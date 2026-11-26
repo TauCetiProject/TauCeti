@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-import Mathlib.Topology.Bases
+public import TauCeti.Topology.Bases
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Pairwise distance, countability, and elementary constructions for orthonormal families
@@ -15,7 +16,11 @@ Two distinct vectors of an orthonormal family in an inner product space sit at s
 hence at distance `√2` (`Orthonormal.norm_sub_sq`, `Orthonormal.norm_sub_eq_sqrt_two`,
 `Orthonormal.dist_eq_sqrt_two`). Consequently the open balls of radius `√2 / 2` around the members
 of an orthonormal family are pairwise disjoint, so in a separable inner product space every
-orthonormal family is countable (`Orthonormal.countable_of_separableSpace`).
+orthonormal family is countable (`Orthonormal.countable_of_separableSpace`), and more generally
+any orthonormal family has lifted index cardinality at most that of any dense-range map
+(`Orthonormal.lift_mk_le_of_denseRange`), or at most `max (#ι) ℵ₀` under a continuous dense-range
+map from a topological module densely spanned by `ι`
+(`Orthonormal.lift_mk_le_max_aleph0_of_denseRange`).
 
 Independently of separability, Bessel's inequality `Orthonormal.inner_products_summable` implies
 that any vector pairs nontrivially with at most countably many members of an orthonormal family
@@ -38,7 +43,9 @@ vectors (`Orthonormal.exists_orthonormalBasis_coe_eq`).
 
 public section
 
-open scoped InnerProductSpace
+open scoped Cardinal InnerProductSpace
+
+universe u v
 
 namespace TauCeti
 
@@ -91,14 +98,52 @@ theorem countable_support_inner_right (hv : Orthonormal 𝕜 v) (x : E) :
   apply hi
   rw [← inner_conj_symm, h0, map_zero]
 
+private theorem pairwise_disjoint_ball (hv : Orthonormal 𝕜 v) :
+    Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) :=
+  fun _ _ hij ↦ Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
+
+/-- If `ψ : α → E` has dense range, then any orthonormal family `v : ι → E` has lifted index
+cardinality at most `#α`. -/
+theorem lift_mk_le_of_denseRange {𝕜 E : Type*} {ι : Type u} {α : Type v}
+    [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    {v : ι → E} (hv : Orthonormal 𝕜 v) {ψ : α → E} (hψ : DenseRange ψ) :
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α :=
+  hv.pairwise_disjoint_ball.lift_mk_le_of_isOpen_disjoint_of_denseRange
+    (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by positivity)⟩) hψ
+
+/-- **Density-character bound.** If `E` is a topological `𝕜`-module densely spanned by `w : ι → E`
+and `f : E → F` is continuous with dense range, then any orthonormal family `v : κ → F` has index
+cardinality at most `max (#ι) ℵ₀`. -/
+theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ : Type v}
+    [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+    [ContinuousSMul 𝕜 E] [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    {v : κ → F} (hv : Orthonormal 𝕜 v) {w : ι → E}
+    (hw : Dense (Submodule.span 𝕜 (Set.range w) : Set E)) {f : E → F}
+    (hf : Continuous f) (hd : DenseRange f) :
+    Cardinal.lift.{u} #κ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ := by
+  classical
+  have : ProperSpace 𝕜 := FiniteDimensional.proper_rclike 𝕜 𝕜
+  have hφ_dense := (TopologicalSpace.denseRange_denseSeq 𝕜).finset_sum_smul hw
+  have hfφ_dense : DenseRange (f ∘ fun t : Finset (ι × ℕ) ↦
+      ∑ p ∈ t, TopologicalSpace.denseSeq 𝕜 p.2 • w p.1) :=
+    hd.comp hφ_dense hf
+  refine (hv.lift_mk_le_of_denseRange hfφ_dense).trans ?_
+  calc Cardinal.lift.{v} #(Finset (ι × ℕ))
+      ≤ Cardinal.lift.{v} #(List (ι × ℕ)) :=
+        Cardinal.lift_le.2 (Cardinal.mk_le_of_surjective List.toFinset_surjective)
+    _ ≤ Cardinal.lift.{v} (max ℵ₀ #(ι × ℕ)) :=
+        Cardinal.lift_le.2 (Cardinal.mk_list_le_max _)
+    _ = max ℵ₀ (Cardinal.lift.{v} #ι * ℵ₀) := by
+        simp [Cardinal.mk_prod]
+    _ ≤ max (Cardinal.lift.{v} #ι) ℵ₀ :=
+        max_le (le_max_right _ _)
+          ((Cardinal.mul_le_max (Cardinal.lift.{v} #ι) ℵ₀).trans (by simp))
+
 /-- Every orthonormal family in a separable inner product space is countable. -/
 theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
-    [TopologicalSpace.SeparableSpace E] : Countable ι := by
-  have hr : 0 < √2 / 2 := by positivity
-  have hd : Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) := fun i j hij ↦
-    Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
-  exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩)
+    [TopologicalSpace.SeparableSpace E] : Countable ι :=
+  hv.pairwise_disjoint_ball.countable_of_isOpen_disjoint
+    (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by positivity)⟩)
 
 /-- Two distinct entries of an orthonormal family form an orthonormal pair. -/
 theorem pair {f : ι → E} (hf : Orthonormal 𝕜 f) {i j : ι} (hij : i ≠ j) :
