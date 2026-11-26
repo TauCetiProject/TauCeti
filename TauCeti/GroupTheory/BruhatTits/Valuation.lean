@@ -42,6 +42,7 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 
 * `TauCeti.BruhatTits.Valuation`: a valuation of a root datum.
 * `TauCeti.BruhatTits.Valuation.filtration`: the filtration subgroups `U (a, k)`.
+* `TauCeti.BruhatTits.Valuation.filtrationGT`: the strict filtration subgroups `U (a, k+)`.
 * `TauCeti.BruhatTits.Valuation.valueSet`: the set `Γ a = φ a (U a ∖ {1}) ⊆ ℝ`.
 * `TauCeti.BruhatTits.Valuation.shift`: the valuation `φ + v` for `v` in the coroot space; it
   defines an additive action of the coroot space on the valuations.
@@ -187,6 +188,48 @@ theorem filtration_le_U (i : ι) (k : ℝ) : φ.filtration i k ≤ D.U i :=
 /-- The filtration is decreasing: `U (a, l) ≤ U (a, k)` for `k ≤ l`. -/
 theorem filtration_antitone (i : ι) : Antitone (φ.filtration i) :=
   fun _ _ hkl _ ⟨h, hl⟩ ↦ ⟨h, (WithTop.coe_le_coe.mpr hkl).trans hl⟩
+
+/-- The strict filtration subgroup `U (a, k+)` is the union of `U (a, l)` over `k < l`. -/
+def filtrationGT (i : ι) (k : ℝ) : Subgroup G :=
+  ⨆ l : Set.Ioi k, φ.filtration i l
+
+/-- Membership in the strict filtration is equivalent to membership at some strictly larger
+depth. -/
+theorem mem_filtrationGT_iff_exists {k : ℝ} {g : G} :
+    g ∈ φ.filtrationGT i k ↔ ∃ l : ℝ, k < l ∧ g ∈ φ.filtration i l := by
+  let : Nonempty (Set.Ioi k) := (Set.nonempty_Ioi (a := k)).to_subtype
+  have hanti : Antitone (fun l : Set.Ioi k ↦ φ.filtration i l) :=
+    fun _ _ h ↦ φ.filtration_antitone i h
+  have hdir := hanti.directed_le
+  simpa [filtrationGT, SetCoe.exists] using (Subgroup.mem_iSup_of_directed hdir (x := g))
+
+/-- The strict filtration consists of elements of the root subgroup of value strictly above
+the given depth. -/
+@[simp]
+theorem mem_filtrationGT_iff {k : ℝ} {g : G} :
+    g ∈ φ.filtrationGT i k ↔ ∃ h : g ∈ D.U i, (k : WithTop ℝ) < φ i ⟨g, h⟩ := by
+  simp only [φ.mem_filtrationGT_iff_exists, φ.mem_filtration_iff]
+  refine ⟨fun ⟨l, hkl, h, hl⟩ ↦ ⟨h, (WithTop.coe_lt_coe.mpr hkl).trans_le hl⟩, ?_⟩
+  rintro ⟨h, hk⟩
+  obtain ⟨l, hkl, hl⟩ := exists_between hk
+  obtain ⟨r, rfl⟩ := WithTop.ne_top_iff_exists.mp (ne_top_of_lt hl)
+  exact ⟨r, WithTop.coe_lt_coe.mp hkl, h, hl.le⟩
+
+/-- For an element of the root subgroup, strict filtration membership tests its value. -/
+theorem coe_mem_filtrationGT_iff {k : ℝ} (u : D.U i) :
+    (u : G) ∈ φ.filtrationGT i k ↔ (k : WithTop ℝ) < φ i u :=
+  (φ.mem_filtrationGT_iff).trans ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.property, h⟩⟩
+
+/-- The strict filtration at a depth is contained in the weak filtration there. -/
+theorem filtrationGT_le_filtration (i : ι) (k : ℝ) :
+    φ.filtrationGT i k ≤ φ.filtration i k :=
+  iSup_le fun l ↦ φ.filtration_antitone i l.property.le
+
+/-- The strict filtration decreases with depth. -/
+theorem filtrationGT_antitone (i : ι) : Antitone (φ.filtrationGT i) := by
+  intro k l hkl g hg
+  obtain ⟨h, hl⟩ := φ.mem_filtrationGT_iff.mp hg
+  exact φ.mem_filtrationGT_iff.mpr ⟨h, (WithTop.coe_le_coe.mpr hkl).trans_lt hl⟩
 
 /-- `U (a, ∞) = ⋂ k, U (a, k)` is trivial. -/
 @[simp]
@@ -407,6 +450,14 @@ theorem filtration_shift (v : N) (k : ℝ) :
     (φ.shift v).filtration i k = φ.filtration i (k - P.root' i v) := by
   ext g
   simp only [mem_filtration_iff, shift_apply, WithTop.coe_le_add_coe_iff]
+
+/-- Shifting the valuation by `v` subtracts `a(v)` from the threshold in the strict
+filtration. -/
+@[simp]
+theorem filtrationGT_shift (i : ι) (v : N) (k : ℝ) :
+    (φ.shift v).filtrationGT i k = φ.filtrationGT i (k - P.root' i v) := by
+  ext g
+  simp only [mem_filtrationGT_iff, shift_apply, WithTop.coe_lt_add_coe_iff]
 
 /-- Shifting by `v` translates the value set of `a` by `a v`. -/
 @[simp]
