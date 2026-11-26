@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
 public import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
@@ -22,7 +23,9 @@ permutations of the coordinates and under positive dilations. Together with open
 (`TauCeti.isOpen_hessianCone`) and `Γ_n ⊆ Γ_k ⊆ Γ_1` (`TauCeti.sum_pos_of_mem_hessianCone`), both
 from the basic cone API next to the definition, this makes `Γ_k` an admissible cone for
 `1 ≤ k ≤ n` (`TauCeti.isAdmissibleCone_hessianCone`). The largest index `Γ_n` is the positive
-orthant (`TauCeti.hessianCone_self`).
+orthant (`TauCeti.hessianCone_self`). By Gårding's theorem on the convexity of the cones of
+hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `Γ_k` is convex
+(`TauCeti.convex_hessianCone`); for `k > n` it is empty, since `σ_{n+1} = 0`.
 
 ## Main results
 
@@ -31,6 +34,7 @@ orthant (`TauCeti.hessianCone_self`).
   cone.
 * `TauCeti.hessianCone_self`: `Γ_n` is the positive orthant.
 * `TauCeti.isAdmissibleCone_hessianCone`: for `1 ≤ k ≤ n`, `Γ_k` is an admissible cone.
+* `TauCeti.convex_hessianCone`: `Γ_k` is convex.
 
 ## References
 
@@ -81,5 +85,19 @@ theorem isAdmissibleCone_hessianCone (hk : 1 ≤ k) (hkn : k ≤ n) :
   smul_mem ht _ hμ := smul_mem_hessianCone ht hμ
   mem_of_forall_pos hμ := mem_hessianCone_of_pos hμ hkn
   sum_pos hμ := sum_pos_of_mem_hessianCone hk hμ
+
+/-- **The Hessian cone `Γ_k` is convex** (Gårding). For `k ≤ n` it is the Gårding cone of the
+hyperbolic polynomial `σ_k`; for `k > n` it is empty, since `σ_{n+1}` vanishes on `ℝⁿ`. -/
+theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
+  rcases le_or_gt k n with hkn | hkn
+  · rw [← gardingCone_esymm_eq_hessianCone]
+    exact (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn)).convex_gardingCone
+  · convert convex_empty (𝕜 := ℝ) (E := Fin n → ℝ)
+    refine Set.eq_empty_of_forall_notMem fun μ hμ ↦ ?_
+    have h := mem_hessianCone.1 hμ (n + 1) (mem_Icc.2 ⟨by omega, hkn⟩)
+    have hzero : esymm (Fin n) ℝ (n + 1) = 0 := by
+      rw [esymm_eq_multiset_esymm]
+      exact Multiset.esymm_of_card_lt (by simp)
+    simp [hzero] at h
 
 end TauCeti

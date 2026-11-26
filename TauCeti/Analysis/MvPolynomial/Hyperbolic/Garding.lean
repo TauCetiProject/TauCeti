@@ -29,6 +29,8 @@ fully nonlinear elliptic equations such as the complex Hessian equations require
 
 ## Main results
 
+* `MvPolynomial.IsHyperbolic.eval_map_ofReal_add_smul_ne_zero`: a hyperbolic polynomial has no
+  complex zero off the real axis on a line in its direction.
 * `MvPolynomial.IsHyperbolic.of_mem_gardingCone`: `p` is hyperbolic in every direction `b ∈ Γ`.
 * `MvPolynomial.IsHyperbolic.mem_gardingCone_of_mem_closure`: a point of the closure of `Γ` where
   `p` does not vanish lies in `Γ`.
@@ -126,6 +128,13 @@ private theorem IsHyperbolic.im_eq_zero_of_eval_eq_zero (hp : IsHyperbolic p m a
     (i := ofRealHom)
     (by rwa [Polynomial.IsRoot.def, eval_map_aeval_C_add_C_mul_X ofRealHom])
   simp
+
+/-- **No complex roots off the real axis.** If `p` is hyperbolic in the direction `a`, then for a
+real point `y` and a non-real `t`, the complexification of `p` does not vanish at `y + t • a`. -/
+theorem IsHyperbolic.eval_map_ofReal_add_smul_ne_zero (hp : IsHyperbolic p m a) (y : σ → ℝ)
+    {t : ℂ} (ht : t.im ≠ 0) :
+    eval ((fun j ↦ (y j : ℂ)) + t • fun j ↦ (a j : ℂ)) (p.map ofRealHom) ≠ 0 :=
+  fun h ↦ ht (hp.im_eq_zero_of_eval_eq_zero y h)
 
 /-- The point `y + r • v` of the complexification, for real `y`, `v` and `r`, is real. -/
 private theorem ofReal_comp_add_ofReal_smul (y v : σ → ℝ) (r : ℝ) :
