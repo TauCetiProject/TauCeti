@@ -214,17 +214,10 @@ theorem PosDef.exists_isPrimitive_forall_dotProduct_mulVec_le [Nonempty ι] {A :
         (fun i ↦ (x i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (x i : ℝ)) := by
   classical
   let q : (ι → ℤ) → ℝ := fun z ↦ (fun i ↦ (z i : ℝ)) ⬝ᵥ A *ᵥ (fun i ↦ (z i : ℝ))
+  have : Northcott q := hA.northcott
   obtain ⟨i₀⟩ := ‹Nonempty ι›
-  set z₀ : ι → ℤ := Pi.single i₀ 1
-  have hz₀ : z₀ ≠ 0 := fun h ↦ by simpa [z₀] using congrFun h i₀
-  have hfin : {z : ι → ℤ | q z ≤ q z₀ ∧ z ≠ 0}.Finite :=
-    (hA.northcott.finite_le (q z₀)).subset fun _ h ↦ h.1
-  obtain ⟨v, hv_mem, hv_min⟩ :=
-    hfin.toFinset.exists_min_image q ⟨z₀, hfin.mem_toFinset.mpr ⟨le_rfl, hz₀⟩⟩
-  obtain ⟨hv_le, hv0⟩ := hfin.mem_toFinset.mp hv_mem
-  have hmin (x : ι → ℤ) (hx : x ≠ 0) : q v ≤ q x :=
-    if hxq : q x ≤ q z₀ then hv_min x (hfin.mem_toFinset.mpr ⟨hxq, hx⟩)
-    else hv_le.trans (le_of_not_ge hxq)
+  have hz₀ : (Pi.single i₀ 1 : ι → ℤ) ≠ 0 := fun h ↦ by simpa using congrFun h i₀
+  obtain ⟨v, hv0, hmin⟩ := Northcott.exists_min_image q {z | z ≠ 0} ⟨Pi.single i₀ 1, hz₀⟩
   refine ⟨v, TauCeti.isPrimitive_of_forall_le_of_zsmul_eq_sq_mul hv0 hmin (fun w hw ↦ ?_)
     (fun d w ↦ ?_), hmin⟩
   · exact hA.dotProduct_mulVec_pos fun h0 ↦

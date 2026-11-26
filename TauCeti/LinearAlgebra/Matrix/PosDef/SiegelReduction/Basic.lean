@@ -32,11 +32,12 @@ normalization `b.det ^ (-(n : ℝ)⁻¹) • b`.
 * `TauCeti.RealSiegel.IsReduced`, `TauCeti.RealSiegel.reducedSet`,
   `TauCeti.RealSiegel.reducedSetInBasis`: `C`-reduced positive-definite forms, semialgebraicity in
   entry coordinates (`isSemialgebraic_reducedSet`), and `GL (Fin n) ℝ` equivariance.
-* `TauCeti.RealSiegel.exists_cholesky_bound_of_isReduced` and
+* `Matrix.PosDef.exists_isUpperUnitriangular_transpose_mul_diagonal_mul_eq`,
+  `TauCeti.RealSiegel.exists_cholesky_bound_of_isReduced`, and
   `TauCeti.RealSiegel.exists_isReduced_of_cholesky_bound`: quantitative equivalence between
   `C`-reducedness of `Nᵀ * Matrix.diagonal d * N` and uniform bounds on upper-unitriangular `N` and
   adjacent ratios `d i / d (i + 1)`.
-* `TauCeti.RealSiegel.abs_dotProduct_mulVec_le_of_diag_le` and
+* `Matrix.PosDef.abs_dotProduct_mulVec_le_of_diag_le` and
   `TauCeti.RealSiegel.exists_monotone_and_isReduced_submatrix_sort_transpose_mul_mul`: transfer of
   reducedness across an invertible change of basis with determinant control after sorting the
   diagonal via `Tuple.sort`.
@@ -199,9 +200,6 @@ theorem isSemialgebraic_reducedSet (n : ℕ) (C : ℝ) :
       Matrix.of (Function.curry s) ∈ reducedSet n C} := by
   let ev := MvPolynomial.eval (R := ℝ) (σ := Fin n × Fin n)
   let X := MvPolynomial.X (R := ℝ) (σ := Fin n × Fin n)
-  have hdet (s) : (Matrix.of (Function.curry s)).det =
-      ev s (Matrix.mvPolynomialX (Fin n) (Fin n) ℝ).det := by
-    rw [RingHom.map_det]; congr 1; ext i j; simp [ev, Matrix.mvPolynomialX_apply, Function.curry]
   have heq : {s : Fin n × Fin n → ℝ | Matrix.of (Function.curry s) ∈ reducedSet n C} =
       {s | (Matrix.of (Function.curry s)).PosDef} ∩
       ((⋂ p : Fin n × Fin n, {s | 0 < ev s (MvPolynomial.C C * X (p.1, p.1) - X p)} ∩
@@ -213,7 +211,8 @@ theorem isSemialgebraic_reducedSet (n : ℕ) (C : ℝ) :
     ext s
     simp only [ev, X, mem_reducedSet_iff, IsReduced, Set.mem_ofPred_eq, Set.mem_inter_iff,
       Set.mem_iInter, Prod.forall, Subtype.forall, map_sub, map_add, map_mul, MvPolynomial.eval_C,
-      MvPolynomial.eval_X, map_prod, sub_pos, Matrix.of_apply, Function.curry_apply, ← hdet, abs_lt]
+      MvPolynomial.eval_X, map_prod, sub_pos, Matrix.of_apply, Function.curry_apply,
+      Matrix.eval_det_mvPolynomialX, abs_lt]
     exact and_congr_right fun _ ↦ and_congr (forall₂_congr fun _ _ ↦
       ⟨fun ⟨_, h2⟩ ↦ ⟨h2, by linarith⟩, fun ⟨h1, _⟩ ↦ ⟨by linarith, h1⟩⟩) Iff.rfl
   exact heq ▸ (isSemialgebraic_setOf_posDef n).inter
@@ -265,12 +264,15 @@ end ReducedSet
 
 section CholeskyBounds
 
-/-- Every positive-definite real `n × n` matrix decomposes as `Nᵀ * Matrix.diagonal d * N` with
-`N` upper unitriangular and `0 < d i` for all `i`, given by Mathlib's `LDL` decomposition. -/
-theorem exists_isUpperUnitriangular_transpose_mul_diagonal_mul_eq {n : ℕ}
-    {b : Matrix (Fin n) (Fin n) ℝ} (hb : b.PosDef) :
-    ∃ (N : Matrix (Fin n) (Fin n) ℝ) (d : Fin n → ℝ),
+/-- Every positive-definite real matrix indexed by a finite linear order decomposes as
+`Nᵀ * Matrix.diagonal d * N` with `N` upper unitriangular and `0 < d i` for all `i`, given by
+Mathlib's `LDL` decomposition. -/
+theorem _root_.Matrix.PosDef.exists_isUpperUnitriangular_transpose_mul_diagonal_mul_eq {n : Type*}
+    [LinearOrder n] [Fintype n] {b : Matrix n n ℝ} (hb : b.PosDef) :
+    ∃ (N : Matrix n n ℝ) (d : n → ℝ),
       N.IsUpperUnitriangular ∧ (∀ i, 0 < d i) ∧ b = Nᵀ * Matrix.diagonal d * N := by
+  let : LocallyFiniteOrderBot n :=
+    LocallyFiniteOrderBot.ofIic n (fun a ↦ Finset.univ.filter (· ≤ a)) (by simp)
   refine ⟨(LDL.lower hb)ᵀ, LDL.diagEntries hb, (Matrix.isUpperUnitriangular_def _).mpr
     ⟨(LDL.isLowerTriangular_lower hb).transpose, LDL.lower_apply_diag hb⟩,
     LDL.diagEntries_pos hb, ?_⟩
@@ -438,8 +440,11 @@ theorem exists_isReduced_of_cholesky_bound (n : ℕ) (R : ℝ) :
   refine ⟨C, (by linarith [one_le_pow₀ (n := n) hM] : 1 < M ^ n + 1).trans_le (le_max_right _ _),
     fun {N d} hN hd hN_le hd_step ↦ ?_⟩
   set b : Matrix _ _ ℝ := Nᵀ * Matrix.diagonal d * N
-  have hb_pd : b.PosDef := (Matrix.IsUnit.posDef_transpose_mul_mul_iff
-    ((Matrix.isUnit_iff_isUnit_det N).mpr hN.isUnit_det)).mpr (Matrix.posDef_diagonal_iff.mpr hd)
+  have hb_pd : b.PosDef := by
+    simpa only [b, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
+      (Matrix.IsUnit.posDef_star_left_conjugate_iff
+        ((Matrix.isUnit_iff_isUnit_det N).mpr hN.isUnit_det)).mpr
+        (Matrix.posDef_diagonal_iff.mpr hd)
   have hd_ratio {k i : Fin n} (hki : k ≤ i) : d k ≤ R₁ ^ n * d i :=
     pivot_le_pow_mul hd hR₁ (le_max_left R 1) hd_step hki
   have hN_all (i j : Fin n) : |N i j| ≤ R₁ := by
@@ -479,10 +484,11 @@ satisfies weak `C'`-reducedness inequalities (`C' ≥ 1`) and `v : Fin n → ℝ
 coordinate `k`, then
 `|v ⬝ᵥ B *ᵥ w| ≤ C' ^ 3 * (∑ a, |v a|) * (∑ b, |w b|) / v k ^ 2 * (v ⬝ᵥ B *ᵥ v)`
 for every vector `w`. -/
-theorem abs_dotProduct_mulVec_le_of_diag_le {n : ℕ} {B : Matrix (Fin n) (Fin n) ℝ} (hB : B.PosDef)
-    {C' : ℝ} (hC'1 : 1 ≤ C') (hOff : ∀ a b, |B a b| ≤ C' * B a a)
-    (hDiag : ∀ a b, a < b → B a a ≤ C' * B b b) (hDet : ∏ a, B a a ≤ C' * B.det)
-    {v : Fin n → ℝ} (w : Fin n → ℝ) {k : Fin n} (hvk : v k ≠ 0) (hsupp : ∀ a, k < a → v a = 0) :
+theorem _root_.Matrix.PosDef.abs_dotProduct_mulVec_le_of_diag_le {n : ℕ}
+    {B : Matrix (Fin n) (Fin n) ℝ} (hB : B.PosDef) {C' : ℝ} (hC'1 : 1 ≤ C')
+    (hOff : ∀ a b, |B a b| ≤ C' * B a a) (hDiag : ∀ a b, a < b → B a a ≤ C' * B b b)
+    (hDet : ∏ a, B a a ≤ C' * B.det) {v : Fin n → ℝ} (w : Fin n → ℝ) {k : Fin n}
+    (hvk : v k ≠ 0) (hsupp : ∀ a, k < a → v a = 0) :
     |v ⬝ᵥ B *ᵥ w| ≤ C' ^ 3 * (∑ a, |v a|) * (∑ b, |w b|) / v k ^ 2 * (v ⬝ᵥ B *ᵥ v) := by
   have hC'_pos : 0 < C' := zero_lt_one.trans_le hC'1
   have hBab {a : Fin n} (hak : a ≤ k) (b : Fin n) : |B a b| ≤ C' ^ 2 * B k k := by
@@ -533,8 +539,8 @@ private theorem exists_topIdx_col {n : ℕ} (A : GL (Fin n) ℝ) (i : Fin n) :
 /-- **Basis change with determinant control.** Given `A : GL (Fin n) ℝ` and thresholds `C, C'`,
 there is `C'' > 1` depending only on `C`, `C'`, and `A` such that for every positive-definite
 `C'`-reduced matrix `B` whose transformed Gram matrix `B_A = Aᵀ * B * A` satisfies
-`∏ i, B_A i i ≤ C * B_A.det`, sorting the diagonal of `B_A` by `σ = Tuple.sort (fun i ↦ B_A i i)`
-produces a `C''`-reduced matrix `B_A.submatrix σ σ` with monotone diagonal.
+`∏ i, B_A i i ≤ C * B_A.det`, sorting the diagonal of `B_A` by `Tuple.sort (fun i ↦ B_A i i)`
+produces a `C''`-reduced submatrix with monotone diagonal.
 
 The sorting permutation is essential: for `A` swapping coordinates on `Fin 2` and `B = diag(1, N)`
 (`N ≥ 2`), `B` is `2`-reduced and the swapped matrix `B' = diag(N, 1)` satisfies
@@ -544,16 +550,21 @@ theorem exists_monotone_and_isReduced_submatrix_sort_transpose_mul_mul {n : ℕ}
     ∃ C'' : ℝ, 1 < C'' ∧ ∀ {B : Matrix (Fin n) (Fin n) ℝ}, B.PosDef → IsReduced C' B →
       (∏ i, ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) i i ≤
         C * ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)).det) →
-      ∀ (σ : Equiv.Perm (Fin n)),
-        σ = Tuple.sort (fun i ↦
-          ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) i i) →
-        Monotone (fun i ↦ ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B *
-          (A : Matrix (Fin n) (Fin n) ℝ)) (σ i) (σ i)) ∧
-          IsReduced C'' (((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B *
-            (A : Matrix (Fin n) (Fin n) ℝ)).submatrix σ σ) := by
+      Monotone (fun i ↦ ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B *
+        (A : Matrix (Fin n) (Fin n) ℝ))
+          (Tuple.sort (fun j ↦
+            ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) j j) i)
+          (Tuple.sort (fun j ↦
+            ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) j j) i)) ∧
+        IsReduced C'' (((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B *
+          (A : Matrix (Fin n) (Fin n) ℝ)).submatrix
+            (Tuple.sort fun j ↦
+              ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) j j)
+            (Tuple.sort fun j ↦
+              ((A : Matrix (Fin n) (Fin n) ℝ)ᵀ * B * (A : Matrix (Fin n) (Fin n) ℝ)) j j)) := by
   classical
   -- Choose the top nonzero index of each column of `A` to bound off-diagonal entries via
-  -- `abs_dotProduct_mulVec_le_of_diag_le`.
+  -- `Matrix.PosDef.abs_dotProduct_mulVec_le_of_diag_le`.
   let colA (i : Fin n) : Fin n → ℝ := fun a ↦ A.val a i
   choose topIdx htop_ne htop_vanish using exists_topIdx_col A
   set C₁ : ℝ := max C 1; set C'₁ : ℝ := max C' 1
@@ -562,11 +573,14 @@ theorem exists_monotone_and_isReduced_submatrix_sort_transpose_mul_mul {n : ℕ}
   have hK_nn (i j : Fin n) : 0 ≤ K i j := by dsimp [K]; positivity
   set C'' : ℝ := max 2 (max (C₁ + 1) ((∑ i : Fin n, ∑ j : Fin n, K i j) + 1))
   have hC''_gt : 1 < C'' := (by norm_num : (1 : ℝ) < 2).trans_le (le_max_left _ _)
-  refine ⟨C'', hC''_gt, fun {B} hB hRed hDet σ hσ ↦ ?_⟩
+  refine ⟨C'', hC''_gt, fun {B} hB hRed hDet ↦ ?_⟩
   set B_A := A.valᵀ * B * A.val
-  have hmono : Monotone (fun i ↦ B_A (σ i) (σ i)) := hσ ▸ Tuple.monotone_sort (fun i ↦ B_A i i)
+  set σ := Tuple.sort (fun j ↦ B_A j j)
+  have hmono : Monotone (fun i ↦ B_A (σ i) (σ i)) := Tuple.monotone_sort (fun j ↦ B_A j j)
   have hRed₁ : IsReduced C'₁ B := hRed.mono hB (le_max_left C' 1)
-  have hB_A_pd : B_A.PosDef := (Matrix.IsUnit.posDef_transpose_mul_mul_iff A.isUnit).mpr hB
+  have hB_A_pd : B_A.PosDef := by
+    simpa only [B_A, Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial]
+      using (Matrix.IsUnit.posDef_star_left_conjugate_iff A.isUnit).mpr hB
   have hB_A_apply (i j : Fin n) : B_A i j = colA i ⬝ᵥ B *ᵥ colA j := by
     simp only [B_A, colA, Matrix.mul_apply, Matrix.transpose_apply, dotProduct, Matrix.mulVec,
       Finset.mul_sum, mul_assoc]
@@ -576,7 +590,7 @@ theorem exists_monotone_and_isReduced_submatrix_sort_transpose_mul_mul {n : ℕ}
   refine ⟨hmono, ⟨fun i j ↦ ?_, fun i j hij ↦ ?_, ?_⟩⟩
   · have hbij : |B' i j| ≤ K (σ i) (σ j) * B' i i := by
       simpa [B', Matrix.submatrix_apply, hB_A_apply, K] using
-        abs_dotProduct_mulVec_le_of_diag_le hB (le_max_right C' 1)
+        hB.abs_dotProduct_mulVec_le_of_diag_le (le_max_right C' 1)
           (fun a b ↦ (hRed₁.abs_apply_lt a b).le) (fun _ _ h ↦ (hRed₁.diag_lt_of_lt h).le)
           hRed₁.prod_diag_lt.le (v := colA (σ i)) (colA (σ j)) (k := topIdx (σ i))
           (htop_ne (σ i)) (htop_vanish (σ i))

@@ -48,8 +48,10 @@ This mirrors `TauCeti.GLSymplectic`, the units-level avatar of `Matrix.symplecti
   `TauCeti.GLSpecialOrthogonal.mem_iff_mem_specialOrthogonalGroup`: the two groups are Mathlib's
   matrix groups read on units.
 * `TauCeti.GLOrthogonal.coe_inv`: an orthogonal matrix is inverted by its transpose.
-* `TauCeti.GLOrthogonal.inv_mul_mem_of_mul_transpose_eq`: equal right Gram matrices
-  `h * hᵀ = p * pᵀ` force `p⁻¹ * h` to be orthogonal.
+* `TauCeti.GLOrthogonal.inv_mul_mem_of_mul_transpose_eq` and
+  `TauCeti.GLOrthogonal.mul_inv_mem_of_transpose_mul_eq`: equal right Gram matrices
+  `h * hᵀ = p * pᵀ` force `p⁻¹ * h` to be orthogonal, and equal left Gram matrices
+  `hᵀ * h = pᵀ * p` force `h * p⁻¹` to be orthogonal.
 * `TauCeti.GLOrthogonal.map_mem` and `TauCeti.GLSpecialOrthogonal.map_mem`: a ring homomorphism
   maps orthogonal and special orthogonal matrices to orthogonal and special orthogonal matrices.
 * `TauCeti.GLOrthogonal.eq_unitarySubgroup` and `TauCeti.GLSpecialOrthogonal.eq_GLSpecialUnitary`:
@@ -133,6 +135,18 @@ theorem inv_mul_mem_of_mul_transpose_eq {p h : GL n R}
     _ = ((p⁻¹ * p : GL n R) : Matrix n n R) * ((p⁻¹ * p : GL n R) : Matrix n n R)ᵀ := by
         rw [heq]; simp only [Units.val_mul, transpose_mul, Matrix.mul_assoc]
     _ = 1 := by simp
+
+/-- If two invertible matrices have the same left Gram matrix `hᵀ * h = pᵀ * p`, then `h * p⁻¹`
+is orthogonal. -/
+theorem mul_inv_mem_of_transpose_mul_eq {p h : GL n R}
+    (heq : (h : Matrix n n R)ᵀ * (h : Matrix n n R) =
+      (p : Matrix n n R)ᵀ * (p : Matrix n n R)) :
+    h * p⁻¹ ∈ GLOrthogonal n R := by
+  have hmem : (inverseTranspose h⁻¹)⁻¹ * inverseTranspose p⁻¹ ∈ GLOrthogonal n R :=
+    inv_mul_mem_of_mul_transpose_eq
+      (by simpa [← map_inv, coe_inverseTranspose, inv_inv] using heq.symm)
+  rw [mem_iff_inverseTranspose_eq] at hmem ⊢
+  simpa [map_mul, map_inv, inverseTranspose_inverseTranspose] using hmem.symm
 
 /-- The carrier of the orthogonal group is the preimage, under the coercion of units, of the
 matrices whose transpose is a left inverse. This is the form its closedness is read from. -/

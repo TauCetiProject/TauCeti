@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unipotent
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
 /-!
 # Upper-unitriangular matrix groups
@@ -39,9 +40,8 @@ matrices whose entries above the diagonal are supported on a prescribed set of p
 * `OrderIso.reindexUpperUnitriangularGroup`: order-preserving reindexing as a group isomorphism.
 * `TauCeti.UpperUnitriangularGroup.isUnipotent_toLin`: the natural representation of every
   element of `Uₙ(R)` is unipotent.
-* `Matrix.abs_pow_apply_le` and `Matrix.IsUpperUnitriangular.abs_inv_toGL_apply_le`: entrywise
-  magnitude bounds for powers of matrices and for inverses of upper-unitriangular matrices over
-  a linearly ordered ring.
+* `Matrix.IsUpperUnitriangular.abs_inv_toGL_apply_le`: entrywise magnitude bound for the inverse
+  of an upper-unitriangular matrix over a linearly ordered ring.
 * `TauCeti.unitriangularGroupEquivFunOfSupported`: the coordinates of a group of
   upper-unitriangular matrices supported on a set of pairs `i < j`.
 * `TauCeti.upperUnitriangularGroupEquivFun`: `Uₙ(R)` in bijection with the functions on the pairs
@@ -80,31 +80,10 @@ end Ring
 
 section OrderedRing
 
-/-- Entrywise bound on matrix powers: if `|X i j| ≤ B` for all entries (`0 ≤ B`), then
-`|(X ^ k) i j| ≤ (Fintype.card m * B) ^ k`. -/
-theorem abs_pow_apply_le [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
-    {X : Matrix m m R} {B : R} (hB : 0 ≤ B) (hX : ∀ i j, |X i j| ≤ B) (k : ℕ) (i j : m) :
-    |(X ^ k) i j| ≤ ((Fintype.card m : R) * B) ^ k := by
-  induction k generalizing i j with
-  | zero =>
-    rw [pow_zero, pow_zero, Matrix.one_apply]
-    split_ifs <;> simp
-  | succ k ih =>
-    rw [pow_succ, Matrix.mul_apply]
-    refine (Finset.abs_sum_le_sum_abs _ _).trans ?_
-    calc ∑ l : m, |(X ^ k) i l * X l j|
-        ≤ ∑ _l : m, ((Fintype.card m : R) * B) ^ k * B := Finset.sum_le_sum fun l _ ↦ by
-          rw [abs_mul]
-          exact mul_le_mul (ih i l) (hX l j) (abs_nonneg _)
-            (pow_nonneg (mul_nonneg (Nat.cast_nonneg _) hB) k)
-      _ = ((Fintype.card m : R) * B) ^ (k + 1) := by
-          simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, pow_succ]
-          ring
-
 /-- Entrywise bound on the inverse of an upper-unitriangular matrix: if `|M i j| ≤ B` above the
 diagonal (`0 ≤ B`), then every entry of `hM.toGL⁻¹` has absolute value at most
 `∑ k ∈ Finset.range (Fintype.card m), (Fintype.card m * B) ^ k`. -/
-theorem IsUpperUnitriangular.abs_inv_toGL_apply_le [CommRing R] [LinearOrder R]
+theorem IsUpperUnitriangular.abs_inv_toGL_apply_le [Ring R] [LinearOrder R]
     [IsStrictOrderedRing R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {B : R} (hB : 0 ≤ B)
     (hM_bound : ∀ i j, i < j → |M i j| ≤ B) (i j : m) :
     |((hM.toGL⁻¹ : GL m R) : Matrix m m R) i j| ≤

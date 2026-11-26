@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.RingTheory.Localization.Integer
+public import TauCeti.LinearAlgebra.Matrix.CornerBlockSucc
 import Mathlib.Algebra.Order.Star.Rat
 import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.PosSemidef
@@ -46,12 +47,13 @@ the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper
   more generally over any linearly ordered field with the star order.
 * `TauCeti.Matrix.posDef_conjTranspose_mul_self_of_isUnit`: an invertible rational matrix of the
   form `Bᴴ * B` is positive definite.
-* `Matrix.IsUnit.posDef_transpose_mul_mul_iff` and `Matrix.IsUnit.posDef_mul_mul_transpose_iff`:
-  congruence by an invertible matrix over a ring with trivial star preserves positive definiteness.
 * `Matrix.PosDef.trivialStar`: over a linearly ordered field, a positive definite matrix on a
   nonempty index type forces the star to be trivial.
 * `Matrix.PosDef.sq_apply_le_inv_apply_self_mul_dotProduct_mulVec`: Cauchy–Schwarz coordinate
   bound `x k ^ 2 ≤ S⁻¹ k k * (x ⬝ᵥ S *ᵥ x)`.
+* `Matrix.PosDef.exists_eq_transpose_upperBorder_mul_cornerBlockSucc_mul`: single-step Schur
+  complement factorization `(upperBorder u₀ 1)ᵀ * cornerBlockSucc (b 0 0) b_sub * upperBorder u₀ 1`
+  of a positive-definite `(n + 1) × (n + 1)` matrix.
 * `Matrix.PosDef.exists_sq_le_of_dotProduct_mulVec_le`: for a positive definite matrix `S`, the
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 * `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
@@ -233,27 +235,6 @@ end Matrix
 
 end TauCeti
 
-namespace Matrix.IsUnit
-
-variable {n R : Type*} [Fintype n] [DecidableEq n] [Ring R] [PartialOrder R] [StarRing R]
-  [TrivialStar R]
-
-/-- For an invertible matrix `P` over a star-ring with trivial star, `Pᵀ * B * P` is positive
-definite if and only if `B` is. -/
-theorem posDef_transpose_mul_mul_iff {B P : Matrix n n R} (hP : IsUnit P) :
-    (Pᵀ * B * P).PosDef ↔ B.PosDef := by
-  simpa only [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
-    Matrix.IsUnit.posDef_star_left_conjugate_iff (x := B) hP
-
-/-- For an invertible matrix `P` over a star-ring with trivial star, `P * B * Pᵀ` is positive
-definite if and only if `B` is. -/
-theorem posDef_mul_mul_transpose_iff {B P : Matrix n n R} (hP : IsUnit P) :
-    (P * B * Pᵀ).PosDef ↔ B.PosDef := by
-  simpa only [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial] using
-    Matrix.IsUnit.posDef_star_right_conjugate_iff (x := B) hP
-
-end Matrix.IsUnit
-
 namespace Matrix.PosDef
 
 section TrivialStar
@@ -290,21 +271,43 @@ theorem sq_apply_le_inv_apply_self_mul_dotProduct_mulVec [DecidableEq B] {S : Ma
     x k ^ 2 ≤ S⁻¹ k k * (x ⬝ᵥ S *ᵥ x) := by
   have : Nonempty B := ⟨k⟩
   have := hS.trivialStar
-  set F : LinearMap.BilinForm K (B → K) := Matrix.toBilin' S
-  have hnonneg : ∀ u : B → K, 0 ≤ F u u := fun u ↦ by
-    simpa [F, Matrix.toBilin'_apply'] using hS.posSemidef.dotProduct_mulVec_nonneg u
-  have hsymm : LinearMap.IsSymm F :=
-    LinearMap.BilinForm.isSymm_iff.mp (Matrix.isSymm_toBilin'_iff_isSymm.mpr hS.isHermitian.isSymm)
   set u : B → K := S⁻¹ *ᵥ Pi.single k 1
   have hSu : S *ᵥ u = Pi.single k 1 := by
     rw [Matrix.mulVec_mulVec,
       Matrix.mul_nonsing_inv S ((Matrix.isUnit_iff_isUnit_det S).mp hS.isUnit), Matrix.one_mulVec]
-  have hFxu : F x u = x k := by rw [Matrix.toBilin'_apply', hSu, dotProduct_single_one]
-  have hFuu : F u u = S⁻¹ k k := by
-    rw [Matrix.toBilin'_apply', hSu, dotProduct_single_one]; simp [u]
-  have hcs := F.apply_sq_le_of_symm hnonneg hsymm x u
-  rw [hFxu, hFuu, Matrix.toBilin'_apply', mul_comm] at hcs
-  exact hcs
+  have hcs := hS.star_dotProduct_mulVec_mul_le x u
+  simp only [star_trivial, hSu, dotProduct_single_one, mul_comm (x ⬝ᵥ S *ᵥ x), ← sq] at hcs
+  simpa [u, Matrix.mulVec_single_one] using hcs
+
+/-- **Single-step Schur-complement factorization of a positive-definite `(n + 1) × (n + 1)`
+matrix.** Writing `d₀ = b 0 0`, there exist a top-row shear `u₀ : Fin n → K` and a
+positive-definite `n × n` Schur complement `b_sub` such that
+`b = (upperBorder u₀ 1)ᵀ * cornerBlockSucc (b 0 0) b_sub * upperBorder u₀ 1`. -/
+theorem exists_eq_transpose_upperBorder_mul_cornerBlockSucc_mul {n : ℕ}
+    {b : Matrix (Fin (n + 1)) (Fin (n + 1)) K} (hb : b.PosDef) :
+    ∃ (u₀ : Fin n → K) (b_sub : Matrix (Fin n) (Fin n) K), b_sub.PosDef ∧
+      b = (Matrix.upperBorder u₀ 1)ᵀ * Matrix.cornerBlockSucc (b 0 0) b_sub *
+        Matrix.upperBorder u₀ 1 := by
+  have := hb.trivialStar
+  let d₀ : K := b 0 0
+  have hd₀_pos : 0 < d₀ := hb.diag_pos
+  let u₀ : Fin n → K := fun j ↦ b 0 j.succ / d₀
+  let b_sub : Matrix (Fin n) (Fin n) K := Matrix.of fun i j ↦ b i.succ j.succ - d₀ * u₀ i * u₀ j
+  have hb_schur : b = (Matrix.upperBorder u₀ 1)ᵀ * Matrix.cornerBlockSucc d₀ b_sub *
+      Matrix.upperBorder u₀ 1 := by
+    rw [Matrix.transpose_upperBorder_mul_cornerBlockSucc_mul]
+    exact Matrix.ext_fin_succ rfl (fun j ↦ (mul_div_cancel₀ _ hd₀_pos.ne').symm)
+      (fun i ↦ by
+        simpa [u₀, div_mul_cancel₀ _ hd₀_pos.ne'] using hb.isHermitian.isSymm.apply 0 i.succ)
+      fun i j ↦ by simp [b_sub]
+  have hcorner : (Matrix.cornerBlockSucc d₀ b_sub).PosDef := by
+    refine (Matrix.IsUnit.posDef_star_left_conjugate_iff (Matrix.upperBorderUnit u₀ 1).isUnit).mp ?_
+    simpa only [Matrix.star_eq_conjTranspose, Matrix.conjTranspose_eq_transpose_of_trivial,
+      Matrix.coe_upperBorderUnit, Units.val_one, ← hb_schur] using hb
+  refine ⟨u₀, b_sub, ?_, hb_schur⟩
+  exact (by ext i j; simp :
+    (Matrix.cornerBlockSucc d₀ b_sub).submatrix Fin.succ Fin.succ = b_sub) ▸
+      hcorner.submatrix (Fin.succ_injective n)
 
 /-- **A positive definite quadratic inequality bounds every coordinate.** For a positive definite
 matrix `S` and a linear functional `w`, the vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have squared

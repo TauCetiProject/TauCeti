@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.LinearAlgebra.Matrix.Module
+import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Matrix adjugation
@@ -138,14 +139,16 @@ deleting row `i` and column `i`. -/
 theorem adjugate_apply_self {n : Type*} [Fintype n] [DecidableEq n]
     (A : Matrix n n R) (i : n) :
     A.adjugate i i = (A.submatrix ((↑) : {a // a ≠ i} → n) (↑)).det := by
-  let e := Equiv.sumCompl (· = i)
-  have hblk : (A.updateRow i (Pi.single i 1)).submatrix e e =
-      fromBlocks 1 0 (A.submatrix (↑) (↑)) (A.submatrix (↑) (↑)) := by
-    ext (⟨x, rfl⟩ | ⟨x, hx⟩) (⟨y, hy⟩ | ⟨y, hy⟩)
-    · simp [e, updateRow_apply, hy.symm]
-    · simp [e, updateRow_apply, hy]
-    · simp [e, updateRow_apply, hx]
-    · simp [e, updateRow_apply, hx]
-  rw [adjugate_apply, ← det_submatrix_equiv_self e, hblk, det_fromBlocks_zero₁₂, det_one, one_mul]
+  have : Nonempty n := ⟨i⟩
+  obtain ⟨m, hm⟩ := Nat.exists_eq_succ_of_ne_zero (Fintype.card_ne_zero (α := n))
+  obtain ⟨e⟩ := Fintype.truncEquivFinOfCardEq hm
+  let g : Fin m ≃ {a : n // a ≠ i} :=
+    (finSuccAboveEquiv (e i)).trans (e.symm.subtypeEquiv fun x ↦ by simp [Equiv.symm_apply_eq])
+  have hA : A.adjugate i i = ((reindex e e A).submatrix (e i).succAbove (e i).succAbove).det := by
+    have h := adjugate_fin_succ_eq_det_submatrix (reindex e e A) (e i) (e i)
+    rwa [adjugate_reindex, reindex_apply, submatrix_apply, Equiv.symm_apply_apply,
+      Even.neg_one_pow ⟨e i, rfl⟩, one_mul] at h
+  rw [hA, ← det_submatrix_equiv_self g (A.submatrix ((↑) : {a // a ≠ i} → n) (↑))]
+  exact congrArg det (Matrix.ext fun a b ↦ by simp [g, finSuccAboveEquiv_apply])
 
 end Matrix

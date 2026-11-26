@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
-import Mathlib.LinearAlgebra.Matrix.MvPolynomial
+import TauCeti.LinearAlgebra.Matrix.MvPolynomial
 import TauCeti.LinearAlgebra.Matrix.PosDef.Sylvester
 
 /-!
@@ -42,7 +42,10 @@ theorem isSemialgebraic_setOf_posDef {K : Type*} [Field K] [LinearOrder K] [IsSt
   let M := Matrix.mvPolynomialX (Fin n) (Fin n) K
   have hdet {m : ℕ} (f : Fin m → Fin n) (s) :
       ((Matrix.of (Function.curry s)).submatrix f f).det = ev s ((M.submatrix f f).det) := by
-    rw [RingHom.map_det]; congr 1; ext a b; simp [ev, M, Matrix.mvPolynomialX_apply, Function.curry]
+    have hs : Function.uncurry (Matrix.of (Function.curry s)) = s := by
+      ext ⟨i, j⟩; simp [Function.uncurry, Function.curry]
+    simpa [ev, M, MvPolynomial.aeval_eq_eval, hs] using
+      (Matrix.aeval_det_submatrix_mvPolynomialX (R := K) (Matrix.of (Function.curry s)) f f).symm
   have heq : {s : Fin n × Fin n → K | (Matrix.of (Function.curry s)).PosDef} =
       (⋂ p : Fin n × Fin n, {s | ev s (MvPolynomial.X p) = ev s (MvPolynomial.X p.swap)}) ∩
       (⋂ k : Fin n, {s | 0 < ev s ((M.submatrix (Fin.castLE (Nat.succ_le_of_lt k.isLt))

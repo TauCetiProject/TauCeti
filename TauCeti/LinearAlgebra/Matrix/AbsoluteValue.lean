@@ -59,8 +59,9 @@ bounded entrywise.
 * `Matrix.abv_det_le_factorial_prod` and `Matrix.abv_det_le_factorial_prod'`: for any absolute
   value, entrywise row bounds `b i` or column bounds `b j` give
   `abv A.det ≤ n! · ∏ i, b i` and `abv A.det ≤ n! · ∏ j, b j`.
-* `Matrix.abs_mul_apply_le` and `Matrix.abs_adjugate_apply_le`: entrywise bounds on `|·|` for a
-  product of two matrices and for the adjugate of a square matrix.
+* `Matrix.abs_mul_apply_le`, `Matrix.abs_pow_apply_le`, and `Matrix.abs_adjugate_apply_le`:
+  entrywise bounds on `|·|` for a product of two matrices, powers of a square matrix, and the
+  adjugate of a square matrix.
 * `Matrix.exists_abs_apply_le` and `Matrix.exists_abs_mul_mul_apply_le`: a finite matrix is
   bounded entrywise, and fixed factors on both sides preserve the entrywise boundedness of a
   family of matrices.
@@ -235,5 +236,27 @@ theorem abs_adjugate_apply_le {A : Matrix n n S} {C : S} (hA : ∀ i j, |A i j| 
   · rw [Pi.single_apply]
     split_ifs <;> simp
   · exact (hA k l).trans (le_max_left _ _)
+
+/-- Entrywise bound on matrix powers over a linearly ordered ring: if `|X i j| ≤ B` for all
+entries (`0 ≤ B`), then `|(X ^ k) i j| ≤ (Fintype.card m * B) ^ k`. -/
+theorem abs_pow_apply_le {m T : Type*} [Fintype m] [DecidableEq m] [Ring T] [LinearOrder T]
+    [IsStrictOrderedRing T] {X : Matrix m m T} {B : T} (hB : 0 ≤ B) (hX : ∀ i j, |X i j| ≤ B)
+    (k : ℕ) (i j : m) :
+    |(X ^ k) i j| ≤ ((Fintype.card m : T) * B) ^ k := by
+  induction k generalizing i j with
+  | zero =>
+    rw [pow_zero, pow_zero, Matrix.one_apply]
+    split_ifs <;> simp
+  | succ k ih =>
+    rw [pow_succ, Matrix.mul_apply]
+    refine (abs_sum_le_sum_abs _ _).trans ?_
+    calc ∑ l : m, |(X ^ k) i l * X l j|
+        ≤ ∑ _l : m, ((Fintype.card m : T) * B) ^ k * B := sum_le_sum fun l _ ↦ by
+          rw [abs_mul]
+          exact mul_le_mul (ih i l) (hX l j) (abs_nonneg _)
+            (pow_nonneg (mul_nonneg (Nat.cast_nonneg _) hB) k)
+      _ = ((Fintype.card m : T) * B) ^ (k + 1) := by
+          simp only [sum_const, card_univ, nsmul_eq_mul, ← mul_assoc]
+          rw [Nat.cast_comm (Fintype.card m), mul_assoc, ← pow_succ]
 
 end Matrix

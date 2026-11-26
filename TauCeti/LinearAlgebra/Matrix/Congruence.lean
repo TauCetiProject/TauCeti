@@ -37,6 +37,8 @@ one factor after the other.
   entries of congruence under the basis substitution `r ↦ r + a + b`.
 * `Matrix.transpose_map_mul_mul_mul` — `((M N) ^ σ)ᵀ Q (M N) = (N ^ σ)ᵀ ((M ^ σ)ᵀ Q M) N`.
 * `Matrix.mul_mul_transpose_apply` — entrywise expansion of `(P * M * Qᵀ) i j` as a double sum.
+* `Matrix.submatrix_transpose_mul_mul_equiv` — reindexing along equivalences commutes with
+  congruence `Pᵀ * B * P`.
 
 ## References
 
@@ -125,6 +127,14 @@ theorem mul_mul_transpose_apply {l m n p R : Type*} [Fintype m] [Fintype n]
     (P * M * Qᵀ) i j = ∑ x : m, ∑ y : n, P i x * M x y * Q j y := by
   simp only [Matrix.mul_apply, transpose_apply, Finset.sum_mul]
   exact Finset.sum_comm
+
+/-- Reindexing along equivalences `e₁` and `e₂` commutes with congruence `Pᵀ * B * P`. -/
+theorem submatrix_transpose_mul_mul_equiv {l m n o R : Type*} [Fintype l] [Fintype m]
+    [NonUnitalNonAssocSemiring R] (P : Matrix m n R) (B : Matrix m m R)
+    (e₁ : l ≃ m) (e₂ : o ≃ n) :
+    (Pᵀ * B * P).submatrix e₂ e₂ =
+      (P.submatrix e₁ e₂)ᵀ * B.submatrix e₁ e₁ * P.submatrix e₁ e₂ := by
+  rw [← submatrix_mul_equiv _ _ _ e₁, ← submatrix_mul_equiv _ _ _ e₁, transpose_submatrix]
 
 section BasisSubstitution
 

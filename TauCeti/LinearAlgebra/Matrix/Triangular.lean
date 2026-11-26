@@ -714,10 +714,8 @@ section DiagonalCongruence
 theorem transpose_mul_diagonal_mul_apply {p q T : Type*} [Fintype p] [DecidableEq p]
     [CommSemiring T] (N : Matrix p q T) (d : p → T) (i j : q) :
     (Nᵀ * diagonal d * N) i j = ∑ k : p, d k * N k i * N k j := by
-  simp only [Matrix.mul_apply, transpose_apply, diagonal_apply]
-  refine Finset.sum_congr rfl fun k _ ↦ ?_
-  rw [Finset.sum_mul, Finset.sum_eq_single k (fun _ _ hlk ↦ by simp [hlk]) (by simp)]
-  simp [mul_comm, mul_left_comm]
+  rw [Matrix.mul_apply]
+  simp only [mul_diagonal, transpose_apply, mul_comm (N _ i)]
 
 /-- For an upper-unitriangular matrix `N`, the `(i, j)` entry of `Nᵀ * diagonal d * N` splits off
 the leading term `d i * N i j` from the earlier indices `k < i`. -/
