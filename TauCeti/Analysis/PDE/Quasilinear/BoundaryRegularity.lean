@@ -52,7 +52,7 @@ A weak solution `u` solves the linear equation with the frozen coefficient `a(x)
   (`HolderOnWith.comp_of_lipschitzWith_right`), and the global Schauder estimate makes
   `∇u` agree with a bounded function that is `β₁`-Hölder on `closure Ω`. The estimate takes the
   same exponent for the coefficient and the boundary charts, so the charts are first replaced by
-  charts with bounded `β₁`-Hölder derivative that agree with them on the cylinders
+  charts with `β₁`-Hölder derivative that agree with them on the cylinders
   (`TauCeti.PDE.forall_graph_holderWith_fderiv_of_le`).
 * **Lipschitz.** A continuous function with a bounded continuous weak gradient is `C¹`
   (`TauCeti.HasWeakFDerivOn.hasFDerivAt_of_continuousOn`), and on a bounded Lipschitz domain a
@@ -144,13 +144,14 @@ private theorem exists_memLp_and_aestronglyMeasurable (hα : 0 < α) (hqn : (n :
   have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hΩ.measure_lt_top.ne
   have hΩm : MeasurableSet (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) := Ω.isOpen.measurableSet
-  obtain ⟨hAm, hAc⟩ := aestronglyMeasurable_and_ae_continuous_of_continuousOn_matrixBilinearForm
-    hΩm (fun s => ((hAx s).continuousOn hα).mono subset_closure)
-    fun x hx => (hAs x (subset_closure hx)).continuous
   refine ⟨r, by exact_mod_cast (show (1 : ℝ) < r by linarith), by linarith, by push_cast; linarith,
     hf.mono_exponent (by exact_mod_cast hrq.le),
     ((MeasureTheory.memLp_top_of_holderOnWith hΩm hΩ hα (hG.mono subset_closure)).neg
-      ).mono_exponent le_top, hAm, hAc, ?_⟩
+      ).mono_exponent le_top,
+    fun s => (continuousOn_of_continuousOn_matrixBilinearForm
+      (((hAx s).continuousOn hα).mono subset_closure)).aestronglyMeasurable hΩm,
+    ae_restrict_of_forall_mem hΩm fun x hx =>
+      continuous_of_continuous_matrixBilinearForm (hAs x (subset_closure hx)).continuous, ?_⟩
   rw [W1p.value_zero]
   exact Lp.coeFn_zero _ _ _
 

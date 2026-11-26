@@ -258,7 +258,7 @@ private theorem exists_hasLocalGradientEstimate_of_mem_closure {E : Type*} [Norm
 
 /-- **Lowering the exponent of the boundary charts.** A `C^{1,α}` boundary is `C^{1,β}` for
 `β ≤ α`, `β ≤ 1`, with the same rigid coordinates and cylinders: each graph is replaced by one
-agreeing with it on the cylinder and with bounded `β`-Hölder derivative
+agreeing with it on the cylinder and with `β`-Hölder derivative
 (`ContDiff.exists_eqOn_ball_holderWith_fderiv_and_norm_le`). This supplies the boundary hypothesis
 of `TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph` with an exponent below the
 one of the domain. -/

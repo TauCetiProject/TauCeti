@@ -99,9 +99,11 @@ private theorem aestronglyMeasurable_comp_of_holderOnWith (hα : 0 < α)
     (hAs : ∀ x ∈ Omega, LipschitzWith L fun s => matrixBilinearForm (A x s))
     {v : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hv : AEStronglyMeasurable v (volume.restrict Omega)) :
     AEStronglyMeasurable (fun x => A x (v x)) (volume.restrict Omega) :=
-  let h := aestronglyMeasurable_and_ae_continuous_of_continuousOn_matrixBilinearForm
-    Omega.isOpen.measurableSet (fun s => (hAx s).continuousOn hα) fun x hx => (hAs x hx).continuous
-  hv.apply_of_forall_of_continuousAt h.1 (h.2.mono fun _ hx => hx.continuousAt)
+  hv.apply_of_forall_of_continuousAt
+    (fun s => (continuousOn_of_continuousOn_matrixBilinearForm
+      ((hAx s).continuousOn hα)).aestronglyMeasurable Omega.isOpen.measurableSet)
+    (ae_restrict_of_forall_mem Omega.isOpen.measurableSet fun x hx =>
+      (continuous_of_continuous_matrixBilinearForm (hAs x hx).continuous).continuousAt)
 
 variable {u : W1p volume Omega 2}
   {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
