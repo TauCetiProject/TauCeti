@@ -29,7 +29,8 @@ the coordinate vectors, and then `ξ = ∑ j, I_j dθ_j`. This file studies the 
 `θ ∈ ℝ^ι`, defined modulo `p ℤ^ι`, and action coordinates `I ∈ ℝ^ι`.
 
 * The actions `I_j = ξ(e_j)` of a covector (`TauCeti.CotangentBundle.torusActions`) of `κ(θ, I)`
-  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`).
+  are `I` (`TauCeti.CotangentBundle.torusActions_actionAngleCover`), and a covector is determined
+  by its base point and its actions (`TauCeti.CotangentBundle.ext_torusActions`).
 * `κ` is surjective, and `κ(θ, I) = κ(θ', I')` exactly when `I' = I` and `θ' - θ ∈ p ℤ^ι`
   (`TauCeti.CotangentBundle.surjective_actionAngleCover`,
   `TauCeti.CotangentBundle.actionAngleCover_eq_actionAngleCover_iff`).
@@ -177,6 +178,16 @@ theorem surjective_actionAngleCover :
   simp only [← Pi.single_apply, Pi.single_comm, smul_eq_mul, mul_comm]
   -- `z.2` is a covector on the tangent space, a type synonym of `ι → ℝ`.
   rfl
+
+/-- **A covector of the torus is determined by its base point and its actions.** -/
+theorem ext_torusActions [DecidableEq ι]
+    {z w : CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+    (hproj : z.proj = w.proj) (h : torusActions p z = torusActions p w) : z = w := by
+  obtain ⟨x, rfl⟩ := surjective_actionAngleCover p z
+  obtain ⟨y, rfl⟩ := surjective_actionAngleCover p w
+  rw [torusActions_actionAngleCover, torusActions_actionAngleCover] at h
+  exact CotangentBundle.ext hproj fun v ↦ (actionAngleCover_snd_apply p x v).trans
+    ((congrArg (fun I : ι → ℝ ↦ ∑ j, I j * v j) h).trans (actionAngleCover_snd_apply p y v).symm)
 
 /-- **The action–angle covering map is smooth.** -/
 theorem contMDiff_actionAngleCover :
