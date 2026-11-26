@@ -69,14 +69,6 @@ theorem LiesOver.apply_algebraMap {K L S : Type*} [CommSemiring K] [Semiring L] 
     (v : AbsoluteValue K S) [w.LiesOver v] (x : K) : w (algebraMap K L x) = v x := by
   rw [← LiesOver.under_eq w v, under_def, comp_apply]
 
-/-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
-theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
-    [Algebra K L] [FaithfulSMul K L] [LinearOrder S] [Semiring S]
-    {w : AbsoluteValue L S} (u : AbsoluteValue K S) [w.LiesOver u]
-    (hw : IsNonarchimedean w) : IsNonarchimedean u := fun x y ↦ by
-  simpa only [← LiesOver.apply_algebraMap (w := w) u, map_add] using
-    hw (algebraMap K L x) (algebraMap K L y)
-
 /-- The restriction of a nonarchimedean absolute value along an injective ring homomorphism is
 nonarchimedean. -/
 theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semiring S]
@@ -84,6 +76,14 @@ theorem isNonarchimedean_comp {R T S : Type*} [Semiring R] [Semiring T] [Semirin
     (hf : Function.Injective f) :
     IsNonarchimedean (v.comp hf) := fun x y ↦ by
   simpa [AbsoluteValue.comp] using hv (f x) (f y)
+
+/-- An absolute value underneath a nonarchimedean absolute value is nonarchimedean. -/
+theorem isNonarchimedean_under_of_liesOver {K L S : Type*} [CommSemiring K] [Semiring L]
+    [Algebra K L] [FaithfulSMul K L] [LinearOrder S] [Semiring S]
+    {w : AbsoluteValue L S} (u : AbsoluteValue K S) [w.LiesOver u]
+    (hw : IsNonarchimedean w) : IsNonarchimedean u := by
+  rw [← LiesOver.under_eq w u, under_def]
+  exact isNonarchimedean_comp hw _
 
 /-- The trivial absolute value is nonarchimedean. -/
 theorem isNonarchimedean_trivial {R S : Type*} [Semiring R] [DecidablePred fun x : R ↦ x = 0]

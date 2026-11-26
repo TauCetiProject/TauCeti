@@ -230,8 +230,7 @@ the valuation. -/
 theorem valuationSubring_absoluteValue :
     v.absoluteValue.valuationSubring v.isNonarchimedean_absoluteValue = v.valuationSubring := by
   ext x
-  rw [AbsoluteValue.mem_valuationSubring_iff, absoluteValue_apply, norm_def, NNReal.coe_le_one,
-    ← map_one hv.hom', hv.strictMono'.le_iff_le, restrict_le_one_iff, mem_valuationSubring_iff]
+  simpa [norm_def, restrict_le_one_iff] using hv.strictMono'.le_iff_le (a := v.restrict x) (b := 1)
 
 end RankLeOne
 
@@ -242,13 +241,13 @@ namespace NormedField
 variable (K : Type*) [NormedField K] [IsUltrametricDist K]
 
 /-- The norm of a nonarchimedean normed field is a nonarchimedean absolute value. -/
-theorem isNonarchimedean_toAbsoluteValue : IsNonarchimedean (toAbsoluteValue K) :=
-  IsUltrametricDist.isNonarchimedean_norm
+theorem isNonarchimedean_toAbsoluteValue : IsNonarchimedean (toAbsoluteValue K) := fun x y ↦ by
+  simpa using IsUltrametricDist.isNonarchimedean_norm x y
 
 /-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
 theorem toValuation_toAbsoluteValue :
     (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
-  Valuation.ext fun x ↦ NNReal.eq (AbsoluteValue.coe_toValuation_apply _ x)
+  Valuation.ext fun x ↦ NNReal.eq (by simp [NormedField.valuation_apply])
 
 /-- The valuation subring of the norm of a nonarchimedean normed field is the valuation subring
 of Mathlib's valuation of the field. -/
