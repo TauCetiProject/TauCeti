@@ -14,6 +14,7 @@ import TauCeti.Analysis.Polynomial.Monic.RootBound
 import TauCeti.Order.Filter.AtTopBot
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
@@ -385,9 +386,8 @@ theorem exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {�
       (hev.continuous.comp_continuousOn (((continuousOn_const.mul (hcU j hj)).smul hν₀).add
         (hN₀.smul hμ₀))).neg hU.measurableSet)
     (fun n ↦ hasWeakConjWirtingerDerivOn_of_contDiffOn (hb n j hj))
-    (fun K hKU hK ↦ (hloc K hKU hK (hc j hj)).tendsto_setLIntegral_enorm_sub_of_le
-      (r := fun _ _ ↦ (0 : ℂ)) hK.measurableSet hK.measure_lt_top.ne (by simp)
-      fun n z _ ↦ by simp) fun K hKU hK ↦ ?_
+    (fun K hKU hK ↦ (hloc K hKU hK (hc j hj)).tendsto_setLIntegral_enorm_sub
+      hK.measure_lt_top.ne) fun K hKU hK ↦ ?_
   have hT := (hloc K hKU hK (hc j hj)).prodMk_same
     ((hev.uniformContinuous.comp_tendstoUniformlyOn (hloc K hKU hK hν)).prodMk_same
       ((hev.uniformContinuous.comp_tendstoUniformlyOn (hloc K hKU hK hμ)).prodMk_same
