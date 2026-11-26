@@ -17,15 +17,16 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 Pulling a linearized symplectic ODE on `(V, ω)` back along a moving symplectic frame
 `Φ : ℝ → F →L[ℝ] V` into `(F, Im ⟪·, ·⟫)` adds `-Φ(t)⁻¹ Φ'(t)` to the conjugated coefficient
 `Φ(t)⁻¹ S(t) Φ(t)`, yielding `TauCeti.trivializedCoeff Φ S t`, yet preserves infinitesimal
-symplecticity (`SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`). For a one-periodic frame
-and coefficient, the trivialized coefficient is a loop on the circle, `C¹` when `Φ` is `C²` and
-`S` is `C¹`, whose return map is nondegenerate when that of `S` is
-(`SymplecticForm.exists_loop_eq_trivializedCoeff`): the input of the invertibility of the stationary
-cylinder operator `∂s + i (∂t - S_Φ)` in a unitary trivialization. This supplies the `H⁰`-symmetry
+symplecticity (`SymplecticForm.im_inner_trivializedCoeff_add_eq_zero`), supplying the `H⁰`-symmetry
 needed in `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Trivialization.lean` and
 `TauCeti/Geometry/Symplectic/Floer/AsymptoticOperator/Cylinder.lean`. Adapts
 `TauCeti.isSymmetric_frameConnection`
 (`TauCeti/Geometry/Symplectic/JHolomorphic/OrbitTorus/Trivialization.lean`).
+
+For a one-periodic frame and coefficient, the trivialized coefficient is a loop on the circle, `C¹`
+when `Φ` is `C²` and `S` is `C¹`, whose return map is nondegenerate when that of `S` is
+(`SymplecticForm.exists_loop_eq_trivializedCoeff`): the input of the invertibility of the stationary
+cylinder operator `∂s + i (∂t - S_Φ)` in a unitary trivialization.
 
 ## References
 

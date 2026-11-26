@@ -14,7 +14,6 @@ import TauCeti.Geometry.Symplectic.FrameTrivialization
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Topology.Constructions.SumProd
-import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
