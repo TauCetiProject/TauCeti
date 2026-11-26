@@ -61,13 +61,19 @@ noncomputable def classifyingSpaceHomotopy (η : F ⟶ G) :
     TopCat.Homotopy F.classifyingSpaceMap G.classifyingSpaceMap :=
   η.nerveHomotopy.toTop
 
+/-- The homotopy induced by `η` is the realization of the simplicial homotopy of nerves
+`η.nerveHomotopy`. -/
+theorem classifyingSpaceHomotopy_def (η : F ⟶ G) :
+    η.classifyingSpaceHomotopy = η.nerveHomotopy.toTop :=
+  (rfl)
+
 /-- The homotopy induced by `η` moves the vertex `[c]` along the edge path of `η.app c`. -/
 @[simp]
 theorem classifyingSpaceHomotopy_apply_vertex (η : F ⟶ G) (t : I) (c : C) :
     η.classifyingSpaceHomotopy (t, vertex c) = edge (η.app c) t := by
   -- Over the vertex `[c]` the triangulated cylinder traces the vertical edge `{c} × Δ[1]`, which
   -- the simplicial homotopy sends to the edge `η.app c`, whose path is `edge (η.app c)`.
-  rw [classifyingSpaceHomotopy, SSet.Homotopy.toTop_apply, vertex,
+  rw [classifyingSpaceHomotopy_def, SSet.Homotopy.toTop_apply, vertex,
     SSet.toTopPoint_eq_toTopObjMk (X := nerve C) (nerveEquiv.symm c) default,
     SSet.toTopCylinder_toTopObjMk_verticalEdge (X := nerve C) (nerveEquiv.symm c) default t,
     SSet.toTop_map_toTopObjMk, nerveHomotopy_h_app_verticalEdge, edge_eq_toTopPath]
