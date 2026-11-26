@@ -48,7 +48,10 @@ support, such sequences exist with derivatives bounded by `L` on the support
 
 Along maps smooth on `Ω` it is the smooth pushforward
 (`Distribution.lipschitzPushforward_eq_comp_cutoffPullbackCLM`), and it only depends on the values
-of the map on the support of `T` (`Distribution.lipschitzPushforward_congr`).
+of the map on the support of `T` (`Distribution.lipschitzPushforward_congr`). It is linear in `T`
+(`Distribution.lipschitzPushforward_zero`, `Distribution.lipschitzPushforward_smul` and, for
+currents with compact supports near which the map is Lipschitz,
+`Distribution.lipschitzPushforward_add`).
 
 Currents here are real valued, as the bounds go through the mass measure. Flat convergence of the
 approximating pushforwards and pushforwards of currents without compact support are not treated.
@@ -378,7 +381,68 @@ theorem lipschitzPushforward_congr {f' : E → E'} (h : EqOn f f' (dsupport T)) 
     exact (key h.symm hT hχ hg hgf hgL).symm
   rw [lipschitzPushforward, lipschitzPushforward, dite_eq_right hf, dite_eq_right hf']
 
+/-- The pushforward of the zero current is zero. -/
+@[simp]
+theorem lipschitzPushforward_zero :
+    (lipschitzPushforward (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) f :
+      𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) = 0 := by
+  by_cases h : IsApproximable (0 : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) f
+  · obtain ⟨hT, ⟨χ, hχ⟩, g, hg, hgf, L, hgL⟩ := h
+    ext ω
+    exact tendsto_nhds_unique (tendsto_lipschitzPushforward hT hχ hg hgf hgL ω)
+      (by simp)
+  · rw [lipschitzPushforward, dite_eq_right h]
+
+/-- The pushforward commutes with scalar multiplication. -/
+theorem lipschitzPushforward_smul (c : ℝ) :
+    (lipschitzPushforward (c • T) f : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) =
+      c • lipschitzPushforward T f := by
+  -- Approximations of `f` on the support of `T` also serve `c • T`, whose support is smaller.
+  have key (c : ℝ) {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ} (h : IsApproximable T f) :
+      IsApproximable (c • T) f ∧ (lipschitzPushforward (c • T) f :
+        𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) = c • lipschitzPushforward T f := by
+    obtain ⟨hT, ⟨χ, hχ⟩, g, hg, hgf, L, hgL⟩ := h
+    have hsub : dsupport (c • T) ⊆ dsupport T := dsupport_smul_subset c ⇑T
+    have hχ' := hχ.filter_mono (nhdsSet_mono hsub)
+    have hgL' (j : ℕ) (x : E) (hx : x ∈ dsupport (c • T)) := hgL j x (hsub hx)
+    refine ⟨⟨hT.smul c, ⟨χ, hχ'⟩, g, hg, hgf.mono hsub, L, hgL'⟩, ?_⟩
+    ext ω
+    exact tendsto_nhds_unique (tendsto_lipschitzPushforward (hT.smul c) hχ' hg (hgf.mono hsub)
+      hgL' ω) (by simpa using (tendsto_lipschitzPushforward hT hχ hg hgf hgL ω).const_smul c)
+  by_cases h : IsApproximable T f
+  · exact (key c h).2
+  by_cases hc : c = 0
+  · subst hc
+    simp
+  -- Otherwise neither `T` nor `c • T` has approximations, and both sides are zero.
+  have h' : ¬ IsApproximable (c • T) f := fun h' ↦ h (by
+    simpa only [inv_smul_smul₀ hc] using (key c⁻¹ h').1)
+  rw [lipschitzPushforward, lipschitzPushforward, dite_eq_right h, dite_eq_right h', smul_zero]
+
 variable [FiniteDimensional ℝ E'] {U : Set E} {L : ℝ≥0}
+
+/-- The pushforward is additive, for normal currents with compact supports in `Ω` and a map
+Lipschitz on a neighbourhood of both supports. -/
+theorem lipschitzPushforward_add {S : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsNormal T)
+    (hS : IsNormal S) (hTc : IsCompact (dsupport T)) (hSc : IsCompact (dsupport S))
+    (hTΩ : dsupport T ⊆ Ω) (hSΩ : dsupport S ⊆ Ω) (hf : LipschitzOnWith L f U)
+    (hTU : U ∈ 𝓝ˢ (dsupport T)) (hSU : U ∈ 𝓝ˢ (dsupport S)) :
+    (lipschitzPushforward (T + S) f : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ) =
+      lipschitzPushforward T f + lipschitzPushforward S f := by
+  -- One approximating sequence and one cutoff serve `T`, `S` and `T + S`.
+  obtain ⟨g, hg, hgf, hgL⟩ := hf.exists_seq_contDiff_tendstoUniformlyOn (hTc.union hSc)
+    (by rw [nhdsSet_union]; exact mem_sup.2 ⟨hTU, hSU⟩)
+  obtain ⟨χ, hχ, -⟩ := TestFunction.exists_eventually_eq_one (n := ⊤) (hTc.union hSc)
+    (union_subset hTΩ hSΩ)
+  have h {R : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] ℝ} (hR : IsNormal R)
+      (hRTS : dsupport R ⊆ dsupport T ∪ dsupport S) (ω : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F)) :
+      Tendsto (fun j ↦ R (cutoffPullbackCLM χ (g j) (hg j).contDiffOn ω)) atTop
+        (𝓝 (lipschitzPushforward R f ω)) :=
+    tendsto_lipschitzPushforward hR (hχ.filter_mono (nhdsSet_mono hRTS)) _ (hgf.mono hRTS)
+      (fun j x hx ↦ hgL j x (hRTS hx)) ω
+  ext ω
+  exact tendsto_nhds_unique (h (hT.add hS) (dsupport_add_subset ⇑T ⇑S) ω)
+    (by simpa using (h hT subset_union_left ω).add (h hS subset_union_right ω))
 
 omit [CompleteSpace F] in
 /-- Smooth approximations of a map which is Lipschitz near the support, and a cutoff. -/
