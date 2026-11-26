@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.HeatKernel.Generator
 public import TauCeti.Analysis.Distribution.TestFunction.Lp
 public import Mathlib.Topology.Algebra.Module.LinearPMap
 public import TauCeti.Analysis.Fourier.LaplacianSymbol
-import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.Smoothing
@@ -200,17 +199,6 @@ section L2
 open scoped FourierTransform SchwartzMap
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
-
-/-- An `L²` function whose Laplacian as a tempered distribution is `χ ∈ L²` has Laplacian `χ` in
-the sense of `TauCeti.weakLaplacianLp`: real test functions are Schwartz functions. -/
-private theorem mem_graph_weakLaplacianLp_of_laplacian_toTemperedDistribution_eq
-    {ψ χ : Lp G 2 (volume : Measure E)} (h : Δ (ψ : 𝓢'(E, G)) = (χ : 𝓢'(E, G))) :
-    (ψ, χ) ∈ (weakLaplacianLp E G 2).graph := by
-  refine mem_graph_weakLaplacianLp_iff.2 fun φ ↦ ?_
-  have hφ := congrArg (fun T : 𝓢'(E, G) ↦
-    T ((TestFunction.toSchwartzMapCLM ℝ φ).postcompCLM Complex.ofRealCLM)) h
-  rw [TemperedDistribution.laplacian_apply_apply, SchwartzMap.laplacian_postcompCLM] at hφ
-  simpa [SchwartzMap.laplacian_apply] using hφ
 
 /-- **Schwartz functions are a core for the Laplacian on `L²`.** If `ψ, χ ∈ L²(E, G)` satisfy
 `𝓕 χ = -4π² ‖ξ‖² 𝓕 ψ` almost everywhere, that is `χ = Δψ` with `ψ` in the domain of the Laplacian
