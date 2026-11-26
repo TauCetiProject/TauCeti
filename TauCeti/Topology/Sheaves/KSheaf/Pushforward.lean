@@ -278,7 +278,7 @@ noncomputable def toKPresheafPushforwardIso (P : Presheaf C X) :
     fun {K L} g ↦ toKPresheaf_hom_ext _ fun U hU ↦
       (kGerm_toKPresheaf_map_assoc _ g U hU _).trans <|
         (kGerm_toKPresheafPushforwardIsoApp_hom f hf P L.unop U _).trans <|
-          (P.kGerm_toKPresheaf_map ((Compacts.comap_mono f hf).functor.op.map g) _ _).symm.trans
+          (P.kGerm_toKPresheaf_map _ _ _).symm.trans
             (kGerm_toKPresheafPushforwardIsoApp_hom_assoc f hf P K.unop U hU _).symm
 
 /-- `toKPresheafPushforwardIso` sends the germ along `K` of a section of `f_* P` over `U` to the
@@ -293,7 +293,7 @@ theorem kGerm_toKPresheafPushforwardIso_hom_app (P : Presheaf C X) (K : Compacts
 
 /-- `(toKPresheafPushforwardIso f hf P).inv` sends the germ along `f⁻¹(K)` of a section of `P`
 over the preimage of `U` to the germ along `K` of the same section of `f_* P`. -/
-@[simp]
+@[simp, reassoc]
 theorem kGerm_toKPresheafPushforwardIso_inv_app (P : Presheaf C X) (K : Compacts Y) (U : Opens Y)
     (h : (K : Set Y) ⊆ U) :
     P.kGerm (Compacts.comap f hf K) ((Opens.map f).obj U)
