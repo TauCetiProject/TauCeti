@@ -83,6 +83,8 @@ representing chain system of its continuation trajectories.
   right-hand side of the homotopy equation is a cycle.
 * `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy`: two representing chain systems of
   the same classes are joined by a homotopy.
+* `TopPair.injective_homologyMap_cokernel_π_of_isZero`: the injectivity hypothesis of
+  `nonempty_homotopy` holds when the subspace has no homology in the relevant degree.
 * `TauCeti.TwistingChainSystem.Homotopy.isUnit_continuationCocycle`: the continuation cocycle of a
   homotopy whose chains vanish on the pairs of equal index is invertible.
 * `TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedChainSystem`: two
@@ -289,6 +291,17 @@ end TwistingChainSystem
 end Homotopy
 
 /-! ### Existence of homotopies between representing chain systems -/
+
+/-- If the subspace has no cubical homology in degree `n`, the map `Hₙ(X) ⟶ Hₙ(X, A)` to relative
+homology is injective, by the exact sequence of the pair. This is how the injectivity hypothesis
+of `TauCeti.TwistingChainSystem.IsRepresenting.nonempty_homotopy` is met when the boundary `A x y`
+of `M x y` has no homology in degree `ind x - ind y - 1`. -/
+theorem _root_.TopPair.injective_homologyMap_cokernel_π_of_isZero {k : Type u} [Ring k]
+    (P : TopPair.{u}) (n : ℕ)
+    (h : IsZero (((normalizedCubicalChainComplex k).obj P.snd).homology n)) :
+    Function.Injective (HomologicalComplex.homologyMap
+      (cokernel.π ((normalizedCubicalChainComplex k).map P.map)) n).hom :=
+  (ModuleCat.mono_iff_injective _).1 ((P.cubicalHomology_exact_space k n).mono_g (h.eq_of_src _ _))
 
 section Existence
 
