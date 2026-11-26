@@ -57,6 +57,8 @@ coefficient equivalence `Hᵏ(M; ℝ/ℤ) ≃ Hom(H_k(M; ℤ), ℝ/ℤ)` with sm
 * `TauCeti.deRhamHom_mk`: the image of the class of a closed form is the singular class
   corresponding to its integration cocycle.
 * `TauCeti.deRhamHom_map`: naturality under smooth maps, `deRhamHom (f^* c) = f^* (deRhamHom c)`.
+* `Diffeomorph.bijective_deRhamHom_iff`: bijectivity of the de Rham homomorphism is
+  invariant under diffeomorphisms.
 * `TauCeti.singularKronecker_deRhamHom_mk_apply`: the class of a closed form evaluates on the class
   of a smooth cycle to the integral of the form over the cycle.
 
@@ -171,6 +173,32 @@ theorem deRhamHom_map {f : M → N} (hf : ContMDiff I J ∞ f) (k : ℕ)
   exact ConcreteCategory.congr_hom
     (smoothSingularCohomologyIso_inv_naturality (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) hf k)
     (deRhamCohomology.integration J N k c)
+
+variable {I M} in
+/-- **The de Rham theorem is invariant under diffeomorphisms**: for a diffeomorphism `Φ : M ≃ N`,
+the de Rham homomorphism of `M` is bijective in degree `k` exactly when that of `N` is. By the
+naturality `TauCeti.deRhamHom_map`, pulling back along `Φ` intertwines them, and pullback along `Φ`
+is bijective on both de Rham and singular cohomology. -/
+theorem _root_.Diffeomorph.bijective_deRhamHom_iff (Φ : M ≃ₘ⟮I, J⟯ N) (k : ℕ) :
+    Function.Bijective (deRhamHom I M k) ↔ Function.Bijective (deRhamHom J N k) := by
+  have : IsIso (TopCat.ofHom ⟨Φ, Φ.continuous⟩ : TopCat.of M ⟶ TopCat.of N) :=
+    TopCat.isIso_of_bijective_of_isClosedMap _ Φ.toHomeomorph.bijective
+      Φ.toHomeomorph.isClosedMap
+  -- The singular cohomology functor sends `Φ` to `TopCat.singularCohomologyMap Φ k` by
+  -- definition, so this map is an isomorphism.
+  have : IsIso (TopCat.singularCohomologyMap (R := ModuleCat.of ℝ ℝ) (k := ℝ)
+      (M := ModuleCat.of ℝ ℝ) (TopCat.ofHom ⟨Φ, Φ.continuous⟩) k) :=
+    Functor.map_isIso (singularCohomologyFunctor (ModuleCat.of ℝ ℝ) ℝ (ModuleCat.of ℝ ℝ) k)
+      (TopCat.ofHom ⟨Φ, Φ.continuous⟩).op
+  have h : deRhamHom I M k ∘ deRhamCohomology.equivOfDiffeomorph Φ k =
+      TopCat.singularCohomologyMap (TopCat.ofHom ⟨Φ, Φ.continuous⟩) k ∘ deRhamHom J N k :=
+    funext fun c ↦ by
+      rw [Function.comp_apply, deRhamCohomology.equivOfDiffeomorph_apply, deRhamHom_map]
+      -- `deRhamHom_map` applies `ConcreteCategory.hom` where the goal applies the coercion of
+      -- `ModuleCat.Hom.hom`; the two coercions of a morphism of modules agree by definition.
+      rfl
+  rw [← Function.Bijective.of_comp_iff _ (deRhamCohomology.equivOfDiffeomorph Φ k).bijective, h,
+    Function.Bijective.of_comp_iff' (ConcreteCategory.bijective_of_isIso _)]
 
 /-- **Periods of the de Rham homomorphism**: the singular class `deRhamHom [φ]` of a closed
 form `φ` evaluates, under the Kronecker map, on the singular homology class of a smooth singular
