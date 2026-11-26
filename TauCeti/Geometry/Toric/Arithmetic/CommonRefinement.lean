@@ -119,8 +119,7 @@ def commonRefinement : ArithmeticFan i Γ C Cstar where
     have hτ' : τ.map ((γ'⁻¹ : V' ≃ₗ[ℝ] V') : V' →ₗ[ℝ] V') ∈ Ψ.cones :=
       Ψ.map_mem (inv_mem hγ') hτ
     refine ⟨_, Set.mem_biUnion ⟨hσ₀, (Φ.map_mem_iff hγ).1 hσ⟩ ⟨_, hτ', rfl⟩, γ, hγ, ?_⟩
-    rw [PointedCone.map_inf_comap_of_comm h, ← PointedCone.map_linearEquiv_mul, mul_inv_cancel,
-      LinearEquiv.coe_toLinearMap_one, PointedCone.map_id]
+    rw [PointedCone.map_inf_comap_of_comm h, PointedCone.map_map_linearEquiv_inv]
   finite_setOf_inter_nonempty := by
     intro K hK hKC
     have := Φ.lattice.finiteDimensional

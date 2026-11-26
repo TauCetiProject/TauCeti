@@ -45,7 +45,8 @@ lattice, so they belong to the generic convex-cone API rather than to any consum
 * `PointedCone.mapsTo_nsmul_linearMap_id`: multiplication by a natural number carries a pointed
   cone into itself.
 * `PointedCone.map_linearEquiv_mul`: mapping a pointed cone by a product of linear automorphisms
-  maps it by each factor in turn.
+  maps it by each factor in turn; `PointedCone.map_map_linearEquiv_inv` and
+  `PointedCone.map_inv_map_linearEquiv` cancel a linear automorphism against its inverse.
 * `PointedCone.map_inf_comap_of_comm`: transporting `σ ⊓ g⁻¹(τ)` by `γ` gives
   `γ(σ) ⊓ g⁻¹(γ'(τ))` when `g ∘ γ = γ' ∘ g`.
 -/
@@ -231,6 +232,18 @@ variable {R V V' : Type*} [Semiring R] [PartialOrder R] [IsOrderedRing R]
 theorem map_linearEquiv_mul (σ : PointedCone R V) (g h : V ≃ₗ[R] V) :
     σ.map ((g * h : V ≃ₗ[R] V) : V →ₗ[R] V) = (σ.map (h : V →ₗ[R] V)).map (g : V →ₗ[R] V) := by
   rw [LinearEquiv.coe_toLinearMap_mul, Module.End.mul_eq_comp, map_map]
+
+/-- Mapping a pointed cone by `g⁻¹` and then by `g` gives back the cone. -/
+@[simp]
+theorem map_map_linearEquiv_inv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V)).map (g : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, mul_inv_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
+
+/-- Mapping a pointed cone by `g` and then by `g⁻¹` gives back the cone. -/
+@[simp]
+theorem map_inv_map_linearEquiv (σ : PointedCone R V) (g : V ≃ₗ[R] V) :
+    (σ.map (g : V →ₗ[R] V)).map ((g⁻¹ : V ≃ₗ[R] V) : V →ₗ[R] V) = σ := by
+  rw [← map_linearEquiv_mul, inv_mul_cancel, LinearEquiv.coe_toLinearMap_one, map_id]
 
 /-- Transporting `σ ⊓ g⁻¹(τ)` by a linear automorphism `γ` gives `γ(σ) ⊓ g⁻¹(γ'(τ))` when
 `g ∘ γ = γ' ∘ g`. -/
