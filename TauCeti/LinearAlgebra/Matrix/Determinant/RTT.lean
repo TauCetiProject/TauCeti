@@ -59,28 +59,29 @@ namespace IsRTT
 
 variable [CommRing K] [Ring A] [Algebra K A] {t : K → Matrix ι ι A}
 
+/-- The exchange relation at adjacent spectral parameters `v + 1` and `v`, where the scalar
+coefficient is one. -/
+theorem adjacent (ht : IsRTT t) (v : K) (i j k l : ι) :
+    t (v + 1) i j * t v k l - t v k l * t (v + 1) i j =
+      t (v + 1) k j * t v i l - t v k j * t (v + 1) i l := by
+  simpa only [add_sub_cancel_left, one_smul] using isRTT_iff.mp ht (v + 1) v i j k l
+
 /-- The two ordered products from a repeated column agree at adjacent spectral parameters. -/
 theorem mul_adjacent_same_col (ht : IsRTT t) (v : K) (i k j : ι) :
-    t (v + 1) i j * t v k j = t (v + 1) k j * t v i j := by
-  have h := isRTT_iff.mp ht (v + 1) v i j k j
-  rw [add_sub_cancel_left, one_smul] at h
-  exact sub_left_injective h
+    t (v + 1) i j * t v k j = t (v + 1) k j * t v i j :=
+  sub_left_injective (ht.adjacent v i j k j)
 
 /-- The products from a repeated row agree in reverse parameter order. -/
 theorem mul_adjacent_same_row (ht : IsRTT t) (v : K) (i j l : ι) :
-    t v i j * t (v + 1) i l = t v i l * t (v + 1) i j := by
-  have h := isRTT_iff.mp ht (v + 1) v i l i j
-  rw [add_sub_cancel_left, one_smul] at h
-  exact sub_right_injective h
+    t v i j * t (v + 1) i l = t v i l * t (v + 1) i j :=
+  sub_right_injective (ht.adjacent v i l i j)
 
 /-- Reversing the order of the spectral parameters converts a column-ordered two-by-two minor
 into the row-ordered expression with the same value. -/
 theorem minor_eq_reverse (ht : IsRTT t) (v : K) (i k j l : ι) :
     t (v + 1) i j * t v k l - t (v + 1) k j * t v i l =
       t v k l * t (v + 1) i j - t v k j * t (v + 1) i l := by
-  have h := isRTT_iff.mp ht (v + 1) v i j k l
-  rw [add_sub_cancel_left, one_smul] at h
-  linear_combination (norm := abel) h
+  linear_combination (norm := abel) ht.adjacent v i j k l
 
 /-- The adjacent-parameter column-ordered minor changes sign when its columns are swapped. -/
 theorem minor_eq_neg_swap_cols (ht : IsRTT t) (v : K) (i k j l : ι) :
@@ -91,8 +92,7 @@ theorem minor_eq_neg_swap_cols (ht : IsRTT t) (v : K) (i k j l : ι) :
   linear_combination (norm := abel) h₁ + h₂
 
 /-- An adjacent-parameter minor commutes with the entry at its first row and first column,
-evaluated at any spectral parameter. This uses only the exchange relations in those two rows
-and columns. -/
+evaluated at any spectral parameter. -/
 theorem commute_minor (ht : IsRTT t) (v w : K) (i k j l : ι) :
     Commute (t (v + 1) i j * t v k l - t (v + 1) k j * t v i l) (t w i j) := by
   let U := t (v + 1)
@@ -104,10 +104,12 @@ theorem commute_minor (ht : IsRTT t) (v w : K) (i k j l : ι) :
     isRTT_iff.mp ht (v + 1) w i j i l
   have h₂ : x • (U k j * W i l - W i l * U k j) = U i j * W k l - W i j * U k l :=
     isRTT_iff.mp ht (v + 1) w k j i l
-  have h₃ : (1 - x) • (W i l * V k j - V k j * W i l) = W k l * V i j - V k l * W i j :=
-    hy ▸ isRTT_iff.mp ht w v i l k j
-  have h₄ : (1 - x) • (W i l * V i j - V i j * W i l) = W i l * V i j - V i l * W i j :=
-    hy ▸ isRTT_iff.mp ht w v i l i j
+  have h₃ : (1 - x) • (W i l * V k j - V k j * W i l) = W k l * V i j - V k l * W i j := by
+    rw [← hy]
+    exact isRTT_iff.mp ht w v i l k j
+  have h₄ : (1 - x) • (W i l * V i j - V i j * W i l) = W i l * V i j - V i l * W i j := by
+    rw [← hy]
+    exact isRTT_iff.mp ht w v i l i j
   let p := U i j * V k j - U k j * V i j
   have hp : p = 0 := sub_eq_zero.mpr (ht.mul_adjacent_same_col v i k j)
   let q := U i j * V k l - U k j * V i l
@@ -126,8 +128,10 @@ theorem commute_minor (ht : IsRTT t) (v w : K) (i k j l : ι) :
     noncomm_ring [sub_smul, add_smul, neg_smul, one_smul, smul_add, smul_neg, Algebra.mul_smul_comm,
       Algebra.smul_mul_assoc]
   rw [h₁, h₂, h₃, h₄, hp, ← hq] at hcert
-  exact sub_eq_zero.mp (by simpa only [sub_self, mul_zero, zero_mul, smul_zero, zero_sub,
-    neg_zero, zero_add, sub_zero] using hcert.symm)
+  simp only [sub_self, mul_zero, zero_mul, smul_zero, zero_add] at hcert
+  -- `hcert` now reads `0 = q * W i j - W i j * q`, and `q` is the let-bound minor in the goal.
+  refine (commute_iff_eq _ _).mpr ?_
+  exact sub_eq_zero.mp hcert.symm
 
 variable {t₂ : K → Matrix (Fin 2) (Fin 2) A}
 
@@ -155,7 +159,11 @@ theorem transpose_mul_alt_mul_eq_quantumDetTwo_smul (ht₂ : IsRTT t₂) (v : K)
   ext j l
   simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply, Matrix.smul_apply,
     smul_eq_mul]
-  fin_cases j <;> fin_cases l <;> simp [quantumDetTwo_def, sub_eq_add_neg]
+  fin_cases j <;> fin_cases l <;>
+    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Matrix.of_apply, Matrix.cons_val',
+      Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one, mul_zero, mul_neg,
+      mul_one, zero_add, neg_mul, add_zero, neg_add_rev, neg_neg, quantumDetTwo_def,
+      sub_eq_add_neg]
   · linear_combination (norm := abel) ht₂.mul_adjacent_same_col v 0 1 0
   · abel
   · linear_combination (norm := abel) ht₂.minor_eq_neg_swap_cols v 0 1 1 0
@@ -168,7 +176,11 @@ theorem mul_alt_mul_transpose_eq_quantumDetTwo_smul (ht₂ : IsRTT t₂) (v : K)
   ext i k
   simp only [Matrix.mul_apply, Fin.sum_univ_two, Matrix.transpose_apply, Matrix.smul_apply,
     smul_eq_mul]
-  fin_cases i <;> fin_cases k <;> simp [quantumDetTwo_def, sub_eq_add_neg]
+  fin_cases i <;> fin_cases k <;>
+    simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Matrix.of_apply, Matrix.cons_val',
+      Matrix.cons_val_zero, Matrix.cons_val_fin_one, Matrix.cons_val_one, mul_zero, mul_neg,
+      mul_one, zero_add, neg_mul, add_zero, neg_add_rev, neg_neg, quantumDetTwo_def,
+      sub_eq_add_neg]
   · linear_combination (norm := abel) ht₂.mul_adjacent_same_row v 0 0 1
   · have h := ht₂.minor_eq_reverse v 1 0 1 0
     have h' := ht₂.minor_eq_neg_swap_cols v 1 0 1 0
