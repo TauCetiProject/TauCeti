@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
-import TauCeti.Analysis.InnerProductSpace.Orientation
+public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.SkewSymmetric.Basic
 import TauCeti.Data.Fin.VecNotation
 
@@ -42,7 +42,7 @@ public section
 
 noncomputable section
 
-open Module exteriorPower
+open Module
 open scoped RealInnerProductSpace
 
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [AddCommGroup W] [Module ℝ W]
