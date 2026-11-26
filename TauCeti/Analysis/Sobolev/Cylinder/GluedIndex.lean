@@ -13,7 +13,7 @@ import TauCeti.Analysis.Fredholm.Parametric
 import TauCeti.Analysis.Fredholm.Stabilization
 
 /-!
-# The kernel and the index of glued operators on the cylinder
+# The kernel, the exact sequence and the index of glued operators on the cylinder
 
 Let `D₁` and `D₂` be first-order operators `D ξ = M (ξ, ∂s ξ, ∂t ξ)` on the cylinder `ℝ × S¹`,
 from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, W)`, with essentially bounded coefficient fields `M₁`
@@ -55,16 +55,44 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
   the stabilizers are supported where `β` is `1` or `0`. Projecting the pieces to `Eᵢ` along the
   ranges of the `Qᵢ` is injective on `E_R`, since the pieces add up to `(ξ, σ₁, σ₂)`.
 * **Pregluing.** Two elements `(ξᵢ, σᵢ)` of `E₁` and `E₂` are preglued to
-  `(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), σ₁, σ₂)`, which nearly lies in `E_R`
-  (`TauCeti.CylinderSobolev.norm_jetOperator_cutoffL_translate_add_le`), and corrected into `E_R`
-  along the range of `Q`.
+  `(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), σ₁, σ₂)` (`TauCeti.CylinderSobolev.neckPreglue`), which
+  nearly lies in `E_R` (`TauCeti.CylinderSobolev.norm_jetOperator_cutoffL_translate_add_le`), and
+  corrected into `E_R` along the range of `Q` (`TauCeti.CylinderSobolev.gluedKernelMap`).
   This is injective, because the pregluing is `ξ₁(· + R, ·)` on `s < 0` and `ξ₂(· - R, ·)` on
   `s > R / 2`, so it controls `ξ₁` and `ξ₂` up to their tails beyond the neck. These tails are
   uniformly small on the finite-dimensional spaces `Eᵢ` for long necks
   (`TauCeti.CylinderSobolev.eventually_forall_norm_multiplicationOperator_le`).
 
+So the corrected pregluing is an isomorphism `E₁ × E₂ ≃ E_R` for long necks, for every right
+inverse `Q` of bounded norm
+(`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluedKernelMap`).
+
+**The exact sequence.** Through this isomorphism, the exact sequence
+`0 → ker D_R → E_R → S₁ × S₂ → coker D_R → 0` of the surjective stabilization
+(`ContinuousLinearMap.exact_kerCoprodHom_parameterProj`,
+`ContinuousLinearMap.exact_parameterProj_parameterToCoker`) becomes the exact sequence of linear
+gluing
+
+`0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
+
+(`TauCeti.CylinderSobolev.exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap`). Its
+middle map is the obstruction map `b_R`, the stabilizer component of the corrected pregluing. When
+`b_R = 0` the kernel of `D_R` is `E₁ × E₂` and its cokernel is `S₁ × S₂`. For stabilizers
+complementing the ranges of the pieces, `Eᵢ = ker Dᵢ × {0}`, and in the surjective case
+(`Sᵢ = 0`) there is no obstruction.
+
+## Main definitions
+
+* `TauCeti.CylinderSobolev.neckPreglue`: the pregluing of two pieces along a neck of length `2 R`.
+* `TauCeti.CylinderSobolev.gluedKernelMap`: the pregluing of elements of the kernels of the pieces,
+  corrected into the kernel of the glued operator along a right inverse.
+
 ## Main results
 
+* `exists_forall_ge_forall_bijective_gluedKernelMap`: for long necks the corrected pregluing is an
+  isomorphism `E₁ × E₂ ≃ E_R`.
+* `exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap`: the exact sequence
+  `0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`, and its splitting when `b_R = 0`.
 * `exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq`: the
   kernel of the stabilized glued operator has dimension `dim E₁ + dim E₂` for long necks.
 * `TauCeti.CylinderSobolev.exists_forall_ge_isFredholm_and_index_jetOperator_gluedCoeff_eq`: the
@@ -587,35 +615,127 @@ private theorem eq_zero_of_preglue {M₁ M₂ : ℝ × ℝ → V × V × V →L[
   have hN0 := nonpos_of_le_mul_of_lt_one key hsmall
   exact ⟨norm_le_zero_iff.1 (hN₁.trans hN0), norm_le_zero_iff.1 (hN₂.trans hN0)⟩
 
-/-- **The kernel of the glued operator is at least as large as those of the pieces.** Pregluing
-elements of the kernels of `Dᵢ ⊕ ιᵢ` and correcting the result into the kernel of `D_R ⊕ j_R` along
-the range of a right inverse `Q` is injective once the pregluing errors are small compared with
-`‖Q‖` and the elements of the kernels of the pieces are small beyond the neck. -/
-private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+/-! ### Pregluing along the neck -/
+
+/-- The neck cutoff `β = neckCutoff a`, the complementary cutoff `1 - β` and their derivatives are
+bounded. -/
+private theorem exists_bound_neckCutoff (a : ℝ) : ∃ B : ℝ,
+    (∀ s, |neckCutoff a s| ≤ B) ∧ (∀ s, |deriv (neckCutoff a) s| ≤ B) ∧
+      (∀ s, |1 - neckCutoff a s| ≤ B) ∧ ∀ s, |deriv (fun s ↦ 1 - neckCutoff a s) s| ≤ B := by
+  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  refine ⟨max 1 (|a| * L), fun s ↦ (abs_neckCutoff_le_one a s).trans (le_max_left _ _),
+    fun s ↦ (abs_deriv_neckCutoff_le hL a s).trans (le_max_right _ _), fun s ↦ ?_, fun s ↦ ?_⟩
+  · refine le_trans ?_ (le_max_left _ _)
+    rw [abs_le]
+    constructor <;> linarith [neckCutoff_nonneg a s, neckCutoff_le_one a s]
+  · rw [deriv_const_sub, abs_neg]
+    exact (abs_deriv_neckCutoff_le hL a s).trans (le_max_right _ _)
+
+/-- **Pregluing along a neck of length `2 R`.** Elements `(ξ₁, σ₁)` of `W^{1,2} × S₁` and
+`(ξ₂, σ₂)` of `W^{1,2} × S₂` are preglued to
+
+`(β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·), (σ₁, σ₂))`,
+
+for the neck cutoff `β = neckCutoff (-(2 / R))`, which is `1` on `s ≤ 0` and `0` on `s ≥ R / 2`
+(`TauCeti.CylinderSobolev.coe_fst_neckPreglue_apply`,
+`TauCeti.CylinderSobolev.snd_neckPreglue_apply`). The pieces are translated to the two halves of
+the neck as in the glued coefficient field `TauCeti.gluedCoeff`, which is `M₁(· + R, ·)` on `s < 0`
+and `M₂(· - R, ·)` on `s ≥ 0`. -/
+noncomputable def neckPreglue (R : ℝ) : (H1 V × S₁) × (H1 V × S₂) →L[ℝ] H1 V × (S₁ × S₂) :=
+  have hB := (exists_bound_neckCutoff (-(2 / R))).choose_spec
+  (((cutoffL (contDiff_neckCutoff _) hB.1 hB.2.1).comp
+      ((translate 2 (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
+        ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)))) +
+    ((cutoffL (β := fun s ↦ 1 - neckCutoff (-(2 / R)) s)
+      (contDiff_const.sub (contDiff_neckCutoff _)) hB.2.2.1 hB.2.2.2).comp
+      ((translate 2 (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
+        ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))))).prod
+    (((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)).prod
+      ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _)))
+
+/-- The `W^{1,2}` component of the pregluing, as an `L²` jet:
+`β ξ₁(· + R, ·) + (1 - β) ξ₂(· - R, ·)` for the neck cutoff `β = neckCutoff (-(2 / R))`. -/
+theorem coe_fst_neckPreglue_apply (R : ℝ) (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) :
+    ((neckPreglue R (k₁, k₂)).1 : Lp (V × V × V) 2 stripMeasure) =
+      jetOperator stripMeasure (cutoffCoeff V (neckCutoff (-(2 / R))))
+          (translateLp R (k₁.1 : Lp (V × V × V) 2 stripMeasure)) +
+        jetOperator stripMeasure (cutoffCoeff V fun s ↦ 1 - neckCutoff (-(2 / R)) s)
+          (translateLp (-R) (k₂.1 : Lp (V × V × V) 2 stripMeasure)) := by
+  simp [neckPreglue, coe_translate]
+
+/-- The stabilizer components of the pregluing are those of the two pieces. -/
+@[simp]
+theorem snd_neckPreglue_apply (R : ℝ) (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) :
+    (neckPreglue R (k₁, k₂)).2 = (k₁.2, k₂.2) := by
+  simp [neckPreglue]
+
+/-- The pregluing written with the cutoff operators `cutoffL`, for any bounds on the cutoffs. -/
+private theorem neckPreglue_eq_cutoffL {R : ℝ} (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R))))
+    {B₁ : ℝ} (hβ1 : ∀ s, |neckCutoff (-(2 / R)) s| ≤ B₁)
+    (hβ'1 : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ B₁)
+    (hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s) {B₂ : ℝ}
+    (hγ1 : ∀ s, |1 - neckCutoff (-(2 / R)) s| ≤ B₂)
+    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ B₂)
+    (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) :
+    neckPreglue R (k₁, k₂) = (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
+      cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
+  refine Prod.ext (Subtype.ext ?_) (snd_neckPreglue_apply R k₁ k₂)
+  rw [coe_fst_neckPreglue_apply]
+  simp [coe_translate]
+
+/-- **The corrected pregluing.** Let `A` be an operator on `W^{1,2} × (S₁ × S₂)` with a right
+inverse `Q`, and let `K₁`, `K₂` be subspaces of `W^{1,2} × S₁` and `W^{1,2} × S₂`, typically the
+kernels `E₁`, `E₂` of the stabilized pieces. The pregluing `p = neckPreglue R` of an element of
+`K₁ × K₂`, corrected into the kernel of `A` along the range of `Q`, is `p k - Q (A (p k))`
+(`TauCeti.CylinderSobolev.coe_gluedKernelMap_apply`). For the stabilized glued operator
+`A = D_R ⊕ j_R` and long necks it is an isomorphism `E₁ × E₂ ≃ E_R`
+(`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluedKernelMap`). -/
+noncomputable def gluedKernelMap {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (A : H1 V × (S₁ × S₂) →L[ℝ] Y) (Q : Y →L[ℝ] H1 V × (S₁ × S₂))
+    (hQ : Function.RightInverse Q A) (K₁ : Submodule ℝ (H1 V × S₁))
+    (K₂ : Submodule ℝ (H1 V × S₂)) (R : ℝ) : K₁ × K₂ →L[ℝ] A.ker :=
+  (A.projKerOfRightInverse Q hQ).comp ((neckPreglue R).comp (K₁.subtypeL.prodMap K₂.subtypeL))
+
+/-- The corrected pregluing is the pregluing minus `Q A` of it. -/
+@[simp]
+theorem coe_gluedKernelMap_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (A : H1 V × (S₁ × S₂) →L[ℝ] Y) (Q : Y →L[ℝ] H1 V × (S₁ × S₂))
+    (hQ : Function.RightInverse Q A) (K₁ : Submodule ℝ (H1 V × S₁))
+    (K₂ : Submodule ℝ (H1 V × S₂)) (R : ℝ) (k : K₁ × K₂) :
+    (gluedKernelMap A Q hQ K₁ K₂ R k : H1 V × (S₁ × S₂)) =
+      neckPreglue R ((k.1 : H1 V × S₁), (k.2 : H1 V × S₂)) -
+        Q (A (neckPreglue R ((k.1 : H1 V × S₁), (k.2 : H1 V × S₂)))) :=
+  ContinuousLinearMap.coe_projKerOfRightInverse_apply A Q hQ _
+
+/-- **The corrected pregluing is injective.** Pregluing elements of the kernels of `Dᵢ ⊕ ιᵢ`
+with the neck cutoff and correcting the result into the kernel of `D_R ⊕ j_R` along the range of a
+right inverse `Q` (`TauCeti.CylinderSobolev.gluedKernelMap`) is injective once the pregluing errors
+are small compared with `‖Q‖` and the elements of the kernels of the pieces are small beyond the
+neck. -/
+private theorem injective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
     (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0) (hTR : T < R) (h2TR : 2 * T ≤ R)
-    {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1)
-    (hγ : ContDiff ℝ 2 fun s ↦ 1 - β s) (hγ1 : ∀ s, |1 - β s| ≤ 1)
-    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ 1)
-    (hβ0 : ∀ s ≤ 0, β s = 1) (hβR : ∀ s, R / 2 ≤ s → β s = 0)
+    (hβ : ContDiff ℝ 2 (neckCutoff (-(2 / R)))) (hβ1 : ∀ s, |neckCutoff (-(2 / R)) s| ≤ 1)
+    (hβ'1 : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ 1)
+    (hγ : ContDiff ℝ 2 fun s ↦ 1 - neckCutoff (-(2 / R)) s)
+    (hγ1 : ∀ s, |1 - neckCutoff (-(2 / R)) s| ≤ 1)
+    (hγ'1 : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ 1)
+    (hβ0 : ∀ s ≤ 0, neckCutoff (-(2 / R)) s = 1)
+    (hβR : ∀ s, R / 2 ≤ s → neckCutoff (-(2 / R)) s = 0)
     {B d ε : ℝ} (hB0 : 0 ≤ B) (hB : ∀ᵐ z ∂stripMeasure,
       ‖Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z‖ ≤ B)
-    (hβd : ∀ s, |deriv β s| ≤ d) (hγd : ∀ s, |deriv (fun s ↦ 1 - β s) s| ≤ d) (hε : 0 ≤ ε)
-    (hn₁ : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖Function.uncurry
+    (hβd : ∀ s, |deriv (neckCutoff (-(2 / R))) s| ≤ d)
+    (hγd : ∀ s, |deriv (fun s ↦ 1 - neckCutoff (-(2 / R)) s) s| ≤ d) (hε : 0 ≤ ε)
+    (hn₁ : ∀ᵐ z ∂stripMeasure, neckCutoff (-(2 / R)) z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₁ (z + (R, 0))‖ ≤ ε)
-    (hn₂ : ∀ᵐ z ∂stripMeasure, 1 - β z.1 ≠ 0 → ‖Function.uncurry
+    (hn₂ : ∀ᵐ z ∂stripMeasure, 1 - neckCutoff (-(2 / R)) z.1 ≠ 0 → ‖Function.uncurry
       (gluedCoeff (Function.curry M₁) (Function.curry M₂) R) z - M₂ (z + (-R, 0))‖ ≤ ε)
     {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
-    (hQ : (((jetOperator stripMeasure
+    (hQ : Function.RightInverse Q (((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).comp Q = ContinuousLinearMap.id ℝ _)
-    [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
-    [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
-    [FiniteDimensional ℝ (((jetOperator stripMeasure
-      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker]
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)))
     {θ : ℝ} (hθ : 0 ≤ θ)
     (ht₁ : ∀ k ∈ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker,
       ‖Lp.multiplicationOperator (linftyIndicator stripMeasure {z : ℝ × ℝ | R ≤ z.1}
@@ -626,51 +746,21 @@ private theorem finrank_ker_add_finrank_ker_le {M₁ M₂ : ℝ × ℝ → V × 
         (measurableSet_le measurable_fst measurable_const))
         ((k : H1 V × S₂).1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ θ * ‖k‖)
     (hsmall : 2 * ‖Q‖ * (ε + d * B) + θ < 1) :
-    finrank ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker +
-        finrank ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker ≤
-      finrank ℝ (((jetOperator stripMeasure
-        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker := by
+    Function.Injective (gluedKernelMap (((jetOperator stripMeasure
+      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) Q hQ
+      (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+      (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R) := by
   have hzero (k₁ k₂) := eq_zero_of_preglue hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1 hγ'1 hβ0
     hβR hB0 hB hβd hγd hε hn₁ hn₂ hθ ht₁ ht₂ hsmall (k₁ := k₁) (k₂ := k₂)
-  set A₁ := ((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁
-  set A₂ := ((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂
-  set A := ((jetOperator stripMeasure
-    (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-      (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)
-  -- The pregluing of two elements of `W^{1,2} × Sᵢ`.
-  set pre : (H1 V × S₁) × (H1 V × S₂) →L[ℝ] H1 V × (S₁ × S₂) :=
-    (((cutoffL hβ hβ1 hβ'1).comp
-      ((translate 2 (testSection V) R).toContinuousLinearEquiv.toContinuousLinearMap.comp
-        ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)))) +
-      ((cutoffL hγ hγ1 hγ'1).comp
-      ((translate 2 (testSection V) (-R)).toContinuousLinearEquiv.toContinuousLinearMap.comp
-        ((ContinuousLinearMap.fst ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))))).prod
-      (((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.fst ℝ _ _)).prod
-        ((ContinuousLinearMap.snd ℝ _ _).comp (ContinuousLinearMap.snd ℝ _ _))) with hpredef
-  have hpre (k₁ : H1 V × S₁) (k₂ : H1 V × S₂) : pre (k₁, k₂) =
-      (cutoffL hβ hβ1 hβ'1 (translate 2 (testSection V) R k₁.1) +
-        cutoffL hγ hγ1 hγ'1 (translate 2 (testSection V) (-R) k₂.1), (k₁.2, k₂.2)) := by
-    simp [hpredef]
-  have hr := ContinuousLinearMap.rightInverse_of_comp hQ
-  clear_value A₁ A₂ A pre
-  -- The pregluing corrected into the kernel of the glued operator along the range of `Q`.
-  let Ψ : A₁.ker × A₂.ker →ₗ[ℝ] A.ker :=
-    ((A.projKerOfRightInverse Q hr).comp pre : _ →ₗ[ℝ] _) ∘ₗ A₁.ker.subtype.prodMap A₂.ker.subtype
-  have hinj : Function.Injective Ψ := by
-    intro x y hxy
-    rw [← sub_eq_zero]
-    have h : Ψ (x - y) = 0 := (map_sub Ψ x y).trans (by rw [hxy]; exact sub_self (Ψ y))
-    generalize x - y = w at h ⊢
-    obtain ⟨⟨k₁, hk₁⟩, ⟨k₂, hk₂⟩⟩ := w
-    have h' : pre (k₁, k₂) - Q (A (pre (k₁, k₂))) = 0 := congrArg Subtype.val h
-    rw [sub_eq_zero, hpre] at h'
-    obtain ⟨rfl, rfl⟩ := hzero k₁ k₂ hk₁ hk₂ h'
-    rfl
-  have := free_ker A₁
-  have := free_ker A₂
-  have := free_ker A
-  exact Module.finrank_prod.symm.trans_le (LinearMap.finrank_le_finrank_of_injective hinj)
+  refine (injective_iff_map_eq_zero _).2 fun w h ↦ ?_
+  obtain ⟨⟨k₁, hk₁⟩, ⟨k₂, hk₂⟩⟩ := w
+  -- The corrected pregluing vanishes exactly when the pregluing is fixed by `Q A`.
+  have h' := congrArg Subtype.val h
+  rw [coe_gluedKernelMap_apply, ZeroMemClass.coe_zero, sub_eq_zero,
+    neckPreglue_eq_cutoffL hβ hβ1 hβ'1 hγ hγ1 hγ'1] at h'
+  obtain ⟨rfl, rfl⟩ := hzero k₁ k₂ hk₁ hk₂ h'
+  rfl
 
 /-- The first components of a space of elements of `W^{1,2} × S`, as `L²` jets. -/
 private abbrev jetComponents {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S]
@@ -678,9 +768,9 @@ private abbrev jetComponents {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ
   K.map ((H1 V).subtype ∘ₗ LinearMap.fst ℝ (H1 V) S)
 
 /-- **The kernels for one neck length.** For a neck length `R` at which the cutting and
-pregluing errors are small, the kernel of `D_R ⊕ j_R` has the dimension of the kernels of the
-pieces. -/
-private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+pregluing errors are small, the corrected pregluing is an isomorphism from the product of the
+kernels of the stabilized pieces onto the kernel of `D_R ⊕ j_R`. -/
+private theorem bijective_gluedKernelMap_of_lt_one {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
     {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
     (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
@@ -697,9 +787,9 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
     (hQ₂ : (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
       ContinuousLinearMap.id ℝ _)
     {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂)}
-    (hQ : (((jetOperator stripMeasure
+    (hQ : Function.RightInverse Q (((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).comp Q = ContinuousLinearMap.id ℝ _)
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)))
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
     [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
     (ht₁ : ∀ f ∈ jetComponents (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker,
@@ -710,14 +800,11 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
         (measurableSet_le measurable_fst measurable_const)) f‖ ≤ 1 / 2 * ‖f‖)
     (hsmall₁ : (‖Q₁‖ + ‖Q₂‖) * (ε + 2 / R * L * B) < 1)
     (hsmall₂ : 2 * ‖Q‖ * (ε + 2 / R * L * B) + 1 / 2 < 1) :
-    FiniteDimensional ℝ (((jetOperator stripMeasure
+    Function.Bijective (gluedKernelMap (((jetOperator stripMeasure
       (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker ∧
-    finrank ℝ (((jetOperator stripMeasure
-      (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
-        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker =
-      finrank ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker +
-        finrank ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker := by
+        (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) Q hQ
+      (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+      (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R) := by
   -- The cutoff `β = neckCutoff (-(2 / R))`, equal to `1` on `s ≤ 0` and `0` on `s ≥ R / 2`.
   set β := neckCutoff (-(2 / R))
   have hβ : ContDiff ℝ 2 β := contDiff_neckCutoff _
@@ -759,9 +846,16 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
         ((k : H1 V × S₂).1 : Lp (V × V × V) 2 stripMeasure)‖ ≤ 1 / 2 * ‖k‖ :=
     (ht₂ _ (Submodule.mem_map_of_mem hk)).trans (mul_le_mul_of_nonneg_left
       ((Submodule.norm_coe _).trans_le (norm_fst_le k)) (by norm_num))
-  exact ⟨hfin, le_antisymm hle (finrank_ker_add_finrank_ker_le hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1
-    hβ'1 hγ hγ1 hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ hQ (by norm_num) ht₁' ht₂'
-    hsmall₂)⟩
+  have hinj := injective_gluedKernelMap_of_lt_one hM₁ hM₂ hι₁ hι₂ hTR h2TR hβ hβ1 hβ'1 hγ hγ1
+    hγ'1 hβ0 hβR hB0 hB hβd hγd hε hn hn₂ hQ (by norm_num) ht₁' ht₂' hsmall₂
+  have := free_ker (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
+  have := free_ker (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
+  -- The injective map between spaces whose dimensions satisfy the reverse inequality is onto.
+  have hge := Module.finrank_prod.symm.trans_le (LinearMap.finrank_le_finrank_of_injective hinj)
+  have hrange := ((LinearMap.finrank_range_of_inj hinj).trans Module.finrank_prod).trans
+    (le_antisymm hge hle)
+  -- The instance `hfin` is passed explicitly: instance search times out on these kernels.
+  exact ⟨hinj, LinearMap.range_eq_top.1 (@Submodule.eq_top_of_finrank_eq _ _ _ _ _ hfin _ hrange)⟩
 
 /-- The choice of `ε` and of the neck length making the cutting and the pregluing errors
 `2 ε + 2 L B / R` small: with `ε = 1 / (64 (K + 1))` and `R ≥ 128 L B (K + 1)`, they are at most
@@ -778,6 +872,104 @@ private theorem small_errors {K L B ε R q : ℝ} (hK0 : 0 ≤ K) (hL0 : 0 ≤ L
       linarith
     linarith [mul_add (K + 1) (2 * ε) (2 / R * L * B)]
   constructor <;> nlinarith [hq]
+
+/-- **Small tails beyond the neck.** For long necks, the jets of the elements of two
+finite-dimensional spaces `K₁ ⊆ W^{1,2} × S₁` and `K₂ ⊆ W^{1,2} × S₂`, such as the kernels of the
+stabilized pieces, have at most half their norm on `s ≥ R` and on `s ≤ -(R / 2)` respectively. -/
+private theorem exists_forall_ge_norm_tail_le (K₁ : Submodule ℝ (H1 V × S₁))
+    (K₂ : Submodule ℝ (H1 V × S₂)) [FiniteDimensional ℝ K₁] [FiniteDimensional ℝ K₂] :
+    ∃ R₂ : ℝ, ∀ R ≥ R₂,
+      (∀ f ∈ jetComponents K₁, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | R ≤ z.1} (measurableSet_le measurable_const measurable_fst)) f‖ ≤
+          1 / 2 * ‖f‖) ∧
+      ∀ f ∈ jetComponents K₂, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | z.1 ≤ -(R / 2)} (measurableSet_le measurable_fst measurable_const)) f‖ ≤
+          1 / 2 * ‖f‖ := by
+  have hf₁ : FiniteDimensional ℝ (jetComponents K₁) := Module.Finite.map _ _
+  have hf₂ : FiniteDimensional ℝ (jetComponents K₂) := Module.Finite.map _ _
+  -- Instance search times out on `FiniteDimensional` of these spaces (the instance mismatch of
+  -- `free_ker`), so `hf₁` and `hf₂` are passed explicitly.
+  obtain ⟨ht₁, -⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₁
+    (1 / 2) (by norm_num)
+  obtain ⟨-, ht₂⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₂
+    (1 / 2) (by norm_num)
+  exact eventually_atTop.1 (ht₁.and ((tendsto_id.atTop_div_const two_pos).eventually ht₂))
+
+/-- **The corrected pregluing is an isomorphism onto the glued kernel.** Let `D₁` and `D₂` be
+first-order operators on the cylinder with essentially bounded coefficient fields `M₁` and `M₂`
+whose ends match, `M₁(s, t) → M(t)` as `s → +∞` and `M₂(s, t) → M(t)` as `s → -∞` uniformly in
+`t`. Let `ιᵢ : Sᵢ → L²` be stabilizers, the sections `ι₁ σ₁` vanishing for `s > T` and `ι₂ σ₂` for
+`s < -T`, such that the stabilized operators `Aᵢ (ξ, σ) = Dᵢ ξ + ιᵢ σ` have bounded linear right
+inverses and finite-dimensional kernels `Eᵢ`. Then for every bound `C`, for every sufficiently long
+neck and every right inverse `Q` of norm at most `C` of the stabilized glued operator
+`A_R (ξ, σ₁, σ₂) = D_R ξ + j_R (σ₁, σ₂)`, the pregluing corrected along `Q`
+(`TauCeti.CylinderSobolev.gluedKernelMap`) is a linear isomorphism `E₁ × E₂ ≃ E_R` onto the kernel
+`E_R` of `A_R`. Right inverses of norm at most `4 (‖Q₁‖ + ‖Q₂‖)` exist for long necks
+(`TauCeti.CylinderSobolev.exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff`). -/
+theorem exists_forall_ge_forall_bijective_gluedKernelMap
+    {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+    {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
+    (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
+    (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
+    {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T : ℝ}
+    (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
+    (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0)
+    {Q₁ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₁} {Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₂}
+    (hQ₁ : (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
+      ContinuousLinearMap.id ℝ _)
+    (hQ₂ : (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
+      ContinuousLinearMap.id ℝ _)
+    [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
+    [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
+    (C : ℝ) :
+    ∃ R₀ : ℝ, ∀ R ≥ R₀, ∀ (Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂))
+      (hQ : Function.RightInverse Q (((jetOperator stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))), ‖Q‖ ≤ C →
+      Function.Bijective (gluedKernelMap (((jetOperator stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) Q hQ
+        (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+        (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R) := by
+  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
+  -- Opaque names for the constants keep the arithmetic below away from the operator norms. The
+  -- constant `K` bounds both the right inverses of the pieces and the given right inverses.
+  obtain ⟨K, hK⟩ : ∃ K, K = max (‖Q₁‖ + ‖Q₂‖) C := ⟨_, rfl⟩
+  have hK0 : 0 ≤ K := by rw [hK]; exact le_max_of_le_left (by positivity)
+  obtain ⟨B, hB⟩ : ∃ B, B = lpNorm M₁ ∞ stripMeasure + lpNorm M₂ ∞ stripMeasure := ⟨_, rfl⟩
+  have hB0 : 0 ≤ B := by rw [hB]; exact add_nonneg lpNorm_nonneg lpNorm_nonneg
+  obtain ⟨ε, hε⟩ : ∃ ε : ℝ, ε = 1 / (64 * (K + 1)) := ⟨_, rfl⟩
+  have hε0 : 0 < ε := by rw [hε]; positivity
+  obtain ⟨T₁, hT₁⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 h₁ ε hε0)
+  obtain ⟨T₂, hT₂⟩ := eventually_atBot.1 (Metric.tendstoUniformlyOn_iff.1 h₂ ε hε0)
+  -- The kernels of the pieces have uniformly small tails beyond the neck.
+  obtain ⟨R₂, hR₂⟩ := exists_forall_ge_norm_tail_le
+    (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+    (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker
+  refine ⟨max R₂ (max (max (2 * T₁) (-2 * T₂))
+    (max (max (T + 1) (2 * T)) (max 1 (max (2 * L) (128 * L * B * (K + 1)))))),
+    fun R hR Q hQ hQn ↦ ?_⟩
+  simp only [ge_iff_le, max_le_iff] at hR
+  obtain ⟨hRR₂, ⟨hRT₁, hRT₂⟩, ⟨hRT, h2TR⟩, hR1, hR2L, hRLB⟩ := hR
+  have hRpos : 0 < R := by linarith
+  obtain ⟨hR₂₁, hR₂₂⟩ := hR₂ R hRR₂
+  have hB₁ : ∀ᵐ z ∂stripMeasure, ‖M₁ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₁).mono fun z h ↦
+    h.trans (by rw [hB]; exact le_add_of_nonneg_right lpNorm_nonneg)
+  have hB₂ : ∀ᵐ z ∂stripMeasure, ‖M₂ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₂).mono fun z h ↦
+    h.trans (by rw [hB]; exact le_add_of_nonneg_left lpNorm_nonneg)
+  have hRL : 2 / R * L ≤ 1 := by rw [div_mul_eq_mul_div, div_le_one hRpos]; linarith
+  have hQK : ‖Q‖ ≤ 4 * K := by
+    have : C ≤ K := hK ▸ le_max_right _ _
+    linarith [norm_nonneg Q]
+  obtain ⟨hsmall₁, hsmall₂⟩ := small_errors hK0 hL0 hB0 hε hRpos hRLB hQK
+  have hδ : 0 ≤ 2 * ε + 2 / R * L * B := by positivity
+  have hsmall₁' : (‖Q₁‖ + ‖Q₂‖) * (2 * ε + 2 / R * L * B) < 1 :=
+    (mul_le_mul_of_nonneg_right (hK ▸ le_max_left _ _) hδ).trans_lt hsmall₁
+  exact bijective_gluedKernelMap_of_lt_one hM₁ hM₂ hι₁ hι₂ (by linarith) h2TR hRpos hL hRL hB0
+    hB₁ hB₂ ((memLp_uncurry_gluedCoeff hM₁ hM₂ R).2.mono fun z h ↦ hB ▸ h) (by positivity)
+    (ae_norm_uncurry_gluedCoeff_sub_le_left hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂) hQ₁ hQ₂ hQ hR₂₁ hR₂₂
+    hsmall₁' hsmall₂
 
 variable [CompleteSpace W] in
 /-- **The kernels of glued stabilized operators.** Let `D₁` and `D₂` be first-order operators on
@@ -812,52 +1004,125 @@ theorem exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gl
           (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker =
         finrank ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker +
           finrank ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker := by
-  obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
-  have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
-  -- Opaque names for the constants keep the arithmetic below away from the operator norms.
-  obtain ⟨K, hK⟩ : ∃ K, K = ‖Q₁‖ + ‖Q₂‖ := ⟨_, rfl⟩
-  have hK0 : 0 ≤ K := by rw [hK]; positivity
-  obtain ⟨B, hB⟩ : ∃ B, B = lpNorm M₁ ∞ stripMeasure + lpNorm M₂ ∞ stripMeasure := ⟨_, rfl⟩
-  have hB0 : 0 ≤ B := by rw [hB]; exact add_nonneg lpNorm_nonneg lpNorm_nonneg
-  obtain ⟨ε, hε⟩ : ∃ ε : ℝ, ε = 1 / (64 * (K + 1)) := ⟨_, rfl⟩
-  have hε0 : 0 < ε := by rw [hε]; positivity
-  obtain ⟨T₁, hT₁⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 h₁ ε hε0)
-  obtain ⟨T₂, hT₂⟩ := eventually_atBot.1 (Metric.tendstoUniformlyOn_iff.1 h₂ ε hε0)
+  obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_bijective_gluedKernelMap hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁
+    hQ₂ (4 * (‖Q₁‖ + ‖Q₂‖))
   obtain ⟨R₁, hR₁⟩ := exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff hM₁ hM₂
     h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
-  -- The kernels of the pieces have uniformly small tails beyond the neck.
-  have hf₁ : FiniteDimensional ℝ
-      (jetComponents (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker) :=
-    Module.Finite.map _ _
-  have hf₂ : FiniteDimensional ℝ
-      (jetComponents (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker) :=
-    Module.Finite.map _ _
-  -- Instance search times out on `FiniteDimensional` of these kernels (the instance mismatch of
-  -- `free_ker`), so `hf₁` and `hf₂` are passed explicitly.
-  obtain ⟨ht₁, -⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₁
-    (1 / 2) (by norm_num)
-  obtain ⟨-, ht₂⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₂
-    (1 / 2) (by norm_num)
-  obtain ⟨R₂, hR₂⟩ :=
-    eventually_atTop.1 (ht₁.and ((tendsto_id.atTop_div_const two_pos).eventually ht₂))
-  refine ⟨max (max R₁ R₂) (max (max (2 * T₁) (-2 * T₂))
-    (max (max (T + 1) (2 * T)) (max 1 (max (2 * L) (128 * L * B * (K + 1)))))), fun R hR ↦ ?_⟩
-  simp only [ge_iff_le, max_le_iff] at hR
-  obtain ⟨⟨hRR₁, hRR₂⟩, ⟨hRT₁, hRT₂⟩, ⟨hRT, h2TR⟩, hR1, hR2L, hRLB⟩ := hR
-  have hRpos : 0 < R := by linarith
-  obtain ⟨Q, hQ, hQn⟩ := hR₁ R hRR₁
-  obtain ⟨hR₂₁, hR₂₂⟩ := hR₂ R hRR₂
-  have hB₁ : ∀ᵐ z ∂stripMeasure, ‖M₁ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₁).mono fun z h ↦
-    h.trans (by rw [hB]; exact le_add_of_nonneg_right lpNorm_nonneg)
-  have hB₂ : ∀ᵐ z ∂stripMeasure, ‖M₂ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₂).mono fun z h ↦
-    h.trans (by rw [hB]; exact le_add_of_nonneg_left lpNorm_nonneg)
-  have hRL : 2 / R * L ≤ 1 := by rw [div_mul_eq_mul_div, div_le_one hRpos]; linarith
-  obtain ⟨hsmall₁, hsmall₂⟩ := small_errors hK0 hL0 hB0 hε hRpos hRLB (hK ▸ hQn)
-  rw [hK] at hsmall₁
-  exact finiteDimensional_and_finrank_ker_eq hM₁ hM₂ hι₁ hι₂ (by linarith) h2TR hRpos hL hRL hB0
-    hB₁ hB₂ ((memLp_uncurry_gluedCoeff hM₁ hM₂ R).2.mono fun z h ↦ hB ▸ h) (by positivity)
-    (ae_norm_uncurry_gluedCoeff_sub_le_left hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂) hQ₁ hQ₂ hQ hR₂₁ hR₂₂
-    hsmall₁ hsmall₂
+  refine ⟨max R₀ R₁, fun R hR ↦ ?_⟩
+  obtain ⟨Q, hQ, hQn⟩ := hR₁ R (le_of_max_le_right hR)
+  have hr := ContinuousLinearMap.rightInverse_of_comp hQ
+  -- The corrected pregluing identifies the kernel `E_R` with `E₁ × E₂`.
+  let e := LinearEquiv.ofBijective (gluedKernelMap _ Q hr
+    (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+    (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R).toLinearMap
+    (hR₀ R (le_of_max_le_left hR) Q hr hQn)
+  have := free_ker (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)
+  have := free_ker (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂)
+  exact ⟨Module.Finite.equiv e, e.finrank_eq.symm.trans Module.finrank_prod⟩
+
+/-- **The exact sequence of linear gluing.** Let `D₁` and `D₂` be first-order operators on the
+cylinder with essentially bounded coefficient fields whose ends match, as in
+`TauCeti.CylinderSobolev.exists_forall_ge_forall_bijective_gluedKernelMap`, with stabilizers
+`ιᵢ : Sᵢ → L²` vanishing near the glued ends, such that the stabilized pieces
+`Aᵢ (ξ, σ) = Dᵢ ξ + ιᵢ σ` have bounded linear right inverses and finite-dimensional kernels `Eᵢ`.
+Fix a bound `C`. For every sufficiently long neck and every right inverse `Q` of norm at most `C`
+of the stabilized glued operator `A_R (ξ, σ₁, σ₂) = D_R ξ + j_R (σ₁, σ₂)`, the pregluing corrected
+along `Q` is a linear isomorphism `e : E₁ × E₂ ≃ E_R` onto the kernel of `A_R`, and the sequence
+
+`0 → ker D_R → E₁ × E₂ → S₁ × S₂ → coker D_R → 0`
+
+is exact. Its maps are `ξ ↦ e⁻¹ (ξ, 0)`; the **obstruction map** `b_R`, the stabilizer component
+`(σ₁, σ₂)` of `e k ∈ E_R`; and `(σ₁, σ₂) ↦ [j_R (σ₁, σ₂)]`. When `b_R = 0`, the first map is an
+isomorphism `ker D_R ≃ E₁ × E₂` and the last one an isomorphism `S₁ × S₂ ≃ coker D_R`.
+
+For stabilizers complementing the ranges of the pieces, such as those of
+`exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff_of_isFredholm`, the kernel
+`Eᵢ` is `ker Dᵢ × {0}` (`ContinuousLinearMap.ker_coprod_of_disjoint_range`), and the sequence
+reads `0 → ker D_R → ker D₁ × ker D₂ → S₁ × S₂ → coker D_R → 0`. -/
+theorem exists_forall_ge_forall_exists_linearEquiv_exact_gluedKernelMap
+    {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+    {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
+    (h₁ : TendstoUniformlyOn (Function.curry M₁) M atTop (Icc 0 1))
+    (h₂ : TendstoUniformlyOn (Function.curry M₂) M atBot (Icc 0 1))
+    {ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure} {ι₂ : S₂ →L[ℝ] Lp W 2 stripMeasure} {T : ℝ}
+    (hι₁ : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι₁ σ z = 0)
+    (hι₂ : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι₂ σ z = 0)
+    {Q₁ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₁} {Q₂ : Lp W 2 stripMeasure →L[ℝ] H1 V × S₂}
+    (hQ₁ : (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).comp Q₁ =
+      ContinuousLinearMap.id ℝ _)
+    (hQ₂ : (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
+      ContinuousLinearMap.id ℝ _)
+    [FiniteDimensional ℝ (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
+    [FiniteDimensional ℝ (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
+    (C : ℝ) :
+    ∃ R₀ : ℝ, ∀ R ≥ R₀, ∀ (Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂))
+      (hQ : Function.RightInverse Q (((jetOperator stripMeasure
+        (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+          (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))), ‖Q‖ ≤ C →
+      ∃ e : ((((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker ×
+          (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker) ≃ₗ[ℝ]
+          (((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker,
+        (∀ k, e k = gluedKernelMap (((jetOperator stripMeasure
+          (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+            (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)) Q hQ
+          (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+          (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R k) ∧
+        Function.Injective (e.symm.toLinearMap ∘ₗ (ContinuousLinearMap.kerCoprodHom
+          ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap) ∧
+        Function.Exact (e.symm.toLinearMap ∘ₗ (ContinuousLinearMap.kerCoprodHom
+          ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap)
+          ((ContinuousLinearMap.parameterProj ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap ∘ₗ e.toLinearMap) ∧
+        Function.Exact ((ContinuousLinearMap.parameterProj ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap ∘ₗ e.toLinearMap)
+          (ContinuousLinearMap.parameterToCoker ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)) ∧
+        Function.Surjective (ContinuousLinearMap.parameterToCoker ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)) ∧
+        ((ContinuousLinearMap.parameterProj ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap ∘ₗ e.toLinearMap = 0 →
+          Function.Bijective (e.symm.toLinearMap ∘ₗ (ContinuousLinearMap.kerCoprodHom
+            ((jetOperator stripMeasure
+              (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+                (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R)).toLinearMap) ∧
+          Function.Bijective (ContinuousLinearMap.parameterToCoker ((jetOperator stripMeasure
+            (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
+              (H1 V).subtypeL) (gluedStabilizer ι₁ ι₂ R))) := by
+  obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_bijective_gluedKernelMap hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁
+    hQ₂ C
+  refine ⟨R₀, fun R hR Q hQ hQn ↦ ?_⟩
+  -- The corrected pregluing identifies `E₁ × E₂` with the kernel `E_R` of `A_R`, along which the
+  -- exact sequence `0 → ker D_R → E_R → S₁ × S₂ → coker D_R → 0` of the stabilization is
+  -- transported.
+  let e := LinearEquiv.ofBijective (gluedKernelMap _ Q hQ
+    (((jetOperator stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker
+    (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker R).toLinearMap
+    (hR₀ R hR Q hQ hQn)
+  have ha := (LinearEquiv.conj_symm_exact_iff_exact _ _ e).2
+    (ContinuousLinearMap.exact_kerCoprodHom_parameterProj _ (gluedStabilizer ι₁ ι₂ R))
+  have hb := (LinearEquiv.precomp_exact_iff_exact (e := e)).2
+    (ContinuousLinearMap.exact_parameterProj_parameterToCoker _ (gluedStabilizer ι₁ ι₂ R))
+  have hc := (ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective _
+    (gluedStabilizer ι₁ ι₂ R)).2 hQ.surjective
+  have hi := e.symm.injective.comp (ContinuousLinearMap.kerCoprodHom_injective _
+    (gluedStabilizer ι₁ ι₂ R))
+  refine ⟨e, fun _ ↦ rfl, hi, ha, hb, hc, fun hzero ↦ ⟨⟨hi, ?_⟩, ⟨?_, hc⟩⟩⟩
+  -- When `b_R = 0`, exactness at `E₁ × E₂` and at `S₁ × S₂` gives the two isomorphisms.
+  · exact fun x ↦ (ha x).1 (LinearMap.congr_fun hzero x)
+  · refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
+    obtain ⟨x, rfl⟩ := (hb y).1 hy
+    exact LinearMap.congr_fun hzero x
 
 variable [CompleteSpace V] [CompleteSpace W] in
 /-- **Index additivity under gluing.** Let `D₁` and `D₂` be first-order operators on the cylinder,
