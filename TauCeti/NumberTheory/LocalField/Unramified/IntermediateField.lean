@@ -43,6 +43,10 @@ automorphisms of `K_{f(L/K)} / K` that extend to `L`.
   is positive.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
+* `IntermediateField.inertiaDegree_eq_finrank_iff`: a finite `L` has `f(L/K) = [L : K]` exactly
+  when it is `K_{[L : K]}`; `IntermediateField.inertiaDegree_unramifiedExtension`: `f(K_f/K) = f`.
+* `TauCeti.setOf_finrank_eq_of_prime`: for a prime `p`, the subextensions of degree `p` are
+  `K_p` and the members of `σ_K(p)`.
 * `IntermediateField.natCard_algEquiv_eq_mul`: decomposition of `Nat.card (L ≃ₐ[K] L)` along
   `K_{f(L/K)} ≤ L`.
 * `IntermediateField.natCard_algEquiv_eq_mul_inertiaDegree_of_normal`: for normal `L / K`,
@@ -273,6 +277,35 @@ theorem inf_maximalUnramifiedExtension (L : IntermediateField K (SeparableClosur
   · exact le_inf (unramifiedExtension_inertiaDegree_le L)
       (unramifiedExtension_le_maximalUnramifiedExtension K (SeparableClosure K) _)
 
+/-- A finite subextension has residue degree equal to its degree exactly when it is the unramified
+extension of that degree. -/
+theorem inertiaDegree_eq_finrank_iff (L : IntermediateField K (SeparableClosure K))
+    [Module.Finite K L] :
+    L.inertiaDegree = Module.finrank K L ↔
+      L = unramifiedExtension K (SeparableClosure K) (Module.finrank K L) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · have hle := L.unramifiedExtension_inertiaDegree_le
+    rw [h] at hle
+    exact (eq_of_le_of_finrank_eq hle (finrank_unramifiedExtension Module.finrank_pos.ne')).symm
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    have : IsUnramified K L := L.le_maximalUnramifiedExtension_iff.1
+      (h ▸ unramifiedExtension_le_maximalUnramifiedExtension K (SeparableClosure K) _)
+    exact IsUnramified.inertiaDegree_eq_finrank
+
+/-- The unramified extension `K_f` of degree `f ≥ 1` has residue degree `f`. -/
+@[simp]
+theorem inertiaDegree_unramifiedExtension {f : ℕ} (hf : f ≠ 0) :
+    (unramifiedExtension K (SeparableClosure K) f).inertiaDegree = f := by
+  have hrank := finrank_unramifiedExtension (K := K) (Ω := SeparableClosure K) hf
+  have : Module.Finite K (unramifiedExtension K (SeparableClosure K) f) :=
+    Module.finite_of_finrank_pos (by omega)
+  rw [((unramifiedExtension K (SeparableClosure K) f).inertiaDegree_eq_finrank_iff).2
+    (by rw [hrank]), hrank]
+
 /-- **The automorphism count over the unramified part**: for a finite subextension `L` of
 `SeparableClosure K` with canonical unramified base
 `U = unramifiedExtension K (SeparableClosure K) L.inertiaDegree`, `Nat.card (L ≃ₐ[K] L)` equals
@@ -353,3 +386,30 @@ theorem ncard_isomorphic_restrictScalars_mul_natCard_eq_inertiaDegree
     natCard_algEquiv_unramifiedExtension L.inertiaDegree_pos.ne']
 
 end IntermediateField
+
+namespace TauCeti
+
+variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K]
+
+/-- **The subextensions of prime degree.** For a prime `p`, the subextensions of
+`SeparableClosure K` of degree `p` are the unramified extension `K_p` of degree `p` and the members
+of `σ_K(p)`: the residue degree divides `p`, so it is either `p` or `1`. -/
+theorem setOf_finrank_eq_of_prime {p : ℕ} (hp : p.Prime) :
+    {L : IntermediateField K (SeparableClosure K) | Module.finrank K L = p} =
+      insert (unramifiedExtension K (SeparableClosure K) p) (totallyRamifiedOfDegree K p) := by
+  ext L
+  rw [Set.mem_ofPred_eq, Set.mem_insert_iff, mem_totallyRamifiedOfDegree_iff,
+    IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one]
+  refine ⟨fun hL ↦ ?_, ?_⟩
+  · have : Module.Finite K L := Module.finite_of_finrank_pos (hL ▸ hp.pos)
+    have hdvd := L.inertiaDegree_dvd_finrank
+    rw [hL, Nat.dvd_prime hp] at hdvd
+    refine hdvd.symm.imp (fun h ↦ ?_) (fun h ↦ ⟨hL, h⟩)
+    rw [← hL]
+    exact L.inertiaDegree_eq_finrank_iff.1 (h.trans hL.symm)
+  · rintro (rfl | ⟨hL, -⟩)
+    · exact finrank_unramifiedExtension hp.ne_zero
+    · exact hL
+
+end TauCeti

@@ -26,7 +26,8 @@ the multiplicities needed when counting étale algebras by their Galois actions.
 
 The stabilizer of each point is open, its fixed field is finite over `K`, and its degree
 is the orbit size. In particular, a nonempty labelled action is transitive exactly when
-the fixed field of a point stabilizer has degree `n`. These results use Mathlib's infinite
+the fixed field of a point stabilizer has degree `n`; one of size two is transitive unless it is
+trivial (`TauCeti.GaloisSet.isTransitive_or_eq_trivial`). These results use Mathlib's infinite
 Galois correspondence and orbit–stabilizer theorem. The conversion from continuous finite
 actions uses `TauCeti.isOpen_ker_toPermHom`.
 
@@ -256,6 +257,16 @@ theorem fixedField_stabilizer_trivial (i : Fin n) :
     ext σ
     simp [MulAction.mem_stabilizer_iff]
   rw [hstab, InfiniteGalois.fixedField_bot]
+
+/-- A labelled Galois set of size two is either transitive or trivial: a permutation of `Fin 2`
+that moves one label exchanges the two. -/
+theorem isTransitive_or_eq_trivial (ρ : GaloisSet K 2) : ρ.IsTransitive ∨ ρ = trivial K 2 := by
+  have key : ∀ (e : Equiv.Perm (Fin 2)) (i a b : Fin 2), e i ≠ i → a ≠ b → e a = b := by decide
+  refine or_iff_not_imp_left.2 fun hρ ↦ ext fun σ i ↦ by_contra fun h ↦ hρ ?_
+  refine (isTransitive_iff ρ).2 fun a b ↦ ?_
+  by_cases hab : a = b
+  · exact ⟨1, by simp [hab]⟩
+  · exact ⟨σ, key _ i a b h hab⟩
 
 /-- Disjoint union of a family of Galois sets, labelled along `b : Fin n ≃ Σ i, Fin (d i)`. -/
 def sigma {ι : Type*} {d : ι → ℕ} (b : Fin n ≃ Σ i, Fin (d i))
