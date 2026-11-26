@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLog
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
+public import TauCeti.Dynamics.SymbolicDynamics.Basic
 public import TauCeti.Dynamics.SymbolicDynamics.Shift
 public import TauCeti.Topology.UniformSpace.DiscreteUniformity
 import Mathlib.Analysis.Asymptotics.ExpGrowth
@@ -27,18 +28,13 @@ cover with at most `card α ^ (n + c)` points; agreeing at the coordinate `0` fo
 agreeing on `0, …, n - 1`, which needs at least `card α ^ n` points. Both bounds grow like
 `card α ^ n`.
 
-## Main definitions
-
-* `TauCeti.agreeOn S`: the relation "agree on the coordinates of `S`" on `G → α`; for a discrete
-  alphabet these relations for finite `S` form a basis of the product uniformity
-  (`TauCeti.hasBasis_agreeOn`), and `TauCeti.dynEntourage_shift_agreeOn` describes them for `n`
-  steps of the shift (with the window and coordinate-`0` cases
-  `TauCeti.agreeOn_window_subset_dynEntourage_shift` and
-  `TauCeti.dynEntourage_shift_agreeOn_singleton_zero`).
-* `TauCeti.extendWord S w`: a configuration extending the word `w` on `S`.
-
 ## Main results
 
+* `TauCeti.dynEntourage_shift_agreeOn`: agreement on `S` (`TauCeti.agreeOn`, whose relations for
+  finite `S` form a basis of the product uniformity by
+  `Pi.hasBasis_uniformity_of_discreteUniformity`) for `n` steps of the shift, with the window and
+  coordinate-`0` cases `TauCeti.agreeOn_window_subset_dynEntourage_shift` and
+  `TauCeti.dynEntourage_shift_agreeOn_singleton_zero`.
 * `TauCeti.coverEntropy_shift_nat`, `TauCeti.coverEntropyInf_shift_nat`: the one-sided full shift
   has entropy `log (card α)`.
 * `TauCeti.coverEntropy_shift_int`, `TauCeti.coverEntropyInf_shift_int`: the two-sided full shift
@@ -53,41 +49,6 @@ open Dynamics Set Filter ExpGrowth SymbolicDynamics.FullShift
 open scoped Uniformity ENNReal
 
 variable {α G : Type*}
-
-/-- Configurations agreeing on the coordinates of `S`. -/
-def agreeOn (S : Set G) : SetRel (G → α) (G → α) := {p | ∀ i ∈ S, p.1 i = p.2 i}
-
-@[simp]
-theorem mem_agreeOn {S : Set G} {x y : G → α} : (x, y) ∈ agreeOn S ↔ ∀ i ∈ S, x i = y i :=
-  Iff.rfl
-
-/-- Agreeing on a larger set of coordinates implies agreeing on a smaller one. -/
-theorem agreeOn_anti {S S' : Set G} (h : S ⊆ S') :
-    (agreeOn S' : SetRel (G → α) (G → α)) ⊆ agreeOn S :=
-  fun _ hp i hi ↦ hp i (h hi)
-
-/-- For a discrete alphabet, agreement on finite sets of coordinates is a basis of the product
-uniformity. -/
-theorem hasBasis_agreeOn [UniformSpace α] [DiscreteUniformity α] :
-    (𝓤 (G → α)).HasBasis Set.Finite (agreeOn : Set G → SetRel (G → α) (G → α)) :=
-  Pi.hasBasis_uniformity_of_discreteUniformity
-
-/-- Extend a word on `S` to a configuration, by an arbitrary symbol off `S`. -/
-noncomputable def extendWord [Nonempty α] (S : Finset G) (w : S → α) : G → α :=
-  open Classical in fun i ↦ if h : i ∈ S then w ⟨i, h⟩ else Classical.arbitrary α
-
-/-- On `S`, the extension of a word on `S` is the word. -/
-theorem extendWord_of_mem [Nonempty α] {S : Finset G} (w : S → α) {i : G} (hi : i ∈ S) :
-    extendWord S w i = w ⟨i, hi⟩ := by
-  simp [extendWord, hi]
-
-/-- The extensions of two words on `S` agree on `S` exactly when the words are equal. -/
-theorem extendWord_mem_agreeOn_iff [Nonempty α] {S : Finset G} {w w' : S → α} :
-    (extendWord S w, extendWord S w') ∈ (agreeOn (S : Set G) : SetRel (G → α) (G → α)) ↔
-      w = w' := by
-  refine ⟨fun h ↦ funext fun i ↦ ?_, fun h ↦ h ▸ mem_agreeOn.2 fun _ _ ↦ rfl⟩
-  rw [← extendWord_of_mem w i.property, ← extendWord_of_mem w' i.property]
-  exact mem_agreeOn.1 h i i.property
 
 section Counting
 
@@ -224,7 +185,7 @@ private lemma coverEntropy_shift_of_window [UniformSpace α] [DiscreteUniformity
       (univ : Set (G → α)) (agreeOn {0}) := by
     rw [← expGrowthInf_pow]
     exact expGrowthInf_monotone fun n ↦ pow_le_coverMincard_shift hG n
-  rw [coverEntropy_eq_iSup_basis hasBasis_agreeOn]
+  rw [coverEntropy_eq_iSup_basis Pi.hasBasis_uniformity_of_discreteUniformity]
   exact (iSup₂_le hupper).antisymm <| hlower.trans <|
     (coverEntropyInfEntourage_le_coverEntropyEntourage _ _ _).trans <|
       le_iSup₂_of_le {0} (finite_singleton 0) le_rfl

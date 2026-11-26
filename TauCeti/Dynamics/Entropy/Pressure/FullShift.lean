@@ -155,7 +155,7 @@ theorem topologicalPressure_shift_nat_comp_eval_zero (f : α → ℝ) :
     Finset.sum_pos (fun a _ ↦ Real.exp_pos _) Finset.univ_nonempty
   rw [← ENNReal.log_ofReal_of_pos hpos, ← hZ, ← expGrowthSup_pow]
   refine le_antisymm (topologicalPressure_le_iff.mpr fun U hU ↦ ?_) ?_
-  · obtain ⟨S, hS, hSU⟩ := hasBasis_agreeOn.mem_iff.mp hU
+  · obtain ⟨S, hS, hSU⟩ := Pi.hasBasis_uniformity_of_discreteUniformity.mem_iff.mp hU
     obtain ⟨c, hc⟩ := hS.bddAbove
     have hsub : (agreeOn (Iio (c + 1)) : SetRel (ℕ → α) (ℕ → α)) ⊆ U :=
       (agreeOn_anti fun i hi ↦ Nat.lt_succ_of_le (hc hi)).trans hSU
@@ -164,7 +164,7 @@ theorem topologicalPressure_shift_nat_comp_eval_zero (f : α → ℝ) :
     exact expGrowthSup_le_of_eventually_le (by simp)
       (Eventually.of_forall (pressureNetSum_agreeOn_Iio_le f (c + 1)))
   · have hU : (agreeOn {0} : SetRel (ℕ → α) (ℕ → α)) ∈ 𝓤 (ℕ → α) :=
-      hasBasis_agreeOn.mem_of_mem (finite_singleton 0)
+      Pi.hasBasis_uniformity_of_discreteUniformity.mem_of_mem (finite_singleton 0)
     refine le_trans ?_ (netPressureEntourage_le_topologicalPressure hU)
     rw [netPressureEntourage_def]
     exact expGrowthSup_monotone (pow_le_pressureNetSum_agreeOn_zero f)
