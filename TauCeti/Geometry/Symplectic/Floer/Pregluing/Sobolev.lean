@@ -159,19 +159,6 @@ private theorem continuous_floerJetCoeff_preglue (ω : SymplecticForm V)
   exact ω.continuous_floerJetCoeff (fun _ ↦ hJ'.contDiffAt) (fun _ ↦ contDiff_const.contDiffAt)
     (fun _ ↦ hKt.contDiffAt) (contDiff_preglue hx₁ hu hv)
 
-/-- If the linearized operator along `w` has a right inverse and `L²` is nontrivial, its
-coefficient field on jets is essentially bounded: otherwise the operator is `0` by convention. -/
-private theorem memLp_floerJetCoeff_of_comp_eq_id [Nontrivial (Lp V 2 stripMeasure)]
-    {J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {w : ℝ × ℝ → V}
-    {Q : Lp V 2 stripMeasure →L[ℝ] H1 V}
-    (hQ : (ω.floerSobolevOperator J' Ks Kt w).comp Q = ContinuousLinearMap.id ℝ _) :
-    MemLp (ω.floerJetCoeff J' Ks Kt w) ∞ stripMeasure :=
-  memLp_of_jetOperator_ne_zero fun h ↦ by
-    obtain ⟨η, hη⟩ := exists_ne (0 : Lp V 2 stripMeasure)
-    have h' := DFunLike.congr_fun hQ η
-    rw [floerSobolevOperator_def, h, zero_comp, zero_comp] at h'
-    exact hη (by simpa using h'.symm)
-
 /-- **Uniformly bounded right inverses along pre-glued Floer cylinders.** Let `J` be a `C¹`
 family of endomorphisms and `H` a `C²` Hamiltonian, both of period one in `t`, and let `x` be an
 orbit of `X_{H_t}` of period one. Let `u` and `v` be `C¹` maps, `u` converging to `x` in `C¹` as
@@ -203,8 +190,8 @@ theorem eventually_exists_rightInverse_floerSobolevOperator_preglue (ω : Symple
   rcases subsingleton_or_nontrivial (Lp V 2 stripMeasure) with hL | hL
   · exact .of_forall fun R ↦
       ⟨0, ContinuousLinearMap.ext fun _ ↦ Subsingleton.elim _ _, by rw [opNorm_zero]; positivity⟩
-  have hMu := memLp_floerJetCoeff_of_comp_eq_id hQ₁
-  have hMv := memLp_floerJetCoeff_of_comp_eq_id hQ₂
+  have hMu := ω.memLp_floerJetCoeff_of_comp_eq_id hQ₁
+  have hMv := ω.memLp_floerJetCoeff_of_comp_eq_id hQ₂
   simp only [floerSobolevOperator_def] at hQ₁ hQ₂ ⊢
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   -- The operators of the glued coefficient fields have uniformly bounded right inverses.
