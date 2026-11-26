@@ -50,7 +50,7 @@ public section
 noncomputable section
 
 open Filter Set Topology Unitization
-open scoped CStarAlgebra ComplexOrder Pointwise
+open scoped CStarAlgebra ComplexOrder NNReal Pointwise
 
 namespace ContinuousLinearMap
 
@@ -113,21 +113,21 @@ theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
 
 /-- Nonnegative real scalar multiple of a weak-* state as a `PositiveContinuousLinearMap`. -/
 private def smulState {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
-    {c : ℝ} (hc : 0 ≤ c) {η : WeakDual ℂ D} (hη : η ∈ TauCeti.stateSpace D) : D →P[ℂ] ℂ :=
-  .mk₀ (c • WeakDual.toStrongDual η) fun a ha => by
-    simpa [Complex.real_smul] using
-      mul_nonneg (Complex.zero_le_real.mpr hc) (TauCeti.map_nonneg_of_mem_stateSpace hη ha)
+    {c : ℝ} (_hc : 0 ≤ c) {η : WeakDual ℂ D} (hη : η ∈ TauCeti.stateSpace D) : D →P[ℂ] ℂ :=
+  c.toNNReal • PositiveContinuousLinearMap.mk₀ (WeakDual.toStrongDual η) fun _ ha => by
+    simpa [WeakDual.toStrongDual_apply] using TauCeti.map_nonneg_of_mem_stateSpace hη ha
 
 private theorem smulState_apply {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
     {c : ℝ} (hc : 0 ≤ c) {η : WeakDual ℂ D} (hη : η ∈ TauCeti.stateSpace D) (a : D) :
     smulState hc hη a = (c : ℂ) * η a := by
-  simp [smulState, Complex.real_smul]
+  simp [smulState, NNReal.smul_def, hc, Complex.real_smul, WeakDual.toStrongDual_apply]
 
 private theorem opNorm_smulState {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D]
     {c : ℝ} (hc : 0 ≤ c) {η : WeakDual ℂ D} (hη : η ∈ TauCeti.stateSpace D) :
     ‖(smulState hc hη : D →L[ℂ] ℂ)‖ = c := by
-  rw [smulState, PositiveContinuousLinearMap.toContinuousLinearMap_mk₀, norm_smul,
-    Real.norm_of_nonneg hc, TauCeti.norm_toStrongDual_of_mem_stateSpace hη, mul_one]
+  rw [smulState, PositiveContinuousLinearMap.opNorm_smul,
+    PositiveContinuousLinearMap.toContinuousLinearMap_mk₀,
+    TauCeti.norm_toStrongDual_of_mem_stateSpace hη, mul_one, Real.coe_toNNReal c hc]
 
 /-- On a unital C⋆-algebra, every bounded Hermitian functional admits a norm-preserving Jordan
 decomposition `φ = ω₁ - ω₂` into positive functionals with `‖ω₁‖ + ‖ω₂‖ = ‖φ‖`. -/

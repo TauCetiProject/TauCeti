@@ -177,11 +177,13 @@ theorem strictlyPositiveApproximateUnit_of_not_nonneg {h : A} (hh : ¬ 0 ≤ h) 
   exact cfcₙ_apply_of_not_predicate _ hh
 
 /-- Each term of `strictlyPositiveApproximateUnit h` is nonnegative. -/
+@[simp]
 theorem strictlyPositiveApproximateUnit_nonneg (h : A) (n : ℕ) :
     0 ≤ strictlyPositiveApproximateUnit h n :=
   cfcₙ_nonneg_of_predicate
 
 /-- Each term of `strictlyPositiveApproximateUnit h` has norm strictly less than `1`. -/
+@[simp]
 theorem norm_strictlyPositiveApproximateUnit_lt_one (h : A) (n : ℕ) :
     ‖strictlyPositiveApproximateUnit h n‖ < 1 := by
   have hlt : ‖strictlyPositiveApproximateUnit h n‖₊ < 1 := by
@@ -193,6 +195,7 @@ theorem norm_strictlyPositiveApproximateUnit_lt_one (h : A) (n : ℕ) :
   exact_mod_cast hlt
 
 /-- Each term of `strictlyPositiveApproximateUnit h` has norm at most `1`. -/
+@[simp]
 theorem norm_strictlyPositiveApproximateUnit_le_one (h : A) (n : ℕ) :
     ‖strictlyPositiveApproximateUnit h n‖ ≤ 1 :=
   (norm_strictlyPositiveApproximateUnit_lt_one h n).le
@@ -382,8 +385,7 @@ theorem tendsto_strictlyPositiveApproximateUnit_mul_of_mem_closure_range_mul_lef
     (.of_forall fun n => by
       refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
       exact (mul_le_mul (ContinuousLinearMap.opNorm_mul_apply_le ℂ A _) K.norm_subtypeL_le
-        (norm_nonneg K.subtypeL) (norm_nonneg _)).trans <| by
-          simpa using norm_strictlyPositiveApproximateUnit_le_one h n)
+        (norm_nonneg K.subtypeL) (norm_nonneg _)).trans <| by simp)
     ?_ ⟨a, haK⟩
   rintro ⟨_, -⟩ ⟨b, rfl⟩
   simpa [mul_assoc] using (tendsto_strictlyPositiveApproximateUnit_mul_self hh).mul_const b

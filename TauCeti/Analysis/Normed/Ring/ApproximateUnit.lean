@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Ring.Basic
 public import TauCeti.Topology.ApproximateUnit
 public import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 import Mathlib.Analysis.Normed.Ring.Lemmas
+import TauCeti.Topology.MetricSpace.Equicontinuity
 
 /-!
 # Bounded approximate identities in normed rings
@@ -215,35 +216,6 @@ theorem tendsto_mul_mul_of_isBoundedUnder {ι : Type*} {l : Filter ι} {u v : ι
     Filter.isBoundedUnder_le_mul_tendsto_zero hu (by simpa using hright.sub_const a)
   simpa only [mul_sub, ← mul_assoc, sub_add_cancel, zero_add] using hzero.add hleft
 
-/-- If `F : ι → X → Y` is eventually uniformly Lipschitz along `l`, `g : X → Y` is Lipschitz,
-and `F i d → g d` along `l` for every `d` in a dense set `D`, then `F i x → g x` for every
-`x`. -/
-private theorem tendsto_of_dense_of_eventually_lipschitz {ι X Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y} {g : X → Y} {D : Set X}
-    (hD : Dense D) {K L : ℝ} (hK : 0 ≤ K) (hL : 0 ≤ L)
-    (hF : ∀ᶠ i in l, ∀ x y, dist (F i x) (F i y) ≤ K * dist x y)
-    (hg : ∀ x y, dist (g x) (g y) ≤ L * dist x y)
-    (hlim : ∀ d ∈ D, Tendsto (fun i => F i d) l (𝓝 (g d))) (x : X) :
-    Tendsto (fun i => F i x) l (𝓝 (g x)) := by
-  rw [Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (2 * (K + L + 1)))
-  filter_upwards [hF, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
-  have hdist : dist (F i x) (g x) ≤ (K + L) * dist x d + dist (F i d) (g d) := by
-    calc dist (F i x) (g x)
-        ≤ dist (F i x) (F i d) + dist (F i d) (g d) + dist (g d) (g x) := dist_triangle4 _ _ _ _
-      _ ≤ K * dist x d + dist (F i d) (g d) + L * dist d x := by
-          gcongr
-          · exact hi x d
-          · exact hg d x
-      _ = (K + L) * dist x d + dist (F i d) (g d) := by rw [dist_comm d x]; ring
-  have hprod : (K + L) * dist x d < ε / 2 := by
-    calc (K + L) * dist x d
-        ≤ (K + L + 1) * dist x d := mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
-      _ < (K + L + 1) * (ε / (2 * (K + L + 1))) := mul_lt_mul_of_pos_left hxd (by positivity)
-      _ = ε / 2 := by field_simp
-  linarith
-
 /-- If `u` is eventually norm-bounded along `l` and `u i * d → d` for every `d` in a dense set `D`
 of a seminormed ring, then `u i * x → x` for every `x`. -/
 theorem tendsto_mul_right_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {D : Set A}
@@ -251,8 +223,9 @@ theorem tendsto_mul_right_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} {
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d) l (𝓝 d)) (x : A) :
     Tendsto (fun i => u i * x) l (𝓝 x) := by
   refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y) (g := id) hD
-    (abs_nonneg C) zero_le_one ?_ (fun x y => by simp) hlim x
-  filter_upwards [hC] with i hi x y
+    (K := ‖C‖₊) (L := 1) ?_ LipschitzWith.id hlim x
+  filter_upwards [hC] with i hi
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [dist_eq_norm, dist_eq_norm, ← mul_sub]
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right (hi.trans (le_abs_self C))
     (norm_nonneg _))
@@ -264,9 +237,9 @@ theorem tendsto_commutator_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} 
     (hlim : ∀ d ∈ D, Tendsto (fun i => u i * d - d * u i) l (𝓝 0)) (x : A) :
     Tendsto (fun i => u i * x - x * u i) l (𝓝 0) := by
   refine tendsto_of_dense_of_eventually_lipschitz (F := fun i y => u i * y - y * u i)
-    (g := fun _ => 0) hD (mul_nonneg zero_le_two (abs_nonneg C)) le_rfl ?_ (fun _ _ => by simp)
-    hlim x
-  filter_upwards [hC] with i hi x y
+    (g := fun _ => 0) hD (K := 2 * ‖C‖₊) (L := 0) ?_ (LipschitzWith.const 0) hlim x
+  filter_upwards [hC] with i hi
+  refine LipschitzWith.of_dist_le_mul fun x y => ?_
   rw [dist_eq_norm, dist_eq_norm]
   have hsub : (u i * x - x * u i) - (u i * y - y * u i) =
       u i * (x - y) - (x - y) * u i := by
@@ -275,7 +248,8 @@ theorem tendsto_commutator_of_dense {ι : Type*} {l : Filter ι} {u : ι → A} 
   rw [hsub]
   have h1 := norm_mul_le (u i) (x - y)
   have h2 := norm_mul_le (x - y) (u i)
-  have h3 := hi.trans (le_abs_self C)
+  have h3 : ‖u i‖ ≤ ‖C‖ := hi.trans (le_abs_self C)
+  push_cast
   exact (norm_sub_le _ _).trans (by nlinarith [norm_nonneg (x - y)])
 
 end TauCeti

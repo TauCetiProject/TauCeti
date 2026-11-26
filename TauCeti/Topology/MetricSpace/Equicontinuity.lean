@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.Topology.MetricSpace.Equicontinuity
+public import Mathlib.Topology.MetricSpace.Lipschitz
 
 /-!
 # Equicontinuity from slice distance bounds, and uniform attainment from rate bounds
@@ -22,6 +23,10 @@ Separately, uniform equicontinuity of a family `(g_k)` turns a bound `F k p ≤ 
 valid whenever `g_k` moves by at most `η` over distances at most `√(s p)`, into the uniform
 smallness `F k p < ε` for all `k` once `s p` is small enough.
 
+Finally, a family that is eventually uniformly Lipschitz along a filter and converges pointwise on
+a dense set to a Lipschitz limit converges everywhere
+(`TauCeti.tendsto_of_dense_of_eventually_lipschitz`).
+
 ## Main statements
 
 * `Metric.equicontinuous_of_forall_dist_le`: a family `F : ι → X → W` controlled linearly by every
@@ -29,6 +34,8 @@ smallness `F k p < ε` for all `k` once `s p` is small enough.
   equicontinuous.
 * `UniformEquicontinuous.exists_forall_lt_of_le_mul_add_mul`: a bound of the form
   `C (η + s L)` over a uniformly equicontinuous family gives uniform attainment as `s → 0`.
+* `TauCeti.tendsto_of_dense_of_eventually_lipschitz`: pointwise convergence on a dense set extends
+  to every point under an eventual uniform Lipschitz bound.
 -/
 
 public section
@@ -116,3 +123,37 @@ theorem exists_forall_lt_of_le_mul_add_mul {κ X P : Type*} [PseudoMetricSpace X
     _ < ε := by linarith
 
 end UniformEquicontinuous
+
+namespace TauCeti
+
+open scoped NNReal
+
+/-- If `F : ι → X → Y` is eventually uniformly `K`-Lipschitz along `l`, `g : X → Y` is
+`L`-Lipschitz, and `F i d → g d` along `l` for every `d` in a dense set `D`, then `F i x → g x`
+for every `x`. -/
+theorem tendsto_of_dense_of_eventually_lipschitz {ι X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {l : Filter ι} {F : ι → X → Y} {g : X → Y} {D : Set X}
+    (hD : Dense D) {K L : ℝ≥0} (hF : ∀ᶠ i in l, LipschitzWith K (F i))
+    (hg : LipschitzWith L g) (hlim : ∀ d ∈ D, Tendsto (fun i => F i d) l (𝓝 (g d))) (x : X) :
+    Tendsto (fun i => F i x) l (𝓝 (g x)) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨d, hdD, hxd⟩ := hD.exists_dist_lt x (by positivity : 0 < ε / (2 * ((K : ℝ) + L + 1)))
+  filter_upwards [hF, Metric.tendsto_nhds.mp (hlim d hdD) (ε / 2) (by positivity)] with i hi hid
+  have hdist : dist (F i x) (g x) ≤ ((K : ℝ) + L) * dist x d + dist (F i d) (g d) := by
+    calc dist (F i x) (g x)
+        ≤ dist (F i x) (F i d) + dist (F i d) (g d) + dist (g d) (g x) := dist_triangle4 _ _ _ _
+      _ ≤ K * dist x d + dist (F i d) (g d) + L * dist d x := by
+          gcongr
+          · exact hi.dist_le_mul x d
+          · exact hg.dist_le_mul d x
+      _ = ((K : ℝ) + L) * dist x d + dist (F i d) (g d) := by rw [dist_comm d x]; ring
+  have hprod : ((K : ℝ) + L) * dist x d < ε / 2 := by
+    calc ((K : ℝ) + L) * dist x d
+        ≤ ((K : ℝ) + L + 1) * dist x d := mul_le_mul_of_nonneg_right (by linarith) dist_nonneg
+      _ < ((K : ℝ) + L + 1) * (ε / (2 * ((K : ℝ) + L + 1))) :=
+          mul_lt_mul_of_pos_left hxd (by positivity)
+      _ = ε / 2 := by field_simp
+  linarith
+
+end TauCeti
