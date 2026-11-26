@@ -26,9 +26,9 @@ one-sided Laplace transform of a monomial, for arbitrary complex power and natur
 
 public section
 
-open MeasureTheory Set
+open MeasureTheory Set TauCeti
 
-namespace TauCeti
+namespace Complex
 
 private theorem powerLog_exp_pullback (p : ℂ) (k : ℕ) (u : ℝ) :
     Real.exp u • (((Real.exp u : ℝ) : ℂ) ^ p * (Real.log (Real.exp u) : ℂ) ^ k) =
@@ -40,6 +40,7 @@ private theorem powerLog_exp_pullback (p : ℂ) (k : ℕ) (u : ℝ) :
 
 /-- The upper-tail logarithmic moment of a complex power is absolutely convergent exactly when
 its power has real part strictly below `-1`. -/
+@[simp]
 theorem integrableOn_cpow_mul_log_pow_Ioi_one_iff (p : ℂ) (k : ℕ) :
     IntegrableOn (fun y : ℝ ↦ (y : ℂ) ^ p * (Real.log y : ℂ) ^ k) (Ioi 1) ↔
       p.re < -1 := by
@@ -67,7 +68,7 @@ theorem integrableOn_cpow_mul_log_pow_Ioi_one_iff (p : ℂ) (k : ℕ) :
 
 /-- For `Re p < -1`, the integral of `y ^ p * (log y) ^ k` over `(1, ∞)` is
 `k! / (-(p + 1)) ^ (k + 1)`. -/
-theorem integral_cpow_mul_log_pow_Ioi_one (k : ℕ) {p : ℂ} (hp : p.re < -1) :
+theorem integral_cpow_mul_log_pow_Ioi_one {p : ℂ} (hp : p.re < -1) (k : ℕ) :
     ∫ y in Ioi (1 : ℝ), (y : ℂ) ^ p * (Real.log y : ℂ) ^ k =
       (k.factorial : ℂ) / (-(p + 1)) ^ (k + 1) := by
   rw [← Real.exp_zero, ← integral_comp_exp_Ioi]
@@ -77,7 +78,7 @@ theorem integral_cpow_mul_log_pow_Ioi_one (k : ℕ) {p : ℂ} (hp : p.re < -1) :
     linarith
   simpa only [neg_neg, smul_eq_mul] using (hasLaplace_pow k hs).integral_eq
 
-private theorem cpow_mul_affine_log_eq (y : ℝ) (p a b : ℂ) :
+private theorem cpow_mul_affine_log_eq (p a b : ℂ) (y : ℝ) :
     (y : ℂ) ^ p * (a + b * (Real.log y : ℂ)) =
       a * ((y : ℂ) ^ p * (Real.log y : ℂ) ^ 0) + b * ((y : ℂ) ^ p * (Real.log y : ℂ) ^ 1) := by
   simp only [pow_zero, pow_one, mul_one]
@@ -90,7 +91,7 @@ theorem integrableOn_cpow_mul_affine_log_Ioi_one (a b : ℂ) {p : ℂ} (hp : p.r
   have h0 := (integrableOn_cpow_mul_log_pow_Ioi_one_iff p 0).mpr hp
   have h1 := (integrableOn_cpow_mul_log_pow_Ioi_one_iff p 1).mpr hp
   exact ((h0.const_mul a).add (h1.const_mul b)).congr (.of_forall fun y ↦
-    (cpow_mul_affine_log_eq y p a b).symm)
+    (cpow_mul_affine_log_eq p a b y).symm)
 
 /-- The upper-tail integral of a complex power times `a + b * log y` is the sum of a simple
 and a double reciprocal power at `p = -1`. -/
@@ -101,7 +102,7 @@ theorem integral_cpow_mul_affine_log_Ioi_one (a b : ℂ) {p : ℂ} (hp : p.re < 
   have h1 := (integrableOn_cpow_mul_log_pow_Ioi_one_iff p 1).mpr hp
   simp_rw [cpow_mul_affine_log_eq]
   rw [integral_add (h0.const_mul a) (h1.const_mul b), integral_const_mul, integral_const_mul,
-    integral_cpow_mul_log_pow_Ioi_one 0 hp, integral_cpow_mul_log_pow_Ioi_one 1 hp]
+    integral_cpow_mul_log_pow_Ioi_one hp 0, integral_cpow_mul_log_pow_Ioi_one hp 1]
   simp [div_eq_mul_inv]
 
-end TauCeti
+end Complex
