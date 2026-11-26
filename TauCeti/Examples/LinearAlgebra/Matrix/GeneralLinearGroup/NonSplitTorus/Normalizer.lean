@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Finite.GaloisField
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorusNormalizer
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Normalizer
 public import TauCeti.NumberTheory.ModularForms.ArithmeticSubgroups
 
 /-!
@@ -35,12 +35,8 @@ example : Nat.card (GL2NonSplitTorus (ZMod 13) (GaloisField 13 2)) = 168 := by
 
 /-- `[GL₂(𝔽₁₃) : ±C_ns(13)] = 156`. -/
 example : (GL2NonSplitTorus (ZMod 13) (GaloisField 13 2)).projectiveIndex = 156 := by
-  have h1 : (-1 : GL (Fin 2) (ZMod 13)) ∈ GL2NonSplitTorus (ZMod 13) (GaloisField 13 2) := by
-    have := GL2NonSplitTorus.scalar_mem (F := ZMod 13) (E := GaloisField 13 2) (-1)
-    convert this using 1
-    ext i j
-    by_cases h : i = j <;> simp [Matrix.GeneralLinearGroup.coe_scalar, h]
-  rw [Subgroup.projectiveIndex_eq_index h1, GL2NonSplitTorus.index_eq, Nat.card_zmod]
+  rw [Subgroup.projectiveIndex_eq_index GL2NonSplitTorus.neg_one_mem, GL2NonSplitTorus.index_eq,
+    Nat.card_zmod]
 
 /-- `|C_ns⁺(13)| = 336`. -/
 example : Nat.card (Subgroup.normalizer

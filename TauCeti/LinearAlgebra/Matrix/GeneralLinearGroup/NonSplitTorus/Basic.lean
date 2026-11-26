@@ -48,12 +48,12 @@ characters give the principal series by ordinary induction from the Borel subgro
 
 The word *torus* is the algebraic-group one only when `E/F` is separable, which over a finite
 field — the setting of the representation theory of `GL₂(𝔽_q)` — it always is. Degree `2` alone
-also admits a purely inseparable `E/F` (characteristic `2` only), where the *algebra* `E ⊗[F] F̄`
-is the nonreduced `F̄[X]/(X²)` rather than `F̄ × F̄`. The image of `Eˣ` is then not a torus: after
-base change to `F̄` it is the unit group of `F̄[X]/(X²)`, which is `Gₘ × Gₐ` — still smooth and
-reduced as a group, but with a nontrivial unipotent part — and its non-scalar elements are not
-semisimple. Everything stated below, non-splitness included, is true in that case too: no proof
-here uses separability, so no statement assumes it.
+also admits a purely inseparable `E/F` (characteristic `2` only), where, for an algebraic closure
+`K` of `F`, the *algebra* `E ⊗[F] K` is the nonreduced `K[X]/(X²)` rather than `K × K`. The image
+of `Eˣ` is then not a torus: after base change to `K` it is the unit group of `K[X]/(X²)`, which is
+`Gₘ × Gₐ` — still smooth and reduced as a group, but with a nontrivial unipotent part — and its
+non-scalar elements are not semisimple. Everything stated below, non-splitness included, is true in
+that case too: no proof here uses separability, so no statement assumes it.
 
 "Non-split" is the assertion that, away from the scalars, the torus is not conjugate into the Borel
 subgroup: `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel` says that if `x : Eˣ` does not lie in `F`
@@ -196,6 +196,12 @@ theorem gl2NonSplitTorusHom_map_algebraMap (a : Fˣ) :
 theorem scalar_mem (a : Fˣ) :
     Matrix.GeneralLinearGroup.scalar (Fin 2) a ∈ GL2NonSplitTorus F E :=
   ⟨_, gl2NonSplitTorusHom_map_algebraMap a⟩
+
+/-- `-1` lies in the non-split torus. -/
+theorem neg_one_mem : (-1 : GL (Fin 2) F) ∈ GL2NonSplitTorus F E := by
+  convert scalar_mem (F := F) (E := E) (-1) using 1
+  ext i j
+  by_cases h : i = j <;> simp [Matrix.GeneralLinearGroup.coe_scalar, h]
 
 /-- A scalar matrix, read back through `TauCeti.GL2NonSplitTorus.unitsEquiv`, is the unit of `F`
 it came from, pushed into `E`. -/
