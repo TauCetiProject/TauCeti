@@ -9,6 +9,9 @@ public import TauCeti.AlgebraicTopology.ClassifyingSpace.Comparison
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 
+import TauCeti.AlgebraicTopology.ClassifyingSpace.CWComplex
+import TauCeti.AlgebraicTopology.EilenbergMacLane.Homotopic
+
 /-!
 # The classifying space as a functor to the pointed homotopy category
 
@@ -22,8 +25,15 @@ category, which the strict functor refines by construction.
 Under the identifications `TauCeti.classifyingSpaceFundamentalGroupMulEquiv` of the fundamental
 groups of the classifying spaces with the groups, the fundamental group undoes the classifying
 space: `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso` is a natural
-isomorphism from `B ⋙ π₁` to the identity functor of `GrpCat`. In particular the
-classifying-space functor is faithful.
+isomorphism from `B ⋙ π₁` to the identity functor of `GrpCat`. The classifying-space functor is
+moreover fully faithful (`TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`): the base point
+of `classifyingSpace G` is a `0`-cell of its CW structure
+(`TauCeti.classifyingSpaceBasepoint_mem_skeletonLT_one`) and the higher homotopy groups of
+`classifyingSpace H` vanish, so pointed maps between classifying spaces inducing the same
+homomorphism of fundamental groups are pointed homotopic
+(`TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq`). Hence every pointed homotopy class
+of maps `classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for a
+unique homomorphism `φ`.
 
 The cellular model determines the induced maps up to pointed homotopy. Out of the
 cellular classifying space `TauCeti.cellularClassifyingSpace R` of a presentation, pointed homotopy
@@ -41,12 +51,16 @@ the comparison map of `TauCeti.cellularHomotopyEquivClassifyingSpace` followed b
   homotopy category.
 * `TauCeti.classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`: the natural
   isomorphism `π₁ ∘ B ≅ 𝟭`.
+* `TauCeti.classifyingSpaceHomotopyFunctorFullyFaithful`: the classifying-space functor to the
+  pointed homotopy category is fully faithful.
 * `TauCeti.cellularClassifyingSpaceBased`: the cellular classifying space as a based space.
 * `TauCeti.cellularHomotopyEquivClassifyingSpaceBasedHom`: the comparison of the cellular model
   with Milnor's classifying space, as a based map.
 
 ## Main results
 
+* `TauCeti.quotient_map_eq_of_fundamentalGroupFunctor_map_eq`: pointed maps between classifying
+  spaces are classified up to pointed homotopy by their effect on `π₁`.
 * `TauCeti.fundamentalGroupFunctor_map_bijective_cellularClassifyingSpace`: pointed homotopy
   classes of maps out of a cellular classifying space into a space with no higher homotopy groups
   are classified by their effect on `π₁`.
@@ -147,10 +161,52 @@ theorem classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso_inv_app_ho
       (classifyingSpaceFundamentalGroupMulEquiv G).symm.toMonoidHom :=
   (rfl)
 
-/-- The classifying-space functor to the pointed homotopy category is faithful: the fundamental
-group recovers the homomorphism inducing a map. -/
+/-- **Pointed maps between classifying spaces are classified by `π₁`.** Two based maps
+`classifyingSpace G → classifyingSpace H` inducing the same homomorphism of fundamental groups are
+pointed homotopic: the base point of `classifyingSpace G` is a `0`-cell of its CW structure, and
+the higher homotopy groups of `classifyingSpace H` vanish. -/
+theorem quotient_map_eq_of_fundamentalGroupFunctor_map_eq {G H : GrpCat.{u}}
+    {f g : classifyingSpaceFunctor.obj G ⟶ classifyingSpaceFunctor.obj H}
+    (h : BasedTopologicalSpace.fundamentalGroupFunctor.map f =
+      BasedTopologicalSpace.fundamentalGroupFunctor.map g) :
+    PointedHomotopyCat.quotient.map f = PointedHomotopyCat.quotient.map g :=
+  (PointedHomotopyCat.quotient_map_eq_iff f g).2 <|
+    homotopicRel_singleton_of_mapOfEq_eq_of_mem_skeletonLT_of_cwComplex
+      (fun y n ↦ subsingleton_homotopyGroup_classifyingSpace H n y)
+      (classifyingSpaceBasepoint_mem_skeletonLT_one G) f.map_basepoint g.map_basepoint (by
+        have h' := congrArg GrpCat.Hom.hom h
+        rw [BasedTopologicalSpace.fundamentalGroupFunctor_map_hom,
+          BasedTopologicalSpace.fundamentalGroupFunctor_map_hom] at h'
+        exact h')
+
+/-- **The classifying-space functor is fully faithful** (Hatcher, Proposition 1B.9, for maps
+between classifying spaces). A pointed homotopy class of maps
+`classifyingSpace G → classifyingSpace H` is the class of `classifyingSpaceMap φ` for exactly one
+homomorphism `φ : G →* H`, namely the homomorphism it induces on fundamental groups, read through
+`classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`. -/
+def classifyingSpaceHomotopyFunctorFullyFaithful :
+    classifyingSpaceHomotopyFunctor.{u}.FullyFaithful where
+  preimage {G H} a := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.inv.app G ≫
+    PointedHomotopyCat.fundamentalGroupFunctor.map a ≫
+      classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app H
+  map_preimage {G H} a := by
+    let e := classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.{u}
+    -- `B (preimage a)` and `a` induce the same homomorphism of fundamental groups.
+    have key : PointedHomotopyCat.fundamentalGroupFunctor.map (classifyingSpaceHomotopyFunctor.map
+        (e.inv.app G ≫ PointedHomotopyCat.fundamentalGroupFunctor.map a ≫ e.hom.app H)) =
+        PointedHomotopyCat.fundamentalGroupFunctor.map a := by
+      rw [← Functor.comp_map, ← NatIso.naturality_2 e]
+      simp
+    obtain ⟨f, rfl⟩ := PointedHomotopyCat.quotient.map_surjective a
+    exact quotient_map_eq_of_fundamentalGroupFunctor_map_eq key
+  preimage_map :=
+    NatIso.naturality_1 classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
+
+instance : classifyingSpaceHomotopyFunctor.{u}.Full :=
+  classifyingSpaceHomotopyFunctorFullyFaithful.full
+
 instance : classifyingSpaceHomotopyFunctor.{u}.Faithful :=
-  .of_comp_iso classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso
+  classifyingSpaceHomotopyFunctorFullyFaithful.faithful
 
 section Cellular
 
