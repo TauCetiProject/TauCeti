@@ -244,7 +244,7 @@ theorem glue_mul (hR : R ∈ J U) (hz : IsCompatible z) (hw : IsCompatible w) :
 variable (F) in
 /-- The presheaf of abelian groups `U ↦ Additive ZF(U)`, with restriction along `f : V ⟶ U` as
 transition map. -/
-@[expose, simps]
+@[expose, simps obj]
 def presheaf : Cᵒᵖ ⥤ AddCommGrpCat.{max u v u' v'} where
   obj U := .of (Additive (IntrinsicBandSections F U.unop))
   map f := AddCommGrpCat.ofHom (restrict f.unop).toAdditive
@@ -252,18 +252,21 @@ def presheaf : Cᵒᵖ ⥤ AddCommGrpCat.{max u v u' v'} where
   map_comp f g := AddCommGrpCat.ext fun s ↦
     congrArg Additive.ofMul (restrict_comp f.unop g.unop s.toMul).symm
 
+/-- The restriction map of `presheaf F` along `f` is `restrict f.unop` through the `Additive`
+wrapper. -/
+@[simp]
+theorem presheaf_map_apply {V W : Cᵒᵖ} (f : V ⟶ W) (s : (presheaf F).obj V) :
+    (presheaf F).map f s = Additive.ofMul (restrict f.unop (Additive.toMul s)) :=
+  rfl
+
 /-- **The intrinsic central sections of a prestack form a sheaf**: `U ↦ Additive ZF(U)` is a sheaf
 of abelian groups for `J`. No groupoid, gerbe or commutativity hypothesis is needed. -/
 theorem isSheaf_of_prestack : Presheaf.IsSheaf J (presheaf F) := by
   refine Presheaf.isSheaf_of_isSheaf_comp J _ (forget AddCommGrpCat) ?_
-  -- The underlying function of `(presheaf F).map f` is `restrict f.unop` conjugated by the
-  -- `Additive` wrapper; this holds by unfolding `presheaf_map`, `AddCommGrpCat.ofHom` and
-  -- `MonoidHom.toAdditive`. Since `Additive.ofMul` and `Additive.toMul` are identities, the
-  -- `congrArg` steps below move equations of sections across the wrapper.
-  have hmap {V W : Cᵒᵖ} (f : V ⟶ W) (s : Additive (IntrinsicBandSections F V.unop)) :
-      (presheaf F ⋙ forget AddCommGrpCat).map f s = Additive.ofMul (restrict f.unop s.toMul) :=
-    rfl
   rw [isSheaf_iff_isSheaf_of_type]
+  -- Applying `forget AddCommGrpCat` to a map is applying the underlying function, so each
+  -- restriction map below is described by `presheaf_map_apply`; `Additive.ofMul` and
+  -- `Additive.toMul` then move equations of sections across the `Additive` wrapper.
   intro U R hR x hx
   replace hx := hx.to_sieveCompatible
   let y : ∀ i : R.arrows.category, IntrinsicBandSections F i.obj.left :=
@@ -275,11 +278,11 @@ theorem isSheaf_of_prestack : Presheaf.IsSheaf J (presheaf F) := by
   have hy : IsCompatible y := (isCompatible_iff _).2 fun i j g ↦ by
     have h := hx j.obj.hom g.hom.left j.property
     rw [congr_x (Over.w g.hom) _ i.property] at h
-    exact congrArg Additive.toMul (h.trans (hmap _ _)).symm
+    exact congrArg Additive.toMul (h.trans (presheaf_map_apply _ _)).symm
   refine ⟨Additive.ofMul (glue hR hy), fun V f hf ↦ ?_, fun t ht ↦ ?_⟩
-  · exact (hmap _ _).trans
+  · exact (presheaf_map_apply _ _).trans
       (congrArg Additive.ofMul (restrict_glue hR hy (Presieve.categoryMk _ f hf)))
   · exact congrArg Additive.ofMul (glue_unique hR hy fun i ↦
-      congrArg Additive.toMul ((hmap _ _).symm.trans (ht i.obj.hom i.property)))
+      congrArg Additive.toMul ((presheaf_map_apply _ _).symm.trans (ht i.obj.hom i.property)))
 
 end CategoryTheory.Pseudofunctor.IntrinsicBandSections
