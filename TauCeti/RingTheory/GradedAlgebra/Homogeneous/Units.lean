@@ -212,13 +212,16 @@ theorem exists_linearEquiv_of_isUnit_mem [AddSubmonoidClass σM A] [Decompositio
 
 variable {𝒜 ℳ}
 
+/-- A linear automorphism of the free module `A` of rank one sends `1` to a unit. -/
+theorem _root_.LinearEquiv.isUnit_apply_one (φ : A ≃ₗ[A] A) : IsUnit (φ 1) :=
+  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
+  (((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map (RingEquiv.moduleEndSelf A).symm).unop
+
 /-- A graded isomorphism from a shift `A(d)` onto a grading `ℳ` of `A` sends `1` to a homogeneous
 generator of `ℳ`: a unit of degree `-d`. -/
 theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
-  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
-  refine ⟨(((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map
-    (RingEquiv.moduleEndSelf A).symm).unop, (hφ _ _).mpr ?_⟩
+  refine ⟨φ.isUnit_apply_one, (hφ _ _).mpr ?_⟩
   rw [neg_add_cancel]
   exact SetLike.one_mem_graded 𝒜
 

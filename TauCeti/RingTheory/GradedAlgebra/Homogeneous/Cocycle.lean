@@ -91,19 +91,6 @@ structure IsGradingCocycle (u : A[T;T⁻¹]) : Prop where
   /-- The unit condition: `u` evaluates to `1` at `T = 1`. -/
   eval₂_one : eval₂ (RingHom.id A) 1 u = 1
 
-/-- Cancelling a monomial: `p * T c' = q * T c` exactly when `p = q * T (c - c')`. -/
-private theorem mul_T_eq_mul_T_iff {p q : A[T;T⁻¹]} {c c' : ℤ} :
-    p * T c' = q * T c ↔ p = q * T (c - c') := by
-  refine Iff.trans ?_ (isUnit_T c').mul_left_inj
-  rw [mul_assoc q, ← T_add, sub_add_cancel]
-
-variable {𝒜} in
-/-- Multiplication by an element homogeneous of degree `i` multiplies the coaction by a monomial
-of degree `i`. -/
-private theorem decomposeLaurent_mul_of_mem {a : A} {i : ℤ} (ha : a ∈ 𝒜 i) (x : A) :
-    decomposeLaurent 𝒜 (a * x) = C a * T i * decomposeLaurent 𝒜 x := by
-  rw [decomposeLaurent_mul 𝒜 𝒜, decomposeLaurent_of_mem 𝒜 ha]
-
 /-- The grading of the `A`-module `A` defined by `u ∈ A[T;T⁻¹]`: its degree-`n` piece consists of
 the `m` with `ρ(m) * u = m Tⁿ`, where `ρ = decomposeLaurent 𝒜`. It is a grading when `u` is a
 cocycle (`isInternal_cocycleGrading`). -/
@@ -115,7 +102,7 @@ def cocycleGrading (u : A[T;T⁻¹]) (n : ℤ) : Submodule R A where
     rw [hm, hm']
   smul_mem' r m hm := by
     simp only [Set.mem_ofPred_eq, Algebra.smul_def] at hm ⊢
-    rw [decomposeLaurent_mul_of_mem (SetLike.algebraMap_mem_graded 𝒜 r), mul_assoc, hm]
+    rw [decomposeLaurent_mul_of_mem 𝒜 𝒜 (SetLike.algebraMap_mem_graded 𝒜 r), mul_assoc, hm]
     simp [mul_assoc]
 
 @[simp]
@@ -126,7 +113,7 @@ theorem mem_cocycleGrading_iff {u : A[T;T⁻¹]} {n : ℤ} {m : A} :
 /-- The grading defined by any `u ∈ A[T;T⁻¹]` is compatible with `𝒜`. -/
 instance cocycleGrading.gradedSMul (u : A[T;T⁻¹]) : SetLike.GradedSMul 𝒜 (cocycleGrading 𝒜 u) where
   smul_mem {i j a m} ha hm := by
-    rw [smul_eq_mul, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem ha, mul_assoc,
+    rw [smul_eq_mul, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem 𝒜 𝒜 ha, mul_assoc,
       (mem_cocycleGrading_iff 𝒜).mp hm, vadd_eq_add, T_add, map_mul]
     ring
 
@@ -176,7 +163,7 @@ theorem IsGradingCocycle.coeff_mem_cocycleGrading {u : A[T;T⁻¹]} (hu : IsGrad
   | @homogeneous d m =>
     -- For `m` homogeneous of degree `d`, the coefficient is `m * u_{n - d}`.
     rw [decomposeLaurent_of_mem 𝒜 m.property, mul_assoc, mul_comm (T d), coeff_C_mul,
-      coeff_mul_T, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem m.property, mul_assoc,
+      coeff_mul_T, mem_cocycleGrading_iff, decomposeLaurent_mul_of_mem 𝒜 𝒜 m.property, mul_assoc,
       hu.decomposeLaurent_coeff_mul, map_mul]
     calc C (m : A) * T d * (C (u.coeff (n - d)) * T (n - d))
         = C (m : A) * C (u.coeff (n - d)) * (T d * T (n - d)) := by ring
@@ -195,10 +182,7 @@ theorem isInternal_cocycleGrading {u : A[T;T⁻¹]} (hu : IsGradingCocycle 𝒜 
     have hp : eval₂ (RingHom.id A) 1 p = m := by
       rw [map_mul, eval₂_one_decomposeLaurent, hu.eval₂_one, mul_one]
     simp only [map_sum, coeAddMonoidHom_of]
-    trans eval₂ (RingHom.id A) 1 p
-    · rw [← Algebra.algebraMap_self, eval₂_eq_smeval, smeval_eq_sum, Finsupp.sum]
-      simp
-    · exact hp
+    rwa [eval₂_id_one_eq_sum_coeff] at hp
 
 /-- The decomposition of `A` by the grading defined by a cocycle. -/
 abbrev IsGradingCocycle.decomposition {u : A[T;T⁻¹]} (hu : IsGradingCocycle 𝒜 u) :
@@ -224,8 +208,8 @@ theorem isGradingCocycle_decomposeLaurent_one {σ : Type*} [SetLike σ A] [AddSu
     (ℳ : ℤ → σ) [Decomposition ℳ] [SetLike.GradedSMul 𝒜 ℳ] :
     IsGradingCocycle 𝒜 (decomposeLaurent ℳ 1) where
   decomposeLaurent_coeff_mul e := by
-    rw [← decomposeLaurent_mul ℳ 𝒜, mul_one, coeff_decomposeLaurent]
-    exact decomposeLaurent_of_mem ℳ (decompose ℳ 1 e).property
+    rw [coeff_decomposeLaurent]
+    exact decomposeLaurent_decompose_one_mul 𝒜 ℳ e
   eval₂_one := eval₂_one_decomposeLaurent ℳ 1
 
 /-- A grading `ℳ` of the `A`-module `A` compatible with `𝒜` is recovered from its cocycle. -/
@@ -303,8 +287,7 @@ theorem exists_linearEquiv_iff_exists_mul_eq {u u' : A[T;T⁻¹]} (hu : IsGradin
   · -- The isomorphism is multiplication by the unit `φ 1`, which sends each homogeneous
     -- component of `1` for `u` to a homogeneous element of the same degree for `u'`.
     have hφx (x : A) : φ x = x * φ 1 := by rw [← smul_eq_mul, ← φ.map_smul, smul_eq_mul, mul_one]
-    have hunit : IsUnit (φ 1) :=
-      .of_mul_eq_one (φ.symm 1) (by rw [mul_comm, ← hφx, φ.apply_symm_apply])
+    have hunit : IsUnit (φ 1) := φ.isUnit_apply_one
     refine ⟨hunit.unit, ?_⟩
     -- Write `1 = ∑ₙ mₙ` with `mₙ` homogeneous of degree `n` for `u`, so that `u = ∑ₙ mₙ Tⁿ`.
     set D := decompose (cocycleGrading 𝒜 u) (1 : A)

@@ -93,6 +93,13 @@ theorem decomposeLaurent_mul (a x : A) :
         decomposeLaurent_of_mem ℳ x.property]
       simp only [← LaurentPolynomial.single_eq_C_mul_T, AddMonoidAlgebra.single_mul_single]
 
+/-- Multiplication by an element homogeneous of degree `i` multiplies the decomposition Laurent
+polynomial by a monomial of degree `i`. -/
+theorem decomposeLaurent_mul_of_mem {a : A} {i : ℤ} (ha : a ∈ 𝒜 i) (x : A) :
+    decomposeLaurent ℳ (a * x) =
+      LaurentPolynomial.C a * LaurentPolynomial.T i * decomposeLaurent ℳ x := by
+  rw [decomposeLaurent_mul ℳ 𝒜, decomposeLaurent_of_mem 𝒜 ha]
+
 section CommSemiring
 
 variable {A σ : Type*} [CommSemiring A] [SetLike σ A] [AddSubmonoidClass σ A]

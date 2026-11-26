@@ -29,8 +29,10 @@ over commutative semirings, needs commutativity.
 * `LaurentPolynomial.coeff_mul_T`: `(f * T n).coeff d = f.coeff (d - n)`.
 * `LaurentPolynomial.T_mul_eq_self_iff`: a nonzero Laurent polynomial is fixed by multiplication
   by `T n` only for `n = 0`.
+* `LaurentPolynomial.mul_T_eq_mul_T_iff`: cancelling a monomial from both sides of an equation.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
   `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
+* `LaurentPolynomial.eval₂_id_one_eq_sum_coeff`: evaluation at `T = 1` sums the coefficients.
 * `LaurentPolynomial.coeff_C_mul`: constants scale coefficients. For natural-number constants
   this is Mathlib's `AddMonoidAlgebra.coeff_natCast_mul`, which
   `TauCeti.Algebra.MonoidAlgebra.Basic` tags as a `simp` lemma.
@@ -69,6 +71,12 @@ theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 �
       (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) h
   · rintro (rfl | rfl) <;> simp [T_zero]
 
+/-- Cancelling a monomial: `p * T c' = q * T c` exactly when `p = q * T (c - c')`. -/
+theorem mul_T_eq_mul_T_iff {p q : R[T;T⁻¹]} {c c' : ℤ} :
+    p * T c' = q * T c ↔ p = q * T (c - c') := by
+  refine Iff.trans ?_ (isUnit_T c').mul_left_inj
+  rw [mul_assoc q, ← T_add, sub_add_cancel]
+
 /-- Left multiplication by a constant scales every coefficient. -/
 @[simp]
 theorem coeff_C_mul (t : R) (f : R[T;T⁻¹]) (d : ℤ) : (C t * f).coeff d = t * f.coeff d := by
@@ -104,6 +112,12 @@ theorem invert_T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} (hf : invert f = f)
   have h2 : T (n + n) * f = f := by
     simpa [← mul_assoc, ← T_add] using congr_arg (T n * ·) h.symm
   exact (T_mul_eq_self_iff.mp h2).imp_left (by omega)
+
+/-- Evaluating a Laurent polynomial at `T = 1` sums its coefficients. -/
+theorem eval₂_id_one_eq_sum_coeff (p : R[T;T⁻¹]) :
+    eval₂ (RingHom.id R) 1 p = ∑ n ∈ p.coeff.support, p.coeff n := by
+  rw [← Algebra.algebraMap_self, eval₂_eq_smeval, smeval_eq_sum, Finsupp.sum]
+  simp
 
 end CommSemiring
 

@@ -34,6 +34,14 @@ variable {A σ τ : Type*} [CommSemiring A]
     (𝒜 : ℤ → σ) (ℳ : ℤ → τ) [Decomposition 𝒜] [Decomposition ℳ]
     [SetLike.GradedSMul 𝒜 ℳ]
 
+/-- The scalar coaction of the degree-`i` component `mᵢ` of `1`, times the Laurent polynomial of
+the homogeneous components of `1`, is the monomial `mᵢ Tⁱ`. -/
+theorem decomposeLaurent_decompose_one_mul (i : ℤ) :
+    decomposeLaurent 𝒜 (decompose ℳ (1 : A) i : A) * decomposeLaurent ℳ (1 : A) =
+      C (decompose ℳ (1 : A) i : A) * T i := by
+  rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
+  exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
+
 include 𝒜 in
 /-- For a compatible grading on the free module of rank one, the Laurent polynomial of the
 homogeneous components of `1` is a unit, even if the spectrum is disconnected. -/
@@ -41,9 +49,8 @@ theorem isUnit_decomposeLaurent_one : IsUnit (decomposeLaurent ℳ (1 : A)) := b
   classical
   let m (i : ℤ) : A := decompose ℳ (1 : A) i
   have h (i : ℤ) :
-      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i := by
-    rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
-    exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
+      decomposeLaurent 𝒜 (m i) * decomposeLaurent ℳ (1 : A) = C (m i) * T i :=
+    decomposeLaurent_decompose_one_mul 𝒜 ℳ i
   -- Shifting each identity back by its degree and summing gives an explicit inverse.
   apply isUnit_iff_exists_inv'.mpr
   refine ⟨∑ i ∈ (decompose ℳ (1 : A)).support, decomposeLaurent 𝒜 (m i) * T (-i), ?_⟩
