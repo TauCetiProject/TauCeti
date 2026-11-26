@@ -8,7 +8,7 @@ module
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.FieldTheory.Perfect
 import TauCeti.RingTheory.Polynomial.Monic.Squarefree
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant

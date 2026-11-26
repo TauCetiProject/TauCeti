@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
