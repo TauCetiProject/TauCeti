@@ -17,9 +17,9 @@ import TauCeti.RingTheory.PowerSeries.Substitution
 /-!
 # The action of formal coordinate changes on arcs
 
-Let `H` be a bialgebra over a commutative semiring `k` and `R` a commutative `k`-algebra. The
-arcs of `G = Spec H` over `R` are the points `G(R⟦X⟧) = WithConv (H →ₐ[k] R⟦X⟧)`, the positive
-loop group `L⁺G(R)` when `H` is a commutative Hopf algebra. A formal coordinate
+Let `H` be an algebra over a commutative semiring `k` and `R` a commutative `k`-algebra. When `H`
+is a commutative Hopf algebra, the convolution points `WithConv (H →ₐ[k] R⟦X⟧)` are the arcs
+`G(R⟦X⟧)` of `G = Spec H`, the positive loop group `L⁺G(R)`. A formal coordinate
 `φ ∈ TauCeti.FormalCoordinate R` gives the substitution automorphism `σ_φ : f ↦ f (φ)` of
 `R⟦X⟧`, and these compose contravariantly: `σ_φ ∘ σ_ψ = σ_(ψ ∘ φ)`. Substituting the inverse
 coordinate turns this right action into a left one,
@@ -27,11 +27,13 @@ coordinate turns this right action into a left one,
   `ρ_φ (g) = σ_(φ⁻¹) ∘ g`,
 
 so that `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` and `ρ_X = id`. Since `ρ_φ` is post-composition with an algebra
-automorphism of the coefficients, it is multiplicative for the convolution product. This file
-records `ρ` as a `MulDistribMulAction` of `FormalCoordinate R` on `G(R⟦X⟧)`; Mathlib's
-`MulDistribMulAction.toMulAut` then makes each `ρ_φ` a group automorphism, and the
-semidirect product `G(R⟦X⟧) ⋊ FormalCoordinate R` has the multiplication
-`(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
+automorphism of the coefficients, it is multiplicative for the convolution product when `H` is a
+bialgebra. This file records `ρ` as a `MulAction` of `FormalCoordinate R` on the convolution
+points, and for a bialgebra as a `MulDistribMulAction`, an action by monoid automorphisms of the
+convolution monoid. When `H` is a Hopf algebra the convolution monoid is a group, Mathlib's
+`MulDistribMulAction.toMulAut` makes each `ρ_φ` a group automorphism, and the semidirect product
+`WithConv (H →ₐ[k] R⟦X⟧) ⋊ FormalCoordinate R`, the group `G(R⟦X⟧) ⋊ FormalCoordinate R` for a
+commutative Hopf algebra `H`, has the multiplication `(g, φ) (h, ψ) = (g ρ_φ (h), φ ∘ ψ)`.
 
 The action is natural in the coefficient algebra `R`, along `PowerSeries.mapAlgHom f` on arcs
 and `TauCeti.FormalCoordinate.map f` on coordinates, and in the bialgebra `H`, along
@@ -46,9 +48,11 @@ multiplicative group it is the same substitution on units. For instance the homo
 
 ## Main declarations
 
-* `TauCeti.FormalCoordinate.instMulDistribMulActionWithConv`: the action
-  `φ • g = σ_(φ⁻¹) ∘ g` of formal coordinates on arcs, with `TauCeti.FormalCoordinate.smul_def`
-  and `TauCeti.FormalCoordinate.ofConv_smul_apply`.
+* `TauCeti.FormalCoordinate.instMulActionWithConv`: the action `φ • g = σ_(φ⁻¹) ∘ g` of formal
+  coordinates on convolution points `WithConv (H →ₐ[k] R⟦X⟧)` for any `k`-algebra `H`, with
+  `TauCeti.FormalCoordinate.ofConv_smul_apply`.
+* `TauCeti.FormalCoordinate.instMulDistribMulActionWithConv`: for a bialgebra the action is by
+  monoid automorphisms, with `TauCeti.FormalCoordinate.smul_def`.
 * `TauCeti.FormalCoordinate.mapValue_mapAlgHom_smul`: naturality in the coefficient algebra.
 * `TauCeti.FormalCoordinate.mapDomain_smul`: naturality in the bialgebra.
 * `TauCeti.FormalCoordinate.smul_mem_congruenceSubgroup_span_X_pow_iff` and
@@ -76,36 +80,60 @@ namespace FormalCoordinate
 
 variable {k H R : Type*} [CommSemiring k] [CommRing R] [Algebra k R]
 
+section Algebra
+
+variable [Semiring H] [Algebra k H]
+
+/-- A formal coordinate `φ` acts on the convolution points `WithConv (H →ₐ[k] R⟦X⟧)` by
+post-composition with the substitution automorphism `σ_(φ⁻¹) : f ↦ f (φ⁻¹)` of the coefficients. -/
+noncomputable instance instSMulWithConv : SMul (FormalCoordinate R) (WithConv (H →ₐ[k] R⟦X⟧)) where
+  smul φ g := toConv ((φ⁻¹.substAlgEquiv.toAlgHom.restrictScalars k).comp g.ofConv)
+
+/-- The point `φ • g` takes the value `g (h) (φ⁻¹)` at `h`. -/
+@[simp]
+theorem ofConv_smul_apply (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⟦X⟧)) (h : H) :
+    (φ • g).ofConv h = (g.ofConv h).subst φ⁻¹.toPowerSeries :=
+  substAlgEquiv_apply φ⁻¹ (g.ofConv h)
+
+/-- Formal coordinates act on the convolution points `WithConv (H →ₐ[k] R⟦X⟧)` on the left:
+`ρ_φ (g) = σ_(φ⁻¹) ∘ g` satisfies `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` because substitution reverses
+composition. -/
+noncomputable instance instMulActionWithConv :
+    MulAction (FormalCoordinate R) (WithConv (H →ₐ[k] R⟦X⟧)) where
+  one_smul g := ofConv_injective <| _root_.AlgHom.ext fun h ↦ by simp
+  mul_smul φ ψ g := ofConv_injective <| _root_.AlgHom.ext fun h ↦ by
+    rw [ofConv_smul_apply, ofConv_smul_apply, ofConv_smul_apply, subst_subst, mul_inv_rev]
+
+/-- Coordinate changes fix the constant points, the composites `H →ₐ[k] R →ₐ[k] R⟦X⟧` of points
+`x : H →ₐ[k] R` with the inclusion of constant series. The constant point is written as
+`toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x)`, the simp-normal form of
+`AlgHom.mapValue (IsScalarTower.toAlgHom k R R⟦X⟧) (toConv x)` when `H` is a bialgebra. -/
+@[simp]
+theorem smul_toConv_toAlgHom_comp (φ : FormalCoordinate R) (x : H →ₐ[k] R) :
+    φ • toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) =
+      toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) := by
+  refine ofConv_injective <| _root_.AlgHom.ext fun h ↦ ?_
+  simp only [ofConv_smul_apply, _root_.AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
+    ← substAlgEquiv_apply, AlgEquiv.commutes]
+
+end Algebra
+
 section Bialgebra
 
 variable [Semiring H] [Bialgebra k H]
 
-/-- A formal coordinate `φ` acts on the arcs `G(R⟦X⟧)` by post-composition with the substitution
-automorphism `σ_(φ⁻¹) : f ↦ f (φ⁻¹)` of the coefficients. -/
-noncomputable instance instSMulWithConv : SMul (FormalCoordinate R) (WithConv (H →ₐ[k] R⟦X⟧)) where
-  smul φ g := AlgHom.mapValue (φ⁻¹.substAlgEquiv.toAlgHom.restrictScalars k) g
-
 /-- The action of `φ` on arcs is `AlgHom.mapValue` of the substitution automorphism of `φ⁻¹`. -/
 theorem smul_def (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⟦X⟧)) :
     φ • g = AlgHom.mapValue (φ⁻¹.substAlgEquiv.toAlgHom.restrictScalars k) g :=
-  (rfl)
+  (AlgHom.mapValue_apply _ g).symm
 
-/-- The arc `φ • g` takes the value `g (h) (φ⁻¹)` at `h`. -/
-@[simp]
-theorem ofConv_smul_apply (φ : FormalCoordinate R) (g : WithConv (H →ₐ[k] R⟦X⟧)) (h : H) :
-    (φ • g).ofConv h = (g.ofConv h).subst φ⁻¹.toPowerSeries := by
-  simp [smul_def]
-
-/-- Formal coordinates act on the arcs `G(R⟦X⟧)` on the left by monoid automorphisms:
-`ρ_φ (g) = σ_(φ⁻¹) ∘ g` satisfies `ρ_(φ ∘ ψ) = ρ_φ ∘ ρ_ψ` because substitution reverses
-composition. -/
+/-- For a bialgebra `H`, formal coordinates act on the convolution monoid
+`WithConv (H →ₐ[k] R⟦X⟧)` by monoid automorphisms, since each `ρ_φ` is `AlgHom.mapValue` of an
+algebra automorphism. -/
 noncomputable instance instMulDistribMulActionWithConv :
     MulDistribMulAction (FormalCoordinate R) (WithConv (H →ₐ[k] R⟦X⟧)) where
-  one_smul g := ofConv_injective <| _root_.AlgHom.ext fun h ↦ by simp
-  mul_smul φ ψ g := ofConv_injective <| _root_.AlgHom.ext fun h ↦ by
-    rw [ofConv_smul_apply, ofConv_smul_apply, ofConv_smul_apply, subst_subst, mul_inv_rev]
-  smul_mul φ g g' := map_mul (AlgHom.mapValue _) g g'
-  smul_one φ := map_one (AlgHom.mapValue _)
+  smul_mul φ g g' := by simp only [smul_def, map_mul]
+  smul_one φ := by simp only [smul_def, map_one]
 
 /-- The action on arcs is natural in the coefficient algebra: changing coefficients along
 `f : R →ₐ[k] S` carries `φ • g` to `map f φ • g'`, where `g'` is the base-changed arc. -/
@@ -128,18 +156,6 @@ theorem mapDomain_smul {H' : Type*} [Semiring H'] [Bialgebra k H'] (ψ : H' →�
   rw [smul_def, smul_def, ← MonoidHom.comp_apply, BialgHom.mapValue_mapDomain,
     MonoidHom.comp_apply]
 
-/-- Coordinate changes fix the constant arcs, the images `R → R⟦X⟧ ∘ x` of the points
-`x ∈ G(R)` under the inclusion of constant series. The constant arc is written as
-`toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x)`, the simp-normal form of
-`AlgHom.mapValue (IsScalarTower.toAlgHom k R R⟦X⟧) (toConv x)`. -/
-@[simp]
-theorem smul_toConv_toAlgHom_comp (φ : FormalCoordinate R) (x : H →ₐ[k] R) :
-    φ • toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) =
-      toConv ((IsScalarTower.toAlgHom k R R⟦X⟧).comp x) := by
-  refine ofConv_injective <| _root_.AlgHom.ext fun h ↦ ?_
-  simp only [ofConv_smul_apply, _root_.AlgHom.comp_apply, IsScalarTower.coe_toAlgHom',
-    ← substAlgEquiv_apply, AlgEquiv.commutes]
-
 end Bialgebra
 
 section HopfAlgebra
@@ -152,6 +168,7 @@ theorem smul_mem_congruenceSubgroup_span_X_pow {N : ℕ} (φ : FormalCoordinate 
     {g : WithConv (H →ₐ[k] R⟦X⟧)}
     (hg : g ∈ HopfAlgebra.congruenceSubgroup k H (Ideal.span {(X : R⟦X⟧) ^ N})) :
     φ • g ∈ HopfAlgebra.congruenceSubgroup k H (Ideal.span {(X : R⟦X⟧) ^ N}) := by
+  rw [smul_def]
   refine HopfAlgebra.congruenceSubgroup_le_comap_mapValue _ (fun f hf ↦ ?_) hg
   rw [Ideal.mem_span_singleton] at hf
   rw [Ideal.mem_comap, Ideal.mem_span_singleton]
