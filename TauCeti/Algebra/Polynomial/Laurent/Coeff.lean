@@ -29,6 +29,7 @@ over commutative semirings, needs commutativity.
 * `LaurentPolynomial.coeff_mul_T`: `(f * T n).coeff d = f.coeff (d - n)`.
 * `LaurentPolynomial.T_mul_eq_self_iff`: a nonzero Laurent polynomial is fixed by multiplication
   by `T n` only for `n = 0`.
+* `LaurentPolynomial.mul_T_eq_mul_T_iff`: cancelling a monomial from both sides of an equation.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
   `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
 * `LaurentPolynomial.coeff_C_mul`: constants scale coefficients. For natural-number constants
@@ -68,6 +69,12 @@ theorem T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} : T n * f = f ↔ n = 0 �
     exact TauCeti.eq_zero_of_mul_single_eq_self_of_not_isOfFinAddOrder
       (mt (isOfFinAddOrder_iff_eq_zero n).mp hn) h
   · rintro (rfl | rfl) <;> simp [T_zero]
+
+/-- Cancelling a monomial: `p * T c' = q * T c` exactly when `p = q * T (c - c')`. -/
+theorem mul_T_eq_mul_T_iff {p q : R[T;T⁻¹]} {c c' : ℤ} :
+    p * T c' = q * T c ↔ p = q * T (c - c') := by
+  refine Iff.trans ?_ (isUnit_T c').mul_left_inj
+  rw [mul_assoc q, ← T_add, sub_add_cancel]
 
 /-- Left multiplication by a constant scales every coefficient. -/
 @[simp]

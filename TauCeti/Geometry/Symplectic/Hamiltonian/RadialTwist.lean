@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import Mathlib.Geometry.Manifold.Diffeomorph
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -78,6 +79,8 @@ orbits. If `p` is a periodic point of `φ` of period `k` and the twist is suppor
 * `TauCeti.hamiltonianVectorField_radialHamiltonian`: `X_H(w) = i G'(‖w - p‖²) (w - p)`.
 * `TauCeti.hamiltonianFlow_radialHamiltonian`: the flow is the twist map
   `w ↦ p + exp (i t G'(‖w - p‖²)) (w - p)`.
+* `TauCeti.eq_of_periodic_radialHamiltonian`: a periodic orbit of a radial Hamiltonian along which
+  the period times the angular speed is less than `2π` in absolute value is constant.
 * `TauCeti.hamiltonianFlow_radialHamiltonian_eventuallyEq`: if `G' = θ` near `0`, the time-`t`
   map is the rotation by `t θ` near `p`, and
   `TauCeti.hasFDerivAt_hamiltonianFlow_radialHamiltonian_center` computes its derivative at `p`.
@@ -205,6 +208,33 @@ theorem hamiltonianFlow_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNRea
   rw [h0] at h
   rw [SymplecticForm.hamiltonianFlow_eq]
   exact h.symm
+
+/-- **Slow periodic orbits of a radial Hamiltonian are constant.** Let `γ` be a solution of
+Hamilton's equations of the radial Hamiltonian `-G(‖w - p‖²) / 2` (`TauCeti.radialHamiltonian`) on
+the complex line, whose vector field is globally Lipschitz, and let `γ` be `T`-periodic with
+`T ≠ 0`. The orbit turns about `p` at the angular speed `G'(‖γ 0 - p‖²)`; if the angle
+`T G'(‖γ 0 - p‖²)` it turns through in one period is less than `2π` in absolute value, then `γ` is
+constant. -/
+theorem eq_of_periodic_radialHamiltonian {G : ℝ → ℝ} {p : ℂ} {K : NNReal}
+    (hX : LipschitzWith K
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p)))
+    {γ : ℝ → ℂ} (hγ : ∀ t, HasDerivAt γ
+      (stdComplexSymplecticForm.hamiltonianVectorField (radialHamiltonian G p) (γ t)) t)
+    (hG : DifferentiableAt ℝ G (‖γ 0 - p‖ ^ 2)) {T : ℝ} (hT : T ≠ 0) (hper : Function.Periodic γ T)
+    (hslow : |T * deriv G (‖γ 0 - p‖ ^ 2)| < 2 * Real.pi) (t : ℝ) : γ t = γ 0 := by
+  set c := deriv G (‖γ 0 - p‖ ^ 2)
+  have hrot (s : ℝ) : γ s = p + exp (I * ↑(s * c)) * (γ 0 - p) := by
+    rw [eq_flowOfLipschitz hX hγ s, ← SymplecticForm.hamiltonianFlow_eq,
+      hamiltonianFlow_radialHamiltonian hX hG]
+  rcases eq_or_ne (γ 0 - p) 0 with hw | hw
+  · rw [hrot t, hw, mul_zero, add_zero, ← sub_eq_zero.1 hw]
+  -- One period turns `γ 0` through the angle `T c`, a multiple of `2π` smaller than `2π`.
+  have hexp : exp (I * ↑(T * c)) = 1 := by
+    refine mul_right_cancel₀ hw ?_
+    rw [one_mul, ← sub_eq_iff_eq_add'.2 (hrot T), hper.eq]
+  have h0 := Complex.eq_zero_of_exp_eq_one_of_norm_lt hexp (by simpa [norm_mul] using hslow)
+  have hc : c = 0 := (mul_eq_zero.1 (by simpa using h0)).resolve_left hT
+  rw [hrot t, hc, mul_zero, ofReal_zero, mul_zero, Complex.exp_zero, one_mul, add_sub_cancel]
 
 /-- The orbit of `w` under the flow of a radial Hamiltonian stays on the circle through `w` about
 `p`. -/

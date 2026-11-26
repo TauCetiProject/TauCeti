@@ -13,9 +13,10 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 # Lipschitz bounds for first Riesz sums
 
 For coefficients `c : ℕ → ℂ` the first Riesz sum `S(y) = TauCeti.rieszSum c y` is the sum of the
-ramps `c(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max`), so it is Lipschitz in `y` with
-constant `∑_{n ≤ y} ‖c(n)‖ / n`. Its weighted form `w · S(a / w) = ∑_n c(n) max (a / n - w) 0` is
-Lipschitz in the weight `w` with constant `∑_{n ≤ a / w} ‖c(n)‖`.
+ramps `c(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max_of_floor_le`), so it is Lipschitz
+in `y` with constant `∑_{n ≤ y} ‖c(n)‖ / n`. Its weighted form
+`w · S(a / w) = ∑_n c(n) max (a / n - w) 0` is Lipschitz in the weight `w` with constant
+`∑_{n ≤ a / w} ‖c(n)‖`.
 
 For real coefficients the sum `∑ n ∈ Ioc 0 ⌊y⌋₊, c n * (y / n - 1)`, on the index set of
 Mathlib's `Chebyshev.psi`, is the real form of `TauCeti.rieszSum`
@@ -57,7 +58,7 @@ theorem mul_rieszSum_div_eq_sum_max (c : ℕ → ℂ) {a w w' : ℝ} (hw : 0 < w
     rcases le_total a 0 with ha | ha
     · simp [Nat.floor_of_nonpos (div_nonpos_of_nonpos_of_nonneg ha hw'.le)]
     · exact Nat.floor_le_floor (div_le_div_of_nonneg_left ha hw hww')
-  rw [rieszSum_eq_sum_max c hN, mul_sum]
+  rw [rieszSum_eq_sum_max_of_floor_le c hN, mul_sum]
   refine sum_congr rfl fun n hn ↦ ?_
   have hn : (n : ℝ) ≠ 0 := by
     have := (mem_Icc.1 hn).1
@@ -69,8 +70,8 @@ theorem mul_rieszSum_div_eq_sum_max (c : ℕ → ℂ) {a w w' : ℝ} (hw : 0 < w
 `‖S(y) - S(z)‖ ≤ (∑_{1 ≤ n ≤ y} ‖c(n)‖ / n) (y - z)`, where `S = TauCeti.rieszSum c`. -/
 theorem norm_rieszSum_sub_rieszSum_le (c : ℕ → ℂ) {y z : ℝ} (hzy : z ≤ y) :
     ‖rieszSum c y - rieszSum c z‖ ≤ (∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n) * (y - z) := by
-  rw [rieszSum_eq_sum_max c le_rfl, rieszSum_eq_sum_max c (Nat.floor_le_floor hzy),
-    ← sum_sub_distrib, sum_mul]
+  rw [rieszSum_eq_sum_max_of_floor_le c le_rfl,
+    rieszSum_eq_sum_max_of_floor_le c (Nat.floor_le_floor hzy), ← sum_sub_distrib, sum_mul]
   refine (norm_sum_le _ _).trans (sum_le_sum fun n _ ↦ ?_)
   simp only [← mul_sub, norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
   have h : |max (y / n - 1) 0 - max (z / n - 1) 0| ≤ (y - z) / n :=
