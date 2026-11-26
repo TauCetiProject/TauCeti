@@ -238,7 +238,8 @@ fields to `ℂᵐ` such that
   are the zeros of `y`, counted with multiplicity;
 * `c` is smooth in the real coordinates of the fields at every field of `U`.
 
-It is the divisor of the field projection `exists_isOpen_fieldProjection`. -/
+In the construction (not recorded in the statement), `c` is the divisor of the field projection
+of `exists_isOpen_fieldProjection`. -/
 theorem exists_isOpen_contDiffAt_coeffEquiv_sobolevVortexDivisor (hk : 3 ≤ k)
     (x₀ : SobolevFieldSpace f m (k + 1 : ℕ)) (hmem : ∀ j : ℕ, ⇑x₀ ∈ framedFieldSpace f m j)
     (hsol : ∀ z, equation x₀ z = 0) :
