@@ -281,27 +281,35 @@ private theorem cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx 
   congr 1
   field_simp
 
+/-- The factor `x^{-z} x` of `cpow_smul_comp_mul_left` absorbs the Jacobian `x⁻¹` of the
+substitution `u = x t`. -/
+private theorem cpow_neg_mul_smul_inv_smul (z : ℂ) {x : ℝ} (hx : x ≠ 0) (v : E) :
+    ((x : ℂ) ^ (-z) * x) • (x⁻¹ • v) = (x : ℂ) ^ (-z) • v := by
+  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx
+  rw [← Complex.coe_smul, smul_smul]
+  congr 1
+  push_cast
+  field_simp
+
 /-- For `x > 0`, the Mellin integral over `(0, 1]` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
 integral of `g` over `(0, x]`. -/
 theorem integral_Ioc_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
     ∫ t : ℝ in Ioc 0 1, (t : ℂ) ^ (z - 1) • g (x * t) =
       (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioc 0 x, (u : ℂ) ^ (z - 1) • g u := by
-  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
   rw [setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
     integral_smul, ← intervalIntegral.integral_of_le zero_le_one,
     intervalIntegral.integral_comp_mul_left (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) hx.ne',
-    mul_zero, mul_one, intervalIntegral.integral_of_le hx.le, ← Complex.coe_smul, smul_smul,
-    ofReal_inv, mul_assoc, mul_inv_cancel₀ hx0, mul_one]
+    mul_zero, mul_one, intervalIntegral.integral_of_le hx.le,
+    cpow_neg_mul_smul_inv_smul z hx.ne']
 
 /-- For `x > 0`, the Mellin integral over `(1, ∞)` of `t ↦ g (x t)` is `x^{-z}` times the Mellin
 integral of `g` over `(x, ∞)`. -/
 theorem integral_Ioi_cpow_smul_comp_mul_left (g : ℝ → E) (z : ℂ) {x : ℝ} (hx : 0 < x) :
     ∫ t : ℝ in Ioi 1, (t : ℂ) ^ (z - 1) • g (x * t) =
       (x : ℂ) ^ (-z) • ∫ u : ℝ in Ioi x, (u : ℂ) ^ (z - 1) • g u := by
-  have hx0 : (x : ℂ) ≠ 0 := ofReal_ne_zero.mpr hx.ne'
   rw [setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ cpow_smul_comp_mul_left g z hx t,
     integral_smul, integral_comp_mul_left_Ioi (fun u : ℝ ↦ (u : ℂ) ^ (z - 1) • g u) 1 hx,
-    mul_one, ← Complex.coe_smul, smul_smul, ofReal_inv, mul_assoc, mul_inv_cancel₀ hx0, mul_one]
+    mul_one, cpow_neg_mul_smul_inv_smul z hx.ne']
 
 /-! ### Mellin integrals over `(0, 1]` and `(1, ∞)` from power bounds -/
 

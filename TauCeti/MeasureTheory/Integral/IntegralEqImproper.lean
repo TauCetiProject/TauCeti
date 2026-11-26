@@ -389,8 +389,8 @@ theorem integral_comp_add_mul_left_Ioi' {E : Type*} [NormedAddCommGroup E] [Norm
     preimage_const_add_Ioi, add_sub_cancel_left]
 
 /-- **Bounding an integral over `(c, ∞)` piece by piece.** Split `(c, ∞)` at `c ≤ a ≤ δ`: if `‖φ‖`
-is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then `φ` is
-integrable there and `‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
+is dominated by integrable `g₁`, `g₂`, `g₃` on `(c, a]`, `(a, δ]` and `(δ, ∞)`, then
+`‖∫_c^∞ φ‖ ≤ ∫_c^a g₁ + ∫_a^δ g₂ + ∫_δ^∞ g₃`. -/
 theorem norm_integral_Ioi_le_of_three_pieces {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {φ : ℝ → E} {g₁ g₂ g₃ : ℝ → ℝ} {c a δ : ℝ} (hca : c ≤ a) (haδ : a ≤ δ)
     (hφ : AEStronglyMeasurable φ (volume.restrict (Ioi c)))

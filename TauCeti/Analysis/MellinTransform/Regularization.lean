@@ -203,24 +203,6 @@ private theorem natCast_add_ne_natCast_add {α β : ℝ} (hαβ : α < β + 1) (
 
 variable {f h : ℝ → ℂ} {a b : ℕ → ℂ} {α β c ρ : ℝ}
 
-/-- The remainder bound of `f` at `0+` after `n` terms, with a real power. -/
-private theorem isBigO_sub_sum_nhdsGT {n : ℕ}
-    (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]
-      fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1)) :
-    (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j)
-      =O[𝓝[>] 0] (· ^ ((n : ℝ) + α - 1)) := by
-  have := hfn.trans (isBigO_ofReal_cpow_rpow eventually_mem_nhdsWithin _)
-  simpa only [sub_re, add_re, natCast_re, ofReal_re, one_re] using this
-
-/-- The remainder bound of `h` at `+∞` after `n` terms, with a real power. -/
-private theorem isBigO_sub_sum_atTop {n : ℕ}
-    (hhn : (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k) =O[atTop]
-      fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β))) :
-    (fun t ↦ h t - ∑ k ∈ Finset.range n, (t : ℂ) ^ (-((k : ℂ) + β)) • b k)
-      =O[atTop] (· ^ (-((n : ℝ) + β))) := by
-  have := hhn.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _)
-  simpa only [neg_re, add_re, natCast_re, ofReal_re] using this
-
 /-- The partial Mellin integrals of `h (x ·)` at `z`, with the expansion of `h (x ·)` at `+∞`
 subtracted on `(1, ∞)`, are `x^{-z}` times the continued transform of `h` plus the principal
 parts of the continued transform of `h (x ·)`. -/
@@ -239,7 +221,8 @@ private theorem integral_Ioc_add_integral_Ioi_comp_mul_left (hh : ContinuousOn h
     (integrableOn_Ioc_cpow_smul_of_isBigO (hh.locallyIntegrableOn measurableSet_Ioi) hh0 hcz)
     (integrableOn_Ioi_cpow_smul_of_isBigO
       ((hh.sub (continuousOn_sum_cpow_smul _ b n)).locallyIntegrableOn measurableSet_Ioi)
-      (isBigO_sub_sum_atTop hhn) hzn) hz hx
+      (hhn.trans_ofReal_cpow_rpow (eventually_gt_atTop 0)
+        (by simp only [neg_re, add_re, natCast_re, ofReal_re])) hzn) hz hx
   rw [mellinContAtTop_def] at hsc
   simp only [smul_eq_mul] at hsc ⊢
   linear_combination hsc
@@ -298,7 +281,8 @@ private theorem integrableOn_and_integral_eq_sum_brackets
   have hhx : ContinuousOn (fun t ↦ h (x * t)) (Ioi 0) :=
     hh.comp (continuousOn_const.mul continuousOn_id) fun t ht ↦ mul_pos hx ht
   have hH1 : (fun t ↦ h (x * t) - B t) =O[atTop] (· ^ (-((n : ℝ) + β))) := by
-    simpa only [hBx] using (isBigO_sub_sum_atTop hhn).comp_mul_left_rpow hx
+    simpa only [hBx] using (hhn.trans_ofReal_cpow_rpow (eventually_gt_atTop 0)
+      (by simp only [neg_re, add_re, natCast_re, ofReal_re])).comp_mul_left_rpow hx
       (tendsto_id.const_mul_atTop hx) (eventually_gt_atTop 0)
   simp only [hBx]
   exact integral_mul_eq_sum_partialMellin (F := fun t ↦ f t - A t)
@@ -307,7 +291,8 @@ private theorem integrableOn_and_integral_eq_sum_brackets
     (fun t ↦ by rw [hA, add_sub_cancel]) (fun t ↦ by rw [hB, add_sub_cancel])
     hf (hf.sub (locallyIntegrableOn_sum_cpow_smul _ a n))
     hhx (hhx.sub (continuousOn_sum_cpow_smul _ _ n))
-    (by rw [neg_sub]; exact isBigO_sub_sum_nhdsGT hfn)
+    (hfn.trans_ofReal_cpow_rpow eventually_mem_nhdsWithin
+      (by simp only [sub_re, add_re, natCast_re, ofReal_re, one_re, neg_sub]))
     (hh0.comp_mul_left_rpow hx (tendsto_iff_comap.mpr (comap_mulLeft_nhdsGT_zero hx).ge)
       eventually_mem_nhdsWithin) hf1 hH1
     (fun j _ ↦ by simp only [add_re, natCast_re, ofReal_re]; linarith [j.cast_nonneg (α := ℝ)])
@@ -466,7 +451,9 @@ private theorem exists_norm_sub_sum_le_rpow_Ioc_nhdsGT {n : ℕ}
       fun t ↦ (t : ℂ) ^ ((n : ℂ) + α - 1)) : ∃ C ≥ 0, ∃ δ > 0, ∀ t ∈ Ioc 0 δ,
       ‖f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j‖ ≤
         C * t ^ ((n : ℝ) + α - 1) := by
-  obtain ⟨C, hC, hw⟩ := (isBigO_sub_sum_nhdsGT hfn).exists_nonneg
+  obtain ⟨C, hC, hw⟩ := (hfn.trans_ofReal_cpow_rpow (a := (n : ℝ) + α - 1)
+    eventually_mem_nhdsWithin
+    (by simp only [sub_re, add_re, natCast_re, ofReal_re, one_re])).exists_nonneg
   obtain ⟨ε, hε, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp hw.bound
   refine ⟨C, hC, ε / 2, half_pos hε, fun t ht ↦ ?_⟩
   have : ‖f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j‖ ≤
@@ -507,7 +494,8 @@ private theorem exists_norm_sub_sum_le_rpow_Ici (hh : ContinuousOn h (Ioi 0)) {n
       fun t ↦ (t : ℂ) ^ (-((n : ℂ) + β))) : ∃ C ≥ 0, ∀ u ∈ Ici 1,
       ‖h u - ∑ k ∈ Finset.range n, (u : ℂ) ^ (-((k : ℂ) + β)) • b k‖ ≤
         C * u ^ (-((n : ℝ) + β)) := by
-  obtain ⟨C, hC, hw⟩ := ((isBigO_sub_sum_atTop hhn).isBigO_principal_Ici_of_continuousOn
+  obtain ⟨C, hC, hw⟩ := ((hhn.trans_ofReal_cpow_rpow (a := -((n : ℝ) + β)) (eventually_gt_atTop 0)
+      (by simp only [neg_re, add_re, natCast_re, ofReal_re])).isBigO_principal_Ici_of_continuousOn
     ((hh.sub (continuousOn_sum_cpow_smul _ b n)).mono fun u (hu : 1 ≤ u) ↦
       zero_lt_one.trans_le hu)
     (continuousOn_id.rpow_const fun u (hu : 1 ≤ u) ↦ Or.inl (zero_lt_one.trans_le hu).ne')

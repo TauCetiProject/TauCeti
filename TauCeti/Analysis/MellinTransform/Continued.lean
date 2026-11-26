@@ -155,8 +155,8 @@ theorem mellinContAtZero_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f 
   | base => rfl
   | succ m hnm ih =>
     have hzm : -(α m).re < z.re := (neg_le_neg (hα hnm)).trans_lt hz
-    have hm := (hexp.isBigO m).trans (isBigO_ofReal_cpow_rpow eventually_mem_nhdsWithin _)
-    rw [← neg_neg (α m).re] at hm
+    have hm := (hexp.isBigO m).trans_ofReal_cpow_rpow eventually_mem_nhdsWithin
+      (neg_neg (α m).re).symm
     rw [mellinContAtZero_succ (integrableOn_Ioc_cpow_smul_of_isBigO
       ((hf.sub (locallyIntegrableOn_sum_cpow_smul α a m))) hm hzm)
       (Or.inr (by rw [add_re]; linarith)), ih]
@@ -172,8 +172,7 @@ theorem differentiableOn_mellinContAtZero_sub_sum (hf : LocallyIntegrableOn f (I
       (fun z ↦ mellinContAtZero f a α n z - ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k)
       {z | -(α n).re < z.re ∧ z.re < b} := by
   intro z hz
-  have hn' := hn.trans (isBigO_ofReal_cpow_rpow eventually_mem_nhdsWithin _)
-  rw [← neg_neg (α n).re] at hn'
+  have hn' := hn.trans_ofReal_cpow_rpow eventually_mem_nhdsWithin (neg_neg (α n).re).symm
   have h := (differentiableAt_integral_Ioc_cpow_smul_of_isBigO
     (hf.sub (locallyIntegrableOn_sum_cpow_smul α a n)) hn' hz.1).add
     (differentiableAt_integral_Ioi_cpow_smul_of_isBigO hf hb hz.2)
@@ -320,8 +319,8 @@ theorem mellinContAtZero_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi
         (by rwa [min_eq_left hnm] at hz)).symm
     · exact mellinContAtZero_eq_of_le hf hexp hα.monotone hmn (by rwa [min_eq_right hmn] at hz)
   · have hbot : f =O[𝓝[>] 0] (· ^ (-(-(α 0).re))) := by
-      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero, neg_neg] using
-        (hexp.isBigO 0).trans (isBigO_ofReal_cpow_rpow eventually_mem_nhdsWithin _)
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
+        (hexp.isBigO 0).trans_ofReal_cpow_rpow eventually_mem_nhdsWithin (neg_neg (α 0).re).symm
     exact mellinContAtZero_eq_mellin hexp hα
       (mellinConvergent_of_isBigO_rpow hf hb hz.2 hbot hz.1) n
 
@@ -460,7 +459,7 @@ theorem mellinContAtTop_eq_of_le [CompleteSpace E] (hf : LocallyIntegrableOn f (
     have hzm : z.re < (β m).re := hz.trans_le (hβ hnm)
     rw [mellinContAtTop_succ (integrableOn_Ioi_cpow_smul_of_isBigO
       (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b m))
-      ((hexp.isBigO m).trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _)) hzm)
+      ((hexp.isBigO m).trans_ofReal_cpow_rpow (eventually_gt_atTop 0) (neg_re (β m))) hzm)
       (Or.inr hzm), ih]
 
 /-- Removing the principal parts `-b_k/(z - β_k)`, i.e. adding `∑ b_k/(z - β_k)`, leaves a function
@@ -479,7 +478,7 @@ theorem differentiableOn_mellinContAtTop_add_sum (hf : LocallyIntegrableOn f (Io
     (by simpa only [neg_neg] using hc) hz.1).add
     (differentiableAt_integral_Ioi_cpow_smul_of_isBigO
       (hf.sub (locallyIntegrableOn_sum_cpow_smul (fun k ↦ -β k) b n))
-      (hn.trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _)) hz.2)
+      (hn.trans_ofReal_cpow_rpow (eventually_gt_atTop 0) (neg_re (β n))) hz.2)
   refine (h.congr_of_eventuallyEq (Eventually.of_forall fun w ↦ ?_)).differentiableWithinAt
   simp only [mellinContAtTop_def, Pi.add_apply, Pi.sub_apply]
   abel
@@ -548,8 +547,8 @@ theorem mellinContAtTop_spec [CompleteSpace E] (hf : LocallyIntegrableOn f (Ioi 
         (by rwa [min_eq_left hnm] at hz)).symm
     · exact mellinContAtTop_eq_of_le hf hexp hβ.monotone hmn (by rwa [min_eq_right hmn] at hz)
   · have htop : f =O[atTop] (· ^ (-(β 0).re)) := by
-      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero, neg_re] using
-        (hexp.isBigO 0).trans (isBigO_ofReal_cpow_rpow (eventually_gt_atTop 0) _)
+      simpa only [Finset.range_zero, Finset.sum_empty, sub_zero] using
+        (hexp.isBigO 0).trans_ofReal_cpow_rpow (eventually_gt_atTop 0) (neg_re (β 0))
     exact mellinContAtTop_eq_mellin hexp hβ
       (mellinConvergent_of_isBigO_rpow hf htop hz.2 (by simpa only [neg_neg] using hc) hz.1) n
 

@@ -48,7 +48,8 @@ every `c ≤ a`.
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`.
+`O(t ^ Re w)`, so a bound by `t ^ w` is a bound by the real power `t ^ Re w`
+(`Asymptotics.IsBigO.trans_ofReal_cpow_rpow`).
 
 ## Families bounded by integer powers
 
@@ -318,6 +319,13 @@ theorem IsBigO.atTop_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c : ℝ}
   filter_upwards [eventually_ge_atTop 1] with x hx
   rw [Real.norm_of_nonneg (Real.rpow_nonneg (zero_le_one.trans hx) a)]
   exact Real.rpow_le_rpow_of_exponent_le hx h
+
+/-- Along a filter eventually in `(0, ∞)`, a bound `f = O(t ^ w)` by a complex power of the real
+variable is a bound `f = O(t ^ a)` by the real power with exponent `a = Re w`. -/
+theorem IsBigO.trans_ofReal_cpow_rpow {R : Type*} [Norm R] {f : ℝ → R} {l : Filter ℝ} {w : ℂ}
+    {a : ℝ} (hf : f =O[l] fun t ↦ (t : ℂ) ^ w) (hl : ∀ᶠ t in l, 0 < t) (ha : w.re = a) :
+    f =O[l] fun t ↦ t ^ a :=
+  ha ▸ hf.trans (TauCeti.isBigO_ofReal_cpow_rpow hl w)
 
 /-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
 set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
