@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Bilinear
+public import TauCeti.Algebra.Homology.ModuleCat.Single
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Reverse
 
@@ -29,8 +30,25 @@ compatibility with the degree-`0` augmentation, and graded commutativity
 
 Specializing to a presheaf of `R`-algebras `F : Cᵒᵖ ⥤ AlgCat R` yields the cohomology cup product
 `TauCeti.CategoryTheory.cechCupHomology` and unit class `TauCeti.CategoryTheory.cechOneHomology`,
-together with graded commutativity `TauCeti.CategoryTheory.cechCupHomology_comm` when `F` has
-commutative multiplication.
+for which:
+* the cup product is **associative** (`TauCeti.CategoryTheory.cechCupHomology_assoc`);
+* the class of the unit cochain `1` (`TauCeti.CategoryTheory.cechOneHomology`) is a two-sided
+  **unit** (`TauCeti.CategoryTheory.cechCupHomology_cechOneHomology`,
+  `TauCeti.CategoryTheory.cechOneHomology_cechCupHomology`);
+* the maps on cohomology induced by morphisms of families, such as refinements of open covers,
+  and by morphisms of presheaves of algebras preserve the cup product and the unit
+  (`TauCeti.CategoryTheory.homologyMap_cechComplexMap_cechCupHomology`,
+  `TauCeti.CategoryTheory.homologyMap_cechComplexFunctor_map_cechCupHomology` and the
+  corresponding statements for `cechOneHomology`);
+* in degree `0`, for a terminal object `T`, the classes of the augmentations of sections over `T`
+  multiply as the sections do, and the section `1` gives the unit class
+  (`TauCeti.CategoryTheory.homologyMap_cechAugmentation_mul`,
+  `TauCeti.CategoryTheory.homologyMap_cechAugmentation_one`).
+
+So `⊕ₚ Hᵖ(U, F)` is an associative unital graded `R`-algebra, functorial in the family and in the
+presheaf. Since any two morphisms between two families induce the same map on cohomology, these
+are the compatibilities through which the product passes to Čech cohomology defined as a colimit
+over a directed system of covers (`TauCeti.CategoryTheory.cechCohomologyCup`).
 
 ## Main definitions
 
@@ -54,8 +72,6 @@ commutative multiplication.
   `TauCeti.CategoryTheory.cechComplexCup_unit_right`: left and right unit laws on cohomology.
 * `TauCeti.CategoryTheory.cechComplexCup_homologyMap_cechAugmentation`: compatibility with the
   degree-`0` augmentation from global sections.
-* `TauCeti.CategoryTheory.cechCupHomology_comm`: graded commutativity for a presheaf of
-  commutative `R`-algebras.
 
 ## References
 
@@ -288,7 +304,10 @@ theorem cechUnitClass_eq_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T
     homologyMap (cechAugmentation U hT P) 0
         ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀) =
       cechUnitClass U P (fun X ↦ P.map (hT.from X.unop).op e₀)
-        (map_terminal_from_compat hT P e₀) := by
+        (fun {X Y} f ↦ by
+          rw [← ModuleCat.comp_apply, ← P.map_comp,
+            show (hT.from X.unop).op ≫ f = (hT.from Y.unop).op from
+              Quiver.Hom.unop_inj (hT.hom_ext _ _)]) := by
   rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
     moduleCat_homologyMap_homologyπ, cechUnitClass]
   congr 1; apply moduleCat_iCycles_injective
@@ -394,18 +413,6 @@ theorem cechCupHomology_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m +
     (fun _ (x y z : F.obj _) ↦ mul_assoc x y z)
     p q r m l n h₁ h₃ h₂ α β γ
 
-/-- **Graded commutativity** of the cup product on Čech cohomology for a presheaf of commutative
-`R`-algebras. -/
-theorem cechCupHomology_comm [Quiver.IsThin C] {F : Cᵒᵖ ⥤ AlgCat.{w} R}
-    (hcomm : ∀ X (x y : F.obj X), x * y = y * x) {p q n : ℕ} (h : p + q = n)
-    (α : (cechAlgebraComplex U F).homology p) (β : (cechAlgebraComplex U F).homology q) :
-    cechCupHomology U F q p n (by omega) β α =
-      (-1 : ℤ) ^ (p * q) • cechCupHomology U F p q n h α β := by
-  simp only [cechCupHomology]
-  exact cechComplexCup_comm U _ _
-    (cechAlgebraMul_naturality F) (cechAlgebraMul_naturality F)
-    (fun X (x y : F.obj X) ↦ hcomm X y x) p q n h α β
-
 /-- The **unit class** of Čech cohomology: the class in `H⁰(U, F)` of the unit cocycle, all of
 whose factors are `1`. -/
 def cechOneHomology : (cechAlgebraComplex U F).homology 0 :=
@@ -504,6 +511,63 @@ theorem homologyMap_cechComplexFunctor_map_cechOneHomology {G : Cᵒᵖ ⥤ AlgC
     (cechAlgebraOne_naturality F) _ (cechAlgebraOne_naturality G) fun X ↦ map_one (α.app X).hom
 
 end Naturality
+
+section Augmentation
+
+variable {T : C} (hT : IsTerminal T)
+
+/-- The class in `H⁰(U, F)` of the augmentation of a section over the terminal object is the class
+of the cycle that the augmentation maps it to. -/
+private lemma homologyMap_cechAugmentation_apply (s : F.obj (op T)) :
+    (homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
+        ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s) =
+      ((cechAlgebraComplex U F).homologyπ 0).hom
+        (cyclesMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0
+          ((singleObjCyclesSelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s)) := by
+  rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
+    moduleCat_homologyMap_homologyπ]
+
+/-- **The cup product in degree zero is the product of sections.** For a terminal object `T`, the
+class in `H⁰(U, F)` of the augmentation of a product `s * t` of sections of `F` over `T` is the cup
+product of the classes of the augmentations of `s` and `t`. -/
+theorem homologyMap_cechAugmentation_mul (s t : F.obj (op T)) :
+    (homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
+        ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom (s * t)) =
+      cechCupHomology U F 0 0 0 rfl
+        ((homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
+          ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s))
+        ((homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
+          ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom t)) := by
+  simp only [homologyMap_cechAugmentation_apply, cechCupHomology_homologyπ]
+  congr 1
+  apply moduleCat_iCycles_injective
+  refine cechCochain_ext fun a ↦ ?_
+  simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk, cechComponent_cechCup,
+    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechFace_cechAugmentation_f_zero,
+    cechComponent_cechAugmentation_f_zero, map_mul]
+
+/-- **The unit class in degree zero is the class of the unit section.** For a terminal object `T`,
+the class in `H⁰(U, F)` of the augmentation of the section `1` of `F` over `T` is the unit class. -/
+theorem homologyMap_cechAugmentation_one :
+    (homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
+        ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom
+          (1 : F.obj (op T))) =
+      cechOneHomology U F := by
+  rw [homologyMap_cechAugmentation_apply, cechOneHomology_def]
+  congr 1
+  apply moduleCat_iCycles_injective
+  refine cechCochain_ext fun a ↦ ?_
+  simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk,
+    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechComponent_cechAugmentation_f_zero,
+    map_one, cechComponent_cechOne]
+
+end Augmentation
 
 end Algebra
 

@@ -84,7 +84,8 @@ be added or removed.
   complex of `P` for `U` is exact if and only if the one for `V` is.
 * `TauCeti.CategoryTheory.isIso_cechComplexMap`: a morphism of families that is the identity on
   indices induces an isomorphism of Čech complexes when `P` inverts the induced maps of products.
-* `TauCeti.CategoryTheory.cechAugmentation_naturality`: the augmentation is natural in `P`.
+* `TauCeti.CategoryTheory.cechAugmentation_naturality`,
+  `TauCeti.CategoryTheory.cechAugmentationNatTrans`: the augmentation is natural in `P`.
 * `TauCeti.CategoryTheory.cechComplexMap_naturality`: the map induced by a morphism of families is
   natural in `P`.
 * `TauCeti.CategoryTheory.quasiIso_cechAugmentation_iff_of_iso`: acyclicity of a family is
@@ -341,6 +342,15 @@ instance : (cechComplexFunctor U : (Cᵒᵖ ⥤ A) ⥤ CochainComplex A ℕ).Add
       (congrArg _ (NatTrans.app_add _ α β)).trans <| (Preadditive.comp_add _ _ _ _ _ _).trans <|
         (congrArg₂ (· + ·) (cechComplexFunctor_map_f_π U P α n a).symm
           (cechComplexFunctor_map_f_π U P β n a).symm).trans (Preadditive.add_comp _ _ _ _ _ _).symm
+
+/-- An empty family has zero Čech complex, without requiring any value of the presheaf to
+vanish. -/
+lemma isZero_cechComplexFunctor_obj [IsEmpty ι] :
+    IsZero ((cechComplexFunctor U).obj P) := by
+  refine (IsZero.iff_id_eq_zero _).2 ?_
+  apply HomologicalComplex.hom_ext
+  intro p
+  exact Pi.hom_ext _ _ fun a ↦ isEmptyElim (a 0)
 
 /-! ### Maps of families
 
@@ -849,6 +859,20 @@ theorem cechAugmentation_naturality {Q : Cᵒᵖ ⥤ A} (α : P ⟶ Q) :
         ((by simp : _ = ((CochainComplex.single₀ A).map (α.app (op T)) ≫
           cechAugmentation U hT Q).f 0) =≫ _)
 
+/-- The augmentation `P(T) ⟶ Č(U, P)` of the Čech complex for `U`, as a natural transformation in
+the presheaf `P` (`TauCeti.CategoryTheory.cechAugmentation_naturality`). -/
+def cechAugmentationNatTrans :
+    (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A ⟶ cechComplexFunctor (A := A) U where
+  app Q := cechAugmentation U hT Q
+  naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm
+
+/-- The component of `cechAugmentationNatTrans` at `Q` is the augmentation of the Čech complex
+of `Q`. -/
+@[simp]
+theorem cechAugmentationNatTrans_app (Q : Cᵒᵖ ⥤ A) :
+    (cechAugmentationNatTrans U hT).app Q = cechAugmentation U hT Q :=
+  (rfl)
+
 /-! ### The augmentation in degree `0`
 
 The degree `0` component `augmentation₀ : P(T) ⟶ Č⁰(U, P)` of the augmentation restricts along
@@ -977,11 +1001,10 @@ theorem quasiIso_cechAugmentation_iff_of_iso {Q : Cᵒᵖ ⥤ A} (e : P ≅ Q) :
 Čech complex of `Q` for `U` is exact, then so is the one of `P`: by naturality, the augmentation of
 `P` is a retract of the augmentation of `Q`. -/
 theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P Q)
-    (_hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
+    (hQ : QuasiIso (cechAugmentation U hT Q)) : QuasiIso (cechAugmentation U hT P) :=
   -- the augmentation is natural in the presheaf, so retracts of presheaves give retracts of arrows
-  quasiIso_of_retractArrow (NatTrans.retractArrowApp
-    (F := (evaluation Cᵒᵖ A).obj (op T) ⋙ CochainComplex.single₀ A) (G := cechComplexFunctor U)
-    { app R := cechAugmentation U hT R
-      naturality _ _ α := (cechAugmentation_naturality U hT _ α).symm } h)
+  have : QuasiIso ((cechAugmentationNatTrans U hT).app Q) := by
+    rwa [cechAugmentationNatTrans_app]
+  quasiIso_of_retractArrow (NatTrans.retractArrowApp (cechAugmentationNatTrans U hT) h)
 
 end TauCeti.CategoryTheory

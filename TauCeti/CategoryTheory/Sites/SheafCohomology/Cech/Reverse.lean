@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
@@ -31,8 +32,9 @@ commutes with the maps induced by morphisms of families, such as refinements of 
 
 For a family in a thin category, for instance a family of open subsets of a topological space,
 `τ` is homotopic to the identity (`cechReverseHomotopy`), so it induces the identity on Čech
-cohomology (`homologyMap_cechReverse_app`). The homotopy comes from the ordered Čech complex:
-after choosing a well-ordering of `ι`, every cochain is homotopic to its alternation
+cohomology (`homologyMap_cechReverse_app`) and fixes the class of every cocycle of a presheaf of
+modules (`homologyπ_moduleCatCyclesMk_cechReverse`). The homotopy comes from the ordered Čech
+complex: after choosing a well-ordering of `ι`, every cochain is homotopic to its alternation
 (`strictMonoCechComplexHomotopyEquiv`), and alternating cochains are fixed by `τ`, because the
 inversion signs of a tuple and of its reversal differ by the sign of the reversal
 (`fromStrictMonoCechComplex_comp_cechReverse`).
@@ -60,8 +62,12 @@ are cohomologous.
 * `TauCeti.CategoryTheory.cechComplexMap_comp_cechReverse_app`: compatibility with refinements.
 * `TauCeti.CategoryTheory.homologyMap_cechReverse_app`: in a thin category, `τ` is the identity on
   cohomology.
+* `TauCeti.CategoryTheory.homologyπ_moduleCatCyclesMk_cechReverse`: in a thin category, a cocycle
+  of a presheaf of modules and its reversal have the same class.
 * `TauCeti.CategoryTheory.cechComplexπ_cechReverse`: the factors of `τ c` for a presheaf of
   modules.
+* `TauCeti.CategoryTheory.cechComponent_cechReverse`, `TauCeti.CategoryTheory.cechFace_cechReverse`:
+  the factors and restrictions of `τ c` for a presheaf of algebras.
 * `TauCeti.CategoryTheory.cechReverse_cechCupCochain` and
   `TauCeti.CategoryTheory.cechReverse_cechCup_cechReverse`: `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b`
   for general pairings and presheaves of commutative algebras.
@@ -328,6 +334,21 @@ theorem homologyMap_cechReverse_app [CategoryWithHomology A] (P : Cᵒᵖ ⥤ A)
     HomologicalComplex.homologyMap ((cechReverse A U).app P) n = 𝟙 _ := by
   rw [(cechReverseHomotopy U P).homologyMap_eq, HomologicalComplex.homologyMap_id]
 
+/-- **The order-reversing operator fixes classes.** For a family in a thin category and a presheaf
+of `R`-modules, the reversal `τ c` of a Čech cocycle `c` has the same class as `c`. -/
+@[simp]
+theorem homologyπ_moduleCatCyclesMk_cechReverse {R : Type u''} [Ring R]
+    {P : Cᵒᵖ ⥤ ModuleCat.{w} R} {p : ℕ} (c : ((cechComplexFunctor U).obj P).X p) (m : ℕ)
+    (hm : (ComplexShape.up ℕ).next p = m) (hc : (((cechComplexFunctor U).obj P).d p m).hom c = 0) :
+    (((cechComplexFunctor U).obj P).homologyπ p).hom
+        (((cechComplexFunctor U).obj P).moduleCatCyclesMk
+          ((((cechReverse (ModuleCat.{w} R) U).app P).f p).hom c) m hm
+          (by rw [HomologicalComplex.Hom.comm_apply, hc, map_zero])) =
+      (((cechComplexFunctor U).obj P).homologyπ p).hom
+        (((cechComplexFunctor U).obj P).moduleCatCyclesMk c m hm hc) := by
+  rw [← HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk, homologyMap_cechReverse_app,
+    ModuleCat.id_apply]
+
 end Thin
 
 /-! ### The cup product -/
@@ -378,12 +399,39 @@ theorem cechReverse_cechCupCochain
   simp only [map_zsmul, LinearMap.smul_apply, smul_smul]
   rw [mul_comm ((-1 : ℤ) ^ (p + 1).choose 2), Nat.neg_one_pow_add_add_one_choose_two_mul, hcomm]
   refine congrArg ((-1 : ℤ) ^ (p * q) • ·) (congrArg₂ (fun x y ↦ μ _ x y) ?_ ?_)
-  · simp only [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map', Function.comp_def,
-      Category.id_comp]
+  · dsimp only [Function.comp_def]
+    rw [cechComplexπ_map_piMap'_comp U P (fun i ↦ c i.rev)]
+    dsimp only [Function.comp_def]
+    rw [cechComplexπ_map_piMap'_comp U P c]
     exact cechComplexπ_map_piMap'_eq_of_val U P c (fun i ↦ by simp [Fin.val_rev]; omega) a
-  · simp only [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map', Function.comp_def,
-      Category.id_comp]
+  · dsimp only [Function.comp_def]
+    rw [cechComplexπ_map_piMap'_comp U Q (fun i ↦ c i.rev)]
+    dsimp only [Function.comp_def]
+    rw [cechComplexπ_map_piMap'_comp U Q c]
     exact cechComplexπ_map_piMap'_eq_of_val U Q c (fun i ↦ by simp [Fin.val_rev]; omega) b
+
+/-- The factors of `τ c` for a cochain `c` of a presheaf of algebras: the factor at
+`k = (k 0, …, k n)` is `(-1) ^ (n (n + 1) / 2)` times the restriction of `c` along the reversal of
+the vertices. -/
+@[simp]
+theorem cechComponent_cechReverse {n : ℕ} (k : Fin (n + 1) → ι)
+    (c : (cechAlgebraComplex U F).X n) :
+    cechComponent k ((((cechReverse (ModuleCat.{w} R) U).app
+      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f n).hom c) =
+      (-1 : ℤ) ^ (n + 1).choose 2 • cechFace k Fin.rev c := by
+  rw [cechComponent_eq_sum_of_comp_π_eq (s := {()}) (z := fun _ ↦ (-1) ^ (n + 1).choose 2)
+    (σ := fun _ ↦ Fin.rev) (by rw [Finset.sum_singleton]; exact cechReverse_app_f_π U _ n k),
+    Finset.sum_singleton]
+
+/-- The restrictions of `τ c` along a map `σ` of vertices are the restrictions of `c` along
+`σ ∘ Fin.rev`, times the sign `(-1) ^ (m (m + 1) / 2)` of the reversal of `m + 1` vertices. -/
+@[simp]
+theorem cechFace_cechReverse {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m + 1) → Fin (n + 1))
+    (c : (cechAlgebraComplex U F).X m) :
+    cechFace k σ ((((cechReverse (ModuleCat.{w} R) U).app
+      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).f m).hom c) =
+      (-1 : ℤ) ^ (m + 1).choose 2 • cechFace k (σ ∘ Fin.rev) c := by
+  rw [cechFace_apply, cechComponent_cechReverse, map_zsmul, map_cechFace]
 
 /-- **The order-reversing operator reverses cup products.** For a presheaf of commutative
 algebras, `τ (τ b ⌣ τ a) = (-1) ^ (p q) a ⌣ b` for Čech cochains `a` of degree `p` and `b` of

@@ -11,18 +11,21 @@ public import Mathlib.GroupTheory.GroupAction.Basic
 public import Mathlib.GroupTheory.GroupAction.FixedPoints
 public import Mathlib.GroupTheory.GroupAction.Hom
 public import Mathlib.GroupTheory.GroupAction.Pointwise
+public import Mathlib.GroupTheory.GroupAction.SubMulAction
 
 /-!
 # Elementary equivariant maps and the existence of equivariant maps
 
 Two elementary equivariant maps which `Mathlib/GroupTheory/GroupAction/Hom.lean` leaves
 unrecorded: the unique equivariant map to the one-point space `PUnit`, and the constant equivariant
-map whose value is a fixed point.
+map whose value is a fixed point. The range of an equivariant map is an invariant subset of the
+target.
 
 For group actions, the stabilizer of the preimage of a set of values of an equivariant map is the
 stabilizer of the set; in particular the stabilizer of the image of a point is the stabilizer of
-the fibre through that point. An injective map, equivariant at a point, preserves its stabilizer
-and, already for monoid actions, whether it is fixed; no `MulActionHom` structure is needed.
+the fibre through that point. An injective equivariant map preserves and reflects the orbit
+relation. An injective map, equivariant at a point, preserves its stabilizer and, already for
+monoid actions, whether it is fixed; no `MulActionHom` structure is needed.
 
 An equivariant map `X →[G] Y` sends each point to a point whose stabilizer contains the
 stabilizer of the first. Conversely, if every point of `X` has such a point in `Y`, an equivariant
@@ -33,11 +36,14 @@ stabilizer, and extend along the orbit.
 
 * `MulActionHom.toPUnit`: the equivariant map from any space to the point.
 * `MulActionHom.constOfMemFixedPoints`: the constant equivariant map at a fixed point.
+* `MulActionHom.range`: the range of an equivariant map, as an invariant subset.
 * `TauCeti.MulAction.stabilizer_preimage_of_subset_range`: the stabilizer of the preimage of a set
   of values is the stabilizer of the set.
 * `TauCeti.MulAction.stabilizer_eq_of_injective`,
   `TauCeti.MulAction.image_fixedPoints_of_bijective`: an injective equivariant map preserves
   stabilizers, and a bijective one carries the fixed points onto the fixed points.
+* `TauCeti.MulAction.orbitRel_apply_iff_of_injective`: an injective equivariant map preserves and
+  reflects the orbit relation.
 * `TauCeti.MulAction.nonempty_mulActionHom_iff`: an equivariant map exists exactly when every
   stabilizer of `X` is contained in a stabilizer of `Y`.
 -/
@@ -75,6 +81,27 @@ theorem constOfMemFixedPoints_apply {y : Y} (hy : y ∈ fixedPoints N Y) (x : X)
 theorem coe_constOfMemFixedPoints {y : Y} (hy : y ∈ fixedPoints N Y) :
     ⇑(constOfMemFixedPoints (X := X) (φ := φ) hy) = Function.const X y :=
   (rfl)
+
+section Range
+
+variable {G : Type*} [SMul G X] [SMul G Y] (f : X →[G] Y)
+
+/-- The range of an equivariant map, as an invariant subset of the target. -/
+def range : SubMulAction G Y where
+  carrier := Set.range f
+  smul_mem' g := by
+    rintro _ ⟨x, rfl⟩
+    exact ⟨g • x, map_smul f g x⟩
+
+@[simp]
+theorem coe_range : (f.range : Set Y) = Set.range f :=
+  Set.ext fun _ => Iff.rfl
+
+@[simp]
+theorem mem_range {y : Y} : y ∈ f.range ↔ ∃ x, f x = y :=
+  Iff.rfl
+
+end Range
 
 end MulActionHom
 
@@ -115,6 +142,17 @@ theorem MulAction.stabilizer_apply_eq_stabilizer_preimage (f : F) (x : X) :
     stabilizer_singleton]
 
 end Stabilizer
+
+section OrbitRel
+
+variable {F : Type*} [FunLike F X Y] [MulActionHomClass F G X Y]
+
+/-- An injective equivariant map preserves and reflects the orbit relation. -/
+theorem MulAction.orbitRel_apply_iff_of_injective {f : F} (hf : Function.Injective f)
+    {x x' : X} : orbitRel G Y (f x) (f x') ↔ orbitRel G X x x' := by
+  simp only [orbitRel_apply, mem_orbit_iff, ← map_smul, hf.eq_iff]
+
+end OrbitRel
 
 section Injective
 

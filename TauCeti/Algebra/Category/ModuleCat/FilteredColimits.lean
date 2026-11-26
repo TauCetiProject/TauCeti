@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import TauCeti.Algebra.Category.Grp.FilteredColimits
+public import TauCeti.Algebra.Category.ModuleCat.Colimits
 
 /-!
 # Filtered colimits of modules with independent universe levels
@@ -25,10 +26,13 @@ covers modules of chains with local coefficients, whose universe is that of the 
 that of the ring. Over a directed order, injectivity only needs checking on elements mapped to zero
 in the apex (`TauCeti.ModuleCat.isColimitOfJointlySurjectiveOfMapEqZero`).
 
-Finally, for a commutative ring `R` and a filtered (or empty) index category `J`, a compatible
-family of `R`-bilinear pairings `F(j) × G(j) → H(j)` induces a canonical `R`-bilinear pairing
-`colimit F × colimit G → colimit H` (`TauCeti.ModuleCat.colimitBilinear`), uniquely determined by
-its values on the colimit insertions (`TauCeti.ModuleCat.colimit_bilinear_ext`).
+Conversely, every element of a filtered colimit of modules comes from some member of the diagram
+(`TauCeti.ModuleCat.colimit_exists_rep`), again with no universe constraints. Finally, a family
+of bilinear maps `M j × N j → P j` natural in `j` induces a bilinear map of the filtered colimits,
+`TauCeti.ModuleCat.colimitMap₂`, computed on the images of two elements by multiplying them at any
+common later member of the diagram (`TauCeti.ModuleCat.colimitMap₂_ι_ι`), and bilinear/trilinear
+maps out of filtered colimits are determined on tuples from a single member
+(`TauCeti.ModuleCat.colimit_bilinear_ext`, `TauCeti.ModuleCat.colimit_trilinear_ext`).
 -/
 
 public noncomputable section
@@ -92,158 +96,191 @@ def isColimitOfJointlySurjectiveOfMapEqZero {ι : Type u} [Preorder ι] [IsDirec
     rwa [map_sub, sub_eq_zero, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
       ← F.map_comp, ← F.map_comp] at hm
 
-/-- Two `R`-linear maps out of a colimit of `R`-modules agree if they agree on all colimit
-insertions `colimit.ι F j`. -/
-theorem linearMap_colimit_ext [HasColimit F] {M : _root_.ModuleCat.{v} R}
-    {f g : (colimit F : _root_.ModuleCat.{v} R) →ₗ[R] M}
-    (h : ∀ j (x : F.obj j), f (colimit.ι F j x) = g (colimit.ι F j x)) : f = g := by
-  have h' : (_root_.ModuleCat.ofHom f : colimit F ⟶ M) = _root_.ModuleCat.ofHom g :=
-    colimit.hom_ext fun j ↦ by
-      ext x
-      exact h j x
-  exact congrArg _root_.ModuleCat.Hom.hom h'
-
 end ColimitExt
 
 section FilteredBilinear
+
+open IsFiltered
 
 variable {R : Type*} [CommRing R] {J : Type u} [Category.{w} J] [IsFilteredOrEmpty J]
 
 /-- Two `R`-bilinear maps out of filtered colimits of `R`-modules agree if they agree on pairs
 coming from the same index `j : J`. -/
 theorem colimit_bilinear_ext {F G : J ⥤ _root_.ModuleCat.{v} R} [HasColimit F] [HasColimit G]
-    {M : _root_.ModuleCat.{v} R}
-    {Φ Ψ : (colimit F : _root_.ModuleCat.{v} R) →ₗ[R] (colimit G : _root_.ModuleCat.{v} R) →ₗ[R] M}
+    {M : Type v} [AddCommGroup M] [Module R M]
+    {Φ Ψ : ↑(colimit F) →ₗ[R] ↑(colimit G) →ₗ[R] M}
     (h : ∀ j (x : F.obj j) (y : G.obj j),
-      Φ (colimit.ι F j x) (colimit.ι G j y) = Ψ (colimit.ι F j x) (colimit.ι G j y)) :
+      Φ ((colimit.ι F j).hom x) ((colimit.ι G j).hom y) =
+        Ψ ((colimit.ι F j).hom x) ((colimit.ι G j).hom y)) :
     Φ = Ψ :=
-  linearMap_colimit_ext
-    (M := _root_.ModuleCat.of R ((colimit G : _root_.ModuleCat.{v} R) →ₗ[R] M)) fun i x ↦
-    linearMap_colimit_ext fun j y ↦ by
-      rw [← colimit.w F (IsFiltered.leftToMax i j), ← colimit.w G (IsFiltered.rightToMax i j),
-        _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
-      exact h (IsFiltered.max i j) _ _
+  colimit_linearMap_ext fun i x ↦ colimit_linearMap_ext fun j y ↦ by
+    rw [← colimit.w F (leftToMax i j), ← colimit.w G (rightToMax i j),
+      _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
+    exact h (max i j) _ _
 
 /-- Two `R`-trilinear maps out of filtered colimits of `R`-modules agree if they agree on triples
 coming from the same index `j : J`. -/
 theorem colimit_trilinear_ext {F₁ F₂ F₃ : J ⥤ _root_.ModuleCat.{v} R}
-    [HasColimit F₁] [HasColimit F₂] [HasColimit F₃] {M : _root_.ModuleCat.{v} R}
-    {Φ Ψ : (colimit F₁ : _root_.ModuleCat.{v} R) →ₗ[R] (colimit F₂ : _root_.ModuleCat.{v} R) →ₗ[R]
-      (colimit F₃ : _root_.ModuleCat.{v} R) →ₗ[R] M}
+    [HasColimit F₁] [HasColimit F₂] [HasColimit F₃]
+    {M : Type v} [AddCommGroup M] [Module R M]
+    {Φ Ψ : ↑(colimit F₁) →ₗ[R] ↑(colimit F₂) →ₗ[R] ↑(colimit F₃) →ₗ[R] M}
     (h : ∀ j (x : F₁.obj j) (y : F₂.obj j) (z : F₃.obj j),
-      Φ (colimit.ι F₁ j x) (colimit.ι F₂ j y) (colimit.ι F₃ j z) =
-        Ψ (colimit.ι F₁ j x) (colimit.ι F₂ j y) (colimit.ι F₃ j z)) :
+      Φ ((colimit.ι F₁ j).hom x) ((colimit.ι F₂ j).hom y) ((colimit.ι F₃ j).hom z) =
+        Ψ ((colimit.ι F₁ j).hom x) ((colimit.ι F₂ j).hom y) ((colimit.ι F₃ j).hom z)) :
     Φ = Ψ :=
-  colimit_bilinear_ext
-    (M := _root_.ModuleCat.of R ((colimit F₃ : _root_.ModuleCat.{v} R) →ₗ[R] M)) fun m x y ↦
-    linearMap_colimit_ext fun i₃ z ↦ by
-      rw [← colimit.w F₁ (IsFiltered.leftToMax m i₃), ← colimit.w F₂ (IsFiltered.leftToMax m i₃),
-        ← colimit.w F₃ (IsFiltered.rightToMax m i₃), _root_.ModuleCat.comp_apply,
-        _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
-      exact h (IsFiltered.max m i₃) _ _ _
-
-variable {F G H : J ⥤ _root_.ModuleCat.{v} R} [HasColimit F] [HasColimit G] [HasColimit H]
-  (B : ∀ j, F.obj j →ₗ[R] G.obj j →ₗ[R] H.obj j)
-  (hB : ∀ ⦃i j : J⦄ (f : i ⟶ j) x y, B j (F.map f x) (G.map f y) = H.map f (B i x y))
-
-private def colimitBilinearLeg (i : J) (x : F.obj i) (j : J) : G.obj j ⟶ colimit H :=
-  _root_.ModuleCat.ofHom <|
-    (colimit.ι H (IsFiltered.max i j)).hom.comp <|
-      (B (IsFiltered.max i j) (F.map (IsFiltered.leftToMax i j) x)).comp
-        (G.map (IsFiltered.rightToMax i j)).hom
-
-section WithCompat
-include hB
-
-omit [HasColimit F] [HasColimit G] in
-private lemma colimitBilinearLeg_eq (i : J) (x : F.obj i) (j k : J)
-    (fi : i ⟶ k) (fj : j ⟶ k) (y : G.obj j) :
-    colimitBilinearLeg B i x j y = colimit.ι H k (B k (F.map fi x) (G.map fj y)) := by
-  let k₀ := IsFiltered.max i j
-  let fi₀ := IsFiltered.leftToMax i j
-  let fj₀ := IsFiltered.rightToMax i j
-  let a₁ := IsFiltered.leftToMax k₀ k
-  let b₁ := IsFiltered.rightToMax k₀ k
-  let c := IsFiltered.coeqHom (fi₀ ≫ a₁) (fi ≫ b₁)
-  let d := IsFiltered.coeqHom (fj₀ ≫ a₁ ≫ c) (fj ≫ b₁ ≫ c)
-  have hi : fi₀ ≫ (a₁ ≫ c ≫ d) = fi ≫ (b₁ ≫ c ≫ d) := by
-    simp only [← Category.assoc]
-    exact IsFiltered.coeq_condition (fi₀ ≫ a₁) (fi ≫ b₁) =≫ d
-  have hj : fj₀ ≫ (a₁ ≫ c ≫ d) = fj ≫ (b₁ ≫ c ≫ d) := by
-    simpa only [Category.assoc] using IsFiltered.coeq_condition (fj₀ ≫ a₁ ≫ c) (fj ≫ b₁ ≫ c)
-  have step (k' m : J) (fi' : i ⟶ k') (fj' : j ⟶ k') (u' : k' ⟶ m) :
-      colimit.ι H k' (B k' (F.map fi' x) (G.map fj' y)) =
-        colimit.ι H m (B m (F.map (fi' ≫ u') x) (G.map (fj' ≫ u') y)) := by
-    rw [← colimit.w H u', _root_.ModuleCat.comp_apply, ← hB, ← _root_.ModuleCat.comp_apply,
-      ← F.map_comp, ← _root_.ModuleCat.comp_apply, ← G.map_comp]
-  exact (step k₀ _ fi₀ fj₀ (a₁ ≫ c ≫ d)).trans <| by
-    rw [hi, hj]
-    exact (step k _ fi fj (b₁ ≫ c ≫ d)).symm
-
-private def colimitBilinearRight (i : J) (x : F.obj i) : colimit G ⟶ colimit H :=
-  colimit.desc G
-    { pt := colimit H
-      ι :=
-        { app := colimitBilinearLeg B i x
-          naturality j₁ j₂ f := by
-            ext y
-            simp only [Functor.const_obj_map, _root_.ModuleCat.hom_comp, LinearMap.comp_apply]
-            exact (colimitBilinearLeg_eq B hB i x j₂ _ (IsFiltered.leftToMax i j₂)
-                (IsFiltered.rightToMax i j₂) (G.map f y)).trans <| by
-              rw [← _root_.ModuleCat.comp_apply, ← G.map_comp]
-              exact (colimitBilinearLeg_eq B hB i x j₁ _ (IsFiltered.leftToMax i j₂)
-                (f ≫ IsFiltered.rightToMax i j₂) y).symm } }
-
-omit [HasColimit F] in
-private lemma colimitBilinearRight_ι (i : J) (x : F.obj i) (j : J) (y : G.obj j) :
-    colimitBilinearRight B hB i x (colimit.ι G j y) = colimitBilinearLeg B i x j y := by
-  rw [← _root_.ModuleCat.comp_apply, colimitBilinearRight, colimit.ι_desc]
-
-private def colimitBilinearCocone : Cocone F where
-  pt := _root_.ModuleCat.of R ((colimit G : _root_.ModuleCat.{v} R) →ₗ[R]
-    (colimit H : _root_.ModuleCat.{v} R))
-  ι :=
-    { app i := _root_.ModuleCat.ofHom
-        { toFun x := (colimitBilinearRight B hB i x).hom
-          map_add' x₁ x₂ := linearMap_colimit_ext fun j y ↦ by
-            simp [colimitBilinearRight_ι, colimitBilinearLeg]
-          map_smul' r x := linearMap_colimit_ext fun j y ↦ by
-            simp [colimitBilinearRight_ι, colimitBilinearLeg] }
-      naturality i₁ i₂ f := by
-        ext x
-        refine linearMap_colimit_ext fun j y ↦ ?_
-        simp only [_root_.ModuleCat.hom_comp, LinearMap.comp_apply, _root_.ModuleCat.hom_ofHom,
-          LinearMap.coe_mk, AddHom.coe_mk, Functor.const_obj_map]
-        exact (colimitBilinearRight_ι B hB i₂ (F.map f x) j y).trans <|
-          (colimitBilinearLeg_eq B hB i₂ _ j _ (IsFiltered.leftToMax i₂ j)
-              (IsFiltered.rightToMax i₂ j) y).trans <| by
-            rw [← _root_.ModuleCat.comp_apply, ← F.map_comp]
-            exact (colimitBilinearLeg_eq B hB i₁ _ j _ (f ≫ IsFiltered.leftToMax i₂ j)
-              (IsFiltered.rightToMax i₂ j) y).symm.trans
-              (colimitBilinearRight_ι B hB i₁ x j y).symm }
-
-/-- The `R`-bilinear pairing on filtered colimits of `R`-modules induced by a compatible family of
-`R`-bilinear pairings `B j : F(j) →ₗ[R] G(j) →ₗ[R] H(j)`. -/
-def colimitBilinear :
-    (colimit F : _root_.ModuleCat.{v} R) →ₗ[R] (colimit G : _root_.ModuleCat.{v} R) →ₗ[R]
-      (colimit H : _root_.ModuleCat.{v} R) :=
-  (colimit.desc F (colimitBilinearCocone B hB)).hom
-
-/-- On elements inserted from the same index `j : J`, `colimitBilinear` applies `B j` followed by
-the colimit insertion `colimit.ι H j`. -/
-@[simp]
-theorem colimitBilinear_ι (j : J) (x : F.obj j) (y : G.obj j) :
-    colimitBilinear B hB (colimit.ι F j x) (colimit.ι G j y) = colimit.ι H j (B j x y) := by
-  have hfac : colimitBilinear B hB (colimit.ι F j x) = (colimitBilinearRight B hB j x).hom :=
-    (_root_.ModuleCat.comp_apply _ _ x).symm.trans <|
-      ConcreteCategory.congr_hom (colimit.ι_desc (colimitBilinearCocone B hB) j) x
-  rw [hfac]
-  exact (colimitBilinearRight_ι B hB j x j y).trans <|
-    (colimitBilinearLeg_eq B hB j x j j (𝟙 j) (𝟙 j) y).trans <| by
-      simp only [F.map_id, G.map_id, _root_.ModuleCat.id_apply]
-
-end WithCompat
+  colimit_bilinear_ext fun m x y ↦ colimit_linearMap_ext fun i₃ z ↦ by
+    rw [← colimit.w F₁ (leftToMax m i₃), ← colimit.w F₂ (leftToMax m i₃),
+      ← colimit.w F₃ (rightToMax m i₃), _root_.ModuleCat.comp_apply,
+      _root_.ModuleCat.comp_apply, _root_.ModuleCat.comp_apply]
+    exact h (max m i₃) _ _ _
 
 end FilteredBilinear
+
+/-! ### Elements and bilinear maps of filtered colimits -/
+
+section Bilinear
+
+open IsFiltered
+
+variable {R : Type*} [Ring R] {J : Type u} [Category.{w} J] {F : J ⥤ _root_.ModuleCat.{v} R}
+
+/-- **Every element of a filtered colimit of modules comes from some member of the diagram.**
+There are no universe bounds on the index category, the ring or the modules; unlike
+`CategoryTheory.Limits.Concrete.colimit_exists_rep`, no instance that the forgetful functor
+preserves the colimit is needed. -/
+theorem colimit_exists_rep [IsFiltered J] [HasColimit F] (x : ↑(colimit F)) :
+    ∃ (j : J) (y : F.obj j), (colimit.ι F j).hom y = x := by
+  -- the ranges of the legs span the colimit, and they are directed
+  have hmem : x ∈ ⨆ j, LinearMap.range (colimit.ι F j).hom :=
+    (iSup_range_eq_top_of_isColimit (colimit.isColimit F)).ge Submodule.mem_top
+  have hdir : Directed (· ≤ ·) fun j ↦ LinearMap.range (colimit.ι F j).hom := fun i j ↦
+    ⟨IsFiltered.max i j,
+      by
+        rintro _ ⟨y, rfl⟩
+        exact ⟨(F.map (leftToMax i j)).hom y, by rw [← ConcreteCategory.comp_apply, colimit.w]⟩,
+      by
+        rintro _ ⟨y, rfl⟩
+        exact ⟨(F.map (rightToMax i j)).hom y, by rw [← ConcreteCategory.comp_apply, colimit.w]⟩⟩
+  have : Nonempty J := IsFiltered.nonempty
+  obtain ⟨j, y, hy⟩ := (Submodule.mem_iSup_of_directed _ hdir).1 hmem
+  exact ⟨j, y, hy⟩
+
+end Bilinear
+
+end TauCeti.ModuleCat
+
+namespace TauCeti.ModuleCat
+
+section Bilinear
+
+open IsFiltered _root_.ModuleCat
+
+universe u v w
+
+variable {R : Type*} [CommRing R] {J : Type u} [Category.{w} J] [IsFilteredOrEmpty J]
+  {M N P : J ⥤ _root_.ModuleCat.{v} R} (μ : ∀ j, M.obj j →ₗ[R] N.obj j →ₗ[R] P.obj j)
+  (hμ : ∀ ⦃j k : J⦄ (f : j ⟶ k) (x : M.obj j) (y : N.obj j),
+    μ k ((M.map f).hom x) ((N.map f).hom y) = (P.map f).hom (μ j x y))
+
+omit [IsFilteredOrEmpty J] in
+include hμ in
+/-- Moving the product of two elements along `α : l ⟶ l'` is the product of the moved elements. -/
+private lemma μ_map_comp_map_comp {j k l l' : J} (f : j ⟶ l) (g : k ⟶ l) (α : l ⟶ l')
+    (x : M.obj j) (y : N.obj k) :
+    μ l' ((M.map (f ≫ α)).hom x) ((N.map (g ≫ α)).hom y) =
+      (P.map α).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) := by
+  rw [M.map_comp, N.map_comp, _root_.ModuleCat.hom_comp, _root_.ModuleCat.hom_comp,
+    LinearMap.comp_apply, LinearMap.comp_apply, hμ]
+
+include hμ in
+/-- The image in the colimit of the product of two elements, after moving them to a common later
+member of the diagram, does not depend on that member. -/
+private lemma colimit_ι_μ_eq [HasColimit P] {j k l l' : J} (f : j ⟶ l) (g : k ⟶ l)
+    (f' : j ⟶ l') (g' : k ⟶ l') (x : M.obj j) (y : N.obj k) :
+    (colimit.ι P l).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) =
+      (colimit.ι P l').hom (μ l' ((M.map f').hom x) ((N.map g').hom y)) := by
+  -- move both products to a common later member `s`, where the two routes agree
+  obtain ⟨s, α, β, hf, hg⟩ := bowtie f f' g g'
+  rw [← colimit.w P α, ← colimit.w P β, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
+    ← μ_map_comp_map_comp μ hμ, ← μ_map_comp_map_comp μ hμ, hf, hg]
+
+/-- The product of an element of `M j` and an element of `N k`, computed at the chosen common
+later member `max j k` and mapped to the colimit of `P`. -/
+private noncomputable def colimitPairing [HasColimit P] (j k : J) :
+    M.obj j →ₗ[R] N.obj k →ₗ[R] ↑(colimit P) :=
+  ((μ (max j k)).compl₁₂ (M.map (leftToMax j k)).hom (N.map (rightToMax j k)).hom).compr₂
+    (colimit.ι P (max j k)).hom
+
+include hμ in
+private lemma colimitPairing_apply [HasColimit P] {j k l : J} (f : j ⟶ l) (g : k ⟶ l)
+    (x : M.obj j) (y : N.obj k) :
+    colimitPairing μ j k x y = (colimit.ι P l).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) :=
+  colimit_ι_μ_eq μ hμ _ _ f g x y
+
+include hμ in
+/-- For a fixed element of `M j`, its products with the elements of the colimit of `N`. -/
+private noncomputable def colimitMap₂Aux [HasColimit N] [HasColimit P] (j : J) :
+    M.obj j →ₗ[R] ↑(colimit N) →ₗ[R] ↑(colimit P) :=
+  (colimit.desc N
+    { pt := .of R (M.obj j →ₗ[R] ↑(colimit P))
+      ι :=
+        { app k := _root_.ModuleCat.ofHom (colimitPairing μ j k).flip
+          naturality k k' g := by
+            refine _root_.ModuleCat.hom_ext (LinearMap.ext fun y ↦ LinearMap.ext fun x ↦ ?_)
+            dsimp
+            -- compute both products at the common later member `max j k'`
+            rw [colimitPairing_apply μ hμ (leftToMax j k') (rightToMax j k') x,
+              colimitPairing_apply μ hμ (leftToMax j k') (g ≫ rightToMax j k') x y, N.map_comp,
+              _root_.ModuleCat.hom_comp, LinearMap.comp_apply] } }).hom.flip
+
+private lemma colimitMap₂Aux_apply [HasColimit N] [HasColimit P] (j k : J) (x : M.obj j)
+    (y : N.obj k) :
+    colimitMap₂Aux μ hμ j x ((colimit.ι N k).hom y) = colimitPairing μ j k x y := by
+  simp [colimitMap₂Aux, ← ConcreteCategory.comp_apply]
+
+include hμ in
+/-- **Bilinear maps of filtered colimits of modules.** A family of bilinear maps
+`μ j : M j × N j → P j`, natural in `j`, induces a bilinear map `colim M × colim N → colim P` of
+the colimits over a filtered index category. It sends the images of `x : M j` and `y : N k` to the
+image of the product of `x` and `y` computed at any common later member of the diagram
+(`TauCeti.ModuleCat.colimitMap₂_ι_ι`). -/
+noncomputable def colimitMap₂ [HasColimit M] [HasColimit N] [HasColimit P] :
+    ↑(colimit M) →ₗ[R] ↑(colimit N) →ₗ[R] ↑(colimit P) :=
+  (colimit.desc M
+    { pt := .of R (↑(colimit N) →ₗ[R] ↑(colimit P))
+      ι :=
+        { app j := _root_.ModuleCat.ofHom (colimitMap₂Aux μ hμ j)
+          naturality j j' f := by
+            refine _root_.ModuleCat.hom_ext (LinearMap.ext fun x ↦ ?_)
+            dsimp
+            -- two linear maps out of the colimit of `N` agree on the image of every member
+            refine colimit_linearMap_ext fun k y ↦ ?_
+            simp only [colimitMap₂Aux_apply]
+            -- compute both products at the common later member `max j' k`
+            rw [colimitPairing_apply μ hμ (leftToMax j' k) (rightToMax j' k),
+              colimitPairing_apply μ hμ (f ≫ leftToMax j' k) (rightToMax j' k), M.map_comp,
+              _root_.ModuleCat.hom_comp, LinearMap.comp_apply] } }).hom
+
+include hμ in
+/-- **The bilinear map of colimits on images.** `colimitMap₂ μ hμ` sends the images of `x : M j`
+and `y : N k` to the image of `μ l x y`, after moving `x` and `y` to any common later member `l`
+of the diagram. -/
+theorem colimitMap₂_ι_ι [HasColimit M] [HasColimit N] [HasColimit P] {j k l : J} (f : j ⟶ l)
+    (g : k ⟶ l) (x : M.obj j) (y : N.obj k) :
+    colimitMap₂ μ hμ ((colimit.ι M j).hom x) ((colimit.ι N k).hom y) =
+      (colimit.ι P l).hom (μ l ((M.map f).hom x) ((N.map g).hom y)) := by
+  rw [colimitMap₂, ← ConcreteCategory.comp_apply, colimit.ι_desc]
+  exact (colimitMap₂Aux_apply μ hμ j k x y).trans (colimitPairing_apply μ hμ f g x y)
+
+include hμ in
+/-- `colimitMap₂ μ hμ` sends the images of `x : M j` and `y : N j` to the image of `μ j x y`. -/
+@[simp]
+theorem colimitMap₂_ι [HasColimit M] [HasColimit N] [HasColimit P] (j : J) (x : M.obj j)
+    (y : N.obj j) :
+    colimitMap₂ μ hμ ((colimit.ι M j).hom x) ((colimit.ι N j).hom y) =
+      (colimit.ι P j).hom (μ j x y) := by
+  simp [colimitMap₂_ι_ι μ hμ (𝟙 j) (𝟙 j)]
+
+end Bilinear
 
 end TauCeti.ModuleCat

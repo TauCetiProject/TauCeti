@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.AdjoinRoot
 public import TauCeti.Algebra.Module.Torsion.Finite
 import Mathlib.RingTheory.Ideal.GoingUp
 import TauCeti.Algebra.GroupWithZero.Irreducible
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Quotients by distinguished restricted power series
@@ -65,12 +67,8 @@ theorem IsDistinguished.polynomialToRestricted_dvd_iff
   have hdiv : (g : PowerSeries R) = (g /ₘ p : PowerSeries R) * (p : PowerSeries R)
       + (g %ₘ p : PowerSeries R) := by
     exact_mod_cast (Polynomial.modByMonic_add_div g p).symm.trans (by ring)
-  have hr : ∀ n, s ≤ n → (g %ₘ p : PowerSeries R).coeff n = 0 := by
-    intro n hn
-    rw [Polynomial.coeff_coe]
-    apply Polynomial.coeff_eq_zero_of_degree_lt
-    exact (Polynomial.degree_modByMonic_lt g hm.monic).trans_le
-      (by rw [Polynomial.degree_eq_natDegree hm.ne_zero, hm.natDegree_eq]; exact_mod_cast hn)
+  have hr : ∀ n, s ≤ n → (g %ₘ p : PowerSeries R).coeff n = 0 := fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt (hm.degree_modByMonic_lt g)
   have heq : (a : PowerSeries R) * (p : PowerSeries R) + 0 =
       (g /ₘ p : PowerSeries R) * (p : PowerSeries R) + (g %ₘ p : PowerSeries R) := by
     have hcoe := congrArg (fun x : PowerSeries.IsRestricted.subring (R := R) c ↦

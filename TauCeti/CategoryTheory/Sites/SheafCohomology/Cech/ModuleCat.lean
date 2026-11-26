@@ -155,4 +155,18 @@ theorem cechComplexπ_map_piMap'_id (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w
   obtain rfl : f = id := funext fun i ↦ Fin.ext (hf i)
   simp
 
+/-- Restrictions along composable maps of vertex indices compose. -/
+theorem cechComplexπ_map_piMap'_comp (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R)
+    {k m n : ℕ} (c : Fin (n + 1) → ι) (τ : Fin (m + 1) → Fin (n + 1))
+    (σ : Fin (k + 1) → Fin (m + 1)) (x : ((cechComplexFunctor U).obj P).X k) :
+    P.map (Pi.map' τ (fun _ ↦ 𝟙 _) : (∏ᶜ fun i ↦ U (c i)) ⟶ ∏ᶜ fun j ↦ U (c (τ j))).op
+        (P.map (Pi.map' σ (fun _ ↦ 𝟙 _) :
+            (∏ᶜ fun i ↦ U (c (τ i))) ⟶ ∏ᶜ fun j ↦ U (c (τ (σ j)))).op
+          (cechComplexπ U P k (fun x ↦ c (τ (σ x))) x)) =
+      P.map (Pi.map' (τ ∘ σ) (fun _ ↦ 𝟙 _) :
+          (∏ᶜ fun i ↦ U (c i)) ⟶ ∏ᶜ fun j ↦ U (c (τ (σ j)))).op
+        (cechComplexπ U P k (fun x ↦ c (τ (σ x))) x) := by
+  rw [← Functor.map_comp_apply, ← op_comp, Pi.map'_comp_map']
+  simp only [Function.comp_def, Category.id_comp]
+
 end TauCeti.CategoryTheory
