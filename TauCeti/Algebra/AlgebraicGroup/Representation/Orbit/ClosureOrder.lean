@@ -301,7 +301,8 @@ theorem mk_zero_le_mk_of_forall_smul {v : M}
       (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hne).mpr hroot)))
   simpa [hq0] using (hqeval 0).symm
 
-/-- **Decomposition of the `k`-rational vectors below an orbit in a downward-closed family.** -/
+/-- **Decomposition of the `k`-rational vectors below an orbit `O`** for any family `S` containing
+every orbit below `O`. -/
 theorem setOf_mk_le_eq_union_biUnion_of_forall_le {S : Set (VectorOrbit k H M)}
     {O : VectorOrbit k H M} (hS : ∀ ⦃O' : VectorOrbit k H M⦄, O' ≤ O → O' ∈ S) :
     {y : M | (mk y : VectorOrbit k H M) ≤ O} =

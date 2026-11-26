@@ -895,6 +895,12 @@ private noncomputable def centerProdToNilpotentAdOrbit
     exact Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp
       (isNilpotentAd_of_mem_nilpotentConeOrbits hO)⟩
 
+private theorem coe_centerProdToNilpotentAdOrbit
+    (p : LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H) :
+    (centerProdToNilpotentAdOrbit (k := k) (H := H) p : Comodule.VectorOrbit k H 𝔤) =
+      centerAddNilpotentConeOrbit p.fst p.snd.val :=
+  (rfl)
+
 private theorem centerProdToNilpotentAdOrbit_bijective [LieAlgebra.HasCentralRadical k 𝔤] :
     Function.Bijective (centerProdToNilpotentAdOrbit (k := k) (H := H)) := by
   constructor
@@ -903,7 +909,7 @@ private theorem centerProdToNilpotentAdOrbit_bijective [LieAlgebra.HasCentralRad
     induction O₂ using Comodule.VectorOrbit.ind with | h y₂ =>
     have heq' : (Comodule.VectorOrbit.mk ((z₁ : 𝔤) + y₁) : Comodule.VectorOrbit k H 𝔤) =
         Comodule.VectorOrbit.mk ((z₂ : 𝔤) + y₂) := by
-      simpa only [centerProdToNilpotentAdOrbit, centerAddNilpotentConeOrbit_mk] using
+      simpa only [coe_centerProdToNilpotentAdOrbit, centerAddNilpotentConeOrbit_mk] using
         congrArg Subtype.val heq
     obtain ⟨g, hg⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq'
     rw [map_add, Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one (z₁ : 𝔤)
@@ -911,10 +917,8 @@ private theorem centerProdToNilpotentAdOrbit_bijective [LieAlgebra.HasCentralRad
         (FiniteTypeCommHopfAlgCat.of k H) _).mpr z₁.property) g] at hg
     have hy₁ := (mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad.mp hO₁).left
     have hy₂ := (mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad.mp hO₂).left
-    have hgy₁ : Comodule.basePointsRepresentation 𝔤 g y₁ ∈ LieAlgebra.derivedSeries k 𝔤 1 := by
-      rw [← Derivation.basePointsAdjointLieEquiv_apply,
-        ← LieIdeal.derivedSeries_map_eq 1 (Derivation.basePointsAdjointLieEquiv g).surjective]
-      exact LieIdeal.mem_map hy₁
+    have hgy₁ : Comodule.basePointsRepresentation 𝔤 g y₁ ∈ LieAlgebra.derivedSeries k 𝔤 1 :=
+      (Derivation.basePointsRepresentation_adjointComodule_mem_derivedSeries_iff g 1 y₁).mpr hy₁
     have hz_eq : z₁ = z₂ := by
       have hsub : (z₁ : 𝔤) - z₂ = y₂ - Comodule.basePointsRepresentation 𝔤 g y₁ :=
         sub_eq_sub_iff_add_eq_add.mpr (hg.trans (add_comm _ _))
@@ -933,9 +937,7 @@ private theorem centerProdToNilpotentAdOrbit_bijective [LieAlgebra.HasCentralRad
         (H := FiniteTypeCommHopfAlgCat.of k H)).mp
         (Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp hO)
     exact ⟨(⟨z, hz⟩, ⟨Comodule.VectorOrbit.mk y, mk_mem_nilpotentConeOrbits_iff.mpr hy⟩),
-      Subtype.ext <| by
-        dsimp only [centerProdToNilpotentAdOrbit]
-        rw [centerAddNilpotentConeOrbit_mk, hzy]⟩
+      Subtype.ext <| by rw [coe_centerProdToNilpotentAdOrbit, centerAddNilpotentConeOrbit_mk, hzy]⟩
 
 /-- **Decomposition of `ad`-nilpotent orbits for a reductive tangent Lie algebra.** For a connected
 affine group in characteristic zero over an algebraically closed field with `𝔤` reductive, adding a
@@ -947,6 +949,11 @@ noncomputable def centerProdNilpotentConeOrbitsEquiv [LieAlgebra.HasCentralRadic
   Equiv.ofBijective (centerProdToNilpotentAdOrbit (k := k) (H := H))
     (centerProdToNilpotentAdOrbit_bijective (k := k) (H := H))
 
+private theorem centerProdNilpotentConeOrbitsEquiv_apply [LieAlgebra.HasCentralRadical k 𝔤]
+    (p : LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H) :
+    centerProdNilpotentConeOrbitsEquiv (k := k) (H := H) p = centerProdToNilpotentAdOrbit p :=
+  Equiv.ofBijective_apply _ _ p
+
 /-- On `(z, mk y)`, `centerProdNilpotentConeOrbitsEquiv` sends the pair to `mk (z + y)`. -/
 @[simp]
 theorem coe_centerProdNilpotentConeOrbitsEquiv_mk [LieAlgebra.HasCentralRadical k 𝔤]
@@ -955,7 +962,8 @@ theorem coe_centerProdNilpotentConeOrbitsEquiv_mk [LieAlgebra.HasCentralRadical 
     (centerProdNilpotentConeOrbitsEquiv (k := k) (H := H) (z, ⟨Comodule.VectorOrbit.mk y, hy⟩) :
         Comodule.VectorOrbit k H 𝔤) =
       Comodule.VectorOrbit.mk ((z : 𝔤) + y) := by
-  simp [centerProdNilpotentConeOrbitsEquiv, centerProdToNilpotentAdOrbit, Equiv.ofBijective]
+  rw [centerProdNilpotentConeOrbitsEquiv_apply, coe_centerProdToNilpotentAdOrbit,
+    centerAddNilpotentConeOrbit_mk]
 
 /-- The inverse of `centerProdNilpotentConeOrbitsEquiv` splits `mk (z + y)` into `(z, mk y)`. -/
 @[simp]

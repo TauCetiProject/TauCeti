@@ -134,6 +134,8 @@ the derived ideal is isomorphic to `L ⧸ Z(L)`, hence Killing and semisimple.
   reductive Lie algebra is the direct sum of its centre and its derived ideal.**
 * `TauCeti.isKilling_quotient_center` and `TauCeti.isKilling_derivedSeries`: the quotient by the
   centre and the derived ideal of a reductive Lie algebra are Killing, hence semisimple.
+* `TauCeti.derivedSeriesLieProj`: the canonical Lie algebra retraction `L →ₗ⁅K⁆ ⁅L, L⁆` along the
+  centre `Z(L)`.
 * `TauCeti.hasCentralRadical_iff_isCompl_center_derivedSeries`: **the structure theorem**, `L` is
   reductive if and only if `L = Z(L) ⊕ ⁅L, L⁆` with `⁅L, L⁆` semisimple.
 
@@ -450,37 +452,49 @@ theorem isCompl_center_derivedSeries :
   ⟨disjoint_iff.2 (center_inf_derivedSeries_eq_bot K L),
     codisjoint_iff.2 (sup_center_derivedSeries_eq_top K L)⟩
 
+/-- As `K`-submodules of `L`, the centre and the derived Lie subalgebra are complementary. -/
+theorem isCompl_center_toLieSubalgebra_derivedSeries :
+    IsCompl (LieAlgebra.center K L).toSubmodule
+      (derivedSeries K L 1).toLieSubalgebra.toSubmodule := by
+  rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
+  exact isCompl_center_derivedSeries K L
+
+private noncomputable def derivedSeriesQuotientEquiv :
+    (L ⧸ LieAlgebra.center K L) ≃ₗ⁅K⁆ derivedSeries K L 1 :=
+  (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra
+    (isCompl_center_toLieSubalgebra_derivedSeries K L)
+
 variable {K L} in
 /-- **The derived ideal of a reductive Lie algebra has nondegenerate Killing form**, and is
 therefore semisimple (`LieAlgebra.IsKilling.instSemisimple`). Being a complement of the centre, it
 is isomorphic to `L ⧸ Z(L)` (`LieIdeal.quotientEquivOfIsCompl`), which is Killing by
 `TauCeti.isKilling_quotient_center`. -/
 instance isKilling_derivedSeries : LieAlgebra.IsKilling K (derivedSeries K L 1) :=
-  LieAlgebra.isKilling_of_equiv <|
-    (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
-      rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-      exact isCompl_center_derivedSeries K L
+  LieAlgebra.isKilling_of_equiv (derivedSeriesQuotientEquiv K L)
 
 /-- **Canonical Lie algebra retraction `L →ₗ⁅K⁆ ⁅L, L⁆`** of a reductive Lie algebra onto its
 derived ideal along the centre `Z(L)`, built from `L = Z(L) ⊕ ⁅L, L⁆` via `L ⧸ Z(L) ≃ₗ⁅K⁆ ⁅L, L⁆`.
 -/
 noncomputable def derivedSeriesLieProj : L →ₗ⁅K⁆ derivedSeries K L 1 :=
-  ((LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <| by
-    rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-    exact isCompl_center_derivedSeries K L).toLieHom.comp (LieAlgebra.center K L).mkQ
+  (derivedSeriesQuotientEquiv K L).toLieHom.comp (LieAlgebra.center K L).mkQ
+
+private theorem derivedSeriesLieProj_apply (x : L) :
+    derivedSeriesLieProj K L x = derivedSeriesQuotientEquiv K L ((LieAlgebra.center K L).mkQ x) :=
+  (rfl)
 
 variable {K L} in
 /-- `derivedSeriesLieProj` fixes every element of the derived ideal `⁅L, L⁆`. -/
 @[simp]
 theorem derivedSeriesLieProj_coe (y : derivedSeries K L 1) :
-    derivedSeriesLieProj K L (y : L) = y :=
-  (LieAlgebra.center K L).quotientEquivOfIsCompl_apply_mk_coe (derivedSeries K L 1).toLieSubalgebra
-    (by rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-        exact isCompl_center_derivedSeries K L) ⟨(y : L), y.property⟩
+    derivedSeriesLieProj K L (y : L) = y := by
+  rw [derivedSeriesLieProj_apply]
+  exact (LieAlgebra.center K L).quotientEquivOfIsCompl_apply_mk_coe
+    (derivedSeries K L 1).toLieSubalgebra
+    (isCompl_center_toLieSubalgebra_derivedSeries K L) ⟨(y : L), y.property⟩
 
 /-- `derivedSeriesLieProj` retracts the inclusion of the derived ideal `⁅L, L⁆`. -/
 @[simp]
-theorem comp_incl_derivedSeriesLieProj :
+theorem derivedSeriesLieProj_comp_incl :
     (derivedSeriesLieProj K L).comp (derivedSeries K L 1).incl = LieHom.id :=
   LieHom.ext (derivedSeriesLieProj_coe (K := K) (L := L))
 
@@ -489,12 +503,9 @@ variable {K L} in
 @[simp]
 theorem derivedSeriesLieProj_eq_zero_iff {x : L} :
     derivedSeriesLieProj K L x = 0 ↔ x ∈ LieAlgebra.center K L := by
-  let e := (LieAlgebra.center K L).quotientEquivOfIsCompl (derivedSeries K L 1).toLieSubalgebra <|
-    by rw [LieIdeal.toLieSubalgebra_toSubmodule, LieSubmodule.isCompl_toSubmodule]
-       exact isCompl_center_derivedSeries K L
-  have hx : (derivedSeriesLieProj K L x : L) = (e ((LieAlgebra.center K L).mkQ x) : L) := rfl
-  rw [← ZeroMemClass.coe_eq_zero, hx, ZeroMemClass.coe_eq_zero,
-    map_eq_zero_iff e (EquivLike.injective e), LieIdeal.mkQ_eq_zero]
+  rw [derivedSeriesLieProj_apply,
+    map_eq_zero_iff (derivedSeriesQuotientEquiv K L) (derivedSeriesQuotientEquiv K L).injective,
+    LieIdeal.mkQ_eq_zero]
 
 variable {K L} in
 /-- `derivedSeriesLieProj` annihilates the centre `Z(L)`. -/

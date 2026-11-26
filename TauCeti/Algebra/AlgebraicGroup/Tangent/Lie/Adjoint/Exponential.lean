@@ -48,9 +48,10 @@ algebra `𝔤 = (𝔪 / 𝔪²)*`.
 
 * `isNilpotent_differential_cotangentDualLieEquiv_of_forall_lift_eval_eq_zero` in
   `TauCeti.Comodule`, together with
-  `exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero_of_mem_derivedSeries` and
-  `exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero` in `TauCeti`: nilpotence on
-  comodules and local nilpotence on `H`.
+  `exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero`,
+  `exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero_of_mem_derivedSeries`, and
+  `exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero_of_forall_lift_eval_eq_zero`
+  in `TauCeti`: nilpotence on comodules and local nilpotence on `H`.
 * `TauCeti.expAdPoint`: the rational point `exp x ∈ G(k)` attached to an `ad`-nilpotent `x ∈ 𝔤`
   when `IsKilling k 𝔤`, with its action, injectivity, and subgroup-membership API.
 * `TauCeti.map_expAdSubgroup_le_map_quotientPointsSubgroup`,
@@ -404,6 +405,64 @@ theorem map_expAdSubgroup_le_map_quotientPointsSubgroup_centralizer [LieAlgebra 
           (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤).toHomUnits :=
   map_expAdSubgroup_le_map_quotientPointsSubgroup e (centralizerHopfIdeal H e) le_rfl
 
+private def quotientPointsDerivedSeriesSubgroup (I : HopfIdeal k H) :
+    Subgroup (LinearMap.GeneralLinearGroup k (LieAlgebra.derivedSeries k 𝔤 1)) where
+  carrier := {v | ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup
+        (CommHopfAlgCat.of k H) I (CommAlgCat.of k k),
+      ∀ y : LieAlgebra.derivedSeries k 𝔤 1,
+        Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g (y : 𝔤) =
+          ((v • y : LieAlgebra.derivedSeries k 𝔤 1) : 𝔤)}
+  one_mem' := ⟨1, Subgroup.one_mem _, fun y ↦ by simp⟩
+  mul_mem' := fun {v₁ v₂} ⟨g₁, hg₁, h₁⟩ ⟨g₂, hg₂, h₂⟩ ↦
+    ⟨g₁ * g₂, Subgroup.mul_mem _ hg₁ hg₂, fun y ↦ by
+      rw [map_mul, mul_apply_eq_comp, h₂, h₁, mul_smul]⟩
+  inv_mem' := fun {v} ⟨g, hg, hv⟩ ↦
+    ⟨g⁻¹, Subgroup.inv_mem _ hg, fun y ↦ by
+      have := congrArg (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g⁻¹)
+        (hv (v⁻¹ • y))
+      simpa [Representation.inv_self_apply] using this.symm⟩
+
+omit [CharZero k] [LieAlgebra.HasCentralRadical k 𝔤] in
+@[simp]
+private theorem mem_quotientPointsDerivedSeriesSubgroup_iff (I : HopfIdeal k H)
+    {v : LinearMap.GeneralLinearGroup k (LieAlgebra.derivedSeries k 𝔤 1)} :
+    v ∈ quotientPointsDerivedSeriesSubgroup (H := H) I ↔
+      ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup
+          (CommHopfAlgCat.of k H) I (CommAlgCat.of k k),
+        ∀ y : LieAlgebra.derivedSeries k 𝔤 1,
+          Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g (y : 𝔤) =
+            ((v • y : LieAlgebra.derivedSeries k 𝔤 1) : 𝔤) :=
+  Iff.rfl
+
+omit [LieAlgebra.HasCentralRadical k 𝔤] in
+private theorem basePointsRepresentation_expPoint_derivedSeries
+    [LieAlgebra ℚ (LieAlgebra.derivedSeries k 𝔤 1)]
+    {x : LieAlgebra.derivedSeries k 𝔤 1}
+    (hx : IsNilpotent (LieAlgebra.ad k (LieAlgebra.derivedSeries k 𝔤 1) x))
+    (hd : ∀ a : H, ∃ m,
+      (Bialgebra.leftInvariantDerivation
+        (Derivation.cotangentLinearEquiv (x : 𝔤)))^[m] a = 0)
+    (y : LieAlgebra.derivedSeries k 𝔤 1) :
+    letI : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+    Comodule.basePointsRepresentation (R := k) (H := H) 𝔤
+        (toConv (Bialgebra.expPoint
+          (Derivation.cotangentLinearEquiv (x : 𝔤)) hd))
+        (y : 𝔤) =
+      ((expAd (K := k) x hx.exists_pow_apply_eq_zero y :
+        LieAlgebra.derivedSeries k 𝔤 1) : 𝔤) := by
+  let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
+  let _ := ratLieAlgebra k 𝔤
+  let 𝔤' := LieAlgebra.derivedSeries k 𝔤 1
+  have hx𝔤 : IsNilpotent (LieAlgebra.ad k 𝔤 (𝔤'.incl x)) := (LieIdeal.isNilpotent_ad_iff 𝔤').mp hx
+  rw [Comodule.basePointsRepresentation_expPoint hd
+      (Derivation.differential_cotangentLinearEquiv_adjointComodule (x : 𝔤) ▸ hx𝔤),
+    Derivation.differential_cotangentLinearEquiv_adjointComodule,
+    ← 𝔤'.incl_apply (expAd (K := k) x hx.exists_pow_apply_eq_zero y),
+    𝔤'.incl.map_expAd hx.exists_pow_apply_eq_zero hx𝔤.exists_pow_apply_eq_zero y,
+    expAd_apply (K := k) (𝔤'.incl x) hx𝔤 (𝔤'.incl y), 𝔤'.incl_apply, 𝔤'.incl_apply]
+  congr!
+  exact Subsingleton.elim _ _
+
 /-- **Realizing `Int(⁅𝔤, 𝔤⁆)` on the derived ideal inside a closed subgroup containing `⁅𝔤, 𝔤⁆`.**
 When `𝔤` is reductive over a characteristic-zero field and `I.lieSubalgebra` contains the derived
 ideal `⁅𝔤, 𝔤⁆`, every element of `intLieAlgebra k ⁅𝔤, 𝔤⁆` is realized on `⁅𝔤, 𝔤⁆` by a rational
@@ -418,46 +477,19 @@ theorem exists_mem_quotientPointsSubgroup_forall_derivedSeries_eq_of_mem_intLieA
       ∀ y : LieAlgebra.derivedSeries k 𝔤 1,
         Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g (y : 𝔤) =
           ((u • y : LieAlgebra.derivedSeries k 𝔤 1) : 𝔤) := by
+  rw [← mem_quotientPointsDerivedSeriesSubgroup_iff]
+  refine intLieAlgebra_le_iff.mpr (fun x hx ↦ ?_) hu
   let _ : Algebra ℚ H := Algebra.compHom H (algebraMap ℚ k)
-  let 𝔤' := LieAlgebra.derivedSeries k 𝔤 1
-  let S : Subgroup (LinearMap.GeneralLinearGroup k 𝔤') :=
-    { carrier := {v | ∃ g ∈ CommHopfAlgCat.quotientPointsSubgroup
-          (CommHopfAlgCat.of k H) I (CommAlgCat.of k k),
-        ∀ y : 𝔤', Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g (y : 𝔤) =
-          ((v • y : 𝔤') : 𝔤)}
-      one_mem' := ⟨1, Subgroup.one_mem _, fun y ↦ by simp⟩
-      mul_mem' := fun {v₁ v₂} ⟨g₁, hg₁, h₁⟩ ⟨g₂, hg₂, h₂⟩ ↦
-        ⟨g₁ * g₂, Subgroup.mul_mem _ hg₁ hg₂, fun y ↦ by
-          rw [map_mul, mul_apply_eq_comp, h₂, h₁, mul_smul]⟩
-      inv_mem' := fun {v} ⟨g, hg, hv⟩ ↦
-        ⟨g⁻¹, Subgroup.inv_mem _ hg, fun y ↦ by
-          have := congrArg (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 g⁻¹)
-            (hv (v⁻¹ • y))
-          simpa [Representation.inv_self_apply] using this.symm⟩ }
-  suffices intLieAlgebra k 𝔤' ≤ S from this hu
-  refine intLieAlgebra_le_iff.mpr fun x hx ↦ ?_
-  have hx𝔤 : IsNilpotent (LieAlgebra.ad k 𝔤 (x : 𝔤)) := (LieIdeal.isNilpotent_ad_iff 𝔤').mp hx
+  have hx𝔤 : IsNilpotent (LieAlgebra.ad k 𝔤 (x : 𝔤)) := (LieIdeal.isNilpotent_ad_iff _).mp hx
   have hD :=
     exists_iterate_leftInvariantDerivation_cotangentDualLieEquiv_eq_zero_of_mem_derivedSeries
       (H := H) x.property hx𝔤
-  set d := Derivation.cotangentDualLieEquiv (R := k) (H := H) (x : 𝔤)
-  have hdI : d ∈ I.lieSubalgebra (B := k) :=
+  have hdI : Derivation.cotangentDualLieEquiv (R := k) (H := H) (x : 𝔤) ∈
+      I.lieSubalgebra (B := k) :=
     hI ((LieSubalgebra.mem_map _ _ _).mpr ⟨(x : 𝔤), x.property, rfl⟩)
-  refine ⟨toConv (Bialgebra.expPoint d hD),
+  refine ⟨toConv (Bialgebra.expPoint _ hD),
     I.toConv_expPoint_mem_quotientPointsSubgroup hdI hD, fun y ↦ ?_⟩
-  obtain ⟨N, hN⟩ := hx𝔤
-  have hN' : LieAlgebra.ad k 𝔤' x ^ N = 0 :=
-    LinearMap.ext fun z ↦ Subtype.ext <| (𝔤'.incl.map_ad_pow x N z).trans (by simp [hN])
-  rw [Comodule.basePointsRepresentation_expPoint hD
-      (Derivation.differential_cotangentDualLieEquiv_adjointComodule (x : 𝔤) ▸ ⟨N, hN⟩),
-    Derivation.differential_cotangentDualLieEquiv_adjointComodule,
-    IsNilpotent.exp_eq_sum hN, LinearMap.sum_apply,
-    LinearMap.GeneralLinearGroup.ofLinearEquiv_smul, LieEquiv.coe_toLinearEquiv,
-    expAd_apply (K := k) x hx y, IsNilpotent.exp_eq_sum hN', LinearMap.sum_apply,
-    ← 𝔤'.incl_apply (∑ _ ∈ _, _), _root_.map_sum 𝔤'.incl]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.smul_apply, LinearMap.smul_apply, map_rat_smul 𝔤'.incl (i.factorial : ℚ)⁻¹]
-  exact congrArg (fun v ↦ (i.factorial : ℚ)⁻¹ • v) (𝔤'.incl.map_ad_pow x i y).symm
+  simp [basePointsRepresentation_expPoint_derivedSeries hx _ y]
 
 end Reductive
 

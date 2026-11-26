@@ -61,27 +61,28 @@ orbit-level weighted Dynkin diagram invariant
 `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram` valued in `b.support → Fin 3`, assigning the
 all-zero diagram `0` to the zero orbit and `b.weightedDynkinDiagram h` to each nonzero orbit.
 
-Every `sl₂` triple can be rescaled inside its rational `C_G(h)(k)`-orbit (`IsSl2Triple.mk_smul_eq`),
-placing the zero orbit in the closure of every nilpotent orbit
-(`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.mk_zero_le`), and combining lower-set finiteness with
+For any `sl₂` triple `(h, e, f)`, every nonzero scalar multiple of the nilpositive element `e` lies
+in its rational `G(k)`-orbit (`IsSl2Triple.mk_smul_eq`), placing the zero orbit in the closure of
+every nilpotent orbit (`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.mk_zero_le`). In addition,
+`TauCeti.Comodule.VectorOrbit.finite_setOf_le_of_isNilpotentAd` supplies the lower-set finiteness
+hypothesis needed to apply the generic representation orbit-closure and boundary decompositions
 `TauCeti.Comodule.VectorOrbit.closure_image_inter_basicOpen_snd_eq_biUnion` and
-`TauCeti.Comodule.VectorOrbit.closure_image_sdiff_image_inter_basicOpen_snd_eq_biUnion` decomposes
-the scheme points of `closure O.image` and `(closure O.image \ O.image)` in the affine chart
-`{t ≠ 0}` of `P(𝔤 × k)` into finite unions of lower orbit images.
+`TauCeti.Comodule.VectorOrbit.closure_image_sdiff_image_inter_basicOpen_snd_eq_biUnion`.
 
 Finally, when `𝔤` is reductive (`[LieAlgebra.HasCentralRadical k 𝔤]`), `⁅𝔤, 𝔤⁆` has nondegenerate
 Killing form (`TauCeti.isKilling_derivedSeries`) and `Int(⁅𝔤, 𝔤⁆)` integrates on `⁅𝔤, 𝔤⁆` into
 `G°(k)` (`TauCeti.exists_mem_quotientPointsSubgroup_forall_derivedSeries_eq_of_mem_intLieAlgebra`).
-For connected `G`, `TauCeti.nilpotentConeOrbits k H` consists of the orbits of `ad`-nilpotent
-elements of `⁅𝔤, 𝔤⁆`
-(`TauCeti.mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad`), avoiding nonzero
-central scalars; pulling coadjoint invariants on `⁅𝔤, 𝔤⁆` back along
-`TauCeti.derivedSeriesLieProj k 𝔤` extends finiteness, `3 ^ rank` bounds, exact counts, lower-set
-finiteness, and the injective weighted Dynkin diagram classification
-(`RootPairing.Base.optionDominantNeutralElementsEquivNilpotentConeOrbits`,
-`RootPairing.Base.nilpotentConeOrbitWeightedDynkinDiagram`) to `nilpotentConeOrbits k H` for any
-Cartan subalgebra `𝔥` of `⁅𝔤, 𝔤⁆`, instantiated from the same shared dominant-orbit and
-`Option`-equivalence construction as the Killing case.
+Exhaustion by dominant `sl₂` triples in `⁅𝔤, 𝔤⁆` gives finiteness and `3 ^ finrank k 𝔥` bounds on
+the `G(k)`-orbits of `ad`-nilpotent elements of `⁅𝔤, 𝔤⁆` (and hence, for connected `G`, on
+`TauCeti.nilpotentConeOrbits k H` together with lower-set finiteness
+`TauCeti.finite_setOf_le_of_mem_nilpotentConeOrbits`). Pulling Lie invariants on `⁅𝔤, 𝔤⁆` back
+along `TauCeti.derivedSeriesLieProj k 𝔤` then establishes uniqueness of the dominant neutral
+element under `G(k)`-conjugacy
+(`IsSl2Triple.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_coe_eq`), yielding the
+bijection `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentConeOrbits`, the exact count
+`RootPairing.Base.ncard_nilpotentConeOrbits_eq`, and the injective weighted Dynkin diagram
+invariant `RootPairing.Base.nilpotentConeOrbitWeightedDynkinDiagram` for any Cartan subalgebra `𝔥`
+of `⁅𝔤, 𝔤⁆`.
 
 ## Main declarations
 
@@ -226,16 +227,23 @@ private theorem dominantNilpotentOrbitOfLieHom_eq_mk_of_isSl2Triple {L : Type u}
     t₀'.exists_mem_quotientPointsSubgroup_centralizerHopfIdeal_basePointsRepresentation_eq t
   exact Comodule.VectorOrbit.mk_eq_mk_iff.mpr ⟨g, hge⟩
 
-omit [CharZero k] [IsAlgClosed k] in
-private theorem finite_of_range_dominantNilpotentOrbit {α : Type u} [Finite α]
-    {S : Set (Comodule.VectorOrbit k H 𝔤)} {D : α → Comodule.VectorOrbit k H 𝔤}
-    (hrange : Set.range D = S \ {Comodule.VectorOrbit.mk 0}) :
-    S.Finite := by
-  refine ((Set.finite_range D).insert (Comodule.VectorOrbit.mk 0)).subset fun O hO ↦ ?_
-  rw [hrange]
-  rcases eq_or_ne O (Comodule.VectorOrbit.mk 0) with rfl | hne
-  · exact Set.mem_insert _ _
-  · exact Set.mem_insert_of_mem _ ⟨hO, hne⟩
+private theorem dominantNilpotentOrbitOfLieHom_injective {L : Type u} [LieRing L] [LieAlgebra k L]
+    [FiniteDimensional k L] [LieAlgebra.IsKilling k L] (ι : L →ₗ⁅k⁆ 𝔤)
+    {𝔥 : LieSubalgebra k L} [𝔥.IsCartanSubalgebra]
+    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
+    (huniq : ∀ {h₁ h₂ : 𝔥} {e₁ f₁ e₂ f₂ : L},
+      IsSl2Triple (h₁ : L) e₁ f₁ → IsSl2Triple (h₂ : L) e₂ f₂ →
+        h₁ ∈ b.dominantNeutralElements → h₂ ∈ b.dominantNeutralElements →
+        ∀ {g : WithConv (H →ₐ[k] k)},
+          Comodule.basePointsRepresentation 𝔤 g (ι e₁) = ι e₂ → h₁ = h₂) :
+    Function.Injective (dominantNilpotentOrbitOfLieHom (H := H) ι b) := by
+  intro h₁ h₂ heq
+  obtain ⟨f₁, t₁⟩ :=
+    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₁.val).mp h₁.property).1
+  obtain ⟨f₂, t₂⟩ :=
+    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₂.val).mp h₂.property).1
+  obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq
+  exact Subtype.ext (huniq t₁ t₂ h₁.property h₂.property hge)
 
 private theorem ncard_sdiff_singleton_mk_zero_le_of_range {L : Type u} [LieRing L] [LieAlgebra k L]
     [FiniteDimensional k L] [LieAlgebra.IsKilling k L] {𝔥 : LieSubalgebra k L}
@@ -264,38 +272,56 @@ private theorem ncard_le_of_range {L : Type u} [LieRing L] [LieAlgebra k L] [Fin
   rw [← Set.insert_sdiff_self_of_mem h0]
   omega
 
-private noncomputable def optionDominantToOrbit {α : Type u}
+private noncomputable def optionDominantNeutralElementsEquivOfLieHom {L : Type u} [LieRing L]
+    [LieAlgebra k L] [FiniteDimensional k L] [LieAlgebra.IsKilling k L] (ι : L →ₗ⁅k⁆ 𝔤)
+    {𝔥 : LieSubalgebra k L} [𝔥.IsCartanSubalgebra]
+    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
     {S : Set (Comodule.VectorOrbit k H 𝔤)} (h0 : Comodule.VectorOrbit.mk 0 ∈ S)
-    {D : α → Comodule.VectorOrbit k H 𝔤}
-    (hrange : Set.range D = S \ {Comodule.VectorOrbit.mk 0}) : Option α → S
-  | none => ⟨Comodule.VectorOrbit.mk 0, h0⟩
-  | some h => ⟨D h, (hrange.subset (Set.mem_range_self h)).1⟩
+    (hrange : Set.range (dominantNilpotentOrbitOfLieHom (H := H) ι b) =
+      S \ {Comodule.VectorOrbit.mk 0})
+    (hinj : Function.Injective (dominantNilpotentOrbitOfLieHom (H := H) ι b)) :
+    Option b.dominantNeutralElements ≃ S :=
+  open Classical in
+  (Equiv.optionCongr <|
+      (Equiv.ofInjective (dominantNilpotentOrbitOfLieHom (H := H) ι b) hinj).trans <|
+        (Set.equivOfEq hrange).trans <|
+          (Equiv.subtypeEquivRight fun _ ↦ by simp).trans <|
+            (Equiv.subtypeSubtypeEquivSubtypeInter (· ∈ S)
+                (· ≠ Comodule.VectorOrbit.mk 0)).symm.trans
+              (Equiv.subtypeEquivRight fun _ ↦ by simp [Subtype.ext_iff])).trans
+    (Equiv.optionSubtypeNe ⟨Comodule.VectorOrbit.mk 0, h0⟩)
 
-omit [CharZero k] [IsAlgClosed k] in
-private theorem optionDominantToOrbit_bijective {α : Type u}
+private theorem optionDominantNeutralElementsEquivOfLieHom_none {L : Type u} [LieRing L]
+    [LieAlgebra k L] [FiniteDimensional k L] [LieAlgebra.IsKilling k L] (ι : L →ₗ⁅k⁆ 𝔤)
+    {𝔥 : LieSubalgebra k L} [𝔥.IsCartanSubalgebra]
+    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
     {S : Set (Comodule.VectorOrbit k H 𝔤)} (h0 : Comodule.VectorOrbit.mk 0 ∈ S)
-    {D : α → Comodule.VectorOrbit k H 𝔤}
-    (hrange : Set.range D = S \ {Comodule.VectorOrbit.mk 0}) (hD : Function.Injective D) :
-    Function.Bijective (optionDominantToOrbit h0 hrange) := by
-  constructor
-  · rintro (_ | h₁) (_ | h₂) heq
-    · rfl
-    · exact absurd (congrArg Subtype.val heq).symm (hrange.subset (Set.mem_range_self h₂)).2
-    · exact absurd (congrArg Subtype.val heq) (hrange.subset (Set.mem_range_self h₁)).2
-    · exact congrArg some (hD (congrArg Subtype.val heq))
-  · rintro ⟨O, hO⟩
-    by_cases hO0 : O = Comodule.VectorOrbit.mk 0
-    · exact ⟨none, Subtype.ext hO0.symm⟩
-    · obtain ⟨h, hh⟩ : O ∈ Set.range D := hrange.symm ▸ ⟨hO, hO0⟩
-      exact ⟨some h, Subtype.ext hh⟩
+    (hrange : Set.range (dominantNilpotentOrbitOfLieHom (H := H) ι b) =
+      S \ {Comodule.VectorOrbit.mk 0})
+    (hinj : Function.Injective (dominantNilpotentOrbitOfLieHom (H := H) ι b)) :
+    optionDominantNeutralElementsEquivOfLieHom (H := H) ι b h0 hrange hinj none =
+      ⟨Comodule.VectorOrbit.mk 0, h0⟩ := by
+  classical
+  rw [optionDominantNeutralElementsEquivOfLieHom, Equiv.trans_apply, Equiv.optionCongr_apply,
+    Option.map_none, Equiv.optionSubtypeNe_none]
 
-private noncomputable def optionDominantEquivOfRange {α : Type u}
+private theorem optionDominantNeutralElementsEquivOfLieHom_some_of_isSl2Triple {L : Type u}
+    [LieRing L] [LieAlgebra k L] [FiniteDimensional k L] [LieAlgebra.IsKilling k L]
+    (ι : L →ₗ⁅k⁆ 𝔤) (hι : Function.Injective ι)
+    {𝔥 : LieSubalgebra k L} [𝔥.IsCartanSubalgebra]
+    (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base)
     {S : Set (Comodule.VectorOrbit k H 𝔤)} (h0 : Comodule.VectorOrbit.mk 0 ∈ S)
-    {D : α → Comodule.VectorOrbit k H 𝔤}
-    (hrange : Set.range D = S \ {Comodule.VectorOrbit.mk 0}) (hD : Function.Injective D) :
-    Option α ≃ S :=
-  Equiv.ofBijective (optionDominantToOrbit h0 hrange)
-    (optionDominantToOrbit_bijective h0 hrange hD)
+    (hrange : Set.range (dominantNilpotentOrbitOfLieHom (H := H) ι b) =
+      S \ {Comodule.VectorOrbit.mk 0})
+    (hinj : Function.Injective (dominantNilpotentOrbitOfLieHom (H := H) ι b))
+    (h : b.dominantNeutralElements) {e f : 𝔤} (t : IsSl2Triple (ι h.val) e f) :
+    ((optionDominantNeutralElementsEquivOfLieHom (H := H) ι b h0 hrange hinj (some h) : S) :
+        Comodule.VectorOrbit k H 𝔤) =
+      Comodule.VectorOrbit.mk e := by
+  classical
+  rw [optionDominantNeutralElementsEquivOfLieHom, Equiv.trans_apply, Equiv.optionCongr_apply,
+    Option.map_some, Equiv.optionSubtypeNe_some]
+  simp [dominantNilpotentOrbitOfLieHom_eq_mk_of_isSl2Triple (H := H) ι hι b h t]
 
 private theorem ncard_eq_of_equiv_option {L : Type u} [LieRing L] [LieAlgebra k L]
     [FiniteDimensional k L] [LieAlgebra.IsKilling k L] {𝔥 : LieSubalgebra k L}
@@ -378,7 +404,9 @@ many nilpotent rational adjoint orbits. No connectedness hypothesis on `G` is ne
 theorem finite_setOf_isNilpotentAd : {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd}.Finite := by
   obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k 𝔤
   let b := (LieAlgebra.IsKilling.rootSystem (LieSubalgebra.engel k x)).nonempty_base.some
-  exact finite_of_range_dominantNilpotentOrbit (range_dominantNilpotentOrbit_eq (H := H) b)
+  rw [← Set.insert_sdiff_self_of_mem (s := {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd})
+    isNilpotentAd_mk_zero, ← range_dominantNilpotentOrbit_eq (H := H) b]
+  exact (Set.finite_range _).insert _
 
 /-- The subtype of nilpotent rational adjoint orbits is finite. -/
 instance : Finite {O : VectorOrbit k H 𝔤 // O.IsNilpotentAd} :=
@@ -514,16 +542,10 @@ local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
 
 private theorem dominantNilpotentOrbit_injective (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     Function.Injective
-      (TauCeti.dominantNilpotentOrbitOfLieHom (H := H) (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) b) := by
-  intro h₁ h₂ heq
-  obtain ⟨f₁, t₁⟩ :=
-    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₁.val).mp h₁.property).1
-  obtain ⟨f₂, t₂⟩ :=
-    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₂.val).mp h₂.property).1
-  obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq
-  exact Subtype.ext
-    (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq
-      (H := H) b t₂ h₁.property h₂.property hge)
+      (TauCeti.dominantNilpotentOrbitOfLieHom (H := H) (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) b) :=
+  TauCeti.dominantNilpotentOrbitOfLieHom_injective (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) b
+    fun {_ _ _ _ _ _} t₁ t₂ hh₁ hh₂ {_} hge ↦
+      t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq (H := H) b t₂ hh₁ hh₂ hge
 
 /-- **Bijection between `Option b.dominantNeutralElements` and nilpotent orbits.** For connected
 `G`, `none` corresponds to the zero orbit and `some h` corresponds to the nilpotent `G(k)`-orbit of
@@ -531,7 +553,7 @@ any nilpositive partner of `h`. -/
 noncomputable def optionDominantNeutralElementsEquivNilpotentOrbit
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     Option b.dominantNeutralElements ≃ {O : Comodule.VectorOrbit k H 𝔤 // O.IsNilpotentAd} :=
-  (TauCeti.optionDominantEquivOfRange
+  (TauCeti.optionDominantNeutralElementsEquivOfLieHom (H := H) (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) b
       (S := {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd})
       Comodule.VectorOrbit.isNilpotentAd_mk_zero
       (TauCeti.range_dominantNilpotentOrbit_eq (H := H) b)
@@ -543,8 +565,10 @@ noncomputable def optionDominantNeutralElementsEquivNilpotentOrbit
 theorem optionDominantNeutralElementsEquivNilpotentOrbit_none
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     b.optionDominantNeutralElementsEquivNilpotentOrbit (H := H) none =
-      ⟨Comodule.VectorOrbit.mk 0, Comodule.VectorOrbit.isNilpotentAd_mk_zero⟩ := by
-  rfl
+      ⟨Comodule.VectorOrbit.mk 0, Comodule.VectorOrbit.isNilpotentAd_mk_zero⟩ :=
+  Subtype.ext <| by
+    simp [optionDominantNeutralElementsEquivNilpotentOrbit,
+      TauCeti.optionDominantNeutralElementsEquivOfLieHom_none]
 
 /-- `some h` maps to the nilpotent orbit of any nilpositive partner `e` of `(h : 𝔤)`. -/
 theorem optionDominantNeutralElementsEquivNilpotentOrbit_some_of_isSl2Triple
@@ -553,12 +577,14 @@ theorem optionDominantNeutralElementsEquivNilpotentOrbit_some_of_isSl2Triple
     b.optionDominantNeutralElementsEquivNilpotentOrbit (H := H) (some h) =
       ⟨Comodule.VectorOrbit.mk e,
         Comodule.VectorOrbit.isNilpotentAd_mk_iff.mpr
-          (t.isNilpotent_toEnd_e (K := k) (M := 𝔤))⟩ := by
-  apply Subtype.ext
-  simpa [optionDominantNeutralElementsEquivNilpotentOrbit, TauCeti.optionDominantEquivOfRange,
-    TauCeti.optionDominantToOrbit, Equiv.ofBijective] using
-    TauCeti.dominantNilpotentOrbitOfLieHom_eq_mk_of_isSl2Triple (H := H)
-      (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) Function.injective_id b h t
+          (t.isNilpotent_toEnd_e (K := k) (M := 𝔤))⟩ :=
+  Subtype.ext <| by
+    simp [optionDominantNeutralElementsEquivNilpotentOrbit,
+      TauCeti.optionDominantNeutralElementsEquivOfLieHom_some_of_isSl2Triple (H := H)
+        (LieHom.id : 𝔤 →ₗ⁅k⁆ 𝔤) Function.injective_id b
+        Comodule.VectorOrbit.isNilpotentAd_mk_zero
+        (TauCeti.range_dominantNilpotentOrbit_eq (H := H) b)
+        (b.dominantNilpotentOrbit_injective (H := H)) h t]
 
 /-- The inverse equivalence sends the zero nilpotent orbit to `none`. -/
 @[simp]
@@ -687,7 +713,7 @@ namespace IsSl2Triple
 
 /-- **Every `sl₂` triple in `⁅𝔤, 𝔤⁆` is `G°(k)`-conjugate to a dominant one** when `𝔤` is
 reductive. -/
-theorem exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements_derivedSeries
+theorem exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements_coe_eq
     {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
     {H : FiniteTypeCommHopfAlgCat.{u, u} k}
     [LieAlgebra.HasCentralRadical k (Module.Dual k (Bialgebra.CotangentSpace k H))]
@@ -747,7 +773,7 @@ theorem exists_basePointsRepresentation_isSl2Triple_of_mem_derivedSeries_of_isNi
   have he'0 : (⟨e, he_mem⟩ : 𝔤') ≠ 0 := fun h ↦ he0 (congrArg Subtype.val h)
   obtain ⟨h₀, f₀, t₀⟩ := exists_isSl2Triple_of_isNilpotent_ad he' he'0
   obtain ⟨g, -, h, hh, e', f', -, hge, -, t⟩ :=
-    t₀.exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements_derivedSeries
+    t₀.exists_mem_quotientPointsSubgroup_identityComponent_dominantNeutralElements_coe_eq
       (H := FiniteTypeCommHopfAlgCat.of k H) b
   exact ⟨g, h, hh, e', f', hge, t⟩
 
@@ -798,7 +824,11 @@ theorem finite_setOf_exists_mem_derivedSeries_and_isNilpotent_ad :
       ∃ x ∈ 𝔤', IsNilpotent (LieAlgebra.ad k 𝔤 x) ∧ Comodule.VectorOrbit.mk x = O}.Finite := by
   obtain ⟨x, _⟩ := LieAlgebra.exists_isCartanSubalgebra_engel k 𝔤'
   let b := (LieAlgebra.IsKilling.rootSystem (LieSubalgebra.engel k x)).nonempty_base.some
-  exact finite_of_range_dominantNilpotentOrbit (range_dominantDerivedNilpotentOrbit_eq b)
+  rw [← Set.insert_sdiff_self_of_mem
+    (s := {O : Comodule.VectorOrbit k H 𝔤 |
+      ∃ x ∈ 𝔤', IsNilpotent (LieAlgebra.ad k 𝔤 x) ∧ Comodule.VectorOrbit.mk x = O})
+    ⟨0, zero_mem _, by simp, rfl⟩, ← range_dominantDerivedNilpotentOrbit_eq b]
+  exact (Set.finite_range _).insert _
 
 variable (k H) in
 /-- **Bound on all `G(k)`-orbits of `ad`-nilpotent elements of `⁅𝔤, 𝔤⁆`** (no connectedness
@@ -835,13 +865,11 @@ theorem nilpotentConeOrbits_eq_setOf_exists_mem_derivedSeries_and_isNilpotent_ad
     Set.mem_ofPred_eq]
   refine ⟨fun ⟨hx, hnil⟩ ↦ ⟨x, hx, hnil, rfl⟩, fun ⟨y, hy, hnil, heq⟩ ↦ ?_⟩
   obtain ⟨g, rfl⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq
-  refine ⟨?_, ?_⟩
-  · rw [← Derivation.basePointsAdjointLieEquiv_apply,
-      ← LieIdeal.derivedSeries_map_eq 1 (Derivation.basePointsAdjointLieEquiv g).surjective]
-    exact LieIdeal.mem_map hy
-  · rw [← Derivation.basePointsAdjointLieEquiv_apply,
-      (Derivation.basePointsAdjointLieEquiv g).isNilpotent_ad_apply_iff]
-    exact hnil
+  refine ⟨(Derivation.basePointsRepresentation_adjointComodule_mem_derivedSeries_iff g 1 y).mpr hy,
+    ?_⟩
+  rw [← Derivation.basePointsAdjointLieEquiv_apply,
+    (Derivation.basePointsAdjointLieEquiv g).isNilpotent_ad_apply_iff]
+  exact hnil
 
 /-- **Finiteness of rational orbits in the nilpotent cone** for connected `G` with reductive Lie
 algebra `𝔤`. -/
@@ -912,7 +940,7 @@ local notation "𝔤'" => LieAlgebra.derivedSeries k (Module.Dual k (Bialgebra.C
 
 /-- **Uniqueness of dominant neutral elements in `⁅𝔤, 𝔤⁆` under `G(k)`-conjugacy** for connected
 `G` with reductive Lie algebra `𝔤`. -/
-theorem eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq_derivedSeries
+theorem eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_coe_eq
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) {h₁ h₂ : 𝔥} {e₁ f₁ e₂ f₂ : 𝔤'}
     (t₁ : IsSl2Triple (h₁ : 𝔤') e₁ f₁) (t₂ : IsSl2Triple (h₂ : 𝔤') e₂ f₂)
     (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements)
@@ -920,17 +948,11 @@ theorem eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq_derived
     (hge : Comodule.basePointsRepresentation 𝔤 g (e₁ : 𝔤) = (e₂ : 𝔤)) :
     h₁ = h₂ := by
   let ψ : 𝔤 ≃ₗ⁅k⁆ 𝔤 := Derivation.basePointsAdjointLieEquiv g
-  have hmap : (𝔤').toLieSubalgebra.map ψ.toLieHom = (𝔤').toLieSubalgebra := by
-    have hder : LieIdeal.map ψ.toLieHom 𝔤' = 𝔤' := LieIdeal.derivedSeries_map_eq 1 ψ.surjective
-    ext x
-    rw [LieSubalgebra.mem_map, LieIdeal.mem_toLieSubalgebra, ← hder,
-      ← LieSubmodule.mem_toSubmodule, LieIdeal.coe_map_of_surjective ψ.surjective,
-      Submodule.mem_map]
-    simp only [hder, LieIdeal.mem_toLieSubalgebra, LieSubmodule.mem_toSubmodule,
-      LieHom.coe_toLinearMap]
-  let φ : 𝔤' ≃ₗ⁅k⁆ 𝔤' := ψ.ofSubalgebras (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra hmap
+  let φ : 𝔤' ≃ₗ⁅k⁆ 𝔤' := ψ.ofSubalgebras (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra
+    (Derivation.map_basePointsAdjointLieEquiv_derivedSeries g 1)
   have hφe : φ e₁ = e₂ := Subtype.ext <|
-    (ψ.ofSubalgebras_apply (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra hmap e₁).trans
+    (ψ.ofSubalgebras_apply (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra
+      (Derivation.map_basePointsAdjointLieEquiv_derivedSeries g 1) e₁).trans
       (by rwa [Derivation.basePointsAdjointLieEquiv_apply])
   refine t₁.eq_of_mem_dominantNeutralElements_of_lieEquiv_apply_eq b t₂ hh₁ hh₂ φ hφe
     fun p hp z ↦ ?_
@@ -950,14 +972,15 @@ theorem eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq_derived
     exact AlgHom.congr_fun hhom p
   rw [← heval (φ z), ← heval z]
   have hφz : ((φ z : 𝔤') : 𝔤) = Comodule.basePointsRepresentation 𝔤 g (z : 𝔤) :=
-    (ψ.ofSubalgebras_apply (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra hmap z).trans
+    (ψ.ofSubalgebras_apply (𝔤').toLieSubalgebra (𝔤').toLieSubalgebra
+      (Derivation.map_basePointsAdjointLieEquiv_derivedSeries g 1) z).trans
       (Derivation.basePointsAdjointLieEquiv_apply g (z : 𝔤))
   rw [hφz]
   exact lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials g (z : 𝔤) hq
 
 /-- **Classification of nilpositive elements in `⁅𝔤, 𝔤⁆` by weighted Dynkin diagrams** for
 connected `G` with reductive Lie algebra `𝔤`. -/
-theorem exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq_derivedSeries
+theorem exists_basePointsRepresentation_coe_eq_iff_weightedDynkinDiagram_eq
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) {h₁ h₂ : 𝔥} {e₁ f₁ e₂ f₂ : 𝔤'}
     (t₁ : IsSl2Triple (h₁ : 𝔤') e₁ f₁) (t₂ : IsSl2Triple (h₂ : 𝔤') e₂ f₂)
     (hh₁ : h₁ ∈ b.dominantNeutralElements) (hh₂ : h₂ ∈ b.dominantNeutralElements) :
@@ -967,7 +990,7 @@ theorem exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq_derivedS
   · rintro ⟨g, hge⟩
     congr 1
     exact Subtype.ext
-      (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq_derivedSeries
+      (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_coe_eq
         b t₂ hh₁ hh₂ hge)
   · intro hdiag
     obtain rfl : h₁ = h₂ := congrArg Subtype.val (b.weightedDynkinDiagram_injective hdiag)
@@ -999,23 +1022,19 @@ private theorem range_dominantNilpotentConeOrbit_eq (b : (LieAlgebra.IsKilling.r
 
 private theorem dominantNilpotentConeOrbit_injective
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
-    Function.Injective (TauCeti.dominantNilpotentOrbitOfLieHom (H := H) (𝔤').incl b) := by
-  intro h₁ h₂ heq
-  obtain ⟨f₁, t₁⟩ :=
-    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₁.val).mp h₁.property).1
-  obtain ⟨f₂, t₂⟩ :=
-    Classical.choose_spec ((b.mem_dominantNeutralElements_iff h₂.val).mp h₂.property).1
-  obtain ⟨g, hge⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq
-  exact Subtype.ext
-    (t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_eq_derivedSeries
-      (H := H) b t₂ h₁.property h₂.property hge)
+    Function.Injective (TauCeti.dominantNilpotentOrbitOfLieHom (H := H) (𝔤').incl b) :=
+  TauCeti.dominantNilpotentOrbitOfLieHom_injective (𝔤').incl b
+    fun {_ _ _ _ _ _} t₁ t₂ hh₁ hh₂ {_} hge ↦
+      t₁.eq_of_mem_dominantNeutralElements_of_basePointsRepresentation_coe_eq
+        (H := H) b t₂ hh₁ hh₂ hge
 
 /-- **Bijection between `Option b.dominantNeutralElements` and `nilpotentConeOrbits k H`** for
 connected `G` with reductive Lie algebra `𝔤` and Cartan subalgebra `𝔥` of `⁅𝔤, 𝔤⁆`. -/
 noncomputable def optionDominantNeutralElementsEquivNilpotentConeOrbits
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     Option b.dominantNeutralElements ≃ nilpotentConeOrbits k H :=
-  TauCeti.optionDominantEquivOfRange mk_zero_mem_nilpotentConeOrbits
+  TauCeti.optionDominantNeutralElementsEquivOfLieHom (H := H) (𝔤').incl b
+    mk_zero_mem_nilpotentConeOrbits
     (b.range_dominantNilpotentConeOrbit_eq (H := H))
     (b.dominantNilpotentConeOrbit_injective (H := H))
 
@@ -1024,8 +1043,11 @@ noncomputable def optionDominantNeutralElementsEquivNilpotentConeOrbits
 theorem optionDominantNeutralElementsEquivNilpotentConeOrbits_none
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) :
     b.optionDominantNeutralElementsEquivNilpotentConeOrbits (H := H) none =
-      ⟨Comodule.VectorOrbit.mk 0, mk_zero_mem_nilpotentConeOrbits⟩ := by
-  rfl
+      ⟨Comodule.VectorOrbit.mk 0, mk_zero_mem_nilpotentConeOrbits⟩ :=
+  TauCeti.optionDominantNeutralElementsEquivOfLieHom_none (H := H) (𝔤').incl b
+    mk_zero_mem_nilpotentConeOrbits
+    (b.range_dominantNilpotentConeOrbit_eq (H := H))
+    (b.dominantNilpotentConeOrbit_injective (H := H))
 
 /-- `some h` maps to the orbit of `(e : 𝔤)` for any `sl₂` triple `(h, e, f)` in `⁅𝔤, 𝔤⁆`. -/
 theorem optionDominantNeutralElementsEquivNilpotentConeOrbits_some_of_isSl2Triple
@@ -1035,12 +1057,13 @@ theorem optionDominantNeutralElementsEquivNilpotentConeOrbits_some_of_isSl2Tripl
       ⟨Comodule.VectorOrbit.mk (e : 𝔤),
         mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad.mpr
           ⟨e.property, (LieIdeal.isNilpotent_ad_iff 𝔤').mp
-            (t.isNilpotent_toEnd_e (K := k) (M := 𝔤'))⟩⟩ := by
-  apply Subtype.ext
-  simpa [optionDominantNeutralElementsEquivNilpotentConeOrbits, TauCeti.optionDominantEquivOfRange,
-    TauCeti.optionDominantToOrbit, Equiv.ofBijective] using
-    TauCeti.dominantNilpotentOrbitOfLieHom_eq_mk_of_isSl2Triple (H := H)
-      (𝔤').incl (𝔤').incl_injective b h (t.map (𝔤').incl (by simpa using t.h_ne_zero))
+            (t.isNilpotent_toEnd_e (K := k) (M := 𝔤'))⟩⟩ :=
+  Subtype.ext <|
+    TauCeti.optionDominantNeutralElementsEquivOfLieHom_some_of_isSl2Triple (H := H)
+      (𝔤').incl (𝔤').incl_injective b mk_zero_mem_nilpotentConeOrbits
+      (b.range_dominantNilpotentConeOrbit_eq (H := H))
+      (b.dominantNilpotentConeOrbit_injective (H := H)) h
+      (t.map (𝔤').incl (by simpa using t.h_ne_zero))
 
 /-- The inverse equivalence sends the zero orbit in `nilpotentConeOrbits k H` to `none`. -/
 @[simp]
@@ -1093,7 +1116,8 @@ theorem nilpotentConeOrbitWeightedDynkinDiagram_def
 /-- On `optionDominantNeutralElementsEquivNilpotentConeOrbits x`, the diagram is `0` for `none` and
 `b.weightedDynkinDiagram h` for `some h`. -/
 @[simp]
-theorem nilpotentConeOrbitWeightedDynkinDiagram_optionDominantNeutralElementsEquiv
+theorem
+    nilpotentConeOrbitWeightedDynkinDiagram_optionDominantNeutralElementsEquivNilpotentConeOrbits
     (b : (LieAlgebra.IsKilling.rootSystem 𝔥).Base) (x : Option b.dominantNeutralElements) :
     b.nilpotentConeOrbitWeightedDynkinDiagram (H := H)
         (b.optionDominantNeutralElementsEquivNilpotentConeOrbits (H := H) x) =
