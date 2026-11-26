@@ -91,7 +91,8 @@ def IsOrdinaryNodeOrSmoothAt (f : X ⟶ Spec (.of F)) (x : X) : Prop :=
 
 /-- Unfolding `IsOrdinaryNodeOrSmoothAt`: a point is an ordinary node or a smooth point exactly
 when it lies in the image of an étale morphism `e : U ⟶ X` admitting an étale morphism
-`c : U ⟶ Spec F[u, v] ⧸ (uv)` over `F`. -/
+`c : U ⟶ Spec F[u, v] ⧸ (uv)` over `F`. This characterization makes the chart data accessible
+to importing modules while keeping the definition's body unexposed. -/
 theorem isOrdinaryNodeOrSmoothAt_def (f : X ⟶ Spec (.of F)) (x : X) :
     IsOrdinaryNodeOrSmoothAt f x ↔
       ∃ (U : Scheme.{u}) (e : U ⟶ X) (c : U ⟶ Spec (.of (NodeAlgebra F 0))),
