@@ -832,6 +832,8 @@ theorem exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gl
   have hf₂ : FiniteDimensional ℝ
       (jetComponents (((jetOperator stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker) :=
     Module.Finite.map _ _
+  -- Instance search times out on `FiniteDimensional` of these kernels (the instance mismatch of
+  -- `free_ker`), so `hf₁` and `hf₂` are passed explicitly.
   obtain ⟨ht₁, -⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₁
     (1 / 2) (by norm_num)
   obtain ⟨-, ht₂⟩ := @eventually_forall_norm_multiplicationOperator_le (V × V × V) _ _ _ hf₂

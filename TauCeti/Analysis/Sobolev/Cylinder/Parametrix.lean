@@ -186,8 +186,8 @@ theorem multiplicationOperator_linftyIndicator_cutoffL {β : ℝ → ℝ} (hβ :
   rw [h₁, h₂, Pi.smul_apply, h₃]
   by_cases hz : z ∈ A
   · rw [indicator_of_mem hz, indicator_of_mem hz, coe_cutoffL, h₄,
-      cutoffCoeff_of_eventuallyEq (h z hz)]
-    rfl
+      cutoffCoeff_of_eventuallyEq (h z hz), smul_apply,
+      ContinuousLinearMap.id_apply]
   · rw [indicator_of_notMem hz, indicator_of_notMem hz, smul_zero]
 
 end Cutoff
