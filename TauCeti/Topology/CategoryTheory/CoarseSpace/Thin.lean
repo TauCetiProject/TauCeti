@@ -170,13 +170,11 @@ theorem thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace_of_i
         (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding
         (fatToThinClassifyingSpace P.FullSubcategory z) =
       thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
-        (P.fatClassifyingSpaceRestrictionHomeomorph hs hP z) := by
-  ext
-  rw [thinClassifyingSpaceRestrictionHomeomorph_apply_val,
-    thinClassifyingSpace.fatToThinClassifyingSpacePreimage_apply_val,
-    fatClassifyingSpaceRestrictionHomeomorph_apply_val]
-  simpa only [TopCat.comp_app] using (ConcreteCategory.congr_hom
-    (fatClassifyingSpaceMap_comp_fatToThinClassifyingSpace P.ι P.continuous_mapTotal_ι) z).symm
+        (P.fatClassifyingSpaceRestrictionHomeomorph hs hP z) :=
+  P.fatClassifyingSpaceRestrictionHomeomorph_eq hs hP ▸
+    P.thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace hs
+      (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+      (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
 
 /-- Conjugating the induced map on coarse preimages by the open restriction homeomorphisms recovers
 `fatToThinClassifyingSpace P.FullSubcategory`. -/
@@ -188,9 +186,10 @@ theorem thinClassifyingSpaceRestrictionHomeomorph_symm_fatToThinClassifyingSpace
         (thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
           (P.fatClassifyingSpaceRestrictionHomeomorph hs hP z)) =
       fatToThinClassifyingSpace P.FullSubcategory z :=
-  ((P.thinClassifyingSpaceRestrictionHomeomorph hs
-      (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding).symm_apply_eq).2
-    (P.thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace_of_isOpen hs hP z).symm
+  P.fatClassifyingSpaceRestrictionHomeomorph_eq hs hP ▸
+    P.thinClassifyingSpaceRestrictionHomeomorph_symm_fatToThinClassifyingSpacePreimage hs
+      (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+      (P.isOpenEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
 
 /-- The thin classifying space of a saturated closed full subgroupoid is homeomorphic to the
 corresponding coarse-map preimage in `thinClassifyingSpace C`. -/
@@ -225,13 +224,11 @@ theorem thinClassifyingSpaceClosedRestrictionHomeomorph_fatToThinClassifyingSpac
     P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP
         (fatToThinClassifyingSpace P.FullSubcategory z) =
       thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
-        (P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP z) := by
-  ext
-  rw [thinClassifyingSpaceClosedRestrictionHomeomorph_apply_val,
-    thinClassifyingSpace.fatToThinClassifyingSpacePreimage_apply_val,
-    fatClassifyingSpaceClosedRestrictionHomeomorph_apply_val]
-  simpa only [TopCat.comp_app] using (ConcreteCategory.congr_hom
-    (fatClassifyingSpaceMap_comp_fatToThinClassifyingSpace P.ι P.continuous_mapTotal_ι) z).symm
+        (P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP z) :=
+  P.fatClassifyingSpaceClosedRestrictionHomeomorph_eq hs hP ▸
+    P.thinClassifyingSpaceRestrictionHomeomorph_fatToThinClassifyingSpace hs
+      (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+      (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
 
 /-- Conjugating the induced map on coarse preimages by the closed restriction homeomorphisms
 recovers `fatToThinClassifyingSpace P.FullSubcategory`. -/
@@ -242,8 +239,10 @@ theorem thinClassifyingSpaceClosedRestrictionHomeomorph_symm_fatToThinClassifyin
         (thinClassifyingSpace.fatToThinClassifyingSpacePreimage hs _
           (P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP z)) =
       fatToThinClassifyingSpace P.FullSubcategory z :=
-  ((P.thinClassifyingSpaceClosedRestrictionHomeomorph hs hP).symm_apply_eq).2
-    (P.thinClassifyingSpaceClosedRestrictionHomeomorph_fatToThinClassifyingSpace hs hP z).symm
+  P.fatClassifyingSpaceClosedRestrictionHomeomorph_eq hs hP ▸
+    P.thinClassifyingSpaceRestrictionHomeomorph_symm_fatToThinClassifyingSpacePreimage hs
+      (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+      (P.isClosedEmbedding_thinClassifyingSpaceMap_ι hs hP).isEmbedding z
 
 end SaturatedGroupoid
 

@@ -30,10 +30,8 @@ of stage `n` and `X _⦋n + 1⦌ × Δⁿ⁺¹` along the closed subspace `geome
 (`geometricRealization.isPushout_skeleton_succ`). Hence every stage inclusion is a closed embedding,
 continuous maps from compact spaces factor continuously through a single stage
 (`geometricRealization.exists_lift_skeleton_of_compactSpace`), and whenever each `X _⦋n⦌ × Δⁿ` is
-`T4` — in particular whenever every `X _⦋n⦌` is `T3` and Lindelöf
-(`geometricRealization.instT4Space_of_t3Space_lindelofSpace`) — `X.geometricRealization` is `T4` —
-hence Hausdorff, and paracompact when Lindelöf — in its colimit topology
-(`geometricRealization.instT4Space`).
+`T4`, `X.geometricRealization` is `T4` — hence Hausdorff, and paracompact when Lindelöf — in its
+colimit topology (`geometricRealization.instT4Space`).
 
 ## References
 
@@ -819,17 +817,6 @@ instance instParacompactSpaceSkeleton (n : ℕ)
   have : T1Space ((skeleton X).obj n) := instT1SpaceSkeleton X n
   have : LindelofSpace ((skeleton X).obj n) := inferInstance
   exact TauCeti.paracompactSpace_of_regularSpace_lindelofSpace
-
-/-- Every simplicial space whose levels `X _⦋n⦌` are `T3` (regular Hausdorff) and Lindelöf has a
-`T4` (normal Hausdorff, and hence paracompact) thin geometric realization in its colimit
-topology. -/
-instance (priority := 90) instT4Space_of_t3Space_lindelofSpace [h3 : ∀ n : ℕ, T3Space (X _⦋n⦌)]
-    [hL : ∀ n : ℕ, LindelofSpace (X _⦋n⦌)] : T4Space X.geometricRealization :=
-  have (n : ℕ) : T4Space (X _⦋n⦌ × toTop.{u}.obj ⦋n⦌) :=
-    have := h3 n
-    have := hL n
-    inferInstance
-  inferInstance
 
 /-- If each `X _⦋n⦌` is `T3` and Lindelöf, `|X|` is paracompact in its colimit topology. -/
 instance instParacompactSpace [∀ n : ℕ, T3Space (X _⦋n⦌)] [∀ n : ℕ, LindelofSpace (X _⦋n⦌)] :

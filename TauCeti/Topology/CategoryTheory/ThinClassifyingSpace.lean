@@ -26,11 +26,9 @@ identifications gives the quotient map `TauCeti.fatToThinClassifyingSpace C`
 fat-realization APIs of `TauCeti.Topology.CategoryTheory.Nerve`,
 `TauCeti.Topology.CategoryTheory.CoarseSpace`, and
 `TauCeti.Topology.CategoryTheory.CoarseSpace.Restrict`, continuous functors and `[0, 1]`-families
-induce `TauCeti.thinClassifyingSpaceMap` and `TauCeti.thinClassifyingSpaceHomotopy`; full
-subcategories induce injections
-(`CategoryTheory.ObjectProperty.thinClassifyingSpaceMap_ι_injective`); when the source map
-`Quiver.Total.left : Quiver.Total C → C` is continuous, closed full subcategories induce closed
-embeddings (`CategoryTheory.ObjectProperty.isClosedEmbedding_thinClassifyingSpaceMap_ι`) and
+induce `TauCeti.thinClassifyingSpaceMap` and `TauCeti.thinClassifyingSpaceHomotopy`; when the
+source map `Quiver.Total.left : Quiver.Total C → C` is continuous, closed full subcategories induce
+closed embeddings (`CategoryTheory.ObjectProperty.isClosedEmbedding_thinClassifyingSpaceMap_ι`) and
 saturated open full subgroupoids induce open embeddings
 (`CategoryTheory.ObjectProperty.isOpenEmbedding_thinClassifyingSpaceMap_ι`); and for groupoids with
 continuous source, `TauCeti.thinClassifyingSpace.coarseMap` factors
@@ -45,13 +43,6 @@ Specializing the skeletal pushout and sequential-colimit theorems of
   in particular any category with a second-countable regular `T0` total arrow space
   (`TauCeti.thinClassifyingSpace.instT4SpaceOfRegularSecondCountable`, covering Hausdorff orbifold
   and Lie groupoids, where second-countability also supplies `LindelofSpace`);
-* any category with `T3` `Quiver.Total C` and Lindelöf nerve levels
-  (`TauCeti.thinClassifyingSpace.instT4Space_of_t3Space_lindelofSpace`,
-  `TauCeti.thinClassifyingSpace.instLindelofSpace`), including `σ`-compact `T3` categories and
-  groupoids (`TauCeti.thinClassifyingSpace.t4Space_of_sigmaCompactSpace`,
-  `TauCeti.thinClassifyingSpace.lindelofSpace_of_sigmaCompactSpace`,
-  `TauCeti.thinClassifyingSpace.instT4SpaceOfSigmaCompactSpace`,
-  `TauCeti.thinClassifyingSpace.instLindelofSpaceOfSigmaCompactSpace`, hence paracompact);
 * any category with compact Hausdorff `Quiver.Total C` and continuous source, target, units, and
   composition, where `thinClassifyingSpace C` is `T4`, Lindelöf, and compactly generated
   (`TauCeti.thinClassifyingSpace.t4Space_of_compactSpace`,
@@ -327,13 +318,6 @@ instance instT4SpaceOfRegularSecondCountable [T0Space (Quiver.Total C)]
   have : TopologicalSpace.MetrizableSpace (Quiver.Total C) := inferInstance
   instT4Space
 
-/-- **Separation of `thinClassifyingSpace C` for `T3` categories with Lindelöf nerve levels.**
-When `Quiver.Total C` is `T3` and every nerve level `ComposableArrows C n` is Lindelöf,
-`thinClassifyingSpace C` is `T4` (hence Hausdorff and paracompact) in its colimit topology. -/
-instance (priority := 90) instT4Space_of_t3Space_lindelofSpace [T3Space (Quiver.Total C)]
-    [∀ n : ℕ, LindelofSpace (ComposableArrows C n)] : T4Space (thinClassifyingSpace C) :=
-  inferInstanceAs (T4Space (geometricRealization (topologicalNerve C)))
-
 section CompactCategory
 
 variable [TopologicalSpace C] [CompactSpace (Quiver.Total C)]
@@ -373,39 +357,6 @@ theorem compactlyGeneratedSpace_of_compactSpace [T2Space (Quiver.Total C)] :
 
 end CompactCategory
 
-section SigmaCompactCategory
-
-variable [TopologicalSpace C] [SigmaCompactSpace (Quiver.Total C)]
-  (hs : Continuous (Quiver.Total.left : Quiver.Total C → C))
-  (ht : Continuous (Quiver.Total.right : Quiver.Total C → C))
-  (hu : Continuous fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C))
-  (hc : Continuous fun p : {p : Quiver.Total C × Quiver.Total C // p.fst.right = p.snd.left} ↦
-    p.val.fst.comp p.val.snd p.property)
-include hs ht hu hc
-
-private theorem sigmaCompactSpace_composableArrows [T2Space C] :
-    ∀ n : ℕ, SigmaCompactSpace (ComposableArrows C n) :=
-  ComposableArrows.sigmaCompactSpace hs hu
-    (by simpa only [Quiver.Total.comp_def] using hc) ht
-
-/-- If `C` is Hausdorff, `Quiver.Total C` is `σ`-compact, and source, target, units, and
-composition are continuous, then `thinClassifyingSpace C` is Lindelöf in its colimit topology. -/
-theorem lindelofSpace_of_sigmaCompactSpace [T2Space C] :
-    LindelofSpace (thinClassifyingSpace C) := by
-  have := sigmaCompactSpace_composableArrows hs ht hu hc
-  exact inferInstanceAs (LindelofSpace (geometricRealization (topologicalNerve C)))
-
-/-- **Separation of `thinClassifyingSpace C` for `σ`-compact `T3` categories.** If `Quiver.Total C`
-is `σ`-compact and `T3`, and source, target, units, and composition are continuous, then
-`thinClassifyingSpace C` is `T4` (hence Hausdorff and paracompact) in its colimit topology. -/
-theorem t4Space_of_sigmaCompactSpace [T3Space (Quiver.Total C)] :
-    T4Space (thinClassifyingSpace C) := by
-  have : T2Space C := .of_injective_continuous (fun _ _ h ↦ congrArg Quiver.Total.left h) hu
-  have := sigmaCompactSpace_composableArrows hs ht hu hc
-  exact inferInstanceAs (T4Space (geometricRealization (topologicalNerve C)))
-
-end SigmaCompactCategory
-
 end PointSetTopology
 
 section TopologicalGroupoidInstances
@@ -413,27 +364,13 @@ section TopologicalGroupoidInstances
 open IsTopologicalGroupoid
 
 variable (C : Type u) [Category.{v} C] [IsGroupoid C] [TopologicalSpace C]
-  [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C]
+  [TopologicalSpace (Quiver.Total C)] [IsTopologicalGroupoid C] [T2Space (Quiver.Total C)]
+  [CompactSpace (Quiver.Total C)]
 
 /-- The thin classifying space of any compact Hausdorff topological groupoid is `T4` in its colimit
 topology, without second-countability or étaleness. -/
-instance instT4SpaceOfCompactSpace [T2Space (Quiver.Total C)] [CompactSpace (Quiver.Total C)] :
-    T4Space (thinClassifyingSpace C) :=
+instance instT4SpaceOfCompactSpace : T4Space (thinClassifyingSpace C) :=
   t4Space_of_compactSpace continuous_source continuous_target continuous_unit continuous_comp
-
-/-- The thin classifying space of any `σ`-compact Hausdorff topological groupoid is Lindelöf in its
-colimit topology. -/
-instance (priority := 90) instLindelofSpaceOfSigmaCompactSpace [T2Space (Quiver.Total C)]
-    [SigmaCompactSpace (Quiver.Total C)] : LindelofSpace (thinClassifyingSpace C) :=
-  have : T2Space C := (IsTopologicalGroupoid.isEmbedding_unit C).t2Space
-  lindelofSpace_of_sigmaCompactSpace continuous_source continuous_target continuous_unit
-    continuous_comp
-
-/-- The thin classifying space of any `σ`-compact `T3` topological groupoid is `T4` (hence
-Hausdorff and paracompact) in its colimit topology, without second-countability or étaleness. -/
-instance (priority := 90) instT4SpaceOfSigmaCompactSpace [T3Space (Quiver.Total C)]
-    [SigmaCompactSpace (Quiver.Total C)] : T4Space (thinClassifyingSpace C) :=
-  t4Space_of_sigmaCompactSpace continuous_source continuous_target continuous_unit continuous_comp
 
 end TopologicalGroupoidInstances
 

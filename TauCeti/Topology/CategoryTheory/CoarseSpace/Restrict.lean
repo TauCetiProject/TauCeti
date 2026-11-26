@@ -170,6 +170,13 @@ def fatClassifyingSpaceRestrictionHomeomorph (hP : IsOpen {x | P x}) :
   P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
     (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
 
+/-- `fatClassifyingSpaceRestrictionHomeomorph` is the embedding restriction homeomorphism applied
+to the open embedding of a saturated open restriction. -/
+theorem fatClassifyingSpaceRestrictionHomeomorph_eq (hP : IsOpen {x | P x}) :
+    P.fatClassifyingSpaceRestrictionHomeomorph hs hP =
+      P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
+        (P.isOpenEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding := (rfl)
+
 /-- The restriction homeomorphism is induced by the original inclusion functor. -/
 -- Rewrite before simplification normalizes the dependent TopCat carriers.
 @[simp↓]
@@ -199,6 +206,13 @@ def fatClassifyingSpaceClosedRestrictionHomeomorph (hP : IsClosed {x | P x}) :
         (Quotient.mk (isIsomorphicSetoid C) '' {x | P x})) :=
   P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
     (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding
+
+/-- `fatClassifyingSpaceClosedRestrictionHomeomorph` is the embedding restriction homeomorphism
+applied to the closed embedding of a saturated closed restriction. -/
+theorem fatClassifyingSpaceClosedRestrictionHomeomorph_eq (hP : IsClosed {x | P x}) :
+    P.fatClassifyingSpaceClosedRestrictionHomeomorph hs hP =
+      P.fatClassifyingSpaceRestrictionHomeomorphOfIsEmbedding hs
+        (P.isClosedEmbedding_fatClassifyingSpaceMap_ι hs hP).isEmbedding := (rfl)
 
 /-- The closed restriction homeomorphism is induced by the original inclusion functor. -/
 @[simp↓]
