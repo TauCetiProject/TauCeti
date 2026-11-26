@@ -11,6 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Spectrum
 public import TauCeti.Analysis.InnerProductSpace.Variational.Fredholm
 public import TauCeti.Analysis.Normed.Operator.Compact.Eigenspace
 public import TauCeti.Analysis.Normed.Operator.NormedAddGroupHom
+public import TauCeti.Analysis.Variational.QuadraticEnergy
 import TauCeti.Analysis.Normed.Operator.Coercive
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 
@@ -56,7 +57,9 @@ eigenfunction.
 ## Main declarations
 
 * `IsCoercive.formSolutionMap`: the Lax--Milgram solution map `H →L[ℝ] V` of the forcing
-  `v ↦ ⟪h, J v⟫`, characterized by `IsCoercive.apply_formSolutionMap`.
+  `v ↦ ⟪h, J v⟫`, characterized by `IsCoercive.apply_formSolutionMap`; for symmetric `B` it is
+  the global minimizer of the quadratic energy
+  (`IsCoercive.isMinOn_quadraticEnergy_iff_eq_formSolutionMap`).
 * `IsCoercive.formSolutionOperator`: the induced solution operator `S : H →L[ℝ] H`, with
   `IsCoercive.isCompactOperator_formSolutionOperator`,
   `IsCoercive.isSymmetric_formSolutionOperator` and
@@ -129,6 +132,26 @@ theorem eq_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) {h : H} {u : 
   apply eq_solutionOfFunctional hB
   simpa only [ContinuousLinearMap.toSesqForm_apply_coe, ContinuousLinearMap.comp_apply,
     innerSL_apply_apply] using hu
+
+/-- For a symmetric coercive form and the forcing `v ↦ ⟪h, J v⟫`, the global minimizer of the
+quadratic energy is the solution map's value `formSolutionMap J h`. -/
+theorem isMinOn_quadraticEnergy_iff_eq_formSolutionMap (hB : IsCoercive B)
+    (hsymm : ∀ u v, B u v = B v u) (J : V →L[ℝ] H) (h : H) {u : V} :
+    IsMinOn (B.quadraticEnergy (ContinuousLinearMap.toSesqForm J h)) Set.univ u ↔
+      u = hB.formSolutionMap J h := by
+  rw [formSolutionMap_apply]
+  exact hB.isMinOn_quadraticEnergy_iff_eq_solutionOfFunctional hsymm _
+
+/-- Value of `B.quadraticEnergy ((innerSL ℝ h).comp J)` at `hB.formSolutionMap J h` (its global
+minimum value when `B` is symmetric), stated in `simp`-normal form for
+`ContinuousLinearMap.toSesqForm J h` (`ContinuousLinearMap.toSesqForm_apply_coe`). -/
+@[simp]
+theorem quadraticEnergy_innerSL_comp_formSolutionMap (hB : IsCoercive B) (J : V →L[ℝ] H) (h : H) :
+    B.quadraticEnergy ((innerSL ℝ h).comp J) (hB.formSolutionMap J h) =
+      -⟪h, J (hB.formSolutionMap J h)⟫_ℝ := by
+  rw [ContinuousLinearMap.quadraticEnergy_real_apply, hB.apply_formSolutionMap]
+  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply]
+  ring
 
 /-- The form perturbation operator on `V` is the solution map precomposed with `J`, where the
 solution operator on `H` is the same pair of maps composed in the other order. -/

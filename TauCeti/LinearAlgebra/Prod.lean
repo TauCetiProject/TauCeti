@@ -43,7 +43,11 @@ quadratic forms with the subgroup preserving both summands.
 * `LinearMap.det_eq_det_mul_det_of_fst_apply_inr`: a block lower triangular endomorphism
   `(x, y) ↦ (a x, c x + d y)` of `M₁ × M₂` has determinant `det a * det d`, and
   `LinearMap.det_eq_det_snd_comp_comp_inr` is the case `a = id`.
+* `LinearMap.det_comp_inr_eq_det_prod_mul`: for a linear map `A : R × M₁ → M₁` with a kernel
+  vector `w`, `det (A ∘ inr) = det Ψ * w.1` with `Ψ (ξ, a) = (A (a, ξ), ℓ ξ)` and `ℓ w.2 = 1`.
 * `LinearMap.finrank_graph`: the graph of a linear map `M → M₂` has the dimension of `M`.
+* `LinearMap.isCompl_graph_ker_fst`: the graph of a linear map `M → M₂` is a complement of
+  `0 × M₂`.
 * `TauCeti.antidiagDiagEquiv`: when `2` is invertible, the linear automorphism
   `(x, y) ↦ (x, -x) + (y, y)` of `M × M`, carrying the two coordinate axes onto the antidiagonal
   `(-LinearMap.id).graph` and the diagonal `LinearMap.id.graph`.
@@ -138,6 +142,48 @@ theorem det_eq_det_snd_comp_comp_inr {g : Module.End R (M₁ × M₂)}
   rw [det_eq_det_mul_det_of_fst_apply_inr fun y ↦ hg (0, y)]
   have : fst R M₁ M₂ ∘ₗ g ∘ₗ inl R M₁ M₂ = LinearMap.id := LinearMap.ext fun x ↦ hg (x, 0)
   rw [this, LinearMap.det_id, one_mul]
+
+/-- **The determinant of the restriction to a factor along a kernel vector.** Let
+`A : R × M₁ → M₁` be linear, `w` a vector in its kernel and `ℓ` a linear form with `ℓ w.2 = 1`.
+Then the restriction `A ∘ inr` of `A` to `M₁` has determinant `det Ψ * w.1`, where
+`Ψ (ξ, a) = (A (a, ξ), ℓ ξ)`. With `A` the derivative of a family of maps at a zero and `w` the
+velocity of a curve of zeros, this compares the Jacobian of a member of the family with the
+parameter velocity of the curve. -/
+theorem det_comp_inr_eq_det_prod_mul (A : R × M₁ →ₗ[R] M₁) (ℓ : M₁ →ₗ[R] R)
+    {w : R × M₁} (hw : A w = 0) (hℓ : ℓ w.2 = 1) :
+    LinearMap.det (A ∘ₗ inr R R M₁) =
+      LinearMap.det ((A ∘ₗ (LinearEquiv.prodComm R M₁ R).toLinearMap).prod (ℓ ∘ₗ fst R M₁ R)) *
+        w.1 := by
+  set Ψ := (A ∘ₗ (LinearEquiv.prodComm R M₁ R).toLinearMap).prod (ℓ ∘ₗ fst R M₁ R)
+  -- `K (ξ, a) = (ξ + a w.2, a w.1)`, so that `Ψ ∘ K (ξ, a) = (A (0, ξ), ℓ ξ + a)`.
+  set K : Module.End R (M₁ × R) := (fst R M₁ R + (snd R M₁ R).smulRight w.2).prod
+    ((snd R M₁ R).smulRight w.1)
+  have hAw (ξ : M₁) (a : R) : A (a • w.1, ξ + a • w.2) = A (0, ξ) := by
+    rw [show ((a • w.1, ξ + a • w.2) : R × M₁) = (0, ξ) + a • w by ext <;> simp [add_comm],
+      map_add, map_smul, hw, smul_zero, add_zero]
+  have hA0 (a : R) : A (a • w.1, a • w.2) = 0 := by
+    simpa only [zero_add, Prod.mk_zero_zero, map_zero] using hAw 0 a
+  have hΨK : LinearMap.det (Ψ ∘ₗ K) = LinearMap.det (A ∘ₗ inr R R M₁) := by
+    rw [det_eq_det_mul_det_of_fst_apply_inr fun a ↦ by simpa [Ψ, K] using hA0 a]
+    have h₁ : fst R M₁ R ∘ₗ (Ψ ∘ₗ K) ∘ₗ inl R M₁ R = A ∘ₗ inr R R M₁ :=
+      LinearMap.ext fun ξ ↦ by simp [Ψ, K]
+    have h₂ : snd R M₁ R ∘ₗ (Ψ ∘ₗ K) ∘ₗ inr R M₁ R = LinearMap.id :=
+      LinearMap.ext fun a ↦ by simp [Ψ, K, hℓ]
+    rw [h₁, h₂, LinearMap.det_id, mul_one]
+  -- Conjugated by the swap of factors, `K` becomes lower triangular with diagonal `(w.1, 1)`.
+  have hK : LinearMap.det K = w.1 := by
+    set σ := LinearEquiv.prodComm R M₁ R
+    rw [← LinearMap.det_conj K σ,
+      det_eq_det_mul_det_of_fst_apply_inr fun ξ ↦ by simp [σ, K]]
+    have h₁ : fst R R M₁ ∘ₗ (σ.toLinearMap ∘ₗ K ∘ₗ σ.symm.toLinearMap) ∘ₗ inl R R M₁ =
+        w.1 • LinearMap.id :=
+      LinearMap.ext fun a ↦ by simp [σ, K, mul_comm]
+    have h₂ : snd R R M₁ ∘ₗ (σ.toLinearMap ∘ₗ K ∘ₗ σ.symm.toLinearMap) ∘ₗ inr R R M₁ =
+        LinearMap.id :=
+      LinearMap.ext fun ξ ↦ by simp [σ, K]
+    rw [h₁, h₂]
+    simp
+  rw [← hΨK, LinearMap.det_comp, hK]
 
 end CommRing
 
@@ -278,6 +324,18 @@ theorem finrank_graph {R M M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module 
   rw [graph_eq_range_prod, finrank_range_of_inj]
   intro x y h
   exact congr(($h).1)
+
+/-- The graph of a linear map `f : M → M₂` is a complement of the kernel `0 × M₂` of the first
+projection: every `(x, y)` splits uniquely as `(x, f x) + (0, y - f x)`. -/
+theorem isCompl_graph_ker_fst {R M M₂ : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup M₂] [Module R M₂] (f : M →ₗ[R] M₂) : IsCompl (graph f) (ker (fst R M M₂)) := by
+  refine ⟨Submodule.disjoint_def.2 fun ⟨x, y⟩ hg hk ↦ ?_, codisjoint_iff.2 <| eq_top_iff.2
+    fun ⟨x, y⟩ _ ↦ ?_⟩
+  · simp only [mem_graph_iff, mem_ker, fst_apply] at hg hk
+    simp [hk, hg]
+  · have hxy : ((x, y) : M × M₂) = (x, f x) + (0, y - f x) := by simp
+    rw [hxy]
+    exact Submodule.add_mem_sup ((mem_graph_iff _ _).2 rfl) (by simp)
 
 /-- A product map `f × g` carries the graph of `φ` onto the graph of `ψ` when `f` is surjective
 and `g ∘ φ = ψ ∘ f`. For instance a surjective `f` acting diagonally, as `f × f`, carries the

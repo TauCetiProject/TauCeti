@@ -36,7 +36,8 @@ actions of Lie groups.
 * **Its action on the level is smooth, free and proper.** The level `Z` is a smooth manifold by
   the implicit function theorem (`TauCeti.Toric.IsDelzant.delzantLevelChartedSpace`). The rotation
   action of `(ℝ / 2πℤ)^ι` on `ℂ^ι` is smooth (`TauCeti.contMDiff_torusRotation`) and preserves
-  `Z`, so the kernel torus acts smoothly on `Z`
+  `Z`, so the torus acts smoothly on `Z`
+  (`TauCeti.Toric.IsDelzant.contMDiffVAdd_delzantLevel`), and so does the kernel torus
   (`TauCeti.Toric.IsDelzant.contMDiffSMul_kernelTorus`). It acts freely because the normals at
   each vertex of `Δ` form a lattice basis (`TauCeti.Toric.IsDelzant.isCancelSMul_kernelTorus`),
   and properly because it is compact.
@@ -46,7 +47,9 @@ actions of Lie groups.
   manifold theorem, pulled back along it, are the atlas
   `TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`. For it, `M_Δ` is a smooth manifold
   (`TauCeti.Toric.IsDelzant.isManifold_delzantQuotient`) and the projection `Z → M_Δ` is a smooth
-  submersion (`TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`) whose vertical tangent
+  submersion (`TauCeti.Toric.IsDelzant.isSubmersion_delzantQuotientMk`), intertwining the actions
+  of the torus, which therefore acts smoothly on `M_Δ`
+  (`TauCeti.Toric.IsDelzant.contMDiffVAdd_delzantQuotient`). Its vertical tangent
   vectors are exactly the directions of the orbits of the kernel torus
   (`TauCeti.Toric.IsDelzant.ker_mfderiv_delzantQuotientMk`). The reduced moment map
   `μ_Δ : M_Δ → V*` is smooth (`TauCeti.Toric.IsDelzant.contMDiff_reducedMomentMap`), because its
@@ -220,6 +223,11 @@ theorem coe_kernelTorus_smul (θ : kernelTorus i u) (x : delzantLevel i u c) :
       torusRotation (θ : Multiplicative (ι → AddCircle (2 * π))).toAdd x := by
   rw [Subgroup.smul_def, ← toAdd_vadd, coe_vadd_delzantLevel]
 
+/-- An element of the kernel torus acts on the level as its angles do. -/
+theorem kernelTorus_smul_eq_vadd (θ : kernelTorus i u) (x : delzantLevel i u c) :
+    θ • x = (θ : Multiplicative (ι → AddCircle (2 * π))).toAdd +ᵥ x := by
+  rw [Subgroup.smul_def, ← toAdd_vadd]
+
 /-- The kernel torus acts continuously on the level. -/
 instance : ContinuousSMul (kernelTorus i u) (delzantLevel i u c) :=
   ⟨continuous_induced_rng.2 (continuous_torusRotation.comp
@@ -317,26 +325,33 @@ theorem isCancelSMul_kernelTorus : IsCancelSMul (kernelTorus i u) (delzantLevel 
   have h0 := (hΔ.weightRotation_neg_eq_self_iff hi x.property hker).1 hrot
   rwa [ht] at h0
 
+/-- **The torus acts smoothly on the level**, by restricting the rotations of `ℂ^ι`, for the
+implicit-function atlas of the level. -/
+theorem contMDiffVAdd_delzantLevel :
+    letI := hΔ.delzantLevelChartedSpace hi
+    ContMDiffVAdd (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) ∞
+      (ι → AddCircle (2 * π)) (delzantLevel i u c) :=
+  letI := hΔ.delzantLevelChartedSpace hi
+  ⟨hΔ.contMDiff_codRestrict_delzantLevel hi (contMDiff_torusRotation.comp
+    (contMDiff_fst.prodMk ((hΔ.contMDiff_coe_delzantLevel hi).comp contMDiff_snd)))
+    fun p ↦ (p.1 +ᵥ p.2).property⟩
+
 /-- **The kernel torus acts smoothly on the level**, for the implicit-function atlas of the level
-and the Lie group structure of the kernel torus. -/
+and the Lie group structure of the kernel torus: it acts through its angles, by the smooth action
+of the torus. -/
 theorem contMDiffSMul_kernelTorus :
     letI := hΔ.delzantLevelChartedSpace hi
     letI := (kernelTorusData i u hi).chartedSpace
     ContMDiffSMul 𝓘(ℝ, kernelTorusLieAlgebra i u) 𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ) ∞
-      (kernelTorus i u) (delzantLevel i u c) := by
-  let _ := hΔ.delzantLevelChartedSpace hi
-  let _ := (kernelTorusData i u hi).chartedSpace
-  refine ⟨?_⟩
-  -- The action is the restriction to the level of the smooth rotation action on `ℂ^ι`.
-  have hg : ContMDiff (𝓘(ℝ, kernelTorusLieAlgebra i u).prod
-      𝓘(ℝ, Fin (Fintype.card ι + finrank ℝ V) → ℝ))
-      𝓘(ℝ, EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) ∞
-      fun p : kernelTorus i u × delzantLevel i u c ↦
-        torusRotation (p.1 : Multiplicative (ι → AddCircle (2 * π))).toAdd p.2 :=
-    contMDiff_torusRotation.comp
-      (((contMDiff_toAdd_coe_kernelTorus u hi).comp contMDiff_fst).prodMk
-        ((hΔ.contMDiff_coe_delzantLevel hi).comp contMDiff_snd))
-  exact hΔ.contMDiff_codRestrict_delzantLevel hi hg fun p ↦ (p.1 • p.2).property
+      (kernelTorus i u) (delzantLevel i u c) :=
+  letI := hΔ.delzantLevelChartedSpace hi
+  letI := (kernelTorusData i u hi).chartedSpace
+  haveI := hΔ.contMDiffVAdd_delzantLevel hi
+  ⟨((contMDiff_vadd (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (G := ι → AddCircle (2 * π))
+    (M := delzantLevel i u c)).comp
+      (((contMDiff_toAdd_coe_kernelTorus u hi).comp contMDiff_fst).prodMk contMDiff_snd)).congr
+    fun p ↦ kernelTorus_smul_eq_vadd p.1 p.2⟩
 
 /-! ### The smooth structure of the Delzant quotient -/
 
@@ -423,6 +438,31 @@ theorem isSubmersion_delzantQuotientMk :
   exact IsSubmersionOfComplement.isSubmersion (F := hq.complement)
     (isSubmersionOfComplement_iff.2 fun x ↦
       (e.symm.isLocalDiffeomorph _).comp_isSubmersionAtOfComplement (h.isSubmersionAt x))
+
+/-- **The torus acts smoothly on the Delzant quotient**, for the atlas
+`TauCeti.Toric.IsDelzant.delzantQuotientChartedSpace`: the projection from the level is a
+surjective submersion intertwining the actions on the level and on the quotient. -/
+theorem contMDiffVAdd_delzantQuotient :
+    letI := hΔ.delzantQuotientChartedSpace hi
+    ContMDiffVAdd (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      𝓘(ℝ, ProperSMul.QuotientModelSpace (kernelTorusLieAlgebra i u)
+        (Fin (Fintype.card ι + finrank ℝ V) → ℝ)) ∞
+      (ι → AddCircle (2 * π)) (DelzantQuotient i u c) := by
+  let _ := hΔ.delzantLevelChartedSpace hi
+  let _ := hΔ.delzantQuotientChartedSpace hi
+  have := hΔ.isManifold_delzantLevel hi ∞
+  have := hΔ.isManifold_delzantQuotient hi
+  have := hΔ.contMDiffVAdd_delzantLevel hi
+  have hπ := hΔ.isSubmersion_delzantQuotientMk hi
+  refine ⟨((Manifold.IsSubmersion.id.prodMap hπ).contMDiff_comp_iff
+    (Function.surjective_id.prodMap DelzantQuotient.mk_surjective) le_rfl).1 ?_⟩
+  -- On representatives, the action on the quotient is the action on the level.
+  have h : (fun p : (ι → AddCircle (2 * π)) × DelzantQuotient i u c ↦ p.1 +ᵥ p.2) ∘
+      Prod.map id DelzantQuotient.mk = DelzantQuotient.mk ∘ fun p ↦ p.1 +ᵥ p.2 :=
+    funext fun p ↦ DelzantQuotient.vadd_mk p.1 p.2
+  rw [h]
+  exact hπ.contMDiff.comp (contMDiff_vadd (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (G := ι → AddCircle (2 * π)) (M := delzantLevel i u c))
 
 /-- **The vertical tangent vectors of the projection are the orbit directions.** The kernel of
 the differential at `x` of the projection from the level onto the Delzant quotient is the

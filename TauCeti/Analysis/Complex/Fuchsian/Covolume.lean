@@ -36,6 +36,7 @@ form a countable set.
 * `Subgroup.freeLocus_nonempty`: some point of `ℍ` has trivial stabilizer in a countable `Γ`.
 * `Subgroup.exists_isFundamentalDomain`: a discrete `Γ` has a measurable fundamental domain
   whose translates are pairwise disjoint.
+* `Subgroup.covolume_pos`: a discrete `Γ` has positive covolume.
 * `Subgroup.card_mul_volume_ball_le_covolume`: balls in `ℍ` with pairwise disjoint
   `Γ`-translates have total area at most the covolume.
 * `Subgroup.IsCofinite`: a discrete subgroup of finite covolume.
@@ -46,8 +47,8 @@ form a countable set.
 * `Subgroup.isCofinite_iff_isCofinite_and_finiteIndex`: a subgroup of a discrete group is
   cofinite exactly when the larger group is cofinite and the index is finite.
 
-Positivity, conjugation invariance and index multiplicativity of the covolume are the generic
-`MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul` and
+Positivity, conjugation invariance and index multiplicativity of the covolume come from the
+generic `MeasureTheory.covolume_pos`, `MeasureTheory.covolume_conjAct_smul` and
 `MeasureTheory.covolume_eq_card_mul_covolume`, which apply directly to `PSL(2, ℝ)` acting on `ℍ`.
 
 ## References
@@ -111,6 +112,11 @@ of any of its fundamental domains. -/
 instance hasFundamentalDomain [DiscreteTopology Γ] : HasFundamentalDomain Γ ℍ :=
   let ⟨_, _, _, hs⟩ := exists_isFundamentalDomain Γ
   hs.hasFundamentalDomain volume
+
+/-- The covolume of a discrete subgroup of `PSL(2, ℝ)` is positive. -/
+theorem covolume_pos [DiscreteTopology Γ] : 0 < covolume Γ ℍ :=
+  MeasureTheory.covolume_pos <|
+    Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)
 
 /-- A subgroup `Γ ≤ PSL(2, ℝ)` is **cofinite** (a lattice) when it is discrete and the quotient
 `Γ \ ℍ` has finite hyperbolic area, that is, `Γ` has finite covolume. -/
@@ -194,8 +200,7 @@ theorem isCofinite_iff_isCofinite_and_finiteIndex [DiscreteTopology Γ] {Δ : Su
     refine ⟨⟨inferInstance, fun htop ↦ hne (by rw [htop, ENNReal.mul_top hcard])⟩,
       lt_top_iff_ne_top.mpr fun htop ↦ hne ?_⟩
     rw [htop]
-    simpa using ENNReal.top_mul (MeasureTheory.covolume_pos (G := Γ) (α := ℍ) <|
-      Measure.measure_univ_pos.mp (isOpen_univ.measure_pos volume univ_nonempty)).ne'
+    simpa using ENNReal.top_mul (Γ.covolume_pos).ne'
   · rintro ⟨hΓ, hfin⟩
     refine ⟨hΔ, ?_⟩
     rw [MeasureTheory.covolume_eq_card_mul_covolume h]

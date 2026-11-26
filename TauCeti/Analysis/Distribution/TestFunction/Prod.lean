@@ -47,6 +47,7 @@ kernels are tested. On an open subset `W` of the `L^p` product `WithLp p (E × D
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
 * `TestFunction.prodSMulCLM_add`, `TestFunction.prodSMulCLM_smul`: its linearity in `ψ`.
+* `TestFunction.lineDerivOp_prodSMulCLM`: the product rule for its directional derivatives.
 * `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
   support `TestFunction.tsupport_sliceRight_subset`, derivative bound
   `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
@@ -106,11 +107,11 @@ private def prodSMulSupportedInCLM (ψ : 𝓓(O, ℝ)) (K : Compacts E) :
       refine Finset.sum_le_sum fun j hj ↦ ?_
       have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
       have hψj : ‖iteratedFDeriv ℝ j (ψ ∘ Prod.snd) p‖ ≤ |M j| :=
-        (norm_iteratedFDeriv_comp_snd_le p).trans
+        p.norm_iteratedFDeriv_comp_snd.le.trans
           ((hM j ⟨p.2, rfl⟩).trans (le_abs_self _))
       have hφj : ‖iteratedFDeriv ℝ (i - j) (φ ∘ Prod.fst) p‖ ≤
           (Finset.range (i + 1)).sup (ContDiffMapSupportedIn.seminorm ℝ E F ⊤ K) φ :=
-        (norm_iteratedFDeriv_comp_fst_le p).trans
+        p.norm_iteratedFDeriv_comp_fst.le.trans
           ((ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℝ).trans
             (Seminorm.le_finset_sup_apply (Finset.mem_range.2 (by omega))))
       calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j (fun p : E × D ↦ ψ p.2) p‖ *
@@ -160,6 +161,22 @@ theorem prodSMulCLM_smul (c : ℝ) (ψ : 𝓓(O, ℝ)) :
     prodSMulCLM (F := F) (c • ψ) hV = c • prodSMulCLM ψ hV := by
   ext φ p
   simp [mul_smul]
+
+/-- **Product rule for `TestFunction.prodSMulCLM`.** Differentiating the tensor product
+`p ↦ ψ p.2 • φ p.1` in direction `v : E × D` differentiates both factors:
+`∂_{v} (prodSMulCLM ψ hV φ) = prodSMulCLM ψ hV (∂_{v.1} φ) + prodSMulCLM (∂_{v.2} ψ) hV φ`. -/
+theorem lineDerivOp_prodSMulCLM (φ : 𝓓(Ω, F)) (v : E × D) :
+    ∂_{v} (prodSMulCLM ψ hV φ) =
+      prodSMulCLM ψ hV (∂_{v.1} φ) + prodSMulCLM (∂_{v.2} ψ) hV φ := by
+  ext p
+  have hψ := (ψ.contDiff.differentiable (by simp) p.2).hasFDerivAt.comp p
+    (ContinuousLinearMap.snd ℝ E D).hasFDerivAt
+  have hφ := (φ.contDiff.differentiable (by simp) p.1).hasFDerivAt.comp p
+    (ContinuousLinearMap.fst ℝ E D).hasFDerivAt
+  have hsmul : HasFDerivAt (prodSMulCLM ψ hV φ : E × D → F) _ p := hψ.smul hφ
+  rw [lineDerivOp_apply_eq_fderiv, add_apply, prodSMulCLM_apply, prodSMulCLM_apply,
+    lineDerivOp_apply_eq_fderiv, lineDerivOp_apply_eq_fderiv, hsmul.fderiv]
+  simp [add_comm]
 
 /-! ### Slices -/
 

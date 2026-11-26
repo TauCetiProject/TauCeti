@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.Complex.Module
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.Analysis.Matrix.UnitaryGroup.Weyl
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
-import TauCeti.LinearAlgebra.Matrix.Hermitian
+import TauCeti.LinearAlgebra.Matrix.Hermitian.Basic
 import TauCeti.LinearAlgebra.Matrix.Unique
 import TauCeti.RepresentationTheory.SU2.StandardBasis
 import TauCeti.Topology.Algebra.Group.Subgroup

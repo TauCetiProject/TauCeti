@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Calculus.TangentCone.Defs
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Matrix
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -45,9 +46,13 @@ cone at `0` of `{Y : exp Y ∈ G}`. That cone lies in `𝔤` by the limit criter
 
 * `ClosedSubgroup.mem_matrixTangentSpace_iff`: `V ∈ g 𝔤` exactly when `g⁻¹ V ∈ 𝔤`.
 * `ClosedSubgroup.matrixTangentSpace_eq_map_mulRight`: `g 𝔤 = 𝔤 g`.
+* `ClosedSubgroup.mem_posTangentConeAt_of_mem_matrixTangentSpace`: `g 𝔤` lies in the positive
+  tangent cone of `G` at `g`.
 * `ClosedSubgroup.tangentConeAt_eq_matrixTangentSpace`: the tangent cone of `G` at `g` is `g 𝔤`.
 * `ClosedSubgroup.range_mvfderiv_matrixInclusion`: the manifold differential of the matrix
   inclusion `G → Matrix n n 𝕜` at `g ∈ G` has range `g 𝔤`.
+* `ClosedSubgroup.fderiv_apply_mem_matrixTangentSpace`: the derivative at `x` of a map with values
+  in `G` near `x` lies in the tangent space of `G` at its value.
 
 ## References
 
@@ -105,25 +110,18 @@ theorem mem_matrixTangentSpace_iff_mul_star {g : G} {V : Matrix n n 𝕜} :
   · intro h
     simpa [mul_assoc] using mul_mul_star_mem_matrixLieAlgebra (inv_mem g.property) h
 
-section
-
-open TauCeti TauCeti.Lie
-open scoped Matrix.Norms.Operator
-
-attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
-attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-
 /-- **`g 𝔤 = 𝔤 g`.** The tangent space at `g` is also the image of the Lie algebra under right
 multiplication by `g`. -/
 theorem matrixTangentSpace_eq_map_mulRight (g : G) :
     G.matrixTangentSpace g =
       G.matrixLieAlgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : Matrix n n 𝕜)) := by
-  have h := map_mulLeft_unitsLieSubalgebra_eq_map_mulRight
-    (Subgroup.le_normalizer (G.equivToGL g).property)
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
-
-end
+  ext V
+  rw [mem_matrixTangentSpace_iff_mul_star]
+  constructor
+  · intro h
+    exact ⟨_, h, by simp [mul_assoc]⟩
+  · rintro ⟨X, hX, rfl⟩
+    simpa [mul_assoc] using hX
 
 /-- The tangent space at the identity is the Lie algebra. -/
 @[simp]
@@ -199,6 +197,27 @@ private theorem tangentConeAt_one_subset :
   rintro _ ⟨M, ⟨⟨g, hg, rfl⟩, hM⟩, rfl⟩
   exact ⟨g, hg, hM.symm⟩
 
+/-- Every vector `g X`, `X ∈ 𝔤`, of the tangent space at `g` is a velocity of a curve in `G`
+starting at `g`, so it lies in the positive tangent cone of `G` at `g`. -/
+theorem mem_posTangentConeAt_of_mem_matrixTangentSpace {g : G} {V : Matrix n n 𝕜}
+    (hV : V ∈ G.matrixTangentSpace g) :
+    V ∈ posTangentConeAt (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
+      (g : Matrix n n 𝕜) := by
+  obtain ⟨X, hX, rfl⟩ := Submodule.mem_map.mp hV
+  -- The curve `t ↦ g exp (t X)` stays in `G` and has velocity `g X` at `t = 0`.
+  have hγ := (hasDerivAt_exp_smul_const X (0 : ℝ)).const_mul (g : Matrix n n 𝕜)
+  simp only [zero_smul, exp_zero, one_mul] at hγ
+  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), (g : Matrix n n 𝕜) * exp (t • X) ∈
+      ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G := by
+    refine Eventually.of_forall fun t ↦ ?_
+    obtain ⟨h, hh, hht⟩ := mem_matrixLieAlgebra_iff.mp ((LieSubalgebra.mem_toSubmodule _).mp hX) t
+    exact ⟨g * h, mul_mem g.property hh, by simp [hht]⟩
+  have h : (g : Matrix n n 𝕜) * X ∈ posTangentConeAt
+      (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
+      ((g : Matrix n n 𝕜) * exp ((0 : ℝ) • X)) :=
+    hγ.hasDerivWithinAt.mem_posTangentConeAt hmem.frequently
+  simpa using h
+
 /-- **The tangent space of a closed subgroup of `U(n)`.** The tangent cone of `G` at `g ∈ G`, as a
 set of matrices, is the subspace `g 𝔤`. -/
 theorem tangentConeAt_eq_matrixTangentSpace (g : G) :
@@ -218,20 +237,22 @@ theorem tangentConeAt_eq_matrixTangentSpace (g : G) :
     refine tangentConeAt_one_subset (tangentConeAt_mono ?_ h)
     rintro _ ⟨_, ⟨h, hh, rfl⟩, rfl⟩
     exact ⟨g⁻¹ * h, mul_mem (inv_mem g.property) hh, by simp⟩
-  · obtain ⟨X, hX, rfl⟩ := Submodule.mem_map.mp (SetLike.mem_coe.mp hV)
-    -- The curve `t ↦ g exp (t X)` stays in `G` and has velocity `g X` at `t = 0`.
-    have hγ := (hasDerivAt_exp_smul_const X (0 : ℝ)).const_mul (g : Matrix n n 𝕜)
-    simp only [zero_smul, exp_zero, one_mul] at hγ
-    have hmem : ∀ᶠ t in 𝓝 (0 : ℝ), (g : Matrix n n 𝕜) * exp (t • X) ∈
-        ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G := by
-      refine Eventually.of_forall fun t ↦ ?_
-      obtain ⟨h, hh, hht⟩ := mem_matrixLieAlgebra_iff.mp ((LieSubalgebra.mem_toSubmodule _).mp hX) t
-      exact ⟨g * h, mul_mem g.property hh, by simp [hht]⟩
-    have h : (g : Matrix n n 𝕜) * X ∈ tangentConeAt ℝ
-        (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
-        ((g : Matrix n n 𝕜) * exp ((0 : ℝ) • X)) :=
-      hγ.mem_tangentConeAt hmem
-    simpa using h
+  · exact tangentConeAt_mono_field (mem_posTangentConeAt_of_mem_matrixTangentSpace hV)
+
+/-- **The derivative of a `G`-valued map lies in the tangent space.** If `O` takes values in `G`
+near `x`, then every directional derivative `∂ᵥO(x)` lies in the tangent space `g 𝔤` of `G` at
+`g = O x`. No differentiability is assumed: where `O` is not differentiable, `fderiv` is `0`. -/
+theorem fderiv_apply_mem_matrixTangentSpace {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {O : E → Matrix n n 𝕜} {x : E} {g : G}
+    (hO : ∀ᶠ y in 𝓝 x, O y ∈ ((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G)
+    (hOx : O x = g) (v : E) : fderiv ℝ O x v ∈ G.matrixTangentSpace g := by
+  by_cases hd : DifferentiableAt ℝ O x
+  · rw [← SetLike.mem_coe, ← tangentConeAt_eq_matrixTangentSpace, ← hOx]
+    refine tangentConeAt_mono (image_preimage_subset O _) ?_
+    exact hd.hasFDerivAt.hasFDerivWithinAt.mapsTo_tangent_cone
+      (by rw [tangentConeAt_of_mem_nhds (show O ⁻¹' _ ∈ 𝓝 x from hO)]; trivial)
+  · rw [fderiv_zero_of_not_differentiableAt hd]
+    exact zero_mem _
 
 end TangentCone
 
@@ -254,8 +275,9 @@ theorem range_mvfderiv_matrixInclusion (g : G) :
     (mvfderiv 𝓘(ℝ, E) (fun k : toGL G ↦ ((k : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜))
       (G.equivToGL g)).range = G.matrixTangentSpace g := by
   have h := (embeddedLieSubgroupData G).range_mvfderiv_unitsVal_subtypeVal (G.equivToGL g)
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_unitsLieSubalgebra, matrixTangentSpace] using h
+  -- Unfold `matrixTangentSpace` and bridge `G.matrixLieAlgebra` with
+  -- `(toGL G).linearLieSubalgebra`.
+  simpa only [coe_equivToGL, ← matrixLieAlgebra_eq_linearLieSubalgebra, matrixTangentSpace] using h
 
 end EmbeddedLieSubgroup
 

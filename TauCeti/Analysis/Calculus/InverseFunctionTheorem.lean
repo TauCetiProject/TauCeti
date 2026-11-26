@@ -39,6 +39,8 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   constant `c`, every derivative of `f` at an interior point is within `c` of `L`.
 * `HasStrictFDerivAt.exists_mem_nhds_injOn`: a map with an invertible strict derivative at a point
   is injective near it, without completeness.
+* `ContDiffAt.exists_mem_nhds_injOn`: hence a `C¹` map over `ℝ` or `ℂ` with invertible derivative
+  at a point is injective near it.
 * `HasStrictFDerivAt.approximatesLinearOn_toOpenPartialHomeomorph_source`: the source of the
   inverse function theorem's homeomorphism carries the approximation estimate its construction
   chose.
@@ -160,6 +162,21 @@ theorem contDiffOn_toOpenPartialHomeomorph_symm {n : ℕ∞ω}
 end HasStrictFDerivAt
 
 end Approximation
+
+section LocalInjectivity
+
+variable {𝕂 E F : Type*} [RCLike 𝕂] [NormedAddCommGroup E] [NormedSpace 𝕂 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+
+/-- **Local injectivity of a `C¹` map.** A map that is `C^n`, `n ≠ 0`, at `a` over `ℝ` or `ℂ`,
+with invertible derivative at `a`, is injective on a neighbourhood of `a`. -/
+theorem ContDiffAt.exists_mem_nhds_injOn {n : WithTop ℕ∞} {f : E → F} {a : E}
+    (hf : ContDiffAt 𝕂 n f a) (hn : n ≠ 0) (hf' : (fderiv 𝕂 f a).IsInvertible) :
+    ∃ s ∈ 𝓝 a, InjOn f s := by
+  obtain ⟨L, hL⟩ := hf'
+  exact (hL ▸ hf.hasStrictFDerivAt_fderiv hn).exists_mem_nhds_injOn
+
+end LocalInjectivity
 
 section ContDiffInverse
 

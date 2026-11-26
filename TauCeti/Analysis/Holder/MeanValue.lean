@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
@@ -15,6 +16,7 @@ import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Normed.Affine.Convex
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 
 /-!
 # Hölder bounds from bounds on a function and its derivative
@@ -41,11 +43,16 @@ the remainder `φ (x + h • e) - φ x - h • φ' x` is `O(|h| ^ (1 + r))`.
   derivative zero there.
 * `HolderOnWith.eq_of_one_lt`: a function `r`-Hölder on a preconnected open set, with `r > 1`, is
   constant there.
-* `TauCeti.holderOnWith_ball_of_norm_fderiv_le`: on a ball `B_R`, the derivative bound `N₁` alone
-  gives the Hölder constant `N₁ (2R)^(1 - α)`.
-* `TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le`: on a ball `B_R`, the
-  derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with constant
-  `N₂ (2R)^(1 - α)`.
+* `Convex.holderOnWith_of_norm_fderiv_le`, `TauCeti.holderOnWith_ball_of_norm_fderiv_le`: on a
+  convex set inside a ball `B_R`, for instance `B_R` itself, the derivative bound `N₁` alone gives
+  the Hölder constant `N₁ (2R)^(1 - α)`.
+* `Convex.holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le`,
+  `TauCeti.holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le`: on a convex set inside a ball
+  `B_R`, the derivative of a `C²` function with second derivative bounded by `N₂` is Hölder with
+  constant `N₂ (2R)^(1 - α)`.
+* `ContDiff.holderOnWith_iteratedDeriv`: an iterated derivative `g⁽ʳ⁾` of a function of a real
+  variable, bounded by `M` together with `g⁽ʳ⁺¹⁾` on a convex set, is Hölder there with constant
+  `3 M`.
 * `TauCeti.holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: a function vanishing at `0`
   with weighted bounds `‖f z‖ ≤ A ‖z‖ ^ α` and `‖Df z‖ ≤ B ‖z‖ ^ (α - 1)` on a punctured ball is
   `α`-Hölder on the ball.
@@ -201,34 +208,69 @@ theorem holderOnWith_thickening_of_norm_fderiv_le {Ω K : Set E} {g : E → F} {
     push_cast
     linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
 
-/-- A function differentiable on the ball `B_R`, with derivative bounded by `N` there, is `α`-Hölder
-on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: it is `N`-Lipschitz on the convex set
-`B_R`, whose diameter is at most `2R`. -/
-theorem holderOnWith_ball_of_norm_fderiv_le {g : E → F} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
-    (hα : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
-    (hN : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ N) :
-    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) := by
-  have hA : ∀ x ∈ ball x₀ R, ∀ y ∈ ball x₀ R, edist x y ≤ (2 * R).toNNReal := by
+/-- A function differentiable at the points of a convex set `s` inside the ball `B_R`, with
+derivative bounded by `N` there, is `α`-Hölder on `s` with constant `N (2R)^(1 - α)` for every
+`α ≤ 1`: it is `N`-Lipschitz on `s`, whose diameter is at most `2R`. -/
+theorem _root_.Convex.holderOnWith_of_norm_fderiv_le {g : E → F} {s : Set E} {x₀ : E} {R : ℝ}
+    {N α : ℝ≥0} (hs : Convex ℝ s) (hα : α ≤ 1) (hsR : s ⊆ ball x₀ R)
+    (hg : ∀ x ∈ s, DifferentiableAt ℝ g x) (hN : ∀ x ∈ s, ‖fderiv ℝ g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g s := by
+  have hA : ∀ x ∈ s, ∀ y ∈ s, edist x y ≤ (2 * R).toNNReal := by
     intro x hx y hy
     rw [edist_dist]
     refine ENNReal.ofReal_le_ofReal ?_
-    linarith [dist_triangle_right x y x₀, mem_ball.1 hx, mem_ball.1 hy]
-  have hL : LipschitzOnWith N g (ball x₀ R) :=
-    (convex_ball x₀ R).lipschitzOnWith_of_nnNorm_fderiv_le
-      (fun x hx => hg.differentiableAt (isOpen_ball.mem_nhds hx))
+    linarith [dist_triangle_right x y x₀, mem_ball.1 (hsR hx), mem_ball.1 (hsR hy)]
+  have hL : LipschitzOnWith N g s :=
+    hs.lipschitzOnWith_of_nnNorm_fderiv_le hg
       fun x hx => by rw [← NNReal.coe_le_coe, coe_nnNorm]; exact hN x hx
   simpa using (holderOnWith_one.2 hL).of_le hA hα
 
+/-- The derivative of a function which is `C²` at the points of a convex set `s` inside the ball
+`B_R`, with second derivative bounded by `N` there, is `α`-Hölder on `s` with constant
+`N (2R)^(1 - α)` for every `α ≤ 1`: this is `Convex.holderOnWith_of_norm_fderiv_le` applied to
+`Dg`. -/
+theorem _root_.Convex.holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le {g : E → F} {s : Set E}
+    {x₀ : E} {R : ℝ} {N α : ℝ≥0} (hs : Convex ℝ s) (hα : α ≤ 1) (hsR : s ⊆ ball x₀ R)
+    (hg : ∀ x ∈ s, ContDiffAt ℝ 2 g x) (hN : ∀ x ∈ s, ‖iteratedFDeriv ℝ 2 g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ g) s :=
+  hs.holderOnWith_of_norm_fderiv_le hα hsR
+    (fun x hx => ((hg x hx).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)
+    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN x hx
+
+/-- The `r`-th derivative of a `C^n` function `g` of a real variable, `r < n`, is `β`-Hölder with
+constant `3 M` on a convex set `s` where `g⁽ʳ⁾` and `g⁽ʳ⁺¹⁾` are bounded by `M`, for every `β ≤ 1`:
+it is `M`-Lipschitz on `s` (`LipschitzOnWith.holderOnWith_of_norm_le`). -/
+theorem _root_.ContDiff.holderOnWith_iteratedDeriv {g : ℝ → F} {n : WithTop ℕ∞} {r : ℕ}
+    (hg : ContDiff ℝ n g) (hr : r < n) {s : Set ℝ} (hs : Convex ℝ s) {M β : ℝ≥0} (hβ : β ≤ 1)
+    (hM : ∀ t ∈ s, ‖iteratedDeriv r g t‖ ≤ M ∧ ‖iteratedDeriv (r + 1) g t‖ ≤ M) :
+    HolderOnWith (3 * M) β (iteratedDeriv r g) s := by
+  have hL : LipschitzOnWith M (iteratedDeriv r g) s :=
+    hs.lipschitzOnWith_of_nnNorm_hasDerivWithin_le
+      (fun t _ => (hg.hasDerivAt_iteratedDeriv hr t).hasDerivWithinAt) fun t ht => by
+        rw [← NNReal.coe_le_coe, coe_nnNorm]
+        exact (hM t ht).2
+  have h := hL.holderOnWith_of_norm_le (fun t ht => (hM t ht).1) hβ
+  rwa [show M + 2 * M = 3 * M by ring] at h
+
+/-- A function differentiable on the ball `B_R`, with derivative bounded by `N` there, is `α`-Hölder
+on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: the case `s = B_R` of
+`Convex.holderOnWith_of_norm_fderiv_le`. -/
+theorem holderOnWith_ball_of_norm_fderiv_le {g : E → F} {x₀ : E} {R : ℝ} {N α : ℝ≥0}
+    (hα : α ≤ 1) (hg : DifferentiableOn ℝ g (ball x₀ R))
+    (hN : ∀ x ∈ ball x₀ R, ‖fderiv ℝ g x‖ ≤ N) :
+    HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α g (ball x₀ R) :=
+  (convex_ball x₀ R).holderOnWith_of_norm_fderiv_le hα subset_rfl
+    (fun _ hx => hg.differentiableAt (isOpen_ball.mem_nhds hx)) hN
+
 /-- The derivative of a `C²` function on the ball `B_R`, with second derivative bounded by `N`
-there, is `α`-Hölder on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: this is
-`holderOnWith_ball_of_norm_fderiv_le` applied to `Dg`. -/
+there, is `α`-Hölder on `B_R` with constant `N (2R)^(1 - α)` for every `α ≤ 1`: the case `s = B_R`
+of `Convex.holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le`. -/
 theorem holderOnWith_fderiv_ball_of_norm_iteratedFDeriv_two_le {g : E → F} {x₀ : E} {R : ℝ}
     {N α : ℝ≥0} (hα : α ≤ 1) (hg : ContDiffOn ℝ 2 g (ball x₀ R))
     (hN : ∀ x ∈ ball x₀ R, ‖iteratedFDeriv ℝ 2 g x‖ ≤ N) :
     HolderOnWith (N * (2 * R).toNNReal ^ ((1 : ℝ) - α)) α (fderiv ℝ g) (ball x₀ R) :=
-  holderOnWith_ball_of_norm_fderiv_le hα
-    ((hg.fderiv_of_isOpen isOpen_ball (m := 1) le_rfl).differentiableOn one_ne_zero)
-    fun x hx => by rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]; exact hN x hx
+  (convex_ball x₀ R).holderOnWith_fderiv_of_norm_iteratedFDeriv_two_le hα subset_rfl
+    (fun _ hx => hg.contDiffAt (isOpen_ball.mem_nhds hx)) hN
 
 /-- The near-diagonal case of `holderOnWith_ball_of_norm_le_rpow_of_norm_fderiv_le_rpow`: if
 `‖x - y‖ ≤ ‖x‖ / 2`, the segment from `x` to `y` stays at distance at least `‖x - y‖` from `0`,

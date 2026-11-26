@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.Sobolev.BesselPotential.Conj
-import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 
 /-!
 # The real elements of the Bessel-potential space `H^s`
@@ -41,9 +41,23 @@ Complex conjugation of the `L²` function is a real-linear isometric involution
 real elements are its fixed points (`BesselPotentialSpace.mem_realSubmodule_iff_conjCLM_eq`). The
 real part `(F + conj F) / 2` is therefore a bounded real-linear projection
 `BesselPotentialSpace.realPartCLM` of `H^s(E)` onto the real subspace
-(`BesselPotentialSpace.realPartCLM_coe`). Composing with it turns a smooth map into `H^s(E)` that
-takes real values into a smooth map into the real subspace, with the same order of smoothness,
-analytic included.
+(`BesselPotentialSpace.realPartCLM_coe`), whose `L²` function is the real part of that of `F`
+(`BesselPotentialSpace.coeFn_inclusionLp_realPartCLM`). Composing with it turns a smooth map into
+`H^s(E)` that takes real values into a smooth map into the real subspace, with the same order of
+smoothness, analytic included.
+
+The real action on `H^s(E)` is restricted from the complex one
+(`BesselPotentialSpace.isScalarTower_real_complex`), so `ℂ`-bilinear maps of `H^s(E)` restrict
+to real ones.
+
+Applied in each coordinate, the inclusion of the real subspace and the real part give bounded
+real-linear maps `BesselPotentialSpace.coordInclusion` and `BesselPotentialSpace.realPartPi`
+between `(realSubmodule E h)^ι` and `H^s(E)^ι`, the second a left inverse of the first
+(`BesselPotentialSpace.realPartPi_coordInclusion`).
+
+The inclusions `H^s(E) ⊆ H^r(E)`, `r ≤ s`, preserve real elements
+(`BesselPotentialSpace.inclusion_mem_realSubmodule`). For equal orders `s = t` written differently
+they identify the two real subspaces (`BesselPotentialSpace.realSubmoduleCongr`).
 -/
 
 public section
@@ -124,6 +138,16 @@ theorem continuous_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule
 theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
     inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) :=
   (continuousRep_spec hs F).2
+
+/-- Above the Sobolev threshold, the Sobolev embedding of a real element `F` of `H^s(E)` is its
+continuous representative. -/
+@[simp]
+theorem toZeroAtInfty_coe_apply_eq_continuousRep (hs : finrank ℝ E < 2 * s)
+    (F : realSubmodule E h) (z : E) : toZeroAtInfty hs (F : H^{s}(E)) z = (continuousRep F z : ℂ) :=
+  congrFun ((Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs (F : H^{s}(E))).continuous
+    (Complex.continuous_ofReal.comp (continuous_continuousRep hs F))).1
+      ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h (F : H^{s}(E))).symm.trans
+        (coeFn_inclusionLp_ae_eq_continuousRep hs F))) z
 
 /-- The continuous representative is the only continuous function representing `F`. -/
 theorem continuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {F : realSubmodule E h}
@@ -308,5 +332,111 @@ theorem realPartCLM_coe (F : realSubmodule E h) : realPartCLM E h (F : H^{s}(E))
   ext1
   rw [coe_realPartCLM, conjCLM_coe]
   module
+
+/-- The `L²` function of the real part of `F ∈ H^s(E)` is the real part of the `L²` function of
+`F`. -/
+theorem coeFn_inclusionLp_realPartCLM (F : H^{s}(E)) :
+    ⇑(inclusionLp h (realPartCLM E h F : H^{s}(E))) =ᵐ[volume]
+      fun z ↦ ((inclusionLp h F z).re : ℂ) := by
+  rw [coe_realPartCLM]
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (2⁻¹ : ℂ)
+    (coeFn_inclusionLp_add_ae_eq h (u := F) (v := conjCLM E h F) (F := ⇑(inclusionLp h F))
+      (F' := fun z ↦ conj (inclusionLp h F z)) (Filter.Eventually.of_forall fun _ ↦ rfl)
+      (coeFn_inclusionLp_conjCLM F))] with z hz
+  rw [hz, Complex.re_eq_add_conj]
+  ring
+
+/-! ### The real and complex scalar actions -/
+
+/-- The scalar tower `ℝ → ℂ → H^s(E)`. Instance search does not find it: the real action on
+`H^s(E)` comes from its complex normed space structure, and agrees with the action restricted
+from `ℂ` only up to definitional unfolding. With it, `ℂ`-linear and `ℂ`-bilinear maps of `H^s(E)`
+restrict to real ones (`ContinuousLinearMap.bilinearRestrictScalars`). -/
+instance isScalarTower_real_complex : IsScalarTower ℝ ℂ H^{s}(E) :=
+  ⟨fun r c v ↦ by rw [Complex.real_smul, mul_smul, Complex.coe_smul]; rfl⟩
+
+/-! ### Coordinatewise inclusion and real part -/
+
+variable (E h) in
+/-- **The inclusion of real coordinates**: the bounded real-linear map
+`(ι → realSubmodule E h) → (ι → H^s(E))` including each coordinate into `H^s(E)`. -/
+def coordInclusion {ι : Type*} : (ι → realSubmodule E h) →L[ℝ] (ι → H^{s}(E)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule E h).subtypeL
+
+@[simp]
+theorem coordInclusion_apply {ι : Type*} (u : ι → realSubmodule E h) (i : ι) :
+    coordInclusion E h u i = u i :=
+  (rfl)
+
+/-- The inclusion of real coordinates as a function: it coerces each coordinate into `H^s(E)`. -/
+theorem coe_coordInclusion {ι : Type*} :
+    ⇑(coordInclusion E h (ι := ι)) = fun u i ↦ (u i : H^{s}(E)) :=
+  (rfl)
+
+variable (E h) in
+/-- **The real part, coordinatewise**: the bounded real-linear projection
+`(ι → H^s(E)) → (ι → realSubmodule E h)` applying `realPartCLM` in each coordinate. -/
+def realPartPi {ι : Type*} : (ι → H^{s}(E)) →L[ℝ] (ι → realSubmodule E h) :=
+  ContinuousLinearMap.piMap fun _ ↦ realPartCLM E h
+
+@[simp]
+theorem realPartPi_apply {ι : Type*} (v : ι → H^{s}(E)) (i : ι) :
+    realPartPi E h v i = realPartCLM E h (v i) :=
+  (rfl)
+
+/-- The coordinatewise real part is a left inverse of the inclusion of real coordinates. -/
+@[simp]
+theorem realPartPi_coordInclusion {ι : Type*} (u : ι → realSubmodule E h) :
+    realPartPi E h (coordInclusion E h u) = u :=
+  funext fun i ↦ by rw [realPartPi_apply, coordInclusion_apply, realPartCLM_coe]
+
+/-! ### Inclusions between orders -/
+
+/-- The inclusion `H^s(E) ⊆ H^r(E)`, `0 ≤ r ≤ s`, maps real elements to real elements. -/
+theorem inclusion_mem_realSubmodule {r : ℝ} (hrs : r ≤ s) (hr : 0 ≤ r) (F : realSubmodule E h) :
+    inclusion hrs (F : H^{s}(E)) ∈ realSubmodule E hr := by
+  rw [mem_realSubmodule_iff, inclusionLp_inclusion]
+  exact (mem_realSubmodule_iff h).1 F.property
+
+variable (E) in
+/-- **The real elements of `H^s(E)` for equal orders.** For `s = t`, the inclusions identify the
+real elements of `H^s(E)` and of `H^t(E)`, as real Hilbert spaces. This transports real
+elements between two expressions of the same order. -/
+def realSubmoduleCongr {t : ℝ} (hst : s = t) (h : 0 ≤ s) (ht : 0 ≤ t) :
+    realSubmodule E h ≃L[ℝ] realSubmodule E ht :=
+  ContinuousLinearEquiv.ofContinuousLinearMap
+    ((((inclusion hst.ge).restrictScalars ℝ).comp (realSubmodule E h).subtypeL).codRestrict _
+      (inclusion_mem_realSubmodule hst.ge ht))
+    ((((inclusion hst.le).restrictScalars ℝ).comp (realSubmodule E ht).subtypeL).codRestrict _
+      (inclusion_mem_realSubmodule hst.le h))
+    (ContinuousLinearMap.ext fun _ ↦ Subtype.ext <| inclusion_inclusion hst.le hst.ge _ |>.trans
+      (inclusion_self _))
+    (ContinuousLinearMap.ext fun _ ↦ Subtype.ext <| inclusion_inclusion hst.ge hst.le _ |>.trans
+      (inclusion_self _))
+
+@[simp]
+theorem coe_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t) (F : realSubmodule E h) :
+    (realSubmoduleCongr E hst h ht F : H^{t}(E)) = inclusion hst.ge (F : H^{s}(E)) :=
+  (rfl)
+
+/-- The inverse of `realSubmoduleCongr` is `realSubmoduleCongr` for the reversed equality. -/
+@[simp]
+theorem realSubmoduleCongr_symm {t : ℝ} (hst : s = t) (ht : 0 ≤ t) :
+    (realSubmoduleCongr E hst h ht).symm = realSubmoduleCongr E hst.symm ht h :=
+  (rfl)
+
+/-- `realSubmoduleCongr` does not change the `L²` function. -/
+theorem inclusionLp_realSubmoduleCongr {t : ℝ} (hst : s = t) (ht : 0 ≤ t)
+    (F : realSubmodule E h) :
+    inclusionLp ht (realSubmoduleCongr E hst h ht F : H^{t}(E)) = inclusionLp h (F : H^{s}(E)) :=
+  inclusionLp_inclusion hst.ge ht _
+
+/-- `realSubmoduleCongr` does not change the continuous representative. -/
+theorem continuousRep_realSubmoduleCongr (hs : finrank ℝ E < 2 * s) {t : ℝ} (hst : s = t)
+    (ht : 0 ≤ t) (F : realSubmodule E h) :
+    continuousRep (realSubmoduleCongr E hst h ht F) = continuousRep F :=
+  continuousRep_eq_of_ae_eq (hst ▸ hs) (continuous_continuousRep hs F) <| by
+    rw [inclusionLp_realSubmoduleCongr]
+    exact coeFn_inclusionLp_ae_eq_continuousRep hs F
 
 end BesselPotentialSpace

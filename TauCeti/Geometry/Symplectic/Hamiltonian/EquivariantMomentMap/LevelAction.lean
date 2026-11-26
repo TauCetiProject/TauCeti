@@ -29,8 +29,10 @@ hypotheses on the action, and regularity also uses the moment-map equation.
 * The stabilizer of a point lies in the coadjoint stabilizer of its value, `G_x ≤ G_{μ x}`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.stabilizer_le_stabilizer_coadjointRepresentation`).
 * The level `Z` is invariant under `G_c`, so it is a `SubMulAction` of `G_c`
-  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`). Conversely, an element of
-  `G` carrying a point of `Z` into `Z` lies in `G_c`.
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulAction`), and its inclusion into `M`
+  is equivariant along `G_c → G`
+  (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.levelSubMulActionSubtype`). Conversely, an
+  element of `G` carrying a point of `Z` into `Z` lies in `G_c`.
 * Two points of `Z` lie in the same `G_c`-orbit exactly when they lie in the same `G`-orbit, so
   `Z / G_c → M / G` is injective, with image the orbits meeting `Z`
   (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitRelQuotientMap_levelSubMulAction_injective`).

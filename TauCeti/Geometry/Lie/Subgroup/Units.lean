@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Lie.Adjoint.Units.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Differential
 public import TauCeti.Geometry.Lie.Subgroup.LieAlgebra
+import TauCeti.Geometry.Lie.Subgroup.CartanChart
 import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
@@ -17,30 +18,38 @@ import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 For the Lie group `Rˣ` of units of a finite-dimensional real normed algebra, the canonical
 identification `TauCeti.Lie.unitsLieAlgebraLieEquiv` of its Lie algebra with `R` turns the
 abstract exponential into the Banach-algebra exponential `TauCeti.expUnit`. This file reads
-`TauCeti.Lie.lieSubalgebraOfSubgroup` through that identification as a real Lie subalgebra
-`TauCeti.Lie.unitsLieSubalgebra K` of `R`, so that a subgroup of `Rˣ` given by a condition on
-algebra elements can have its Lie algebra computed entirely inside `R`.
+`TauCeti.Lie.lieSubalgebraOfSubgroup` through that identification, so that a subgroup of `Rˣ` given
+by a condition on algebra elements can have its Lie algebra computed entirely inside `R`.
+
+The exponential-line set `Subgroup.linearLieAlgebra` is defined for any complete real normed
+algebra. Its elementary closure properties need no finite-dimensionality or closedness. In finite
+dimension, `Subgroup.linearLieSubalgebra` transports the intrinsic Lie subalgebra as a bundled
+Lie subalgebra; for a closed subgroup its carrier is the exponential-line set.
 
 For an embedded Lie subgroup `K ≤ Rˣ`, the differential of the inclusion `K → R` at the identity
-has range `unitsLieSubalgebra K`; left translation by `g ∈ K` carries this range onto
-`g · unitsLieSubalgebra K`, and adjoint invariance `Ad(g) 𝔤 = 𝔤` identifies the left and right
+has range `K.linearLieSubalgebra`; left translation by `g ∈ K` carries this range onto
+`g · K.linearLieSubalgebra`, and adjoint invariance `Ad(g) 𝔤 = 𝔤` identifies the left and right
 translates `g · 𝔤 = 𝔤 · g`.
-
-## Main definitions
-
-* `TauCeti.Lie.unitsLieSubalgebra`: the Lie subalgebra of `R` corresponding to a subgroup of `Rˣ`.
 
 ## Main results
 
+* `Subgroup.linearLieAlgebra`: the exponential-line set for a complete real normed algebra.
+* `Subgroup.linearLieSubalgebra`: the bundled transported Lie subalgebra.
+* `Subgroup.mem_linearLieSubalgebra_iff` and `Subgroup.coe_linearLieSubalgebra`: membership and
+  the carrier equation for closed subgroups.
 * `TauCeti.Lie.forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff`: the abstract exponential
   line of `x : R` is the Banach-algebra exponential line.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`: for a closed
   subgroup, membership in its Lie algebra is that exponential line staying inside the subgroup.
-* `TauCeti.Lie.mem_unitsLieSubalgebra_iff_forall_expUnit`: membership in `unitsLieSubalgebra K`
-  for a closed subgroup `K ≤ Rˣ`.
-* `TauCeti.Lie.conj_mem_unitsLieSubalgebra` and
-  `TauCeti.Lie.map_mulLeft_unitsLieSubalgebra_eq_map_mulRight`: adjoint invariance and equality
-  `g · 𝔤 = 𝔤 · g` for elements of the normalizer of `K`.
+* `Subgroup.star_mem_linearLieAlgebra`: the exponential-line set of a subgroup is invariant under
+  a star that preserves the subgroup.
+* `Subgroup.star_mem_linearLieSubalgebra`: the same for the Lie algebra of a closed subgroup.
+* `Subgroup.conj_mem_linearLieSubalgebra`,
+  `Subgroup.conj_mem_linearLieSubalgebra_of_mem_normalizer`,
+  and `Subgroup.map_mulLeft_linearLieSubalgebra_eq_map_mulRight`: adjoint invariance and equality
+  `g · 𝔤 = 𝔤 · g` for elements of the normalizer.
+* `Subgroup.le_of_linearLieSubalgebra_le`: a closed connected subgroup lies in every closed
+  subgroup whose Lie algebra contains its own.
 * `TauCeti.Lie.EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal` and
   `TauCeti.Lie.EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight`: the
   tangent space in `R` at `g ∈ K` of an embedded Lie subgroup `K ≤ Rˣ` is `g · 𝔤 = 𝔤 · g`.
@@ -53,11 +62,11 @@ open scoped ContDiff Manifold
 
 noncomputable section
 
-namespace TauCeti.Lie
-
 attribute [local instance] TauCeti.normedAlgebraRatOfReal
 
 attribute [local instance 100] LieRing.ofAssociativeRing
+
+namespace TauCeti.Lie
 
 variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
 
@@ -85,82 +94,223 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff {K : Subgro
     ← forall_lieExp_unitsLieAlgebraLieEquiv_symm_smul_mem_iff K x]
   simp only [map_smul]
 
-/-- The Lie subalgebra of `R` corresponding to a subgroup `K ≤ Rˣ`, read through the canonical
-identification `unitsLieAlgebraLieEquiv`. -/
-def unitsLieSubalgebra (K : Subgroup Rˣ) : LieSubalgebra ℝ R :=
-  (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) K).map (unitsLieAlgebraLieEquiv (R := R)).toLieHom
+end TauCeti.Lie
 
-/-- Membership in `unitsLieSubalgebra K` is membership of the corresponding left-invariant
-derivation in `lieSubalgebraOfSubgroup K`. -/
+namespace Subgroup
+
+section Complete
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [CompleteSpace R]
+
+/-- The elements whose entire exponential line is contained in a subgroup of algebra units. -/
+def linearLieAlgebra (G : Subgroup Rˣ) : Set R :=
+  {x | ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ G}
+
+variable {G : Subgroup Rˣ} {x y : R}
+
+/-- Membership in the linear Lie algebra means containment of the whole exponential line. -/
+theorem mem_linearLieAlgebra_iff :
+    x ∈ G.linearLieAlgebra ↔ ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ G :=
+  Iff.rfl
+
+/-- In algebra coordinates, the exponential line consists of elements underlying units of the
+subgroup. -/
+theorem mem_linearLieAlgebra_iff_forall_exp :
+    x ∈ G.linearLieAlgebra ↔
+      ∀ t : ℝ, ∃ g ∈ G, (g : R) = NormedSpace.exp (t • x) := by
+  rw [mem_linearLieAlgebra_iff]
+  refine forall_congr' fun t => ?_
+  rw [← TauCeti.expUnit_coe (t • x)]
+  exact (Units.val_injective.mem_set_image
+    (s := (G : Set Rˣ)) (a := TauCeti.expUnit (t • x))).symm
+
+/-- Zero lies in every linear Lie algebra. -/
 @[simp]
-theorem mem_unitsLieSubalgebra_iff (K : Subgroup Rˣ) (x : R) :
-    x ∈ unitsLieSubalgebra K ↔
-      (unitsLieAlgebraLieEquiv (R := R)).symm x ∈ lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) K := by
+theorem zero_mem_linearLieAlgebra : (0 : R) ∈ G.linearLieAlgebra := by
+  intro t
+  simpa only [smul_zero, TauCeti.expUnit_zero] using G.one_mem
+
+/-- Scalar multiplication preserves the exponential-line condition for any subgroup. -/
+theorem smul_mem_linearLieAlgebra (c : ℝ) (hx : x ∈ G.linearLieAlgebra) :
+    c • x ∈ G.linearLieAlgebra := by
+  intro t
+  simpa only [smul_smul] using hx (t * c)
+
+/-- Negation preserves the linear Lie algebra of any subgroup. -/
+theorem neg_mem_linearLieAlgebra (hx : x ∈ G.linearLieAlgebra) :
+    -x ∈ G.linearLieAlgebra := by
+  simpa only [neg_one_smul] using smul_mem_linearLieAlgebra (-1) hx
+
+/-- The linear Lie algebra of a subgroup stable under a continuous star is stable under the
+star. -/
+theorem star_mem_linearLieAlgebra [StarRing R] [StarModule ℝ R] [ContinuousStar R]
+    (hstar : ∀ y ∈ G, star y ∈ G) (hx : x ∈ G.linearLieAlgebra) :
+    star x ∈ G.linearLieAlgebra := by
+  intro t
+  rw [← star_trivial t, ← star_smul, TauCeti.expUnit_star]
+  exact hstar _ (hx t)
+
+/-- The linear Lie algebra of a closed subgroup is a closed subset of the ambient algebra. -/
+theorem isClosed_linearLieAlgebra (hG : IsClosed (G : Set Rˣ)) :
+    IsClosed G.linearLieAlgebra := by
+  have hset : G.linearLieAlgebra =
+      ⋂ t : ℝ, (fun x : R => TauCeti.expUnit (t • x)) ⁻¹' (G : Set Rˣ) := by
+    ext x
+    simp only [mem_linearLieAlgebra_iff, Set.mem_iInter, Set.mem_preimage, SetLike.mem_coe]
+  rw [hset]
+  exact isClosed_iInter fun t => hG.preimage
+    (TauCeti.continuous_expUnit.comp (continuous_const_smul t))
+
+end Complete
+
+section FiniteDimensional
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
+
+local instance finiteDimensionalCompleteSpaceLinearLieAlgebra : CompleteSpace R :=
+  FiniteDimensional.completeSpace ℝ R
+
+/-- The intrinsic Lie subalgebra of a subgroup of units, transported to algebra coordinates.
+For a closed subgroup, its carrier is `Subgroup.linearLieAlgebra`. -/
+def linearLieSubalgebra (G : Subgroup Rˣ) : LieSubalgebra ℝ R :=
+  (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G).map
+    (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).toLieHom
+
+/-- The transported Lie subalgebra is the image under the canonical units Lie equivalence. -/
+theorem linearLieSubalgebra_eq_map (G : Subgroup Rˣ) :
+    G.linearLieSubalgebra =
+      (TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G).map
+        (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).toLieHom := by
+  rfl
+
+variable {G : Subgroup Rˣ} {x y : R}
+
+/-- Membership in the transported Lie subalgebra is membership of the corresponding element in
+the intrinsic Lie algebra of the subgroup. -/
+theorem mem_linearLieSubalgebra :
+    x ∈ G.linearLieSubalgebra ↔
+      (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm x ∈
+        TauCeti.Lie.lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) G := by
+  rw [linearLieSubalgebra_eq_map, LieSubalgebra.mem_map]
   constructor
-  · rintro ⟨X, hX, rfl⟩
-    rw [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
-    exact hX
-  · intro hx
-    exact ⟨(unitsLieAlgebraLieEquiv (R := R)).symm x, hx, by simp⟩
+  · rintro ⟨y, hy, rfl⟩
+    rwa [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply]
+  · exact fun hx ↦ ⟨_, hx, LieEquiv.apply_symm_apply _ x⟩
 
-/-- For a closed subgroup `K ≤ Rˣ`, an element of `R` lies in `unitsLieSubalgebra K` exactly when
-its Banach-algebra exponential line stays in `K`. -/
-theorem mem_unitsLieSubalgebra_iff_forall_expUnit {K : Subgroup Rˣ}
-    (hK : IsClosed (K : Set Rˣ)) (x : R) :
-    x ∈ unitsLieSubalgebra K ↔ ∀ t : ℝ, TauCeti.expUnit (t • x) ∈ K := by
-  rw [mem_unitsLieSubalgebra_iff, unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hK]
+/-- For a closed subgroup, membership in the transported Lie subalgebra is equivalent to the
+exponential-line condition. -/
+theorem mem_linearLieSubalgebra_iff (hG : IsClosed (G : Set Rˣ)) :
+    x ∈ G.linearLieSubalgebra ↔ x ∈ G.linearLieAlgebra := by
+  rw [mem_linearLieSubalgebra]
+  exact TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff hG x
 
-/-- A larger subgroup of `Rˣ` has a larger Lie subalgebra in `R`. -/
-theorem unitsLieSubalgebra_mono {K K' : Subgroup Rˣ} (h : K ≤ K') :
-    unitsLieSubalgebra K ≤ unitsLieSubalgebra K' := fun x hx ↦
-  (mem_unitsLieSubalgebra_iff K' x).2
-    (lieSubalgebraOfSubgroup_mono h ((mem_unitsLieSubalgebra_iff K x).1 hx))
+/-- For a closed subgroup, the transported Lie subalgebra has the exponential-line set as its
+carrier. -/
+theorem coe_linearLieSubalgebra (hG : IsClosed (G : Set Rˣ)) :
+    (G.linearLieSubalgebra : Set R) = G.linearLieAlgebra :=
+  Set.ext fun _ => mem_linearLieSubalgebra_iff hG
 
-/-- For closed subgroups of `Rˣ`, the Lie subalgebra of an intersection is the intersection of the
-Lie subalgebras. -/
-theorem unitsLieSubalgebra_inf {K K' : Subgroup Rˣ}
+/-- Addition preserves the linear Lie algebra of a closed subgroup. -/
+theorem add_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
+    (hx : x ∈ G.linearLieAlgebra) (hy : y ∈ G.linearLieAlgebra) :
+    x + y ∈ G.linearLieAlgebra := by
+  rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
+  exact G.linearLieSubalgebra.add_mem hx hy
+
+/-- The associative commutator preserves the linear Lie algebra of a closed subgroup. -/
+theorem commutator_mem_linearLieAlgebra (hG : IsClosed (G : Set Rˣ))
+    (hx : x ∈ G.linearLieAlgebra) (hy : y ∈ G.linearLieAlgebra) :
+    x * y - y * x ∈ G.linearLieAlgebra := by
+  rw [← mem_linearLieSubalgebra_iff hG] at hx hy ⊢
+  exact G.linearLieSubalgebra.lie_mem hx hy
+
+/-- The Lie algebra of a subgroup `G` of `Rˣ` is invariant under conjugation by `G`: this is
+`TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`, read through `TauCeti.Lie.unitsLieAlgebraLieEquiv`,
+under which the adjoint action is conjugation in `R` (`TauCeti.Lie.unitsLieAlgebraEquiv_Ad`). -/
+theorem conj_mem_linearLieSubalgebra {y : Rˣ} (hy : y ∈ G) (hx : x ∈ G.linearLieSubalgebra) :
+    (y : R) * x * ↑y⁻¹ ∈ G.linearLieSubalgebra := by
+  rw [mem_linearLieSubalgebra] at hx ⊢
+  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) (Subgroup.le_normalizer hy)
+    hx using 1
+  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    LieEquiv.apply_symm_apply]
+
+/-- The Lie algebra of a closed subgroup stable under a continuous star is stable under the
+star. -/
+theorem star_mem_linearLieSubalgebra [StarRing R] [StarModule ℝ R] [ContinuousStar R]
+    (hG : IsClosed (G : Set Rˣ)) (hstar : ∀ y ∈ G, star y ∈ G)
+    (hx : x ∈ G.linearLieSubalgebra) : star x ∈ G.linearLieSubalgebra :=
+  (mem_linearLieSubalgebra_iff hG).2 <|
+    star_mem_linearLieAlgebra hstar ((mem_linearLieSubalgebra_iff hG).1 hx)
+
+/-- A closed connected subgroup `G` of `Rˣ` lies in every closed subgroup `L` whose Lie algebra
+contains its own. -/
+theorem le_of_linearLieSubalgebra_le {L : Subgroup Rˣ} (hG : IsClosed (G : Set Rˣ))
+    (hconn : IsPreconnected (G : Set Rˣ)) (hL : IsClosed (L : Set Rˣ))
+    (h : G.linearLieSubalgebra ≤ L.linearLieSubalgebra) : G ≤ L := by
+  refine TauCeti.Lie.le_of_lieSubalgebraOfSubgroup_le (I := 𝓘(ℝ, R)) hG hconn hL fun x hx ↦ ?_
+  rw [← (TauCeti.Lie.unitsLieAlgebraLieEquiv (R := R)).symm_apply_apply x] at hx ⊢
+  exact mem_linearLieSubalgebra.1 (h (mem_linearLieSubalgebra.2 hx))
+
+/-- A larger subgroup of `Rˣ` has a larger linear Lie subalgebra in `R`. -/
+theorem linearLieSubalgebra_mono {K K' : Subgroup Rˣ} (h : K ≤ K') :
+    K.linearLieSubalgebra ≤ K'.linearLieSubalgebra := fun _ hx ↦
+  mem_linearLieSubalgebra.2
+    (TauCeti.Lie.lieSubalgebraOfSubgroup_mono h (mem_linearLieSubalgebra.1 hx))
+
+/-- For closed subgroups of `Rˣ`, the linear Lie subalgebra of an intersection is the intersection
+of the linear Lie subalgebras. -/
+theorem linearLieSubalgebra_inf {K K' : Subgroup Rˣ}
     (hK : IsClosed (K : Set Rˣ)) (hK' : IsClosed (K' : Set Rˣ)) :
-    unitsLieSubalgebra (K ⊓ K') = unitsLieSubalgebra K ⊓ unitsLieSubalgebra K' := by
+    (K ⊓ K').linearLieSubalgebra = K.linearLieSubalgebra ⊓ K'.linearLieSubalgebra := by
   ext x
-  simp only [mem_unitsLieSubalgebra_iff, LieSubalgebra.mem_inf,
-    lieSubalgebraOfSubgroup_inf hK hK']
+  simp only [mem_linearLieSubalgebra, LieSubalgebra.mem_inf,
+    TauCeti.Lie.lieSubalgebraOfSubgroup_inf hK hK']
 
-/-- Conjugation by an element of the normalizer of `K` preserves `unitsLieSubalgebra K`. -/
-theorem conj_mem_unitsLieSubalgebra {K : Subgroup Rˣ} {g : Rˣ}
-    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) {x : R} (hx : x ∈ unitsLieSubalgebra K) :
-    (g : R) * x * ((g⁻¹ : Rˣ) : R) ∈ unitsLieSubalgebra K := by
-  rw [mem_unitsLieSubalgebra_iff] at hx ⊢
-  have hAd := Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) hg hx
-  have heq : unitsLieAlgebraLieEquiv (R := R)
-      (Ad (I := 𝓘(ℝ, R)) g ((unitsLieAlgebraLieEquiv (R := R)).symm x)) =
-      (g : R) * x * ((g⁻¹ : Rˣ) : R) := by
-    rw [unitsLieAlgebraLieEquiv_apply, unitsLieAlgebraEquiv_Ad, unitsLieAlgebraLieEquiv_symm_apply,
-      LinearEquiv.apply_symm_apply]
-  rw [← heq, LieEquiv.symm_apply_apply]
-  exact hAd
+/-- Conjugation by an element of the normalizer of `K` preserves `K.linearLieSubalgebra`. -/
+theorem conj_mem_linearLieSubalgebra_of_mem_normalizer {K : Subgroup Rˣ} {g : Rˣ}
+    (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) {x : R} (hx : x ∈ K.linearLieSubalgebra) :
+    (g : R) * x * ((g⁻¹ : Rˣ) : R) ∈ K.linearLieSubalgebra := by
+  rw [mem_linearLieSubalgebra] at hx ⊢
+  convert TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup (I := 𝓘(ℝ, R)) hg hx using 1
+  rw [LieEquiv.symm_apply_eq, TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    TauCeti.Lie.unitsLieAlgebraEquiv_Ad, ← TauCeti.Lie.unitsLieAlgebraLieEquiv_apply,
+    LieEquiv.apply_symm_apply]
 
-/-- For `g` in the normalizer of `K`, the left and right translates of `unitsLieSubalgebra K`
+/-- For `g` in the normalizer of `K`, the left and right translates of `K.linearLieSubalgebra`
 by `g` coincide: `g · 𝔤 = 𝔤 · g`. -/
-theorem map_mulLeft_unitsLieSubalgebra_eq_map_mulRight {K : Subgroup Rˣ} {g : Rˣ}
+theorem map_mulLeft_linearLieSubalgebra_eq_map_mulRight {K : Subgroup Rˣ} {g : Rˣ}
     (hg : g ∈ Subgroup.normalizer (K : Set Rˣ)) :
-    (unitsLieSubalgebra K).toSubmodule.map (LinearMap.mulLeft ℝ (g : R)) =
-      (unitsLieSubalgebra K).toSubmodule.map (LinearMap.mulRight ℝ (g : R)) := by
+    K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulLeft ℝ (g : R)) =
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulRight ℝ (g : R)) := by
   ext v
   simp only [Submodule.mem_map, LieSubalgebra.mem_toSubmodule, LinearMap.mulLeft_apply,
     LinearMap.mulRight_apply]
   constructor
   · rintro ⟨x, hx, rfl⟩
-    refine ⟨(g : R) * x * ((g⁻¹ : Rˣ) : R), conj_mem_unitsLieSubalgebra hg hx, ?_⟩
+    refine ⟨(g : R) * x * ((g⁻¹ : Rˣ) : R),
+      conj_mem_linearLieSubalgebra_of_mem_normalizer hg hx, ?_⟩
     simp [mul_assoc]
   · rintro ⟨x, hx, rfl⟩
     have hg' : g⁻¹ ∈ Subgroup.normalizer (K : Set Rˣ) := inv_mem hg
     refine ⟨((g⁻¹ : Rˣ) : R) * x * (g : R), ?_, ?_⟩
-    · simpa only [inv_inv] using conj_mem_unitsLieSubalgebra hg' hx
+    · simpa only [inv_inv] using conj_mem_linearLieSubalgebra_of_mem_normalizer hg' hx
     · simp [mul_assoc]
+
+end FiniteDimensional
+
+end Subgroup
+
+namespace TauCeti.Lie
 
 section EmbeddedTangent
 
-variable {K : Subgroup Rˣ} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+variable {R : Type*} [NormedRing R] [NormedAlgebra ℝ R] [FiniteDimensional ℝ R]
+  {K : Subgroup Rˣ} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+local instance finiteDimensionalCompleteSpaceEmbeddedTangent : CompleteSpace R :=
+  FiniteDimensional.completeSpace ℝ R
 
 /-- The inclusion of an embedded Lie subgroup `K ≤ Rˣ` into the ambient normed algebra `R` is
 smooth. -/
@@ -174,12 +324,12 @@ theorem EmbeddedLieSubgroupData.contMDiff_unitsVal_subtypeVal
 variable [FiniteDimensional ℝ E']
 
 /-- At the identity, the range of the differential of the inclusion `K → R` of an embedded Lie
-subgroup `K ≤ Rˣ` is `unitsLieSubalgebra K`. -/
+subgroup `K ≤ Rˣ` is `K.linearLieSubalgebra`. -/
 theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
     (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') :
     let _ : ChartedSpace E' K := d.chartedSpace
     (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) (1 : K)).range =
-      (unitsLieSubalgebra K).toSubmodule := by
+      K.linearLieSubalgebra.toSubmodule := by
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   let eK := leftInvariantDerivationLinearIsometryEquivModelVectorSpace (I := 𝓘(ℝ, E')) (G := K)
@@ -213,7 +363,7 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_one
     rfl
   ext v
   simp only [LinearMap.mem_range, ContinuousLinearMap.coe_coe, LieSubalgebra.mem_toSubmodule,
-    mem_unitsLieSubalgebra_iff]
+    Subgroup.mem_linearLieSubalgebra]
   constructor
   · rintro ⟨w, rfl⟩
     have hD := hval_D (eK.symm w)
@@ -235,7 +385,7 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal
     (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') (g : K) :
     let _ : ChartedSpace E' K := d.chartedSpace
     (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
-      (unitsLieSubalgebra K).toSubmodule.map (LinearMap.mulLeft ℝ ((g : Rˣ) : R)) := by
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulLeft ℝ ((g : Rˣ) : R)) := by
   let _ : ChartedSpace E' K := d.chartedSpace
   let _ : LieGroup 𝓘(ℝ, E') ∞ K := d.lieGroup
   let ι : K → R := fun k ↦ ((k : Rˣ) : R)
@@ -286,10 +436,10 @@ theorem EmbeddedLieSubgroupData.range_mvfderiv_unitsVal_subtypeVal_eq_mulRight
     (d : EmbeddedLieSubgroupData 𝓘(ℝ, R) K E') (g : K) :
     let _ : ChartedSpace E' K := d.chartedSpace
     (mvfderiv 𝓘(ℝ, E') (fun k : K ↦ ((k : Rˣ) : R)) g).range =
-      (unitsLieSubalgebra K).toSubmodule.map (LinearMap.mulRight ℝ ((g : Rˣ) : R)) := by
+      K.linearLieSubalgebra.toSubmodule.map (LinearMap.mulRight ℝ ((g : Rˣ) : R)) := by
   dsimp only
   rw [d.range_mvfderiv_unitsVal_subtypeVal g]
-  exact map_mulLeft_unitsLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.property)
+  exact Subgroup.map_mulLeft_linearLieSubalgebra_eq_map_mulRight (Subgroup.le_normalizer g.property)
 
 end EmbeddedTangent
 

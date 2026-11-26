@@ -59,7 +59,8 @@ curve through `1` with the constant `C`; the latter involves no inversion.
   is `C^n`; `ContinuousAt.ringInverse` is the continuous version, on any topological domain.
 * `TauCeti.iteratedDeriv_ringInverse_add_smul`: all derivatives of the ring inverse of an
   affine pencil, at any parameter where the pencil is a unit;
-  `TauCeti.iteratedDeriv_ringInverse_one_sub_smul` is the commutative form for `1 - r • P`.
+  `TauCeti.iteratedDeriv_ringInverse_one_sub_smul` is the commutative form for `1 - r • P`, and
+  `TauCeti.iteratedDeriv_succ_smul_ringInverse_one_sub_smul` gives those of `r • (1 - r • P)⁻¹`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
 
@@ -179,8 +180,7 @@ theorem ContinuousLinearMap.IsInvertible.norm_inverse_le_of_mul_norm_sub_lt [Com
       _ ≤ ‖y‖ + ‖((f : E →L[𝕜] F) - A) x‖ := norm_sub_le _ _
       _ ≤ ‖y‖ + ‖(f : E →L[𝕜] F) - A‖ * ‖x‖ := by gcongr; exact le_opNorm _ _
   have hx : ‖x‖ ≤ M * ‖A x‖ := by
-    calc ‖x‖ = ‖A.inverse (A x)‖ := by simp [hA.inverse_apply_self]
-      _ ≤ ‖A.inverse‖ * ‖A x‖ := le_opNorm _ _
+    calc ‖x‖ ≤ ‖A.inverse‖ * ‖A x‖ := hA.norm_le_norm_inverse_mul_norm x
       _ ≤ M * ‖A x‖ := by gcongr
   rw [div_mul_eq_mul_div, le_div_iff₀ hδ]
   nlinarith [mul_le_mul_of_nonneg_left hAx hM0]
@@ -417,6 +417,55 @@ theorem TauCeti.iteratedDeriv_ringInverse_one_sub_smul (P : R) (j : ℕ) {r : �
     rw [hc.mul_pow, ← mul_assoc, ← (hc.pow_left j).eq, mul_assoc, ← pow_succ']
   rw [iteratedDeriv_ringInverse_add_smul 1 (-P) j hr, neg_mul, ← hI]
   rcases Nat.even_or_odd j with h | h <;> simp [h.neg_one_pow, h.neg_pow]
+
+/-- `∂_r^(j + 1) (r (1 - r P)⁻¹) = (j + 1)! P ^ j ((1 - r P)⁻¹) ^ (j + 2)` where `1 - r P` is a
+unit. By Leibniz's rule it is `r ∂_r^(j + 1) (1 - r P)⁻¹ + (j + 1) ∂_r^j (1 - r P)⁻¹`, and
+`1 + r P (1 - r P)⁻¹ = (1 - r P)⁻¹`; for `j = 0` the derivative is `((1 - r P)⁻¹) ^ 2`. -/
+theorem TauCeti.iteratedDeriv_succ_smul_ringInverse_one_sub_smul (P : R) (j : ℕ) {r : 𝕜}
+    (hr : IsUnit (1 - r • P)) :
+    iteratedDeriv (j + 1) (fun s : 𝕜 => s • Ring.inverse (1 - s • P)) r =
+      (Nat.factorial (j + 1) : 𝕜) • (P ^ j * Ring.inverse (1 - r • P) ^ (j + 2)) := by
+  set I := Ring.inverse (1 - r • P)
+  have hI : ContDiffAt 𝕜 (j + 1) (fun s : 𝕜 => Ring.inverse (1 - s • P)) r :=
+    ContDiffAt.inverse (by fun_prop) hr
+  have hid (i : ℕ) : iteratedDeriv i (fun s : 𝕜 => s • (1 : R)) r =
+      iteratedDeriv i (fun s : 𝕜 => s) r • (1 : R) :=
+    iteratedDeriv_smul_const (f := fun s : 𝕜 => s) (by fun_prop) 1
+  -- Leibniz's rule for `r • (1 - r P)⁻¹ = (r • 1) (1 - r P)⁻¹`: only two terms survive.
+  have hsum : iteratedDeriv (j + 1) (fun s : 𝕜 => s • Ring.inverse (1 - s • P)) r =
+      (Nat.factorial j : 𝕜) • (((j : R) + 1) * (P ^ j * I ^ (j + 1))) +
+        (Nat.factorial (j + 1) : 𝕜) • r • (P ^ (j + 1) * I ^ (j + 1 + 1)) := by
+    have hmul : (fun s : 𝕜 => s • Ring.inverse (1 - s • P)) =
+        fun s => (s • (1 : R)) * Ring.inverse (1 - s • P) := by
+      funext s
+      rw [smul_one_mul]
+    rw [hmul, iteratedDeriv_fun_mul (by fun_prop) hI, Finset.sum_range_succ',
+      Finset.sum_range_succ']
+    simp [hid, iteratedDeriv_fun_id, iteratedDeriv_ringInverse_one_sub_smul P _ hr, I]
+  have hcomm : Commute P I :=
+    ((Commute.one_right P).sub_right ((Commute.refl P).smul_right r)).ringInverse_right
+  have hI1 : I = 1 + r • (P * I) := by
+    have h := Ring.mul_inverse_cancel _ hr
+    rw [sub_mul, one_mul, smul_mul_assoc] at h
+    rw [← h, sub_add_cancel]
+  have hPI : P ^ j * I ^ (j + 1) * (P * I) = P ^ (j + 1) * I ^ (j + 2) := by
+    calc P ^ j * I ^ (j + 1) * (P * I) = P ^ j * (I ^ (j + 1) * P) * I := by
+          simp only [mul_assoc]
+      _ = P ^ j * P * (I ^ (j + 1) * I) := by
+          rw [← (hcomm.pow_right _).eq]
+          simp only [mul_assoc]
+      _ = P ^ (j + 1) * I ^ (j + 2) := by rw [← pow_succ, ← pow_succ]
+  -- since `(1 - r P)⁻¹ = 1 + r P (1 - r P)⁻¹`
+  have key : P ^ j * I ^ (j + 2) = P ^ j * I ^ (j + 1) + r • (P ^ (j + 1) * I ^ (j + 2)) := by
+    calc P ^ j * I ^ (j + 2) = P ^ j * I ^ (j + 1) * (1 + r • (P * I)) := by
+          rw [← hI1, pow_succ I (j + 1), mul_assoc]
+      _ = _ := by rw [mul_add, mul_one, mul_smul_comm, hPI]
+  have hcast : ((j : R) + 1) * (P ^ j * I ^ (j + 1)) = ((j : 𝕜) + 1) • (P ^ j * I ^ (j + 1)) := by
+    rw [Algebra.smul_def]
+    simp
+  rw [hsum, hcast, key, Nat.factorial_succ]
+  push_cast
+  module
 
 omit [HasSummableGeomSeries R] in
 /-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `P` has derivative `Z` at `t₀` and `K` is

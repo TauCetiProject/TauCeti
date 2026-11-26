@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.IsManifold.RestrictScalars
 public import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+import Mathlib.Geometry.Manifold.MFDeriv.Tangent
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The Levi form on a complex manifold
@@ -50,13 +52,19 @@ index is at most `dim_ℂ E + q`.
 * `TauCeti.leviForm_comp_symm_apply_of_mem_maximalAtlas`: for `f` real `C²` at `x`, the Levi
   form of the coordinate expression in any holomorphic `C²` chart at `x` is the manifold Levi
   form.
+* `TauCeti.tendsto_manifoldLeviForm_tangentCoordChange`: for `f` real `C²` at `x₀`, the Levi form
+  read in the chart at `x₀` is continuous at `x₀`.
 * `TauCeti.re_manifoldLeviForm_apply`, `TauCeti.im_manifoldLeviForm_apply`: the real and imaginary
   parts of the Levi form in terms of the real critical Hessian.
 * `TauCeti.manifoldLeviForm_apply_self`: for `C²` `f`, its diagonal is the real number
   `(Hess f(v, v) + Hess f(I • v, I • v)) / 4`.
-* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`,
+* `TauCeti.re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax`: at a local maximum of a `C²`
+  function, the Levi form is negative semidefinite.
+* `TauCeti.manifoldLeviForm_add`, `TauCeti.manifoldLeviForm_neg`, `TauCeti.manifoldLeviForm_smul`,
   `TauCeti.manifoldLeviForm_mul_apply`, `TauCeti.manifoldLeviForm_scalar_comp_apply`: the sum,
-  negation, product and composition rules.
+  negation, scalar multiple, product and composition rules, and `TauCeti.manifoldLeviForm_const`:
+  the Levi form of a constant function vanishes.
+* `TauCeti.manifoldLeviForm_I_smul_I_smul`: invariance under `I • ·` in both arguments.
 * `TauCeti.manifoldLeviForm_comp_apply`: the pullback rule under a complex `C²` map.
 * `TauCeti.le_re_manifoldLeviForm_scalar_comp_apply_self`: post-composition with an increasing
   convex function preserves positivity of the Levi form.
@@ -168,6 +176,18 @@ theorem isSymm_manifoldLeviForm (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) 
     (manifoldLeviForm E f x).IsSymm :=
   isSymm_leviForm hf.contDiffAt_comp_chartAt_symm
 
+/-- **The Levi form at a local maximum.** If `f` is `C²` at a local maximum `x`, the real part of
+`L_f(x)(v, v)` is nonpositive. -/
+theorem re_manifoldLeviForm_apply_self_nonpos_of_isLocalMax
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x) (hmax : IsLocalMax f x) (v : E) :
+    (manifoldLeviForm E f x v v).re ≤ 0 := by
+  have hx : (chartAt E x).symm (chartAt E x x) = x := (chartAt E x).left_inv (mem_chart_source E x)
+  have hmax' : IsLocalMax (f ∘ (chartAt E x).symm) (chartAt E x x) :=
+    IsLocalMax.comp_continuous (hx.symm ▸ hmax)
+      ((chartAt E x).continuousAt_symm (mem_chart_target E x))
+  rw [manifoldLeviForm_def]
+  exact re_leviForm_nonpos_of_isLocalMax hf.contDiffAt_comp_chartAt_symm hmax' v
+
 /-! ### Algebraic rules -/
 
 /-- **The sum rule** for the Levi form on a complex manifold. -/
@@ -181,6 +201,23 @@ theorem manifoldLeviForm_add {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘
 theorem manifoldLeviForm_neg (f : M → ℝ) (x : M) :
     manifoldLeviForm E (-f) x = -manifoldLeviForm E f x :=
   leviForm_neg (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form of a constant function vanishes. -/
+@[simp]
+theorem manifoldLeviForm_const (c : ℝ) (x : M) : manifoldLeviForm E (fun _ : M ↦ c) x = 0 :=
+  leviForm_const c (chartAt E x x)
+
+/-- The Levi form on a complex manifold is real homogeneous in the function. -/
+@[simp]
+theorem manifoldLeviForm_smul (a : ℝ) (f : M → ℝ) (x : M) :
+    manifoldLeviForm E (a • f) x = (a : ℂ) • manifoldLeviForm E f x :=
+  leviForm_smul a (f ∘ (chartAt E x).symm) (chartAt E x x)
+
+/-- The Levi form on a complex manifold is invariant under applying the complex structure `I • ·`
+to both arguments. -/
+theorem manifoldLeviForm_I_smul_I_smul (f : M → ℝ) (x : M) (v w : E) :
+    manifoldLeviForm E f x (I • v) (I • w) = manifoldLeviForm E f x v w :=
+  leviForm_I_smul_I_smul (f ∘ (chartAt E x).symm) (chartAt E x x) v w
 
 /-- **The product rule** for the Levi form on a complex manifold. Writing `∂f` for the
 complex-linear extension `StrongDual.extendRCLike` of the real differential `mvfderiv 𝓘(ℝ, E) f x`,
@@ -321,6 +358,33 @@ theorem leviForm_comp_symm_apply_of_mem_maximalAtlas
     leviForm_comp_apply (hφy ▸ hfe) hφ, hDφ, hφy]
   -- The two sides differ only in reading the model space `E` as the tangent spaces of `M`.
   rfl
+
+/-- **The Levi form, read in the chart at `x₀`, is continuous at `x₀`** for a function that is
+real `C²` at `x₀`: `L_f(x)(B x u, B x v) → L_f(x₀)(u, v)`, where `B x` is the tangent coordinate
+change from the chart at `x₀` to the chart at `x`. -/
+theorem tendsto_manifoldLeviForm_tangentCoordChange [IsManifold 𝓘(ℂ, E) 2 M] {x₀ : M}
+    (hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 f x₀) (u v : E) :
+    Tendsto (fun x ↦ manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
+      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v)) (𝓝 x₀) (𝓝 (manifoldLeviForm E f x₀ u v)) := by
+  have : IsManifold 𝓘(ℝ, E) 2 M := IsManifold.restrictScalars ℝ ‹_›
+  set c := chartAt E x₀
+  -- In the chart at `x₀`, the Levi form is that of the coordinate expression `f ∘ c.symm`.
+  have hL : ∀ᶠ x in 𝓝 x₀, manifoldLeviForm E f x (tangentCoordChange 𝓘(ℂ, E) x₀ x x u)
+      (tangentCoordChange 𝓘(ℂ, E) x₀ x x v) = leviForm (f ∘ c.symm) (c x) u v := by
+    filter_upwards [c.open_source.mem_nhds (mem_chart_source E x₀),
+      (contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 hf] with x hx hfx
+    have hD (w : E) : mfderiv 𝓘(ℂ, E) 𝓘(ℂ, E) c x (tangentCoordChange 𝓘(ℂ, E) x₀ x x w) = w := by
+      rw [mfderiv_chartAt_eq_tangentCoordChange (I := 𝓘(ℂ, E)) hx]
+      exact tangentCoordChange_tangentCoordChange (by simpa using hx) (mem_extChartAt_source x) w
+    rw [← leviForm_comp_symm_apply_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas x₀) hx
+      hfx, hD, hD]
+  -- The Levi form of `f ∘ c.symm` is continuous at `c x₀`, as its second derivative is.
+  have hD2 : ContinuousAt (fderiv ℝ (fderiv ℝ (f ∘ c.symm))) (c x₀) :=
+    ((hf.contDiffAt_comp_chartAt_symm.fderiv_right (m := 1) (by norm_num)).fderiv_right
+      (m := 0) (by norm_num)).continuousAt
+  rw [manifoldLeviForm_def]
+  exact ((hD2.leviForm_apply u v).tendsto.comp
+    (c.continuousAt (mem_chart_source E x₀)).tendsto).congr' (hL.mono fun x hx ↦ hx.symm)
 
 end Chart
 

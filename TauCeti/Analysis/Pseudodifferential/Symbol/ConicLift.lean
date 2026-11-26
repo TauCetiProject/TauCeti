@@ -10,8 +10,8 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Lifting a symbol to a product, cut off near an axis
@@ -40,15 +40,19 @@ difference are controlled, and none are claimed: the difference is not a symbol 
 
 The full symbols of the external product of two elliptic operators on the factors of a product
 have entries of the form `p(P x, P ξ)`, singular along an axis; their lifts are symbols of order
-`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The
-homogeneous counterpart of the construction, for principal symbols, is
-`TauCeti.HomogeneousSymbol.conicCutoffFst`.
+`m` (in `S^m_{1,0}`) on the product, close to the original entries in the sense above. The lift
+of a classical symbol is classical (`TauCeti.ClassicalSymbol.conicLift`, in
+`TauCeti.Analysis.Pseudodifferential.Symbol.Classical.ConicLift`), and its homogeneous terms are
+the homogeneous counterpart of the construction, `TauCeti.HomogeneousSymbol.conicLift`, with the
+same `P`, `χ` and `ε`. The product-specific variant `TauCeti.HomogeneousSymbol.conicCutoffFst`
+uses the ratio `‖ξ‖² / (‖ξ‖² + ‖η‖²)` instead.
 
 ## Main declarations
 
 * `TauCeti.conicLiftCutoff`: the cutoff `c`, with `TauCeti.contDiff_conicLiftCutoff`, its values
   `TauCeti.conicLiftCutoff_eq_one_of_norm_le`, `TauCeti.conicLiftCutoff_eq_one_of_le`,
-  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, the range `TauCeti.conicLiftCutoff_nonneg`,
+  `TauCeti.conicLiftCutoff_eventuallyEq_zero`, its angular form at large frequencies
+  `TauCeti.conicLiftCutoff_eq_of_two_mul_le_norm`, the range `TauCeti.conicLiftCutoff_nonneg`,
   `TauCeti.conicLiftCutoff_le_one`, and the order-zero estimates
   `TauCeti.exists_norm_iteratedFDeriv_conicLiftCutoff_le`.
 * `TauCeti.Symbol.conicLift`: the lifted symbol `c(ξ) p(P x, P ξ)` of order `m` on `ℝᴺ`, equal
@@ -122,6 +126,12 @@ theorem conicLiftCutoff_eq_one_of_le (hε : ε ≠ 0) {ξ : CoordinateSpace N}
   have hpos : 0 < ε ^ 2 * ‖ξ‖ ^ 2 := by positivity
   rw [conicLiftCutoff_def, χ.apply_eq_one_of_one_div_two_le (by rw [le_div_iff₀ hpos]; linarith),
     sub_self, mul_zero, sub_zero]
+
+/-- At frequencies `‖ξ‖ ≥ 2 R` the cutoff is the angular factor `χ(‖P ξ‖² / (ε² ‖ξ‖²))`, which is
+positively homogeneous of degree `0`. -/
+theorem conicLiftCutoff_eq_of_two_mul_le_norm (hR : 0 < R) {ξ : CoordinateSpace N}
+    (hξ : 2 * R ≤ ‖ξ‖) : conicLiftCutoff P χ φ ε R ξ = χ (‖P ξ‖ ^ 2 / (ε ^ 2 * ‖ξ‖ ^ 2)) := by
+  rw [conicLiftCutoff_def, φ.apply_inv_smul_eq_one hR hξ, one_mul, sub_sub_cancel]
 
 /-- The cutoff vanishes near every frequency with `‖ξ‖ > 2 R` and `‖P ξ‖² < ε² ‖ξ‖² / 4`. -/
 theorem conicLiftCutoff_eventuallyEq_zero (hε : ε ≠ 0) (hR : 0 < R) {ξ : CoordinateSpace N}
@@ -217,8 +227,9 @@ private theorem exists_norm_iteratedFDeriv_removed_le (hε : ε ≠ 0) (hR : 1 �
     refine (hA (k - i) (Nat.sub_le k i) ξ (norm_pos_iff.1 (one_pos.trans_le h1))).trans ?_
     rw [div_eq_mul_inv, mul_assoc]
     gcongr
-    have h := norm_rpow_le_one_add_norm_sq_rpow h1 (-((k - i : ℕ) : ℝ))
-    rwa [abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
+    have h := Real.abs_rpow_le_two_rpow_mul_one_add_sq_rpow (t := ‖ξ‖) (by rwa [abs_norm])
+      (-((k - i : ℕ) : ℝ))
+    rwa [abs_norm, abs_neg, Nat.abs_cast, Real.rpow_neg (norm_nonneg _), Real.rpow_natCast] at h
   have hw : (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (-((k - i : ℕ) : ℝ) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by
     rw [← Real.rpow_add (by positivity), Nat.cast_sub hik]

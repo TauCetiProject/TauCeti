@@ -16,17 +16,23 @@ import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 import Mathlib.Analysis.Complex.Isometry
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Planar area of coordinate lines, graphs and rectangles
 
+Mathlib's measurable equivalence `Complex.measurableEquivRealProd` is the map
+`Complex.equivRealProdCLM` (`Complex.coe_measurableEquivRealProd_eq_equivRealProdCLM`).
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure,
 so a half-disc `Ω ∩ {0 ≤ im}` agrees almost everywhere with its interior
-(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`).
+(`TauCeti.inter_setOf_im_nonneg_ae_eq_interior`), and an integral over `ℂ` is the integral over
+the open upper half-plane of the function plus its composition with conjugation
+(`Complex.integral_eq_setIntegral_add_comp_conj`).
 Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
-`s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
+`s ×ℂ t`, planar measure is the product of the restrictions to the sides
+(`Complex.volume_reProdIm`, `Complex.volume_real_reProdIm_Icc` for the area), so a function of the
 imaginary part integrable on a rectangle of positive width is integrable on the vertical side,
 and a function of the real or imaginary part integrates by Fubini as the length of the other
 side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`,
@@ -34,6 +40,8 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
+(`Complex.measurePreserving_equivRealProdCLM_symm`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
 -/
@@ -50,6 +58,12 @@ theorem MeasurableSet.reProdIm {s t : Set ℝ} (hs : MeasurableSet s) (ht : Meas
   exact (Complex.continuous_re.measurable hs).inter (Complex.continuous_im.measurable ht)
 
 namespace Complex
+
+/-- Mathlib's measurable equivalence `ℂ ≃ᵐ ℝ × ℝ`, along which `volume` is preserved, is the map
+`equivRealProdCLM`. -/
+theorem coe_measurableEquivRealProd_eq_equivRealProdCLM :
+    (measurableEquivRealProd : ℂ → ℝ × ℝ) = equivRealProdCLM :=
+  funext fun w ↦ by rw [measurableEquivRealProd_apply, equivRealProdCLM_apply]
 
 /-- A vertical coordinate line has zero planar area. -/
 theorem volume_setOf_re_eq (c : ℝ) : volume {z : ℂ | z.re = c} = 0 := by
@@ -103,6 +117,27 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
 
+/-- Almost every complex number is off the real axis. -/
+theorem ae_im_ne_zero : ∀ᵐ z : ℂ, z.im ≠ 0 :=
+  measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
+
+/-- An integral over `ℂ` is the integral over the open upper half-plane of the function plus its
+composition with conjugation: the real axis is null and `z ↦ conj z` preserves the measure. -/
+theorem integral_eq_setIntegral_add_comp_conj {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {f : ℂ → E} (hf : Integrable f) :
+    ∫ z, f z = ∫ z in {z : ℂ | 0 < z.im}, (f z + f (starRingEnd ℂ z)) := by
+  have hH : MeasurableSet {z : ℂ | 0 ≤ z.im} := measurableSet_le measurable_const measurable_im
+  have hpre : (conjLIE : ℂ → ℂ) ⁻¹' {z : ℂ | 0 ≤ z.im}ᶜ = {z : ℂ | 0 < z.im} := by
+    ext z
+    simp
+  rw [integral_add (g := fun z => f (starRingEnd ℂ z)) hf.integrableOn
+      ((integrable_comp conjLIE f).2 hf).integrableOn,
+    ← integral_add_compl hH hf,
+    setIntegral_congr_set (setOf_le_im_ae_eq 0),
+    ← conjLIE.measurePreserving.setIntegral_preimage_emb
+      conjLIE.toHomeomorph.measurableEmbedding f {z : ℂ | 0 ≤ z.im}ᶜ, hpre]
+  simp only [conjLIE_apply]
+
 /-- Restricted to a rectangle, planar Lebesgue measure is the product of the restrictions to its
 sides. -/
 theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs : MeasurableSet s)
@@ -112,6 +147,19 @@ theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs :
   have h := volume_preserving_equiv_real_prod.restrict_preimage (hs.prod ht)
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict] at h
   exact h
+
+/-- The planar measure of a rectangle `s ×ℂ t` is the product of the lengths of its sides. -/
+@[simp]
+theorem volume_reProdIm (s t : Set ℝ) : volume (s ×ℂ t) = volume s * volume t := by
+  have h := volume_preserving_equiv_real_prod.measure_preimage_equiv (s ×ˢ t)
+  rw [Measure.volume_eq_prod, Measure.prod_prod] at h
+  rwa [← preimage_equivRealProd_prod]
+
+/-- The planar measure of a closed rectangle `[a, b] × [c, d]`, as a real number. -/
+theorem volume_real_reProdIm_Icc {a b c d : ℝ} (hab : a ≤ b) (hcd : c ≤ d) :
+    volume.real (Icc a b ×ℂ Icc c d) = (b - a) * (d - c) := by
+  rw [measureReal_def, volume_reProdIm, Real.volume_Icc, Real.volume_Icc, ENNReal.toReal_mul,
+    ENNReal.toReal_ofReal (by linarith), ENNReal.toReal_ofReal (by linarith)]
 
 /-- A function of the imaginary part integrable on a rectangle of positive width is integrable
 on the vertical side. -/
@@ -134,6 +182,17 @@ theorem measurePreserving_coordinateSwapCLE :
   rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
+
+/-- The real coordinates `(x, y) ↦ x + y i` of the plane preserve area: as a map, the inverse of
+the continuous linear equivalence `Complex.equivRealProdCLM` is the inverse of the measurable
+equivalence `Complex.measurableEquivRealProd`. -/
+theorem measurePreserving_equivRealProdCLM_symm :
+    MeasurePreserving equivRealProdCLM.symm (volume : Measure (ℝ × ℝ)) volume := by
+  have heq : (equivRealProdCLM.symm : ℝ × ℝ → ℂ) = measurableEquivRealProd.symm := by
+    funext p
+    rw [equivRealProdCLM_symm_apply, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
+  rw [heq]
+  exact volume_preserving_equiv_real_prod.symm
 
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
@@ -183,6 +242,15 @@ theorem inter_setOf_im_nonneg_ae_eq_interior (Ω : Opens ℂ) :
       (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ) := by
   rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen]
   exact ae_eq_set_inter (by rfl) (Complex.setOf_le_im_ae_eq 0)
+
+/-- Almost every point, indeed every point, of the interior `Ω ∩ {0 < im}` of the half-disc
+`Ω ∩ {0 ≤ im}` lies in the open upper half-plane. -/
+theorem ae_restrict_interior_inter_setOf_im_nonneg_im_pos (Ω : Opens ℂ) :
+    ∀ᵐ z ∂volume.restrict (Opens.interior ((Ω : Set ℂ) ∩ {z : ℂ | 0 ≤ z.im}) : Set ℂ),
+      0 < z.im := by
+  refine (ae_restrict_iff' (Opens.interior _).isOpen.measurableSet).2 (.of_forall fun z hz => ?_)
+  rw [Opens.coe_interior, interior_inter_setOf_im_nonneg Ω.isOpen] at hz
+  exact hz.2
 
 /-- Splitting complex coordinates into their real and imaginary blocks preserves volume,
 including on an empty coordinate type. -/

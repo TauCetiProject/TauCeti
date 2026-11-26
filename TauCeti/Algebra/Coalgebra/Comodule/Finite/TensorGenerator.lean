@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.MatrixCoefficient
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.RightRigid
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FiniteType
-public import TauCeti.CategoryTheory.Monoidal.Rigid.TensorGenerator
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Tensor.Generator
 
 /-!
 # Finite generation and tensor generators

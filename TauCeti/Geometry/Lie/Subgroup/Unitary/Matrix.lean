@@ -10,12 +10,12 @@ public import Mathlib.Algebra.Lie.Prod
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.Topology.Algebra.Group.ClosedSubgroup
+public import TauCeti.Analysis.Matrix.Frobenius
 public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.RepresentationTheory.InvariantForm
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Analysis.Matrix.Exponential.Block
-import TauCeti.Analysis.Matrix.Frobenius
 import TauCeti.Analysis.Matrix.Normed
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.SpecialFunctions.Exponential
@@ -34,13 +34,10 @@ this file defines its Lie algebra as a real Lie subalgebra of the matrices,
 gauge theory: connections and curvatures are `𝔤`-valued matrix functions, and gauge
 transformations act on them by `Ad`.
 
-That `𝔤` is closed under addition and the commutator is the closed-subgroup theorem: we
-define `ClosedSubgroup.matrixLieAlgebra G` as `TauCeti.Lie.unitsLieSubalgebra G.toGL` under the
-local `L∞` operator-norm instances, where `G.toGL` is the image of `G` in `(Matrix n n 𝕜)ˣ`
-(packaged with `ClosedSubgroup.equivToGL` and `ClosedSubgroup.embeddedLieSubgroupData`).
-Through `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`, its members are
-exactly the generators of exponential lines in `G`, which shows that `𝔤` consists of
-skew-Hermitian matrices. Closedness of `G.toGL` comes from compactness of `G`.
+That `𝔤` is closed under addition and the commutator is the closed-subgroup theorem: `G` embeds
+as a closed subgroup `G.toGL` of `(Matrix n n 𝕜)ˣ` (packaged with `ClosedSubgroup.equivToGL` and
+`ClosedSubgroup.embeddedLieSubgroupData`), whose Lie algebra in matrix coordinates coincides with
+`𝔤` through `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff`.
 
 We also characterize the Lie algebras of `ClosedSubgroup.unitary` (`Xᴴ = -X`),
 `ClosedSubgroup.specialUnitary` (`Xᴴ = -X ∧ X.trace = 0`), countable subgroups (trivial Lie algebra
@@ -56,8 +53,7 @@ also invariant under `ad X = ⁅X, ·⁆`. The trace form `⟨X, Y⟩ = -Re tr (
 
 * `ClosedSubgroup.toGL`, `ClosedSubgroup.equivToGL`, `ClosedSubgroup.embeddedLieSubgroupData`:
   embedding of `G ≤ U(n)` into `(Matrix n n 𝕜)ˣ` and its embedded Lie subgroup data.
-* `ClosedSubgroup.matrixLieAlgebra`: the Lie algebra of a closed subgroup of `U(n)`, defined as
-  `TauCeti.Lie.unitsLieSubalgebra G.toGL`.
+* `ClosedSubgroup.matrixLieAlgebra`: the Lie algebra of a closed subgroup of `U(n)`.
 * `ClosedSubgroup.matrixAdjointRepresentation`: its adjoint representation `X ↦ g X g⁻¹`.
 * `ClosedSubgroup.matrixTraceForm`: the trace form `⟨X, Y⟩ = -Re tr (X Y)`.
 * `ClosedSubgroup.matrixLieAlgebraFromBlocksProdEquiv`: the Lie algebra of the block-diagonal
@@ -66,14 +62,22 @@ also invariant under `ad X = ⁅X, ·⁆`. The trace form `⟨X, Y⟩ = -Re tr (
 
 ## Main results
 
+* `ClosedSubgroup.isCompact_image_coe_matrix`: a closed subgroup of `U(n)` is compact as a set of
+  matrices.
 * `ClosedSubgroup.mem_matrixLieAlgebra_iff`: exponential-line membership criterion.
 * `ClosedSubgroup.mem_matrixLieAlgebra_of_tendsto`: the limit criterion, a limit `X` of matrices
   `Xₖ` with `exp (tₖ • Xₖ) ∈ G` for positive scales `tₖ → 0` lies in the Lie algebra.
 * `ClosedSubgroup.conjTranspose_eq_neg_of_mem_matrixLieAlgebra`: the Lie algebra consists of
   skew-Hermitian matrices.
+* `ClosedSubgroup.mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem`: the Lie algebra of
+  all of `U(n)` is the skew-Hermitian matrices.
+* `ClosedSubgroup.eq_zero_of_mem_matrixLieAlgebra_of_countable`: a countable closed subgroup has
+  Lie algebra `0`.
 * `ClosedSubgroup.matrixAdjointRepresentation_lie`: each `Ad(g)` preserves the bracket.
 * `ClosedSubgroup.lieInvariant_of_isInvariantForm`: an `Ad(G)`-invariant bilinear form is
   `ad`-invariant, `B ⁅X, Y⁆ Z = -B Y ⁅X, Z⁆`.
+* `ClosedSubgroup.matrixTraceForm_eq_frobenius_real_inner`: the trace form is the restriction of
+  the real Frobenius inner product.
 * `ClosedSubgroup.posDef_matrixTraceForm`, `ClosedSubgroup.isInvariantForm_matrixTraceForm`: the
   trace form is positive definite and `Ad(G)`-invariant.
 * `ClosedSubgroup.mem_matrixLieAlgebra_fromBlocksProd_iff`: the Lie algebra of a block-diagonal
@@ -109,35 +113,38 @@ private theorem isCompact_coe (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) 
     IsCompact (G : Set (Matrix.unitaryGroup n 𝕜)) :=
   G.isClosed'.isCompact
 
-/-- View a closed subgroup of `Matrix.unitaryGroup n 𝕜` as a subgroup of `(Matrix n n 𝕜)ˣ`
-via `Unitary.toUnits`. -/
+/-- A closed subgroup of `U(n)` is compact as a set of matrices. -/
+theorem isCompact_image_coe_matrix (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    IsCompact (((↑) : Matrix.unitaryGroup n 𝕜 → Matrix n n 𝕜) '' G) :=
+  (isCompact_coe G).image continuous_subtypeVal
+
+/-- The subgroup of the general linear group carried by a closed subgroup of `U(n)`, its image
+under `Unitary.toUnits`. -/
 def toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) : Subgroup (Matrix n n 𝕜)ˣ :=
   (G : Subgroup (Matrix.unitaryGroup n 𝕜)).map Unitary.toUnits
 
-/-- Membership in `G.toGL` is being `Unitary.toUnits u` for some `u ∈ G`. -/
-theorem mem_toGL_iff {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} {g : (Matrix n n 𝕜)ˣ} :
-    g ∈ G.toGL ↔ ∃ u ∈ G, Unitary.toUnits u = g :=
+/-- The units of `G.toGL` are the images of the elements of `G`. -/
+@[simp]
+theorem mem_toGL {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)} {u : (Matrix n n 𝕜)ˣ} :
+    u ∈ G.toGL ↔ ∃ g ∈ G, Unitary.toUnits g = u :=
   Subgroup.mem_map
 
-/-- `Unitary.toUnits u` lies in `G.toGL` iff `u ∈ G`. -/
-@[simp]
-theorem toUnits_mem_toGL_iff {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
-    {u : Matrix.unitaryGroup n 𝕜} :
-    Unitary.toUnits u ∈ G.toGL ↔ u ∈ G :=
-  Subgroup.mem_map_iff_mem Unitary.toUnits_injective
+/-- The image of an element of `G` lies in `G.toGL`. -/
+theorem toUnits_mem_toGL {G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
+    {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G) : Unitary.toUnits g ∈ G.toGL :=
+  mem_toGL.mpr ⟨g, hg, rfl⟩
 
-/-- Every unitary subgroup viewed in `(Matrix n n 𝕜)ˣ` is contained in `unitarySubgroup`. -/
-theorem toGL_le_unitarySubgroup (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
-    G.toGL ≤ unitarySubgroup (Matrix n n 𝕜)ˣ := by
-  rintro g ⟨u, -, rfl⟩
-  exact TauCeti.mem_unitary_units_iff.mpr u.property
+/-- As a set, `G.toGL` is the image of `G` under `Unitary.toUnits`. -/
+theorem coe_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    (G.toGL : Set (Matrix n n 𝕜)ˣ) = Unitary.toUnits '' (G : Set (Matrix.unitaryGroup n 𝕜)) :=
+  Subgroup.coe_map _ _
 
 /-- The image of `ClosedSubgroup.unitary n 𝕜` in `(Matrix n n 𝕜)ˣ` is `unitarySubgroup`. -/
 @[simp]
 theorem toGL_unitary :
     (unitary n 𝕜).toGL = unitarySubgroup (Matrix n n 𝕜)ˣ := by
   ext g
-  simp only [mem_toGL_iff, mem_unitary, true_and, mem_unitarySubgroup_iff,
+  simp only [mem_toGL, mem_unitary, true_and, mem_unitarySubgroup_iff,
     TauCeti.mem_unitary_units_iff]
   exact ⟨fun ⟨u, hu⟩ ↦ hu ▸ u.property, fun hg ↦ ⟨⟨g, hg⟩, Units.ext rfl⟩⟩
 
@@ -146,7 +153,7 @@ theorem toGL_unitary :
 theorem toGL_specialUnitary :
     (specialUnitary n 𝕜).toGL = TauCeti.GLSpecialUnitary n 𝕜 := by
   ext g
-  simp only [mem_toGL_iff, mem_specialUnitary_iff,
+  simp only [mem_toGL, mem_specialUnitary_iff,
     TauCeti.GLSpecialUnitary.mem_iff_mem_specialUnitaryGroup, Matrix.mem_specialUnitaryGroup_iff]
   exact ⟨fun ⟨u, hu, hgu⟩ ↦ hgu ▸ ⟨u.property, hu⟩,
     fun ⟨hU, hdet⟩ ↦ ⟨⟨(g : Matrix n n 𝕜), hU⟩, hdet, Units.ext rfl⟩⟩
@@ -164,7 +171,60 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 /-- The subgroup of units determined by `G` is closed, being the compact image of `G`. -/
 theorem isClosed_toGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
     IsClosed (toGL G : Set (Matrix n n 𝕜)ˣ) :=
-  ((isCompact_coe G).image (Unitary.continuous_toUnits (M := Matrix n n 𝕜))).isClosed
+  G.coe_toGL ▸ ((isCompact_coe G).image (Unitary.continuous_toUnits (M := Matrix n n 𝕜))).isClosed
+
+/-- Membership of the exponential line in `G` is membership in the Lie algebra of the units. -/
+private theorem forall_exp_mem_iff (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    (X : Matrix n n 𝕜) :
+    (∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X)) ↔
+      (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm X ∈
+        lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜)) (toGL G) := by
+  rw [unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff (isClosed_toGL G)]
+  refine forall_congr' fun t ↦ Iff.trans ?_ mem_toGL.symm
+  simp only [Units.ext_iff, Unitary.val_toUnits_apply, expUnit_coe]
+  -- Membership in `G` is elaborated for the entrywise and for the operator-norm topology on
+  -- `U(n)`, which agree by definition.
+  exact Iff.rfl
+
+private theorem conjTranspose_eq_neg_of_forall_exp_mem
+    (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) {X : Matrix n n 𝕜}
+    (hX : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X)) : Xᴴ = -X := by
+  rw [← unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg]
+  refine lieSubalgebraOfSubgroup_mono ?_ ((forall_exp_mem_iff G X).mp hX)
+  intro u hu
+  obtain ⟨g, -, rfl⟩ := mem_toGL.mp hu
+  exact mem_unitary_units_iff.mpr g.property
+
+private theorem forall_exp_mem_add (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    {X Y : Matrix n n 𝕜} (hX : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X))
+    (hY : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • Y)) :
+    ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • (X + Y)) := by
+  rw [forall_exp_mem_iff] at hX hY ⊢
+  simpa only [map_add] using add_mem hX hY
+
+private theorem forall_exp_mem_lie (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    {X Y : Matrix n n 𝕜} (hX : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X))
+    (hY : ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • Y)) :
+    ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • ⁅X, Y⁆) := by
+  rw [forall_exp_mem_iff] at hX hY ⊢
+  simpa only [LieEquiv.map_lie] using LieSubalgebra.lie_mem _ hX hY
+
+/-- The limit criterion for the Lie algebra of the closed subgroup of units determined by `G`,
+read in matrix coordinates. -/
+private theorem forall_exp_mem_of_tendsto (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜))
+    {X : Matrix n n 𝕜} {t : ℕ → ℝ} {Xn : ℕ → Matrix n n 𝕜} (ht_pos : ∀ᶠ k in atTop, 0 < t k)
+    (ht : Tendsto t atTop (𝓝 0)) (hXn : Tendsto Xn atTop (𝓝 X))
+    (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
+    ∀ s : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (s • X) := by
+  rw [forall_exp_mem_iff]
+  refine mem_lieSubalgebraOfSubgroup_of_seq (isClosed_toGL G) ht_pos ht
+    (Xn := fun k ↦ (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm (Xn k)) ?_ ?_
+  · exact ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm.toLinearMap
+      |>.continuous_of_finiteDimensional.tendsto X).comp hXn
+  · filter_upwards [hmem] with k ⟨g, hg, hgk⟩
+    rw [← map_smul, lieExp_eq_expUnit]
+    refine ⟨g, hg, Units.ext ?_⟩
+    simp [hgk]
 
 /-- A real linear functional on matrices, along conjugation by the exponential line of `X`, has
 derivative at `0` its value on the commutator. -/
@@ -174,61 +234,25 @@ private theorem hasDerivAt_linearMap_exp_mul_mul_exp_neg (ℓ : Matrix n n 𝕜 
   (LinearMap.toContinuousLinearMap ℓ).hasFDerivAt.comp_hasDerivAt 0
     (hasDerivAt_exp_mul_const_mul_exp_neg X Y)
 
+end Transport
+
 /-- The Lie algebra of a closed subgroup `G` of the unitary group `U(n)`, as a real Lie subalgebra
 of the `n × n` matrices: the matrices `X` whose exponential line `t ↦ exp (t • X)` stays in `G`.
 That it is closed under addition and the commutator is the closed-subgroup theorem. -/
 def matrixLieAlgebra (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
-    LieSubalgebra ℝ (Matrix n n 𝕜) :=
-  unitsLieSubalgebra (toGL G)
-
-/-- Under the `L∞` operator norm, `G.matrixLieAlgebra` equals
-`TauCeti.Lie.unitsLieSubalgebra (toGL G)`. -/
-theorem matrixLieAlgebra_eq_unitsLieSubalgebra (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
-    G.matrixLieAlgebra = unitsLieSubalgebra (toGL G) :=
-  (rfl)
-
-variable {G H : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
-
-/-- A larger closed subgroup has a larger Lie algebra. -/
-theorem matrixLieAlgebra_mono (h : G ≤ H) : G.matrixLieAlgebra ≤ H.matrixLieAlgebra :=
-  unitsLieSubalgebra_mono (Subgroup.map_mono h)
-
-/-- The Lie algebra of a closed subgroup of `U(n)` consists of skew-Hermitian matrices. -/
-theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}
-    (hX : X ∈ G.matrixLieAlgebra) : Xᴴ = -X := by
-  rw [← unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg]
-  exact lieSubalgebraOfSubgroup_mono (toGL_le_unitarySubgroup G)
-    ((mem_unitsLieSubalgebra_iff (toGL G) X).1 hX)
-
-/-- Conjugation by an element of `G` preserves the Lie algebra of `G`. -/
-theorem mul_mul_star_mem_matrixLieAlgebra {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G)
-    {X : Matrix n n 𝕜} (hX : X ∈ G.matrixLieAlgebra) :
-    (g : Matrix n n 𝕜) * X * star (g : Matrix n n 𝕜) ∈ G.matrixLieAlgebra := by
-  have hnorm : Unitary.toUnits g ∈ Subgroup.normalizer (toGL G : Set (Matrix n n 𝕜)ˣ) :=
-    Subgroup.le_normalizer (toUnits_mem_toGL_iff.2 hg)
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  simpa only [Unitary.val_toUnits_apply, Unitary.val_inv_toUnits_apply,
-    Matrix.UnitaryGroup.inv_val] using conj_mem_unitsLieSubalgebra hnorm hX
-
-end Transport
+    LieSubalgebra ℝ (Matrix n n 𝕜) where
+  carrier := {X | ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X)}
+  zero_mem' t := ⟨1, G.one_mem, by simp⟩
+  add_mem' := forall_exp_mem_add G
+  smul_mem' c X hX t := by simpa only [smul_smul] using hX (t * c)
+  lie_mem' := forall_exp_mem_lie G
 
 variable {G H : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)}
 
 /-- A matrix lies in the Lie algebra exactly when its exponential line stays in `G`. -/
 theorem mem_matrixLieAlgebra_iff {X : Matrix n n 𝕜} :
-    X ∈ G.matrixLieAlgebra ↔ ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X) := by
-  open TauCeti TauCeti.Lie in
-  open scoped Matrix.Norms.Operator in
-  let _ : SeminormedAddCommGroup (Matrix n n 𝕜) := NormedAddCommGroup.toSeminormedAddCommGroup
-  let _ := Matrix.linftyOpTopologicalSpace n n 𝕜
-  let _ := Matrix.linftyOpContinuousStar n 𝕜
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  rw [mem_unitsLieSubalgebra_iff_forall_expUnit (isClosed_toGL G)]
-  refine forall_congr' fun t ↦ ?_
-  simp only [mem_toGL_iff, Units.ext_iff, Unitary.val_toUnits_apply, expUnit_coe,
-    Matrix.linftyOpTopologicalSpace_eq]
+    X ∈ G.matrixLieAlgebra ↔ ∀ t : ℝ, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t • X) :=
+  Iff.rfl
 
 /-- **The limit criterion for the Lie algebra.** If positive scales `tₖ → 0` and matrices
 `Xₖ → X` have `exp (tₖ • Xₖ) ∈ G` for all large `k`, then `X` lies in the Lie algebra of `G`. -/
@@ -236,24 +260,63 @@ theorem mem_matrixLieAlgebra_of_tendsto {X : Matrix n n 𝕜} {t : ℕ → ℝ} 
     (ht_pos : ∀ᶠ k in atTop, 0 < t k) (ht : Tendsto t atTop (𝓝 0))
     (hXn : Tendsto Xn atTop (𝓝 X))
     (hmem : ∀ᶠ k in atTop, ∃ g ∈ G, (g : Matrix n n 𝕜) = exp (t k • Xn k)) :
-    X ∈ G.matrixLieAlgebra := by
-  open TauCeti TauCeti.Lie in
-  open scoped Matrix.Norms.Operator in
-  let _ : SeminormedAddCommGroup (Matrix n n 𝕜) := NormedAddCommGroup.toSeminormedAddCommGroup
-  let _ := Matrix.linftyOpTopologicalSpace n n 𝕜
-  let _ := Matrix.linftyOpContinuousStar n 𝕜
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  rw [mem_unitsLieSubalgebra_iff]
-  refine mem_lieSubalgebraOfSubgroup_of_seq (isClosed_toGL G) ht_pos ht
-    (Xn := fun k ↦ (unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm (Xn k)) ?_ ?_
-  · exact ((unitsLieAlgebraLieEquiv (R := Matrix n n 𝕜)).symm.toLinearMap
-      |>.continuous_of_finiteDimensional.tendsto X).comp hXn
-  · filter_upwards [hmem] with k ⟨g, hg, hgk⟩
-    rw [← map_smul, lieExp_eq_expUnit]
-    refine ⟨g, hg, Units.ext ?_⟩
-    simpa only [expUnit_coe, unitsLieAlgebraLieEquiv_symm_apply, LinearEquiv.apply_symm_apply,
-      Unitary.val_toUnits_apply, Matrix.linftyOpTopologicalSpace_eq] using hgk
+    X ∈ G.matrixLieAlgebra :=
+  forall_exp_mem_of_tendsto G ht_pos ht hXn hmem
+
+/-- The Lie algebra of a closed subgroup of `U(n)` consists of skew-Hermitian matrices. -/
+theorem conjTranspose_eq_neg_of_mem_matrixLieAlgebra {X : Matrix n n 𝕜}
+    (hX : X ∈ G.matrixLieAlgebra) : Xᴴ = -X :=
+  conjTranspose_eq_neg_of_forall_exp_mem G hX
+
+section OperatorNorm
+
+open scoped Matrix.Norms.Operator
+
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
+
+/-- **The Lie algebra of `U(n)`.** If `G` is all of `U(n)`, its Lie algebra is the
+skew-Hermitian matrices. -/
+theorem mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem (hG : ∀ g, g ∈ G)
+    {X : Matrix n n 𝕜} :
+    X ∈ G.matrixLieAlgebra ↔ Xᴴ = -X :=
+  ⟨conjTranspose_eq_neg_of_mem_matrixLieAlgebra, fun hX t ↦
+    ⟨⟨_, exp_mem_unitary_of_mem_skewAdjoint (skewAdjoint.smul_mem t (skewAdjoint.mem_iff.mpr hX))⟩,
+      hG _, rfl⟩⟩
+
+/-- **A countable closed subgroup has Lie algebra `0`.** This is the matrix form of
+`TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_countable`. -/
+theorem eq_zero_of_mem_matrixLieAlgebra_of_countable
+    (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Countable) {X : Matrix n n 𝕜}
+    (hX : X ∈ G.matrixLieAlgebra) : X = 0 := by
+  have h := (forall_exp_mem_iff G X).mp hX
+  rw [TauCeti.Lie.lieSubalgebraOfSubgroup_eq_bot_of_countable (G.coe_toGL ▸ hG.image _),
+    LieSubalgebra.mem_bot] at h
+  have h0 := congrArg TauCeti.Lie.unitsLieAlgebraLieEquiv h
+  rw [LieEquiv.apply_symm_apply, map_zero] at h0
+  -- The two sides carry the zero of the operator-norm and of the entrywise structure on the
+  -- matrices, which agree by definition.
+  exact h0
+
+end OperatorNorm
+
+/-- A larger closed subgroup has a larger Lie algebra. -/
+theorem matrixLieAlgebra_mono (h : G ≤ H) : G.matrixLieAlgebra ≤ H.matrixLieAlgebra :=
+  fun _ hX t ↦ (hX t).imp fun _ hg ↦ ⟨h hg.1, hg.2⟩
+
+/-- Conjugation by an element of `G` preserves the Lie algebra of `G`. -/
+theorem mul_mul_star_mem_matrixLieAlgebra {g : Matrix.unitaryGroup n 𝕜} (hg : g ∈ G)
+    {X : Matrix n n 𝕜} (hX : X ∈ G.matrixLieAlgebra) :
+    (g : Matrix n n 𝕜) * X * star (g : Matrix n n 𝕜) ∈ G.matrixLieAlgebra := by
+  intro t
+  obtain ⟨h, hh, hht⟩ := hX t
+  refine ⟨g * h * g⁻¹, mul_mem (mul_mem hg hh) (inv_mem hg), ?_⟩
+  have hconj := Matrix.exp_units_conj (Unitary.toUnits g) (t • X)
+  simp only [Unitary.val_toUnits_apply, Unitary.val_inv_toUnits_apply,
+    Matrix.UnitaryGroup.inv_val] at hconj
+  rw [← Matrix.smul_mul, ← Matrix.mul_smul, hconj, ← hht]
+  simp
 
 variable (G) in
 /-- The adjoint representation `Ad(g) X = g X g⁻¹` of a closed subgroup `G` of `U(n)` on its Lie
@@ -356,38 +419,43 @@ theorem matrixTraceForm_apply (X Y : G.matrixLieAlgebra) :
     G.matrixTraceForm X Y = -RCLike.re ((X : Matrix n n 𝕜) * Y).trace :=
   (rfl)
 
+section
+
+open scoped InnerProductSpace Matrix.Norms.Frobenius
+
+/-- The trace form on the Lie algebra is the restriction of the real Frobenius inner product. -/
+theorem matrixTraceForm_eq_frobenius_real_inner (X Y : G.matrixLieAlgebra) :
+    G.matrixTraceForm X Y = ⟪(X : Matrix n n 𝕜), (Y : Matrix n n 𝕜)⟫_ℝ := by
+  rw [matrixTraceForm_apply, Matrix.frobenius_real_inner_eq_neg_re_trace_mul_of_conjTranspose_eq_neg
+    (conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property)]
+
 /-- The trace form is symmetric. -/
 theorem isSymm_matrixTraceForm : G.matrixTraceForm.IsSymm :=
-  ⟨fun X Y ↦ by simp only [matrixTraceForm_apply, Matrix.trace_mul_comm (X : Matrix n n 𝕜)]⟩
+  ⟨fun X Y ↦ by simpa only [matrixTraceForm_eq_frobenius_real_inner] using real_inner_comm _ _⟩
 
 /-- The trace form of an element with itself is the sum of the squared norms of its entries. -/
 theorem matrixTraceForm_self (X : G.matrixLieAlgebra) :
     G.matrixTraceForm X X = ∑ i, ∑ j, ‖(X : Matrix n n 𝕜) i j‖ ^ 2 := by
-  rw [matrixTraceForm_apply, ← Matrix.re_trace_mul_conjTranspose_self,
-    conjTranspose_eq_neg_of_mem_matrixLieAlgebra X.property, mul_neg, Matrix.trace_neg, map_neg]
+  rw [matrixTraceForm_eq_frobenius_real_inner, real_inner_self_eq_norm_sq,
+    Matrix.frobenius_norm_sq_eq_sum_norm_sq]
 
 /-- The trace form is positive definite. -/
 theorem posDef_matrixTraceForm : G.matrixTraceForm.toQuadraticMap.PosDef := by
   intro X hX
-  rw [LinearMap.BilinMap.toQuadraticMap_apply, matrixTraceForm_self]
-  refine lt_of_le_of_ne (by positivity) fun h ↦ hX (Subtype.ext (Matrix.ext fun i j ↦ ?_))
-  have hi := (Finset.sum_eq_zero_iff_of_nonneg fun i _ ↦ by positivity).mp h.symm i
-    (Finset.mem_univ i)
-  have hij := (Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ by positivity).mp hi j
-    (Finset.mem_univ j)
-  simpa using hij
+  rw [LinearMap.BilinMap.toQuadraticMap_apply, matrixTraceForm_eq_frobenius_real_inner,
+    real_inner_self_eq_norm_sq]
+  exact sq_pos_of_pos (norm_pos_iff.mpr (fun h ↦ hX (Subtype.ext h)))
 
 /-- The trace form is invariant under the adjoint action of `G`. -/
 theorem isInvariantForm_matrixTraceForm :
     TauCeti.Representation.IsInvariantForm G.matrixAdjointRepresentation G.matrixTraceForm := by
   refine TauCeti.Representation.isInvariantForm_iff.mpr fun g X Y ↦ ?_
-  simp only [matrixTraceForm_apply, coe_matrixAdjointRepresentation_apply]
-  -- Merge `(g X g⋆) (g Y g⋆)` into `g (X Y) g⋆`: both factors are images of the conjugation
-  -- automorphism `Unitary.conjStarAlgAut`, so `map_mul` combines them, and unfolding it again
-  -- leaves a single conjugate whose trace is cyclic.
-  rw [← Unitary.conjStarAlgAut_apply (S := ℝ), ← Unitary.conjStarAlgAut_apply (S := ℝ), ← map_mul,
-    Unitary.conjStarAlgAut_apply]
-  rw [Matrix.trace_mul_comm, ← mul_assoc, Matrix.UnitaryGroup.star_mul_self, one_mul]
+  simpa only [matrixTraceForm_eq_frobenius_real_inner, coe_matrixAdjointRepresentation_apply,
+    Matrix.star_eq_conjTranspose] using
+    Matrix.UnitaryGroup.frobenius_real_inner_conj (g : Matrix.unitaryGroup n 𝕜)
+      (X : Matrix n n 𝕜) (Y : Matrix n n 𝕜)
+
+end
 
 section FromBlocks
 
@@ -540,48 +608,29 @@ attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContin
 skew-Hermitian matrices `Xᴴ = -X`. -/
 @[simp]
 theorem mem_matrixLieAlgebra_unitary_iff {X : Matrix n n 𝕜} :
-    X ∈ (unitary n 𝕜).matrixLieAlgebra ↔ Xᴴ = -X := by
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  rw [toGL_unitary, mem_unitsLieSubalgebra_iff]
-  exact unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_conjTranspose_eq_neg X
+    X ∈ (unitary n 𝕜).matrixLieAlgebra ↔ Xᴴ = -X :=
+  mem_matrixLieAlgebra_iff_conjTranspose_eq_neg_of_forall_mem (mem_unitary n 𝕜)
 
 /-- The Lie algebra of the special unitary group `SU(n)` consists of the trace-free skew-Hermitian
 matrices `Xᴴ = -X` and `tr X = 0`. -/
 @[simp]
 theorem mem_matrixLieAlgebra_specialUnitary_iff {X : Matrix n n 𝕜} :
     X ∈ (specialUnitary n 𝕜).matrixLieAlgebra ↔ Xᴴ = -X ∧ X.trace = 0 := by
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  rw [toGL_specialUnitary, mem_unitsLieSubalgebra_iff]
-  exact unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff X
+  have h := forall_exp_mem_iff (specialUnitary n 𝕜) X
+  rw [toGL_specialUnitary] at h
+  exact h.trans (unitsLieAlgebraLieEquiv_symm_mem_GLSpecialUnitary_lieSubalgebra_iff X)
 
 end Standard
 
 section Countable
 
-open TauCeti TauCeti.Lie
-
-open scoped Matrix.Norms.Operator
-
-attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
-
-attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
-
 /-- Every countable subgroup of `Matrix.unitaryGroup n 𝕜` has trivial Lie algebra `⊥`. -/
 theorem matrixLieAlgebra_eq_bot_of_countable
     (hG : (G : Set (Matrix.unitaryGroup n 𝕜)).Countable) :
     G.matrixLieAlgebra = ⊥ := by
-  have hcnt : (G.toGL : Set (Matrix n n 𝕜)ˣ).Countable := by
-    rw [show (G.toGL : Set (Matrix n n 𝕜)ˣ) = Unitary.toUnits '' (G : Set (Matrix.unitaryGroup n 𝕜))
-      from Subgroup.coe_map _ _]
-    exact hG.image _
-  have hbot := lieSubalgebraOfSubgroup_eq_bot_of_countable (I := 𝓘(ℝ, Matrix n n 𝕜)) hcnt
   ext X
-  -- Unfold `matrixLieAlgebra` under the local `L∞` operator-norm instances.
-  unfold matrixLieAlgebra
-  rw [mem_unitsLieSubalgebra_iff, hbot]
-  simp
+  simp only [LieSubalgebra.mem_bot]
+  exact ⟨eq_zero_of_mem_matrixLieAlgebra_of_countable hG, fun h ↦ h ▸ zero_mem _⟩
 
 end Countable
 
@@ -688,6 +737,12 @@ theorem coe_equivToGL (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) (g : G) 
   congrArg Units.val
     (Subgroup.coe_equivMapOfInjective_apply (G : Subgroup (Matrix.unitaryGroup n 𝕜))
       Unitary.toUnits Unitary.toUnits_injective g)
+
+/-- Under the `L∞` operator norm, `G.matrixLieAlgebra` equals `(toGL G).linearLieSubalgebra`. -/
+theorem matrixLieAlgebra_eq_linearLieSubalgebra (G : ClosedSubgroup (Matrix.unitaryGroup n 𝕜)) :
+    G.matrixLieAlgebra = (toGL G).linearLieSubalgebra := by
+  ext X
+  exact (forall_exp_mem_iff G X).trans Subgroup.mem_linearLieSubalgebra.symm
 
 end EmbeddedLieSubgroup
 

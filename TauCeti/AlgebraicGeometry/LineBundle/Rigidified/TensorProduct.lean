@@ -16,8 +16,9 @@ rigidified along `s`, by `α : s^* L ≅ 𝒪_T` and `β : s^* K ≅ 𝒪_T`, is
 ```
 s^* (L ⊗ K) ≅ s^* L ⊗ s^* K ≅ 𝒪_T ⊗ 𝒪_T ≅ 𝒪_T,
 ```
-using the tensor comparison of pullback, which is invertible because line bundles are
-quasicoherent. The dual of `L` is rigidified so that the canonical isomorphism `L ⊗ L^∨ ≅ 𝒪_Y`
+using the tensor comparison of pullback, which is invertible for arbitrary module sheaves
+(`Scheme.Modules.isIso_pullback_δ`).
+The dual of `L` is rigidified so that the canonical isomorphism `L ⊗ L^∨ ≅ 𝒪_Y`
 respects the rigidifications. On isomorphism classes this makes the classes of line bundles
 rigidified along `s` a commutative group, with the canonically rigidified structure sheaf as
 identity. Forgetting the rigidification is a group homomorphism to the Picard group of `Y`, and
@@ -193,8 +194,7 @@ lemma mk_tensorProduct_trivial_left (P : RigidifiedLineBundle s) :
   refine ⟨InvertibleSheaf.tensorProductObjIso _ _ ≪≫ λ_ P.lineBundle.obj, ?_⟩
   simp only [Iso.trans_hom, tensorIso_hom, Functor.mapIso_hom, asIso_hom, Functor.map_comp,
     Category.assoc, ← Scheme.Modules.pullback_η]
-  rw [δ_comp_η_tensorHom_assoc, ← leftUnitor_inv_naturality_assoc, Iso.inv_hom_id,
-    Category.comp_id]
+  rw [δ_comp_η_tensorHom_comp_leftUnitor_hom]
 
 /-- The tensor product of a rigidified line bundle with its dual is isomorphic to the canonically
 rigidified trivial line bundle. -/
@@ -322,8 +322,8 @@ private lemma pullbackRigidification_tensorProduct (w : s' ≫ h = g ≫ s)
           (Scheme.Modules.pullbackComp g s).inv.app Q.lineBundle.obj) ≫ k = k := by
     rw [tensorHom_comp_tensorHom_assoc, Iso.hom_inv_id_app, Iso.hom_inv_id_app,
       id_tensorHom_id, Category.id_comp]
-  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η, δ_comp_η_tensorHom_assoc,
-    leftUnitor_naturality, Iso.inv_hom_id_assoc]
+  rw [hc, δ_natural_assoc, ← Scheme.Modules.pullback_η,
+    δ_comp_η_tensorHom_comp_leftUnitor_hom]
   have h₁ := (Scheme.Modules.pullbackComp s' h).hom.naturality
     (InvertibleSheaf.tensorProductObjIso P.lineBundle Q.lineBundle).hom
   have h₂ := (Scheme.Modules.pullbackCongr w).hom.naturality

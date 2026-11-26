@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.FundamentalClass
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Automorphism
 import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Complex.Analytic
+import TauCeti.Topology.Perfect
 
 /-!
 # The mapping degree of a holomorphic map between compact Riemann surfaces
@@ -63,6 +64,8 @@ pseudoholomorphic maps as well.
   biholomorphisms.
 * `MDifferentiable.degree_reindex_complexManifoldOrientation_eq_one_iff_exists_smul`: a holomorphic
   map of the Riemann sphere has mapping degree one exactly when it is a Möbius transformation.
+* `Matrix.ProjectiveSpecialLinearGroup.degree_reindex_complexManifoldOrientation_smul`: a Möbius
+  transformation of `PSL(2, ℂ)` has mapping degree one.
 
 ## References
 
@@ -178,7 +181,8 @@ theorem degree_reindex_complexManifoldOrientation_eq_one_iff [Nonempty X]
   -- In either direction `f` is not constant: a degree-one map is not constant, and a bijection out
   -- of a Riemann surface, which has more than one point, is not constant.
   have hne_of_injective (hinj : Injective f) : ∃ x x', f x ≠ f x' := by
-    have := ChartedSpace.nontrivial (H := ℂ) (X := X)
+    have := ChartedSpace.perfectSpace (H := ℂ) (X := X)
+    have := PerfectSpace.nontrivial X
     obtain ⟨x, x', hxx'⟩ := exists_pair_ne X
     exact ⟨x, x', hinj.ne hxx'⟩
   constructor
@@ -218,3 +222,18 @@ theorem degree_reindex_complexManifoldOrientation_eq_one_iff_exists_smul
     exact ⟨Diffeomorph.constSmul 𝓘(ℂ) _ g, funext fun x ↦ Diffeomorph.constSmul_apply g x⟩
 
 end MDifferentiable
+
+open scoped MatrixGroups in
+/-- **A Möbius transformation has mapping degree one**, for the canonical orientation of the
+Riemann sphere. -/
+theorem Matrix.ProjectiveSpecialLinearGroup.degree_reindex_complexManifoldOrientation_smul
+    (g : PSL(2, ℂ)) :
+    TauCeti.degree ((TauCeti.complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
+        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
+      ((TauCeti.complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
+        (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
+      (g • · : OnePoint ℂ → OnePoint ℂ) = 1 := by
+  refine ((contMDiff_const_smul (I := 𝓘(ℂ)) (n := ω) g).mdifferentiable (by simp)
+    |>.degree_reindex_complexManifoldOrientation_eq_one_iff_exists_smul).2 ?_
+  induction g using QuotientGroup.induction_on with
+  | H s => exact ⟨s, funext fun z ↦ OnePoint.pslMk_smul s z⟩

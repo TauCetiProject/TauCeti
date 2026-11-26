@@ -202,6 +202,14 @@ theorem weight_ne_zero_iff (i : Fin (Module.finrank ℝ E)) :
     φ.weight i ≠ 0 ↔ φ.weight i ^ 2 = 1 := by
   rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with h | h | h <;> simp [h]
 
+/-- The projection of `z` onto the coordinates of weight `0` has norm at most `‖z‖`. -/
+theorem norm_ite_weight_eq_zero_le (z : Fin (Module.finrank ℝ E) → ℝ) :
+    ‖fun i ↦ if φ.weight i = 0 then z i else 0‖ ≤ ‖z‖ := by
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg z)).2 fun i ↦ ?_
+  split_ifs
+  · exact norm_le_pi_norm z i
+  · simp
+
 /-- The coordinate change of a Morse–Bott chart, as a continuous linear equivalence. -/
 noncomputable def coordL : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
   have := φ.finiteDimensional
@@ -233,6 +241,16 @@ theorem exists_pos_forall_norm_lt_mem_target :
 theorem continuous_coord : Continuous φ.coord := by
   have := φ.finiteDimensional
   exact φ.coordL.continuous.congr φ.coordL_apply
+
+open Filter in
+/-- The points of the chart source whose coordinates have norm less than `ρ > 0` form a
+neighbourhood of the centre. -/
+theorem eventually_mem_source_norm_coord_lt {ρ : ℝ} (hρ : 0 < ρ) :
+    ∀ᶠ w in 𝓝 x, w ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart w)‖ < ρ := by
+  have hcont : ContinuousAt (fun w ↦ ‖φ.coord (φ.toChart w)‖) x :=
+    (φ.continuous_coord.norm.continuousAt).comp (φ.toChart.continuousAt φ.mem_source)
+  filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source,
+    hcont.eventually (gt_mem_nhds (by simpa [φ.apply_self] using hρ))] with w hw hwρ using ⟨hw, hwρ⟩
 
 open Filter in
 /-- The point with coordinates `w` tends to the centre as `w` tends to `0`. -/
@@ -340,6 +358,16 @@ theorem mfderiv_eq_zero_iff {y : M} (hy : y ∈ φ.toChart.source) :
     mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y = 0 ↔ ∀ i, φ.weight i ≠ 0 → φ.coord (φ.toChart y) i = 0 := by
   rw [mfderiv_eq_zero_iff_of_eqOn φ.mem_maximalAtlas_one φ.eqOn_quadratic hy,
     φ.fderiv_quadratic_eq_zero_iff]
+
+/-- **The points of the coordinate plane of weight `0` are critical points.** If the coordinates
+`w` vanish in every direction of nonzero weight, the point with coordinates `w` is a critical point
+of `f`. The converse is `TauCeti.MorseBottChart.mfderiv_eq_zero_iff`. -/
+theorem mfderiv_toChart_symm_coord_symm_eq_zero {w : Fin (Module.finrank ℝ E) → ℝ}
+    (hw : φ.coord.symm w ∈ φ.toChart.target) (h0 : ∀ i, φ.weight i ≠ 0 → w i = 0) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (φ.toChart.symm (φ.coord.symm w)) = 0 :=
+  (φ.mfderiv_eq_zero_iff (φ.toChart.map_target hw)).2 fun i hi ↦ by
+    rw [φ.toChart.right_inv hw, LinearEquiv.apply_symm_apply]
+    exact h0 i hi
 
 include φ in
 /-- The centre of a Morse–Bott chart is a critical point. -/

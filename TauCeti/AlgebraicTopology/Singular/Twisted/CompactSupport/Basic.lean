@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Basic
 public import TauCeti.Topology.Category.TopCat.Subspace
+import Mathlib.Topology.Sets.Compacts
 import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 /-!
@@ -17,9 +18,14 @@ import TauCeti.Topology.CWComplex.Classical.CompactSupport
 
 A twisted singular chain is a finite sum of coefficients placed on singular simplices, and each
 simplex has compact image. So every twisted chain of a space `X`, with coefficients in a local
-system `L`, is a chain of every subspace containing a certain compact set, with `L` restricted to
-that subspace
-(`TauCeti.LocalCoefficientSystem.exists_isCompact_forall_mem_range_twistedChainComplexMap_f`).
+system `L`, has a compact support `K`: it is a chain of a subspace, with `L` restricted to that
+subspace, exactly when the subspace contains `K`
+(`LocalCoefficientSystem.exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f`).
+The maps of twisted chains induced by inclusions of subspaces are monomorphisms
+(`TauCeti.LocalCoefficientSystem.mono_subsetTwistedChainComplexMap`), and for a monotone family of
+subsets they form a diagram of chain complexes
+(`TauCeti.LocalCoefficientSystem.subsetTwistedChainComplexDiagram`), whose homology is
+`TauCeti.LocalCoefficientSystem.subsetTwistedHomologyFunctor`.
 
 Consequently, if `U` is a monotone family of subsets of `X` indexed by a directed order such that
 every compact subset of `X` lies in some `U i`, then the twisted homology of `X` is the filtered
@@ -88,28 +94,56 @@ lemma subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap (hAB : A �
   rw [← cancel_mono (twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal C)) L)]
   simp only [Category.assoc, subsetTwistedChainComplexMap_twistedChainComplexMap]
 
+/-- The elementwise form of `subsetTwistedChainComplexMap_twistedChainComplexMap`. -/
+lemma twistedChainComplexMap_f_subsetTwistedChainComplexMap_f_apply (h : A ⊆ B) {n : ℕ}
+    (y : ((pullback (X := TopCat.of ↥A) (ContinuousMap.subtypeVal A)).obj
+      L).twistedChainComplex.X n) :
+    ((twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal B)) L).f n).hom
+        (((subsetTwistedChainComplexMap L h).f n).hom y) =
+      ((twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L).f n).hom y := by
+  rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
+    subsetTwistedChainComplexMap_twistedChainComplexMap]
+
+/-- The map of twisted chains induced by an inclusion of subsets is a monomorphism. -/
+instance mono_subsetTwistedChainComplexMap (h : A ⊆ B) :
+    Mono (subsetTwistedChainComplexMap L h) :=
+  mono_of_mono_fac (subsetTwistedChainComplexMap_twistedChainComplexMap L h)
+
+/-- In each degree, the map of twisted chains induced by an inclusion of subsets is a
+monomorphism. -/
+-- Mathlib's degreewise instance for a monomorphism of complexes gives this, but inside larger
+-- terms its search for finite limits of modules can fail to unify their universes.
+instance mono_subsetTwistedChainComplexMap_f (h : A ⊆ B) (n : ℕ) :
+    Mono ((subsetTwistedChainComplexMap L h).f n) :=
+  inferInstance
+
 end Subset
 
 /-! ### Compact supports of chains and of homology classes -/
 
-/-- **Twisted chains have compact supports.** Every twisted chain `c` of `X` is the pushforward of
-a twisted chain of every subspace `A` containing a certain compact set `K`, the union of the images
-of the finitely many simplices on which `c` has a nonzero coefficient. -/
-theorem exists_isCompact_forall_mem_range_twistedChainComplexMap_f {k : ℕ}
+/-- **Twisted chains have compact supports.** Every twisted chain `c` of `X` has a compact support
+`K`, the union of the images of the finitely many simplices on which `c` has a nonzero coefficient:
+`c` is the pushforward of a twisted chain of a subspace `A` exactly when `K ⊆ A`. -/
+theorem exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f {k : ℕ}
     (c : L.twistedChainComplex.X k) :
-    ∃ K : Set X, IsCompact K ∧ ∀ A : Set X, K ⊆ A →
+    ∃ K : Set X, IsCompact K ∧ ∀ A : Set X, K ⊆ A ↔
       c ∈ LinearMap.range
         ((twistedChainComplexMap (TopCat.ofHom (ContinuousMap.subtypeVal A)) L).f k).hom := by
   refine ⟨⋃ σ ∈ {σ : (TopCat.toSSet.obj X) _⦋k⦌ | (twistedChainComplexCoeff L σ).hom c ≠ 0},
       Set.range (X.toSSetObjEquiv _ σ),
     (finite_support_twistedChainComplexCoeff L c).isCompact_biUnion
       fun σ _ ↦ isCompact_range (X.toSSetObjEquiv _ σ).continuous,
-    fun A hA ↦ ?_⟩
+    fun A ↦ ?_⟩
   rw [range_twistedChainComplexMap_subtypeVal_f, mem_smallTwistedChains_iff]
-  -- a simplex carrying a nonzero coefficient lies in `K`, hence in `A`
-  refine fun σ hσ ↦ by_contra fun h ↦ hσ ?_
-  exact (TopCat.mem_smallSingularSubcomplex_iff X _ σ).2
-    ⟨(), (Set.subset_biUnion_of_mem (u := fun σ ↦ Set.range (X.toSSetObjEquiv _ σ)) h).trans hA⟩
+  refine ⟨fun hA σ hσ ↦ by_contra fun h ↦ hσ ?_, fun hA ↦ Set.iUnion₂_subset fun σ hσ ↦ ?_⟩
+  · -- a simplex carrying a nonzero coefficient lies in `K`, hence in `A`
+    exact (TopCat.mem_smallSingularSubcomplex_iff X _ σ).2
+      ⟨(), (Set.subset_biUnion_of_mem (u := fun σ ↦ Set.range (X.toSSetObjEquiv _ σ)) h).trans hA⟩
+  · -- conversely, a simplex carrying a nonzero coefficient of a chain of `A` lies in `A`
+    by_contra h
+    refine hσ (hA σ fun hσ' ↦ h ?_)
+    obtain ⟨-, h'⟩ := (TopCat.mem_smallSingularSubcomplex_iff X _ σ).1 hσ'
+    exact h'
 
 variable {ι : Type*} {U : ι → Set X}
 
@@ -124,9 +158,10 @@ theorem exists_twistedHomologyMap_subtypeVal_eq
   HomologicalComplex.exists_homologyMap_eq_of_injective k _
     (fun _ ↦ (ModuleCat.mono_iff_injective _).1 inferInstance)
     (fun c ↦ by
-      obtain ⟨K, hKc, hc⟩ := exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
+      obtain ⟨K, hKc, hc⟩ :=
+        exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f L c
       obtain ⟨i, hi⟩ := hK K hKc
-      obtain ⟨y, hy⟩ := hc (U i) hi
+      obtain ⟨y, hy⟩ := (hc (U i)).1 hi
       exact ⟨i, y, hy⟩) x
 
 /-- **A twisted homology class that vanishes in `X` vanishes in a larger member.** Let `U` be a
@@ -147,30 +182,61 @@ theorem exists_homologyMap_subsetTwistedChainComplexMap_eq_zero [Preorder ι] [I
     (fun _ hij ↦ subsetTwistedChainComplexMap_twistedChainComplexMap L (hU hij))
     (fun c ↦ by
       -- the bounding chain lies in some member, and then in a member above `i`
-      obtain ⟨K, hKc, hc⟩ := exists_isCompact_forall_mem_range_twistedChainComplexMap_f L c
+      obtain ⟨K, hKc, hc⟩ :=
+        exists_isCompact_forall_subset_iff_mem_range_twistedChainComplexMap_f L c
       obtain ⟨j₀, hj₀⟩ := hK K hKc
       obtain ⟨j, hij, hj₀j⟩ := exists_ge_ge i j₀
-      obtain ⟨y, hy⟩ := hc (U j) (hj₀.trans (hU hj₀j))
+      obtain ⟨y, hy⟩ := (hc (U j)).1 (hj₀.trans (hU hj₀j))
       exact ⟨j, hij, y, hy⟩) y hy
+
+/-! ### Compact subsets -/
+
+/-- **Every twisted homology class comes from a compact subset.** Every class of `Hₖ(X; L)` is the
+image of a class of `Hₖ(K; L)` for some compact subset `K` of `X`, with `L` restricted to `K`. -/
+theorem exists_isCompact_twistedHomologyMap_subtypeVal_eq {k : ℕ} (x : L.twistedHomology k) :
+    ∃ (K : Set X) (_ : IsCompact K)
+      (y : ((pullback (X := TopCat.of ↥K) (ContinuousMap.subtypeVal K)).obj L).twistedHomology k),
+      twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal K)) L k y = x := by
+  obtain ⟨K, y, hy⟩ := exists_twistedHomologyMap_subtypeVal_eq L
+    (U := fun K : TopologicalSpace.Compacts X ↦ (K : Set X)) (fun K hK ↦ ⟨⟨K, hK⟩, le_rfl⟩) x
+  exact ⟨K, K.isCompact, y, hy⟩
+
+/-- **A twisted class on a compact subset that vanishes in `X` vanishes in a compact superset.**
+If `K ⊆ X` is compact and a class of `Hₖ(K; L)` maps to zero in `Hₖ(X; L)`, then it already maps
+to zero in `Hₖ(K'; L)` for some compact `K'` containing `K`. -/
+theorem exists_isCompact_homologyMap_subsetTwistedChainComplexMap_eq_zero {K : Set X}
+    (hK : IsCompact K) {k : ℕ}
+    (y : ((pullback (X := TopCat.of ↥K) (ContinuousMap.subtypeVal K)).obj L).twistedHomology k)
+    (hy : twistedHomologyMap (TopCat.ofHom (ContinuousMap.subtypeVal K)) L k y = 0) :
+    ∃ (K' : Set X) (_ : IsCompact K') (hKK' : K ⊆ K'),
+      HomologicalComplex.homologyMap (subsetTwistedChainComplexMap L hKK') k y = 0 := by
+  obtain ⟨K', hK', hy'⟩ := exists_homologyMap_subsetTwistedChainComplexMap_eq_zero L
+    (U := fun K : TopologicalSpace.Compacts X ↦ (K : Set X)) (fun _ _ h ↦ h)
+    (fun K hK ↦ ⟨⟨K, hK⟩, le_rfl⟩) (i := ⟨K, hK⟩) y hy
+  exact ⟨K', K'.isCompact, hK', hy'⟩
 
 /-! ### The colimit over a directed family -/
 
 variable [Preorder ι] (hU : Monotone U) (k : ℕ)
 
-/-- Twisted homology of the members of a monotone family `U` of subsets of `X`, with `L`
-restricted to each member, as a functor on the index order. -/
+/-- The twisted chain complexes of the members of a monotone family `U` of subsets of `X`, with
+`L` restricted to each member, and the maps induced by the inclusions. -/
 -- Its object part must compute, so that the legs of `subsetTwistedHomologyCocone` are the maps
 -- induced by the inclusions on the nose.
 @[expose, simps]
-def subsetTwistedHomologyFunctor : ι ⥤ ModuleCat.{max v w} R where
+def subsetTwistedChainComplexDiagram : ι ⥤ ChainComplex (ModuleCat.{max v w} R) ℕ where
   obj i := ((pullback (X := TopCat.of ↥(U i)) (ContinuousMap.subtypeVal (U i))).obj
-    L).twistedHomology k
-  map {i j} f := HomologicalComplex.homologyMap (subsetTwistedChainComplexMap L (hU f.le)) k
-  map_id i := by
-    rw [subsetTwistedChainComplexMap_self, HomologicalComplex.homologyMap_id]
-  map_comp f g := by
-    rw [← HomologicalComplex.homologyMap_comp,
-      subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap]
+    L).twistedChainComplex
+  map f := subsetTwistedChainComplexMap L (hU f.le)
+  map_id i := subsetTwistedChainComplexMap_self L (U i)
+  map_comp _ _ := (subsetTwistedChainComplexMap_comp_subsetTwistedChainComplexMap L _ _).symm
+
+/-- Twisted homology of the members of a monotone family `U` of subsets of `X`, with `L`
+restricted to each member, as a functor on the index order: the homology of
+`subsetTwistedChainComplexDiagram`. -/
+@[expose, simps!]
+def subsetTwistedHomologyFunctor : ι ⥤ ModuleCat.{max v w} R :=
+  subsetTwistedChainComplexDiagram L hU ⋙ HomologicalComplex.homologyFunctor _ _ k
 
 /-- The cocone of the maps `Hₖ(U i; L) ⟶ Hₖ(X; L)` induced by the inclusions of the members of a
 monotone family `U`. -/

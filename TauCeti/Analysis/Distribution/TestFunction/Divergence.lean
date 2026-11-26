@@ -11,7 +11,7 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Analysis.InnerProductSpace.Trace
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+public import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
@@ -21,6 +21,7 @@ For an open set `Ω` of a finite-dimensional real normed space `E`, a test vecto
 `φ ∈ 𝓓(Ω, E)` has divergence `div φ = tr (Dφ)`, which is again a test function on `Ω`. This file
 packages the divergence as a continuous linear map `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`, in the style of
 Mathlib's `TestFunction.fderivCLM`, and expands it in the coordinates of any finite basis.
+The kernel of this map is the submodule of solenoidal test vector fields.
 
 The divergence of test vector fields is the operator dual to the distributional gradient: the
 total variation of a function and the perimeter of a set are suprema of the pairings
@@ -30,12 +31,16 @@ total variation of a function and the perimeter of a set are suprema of the pair
 
 * `TestFunction.divergenceCLM`: the divergence `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`.
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
+* `TestFunction.solenoidalSubmodule`: the kernel of `divergenceCLM` on test vector fields.
+* `TestFunction.mem_solenoidalSubmodule_iff`: membership means that the bundled divergence vanishes.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
   `φ v` is the directional derivative `∂_v φ`.
 * `TestFunction.divergenceCLM_apply_eq_deriv`: on the real line, the divergence of a test
   function is its derivative.
+* `TestFunction.divergenceCLM_lineTestFunction`: the divergence of the restriction of a scalar
+  test function to a line is its directional derivative along the line.
 * `TestFunction.divergenceCLM_apply_eq_sum`: in a basis `b`, it is the sum of the derivatives of
   the coordinate functions `b.repr (φ ·) i` in the directions `b i`.
 * `TauCeti.divergenceCLM_translateTestFunction`: the divergence of a translated test vector field
@@ -73,6 +78,16 @@ derivative `TestFunction.fderivCLM` with the trace `TauCeti.traceCLM`. -/
 noncomputable def divergenceCLM : 𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ) :=
   postcompCLM (TauCeti.traceCLM ℝ E) ∘L fderivCLM ℝ ⊤ ⊤
 
+/-- Smooth compactly supported vector fields with zero divergence on the open set. -/
+noncomputable def solenoidalSubmodule (Ω : Opens E) : Submodule ℝ 𝓓(Ω, E) :=
+  (divergenceCLM (Ω := Ω)).ker
+
+/-- A test field is solenoidal exactly when its bundled divergence vanishes. -/
+@[simp]
+theorem mem_solenoidalSubmodule_iff {φ : 𝓓(Ω, E)} :
+    φ ∈ solenoidalSubmodule Ω ↔ divergenceCLM φ = 0 :=
+  (Iff.rfl)
+
 /-- The divergence of a test vector field is pointwise the trace of its Fréchet derivative. -/
 @[simp]
 theorem divergenceCLM_apply (φ : 𝓓(Ω, E)) (x : E) :
@@ -109,6 +124,14 @@ theorem divergenceCLM_apply_eq_deriv {Ω : Opens ℝ} (φ : 𝓓(Ω, ℝ)) (x : 
     ext; simp
   conv_lhs => rw [← hφ]
   rw [divergenceCLM_postcompCLM_toSpanSingleton, lineDerivOp_one_apply_eq_deriv]
+
+/-- The divergence of the restriction of a scalar test function `ψ` to a line is the derivative
+`∂_e ψ` along it. -/
+@[simp high]
+theorem divergenceCLM_lineTestFunction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Ω : Opens E} (ψ : 𝓓(Ω, ℝ)) (y e : E) (he : e ≠ 0) (t : ℝ) :
+    divergenceCLM (ψ.lineTestFunction y e he) t = ∂_{e} ψ (y + t • e) := by
+  rw [divergenceCLM_apply_eq_deriv, lineDerivOp_apply, deriv_lineTestFunction]
 
 /-- **The divergence in a basis**: `div φ = ∑ i, ∂_{b i} (b.repr (φ ·) i)`. -/
 theorem divergenceCLM_apply_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ E)
