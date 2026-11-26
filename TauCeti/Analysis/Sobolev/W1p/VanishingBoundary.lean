@@ -6,9 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Truncation
-import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Sobolev.W1p.Lipschitz
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Sobolev functions vanishing continuously on the boundary
@@ -154,20 +151,15 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
 
 /-- **A `C¹` function vanishing on the boundary gives an element of `W^{1,p}_0(Ω)`.** Let `Ω` be
 bounded and `1 ≤ p < ∞`. A `C¹` function `g` on the whole space that is zero on `frontier Ω` is,
-on `Ω`, the value of an element of `W^{1,p}_0(Ω)`: it is Lipschitz near every point, and it and
-its gradient are bounded on the compact closure of `Ω`. -/
+on `Ω`, the value of an element of `W^{1,p}_0(Ω)`: it is `C¹` near the compact closure of `Ω`, so
+it lies in `W^{1,p}(Ω)`, and it vanishes continuously on the boundary. -/
 theorem W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff (hp : p ≠ ∞)
     (hb : Bornology.IsBounded (Omega : Set E)) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
     (hg0 : ∀ x ∈ frontier (Omega : Set E), g x = 0) :
     ∃ u : W1p mu Omega p, u ∈ w1p0Submodule mu Omega p ∧
       W1p.value u =ᵐ[mu.restrict Omega] g := by
-  have hK := hb.isCompact_closure
-  have hO := Omega.isOpen.measurableSet
-  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_locallyLipschitzOn (mu := mu)
-    hg.locallyLipschitz.locallyLipschitzOn
-    (hg.continuous.continuousOn.memLp_restrict_of_subset_isCompact hK hO subset_closure p)
-    ((hg.continuous_gradient one_ne_zero).continuousOn.memLp_restrict_of_subset_isCompact hK hO
-      subset_closure p)
+  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu)
+    (p := p) isOpen_univ hg.contDiffOn hb.isCompact_closure subset_closure (Set.subset_univ _)
   exact ⟨u, W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb hg.continuous.continuousOn hg0 hu,
     hu⟩
 
