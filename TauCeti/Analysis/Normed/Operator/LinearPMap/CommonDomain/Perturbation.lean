@@ -113,16 +113,13 @@ theorem countable_setOf_exists_ne_zero_apply_eq_ofReal_smul (hι : IsCompactOper
       norm_num
     nlinarith [dist_nonneg (x := w c) (y := w d)]
   have hmem (c : S) : w c ∈ range ι := ⟨((‖ι (x c)‖⁻¹ : ℝ) : 𝕜) • x c, map_smul _ _ _⟩
-  -- A countable dense subset of the range of `ι` separates them.
-  obtain ⟨u, hu, hsub⟩ := hι.isSeparable_range (f := (ι : D →ₗ[𝕜] H))
-  choose f hfu hf using fun c : S ↦ Metric.mem_closure_iff.1 (hsub (hmem c)) (1 / 2) one_half_pos
-  have hinj : Injective f := fun c d hcd ↦ by
-    by_contra hne
-    have := dist_triangle_right (w c) (w d) (f c)
-    rw [hcd] at this
-    linarith [hf c, hf d, hdist hne, hcd ▸ hf c]
-  have := hu.to_subtype
-  exact Set.countable_coe_iff.1 (hinj.codRestrict hfu).countable
+  -- The balls of radius `1 / 2` around them are disjoint in the separable range of `ι`.
+  have := (hι.isSeparable_range (f := (ι : D →ₗ[𝕜] H))).separableSpace
+  have : Countable S :=
+    Pairwise.countable_of_isOpen_disjoint (s := fun c ↦ ball (⟨w c, hmem c⟩ : range ι) (1 / 2))
+      (fun _ _ hcd ↦ ball_disjoint_ball ((add_halves 1).trans_le (hdist hcd).le))
+      (fun _ ↦ isOpen_ball) fun _ ↦ ⟨_, mem_ball_self one_half_pos⟩
+  exact Set.countable_coe_iff.1 this
 
 variable [CompleteSpace D] [CompleteSpace H] {c₀ : 𝕜}
 
@@ -140,12 +137,9 @@ theorem exists_isInvertible_ofReal_smul_sub_of_norm_sub_apply_le (hι : IsCompac
   have hker : Injective ((ι : D →ₗ[𝕜] H) ∘ₗ B.ker.subtype) := by
     rw [← LinearMap.ker_eq_bot, eq_bot_iff]
     rintro ⟨x, hx⟩ hιx
-    replace hx : B x = 0 := hx
-    replace hιx : ι x = 0 := hιx
-    have hAx : A x = 0 := by
-      have := hBA x
-      rw [hιx, norm_zero, mul_zero, norm_le_zero_iff, sub_apply, hx, zero_sub, neg_eq_zero] at this
-      exact this
+    replace hx : B x = 0 := LinearMap.mem_ker.1 hx
+    replace hιx : ι x = 0 := by simpa using hιx
+    have hAx : A x = 0 := by simpa [hιx, hx] using hBA x
     have : x = 0 := h₀.injective (by simp [hιx, hAx])
     simp [this]
   -- Some real `c` is not an eigenvalue, since there are only countably many.

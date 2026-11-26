@@ -195,12 +195,7 @@ theorem isCompactOperator_iff_totallyBounded_image_closedBall [CompleteSpace M�
 it is the union of the images of the closed balls of integer radii, which are totally bounded. -/
 theorem IsCompactOperator.isSeparable_range [(uniformity M₂).IsCountablyGenerated]
     (hf : IsCompactOperator f) : TopologicalSpace.IsSeparable (Set.range f) := by
-  have hrange : Set.range f = ⋃ n : ℕ, f '' Metric.closedBall 0 n := by
-    refine (Set.iUnion_subset fun _ ↦ Set.image_subset_range _ _).antisymm' ?_
-    rintro _ ⟨x, rfl⟩
-    obtain ⟨n, hn⟩ := exists_nat_ge ‖x‖
-    exact Set.mem_iUnion.2 ⟨n, x, mem_closedBall_zero_iff.2 hn, rfl⟩
-  rw [hrange]
+  rw [← Set.image_univ, ← Metric.iUnion_closedBall_nat 0, Set.image_iUnion]
   exact .iUnion fun n ↦ (hf.totallyBounded_image_closedBall n).isSeparable
 
 end TotallyBounded
