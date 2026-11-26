@@ -504,20 +504,19 @@ the units, the classes of `e` and `e'`
 theorem cohomologyGRing_eq_of_sub_mem_coboundaries :
     cohomologyGRing μ hμdeg hμL e he hμone_mul hμmul_one hμassoc =
       cohomologyGRing ν hνdeg hνL e' he' hνone_mul hνmul_one hνassoc := by
-  have hmul : (fun {i j : ℤ} (x : D.cohomology G i) (y : D.cohomology G j) ↦
-      cohomologyMul μ hμdeg hμL x y) = fun {i j : ℤ} (x : D.cohomology G i)
-        (y : D.cohomology G j) ↦ cohomologyMul ν hνdeg hνL x y := by
-    funext i j x y
-    exact cohomologyMul_eq_of_sub_mem_coboundaries μ hμdeg hμL ν hνdeg hνL hμν x y
   have hone : (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) =
       Submodule.Quotient.mk ⟨e', he'⟩ :=
     cohomology_mk_eq_mk_iff.2 (sub_mem_coboundaries_of_mul_sub_mem_coboundaries μ e he hμone_mul ν
       hνdeg hνL e' he' hνmul_one hμν)
-  -- `congr` closes the product and unit fields by `hmul` and `hone`; the remaining fields are the
-  -- casts `n • [e]` into degree zero.
+  -- With `hone` in context, `congr` stops at the unit fields and closes them by `hone`; without
+  -- it, `congr` would descend to the unprovable `e = e'`. It leaves the product fields, closed by
+  -- `LinearMap.cohomologyMul_eq_of_sub_mem_coboundaries`, and the casts `n • [e]` into degree zero.
   unfold cohomologyGRing
   congr
-  all_goals rw [hone]
+  all_goals first
+    | funext i j x y
+      exact cohomologyMul_eq_of_sub_mem_coboundaries μ hμdeg hμL ν hνdeg hνL hμν x y
+    | rw [hone]
 
 end Homotopy
 
