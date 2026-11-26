@@ -367,6 +367,20 @@ theorem isFullLattice_map (S : Submodule R V) [S.IsFullLattice A] (f : V →ₗ[
     simp [Submodule.map_coe, Submodule.span_image, _root_.Submodule.IsFullLattice.span_eq_top,
       LinearMap.range_eq_top.mpr hf]
 
+/-- A linear equivalence over the fraction field preserves and reflects full lattices. -/
+theorem isFullLattice_map_iff (S : Submodule R V) (f : V ≃ₗ[A] W) :
+    (S.map (f.toLinearMap.restrictScalars R)).IsFullLattice A ↔ S.IsFullLattice A := by
+  constructor
+  · intro h
+    let := h
+    have hmap := isFullLattice_map (S.map (f.toLinearMap.restrictScalars R))
+      f.symm.toLinearMap f.symm.surjective
+    simpa only [← map_comp, ← LinearMap.restrictScalars_comp, LinearEquiv.symm_comp,
+      LinearMap.restrictScalars_id, map_id] using hmap
+  · intro h
+    let := h
+    exact isFullLattice_map S f.toLinearMap f.surjective
+
 end Map
 
 section Pointwise
@@ -396,6 +410,28 @@ instance IsFullLattice.pointwise_smul (M : Submodule R V) [M.IsFullLattice A] (g
     rw [coe_pointwise_smul, span_smul, _root_.Submodule.IsFullLattice.span_eq_top, smul_top]
 
 end Pointwise
+
+section Subsingleton
+
+variable {R A V : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable [AddCommGroup V] [Module R V] [Module A V] [IsScalarTower R A V]
+
+/-- Every submodule of a subsingleton module is a full lattice. -/
+theorem IsFullLattice.of_subsingleton (S : Submodule R V) [Subsingleton V] :
+    S.IsFullLattice A where
+  fg := by
+    rw [eq_bot_of_subsingleton (p := S)]
+    exact fg_bot
+  linearIndepOn := by
+    intro s _ hs
+    rcases subsingleton_or_nontrivial A with hA | hA
+    · exact linearIndependent_of_subsingleton
+    · have : Nontrivial R := (algebraMap R A).domain_nontrivial
+      have : IsEmpty s := (linearIndependent_subsingleton_iff _).mp hs
+      exact linearIndependent_empty_type
+  span_eq_top := Subsingleton.elim _ _
+
+end Subsingleton
 
 section Comap
 
