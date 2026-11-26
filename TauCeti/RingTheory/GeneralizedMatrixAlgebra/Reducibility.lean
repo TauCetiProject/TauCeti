@@ -195,12 +195,7 @@ theorem range_lift_pairing (i j : ι) :
 
 /-- **The reducibility ideal is symmetric**: `I_{ij} = I_{ji}`. -/
 theorem reducibilityIdeal_comm (i j : ι) : E.reducibilityIdeal i j = E.reducibilityIdeal j i := by
-  refine le_antisymm (E.reducibilityIdeal_le_iff.2 fun x y ↦ ?_)
-    (E.reducibilityIdeal_le_iff.2 fun x y ↦ ?_)
-  · rw [pairing_comm]
-    exact E.pairing_mem_reducibilityIdeal y x
-  · rw [pairing_comm]
-    exact E.pairing_mem_reducibilityIdeal y x
+  rw [reducibilityIdeal_def, reducibilityIdeal_def, ← E.pairing_flip j i, Submodule.map₂_flip]
 
 /-- The reducibility ideal of a block with itself is the unit ideal, as `φ(Eᵢ, Eᵢ) = 1`. -/
 @[simp]
