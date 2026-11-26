@@ -273,9 +273,6 @@ instance Hom.isMonHom_descendIso_hom {X Y : Over S} [MonObj X] [MonObj Y]
     (f : Hom (baseChange p X) D) (g : Hom (baseChange p Y) D)
     [IsIso f.hom] [IsIso g.hom] [IsMonHom f.hom] [IsMonHom g.hom] :
     IsMonHom (f.descendIso g).hom := by
-  have : IsMonHom g.inv.hom := by
-    have : IsMonHom (asIso g.hom).hom := ‹_›
-    simpa [Hom.inv_hom] using (inferInstance : IsMonHom (asIso g.hom).inv)
   have : IsMonHom (g.inv.comp f).hom := by
     rw [Hom.comp_hom]
     infer_instance
@@ -288,17 +285,18 @@ variable {X₀ : Over S} {Y : Over S'} [MonObj Y] {D : DescentDatum p Y} [D.IsMo
   (f : Hom (baseChange p X₀) D) [IsIso f.hom]
 
 private theorem Hom.map_one_descend :
+    letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
     (Over.pullback p).map (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend =
-      Functor.OplaxMonoidal.η (Over.pullback p) ≫ η[Y] ≫ CategoryTheory.inv f.hom := by
-  rw [← baseChangeHom_hom, baseChangeHom_descend]
+      Functor.OplaxMonoidal.η (Over.pullback p) ≫ η[(Over.pullback p).obj X₀] := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend, MonObj.ofIso_one]
   simp
 
 private theorem Hom.map_mul_descend :
+    letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
     (Over.pullback p).map
         (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend =
-      Functor.OplaxMonoidal.δ (Over.pullback p) X₀ X₀ ≫
-        (f.hom ⊗ₘ f.hom) ≫ μ[Y] ≫ CategoryTheory.inv f.hom := by
-  rw [← baseChangeHom_hom, baseChangeHom_descend]
+      Functor.OplaxMonoidal.δ (Over.pullback p) X₀ X₀ ≫ μ[(Over.pullback p).obj X₀] := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend, MonObj.ofIso_mul]
   simp
 
 /-- **Descent of a monoid object along an effective descent datum.** Let `D` be a monoid-compatible
@@ -312,8 +310,7 @@ noncomputable def Hom.descendMonObj : MonObj X₀ :=
   (Over.pullback p).monObjOfFaithful X₀
     (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
     (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend
-    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
-    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
+    f.map_one_descend f.map_mul_descend
 
 /-- The unit of `f.descendMonObj` over `S` is the descent of the transported bundled unit. -/
 @[simp]
@@ -333,11 +330,9 @@ theorem Hom.descendMonObj_mul :
 the monoid structure on `X₀ ×_S S'` transported from `Y` along `f.hom⁻¹`. -/
 theorem Hom.monObjObj_descendMonObj :
     letI := f.descendMonObj
-    Functor.monObjObj (F := Over.pullback p) (X := X₀) = MonObj.ofIso (asIso f.hom).symm := by
-  let : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
-  exact (Over.pullback p).monObjObj_monObjOfFaithful X₀ _ _
-    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
-    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
+    Functor.monObjObj (F := Over.pullback p) (X := X₀) = MonObj.ofIso (asIso f.hom).symm :=
+  letI : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
+  (Over.pullback p).monObjObj_monObjOfFaithful X₀ _ _ f.map_one_descend f.map_mul_descend
 
 /-- With `f.descendMonObj` on `X₀`, the comparison `f.hom : X₀ ×_S S' ⟶ Y` is a monoid
 homomorphism. -/
@@ -346,11 +341,16 @@ theorem Hom.isMonHom_hom_descendMonObj :
     IsMonHom f.hom := by
   let := f.descendMonObj
   -- Rewrite the pulled-back `f.descendMonObj` structure on `X₀ ×_S S'` to the transported
-  -- `MonObj.ofIso (asIso f.hom).symm` structure, for which `f.hom` is `IsMonHom` by construction.
+  -- `MonObj.ofIso (asIso f.hom).symm` structure, for which `f.inv.hom` is `IsMonHom` by
+  -- construction, and invert via `Hom.isMonHom_inv_hom`.
   rw [f.monObjObj_descendMonObj]
   let _ : MonObj ((Over.pullback p).obj X₀) := MonObj.ofIso (asIso f.hom).symm
-  have : IsMonHom (asIso f.hom).symm.hom := inferInstance
-  simpa using (inferInstance : IsMonHom (asIso f.hom).symm.inv)
+  have : IsMonHom f.inv.hom := by
+    rw [Hom.inv_hom, ← asIso_inv, ← Iso.symm_hom]
+    infer_instance
+  have h := f.inv.isMonHom_inv_hom
+  simp only [Hom.inv_hom, IsIso.inv_inv] at h
+  exact h
 
 /-- **Uniqueness of `Hom.descendMonObj`.** Any monoid object structure on `X₀` for which
 `f.hom : X₀ ×_S S' ⟶ Y` is a monoid homomorphism coincides with `f.descendMonObj`. -/
@@ -386,9 +386,10 @@ variable {X₀ : Over S} {G : Over S'} [GrpObj G] {D : DescentDatum p G} [D.IsMo
   (f : Hom (baseChange p X₀) D) [IsIso f.hom]
 
 private theorem Hom.map_inv_descend :
+    letI : GrpObj ((Over.pullback p).obj X₀) := GrpObj.ofIso (asIso f.hom).symm
     (Over.pullback p).map (f.inv.comp ((invHom D).comp f)).descend =
-      f.hom ≫ ι[G] ≫ CategoryTheory.inv f.hom := by
-  rw [← baseChangeHom_hom, baseChangeHom_descend]
+      ι[(Over.pullback p).obj X₀] := by
+  rw [← baseChangeHom_hom, baseChangeHom_descend, GrpObj.ofIso_inv]
   simp
 
 /-- **Descent of a group object along an effective descent datum.** Let `D` be a monoid-compatible
@@ -403,9 +404,7 @@ noncomputable def Hom.descendGrpObj : GrpObj X₀ :=
     (f.inv.comp ((oneHom D).comp (baseChangeUnitHom p))).descend
     (f.inv.comp ((mulHom D).comp ((f.prodMap f).comp (baseChangeProdHom p X₀ X₀)))).descend
     (f.inv.comp ((invHom D).comp f)).descend
-    (by simpa [MonObj.ofIso_one] using f.map_one_descend)
-    (by simpa [MonObj.ofIso_mul] using f.map_mul_descend)
-    (by simpa [GrpObj.ofIso_inv] using f.map_inv_descend)
+    f.map_one_descend f.map_mul_descend f.map_inv_descend
 
 /-- The monoid structure underlying `f.descendGrpObj` is `f.descendMonObj`. -/
 @[simp]

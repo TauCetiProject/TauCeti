@@ -33,8 +33,9 @@ monomorphic monoid homomorphisms (`Hom.isMon_of_mono`).
 
 * `TauCeti.DescentDatum.IsMon.inv_act`: automatic equivariance of group inversion.
 * `TauCeti.DescentDatum.baseChange_isMon`: canonical base-change descent data satisfy `IsMon`.
-* `TauCeti.DescentDatum.Hom.isMon_of_mono`, `TauCeti.DescentDatum.Hom.isMon_iff`: restriction and
-  invariance of `IsMon` along monomorphic and isomorphic monoid homomorphisms.
+* `TauCeti.DescentDatum.Hom.isMonHom_inv_hom`, `TauCeti.DescentDatum.Hom.isMon_of_mono`,
+  `TauCeti.DescentDatum.Hom.isMon_iff`: preservation of `IsMonHom` under `Hom.inv`, and restriction
+  and invariance of `IsMon` along monomorphic and isomorphic monoid homomorphisms.
 
 ## References
 
@@ -198,15 +199,20 @@ theorem Hom.isMon_of_mono {X Y : Over S'} [MonObj X] [MonObj Y]
     have hψ : ψ.hom = μ[X] := Hom.mkOfCompMono_hom _ _ _ _
     simpa only [hψ] using ψ.map_act
 
+/-- The underlying morphism of the inverse of a monoid isomorphism of descent data is a monoid
+homomorphism. -/
+instance Hom.isMonHom_inv_hom {X Y : Over S'} [MonObj X] [MonObj Y]
+    {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
+    [IsIso f.hom] [IsMonHom f.hom] : IsMonHom f.inv.hom := by
+  rw [Hom.inv_hom, ← asIso_inv]
+  infer_instance
+
 /-- If `f : D ⟶ E` is an isomorphism of descent data whose underlying morphism in `Over S'` is a
 monoid isomorphism, then `D` is compatible with the monoid structure if and only if `E` is. -/
 theorem Hom.isMon_iff {X Y : Over S'} [MonObj X] [MonObj Y]
     {D : DescentDatum p X} {E : DescentDatum p Y} (f : Hom D E)
-    [IsIso f.hom] [IsMonHom f.hom] : D.IsMon ↔ E.IsMon := by
-  have : IsMonHom f.inv.hom := by
-    have : IsMonHom (asIso f.hom).hom := ‹_›
-    simpa [Hom.inv_hom] using (inferInstance : IsMonHom (asIso f.hom).inv)
-  exact ⟨fun _ ↦ f.inv.isMon_of_mono, fun _ ↦ f.isMon_of_mono⟩
+    [IsIso f.hom] [IsMonHom f.hom] : D.IsMon ↔ E.IsMon :=
+  ⟨fun _ ↦ f.inv.isMon_of_mono, fun _ ↦ f.isMon_of_mono⟩
 
 end IsMon
 

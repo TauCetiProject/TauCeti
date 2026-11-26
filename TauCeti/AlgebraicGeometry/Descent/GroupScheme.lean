@@ -102,19 +102,39 @@ theorem exists_finiteFlatCommGroupScheme_baseChange_hom_isIso
   have : LocallyOfFinitePresentation G.toOver.hom := G.locallyOfFinitePresentation
   obtain ⟨X₀, hfin, hflat, hlfp, f, hf, hrank⟩ :=
     D.exists_finiteLocallyFree_baseChange_hom_isIso
-  let f' : Hom (baseChange p (Over.mk X₀.hom)) D := f
-  have : IsIso f'.hom := hf
-  let grp₀ : GrpObj (Over.mk X₀.hom) := f'.descendGrpObj
-  have comm₀ : IsCommMonObj (Over.mk X₀.hom) := f'.isCommMonObj_descendGrpObj
-  have hmon : IsMonHom f'.hom := f'.isMonHom_hom_descendGrpObj
-  exact ⟨{ carrier := X₀.left
-           structureMap := X₀.hom
+  -- Rewrite `X₀` as `Over.mk hom₀` via `CostructuredArrow.eq_mk` so that its carrier matches
+  -- `FiniteFlatCommGroupScheme.toOver = Over.mk structureMap` without implicit `Over` eta.
+  obtain ⟨carrier₀, hom₀, rfl⟩ : ∃ (Y : Scheme.{u}) (g : Y ⟶ S), X₀ = Over.mk g :=
+    ⟨X₀.left, X₀.hom, CostructuredArrow.eq_mk X₀⟩
+  have : IsIso f.hom := hf
+  let grp₀ : GrpObj (Over.mk hom₀) := f.descendGrpObj
+  have comm₀ : IsCommMonObj (Over.mk hom₀) := f.isCommMonObj_descendGrpObj
+  have hmon : IsMonHom f.hom := f.isMonHom_hom_descendGrpObj
+  exact ⟨{ carrier := carrier₀
+           structureMap := hom₀
            grp := grp₀
            comm := comm₀
            finite := hfin
            flat := hflat
            locallyOfFinitePresentation := hlfp },
-    f', hf, hmon, hrank⟩
+    f, hf, hmon, hrank⟩
+
+/-- Upgrade a scheme `W` over `G₀.X.left` descended from `(D, f)` via `OverBaseChange` to a
+homomorphism `i₀ : K₀ ⟶ G₀` in `Grp (Over S)`, transporting any property `Q` of `W.hom`. -/
+private theorem Hom.exists_grp_of_baseChangeHom
+    {G₀ : Grp (Over S)} {Z : Over S'} [GrpObj Z] {D : DescentDatum p Z} [D.IsMon]
+    (f : Hom D (baseChange p G₀.X)) [IsMonHom f.hom]
+    (W : Over G₀.X.left) (g : Hom (baseChange p (Over.mk (W.hom ≫ G₀.X.hom))) D)
+    (hg : IsIso g.hom) (hcomp : f.comp g = baseChangeHom p (Over.homMk W.hom))
+    {Q : ∀ {A : Scheme.{u}}, (A ⟶ G₀.X.left) → Prop} (hQ : Q W.hom) :
+    ∃ (K₀ : Grp (Over S)) (i₀ : K₀ ⟶ G₀) (g' : Hom (baseChange p K₀.X) D),
+      IsIso g'.hom ∧ IsMonHom g'.hom ∧ f.comp g' = baseChangeHom p i₀.hom.hom ∧
+        Q i₀.hom.hom.left := by
+  let : GrpObj (Over.mk (W.hom ≫ G₀.X.hom)) := g.descendGrpObj
+  have : IsMonHom g.hom := g.isMonHom_hom_descendGrpObj
+  let wHom : Over.mk (W.hom ≫ G₀.X.hom) ⟶ G₀.X := Over.homMk W.hom rfl
+  have : IsMonHom wHom := f.isMonHom_of_comp_eq_baseChangeHom g hcomp
+  exact ⟨Grp.mk (Over.mk (W.hom ≫ G₀.X.hom)), Grp.homMk wHom, g, hg, inferInstance, hcomp, hQ⟩
 
 /-- **Effective fpqc descent of group schemes affine over a descended group scheme.** Let
 `p : S' ⟶ S` be surjective, flat and quasi-compact, let `G₀` be a group scheme over `S`, let `D`
@@ -133,11 +153,7 @@ theorem Hom.exists_grp_baseChange_hom_isIso_of_mem
       IsIso g.hom ∧ IsMonHom g.hom ∧ f.comp g = baseChangeHom p i₀.hom.hom ∧
         P i₀.hom.hom.left := by
   obtain ⟨W, g, hg, hcomp, hP⟩ := f.exists_baseChange_hom_isIso_of_mem (P := P) hf
-  let : GrpObj (Over.mk (W.hom ≫ G₀.X.hom)) := g.descendGrpObj
-  have : IsMonHom g.hom := g.isMonHom_hom_descendGrpObj
-  let wHom : Over.mk (W.hom ≫ G₀.X.hom) ⟶ G₀.X := Over.homMk W.hom rfl
-  have : IsMonHom wHom := f.isMonHom_of_comp_eq_baseChangeHom g hcomp
-  exact ⟨Grp.mk (Over.mk (W.hom ≫ G₀.X.hom)), Grp.homMk wHom, g, hg, inferInstance, hcomp, hP⟩
+  exact f.exists_grp_of_baseChangeHom W g hg hcomp (Q := fun u ↦ P u) hP
 
 /-- **Effective fpqc descent of finite locally free homomorphisms into a descended group scheme.**
 Let `p : S' ⟶ S` be surjective, flat and quasi-compact, let `G₀` be a group scheme over `S`, let
@@ -157,12 +173,10 @@ theorem Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso
             f.hom.left.finrank = i₀.hom.hom.left.finrank ∘ pullback.fst G₀.X.hom p := by
   obtain ⟨W, g, hg, hcomp, hfin, hflat, hlfp, hrank⟩ :=
     f.exists_finiteLocallyFree_baseChange_hom_isIso
-  let : GrpObj (Over.mk (W.hom ≫ G₀.X.hom)) := g.descendGrpObj
-  have : IsMonHom g.hom := g.isMonHom_hom_descendGrpObj
-  let wHom : Over.mk (W.hom ≫ G₀.X.hom) ⟶ G₀.X := Over.homMk W.hom rfl
-  have : IsMonHom wHom := f.isMonHom_of_comp_eq_baseChangeHom g hcomp
-  exact ⟨Grp.mk (Over.mk (W.hom ≫ G₀.X.hom)), Grp.homMk wHom, g, hg, inferInstance,
-    hcomp, hfin, hflat, hlfp, hrank⟩
+  exact f.exists_grp_of_baseChangeHom W g hg hcomp
+    (Q := fun u ↦ IsFinite u ∧ Flat u ∧ LocallyOfFinitePresentation u ∧
+      f.hom.left.finrank = u.finrank ∘ pullback.fst G₀.X.hom p)
+    ⟨hfin, hflat, hlfp, hrank⟩
 
 end TauCeti.DescentDatum
 
