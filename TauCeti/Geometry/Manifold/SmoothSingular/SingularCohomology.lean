@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.SmoothSingular.DeRham.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Smoothing
 import Mathlib.Algebra.Category.Grp.Injective
 import Mathlib.Algebra.Category.ModuleCat.Injective
+import TauCeti.Algebra.Module.Equiv.IntLinear
 
 /-!
 # The de Rham homomorphism into singular cohomology
@@ -94,19 +95,9 @@ def singularCohomologyUnitAddCircleAddEquiv :
   (smoothSingularCohomologyIso I M (ModuleCat.of ℤ ℤ) ℤ (ModuleCat.of ℤ UnitAddCircle)
       k).toLinearEquiv.toAddEquiv.trans <|
     (ChainComplex.kroneckerEquiv ℤ _ (ModuleCat.of ℤ UnitAddCircle) k).toAddEquiv.trans <|
-      -- Mathlib's `addMonoidHomLequivInt` does not apply here: the homology carries the
-      -- `ℤ`-module structure of `ModuleCat`, which is not definitionally the canonical one
-      -- `AddCommGroup.toIntModule` that `addMonoidHomLequivInt` uses.
-      ModuleCat.homAddEquiv.trans
-        { toFun f := f.toAddMonoidHom
-          invFun f :=
-            { toFun := f
-              map_add' := map_add f
-              map_smul' n x := by
-                simpa only [Int.cast_id, RingHom.id_apply] using map_intCast_smul f ℤ ℤ n x }
-          left_inv _ := rfl
-          right_inv _ := rfl
-          map_add' _ _ := rfl }
+      -- The homology carries the `ℤ`-module structure of `ModuleCat`, which is not
+      -- definitionally the canonical one that Mathlib's `addMonoidHomLequivInt` uses.
+      ModuleCat.homAddEquiv.trans intLinearMapAddEquivAddMonoidHom
 
 /-- The universal coefficient equivalence evaluates a singular cohomology class on a smooth
 singular homology class by the Kronecker pairing of its smooth singular representative. -/
@@ -120,11 +111,9 @@ theorem singularCohomologyUnitAddCircleAddEquiv_apply
   have := (Module.Baer.of_divisible UnitAddCircle).injective
   have := Module.injective_object_of_injective_module ℤ UnitAddCircle
   simp only [singularCohomologyUnitAddCircleAddEquiv, AddEquiv.trans_apply,
-    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply]
-  rw [ChainComplex.kroneckerEquiv_apply, Iso.toLinearEquiv_apply]
-  -- What remains is the passage from a morphism of `ℤ`-modules to its underlying homomorphism,
-  -- the hand-built last step of the equivalence, which holds by definition.
-  rfl
+    LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    intLinearMapAddEquivAddMonoidHom_apply_apply]
+  rw [ChainComplex.kroneckerEquiv_apply, Iso.toLinearEquiv_apply, ModuleCat.homAddEquiv_apply]
 
 end UnitAddCircle
 
