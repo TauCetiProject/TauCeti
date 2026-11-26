@@ -105,6 +105,7 @@ lemma overTwistedChainComplexMap_id (h : 𝟙 A ≫ a = a) :
 
 /-- A composite of maps of spaces over `X` induces the composite of the two maps of twisted
 chains. -/
+@[reassoc]
 lemma overTwistedChainComplexMap_comp (g : A ⟶ B) (g' : B ⟶ C) (h : g ≫ b = a)
     (h' : g' ≫ c = b) :
     overTwistedChainComplexMap L (g ≫ g') (by rw [Category.assoc, h', h]) =
