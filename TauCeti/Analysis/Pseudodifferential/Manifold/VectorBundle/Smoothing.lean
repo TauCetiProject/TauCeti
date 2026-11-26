@@ -167,11 +167,11 @@ theorem exists_isSmoothing_quantizeSchwartzValue_eq_apply_chartCutoffSection
   -- same coefficient.
   obtain ⟨a, ha⟩ := exists_quantizeSchwartzValue_eq_apply_chartCutoffSection he t hE
     (mem_sectionSmoothingPseudodifferentialOperators_iff.1 hP m) t' hF φ ψ
-  refine ⟨a.toSymbol, Symbol.isSmoothing_iff.2 fun m' ↦ ?_, ha⟩
+  refine ⟨a.toSymbol,
+    Symbol.isSmoothing_iff_forall_exists_quantizeSchwartzValue_eq.2 fun m' ↦ ?_, ha⟩
   obtain ⟨b, hb⟩ := exists_quantizeSchwartzValue_eq_apply_chartCutoffSection he t hE
     (mem_sectionSmoothingPseudodifferentialOperators_iff.1 hP m') t' hF φ ψ
-  exact ⟨b.toSymbol, Symbol.coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦
-    funext fun y ↦ (hb u y).trans (ha u y).symm⟩
+  exact ⟨b.toSymbol, fun u _ ↦ funext fun y ↦ (hb u y).trans (ha u y).symm⟩
 
 /-! ### Pseudolocality -/
 
