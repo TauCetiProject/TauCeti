@@ -13,17 +13,22 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.Cardinal
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Dual.Separability
 
 /-!
-# Orders of local isogeny cohomology groups
+# Orders of local torsion and isogeny cohomology groups
 
-For an isogeny `φ` of degree invertible in a nonarchimedean local field `K`, local Tate
-duality identifies the order of `H²(K, E₁[φ])` with the order of the rational dual kernel
-`E₂(K)[φ̂]`. Over a finite compatible extension of `ℚ_p`, the local Euler characteristic
-then computes the order of `H¹(K, E₁[φ])` from the two rational kernel orders and the degree,
-including when `p` divides the degree.
+For an elliptic curve `E` over a nonarchimedean local field `K` and an integer `m` invertible in
+`K`, local Tate duality identifies the order of `H²(K, E[m])` with the order of the rational
+`m`-torsion `E(K)[m]`. Over a finite compatible extension of `ℚ_p`, the local Euler characteristic
+then computes `#H¹(K, E[m]) = (#E(K)[m] · p ^ ([K : ℚ_p] v_p(m)))²` for every nonzero `m`,
+including when `p` divides `m`.
 
-This is a cohomology order needed when comparing the local Kummer images of
-an isogeny and its dual with their annihilators. No rationality assumption is imposed on
-the geometric kernels or on the roots of unity.
+Likewise, for an isogeny `φ` of degree invertible in `K`, local Tate duality identifies the order
+of `H²(K, E₁[φ])` with the order of the rational dual kernel `E₂(K)[φ̂]`. Over a finite compatible
+extension of `ℚ_p`, the local Euler characteristic computes the order of `H¹(K, E₁[φ])` from the
+two rational kernel orders and the degree, including when `p` divides the degree.
+
+These cohomology orders are needed when comparing the local Kummer images of `[m]`, and of an
+isogeny and its dual, with their annihilators. No rationality assumption is imposed on the
+geometric kernels or on the roots of unity.
 
 ## References
 
@@ -33,6 +38,45 @@ the geometric kernels or on the roots of unity.
 -/
 
 public noncomputable section
+
+namespace WeierstrassCurve
+
+open TauCeti TauCeti.ContCohomology TauCeti.ClassFieldTheory
+
+variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] (W : WeierstrassCurve K) [W.IsElliptic]
+
+/-- For an elliptic curve over a nonarchimedean local field `K` and `m` invertible in `K`,
+`#H²(K, E[m]) = #E(K)[m]`. -/
+theorem natCard_H2_torsionCoeff [DecidableEq K] (m : ℕ) (hm : IsUnit (m : K)) :
+    Nat.card (H2 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) =
+      Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) := by
+  have := hm.neZero_natCast
+  rw [Nat.card_congr (W.baseTorsionEquivInvariants m).toEquiv,
+    natCard_H2_eq_natCard_H0_internalHom hm (W.TorsionCoeff m)
+      fun P ↦ AddSubgroup.torsionBy.nsmul P]
+  exact Nat.card_congr (Equiv.ofBijective _
+    (explicitCoeff0_bijective _ _ (W.torsionCoeffWeilDual_bijective m hm))).symm
+
+/-- Over a finite compatible extension of `ℚ_p`, the order of `H¹(K, E[m])` for `m ≠ 0` is the
+square of `#E(K)[m] · p ^ ([K : ℚ_p] v_p(m))`, including when `p` divides `m`. -/
+theorem natCard_H1_torsionCoeff [DecidableEq K] {m : ℕ} (hm0 : m ≠ 0) (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension K p] :
+    Nat.card (H1 (AbsoluteGaloisGroup K) (W.TorsionCoeff m)) =
+      (Nat.card (AddSubgroup.torsionBy W.toAffine.Point m) *
+        p ^ (Module.finrank ℚ_[p] K * padicValNat p m)) ^ 2 := by
+  have := FinitePadicExtension.charZero K p
+  have : NeZero m := ⟨hm0⟩
+  have hm : IsUnit (m : K) := isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hm0)
+  -- `padicValNat.pow` is deprecated in favor of `Nat.multiplicity_pow`, so pass between
+  -- `padicValNat` and `multiplicity` via `Nat.padicValNat_def`.
+  rw [natCard_H1_eq_mul p K (W.TorsionCoeff m),
+    ← Nat.card_congr (W.baseTorsionEquivInvariants m).toEquiv,
+    W.natCard_H2_torsionCoeff m hm, W.natCard_torsionCoeff hm, Nat.padicValNat_def,
+    Nat.multiplicity_pow m 2, ← Nat.padicValNat_def]
+  ring
+
+end WeierstrassCurve
 
 namespace TauCeti.Isogeny
 

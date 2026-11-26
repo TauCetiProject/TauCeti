@@ -105,6 +105,14 @@ instance neZero_natCast (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace
   have := charZero K p
   ⟨Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero⟩
 
+/-- Shortcut `𝓀[ℚ_[p]]`-module instance on `𝓀[K]` for a finite compatible extension of `ℚ_[p]`,
+bypassing `Submodule.Quotient.module'` before `Algebra.toModule` (which has priority `100`). -/
+noncomputable instance (priority := 1100) residueFieldModule (K : Type*) [Field K]
+    [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K] (p : ℕ) [Fact p.Prime]
+    [FinitePadicExtension K p] :
+    Module 𝓀[ℚ_[p]] 𝓀[K] :=
+  Algebra.toModule
+
 end FinitePadicExtension
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
