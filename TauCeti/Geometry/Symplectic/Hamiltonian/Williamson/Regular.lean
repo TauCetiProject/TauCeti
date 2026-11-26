@@ -70,20 +70,6 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V] {
 
 namespace IsNondegenerateQuadraticFamily
 
-/-! ### The centralizer of a nondegenerate family -/
-
-/-- An element of `sp(V, ω)` commuting with a nondegenerate family is the Hamiltonian
-endomorphism of a form in its span. -/
-private theorem exists_mem_span_hamiltonianEnd_eq (h : ω.IsNondegenerateQuadraticFamily Q)
-    {X : Module.End ℝ V} (hX : X ∈ skewAdjointLieSubalgebra ω.toBilinForm)
-    (hXQ : ∀ i, Commute X (ω.hamiltonianEnd (Q i))) :
-    ∃ R ∈ Submodule.span ℝ (Set.range Q), ω.hamiltonianEnd R = X := by
-  have hR : ω.hamiltonianEnd (ω.hamiltonianEndEquiv.symm ⟨X, hX⟩) = X := by
-    rw [← coe_hamiltonianEndEquiv_apply, LinearEquiv.apply_symm_apply]
-  refine ⟨_, h.mem_span_of_forall_quadraticPoissonBracket_eq_zero fun i ↦ ?_, hR⟩
-  rw [quadraticPoissonBracket_eq_zero_iff, hR]
-  exact hXQ i
-
 /-! ### Skew-adjoint and self-adjoint endomorphisms commuting with the family -/
 
 variable (ω Q) in
