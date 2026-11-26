@@ -30,7 +30,7 @@ as itself: its parent.
 * `TauCeti.IsTreeOrder.exists_isPath_support`: the path of parents from the least element to `y`
   passes exactly through the predecessors of `y`.
 * `TauCeti.IsTreeOrder.isTree_fromRel_relCovBy`: the cover graph of a tree order is a tree.
-* `TauCeti.IsTreeOrder.mem_support_iff`: on every path from the least element to `y`, the
+* `TauCeti.IsTreeOrder.mem_support_iff_rel`: on every path from the least element to `y`, the
   vertices are exactly the predecessors of `y`.
 * `TauCeti.IsTreeOrder.rel_iff_of_iso`: an isomorphism of cover graphs of tree orders mapping
   least element to least element is an isomorphism of the orders.
@@ -62,13 +62,12 @@ theorem exists_isPath_support {a : V} (ha : ∀ x, r a x) (y : V) :
     exact ⟨.nil, .nil, fun x => by
       simpa using ⟨fun hx => hx ▸ refl_of r x, fun hx => antisymm_of r hx (ha x)⟩⟩
   obtain ⟨q, hq⟩ := h.exists_relCovBy ha hya
-  have hq' := relCovBy_iff.1 hq
-  obtain ⟨p, hp, hsupp⟩ := ih q hq'.1
+  obtain ⟨p, hp, hsupp⟩ := ih q ⟨hq.rel, hq.not_rel⟩
   have hadj : (SimpleGraph.fromRel (RelCovBy r)).Adj q y :=
-    (SimpleGraph.fromRel_adj _ _ _).2 ⟨fun hqy => hq'.1.2 (hqy ▸ refl_of r q), .inl hq⟩
-  refine ⟨p.concat hadj, hp.concat (fun hy => hq'.1.2 ((hsupp y).1 hy)) hadj, fun x => ?_⟩
+    (SimpleGraph.fromRel_adj _ _ _).2 ⟨hq.ne, .inl hq⟩
+  refine ⟨p.concat hadj, hp.concat (fun hy => hq.not_rel ((hsupp y).1 hy)) hadj, fun x => ?_⟩
   rw [Walk.support_concat, List.mem_append, List.mem_singleton, hsupp]
-  refine ⟨fun hx => hx.elim (fun hxq => trans_of r hxq hq'.1.1) fun hxy => hxy ▸ refl_of r y,
+  refine ⟨fun hx => hx.elim (fun hxq => trans_of r hxq hq.rel) fun hxy => hxy ▸ refl_of r y,
     fun hxy => ?_⟩
   by_cases hx : x = y
   · exact .inr hx
@@ -90,7 +89,7 @@ theorem isAcyclic_fromRel_relCovBy : (SimpleGraph.fromRel (RelCovBy r)).IsAcycli
   have hcov {v u : V} (hvu : (SimpleGraph.fromRel (RelCovBy r)).Adj v u)
       (hle : {w | r w u}.ncard ≤ {w | r w v}.ncard) : RelCovBy r u v :=
     ((SimpleGraph.fromRel_adj _ _ _).1 hvu).2.resolve_left fun hvu' =>
-      (h.ncard_lt_ncard_of_rel (relCovBy_iff.1 hvu').1).not_ge hle
+      (h.ncard_lt_ncard_of_rel_of_not_rel hvu'.rel hvu'.not_rel).not_ge hle
   exact isAcyclic_of_forall_adj_le_eq (fun v => {w | r w v}.ncard)
     fun _ _ _ hu hw hu' hw' => h.eq_of_relCovBy (hcov hu hu') (hcov hw hw')
 
@@ -100,7 +99,7 @@ theorem isTree_fromRel_relCovBy : (SimpleGraph.fromRel (RelCovBy r)).IsTree :=
 
 /-- **The order of a tree order is read off its cover graph.** On every path from the least
 element `a` to `y` in the cover graph, the vertices are exactly the predecessors of `y`. -/
-theorem mem_support_iff {a y : V} (ha : ∀ x, r a x)
+theorem mem_support_iff_rel {a y : V} (ha : ∀ x, r a x)
     (p : (SimpleGraph.fromRel (RelCovBy r)).Walk a y) (hp : p.IsPath) (x : V) :
     x ∈ p.support ↔ r x y := by
   obtain ⟨q, hq, hsupp⟩ := h.exists_isPath_support ha y
@@ -117,7 +116,7 @@ theorem rel_iff_of_iso {s : W → W → Prop} (hr : IsTreeOrder r) (hs : IsTreeO
     (ha : ∀ x, r a x) (hσa : ∀ x, s (σ a) x) (x y : V) : s (σ x) (σ y) ↔ r x y := by
   obtain ⟨p, hp, hsupp⟩ := hr.exists_isPath_support ha y
   have hpm : (p.map σ.toHom).IsPath := hp.map σ.injective
-  have key := hs.mem_support_iff hσa (p.map σ.toHom) hpm (σ x)
+  have key := hs.mem_support_iff_rel hσa (p.map σ.toHom) hpm (σ x)
   rw [Walk.support_map, List.mem_map] at key
   refine key.symm.trans ((hsupp x).symm.trans ?_).symm
   exact ⟨fun hx => ⟨x, hx, rfl⟩, fun ⟨z, hz, hzx⟩ => σ.injective hzx ▸ hz⟩

@@ -410,8 +410,8 @@ theorem coverGraphCode_mem_markedTreeClass {c : RelationalConfiguration Language
   refine ⟨fun u v huv => ?_, fun v hv => ?_, ?_, a, ?_, fun b hb => ?_⟩
   · rw [codeRel_coverGraphCode] at huv ⊢
     exact huv.symm
-  · rw [codeRel_coverGraphCode, or_self, relCovBy_iff] at hv
-    exact hv.1.2 hv.1.1
+  · rw [codeRel_coverGraphCode, or_self] at hv
+    exact hv.ne rfl
   · rw [markedGraph_coverGraphCode]
     exact hc.isTree_fromRel_relCovBy
   · exact (isMarked_coverGraphCode c a).2 ha

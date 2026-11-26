@@ -29,8 +29,8 @@ prefix order of the tree of its paths from the least element.
 ## Main results
 
 * `TauCeti.IsTreeOrder.of_relIso`: being a tree order is transported along relation isomorphisms.
-* `TauCeti.IsTreeOrder.ncard_lt_ncard_of_rel`, `TauCeti.IsTreeOrder.wellFounded`: a strict
-  predecessor has strictly fewer predecessors, so the strict order of a tree order is
+* `TauCeti.IsTreeOrder.ncard_lt_ncard_of_rel_of_not_rel`, `TauCeti.IsTreeOrder.wellFounded`: a
+  strict predecessor has strictly fewer predecessors, so the strict order of a tree order is
   well-founded.
 * `TauCeti.isTreeOrder_of_injective`: the order pulled back from `ℕ` along an injection is a tree
   order.
@@ -80,17 +80,17 @@ theorem IsTreeOrder.of_relIso {r : V → V → Prop} {s : W → W → Prop} (e :
     exact (h.isChain_setOf _).image e
 
 /-- In a tree order a strict predecessor `x` of `y` has strictly fewer predecessors than `y`. -/
-theorem IsTreeOrder.ncard_lt_ncard_of_rel {r : V → V → Prop} (h : IsTreeOrder r) {x y : V}
-    (hxy : r x y ∧ ¬ r y x) : {w | r w x}.ncard < {w | r w y}.ncard := by
+theorem IsTreeOrder.ncard_lt_ncard_of_rel_of_not_rel {r : V → V → Prop} (h : IsTreeOrder r)
+    {x y : V} (hxy : r x y) (hyx : ¬ r y x) : {w | r w x}.ncard < {w | r w y}.ncard := by
   have := h.isPartialOrder
-  exact ncard_lt_ncard ⟨fun z hz => trans_of r hz hxy.1, fun hs => hxy.2 (hs (refl_of r y))⟩
+  exact ncard_lt_ncard ⟨fun z hz => trans_of r hz hxy, fun hs => hyx (hs (refl_of r y))⟩
     (h.finite_setOf y)
 
 /-- The strict order of a tree order is well-founded: a strict predecessor has strictly fewer
 predecessors. -/
 theorem IsTreeOrder.wellFounded {r : V → V → Prop} (h : IsTreeOrder r) :
     WellFounded fun x y => r x y ∧ ¬ r y x :=
-  Subrelation.wf (fun {_ _} hxy => h.ncard_lt_ncard_of_rel hxy)
+  Subrelation.wf (fun {_ _} hxy => h.ncard_lt_ncard_of_rel_of_not_rel hxy.1 hxy.2)
     (measure fun x => {y | r y x}.ncard).wf
 
 /-- The order pulled back from `ℕ` along an injection, from a nonempty type, is a tree order: a
@@ -141,10 +141,7 @@ theorem exists_relCovBy {a y : V} (ha : ∀ x, r a x) (hy : y ≠ a) : ∃ p, Re
 /-- In a tree order every element covers at most one element. -/
 theorem eq_of_relCovBy {p q y : V} (hp : RelCovBy r p y) (hq : RelCovBy r q y) : p = q := by
   have := h.isPartialOrder
-  have hp' := relCovBy_iff.1 hp
-  have hq' := relCovBy_iff.1 hq
-  exact antisymm_of r (h.rel_of_relCovBy hq hp'.1.1 fun e => hp'.1.2 (e ▸ refl_of r p))
-    (h.rel_of_relCovBy hp hq'.1.1 fun e => hq'.1.2 (e ▸ refl_of r q))
+  exact antisymm_of r (h.rel_of_relCovBy hq hp.rel hp.ne) (h.rel_of_relCovBy hp hq.rel hq.ne)
 
 end IsTreeOrder
 
@@ -197,7 +194,8 @@ in increasing order. -/
 private noncomputable def path (x : V) : List V :=
   if _hx : (Iio x).Nonempty then path (parent h x) ++ [x] else []
 termination_by {y | y ≤ x}.ncard
-decreasing_by exact h.ncard_lt_ncard_of_rel (lt_iff_le_not_ge.1 (parent_spec h _hx).lt)
+decreasing_by
+  exact h.ncard_lt_ncard_of_rel_of_not_rel (parent_spec h _hx).le (parent_spec h _hx).lt.not_ge
 
 private theorem path_of_nonempty {x : V} (hx : (Iio x).Nonempty) :
     path h x = path h (parent h x) ++ [x] := by
