@@ -6,15 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Splits
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.Algebra.Polynomial.Splits
+public import TauCeti.LinearAlgebra.Multilinear.Bilinear
+public import TauCeti.LinearAlgebra.PiTensorProduct.Divisible
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
+public import TauCeti.RingTheory.MilnorK.Homogeneous
+public import TauCeti.RingTheory.Regular.IsSMulRegular
 
 /-!
-# Root factorization divides the Steinberg tensors
+# Unique divisibility of Milnor K-groups
 
 Let `R` be a commutative ring and write the unit group additively, `U = Additive Rˣ`. The
 degree-two relations of Milnor K-theory are the *Steinberg tensors* `a ⊗ b ∈ U ⊗[ℤ] U` for units
 `a, b` with `a + b = 1`. This file proves that if `Xⁿ - a` splits into linear factors over `R`,
-the Steinberg tensor `a ⊗ b` is `n` times a sum of Steinberg tensors.
+the Steinberg tensor `a ⊗ b` is `n` times a sum of Steinberg tensors, and deduces that the Milnor
+K-groups `K_nᴹ(F)` of an algebraically closed field `F` are uniquely divisible for `n ≥ 2`.
 
 The argument is the root factorization of `Xⁿ - a`. Write `Xⁿ - a = ∏ (X - cᵢ)`, with roots
 counted with multiplicity. Evaluating at `1` gives `b = 1 - a = ∏ (1 - cᵢ)`. Each root is a unit
@@ -23,31 +30,39 @@ with `cᵢⁿ = a`, and each `1 - cᵢ` divides the unit `b`, so it is a unit wi
 
 `a ⊗ b = ∑ᵢ a ⊗ (1 - cᵢ) = ∑ᵢ cᵢⁿ ⊗ (1 - cᵢ) = n • ∑ᵢ cᵢ ⊗ (1 - cᵢ)`.
 
-It follows that the submodule spanned by the Steinberg tensors is `n`-divisible whenever every
-`Xⁿ - a` splits, for instance for every `n ≠ 0` over an algebraically closed field. Together with
-the divisibility statements for tensor products in
-`TauCeti.LinearAlgebra.TensorProduct.Divisible` and
-`TauCeti.LinearAlgebra.PiTensorProduct.Divisible`, and for quotients in
-`TauCeti.RingTheory.Regular.IsSMulRegular`, this is the input for the unique divisibility of the
-Milnor K-groups `TauCeti.MilnorK` of an algebraically closed field in degrees at least two. Over
-a field of characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with
-their multiplicity.
+Now let `m ≠ 0` be the multiplier and suppose every `Xᵐ - a` splits. Placing the identity above,
+with `m` in place of `n`, in two neighbouring entries of a pure tensor shows that every Steinberg
+relation module `R_n ⊆ U^{⊗ n}` of `TauCeti.MilnorK.steinbergRelations` is `m`-divisible. By
+`TauCeti.MilnorK.degreeEquiv`, `K_nᴹ(R)` is the quotient `U^{⊗ n} / R_n`. For `n ≥ 2` the tensor
+power has at least two `m`-divisible factors, so multiplication by `m` is bijective on it
+(`TauCeti.LinearAlgebra.PiTensorProduct.Divisible`), and it stays bijective on the quotient by
+the `m`-divisible submodule `R_n` (`TauCeti.RingTheory.Regular.IsSMulRegular`). Over a field of
+characteristic `p` the roots of `Xᵖ - a` all coincide, and the argument uses them with their
+multiplicity. Degree one is genuinely excluded: `Fˣ` is divisible but contains the roots of
+unity.
 
 ## Main results
 
 * `TauCeti.exists_ofMul_tmul_ofMul_eq_nsmul_sum`: if `a + b = 1` and `Xⁿ - a` splits, then
-  `a ⊗ b = n • ∑ᵢ cᵢ ⊗ dᵢ` for finitely many unit pairs with `cᵢ + dᵢ = 1` and `cᵢⁿ = a`.
+  `a ⊗ b = n • ∑ᵢ cᵢ ⊗ dᵢ` for finitely many unit pairs with `cᵢ + dᵢ = 1` and `cᵢⁿ = a`; here
+  `n` is the multiplier.
+* `TauCeti.MilnorK.steinbergRelations_le_smul`: if every `Xᵐ - a` splits, the Steinberg relation
+  modules `R_n` are `m`-divisible.
+* `TauCeti.MilnorK.bijective_nsmul_degree`: if every `Xᵐ - a` splits, multiplication by `m ≠ 0`
+  is bijective on `K_nᴹ(R)` for `n ≥ 2`.
+* `TauCeti.MilnorK.bijective_nsmul_degree_of_isAlgClosed`: the Milnor K-groups of an
+  algebraically closed field are uniquely divisible in degrees at least two.
 
 ## References
 
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
-  Mathematics 145 (2013), Chapter III, Proposition 6.4.1 and Exercise 7.3.
+  Mathematics 145 (2013), Chapter III, Proposition 6.4.1, Example 7.2(b) and Exercise 7.3.
 -/
 
 public section
 
 open Polynomial
-open scoped TensorProduct
+open scoped TensorProduct Pointwise
 
 namespace TauCeti
 
@@ -95,5 +110,72 @@ theorem exists_ofMul_tmul_ofMul_eq_nsmul_sum {n : ℕ} (hn : n ≠ 0) {a b : Rˣ
       Function.comp_def, ← Multiset.sum_map_nsmul]
     refine congrArg Multiset.sum (Multiset.map_congr rfl fun c hc ↦ ?_)
     rw [← hpow c hc, ofMul_pow, TensorProduct.smul_tmul']
+
+namespace MilnorK
+
+open Function
+
+/-- If `Xᵐ - a` splits for every unit `a`, the Steinberg relation modules are `m`-divisible. -/
+theorem steinbergRelations_le_smul {m : ℕ} (hm : m ≠ 0)
+    (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) (n : ℕ) :
+    steinbergRelations R n ≤ (m : ℤ) • steinbergRelations R n := by
+  conv_lhs => rw [steinbergRelations_eq_span]
+  rw [Submodule.span_le]
+  rintro _ ⟨f, i, hi, h, rfl⟩
+  set i' : Fin n := ⟨i, Nat.lt_of_succ_lt hi⟩
+  set j' : Fin n := ⟨i + 1, hi⟩
+  have hij : i' ≠ j' := by simp [i', j', Fin.ext_iff]
+  obtain ⟨s, hs, hsum⟩ := exists_ofMul_tmul_ofMul_eq_nsmul_sum hm h (hsplit _)
+  -- Place both sides of `hsum` into the entries `i` and `i + 1` of the pure tensor of `f`.
+  have key := congrArg (TensorProduct.lift
+    ((PiTensorProduct.tprod ℤ).toLinearMap₂ (fun k ↦ Additive.ofMul (f k)) hij)) hsum
+  simp only [TensorProduct.lift.tmul, MultilinearMap.toLinearMap₂_apply, update_eq_self,
+    map_nsmul, map_multiset_sum, Multiset.map_map] at key
+  rw [key, ← natCast_zsmul]
+  refine Submodule.smul_mem_pointwise_smul _ _ _ (multiset_sum_mem _ ?_)
+  simp only [Multiset.mem_map, comp_apply, TensorProduct.lift.tmul,
+    MultilinearMap.toLinearMap₂_apply]
+  rintro _ ⟨x, hx, rfl⟩
+  have e : update (update (fun k ↦ Additive.ofMul (f k)) j' (Additive.ofMul x.2)) i'
+      (Additive.ofMul x.1) = fun k ↦ Additive.ofMul (update (update f j' x.2) i' x.1 k) :=
+    (congrArg (update · i' _) (comp_update Additive.ofMul f j' x.2).symm).trans
+      (comp_update Additive.ofMul _ i' x.1).symm
+  rw [e]
+  exact tprod_mem_steinbergRelations (update (update f j' x.2) i' x.1) i hi (by
+    simpa [i', j', update_apply, Fin.ext_iff] using (hs x hx).1)
+
+/-- **Unique divisibility of Milnor K-groups.** If every polynomial `Xᵐ - a`, `a` a unit, splits,
+then multiplication by `m ≠ 0` is bijective on the Milnor K-group `K_nᴹ(R)` of every degree
+`n ≥ 2`. -/
+theorem bijective_nsmul_degree {m : ℕ} (hm : m ≠ 0)
+    (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) {n : ℕ} (hn : 2 ≤ n) :
+    Function.Bijective fun x : degree R n ↦ m • x := by
+  have hU : Function.Surjective fun u : Additive Rˣ ↦ (m : ℤ) • u := fun u ↦ by
+    obtain ⟨v, hv : v ^ m = u.toMul⟩ := Units.exists_pow_eq_of_splits hm (hsplit u.toMul)
+    exact ⟨Additive.ofMul v, by dsimp only; rw [natCast_zsmul, ← ofMul_pow, hv, ofMul_toMul]⟩
+  -- Multiplication by `m` is bijective on `T_n` and `R_n` is `m`-divisible, so it is bijective on
+  -- the quotient `T_n / R_n`.
+  have hQ : Function.Bijective
+      fun q : (⨂[ℤ]^n (Additive Rˣ)) ⧸ steinbergRelations R n ↦ (m : ℤ) • q := by
+    refine ⟨(PiTensorProduct.isSMulRegular_of_surjective_smul (i₀ := ⟨0, by omega⟩)
+      (i₁ := ⟨1, by omega⟩) (by simp [Fin.ext_iff]) hU hU).quotient_of_le_smul
+      (steinbergRelations_le_smul hm hsplit n), fun q ↦ ?_⟩
+    obtain ⟨x, rfl⟩ := Submodule.mkQ_surjective _ q
+    obtain ⟨y, rfl⟩ := PiTensorProduct.surjective_smul_of_surjective ⟨0, by omega⟩ hU x
+    exact ⟨Submodule.Quotient.mk y, (Submodule.Quotient.mk_smul _ _ _).symm⟩
+  have h : (fun x : degree R n ↦ m • x) =
+      degreeEquiv R n ∘ (fun q ↦ (m : ℤ) • q) ∘ (degreeEquiv R n).symm := by
+    ext x
+    simp
+  rw [h]
+  exact (degreeEquiv R n).bijective.comp (hQ.comp (degreeEquiv R n).symm.bijective)
+
+/-- **Milnor K-groups of an algebraically closed field are uniquely divisible** in every degree
+`n ≥ 2`: multiplication by every `m ≠ 0` is bijective on `K_nᴹ(F)`. -/
+theorem bijective_nsmul_degree_of_isAlgClosed {F : Type*} [Field F] [IsAlgClosed F] {m : ℕ}
+    (hm : m ≠ 0) {n : ℕ} (hn : 2 ≤ n) : Function.Bijective fun x : degree F n ↦ m • x :=
+  bijective_nsmul_degree hm (fun _ ↦ IsAlgClosed.splits _) hn
+
+end MilnorK
 
 end TauCeti
