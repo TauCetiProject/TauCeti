@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Geometry.Euclidean.Angle.Unoriented.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.MetricBridge
@@ -68,17 +69,6 @@ private theorem abs_mul_inner_coe_sphere_lt_one {c : ℝ} (hc : |c| < 1) (x z : 
   rw [abs_mul]
   exact (mul_le_of_le_one_right (abs_nonneg c) (abs_le.2 (real_inner_mem_Icc_of_norm_eq_one
     (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere z)))).trans_lt hc
-
-/-- The function `z ↦ ⟪x, z⟫` is smooth on the unit sphere. -/
-private theorem contMDiff_inner_coe_sphere (x : E) :
-    ContMDiff (𝓡 n) 𝓘(ℝ) ω fun z : sphere (0 : E) 1 ↦ inner ℝ x (z : E) :=
-  (innerSL ℝ x).contDiff.contMDiff.comp contMDiff_coe_sphere
-
-/-- For points `x, y` of the unit sphere, the angle `∠ x y` is `arccos ⟪x, y⟫`. -/
-private theorem angle_coe_sphere (x y : sphere (0 : E) 1) :
-    angle (x : E) (y : E) = Real.arccos (inner ℝ (x : E) (y : E)) := by
-  rw [inner_eq_cos_angle_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere y),
-    Real.arccos_cos (angle_nonneg _ _) (angle_le_pi _ _)]
 
 /-- For `|c| < 1` the function `z ↦ arccos (c ⟪x, z⟫)` is `C¹` on the sphere: its argument stays in
 `[-|c|, |c|]`, away from the singular points `±1` of `arccos`. -/
@@ -164,7 +154,7 @@ theorem ofReal_angle_le_riemannianEDist_sphere (x y : sphere (0 : E) 1) :
           Real.continuous_arccos)
     have h1 := hcont.tendsto 1
     simp only [one_mul, Real.arccos_one, sub_zero] at h1
-    rw [angle_coe_sphere]
+    rw [angle_eq_arccos_inner_of_norm_eq_one (norm_eq_of_mem_sphere x) (norm_eq_of_mem_sphere y)]
     exact h1.mono_left nhdsWithin_le_nhds
   refine le_of_tendsto hlim ?_
   filter_upwards [Ioo_mem_nhdsLT one_pos] with c hc
@@ -230,7 +220,8 @@ theorem riemannianEDist_sphere_of_ne_neg {x y : sphere (0 : E) 1} (h : y ≠ -x)
   have hsin : Real.sin (Real.arccos s) = ‖w‖ := by
     rw [Real.sin_arccos, ← hw2, Real.sqrt_sq (norm_nonneg w)]
   ext
-  rw [coe_sphereGreatCircle, angle_coe_sphere, Real.cos_arccos hs1.1 hs1.2, hsin]
+  rw [coe_sphereGreatCircle, angle_eq_arccos_inner_of_norm_eq_one (norm_eq_of_mem_sphere x)
+    (norm_eq_of_mem_sphere y), Real.cos_arccos hs1.1 hs1.2, hsin]
   simp [q, smul_smul, hwpos.ne', w]
 
 /-- **The round distance is the angle.** In positive dimension, the Riemannian distance between
