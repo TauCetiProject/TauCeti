@@ -14,6 +14,7 @@ import Mathlib.Analysis.Real.Sqrt
 import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.FieldTheory.Separable
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Topology.Algebra.Polynomial.Root.Isolated
 
 /-!
 # Exact algebraic values with isolating rational regions
@@ -146,9 +147,8 @@ theorem exists_disc_subset {x : ℂ} {V : Set ℂ} (hV : V ∈ 𝓝 x) :
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.mp hV
   obtain ⟨a, b, s, -, hsε, ha, hb⟩ := exists_rat_approx x hε
   have hc : dist x (a + b * I) < 2 * s := by
-    have := norm_le_abs_re_add_abs_im (x - (a + b * I))
-    simp only [sub_re, sub_im, add_re, ratCast_re, mul_re, I_re, mul_zero, ratCast_im, I_im,
-      mul_one, sub_self, add_zero, add_im, mul_im, zero_add] at this
+    have : ‖x - (a + b * I)‖ ≤ |x.re - a| + |x.im - b| := by
+      simpa using norm_le_abs_re_add_abs_im (x - (a + b * I))
     rw [Complex.dist_eq]
     linarith
   refine ⟨a, b, 2 * s, by exact_mod_cast hc, fun w hw => hεV ?_⟩
@@ -169,6 +169,12 @@ private theorem mem_Icc_symmInterval_iff {a s : ℚ} (hs : 0 < s) {t : ℝ} :
   push_cast
   constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
 
+private theorem mem_Ioo_symmInterval_iff {a s : ℚ} (hs : 0 < s) {t : ℝ} :
+    t ∈ Set.Ioo ((symmInterval a s hs).fst : ℝ) (symmInterval a s hs).snd ↔ |t - a| < s := by
+  simp only [symmInterval, Set.mem_Ioo, abs_sub_lt_iff]
+  push_cast
+  constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
+
 /-- Every neighbourhood of `x` contains a rectangle with rational sides containing `x` in its
 interior. -/
 theorem exists_box_subset {x : ℂ} {V : Set ℂ} (hV : V ∈ 𝓝 x) :
@@ -176,15 +182,8 @@ theorem exists_box_subset {x : ℂ} {V : Set ℂ} (hV : V ∈ 𝓝 x) :
       x.im ∈ Set.Ioo (J.fst : ℝ) J.snd ∧ (box R J).toSet ⊆ V := by
   obtain ⟨ε, hε, hεV⟩ := Metric.mem_nhds_iff.mp hV
   obtain ⟨a, b, s, hs, hsε, ha, hb⟩ := exists_rat_approx x hε
-  refine ⟨symmInterval a s hs, symmInterval b s hs, ?_, ?_, fun w hw => hεV ?_⟩
-  · rw [abs_sub_lt_iff] at ha
-    simp only [symmInterval, Set.mem_Ioo]
-    push_cast
-    constructor <;> linarith
-  · rw [abs_sub_lt_iff] at hb
-    simp only [symmInterval, Set.mem_Ioo]
-    push_cast
-    constructor <;> linarith
+  refine ⟨symmInterval a s hs, symmInterval b s hs, (mem_Ioo_symmInterval_iff hs).2 ha,
+    (mem_Ioo_symmInterval_iff hs).2 hb, fun w hw => hεV ?_⟩
   rw [mem_toSet_box, mem_Icc_symmInterval_iff, mem_Icc_symmInterval_iff] at hw
   rw [mem_ball, Complex.dist_eq]
   have := norm_le_abs_re_add_abs_im (w - x)
@@ -229,6 +228,8 @@ structure RootIsolation (σ : K →+* ℂ) (z : K) where
 
 namespace RootIsolation
 
+attribute [simp] aeval_poly
+
 variable {σ : K →+* ℂ} {z z' : K}
 
 /-- The isolating polynomial is nonzero. -/
@@ -236,6 +237,7 @@ theorem poly_ne_zero (D : RootIsolation σ z) : D.poly ≠ 0 :=
   D.squarefree_poly.ne_zero
 
 /-- The isolating polynomial vanishes at the embedded value `σ z`. -/
+@[simp]
 theorem aeval_apply_poly (D : RootIsolation σ z) : aeval (σ z) D.poly = 0 := by
   simpa [D.aeval_poly] using aeval_algHom_apply σ.toRatAlgHom z D.poly
 
@@ -272,17 +274,6 @@ theorem ofRat_region (q : ℚ) :
     (ofRat (σ := σ) q).region = .interval (NonemptyInterval.pure q) :=
   (rfl)
 
-/-- The complex roots of a nonzero rational polynomial are isolated: near `x`, every root is `x`. -/
-private theorem setOf_aeval_eq_zero_imp_mem_nhds {f : ℚ[X]} (hf : f ≠ 0) (x : ℂ) :
-    {w : ℂ | aeval w f = 0 → w = x} ∈ 𝓝 x := by
-  have hfin : {w : ℂ | aeval w f = 0}.Finite := by
-    convert finite_setOfPred_isRoot (map_ne_zero (f := algebraMap ℚ ℂ) hf) using 1
-    ext w
-    simp [eval_map_algebraMap]
-  filter_upwards [(hfin.sdiff (t := {x})).isClosed.compl_mem_nhds (by simp)] with w hw h0
-  by_contra hne
-  exact hw ⟨h0, hne⟩
-
 /-- For every squarefree annihilator `f` of `z` and every neighbourhood `V` of `σ z`, there is an
 isolation of `z` by `f` whose region is a closed disc `|w - (a + b i)| ≤ r` contained in `V`, with
 `σ z` in its interior. -/
@@ -291,7 +282,7 @@ theorem exists_disc {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) {V : S
     ∃ (a b r : ℚ) (D : RootIsolation σ z), D.poly = f ∧ D.region = .disc a b r ∧
       dist (σ z) (a + b * I) < r ∧ D.region.toSet ⊆ V := by
   obtain ⟨a, b, r, hr, hsub⟩ := RationalRegion.exists_disc_subset
-    (inter_mem hV (setOf_aeval_eq_zero_imp_mem_nhds hf.ne_zero (σ z)))
+    (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
   exact ⟨a, b, r, ⟨f, hf, hz, .disc a b r, RationalRegion.mem_toSet_disc.mpr hr.le,
     fun w hw => (hsub hw).2⟩, rfl, rfl, hr, fun w hw => (hsub hw).1⟩
 
@@ -304,7 +295,7 @@ theorem exists_box {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0) {V : Se
       (σ z).re ∈ Set.Ioo (R.fst : ℝ) R.snd ∧ (σ z).im ∈ Set.Ioo (J.fst : ℝ) J.snd ∧
       D.region.toSet ⊆ V := by
   obtain ⟨R, J, hR, hJ, hsub⟩ := RationalRegion.exists_box_subset
-    (inter_mem hV (setOf_aeval_eq_zero_imp_mem_nhds hf.ne_zero (σ z)))
+    (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
   exact ⟨R, J, ⟨f, hf, hz, .box R J, RationalRegion.mem_toSet_box.mpr
     ⟨Set.Ioo_subset_Icc_self hR, Set.Ioo_subset_Icc_self hJ⟩, fun w hw => (hsub hw).2⟩,
     rfl, rfl, hR, hJ, fun w hw => (hsub hw).1⟩
@@ -317,7 +308,7 @@ theorem exists_interval {f : ℚ[X]} (hf : Squarefree f) (hz : aeval z f = 0)
     ∃ (J : NonemptyInterval ℚ) (D : RootIsolation σ z), D.poly = f ∧ D.region = .interval J ∧
       (σ z).re ∈ Set.Ioo (J.fst : ℝ) J.snd ∧ D.region.toSet ⊆ V := by
   obtain ⟨J, hJ, hsub⟩ := RationalRegion.exists_interval_subset hreal
-    (inter_mem hV (setOf_aeval_eq_zero_imp_mem_nhds hf.ne_zero (σ z)))
+    (inter_mem hV (eventually_aeval_eq_zero_imp_eq hf.ne_zero (σ z)))
   exact ⟨J, ⟨f, hf, hz, .interval J, RationalRegion.mem_toSet_interval.mpr
     ⟨hreal, Set.Ioo_subset_Icc_self hJ⟩, fun w hw => (hsub hw).2⟩, rfl, rfl, hJ,
     fun w hw => (hsub hw).1⟩
@@ -351,21 +342,12 @@ variable (σ) in
 /-- Finitely many algebraic values have isolations whose regions are pairwise disjoint. -/
 theorem exists_pairwise_disjoint (s : Finset K) (hs : ∀ z ∈ s, IsAlgebraic ℚ z) :
     ∃ D : (z : s) → RootIsolation σ z, Pairwise (Disjoint on fun z => (D z).region.toSet) := by
-  -- A common radius `ρ` with `2 ρ` below the distance of any two distinct embedded values.
-  have hev : ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ p ∈ s.offDiag, ρ + ρ ≤ dist (σ p.1) (σ p.2) := by
-    rw [eventually_all_finset]
-    intro p hp
-    have hpos : 0 < dist (σ p.1) (σ p.2) :=
-      dist_pos.mpr (σ.injective.ne (Finset.mem_offDiag.mp hp).2.2)
-    filter_upwards [(eventually_lt_nhds (half_pos hpos)).filter_mono nhdsWithin_le_nhds]
-      with ρ hρ
-    linarith
-  obtain ⟨ρ, hρ, hρ0⟩ := (hev.and self_mem_nhdsWithin).exists
+  obtain ⟨U, hU, hdisj⟩ := ((s : Set K).image σ).toFinite.t2_separation
   choose D hD using fun z : s => exists_subset_of_isAlgebraic σ (hs z z.property)
-    (ball_mem_nhds (σ z) hρ0)
-  refine ⟨D, fun z z' hne => ?_⟩
-  exact (ball_disjoint_ball (hρ (z, z') (Finset.mem_offDiag.mpr
-    ⟨z.property, z'.property, Subtype.coe_ne_coe.mpr hne⟩))).mono (hD z) (hD z')
+    ((hU _).2.mem_nhds (hU _).1)
+  exact ⟨D, fun z z' hne => (hdisj (Set.mem_image_of_mem σ z.property)
+    (Set.mem_image_of_mem σ z'.property) (σ.injective.ne (Subtype.coe_ne_coe.mpr hne))).mono
+    (hD z) (hD z')⟩
 
 /-- Exact equality test: two isolated values are equal if and only if the gcd of their isolating
 polynomials has a complex root in the intersection of their regions. -/
@@ -376,7 +358,7 @@ theorem eq_iff_exists_aeval_gcd_eq_zero (D : RootIsolation σ z) (D' : RootIsola
   · rintro rfl
     refine ⟨σ z, ⟨D.mem_region, D'.mem_region⟩, ?_⟩
     rw [EuclideanDomain.gcd_eq_gcd_ab]
-    simp [D.aeval_apply_poly, D'.aeval_apply_poly]
+    simp
   · rintro ⟨w, ⟨hw, hw'⟩, h0⟩
     apply σ.injective
     rw [← D.eq_of_mem_region w hw (aeval_eq_zero_of_dvd_aeval_eq_zero
@@ -427,16 +409,14 @@ private theorem squarefree_X_sq_sub_C {a : ℚ} (ha : a ≠ 0) : Squarefree (X ^
 private noncomputable def sqrtTwo : RootIsolation (RingHom.id ℂ) (√2 : ℝ) :=
   ofSq _ (squarefree_X_sq_sub_C two_ne_zero) 2 (aeval_X_sq_sub_C_eq_zero_iff 2)
     (by positivity) (by simp) ⟨(1, 3 / 2), by norm_num⟩ (by norm_num)
-    (by simp) (by
-      rw [Real.sqrt_le_left (by norm_num)]
-      norm_num)
+    (by simp) ((Real.sqrt_le_left (by norm_num)).2 (by norm_num))
 
 example : sqrtTwo.poly = X ^ 2 - C 2 ∧ aeval (-(√2 : ℝ) : ℂ) sqrtTwo.poly = 0 ∧
     (-(√2 : ℝ) : ℂ) ∉ sqrtTwo.region.toSet := by
   refine ⟨rfl, ?_, ?_⟩
-  · simp [sqrtTwo, ofSq]
-    norm_cast
-    simp
+  · refine (aeval_X_sq_sub_C_eq_zero_iff 2 _).2 ?_
+    rw [neg_sq, ← ofReal_pow, Real.sq_sqrt zero_le_two]
+    norm_num
   · simp only [sqrtTwo, ofSq, RationalRegion.mem_toSet_interval, Set.mem_Icc, not_and]
     intro _ h
     have : (0 : ℝ) ≤ √2 := Real.sqrt_nonneg 2
@@ -447,32 +427,29 @@ example : sqrtTwo.poly = X ^ 2 - C 2 ∧ aeval (-(√2 : ℝ) : ℂ) sqrtTwo.pol
 /-- The disc of radius `1/2` about `b i` isolates `z = b i` as a root of `X² + 1`, for
 `b = ± 1`. -/
 private noncomputable def ofI (b : ℚ) (hb : b ^ 2 = 1) (z : ℂ) (hz : (b : ℂ) * I = z) :
-    RootIsolation (RingHom.id ℂ) z where
-  poly := X ^ 2 + 1
-  squarefree_poly := by
-    simpa using squarefree_X_sq_sub_C (a := -1) (by norm_num)
-  aeval_poly := by
-    have hb' : (b : ℂ) ^ 2 = 1 := by exact_mod_cast hb
-    simp [← hz, mul_pow, hb']
-  region := .disc 0 b (1 / 2)
-  mem_region := by simp [← hz]
-  eq_of_mem_region w hw h0 := by
-    have hb' : (b : ℂ) ^ 2 = 1 := by exact_mod_cast hb
-    simp only [map_add, map_pow, aeval_X, map_one] at h0
-    have hprod : (w - b * I) * (w + b * I) = 0 := by
-      linear_combination h0 - I ^ 2 * hb' - Complex.I_sq
-    rcases mul_eq_zero.mp hprod with h | h
-    · rw [RingHom.id_apply, ← hz, sub_eq_zero.mp h]
-    · rw [eq_neg_of_add_eq_zero_left h, RationalRegion.mem_toSet_disc, Complex.dist_eq] at hw
-      have hsub : -((b : ℂ) * I) - (((0 : ℚ) : ℂ) + (b : ℂ) * I) =
-          (((-2 * b : ℚ) : ℝ) : ℂ) * I := by
-        push_cast
-        ring
-      rw [hsub, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs] at hw
-      have hb2 : (b : ℝ) ^ 2 = 1 := by exact_mod_cast hb
-      push_cast at hw
-      rw [abs_mul] at hw
-      nlinarith [sq_abs (b : ℝ), abs_nonneg (b : ℝ)]
+    RootIsolation (RingHom.id ℂ) z :=
+  have hb' : (b : ℂ) ^ 2 = 1 := by exact_mod_cast hb
+  { poly := X ^ 2 + 1
+    squarefree_poly := by
+      simpa using squarefree_X_sq_sub_C (a := -1) (by norm_num)
+    aeval_poly := by simp [← hz, mul_pow, hb']
+    region := .disc 0 b (1 / 2)
+    mem_region := by simp [← hz]
+    eq_of_mem_region w hw h0 := by
+      simp only [map_add, map_pow, aeval_X, map_one] at h0
+      have hprod : (w - b * I) * (w + b * I) = 0 := by
+        linear_combination h0 - I ^ 2 * hb' - Complex.I_sq
+      rcases mul_eq_zero.mp hprod with h | h
+      · rw [RingHom.id_apply, ← hz, sub_eq_zero.mp h]
+      · have hb1 : |(b : ℝ)| = 1 := by
+          simpa using (sq_eq_sq_iff_abs_eq_abs (b : ℝ) 1).1 (by exact_mod_cast hb)
+        have hdist : ‖-((b : ℂ) * I) - (((0 : ℚ) : ℂ) + b * I)‖ = 2 := by
+          rw [show -((b : ℂ) * I) - (((0 : ℚ) : ℂ) + b * I) = -(2 * ((b : ℝ) : ℂ) * I) by
+            push_cast; ring]
+          simp [hb1]
+        rw [eq_neg_of_add_eq_zero_left h, RationalRegion.mem_toSet_disc, Complex.dist_eq,
+          hdist] at hw
+        norm_num at hw }
 
 /-- The discs of radius `1/2` about `i` and `-i` isolate `i` and `-i` as roots of `X² + 1`. -/
 example : ∃ (D : RootIsolation (RingHom.id ℂ) I) (D' : RootIsolation (RingHom.id ℂ) (-I)),
@@ -491,15 +468,13 @@ example : ∃ (D : RootIsolation (RingHom.id ℂ) (√2 : ℝ))
     (D' : RootIsolation (RingHom.id ℂ) (√3 : ℝ)),
     D.region = D'.region ∧ ((√2 : ℝ) : ℂ) ≠ (√3 : ℝ) := by
   refine ⟨ofSq _ (squarefree_X_sq_sub_C two_ne_zero) 2 (aeval_X_sq_sub_C_eq_zero_iff 2)
-    (by positivity) (by simp) ⟨(1, 2), by norm_num⟩ (by norm_num) (by simp) ?_,
+    (by positivity) (by simp) ⟨(1, 2), by norm_num⟩ (by norm_num) (by simp)
+    ((Real.sqrt_le_left (by norm_num)).2 (by norm_num)),
     ofSq _ (squarefree_X_sq_sub_C three_ne_zero) 3 (aeval_X_sq_sub_C_eq_zero_iff 3)
-    (by positivity) (by simp) ⟨(1, 2), by norm_num⟩ (by norm_num) (by simp) ?_, rfl, ?_⟩
-  · rw [Real.sqrt_le_left (by norm_num)]
-    norm_num
-  · rw [Real.sqrt_le_left (by norm_num)]
-    norm_num
-  · rw [Ne, ofReal_inj, Real.sqrt_inj (by norm_num) (by norm_num)]
-    norm_num
+    (by positivity) (by simp) ⟨(1, 2), by norm_num⟩ (by norm_num) (by simp)
+    ((Real.sqrt_le_left (by norm_num)).2 (by norm_num)), rfl, ?_⟩
+  rw [Ne, ofReal_inj, Real.sqrt_inj (by norm_num) (by norm_num)]
+  norm_num
 
 /-- The positive interval `[1/2, 1]` isolates `1/√2` as a root of `2X² - 1`. -/
 example : ∃ D : RootIsolation (RingHom.id ℂ) ((√2)⁻¹ : ℝ),
@@ -520,9 +495,7 @@ example : ∃ D : RootIsolation (RingHom.id ℂ) ((√2)⁻¹ : ℝ),
   refine ⟨ofSq _ hsq (1 / 2) hroot (by positivity) ?_ _ (by norm_num) ?_ ?_, rfl, rfl⟩
   · rw [inv_pow, Real.sq_sqrt (by norm_num)]
     norm_num
-  · have h2 : √2 ≤ 2 := by
-      rw [Real.sqrt_le_left (by norm_num)]
-      norm_num
+  · have h2 : √2 ≤ 2 := (Real.sqrt_le_left (by norm_num)).2 (by norm_num)
     simpa using inv_anti₀ (by positivity) h2
   · have h1 : 1 ≤ √2 := by simp
     simpa using inv_le_one_of_one_le₀ h1
