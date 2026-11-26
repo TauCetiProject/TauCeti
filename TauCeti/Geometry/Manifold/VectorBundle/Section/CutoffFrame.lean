@@ -44,6 +44,12 @@ and `(bⱼ)` a basis of the model fibre, then `h = ∑ᵢ ∑ⱼ gᵢ bⱼ*(tᵢ
 (`ContMDiffSection.eq_sum_cutoffFrameCoeff_smul_cutoffFrameSection`). This is what composes the
 matrices of two operators.
 
+Cut-off frames also change frames. Where a cutoff `ρ` equals `1` inside the base set of a second
+trivialization `t₀`, a cut-off frame coefficient is a combination of the coefficients in `t₀`
+(`Bundle.Trivialization.cutoffFrameCoeff_apply_eq_sum`). For a cutoff `θ` supported where `ρ = 1`,
+every section `s` is `∑ᵢ θ ρ bᵢ*(t₀ s) ρ t₀⁻¹ bᵢ + (1 - θ) s`
+(`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`).
+
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
 `x ↦ t⁻¹ₓ (ψ(e x) u(e x))` (`Bundle.Trivialization.chartCutoffSection`), on which chart
@@ -200,6 +206,66 @@ theorem sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply [FiniteDimensional �
     ← b.sum_repr (t.continuousLinearMapAt ℂ x (h x)), map_sum, Finset.smul_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp [hψρ x (subset_tsupport _ hx), ← t.symmL_apply (R := ℂ) hxt, mul_smul, Complex.real_smul]
+
+/-- **A cut-off frame coefficient in another frame.** Let `(bⱼ)` be a basis of the model fibre
+with coordinate functionals `bⱼ*`, and `ρ` a cutoff supported in the base set of a trivialization
+`t₀`. At a point `y` of the base set of `t₀` where `ρ y = 1`, the cut-off frame coefficient
+`χ ℓ(t h)` of a section `h` is the combination of its coefficients `ρ bⱼ*(t₀ h)` in `t₀` with the
+coefficients `χ ℓ(t ρ t₀⁻¹ bⱼ)` of the cut-off frame sections of `t₀`. -/
+theorem cutoffFrameCoeff_apply_eq_sum [FiniteDimensional ℂ W] (χ : C^n⟮I, M; ℝ⟯)
+    (hχ : tsupport χ ⊆ t.baseSet) (ℓ : W →L[ℂ] ℂ) (t₀ : Trivialization W (π W F))
+    [MemTrivializationAtlas t₀] (ρ : C^n⟮I, M; ℝ⟯) (hρ : tsupport ρ ⊆ t₀.baseSet) {ι : Type*}
+    [Fintype ι] (b : Module.Basis ι ℂ W) {y : M} (hy : y ∈ t₀.baseSet) (hρy : ρ y = 1)
+    (h : Cₛ^n⟮I; W, F⟯) :
+    t.cutoffFrameCoeff χ hχ ℓ h y = ∑ j, t.cutoffFrameCoeff χ hχ ℓ
+      (t₀.cutoffFrameSection ρ hρ (b j)) y *
+        t₀.cutoffFrameCoeff ρ hρ (b.coord j).toContinuousLinearMap h y := by
+  simp only [cutoffFrameCoeff_apply, cutoffFrameSection_apply, hρy, one_smul]
+  conv_lhs => rw [← t₀.sum_repr_smul_symmL b hy (h y)]
+  simp only [map_sum, map_smul, Finset.smul_sum, t₀.symmL_apply hy,
+    LinearMap.coe_toContinuousLinearMap', smul_eq_mul, Complex.real_smul, Module.Basis.coord_apply]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  ring
+
+/-- **A section split along a cut-off frame.** Let `(bᵢ)` be a basis of the model fibre with
+coordinate functionals `bᵢ*`, `ρ` a cutoff supported in the base set of `t`, and `θ` a cutoff
+supported where `ρ = 1` inside that base set. Every section `s` splits as
+`∑ᵢ θ kᵢ ρ t⁻¹ bᵢ + (1 - θ) s` with the coefficients `kᵢ = ρ bᵢ*(t s)`, also after multiplication
+by any complex function `f`. -/
+theorem smul_eq_sum_smul_cutoffFrameSection_add [FiniteDimensional ℂ W] (ρ : C^n⟮I, M; ℝ⟯)
+    (hρ : tsupport ρ ⊆ t.baseSet) {ι : Type*} [Fintype ι] (b : Module.Basis ι ℂ W)
+    (θ : C^n⟮I, M; ℝ⟯) (hθ : tsupport θ ⊆ {y | ρ y = 1} ∩ t.baseSet) (s : Cₛ^n⟮I; W, F⟯)
+    (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    f • s = ∑ i, (ContMDiffMap.ofReal θ *
+        t.cutoffFrameCoeff ρ hρ (b.coord i).toContinuousLinearMap s * f) •
+          t.cutoffFrameSection ρ hρ (b i) +
+      ((1 - ContMDiffMap.ofReal θ) * f) • s := by
+  ext y
+  simp only [ContMDiffSection.coe_add, ContMDiffSection.coe_sum, Pi.add_apply, Finset.sum_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra]
+  by_cases hθy : θ y = 0
+  · simp [hθy]
+  obtain ⟨hρy, hy⟩ := hθ (subset_tsupport _ hθy)
+  have hρy' : ρ y = 1 := hρy
+  -- Each term is `θ(y) f(y) bᵢ*(t s(y)) t⁻¹ bᵢ`, and these add up to `θ(y) f(y) s(y)`.
+  have hterm (i : ι) :
+      (ContMDiffMap.ofReal θ *
+          t.cutoffFrameCoeff ρ hρ (b.coord i).toContinuousLinearMap s * f) y •
+        t.cutoffFrameSection ρ hρ (b i) y =
+      ((θ y : ℂ) * f y) • (b.repr (t.continuousLinearMapAt ℂ y (s y)) i •
+        t.symmL ℂ y (b i)) := by
+    rw [cutoffFrameSection_apply, hρy', one_smul, t.symmL_apply (R := ℂ) hy, smul_smul]
+    congr 1
+    simp only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply,
+      cutoffFrameCoeff_apply, hρy', one_smul, LinearMap.coe_toContinuousLinearMap',
+      Module.Basis.coord_apply]
+    ring
+  rw [Finset.sum_congr rfl fun i _ ↦ hterm i, ← Finset.smul_sum, t.sum_repr_smul_symmL b hy,
+    ← add_smul]
+  congr 1
+  simp only [ContMDiffMap.coe_mul, ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.mul_apply,
+    Pi.sub_apply, Pi.one_apply, ContMDiffMap.ofReal_apply]
+  ring
 
 end Coeff
 
