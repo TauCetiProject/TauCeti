@@ -90,12 +90,10 @@ theorem piEquiv_toKZero (x : IdempotentMonoid (∀ j, R j)) :
     piEquiv R (IdempotentMonoid.toKZero _ x) =
       fun j ↦ IdempotentMonoid.toKZero (R j)
         (IdempotentMonoid.map (Pi.evalNonUnitalRingHom R j) x) := by
-  rw [← IdempotentMonoid.kZeroEquiv_of, piEquiv, AddEquiv.trans_apply,
-    AddEquiv.symm_apply_apply, AddEquiv.trans_apply, GrothendieckAddGroup.congr_of,
-    AddEquiv.trans_apply, GrothendieckAddGroup.piEquiv_of]
-  -- `AddEquiv.piCongrRight` acts componentwise.
-  exact funext fun j ↦ (IdempotentMonoid.kZeroEquiv_of _ _).trans (by
-    rw [IdempotentMonoid.piEquiv_apply])
+  ext j
+  simp only [piEquiv, ← IdempotentMonoid.kZeroEquiv_of, AddEquiv.trans_apply,
+    AddEquiv.symm_apply_apply, GrothendieckAddGroup.congr_of, GrothendieckAddGroup.piEquiv_of,
+    AddEquiv.piCongrRight_apply, IdempotentMonoid.piEquiv_apply]
 
 /-- The inverse of `TauCeti.KZero.piEquiv` places the class of an element `x` of the idempotent
 monoid of `R j` in the factor `j` by the element of the idempotent monoid of the product supported

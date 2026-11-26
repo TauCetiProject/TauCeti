@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Ring.Hom.Defs
 public import Mathlib.GroupTheory.MonoidLocalization.GrothendieckGroup
+public import Mathlib.GroupTheory.MonoidLocalization.Lemmas
 public import Mathlib.Tactic.Abel
 
 /-!
@@ -182,23 +183,14 @@ section Pi
 
 variable {ι : Type*} {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
 
-/-- Taking all components, on group completions. -/
-private noncomputable abbrev piHom :
-    GrothendieckAddGroup (∀ i, P i) →+ ∀ i, GrothendieckAddGroup (P i) :=
-  lift (AddMonoidHom.pi fun i ↦ (of : P i →+ _).comp (Pi.evalAddMonoidHom P i))
-
-private theorem piHom_of (a : ∀ i, P i) : piHom (of a) = fun i ↦ of (a i) :=
-  lift_apply_of _ a
-
-private theorem piHom_bijective : Function.Bijective (piHom (P := P)) := by
-  refine ⟨(injective_iff_map_eq_zero _).2 fun x hx ↦ ?_, fun x ↦ ?_⟩
-  · obtain ⟨a, b, rfl⟩ := exists_eq_sub_of x
-    rw [map_sub, piHom_of, piHom_of, sub_eq_zero] at hx
-    -- Componentwise, `a i` and `b i` agree after adding some `c i`; then `a + c = b + c`.
-    choose c hc using fun i ↦ of_eq_of_iff.1 (congr_fun hx i)
-    exact sub_eq_zero.2 (of_eq_of_iff.2 ⟨c, funext hc⟩)
-  · choose a b hab using fun i ↦ exists_eq_sub_of (x i)
-    exact ⟨of a - of b, by rw [map_sub, piHom_of, piHom_of]; exact funext fun i ↦ (hab i).symm⟩
+/-- Taking all components, `of a ↦ (of (a i))ᵢ`, is a localization map of the product at its top
+submonoid, by Mathlib's `AddSubmonoid.IsLocalizationMap.pi`. -/
+private noncomputable def piLocalizationMap :
+    (⊤ : AddSubmonoid (∀ i, P i)).LocalizationMap (∀ i, GrothendieckAddGroup (P i)) where
+  __ := AddMonoidHom.pi fun i ↦ (of : P i →+ _).comp (Pi.evalAddMonoidHom P i)
+  isLocalizationMap := AddSubmonoid.pi_top (M := P) .univ ▸
+    AddSubmonoid.IsLocalizationMap.pi (fun _ ↦ ⊤) fun i ↦
+      (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (P i))).isLocalizationMap
 
 /-- **The Grothendieck group of a product.** The group completion of `Π i, P i` is the product of
 the group completions of the `P i`, `of a ↦ (of (a i))ᵢ`
@@ -207,13 +199,15 @@ families become equal in the completion exactly when they do componentwise, each
 its own element. -/
 noncomputable def piEquiv :
     GrothendieckAddGroup (∀ i, P i) ≃+ ∀ i, GrothendieckAddGroup (P i) :=
-  AddEquiv.ofBijective piHom piHom_bijective
+  (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (∀ i, P i))).addEquivOfLocalizations
+    piLocalizationMap
 
 -- Not `@[simp]`, like `Algebra.GrothendieckAddGroup.prodEquiv_of`: the simp normal form of
 -- `of a` is `AddLocalization.addMonoidOf ⊤ a`.
 /-- `Algebra.GrothendieckAddGroup.piEquiv` sends `of a` to the family `(of (a i))ᵢ`. -/
-theorem piEquiv_of (a : ∀ i, P i) : piEquiv (of a) = fun i ↦ of (a i) :=
-  piHom_of a
+theorem piEquiv_of (a : ∀ i, P i) : piEquiv (of a) = fun i ↦ of (a i) := by
+  rw [piEquiv, AddSubmonoid.LocalizationMap.addEquivOfLocalizations_apply]
+  exact (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (∀ i, P i))).lift_eq _ a
 
 /-- The inverse of `Algebra.GrothendieckAddGroup.piEquiv` sends the family `(of (a i))ᵢ` to
 `of a`. -/

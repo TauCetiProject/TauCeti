@@ -341,8 +341,8 @@ theorem toKZero_mk {ι : Type*} [Fintype ι] (e : Matrix ι ι R) (he : IsIdempo
 class of the free right module of rank one. -/
 theorem toKZero_mk_one :
     toKZero R (mk (1 : Matrix (Fin 1) (Fin 1) R) .one) =
-      SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) :=
-  (kZeroEquiv_of_mk_one 1).trans (one_nsmul _)
+      SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ) := by
+  rw [← kZeroEquiv_of, kZeroEquiv_of_mk_one, one_nsmul]
 
 /-- `TauCeti.IdempotentMonoid.toKZero R` factors via `objectCodeAddEquiv R` and `SplitK0.ofCode`. -/
 theorem ofCode_comp_objectCodeAddEquiv :
@@ -467,9 +467,9 @@ theorem IdempotentMonoid.toKZero_mk_of_unique {m : Type*} [Unique m] (he : IsIde
     IdempotentMonoid.toKZero R
       (IdempotentMonoid.mk ((Matrix.uniqueRingEquiv (m := m)).symm e)
         (he.map Matrix.uniqueRingEquiv.symm)) =
-      SplitK0.of.{u} (KZero.principalRightIdeal he) :=
-  (IdempotentMonoid.kZeroEquiv_of R _).symm.trans
-    (IdempotentMonoid.kZeroEquiv_of_mk _ _ (rangeMulVecBilinOfUniqueEquivSpan R m e).symm)
+      SplitK0.of.{u} (KZero.principalRightIdeal he) := by
+  rw [← IdempotentMonoid.kZeroEquiv_of]
+  exact IdempotentMonoid.kZeroEquiv_of_mk _ _ (rangeMulVecBilinOfUniqueEquivSpan R m e).symm
 
 end PrincipalRightIdeal
 
