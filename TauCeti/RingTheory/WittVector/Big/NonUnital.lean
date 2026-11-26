@@ -298,10 +298,11 @@ noncomputable def restrict (h : T ≤ S) :
   codRestrict
     ((BigWittVector.restrict (R := Unitization ℤ R) h).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
+      rw [NonUnitalRingHom.comp_apply]
+      -- Reinterpret the restricted unital homomorphism as its underlying function.
       change BigWittVector.map _
         (BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x)) = 0
-      rw [← RingHom.comp_apply, BigWittVector.map_comp_restrict, RingHom.comp_apply,
-        map_fst_toBigWitt, map_zero]
+      rw [BigWittVector.map_restrict, map_fst_toBigWitt, map_zero]
 
 /-- The kernel inclusion commutes with restriction of truncation sets. -/
 @[simp]
@@ -338,6 +339,8 @@ noncomputable def map (f : R →ₙ+* A) :
     ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
       (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
+      rw [NonUnitalRingHom.comp_apply]
+      -- Reinterpret the coefficient homomorphism as its underlying function.
       change BigWittVector.map _ (BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
         (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x)) = 0
       apply BigWittVector.ext
