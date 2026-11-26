@@ -85,7 +85,7 @@ public section
 namespace TauCeti
 
 open _root_.Complex Filter Function Metric Set
-open scoped ComplexConjugate ComplexOrder Topology
+open scoped ComplexConjugate ComplexOrder Pointwise Topology
 
 variable {Ω Ω' : Set ℂ} {f φ ψ F h : ℂ → ℂ} {z₀ : ℂ}
 
@@ -252,13 +252,10 @@ theorem riemannConformalRadius_eq_one_sub_norm_sq_div_norm_deriv_of_bijOn_ball (
   -- Post-compose `φ` with the unit-disc Möbius factor centred at `w₀ = φ z₀`.
   set w₀ : ℂ := φ z₀
   have hw₀ : ‖w₀‖ < 1 := mem_ball_zero_iff.mp (hφbij.mapsTo hz₀)
-  have hnw₀ : ‖-w₀‖ < 1 := by simpa using hw₀
   set μ : ℂ → ℂ := fun w => (w - w₀) / (1 - (starRingEnd ℂ) w₀ * w)
-  have hμbij : BijOn μ (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) := by
-    refine InvOn.bijOn ⟨leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one hw₀, ?_⟩
-      (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hw₀)
-      (mapsTo_ball_unitDiscMoebiusFormula_of_norm_lt_one hnw₀)
-    simpa only [neg_neg] using leftInvOn_unitDiscMoebiusFormula_of_norm_lt_one hnw₀
+  have hμbij : BijOn μ (ball (0 : ℂ) 1) (ball (0 : ℂ) 1) :=
+    bijOn_ball_of_unitDiscEquiv (unitDiscMoebiusEquiv (.mk w₀ hw₀)) fun z => by
+      simp [unitDiscMoebiusEquiv_apply, coe_unitDiscMoebius, μ]
   have hcomp_d : DifferentiableOn ℂ (μ ∘ φ) Ω :=
     (differentiableOn_unitDiscMoebiusFormula_of_norm_lt_one hw₀).comp hφd hφbij.mapsTo
   have hcomp_bij : BijOn (μ ∘ φ) Ω (ball (0 : ℂ) 1) := hμbij.comp hφbij
@@ -620,12 +617,8 @@ theorem riemannConformalRadius_ball {b : ℂ} {R : ℝ} (hz₀ : z₀ ∈ ball b
   have hR : 0 < R := pos_of_mem_ball hz₀
   have hR0 : (R : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hR.ne'
   have himg : (fun z : ℂ => (R : ℂ) * z + b) '' ball (0 : ℂ) 1 = ball b R := by
-    ext w
-    simp only [mem_image, mem_ball_iff_norm, sub_zero]
-    refine ⟨?_, fun hw => ⟨(w - b) / (R : ℂ), ?_, by field_simp; ring⟩⟩
-    · rintro ⟨z, hz, rfl⟩
-      simpa [abs_of_pos hR, mul_lt_iff_lt_one_right hR] using hz
-    · simpa [abs_of_pos hR, div_lt_one hR] using hw
+    rw [← affinity_unitBall hR b, ← Set.image_smul, ← Set.image_vadd, Set.image_image]
+    simp [Complex.real_smul, add_comm]
   have hpt : (R : ℂ) * ((z₀ - b) / (R : ℂ)) + b = z₀ := by field_simp; ring
   have hw₀ : (z₀ - b) / (R : ℂ) ∈ ball (0 : ℂ) 1 := by
     simpa [dist_eq_norm, abs_of_pos hR, div_lt_one hR] using hz₀
