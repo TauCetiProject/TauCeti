@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Chow.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.Limits.Coproduct
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import TauCeti.Topology.LocallyFinite.Sigma
 import TauCeti.Topology.LocallyFinsupp.Comap
 
 /-!
@@ -33,8 +34,13 @@ For locally Noetherian `X i` this gives:
   the product of the Chow groups of the summands, sending the class of a cycle to the classes of
   its restrictions (`Chow.ChowGroup.sigmaEquiv_cycleClass`).
 
+Under either equivalence, pushforward along `Sigma.ι X i` inserts a cycle or Chow class in its
+`i`-th coordinate (`Chow.cyclesSigmaEquiv_cyclesPushforward_sigmaι`,
+`Chow.ChowGroup.sigmaEquiv_pushforward_sigmaι`).
+
 The product is a genuine product, not a direct sum: for infinitely many summands a cycle on `∐ X`
-can be nonzero on every one of them, as locally finite cycles need not have finite support.
+can be nonzero on every one of them, as locally finite cycles need not have finite support. For a
+finite index type it also identifies with the direct sum via `DirectSum.addEquivProd`.
 
 ## References
 
@@ -130,6 +136,23 @@ lemma cyclesSigmaEquiv_symm_apply (γ : (i : I) → cyclesOfDimension (X i) k) (
       (γ i : AlgebraicCycle (X i) ℤ) x := by
   rw [← cyclesSigmaEquiv_apply, AddEquiv.apply_symm_apply]
 
+/-- Under the coproduct equivalence for cycles, pushforward along a coprojection inserts a cycle
+in the corresponding coordinate. -/
+@[simp]
+lemma cyclesSigmaEquiv_cyclesPushforward_sigmaι [DecidableEq I] (i : I)
+    (α : cyclesOfDimension (X i) k) :
+    cyclesSigmaEquiv X k (cyclesPushforward (Sigma.ι X i) α) = Pi.single i α := by
+  funext j
+  rcases eq_or_ne j i with rfl | h
+  · rw [Pi.single_eq_same]
+    exact Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ by
+      rw [cyclesSigmaEquiv_apply, cyclesPushforward_apply])
+  · rw [Pi.single_eq_of_ne h]
+    exact Subtype.ext (Function.locallyFinsuppWithin.ext fun x ↦ by
+      rw [cyclesSigmaEquiv_apply]
+      exact cyclesPushforward_apply_of_notMem_range α
+        (fun hx ↦ h ((sigmaι_apply_mem_range_sigmaι_iff x).mp hx)))
+
 end Cycles
 
 section RatEquiv
@@ -208,15 +231,12 @@ private noncomputable def sigma (F : (i : I) → RatEquivFamily (X i) k) :
   genericPoint_mem p := (F p.fst).genericPoint_mem p.snd
   r p := (F p.fst).r p.snd
   locallyFinite := by
-    intro x
-    obtain ⟨i, y, rfl⟩ := sigmaι_jointly_surjective X x
-    obtain ⟨t, ht, hfin⟩ := (F i).locallyFinite y
-    refine ⟨Sigma.ι X i '' t, (Sigma.ι X i).isOpenEmbedding.image_mem_nhds.mpr ht,
-      (hfin.image (Sigma.mk i)).subset ?_⟩
-    rintro ⟨i', j⟩ ⟨_, ⟨w, rfl⟩, z, hz, hzw⟩
-    rw [Scheme.Hom.comp_apply] at hzw
-    obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.mp ((sigmaι_eq_iff X i i' z _).mp hzw)
-    exact ⟨j, ⟨(F i).i j w, ⟨w, rfl⟩, eq_of_heq h ▸ hz⟩, rfl⟩
+    refine ((LocallyFinite.sigmaMk_image fun i ↦ (F i).locallyFinite).preimage_continuous
+      (sigmaMk X).symm.continuous).subset ?_
+    rintro ⟨i, j⟩ _ ⟨w, rfl⟩
+    refine ⟨(F i).i j w, ⟨w, rfl⟩, ?_⟩
+    apply (sigmaMk X).injective
+    rw [Homeomorph.apply_symm_apply, sigmaMk_mk, Scheme.Hom.comp_apply]
 
 /-- The cycle of the glued family has, at a point of `X i`, the coefficient of the cycle of `F i`.
 -/
@@ -309,6 +329,15 @@ lemma sigmaEquiv_symm_cycleClass (γ : (i : I) → cyclesOfDimension (X i) k) :
     (sigmaEquiv X k).symm (fun i ↦ cycleClass (γ i)) =
       cycleClass ((cyclesSigmaEquiv X k).symm γ) := by
   rw [AddEquiv.symm_apply_eq, sigmaEquiv_cycleClass, AddEquiv.apply_symm_apply]
+
+/-- Under the coproduct equivalence for Chow groups, pushforward along a coprojection inserts a
+class in the corresponding coordinate. -/
+@[simp]
+lemma sigmaEquiv_pushforward_sigmaι [DecidableEq I] (i : I) (a : ChowGroup (X i) k) :
+    sigmaEquiv X k (pushforward (Sigma.ι X i) a) = Pi.single i a := by
+  obtain ⟨α, rfl⟩ := cycleClass_surjective a
+  rw [pushforward_cycleClass, sigmaEquiv_cycleClass, cyclesSigmaEquiv_cyclesPushforward_sigmaι]
+  exact (Pi.single_op (fun _ ↦ cycleClass) (fun _ ↦ map_zero _) i α).symm
 
 end ChowGroup
 
