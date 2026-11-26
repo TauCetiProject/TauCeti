@@ -141,9 +141,9 @@ theorem not_isDimerGibbs_dirac_noEdge (w : (nnGraph ℤ).edgeSet → ℝ) :
 local instance fact_one_lt_six : Fact (1 < 6) :=
   ⟨by decide⟩
 
-/-- The cylinder of a configuration of the hexagon over all six edges is its singleton. -/
-theorem setOf_forall_mem_univ_eq (ω : (nnGraph (ZMod 6)).edgeSet → Bool) :
-    {η : (nnGraph (ZMod 6)).edgeSet → Bool | ∀ e ∈ Finset.univ, η e = ω e} = {ω} := by
+/-- The cylinder of a configuration over all of a finite index type is its singleton. -/
+private theorem setOf_forall_mem_univ_eq {ι β : Type*} [Fintype ι] (ω : ι → β) :
+    {η : ι → β | ∀ e ∈ Finset.univ, η e = ω e} = {ω} := by
   ext η
   simp [funext_iff]
 
@@ -236,7 +236,7 @@ theorem isDimerGibbs_hexConfig {w : (nnGraph (ZMod 6)).edgeSet → ℝ} (hw : �
 theorem dimerWeight_univ_hexConfig (w : (nnGraph (ZMod 6)).edgeSet → ℝ) (b : Bool) :
     (nnGraph (ZMod 6)).dimerWeight w Finset.univ (hexConfig b) =
       ∏ a : ZMod 6, if (b ^^ decide (a.val % 2 = 1)) = true then w (edge a) else 1 := by
-  rw [dimerWeight_def, Finset.prod_filter, prod_edgeSet_zmod_six]
+  rw [dimerWeight_def, Finset.prod_filter, prod_edgeSet (by decide)]
   simp only [hexConfig_edge]
 
 /-- **Unit weights on the hexagon**: every dimer Gibbs measure gives each matching mass `1/2`. -/

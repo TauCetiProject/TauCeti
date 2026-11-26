@@ -84,6 +84,10 @@ theorem exists_edge_eq (e : (nnGraph R).edgeSet) : ∃ a, edge a = e := by
     · exact ⟨u, rfl⟩
     · exact ⟨v, Subtype.ext Sym2.eq_swap⟩
 
+/-- `a ↦ {a, a + 1}` is onto the edges. -/
+theorem edge_surjective : Surjective (edge (R := R)) :=
+  exists_edge_eq
+
 /-- The edges at `v` are `{v − 1, v}` and `{v, v + 1}`. -/
 theorem mem_iff_eq_edge_sub_one_or_eq_edge {v : R} {e : (nnGraph R).edgeSet} :
     v ∈ (e : Sym2 R) ↔ e = edge (v - 1) ∨ e = edge v := by
@@ -110,6 +114,25 @@ theorem edge_injective (h2 : (2 : R) ≠ 0) : Injective (edge (R := R)) := by
   rcases this with ⟨h, -⟩ | ⟨rfl, h⟩
   · exact h
   · exact absurd (by simpa [add_assoc, one_add_one_eq_two] using congrArg (· - b) h) h2
+
+/-- When `2 ≠ 0`, `a ↦ {a, a + 1}` is a bijection onto the edges. -/
+theorem edge_bijective (h2 : (2 : R) ≠ 0) : Bijective (edge (R := R)) :=
+  ⟨edge_injective h2, edge_surjective⟩
+
+/-- When `2 ≠ 0`, a product over the edges of a finite ring is the product over `a` of the value
+at the edge `{a, a + 1}`. -/
+theorem prod_edgeSet [Fintype R] [Fintype (nnGraph R).edgeSet] (h2 : (2 : R) ≠ 0)
+    {M : Type*} [CommMonoid M] (f : (nnGraph R).edgeSet → M) :
+    ∏ e, f e = ∏ a, f (edge a) :=
+  (Fintype.prod_bijective _ (edge_bijective h2) _ _ fun _ => rfl).symm
+
+/-- The nearest-neighbour graph of an infinite ring has infinitely many edges. -/
+instance [Infinite R] : Infinite (nnGraph R).edgeSet := by
+  refine not_finite_iff_infinite.1 fun _ => infinite_univ (α := R) ?_
+  refine (finite_iUnion fun e : (nnGraph R).edgeSet => (?_ : {x | x ∈ (e : Sym2 R)}.Finite)).subset
+    fun a _ => mem_iUnion.2 ⟨edge a, Sym2.mem_mk_left a (a + 1)⟩
+  obtain ⟨b, rfl⟩ := exists_edge_eq e
+  exact (toFinite {b, b + 1}).subset fun x hx => by simpa [Sym2.mem_iff] using hx
 
 /-- When `2 ≠ 0`, the point chosen for the edge `{a, a + 1}` is `a`. -/
 theorem choose_exists_edge_eq (h2 : (2 : R) ≠ 0) (a : R) :
@@ -193,14 +216,6 @@ theorem setOf_isDimerConfiguration_int :
 instance : (nnGraph ℤ).LocallyFinite := fun v =>
   ((toFinite {v - 1, v + 1}).subset fun w hw => by
     rcases (nnGraph_adj.1 hw).2 with rfl | rfl <;> simp).fintype
-
-/-- The edges of the line are countable. -/
-instance instCountableEdgeSetNNGraphInt : Countable (nnGraph ℤ).edgeSet :=
-  Function.Surjective.countable (f := edge) fun e => exists_edge_eq e
-
-/-- The line has infinitely many edges. -/
-instance instInfiniteEdgeSetNNGraphInt : Infinite (nnGraph ℤ).edgeSet :=
-  Infinite.of_injective edge (edge_injective (by decide))
 
 /-- Translation by `2` as an automorphism of the line. -/
 def shiftTwo : nnGraph ℤ ≃g nnGraph ℤ where
@@ -410,15 +425,5 @@ instance instLocallyFiniteNNGraphZModSix : (nnGraph (ZMod 6)).LocallyFinite :=
 /-- The edges of the hexagon are finite. -/
 instance instFintypeEdgeSetNNGraphZModSix : Fintype (nnGraph (ZMod 6)).edgeSet :=
   Fintype.ofFinite _
-
-/-- The edge `{a, a + 1}` of the hexagon, as a bijection from `ZMod 6`. -/
-theorem edge_bijective_zmod_six : Bijective (edge (R := ZMod 6)) :=
-  ⟨edge_injective two_ne_zero_zmod_six, fun e => exists_edge_eq e⟩
-
-/-- A product over the six edges of the hexagon is the product over `a : ZMod 6` of the value at
-the edge `{a, a + 1}`. -/
-theorem prod_edgeSet_zmod_six {M : Type*} [CommMonoid M] (f : (nnGraph (ZMod 6)).edgeSet → M) :
-    ∏ e, f e = ∏ a : ZMod 6, f (edge a) :=
-  (Fintype.prod_bijective _ edge_bijective_zmod_six _ _ fun _ => rfl).symm
 
 end TauCeti.Examples.DimerConfiguration
