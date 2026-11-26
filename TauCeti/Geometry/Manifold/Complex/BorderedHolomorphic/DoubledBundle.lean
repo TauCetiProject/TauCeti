@@ -57,8 +57,9 @@ with real `C^n` chart operators in both directions which commutes with conjugati
 boundary, to a bundle pair with real `C^n` transitions and smooth doubled transitions, real `C^n`
 on the Schottky double
 (`TauCeti.SchottkyDouble.exists_iso_contMDiffOn_coordChange_doubledBundleCore`, in
-`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Not treated
-here: independence of the doubled bundle of the choices up to isomorphism.
+`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Its doubled
+bundle is isomorphic to `doubledBundleCore C hC`, compatibly with the lifted involutions, through
+`TauCeti.FiniteRankBundleCore.doubleAlongIso`, whatever choices the collar form was built from.
 
 ## References
 
