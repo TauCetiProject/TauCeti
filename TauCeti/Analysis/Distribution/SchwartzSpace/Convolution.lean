@@ -40,6 +40,8 @@ starting point of the estimates for multiplication operators on Sobolev spaces.
 * `SchwartzMap.fourierMultiplierCLM_eq_convolution`: the multiplier with symbol `σ` is
   `SchwartzMap.convolution` with `𝓕⁻ σ`.
 * `SchwartzMap.fourierMultiplierCLM_apply_eq_integral`: the same, pointwise, as an integral.
+* `SchwartzMap.integral_fourierInv_sub_mul_fourierChar`: the kernel `𝓕⁻ σ` acts on the plane wave
+  of frequency `ξ` by `σ(ξ)`.
 * `SchwartzMap.fourier_smulLeftCLM_fourierInv_apply`: the convolution theorem
   `𝓕 (𝓕 K • 𝓕⁻ φ) y = ∫ x, K (x - y) * φ x` for an integrable kernel `K` and a test function `φ`.
 * `SchwartzMap.eLpNorm_fourierMultiplierCLM_le`: the `Lᵖ` bound `‖T_σ φ‖_p ≤ ‖𝓕⁻ σ‖₁ ‖φ‖_p`.
@@ -125,6 +127,25 @@ theorem fourierMultiplierCLM_apply_eq_integral (σ : 𝓢(E, ℂ)) (φ : 𝓢(E,
     simp only [lsmul_apply]
   · simp [fourierMultiplierCLM_apply, fourier_eq_zero_of_not_completeSpace hF,
       integral_of_not_completeSpace hF]
+
+/-- The kernel `𝓕⁻ σ` of the multiplier with a Schwartz symbol `σ` acts on the plane wave
+`y ↦ 𝐞 ⟪y, ξ⟫` by the value of the symbol at the frequency `ξ`:
+`∫ 𝓕⁻ σ (x - y) 𝐞 ⟪y, ξ⟫ dy = σ(ξ) 𝐞 ⟪x, ξ⟫`. -/
+theorem integral_fourierInv_sub_mul_fourierChar (σ : 𝓢(E, ℂ)) (ξ x : E) :
+    ∫ y, 𝓕⁻ σ (x - y) * 𝐞 ⟪y, ξ⟫ = σ ξ * 𝐞 ⟪x, ξ⟫ := by
+  have hσ : σ ξ = ∫ z, 𝐞 (-⟪z, ξ⟫) • 𝓕⁻ σ z := by
+    rw [← Real.fourier_eq, ← fourier_coe, fourier_fourierInv_eq]
+  calc ∫ y, 𝓕⁻ σ (x - y) * 𝐞 ⟪y, ξ⟫
+      = ∫ y, (fun z ↦ 𝓕⁻ σ z * 𝐞 ⟪x - z, ξ⟫) (x - y) := by simp only [sub_sub_cancel]
+    _ = ∫ z, 𝓕⁻ σ z * 𝐞 ⟪x - z, ξ⟫ :=
+        integral_sub_left_eq_self (fun z ↦ 𝓕⁻ σ z * (𝐞 ⟪x - z, ξ⟫ : ℂ)) volume x
+    _ = ∫ z, (𝐞 ⟪x, ξ⟫ : ℂ) * (𝐞 (-⟪z, ξ⟫) • 𝓕⁻ σ z) := by
+        refine integral_congr_ae (.of_forall fun z ↦ ?_)
+        dsimp only
+        rw [inner_sub_left, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.coe_mul,
+          Circle.smul_def, smul_eq_mul]
+        ring
+    _ = σ ξ * 𝐞 ⟪x, ξ⟫ := by rw [integral_const_mul, hσ, mul_comm]
 
 /-- **The convolution theorem against a test function.** If the symbol `g` of temperate growth is
 the Fourier transform of an integrable kernel `K`, then for every test function `φ`,
