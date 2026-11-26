@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.LinearAlgebra.Finsupp.Supported
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.Nice
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
@@ -73,11 +74,6 @@ indices of the periodic domains, and on the nose when those vanish.
   differential.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_eq_zero_iff`: the differential vanishes exactly
   when all of its coefficients do.
-* `TauCeti.HeegaardRegionSystem.mem_supported_of_apply_eq_sum`,
-  `TauCeti.HeegaardRegionSystem.filter_of_apply_eq_sum`: a map of free modules on generators
-  preserves the chains supported on a set of generators that no nonzero matrix coefficient leaves,
-  and commutes with restricting chains to a set of generators that no nonzero coefficient enters
-  or leaves.
 * `TauCeti.HeegaardRegionSystem.hatDifferential_mem_supported`: the differential preserves the
   chains supported on a set of generators that no nonzero coefficient leaves.
 * `TauCeti.HeegaardRegionSystem.IsNice.hammingDist_eq_one_or_eq_two_of_hatCoefficient_ne_zero`:
@@ -113,48 +109,6 @@ universe u v w
 
 variable {n : ℕ} {Point : Type u} {Region : Type v} {Basepoint : Type w}
   {H : HeegaardRegionSystem n Point Region Basepoint}
-
-section Supported
-
-variable {R : Type*} [Semiring R] {f : (H.Generator →₀ R) → H.Generator →₀ R}
-  {k : H.Generator → H.Generator → R}
-
-/-- A map of free modules on generators with matrix coefficients `k x y` maps the chains supported
-on a set `s` of generators to chains supported on `s`, when no nonzero coefficient leads out of
-`s`. -/
-theorem mem_supported_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
-    {s : Set H.Generator} (hs : ∀ x ∈ s, ∀ y, k x y ≠ 0 → y ∈ s) {v : H.Generator →₀ R}
-    (hv : v ∈ Finsupp.supported R R s) : f v ∈ Finsupp.supported R R s := by
-  rw [Finsupp.mem_supported']
-  intro y hy
-  rw [hf, Finsupp.sum]
-  refine Finset.sum_eq_zero fun x hx => ?_
-  rw [not_ne_iff.mp (mt (hs x ((Finsupp.mem_supported _ _).mp hv hx) y) hy), mul_zero]
-
-/-- A map of free modules on generators with matrix coefficients `k x y` commutes with restricting
-a chain to the generators satisfying `p`, when no nonzero coefficient joins a generator satisfying
-`p` to one that does not. -/
-theorem filter_of_apply_eq_sum (hf : ∀ v y, f v y = v.sum fun x a => a * k x y)
-    {p : H.Generator → Prop} [DecidablePred p] (hk : ∀ x y, k x y ≠ 0 → (p x ↔ p y))
-    (v : H.Generator →₀ R) : f (v.filter p) = (f v).filter p := by
-  have hk' (x y : H.Generator) (hxy : ¬(p x ↔ p y)) : k x y = 0 :=
-    not_imp_comm.mp (hk x y) hxy
-  ext y
-  rw [Finsupp.filter_apply, hf, hf, Finsupp.sum_fintype _ _ fun _ => zero_mul _,
-    Finsupp.sum_fintype _ _ fun _ => zero_mul _]
-  split_ifs with hy
-  · refine Finset.sum_congr rfl fun x _ => ?_
-    rw [Finsupp.filter_apply]
-    split_ifs with hx
-    · rfl
-    · rw [zero_mul, hk' x y (fun h => hx (h.mpr hy)), mul_zero]
-  · refine Finset.sum_eq_zero fun x _ => ?_
-    rw [Finsupp.filter_apply]
-    split_ifs with hx
-    · rw [hk' x y (fun h => hy (h.mp hx)), mul_zero]
-    · rw [zero_mul]
-
-end Supported
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 
@@ -335,7 +289,7 @@ theorem hatDifferential_mem_supported {s : Set H.Generator}
     (hs : ∀ x ∈ s, ∀ y, H.hatCoefficient χ x y ≠ 0 → y ∈ s) {c : H.Generator →₀ ZMod 2}
     (hc : c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s) :
     H.hatDifferential χ c ∈ Finsupp.supported (ZMod 2) (ZMod 2) s :=
-  mem_supported_of_apply_eq_sum hatDifferential_apply hs hc
+  Finsupp.mem_supported_of_apply_eq_sum hatDifferential_apply hs hc
 
 end Differential
 

@@ -62,6 +62,8 @@ diagram of a lens space are counted in `TauCeti.LowDimTopology.Heegaard.LensSpac
 * `TauCeti.HeegaardRegionSystem.epsilonClass`: the class of a generator.
 * `TauCeti.HeegaardRegionSystem.EpsilonClass.lift`: a function on generators that is constant on
   `ε`-classes, as a function on classes.
+* `TauCeti.HeegaardRegionSystem.EpsilonClass.equivOfSurjective`: the identification of the
+  `ε`-classes of two diagrams by a map of generators that preserves and reflects classes.
 * `TauCeti.HeegaardRegionSystem.EpsilonClass.epsilon`: the difference `ε` of two classes.
 * `TauCeti.HeegaardRegionSystem.epsilonSummand`: the chains supported on one class.
 
@@ -172,6 +174,36 @@ theorem EpsilonClass.lift_epsilonClass {β : Sort*} (f : H.Generator → β)
     (hf : ∀ x y, H.epsilonClass x = H.epsilonClass y → f x = f y) (x : H.Generator) :
     EpsilonClass.lift f hf (H.epsilonClass x) = f x :=
   (rfl)
+
+section Equiv
+
+variable {n' : ℕ} {Point' Region' Basepoint' : Type*}
+  {H' : HeegaardRegionSystem n' Point' Region' Basepoint'}
+
+/-- A map of generators that preserves and reflects lying in the same `ε`-class, and meets every
+`ε`-class of the target, identifies the `ε`-classes of the two diagrams. -/
+noncomputable def EpsilonClass.equivOfSurjective (f : H.Generator → H'.Generator)
+    (hf : ∀ x y, H'.epsilonClass (f x) = H'.epsilonClass (f y) ↔
+      H.epsilonClass x = H.epsilonClass y)
+    (hs : Function.Surjective (H'.epsilonClass ∘ f)) : H.EpsilonClass ≃ H'.EpsilonClass :=
+  Equiv.ofBijective (EpsilonClass.lift (H'.epsilonClass ∘ f) fun x y => (hf x y).mpr)
+    ⟨fun c d => by
+      induction c using EpsilonClass.ind with
+      | h x =>
+        induction d using EpsilonClass.ind with
+        | h y => exact (hf x y).mp,
+    fun c => (hs c).elim fun x hx => ⟨H.epsilonClass x, hx⟩⟩
+
+/-- The identification sends the class of `x` to the class of `f x`. -/
+@[simp]
+theorem EpsilonClass.equivOfSurjective_epsilonClass (f : H.Generator → H'.Generator)
+    (hf : ∀ x y, H'.epsilonClass (f x) = H'.epsilonClass (f y) ↔
+      H.epsilonClass x = H.epsilonClass y)
+    (hs : Function.Surjective (H'.epsilonClass ∘ f)) (x : H.Generator) :
+    EpsilonClass.equivOfSurjective f hf hs (H.epsilonClass x) = H'.epsilonClass (f x) :=
+  (rfl)
+
+end Equiv
 
 variable (H) in
 /-- The difference `ε(c, d) ∈ CurveHomology` of two `ε`-classes: the class `ε(x, y)` of any
@@ -315,7 +347,7 @@ theorem hatDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonClass)
     (v : H.Generator →₀ ZMod 2) :
     H.hatDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.hatDifferential χ v).filter fun y => H.epsilonClass y = c :=
-  filter_of_apply_eq_sum hatDifferential_apply
+  Finsupp.filter_of_apply_eq_sum hatDifferential_apply
     (fun _ _ h => by rw [epsilonClass_eq_of_hatCoefficient_ne_zero h]) v
 
 variable [Fintype Basepoint]
@@ -332,7 +364,7 @@ theorem epsilonClass_eq_of_minusCoefficient_ne_zero (h : H.minusCoefficient χ x
 theorem minusDifferential_mem_epsilonSummand {c : H.EpsilonClass}
     {v : H.Generator →₀ (ZMod 2)[X]} (hv : v ∈ H.epsilonSummand (ZMod 2)[X] c) :
     H.minusDifferential χ v ∈ H.epsilonSummand (ZMod 2)[X] c :=
-  mem_supported_of_apply_eq_sum minusDifferential_apply
+  Finsupp.mem_supported_of_apply_eq_sum minusDifferential_apply
     (fun _ hx _ h => (epsilonClass_eq_of_minusCoefficient_ne_zero h).symm.trans hx) hv
 
 /-- **The splitting of `CF⁻` along `ε`-classes.** The minus differential commutes with the
@@ -341,7 +373,7 @@ theorem minusDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonClas
     (v : H.Generator →₀ (ZMod 2)[X]) :
     H.minusDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.minusDifferential χ v).filter fun y => H.epsilonClass y = c :=
-  filter_of_apply_eq_sum minusDifferential_apply
+  Finsupp.filter_of_apply_eq_sum minusDifferential_apply
     (fun _ _ h => by rw [epsilonClass_eq_of_minusCoefficient_ne_zero h]) v
 
 /-- The coefficients of the infinity differential, the minus coefficients read as Laurent
@@ -354,7 +386,7 @@ private theorem epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero
 theorem infinityDifferential_mem_epsilonSummand {c : H.EpsilonClass}
     {v : H.Generator →₀ (ZMod 2)[T;T⁻¹]} (hv : v ∈ H.epsilonSummand (ZMod 2)[T;T⁻¹] c) :
     H.infinityDifferential χ v ∈ H.epsilonSummand (ZMod 2)[T;T⁻¹] c :=
-  mem_supported_of_apply_eq_sum infinityDifferential_apply
+  Finsupp.mem_supported_of_apply_eq_sum infinityDifferential_apply
     (fun _ hx _ h => (epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero h).symm.trans hx) hv
 
 /-- **The splitting of `CF^∞` along `ε`-classes.** The infinity differential commutes with the
@@ -363,7 +395,7 @@ theorem infinityDifferential_filter [DecidableEq H.EpsilonClass] (c : H.EpsilonC
     (v : H.Generator →₀ (ZMod 2)[T;T⁻¹]) :
     H.infinityDifferential χ (v.filter fun x => H.epsilonClass x = c) =
       (H.infinityDifferential χ v).filter fun y => H.epsilonClass y = c :=
-  filter_of_apply_eq_sum infinityDifferential_apply
+  Finsupp.filter_of_apply_eq_sum infinityDifferential_apply
     (fun _ _ h => by rw [epsilonClass_eq_of_toLaurent_minusCoefficient_ne_zero h]) v
 
 end Differentials

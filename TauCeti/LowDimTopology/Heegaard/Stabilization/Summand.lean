@@ -63,29 +63,16 @@ theorem epsilonClass_stabilizeGenerator_eq_iff {x y : H.Generator} :
 /-- The identification of the `ε`-classes of a diagram with those of its stabilization, sending
 the class of `x` to the class of `x ∪ {x₀}`. -/
 noncomputable def stabilizeEpsilonClassEquiv : H.EpsilonClass ≃ (H.stabilize r₀).EpsilonClass :=
-  Equiv.ofBijective
-    (EpsilonClass.lift (fun x => (H.stabilize r₀).epsilonClass (H.stabilizeGenerator r₀ x))
-      fun _ _ => (H.epsilonClass_stabilizeGenerator_eq_iff r₀).mpr)
-    ⟨fun c d => by
-      induction c using EpsilonClass.ind with
-      | h x =>
-        induction d using EpsilonClass.ind with
-        | h y =>
-          rw [EpsilonClass.lift_epsilonClass, EpsilonClass.lift_epsilonClass]
-          exact (H.epsilonClass_stabilizeGenerator_eq_iff r₀).mp,
-    fun c => by
-      induction c using EpsilonClass.ind with
-      | h g =>
-        obtain ⟨x, rfl⟩ := (H.stabilizeGeneratorEquiv r₀).surjective g
-        rw [stabilizeGeneratorEquiv_apply]
-        exact ⟨H.epsilonClass x, EpsilonClass.lift_epsilonClass _ _ x⟩⟩
+  EpsilonClass.equivOfSurjective (H.stabilizeGenerator r₀)
+    (fun _ _ => H.epsilonClass_stabilizeGenerator_eq_iff r₀)
+    ((epsilonClass_surjective _).comp (H.stabilizeGenerator_surjective r₀))
 
 /-- The identification sends the class of `x` to the class of `x ∪ {x₀}`. -/
 @[simp]
 theorem stabilizeEpsilonClassEquiv_epsilonClass (x : H.Generator) :
     H.stabilizeEpsilonClassEquiv r₀ (H.epsilonClass x) =
       (H.stabilize r₀).epsilonClass (H.stabilizeGenerator r₀ x) :=
-  EpsilonClass.lift_epsilonClass _ _ x
+  EpsilonClass.equivOfSurjective_epsilonClass _ _ _ x
 
 /-- The identification of the hat chain groups by stabilization carries the summand of each
 `ε`-class onto the summand of the corresponding class of the stabilized diagram. -/

@@ -60,31 +60,18 @@ theorem epsilonClass_addBasepointGenerator_eq_iff {x y : H.Generator} {i j : Fin
 basepoint, sending the class of `x` to the common class of `(x, 0)` and `(x, 1)`. -/
 noncomputable def addBasepointEpsilonClassEquiv :
     H.EpsilonClass ≃ (H.addBasepoint r₀).EpsilonClass :=
-  Equiv.ofBijective
-    (EpsilonClass.lift
-      (fun x => (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ x 0))
-      fun _ _ => (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr)
-    ⟨fun c d => by
-      induction c using EpsilonClass.ind with
-      | h x =>
-        induction d using EpsilonClass.ind with
-        | h y =>
-          rw [EpsilonClass.lift_epsilonClass, EpsilonClass.lift_epsilonClass]
-          exact (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mp,
-    fun c => by
-      induction c using EpsilonClass.ind with
-      | h g =>
-        obtain ⟨⟨x, k⟩, rfl⟩ := (H.addBasepointGeneratorEquiv r₀).surjective g
-        rw [addBasepointGeneratorEquiv_apply]
-        exact ⟨H.epsilonClass x, (EpsilonClass.lift_epsilonClass _ _ x).trans
-          ((H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr rfl)⟩⟩
+  EpsilonClass.equivOfSurjective (H.addBasepointGenerator r₀ · 0)
+    (fun _ _ => H.epsilonClass_addBasepointGenerator_eq_iff r₀) fun c => by
+      obtain ⟨g, rfl⟩ := epsilonClass_surjective _ c
+      obtain ⟨⟨x, k⟩, rfl⟩ := H.addBasepointGenerator_surjective r₀ g
+      exact ⟨x, (H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr rfl⟩
 
 /-- The identification sends the class of `x` to the class of `(x, k)`, for either new point
 `k`. -/
 theorem addBasepointEpsilonClassEquiv_epsilonClass (x : H.Generator) (k : Fin 2) :
     H.addBasepointEpsilonClassEquiv r₀ (H.epsilonClass x) =
       (H.addBasepoint r₀).epsilonClass (H.addBasepointGenerator r₀ x k) :=
-  (EpsilonClass.lift_epsilonClass _ _ x).trans
+  (EpsilonClass.equivOfSurjective_epsilonClass _ _ _ x).trans
     ((H.epsilonClass_addBasepointGenerator_eq_iff r₀).mpr rfl)
 
 /-- The identification sends the class of `x` to the class of `(x, 0)`. This is the case `k = 0`
