@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.MulSign
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension.FiberProd
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Extension.Pullback
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Twist
 public import TauCeti.Topology.VectorBundle.SpinStructure.Orientation
 
 /-!
@@ -21,23 +21,25 @@ with principal bundle
 
 `P ⊗ L = (P ×_X L) ×_μ Spin(n)`,
 
-the extension of structure group of the fibre product `P ×_X L`
-(`TauCeti.OrthonormalFrameLift.fiberProd`) along the multiplication by the central signs
-`μ : Spin(n) × ℤ/2 → Spin(n)`, `(g, ε) ↦ g ε` (`CliffordAlgebra.realCliffordSpinMulSign`).
-Equivalently, `P ⊗ L` is the quotient of `P ×_X L` by `ℤ/2` acting by `(p, l) • ε = (p ε, l ε)`;
-in terms of transition functions, it multiplies the transition functions of `P` by the
-`±1`-valued transition functions of `L` (this description is not formalized here). Since the
-signs act trivially on frames, the frame map of `s` descends: the frame of `[(p, l), a]` is the
-frame of `p` composed with the rotation of `a` (`TauCeti.SpinStructure.toFrame_twist_mk`). In
-particular the twist induces the same orientation of `V` as `s`
-(`TauCeti.SpinStructure.orientation_twist`).
+the twist of lifts of the orthonormal frame bundle (`TauCeti.OrthonormalFrameLift.twist`) along
+the multiplication by the central signs `μ : Spin(n) × ℤ/2 → Spin(n)`, `(g, ε) ↦ g ε`
+(`CliffordAlgebra.realCliffordSpinMulSign`): the extension of structure group of the fibre product
+`P ×_X L` along `μ`. Equivalently, `P ⊗ L` is the quotient of `P ×_X L` by `ℤ/2` acting by
+`(p, l) • ε = (p ε, l ε)`; in terms of transition functions, it multiplies the transition functions
+of `P` by the `±1`-valued transition functions of `L` (this description is not formalized here).
+The construction follows the twist of `Spinᶜ` structures by principal `U(1)`-bundles
+(`TauCeti.SpinCStructure.twist`), with the central circle replaced by the central signs; both are
+instances of the general twist.
 
-Twisting is functorial in `s` and `L` (`TauCeti.SpinStructure.twistEquiv`), does nothing for the
-trivial double cover (`TauCeti.SpinStructure.twistTrivialEquiv`), commutes with pullback
-(`TauCeti.SpinStructure.twistPullbackEquiv`), and is an involution: twisting twice by the same
-double cover gives back `s` (`TauCeti.SpinStructure.twistTwistEquiv`), by
-`[([(p, l), a], l'), b] ↦ p • a ε b`, where `ε` is the sign with `l' = l • ε`. This last fact uses
-that every sign squares to one.
+Since the signs act trivially on frames, the frame of `[(p, l), a]` is the frame of `p` composed
+with the rotation of `a` (`TauCeti.OrthonormalFrameLift.toFrame_twist_mk`). In particular the
+twist induces the same orientation of `V` as `s` (`TauCeti.SpinStructure.orientation_twist`).
+Twisting is functorial in `s` and `L` (`TauCeti.OrthonormalFrameLift.twistEquiv`) and commutes
+with pullback (`TauCeti.OrthonormalFrameLift.twistPullbackEquiv`); twisting by the trivial double
+cover does nothing (`TauCeti.SpinStructure.twistTrivialEquiv`). Twisting is an involution:
+twisting twice by the same double cover gives back `s` (`TauCeti.SpinStructure.twistTwistEquiv`),
+by `[([(p, l), a], l'), b] ↦ p • a ε b`, where `ε` is the sign with `l' = l • ε`. This last fact
+uses that every sign squares to one.
 
 This is the action of the double covers of the base on the Spin structures inducing a fixed
 orientation of `V`. On paracompact Hausdorff bases the double covers are classified by
@@ -47,23 +49,15 @@ none of these statements is proved here.
 ## Main definitions
 
 * `TauCeti.SpinStructure.twist`: the twist of a Spin structure by a principal `ℤ/2`-bundle.
-* `TauCeti.SpinStructure.twistEquiv`: the equivalence of twists induced by an equivalence of Spin
-  structures and an isomorphism of principal `ℤ/2`-bundles.
 * `TauCeti.SpinStructure.twistTrivialEquiv`: the twist by the trivial double cover is equivalent to
   the Spin structure.
-* `TauCeti.SpinStructure.twistPullbackEquiv`: `(g^* s).twist (g^* L) ≃ g^* (s.twist L)`.
 * `TauCeti.SpinStructure.twistTwistEquiv`: twisting twice by the same double cover is equivalent
   to the Spin structure.
 
 ## Main results
 
-* `TauCeti.SpinStructure.toFrame_twist_mk`, `TauCeti.SpinStructure.toFrame_twist_inl`: the frame
-  map of the twist.
 * `TauCeti.SpinStructure.fiberOrientation_twist`, `TauCeti.SpinStructure.orientation_twist`: the
   twist induces the orientation induced by `s`.
-* `TauCeti.SpinStructure.twistEquiv_refl`, `TauCeti.SpinStructure.twistEquiv_symm`,
-  `TauCeti.SpinStructure.twistEquiv_trans`: twisting respects identities, inverses and
-  composites.
 * `TauCeti.SpinStructure.twistTwistEquiv_toEquiv_inl`: the formula of the untwisting equivalence.
 
 ## References
@@ -112,53 +106,15 @@ local notation "hc" => fun v ↦ Continuous.comp
   (continuous_spinToSpecialOrthogonal_pi (realCliffordForm n 0))
 
 /-- The **twist of a Spin structure by a principal `ℤ/2`-bundle** `L`: the Spin structure with
-principal bundle `(P ×_X L) ×_μ Spin(n)`, the extension of structure group of the fibre product of
-`P` and `L` along multiplication by the central signs `μ : (g, ε) ↦ g ε`. The frame of
-`[(p, l), a]` is the frame of `p` composed with the rotation of `a`
-(`TauCeti.SpinStructure.toFrame_twist_mk`). Its body is exposed so that the fibre
-`(s.twist L).P x` unfolds to the fibre of the extension downstream. -/
-@[expose]
-noncomputable def twist (s : SpinStructure F V n) : SpinStructure F V n :=
-  (s.fiberProd C₂ L).extend (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
+principal bundle `(P ×_X L) ×_μ Spin(n)`, the twist of lifts (`TauCeti.OrthonormalFrameLift.twist`)
+along multiplication by the central signs `μ : (g, ε) ↦ g ε`. The frame of `[(p, l), a]` is the
+frame of `p` composed with the rotation of `a` (`TauCeti.OrthonormalFrameLift.toFrame_twist_mk`).
+It is reducible, so that the general API of `TauCeti.OrthonormalFrameLift.twist` applies to it. -/
+noncomputable abbrev twist (s : SpinStructure F V n) : SpinStructure F V n :=
+  OrthonormalFrameLift.twist s L (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
     (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) hn hc
 
 variable {L} (s : SpinStructure F V n)
-
-/-- The principal bundle of the twist of `s` by `L` is the extension of structure group of the
-fibre product of the principal bundle of `s` with `L` along multiplication by the central signs. -/
-@[simp]
-theorem twist_P :
-    (s.twist L).P = Extend (s.fiberProd C₂ L).P (realCliffordSpinMulSign n)
-      (continuous_realCliffordSpinMulSign n) :=
-  (rfl)
-
-/-- **The frame of `[(p, l), a]`** in the twist of a Spin structure by `L` sends `v` to the frame
-of `p` applied to the rotation `a v a⁻¹`. -/
-theorem toFrame_twist_mk (x : X) (p : s.P x) (l : L x) (a : realCliffordSpinGroupZero n)
-    (v : Fin n → ℝ) :
-    TotalSpace.mk' F ((s.twist L).toFrame
-        ⟨x, Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l) a⟩).proj
-        (((s.twist L).toFrame
-          ⟨x, Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-            (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l) a⟩).frame (WithLp.toLp 2 v)) =
-      TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
-        ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2 (spinVectorAction _ a v))) := by
-  refine ((s.fiberProd C₂ L).toFrame_extend_mk (realCliffordSpinMulSign n)
-    (continuous_realCliffordSpinMulSign n) _ _ _ x (FiberProd.mk p l) a v).trans ?_
-  -- The frame of `(p, l)` in the fibre product is by definition the frame of `p`
-  -- (`TauCeti.OrthonormalFrameLift.toFrame_fiberProd_mk`).
-  exact congrArg (fun w ↦ TotalSpace.mk' F (s.toFrame ⟨x, p⟩).proj
-    ((s.toFrame ⟨x, p⟩).frame (WithLp.toLp 2 w))) (by simp)
-
-/-- **The frame of `[(p, l), 1]`** in the twist of a Spin structure by `L` is the frame of `p`. -/
-@[simp]
-theorem toFrame_twist_inl (x : X) (p : s.P x) (l : L x) :
-    (s.twist L).toFrame
-        ⟨x, Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l)⟩ =
-      s.toFrame ⟨x, p⟩ :=
-  (s.fiberProd C₂ L).toFrame_extend_inl _ _ _ _ _ x (FiberProd.mk p l)
 
 /-- **Twisting preserves the orientation of the fibres**: the twist of `s` by `L` induces on each
 fibre the orientation induced by `s`. -/
@@ -166,12 +122,16 @@ fibre the orientation induced by `s`. -/
 theorem fiberOrientation_twist (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (x : X) :
     (s.twist L).fiberOrientation o x = s.fiberOrientation o x := by
   obtain ⟨z⟩ := (s.fiberProd C₂ L).nonempty_P x
+  set p := FiberProd.fst (P := s.P) (Q := L) z
+  have hf : (s.twist L).toFrame
+      ⟨x, Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
+        (P := (s.fiberProd C₂ L).P) (FiberProd.mk p (FiberProd.snd (P := s.P) (Q := L) z))⟩ =
+      s.toFrame ⟨x, p⟩ :=
+    toFrame_twist_inl s _ _ _ _ _ x p _
   have h := (s.twist L).toOrientationCover_toFrame o
     ⟨x, Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-      (P := (s.fiberProd C₂ L).P) (FiberProd.mk (FiberProd.fst (P := s.P) (Q := L) z)
-        (FiberProd.snd (P := s.P) (Q := L) z))⟩
-  rw [toFrame_twist_inl, s.toOrientationCover_toFrame,
-    VectorBundleOrientationCover.mk_eq_mk_iff] at h
+      (P := (s.fiberProd C₂ L).P) (FiberProd.mk p (FiberProd.snd (P := s.P) (Q := L) z))⟩
+  rw [hf, s.toOrientationCover_toFrame, VectorBundleOrientationCover.mk_eq_mk_iff] at h
   exact h.symm
 
 /-- **Twisting preserves the orientation**: the twist of `s` by `L` induces the orientation of `V`
@@ -182,173 +142,14 @@ theorem orientation_twist (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin
   ext x
   rw [orientation_apply, orientation_apply, fiberOrientation_twist]
 
-/-! ### Functoriality -/
-
-variable {L' : X → Type} [TopologicalSpace (TotalSpace C₂ L')] [∀ x, TopologicalSpace (L' x)]
-  [FiberBundle C₂ L'] [∀ x, MulAction C₂ᵐᵒᵖ (L' x)] [PrincipalBundle C₂ L']
-  {L'' : X → Type} [TopologicalSpace (TotalSpace C₂ L'')] [∀ x, TopologicalSpace (L'' x)]
-  [FiberBundle C₂ L''] [∀ x, MulAction C₂ᵐᵒᵖ (L'' x)] [PrincipalBundle C₂ L'']
-
-/-- **Twisting is functorial**: an equivalence `φ : s ≃ t` of Spin structures and an equivalence
-`ψ : L ≃ L'` of principal `ℤ/2`-bundles induce an equivalence of twists
-`[(p, l), a] ↦ [(φ p, ψ l), a]`. -/
-noncomputable def twistEquiv {s t : SpinStructure F V n} (φ : s.Equiv t)
-    (ψ : PrincipalBundle.Equiv C₂ L L') : (s.twist L).Equiv (t.twist L') :=
-  (φ.fiberProd ψ).extend _ _ _ _ _
-
-@[simp]
-theorem twistEquiv_toEquiv_mk {s t : SpinStructure F V n} (φ : s.Equiv t)
-    (ψ : PrincipalBundle.Equiv C₂ L L') (x : X) (p : s.P x) (l : L x)
-    (a : realCliffordSpinGroupZero n) :
-    (twistEquiv φ ψ).toEquiv x
-        (Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l) a) =
-      Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-        (P := (t.fiberProd C₂ L').P) (FiberProd.mk (φ.toEquiv x p) (ψ.toEquiv x l)) a :=
-  (OrthonormalFrameLift.Equiv.extend_toEquiv_mk (realCliffordSpinMulSign n)
-    (continuous_realCliffordSpinMulSign n) _ _ _ (φ.fiberProd ψ) x _ a).trans
-    (congrArg (fun q ↦ Extend.mk (realCliffordSpinMulSign n)
-      (continuous_realCliffordSpinMulSign n) (P := (t.fiberProd C₂ L').P) q a)
-      (φ.fiberProd_toEquiv_mk ψ x p l))
-
-@[simp]
-theorem twistEquiv_toEquiv_inl {s t : SpinStructure F V n} (φ : s.Equiv t)
-    (ψ : PrincipalBundle.Equiv C₂ L L') (x : X) (p : s.P x) (l : L x) :
-    (twistEquiv φ ψ).toEquiv x
-        (Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l)) =
-      Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-        (P := (t.fiberProd C₂ L').P) (FiberProd.mk (φ.toEquiv x p) (ψ.toEquiv x l)) :=
-  (OrthonormalFrameLift.Equiv.extend_toEquiv_inl (realCliffordSpinMulSign n)
-    (continuous_realCliffordSpinMulSign n) _ _ _ (φ.fiberProd ψ) x _).trans
-    (congrArg (Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-      (P := (t.fiberProd C₂ L').P)) (φ.fiberProd_toEquiv_mk ψ x p l))
-
-/-- Twisting by the identity equivalence of `s` and the identity of `L` gives the identity
-equivalence of the twist. -/
-@[simp]
-theorem twistEquiv_refl :
-    twistEquiv (OrthonormalFrameLift.Equiv.refl s) (PrincipalBundle.Equiv.refl C₂ L) =
-      OrthonormalFrameLift.Equiv.refl (s.twist L) := by
-  rw [twistEquiv, OrthonormalFrameLift.Equiv.fiberProd_refl]
-  exact OrthonormalFrameLift.Equiv.extend_refl _ _ _ _ _ _
-
-/-- The inverse of the twist by `φ` and `ψ` is the twist by the inverses of `φ` and `ψ`. -/
-@[simp]
-theorem twistEquiv_symm {s t : SpinStructure F V n} (φ : s.Equiv t)
-    (ψ : PrincipalBundle.Equiv C₂ L L') : (twistEquiv φ ψ).symm = twistEquiv φ.symm ψ.symm := by
-  rw [twistEquiv, twistEquiv, ← OrthonormalFrameLift.Equiv.fiberProd_symm φ ψ]
-  exact (OrthonormalFrameLift.Equiv.extend_symm _ _ _ _ _ _).symm
-
-/-- The composite of the twists by `φ, ψ` and by `φ', ψ'` is the twist by the composites. -/
-@[simp]
-theorem twistEquiv_trans {s t u : SpinStructure F V n} (φ : s.Equiv t) (φ' : t.Equiv u)
-    (ψ : PrincipalBundle.Equiv C₂ L L') (ψ' : PrincipalBundle.Equiv C₂ L' L'') :
-    (twistEquiv φ ψ).trans (twistEquiv φ' ψ') = twistEquiv (φ.trans φ') (ψ.trans ψ') := by
-  unfold twistEquiv
-  rw [← OrthonormalFrameLift.Equiv.fiberProd_trans φ φ' ψ ψ']
-  exact (OrthonormalFrameLift.Equiv.extend_trans _ _ _ _ _ _ _).symm
-
-/-! ### The trivial double cover -/
-
 /-- **Twisting by the trivial double cover changes nothing**: the twist of a Spin structure `s` by
-the trivial principal `ℤ/2`-bundle is equivalent to `s`, by `[(p, ε), a] ↦ p • ε a`. -/
-noncomputable def twistTrivialEquiv : (s.twist (Bundle.Trivial X C₂)).Equiv s :=
-  (s.fiberProd C₂ (Bundle.Trivial X C₂)).extendEquivOfEquivariant _ _ _ _ _ s
-    (fun _ z ↦ op ((realCliffordSpinDoubleCoverZero n).inl z.snd) • z.fst)
-    (fun x z g ↦ by
-      obtain ⟨a, ε⟩ := g
-      rw [OrthonormalFrameLift.fiberProd_fst_smul, OrthonormalFrameLift.fiberProd_snd_smul,
-        unop_op, smul_smul, smul_smul, ← op_mul, ← op_mul, op_smul_eq_mul, map_mul,
-        realCliffordSpinMulSign_apply]
-      refine congrArg (fun g ↦ op g • _) ?_
-      dsimp only
-      rw [← mul_assoc, ← mul_assoc,
-        Subgroup.mem_center_iff.1 (realCliffordSpinDoubleCoverZero_inl_mem_center n _) a])
-    (by
-      refine Continuous.totalSpaceMk_smul (G := realCliffordSpinGroupZero n)
-        (f := fun z : TotalSpace _ (FiberProd s.P (Bundle.Trivial X C₂)) ↦ z.proj)
-        (p := fun z ↦ z.snd.fst) FiberProd.continuous_totalSpaceMk_fst ?_
-      exact (continuous_of_discreteTopology (f := ⇑(realCliffordSpinDoubleCoverZero n).inl)).comp
-        (continuous_snd.comp ((Bundle.Trivial.homeomorphProd X C₂).continuous.comp
-          FiberProd.continuous_totalSpaceMk_snd)))
-    (fun x z ↦ s.toFrame_smul_of_map_eq_one (by simp) x z.fst)
-
-@[simp]
-theorem twistTrivialEquiv_toEquiv_mk (x : X) (p : s.P x) (ε : C₂)
-    (a : realCliffordSpinGroupZero n) :
-    s.twistTrivialEquiv.toEquiv x
-        (Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ (Bundle.Trivial X C₂)).P)
-          (FiberProd.mk (Q := Bundle.Trivial X C₂) p ε) a) =
-      op a • op ((realCliffordSpinDoubleCoverZero n).inl ε) • p :=
-  OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_mk _ _ _ _ _ _ _ _ _ _ _ x _ a
-
-@[simp]
-theorem twistTrivialEquiv_toEquiv_inl (x : X) (p : s.P x) (ε : C₂) :
-    s.twistTrivialEquiv.toEquiv x
-        (Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ (Bundle.Trivial X C₂)).P)
-          (FiberProd.mk (Q := Bundle.Trivial X C₂) p ε)) =
-      op ((realCliffordSpinDoubleCoverZero n).inl ε) • p :=
-  OrthonormalFrameLift.extendEquivOfEquivariant_toEquiv_inl _ _ _ _ _ _ _ _ _ _ _ x _
-
-/-! ### Pullback -/
-
-section Pullback
-
-variable {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
-
-/-- **The frame of `[(p, l), 1]`** in the pullback of the twist of a Spin structure `s` by `L` is
-the frame of `p` in the pullback of `s`. -/
-@[simp]
-theorem toFrame_pullback_twist_inl (g : K) (y : Y) (p : s.P (g y)) (l : L (g y)) :
-    ((s.twist L).pullback g).toFrame
-        ⟨y, Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l)⟩ =
-      (s.pullback g).toFrame ⟨y, p⟩ :=
-  ((s.fiberProd C₂ L).toFrame_pullback_extend_inl _ _ _ _ _ g y (FiberProd.mk p l)).trans
-    (s.toFrame_pullback_fiberProd_mk g y p l)
-
-variable [∀ x, Nonempty (L x)]
-
-/-- **Twisting commutes with pullback**: for a continuous map `g : Y → X`,
-`(g^* s).twist (g^* L) ≃ g^* (s.twist L)`. Over `y`, both principal bundles are
-`(P_{g y} × L_{g y}) ×_μ Spin(n)`, and the equivalence is `[(p, l), a] ↦ [(p, l), a]`. -/
-noncomputable def twistPullbackEquiv (g : K) :
-    (twist ((g : Y → X) *ᵖ L) (s.pullback g)).Equiv ((s.twist L).pullback g) :=
-  ((fiberProdPullbackEquiv (H := C₂) (Q := L) s g).extend (realCliffordSpinMulSign n)
-    (continuous_realCliffordSpinMulSign n) _ _ _).trans
-      ((s.fiberProd C₂ L).extendPullbackEquiv _ _ _ _ _ g)
-
-/-- The equivalence `(g^* s).twist (g^* L) ≃ g^* (s.twist L)` sends `[(p, l), a]` to
-`[(p, l), a]`. -/
-theorem twistPullbackEquiv_toEquiv_mk (g : K) (y : Y) (p : s.P (g y)) (l : L (g y))
-    (a : realCliffordSpinGroupZero n) :
-    (s.twistPullbackEquiv (L := L) g).toEquiv y
-        (Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := ((s.pullback g).fiberProd C₂ ((g : Y → X) *ᵖ L)).P) (FiberProd.mk p l) a) =
-      Extend.mk (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-        (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l) a := by
-  unfold twistPullbackEquiv
-  refine (DFunLike.congr_fun (OrthonormalFrameLift.Equiv.trans_toEquiv _ _ y) _).trans ?_
-  refine (congrArg (((s.fiberProd C₂ L).extendPullbackEquiv _ _ _ _ _ g).toEquiv y)
-    ((Equiv.extend_toEquiv_mk _ _ _ _ _ _ y _ a).trans ?_)).trans
-      ((s.fiberProd C₂ L).extendPullbackEquiv_toEquiv_mk _ _ _ _ _ g y _ a)
-  exact congrArg (Extend.mk _ _ · a) (fiberProdPullbackEquiv_toEquiv_mk s g y p l)
-
-/-- The equivalence `(g^* s).twist (g^* L) ≃ g^* (s.twist L)` sends `[(p, l), 1]` to
-`[(p, l), 1]`. -/
-theorem twistPullbackEquiv_toEquiv_inl (g : K) (y : Y) (p : s.P (g y)) (l : L (g y)) :
-    (s.twistPullbackEquiv (L := L) g).toEquiv y
-        (Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-          (P := ((s.pullback g).fiberProd C₂ ((g : Y → X) *ᵖ L)).P) (FiberProd.mk p l)) =
-      Extend.inl (realCliffordSpinMulSign n) (continuous_realCliffordSpinMulSign n)
-        (P := (s.fiberProd C₂ L).P) (FiberProd.mk p l) :=
-  (congrArg _ (Extend.inl_def _ _ _)).trans
-    ((s.twistPullbackEquiv_toEquiv_mk g y p l 1).trans (Extend.inl_def _ _ _).symm)
-
-end Pullback
+the trivial principal `ℤ/2`-bundle is equivalent to `s`, by `[(p, ε), a] ↦ p • ε a`
+(`TauCeti.OrthonormalFrameLift.twistTrivialEquiv_toEquiv_mk`). -/
+noncomputable abbrev twistTrivialEquiv : (s.twist (Bundle.Trivial X C₂)).Equiv s :=
+  OrthonormalFrameLift.twistTrivialEquiv s (realCliffordSpinMulSign n)
+    (continuous_realCliffordSpinMulSign n)
+    (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) hn hc
+    (realCliffordSpinMulSign_comp_inl n)
 
 /-! ### Twisting twice -/
 
@@ -383,10 +184,10 @@ private theorem untwist_smul (x : X) (z : ((s.fiberProd C₂ L).fiberProd C₂ L
   have key (d : C₂) : a * (realCliffordSpinDoubleCoverZero n).inl (ε⁻¹ * d * ε') =
       (realCliffordSpinDoubleCoverZero n).inl d *
         realCliffordSpinMulSign n (realCliffordSpinMulSign n (a, ε), ε') := by
-    rw [inv_mul_mul_eq, realCliffordSpinMulSign_realCliffordSpinMulSign,
-      realCliffordSpinMulSign_apply, ← mul_assoc ((realCliffordSpinDoubleCoverZero n).inl d) a,
-      ← Subgroup.mem_center_iff.1 (realCliffordSpinDoubleCoverZero_inl_mem_center n d) a,
-      mul_assoc a, ← map_mul]
+    -- Both sides are `a d ε ε'`, since the sign `d` commutes with `a`.
+    rw [inv_mul_mul_eq]
+    simp only [realCliffordSpinMulSign_apply, map_mul, ← mul_assoc,
+      (realCliffordSpinDoubleCoverZero_inl_commute n d a).eq]
   simp only [untwist, OrthonormalFrameLift.fiberProd_fst_smul,
     OrthonormalFrameLift.fiberProd_snd_smul, unop_op, division_smul_left, division_smul_right,
     smul_smul, ← op_mul]
@@ -450,27 +251,18 @@ theorem twistTwistEquiv_toEquiv_inl (x : X) (p : s.P x) (l l' : L x) :
       op ((realCliffordSpinDoubleCoverZero n).inl (division C₂ l l')) • p := by
   -- `rw` and `simp` cannot see through the fibres of the iterated twist, so the values of the
   -- three equivalences composed in `twistTwistEquiv` are computed one at a time and chained by
-  -- the following two facts about composites and inverses of equivalences of lifts.
-  have trans_toEquiv_apply_of_eq {G : Type} [Group G] [TopologicalSpace G]
-      {ρ : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} {s t u : OrthonormalFrameLift F V n G ρ}
-      (φ : s.Equiv t) (ψ : t.Equiv u) {z : s.P x} {w : t.P x} {r : u.P x}
-      (hz : φ.toEquiv x z = w) (hw : ψ.toEquiv x w = r) : (φ.trans ψ).toEquiv x z = r := by
-    rw [OrthonormalFrameLift.Equiv.trans_toEquiv, _root_.Equiv.trans_apply, hz, hw]
-  have symm_toEquiv_apply_of_eq {G : Type} [Group G] [TopologicalSpace G]
-      {ρ : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)} {s t : OrthonormalFrameLift F V n G ρ}
-      (φ : s.Equiv t) {z : t.P x} {w : s.P x} (h : φ.toEquiv x w = z) :
-      φ.symm.toEquiv x z = w := by
-    rw [OrthonormalFrameLift.Equiv.symm_toEquiv, _root_.Equiv.symm_apply_eq, h]
+  -- `TauCeti.OrthonormalFrameLift.Equiv.trans_toEquiv_apply_of_eq` and
+  -- `TauCeti.OrthonormalFrameLift.Equiv.symm_toEquiv_apply_of_eq`.
   unfold twistTwistEquiv
-  apply trans_toEquiv_apply_of_eq
-  · exact (OrthonormalFrameLift.Equiv.extend_toEquiv_inl _ _ _ _ _ _ x _).trans
-      (congrArg _ (symm_toEquiv_apply_of_eq _
+  apply Equiv.trans_toEquiv_apply_of_eq
+  · exact (Equiv.extend_toEquiv_inl _ _ _ _ _ _ x _).trans
+      (congrArg _ (Equiv.symm_toEquiv_apply_of_eq _
         ((s.fiberProd C₂ L).extendFiberProdEquiv_toEquiv_inl L (realCliffordSpinMulSign n)
           (continuous_realCliffordSpinMulSign n)
           (subtype_comp_spinToSpecialOrthogonal_comp_realCliffordSpinMulSign n) hn hc x
           (FiberProd.mk p l) l')))
-  apply trans_toEquiv_apply_of_eq
-  · exact symm_toEquiv_apply_of_eq _ (extendCompEquiv_toEquiv_inl ..)
+  apply Equiv.trans_toEquiv_apply_of_eq
+  · exact Equiv.symm_toEquiv_apply_of_eq _ (extendCompEquiv_toEquiv_inl ..)
   · exact extendEquivOfEquivariant_toEquiv_inl ..
 
 end SpinStructure

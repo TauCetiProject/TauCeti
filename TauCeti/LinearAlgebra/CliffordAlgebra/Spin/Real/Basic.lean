@@ -35,6 +35,9 @@ separate.
 * `CliffordAlgebra.realCliffordSpinDoubleCoverZero` packages its double cover in positive dimension.
 * `CliffordAlgebra.card_fiber_realCliffordSpinDoubleCoverZero_rightHom` proves that every fiber
   of the double cover contains exactly two points.
+* `CliffordAlgebra.realCliffordSpinDoubleCoverZero_inl_commute` and
+  `CliffordAlgebra.realCliffordSpinDoubleCoverZero_inl_mem_center`: the kernel `{1, -1}` of the
+  double cover is central.
 * `CliffordAlgebra.finite_realCliffordSpinGroupZero_one` shows that `Spin(1) = {1, -1}` is
   finite.
 
@@ -124,6 +127,32 @@ theorem realCliffordSpinDoubleCoverZero_rightHom (n : ℕ) [NeZero n] :
     (realCliffordSpinDoubleCoverZero n).rightHom =
       spinToSpecialOrthogonal (realCliffordForm n 0) := by
   rw [realCliffordSpinDoubleCoverZero, spinDoubleCoverOfSurjective_rightHom]
+
+/-- The signs of `Spin(n)` act trivially on `ℝⁿ`: they lie in the kernel of `Spin(n) → SO(n)`. -/
+@[simp]
+theorem spinToSpecialOrthogonal_realCliffordSpinDoubleCoverZero_inl (n : ℕ) [NeZero n]
+    (ε : Multiplicative (ZMod 2)) :
+    spinToSpecialOrthogonal (realCliffordForm n 0) ((realCliffordSpinDoubleCoverZero n).inl ε) =
+      1 := by
+  rw [← realCliffordSpinDoubleCoverZero_rightHom, GroupExtension.rightHom_inl]
+
+/-- **The signs of `Spin(n)` commute with every element**: the image `{1, -1}` of the kernel
+`ℤ/2` of the double cover `Spin(n) → SO(n)` commutes with every `g ∈ Spin(n)`. -/
+theorem realCliffordSpinDoubleCoverZero_inl_commute (n : ℕ) [NeZero n]
+    (ε : Multiplicative (ZMod 2)) (g : realCliffordSpinGroupZero n) :
+    Commute ((realCliffordSpinDoubleCoverZero n).inl ε) g := by
+  obtain rfl | rfl : ε = 1 ∨ ε = Multiplicative.ofAdd 1 := by revert ε; decide
+  · rw [map_one]
+    exact Commute.one_left g
+  · rw [realCliffordSpinDoubleCoverZero_inl_ofAdd_one]
+    exact spinGroup.negOne_mul_comm _ _ g
+
+/-- **The signs of `Spin(n)` are central**: the image of the kernel `ℤ/2` of the double cover
+`Spin(n) → SO(n)`, namely `{1, -1}`, lies in the centre of `Spin(n)`. -/
+theorem realCliffordSpinDoubleCoverZero_inl_mem_center (n : ℕ) [NeZero n]
+    (ε : Multiplicative (ZMod 2)) :
+    (realCliffordSpinDoubleCoverZero n).inl ε ∈ Subgroup.center (realCliffordSpinGroupZero n) :=
+  Subgroup.mem_center_iff.2 fun g ↦ (realCliffordSpinDoubleCoverZero_inl_commute n ε g).symm
 
 /-- Every fiber of the compact real Spin double cover has exactly two elements. -/
 theorem card_fiber_realCliffordSpinDoubleCoverZero_rightHom
