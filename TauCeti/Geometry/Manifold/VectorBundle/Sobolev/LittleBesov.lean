@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Local.Little
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Besov
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
+import TauCeti.Algebra.Module.Submodule.Map
 
 /-!
 # Little Besov spaces of distributions on bundle tests
@@ -37,7 +38,8 @@ Besov space `B^s_{p,∞}`, for every real `s` and `1 ≤ p ≤ ∞`.
   with respect to `A` (`TauCeti.SquareChartPartition.mem_littleBesovSpace_iff_memLittleBesov`). It
   is closed (`TauCeti.SquareChartPartition.isClosed_littleBesovSpace`), hence a Banach space with
   the norm inherited from `B^s_{p,∞}`, so its inclusion `(A.littleBesovSpace φ s p).subtypeₗᵢ` is
-  isometric.
+  isometric. It is linearly equivalent to the subspace of `b^s_{p,∞}` functionals
+  (`TauCeti.SquareChartPartition.littleBesovSpaceEquiv`).
 
 **Independence of the choices.** Being `b^s_{p,∞}` near a point of `M`
 (`TauCeti.BundleTest.IsLocallyMemLittleBesovAt`) is defined in a chart and a frame, and does not
@@ -309,6 +311,53 @@ theorem ofMemBesov_mem_littleBesovSpace_iff {T : BundleTest I F V →L_c[ℝ] �
     A.ofMemBesov φ hT ∈ A.littleBesovSpace φ s p ↔ A.MemLittleBesov φ s p T := by
   rw [mem_littleBesovSpace_iff_memLittleBesov, besovToDistribution_ofMemBesov]
 
+/-- The element of the little Besov space representing a functional which is `b^s_{p,∞}` with
+respect to `A`: the tuple of its localizations. -/
+def ofMemLittleBesov {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemLittleBesov φ s p T) :
+    A.littleBesovSpace φ s p :=
+  ⟨A.ofMemBesov φ hT.memBesov, (A.ofMemBesov_mem_littleBesovSpace_iff φ hT.memBesov).2 hT⟩
+
+@[simp]
+theorem coe_ofMemLittleBesov {T : BundleTest I F V →L_c[ℝ] ℝ} (hT : A.MemLittleBesov φ s p T) :
+    (A.ofMemLittleBesov φ hT : A.besovSpace φ s p ∞) = A.ofMemBesov φ hT.memBesov :=
+  (rfl)
+
+theorem besovToDistribution_ofMemLittleBesov {T : BundleTest I F V →L_c[ℝ] ℝ}
+    (hT : A.MemLittleBesov φ s p T) :
+    A.besovToDistribution φ s p ∞ (A.ofMemLittleBesov φ hT) = T :=
+  A.besovToDistribution_ofMemBesov φ hT.memBesov
+
+variable (s p) in
+/-- The functionals represented by the little Besov space are exactly those which are
+`b^s_{p,∞}` with respect to `A`. -/
+theorem map_besovToDistribution_littleBesovSpace :
+    (A.littleBesovSpace φ s p).map (A.besovToDistribution φ s p ∞) =
+      A.memLittleBesovSubmodule φ s p :=
+  Submodule.ext fun _ ↦
+    ⟨by rintro ⟨u, hu, rfl⟩; exact (A.mem_littleBesovSpace_iff_memLittleBesov φ).1 hu,
+      fun hT ↦ ⟨_, (A.ofMemLittleBesov φ hT).property, A.besovToDistribution_ofMemLittleBesov φ hT⟩⟩
+
+variable (s p) in
+/-- The little Besov space is linearly equivalent to the space of functionals on bundle tests that
+are `b^s_{p,∞}` with respect to `A`, through the restriction of
+`TauCeti.SquareChartPartition.besovToDistribution`. -/
+def littleBesovSpaceEquiv : A.littleBesovSpace φ s p ≃ₗ[ℝ] A.memLittleBesovSubmodule φ s p :=
+  (Submodule.equivMapOfInjective _ (A.besovToDistribution_injective φ) _).trans
+    (LinearEquiv.ofEq _ _ (A.map_besovToDistribution_littleBesovSpace φ s p))
+
+@[simp]
+theorem coe_littleBesovSpaceEquiv_apply (u : A.littleBesovSpace φ s p) :
+    (A.littleBesovSpaceEquiv φ s p u : BundleTest I F V →L_c[ℝ] ℝ) =
+      A.besovToDistribution φ s p ∞ u :=
+  (rfl)
+
+@[simp]
+theorem littleBesovSpaceEquiv_symm_apply (T : A.memLittleBesovSubmodule φ s p) :
+    (A.littleBesovSpaceEquiv φ s p).symm T =
+      A.ofMemLittleBesov φ ((A.mem_memLittleBesovSubmodule φ s p).1 T.property) :=
+  (A.littleBesovSpaceEquiv φ s p).symm_apply_eq.2 <|
+    Subtype.ext (A.besovToDistribution_ofMemLittleBesov φ _).symm
+
 variable (s p)
 
 /-- The little Besov space is closed in the Besov space `B^s_{p,∞}` of `A`. -/
@@ -345,18 +394,13 @@ functions `φ` and `φ'` are isomorphic Banach spaces, through the restriction o
 functional. -/
 def littleBesovBumpEquiv (φ' : ContDiffBump (0 : E)) :
     A.littleBesovSpace φ s p ≃L[ℝ] A.littleBesovSpace φ' s p :=
-  ContinuousLinearEquiv.ofSubmodules (A.besovBumpEquiv φ s p ∞ φ') _ _ <| Submodule.ext fun v ↦
-    ⟨fun hv ↦ by
-      obtain ⟨u, hu, rfl⟩ := Submodule.mem_map.1 hv
-      exact (A.besovBumpEquiv_mem_littleBesovSpace_iff φ φ').2 hu,
-    fun hv ↦ Submodule.mem_map.2 ⟨_, (A.besovBumpEquiv_mem_littleBesovSpace_iff φ φ').1 <| by
-      rwa [ContinuousLinearEquiv.apply_symm_apply],
-      (A.besovBumpEquiv φ s p ∞ φ').apply_symm_apply v⟩⟩
+  ContinuousLinearEquiv.ofSubmodules (A.besovBumpEquiv φ s p ∞ φ') _ _ <|
+    Submodule.map_equiv_eq_iff.2 fun _ ↦ A.besovBumpEquiv_mem_littleBesovSpace_iff φ φ'
 
 @[simp]
 theorem coe_littleBesovBumpEquiv_apply (φ' : ContDiffBump (0 : E)) (u : A.littleBesovSpace φ s p) :
     (A.littleBesovBumpEquiv φ s p φ' u : A.besovSpace φ' s p ∞) = A.besovBumpEquiv φ s p ∞ φ' u :=
-  (rfl)
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
 
 @[simp]
 theorem littleBesovBumpEquiv_symm (φ' : ContDiffBump (0 : E)) :
@@ -422,19 +466,23 @@ element representing the same functional on bundle tests. So the pinned norms of
 are equivalent on the `b^s_{p,∞}` functionals. -/
 def littleBesovSpaceCongr (B : SquareChartPartition κ I F V) :
     A.littleBesovSpace φ s p ≃L[ℝ] B.littleBesovSpace φ s p :=
-  ContinuousLinearEquiv.ofSubmodules (A.besovSpaceCongr φ s p ∞ B) _ _ <| Submodule.ext fun v ↦
-    ⟨fun hv ↦ by
-      obtain ⟨u, hu, rfl⟩ := Submodule.mem_map.1 hv
-      exact (A.besovSpaceCongr_mem_littleBesovSpace_iff φ B).2 hu,
-    fun hv ↦ Submodule.mem_map.2 ⟨_, (A.besovSpaceCongr_mem_littleBesovSpace_iff φ B).1 <| by
-      rwa [ContinuousLinearEquiv.apply_symm_apply],
-      (A.besovSpaceCongr φ s p ∞ B).apply_symm_apply v⟩⟩
+  ContinuousLinearEquiv.ofSubmodules (A.besovSpaceCongr φ s p ∞ B) _ _ <|
+    Submodule.map_equiv_eq_iff.2 fun _ ↦ A.besovSpaceCongr_mem_littleBesovSpace_iff φ B
 
 @[simp]
 theorem coe_littleBesovSpaceCongr_apply (B : SquareChartPartition κ I F V)
     (u : A.littleBesovSpace φ s p) :
     (A.littleBesovSpaceCongr φ s p B u : B.besovSpace φ s p ∞) = A.besovSpaceCongr φ s p ∞ B u :=
-  (rfl)
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
+
+variable (s p) in
+/-- The identification of the little Besov spaces of a partition with itself is the identity. -/
+@[simp]
+theorem littleBesovSpaceCongr_refl :
+    A.littleBesovSpaceCongr φ s p A = ContinuousLinearEquiv.refl ℝ (A.littleBesovSpace φ s p) :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ Subtype.ext <| by
+    rw [coe_littleBesovSpaceCongr_apply, besovSpaceCongr_refl]
+    rfl
 
 /-- The inverse of the identification from `A` to `B` is the identification from `B` to `A`. -/
 @[simp]
@@ -445,6 +493,18 @@ theorem littleBesovSpaceCongr_symm (B : SquareChartPartition κ I F V) :
     refine Subtype.ext ?_
     rw [coe_littleBesovSpaceCongr_apply, coe_littleBesovSpaceCongr_apply,
       ← A.besovSpaceCongr_symm φ s p ∞ B, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The identifications compose: going from `A` to `B` and then to `C` is going from `A` to
+`C`. -/
+@[simp]
+theorem littleBesovSpaceCongr_trans {ν : Type*} [Fintype ν] (B : SquareChartPartition κ I F V)
+    (C : SquareChartPartition ν I F V) :
+    (A.littleBesovSpaceCongr φ s p B).trans (B.littleBesovSpaceCongr φ s p C) =
+      A.littleBesovSpaceCongr φ s p C :=
+  ContinuousLinearEquiv.ext <| funext fun u ↦ Subtype.ext <| by
+    rw [ContinuousLinearEquiv.trans_apply, coe_littleBesovSpaceCongr_apply,
+      coe_littleBesovSpaceCongr_apply, coe_littleBesovSpaceCongr_apply,
+      ← A.besovSpaceCongr_trans φ s p ∞ B C, ContinuousLinearEquiv.trans_apply]
 
 end Independence
 
