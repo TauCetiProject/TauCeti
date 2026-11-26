@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.OrbitSpace
 public import TauCeti.Geometry.Lie.Adjoint.Representation.OrbitSpace
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.AdjointOrbit
 public import TauCeti.RepresentationTheory.InvariantForm
+import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.RepresentationTheory.Continuous.Basic
 import TauCeti.Topology.Algebra.Module.ModuleTopology
 
@@ -198,22 +200,16 @@ local notation "evalOne" => leftInvariantDerivationLieEquivGroupLieAlgebra (I :=
 
 variable {T : Subgroup G} {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
 
-omit [T2Space G] in
-/-- The coadjoint action on the covector `B (X(1), ·)` of a left-invariant derivation `X` is the
-covector of `Ad_g X`, for an invariant form `B`. -/
-private theorem coadjointRepresentation_apply_evalOne
-    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B) (g : G)
-    (X : LeftInvariantDerivation I G) :
-    coadjointRepresentation ℝ I G g (B (evalOne X)) = B (evalOne (Ad (I := I) g X)) := by
-  rw [coadjointRepresentation_def, hB.dual_apply,
-    leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, adjointRepresentation_apply,
-    tangentAd_apply]
+omit [T2Space G] [FiniteDimensional ℝ E] [LieGroup I ∞ G] in
+/-- A form with trivial left radical is injective as a map `𝔤 → 𝔤*`. -/
+private theorem injective_of_separatingLeft (hB' : LinearMap.SeparatingLeft B) :
+    Function.Injective B :=
+  LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hB')
 
 omit [T2Space G] in
 private theorem injective_apply_evalOne (hB' : LinearMap.SeparatingLeft B) :
     Function.Injective fun X : LeftInvariantDerivation I G ↦ B (evalOne X) :=
-  (LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hB')).comp
-    (evalOne).injective
+  (injective_of_separatingLeft hB').comp (evalOne).injective
 
 /-- The linear map `𝔱 → 𝔤*`, `X ↦ B (X(1), ·)`, sending an element of the Lie algebra of `T` to
 its covector for the form `B`. -/
@@ -221,6 +217,10 @@ private def torusCovector (T : Subgroup G) (B : LinearMap.BilinForm ℝ (GroupLi
     (lieSubalgebraOfSubgroup (I := I) T).toSubmodule →ₗ[ℝ] Module.Dual ℝ (GroupLieAlgebra I G) :=
   B ∘ₗ (evalOne).toLinearEquiv.toLinearMap ∘ₗ
     (lieSubalgebraOfSubgroup (I := I) T).toSubmodule.subtype
+
+private theorem torusCovector_apply (X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule) :
+    torusCovector T B X = B (evalOne (X : LeftInvariantDerivation I G)) :=
+  rfl
 
 variable [CompactSpace G]
 
@@ -234,13 +234,13 @@ theorem IsMaximalTorus.exists_coadjointRepresentation_apply_eq (hT : IsMaximalTo
     ∃ g : G, ∃ X ∈ lieSubalgebraOfSubgroup (I := I) T,
       coadjointRepresentation ℝ I G g ν = B (evalOne X) := by
   -- In finite dimension, a form with trivial left radical identifies `𝔤` with `𝔤*`.
-  have hBinj : Function.Injective B :=
-    LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hB')
   obtain ⟨Z, rfl⟩ := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
-    (Subspace.dual_finrank_eq (K := ℝ) (V := GroupLieAlgebra I G)).symm).mp hBinj ν
+    (Subspace.dual_finrank_eq (K := ℝ) (V := GroupLieAlgebra I G)).symm).mp
+    (injective_of_separatingLeft hB') ν
   obtain ⟨X, rfl⟩ := (evalOne).surjective Z
   obtain ⟨g, hg⟩ := hT.exists_Ad_mem_lieSubalgebraOfSubgroup X
-  exact ⟨g, _, hg, coadjointRepresentation_apply_evalOne hB g X⟩
+  exact ⟨g, _, hg, (Representation.orbitMap_mk _ _ g).symm.trans
+    (orbitMap_coadjointRepresentation_bilinForm_mk hB X g)⟩
 
 variable [IsMulCommutative T]
 
@@ -257,7 +257,8 @@ theorem IsMaximalTorus.orbitRel_coadjointRepresentation_iff (hT : IsMaximalTorus
   rw [hT.orbitRel_weylAdjointRepresentation_iff, Representation.orbitRel_apply,
     Representation.orbitRel_apply]
   refine exists_congr fun g ↦ ?_
-  rw [coadjointRepresentation_apply_evalOne hB, ContRepresentation.toRepresentation_apply,
+  rw [← Representation.orbitMap_mk, orbitMap_coadjointRepresentation_bilinForm_mk hB,
+    ContRepresentation.toRepresentation_apply,
     continuousAdjointRepresentation_apply]
   exact (injective_apply_evalOne hB').eq_iff
 
@@ -276,7 +277,7 @@ private theorem IsMaximalTorus.weylCoadjointOrbitMap_mk (hT : IsMaximalTorus T)
     hT.weylCoadjointOrbitMap hB hB' (Quotient.mk'' X) =
       Quotient.mk (coadjointRepresentation ℝ I G).orbitRel
         (B (evalOne (X : LeftInvariantDerivation I G))) :=
-  Quotient.map'_mk'' _ _ X
+  (Quotient.map'_mk'' _ _ X).trans (congrArg _ (torusCovector_apply X))
 
 private theorem IsMaximalTorus.bijective_weylCoadjointOrbitMap (hT : IsMaximalTorus T)
     (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
@@ -309,10 +310,12 @@ theorem isProperMap_orbitRel_mk_coadjointRepresentation (hB' : LinearMap.Separat
   have := ModuleTopology.t2Space (Module.finBasis ℝ (Module.Dual ℝ (GroupLieAlgebra I G)))
   -- An injective linear map out of the finite-dimensional space `𝔱` is a closed embedding.
   have hφ : IsClosedEmbedding (torusCovector (I := I) T B) :=
-    LinearMap.isClosedEmbedding_of_injective <| LinearMap.ker_eq_bot.mpr <|
-      (injective_apply_evalOne hB').comp Subtype.val_injective
-  exact (Representation.isProperMap_orbitRel_mk _ continuous_coadjointRepresentation_apply).comp
-    hφ.isProperMap
+    LinearMap.isClosedEmbedding_of_injective <| LinearMap.ker_eq_bot.mpr fun X Y hXY ↦
+      Subtype.val_injective <| injective_apply_evalOne hB' <| by
+        rwa [torusCovector_apply, torusCovector_apply] at hXY
+  simpa only [Function.comp_def, torusCovector_apply] using
+    (Representation.isProperMap_orbitRel_mk _ continuous_coadjointRepresentation_apply).comp
+      hφ.isProperMap
 
 /-- **The coadjoint orbit space of a compact Lie group is the quotient of a torus Lie algebra by
 the Weyl group.** Let `T` be a maximal torus of a compact Lie group `G`, with Lie algebra `𝔱`, and
