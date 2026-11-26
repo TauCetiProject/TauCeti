@@ -614,6 +614,16 @@ theorem cappedComparisonPerturbation_of_two_le (H : Puncture → ℝ → M → �
   rw [cappedComparisonPerturbation_def, comparisonCutoff_of_ge (by linarith),
     comparisonNeckLength_of_ge hR]
 
+/-- **The comparison datum is the pair-of-pants datum up to the necks.** For `R ≥ 2`, at points
+where the signed longitudinal coordinate of every end is at most `R + 1`, such as the points of the
+truncation `S_T` for `T ≤ R + 1`, the comparison datum is the pair-of-pants perturbation. -/
+theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation (H : Puncture → ℝ → M → ℝ) {R : ℝ}
+    (hR : 2 ≤ R) {w : ℂ} (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R + 1) (x : M) :
+    cappedComparisonPerturbation H R w x = pairOfPantsPerturbation H w x := by
+  rw [cappedComparisonPerturbation_of_two_le H hR,
+    cappedPerturbation_eq_smul_pairOfPantsPerturbation (fun q ↦ (h q).trans (by linarith)) x,
+    one_smul]
+
 section Smooth
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]

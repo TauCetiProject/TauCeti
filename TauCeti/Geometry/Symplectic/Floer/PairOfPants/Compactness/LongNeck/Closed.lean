@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Closed
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
+import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
 # Compactness at the long-neck end of the capped comparison family in a closed manifold
@@ -103,20 +105,6 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_injective
   det_fderiv_realChart_nonneg)
 open scoped Manifold
-
-namespace TauCeti.Floer
-
-/-- On the truncation `S_T`, the comparison datum with parameter `R ≥ 2` and `T ≤ R + 1` is the
-pair-of-pants perturbation. -/
-private theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation {M : Type*}
-    {H : Puncture → ℝ → M → ℝ} {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
-    (hw : w ∈ truncation T) (x : M) :
-    cappedComparisonPerturbation H R w x = pairOfPantsPerturbation H w x := by
-  rw [cappedComparisonPerturbation_of_two_le H hR,
-    cappedPerturbation_eq_smul_pairOfPantsPerturbation
-      fun q ↦ ((mem_truncation.1 hw).2.2 q).trans (by linarith), one_smul]
-
-end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
 
@@ -231,18 +219,6 @@ private theorem Compatible.contMDiffAt_cappedAlmostComplex_equivRealProdCLM (h�
   (h₀.contMDiff_cappedAlmostComplex J hJ (n := 2) hJp hJs contMDiff_const contMDiff_const
     (equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst) contMDiff_snd).contMDiffAt
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
-/-- Each component of the pair-of-pants perturbation, read in the plane chart, is `C³` jointly in
-the point of `S` and the target point. -/
-private theorem contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 3 (uncurry (H q)))
-    (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-    ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-      (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v) (z, x) :=
-  (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-    ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
-
 /-- On the truncation `S_T`, the structure of the comparison family with parameter `R ≥ 2` and
 `T ≤ R + 1` is the capped structure of neck length `T`: both are the pair-of-pants structure. -/
 private theorem Compatible.cappedComparisonAlmostComplex_eq_cappedAlmostComplex
@@ -251,9 +227,8 @@ private theorem Compatible.cappedComparisonAlmostComplex_eq_cappedAlmostComplex
     (hw : w ∈ truncation T) :
     h₀.cappedComparisonAlmostComplex J hJ R w = h₀.cappedAlmostComplex J hJ 1 T w := by
   obtain ⟨hw₀, hw₁, hwq⟩ := mem_truncation.1 hw
-  rw [cappedComparisonAlmostComplex_of_two_le h₀ J hJ hR]
-  exact (h₀.cappedAlmostComplex_eq_pairOfPantsAlmostComplex J hJ (w := ⟨w, hw₀, hw₁⟩) le_rfl
-    fun q ↦ (hwq q).trans (by linarith)).trans
+  exact (h₀.cappedComparisonAlmostComplex_eq_pairOfPantsAlmostComplex J hJ hR
+    (w := ⟨w, hw₀, hw₁⟩) fun q ↦ (hwq q).trans hRT).trans
       (h₀.cappedAlmostComplex_eq_pairOfPantsAlmostComplex J hJ (w := ⟨w, hw₀, hw₁⟩) le_rfl
         fun q ↦ (hwq q).trans (by linarith)).symm
 
@@ -388,9 +363,9 @@ theorem
     (contDiffOn_almostComplexInChartAt_almostComplexStructureAt (n := 2)
       (J := fun z ↦ h₀.cappedAlmostComplex J hJ 1 T (equivRealProdCLM.symm z))
       fun z _ x ↦ contMDiffAt_cappedAlmostComplex_equivRealProdCLM h₀ hJ hJp hJs 1 T z x)
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
       (contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM hH hHs 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (n := 2)
       (contMDiffAt_pairOfPantsPerturbation_apply_equivRealProdCLM hH hHs Complex.I))
     (fun z _ x ↦ hω.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ 1 T _) x) hc
     (fun z hz x v ↦ by
@@ -405,7 +380,8 @@ theorem
   -- On `Ω` the comparison data are the pair-of-pants datum and the structure of neck length `T`.
   have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) : KR k v z = Kb v z := funext fun x ↦ by
     simp only [KR, Kb]
-    rw [cappedComparisonPerturbation_eq_pairOfPantsPerturbation (hR2 k) (hRT k) (hDT (hΩD hz))]
+    rw [cappedComparisonPerturbation_eq_pairOfPantsPerturbation H (hR2 k)
+      fun q ↦ ((mem_truncation.1 (hDT (hΩD hz))).2.2 q).trans (hRT k)]
   have hJb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) :=
     cappedComparisonAlmostComplex_eq_cappedAlmostComplex h₀ J hJ (hR2 k) (hRT k) (hDT (hΩD hz))
   -- The energy over `Ω` is at most the area plus `2 (B₀ + B₁ + B_∞)`.
@@ -645,11 +621,6 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappe
   have hcard {δ' : ℝ} (hδ' : δ ≤ δ') {Z₀ : Finset (ℝ × ℝ)} (h : Z₀.card * δ' ≤ A + 2 * ∑ q, B q) :
       Z₀.card * δ ≤ A + 2 * ∑ q, B q :=
     (mul_le_mul_of_nonneg_left hδ' (Nat.cast_nonneg _)).trans h
-  -- Locally uniform convergence passes to subsequences.
-  have hsub {G : ℕ → ℝ × ℝ → F} {g : ℝ × ℝ → F} {s : Set (ℝ × ℝ)} {ψ : ℕ → ℕ}
-      (hψ : Tendsto ψ atTop atTop) (h : TendstoLocallyUniformlyOn G g atTop s) :
-      TendstoLocallyUniformlyOn (fun n ↦ G (ψ n)) g atTop s :=
-    fun U hU x hx ↦ (h U hU x hx).imp fun _ ht ↦ ⟨ht.1, hψ.eventually ht.2⟩
   -- Compactness on the pair of pants, then on the caps of the three PSS planes along further
   -- subsequences.
   obtain ⟨φ₀, hφ₀, Z, hZ, hZE, -, -, v, hvc, hv, hvp⟩ :=
@@ -671,13 +642,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappe
   refine ⟨φ₀ ∘ φ₁ ∘ φ₂ ∘ φ₃, Z, fun q ↦ match q with | .zero => Z₀ | .one => Z₁ | .inf => Z₂, v,
     fun q ↦ match q with | .zero => v₀ | .one => v₁ | .inf => v₂,
     hφ₀.comp (hφ₁.comp (hφ₂.comp hφ₃)), hZ, hcard (min_le_left _ _) hZE, hvc,
-    hsub h₁₂₃ hv, fun z hz ↦ (hvp z hz).comp h₁₂₃, ?_⟩
+    (hv.comp_tendsto h₁₂₃ :), fun z hz ↦ (hvp z hz).comp h₁₂₃, ?_⟩
   rintro (_ | _ | _)
   · have h₂₃ := (hφ₂.comp hφ₃).tendsto_atTop
     exact ⟨hZ₀, hcard ((min_le_right _ _).trans (min_le_left _ _)) hZ₀E, hv₀c,
-      hsub h₂₃ hv₀, fun z hz ↦ (hv₀p z hz).comp h₂₃⟩
+      (hv₀.comp_tendsto h₂₃ :), fun z hz ↦ (hv₀p z hz).comp h₂₃⟩
   · exact ⟨hZ₁, hcard ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_left _ _)))
-      hZ₁E, hv₁c, hsub hφ₃.tendsto_atTop hv₁,
+      hZ₁E, hv₁c, (hv₁.comp_tendsto hφ₃.tendsto_atTop :),
       fun z hz ↦ (hv₁p z hz).comp hφ₃.tendsto_atTop⟩
   · exact ⟨hZ₂, hcard ((min_le_right _ _).trans ((min_le_right _ _).trans (min_le_right _ _)))
       hZ₂E, hv₂c, hv₂, hv₂p⟩

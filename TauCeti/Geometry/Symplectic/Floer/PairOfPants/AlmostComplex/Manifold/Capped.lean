@@ -300,6 +300,17 @@ theorem cappedComparisonAlmostComplex_of_two_le (hR : 2 ≤ R) :
   rw [cappedComparisonAlmostComplex_def, Floer.comparisonNeckLength_of_ge hR,
     cappedAlmostComplex_of_one_le h₀ J hJ (by linarith)]
 
+/-- **The comparison family is the pair-of-pants structure up to the necks.** For `R ≥ 2`, at
+points of the pair of pants where the signed longitudinal coordinate of every end is at most
+`R + 1`, such as the points of the truncation `S_T` for `T ≤ R + 1`, the structure is the
+pair-of-pants structure. -/
+theorem cappedComparisonAlmostComplex_eq_pairOfPantsAlmostComplex (hR : 2 ≤ R)
+    {w : ThricePuncturedSphere} (hw : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R + 1) :
+    h₀.cappedComparisonAlmostComplex J hJ R w = h₀.pairOfPantsAlmostComplex J hJ w := by
+  rw [cappedComparisonAlmostComplex_of_two_le h₀ J hJ hR]
+  exact cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ J hJ le_rfl
+    fun q ↦ (hw q).trans (by linarith)
+
 /-- **The comparison family is smooth** along every `C^n` family of family parameters `R`, points
 `f` of `ℂ` and points `b` of `M`. -/
 theorem contMDiff_cappedComparisonAlmostComplex {F G N : Type*} [NormedAddCommGroup F]
