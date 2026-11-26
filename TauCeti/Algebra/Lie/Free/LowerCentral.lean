@@ -147,7 +147,7 @@ theorem lowerCentralSeries_two_le_ker_lift {x y : L} (hx : ⁅x, ⁅x, y⁆⁆ =
     have hφ : f = K.incl.comp (_root_.FreeLieAlgebra.lift R
         ![⟨x, Submodule.subset_span (by simp)⟩, ⟨y, Submodule.subset_span (by simp)⟩]) := by
       rw [comp_lift_pair]
-      rfl
+      simp only [f, LieSubalgebra.coe_incl]
     rw [hφ]
     exact SetLike.coe_mem _
   -- The first term of the lower central series maps into `R ∙ ⁅x, y⁆`, the second to zero.
