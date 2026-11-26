@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
-import TauCeti.Algebra.BigOperators.Intervals
+import Mathlib.Algebra.BigOperators.Group.Finset.Interval
 import Mathlib.Algebra.Ring.Periodic
 import Mathlib.Order.Interval.Finset.Defs
 import Mathlib.Order.SuccPred.Int
@@ -22,11 +22,6 @@ direction `e₁` in `M ∖ M'` minus the number in `M' ∖ M` is a telescoping s
 `D`, which vanishes between two points far away. So for each direction `k` the sets `M ∖ M'` and
 `M' ∖ M` contain equally many edges of direction `k`: for `e₁` by the telescoping sums, and for the
 other two directions by applying the rotation `ρ`, which permutes the directions.
-
-## Main definitions
-
-* `TauCeti.edgesOfDir k`: the set of all edges of direction `k`; `ρ` maps it onto
-  `edgesOfDir (k + 1)` (`TauCeti.image_rot_edgesOfDir`).
 
 ## Main statements
 
@@ -47,35 +42,22 @@ namespace TauCeti
 
 variable {M M' : Set TriEdge}
 
-/-- The set of all edges of direction `k`. -/
-def edgesOfDir (k : Fin 3) : Set TriEdge :=
-  {e | e.k = k}
-
-@[simp] theorem mem_edgesOfDir {k : Fin 3} {e : TriEdge} : e ∈ edgesOfDir k ↔ e.k = k :=
-  Iff.rfl
-
-/-- `ρ` maps the edges of direction `k` onto the edges of direction `k + 1`. -/
-@[simp] theorem image_rot_edgesOfDir (k : Fin 3) :
-    TriEdge.rot '' edgesOfDir k = edgesOfDir (k + 1) := by
-  ext e
-  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e
-  simp
-
-open Classical in
 /-- A set `X` of edges of direction `e₁` whose initial vertices lie in a finite set `s` has as
 many elements as there are `p ∈ s` with `(p, e₁) ∈ X`. -/
-private theorem ncard_eq_sum_ite_of_subset {X : Set TriEdge} {s : Finset (ℤ × ℤ)}
+private theorem ncard_eq_sum_indicator_of_subset {X : Set TriEdge} {s : Finset (ℤ × ℤ)}
     (hX : X ⊆ edgesOfDir 0) (hXs : ∀ e ∈ X, e.v ∈ s) :
-    (X.ncard : ℤ) = ∑ p ∈ s, if (⟨p, 0⟩ : TriEdge) ∈ X then 1 else 0 := by
+    (X.ncard : ℤ) = ∑ p ∈ s, X.indicator 1 ⟨p, 0⟩ := by
+  classical
   have hX' : X = (fun p : ℤ × ℤ => (⟨p, 0⟩ : TriEdge)) '' ↑(s.filter fun p => ⟨p, 0⟩ ∈ X) := by
     ext ⟨v, k⟩
     refine ⟨fun he => ⟨v, ?_, ?_⟩, ?_⟩
-    · have hk : k = 0 := hX he
+    · have hk : k = 0 := mem_edgesOfDir.1 (hX he)
       subst hk
       exact Finset.mem_filter.2 ⟨hXs _ he, he⟩
-    · rw [show k = 0 from hX he]
+    · rw [show k = 0 from mem_edgesOfDir.1 (hX he)]
     · rintro ⟨p, hp, hpe⟩
       exact hpe ▸ (Finset.mem_filter.1 hp).2
+  simp_rw [Set.indicator_apply, Pi.one_apply]
   rw [Finset.sum_boole, Nat.cast_inj]
   conv_lhs => rw [hX']
   rw [Set.ncard_image_of_injective _ fun p q h => congrArg TriEdge.v h, Set.ncard_coe_finset]
@@ -96,19 +78,16 @@ theorem tilingHeight_sub_target_eq {e : TriEdge} (he : e ∉ symmDiff M M') :
     by_cases hM : e ∈ M <;> by_cases hM' : e ∈ M' <;> simp_all [Set.mem_symmDiff]
   omega
 
-open Classical in
 /-- Along an edge `e` of direction `e₁` the increment of `H_M − H_{M'}` is
 `[e ∈ M ∖ M'] − [e ∈ M' ∖ M]`. -/
 theorem tilingHeight_sub_add_one_zero_sub (p : ℤ × ℤ) :
     (tilingHeight M (p + (1, 0)) - tilingHeight M' (p + (1, 0))) -
         (tilingHeight M p - tilingHeight M' p) =
-      (if (⟨p, 0⟩ : TriEdge) ∈ M \ M' ∩ edgesOfDir 0 then 1 else 0) -
-        (if (⟨p, 0⟩ : TriEdge) ∈ M' \ M ∩ edgesOfDir 0 then 1 else 0) := by
+      (M \ M' ∩ edgesOfDir 0).indicator 1 ⟨p, 0⟩ - (M' \ M ∩ edgesOfDir 0).indicator 1 ⟨p, 0⟩ := by
   have h₁ := h.tilingHeight_target_sub_v ⟨p, 0⟩
   have h₂ := h'.tilingHeight_target_sub_v ⟨p, 0⟩
   rw [heightCochain_mk_zero] at h₁ h₂
   simp only [TriEdge.target_mk, latticeDir_zero] at h₁ h₂
-  simp only [Set.mem_inter_iff, Set.mem_sdiff, mem_edgesOfDir, and_true]
   by_cases hM : (⟨p, 0⟩ : TriEdge) ∈ M <;> by_cases hM' : (⟨p, 0⟩ : TriEdge) ∈ M' <;>
     simp [hM, hM'] at h₁ h₂ ⊢ <;> omega
 
@@ -165,9 +144,8 @@ theorem exists_finite_setOf_tilingHeight_sub_ne (hS : (symmDiff M M').Finite) :
   exact ⟨⟨this.1.1.le, this.2.1.le⟩, ⟨this.1.2.le, this.2.2.le⟩⟩
 
 /-- The case `k = 0` (direction `e₁`) of `ncard_sdiff_inter_eq`. -/
-theorem ncard_sdiff_inter_edgesOfDir_zero_eq (hS : (symmDiff M M').Finite) :
+private theorem ncard_sdiff_inter_edgesOfDir_zero_eq (hS : (symmDiff M M').Finite) :
     (M \ M' ∩ edgesOfDir 0).ncard = (M' \ M ∩ edgesOfDir 0).ncard := by
-  classical
   -- Both counts are sums over a square `box` containing the symmetric difference; their
   -- difference is the sum of the increments of `H_M − H_{M'}` along the rows of `box`, and each
   -- row telescopes to the difference of two values far away, which is `0`.
@@ -179,15 +157,17 @@ theorem ncard_sdiff_inter_edgesOfDir_zero_eq (hS : (symmDiff M M').Finite) :
     simp only [box, Finset.mem_product, Finset.mem_Ico]
     rw [abs_lt] at h₁ h₂
     exact ⟨⟨by omega, by omega⟩, by omega, by omega⟩
-  have hA := ncard_eq_sum_ite_of_subset (X := M \ M' ∩ edgesOfDir 0) Set.inter_subset_right
+  have hA := ncard_eq_sum_indicator_of_subset (X := M \ M' ∩ edgesOfDir 0) Set.inter_subset_right
     fun e he => hbox e (Or.inl he.1)
-  have hB := ncard_eq_sum_ite_of_subset (X := M' \ M ∩ edgesOfDir 0) Set.inter_subset_right
+  have hB := ncard_eq_sum_indicator_of_subset (X := M' \ M ∩ edgesOfDir 0) Set.inter_subset_right
     fun e he => hbox e (Or.inr he.1)
   have hzero : ∑ p ∈ box, (D (p + (1, 0)) - D p) = 0 := by
     rw [Finset.sum_product_right]
     refine Finset.sum_eq_zero fun y _ => ?_
-    have := Finset.sum_Ico_sub_int (fun x => D (x, y)) (by omega : (-K : ℤ) ≤ K)
-    simp only [Prod.mk_add_mk, add_zero] at this ⊢
+    have := Finset.sum_Ico_int_sub K (fun x => D (x, y))
+    simp only [Prod.mk_add_mk, add_zero]
+    rw [← neg_eq_zero, ← Finset.sum_neg_distrib]
+    simp only [neg_sub]
     rw [this]
     have hK₁ := hc (K, y) (Or.inl (by simp))
     have hK₂ := hc (-K, y) (Or.inl (by simp))
@@ -195,9 +175,7 @@ theorem ncard_sdiff_inter_edgesOfDir_zero_eq (hS : (symmDiff M M').Finite) :
     omega
   simp_rw [hD, tilingHeight_sub_add_one_zero_sub h h', Finset.sum_sub_distrib, sub_eq_zero] at hzero
   have : ((M \ M' ∩ edgesOfDir 0).ncard : ℤ) = (M' \ M ∩ edgesOfDir 0).ncard := by
-    -- `convert` identifies the `Decidable` instances of the two sides.
-    rw [hA, hB]
-    convert hzero
+    rw [hA, hB, hzero]
   exact_mod_cast this
 
 end IsTiling

@@ -35,9 +35,8 @@ denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r =
 Read backwards, `∑_{j < n} (n - j) = n (n + 1) / 2` in `ℕ`.
 Counted with sign, the integers between `0` and any `k : ℤ` sum to `k (k - 1) / 2`, the signed
 form of Gauss's sum; more generally, the signed partial sums of a sequence indexed by `ℤ` form its
-discrete primitive vanishing at `0`. Over an integer interval `a ≤ j < b`, the increments
-`g (j + 1) - g j` of any `g : ℤ → G` telescope to `g b - g a`. Grouping `i < n` into blocks of
-length `H`, the quotients `i / H` sum to `H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
+discrete primitive vanishing at `0`. Grouping `i < n` into blocks of length `H`, the quotients
+`i / H` sum to `H (q choose 2) + ρ q` for `n = H q + ρ` with `ρ < H`.
 A sum over `Icc 0 N` of a sequence vanishing at `0` is its sum over `Icc 1 N`.
 A window sum `∑_{j - L ≤ k < j + L} f k` is the sum over `d < 2 L` of the shifts of `f` that read
 `f` at `j + d - L` where this index is defined, and vanish otherwise.
@@ -77,8 +76,6 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   sum of `2 L` shifts of `f`.
 * `Finset.prod_Ico_mul_mul_endpoints`, `Finset.sum_Ico_add_add_endpoints`: trapezoidal pairing of
   adjacent products or sums over `Ico a n` (`a ≤ n` in `ℤ`) with the two endpoints.
-* `Finset.prod_Ico_div_int`, `Finset.sum_Ico_sub_int`: telescoping over an integer interval,
-  `∑_{a ≤ j < b} (g(j + 1) - g(j)) = g(b) - g(a)` for `a ≤ b`.
 * `Finset.sum_Ioc_div_smul_eq_sum_Ico_sum_Ioc`:
   `∑_{N < n ≤ K N} ⌊K N / n⌋ f(n) = ∑_{1 ≤ j < K} ∑_{N < n ≤ K N / j} f(n)`.
 * `Finset.sum_Ioc_dist_le`: `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 ≤ k ≤ H} w(k)` for
@@ -349,19 +346,6 @@ theorem prod_Ico_mul_mul_endpoints {M : Type*} [CommMonoid M] (g : ℤ → M) {a
     _ = (∏ j ∈ Icc a n, g j) * ∏ j ∈ Icc a n, g j := by
           rw [prod_Ico_mul_eq_prod_Icc han, hshift, mul_prod_Ioc_eq_prod_Icc han]
     _ = (∏ j ∈ Icc a n, g j) ^ 2 := (pow_two _).symm
-
-/-- Telescoping over an integer interval: for `a ≤ b`, `∏_{a ≤ j < b} g(j + 1) / g(j)` is
-`g(b) / g(a)`. -/
-@[to_additive /-- Telescoping over an integer interval: for `a ≤ b`,
-`∑_{a ≤ j < b} (g(j + 1) - g(j))` is `g(b) - g(a)`. -/]
-theorem prod_Ico_div_int {G : Type*} [CommGroup G] (g : ℤ → G) {a b : ℤ} (hab : a ≤ b) :
-    ∏ j ∈ Ico a b, g (j + 1) / g j = g b / g a := by
-  obtain ⟨n, rfl⟩ : ∃ n : ℕ, b = a + n := ⟨(b - a).toNat, by omega⟩
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [Nat.cast_succ, ← add_assoc, ← prod_Ico_mul_eq_prod_Ico_add_one (by omega), ih (by omega),
-      mul_comm, div_mul_div_cancel]
 
 /-- A sum over `Finset.Icc 0 N` of a sequence vanishing at `0` is its sum over
 `Finset.Icc 1 N`. -/
