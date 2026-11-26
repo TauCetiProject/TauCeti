@@ -99,11 +99,6 @@ instance AlgebraicGeometry.Etale.respects_etale :
   precomp _ _ _ _ := inferInstance
   postcomp _ _ _ _ := inferInstance
 
-/-- Étale morphisms of schemes respect precomposition with étale morphisms. -/
-instance AlgebraicGeometry.Etale.respectsLeft_etale :
-    MorphismProperty.RespectsLeft @Etale.{u} @Etale.{u} where
-  precomp _ _ _ _ := inferInstance
-
 namespace CategoryTheory.MorphismProperty
 
 /-- A property of scheme morphisms local at the source for the étale precoverage is Zariski-local
