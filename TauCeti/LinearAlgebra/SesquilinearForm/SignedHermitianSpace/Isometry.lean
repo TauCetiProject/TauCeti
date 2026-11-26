@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitian
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 
 /-!
 # Isometries, orthogonal sums and nondegenerate subspaces of signed hermitian spaces
@@ -91,6 +91,10 @@ instance : LinearEquivClass (IsometryEquiv H₁ H₂) K V₁ V₂ where
 theorem coe_toLinearEquiv (f : IsometryEquiv H₁ H₂) : ⇑f.toLinearEquiv = f :=
   (rfl)
 
+@[ext]
+theorem ext {f g : IsometryEquiv H₁ H₂} (h : ∀ x, f x = g x) : f = g :=
+  DFunLike.ext _ _ h
+
 /-- An isometric equivalence carries the first form to the second. -/
 @[simp]
 theorem map_app (f : IsometryEquiv H₁ H₂) (x y : V₁) : H₂.form (f x) (f y) = H₁.form x y :=
@@ -127,6 +131,21 @@ theorem symm_apply_apply (f : IsometryEquiv H₁ H₂) (x : V₁) : f.symm (f x)
 @[simp]
 theorem apply_symm_apply (f : IsometryEquiv H₁ H₂) (x : V₂) : f (f.symm x) = x :=
   f.toLinearEquiv.apply_symm_apply x
+
+theorem symm_apply_eq (f : IsometryEquiv H₁ H₂) {x : V₂} {y : V₁} : f.symm x = y ↔ x = f y :=
+  f.toLinearEquiv.symm_apply_eq
+
+theorem eq_symm_apply (f : IsometryEquiv H₁ H₂) {x : V₂} {y : V₁} : y = f.symm x ↔ f y = x :=
+  f.toLinearEquiv.eq_symm_apply
+
+@[simp]
+theorem toLinearEquiv_symm (f : IsometryEquiv H₁ H₂) :
+    f.symm.toLinearEquiv = f.toLinearEquiv.symm :=
+  (rfl)
+
+@[simp]
+theorem coe_symm_toLinearEquiv (f : IsometryEquiv H₁ H₂) : ⇑f.toLinearEquiv.symm = f.symm :=
+  (rfl)
 
 @[simp]
 theorem trans_apply (f : IsometryEquiv H₁ H₂) (g : IsometryEquiv H₂ H₃) (x : V₁) :

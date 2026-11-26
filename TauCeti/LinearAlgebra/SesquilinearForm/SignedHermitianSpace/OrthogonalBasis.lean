@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Basis.Fin
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.LinearAlgebra.SesquilinearForm.Basic
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitian
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 
 /-!
 # Orthogonal bases of signed hermitian spaces

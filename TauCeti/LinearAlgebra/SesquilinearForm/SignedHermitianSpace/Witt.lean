@@ -147,10 +147,34 @@ noncomputable def quasiReflection (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s 
     exact mul_ne_zero (inv_ne_zero s.ne_zero)
       (mul_ne_zero units_cast_ne_zero ((map_ne_zero σ).2 s.ne_zero))
 
+@[simp]
 theorem quasiReflection_apply (v : V) (s : Kˣ) (hs : (s : K) + ε • σ s = H.form v v) (x : V) :
     H.quasiReflection v s hs x = x - ((s : K)⁻¹ * H.form v x) • v := by
   rw [quasiReflection, LinearEquiv.dilatransvection.apply, LinearMap.neg_apply,
     LinearMap.smul_apply, smul_eq_mul, neg_smul, ← sub_eq_add_neg]
+
+/-- A quasi-reflection is a dilatransvection in Mathlib's sense. -/
+@[simp]
+theorem quasiReflection_mem_dilatransvections (v : V) (s : Kˣ)
+    (hs : (s : K) + ε • σ s = H.form v v) :
+    H.quasiReflection v s hs ∈ LinearEquiv.dilatransvections K V :=
+  LinearEquiv.dilatransvection_mem_dilatransvections
+
+/-- The inverse of the quasi-reflection along `v` with parameter `s` is the quasi-reflection
+along `v` with parameter `t = ε σ s`: indeed `t + ε σ t = ε σ s + s = h v v`. -/
+theorem quasiReflection_symm [RingHomInvPair σ σ] (v : V) (s : Kˣ)
+    (hs : (s : K) + ε • σ s = H.form v v) {t : Kˣ} (ht : (t : K) = ε • σ s) :
+    (H.quasiReflection v s hs).symm = H.quasiReflection v t (by
+      rw [ht, map_zsmul_unit, RingHomInvPair.comp_apply_eq₂, smul_smul, Int.units_mul_self,
+        one_smul, add_comm, hs]) := by
+  ext x
+  have hvv : H.form v v = s + t := by rw [← hs, ht]
+  have hc : (t : K)⁻¹ * H.form v x + (s : K)⁻¹ * (H.form v x - (t : K)⁻¹ * H.form v x * (s + t)) =
+      0 := by
+    field_simp [s.ne_zero, t.ne_zero]
+    ring
+  rw [LinearEquiv.symm_apply_eq, quasiReflection_apply, quasiReflection_apply, map_sub, map_smul,
+    smul_eq_mul, hvv, sub_sub, ← add_smul, hc, zero_smul, sub_zero]
 
 /-- A quasi-reflection fixes the vectors orthogonal to its direction. -/
 theorem quasiReflection_apply_of_form_eq_zero (v : V) (s : Kˣ)

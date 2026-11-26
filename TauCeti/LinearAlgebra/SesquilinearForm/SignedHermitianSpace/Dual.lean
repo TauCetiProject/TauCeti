@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitian
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -21,8 +21,8 @@ skew-symmetric bilinear forms. These are the spaces whose isometry groups are th
 symplectic and orthogonal groups over local fields, as in Kurinczuk–Skodlerack–Stevens.
 
 This file adds to the carrier and adjoint of `TauCeti/LinearAlgebra/SesquilinearForm/
-SignedHermitian.lean` the rank-one spaces, the induced isomorphism onto the dual, and the adjoint
-as an equivalence.
+SignedHermitianSpace/Basic.lean` the rank-one spaces, the induced isomorphism onto the dual, and
+the adjoint as an equivalence.
 
 ## Main definitions
 

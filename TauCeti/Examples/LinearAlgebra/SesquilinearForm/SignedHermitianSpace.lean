@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace
+import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Dual
 import Mathlib.Algebra.Star.Rat
 import Mathlib.Basic.Complex.Basic
 
