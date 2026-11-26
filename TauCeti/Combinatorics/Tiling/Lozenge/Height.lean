@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
 public import TauCeti.Combinatorics.Tiling.Lozenge.Tiling
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 
 /-!
@@ -63,26 +62,7 @@ open Pointwise
 
 namespace TauCeti
 
-variable {R : Set TriFace} {M : Set TriEdge} {H g : ℤ × ℤ → ℤ} {c : TriEdge → ℤ}
-
-/-! ### Primitives on the plane -/
-
-/-- A primitive on the plane is a function whose increment along every edge is the cochain. -/
-theorem isCochainPrimitiveOn_univ_iff :
-    IsCochainPrimitiveOn Set.univ c g ↔ ∀ e : TriEdge, c e = g e.target - g e.v := by
-  rw [isCochainPrimitiveOn_def]
-  exact ⟨fun h e => h e (mem_regionEdges_iff.2 (Or.inl (Set.mem_univ _))), fun h e _ => h e⟩
-
-theorem mem_regionVertices_univ (u : ℤ × ℤ) : u ∈ regionVertices (Set.univ : Set TriFace) :=
-  mem_regionVertices.2 ⟨⟨u, true⟩, Set.mem_univ _, by simp⟩
-
-/-- Two primitives on the plane of the same cochain that agree at `0` are equal. -/
-theorem eq_of_isCochainPrimitiveOn_univ {g' : ℤ × ℤ → ℤ} (hg : IsCochainPrimitiveOn Set.univ c g)
-    (hg' : IsCochainPrimitiveOn Set.univ c g') (h0 : g 0 = g' 0) : g = g' := by
-  funext u
-  have := isConnectedRegion_univ.sub_eq_sub_of_isCochainPrimitiveOn hg hg'
-    (mem_regionVertices_univ u) (mem_regionVertices_univ 0)
-  omega
+variable {R : Set TriFace} {M : Set TriEdge} {H g : ℤ × ℤ → ℤ}
 
 /-! ### The height cochain -/
 
@@ -98,11 +78,6 @@ theorem heightCochain_of_mem (he : e ∈ M) : heightCochain M e = 1 - neutralInc
 
 theorem heightCochain_of_notMem (he : e ∉ M) : heightCochain M e = neutralIncrement e := by
   simp [heightCochain, he]
-
-theorem neutralIncrement_eq_zero_or_eq_one (e : TriEdge) :
-    neutralIncrement e = 0 ∨ neutralIncrement e = 1 := by
-  rw [neutralIncrement_def]
-  split_ifs <;> simp
 
 /-- The height cochain takes the non-neutral value `1 − c₀(e)` exactly on the edges of `M`. -/
 theorem heightCochain_eq_one_sub_neutralIncrement_iff :
@@ -120,21 +95,6 @@ theorem heightCochain_eq_zero_or_eq_one (M : Set TriEdge) (e : TriEdge) :
   · rw [heightCochain_of_notMem he]
     exact neutralIncrement_eq_zero_or_eq_one e
 
-/-- A face meets a set of edges in exactly one edge when exactly one of its three edges, indexed by
-direction, lies in the set. -/
-theorem TriFace.existsUnique_mem_edges_iff (f : TriFace) (M : Set TriEdge) :
-    (∃! e, e ∈ M ∧ e ∈ f.edges) ↔ ∃! k : Fin 3, f.edge k ∈ M := by
-  constructor
-  · rintro ⟨e, ⟨heM, hef⟩, hu⟩
-    rw [TriFace.mem_edges_iff_edge_eq] at hef
-    refine ⟨e.k, show f.edge e.k ∈ M by rw [hef]; exact heM, fun k hk => ?_⟩
-    have := congrArg TriEdge.k (hu _ ⟨hk, f.edge_mem_edges k⟩)
-    rwa [TriFace.edge_k] at this
-  · rintro ⟨k, hk, hu⟩
-    refine ⟨f.edge k, ⟨hk, f.edge_mem_edges k⟩, fun e ⟨heM, hef⟩ => ?_⟩
-    rw [TriFace.mem_edges_iff_edge_eq] at hef
-    rw [← hef, hu e.k (show f.edge e.k ∈ M by rw [hef]; exact heM)]
-
 /-- **The height cochain of a free tiling is closed.** On a face meeting `M` in exactly one edge,
 the three values of the height cochain are `(1, 0, 1)`, `(0, 1, 1)` or `(0, 0, 0)`. -/
 theorem IsFreeTiling.isClosedCochainOn_heightCochain (h : IsFreeTiling R M) :
@@ -142,15 +102,13 @@ theorem IsFreeTiling.isClosedCochainOn_heightCochain (h : IsFreeTiling R M) :
   rw [isClosedCochainOn_def]
   intro f hf
   obtain ⟨j, hj, hu⟩ := (TriFace.existsUnique_mem_edges_iff f M).1 (h.existsUnique hf)
-  have hn : ∀ k, neutralIncrement (f.edge k) = if k = 2 then 1 else 0 := fun k => by
-    rw [neutralIncrement_def, TriFace.edge_k]
   have hc : ∀ k, heightCochain M (f.edge k) =
       if k = j then 1 - neutralIncrement (f.edge k) else neutralIncrement (f.edge k) := fun k => by
     by_cases hk : k = j
     · subst hk
       simp only [↓reduceIte, heightCochain_of_mem hj]
     · simp only [hk, ↓reduceIte, heightCochain_of_notMem fun h' => hk (hu k h')]
-  rw [hc, hc, hc, hn, hn, hn]
+  simp only [hc, f.neutralIncrement_edge]
   fin_cases j <;> simp
 
 /-! ### The height function of a plane tiling -/
@@ -213,7 +171,8 @@ theorem isHeightFunction_def :
     IsHeightFunction H ↔ ∀ e : TriEdge, H e.target - H e.v = 0 ∨ H e.target - H e.v = 1 :=
   Iff.rfl
 
-theorem mem_tilingOfHeight : e ∈ tilingOfHeight H ↔ H e.target - H e.v = 1 - neutralIncrement e :=
+@[simp] theorem mem_tilingOfHeight :
+    e ∈ tilingOfHeight H ↔ H e.target - H e.v = 1 - neutralIncrement e :=
   Iff.rfl
 
 /-- The height function of a plane tiling is a height function. -/
@@ -247,7 +206,7 @@ theorem isTiling_tilingOfHeight (hH : IsHeightFunction H) :
   have hmem : ∀ k, f.edge k ∈ tilingOfHeight H ↔
       H (f.edge k).target - H (f.edge k).v = 1 - (if k = 2 then 1 else 0) := by
     intro k
-    rw [mem_tilingOfHeight, neutralIncrement_def, TriFace.edge_k]
+    rw [mem_tilingOfHeight, f.neutralIncrement_edge]
   simp only [hmem]
   have h0 := hH (f.edge 0)
   have h1 := hH (f.edge 1)
@@ -292,10 +251,6 @@ theorem tilingOfHeight_bijOn :
       IsTiling.tilingOfHeight_tilingHeight hM⟩⟩
 
 /-! ### Translations -/
-
-@[simp] theorem neutralIncrement_vadd (w : ℤ × ℤ) (e : TriEdge) :
-    neutralIncrement (w +ᵥ e) = neutralIncrement e := by
-  simp [neutralIncrement_def]
 
 theorem heightCochain_vadd (w : ℤ × ℤ) (M : Set TriEdge) (e : TriEdge) :
     heightCochain (w +ᵥ M) e = heightCochain M (-w +ᵥ e) := by
@@ -352,10 +307,10 @@ theorem add_nsmul_latticeDir_le (v : ℤ × ℤ) (k : Fin 3) (n : ℕ) :
     push_cast
     omega
 
-/-- **The Lipschitz bound** for height functions: `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`. Going
-from `u + (a, b)` up along `e₁` and `e₂` to `u + m e₃`, `m = max(a, b, 0)`, does not decrease
-`H`, and `m` steps along `e₃` raise it by at most `m`. -/
+/-- **The Lipschitz bound** for height functions: `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`. -/
 theorem sub_le_max (u : ℤ × ℤ) (a b : ℤ) : H (u + (a, b)) - H u ≤ max a (max b 0) := by
+  -- Going from `u + (a, b)` up along `e₁` and `e₂` to `u + m e₃`, `m = max(a, b, 0)`, does not
+  -- decrease `H`, and `m` steps along `e₃` raise it by at most `m`.
   set m := max a (max b 0)
   have hma : a ≤ m := le_max_left _ _
   have hmb : b ≤ m := (le_max_left _ _).trans (le_max_right _ _)

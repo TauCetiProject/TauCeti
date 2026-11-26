@@ -118,6 +118,10 @@ variable {R S : Set TriFace} {e : TriEdge} {f : TriFace} {u u' : ℤ × ℤ}
 
 theorem mem_regionVertices : u ∈ regionVertices R ↔ ∃ f ∈ R, u ∈ f.vertices := Iff.rfl
 
+@[simp] theorem mem_regionVertices_univ (u : ℤ × ℤ) :
+    u ∈ regionVertices (Set.univ : Set TriFace) :=
+  mem_regionVertices.2 ⟨⟨u, true⟩, Set.mem_univ _, by simp⟩
+
 theorem mem_regionEdges : e ∈ regionEdges R ↔ ∃ f ∈ R, e ∈ f.edges := Iff.rfl
 
 theorem mem_interiorEdges : e ∈ interiorEdges R ↔ ∀ f : TriFace, e ∈ f.edges → f ∈ R := Iff.rfl

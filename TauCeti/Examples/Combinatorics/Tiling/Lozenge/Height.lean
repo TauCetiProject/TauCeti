@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Height
 import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Linarith
 
 /-!
 # Checks: heights of plane lozenge tilings
@@ -29,6 +28,9 @@ open TauCeti
 def typeTiling (j : Fin 3) : Set TriEdge :=
   {e | e.k = j}
 
+@[simp] theorem mem_typeTiling {j : Fin 3} {e : TriEdge} : e ∈ typeTiling j ↔ e.k = j :=
+  Iff.rfl
+
 /-- Every face has exactly one edge of each direction, so `typeTiling j` is a plane tiling. -/
 theorem isTiling_typeTiling (j : Fin 3) : IsTiling Set.univ (typeTiling j) := by
   rw [isTiling_univ_iff]
@@ -47,8 +49,8 @@ theorem heightCochain_typeTiling (j : Fin 3) (e : TriEdge) :
     heightCochain (typeTiling j) e =
       if e.k = j then 1 - neutralIncrement e else neutralIncrement e := by
   by_cases h : e.k = j
-  · simp only [heightCochain_of_mem (show e ∈ typeTiling j from h), h, ↓reduceIte]
-  · simp only [heightCochain_of_notMem (show e ∉ typeTiling j from h), h, ↓reduceIte]
+  · simp only [heightCochain_of_mem (mem_typeTiling.2 h), h, ↓reduceIte]
+  · simp only [heightCochain_of_notMem (mt mem_typeTiling.1 h), h, ↓reduceIte]
 
 /-- `H_{M₁}(x, y) = x`. -/
 example : tilingHeight (typeTiling 0) = fun v => v.1 := by
