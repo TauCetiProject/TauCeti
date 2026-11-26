@@ -17,8 +17,9 @@ import TauCeti.NumberTheory.NumberField.ExistsRamified
   `NumberField.finrank_eq_one_of_finrank_eq_one_of_isUnramifiedIn`). A definition of `K_S` that
   ignored ramification would give the algebraic closure of `ℚ` in `Ω` (all of `Ω` when `Ω / ℚ` is
   algebraic).
-* For `S` the set of all finite places, `K_S = Ω` for `Ω` algebraic over `K`
-  (`TauCeti.RestrictedRamification.maxUnramifiedOutside_univ`).
+* For `S` the set of all finite places, `K_S` is the algebraic closure of `K` in `Ω`
+  (`TauCeti.RestrictedRamification.maxUnramifiedOutside_univ`), so `K_S = Ω` for `Ω` algebraic
+  over `K`.
 -/
 
 public section
@@ -51,6 +52,6 @@ theorem maxUnramifiedOutside_rat_empty : maxUnramifiedOutside ℚ Ω ∅ = ⊥ :
 
 /-- For `S` the set of all finite places of `ℚ`, `K_S` is all of an algebraic closure. -/
 example : maxUnramifiedOutside ℚ (AlgebraicClosure ℚ) Set.univ = ⊤ :=
-  maxUnramifiedOutside_univ
+  maxUnramifiedOutside_univ.trans ((algebraicClosure.eq_top_iff _ _).2 inferInstance)
 
 end TauCeti.Examples.RestrictedRamification
