@@ -55,8 +55,9 @@ such walks, alternating between rows and columns.
   bound for walks with prescribed vertex sets, `#(A 0) / m * ∏ t, (#(A (t + 1)) / m + 1 + L * γ)`.
 * `TauCeti.sum_pow_div_pow_card_image_le_of_no_singleton_edge`: the weighted enumeration bound
   `(2 + L * γ) ^ L` for all closed walks on `n` vertices.
-* `TauCeti.sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking`: a sharper weighted bound
-  when the walk is non-backtracking within prescribed blocks and discovery weights alternate.
+* `TauCeti.sum_piFinset_pow_div_pow_card_image_le_of_nonbacktracking`: the weighted bound for
+  walks that are non-backtracking within prescribed blocks, with each discovery weight bounded
+  by a ratio of successive values of a bounded scale.
 
 ## References
 

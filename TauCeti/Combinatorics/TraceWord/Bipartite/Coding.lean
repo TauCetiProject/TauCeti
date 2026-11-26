@@ -108,12 +108,13 @@ theorem sum_pow_div_sqrt_mul_pow_le_of_no_singleton_edge {k : ℕ} (hk : k ≠ 0
     _ = _ := by
       -- Steps from rows discover columns, and steps from columns discover rows.
       have h0 : (0 : Fin (2 * k)) = e (.inl ⟨0, Nat.pos_of_ne_zero hk⟩) := Fin.ext (by simp [e])
+      have hrow (t : Fin k) : #(A (finSumFinInterleaveEquiv k (.inl t))) = Fintype.card α := by
+        simp [A]
+      have hcol (t : Fin k) : #(A (finSumFinInterleaveEquiv k (.inr t))) = Fintype.card β := by
+        simp [A]
       rw [← e.prod_comp, Fintype.prod_sum_type, h0]
       simp only [e, finRotate_finSumFinInterleaveEquiv_inl, finRotate_finSumFinInterleaveEquiv_inr,
-        A, bipartiteVertexFinset_def, val_finSumFinInterleaveEquiv_inl,
-        val_finSumFinInterleaveEquiv_inr, Nat.mul_mod_right, Nat.mul_add_mod, Nat.reduceMod,
-        Nat.one_ne_zero, ite_true, ite_false, card_map, card_univ, prod_const, Fintype.card_fin,
-        ← mul_pow]
+        hrow, hcol, prod_const, card_univ, Fintype.card_fin, ← mul_pow]
       -- `√(a * b) = a * √(b / a)`, so `a / √(a * b) = (√(b / a))⁻¹ = √(a / b)`.
       have hdiv {a b : ℝ} (ha : 0 ≤ a) : a / √(a * b) = √(a / b) := by
         rcases ha.eq_or_lt with rfl | ha

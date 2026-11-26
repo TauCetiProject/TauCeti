@@ -118,12 +118,25 @@ theorem bipartiteVertexFinset_def [Fintype α] [Fintype β] (t : ℕ) :
     bipartiteVertexFinset (α := α) (β := β) t =
       if t % 2 = 0 then (univ : Finset α).map .inl else (univ : Finset β).map .inr := (rfl)
 
+/-- Membership in the prescribed vertex finset is determined by the parity of the time. -/
+@[simp]
+theorem mem_bipartiteVertexFinset [Fintype α] [Fintype β] {t : ℕ} {x : α ⊕ β} :
+    x ∈ bipartiteVertexFinset t ↔ if t % 2 = 0 then x.isLeft else x.isRight := by
+  cases x <;> by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
+/-- The prescribed vertex finset has the cardinality of the row or column type at that time. -/
+@[simp]
+theorem card_bipartiteVertexFinset [Fintype α] [Fintype β] (t : ℕ) :
+    #(bipartiteVertexFinset (α := α) (β := β) t) =
+      if t % 2 = 0 then Fintype.card α else Fintype.card β := by
+  by_cases ht : t % 2 = 0 <;> simp [bipartiteVertexFinset_def, ht]
+
 /-- A bipartite word visits a label on the prescribed side at each time. -/
 theorem bipartiteWord_mem_bipartiteVertexFinset [Fintype α] [Fintype β]
     (u : Fin k → α) (v : Fin k → β) (t : Fin (2 * k)) :
     bipartiteWord u v t ∈ bipartiteVertexFinset t.val := by
   obtain ⟨a, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
-  cases a <;> simp [bipartiteVertexFinset]
+  cases a <;> simp
 
 /-- A cyclic bipartite word determines its row and column indices. -/
 @[simp]

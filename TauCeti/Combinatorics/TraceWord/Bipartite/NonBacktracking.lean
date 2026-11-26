@@ -121,15 +121,13 @@ private theorem card_bipartiteVertexFinset_div_le {r l : ℕ} (hl : Even l) {d :
     · exact hy.trans (by positivity)
     rw [le_div_iff₀ (zero_lt_one.trans_le (le_max_left _ _)), mul_max_of_nonneg _ _ hy.le,
       mul_one, mul_comm y, hxy, max_comm y 1]
+  rw [card_bipartiteVertexFinset, hpar]
   by_cases hi : i.val % 2 = 0
   · have hn : (i.val + 1) % 2 ≠ 0 := by omega
-    simp only [bipartiteVertexFinset_def, alternatingDiscoveryScale, hpar, hi, hn,
-      ite_false, ite_true, card_map, card_univ]
-    exact le_ratio hmul
+    simpa [alternatingDiscoveryScale, hi, hn] using le_ratio hmul
   · have hn : (i.val + 1) % 2 = 0 := by omega
-    simp only [bipartiteVertexFinset_def, alternatingDiscoveryScale, hpar, hi, hn,
-      ite_false, ite_true, card_map, card_univ]
-    exact le_ratio (by rwa [mul_comm])
+    simpa [alternatingDiscoveryScale, hi, hn] using
+      le_ratio (mul_comm (Fintype.card α / d : ℝ) (Fintype.card β / d) ▸ hmul)
 
 open Classical in
 /-- The pairs of row and column words joined from non-backtracking blocks, with every edge
@@ -242,7 +240,7 @@ private theorem sum_pow_div_sqrt_mul_pow_le_of_nonbacktracking [Nonempty α] [No
         (fun _ i ↦ alternatingDiscoveryScale_bounds d i.val)
         (card_bipartiteVertexFinset_div_le ⟨k + 1, two_mul _⟩ hmul)
       have hA₀ : #(bipartiteVertexFinset (α := α) (β := β) 0) = Fintype.card α := by
-        simp [bipartiteVertexFinset_def]
+        simp
       simpa only [weight, Fin.val_zero, hA₀, hlength] using hbound
 
 /-- **Weighted enumeration of bipartite non-backtracking words.** For `p` row labels and
