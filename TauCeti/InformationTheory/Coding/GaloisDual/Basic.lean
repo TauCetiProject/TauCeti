@@ -16,7 +16,9 @@ A code is a submodule of a finite coordinate space. Its Galois dual uses the for
 `h(x,y) = ∑ i, x i * σ (y i)`, with a specified semiring automorphism `σ`. A generator
 matrix becomes a parity-check matrix for the dual after applying `σ.symm` entrywise;
 for involutive `σ`, this is `σ` itself. Over a field, the dimensions of a code and its dual
-add to the length. Taking duals with `σ` and then `σ.symm` recovers the code; for
+add to the length. Galois duality with `σ` and with `σ.symm` form a Galois connection with
+the order dual (`RingEquiv.galoisDual_gc`); over a field they are mutually inverse, so
+`σ.galoisDual` is an inclusion-reversing bijection of codes (`RingEquiv.galoisDualOrderIso`). For
 involutive `σ`, this is Hermitian double duality.
 The field need not be finite.
 
@@ -54,10 +56,21 @@ theorem mem_galoisDual (σ : R ≃+* R) (C : Submodule R (ι → R)) (y : ι →
     y ∈ galoisDual σ C ↔ ∀ x ∈ C, ∑ i, x i * σ (y i) = 0 := by
   simp [galoisDual]
 
+variable (ι) in
+/-- Galois duality with `σ` and with `σ.symm` form a Galois connection between codes and codes
+ordered by reverse inclusion: `D ≤ galoisDual σ C` exactly when `C ≤ galoisDual σ.symm D`. -/
+theorem galoisDual_gc (σ : R ≃+* R) :
+    @GaloisConnection (Submodule R (ι → R)) (Submodule R (ι → R))ᵒᵈ _ _
+      (galoisDual σ) (galoisDual σ.symm) := fun _ _ ↦
+  ⟨fun h x hx y hy ↦ by rw [sesquilinearForm_symm_swap, h hy x hx, map_zero],
+    fun h y hy x hx ↦ σ.symm.map_eq_zero_iff.mp <| by
+      rw [← sesquilinearForm_symm_swap]
+      exact h hx y hy⟩
+
 @[simp]
 theorem galoisDual_bot (σ : R ≃+* R) :
-    galoisDual σ (⊥ : Submodule R (ι → R)) = ⊤ := by
-  simp [galoisDual]
+    galoisDual σ (⊥ : Submodule R (ι → R)) = ⊤ :=
+  (galoisDual_gc ι σ).l_bot
 
 @[simp]
 theorem galoisDual_top (σ : R ≃+* R) :
@@ -69,19 +82,18 @@ theorem galoisDual_top (σ : R ≃+* R) :
 
 /-- Galois duality reverses inclusion. -/
 theorem galoisDual_antitone (σ : R ≃+* R) :
-    Antitone (galoisDual σ (ι := ι)) := Submodule.orthogonalBilin_antitone
+    Antitone (galoisDual σ (ι := ι)) := (galoisDual_gc ι σ).monotone_l
 
 /-- The Galois dual of a sum is the intersection of the Galois duals. -/
 @[simp]
 theorem galoisDual_sup (σ : R ≃+* R) (C D : Submodule R (ι → R)) :
     galoisDual σ (C ⊔ D) = galoisDual σ C ⊓ galoisDual σ D :=
-  Submodule.orthogonalBilin_sup C D
+  (galoisDual_gc ι σ).l_sup
 
 /-- Every code is contained in the inverse-automorphism dual of its Galois dual. -/
 theorem le_galoisDual_symm_galoisDual (σ : R ≃+* R)
-    (C : Submodule R (ι → R)) : C ≤ galoisDual σ.symm (galoisDual σ C) := by
-  intro x hx y hy
-  rw [sesquilinearForm_symm_swap, hy x hx, map_zero]
+    (C : Submodule R (ι → R)) : C ≤ galoisDual σ.symm (galoisDual σ C) :=
+  (galoisDual_gc ι σ).le_u_l C
 
 /-- Every code is contained in its double Hermitian dual for an involutive automorphism. -/
 theorem le_galoisDual_galoisDual (σ : R ≃+* R) (hσ : Function.Involutive σ)
@@ -152,21 +164,37 @@ theorem galoisDual_galoisDual (σ : K ≃+* K) (hσ : Function.Involutive σ)
   have hsymm : σ.symm = σ := DFunLike.coe_injective (hσ.leftInverse_iff.mp σ.left_inv)
   simpa only [hsymm] using galoisDual_symm_galoisDual σ C
 
+variable (ι) in
+open OrderDual in
+/-- Over a field, Galois duality with `σ` is an inclusion-reversing bijection of codes, with
+inverse Galois duality with `σ.symm`. -/
+@[expose, simps! apply symm_apply]
+noncomputable def galoisDualOrderIso (σ : K ≃+* K) :
+    Submodule K (ι → K) ≃o (Submodule K (ι → K))ᵒᵈ where
+  toFun C := toDual (galoisDual σ C)
+  invFun C := galoisDual σ.symm (ofDual C)
+  left_inv := galoisDual_symm_galoisDual σ
+  right_inv C := by
+    have h := galoisDual_symm_galoisDual σ.symm (ofDual C)
+    rw [symm_symm] at h
+    exact congrArg toDual h
+  map_rel_iff' := by
+    intro C D
+    change galoisDual σ D ≤ galoisDual σ C ↔ C ≤ D
+    conv_rhs => rw [← galoisDual_symm_galoisDual σ D]
+    exact (galoisDual_gc ι σ).le_iff_le
+
+/-- Two codes with the same Galois dual over a field are equal. -/
+theorem galoisDual_injective (σ : K ≃+* K) :
+    Function.Injective (galoisDual σ (ι := ι)) :=
+  fun _ _ h ↦ (galoisDualOrderIso ι σ).injective (by simpa using h)
+
 /-- The Galois dual of an intersection is the sum of the Galois duals. -/
 @[simp]
 theorem galoisDual_inf (σ : K ≃+* K) (C D : Submodule K (ι → K)) :
-    galoisDual σ (C ⊓ D) = galoisDual σ C ⊔ galoisDual σ D := by
-  apply (Submodule.eq_of_le_of_finrank_le
-    (sup_le (galoisDual_antitone σ inf_le_left)
-      (galoisDual_antitone σ inf_le_right)) _).symm
-  have hC := finrank_add_finrank_galoisDual σ C
-  have hD := finrank_add_finrank_galoisDual σ D
-  have hsup := finrank_add_finrank_galoisDual σ (C ⊔ D)
-  have hinf := finrank_add_finrank_galoisDual σ (C ⊓ D)
-  have hCD := Submodule.finrank_sup_add_finrank_inf_eq C D
-  have hdual := Submodule.finrank_sup_add_finrank_inf_eq (galoisDual σ C) (galoisDual σ D)
-  rw [galoisDual_sup] at hsup
-  omega
+    galoisDual σ (C ⊓ D) = galoisDual σ C ⊔ galoisDual σ D :=
+  by simpa only [galoisDualOrderIso_apply, ← toDual_sup, OrderDual.toDual_inj] using
+    (galoisDualOrderIso ι σ).map_inf C D
 
 /-- A matrix generates a code exactly when its inverse-automorphism image checks the
 Galois dual. -/
@@ -175,8 +203,7 @@ theorem range_vecMulLinear_eq_iff_ker_map_eq_galoisDual (σ : K ≃+* K)
     LinearMap.range G.vecMulLinear = C ↔
       LinearMap.ker (G.map σ.symm).mulVecLin = galoisDual σ C := by
   rw [← galoisDual_range_vecMulLinear]
-  exact ⟨congrArg (galoisDual σ), fun h ↦ by
-    simpa only [galoisDual_symm_galoisDual] using congrArg (galoisDual σ.symm) h⟩
+  exact (galoisDual_injective σ).eq_iff.symm
 
 /-- For an involutive automorphism, a matrix generates a code exactly when its conjugate
 checks the Hermitian dual. -/
