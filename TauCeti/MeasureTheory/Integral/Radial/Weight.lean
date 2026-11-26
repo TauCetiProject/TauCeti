@@ -47,31 +47,30 @@ variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableS
 omit [OpensMeasurableSpace X] [SFinite μ] in
 private theorem intervalIntegral_setIntegral_ball_eq_zero_of_nonpos (hr : r ≤ 0)
     (k : X → ℝ → ℝ) : (∫ τ in 0..r, ∫ y in ball x τ, k y τ ∂μ) = 0 := by
-  calc
-    _ = ∫ _ in 0..r, (0 : ℝ) := by
-      apply intervalIntegral.integral_congr
-      intro τ hτ
-      rw [uIcc_of_ge hr] at hτ
-      change (∫ y in ball x τ, k y τ ∂μ) = 0
-      rw [ball_eq_empty.2 hτ.2, setIntegral_empty]
-    _ = 0 := intervalIntegral.integral_zero
+  apply intervalIntegral.integral_zero_ae
+  exact Eventually.of_forall fun τ hτ ↦ by
+    rw [uIoc_of_ge hr] at hτ
+    simp [ball_eq_empty.2 hτ.2]
+
+-- The indicator form is shared by the product-integrability and Fubini arguments.
+private noncomputable def radialKernel (f : X → ℝ) (g : ℝ → ℝ) (x y : X) (τ : ℝ) : ℝ :=
+  (ball x τ).indicator (fun y ↦ f y * g (τ - dist x y)) y
 
 private theorem integrable_radialWeight_integrand (hr : 0 ≤ r)
     (hf : IntegrableOn f (ball x r) μ) {g : ℝ → ℝ} (hg : Continuous g) :
-    Integrable (fun p : X × ℝ ↦ if dist x p.1 < p.2 then f p.1 * g (p.2 - dist x p.1) else 0)
+    Integrable (Function.uncurry (radialKernel f g x))
       ((μ.restrict (ball x r)).prod (volume.restrict (Ioc 0 r))) := by
-  set F : X → ℝ → ℝ := fun y τ ↦ if dist x y < τ then f y * g (τ - dist x y) else 0 with hF
-  change Integrable (Function.uncurry F) _
+  classical
   have hd : Measurable fun p : X × ℝ ↦ dist x p.1 :=
     (continuous_const.dist continuous_id).measurable.comp measurable_fst
   have hS : MeasurableSet {p : X × ℝ | dist x p.1 < p.2} := measurableSet_lt hd measurable_snd
-  have hFS : Function.uncurry F =
+  have hFS : Function.uncurry (radialKernel f g x) =
       {p : X × ℝ | dist x p.1 < p.2}.indicator fun p ↦ f p.1 * g (p.2 - dist x p.1) := by
     funext p
-    simp [hF, Set.indicator_apply, Function.uncurry]
+    simp only [radialKernel, Set.indicator_apply, Function.uncurry, mem_ball', mem_ofPred_eq]
   obtain ⟨C, hC⟩ := (isCompact_Icc (a := (-r)) (b := r)).exists_bound_of_continuousOn
     hg.continuousOn
-  have hmeas : AEStronglyMeasurable (Function.uncurry F)
+  have hmeas : AEStronglyMeasurable (Function.uncurry (radialKernel f g x))
       ((μ.restrict (ball x r)).prod (volume.restrict (Ioc 0 r))) := by
     rw [hFS]
     refine AEStronglyMeasurable.indicator ?_ hS
@@ -83,7 +82,7 @@ private theorem integrable_radialWeight_integrand (hr : 0 ≤ r)
   rw [Measure.prod_restrict]
   filter_upwards [ae_restrict_mem (measurableSet_ball.prod measurableSet_Ioc)] with p hp
   have hp₂ := hp.2
-  simp only [Function.uncurry, hF]
+  simp only [Function.uncurry, radialKernel, Set.indicator_apply, mem_ball']
   split_ifs with h
   · rw [norm_mul]
     refine mul_le_mul_of_nonneg_left (hC _ ?_) (norm_nonneg _)
@@ -98,32 +97,27 @@ theorem intervalIntegral_setIntegral_ball_mul_eq
     (hf : IntegrableOn f (ball x r) μ) {g : ℝ → ℝ} (hg : Continuous g) :
     ∫ τ in 0..r, ∫ y in ball x τ, f y * g (τ - dist x y) ∂μ =
       ∫ y in ball x r, f y * (∫ τ in dist x y..r, g (τ - dist x y)) ∂μ := by
+  classical
   by_cases hr : 0 ≤ r
   swap
   · have hr' := le_of_not_ge hr
     rw [ball_eq_empty.2 hr', setIntegral_empty]
     exact intervalIntegral_setIntegral_ball_eq_zero_of_nonpos hr' _
-  set F : X → ℝ → ℝ := fun y τ ↦ if dist x y < τ then f y * g (τ - dist x y) else 0 with hF
   have hint := integrable_radialWeight_integrand hr hf hg
   calc ∫ τ in 0..r, ∫ y in ball x τ, f y * g (τ - dist x y) ∂μ
-      = ∫ τ in Ioc 0 r, (∫ y in ball x r, F y τ ∂μ) := by
+      = ∫ τ in Ioc 0 r, (∫ y in ball x r, radialKernel f g x y τ ∂μ) := by
         rw [intervalIntegral.integral_of_le hr]
         refine setIntegral_congr_fun measurableSet_Ioc fun τ hτ ↦ ?_
-        have h : (fun y ↦ F y τ) = (ball x τ).indicator fun y ↦ f y * g (τ - dist x y) := by
-          funext y
-          by_cases h : dist x y < τ
-          · simp only [hF, h, ↓reduceIte]
-            rw [Set.indicator_of_mem (mem_ball'.mpr h)]
-          · simp only [hF, h, ↓reduceIte]
-            rw [Set.indicator_of_notMem fun h' ↦ h (mem_ball'.mp h')]
-        rw [h, setIntegral_indicator measurableSet_ball,
+        simp only [radialKernel, setIntegral_indicator measurableSet_ball,
           inter_eq_right.mpr (ball_subset_ball hτ.2)]
-    _ = ∫ y in ball x r, (∫ τ in Ioc 0 r, F y τ) ∂μ := (integral_integral_swap hint).symm
+    _ = ∫ y in ball x r, (∫ τ in Ioc 0 r, radialKernel f g x y τ) ∂μ :=
+      (integral_integral_swap hint).symm
     _ = ∫ y in ball x r, f y * (∫ τ in dist x y..r, g (τ - dist x y)) ∂μ := by
         refine setIntegral_congr_fun measurableSet_ball fun y hy ↦ ?_
-        have h : (fun τ ↦ F y τ) = (Ioi (dist x y)).indicator fun τ ↦ f y * g (τ - dist x y) := by
+        have h : (fun τ ↦ radialKernel f g x y τ) =
+            (Ioi (dist x y)).indicator fun τ ↦ f y * g (τ - dist x y) := by
           funext τ
-          simp [hF, Set.indicator_apply]
+          simp only [radialKernel, Set.indicator_apply, mem_ball', mem_Ioi]
         rw [h, setIntegral_indicator measurableSet_Ioi, Ioc_inter_Ioi,
           max_eq_right dist_nonneg, ← intervalIntegral.integral_of_le (mem_ball'.mp hy).le,
           intervalIntegral.integral_const_mul]
@@ -139,14 +133,11 @@ theorem setIntegral_ball_mul_sq_sub_dist_div_two_eq
   · have hr' := le_of_not_ge hr
     rw [ball_eq_empty.2 hr', setIntegral_empty]
     symm
-    calc
-      _ = ∫ _ in 0..r, (0 : ℝ) := by
-        apply intervalIntegral.integral_congr
-        intro τ hτ
-        rw [uIcc_of_ge hr'] at hτ
-        exact intervalIntegral_setIntegral_ball_eq_zero_of_nonpos hτ.2 (x := x) (μ := μ)
-          (fun y _ ↦ f y)
-      _ = 0 := intervalIntegral.integral_zero
+    apply intervalIntegral.integral_zero_ae
+    exact Eventually.of_forall fun τ hτ ↦ by
+      rw [uIoc_of_ge hr'] at hτ
+      exact intervalIntegral_setIntegral_ball_eq_zero_of_nonpos hτ.2
+        (x := x) (μ := μ) (fun y _ ↦ f y)
   have h₁ : ∀ τ ∈ uIcc 0 r, ∫ ρ in 0..τ, ∫ y in ball x ρ, f y ∂μ =
       ∫ y in ball x τ, f y * (τ - dist x y) ∂μ := by
     intro τ hτ
@@ -171,6 +162,7 @@ theorem sq_mul_integral_ball_le_integral_radialWeight {X : Type*} [PseudoMetricS
     t ^ 2 * ∫ y in ball p (r - 2 * t), f y ∂μ ≤
       ∫ y in ball p r, f y * (r - dist p y) ^ 2 / 2 ∂μ := by
   let w (y : X) : ℝ := (r - dist p y) ^ 2 / 2
+  have hw_def (y : X) : w y = (r - dist p y) ^ 2 / 2 := rfl
   have hw : Continuous w := by fun_prop
   have hsub : ball p (r - 2 * t) ⊆ ball p r := ball_subset_ball (by linarith)
   have hi : IntegrableOn (fun y ↦ f y * w y) (ball p r) μ := by
@@ -179,9 +171,9 @@ theorem sq_mul_integral_ball_le_integral_radialWeight {X : Type*} [PseudoMetricS
     have hd := mem_ball'.mp hy
     have h := dist_nonneg (x := p) (y := y)
     rw [Real.norm_of_nonneg (div_nonneg (sq_nonneg _) (by norm_num))]
-    nlinarith [mul_nonneg (sub_nonneg.mpr h) (show 0 ≤ 2 * r - dist p y by linarith)]
-  simp_rw [mul_div_assoc]
-  change _ ≤ ∫ y in ball p r, f y * w y ∂μ
+    have hrad : 0 ≤ 2 * r - dist p y := by linarith
+    nlinarith [mul_nonneg (sub_nonneg.mpr h) hrad]
+  simp_rw [mul_div_assoc, ← hw_def]
   rw [← integral_const_mul]
   calc
     _ ≤ ∫ y in ball p (r - 2 * t), f y * w y ∂μ := by
@@ -190,8 +182,10 @@ theorem sq_mul_integral_ball_le_integral_radialWeight {X : Type*} [PseudoMetricS
         hf₀] with y hy hy₀
       have hd : 2 * t ≤ r - dist p y := by linarith [mem_ball'.mp hy]
       have hsq := sq_le_sq' (by linarith : -(r - dist p y) ≤ 2 * t) hd
-      exact (mul_le_mul_of_nonneg_right (show t ^ 2 ≤ w y by
-        dsimp [w]; nlinarith [sq_nonneg t]) hy₀).trans_eq (mul_comm _ _)
+      have hweight : t ^ 2 ≤ w y := by
+        dsimp [w]
+        nlinarith [sq_nonneg t]
+      exact (mul_le_mul_of_nonneg_right hweight hy₀).trans_eq (mul_comm _ _)
     _ ≤ _ := setIntegral_mono_set hi (hf₀.mono fun y hy ↦
       mul_nonneg hy (div_nonneg (sq_nonneg _) (by norm_num))) (Eventually.of_forall hsub)
 
