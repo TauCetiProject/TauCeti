@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PolynomialLaw.Coeff
+public import TauCeti.RingTheory.PolynomialLaw.MatrixDet
 public import TauCeti.RingTheory.PolynomialLaw.Power
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import Mathlib.Algebra.Polynomial.Monic
 public import Mathlib.Algebra.Polynomial.Reverse
 import Mathlib.Algebra.Polynomial.Degree.Lemmas
@@ -58,6 +60,10 @@ to be a ring.
 * `TauCeti.Determinant.algHomPow`: the `d`-th power of an algebra map `R →ₐ[A] A`, a
   `d`-dimensional determinant with characteristic coefficients `d.choose i * φ x ^ i` and
   characteristic polynomial `(X - φ x)ᵈ`.
+* `TauCeti.Determinant.algHomDet`: the determinant `det ∘ ρ` of a matrix representation
+  `ρ : R →ₐ[A] Matrix n n A`, a `card n`-dimensional determinant with value `det (ρ x)`,
+  characteristic polynomial `(ρ x).charpoly` and trace `(ρ x).trace`; conjugate representations
+  have the same determinant (`TauCeti.Determinant.algHomDet_innerAut_comp`).
 
 ## References
 
@@ -530,6 +536,70 @@ theorem charpoly_algHomPow (φ : R →ₐ[A] A) (d : ℕ) (x : R) :
   simp [charpoly, algHomPow_toFun', Algebra.TensorProduct.rid_tmul, smul_eq_C_mul]
 
 end AlgHomPowCharpoly
+
+section AlgHomDet
+
+variable {A : Type u} [CommRing A] {R : Type*} [Semiring R] [Algebra A R] {n : Type*} [Fintype n]
+  [DecidableEq n]
+
+/-- The determinant `det ∘ ρ` of a matrix representation `ρ : R →ₐ[A] Matrix n n A`, a
+`card n`-dimensional determinant. After scalar extension to a commutative ring `S`, it is the
+determinant of `ρ` extended to `S` (`algHomDet_toFun`). -/
+def algHomDet (ρ : R →ₐ[A] Matrix n n A) : Determinant A R (Fintype.card n) where
+  toLaw := (PolynomialLaw.det n A).comp ρ.toLinearMap.toPolynomialLaw
+  isHomogeneousOfDegree := by
+    simpa using (PolynomialLaw.isHomogeneousOfDegree_det (n := n) (A := A)).comp
+      ρ.toLinearMap.isHomogeneousOfDegree_toPolynomialLaw
+  isMultiplicative := PolynomialLaw.isMultiplicative_det.comp ρ.isMultiplicative_toPolynomialLaw
+
+/-- After scalar extension to a commutative ring `S`, the law of `algHomDet ρ` is the determinant
+of `ρ` extended to `S`, read in `Matrix n n S`. -/
+@[simp]
+theorem algHomDet_toFun (ρ : R →ₐ[A] Matrix n n A) (S : Type*) [CommRing S] [Algebra A S]
+    (x : S ⊗[A] R) :
+    (algHomDet ρ).toLaw.toFun S x =
+      (TauCeti.Algebra.matrixBaseChangeAlgEquiv A S n
+        (Algebra.TensorProduct.map (AlgHom.id A S) ρ x)).det ⊗ₜ 1 := by
+  rw [algHomDet, PolynomialLaw.toFun_comp_apply, LinearMap.toPolynomialLaw_toFun,
+    PolynomialLaw.det_toFun, LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
+
+/-- The value of `algHomDet ρ` at `x` is `det (ρ x)`. -/
+@[simp]
+theorem algHomDet_apply (ρ : R →ₐ[A] Matrix n n A) (x : R) : algHomDet ρ x = (ρ x).det := by
+  simp [apply_eq_lid_toFun]
+
+/-- The characteristic polynomial of `algHomDet ρ` at `x` is that of the matrix `ρ x`. -/
+@[simp]
+theorem charpoly_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
+    (algHomDet ρ).charpoly x = (ρ x).charpoly := by
+  rw [charpoly, PolynomialLaw.toFun'_eq_toFun, algHomDet_toFun, Algebra.TensorProduct.rid_tmul,
+    one_smul, Matrix.charpoly]
+  congr 1
+  ext i j
+  simp [Matrix.charmatrix_apply, Matrix.diagonal_apply, Matrix.algebraMap_matrix_apply,
+    Algebra.smul_def]
+
+/-- The trace of `algHomDet ρ` at `x` is the trace of the matrix `ρ x`. -/
+@[simp]
+theorem trace_algHomDet (ρ : R →ₐ[A] Matrix n n A) (x : R) :
+    (algHomDet ρ).trace x = (ρ x).trace := by
+  rcases isEmpty_or_nonempty n with hn | hn
+  · rw [trace_apply, charCoeff_eq_zero _ (by simp), Matrix.trace, Finset.univ_eq_empty,
+      Finset.sum_empty]
+  · rw [trace_eq_neg_charpoly_coeff _ Fintype.card_pos, charpoly_algHomDet,
+      Matrix.trace_eq_neg_charpoly_coeff]
+
+/-- Conjugate matrix representations have the same determinant: `algHomDet` does not change when
+`ρ` is followed by conjugation by an invertible matrix. -/
+@[simp]
+theorem algHomDet_innerAut_comp (g : GL n A) (ρ : R →ₐ[A] Matrix n n A) :
+    algHomDet ((Matrix.GeneralLinearGroup.innerAut g).toAlgHom.comp ρ) = algHomDet ρ := by
+  ext1
+  dsimp only [algHomDet]
+  rw [AlgHom.comp_toLinearMap, LinearMap.toPolynomialLaw_comp,
+    PolynomialLaw.comp_assoc, AlgEquiv.toAlgHom_toLinearMap, PolynomialLaw.det_comp_innerAut]
+
+end AlgHomDet
 
 end Determinant
 
