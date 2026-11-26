@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.OneParameter
 import Mathlib.Algebra.Module.Rat
 import Mathlib.RingTheory.Finiteness.Nilpotent
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 
 /-!
 # Exponential points on comodules
@@ -107,28 +108,13 @@ theorem pow_differential_apply (d : Derivation R H (Bialgebra.CounitAlgebra R H 
     LinearMap.comp_apply, LinearEquiv.coe_coe]
 
 omit [Comodule R H M] in
-/-- If a property holds on every pure tensor `m ⊗ₜ h` for all sufficiently large `n` and is closed
-under addition, then it holds on every tensor `z : M ⊗[R] H` for all sufficiently large `n`. -/
-private theorem exists_forall_ge_of_tmul {P : ℕ → M ⊗[R] H → Prop}
-    (ht : ∀ m h, ∃ N, ∀ k, N ≤ k → P k (m ⊗ₜ[R] h))
-    (hadd : ∀ k x y, P k x → P k y → P k (x + y)) (z : M ⊗[R] H) :
-    ∃ N, ∀ k, N ≤ k → P k z := by
-  induction z using TensorProduct.inductionOn with
-  | tmul m h => exact ht m h
-  | add x y hx hy =>
-    obtain ⟨Nx, hNx⟩ := hx
-    obtain ⟨Ny, hNy⟩ := hy
-    exact ⟨max Nx Ny, fun k hk ↦
-      hadd k x y (hNx k (le_of_max_le_left hk)) (hNy k (le_of_max_le_right hk))⟩
-
-omit [Comodule R H M] in
 /-- Any tensor in `M ⊗ H` is annihilated in its `H`-factor by a uniform iterate of a locally
 nilpotent derivation. -/
 private theorem exists_lTensor_pow_leftInvariantDerivation_eq_zero
     {d : Derivation R H (Bialgebra.CounitAlgebra R H R)}
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t : M ⊗[R] H) :
     ∃ N, ∀ k, N ≤ k → ((Bialgebra.leftInvariantDerivation d).toLinearMap ^ k).lTensor M t = 0 :=
-  exists_forall_ge_of_tmul
+  TensorProduct.exists_forall_ge_of_tmul
     (P := fun k z ↦ ((Bialgebra.leftInvariantDerivation d).toLinearMap ^ k).lTensor M z = 0)
     (fun _ h ↦ by
       obtain ⟨N, hN⟩ := hd h
@@ -175,11 +161,9 @@ omit [Comodule R H M] in
 /-- Expanding the `endOfPoint` tensor action of `expPointAt d hd t` on `M ⊗[R] H` into a
 finite Taylor sum. -/
 private theorem smul_comm_lTensor_expPointAt_eq_sum [Algebra ℚ H]
-    {B : Type*} [CommRing B] [Algebra R B]
+    {B : Type*} [CommRing B] [Algebra R B] [Algebra ℚ B]
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R))
     (hd : ∀ h, ∃ n, (Bialgebra.leftInvariantDerivation d)^[n] h = 0) (t b : B) (z : M ⊗[R] H) :
-    letI : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
-    letI : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
     ∃ N, ∀ n ≥ N,
       b • TensorProduct.comm R M B
           (((Bialgebra.expPointAt d hd t).ofConv.toLinearMap.lTensor M) z) =
@@ -189,9 +173,9 @@ private theorem smul_comm_lTensor_expPointAt_eq_sum [Algebra ℚ H]
               (Coalgebra.counit (R := R) ∘ₗ
                 (Bialgebra.leftInvariantDerivation d).toLinearMap ^ k) z) := by
   let : Algebra ℚ R := Bialgebra.counitRatAlgebra R H
-  let : Algebra ℚ B := Algebra.compHom B (algebraMap ℚ R)
+  have : IsScalarTower ℚ R B := IsScalarTower.of_algebraMap_eq' (Subsingleton.elim _ _)
   set D := Bialgebra.leftInvariantDerivation d
-  refine exists_forall_ge_of_tmul
+  refine TensorProduct.exists_forall_ge_of_tmul
     (P := fun n w ↦
       b • TensorProduct.comm R M B
           (((Bialgebra.expPointAt d hd t).ofConv.toLinearMap.lTensor M) w) =
@@ -250,15 +234,10 @@ private theorem tensorComponent_expPoint_eq_sum
   have h := congrArg (TensorProduct.lid R M) (hN K hK)
   simp only [one_smul, Bialgebra.expPointAt_one, WithConv.ofConv_toConv,
     one_pow, mul_one, map_sum] at h
-  have hlid (w : M ⊗[R] R) :
-      TensorProduct.lid R M (TensorProduct.comm R M R w) = TensorProduct.rid R M w := by
-    induction w using TensorProduct.inductionOn with
-    | tmul m r => simp
-    | add x y hx hy => simp [map_add, hx, hy]
-  rw [hlid, ← LinearEquiv.coe_coe, ← LinearMap.comp_apply, ← LinearMap.tensorComponent_def] at h
+  rw [TensorProduct.lid_comm, ← LinearEquiv.coe_coe, ← LinearMap.comp_apply,
+    ← LinearMap.tensorComponent_def] at h
   rw [h]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  let : Algebra ℚ R := Algebra.compHom R (@algebraMap ℚ R _ _ (Bialgebra.counitRatAlgebra R H))
   exact (map_rat_smul (TensorProduct.lid R M).toAddMonoidHom (i.factorial : ℚ)⁻¹ _).trans
     (by simp)
 

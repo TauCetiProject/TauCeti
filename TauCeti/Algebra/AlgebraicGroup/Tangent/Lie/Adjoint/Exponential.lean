@@ -179,7 +179,7 @@ theorem basePointsRepresentation_expAdPoint {x : 𝔤} (hx : IsNilpotent (LieAlg
     Comodule.basePointsRepresentation (R := k) (H := H) 𝔤 (expAdPoint hx) =
       IsNilpotent.exp (LieAlgebra.ad k 𝔤 x) := by
   rw [Comodule.basePointsRepresentation_expAdPoint (M := 𝔤) hx,
-    Derivation.differential_cotangentDualLieEquiv]
+    Derivation.cotangentDualLieEquiv_apply, Derivation.differential_cotangentLinearEquiv]
 
 /-- **Two `ad`-nilpotent elements have the same exponential point if and only if they are equal.**
 -/
@@ -329,13 +329,11 @@ theorem exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup
       {u ∈ CommHopfAlgCat.quotientPointsSubgroup (_root_.CommHopfAlgCat.of k H) I
           (CommAlgCat.of k k) |
         HopfAlgebra.IsUnipotentPoint u}
-  let toGL : WithConv (H →ₐ[k] k) →* LinearMap.GeneralLinearGroup k 𝔤 :=
-    (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤).toHomUnits
   have hle :
-      (expAdSubgroup k e).map
-          (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤).symm.toMonoidHom ≤
-        U.map toGL := by
-    rw [Subgroup.map_le_iff_le_comap, expAdSubgroup_le_iff]
+      expAdSubgroup k e ≤
+        U.map ((LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤).toMonoidHom.comp
+          (Comodule.basePointsRepresentation (R := k) (H := H) 𝔤).toHomUnits) := by
+    rw [expAdSubgroup_le_iff]
     intro y hy hy_mem
     have hy_ker : ⁅e, y⁆ = 0 := by
       simpa [LinearMap.mem_ker, LieAlgebra.ad_apply] using (Submodule.mem_inf.mp hy_mem).1
@@ -345,17 +343,15 @@ theorem exists_mem_closure_unipotent_quotientPointsSubgroup_of_mem_expAdSubgroup
         rw [← LieEquiv.map_lie, hy_ker, map_zero])
     refine ⟨expAdPoint hy, Subgroup.subset_closure
       ⟨expAdPoint_mem_quotientPointsSubgroup I hy hy_lie, isUnipotentPoint_expAdPoint hy⟩, ?_⟩
-    change toGL (expAdPoint hy) = LinearMap.GeneralLinearGroup.ofLinearEquiv _
-    exact toHomUnits_basePointsRepresentation_expAdPoint hy
-  obtain ⟨g, hg, hgf⟩ := hle ⟨ψ, hψ, rfl⟩
+    rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+      toHomUnits_basePointsRepresentation_expAdPoint hy]
+    ext v
+    simp
+  obtain ⟨g, hg, hgf⟩ := hle hψ
   refine ⟨g, hg, ?_⟩
-  rw [show toGL g = LinearMap.GeneralLinearGroup.ofLinearEquiv
-    (Derivation.basePointsAdjointLieEquiv (R := k) (H := H) g).toLinearEquiv from
-      toHomUnits_basePointsRepresentation_eq_ofLinearEquiv g] at hgf
-  have hgf' := congrArg (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤) hgf
-  change (LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤)
-      ((LinearMap.GeneralLinearGroup.generalLinearEquiv k 𝔤).symm _) = _ at hgf'
-  simpa using hgf'
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    toHomUnits_basePointsRepresentation_eq_ofLinearEquiv g] at hgf
+  simpa [LinearEquiv.ext_iff] using hgf
 
 end Field
 
@@ -380,7 +376,8 @@ theorem basePointsAdjointLieEquiv_expPointAt_toLinearMap [Algebra ℚ H]
           (Derivation.cotangentDualLieEquiv (R := R) (H := H) x) hd t)).toLinearMap =
       IsNilpotent.exp (t • LieAlgebra.ad R 𝔤 x) := by
   rw [Derivation.basePointsAdjointLieEquiv_toLinearMap,
-    Comodule.basePointsRepresentation_expPointAt, Derivation.differential_cotangentDualLieEquiv]
+    Comodule.basePointsRepresentation_expPointAt, Derivation.cotangentDualLieEquiv_apply,
+    Derivation.differential_cotangentLinearEquiv]
 
 end Ring
 
