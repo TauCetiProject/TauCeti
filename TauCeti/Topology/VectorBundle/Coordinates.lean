@@ -44,8 +44,14 @@ semilinear fibre maps.
 
 `VectorBundleCore.localTriv_coordChangeL` and
 `VectorBundleCore.trivializationAt_coordChangeL` identify transitions between actual
-trivializations with their core coordinate-change maps, and
-`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity.
+trivializations with their core coordinate-change maps,
+`VectorBundleCore.coordChange_self_eq_id` states the self-transition as an operator identity,
+`VectorBundleCore.coordChange_comp_coordChange_eq_id` states that the transitions between two
+charts are mutually inverse, and
+`VectorBundleCore.isInvertible_coordChange` and `VectorBundleCore.coordChange_bijective` record
+invertibility and bijectivity of core transition operators on chart overlaps.
+For a core with model fibre the scalar field, `VectorBundleCore.det_coordChangeL_localTriv`
+computes the determinant of such a transition as the scalar transition function.
 The fibre instances `VectorBundleCore.isTopologicalAddGroupFiber` and
 `VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between two cores available.
 `VectorBundleCore.inChartCoordinates` expresses a fibre map between two cores in an arbitrary
@@ -88,6 +94,33 @@ variable {𝕜 B F κ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace 
 theorem coordChange_self_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i : κ} {x : B}
     (hx : x ∈ Z.baseSet i) : Z.coordChange i i x = ContinuousLinearMap.id 𝕜 F :=
   ContinuousLinearMap.ext (Z.coordChange_self i x hx)
+
+/-- The transition from chart `j` back to chart `i` undoes the transition from `i` to `j`. -/
+theorem coordChange_comp_coordChange_eq_id (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
+    (Z.coordChange j i x).comp (Z.coordChange i j x) = ContinuousLinearMap.id 𝕜 F :=
+  (Z.coordChange_linear_comp i j i x ⟨⟨hi, hj⟩, hi⟩).trans (Z.coordChange_self_eq_id hi)
+
+/-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is invertible
+as a continuous linear map. -/
+theorem isInvertible_coordChange (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) : (Z.coordChange i j x).IsInvertible :=
+  Z.localTriv_coordChangeL ⟨hi, hj⟩ ▸ ContinuousLinearMap.isInvertible_equiv
+
+/-- Every transition operator of a `VectorBundleCore` on the overlap of two charts is bijective. -/
+theorem coordChange_bijective (Z : VectorBundleCore 𝕜 B F κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) : Function.Bijective (Z.coordChange i j x) :=
+  Z.localTriv_coordChangeL ⟨hi, hj⟩ ▸ ((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).bijective
+
+/-- The coordinate change between the local trivializations `i` and `j` of a core with model
+fibre `𝕜`, as a linear equivalence of the model fibre, has determinant the scalar transition
+function `Z.coordChange i j x 1`. -/
+theorem det_coordChangeL_localTriv (Z : VectorBundleCore 𝕜 B 𝕜 κ) {i j : κ} {x : B}
+    (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
+    LinearMap.det (((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).toLinearEquiv :
+      𝕜 →ₗ[𝕜] 𝕜) = Z.coordChange i j x 1 := by
+  rw [LinearMap.det_ring, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
+  exact Z.localTriv_coordChange_eq i j ⟨hi, hj⟩ 1
 
 /-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
 This makes the Hom bundle between two cores available. -/

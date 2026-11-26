@@ -13,6 +13,8 @@ import Mathlib.NumberTheory.LSeries.Positivity
 public import Mathlib.NumberTheory.LSeries.Deriv
 public import TauCeti.NumberTheory.LSeries.Convergence
 public import TauCeti.NumberTheory.LSeries.EntireExtension
+import TauCeti.Analysis.Complex.Basic
+import TauCeti.NumberTheory.LSeries.Positivity
 
 /-!
 # Landau's theorem on Dirichlet series with nonnegative coefficients
@@ -103,13 +105,6 @@ private lemma logPowMul_nonneg (ha : 0 ≤ a) {x : ℝ}
   (logPowMul_eq_alternating (s := (x : ℂ)) (by simpa using hx) k).symm ▸
     LSeries.iteratedDeriv_alternating ha hx k
 
-/-- The real part of a Dirichlet term at a real point. -/
-lemma re_term_of_ne_zero (a : ℕ → ℂ) (x : ℝ) {n : ℕ} (hn : n ≠ 0) :
-    (LSeries.term a (x : ℂ) n).re = (a n).re / (n : ℝ) ^ x := by
-  have hcast : (n : ℂ) ^ (x : ℂ) = (((n : ℝ) ^ x : ℝ) : ℂ) := by
-    rw [← Complex.ofReal_natCast, ← Complex.ofReal_cpow (Nat.cast_nonneg n)]
-  rw [LSeries.term_of_ne_zero hn, hcast, Complex.div_ofReal_re]
-
 /-- At a real point `x` in the half-plane of absolute convergence, the real series obtained by
 taking real parts of the terms of `logPowMul` converges to the real part of its L-series. -/
 lemma hasSum_logPowMul_re_term {x : ℝ}
@@ -141,15 +136,6 @@ def HasAnalyticExtensionAt (a : ℕ → ℂ) (σ : ℝ) : Prop :=
   ∃ r : ℝ, 0 < r ∧ ∃ F : ℂ → ℂ, DifferentiableOn ℂ F (ball (σ : ℂ) r) ∧
     ∀ s ∈ ball (σ : ℂ) r, σ < s.re → F s = LSeries a s
 
-private lemma sub_lt_re_of_mem_ball {σ r : ℝ} {s : ℂ}
-    (hs : s ∈ ball ((σ : ℝ) : ℂ) r) : σ - r < s.re := by
-  have key : |s.re - σ| ≤ dist s ((σ : ℝ) : ℂ) := by
-    rw [dist_eq_norm]
-    simpa using Complex.abs_re_le_norm (s - ((σ : ℝ) : ℂ))
-  rw [mem_ball] at hs
-  have := (abs_lt.mp (key.trans_lt hs)).1
-  linarith
-
 /-- Above the abscissa of absolute convergence the L-series continues across every real point:
 it is already analytic there. -/
 lemma hasAnalyticExtensionAt_of_abscissaOfAbsConv_lt {σ : ℝ}
@@ -158,9 +144,7 @@ lemma hasAnalyticExtensionAt_of_abscissaOfAbsConv_lt {σ : ℝ}
   have h₂' : σ' < σ := mod_cast h₂
   refine ⟨σ - σ', by linarith, LSeries a, ?_, fun _ _ _ ↦ rfl⟩
   refine (LSeries_differentiableOn a).mono fun s hs ↦ ?_
-  have hσ' : σ' < s.re := by
-    have := sub_lt_re_of_mem_ball hs
-    linarith
+  have hσ' : σ' < s.re := Complex.ball_subset_setOfPred_lt_re (by simp) hs
   exact Set.mem_ofPred.mpr (h₁.trans_le (by exact_mod_cast hσ'.le))
 
 private lemma exists_differentiableOn_patch {σ : ℝ}
@@ -399,9 +383,7 @@ theorem abscissaOfAbsConv_le_of_differentiableOn (ha : 0 ≤ a)
   have habs : LSeries.abscissaOfAbsConv a = (σ : EReal) := (EReal.coe_toReal hfin hbot).symm
   have hσ₁σ : σ₁ < σ := by rw [habs] at hlt; exact_mod_cast hlt
   refine landau ha habs ⟨σ - σ₁, by linarith, F, ?_, ?_⟩
-  · refine hF.mono fun s hs ↦ ?_
-    have := sub_lt_re_of_mem_ball hs
-    exact Set.mem_ofPred.mpr (by linarith)
+  · exact hF.mono fun s hs ↦ Complex.ball_subset_setOfPred_lt_re (by simp) hs
   · intro s _ hs
     refine hFeq s (hσ₁σ.trans hs) ?_
     rw [habs]

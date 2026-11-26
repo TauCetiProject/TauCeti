@@ -47,49 +47,49 @@ public section
 
 namespace TauCeti.OddComponentGridDiagram
 
-open MvPolynomial
+open GridChainMinus MvPolynomial
 open scoped TensorProduct
 
 section CharacteristicTwoCycles
 
 variable {n : ℕ} (G : OddComponentGridDiagram n)
 
-private noncomputable def bigradedChainMinusSupportedBasis (K : Type*) [CommSemiring K]
-    (S : Set (ℤ × ℤ)) :
+private noncomputable def monomialDegreeSupportedBasis (K : Type*) [CommSemiring K]
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
     Module.Basis
-      {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}
-      K (G.bigradedChainMinusSupported K S) :=
+      {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}
+      K (monomialDegreeSupported K deg S) :=
   (Module.Basis.span
     ((monomialChainBasis (n := n) K).linearIndependent.comp
       Subtype.val Subtype.val_injective)).map
     (LinearEquiv.ofEq _ _ <| by
-      rw [G.bigradedChainMinusSupported_eq_span K S, Set.image_eq_range]
+      rw [monomialDegreeSupported_eq_span K deg S, Set.image_eq_range]
       rfl)
 
 @[simp]
-private theorem coe_bigradedChainMinusSupportedBasis_apply (K : Type*) [CommSemiring K]
-    (S : Set (ℤ × ℤ))
-    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}) :
-    ((G.bigradedChainMinusSupportedBasis K S i :
-        G.bigradedChainMinusSupported K S) : GridChainMinus K n) =
+private theorem coe_monomialDegreeSupportedBasis_apply (K : Type*) [CommSemiring K]
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    ((monomialDegreeSupportedBasis K deg S i :
+        monomialDegreeSupported K deg S) : GridChainMinus K n) =
       monomialChainBasis (n := n) K i.val := by
-  simp [bigradedChainMinusSupportedBasis]
+  simp [monomialDegreeSupportedBasis]
 
 private noncomputable def baseChangeSupportedEquiv (R : Type*) [CommRing R]
-    [Algebra (ZMod 2) R] (S : Set (ℤ × ℤ)) :
+    [Algebra (ZMod 2) R] {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
     R ⊗[ZMod 2]
-        ({ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S} →₀
+        ({ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S} →₀
           ZMod 2) ≃ₗ[R]
-      G.bigradedChainMinusSupported R S :=
+      monomialDegreeSupported R deg S :=
   (Finsupp.basisSingleOne.baseChange R).equiv
-    (G.bigradedChainMinusSupportedBasis R S) (Equiv.refl _)
+    (monomialDegreeSupportedBasis R deg S) (Equiv.refl _)
 
 @[simp]
 private theorem baseChangeSupportedEquiv_tmul_single (R : Type*) [CommRing R]
-    [Algebra (ZMod 2) R] (S : Set (ℤ × ℤ))
-    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}) :
-    G.baseChangeSupportedEquiv R S (1 ⊗ₜ[ZMod 2] Finsupp.single i 1) =
-      G.bigradedChainMinusSupportedBasis R S i := by
+    [Algebra (ZMod 2) R] {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    baseChangeSupportedEquiv R deg S (1 ⊗ₜ[ZMod 2] Finsupp.single i 1) =
+      monomialDegreeSupportedBasis R deg S i := by
   have hi : Finsupp.single i (1 : ZMod 2) = Finsupp.basisSingleOne i := by
     rw [Finsupp.coe_basisSingleOne]
   rw [hi, baseChangeSupportedEquiv, ← Module.Basis.baseChange_apply,
@@ -129,60 +129,64 @@ private theorem baseChangeChainEquiv_tmul {F R : Type*} [CommRing F] [CommRing R
         monomialChainBasis_apply, Finsupp.smul_single, smul_monomial, smul_eq_mul, mul_one,
         Finsupp.mapRange_single, map_monomial]
 
-private noncomputable def supportedDifferentialZMod (S : Set (ℤ × ℤ)) :
-    ({ix : Σ _ : GridState n, Fin n →₀ ℕ //
-        G.monomialBidegree ix.fst ix.snd ∈ S} →₀ ZMod 2) →ₗ[ZMod 2]
+private noncomputable def supportedDifferentialZMod {ι : Type*}
+    (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
+    ({ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S} →₀ ZMod 2) →ₗ[ZMod 2]
       GridChainMinus (ZMod 2) n :=
   Finsupp.linearCombination (ZMod 2) fun i ↦
     (G.val.unblockedDifferential (ZMod 2)) (monomialChainBasis (n := n) (ZMod 2) i.val)
 
 @[simp]
-private theorem supportedDifferentialZMod_single (S : Set (ℤ × ℤ))
-    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S}) :
-    G.supportedDifferentialZMod S (Finsupp.single i 1) =
+private theorem supportedDifferentialZMod_single {ι : Type*}
+    (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (i : {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S}) :
+    G.supportedDifferentialZMod deg S (Finsupp.single i 1) =
       G.val.unblockedDifferential (ZMod 2) (monomialChainBasis (n := n) (ZMod 2) i.val) := by
   simp [supportedDifferentialZMod]
 
 private noncomputable def unblockedDifferentialSupported (R : Type*) [CommRing R]
-    (S : Set (ℤ × ℤ)) :
-    G.bigradedChainMinusSupported R S →ₗ[R] GridChainMinus R n :=
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
+    monomialDegreeSupported R deg S →ₗ[R] GridChainMinus R n :=
   ((G.val.unblockedDifferential R).restrictScalars R).comp
-    (G.bigradedChainMinusSupported R S).subtype
+    (monomialDegreeSupported R deg S).subtype
 
 @[simp]
-private theorem unblockedDifferentialSupported_apply (R : Type*) [CommRing R] (S : Set (ℤ × ℤ))
-    (c : G.bigradedChainMinusSupported R S) :
-    G.unblockedDifferentialSupported R S c = G.val.unblockedDifferential R c :=
+private theorem unblockedDifferentialSupported_apply (R : Type*) [CommRing R]
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (c : monomialDegreeSupported R deg S) :
+    G.unblockedDifferentialSupported R deg S c = G.val.unblockedDifferential R c :=
   rfl
 
 private theorem baseChange_unblockedDifferential_comm_supported
-    (R : Type*) [CommRing R] [Algebra (ZMod 2) R] (S : Set (ℤ × ℤ)) :
+    (R : Type*) [CommRing R] [Algebra (ZMod 2) R]
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι) :
     (baseChangeChainEquiv n (ZMod 2) R).toLinearMap.comp
-        ((G.supportedDifferentialZMod S).baseChange R) =
-      (G.unblockedDifferentialSupported R S).comp
-        (G.baseChangeSupportedEquiv R S).toLinearMap := by
+        ((G.supportedDifferentialZMod deg S).baseChange R) =
+      (G.unblockedDifferentialSupported R deg S).comp
+        (baseChangeSupportedEquiv R deg S).toLinearMap := by
   refine (Finsupp.basisSingleOne.baseChange R).ext fun i ↦ ?_
   simp [Module.Basis.baseChange_apply, LinearMap.baseChange_tmul,
     G.val.mapRange_map_unblockedDifferential]
 
-private theorem finite_ker_unblockedDifferential_bigradedChainMinusSupported
-    (R : Type*) [CommRing R] [CharP R 2] (S : Set (ℤ × ℤ))
-    (hfin : {ix : Σ _ : GridState n, Fin n →₀ ℕ | G.monomialBidegree ix.fst ix.snd ∈ S}.Finite) :
+private theorem finite_ker_unblockedDifferential_monomialDegreeSupported
+    (R : Type*) [CommRing R] [CharP R 2]
+    {ι : Type*} (deg : GridState n → (Fin n →₀ ℕ) → ι) (S : Set ι)
+    (hfin : {ix : Σ _ : GridState n, Fin n →₀ ℕ | deg ix.fst ix.snd ∈ S}.Finite) :
     Module.Finite R
       (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
-        (G.bigradedChainMinusSupported R S).subtype)) := by
+        (monomialDegreeSupported R deg S).subtype)) := by
   let _ : Algebra (ZMod 2) R := ZMod.algebra R 2
-  have _ : Finite
-      {ix : Σ _ : GridState n, Fin n →₀ ℕ // G.monomialBidegree ix.fst ix.snd ∈ S} := hfin
-  -- Transport finite generation of `ker ((supportedDifferentialZMod S).baseChange R)` over `ZMod 2`
-  -- across the base-change commuting square.
-  have _ : Module.Finite R (LinearMap.ker ((G.supportedDifferentialZMod S).baseChange R)) :=
-    LinearMap.finite_ker_baseChange (G.supportedDifferentialZMod S)
-  have hker := LinearEquiv.map_ker_of_comm (G.baseChangeSupportedEquiv R S)
-    (baseChangeChainEquiv n (ZMod 2) R) ((G.supportedDifferentialZMod S).baseChange R)
-    (G.unblockedDifferentialSupported R S) (G.baseChange_unblockedDifferential_comm_supported R S)
+  have _ : Finite {ix : Σ _ : GridState n, Fin n →₀ ℕ // deg ix.fst ix.snd ∈ S} := hfin
+  -- Transport finite generation of `ker ((supportedDifferentialZMod deg S).baseChange R)`
+  -- over `ZMod 2` across the base-change commuting square.
+  have _ : Module.Finite R (LinearMap.ker ((G.supportedDifferentialZMod deg S).baseChange R)) :=
+    LinearMap.finite_ker_baseChange (G.supportedDifferentialZMod deg S)
+  have hker := LinearEquiv.map_ker_of_comm (baseChangeSupportedEquiv R deg S)
+    (baseChangeChainEquiv n (ZMod 2) R) ((G.supportedDifferentialZMod deg S).baseChange R)
+    (G.unblockedDifferentialSupported R deg S)
+    (G.baseChange_unblockedDifferential_comm_supported R deg S)
   exact Module.Finite.equiv
-    (((G.baseChangeSupportedEquiv R S).submoduleMap _).trans (LinearEquiv.ofEq _ _ hker))
+    (((baseChangeSupportedEquiv R deg S).submoduleMap _).trans (LinearEquiv.ofEq _ _ hker))
 
 /-- Over any commutative ring of characteristic two, the kernel of the unblocked differential
 restricted to a Maslov--Alexander chain piece is finitely generated over the ground ring. -/
@@ -192,7 +196,7 @@ theorem finite_ker_unblockedDifferential_bigradedChainMinusPiece (R : Type*) [Co
       (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
         (G.bigradedChainMinusPiece R g).subtype)) := by
   rw [G.bigradedChainMinusPiece_def R g]
-  exact G.finite_ker_unblockedDifferential_bigradedChainMinusSupported R {g} <|
+  exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R G.monomialBidegree {g} <|
     (G.finite_state_exponent_of_alexander_eq g.snd).subset
       fun ix (hix : G.monomialBidegree _ _ = g) ↦
         (G.monomialBidegree_snd ix.fst ix.snd).symm.trans (congrArg Prod.snd hix)
@@ -205,10 +209,9 @@ theorem finite_ker_unblockedDifferential_alexanderChainMinusPiece (R : Type*) [C
       (LinearMap.ker (((G.val.unblockedDifferential R).restrictScalars R).comp
         (G.alexanderChainMinusPiece R a).subtype)) := by
   rw [G.alexanderChainMinusPiece_def R a]
-  exact G.finite_ker_unblockedDifferential_bigradedChainMinusSupported R {p | p.snd = a} <|
-    (G.finite_state_exponent_of_alexander_eq a).subset
-      fun ix (hix : (G.monomialBidegree _ _).snd = a) ↦
-        (G.monomialBidegree_snd ix.fst ix.snd).symm.trans hix
+  exact G.finite_ker_unblockedDifferential_monomialDegreeSupported R
+    (fun x e ↦ G.alexanderℤ x - (e.degree : ℤ)) {a} <|
+      by simpa only [Set.mem_singleton_iff] using G.finite_state_exponent_of_alexander_eq a
 
 end CharacteristicTwoCycles
 

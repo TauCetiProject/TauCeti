@@ -24,9 +24,11 @@ The adjoint of the differential is the canonical isometric horizontal lift. Its 
 the differential is exactly the native orthogonal projection onto the horizontal space; the
 complementary projection is the vertical one. Thus the differential decreases norms, with
 equality exactly on horizontal vectors, and horizontal lifting and the differential on horizontal
-families preserve Gram matrices, linear independence, and orthonormality. The gradient of a
-pulled-back function is the horizontal lift of its gradient, so it has the same length. Product
-projections give submersions with arbitrary-dimensional fibres.
+families preserve Gram matrices, linear independence, and orthonormality. Horizontal lifts of an
+orthonormal basis of the base tangent space, followed by an orthonormal basis of the vertical
+space, form an orthonormal basis of `T_x M` (`IsRiemannianSubmersion.horizontalVerticalBasis`).
+The gradient of a pulled-back function is the horizontal lift of its gradient, so it has the same
+length. Product projections give submersions with arbitrary-dimensional fibres.
 
 These are pointwise splitting and metric identities. They do not assert regularity of the
 horizontal distribution or construct horizontal lifts of curves.
@@ -96,6 +98,16 @@ def horizontalLift (x : M) : TangentSpace J (f x) →ₗᵢ[ℝ] TangentSpace I 
 /-- The horizontal lift is computed by the metric adjoint of the differential. -/
 theorem horizontalLift_apply (x : M) (v : TangentSpace J (f x)) :
     h.horizontalLift x v = (mfderiv I J f x).adjoint v := (rfl)
+
+/-- The horizontal lift of a base vector `u` pairs with `w` as `u` pairs with `df_x w`. -/
+theorem inner_horizontalLift_left (x : M) (u : TangentSpace J (f x)) (w : TangentSpace I x) :
+    ⟪h.horizontalLift x u, w⟫_ℝ = ⟪u, mfderiv I J f x w⟫_ℝ := by
+  rw [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_left]
+
+/-- A tangent vector `w` pairs with the horizontal lift of `u` as `df_x w` pairs with `u`. -/
+theorem inner_horizontalLift_right (x : M) (u : TangentSpace J (f x)) (w : TangentSpace I x) :
+    ⟪w, h.horizontalLift x u⟫_ℝ = ⟪mfderiv I J f x w, u⟫_ℝ := by
+  rw [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right]
 
 /-- Taking the differential of a horizontal lift recovers the original vector. -/
 @[simp]
@@ -213,6 +225,88 @@ theorem orthonormal_mfderiv_iff_of_mem {x : M} {ι : Type*} {u : ι → TangentS
     ← Matrix.gram_eq_one_iff_orthonormal (𝕜 := ℝ),
     h.gram_mfderiv_of_mem hu]
 
+/-! ### The adapted orthonormal basis -/
+
+section Basis
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ]
+
+/-- Horizontal lifts of an orthonormal basis of `T_(f x) N`, followed by an orthonormal basis of the
+vertical space `ker (df_x)`, form an orthonormal family. -/
+theorem orthonormal_sumElim_horizontalLift (x : M)
+    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) :
+    Orthonormal ℝ (Sum.elim (fun i ↦ h.horizontalLift x (b i))
+      fun a ↦ (c a : TangentSpace I x)) := by
+  classical
+  rw [orthonormal_iff_ite]
+  rintro (i | a) (j | a')
+  · rw [Sum.elim_inl, Sum.elim_inl, LinearIsometry.inner_map_map,
+      orthonormal_iff_ite.mp b.orthonormal i j]
+    simp
+  · rw [Sum.elim_inl, Sum.elim_inr, Submodule.inner_left_of_mem_orthogonal (c a').property
+      (h.horizontalLift_mem_orthogonal_ker x (b i))]
+    simp
+  · rw [Sum.elim_inr, Sum.elim_inl, Submodule.inner_right_of_mem_orthogonal (c a).property
+      (h.horizontalLift_mem_orthogonal_ker x (b j))]
+    simp
+  · rw [Sum.elim_inr, Sum.elim_inr, ← Submodule.coe_inner,
+      orthonormal_iff_ite.mp c.orthonormal a a']
+    simp
+
+/-- A tangent vector orthogonal to the horizontal lifts of an orthonormal basis of `T_(f x) N` and
+to an orthonormal basis of `ker (df_x)` is zero. -/
+theorem eq_zero_of_forall_inner_horizontalLift_eq_zero (x : M)
+    (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) {w : TangentSpace I x}
+    (hb : ∀ i, ⟪h.horizontalLift x (b i), w⟫_ℝ = 0)
+    (hc : ∀ a, ⟪(c a : TangentSpace I x), w⟫_ℝ = 0) :
+    w = 0 := by
+  have hdw : mfderiv I J f x w = 0 := by
+    rw [← norm_eq_zero, ← sq_eq_zero_iff, ← b.sum_sq_inner_right]
+    simp [← h.inner_horizontalLift_left, hb]
+  rw [← norm_eq_zero, ← sq_eq_zero_iff]
+  calc ‖w‖ ^ 2 = ‖(⟨w, hdw⟩ : (mfderiv I J f x).ker)‖ ^ 2 := by rw [← Submodule.norm_coe]
+    _ = ∑ a, ⟪c a, (⟨w, hdw⟩ : (mfderiv I J f x).ker)⟫_ℝ ^ 2 := (c.sum_sq_inner_right _).symm
+    _ = 0 := Finset.sum_eq_zero fun a _ ↦ by rw [Submodule.coe_inner, hc a, sq, mul_zero]
+
+/-- The orthonormal basis of `T_x M` adapted to the splitting into horizontal and vertical spaces:
+horizontal lifts of an orthonormal basis `b` of `T_(f x) N`, followed by an orthonormal basis `c` of
+the vertical space `ker (df_x)`. -/
+def horizontalVerticalBasis (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) :
+    OrthonormalBasis (ι ⊕ κ) ℝ (TangentSpace I x) :=
+  .mkOfOrthogonalEqBot (h.orthonormal_sumElim_horizontalLift x b c) <| by
+    refine (Submodule.eq_bot_iff _).2 fun w hw ↦
+      h.eq_zero_of_forall_inner_horizontalLift_eq_zero x b c (fun i ↦ ?_) fun a ↦ ?_
+    · exact Submodule.inner_right_of_mem_orthogonal
+        (Submodule.subset_span (Set.mem_range_self (Sum.inl i))) hw
+    · exact Submodule.inner_right_of_mem_orthogonal
+        (Submodule.subset_span (Set.mem_range_self (Sum.inr a))) hw
+
+/-- The first block of the adapted basis consists of the horizontal lifts. -/
+@[simp]
+theorem horizontalVerticalBasis_inl (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) (i : ι) :
+    h.horizontalVerticalBasis x b c (.inl i) = h.horizontalLift x (b i) := by
+  simp [horizontalVerticalBasis]
+
+/-- The second block of the adapted basis is the vertical basis. -/
+@[simp]
+theorem horizontalVerticalBasis_inr (x : M) (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    (c : OrthonormalBasis κ ℝ (mfderiv I J f x).ker) (a : κ) :
+    h.horizontalVerticalBasis x b c (.inr a) = c a := by
+  simp [horizontalVerticalBasis]
+
+/-- For a horizontal vector `w`, the squared coefficients of `w` on the horizontal lifts of an
+orthonormal basis of `T_(f x) N` add up to `‖w‖²`. -/
+theorem sum_sq_inner_horizontalLift {x : M} (b : OrthonormalBasis ι ℝ (TangentSpace J (f x)))
+    {w : TangentSpace I x} (hw : w ∈ (mfderiv I J f x).kerᗮ) :
+    ∑ i, ⟪h.horizontalLift x (b i), w⟫_ℝ ^ 2 = ‖w‖ ^ 2 := by
+  simp_rw [h.inner_horizontalLift_left, b.sum_sq_inner_right, (h.norm_mfderiv_eq_iff x w).2 hw]
+
+end Basis
+
 variable [IsManifold I 1 M] [IsManifold J 1 N]
 
 /-- The gradient of a pullback is the horizontal lift of the gradient on the base. -/
@@ -222,7 +316,7 @@ theorem mgradient_comp {g : N → ℝ} {x : M}
   apply ext_inner_right ℝ
   intro v
   rw [Manifold.inner_mgradient_comp hg (h.isSubmersion.contMDiff.mdifferentiableAt (by simp)),
-    h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_left]
+    h.inner_horizontalLift_left]
 
 /-- A pulled-back gradient projects to the base gradient. -/
 @[simp]
@@ -281,8 +375,7 @@ theorem horizontalLift_fst (p : M × N) (v : TangentSpace I p.1) :
       (Manifold.tangentSpaceProdEquiv p).symm (v, 0) := by
   apply ext_inner_right ℝ
   intro w
-  rw [IsRiemannianSubmersion.horizontalLift_apply,
-    ContinuousLinearMap.adjoint_inner_left, Manifold.inner_tangentSpace_prod,
+  rw [IsRiemannianSubmersion.inner_horizontalLift_left, Manifold.inner_tangentSpace_prod,
     ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, add_zero,
     mfderiv_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
 
@@ -38,6 +39,8 @@ of `P`.
   root form.
 * `RootPairing.InvariantForm.comap_toInvariantForm`: the canonical invariant form pulls back to the
   canonical invariant form.
+* `RootPairing.InvariantForm.form_weightMap_pow`: an invariant form preserved by an automorphism is
+  preserved by its powers.
 * `RootPairing.InvariantForm.posDef_comap`, `RootPairing.InvariantForm.posDef_comap_iff`: the
   pullback along a morphism with injective weight map of a positive-definite form is positive
   definite, and along an equivalence the converse holds.
@@ -153,6 +156,15 @@ theorem comapEquiv_comp (g : Q.Equiv S) (f : P.Equiv Q) :
 theorem comapEquiv_symm (e : P.Equiv Q) : (comapEquiv e).symm = comapEquiv (Equiv.symm P Q e) := by
   ext B x y
   simp
+
+/-- An invariant form preserved by an automorphism `σ` is preserved by every power of `σ`. -/
+theorem form_weightMap_pow {σ : P.Aut} {B : P.InvariantForm}
+    (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) (n : ℕ) (x y : M) :
+    B.form ((σ ^ n).weightMap x) ((σ ^ n).weightMap y) = B.form x y := by
+  rw [Equiv.weightMap_pow]
+  induction n with
+  | zero => rw [pow_zero, one_apply_eq_self, one_apply_eq_self]
+  | succ n ih => rw [pow_succ', mul_apply_eq_comp, mul_apply_eq_comp, hB, ih]
 
 section Ordered
 

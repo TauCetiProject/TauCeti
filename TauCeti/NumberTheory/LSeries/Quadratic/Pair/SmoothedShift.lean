@@ -12,11 +12,11 @@ import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
 import TauCeti.Analysis.MellinInversion
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.Residue
-import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
+import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Bounds
 import TauCeti.NumberTheory.LSeries.Quadratic.Pair.Residue
-import TauCeti.NumberTheory.LSeries.SmoothedSum
+import TauCeti.NumberTheory.LSeries.SmoothedSum.Basic
 import TauCeti.NumberTheory.LSeries.Twist
 
 /-!

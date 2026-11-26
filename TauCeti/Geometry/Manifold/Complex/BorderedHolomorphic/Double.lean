@@ -52,6 +52,9 @@ lower half-plane, which is not complex differentiable at any real point.
   half-plane.
 * `TauCeti.ClosedUpperHalfPlane.schwarzDouble_symm`, `schwarzDouble_trans`, `schwarzDouble_refl`:
   compatibility with the groupoid operations.
+* `TauCeti.exists_extension_bordered_transition`: on a Riemann surface with boundary, a change of
+  bordered holomorphic chart read in the extended charts is the restriction to the closed upper
+  half-plane of a holomorphic chart change of `ℂ`.
 * `TauCeti.ClosedUpperHalfPlane.not_differentiableAt_negConj_glue`: the piecewise map that is `z`
   on the closed upper half-plane and `-conj (conj z) = -z` on the lower half-plane is not complex
   differentiable at any real point.
@@ -349,5 +352,46 @@ theorem not_differentiableAt_negConj_glue (x : ℝ) :
   · simp [ht.not_ge, abs_of_neg ht]
 
 end ClosedUpperHalfPlane
+
+/-! ### Changes of bordered holomorphic chart -/
+
+section Transition
+
+open ClosedUpperHalfPlane
+
+variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
+
+/-- **The Schwarz reflection of a change of bordered holomorphic chart.** For two bordered
+holomorphic charts `φ` and `φ'`, there is a holomorphic chart change `Φ` of `ℂ` that is defined on
+the part of the extended target of `φ'` over the source of `φ` and agrees with the transition map
+`φ ∘ φ'⁻¹`, read in the extended charts, on the closed upper half-plane. It is the Schwarz
+reflection `TauCeti.ClosedUpperHalfPlane.schwarzDouble` of `φ'⁻¹ ≫ φ`. -/
+theorem exists_extension_bordered_transition {φ φ' : OpenPartialHomeomorph X ClosedUpperHalfPlane}
+    (hφ : φ ∈ borderedHolomorphicGroupoid.maximalAtlas X)
+    (hφ' : φ' ∈ borderedHolomorphicGroupoid.maximalAtlas X) :
+    ∃ Φ : OpenPartialHomeomorph ℂ ℂ, Φ ∈ contDiffGroupoid (⊤ : WithTop ℕ∞) 𝓘(ℂ) ∧
+      (φ'.extend closedUpperHalfPlaneModel).target ∩
+          (φ'.extend closedUpperHalfPlaneModel).symm ⁻¹' φ.source ⊆ Φ.source ∧
+      ∀ z : ℂ, 0 ≤ z.im → Φ z =
+        (φ.extend closedUpperHalfPlaneModel ∘ (φ'.extend closedUpperHalfPlaneModel).symm) z := by
+  set e := φ'.symm ≫ₕ φ
+  have he : e ∈ borderedHolomorphicGroupoid :=
+    StructureGroupoid.compatible_of_mem_maximalAtlas hφ' hφ
+  have hre : PreservesRealAxis e := preservesRealAxis_of_mem_borderedHolomorphicGroupoid he
+  refine ⟨schwarzDouble e hre, schwarzDouble_mem_contDiffGroupoid hre he, fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · have hupper : 0 ≤ z.im := by simpa using φ'.extend_target_subset_range hz.1
+    obtain ⟨hzt, hzφ⟩ := hz
+    rw [OpenPartialHomeomorph.extend_target] at hzt
+    simp only [mem_preimage, OpenPartialHomeomorph.extend_coe_symm, Function.comp_apply] at hzφ
+    simp only [e, schwarzDouble_source, mem_preimage, OpenPartialHomeomorph.trans_source,
+      OpenPartialHomeomorph.symm_source, mem_inter_iff,
+      ← closedUpperHalfPlaneModel_symm_eq_fold hupper]
+    exact ⟨hzt.1, hzφ⟩
+  · -- On the closed upper half-plane the reflection is the transition map.
+    rw [schwarzDouble_apply_of_im_nonneg hre hz]
+    simp [e, closedUpperHalfPlaneModel_symm_eq_fold hz]
+
+end Transition
 
 end TauCeti

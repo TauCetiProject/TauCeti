@@ -19,6 +19,7 @@ import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.Topology.Order.ProjIcc
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Topology.Algebra.Module.ComplexSmulI
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # The Dyson series of a continuous path in a Banach algebra
@@ -337,8 +338,7 @@ variable [StarRing B] [ContinuousStar B]
 theorem dysonSeries_mem_unitary (hp : Continuous p) (hskew : ∀ t, star (p t) = -p t) (t : ℝ) :
     dysonSeries p t ∈ unitary B := by
   -- Continuity of `star` makes it commute with real scalars.
-  have : StarModule ℝ B :=
-    ⟨fun r x => by simpa using map_real_smul (starAddEquiv : B ≃+ B) continuous_star r x⟩
+  have : StarModule ℝ B := ContinuousStar.starModule_real
   have hΓ := hasDerivAt_dysonSeries hp
   have hΓstar (t : ℝ) :
       HasDerivAt (fun s => star (dysonSeries p s)) (-(p t * star (dysonSeries p t))) t :=

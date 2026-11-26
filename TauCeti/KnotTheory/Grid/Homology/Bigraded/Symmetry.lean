@@ -23,8 +23,9 @@ identify every bidegree piece and restrict to ground-ring linear equivalences
 `bigradedUnblockedHomologyTransposeEquiv` and `bigradedUnblockedHomologyRotateEquiv`.
 
 For a knot grid, specializing all grid variables to `U` makes both symmetries `K[U]`-linear, giving
-Maslov--Alexander bigraded `K[U]`-isomorphisms `bigradedUnblockedHomologyIsomorphic_transpose` and
-`bigradedUnblockedHomologyIsomorphic_rotate`.
+Maslov--Alexander bigraded `K[U]`-isomorphisms `bigradedUnblockedHomologyIsomorphic_transpose`
+(`Homology/Transpose.lean`) and `bigradedUnblockedHomologyIsomorphic_rotate`
+(`Homology/HalfTurn.lean`).
 
 ## References
 
@@ -127,33 +128,5 @@ theorem coe_bigradedUnblockedHomologyRotateEquiv_symm (g : ℤ × ℤ)
   exact G.coe_bigradedUnblockedHomologyPieceEquivOfSemilinear_symm R G.rotate _ _ _ g y
 
 end OddComponentGridDiagram
-
-namespace GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
-
-/-- The diagonal reflection of a knot grid preserves `GH⁻` as a Maslov--Alexander bigraded
-`K[U]`-module. -/
-theorem bigradedUnblockedHomologyIsomorphic_transpose :
-    hG.BigradedUnblockedHomologyIsomorphic (G.isKnot_transpose.mpr hG) K := by
-  refine .of_semilinearMap (fun p ↦ ?_)
-    (G.unblockedHomologyTransposeEquiv K).toLinearMap
-    (G.unblockedHomologyTransposeEquiv K).bijective fun g y hy ↦ ?_
-  · simp [aeval_rename, Function.comp_def]
-  · rw [bigradedUnblockedHomologyGrading_piece] at hy ⊢
-    exact (hG.toOddComponentGridDiagram.unblockedHomologyTransposeEquiv_mem_bigradedPiece_iff K).mpr
-      hy
-
-/-- The half-turn of a knot grid preserves `GH⁻` as a Maslov--Alexander bigraded `K[U]`-module. -/
-theorem bigradedUnblockedHomologyIsomorphic_rotate :
-    hG.BigradedUnblockedHomologyIsomorphic (G.isKnot_rotate.mpr hG) K := by
-  refine .of_semilinearMap (fun p ↦ ?_)
-    (G.unblockedHomologyRotateEquiv K).toLinearMap
-    (G.unblockedHomologyRotateEquiv K).bijective fun g y hy ↦ ?_
-  · simp [aeval_rename, Function.comp_def]
-  · rw [bigradedUnblockedHomologyGrading_piece] at hy ⊢
-    exact (hG.toOddComponentGridDiagram.unblockedHomologyRotateEquiv_mem_bigradedPiece_iff K).mpr hy
-
-end GridDiagram.IsKnot
 
 end TauCeti

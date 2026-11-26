@@ -17,8 +17,10 @@ their second coordinate `a` coarsens the `(O-Maslov, Alexander)` bigrading of `G
 Alexander grading (`OddComponentGridDiagram.coarsen_bigradedChainMinusGrading_snd` in
 `TauCeti.KnotTheory.Grid.Grading.Unblocked.Chain`). Over a commutative ring of characteristic two,
 the same projection coarsens the induced bigrading on unblocked grid homology `GH⁻` to
-`alexanderUnblockedHomologyGrading` (`coarsen_bigradedUnblockedHomologyGrading_snd`), so each
-Alexander piece of `GH⁻` is the supremum of its Maslov subpieces
+`alexanderUnblockedHomologyGrading` (`coarsen_bigradedUnblockedHomologyGrading_snd` in
+`TauCeti.KnotTheory.Grid.Homology.Bigraded.Basic`), so the coarsened piece family agrees with the
+Alexander pieces (`coarsenGrading_bigradedUnblockedHomologyPiece_snd`) and each Alexander piece of
+`GH⁻` is the supremum of its Maslov subpieces
 (`iSup_bigradedUnblockedHomologyPiece_eq_alexanderUnblockedHomologyGrading_piece`).
 
 ## References
@@ -31,30 +33,6 @@ public section
 namespace TauCeti.OddComponentGridDiagram
 
 variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommRing R] [CharP R 2]
-
-/-- Every Maslov--Alexander piece of `GH⁻` lies in the Alexander piece of its second
-coordinate. -/
-theorem bigradedUnblockedHomologyPiece_le_alexanderUnblockedHomologyGrading_piece (m a : ℤ) :
-    G.bigradedUnblockedHomologyPiece R (m, a) ≤
-      (G.alexanderUnblockedHomologyGrading R).piece a := by
-  intro y hy
-  obtain ⟨z, hz, rfl⟩ := (G.mem_bigradedUnblockedHomologyPiece_iff R).mp hy
-  rw [G.mem_alexanderUnblockedHomologyGrading_piece_iff R, G.mem_alexanderHomologyGrading_piece_iff]
-  exact ⟨z, G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R m a hz,
-    (G.val.unblockedHomologyIso_hom_unblockedHomologyClass R z).symm⟩
-
-/-- Projecting bidegrees to their Alexander coordinate coarsens the internal bigrading of `GH⁻`
-to its internal Alexander grading. -/
-@[simp]
-theorem coarsen_bigradedUnblockedHomologyGrading_snd :
-    (G.bigradedUnblockedHomologyGrading R).coarsen Prod.snd =
-      G.alexanderUnblockedHomologyGrading R := by
-  refine InternalGrading.eq_of_piece_le fun b ↦ ?_
-  rw [InternalGrading.coarsen_piece]
-  refine coarsenGrading_le_iff.mpr ?_
-  rintro ⟨m, c⟩ (rfl : c = b)
-  rw [bigradedUnblockedHomologyGrading_piece]
-  exact G.bigradedUnblockedHomologyPiece_le_alexanderUnblockedHomologyGrading_piece R m c
 
 /-- Coarsening the Maslov--Alexander homology pieces along `Prod.snd` recovers the Alexander
 homology pieces. -/

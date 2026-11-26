@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Eval
 public import TauCeti.LowDimTopology.Heegaard.AlexanderGrading
-public import TauCeti.LowDimTopology.Heegaard.MinusDifferential
+public import TauCeti.LowDimTopology.Heegaard.Knot.Full
 
 import TauCeti.Algebra.MvPolynomial.AevalConstX
 
@@ -35,6 +34,11 @@ counting nonnegative domains in place of holomorphic disks, as the hat and minus
 * The **knot differential** `H.knotDifferential χ w z` is the `𝔽₂[U, V]`-linear endomorphism of
   the free `𝔽₂[U, V]`-module on the generators with these coefficients. Being linear, it commutes
   with the actions of `U` and `V`.
+
+These are the full coefficient and the full differential
+(`TauCeti.LowDimTopology.Heegaard.Knot.Full`) of the diagram pointed at `w` and `z` alone, with
+`U` the variable of `w` and `V` that of `z` (`fullCoefficient_withBasepoints_eq_knotCoefficient`),
+and their basic API is derived from the full one.
 
 The domains counted do not involve the basepoints, so these are the domains of the singly pointed
 diagram `(Σ, α, β, w)` of the ambient manifold as well (`minusDomains_withBasepoints`); if that
@@ -97,6 +101,10 @@ which the count has the properties listed.
 
 ## Main results
 
+* `TauCeti.HeegaardRegionSystem.fullCoefficient_withBasepoints_eq_knotCoefficient`: the knot
+  coefficient is the full coefficient of the doubly pointed diagram.
+* `TauCeti.HeegaardRegionSystem.fullDifferential_withBasepoints_eq_knotDifferential`: the knot
+  differential is the full differential of the doubly pointed diagram.
 * `TauCeti.HeegaardRegionSystem.coeff_knotCoefficient`: the coefficients count domains by their
   multiplicities at `w` and `z`.
 * `TauCeti.HeegaardRegionSystem.aeval_knotCoefficient_X_one`,
@@ -158,24 +166,34 @@ theorem knotCoefficient_def : H.knotCoefficient χ w z x y =
       X 0 ^ (D (H.basepoint w)).toNat * X 1 ^ (D (H.basepoint z)).toNat :=
   (rfl)
 
+/-- **The knot coefficient is the full coefficient of the doubly pointed diagram.** For the
+diagram pointed at `w` and `z` alone, with `X 0` the variable of `w` and `X 1` that of `z`, the full
+coefficient is the knot coefficient `∑ U ^ n_w(D) V ^ n_z(D)`. -/
+theorem fullCoefficient_withBasepoints_eq_knotCoefficient (w z : Basepoint) :
+    (H.withBasepoints ![H.basepoint w, H.basepoint z]).fullCoefficient χ x y =
+      H.knotCoefficient χ w z x y := by
+  rw [fullCoefficient_def, knotCoefficient_def, minusDomains_withBasepoints]
+  simp [Fin.prod_univ_two]
+
 /-- When finitely many domains are counted, the knot coefficient is a finite sum. -/
 theorem knotCoefficient_eq_sum (hfin : (H.minusDomains χ x y).Finite) :
     H.knotCoefficient χ w z x y = ∑ D ∈ hfin.toFinset,
-      X 0 ^ (D (H.basepoint w)).toNat * X 1 ^ (D (H.basepoint z)).toNat :=
-  finsum_mem_eq_finite_toFinset_sum _ hfin
+      X 0 ^ (D (H.basepoint w)).toNat * X 1 ^ (D (H.basepoint z)).toNat := by
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    fullCoefficient_eq_sum (by rwa [minusDomains_withBasepoints])]
+  simp [Fin.prod_univ_two]
 
 /-- When infinitely many domains are counted, the knot coefficient is `0`. -/
 theorem knotCoefficient_eq_zero_of_infinite (h : (H.minusDomains χ x y).Infinite) :
-    H.knotCoefficient χ w z x y = 0 :=
-  finsum_mem_eq_zero_of_infinite <| by
-    rwa [Set.inter_eq_left.mpr fun D _ => Function.mem_support.mpr <| by
-      rw [X_pow_eq_monomial, X_pow_eq_monomial, monomial_mul_monomial, Ne, monomial_eq_zero]
-      exact one_ne_zero]
+    H.knotCoefficient χ w z x y = 0 := by
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    fullCoefficient_eq_zero_of_infinite (by rwa [minusDomains_withBasepoints])]
 
 /-- The knot coefficient vanishes when no domain is counted. -/
 theorem knotCoefficient_eq_zero_of_minusDomains_eq_empty (h : H.minusDomains χ x y = ∅) :
     H.knotCoefficient χ w z x y = 0 := by
-  simp [knotCoefficient_def, h]
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    fullCoefficient_eq_zero_of_minusDomains_eq_empty (by rwa [minusDomains_withBasepoints])]
 
 /-- The coefficient of the monomial `U ^ m 0 * V ^ m 1` in the knot coefficient from `x` to `y` is
 the number, modulo two, of counted domains from `x` to `y` with multiplicity `m 0` at `w` and
@@ -183,36 +201,17 @@ the number, modulo two, of counted domains from `x` to `y` with multiplicity `m 
 theorem coeff_knotCoefficient (hfin : (H.minusDomains χ x y).Finite) (m : Fin 2 →₀ ℕ) :
     (H.knotCoefficient χ w z x y).coeff m =
       {D ∈ H.minusDomains χ x y | D (H.basepoint w) = m 0 ∧ D (H.basepoint z) = m 1}.ncard := by
-  classical
-  rw [knotCoefficient_eq_sum hfin, coeff_sum]
-  simp only [X_pow_eq_monomial, monomial_mul_monomial, mul_one, coeff_monomial, Finset.sum_boole]
-  rw [← Set.ncard_coe_finset]
-  congr 2
-  ext D
-  simp only [Finset.coe_filter, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
-  refine and_congr_right fun hD => ?_
-  have hw := basepoint_nonneg_of_mem_minusDomains hD w
-  have hz := basepoint_nonneg_of_mem_minusDomains hD z
-  constructor
-  · intro h
-    have h0 := DFunLike.congr_fun h 0
-    have h1 := DFunLike.congr_fun h 1
-    simp only [Finsupp.add_apply, Finsupp.single_apply] at h0 h1
-    norm_num at h0 h1
-    omega
-  · rintro ⟨h0, h1⟩
-    ext i
-    fin_cases i <;> simp <;> omega
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    coeff_fullCoefficient (by rwa [minusDomains_withBasepoints])]
+  simp [Fin.forall_fin_two]
 
 /-- A nonzero coefficient of `U ^ m 0 * V ^ m 1` in the knot coefficient from `x` to `y` comes
 from a counted domain from `x` to `y` with multiplicity `m 0` at `w` and `m 1` at `z`. -/
 theorem exists_mem_minusDomains_of_coeff_knotCoefficient_ne_zero {m : Fin 2 →₀ ℕ}
     (h : (H.knotCoefficient χ w z x y).coeff m ≠ 0) :
     ∃ D ∈ H.minusDomains χ x y, D (H.basepoint w) = m 0 ∧ D (H.basepoint z) = m 1 := by
-  by_cases hfin : (H.minusDomains χ x y).Finite
-  · rw [coeff_knotCoefficient hfin] at h
-    exact Set.nonempty_of_ncard_ne_zero fun h0 => h (by rw [h0, Nat.cast_zero])
-  · simp [knotCoefficient_eq_zero_of_infinite hfin] at h
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient] at h
+  simpa [Fin.forall_fin_two] using exists_mem_minusDomains_of_coeff_fullCoefficient_ne_zero h
 
 /-- Evaluating the variables `U` and `V` at elements `g 0` and `g 1` of an algebra, the knot
 coefficient becomes the sum of `g 0 ^ n_w(D) * g 1 ^ n_z(D)` over the counted domains, provided
@@ -221,11 +220,10 @@ theorem aeval_knotCoefficient {S : Type*} [CommSemiring S] [Algebra (ZMod 2) S] 
     (hg : ∀ a b : ℕ, g 0 ^ a * g 1 ^ b ≠ 0) :
     aeval g (H.knotCoefficient χ w z x y) = ∑ᶠ D ∈ H.minusDomains χ x y,
       g 0 ^ (D (H.basepoint w)).toNat * g 1 ^ (D (H.basepoint z)).toNat := by
-  by_cases hfin : (H.minusDomains χ x y).Finite
-  · rw [knotCoefficient_eq_sum hfin, map_sum, finsum_mem_eq_finite_toFinset_sum _ hfin]
-    simp
-  · rw [knotCoefficient_eq_zero_of_infinite hfin, map_zero, finsum_mem_eq_zero_of_infinite]
-    rwa [Set.inter_eq_left.mpr fun D _ => Function.mem_support.mpr (hg _ _)]
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    aeval_fullCoefficient g fun m => by simpa [Fin.prod_univ_two] using hg (m 0) (m 1),
+    minusDomains_withBasepoints]
+  simp [Fin.prod_univ_two]
 
 end Coefficient
 
@@ -250,15 +248,9 @@ both variables at `X`, the knot coefficient becomes the minus coefficient of the
 theorem aeval_knotCoefficient_X_X :
     aeval ![Polynomial.X, Polynomial.X] (H.knotCoefficient χ w z x y) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).minusCoefficient χ x y := by
-  rw [aeval_knotCoefficient _ fun a b => by
-      simpa only [Matrix.cons_val_zero, Matrix.cons_val_one, ← pow_add] using
-        (Polynomial.monic_X_pow (a + b)).ne_zero, minusCoefficient_def,
-    minusDomains_withBasepoints ![H.basepoint w, H.basepoint z]]
-  refine finsum_mem_congr rfl fun D hD => ?_
-  simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one]
-  rw [Int.toNat_add (basepoint_nonneg_of_mem_minusDomains hD w)
-    (basepoint_nonneg_of_mem_minusDomains hD z), pow_add]
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient,
+    Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)), Matrix.vecCons_const]
+  exact aeval_X_fullCoefficient
 
 /-- **Setting `U = 0` and `V = 1` gives the hat coefficient of the ambient manifold.** When
 finitely many domains are counted, evaluating `U = 0` and `V = 1` keeps the counted domains
@@ -280,9 +272,8 @@ its hat differential. -/
 theorem constantCoeff_knotCoefficient (hfin : (H.minusDomains χ x y).Finite) :
     constantCoeff (H.knotCoefficient χ w z x y) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatCoefficient χ x y := by
-  rw [← coeff_zero_minusCoefficient (by rwa [minusDomains_withBasepoints]),
-    ← aeval_knotCoefficient_X_X, Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)),
-    Matrix.vecCons_const, coeff_zero_aeval_const_X]
+  rw [← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  exact constantCoeff_fullCoefficient (by rwa [minusDomains_withBasepoints])
 
 end Specialization
 
@@ -340,31 +331,47 @@ variable (H) in
 characteristics `χ`: the `𝔽₂[U, V]`-linear endomorphism of the free `𝔽₂[U, V]`-module on the
 generators whose coefficient from `x` to `y` is the sum of `U ^ n_w(D) * V ^ n_z(D)` over the
 nonnegative domains `D` of Maslov index one from `x` to `y`
-(`TauCeti.HeegaardRegionSystem.knotCoefficient`). -/
+(`TauCeti.HeegaardRegionSystem.knotCoefficient`). It is the full differential of the diagram
+pointed at `w` and `z` alone. -/
 noncomputable def knotDifferential (χ : Region → ℤ) (w z : Basepoint) :
     (H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) →ₗ[MvPolynomial (Fin 2) (ZMod 2)]
       H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2) :=
-  Finsupp.linearCombination _ fun x => Finsupp.equivFunOnFinite.symm (H.knotCoefficient χ w z x)
+  (H.withBasepoints ![H.basepoint w, H.basepoint z]).fullDifferential χ
 
 variable {χ : Region → ℤ} {w z : Basepoint}
+
+/-- **The knot differential is the full differential of the doubly pointed diagram.** For the
+diagram pointed at `w` and `z` alone, with `X 0` the variable of `w` and `X 1` that of `z`, the full
+differential is the knot differential. -/
+theorem fullDifferential_withBasepoints_eq_knotDifferential (w z : Basepoint) :
+    (H.withBasepoints ![H.basepoint w, H.basepoint z]).fullDifferential χ =
+      H.knotDifferential χ w z :=
+  (rfl)
 
 /-- The matrix coefficients of the knot differential are the polynomials
 `TauCeti.HeegaardRegionSystem.knotCoefficient`. -/
 @[simp]
 theorem knotDifferential_single_apply (x y : H.Generator) (a : MvPolynomial (Fin 2) (ZMod 2)) :
-    H.knotDifferential χ w z (Finsupp.single x a) y = a * H.knotCoefficient χ w z x y :=
-  Finsupp.linearCombination_equivFunOnFinite_symm_single_apply _ x y a
+    H.knotDifferential χ w z (Finsupp.single x a) y = a * H.knotCoefficient χ w z x y := by
+  rw [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  exact fullDifferential_single_apply
+    (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) x y a
 
 /-- The coefficient of `y` in the knot differential of a chain `c`. -/
 theorem knotDifferential_apply (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2))
     (y : H.Generator) :
-    H.knotDifferential χ w z c y = c.sum fun x a => a * H.knotCoefficient χ w z x y :=
-  Finsupp.linearCombination_equivFunOnFinite_symm_apply _ c y
+    H.knotDifferential χ w z c y = c.sum fun x a => a * H.knotCoefficient χ w z x y := by
+  simp only [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  exact fullDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) c y
 
 /-- The knot differential vanishes exactly when all of its coefficients vanish. -/
 theorem knotDifferential_eq_zero_iff :
-    H.knotDifferential χ w z = 0 ↔ ∀ x y, H.knotCoefficient χ w z x y = 0 :=
-  Finsupp.linearCombination_equivFunOnFinite_symm_eq_zero_iff
+    H.knotDifferential χ w z = 0 ↔ ∀ x y, H.knotCoefficient χ w z x y = 0 := by
+  simp only [← fullDifferential_withBasepoints_eq_knotDifferential,
+    ← fullCoefficient_withBasepoints_eq_knotCoefficient]
+  exact fullDifferential_eq_zero_iff
 
 /-- Applying a ring homomorphism `f` to the coefficients of a chain intertwines the knot
 differential with any differential `d` whose coefficients are the images under `f` of the knot
@@ -377,14 +384,11 @@ private theorem mapRange_knotDifferential {S F : Type*} [CommSemiring S]
     (c : H.Generator →₀ MvPolynomial (Fin 2) (ZMod 2)) :
     Finsupp.mapRange f (map_zero f) (H.knotDifferential χ w z c) =
       d (Finsupp.mapRange f (map_zero f) c) := by
-  have hv : (fun x => Finsupp.mapRange f (map_zero f)
-      (Finsupp.equivFunOnFinite.symm (H.knotCoefficient χ w z x))) =
-        fun x => Finsupp.equivFunOnFinite.symm (e x) := by
-    ext x y
-    simp [he]
   ext y
-  rw [knotDifferential, Finsupp.mapRange_linearCombination, hv,
-    Finsupp.linearCombination_equivFunOnFinite_symm_apply, hd]
+  rw [hd]
+  refine (mapRange_fullDifferential_apply
+    (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) f c y).trans ?_
+  simp only [fullCoefficient_withBasepoints_eq_knotCoefficient, he]
 
 /-- **Setting `V = 1` gives the minus differential of the ambient manifold.** Evaluating `U = X`
 and `V = 1` in the coefficients of a chain intertwines the knot differential with the minus
@@ -408,10 +412,9 @@ theorem mapRange_aeval_X_X_knotDifferential
       (H.knotDifferential χ w z c) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).minusDifferential χ
         (Finsupp.mapRange (aeval ![(Polynomial.X : Polynomial (ZMod 2)), Polynomial.X])
-          (map_zero _) c) :=
-  mapRange_knotDifferential (H := H) _
-    (minusDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]))
-    (fun _ _ => aeval_knotCoefficient_X_X) c
+          (map_zero _) c) := by
+  rw [Matrix.vec_single_eq_const (Polynomial.X : Polynomial (ZMod 2)), Matrix.vecCons_const]
+  exact mapRange_aeval_X_fullDifferential (H := H.withBasepoints ![H.basepoint w, H.basepoint z]) c
 
 /-- **Setting `U = V = 0` gives the hat knot Floer differential.** When the counts are finite,
 taking constant coefficients of a chain intertwines the knot differential with the hat
@@ -421,9 +424,8 @@ theorem mapRange_constantCoeff_knotDifferential (hfin : ∀ x y, (H.minusDomains
     Finsupp.mapRange constantCoeff (map_zero _) (H.knotDifferential χ w z c) =
       (H.withBasepoints ![H.basepoint w, H.basepoint z]).hatDifferential χ
         (Finsupp.mapRange constantCoeff (map_zero _) c) :=
-  mapRange_knotDifferential (H := H) _
-    (hatDifferential_apply (H := H.withBasepoints ![H.basepoint w, H.basepoint z]))
-    (fun x y => constantCoeff_knotCoefficient (hfin x y)) c
+  mapRange_constantCoeff_fullDifferential (H := H.withBasepoints ![H.basepoint w, H.basepoint z])
+    (fun x y => by rw [minusDomains_withBasepoints]; exact hfin x y) c
 
 /-- **Setting `U = 0` and `V = 1` gives the hat differential of the ambient manifold.** When the
 counts are finite, evaluating `U = 0` and `V = 1` in the coefficients of a chain intertwines the

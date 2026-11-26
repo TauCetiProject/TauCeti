@@ -10,6 +10,9 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Categorical.Basic
 public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Cat
 public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Equivalence
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Groupoid
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Categorical.Pasting
 
 /-!
 # The 2-fiber product of pseudofunctors
@@ -25,7 +28,13 @@ along `f` is `(f^* x, f^* y, f^* e)`, with `f^* e` transported along the natural
 and it has the 2-universal property of the 2-fiber product: strong transformations into it are
 induced by pairs of strong transformations into `F` and `G` with an invertible modification
 between their composites to `H` (`twoFiberProduct.lift`), and modifications between them are
-determined by their projections (`twoFiberProduct.homMk`, `twoFiberProduct.hom_ext`).
+determined by their projections (`twoFiberProduct.homMk`, `twoFiberProduct.hom_ext`). Its fibers
+are groupoids when those of `F` and `G` are (`twoFiberProduct.isGroupoid_obj`), its second
+projection is a fiberwise equivalence when `α` is (`twoFiberProduct.isEquivalence_snd_app`), and
+its first projection is one when `β` is (`twoFiberProduct.isEquivalence_fst_app`). Finally,
+2-fiber products paste: for `γ : K ⟶ F` there is a strong transformation
+`twoFiberProduct γ (fst α β) ⟶ twoFiberProduct (γ ≫ α) β` whose components are equivalences
+(`twoFiberProduct.pullbackRightPullbackFst`).
 
 The construction uses no topology; that the 2-fiber product of stacks is a stack is proved in
 `TauCeti.CategoryTheory.Sites.Descent.TwoFiberProduct`.
@@ -48,6 +57,14 @@ values in `Cat.{v', max u' v'}`. For pseudofunctors with values in `Cat.{u, u + 
   and `whiskerLeft_lift_iso_hom`.
 * `TauCeti.Stack.twoFiberProduct.homMk`, `TauCeti.Stack.twoFiberProduct.isoMk`,
   `TauCeti.Stack.twoFiberProduct.hom_ext`: modifications into the 2-fiber product.
+* `TauCeti.Stack.twoFiberProduct.isGroupoid_obj`: the fibers are groupoids when those of `F` and
+  `G` are.
+* `TauCeti.Stack.twoFiberProduct.isEquivalence_snd_app`,
+  `TauCeti.Stack.twoFiberProduct.isEquivalence_fst_app`: equivalences are stable under 2-base
+  change.
+* `TauCeti.Stack.twoFiberProduct.pullbackRightPullbackFst`,
+  `TauCeti.Stack.twoFiberProduct.isEquivalence_pullbackRightPullbackFst_app`: the pasting law
+  `twoFiberProduct γ (fst α β) ⟶ twoFiberProduct (γ ≫ α) β`, whose components are equivalences.
 
 ## References
 
@@ -414,6 +431,14 @@ lemma snd_app_toFunctor (X : LocallyDiscrete Cᵒᵖ) :
     ((snd α β).app X).toFunctor = π₂ (α.app X).toFunctor (β.app X).toFunctor :=
   (rfl)
 
+/-- The component over `X` of the first projection is an equivalence when that of `β` is:
+equivalences are stable under 2-base change. -/
+instance isEquivalence_fst_app (X : LocallyDiscrete Cᵒᵖ) [(β.app X).toFunctor.IsEquivalence] :
+    ((fst α β).app X).toFunctor.IsEquivalence :=
+  -- The fiber over `X` is a categorical pullback only definitionally, so instance search does
+  -- not find `CategoricalPullback.isEquivalence_π₁`.
+  CategoricalPullback.isEquivalence_π₁ _ _
+
 /-- The `2`-cell `fst ≫ α ≅ snd ≫ β` of the 2-fiber product, with components the structure
 isomorphisms of the objects of the categorical pullbacks. -/
 def iso : fst α β ≫ α ≅ snd α β ≫ β :=
@@ -763,6 +788,87 @@ def isoMk (e₁ : φ ≫ fst α β ≅ ψ ≫ fst α β) (e₂ : φ ≫ snd α �
   inv_hom_id := hom_ext α β (by simp) (by simp)
 
 end homMk
+
+/-- The fibers of the 2-fiber product of transformations between pseudofunctors with groupoid
+fibers are groupoids. -/
+instance isGroupoid_obj (X : LocallyDiscrete Cᵒᵖ) [IsGroupoid (F.obj X)]
+    [IsGroupoid (G.obj X)] : IsGroupoid ((twoFiberProduct α β).obj X) :=
+  inferInstanceAs (IsGroupoid ((α.app X).toFunctor ⊡ (β.app X).toFunctor))
+
+/-- The second projection of a 2-fiber product along a fiberwise equivalence `α` is a fiberwise
+equivalence: equivalences are stable under 2-base change. -/
+instance isEquivalence_snd_app (X : LocallyDiscrete Cᵒᵖ) [(α.app X).toFunctor.IsEquivalence] :
+    ((snd α β).app X).toFunctor.IsEquivalence :=
+  inferInstanceAs (π₂ (α.app X).toFunctor (β.app X).toFunctor).IsEquivalence
+
+/-! ### Pasting
+
+For `γ : K ⟶ F`, the 2-fiber product of `γ` with the first projection `fst α β` is equivalent to
+the 2-fiber product of `γ ≫ α` with `β` (`pullbackRightPullbackFst`, whose components are
+equivalences): the pasting law for 2-fiber products, computed fiberwise by
+`CategoricalPullback.pullbackRightPullbackFstEquiv`. -/
+
+section pasting
+
+variable {K : Pseudofunctor (LocallyDiscrete Cᵒᵖ) Cat.{v', max u' v'}} (γ : K ⟶ F)
+
+/-- The `2`-cell `fst ≫ γ ≫ α ≅ (snd ≫ snd) ≫ β` of the outer square obtained by pasting the
+`2`-cells of `twoFiberProduct γ (fst α β)` and `twoFiberProduct α β`. -/
+def pullbackRightPullbackFstSquareIso :
+    fst γ (fst α β) ≫ γ ≫ α ≅ (snd γ (fst α β) ≫ snd α β) ≫ β :=
+  (α_ _ _ _).symm ≪≫ whiskerRightIso (iso γ (fst α β)) α ≪≫ α_ _ _ _ ≪≫
+    whiskerLeftIso (snd γ (fst α β)) (iso α β) ≪≫ (α_ _ _ _).symm
+
+/-- The component of `pullbackRightPullbackFstSquareIso` at an object `k = (t, (x, y, e), e')` is
+`α e' ≫ e`. -/
+@[simp]
+lemma pullbackRightPullbackFstSquareIso_hom_as_app_toNatTrans_app (X : LocallyDiscrete Cᵒᵖ)
+    (k : (twoFiberProduct γ (fst α β)).obj X) :
+    ((pullbackRightPullbackFstSquareIso α β γ).hom.as.app X).toNatTrans.app k =
+      (α.app X).toFunctor.map k.iso.hom ≫ k.snd.iso.hom := by
+  -- The associators of `Cat` have identity components and the whiskered `2`-cells are those of
+  -- the two 2-fiber products, but `Cat.Hom₂.comp_app` does not apply to the composite: its
+  -- intermediate `1`-morphisms agree only definitionally with those of the components. So
+  -- `change` states the goal with the components evaluated.
+  change 𝟙 _ ≫ (α.app X).toFunctor.map k.iso.hom ≫ 𝟙 _ ≫ k.snd.iso.hom ≫ 𝟙 _ = _
+  simp only [Category.id_comp]
+  -- The last identity lives over an object of `H.obj X` that is only definitionally the target
+  -- of `k.snd.iso.hom`.
+  exact congrArg (_ ≫ ·) (Category.comp_id _)
+
+/-- The comparison `twoFiberProduct γ (fst α β) ⟶ twoFiberProduct (γ ≫ α) β` of the pasting law
+for 2-fiber products, induced by the pasted `2`-cell `pullbackRightPullbackFstSquareIso`. Its
+components are equivalences (`isEquivalence_pullbackRightPullbackFst_app`). -/
+def pullbackRightPullbackFst : twoFiberProduct γ (fst α β) ⟶ twoFiberProduct (γ ≫ α) β :=
+  lift (γ ≫ α) β _ _ (pullbackRightPullbackFstSquareIso α β γ)
+
+/-- The component of `pullbackRightPullbackFst` over `X` is the functor of the pasting
+equivalence of categorical pullbacks. -/
+def pullbackRightPullbackFstAppIso (X : LocallyDiscrete Cᵒᵖ) :
+    (CategoricalPullback.pullbackRightPullbackFstEquiv (α.app X).toFunctor (β.app X).toFunctor
+      (γ.app X).toFunctor).functor ≅ ((pullbackRightPullbackFst α β γ).app X).toFunctor :=
+  -- Both functors send `k` to `(k.fst, k.snd.snd, -)`, and both structure isomorphisms are
+  -- `α k.iso ≫ k.snd.iso` (`pullbackRightPullbackFstSquareIso_hom_as_app_toNatTrans_app`). The
+  -- fibers of the 2-fiber products are categorical pullbacks only definitionally, so neither
+  -- `simp` nor `rw` can rewrite with the categorical pullback lemmas (even `Functor.map_id` fails
+  -- to fire); the identity cancellations are glued by unification instead.
+  NatIso.ofComponents
+    (fun k ↦ CategoricalPullback.mkIso (Iso.refl _) (Iso.refl _)
+      ((((congrArg (· ≫ _) (Functor.map_id _ _)).trans (Category.id_comp _)).trans
+        (pullbackRightPullbackFstSquareIso_hom_as_app_toNatTrans_app α β γ X k)).trans
+          ((Category.comp_id _).symm.trans (congrArg (_ ≫ ·) (Functor.map_id _ _).symm))))
+    (fun _ ↦ CategoricalPullback.hom_ext ((Category.comp_id _).trans (Category.id_comp _).symm)
+      ((Category.comp_id _).trans (Category.id_comp _).symm))
+
+instance isEquivalence_pullbackRightPullbackFst_app (X : LocallyDiscrete Cᵒᵖ) :
+    ((pullbackRightPullbackFst α β γ).app X).toFunctor.IsEquivalence :=
+  -- The categories of the fibers are categorical pullbacks only definitionally, so instance
+  -- search does not find that the functor of the pasting equivalence is an equivalence.
+  (Functor.isEquivalence_iff_of_iso (pullbackRightPullbackFstAppIso α β γ X)).1
+    (CategoricalPullback.pullbackRightPullbackFstEquiv (α.app X).toFunctor
+      (β.app X).toFunctor (γ.app X).toFunctor).isEquivalence_functor
+
+end pasting
 
 end twoFiberProduct
 

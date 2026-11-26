@@ -134,10 +134,8 @@ theorem _root_.TauCeti.SmoothTwoForm.hamiltonianVectorField_mem_ker_mfderiv_iff
       ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
       mvfderiv_apply_eq_mfderiv_apply]
     exact funext_iff
-  · have h0 (f : M → ℝ) : σ.hamiltonianVectorField f x = 0 := by
-      rw [hamiltonianVectorField_def, ContinuousLinearMap.inverse_of_not_isInvertible hinv]
-      rfl
-    simp [poissonBracket_def, h0]
+  · simp [poissonBracket_eq_zero_of_not_isInvertible_flat hinv,
+      hamiltonianVectorField_eq_zero_of_not_isInvertible_flat hinv]
 
 /-- The kernel of `dF_x` is a coisotropic subspace of `T_x M` exactly when
 `{F_i, F_j}(x) = 0` for all `i` and `j`. -/
@@ -163,7 +161,7 @@ theorem poissonBracket_eq_zero_of_ker_le
     have hXk : σ.hamiltonianVectorField k x ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker :=
       hσ.hamiltonianVectorField_mem_of_forall_mvfderiv_eq_zero
         ((hσ.isCoisotropic_ker_mfderiv_iff hF).2 hcomm) fun _ hv ↦ hk hv
-    rw [hσ.poissonBracket_eq_mvfderiv]
+    rw [σ.poissonBracket_eq_mvfderiv]
     exact hg hXk
   · -- If `F` is not differentiable at `x` then `dF_x = 0`, so `dk_x = 0` and `X_k(x) = 0`.
     rw [mfderiv_zero_of_not_mdifferentiableAt hF] at hk
@@ -171,7 +169,7 @@ theorem poissonBracket_eq_zero_of_ker_le
       ext v
       exact hk (by simp : v ∈ ((0 : TangentSpace I x →L[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)) :
         TangentSpace I x →ₗ[ℝ] TangentSpace 𝓘(ℝ, ι → ℝ) (F x)).ker)
-    rw [hσ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
+    rw [σ.poissonBracket_eq_mvfderiv, hσ.hamiltonianVectorField_eq_zero_iff.2 hdk, map_zero]
 
 /-! ### Independent functions -/
 

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Equation
 public import TauCeti.KnotTheory.Grid.Homology.Commutation.Basic
-public import TauCeti.KnotTheory.Grid.Homology.Transpose
 
 /-!
 # Commutation invariance of `GH⁻`
@@ -30,13 +29,11 @@ equivalences. In particular, on cycles, `Ψ ∘ Φ` and `Φ ∘ Ψ` are the iden
 
 Over a commutative ring of characteristic two this shows that the map `Φ_*` induced on `GH⁻`
 (`GridDiagram.unblockedHomologyCommutationMap`) is bijective
-(`GridDiagram.unblockedHomologyCommutationMap_bijective`). Since `Φ_*` preserves the Alexander
-grading and is semilinear along a renaming of the variables, for knot grids it is a graded
-`R[U]`-isomorphism of degree zero, so `GH⁻` does not change under a column commutation as an
-Alexander-graded `R[U]`-module (`GridDiagram.IsKnot.unblockedHomologyIsomorphic_swapColumns`).
-Combined with the invariance of `GH⁻` under the diagonal reflection, which exchanges row and column
-commutations, `GH⁻` is invariant under every elementary commutation
-(`GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_isCommutation`).
+(`GridDiagram.unblockedHomologyCommutationMap_bijective`). Since `Φ_*` preserves the
+`(O-Maslov, Alexander)` bigrading and is semilinear along a renaming of the variables, for knot
+grids it is a bigraded `R[U]`-isomorphism of degree zero, so `GH⁻` does not change under any
+elementary commutation (`GridDiagram.IsKnot.bigradedUnblockedHomologyIsomorphic_of_isCommutation`,
+in `Homology/Bigraded/Invariance.lean`).
 
 ## Main definitions
 
@@ -47,10 +44,6 @@ commutations, `GH⁻` is invariant under every elementary commutation
 
 * `TauCeti.GridDiagram.unblockedHomologyCommutationMap_bijective`: **commutation invariance of
   `GH⁻`**, the commutation map on unblocked grid homology is bijective.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_swapColumns`: for a knot grid, `GH⁻` is
-  unchanged by a column commutation as an Alexander-graded `R[U]`-module.
-* `TauCeti.GridDiagram.IsKnot.unblockedHomologyIsomorphic_of_isCommutation`: the same for any
-  elementary commutation, of rows or of columns.
 
 ## References
 
@@ -60,8 +53,6 @@ homology*, Geom. Topol. 11 (2007), Section 3.1 (arXiv:math/0610559).
 -/
 
 public section
-
-open MvPolynomial
 
 namespace TauCeti
 
@@ -107,7 +98,7 @@ theorem unblockedHomologyCommutationMap_bijective :
 /-- The pentagon-counting map of a validated column commutation as a semilinear equivalence on
 `GH⁻`, along the transposition of the two swapped column variables. -/
 noncomputable def unblockedHomologyCommutationEquiv :
-    G.unblockedHomology R ≃ₛₗ[((renameEquiv R
+    G.unblockedHomology R ≃ₛₗ[((MvPolynomial.renameEquiv R
       (Equiv.swap C.column (finRotate n C.column))).toRingEquiv :
       MvPolynomial (Fin n) R →+* MvPolynomial (Fin n) R)]
       (G').unblockedHomology R :=
@@ -121,43 +112,5 @@ theorem unblockedHomologyCommutationEquiv_apply (y : G.unblockedHomology R) :
   LinearEquiv.ofBijective_apply _ y
 
 end GridDiagram
-
-/-! ### Invariance of the graded `K[U]`-module `GH⁻` -/
-
-namespace GridDiagram.IsKnot
-
-variable {n : ℕ} {G : GridDiagram n} (hG : G.IsKnot) (K : Type*) [CommRing K] [CharP K 2]
-
-/-- **`GH⁻` is invariant under column commutation.** The commuted diagram of a knot grid along
-validated column-commutation data is a knot grid whose `GH⁻` is isomorphic to that of the original
-as an Alexander-graded `K[U]`-module. -/
-theorem unblockedHomologyIsomorphic_swapColumns (C : ColumnCommutationData G) :
-    hG.UnblockedHomologyIsomorphic (hG.swapColumns C.column (finRotate n C.column)) K := by
-  refine .of_semilinearMap (fun p => ?_) (G.unblockedHomologyCommutationMap K C)
-    (G.unblockedHomologyCommutationMap_bijective C K) fun a y hy => ?_
-  · simp [aeval_rename, Function.comp_def]
-  · let _ := hG.unblockedHomologyModule K
-    let _ := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule K
-    simpa using (hG.isHomogeneous_unblockedHomologyCommutationLinearMap K C).map_mem hy
-
-/-- **`GH⁻` is invariant under elementary column commutations.** -/
-theorem unblockedHomologyIsomorphic_of_isColumnCommutation {G' : GridDiagram n} (hG' : G'.IsKnot)
-    (h : IsColumnCommutation G G') : hG.UnblockedHomologyIsomorphic hG' K := by
-  obtain ⟨C, rfl⟩ := isColumnCommutation_iff_exists_columnCommutationData.mp h
-  exact hG.unblockedHomologyIsomorphic_swapColumns K C
-
-/-- **`GH⁻` is invariant under elementary commutations.** Two knot grids related by an elementary
-row or column commutation have isomorphic `GH⁻` as Alexander-graded `K[U]`-modules; a row
-commutation is a column commutation of the diagonal reflections. -/
-theorem unblockedHomologyIsomorphic_of_isCommutation {G' : GridDiagram n} (hG' : G'.IsKnot)
-    (h : IsCommutation G G') : hG.UnblockedHomologyIsomorphic hG' K := by
-  rcases (isCommutation_iff G G').mp h with h | h
-  · exact (hG.unblockedHomologyIsomorphic_transpose K).trans
-      ((unblockedHomologyIsomorphic_of_isColumnCommutation _ K _
-        ((isColumnCommutation_transpose G G').mpr h)).trans
-        (hG'.unblockedHomologyIsomorphic_transpose K).symm)
-  · exact hG.unblockedHomologyIsomorphic_of_isColumnCommutation K hG' h
-
-end GridDiagram.IsKnot
 
 end TauCeti

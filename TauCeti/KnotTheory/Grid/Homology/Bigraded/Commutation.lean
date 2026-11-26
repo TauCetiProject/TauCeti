@@ -21,11 +21,11 @@ components, this equivalence preserves and reflects every `(O-Maslov, Alexander)
 
 For a knot grid, specializing all grid variables to `U` makes the commutation map of any column turn
 `C` homogeneous of bidegree `G.commutationBidegree C` over `K[U]`
-(`isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded`). Since `commutationBidegree`
-vanishes for a column commutation, `GH⁻` is invariant as a Maslov--Alexander bigraded
-`K[U]`-module under column commutations (`bigradedUnblockedHomologyIsomorphic_swapColumns`,
-`bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation`) and, by diagonal reflection, under
-all elementary row or column commutations (`bigradedUnblockedHomologyIsomorphic_of_isCommutation`).
+(`isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded`). See
+`TauCeti.KnotTheory.Grid.Homology.Bigraded.Invariance` for bigraded commutation invariance
+(`bigradedUnblockedHomologyIsomorphic_swapColumns`,
+`bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation`, and
+`bigradedUnblockedHomologyIsomorphic_of_isCommutation`).
 
 ## References
 
@@ -129,37 +129,6 @@ theorem isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded (C : Column
   rw [hG.bigradedUnblockedHomologyGrading_swapColumns_piece,
     unblockedHomologyCommutationLinearMap_apply]
   exact unblockedHomologyCommutationMap_mem_bigradedUnblockedHomologyPiece_add _ K C hy
-
-/-- **`GH⁻` is invariant under column commutation as a Maslov--Alexander bigraded
-`K[U]`-module.** -/
-theorem bigradedUnblockedHomologyIsomorphic_swapColumns (C : ColumnCommutationData G) :
-    hG.BigradedUnblockedHomologyIsomorphic
-      (hG.swapColumns C.column (finRotate n C.column)) K := by
-  refine .of_semilinearMap (fun p ↦ ?_) (G.unblockedHomologyCommutationMap K C)
-    (G.unblockedHomologyCommutationMap_bijective C K) fun g y hy ↦ ?_
-  · simp [aeval_rename, Function.comp_def]
-  · let _ := hG.unblockedHomologyModule K
-    let _ := (hG.swapColumns C.column (finRotate n C.column)).unblockedHomologyModule K
-    simpa using (hG.isHomogeneous_unblockedHomologyCommutationLinearMap_bigraded K C).map_mem hy
-
-/-- **`GH⁻` is invariant under elementary column commutations as a bigraded `K[U]`-module.** -/
-theorem bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation {G' : GridDiagram n}
-    (hG' : G'.IsKnot) (h : IsColumnCommutation G G') :
-    hG.BigradedUnblockedHomologyIsomorphic hG' K := by
-  obtain ⟨C, rfl⟩ := isColumnCommutation_iff_exists_columnCommutationData.mp h
-  exact hG.bigradedUnblockedHomologyIsomorphic_swapColumns K C
-
-/-- **`GH⁻` is invariant under elementary row or column commutations as a bigraded
-`K[U]`-module.** -/
-theorem bigradedUnblockedHomologyIsomorphic_of_isCommutation {G' : GridDiagram n}
-    (hG' : G'.IsKnot) (h : IsCommutation G G') :
-    hG.BigradedUnblockedHomologyIsomorphic hG' K := by
-  rcases (isCommutation_iff G G').mp h with h | h
-  · exact (hG.bigradedUnblockedHomologyIsomorphic_transpose K).trans
-      ((bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation _ K _
-        ((isColumnCommutation_transpose G G').mpr h)).trans
-        (hG'.bigradedUnblockedHomologyIsomorphic_transpose K).symm)
-  · exact hG.bigradedUnblockedHomologyIsomorphic_of_isColumnCommutation K hG' h
 
 end GridDiagram.IsKnot
 
