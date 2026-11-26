@@ -215,13 +215,13 @@ variable {n : ℕ} {μ ν : _root_.YoungDiagram}
 /-- **The sub-shape of small entries**: the cells of `μ` whose entry is smaller than the top letter
 `n`.  It is a Young diagram because the entries increase weakly to the right and downwards. -/
 def restrictShape (T : BoundedSSYT (n + 1) μ) : _root_.YoungDiagram :=
-  μ.sublevel (fun c => T.val c.val.1 c.val.2)
+  μ.strictSublevel (fun c => T.val c.val.1 c.val.2)
     (fun _ d h => SemistandardYoungTableau.entry_le_of_le T.val h.1 h.2 d.property) n
 
 @[simp]
 theorem mem_restrictShape {T : BoundedSSYT (n + 1) μ} {i j : ℕ} :
     ((i, j) : ℕ × ℕ) ∈ restrictShape T ↔ ((i, j) : ℕ × ℕ) ∈ μ ∧ T.val i j < n :=
-  (YoungDiagram.mem_sublevel (hf := _)).trans
+  (YoungDiagram.mem_strictSublevel (hf := _)).trans
     ⟨fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩, fun ⟨hc, hlt⟩ => ⟨hc, hlt⟩⟩
 
 /-- Reading the defining property of `TauCeti.BoundedSSYT.restrictShape` off an equation naming

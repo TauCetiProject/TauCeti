@@ -8,7 +8,7 @@ module
 public import Mathlib.Combinatorics.Young.YoungDiagram
 
 /-!
-# Sublevel diagrams
+# Strict sublevel diagrams
 
 The cells with labels strictly below a threshold form a Young diagram when the labels are
 monotone in the product order.
@@ -21,7 +21,8 @@ namespace YoungDiagram
 variable {A : Type*} [Preorder A] [DecidableLT A]
 
 /-- The cells of a Young diagram whose monotone labels are strictly below a threshold. -/
-def sublevel (μ : YoungDiagram) (f : ↥μ.cells → A) (hf : Monotone f) (a : A) : YoungDiagram where
+def strictSublevel (μ : YoungDiagram) (f : ↥μ.cells → A) (hf : Monotone f) (a : A) :
+    YoungDiagram where
   cells := (μ.cells.attach.filter fun c => f c < a).map ⟨Subtype.val, Subtype.val_injective⟩
   isLowerSet := by
     intro d c hcd hd
@@ -32,11 +33,12 @@ def sublevel (μ : YoungDiagram) (f : ↥μ.cells → A) (hf : Monotone f) (a : 
     exact Finset.mem_map.mpr ⟨⟨c, hc⟩, Finset.mem_filter.mpr
       ⟨Finset.mem_attach _ _, (hf hcd).trans_lt (Finset.mem_filter.mp hmem).2⟩, rfl⟩
 
-/-- A cell belongs to a sublevel diagram exactly when it has a label below the threshold. -/
+/-- A cell belongs to a strict sublevel diagram exactly when it has a label below the threshold. -/
 @[simp]
-theorem mem_sublevel {μ : YoungDiagram} {f : ↥μ.cells → A} {hf : Monotone f} {a : A}
-    {c : ℕ × ℕ} : c ∈ μ.sublevel f hf a ↔ ∃ hc : c ∈ μ.cells, f ⟨c, hc⟩ < a := by
-  have hcells : (μ.sublevel f hf a).cells =
+theorem mem_strictSublevel {μ : YoungDiagram} {f : ↥μ.cells → A} {hf : Monotone f} {a : A}
+    {c : ℕ × ℕ} :
+    c ∈ μ.strictSublevel f hf a ↔ ∃ hc : c ∈ μ.cells, f ⟨c, hc⟩ < a := by
+  have hcells : (μ.strictSublevel f hf a).cells =
       (μ.cells.attach.filter fun c => f c < a).map ⟨Subtype.val, Subtype.val_injective⟩ := rfl
   rw [← mem_cells, hcells]
   simp only [Finset.mem_map, Finset.mem_filter, Finset.mem_attach, true_and,

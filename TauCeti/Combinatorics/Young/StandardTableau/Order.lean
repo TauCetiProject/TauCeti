@@ -155,14 +155,14 @@ theorem strictMono_toTableau (T : StandardYoungTableau μ) : StrictMono T.toTabl
 
 /-- The diagram of the cells labelled strictly below `i` in a standard Young tableau. -/
 def initialDiagram (T : StandardYoungTableau μ) (i : Fin μ.card) : YoungDiagram :=
-  μ.sublevel T.toTableau T.strictMono_toTableau.monotone i
+  μ.strictSublevel T.toTableau T.strictMono_toTableau.monotone i
 
 /-- The cells of the initial diagram are exactly those carrying a label below its cutoff. -/
 @[simp]
 theorem mem_initialDiagram {T : StandardYoungTableau μ} {i : Fin μ.card} {c : ℕ × ℕ} :
     c ∈ T.initialDiagram i ↔
       ∃ j < i, (rowIndex T.toTableau j, colIndex T.toTableau j) = c := by
-  rw [initialDiagram, YoungDiagram.mem_sublevel]
+  rw [initialDiagram, YoungDiagram.mem_strictSublevel]
   constructor
   · rintro ⟨hc, hlt⟩
     exact ⟨T.toTableau ⟨c, hc⟩, hlt, Prod.ext (rowIndex_apply _ _) (colIndex_apply _ _)⟩
