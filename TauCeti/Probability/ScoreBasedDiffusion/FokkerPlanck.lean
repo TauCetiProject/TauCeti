@@ -16,8 +16,8 @@ import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 
 For an arbitrary finite data measure, the Gaussian smoothed density solves the pointwise
 Fokker–Planck equation along differentiable signal and noise paths. No moment hypothesis on
-the data measure is needed. The signal must be nonzero; the noise derivative alone allows
-every signal, including zero.
+the data measure is needed. All formulas require nonzero noise. The noise derivative holds
+for every signal, including zero. The other formulas require nonzero signal.
 
 The forward equation is the one in Song, Sohl-Dickstein, Kingma, Kumar, Ermon and Poole,
 *Score-Based Generative Modeling through Stochastic Differential Equations* (2021),
@@ -46,23 +46,8 @@ private theorem hasFDerivAt_kernel (y x : EuclideanSpace ℝ ι) {p : ℝ × ℝ
     (hp : 0 < p.2) :
     HasFDerivAt (fun q : ℝ × ℝ ↦ heatKernel q.2 (y - q.1 • x)) (kernelDeriv y x p) p := by
   classical
-  have hd : DifferentiableAt ℝ
-      (fun q : ℝ × ℝ ↦ heatKernel q.2 (y - q.1 • x)) p := by
-    rw [show (fun q : ℝ × ℝ ↦ heatKernel q.2 (y - q.1 • x)) =
-      (fun q ↦ (4 * π * q.2) ^ (-(Module.finrank ℝ (EuclideanSpace ℝ ι) : ℝ) / 2) *
-        exp (-‖y - q.1 • x‖ ^ 2 / (4 * q.2))) from funext fun q ↦ heatKernel_apply _ _]
-    have hn : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ ‖y - q.1 • x‖ ^ 2) p :=
-      (show DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ y - q.1 • x) p from by
-        fun_prop).norm_sq ℝ
-    have hscale : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ 4 * π * q.2) p := by
-      fun_prop
-    have hscale' : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ 4 * q.2) p := by
-      fun_prop
-    have hradial : DifferentiableAt ℝ
-        (fun q : ℝ × ℝ ↦ -‖y - q.1 • x‖ ^ 2 / (4 * q.2)) p := by
-      simp only [div_eq_mul_inv]
-      exact hn.neg.fun_mul (hscale'.inv (by positivity))
-    exact (hscale.rpow_const (Or.inl (by positivity))).fun_mul hradial.exp
+  have hshift : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ (q.2, y - q.1 • x)) p := by fun_prop
+  have hd := (differentiableAt_heatKernel_uncurry (p := (p.2, y - p.1 • x)) hp).comp p hshift
   have h₁ := hd.hasFDerivAt.comp_hasDerivAt p.1
     ((hasDerivAt_id p.1).prodMk (hasDerivAt_const p.1 p.2))
   have h₂ := hd.hasFDerivAt.comp_hasDerivAt p.2
@@ -73,13 +58,10 @@ private theorem hasFDerivAt_kernel (y x : EuclideanSpace ℝ ι) {p : ℝ × ℝ
   have he₁ := h₁.unique hs
   have he₂ := h₂.unique (hasDerivAt_heatKernel hp (y - p.1 • x))
   refine hd.hasFDerivAt.congr_fderiv ?_
-  apply ContinuousLinearMap.ext
-  rintro ⟨a, b⟩
-  have hsplit : (a, b) = a • (1, 0) + b • (0, 1) := by simp
-  rw [hsplit, map_add, map_smul, map_smul]
   simp only [one_smul, id_eq, zero_sub, map_neg] at he₁
-  simp [kernelDeriv, he₁, he₂, mul_comm]
-
+  apply ContinuousLinearMap.prod_ext <;> apply ContinuousLinearMap.ext_ring
+  · simpa [kernelDeriv] using he₁
+  · simpa [kernelDeriv] using he₂
 
 omit [DecidableEq ι] in
 private theorem norm_signalDerivative_le (y x : EuclideanSpace ℝ ι) {c v δ B₀ B₁ : ℝ}
@@ -222,40 +204,35 @@ private theorem integral_neg_fderiv_heatKernel_sub_smul_apply {c s : ℝ}
       heatKernel (s ^ 2 / 2) (y - c • x) + fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) y) μ₀ :=
     (hintK.const_mul _).add hintDy
   simp_rw [hpoint]
-  rw [integral_sub (hintSum.const_mul (-(1 / c))) (hintΔ.const_mul (s ^ 2 / c)),
-    integral_const_mul, integral_const_mul,
-    integral_add (hintK.const_mul (Fintype.card ι : ℝ)) hintDy,
-    integral_const_mul, ← smoothedDensity_eq_integral_heatKernel hs,
-    ← ContinuousLinearMap.integral_apply hintD, ← fderiv_smoothedDensity hs,
-    ← inner_gradient_left, real_inner_comm y, ← laplacian_smoothedDensity hs]
+  rw [integral_sub (hintSum.const_mul (-(1 / c))) (hintΔ.const_mul (s ^ 2 / c))]
+  simp only [integral_const_mul, integral_add (hintK.const_mul (Fintype.card ι : ℝ)) hintDy]
+  have hgradient :
+      (∫ x, fderiv ℝ (heatKernel (s ^ 2 / 2)) (y - c • x) y ∂μ₀) =
+        ⟪y, gradient (smoothedDensity μ₀ c s) y⟫ := by
+    rw [← ContinuousLinearMap.integral_apply hintD, ← fderiv_smoothedDensity hs]
+    rw [← inner_gradient_left, real_inner_comm y]
+  rw [← smoothedDensity_eq_integral_heatKernel hs, hgradient, ← laplacian_smoothedDensity hs]
 
-private theorem integral_kernelDeriv_apply {c s : ℝ} (hc : c ≠ 0) (hs : s ≠ 0)
-    (y : EuclideanSpace ℝ ι) (a b : ℝ) :
-    (∫ x, kernelDeriv y x (c, s ^ 2 / 2) ∂μ₀) (a, b) =
+private theorem integral_kernelDeriv {c s : ℝ} (hc : c ≠ 0) (hs : s ≠ 0)
+    (y : EuclideanSpace ℝ ι) :
+    (∫ x, kernelDeriv y x (c, s ^ 2 / 2) ∂μ₀) =
       (-(1 / c) * (Fintype.card ι * smoothedDensity μ₀ c s y +
         ⟪y, gradient (smoothedDensity μ₀ c s) y⟫) -
-        (s ^ 2 / c) * Δ (smoothedDensity μ₀ c s) y) * a +
-      Δ (smoothedDensity μ₀ c s) y * b := by
+        (s ^ 2 / c) * Δ (smoothedDensity μ₀ c s) y) • ContinuousLinearMap.fst ℝ ℝ ℝ +
+      Δ (smoothedDensity μ₀ c s) y • ContinuousLinearMap.snd ℝ ℝ ℝ := by
   obtain ⟨B, hB⟩ := exists_eventually_norm_kernelDeriv_le y
     (p := (c, s ^ 2 / 2)) hc (by positivity)
   have hint : Integrable (fun x ↦ kernelDeriv y x (c, s ^ 2 / 2)) μ₀ :=
     Integrable.of_bound (continuous_kernelDeriv y _).aestronglyMeasurable B
       (.of_forall fun x ↦ hB.self_of_nhds.2 x)
-  have h₁ : (∫ x, kernelDeriv y x (c, s ^ 2 / 2) ∂μ₀) (1, 0) =
-      -(1 / c) * (Fintype.card ι * smoothedDensity μ₀ c s y +
-        ⟪y, gradient (smoothedDensity μ₀ c s) y⟫) -
-        (s ^ 2 / c) * Δ (smoothedDensity μ₀ c s) y := by
-    rw [ContinuousLinearMap.integral_apply hint]
+  apply ContinuousLinearMap.prod_ext <;> apply ContinuousLinearMap.ext_ring
+  · simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inl_apply,
+      ContinuousLinearMap.integral_apply hint]
     simpa [kernelDeriv] using
       integral_neg_fderiv_heatKernel_sub_smul_apply (μ₀ := μ₀) hc hs y
-  have h₂ : (∫ x, kernelDeriv y x (c, s ^ 2 / 2) ∂μ₀) (0, 1) =
-      Δ (smoothedDensity μ₀ c s) y := by
-    rw [ContinuousLinearMap.integral_apply hint]
+  · simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.inr_apply,
+      ContinuousLinearMap.integral_apply hint]
     simpa [kernelDeriv] using (laplacian_smoothedDensity (μ₀ := μ₀) (c := c) hs y).symm
-  have hsplit : (a, b) = a • (1, 0) + b • (0, 1) := by simp
-  rw [hsplit, map_add, map_smul, map_smul, h₁, h₂]
-  simp only [smul_eq_mul]
-  ring
 
 /-- **Noise derivative of the smoothed density.** This includes zero signal and negative noise
 levels, since the smoothing depends on the square of the noise. -/
@@ -291,13 +268,11 @@ theorem hasFDerivAt_smoothedDensity_level {c s : ℝ} (hc : c ≠ 0) (hs : s ≠
   refine (h.congr_fderiv ?_).congr_of_eventuallyEq
     ((continuousAt_snd.eventually (eventually_ne_nhds hs)).mono fun q hq ↦
       smoothedDensity_eq_integral_heatKernel hq y)
+  rw [integral_kernelDeriv hc hs]
   apply ContinuousLinearMap.ext
   intro w
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.prod_apply,
-    smul_apply, ContinuousLinearMap.coe_fst',
-    ContinuousLinearMap.coe_snd', smul_eq_mul]
-  rw [integral_kernelDeriv_apply hc hs]
-  simp only [add_apply, smul_apply, id_eq,
+    add_apply, smul_apply, id_eq,
     ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', smul_eq_mul]
   ring
 

@@ -51,6 +51,8 @@ the constant function `1`.
   `C t^(-m / 2) K_{2t}(x)`.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted bound by
   `C t^((α - m) / 2) K_{4t}(x)`.
+* `TauCeti.exists_eventually_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: weighted derivative
+  bounds uniform in space for times near a positive time.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
   derivatives.
 * `TauCeti.integrable_norm_rpow_mul_heatKernel`: integrability of the weight `‖x‖^α K_t(x)`.

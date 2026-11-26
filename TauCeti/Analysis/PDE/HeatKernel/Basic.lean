@@ -49,6 +49,8 @@ hold in the degenerate cases only through those conventions.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: its case `s = 1`,
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` for `t ≥ 0`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
+* `TauCeti.differentiableAt_heatKernel_uncurry`: joint differentiability in time and space for
+  `t > 0`.
 * `TauCeti.hasGradientAt_heatKernel`: the gradient of `K_t` at `x` is `-(2t)⁻¹ K_t(x) x`.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
@@ -152,6 +154,18 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 ≤ t) (x : E) :
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
+
+/-- The heat kernel is jointly differentiable in time and space at every positive time. -/
+theorem differentiableAt_heatKernel_uncurry {p : ℝ × E} (hp : 0 < p.1) :
+    DifferentiableAt ℝ (fun q : ℝ × E ↦ heatKernel q.1 q.2) p := by
+  simp only [heatKernel_apply]
+  have hscale : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * π * q.1) p := by fun_prop
+  have htime : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * q.1) p := by fun_prop
+  have hradial : DifferentiableAt ℝ (fun q : ℝ × E ↦ -‖q.2‖ ^ 2 / (4 * q.1)) p := by
+    simp only [div_eq_mul_inv]
+    exact ((differentiableAt_snd (𝕜 := ℝ) (p := p)).norm_sq ℝ).neg.fun_mul
+      (htime.inv (by positivity))
+  exact (hscale.rpow_const (Or.inl (by positivity))).fun_mul hradial.exp
 
 /-- The gradient of the heat kernel: `∇ K_t(x) = -(2t)⁻¹ K_t(x) x`. The formula holds for every `t`
 (at `t = 0` both sides vanish through Mathlib's conventions for division by zero). -/
