@@ -47,8 +47,8 @@ torsion, such as `V` itself, has `Fitt₀ = 0` and degree `⊤`.
 
 ## Main results
 
-* `AddValuation.fittingDegree_eq_generator`, `AddValuation.fittingDegree_of_not_isPrincipal`: the
-  two cases of the definition.
+* `AddValuation.fittingDegree_eq_generator`,
+  `AddValuation.fittingDegree_eq_top_of_not_isPrincipal`: the two cases of the definition.
 * `AddValuation.fittingDegree_eq_of_fittingIdeal_eq_span`: for `v` nonnegative on `V`, if
   `Fitt₀ M = (x)`, then `deg M = v x`.
 * `AddValuation.fittingDegree_quotient_span_singleton`: for `v` nonnegative on `V`,
@@ -103,7 +103,7 @@ theorem fittingDegree_eq_generator [(fittingIdeal V M 0).IsPrincipal] :
   rw [fittingDegree, dite_eq_left ‹_›]
 
 /-- When `Fitt₀ M` is not principal, Fargues's degree of `M` is `⊤`. -/
-theorem fittingDegree_of_not_isPrincipal (h : ¬ (fittingIdeal V M 0).IsPrincipal) :
+theorem fittingDegree_eq_top_of_not_isPrincipal (h : ¬ (fittingIdeal V M 0).IsPrincipal) :
     v.fittingDegree M = ⊤ := by
   rw [fittingDegree, dite_eq_right h]
 
@@ -129,7 +129,7 @@ theorem fittingDegree_quotient_span_singleton (hv : ∀ x, 0 ≤ v x) (x : V) :
   v.fittingDegree_eq_of_fittingIdeal_eq_span hv (fittingIdeal_quotient_zero _)
 
 /-- The zero module has degree zero. -/
-theorem fittingDegree_of_subsingleton (hv : ∀ x, 0 ≤ v x) [Subsingleton M] :
+theorem fittingDegree_eq_zero_of_subsingleton (hv : ∀ x, 0 ≤ v x) [Subsingleton M] :
     v.fittingDegree M = 0 := by
   rw [v.fittingDegree_eq_of_fittingIdeal_eq_span hv (x := 1), v.map_one]
   rw [Ideal.span_singleton_one, fittingIdeal_zero_eq_top_iff]
