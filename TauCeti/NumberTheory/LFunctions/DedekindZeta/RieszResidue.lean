@@ -7,7 +7,8 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Residue
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
-import TauCeti.NumberTheory.LFunctions.DedekindZeta.LeadingTerm
+import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
+import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 
 /-!
 # The origin and trivial-zero terms of the Dedekind zeta Riesz formula
@@ -31,8 +32,17 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_zero {y : ℂ} (hy : y ≠ 0)
     residue (fun s ↦ rieszRemainderMellin (dedekindZetaC K) s * y ^ s) 0 =
       logDerivFinitePart (dedekindZetaC K) 0 +
         ((nrRealPlaces K : ℂ) + nrComplexPlaces K - 1) * (1 + log y) := by
-  rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul_cpow_zero
-    (meromorphicOrderAt_dedekindZetaC_zero K) hy]
+  have horder : meromorphicOrderAt (dedekindZetaC K) 0 =
+      ((nrRealPlaces K : ℤ) + nrComplexPlaces K - 1 : ℤ) := by
+    have h := meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
+      (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
+    rw [Nat.cast_one, sub_self, ite_eq_right Nat.not_even_one] at h
+    rw [← dedekindZetaData_continuedL, (dedekindZetaData K).meromorphicOrderAt_continuedL
+      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic, dedekindZetaData_completed,
+      meromorphicOrderAt_completedDedekindZeta_zero, funext (dedekindZetaData_gammaFactor K), h,
+      sub_neg_eq_add, ← WithTop.coe_add]
+    congr 1
+  rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul_cpow_zero horder hy]
   push_cast
   norm_num
 
@@ -49,13 +59,12 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2
   have h₀ : (1 : ℂ) - n ≠ 0 := by
     intro h
     simp [h] at hr
-  have h₁ : (1 : ℂ) - n ≠ 1 := by
-    intro h
-    norm_num [h] at hr
-  have horder := (analyticAt_dedekindZetaC K h₁).meromorphicOrderAt_eq
-  rw [analyticOrderAt_dedekindZetaC_one_sub_nat K hn,
-    TauCeti.NumberField.finrank_tateEmbeddingSpace_pred K (by omega : 1 ≤ n),
-    ENat.map_natCast] at horder
+  have horder : meromorphicOrderAt (dedekindZetaC K) (1 - n) =
+      (((if Even n then 0 else nrRealPlaces K) + nrComplexPlaces K : ℕ) : ℤ) := by
+    rw [meromorphicOrderAt_dedekindZetaC_of_re_neg K hr,
+      (analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _).meromorphicOrderAt_eq,
+      analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
+      ENat.map_natCast]
   have hy : AnalyticAt ℂ (fun s : ℂ ↦ y ^ s) (1 - n) := by
     by_cases hy : y = 0
     · subst y

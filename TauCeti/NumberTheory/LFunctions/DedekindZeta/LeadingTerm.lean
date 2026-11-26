@@ -9,9 +9,9 @@ public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
 public import TauCeti.NumberTheory.NumberField.TateEmbedding.Basic
 import TauCeti.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Logarithm.DedekindZeta.Basic
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
 import TauCeti.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
@@ -81,13 +81,12 @@ private theorem leadingTermFactor_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
 
 private theorem leadingTermFactor_ne_zero {n : ℕ} (hn : 2 ≤ n) :
     leadingTermFactor K (1 - n) ≠ 0 := by
-  have hs := one_lt_re_natCast hn
-  have hR := Gammaℝ_ne_zero_of_re_pos (zero_lt_one.trans hs)
-  have hC := Gammaℂ_ne_zero_of_re_pos (zero_lt_one.trans hs)
+  have hr : ((1 : ℂ) - n).re < 0 := by
+    simpa only [sub_re, one_re, sub_neg] using one_lt_re_natCast hn
   have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
-  rw [leadingTermFactor_one_sub_nat K hn]
-  have hζ : dedekindZeta K n ≠ 0 := dedekindZeta_ne_zero_of_one_lt_re hs
-  simp [hd, pow_ne_zero _ hR, pow_ne_zero _ hC, hζ]
+  rw [leadingTermFactor]
+  exact mul_ne_zero (cpow_ne_zero_iff.mpr (.inl hd))
+    (completedDedekindZeta_ne_zero_of_re_neg K hr)
 
 private theorem eventuallyEq_dedekindZetaC_mul_reciprocalGamma {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1) :
     dedekindZetaC K =ᶠ[𝓝 s] fun z ↦
@@ -102,13 +101,12 @@ equals the dimension of the embedding Tate space in twist `n - 1`. -/
 theorem analyticOrderAt_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
     analyticOrderAt (dedekindZetaC K) (1 - n) =
       (finrank ℝ (TauCeti.NumberField.tateEmbeddingSpace K (n - 1)) : ℕ∞) := by
-  have h₀ := one_sub_natCast_ne_zero hn
-  have h₁ := one_sub_natCast_ne_one hn
-  have hf := analyticAt_leadingTermFactor K h₀ h₁
-  rw [analyticOrderAt_congr (eventuallyEq_dedekindZetaC_mul_reciprocalGamma K h₀ h₁),
-    analyticOrderAt_fun_mul hf
-      (TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _),
-    analyticOrderAt_eq_zero.mpr (.inr (leadingTermFactor_ne_zero K hn)), zero_add,
+  have hr : ((1 : ℂ) - n).re < 0 := by
+    simpa only [sub_re, one_re, sub_neg] using one_lt_re_natCast hn
+  apply ENat.map_natCast_injective (α := ℤ)
+  rw [← (analyticAt_dedekindZetaC K (one_sub_natCast_ne_one hn)).meromorphicOrderAt_eq,
+    meromorphicOrderAt_dedekindZetaC_of_re_neg K hr,
+    (TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _).meromorphicOrderAt_eq,
     analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
     TauCeti.NumberField.finrank_tateEmbeddingSpace_pred K (by omega : 1 ≤ n)]
 
