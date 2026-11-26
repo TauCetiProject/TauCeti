@@ -5,37 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
-public import TauCeti.AlgebraicTopology.Singular.Coefficients.MapCoefficients
 public import TauCeti.AlgebraicTopology.SimplicialSet.Cochains.Basic
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.RestrictScalars
 
 /-!
 # Cap products under a change of coefficient ring
 
 Let `f : R →+* k` be a homomorphism of commutative rings and write `G` for restriction of scalars
-`ModuleCat k ⥤ ModuleCat R` along `f`. Singular chains of a space `X` over `R` with coefficients
-in an `R`-module `T` map to the singular chains over `k` with coefficients in `k`, viewed as
-`R`-modules, once a map `c : T ⟶ G k` is chosen: the chain map
-`TopCat.restrictScalarsChainMap` sends the simplex `σ` with coefficient `t` to `σ` with
-coefficient `c t`. Dually, a `k`-valued cochain `φ` over `k` restricts to a cochain over `R` with
-values in `G k`, `σ ⊗ t ↦ φ(σ) c t` (`TopCat.restrictScalarsCochainMap`). On homology and cohomology
-these give
+`ModuleCat k ⥤ ModuleCat R` along `f`. Given a map `c : T ⟶ G k` from an `R`-module `T`, singular
+chains over `R` with coefficients in `T` map to singular chains over `k`
+(`TopCat.restrictScalarsChainMap`, `TopCat.restrictScalarsHomologyMap`). Dually, a `k`-valued
+cochain `φ` over `k` restricts to a cochain over `R` with values in `G k`, `σ ⊗ t ↦ φ(σ) c t`
+(`TopCat.restrictScalarsCochainMap`). On cohomology this gives
 
-`TopCat.restrictScalarsHomologyMap : Hₙ(X; T) ⟶ G Hₙ(X; k)`,
 `TopCat.restrictScalarsCohomologyMap : G Hᵖ(X; k) ⟶ Hᵖ(X; T, G k)`,
 
 where the cohomology on the right is computed from chains over `R` with coefficients in `T` and
-cochain values in `G k`. Restriction of scalars is exact and preserves coproducts, which is what
-makes these maps well defined: the chain comparison is built from the identification
-`CategoryTheory.Functor.singularChainComplexFunctorObjCompMapIso` of `G` applied to chains with
-chains with coefficients in `G k` (Mathlib's `SSet.chainComplexFunctorObjCompMapIso` for singular
-simplices), and the homology comparison from its homology version
-`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`. Unlike
-`TauCeti.singularCohomologyIntegralIso`, which compares the cohomologies of chains over `k` and
-over `ℤ` as abelian groups, the cohomology over `k` here keeps its `k`-linear structure, so that
-it is the source of `TopCat.singularCapLinearMap`.
+cochain values in `G k`. Unlike `TauCeti.singularCohomologyIntegralIso`, which compares the
+cohomologies of chains over `k` and over `ℤ` as abelian groups, the cohomology over `k` here keeps
+its `k`-linear structure, so that it is the source of `TopCat.singularCapLinearMap`.
 
 The main result is that the cap product is compatible with these maps
 (`TopCat.restrictScalarsHomologyMap_comp_map_singularCap`): for `x ∈ Hₙ(X; T)` and
@@ -57,8 +46,6 @@ ring.
 
 ## Main definitions and results
 
-* `TopCat.restrictScalarsChainMap`, `TopCat.restrictScalarsHomologyMap`: the comparison of chains
-  and of homology.
 * `TopCat.restrictScalarsCochainMap`, `TopCat.restrictScalarsCohomologyMap`: the comparison of
   cochains and of cohomology.
 * `TopCat.restrictScalarsHomologyMap_comp_map_singularCap`: the cap product commutes with the
@@ -84,87 +71,6 @@ namespace TopCat
 
 variable (X : TopCat.{w}) {R k : Type w} [CommRing R] [CommRing k] (f : R →+* k)
   {T : ModuleCat.{w} R} (c : T ⟶ (ModuleCat.restrictScalars f).obj (𝟙_ (ModuleCat.{w} k)))
-
-/-! ### Chains and homology -/
-
-/-- The chain map from singular chains over `R` with coefficients in `T` to the restriction of
-scalars of singular chains over `k`, applying `c` to the coefficient of each simplex. -/
-def restrictScalarsChainMap :
-    (toSSet.obj X).chainComplex T ⟶
-      ((ModuleCat.restrictScalars f).mapHomologicalComplex _).obj
-        ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))) :=
-  ((singularChainComplexFunctor _).map c).app X ≫
-    ((ModuleCat.restrictScalars f).singularChainComplexFunctorObjCompMapIso
-      (𝟙_ (ModuleCat.{w} k))).inv.app X
-
-/-- The chain comparison in terms of Mathlib's simplicial comparison
-`SSet.chainComplexFunctorObjCompMapIso`, whose objects are the chain complexes
-`(toSSet.obj X).chainComplex _` rather than their singular-functor forms. -/
-private lemma restrictScalarsChainMap_eq :
-    X.restrictScalarsChainMap f c =
-      ((SSet.chainComplexFunctor _).map c).app (toSSet.obj X) ≫
-        (SSet.chainComplexFunctorObjCompMapIso (ModuleCat.restrictScalars f)
-          (𝟙_ (ModuleCat.{w} k))).inv.app (toSSet.obj X) :=
-  congrArg (_ ≫ ·) (Functor.singularChainComplexFunctorObjCompMapIso_inv_app _ _ X)
-
-/-- The chain comparison applies `c` to the coefficient of a simplex. -/
-@[reassoc (attr := simp)]
-lemma ιChainComplex_restrictScalarsChainMap_f {n : ℕ} (σ : (toSSet.obj X) _⦋n⦌) :
-    (toSSet.obj X).ιChainComplex σ ≫ (X.restrictScalarsChainMap f c).f n =
-      c ≫ (ModuleCat.restrictScalars f).map ((toSSet.obj X).ιChainComplex σ) := by
-  rw [restrictScalarsChainMap_eq, HomologicalComplex.comp_f]
-  simp
-
-/-- The chain comparison along an isomorphism of coefficients is an isomorphism. -/
-instance [IsIso c] : IsIso (X.restrictScalarsChainMap f c) := by
-  rw [restrictScalarsChainMap_eq]
-  infer_instance
-
-/-- The comparison `Hₙ(X; T) ⟶ G Hₙ(X; k)`: the map `Hₙ(X; T) ⟶ Hₙ(X; G k)` induced by `c`,
-followed by the identification `CategoryTheory.Functor.singularHomologyFunctorObjCompIso` of
-`Hₙ(X; G k)` with the restriction of scalars of `Hₙ(X; k)`. -/
-def restrictScalarsHomologyMap (n : ℕ) :
-    ((singularHomologyFunctor (ModuleCat.{w} R) n).obj T).obj X ⟶
-      (ModuleCat.restrictScalars f).obj
-        (((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :=
-  ((singularHomologyFunctor (ModuleCat.{w} R) n).map c).app X ≫
-    ((ModuleCat.restrictScalars f).singularHomologyFunctorObjCompIso
-      (𝟙_ (ModuleCat.{w} k)) n).inv.app X
-
-/-- The homology comparison is the map induced by `TopCat.restrictScalarsChainMap`, followed by the
-identification of the homology of the restricted complex with the restriction of its homology. -/
-lemma restrictScalarsHomologyMap_eq (n : ℕ) :
-    X.restrictScalarsHomologyMap f c n =
-      homologyMap (X.restrictScalarsChainMap f c) n ≫
-        ((ModuleCat.restrictScalars f).mapHomologicalComplexCompHomologyFunctorIso _ n).hom.app
-          ((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))) := by
-  rw [restrictScalarsChainMap_eq, homologyMap_comp, Category.assoc]
-  -- The map induced by `c` on singular homology is by definition the one induced on chains.
-  exact congrArg (_ ≫ ·) ((Functor.singularHomologyFunctorObjCompIso_inv_app _ _ n X).trans
-    (congrArg (homologyMap · n ≫ _)
-      (Functor.singularChainComplexFunctorObjCompMapIso_inv_app _ _ X)))
-
-/-- The homology comparison on the class of a cycle `z` is the restriction of the class of the
-cycle `c_* z`. -/
-@[reassoc]
-lemma homologyπ_restrictScalarsHomologyMap (n : ℕ) :
-    ((toSSet.obj X).chainComplex T).homologyπ n ≫ X.restrictScalarsHomologyMap f c n =
-      cyclesMap (X.restrictScalarsChainMap f c) n ≫
-        ((((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).sc n).mapCyclesIso
-          (ModuleCat.restrictScalars f)).hom ≫
-        (ModuleCat.restrictScalars f).map
-          (((toSSet.obj X).chainComplex (𝟙_ (ModuleCat.{w} k))).homologyπ n) :=
-  -- The comparison and the class maps name the same objects in their singular-functor and
-  -- chain-complex forms, so the squares are composed as terms.
-  (congrArg (_ ≫ ·) (X.restrictScalarsHomologyMap_eq f c n)).trans <|
-    (homologyπ_naturality_assoc (X.restrictScalarsChainMap f c) n _).trans <|
-      congrArg (_ ≫ ·)
-        (Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app _ _ _ _)
-
-/-- The homology comparison along an isomorphism of coefficients is an isomorphism. -/
-instance [IsIso c] (n : ℕ) : IsIso (X.restrictScalarsHomologyMap f c n) := by
-  rw [restrictScalarsHomologyMap]
-  infer_instance
 
 /-! ### Cochains and cohomology -/
 

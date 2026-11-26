@@ -66,28 +66,6 @@ section CommRing
 variable {n : ℕ} (o : HomologicalOrientation M E n) (hn : finrank ℝ E = n) (k : Type)
   [CommRing k]
 
-/-- The **fundamental class over a commutative ring `k`** of a compact oriented manifold: the image
-`[M]_k ∈ Hₙ(M; k)` of the integral fundamental class under the change of coefficients `ℤ → k`,
-in the homology of singular chains over `k`. -/
-def fundamentalClassOver [CompactSpace M] :
-    ((singularHomologyFunctor (ModuleCat k) n).obj (𝟙_ (ModuleCat k))).obj (TopCat.of M) :=
-  (TopCat.of M).restrictScalarsHomologyMap (Int.castRingHom k)
-    (ModuleCat.uliftUnitToRestrictScalars _) n (o.fundamentalClass hn)
-
-/-- The fundamental class over `k` is the image of the integral fundamental class. -/
-theorem fundamentalClassOver_def [CompactSpace M] :
-    o.fundamentalClassOver hn k =
-      (TopCat.of M).restrictScalarsHomologyMap (Int.castRingHom k)
-        (ModuleCat.uliftUnitToRestrictScalars _) n (o.fundamentalClass hn) :=
-  (rfl)
-
-/-- Reversing the orientation negates the fundamental class over `k`. -/
-@[simp]
-theorem fundamentalClassOver_neg [CompactSpace M] :
-    (-o).fundamentalClassOver hn k = -o.fundamentalClassOver hn k := by
-  rw [fundamentalClassOver_def, fundamentalClassOver_def, fundamentalClass_neg]
-  exact map_neg _ _
-
 /-- **Poincaré duality with coefficients in a commutative ring.** For a compact Hausdorff manifold
 `M` without boundary of dimension `n` with a homological orientation, and a commutative ring `k`,
 capping with the fundamental class `[M]_k ∈ Hₙ(M; k)` over `k` is a bijection
