@@ -79,6 +79,8 @@ form in which it is additive and the degree is a quadratic form.
   `TauCeti.Isogeny.Hom.dual_comp`: the same identities for the dual of a morphism.
 * `TauCeti.Isogeny.Hom.dual_pointMapHom_comp_pointMapHom`: `f̂ ∘ f` acts on points as
   multiplication by `deg f`.
+* `TauCeti.Isogeny.Hom.degree_sub_one_nsmul_eq_zero_of_pointMap_eq_self`: a point fixed by an
+  endomorphism `f` is killed by `deg (f - 1)`.
 
 ## References
 
@@ -285,6 +287,12 @@ theorem dual_pointMap_pointMap [DecidableEq F] (f : Hom W₁ W₂) (P : W₁.Poi
 theorem pointMap_dual_pointMap [DecidableEq F] (f : Hom W₁ W₂) (Q : W₂.Point) :
     f.pointMap (f.dual.pointMap Q) = f.degree • Q := by
   rw [← comp_pointMap, comp_dual_self, nsmul_pointMap, id_pointMap]
+
+/-- **A point fixed by an endomorphism `f` is killed by the degree of `f - 1`**: apply the dual
+of `f - 1` to `(f - 1) P = 0`. -/
+theorem degree_sub_one_nsmul_eq_zero_of_pointMap_eq_self [DecidableEq F] {f : Hom W₁ W₁}
+    {P : W₁.Point} (hP : f.pointMap P = P) : (f - 1).degree • P = 0 := by
+  rw [← dual_pointMap_pointMap, sub_pointMap, one_def, id_pointMap, hP, sub_self, pointMap_zero]
 
 /-- `f̂ ∘ f` acts on points as multiplication by `deg f`. -/
 @[simp]

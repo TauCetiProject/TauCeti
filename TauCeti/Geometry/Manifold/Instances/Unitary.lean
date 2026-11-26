@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Topology.Algebra.Star.RealModule
 
 /-!
 # The unitary group of a finite-dimensional real normed star algebra
@@ -47,6 +48,8 @@ factor of the smooth Cartan decomposition.
 * `Unitary.instContMDiffSMul`: restriction of a `C^n` action (`n ≤ ∞`) of `R` on a manifold to
   `unitary R`.
 * `Unitary.finiteDimensional_model`: the model space is finite-dimensional.
+* `Unitary.tangentSpaceCastModel_mfderiv_val_mem_skewAdjoint`: the differential of the inclusion
+  into `R` at the identity takes values in the skew-adjoint elements.
 
 ## References
 
@@ -240,5 +243,28 @@ instance finiteDimensional_model : FiniteDimensional ℝ 𝔩 := by
     finiteDimensional_leftInvariantDerivation
       (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, R)) (n := ∞) (by simp) (1 : Rˣ))
   infer_instance
+
+/-- **The Lie algebra of the unitary group consists of skew-adjoint elements.** The differential
+at the identity of the inclusion `unitary R → R` takes values in `skewAdjoint R`: differentiating
+`star u * u = 1` at `u = 1` gives `star X + X = 0`. -/
+theorem tangentSpaceCastModel_mfderiv_val_mem_skewAdjoint
+    (ξ : GroupLieAlgebra (model R) (unitary R)) :
+    tangentSpaceCastModel 𝓘(ℝ, R) (1 : R) (mfderiv (model R) 𝓘(ℝ, R) Subtype.val 1 ξ) ∈
+      skewAdjoint R := by
+  -- A continuous additive involution is real-linear, so `star` is a continuous linear map.
+  have : StarModule ℝ R := ContinuousStar.starModule_real
+  have hF := (starL' ℝ : R ≃L[ℝ] R).hasFDerivAt.mul' (hasFDerivAt_id (1 : R))
+  have hconst : (⇑(starL' ℝ : R ≃L[ℝ] R) * id) ∘ (Subtype.val : unitary R → R) = fun _ ↦ 1 :=
+    funext fun u ↦ by simp
+  -- The chain rule computes the derivative of the constant map `u ↦ star u * u` at `1`.
+  have h := hF.hasMFDerivAt.comp (1 : unitary R)
+    (contMDiff_val.mdifferentiableAt (by simp)).hasMFDerivAt
+  rw [hconst] at h
+  have key := congrArg (fun L ↦ L ξ)
+    ((hasMFDerivAt_const (1 : R) (1 : unitary R)).mfderiv.symm.trans h.mfderiv)
+  rw [skewAdjoint.mem_iff, eq_neg_iff_add_eq_zero]
+  simp only [zero_apply, starL'_apply, star_one, id_eq, MulOpposite.op_one, one_smul] at key
+  -- `key` reads `X + star X = 0` for `X = dval₁(ξ)`, up to the identity casts of tangent spaces.
+  exact (add_comm _ _).trans key.symm
 
 end Unitary

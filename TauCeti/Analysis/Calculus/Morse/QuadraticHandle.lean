@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Analysis.Normed.Module.Basic
 
 /-!
 # Milnor's handle in the quadratic model is a product of discs
@@ -140,16 +141,6 @@ theorem quadraticHandleMap_apply (z : Eᵤ × Eₛ) :
     quadraticHandleMap ε μ z = ((√(‖z.2‖ ^ 2 + ε))⁻¹ • z.1,
       (√(‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε))⁻¹ • z.2) :=
   (rfl)
-
-/-- The squared norm of a vector scaled by the square root of `a ≥ 0` is multiplied by `a`. -/
-private theorem norm_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {a : ℝ}
-    (ha : 0 ≤ a) (x : F) : ‖√a • x‖ ^ 2 = a * ‖x‖ ^ 2 := by
-  simp [norm_smul, mul_pow, Real.sq_sqrt ha]
-
-/-- The squared norm of a vector scaled by the inverse square root of `a ≥ 0` is divided by `a`. -/
-private theorem norm_inv_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {a : ℝ} (ha : 0 ≤ a) (x : F) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
-  simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
 
 /-! ### The handle in the coordinates `s = ‖u‖²`, `t = ‖v‖²`
 

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -200,6 +201,13 @@ theorem toBilinForm_flat (σ : SmoothTwoForm I M) (x : M) :
     (σ.flat x).toBilinForm = σ.bilinFormAt x := by
   ext v w
   simp
+
+/-- A two-form is nondegenerate exactly when all its flat maps are injective. This is *weak*
+nondegeneracy; in infinite dimensions the flat maps need not be onto the continuous dual. -/
+theorem isNondegenerate_iff_injective_flat :
+    σ.IsNondegenerate ↔ ∀ x, Function.Injective (σ.flat x) := by
+  simp only [isNondegenerate_iff_separatingLeft, ← flat_apply, injective_iff_map_eq_zero,
+    ContinuousLinearMap.ext_iff, zero_apply]
 
 /-- In finite dimensions, the flat map of a two-form at a point is invertible exactly when the
 form is nondegenerate there. -/

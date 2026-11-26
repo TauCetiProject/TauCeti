@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Basic
 public import TauCeti.Topology.PathSpace.Moore
 
 /-!
@@ -30,6 +31,8 @@ shrinking homotopies of the fibre are built.
 * `TauCeti.MoorePath.truncate_trans_drop`: `γ.truncate s` followed by `γ.drop s` is `γ`.
 * `TauCeti.MoorePath.truncate_trans_of_le`, `TauCeti.MoorePath.truncate_trans_length_add`: the
   truncations of a concatenation.
+* `TauCeti.MoorePath.truncateFromHomotopy`: truncation deforms the Moore paths starting in a set
+  `A` onto the constant paths at their sources.
 -/
 
 public section
@@ -112,6 +115,12 @@ theorem _root_.Continuous.moorePath_retrace {f : Y → MoorePath X} {g : Y → �
       (by simp) := by
   have h := hf.moorePath_truncate hg
   exact h.moorePath_trans h.moorePath_symm _
+
+/-- At a turning time `s` before the end of `γ`, the path `γ.truncate s` followed by its reversal
+is at `γ s`. -/
+theorem truncate_trans_symm_apply_self (γ : MoorePath X) {s : ℝ≥0} (hs : s ≤ γ.length) :
+    ((γ.truncate s).trans (γ.truncate s).symm (by simp)) s = γ s := by
+  rw [trans_apply_of_le _ _ _ (by simp [hs]), truncate_apply, min_self]
 
 /-- Truncating a concatenation before the end of its first piece truncates the first piece. -/
 theorem truncate_trans_of_le (γ δ : MoorePath X) (h : γ.target = δ.source) {s : ℝ≥0}
@@ -204,6 +213,28 @@ theorem truncate_trans_drop (γ : MoorePath X) (s : ℝ≥0) :
       rw [add_tsub_cancel_of_le ht]
     · rw [min_eq_right hs] at ht ⊢
       rw [γ.apply_of_length_le (hs.trans le_self_add), γ.apply_of_length_le ht]
+
+/-! ### Paths starting in a set -/
+
+/-- **Truncation deforms the Moore paths starting in `A` onto their sources.** At time `t` a
+path `γ` is truncated at `t * length γ`. This is a homotopy from the constant paths of length zero
+at the sources to the identity of `P_{A→X} X`, so the source map `P_{A→X} X → A` is a homotopy
+equivalence with homotopy inverse the constant paths. -/
+def truncateFromHomotopy (A : Set X) :
+    ((constantBetween A Set.univ).comp (sourceFrom A)).Homotopy
+      (ContinuousMap.id (pathsBetween A Set.univ)) where
+  toFun q := ⟨q.2.val.truncate (unitInterval.toNNReal q.1 * q.2.val.length),
+    mem_pathsBetween.2
+      ⟨by rw [source_truncate]; exact (mem_pathsBetween.1 q.2.property).1, trivial⟩⟩
+  continuous_toFun := by fun_prop
+  map_zero_left γ := Subtype.ext (by simp)
+  map_one_left γ := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_truncateFromHomotopy (A : Set X) (t : unitInterval) (γ : pathsBetween A Set.univ) :
+    (truncateFromHomotopy A (t, γ) : MoorePath X) =
+      γ.val.truncate (unitInterval.toNNReal t * γ.val.length) :=
+  (rfl)
 
 end MoorePath
 

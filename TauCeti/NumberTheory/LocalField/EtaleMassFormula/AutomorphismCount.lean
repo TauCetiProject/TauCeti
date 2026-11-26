@@ -199,7 +199,7 @@ private theorem image_unramifiedTransportOrderIso_subset {e : ℕ}
             L.inertiaDegree = TauCeti.inertiaDegree K F} := by
   rintro _ ⟨M, hM, rfl⟩
   have hmem : (M.map Φ.toAlgHom).map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e := by
-    rw [map_map_symm]
+    rw [map_symm_map]
     exact hR.subset hM
   have h := (map_mem_totallyRamifiedOfDegree_iff F Φ (M.map Φ.toAlgHom) e).1 hmem
   rw [← IsUnramified.inertiaDegree_eq_finrank (K := K) (L := F)] at h
@@ -368,11 +368,11 @@ private theorem tsum_one_div_natCard_algEquiv_mul_natCard_residueField_pow_discr
             (Nat.card 𝓀[F] : ℝ≥0∞) ^ E.val.wildExponent) *
           (1 / (Nat.card 𝓀[K] : ℝ≥0∞) ^ (TauCeti.inertiaDegree K F * (e - 1))) := by
     have hmem : (E.val.map Φ.toAlgHom).map Φ.symm.toAlgHom ∈ totallyRamifiedOfDegree F e := by
-      rw [map_map_symm]
+      rw [map_symm_map]
       exact hR.subset E.property
     have hdisc := one_div_natCard_residueField_pow_discriminantExponent_restrictScalars F Φ
       (E.val.map Φ.toAlgHom) hmem
-    rw [map_map_symm] at hdisc
+    rw [map_symm_map] at hdisc
     rw [hdisc, div_eq_mul_inv, one_div, one_div, one_div,
       ENNReal.mul_inv (.inr (ENNReal.pow_ne_top (ENNReal.natCast_ne_top _)))
         (.inl (ENNReal.natCast_ne_top _)), mul_comm, ← mul_assoc]

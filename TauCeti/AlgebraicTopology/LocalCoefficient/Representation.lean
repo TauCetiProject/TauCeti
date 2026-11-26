@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient
 public import TauCeti.CategoryTheory.Groupoid.SingleObj
 public import TauCeti.CategoryTheory.Groupoid.ConnectedFunctor
 public import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 
 /-!
 # The local system of a representation of the fundamental group
@@ -22,6 +23,20 @@ system `L` is the local system of its monodromy representation at `x`, up to an 
 is the identity at `x` (`ofRepresentationMonodromyIso`), so `ofRepresentation` inverts the
 monodromy representation up to isomorphism.
 
+The construction is functorial. A linear map intertwining two representations induces the
+morphism of their local systems which is that map on every fiber (`ofRepresentationMap`), and it
+is the only morphism with that component at `x` (`eq_ofRepresentationMap`); conversely the
+component at `x` of any morphism of local systems intertwines the representations
+(`ofRepresentationHomEquiv`). An equivalence of representations induces an isomorphism of their
+local systems in the same way (`ofRepresentationIso`). On the category `Rep R π₁(X, x)` this is a
+fully faithful functor (`ofRepresentationFunctor`), essentially surjective because every local
+system is the local system of its monodromy, hence an equivalence. In particular it preserves
+limits and colimits, so a short exact sequence of representations gives a short exact sequence of
+local systems (`shortExact_map_ofRepresentationFunctor`). Composing with `Rep.resFunctor`
+gives the same for the local systems of representations of any group `G` pulled back along a
+homomorphism `π₁(X, x) →* G`, which is how the coefficients of group (co)homology of `G` become
+local systems on a space with fundamental group `G`.
+
 The functor out of the fundamental groupoid is `TauCeti.Groupoid.functorOfEndHom`, which only
 uses that every point is joined to `x`.
 
@@ -29,6 +44,14 @@ uses that every point is joined to `x`.
 
 * `TauCeti.LocalCoefficientSystem.pathFromBase`: the chosen path classes out of the basepoint.
 * `TauCeti.LocalCoefficientSystem.ofRepresentation`: the local system of a representation.
+* `TauCeti.LocalCoefficientSystem.ofRepresentationMap`: an intertwining map induces a morphism of
+  local systems.
+* `TauCeti.LocalCoefficientSystem.ofRepresentationHomEquiv`: morphisms between the local systems
+  of two representations are the intertwining maps.
+* `TauCeti.LocalCoefficientSystem.ofRepresentationIso`: equivalent representations have isomorphic
+  local systems.
+* `TauCeti.LocalCoefficientSystem.ofRepresentationFunctor`: the local system of a representation,
+  as a functor out of `Rep R π₁(X, x)`; it is an equivalence onto local systems on `X`.
 * `TauCeti.LocalCoefficientSystem.ofRepresentationMonodromyIso`: a local system is the local system
   of its monodromy representation.
 
@@ -36,6 +59,10 @@ uses that every point is joined to `x`.
 
 * `TauCeti.LocalCoefficientSystem.monodromyRepresentation_ofRepresentation`: its monodromy at the
   basepoint is the given representation.
+* `TauCeti.LocalCoefficientSystem.eq_ofRepresentationMap`, `eq_ofRepresentationIso`: a morphism or
+  isomorphism of such local systems is determined by its component at the basepoint.
+* `TauCeti.LocalCoefficientSystem.shortExact_map_ofRepresentationFunctor`: short exact sequences
+  of representations give short exact sequences of local systems.
 
 ## References
 
@@ -116,6 +143,137 @@ theorem monodromyRepresentation_ofRepresentation
   rw [pathFromBase_mk, IsIso.inv_id, Category.id_comp, Category.comp_id]
   rfl
 
+section Map
+
+variable {W : Type w} [AddCommGroup W] [Module R W] {ρ : Representation R (FundamentalGroup X x) V}
+  {σ : Representation R (FundamentalGroup X x) W}
+
+/-- **An intertwining map of representations is a morphism of their local systems**: a linear map
+`f : V → W` intertwining `ρ` and `σ` is the morphism `ofRepresentation x ρ ⟶ ofRepresentation x σ`
+which is `f` on every fiber. It is the only morphism with component `f` at the basepoint
+(`eq_ofRepresentationMap`). -/
+def ofRepresentationMap (f : ρ.IntertwiningMap σ) :
+    ofRepresentation x ρ ⟶ ofRepresentation x σ where
+  app _ := ModuleCat.ofHom f.toLinearMap
+  naturality _ _ p := by
+    ext v
+    -- Every fiber is `V`, respectively `W`, only by unfolding `ofRepresentation_obj`, so the
+    -- composites in `ModuleCat` are evaluated by `change` rather than by `ModuleCat.hom_comp`.
+    change f ((ofRepresentation x ρ).map p v) = (ofRepresentation x σ).map p (f v)
+    refine (congrArg f (ofRepresentation_map_apply x ρ p v)).trans ?_
+    refine (Representation.IntertwiningMap.isIntertwining _ _ f _ v).trans ?_
+    exact (ofRepresentation_map_apply x σ p (f v)).symm
+
+/-- The morphism of local systems induced by an intertwining map is that map on every fiber. -/
+@[simp]
+theorem ofRepresentationMap_app_apply (f : ρ.IntertwiningMap σ) (y : FundamentalGroupoid X)
+    (v : V) : ((ofRepresentationMap x f).app y).hom v = f v :=
+  (rfl)
+
+/-- A morphism between the local systems of two representations is the morphism induced by an
+intertwining map as soon as its component at the basepoint is that map. -/
+theorem eq_ofRepresentationMap (f : ρ.IntertwiningMap σ)
+    (α : ofRepresentation x ρ ⟶ ofRepresentation x σ)
+    (hα : ∀ v : V, (α.app (FundamentalGroupoid.mk x)).hom v = f v) :
+    α = ofRepresentationMap x f :=
+  Groupoid.natTrans_ext (FundamentalGroupoid.nonempty_hom _) (ModuleCat.hom_ext (LinearMap.ext hα))
+
+/-- The identity map of a representation induces the identity of its local system. -/
+@[simp]
+theorem ofRepresentationMap_id :
+    ofRepresentationMap x (Representation.IntertwiningMap.id ρ) = 𝟙 (ofRepresentation x ρ) :=
+  ((eq_ofRepresentationMap x _ _ fun _ ↦ rfl).symm)
+
+/-- The morphism of local systems induced by a composite of intertwining maps is the composite of
+the induced morphisms. -/
+@[simp]
+theorem ofRepresentationMap_comp {U : Type w} [AddCommGroup U] [Module R U]
+    {τ : Representation R (FundamentalGroup X x) U} (f : ρ.IntertwiningMap σ)
+    (g : σ.IntertwiningMap τ) :
+    ofRepresentationMap x (g.comp f) = ofRepresentationMap x f ≫ ofRepresentationMap x g :=
+  ((eq_ofRepresentationMap x _ _ fun _ ↦ rfl).symm)
+
+/-- **Morphisms between the local systems of representations are intertwining maps**: taking the
+component at the basepoint is a bijection from morphisms
+`ofRepresentation x ρ ⟶ ofRepresentation x σ` to intertwining maps from `ρ` to `σ`, whose inverse
+is `ofRepresentationMap`. -/
+def ofRepresentationHomEquiv :
+    (ofRepresentation x ρ ⟶ ofRepresentation x σ) ≃ ρ.IntertwiningMap σ where
+  toFun α :=
+    { toLinearMap := (α.app (FundamentalGroupoid.mk x)).hom
+      isIntertwining' := fun g ↦ by
+        ext v
+        -- The monodromy of both local systems at the basepoint is the given representation, and
+        -- `α` commutes with the monodromy along the loop `g`.
+        have hρ := congrArg (fun r ↦ r g v) (monodromyRepresentation_ofRepresentation x ρ)
+        have hσ := congrArg (fun r ↦ r g ((α.app _).hom v))
+          (monodromyRepresentation_ofRepresentation x σ)
+        exact (congrArg (α.app _).hom hρ.symm).trans ((α.naturality_apply g.asHom v).trans hσ) }
+  invFun := ofRepresentationMap x
+  left_inv α := (eq_ofRepresentationMap x _ α fun _ ↦ rfl).symm
+  right_inv _ := rfl
+
+/-- The intertwining map of a morphism of local systems is its component at the basepoint. -/
+@[simp]
+theorem ofRepresentationHomEquiv_apply_apply (α : ofRepresentation x ρ ⟶ ofRepresentation x σ)
+    (v : V) : ofRepresentationHomEquiv x α v = (α.app (FundamentalGroupoid.mk x)).hom v :=
+  (rfl)
+
+/-- The inverse of `ofRepresentationHomEquiv` is `ofRepresentationMap`. -/
+@[simp]
+theorem ofRepresentationHomEquiv_symm_apply (f : ρ.IntertwiningMap σ) :
+    (ofRepresentationHomEquiv x).symm f = ofRepresentationMap x f :=
+  (rfl)
+
+/-- **Equivalent representations have isomorphic local systems**: an equivalence `e` of
+representations of `π₁(X, x)` is an isomorphism of their local systems which is `e` on every
+fiber. -/
+def ofRepresentationIso (e : ρ.Equiv σ) : ofRepresentation x ρ ≅ ofRepresentation x σ where
+  hom := ofRepresentationMap x e.toIntertwiningMap
+  inv := ofRepresentationMap x e.symm.toIntertwiningMap
+  hom_inv_id := by
+    rw [← ofRepresentationMap_comp, ← ofRepresentationMap_id]
+    exact congrArg _ (Representation.IntertwiningMap.ext (LinearMap.ext e.symm_apply_apply))
+  inv_hom_id := by
+    rw [← ofRepresentationMap_comp, ← ofRepresentationMap_id]
+    exact congrArg _ (Representation.IntertwiningMap.ext (LinearMap.ext e.apply_symm_apply))
+
+/-- The isomorphism of local systems induced by an equivalence of representations is the morphism
+induced by the underlying intertwining map. -/
+theorem ofRepresentationIso_hom (e : ρ.Equiv σ) :
+    (ofRepresentationIso x e).hom = ofRepresentationMap x e.toIntertwiningMap :=
+  (rfl)
+
+/-- The inverse of the isomorphism of local systems induced by an equivalence of representations
+is the morphism induced by the inverse equivalence. -/
+theorem ofRepresentationIso_inv (e : ρ.Equiv σ) :
+    (ofRepresentationIso x e).inv = ofRepresentationMap x e.symm.toIntertwiningMap :=
+  (rfl)
+
+/-- The isomorphism of local systems induced by an equivalence of representations is that
+equivalence on every fiber. -/
+@[simp]
+theorem ofRepresentationIso_hom_app_apply (e : ρ.Equiv σ) (y : FundamentalGroupoid X) (v : V) :
+    ((ofRepresentationIso x e).hom.app y).hom v = e v :=
+  (rfl)
+
+/-- The inverse of the isomorphism of local systems induced by an equivalence of representations
+is the inverse equivalence on every fiber. -/
+@[simp]
+theorem ofRepresentationIso_inv_app_apply (e : ρ.Equiv σ) (y : FundamentalGroupoid X) (w : W) :
+    ((ofRepresentationIso x e).inv.app y).hom w = e.symm w :=
+  (rfl)
+
+/-- An isomorphism between the local systems of two representations is the isomorphism induced by
+an equivalence of representations as soon as its component at the basepoint is that
+equivalence. -/
+theorem eq_ofRepresentationIso (e : ρ.Equiv σ) (α : ofRepresentation x ρ ≅ ofRepresentation x σ)
+    (hα : ∀ v : V, (α.hom.app (FundamentalGroupoid.mk x)).hom v = e v) :
+    α = ofRepresentationIso x e :=
+  Iso.ext (eq_ofRepresentationMap x _ α.hom hα)
+
+end Map
+
 /-- **A local system is the local system of its monodromy representation**: on a path-connected
 space, the isomorphism `ofRepresentation x (monodromyRepresentation L x) ≅ L` which is the
 identity of the fiber at `x`. -/
@@ -135,5 +293,60 @@ def ofRepresentationMonodromyIso (L : LocalCoefficientSystem.{u, v, w} R X) :
 theorem ofRepresentationMonodromyIso_app_mk (L : LocalCoefficientSystem.{u, v, w} R X) :
     (ofRepresentationMonodromyIso x L).app (FundamentalGroupoid.mk x) = Iso.refl _ :=
   Groupoid.natIsoOfEnd_app_self _ _ _
+
+section Functor
+
+variable (R) in
+/-- **The local system of a representation, as a functor** from representations of `π₁(X, x)` over
+`R` to local coefficient systems on `X`: a morphism of representations goes to the morphism of
+local systems which is that morphism on every fiber. -/
+-- Exposed, like `ofRepresentation`, so that the fibers of `(ofRepresentationFunctor x R).obj A`
+-- are the module of `A` by definition: the statement of `ofRepresentationFunctor_map` needs it.
+@[expose, simps]
+def ofRepresentationFunctor :
+    Rep.{w} R (FundamentalGroup X x) ⥤ LocalCoefficientSystem.{u, v, w} R X where
+  obj A := ofRepresentation x A.ρ
+  map f := ofRepresentationMap x f.hom
+  map_id _ := ofRepresentationMap_id x
+  map_comp f g := ofRepresentationMap_comp x f.hom g.hom
+
+variable (R) in
+/-- **The local system functor is fully faithful**: a morphism between the local systems of two
+representations is induced by a unique morphism of representations, its component at the
+basepoint. -/
+def ofRepresentationFunctorFullyFaithful : (ofRepresentationFunctor x R).FullyFaithful where
+  preimage α := Rep.ofHom (ofRepresentationHomEquiv x α)
+  map_preimage α := (ofRepresentationHomEquiv x).symm_apply_apply α
+  preimage_map f := Rep.hom_ext ((ofRepresentationHomEquiv x).apply_symm_apply f.hom)
+
+instance : (ofRepresentationFunctor x R).Full :=
+  (ofRepresentationFunctorFullyFaithful x R).full
+
+instance : (ofRepresentationFunctor x R).Faithful :=
+  (ofRepresentationFunctorFullyFaithful x R).faithful
+
+/-- Every local system is the local system of its monodromy representation
+(`ofRepresentationMonodromyIso`), so the local system functor is essentially surjective. -/
+instance : (ofRepresentationFunctor x R).EssSurj :=
+  ⟨fun L ↦ ⟨Rep.of (monodromyRepresentation L x), ⟨ofRepresentationMonodromyIso x L⟩⟩⟩
+
+/-- **Local systems are representations of the fundamental group**: on a path-connected space,
+the local system functor is an equivalence between representations of `π₁(X, x)` and local
+systems on `X`. -/
+instance : (ofRepresentationFunctor x R).IsEquivalence where
+
+instance : (ofRepresentationFunctor x R).Additive where
+  -- Both sums are computed componentwise on the underlying linear maps.
+  map_add := rfl
+
+/-- **A short exact sequence of representations gives a short exact sequence of local
+systems**: for a short exact sequence `0 → A₁ → A₂ → A₃ → 0` of representations of `π₁(X, x)`,
+the sequence of their local systems `0 → L(A₁) → L(A₂) → L(A₃) → 0` is short exact. -/
+theorem shortExact_map_ofRepresentationFunctor
+    {S : ShortComplex (Rep.{w} R (FundamentalGroup X x))} (hS : S.ShortExact) :
+    (S.map (ofRepresentationFunctor x R)).ShortExact :=
+  hS.map_of_exact _
+
+end Functor
 
 end TauCeti.LocalCoefficientSystem

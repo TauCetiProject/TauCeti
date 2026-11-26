@@ -39,7 +39,9 @@ jointly smooth in time and point
 point where the hyperplane does not move with time
 (`TauCeti.IsContactDistributionFamily.distributionGrayVectorField_eq_zero`). For the kernels of a
 smooth family of contact forms on `M` it is the Gray vector field of the forms
-(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`).
+(`TauCeti.SmoothForm.distributionGrayVectorField_kerDistribution`). Its flow carries `ξ_s` to `ξ_t`
+(`TauCeti.IsContactDistributionFamily.map_mfderiv_timeDependentFlowOf`, in
+`TauCeti.Geometry.Contact.Gray.Relative`).
 
 ## Main definitions
 
@@ -111,6 +113,20 @@ theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V
     simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe]
     rw [mfderiv_subtype_val_inclusion_apply]
 
+/-- The slice at time `t` of a local defining family near `t` is a contact form. -/
+theorem isContactForm (hα : IsLocalContactFormFamily ξ U α t₀) :
+    (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm :=
+  hα.self_of_nhds.1
+
+/-- The kernel of the slice at time `t` of a local defining family near `t` is the hyperplane
+`ξ_t`, the tangent spaces of `U` being those of `M`. -/
+theorem mem_kerDistribution_iff (hα : IsLocalContactFormFamily ξ U α t₀) {z : U}
+    {v : TangentSpace I z} :
+    v ∈ (SmoothForm.mpullback (Prod.mk t₀) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution
+        z ↔ v ∈ ξ t₀ z := by
+  rw [hα.self_of_nhds.2 z, Submodule.mem_comap]
+  exact Iff.of_eq (congrArg (· ∈ ξ t₀ z) (Manifold.mfderiv_subtype_val_apply z v))
+
 variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
 /-- **Local Gray vector fields agree.** Two local defining families of `ξ_t` near `t₀` have the same
@@ -180,6 +196,16 @@ theorem IsLocalContactFormFamily.distributionGrayVectorField_eq [FiniteDimension
   rw [distributionGrayVectorField, dite_eq_left_of_eq_true (eq_true h)]
   exact hα.mfderiv_grayVectorField_eq h.choose_spec.choose_spec.choose_spec hx _
 
+/-- On the open set of a local defining family near `t`, the Gray vector field of the family is the
+Gray vector field of the contact structures, the tangent spaces of `U` being those of `M`. -/
+theorem IsLocalContactFormFamily.grayVectorField_eq_distributionGrayVectorField
+    [FiniteDimensional ℝ E] [I.Boundaryless] {U : Opens M}
+    {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × U) ℝ 1} {t : ℝ} (hα : IsLocalContactFormFamily ξ U α t)
+    (z : U) : α.grayVectorField t z = distributionGrayVectorField ξ t z := by
+  have h := hα.distributionGrayVectorField_eq z.property
+  rw [Manifold.mfderiv_subtype_val_apply] at h
+  exact h.symm
+
 namespace IsContactDistributionFamily
 
 variable [FiniteDimensional ℝ E] [I.Boundaryless] (hξ : IsContactDistributionFamily ξ)
@@ -207,6 +233,12 @@ theorem distributionGrayVectorField_eq_zero {t : ℝ} {x : M} (hx : ∀ᶠ u in 
   rw [hα.distributionGrayVectorField_eq hxU, grayVectorField_eq_zero hα.self_of_nhds.1, map_zero]
   filter_upwards [hα, hx] with u hu hux
   rw [hu.2, hα.self_of_nhds.2, hux]
+
+/-- At a point at which the contact hyperplane `ξ_u` is the same for all times, the Gray vector
+field of a smooth family of contact structures vanishes at all times. -/
+theorem distributionGrayVectorField_eq_zero_of_forall_eq {x : M} {t₀ : ℝ}
+    (hx : ∀ u, ξ u x = ξ t₀ x) (u : ℝ) : distributionGrayVectorField ξ u x = 0 :=
+  hξ.distributionGrayVectorField_eq_zero (.of_forall fun v ↦ (hx v).trans (hx u).symm)
 
 /-- **The Gray vector field of a smooth family of contact structures is smooth**: the map
 `(t, x) ↦ (x, Y_t(x))` into the tangent bundle is smooth. -/

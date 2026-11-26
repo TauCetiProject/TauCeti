@@ -22,6 +22,7 @@ this topology.
 ## Main results
 
 * `TauCeti.LaurentSeries.substAlgEquiv_mem_lattice_iff`: `σ_φ f ∈ Xᵃ R⟦X⟧ ↔ f ∈ Xᵃ R⟦X⟧`.
+* `TauCeti.LaurentSeries.image_substAlgEquiv_lattice`: `σ_φ` maps `Xᵃ R⟦X⟧` onto itself.
 * `TauCeti.LaurentSeries.continuous_substAlgEquiv`: `σ_φ` is continuous for the `X`-adic topology.
 -/
 
@@ -47,6 +48,13 @@ theorem substAlgEquiv_mem_lattice_iff (φ : FormalCoordinate R) {a : ℤ} {f : R
     exact mem_lattice_iff_exists.mpr ⟨_, rfl⟩
   refine ⟨fun h ↦ ?_, key φ⟩
   simpa [← substAlgEquiv_symm] using key φ⁻¹ h
+
+/-- Substitution of a formal coordinate maps the lattice `Xᵃ R⟦X⟧` onto itself. -/
+theorem image_substAlgEquiv_lattice (φ : FormalCoordinate R) (a : ℤ) :
+    substAlgEquiv φ '' (lattice R R a : Set R⸨X⸩) = lattice R R a := by
+  ext f
+  rw [← AlgEquiv.coe_toEquiv, Equiv.image_eq_preimage_symm]
+  simp [substAlgEquiv_mem_lattice_iff]
 
 /-- Substitution of a formal coordinate is continuous for the `X`-adic topology on
 `R⸨X⸩ = HahnModule ℤ R R`, in which the lattices `Xᵃ R⟦X⟧` form a basis of neighbourhoods of

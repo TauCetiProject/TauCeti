@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Places.Basic
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Real
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
+public import TauCeti.Topology.Algebra.Group.Units
 import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
 
 /-!
 # The idele norm of a number field
@@ -121,10 +122,8 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_sel
     (u : (v.adicCompletion K)ˣ) :
     v.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = u :=
   Units.ext <| by
-    classical
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v).trans
-      (Pi.mulSingle_eq_same _ _)
+    exact FiniteAdeleRing.ofAdicCompletion_apply_self K v u
 
 /-- Away from its own place, the finite coordinates of an idele concentrated at a finite place are
 trivial. -/
@@ -134,10 +133,8 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofAdicCompletion_of_
     (u : (v.adicCompletion K)ˣ) :
     v'.ideleFiniteCoord (IdeleGroup.ofAdicCompletion R K v u) = 1 :=
   Units.ext <| by
-    classical
     rw [HeightOneSpectrum.coe_ideleFiniteCoord]
-    exact (FiniteAdeleRing.ofAdicCompletion_apply_coe K v u v').trans
-      (Pi.mulSingle_eq_of_ne h _)
+    exact FiniteAdeleRing.ofAdicCompletion_apply_of_ne K h u
 
 /-- The finite coordinates of a product of ideles, one concentrated at each place of a finite set
 `S` of finite places: the prescribed unit at a place of `S`, and `1` elsewhere. -/
@@ -206,6 +203,17 @@ theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele
   Units.ext <| by
     rw [coe_ideleFiniteCoord, IdeleGroup.coe_ofFiniteIdele]
     exact (Units.coe_map (RestrictedProduct.evalMonoidHom _ v) a).symm
+
+/-- The finite coordinate of the idele built from the principal finite idele of `x ∈ Kˣ` is the
+image of `x` in the completion. -/
+theorem IsDedekindDomain.HeightOneSpectrum.ideleFiniteCoord_ofFiniteIdele_unitEmbedding
+    (v : HeightOneSpectrum R) (x : Kˣ) :
+    v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele R K (FiniteAdeleRing.unitEmbedding R K x)) =
+      Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
+  rw [← HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v x]
+  refine Units.ext ?_
+  simp only [HeightOneSpectrum.coe_ideleFiniteCoord, ← IdeleGroup.coe_toFiniteIdele,
+    IdeleGroup.toFiniteIdele_ofFiniteIdele, IdeleGroup.toFiniteIdele_unitEmbedding]
 
 /-- The finite coordinates of an idele concentrated at an infinite place are trivial. -/
 @[simp]
@@ -502,10 +510,9 @@ private lemma continuous_ideleNormAux : Continuous (ideleNormAux (K := K)) := by
   rw [Pi.mul_apply, Function.comp_apply, ← hU_eq _ hy, ← ideleNormAux_mul, mul_inv_cancel_left]
 
 /-- The idele norm is continuous. -/
-theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) := by
-  have h : Continuous fun x : IdeleGroup (𝓞 K) K ↦ (ideleNorm x : ℝ≥0) :=
+theorem continuous_ideleNorm : Continuous (ideleNorm (K := K)) :=
+  (MonoidHom.continuous_iff_continuous_val _).2 <|
     continuous_real_toNNReal.comp continuous_ideleNormAux
-  exact Units.continuous_iff.mpr ⟨h, (h.comp continuous_inv).congr fun x ↦ by simp⟩
 
 /-- The idele norm is surjective: every positive real number is the idele norm of an idele
 concentrated at a single infinite place. -/

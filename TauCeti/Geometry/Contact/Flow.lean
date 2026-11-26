@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Path
 public import TauCeti.Geometry.Manifold.Flow.Monodromy
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
+import TauCeti.Geometry.Manifold.Flow.Integral
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.LinearAlgebra.Charpoly.Quotient
 
@@ -27,7 +28,10 @@ at time `t`, it rescales `α` by a positive factor:
 (`IsContactHamiltonianVectorField.mpullback_flowOf_apply`). So each local time-`t` map pulls `α`
 back at `x` to a positive multiple of `αₓ`, as a cooriented contactomorphism does
 (`IsContactHamiltonianVectorField.exists_pos_mpullback_flowOf_apply_eq_smul`). The
-local flow preserves `α` itself exactly when `f` is invariant under the Reeb vector field,
+strictness test holds orbit by orbit: the local flow preserves `α` at `x` at every time at which
+it is defined, that is, the rescaling factor is `1` there, exactly when `R_α f` vanishes along the
+trajectory of `x` (`IsContactHamiltonianVectorField.forall_mpullback_flowOf_apply_eq_self_iff`).
+So the local flow preserves `α` itself exactly when `f` is invariant under the Reeb vector field,
 `R_α f = 0` (`IsContactHamiltonianVectorField.mpullback_flowOf_apply_eq_self_iff`). In particular
 the local Reeb flow, the flow of the constant Hamiltonian `1`, preserves `α`
 (`IsContactForm.mpullback_flowOf_reebVectorField_apply`). None of this needs completeness.
@@ -61,11 +65,14 @@ a topological `Flow ℝ M` in `IsContactForm.reebFlow` without rest points
   `IsContactForm.conj_kerFlowEquiv_linearizedReebReturn`,
   `IsContactForm.charpoly_mfderiv_flowOf_reebVectorField`,
   `IsContactForm.charpoly_normalReturnDerivative_eq`,
-  `IsContactForm.hasEigenvalue_returnDerivative_iff`): when `Φ_T(p) = p`, restricting `dΦ_T(p)` to
-  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy class
-  is invariant along the trajectory, whose full monodromy characteristic polynomial splits as
+  `IsContactForm.hasEigenvalue_returnDerivative_iff`):
+  when the maximal flow is defined at `(T, p)` and `Φ_T(p) = p`, restricting `dΦ_T(p)` to
+  `ξ_p` yields a linear symplectomorphism whose iterates obey the power law, whose conjugacy
+  class is invariant along the trajectory,
+  whose full monodromy characteristic polynomial splits as
   `(X - 1)` times its characteristic polynomial, and whose characteristic polynomial and eigenvalues
-  agree with those of any local transverse Poincaré section.
+  agree with those of the normal derivative on a transverse section for the return branch at
+  the specified time `T`, including when `T` exceeds the least period.
 
 ## References
 
@@ -108,9 +115,8 @@ theorem mpullback_flowOf_apply (hα : α.IsContactForm)
   have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
     hX.contMDiff hα (by simp) (by norm_num [hf])
   have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
-    ((ContMDiff.contMDiff_mvfderiv_apply hf (m := 0) (by norm_num)).comp
-      (hα.contMDiff_reebVectorField.of_le (by simp))).continuous
-  exact mpullback_flowOf_apply_eq_exp_integral_smul hX2 hRf α.mdifferentiable
+    (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp) (hf.of_le (by norm_num))).continuous
+  exact mpullback_flowOf_apply_eq_exp_integral_smul (hX2.of_le one_le_two) hRf α.mdifferentiable
     (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)) hx
 
 /-- **Contact Hamiltonian flows preserve the coorientation.** For a contact form `α` and the
@@ -123,6 +129,26 @@ theorem exists_pos_mpullback_flowOf_apply_eq_smul (hα : α.IsContactForm)
     ∃ c : ℝ, 0 < c ∧ TauCeti.mpullback I I (flowOf X t) α.val x = c • α.val x :=
   ⟨_, Real.exp_pos _, hX.mpullback_flowOf_apply hα hf hx⟩
 
+/-- **Strictness along one trajectory.** For a contact form `α` and the contact Hamiltonian
+vector field `X` of a `C³` function `f`, the maximal flow `φ` of `X` preserves `α` at `x`,
+`(φₜ^* α)ₓ = αₓ`, at every time `t` at which the flow through `x` is defined exactly when `R_α f`
+vanishes along the trajectory of `x`. Equivalently, by
+`IsContactHamiltonianVectorField.mpullback_flowOf_apply`, the rescaling factor
+`exp (∫₀ᵗ (R_α f)(φₛ x) ds)` is `1` at all those times. -/
+theorem forall_mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
+    (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) (x : M) :
+    (∀ t, (t, x) ∈ flowDomain X → TauCeti.mpullback I I (flowOf X t) α.val x = α.val x) ↔
+      ∀ t, (t, x) ∈ flowDomain X →
+        mvfderiv I f (flowOf X t x) (α.reebVectorField (flowOf X t x)) = 0 := by
+  have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
+    hX.contMDiff hα (by simp) (by norm_num [hf])
+  have hRf : Continuous fun y ↦ mvfderiv I f y (α.reebVectorField y) :=
+    (hα.contMDiff_mvfderiv_reebVectorField (n := 0) (by simp) (hf.of_le (by norm_num))).continuous
+  exact TauCeti.forall_mpullback_flowOf_apply_eq_self_iff_of_mlieDerivForm_eq_smul
+    (hX2.of_le one_le_two) hRf α.mdifferentiable
+    (hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero))
+    (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
+
 /-- **Strict contact Hamiltonian flows.** For a contact form `α` and the contact Hamiltonian
 vector field `X` of a `C³` function `f`, the maximal flow of `X` preserves `α` wherever it is
 defined exactly when `f` is invariant under the Reeb vector field: `R_α f = 0`. -/
@@ -130,30 +156,12 @@ theorem mpullback_flowOf_apply_eq_self_iff (hα : α.IsContactForm)
     (hX : α.IsContactHamiltonianVectorField f X) (hf : ContMDiff I 𝓘(ℝ) 3 f) :
     (∀ t x, (t, x) ∈ flowDomain X → TauCeti.mpullback I I (flowOf X t) α.val x = α.val x) ↔
       ∀ x, mvfderiv I f x (α.reebVectorField x) = 0 := by
-  have hX2 : ContMDiff I I.tangent 2 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
-    hX.contMDiff hα (by simp) (by norm_num [hf])
-  have hX1 := hX2.of_le one_le_two
-  constructor
-  · intro h x
-    -- The pullbacks `φₜ^* α` at `x` are constant for small `t`, and their velocity at `0` is
-    -- `L_X α = (R_α f) α`.
-    have hd := hasDerivAt_mpullback_flowOf_zero hX2 x (α.mdifferentiable x)
-    have hconst : (fun s ↦ TauCeti.mpullback I I (flowOf X s) α.val x) =ᶠ[𝓝 0]
-        fun _ ↦ α.val x := by
-      have hopen : {s | (s, x) ∈ flowDomain X} ∈ 𝓝 (0 : ℝ) :=
-        ((isOpen_flowDomain hX1).preimage (continuous_id.prodMk continuous_const)).mem_nhds
-          (mem_flowDomain_zero hX1 x)
-      filter_upwards [hopen] with s hs
-      exact h s x hs
-    rw [hX.mlieDerivForm_eq (hX2.mdifferentiable two_ne_zero)] at hd
-    have h0 := (hd.congr_of_eventuallyEq hconst.symm).unique
-      (hasDerivAt_const (F := E [⋀^Fin 1]→L[ℝ] ℝ) (0 : ℝ) (α.val x))
-    have hα₀ : (α.val x : E [⋀^Fin 1]→L[ℝ] ℝ) ≠ 0 :=
-      (isContactForm_iff_forall_isContactFormAt.mp hα x).ne_zero
-    exact (smul_eq_zero.mp h0).resolve_right hα₀
-  · intro h t x hx
-    rw [hX.mpullback_flowOf_apply hα hf hx]
-    simp [h]
+  have hX1 : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, X y⟩ : TangentBundle I M)) :=
+    hX.contMDiff hα (by simp) (hf.of_le (by norm_num))
+  simp_rw [forall_comm (α := ℝ) (β := M), hX.forall_mpullback_flowOf_apply_eq_self_iff hα hf]
+  refine ⟨fun h x ↦ ?_, fun h x t _ ↦ h _⟩
+  have h0 := h x 0 (mem_flowDomain_zero hX1 x)
+  rwa [flowOf_zero] at h0
 
 /-! ### Complete flows -/
 
@@ -596,6 +604,28 @@ theorem IsContactForm.hasEigenvalue_returnDerivative_iff (hα : α.IsContactForm
     Module.End.hasEigenvalue_iff_isRoot_charpoly, Module.End.hasEigenvalue_iff_isRoot_charpoly,
     charpoly_returnDerivative_eq_X_mul hgv (h := hK), IsRoot.def, IsRoot.def, eval_mul, eval_X,
     mul_eq_zero, or_iff_right hμ]
+
+namespace IsContactForm
+
+/-- The linearized Reeb return map at a return time `T` has no eigenvalue `1` iff some local
+transverse section through `p` has a return derivative without eigenvalue `1` for the branch at
+time `T`. The branch uses the specified return time, which need not be the least period. -/
+theorem not_hasEigenvalue_one_linearizedReebReturn_iff_exists_not_hasEigenvalue_returnDerivative
+    (hα : α.IsContactForm) {T : ℝ} {p : M} (hT : (T, p) ∈ flowDomain α.reebVectorField)
+    (hp : flowOf α.reebVectorField T p = p) :
+    ¬(hα.linearizedReebReturn hT hp).HasEigenvalue 1 ↔
+      ∃ g : M → ℝ, ContMDiffAt I 𝓘(ℝ) 1 g p ∧
+        mvfderiv I g p (α.reebVectorField p) ≠ 0 ∧
+        ¬(returnDerivative α.reebVectorField g T p).HasEigenvalue 1 := by
+  constructor
+  · intro hnd
+    obtain ⟨g, hg, hgv⟩ := hα.exists_contMDiffAt_and_mvfderiv_reebVectorField_eq_one 1 p
+    have hgv0 : mvfderiv I g p (α.reebVectorField p) ≠ 0 := hgv ▸ one_ne_zero
+    exact ⟨g, hg, hgv0, mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv0 one_ne_zero).1 hnd⟩
+  · rintro ⟨g, hg, hgv, hnd⟩
+    exact mt (hα.hasEigenvalue_returnDerivative_iff hT hp hg hgv one_ne_zero).2 hnd
+
+end IsContactForm
 
 /-- **Degeneracy of identity return in dimension at least `3`.** If `2 ≤ finrank ℝ E` (so the
 contact manifold has odd dimension `2 n + 1 ≥ 3` and `dim ξ_p ≥ 1`) and `dΦ_T(p) = id`, then

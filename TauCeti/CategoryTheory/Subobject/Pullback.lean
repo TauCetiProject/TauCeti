@@ -26,6 +26,8 @@ below `Z`, by `Subobject.map Z.arrow` with inverse `Subobject.pullback Z.arrow` 
   `Z.arrow` is the subobject represented by the inclusion `Subobject.ofLE S Z`.
 * `CategoryTheory.Subobject.map_pullback_arrow_of_le`: for `S ≤ Z`, mapping back the
   pullback of `S` along `Z.arrow` gives `S`.
+* `CategoryTheory.Subobject.pullback_eq_of_comp_eq_id`: if `g` is a retraction of `f`, then
+  `S ≤ f⁻¹ T` and `T ≤ g⁻¹ S` force `f⁻¹ T = S`.
 * `CategoryTheory.Subobject.isLimitKernelForkOfLE`: if the kernel of a morphism `g` out of `Z` is
   the pullback of `S ≤ Z`, then the inclusion `S ⟶ Z` is a kernel of `g`.
 -/
@@ -53,6 +55,13 @@ lemma pullback_arrow_of_le {S Z : Subobject A} (h : S ≤ Z) :
 lemma map_pullback_arrow_of_le {S Z : Subobject A} (h : S ≤ Z) :
     (map Z.arrow).obj ((pullback Z.arrow).obj S) = S := by
   rw [← inf_eq_map_pullback, inf_eq_right.2 h]
+
+/-- If `g` is a retraction of `f`, a subobject `S` whose image under `f` lies in `T` and which
+contains the image of `T` under `g` is the pullback of `T` along `f`. -/
+lemma pullback_eq_of_comp_eq_id {X Y : C} {f : X ⟶ Y} {g : Y ⟶ X} (hfg : f ≫ g = 𝟙 X)
+    {S : Subobject X} {T : Subobject Y} (hS : S ≤ (pullback f).obj T)
+    (hT : T ≤ (pullback g).obj S) : (pullback f).obj T = S :=
+  le_antisymm (((pullback f).monotone hT).trans_eq (by rw [← pullback_comp, hfg, pullback_id])) hS
 
 section Kernel
 

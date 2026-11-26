@@ -11,6 +11,9 @@ public import Mathlib.RingTheory.Ideal.Maps
 /-!
 # Basic facts about bialgebra morphisms
 
+`BialgHom.toCoalgHom_eq_ofClass` identifies the structure projection to a coalgebra morphism
+with the coercion `CoalgHom.ofClass`.
+
 `BialgHom.id_toRingHom` and `BialgHom.comp_toRingHom` identify the direct ring-homomorphism
 coercions of the identity and composition. They complement Mathlib's `BialgHom.id_toAlgHom`
 and `BialgHom.comp_toAlgHom`, which concern the algebra-homomorphism coercions.
@@ -18,6 +21,8 @@ and `BialgHom.comp_toAlgHom`, which concern the algebra-homomorphism coercions.
 The ordinary kernel of a bialgebra morphism is killed by the counit, and its comultiplication
 lies in the kernel of the tensor-square map. These facts require only the algebra and coalgebra
 structures used to define a bialgebra morphism, without an antipode.
+`BialgHom.mem_ker_toAlgHom_toRingHom` reads membership in the kernel of the underlying ring
+homomorphism as vanishing under the bialgebra morphism.
 
 `Bialgebra.unitBialgHom_apply` evaluates Mathlib's unit bialgebra morphism as the structure map.
 -/
@@ -34,6 +39,11 @@ theorem id_toRingHom : (BialgHom.id R A : A →+* A) = RingHom.id A := rfl
 
 variable {R A}
 variable {B : Type*} [Semiring B] [Algebra R B] [CoalgebraStruct R B]
+
+/-- The coalgebra morphism underlying a bialgebra morphism is its coercion to a coalgebra
+morphism. -/
+theorem toCoalgHom_eq_ofClass (f : A →ₐc[R] B) : f.toCoalgHom = CoalgHom.ofClass f :=
+  rfl
 
 /-- The ring homomorphism underlying a composite of bialgebra morphisms is the composite
 of the underlying ring homomorphisms. -/
@@ -62,6 +72,12 @@ theorem counit_eq_zero_of_mem_ker (f : A →ₐc[R] B) {x : A}
     (hx : x ∈ RingHom.ker f.toAlgHom) : Coalgebra.counit (R := R) x = 0 := by
   simp only [RingHom.mem_ker, coe_toAlgHom] at hx
   rw [← CoalgHomClass.counit_comp_apply f x, hx, map_zero]
+
+/-- Membership in the kernel of the ring homomorphism underlying a bialgebra morphism is
+vanishing under the morphism. -/
+theorem mem_ker_toAlgHom_toRingHom {f : A →ₐc[R] B} {x : A} :
+    x ∈ RingHom.ker f.toAlgHom.toRingHom ↔ f x = 0 :=
+  Iff.rfl
 
 end BialgHom
 

@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.RingHom.StandardSyntomic
 import Mathlib.RingTheory.Localization.BaseChange
 import TauCeti.RingTheory.Extension.Presentation.Fiber
 import TauCeti.RingTheory.KrullDimension.Presentation
+import TauCeti.RingTheory.Syntomic.KrullDimension
 
 /-!
 # The fibrewise criterion for syntomic ring maps
@@ -28,13 +29,11 @@ presentation of some localization `A[1/a][1/g]` with `n + c` generators and `c` 
 localization have Krull dimension at least `n` by Krull's height theorem applied to the base
 changed presentation, and at most `n` because they are again locally standard syntomic of
 relative dimension `n` over a field
-(`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`).
+(`TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`, in
+`TauCeti.RingTheory.Syntomic.KrullDimension`).
 
 ## Main results
 
-* `TauCeti.ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension`: an algebra over a
-  field which is locally standard syntomic of relative dimension `n` has Krull dimension at most
-  `n`.
 * `TauCeti.exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away`: under the
   fibrewise hypothesis, every prime `q` of `A` has a standard syntomic neighbourhood `A[1/g]` of
   relative dimension `n` with `g ∉ q`.
@@ -56,32 +55,6 @@ namespace TauCeti
 universe u
 
 variable {n : ℕ}
-
-/-- An algebra over a field which is locally standard syntomic of relative dimension `n` has Krull
-dimension at most `n`. -/
-theorem ringKrullDim_le_of_locally_isStandardSyntomicOfRelativeDimension {k A : Type u} [Field k]
-    [CommRing A] [Algebra k A]
-    (h : RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap k A)) :
-    ringKrullDim A ≤ n := by
-  obtain ⟨s, hs, hst⟩ := h
-  refine (ringKrullDim_le_iff_height_le _).mpr fun P hP ↦ ?_
-  -- Some chart `A[1/t]` of the cover contains `P`, and the height of `P` is computed there.
-  obtain ⟨t, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs P hP.ne_top
-  have hPt : (P.map (algebraMap A (Localization.Away t))).IsPrime :=
-    IsLocalization.isPrime_of_isPrime_disjoint _ _ P hP hdisj.symm
-  have : Algebra.IsStandardSyntomicOfRelativeDimension n k (Localization.Away t) := by
-    rw [← isStandardSyntomicOfRelativeDimension_algebraMap, IsScalarTower.algebraMap_eq k A]
-    exact hst t hts
-  -- The chart is nonzero, so over the field `k` its Krull dimension is exactly `n`.
-  let e := Algebra.TensorProduct.lid k (Localization.Away t)
-  have : Nontrivial (Localization.Away t) := nontrivial_of_ne 0 1 fun h ↦
-    hPt.ne_top ((Ideal.eq_top_iff_one _).mpr (h ▸ Ideal.zero_mem _))
-  have : Nontrivial (k ⊗[k] Localization.Away t) := e.toEquiv.nontrivial
-  rw [← IsLocalization.height_map_of_disjoint (S := Localization.Away t) (.powers t) P
-    hdisj.symm]
-  refine Ideal.height_le_ringKrullDim_of_isPrime.trans_eq ?_
-  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv,
-    Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field (n := n) k]
 
 /-- If every fibre of `A` is locally standard syntomic of relative dimension `n`, so is every fibre
 of a localization `B = A[1/a]`, since `κ(p) ⊗[R] A[1/a]` is the localization of `κ(p) ⊗[R] A`
@@ -119,8 +92,8 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_fiber_locali
   have hQ : Q.asIdeal.comap Algebra.TensorProduct.includeRight = q := by
     rw [← PrimeSpectrum.coe_primesOverOrderIsoFiber_symm_apply, OrderIso.symm_apply_apply]
   -- Choose a standard syntomic chart `(κ(p) ⊗[R] A)[1/t]` of the fibre around `Q`.
-  obtain ⟨s, hs, hst⟩ := h
-  obtain ⟨t, hts, hdisj⟩ := Ideal.exists_disjoint_powers_of_span_eq_top s hs _ Q.isPrime.ne_top
+  obtain ⟨t, hdisj, _⟩ :=
+    exists_disjoint_powers_isStandardSyntomicOfRelativeDimension_of_locally h _ Q.isPrime.ne_top
   have htQ : t ∉ Q.asIdeal :=
     (Ideal.disjoint_powers_iff_notMem t Q.isPrime.isRadical).mp hdisj.symm
   -- Up to a unit of `κ(p)`, `t` is the image `1 ⊗ a` of some `a ∉ q`.
@@ -141,10 +114,6 @@ private theorem exists_notMem_isStandardSyntomicOfRelativeDimension_fiber_locali
   let e : p.Fiber (Localization.Away a) ≃ₐ[p.ResidueField] Localization.Away t :=
     (IsLocalization.Away.tensorProductEquivTMulRight R p.ResidueField a _).trans
       ((IsLocalization.algEquiv (.powers ((1 : p.ResidueField) ⊗ₜ[R] a)) _ _).restrictScalars _)
-  have : Algebra.IsStandardSyntomicOfRelativeDimension n p.ResidueField (Localization.Away t) := by
-    rw [← isStandardSyntomicOfRelativeDimension_algebraMap,
-      IsScalarTower.algebraMap_eq p.ResidueField (p.Fiber A)]
-    exact hst t hts
   exact .of_algEquiv e.symm
 
 /-- A flat `R`-algebra `B` with a presentation by `n + c` generators and `c` relations, all of
@@ -223,14 +192,8 @@ theorem locally_isStandardSyntomicOfRelativeDimension_of_fiber [Module.Flat R A]
     [Algebra.FinitePresentation R A]
     (h : ∀ (p : Ideal R) [p.IsPrime], RingHom.Locally (IsStandardSyntomicOfRelativeDimension n)
       (algebraMap p.ResidueField (p.Fiber A))) :
-    RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R A) := by
-  rw [RingHom.locally_iff_span_eq_top]
-  by_contra hne
-  obtain ⟨m, hm, hle⟩ := Ideal.exists_le_maximal _ hne
-  obtain ⟨g, hg, hstd⟩ := exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away h m
-  refine hg (hle (Ideal.subset_span ?_))
-  rw [Set.mem_ofPred_eq, ← IsScalarTower.algebraMap_eq,
-    isStandardSyntomicOfRelativeDimension_algebraMap]
-  exact hstd
+    RingHom.Locally (IsStandardSyntomicOfRelativeDimension n) (algebraMap R A) :=
+  locally_isStandardSyntomicOfRelativeDimension_of_forall_isMaximal fun m _ ↦
+    exists_notMem_isStandardSyntomicOfRelativeDimension_localization_away h m
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.KMS.StateSpace
+public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import Mathlib.Analysis.CStarAlgebra.Unitary.Span
 import TauCeti.Analysis.CStarAlgebra.Action.KMS.Dense
 import TauCeti.RingTheory.TraceFunctional.Star
@@ -36,6 +37,9 @@ it with the set of β-KMS states of the trivial dynamics for every `β`.
   (`IsTracialState.comp_of_surjective`).
 * `PositiveContinuousLinearMap.isTracialState_iff_of_comm`: on a commutative C⋆-algebra every
   state is tracial, so `T(A) = S(A)` (`TauCeti.tracialStates_eq_stateSpace`).
+* `PositiveContinuousLinearMap.isTracialState_unitization_iff`: the extension `τ⁺¹` of a positive
+  functional to the unitization (`PositiveContinuousLinearMap.unitization`) is a tracial state
+  exactly when `τ` is.
 * `PositiveContinuousLinearMap.not_isTracialState_of_mul_star_add_mul_star_eq_one`: a unital
   C⋆-algebra containing two isometries `s, t` with `s * star s + t * star t = 1` has no tracial
   state.
@@ -44,7 +48,10 @@ The set `T(A)` is convex (`TauCeti.convex_tracialStates`), contains every weak-*
 of itself that has norm one (`TauCeti.closure_tracialStates_inter_subset`), and for unital `A`
 is weak-* closed and compact (`TauCeti.isClosed_tracialStates`,
 `TauCeti.isCompact_tracialStates`). Without a unit it need not be weak-* closed: on `c₀` the
-point evaluations are tracial states converging weak-* to `0`.
+point evaluations are tracial states converging weak-* to `0`. It is always closed in the norm
+topology of the continuous dual (`TauCeti.isClosed_preimage_toWeakDual_tracialStates`), and its
+elements are the functionals of tracial states
+(`TauCeti.mem_tracialStates_iff_exists_isTracialState`).
 
 ## References
 
@@ -260,6 +267,25 @@ theorem closure_tracialStates_inter_subset :
     closure (tracialStates A) ∩ {φ | ‖toStrongDual φ‖ = 1} ⊆ tracialStates A :=
   CStarAction.closure_kmsStates_inter_subset
 
+/-- The elements of `T(A)` are the functionals induced by tracial states. -/
+theorem mem_tracialStates_iff_exists_isTracialState :
+    φ ∈ tracialStates A ↔ ∃ τ : A →P[ℂ] ℂ, τ.IsTracialState ∧
+      StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) = φ := by
+  simp only [tracialStates, CStarAction.mem_kmsStates_iff,
+    CStarAction.isKMSState_trivial_iff_isTracialState]
+
+/-- In the norm topology of the continuous dual, the tracial state space is closed. -/
+theorem isClosed_preimage_toWeakDual_tracialStates :
+    IsClosed (StrongDual.toWeakDual ⁻¹' tracialStates A) := by
+  have h : StrongDual.toWeakDual ⁻¹' tracialStates A = StrongDual.toWeakDual ⁻¹' stateSpace A ∩
+      ⋂ a : A, ⋂ b : A, {x : StrongDual ℂ A | x (a * b) = x (b * a)} := by
+    ext x
+    simp [mem_tracialStates_iff]
+  rw [h]
+  exact isClosed_preimage_toWeakDual_stateSpace.inter <| isClosed_iInter fun a =>
+    isClosed_iInter fun b => isClosed_eq (ContinuousLinearMap.apply ℂ ℂ (a * b)).continuous
+      (ContinuousLinearMap.apply ℂ ℂ (b * a)).continuous
+
 /-- On a commutative C⋆-algebra every state is tracial: `T(A) = S(A)`. -/
 theorem tracialStates_eq_stateSpace {B : Type*} [NonUnitalCommCStarAlgebra B] [PartialOrder B]
     [StarOrderedRing B] : tracialStates B = stateSpace B := by
@@ -308,3 +334,22 @@ theorem mapsTo_pullbackFunctional_tracialStates (f : F) :
 end Unital
 
 end TauCeti
+
+namespace PositiveContinuousLinearMap
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {τ : A →P[ℂ] ℂ}
+
+/-- The extension `τ⁺¹` is a tracial state of `Unitization ℂ A` exactly when `τ` is a tracial
+state of `A`. -/
+@[simp]
+theorem isTracialState_unitization_iff : τ.unitization.IsTracialState ↔ τ.IsTracialState := by
+  simp only [isTracialState_iff, norm_unitization, and_congr_right_iff]
+  refine fun _ => ⟨fun h a b => ?_, unitization_map_mul_comm⟩
+  simpa only [← Unitization.inr_mul, unitization_apply_inr] using h a b
+
+/-- The extension of a tracial state to the unitization is a tracial state. -/
+theorem IsTracialState.unitization (hτ : τ.IsTracialState) : τ.unitization.IsTracialState :=
+  isTracialState_unitization_iff.mpr hτ
+
+end PositiveContinuousLinearMap

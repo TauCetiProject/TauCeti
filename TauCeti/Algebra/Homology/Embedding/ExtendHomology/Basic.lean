@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologySequence
+public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
 
 /-!
 # Opcycles and extension by zero
@@ -14,10 +15,12 @@ public import Mathlib.Algebra.Homology.HomologySequence
 The opcycles isomorphism of an extended complex is natural in chain maps and compatible with
 `HomologicalComplex.opcyclesToCycles`. These identities require homology only in the degrees
 involved, in a category with zero morphisms and a zero object. An extended chain map is an
-epimorphism in homology in a degree of the image exactly when the original map is, the counterpart
-for epimorphisms of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
+epimorphism (or a monomorphism) in homology in a degree of the image exactly when the original map
+is, the counterpart of Mathlib's `HomologicalComplex.quasiIsoAt_extendMap_iff`. Outside the image,
 an extended complex has zero homology, so every extended chain map is an isomorphism in homology
-there.
+there. In a degree of the image, taking homology commutes with extension, naturally, both for
+complexes (`ComplexShape.Embedding.extendFunctorCompHomologyFunctorIso`) and on homotopy
+categories (`ComplexShape.Embedding.extendHomotopyFunctorCompHomologyFunctorIso`).
 
 Adapted from [TauCetiProject/TauCeti#10141](https://github.com/TauCetiProject/TauCeti/pull/10141).
 -/
@@ -66,6 +69,16 @@ lemma epi_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
     (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj'))
 
 variable {e} in
+/-- In a degree `j'` in the image of `e`, the map induced in homology by the extension of `φ` is a
+monomorphism exactly when the map induced by `φ` is in the corresponding degree `j`. -/
+lemma mono_homologyMap_extendMap_iff {j : ι} {j' : ι'} (hj' : e.f j = j')
+    [K.HasHomology j] [L.HasHomology j] [(K.extend e).HasHomology j']
+    [(L.extend e).HasHomology j'] :
+    Mono (homologyMap (extendMap φ e) j') ↔ Mono (homologyMap φ j) :=
+  (MorphismProperty.monomorphisms C).arrow_mk_iso_iff
+    (Arrow.isoMk (K.extendHomologyIso e hj') (L.extendHomologyIso e hj'))
+
+variable {e} in
 /-- In a degree `j'` outside the image of `e`, the map induced in homology by the extension of `φ`
 is an isomorphism, between zero objects. -/
 lemma isIso_homologyMap_extendMap_of_forall_ne {j' : ι'} (hj' : ∀ j, e.f j ≠ j')
@@ -75,3 +88,53 @@ lemma isIso_homologyMap_extendMap_of_forall_ne {j' : ι'} (hj' : ∀ j, e.f j �
     (L.extend_exactAt e j' hj').isZero_homology.eq_of_src _ _⟩
 
 end HomologicalComplex
+
+namespace ComplexShape.Embedding
+
+open HomologicalComplex
+
+variable {ι ι' : Type*} {c : ComplexShape ι} {c' : ComplexShape ι'} (e : c.Embedding c')
+  (C : Type*) [Category* C]
+
+section
+
+variable [HasZeroMorphisms C] [HasZeroObject C] [CategoryWithHomology C]
+
+/-- In a degree `j'` of the image of `e`, the homology of the extension of a complex along `e` is
+naturally the homology of the complex in the corresponding degree `j`. -/
+noncomputable def extendFunctorCompHomologyFunctorIso {j : ι} {j' : ι'} (hj' : e.f j = j') :
+    e.extendFunctor C ⋙ homologyFunctor C c' j' ≅ homologyFunctor C c j :=
+  NatIso.ofComponents (fun K ↦ K.extendHomologyIso e hj')
+    (fun φ ↦ extendHomologyIso_hom_naturality φ e hj')
+
+@[simp]
+lemma extendFunctorCompHomologyFunctorIso_hom_app {j : ι} {j' : ι'} (hj' : e.f j = j')
+    (K : HomologicalComplex C c) :
+    (e.extendFunctorCompHomologyFunctorIso C hj').hom.app K = (K.extendHomologyIso e hj').hom :=
+  (rfl)
+
+end
+
+variable [Preadditive C] [HasZeroObject C] [CategoryWithHomology C] [e.IsRelIff]
+
+/-- In a degree `j'` of the image of `e`, the homology of the extension along `e` is naturally the
+homology in the corresponding degree `j`, on homotopy categories. -/
+noncomputable def extendHomotopyFunctorCompHomologyFunctorIso {j : ι} {j' : ι'}
+    (hj' : e.f j = j') :
+    e.extendHomotopyFunctor C ⋙ HomotopyCategory.homologyFunctor C c' j' ≅
+      HomotopyCategory.homologyFunctor C c j :=
+  Quotient.natIsoLift _
+    (Functor.isoWhiskerLeft (e.extendFunctor C) (HomotopyCategory.homologyFunctorFactors C c' j') ≪≫
+      e.extendFunctorCompHomologyFunctorIso C hj' ≪≫
+      (HomotopyCategory.homologyFunctorFactors C c j).symm)
+
+lemma extendHomotopyFunctorCompHomologyFunctorIso_hom_app_quotient_obj {j : ι} {j' : ι'}
+    (hj' : e.f j = j') (K : HomologicalComplex C c) :
+    (e.extendHomotopyFunctorCompHomologyFunctorIso C hj').hom.app
+        ((HomotopyCategory.quotient C c).obj K) =
+      (HomotopyCategory.homologyFunctorFactors C c' j').hom.app (K.extend e) ≫
+        (K.extendHomologyIso e hj').hom ≫
+        (HomotopyCategory.homologyFunctorFactors C c j).inv.app K := by
+  (rfl)
+
+end ComplexShape.Embedding

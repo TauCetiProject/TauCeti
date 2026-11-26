@@ -13,9 +13,11 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The height function on the unit sphere is a Morse function
@@ -60,10 +62,15 @@ multiple of `x`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
 * `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
   `0`.
+* `TauCeti.sphereHeight_mem_Ioo_iff`: the height lies in `(-1, 1)` exactly off the poles.
+* `TauCeti.range_sphereHeight`: in positive dimension the height function takes exactly the values
+  in `[-1, 1]`.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
 * `TauCeti.ncard_setOf_sphereHeight_eq_zero`: the equator of the circle has two points.
 * `TauCeti.infinite_setOf_sphereHeight_eq_zero`: the equator of a sphere of dimension at least `2`
   is infinite.
+* `TauCeti.isConnected_setOf_sphereHeight_eq`: on a sphere of dimension at least `2` every level of
+  the height function is connected.
 
 ## References
 
@@ -365,6 +372,25 @@ theorem sphereHeight_eq_neg_one_iff {v x : sphere (0 : E) 1} :
     sphereHeight v x = -1 ↔ x = -v := by
   rw [← neg_eq_iff_eq_neg, ← Pi.neg_apply, ← sphereHeight_neg, sphereHeight_eq_one_iff]
 
+/-- The height of a point lies strictly between `-1` and `1` exactly when the point is neither
+pole. -/
+theorem sphereHeight_mem_Ioo_iff {v x : sphere (0 : E) 1} :
+    sphereHeight v x ∈ Ioo (-1) 1 ↔ x ≠ v ∧ x ≠ -v := by
+  rw [mem_Ioo, (neg_one_le_sphereHeight v x).lt_iff_ne', (sphereHeight_le_one v x).lt_iff_ne,
+    Ne, Ne, sphereHeight_eq_neg_one_iff, sphereHeight_eq_one_iff, and_comm]
+
+/-- In positive dimension the height function takes exactly the values in `[-1, 1]`. In dimension
+`0` the sphere consists of the two poles, and the range is `{-1, 1}`. -/
+theorem range_sphereHeight (hn : 0 < n) (v : sphere (0 : E) 1) :
+    range (sphereHeight v) = Icc (-1) 1 := by
+  refine (range_subset_iff.2 fun x ↦
+    mem_Icc.2 ⟨neg_one_le_sphereHeight v x, sphereHeight_le_one v x⟩).antisymm fun r hr ↦ ?_
+  obtain ⟨y, hy, hyr⟩ := (isConnected_sphere_of_one_le (E := E) hn).isPreconnected
+    |>.intermediate_value (f := fun y : E ↦ ⟪y, (v : E)⟫) (-v).property v.property
+    (continuous_id.inner continuous_const).continuousOn
+    (by simpa only [← sphereHeight_apply, sphereHeight_neg_self, sphereHeight_self] using hr)
+  exact ⟨⟨y, hy⟩, hyr⟩
+
 omit [Fact (finrank ℝ E = n + 1)] in
 /-- If the unit vectors `u` and `v` are orthogonal, the height function in the direction `u`
 vanishes at `v`. -/
@@ -575,6 +601,33 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
     (fun y z h ↦ Subtype.ext (Subtype.ext congr(($h).val))) fun y ↦ ?_
   rw [mem_ofPred_eq, sphereHeight_apply]
   exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).property
+
+/-- **The levels of the height are connected in dimension at least two.** On the unit sphere
+`Sⁿ` with `n ≥ 2`, every level `h = c` with `-1 ≤ c ≤ 1` is connected: it is a pole when
+`c = ±1`, and otherwise the round sphere of radius `√(1 - c²)` centred at `c v` in the hyperplane
+`h = c`. On the circle the levels strictly between the poles have two points. -/
+theorem isConnected_setOf_sphereHeight_eq (hn : 2 ≤ n) (v : sphere (0 : E) 1) {c : ℝ}
+    (hc : c ∈ Icc (-1) 1) : IsConnected {x | sphereHeight v x = c} := by
+  -- The unit sphere of `(ℝ ∙ v)ᗮ` is connected, since its dimension is `n ≥ 2`, and the level
+  -- `h = c` is its image under the latitude map at height `c`.
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hrank : 1 < Module.rank ℝ (ℝ ∙ (v : E))ᗮ := by
+    rw [← Module.finrank_eq_rank,
+      Submodule.finrank_orthogonal_span_singleton (n := n) (ne_zero_of_mem_unit_sphere v)]
+    exact_mod_cast hn
+  have hconn := isConnected_sphere hrank (0 : (ℝ ∙ (v : E))ᗮ) zero_le_one
+  have := isConnected_iff_connectedSpace.1 hconn
+  obtain ⟨u₀, hu₀⟩ := hconn.nonempty
+  have hlevel : {x | sphereHeight v x = c} = range fun u ↦ latitude v u c := by
+    ext x
+    simp only [mem_ofPred_eq, mem_range, sphereHeight_apply]
+    constructor
+    · rintro rfl
+      obtain ⟨u, t, ht, rfl⟩ := exists_latitude_eq v ⟨u₀, hu₀⟩ x
+      exact ⟨u, by rw [inner_latitude, projIcc_of_mem _ ht]⟩
+    · rintro ⟨u, rfl⟩
+      rw [inner_latitude, projIcc_of_mem _ hc]
+  exact hlevel ▸ isConnected_range (continuous_latitude v continuous_id continuous_const)
 
 end Sphere
 

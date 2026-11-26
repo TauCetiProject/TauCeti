@@ -30,7 +30,8 @@ homology of this pair, up to the shift by the dimension of the cube:
 over every commutative ring `k` (`TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv`,
 `TauCeti.MoorePathPullback.isCubicalRepresentative_cubicalHomologyCubeBoundaryEquiv`). Here
 `z · c₀` is the left action of chains on loops on chains on the pullback,
-`TauCeti.NormalizedCubicalChain.leftAct`.
+`TauCeti.NormalizedCubicalChain.leftAct`. Below degree `m + 1` the relative homology vanishes
+(`TauCeti.MoorePathPullback.isZero_cubicalHomology_of_lt`).
 
 The map `(ω, d) ↦ ω · (d, τ d)` from `Ω_b X × Iᵐ⁺¹` to the pullback is, up to the interchange of
 the factors, the fibre homotopy trivialization `TauCeti.MoorePathPullback.fiberHomotopyEquiv` of
@@ -70,6 +71,7 @@ which free generators, one for each `(m + 1)`-cell, are compared with the relati
 * `TauCeti.MoorePathPullback.cubicalHomologyCubeBoundaryEquiv τ h₀ h₁ k q`: the isomorphism
   `H_q(Ω_b X; k) ≃ₗ[k] H_{q+m+1}(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹}; k)`.
 * `TauCeti.cellCubeMap C n j`: the disk of the `n`-cell `j`, read on the cube.
+* `TauCeti.cellCube C n j`: the characteristic map of the `n`-cell `j`, read on the cube.
 
 * `TauCeti.cellRadialPaths C n γ`: the radial paths to the points of the `n`-cells.
 * `TauCeti.cellSectionCube C n γ j`: the section cube of the `n`-cell `j` in the pullback over the
@@ -85,6 +87,9 @@ which free generators, one for each `(m + 1)`-cell, are compared with the relati
   is the disjoint union of the pullbacks over the single cells.
 * `TauCeti.isCubicalRepresentative_cellPathPullbackHomologyEquiv`: for a cycle `z` of `Ω_b B`, the
   chain `z · cⱼ` represents the image of `[z]` in the summand of the cell `j`.
+* `TauCeti.MoorePathPullback.isZero_cubicalHomology_of_lt`,
+  `TauCeti.isZero_cubicalHomology_cellPathPullbackPair_of_lt`: below the dimension of the cube, or
+  of the cells, the relative homology vanishes.
 
 ## References
 
@@ -166,6 +171,19 @@ def cubicalHomologyCubeBoundaryEquiv (q : ℕ) :
   cubicalHomologyCubeBoundaryPairProdLeftEquiv k (TopCat.of (MooreLoopSpace X b)) m q ≪≫ₗ
     (asIso (homologyMap (TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁))
       (q + (m + 1)))).toLinearEquiv
+
+include τ h₀ h₁ in
+/-- **The relative homology of the based path fibration over a cube vanishes below the dimension of
+the cube**: given a continuous family `τ` of Moore paths from `b` to the points of
+`f : Iᵐ⁺¹ → X`, `Hⱼ(f^*P_b X, f^*P_b X|_{∂Iᵐ⁺¹}; k) = 0` for `j < m + 1`, over every commutative
+ring `k`. -/
+theorem isZero_cubicalHomology_of_lt {j : ℕ} (hj : j < m + 1) :
+    IsZero (((TopPair.ofSubset (X := TopCat.of (MoorePathPullback f b))
+      (proj f b ⁻¹' Cube.boundary (Fin (m + 1)))).cubicalChainComplex k).homology j) :=
+  have := isIso_homologyMap_smulSectionPairMap τ h₀ h₁ k j
+  (isZero_cubicalHomology_cubeBoundaryPair_prodLeft_of_lt k (TopCat.of (MooreLoopSpace X b)) m
+    hj).of_iso
+    (asIso (homologyMap (TopPair.cubicalChainComplexMap k (smulSectionPairMap τ h₀ h₁)) j)).symm
 
 /-- The **section cube** `d ↦ (d, τ d)` of the pullback of the based Moore path fibration along
 `f`, given by the family `τ` of paths from `b` to the points `f d`. -/
@@ -285,6 +303,23 @@ theorem isOpenEmbedding_cellCubeMap (n : ℕ) (j : cell C n) :
   IsOpenEmbedding.sigmaMk.comp (cubeHomeomorphClosedBall (Fin n)).isOpenEmbedding
 
 variable (C) in
+/-- The **characteristic cube** of an `n`-cell `j`: its characteristic map, read on the cube `Iⁿ`
+through `TauCeti.cubeHomeomorphClosedBall`. -/
+def cellCube (n : ℕ) (j : cell C n) : SingularCube B n :=
+  (sigmaCellMap C n).comp (cellCubeMap C n j)
+
+@[simp]
+theorem cellCube_apply (n : ℕ) (j : cell C n) (d : Fin n → I) :
+    cellCube C n j d = map n j (cubeHomeomorphClosedBall (Fin n) d) := by
+  rw [cellCube, ContinuousMap.comp_apply, cellCubeMap_apply, sigmaCellMap_apply]
+
+/-- The characteristic cube of a `0`-cell is the `0`-cube at the point of the cell. -/
+theorem cellCube_zero (j : cell C 0) : cellCube C 0 j = SingularCube.point (map 0 j 0) := by
+  rw [SingularCube.eq_point (cellCube C 0 j), cellCube_apply]
+  congr 2
+  exact Subsingleton.elim _ _
+
+variable (C) in
 /-- The characteristic map of the `n`-cell `j`, on the closed unit ball of the sup norm. -/
 private def cellDiskMap (n : ℕ) (j : cell C n) : C(closedBall (0 : Fin n → ℝ) 1, B) :=
   (sigmaCellMap C n).comp
@@ -297,7 +332,7 @@ private def cellRadialPath (n : ℕ) (j : cell C n) (γ : MoorePathBetween B b (
   MoorePathPullback.radialPaths
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨γ.toMoorePath, γ.source, γ.target.trans (by simp [cellDiskMap])⟩
+    (γ.cast rfl (by simp [cellDiskMap]))
 
 variable (C) in
 /-- **Radial paths to the points of the `n`-cells.** Given a Moore path `γ j` from `b` to the
@@ -338,8 +373,8 @@ theorem cellRadialPaths_apply_length_add {n : ℕ}
   have h := MoorePathPullback.radialPaths_apply_length_add
     ((convex_closedBall (0 : Fin n → ℝ) 1).starConvex (mem_closedBall_self zero_le_one))
     (mem_closedBall_self zero_le_one) (cellDiskMap C n j)
-    ⟨(γ j).toMoorePath, (γ j).source, (γ j).target.trans (by simp [cellDiskMap])⟩ v t
-  simp only [MoorePathBetween.toMoorePath_mk] at h
+    ((γ j).cast rfl (by simp [cellDiskMap])) v t
+  simp only [MoorePathBetween.toMoorePath_cast] at h
   exact h.trans (by simp [cellDiskMap, AffineMap.lineMap_apply_module])
 
 variable (b C) in
@@ -496,6 +531,19 @@ private def isColimitCofanCellHomologyLeg (q : ℕ) :
       Sigma.hom_ext _ _ fun j ↦ by simp [cellHomologyLeg]]
     infer_instance
   Cofan.isColimitOfIsIsoSigmaDesc (hc := this) _
+
+include γ in
+/-- **The relative homology of the based path fibration over the cells vanishes below their
+dimension**: for the pullback `P` of `P_b B → B` to the disks of the `(m + 1)`-cells and its part
+`∂P` over the boundary spheres, `Hⱼ(P, ∂P; k) = 0` for `j < m + 1`, over every commutative ring
+`k`. It is the sum of the relative homology modules over the single cells. -/
+theorem isZero_cubicalHomology_cellPathPullbackPair_of_lt {j : ℕ} (hj : j < m + 1) :
+    IsZero (((cellPathPullbackPair b C (m + 1)).cubicalChainComplex k).homology j) :=
+  (IsZero.iff_id_eq_zero _).2 <| Cofan.IsColimit.hom_ext
+    (TopPair.isColimitCofanCubicalHomologyOfIsColimit k
+      (isColimitCofanCellCubePathPullbackPairι b C (m + 1)) j) _ _ fun i ↦
+    (MoorePathPullback.isZero_cubicalHomology_of_lt (cellCubeRadialPaths γ i)
+      (source_cellCubeRadialPaths γ i) (target_cellCubeRadialPaths γ i) k hj).eq_of_src _ _
 
 /-- The inclusion of the pullback over the cube of `j` carries its section cube to the section
 cube of `j`. -/

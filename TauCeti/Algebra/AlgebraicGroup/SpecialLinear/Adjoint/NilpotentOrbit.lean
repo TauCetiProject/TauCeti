@@ -142,11 +142,8 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_le
         (Module.isUnimodular_mk_one x))) + n ≤ n ^ 2 := by
   rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
   norm_cast
-  by_cases hn : n = 0
-  · subst n
-    simp [Module.finrank_eq_zero_of_subsingleton]
-  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_le
-      (by simpa using hn) (cotangentDualLieEquivSl n x) hx
+  simpa only [Fintype.card_fin] using
+    finrank_range_ad_sl_add_card_le (cotangentDualLieEquivSl n x) hx
 
 /-- The regular Jordan type `(n)` is characterized by adjoint orbit dimension `n² - n`. -/
 theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff
@@ -183,11 +180,8 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_le
         (Module.isUnimodular_mk_one x))) + n + 2 ≤ n ^ 2 := by
   rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
   norm_cast
-  by_cases hn : n = 0
-  · subst n
-    exact (hreg (jordanPartition_cotangentDualLieEquivSl_zero x hx)).elim
-  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_le
-      (by simpa using hn) (cotangentDualLieEquivSl n x) hx hreg
+  simpa only [Fintype.card_fin] using
+    finrank_range_ad_sl_add_card_add_two_le (cotangentDualLieEquivSl n x) hx hreg
 
 /-- The subregular Jordan type `(n - 1, 1)` is characterized by adjoint orbit dimension
 `n² - n - 2`. The equivalence has no solutions at sizes zero and one. -/
