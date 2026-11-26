@@ -187,7 +187,7 @@ private theorem norm_mk_le_exp_mul_exp_re_contracted_holoPotential {θ δ T κ �
   by_cases hθ : θ ∈ Icc (0 : ℝ) 1
   · have hb := norm_smul_mk_le_of_diffContOnCl θ g
       (diffContOnCl_contractedExpNegHoloPotential g hδ hε)
-      (fun _ hz => norm_contractedExpNegHoloPotential_le g hδ hε hz) (Real.exp_pos κ).le
+      (fun _ hz => norm_contractedExpNegHoloPotential_le g hδ hε hz)
       (norm_contracted_smul_fst_le hδ hκ hε g hg₀ happrox₀)
       (norm_contracted_smul_snd_le hδ hκ hε g hg₁ happrox₁)
     have hnorm : ‖contractedExpNegHoloPotential g δ ε θ‖ =

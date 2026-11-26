@@ -65,7 +65,7 @@ private theorem norm_mk_zero_le (g : C.stripTraces) : ‖mk 0 g‖ ≤ ‖g.val.
         (abs_le.2 ⟨by linarith [hz.1], by linarith [hz.2]⟩), sq_nonneg z.im, hA.le]
   have hbound := norm_smul_mk_le_of_diffContOnCl 0 g
     ((differentiable_stripGaussian A 1).const_mul (Complex.exp (-(A : ℂ)))).diffContOnCl hc_le
-    (B := ‖g.val.1 0‖ + ε / 2) (by positivity)
+    (B := ‖g.val.1 0‖ + ε / 2)
     (fun t => by
       rw [norm_smul]; by_cases ht : |t| < δ
       · have hd := hclose (by simpa [Real.dist_eq] using ht); rw [dist_eq_norm] at hd

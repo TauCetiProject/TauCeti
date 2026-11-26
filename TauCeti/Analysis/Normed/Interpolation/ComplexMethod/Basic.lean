@@ -572,12 +572,14 @@ def boundaryMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
       (hT.exists_norm_snd_le.imp fun _ hM t => (T₁ t).le_of_opNorm_le (hM t)))
 
 omit [T1Space V] [T1Space W] in
-@[simp] theorem boundaryMap_apply_fst (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp]
+theorem boundaryMap_apply_fst (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) (t : ℝ) : (hT.boundaryMap g).1 t = T₀ t (g.1 t) :=
   ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _ _ _
 
 omit [T1Space V] [T1Space W] in
-@[simp] theorem boundaryMap_apply_snd (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp]
+theorem boundaryMap_apply_snd (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (g : C₀(ℝ, X₀) × C₀(ℝ, X₁)) (t : ℝ) : (hT.boundaryMap g).2 t = T₁ t (g.2 t) :=
   ZeroAtInftyContinuousMap.compLeftFamily_apply _ _ _ _ _
 
@@ -595,13 +597,15 @@ theorem norm_boundaryMap_apply_le (hT : IsBoundedAnalyticFamily T T₀ T₁) {M�
   · exact norm_prod_le_iff.2
       ⟨ha.trans (mul_le_mul (le_max_left _ _) (norm_fst_le g) (norm_nonneg _) hM),
         hb.trans (mul_le_mul (le_max_right _ _) (norm_snd_le g) (norm_nonneg _) hM)⟩
-  · obtain ⟨hM₀, hM₁⟩ := max_lt_iff.1 hM
+  · -- negative bounds force both endpoints, hence `g`, to vanish
+    obtain ⟨hM₀, hM₁⟩ := max_lt_iff.1 hM
+    have ha₀ := norm_nonneg (hT.boundaryMap g).1
+    have hb₀ := norm_nonneg (hT.boundaryMap g).2
     have hg : ‖g‖ = 0 := le_antisymm (norm_prod_le_iff.2
-      ⟨by nlinarith [norm_nonneg (hT.boundaryMap g).1, norm_nonneg g.1],
-        by nlinarith [norm_nonneg (hT.boundaryMap g).2, norm_nonneg g.2]⟩) (norm_nonneg _)
-    exact hg ▸ mul_zero (max M₀ M₁) ▸ norm_prod_le_iff.2
-      ⟨ha.trans (by nlinarith [norm_nonneg g.1, norm_fst_le g]),
-        hb.trans (by nlinarith [norm_nonneg g.2, norm_snd_le g])⟩
+      ⟨by nlinarith [norm_nonneg g.1], by nlinarith [norm_nonneg g.2]⟩) (norm_nonneg _)
+    rw [hg, mul_zero]
+    exact norm_prod_le_iff.2 ⟨ha.trans (by nlinarith [norm_nonneg g.1, norm_fst_le g]),
+      hb.trans (by nlinarith [norm_nonneg g.2, norm_snd_le g])⟩
 
 /-- **Bounded analytic families preserve admissible functions.** If `F` is admissible with
 boundary traces `g = (g₀, g₁)`, then `z ↦ T z (F z)` is admissible, with boundary traces
@@ -609,15 +613,18 @@ boundary traces `g = (g₀, g₁)`, then `z ↦ T z (F z)` is admissible, with b
 theorem isStripFunction_apply (hT : IsBoundedAnalyticFamily T T₀ T₁) {F : ℂ → C.SumSpace}
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) :
     D.IsStripFunction (fun z => T z (F z)) (hT.boundaryMap g) := by
-  obtain ⟨M, hM⟩ := hT.exists_norm_le; obtain ⟨N, hN⟩ := hF.exists_norm_le
+  obtain ⟨M, hM⟩ := hT.exists_norm_le
+  obtain ⟨N, hN⟩ := hF.exists_norm_le
   have hsub := closure_verticalStrip_subset 0 1
-  exact ⟨⟨hT.differentiableOn.clm_apply hF.diffContOnCl.differentiableOn,
-      AddMonoidHomClass.continuousOn_apply_of_bound (fun x => (hT.continuousOn_apply x).mono hsub)
-        (fun z hz => (T z).le_of_opNorm_le (hM z (hsub hz))) hF.diffContOnCl.continuousOn⟩,
-    isBounded_iff_forall_norm_le.2 ⟨M * N,
-      by rintro _ ⟨z, hz, rfl⟩; exact (T z).le_of_opNorm_le_of_le (hM z hz) (hN z hz)⟩,
+  refine ⟨⟨hT.differentiableOn.clm_apply hF.diffContOnCl.differentiableOn,
+    AddMonoidHomClass.continuousOn_apply_of_bound
+      (fun x => (hT.continuousOn_apply x).mono hsub)
+      (fun z hz => (T z).le_of_opNorm_le (hM z (hsub hz))) hF.diffContOnCl.continuousOn⟩, ?_,
     fun t => by simp [hF.apply_mul_I, hT.apply_mul_I],
     fun t => by simp [hF.apply_one_add_mul_I, hT.apply_one_add_mul_I]⟩
+  refine isBounded_iff_forall_norm_le.2 ⟨M * N, ?_⟩
+  rintro _ ⟨z, hz, rfl⟩
+  exact (T z).le_of_opNorm_le_of_le (hM z hz) (hN z hz)
 
 /-- The map of admissible boundary traces induced by a bounded analytic family: on admissible
 functions it is `F ↦ (z ↦ T z (F z))` (`IsBoundedAnalyticFamily.isStripFunction_stripTracesMap`). -/
@@ -625,8 +632,10 @@ def stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) : C.stripTraces �
   (hT.boundaryMap.comp C.stripTraces.subtypeL).codRestrict D.stripTraces fun g =>
     mem_stripTraces_iff.2 ⟨_, hT.isStripFunction_apply (C.isStripFunction_stripFunction g)⟩
 
-@[simp] theorem coe_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
-    (hT.stripTracesMap g : C₀(ℝ, Y₀) × C₀(ℝ, Y₁)) = hT.boundaryMap g := (rfl)
+@[simp]
+theorem coe_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
+    (hT.stripTracesMap g : C₀(ℝ, Y₀) × C₀(ℝ, Y₁)) = hT.boundaryMap g :=
+  (rfl)
 
 theorem isStripFunction_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (g : C.stripTraces) :
@@ -637,7 +646,8 @@ theorem isStripFunction_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁
 theorem stripEval_stripTracesMap (hT : IsBoundedAnalyticFamily T T₀ T₁) (z : ℂ)
     (g : C.stripTraces) : D.stripEval z (hT.stripTracesMap g) = T z (C.stripEval z g) := by
   by_cases hz : z ∈ verticalClosedStrip 0 1
-  · rw [stripEval_apply, stripFunction_eq (hT.isStripFunction_stripTracesMap g) hz, stripEval_apply]
+  · rw [stripEval_apply, stripFunction_eq (hT.isStripFunction_stripTracesMap g) hz,
+      stripEval_apply]
   · simp [D.stripEval_eq_zero hz, C.stripEval_eq_zero hz]
 
 end IsBoundedAnalyticFamily
@@ -658,11 +668,14 @@ def analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁) :
     rw [ContinuousLinearMap.comp_apply, ← map_zero (mk (C := D) θ), mk_eq_mk_iff,
       hT.stripEval_stripTracesMap, hg, map_zero, map_zero]
 
-@[simp] theorem analyticFamilyMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
-    analyticFamilyMap θ hT (mk θ g) = mk θ (hT.stripTracesMap g) := (rfl)
+@[simp]
+theorem analyticFamilyMap_mk (hT : IsBoundedAnalyticFamily T T₀ T₁) (g : C.stripTraces) :
+    analyticFamilyMap θ hT (mk θ g) = mk θ (hT.stripTracesMap g) :=
+  (rfl)
 
 /-- The map induced by a bounded analytic family `T` lies over `T θ`. -/
-@[simp] theorem toSum_analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
+@[simp]
+theorem toSum_analyticFamilyMap (hT : IsBoundedAnalyticFamily T T₀ T₁)
     (u : C.ComplexMethodSpace θ) :
     toSum (analyticFamilyMap θ hT u) = T θ (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
@@ -726,10 +739,11 @@ strip and continuous and bounded on the closed strip scales `mk θ g` by `c θ` 
 by the boundary suprema of `c • g`. -/
 theorem norm_smul_mk_le_of_diffContOnCl (θ : ℝ) (g : C.stripTraces) {c : ℂ → ℂ}
     (hc : DiffContOnCl ℂ c (verticalStrip 0 1))
-    {K B : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K) (hB : 0 ≤ B)
+    {K B : ℝ} (hK : ∀ z ∈ verticalClosedStrip 0 1, ‖c z‖ ≤ K)
     (hb₀ : ∀ t : ℝ, ‖c (t * I) • g.val.1 t‖ ≤ B)
     (hb₁ : ∀ t : ℝ, ‖c (1 + t * I) • g.val.2 t‖ ≤ B) :
     ‖c θ • mk θ g‖ ≤ B := by
+  have hB : 0 ≤ B := (norm_nonneg _).trans (hb₀ 0)
   obtain ⟨g', hg₀', hg₁', heq⟩ := exists_stripTraces_smul_of_diffContOnCl g hc hK
   rw [← heq θ]
   exact ((norm_mk_le g').trans_eq (Submodule.norm_coe g').symm).trans (max_le
@@ -778,7 +792,7 @@ theorem norm_mk_le_rpow_mul_rpow (θ : ℝ) (g : C.stripTraces) :
     set M₀ := ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1‖ + ε
     set M₁ := ‖(g : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2‖ + ε
     have hb := norm_smul_mk_le_of_diffContOnCl θ g (differentiable_scaleFactor M₀ M₁).diffContOnCl
-      (fun _ hz => norm_scaleFactor_le hz) zero_le_one
+      (fun _ hz => norm_scaleFactor_le hz)
       (fun t => (norm_smul _ _).trans_le <| by
         rw [norm_scaleFactor_mul_I (by positivity)]
         exact inv_mul_le_one_of_le₀ ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ t).trans
@@ -802,7 +816,6 @@ private theorem norm_analyticFamilyMap_le_of_pos (hT : IsBoundedAnalyticFamily T
     (opNorm_le_of_norm_apply_mk_le (by positivity) fun g => ?_) u
   have hsmul := norm_smul_mk_le_of_diffContOnCl θ (hT.stripTracesMap g)
     (differentiable_scaleFactor M₀ M₁).diffContOnCl (fun _ hz => norm_scaleFactor_le hz)
-    (norm_nonneg g)
     (fun t => (norm_smul _ _).trans_le (norm_scaleFactor_mul_I hM₀ t ▸
       ((mul_le_mul_of_nonneg_left (by simpa using h₀ t (g.val.1 t)) (inv_pos.2 hM₀).le).trans_eq
         (inv_mul_cancel_left₀ hM₀.ne' _)).trans (norm_stripTraces_fst_apply_le g t)))
@@ -861,7 +874,8 @@ def stripTracesMap : C.stripTraces →L[ℂ] D.stripTraces :=
 @[simp]
 theorem IsBoundedAnalyticFamily.stripTracesMap_const :
     (IsBoundedAnalyticFamily.const T₀ T₁ h).stripTracesMap =
-      CompatibleCouple.stripTracesMap T₀ T₁ h := (rfl)
+      CompatibleCouple.stripTracesMap T₀ T₁ h :=
+  (rfl)
 
 @[simp]
 theorem stripTracesMap_apply_fst (g : C.stripTraces) (t : ℝ) :
@@ -927,11 +941,13 @@ def map : C.ComplexMethodSpace θ →L[ℂ] D.ComplexMethodSpace θ :=
 /-- The map induced by a constant analytic family is `ComplexMethodSpace.map`. -/
 @[simp]
 theorem analyticFamilyMap_const :
-    analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h := (rfl)
+    analyticFamilyMap θ (IsBoundedAnalyticFamily.const T₀ T₁ h) = map θ T₀ T₁ h :=
+  (rfl)
 
 @[simp]
 theorem map_mk (g : C.stripTraces) :
-    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) := (rfl)
+    map θ T₀ T₁ h (mk θ g) = mk θ (stripTracesMap T₀ T₁ h g) :=
+  (rfl)
 
 /-- The induced map lies over the map `x₀ + x₁ ↦ T₀ x₀ + T₁ x₁` of sum spaces. -/
 @[simp]
@@ -950,10 +966,10 @@ theorem map_id
     (h : ∀ x : C.inter, C.fstToSum (ContinuousLinearMap.id ℂ X₀ (C.interFst x)) =
       C.sndToSum (ContinuousLinearMap.id ℂ X₁ (C.interSnd x))) :
     map θ (ContinuousLinearMap.id ℂ X₀) (ContinuousLinearMap.id ℂ X₁) h =
-      ContinuousLinearMap.id ℂ (C.ComplexMethodSpace θ) :=
-  ContinuousLinearMap.ext fun u => by
-    obtain ⟨g, rfl⟩ := mk_surjective u
-    rw [map_mk, stripTracesMap_id, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+      ContinuousLinearMap.id ℂ (C.ComplexMethodSpace θ) := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  rw [map_mk, stripTracesMap_id, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
 
 section Comp
 
@@ -966,11 +982,11 @@ variable {Z₀ Z₁ U : Type*} [NormedAddCommGroup Z₀] [NormedSpace ℂ Z₀] 
 
 /-- The map induced by composites of maps of the endpoints is the composite of the induced maps. -/
 theorem map_comp :
-    map θ (S₀.comp T₀) (S₁.comp T₁) hST = (map θ S₀ S₁ hS).comp (map θ T₀ T₁ h) :=
-  ContinuousLinearMap.ext fun u => by
-    obtain ⟨g, rfl⟩ := mk_surjective u
-    rw [map_mk, stripTracesMap_comp T₀ T₁ h S₀ S₁ hS hST, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.comp_apply, map_mk, map_mk]
+    map θ (S₀.comp T₀) (S₁.comp T₁) hST = (map θ S₀ S₁ hS).comp (map θ T₀ T₁ h) := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  rw [map_mk, stripTracesMap_comp T₀ T₁ h S₀ S₁ hS hST, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, map_mk, map_mk]
 
 end Comp
 
@@ -979,7 +995,9 @@ the class of `x ∈ X₀ ∩ X₁` to the class of the element `y ∈ Y₀ ∩ Y
 `T₀ x`. -/
 theorem map_ofInter (hθ : θ ∈ Icc 0 1) {x : C.inter} {y : D.inter}
     (hy : D.interFst y = T₀ (C.interFst x)) : map θ T₀ T₁ h (ofInter θ x) = ofInter θ y := by
-  ext; rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]; exact C.sumLift_fstToSum _ _ h _
+  ext
+  rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]
+  exact C.sumLift_fstToSum _ _ h _
 
 /-- **Exact interpolation of exponent `θ`.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` with
 `M₀, M₁ ≥ 0`, the induced map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` satisfies
@@ -1057,7 +1075,9 @@ namespace ComplexMethodSpace
 `[X₀, X₁]_θ → [Y₀, Y₁]_θ` induced by `I₀`, `I₁`. -/
 theorem leftInverse_map (hPI₀ : Function.LeftInverse P₀ I₀) (hPI₁ : Function.LeftInverse P₁ I₁) :
     Function.LeftInverse (map θ P₀ P₁ hP) (map θ I₀ I₁ hI) := fun u => by
-  ext; rw [toSum_map, toSum_map]; exact leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁ _
+  ext
+  rw [toSum_map, toSum_map]
+  exact leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁ _
 
 include hP in
 /-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, and `‖P₀ y‖ ≤ N₀ ‖y‖`,
@@ -1084,9 +1104,12 @@ theorem range_toSum_eq_comap_of_leftInverse (hPI₀ : Function.LeftInverse P₀ 
           C.SumSpace →ₗ[ℂ] D.SumSpace) := by
   ext u
   simp only [LinearMap.mem_range, Submodule.mem_comap, ContinuousLinearMap.coe_coe]
-  exact ⟨fun ⟨v, hv⟩ => hv ▸ ⟨map θ I₀ I₁ hI v, toSum_map I₀ I₁ hI v⟩,
-    fun ⟨w, hw⟩ => ⟨map θ P₀ P₁ hP w,
-      by rw [toSum_map, hw, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]⟩⟩
+  constructor
+  · rintro ⟨v, rfl⟩
+    exact ⟨map θ I₀ I₁ hI v, toSum_map I₀ I₁ hI v⟩
+  · rintro ⟨w, hw⟩
+    refine ⟨map θ P₀ P₁ hP w, ?_⟩
+    rw [toSum_map, hw, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]
 
 include hI in
 /-- **Retracts.** If `P₀`, `P₁` are left inverses of `I₀`, `I₁`, then `[X₀, X₁]_θ` is the image
@@ -1099,9 +1122,12 @@ theorem range_toSum_eq_map_of_leftInverse (hPI₀ : Function.LeftInverse P₀ I�
           D.SumSpace →ₗ[ℂ] C.SumSpace) := by
   ext u
   simp only [LinearMap.mem_range, Submodule.mem_map, ContinuousLinearMap.coe_coe]
-  exact ⟨fun ⟨v, hv⟩ => hv ▸ ⟨toSum (map θ I₀ I₁ hI v), ⟨_, rfl⟩,
-      by rw [toSum_map, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]⟩,
-    fun ⟨_, ⟨w, rfl⟩, h⟩ => h ▸ ⟨map θ P₀ P₁ hP w, toSum_map P₀ P₁ hP w⟩⟩
+  constructor
+  · rintro ⟨v, rfl⟩
+    refine ⟨toSum (map θ I₀ I₁ hI v), ⟨_, rfl⟩, ?_⟩
+    rw [toSum_map, leftInverse_sumLift I₀ I₁ hI P₀ P₁ hP hPI₀ hPI₁]
+  · rintro ⟨_, ⟨w, rfl⟩, rfl⟩
+    exact ⟨map θ P₀ P₁ hP w, toSum_map P₀ P₁ hP w⟩
 
 end ComplexMethodSpace
 
@@ -1127,18 +1153,23 @@ variable (θ) in
 its inverse by `norm_map_le`; if `e₀` and `e₁` preserve norms, so does it (`norm_mapEquiv`). -/
 def mapEquiv : C.ComplexMethodSpace θ ≃L[ℂ] D.ComplexMethodSpace θ :=
   ContinuousLinearEquiv.ofContinuousLinearMap (map θ e₀ e₁ h) (map θ e₀.symm e₁.symm hsymm)
-    (ContinuousLinearMap.ext fun _ => leftInverse_map (e₀.symm : Y₀ →L[ℂ] X₀)
-      (e₁.symm : Y₁ →L[ℂ] X₁) hsymm (e₀ : X₀ →L[ℂ] Y₀) (e₁ : X₁ →L[ℂ] Y₁) h
-      (fun _ => e₀.apply_symm_apply _) (fun _ => e₁.apply_symm_apply _) _)
-    (ContinuousLinearMap.ext fun _ => leftInverse_map (e₀ : X₀ →L[ℂ] Y₀)
-      (e₁ : X₁ →L[ℂ] Y₁) h (e₀.symm : Y₀ →L[ℂ] X₀) (e₁.symm : Y₁ →L[ℂ] X₁) hsymm
-      (fun _ => e₀.symm_apply_apply _) (fun _ => e₁.symm_apply_apply _) _)
+    (ContinuousLinearMap.ext fun x ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      exact leftInverse_map (e₀.symm : Y₀ →L[ℂ] X₀) (e₁.symm : Y₁ →L[ℂ] X₁) hsymm
+        (e₀ : X₀ →L[ℂ] Y₀) (e₁ : X₁ →L[ℂ] Y₁) h e₀.apply_symm_apply e₁.apply_symm_apply x)
+    (ContinuousLinearMap.ext fun x ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply]
+      exact leftInverse_map (e₀ : X₀ →L[ℂ] Y₀) (e₁ : X₁ →L[ℂ] Y₁) h
+        (e₀.symm : Y₀ →L[ℂ] X₀) (e₁.symm : Y₁ →L[ℂ] X₁) hsymm e₀.symm_apply_apply
+        e₁.symm_apply_apply x)
 
 theorem mapEquiv_apply (u : C.ComplexMethodSpace θ) :
-    mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u := (rfl)
+    mapEquiv θ e₀ e₁ h hsymm u = map θ e₀ e₁ h u :=
+  (rfl)
 
 theorem mapEquiv_symm_apply (v : D.ComplexMethodSpace θ) :
-    (mapEquiv θ e₀ e₁ h hsymm).symm v = map θ e₀.symm e₁.symm hsymm v := (rfl)
+    (mapEquiv θ e₀ e₁ h hsymm).symm v = map θ e₀.symm e₁.symm hsymm v :=
+  (rfl)
 
 @[simp]
 theorem toSum_mapEquiv (u : C.ComplexMethodSpace θ) :
@@ -1158,11 +1189,12 @@ theorem toSum_mapEquiv_symm (v : D.ComplexMethodSpace θ) :
 isomorphism of complex interpolation spaces. -/
 theorem norm_mapEquiv (h₀ : ∀ x, ‖e₀ x‖ = ‖x‖) (h₁ : ∀ x, ‖e₁ x‖ = ‖x‖)
     (u : C.ComplexMethodSpace θ) : ‖mapEquiv θ e₀ e₁ h hsymm u‖ = ‖u‖ := by
-  refine le_antisymm (norm_map_le_of_norm_le _ _ h (fun x => (h₀ x).le) (fun x => (h₁ x).le) u) ?_
+  refine le_antisymm (norm_map_le_of_norm_le _ _ h (fun x => (h₀ x).le) (fun x => (h₁ x).le) u)
+    ?_
   conv_lhs => rw [← (mapEquiv θ e₀ e₁ h hsymm).symm_apply_apply u, mapEquiv_symm_apply]
-  exact norm_map_le_of_norm_le _ _ hsymm
-    (fun y => by rw [ContinuousLinearEquiv.coe_coe, ← h₀ (e₀.symm y)]; simp)
-    (fun y => by rw [ContinuousLinearEquiv.coe_coe, ← h₁ (e₁.symm y)]; simp) _
+  refine norm_map_le_of_norm_le _ _ hsymm (fun y => ?_) (fun y => ?_) _
+  · rw [ContinuousLinearEquiv.coe_coe, ← h₀ (e₀.symm y), ContinuousLinearEquiv.apply_symm_apply]
+  · rw [ContinuousLinearEquiv.coe_coe, ← h₁ (e₁.symm y), ContinuousLinearEquiv.apply_symm_apply]
 
 end ComplexMethodSpace
 
