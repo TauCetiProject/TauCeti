@@ -15,7 +15,9 @@ This file defines `ω_k = TauCeti.unitBallVolume k`, the volume of the unit ball
 `EuclideanSpace ℝ (Fin k)`, and expresses the volume of every ball of radius `r` in a
 `k`-dimensional real inner product space as `ω_k r ^ k`
 (`TauCeti.volume_ball_eq_unitBallVolume_mul`, `TauCeti.volume_closedBall_eq_unitBallVolume_mul`).
-It records `ω_1 = 2` and `ω_2 = π` (`TauCeti.unitBallVolume_one`, `TauCeti.unitBallVolume_two`).
+It records `ω_1 = 2` and `ω_2 = π` (`TauCeti.unitBallVolume_one`, `TauCeti.unitBallVolume_two`),
+and the length `2r` of a ball of radius `r` in `EuclideanSpace ℝ (Fin 1)`
+(`EuclideanSpace.volume_ball_fin_one`).
 The constant `ω_k` normalizes the `k`-dimensional densities of a measure.
 -/
 
@@ -97,3 +99,12 @@ theorem unitBallVolume_two : unitBallVolume 2 = ENNReal.ofReal Real.pi := by
     one_mul]
 
 end TauCeti
+
+/-- The ball of radius `r` in `ℝ¹ = EuclideanSpace ℝ (Fin 1)` has length `2r` (and is empty for
+`r ≤ 0`). -/
+theorem EuclideanSpace.volume_ball_fin_one (x : EuclideanSpace ℝ (Fin 1)) (r : ℝ) :
+    volume (ball x r) = ENNReal.ofReal (2 * r) := by
+  rcases le_or_gt r 0 with hr | hr
+  · rw [ball_eq_empty.mpr hr, measure_empty, ENNReal.ofReal_of_nonpos (by linarith)]
+  rw [TauCeti.volume_ball_eq_unitBallVolume_mul x hr, finrank_euclideanSpace_fin,
+    TauCeti.unitBallVolume_one, pow_one, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat]
