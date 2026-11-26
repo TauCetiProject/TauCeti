@@ -140,11 +140,12 @@ theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ
 /-- Every orthonormal family in a separable inner product space is countable. -/
 theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
     [TopologicalSpace.SeparableSpace E] : Countable ι := by
-  have hr : 0 < √2 / 2 := by positivity
-  have hd : Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) := fun i j hij ↦
-    Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
-  exact hd.countable_of_isOpen_disjoint (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩)
+  rcases isEmpty_or_nonempty E with hE | _
+  · have : IsEmpty ι := ⟨fun i ↦ hE.false (v i)⟩
+    infer_instance
+  · have h := hv.lift_mk_le_of_denseRange (TopologicalSpace.denseRange_denseSeq E)
+    rw [Cardinal.mk_nat, Cardinal.lift_aleph0, Cardinal.lift_le_aleph0] at h
+    exact Cardinal.mk_le_aleph0_iff.1 h
 
 /-- Two distinct entries of an orthonormal family form an orthonormal pair. -/
 theorem pair {f : ι → E} (hf : Orthonormal 𝕜 f) {i j : ι} (hij : i ≠ j) :
