@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 
 /-!
 # The periodic little Besov spaces
@@ -49,6 +50,11 @@ to `0` when the weighted blocks of `c` do.
 * `TauCeti.UnitAddTorus.BesovSpace.littleBesov`: the periodic little Besov space, a closed
   subspace of `B^s_{p,∞}(𝕋ᵈ)` containing every trigonometric polynomial
   (`TauCeti.UnitAddTorus.BesovSpace.mem_littleBesov_of_finite_support`).
+* `TauCeti.UnitAddTorus.BesovSpace.littleBesov_le`: it is the smallest closed subspace containing
+  the trigonometric polynomials, which are dense in it
+  (`TauCeti.UnitAddTorus.BesovSpace.dense_setOf_finite_support_coeff`).
+* `TauCeti.UnitAddTorus.BesovSpace.bumpEquiv_mem_littleBesov_iff` and
+  `TauCeti.UnitAddTorus.BesovSpace.littleBesovBumpEquiv`: it does not depend on the bump `φ`.
 * `TauCeti.UnitAddTorus.BesovSpace.exists_norm_sub_le_of_forall_lt_rpow_mul_norm_le`: the
   approximation by trigonometric polynomials, `‖u - v‖_{B^s_{p,∞}} ≤ K ε` for some trigonometric
   polynomial `v` whenever `2^{is} ‖Δᵢ u‖_p ≤ ε` for all `i > N`.
@@ -96,35 +102,6 @@ private theorem littlewoodPaleyBlockLp_mul_eq_zero {i k : ℕ}
   rw [Pi.zero_apply, mul_zero, ← mul_assoc, ← Complex.ofReal_mul, h, Complex.ofReal_zero,
     zero_mul]
 
-/-- **The tail of the partition.** If `ψₖ ψᵢ = 0` for `i ≥ k + L`, then
-`ψₖ (1 - ∑_{i ≤ N} ψᵢ) = ψₖ ∑_{N < i < k + L} ψᵢ`, since the pieces sum to one. -/
-private theorem inhomogeneousLittlewoodPaley_mul_one_sub_sum_range {L k : ℕ}
-    (hL : ∀ i, k + L ≤ i → ∀ ξ,
-      φ.inhomogeneousLittlewoodPaley k ξ * φ.inhomogeneousLittlewoodPaley i ξ = 0)
-    (N : ℕ) (ξ : EuclideanSpace ℝ d) :
-    φ.inhomogeneousLittlewoodPaley k ξ *
-        (1 - ∑ i ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley i ξ) =
-      φ.inhomogeneousLittlewoodPaley k ξ *
-        ∑ i ∈ Finset.Ico (N + 1) (k + L), φ.inhomogeneousLittlewoodPaley i ξ := by
-  -- `ψₖ = ∑_{i < M} ψₖ ψᵢ` for `M = max (N + 1) (k + L)`, the terms with `i ≥ M` vanishing.
-  have hM : φ.inhomogeneousLittlewoodPaley k ξ =
-      φ.inhomogeneousLittlewoodPaley k ξ *
-        ∑ i ∈ Finset.range (max (N + 1) (k + L)), φ.inhomogeneousLittlewoodPaley i ξ := by
-    rw [Finset.mul_sum]
-    have h := (φ.hasSum_inhomogeneousLittlewoodPaley ξ).mul_left
-      (φ.inhomogeneousLittlewoodPaley k ξ)
-    rw [mul_one] at h
-    exact h.unique (hasSum_sum_of_ne_finset_zero fun i hi ↦
-      hL i (by simp only [Finset.mem_range, not_lt] at hi; omega) ξ)
-  have hIco : Finset.Ico (N + 1) (max (N + 1) (k + L)) = Finset.Ico (N + 1) (k + L) := by
-    rcases le_total (k + L) (N + 1) with h | h
-    · rw [max_eq_left h, Finset.Ico_self, Finset.Ico_eq_empty_of_le h]
-    · rw [max_eq_right h]
-  rw [mul_sub, mul_one]
-  nth_rw 1 [hM]
-  rw [← Finset.sum_range_add_sum_Ico _ (le_max_left (N + 1) (k + L)), hIco, mul_add,
-    add_sub_cancel_left]
-
 variable (φ) in
 /-- The **smooth truncation** `S_N c = ∑_{i ≤ N} ψᵢ c` of a formal Fourier series, with
 coefficients `(∑_{i ≤ N} ψᵢ(n)) c(n) = φ(2^{-N} n) c(n)`: a trigonometric polynomial. -/
@@ -157,7 +134,8 @@ private theorem littlewoodPaleyBlockLp_sub_truncation {L k : ℕ}
   rw [← map_sum]
   refine littlewoodPaleyBlockLp_congr fun n ↦ ?_
   have h := congrArg (fun x : ℝ ↦ (x : ℂ) * c n)
-    (inhomogeneousLittlewoodPaley_mul_one_sub_sum_range hL N (latticePoint n))
+    (φ.inhomogeneousLittlewoodPaley_mul_one_sub_sum_range (ξ := latticePoint n)
+      (fun i hi ↦ hL i hi _) N)
   simp only [Complex.ofReal_mul, Complex.ofReal_sub, Complex.ofReal_one, Complex.ofReal_sum]
     at h
   simp only [truncation, Pi.sub_apply, Finset.sum_apply, ← Finset.sum_mul]
@@ -271,24 +249,6 @@ theorem isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp :
     _ < ε / 2 + ε / 2 := add_lt_add_of_le_of_lt (hsub.trans hvu.le) hvj
     _ = ε := add_halves ε
 
-/-- A formal Fourier series with finitely many nonzero coefficients has only finitely many nonzero
-blocks, so its weighted blocks vanish at high frequency. -/
-private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_of_finite_support
-    {c : (d → ℤ) → ℂ} (hc : (Function.support c).Finite) :
-    Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j c‖) atTop (𝓝 0) := by
-  obtain ⟨R, hR⟩ := (hc.image fun n ↦ ‖latticePoint n‖).bddAbove
-  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (R / φ.rIn) (one_lt_two (α := ℝ))
-  have hN' : R ≤ 2 ^ N * φ.rIn := ((div_lt_iff₀ φ.rIn_pos).1 hN).le
-  refine tendsto_const_nhds.congr' (eventually_atTop.2 ⟨N + 1, fun j hj ↦ ?_⟩)
-  obtain ⟨k, rfl⟩ : ∃ k, j = k + 1 := Nat.exists_eq_add_one.2 (by omega)
-  dsimp only
-  rw [littlewoodPaleyBlockLp_succ_eq_zero fun n hn ↦ ?_, norm_zero, mul_zero]
-  by_contra hcn
-  have hle : ‖latticePoint n‖ ≤ R := hR ⟨n, hcn, rfl⟩
-  have hpow : (2 : ℝ) ^ N ≤ 2 ^ k := pow_le_pow_right₀ one_le_two (by omega)
-  have := mul_le_mul_of_nonneg_right hpow φ.rIn_pos.le
-  linarith
-
 /-! ### The periodic little Besov space -/
 
 variable (φ s p) in
@@ -322,6 +282,26 @@ theorem mem_littleBesov_of_finite_support {u : BesovSpace φ s p ∞}
     (hu : (Function.support u.coeff).Finite) : u ∈ littleBesov φ s p :=
   Submodule.le_topologicalClosure _ hu
 
+/-- **Minimality.** The periodic little Besov space is contained in every closed subspace of
+`B^s_{p,∞}(𝕋ᵈ)` containing the trigonometric polynomials. -/
+theorem littleBesov_le {S : Submodule ℂ (BesovSpace φ s p ∞)}
+    (hS : IsClosed (S : Set (BesovSpace φ s p ∞)))
+    (h : ∀ u : BesovSpace φ s p ∞, (Function.support u.coeff).Finite → u ∈ S) :
+    littleBesov φ s p ≤ S :=
+  Submodule.topologicalClosure_minimal _ (fun u hu ↦ h u hu) hS
+
+/-- **Density of the trigonometric polynomials.** The trigonometric polynomials are dense in the
+periodic little Besov space. -/
+theorem dense_setOf_finite_support_coeff :
+    Dense {v : littleBesov φ s p | (Function.support (v : BesovSpace φ s p ∞).coeff).Finite} := by
+  refine Topology.IsInducing.subtypeVal.dense_iff.2 fun v ↦ ?_
+  have hv : (v : BesovSpace φ s p ∞) ∈
+      closure {u : BesovSpace φ s p ∞ | (Function.support u.coeff).Finite} := by
+    rw [← coe_littleBesov]
+    exact v.property
+  refine closure_mono (fun u hu ↦ ?_) hv
+  exact ⟨⟨u, mem_littleBesov_of_finite_support hu⟩, hu, rfl⟩
+
 /-- The weighted blocks of an element of the periodic little Besov space vanish at high
 frequency. -/
 theorem tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_of_mem_littleBesov {u : BesovSpace φ s p ∞}
@@ -329,8 +309,10 @@ theorem tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_of_mem_littleBesov {u : Bes
     Tendsto (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) atTop
       (𝓝 0) := by
   rw [← SetLike.mem_coe, coe_littleBesov] at hu
-  exact closure_minimal (fun v hv ↦ tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_of_finite_support
-    hv) isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp hu
+  -- A trigonometric polynomial lies in `B^s_{p,1}(𝕋ᵈ)`, so its weighted blocks are summable.
+  exact closure_minimal (fun v hv ↦
+      (memBesov_def.1 (memBesov_of_finite_support (q := 1) hv)).summable_of_one.tendsto_atTop_zero)
+    isClosed_setOf_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp hu
 
 variable (φ s) in
 /-- **Approximation by trigonometric polynomials.** There is `K ≥ 0`, depending only on `φ` and
@@ -374,6 +356,45 @@ theorem mem_littleBesov_iff_tendsto (u : BesovSpace φ s p ∞) :
     _ < ε := by
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith
+
+/-! ### Independence of the bump function -/
+
+/-- `bumpEquiv` maps `b^s_{p,∞}(𝕋ᵈ)` into `b^s_{p,∞}(𝕋ᵈ)` for any other bump `φ'`: it is
+continuous and keeps the coefficients, hence the trigonometric polynomials. -/
+theorem bumpEquiv_mem_littleBesov (φ' : ContDiffBump (0 : EuclideanSpace ℝ d))
+    {u : BesovSpace φ s p ∞} (hu : u ∈ littleBesov φ s p) :
+    bumpEquiv φ φ' s p ∞ u ∈ littleBesov φ' s p := by
+  rw [← SetLike.mem_coe, coe_littleBesov] at hu ⊢
+  exact map_mem_closure (bumpEquiv φ φ' s p ∞).continuous hu fun v hv ↦ by
+    simpa only [Set.mem_ofPred_eq, coeff_bumpEquiv] using hv
+
+/-- **The periodic little Besov space does not depend on the bump function.** -/
+@[simp]
+theorem bumpEquiv_mem_littleBesov_iff (φ' : ContDiffBump (0 : EuclideanSpace ℝ d))
+    {u : BesovSpace φ s p ∞} :
+    bumpEquiv φ φ' s p ∞ u ∈ littleBesov φ' s p ↔ u ∈ littleBesov φ s p := by
+  refine ⟨fun h ↦ ?_, bumpEquiv_mem_littleBesov φ'⟩
+  have h' := bumpEquiv_mem_littleBesov φ h
+  rwa [← bumpEquiv_symm, ContinuousLinearEquiv.symm_apply_apply] at h'
+
+/-- **Equivalence of periodic little Besov norms across Littlewood–Paley partitions.** Two smooth
+bump functions `φ` and `φ'` define canonically isomorphic Banach spaces `b^s_{p,∞}(𝕋ᵈ)`. -/
+def littleBesovBumpEquiv (φ φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) (s : ℝ) (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] : littleBesov φ s p ≃L[ℂ] littleBesov φ' s p :=
+  (bumpEquiv φ φ' s p ∞).ofSubmodules _ _ <| by
+    ext v
+    simp [Submodule.mem_map_equiv]
+
+@[simp]
+theorem coe_littleBesovBumpEquiv_apply (φ' : ContDiffBump (0 : EuclideanSpace ℝ d))
+    (u : littleBesov φ s p) :
+    (littleBesovBumpEquiv φ φ' s p u : BesovSpace φ' s p ∞) = bumpEquiv φ φ' s p ∞ u :=
+  ContinuousLinearEquiv.ofSubmodules_apply _ _ u
+
+@[simp]
+theorem littleBesovBumpEquiv_symm (φ' : ContDiffBump (0 : EuclideanSpace ℝ d)) :
+    (littleBesovBumpEquiv φ φ' s p).symm = littleBesovBumpEquiv φ' φ s p :=
+  ContinuousLinearEquiv.ext <| funext fun _ ↦ Subtype.ext <| by simp [littleBesovBumpEquiv]
 
 end BesovSpace
 

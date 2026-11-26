@@ -580,8 +580,8 @@ theorem heatSemigroup_mem_littleBesov {t : ℝ≥0} (ht : t ≠ 0) (u : BesovSpa
   have h (j : ℕ) : 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j
       (heatSemigroup φ s p ∞ t u).coeff‖ ≤ ((2 : ℝ) ^ j)⁻¹ * ‖w‖ := by
     have hw := rpow_mul_norm_littlewoodPaleyBlockLp_le w j
-    rw [coeff_heatSemigroupOfNeZero, add_mul, one_mul, Real.rpow_add two_pos, Real.rpow_natCast,
-      mul_assoc, mul_comm] at hw
+    rw [coeff_heatSemigroupOfNeZero, add_mul, one_mul, Real.rpow_add two_pos,
+      Real.rpow_natCast] at hw
     rw [coeff_heatSemigroup, le_inv_mul_iff₀ (by positivity)]
     linarith
   refine squeeze_zero (fun j ↦ by positivity) h ?_
