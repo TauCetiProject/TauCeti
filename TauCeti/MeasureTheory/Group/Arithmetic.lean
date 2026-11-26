@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
 public import Mathlib.MeasureTheory.Group.Arithmetic
+import Mathlib.MeasureTheory.Group.MeasurableEquiv
 
 /-!
 # Measurable arithmetic operations on subobjects and groups
@@ -34,6 +35,8 @@ a jointly measurable action to an invariant subset (a `SubMulAction`) is jointly
   subtraction gives separately measurable addition.
 * `TauCeti.measurableAdd₂_of_measurableSub₂`: on an additive group, jointly measurable subtraction
   gives jointly measurable addition.
+* `TauCeti.measurableEmbedding_divLeft₀`: division of a nonzero constant by the variable is a
+  measurable embedding on a group with zero.
 -/
 
 public section
@@ -86,5 +89,13 @@ theorem measurableAdd₂_of_measurableSub₂ {G : Type*} [AddGroup G] [Measurabl
     have h : Measurable fun p : G × G ↦ p.1 - (0 - p.2) :=
       measurable_fst.sub (measurable_const.sub measurable_snd)
     simpa using h⟩
+
+/-- On a group with zero with measurable left multiplications and inversion, division of a
+nonzero constant by the variable is a measurable embedding. -/
+theorem measurableEmbedding_divLeft₀ {G₀ : Type*} [GroupWithZero G₀] [MeasurableSpace G₀]
+    [MeasurableConstSMul G₀ G₀] [MeasurableInv G₀] {c : G₀} (hc : c ≠ 0) :
+    MeasurableEmbedding (c / ·) := by
+  simpa only [Function.comp_def, smul_eq_mul, div_eq_mul_inv] using
+    (measurableEmbedding_const_smul₀ (α := G₀) hc).comp measurableEmbedding_inv
 
 end TauCeti

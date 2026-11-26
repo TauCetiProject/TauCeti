@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Group.Arithmetic
 
 /-!
 # The multiplicative Haar measure `dt / t` on the positive reals
@@ -261,11 +262,6 @@ theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
   simpa only [hpre] using
     (measurePreserving_div_multHaar hsq).restrict_preimage (measurableSet_Ioo (a := 0) (b := a))
 
-private theorem measurableEmbedding_sq_div {a : ℝ} (ha : a ≠ 0) :
-    MeasurableEmbedding (fun t : ℝ ↦ a ^ 2 / t) := by
-  simpa only [Function.comp_def, div_eq_mul_inv] using
-    (measurableEmbedding_mulLeft₀ (pow_ne_zero 2 ha)).comp measurableEmbedding_inv
-
 section Fold
 
 variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {a : ℝ}
@@ -280,7 +276,8 @@ theorem integrable_multHaar_iff_of_sq_div
   have ha := lt_of_not_ge hnonpos
   refine ⟨fun h ↦ h.integrableOn, fun h ↦ ?_⟩
   have hlow := ((measurePreserving_sq_div_multHaar_restrict_Ioi ha).integrable_comp_emb
-    (measurableEmbedding_sq_div ha.ne') (g := f)).mp (h.congr (Filter.EventuallyEq.symm hsym))
+    (measurableEmbedding_divLeft₀ (pow_ne_zero 2 ha.ne')) (g := f)).mp
+      (h.congr (Filter.EventuallyEq.symm hsym))
   have hleft : IntegrableOn f (Ioc 0 a) multHaar := by
     simpa only [IntegrableOn, Measure.restrict_congr_set (Ioo_ae_eq_Ioc (μ := multHaar))] using hlow
   -- Use `(0,a]` and `(a,∞)` to cover the support of the measure.
@@ -297,7 +294,7 @@ theorem integral_multHaar_eq_two_smul_of_sq_div [NormedSpace ℝ E] (ha : 0 < a)
     have hlow : (∫ t in Ioc 0 a, f t ∂multHaar) = ∫ t in Ioi a, f t ∂multHaar := by
       have hp := measurePreserving_sq_div_multHaar_restrict_Ioi ha
       rw [setIntegral_congr_set (Ioo_ae_eq_Ioc (μ := multHaar)).symm,
-        ← hp.integral_comp (measurableEmbedding_sq_div ha.ne') f]
+        ← hp.integral_comp (measurableEmbedding_divLeft₀ (pow_ne_zero 2 ha.ne')) f]
       exact integral_congr_ae hsym
     calc
       _ = ∫ t in Ioc 0 a ∪ Ioi a, f t ∂multHaar := by
