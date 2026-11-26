@@ -37,6 +37,8 @@ This file contains basic facts about finite partial sums.
 * `TauCeti.prefixSum_eq_sum_range`, `TauCeti.prefixSum_eq_sum_range_dite`: prefix sums of a
   sequence restricted to `Fin n` are its partial sums over `range`, capped at `n`, and prefix sums
   of a tuple equal the `range` sum padded with `0` beyond `n`.
+* `TauCeti.prefixSum_comp_castLE`: prefix sums of the restriction of a tuple to its first `m`
+  coordinates are its prefix sums, capped at `m`.
 * `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
   finite sums and differences of tuples, and of a tuple supported at one coordinate.
 * `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
@@ -175,6 +177,16 @@ theorem prefixSum_eq_sum_range_dite (k : ℕ) (x : Fin n → M) :
       sum_subset (range_mono (min_le_left k n)) fun i hi hni ↦ by
         rw [mem_range] at hi hni
         exact dite_eq_right (by omega)
+
+/-- The prefix sums of the restriction of `x` to its first `m` coordinates are the prefix sums of
+`x`, capped at `m`. -/
+theorem prefixSum_comp_castLE {m : ℕ} (h : m ≤ n) (k : ℕ) (x : Fin n → M) :
+    prefixSum k (x ∘ Fin.castLE h) = prefixSum (min k m) x := by
+  rw [← prefixSum_min k (x ∘ Fin.castLE h), prefixSum_eq_sum_range_dite,
+    prefixSum_eq_sum_range_dite]
+  refine sum_congr rfl fun i hi ↦ ?_
+  have him : i < m := (mem_range.1 hi).trans_le (min_le_right k m)
+  simp [him, him.trans_le h, Fin.castLE]
 
 /-- Prefix sums are additive in the tuple. -/
 @[simp]
