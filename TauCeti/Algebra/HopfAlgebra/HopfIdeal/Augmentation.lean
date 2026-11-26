@@ -259,19 +259,9 @@ ideal of `H`. -/
 theorem augmentation_quotient_eq_bot_iff {k : Type u} {H : Type v} [CommRing k] [CommRing H]
     [HopfAlgebra k H] (I : HopfIdeal k H) :
     augmentation k (H ⧸ I.toIdeal) = ⊥ ↔ I = augmentation k H := by
-  constructor
-  · intro h
-    refine le_antisymm (le_augmentation k H I) fun x hx ↦ ?_
-    have hmk : Ideal.Quotient.mk I.toIdeal x ∈ augmentation k (H ⧸ I.toIdeal) := by
-      rw [mem_augmentation, Bialgebra.Quotient.counit_mk]
-      exact (mem_augmentation k H).mp hx
-    rw [h, mem_bot, Ideal.Quotient.eq_zero_iff_mem] at hmk
-    exact mem_toIdeal.mp hmk
-  · rintro rfl
-    ext y
-    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [mem_augmentation, Bialgebra.Quotient.counit_mk, mem_bot, Ideal.Quotient.eq_zero_iff_mem,
-      mem_toIdeal, mem_augmentation]
+  rw [← comapOfSurjective_eq_comapOfSurjective_iff (Bialgebra.Quotient.mkBialgHom I.toIdeal)
+    (Bialgebra.Quotient.mkBialgHom_surjective _), comapOfSurjective_augmentation,
+    comapOfSurjective_bot, kerOfSurjective_mkBialgHom, eq_comm]
 
 end HopfIdeal
 
