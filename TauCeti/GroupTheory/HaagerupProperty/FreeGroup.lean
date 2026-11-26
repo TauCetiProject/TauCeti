@@ -7,7 +7,7 @@ module
 
 public import TauCeti.GroupTheory.FreeGroup.GeodesicEdges
 public import TauCeti.GroupTheory.HaagerupProperty.Basic
-import TauCeti.GroupTheory.FreeGroup.WeightedLength
+import Mathlib.Data.Set.Finite.List
 
 /-!
 # Free groups have the Haagerup property
@@ -51,7 +51,26 @@ theorem hasHaagerupProperty_freeGroup (ι : Type*) [Countable ι] :
   obtain ⟨n, hn⟩ := exists_injective_nat ι
   -- The weighted word length: the letter `of i` has weight `n i + 1`.
   let W : FreeGroup ι → ℕ := fun g => (g.toWord.map fun x => n x.1 + 1).sum
-  have hW : Tendsto W cofinite atTop := FreeGroup.tendsto_cofinite_sum_map_toWord n hn
+  -- Only finitely many elements have weighted length below a given bound.
+  have hW : Tendsto W cofinite atTop := by
+    refine tendsto_atTop.2 fun N => eventually_cofinite.2 ?_
+    let T : Set (ι × Bool) := {x | n x.1 < N}
+    have hT : T.Finite :=
+      (((Set.finite_Iio N).preimage hn.injOn).prod Set.finite_univ).subset fun x hx => ⟨hx, trivial⟩
+    have : Finite T := hT.to_subtype
+    have hlists : {l : List (ι × Bool) | l.length ≤ N ∧ ∀ x ∈ l, x ∈ T}.Finite := by
+      refine ((List.finite_length_le T N).image (List.map Subtype.val)).subset ?_
+      rintro l ⟨hl, hmem⟩
+      exact ⟨l.attachWith (· ∈ T) hmem, by simpa using hl, List.attachWith_map_subtype_val hmem⟩
+    refine (hlists.preimage FreeGroup.toWord_injective.injOn).subset fun g hg => ?_
+    replace hg : (g.toWord.map fun x => n x.1 + 1).sum < N := not_le.1 hg
+    refine ⟨?_, fun x hx => ?_⟩
+    · have := List.length_le_sum_of_one_le (g.toWord.map fun x => n x.1 + 1) (by simp)
+      simp only [List.length_map] at this
+      exact (this.trans hg.le)
+    · have := List.le_sum_of_mem (List.mem_map_of_mem (f := fun x => n x.1 + 1) hx)
+      have hlt : n x.1 < N := by omega
+      simpa only [T, Set.mem_ofPred_eq] using hlt
   have hpow (r : ℝ) (g : FreeGroup ι) :
       r ^ W g = (g.toWord.map fun x => r ^ (n x.1 + 1)).prod := by
     simp only [W]
