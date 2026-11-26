@@ -58,6 +58,7 @@ noncomputable def weightedPairing (s : WeightedLatticeFamily U L K)
 
 /-- Casting the integral entry back to the rationals recovers the original pairing when the
 pairing is integer-valued against the intersection of the two submodules. -/
+@[simp]
 theorem weightedPairing_intCast (s : WeightedLatticeFamily U L K)
     (B : N →ₗ[ℤ] N →ₗ[ℤ] ℚ)
     (hB : ∀ x y, y ∈ U ⊓ L → ∃ n : ℤ, B x y = n) (x : N) (k : K) :
@@ -123,6 +124,7 @@ theorem signedMutation_vector_self (hAlt : B.IsAlt) (sign : ℤ) (k : K) :
   simp [signedMutation]
 
 /-- Away from the pivot, signed mutation adds a multiple of the pivot vector. -/
+@[simp]
 theorem signedMutation_vector_of_ne (hAlt : B.IsAlt) (sign : ℤ) {i k : K} (hik : i ≠ k) :
     (s.signedMutation B hB hAlt sign k).vector i =
       s.vector i + max (sign * s.weightedPairing B hB (s.vector i) k) 0 • s.vector k := by
@@ -130,6 +132,7 @@ theorem signedMutation_vector_of_ne (hAlt : B.IsAlt) (sign : ℤ) {i k : K} (hik
 
 /-- The entries paired against the pivot negate under mutation, since the correction is a
 multiple of the alternating pairing's isotropic pivot. -/
+@[simp]
 theorem signedMutation_weightedPairing_pivot (hAlt : B.IsAlt) (sign : ℤ) (i k : K) :
     (s.signedMutation B hB hAlt sign k).weightedPairing B hB
       ((s.signedMutation B hB hAlt sign k).vector i) k =
@@ -144,6 +147,7 @@ theorem signedMutation_weightedPairing_pivot (hAlt : B.IsAlt) (sign : ℤ) (i k 
 
 /-- Applying a signed mutation and then the opposite signed mutation at the same pivot
 recovers the original weighted family. -/
+@[simp]
 theorem signedMutation_signedMutation_neg (hAlt : B.IsAlt) (sign : ℤ) (k : K) :
     (s.signedMutation B hB hAlt sign k).signedMutation B hB hAlt (-sign) k = s := by
   apply WeightedLatticeFamily.ext
