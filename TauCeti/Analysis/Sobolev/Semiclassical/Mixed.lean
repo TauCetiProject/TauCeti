@@ -54,8 +54,9 @@ At scale one the mixed norm is equivalent to the ordinary Sobolev norm
 (`Submodule.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le`,
 `Submodule.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one`). Together with
 the dilation identity this gives the **Sobolev embedding uniformly in the scale**: if `2j > dim E`,
-then `|f(x)| ≤ C ‖f‖_{j,h,V}` for every real-valued `f` and every `h > 0`, with `C` independent of
-`h` (`Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`). This is the pointwise control
+then `|f(x)| ≤ C ‖f‖_{j,h,V}` for every real-valued `f` of class `Cʲ` whose mixed derivatives
+through total order `j` are square integrable, and every `h > 0`, with `C` independent of `h`
+(`Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`). This is the pointwise control
 of real-valued functions in the tube norms; the volume normalization `h^(-dim V / 2)` is the one
 that makes it uniform.
 
