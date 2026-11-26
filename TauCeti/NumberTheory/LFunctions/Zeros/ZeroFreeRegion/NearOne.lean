@@ -19,9 +19,10 @@ import TauCeti.NumberTheory.LSeries.Quadratic.Siegel
 /-!
 # Uniform bounds for logarithmic derivatives near one
 
-For levels `q ≤ X^A`, the pole-removed Dirichlet L-functions are nonvanishing on
-`‖s - 1‖ ≤ 1/X` and their logarithmic derivatives there have norm at most `X`, for
-sufficiently large `X`. The zero-free region and Siegel's theorem give a larger zero-free disc;
+The theorem `TauCeti.LFunctions.eventually_entireLFunction_ne_zero_and_norm_logDeriv_le_near_one`
+shows that for sufficiently large `X` and levels `q ≤ X^A`, the pole-removed Dirichlet
+L-functions are nonvanishing on `‖s - 1‖ ≤ 1/X` and their logarithmic derivatives there have
+norm at most `X`. The zero-free region and Siegel's theorem give a larger zero-free disc;
 Borel–Carathéodory bounds the logarithmic derivative from a point just right of `1`.
 
 The near-one estimate is the one used in `New.eventually_norm_logDeriv_entireL_le_near_one`
@@ -221,7 +222,7 @@ private theorem eventually_norm_logDeriv_near_one_sq (B : ℕ) :
 /-- Uniform near-one estimate for Dirichlet characters of level at most `X^A`. For sufficiently
 large `X`, the L-function, with the pole of the principal character removed, is nonvanishing on
 `‖s - 1‖ ≤ 1/X` and its logarithmic derivative there has norm at most `X`. -/
-theorem eventually_norm_logDeriv_poleRemoved_LFunction_le_near_one (A : ℕ) :
+theorem eventually_entireLFunction_ne_zero_and_norm_logDeriv_le_near_one (A : ℕ) :
     ∀ᶠ X : ℝ in atTop, ∀ (q : ℕ) [NeZero q] (χ : DirichletCharacter ℂ q), (q : ℝ) ≤ X ^ A →
       ∀ s : ℂ, ‖s - 1‖ ≤ 1 / X →
         χ.entireLFunction s ≠ 0 ∧ ‖logDeriv χ.entireLFunction s‖ ≤ X := by

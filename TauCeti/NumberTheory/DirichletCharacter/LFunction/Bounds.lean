@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.SumCoeff
 public import TauCeti.NumberTheory.DirichletCharacter.PartialSum
 import Mathlib.Analysis.Complex.Convex
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Entire
 import TauCeti.NumberTheory.LSeries.Moebius
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Bounds
@@ -198,23 +199,9 @@ theorem norm_entireLFunction_le_eight_mul_level {s : ℂ} (hs : ‖s - 1‖ ≤ 
   · subst χ
     rw [entireLFunction_one]
     rcases eq_or_ne s 1 with rfl | h₁
-    · calc
-        ‖LFunctionTrivChar₁ N 1‖ ≤ 1 := by
-          -- At the pole the definition is the updated value, not `(s - 1) * L(s)`.
-          have hvalue : LFunctionTrivChar₁ N 1 = ∏ p ∈ N.primeFactors, (1 - (p : ℂ)⁻¹) :=
-            Function.update_self _ _ _
-          rw [hvalue, norm_prod]
-          refine Finset.prod_le_one₀ (fun p _ ↦ norm_nonneg _) fun p hp ↦ ?_
-          have hp₁ : (1 : ℝ) ≤ p := by
-            exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le
-          have hnonneg : 0 ≤ 1 - (p : ℝ)⁻¹ := sub_nonneg.mpr (inv_le_one_of_one_le₀ hp₁)
-          have hle : ‖(1 - (p : ℝ)⁻¹ : ℝ)‖ ≤ 1 := by
-            rw [Real.norm_of_nonneg hnonneg]
-            exact sub_le_self _ (by positivity)
-          simpa using (norm_real (1 - (p : ℝ)⁻¹)).trans_le hle
-        _ ≤ 8 * (N : ℝ) := by
-          have hN : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
-          linarith
+    · refine (TauCeti.norm_LFunctionTrivChar₁_apply_one_le_one N).trans ?_
+      have hN : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
+      linarith
     · rw [LFunctionTrivChar₁_apply_of_ne_one N h₁, norm_mul]
       have ht : 0 < ‖s - 1‖ := norm_pos_iff.mpr (sub_ne_zero.mpr h₁)
       have hb := (1 : DirichletCharacter ℂ N).norm_LFunction_le hspos (.inl h₁)
@@ -250,7 +237,7 @@ theorem min_one_norm_sub_one_div_le_norm_entireLFunction {s : ℂ} (hs : 1 < s.r
   by_cases hχ : χ = 1
   · subst χ
     have hs₁ : s ≠ 1 := ne_of_apply_ne re (by simpa using hs.ne')
-    rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one N hs₁, norm_mul, LFunctionTrivChar]
+    rw [entireLFunction_one_apply hs₁, norm_mul]
     exact mul_le_mul (min_le_right _ _) hL hnonneg (norm_nonneg _)
   · rw [entireLFunction_of_ne_one hχ]
     exact (mul_le_mul_of_nonneg_right (min_le_left _ _) hnonneg).trans (by simpa using hL)

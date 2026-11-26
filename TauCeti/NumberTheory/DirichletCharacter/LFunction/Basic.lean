@@ -41,7 +41,8 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   `DirichletCharacter.analyticOrderAt_LFunctionTrivChar₁_one`: the values of the pole-removed
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
-  its analytic orders agree with `ζ`.
+  its analytic orders agree with `ζ`. At any level its norm at `1` is at most `1`
+  (`TauCeti.norm_LFunctionTrivChar₁_apply_one_le_one`).
 * `DirichletCharacter.entireLFunction`, with `DirichletCharacter.entireLFunction_one` and
   `DirichletCharacter.entireLFunction_of_ne_one`: the entire function `E_χ`, which is `χ.LFunction`
   for `χ ≠ 1` and `LFunctionTrivChar₁ N` for `χ = 1`.
@@ -164,6 +165,19 @@ end DirichletCharacter
 namespace TauCeti
 
 open DirichletCharacter
+
+/-- The pole-removed principal `L`-function has norm at most `1` at `s = 1`. -/
+theorem norm_LFunctionTrivChar₁_apply_one_le_one (N : ℕ) [NeZero N] :
+    ‖LFunctionTrivChar₁ N 1‖ ≤ 1 := by
+  simp only [LFunctionTrivChar₁, Function.update_self, norm_prod]
+  refine Finset.prod_le_one₀ (fun p _ ↦ norm_nonneg _) fun p hp ↦ ?_
+  have hp₁ : (1 : ℝ) ≤ p := by
+    exact_mod_cast (Nat.prime_of_mem_primeFactors hp).one_lt.le
+  have hnonneg : 0 ≤ 1 - (p : ℝ)⁻¹ := sub_nonneg.mpr (inv_le_one_of_one_le₀ hp₁)
+  have hle : ‖(1 - (p : ℝ)⁻¹ : ℝ)‖ ≤ 1 := by
+    rw [Real.norm_of_nonneg hnonneg]
+    exact sub_le_self _ (by positivity)
+  simpa using (norm_real (1 - (p : ℝ)⁻¹)).trans_le hle
 
 /-- The principal Dirichlet `L`-function modulo `N` has a simple pole (meromorphic order `-1`) at
 `s = 1`. -/
