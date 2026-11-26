@@ -224,7 +224,8 @@ noncomputable def completedChartCoeffEquiv :
 theorem coe_completedChartCoeffEquiv_apply (x : AdicCompletion
       (Ideal.span {boundaryMonomial R ι Q}) (AddMonoidAlgebra R ((ι →₀ ℕ) × Q))) :
     (completedChartCoeffEquiv R ι Q x : (ι →₀ ℕ) × Q → R) = completedChartCoeff x := by
-  rfl
+  exact congrArg Subtype.val (LinearEquiv.ofBijective_apply _ x) |>.trans
+    (LinearMap.codRestrict_apply _ _ x)
 
 /-- The element of the completion with a given admissible coefficient family has that family as
 its coefficients. -/
