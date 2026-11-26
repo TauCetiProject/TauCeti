@@ -65,7 +65,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 section NormalOrder
 
-variable {K A R C : Type*} [Field K] [Ring A] [Algebra K A] [Fintype R] [DecidableEq R]
+variable {K A R C : Type*} [CommRing K] [Ring A] [Algebra K A] [Fintype R] [DecidableEq R]
   [Fintype C] [DecidableEq C]
 
 /-- Adding a scalar `t` to the diagonal of a square array `F` adds `2 t ∑ F a a + n t²` to the
