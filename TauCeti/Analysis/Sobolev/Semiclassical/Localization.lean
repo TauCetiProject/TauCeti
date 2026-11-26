@@ -35,17 +35,20 @@ number of cutoffs, and of `f`.
 
 The cutoffs may differ from ball to ball, as they do for cutoffs adapted to local charts. The
 basic case is a cover by `h`-balls with centres `x a ∈ E` and translates of one rescaled cutoff,
-`χ a = η (h⁻¹ • (· - x a))`; its semiclassical derivative bounds are the unscaled bounds
-`‖Dⁱ η‖ ≤ B` (`TauCeti.sum_sq_semiclassicalSobolevNorm_localization_le`,
-`TauCeti.sq_semiclassicalSobolevNorm_le_sum_sq_localization`).
+`χ a = η (h⁻¹ • (· - x a))`, where semiclassical derivative bounds become unscaled ones. The
+upper bound then assumes `‖Dⁱ η‖ ≤ B` (`TauCeti.sum_sq_semiclassicalSobolevNorm_localization_le`).
+The lower bound instead uses the translates `ψ (h⁻¹ • (· - x a))` of a second cutoff `ψ` with
+`‖Dⁱ ψ‖ ≤ B` and `∑_{a ∈ s} ψ (h⁻¹ • (y - x a)) η (h⁻¹ • (y - x a)) = 1` wherever `f y ≠ 0`, and
+assumes no derivative bound on `η` (`TauCeti.sq_semiclassicalSobolevNorm_le_sum_sq_localization`).
 
 So the squared norm of a function is comparable, uniformly in `h`, to the sum of the squared norms
 of its localizations over a bounded-overlap cover of its support by balls of radius comparable to
 `h`. The uniformly local norm `‖f‖_{k,h,η} = sup_x ‖η (h⁻¹ • (· - x)) f‖_{k,h}`
 (`TauCeti.uniformlyLocalSemiclassicalSobolevNorm`) keeps only the largest of these localizations.
-It is bounded by the global norm, `‖f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h}`
-(`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm`), and conversely
-the lower bound recovers the global norm from it up to the number of balls,
+If `‖Dⁱ η‖ ≤ B`, it is bounded by the global norm, `‖f‖_{k,h,η} ≤ (k + 1) 2ᵏ B ‖f‖_{k,h}`
+(`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm`). Conversely,
+under the hypotheses of the lower bound, where `B` bounds the derivatives of the second cutoff
+`ψ`, it recovers the global norm up to the number of balls,
 `‖f‖²_{k,h} ≤ (k + 1)⁴ 4ᵏ B² K #s ‖f‖²_{k,h,η}`
 (`TauCeti.sq_semiclassicalSobolevNorm_le_mul_card_mul_sq_uniformlyLocalSemiclassicalSobolevNorm`).
 This is the total mass that the supremum alone does not see. In Taubes's large-parameter analysis
@@ -76,7 +79,7 @@ nonzero, so the square of the sum is at most `K` times the sum of the squares
   local norm is bounded by the global norm.
 * `TauCeti.sq_semiclassicalSobolevNorm_le_mul_card_mul_sq_uniformlyLocalSemiclassicalSobolevNorm`:
   the global norm is bounded by `(k + 1)² 2ᵏ B √(K #s)` times the uniformly local norm, where `#s`
-  is the number of balls.
+  is the number of balls and `B` bounds the derivatives of the second cutoff `ψ`.
 
 ## References
 
