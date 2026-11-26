@@ -7,8 +7,7 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.CategoryTheory.Groupoid.Discrete
-public import Mathlib.CategoryTheory.SingleObj
-public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.Functor.SingleObj
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 public import TauCeti.CategoryTheory.Sites.Descent.TwoFiberProduct
 public import TauCeti.CategoryTheory.Sites.Descent.Yoneda
@@ -67,16 +66,17 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
 * `CategoryTheory.Pseudofunctor.StrongTrans.isLocallyEssSurj_bot_iff`,
   `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_bot_iff`: the two notions for the
   trivial topology.
-* `CategoryTheory.Pseudofunctor.StrongTrans.relativeFiber`: the relative fibre over an object, a
-  stack (`isStack_relativeFiber`) with groupoid fibres (`isGroupoid_relativeFiber_obj`).
+* `CategoryTheory.Pseudofunctor.StrongTrans.relativeFiber`: the relative fibre over an object,
+  unfolded to a 2-fibre product by `relativeFiber_def`, a stack (`isStack_relativeFiber`) with
+  groupoid fibres (`isGroupoid_relativeFiber_obj`).
 * `CategoryTheory.Pseudofunctor.StrongTrans.isRelativeGerbe_iff_isGerbe_relativeFiber`: `η` is a
   relative gerbe if and only if its relative fibres are gerbes.
-* `TauCeti.constSingleObjMap`, `TauCeti.isLocallyEssSurj_constSingleObjMap`,
-  `TauCeti.isRelativeGerbe_bot_constSingleObjMap_iff`,
-  `TauCeti.not_isRelativeGerbe_bot_constSingleObjMap_subtype`: the transformation of constant
-  pseudofunctors with one-object fibres induced by a monoid homomorphism `φ`, which is locally
-  essentially surjective for every topology; for groups and the trivial topology on a nonempty
-  category it is a relative gerbe if and only if `φ` is surjective.
+* `MonoidHom.isLocallyEssSurj_constSingleObjMap`,
+  `MonoidHom.isRelativeGerbe_bot_constSingleObjMap_iff`,
+  `TauCeti.not_isRelativeGerbe_bot_constSingleObjMap_subtype`: the transformation
+  `TauCeti.constSingleObjMap` of constant pseudofunctors with one-object fibres induced by a
+  monoid homomorphism `φ` is locally essentially surjective for every topology; for groups and the
+  trivial topology on a nonempty category it is a relative gerbe if and only if `φ` is surjective.
 
 ## References
 
@@ -84,7 +84,7 @@ the universe `v` of the morphisms of `C`; this holds for pseudofunctors with val
   Definition 8.11.4
 -/
 
-@[expose] public section
+public section
 
 universe w w' v u v' u'
 
@@ -175,15 +175,9 @@ theorem isRelativeGerbe_bot_iff :
     obtain ⟨a, ha⟩ := h (𝟙 U) trivial
     let m := Cat.Hom.toNatIso (F.mapId' (𝟙 U).op.toLoc)
     refine ⟨(m.app x).symm ≪≫ a ≪≫ m.app x', ?_⟩
-    have hx := naturality_id'_inv_app η (𝟙 U).op.toLoc rfl x
-    have hx' := naturality_id'_inv_app η (𝟙 U).op.toLoc rfl x'
-    rw [← cancel_epi ((η.naturality (𝟙 U).op.toLoc).inv.toNatTrans.app x)] at ha
-    simp only [Cat.Hom.inv_hom_id_toNatTrans_app_assoc] at ha
-    rw [hx, hx', Category.assoc,
-      reassoc_of% ((G.mapId' (𝟙 U).op.toLoc).hom.toNatTrans.naturality b.hom), cancel_epi] at ha
-    simp only [Iso.trans_hom, Iso.symm_hom, Functor.map_comp, m, Iso.app_hom, Iso.app_inv,
-      Cat.Hom.toNatIso_hom, Cat.Hom.toNatIso_inv, reassoc_of% ha]
-    simp [← Functor.map_comp]
+    refine (map_mapId'_inv_comp_comp_mapId'_hom η (𝟙 U).op.toLoc rfl a.hom).trans ?_
+    rw [ha]
+    simp
   · exact { toIsLocallyEssSurj := (isLocallyEssSurj_bot_iff η).2 h₁
             exists_covering_liftIso {U} x x' b := ⟨⊤, (⊥ : GrothendieckTopology C).top_mem U,
               fun V f _ ↦ h₂ V _ _ ((Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x ≪≫
@@ -210,12 +204,21 @@ def relativeFiber {U : C} (y : G.obj (.mk (op U))) :
   TauCeti.Stack.twoFiberProduct.{w'} ((Over.forget U).op.toPseudofunctor.whiskerLeft η)
     ((G.over U).yonedaPullbackObj (Over.mk (𝟙 U)) y)
 
+/-- The relative fibre of `η` over `y` is the 2-fibre product of the restriction of `η` to the
+slice `Over U` with the strong transformation attached to `y` by the 2-Yoneda lemma; this
+equation gives access to the API of `TauCeti.Stack.twoFiberProduct`. -/
+lemma relativeFiber_def {U : C} (y : G.obj (.mk (op U))) :
+    η.relativeFiber y =
+      TauCeti.Stack.twoFiberProduct.{w'} ((Over.forget U).op.toPseudofunctor.whiskerLeft η)
+        ((G.over U).yonedaPullbackObj (Over.mk (𝟙 U)) y) :=
+  (rfl)
+
 variable {η} {J : GrothendieckTopology C}
 
-/-- The relative fibres of a transformation out of a pseudofunctor with groupoid fibres have
-groupoid fibres. -/
-instance isGroupoid_relativeFiber_obj [∀ U : C, IsGroupoid (F.obj (.mk (op U)))] {U : C}
-    (y : G.obj (.mk (op U))) (V : LocallyDiscrete (Over U)ᵒᵖ) :
+/-- The fibre over `V : Over U` of a relative fibre of a transformation out of `F` is a groupoid
+when the fibre of `F` over `V.left` is. -/
+instance isGroupoid_relativeFiber_obj {U : C} (y : G.obj (.mk (op U)))
+    (V : LocallyDiscrete (Over U)ᵒᵖ) [IsGroupoid (F.obj (.mk (op V.as.unop.left)))] :
     IsGroupoid ((η.relativeFiber y).obj V) :=
   have : IsGroupoid ((F.over U).obj V) :=
     inferInstanceAs (IsGroupoid (F.obj (.mk (op V.as.unop.left))))
@@ -339,27 +342,13 @@ end CategoryTheory.Pseudofunctor.StrongTrans
 
 /-! ### Local essential surjectivity does not suffice -/
 
-namespace TauCeti
+namespace MonoidHom
 
-open CategoryTheory Pseudofunctor
-open scoped Pseudofunctor.StrongTrans
+open CategoryTheory Pseudofunctor TauCeti
 
 section Monoid
 
-variable (C : Type u) [Category.{v} C] {M N : Type w} [Monoid M] [Monoid N]
-
-/-- The constant pseudofunctor on `C` with fibre the one-object category `SingleObj M` of a
-monoid `M`, and identities as pullbacks. -/
-abbrev constSingleObj (M : Type w) [Monoid M] : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{w, 0} :=
-  ((Functor.const Cᵒᵖ).obj (Cat.of (SingleObj M))).toPseudofunctor.comp (𝟭 Cat).toPseudofunctor'
-
-/-- The strong transformation of constant pseudofunctors on `C` with one-object fibres induced by
-a monoid homomorphism `φ : M →* N`: each component is the functor `SingleObj M ⥤ SingleObj N` of
-`φ`. -/
-def constSingleObjMap (φ : M →* N) : constSingleObj C M ⟶ constSingleObj C N :=
-  (𝟭 Cat).toPseudofunctor'.mapNatTrans ((Functor.const Cᵒᵖ).map (SingleObj.mapHom M N φ).toCatHom)
-
-variable {C}
+variable {C : Type u} [Category.{v} C] {M N : Type w} [Monoid M] [Monoid N]
 
 /-- The transformation of constant pseudofunctors with one-object fibres induced by any monoid
 homomorphism is locally essentially surjective, for every topology: the fibres have one object. -/
@@ -381,18 +370,27 @@ theorem isRelativeGerbe_bot_constSingleObjMap_iff [Nonempty C] (φ : M →* N) :
     fun U x x' b ↦ ?_⟩⟩
   · obtain ⟨a, ha⟩ := h (Classical.arbitrary C) (SingleObj.star M) (SingleObj.star M)
       ((Groupoid.isoEquivHom (SingleObj.star N) (SingleObj.star N)).symm n)
-    exact ⟨a.hom, ha⟩
+    exact ⟨a.hom, (constSingleObjMap_app_map φ _ a.hom).symm.trans ha⟩
   · obtain ⟨m, hm⟩ := h b.hom
-    exact ⟨(Groupoid.isoEquivHom (SingleObj.star M) (SingleObj.star M)).symm m, hm⟩
+    exact ⟨(Groupoid.isoEquivHom (SingleObj.star M) (SingleObj.star M)).symm m,
+      (constSingleObjMap_app_map φ _ m).trans hm⟩
+
+end MonoidHom
+
+namespace TauCeti
+
+open CategoryTheory Pseudofunctor
+
+variable {C : Type u} [Category.{v} C]
 
 /-- On a nonempty category with the trivial topology, for instance the category with one object
 and only the maximal cover, the transformation of constant pseudofunctors with one-object fibres
 induced by the inclusion of a proper subgroup `H` of `G` is no relative gerbe, although it is
-locally essentially surjective (`isLocallyEssSurj_constSingleObjMap`). -/
+locally essentially surjective (`MonoidHom.isLocallyEssSurj_constSingleObjMap`). -/
 theorem not_isRelativeGerbe_bot_constSingleObjMap_subtype [Nonempty C] {G : Type w} [Group G]
     {H : Subgroup G} (hH : H ≠ ⊤) :
     ¬ StrongTrans.IsRelativeGerbe (constSingleObjMap C H.subtype) ⊥ := by
-  rw [isRelativeGerbe_bot_constSingleObjMap_iff]
+  rw [MonoidHom.isRelativeGerbe_bot_constSingleObjMap_iff]
   exact fun h ↦ hH (eq_top_iff.2 fun g _ ↦ by obtain ⟨⟨g', hg'⟩, rfl⟩ := h g; exact hg')
 
 end TauCeti
