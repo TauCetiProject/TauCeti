@@ -103,30 +103,9 @@ end Complex
 
 end Orthonormal
 
-namespace TauCeti
-
-open scoped RealInnerProductSpace
-
-/-- The underlying real family `(u₀, i • u₀, …)` of a complex-orthonormal family is
-real-orthonormal for any compatible real inner product. -/
-theorem orthonormal_complexToRealFamily {E : Type*} [SeminormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [InnerProductSpace ℂ E] {r : ℕ} {u : Fin r → E}
-    (hu : Orthonormal ℂ u) : Orthonormal ℝ (complexToRealFamily u) := by
-  rw [orthonormal_iff_ite]
-  intro i j
-  obtain ⟨⟨a, p⟩, rfl⟩ := (complexRealIndexEquiv r).surjective i
-  obtain ⟨⟨b, q⟩, rfl⟩ := (complexRealIndexEquiv r).surjective j
-  simp only [complexToRealFamily_complexRealIndexEquiv, TauCeti.inner_real_eq_re_inner ℂ,
-    inner_smul_left, inner_smul_right, (complexRealIndexEquiv r).injective.eq_iff, Prod.mk.injEq]
-  rcases eq_or_ne a b with rfl | hab
-  · fin_cases p <;> fin_cases q <;> simp [hu.1 a]
-  · simp [hab, hu.2 hab]
-
-end TauCeti
-
 section ComplexToReal
 
-variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
+variable {ι E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
 
 /-- The family `(v i, I • v i)`, indexed by `ι × Fin 2` as in `Module.Basis.complexToReal`, of a
 complex orthonormal family `v` is orthonormal for any real inner product with the same norm. -/
@@ -139,9 +118,23 @@ theorem Orthonormal.complexToReal {v : ι → E} (hv : Orthonormal ℂ v) :
   fin_cases k <;> fin_cases l <;>
     simp [inner_smul_left, inner_smul_right, hv, apply_ite]
 
-namespace OrthonormalBasis
+/-- The underlying real family `(u₀, i • u₀, …)` of a complex-orthonormal family is
+real-orthonormal for any compatible real inner product. -/
+theorem TauCeti.orthonormal_complexToRealFamily {r : ℕ} {u : Fin r → E} (hu : Orthonormal ℂ u) :
+    Orthonormal ℝ (TauCeti.complexToRealFamily u) := by
+  convert hu.complexToReal.comp _ (TauCeti.complexRealIndexEquiv r).symm.injective
+  funext i
+  obtain ⟨⟨a, k⟩, rfl⟩ := (TauCeti.complexRealIndexEquiv r).surjective i
+  simp
 
-variable [Fintype ι] [IsScalarTower ℝ ℂ E]
+end ComplexToReal
+
+section OrthonormalBasis
+
+variable {ι E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [InnerProductSpace ℝ E]
+  [Fintype ι] [IsScalarTower ℝ ℂ E]
+
+namespace OrthonormalBasis
 
 /-- The real orthonormal basis underlying a complex orthonormal basis `b`: its vectors are `b i` at
 index `(i, 0)` and `I • b i` at index `(i, 1)`. -/
@@ -175,4 +168,4 @@ theorem complexToReal_repr_apply (b : OrthonormalBasis ι ℂ E) (x : E) (i : ι
 
 end OrthonormalBasis
 
-end ComplexToReal
+end OrthonormalBasis

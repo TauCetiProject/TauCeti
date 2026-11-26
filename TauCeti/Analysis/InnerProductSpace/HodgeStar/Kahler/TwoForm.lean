@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
+public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.InnerProductSpace.Complex
 
@@ -14,7 +15,7 @@ import TauCeti.Analysis.InnerProductSpace.Complex
 # The Kähler two-form on a complex inner product space
 
 On a complex inner product space `E` carrying a compatible real scalar action
-(`[IsScalarTower ℝ ℂ E]`), the **Kähler two-form** is the real continuous alternating two-form
+(`IsScalarTower ℝ ℂ E`), the **Kähler two-form** is the real continuous alternating two-form
 `TauCeti.kahlerTwoForm E v = Im ⟪v₀, v₁⟫_ℂ`.
 
 For `E = ℂ` with the standard Hermitian inner product conjugate-linear in the first slot,
@@ -22,8 +23,10 @@ For `E = ℂ` with the standard Hermitian inner product conjugate-linear in the 
 comass at most `1` (`TauCeti.norm_kahlerTwoForm_le`), and on any nontrivial normed complex inner
 product space (without finite-dimensionality), its comass equals `1` (`TauCeti.norm_kahlerTwoForm`).
 When `E` also carries a compatible real inner product, `ω(v, w) = ⟪i • v, w⟫_ℝ`
-(`TauCeti.kahlerTwoForm_apply_eq_inner`). Complex linear isometries pull `kahlerTwoForm` back to
-itself (`TauCeti.kahlerTwoForm_comp_linearIsometry`).
+(`TauCeti.kahlerTwoForm_apply_eq_inner`), and on pairs `kahlerTwoForm E` agrees with the symplectic
+form `TauCeti.imInnerSymplecticForm E` (`TauCeti.kahlerTwoForm_apply_eq_imInnerSymplecticForm`).
+Complex linear isometries pull `kahlerTwoForm` back to itself
+(`TauCeti.kahlerTwoForm_comp_linearIsometry`).
 
 ## Main definitions
 
@@ -39,6 +42,8 @@ itself (`TauCeti.kahlerTwoForm_comp_linearIsometry`).
   complex inner product space.
 * `TauCeti.kahlerTwoForm_comp_linearIsometry`: naturality under complex linear isometries.
 * `TauCeti.kahlerTwoForm_apply_eq_inner`: identification `kahlerTwoForm E ![v, w] = ⟪i • v, w⟫_ℝ`.
+* `TauCeti.kahlerTwoForm_apply_eq_imInnerSymplecticForm`: identification
+  `kahlerTwoForm E ![v, w] = imInnerSymplecticForm E v w`.
 
 ## References
 
@@ -122,5 +127,12 @@ theorem kahlerTwoForm_apply_eq_inner {E : Type*} [SeminormedAddCommGroup E]
     kahlerTwoForm E ![v, w] = ⟪Complex.I • v, w⟫_ℝ := by
   rw [kahlerTwoForm_apply, TauCeti.inner_real_eq_re_inner ℂ, inner_smul_left]
   simp
+
+/-- On pairs, `TauCeti.kahlerTwoForm E` evaluates to `TauCeti.imInnerSymplecticForm E`. -/
+theorem kahlerTwoForm_apply_eq_imInnerSymplecticForm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [InnerProductSpace ℂ E] [IsScalarTower ℝ ℂ E] (v w : E) :
+    kahlerTwoForm E ![v, w] = imInnerSymplecticForm E v w := by
+  rw [kahlerTwoForm_apply, imInnerSymplecticForm_apply]
+  rfl
 
 end TauCeti

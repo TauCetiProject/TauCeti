@@ -435,29 +435,21 @@ theorem _root_.TauCeti.ofComplexModule_kahlerForm_eq_sum {E : Type*} [NormedAddC
     {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι ℂ E) :
     (AlmostComplexStructure.ofComplexModule E).kahlerForm =
       ∑ j : ι, ιMulti ℝ 2 ![b j, Complex.I • b j] := by
-  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-  let bC : Basis (Fin (Fintype.card ι)) ℂ E := b.toBasis.reindex (Fintype.equivFin ι)
-  let b₀Basis : Basis (Fin (2 * Fintype.card ι)) ℝ E :=
-    bC.complexToReal.reindex (complexRealIndexEquiv (Fintype.card ι))
-  have hb₀_eq : ⇑b₀Basis = complexToRealFamily ⇑bC :=
-    bC.coe_complexToReal_reindex_complexRealIndexEquiv
-  have hbC_on : Orthonormal ℂ bC := by
-    simpa [bC, Basis.coe_reindex, e] using b.orthonormal.comp e e.injective
-  have hb₀_on : Orthonormal ℝ b₀Basis := by
-    rw [hb₀_eq]
-    exact orthonormal_complexToRealFamily hbC_on
-  let b₀ : OrthonormalBasis (Fin (2 * Fintype.card ι)) ℝ E := b₀Basis.toOrthonormalBasis hb₀_on
-  have hb₀ (i : Fin (2 * Fintype.card ι)) : b₀ i = complexToRealFamily ⇑bC i := by
-    simp [b₀, hb₀_eq]
-  have hadapt (k : Fin (Fintype.card ι)) :
-      b₀ ⟨2 * (k : ℕ) + 1, by omega⟩ =
-        AlmostComplexStructure.ofComplexModule E (b₀ ⟨2 * (k : ℕ), by omega⟩) := by
-    simp only [hb₀]
-    simp
-  rw [AlmostComplexStructure.kahlerForm_eq_sum_of_adapted b₀ hadapt]
-  simp_rw [hb₀, complexToRealFamily_even, complexToRealFamily_odd, bC, Basis.coe_reindex,
-    OrthonormalBasis.coe_toBasis, Function.comp_apply]
-  exact Fintype.sum_equiv e _ (fun j ↦ ιMulti ℝ 2 ![b j, Complex.I • b j]) (fun _ ↦ rfl)
+  have h := AlmostComplexStructure.sum_ιMulti_apply_eq_two_smul_kahlerForm
+    (AlmostComplexStructure.ofComplexModule E) b.complexToReal
+  rw [Fintype.sum_prod_type] at h
+  have hterm (j : ι) :
+      (∑ k : Fin 2, ιMulti ℝ 2 ![b.complexToReal (j, k),
+          AlmostComplexStructure.ofComplexModule E (b.complexToReal (j, k))]) =
+        (2 : ℝ) • ιMulti ℝ 2 ![b j, Complex.I • b j] := by
+    rw [Fin.sum_univ_two]
+    simp only [OrthonormalBasis.complexToReal_apply, AlmostComplexStructure.ofComplexModule_apply,
+      Complex.coe_basisOneI, Matrix.cons_val_zero, Matrix.cons_val_one, one_smul, smul_smul,
+      Complex.I_mul_I, neg_one_smul]
+    rw [exteriorPower.ιMulti_two_neg_right, exteriorPower.ιMulti_two_swap (b j) (Complex.I • b j),
+      neg_neg, two_smul]
+  simp_rw [hterm, ← Finset.smul_sum] at h
+  exact (smul_right_injective (⋀[ℝ]^2 E) (by norm_num : (2 : ℝ) ≠ 0) h).symm
 
 /-- The Riesz dual of `(AlmostComplexStructure.ofComplexModule E).kahlerForm` is
 `kahlerTwoForm E`. -/

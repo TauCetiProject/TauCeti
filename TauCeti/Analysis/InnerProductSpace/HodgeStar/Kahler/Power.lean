@@ -9,7 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Mass
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.CalibratedFrame
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Wedge
 import TauCeti.Algebra.BigOperators.Ring.SquareZero
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
 import TauCeti.Analysis.Normed.Module.Alternating.Bilinear
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -264,16 +263,17 @@ finite-dimensional real inner product spaces with almost complex structures. -/
 theorem kahlerPowerForm_comp_linearIsometry {W : Type*} [NormedAddCommGroup W]
     [InnerProductSpace ℝ W] [FiniteDimensional ℝ W]
     {J : AlmostComplexStructure V} {J' : AlmostComplexStructure W}
-    (f : V →ₗᵢ[ℝ] W) (hf : ∀ v, f (J v) = J' (f v)) (r : ℕ) :
+    (f : V →ₗᵢ[ℝ] W) (hf : IsComplexLinearMap J J' f.toLinearMap) (r : ℕ) :
     (J'.kahlerPowerForm r).compContinuousLinearMap f.toContinuousLinearMap =
       J.kahlerPowerForm r := by
+  have hf' (v : V) : f (J v) = J' (f v) := LinearMap.congr_fun hf v
   have h2 : (alternatingFormEquiv W 2 J'.kahlerForm).compContinuousLinearMap
       f.toContinuousLinearMap = alternatingFormEquiv V 2 J.kahlerForm := by
     ext v
     rw [show v = ![v 0, v 1] from (FinVec.etaExpand_eq v).symm,
       ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two,
       alternatingFormEquiv_apply, inner_kahlerForm_ιMulti_eq_inv_two_mul_sub,
-      LinearIsometry.coe_toContinuousLinearMap, ← hf, ← hf,
+      LinearIsometry.coe_toContinuousLinearMap, ← hf', ← hf',
       f.inner_map_map, f.inner_map_map, ← inner_kahlerForm_ιMulti_eq_inv_two_mul_sub,
       ← alternatingFormEquiv_apply]
   rw [kahlerPowerForm_compContinuousLinearMap_eq J' f.toContinuousLinearMap J.kahlerForm h2 r,
@@ -476,52 +476,11 @@ theorem kahlerPowerForm_eq_wedgePow (r : ℕ) :
   rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_def,
     alternatingFormEquiv_ofComplexModule_kahlerForm]
 
-/-- Unfolding lemma for `TauCeti.kahlerPowerForm`. -/
-theorem kahlerPowerForm_def (r : ℕ) :
-    kahlerPowerForm E r = (r.factorial : ℝ)⁻¹ •
-      alternatingFormEquiv E (2 * r)
-        (exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r) := by
-  rw [kahlerPowerForm_eq_ofComplexModule,
-    AlmostComplexStructure.kahlerPowerForm_eq_alternatingFormEquiv_pow]
-
-/-- Evaluation formula for `TauCeti.kahlerPowerForm` on an arbitrary `2r`-frame. -/
-theorem kahlerPowerForm_apply (r : ℕ) (v : Fin (2 * r) → E) :
-    kahlerPowerForm E r v =
-      ⟪(r.factorial : ℝ)⁻¹ •
-          exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r,
-        ιMulti ℝ (2 * r) v⟫ := by
-  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_apply]
-
-/-- Under the Riesz identification `alternatingFormEquiv`, `TauCeti.kahlerPowerForm E r`
-corresponds to `(r!)⁻¹ • exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r`.
--/
-@[simp]
-theorem alternatingFormEquiv_symm_kahlerPowerForm (r : ℕ) :
-    (alternatingFormEquiv E (2 * r)).symm (kahlerPowerForm E r) =
-      (r.factorial : ℝ)⁻¹ •
-        exteriorPower.pow (AlmostComplexStructure.ofComplexModule E).kahlerForm r := by
-  rw [kahlerPowerForm_eq_ofComplexModule,
-    AlmostComplexStructure.alternatingFormEquiv_symm_kahlerPowerForm]
-
-/-- For power index `r = 0` (form degree `0`), `ω⁰ / 0!` is the constant form `1`. -/
-@[simp]
-theorem kahlerPowerForm_zero :
-    kahlerPowerForm E 0 = ContinuousAlternatingMap.constOfIsEmpty ℝ E (Fin 0) 1 := by
-  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_zero]
-
 /-- For power index `r = 1` (form degree `2`), `ω¹ / 1!` is `TauCeti.kahlerTwoForm E`. -/
 @[simp]
 theorem kahlerPowerForm_one : kahlerPowerForm E 1 = kahlerTwoForm E := by
   rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_one,
     alternatingFormEquiv_ofComplexModule_kahlerForm]
-
-/-- Wedge recurrence for normalized Kähler powers on a Hermitian vector space:
-`ω^(r+1) / (r+1)! = (r + 1)⁻¹ • (ωʳ / r!) ∧ ω`. -/
-theorem kahlerPowerForm_succ (r : ℕ) :
-    kahlerPowerForm E (r + 1) =
-      ((r + 1 : ℕ) : ℝ)⁻¹ • (kahlerPowerForm E r).wedge (kahlerTwoForm E) := by
-  rw [kahlerPowerForm_eq_ofComplexModule, AlmostComplexStructure.kahlerPowerForm_succ,
-    alternatingFormEquiv_ofComplexModule_kahlerForm, ← kahlerPowerForm_eq_ofComplexModule]
 
 /-- Normalized Kähler powers vanish whenever the power index exceeds the complex dimension
 (`r > finrank ℂ E`, equivalently form degree `2 * r > finrank ℝ E`). -/
@@ -543,18 +502,10 @@ theorem kahlerPowerForm_comp_linearIsometry (f : E →ₗᵢ[ℂ] F) (r : ℕ) :
       norm_map' := f.norm_map }
   rw [kahlerPowerForm_eq_ofComplexModule, kahlerPowerForm_eq_ofComplexModule]
   exact AlmostComplexStructure.kahlerPowerForm_comp_linearIsometry fR
-    (fun v ↦ by
+    ((isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ by
       rw [AlmostComplexStructure.ofComplexModule_apply,
         AlmostComplexStructure.ofComplexModule_apply]
       exact f.map_smul Complex.I v) r
-
-/-- The normalized Kähler power `ωʳ / r!` evaluates to `1` on the real frame
-`TauCeti.complexToRealFamily u` of every complex-orthonormal family `u : Fin r → E`. -/
-theorem kahlerPowerForm_complexToRealFamily {r : ℕ} {u : Fin r → E} (hu : Orthonormal ℂ u) :
-    kahlerPowerForm E r (complexToRealFamily u) = 1 := by
-  rw [kahlerPowerForm_eq_ofComplexModule]
-  exact AlmostComplexStructure.kahlerPowerForm_apply_of_adapted
-    (orthonormal_complexToRealFamily hu) (fun _ ↦ by simp)
 
 /-- **Hilbert norm of the normalized Kähler power**:
 `√⟨ωʳ / r!, ωʳ / r!⟩ = √((finrank ℂ E).choose r)`. -/
