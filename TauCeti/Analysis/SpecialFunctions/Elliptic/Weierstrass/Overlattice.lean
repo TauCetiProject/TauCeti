@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
-import Mathlib.GroupTheory.Coset.Basic
+import TauCeti.Topology.Algebra.InfiniteSum.Basic
 
 /-!
 # The Weierstrass function of the lattice `Λ ∪ (Λ - u)`
@@ -44,26 +44,20 @@ theorem two_mul_mem_lattice_of_mem_iff (hu : u ∉ L.lattice)
   · exact absurd (by simpa using neg_mem h) hu
 
 /-- A sum over the lattice `Λ ∪ (Λ - u)` of `M` is the sum over `Λ` plus the sum over the coset
-`Λ - u = -u + Λ`. -/
+`Λ - u = -u + Λ`: the case `g = -u` of `TauCeti.hasSum_union_leftAddCoset`. -/
 private lemma hasSum_of_mem_iff (hu : u ∉ L.lattice)
     (hM : ∀ x, x ∈ M.lattice ↔ x ∈ L.lattice ∨ x + u ∈ L.lattice) {f : ℂ → ℂ} {a b : ℂ}
     (ha : HasSum (fun l : L.lattice ↦ f l) a) (hb : HasSum (fun l : L.lattice ↦ f (l - u)) b) :
     HasSum (fun l : M.lattice ↦ f l) (a + b) := by
   let Λ := L.lattice.toAddSubgroup
-  have hS (x : ℂ) : x ∈ -u +ᵥ (Λ : Set ℂ) ↔ x + u ∈ L.lattice := by
-    rw [mem_leftAddCoset_iff, neg_neg, add_comm, SetLike.mem_coe, Submodule.mem_toAddSubgroup]
-  have hdisj : Disjoint (Λ : Set ℂ) (-u +ᵥ (Λ : Set ℂ)) :=
-    Set.disjoint_left.mpr fun x hx hxu ↦ hu (by simpa using sub_mem ((hS x).mp hxu) hx)
-  -- reindex the sum over the coset by `Λ`, through `l ↦ -u + l`, which is by definition the
-  -- inverse of `AddSubgroup.leftCosetEquivAddSubgroup (-u)`
-  have hb' : HasSum (fun x : ↥(-u +ᵥ (Λ : Set ℂ)) ↦ f x) b := by
-    rw [← (AddSubgroup.leftCosetEquivAddSubgroup (s := Λ) (-u)).symm.hasSum_iff]
-    exact hb.congr_fun fun l ↦ congr_arg f (neg_add_eq_sub u l)
   have hset : (M.lattice : Set ℂ) = (Λ : Set ℂ) ∪ (-u +ᵥ (Λ : Set ℂ)) := by
     ext x
-    rw [Set.mem_union, hS, SetLike.mem_coe, SetLike.mem_coe, Submodule.mem_toAddSubgroup, hM]
-  -- the subtypes of `M.lattice` as a submodule and of its carrier set are the same type
-  have := HasSum.add_disjoint (f := f) (a := a) hdisj ha hb'
+    rw [Set.mem_union, mem_leftAddCoset_iff, neg_neg, add_comm, SetLike.mem_coe, SetLike.mem_coe,
+      SetLike.mem_coe, Submodule.mem_toAddSubgroup, Submodule.mem_toAddSubgroup, hM]
+  -- the subtypes of `L.lattice` and of `Λ`, and of `M.lattice` as a submodule and of its carrier
+  -- set, are the same types
+  have := TauCeti.hasSum_union_leftAddCoset (s := Λ) (g := -u) (neg_mem_iff.not.mpr hu) ha
+    (hb.congr_fun fun l ↦ congr_arg f (neg_add_eq_sub u l))
   rwa [← hset] at this
 
 /-- **`℘` of the lattice `Λ ∪ (Λ - u)`**: if `u ∉ Λ` and the lattice of `M` consists of the `x`
