@@ -81,12 +81,17 @@ theorem truncation_powerBasis_basis (i : Fin (powerBasis (R := R) p).dim) :
     truncation p ((powerBasis (R := R) p).basis i) =
       (ι R R 1 : SymmetricAlgebra R R) ^ (i : ℕ) := by
   rw [PowerBasis.coe_basis, powerBasis_gen]
+  -- The goal is over `(hopfIdeal p).toIdeal` and `truncation_mk_pow` over `Ideal.span {x ^ p}`.
+  -- These are definitionally equal (`hopfIdeal_toIdeal` is `rfl`) but cannot be rewritten into each
+  -- other, since the quotient type depends on the ideal.
   exact truncation_mk_pow p (i.isLt.trans_eq (powerBasis_dim p))
 
 /-- The truncation map is a section of the quotient map `R[x] → R[x] / (xᵖ)`. -/
 theorem mk_truncation (a : CoordinateRing (R := R) p) :
     Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (truncation p a) = a := by
   apply (coordinateRingEquivAdjoinRoot (R := R) p).injective
+  -- `coordinateRingEquivAdjoinRoot_mk` is stated over `Ideal.span {x ^ p}`, definitionally the
+  -- ideal `(hopfIdeal p).toIdeal` of the goal (`hopfIdeal_toIdeal` is `rfl`).
   refine (coordinateRingEquivAdjoinRoot_mk p _).trans ?_
   rw [truncation, LinearMap.comp_apply, LinearMap.comp_apply,
     AlgEquiv.toLinearMap_apply, AlgEquiv.toLinearMap_apply, AlgEquiv.apply_symm_apply,
@@ -99,6 +104,8 @@ theorem truncation_injective : Function.Injective (truncation (R := R) p) :=
 /-- The truncation map sends `1` to `1`. -/
 @[simp]
 theorem truncation_one : truncation (R := R) p 1 = 1 := by
+  -- The middle step applies `truncation_mk_pow`, stated over `Ideal.span {x ^ p}`, to a class
+  -- modulo `(hopfIdeal p).toIdeal`: the two ideals are definitionally equal (`hopfIdeal_toIdeal`).
   calc truncation p 1
       = truncation p (Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (ι R R 1) ^ 0) :=
         congrArg (truncation p) (pow_zero _).symm
@@ -124,6 +131,8 @@ noncomputable def truncationCoalgHom :
     refine Finset.sum_congr rfl fun mn hmn ↦ ?_
     have hmn' := Finset.mem_antidiagonal.mp hmn
     have hi : (i : ℕ) < p := i.isLt.trans_eq (powerBasis_dim (R := R) p)
+    -- The classes are modulo `(hopfIdeal p).toIdeal`, and `truncation_mk_pow` is stated over the
+    -- definitionally equal `Ideal.span {x ^ p}` (`hopfIdeal_toIdeal` is `rfl`).
     exact congrArg₂ (fun a b ↦ (i : ℕ).choose mn.1 • a ⊗ₜ[R] b) (truncation_mk_pow p (by omega))
       (truncation_mk_pow p (by omega))
 

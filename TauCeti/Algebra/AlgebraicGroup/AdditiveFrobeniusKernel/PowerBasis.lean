@@ -70,6 +70,10 @@ theorem powerBasis_gen :
     (powerBasis (R := R) p).gen =
       Ideal.Quotient.mk (hopfIdeal (R := R) p).toIdeal (ι R R 1 : SymmetricAlgebra R R) := by
   rw [powerBasis, PowerBasis.map_gen, AdjoinRoot.powerBasis'_gen, AlgEquiv.symm_apply_eq]
+  -- `coordinateRingEquivAdjoinRoot_mk` is stated over `Ideal.span {x ^ p}`, which is the ideal
+  -- `(hopfIdeal p).toIdeal` of the goal by `hopfIdeal_toIdeal` (`rfl`). Neither `rw` nor `simp`
+  -- can rewrite that ideal, because the quotient type depends on it, so `Eq.trans` uses the
+  -- definitional equality directly.
   refine Eq.trans ?_ (coordinateRingEquivAdjoinRoot_mk p _).symm
   rw [equivPolynomial_ι_one, AdjoinRoot.mk_X]
 
