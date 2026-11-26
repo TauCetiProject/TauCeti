@@ -27,18 +27,6 @@ namespace TauCeti
 variable {C : Type*} [NormedField C] [IsUltrametricDist C] [CharZero C]
   {p : ℕ}
 
-omit [CharZero C] in
-/-- A prime of norm less than one determines the norm of every nonzero natural number. -/
-theorem norm_natCast_eq_pow_multiplicity (hp : p.Prime) (hpC : ‖(p : C)‖ < 1)
-    {m : ℕ} (hm : m ≠ 0) : ‖(m : C)‖ = ‖(p : C)‖ ^ multiplicity p m := by
-  have hfin : FiniteMultiplicity p m :=
-    Nat.finiteMultiplicity_iff.mpr ⟨hp.ne_one, Nat.pos_of_ne_zero hm⟩
-  obtain ⟨u, hu, hpu⟩ := hfin.exists_eq_pow_mul_and_not_dvd
-  conv_lhs => rw [hu]
-  rw [Nat.cast_mul, Nat.cast_pow, norm_mul, norm_pow,
-    IsUltrametricDist.norm_natCast_eq_one_of_coprime hpC (hp.coprime_iff_not_dvd.mpr hpu),
-    mul_one]
-
 /-- Legendre's lower bound for the norm of a factorial in an arbitrarily normalized
 ultrametric field. -/
 theorem rpow_div_le_norm_factorial (hp : p.Prime) (hpC : ‖(p : C)‖ < 1) (m : ℕ) :
@@ -50,7 +38,7 @@ theorem rpow_div_le_norm_factorial (hp : p.Prime) (hpC : ‖(p : C)‖ < 1) (m :
     hpC.le (multiplicity_factorial_le_div p m)
 
 /-- Inverse factorials grow at most geometrically with base `‖p‖ ^ (-(p - 1)⁻¹)`. -/
-theorem norm_inv_factorial_le_prime_norm (hp : p.Prime) (hpC : ‖(p : C)‖ < 1) (m : ℕ) :
+theorem norm_inv_factorial_le_norm_natCast_rpow_pow (hp : p.Prime) (hpC : ‖(p : C)‖ < 1) (m : ℕ) :
     ‖(m.factorial : C)⁻¹‖ ≤ (‖(p : C)‖ ^ (-((p : ℝ) - 1)⁻¹)) ^ m := by
   have hp0 : 0 < ‖(p : C)‖ := norm_pos_iff.mpr (Nat.cast_ne_zero.mpr hp.ne_zero)
   rw [norm_inv]
