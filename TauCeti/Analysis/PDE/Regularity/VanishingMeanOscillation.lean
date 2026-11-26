@@ -1111,7 +1111,7 @@ theorem exists_eLpNorm_gradient_le_eLpNorm_value_of_setAverage_le {p : ℝ≥0�
   have hp1 : 1 ≤ p := one_le_two.trans hp.le
   obtain ⟨C, δ, hδ, h⟩ :=
     exists_eLpNorm_gradient_ball_le_eLpNorm_value_of_setAverage_le (n := n) hp hp_top lam Lam
-  refine ⟨2 * 4 ^ (n + 1) * (C + 1) * 4, δ, hδ,
+  refine ⟨2 * 4 ^ (n + 1) * (4 * (C + 1)), δ, hδ,
     fun {a r₀} hr₀ ham hell hosc u G hu hgrad => ?_⟩
   -- A forcing outside `Lᵖ` makes the right side infinite.
   rcases eq_or_ne (eLpNorm G p volume) ⊤ with hGtop | hGfin
@@ -1121,39 +1121,36 @@ theorem exists_eLpNorm_gradient_le_eLpNorm_value_of_setAverage_le {p : ℝ≥0�
   have hR : 0 < R := by positivity
   have hval : AEStronglyMeasurable (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) volume := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.aestronglyMeasurable (W1p.value u)
-  set c : ℝ := ((C + 1 : ℝ≥0) : ℝ)
+  set c : ℝ := 4 * ((C + 1 : ℝ≥0) : ℝ) with hc_def
+  have hc0 : 0 ≤ c := by positivity
+  have hC : (C : ℝ≥0∞) ≤ ENNReal.ofReal c := by
+    rw [hc_def, ENNReal.ofReal_mul zero_le_four, ENNReal.ofReal_ofNat, ENNReal.ofReal_coe_nnreal]
+    exact (ENNReal.coe_le_coe.2 le_self_add).trans (le_mul_of_one_le_left' (by norm_num))
+  have hcR : ENNReal.ofReal (c * r₀⁻¹) = (C + 1 : ℝ≥0) * ENNReal.ofReal R⁻¹ := by
+    rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul NNReal.zero_le_coe, hc_def, hR_def,
+      inv_div]
+    congr 1
+    ring
   -- The interior estimate on `B(y, R/2)`, at every centre `y`.
   have hlocal : ∀ y, eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
       EuclideanSpace ℝ (Fin (n + 1))) p (volume.restrict (ball y (R / 2))) ≤
       ENNReal.ofReal c * eLpNorm G p (volume.restrict (ball y (4 * (R / 2)))) +
-        ENNReal.ofReal (c * R⁻¹) * eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p
+        ENNReal.ofReal (c * r₀⁻¹) * eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p
           (volume.restrict (ball y (4 * (R / 2)))) := fun y => by
-    rw [show 4 * (R / 2) = 2 * R by ring, ENNReal.ofReal_mul (by positivity),
-      ENNReal.ofReal_coe_nnreal, mul_assoc, ← mul_add]
+    rw [show 4 * (R / 2) = 2 * R by ring, hcR, mul_assoc]
     refine (h ham (fun x => hell.opNorm_matrixBilinearForm_le (mem_univ x)) hosc (Ω := ⊤)
       (x₀ := y) (R := R) (hell.mono_set (subset_univ _)) (by rw [hR_def]; linarith)
       (subset_univ _) u G (fun φ => by rw [hu φ, Opens.coe_top, Measure.restrict_univ])
       (hgrad.restrict _)).trans ?_
+    rw [mul_add]
     gcongr
     exact le_self_add
-  -- Average the interior estimates over all centres; `R⁻¹ = 4 r₀⁻¹`.
+  -- Average the interior estimates over all centres.
   refine (eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add hp1 hp_top hgrad.aestronglyMeasurable hG
-    hval (by positivity) (by positivity) (by norm_num) (half_pos hR)
-    (Eventually.of_forall hlocal)).trans ?_
-  rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_coe_nnreal, hR_def, inv_div,
-    div_eq_mul_inv, ENNReal.ofReal_mul zero_le_four, ENNReal.ofReal_ofNat,
-    finrank_euclideanSpace_fin]
-  push_cast
-  calc 2 * 4 ^ (n + 1) * ((C + 1) * eLpNorm G p volume + (C + 1) * (4 * ENNReal.ofReal r₀⁻¹) *
-        eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p volume)
-      = 2 * 4 ^ (n + 1) * (C + 1) * eLpNorm G p volume + 2 * 4 ^ (n + 1) * (C + 1) * 4 *
-          (ENNReal.ofReal r₀⁻¹ * eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p
-            volume) := by ring
-    _ ≤ 2 * 4 ^ (n + 1) * (C + 1) * 4 * eLpNorm G p volume + 2 * 4 ^ (n + 1) * (C + 1) * 4 *
-          (ENNReal.ofReal r₀⁻¹ * eLpNorm (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) p
-            volume) :=
-        add_le_add_left (mul_le_mul_left (le_mul_of_one_le_right' (by norm_num)) _) _
-    _ = _ := by ring
+    hval (by norm_num) (half_pos hR) (Eventually.of_forall hlocal)).trans_eq ?_
+  rw [ENNReal.ofReal_mul hc0, mul_assoc (ENNReal.ofReal c), ← mul_add, ← mul_assoc]
+  congr 1
+  simp [hc_def, ENNReal.ofReal_mul, ENNReal.ofReal_add]
 
 end WholeSpace
 

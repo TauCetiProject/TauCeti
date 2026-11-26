@@ -269,17 +269,18 @@ theorem measure_ball_rpow_mul_eLpNorm_restrict_ball_le {q : ℝ≥0∞} (hq : 1 
         exact ENNReal.rpow_le_self_of_one_le (one_le_pow₀ (ENNReal.one_le_ofReal.2 hc)) he1
 
 /-- **Global estimates from local ones by two functions on concentric balls.** Let `μ` be an
-additive Haar measure on a finite-dimensional real normed space `E`, let `1 ≤ p < ∞`, `0 ≤ c₁`,
-`0 ≤ c₂`, `1 ≤ κ` and `0 < r`. If, at almost every centre `y`,
+additive Haar measure on a finite-dimensional real normed space `E`, let `1 ≤ p < ∞`, `1 ≤ κ`
+and `0 < r`. If, at almost every centre `y`,
 
 `‖g‖_{Lᵖ(B(y, r))} ≤ c₁ ‖f₁‖_{Lᵖ(B(y, κ r))} + c₂ ‖f₂‖_{Lᵖ(B(y, κ r))}`,
 
 then `‖g‖_{Lᵖ} ≤ 2 κ ^ dim E (c₁ ‖f₁‖_{Lᵖ} + c₂ ‖f₂‖_{Lᵖ})`. The constant does not depend on `r`,
-and no integrability is assumed: the seminorms may be infinite. -/
+and no integrability is assumed: the seminorms may be infinite. The constants enter only through
+`ENNReal.ofReal`, so a negative constant acts as `0`. -/
 theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ ∞) {g : E → F}
     {f₁ : E → G₁} {f₂ : E → G₂} (hg : AEStronglyMeasurable g μ)
     (hf₁ : AEStronglyMeasurable f₁ μ) (hf₂ : AEStronglyMeasurable f₂ μ) {c₁ c₂ κ r : ℝ}
-    (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂) (hκ : 1 ≤ κ) (hr : 0 < r)
+    (hκ : 1 ≤ κ) (hr : 0 < r)
     (hle : ∀ᵐ y ∂μ, eLpNorm g p (μ.restrict (ball y r)) ≤
       ENNReal.ofReal c₁ * eLpNorm f₁ p (μ.restrict (ball y (κ * r))) +
         ENNReal.ofReal c₂ * eLpNorm f₂ p (μ.restrict (ball y (κ * r)))) :
@@ -287,19 +288,21 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p �
       (ENNReal.ofReal c₁ * eLpNorm f₁ p μ + ENNReal.ofReal c₂ * eLpNorm f₂ p μ) := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
   -- Both terms of each local bound are dominated by the local seminorm of one function `h`.
-  set h₁ : E → ℝ := c₁ • fun x => ‖f₁ x‖
-  set h₂ : E → ℝ := c₂ • fun x => ‖f₂ x‖
-  have hh₁ : AEStronglyMeasurable h₁ μ := hf₁.norm.const_smul c₁
-  have hh₂ : AEStronglyMeasurable h₂ μ := hf₂.norm.const_smul c₂
+  -- Since `ENNReal.ofReal c = ENNReal.ofReal (max c 0)`, the constants may be taken nonnegative.
+  set h₁ : E → ℝ := max c₁ 0 • fun x => ‖f₁ x‖
+  set h₂ : E → ℝ := max c₂ 0 • fun x => ‖f₂ x‖
+  have hh₁ : AEStronglyMeasurable h₁ μ := hf₁.norm.const_smul _
+  have hh₂ : AEStronglyMeasurable h₂ μ := hf₂.norm.const_smul _
   have hsmul : ∀ (ν : Measure E), AEStronglyMeasurable f₁ ν → AEStronglyMeasurable f₂ ν →
       eLpNorm h₁ p ν = ENNReal.ofReal c₁ * eLpNorm f₁ p ν ∧
         eLpNorm h₂ p ν = ENNReal.ofReal c₂ * eLpNorm f₂ p ν := fun ν h₁ν h₂ν => by
     simp only [h₁, h₂, eLpNorm_const_smul, eLpNorm_norm _ h₁ν, eLpNorm_norm _ h₂ν,
-      Real.eNorm_eq_ofReal hc₁, Real.eNorm_eq_ofReal hc₂, and_self]
+      Real.eNorm_eq_ofReal (le_max_right _ 0), ENNReal.ofReal_max, ENNReal.ofReal_zero,
+      max_zero, and_self]
   have hdom : ∀ x, ‖h₁ x‖ ≤ (h₁ + h₂) x ∧ ‖h₂ x‖ ≤ (h₁ + h₂) x := fun x => by
-    have : 0 ≤ h₁ x := mul_nonneg hc₁ (norm_nonneg _)
-    have : 0 ≤ h₂ x := mul_nonneg hc₂ (norm_nonneg _)
-    rw [Real.norm_of_nonneg (by assumption), Real.norm_of_nonneg (by assumption), Pi.add_apply]
+    have h₁x : 0 ≤ h₁ x := mul_nonneg (le_max_right _ _) (norm_nonneg _)
+    have h₂x : 0 ≤ h₂ x := mul_nonneg (le_max_right _ _) (norm_nonneg _)
+    rw [Real.norm_of_nonneg h₁x, Real.norm_of_nonneg h₂x, Pi.add_apply]
     constructor <;> linarith
   have hlocal : ∀ᵐ y ∂μ, eLpNorm g p (μ.restrict (ball y r)) ≤
       eLpNorm ((2 : ℝ) • (h₁ + h₂)) p (μ.restrict (ball y (κ * r))) := hle.mono fun y hy => by
@@ -349,16 +352,14 @@ theorem lpNorm_le_of_ae_lpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p ≠ 
     rw [ENNReal.ofReal_add (mul_nonneg hc₁ lpNorm_nonneg) (mul_nonneg hc₂ lpNorm_nonneg),
       ENNReal.ofReal_mul hc₁, ENNReal.ofReal_mul hc₂, ofReal_lpNorm h₁ν, ofReal_lpNorm h₂ν]
   have hglobal := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add hp1 hp hg.aestronglyMeasurable
-    hf₁.aestronglyMeasurable hf₂.aestronglyMeasurable hc₁ hc₂ one_le_two hr
+    hf₁.aestronglyMeasurable hf₂.aestronglyMeasurable one_le_two hr
     (hle.mono fun y hy => by
       rw [← ofReal_lpNorm (hg.restrict _), hofReal _ (hf₁.restrict _) (hf₂.restrict _)]
       exact ENNReal.ofReal_le_ofReal hy)
   rw [← ofReal_lpNorm hg, hofReal μ hf₁ hf₂, ENNReal.ofReal_ofNat] at hglobal
   have hreal := ENNReal.toReal_mono (by finiteness) hglobal
-  rwa [ENNReal.toReal_ofReal lpNorm_nonneg, ENNReal.toReal_mul, ENNReal.toReal_mul,
-    ENNReal.toReal_pow, ENNReal.toReal_ofNat, ENNReal.toReal_ofReal
-      (add_nonneg (mul_nonneg hc₁ lpNorm_nonneg) (mul_nonneg hc₂ lpNorm_nonneg)), ← pow_succ']
-    at hreal
+  simpa [ENNReal.toReal_ofReal lpNorm_nonneg, pow_succ', ENNReal.toReal_ofReal
+    (add_nonneg (mul_nonneg hc₁ lpNorm_nonneg) (mul_nonneg hc₂ lpNorm_nonneg))] using hreal
 
 end FiniteDimensional
 
