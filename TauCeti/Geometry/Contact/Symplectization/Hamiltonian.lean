@@ -53,8 +53,8 @@ right is the Jacobi bracket of the contact form `α`; in terms of `r` the identi
 * `TauCeti.SmoothForm.IsContactForm.poissonBracket_symplectization_exp_mul`:
   `{eᵗ f, eᵗ g} = eᵗ (dα(X_f, X_g) + f R_α(g) - g R_α(f))`.
 
-The last two formulas hold at `(t, x)` as soon as `α` is a contact form at `x`
-(`TauCeti.SmoothForm.hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt`,
+The formulas for `X_(eᵗ f)` and `{eᵗ f, eᵗ g}` hold at `(t, x)` as soon as `α` is a contact form
+at `x` (`TauCeti.SmoothForm.hamiltonianVectorField_symplectization_exp_mul_of_isContactFormAt`,
 `TauCeti.SmoothForm.poissonBracket_symplectization_exp_mul_of_isContactFormAt`), which is what a
 local contact form of a contact structure provides.
 
