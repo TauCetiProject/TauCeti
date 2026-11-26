@@ -18,6 +18,7 @@ public import TauCeti.LinearAlgebra.Matrix.IdealEntries
 import Mathlib.Algebra.Order.Star.Real
 import Mathlib.LinearAlgebra.Matrix.Nondegenerate
 import Mathlib.LinearAlgebra.Matrix.PosDef
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
 import Mathlib.Data.Fintype.EquivFin
 import TauCeti.LinearAlgebra.Matrix.Symmetric
@@ -51,6 +52,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 
 * `Matrix.J_mul_neg_J`, `Matrix.neg_J_mul_J` and `Matrix.isUnit_J`: the canonical skew-symmetric
   matrix is a unit, with inverse `-J`.
+* `Matrix.J_mul_fromBlocks_zero₁₂_zero₂₁`: left multiplication by `J` turns a block diagonal
+  matrix `[[A, 0], [0, D]]` into the antidiagonal matrix `[[0, -D], [A, 0]]`.
 * `Matrix.det_J`: its determinant is `1`.
 * `Matrix.star_J` and `Matrix.J_mem_unitaryGroup`: over any star ring its adjoint is `-J`, so
   it is unitary (orthogonal over `ℝ`).
@@ -80,9 +83,15 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   `-1` its kernel is the space of fixed vectors of `Ψ`
   (`Matrix.ker_mulVecLin_transpose_mul_J_sub_J_mul`). On every vector its quadratic form is twice
   that of `-(J * Ψ)` (`Matrix.dotProduct_transpose_mul_J_sub_J_mul_mulVec`).
+* `Matrix.IsSymm.transpose_mul_mul_add_transpose_mul_J_mul`: if `S` is symmetric and
+  `G'ᵀ * J * G + Gᵀ * J * G' = 0`, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric.
 * `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
   equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
   alternating `E` with entries in `I`, without dividing by two.
+* `Matrix.one_add_mul_mul_J_mul_transpose_sub_J`: correcting `M` by such an `X` leaves the
+  defect `X * E + E * Xᵀ + X * J * Xᵀ + X * E * Xᵀ`, quadratic in `X` and `E`.
+* `Matrix.mul_J_mul_transpose_sub_J_mem_of_sub_mem`: a matrix congruent modulo an ideal `𝔞` to
+  one whose defect has entries in `𝔞` has defect with entries in `𝔞`.
 * `Matrix.one_add_mul_mem_symplecticGroup`: over a square-zero ideal `I`, correcting `M` by
   `1 + X`, where `X` has entries in `I` and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix
   when `M * J * Mᵀ - J = E`.
@@ -96,6 +105,8 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
   symplectic ones are exactly the orthogonal ones, and an orthogonal symplectic matrix commutes
   with `J`. Any two of the three conditions symplectic, orthogonal and commuting with `J` imply the
   third.
+* `SymplecticGroup.mem_iff_toBlocks`: a matrix is symplectic exactly when its blocks satisfy the
+  relations `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`.
 * `SymplecticGroup.fromBlocks_upper_mem`: `fromBlocks 1 B 0 1` for symmetric `B`;
 * `SymplecticGroup.fromBlocks_lower_mem`: `fromBlocks 1 0 C 1` for symmetric `C`;
 * `SymplecticGroup.fromBlocks_diagonal_mem`: `fromBlocks A 0 0 D` when `Aᵀ * D = 1`.
@@ -154,6 +165,12 @@ theorem neg_J_mul_J : (-J l R) * J l R = 1 := by
 /-- The canonical skew-symmetric matrix is a unit, with inverse `-J`, because `J * J = -1`. -/
 theorem isUnit_J : IsUnit (J l R) :=
   ⟨⟨J l R, -J l R, J_mul_neg_J l R, neg_J_mul_J l R⟩, rfl⟩
+
+/-- Left multiplication by `J` turns a block diagonal matrix into an antidiagonal one:
+`J * [[A, 0], [0, D]] = [[0, -D], [A, 0]]`. -/
+theorem J_mul_fromBlocks_zero₁₂_zero₂₁ (A D : Matrix l l R) :
+    J l R * fromBlocks A 0 0 D = fromBlocks 0 (-D) A 0 := by
+  simp [J, fromBlocks_multiply]
 
 /-- The canonical skew-symmetric matrix has determinant one. Mathlib records only
 `det J * det J = 1` (`Matrix.J_det_mul_J_det`), which leaves the sign open. -/
@@ -356,6 +373,16 @@ theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (l ⊕ l) (l ⊕ l) R}
     J_squared]
   simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
 
+/-- If `S` is symmetric and `G'ᵀ * J * G + Gᵀ * J * G' = 0`, as for the derivative `G'` of a path
+`G` of symplectic matrices, then `Gᵀ * S * G + Gᵀ * J * G'` is symmetric. This is the matrix of
+the equation `Ψ' = J * S * Ψ` after a change of frame by `G`. -/
+theorem IsSymm.transpose_mul_mul_add_transpose_mul_J_mul {S G G' : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hS : S.IsSymm) (h : G'ᵀ * J l R * G + Gᵀ * J l R * G' = 0) :
+    (Gᵀ * S * G + Gᵀ * J l R * G').IsSymm := by
+  simp only [IsSymm, transpose_add, transpose_mul, transpose_transpose, hS.eq, J_transpose,
+    Matrix.neg_mul, Matrix.mul_neg, Matrix.mul_assoc, add_right_inj, neg_eq_iff_eq_neg]
+  simpa only [Matrix.mul_assoc] using eq_neg_of_add_eq_zero_left h
+
 /-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
 theorem mul_J_mul_transpose_sub_J_apply_self (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
     (M * J l R * Mᵀ - J l R) i i = 0 := by
@@ -393,6 +420,44 @@ theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
       E + Y + -Yᵀ = E + (Y - Yᵀ) := by abel
       _ = 0 := by rw [hY_sub, add_neg_cancel]
 
+/-- **The symplectic defect after a linearized correction.** If `M * J * Mᵀ - J = E` and
+`E + X * J + J * Xᵀ = 0`, the defect of `(1 + X) * M` is the sum of the terms quadratic in `X`
+and `E`. -/
+theorem one_add_mul_mul_J_mul_transpose_sub_J {M E X : Matrix (l ⊕ l) (l ⊕ l) R}
+    (hM : M * J l R * Mᵀ - J l R = E) (hX : E + X * J l R + J l R * Xᵀ = 0) :
+    (1 + X) * M * J l R * ((1 + X) * M)ᵀ - J l R =
+      X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ := by
+  calc
+    (1 + X) * M * J l R * ((1 + X) * M)ᵀ - J l R =
+        (1 + X) * (M * J l R * Mᵀ) * (1 + Xᵀ) - J l R := by
+          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
+          noncomm_ring
+    _ = (1 + X) * (J l R + E) * (1 + Xᵀ) - J l R := by rw [← hM, add_sub_cancel]
+    _ = (E + X * J l R + J l R * Xᵀ) +
+          (X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ) := by
+        noncomm_ring
+    _ = _ := by rw [hX, zero_add]
+
+/-- **The symplectic defect modulo an ideal.** If `L` is congruent entrywise to `M` modulo `𝔞`
+and the defect `M * J * Mᵀ - J` has entries in `𝔞`, so does the defect of `L`. -/
+theorem mul_J_mul_transpose_sub_J_mem_of_sub_mem {𝔞 : Ideal R}
+    {L M : Matrix (l ⊕ l) (l ⊕ l) R} (hLM : ∀ i j, (L - M) i j ∈ 𝔞)
+    (hM : ∀ i j, (M * J l R * Mᵀ - J l R) i j ∈ 𝔞) (i j : l ⊕ l) :
+    (L * J l R * Lᵀ - J l R) i j ∈ 𝔞 := by
+  set D := L - M
+  have hL : L = M + D := by simp [D]
+  have hD : ∀ i j, (D * J l R) i j ∈ 𝔞 := mul_apply_mem_right hLM (J l R)
+  have hDt : ∀ i j, Dᵀ i j ∈ 𝔞 := fun i j ↦ hLM j i
+  have h : L * J l R * Lᵀ - J l R = (M * J l R * Mᵀ - J l R) + D * J l R * Mᵀ +
+      M * J l R * Dᵀ + D * J l R * Dᵀ := by
+    rw [hL, Matrix.transpose_add]
+    noncomm_ring
+  rw [h]
+  simp only [Matrix.add_apply]
+  exact 𝔞.add_mem (𝔞.add_mem (𝔞.add_mem (hM i j)
+    (mul_apply_mem_right hD Mᵀ i j)) (mul_apply_mem_left hDt (M * J l R) i j))
+    (mul_apply_mem_left hDt (D * J l R) i j)
+
 /-- Correcting a matrix `M` with `M * J * Mᵀ - J = E` by `1 + X`, where `X` has entries in a
 square-zero ideal and `E + X * J + J * Xᵀ = 0`, gives a symplectic matrix. -/
 theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal R))
@@ -415,19 +480,9 @@ theorem one_add_mul_mem_symplecticGroup {I : Ideal R} (hI : I ^ 2 = (⊥ : Ideal
   have hE_mul_Xt : E * Xᵀ = 0 := mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hE_mem hXt_mem
   have hXJ_mul_Xt : X * J l R * Xᵀ = 0 :=
     mul_eq_zero_of_mul_eq_bot (sq I ▸ hI) hXJ_mem hXt_mem
-  rw [SymplecticGroup.mem_iff]
-  calc
-    (1 + X) * M * J l R * ((1 + X) * M).transpose =
-        (1 + X) * (M * J l R * Mᵀ) * (1 + Xᵀ) := by
-          rw [Matrix.transpose_mul, Matrix.transpose_add, Matrix.transpose_one]
-          noncomm_ring
-    _ = (1 + X) * (J l R + E) * (1 + Xᵀ) := by rw [← hM, add_sub_cancel]
-    _ = J l R + (E + X * J l R + J l R * Xᵀ) +
-          X * E + E * Xᵀ + X * J l R * Xᵀ + X * E * Xᵀ := by
-        noncomm_ring
-    _ = J l R := by
-        rw [hX, hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
-        simp
+  rw [SymplecticGroup.mem_iff, ← sub_eq_zero, one_add_mul_mul_J_mul_transpose_sub_J hM hX,
+    hX_mul_E, hE_mul_Xt, hXJ_mul_Xt]
+  simp
 
 end Matrix
 
@@ -479,6 +534,17 @@ theorem commute_J_of_mem_orthogonalGroup {A : Matrix (l ⊕ l) (l ⊕ l) R}
   calc J l R * A = A * J l R * Aᵀ * A := by rw [hS]
     _ = A * J l R := by rw [Matrix.mul_assoc, hO, Matrix.mul_one]
 
+/-- **The block relations of a symplectic matrix.** A matrix `M = [[A, B], [C, D]]` is symplectic
+exactly when `Aᵀ C = Cᵀ A`, `Bᵀ D = Dᵀ B` and `Aᵀ D - Cᵀ B = 1`; this is
+`SymplecticGroup.fromBlocks_mem_iff` stated for the blocks `M.toBlocksᵢⱼ` of an arbitrary `M`. -/
+theorem mem_iff_toBlocks {M : Matrix (l ⊕ l) (l ⊕ l) R} :
+    M ∈ symplecticGroup l R ↔
+      M.toBlocks₁₁ᵀ * M.toBlocks₂₁ = M.toBlocks₂₁ᵀ * M.toBlocks₁₁ ∧
+        M.toBlocks₁₂ᵀ * M.toBlocks₂₂ = M.toBlocks₂₂ᵀ * M.toBlocks₁₂ ∧
+        M.toBlocks₁₁ᵀ * M.toBlocks₂₂ - M.toBlocks₂₁ᵀ * M.toBlocks₁₂ = 1 := by
+  conv_lhs => rw [← M.fromBlocks_toBlocks]
+  exact fromBlocks_mem_iff
+
 /-- An upper unitriangular block matrix is symplectic when its upper-right block is symmetric. -/
 theorem fromBlocks_upper_mem {B : Matrix l l R} (hB : Bᵀ = B) :
     fromBlocks 1 B 0 1 ∈ symplecticGroup l R := by
@@ -506,8 +572,7 @@ theorem isUnit_det_mul_J_add_J_mul {A : Matrix (l ⊕ l) (l ⊕ l) ℝ}
   have hkey : (A * J l ℝ + J l ℝ * A) * Aᵀ = J l ℝ * (1 + A * Aᵀ) := by
     rw [add_mul, hsymp, mul_add, mul_one, Matrix.mul_assoc]
   have hpos : (1 + A * Aᵀ).PosDef := by
-    simpa [conjTranspose_eq_transpose_of_trivial] using
-      PosDef.one.add_posSemidef (posSemidef_self_mul_conjTranspose A)
+    simpa [conjTranspose_eq_transpose_of_trivial] using posDef_one_add_mul_conjTranspose A
   have h := congrArg Matrix.det hkey
   rw [det_mul, det_mul] at h
   have hne : (J l ℝ).det * (1 + A * Aᵀ).det ≠ 0 :=

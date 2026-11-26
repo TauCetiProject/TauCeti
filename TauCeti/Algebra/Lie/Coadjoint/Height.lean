@@ -26,7 +26,7 @@ bilinear form
 
 `h_(p,X)(A, C) = -B(⁅A, p⁆, ⁅C, X⁆)`
 
-on `L` (`LinearMap.BilinForm.heightHessian`). For a symmetric invariant form and `⁅X, p⁆ = 0` it is
+on `L` (`LinearMap.BilinForm.heightHessian`). For an invariant form and `⁅X, p⁆ = 0` it is
 symmetric (`LinearMap.BilinForm.isSymm_heightHessian`), and it is the Hessian of `f_X` at `p`
 pulled back to `L` along the orbit derivative `A ↦ ⁅A, p⁆`, whose kernel, the centralizer of `p`,
 lies in the kernel of `h_(p,X)` (`LinearMap.BilinForm.ker_ad_le_ker_heightHessian`). Since the
@@ -62,7 +62,9 @@ of the planes are hypotheses here; the formulas themselves are linear algebra ov
 field and use neither the invariance nor the symmetry of `B`.
 
 The decomposition of `so(3)` into a line and its orthogonal plane is worked out in
-`TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`.
+`TauCeti.Algebra.Lie.Orthogonal.CrossProduct.RootPlane`. The descent of the Hessian to the
+tangent model `L ⧸ L_ν` of the orbit, and the dimension of the orbit, are in
+`TauCeti.Algebra.Lie.Coadjoint.Height.TangentModel`.
 
 ## Main definitions
 
@@ -74,6 +76,7 @@ The decomposition of `so(3)` into a line and its orthogonal plane is worked out 
 
 * `LinearMap.BilinForm.forall_apply_lie_eq_zero_iff`: the critical points of a height.
 * `LinearMap.BilinForm.isSymm_heightHessian`: the Hessian is symmetric at a critical point.
+* `TauCeti.IsRootPlane.heightHessian_apply`: the Hessian on a root plane.
 * `TauCeti.IsRootPlaneDecomposition.heightHessian_add_sum_add_sum`: the Hessian is diagonal in a
   root-plane decomposition.
 * `TauCeti.IsRootPlaneDecomposition.sigNeg_toQuadraticMap_heightHessian`,
@@ -140,25 +143,41 @@ theorem ker_ad_le_ker_heightHessian :
   ext C
   simp [hA]
 
-/-- **The Hessian of a height is symmetric at a critical point.** For a symmetric invariant form
-`B` and `⁅X, p⁆ = 0`, the form `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)` is symmetric. -/
-theorem isSymm_heightHessian (hB : B.lieInvariant L) (hBs : B.IsSymm) (hXp : ⁅X, p⁆ = 0) :
+/-- **The Hessian of a height is symmetric at a critical point.** For an invariant form `B` and
+`⁅X, p⁆ = 0`, the form `(A, C) ↦ -B(⁅A, p⁆, ⁅C, X⁆)` is symmetric
+(`LinearMap.BilinForm.lieInvariant.apply_lie_lie_comm`). No symmetry of `B` is needed. -/
+theorem isSymm_heightHessian (hB : B.lieInvariant L) (hXp : ⁅X, p⁆ = 0) :
     (B.heightHessian p X).IsSymm := by
   refine ⟨fun A C ↦ ?_⟩
-  -- `B(p, ⁅Y, X⁆) = -B(⁅X, Y⁆, p) = B(Y, ⁅X, p⁆)` vanishes for every `Y`.
-  have hp (Y : L) : B p ⁅Y, X⁆ = 0 := by
-    simp [hBs.eq p, ← lie_skew Y X, -lie_skew, hB X Y p, hXp]
-  -- The Jacobi identity turns `B(p, ⁅⁅A, C⁆, X⁆) = 0` into the symmetry.
-  have hJ := hp ⁅A, C⁆
-  rw [lie_lie, map_sub, sub_eq_zero] at hJ
   simp only [heightHessian_apply, neg_inj]
-  rw [hB A p, hB C p, hJ]
+  exact hB.apply_lie_lie_comm hXp A C
+
+/-- **The height Hessian as a form on generators of the coadjoint orbit.** For an invariant form,
+`h_(p,X)(A, C) = (B p)(⁅⁅X, C⁆, A⁆)`. When `⁅X, p⁆ = 0`, the right side is the Hessian of the
+height `f_X` at the critical point `B p` of the coadjoint orbit, evaluated on the generators of `A`
+and `C`. -/
+theorem heightHessian_apply_eq_apply_lie_lie (hB : B.lieInvariant L) (A C : L) :
+    B.heightHessian p X A C = B p ⁅⁅X, C⁆, A⁆ := by
+  rw [heightHessian_apply, ← lie_skew C X, map_neg, hB A p, ← lie_skew ⁅X, C⁆ A, map_neg, neg_neg]
 
 end LinearMap.BilinForm
 
-/-! ### Root-plane decompositions -/
-
 namespace TauCeti
+
+namespace IsRootPlane
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {B : LinearMap.BilinForm R L}
+  {t : Submodule R L} {α : Dual R t} {E : Submodule R L} {J : Module.End R E}
+
+/-- **The height Hessian on a root plane.** For `p, X ∈ t` and `A, C` in a root plane with root
+`α`, the height Hessian is `h_(p,X)(A, C) = -α(p) α(X) B(A, C)`. -/
+theorem heightHessian_apply (h : IsRootPlane B t α E J) (p X : t) (v w : E) :
+    B.heightHessian p X v w = -(α p * α X * B v w) := by
+  rw [LinearMap.BilinForm.heightHessian_apply, h.apply_lie_lie]
+
+end IsRootPlane
+
+/-! ### Root-plane decompositions -/
 
 variable {R L : Type*} [CommRing R] [PartialOrder R] [LieRing L] [LieAlgebra R L]
 
@@ -280,14 +299,6 @@ variable {K L : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K] [LieRin
   [LieAlgebra K L] {ι : Type*} [Fintype ι] {B : LinearMap.BilinForm K L} {t : Submodule K L}
   {α : ι → Dual K t} {E : ι → Submodule K L} {J : ∀ i, Module.End K (E i)}
 
-omit [IsStrictOrderedRing K] [Fintype ι] in
-/-- The dimension of the sum of the planes indexed by `s` is the sum of their dimensions. -/
-theorem finrank_biSup [FiniteDimensional K L] (hD : IsRootPlaneDecomposition B t α E J)
-    (s : Finset ι) : finrank K ↥(⨆ i ∈ s, E i) = ∑ i ∈ s, finrank K (E i) := by
-  rw [iSup_subtype', finrank_iSup_eq_sum_finrank_of_iSupIndep (V := fun i : s ↦ E i)
-      (hD.iSupIndep.comp Subtype.val_injective),
-    Finset.sum_coe_sort s fun i ↦ finrank K (E i)]
-
 omit [Fintype ι] in
 /-- The Hessian `h_(p,X)` is negative definite on the planes `E_i` with `α_i(p) α_i(X) > 0`. -/
 private theorem toQuadraticMap_heightHessian_neg (hD : IsRootPlaneDecomposition B t α E J)
@@ -345,7 +356,7 @@ private theorem sigNeg_toQuadraticMap_heightHessian_of_forall [Finite ι] [Finit
     by_contra hx0
     exact (hD.toQuadraticMap_heightHessian_neg p X hs hxA hx0).not_ge (hW x hxW)
   exact (QuadraticForm.sigNeg_eq_finrank_of_isCompl_of_negDef Q hAW hA hW).trans
-    (hD.finrank_biSup s)
+    (finrank_biSup_eq_sum_finrank_of_iSupIndep hD.iSupIndep s)
 
 /-- **The Morse index of a height at a torus point.** In a root-plane decomposition, the negative
 index of the Hessian `h_(p,X)` of the height `f_X` at `p ∈ t`, for `X ∈ t`, is the sum of the

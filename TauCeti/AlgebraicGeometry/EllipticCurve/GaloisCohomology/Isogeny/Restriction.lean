@@ -41,11 +41,15 @@ the image of a local Kummer map of `φ` serve as the local condition of the `φ`
 
 * `TauCeti.Isogeny.pointCoeffMap_baseChange_pointCoeffBaseChange`: the action of an isogeny over
   `K` on the points over the separable closures commutes with restriction along `τ`.
-* `TauCeti.Isogeny.pointRes_kerCoeffIncl`: restriction commutes with
-  `H¹(G, E₁[φ]) → H¹(G, E₁)`.
+* `TauCeti.Isogeny.pointRes_kerCoeffIncl`, `TauCeti.Isogeny.pointRes_dualKerCoeffIncl`:
+  restriction commutes with `H¹(G, E₁[φ]) → H¹(G, E₁)` and `H¹(G, E₂[φ̂]) → H¹(G, E₂)`.
+* `TauCeti.Isogeny.dualKerRes_eq_explicitMap1`: `dualKerRes` is the pullback along `τ` and
+  `dualKerCoeffBaseChange`.
 * `TauCeti.Isogeny.kerRes_kummerMap`: restriction commutes with the Kummer maps of `φ`.
 * `TauCeti.Isogeny.explicitCoeff1_kerCoeffIncl_dualKerRes`: `dualKerRes` and the restriction
   `TauCeti.Isogeny.kerRes` of `φ̂` agree after inclusion into `H¹(G_L, E₂)`.
+* `TauCeti.Isogeny.dualKerRes_eq_zero_iff`: `dualKerRes` and the restriction of `φ̂` have the
+  same kernel.
 * `TauCeti.Isogeny.dualKerRes_kummerMap`: `dualKerRes` carries Kummer classes of `φ̂` to Kummer
   classes of the dual of `φ_L`.
 
@@ -139,6 +143,19 @@ theorem pointRes_kerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ).Ker
 
 /-! ### Restriction to the kernel of the dual of the base change -/
 
+/-- **The kernels of `φ̂_L` and `(φ_L)^` agree** as subgroups of `E₂(Lˢ)`: the base change of the
+dual of `φ` is the dual of its base change, by `TauCeti.Isogeny.dual_map`. -/
+theorem ker_pointCoeffMap_dual_baseChange :
+    ((ofIsogeny (φ.dual.baseChange L)).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker =
+      ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
+        (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
+  rw [baseChange, dual_map φ (algebraMap K L)]
+  -- The dual produced by `dual_map` lives over the curves `W.toAffine.map (algebraMap K L)`, which
+  -- are `(W⁄L).toAffine` by definition of `WeierstrassCurve.baseChange`. These curves occur in the
+  -- types, so they are identified definitionally rather than by rewriting.
+  rfl
+
 /-- **The coordinate map along `τ` carries `E₂(Kˢ)[φ̂]` into `E₂(Lˢ)[(φ_L)^]`**, the kernel of the
 dual of the base change of `φ`. -/
 theorem pointCoeffBaseChange_mem_kerCoeff_dual {Q : W₂.PointCoeff}
@@ -146,8 +163,8 @@ theorem pointCoeffBaseChange_mem_kerCoeff_dual {Q : W₂.PointCoeff}
     W₂.pointCoeffBaseChange τ Q ∈
       ((ofIsogeny (φ.baseChange L).dual).pointCoeffMap :
         (W₂⁄L).PointCoeff →+ (W₁⁄L).PointCoeff).ker := by
-  have h := φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hQ
-  rwa [baseChange, dual_map φ (algebraMap K L)] at h
+  rw [← ker_pointCoeffMap_dual_baseChange]
+  exact φ.dual.pointCoeffBaseChange_mem_kerCoeff τ hQ
 
 /-- **The map `E₂(Kˢ)[φ̂] → E₂(Lˢ)[(φ_L)^]`** along `τ`, the restriction of
 `pointCoeffBaseChange τ` to the kernel of `φ̂`. -/
@@ -205,6 +222,51 @@ theorem explicitCoeff1_kerCoeffIncl_dualKerRes
     pointRes_eq_explicitMap1, dualKerRes_eq_explicitMap1]
   exact explicitMap1_explicitMap1_of_comp_eq _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
     (by ext; rfl) (by ext; simp) c
+
+/-- **Restriction of the dual kernel commutes with `H¹(G, E₂[φ̂]) → H¹(G, E₂)`**, by
+`pointRes_kerCoeffIncl` for `φ̂`. This identifies the local Selmer conditions of `φ̂` with the
+kernel conditions of the dual of the base change of `φ`. Not `@[simp]`: `pointRes_kerCoeffIncl`
+already rewrites its left-hand side, into the kernel of the base change of `φ̂`. -/
+theorem pointRes_dualKerCoeffIncl (c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff) :
+    W₂.pointRes τ
+        (explicitCoeff1 _ _ (ofIsogeny φ.dual).kerCoeffIncl continuous_of_discreteTopology c) =
+      explicitCoeff1 _ _ (ofIsogeny (φ.baseChange L).dual).kerCoeffIncl
+        continuous_of_discreteTopology (φ.dualKerRes τ c) := by
+  rw [pointRes_kerCoeffIncl, explicitCoeff1_kerCoeffIncl_dualKerRes]
+
+/-- **`dualKerRes τ` and the restriction of `φ̂` have the same kernel.** The kernels
+`E₂(Lˢ)[φ̂_L]` and `E₂(Lˢ)[(φ_L)^]` are the same subgroup of `E₂(Lˢ)`, and `dualKerRes τ` is the
+restriction `kerRes τ` of `φ̂` followed by the isomorphism this equality induces on `H¹`. So a
+class satisfies the strict local condition of `φ̂` at `L` exactly when `dualKerRes τ` kills it. -/
+theorem dualKerRes_eq_zero_iff {c : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff} :
+    φ.dualKerRes τ c = 0 ↔ φ.dual.kerRes τ c = 0 := by
+  have h := φ.ker_pointCoeffMap_dual_baseChange (L := L)
+  -- The inclusion between the two equal kernels is a bijective coefficient map.
+  let f : (ofIsogeny (φ.dual.baseChange L)).KerCoeff →+[AbsoluteGaloisGroup L]
+      (ofIsogeny (φ.baseChange L).dual).KerCoeff :=
+    { AddSubgroup.inclusion h.le with map_smul' := fun _ _ ↦ Subtype.ext (by simp) }
+  have hf : Function.Bijective f :=
+    ⟨AddSubgroup.inclusion_injective h.le, fun y ↦ ⟨⟨y, h.ge y.property⟩, rfl⟩⟩
+  -- On coefficients, `dualKerCoeffBaseChange τ` is `kerCoeffBaseChange τ` of `φ̂` followed by `f`:
+  -- both send `Q` to `pointCoeffBaseChange τ Q`.
+  have hqf : (AddMonoidHom.id (ofIsogeny (φ.baseChange L).dual).KerCoeff).comp
+      (φ.dualKerCoeffBaseChange τ) = f.toAddMonoidHom.comp (φ.dual.kerCoeffBaseChange τ) :=
+    AddMonoidHom.ext fun Q ↦ Subtype.ext <|
+      (φ.coe_dualKerCoeffBaseChange τ Q).trans (φ.dual.coe_kerCoeffBaseChange τ Q).symm
+  have hT : φ.dualKerRes τ c =
+      explicitCoeff1 _ _ f continuous_of_discreteTopology (φ.dual.kerRes τ c) := by
+    refine (DFunLike.congr_fun (explicitCoeff1_id _ _) (φ.dualKerRes τ c)).symm.trans ?_
+    rw [explicitCoeff1_eq_explicitMap1, explicitCoeff1_eq_explicitMap1, kerRes_eq_explicitMap1,
+      dualKerRes_eq_explicitMap1]
+    -- On groups both sides pull back along `absoluteGaloisGroupMap τ` followed by the identity.
+    -- The remaining arguments are the types and the continuity and equivariance proofs of the goal.
+    exact explicitMap1_explicitMap1_of_comp_eq
+      (φ := absoluteGaloisGroupMap τ) (f := φ.dualKerCoeffBaseChange τ)
+      (ψ := ContinuousMonoidHom.id _) (q := AddMonoidHom.id _)
+      (φ' := absoluteGaloisGroupMap τ) (f' := φ.dual.kerCoeffBaseChange τ)
+      (ψ' := ContinuousMonoidHom.id _) (q' := f.toAddMonoidHom) (hφ := rfl) (hqf := hqf) (x := c) ..
+  rw [hT]
+  exact map_eq_zero_iff _ (explicitCoeff1_bijective _ _ hf).1
 
 variable [Algebra.IsSeparable φ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
   [DecidableEq K] [DecidableEq L]

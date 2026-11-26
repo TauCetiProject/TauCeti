@@ -5,18 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Tactic.Ring
 
 /-!
-# Traces of products alternating with a fixed matrix
+# Trace identities for matrices
 
 Fix a matrix `S`. This file expands the quadratic map `M ↦ trace (M * S * M * S)` at a sum, so
 that polarization recovers the symmetric bilinear map `(M, N) ↦ trace (M * S * N * S)` from it.
 It also computes the trace of `2 P - 1`, which vanishes for a trace-one `2 × 2` matrix `P` such as
 the orthogonal projector onto a line of `ℂ²`, and records that reindexing rows and columns along
-one equivalence preserves the trace.
+one equivalence preserves the trace. Two square matrices intertwined by a matrix whose
+determinant is a non-zero-divisor have the same trace; over a domain this applies to every
+intertwiner of nonzero determinant, such as the inclusion matrix of a full-rank sublattice.
+The trace of a product of two skew-Hermitian matrices is fixed by `star` (in particular,
+it is real over `ℂ`).
 
 ## Main results
 
@@ -25,6 +30,14 @@ one equivalence preserves the trace.
 * `Matrix.trace_two_mul_sub_one`: `trace (2 P - 1) = 2 trace P - n` for an `n × n` matrix `P`.
 * `Matrix.trace_reindex_self`: reindexing rows and columns along one equivalence preserves the
   trace.
+* `Matrix.trace_eq_of_mul_eq_mul`: if `A * P = P * B` and `det P` is a non-zero-divisor, then
+  `trace A = trace B`.
+* `Matrix.trace_list_prod_map_mapMatrix`: mapping a list of square matrices along a ring
+  homomorphism commutes with taking the trace of its product.
+* `Matrix.star_trace_mul_of_conjTranspose_eq_neg`: the trace of a product of two skew-Hermitian
+  matrices is fixed by `star`.
+* `Matrix.sum_map_mul_comm`: the trace property for rectangular matrices over a possibly
+  noncommutative ring, through an additive map `f` with `f (a * b) = f (b * a)`.
 -/
 
 public section
@@ -53,5 +66,45 @@ trace. -/
 theorem trace_reindex_self {R : Type*} [AddCommMonoid R] (e : m ≃ n) (A : Matrix m m R) :
     (reindex e e A).trace = A.trace := by
   simpa [trace] using e.symm.sum_comp (fun i ↦ A i i)
+
+/-- **Intertwined matrices have equal traces.** If `A * P = P * B` and the determinant of `P` is a
+non-zero-divisor, then `trace A = trace B`. The matrix `P` need not be invertible; over `ℤ`, for
+instance, it may be the inclusion matrix of a sublattice of finite index. -/
+theorem trace_eq_of_mul_eq_mul {R : Type*} [CommRing R] [DecidableEq n] {A B P : Matrix n n R}
+    (hP : P.det ∈ nonZeroDivisors R) (h : A * P = P * B) : A.trace = B.trace := by
+  -- multiply both traces by `det P` and move `P` across with its adjugate
+  refine (mul_cancel_left_mem_nonZeroDivisors hP).1 ?_
+  calc P.det * A.trace = (A * (P * P.adjugate)).trace := by
+        rw [mul_adjugate, Matrix.mul_smul, Matrix.mul_one, trace_smul, smul_eq_mul]
+    _ = (P.adjugate * (P * B)).trace := by
+        rw [← Matrix.mul_assoc, h, trace_mul_comm]
+    _ = P.det * B.trace := by
+        rw [← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul, Matrix.one_mul, trace_smul,
+          smul_eq_mul]
+
+/-- Mapping a list of square matrices along a ring homomorphism commutes with taking the trace of
+its product. -/
+theorem trace_list_prod_map_mapMatrix {R S : Type*} [DecidableEq n] [Semiring R] [Semiring S]
+    (f : R →+* S) (l : List (Matrix n n R)) :
+    trace (l.map f.mapMatrix).prod = f (trace l.prod) := by
+  rw [← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace]
+
+/-- The trace of a product of two skew-Hermitian matrices is fixed by `star`. -/
+theorem star_trace_mul_of_conjTranspose_eq_neg {R : Type*} [NonUnitalNonAssocCommRing R]
+    [StarRing R] {X Y : Matrix n n R} (hX : Xᴴ = -X) (hY : Yᴴ = -Y) :
+    star (X * Y).trace = (X * Y).trace := by
+  rw [← trace_conjTranspose, conjTranspose_mul, hX, hY, neg_mul_neg, trace_mul_comm]
+
+/-- **Trace property for rectangular matrices.** If an additive map `f` satisfies
+`f (a * b) = f (b * a)`, then for `u : Matrix m n R` and `v : Matrix n m R` the sums of `f` over the
+diagonals of `u * v` and `v * u` agree. For commutative `R` and `f = id` this is
+`Matrix.trace_mul_comm`. -/
+theorem sum_map_mul_comm {R M F : Type*} [AddCommMonoid R] [Mul R] [AddCommMonoid M]
+    [FunLike F R M] [AddMonoidHomClass F R M] (f : F) (hf : ∀ a b, f (a * b) = f (b * a))
+    (u : Matrix m n R) (v : Matrix n m R) :
+    ∑ i, f ((u * v) i i) = ∑ k, f ((v * u) k k) := by
+  simp only [Matrix.mul_apply, map_sum]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ ↦ Finset.sum_congr rfl fun i _ ↦ hf _ _
 
 end Matrix

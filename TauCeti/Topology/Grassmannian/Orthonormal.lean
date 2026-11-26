@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
-public import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Topology.Grassmannian.Basic
@@ -47,7 +47,9 @@ is the definition `TauCeti.finiteOrthonormalFrame.unitaryMulAction` rather than 
 for `r = N` the two actions would be actions of the same group; it restricts to the special
 unitary group (`TauCeti.finiteOrthonormalFrame.specialUnitaryMulAction`) and, over `ℝ`, to the
 special orthogonal group (`TauCeti.finiteOrthonormalFrame.specialOrthogonalMulAction`). The
-standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`.
+standard orthonormal frame `(e₀, …, e_{r-1})` is `TauCeti.finiteOrthonormalFrame.standard`, so
+orthonormal `r`-frames exist exactly when `r ≤ N`
+(`TauCeti.finiteOrthonormalFrame.nonempty_iff_le`).
 An orthonormal one-frame is the same as a unit vector
 (`TauCeti.finiteOrthonormalFrame.sphereHomeomorph`).
 

@@ -39,12 +39,19 @@ normal bundle, multiplied by `t` to the power of its index.
 So the pieces are pairwise disjoint and cover the critical set
 (`TauCeti.IsMorseBottFamily.pairwise_disjoint_range`, `TauCeti.IsMorseBottFamily.iUnion_range`),
 each critical point lies on exactly one of them
-(`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
-(by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
-many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
+(`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), so pieces through a common point have the
+same index (`TauCeti.IsMorseBottFamily.eq_of_apply_eq`), only finitely many of them meet a compact
+set (by `LocallyFinite.finite_nonempty_inter_compact`), so only finitely many lie in it
+(`TauCeti.IsMorseBottFamily.finite_setOf_range_subset`), and on a compact manifold there are
+finitely many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`) and preconnected
 (`TauCeti.IsMorseBottFamily.preconnectedSpace`), so a piece lying in a compact set is compact
-(`TauCeti.IsMorseBottFamily.compactSpace_of_range_subset`). The function takes a single value on
+(`TauCeti.IsMorseBottFamily.compactSpace_of_range_subset`). In particular the pieces on a level
+`f = c` inside a compact band `f⁻¹[a, b]` are finitely many
+(`TauCeti.IsMorseBottFamily.finite_subtype_of_forall_apply_eq`) and compact
+(`TauCeti.IsMorseBottFamily.compactSpace_of_forall_apply_eq`), on a manifold which need not be
+compact; this is what lets a band of a Morse–Bott function be crossed with finitely many
+attachments. The function takes a single value on
 each piece (`TauCeti.IsMorseBottFamily.subsingleton_image_range`), so a critical point on a level
 lies on a piece on that level (`TauCeti.IsMorseBottFamily.mem_iUnion_range_of_apply_eq`), it takes
 finitely many critical values on a compact set
@@ -178,6 +185,11 @@ theorem existsUnique_mem_range (hx : x ∈ criticalPoints I f) : ∃! a, x ∈ r
   by_contra hba
   exact disjoint_left.1 (h.pairwise_disjoint_range hba) hb ha
 
+/-- Two pieces passing through the same point have the same index. -/
+theorem eq_of_apply_eq {a b : ι} {s : S a} {s' : S b} (hss' : i a s = i b s') : a = b := by
+  by_contra hab
+  exact disjoint_left.1 (h.pairwise_disjoint_range hab) (mem_range_self s) ⟨s', hss'.symm⟩
+
 /-- On a compact manifold a Morse–Bott family has finitely many pieces. -/
 theorem finite [CompactSpace M] : Finite ι :=
   finite_univ_iff.1 <| h.locallyFinite_range.finite_of_compact fun a ↦
@@ -203,6 +215,30 @@ theorem compactSpace_of_range_subset [IsManifold I 1 M] {K : Set M} (hK : IsComp
   isCompact_univ_iff.1 <| (i a).isEmbedding.isInducing.isCompact_iff.2 <| by
     rw [image_univ]
     exact hK.of_isClosed_subset (h.isClosed_range a) ha
+
+/-- Only finitely many pieces lie in a compact set, since only finitely many meet it. -/
+theorem finite_setOf_range_subset {K : Set M} (hK : IsCompact K) :
+    {a | range (i a) ⊆ K}.Finite :=
+  (h.locallyFinite_range.finite_nonempty_inter_compact hK).subset fun a ha ↦
+    have := h.nonempty a
+    (range_nonempty (i a)).mono (subset_inter subset_rfl ha)
+
+/-- Only finitely many pieces lie on a level `f = c` inside a compact band `f⁻¹[a, b]`, since they
+all lie in the band. So only finitely many indices satisfy a condition `p` which puts the piece on
+that level. -/
+theorem finite_subtype_of_forall_apply_eq {a b c : ℝ} (hK : IsCompact (f ⁻¹' Icc a b))
+    (hc : c ∈ Icc a b) {p : ι → Prop} (hp : ∀ j, p j → ∀ s, f (i j s) = c) : Finite {j // p j} :=
+  ((h.finite_setOf_range_subset hK).subset (t := {j | p j}) fun j hj ↦
+    range_subset_iff.2 fun s ↦ by rw [mem_preimage, hp j hj s]; exact hc).to_subtype
+
+/-- A piece on a level `f = c` inside a compact band `f⁻¹[a, b]` is compact, since it lies in the
+band. -/
+theorem compactSpace_of_forall_apply_eq [IsManifold I 1 M] {a b c : ℝ}
+    (hK : IsCompact (f ⁻¹' Icc a b)) (hc : c ∈ Icc a b) {j : ι} (hj : ∀ s, f (i j s) = c) :
+    CompactSpace (S j) :=
+  h.compactSpace_of_range_subset hK <| range_subset_iff.2 fun s ↦ by
+    rw [mem_preimage, hj s]
+    exact hc
 
 /-- **A Morse–Bott function takes a single value on each piece**, its critical value: `f ∘ i a` is
 locally constant, and the piece is connected because its image is a connected component of the

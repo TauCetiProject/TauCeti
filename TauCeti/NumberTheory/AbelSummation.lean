@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.SpecialFunctions.Integrals.InvLog
 
 /-!
@@ -55,9 +56,13 @@ at `k = 2`, where `log k > 0`.
 ## Main declarations
 
 * `TauCeti.sum_Icc_one_natFloor_eq_zero`: `∑_{1 ≤ k ≤ t} c k = 0` for `t < 1`.
+* `TauCeti.abs_sum_Icc_one_natFloor_le`: the trivial bound `|∑_{1 ≤ k ≤ t} c k| ≤ t` for
+  `t ≥ 0` when `|c k| ≤ 1`.
 * `TauCeti.isBigO_sum_Icc_natFloor_nhdsGT_zero`: the step function is `O(g)` as `t → 0⁺`.
 * `TauCeti.locallyIntegrableOn_sum_Icc_natFloor`: the step function is locally integrable on
   `[0, ∞)`.
+* `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function locally integrable on
+  `[1, ∞)`, the step function is interval integrable between any two reals.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -91,6 +96,15 @@ theorem sum_Icc_one_natFloor_eq_zero {M : Type*} [AddCommMonoid M] (c : ℕ → 
     ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k = 0 := by
   simp [Nat.floor_eq_zero.mpr ht]
 
+/-- The trivial bound on the partial-sum step function: if `|c k| ≤ 1` for every `k`, then
+`|∑ k ∈ Icc 1 ⌊t⌋₊, c k| ≤ t` for `t ≥ 0`. -/
+theorem abs_sum_Icc_one_natFloor_le {c : ℕ → ℝ} (hc : ∀ k, |c k| ≤ 1) (ht : 0 ≤ t) :
+    |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ t := by
+  calc |∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k| ≤ ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, |c k| :=
+        Finset.abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _k ∈ Finset.Icc 1 ⌊t⌋₊, (1 : ℝ) := Finset.sum_le_sum fun k _ ↦ hc k
+    _ ≤ t := by simpa using Nat.floor_le ht
+
 /-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k` vanishes near `0`, so it is `O(g)`
 as `t → 0⁺` for every `g`. -/
 theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGroup E] [Norm F]
@@ -105,6 +119,23 @@ theorem isBigO_sum_Icc_natFloor_nhdsGT_zero {E F : Type*} [SeminormedAddCommGrou
 theorem locallyIntegrableOn_sum_Icc_natFloor {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) (m : ℕ) :
     LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.Icc m ⌊t⌋₊, c k) (Ici 0) := by
   simpa using locallyIntegrableOn_mul_sum_Icc c le_rfl (m := m) (locallyIntegrableOn_const 1)
+
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, c k`, weighted by a function locally
+integrable on `[1, ∞)`, is interval integrable between any two reals: it vanishes below `1`. -/
+theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ → 𝕜) {f : ℝ → 𝕜}
+    (hf : LocallyIntegrableOn f (Ici 1)) (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume a b := by
+  have key (b : ℝ) :
+      IntervalIntegrable (fun t ↦ f t * ∑ k ∈ Finset.Icc 1 ⌊t⌋₊, c k) volume 1 b := by
+    rcases le_or_gt 1 b with hb | hb
+    · exact (intervalIntegrable_iff_integrableOn_Icc_of_le hb).mpr <|
+        integrableOn_mul_sum_Icc c zero_le_one
+          (hf.integrableOn_compact_subset Icc_subset_Ici_self isCompact_Icc)
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Ioc_of_le hb.le).mpr ?_)
+      exact (integrableOn_Ioc_iff_integrableOn_Ioo).mpr <|
+        integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
+          measurableSet_Ioo
+  exact (key a).symm.trans (key b)
 
 /-! ### The comparison weight -/
 
@@ -298,8 +329,7 @@ provided the weight is read from `Icc 1 m`. -/
 private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
     ∑ k ∈ Finset.Icc 0 m, g k * (if k = 0 then 0 else c k) =
       ∑ n ∈ Finset.Icc 1 m, g n * c n := by
-  rw [Finset.Icc_eq_cons_Ioc (Nat.zero_le _), Finset.sum_cons, ← Finset.Icc_add_one_left_eq_Ioc]
-  simp only [↓reduceIte, mul_zero, zero_add]
+  rw [Finset.sum_Icc_zero_eq_sum_Icc_one (by simp)]
   refine Finset.sum_congr rfl fun n hn ↦ ?_
   have hn0 : n ≠ 0 := by have := (Finset.mem_Icc.mp hn).1; omega
   simp [hn0]
@@ -346,22 +376,8 @@ theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) (x : ℝ) :
 theorem intervalIntegrable_sum_Icc_sub_mul (c : ℕ → ℝ) (κ x : ℝ) :
     IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n - κ * t) volume 1 x := by
   have hS_int : IntervalIntegrable (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) volume 1 x := by
-    rcases le_total 1 x with hx | hx
-    · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_
-      simpa using integrableOn_mul_sum_Icc c (m := 1) zero_le_one
-        (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Icc_of_le hx).mpr ?_)
-      have hA : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc (min x 0) 0) := by
-        refine (integrableOn_zero (μ := volume) (s := Icc (min x 0) 0)).congr_fun
-          (fun t ht ↦ ?_) measurableSet_Icc
-        simp [Nat.floor_eq_zero.mpr (by linarith [ht.2] : t < 1)]
-      have hB : IntegrableOn (fun t : ℝ ↦ ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n) (Icc 0 1) := by
-        simpa using integrableOn_mul_sum_Icc c (m := 1) le_rfl
-          (continuous_const (y := (1 : ℝ))).integrableOn_Icc
-      refine (hA.union hB).mono_set fun t ht ↦ ?_
-      rcases le_total t 0 with h | h
-      · exact Or.inl ⟨(min_le_left _ _).trans ht.1, h⟩
-      · exact Or.inr ⟨h, ht.2⟩
+    simpa using intervalIntegrable_mul_sum_Icc c (f := fun _ ↦ (1 : ℝ))
+      (locallyIntegrableOn_const 1) 1 x
   exact hS_int.sub ((continuous_const.mul continuous_id).intervalIntegrable 1 x)
 
 /-- The Abel-summation identity `sum_Icc_rpow_mul_eq`, with the partial sums `S t` split as

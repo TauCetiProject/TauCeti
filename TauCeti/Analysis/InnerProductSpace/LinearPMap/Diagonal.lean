@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
-import TauCeti.Analysis.InnerProductSpace.Parseval
+import Mathlib.Algebra.FiniteSupport.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
+import TauCeti.Analysis.Normed.Lp.Finsupp
 import TauCeti.Topology.Algebra.Module.LinearPMap.Basic
 
 /-!
@@ -60,6 +62,10 @@ so `f` only enters through its values `f (λ i)` at the eigenvalues.
 * `HilbertBasis.mem_diagonalPMap_domain_iff`, `HilbertBasis.inner_diagonalPMap_apply`,
   `HilbertBasis.mem_graph_diagonalPMap_iff`: the domain, the coordinates and the graph of a
   diagonal operator.
+* `HilbertBasis.default_diagonalPMap_apply`: in the standard Hilbert basis of `ℓ²(ι, 𝕜)` a
+  diagonal operator multiplies the entries.
+* `HilbertBasis.mem_diagonalPMap_domain_of_hasFiniteSupport`: finitely supported vectors lie in
+  the domain.
 * `HilbertBasis.hasSum_diagonalPMap_apply`: the expansion
   `b.diagonalPMap c x = ∑ᵢ c i ⟪b i, x⟫ • b i`.
 * `HilbertBasis.diagonalPMap_domain_eq_top`: a bounded family gives an everywhere defined operator,
@@ -150,6 +156,13 @@ theorem mem_diagonalPMap_domain_iff {x : E} :
   rw [mem_diagonalPMap_domain_iff_memℓp, memℓp_gen_iff (by norm_num)]
   norm_num
 
+/-- A vector with finitely many nonzero coordinates `⟪b i, x⟫` lies in the domain of every
+diagonal operator `b.diagonalPMap c`. -/
+theorem mem_diagonalPMap_domain_of_hasFiniteSupport {x : E}
+    (hx : (fun i ↦ ⟪b i, x⟫_𝕜).HasFiniteSupport) : x ∈ (b.diagonalPMap c).domain := by
+  rw [mem_diagonalPMap_domain_iff_memℓp]
+  exact (Function.HasFiniteSupport.fun_mul_right c hx).memℓp 2
+
 /-- The coordinates of `b.diagonalPMap c x` in the Hilbert basis `b` are `c i * ⟪b i, x⟫`. -/
 @[simp]
 theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
@@ -161,6 +174,17 @@ theorem repr_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
 theorem inner_diagonalPMap_apply (x : (b.diagonalPMap c).domain) (i : ι) :
     ⟪b i, b.diagonalPMap c x⟫_𝕜 = c i * ⟪b i, (x : E)⟫_𝕜 := by
   rw [← b.repr_apply_apply, repr_diagonalPMap_apply]
+
+open scoped lp in
+/-- In the standard Hilbert basis of `ℓ²(ι, 𝕜)` the diagonal operator multiplies the entries:
+`(diagonalPMap c x) i = c i * x i`. -/
+@[simp]
+theorem default_diagonalPMap_apply (c : ι → 𝕜)
+    (x : ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c).domain) (i : ι) :
+    ((default : HilbertBasis ι 𝕜 ℓ²(ι, 𝕜)).diagonalPMap c x : ℓ²(ι, 𝕜)) i =
+      c i * (x : ℓ²(ι, 𝕜)) i := by
+  rw [← inner_default_apply, ← inner_default_apply (x : ℓ²(ι, 𝕜))]
+  exact inner_diagonalPMap_apply _ _ x i
 
 /-- A vector `y` is the image of `x` under the diagonal operator if and only if its coordinates are
 those of `x` multiplied by `c`. -/
@@ -197,7 +221,7 @@ theorem hasSum_diagonalPMap_apply (x : (b.diagonalPMap c).domain) :
 `‖b.diagonalPMap c x‖² = ∑ᵢ ‖c i * ⟪b i, x⟫‖²`. -/
 theorem hasSum_norm_diagonalPMap_apply_sq (x : (b.diagonalPMap c).domain) :
     HasSum (fun i ↦ ‖c i * ⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖b.diagonalPMap c x‖ ^ 2) := by
-  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_sq_inner (b.diagonalPMap c x)
+  simpa only [inner_diagonalPMap_apply] using b.hasSum_norm_inner_sq (b.diagonalPMap c x)
 
 /-- The coordinates of `c i • b i` are those of `b i` multiplied by `c`. -/
 private theorem inner_smul_self (i j : ι) : ⟪b j, c i • b i⟫_𝕜 = c j * ⟪b j, b i⟫_𝕜 := by
@@ -240,7 +264,7 @@ theorem dense_diagonalPMap_domain : Dense ((b.diagonalPMap c).domain : Set E) :=
 theorem diagonalPMap_domain_eq_top {C : ℝ} (hc : ∀ i, ‖c i‖ ≤ C) :
     (b.diagonalPMap c).domain = ⊤ := by
   refine Submodule.eq_top_iff'.2 fun x ↦ (b.mem_diagonalPMap_domain_iff c).2 ?_
-  refine ((b.summable_norm_sq_inner x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
+  refine ((b.summable_norm_inner_sq x).mul_left (C ^ 2)).of_nonneg_of_le (fun _ ↦ by positivity)
     fun i ↦ ?_
   rw [norm_mul, mul_pow]
   gcongr
@@ -411,7 +435,7 @@ theorem IsFormalAdjoint.hasSum_norm_sq_add_norm_apply_sq (hA : A.IsFormalAdjoint
     {lam : ι → ℝ} (hb : ∀ i, ∃ hi : b i ∈ A.domain, A ⟨b i, hi⟩ = (lam i : 𝕜) • b i)
     (x : A.domain) :
     HasSum (fun i ↦ (1 + lam i ^ 2) * ‖⟪b i, (x : E)⟫_𝕜‖ ^ 2) (‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2) := by
-  have h := (b.hasSum_norm_sq_inner (x : E)).add (b.hasSum_norm_sq_inner (A x))
+  have h := (b.hasSum_norm_inner_sq (x : E)).add (b.hasSum_norm_inner_sq (A x))
   refine h.congr_fun fun i ↦ ?_
   rw [(b.le_diagonalPMap_iff _).1 (hA.le_diagonalPMap hb) x, norm_mul, RCLike.norm_ofReal,
     mul_pow, sq_abs]

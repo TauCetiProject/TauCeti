@@ -141,7 +141,7 @@ theorem tendsto_integral_inv_log_principalValue {x : ℝ} (hx : 1 < x) :
   filter_upwards [Ioo_mem_nhdsGT (lt_min one_pos (sub_pos.mpr hx))] with ε ⟨hε0, hεm⟩
   have hε1 : ε < 1 := lt_of_lt_of_le hεm (min_le_left _ _)
   rw [← li_eq_integral_inv_log (by linarith) (by linarith),
-    integral_inv_log_eq_li_sub_of_one_lt (by linarith) hx]
+    integral_inv_log_eq_li_sub_li (by linarith) hx]
   ring
 
 /-- In exponential coordinates, `t ↦ li (exp t)` has derivative `exp u / u` at every `u ≠ 0`. -/

@@ -7,7 +7,10 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.Matrix.Symmetric
+public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.Matrix.Trace
+public import Mathlib.LinearAlgebra.Trace
+import TauCeti.LinearAlgebra.Matrix.Trace.LinearMap
 
 /-!
 # Matrices skew-adjoint for a bilinear form
@@ -16,10 +19,12 @@ For a square matrix `J`, Mathlib's `Matrix.IsSkewAdjoint J A` is the condition `
 the matrix `A` is skew-adjoint for the bilinear form `B(u, v) = u ⬝ᵥ J v`. This file records
 basic facts about such matrices, independent of any Lie theory.
 
-When `J` is invertible, skew-adjointness makes `Aᵀ` conjugate to `-A`, so `A` has trace zero as
-soon as `2` is invertible. When `J` is symmetric, every pair of vectors `u`, `v` gives a
-skew-adjoint matrix, the matrix `vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J)` sending `x`
-to `B(u, x) v - B(v, x) u`.
+When `J` is invertible, skew-adjointness makes `Aᵀ` conjugate to `-A`: it says exactly
+that `J⁻¹ * Aᵀ * J = -A`, so `A` has trace zero as soon as `2` is invertible. The linear operator
+`Matrix.transposeConj J : Z ↦ J⁻¹ * Zᵀ * J` is an involution when `Jᵀ = ε • J`, and the file
+computes the trace of its composites with left and right multiplications. When `J` is
+symmetric, every pair of vectors `u`, `v` gives a skew-adjoint matrix, the matrix
+`vecMulVec v (u ᵥ* J) - vecMulVec u (v ᵥ* J)` sending `x` to `B(u, x) v - B(v, x) u`.
 
 The file also records the matrices preserving `J` by congruence, `M * J * Mᵀ = J`: a square-zero
 matrix `Y` with `Y * J + J * Yᵀ = 0`, that is, with `Yᵀ` skew-adjoint for `J`, gives the
@@ -31,6 +36,14 @@ inverse; and a scalar matrix `c • 1` can only preserve an invertible `J` when 
 
 * `Matrix.isUnit_of_mul_self_eq_neg_one`: a form matrix whose square is minus the identity
   is a unit over any ring.
+* `Matrix.isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg`: for invertible `J`, a matrix `A` is
+  skew-adjoint for `J` exactly when `J⁻¹ * Aᵀ * J = -A`.
+* `Matrix.transposeConj_mul`: for invertible `J`, the operator `Matrix.transposeConj J` reverses
+  products.
+* `Matrix.transposeConj_transposeConj`: for invertible `J` with `Jᵀ = ε • J`, the operator
+  `Matrix.transposeConj J` is an involution.
+* `Matrix.trace_transposeConj_comp_mulLeft_comp_mulRight`: the trace of `Z ↦ J⁻¹ (A Z B)ᵀ J` is
+  `ε * trace (J⁻¹ * Bᵀ * J * A)` when `Jᵀ = ε • J`.
 * `Matrix.IsSkewAdjoint.trace_eq_zero`: a matrix skew-adjoint for an invertible matrix has trace
   zero when `2` is invertible.
 * `Matrix.isSkewAdjoint_vecMulVec_sub_vecMulVec`: for symmetric `J`, the matrix
@@ -61,6 +74,80 @@ theorem isUnit_of_mul_self_eq_neg_one [Ring R] [DecidableEq n] {J : Matrix n n R
 section
 
 variable [CommRing R]
+
+/-- For an invertible `J`, a matrix `A` is skew-adjoint for `J` exactly when its transpose is
+conjugate to `-A`: `J⁻¹ * Aᵀ * J = -A`. -/
+theorem isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg [DecidableEq n] {J A : Matrix n n R}
+    (hJ : IsUnit J) : J.IsSkewAdjoint A ↔ J⁻¹ * Aᵀ * J = -A := by
+  have := hJ.invertible
+  rw [Matrix.IsSkewAdjoint, Matrix.IsAdjointPair, Matrix.mul_assoc,
+    inv_mul_eq_iff_eq_mul_of_invertible]
+
+section TransposeConj
+
+variable [DecidableEq n]
+
+/-- The operator `Z ↦ J⁻¹ Zᵀ J` of the square matrices. For an invertible `J`, the matrices
+skew-adjoint for `J` are those it sends to their negatives
+(`Matrix.isSkewAdjoint_iff_transposeConj_eq_neg`). -/
+noncomputable def transposeConj (J : Matrix n n R) : Matrix n n R →ₗ[R] Matrix n n R :=
+  LinearMap.mulLeft R J⁻¹ ∘ₗ LinearMap.mulRight R J ∘ₗ
+    (transposeLinearEquiv n n R R).toLinearMap
+
+theorem transposeConj_apply (J Z : Matrix n n R) : J.transposeConj Z = J⁻¹ * Zᵀ * J := by
+  simp [transposeConj, mul_assoc]
+
+/-- For an invertible `J`, a matrix `A` is skew-adjoint for `J` exactly when
+`J.transposeConj A = -A`. -/
+theorem isSkewAdjoint_iff_transposeConj_eq_neg {J A : Matrix n n R} (hJ : IsUnit J) :
+    J.IsSkewAdjoint A ↔ J.transposeConj A = -A := by
+  rw [transposeConj_apply, isSkewAdjoint_iff_inv_mul_transpose_mul_eq_neg hJ]
+
+/-- For an invertible `J`, the operator `Z ↦ J⁻¹ Zᵀ J` reverses products. -/
+theorem transposeConj_mul {J : Matrix n n R} (hJu : IsUnit J) (A B : Matrix n n R) :
+    J.transposeConj (A * B) = J.transposeConj B * J.transposeConj A := by
+  rw [transposeConj_apply, transposeConj_apply, transposeConj_apply, transpose_mul]
+  simp only [Matrix.mul_assoc]
+  rw [← Matrix.mul_assoc J J⁻¹, mul_nonsing_inv _ ((isUnit_iff_isUnit_det J).mp hJu),
+    Matrix.one_mul]
+
+/-- **The operator `Z ↦ J⁻¹ Zᵀ J` is an involution** for an invertible `J` with `Jᵀ = ε • J`. -/
+theorem transposeConj_transposeConj {J : Matrix n n R} {ε : R} (hJ : Jᵀ = ε • J)
+    (hJu : IsUnit J) (Z : Matrix n n R) : J.transposeConj (J.transposeConj Z) = Z := by
+  have hd := (isUnit_iff_isUnit_det J).mp hJu
+  -- Transposing `Jᵀ = ε • J` gives `J = ε • Jᵀ = (ε * ε) • J`, so `ε * ε = 1` on matrices.
+  have hJ' : J = ε • Jᵀ := by simpa using congrArg transpose hJ
+  have hε : (ε * ε) • (1 : Matrix n n R) = 1 := by
+    have h : (ε * ε) • J = J := by rw [mul_smul, ← hJ, ← hJ']
+    rw [← mul_nonsing_inv _ hd, ← Matrix.smul_mul, h]
+  have h1 : J⁻¹ * Jᵀ = ε • 1 := by
+    rw [hJ, Matrix.mul_smul, nonsing_inv_mul _ hd]
+  have h2 : (Jᵀ)⁻¹ * J = ε • 1 := calc
+    (Jᵀ)⁻¹ * J = (Jᵀ)⁻¹ * (ε • Jᵀ) := congrArg _ hJ'
+    _ = ε • 1 := by rw [Matrix.mul_smul, nonsing_inv_mul _ (isUnit_det_transpose J hd)]
+  rw [transposeConj_apply, transposeConj_apply, transpose_mul, transpose_mul, transpose_transpose,
+    transpose_nonsing_inv]
+  calc J⁻¹ * (Jᵀ * (Z * (Jᵀ)⁻¹)) * J = (J⁻¹ * Jᵀ) * Z * ((Jᵀ)⁻¹ * J) := by
+        simp only [Matrix.mul_assoc]
+    _ = ((ε * ε) • (1 : Matrix n n R)) * Z := by
+        simp [h1, h2, smul_smul]
+    _ = Z := by rw [hε, Matrix.one_mul]
+
+/-- The trace of `Z ↦ J⁻¹ (A Z B)ᵀ J` on the square matrices, for `Jᵀ = ε • J`. -/
+theorem trace_transposeConj_comp_mulLeft_comp_mulRight {J : Matrix n n R} {ε : R}
+    (hJ : Jᵀ = ε • J) (A B : Matrix n n R) :
+    LinearMap.trace R _ (J.transposeConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B) =
+      ε * (J⁻¹ * Bᵀ * J * A).trace := by
+  have h : J.transposeConj ∘ₗ LinearMap.mulLeft R A ∘ₗ LinearMap.mulRight R B =
+      LinearMap.mulLeft R (J⁻¹ * Bᵀ) ∘ₗ LinearMap.mulRight R (Aᵀ * J) ∘ₗ
+        (transposeLinearEquiv n n R R).toLinearMap := by
+    ext1 Z
+    simp [transposeConj_apply, transpose_mul, mul_assoc]
+  rw [h, trace_mulLeft_comp_mulRight_comp_transpose, transpose_mul, transpose_transpose, hJ,
+    Matrix.smul_mul, Matrix.mul_smul, trace_smul, smul_eq_mul]
+  simp only [mul_assoc]
+
+end TransposeConj
 
 /-- **A matrix skew-adjoint for an invertible matrix has trace zero** when `2` is invertible:
 skew-adjointness makes `Aᵀ` conjugate to `-A`. -/

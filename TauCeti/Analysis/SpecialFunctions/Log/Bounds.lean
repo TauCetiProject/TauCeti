@@ -16,7 +16,10 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+real cutoff `x` when passing between inclusive and strict prime sums. From `e² < (3 / 2) ^ 5`
+(Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
+(`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
+integral below `3 / 2`.
 
 This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
 enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
@@ -33,15 +36,22 @@ Applied to reciprocal distances, these inequalities dominate logarithmic singula
 inverse-square-root kernels. Their integrals control dyadic averages and the choice of circles
 in Hadamard minimum-modulus estimates.
 
+`Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt` squares `e y ≤ exp y` (`Real.exp_one_mul_le_exp`)
+at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²`, the square of the
+logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
+in explicit prime-counting estimates.
+
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
+* `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
 * `Real.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
 * `Real.le_log_log_two` and `Real.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
+* `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
 -/
@@ -56,6 +66,15 @@ theorem log_four_le_two : log 4 ≤ 2 := by
   rw [h4, log_pow]
   norm_num
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- `2 / 5 < log (3 / 2)`, from `e² < (3 / 2) ^ 5` and `e < 2.7182818286`. -/
+theorem two_fifths_lt_log_three_halves : (2 / 5 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  refine (pow_lt_pow_iff_left₀ (exp_pos _).le (by norm_num) (by norm_num : (5 : ℕ) ≠ 0)).1 ?_
+  rw [← exp_natCast_mul, show ((5 : ℕ) : ℝ) * (2 / 5) = (2 : ℕ) * 1 by norm_num, exp_natCast_mul]
+  have h := exp_one_lt_d9
+  have h0 := (exp_pos 1).le
+  nlinarith
 
 /-- For every nonnegative real `x`, `log x / x ≤ 1 / 2` (holding at `x = 0` via `0 / 0 = 0`). -/
 theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := by
@@ -126,6 +145,17 @@ theorem posLog_le_sqrt_two_mul_abs (x : ℝ) : Real.posLog x ≤ Real.sqrt (2 * 
   refine max_le (Real.sqrt_nonneg _) ?_
   simpa only [Real.log_inv, neg_neg, div_inv_eq_mul, Real.log_abs] using
     (neg_log_le_sqrt_two_div (inv_nonneg.mpr (abs_nonneg x)))
+
+/-- For `x ≥ 1`, `(log x · e)² ≤ 16 √x`: the maximum of `L² e^{−L/2}` is `16/e²`, at `L = 4`. -/
+theorem sq_log_mul_exp_one_le_sixteen_mul_sqrt {x : ℝ} (hx : 1 ≤ x) :
+    (log x * exp 1) ^ 2 ≤ 16 * √x := by
+  have hsqrt : √x = exp (log x / 4) ^ 2 := by
+    rw [sqrt_eq_iff_mul_self_eq_of_pos (by positivity), ← pow_add, ← exp_natCast_mul,
+      show ((2 + 2 : ℕ) : ℝ) * (log x / 4) = log x by push_cast; ring, exp_log (by linarith)]
+  have h := pow_le_pow_left₀ (by have := log_nonneg hx; positivity)
+    (exp_one_mul_le_exp (x := log x / 4)) 2
+  rw [hsqrt]
+  nlinarith
 
 /-- An upper bound on a power of a ratio of natural numbers gives a logarithmic bound
 with any nonnegative coefficient at most the exponent, including when the ratio is zero. -/

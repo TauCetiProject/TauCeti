@@ -34,6 +34,8 @@ Rellich–Kondrachov compactness from `Lᵖ` to every subcritical target exponen
 ## Main declarations
 
 * `IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`: compactness by interpolation.
+* `IsCompactOperator.of_norm_le_mul_norm`: a linear map dominated by a compact operator is
+  compact.
 * `IsCompactOperator.of_adjoint_comp_self`: a bounded operator between Hilbert spaces is compact
   when `T† T` is, by the interpolation inequality `‖T x‖ ≤ ‖T† T x‖ ^ (1 / 2) ‖x‖ ^ (1 / 2)`.
 * `IsCompactOperator.of_forall_ae_eq_of_interpolation`: compactness into `L^{p₀}` and boundedness
@@ -101,6 +103,15 @@ theorem of_norm_le_mul_rpow_mul_rpow {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCom
         mul_le_mul (mul_le_mul_of_nonneg_right (le_abs_self C) (by positivity))
           (Real.rpow_le_rpow (norm_nonneg _) h₁ hθ₀) (by positivity) (by positivity)
     _ < ε := hε'
+
+/-- **Compactness by domination.** A linear map `T : X → Y` into a Banach space with
+`‖T x‖ ≤ C ‖T₀ x‖` for all `x`, for a compact operator `T₀ : X → Y₀`, is compact. This is the
+case `θ = 0` of `IsCompactOperator.of_norm_le_mul_rpow_mul_rpow`. -/
+theorem of_norm_le_mul_norm {T₀ : X →ₗ[𝕜] Y₀} (hT₀ : IsCompactOperator T₀) {T : X →ₗ[𝕜] Y}
+    {C : ℝ} (hT : ∀ x, ‖T x‖ ≤ C * ‖T₀ x‖) : IsCompactOperator T :=
+  of_norm_le_mul_rpow_mul_rpow hT₀ (0 : X →L[𝕜] 𝕜) le_rfl zero_lt_one fun x ↦ by
+    rw [sub_zero, Real.rpow_one, Real.rpow_zero, mul_one]
+    exact hT x
 
 /-- **Compactness from the Gram operator.** A bounded operator `T` between Hilbert spaces is
 compact as soon as `T† T` is. In particular a self-adjoint `T` is compact when `T²` is. -/

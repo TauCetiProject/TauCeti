@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Real.Sqrt
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
+import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 
 /-!
 # Basic facts about the discriminant of a number field
@@ -14,7 +16,9 @@ The discriminant of a number field is a nonzero integer (Mathlib's `NumberField.
 its absolute value is strictly positive and a nonzero natural number. Recording the `NeZero`
 instances and absolute-value positivity lemmas lets `(discr K).natAbs` serve as the level of a
 Dirichlet character whose `L`-function is taken, such as the quadratic character of a quadratic
-field, and supplies `0 < |(discr K : ℝ)|` directly to analytic class-number bounds.
+field, and supplies `0 < |(discr K : ℝ)|` directly to analytic class-number bounds. A nontrivial
+number field (`1 < Module.finrank ℚ K`) has `|discr K| > 2` by Hermite–Minkowski
+(`NumberField.abs_discr_gt_two`), so its discriminant is not `1`.
 
 ## Main results
 
@@ -22,6 +26,8 @@ field, and supplies `0 < |(discr K : ℝ)|` directly to analytic class-number bo
 * `NumberField.instNeZeroNatAbsDiscr`: `(discr K).natAbs ≠ 0`, as a `NeZero` instance.
 * `NumberField.abs_discr_pos` and `NumberField.abs_cast_discr_pos`: `0 < |discr K|` in `ℤ` and in
   any strict ordered ring.
+* `NumberField.sqrt_abs_cast_discr_pos`: `0 < √|(discr K : ℝ)|`.
+* `NumberField.discr_ne_one`: `discr K ≠ 1` whenever `1 < Module.finrank ℚ K`.
 -/
 
 public section
@@ -49,5 +55,16 @@ theorem abs_cast_discr_pos (K : Type*) [Field K] [NumberField K]
     {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R] :
     0 < |(discr K : R)| :=
   abs_pos.mpr (Int.cast_ne_zero.mpr (discr_ne_zero K))
+
+/-- The square root of the absolute value of a number field discriminant is strictly positive. -/
+theorem sqrt_abs_cast_discr_pos (K : Type*) [Field K] [NumberField K] :
+    0 < √|(discr K : ℝ)| :=
+  Real.sqrt_pos.mpr (abs_cast_discr_pos K)
+
+/-- The discriminant of a nontrivial number field (`1 < [K : ℚ]`) is not `1`. -/
+theorem discr_ne_one (hK : 1 < Module.finrank ℚ K) : discr K ≠ 1 := by
+  have := NumberField.abs_discr_gt_two (K := K) hK
+  intro h
+  simp [h] at this
 
 end NumberField

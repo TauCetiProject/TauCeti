@@ -9,11 +9,13 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Hom
 public import Mathlib.LinearAlgebra.BilinearForm.Properties
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
+public import TauCeti.Algebra.Ring.CayleyChart
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import TauCeti.LinearAlgebra.Determinant.Prod
 
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.NoncommRing
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 
 /-!
@@ -50,6 +52,8 @@ on tangent fibers rather than restating the linear algebra.
 * `TauCeti.AlmostComplexStructure.bilinForm_apply_left_eq_neg_apply_right` and
   `TauCeti.AlmostComplexStructure.bilinForm_apply_apply_self_eq_zero`: a bilinear form preserved
   by `J` satisfies `g (J v, w) = -g (v, J w)`, and `g (v, J v) = 0` when it is symmetric.
+* `TauCeti.AlmostComplexStructure.bilinForm_apply_left_symm`: an alternating form `B` preserved by
+  `J` satisfies `B (J v, w) = B (J w, v)`.
 * `TauCeti.AlmostComplexStructure.restrict`: the restriction of `J` to a `J`-invariant subspace.
 * `TauCeti.IsComplexLinearMap.restrict`: a complex-linear map preserving a `J`-invariant subspace
   restricts to a complex-linear map of the restricted structure.
@@ -111,6 +115,32 @@ theorem map_cayleyFormula {S F : Type*} [Ring S] [EquivLike F R S] [RingEquivCla
     (f : F) (A B : R) :
     f (cayleyFormula A B) = cayleyFormula (f A) (f B) := by
   simp only [cayleyFormula_def, map_mul, map_add, map_one, map_neg, map_sub, map_ringInverse]
+
+/-- For square roots `A`, `B` of `-1`, the Cayley coordinate expression `-(1 + A B)(1 - A B)⁻¹`
+is the Cayley coordinate `(A - B)(A + B)⁻¹` of `TauCeti.cayleyCoord`, the inverse of the
+conjugation chart `TauCeti.cayleyParam A`. Both vanish when `A + B`, equivalently `1 - A B`, is
+not invertible. -/
+theorem cayleyCoord_eq_cayleyFormula {A B : R} (hA : A * A = -1) (hB : B * B = -1) :
+    cayleyCoord A B = cayleyFormula A B := by
+  by_cases hu : IsUnit (A + B)
+  · have hu' := (isUnit_add_iff_isUnit_one_sub_mul hA).1 hu
+    rw [cayleyFormula_def, ← neg_mul, Ring.eq_mul_inverse_iff_mul_eq _ _ _ hu']
+    -- `1 - A B = -A (A + B)`, and `(A + B)⁻¹ A = B (A + B)⁻¹`.
+    have h : 1 - A * B = -A * (A + B) := by
+      rw [neg_mul, mul_add, hA]
+      noncomm_ring
+    rw [h, cayleyCoord_def]
+    calc (A - B) * Ring.inverse (A + B) * (-A * (A + B))
+        = -((A - B) * (Ring.inverse (A + B) * A) * (A + B)) := by noncomm_ring
+      _ = -((A - B) * B * (Ring.inverse (A + B) * (A + B))) := by
+          rw [inverse_add_mul_eq_mul_inverse_add_of_mul_self_eq_neg_one hA hB]
+          noncomm_ring
+      _ = -(1 + A * B) := by
+          rw [Ring.inverse_mul_cancel _ hu, mul_one, sub_mul, hB]
+          noncomm_ring
+  · have hu' : ¬IsUnit (1 - A * B) := fun h ↦ hu ((isUnit_add_iff_isUnit_one_sub_mul hA).2 h)
+    simp [cayleyCoord_def, cayleyFormula_def, Ring.inverse_non_unit _ hu,
+      Ring.inverse_non_unit _ hu']
 
 end CayleyFormula
 
@@ -174,6 +204,12 @@ lemma toLinearMap_mul_self (J : AlmostComplexStructure V) :
     J.toLinearMap * J.toLinearMap = -1 := by
   ext v
   exact J.apply_apply v
+
+/-- `a + b J` inverts `a - b J` up to the factor `a² + b²`: `(a + b J) (a - b J) = a² + b²`. -/
+lemma smul_add_smul_apply_smul_sub_smul (J : AlmostComplexStructure V) (a b : ℝ) (v : V) :
+    a • (a • v - b • J v) + b • J (a • v - b • J v) = (a ^ 2 + b ^ 2) • v := by
+  rw [apply_sub, apply_smul, apply_smul, apply_apply]
+  module
 
 /-- The underlying linear map of an almost complex structure is injective. -/
 lemma injective (J : AlmostComplexStructure V) : Function.Injective J := by
@@ -308,6 +344,13 @@ theorem bilinForm_apply_left_eq_neg_apply_right (J : AlmostComplexStructure V)
   have h := hgJ v (J w)
   rw [apply_apply, map_neg] at h
   rw [← h, neg_neg]
+
+/-- An alternating bilinear form preserved by `J` becomes symmetric after precomposing its first
+slot with `J`: `B (J v) w = B (J w) v`. -/
+theorem bilinForm_apply_left_symm (J : AlmostComplexStructure V) {B : LinearMap.BilinForm ℝ V}
+    (hB : B.IsAlt) (hBJ : ∀ v w, B (J v) (J w) = B v w) (v w : V) :
+    B (J v) w = B (J w) v := by
+  rw [J.bilinForm_apply_left_eq_neg_apply_right hBJ, hB.neg_eq]
 
 /-- A symmetric bilinear form preserved by `J` pairs every vector `v` trivially with `J v`. -/
 theorem bilinForm_apply_apply_self_eq_zero (J : AlmostComplexStructure V)
