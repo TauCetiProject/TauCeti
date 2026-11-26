@@ -312,14 +312,12 @@ theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
 /-- Moving along the direction `e` does not change `Im (conj e · z)`. -/
 theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
     (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
-  rw [mul_add, Complex.real_smul, mul_left_comm, conj_coe_mul_self, mul_one, Complex.add_im,
-    Complex.ofReal_im, add_zero]
+  simp [Complex.real_smul, mul_add, mul_left_comm, conj_coe_mul_self]
 
 /-- The point `r i e` satisfies `Im (conj e · r i e) = r`. -/
 theorem im_conj_mul_smul_I_mul (e : Circle) (r : ℝ) :
     (conj (e : ℂ) * (r • (Complex.I * e))).im = r := by
-  rw [Complex.real_smul, mul_left_comm, mul_left_comm (conj _), conj_coe_mul_self, mul_one,
-    Complex.im_ofReal_mul, Complex.I_im, mul_one]
+  simp [Complex.real_smul, mul_left_comm, conj_coe_mul_self]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/

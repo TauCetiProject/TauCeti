@@ -37,7 +37,8 @@ entry state (`TauCeti.ConvexTable.orientedLineHomeomorph_symm_apply_mk`):
   `TauCeti.ConvexTable.orientedLineSet_orientedLine_inter_interior_eq_empty`);
 * `Λ` is injective on the phase cylinder
   (`TauCeti.ConvexTable.orientedLine_eq_orientedLine_iff`), by the injectivity of the oriented
-  lines of `TauCeti.StrictConvexBilliardTable`;
+  lines of `TauCeti.StrictConvexBilliardTable`, which agree with `Λ`
+  (`TauCeti.ConvexTable.toStrictConvexBilliardTable_orientedLine_cos`);
 * every line meeting the interior of `Ω` is `Λ` of its entry state
   (`TauCeti.ConvexTable.exists_orientedLine_eq`): the point where the line enters `Ω` is the last
   point of `Ω` before an interior point, in the reverse direction, and lies on the curve;
@@ -148,25 +149,30 @@ theorem orientedLineSet_orientedLine_inter_interior_eq_empty {s δ : ℝ} (hδ :
       coe_tangent] at hz <;>
     exact hpos.ne' hz
 
+/-- **The two oriented-line APIs agree.** For `δ ∈ [0, π]`, the oriented line of the state
+`(s, cos δ)` of the strict convex billiard table underlying `T` is `Λ(s, δ)`, with its direction
+viewed in `ℂ`. -/
+theorem toStrictConvexBilliardTable_orientedLine_cos {s δ : ℝ} (hδ : δ ∈ Icc 0 Real.pi) :
+    T.toStrictConvexBilliardTable.orientedLine s (Real.cos δ) =
+      (((T.orientedLine s δ).1 : ℂ), (T.orientedLine s δ).2) := by
+  rw [StrictConvexBilliardTable.orientedLine_def,
+    T.toStrictConvexBilliardTable_outgoingDir_cos hδ, Complex.areaForm,
+    coe_toStrictConvexBilliardTable]
+  exact Prod.ext (T.coe_orientedLine_fst s δ).symm (T.orientedLine_snd s δ).symm
+
 /-- **Injectivity on the phase cylinder.** For `δ ∈ (0, π)` and `δ' ∈ [0, π]`, the states `(s, δ)`
 and `(s', δ')` have the same oriented line exactly when `s ≡ s'` modulo `ℓ` and `δ = δ'`. -/
 theorem orientedLine_eq_orientedLine_iff {s s' δ δ' : ℝ} (hδ : δ ∈ Ioo 0 Real.pi)
     (hδ' : δ' ∈ Icc 0 Real.pi) :
     T.orientedLine s δ = T.orientedLine s' δ' ↔ (s : AddCircle ℓ) = s' ∧ δ = δ' := by
-  set χ := T.toStrictConvexBilliardTable
-  set g : Circle × ℝ → ℂ × ℝ := fun p => ((p.1 : ℂ), p.2)
-  have key (t ε : ℝ) (hε : ε ∈ Icc 0 Real.pi) :
-      χ.orientedLine t (Real.cos ε) = g (T.orientedLine t ε) := by
-    rw [StrictConvexBilliardTable.orientedLine_def,
-      T.toStrictConvexBilliardTable_outgoingDir_cos hε, Complex.areaForm,
-      coe_toStrictConvexBilliardTable]
-    exact Prod.ext (T.coe_orientedLine_fst t ε).symm (T.orientedLine_snd t ε).symm
-  have hinj : Injective g := fun p q h =>
-    Prod.ext (Circle.ext (congrArg Prod.fst h :)) (congrArg Prod.snd h :)
-  refine hinj.eq_iff.symm.trans ?_
-  rw [← key s δ (Ioo_subset_Icc_self hδ), ← key s' δ' hδ',
-    χ.orientedLine_eq_orientedLine_iff (Real.mapsTo_cos_Ioo hδ), coe_toStrictConvexBilliardTable,
-    T.apply_eq_apply_iff, Real.injOn_cos.eq_iff (Ioo_subset_Icc_self hδ) hδ']
+  have hinj : Injective fun p : Circle × ℝ => ((p.1 : ℂ), p.2) := fun p q h => by
+    simp only [Prod.mk.injEq] at h
+    exact Prod.ext (Circle.ext h.1) h.2
+  rw [← hinj.eq_iff, ← T.toStrictConvexBilliardTable_orientedLine_cos (Ioo_subset_Icc_self hδ),
+    ← T.toStrictConvexBilliardTable_orientedLine_cos hδ',
+    StrictConvexBilliardTable.orientedLine_eq_orientedLine_iff _ (Real.mapsTo_cos_Ioo hδ),
+    coe_toStrictConvexBilliardTable, T.apply_eq_apply_iff,
+    Real.injOn_cos.eq_iff (Ioo_subset_Icc_self hδ) hδ']
 
 /-- The ray from an interior point `z₀` of `Ω` in the direction `−e` meets the curve: the last
 point of `Ω` on it is not interior, so it is a point `γ(s)`. -/
@@ -317,6 +323,11 @@ private def phaseCylinderEquiv :
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
+private theorem coe_phaseCylinderEquiv_apply (x : AddCircle ℓ × Ioo 0 Real.pi) :
+    (T.phaseCylinderEquiv x : AddCircle ℓ × Icc 0 Real.pi) =
+      (x.1, ⟨x.2, Ioo_subset_Icc_self x.2.property⟩) :=
+  (rfl)
+
 /-- **The phase cylinder is the space of oriented lines meeting the interior.** The map
 `Λ(s, δ) = (exp(iδ) τ(s), exp(iδ) τ(s) × γ(s))` is a homeomorphism from `AddCircle ℓ × (0, π)`
 onto the set of oriented lines meeting the interior of the region `Ω`. Its inverse sends such a
@@ -331,9 +342,9 @@ def orientedLineHomeomorph :
 @[simp]
 theorem coe_orientedLineHomeomorph_apply (s : ℝ) (δ : Ioo 0 Real.pi) :
     (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ := by
-  rw [orientedLineHomeomorph, Homeomorph.trans_apply, Equiv.toHomeomorphOfContinuousClosed_apply,
-    Equiv.ofBijective_apply, restrictedLine, phaseCylinderEquiv, Homeomorph.homeomorph_mk_coe,
-    Equiv.coe_fn_mk, restrictPreimage_mk, Subtype.coe_mk, closedLine, addCircleOrientedLine_mk]
+  -- Keep the preimage subtype unnormalised, so that the coercions still match.
+  simp [orientedLineHomeomorph, restrictedLine, closedLine, coe_phaseCylinderEquiv_apply,
+    -preimage_ofPred_eq]
 
 /-- The inverse of `Λ` sends the line `Λ(s, δ)` to its entry state `(s, δ)`. -/
 @[simp]
