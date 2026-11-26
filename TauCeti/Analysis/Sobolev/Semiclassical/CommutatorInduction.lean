@@ -111,7 +111,8 @@ theorem semiclassicalSobolevNorm_succ_le_add_sum {k : ℕ} {f : CoordinateSpace 
   rw [semiclassicalSobolevNorm_succ_eq]
   simp only [semiclassicalSobolevNorm_def k]
   refine add_le_add le_rfl ((mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi ↦
-    mul_le_mul_of_nonneg_left (lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv (hf.of_le ?_))
+    mul_le_mul_of_nonneg_left
+      (lpNorm_iteratedFDeriv_succ_le_sum_coordinateDeriv (hf.of_le ?_) one_le_two)
       (pow_nonneg hh _)) (Real.rpow_nonneg hh _)).trans_eq ?_)
   · exact_mod_cast Nat.succ_le_succ (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
   · simp only [Finset.mul_sum]
