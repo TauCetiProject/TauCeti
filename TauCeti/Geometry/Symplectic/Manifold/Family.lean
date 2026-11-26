@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 public import TauCeti.Geometry.Symplectic.Manifold.Flat
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Smooth families of nondegenerate two-forms
