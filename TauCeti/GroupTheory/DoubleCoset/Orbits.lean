@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.GroupAction.Burnside
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import Mathlib.GroupTheory.Coset.Card
 public import Mathlib.GroupTheory.DoubleCoset
+import Mathlib.Tactic.Group
 import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
@@ -32,6 +33,8 @@ numbers, which is the group-theoretic half of the statement that the permutation
 
 * `TauCeti.doubleCosetEquivOrbitQuotient`: the bijection
   `H \ G / K ≃ ((G ⧸ H) × (G ⧸ K)) / G`.
+* `TauCeti.doubleCosetQuotientEquivOrbitRelQuotient`: the class set `Γ \ G / J` as the orbit
+  space of `J` acting on `G ⧸ Γ`, by `Γ g J ↦ J • g⁻¹ Γ`.
 * `TauCeti.orbitOfCosetTranslate`: the `𝒢`-orbit a class in `ℋ ⧸ 𝒢.subgroupOf ℋ` translates a
   point into — the index map along which a coset sum is regrouped into an orbit sum.
 * `Subgroup.orbitOfRightCoset`: for a subgroup `Γ` and a point `v`, the map `Γ g ↦ Γ (g • v)`
@@ -188,6 +191,54 @@ theorem card_doubleCosetQuotient_eq_card_orbitQuotient :
       Nat.card (orbitRel.Quotient G ((G ⧸ H) × (G ⧸ K))) :=
   Nat.card_congr (doubleCosetEquivOrbitQuotient H K)
 
+
+section ClassSet
+
+variable (Γ J : Subgroup G)
+
+/-- Two cosets `g⁻¹ Γ` and `h⁻¹ Γ` lie in one `J`-orbit exactly when `g` and `h` lie in one
+double coset `Γ g J`. -/
+theorem orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq {g h : G} :
+    (Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ) : orbitRel.Quotient J (G ⧸ Γ)) =
+        Quotient.mk'' ((h⁻¹ : G) : G ⧸ Γ) ↔
+      DoubleCoset.mk Γ J g = DoubleCoset.mk Γ J h := by
+  rw [Quotient.eq'', orbitRel_apply, ← mem_doubleCoset_iff_mk_mem_orbit,
+    DoubleCoset.mem_doubleCoset, DoubleCoset.eq]
+  constructor
+  · rintro ⟨u, hu, γ, hγ, h'⟩
+    exact ⟨γ, hγ, u, hu, by rw [← inv_inv g, h']; group⟩
+  · rintro ⟨γ, hγ, u, hu, h'⟩
+    exact ⟨u, hu, γ, hγ, by rw [h']; group⟩
+
+/-- **The class set as an orbit space.** The double coset space `Γ \ G / J` is the orbit space of
+`J` acting on the left cosets `G ⧸ Γ`, by `Γ g J ↦ J • g⁻¹ Γ`. -/
+noncomputable def doubleCosetQuotientEquivOrbitRelQuotient :
+    DoubleCoset.Quotient (Γ : Set G) J ≃ orbitRel.Quotient J (G ⧸ Γ) :=
+  Equiv.ofBijective
+    (Quotient.lift (fun g ↦ Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ)) fun _ _ h ↦
+      (orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq Γ J).mpr (Quotient.sound h))
+    ⟨fun p q ↦ by
+      induction p using Quotient.inductionOn' with | h g => ?_
+      induction q using Quotient.inductionOn' with | h h => ?_
+      exact (orbitRel_mk_inv_eq_iff_doubleCoset_mk_eq Γ J).mp,
+    fun p ↦ by
+      induction p using Quotient.inductionOn' with | h x => ?_
+      induction x using QuotientGroup.induction_on with | H g => ?_
+      exact ⟨DoubleCoset.mk Γ J g⁻¹, by simp [DoubleCoset.mk]⟩⟩
+
+@[simp]
+theorem doubleCosetQuotientEquivOrbitRelQuotient_mk (g : G) :
+    doubleCosetQuotientEquivOrbitRelQuotient Γ J (DoubleCoset.mk Γ J g) =
+      Quotient.mk'' ((g⁻¹ : G) : G ⧸ Γ) :=
+  (rfl)
+
+@[simp]
+theorem doubleCosetQuotientEquivOrbitRelQuotient_symm_mk (g : G) :
+    (doubleCosetQuotientEquivOrbitRelQuotient Γ J).symm (Quotient.mk'' (g : G ⧸ Γ)) =
+      DoubleCoset.mk Γ J g⁻¹ := by
+  rw [Equiv.symm_apply_eq, doubleCosetQuotientEquivOrbitRelQuotient_mk, inv_inv]
+
+end ClassSet
 
 section GeneralAction
 

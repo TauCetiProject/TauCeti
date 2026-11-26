@@ -322,6 +322,16 @@ theorem halfImage_le_halfImage_enlarge {U : Fin A.n → Set M} {hU : ∀ j, IsOp
   (A.enlarge U hU hAU hUc hUs).mem_halfImage.2
     ⟨image_le_image_enlarge j (A.mem_halfImage.1 hz).1, (A.mem_halfImage.1 hz).2⟩
 
+/-- The charts of `A`, as an atlas of another bundle, have the same interiors of chart images. -/
+@[simp]
+theorem halfImage_ofBaseSet {F' : Type*} [TopologicalSpace F'] {V' : M → Type*}
+    [TopologicalSpace (TotalSpace F' V')] [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V']
+    {h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet} (i : Fin A.n) :
+    (A.ofBaseSet h).halfImage i = A.halfImage i :=
+  SetLike.ext fun _ ↦ (mem_halfImage (A := A.ofBaseSet h) (i := i)).trans <| by
+    rw [image_ofBaseSet]
+    exact (mem_halfImage (A := A)).symm
+
 /-- The extended chart `i` sends a point to its image under the manifold chart, read in `ℂ`. -/
 theorem extChartAt_center_apply (i : Fin A.n) (x : M) :
     extChartAt closedUpperHalfPlaneModel (A.center i) x = (A.chart i x : ℂ) := by

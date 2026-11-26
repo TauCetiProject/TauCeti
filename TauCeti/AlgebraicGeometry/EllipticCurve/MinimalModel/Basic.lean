@@ -79,7 +79,9 @@ have the same `c₄` valuation too.
   reduction.
 * `WeierstrassCurve.hasGoodReduction_iff_isUnit_integralModel_Δ`: an integral equation has good
   reduction exactly when its integral discriminant is a unit, and then it is elliptic
-  (`WeierstrassCurve.HasGoodReduction.isElliptic`).
+  (`WeierstrassCurve.HasGoodReduction.isElliptic`). For an equation over a ring `A → R`,
+  `WeierstrassCurve.hasGoodReduction_baseChange_iff_isUnit_algebraMap_Δ` reads this on the image
+  of its discriminant in `R`.
 * `WeierstrassCurve.hasMultiplicativeReduction_iff_not_isUnit_integralModel_Δ_and_isUnit_c₄`: it
   has multiplicative reduction exactly when its integral discriminant is not a unit and its
   integral `c₄` is.
@@ -530,6 +532,15 @@ theorem hasGoodReduction_iff_isUnit_integralModel_Δ (W : WeierstrassCurve K) [I
   rw [← hval]
   exact ⟨fun h ↦ h.goodReduction,
     fun h ↦ { toIsMinimal := isMinimal_of_valuation_Δ_eq_one R W h, goodReduction := h }⟩
+
+/-- **An equation defined over a ring mapping to `R` has good reduction exactly when the image of
+its discriminant in `R` is a unit.** For a scalar tower `A → R → K` and an equation `W` over `A`,
+the base change of `W` to `K` is integral with integral model the image of `W` in `R`, so this is
+`hasGoodReduction_iff_isUnit_integralModel_Δ` read on that image. -/
+theorem hasGoodReduction_baseChange_iff_isUnit_algebraMap_Δ {A : Type*} [CommRing A]
+    [Algebra A R] [Algebra A K] [IsScalarTower A R K] (W : WeierstrassCurve A) :
+    (W.baseChange K).HasGoodReduction R ↔ IsUnit (algebraMap A R W.Δ) := by
+  rw [hasGoodReduction_iff_isUnit_integralModel_Δ, integralModel_baseChange_eq_map, map_Δ]
 
 /-- **An integral equation has multiplicative reduction exactly when the discriminant of its
 integral model is not a unit and its `c₄` is.** Such an equation is automatically minimal

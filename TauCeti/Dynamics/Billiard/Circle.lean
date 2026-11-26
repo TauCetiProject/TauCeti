@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.NumberTheory.Real.Irrational
+public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
 public import TauCeti.Dynamics.Billiard.RotationNumber
@@ -47,6 +48,10 @@ as a test of the general billiard API of `TauCeti.Dynamics.Billiard.NextCollisio
   (`TauCeti.StrictConvexBilliardTable.existsUnique_isInvariantGraph_circle`), and the rotation
   number `c ↦ arccos c / π` is a homeomorphism from `(-1, 1)` onto `(0, 1)`
   (`TauCeti.StrictConvexBilliardTable.circleRotationNumberHomeomorph`).
+* **The oriented-plane circle.** The table is the circular table
+  `Complex.orientation.circleBilliardTable 0 1 R` of `TauCeti.Dynamics.Billiard.Circle.Basic`
+  (`TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`), so the formulas stated there
+  in every oriented Euclidean plane apply to it.
 * **Periodic states.** A state returns after `n` bounces exactly when `n arccos v` is a multiple of
   `π` (`TauCeti.StrictConvexBilliardTable.isPeriodicPt_billiardMap_circle_iff`), so the periodic
   states are those whose angle `arccos v` is a rational multiple of `π`
@@ -170,6 +175,16 @@ theorem circle_apply (s : ℝ) : circle hR s = circleMap 0 R (s / R) :=
 @[simp]
 theorem period_circle : (circle hR).period = 2 * π * R :=
   (rfl)
+
+/-- The circle billiard table of radius `R` is the circular table
+`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the
+next-collision and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic`, stated
+in every oriented Euclidean plane, apply to it. -/
+theorem circle_eq_circleBilliardTable :
+    circle hR = Complex.orientation.circleBilliardTable 0 1 R (by simp) hR := by
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
+  · rw [circle_apply, Orientation.coe_circleBilliardTable, Complex.orientation_circleCurve_one]
+  · rw [period_circle, Orientation.circleBilliardTable_period]
 
 /-- The parametrization `s ↦ R e^{i s / R}` of the circular table is smooth. -/
 theorem contDiff_circle {n : WithTop ℕ∞} : ContDiff ℝ n (circle hR) := by
