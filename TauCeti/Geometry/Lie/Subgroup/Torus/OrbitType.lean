@@ -19,8 +19,9 @@ Let `G` be a Lie group with Lie algebra `𝔤` of left-invariant derivations, `B
 invariant form on `𝔤`, and let `𝔤 = t ⊕ E₁ ⊕ ⋯ ⊕ E_r` be a decomposition into an abelian subspace
 `t` and root planes `E_i` with roots `α_i ∈ t*` (`TauCeti.IsRootPlaneDecomposition B t α E J`).
 For a compact Lie group, a maximal torus `T` with Lie algebra `t = Lie(T)` and an invariant inner
-product give such a decomposition
-(`TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`). This file determines the adjoint
+product supply the data of such a decomposition, the internal direct sum and the root planes
+(`TauCeti.Lie.IsMaximalTorus.exists_isInternal_isRootPlane`); that data still has to be assembled
+into an `IsRootPlaneDecomposition` before the results here apply. This file determines the adjoint
 stabilizer `Z_G(X) = {g | Ad_g X = X}` of `X ∈ t` from the roots that vanish at `X`.
 
 * **Its Lie algebra.** The Lie algebra of `Z_G(X)` is the centralizer of `X`

@@ -264,12 +264,11 @@ theorem Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero {X Y : LeftInvariantDerivati
   refine tangentAd_mulInvariantExp_smul_apply_eq_self_of_lie_eq_zero ?_ s
   rw [← LieEquiv.map_lie, h, map_zero]
 
-/-- **The one-parameter subgroup of `X` fixes `Y` under `Ad` exactly when `⁅X, Y⁆ = 0`.** The
-converse direction differentiates the constant curve `s ↦ Ad (lieExp (s • X)) Y` at `0`, where its
-derivative is `⁅X, Y⁆` by `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`. -/
+/-- **The one-parameter subgroup of `X` fixes `Y` under `Ad` exactly when `⁅X, Y⁆ = 0`.** -/
 theorem Ad_lieExp_smul_apply_eq_self_iff {X Y : LeftInvariantDerivation I G} :
     (∀ s : ℝ, Ad (I := I) (lieExp (I := I) (s • X)) Y = Y) ↔ ⁅X, Y⁆ = 0 := by
   refine ⟨fun h ↦ ?_, Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero⟩
+  -- The curve `s ↦ Ad (lieExp (s • X)) Y` has derivative `⁅X, Y⁆` at `0`; here it is constant.
   have hderiv := hasDerivAt_Ad_lieExp_smul_apply_zero (I := I) X Y
   rw [show (fun s : ℝ ↦ Ad (I := I) (lieExp (I := I) (s • X)) Y) = fun _ ↦ Y from funext h]
     at hderiv
