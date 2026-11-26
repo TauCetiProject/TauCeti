@@ -28,7 +28,8 @@ The choice of exponents and the half-gamma normalization follow
 public section
 
 open Complex Complex.HadamardThreeLines Filter Set
-open TauCeti.Complex.HadamardThreeLines (closure_verticalStrip)
+open TauCeti.Complex.HadamardThreeLines (closure_verticalStrip
+  norm_le_max_mul_rpow_of_mem_verticalClosedStrip)
 open scoped Topology
 
 namespace TauCeti.DirichletCharacter
@@ -109,7 +110,7 @@ theorem norm_gammaFactor_div_two_sq_le_of_LFunction_eq_zero (D : ℝ) :
   rw [← hFzero]
   have hs₁ : s.re < 1 := lt_of_not_ge fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) h hzero
   have hz : s ∈ verticalClosedStrip (1 / 2) 2 := ⟨by linarith, hs₁.le.trans (by norm_num)⟩
-  refine (HadamardThreeLines.norm_le_max_mul_rpow_of_mem_verticalClosedStrip
+  refine (norm_le_max_mul_rpow_of_mem_verticalClosedStrip
     (q := -1) (zero_lt_one.trans_le hT) hz hd hb hl
       (fun z hz ↦ by simpa only [F, Real.rpow_neg_one, div_eq_mul_inv] using hright z hz)).trans ?_
   refine mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hT ?_) (by positivity)

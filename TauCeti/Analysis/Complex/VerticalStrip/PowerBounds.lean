@@ -16,9 +16,9 @@ Hadamard's three-lines estimate is the affine interpolation of the two edge expo
 
 public section
 
-open Set
+open Complex Complex.HadamardThreeLines Set
 
-namespace Complex.HadamardThreeLines
+namespace TauCeti.Complex.HadamardThreeLines
 
 /-- Interpolate bounds `A * T ^ p` and `B * T ^ q` across a vertical strip. The constant
 `max A B` is uniform in the position in the strip. -/
@@ -48,4 +48,4 @@ theorem norm_le_max_mul_rpow_of_mem_verticalClosedStrip {E : Type*}
     _ = _ := by rw [← Real.rpow_add' hC (by ring_nf; norm_num), sub_add_cancel, Real.rpow_one,
       ← Real.rpow_add hT, mul_comm p, mul_comm q]
 
-end Complex.HadamardThreeLines
+end TauCeti.Complex.HadamardThreeLines
