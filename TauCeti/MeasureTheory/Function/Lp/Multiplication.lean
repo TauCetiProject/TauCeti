@@ -40,7 +40,9 @@ A function `f` continuous and bounded on a measurable set `s` has a class
 `x ↦ f x • g x` (`multiplicationOperator_linftyOfContinuousOn_ae`). For `|f| ≤ 1` on `s` it does
 not increase the norm (`norm_multiplicationOperator_linftyOfContinuousOn_apply_le`), and
 multiplications by two functions summing to one on `s` add up to the identity
-(`multiplicationOperator_linftyOfContinuousOn_add_eq_one`). Multiplication by `a` commutes
+(`multiplicationOperator_linftyOfContinuousOn_add_eq_one`). The interpolation
+`x ↦ (1 - f x) • g x + f x • g' x` of two `L∞` classes by such an `f` is again an `L∞` class
+(`exists_ae_eq_one_sub_smul_add_smul`). Multiplication by `a` commutes
 with composition by a continuous linear map (`ContinuousLinearMap.compLpL_multiplicationOperator`).
 
 On a compact space with a finite measure `μ`, a continuous function `f` acts on `L²(μ; E)` by the
@@ -261,6 +263,25 @@ theorem multiplicationOperator_linftyOfContinuousOn_add_eq_one {g : X → ℝ}
     with x hx h₁ h₂ hxs
   rw [add_apply, hx, Pi.add_apply, h₁, h₂, ← add_smul, h x hxs, one_smul,
     one_apply_eq_self]
+
+/-- The interpolation `x ↦ (1 - f x) • g x + f x • g' x` of two essentially bounded functions by a
+function `f` continuous and bounded on `s` has a class in `L∞(μ.restrict s)`. -/
+theorem exists_ae_eq_one_sub_smul_add_smul {g g' : X → E} {a a' : Lp E ∞ (μ.restrict s)}
+    (ha : a =ᵐ[μ.restrict s] g) (ha' : a' =ᵐ[μ.restrict s] g') (hf : ContinuousOn f s)
+    (hs : MeasurableSet s) (hC : ∃ C, ∀ x ∈ s, ‖f x‖ ≤ C) :
+    ∃ b : Lp E ∞ (μ.restrict s), b =ᵐ[μ.restrict s] fun x ↦ (1 - f x) • g x + f x • g' x := by
+  have hC' : ∃ C, ∀ x ∈ s, ‖1 - f x‖ ≤ C := by
+    obtain ⟨C, hC⟩ := hC
+    exact ⟨1 + C, fun x hx ↦ (norm_sub_le _ _).trans (by rw [norm_one]; linarith [hC x hx])⟩
+  have hf' : ContinuousOn (fun x ↦ 1 - f x) s := continuousOn_const.sub hf
+  refine ⟨multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf' hs hC') a +
+    multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) a', ?_⟩
+  filter_upwards [Lp.coeFn_add
+      (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf' hs hC') a)
+      (multiplicationOperator (TauCeti.linftyOfContinuousOn μ hf hs hC) a'),
+    multiplicationOperator_linftyOfContinuousOn_ae hf' hs hC' a,
+    multiplicationOperator_linftyOfContinuousOn_ae hf hs hC a', ha, ha'] with x h h₁ h₂ h₃ h₄
+  rw [h, Pi.add_apply, h₁, h₂, h₃, h₄]
 
 end ContinuousOn
 
