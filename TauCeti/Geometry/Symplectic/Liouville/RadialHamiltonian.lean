@@ -119,11 +119,8 @@ theorem apply_hamiltonianVectorField_liouvilleRadialCoordinate (h : IsLiouvilleC
     (hZ : RoughForm.interior Z ω.val = α.val) (hx : x ∉ W) :
     α.val x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
       -liouvilleRadialCoordinate Z W x := by
-  have hα : α.val x ![ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x] =
-      SmoothBundleForm.eval₂ ω x (Z x)
-        (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x) := by
-    rw [← hZ, RoughForm.interior_apply, SmoothBundleForm.eval₂_apply]
-  rw [hα, SmoothBundleForm.eval₂_swap, h.isNondegenerate.eval₂_hamiltonianVectorField,
+  rw [h.isNondegenerate.apply_hamiltonianVectorField_of_interior_eq (z := Z x)
+      (fun v ↦ by rw [← hZ, RoughForm.interior_apply]),
     h.mvfderiv_liouvilleRadialCoordinate_apply hZ hx]
 
 /-- The Hamiltonian vector field of the radial coordinate vanishes nowhere on the cylindrical
