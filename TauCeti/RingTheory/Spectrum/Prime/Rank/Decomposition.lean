@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
-import Mathlib.RingTheory.Support
 import TauCeti.RingTheory.Idempotents.Prime
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
@@ -74,15 +73,6 @@ section Piece
 
 variable {e : R}
 
-/-- Off the basic open set of an idempotent `e`, the localization of the piece `e • M` vanishes:
-there `1 - e` becomes a unit, and it kills `e • M`. -/
-private theorem subsingleton_localizedModule_smul_top (he : IsIdempotentElem e)
-    {p : PrimeSpectrum R} (hp : e ∈ p.asIdeal) :
-    Subsingleton (LocalizedModule p.asIdeal.primeCompl ↥(e • (⊤ : Submodule R M))) := by
-  rw [← notMem_support_iff, notMem_support_iff']
-  refine fun x ↦ ⟨1 - e, (he.one_sub_mem_iff_notMem.not.2 (not_not.2 hp)), Subtype.ext ?_⟩
-  simp [sub_smul, he.smul_eq_self_of_mem_smul_top x.property]
-
 open scoped Classical in
 /-- **The rank of the piece cut out by an idempotent**: at a prime `p`, the piece `e • M` has the
 rank of `M` if `e ∉ p`, that is on the basic open set of `e`, and rank `0` otherwise. -/
@@ -90,10 +80,10 @@ theorem rankAtStalk_smul_top (he : IsIdempotentElem e) (p : PrimeSpectrum R) :
     rankAtStalk (R := R) ↥(e • (⊤ : Submodule R M)) p =
       if e ∈ p.asIdeal then 0 else rankAtStalk M p := by
   split_ifs with hp
-  · have := subsingleton_localizedModule_smul_top (M := M) he hp
+  · have := he.subsingleton_localizedModule_smul_top (M := M) hp
     exact finrank_zero_of_subsingleton
   -- Otherwise `1 - e ∈ p`, so the complementary piece `(1 - e) • M` vanishes at `p`.
-  have := subsingleton_localizedModule_smul_top (M := M) he.one_sub
+  have := he.one_sub.subsingleton_localizedModule_smul_top (M := M)
     (he.one_sub_mem_iff_notMem.2 hp)
   rw [← congrFun (rankAtStalk_eq_of_equiv (Submodule.prodEquivOfIsCompl _ _
     (he.isCompl_smul_top_one_sub_smul_top (S := R) (M := M)))) p,
