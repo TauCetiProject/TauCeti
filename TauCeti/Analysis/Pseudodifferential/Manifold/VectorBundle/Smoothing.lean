@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Topology.Algebra.Support
 
 /-!
 # Operators of order `-∞` between vector bundles and pseudolocality
@@ -29,7 +30,7 @@ The patching of pseudodifferential operators between bundles from local data res
 **pseudolocality** (Hörmander III, §18.1; Melrose, §5.3): if `P` is a classical pseudodifferential
 operator between the bundles and `f`, `g` are smooth functions with disjoint supports, then
 `s ↦ f P (g s)` has order `-∞`
-(`TauCeti.smul_comp_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`). Its entries are
+(`TauCeti.smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`). Its entries are
 `f` times the entries of `P` times `g`, so this is the scalar pseudolocality
 `TauCeti.mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators` entry by entry.
 
@@ -47,7 +48,7 @@ operator between the bundles and `f`, `g` are smooth functions with disjoint sup
 * `TauCeti.smul_mem_sectionSmoothingPseudodifferentialOperators`,
   `TauCeti.comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: multiplying by smooth
   functions on either side keeps the order `-∞`.
-* `TauCeti.smul_comp_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: pseudolocality.
+* `TauCeti.smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: pseudolocality.
 * `TauCeti.smul_sub_smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators`: localization,
   `ρ P` and `ρ P χ` differ by an operator of order `-∞` when `χ = 1` near the support of `ρ`.
 
@@ -177,7 +178,7 @@ theorem exists_isSmoothing_quantizeSchwartzValue_eq_apply_chartCutoffSection
 omit [T2Space M] in
 /-- The entries of `s ↦ f P (g s)` are the entries of `P`, multiplied by `f` on the left and by `g`
 on the right. -/
-theorem sectionEntry_smul_comp_comp_smul (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
+theorem sectionEntry_smul_comp_smul (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
     (ψ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hψ : tsupport ψ ⊆ t.baseSet) (v : V)
     (t' : Trivialization W (π W F)) [MemTrivializationAtlas t']
     (χ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hχ : tsupport χ ⊆ t'.baseSet) (ℓ : W →L[ℂ] ℂ)
@@ -189,7 +190,7 @@ theorem sectionEntry_smul_comp_comp_smul (t : Trivialization V (π V E)) [MemTri
 
 /-- **Pseudolocality.** If `P` is a classical pseudodifferential operator between bundles and `f`,
 `g` are smooth functions with disjoint supports, then `s ↦ f P (g s)` has order `-∞`. -/
-theorem smul_comp_comp_smul_mem_sectionSmoothingPseudodifferentialOperators {m : ℝ}
+theorem smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators {m : ℝ}
     (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
     {f g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (hfg : Disjoint (tsupport f) (tsupport g)) :
@@ -199,7 +200,7 @@ theorem smul_comp_comp_smul_mem_sectionSmoothingPseudodifferentialOperators {m :
       (smul_mem_sectionClassicalPseudodifferentialOperators
         (comp_smul_mem_sectionClassicalPseudodifferentialOperators hP g) f)).1,
       fun t _ ψ hψ v t' _ χ hχ ℓ ↦ ?_⟩
-  rw [sectionEntry_smul_comp_comp_smul]
+  rw [sectionEntry_smul_comp_smul]
   exact mulLeft_comp_comp_mulLeft_mem_smoothingPseudodifferentialOperators
     ((mem_sectionClassicalPseudodifferentialOperators_iff.1 hP).2 t ψ hψ v t' χ hχ ℓ) hfg
 
@@ -215,12 +216,8 @@ theorem smul_sub_smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators 
   have hdiff : ρ • P - ρ • (P ∘ₗ (χ • LinearMap.id)) = ρ • (P ∘ₗ ((1 - χ) • LinearMap.id)) := by
     ext s x
     simp [sub_smul, smul_sub]
-  obtain ⟨U, hU, hρU, hχU⟩ := mem_nhdsSet_iff_exists.1 hχ
-  have hdisj : Disjoint (tsupport ρ) (tsupport ⇑(1 - χ)) := by
-    refine Disjoint.mono_left hρU (disjoint_compl_right.mono_right ?_)
-    refine closure_minimal (fun x hx hxU ↦ hx ?_) hU.isClosed_compl
-    rw [ContMDiffMap.coe_sub, ContMDiffMap.coe_one, Pi.sub_apply, Pi.one_apply, hχU hxU, sub_self]
   rw [hdiff]
-  exact smul_comp_comp_smul_mem_sectionSmoothingPseudodifferentialOperators hP hdisj
+  exact smul_comp_smul_mem_sectionSmoothingPseudodifferentialOperators hP
+    (disjoint_tsupport_iff_eventuallyEq.2 (hχ.mono fun x hx ↦ by simp [hx]))
 
 end TauCeti
