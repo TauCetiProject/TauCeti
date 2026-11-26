@@ -48,21 +48,25 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} [NormedAddCommGroup F] [No
   {E : X → Type w} [TopologicalSpace (TotalSpace F E)] [∀ x, NormedAddCommGroup (E x)]
   [∀ x, InnerProductSpace ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E] {n : ℕ}
   {G : Type*} [Group G] [TopologicalSpace G] {ρ : G →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)}
-  {H : Type w} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
+  {H : Type w} [Group H] [TopologicalSpace H]
   {ρ' : H →* (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)}
   {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
   (s : OrthonormalFrameLift F E n G ρ) (σ : G →* H) (hσ : Continuous σ) (hσρ : ρ'.comp σ = ρ)
   (hρ'n : ∀ h v, ‖WithLp.toLp 2 (ρ' h v)‖ = ‖WithLp.toLp 2 v‖)
   (hρ'c : ∀ v, Continuous fun h ↦ ρ' h v)
 
+variable [ContinuousMul H] in
 /-- **The frame of `[p, 1]`** in the pullback of the extension of a lift `s` is the frame of `p`
 in the pullback of `s`. -/
+@[simp]
 theorem toFrame_pullback_extend_inl (g : K) (y : Y) (p : s.P (g y)) :
     ((s.extend σ hσ hσρ hρ'n hρ'c).pullback g).toFrame ⟨y, Extend.inl σ hσ p⟩ =
       (s.pullback g).toFrame ⟨y, p⟩ := by
   obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
   rw [(s.extend σ hσ hσρ hρ'n hρ'c).toFrame_pullback_mk g y _
     ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c (g y) p).trans hφ), s.toFrame_pullback_mk g y p hφ]
+
+variable [IsTopologicalGroup H]
 
 /-- **Extension commutes with pullback**: for a continuous map `g : Y → X`,
 `(g^* s).extend σ ≃ g^* (s.extend σ)`. Over `y`, both principal bundles are `P_{g y} ×_σ H`, and
