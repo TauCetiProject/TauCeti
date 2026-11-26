@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Group.Units
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable.BlockSum
 public import TauCeti.Topology.Algebra.Group.Connected
+public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Scalar
 public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Stable
 
 /-!
@@ -65,6 +66,8 @@ of complex matrices out of this file.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_surjective`,
   `TauCeti.AlgebraicK1.ker_toStableComponentGroup`: the comparison is surjective, with kernel the
   image of the stable identity component.
+* `TauCeti.AlgebraicK1.toStableComponentGroup_ofUnits_eq_one_of_mem_connectedComponentOfOne`: a
+  unit in the identity component of `Aˣ` has trivial class in the stable component group.
 * `TauCeti.AlgebraicK1.toStableComponentGroup_map`: naturality of the comparison.
 
 ## References
@@ -396,6 +399,17 @@ theorem ker_toStableComponentGroup :
   rw [← Subgroup.map_comap_eq_self_of_surjective (Group.Abelianization.surjective_of _)
       (toStableComponentGroup A).ker,
     MonoidHom.comap_ker, toStableComponentGroup_comp_of, QuotientGroup.ker_mk']
+
+/-- A unit in the identity component of `Aˣ` has trivial class in the stable component group: the
+`1 × 1` scalar matrix `(u)` depends continuously on `u`, so it lies in the identity component of
+`GL₁(A)`. -/
+theorem toStableComponentGroup_ofUnits_eq_one_of_mem_connectedComponentOfOne {u : Aˣ}
+    (hu : u ∈ Subgroup.connectedComponentOfOne Aˣ) :
+    toStableComponentGroup A (ofUnits A u) = 1 := by
+  rw [ofUnits_apply, toStableComponentGroup_mk]
+  exact StableComponentGroup.mk_eq_one_of_mem_connectedComponentOfOne
+    (Subgroup.map_connectedComponentOfOne_le GeneralLinearGroup.continuous_scalar
+      (Subgroup.mem_map_of_mem _ hu))
 
 /-- The comparison of algebraic `K₁` with the stable component group is natural for continuous
 ring homomorphisms. -/
