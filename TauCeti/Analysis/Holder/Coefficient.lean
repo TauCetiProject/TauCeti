@@ -16,7 +16,8 @@ Second-order operators on `ℝⁿ = EuclideanSpace ℝ ι` have scalar Hölder c
 `bⁱ` on a metric space `X`. At each point `p : X` they assemble into the matrix `(aⁱʲ(p))` and
 the vector `∑ᵢ bⁱ(p) eᵢ`. This file bounds the trace of that matrix and the norm of that vector
 by the supremum-plus-Hölder norms of the coefficients, uniformly in `p`, and bounds each
-coefficient entrywise in the same way.
+coefficient entrywise in the same way. Along the segment from constant coefficients `M` to `a`,
+the coefficient matrix at `p` is the corresponding point of the segment from `M` to `(aⁱʲ(p))`.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ coefficient entrywise in the same way.
 * `TauCeti.HolderSpace.norm_sum_apply_smul_single_le_sum_norm`: `‖∑ᵢ bⁱ(p) eᵢ‖ ≤ ∑ᵢ ‖bⁱ‖`.
 * `TauCeti.HolderSpace.abs_apply_le_sum_sum_norm`, `TauCeti.HolderSpace.abs_apply_le_sum_norm`:
   the entrywise bounds `|aⁱʲ(p)| ≤ ∑ᵢ ∑ⱼ ‖aⁱʲ‖` and `|bⁱ(p)| ≤ ∑ᵢ ‖bⁱ‖`.
+* `TauCeti.HolderSpace.of_lineMap_const_apply`: the matrix of `(1 - t) M + t a` at `p` is
+  `(1 - t) M + t (aⁱʲ(p))`.
 -/
 
 public section
@@ -60,5 +63,16 @@ theorem abs_apply_le_sum_sum_norm (a : ι → ι → HolderSpace α X ℝ) (p : 
     (Finset.single_le_sum (f := fun i ↦ ∑ j, ‖a i j‖)
       (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ norm_nonneg (a i j))
       (Finset.mem_univ i))
+
+omit [Fintype ι] in
+/-- Along the segment from the constant coefficients `M` to `a`, the coefficient matrix at `p` is
+`(1 - t) M + t (aⁱʲ(p))`. With `M = 1` this is the segment from the Laplacian or heat operator used
+by the method of continuity. -/
+theorem of_lineMap_const_apply (M : Matrix ι ι ℝ) (a : ι → ι → HolderSpace α X ℝ) (t : ℝ)
+    (p : X) :
+    (Matrix.of fun i j ↦ AffineMap.lineMap (fun i j ↦ const (M i j)) a t i j p) =
+      AffineMap.lineMap M (Matrix.of fun i j ↦ a i j p) t := by
+  ext i j
+  simp [AffineMap.lineMap_apply_module]
 
 end TauCeti.HolderSpace

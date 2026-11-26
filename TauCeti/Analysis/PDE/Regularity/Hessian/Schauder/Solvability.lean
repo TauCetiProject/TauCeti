@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.Operator
 import TauCeti.Analysis.Holder.C2HolderBoundary.Extension
+import TauCeti.Analysis.Holder.Coefficient
 import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
 import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.BoundedDomain
@@ -161,10 +162,9 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
       hα₀ hα₁ hb hbdry (∑ _i : Fin (n + 1), ∑ _j : Fin (n + 1), (K : ℝ)) K K B hlam
   refine ⟨8 * C, by positivity, fun a b c ha hak hbk hck hc u hu ↦ ?_⟩
   -- The coefficients, extended to `α`-Hölder functions on `closure Ω`.
-  have hext (f : HolderSpace α Ω ℝ) := HolderSpace.exists_holderOnWith_closure_and_norm_le
-    (s := (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) hα₀ f
+  have hext (f : HolderSpace α Ω ℝ) := HolderSpace.exists_holderOnWith_closure_and_norm_le hα₀ f
   choose A hAeq hAH hAbd using fun i j ↦ hext (a i j)
-  choose Bc hBeq hBH hBbd using fun i ↦ hext (b i)
+  choose Bc hBeq hBH _ using fun i ↦ hext (b i)
   obtain ⟨Cc, hCeq, hCH, hCbd⟩ := hext c
   have hAK (i j) {z} (hz : z ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :
       |A i j z| ≤ K := ((Real.norm_eq_abs _).symm.trans_le (hAbd i j z hz)).trans (hak i j)
@@ -173,8 +173,9 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
   have hbvH : HolderOnWith B α bv Ω := (HolderOnWith.sum (s := Finset.univ) fun i _ ↦
     (((hBH i).mono subset_closure).mono_const (by exact_mod_cast hbk i)).smul_const
       (EuclideanSpace.single i (1 : ℝ))).mono_const (by simp [B])
-  have hbvB (z) (hz : z ∈ Ω) : ‖bv z‖ ≤ B := (norm_sum_le_of_le (n := fun _ ↦ (K : ℝ)) _ fun i _ ↦
-    by simpa [norm_smul] using (hBbd i z (subset_closure hz)).trans (hbk i)).trans_eq (by simp [B])
+  have hbvB (z) (hz : z ∈ Ω) : ‖bv z‖ ≤ B := by
+    simpa [bv, hBeq _ ⟨z, hz⟩, B] using le_trans
+      (HolderSpace.norm_sum_apply_smul_single_le_sum_norm b _) (Finset.sum_le_sum fun i _ ↦ hbk i)
   obtain ⟨w, hw, hwu, hw0, V, hwH⟩ := exists_contDiff_eq_and_holderOnWith_closure hα₀ hbdry hb hu
   -- On `Ω` the operator of the global estimate is `L u`.
   have hLu (z) (hz : z ∈ Ω) :
@@ -210,23 +211,6 @@ theorem exists_norm_le_mul_norm_nonDivergenceOperatorL (hα₀ : 0 < α) (hα₁
 section MethodOfContinuity
 
 variable (hα₁ : α < 1)
-
-/-- The coefficients of the Laplacian: the identity matrix. -/
-private abbrev laplacianCoeff : Fin (n + 1) → Fin (n + 1) → HolderSpace α Ω ℝ :=
-  fun i j ↦ if i = j then 1 else 0
-
-/-- Along the segment from the identity to `a`, the matrix of coefficients at `x` is
-`(1 - t) 1 + t a(x)`. -/
-private theorem of_lineMap_laplacianCoeff_apply (a : Fin (n + 1) → Fin (n + 1) → HolderSpace α Ω ℝ)
-    (t : ℝ) (x : Ω) :
-    (Matrix.of fun i j ↦ AffineMap.lineMap laplacianCoeff a t i j x) =
-      AffineMap.lineMap (1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (Matrix.of fun i j ↦ a i j x)
-        t := by
-  ext i j
-  simp only [AffineMap.lineMap_apply_module, Matrix.of_apply, Pi.add_apply, Pi.smul_apply,
-    HolderSpace.add_apply, HolderSpace.smul_apply, Matrix.add_apply, Matrix.smul_apply,
-    Matrix.one_apply]
-  split_ifs <;> simp [HolderSpace.one_apply, HolderSpace.zero_apply]
 
 /-- **The a priori estimate along the segment from the Laplacian.** For elliptic `a` and `c ≤ 0`
 there is `C` with `‖u‖ ≤ C ‖((1 - t) Δ + t L) u‖` for every `u ∈ C^{2,α}(Ω)` vanishing on `∂Ω` and
@@ -266,7 +250,9 @@ private theorem exists_forall_norm_le_lineMap (hα₀ : 0 < α)
       (laplacianL α Ω ℝ ∘L (vanishingOnFrontierSubmodule 2 α Ω ℝ).subtypeL)
       (nonDivergenceOperatorL hΩ hb hα₁.le a b c ∘L
         (vanishingOnFrontierSubmodule 2 α Ω ℝ).subtypeL) t =
-      nonDivergenceOperatorL hΩ hb hα₁.le (AffineMap.lineMap laplacianCoeff a t)
+      nonDivergenceOperatorL hΩ hb hα₁.le
+        (AffineMap.lineMap
+          (fun i j ↦ HolderSpace.const ((1 : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) i j)) a t)
         (AffineMap.lineMap 0 b t) (AffineMap.lineMap 0 c t) ∘L
           (vanishingOnFrontierSubmodule 2 α Ω ℝ).subtypeL := by
     rw [nonDivergenceOperatorL_lineMap, nonDivergenceOperatorL_eq_laplacianL]
@@ -274,15 +260,12 @@ private theorem exists_forall_norm_le_lineMap (hα₀ : 0 < α)
     simp [AffineMap.lineMap_apply_module]
   rw [hcomp]
   refine hC _ _ _ (fun y ξ ↦ ?_) (fun i j ↦ ?_) (fun i ↦ ?_) ?_ (fun y ↦ ?_) x x.property
-  · rw [of_lineMap_laplacianCoeff_apply]
+  · rw [HolderSpace.of_lineMap_const_apply]
     exact Matrix.min_one_mul_norm_sq_le_toQuadraticForm'_lineMap ht (ha y ξ)
   · push_cast
-    refine hball ?_ ((hak i j).trans hK)
-    by_cases hij : i = j
-    · simp only [laplacianCoeff, hij, ite_true]
-      -- The unit of `C^{0,α}(Ω)` is the constant function `1`.
-      exact (HolderSpace.norm_const_le (1 : ℝ)).trans (by simp)
-    · simpa [laplacianCoeff, hij] using h0
+    refine hball ((HolderSpace.norm_const_le _).trans ?_) ((hak i j).trans hK)
+    rw [Matrix.one_apply]
+    split_ifs <;> simp [hK.trans' K.property]
   · push_cast
     exact hball h0 ((hbk i).trans hK)
   · push_cast
