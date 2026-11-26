@@ -68,6 +68,8 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.injective_exp_intCast_mul_mul_I`: the same at period `2π`, read on the real line:
+  `ℓ ↦ (θ ↦ e^{iℓθ})` is injective.
 * `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
 * `TauCeti.star_fourier_mul_fourier`: `fourier n` is unitary in `C(AddCircle T, ℂ)`.
@@ -159,6 +161,19 @@ theorem fourier_injective (hT : T ≠ 0) : Function.Injective (fourier (T := T))
           rw [← Complex.exp_sub, he]
       _ = 1 := by rw [hx, div_self (Complex.exp_ne_zero _)]
   norm_num at hcontra
+
+/-- The characters `θ ↦ e^{iℓθ}` of the rotation group are distinct for distinct `ℓ`. -/
+theorem injective_exp_intCast_mul_mul_I :
+    Function.Injective fun (ℓ : ℤ) (θ : ℝ) ↦ Complex.exp (ℓ * θ * Complex.I) := by
+  intro ℓ ℓ' h
+  -- On the circle `ℝ / 2πℤ` the Fourier monomial `fourier n` is `θ ↦ e^{inθ}`.
+  have key (n : ℤ) (x : ℝ) :
+      2 * (Real.pi : ℂ) * Complex.I * n * x / ((2 * Real.pi : ℝ) : ℂ) = n * x * Complex.I := by
+    push_cast
+    field_simp
+  refine fourier_injective (T := 2 * Real.pi) Real.two_pi_pos.ne' (ContinuousMap.ext fun x ↦ ?_)
+  induction x using QuotientAddGroup.induction_on with
+  | H x => rw [fourier_coe_apply, fourier_coe_apply, key, key]; exact congrFun h x
 
 /-- The Fourier monomial of frequency `1` in terms of the cosine and sine of `2π t / T`. -/
 theorem fourier_one_coe_apply (t : ℝ) :
