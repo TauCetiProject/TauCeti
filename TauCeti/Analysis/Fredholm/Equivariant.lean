@@ -24,6 +24,9 @@ This is the linear input of the equivariant Lyapunov–Schmidt reduction in
 
 ## Main results
 
+* `ContinuousLinearMap.mapsTo_ker_of_comp_eq_comp`,
+  `ContinuousLinearMap.mapsTo_range_of_comp_eq_comp`: an operator intertwining two maps has
+  invariant kernel and range.
 * `ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo`: an equivariant Fredholm
   operator has a Fredholm package with invariant summands.
 
@@ -39,6 +42,24 @@ public section
 open Set
 
 namespace ContinuousLinearMap
+
+section Intertwining
+
+variable {R E F : Type*} [Semiring R] [AddCommMonoid E] [AddCommMonoid F] [Module R E]
+  [Module R F] [TopologicalSpace E] [TopologicalSpace F]
+  {u : E →L[R] F} {σ : E →L[R] E} {τ : F →L[R] F}
+
+/-- If `u` intertwines `σ` with `τ`, then `σ` preserves the kernel of `u`. -/
+theorem mapsTo_ker_of_comp_eq_comp (h : u ∘L σ = τ ∘L u) : MapsTo σ u.ker u.ker := fun x hx ↦ by
+  simp only [SetLike.mem_coe, LinearMap.mem_ker, coe_coe] at hx ⊢
+  rw [← comp_apply, h, comp_apply, hx, map_zero]
+
+/-- If `u` intertwines `σ` with `τ`, then `τ` preserves the range of `u`. -/
+theorem mapsTo_range_of_comp_eq_comp (h : u ∘L σ = τ ∘L u) : MapsTo τ u.range u.range := by
+  rintro _ ⟨x, rfl⟩
+  exact ⟨σ x, congr($h x)⟩
+
+end Intertwining
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [AddCommGroup E] [AddCommGroup F] [Module 𝕜 E] [Module 𝕜 F]
@@ -56,12 +77,8 @@ theorem IsFredholm.exists_fredholmPackage_forall_mapsTo {G : Type*} [Group G] [F
       MapsTo (ρ g) pkg.decDom.X₀ pkg.decDom.X₀ ∧ MapsTo (ρ g) pkg.decDom.X₁ pkg.decDom.X₁ ∧
         MapsTo (ρ' g) pkg.decCodom.X₀ pkg.decCodom.X₀ ∧
           MapsTo (ρ' g) pkg.decCodom.X₁ pkg.decCodom.X₁ := by
-  have hker (g : G) : MapsTo (ρ g) u.ker u.ker := fun x hx ↦ by
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx ⊢
-    rw [hρ, hx, map_zero]
-  have hrange (g : G) : MapsTo (ρ' g) u.range u.range := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨ρ g x, hρ g x⟩
+  have hker (g : G) := mapsTo_ker_of_comp_eq_comp (ext (hρ g))
+  have hrange (g : G) := mapsTo_range_of_comp_eq_comp (ext (hρ g))
   obtain ⟨dom₁, h_dom, h_dom₁⟩ :=
     hu.closedComplemented_ker.exists_isTopCompl_forall_mapsTo hG ρ hker
   obtain ⟨codom₀, h_codom, h_codom₀⟩ :=

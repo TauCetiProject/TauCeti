@@ -123,19 +123,17 @@ theorem normalFormMap_map (ha : σ a = a) {x : E} (hx : f (σ x) = τ (f x)) :
 of the derivative `T` of `f` at `a`, which is the finite-dimensional domain summand. -/
 theorem mapsTo_decDom_X₀ (hf : HasFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo σ pkg.decDom.X₀ pkg.decDom.X₀ := by
-  intro x hx
-  rw [SetLike.mem_coe, ← pkg.ker_eq] at hx ⊢
-  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx ⊢
-  rw [← comp_apply, hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt
-    τ.hasFDerivAt ha hfσ, comp_apply, hx, map_zero]
+  rw [← pkg.ker_eq]
+  exact mapsTo_ker_of_comp_eq_comp
+    (hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ)
 
 /-- If `f` intertwines `σ` with `τ` near a point `a` fixed by `σ`, then `τ` preserves the range of
 the derivative `T` of `f` at `a`, which is the essential codomain summand. -/
 theorem mapsTo_decCodom_X₁ (hf : HasFDerivAt f T a) (ha : σ a = a)
     (hfσ : ∀ᶠ x in 𝓝 a, f (σ x) = τ (f x)) : MapsTo τ pkg.decCodom.X₁ pkg.decCodom.X₁ := by
   rw [← pkg.range_eq]
-  rintro _ ⟨x, rfl⟩
-  exact ⟨σ x, congr($(hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ) x)⟩
+  exact mapsTo_range_of_comp_eq_comp
+    (hf.comp_eq_comp_of_eventuallyEq σ.hasFDerivAt τ.hasFDerivAt ha hfσ)
 
 section Chart
 
