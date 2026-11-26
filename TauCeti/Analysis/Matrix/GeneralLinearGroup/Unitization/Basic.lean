@@ -30,7 +30,8 @@ file proves this invertible-matrix description for the kernel:
   matrices with scalar part `1` (`TauCeti.UnitizationKOne.mk_eq_mk_iff`), so homotopies can be
   chosen with the same scalar condition.
 
-The corresponding description by unitaries of `A⁺` is not treated here.
+The corresponding description by unitaries of `A⁺` is in
+`TauCeti.Analysis.Matrix.GeneralLinearGroup.Unitization.Unitary`.
 
 Both rest on the retraction `g ↦ g · s(g)⁻¹` of `GLₙ(A⁺)` onto the matrices with scalar part `1`
 (`TauCeti.unitizationGLRetract`), where `s(g)` is the scalar part of `g` viewed in `GLₙ(A⁺)`. It
