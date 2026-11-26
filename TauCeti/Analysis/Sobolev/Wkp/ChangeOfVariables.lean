@@ -765,7 +765,7 @@ private theorem exists_comp_top_one (h : IsChangeOfVariables 1 U V Φ L c) (u : 
     Lp.compOfMapLeSmul ℝ h.aemeasurable ENNReal.ofReal_ne_top h.map_restrict_le' (value 1 u)
   set g₀ : E → E := fun x => (fderiv ℝ Φ x).adjoint (iteratedGradient 0 u (Φ x))
   have hweak₀ : HasWeakFDerivOn mu U u₀ (fun x => innerSL ℝ (g₀ x)) := by
-    have hc0 := (hasWeakFDerivOn_value u).comp_contDiffOn_diffeo h.contDiffOn h.injOn
+    have hc0 := (hasWeakFDerivOn_value u).comp_contDiffOn_diffeo h.contDiffOn
       (fun x hx => abs_ne_zero.1 (h.pos.trans_le (h.le_abs_det x hx)).ne') h.mapsTo
     refine (hc0.congr_ae (Lp.coeFn_compOfMapLeSmul (𝕜 := ℝ) h.aemeasurable ENNReal.ofReal_ne_top
       h.map_restrict_le' (value 1 u)).symm).congr_ae_deriv (.of_forall fun x => ?_)
@@ -1135,7 +1135,7 @@ theorem gradient_firstOrder_compL_ae (h : IsChangeOfVariables (k + 1) U V Φ L c
     W1p.gradient (firstOrder k (compL h u)) =ᵐ[mu.restrict U]
       fun x => (fderiv ℝ Φ x).adjoint (W1p.gradient (firstOrder k u) (Φ x)) := by
   have hc1 : ContDiffOn ℝ 1 Φ U := h.contDiffOn.of_le (by exact_mod_cast Nat.le_add_left 1 k)
-  have h1 := (W1p.hasWeakFDerivOn (firstOrder k u)).comp_contDiffOn_diffeo hc1 h.injOn
+  have h1 := (W1p.hasWeakFDerivOn (firstOrder k u)).comp_contDiffOn_diffeo hc1
     (fun x hx => abs_ne_zero.1 (h.pos.trans_le (h.le_abs_det x hx)).ne') h.mapsTo
   have heq : (W1p.value (firstOrder k (compL h u)) : E → ℝ) =ᵐ[mu.restrict U]
       fun x => W1p.value (firstOrder k u) (Φ x) := by
