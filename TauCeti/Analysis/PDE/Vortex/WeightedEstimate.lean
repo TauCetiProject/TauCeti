@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.SoftMin
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -24,7 +26,7 @@ Combining this identity with exterior coercivity gives the weighted energy estim
 weight has gradient bounded by `c`. In particular, exponential weights with rate below
 `1/2` are allowed sufficiently far out on a vortex with unit-modulus end.
 
-The second half of the file removes the exterior restriction. With `ρ = √(1 + |z|²)` and
+The next part of the file removes the exterior restriction. With `ρ = √(1 + |z|²)` and
 `|c| < 1/2`, every compactly supported `C²` field `η` satisfies
 
 `‖exp(c ρ) η‖₂ + ‖exp(c ρ) L_x* η‖₂ ≤ K ‖exp(c ρ) L_x L_x* η‖₂`,
@@ -53,6 +55,27 @@ the weighted adjoint energy bound `integral_sq_mul_norm_sq_gaugeFixedAdjoint_le`
 `TauCeti.Analysis.PDE.Vortex.RightInverse` uses to extend the weighted estimate from test fields to
 the weak right inverse on all of `L²`.
 
+The constants of these `exp(c ρ)` estimates depend on the vortex `x`. Because the weight is
+centred at the origin, the uniform versions in `TauCeti.Analysis.PDE.Vortex.RightInverse` and
+`TauCeti.Analysis.PDE.Vortex.WindowEstimate` hold only over compact windows of divisors: a zero far
+from the origin sits where that weight is large. The next part of the file centres the weight on
+the zeros instead. With `d_D(z)` the distance from `z` to the zeros
+of a vortex with divisor `D` of degree `m` and `|c| < 1/2`,
+
+`‖exp(c d_D) η‖₂ + ‖exp(c d_D) L_x* η‖₂ ≤ K ‖exp(c d_D) L_x L_x* η‖₂`
+
+with `K` depending only on `m` and `c`, uniformly over the whole noncompact moduli space,
+including clusters of zeros that collide, separate or move off to infinity
+(`exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator`,
+`exists_integral_exp_mul_infDist_sq_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral`). The same
+localization applies, now with three inputs uniform over the moduli space: the spectral gap of
+`L_x L_x*` (`exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint`), the
+mass near one at a fixed distance from every zero (`one_sub_lt_normSq_of_forall_le_norm_sub`),
+and a smooth substitute `Φ` for `d_D`, the soft minimum of the regularized distances
+`√(b + |z - a|²)` to the zeros (`TauCeti.softMinDist`). For `b` large, `Φ` is nearly flat where it
+is small, which covers a neighbourhood of every zero of fixed size, and the localization angle is
+taken to be a function of `Φ`.
+
 The last part of the file gains one derivative. A weighted form of the Gårding inequality,
 `∫ G(w y) ≤ 2 ∫ w² |L_x y|² + (2 c² + K) ∫ w² |y|²` for weights with `|dw| ≤ |c| w`, where `G` is
 the covariant gradient density, follows from the Leibniz rule for `L_x` and the Gårding
@@ -62,8 +85,7 @@ ordinary `H¹` norm when the connection coefficients of the vortex are bounded, 
 `‖exp(c ρ) L_x L_x* η‖₂`.
 
 All estimates here concern compactly supported classical test fields. They are not a
-construction of a completed inverse or a uniform spectral gap over the noncompact vortex moduli
-space.
+construction of a completed inverse.
 
 ## Main results
 
@@ -82,6 +104,13 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator` and
   `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`:
   the global weighted estimates for `η` and `L_x* η` in terms of `L_x L_x* η`.
+* `exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le`: weighted coercivity
+  `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for the smooth weight `V = exp(c Φ)` centred on the zeros,
+  with `b`, `δ` depending only on the degree `m` and `c`.
+* `exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator` and
+  `exists_integral_exp_mul_infDist_sq_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral`: the same
+  estimates with weights `exp(c d_D)` centred on the zeros, with constants depending only on `m`
+  and `c`, uniformly over the moduli space.
 * `exists_integral_gaugeFixedGradientDensity_fun_smul_le`: the weighted Gårding inequality.
 * `exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le` and
   `exists_integral_norm_fderiv_sq_exp_smul_gaugeFixedAdjoint_le`: the weighted covariant and
@@ -90,6 +119,8 @@ All in the namespace `TauCeti.Vortex`:
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Chapter III.
+* C. H. Taubes, *Gr ⇒ SW: from pseudo-holomorphic curves to Seiberg–Witten solutions*,
+  J. Differential Geom. 51 (1999), 203–334.
 -/
 public section
 
@@ -98,7 +129,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex MeasureTheory Filter
-open scoped Laplacian Topology RealInnerProductSpace Real
+open scoped ContDiff Laplacian Topology RealInnerProductSpace Real
 
 variable {x η : ℂ → EuclideanSpace ℝ (Fin 4)} {w : ℂ → ℝ}
 
@@ -358,13 +389,13 @@ private theorem mul_integral_sq_mul_norm_sq_le_of_forall_le
 
 /-- The pointwise margin of the localization by the pair of weights `V cos θ`, `V sin θ`. Let
 `m = min c₀ a`. If `V` has logarithmic gradient at most `|c|` everywhere and at most `√m / 4` on
-the disc of radius `R₂`, and the angle `θ` has gradient at most `√m / 4` and equals `π / 2` near
-every point outside that disc, then the pair keeps the margin `min (m / 2) (a - c²)`. -/
-private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c R₂ : ℝ} {V θ : ℂ → ℝ}
+a set `S`, and the angle `θ` has gradient at most `√m / 4` and equals `π / 2` near every point
+outside `S`, then the pair keeps the margin `min (m / 2) (a - c²)`. -/
+private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c : ℝ} {S : Set ℂ} {V θ : ℂ → ℝ}
     (hV : Differentiable ℝ V) (hθ : Differentiable ℝ θ) (hV₀ : ∀ z, 0 ≤ V z)
     (hdV : ∀ z, ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2)
-    (hdV₂ : ∀ z, ‖z‖ ≤ R₂ → ‖fderiv ℝ V z‖ ^ 2 ≤ min c₀ a / 16 * V z ^ 2)
-    (hθout : ∀ z, R₂ < ‖z‖ → θ =ᶠ[𝓝 z] fun _ ↦ π / 2)
+    (hdV₂ : ∀ z ∈ S, ‖fderiv ℝ V z‖ ^ 2 ≤ min c₀ a / 16 * V z ^ 2)
+    (hθout : ∀ z ∉ S, θ =ᶠ[𝓝 z] fun _ ↦ π / 2)
     (hθd : ∀ z, ‖fderiv ℝ θ z‖ ≤ √(min c₀ a) / 4) (hm : 0 ≤ min c₀ a) (z : ℂ) :
     min (min c₀ a / 2) (a - c ^ 2) * V z ^ 2 ≤
       c₀ * (V z * Real.cos (θ z)) ^ 2 + a * (V z * Real.sin (θ z)) ^ 2 -
@@ -385,8 +416,8 @@ private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c R₂ : ℝ} {V θ : �
   have hv₁d := hgd Real.hasDerivAt_cos
     fun t ↦ (abs_neg (Real.sin t)).trans_le (Real.abs_sin_le_one t)
   have hv₂d := hgd Real.hasDerivAt_sin Real.abs_cos_le_one
-  by_cases hz : ‖z‖ ≤ R₂
-  · -- On the disc both gradients are small, and half of `m` survives.
+  by_cases hz : z ∈ S
+  · -- On `S` both gradients are small, and half of `m` survives.
     have he2 : ‖fderiv ℝ θ z‖ ^ 2 ≤ min c₀ a / 16 := by
       have := pow_le_pow_left₀ (norm_nonneg _) (hθd z) 2
       rw [div_pow, Real.sq_sqrt hm] at this
@@ -394,8 +425,7 @@ private theorem min_mul_sq_le_sub_norm_fderiv_sq {c₀ a c R₂ : ℝ} {V θ : �
     exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (sq_nonneg _)).trans
       (half_mul_le_of_norm_le (min_le_left c₀ a) (min_le_right c₀ a) (norm_nonneg _)
         (norm_nonneg _) (norm_nonneg _) (hdV₂ z hz) he2 hv₁d hv₂d)
-  · -- Outside the disc only `V sin θ = V` remains, and the exterior mass `a > c²` absorbs it.
-    push Not at hz
+  · -- Outside `S` only `V sin θ = V` remains, and the exterior mass `a > c²` absorbs it.
     have hθz : θ z = π / 2 := (hθout z hz).self_of_nhds
     have h₀ : fderiv ℝ θ z = 0 := by rw [(hθout z hz).fderiv_eq, fderiv_const_apply]
     have h₁ : fderiv ℝ (fun t ↦ V t * Real.cos (θ t)) z = 0 := by simpa [h₀, hθz] using hv₁d
@@ -468,8 +498,8 @@ theorem exists_pos_forall_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_g
     (fun z ↦ by simp only [mul_pow]; rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one])
     (fun z hz ↦ ?_)
     (min_mul_sq_le_sub_norm_fderiv_sq (hV.differentiable (by simp)) (hθ.differentiable (by simp))
-      hV₀ (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z) (hdV z)) hdV₂ hθout hθd
-      hm.le) hη hηc
+      hV₀ (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z) (hdV z))
+      (S := {z | ‖z‖ ≤ R₂}) hdV₂ (fun z hz ↦ hθout z (lt_of_not_ge hz)) hθd hm.le) hη hηc
   -- The weight `V sin θ` vanishes on the disc of radius `max R 0`.
   have hθz : θ z ≠ 0 := fun h ↦ hz (by simp [h])
   exact hR z ((le_max_left R 0).trans_lt (lt_of_not_ge fun h ↦ hθz (hθR z h)))
@@ -499,6 +529,23 @@ theorem exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFix
       (μ := μ) (a := (c ^ 2 + 1 / 4) / 2) (c := c) hc₀ (by linarith) (by linarith) R
   exact ⟨b, hb, δ, hδ, h x hx hsol hgap fun z hz ↦ (hR z hz).le⟩
 
+/-- **The adjoint step of the weighted estimates.** For a `C¹` weight `W` with
+`‖dW‖² ≤ c² W²`, `∫ W² |L_x* η|² ≤ ∫ W² |L_x L_x* η|² + (1 + 4 c²) ∫ W² |η|²`. -/
+private theorem integral_sq_mul_norm_sq_gaugeFixedAdjoint_le_add (hx : ContDiff ℝ 1 x)
+    (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) {W : ℂ → ℝ} (hW : ContDiff ℝ 1 W) {c : ℝ}
+    (hdW : ∀ z, ‖fderiv ℝ W z‖ ^ 2 ≤ c ^ 2 * W z ^ 2) :
+    ∫ z, W z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ ≤
+      ∫ z, W z ^ 2 * ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ +
+        (1 + 4 * c ^ 2) * ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ := by
+  have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le (μ := μ) hx hη hηc hW hdW
+  have hP := integral_mul_inner_le (ν := μ) (w := fun z ↦ W z ^ 2) (fun z ↦ sq_nonneg _)
+    (hW.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
+    (hW.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport
+      (continuous_gaugeFixedOperator hx.continuous (contDiff_gaugeFixedAdjoint hx hη))
+      (hasCompactSupport_gaugeFixedOperator (hasCompactSupport_gaugeFixedAdjoint hηc))) one_pos
+  norm_num at hP
+  linarith
+
 /-- **The exponentially weighted estimate for `L_x L_x*` at a plane vortex.** For an actual
 vortex with unit-modulus end and `|c| < 1/2`, there is `K` such that every compactly supported
 `C²` field `η` satisfies
@@ -521,46 +568,24 @@ theorem exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFix
     exists_pos_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_gaugeFixedOperator (μ := μ)
       hx hsol hlim hc
   set E : ℝ := Real.exp (|c| * √|b - 1|) ^ 2
-  have : 0 < E := by positivity
   refine ⟨E * E / δ ^ 2, by positivity, fun η hη hηc ↦ ?_⟩
-  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
-  set W : ℂ → ℝ := fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2))
-  set G : ℂ → EuclideanSpace ℝ (Fin 4) := gaugeFixedOperator x (gaugeFixedAdjoint x η)
-  have hGc : Continuous G :=
-    continuous_gaugeFixedOperator hx.continuous (contDiff_gaugeFixedAdjoint hx hη)
-  have hGs : HasCompactSupport G :=
-    hasCompactSupport_gaugeFixedOperator (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hw : Continuous w := (contDiff_exp_mul_sqrt_add_norm_sq (n := 0) c one_pos).continuous
-  have hW₂ : ContDiff ℝ 2 W := contDiff_exp_mul_sqrt_add_norm_sq c (by linarith)
-  have hWc : Continuous W := hW₂.continuous
-  have iWη := hWc.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ) hη.continuous hηc
-  have iWG := hWc.integrable_sq_mul_norm_sq_of_hasCompactSupport (μ := μ) hGc hGs
-  have hamgm := integral_mul_inner_le (ν := μ) (w := fun z ↦ W z ^ 2) (fun z ↦ sq_nonneg _)
-    iWη iWG hδ
-  have hWη := hW W hW₂ (fun z ↦ (Real.exp_pos _).le)
+  have hW₂ : ContDiff ℝ 2 fun z : ℂ ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) :=
+    contDiff_exp_mul_sqrt_add_norm_sq c (by linarith)
+  -- The two weights are comparable, since `√·` is `1/2`-Hölder.
+  have hGc := continuous_gaugeFixedOperator hx.continuous (contDiff_gaugeFixedAdjoint hx hη)
+  have hGs := hasCompactSupport_gaugeFixedOperator (x := x)
+    (hasCompactSupport_gaugeFixedAdjoint (x := x) hηc)
+  refine integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le hδ (by positivity)
+    (fun z ↦ sq_nonneg _) (fun z ↦ sq_nonneg _)
+    (fun z ↦ by simpa only [abs_sub_comm 1 b] using sq_exp_mul_sqrt_add_norm_sq_le c 1 b z)
+    (fun z ↦ sq_exp_mul_sqrt_add_norm_sq_le c b 1 z)
+    (hW₂.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
+    (hW₂.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs)
+    ((continuous_exp_mul_sqrt_add_norm_sq c).integrable_sq_mul_norm_sq_of_hasCompactSupport hGc
+      hGs) ?_
+  exact hW _ hW₂ (fun z ↦ (Real.exp_pos _).le)
     (fun z ↦ (norm_fderiv_exp_mul_sqrt_add_norm_sq c (by linarith) z).trans_le (by
       rw [mul_right_comm])) η hη hηc
-  have hflat : ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤ 1 / δ ^ 2 * ∫ z, W z ^ 2 * ‖G z‖ ^ 2 ∂μ := by
-    rw [div_mul_eq_mul_div, one_mul, le_div_iff₀ (by positivity)]
-    have : δ / 2 * ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤
-        1 / (2 * δ) * ∫ z, W z ^ 2 * ‖G z‖ ^ 2 ∂μ := by linarith
-    have h2 := mul_le_mul_of_nonneg_left this (by positivity : (0 : ℝ) ≤ 2 * δ)
-    convert h2 using 1 <;> field_simp
-  -- The two weights are comparable, since `√·` is `1/2`-Hölder.
-  have h₁ := integral_mono (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
-    (iWη.const_mul E) fun z ↦ by
-      simpa only [mul_assoc, abs_sub_comm 1 b] using mul_le_mul_of_nonneg_right
-        (sq_exp_mul_sqrt_add_norm_sq_le c 1 b z) (sq_nonneg ‖η z‖)
-  have h₂ := integral_mono iWG
-    ((hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs).const_mul E) fun z ↦ by
-      simpa only [mul_assoc] using mul_le_mul_of_nonneg_right
-        (sq_exp_mul_sqrt_add_norm_sq_le c b 1 z) (sq_nonneg ‖G z‖)
-  rw [integral_const_mul] at h₁ h₂
-  calc ∫ z, w z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤ E * ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ := h₁
-    _ ≤ E * (1 / δ ^ 2 * (E * ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ)) := by
-      gcongr
-      exact hflat.trans (by gcongr)
-    _ = E * E / δ ^ 2 * ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ := by ring
 
 /-- **The exponentially weighted estimate for `L_x*` at a plane vortex.** For an actual vortex
 with unit-modulus end and `|c| < 1/2`, there is `K` such that every compactly supported `C²`
@@ -583,26 +608,249 @@ theorem exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mu
     exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator
       (μ := μ) hx hsol hlim hc
   refine ⟨(1 + 4 * c ^ 2) * K₁ + 1, by positivity, fun η hη hηc ↦ ?_⟩
-  set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
-  set G : ℂ → EuclideanSpace ℝ (Fin 4) := gaugeFixedOperator x (gaugeFixedAdjoint x η)
-  have hw : ContDiff ℝ 2 w := contDiff_exp_mul_sqrt_add_norm_sq c one_pos
-  have hGc : Continuous G :=
-    continuous_gaugeFixedOperator hx.continuous (contDiff_gaugeFixedAdjoint hx hη)
-  have hGs : HasCompactSupport G :=
-    hasCompactSupport_gaugeFixedOperator (hasCompactSupport_gaugeFixedAdjoint hηc)
-  have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 :=
-    norm_fderiv_sq_le_of_norm_fderiv_le c zero_le_one (Real.exp_pos _).le
-      ((norm_fderiv_exp_mul_sqrt_add_norm_sq c one_pos z).trans (mul_right_comm _ _ _)).le
-  have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le (μ := μ) hx hη hηc
-    (hw.of_le (by norm_num)) hdw
-  have hP := integral_mul_inner_le (ν := μ) (w := fun z ↦ w z ^ 2) (fun z ↦ sq_nonneg _)
-    (hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
-    (hw.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs) one_pos
-  have h1 := hK η hη hηc
-  have : 0 ≤ ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ := integral_nonneg fun z ↦ by positivity
-  have : 0 ≤ c ^ 2 := sq_nonneg c
-  have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 1 + 4 * c ^ 2)
+  have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le_add (μ := μ) hx hη hηc
+    (contDiff_exp_mul_sqrt_add_norm_sq c one_pos) fun z ↦
+      norm_fderiv_sq_le_of_norm_fderiv_le c zero_le_one (Real.exp_pos _).le
+        ((norm_fderiv_exp_mul_sqrt_add_norm_sq c one_pos z).trans (mul_right_comm _ _ _)).le
+  have : 0 ≤ ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
+      ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ :=
+    integral_nonneg fun z ↦ by positivity
+  have := mul_le_mul_of_nonneg_left (hK η hη hηc) (by positivity : (0 : ℝ) ≤ 1 + 4 * c ^ 2)
   nlinarith
+
+/-! ### Weights centred on the zeros, uniformly over the moduli space -/
+
+/-- A vortex with the degree-`m` end framing has at most `m` distinct zeros. -/
+private theorem card_toFinset_le_of_tendsto {m : ℕ} {D : Multiset ℂ}
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
+    (hD : IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z)) : D.toFinset.card ≤ m :=
+  (Multiset.toFinset_card_le D).trans (hD.card_eq_of_tendsto_mul_inv_pow hframe).le
+
+/-- **Weighted coercivity of `L_x L_x*` with weights centred on the zeros.** For every degree `m`
+and `|c| < 1/2` there are `b > 0` and `δ > 0` such that every smooth vortex `x` with the
+degree-`m` end framing and zero divisor `D` satisfies `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for
+every test field `η`, where `V = exp (c Φ)` and `Φ = softMinDist b D.toFinset` is the smooth
+distance to the zeros. The constants do not depend on the vortex. -/
+theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (m : ℕ)
+    {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ b > 0, ∃ δ > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ),
+      ContDiff ℝ ∞ x → (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      δ * (∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
+        ∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 *
+          ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ := by
+  -- The spectral gap of `L_x L_x*` is uniform over the moduli space, and so is the radius beyond
+  -- which the zeros no longer reduce the mass. The weight is nearly flat where `Φ` is small, which
+  -- includes a neighbourhood of every zero of fixed size; there the spectral gap absorbs its
+  -- gradient. Where `Φ` is large every point is far from every zero, and the exterior mass
+  -- `a > c²` absorbs it. The angle of the localization is a function of `Φ`, so its gradient is
+  -- small as well.
+  have hc2 : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
+  set a : ℝ := (c ^ 2 + 1 / 4) / 2
+  have ha : a ≤ 1 / 4 := by simp only [a]; linarith
+  have hca : c ^ 2 < a := by simp only [a]; linarith
+  obtain ⟨c₀, hc₀, hgap⟩ :=
+    exists_pos_forall_mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) m
+  set mm : ℝ := min c₀ a
+  have hm : 0 < mm := lt_min hc₀ (lt_of_le_of_lt (sq_nonneg c) hca)
+  set ε : ℝ := √mm / 4
+  have hε : 0 < ε := by positivity
+  -- Points at distance at least `ρ` from every zero have mass more than `a`.
+  set C : ℝ := 16 * m + 1
+  set ρ : ℝ := √(m * C / (1 - 4 * a))
+  have hlm : 0 ≤ Real.log m := Real.log_natCast_nonneg m
+  set r₁ : ℝ := ρ + Real.log m
+  have hr₁ : 0 ≤ r₁ := by positivity
+  obtain ⟨R₂, -, θ₀, hθ₀, hθ₀R, hθ₀out, hθ₀d⟩ := exists_contDiff_angle_cutoff (E := ℝ) hr₁ hε
+  obtain ⟨b, hb, hflat⟩ := exists_pos_forall_norm_fderiv_softMinDist_le (E := ℂ) m (r₁ + R₂) hε
+  refine ⟨b, hb, min (mm / 2) (a - c ^ 2), lt_min (by positivity) (by linarith),
+    fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
+  have hcard := card_toFinset_le_of_tendsto hframe hD
+  set s := D.toFinset
+  set Φ : ℂ → ℝ := softMinDist b s
+  have hΦ : ContDiff ℝ ∞ Φ := contDiff_softMinDist hb s
+  have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by simp)
+  set s₀ : ℝ := √b - Real.log m + r₁
+  set V : ℂ → ℝ := fun z ↦ Real.exp (c * Φ z)
+  set θ : ℂ → ℝ := fun z ↦ θ₀ (Φ z - s₀)
+  have hV : ContDiff ℝ 2 V := (contDiff_const.mul (hΦ.of_le (by simp))).exp
+  have hθ : ContDiff ℝ 2 θ := (hθ₀.of_le (by simp)).comp ((hΦ.of_le (by simp)).sub contDiff_const)
+  -- Where `θ` is not `π / 2`, `Φ ≤ √b + r₁ + R₂` and the gradient of `Φ` is at most `ε`.
+  set S : Set ℂ := {z | Φ z - s₀ ≤ R₂}
+  have hΦS (z : ℂ) (hz : z ∈ S) : ‖fderiv ℝ Φ z‖ ≤ ε := hflat s hcard z (by
+    have : Φ z - s₀ ≤ R₂ := hz
+    simp only [s₀] at this
+    linarith)
+  -- The angle has gradient at most `ε`.
+  have hθd (z : ℂ) : ‖fderiv ℝ θ z‖ ≤ √mm / 4 := by
+    have hd := ((hθ₀.differentiable (by simp)) (Φ z - s₀)).hasFDerivAt.comp z
+      ((hΦd z).hasFDerivAt.sub_const s₀)
+    rw [show θ = θ₀ ∘ fun t ↦ Φ t - s₀ from rfl, hd.fderiv]
+    refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
+    have h₁ := hθ₀d (Φ z - s₀)
+    have h₂ := norm_fderiv_softMinDist_le_one hb s z
+    calc ‖fderiv ℝ θ₀ (Φ z - s₀)‖ * ‖fderiv ℝ Φ z‖ ≤ ε * 1 :=
+          mul_le_mul h₁ h₂ (norm_nonneg _) hε.le
+      _ = √mm / 4 := mul_one _
+  -- Outside `S` the angle is `π / 2` nearby.
+  have hθout (z : ℂ) (hz : z ∉ S) : θ =ᶠ[𝓝 z] fun _ ↦ π / 2 := by
+    have hz' : R₂ < Φ z - s₀ := lt_of_not_ge hz
+    have hcont : ContinuousAt (fun t ↦ Φ t - s₀) z := ((hΦd z).sub_const s₀).continuousAt
+    have hlt : R₂ < ‖Φ z - s₀‖ := hz'.trans_le (le_abs_self _)
+    exact hcont.eventually (hθ₀out _ hlt)
+  -- Where `θ ≠ 0`, every zero is at distance at least `ρ`, so the mass exceeds `a`.
+  have hP (z : ℂ) (hz : V z * Real.sin (θ z) ≠ 0) : a ≤ x z 2 ^ 2 + x z 3 ^ 2 := by
+    have hθz : |Φ z - s₀| > r₁ := lt_of_not_ge fun h ↦ hz (by simp [θ, hθ₀R _ h])
+    -- `θ₀` vanishes on `[-r₁, r₁]` and `Φ z - s₀ ≥ -r₁`, so `Φ z > √b + ρ`.
+    have hfar (a' : ℂ) (ha' : a' ∈ D) : ρ ≤ ‖z - a'‖ := by
+      have ha := Multiset.mem_toFinset.2 ha'
+      have h₁ := sqrt_sub_log_card_le_softMinDist (b := b) (z := z) ⟨a', ha⟩
+      have hk : Real.log s.card ≤ Real.log m :=
+        Real.log_le_log (by exact_mod_cast Finset.card_pos.2 ⟨a', ha⟩) (by exact_mod_cast hcard)
+      refine le_norm_sub_of_sqrt_add_le_softMinDist (b := b) ?_ ha
+      rcases lt_abs.1 hθz with h | h <;> simp only [Φ, s₀, r₁] at h h₁ ⊢ <;> linarith
+    have := one_sub_lt_normSq_of_forall_le_norm_sub hx hsol hframe hD (C := C)
+      (by simp only [C]; linarith) (by simp only [a]; linarith : 0 < 1 - 4 * a) hfar
+    simp only [a] at this ⊢
+    linarith
+  refine mul_integral_sq_mul_norm_sq_le_of_forall_le (hx.of_le (by simp)) hsol
+    (hgap x D hx hsol hframe hD) ha (v₁ := fun t ↦ V t * Real.cos (θ t))
+    (v₂ := fun t ↦ V t * Real.sin (θ t)) (hV.mul (Real.contDiff_cos.comp hθ))
+    (hV.mul (Real.contDiff_sin.comp hθ)) hV.continuous
+    (fun z ↦ by simp only [mul_pow]; rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one]) hP
+    (min_mul_sq_le_sub_norm_fderiv_sq (S := S) (hV.differentiable (by simp))
+      (hθ.differentiable (by simp)) (fun z ↦ (Real.exp_pos _).le) (fun z ↦ ?_) (fun z hz ↦ ?_)
+      hθout hθd hm.le) hη hηc
+  · exact norm_fderiv_exp_mul_softMinDist_sq_le hb s c z
+  · rw [norm_fderiv_exp_mul_softMinDist hb, mul_pow, mul_pow, sq_abs]
+    have h₂ : ‖fderiv ℝ Φ z‖ ^ 2 ≤ mm / 16 := by
+      have := pow_le_pow_left₀ (norm_nonneg _) (hΦS z hz) 2
+      rw [div_pow, Real.sq_sqrt hm.le] at this
+      linarith
+    have hc2' : c ^ 2 ≤ 1 := by linarith
+    calc c ^ 2 * ‖fderiv ℝ Φ z‖ ^ 2 * V z ^ 2 ≤ 1 * (mm / 16) * V z ^ 2 := by gcongr
+      _ = mm / 16 * V z ^ 2 := by ring
+
+/-- **The weighted estimate for `L_x L_x*` with weights centred on the zeros, uniformly over the
+moduli space.** For every degree `m` and `|c| < 1/2` there is `K` such that every smooth plane
+vortex `x` with the degree-`m` end framing and zero divisor `D`, and every compactly supported
+`C²` field `η`, satisfy
+
+`∫ exp(2c d_D(z)) |η|² ≤ K ∫ exp(2c d_D(z)) |L_x L_x* η|²`,
+
+where `d_D(z)` is the distance from `z` to the zeros. The constant depends only on `m` and `c`.
+
+Unlike the weight `exp(c √(1 + |z|²))` of
+`exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator`, whose
+constant depends on `x`, and of its window-uniform version
+`exists_forall_eLpNorm_exp_mul_smul_le_of_forall_mem_norm_le`, which is centred at the origin
+and holds only over compact windows of divisors, this weight follows the zeros: it applies to
+clusters of zeros that move apart or off to infinity, where the compact-window hypotheses fail. -/
+theorem exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator
+    (m : ℕ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 * ‖η z‖ ^ 2 ∂μ ≤
+        K * ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 *
+          ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
+  obtain ⟨b, hb, δ, hδ, hW⟩ :=
+    exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le (μ := μ) m hc
+  set E : ℝ := Real.exp (|c| * (√b + Real.log m)) ^ 2
+  refine ⟨E * E / δ ^ 2, by positivity, fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
+  have hx₁ : ContDiff ℝ 1 x := hx.of_le (by simp)
+  -- The two weights are comparable, since the soft minimum is within `√b + log m` of the
+  -- distance to the zeros.
+  have hcmp := abs_softMinDist_sub_infDist_le hb.le (card_toFinset_le_of_tendsto hframe hD)
+  have hw : Continuous fun z ↦ Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) :=
+    (continuous_const.mul (Metric.continuous_infDist_pt _)).rexp
+  have hV : Continuous fun z ↦ Real.exp (c * softMinDist b D.toFinset z) :=
+    (continuous_const.mul (contDiff_softMinDist (n := 0) hb D.toFinset).continuous).rexp
+  have hGc := continuous_gaugeFixedOperator hx₁.continuous (contDiff_gaugeFixedAdjoint hx₁ hη)
+  have hGs := hasCompactSupport_gaugeFixedOperator (x := x)
+    (hasCompactSupport_gaugeFixedAdjoint (x := x) hηc)
+  exact integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le hδ (by positivity)
+    (fun z ↦ sq_nonneg _) (fun z ↦ sq_nonneg _)
+    (fun z ↦ sq_exp_mul_le_of_abs_sub_le ((abs_sub_comm _ _).trans_le (hcmp z)))
+    (fun z ↦ sq_exp_mul_le_of_abs_sub_le (hcmp z))
+    (hV.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
+    (hV.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs)
+    (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs)
+    (hW x D hx hsol hframe hD η hη hηc)
+
+/-- **The weighted estimate for `L_x*` with weights centred on the zeros, uniformly over the
+moduli space.** For every degree `m` and `|c| < 1/2` there is `K` such that every smooth plane
+vortex `x` with the degree-`m` end framing and zero divisor `D`, and every compactly supported
+`C²` field `η`, satisfy
+
+`∫ exp(2c d_D(z)) |L_x* η|² ≤ K ∫ exp(2c d_D(z)) |L_x L_x* η|²`,
+
+where `d_D(z)` is the distance from `z` to the zeros. With `f = L_x L_x* η`, the field `L_x* η` is
+the value at `f` of the right inverse `L_x* (L_x L_x*)⁻¹` of `L_x`, so this is the weighted output
+estimate for that inverse on such inputs, with weights that follow the zeros and a constant
+depending only on `m` and `c`. -/
+theorem exists_integral_exp_mul_infDist_sq_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral
+    (m : ℕ) {c : ℝ} (hc : |c| < 1 / 2) :
+    ∃ K > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
+      ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 *
+          ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ ≤
+        K * ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 *
+          ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
+  obtain ⟨K₁, hK₁, hK⟩ :=
+    exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator
+      (μ := μ) m hc
+  -- The weight `exp (c d_D)` is only Lipschitz; the localization uses the smooth weight
+  -- `exp (c Φ)` with the soft minimum `Φ` of the regularized distances, which is comparable.
+  set E : ℝ := Real.exp (|c| * (1 + Real.log m)) ^ 2
+  refine ⟨E * ((2 + 4 * c ^ 2) * E * K₁ + E), by positivity,
+    fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
+  set w : ℂ → ℝ := fun z ↦ Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ))
+  set W : ℂ → ℝ := fun z ↦ Real.exp (c * softMinDist 1 D.toFinset z)
+  set G : ℂ → EuclideanSpace ℝ (Fin 4) := gaugeFixedOperator x (gaugeFixedAdjoint x η)
+  have hx₁ : ContDiff ℝ 1 x := hx.of_le (by simp)
+  have hW : ContDiff ℝ 1 W := (contDiff_const.mul (contDiff_softMinDist one_pos _)).exp
+  have hw : Continuous w := (continuous_const.mul (Metric.continuous_infDist_pt _)).rexp
+  -- `∫ W² |L_x* η|² ≤ ∫ W² |G|² + (1 + 4 c²) ∫ W² |η|²`.
+  have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le_add (μ := μ) hx₁ hη hηc hW
+    (norm_fderiv_exp_mul_softMinDist_sq_le one_pos _ c)
+  -- The comparison of the weights.
+  have hcmp := abs_softMinDist_sub_infDist_le zero_le_one (card_toFinset_le_of_tendsto hframe hD)
+  rw [Real.sqrt_one] at hcmp
+  have hle {F : ℂ → EuclideanSpace ℝ (Fin 4)} (hF : Continuous F) (hFs : HasCompactSupport F) :=
+    integral_mul_norm_sq_le_mul_of_le (ν := μ) (w := fun z ↦ W z ^ 2) (fun z ↦ sq_nonneg _)
+      (fun z ↦ sq_exp_mul_le_of_abs_sub_le (hcmp z))
+      (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hF hFs)
+  have h₁ := integral_mul_norm_sq_le_mul_of_le (ν := μ) (w := fun z ↦ w z ^ 2)
+    (fun z ↦ sq_nonneg _)
+    (fun z ↦ sq_exp_mul_le_of_abs_sub_le ((abs_sub_comm _ _).trans_le (hcmp z)))
+    (hW.continuous.integrable_sq_mul_norm_sq_of_hasCompactSupport
+      (contDiff_gaugeFixedAdjoint hx₁ hη).continuous (hasCompactSupport_gaugeFixedAdjoint hηc))
+  have h₂ := hle hη.continuous hηc
+  have h₃ := hle (continuous_gaugeFixedOperator hx₁.continuous (contDiff_gaugeFixedAdjoint hx₁ hη))
+    (hasCompactSupport_gaugeFixedOperator (hasCompactSupport_gaugeFixedAdjoint hηc))
+  have h₄ := hK x D hx hsol hframe hD η hη hηc
+  set IG := ∫ z, w z ^ 2 * ‖G z‖ ^ 2 ∂μ
+  have hIG : 0 ≤ IG := integral_nonneg fun z ↦ by positivity
+  -- `∫ W² |L_x* η|² ≤ E IG + (1 + 4 c²) E K₁ IG`.
+  have hWA : ∫ z, W z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ ≤
+      ((2 + 4 * c ^ 2) * E * K₁ + E) * IG := by
+    have hWη : ∫ z, W z ^ 2 * ‖η z‖ ^ 2 ∂μ ≤ E * (K₁ * IG) := h₂.trans (by gcongr)
+    calc ∫ z, W z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ
+        ≤ E * IG + (1 + 4 * c ^ 2) * (E * (K₁ * IG)) :=
+          hA.trans (add_le_add h₃ (mul_le_mul_of_nonneg_left hWη (by positivity)))
+      _ ≤ ((2 + 4 * c ^ 2) * E * K₁ + E) * IG := by nlinarith [mul_nonneg hK₁.le hIG]
+  calc ∫ z, w z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ
+      ≤ E * ∫ z, W z ^ 2 * ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ := h₁
+    _ ≤ E * (((2 + 4 * c ^ 2) * E * K₁ + E) * IG) := by gcongr
+    _ = E * ((2 + 4 * c ^ 2) * E * K₁ + E) * IG := by ring
 
 /-! ### Weighted gradient estimates -/
 
