@@ -121,6 +121,14 @@ theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport (ω : SymplecticForm V
     {x : V} (hx : x ∉ tsupport H) : ω.hamiltonianVectorField H x = 0 :=
   (ω.hamiltonianVectorField_eq_zero_iff H x).2 (fderiv_of_notMem_tsupport ℝ hx)
 
+/-- The Hamiltonian vector field `X_{K z}` of a family `K` of Hamiltonians vanishes at every point
+`(z, x)` off the topological support of the family. -/
+theorem hamiltonianVectorField_eq_zero_of_notMem_tsupport_uncurry (ω : SymplecticForm V)
+    {X : Type*} [TopologicalSpace X] {K : X → V → ℝ} {z : X} {x : V}
+    (h : (z, x) ∉ tsupport (Function.uncurry K)) : ω.hamiltonianVectorField (K z) x = 0 :=
+  ω.hamiltonianVectorField_eq_zero_of_notMem_tsupport fun hx ↦ h
+    (tsupport_comp_subset_preimage (Function.uncurry K) (continuous_const.prodMk continuous_id) hx)
+
 /-- The Hamiltonian vector field is homogeneous: `X_{c H} = c X_H`. -/
 @[simp]
 theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : V → ℝ) (x : V) :
