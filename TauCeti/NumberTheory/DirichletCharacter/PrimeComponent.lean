@@ -20,8 +20,9 @@ value at a unit `u` is the value of `χ` at the unit modulo `N` that is `u` modu
 
 The components are multiplicative in `χ`, commute with a change of coefficient ring, and
 determine `χ`: `χ` is the product of its components at the prime factors of `N`, raised to level
-`N`, and this is the only way to write `χ` as such a product. The conductor of the component at
-`r` is the `r`-primary part `r ^ v_r(f_χ)` of the conductor `f_χ` of `χ`.
+`N`, and this is the only way to write `χ` as such a product. The order of `χ` is the least common
+multiple of the orders of its components, and the conductor of the component at `r` is the
+`r`-primary part `r ^ v_r(f_χ)` of the conductor `f_χ` of `χ`.
 
 ## Main definitions
 
@@ -35,6 +36,8 @@ determine `χ`: `χ` is the product of its components at the prime factors of `N
   factors `r` of `N` of its components at `r`, raised to level `N`.
 * `TauCeti.prod_changeLevel_eq_iff`: uniqueness, a product of characters modulo the prime powers
   `r ^ v_r(N)` raised to level `N` equals `χ` exactly when its factors are the components of `χ`.
+* `TauCeti.orderOf_eq_lcm_orderOf_primeComponent`: for `N ≠ 0`, the order of `χ` is the least
+  common multiple of the orders of its prime components.
 * `TauCeti.primeComponent_changeLevel`: components commute with raising the level.
 * `TauCeti.primeComponent_ringHomComp`: components commute with a change of coefficient ring.
 * `TauCeti.conductor_primeComponent`: the conductor of the component at `r` is `r ^ v_r(f_χ)`.
@@ -98,9 +101,9 @@ theorem primeComponent_changeLevel {M : ℕ} (hN : N ≠ 0) (hMN : M ∣ N) (r :
 
 /-- The component at `r` of a character raised from a divisor `M` of `r ^ v_r(N)` is that
 character raised to level `r ^ v_r(N)`. -/
-theorem primeComponent_changeLevel_of_dvd_ordProj {M r : ℕ} (hMN : M ∣ N)
-    (hM : M ∣ r ^ N.factorization r) (χ : DirichletCharacter R M) :
-    primeComponent r (changeLevel hMN χ) = changeLevel hM χ := by
+theorem primeComponent_changeLevel_of_dvd_ordProj {M r : ℕ} (hM : M ∣ r ^ N.factorization r)
+    (χ : DirichletCharacter R M) :
+    primeComponent r (changeLevel (hM.trans (Nat.ordProj_dvd N r)) χ) = changeLevel hM χ := by
   refine MulChar.ext fun u ↦ ?_
   rw [primeComponent_apply_unit, changeLevel_apply_unit, changeLevel_apply_unit,
     Nat.isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd hM]
@@ -111,13 +114,13 @@ character. -/
 theorem primeComponent_changeLevel_ordProj (r : ℕ)
     (χ : DirichletCharacter R (r ^ N.factorization r)) :
     primeComponent r (changeLevel (Nat.ordProj_dvd N r) χ) = χ := by
-  rw [primeComponent_changeLevel_of_dvd_ordProj _ dvd_rfl, changeLevel_self]
+  rw [primeComponent_changeLevel_of_dvd_ordProj dvd_rfl, changeLevel_self]
 
 /-- The component at `r` of a character raised from a divisor `M` of `N / r ^ v_r(N)` is
 trivial. -/
-theorem primeComponent_changeLevel_of_dvd_ordCompl {M r : ℕ} (hMN : M ∣ N)
+theorem primeComponent_changeLevel_of_dvd_ordCompl {M r : ℕ}
     (hM : M ∣ N / r ^ N.factorization r) (χ : DirichletCharacter R M) :
-    primeComponent r (changeLevel hMN χ) = 1 := by
+    primeComponent r (changeLevel (hM.trans (Nat.div_dvd_of_dvd (Nat.ordProj_dvd N r))) χ) = 1 := by
   refine MulChar.ext fun u ↦ ?_
   rw [primeComponent_apply_unit, changeLevel_apply_unit,
     Nat.isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div hM, map_one,
@@ -131,16 +134,20 @@ theorem prod_changeLevel_primeComponent (hN : N ≠ 0) (χ : DirichletCharacter 
   conv_rhs => rw [← Nat.prod_unitsEquivProd_symm_primePow hN u, Units.coe_prod, map_prod]
   simp only [MulChar.prod_apply_coe, changeLevel_apply_unit, primeComponent_apply_unit]
 
-/-- The component at a prime factor `q` of `N` of a product of characters modulo the prime powers
-`r ^ v_r(N)`, raised to level `N`, is the factor at `q`. -/
+/-- The component at `q` of a product over the prime factors `r` of `N` of characters modulo the
+prime powers `r ^ v_r(N)`, raised to level `N`, is the factor at `q`. Away from the prime factors
+of `N` both sides are characters modulo `1`. -/
 theorem primeComponent_prod_changeLevel
-    (χ : (r : ℕ) → DirichletCharacter R (r ^ N.factorization r)) {q : ℕ}
-    (hq : q ∈ N.primeFactors) :
+    (χ : (r : ℕ) → DirichletCharacter R (r ^ N.factorization r)) (q : ℕ) :
     primeComponent q (∏ r ∈ N.primeFactors, changeLevel (Nat.ordProj_dvd N r) (χ r)) = χ q := by
-  rw [map_prod, Finset.prod_eq_single q, primeComponent_changeLevel_ordProj]
-  · exact fun r _ hrq ↦ primeComponent_changeLevel_of_dvd_ordCompl _
-      (Nat.ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hq) hrq) _
-  · exact fun h ↦ (h hq).elim
+  by_cases hq : q ∈ N.primeFactors
+  · rw [map_prod, Finset.prod_eq_single q, primeComponent_changeLevel_ordProj]
+    · exact fun r _ hrq ↦ primeComponent_changeLevel_of_dvd_ordCompl
+        (Nat.ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hq) hrq) _
+    · exact fun h ↦ (h hq).elim
+  have h1 : q ^ N.factorization q = 1 := by
+    rw [Finsupp.notMem_support_iff.mp (by rwa [Nat.support_factorization]), pow_zero]
+  exact (level_one' _ h1).trans (level_one' _ h1).symm
 
 /-- **Uniqueness of the prime decomposition.** For `N ≠ 0`, a product over the prime factors `r`
 of `N` of characters modulo `r ^ v_r(N)`, raised to level `N`, equals `ψ` exactly when each factor
@@ -149,13 +156,26 @@ theorem prod_changeLevel_eq_iff (hN : N ≠ 0)
     (χ : (r : ℕ) → DirichletCharacter R (r ^ N.factorization r)) (ψ : DirichletCharacter R N) :
     ∏ r ∈ N.primeFactors, changeLevel (Nat.ordProj_dvd N r) (χ r) = ψ ↔
       ∀ r ∈ N.primeFactors, χ r = primeComponent r ψ := by
-  refine ⟨fun h r hr ↦ h ▸ (primeComponent_prod_changeLevel χ hr).symm, fun h ↦ ?_⟩
+  refine ⟨fun h r _ ↦ h ▸ (primeComponent_prod_changeLevel χ r).symm, fun h ↦ ?_⟩
   rw [Finset.prod_congr rfl fun r hr ↦ congrArg _ (h r hr), prod_changeLevel_primeComponent hN]
+
+/-- **The order of a character is the least common multiple of the orders of its prime
+components**, for `N ≠ 0`. -/
+theorem orderOf_eq_lcm_orderOf_primeComponent (hN : N ≠ 0) (χ : DirichletCharacter R N) :
+    orderOf χ = N.primeFactors.lcm fun r ↦ orderOf (primeComponent r χ) := by
+  set L := N.primeFactors.lcm fun r ↦ orderOf (primeComponent r χ)
+  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_)
+    (Finset.lcm_dvd fun r _ ↦ orderOf_map_dvd (primeComponent r) χ)
+  -- each component is killed by `L`, hence so is their product `χ`
+  have hpow (r : ℕ) (hr : r ∈ N.primeFactors) : primeComponent r χ ^ L = 1 :=
+    orderOf_dvd_iff_pow_eq_one.mp (Finset.dvd_lcm hr)
+  rw [← prod_changeLevel_primeComponent hN χ, ← Finset.prod_pow]
+  exact Finset.prod_eq_one fun r hr ↦ by rw [← map_pow, hpow r hr, map_one]
 
 /-- Components commute with a change of coefficient ring: they are compatible with Galois
 conjugation of the values. -/
-theorem primeComponent_ringHomComp {R R' : Type*} [CommRing R] [CommRing R'] (r : ℕ)
-    (χ : DirichletCharacter R N) (f : R →+* R') :
+theorem primeComponent_ringHomComp {S S' : Type*} [CommRing S] [CommRing S'] (r : ℕ)
+    (χ : DirichletCharacter S N) (f : S →+* S') :
     primeComponent r (χ.ringHomComp f) = (primeComponent r χ).ringHomComp f := by
   ext u
   simp [primeComponent_apply_unit, MulChar.ringHomComp_apply]
