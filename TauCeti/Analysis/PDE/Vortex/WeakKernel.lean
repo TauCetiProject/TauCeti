@@ -432,6 +432,18 @@ theorem gaugeFixedKernelToWeak_injective (hx : Continuous x) :
 
 /-! ### Elliptic bootstrap and equivalence of weak and classical kernels -/
 
+/-- Finite-order elliptic bootstrap for the weak kernel: at a smooth field `x` whose coordinates
+have bounded derivatives through order `k`, every `u ∈ weakGaugeFixedKernel x` lies in
+`sobolevFields (k + 1)`. -/
+private theorem coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel (k : ℕ)
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x) :
+    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields ((k : ℝ) + 1) :=
+  mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx hbound
+    (Lp.memLp u) (zero_mem _) fun η hη hηc ↦ by
+      simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
+
 /-- **Sobolev regularity of the weak kernel.** At a smooth field `x` whose coordinates have bounded
 iterated derivatives of each order, every `u ∈ weakGaugeFixedKernel x` lies in `sobolevFields s`
 for every real order `s`. -/
@@ -439,13 +451,10 @@ theorem coeFn_mem_sobolevFields_of_mem_weakGaugeFixedKernel (hx : ContDiff ℝ �
     (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x)
     (s : ℝ) :
-    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields s := by
-  set k : ℕ := ⌈s⌉₊
-  have hk : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) :=
-    mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx
-      (fun i n _ ↦ hbound i n) (Lp.memLp u) (zero_mem _) fun η hη hηc ↦ by
-        simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
-  exact sobolevFields_mono (by linarith [Nat.le_ceil s]) hk
+    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields s :=
+  sobolevFields_mono (by linarith [Nat.le_ceil s])
+    (coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel ⌈s⌉₊ hx
+      (fun i n _ ↦ hbound i n) hu)
 
 /-- **Smooth classical representative of a weak kernel element.** At a smooth field `x` whose
 coordinates have bounded iterated derivatives of each order, every `u ∈ weakGaugeFixedKernel x`
@@ -476,21 +485,8 @@ private theorem exists_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel
   have h4 : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 4 := by
     have h31 : ((3 : ℕ) : ℝ) + 1 = 4 := by norm_num
     rw [← h31]
-    exact mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq 3 hx hbound
-      (Lp.memLp u) (zero_mem _) fun η hη hηc ↦ by
-        simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
-  have hs : (finrank ℝ ℂ : ℝ) + 2 * (2 : ℕ) < 2 * (4 : ℝ) := by
-    rw [Complex.finrank_real_complex]
-    norm_num
-  choose g hg hug using fun j : Fin 4 ↦
-    TemperedDistribution.exists_contDiff_ae_eq_of_mem_realSobolevFunctions (k := 2) hs
-      (mem_sobolevFields.1 h4 j)
-  set y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ g j z
-  have hycd : ContDiff ℝ 2 y := contDiff_euclidean.2 fun j ↦ by simpa [y] using hg j
-  have hae : (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] y := by
-    filter_upwards [ae_all_iff.2 hug] with z hz
-    ext j
-    exact hz j
+    exact coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel 3 hx hbound hu
+  obtain ⟨y, hycd, hae⟩ := exists_contDiff_ae_eq_of_mem_sobolevFields (n := 2) (by norm_num) h4
   have hyker : ∀ z, gaugeFixedOperator x y z = 0 :=
     (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx.continuous
       (hycd.of_le one_le_two) continuous_const).1 fun η hη hηc ↦ by

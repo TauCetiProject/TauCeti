@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Fredholm
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
+import Mathlib.Algebra.Module.Submodule.Equiv
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 import TauCeti.MeasureTheory.Measure.Restrict
 
@@ -210,17 +211,6 @@ theorem kerSobolevGaugeFixedOperatorEquiv_apply_ae (hx : ContDiff ℝ ∞ x)
   filter_upwards [h1, h2] with z hz1 hz2
   simpa using congr($(hz2.symm.trans hz1) j)
 
-/-- The preimage of a classical kernel element under `kerSobolevGaugeFixedOperatorEquiv` has value
-coordinates agreeing almost everywhere with that classical element. -/
-theorem kerSobolevGaugeFixedOperatorEquiv_symm_value_ae (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hax : a =ᵐ[μ⊤] x) (Y : gaugeFixedKernel x) (j : Fin 4) :
-    W1p.value (((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y).val j) =ᵐ[μ⊤]
-      fun z ↦ Y.val z j := by
-  simpa [LinearEquiv.apply_symm_apply] using
-    kerSobolevGaugeFixedOperatorEquiv_apply_ae hx hbound hax
-      ((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).symm Y) j
-
 /-- Characteristic property of `kerSobolevGaugeFixedOperatorEquiv`: an `H¹` kernel element `y` maps
 to `Y ∈ gaugeFixedKernel x` if and only if each coordinate value of `y` agrees almost everywhere
 with the corresponding coordinate of `Y`. -/
@@ -306,17 +296,6 @@ theorem index_sobolevGaugeFixedOperator_eq_two_mul_of_tendsto_sectionValue_mul_i
   push_cast
   rfl
 
-/-- Transport triviality of `gaugeFixedKernel x` back to `(sobolevGaugeFixedOperator a).ker` via
-`kerSobolevGaugeFixedOperatorEquiv`. -/
-private theorem ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot
-    (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
-    (hax : a =ᵐ[μ⊤] x) (hbot : gaugeFixedKernel x = ⊥) :
-    (sobolevGaugeFixedOperator a).ker = ⊥ :=
-  Submodule.subsingleton_iff_eq_bot.1 <|
-    have : Subsingleton (gaugeFixedKernel x) := Submodule.subsingleton_iff_eq_bot.2 hbot
-    (kerSobolevGaugeFixedOperatorEquiv hx hbound hax).injective.subsingleton
-
 /-- **Trivial `H¹` kernel when the section has no zeros.** At a smooth field `x` with bounded
 derivatives through order `3`, vanishing holomorphicity rows, `|α|² → 1` at infinity, no zeros of
 `α`, and `L∞` class `a`, the kernel of `sobolevGaugeFixedOperator a` is trivial. -/
@@ -326,8 +305,11 @@ theorem ker_sobolevGaugeFixedOperator_eq_bot_of_forall_sectionValue_ne_zero (hx 
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hne : ∀ z, sectionValue x z ≠ 0) (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).ker = ⊥ :=
-  ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot hx hbound hax
-    (gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero (hx.of_le (by simp)) hhol hlim hne)
+  LinearEquiv.eq_bot_of_equiv _
+    ((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).trans
+      (LinearEquiv.ofEq _ _
+        (gaugeFixedKernel_eq_bot_of_forall_sectionValue_ne_zero (hx.of_le (by simp)) hhol hlim
+          hne)))
 
 /-- **Trivial `H¹` kernel in degree zero.** At a smooth field `x` with bounded derivatives through
 order `3`, vanishing holomorphicity rows, `α(z) → 1` at infinity, and `L∞` class `a`, the kernel
@@ -337,8 +319,9 @@ theorem ker_sobolevGaugeFixedOperator_eq_bot (hx : ContDiff ℝ ∞ x)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (sectionValue x) (cocompact ℂ) (𝓝 1)) (hax : a =ᵐ[μ⊤] x) :
     (sobolevGaugeFixedOperator a).ker = ⊥ :=
-  ker_sobolevGaugeFixedOperator_eq_bot_of_gaugeFixedKernel_eq_bot hx hbound hax
-    (gaugeFixedKernel_eq_bot (hx.of_le (by simp)) hhol hframe)
+  LinearEquiv.eq_bot_of_equiv _
+    ((kerSobolevGaugeFixedOperatorEquiv hx hbound hax).trans
+      (LinearEquiv.ofEq _ _ (gaugeFixedKernel_eq_bot (hx.of_le (by simp)) hhol hframe)))
 
 /-- **Bijectivity of `L_x : H¹ → L²` when the section has no zeros.** At a smooth plane vortex `x`
 with bounded derivatives through order `3`, `|α|² → 1` at infinity, no zeros of `α`, and `L∞`

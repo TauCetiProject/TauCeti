@@ -36,9 +36,10 @@ formulation, surjectivity, and Fredholm property of this Sobolev realization.
   continuous field `x` with `L∞` class `a` the pairing `∫ ⟪L_a y, η⟫` equals `∫ ⟪y, L_x* η⟫` for
   every `y ∈ H¹(ℂ)⁴` and compactly supported `C¹` field `η`
   (`TauCeti.Vortex.integral_inner_sobolevGaugeFixedOperator`). By the fundamental lemma of the
-  calculus of variations, `L_a y = f` holds in `L²` precisely when `y` is a weak solution of
-  `L_x y = f` (`TauCeti.Vortex.sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`,
-  `TauCeti.Vortex.sobolevGaugeFixedOperator_eq_iff_forall_integral_inner_gaugeFixedAdjoint_eq`,
+  calculus of variations, `L_a y = f` holds in `L²` precisely when `sobolevFieldValues y` is a
+  weak solution of `L_x y = f`
+  (`TauCeti.Vortex.sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`,
+  `TauCeti.Vortex.sobolevGaugeFixedOperator_eq_iff_isGaugeFixedWeakSolution`,
   `TauCeti.Vortex.mem_ker_sobolevGaugeFixedOperator_iff`). Combining `H¹` elliptic regularity
   (`TauCeti.Vortex.mem_sobolevFields_one_of_integral_inner_gaugeFixedAdjoint_eq`) with Calderón's
   identification (`TemperedDistribution.exists_w1p_value_ae_eq_of_mem_realSobolevFunctions`), every
@@ -67,7 +68,7 @@ dimension and real Fredholm index `2 |D|` and `2 m`, and degree-zero bijectivity
 
 * `TauCeti.Vortex.integral_inner_sobolevGaugeFixedOperator`,
   `TauCeti.Vortex.sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`,
-  `TauCeti.Vortex.sobolevGaugeFixedOperator_eq_iff_forall_integral_inner_gaugeFixedAdjoint_eq`,
+  `TauCeti.Vortex.sobolevGaugeFixedOperator_eq_iff_isGaugeFixedWeakSolution`,
   `TauCeti.Vortex.mem_ker_sobolevGaugeFixedOperator_iff`, and
   `TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`:
   integration by parts, weak characterization, and weak-to-strong lifting for
@@ -190,18 +191,30 @@ theorem sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq (hx 
 
 /-- **Weak characterization of `sobolevGaugeFixedOperator a`.** At a continuous field `x` with
 `L∞` class `a`, an element `y ∈ H¹(ℂ)⁴` satisfies `sobolevGaugeFixedOperator a y = f` in `L²` if
-and only if `y` is a weak solution of `L_x y = f` against all smooth compactly supported test
-fields. -/
-theorem sobolevGaugeFixedOperator_eq_iff_forall_integral_inner_gaugeFixedAdjoint_eq
+and only if `sobolevFieldValues y` is a weak solution of `L_x y = f` in the sense of
+`TauCeti.Vortex.IsGaugeFixedWeakSolution`. -/
+theorem sobolevGaugeFixedOperator_eq_iff_isGaugeFixedWeakSolution
     (hx : Continuous x) (hax : a =ᵐ[μ⊤] x) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     sobolevGaugeFixedOperator a y = f ↔
-      ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
+      IsGaugeFixedWeakSolution μ⊤ x f (sobolevFieldValues y) := by
+  refine ⟨fun h ↦ isGaugeFixedWeakSolution_iff.2 fun η hη hηc ↦ ?_, fun h ↦
+    sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq hx hax fun η hη hηc ↦ ?_⟩
+  · have hEq : ∫ z, ⟪sobolevFieldValues y z, gaugeFixedAdjoint x η z⟫ ∂μ⊤ =
         ∫ z, ⟪(WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)),
-          gaugeFixedAdjoint x η z⟫ = ∫ z, ⟪f z, η z⟫ :=
-  ⟨by rintro rfl η hη hηc
-      exact (integral_inner_sobolevGaugeFixedOperator hx hax y (hη.of_le (by simp)) hηc).symm,
-    sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq hx hax⟩
+          gaugeFixedAdjoint x η z⟫ := by
+      rw [integral_restrict_coe_opens_top]
+      exact integral_congr_ae (((sobolevFieldValues_ae_eq y).filter_mono
+        (ae_mono (Measure.restrict_coe_opens_top _).ge)).mono fun z hz ↦ by simp only [hz])
+    rw [hEq, ← integral_inner_sobolevGaugeFixedOperator hx hax y (hη.of_le one_le_two) hηc, h,
+      integral_restrict_coe_opens_top]
+  · have hEq : ∫ z, ⟪(WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)),
+          gaugeFixedAdjoint x η z⟫ =
+        ∫ z, ⟪sobolevFieldValues y z, gaugeFixedAdjoint x η z⟫ ∂μ⊤ := by
+      rw [integral_restrict_coe_opens_top]
+      exact (integral_congr_ae (((sobolevFieldValues_ae_eq y).filter_mono
+        (ae_mono (Measure.restrict_coe_opens_top _).ge)).mono fun z hz ↦ by simp only [hz])).symm
+    rw [hEq, h.integral_inner_eq (hη.of_le (by simp)) hηc, integral_restrict_coe_opens_top]
 
 /-- **The kernel of the `H¹` realization is the weak kernel.** At a continuous field `x` with
 `L∞` class `a`, an element `y ∈ H¹(ℂ)⁴` lies in the kernel of the realization exactly when its
@@ -213,15 +226,17 @@ theorem mem_ker_sobolevGaugeFixedOperator_iff (hx : Continuous x) (hax : a =ᵐ[
       ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ η → HasCompactSupport η →
         ∫ z, ⟪(WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)),
           gaugeFixedAdjoint x η z⟫ = 0 := by
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-    sobolevGaugeFixedOperator_eq_iff_forall_integral_inner_gaugeFixedAdjoint_eq hx hax y 0]
   have h0 (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
       ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫ = 0 := by
     calc ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫
         = ∫ z, ⟪(0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) z, η z⟫ ∂μ⊤ := by
           rw [Measure.restrict_coe_opens_top]
       _ = 0 := Lp.integral_inner_coeFn_zero_left η
-  simp_rw [h0]
+  refine ⟨fun hy η hη hηc ↦ ?_, fun h ↦ ?_⟩
+  · have hy' : sobolevGaugeFixedOperator a y = 0 := by simpa using hy
+    rw [← integral_inner_sobolevGaugeFixedOperator hx hax y (hη.of_le (by simp)) hηc, hy', h0]
+  · exact LinearMap.mem_ker.2 (sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq
+      hx hax fun η hη hηc ↦ by rw [h η hη hηc, h0])
 
 /-- **Weak `L²` solutions are values of strong `H¹` solutions.** Let `x` be a bounded continuous
 field with `L∞` class `a`, and let `y` be a square-integrable weak solution of `L_x y = f` with
