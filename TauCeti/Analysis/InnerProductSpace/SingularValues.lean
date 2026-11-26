@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 
 /-!
 # Singular values, the two Gram spectra, and the singular system

@@ -15,6 +15,7 @@ public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
 import TauCeti.Analysis.InnerProductSpace.CourantFischer
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # Spectral decompositions of self-adjoint operators
@@ -79,6 +80,8 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
   same namespace: in that case the positive and negative spectral subspaces have the same
   dimension.
+* `LinearMap.IsSymmetric.eigenvalues_eq_of_basis`: an antitone list of eigenvalues on a basis
+  of eigenvectors, orthonormal or not, is the sorted eigenvalue list.
 * `LinearMap.IsSymmetric.eigenvalues_neg`: the ordered eigenvalues of `-T` are the negated
   eigenvalues of `T` in reverse order.
 * `LinearMap.IsPositive.det_nonneg`: a positive operator on a finite-dimensional space has
@@ -540,6 +543,23 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
     fun j hj ↦ ⟨j.rev, ?_, Fin.rev_rev j⟩
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hi
   · simpa [hT.eigenvalues_rev_of_anticommute hn e h] using hj
+
+/-! ### Sorted-eigenvalue uniqueness -/
+
+/-- **Sorted-eigenvalue uniqueness.**  If a basis `b`, not necessarily orthonormal,
+diagonalizes the symmetric operator `T` with an *antitone* value list `μ`,
+then `μ` is the sorted eigenvalue list: `hT.eigenvalues hn = μ`. -/
+theorem eigenvalues_eq_of_basis
+    (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (b : Module.Basis (Fin n) 𝕜 E)
+    {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, T (b i) = (μ i : 𝕜) • b i) :
+    hT.eigenvalues hn = μ := by
+  classical
+  -- Both lists contain each value `ν` as often as the dimension of the `ν`-eigenspace.
+  refine (hT.eigenvalues_antitone hn).eq_of_card_filter_eq hμ fun ν ↦ ?_
+  have h₁ := hT.card_filter_eigenvalues_eq hn ν
+  have h₂ := b.finrank_eigenspace_eq_card hb (ν : 𝕜)
+  simp only [RCLike.ofReal_inj] at h₁ h₂
+  rw [h₁, h₂, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-! ### Eigenvalues of the negation -/
 

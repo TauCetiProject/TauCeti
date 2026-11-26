@@ -11,8 +11,6 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 public import TauCeti.LinearAlgebra.Dimension.Submodule
-import TauCeti.Data.Fin.Tuple.Sort
-import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # Courant–Fischer min–max theorem and Weyl's inequality
@@ -35,8 +33,6 @@ form domination and Weyl's perturbation bound.
   the upper direction for subspaces of dimension at least `k + 1`.
 * `LinearMap.IsSymmetric.eigenvalues_eq_iSup_iInf_re_inner`:
   the Courant–Fischer equality.
-* `LinearMap.IsSymmetric.eigenvalues_eq_of_basis`: an antitone list of eigenvalues on a basis
-  of eigenvectors, orthonormal or not, is the sorted eigenvalue list.
 * `LinearMap.IsSymmetric.eigenvalue_mono`:
   monotonicity of sorted eigenvalues under quadratic-form order.
 * `LinearMap.IsSymmetric.abs_eigenvalue_sub_eigenvalue_le` and
@@ -323,27 +319,10 @@ theorem eigenvalues_eq_iSup_iInf_re_inner
     ⟨hT.eigenvalues hn k, by rintro _ ⟨V, rfl⟩; exact hupper V⟩
   exact hlow.trans (le_ciSup hbddA ⟨V₀, hV₀dim⟩)
 
-/-! ### Sorted-eigenvalue uniqueness and Loewner monotonicity
+/-! ### Loewner monotonicity
 
-Facts needed by the Ky Fan / unitarily-invariant-norm development: an antitone
-list diagonalizing a symmetric operator in *some* basis is *the* sorted
-eigenvalue list, since both list each eigenvalue as often as its multiplicity,
-and the sorted eigenvalues are monotone in the quadratic form (Loewner order). -/
-
-/-- **Sorted-eigenvalue uniqueness.**  If a basis `b`, not necessarily orthonormal,
-diagonalizes the symmetric operator `S` with an *antitone* value list `μ`,
-then `μ` is the sorted eigenvalue list: `hS.eigenvalues hn = μ`. -/
-theorem eigenvalues_eq_of_basis
-    (hS : S.IsSymmetric) (hn : finrank 𝕜 E = n) (b : Module.Basis (Fin n) 𝕜 E)
-    {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, S (b i) = (μ i : 𝕜) • b i) :
-    hS.eigenvalues hn = μ := by
-  classical
-  -- Both lists contain each value `ν` as often as the dimension of the `ν`-eigenspace.
-  refine (hS.eigenvalues_antitone hn).eq_of_card_filter_eq hμ fun ν ↦ ?_
-  have h₁ := hS.card_filter_eigenvalues_eq hn ν
-  have h₂ := b.finrank_eigenspace_eq_card hb (ν : 𝕜)
-  simp only [RCLike.ofReal_inj] at h₁ h₂
-  rw [h₁, h₂, Nat.card_eq_fintype_card, Fintype.card_subtype]
+A fact needed by the Ky Fan / unitarily-invariant-norm development: the sorted
+eigenvalues are monotone in the quadratic form (Loewner order). -/
 
 /-- **Loewner monotonicity of the sorted eigenvalues.**  If the quadratic form
 of `T` is dominated by that of `S`, then so is every sorted eigenvalue. -/
