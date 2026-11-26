@@ -124,7 +124,7 @@ theorem support_faceBarycenter (K : AbstractSimplicialComplex ι) (σ : Face K) 
 
 /-- The coordinates of the barycenter of a face `σ` sum to one over every finite set containing
 `σ`. -/
-theorem sum_faceBarycenter_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
+theorem sum_faceBarycenter_eq_one_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
     {s : Finset ι} (hσs : σ.val ⊆ s) : ∑ v ∈ s, faceBarycenter K σ v = 1 := by
   have hcard : (σ.val.card : ℝ) ≠ 0 :=
     Nat.cast_ne_zero.2 (K.isRelLowerSet_faces.prop_of_mem σ.property).card_pos.ne'

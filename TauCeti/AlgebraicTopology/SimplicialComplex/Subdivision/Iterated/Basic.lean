@@ -334,7 +334,7 @@ private theorem exists_support_subset_and_sum_abs_sub_le {κ : Type*}
     exact Finset.sum_congr rfl fun _ _ => (sub_mul _ _ _).symm
   simp only [hpt]
   exact TauCeti.sum_abs_sum_mul_le hdiff (fun τ hτ v _ => hδle hτ v)
-    (fun τ hτ => sum_faceBarycenter_of_subset L τ (hτσ hτ)) hδsum
+    (fun τ hτ => sum_faceBarycenter_eq_one_of_subset L τ (hτσ hτ)) hδsum
 
 /-- **`n` subdivision steps contract `ℓ¹` distances within a closed simplex by `(1 - 1 / D) ^ n`**,
 when every face of `K` has at most `D` vertices: the images under `b_n` of two points of the closed

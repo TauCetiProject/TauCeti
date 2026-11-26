@@ -32,7 +32,7 @@ open star of `L`
 simplicial approximation theorem (Hatcher, Theorem 2C.1) meets this condition by subdividing a
 finite complex `K` until its open stars refine the cover of `|K|` by the preimages of the open
 stars of `L` (`AbstractSimplicialComplex.eventually_exists_isSimplicialApproximation`, in
-`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Iterated`).
+`TauCeti.AlgebraicTopology.SimplicialComplex.Subdivision.Iterated.Basic`).
 
 A continuous map `φ` is homotopic to the realization of any simplicial approximation `f`
 (`PreAbstractSimplicialComplex.SimplicialMap.IsSimplicialApproximation.homotopic`): for each
