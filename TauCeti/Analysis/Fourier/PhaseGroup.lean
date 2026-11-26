@@ -68,6 +68,8 @@ the half-wave phases are with `k = 1`, the propagator intertwines the normalized
   `TauCeti.integrable_phasePropagator_apply_iff`,
   `TauCeti.aestronglyMeasurable_setIntegral_Iio_phasePropagator_sub`: measurability and
   integrability of `a ↦ exp(iτ(a)ω(D)) G(a)` and of retarded integrals.
+* `TauCeti.continuous_setIntegral_Iio_phasePropagator_sub`: retarded integrals of integrable
+  `G : ℝ → L²` are continuous in time.
 * `TauCeti.inner_setIntegral_Iio_phasePropagator_sub`,
   `TauCeti.integrable_inner_setIntegral_Iio_phasePropagator_sub`: pairings of retarded integrals.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
@@ -418,6 +420,23 @@ theorem integrable_inner_setIntegral_Iio_phasePropagator_sub
   refine (norm_integral_le_integral_norm _).trans ?_
   simp_rw [norm_phasePropagator_apply]
   exact setIntegral_le_integral hG.norm (ae_of_all _ fun _ ↦ norm_nonneg _)
+
+/-- The retarded integral `t ↦ ∫_{s < t} exp(i(t - s)ω(D)) G(s) dμ(s)` of an `L²`-valued `G`
+integrable for a measure `μ` without atoms is continuous in time: it is `exp(itω(D))` applied to
+the primitive `t ↦ ∫_{s < t} exp(-isω(D)) G(s) dμ(s)`. -/
+theorem continuous_setIntegral_Iio_phasePropagator_sub {μ : Measure ℝ} [NullSingletonClass μ]
+    {G : ℝ → Lp F 2 (volume : Measure E)} (hG : Integrable G μ) :
+    Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (t - s) (G s) ∂μ := by
+  have hK := integrable_phasePropagator_apply ω continuous_neg.aestronglyMeasurable hG
+  have hprim : Continuous fun t ↦ ∫ s in Set.Iio t, phasePropagator F ω (-s) (G s) ∂μ :=
+    continuous_iff_continuousAt.2 fun t ↦
+      hK.integrableOn.continuousOn_Iic_primitive_Iio.continuousAt
+        (Iic_mem_nhds (lt_add_one t))
+  refine ((continuous_phasePropagator_uncurry ω).comp (continuous_id.prodMk hprim)).congr
+    fun t ↦ ?_
+  dsimp only [Function.comp_apply, id]
+  rw [← ContinuousLinearMap.integral_comp_comm _ hK.integrableOn]
+  simp_rw [sub_eq_add_neg, phasePropagator_add_apply]
 
 /-! ### The generator -/
 
