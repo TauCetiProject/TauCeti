@@ -47,6 +47,11 @@ local instance sinPerturbationTwoPiPos : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 identity of the circle `ℝ / 2πℤ`. -/
 def sinPerturbationLift (k : ℕ) (x : ℝ) : ℝ := x + sin ((k + 2) * x) / ((k : ℝ) + 2) ^ 2
 
+/-- The defining formula of `sinPerturbationLift`, whose body is not exposed. -/
+theorem sinPerturbationLift_apply (k : ℕ) (x : ℝ) :
+    sinPerturbationLift k x = x + sin ((k + 2) * x) / ((k : ℝ) + 2) ^ 2 :=
+  (rfl)
+
 theorem contDiff_sinPerturbationLift {n : ℕ∞ω} (k : ℕ) : ContDiff ℝ n (sinPerturbationLift k) :=
   contDiff_id.add ((contDiff_sin.comp (contDiff_const.mul contDiff_id)).div_const _)
 
@@ -106,11 +111,9 @@ theorem iteratedDeriv_two_sinPerturbationLift (k : ℕ) (x : ℝ) :
     iteratedDeriv 2 (sinPerturbationLift k) x = -sin ((k + 2) * x) := by
   -- The identity has vanishing second derivative, so this is the case `m = 2` of
   -- `iteratedDeriv_sinPerturbationLift_sub_id`.
-  have hsin : iteratedDeriv 2 sin = fun y ↦ -sin y := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one, Real.deriv_sin, Real.deriv_cos']
   have h := iteratedDeriv_sinPerturbationLift_sub_id k 2 x
   rw [iteratedDeriv_sub (contDiff_sinPerturbationLift k).contDiffAt contDiff_id.contDiffAt,
-    iteratedDeriv_id, hsin, mul_div_cancel_left₀ _ (by positivity)] at h
+    iteratedDeriv_id, mul_div_cancel_left₀ _ (by positivity)] at h
   simpa using h
 
 /-- The distance between the `m`-th derivatives of the `k`-th lift and of the identity. -/
@@ -126,10 +129,7 @@ private theorem dist_iteratedFDeriv_sinPerturbationLift (k m : ℕ) (x : ℝ) :
 private theorem dist_iteratedFDeriv_two_sinPerturbationLift (k : ℕ) (x : ℝ) :
     dist (iteratedFDeriv ℝ 2 (sinPerturbationLift k) x) (iteratedFDeriv ℝ 2 id x) =
       |sin ((k + 2) * x)| := by
-  rw [dist_eq_norm, ← iteratedFDeriv_sub_apply (contDiff_sinPerturbationLift k).contDiffAt
-    contDiff_id.contDiffAt, norm_iteratedFDeriv_eq_norm_iteratedDeriv,
-    iteratedDeriv_sub (contDiff_sinPerturbationLift k).contDiffAt contDiff_id.contDiffAt,
-    iteratedDeriv_two_sinPerturbationLift, iteratedDeriv_id]
+  rw [dist_iteratedFDeriv_sinPerturbationLift, mul_div_cancel_left₀ _ (by positivity)]
   simp
 
 /-- The values at `0` of the perturbations are `0`. -/
@@ -146,10 +146,12 @@ theorem tendsto_sinPerturbation_one :
   rw [Diffeomorph.isEmbedding_toContMDiffMap.isInducing.tendsto_nhds_iff]
   refine (ContMDiffMap.tendsto_addCircle_addCircle_iff_lift le_rfl (F := sinPerturbationLift)
     (G := id) (fun k ↦ (contDiff_sinPerturbationLift (n := 1) k).continuous) continuous_id
-    (fun k x ↦ sinPerturbation_apply_coe _ k x) (fun x ↦ rfl)).2 ⟨?_, fun m hm ↦ ?_⟩
-  · have h₀ (k : ℕ) : (sinPerturbation (n := 1) one_ne_zero k).toContMDiffMap 0 = 0 :=
-      sinPerturbation_apply_zero one_ne_zero k
-    simp only [Function.comp_def, h₀]
+    (fun k x ↦ by
+      rw [Function.comp_apply, Diffeomorph.coe_toContMDiffMap, sinPerturbation_apply_coe])
+    (fun x ↦ by rw [Diffeomorph.coe_toContMDiffMap, Diffeomorph.one_apply, id])).2
+    ⟨?_, fun m hm ↦ ?_⟩
+  · simp only [Function.comp_def, Diffeomorph.coe_toContMDiffMap, sinPerturbation_apply_zero,
+      Diffeomorph.one_apply]
     exact tendsto_const_nhds
   · have hm' : m ≤ 1 := by exact_mod_cast hm
     simp only [sinPerturbationLift_zero, id_eq, sub_zero, ← Function.id_def]
@@ -158,10 +160,7 @@ theorem tendsto_sinPerturbation_one :
       (u := fun k : ℕ ↦ 1 / ((k : ℝ) + 1)) tendsto_one_div_add_atTop_nhds_zero_nat
       (Eventually.of_forall fun k x _ ↦ ?_))).tendstoLocallyUniformly
     have hk : (0 : ℝ) < k + 2 := by positivity
-    have hs : |iteratedDeriv m sin ((k + 2) * x)| ≤ 1 := by
-      interval_cases m
-      · simpa using abs_sin_le_one _
-      · simpa using abs_cos_le_one _
+    have hs := Real.abs_iteratedDeriv_sin_le_one m ((k + 2) * x)
     rw [dist_iteratedFDeriv_sinPerturbationLift, abs_div, abs_mul, abs_of_pos (pow_pos hk _),
       abs_of_pos (pow_pos hk _), div_le_div_iff₀ (pow_pos hk _) (by positivity)]
     have hpow : ((k : ℝ) + 2) ^ m ≤ (k : ℝ) + 2 := by
@@ -184,7 +183,9 @@ theorem not_tendsto_sinPerturbation_one {n : ℕ∞ω} (hn : 2 ≤ n) :
   have h₂ := ((ContMDiffMap.tendsto_addCircle_addCircle_iff_lift (one_le_two.trans hn)
     (F := sinPerturbationLift) (G := id)
     (fun k ↦ (contDiff_sinPerturbationLift (n := 0) k).continuous)
-    continuous_id (fun k x ↦ sinPerturbation_apply_coe _ k x) (fun x ↦ rfl)).1 h).2 2 hn
+    continuous_id (fun k x ↦ by
+      rw [Function.comp_apply, Diffeomorph.coe_toContMDiffMap, sinPerturbation_apply_coe])
+    (fun x ↦ by rw [Diffeomorph.coe_toContMDiffMap, Diffeomorph.one_apply, id])).1 h).2 2 hn
   simp only [sinPerturbationLift_zero, id_eq, sub_zero, ← Function.id_def] at h₂
   -- Near `0` the second derivatives would be uniformly close to `0`, but at `π / (2 (k + 2))`
   -- they are `-1`.

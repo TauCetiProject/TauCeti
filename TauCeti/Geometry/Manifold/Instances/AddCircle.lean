@@ -579,7 +579,8 @@ theorem exists_eventually_extChartAt_coe_eq_add_zsmul (y : AddCircle p) {u : ℝ
   have hsrc : e u ∈ (chartAt ℝ y).source := by
     rwa [← extChartAt_source 𝓘(ℝ)]
   obtain ⟨k, hk⟩ := exists_eventuallyEq_add_zsmul (c := e.symm) (c' := chartAt ℝ y)
-    (fun a _ ↦ coe_equivIco) (fun a ha ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ y) ha)
+    (fun a _ ↦ by rw [openPartialHomeomorphCoe_symm_apply, coe_equivIco])
+    (fun a ha ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ y) ha)
     (e.map_source hu') hsrc
   refine ⟨k, ?_⟩
   filter_upwards [continuous_quotient_mk'.continuousAt.eventually hk,

@@ -401,7 +401,8 @@ theorem tendsto_addCircle_addCircle_iff_lift (hn : 1 ≤ n) (hF : ∀ i, Continu
         ∀ a, (r a : AddCircle q) = a := by
       have h0 : (0 : ℝ) ∈ Ioo (-(q / 2)) (-(q / 2) + q) := ⟨by linarith, by linarith⟩
       set e := AddCircle.openPartialHomeomorphCoe q (-(q / 2))
-      refine ⟨e.symm, ?_, e.left_inv h0, fun a ↦ AddCircle.coe_equivIco⟩
+      refine ⟨e.symm, ?_, e.left_inv h0, fun a ↦ by
+        rw [AddCircle.openPartialHomeomorphCoe_symm_apply, AddCircle.coe_equivIco]⟩
       simpa [e] using e.continuousAt_symm (e.map_source h0)
     have hdiff : Tendsto (fun i ↦ r (f i 0 - g 0)) l (𝓝 0) := by
       have h' := h₀.sub_const (g 0)
