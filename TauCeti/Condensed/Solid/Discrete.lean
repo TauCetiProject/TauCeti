@@ -33,7 +33,7 @@ Solidity then follows. A morphism `R[S]^solid ⟶ M` that vanishes on `R[S]` van
 condensed Specker theorem factors it through the pushforward of measures to a finite quotient `F`
 of `S`, where the solidification map `R[F] ⟶ R[F]^solid` is an isomorphism and `R[S] ⟶ R[F]` is
 split surjective. Conversely, a morphism `R[S] ⟶ M` is a locally constant function `S → M`
-(`Profinite.freeModuleHomEquiv`), which factors through a finite quotient, and so extends to
+(`CompHaus.freeModuleHomEquiv`), which factors through a finite quotient, and so extends to
 `R[S]^solid`.
 
 ## Main results
@@ -302,7 +302,7 @@ private theorem exists_profiniteSolidification_comp_eq
   -- The section of `M` over `S` corresponding to `g` is pulled back from a finite set `F`, so `g`
   -- factors through `R[S] ⟶ R[F]`, and on `F` solidification is an isomorphism.
   obtain ⟨j, φ, hφ⟩ := S.exists_structuredArrow_comap_eq
-    (S.freeModuleHomEquiv g : LocallyConstant S M)
+    ((profiniteToCompHaus.obj S).freeModuleHomEquiv g : LocallyConstant S M)
   let F := FintypeCat.toProfinite.obj j.right
   -- By definition of `CompHausLike.LocallyConstantModule.functorToPresheaves`, the sections of
   -- `(CondensedMod.LocallyConstant.functor R).obj M` over `T` are `LocallyConstant T M`, and its
@@ -311,11 +311,17 @@ private theorem exists_profiniteSolidification_comp_eq
   let ψ : ((CondensedMod.LocallyConstant.functor R).obj M).obj.obj
     (op (profiniteToCompHaus.obj F)) := φ
   have hψ : ((CondensedMod.LocallyConstant.functor R).obj M).obj.map
-      (profiniteToCompHaus.map j.hom).op ψ = S.freeModuleHomEquiv g := hφ
-  refine ⟨(profiniteSolid R).map j.hom ≫ inv ((profiniteSolidification R).app F) ≫
-    F.freeModuleHomEquiv.symm ψ, ?_⟩
-  rw [← NatTrans.naturality_assoc, IsIso.hom_inv_id_assoc, Functor.comp_map,
-    ← Profinite.freeModuleHomEquiv_symm_comp, hψ, AddEquiv.symm_apply_apply]
+      (profiniteToCompHaus.map j.hom).op ψ = (profiniteToCompHaus.obj S).freeModuleHomEquiv g := hφ
+  -- `profiniteFree R` is `profiniteToCondensed ⋙ free R`, and `profiniteToCondensed` is by
+  -- definition `profiniteToCompHaus ⋙ compHausToCondensed`, so `R[F]` is the free module on the
+  -- underlying compact Hausdorff space of `F`, and `R[j.hom]` is the free map on `j.hom`.
+  let gF : (profiniteFree R).obj F ⟶ (CondensedMod.LocallyConstant.functor R).obj M :=
+    (profiniteToCompHaus.obj F).freeModuleHomEquiv.symm ψ
+  have hgF : (profiniteFree R).map j.hom ≫ gF = g :=
+    (CompHaus.freeModuleHomEquiv_symm_comp (profiniteToCompHaus.map j.hom) ψ).symm.trans
+      (by rw [hψ]; exact AddEquiv.symm_apply_apply _ g)
+  refine ⟨(profiniteSolid R).map j.hom ≫ inv ((profiniteSolidification R).app F) ≫ gF, ?_⟩
+  rw [← NatTrans.naturality_assoc, IsIso.hom_inv_id_assoc, hgF]
 
 end TauCeti
 
