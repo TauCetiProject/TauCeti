@@ -46,7 +46,9 @@ and changing variables along the chart, which is injective on `ℝ × (0, 1)`, b
 by `∫_S ‖D_u ξ‖²`.
 
 The same holds for the formal adjoint `D_u^*` on covector fields, whose kernel is the cokernel of
-`D_u` (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`). A
+`D_u` (`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`),
+again for data that agree with the pair-of-pants data only far out on the end: on covector fields
+supported there the two adjoints agree (`floerLinearizationAdjoint_congr_data_of_tsupport`). A
 covector field `η` is read in the chart as the `(0, 1)`-form `η' = η (φ'_q ·) ∘ (a + b J)`
 (`TauCeti.Floer.covectorPullback`), on which the adjoint of the half-cylinder is `a² + b²` times
 `D_u^* η` (`floerLinearizationAdjoint_comp_positiveEndChart`). The end estimate of the adjoint on
@@ -503,13 +505,13 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
+    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
+    (hηS : tsupport η ⊆ thricePuncturedSphereReal) {a b : ℝ} (ha₁ : R₁ < a) (ha₂ : 2 ≤ a)
+    (hF : ∀ ζ : ℝ × ℝ, a ≤ ζ.1 → IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J (positiveEndChart q ζ) (u (positiveEndChart q ζ))) (ω.perturbedFDeriv
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
-    (hηS : tsupport η ⊆ thricePuncturedSphereReal) {a b : ℝ} (ha₁ : R₁ < a) (ha₂ : 2 ≤ a) :
+        (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) :
     ∫ ζ in Icc a b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearizationAdjoint
         (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
@@ -548,7 +550,7 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
           (by linarith [hζ.1.1]) (by linarith [hζ.1.1]) ((hu _ hS).differentiableAt one_ne_zero)
           (hη.differentiable one_ne_zero _) (((hJ _ hS).differentiableAt one_ne_zero).comp
             (f := fun z ↦ (z, u z)) _ (differentiableAt_id.prodMk
-              ((hu _ hS).differentiableAt one_ne_zero))) (hF _ hS),
+              ((hu _ hS).differentiableAt one_ne_zero))) (hF ζ hζ.1.1),
           norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
         simp only [g, det_fderiv_positiveEndChart]
         ring
@@ -556,21 +558,24 @@ private theorem setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_l
         setIntegral_det_mul_comp_positiveEndChart_le_integral (fun z ↦ by positivity) hg q a b
     _ = _ := integral_const_mul _ _
 
-/-- **The end estimate of the formal adjoint along a Floer pair of pants.** Let `u` be a solution
-on `S = ℂ ∖ {0, 1}` of the Floer equation for the pair-of-pants perturbation of jointly `C²`
-period-one Hamiltonians `H`, `C¹` on `S`, whose end `q`, read in the positive end chart `φ'_q`,
-converges uniformly to an orbit `x` of the positive end Hamiltonian `H'_q` starting at a
-nondegenerate fixed point of the time-one map, while the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}`
-tends uniformly to zero. Suppose that `J` is `C¹` and compatible along `u` on `S`, and that far out
-on the end, where `u` is `C²`, `J` is a `C²` family `J_q(t)` compatible along `x`. Then there are
-`C` and `R` such that every `C²` covector field `η` with compact support in the part `±s > R` of
-the end satisfies
+/-- **The end estimate of the formal adjoint along a Floer pair of pants.** Let `H` be jointly
+`C²` period-one Hamiltonians, and let `(J, K_s, K_t)` be Floer data on `S = ℂ ∖ {0, 1}` whose
+perturbation agrees with the pair-of-pants perturbation of `H` far out on the end `q`, beyond the
+height `R₁`. Let `u` be a `C¹` map on `S` that solves the Floer equation for these data beyond `R₁`
+on the end `q`, whose end `q`, read in the positive end chart `φ'_q`, converges uniformly to an
+orbit `x` of the positive end Hamiltonian `H'_q` starting at a nondegenerate fixed point of the
+time-one map, while the slice defect `∂t (u ∘ φ'_q) - X_{H'_q}` tends uniformly to zero. Suppose
+that `J` is `C¹` and compatible along `u` on `S`, and that far out on the end, where `u` is `C²`,
+`J` is a `C²` family `J_q(t)` compatible along `x`. Then there are `C` and `R` such that every `C²`
+covector field `η` with compact support in the part `±s > R` of the end satisfies
 
 `∫_{(0, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C ∫ |z - c_q|² ‖D_u^* η (z)‖²`
 
-for the formal adjoint `D_u^*` of the linearized Floer operator of the pair-of-pants perturbation,
-where `η' = η (φ'_q ·) ∘ (a + b J)` is `η` read in the chart as a `(0, 1)`-form
-(`TauCeti.Floer.covectorPullback`) and `c_q` is the center of the end.
+for the formal adjoint `D_u^*` of the linearized Floer operator of the data `(J, K_s, K_t)`, where
+`η' = η (φ'_q ·) ∘ (a + b J)` is `η` read in the chart as a `(0, 1)`-form
+(`TauCeti.Floer.covectorPullback`) and `c_q` is the center of the end. The data need not agree with
+the pair-of-pants data elsewhere, as for
+`exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization`.
 
 The weight `|z - c_q|²` is, up to `4π²`, the Jacobian of the chart at `z`: the adjoint of the
 half-cylinder on `η'` is the Jacobian times `D_u^* η`
@@ -587,17 +592,20 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
     {R₁ : ℝ} (hJe : ContDiff ℝ 2 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
     (hJex : ∀ t, ω.Compatible (Je t (x t)))
-    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2) {u : ℝ × ℝ → V}
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → V}
     (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
     (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
     (hu₂ : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
-    (hF : ∀ z ∈ thricePuncturedSphereReal, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (J z (u z)) (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF : ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
     (hux : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) x atTop (Icc 0 1))
     (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
@@ -608,9 +616,7 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
           (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
         C * ∫ z, ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
           ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-            u η z‖ ^ 2 := by
+            Ks Kt u η z‖ ^ 2 := by
   set φ := positiveEndChart q
   -- The end estimate of the adjoint on the half-cylinder of the end data, whose structure has
   -- period one and is compatible along `u ∘ φ'_q`.
@@ -653,10 +659,16 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
           (mul_le_mul_of_nonneg_right (le_max_left _ _) (setIntegral_nonneg
             (measurableSet_Icc.prod measurableSet_Icc) fun _ _ ↦ sq_nonneg _))
     _ ≤ _ := by
-        rw [mul_assoc]
+        -- On the support of `η`, beyond `R > R₁`, the data are the pair-of-pants data.
+        rw [mul_assoc, ← ω.floerLinearizationAdjoint_congr_data_of_tsupport
+          (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η fun z hz ↦
+            ⟨EventuallyEq.rfl, (hK z (hηR hz).1 (by linarith [(hηR hz).2])).1.symm,
+              (hK z (hηR hz).1 (by linarith [(hηR hz).2])).2.symm⟩]
         exact mul_le_mul_of_nonneg_left
-          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs hJeq hJ hu hF
-            (hη.of_le one_le_two) hηc (fun z hz ↦ (hηR hz).1) (by linarith) hR.2.2)
+          (setIntegral_norm_floerLinearizationAdjoint_covectorPullback_sq_le ω hH hHs hJeq hJ hu
+            (hη.of_le one_le_two) hηc (fun z hz ↦ (hηR hz).1) (by linarith) hR.2.2
+            (ω.isComplexLinearMap_perturbedFDeriv_positiveEndChart hK hF (by linarith)
+              (by linarith)))
           (le_max_right _ _)
 
 end TauCeti.SymplecticForm
