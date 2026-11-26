@@ -34,6 +34,8 @@ particular a space of constant curvature has vanishing Weyl tensor.
 ## Main declarations
 
 * `CovariantDerivative.weylTensor`: the Weyl curvature tensor.
+* `CovariantDerivative.weyl_curvatureFourTensor_apply`: algebraic Weyl tensor of
+  `curvatureFourTensor` agrees with `weylTensor`.
 * `CovariantDerivative.IsMetricCompatible.weylTensor_swap_pairs` and
   `CovariantDerivative.IsMetricCompatible.weylTensor_cyclic_eq_zero`: pair interchange and the
   first Bianchi identity.
@@ -101,6 +103,16 @@ theorem weylTensor_apply (x : M) (u v w z : TangentSpace I x) :
       cov.riemannCurvatureTensor x u v w z -
         kulkarniNomizu (cov.schoutenTensor x) (innerₗ _) u v w z :=
   (rfl)
+
+/-- The algebraic Weyl tensor of `curvatureFourTensor x` agrees with `weylTensor x` with the last
+two slots swapped, away from dimension `2`. -/
+theorem weyl_curvatureFourTensor_apply (x : M) (hn : Module.finrank ℝ (TangentSpace I x) ≠ 2)
+    (u v z w : TangentSpace I x) :
+    TauCeti.FourTensor.weyl (cov.curvatureFourTensor x) ![u, v, z, w] =
+      cov.weylTensor x u v w z := by
+  rw [TauCeti.FourTensor.weyl_eq_sub_kulkarniNomizu_schouten hn, _root_.sub_apply,
+    cov.curvatureFourTensor_eq_riemannCurvatureTensor, TauCeti.FourTensor.kulkarniNomizu_apply_eq,
+    cov.schouten_curvatureFourTensor, cov.weylTensor_apply]
 
 /-- The Weyl tensor is antisymmetric in its first pair of arguments. -/
 theorem weylTensor_antisymm_first (x : M) (u v w z : TangentSpace I x) :

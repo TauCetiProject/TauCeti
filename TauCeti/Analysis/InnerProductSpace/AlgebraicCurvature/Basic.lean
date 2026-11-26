@@ -108,8 +108,10 @@ the curvature four-tensor of `S² × ℝⁿ⁻²` when `u, v` are orthonormal.
   `TauCeti.FourTensor.comap_compContinuousLinearMapL_algebraicCurvatureSubmodule`, and
   `TauCeti.FourTensor.coe_algebraicCurvatureLinearIsometryEquiv`: linear/isometric equivalences
   identify algebraic curvature tensors.
-* `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_ricci`: the Ricci contraction of a
-  bivector-symmetric four-tensor is symmetric.
+* `TauCeti.FourTensor.IsBivectorSymmetric.self_first`,
+  `TauCeti.FourTensor.IsBivectorSymmetric.self_last`, and
+  `TauCeti.FourTensor.IsBivectorSymmetric.isSymm_ricci`: diagonal vanishing and symmetry of the
+  Ricci contraction for a bivector-symmetric four-tensor.
 * `TauCeti.FourTensor.ricci_apply`: the Ricci contraction `ricci r u v` is the metric trace of
   `ricciSlice r u v`.
 * `TauCeti.FourTensor.ricci_apply_orthonormalBasis` and
@@ -293,6 +295,14 @@ structure IsBivectorSymmetric (r : FourTensor V) : Prop where
 /-- Every algebraic curvature tensor is bivector-symmetric. -/
 theorem IsAlgebraicCurvature.isBivectorSymmetric {r : FourTensor V} (hr : IsAlgebraicCurvature r) :
     IsBivectorSymmetric r := ⟨hr.antisymm_first, hr.antisymm_last, hr.swap_pairs⟩
+
+/-- A bivector-symmetric four-tensor vanishes when its first two arguments coincide. -/
+@[simp] theorem IsBivectorSymmetric.self_first {r : FourTensor V} (hr : IsBivectorSymmetric r)
+    (x z w : V) : r ![x, x, z, w] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_first x x z w)
+
+/-- A bivector-symmetric four-tensor vanishes when its last two arguments coincide. -/
+@[simp] theorem IsBivectorSymmetric.self_last {r : FourTensor V} (hr : IsBivectorSymmetric r)
+    (u v z : V) : r ![u, v, z, z] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_last u v z z)
 
 variable (V) in
 /-- The submodule of bivector-symmetric four-tensors on `V`. -/

@@ -495,8 +495,8 @@ theorem inner_curvatureEndomorphism_compContinuousLinearMap (f : W →L[ℝ] V) 
   rw [f.curvatureEndomorphism_compContinuousLinearMap, LinearMap.comp_apply,
     LinearMap.adjoint_inner_left, LinearMap.comp_apply]
 
-/-- Pulling back `ofBivectorEnd T` along a continuous linear map `f : W →L[ℝ] V` conjugates `T`
-by `exteriorPower.map 2 f.toLinearMap` and its adjoint. -/
+/-- Pulling back `ofBivectorEnd T` along a continuous linear map `f : W →L[ℝ] V` sends `T` to
+`M.adjoint ∘ₗ T ∘ₗ M`, where `M = exteriorPower.map 2 f.toLinearMap`. -/
 theorem ofBivectorEnd_compContinuousLinearMap (f : W →L[ℝ] V)
     (T : Module.End ℝ (⋀[ℝ]^2 V)) :
     (ofBivectorEnd T).compContinuousLinearMap (fun _ ↦ f) =

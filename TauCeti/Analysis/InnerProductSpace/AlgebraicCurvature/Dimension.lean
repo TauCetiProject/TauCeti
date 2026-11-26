@@ -105,12 +105,6 @@ theorem IsAlgebraicCurvature.eq_of_apply_self_eq {r₁ r₂ : FourTensor V}
     (h : ∀ u v, r₁ ![u, v, u, v] = r₂ ![u, v, u, v]) : r₁ = r₂ :=
   hr₁.eq_of_apply_self_eq_of_linearIndependent hr₂ fun u v _ ↦ h u v
 
-private theorem isBivectorSymmetric_self_first {r : FourTensor V} (hr : IsBivectorSymmetric r)
-    (x z w : V) : r ![x, x, z, w] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_first x x z w)
-
-private theorem isBivectorSymmetric_self_last {r : FourTensor V} (hr : IsBivectorSymmetric r)
-    (u v z : V) : r ![u, v, z, z] = 0 := CharZero.eq_neg_self_iff.mp (hr.antisymm_last u v z z)
-
 private def bianchiMultilinear (r : FourTensor V) :
     MultilinearMap (RingHom.id ℝ) (fun _ : Fin 4 ↦ V) ℝ :=
   MultilinearMap.mk'
@@ -124,7 +118,7 @@ private theorem bianchiMultilinear_map_eq_zero_of_lt {r : FourTensor V}
     (hr : IsBivectorSymmetric r) (m : Fin 4 → V) {i j : Fin 4} (hm : m i = m j) (hij : i < j) :
     bianchiMultilinear r m = 0 := by
   simp only [bianchiMultilinear, MultilinearMap.mk'_apply]
-  have hf := isBivectorSymmetric_self_first hr; have hl := isBivectorSymmetric_self_last hr
+  have hf := hr.self_first; have hl := hr.self_last
   fin_cases i <;> fin_cases j <;> first | exact absurd hij (by decide) | (
     simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Fin.isValue] at hm ⊢; rw [hm])
   · rw [hf, hr.antisymm_first (m 2) (m 1)]; ring
