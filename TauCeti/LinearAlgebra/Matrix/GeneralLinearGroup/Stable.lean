@@ -96,6 +96,8 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroupMap_surjective`: surjective ring maps
   induce surjective homomorphisms of stable elementary subgroups.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_isPerfect`: `E_∞(A)` is a perfect group.
+* `TauCeti.StableGeneralLinearGroup.instSubsingleton`, `TauCeti.AlgebraicK1.instSubsingleton`:
+  over a zero ring `A`, `GL_∞(A)` and `K₁(A)` are trivial; that is, `K₁(0) = 0`.
 
 ## References
 
@@ -280,6 +282,12 @@ theorem exists_of₂ (x y : StableGeneralLinearGroup A) :
     ∃ n u v, of A n u = x ∧ of A n v = y := by
   obtain ⟨n, u, v, rfl, rfl⟩ := DirectLimit.exists_eq_mk₂ (fun _ _ h ↦ stabilizeGL A h) x y
   exact ⟨n, u, v, of_apply n u, of_apply n v⟩
+
+/-- The stable general linear group of the zero ring is trivial. -/
+instance instSubsingleton [Subsingleton A] : Subsingleton (StableGeneralLinearGroup A) := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨n, u, v, rfl, rfl⟩ := exists_of₂ x y
+  rw [Subsingleton.elim u v]
 
 /-- Homomorphisms out of the stable general linear group agree when they agree on each
 `GL (Fin n) A`. -/
@@ -550,6 +558,13 @@ theorem exists_mk (x : AlgebraicK1 A) : ∃ n u, mk A n u = x := by
   obtain ⟨y, rfl⟩ := QuotientGroup.mk'_surjective _ x
   obtain ⟨n, u, rfl⟩ := StableGeneralLinearGroup.exists_of y
   exact ⟨n, u, rfl⟩
+
+/-- Algebraic `K₁` of the zero ring is trivial. -/
+instance instSubsingleton [Subsingleton A] : Subsingleton (AlgebraicK1 A) := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨m, u, rfl⟩ := exists_mk x
+  obtain ⟨n, v, rfl⟩ := exists_mk y
+  rw [Subsingleton.elim u 1, Subsingleton.elim v 1, map_one, map_one]
 
 /-- The kernel of the projection `GL_∞(A) → K₁(A)` is the stable elementary subgroup. -/
 theorem ker_of :
