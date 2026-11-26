@@ -26,7 +26,7 @@ patched quantization is one.
 
 Conversely, on a compact manifold of positive dimension every classical pseudodifferential
 operator is a finite sum of chart quantizations, exactly and not only modulo an operator of order
-`-∞` as in `TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`.
+`-∞` as in `TauCeti.exists_sub_patchedQuantization_mem_smoothingPseudodifferentialOperators`.
 Every operator splits as `P = ∑ᵢ φᵢ P ψᵢ` for finitely many pairs of cutoffs `φᵢ`, `ψᵢ`, each pair
 in one chart of the maximal atlas (`TauCeti.exists_forall_eq_sum_mulLeft_comp_comp_mulLeft`). In
 that chart `φᵢ P ψᵢ` is the chart quantization of the symbol of a chart compression of `P`
@@ -327,9 +327,7 @@ modulo order `-∞`.** There are points `cᵢ` and cutoffs `φᵢ`, `ψᵢ` in t
 `cᵢ`, whose chart preimages form a locally finite family, such that every classical
 pseudodifferential operator `P` of any order `m` differs from the patched quantization
 `∑ᵢ Op_{eᵢ}(aᵢ)` of classical symbols `aᵢ` of order `m` (`TauCeti.patchedQuantization`) by an
-operator of order `-∞`. The charts and cutoffs do not depend on `P`. This is the locally finite
-counterpart of `TauCeti.exists_sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`
-on a compact manifold. -/
+operator of order `-∞`. The charts and cutoffs do not depend on `P`. -/
 theorem exists_sub_patchedQuantization_mem_smoothingPseudodifferentialOperators
     [SigmaCompactSpace M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] :
     ∃ (ι : Type u) (c : ι → M)
