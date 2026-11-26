@@ -64,7 +64,7 @@ theorem isConilpotent_deconcatenation : (deconcatenation R M).IsConilpotent :=
       iteratedComul_deconcatenation_eq_zero_of_mem_filtration R M n hn
 
 /-- A pure input tensor of length at most the number of cuts is annihilated. -/
-theorem iteratedComul_deconcatenation_of_eq_zero (n : ℕ) {k : {n : ℕ // 0 < n}}
+theorem iteratedComul_deconcatenation_of_eq_zero_of_le (n : ℕ) {k : {n : ℕ // 0 < n}}
     (hk : k.val ≤ n) (x : TensorPower R k.val M) :
     (deconcatenation R M).iteratedComul n (of R M k x) = 0 :=
   iteratedComul_deconcatenation_eq_zero_of_mem_filtration R M n (of_mem_filtration R M hk x)
