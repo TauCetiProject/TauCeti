@@ -154,6 +154,37 @@ theorem chartQuantization_apply_of_notMem (φ ψ : 𝓓(⟨e.target, e.open_targ
     (hp : p ∉ e.source) : e.chartQuantization he φ ψ a u p = 0 :=
   complexCutoffPullback_apply_of_notMem he _ _ hp
 
+/-- The chart quantization only depends on the full symbol: classical symbols of possibly different
+orders with the same full symbol have the same chart quantization. -/
+theorem chartQuantization_congr (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {m' : ℝ}
+    {a : ClassicalSymbol n ℂ ℂ m} {b : ClassicalSymbol n ℂ ℂ m'}
+    (h : a.toSymbol.coefficient = b.toSymbol.coefficient) :
+    e.chartQuantization he φ ψ a = e.chartQuantization he φ ψ b := by
+  ext u p
+  by_cases hp : p ∈ e.source
+  · rw [chartQuantization_apply_of_mem he φ ψ a u (cutoffPushforwardSchwartz_apply he ψ u) hp,
+      chartQuantization_apply_of_mem he φ ψ b u (cutoffPushforwardSchwartz_apply he ψ u) hp, h]
+  · rw [chartQuantization_apply_of_notMem he φ ψ a u hp,
+      chartQuantization_apply_of_notMem he φ ψ b u hp]
+
+/-- The chart quantization is additive in the full symbol, also for classical symbols of different
+orders: if the full symbol of `a` is the sum of those of `b` and `c`, then
+`Op_e(a) = Op_e(b) + Op_e(c)`. -/
+theorem chartQuantization_eq_add (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {m₁ m₂ : ℝ}
+    {a : ClassicalSymbol n ℂ ℂ m} {b : ClassicalSymbol n ℂ ℂ m₁} {c : ClassicalSymbol n ℂ ℂ m₂}
+    (h : a.toSymbol.coefficient = b.toSymbol.coefficient + c.toSymbol.coefficient) :
+    e.chartQuantization he φ ψ a = e.chartQuantization he φ ψ b + e.chartQuantization he φ ψ c := by
+  ext u p
+  rw [LinearMap.add_apply, ContMDiffMap.coe_add, Pi.add_apply]
+  by_cases hp : p ∈ e.source
+  · rw [chartQuantization_apply_of_mem he φ ψ a u (cutoffPushforwardSchwartz_apply he ψ u) hp,
+      chartQuantization_apply_of_mem he φ ψ b u (cutoffPushforwardSchwartz_apply he ψ u) hp,
+      chartQuantization_apply_of_mem he φ ψ c u (cutoffPushforwardSchwartz_apply he ψ u) hp, h,
+      Symbol.quantizeSchwartzValue_coefficient_add, smul_add]
+  · rw [chartQuantization_apply_of_notMem he φ ψ a u hp,
+      chartQuantization_apply_of_notMem he φ ψ b u hp,
+      chartQuantization_apply_of_notMem he φ ψ c u hp, add_zero]
+
 /-- The chart quantization is supported in the image of the support of `φ` under the inverse of
 the chart. -/
 theorem tsupport_chartQuantization_subset (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
