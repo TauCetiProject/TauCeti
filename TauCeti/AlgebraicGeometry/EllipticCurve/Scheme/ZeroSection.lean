@@ -205,6 +205,12 @@ theorem ne_projModelZero_iff_mem_basicOpen {P : Spec (.of R) ⟶ W.projModel}
   · rw [h0, projModelZero_mem_basicOpen_iff] at hs
     exact absurd hs (by decide)
 
+/-- An affine point `[x : y : 1]` misses the zero section over every point of `Spec R`. -/
+theorem projModelAffinePoint_apply_ne_projModelZero {x y : R} (h : W.toAffine.Equation x y)
+    (s : Spec (.of R)) : W.projModelAffinePoint h s ≠ W.projModelZero s :=
+  (ne_projModelZero_iff_mem_basicOpen (projModelAffinePoint_projModelOver h) s).mpr
+    (projModelAffinePoint_mem_basicOpen h s)
+
 variable {W} in
 /-- **A section missing the zero section is a point `[x : y : 1]`.** A section of the projective
 model over `Spec R` which meets the zero section over no point of `Spec R` is the point
@@ -219,6 +225,19 @@ theorem exists_eq_projModelAffinePoint {P : Spec (.of R) ⟶ W.projModel}
   refine ⟨Q 0, Q 1, (Projective.equation_some (W' := W.toProjective) _ _).mp (hQ' ▸ hQ), ?_⟩
   rw [projModelAffinePoint_def, projModelPoint_eq_projModelPoint_iff_of_apply_eq (by simp [hQ2])]
   exact ⟨rfl, hQ'⟩
+
+/-- The affine `x`-coordinate of a section `P : Spec R ⟶ W.projModel` missing `W.projModelZero`. -/
+noncomputable def projModelSectionX {P : Spec (.of R) ⟶ W.projModel}
+    (hP : P ≫ W.projModelOver = 𝟙 _) (hP₀ : ∀ s, P s ≠ W.projModelZero s) : R :=
+  (W.exists_eq_projModelAffinePoint hP hP₀).choose
+
+/-- On an affine point `[x : y : 1]`, `projModelSectionX` returns `x`. -/
+theorem projModelSectionX_eq_of_eq_projModelAffinePoint {P : Spec (.of R) ⟶ W.projModel}
+    (hP : P ≫ W.projModelOver = 𝟙 _) (hP₀ : ∀ s, P s ≠ W.projModelZero s)
+    {x y : R} (h : W.toAffine.Equation x y) (hP' : P = W.projModelAffinePoint h) :
+    W.projModelSectionX hP hP₀ = x := by
+  obtain ⟨_, h₀, hP₀_eq⟩ := (W.exists_eq_projModelAffinePoint hP hP₀).choose_spec
+  exact ((W.projModelAffinePoint_inj h₀).mp (hP₀_eq.symm.trans hP')).1
 
 variable {W} {W' : WeierstrassCurve R}
 

@@ -72,21 +72,6 @@ namespace WeierstrassCurve
 
 variable {R : Type u} [CommRing R] {W : WeierstrassCurve R}
 
--- The isomorphism `projModel W' ≅ projModel W` induced by a change of variables `C` with
--- `C • W = W'` lies over `Spec R`, carries the zero section to the zero section, and carries
--- `[x : y : 1]` to `[u²x + r : u³y + u²sx + t : 1]`.
-private theorem eqToHom_projModelVariableChangeIso_hom_spec {W' : WeierstrassCurve R}
-    (C : VariableChange R) (hC : C • W = W') :
-    (eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom) ≫
-        W.projModelOver = W'.projModelOver ∧
-      W'.projModelZero ≫ eqToHom (congrArg projModel hC.symm) ≫
-        (W.projModelVariableChangeIso C).hom = W.projModelZero ∧
-      ∀ {x y : R} (h : W'.toAffine.Equation x y), W'.projModelAffinePoint h ≫
-        eqToHom (congrArg projModel hC.symm) ≫ (W.projModelVariableChangeIso C).hom =
-          W.projModelAffinePoint ((Affine.variableChange_equation W C x y).mpr (hC ▸ h)) := by
-  subst hC
-  exact ⟨by simp, by simp, fun h ↦ by simp⟩
-
 /-- **Bases of the `3`-torsion of a projective Weierstrass model.** For solutions `(x₁, y₁)` and
 `(x₂, y₂)` of the affine equation of an elliptic Weierstrass curve `W`, the coordinates form a basis
 of the `3`-torsion in the equation-level sense exactly when the points `P = [x₁ : y₁ : 1]` and
@@ -228,9 +213,8 @@ theorem exists_iso_levelThreeNormalForm_iff {P Q : Spec (.of R) ⟶ W.projModel}
   subst heP heQ
   have hb := (exists_variableChange_levelThreeNormalForm_iff (W := W)).mp
     ⟨C, hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩
-  refine ⟨fun s ↦ ?_, fun s ↦ ?_, (isThreeTorsionBasis_iff h₁ h₂).mp hb⟩ <;>
-    exact (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
-      (projModelAffinePoint_mem_basicOpen _ s)
+  exact ⟨W.projModelAffinePoint_apply_ne_projModelZero h₁,
+    W.projModelAffinePoint_apply_ne_projModelZero h₂, (isThreeTorsionBasis_iff h₁ h₂).mp hb⟩
 
 /-- **Uniqueness of the isomorphism with a level-three normal form.** Two isomorphisms
 `projModel (levelThreeNormalForm μ) ≅ projModel W` over `Spec R` which carry the zero section to the

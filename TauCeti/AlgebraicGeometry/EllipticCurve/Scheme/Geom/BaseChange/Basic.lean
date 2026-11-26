@@ -344,6 +344,16 @@ theorem projModelZero_modelMap (h0 : zero' ≫ g = f ≫ zero) :
   rw [← cancel_epi k.baseIso.hom, ← k.modelIso_zero_assoc]
   simp [modelMap, pulledZero_carrierMap_assoc hg hh h0]
 
+/-- If `g` carries `P'` to `P`, then `modelMap hg hh` carries the model point of `P'` to that of
+`P`. -/
+theorem modelPoint_modelMap {P : S ⟶ X} {P' : S' ⟶ X'} (hP : P ≫ π = 𝟙 S) (hP' : P' ≫ π' = 𝟙 S')
+    (hPg : P' ≫ g = f ≫ P) :
+    k.modelPoint hP' ≫ modelMap hg hh = (k.baseIso.inv ≫ h ≫ c.baseIso.hom) ≫ c.modelPoint hP := by
+  have hchart : k.chartPoint hP' ≫ carrierMap hg hh = h ≫ c.chartPoint hP :=
+    c.isPullback.hom_ext (by simp [hPg, reassoc_of% hh]) (by simp)
+  rw [modelPoint_def, Category.assoc, Category.assoc, modelIso_hom_modelMap, reassoc_of% hchart,
+    chartPoint_modelIso_hom, Category.assoc, Category.assoc]
+
 variable (c) in
 /-- If an endomorphism `σ` of `X` over `S`, cartesian over the identity, fixes a section `P`, then
 the induced endomorphism of the projective model of the chart fixes the model point of `P`. -/
@@ -351,10 +361,8 @@ theorem modelPoint_modelMap_of_comp_eq {P : S ⟶ X} (hP : P ≫ π = 𝟙 S) {�
     (hσ : IsPullback σ π π (𝟙 S)) (hσP : P ≫ σ = P) :
     c.modelPoint hP ≫ modelMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) =
       c.modelPoint hP := by
-  have : c.chartPoint hP ≫ carrierMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) =
-      c.chartPoint hP :=
-    c.isPullback.hom_ext (by simp [hσP]) (by simp)
-  simp only [modelPoint_def, Category.assoc, modelIso_hom_modelMap, reassoc_of% this]
+  simpa using modelPoint_modelMap hσ (by simp : 𝟙 c.base ≫ c.baseMap = c.baseMap ≫ 𝟙 S) hP hP
+    (by rw [hσP, Category.id_comp])
 
 end PointedWeierstrassChart
 

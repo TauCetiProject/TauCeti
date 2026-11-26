@@ -111,7 +111,6 @@ theorem projModelAffinePoint_projModelMulBy_three_eq_projModelZero_iff {x y : R}
       (isUnit_evalEval_ψ₂_of_eval_Ψ₃_eq_zero h h₃)).mpr h₃⟩
   -- `2P = -P` misses the zero section everywhere, so `ψ₂(x, y)` is a unit
   rw [← ψ_two, isUnit_evalEval_ψ_iff h 2, h₂, projModelAffinePoint_projModelNeg]
-  exact fun s ↦ (ne_projModelZero_iff_mem_basicOpen (by simp) s).mpr
-    (projModelAffinePoint_mem_basicOpen _ s)
+  exact W.projModelAffinePoint_apply_ne_projModelZero _
 
 end WeierstrassCurve
