@@ -80,10 +80,8 @@ theorem isBigO_ncard_of_threshold_sums {ι : Type*} [Finite ι] (S : Set ℕ)
     refine hcnt.trans ((le_abs_self _).trans ?_)
     simpa only [Real.norm_eq_abs, abs_of_pos (rpow_pos_of_pos hTx a)] using hbound
   have hrescale : T x ^ (a - b) = Q ^ ((a - b) / 2) * x ^ ((a - b) / 2) := by
-    have hexponent : (1 / 2 : ℝ) * (a - b) = (a - b) / 2 := by ring
     dsimp [T]
-    rw [sqrt_eq_rpow, ← rpow_mul (by positivity)]
-    rw [hexponent, mul_rpow hQ.le hx₀.le]
+    rw [← Real.rpow_div_two_eq_sqrt (a - b) (mul_nonneg hQ.le hx₀.le), mul_rpow hQ.le hx₀.le]
   simpa only [hrescale, mul_assoc] using hquot
 
 end Set
