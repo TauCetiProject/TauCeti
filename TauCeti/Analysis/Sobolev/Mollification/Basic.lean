@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Convolution
 public import TauCeti.Analysis.Convolution.Jensen
 public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 
 /-!

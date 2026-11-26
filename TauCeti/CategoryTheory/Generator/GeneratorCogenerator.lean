@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Generator.Preadditive
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
+public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 
 /-!
 # Generator-cogenerators
@@ -30,7 +31,9 @@ generator-cogenerator of `Cᵒᵖ` exactly when `M` is one of `C`.
 
 In a preadditive category with finite biproducts, separators and coseparators also pass up
 additive closures: if a separator `G` lies in `add M`, then `M` is a separator
-(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
+(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually. In particular an additive generator
+(`add M = C`) is a generator-cogenerator, since every object is a direct summand of some `Mⁿ`
+(`TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`).
 
 ## Main definitions
 
@@ -53,6 +56,8 @@ additive closures: if a separator `G` lies in `add M`, then `M` is a separator
 * `CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff`: invariance under
   equivalences of categories.
 * `TauCeti.isGeneratorCogenerator_op_iff`: generator-cogenerators are self-dual.
+* `TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`: in a preadditive category with finite
+  biproducts, an additive generator is a generator-cogenerator.
 -/
 
 public section
@@ -215,5 +220,30 @@ contains a generator-cogenerator, then `M` is one. -/
 theorem IsGeneratorCogenerator.of_additiveClosure {G M : C} (hG : IsGeneratorCogenerator G)
     (h : additiveClosure M G) : IsGeneratorCogenerator M :=
   ⟨hG.1.of_additiveClosure h, hG.2.of_additiveClosure h⟩
+
+/-- **An additive generator is a separator**: every object `X` is a direct summand of some `Mⁿ`, so
+`𝟙 X` is a sum of morphisms factoring through `M`. -/
+theorem IsAdditiveGenerator.isSeparator {M : C} (hM : IsAdditiveGenerator M) : IsSeparator M := by
+  rw [Preadditive.isSeparator_iff]
+  intro X Y f hf
+  obtain ⟨n, a, b, hab⟩ := additiveClosure_iff_exists_sum_comp_eq_id.1 (hM.additiveClosure X)
+  rw [← Category.id_comp f, ← hab, Preadditive.sum_comp]
+  exact Finset.sum_eq_zero fun j _ ↦ by simp only [Category.assoc, hf, Limits.comp_zero]
+
+/-- **An additive generator is a coseparator**: every object `Y` is a direct summand of some `Mⁿ`,
+so `𝟙 Y` is a sum of morphisms factoring through `M`. -/
+theorem IsAdditiveGenerator.isCoseparator {M : C} (hM : IsAdditiveGenerator M) :
+    IsCoseparator M := by
+  rw [Preadditive.isCoseparator_iff]
+  intro X Y f hf
+  obtain ⟨n, a, b, hab⟩ := additiveClosure_iff_exists_sum_comp_eq_id.1 (hM.additiveClosure Y)
+  rw [← Category.comp_id f, ← hab, Preadditive.comp_sum]
+  exact Finset.sum_eq_zero fun j _ ↦ by rw [← Category.assoc, hf, Limits.zero_comp]
+
+/-- **An additive generator is a generator-cogenerator.** In `mod A` for an Artin algebra `A`, this
+is the first step of the Auslander correspondence. -/
+theorem IsAdditiveGenerator.isGeneratorCogenerator {M : C} (hM : IsAdditiveGenerator M) :
+    IsGeneratorCogenerator M :=
+  ⟨hM.isSeparator, hM.isCoseparator⟩
 
 end TauCeti

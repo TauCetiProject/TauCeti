@@ -58,10 +58,10 @@ respect homotopy.
   concatenation.
 * `TauCeti.Diffeotopy.final_concat`: a concatenation ends at `ψ₁ ∘ φ₁`.
 * `TauCeti.Diffeotopy.isCollared_concat`: every concatenation is collared.
-* `TauCeti.Diffeotopy.reparam_homotopic`: a reparametrization fixing both ends is homotopic to
-  the original diffeotopy.
-* `TauCeti.Diffeotopy.exists_homotopic_timeSlice_eq_comp`: every diffeotopy is homotopic to one
-  whose time slices are those of a jointly smooth real-time family.
+* `TauCeti.Diffeotopy.isHomotopy_reparam`, `reparam_homotopic`: a reparametrization fixing both
+  ends is homotopic to the original diffeotopy, through time slices of the original diffeotopy.
+* `TauCeti.Diffeotopy.exists_reparam_timeSlice_eq_comp`: every diffeotopy has a reparametrization
+  fixing both ends whose time slices are those of a jointly smooth real-time family.
 * `TauCeti.Diffeotopy.concat_homotopic_trans`, `reverse_homotopic_symm`: the path-class laws of
   concatenation and reversal.
 * `TauCeti.Diffeotopy.concat_reverse_homotopic_refl`: reversal inverts concatenation up to
@@ -356,30 +356,39 @@ theorem isCollared_concat (hn : n ≤ ∞) : (Φ.concat Ψ hn).IsCollared := by
 section Homotopy
 
 /-- **A reparametrization fixing both ends is homotopic to the original diffeotopy**, through the
-straight-line homotopy `((x, t), s) ↦ φ_{(1 - s) ρ t + s t} x` of time maps. -/
-theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 0 = 0) (h₁ : ρ 1 = 1) :
-    (Φ.reparam ρ).Homotopic Φ := by
+straight-line homotopy `((x, t), s) ↦ φ_{(1 - s) ρ t + s t} x` of time maps, with inverse
+`((x, t), s) ↦ φ_{(1 - s) ρ t + s t}⁻¹ x` in the space variable. Every intermediate map is a time
+slice of `Φ`. -/
+theorem isHomotopy_reparam {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 0 = 0) (h₁ : ρ 1 = 1) :
+    IsHomotopy (Φ.reparam ρ) Φ (fun q ↦ Φ (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1))
+      (fun q ↦ Φ.symm (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1)) := by
   have hτ : ContMDiff ((J.prod (𝓡∂ 1)).prod (𝓡∂ 1)) ((𝓡∂ 1).prod J) n
       fun q : (M × I) × I ↦ (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1) :=
     ((ρ.contMDiff.comp (contMDiff_snd.comp contMDiff_fst)).convexComb
       (contMDiff_snd.comp contMDiff_fst) contMDiff_snd).prodMk (contMDiff_fst.comp contMDiff_fst)
-  refine homotopic_iff.mpr ⟨fun q ↦ Φ (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1),
-    fun q ↦ Φ.symm (Set.Icc.convexComb (ρ q.1.2) q.1.2 q.2, q.1.1), Φ.contMDiff.comp hτ,
-    fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_, fun x s ↦ ?_, Φ.symm.contMDiff.comp hτ,
-    fun x t s ↦ symm_apply_apply_mk _ _ _, fun x t s ↦ apply_symm_apply_mk _ _ _⟩
+  refine isHomotopy_iff.2 ⟨Φ.contMDiff.comp hτ, fun p ↦ ?_, fun p ↦ ?_, fun x s ↦ ?_,
+    fun x s ↦ ?_, Φ.symm.contMDiff.comp hτ, fun x t s ↦ symm_apply_apply_mk _ _ _,
+    fun x t s ↦ apply_symm_apply_mk _ _ _⟩
   · simp only [Set.Icc.convexComb_zero, cylinderMap_apply, reparam_apply_of_map_zero _ h₀]
   · simp only [Set.Icc.convexComb_one, cylinderMap_apply]
   · simp only [h₀, Set.Icc.convexComb_eq, apply_zero]
   · simp only [h₁, Set.Icc.convexComb_eq, final_apply, reparam_apply_of_map_zero _ h₀]
 
-/-- **Every diffeotopy is homotopic to the restriction of a real-time family.** There are a
-diffeotopy `Φ'`, homotopic to `Φ` relative to both time ends, and a `C^n` map `c : ℝ → [0, 1]` such
-that the time slices of `Φ'` are `φ_{c t}` and the family `u ↦ φ_{c u}`, `u ∈ ℝ`, and its inverses
-are `C^n` jointly in time and space. Here `c` is the collared smooth transition and `Φ'` is the
-reparametrization of `Φ` by it. -/
-theorem exists_homotopic_timeSlice_eq_comp (hn : n ≤ ∞) :
-    ∃ (Φ' : Diffeotopy J n M) (c : ℝ → I), Φ'.Homotopic Φ ∧ ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n c ∧
-      (∀ t : I, Φ'.timeSlice t = Φ.timeSlice (c t)) ∧
+/-- **A reparametrization fixing both ends is homotopic to the original diffeotopy**, through the
+straight-line homotopy `((x, t), s) ↦ φ_{(1 - s) ρ t + s t} x` of time maps. -/
+theorem reparam_homotopic {ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯} (h₀ : ρ 0 = 0) (h₁ : ρ 1 = 1) :
+    (Φ.reparam ρ).Homotopic Φ :=
+  (Φ.isHomotopy_reparam h₀ h₁).homotopic
+
+/-- **Every diffeotopy has a reparametrization by the restriction of a real-time family.** There
+are a `C^n` reparametrization `ρ` of the unit interval fixing both ends, so that `Φ.reparam ρ` is
+homotopic to `Φ` relative to both time ends (`TauCeti.Diffeotopy.reparam_homotopic`), and a `C^n`
+map `c : ℝ → [0, 1]` such that the time slices of `Φ.reparam ρ` are `φ_{c t}` and the family
+`u ↦ φ_{c u}`, `u ∈ ℝ`, and its inverses are `C^n` jointly in time and space. Here `c` is the
+collared smooth transition and `ρ` is its restriction to the unit interval. -/
+theorem exists_reparam_timeSlice_eq_comp (hn : n ≤ ∞) :
+    ∃ (ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯) (c : ℝ → I), ρ 0 = 0 ∧ ρ 1 = 1 ∧
+      ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n c ∧ (∀ t : I, (Φ.reparam ρ).timeSlice t = Φ.timeSlice (c t)) ∧
       ContMDiff (𝓘(ℝ, ℝ).prod J) J n (fun p : ℝ × M ↦ Φ (c p.1, p.2)) ∧
       ContMDiff (𝓘(ℝ, ℝ).prod J) J n (fun p : ℝ × M ↦ Φ.symm (c p.1, p.2)) := by
   have hc : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) n collaredSmoothTransitionUnit :=
@@ -387,8 +396,8 @@ theorem exists_homotopic_timeSlice_eq_comp (hn : n ≤ ∞) :
   let ρ : C^n⟮𝓡∂ 1, I; 𝓡∂ 1, I⟯ :=
     ⟨fun t ↦ collaredSmoothTransitionUnit t, hc.comp (contMDiff_subtypeVal_Icc (x := 0) (y := 1))⟩
   have hρ₀ : ρ 0 = 0 := collaredSmoothTransitionUnit_eq_zero_of_le (by norm_num)
-  refine ⟨Φ.reparam ρ, collaredSmoothTransitionUnit,
-    Φ.reparam_homotopic hρ₀ (collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num)), hc,
+  refine ⟨ρ, collaredSmoothTransitionUnit, hρ₀,
+    collaredSmoothTransitionUnit_eq_one_of_ge (by norm_num), hc,
     fun t ↦ _root_.Diffeomorph.ext fun x ↦ ?_, Φ.contMDiff.comp (hc.prodMap contMDiff_id),
     Φ.symm.contMDiff.comp (hc.prodMap contMDiff_id)⟩
   rw [timeSlice_apply, timeSlice_apply, reparam_apply_of_map_zero _ hρ₀]

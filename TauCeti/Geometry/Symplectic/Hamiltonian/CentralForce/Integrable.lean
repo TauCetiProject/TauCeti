@@ -104,6 +104,11 @@ theorem coe_smul_puncturedPhaseSpace (g : G) (x : puncturedPhaseSpace V) :
     ((g • x : puncturedPhaseSpace V) : V × V) = g • (x : V × V) :=
   (rfl)
 
+/-- A group acting continuously and linearly on `V` acts continuously on the punctured phase
+space. -/
+instance [TopologicalSpace G] [ContinuousSMul G V] : ContinuousSMul G (puncturedPhaseSpace V) :=
+  ⟨(continuous_fst.smul (continuous_subtypeVal.comp continuous_snd)).subtype_mk _⟩
+
 variable [NormedSpace ℝ V] {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace G] [ChartedSpace H G]
   {n : ℕ∞ω}

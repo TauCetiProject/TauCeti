@@ -7,15 +7,20 @@ module
 
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.WithDensity
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Measures read in the preferred charts of a manifold
 
 A measure `μ` on a manifold is read in the preferred chart at `x` as the pushforward by
 `extChartAt I x` of `μ` restricted to the chart source. This file collects the basic facts about
-these chart pushforwards, and two estimates for measures on the model seen through a chart.
+these chart pushforwards, two estimates for measures on the model seen through a chart, and the
+integral of a kernel read in a chart against a measure with a density in that chart.
 
 ## Main results
 
@@ -25,11 +30,18 @@ these chart pushforwards, and two estimates for measures on the model seen throu
   agree on the chart source.
 * `TauCeti.map_withDensity_restrict_extChartAt_source`: reweighting by a continuous function read
   in the chart multiplies a chart density by that function.
+* `TauCeti.integral_eq_setIntegral_smul_extChartAt_symm`: the integral of a function supported in
+  a chart source is the integral over the chart target of the function read in the chart, weighted
+  by the chart density.
 * `TauCeti.measure_image_extChartAt_inter_source_pos`: the chart image of the part of an open set
   in the chart source has positive measure when that part is nonempty, even at boundary or corner
   points.
 * `TauCeti.exists_isOpen_setLIntegral_image_extChartAt_lt_top`: a function continuous on the chart
   target has finite integral over the chart image of a small open neighbourhood of `x`.
+* `TauCeti.integral_mul_eq_setIntegral_target`: if `μ` has the density `ρ` in a chart `e`,
+  `K(x, y) = F(e x, e y)` on the product of the chart sources, `K` vanishes elsewhere, and `F(z, w)`
+  vanishes for `w` outside a compact subset of the chart target, then
+  `∫ K(x, y) u(y) dμ(y) = ∫_{e.target} ρ(w) F(e x, w) u(e⁻¹ w) dν(w)`.
 -/
 
 public section
@@ -38,6 +50,8 @@ open MeasureTheory Set
 open scoped ENNReal NNReal Manifold Topology
 
 namespace TauCeti
+
+section ExtChart
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
@@ -153,5 +167,68 @@ theorem map_withDensity_restrict_extChartAt_source {x : M} {ν : Measure E}
   have hgy : g y = ENNReal.ofReal (h y) := piecewise_eq_of_mem _ _ _ hy
   rw [Pi.mul_apply, hgy, mul_comm, ENNReal.ofReal_mul (hh y hy)]
 
+/-- **Integrals read in a chart.** In a chart where `μ` has a nonnegative continuous density `w`,
+the `μ`-integral of a function `F` continuous on the chart source and vanishing off it is the
+integral of `w · (F ∘ e⁻¹)` over the chart target. -/
+theorem integral_eq_setIntegral_smul_extChartAt_symm {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [SecondCountableTopology G] {x : M} {ν : Measure E} {w : E → ℝ}
+    (hwc : ContinuousOn w (extChartAt I x).target) (hw0 : ∀ y ∈ (extChartAt I x).target, 0 ≤ w y)
+    (hw : (μ.restrict (extChartAt I x).source).map (extChartAt I x) =
+      (ν.restrict (extChartAt I x).target).withDensity fun y ↦ ENNReal.ofReal (w y))
+    {F : M → G} (hF : ContinuousOn F (extChartAt I x).source)
+    (hF0 : ∀ z ∉ (extChartAt I x).source, F z = 0) :
+    ∫ z, F z ∂μ = ∫ y in (extChartAt I x).target, w y • F ((extChartAt I x).symm y) ∂ν := by
+  let e := extChartAt I x
+  have hsrc : MeasurableSet e.source := (isOpen_extChartAt_source x).measurableSet
+  have htgt : MeasurableSet e.target := measurableSet_extChartAt_target x
+  have hae : AEMeasurable e (μ.restrict e.source) := (continuousOn_extChartAt x).aemeasurable hsrc
+  -- `F ∘ e⁻¹` is continuous on the target, where the chart pushforward of `μ` lives.
+  have hFe : AEStronglyMeasurable (fun y ↦ F (e.symm y)) ((μ.restrict e.source).map e) := by
+    rw [hw]
+    exact ((hF.comp (continuousOn_extChartAt_symm x) fun y hy ↦
+      e.map_target hy).aestronglyMeasurable htgt).mono_ac (withDensity_absolutelyContinuous _ _)
+  have hFF : EqOn F (fun z ↦ F (e.symm (e z))) e.source := fun z hz ↦ by
+    simp only [e.left_inv hz]
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hF0, setIntegral_congr_fun hsrc hFF,
+    ← integral_map hae hFe, hw, MeasureTheory.integral_withDensity_ofReal
+      (hwc.aemeasurable htgt) (ae_restrict_of_forall_mem htgt hw0)]
+
+end ExtChart
+
+/-! ### Integrals against a measure with a density in a chart -/
+
+section ChartDensity
+
+variable {M E : Type*} [TopologicalSpace M] [T2Space M] [MeasurableSpace M] {μ : Measure M}
+  [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E] {ν : Measure E}
+  {e : OpenPartialHomeomorph M E}
+
+/-- **A kernel read in a chart.** Let `μ` have the density `ρ` in the chart `e`, and let `K` be a
+continuous function on `M × M` equal to `F (e x, e y)` on the product of the chart sources and to
+`0` elsewhere, where `F (z, w)` vanishes for `w` outside a compact subset of the chart target. Then
+`∫ K(x, y) u(y) dμ(y) = ∫_{e.target} ρ(w) F(e x, w) u(e⁻¹ w) dν(w)` at points `x` of the chart
+source. -/
+theorem integral_mul_eq_setIntegral_target {ρ : E → ℝ}
+    (hint : ∀ f : M → ℂ, Continuous f → HasCompactSupport f → tsupport f ⊆ e.source →
+      ∫ x, f x ∂μ = ∫ y in e.target, (ρ y : ℂ) * f (e.symm y) ∂ν)
+    {K : M × M → ℂ} (hK : Continuous K) {F : E × E → ℂ}
+    (hKF : ∀ p ∈ e.source ×ˢ e.source, K p = F (e p.1, e p.2))
+    (hK0 : ∀ p ∉ e.source ×ˢ e.source, K p = 0) {B : Set E} (hB : IsCompact B)
+    (hBt : B ⊆ e.target) (hFB : ∀ z, ∀ w ∉ B, F (z, w) = 0) {u : M → ℂ} (hu : Continuous u)
+    {x : M} (hx : x ∈ e.source) :
+    ∫ y, K (x, y) * u y ∂μ = ∫ w in e.target, (ρ w : ℂ) * F (e x, w) * u (e.symm w) ∂ν := by
+  -- The integrand vanishes off the compact set `e⁻¹(B)` inside the chart source.
+  have hB' : IsCompact (e.symm '' B) := hB.image_of_continuousOn (e.continuousOn_symm.mono hBt)
+  have hfB : ∀ y ∉ e.symm '' B, K (x, y) * u y = 0 := fun y hy ↦ by
+    by_cases hys : y ∈ e.source
+    · rw [hKF (x, y) ⟨hx, hys⟩, hFB _ _ fun h ↦ hy ⟨_, h, e.left_inv hys⟩, zero_mul]
+    · rw [hK0 (x, y) fun h ↦ hys h.2, zero_mul]
+  rw [hint (fun y ↦ K (x, y) * u y) ((hK.comp (continuous_const.prodMk continuous_id)).mul hu)
+    (HasCompactSupport.intro hB' hfB) ((closure_minimal (Function.support_subset_iff'.2 hfB)
+      hB'.isClosed).trans (image_subset_iff.2 fun w hw ↦ e.map_target (hBt hw)))]
+  refine setIntegral_congr_fun e.open_target.measurableSet fun w hw ↦ ?_
+  simp only [hKF (x, e.symm w) ⟨hx, e.map_target hw⟩, e.right_inv hw, mul_assoc]
+
+end ChartDensity
 
 end TauCeti

@@ -91,7 +91,8 @@ theorem isSl2Triple_rep_serreRootGenerator (i : Fin 7) :
 /-! ## The admissible coordinate lattice -/
 
 /-- The coordinate `ℤ`-lattice in the rational minuscule module. -/
-noncomputable def lattice : Submodule ℤ (Fin 56 → ℚ) :=
+-- The lattice must compute when comparing bases of the minuscule and standard coordinate lattices.
+@[expose] noncomputable def lattice : Submodule ℤ (Fin 56 → ℚ) :=
   TauCeti.coordinateLattice (Fin 56)
 
 /-- The minuscule lattice is the standard coordinate lattice. -/

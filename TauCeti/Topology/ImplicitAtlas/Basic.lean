@@ -48,6 +48,8 @@ are proved for it. The zero sets are invariant
 (`TauCeti.ImplicitAtlas.Core.act_mem_kuranishiZeroSet`), the images `U_IJ` are invariant under
 `Γ_I` (`TauCeti.ImplicitAtlas.Core.act_mem_range_footprintMap`), the zero-set domains of the
 cocycle condition match (`TauCeti.ImplicitAtlas.Core.mem_kuranishiZeroSet_iff_footprintMap_mem`),
+near a point of `Z_SJ` over `X_S^reg` every point of `Z_(S'J)`, `S ⊆ S' ⊆ J`, lies over
+`X_(S')^reg` (`TauCeti.ImplicitAtlas.Core.exists_isOpen_forall_footprintMap_mem_regLocus`),
 the footprints are open and cover `X` (`TauCeti.ImplicitAtlas.Core.isOpen_footprint`,
 `TauCeti.ImplicitAtlas.Core.iUnion_footprint`) and are empty where the regular locus is
 (`TauCeti.ImplicitAtlas.Core.footprint_eq_empty_of_regLocus_eq_empty`), they satisfy the
@@ -310,6 +312,39 @@ theorem mem_regLocus_of_footprintMap_eq {I J : Finset A} (h : I ⊆ J)
     (hx : x.val ∈ 𝒜.regLocus J) : y.val ∈ 𝒜.regLocus J := by
   obtain ⟨g, -, hg⟩ := (𝒜.footprintMap_eq_footprintMap_iff h x y).1 hxy
   exact hg ▸ 𝒜.act_mem_regLocus J g x hx
+
+/-- **Regularity is open near a regular point.** Let `x ∈ Z_SJ` lie over the regular locus
+`X_S^reg`. Then there is a neighbourhood `W` of `x` in `X_J` such that every point `y ∈ W` of the
+zero set `Z_(S'J)`, for any `S ⊆ S' ⊆ J`, lies over `X_(S')^reg`. -/
+theorem exists_isOpen_forall_footprintMap_mem_regLocus {S J : Finset A} (hSJ : S ⊆ J)
+    (x : kuranishiZeroSet 𝒜.kuranishi S J) (hx : 𝒜.footprintMap hSJ x ∈ 𝒜.regLocus S) :
+    ∃ W : Set (T J), IsOpen W ∧ x.val ∈ W ∧ ∀ ⦃S' : Finset A⦄ (_ : S ⊆ S') (hS'J : S' ⊆ J)
+      (y : kuranishiZeroSet 𝒜.kuranishi S' J), y.val ∈ W →
+        𝒜.footprintMap hS'J y ∈ 𝒜.regLocus S' := by
+  -- For each of the finitely many `S'`, the point `ψ_S'J(x)` is regular, and regularity is open
+  -- in `Z_S'J`.
+  have key : ∀ S' ∈ J.powerset.filter (S ⊆ ·), ∃ W : Set (T J), IsOpen W ∧ x.val ∈ W ∧
+      ∀ (hS'J : S' ⊆ J) (y : kuranishiZeroSet 𝒜.kuranishi S' J), y.val ∈ W →
+        𝒜.footprintMap hS'J y ∈ 𝒜.regLocus S' := by
+    intro S' hS'
+    obtain ⟨hS'J, hSS'⟩ := Finset.mem_filter.1 hS'
+    rw [Finset.mem_powerset] at hS'J
+    have hx' : x.val ∈ kuranishiZeroSet 𝒜.kuranishi S' J :=
+      kuranishiZeroSet_mono _ hSS' J x.property
+    have hreg : 𝒜.footprintMap hS'J ⟨x, hx'⟩ ∈ 𝒜.regLocus S' := by
+      refine 𝒜.mem_regLocus_of_footprintMap_mem hSS' ⟨_,
+        (𝒜.mem_kuranishiZeroSet_iff_footprintMap_mem hS'J ⟨x, hx'⟩).1 x.property⟩ ?_
+      rwa [𝒜.footprintMap_footprintMap_mk hSS' hS'J ⟨x, hx'⟩ x.property]
+    obtain ⟨W, hW, hWeq⟩ := isOpen_induced_iff.1
+      ((𝒜.isOpen_regLocus S').preimage (𝒜.continuous_footprintMap hS'J))
+    refine ⟨W, hW, ?_, fun _ y hy ↦ ?_⟩
+    · exact Set.mem_preimage.1 ((Set.ext_iff.1 hWeq _).2 (Set.mem_preimage.2 hreg))
+    · exact Set.mem_preimage.1 ((Set.ext_iff.1 hWeq y).1 (Set.mem_preimage.2 hy))
+  choose! W hW hxW hWreg using key
+  refine ⟨⋂ S' ∈ J.powerset.filter (S ⊆ ·), W S', isOpen_biInter_finset hW,
+    mem_iInter₂.2 hxW, fun S' hSS' hS'J y hy ↦ ?_⟩
+  have hmem : S' ∈ J.powerset.filter (S ⊆ ·) := by simp [hS'J, hSS']
+  exact hWreg S' hmem hS'J y (mem_iInter₂.1 hy S' hmem)
 
 /-- The regular footprint `V_I = ψ_∅I(X_I^reg ∩ Z_∅I) ⊆ X`. -/
 def footprint (I : Finset A) : Set X :=

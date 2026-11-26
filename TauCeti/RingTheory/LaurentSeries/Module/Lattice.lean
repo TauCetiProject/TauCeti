@@ -157,10 +157,7 @@ noncomputable def powerSeriesLatticeShift (a k : ℤ) :
   map_add' f g := Subtype.ext (_root_.smul_add _ _ _)
   map_smul' p f := Subtype.ext (by
     simp only [Submodule.coe_smul_of_tower, _root_.HahnModule.powerSeries_smul]
-    rw [← mul_smul, ← mul_smul]
-    congr 1
-    ext n
-    simp only [coeff_single_mul, coeff_mul_single, one_mul, mul_one, RingHom.id_apply])
+    rw [← mul_smul, ← mul_smul, RingHom.id_apply, ((p : R⸨X⸩).commute_single_one k).eq])
 
 /-- The lattice-shift equivalence acts by the specified Laurent monomial. -/
 @[simp]

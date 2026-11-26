@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Analysis.InnerProductSpace.SingularValues
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
+import Mathlib.Analysis.InnerProductSpace.NormDet
 
 /-!
 # The Eckart–Young theorem: approximation numbers are singular values
@@ -27,14 +29,18 @@ Conversely `T` stretches every vector of the `(n + 1)`-dimensional span of the `
 by at least `σₙ`, so `σₙ ≤ aₙ(T)` by the coercive-subspace bound
 `ContinuousLinearMap.le_singularValue_of_lt_rank`.
 
-Two consequences are recorded for linear maps: the operator norm is the largest singular value,
-and singular values are `1`-Lipschitz in the operator norm (Weyl's perturbation bound for singular
-values), transferred from the corresponding facts `a₀(T) = ‖T‖` and `|aₙ(S) - aₙ(T)| ≤ ‖S - T‖`.
+Consequently, for an endomorphism `T` of an inner product space, `‖det T‖` is the product of its
+first `finrank 𝕜 E` approximation numbers (`ContinuousLinearMap.norm_det_eq_prod_singularValue`).
+Two further consequences are recorded for linear maps: the operator norm is the largest singular
+value, and singular values are `1`-Lipschitz in the operator norm (Weyl's perturbation bound for
+singular values), transferred from `a₀(T) = ‖T‖` and `|aₙ(S) - aₙ(T)| ≤ ‖S - T‖`.
 
 ## Main declarations
 
 * `ContinuousLinearMap.singularValue_eq_linearMap_singularValues`: **Eckart–Young**,
   `aₙ(T) = σₙ(T)` in finite dimension.
+* `ContinuousLinearMap.norm_det_eq_prod_singularValue`,
+  `ContinuousLinearMap.nnnorm_det_eq_prod_singularValue`: `‖det T‖ = ∏_{i < finrank 𝕜 E} aᵢ(T)`.
 * `LinearMap.norm_toContinuousLinearMap_eq_singularValues_zero`: `‖A‖ = σ₀(A)`.
 * `LinearMap.abs_singularValues_sub_singularValues_le`: `|σₙ(A) - σₙ(B)| ≤ ‖A - B‖`.
 
@@ -88,6 +94,30 @@ theorem singularValue_eq_linearMap_singularValues (T : E →L[𝕜] F) (n : ℕ)
       simpa [A] using A.singularValues_mul_norm_le_norm_apply hx'
     · rw [A.singularValues_of_finrank_le hn]
       exact NNReal.coe_nonneg _
+
+omit [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [FiniteDimensional 𝕜 F] in
+/-- **Determinant as product of approximation numbers.** On an inner product space, the norm of
+the determinant of a bounded endomorphism is the product of its first `finrank 𝕜 E` approximation
+numbers: `‖T.det‖ = ∏ i ∈ Finset.range (finrank 𝕜 E), (T.singularValue i : ℝ)`. In infinite
+dimension both sides equal `1`. -/
+theorem norm_det_eq_prod_singularValue (T : E →L[𝕜] E) :
+    ‖T.det‖ = ∏ i ∈ Finset.range (finrank 𝕜 E), (T.singularValue i : ℝ) := by
+  by_cases hE : FiniteDimensional 𝕜 E
+  · simp_rw [T.singularValue_eq_linearMap_singularValues]
+    rw [ContinuousLinearMap.det, ← (T : E →ₗ[𝕜] E).normDet_eq_norm_det,
+      (T : E →ₗ[𝕜] E).normDet_eq_prod_singularValues]
+  · rw [ContinuousLinearMap.det, LinearMap.det_eq_one_of_not_module_finite hE, norm_one,
+      finrank_of_not_finite hE, Finset.range_zero, Finset.prod_empty]
+
+omit [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [FiniteDimensional 𝕜 F] in
+/-- Nonnegative-norm form of `ContinuousLinearMap.norm_det_eq_prod_singularValue`:
+`‖T.det‖₊ = ∏ i ∈ Finset.range (finrank 𝕜 E), T.singularValue i`. -/
+theorem nnnorm_det_eq_prod_singularValue (T : E →L[𝕜] E) :
+    ‖T.det‖₊ = ∏ i ∈ Finset.range (finrank 𝕜 E), T.singularValue i := by
+  ext
+  simpa only [coe_nnNorm, NNReal.coe_prod] using T.norm_det_eq_prod_singularValue
 
 end ContinuousLinearMap
 

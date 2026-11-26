@@ -193,6 +193,15 @@ theorem inclusion_eq_eqToHom_comp_hopfSpec_map :
   -- so its two sides are not reducibly equal, and the remaining goal is closed definitionally.
   rfl
 
+/-- The inclusion of `SOₙ` into `GLₙ` is the Hopf-ideal inclusion at its defining Hopf ideal,
+after the quotient-spectrum presentation `groupScheme_def`. -/
+theorem inclusion_eq_eqToHom_comp_hopfIdealInclusion :
+    inclusion R n =
+      eqToHom (groupScheme_def R n) ≫
+        GeneralLinear.hopfIdealInclusion R n (definingHopfIdeal R n) := by
+  rw [inclusion_eq_eqToHom_comp_hopfSpec_map, GeneralLinear.hopfIdealInclusion_def,
+    CommHopfAlgCat.quotientSpecι_def, coordinateMap_def]
+
 /-- The special orthogonal inclusion into the named general linear group scheme is a closed
 immersion. -/
 instance isClosedImmersion_inclusion :

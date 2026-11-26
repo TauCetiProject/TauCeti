@@ -23,6 +23,7 @@ For an open set `Ω` of a finite-dimensional real normed space `E`, a test vecto
 `φ ∈ 𝓓(Ω, E)` has divergence `div φ = tr (Dφ)`, which is again a test function on `Ω`. This file
 packages the divergence as a continuous linear map `𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ)`, in the style of
 Mathlib's `TestFunction.fderivCLM`, and expands it in the coordinates of any finite basis.
+The kernel of this map is the submodule of solenoidal test vector fields.
 
 The divergence of test vector fields is the operator dual to the distributional gradient: the
 total variation of a function and the perimeter of a set are suprema of the pairings
@@ -34,6 +35,8 @@ total variation of a function and the perimeter of a set are suprema of the pair
 * `TestFunction.divergenceCLM_apply`: pointwise, it is the trace of the Fréchet derivative.
 * `TestFunction.tsupport_divergenceCLM_subset`: the divergence of a test vector field is supported
   in the support of the field.
+* `TestFunction.solenoidalSubmodule`: the kernel of `divergenceCLM` on test vector fields.
+* `TestFunction.mem_solenoidalSubmodule_iff`: membership means that the bundled divergence vanishes.
 * `TestFunction.divergenceCLM_monoCLM`: the divergence commutes with extending a test vector
   field from `Ω'` to a larger open set `Ω`.
 * `TestFunction.divergenceCLM_postcompCLM_toSpanSingleton`: the divergence of the vector field
@@ -87,6 +90,16 @@ linear map into the scalar test functions `𝓓(Ω, ℝ)`. It is the composite o
 derivative `TestFunction.fderivCLM` with the trace `TauCeti.traceCLM`. -/
 noncomputable def divergenceCLM : 𝓓(Ω, E) →L[ℝ] 𝓓(Ω, ℝ) :=
   postcompCLM (TauCeti.traceCLM ℝ E) ∘L fderivCLM ℝ ⊤ ⊤
+
+/-- Smooth compactly supported vector fields with zero divergence on the open set. -/
+noncomputable def solenoidalSubmodule (Ω : Opens E) : Submodule ℝ 𝓓(Ω, E) :=
+  (divergenceCLM (Ω := Ω)).ker
+
+/-- A test field is solenoidal exactly when its bundled divergence vanishes. -/
+@[simp]
+theorem mem_solenoidalSubmodule_iff {φ : 𝓓(Ω, E)} :
+    φ ∈ solenoidalSubmodule Ω ↔ divergenceCLM φ = 0 :=
+  (Iff.rfl)
 
 /-- The divergence of a test vector field is pointwise the trace of its Fréchet derivative. -/
 @[simp]

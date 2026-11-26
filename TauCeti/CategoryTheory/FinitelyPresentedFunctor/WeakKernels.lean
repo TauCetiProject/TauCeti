@@ -12,12 +12,12 @@ public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
 /-!
 # The Freyd-Auslander criterion
 
-Let `C` be a preadditive category with binary biproducts. The finitely presented functors
+Let `C` be a preadditive category with finite biproducts. The finitely presented functors
 `Cᵒᵖ ⥤ AddCommGrpCat` (`TauCeti.isFinitelyPresentedFunctor C`, the category `mod C`) are closed
 under kernels in the functor category exactly when `C` has weak kernels
 (`TauCeti.hasWeakKernels_iff_isClosedUnderKernels`).
 
-Since `mod C` already contains zero (for nonempty `C`) and is closed under cokernels and finite
+Since `mod C` already contains zero and is closed under cokernels and finite
 products, Mathlib's instance for subcategories of abelian categories closed under kernels and
 cokernels then makes `(isFinitelyPresentedFunctor C).FullSubcategory` abelian, with kernels and
 cokernels computed in the functor category, whenever `C` has weak kernels. Abelian and
@@ -61,7 +61,9 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] {F G : Cᵒᵖ ⥤ AddCom
 
 section WeakKernels
 
-variable [HasWeakKernels C] [HasBinaryBiproducts C]
+variable [HasWeakKernels C] [HasFiniteBiproducts C]
+
+attribute [local instance] hasBinaryBiproducts_of_finite_biproducts
 
 /-- If `C` has weak kernels, the kernel of a morphism `α : (-, Z) ⟶ F` to a finitely presented
 functor is the image of `(-, w)` for some morphism `w : W ⟶ Z` of `C`. -/
@@ -69,7 +71,7 @@ theorem IsFinitelyPresentedFunctor.exists_exact_preadditiveYoneda_map
     (hF : IsFinitelyPresentedFunctor F) {Z : C} (α : preadditiveYoneda.obj Z ⟶ F) :
     ∃ (W : C) (w : W ⟶ Z) (h : preadditiveYoneda.map w ≫ α = 0),
       (ShortComplex.mk _ _ h).Exact := by
-  obtain ⟨X, Y, f, p, hfp, hp, hS⟩ := isFinitelyPresentedFunctor_def.1 hF
+  obtain ⟨X, Y, f, p, hfp, hp, hS⟩ := (isFinitelyPresentedFunctor_iff_exists_single _).1 hF
   obtain ⟨u, rfl⟩ := exists_preadditiveYoneda_map_comp_eq p α
   rw [exact_preadditiveYoneda_map_iff] at hS
   -- `z : V ⟶ Z` is killed exactly when `z ≫ u = x ≫ f` for some `x`, that is, when
@@ -94,7 +96,8 @@ presented. -/
 theorem IsFinitelyPresentedFunctor.of_isLimit_kernelFork {φ : F ⟶ G} {c : KernelFork φ}
     (hc : IsLimit c) (hF : IsFinitelyPresentedFunctor F) (hG : IsFinitelyPresentedFunctor G) :
     IsFinitelyPresentedFunctor c.pt := by
-  obtain ⟨Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 hF.isFinitelyGeneratedFunctor
+  obtain ⟨Y, p, hp⟩ :=
+    (isFinitelyGeneratedFunctor_iff_exists_single _).1 hF.isFinitelyGeneratedFunctor
   -- `(-, w) ≫ p : (-, W) ⟶ F` has image the kernel of `φ`, so it factors through `c` by an
   -- epimorphism `r`; the kernel of `r` is then the image of some `(-, w')`.
   obtain ⟨W, w, hw, hwS⟩ := hG.exists_exact_preadditiveYoneda_map (p ≫ φ)
@@ -104,7 +107,7 @@ theorem IsFinitelyPresentedFunctor.of_isLimit_kernelFork {φ : F ⟶ G} {c : Ker
     (by rw [Category.assoc, hw])
   have hι : Mono c.ι := Fork.IsLimit.mono hc
   rw [exact_preadditiveYoneda_map_iff] at hwS hw'S
-  refine isFinitelyPresentedFunctor_def.2 ⟨W', W, w', r,
+  refine (isFinitelyPresentedFunctor_iff_exists_single _).2 ⟨W', W, w', r,
     (cancel_mono c.ι).1 (by simp [hr, hw']), ?_, ?_⟩
   · -- Pointwise: lift `c.ι t` along `p` to some `y : V ⟶ Y`, which is killed by `p ≫ φ` and so
     -- factors as `x ≫ w`; then `r` sends `x` to `t`, as `c.ι` is injective.
@@ -134,13 +137,13 @@ instance : (isFinitelyPresentedFunctor C).IsClosedUnderKernels where
 
 end WeakKernels
 
-/-- If the finitely presented functors are closed under kernels in the functor category, then `C`
-has weak kernels: a weak kernel of `g : Y ⟶ Z` is given by a representable functor mapping onto
-the kernel of `(-, g)`. -/
-theorem hasWeakKernels_of_isClosedUnderKernels
+/-- If `C` has finite biproducts and the finitely presented functors are closed under kernels in
+the functor category, then `C` has weak kernels: a weak kernel of `g : Y ⟶ Z` is given by a
+representable functor mapping onto the kernel of `(-, g)`. -/
+theorem hasWeakKernels_of_isClosedUnderKernels [HasFiniteBiproducts C]
     [(isFinitelyPresentedFunctor C).IsClosedUnderKernels] : HasWeakKernels C where
   hasWeakLimit {Y Z} g := by
-    obtain ⟨X, q, hq⟩ := isFinitelyGeneratedFunctor_def.1
+    obtain ⟨X, q, hq⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1
       ((isFinitelyPresentedFunctor C).prop_kernel (preadditiveYoneda.map g)
       (isFinitelyPresentedFunctor_preadditiveYoneda_obj Y)
       (isFinitelyPresentedFunctor_preadditiveYoneda_obj Z)).isFinitelyGeneratedFunctor
@@ -153,17 +156,17 @@ theorem hasWeakKernels_of_isClosedUnderKernels
     refine ⟨hl.choose, preadditiveYoneda.map_injective ?_⟩
     simp [hw, reassoc_of% hl.choose_spec]
 
-/-- **The Freyd-Auslander criterion.** A preadditive category `C` with binary biproducts has weak
+/-- **The Freyd-Auslander criterion.** A preadditive category `C` with finite biproducts has weak
 kernels exactly when the finitely presented functors `Cᵒᵖ ⥤ AddCommGrpCat` are closed under
-kernels in the functor category. For nonempty `C`, this makes `mod C` an abelian category, with
-kernels and cokernels computed in the functor category. -/
-theorem hasWeakKernels_iff_isClosedUnderKernels [HasBinaryBiproducts C] :
+kernels in the functor category. This makes `mod C` an abelian category, with kernels and
+cokernels computed in the functor category. -/
+theorem hasWeakKernels_iff_isClosedUnderKernels [HasFiniteBiproducts C] :
     HasWeakKernels C ↔ (isFinitelyPresentedFunctor C).IsClosedUnderKernels :=
   ⟨fun _ ↦ inferInstance, fun _ ↦ hasWeakKernels_of_isClosedUnderKernels⟩
 
 -- With weak kernels, `mod C` is abelian by Mathlib's instance for full subcategories of abelian
 -- categories containing zero and closed under kernels, cokernels and finite products.
-noncomputable example [HasWeakKernels C] [HasBinaryBiproducts C] [Nonempty C] :
+noncomputable example [HasWeakKernels C] [HasFiniteBiproducts C] :
     Abelian (isFinitelyPresentedFunctor C).FullSubcategory :=
   inferInstance
 

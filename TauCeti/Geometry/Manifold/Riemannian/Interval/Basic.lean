@@ -48,8 +48,12 @@ reflection.
   their images in `ℝ`.
 * `TauCeti.norm_tangentSpace_Icc`: the norm of a tangent vector is the absolute value of its image
   in `ℝ`.
-* `TauCeti.IccZeroAddOne.inner_tangentSpace`, `TauCeti.IccZeroAddOne.norm_tangentSpace`: the same
-  statements for the charts in the successor dimension `0 + 1`.
+* `TauCeti.eq_mvfderiv_subtypeVal_smul_one_Icc`: every tangent vector is a multiple of the unit
+  tangent vector `1`; `TauCeti.norm_mvfderiv_Icc`: so the norm of the differential of a function is
+  the absolute value of its value on `1`.
+* `TauCeti.IccZeroAddOne.inner_tangentSpace`, `TauCeti.IccZeroAddOne.norm_tangentSpace`,
+  `TauCeti.IccZeroAddOne.norm_mvfderiv`: the same statements for the charts in the successor
+  dimension `0 + 1`.
 * `TauCeti.outwardUnitNormal_Icc_bot`, `TauCeti.outwardUnitNormal_Icc_top`: the outward unit
   normal at the two endpoints.
 -/
@@ -142,6 +146,24 @@ theorem mvfderiv_subtypeVal_Icc_one (x : Icc a b) :
 theorem norm_one_tangentSpace_Icc (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ 1) x)‖ = 1 := by
   simp
 
+/-- Every tangent vector `v` of `[a, b]` is the multiple `v = ι'(v) • 1` of the unit tangent
+vector, where `ι'` is the differential of the inclusion into `ℝ`. -/
+theorem eq_mvfderiv_subtypeVal_smul_one_Icc (x : Icc a b) (v : TangentSpace (𝓡∂ 1) x) :
+    v = mvfderiv (𝓡∂ 1) (Subtype.val : Icc a b → ℝ) x v • (1 : TangentSpace (𝓡∂ 1) x) := by
+  apply injective_mvfderiv_subtypeVal_Icc x
+  rw [map_smul, mvfderiv_subtypeVal_Icc_one, smul_eq_mul, mul_one]
+
+/-- For the Euclidean metric of `[a, b]`, the differential of a function at `x` has norm the
+absolute value of its value on the unit tangent vector `1`. -/
+theorem norm_mvfderiv_Icc (f : Icc a b → ℝ) (x : Icc a b) :
+    ‖mvfderiv (𝓡∂ 1) f x‖ = |mvfderiv (𝓡∂ 1) f x (1 : TangentSpace (𝓡∂ 1) x)| := by
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (abs_nonneg _) fun v ↦ ?_) ?_
+  · conv_lhs => rw [eq_mvfderiv_subtypeVal_smul_one_Icc x v]
+    rw [map_smul, smul_eq_mul, norm_mul, norm_tangentSpace_Icc, Real.norm_eq_abs,
+      Real.norm_eq_abs, mul_comm]
+  · have h := (mvfderiv (𝓡∂ 1) f x).le_opNorm (1 : TangentSpace (𝓡∂ 1) x)
+    rwa [norm_one_tangentSpace_Icc, mul_one, Real.norm_eq_abs] at h
+
 /-! ### The Euclidean metric in the successor dimension `0 + 1` -/
 
 namespace IccZeroAddOne
@@ -199,6 +221,15 @@ theorem mvfderiv_subtypeVal_one (x : Icc a b) :
 `instChartedSpaceIccZeroAddOne`. -/
 theorem norm_one_tangentSpace (x : Icc a b) : ‖(1 : TangentSpace (𝓡∂ (0 + 1)) x)‖ = 1 := by
   simp
+
+/-- For the Euclidean metric of `[a, b]` and the charts `instChartedSpaceIccZeroAddOne`, the
+differential of a function at `x` has norm the absolute value of its value on the unit tangent
+vector `1`. -/
+theorem norm_mvfderiv (f : Icc a b → ℝ) (x : Icc a b) :
+    ‖mvfderiv (𝓡∂ (0 + 1)) f x‖ =
+      |mvfderiv (𝓡∂ (0 + 1)) f x (1 : TangentSpace (𝓡∂ (0 + 1)) x)| :=
+  -- The charts for `𝓡∂ (0 + 1)` and `𝓡∂ 1` and their unit vectors `1` agree by definition.
+  norm_mvfderiv_Icc f x
 
 /-- The normal coordinate of the unit tangent vector `1` of `[a, b]` in the preferred chart at
 `x`, read as the boundary constructions read it: `+1` in the translation chart and `-1` in the

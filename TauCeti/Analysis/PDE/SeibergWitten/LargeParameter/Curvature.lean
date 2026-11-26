@@ -231,7 +231,7 @@ theorem norm_add_hodgeStar_add_sq_le (hρ : ∀ v, LinearMap.adjoint (ρ (ι Q v
     rw [hF, ← coe_quadraticTwoForm_sqrt_smul_add_sub_smul o hQ hkl hω hρ h₂ hφ hβ hr]
     abel
   have hXle : ‖r • X‖ ^ 2 ≤ r ^ 2 * (‖φ‖ ^ 2 * ‖β‖ ^ 2 / 2) := by
-    have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
+    have h := norm_quadraticTwoFormPolar_le o hQ hkl hρ φ β
     rw [norm_smul, Real.norm_of_nonneg hr, mul_pow]
     gcongr
     calc ‖X‖ ^ 2 ≤ (‖φ‖ * ‖β‖ / √2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) h 2
@@ -650,7 +650,7 @@ theorem infDist_positiveCone_le_of_add_hodgeStar_eq
     rw [norm_smul, norm_smul, Real.norm_of_nonneg (by positivity),
       Real.norm_of_nonneg (by norm_num)]
     have h1 : ‖(quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)‖ ≤ ‖φ‖ * ‖β‖ / √2 :=
-      norm_quadraticTwoFormPolar_le o hQ hkl hρ h₂ φ β
+      norm_quadraticTwoFormPolar_le o hQ hkl hρ φ β
     have h2 := AlmostComplexStructure.norm_lieMap_lieMap_le hJ η
     have := mul_le_mul_of_nonneg_left h1 (by positivity : (0 : ℝ) ≤ 2 * r)
     linarith

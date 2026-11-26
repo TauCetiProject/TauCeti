@@ -24,7 +24,9 @@ codimension of an intersection is at most the sum of the codimensions. A set spa
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
 of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, every
 vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
-finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`, with equality
+when every element of `U` is a sum of elements of the two
+(`Submodule.finrank_inf_add_finrank_inf_eq`).
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`. A proper subspace of a proper finite-dimensional subspace `P` can be enlarged to a
 distinct subspace of the same dimension as `P`.
@@ -45,7 +47,9 @@ dimension, and the preimage of a submodule `p` inside another submodule `q` has 
 finite-dimensional subspace `p` under a map `f` with finite-dimensional kernel has dimension
 `dim (range f ⊓ p) + dim (ker f)` (`LinearMap.finrank_comap`). An `R`-submodule of
 rank less than `ℵ₀` has finite-dimensional `K`-span over any division ring `K` receiving `R`
-faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`).
+faithfully (`Submodule.finiteDimensional_span_of_rank_lt_aleph0`). Two finite-dimensional subspaces
+of equal dimension are exchanged by a linear automorphism of the ambient space
+(`Submodule.exists_linearEquiv_mem_iff`), which need not itself be finite-dimensional.
 -/
 
 public section
@@ -98,6 +102,21 @@ theorem finrank_add_finrank_le_of_disjoint_of_le {S T U : Submodule 𝕜 E} [Fin
   have := finiteDimensional_of_le hT
   rw [← finrank_sup_add_finrank_inf_eq, h.eq_bot, finrank_bot, add_zero]
   exact finrank_mono (sup_le hS hT)
+
+/-- The equality case of `Submodule.finrank_add_finrank_le_of_disjoint_of_le`: if `A` and `B` are
+disjoint and every element of a finite-dimensional subspace `P` is the sum of an element of
+`P ⊓ A` and one of `P ⊓ B`, the dimensions of these two pieces add up to that of `P`. -/
+theorem finrank_inf_add_finrank_inf_eq {P A B : Submodule 𝕜 E} [FiniteDimensional 𝕜 P]
+    (hAB : Disjoint A B) (h : ∀ x ∈ P, ∃ a ∈ P ⊓ A, ∃ b ∈ P ⊓ B, a + b = x) :
+    finrank 𝕜 ↥(P ⊓ A) + finrank 𝕜 ↥(P ⊓ B) = finrank 𝕜 P := by
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ A ≤ P)
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ B ≤ P)
+  have hsup : P ⊓ A ⊔ P ⊓ B = P := le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := h x hx
+    exact add_mem_sup ha hb
+  have hinf : P ⊓ A ⊓ (P ⊓ B) = ⊥ :=
+    eq_bot_iff.2 fun x hx ↦ hAB.le_bot ⟨hx.1.2, hx.2.2⟩
+  rw [← finrank_sup_add_finrank_inf_eq, hsup, hinf, finrank_bot, add_zero]
 
 /-- Three subspaces whose dimensions sum to more than twice the dimension of the ambient
 space have nontrivial common intersection. -/
@@ -265,6 +284,21 @@ theorem exists_finrank_eq_and_le_and_ne {P K₀ : Submodule 𝕜 E} [FiniteDimen
   have := finrank_lt_finrank_of_lt hK₀
   exact ⟨(K₀ ⊔ M) ⊔ (𝕜 ∙ v), by omega, le_sup_left.trans le_sup_left,
     fun hQP => hvP (hQP ▸ mem_sup_right (mem_span_singleton_self v))⟩
+
+/-- **Subspaces of equal finite dimension are exchanged by a linear automorphism.** In any
+vector space `E` over a division ring `𝕜`, two finite-dimensional subspaces of the same dimension
+are mapped onto each other by a linear automorphism of `E` (`E` itself need not be
+finite-dimensional). -/
+theorem exists_linearEquiv_mem_iff (V L : Submodule 𝕜 E) [FiniteDimensional 𝕜 V]
+    [FiniteDimensional 𝕜 L] (h : finrank 𝕜 V = finrank 𝕜 L) :
+    ∃ g : E ≃ₗ[𝕜] E, ∀ z, z ∈ V ↔ g z ∈ L := by
+  let f := LinearEquiv.ofFinrankEq V L h
+  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq f
+  refine ⟨g, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
+  · simp [← hg ⟨z, hz⟩]
+  · set w := f.symm ⟨g z, hz⟩
+    have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
+    exact g.injective hw ▸ w.property
 
 end DivisionRing
 
