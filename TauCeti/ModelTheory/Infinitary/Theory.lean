@@ -280,6 +280,11 @@ theorem omitsFOType_singleton_iff {ψ : L.BoundedFormula Empty n} :
     OmitsFOType M {ψ} ↔ ∀ a : Fin n → M, ¬ψ.Realize Empty.elim a := by
   simp only [omitsFOType_iff, Set.mem_singleton_iff, exists_eq_left]
 
+/-- A structure omits a single sentence exactly when it does not satisfy it. -/
+theorem omitsFOType_singleton_sentence_iff {ψ : L.Sentence} : OmitsFOType M {ψ} ↔ ¬M ⊨ ψ := by
+  rw [omitsFOType_singleton_iff, Unique.forall_iff, Sentence.Realize, Formula.Realize,
+    Subsingleton.elim (default : Empty → M) Empty.elim]
+
 /-- Every structure omits the partial type `{⊥}`. -/
 theorem omitsFOType_singleton_bot : OmitsFOType M ({⊥} : Set (L.BoundedFormula Empty n)) :=
   omitsFOType_singleton_iff.2 fun _ => BoundedFormula.realize_bot.1

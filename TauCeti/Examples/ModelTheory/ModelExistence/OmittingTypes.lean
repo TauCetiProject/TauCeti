@@ -58,9 +58,8 @@ example (M : Type w) [L.Structure M] : OmitsFOType M ({⊥} : Set (L.BoundedForm
   omitsFOType_singleton_bot
 
 -- At `n = 0`, a structure omits `{ψ}` exactly when it does not satisfy the sentence `ψ`.
-example (M : Type w) [L.Structure M] (ψ : L.Sentence) : OmitsFOType M {ψ} ↔ ¬M ⊨ ψ := by
-  rw [omitsFOType_singleton_iff, Unique.forall_iff, Sentence.Realize, Formula.Realize,
-    Subsingleton.elim (default : Empty → M) Empty.elim]
+example (M : Type w) [L.Structure M] (ψ : L.Sentence) : OmitsFOType M {ψ} ↔ ¬M ⊨ ψ :=
+  omitsFOType_singleton_sentence_iff
 
 end Checks
 
@@ -88,6 +87,16 @@ instance : lang.Structure ℕ where
     | .succ, x => x 0 + 1
   RelMap r := Empty.elim r
 
+/-- In `ℕ`, the symbol `0` denotes zero. -/
+@[simp]
+theorem funMap_zero (x : Fin 0 → ℕ) : Structure.funMap (L := lang) Func.zero x = 0 :=
+  rfl
+
+/-- In `ℕ`, the symbol `S` denotes the successor function. -/
+@[simp]
+theorem funMap_succ (x : Fin 1 → ℕ) : Structure.funMap (L := lang) Func.succ x = x 0 + 1 :=
+  rfl
+
 /-- The numeral `Sᵏ0`, as a term over any variables. -/
 def numeral {α : Type*} : ℕ → lang.Term α
   | 0 => .func Func.zero default
@@ -113,8 +122,8 @@ theorem realize_numeral_congr {α β M : Type*} [lang.Structure M] (k : ℕ) (v 
 @[simp]
 theorem realize_numeral {α : Type*} (k : ℕ) (v : α → ℕ) : (numeral k).realize v = k := by
   induction k with
-  | zero => rfl
-  | succ k ih => exact congrArg (· + 1) ih
+  | zero => simp [numeral]
+  | succ k ih => simp [numeral, ih]
 
 /-- The formula `x₀ ≠ Sᵏ0` in one bound position. -/
 def neNumeral (k : ℕ) : lang.BoundedFormula Empty 1 :=
