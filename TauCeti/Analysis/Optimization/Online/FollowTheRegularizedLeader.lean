@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Optimization.Online.Regret
 import Mathlib.Topology.Semicontinuity.Basic
 import TauCeti.Analysis.Convex.Function.Minimizer
 import TauCeti.Analysis.Convex.Function.Uniform
+import TauCeti.Analysis.Convex.Strong
 
 /-!
 # Follow the regularized leader
@@ -106,7 +107,7 @@ private theorem strongConvexOn_add_mul_sum (hψ : StrongConvexOn K μ ψ) (η : 
     convert (((η • ∑ s ∈ range t, g s : StrongDual ℝ F) : F →ₗ[ℝ] ℝ).convexOn hψ.1) using 1
     funext y
     simp
-  simpa [StrongConvexOn, Pi.add_def] using UniformConvexOn.add hψ (uniformConvexOn_zero.2 hlin)
+  exact hψ.add_convexOn hlin
 
 /-- **Existence and uniqueness of the iterates of follow the regularized leader.** If `K` is
 nonempty and complete and the regularizer `ψ` is lower semicontinuous and `μ`-strongly convex
