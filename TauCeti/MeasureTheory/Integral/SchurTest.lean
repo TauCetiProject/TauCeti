@@ -74,10 +74,10 @@ and column integrals are only required almost everywhere.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
 open scoped ENNReal NNReal
+
+namespace TauCeti
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   {μ : Measure α} {ν : Measure β}

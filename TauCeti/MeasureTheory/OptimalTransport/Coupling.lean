@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureProd
 public import Mathlib.MeasureTheory.Measure.Sub
 
+import Mathlib.MeasureTheory.Integral.Prod
+
 /-!
 # Couplings of two measures
 
@@ -42,6 +44,11 @@ separately as a subtype of `MeasureTheory.ProbabilityMeasure (X × Y)`.
 * `TauCeti.IsCoupling.measurePreserving_fst`, `TauCeti.IsCoupling.measurePreserving_snd`,
   `TauCeti.IsCoupling.integral_comp_fst`, and `TauCeti.IsCoupling.integral_comp_snd` — projection
   and integral-transfer forms of the marginal conditions;
+* `TauCeti.IsCoupling.integrable_and_integrable_of_ae_le_add`,
+  `TauCeti.IsCoupling.integrable_and_integrable_of_ae_add_nonneg`, and
+  `TauCeti.IsCoupling.integrable_and_integrable_of_integrable_add_of_integrable_max` — deducing
+  marginal integrability of `f` and `g` from bounds on their split sum `f x + g y` or its
+  positive part;
 * `TauCeti.IsCoupling.smul`, `TauCeti.IsCoupling.add`, `TauCeti.IsCoupling.smul_add_smul`,
   `TauCeti.IsCoupling.smul_add_smul_left`, `TauCeti.IsCoupling.smul_add_smul_right`,
   `TauCeti.IsCoupling.sum` and `TauCeti.isCoupling_zero` — the relation is compatible with the
@@ -176,6 +183,79 @@ theorem measurePreserving_snd (hπ : IsCoupling π μ ν) :
     MeasurePreserving Prod.snd π ν :=
   ⟨measurable_snd, hπ.snd_eq⟩
 
+/-- A coupling gives the measurable cylinder `s ×ˢ univ` the source mass of `s`. -/
+theorem measure_prod_univ (hπ : IsCoupling π μ ν) {s : Set X} (hs : MeasurableSet s) :
+    π (s ×ˢ univ) = μ s := by
+  rw [prod_univ, ← Measure.fst_apply hs, hπ.fst_eq]
+
+/-- A coupling gives the measurable cylinder `univ ×ˢ t` the target mass of `t`. -/
+theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : MeasurableSet t) :
+    π (univ ×ˢ t) = ν t := by
+  rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
+
+/-- **Transport up to an exceptional set.** If a coupling `π` gives mass at most `δ` to the pairs
+of cost `c` at least `δ`, then it moves every measurable set `s` into the points at cost less than
+`δ` from `s`, up to mass `δ`. -/
+theorem measure_le_of_measure_setOf_le (hπ : IsCoupling π μ ν) {c : X → Y → ℝ≥0∞} {δ : ℝ≥0∞}
+    (h : π {z | δ ≤ c z.1 z.2} ≤ δ) {s : Set X} (hs : MeasurableSet s) :
+    μ s ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ :=
+  calc μ s = π (s ×ˢ univ) := (hπ.measure_prod_univ hs).symm
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ} ∪ {z | δ ≤ c z.1 z.2}) := by
+        refine measure_mono fun z hz ↦ ?_
+        rcases lt_or_ge (c z.1 z.2) δ with hlt | hge
+        · exact .inl ⟨z.1, hz.1, hlt⟩
+        · exact .inr hge
+    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ}) + π {z | δ ≤ c z.1 z.2} := measure_union_le _ _
+    _ ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ := by
+        rw [← hπ.snd_eq]
+        exact add_le_add (Measure.le_map_apply measurable_snd.aemeasurable _) h
+
+/-- The source measure of a coupling has the total mass of the coupling. -/
+theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
+  rw [← hπ.fst_eq, Measure.fst_univ]
+
+/-- The target measure of a coupling has the total mass of the coupling. -/
+theorem measure_univ_right (hπ : IsCoupling π μ ν) : ν univ = π univ := by
+  rw [← hπ.snd_eq, Measure.snd_univ]
+
+/-- Coupled measures have equal total mass. Measures of different total mass are therefore not
+coupled by anything. -/
+theorem measure_univ_eq (hπ : IsCoupling π μ ν) : μ univ = ν univ :=
+  hπ.measure_univ_left.trans hπ.measure_univ_right.symm
+
+/-- The source marginal of a coupling is zero if and only if its target marginal is zero. -/
+theorem left_eq_zero_iff (hπ : IsCoupling π μ ν) : μ = 0 ↔ ν = 0 := by
+  rw [← Measure.measure_univ_eq_zero, ← Measure.measure_univ_eq_zero, hπ.measure_univ_eq]
+
+/-- A coupling of a finite measure is finite. -/
+theorem isFiniteMeasure [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) : IsFiniteMeasure π :=
+  ⟨by rw [← hπ.measure_univ_left]; exact measure_lt_top μ univ⟩
+
+/-- A coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure π :=
+  ⟨by rw [← hπ.measure_univ_left, measure_univ]⟩
+
+/-- A coupling with a finite target measure is finite. -/
+theorem isFiniteMeasure_of_right [IsFiniteMeasure ν] (hπ : IsCoupling π μ ν) :
+    IsFiniteMeasure π :=
+  ⟨by rw [← hπ.measure_univ_right]; exact measure_lt_top ν univ⟩
+
+/-- A coupling with a probability target measure is a probability measure. -/
+theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure π :=
+  ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
+
+/-- The target of a coupling of a finite measure is finite. -/
+theorem isFiniteMeasure_right [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsFiniteMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq]; exact measure_lt_top μ univ⟩
+
+/-- The target of a coupling of a probability measure is a probability measure. -/
+theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsProbabilityMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
+
 section Integral
 
 section Composition
@@ -238,23 +318,27 @@ theorem lintegral_comp_snd (hπ : IsCoupling π μ ν) {f : Y → ℝ≥0∞}
   rw [← hπ.measurePreserving_snd.map_eq] at hf ⊢
   exact (lintegral_map' hf measurable_snd.aemeasurable).symm
 
-/-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
-above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
-`π`-almost every `(x, y)`, then `f` and `g` are both integrable. -/
-theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {f : X → ℝ}
+/-- **Integrability from upper bounds and an integrable lower bound on the split sum.** Let `f`
+and `g` be bounded above almost everywhere by integrable functions of the two marginals. If
+`W z ≤ f z.1 + g z.2` for `π`-almost every `z` and a `π`-integrable function `W`, then `f` and
+`g` are both integrable. -/
+theorem integrable_and_integrable_of_ae_le_add (hπ : IsCoupling π μ ν) {f : X → ℝ}
     {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
-    {V : Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν) (hfU : ∀ᵐ x ∂μ, f x ≤ U x)
-    (hgV : ∀ᵐ y ∂ν, g y ≤ V y) (hfg : ∀ᵐ z ∂π, 0 ≤ f z.1 + g z.2) :
+    {V : Y → ℝ} {W : X × Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν)
+    (hW : Integrable W π) (hfU : ∀ᵐ x ∂μ, f x ≤ U x) (hgV : ∀ᵐ y ∂ν, g y ≤ V y)
+    (hWfg : ∀ᵐ z ∂π, W z ≤ f z.1 + g z.2) :
     Integrable f μ ∧ Integrable g ν := by
-  have hG := hπ.integrable_add_split hU.abs hV.abs
-  have hbound : ∀ᵐ z ∂π, |f z.1| ≤ |U z.1| + |V z.2| ∧ |g z.2| ≤ |U z.1| + |V z.2| := by
+  have habs {a b u v w : ℝ} (ha : a ≤ u) (hb : b ≤ v) (hw : w ≤ a + b) :
+      |a| ≤ |u| + |v| + |w| :=
+    abs_le.2 ⟨by linarith [le_abs_self v, neg_abs_le w, abs_nonneg u],
+      by linarith [le_abs_self u, abs_nonneg v, abs_nonneg w]⟩
+  have hG := (hπ.integrable_add_split hU.abs hV.abs).add hW.abs
+  have hbound : ∀ᵐ z ∂π,
+      |f z.1| ≤ |U z.1| + |V z.2| + |W z| ∧ |g z.2| ≤ |U z.1| + |V z.2| + |W z| := by
     filter_upwards [hπ.measurePreserving_fst.quasiMeasurePreserving.ae hfU,
-      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hfg] with z hzU hzV hz
-    have := le_abs_self (U z.1)
-    have := le_abs_self (V z.2)
-    have := abs_nonneg (U z.1)
-    have := abs_nonneg (V z.2)
-    exact ⟨abs_le.2 ⟨by linarith, by linarith⟩, abs_le.2 ⟨by linarith, by linarith⟩⟩
+      hπ.measurePreserving_snd.quasiMeasurePreserving.ae hgV, hWfg] with z hzU hzV hzW
+    exact ⟨habs hzU hzV hzW,
+      (habs hzV hzU (add_comm (f z.1) (g z.2) ▸ hzW)).trans_eq (by ring)⟩
   exact ⟨(hπ.measurePreserving_fst.integrable_comp hf).1 <|
       hG.mono' (hf.comp_measurePreserving hπ.measurePreserving_fst) <|
         hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.1,
@@ -262,71 +346,42 @@ theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {
       hG.mono' (hg.comp_measurePreserving hπ.measurePreserving_snd) <|
         hbound.mono fun _ hz ↦ by simpa [Real.norm_eq_abs] using hz.2⟩
 
+/-- **Integrability from upper bounds and a nonnegative split sum.** Let `f` and `g` be bounded
+above almost everywhere by integrable functions of the two marginals. If `f x + g y ≥ 0` for
+`π`-almost every `(x, y)`, then `f` and `g` are both integrable. -/
+theorem integrable_and_integrable_of_ae_add_nonneg (hπ : IsCoupling π μ ν) {f : X → ℝ}
+    {g : Y → ℝ} (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν) {U : X → ℝ}
+    {V : Y → ℝ} (hU : Integrable U μ) (hV : Integrable V ν) (hfU : ∀ᵐ x ∂μ, f x ≤ U x)
+    (hgV : ∀ᵐ y ∂ν, g y ≤ V y) (hfg : ∀ᵐ z ∂π, 0 ≤ f z.1 + g z.2) :
+    Integrable f μ ∧ Integrable g ν :=
+  hπ.integrable_and_integrable_of_ae_le_add hf hg hU hV (integrable_zero _ _ _) hfU hgV hfg
+
+/-- **Integrability from a coupling-integrable split sum and product-integrable positive part.**
+Let `μ` be a finite measure and `π` a coupling of `μ` and `ν`. If `f` and `g` are a.e. strongly
+measurable with `f x + g y` integrable against `π` and `max (f x + g y) 0` integrable against
+`μ.prod ν`, then `f` is `μ`-integrable and `g` is `ν`-integrable. -/
+theorem integrable_and_integrable_of_integrable_add_of_integrable_max [IsFiniteMeasure μ]
+    (hπ : IsCoupling π μ ν) {f : X → ℝ} {g : Y → ℝ}
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g ν)
+    (hsum : Integrable (fun z ↦ f z.1 + g z.2) π)
+    (hpos : Integrable (fun z ↦ max (f z.1 + g z.2) 0) (μ.prod ν)) :
+    Integrable f μ ∧ Integrable g ν := by
+  by_cases hμ : μ = 0
+  · obtain rfl : ν = 0 := hπ.left_eq_zero_iff.1 hμ
+    subst hμ
+    exact ⟨integrable_zero_measure, integrable_zero_measure⟩
+  have := hπ.isFiniteMeasure_right
+  have : (ae μ).NeBot := ae_neBot.2 hμ
+  have : (ae ν).NeBot := ae_neBot.2 (hπ.left_eq_zero_iff.not.1 hμ)
+  obtain ⟨y₀, hy₀⟩ := hpos.prod_left_ae.exists
+  obtain ⟨x₀, hx₀⟩ := hpos.prod_right_ae.exists
+  exact hπ.integrable_and_integrable_of_ae_le_add hf hg
+    (hy₀.sub (integrable_const (g y₀))) (hx₀.sub (integrable_const (f x₀))) hsum
+    (ae_of_all _ fun x ↦ le_sub_iff_add_le.2 (le_max_left (f x + g y₀) 0))
+    (ae_of_all _ fun y ↦ le_sub_iff_add_le'.2 (le_max_left (f x₀ + g y) 0))
+    (ae_of_all _ fun _ ↦ le_rfl)
+
 end Integral
-
-/-- A coupling gives the measurable cylinder `s ×ˢ univ` the source mass of `s`. -/
-theorem measure_prod_univ (hπ : IsCoupling π μ ν) {s : Set X} (hs : MeasurableSet s) :
-    π (s ×ˢ univ) = μ s := by
-  rw [prod_univ, ← Measure.fst_apply hs, hπ.fst_eq]
-
-/-- A coupling gives the measurable cylinder `univ ×ˢ t` the target mass of `t`. -/
-theorem measure_univ_prod (hπ : IsCoupling π μ ν) {t : Set Y} (ht : MeasurableSet t) :
-    π (univ ×ˢ t) = ν t := by
-  rw [univ_prod, ← Measure.snd_apply ht, hπ.snd_eq]
-
-/-- **Transport up to an exceptional set.** If a coupling `π` gives mass at most `δ` to the pairs
-of cost `c` at least `δ`, then it moves every measurable set `s` into the points at cost less than
-`δ` from `s`, up to mass `δ`. -/
-theorem measure_le_of_measure_setOf_le (hπ : IsCoupling π μ ν) {c : X → Y → ℝ≥0∞} {δ : ℝ≥0∞}
-    (h : π {z | δ ≤ c z.1 z.2} ≤ δ) {s : Set X} (hs : MeasurableSet s) :
-    μ s ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ :=
-  calc μ s = π (s ×ˢ univ) := (hπ.measure_prod_univ hs).symm
-    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ} ∪ {z | δ ≤ c z.1 z.2}) := by
-        refine measure_mono fun z hz ↦ ?_
-        rcases lt_or_ge (c z.1 z.2) δ with hlt | hge
-        · exact .inl ⟨z.1, hz.1, hlt⟩
-        · exact .inr hge
-    _ ≤ π (Prod.snd ⁻¹' {y | ∃ x ∈ s, c x y < δ}) + π {z | δ ≤ c z.1 z.2} := measure_union_le _ _
-    _ ≤ ν {y | ∃ x ∈ s, c x y < δ} + δ := by
-        rw [← hπ.snd_eq]
-        exact add_le_add (Measure.le_map_apply measurable_snd.aemeasurable _) h
-
-/-- The source measure of a coupling has the total mass of the coupling. -/
-theorem measure_univ_left (hπ : IsCoupling π μ ν) : μ univ = π univ := by
-  rw [← hπ.fst_eq, Measure.fst_univ]
-
-/-- The target measure of a coupling has the total mass of the coupling. -/
-theorem measure_univ_right (hπ : IsCoupling π μ ν) : ν univ = π univ := by
-  rw [← hπ.snd_eq, Measure.snd_univ]
-
-/-- Coupled measures have equal total mass. Measures of different total mass are therefore not
-coupled by anything. -/
-theorem measure_univ_eq (hπ : IsCoupling π μ ν) : μ univ = ν univ :=
-  hπ.measure_univ_left.trans hπ.measure_univ_right.symm
-
-/-- A coupling of a finite measure is finite. -/
-theorem isFiniteMeasure [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) : IsFiniteMeasure π :=
-  ⟨by rw [← hπ.measure_univ_left]; exact measure_lt_top μ univ⟩
-
-/-- A coupling of a probability measure is a probability measure. -/
-theorem isProbabilityMeasure [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
-    IsProbabilityMeasure π :=
-  ⟨by rw [← hπ.measure_univ_left, measure_univ]⟩
-
-/-- A coupling with a finite target measure is finite. -/
-theorem isFiniteMeasure_of_right [IsFiniteMeasure ν] (hπ : IsCoupling π μ ν) :
-    IsFiniteMeasure π :=
-  ⟨by rw [← hπ.measure_univ_right]; exact measure_lt_top ν univ⟩
-
-/-- A coupling with a probability target measure is a probability measure. -/
-theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCoupling π μ ν) :
-    IsProbabilityMeasure π :=
-  ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
-
-/-- The target of a coupling of a probability measure is a probability measure. -/
-theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
-    IsProbabilityMeasure ν :=
-  ⟨by rw [← hπ.measure_univ_eq, measure_univ]⟩
 
 /-- Exchanging the two coordinates of a coupling of `μ` and `ν` gives a coupling of `ν`
 and `μ`. -/

@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.WithDensity
 public import Mathlib.Topology.EMetricSpace.Defs
+public import TauCeti.MeasureTheory.MeasurableSpace.Prod
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
@@ -66,6 +67,11 @@ invariant (`MeasureTheory.Measure.map_div_prod_eq_map_div_abs`).
 A coupling that moves almost every point by less than `r` and is carried in its second marginal
 by a set `s` gives no first-marginal mass to a point at distance at least `r` from every point of
 `s` (`MeasureTheory.measure_fst_singleton_eq_zero_of_ae_edist_lt`).
+
+Exchanging the two middle coordinates (`TauCeti.measurePreserving_prodProdProdComm`) or the second
+coordinates of two pairs (`TauCeti.measurePreserving_prodProdSndComm`, along
+`TauCeti.prodProdSndComm`) preserves the product of two product measures whenever the three factors
+moved across a product are s-finite.
 -/
 
 public section
@@ -534,3 +540,51 @@ theorem map_eval_prod_pi_eq_bind [Fintype I] [MeasurableSingletonClass I]
   exact ae_of_all _ fun i ↦ (measurePreserving_eval K i).map_eq
 
 end MeasureTheory.Measure
+
+section
+
+open MeasureTheory
+
+namespace TauCeti
+
+variable {α β α' β' : Type*} [MeasurableSpace α] [MeasurableSpace β]
+  [MeasurableSpace α'] [MeasurableSpace β']
+
+/-- Exchanging the two middle coordinates preserves the product of two product measures; only the
+three factors moved across a product must be s-finite. -/
+theorem measurePreserving_prodProdProdComm {μ : Measure α} {ν : Measure β} {μ' : Measure α'}
+    {ν' : Measure β'} [SFinite ν] [SFinite μ'] [SFinite ν'] :
+    MeasurePreserving (Equiv.prodProdProdComm α β α' β')
+      ((μ.prod ν).prod (μ'.prod ν')) ((μ.prod μ').prod (ν.prod ν')) := by
+  let f : β × α' × β' → α' × β × β' :=
+    MeasurableEquiv.prodAssoc ∘ Prod.map Prod.swap id ∘ MeasurableEquiv.prodAssoc.symm
+  have hf : MeasurePreserving f (ν.prod (μ'.prod ν')) (μ'.prod (ν.prod ν')) :=
+    (measurePreserving_prodAssoc μ' ν ν').comp <|
+      (Measure.measurePreserving_swap.prod (MeasurePreserving.id ν')).comp
+        (measurePreserving_prodAssoc ν μ' ν').symm
+  have hidf : MeasurePreserving (Prod.map (id : α → α) f)
+      (μ.prod (ν.prod (μ'.prod ν'))) (μ.prod (μ'.prod (ν.prod ν'))) :=
+    ⟨measurable_id.prodMap hf.measurable, by
+      rw [← Measure.map_prod_map _ _ measurable_id hf.measurable, Measure.map_id, hf.map_eq]⟩
+  exact ((measurePreserving_prodAssoc μ μ' (ν.prod ν')).symm.comp <|
+    hidf.comp (measurePreserving_prodAssoc μ ν (μ'.prod ν'))).congr
+      (by dsimp [Equiv.prodProdProdComm]; fun_prop) (ae_of_all _ fun ⟨⟨_, _⟩, ⟨_, _⟩⟩ ↦ rfl)
+
+/-- Exchanging the second coordinates of two pairs preserves the product of two product measures;
+only the three factors moved across a product must be s-finite. -/
+theorem measurePreserving_prodProdSndComm {μ : Measure α} {ν : Measure β} {μ' : Measure α'}
+    {ν' : Measure β'} [SFinite ν] [SFinite μ'] [SFinite ν'] :
+    MeasurePreserving (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β'))
+      ((μ.prod ν).prod (μ'.prod ν')) ((μ.prod ν').prod (μ'.prod ν)) := by
+  have hid : MeasurePreserving (Prod.map (id : α × α' → α × α') Prod.swap)
+      ((μ.prod μ').prod (ν.prod ν')) ((μ.prod μ').prod (ν'.prod ν)) :=
+    ⟨measurable_id.prodMap measurable_swap, by
+      rw [← Measure.map_prod_map _ _ measurable_id measurable_swap, Measure.map_id,
+        Measure.prod_swap]⟩
+  exact ((measurePreserving_prodProdProdComm (μ := μ) (ν := μ') (μ' := ν') (ν' := ν)).comp <|
+    hid.comp (measurePreserving_prodProdProdComm (μ := μ) (ν := ν) (μ' := μ') (ν' := ν'))).congr
+    prodProdSndComm.measurable (ae_of_all _ fun ⟨⟨_, _⟩, ⟨_, _⟩⟩ ↦ by simp)
+
+end TauCeti
+
+end

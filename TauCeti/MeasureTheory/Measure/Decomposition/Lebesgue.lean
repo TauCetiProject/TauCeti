@@ -16,9 +16,11 @@ On a `μ`-null set `s`, the Radon–Nikodym derivative `μ.rnDeriv ν` vanishes 
 at most `μ s = 0`. Likewise, when `μ ≪ ν` and `ν` admits a Lebesgue decomposition with respect to
 `κ`, vanishing of `ν.rnDeriv κ` forces vanishing of `μ.rnDeriv κ` `κ`-almost everywhere
 (`MeasureTheory.Measure.ae_rnDeriv_eq_zero_imp`), and when `ν` is σ-finite the same holds for
-`.toReal` (`MeasureTheory.Measure.ae_toReal_rnDeriv_eq_zero_imp`). For σ-finite `μ ≪ ν`, a
-measurable set `Z` and reals `ε`, `L`, it follows that `(ε * L)⁺ * μ Z` is the integral over `Z` of
-the positive part of `ε * L * μ.rnDeriv ν`
+`.toReal` (`MeasureTheory.Measure.ae_toReal_rnDeriv_eq_zero_imp`). For σ-finite `μ ≪ ν`,
+weighting `ν` by `(μ.rnDeriv ν ·).toReal` recovers `μ`
+(`MeasureTheory.Measure.withDensity_ofReal_toReal_rnDeriv_eq`); for a measurable set `Z` and
+reals `ε`, `L`, `(ε * L)⁺ * μ Z` is the integral over `Z` of the positive part of
+`ε * L * μ.rnDeriv ν`
 (`MeasureTheory.Measure.toENNReal_mul_measure_eq_setLIntegral_ofReal_mul_rnDeriv`).
 
 The Radon–Nikodym derivative `μ.rnDeriv ν` is a fixed representative of an almost-everywhere
@@ -89,6 +91,14 @@ theorem ae_toReal_rnDeriv_eq_zero_imp {κ : Measure α} [SigmaFinite ν]
   filter_upwards [ae_rnDeriv_eq_zero_imp (κ := κ) h, rnDeriv_lt_top ν κ] with x himp hfin hv
   have hν₀ : ν.rnDeriv κ x = 0 := (ENNReal.toReal_eq_zero_iff _).1 hv |>.resolve_right hfin.ne
   rw [himp hν₀, ENNReal.toReal_zero]
+
+/-- For a σ-finite measure `μ` absolutely continuous with respect to `ν`, weighting `ν` by the
+real-valued Radon–Nikodym derivative `(μ.rnDeriv ν ·).toReal` recovers `μ`. -/
+theorem withDensity_ofReal_toReal_rnDeriv_eq (μ ν : Measure α) [SigmaFinite μ]
+    [μ.HaveLebesgueDecomposition ν] (h : μ ≪ ν) :
+    ν.withDensity (fun x ↦ ENNReal.ofReal (μ.rnDeriv ν x).toReal) = μ :=
+  (withDensity_congr_ae <| (rnDeriv_ne_top μ ν).mono fun _ hx ↦
+    ENNReal.ofReal_toReal hx).trans (withDensity_rnDeriv_eq μ ν h)
 
 /-- For `μ ≪ ν` with `μ` σ-finite, a measurable set `Z` and a real `L` which is the extended real
 `c` unless `μ Z = 0`, the term `(ε c)⁺ μ(Z)` is the integral over `Z` of the positive part of
