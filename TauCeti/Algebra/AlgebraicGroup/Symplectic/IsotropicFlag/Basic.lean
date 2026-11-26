@@ -97,15 +97,8 @@ theorem definingHopfIdeal_toIdeal :
 
 /-- The isotropic flag subgroup is defined by finitely many equations. -/
 theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R m).toIdeal.FG := by
-  rw [definingHopfIdeal_toIdeal]
-  refine Submodule.fg_span (Set.Finite.image _ ?_)
-  refine (Set.finite_range fun p : Fin (m + m) × Fin (m + m) ↦
-    GeneralLinear.coordinateHopfAlgebraAlgEquiv R (m + m)
-      (GeneralLinear.coordinateRingMap R (m + m) (MvPolynomial.X p))).subset ?_
-  intro x hx
-  obtain ⟨i, j, _, rfl⟩ :=
-    (GeneralLinear.mem_weightParabolicRelationSet_iff R (weights m) x).mp hx
-  exact ⟨(i, j), rfl⟩
+  rw [definingHopfIdeal, HopfIdeal.map_toIdeal]
+  exact (GeneralLinear.weightParabolicDefiningHopfIdeal_toIdeal_fg R _).map _
 
 /-- The coordinate Hopf algebra of the standard complete isotropic flag subgroup. -/
 noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat.{u} R :=

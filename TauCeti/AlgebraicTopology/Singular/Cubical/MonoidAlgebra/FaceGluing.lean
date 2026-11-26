@@ -23,10 +23,11 @@ form of `TauCeti.singularHomology_ext_of_dense_iUnion`.
 
 At the level of chains this gives a criterion for an `m`-cycle `z` of `A` to represent a class
 `ν ∈ Hₘ(A)` (`TauCeti.isRepresentingCycle_of_forall_isCubicalRepresentative`). It suffices that for
-each `i` some chain `cᵢ`, agreeing with `z` up to a chain of `A ∖ Uᵢ`, is a relative cycle of
-`(A, A ∖ Uᵢ)` representing the image of `ν`: the relative class of a cycle is that of any chain
-agreeing with it modulo the subspace
-(`TopPair.homologyMap_homologyπ_eq_of_isCubicalRepresentative`). Nothing is asked of `z` near the
+each `i` some chain `cᵢ`, agreeing with `z` up to a chain of `A ∖ Uᵢ`, is at every point `a` of
+`Uᵢ` a relative cycle of `(A, A ∖ {a})` representing the image of `ν` in the local homology: the
+relative class of a cycle is that of any chain agreeing with it modulo the subspace
+(`TopPair.homologyMap_homologyπ_eq_of_isCubicalRepresentative`), and the classes are compared
+point by point, the points of the `Uᵢ` forming a dense set. Nothing is asked of `z` near the
 points outside the `Uᵢ`.
 
 When `z` is a finite sum of chains `cᵢ`, each supported in a closed piece `Fᵢ` (a face of `A`),
@@ -45,25 +46,27 @@ What remains of the gluing condition is homological and local to the faces
 `ι x z y : M x z × M z y → M x y` lands in the boundary `A x y`, that it carries the boundary
 `A x z × M z y ∪ M x z × A z y` of the product off the interior `U x z y` of its face, and that the
 face of every other `z'` misses `U x z y`. A chain representing `μ x z` crossed with one
-representing `μ z y` is then a relative cycle of `(A x y, A x y ∖ U x z y)`, whose class is the
-cross product of the two classes pushed forward along `ι x z y`
-(`TopPair.IsCubicalRepresentative.crossProduct`). So the gluing condition holds, and a
-representing chain system exists, as soon as on each face this pushed-forward cross product is
-`(-1) ^ (ind x - ind z)` times the image of `∂ μ x y`. For the fundamental classes of
-compactified trajectory spaces this compares the boundary orientation of each face with its
-product orientation.
+representing `μ z y` is then, for every point `a` of `U x z y`, a relative cycle of
+`(A x y, A x y ∖ {a})`, whose class is the cross product of the two classes pushed forward along
+`ι x z y` (`TopPair.IsCubicalRepresentative.crossProduct`). So the gluing condition holds, and a
+representing chain system exists, as soon as at each point of the interior of each face this
+pushed-forward cross product is `(-1) ^ (ind x - ind z)` times the image of `∂ μ x y` in the local
+homology. For the fundamental classes of compactified trajectory spaces this compares the boundary
+orientation of each face with its product orientation; when `1` is the only unit of the
+coefficients both sides are the unique generator of the local homology, and the condition holds
+(`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units`).
 
 ## Main results
 
 * `TauCeti.isRepresentingCycle_of_forall_isCubicalRepresentative`: a cycle of `A` which, modulo
-  `A ∖ Uᵢ`, agrees with a relative cycle representing the image of `ν` for each `i`, represents
-  `ν`.
-* `TauCeti.isRepresentingCycle_of_eq_sum`: a sum of chains supported in pieces `Fᵢ`, each a
-  relative cycle of `(A, A ∖ Uᵢ)` representing the image of `ν`, represents `ν`.
+  `A ∖ Uᵢ`, agrees for each `i` with a chain representing the image of `ν` at every point of `Uᵢ`,
+  represents `ν`.
+* `TauCeti.isRepresentingCycle_of_eq_sum`: a sum of chains supported in pieces `Fᵢ`, each
+  representing the image of `ν` at every point of `Uᵢ`, represents `ν`.
 * `TauCeti.TwistingChainSystem.exists_isRepresenting_of_faces`: a twisting chain system
   representing classes `μ` of spaces whose boundaries are compact manifolds glued from faces exists
-  when, on the interior of each face, the image of `∂ μ x y` is the signed cross product of the
-  classes of the two factors.
+  when, at each point of the interior of each face, the image of `∂ μ x y` is the signed cross
+  product of the classes of the two factors.
 
 ## References
 
@@ -92,16 +95,18 @@ variable {X : TopCat.{u}} {A : Set X}
 Let `A` be a compact `m`-manifold, `ν` a class of the cubical homology `Hₘ(A)`, and `(Uᵢ)` a family
 of subsets of `A` with dense union. Let `z` be an `m`-cycle of `A` such that, for each `i`, some
 chain `cᵢ` agreeing with `z` up to a chain supported in `A ∖ Uᵢ` represents the image of `ν` in
-`Hₘ(A, A ∖ Uᵢ)`. Then `z`, pushed forward to `X`, represents `ν`. -/
+the local homology `Hₘ(A, A ∖ {a})` at every point `a` of `Uᵢ`. Then `z`, pushed forward to `X`,
+represents `ν`. -/
 theorem isRepresentingCycle_of_forall_isCubicalRepresentative [T2Space A] [CompactSpace A]
     [ChartedSpace E A] [FiniteDimensional ℝ E] {m : ℕ} (hm : finrank ℝ E = m)
     (z : ((normalizedCubicalChainComplex k).obj (TopPair.ofSubset A).snd).cycles m)
     {ν : ((normalizedCubicalChainComplex k).obj (TopPair.ofSubset A).snd).homology m}
     {ι : Type*} {U : ι → Set (TopPair.ofSubset A).snd} (hU : Dense (⋃ i, U i))
     (c : ι → NormalizedCubicalChain (TopPair.ofSubset A).snd k m)
-    (hc : ∀ i, (TopPair.ofSubset (U i)ᶜ).IsCubicalRepresentative k (c i)
-      ((HomologicalComplex.homologyMap (cokernel.π
-        ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (U i)ᶜ).map)) m).hom ν))
+    (hc : ∀ i, ∀ a ∈ U i,
+      (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).IsCubicalRepresentative k (c i)
+        ((HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).map)) m).hom ν))
     (hzc : ∀ i, normalizedCubicalChainComplexXEquiv _ m
         ((((normalizedCubicalChainComplex k).obj (TopPair.ofSubset A).snd).iCycles m).hom z) -
           c i ∈ NormalizedCubicalChain.supportedIn k (U i)ᶜ m) :
@@ -113,21 +118,27 @@ theorem isRepresentingCycle_of_forall_isCubicalRepresentative [T2Space A] [Compa
   have : T2Space (TopPair.ofSubset A).snd := inferInstanceAs (T2Space A)
   have : CompactSpace (TopPair.ofSubset A).snd := inferInstanceAs (CompactSpace A)
   let : ChartedSpace E (TopPair.ofSubset A).snd := inferInstanceAs (ChartedSpace E A)
-  exact (isRepresentingCycle_iff _ ν).2 ⟨z, rfl,
-    cubicalHomology_ext_of_dense_iUnion (Y := (TopPair.ofSubset A).snd) (E := E) hm hU
-      fun i ↦ TopPair.homologyMap_homologyπ_eq_of_isCubicalRepresentative k
-        (TopPair.ofSubset (U i)ᶜ) z (hc i)
-          -- The embedding `(TopPair.ofSubset S).map` of Mathlib's `TopPair.ofSubset` is, by
-          -- definition, `TopCat.ofHom` of the subtype inclusion `ContinuousMap.subtypeVal S`
-          -- through which `NormalizedCubicalChain.supportedIn` is defined.
-          ((NormalizedCubicalChain.supportedIn_def k _ m).le (hzc i))⟩
+  -- The class of `z` is compared with `ν` at each point `a` of each `Uᵢ`, the points `{a}` having
+  -- the dense union `⋃ i, Uᵢ`.
+  refine (isRepresentingCycle_iff _ ν).2 ⟨z, rfl,
+    cubicalHomology_ext_of_dense_iUnion (Y := (TopPair.ofSubset A).snd) (E := E) hm
+      (U := fun p : Σ i, U i ↦ {(p.2 : (TopPair.ofSubset A).snd)})
+      (by simpa only [Set.iUnion_sigma, Set.iUnion_coe_set, Set.biUnion_of_singleton] using hU)
+      fun ⟨i, a, ha⟩ ↦ TopPair.homologyMap_homologyπ_eq_of_isCubicalRepresentative k
+        (TopPair.ofSubset {a}ᶜ) z (hc i a ha) ?_⟩
+  -- The embedding `(TopPair.ofSubset S).map` of Mathlib's `TopPair.ofSubset` is, by definition,
+  -- `TopCat.ofHom` of the subtype inclusion `ContinuousMap.subtypeVal S` through which
+  -- `NormalizedCubicalChain.supportedIn` is defined.
+  refine (NormalizedCubicalChain.supportedIn_def k _ m).le ?_
+  exact NormalizedCubicalChain.supportedIn_mono k
+    (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)) m (hzc i)
 
 /-- **A sum of face chains represents the class they represent face by face.** Let `A` be a
 compact `m`-manifold, `ν` a class of the cubical homology `Hₘ(A)`, and let `z` be an `m`-cycle of
 `A` which is a finite sum of chains `cᵢ`, each supported in a set `Fᵢ` (a face of `A`). Let `Uᵢ` be
 sets with dense union (the interiors of the faces) such that `Uᵢ` meets no other face `Fⱼ`,
-`j ≠ i`. If each `cᵢ` is a relative cycle of `(A, A ∖ Uᵢ)` representing the image of `ν`, then
-`z`, pushed forward to `X`, represents `ν`.
+`j ≠ i`. If each `cᵢ` represents the image of `ν` in the local homology `Hₘ(A, A ∖ {a})` at every
+point `a` of `Uᵢ`, then `z`, pushed forward to `X`, represents `ν`.
 
 For the boundary `A` of a compactified trajectory space, with `ν` the image of its fundamental
 class relative to `A` and `z` the signed sum of the products of fundamental chains of its faces,
@@ -144,9 +155,10 @@ theorem isRepresentingCycle_of_eq_sum [T2Space A] [CompactSpace A] [ChartedSpace
     {F U : ι → Set (TopPair.ofSubset A).snd}
     (hcF : ∀ i, c i ∈ NormalizedCubicalChain.supportedIn k (F i) m)
     (hFU : ∀ i j, j ≠ i → Disjoint (F j) (U i)) (hU : Dense (⋃ i, U i))
-    (hc : ∀ i, (TopPair.ofSubset (U i)ᶜ).IsCubicalRepresentative k (c i)
-      ((HomologicalComplex.homologyMap (cokernel.π
-        ((normalizedCubicalChainComplex k).map (TopPair.ofSubset (U i)ᶜ).map)) m).hom ν)) :
+    (hc : ∀ i, ∀ a ∈ U i,
+      (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).IsCubicalRepresentative k (c i)
+        ((HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
+          (TopPair.ofSubset ({a}ᶜ : Set (TopPair.ofSubset A).snd)).map)) m).hom ν)) :
     IsRepresentingCycle (cubicalChainLof X k m (NormalizedCubicalChain.map k
       (TopPair.ofSubset A).map.hom m
         ((((normalizedCubicalChainComplex k).obj (TopPair.ofSubset A).snd).iCycles m).hom z)))
@@ -205,9 +217,9 @@ relative homology `H_{ind x - ind y - 1}(M x y, A x y)`. Suppose that:
 * the sets `U x z y`, the interiors of the faces, are together dense in `A x y`, the face of every
   other `z'` strictly between `y` and `x` misses `U x z y`, and `ι x z y` carries
   `A x z × M z y ∪ M x z × A z y` off `U x z y`;
-* on each face, the cross product of `μ x z` and `μ z y`, pushed forward along `ι x z y` to the
-  relative homology `H(A x y, A x y ∖ U x z y)`, is `(-1) ^ (ind x - ind z)` times the image of the
-  boundary `∂ μ x y ∈ H(A x y)`.
+* at each point `a` of the interior `U x z y` of each face, the cross product of `μ x z` and
+  `μ z y`, pushed forward along `ι x z y` to the local homology `H(A x y, A x y ∖ {a})`, is
+  `(-1) ^ (ind x - ind z)` times the image of the boundary `∂ μ x y ∈ H(A x y)`.
 
 Then some twisting chain system represents the classes `μ`. For the fundamental classes rel
 boundary of compactified trajectory spaces, the last condition compares the boundary orientation
@@ -231,9 +243,12 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
           ((ι x z y).codRestrict (A x y) (hιA x z y hyz hzx)))
         ((TopPair.ofSubset (A x z)).prodSubspace (TopPair.ofSubset (A z y)))
         (Subtype.val ⁻¹' U x z y)ᶜ)
-    (hface : ∀ x z y (hyz : ind y < ind z) (hzx : ind z < ind x),
+    (hface : ∀ x z y (hyz : ind y < ind z) (hzx : ind z < ind x) (a : A x y)
+      (ha : (a : M x y) ∈ U x z y),
       (HomologicalComplex.homologyMap (TopPair.cubicalChainComplexMap k
-          (TopPair.ofSubsetMap _ (hUA x z y hyz hzx))) (ind x - ind y - 2).toNat).hom
+          (TopPair.ofSubsetMap _ ((hUA x z y hyz hzx).mono_right
+            (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha)))))
+          (ind x - ind y - 2).toNat).hom
         ((HomologicalComplex.homologyMap
           ((TopPair.ofSubset (A x z)).cubicalChainComplexProdComparison k
             (TopPair.ofSubset (A z y))) (ind x - ind y - 2).toNat).hom
@@ -241,8 +256,7 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
             cubicalHomologyKunnethPair k _ _ _).hom (μ x z ⊗ₜ μ z y))) =
         (ind x - ind z).negOnePow •
           (HomologicalComplex.homologyMap (cokernel.π ((normalizedCubicalChainComplex k).map
-            (TopPair.ofSubset (Subtype.val ⁻¹' U x z y : Set (A x y))ᶜ).map))
-              (ind x - ind y - 2).toNat).hom
+            (TopPair.ofSubset ({a}ᶜ : Set (A x y))).map)) (ind x - ind y - 2).toNat).hom
             (((TopPair.ofSubset (A x y)).cubicalHomologyδ k _ _).hom (μ x y))) :
     ∃ S : TwistingChainSystem ind ι k, S.IsRepresenting A μ := by
   refine TwistingChainSystem.exists_isRepresenting fun s x y m hm hs hd ↦ ?_
@@ -279,7 +293,8 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   refine isRepresentingCycle_of_eq_sum (hE x y (by omega)) w c hw
     (F := fun z ↦ (Set.range (g z) : Set (A x y)))
     (U := fun z ↦ (Subtype.val ⁻¹' U x z.val y : Set (A x y))) (fun z ↦ ?_)
-    (fun z z' hz ↦ Set.disjoint_left.2 ?_) (Dense.mono ?_ (hU x y (by omega))) (fun z ↦ ?_)
+    (fun z z' hz ↦ Set.disjoint_left.2 ?_) (Dense.mono ?_ (hU x y (by omega)))
+    (fun z a ha ↦ ?_)
   · simp only [c, Units.smul_def]
     exact zsmul_mem (map_mem_supportedIn_range k (g z) _) _
   · rintro _ ⟨p, rfl⟩ hp
@@ -290,14 +305,15 @@ theorem TwistingChainSystem.exists_isRepresenting_of_faces
   · -- The cross product of the representatives of the two factors, carried to the face, represents
     -- the signed image of `∂ μ x y`, and the sign of the face chain cancels that sign.
     have h := ((ha' z).crossProduct (hpq z) (hb' z)).map
-      (TopPair.ofSubsetMap _ (hUA x z.val y z.prop.1 z.prop.2))
-    rw [hface x z.val y z.prop.1 z.prop.2] at h
+      (TopPair.ofSubsetMap _ ((hUA x z.val y z.prop.1 z.prop.2).mono_right
+        (Set.compl_subset_compl.2 (Set.singleton_subset_iff.2 ha))))
+    rw [hface x z.val y z.prop.1 z.prop.2 a ha] at h
     obtain ⟨r, hr, hcl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1
       (h.zsmul ((ind x - ind z.val).negOnePow : ℤ))
     rw [TopPair.ofSubsetMap_fst] at hr
     refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, hr, hcl.trans ?_⟩
     rw [← Units.smul_def, smul_smul, Int.units_mul_self, one_smul]
-    -- The two sides differ only in how the complement of `U x z y` is typed.
+    -- The two sides differ only in how the complement of `{a}` is typed.
     rfl
 
 end TauCeti

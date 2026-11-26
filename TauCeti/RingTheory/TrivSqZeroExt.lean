@@ -66,58 +66,22 @@ def kerIdealLinearEquiv : M ≃ₗ[R] kerIdeal R M where
 
 variable {R M}
 
-/-- The kernel of `(fstHom R R M).toRingHom` is `kerIdeal R M`. -/
-theorem ker_fstHom_toRingHom :
-    RingHom.ker (fstHom R R M).toRingHom = kerIdeal R M :=
-  rfl
-
 /-- `kerIdealLinearEquiv` sends `m` to `inr m`. -/
 @[simp]
 theorem coe_kerIdealLinearEquiv (m : M) :
-    (kerIdealLinearEquiv R M m : TrivSqZeroExt R M) = inr m := by
-  rw [kerIdealLinearEquiv]; rfl
+    (kerIdealLinearEquiv R M m : TrivSqZeroExt R M) = inr m :=
+  (rfl)
 
 /-- The inverse of `kerIdealLinearEquiv` extracts the second component `snd`. -/
 @[simp]
 theorem kerIdealLinearEquiv_symm_apply (z : kerIdeal R M) :
-    (kerIdealLinearEquiv R M).symm z = z.val.snd := by
-  rw [kerIdealLinearEquiv]; rfl
+    (kerIdealLinearEquiv R M).symm z = z.val.snd :=
+  (rfl)
 
 /-- When `M` is a finite `R`-module, the square-zero ideal `TrivSqZeroExt.kerIdeal R M` is finitely
 generated. -/
-theorem fg_kerIdeal [Module.Finite R M] : (kerIdeal R M).FG := by
-  obtain ⟨s, hs⟩ := ‹Module.Finite R M›.fg_top
-  classical
-  refine ⟨s.image inr, le_antisymm (Ideal.span_le.mpr ?_) fun x hx ↦ ?_⟩
-  · rw [Finset.coe_image]
-    rintro _ ⟨m, _, rfl⟩
-    exact (mem_kerIdeal_iff_inr R M _).mpr rfl
-  · rw [mem_kerIdeal_iff_inr] at hx
-    rw [hx]
-    have key : ∀ m ∈ Submodule.span R (s : Set M),
-        inr m ∈ Ideal.span
-          (s.image (inr : M → TrivSqZeroExt R M) : Set (TrivSqZeroExt R M)) := by
-      intro m hm
-      induction hm using Submodule.span_induction with
-      | mem m hm => exact Ideal.subset_span (Finset.mem_coe.mpr (Finset.mem_image_of_mem inr hm))
-      | zero => simp
-      | add a b _ _ ha hb => rw [inr_add]; exact Ideal.add_mem _ ha hb
-      | smul r a _ ha =>
-        rw [← inl_mul_inr, ← algebraMap_eq_inl]
-        exact Ideal.mul_mem_left _ _ ha
-    exact key x.snd (hs ▸ trivial)
-
-/-- The kernel of `(fstHom R R M).toRingHom` has square zero. -/
-theorem ker_fstHom_mul_self_eq_bot :
-    RingHom.ker (fstHom R R M).toRingHom * RingHom.ker (fstHom R R M).toRingHom = ⊥ := by
-  rw [ker_fstHom_toRingHom]
-  exact (pow_two _).symm.trans (kerIdeal_sq R M)
-
-/-- When `M` is a finite `R`-module, the kernel of `(fstHom R R M).toRingHom` is finitely
-generated. -/
-theorem ker_fstHom_fg [Module.Finite R M] : (RingHom.ker (fstHom R R M).toRingHom).FG := by
-  rw [ker_fstHom_toRingHom]
-  exact fg_kerIdeal
+theorem fg_kerIdeal [Module.Finite R M] : (kerIdeal R M).FG :=
+  (Module.Finite.iff_fg.mp (Module.Finite.equiv (kerIdealLinearEquiv R M))).of_restrictScalars R
 
 end KerIdeal
 

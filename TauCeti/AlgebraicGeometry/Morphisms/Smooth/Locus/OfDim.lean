@@ -33,10 +33,13 @@ subscheme. Over a field `k`, the rank of `Ω_{X/k}` at a smooth point `x` is the
 * `TauCeti.AlgebraicGeometry.iSup_smoothLocusOfDim_eq_smoothLocus` and
   `TauCeti.AlgebraicGeometry.disjoint_smoothLocusOfDim`: the loci partition `X_sm`.
 * `TauCeti.AlgebraicGeometry.preimage_smoothLocusOfDim_eq`: compatibility with open immersions.
+* `TauCeti.AlgebraicGeometry.dense_smoothLocusOfDim_of_isOpenImmersion`: density of
+  `X_sm^{(d)}` passes to open subschemes.
 * `TauCeti.AlgebraicGeometry.rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt`:
   over a field, the rank at a smooth point is the local dimension.
-* `TauCeti.AlgebraicGeometry.smoothLocusOfDim_eq_smoothLocus`: for `X` pure of dimension `d`,
-  `X_sm^{(d)} = X_sm`.
+* `TauCeti.AlgebraicGeometry.smoothLocusOfDim_eq_smoothLocus` and
+  `TauCeti.AlgebraicGeometry.rank_relativeDifferentials_smoothLocus_of_isPureDimensional`: for `X`
+  pure of dimension `d`, `X_sm^{(d)} = X_sm`, and `Ω_{X/k}` has rank `d` on `X_sm`.
 
 ## References
 
@@ -200,6 +203,18 @@ theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
   · have hx : f u ∈ (X ↘ Spec (.of R)).smoothLocus := (hsm.symm ▸ hu :)
     exact ⟨hx, (hrk ⟨u, hu⟩ hx).symm.trans h⟩
 
+variable {R X} in
+/-- **Density of the smooth locus passes to open subschemes.** For an open immersion
+`f : U ⟶ X` over `Spec R`, the smooth locus of dimension `d` of `U` is the preimage of that of
+`X`, so it is dense in `U` when `X_sm^{(d)}` is dense in `X`. -/
+theorem dense_smoothLocusOfDim_of_isOpenImmersion {d : ℕ} {U : Scheme.{u}}
+    [U.Over (Spec (.of R))] [LocallyOfFinitePresentation (U ↘ Spec (.of R))] (f : U ⟶ X)
+    [IsOpenImmersion f] [f.IsOver (Spec (.of R))]
+    (hX : Dense (smoothLocusOfDim R X d : Set X)) :
+    Dense (smoothLocusOfDim R U d : Set U) := by
+  rw [← preimage_smoothLocusOfDim_eq R X f d]
+  exact hX.preimage f.isOpenEmbedding.isOpenMap
+
 section Field
 
 variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
@@ -226,15 +241,22 @@ theorem rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt
   exact (topologicalKrullDimAt_eq_of_isPureDimensional k hV ⟨_, hx⟩).symm.trans
     (V.ι.isOpenEmbedding.topologicalKrullDimAt_eq _)
 
+/-- Over a field, for `X` pure of dimension `d`, the sheaf of differentials of the smooth locus
+has rank `d` at every point. -/
+theorem rank_relativeDifferentials_smoothLocus_of_isPureDimensional {d : ℕ}
+    (h : IsPureDimensional d X) (x : (X ↘ Spec (.of k)).smoothLocus.toScheme) :
+    (FiniteLocallyFreeSheaf.relativeDifferentials k (X ↘ Spec (.of k)).smoothLocus).rank x = d := by
+  have := rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt x
+  rw [topologicalKrullDimAt_eq_of_isPureDimensional k h] at this
+  exact_mod_cast this
+
 /-- Over a field, for `X` pure of dimension `d`, the smooth locus of dimension `d` is the whole
 smooth locus. -/
 theorem smoothLocusOfDim_eq_smoothLocus {d : ℕ} (h : IsPureDimensional d X) :
-    smoothLocusOfDim k X d = (X ↘ Spec (.of k)).smoothLocus := by
-  refine le_antisymm (smoothLocusOfDim_le_smoothLocus k X d) fun x hx ↦ ?_
-  refine mem_smoothLocusOfDim_iff.mpr ⟨hx, ?_⟩
-  have := rank_relativeDifferentials_smoothLocus_eq_topologicalKrullDimAt (k := k) ⟨x, hx⟩
-  rw [topologicalKrullDimAt_eq_of_isPureDimensional k h] at this
-  exact_mod_cast this
+    smoothLocusOfDim k X d = (X ↘ Spec (.of k)).smoothLocus :=
+  le_antisymm (smoothLocusOfDim_le_smoothLocus k X d) fun x hx ↦
+    mem_smoothLocusOfDim_iff.mpr
+      ⟨hx, rank_relativeDifferentials_smoothLocus_of_isPureDimensional h ⟨x, hx⟩⟩
 
 end Field
 

@@ -5,24 +5,35 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
-public import TauCeti.Analysis.Contour.Curve.Integrability
+public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
+import TauCeti.Analysis.Contour.Curve.Integrability
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
-# Cycles of piecewise-`C¹` curves
+# Cycles of absolutely continuous curves
 
-A contour cycle is a finite formal `ℤ`-linear combination of closed piecewise-`C¹` curves. This
-file packages that definition as the free abelian group on parametrized closed curves and extends
-the contour integral and winding number additively from curves to cycles.
+A contour cycle is a finite formal `ℤ`-linear combination of closed absolutely continuous curves.
+This file packages that definition as the free abelian group on parametrized closed curves and
+extends the contour integral and winding number additively from curves to cycles.
 
 Individual curves remain functions on real intervals, as elsewhere in the contour library. The
-small `PiecewiseC1ClosedCurve` bundle exists only because `FreeAddCommGroup` needs a type of
-generators; it records exactly an interval-restricted function, its oriented parameter interval,
+small `AbsolutelyContinuousClosedCurve` bundle exists only because `FreeAddCommGroup` needs a type
+of generators; it records exactly an interval-restricted function, its oriented parameter interval,
 its regularity, and its closedness. Its canonical extension to `ℝ` lets existing raw-function
 contour results apply directly. In particular, it does not introduce a second notion of contour
 integral.
+
+Absolute continuity is the regularity under which the contour integrand `t ↦ γ' t • f (γ t)` of a
+continuous `f` is interval-integrable: the derivative exists almost everywhere and is
+interval-integrable. For `f` with values in a complete space, its integral is the contour integral
+`∫ t in a..b, γ' t • f (γ t)`; for an incomplete codomain the Bochner integral is the junk value
+`0`. Every piecewise-`C¹` curve is absolutely continuous
+(`TauCeti.IsPiecewiseC1On.absolutelyContinuousOnInterval`), so the closed piecewise-`C¹` curves —
+circles, polygons, sector boundaries — are generators. Statements that need more of a generator,
+such as the principal-value theorems for immersed curves, ask for it as a hypothesis on the
+support of the cycle.
 
 The geometric trace of a cycle is the union of the images of the generators with nonzero
 coefficient. Thus cancellation removes a curve from the trace, just as it removes that curve's
@@ -30,7 +41,8 @@ contribution to every additive invariant.
 
 ## Main definitions
 
-* `TauCeti.Contour.PiecewiseC1ClosedCurve` — a closed piecewise-`C¹` parametrized curve.
+* `TauCeti.Contour.AbsolutelyContinuousClosedCurve` — a closed absolutely continuous parametrized
+  curve.
 * `TauCeti.Contour.Cycle` — the free abelian group on such curves.
 * `TauCeti.Contour.Cycle.trace` — the geometric trace of a cycle.
 * `TauCeti.Contour.Cycle.integral` — the additive extension of the contour integral.
@@ -67,45 +79,54 @@ open scoped Interval
 
 namespace TauCeti.Contour
 
-/-- A parametrized closed piecewise-`C¹` curve on an oriented real interval. The parametrization
-is stored only on its interval, so curves cannot differ merely in irrelevant values outside it. -/
-@[ext]
-structure PiecewiseC1ClosedCurve where
+/-- A parametrized closed absolutely continuous curve on an oriented real interval. The
+parametrization is stored only on its interval, so curves cannot differ merely in irrelevant values
+outside it. -/
+structure AbsolutelyContinuousClosedCurve where
   /-- The initial parameter. -/
   a : ℝ
   /-- The terminal parameter. -/
   b : ℝ
   /-- The interval-restricted parametrization of the curve. -/
   toFun : uIcc a b → ℂ
-  /-- Piecewise-`C¹` regularity on the parameter interval. -/
-  isPiecewiseC1On : IsPiecewiseC1On (Function.extend Subtype.val toFun 0) a b
+  /-- Absolute continuity on the parameter interval. -/
+  absolutelyContinuousOnInterval :
+    AbsolutelyContinuousOnInterval (Function.extend Subtype.val toFun 0) a b
   /-- The parametrization has equal endpoints. -/
   source_eq_target :
     Function.extend Subtype.val toFun 0 a = Function.extend Subtype.val toFun 0 b
 
-namespace PiecewiseC1ClosedCurve
+namespace AbsolutelyContinuousClosedCurve
 
 /-- A closed curve coerces to the canonical extension of its parametrization to `ℝ`. -/
-instance : CoeFun PiecewiseC1ClosedCurve fun _ ↦ ℝ → ℂ :=
+instance : CoeFun AbsolutelyContinuousClosedCurve fun _ ↦ ℝ → ℂ :=
   ⟨fun γ ↦ Function.extend Subtype.val γ.toFun 0⟩
 
 /-- On its parameter interval, a closed curve's coercion agrees with its stored function. -/
-theorem coe_apply (γ : PiecewiseC1ClosedCurve) (t : uIcc γ.a γ.b) : γ t = γ.toFun t :=
+theorem coe_apply (γ : AbsolutelyContinuousClosedCurve) (t : uIcc γ.a γ.b) : γ t = γ.toFun t :=
   Subtype.val_injective.extend_apply γ.toFun 0 t
 
-/-- Bundle a raw closed piecewise-`C¹` curve by restricting it to its parameter interval. -/
-def of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) :
-    PiecewiseC1ClosedCurve where
+/-- **Extensionality.** Two bundled curves are equal when they have the same endpoints and agree on
+the parameter interval. -/
+@[ext (iff := false)]
+theorem ext {γ δ : AbsolutelyContinuousClosedCurve} (ha : γ.a = δ.a) (hb : γ.b = δ.b)
+    (h : EqOn γ δ (uIcc γ.a γ.b)) : γ = δ := by
+  obtain ⟨a, b, f, hf, hfc⟩ := γ
+  obtain ⟨a', b', g, hg, hgc⟩ := δ
+  dsimp only at ha hb
+  subst ha hb
+  congr
+  funext t
+  simpa only [Subtype.val_injective.extend_apply] using h t.property
+
+/-- Bundle a raw closed absolutely continuous curve by restricting it to its parameter interval. -/
+def of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) :
+    AbsolutelyContinuousClosedCurve where
   a := a
   b := b
   toFun t := γ t
-  isPiecewiseC1On := by
-    rw [isPiecewiseC1On_iff] at hγ ⊢
-    refine ⟨hγ.1.congr (fun t ht ↦ ?_), ?_⟩
-    · exact Subtype.val_injective.extend_apply (fun t : uIcc a b ↦ γ t) 0 ⟨t, ht⟩
-    · obtain ⟨p, hp, hpieces⟩ := hγ.2
-      refine ⟨p, hp, fun c d hcd hdis ↦ (hpieces c d hcd hdis).congr fun t ht ↦ ?_⟩
-      exact Subtype.val_injective.extend_apply (fun t : uIcc a b ↦ γ t) 0 ⟨t, hcd ht⟩
+  absolutelyContinuousOnInterval := hγ.congr fun t ht ↦
+    (Subtype.val_injective.extend_apply (fun t : uIcc a b ↦ γ t) 0 ⟨t, ht⟩).symm
   source_eq_target := by
     calc
       Function.extend Subtype.val (fun t : uIcc a b ↦ γ t) 0 a =
@@ -119,24 +140,32 @@ def of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b) (hclosed : 
 
 /-- Bundling a raw curve preserves its initial parameter. -/
 @[simp]
-theorem of_a {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) :
+theorem of_a {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) :
     (of γ hγ hclosed).a = a := (rfl)
 
 /-- Bundling a raw curve preserves its terminal parameter. -/
 @[simp]
-theorem of_b {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) :
+theorem of_b {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) :
     (of γ hγ hclosed).b = b := (rfl)
 
 /-- Bundling a raw curve preserves its values on the parameter interval. -/
 @[simp]
-theorem of_apply {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem of_apply {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) {t : ℝ} (ht : t ∈ uIcc a b) :
     of γ hγ hclosed t = γ t := by
   exact coe_apply (of γ hγ hclosed) ⟨t, ht⟩
 
+/-- Bundling a raw curve agrees with it on the parameter interval, as functions. The congruence
+lemmas for contour integrals, winding numbers and principal values take this on `uIoo a b`. -/
+theorem eqOn_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) : EqOn (of γ hγ hclosed) γ (uIcc a b) :=
+  fun _ ht ↦ of_apply γ hγ hclosed ht
+
 /-- Bundling a raw curve preserves its interval image. -/
 @[simp]
-theorem image_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem image_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
     of γ hγ hclosed '' uIcc a b = γ '' uIcc a b := by
   ext z
@@ -148,54 +177,53 @@ theorem image_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
 
 /-- Bundling a raw curve preserves the set into which it maps its parameter interval. -/
 @[simp]
-theorem mapsTo_of_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem mapsTo_of_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) (Ω : Set ℂ) :
     MapsTo (of γ hγ hclosed) (uIcc a b) Ω ↔ MapsTo γ (uIcc a b) Ω := by
   rw [Set.mapsTo_iff_image_subset, Set.mapsTo_iff_image_subset, image_of]
 
 /-- Bundling a raw curve preserves its contour integral. -/
 @[simp]
-theorem integral_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem integral_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) :
     (∫ t in a..b, deriv (of γ hγ hclosed) t • f (of γ hγ hclosed t)) =
       ∫ t in a..b, deriv γ t • f (γ t) := by
-  have heq : EqOn (of γ hγ hclosed) γ (uIoo a b) :=
-    fun _ ht ↦ of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  have heq := (eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self
   exact intervalIntegral.integral_congr_uIoo fun t ht ↦ by
     rw [heq ht, heq.deriv isOpen_Ioo ht]
 
 /-- Bundling a raw curve preserves its winding number. -/
 @[simp]
-theorem windingNumber_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem windingNumber_of {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) (z₀ : ℂ) :
     TauCeti.Contour.windingNumber (of γ hγ hclosed) a b z₀ =
       TauCeti.Contour.windingNumber γ a b z₀ := by
-  apply TauCeti.Contour.windingNumber_congr_curve
-  intro t ht
-  exact of_apply γ hγ hclosed (uIoo_subset_uIcc_self ht)
+  exact TauCeti.Contour.windingNumber_congr_curve
+    ((eqOn_of γ hγ hclosed).mono uIoo_subset_uIcc_self)
 
 /-- Bundling a raw curve preserves null-homology. -/
 @[simp]
 theorem isNullHomologous_of_iff {a b : ℝ} (γ : ℝ → ℂ)
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :
     TauCeti.Contour.IsNullHomologous (of γ hγ hclosed) a b Ω ↔
       TauCeti.Contour.IsNullHomologous γ a b Ω := by
   simp only [TauCeti.Contour.isNullHomologous_iff, windingNumber_of]
 
 /-- The underlying parametrization is continuous on its parameter interval. -/
-theorem continuousOn (γ : PiecewiseC1ClosedCurve) : ContinuousOn γ (uIcc γ.a γ.b) :=
-  γ.isPiecewiseC1On.continuousOn
+theorem continuousOn (γ : AbsolutelyContinuousClosedCurve) : ContinuousOn γ (uIcc γ.a γ.b) :=
+  γ.absolutelyContinuousOnInterval.continuousOn
 
-/-- The derivative of a closed piecewise-`C¹` curve is interval-integrable. -/
-theorem intervalIntegrable_deriv (γ : PiecewiseC1ClosedCurve) :
+/-- The derivative of a closed absolutely continuous curve is interval-integrable. -/
+theorem intervalIntegrable_deriv (γ : AbsolutelyContinuousClosedCurve) :
     IntervalIntegrable (fun t ↦ deriv γ t) volume γ.a γ.b :=
-  γ.isPiecewiseC1On.intervalIntegrable_deriv
+  γ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional
 
-end PiecewiseC1ClosedCurve
+end AbsolutelyContinuousClosedCurve
 
-/-- A contour cycle is a finite formal `ℤ`-linear combination of closed piecewise-`C¹` curves. -/
-abbrev Cycle : Type := FreeAddCommGroup PiecewiseC1ClosedCurve
+/-- A contour cycle is a finite formal `ℤ`-linear combination of closed absolutely continuous
+curves. -/
+abbrev Cycle : Type := FreeAddCommGroup AbsolutelyContinuousClosedCurve
 
 namespace Cycle
 
@@ -213,7 +241,7 @@ theorem mem_trace_iff {C : Cycle} {z : ℂ} :
 
 /-- A point outside the trace of a cycle is avoided by every curve in its canonical support. -/
 theorem avoids_of_mem_support {C : Cycle} {z : ℂ} (hz : z ∉ trace C)
-    {γ : PiecewiseC1ClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
+    {γ : AbsolutelyContinuousClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
     ∀ t ∈ uIcc γ.a γ.b, γ t ≠ z := by
   intro t ht htz
   exact hz (mem_trace_iff.mpr ⟨γ, hγ, t, ht, htz⟩)
@@ -231,17 +259,18 @@ theorem trace_zero : trace (0 : Cycle) = ∅ := by
 
 /-- The trace of a single generator is its image on its parameter interval. -/
 @[simp]
-theorem trace_of (γ : PiecewiseC1ClosedCurve) :
+theorem trace_of (γ : AbsolutelyContinuousClosedCurve) :
     trace (FreeAddCommGroup.of γ) = γ '' uIcc γ.a γ.b := by
   simp [trace]
 
 /-- The trace of a raw curve bundled as a one-generator cycle is its raw interval image. -/
-theorem trace_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem trace_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) :
-    trace (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    trace (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       γ '' uIcc a b := by
   rw [trace_of]
-  exact PiecewiseC1ClosedCurve.image_of γ hγ hclosed
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.image_of γ hγ hclosed
 
 /-- Negating every coefficient does not change the trace. -/
 @[simp]
@@ -283,17 +312,18 @@ theorem isIn_iff {C : Cycle} {Ω : Set ℂ} : IsIn C Ω ↔ trace C ⊆ Ω :=
 
 /-- A raw curve bundled as a one-generator cycle lies in `Ω` exactly when it maps its interval
 into `Ω`. -/
-theorem isIn_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem isIn_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) (Ω : Set ℂ) :
-    IsIn (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
+    IsIn (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) Ω ↔
       MapsTo γ (uIcc a b) Ω := by
   rw [isIn_iff, trace_of, ← Set.mapsTo_iff_image_subset]
-  exact PiecewiseC1ClosedCurve.mapsTo_of_iff γ hγ hclosed Ω
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.mapsTo_of_iff γ hγ hclosed Ω
 
 /-- A one-generator cycle lies in `Ω` exactly when its parametrization maps its interval into
 `Ω`. -/
 @[simp]
-theorem isIn_of_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
+theorem isIn_of_iff {γ : AbsolutelyContinuousClosedCurve} {Ω : Set ℂ} :
     IsIn (FreeAddCommGroup.of γ) Ω ↔ MapsTo γ (uIcc γ.a γ.b) Ω := by
   simpa [isIn_iff] using
     (Set.mapsTo_iff_image_subset (f := γ) (s := uIcc γ.a γ.b) (t := Ω)).symm
@@ -309,10 +339,25 @@ theorem IsIn.add {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) 
   rw [isIn_iff] at hC hD ⊢
   exact (trace_add_subset C D).trans (union_subset hC hD)
 
+/-- Each curve of the canonical support of a cycle in `Ω` maps its parameter interval into `Ω`. -/
+theorem IsIn.mapsTo_of_mem_support {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω)
+    {γ : AbsolutelyContinuousClosedCurve} (hγ : γ ∈ FreeAddCommGroup.support C) :
+    MapsTo γ (uIcc γ.a γ.b) Ω := fun t ht ↦ isIn_iff.mp hC (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)
+
+/-- A cycle in `Ω` lies in every larger set. -/
+theorem IsIn.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsIn C Ω) (hΩ : Ω ⊆ Ω') : IsIn C Ω' :=
+  hC.trans hΩ
+
 /-- Negation preserves containment in a set. -/
 @[simp]
 theorem isIn_neg_iff {C : Cycle} {Ω : Set ℂ} : IsIn (-C) Ω ↔ IsIn C Ω := by
   simp [isIn_iff]
+
+/-- A difference of two cycles in `Ω` is in `Ω`. -/
+theorem IsIn.sub {C D : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (hD : IsIn D Ω) :
+    IsIn (C - D) Ω := by
+  rw [sub_eq_add_neg]
+  exact hC.add (isIn_neg_iff.mpr hD)
 
 /-- Every integer multiple of a cycle in `Ω` is in `Ω`. -/
 theorem IsIn.zsmul {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (n : ℤ) : IsIn (n • C) Ω := by
@@ -328,21 +373,22 @@ theorem IsIn.zsmul {C : Cycle} {Ω : Set ℂ} (hC : IsIn C Ω) (n : ℤ) : IsIn 
 def integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) : Cycle →+ E :=
   FreeAddCommGroup.lift
-    fun γ : PiecewiseC1ClosedCurve ↦ ∫ t in γ.a..γ.b, deriv γ t • f (γ t)
+    fun γ : AbsolutelyContinuousClosedCurve ↦ ∫ t in γ.a..γ.b, deriv γ t • f (γ t)
 
 /-- Integrating over a raw curve bundled as a one-generator cycle gives its raw contour integral. -/
-theorem integral_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem integral_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
     (f : ℂ → E) :
-    integral f (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    integral f (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       ∫ t in a..b, deriv γ t • f (γ t) := by
   rw [integral, FreeAddCommGroup.lift_apply_of]
-  exact PiecewiseC1ClosedCurve.integral_of γ hγ hclosed f
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.integral_of γ hγ hclosed f
 
 /-- Integrating over a one-generator cycle gives the raw contour integral over that curve. -/
 @[simp]
 theorem integral_of {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    (γ : PiecewiseC1ClosedCurve) (f : ℂ → E) :
+    (γ : AbsolutelyContinuousClosedCurve) (f : ℂ → E) :
     integral f (FreeAddCommGroup.of γ) =
       ∫ t in γ.a..γ.b, deriv γ t • f (γ t) := by
   rw [integral, FreeAddCommGroup.lift_apply_of]
@@ -365,10 +411,10 @@ theorem integral_of_not_completeSpace {E : Type*} [NormedAddCommGroup E] [Normed
 /-- Along every curve in the support of a cycle, the contour integrand of a function continuous on
 the trace of the cycle is interval-integrable. -/
 theorem intervalIntegrable_of_mem_support {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : ℂ → E} {C : Cycle} (hf : ContinuousOn f (trace C)) {γ : PiecewiseC1ClosedCurve}
+    {f : ℂ → E} {C : Cycle} (hf : ContinuousOn f (trace C)) {γ : AbsolutelyContinuousClosedCurve}
     (hγ : γ ∈ FreeAddCommGroup.support C) :
     IntervalIntegrable (fun t ↦ deriv γ t • f (γ t)) volume γ.a γ.b :=
-  γ.isPiecewiseC1On.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
+  γ.absolutelyContinuousOnInterval.intervalIntegrable_deriv_smul_comp_of_mapsTo hf
     fun t ht ↦ mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩
 
 /-- A continuous linear map between complex Banach spaces commutes with the integral over a cycle
@@ -478,22 +524,25 @@ theorem norm_integral_le_of_norm_le_const {E : Type*} [NormedAddCommGroup E] [No
   exact mul_le_mul_of_nonneg_left (hgen γ hγ) (abs_nonneg _)
 
 /-- The winding number of a cycle, obtained by additively extending the generalized winding number
-of its generators. -/
+of its generators. Off the trace of the cycle each generator's principal value is an ordinary
+integral; on the trace it need not exist, even for a Lipschitz generator, and the value is then a
+junk value. -/
 def windingNumber (z₀ : ℂ) : Cycle →+ ℂ :=
   FreeAddCommGroup.lift
-    fun γ : PiecewiseC1ClosedCurve ↦ TauCeti.Contour.windingNumber γ γ.a γ.b z₀
+    fun γ : AbsolutelyContinuousClosedCurve ↦ TauCeti.Contour.windingNumber γ γ.a γ.b z₀
 
 /-- The winding number of a raw curve bundled as a one-generator cycle is its raw winding number. -/
-theorem windingNumber_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : IsPiecewiseC1On γ a b)
+theorem windingNumber_of_raw {a b : ℝ} (γ : ℝ → ℂ) (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hclosed : γ a = γ b) (z₀ : ℂ) :
-    windingNumber z₀ (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) =
+    windingNumber z₀ (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) =
       TauCeti.Contour.windingNumber γ a b z₀ := by
   rw [windingNumber, FreeAddCommGroup.lift_apply_of]
-  exact PiecewiseC1ClosedCurve.windingNumber_of γ hγ hclosed z₀
+  simpa only [AbsolutelyContinuousClosedCurve.of_a, AbsolutelyContinuousClosedCurve.of_b] using
+    AbsolutelyContinuousClosedCurve.windingNumber_of γ hγ hclosed z₀
 
 /-- The winding number of a one-generator cycle is the winding number of that curve. -/
 @[simp]
-theorem windingNumber_of (γ : PiecewiseC1ClosedCurve) (z₀ : ℂ) :
+theorem windingNumber_of (γ : AbsolutelyContinuousClosedCurve) (z₀ : ℂ) :
     windingNumber z₀ (FreeAddCommGroup.of γ) =
       TauCeti.Contour.windingNumber γ γ.a γ.b z₀ := by
   rw [windingNumber, FreeAddCommGroup.lift_apply_of]
@@ -515,15 +564,15 @@ theorem IsNullHomologous.mono {C : Cycle} {Ω Ω' : Set ℂ} (hC : IsNullHomolog
 
 /-- Null-homology of a raw curve bundled as a one-generator cycle is the raw-curve predicate. -/
 theorem isNullHomologous_of_raw_iff {a b : ℝ} (γ : ℝ → ℂ)
-    (hγ : IsPiecewiseC1On γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :
-    IsNullHomologous (FreeAddCommGroup.of (PiecewiseC1ClosedCurve.of γ hγ hclosed)) Ω ↔
+    (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b) (Ω : Set ℂ) :
+    IsNullHomologous (FreeAddCommGroup.of (AbsolutelyContinuousClosedCurve.of γ hγ hclosed)) Ω ↔
       TauCeti.Contour.IsNullHomologous γ a b Ω := by
   simp only [isNullHomologous_iff, windingNumber_of_raw,
     TauCeti.Contour.isNullHomologous_iff]
 
 /-- Cycle null-homology specializes on a generator to the raw-curve predicate. -/
 @[simp]
-theorem isNullHomologous_of_iff {γ : PiecewiseC1ClosedCurve} {Ω : Set ℂ} :
+theorem isNullHomologous_of_iff {γ : AbsolutelyContinuousClosedCurve} {Ω : Set ℂ} :
     IsNullHomologous (FreeAddCommGroup.of γ) Ω ↔
       TauCeti.Contour.IsNullHomologous γ γ.a γ.b Ω := by
   simp only [isNullHomologous_iff, windingNumber_of,

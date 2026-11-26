@@ -11,11 +11,13 @@ public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
+public import TauCeti.Analysis.InnerProductSpace.Trace.Continuous
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Normed.Operator.Bilinear
+import TauCeti.Analysis.InnerProductSpace.Calculus
 
 /-!
 # Calculus and geometric invariance of the Laplacian
@@ -55,7 +57,7 @@ corollaries, where smoothness re-enters, live in the companion files
 The file also records the characterization `laplacian_eq_traceL` of the Laplacian as the trace
 `traceL` of the second Fréchet derivative and the base second-derivative computation
 `laplacian_norm_sq` (`Δ ‖x‖² = 2 · dim E`), a reusable characteristic value of the Laplacian on
-the squared norm, its chain-rule generalization `ContDiff.laplacian_comp_norm_sq` to radial
+the squared norm, its chain-rule generalization `ContDiffAt.laplacian_comp_norm_sq` to radial
 functions `x ↦ ρ (‖x‖²)`, the Leibniz rules `ContDiffAt.laplacian_fun_mul` and
 `ContDiffAt.laplacian_fun_smul` for products with a scalar function, the chain rule
 `ContDiffAt.laplacian_comp` for a real function of a scalar function and its instance
@@ -82,13 +84,14 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `TauCeti.laplacian_comp_smul_right`: the origin-centered homothety special case.
 * `TauCeti.laplacian_smul_comp_smul_right`: the rescaling `c⁻² f(c ·)` has Laplacian
   `(Δ f)(c ·)`.
-* `TauCeti.traceL`: the trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map, as a continuous linear
-  functional.
-* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace of the second Fréchet derivative.
-* `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear functional
+* `TauCeti.laplacian_eq_traceL`: the Laplacian as the trace `TauCeti.traceL` of the second
+  Fréchet derivative (`TauCeti.traceL` and its API live in
+  `TauCeti/Analysis/InnerProductSpace/Trace/Continuous.lean`).
+* `TauCeti.laplacian_eq_traceL_iteratedFDeriv`: the same trace, as a continuous linear map
   of the second iterated Fréchet derivative.
 * `TauCeti.laplacian_fun_sum`, `TauCeti.laplacian_sum`: the Laplacian of a finite sum of `C²`
   functions is the sum of their Laplacians.
+* `ContinuousLinearMap.laplacian`: the Laplacian of a continuous linear map vanishes.
 * `TauCeti.norm_laplacian_le`, `TauCeti.norm_laplacian_sub_laplacian_le`: the Laplacian and its
   differences are bounded by `dim E` times the second derivative and its differences;
   `TauCeti.norm_laplacian_le_norm_iteratedFDeriv_two` states the first bound with the second
@@ -105,10 +108,11 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   `Δ (Dⁿ f) = Dⁿ (Δ f)`.
 * `TauCeti.laplacian_norm_sq`: `Δ (fun x => ‖x‖ ^ 2) x = 2 * dim E`, the Laplacian of the
   squared norm.
-* `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
+* `ContDiffAt.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
 * `ContDiff.laplacian`: the Laplacian loses two derivatives at every regularity order.
-* `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`.
+* `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`,
+  for functions with values in a normed commutative `ℝ`-algebra such as `ℝ` or `ℂ`.
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
   function `F` of a scalar function `q`.
@@ -133,44 +137,18 @@ open Filter InnerProductSpace Laplacian Topology
 variable
   {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- The trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a continuous bilinear map in the standard orthonormal basis `e`
-of `E`, as a continuous linear functional. The Laplacian is the trace of the second Fréchet
-derivative (`TauCeti.laplacian_eq_traceL`). -/
-noncomputable def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-  ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-    (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
-
-/-- The trace of a bilinear map is the sum of its diagonal values on the standard orthonormal
-basis. -/
-theorem traceL_apply (H : E →L[ℝ] E →L[ℝ] F) :
-    traceL H = ∑ i, H (stdOrthonormalBasis ℝ E i) (stdOrthonormalBasis ℝ E i) := by
-  simp [traceL]
-
-/-- Transposing the arguments of a bilinear map preserves its trace. -/
-@[simp] theorem traceL_flip (B : E →L[ℝ] E →L[ℝ] F) : traceL B.flip = traceL B := by
-  simp [traceL_apply]
-
-/-- The trace of the real inner product is the dimension of the space. -/
-@[simp] theorem traceL_innerSL :
-    traceL (innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) = (Module.finrank ℝ E : ℝ) := by
-  rw [traceL_apply]
-  have hterm (i : Fin (Module.finrank ℝ E)) :
-      (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
-    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
-      (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
-  simp_rw [hterm]
-  simp
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The Laplacian of a function is the trace of its second Fréchet derivative, expressed as the
-continuous linear functional `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
+continuous linear map `traceL` of `fderiv ℝ (fderiv ℝ f) x`. -/
 theorem laplacian_eq_traceL (f : E → F) (x : E) :
     Δ f x = traceL (fderiv ℝ (fderiv ℝ f) x) := by
-  simp [traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis, iteratedFDeriv_two_apply]
+  rw [ContinuousLinearMap.traceL_apply, laplacian_eq_iteratedFDeriv_stdOrthonormalBasis]
+  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- The Laplacian of a function is the trace of its second iterated Fréchet derivative, expressed
-as a continuous linear functional of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
+as a continuous linear map of `iteratedFDeriv ℝ 2 f x` in the standard orthonormal basis. -/
 theorem laplacian_eq_traceL_iteratedFDeriv (f : E → F) (x : E) :
     Δ f x = (∑ i, ContinuousMultilinearMap.apply ℝ (fun _ : Fin 2 => E) F
       ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i]) (iteratedFDeriv ℝ 2 f x) := by
@@ -190,14 +168,19 @@ theorem laplacian_sum {ι : Type*} {s : Finset ι} {f : ι → E → F} {x : E}
   rw [Finset.sum_fn]
   exact laplacian_fun_sum hf
 
+/-- The Laplacian of a continuous linear map vanishes: its derivative is constant. -/
+@[simp]
+theorem _root_.ContinuousLinearMap.laplacian (L : E →L[ℝ] F) : Δ (L : E → F) = 0 := by
+  funext x
+  rw [laplacian_eq_traceL, show fderiv ℝ (L : E → F) = fun _ ↦ L from funext fun _ ↦ L.fderiv]
+  simp
+
 /-- The Laplacian is bounded by the dimension times the second Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖D²f x‖`. -/
 theorem norm_laplacian_le (f : E → F) (x : E) :
     ‖Δ f x‖ ≤ Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x‖ := by
-  have h := (fderiv ℝ (fderiv ℝ f) x).norm_sum_apply_apply_le Finset.univ
-    (stdOrthonormalBasis ℝ E) (stdOrthonormalBasis ℝ E)
-  rw [mul_comm] at h
-  simpa [laplacian_eq_traceL, traceL_apply] using h
+  rw [laplacian_eq_traceL]
+  exact ContinuousLinearMap.norm_traceL_apply_le _
 
 /-- The Laplacian is bounded by the dimension times the second iterated Fréchet derivative:
 `‖Δ f x‖ ≤ dim E * ‖iteratedFDeriv ℝ 2 f x‖`. -/
@@ -211,11 +194,8 @@ Fréchet derivative: `‖Δ f x - Δ f y‖ ≤ dim E * ‖D²f x - D²f y‖`. 
 theorem norm_laplacian_sub_laplacian_le (f : E → F) (x y : E) :
     ‖Δ f x - Δ f y‖ ≤
       Module.finrank ℝ E * ‖fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y‖ := by
-  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub, traceL_apply]
-  have h := (fderiv ℝ (fderiv ℝ f) x - fderiv ℝ (fderiv ℝ f) y).norm_sum_apply_apply_le
-    Finset.univ (stdOrthonormalBasis ℝ E) (stdOrthonormalBasis ℝ E)
-  rw [mul_comm] at h
-  simpa using h
+  rw [laplacian_eq_traceL, laplacian_eq_traceL, ← map_sub]
+  exact ContinuousLinearMap.norm_traceL_apply_le _
 
 /-- The Laplacian of a function of class `C²` on an open set is continuous there. -/
 theorem _root_.ContDiffOn.continuousOn_laplacian {f : E → F} {s : Set E} (hf : ContDiffOn ℝ 2 f s)
@@ -237,12 +217,9 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   have hD1 : ContDiff ℝ (m + 1) (fderiv ℝ f) :=
     hf.fderiv_right (by convert hm using 1; norm_num [add_assoc])
   have hD : ContDiff ℝ m (fderiv ℝ (fderiv ℝ f)) := hD1.fderiv_right le_rfl
-  let L : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-    ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-      (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
-  have hΔ : Δ f = L ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
+  have hΔ : Δ f = traceL ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
   rw [hΔ]
-  exact L.contDiff.comp hD
+  exact traceL.contDiff.comp hD
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
@@ -324,11 +301,11 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
     (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- The Laplacian of `f` is the trace of the second derivative.
   have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) :=
-    .of_forall fun y ↦ by rw [laplacian_eq_traceL, traceL_apply]
+    .of_forall fun y ↦ by rw [laplacian_eq_traceL, ContinuousLinearMap.traceL_apply]
   ext v
   have hl : Δ (fderiv ℝ f) x v = Δ (fun y ↦ fderiv ℝ f y v) x :=
     (hDf.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
-  rw [hl, laplacian_eq_traceL, traceL_apply, hΔ.fderiv_eq,
+  rw [hl, laplacian_eq_traceL, ContinuousLinearMap.traceL_apply, hΔ.fderiv_eq,
     fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
       (differentiableAt_const _)]
   simp only [FunLike.coe_sum, Finset.sum_apply]
@@ -539,98 +516,22 @@ the dimension. -/
 @[simp]
 theorem laplacian_norm_sq (x : E) :
     Δ (fun y : E => ‖y‖ ^ 2) x = 2 * (Module.finrank ℝ E : ℝ) := by
-  -- The Hessian of `‖·‖²` is the constant bilinear map `2 • innerSL ℝ`.
-  have hsnd : fderiv ℝ (fderiv ℝ fun y : E => ‖y‖ ^ 2) x
-      = (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) := by
-    rw [fderiv_norm_sq]
-    exact (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ‖y‖ ^ 2)
-    (stdOrthonormalBasis ℝ E)) x]
-  -- Each orthonormal diagonal Hessian entry equals `2`.
-  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ‖y‖ ^ 2) x
-      ![stdOrthonormalBasis ℝ E i, stdOrthonormalBasis ℝ E i] = 2 := by
-    intro i
-    have hself : (innerSL ℝ (stdOrthonormalBasis ℝ E i)) (stdOrthonormalBasis ℝ E i) = (1 : ℝ) := by
-      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq,
-        (stdOrthonormalBasis ℝ E).orthonormal.norm_eq_one i, one_pow]
-    rw [iteratedFDeriv_two_apply, hsnd]
-    simp [hself]
-  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_const, Finset.card_univ,
-    Fintype.card_fin, nsmul_eq_mul, mul_comm]
+  rw [laplacian_eq_traceL, fderiv_fderiv_norm_sq, map_nsmul, traceL_innerSL, nsmul_eq_mul,
+    Nat.cast_ofNat]
 
-/-- **The Laplacian of a radial function.** For a `C²` function `ρ : ℝ → ℝ`, the Laplacian of
-`x ↦ ρ (‖x‖ ^ 2)` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. -/
-@[simp]
-theorem _root_.ContDiff.laplacian_comp_norm_sq {ρ : ℝ → ℝ} (hρ : ContDiff ℝ 2 ρ) (x : E) :
-    Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
-      4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
-        2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
-  have hρ1 : ContDiff ℝ 1 (deriv ρ) := hρ.deriv'
-  have hρd : Differentiable ℝ ρ := hρ.differentiable (by norm_num)
-  have hρ'd : Differentiable ℝ (deriv ρ) := hρ1.differentiable one_ne_zero
-  -- The first derivative, by the chain rule through the squared norm.
-  have hfst : fderiv ℝ (fun y : E => ρ (‖y‖ ^ 2)) =
-      fun y => deriv ρ (‖y‖ ^ 2) • (2 • innerSL ℝ y) := by
-    funext y
-    exact ((hρd _).hasDerivAt.comp_hasFDerivAt y
-      (hasStrictFDerivAt_norm_sq y).hasFDerivAt).fderiv
-  -- The second derivative, by the product rule for `c • f` with `c = ρ' ∘ ‖·‖²`.
-  have hc : DifferentiableAt ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x :=
-    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt)
-      |>.differentiableAt
-  have hcd : fderiv ℝ (fun y : E => deriv ρ (‖y‖ ^ 2)) x =
-      deriv (deriv ρ) (‖x‖ ^ 2) • (2 • innerSL ℝ x) :=
-    ((hρ'd _).hasDerivAt.comp_hasFDerivAt x (hasStrictFDerivAt_norm_sq x).hasFDerivAt).fderiv
-  have hi : DifferentiableAt ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x :=
-    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).differentiableAt
-  have hid : fderiv ℝ (fun y : E => (2 • innerSL ℝ y : E →L[ℝ] ℝ)) x =
-      (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ) :=
-    (2 • innerSL ℝ : E →L[ℝ] E →L[ℝ] ℝ).fderiv
-  set b := stdOrthonormalBasis ℝ E
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis (fun y : E => ρ (‖y‖ ^ 2)) b) x]
-  have hterm : ∀ i, iteratedFDeriv ℝ 2 (fun y : E => ρ (‖y‖ ^ 2)) x ![b i, b i] =
-      4 * deriv (deriv ρ) (‖x‖ ^ 2) * ⟪x, b i⟫_ℝ ^ 2 + 2 * deriv ρ (‖x‖ ^ 2) := by
-    intro i
-    rw [iteratedFDeriv_two_apply, hfst, fderiv_fun_smul hc hi, hcd, hid]
-    have hself : (innerSL ℝ (b i)) (b i) = (1 : ℝ) := by
-      rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, b.orthonormal.norm_eq_one, one_pow]
-    simp [hself]
-    ring
-  rw [Finset.sum_congr rfl fun i _ => hterm i, Finset.sum_add_distrib, ← Finset.mul_sum,
-    b.sum_sq_inner_left x]
-  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
-  ring
-
-open Filter Gradient Topology in
+open Gradient in
 /-- **The Leibniz rule for the Laplacian.** For scalar functions twice differentiable at `x`,
 `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf` at `x`. -/
 theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : ContDiffAt ℝ 2 f x)
     (hg : ContDiffAt ℝ 2 g x) :
     Δ (fun y ↦ f y * g y) x = f x * Δ g x + 2 * ⟪∇ f x, ∇ g x⟫_ℝ + g x * Δ f x := by
-  have hfd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ f y :=
-    (hf.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hgd : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ g y :=
-    (hg.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by simp)
-  have hfg : fderiv ℝ (fun y ↦ f y * g y) =ᶠ[𝓝 x]
-      fun y ↦ f y • fderiv ℝ g y + g y • fderiv ℝ f y := by
-    filter_upwards [hfd, hgd] with y hfy hgy
-    exact fderiv_mul hfy hgy
-  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hg' : DifferentiableAt ℝ (fderiv ℝ g) x :=
-    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- Each diagonal Hessian entry of the product, by differentiating the product rule once more.
+  -- Each diagonal Hessian entry of the product, by the second-order product rule.
   have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
       f x * iteratedFDeriv ℝ 2 g x ![v, v] + 2 * (fderiv ℝ f x v * fderiv ℝ g x v) +
         g x * iteratedFDeriv ℝ 2 f x ![v, v] := by
     intro v
-    have h1 : DifferentiableAt ℝ (fun y ↦ f y • fderiv ℝ g y) x := hfd.self_of_nhds.smul hg'
-    have h2 : DifferentiableAt ℝ (fun y ↦ g y • fderiv ℝ f y) x := hgd.self_of_nhds.smul hf'
-    rw [iteratedFDeriv_two_apply, hfg.fderiv_eq, fderiv_fun_add h1 h2,
-      fderiv_fun_smul hfd.self_of_nhds hg', fderiv_fun_smul hgd.self_of_nhds hf',
-      iteratedFDeriv_two_apply, iteratedFDeriv_two_apply]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+    simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, fderiv_fderiv_fun_mul_apply hf hg]
     ring
   set b := stdOrthonormalBasis ℝ E
   -- The mixed first-order terms assemble into the inner product of the gradients.
@@ -643,21 +544,24 @@ theorem _root_.ContDiffAt.laplacian_fun_mul {f g : E → ℝ} {x : E} (hf : Cont
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis g b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
 
-open Complex Gradient in
+open Complex in
 /-- The product rule on the complex plane, with the mixed gradient term expressed in the
-orthonormal directions `1` and `I`. Only twice differentiability at the point is needed. -/
-theorem _root_.ContDiffAt.laplacian_fun_mul_complex {f g : ℂ → ℝ} {x : ℂ}
-    (hf : ContDiffAt ℝ 2 f x) (hg : ContDiffAt ℝ 2 g x) :
+orthonormal directions `1` and `I`, for functions with values in a normed commutative `ℝ`-algebra
+(such as `ℝ` or `ℂ`). Only twice differentiability at the point is needed. -/
+theorem _root_.ContDiffAt.laplacian_fun_mul_complex {𝔸 : Type*} [NormedCommRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] {f g : ℂ → 𝔸} {x : ℂ} (hf : ContDiffAt ℝ 2 f x)
+    (hg : ContDiffAt ℝ 2 g x) :
     Δ (fun y ↦ f y * g y) x = f x * Δ g x + g x * Δ f x +
       2 * (fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I) := by
-  rw [hf.laplacian_fun_mul hg]
-  have hgrad : ⟪∇ f x, ∇ g x⟫_ℝ =
-      fderiv ℝ f x 1 * fderiv ℝ g x 1 + fderiv ℝ f x I * fderiv ℝ g x I := by
-    rw [← orthonormalBasisOneI.sum_inner_mul_inner (∇ f x) (∇ g x)]
-    simp only [Fin.sum_univ_two]
-    simp_rw [inner_gradient_left, real_inner_comm (∇ g x), inner_gradient_left]
-    simp [orthonormalBasisOneI]
-  rw [hgrad]
+  -- Each diagonal Hessian entry of the product, by the second-order product rule.
+  have hterm : ∀ v, iteratedFDeriv ℝ 2 (fun y ↦ f y * g y) x ![v, v] =
+      f x * iteratedFDeriv ℝ 2 g x ![v, v] + g x * iteratedFDeriv ℝ 2 f x ![v, v] +
+        2 * (fderiv ℝ f x v * fderiv ℝ g x v) := by
+    intro v
+    simp only [iteratedFDeriv_two_apply, Fin.isValue, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, fderiv_fderiv_fun_mul_apply hf hg]
+    ring
+  simp only [laplacian_eq_iteratedFDeriv_complexPlane, hterm]
   ring
 
 open Filter Gradient Topology in
@@ -699,6 +603,24 @@ theorem _root_.ContDiffAt.laplacian_comp {F : ℝ → ℝ} {q : E → ℝ} {x : 
   rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x,
     congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis q b) x, hgrad]
   simp_rw [hterm, Finset.sum_add_distrib, ← Finset.mul_sum]
+
+open Gradient in
+/-- **The Laplacian of a radial function.** For a function `ρ : ℝ → ℝ` that is `C²` at `‖x‖²`,
+the Laplacian of `y ↦ ρ (‖y‖ ^ 2)` at `x` is `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`. Only the
+regularity of `ρ` at `‖x‖²` is used, so `ρ` may be singular elsewhere. -/
+@[simp]
+theorem _root_.ContDiffAt.laplacian_comp_norm_sq {ρ : ℝ → ℝ} {x : E}
+    (hρ : ContDiffAt ℝ 2 ρ (‖x‖ ^ 2)) :
+    Δ (fun y : E => ρ (‖y‖ ^ 2)) x =
+      4 * ‖x‖ ^ 2 * deriv (deriv ρ) (‖x‖ ^ 2) +
+        2 * (Module.finrank ℝ E : ℝ) * deriv ρ (‖x‖ ^ 2) := by
+  have hgrad : ∇ (fun y : E => ‖y‖ ^ 2) x = (2 : ℝ) • x := by
+    simpa only [sub_zero] using gradient_norm_sq_sub (0 : E) x
+  have h := hρ.laplacian_comp (x := x) (q := fun y : E => ‖y‖ ^ 2)
+    (contDiff_norm_sq ℝ).contDiffAt
+  simp only [Function.comp_def] at h
+  rw [h, hgrad, laplacian_norm_sq, norm_smul, Real.norm_two]
+  ring
 
 open Gradient in
 /-- **The Laplacian of a logarithm.** For a scalar function `s` twice differentiable at `x` with

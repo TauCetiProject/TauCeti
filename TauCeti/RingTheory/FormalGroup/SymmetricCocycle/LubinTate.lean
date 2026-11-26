@@ -7,21 +7,22 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.BaseChange
 public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
+public import TauCeti.RingTheory.FormalGroup.Deformation.LubinTate
 public import TauCeti.RingTheory.FormalGroup.Logarithm.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Coboundary
 import Mathlib.Algebra.DualNumber
 import Mathlib.Algebra.TrivSqZeroExt.Ideal
-import Mathlib.RingTheory.MvPolynomial.EulerIdentity
 import Mathlib.RingTheory.PowerSeries.CoeffMulMem
 import TauCeti.Data.Finsupp.Fin
 import TauCeti.RingTheory.FormalGroup.Basic
+import TauCeti.RingTheory.FormalGroup.LazardRing.LeadingTerm
 import TauCeti.RingTheory.FormalGroup.LazardRing.Polynomial
 import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
-import TauCeti.RingTheory.MvPolynomial.FirstJet
 import TauCeti.RingTheory.MvPowerSeries.Derivative
 import TauCeti.RingTheory.MvPowerSeries.Ideal
 import TauCeti.RingTheory.MvPowerSeries.Order
 import TauCeti.RingTheory.MvPowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Linearised square-zero deformation cocycles and Lubin–Tate cocycles
@@ -43,7 +44,7 @@ invariant differential `ω = P(T) dT` (`P(T) = F_X(0, T)⁻¹`), and let `I ⊆ 
 * `FormalGroup.deformationCocycle_smul_eq_homDefect_𝔾ₐ`,
   `FormalGroup.exists_smul_eq_iff_exists_deformationCocycle_eq_homDefect_𝔾ₐ`: Lubin–Tate Lemma 1.1,
   characterising `I`-congruent coordinate equivalence via coboundaries `F.homDefect 𝔾ₐ g`.
-* `FormalGroup.lubinTateCocycle`, `FormalGroup.lubinTateIndex`,
+* `FormalGroup.lubinTateCocycle`, `TauCeti.lubinTateIndex`,
   `FormalGroup.homogeneousComponent_lubinTateCocycle`,
   `FormalGroup.sum_smul_lubinTateCocycle_eq_homDefect_𝔾ₐ_iff`,
   `FormalGroup.IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_𝔾ₐ`:
@@ -195,24 +196,22 @@ private theorem assocDefect_add_eq {I : Ideal A} (hI : I * I = ⊥) (F : FormalG
         Δ.subst ![X 0, F₁₂] -
         Δ.subst ![X 1, X 2] * (pderiv 1 F.toPowerSeries).subst ![X 0, F₁₂] := by
   intro S F₀₁ F₁₂
-  have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := A) i
-  have h01 := hasSubst_finTwo (hX 0) (hX 1); have h12 := hasSubst_finTwo (hX 1) (hX 2)
-  have haL := hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2)
-  have haR := hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2))
+  have haL : HasSubst ![F₀₁, X 2] := .cons_subst_zero_left 0 1 2 F.zero_constantCoeff
+  have haR : HasSubst ![X 0, F₁₂] := .cons_subst_zero_right 0 1 2 F.zero_constantCoeff
   set δL : Fin 2 → MvPowerSeries (Fin 3) A := ![Δ.subst ![X 0, X 1], 0]
   set δR : Fin 2 → MvPowerSeries (Fin 3) A := ![0, Δ.subst ![X 1, X 2]]
   have hδLI : ∀ s d, coeff d (δL s) ∈ I
-    | 0, d => coeff_subst_mem_of_coeff_mem h01 hΔI d
+    | 0, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
     | 1, _ => by simp [δL]
   have hδRI : ∀ s d, coeff d (δR s) ∈ I
     | 0, _ => by simp [δR]
-    | 1, d => coeff_subst_mem_of_coeff_mem h12 hΔI d
+    | 1, d => coeff_subst_mem_of_coeff_mem .X_X hΔI d
   have hhL i j := mul_eq_zero_of_coeff_mem hI (hδLI i) (hδLI j)
   have hhR i j := mul_eq_zero_of_coeff_mem hI (hδRI i) (hδRI j)
   have heqL : (![S.subst ![X 0, X 1], X 2] : Fin 2 → MvPowerSeries (Fin 3) A) = ![F₀₁, X 2] + δL :=
-    by funext s; fin_cases s <;> simp [S, F₀₁, δL, subst_add h01]
+    by funext s; fin_cases s <;> simp [S, F₀₁, δL, subst_add .X_X]
   have heqR : (![X 0, S.subst ![X 1, X 2]] : Fin 2 → MvPowerSeries (Fin 3) A) = ![X 0, F₁₂] + δR :=
-    by funext s; fin_cases s <;> simp [S, F₁₂, δR, subst_add h12]
+    by funext s; fin_cases s <;> simp [S, F₁₂, δR, subst_add .X_X]
   rw [heqL, heqR, subst_add (haL.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhL])),
     subst_add (haR.add (.of_sq_eq_zero fun i ↦ by rw [sq, hhR])),
     subst_add_of_mul_eq_zero haL hhL F.toPowerSeries, subst_add_of_mul_eq_zero haL hhL Δ,
@@ -236,10 +235,8 @@ private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
       Φ.subst ![X 0, X 1] + Φ.subst ![F₀₁, X 2] - Φ.subst ![X 0, F₁₂] - Φ.subst ![X 1, X 2] := by
   intro Δ S F₀₁ F₁₂
   have hF := PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff
-  have hX (i : Fin 3) := PowerSeries.HasSubst.X (S := A) i
-  have h01 := hasSubst_finTwo (hX 0) (hX 1); have h12 := hasSubst_finTwo (hX 1) (hX 2)
-  have haL := hasSubst_finTwo (F.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2)
-  have haR := hasSubst_finTwo (hX 0) (F.hasSubst_subst_pair (hX 1) (hX 2))
+  have haL : HasSubst ![F₀₁, X 2] := .cons_subst_zero_left 0 1 2 F.zero_constantCoeff
+  have haR : HasSubst ![X 0, F₁₂] := .cons_subst_zero_right 0 1 2 F.zero_constantCoeff
   have hPΔ : PowerSeries.subst F.toPowerSeries F.invariantDifferential * Δ = Φ := by
     dsimp only [Δ]; rw [← mul_assoc, F.subst_invariantDifferential_mul_derivZeroX hF, one_mul]
   have hPΔ_sub {b : Fin 2 → MvPowerSeries (Fin 3) A} (hb : HasSubst b) :
@@ -254,7 +251,8 @@ private theorem mul_assocDefect_add_eq_cocycle {I : Ideal A} (hI : I * I = ⊥)
     subst_X haR, Matrix.cons_val_one, Matrix.cons_val_fin_one, ← F.assoc] at inv1
   have had := assocDefect_add_eq hI F Δ (coeff_mul_mem_of_right hΦI)
   dsimp only at had
-  rw [had, ← hPΔ_sub h01, ← hPΔ_sub haL, ← hPΔ_sub haR, ← hPΔ_sub h12, ← inv0, ← inv1, ← F.assoc]
+  rw [had, ← hPΔ_sub .X_X, ← hPΔ_sub haL, ← hPΔ_sub haR, ← hPΔ_sub .X_X, ← inv0, ← inv1,
+    ← F.assoc]
   ring
 
 /-- **Lubin–Tate, Lemma 1.2 (forward direction).** If `F` and `G` are commutative formal group laws
@@ -428,8 +426,8 @@ theorem homDefect_𝔾ₐ_eq_of_coeff_mem {F G : FormalGroup A} {I : Ideal A} (h
       (PowerSeries.HasSubst.of_constantCoeff_zero G.zero_constantCoeff).const
       (PowerSeries.HasSubst.of_constantCoeff_zero F.zero_constantCoeff).const
       (fun _ ↦ hFG) fun e x hx ↦ ?_]
-  rw [← PowerSeries.coeff_def rfl, ← Ideal.mem_bot, ← hI]
-  exact Ideal.mul_mem_mul (hgI (e ())) hx
+  rw [← Ideal.mem_bot, ← hI]
+  exact Ideal.mul_mem_mul (PowerSeries.mvCoeff_mem_of_coeff_mem hgI e) hx
 
 /-- If `φ - X` has coefficients in an ideal `I`, then `(φ • F) - F` also has coefficients in `I`. -/
 private theorem coeff_smul_sub_mem {I : Ideal A} (F : FormalGroup A) {φ : FormalCoordinate A}
@@ -529,76 +527,24 @@ section LubinTateCocycle
 
 open TauCeti.LazardRing
 
-private noncomputable def evalShift (n : ℕ+) : MvPolynomial ℕ+ ℤ →ₐ[ℤ] DualNumber LazardRing :=
-  MvPolynomial.aeval fun m : ℕ+ ↦
+private noncomputable def shiftGeneratorHom (n : ℕ+) : LazardRing →+* DualNumber LazardRing :=
+  homEquiv.symm fun m ↦
     algebraMap LazardRing (DualNumber LazardRing) (generator m) +
       if m = n then DualNumber.eps else 0
 
-private noncomputable def shiftGeneratorHom (n : ℕ+) : LazardRing →+* DualNumber LazardRing :=
-  ((evalShift n).comp (mvPolynomialEquiv.symm : LazardRing →ₐ[ℤ] MvPolynomial ℕ+ ℤ)).toRingHom
-
-private theorem evalShift_eq_map_jetAlgebra (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
-    evalShift n p =
-      TrivSqZeroExt.map (LinearMap.proj (R := LazardRing) n)
-        (TauCeti.jetAlgebra generator (MvPolynomial.map (Int.castRingHom LazardRing) p)) := by
-  refine AlgHom.congr_fun (MvPolynomial.algHom_ext (f := evalShift n)
-    (g := ((TrivSqZeroExt.map (LinearMap.proj (R := LazardRing) n)).restrictScalars ℤ).comp
-      (((TauCeti.jetAlgebra generator).restrictScalars ℤ).comp
-        (MvPolynomial.mapAlgHom (Algebra.ofId ℤ LazardRing)))) fun m ↦ ?_) p
-  simp only [evalShift, MvPolynomial.aeval_X, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
-    MvPolynomial.mapAlgHom_apply, MvPolynomial.map_X, TauCeti.jetAlgebra_X, map_add,
-    TrivSqZeroExt.map_inl, TrivSqZeroExt.map_inr, LinearMap.proj_apply,
-    TrivSqZeroExt.algebraMap_eq_inl, DualNumber.eps]
-  congr 1
-  by_cases hmn : m = n <;> simp [hmn]
-
-private theorem fst_evalShift (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
-    (evalShift n p).fst = mvPolynomialEquiv p := by
-  rw [evalShift_eq_map_jetAlgebra, TrivSqZeroExt.fst_map, TauCeti.fst_jetAlgebra,
-    MvPolynomial.eval_map, mvPolynomialEquiv_apply, MvPolynomial.aeval_def, algebraMap_int_eq]
+private theorem shiftGeneratorHom_apply_generator (n m : ℕ+) :
+    shiftGeneratorHom n (generator m) =
+      algebraMap LazardRing (DualNumber LazardRing) (generator m) +
+        if m = n then DualNumber.eps else 0 :=
+  homEquiv_symm_apply_generator _ m
 
 private theorem fst_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
-    (shiftGeneratorHom n x).fst = x := by simp [shiftGeneratorHom, fst_evalShift]
-
-private theorem snd_evalShift (n : ℕ+) (p : MvPolynomial ℕ+ ℤ) :
-    (evalShift n p).snd = mvPolynomialEquiv (MvPolynomial.pderiv n p) := by
-  rw [evalShift_eq_map_jetAlgebra, TrivSqZeroExt.snd_map, LinearMap.proj_apply,
-    TauCeti.snd_jetAlgebra_apply, MvPolynomial.pderiv_map, MvPolynomial.eval_map,
-    mvPolynomialEquiv_apply, MvPolynomial.aeval_def, algebraMap_int_eq]
-
-private theorem snd_shiftGeneratorHom (n : ℕ+) (x : LazardRing) :
-    (shiftGeneratorHom n x).snd =
-      mvPolynomialEquiv (MvPolynomial.pderiv n (mvPolynomialEquiv.symm x)) :=
-  snd_evalShift n (mvPolynomialEquiv.symm x)
-
-private theorem snd_shiftGeneratorHom_eq_zero_of_mem_grading_lt {n : ℕ+} {m : ℕ}
-    (hm : m < 2 * (n : ℕ)) {x : LazardRing} (hx : x ∈ grading m) :
-    (shiftGeneratorHom n x).snd = 0 := by
-  rw [snd_shiftGeneratorHom]
-  have hp := mvPolynomialEquiv_mem_grading_iff.mp (by rw [AlgEquiv.apply_symm_apply]; exact hx)
-  have hnot : n ∉ (mvPolynomialEquiv.symm x).vars := fun hn ↦ by
-    obtain ⟨d, hd, hdn⟩ := (MvPolynomial.mem_vars_iff_mem_support n).1 hn
-    have hle : 2 * (n : ℕ) ≤ Finsupp.weight (fun k : ℕ+ ↦ 2 * (k : ℕ)) d :=
-      Finsupp.le_weight_of_ne_zero (w := fun k : ℕ+ ↦ 2 * (k : ℕ)) (fun _ ↦ Nat.zero_le _)
-        (Finsupp.mem_support_iff.1 hdn)
-    rw [hp (MvPolynomial.mem_support_iff.1 hd)] at hle
-    omega
-  simp [MvPolynomial.pderiv_eq_zero_of_notMem_vars hnot]
-
-private theorem snd_shiftGeneratorHom_mem_grading_zero (n : ℕ+) {x : LazardRing}
-    (hx : x ∈ grading (2 * (n : ℕ))) : (shiftGeneratorHom n x).snd ∈ grading 0 := by
-  rw [snd_shiftGeneratorHom, mvPolynomialEquiv_mem_grading_iff]
-  have hp := mvPolynomialEquiv_mem_grading_iff.mp (by rw [AlgEquiv.apply_symm_apply]; exact hx)
-  exact hp.pderiv (n' := 0) (by simp)
-
-private theorem snd_shiftGeneratorHom_mem_augmentationIdeal_of_mem_sq (n : ℕ+) {x : LazardRing}
-    (hx : x ∈ augmentationIdeal ^ 2) : (shiftGeneratorHom n x).snd ∈ augmentationIdeal := by
-  rw [pow_two] at hx
-  refine Submodule.mul_induction_on hx (fun y hy z hz ↦ ?_) fun y z hy hz ↦ by
-    rw [map_add, TrivSqZeroExt.snd_add]; exact augmentationIdeal.add_mem hy hz
-  rw [map_mul, TrivSqZeroExt.snd_mul, fst_shiftGeneratorHom, fst_shiftGeneratorHom]
-  simpa [smul_eq_mul] using augmentationIdeal.add_mem (augmentationIdeal.mul_mem_right _ hy)
-    (augmentationIdeal.mul_mem_left _ hz)
+    (shiftGeneratorHom n x).fst = x :=
+  RingHom.congr_fun
+    (ringHom_ext (φ := (TrivSqZeroExt.fstHom LazardRing LazardRing LazardRing).toRingHom.comp
+        (shiftGeneratorHom n)) (ψ := RingHom.id LazardRing) fun m ↦ by
+      simp [shiftGeneratorHom_apply_generator, TrivSqZeroExt.algebraMap_eq_inl,
+        apply_ite TrivSqZeroExt.fst]) x
 
 private noncomputable def universalShiftSeries (n : ℕ+) : MvPowerSeries (Fin 2) LazardRing :=
   fun d ↦ (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd
@@ -608,65 +554,47 @@ private theorem coeff_universalShiftSeries (n : ℕ+) (d : Fin 2 →₀ ℕ) :
     coeff d (universalShiftSeries n) =
       (shiftGeneratorHom n (coeff d formalGroup.toPowerSeries)).snd := (rfl)
 
+private theorem smul_eps_map_universalShiftSeries (n : ℕ+) :
+    (DualNumber.eps : DualNumber LazardRing) •
+        MvPowerSeries.map (algebraMap LazardRing (DualNumber LazardRing))
+          (universalShiftSeries n) =
+      (formalGroup.map (shiftGeneratorHom n)).toPowerSeries -
+        (formalGroup.map (algebraMap LazardRing (DualNumber LazardRing))).toPowerSeries :=
+  MvPowerSeries.ext fun d ↦ TrivSqZeroExt.ext
+    (by simp [FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
+      TrivSqZeroExt.algebraMap_eq_inl])
+    (by simp [FormalGroup.map_toPowerSeries, TrivSqZeroExt.algebraMap_eq_inl])
+
 private theorem le_order_universalShiftSeries (n : ℕ+) :
-    (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (universalShiftSeries n).order :=
-  le_order fun d hd ↦ by
-    rw [coeff_universalShiftSeries]
-    exact snd_shiftGeneratorHom_eq_zero_of_mem_grading_lt
-      (by have hlt : d.degree < (n : ℕ) + 1 := Nat.cast_lt.mp hd; have := n.pos; omega)
-      (coeff_formalGroup_mem_grading d)
-
-private theorem coeff_formalGroup_eq_zero_of_axis {d : Fin 2 →₀ ℕ} (hd : 2 ≤ d.degree)
-    (haxis : d 0 = 0 ∨ d 1 = 0) : coeff d formalGroup.toPowerSeries = 0 := by
-  rw [Finsupp.degree_finTwo] at hd
-  have hd_eq := (Finsupp.univ_sum_single d).symm.trans (Fin.sum_univ_two _)
-  rcases haxis with h0 | h1
-  · rw [hd_eq, h0, Finsupp.single_zero, _root_.zero_add, formalGroup.coeff_single_one,
-      ite_eq_right (by omega)]
-  · rw [hd_eq, h1, Finsupp.single_zero, _root_.add_zero, formalGroup.coeff_single_zero,
-      ite_eq_right (by omega)]
-
-private theorem snd_shiftGeneratorHom_nsmul_generator (n : ℕ+) (c : ℕ) :
-    (shiftGeneratorHom n (c • generator n)).snd = c := by
-  rw [snd_shiftGeneratorHom, ← Nat.cast_smul_eq_nsmul ℤ, map_zsmul,
-    mvPolynomialEquiv_symm_generator]
-  simp
+    (((n : ℕ) + 1 : ℕ) : ℕ∞) ≤ (universalShiftSeries n).order := by
+  have hord := succ_le_order_map_sub_map (n := n)
+    (φ := shiftGeneratorHom n) (ψ := algebraMap LazardRing (DualNumber LazardRing))
+    fun m hm ↦ by simp [shiftGeneratorHom_apply_generator, hm.ne]
+  rw [← smul_eps_map_universalShiftSeries] at hord
+  refine le_order fun d hd ↦ ?_
+  have hd0 := coeff_of_lt_order (hd.trans_le hord)
+  simpa [TrivSqZeroExt.algebraMap_eq_inl] using congrArg TrivSqZeroExt.snd hd0
 
 private theorem homogeneousComponent_universalShiftSeries (n : ℕ+) :
     homogeneousComponent ((n : ℕ) + 1) (universalShiftSeries n) =
       ↑(TauCeti.lazardCocycle ((n : ℕ) + 1) LazardRing) := by
-  have hn := n.pos; ext d
-  rw [coeff_homogeneousComponent, MvPolynomial.coeff_coe]
-  have hdeg_sum : d.degree = d 0 + d 1 := Finsupp.degree_finTwo d
-  by_cases hd : d.degree = (n : ℕ) + 1
-  · rw [ite_eq_left hd]
-    by_cases haxis : d 0 = 0 ∨ d 1 = 0
-    · rw [coeff_universalShiftSeries, coeff_formalGroup_eq_zero_of_axis (by omega) haxis, map_zero,
-        TrivSqZeroExt.snd_zero, TauCeti.coeff_lazardCocycle, ite_eq_right (by omega)]
-    · push Not at haxis
-      have hi0 : 0 < d 0 := Nat.pos_of_ne_zero haxis.1
-      have hd_eq : d = Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0) := by
-        have hd1 : d 1 = (n : ℕ) + 1 - d 0 := by omega
-        rw [← hd1]
-        exact (Finsupp.univ_sum_single d).symm.trans (Fin.sum_univ_two _)
-      set z := coeff (Finsupp.single 0 (d 0) + Finsupp.single 1 ((n : ℕ) + 1 - d 0))
-          formalGroup.toPowerSeries -
-        (((n : ℕ) + 1).choose (d 0) / TauCeti.lazardGcd ((n : ℕ) + 1)) • generator n
-      have hz_gr : z ∈ grading (2 * (n : ℕ)) :=
-        sub_mem (by have hmem := coeff_formalGroup_mem_grading d
-                    rwa [hd, Nat.add_sub_cancel, hd_eq] at hmem)
-          (Submodule.smul_of_tower_mem _ _ (generator_mem_grading n))
-      have hz0 : (shiftGeneratorHom n z).snd = 0 := by
-        rw [← intCast_augmentation_of_mem_grading_zero
-          (snd_shiftGeneratorHom_mem_grading_zero n hz_gr),
-          mem_augmentationIdeal.mp (snd_shiftGeneratorHom_mem_augmentationIdeal_of_mem_sq n
-            (coeff_formalGroup_sub_nsmul_generator_mem_sq n hi0 (by omega))), Int.cast_zero]
-      dsimp only [z] at hz0
-      simp only [map_sub, TrivSqZeroExt.snd_sub, snd_shiftGeneratorHom_nsmul_generator,
-        sub_eq_zero, ← hd_eq] at hz0
-      rw [coeff_universalShiftSeries, hz0, hd_eq,
-        TauCeti.coeff_single_add_single_lazardCocycle hi0 (by omega)]; simp
-  · rw [ite_eq_right hd, TauCeti.coeff_lazardCocycle, ite_eq_right (by omega)]
+  have hcomp := homogeneousComponent_map_sub_map_eq_smul_lazardCocycle (n := n)
+    (φ := shiftGeneratorHom n) (ψ := algebraMap LazardRing (DualNumber LazardRing))
+    fun m hm ↦ by simp [shiftGeneratorHom_apply_generator, hm.ne]
+  rw [← smul_eps_map_universalShiftSeries, shiftGeneratorHom_apply_generator] at hcomp
+  simp only [ite_true, add_sub_cancel_left] at hcomp
+  ext d
+  by_cases hdeg : d.degree = (n : ℕ) + 1
+  · have hd := congrArg (TrivSqZeroExt.snd ∘ coeff d) hcomp
+    simp only [Function.comp_apply, coeff_homogeneousComponent, hdeg, ↓reduceIte,
+      MvPolynomial.coe_smul, coeff_smul, coeff_map, MvPolynomial.coeff_coe,
+      ← TauCeti.map_lazardCocycle (algebraMap LazardRing (DualNumber LazardRing)),
+      MvPolynomial.coeff_map, smul_eq_mul, TrivSqZeroExt.snd_mul, DualNumber.fst_eps,
+      DualNumber.snd_eps, TrivSqZeroExt.algebraMap_eq_inl, TrivSqZeroExt.fst_inl,
+      TrivSqZeroExt.snd_inl] at hd
+    simpa [coeff_homogeneousComponent, hdeg] using hd
+  · have hdeg' : d 0 + d 1 ≠ (n : ℕ) + 1 := Finsupp.degree_finTwo d ▸ hdeg
+    simp [coeff_homogeneousComponent, hdeg, TauCeti.coeff_lazardCocycle, hdeg']
 
 private noncomputable def universalLubinTateCocycle (n : ℕ+) :
     MvPowerSeries (Fin 2) LazardRing :=
@@ -679,15 +607,7 @@ private theorem deformationCocycle_universal_shiftGeneratorHom (n : ℕ+) :
       (DualNumber.eps : DualNumber LazardRing) •
         MvPowerSeries.map (algebraMap LazardRing (DualNumber LazardRing))
           (universalLubinTateCocycle n) := by
-  let inlR := algebraMap LazardRing (DualNumber LazardRing)
-  have hsub : (formalGroup.map (shiftGeneratorHom n)).toPowerSeries -
-      (formalGroup.map inlR).toPowerSeries =
-      (DualNumber.eps : DualNumber LazardRing) • MvPowerSeries.map inlR (universalShiftSeries n) :=
-    MvPowerSeries.ext fun d ↦ TrivSqZeroExt.ext
-      (by simp [inlR, FormalGroup.map_toPowerSeries, fst_shiftGeneratorHom,
-        TrivSqZeroExt.algebraMap_eq_inl])
-      (by simp [inlR, FormalGroup.map_toPowerSeries, TrivSqZeroExt.algebraMap_eq_inl])
-  rw [deformationCocycle, hsub, universalLubinTateCocycle, map_mul,
+  rw [deformationCocycle, ← smul_eps_map_universalShiftSeries, universalLubinTateCocycle, map_mul,
     PowerSeries.map_subst (.of_constantCoeff_zero formalGroup.zero_constantCoeff),
     formalGroup.map_invariantDifferential, ← FormalGroup.map_toPowerSeries, mul_smul_comm]
 
@@ -771,40 +691,27 @@ theorem map_lubinTateCocycle {R S : Type*} [CommRing R] [CommRing S] (f : R →+
   rw [lubinTateCocycle, lubinTateCocycle, ← RingHom.comp_apply, ← MvPowerSeries.map_comp,
     LazardRing.lift_map]
 
-/-- The positive integer `p ^ (j + 1) - 1`, indexing the degree-`p^(j + 1)` Lubin–Tate cocycle. -/
-def lubinTateIndex {p : ℕ} (hp : p.Prime) (j : ℕ) : ℕ+ :=
-  ⟨p ^ (j + 1) - 1, Nat.sub_pos_of_lt (Nat.one_lt_pow j.succ_ne_zero hp.one_lt)⟩
-
-/-- The underlying natural number of `FormalGroup.lubinTateIndex hp j` is `p ^ (j + 1) - 1`. -/
-theorem coe_lubinTateIndex {p : ℕ} (hp : p.Prime) (j : ℕ) :
-    (lubinTateIndex hp j : ℕ) = p ^ (j + 1) - 1 := (rfl)
-
-/-- Adding one to `FormalGroup.lubinTateIndex hp j` gives `p ^ (j + 1)`. -/
-@[simp]
-theorem coe_lubinTateIndex_add_one {p : ℕ} (hp : p.Prime) (j : ℕ) :
-    (lubinTateIndex hp j : ℕ) + 1 = p ^ (j + 1) :=
-  Nat.sub_add_cancel (Nat.one_le_pow _ _ hp.pos)
-
 private theorem le_order_lubinTateCocycle_index {R : Type*} [CommRing R] (F : FormalGroup R)
     [F.IsComm] {p : ℕ} (hp : p.Prime) (j : ℕ) :
-    ((p ^ (j + 1) : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle (lubinTateIndex hp j)).order := by
-  simpa using F.le_order_lubinTateCocycle (lubinTateIndex hp j)
+    ((p ^ (j + 1) : ℕ) : ℕ∞) ≤ (F.lubinTateCocycle (lubinTateIndex hp.one_lt j)).order := by
+  simpa [coe_lubinTateIndex_add_one] using F.le_order_lubinTateCocycle (lubinTateIndex hp.one_lt j)
 
 private theorem homogeneousComponent_lubinTateCocycle_index {R : Type*} [CommRing R]
     (F : FormalGroup R) [F.IsComm] {p : ℕ} (hp : p.Prime) (j : ℕ) :
-    homogeneousComponent (p ^ (j + 1)) (F.lubinTateCocycle (lubinTateIndex hp j)) =
+    homogeneousComponent (p ^ (j + 1)) (F.lubinTateCocycle (lubinTateIndex hp.one_lt j)) =
       ↑((1 : R) • TauCeti.lazardCocycle (p ^ (j + 1)) R) := by
-  simpa using F.homogeneousComponent_lubinTateCocycle (lubinTateIndex hp j)
+  simpa [coe_lubinTateIndex_add_one] using
+    F.homogeneousComponent_lubinTateCocycle (lubinTateIndex hp.one_lt j)
 
 /-- **Linear independence of the canonical Lubin–Tate cocycles modulo coboundaries.** Let `p` be
 a prime and let `[p]_F` have order at least `pʰ`. A linear combination
-`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (FormalGroup.lubinTateIndex hp j.val)` is a
+`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (TauCeti.lubinTateIndex hp.one_lt j.val)` is a
 coboundary `F.homDefect 𝔾ₐ g` if and only if `c = 0`. -/
 theorem sum_smul_lubinTateCocycle_eq_homDefect_𝔾ₐ_iff
     {R : Type*} [CommRing R] {F : FormalGroup R} [F.IsComm] {p h : ℕ} (hp : p.Prime)
     (hF : ((p ^ h : ℕ) : ℕ∞) ≤ (F.nsmulSeries p).order) {c : Fin (h - 1) → R} :
     (∃ g : PowerSeries R,
-      ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp j.val) =
+      ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp.one_lt j.val) =
         F.homDefect 𝔾ₐ g) ↔ c = 0 :=
   F.sum_smul_eq_homDefect_𝔾ₐ_iff hp hF (u := fun _ ↦ 1)
     (fun j ↦ F.le_order_lubinTateCocycle_index hp j.val)
@@ -815,7 +722,7 @@ theorem sum_smul_lubinTateCocycle_eq_homDefect_𝔾ₐ_iff
 in `R`, and let `F` be a commutative formal group law over `R` whose `p`-series has order at least
 `pʰ` and a unit coefficient of `X^(pʰ)`. Then every symmetric 2-cocycle `Φ` of `F` without constant
 term decomposes as
-`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (FormalGroup.lubinTateIndex hp j.val) +`
+`∑ j : Fin (h - 1), c j • F.lubinTateCocycle (TauCeti.lubinTateIndex hp.one_lt j.val) +`
 `F.homDefect 𝔾ₐ g`
 for a *unique* tuple `c : Fin (h - 1) → R` and some power series `g` without constant term. -/
 theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_𝔾ₐ
@@ -824,10 +731,10 @@ theorem IsSymmetricCocycle.existsUnique_sum_smul_lubinTateCocycle_add_homDefect_
     (hv : IsUnit (PowerSeries.coeff (p ^ h) (F.nsmulSeries p)))
     {Φ : MvPowerSeries (Fin 2) R} (hΦ : F.IsSymmetricCocycle Φ) (hΦ₀ : constantCoeff Φ = 0) :
     ∃! c : Fin (h - 1) → R, ∃ g : PowerSeries R, PowerSeries.constantCoeff g = 0 ∧
-      Φ = ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp j.val) +
+      Φ = ∑ j : Fin (h - 1), c j • F.lubinTateCocycle (lubinTateIndex hp.one_lt j.val) +
         F.homDefect 𝔾ₐ g :=
   hΦ.existsUnique_sum_smul_add_homDefect_𝔾ₐ hp hpR hF hv (u := fun _ ↦ 1)
-    (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle (lubinTateIndex hp j.val))
+    (fun j ↦ F.isSymmetricCocycle_lubinTateCocycle (lubinTateIndex hp.one_lt j.val))
     (fun j ↦ F.le_order_lubinTateCocycle_index hp j.val)
     (fun j ↦ F.homogeneousComponent_lubinTateCocycle_index hp j.val)
     (fun _ ↦ isUnit_one) hΦ₀

@@ -27,6 +27,7 @@ import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Height
 import TauCeti.RingTheory.LocalRing.RingHom
 import TauCeti.RingTheory.MvPowerSeries.Basic
 import TauCeti.RingTheory.MvPowerSeries.Ideal
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Coordinate.Lifting
 
 /-!
@@ -197,7 +198,7 @@ noncomputable def deformByLubinTate (F : FormalGroupLift π_A F₀) {q : A →+*
     FormalGroupLift π_A F₀ :=
   F.deformByCocycle hker (RingHom.ker_le_ker_of_comp_eq hq)
     (FormalGroup.IsSymmetricCocycle.sum (s := Finset.univ) fun j _ ↦
-      (F.formalGroup.isSymmetricCocycle_lubinTateCocycle (lubinTateIndex hp.out j.val)).smul
+      (F.formalGroup.isSymmetricCocycle_lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val)).smul
         (m j : A))
     (by rw [map_sum]; exact Finset.sum_eq_zero fun j _ ↦ by simp)
     (fun d ↦ by
@@ -213,7 +214,7 @@ theorem deformationCocycle_deformByLubinTate (F : FormalGroupLift π_A F₀) {q 
     (p h : ℕ) [hp : Fact p.Prime] (m : Fin (h - 1) → RingHom.ker q) :
     F.formalGroup.deformationCocycle (F.deformByLubinTate hq hker p h m).formalGroup =
       ∑ j : Fin (h - 1),
-        (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) := by
+        (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) := by
   rw [deformByLubinTate, formalGroup_deformByCocycle,
     FormalGroup.deformationCocycle_deformByCocycle]
 
@@ -255,10 +256,10 @@ theorem map_deformByLubinTate_of_map_ker_le {A' B' : Type*} [CommRing A'] [CommR
   have hsum :
       MvPowerSeries.map f
           (∑ i : Fin (h - 1),
-            (m i : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out i.val)) =
+            (m i : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt i.val)) =
         ∑ i : Fin (h - 1),
           (⟨f (m i), hfq (Ideal.mem_map_of_mem f (m i).property)⟩ : RingHom.ker q').val •
-            (F.map f hf).formalGroup.lubinTateCocycle (lubinTateIndex hp.out i.val) := by
+            (F.map f hf).formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt i.val) := by
     rw [map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [smul_eq_C_mul, map_mul, map_C, FormalGroup.map_lubinTateCocycle, ← smul_eq_C_mul,
@@ -341,12 +342,13 @@ private theorem sum_smul_lubinTate_eq (hπ_A : Function.Surjective π_A)
     (hsmul : ∀ (a : A) (y : I), ((π_A a • y : I) : A) = a * y.val)
     {n : ℕ} (b : Fin n → I) (F : FormalGroupLift π_A F₀) (p h : ℕ) [hp : Fact p.Prime]
     (c : Fin n → Fin (h - 1) → k) (m : Fin (h - 1) → I) (hm : ∀ j, m j = ∑ i, c i j • b i) :
-    ∑ j : Fin (h - 1), (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) =
+    ∑ j : Fin (h - 1),
+        (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) =
       ∑ i, (b i : A) • ∑ j : Fin (h - 1),
         Function.surjInv hπ_A (c i j) •
-          F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) := by
+          F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) := by
   trans ∑ j, ∑ i, (Function.surjInv hπ_A (c i j) * (b i : A)) •
-      F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val)
+      F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val)
   · refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [congrArg Subtype.val (hm j), Submodule.coe_sum, Finset.sum_smul]
     exact Finset.sum_congr rfl fun i _ ↦ by rw [← hsmul, Function.surjInv_eq hπ_A]
@@ -365,33 +367,26 @@ private theorem isSymmetricCocycle_basisComp (hπ_A : Function.Surjective π_A)
   · have h := basisComp_congr b (hf₁ := coeff_subst_mem_of_coeff_mem .X_X hΦI) (hf₂ := hΦI)
       hΦ.subst_swap i
     simpa only [basisComp_subst_finTwo hπ_A hsmul b hΦI .X_X i, map_X] using h
-  · have hX (s : Fin 3) := PowerSeries.HasSubst.X (S := A) s
-    have hs1 := hasSubst_finTwo (hX 0) (hX 1); have hs4 := hasSubst_finTwo (hX 1) (hX 2)
-    have hs2 := hasSubst_finTwo (F.formalGroup.hasSubst_subst_pair (hX 0) (hX 1)) (hX 2)
-    have hs3 := hasSubst_finTwo (hX 0) (F.formalGroup.hasSubst_subst_pair (hX 1) (hX 2))
-    have hf1 : ∀ d : Fin 3 →₀ ℕ,
-        coeff d (Φ.subst ![(X (0 : Fin 3) : MvPowerSeries (Fin 3) A), X 1] +
-          Φ.subst ![F.formalGroup.toPowerSeries.subst
-            ![(X (0 : Fin 3) : MvPowerSeries (Fin 3) A), X 1], X 2]) ∈ I := fun d ↦ by
-      rw [map_add]
-      exact I.add_mem (coeff_subst_mem_of_coeff_mem hs1 hΦI d)
-        (coeff_subst_mem_of_coeff_mem hs2 hΦI d)
-    have hf2 : ∀ d : Fin 3 →₀ ℕ,
-        coeff d (Φ.subst ![(X (0 : Fin 3) : MvPowerSeries (Fin 3) A),
-            F.formalGroup.toPowerSeries.subst ![X 1, X 2]] +
-          Φ.subst ![(X (1 : Fin 3) : MvPowerSeries (Fin 3) A), X 2]) ∈ I := fun d ↦ by
-      rw [map_add]
-      exact I.add_mem (coeff_subst_mem_of_coeff_mem hs3 hΦI d)
-        (coeff_subst_mem_of_coeff_mem hs4 hΦI d)
-    have h := basisComp_congr b (hf₁ := hf1) (hf₂ := hf2) hΦ.subst_add_subst_eq i
-    rw [basisComp_add b (coeff_subst_mem_of_coeff_mem hs1 hΦI)
-          (coeff_subst_mem_of_coeff_mem hs2 hΦI),
-        basisComp_add b (coeff_subst_mem_of_coeff_mem hs3 hΦI)
-          (coeff_subst_mem_of_coeff_mem hs4 hΦI),
-        basisComp_subst_finTwo hπ_A hsmul b hΦI hs1 i,
-        basisComp_subst_finTwo hπ_A hsmul b hΦI hs2 i,
-        basisComp_subst_finTwo hπ_A hsmul b hΦI hs3 i,
-        basisComp_subst_finTwo hπ_A hsmul b hΦI hs4 i] at h
+  · have hs1 : HasSubst ![(X 0 : MvPowerSeries (Fin 3) A), X 1] := .X_X
+    have hs2 : HasSubst ![F.formalGroup.toPowerSeries.subst
+        ![(X 0 : MvPowerSeries (Fin 3) A), X 1], X 2] :=
+      .cons_subst_zero_left 0 1 2 F.formalGroup.zero_constantCoeff
+    have hs3 : HasSubst ![(X 0 : MvPowerSeries (Fin 3) A),
+        F.formalGroup.toPowerSeries.subst ![X 1, X 2]] :=
+      .cons_subst_zero_right 0 1 2 F.formalGroup.zero_constantCoeff
+    have hs4 : HasSubst ![(X 1 : MvPowerSeries (Fin 3) A), X 2] := .X_X
+    have hsub {b : Fin 2 → MvPowerSeries (Fin 3) A} (hb : HasSubst b) :=
+      coeff_subst_mem_of_coeff_mem hb hΦI
+    have hadd {b₁ b₂ : Fin 2 → MvPowerSeries (Fin 3) A} (hb₁ : HasSubst b₁) (hb₂ : HasSubst b₂)
+        (d : Fin 3 →₀ ℕ) : coeff d (Φ.subst b₁ + Φ.subst b₂) ∈ I := by
+      rw [map_add]; exact I.add_mem (hsub hb₁ d) (hsub hb₂ d)
+    have h := basisComp_congr b (hf₁ := hadd hs1 hs2) (hf₂ := hadd hs3 hs4)
+      hΦ.subst_add_subst_eq i
+    rw [basisComp_add b (hsub hs1) (hsub hs2), basisComp_add b (hsub hs3) (hsub hs4),
+      basisComp_subst_finTwo hπ_A hsmul b hΦI hs1 i,
+      basisComp_subst_finTwo hπ_A hsmul b hΦI hs2 i,
+      basisComp_subst_finTwo hπ_A hsmul b hΦI hs3 i,
+      basisComp_subst_finTwo hπ_A hsmul b hΦI hs4 i] at h
     simpa only [map_subst_finTwo π_A hs1, map_subst_finTwo π_A hs4, map_X,
       ← FormalGroup.map_toPowerSeries, F.map_eq] using h
 
@@ -405,7 +400,7 @@ private theorem deformationCocycle_deformByLubinTate_sub {F G : FormalGroupLift 
     (F.deformByLubinTate hq hker p h m).formalGroup.deformationCocycle G.formalGroup =
       F.formalGroup.deformationCocycle G.formalGroup -
         ∑ j : Fin (h - 1),
-          (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) := by
+          (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) := by
   have hFm := coeff_deformByLubinTate_sub_mem F hq hker p h m
   have htrans := FormalGroup.deformationCocycle_trans hker hFm fun d ↦ by
     rw [← sub_sub_sub_cancel_right _ _ F.formalGroup.toPowerSeries, map_sub]
@@ -424,8 +419,8 @@ private theorem map_sum_smul_lubinTateCocycle (hπ_A : Function.Surjective π_A)
     (F : FormalGroupLift π_A F₀) (p h : ℕ) [hp : Fact p.Prime] (c : Fin (h - 1) → k) :
     MvPowerSeries.map π_A (∑ j : Fin (h - 1),
       Function.surjInv hπ_A (c j) •
-        F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val)) =
-      ∑ j : Fin (h - 1), c j • F₀.lubinTateCocycle (lubinTateIndex hp.out j.val) := by
+        F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val)) =
+      ∑ j : Fin (h - 1), c j • F₀.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) := by
   rw [map_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by
     rw [smul_eq_C_mul, map_mul, map_C, Function.surjInv_eq hπ_A, map_lubinTateCocycle_lift,
@@ -456,16 +451,15 @@ private theorem eq_zero_of_sum_lubinTateCocycle_eq_homDefect (hπ_A : Function.S
     (F : FormalGroupLift π_A F₀) {m : Fin (h - 1) → RingHom.ker q} {g : PowerSeries A}
     (hgI : ∀ n, PowerSeries.coeff n g ∈ RingHom.ker q)
     (hsum : ∑ j : Fin (h - 1),
-        (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) =
+        (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) =
       F.formalGroup.homDefect 𝔾ₐ g) : m = 0 := by
   obtain ⟨inst, _, b, hsmul⟩ := exists_ker_basis hπ_A hFG hker
   let _ := inst
-  have hgI' (d : Unit →₀ ℕ) : coeff d g ∈ RingHom.ker q := by
-    rw [← PowerSeries.coeff_def rfl]; exact hgI (d ())
+  have hgI' := PowerSeries.mvCoeff_mem_of_coeff_mem hgI
   let gA (i : Fin _) : PowerSeries A := liftOfSurjective hπ_A (basisComp b hgI' i)
   have heq : ∑ i, (b i : A) • ∑ j : Fin (h - 1),
         Function.surjInv hπ_A (b.repr (m j) i) •
-          F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) =
+          F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) =
       ∑ i, (b i : A) • F.formalGroup.homDefect 𝔾ₐ (gA i) := by
     rw [← sum_smul_lubinTate_eq hπ_A hsmul b F p h _ m fun j ↦ (b.sum_repr (m j)).symm, hsum,
       ← FormalGroup.homDefect_𝔾ₐ_sum_smul, ← eq_sum_smul_liftOfSurjective hπ_A hsmul b hgI']
@@ -509,7 +503,7 @@ private theorem deformByLubinTate_injective [IsLocalRing B] [IsHausdorff (maxima
         (coeff_deformByLubinTate_sub_mem F hq hker_sq p h m₂),
       FormalGroupLift.deformationCocycle_deformByLubinTate] at hcoc
   have hdiff : ∑ j : Fin (h - 1), ((m₂ j - m₁ j : RingHom.ker q) : A) •
-      F.formalGroup.lubinTateCocycle (lubinTateIndex ‹Fact p.Prime›.out j.val) =
+      F.formalGroup.lubinTateCocycle (lubinTateIndex ‹Fact p.Prime›.out.one_lt j.val) =
       F.formalGroup.homDefect 𝔾ₐ g := by
     simpa [AddSubgroupClass.coe_sub, sub_smul, Finset.sum_sub_distrib] using hcoc
   exact (sub_eq_zero.mp (eq_zero_of_sum_lubinTateCocycle_eq_homDefect hπ_A hFG hker hF₀ F
@@ -527,7 +521,7 @@ private theorem exists_lubinTate_decomp_basisComp (hπ_A : Function.Surjective �
     ∃ (c : Fin (h - 1) → k) (gk : PowerSeries k),
       PowerSeries.constantCoeff gk = 0 ∧
         basisComp b hΦI i =
-          ∑ j : Fin (h - 1), c j • F₀.lubinTateCocycle (lubinTateIndex hp.out j.val) +
+          ∑ j : Fin (h - 1), c j • F₀.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) +
           F₀.homDefect 𝔾ₐ gk := by
   have h0 : constantCoeff (basisComp b hΦI i) = 0 := by
     have hΦ0' : (⟨coeff 0 Φ, hΦI 0⟩ : I) = 0 :=
@@ -549,7 +543,7 @@ private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjectiv
     ∃ (m : Fin (h - 1) → RingHom.ker q) (g : PowerSeries A),
       PowerSeries.constantCoeff g = 0 ∧ (∀ n, PowerSeries.coeff n g ∈ RingHom.ker q) ∧
       Φ = ∑ j : Fin (h - 1),
-          (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out j.val) +
+          (m j : A) • F.formalGroup.lubinTateCocycle (lubinTateIndex hp.out.one_lt j.val) +
         F.formalGroup.homDefect 𝔾ₐ g := by
   -- 1. Equip `RingHom.ker q` with a finite `k`-basis `b`.
   obtain ⟨inst, _, b, hsmul⟩ := exists_ker_basis hπ_A hFG hker
@@ -574,12 +568,9 @@ private theorem exists_lubinTate_decomp_of_coeff_mem (hπ_A : Function.Surjectiv
   simp_rw [← smul_add]
   refine sum_smul_eq_of_map_eq hsmul b fun i ↦ ?_
   have hgA : PowerSeries.map π_A (gA i) = gk i := by
-    -- `PowerSeries.map` is definitionally `MvPowerSeries.map`.
-    have hlift : PowerSeries.map π_A (liftOfSurjective hπ_A (gk i)) = gk i :=
-      MvPowerSeries.map_liftOfSurjective hπ_A (gk i)
     dsimp only [gA]
-    rw [map_sub, PowerSeries.map_C, ← PowerSeries.constantCoeff_map, hlift, hgk₀ i, map_zero,
-      sub_zero]
+    rw [map_sub, PowerSeries.map_C, ← PowerSeries.constantCoeff_map,
+      PowerSeries.map_liftOfSurjective, hgk₀ i, map_zero, sub_zero]
   rw [map_liftOfSurjective, map_add, map_sum_smul_lubinTateCocycle, FormalGroup.map_homDefect_𝔾ₐ,
     F.map_eq, hgA, hΦk_eq]
 
@@ -679,20 +670,26 @@ theorem bijective_map_of_height_eq_one [IsLocalRing B] [IsHausdorff (maximalIdea
   have hsub := (squareZeroFiberEquiv hπ_B hq hq_surj hFG hker hF₀ F).symm.injective.subsingleton
   exact congrArg Subtype.val (@Subsingleton.elim _ hsub ⟨x₁, hx⟩ ⟨⟦F⟧, map_mk q hq F⟩)
 
+private theorem mem_kerIdeal_iff_mem_ker_fstHom (k : Type*) [CommRing k] (x : TrivSqZeroExt k k) :
+    x ∈ TrivSqZeroExt.kerIdeal k k ↔ x ∈ RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom :=
+  Iff.rfl
+
+private theorem fg_ker_fstHom (k : Type*) [CommRing k] :
+    (RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom).FG :=
+  TrivSqZeroExt.fg_kerIdeal
+
 private noncomputable def piKerFstEquiv (k : Type*) [CommRing k] (n : ℕ) :
     (Fin n → k) ≃ (Fin n → RingHom.ker (TrivSqZeroExt.fstHom k k k).toRingHom) :=
   Equiv.piCongrRight fun _ ↦
     (TrivSqZeroExt.kerIdealLinearEquiv k k).toEquiv.trans
-      (Equiv.subtypeEquivRight fun x ↦
-        SetLike.ext_iff.mp (TrivSqZeroExt.ker_fstHom_toRingHom (R := k) (M := k)).symm x)
+      (Equiv.subtypeEquivRight (mem_kerIdeal_iff_mem_ker_fstHom k))
 
 private theorem piKerFstEquiv_apply (k : Type*) [CommRing k] {n : ℕ} (c : Fin n → k) :
     piKerFstEquiv k n c = fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩ := by
   funext j
-  apply Subtype.ext
-  rw [piKerFstEquiv, Equiv.piCongrRight_apply, Pi.map_apply, Equiv.trans_apply,
-    Equiv.subtypeEquivRight_apply]
-  simp
+  exact Subtype.ext <| by
+    rw [piKerFstEquiv, Equiv.piCongrRight_apply, Pi.map_apply, Equiv.trans_apply,
+      Equiv.subtypeEquivRight_apply, LinearEquiv.coe_toEquiv, TrivSqZeroExt.coe_kerIdealLinearEquiv]
 
 private theorem fstHom_surjective (k : Type*) [CommRing k] :
     Function.Surjective (TrivSqZeroExt.fstHom k k k).toRingHom :=
@@ -712,8 +709,8 @@ noncomputable def dualNumberEquiv {p h : ℕ} [Fact p.Prime] [CharP k p]
       FormalGroupDeformation (TrivSqZeroExt.fstHom k k k).toRingHom F₀ :=
   (piKerFstEquiv k (h - 1)).trans <|
     (squareZeroFiberEquiv (B := k) (π_B := RingHom.id k) Function.surjective_id
-      (RingHom.id_comp _) (fstHom_surjective k)
-      TrivSqZeroExt.ker_fstHom_fg TrivSqZeroExt.ker_fstHom_mul_self_eq_bot
+      (RingHom.id_comp _) (fstHom_surjective k) (fg_ker_fstHom k)
+      ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
       hF₀ (dualNumberTrivialLift F₀)).trans
       (Equiv.subtypeUnivEquiv fun _ ↦ Subsingleton.elim _ _)
 
@@ -724,7 +721,7 @@ theorem dualNumberEquiv_apply {p h : ℕ} [Fact p.Prime] [CharP k p]
       deformByLubinTate
         (FormalGroupLift.ofSection F₀ (TrivSqZeroExt.fstHom k k k).toRingHom
           (algebraMap k (DualNumber k)) (RingHom.ext fun x ↦ by simp))
-        (RingHom.id_comp _) TrivSqZeroExt.ker_fstHom_mul_self_eq_bot
+        (RingHom.id_comp _) ((pow_two _).symm.trans (TrivSqZeroExt.kerIdeal_sq k k))
         p h (fun j ↦ ⟨TrivSqZeroExt.inr (c j), by simp [RingHom.mem_ker]⟩) := by
   rw [dualNumberEquiv, Equiv.trans_apply, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
     squareZeroFiberEquiv_apply_coe, piKerFstEquiv_apply, dualNumberTrivialLift]

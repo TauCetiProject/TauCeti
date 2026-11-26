@@ -88,14 +88,15 @@ theorem tracelessRicci_apply (r : FourTensor V) :
   ext; simp [tracelessRicci, div_eq_inv_mul, sub_eq_add_neg]
 
 /-- The trace-free Ricci contraction has zero metric trace in every dimension. -/
-@[simp] theorem bilinFormTrace_tracelessRicci (r : FourTensor V) :
-    bilinFormTrace (tracelessRicci r) = 0 := by
+@[simp] theorem metricTrace_tracelessRicci (r : FourTensor V) :
+    LinearMap.BilinMap.metricTrace (tracelessRicci r) = 0 := by
   by_cases hn : Module.finrank ℝ V = 0
   · have : Subsingleton V := Module.finrank_zero_iff.mp hn
     simp [Subsingleton.elim (tracelessRicci r) 0]
-  · have hsub := map_sub bilinFormTrace (ricci r) ((scalar r / Module.finrank ℝ V) • innerₗ V)
-    rw [tracelessRicci_apply, hsub, map_smul, bilinFormTrace_inner, ← scalar_apply, smul_eq_mul,
-      div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn), sub_self]
+  · have hsub := map_sub LinearMap.BilinMap.metricTrace (ricci r)
+      ((scalar r / Module.finrank ℝ V) • innerₗ V)
+    rw [tracelessRicci_apply, hsub, map_smul, LinearMap.BilinMap.metricTrace_inner, ← scalar_apply,
+      smul_eq_mul, div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr hn), sub_self]
 
 /-- On a space of dimension at most `1`, `tracelessRicci r = 0` for every four-tensor `r`. -/
 theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
@@ -105,13 +106,13 @@ theorem tracelessRicci_eq_zero_of_finrank_le_one (r : FourTensor V)
   · let b : OrthonormalBasis (Fin 1) ℝ V := (stdOrthonormalBasis ℝ V).reindex (finCongr h1)
     refine b.toBasis.ext fun i ↦ b.toBasis.ext fun j ↦ ?_
     rcases Fin.eq_zero i with rfl; rcases Fin.eq_zero j with rfl
-    simp [tracelessRicci_apply, scalar_apply, bilinFormTrace_eq_sum _ b, h1]
+    simp [tracelessRicci_apply, scalar_apply, LinearMap.BilinMap.metricTrace_eq_sum _ b, h1]
 
 /-- `tracelessRicci r` is symmetric iff `ricci r` is symmetric. -/
 @[simp] theorem isSymm_tracelessRicci_iff {r : FourTensor V} :
     (tracelessRicci r).IsSymm ↔ (ricci r).IsSymm := by
   have hinner : BilinForm.IsSymm ((scalar r / Module.finrank ℝ V) • innerₗ V) :=
-    (BilinForm.isSymm_iff.mpr (isSymm_inner (E := V))).smul _
+    (isSymm_innerₗ (E := V)).smul _
   rw [tracelessRicci_apply]
   exact ⟨fun h ↦ by convert h.add hinner; abel, fun h ↦ h.sub hinner⟩
 
@@ -203,7 +204,7 @@ theorem IsAlgebraicCurvature.isSymmetric_tracelessRicciEndomorphism {r : FourTen
 /-- The trace of `tracelessRicciEndomorphism r` vanishes in every dimension. -/
 @[simp] theorem trace_tracelessRicciEndomorphism (r : FourTensor V) :
     LinearMap.trace ℝ V (tracelessRicciEndomorphism r) = 0 :=
-  (tracelessRicci r).trace_bilinFormToEnd.trans (bilinFormTrace_tracelessRicci r)
+  (tracelessRicci r).trace_bilinFormToEnd.trans (metricTrace_tracelessRicci r)
 
 /-! ### Scalar, trace-free Ricci, and Weyl curvature parts -/
 
@@ -247,7 +248,7 @@ theorem isAlgebraicCurvature_tracelessRicciPart_of_isSymm_ricci {r : FourTensor 
     (h : (ricci r).IsSymm) : IsAlgebraicCurvature (tracelessRicciPart r) :=
   mem_algebraicCurvatureSubmodule.mp <| Submodule.smul_mem _ _
     (mem_algebraicCurvatureSubmodule.mpr (isAlgebraicCurvature_kulkarniNomizu
-      (isSymm_tracelessRicci_iff.mpr h) (LinearMap.BilinForm.isSymm_iff.mpr isSymm_inner)))
+      (isSymm_tracelessRicci_iff.mpr h) isSymm_innerₗ))
 
 /-- `tracelessRicciPart r` is an algebraic curvature tensor for bivector-symmetric `r`. -/
 theorem IsBivectorSymmetric.isAlgebraicCurvature_tracelessRicciPart {r : FourTensor V}
@@ -336,13 +337,13 @@ theorem scalar_scalarPart (hdim : Module.finrank ℝ V ≠ 1) (r : FourTensor V)
 @[simp] theorem scalar_tracelessRicciPart (r : FourTensor V) :
     scalar (tracelessRicciPart r) = 0 := by
   rw [tracelessRicciPart_apply, map_smul, scalar_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, mul_zero, smul_zero]
+    metricTrace_tracelessRicci, mul_zero, smul_zero]
 
 /-- For `finrank ℝ V ≠ 2`, `ricci (tracelessRicciPart r) = tracelessRicci r`. -/
 theorem ricci_tracelessRicciPart (hdim : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
     ricci (tracelessRicciPart r) = tracelessRicci r := by
   rw [tracelessRicciPart_apply, map_smul, ricci_kulkarniNomizu_innerₗ,
-    bilinFormTrace_tracelessRicci, zero_smul, add_zero,
+    metricTrace_tracelessRicci, zero_smul, add_zero,
     inv_smul_smul₀ (finrank_sub_two_ne_zero hdim)]
 
 /-- For `finrank ℝ V ≠ 2`, `tracelessRicci (tracelessRicciPart r) = tracelessRicci r`. -/
@@ -547,10 +548,11 @@ theorem weyl_eq_sub_kulkarniNomizu_schouten (hn : Module.finrank ℝ V ≠ 2) (r
     weyl r = r - kulkarniNomizu (schouten r) (innerₗ V) := by
   rw [kulkarniNomizu_schouten_innerₗ hn r, weyl_apply, sub_sub]
 
-/-- Away from dimensions `1` and `2`, `bilinFormTrace (schouten r) = scalar r / (2 (n - 1))`. -/
-theorem bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
+/-- Away from dimensions `1` and `2`, `metricTrace (schouten r) = scalar r / (2 (n - 1))`. -/
+theorem metricTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
     (hn₁ : Module.finrank ℝ V ≠ 1) (hn₂ : Module.finrank ℝ V ≠ 2) (r : FourTensor V) :
-    bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
+    LinearMap.BilinMap.metricTrace (schouten r) =
+      scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
   rcases eq_or_ne (Module.finrank ℝ V) 0 with hn0 | hn0
   · have : Subsingleton V := Module.finrank_zero_iff.mp hn0
     rw [Subsingleton.elim (schouten r) 0, scalar_apply, Subsingleton.elim (ricci r) 0]
@@ -559,20 +561,22 @@ theorem bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two
     field_simp [finrank_cast_ne_zero hn0, finrank_sub_one_ne_zero hn₁]
 
 /-- Away from dimension `2`, if `r` is antisymmetric in its first pair,
-`bilinFormTrace (schouten r) = scalar r / (2 (n - 1))`. -/
-theorem bilinFormTrace_schouten_of_antisymm_first (hn : Module.finrank ℝ V ≠ 2) {r : FourTensor V}
+`metricTrace (schouten r) = scalar r / (2 (n - 1))`. -/
+theorem metricTrace_schouten_of_antisymm_first (hn : Module.finrank ℝ V ≠ 2) {r : FourTensor V}
     (hr₁ : ∀ u v z w, r ![u, v, z, w] = -r ![v, u, z, w]) :
-    bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
+    LinearMap.BilinMap.metricTrace (schouten r) =
+      scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) := by
   rcases eq_or_ne (Module.finrank ℝ V) 1 with hn1 | hn1
   · simp [eq_zero_of_finrank_le_one_of_antisymm_first hn1.le hr₁]
-  · exact bilinFormTrace_schouten_of_finrank_ne_one_of_finrank_ne_two hn1 hn r
+  · exact metricTrace_schouten_of_finrank_ne_one_of_finrank_ne_two hn1 hn r
 
-/-- Away from dimension `2`, `bilinFormTrace (schouten r) = scalar r / (2 (n - 1))` for every
+/-- Away from dimension `2`, `metricTrace (schouten r) = scalar r / (2 (n - 1))` for every
 algebraic curvature tensor `r`. -/
-theorem IsAlgebraicCurvature.bilinFormTrace_schouten {r : FourTensor V}
+theorem IsAlgebraicCurvature.metricTrace_schouten {r : FourTensor V}
     (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≠ 2) :
-    bilinFormTrace (schouten r) = scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) :=
-  FourTensor.bilinFormTrace_schouten_of_antisymm_first hn hr.antisymm_first
+    LinearMap.BilinMap.metricTrace (schouten r) =
+      scalar r / (2 * ((Module.finrank ℝ V : ℝ) - 1)) :=
+  FourTensor.metricTrace_schouten_of_antisymm_first hn hr.antisymm_first
 
 /-- In dimension at least `3`, `schouten` is a left inverse to `h ↦ kulkarniNomizu h (innerₗ V)`. -/
 @[simp] theorem schouten_kulkarniNomizu_innerₗ_of_three_le_finrank (hn : 3 ≤ Module.finrank ℝ V)
@@ -848,7 +852,7 @@ theorem sum_constantCurvature_mul_of_antisymm_first (b : OrthonormalBasis ι ℝ
   simp_rw [hc, Finset.sum_sub_distrib]
   classical
   rw [sum_kn_term₂ b (innerₗ V) q, sum_kn_term₃ b (innerₗ V) hq₁]
-  simp [orthonormal_iff_ite.mp b.orthonormal, ← bilinFormTrace_eq_sum (ricci q) b,
+  simp [orthonormal_iff_ite.mp b.orthonormal, ← LinearMap.BilinMap.metricTrace_eq_sum (ricci q) b,
     ← scalar_apply]
   ring
 

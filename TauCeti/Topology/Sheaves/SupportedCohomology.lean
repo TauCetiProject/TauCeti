@@ -8,6 +8,8 @@ module
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Relative
 public import TauCeti.Topology.Sheaves.Flasque.Basic
+public import TauCeti.Topology.Sheaves.Stalks.Support
+import Mathlib.Algebra.Category.Grp.FilteredColimits
 
 /-!
 # Sheaf cohomology with closed supports
@@ -74,6 +76,8 @@ supported in `S` glues with zero on `W ∖ S` to a unique section over `W` suppo
   `H_Sⁿ(-, F₃) ⟶ H_Sⁿ⁺¹(-, F₁)` of presheaves attached to a short exact sequence
   `0 ⟶ F₁ ⟶ F₂ ⟶ F₃ ⟶ 0`, an isomorphism in positive degrees when `F₂` is flasque
   (`CategoryTheory.Sheaf.isIso_supportedHPresheafδ_succ`);
+* `CategoryTheory.Sheaf.supportedHEquivOfSubset`: cohomology with supports in `S` on an open
+  `W ⊆ S` is cohomology, `H_Sⁿ(W, F) ≃+ Hⁿ(W, F)`, for instance for `S = X`;
 * `CategoryTheory.Sheaf.existsUnique_mem_supportedSections_map_eq`: excision for sections
   supported in `S`;
 * `TopologicalSpace.Closeds.isIso_relativeFreeYonedaSheafMap_complInclusion`: excision for the
@@ -124,6 +128,13 @@ def supportedSections (S : Closeds X) (W : Opens X) : AddSubgroup (F.obj.obj (op
 lemma mem_supportedSections_iff {S : Closeds X} {W : Opens X} {s : F.obj.obj (op W)} :
     s ∈ F.supportedSections S W ↔ F.obj.map (S.complInclusion W).op s = 0 :=
   Iff.rfl
+
+/-- A section is supported in `S` exactly when its support, the set of points at which its germ
+is nonzero, lies in `S`. -/
+lemma mem_supportedSections_iff_sectionSupport_subset {S : Closeds X} {W : Opens X}
+    {s : F.obj.obj (op W)} : s ∈ F.supportedSections S W ↔
+      TopCat.Presheaf.sectionSupport F.obj s ⊆ S :=
+  TopCat.Presheaf.map_eq_zero_iff_sectionSupport_subset F S s
 
 /-- A morphism of sheaves maps sections supported in `S` to sections supported in `S`. -/
 lemma map_mem_supportedSections {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
@@ -229,6 +240,23 @@ theorem subsingleton_supportedH_of_le_compl (S : Closeds X) {W : Opens X} (hW : 
   haveI : IsIso (S.complInclusion W) :=
     ⟨homOfLE (le_inf le_rfl hW), Subsingleton.elim _ _, Subsingleton.elim _ _⟩
   relativeH'.subsingleton_of_isIso F _ n
+
+/-- Cohomology with supports in `S` on an open `W` contained in `S` is cohomology: the map
+`H_Sⁿ(W, F) ⟶ Hⁿ(W, F)` of the support sequence is bijective, since its third term is the
+cohomology of the empty open `W ∖ S`. For `S = ⊤` this says `H_Xⁿ(W, F) ≃+ Hⁿ(W, F)`. -/
+noncomputable def supportedHEquivOfSubset (S : Closeds X) {W : Opens X} (hW : (W : Set X) ⊆ S)
+    (n : ℕ) : F.supportedH S W n ≃+ F.H' n W :=
+  relativeH'.toH'AddEquiv F _
+    -- `W ∖ S` is empty, so the empty sieve covers it: a point of `W ⊓ S.compl` lies in `W`,
+    -- hence in `S`, and not in `S`.
+    (TauCeti.CategoryTheory.isZero_freeYonedaSheaf_of_bot_mem _
+      fun _ hx ↦ (hx.2 (hW hx.1)).elim) n
+
+@[simp]
+lemma supportedHEquivOfSubset_apply (S : Closeds X) {W : Opens X} (hW : (W : Set X) ⊆ S) {n : ℕ}
+    (x : F.supportedH S W n) :
+    F.supportedHEquivOfSubset S hW n x = relativeH'.toH' F (S.complInclusion W) n x :=
+  relativeH'.toH'AddEquiv_apply _ _ _ x
 
 /-- Excision for sections with supports: if `W' ≤ W` and `S ∩ W ⊆ W'` (that is,
 `W ≤ W' ⊔ (X ∖ S)`), then every section over `W'` supported in `S` is the restriction of a unique

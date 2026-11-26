@@ -62,8 +62,8 @@ variable (hlam : lam ∈ dominantChamber P b) {χ : X}
 theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
     (crystal hlam').f i (centralTransport χ hχ π) =
       ((crystal hlam).f i π).map (centralTransport χ hχ) := by
-  -- Lift to the canonical rational realization `ℚ ⊗[ℤ] X` and lower on the time–weight graph
-  -- before forgetting time.
+  -- In the canonical rational realization `ℚ ⊗[ℤ] X`, central transport is the central shift of
+  -- realized paths, which commutes with lowering.
   have := P.flip_isReduced
   have := P.finite_weylGroup_of_base b
   let f₀ : X →+ (ℚ ⊗[ℤ] X) := (TensorProduct.mk ℤ ℚ X 1).toAddMonoidHom
@@ -71,31 +71,21 @@ theorem crystal_f_centralTransport (i : b.support) (π : LSPath P b lam) :
   have hF₀ (x : X) : F₀ (f₀ x) = (P.coroot' i x : ℚ) :=
     Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' i) x
   have hFχ : F₀ (f₀ χ) = 0 := by rw [hF₀ χ, hχ i i.property, Int.cast_zero]
+  have hf : Set.InjOn f₀ (Set.range fun w : P.weylGroup ↦ w • lam) :=
+    (P.tensorProduct_mk_injective ℚ).injOn
   have hS : (Set.range fun w : P.weylGroup ↦ f₀ (w • lam)).Pairwise fun u v ↦ ¬ SameRay ℚ u v :=
     P.pairwise_not_sameRay_image_orbit_of_compatible b
       (F := fun j ↦ Module.Dual.baseChange ℚ (P.coroot' j))
       (fun j ↦ Module.Dual.baseChange_apply_toAddMonoidHom_mk_one (P.coroot' j)) lam
+  have hmaps := P.mapsTo_preReflection_image_orbit_weylGroup i hF₀ lam
+  rw [MulAction.orbit, ← Set.range_comp] at hmaps
   apply Option.map_injective (toRatPLPath_injective hlam')
-  rw [toRatPLPath_eq, ← lower_toPLPath hlam' f₀ i F₀ hF₀]
-  have hlow₀ := lower_toPLPath hlam f₀ i F₀ hF₀ π
-  cases hf : (crystal hlam).f i π with
-  | none =>
-    rw [hf, Option.map_none, toPLPath_def, PLPath.lower_ofSegments_map_snd,
-      Option.map_eq_none_iff] at hlow₀
-    simp [lower_toPLPath_centralTransport, hFχ, hlow₀]
-  | some ρ =>
-    rw [hf, Option.map_some, toPLPath_def] at hlow₀
-    have hmaps := P.mapsTo_preReflection_image_orbit_weylGroup i hF₀ lam
-    rw [MulAction.orbit, ← Set.range_comp] at hmaps
-    obtain ⟨Γ, hΓ, hseg⟩ := PLPath.distinguished_of_lower_eq_some
-      (π.isDistinguished_timed ℚ f₀ hlam (P.tensorProduct_mk_injective ℚ).injOn) hmaps hS hlow₀
-    have hΓeq : Γ = PLPath.ofSegments ℚ (ρ.timed ℚ f₀) := by
-      rw [← PLPath.ofSegments_segments Γ, ← hseg, toPLPath_def,
-        PLPath.distinguished_ofSegments
-          (ρ.isDistinguished_timed ℚ f₀ hlam (P.tensorProduct_mk_injective ℚ).injOn) hS]
-    rw [lower_toPLPath_centralTransport χ hχ π ℚ f₀ F₀ hFχ, hΓ, Option.map_some, hΓeq,
-      PLPath.shiftGraph_ofSegments]
-    simp [f₀, LinearMap.coe_snd, toPLPath_centralTransport_eq_ofSegments]
+  rw [toRatPLPath_eq, ← lower_toPLPath hlam' f₀ i F₀ hF₀,
+    toPLPath_centralTransport χ hχ π ℚ f₀ hlam hf hS,
+    PLPath.lower_shiftDistinguished (π.hasDistinguished_toPLPath ℚ f₀) hmaps hS hFχ,
+    lower_toPLPath hlam f₀ i F₀ hF₀, Option.map_map, Option.map_map]
+  exact congrArg (Option.map · _)
+    (funext fun ρ ↦ (toPLPath_centralTransport χ hχ ρ ℚ f₀ hlam hf hS).symm)
 
 /-- **Central transport commutes with crystal raising operators.** -/
 theorem crystal_e_centralTransport (i : b.support) (π : LSPath P b lam) :

@@ -6,6 +6,7 @@ Authors: Wenrong Zou, The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.FormalGroup.Basic
+public import TauCeti.RingTheory.FormalGroup.AddInv
 public import TauCeti.RingTheory.MvPowerSeries.Order
 public import TauCeti.RingTheory.MvPowerSeries.Substitution
 import Mathlib.Algebra.CharP.Lemmas
@@ -563,6 +564,11 @@ noncomputable def applyPoint (f : FormalGroupHom F G) {σ : Type*} (x : F.Point 
 @[simp]
 theorem applyPoint_val (f : FormalGroupHom F G) {σ : Type*} (x : F.Point σ) :
     (f.applyPoint x).val = PowerSeries.subst x.val f.toPowerSeries := (rfl)
+
+/-- Applying `f` to the tautological point `X` of `F` gives the series of `f`. -/
+theorem val_applyPoint_tautologicalPoint (f : FormalGroupHom F G) :
+    (f.applyPoint F.tautologicalPoint).val = f.toPowerSeries := by
+  rw [applyPoint_val, FormalGroup.val_tautologicalPoint, PowerSeries.X_subst]
 
 @[simp]
 theorem applyPoint_zero (f : FormalGroupHom F G) {σ : Type*} :

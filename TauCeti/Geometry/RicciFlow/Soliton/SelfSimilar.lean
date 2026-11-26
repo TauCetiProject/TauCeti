@@ -265,7 +265,7 @@ private theorem hasDerivAt_inner_gradientSolitonFlow_self_hessian {f : M → ℝ
       (hγ.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
     simp only [curveVelocityWithin_univ] at hm
     simpa only [F, Function.comp_def, hvel] using hm
-  simp only [hmap, F, ← hessian_def] at hp
+  simp only [hmap, F, ← I.hessian_eq_inner_leviCivitaConnection_mgradient] at hp
   have hcomp := hp.comp t (hasDerivAt_ricciSolitonTime (ne_of_gt (sub_pos.mpr ht)))
   have hmul := (((hasDerivAt_id t).const_mul (2 * c)).const_sub 1).mul hcomp
   have heq : ∀ᶠ s in 𝓝 t, (gradientSolitonFlow hf hc c s).inner (γ 0) v v =

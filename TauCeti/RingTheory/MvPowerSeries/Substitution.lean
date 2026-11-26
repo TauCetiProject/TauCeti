@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 -- Proof-only: coefficients of three-variable polynomials, and quotients by an ideal.
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import TauCeti.Algebra.MvPolynomial.Fin.Three
+import TauCeti.RingTheory.PowerSeries.Basic
 
 /-!
 # Evaluating a substitution over coefficients that need not be discrete
@@ -777,7 +778,6 @@ theorem coeff_subst_mem_of_coeff_mem {τ R : Type*} [CommRing R] {I : Ideal R}
     {a : MvPowerSeries τ R} (ha : HasSubst a) {f : PowerSeries R}
     (hf : ∀ n, coeff n f ∈ I) (d : τ →₀ ℕ) :
     MvPowerSeries.coeff d (subst a f) ∈ I :=
-  MvPowerSeries.coeff_subst_mem_of_coeff_mem ha.const (fun e ↦ by
-    rw [← coeff_def rfl]; exact hf (e ())) d
+  MvPowerSeries.coeff_subst_mem_of_coeff_mem ha.const (mvCoeff_mem_of_coeff_mem hf) d
 
 end PowerSeries
