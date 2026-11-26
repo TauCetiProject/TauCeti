@@ -241,6 +241,15 @@ theorem exists_eq_top_and_eq_bot (hF : N.IsMonodromyFiltration c F) :
   · exact eq_top_iff.2 (hb₀ ▸ hF.monotone (by omega))
   · exact eq_bot_iff.2 (ha₀ ▸ hF.monotone (by omega))
 
+/-- The power `N ^ k` lowers a monodromy filtration by `2 k` steps. -/
+theorem map_pow_le (hF : N.IsMonodromyFiltration c F) (k : ℕ) (a : ℤ) :
+    (F a).map (N ^ k) ≤ F (a - 2 * k) := by
+  induction k with
+  | zero => simp [Module.End.one_eq_id]
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_eq_comp, map_comp]
+    exact (map_mono ih).trans ((hF.map_le _).trans_eq (by congr 1; push_cast; ring))
+
 /-- A monodromy filtration of `N` centred at `c` is unique. -/
 theorem unique (hF : N.IsMonodromyFiltration c F) (hG : N.IsMonodromyFiltration c G) :
     F = G := by
