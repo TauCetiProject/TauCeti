@@ -27,11 +27,11 @@ derivative of order `i ≤ k` of `x ↦ B (u x) (v x)` satisfies
 
 `‖Dⁱ (B (u, v))‖_{Lᵖ} ≤ C ‖B‖ (‖u‖_∞ + ∑_{l ≤ k} ‖Dˡ u‖_{Lᵖ}) (‖v‖_∞ + ∑_{l ≤ k} ‖Dˡ v‖_{Lᵖ})`,
 
-provided `p ≠ n` (`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank`). This is the
-estimate behind the algebra property of `W^{k,p}` for `k p > n`. Unlike the Moser product estimate
-`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le`, which rests on the Gagliardo–Nirenberg
-inequality and needs `p ≥ 2`, it holds for every `p ≥ 1` with `p ≠ n`; the price is the full
-`W^{k,p}` norm of both factors on the right.
+provided `p ≠ n` or `n = 1` (`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank`).
+This is the estimate behind the algebra property of `W^{k,p}` for `k p > n`. Unlike the Moser
+product estimate `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le`, which rests on the
+Gagliardo–Nirenberg inequality and needs `p ≥ 2`, it holds for every `p ≥ 1` except `p = n ≥ 2`;
+the price is the full `W^{k,p}` norm of both factors on the right.
 
 ## The argument
 
@@ -47,18 +47,20 @@ and `‖u‖_∞`. For `j = 0` this is `‖u‖_∞` and for `j = i` it is `‖D
   applies;
 * if `p > n`, Morrey's inequality bounds `‖Dʲ u‖_∞` by `‖Dʲ u‖_p + ‖D^{j + 1} u‖_p`
   (`TauCeti.exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv`), since `j < k`, and
-  `‖Dʲ u‖_{i p / j}` lies between `‖Dʲ u‖_p` and `‖Dʲ u‖_∞`.
+  `‖Dʲ u‖_{i p / j}` lies between `‖Dʲ u‖_p` and `‖Dʲ u‖_∞`;
+* if `p = n = 1`, the critical Sobolev inequality `‖Dʲ u‖_∞ ≤ C ‖D^{j + 1} u‖_1`
+  (`TauCeti.exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank`) replaces Morrey's.
 
-At `p = n` neither applies: `W^{1,n}` does not embed in `L^∞`. For `p = n ≥ 2` the Moser product
-estimate covers this case, so for `1 < p < ∞` the estimate holds without exception
+At `p = n ≥ 2` none of these applies: `W^{1,n}` does not embed in `L^∞`. The Moser product
+estimate covers this case, so for `1 ≤ p < ∞` the estimate holds without exception
 (`TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul`).
 
 ## Main results
 
 * `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank`: the product estimate for
-  `1 ≤ p < ∞`, `k p > n` and `p ≠ n`, with values in finite-dimensional spaces.
+  `1 ≤ p < ∞`, `k p > n` and `p ≠ n` or `n = 1`, with values in finite-dimensional spaces.
 * `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul`: the product estimate for
-  `1 < p < ∞` and `k p > n`, with values in finite-dimensional inner product spaces.
+  `1 ≤ p < ∞` and `k p > n`, with values in finite-dimensional inner product spaces.
 
 ## References
 
@@ -100,6 +102,18 @@ private theorem inv_sub_div_le_div_mul {n p i j k : ℝ} (hn : 0 < n) (hp : 0 < 
   nlinarith [mul_le_mul_of_nonneg_left hk.le (sub_nonneg.2 hji),
     mul_nonneg (mul_nonneg hj.le hp.le) (sub_nonneg.2 hik)]
 
+/-- For `j ≠ 0`, the exponent `(j / (i p))⁻¹` is the finite exponent `i p / j`. -/
+private theorem inv_natCast_div_mul_eq_coe {j : ℕ} (hj : j ≠ 0) (i : ℕ) (p : ℝ≥0) :
+    ((j : ℝ≥0∞) / (i * p))⁻¹ = ((i * p / j : ℝ≥0) : ℝ≥0∞) := by
+  rw [ENNReal.inv_div (Or.inl (by finiteness)) (Or.inr (by simpa using hj)),
+    ENNReal.coe_div (by simpa using hj)]
+  norm_cast
+
+/-- For `i ≠ 0`, the exponent `(i / (i p))⁻¹` is `p`. -/
+private theorem inv_natCast_div_natCast_mul {i : ℕ} (hi : i ≠ 0) (p : ℝ≥0) :
+    ((i : ℝ≥0∞) / (i * p))⁻¹ = p := by
+  rw [inv_natCast_div_mul_eq_coe hi, mul_div_cancel_left₀ _ (by exact_mod_cast hi)]
+
 /-- For `p < n`, the derivative `Dʲ u`, `j ≤ k`, of a compactly supported `C^k` function lies in
 `L^q` whenever `p ≤ q < ∞` and `1 / q ≥ 1 / p - (k - j) / n`, with norm controlled by the `Lᵖ`
 norms of the derivatives of `u` through order `k`. -/
@@ -121,18 +135,42 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_lt_finrank {p : ℝ�
   exact (hc u (hu.of_le (by exact_mod_cast (Nat.add_sub_cancel' hjk).le)) hcu).trans
     (mul_le_mul_of_nonneg_left (hsum.trans le_add_self) zero_le)
 
-/-- For `p > n`, the derivative `Dʲ u`, `j < k`, of a `C^k` function lies in every `L^q`,
-`q ≥ p`, with norm controlled by the `Lᵖ` norms of the derivatives of `u` through order `k`:
-`‖Dʲ u‖_q` lies between `‖Dʲ u‖_p` and `‖Dʲ u‖_∞`, which Morrey's inequality bounds by
+/-- For `p > n`, and for `p = n = 1`, the sup norm of a compactly supported `C¹` function is
+bounded by its `W^{1,p}` norm: Morrey's inequality for `p > n` and the critical Sobolev inequality
+`‖w‖_∞ ≤ C ‖Dw‖_{L¹}` in dimension one. -/
+private theorem exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv_of_finrank_lt_or_eq_one
+    {p : ℝ≥0} (hp : 1 ≤ p) (hpn : (finrank ℝ E : ℝ) < p ∨ finrank ℝ E = 1) :
+    ∃ c : ℝ≥0, ∀ w : E → F, ContDiff ℝ 1 w → HasCompactSupport w →
+      eLpNorm w ∞ μ ≤ c * (eLpNorm w p μ + eLpNorm (fderiv ℝ w) p μ) := by
+  by_cases hlt : (finrank ℝ E : ℝ) < p
+  · exact (exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := μ) (F := F) hp
+      (by exact_mod_cast hlt)).imp fun c hc w hw _ ↦ hc w hw
+  -- Otherwise `n = 1` and `p = 1`.
+  have hn := hpn.resolve_left hlt
+  obtain rfl : p = 1 := le_antisymm (by simpa [hn] using hlt) hp
+  obtain ⟨c, hc⟩ := exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank μ (F := F)
+  refine ⟨c, fun w hw hwc ↦ ?_⟩
+  have h := hc w (by rwa [hn]) hwc
+  rw [hn, eLpNorm_congr_norm_ae (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
+    (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable
+    (Filter.Eventually.of_forall fun x ↦ norm_iteratedFDeriv_one w)] at h
+  rw [ENNReal.coe_one]
+  exact h.trans (mul_le_mul_of_nonneg_left le_add_self zero_le)
+
+/-- For `p > n`, and for `p = n = 1`, the derivative `Dʲ u`, `j < k`, of a compactly supported
+`C^k` function lies in every `L^q`, `q ≥ p`, with norm controlled by the `Lᵖ` norms of the
+derivatives of `u` through order `k`: `‖Dʲ u‖_q` lies between `‖Dʲ u‖_p` and `‖Dʲ u‖_∞`, which
+Morrey's inequality, or for `p = n = 1` the critical Sobolev inequality, bounds by
 `‖Dʲ u‖_p + ‖D^{j + 1} u‖_p`. -/
-private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt {p : ℝ≥0} (hp : 1 ≤ p)
-    (hpn : (finrank ℝ E : ℝ) < p) {j k : ℕ} (hjk : j < k) {q : ℝ≥0} (hpq : p ≤ q) :
-    ∃ c : ℝ≥0, ∀ u : E → F, ContDiff ℝ k u →
+private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt_or_eq_one {p : ℝ≥0}
+    (hp : 1 ≤ p) (hpn : (finrank ℝ E : ℝ) < p ∨ finrank ℝ E = 1) {j k : ℕ} (hjk : j < k)
+    {q : ℝ≥0} (hpq : p ≤ q) :
+    ∃ c : ℝ≥0, ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm (iteratedFDeriv ℝ j u) q μ ≤
         c * (eLpNorm u ∞ μ + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l u) p μ) := by
-  obtain ⟨c, hc⟩ := exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := μ)
-    (F := ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ E) F) hp (by exact_mod_cast hpn)
-  refine ⟨1 + 2 * c, fun u hu ↦ ?_⟩
+  obtain ⟨c, hc⟩ := exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv_of_finrank_lt_or_eq_one
+    (μ := μ) (F := ContinuousMultilinearMap ℝ (fun _ : Fin j ↦ E) F) hp hpn
+  refine ⟨1 + 2 * c, fun u hu hcu ↦ ?_⟩
   have hu₁ : ContDiff ℝ 1 (iteratedFDeriv ℝ j u) :=
     hu.iteratedFDeriv_right (by exact_mod_cast (show 1 + j ≤ k by omega))
   have ha := eLpNorm_iteratedFDeriv_le_eLpNorm_top_add_sum (μ := μ) u p hjk.le
@@ -145,17 +183,17 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt {p : ℝ�
           c * (eLpNorm (iteratedFDeriv ℝ j u) p μ + eLpNorm (iteratedFDeriv ℝ (j + 1) u) p μ) :=
         max_le le_self_add (by
           rw [← eLpNorm_fderiv_iteratedFDeriv]
-          exact (hc _ hu₁).trans le_add_self)
+          exact (hc _ hu₁ (hcu.iteratedFDeriv j)).trans le_add_self)
     _ ≤ _ := by
         refine (add_le_add ha (mul_le_mul_of_nonneg_left (add_le_add ha hb) zero_le)).trans_eq ?_
         push_cast
         ring
 
-/-- For `k p > n` and `p ≠ n`, the intermediate derivative `Dʲ u` of a compactly supported `C^k`
-function `u` lies in `L^{i p / j}` for `j ≤ i ≤ k`, `i ≠ 0`, with norm controlled by `‖u‖_∞` and the
-`Lᵖ` norms of the derivatives of `u` through order `k`. -/
+/-- For `k p > n`, and `p ≠ n` or `n = 1`, the intermediate derivative `Dʲ u` of a compactly
+supported `C^k` function `u` lies in `L^{i p / j}` for `j ≤ i ≤ k`, `i ≠ 0`, with norm controlled by
+`‖u‖_∞` and the `Lᵖ` norms of the derivatives of `u` through order `k`. -/
 private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp : 1 ≤ p)
-    (hpn : (p : ℝ) ≠ finrank ℝ E) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ}
+    (hpn : (p : ℝ) ≠ finrank ℝ E ∨ finrank ℝ E = 1) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ}
     (hi : i ≠ 0) (hik : i ≤ k) :
     ∃ c : ℕ → ℝ≥0, ∀ j ≤ i, ∀ u : E → F, ContDiff ℝ k u → HasCompactSupport u →
       eLpNorm (iteratedFDeriv ℝ j u) ((j : ℝ≥0∞) / (i * p))⁻¹ μ ≤
@@ -171,7 +209,6 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp
   · exact ⟨0, fun h ↦ absurd h hji⟩
   refine (?_ : ∃ c : ℝ≥0, _).imp fun c hc _ ↦ hc
   have hp0 : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
-  have hip : (i : ℝ≥0∞) * p ≠ ∞ := ENNReal.mul_ne_top (ENNReal.natCast_ne_top _) ENNReal.coe_ne_top
   rcases Nat.eq_zero_or_pos j with rfl | hj0
   · -- `j = 0`: the exponent is `∞`.
     refine ⟨1, fun u _ _ ↦ ?_⟩
@@ -181,48 +218,38 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp
   rcases hji.eq_or_lt with rfl | hji'
   · -- `j = i`: the exponent is `p`.
     refine ⟨1, fun u _ _ ↦ ?_⟩
-    have hi0 : (j : ℝ≥0∞) ≠ 0 := by simpa using hi
-    have hpj : ((j : ℝ≥0∞) / (j * p))⁻¹ = p :=
-      calc ((j : ℝ≥0∞) / (j * p))⁻¹ = j * p / (j * 1) := by
-            rw [mul_one, ENNReal.inv_div (Or.inl hip) (Or.inl (mul_ne_zero hi0 (by simpa using
-              hp0.ne')))]
-        _ = p := by rw [ENNReal.mul_div_mul_left _ _ hi0 (ENNReal.natCast_ne_top _), div_one]
-    rw [hpj, ENNReal.coe_one, one_mul]
+    rw [inv_natCast_div_natCast_mul hi, ENNReal.coe_one, one_mul]
     exact eLpNorm_iteratedFDeriv_le_eLpNorm_top_add_sum u p hik
   -- `0 < j < i`: the exponent is `q = i p / j`, with `p < q < ∞`.
-  have hq : ((j : ℝ≥0∞) / (i * p))⁻¹ = ((i * p / j : ℝ≥0) : ℝ≥0∞) := by
-    rw [ENNReal.inv_div (Or.inl hip) (Or.inr (by simpa using hj0.ne')),
-      ENNReal.coe_div (by simpa using hj0.ne')]
-    push_cast
-    rfl
   have hpq : p ≤ i * p / j := by
     rw [le_div_iff₀ (by exact_mod_cast hj0), mul_comm (i : ℝ≥0)]
     exact mul_le_mul_of_nonneg_left (by exact_mod_cast hji) zero_le
-  simp only [hq]
-  rcases hpn.lt_or_gt with hlt | hgt
+  rw [inv_natCast_div_mul_eq_coe hj0.ne']
+  rcases lt_or_ge (p : ℝ) (finrank ℝ E) with hlt | hge
   · refine exists_eLpNorm_iteratedFDeriv_le_add_sum_of_lt_finrank hp hlt (hji'.trans_le hik).le
       hpq ?_
     rw [Nat.cast_sub (hji'.trans_le hik).le, NNReal.coe_div, NNReal.coe_mul, inv_div,
       NNReal.coe_natCast, NNReal.coe_natCast]
     exact inv_sub_div_le_div_mul (hp0.trans hlt) hp0 (by exact_mod_cast hj0)
       (by exact_mod_cast hji) (by exact_mod_cast hik) hk
-  · exact (exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt hp hgt (hji'.trans_le hik)
-      hpq).imp fun c hc u hu _ ↦ hc u hu
+  · exact exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt_or_eq_one hp
+      (hpn.imp_left fun h ↦ hge.lt_of_ne' h) (hji'.trans_le hik) hpq
 
 variable {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
   [NormedAddCommGroup H] [NormedSpace ℝ H]
 
-/-- **The product estimate for `k p > n`, `p ≠ n`.** Let `1 ≤ p < ∞` with `k p > n` and `p ≠ n`,
-where `n` is the dimension of `E`, and let `i ≤ k`. There is a constant `C` such that for every
-continuous bilinear map `B` and all compactly supported `C^k` functions `u` and `v` with values in
-finite-dimensional spaces,
+/-- **The product estimate for `k p > n`, `p ≠ n`.** Let `1 ≤ p < ∞` with `k p > n`, where `n` is
+the dimension of `E`, assume `p ≠ n` or `n = 1`, and let `i ≤ k`. There is a constant `C` such that
+for every continuous bilinear map `B` and all compactly supported `C^k` functions `u` and `v` with
+values in finite-dimensional spaces,
 
 `‖Dⁱ (B (u, v))‖_{Lᵖ} ≤ C ‖B‖ (‖u‖_∞ + ∑_{l ≤ k} ‖Dˡ u‖_{Lᵖ}) (‖v‖_∞ + ∑_{l ≤ k} ‖Dˡ v‖_{Lᵖ})`.
 
 The intermediate terms of the Leibniz expansion are estimated by Hölder's inequality and the
 Sobolev inequalities for compactly supported functions. -/
 theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank {p : ℝ≥0} (hp : 1 ≤ p)
-    (hpn : (p : ℝ) ≠ finrank ℝ E) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ} (hik : i ≤ k) :
+    (hpn : (p : ℝ) ≠ finrank ℝ E ∨ finrank ℝ E = 1) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p)
+    {i : ℕ} (hik : i ≤ k) :
     ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (u : E → F) (v : E → G), ContDiff ℝ k u →
       HasCompactSupport u → ContDiff ℝ k v → HasCompactSupport v →
       eLpNorm (iteratedFDeriv ℝ i (fun x ↦ B (u x) (v x))) p μ ≤
@@ -248,10 +275,8 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank {p : ℝ≥0} (h
   have hqr : ∀ j ≤ i, ENNReal.HolderTriple (q j) (q (i - j)) p := fun j hj ↦ by
     refine ⟨?_⟩
     simp only [q, inv_inv]
-    rw [ENNReal.div_add_div_same, ← Nat.cast_add, Nat.add_sub_cancel' hj,
-      ENNReal.div_eq_inv_mul, ENNReal.mul_inv (Or.inl (by simpa using hi0.ne'))
-        (Or.inl (by simp)), mul_comm (i : ℝ≥0∞)⁻¹, mul_assoc,
-      ENNReal.inv_mul_cancel (by simpa using hi0.ne') (by simp), mul_one]
+    rw [ENNReal.div_add_div_same, ← Nat.cast_add, Nat.add_sub_cancel' hj]
+    exact inv_eq_iff_eq_inv.1 (inv_natCast_div_natCast_mul hi0.ne' p)
   obtain ⟨cu, hcu⟩ :=
     exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank (μ := μ) (F := F) hp hpn hk hi0.ne' hik
   obtain ⟨cv, hcv⟩ :=
@@ -284,17 +309,17 @@ variable {F G H : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [Finit
   [NormedAddCommGroup G] [InnerProductSpace ℝ G] [FiniteDimensional ℝ G] [NormedAddCommGroup H]
   [NormedSpace ℝ H]
 
-/-- **The product estimate for `k p > n`.** Let `1 < p < ∞` with `k p > n`, where `n` is the
+/-- **The product estimate for `k p > n`.** Let `1 ≤ p < ∞` with `k p > n`, where `n` is the
 dimension of `E`, and let `i ≤ k`. There is a constant `C` such that for every continuous bilinear
 map `B` and all compactly supported `C^k` functions `u` and `v` with values in finite-dimensional
 inner product spaces,
 
 `‖Dⁱ (B (u, v))‖_{Lᵖ} ≤ C ‖B‖ (‖u‖_∞ + ∑_{l ≤ k} ‖Dˡ u‖_{Lᵖ}) (‖v‖_∞ + ∑_{l ≤ k} ‖Dˡ v‖_{Lᵖ})`.
 
-For `p ≠ n` this is `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank`; for
-`p = n`, which forces `p ≥ 2`, it follows from the Moser product estimate
+For `p ≠ n` or `n = 1` this is `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank`;
+for `p = n ≥ 2` it follows from the Moser product estimate
 `TauCeti.exists_eLpNorm_iteratedFDeriv_bilinear_le`. -/
-theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul {p : ℝ≥0} (hp : 1 < p)
+theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul {p : ℝ≥0} (hp : 1 ≤ p)
     {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ} (hik : i ≤ k) :
     ∃ C : ℝ≥0, ∀ (B : F →L[ℝ] G →L[ℝ] H) (u : E → F) (v : E → G), ContDiff ℝ k u →
       HasCompactSupport u → ContDiff ℝ k v → HasCompactSupport v →
@@ -302,13 +327,13 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_finrank_lt_mul {p : ℝ≥0
         C * ‖B‖ₑ *
           (eLpNorm u ∞ μ + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l u) p μ) *
           (eLpNorm v ∞ μ + ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l v) p μ) := by
-  by_cases hpn : (p : ℝ) = finrank ℝ E
-  swap
-  · exact exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank hp.le hpn hk hik
-  -- `p = n` is an integer greater than one.
+  by_cases hpn : (p : ℝ) ≠ finrank ℝ E ∨ finrank ℝ E = 1
+  · exact exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank hp hpn hk hik
+  -- `p = n` is an integer, at least one and not one, so at least two.
+  obtain ⟨hpn, hn⟩ : (p : ℝ) = finrank ℝ E ∧ finrank ℝ E ≠ 1 := by tauto
   have hp2 : (2 : ℝ≥0∞) ≤ p := by
-    have h1 : (1 : ℝ) < finrank ℝ E := hpn ▸ (by exact_mod_cast hp)
-    have h2 : (2 : ℝ) ≤ finrank ℝ E := by exact_mod_cast (show 2 ≤ finrank ℝ E by exact_mod_cast h1)
+    have h1 : 1 ≤ finrank ℝ E := by exact_mod_cast hpn ▸ (by exact_mod_cast hp : (1 : ℝ) ≤ p)
+    have h2 : 2 ≤ finrank ℝ E := by omega
     rw [← ENNReal.coe_ofNat, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, hpn]
     exact_mod_cast h2
   obtain ⟨c, hc⟩ := exists_eLpNorm_iteratedFDeriv_bilinear_le (μ := μ) (F := F) (G := G) (H := H)

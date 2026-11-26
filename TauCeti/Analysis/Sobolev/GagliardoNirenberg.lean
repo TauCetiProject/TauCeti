@@ -674,12 +674,8 @@ private theorem eLpNorm_iteratedFDeriv_zero_bilinear_le {p : ℝ≥0∞} (hp1 : 
         eLpNorm (iteratedFDeriv ℝ 0 u) p μ * eLpNorm v ∞ μ) := by
   have h := B.eLpNorm_iteratedFDeriv_le_of_bilinear (μ := μ) hu hv (k := 0) le_rfl hp1
     (q := fun _ ↦ ∞) (r := fun _ ↦ p) (fun _ _ ↦ inferInstance)
-  have h0 : eLpNorm (iteratedFDeriv ℝ 0 u) ∞ μ = eLpNorm u ∞ μ :=
-    eLpNorm_congr_norm_ae (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable
-      hu.continuous.aestronglyMeasurable
-      (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)
   simp only [zero_add, Finset.range_one, Finset.sum_singleton, Nat.choose_self, Nat.cast_one,
-    mul_one, h0] at h
+    mul_one, eLpNorm_iteratedFDeriv_zero (𝕜 := ℝ) u ∞ μ] at h
   refine h.trans ?_
   rw [ENNReal.coe_one, one_mul, mul_assoc]
   gcongr

@@ -51,6 +51,8 @@ orthonormal basis `e₁, …, eₙ` it is the fundamental theorem of calculus ap
 coordinate: `|u x| ≤ ∫ |∂ᵢu|` along the line through `x` in the direction `eᵢ`, since `u` vanishes
 at infinity on that line. Iterating over the `n` coordinates bounds `|u x|` by the integral of
 `|∂ₙ ⋯ ∂₁u|` over all of `E`, and `|∂ₙ ⋯ ∂₁u y| ≤ ‖Dⁿu y‖` since the `eᵢ` are unit vectors.
+On a normed space with an arbitrary additive Haar measure the same bound holds up to a constant
+(`TauCeti.exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank`).
 
 ## Higher-order inequalities for `p < n`
 
@@ -71,6 +73,8 @@ norms. It is stated for the derivative `Dʲ u` in terms of `D^{j + l} u`, `l ≤
   compactly supported `Cⁿ` functions on a space of dimension `n`.
 * `HasCompactSupport.eNorm_le_lmarginal_iteratedFDeriv`: its iterated form over a finite set of
   coordinates, along vectors of norm at most one.
+* `TauCeti.exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank`: the bound
+  `‖u‖_∞ ≤ C ‖Dⁿu‖_{L¹}` for an additive Haar measure.
 * `TauCeti.exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank`: for `1 ≤ p < n` and
   `1 / q ≥ 1 / p - m / n`, `‖Dʲ u‖_q ≤ C ∑_{l ≤ m} ‖D^{j + l} u‖_p` for compactly supported `u`.
 
@@ -351,5 +355,48 @@ theorem exists_eLpNorm_iteratedFDeriv_le_sum_of_lt_finrank {p : ℝ≥0} (hp : 1
           gcongr
           refine le_trans (le_of_eq (Finset.sum_congr rfl fun l _ ↦ ?_)) le_self_add
           rw [add_assoc, add_comm 1 l]
+
+omit [FiniteDimensional ℝ F] in
+/-- **The Sobolev inequality in the critical case `W^{n,1} ⊆ L^∞`, for an additive Haar
+measure.** On a finite-dimensional real normed space `E` of dimension `n` with an additive Haar
+measure `μ`, there is a constant `C` such that every compactly supported `Cⁿ` function `u`
+satisfies `‖u‖_∞ ≤ C ‖Dⁿu‖_{L¹}`. This transports
+`HasCompactSupport.eNorm_le_lintegral_iteratedFDeriv` along linear coordinates `ℝⁿ ≃ E`, which
+carry the Lebesgue measure to a multiple of `μ`. -/
+theorem exists_eLpNorm_top_le_mul_eLpNorm_iteratedFDeriv_finrank :
+    ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ (finrank ℝ E) u → HasCompactSupport u →
+      eLpNorm u ∞ μ ≤ C * eLpNorm (iteratedFDeriv ℝ (finrank ℝ E) u) 1 μ := by
+  set n := finrank ℝ E
+  let L : EuclideanSpace ℝ (Fin n) ≃L[ℝ] E := ContinuousLinearEquiv.ofFinrankEq (by simp [n])
+  obtain ⟨c, hmap⟩ : ∃ c : ℝ≥0, Measure.map L volume = c • μ :=
+    ⟨_, Measure.isAddLeftInvariant_eq_smul _ _⟩
+  refine ⟨‖(L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)‖₊ ^ n * c, fun u hu hc ↦ ?_⟩
+  have hv : ContDiff ℝ (finrank ℝ (EuclideanSpace ℝ (Fin n))) (u ∘ L) := by
+    simpa using hu.comp L.contDiff
+  rw [eLpNorm_exponent_top hu.continuous.aestronglyMeasurable]
+  refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun x ↦ ?_)
+  obtain ⟨y, rfl⟩ := L.surjective x
+  have h := (hc.comp_homeomorph L.toHomeomorph).eNorm_le_lintegral_iteratedFDeriv hv y
+  rw [finrank_euclideanSpace_fin] at h
+  calc ‖u (L y)‖ₑ ≤ ∫⁻ z, ‖iteratedFDeriv ℝ n (u ∘ L) z‖ₑ := h
+    _ ≤ ∫⁻ z, ‖(L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)‖ₑ ^ n * ‖iteratedFDeriv ℝ n u (L z)‖ₑ := by
+        -- `Dⁿ (u ∘ L) z` is `Dⁿ u (L z)` composed with `L` in each of its `n` arguments.
+        refine lintegral_mono fun z ↦ ?_
+        rw [← L.coe_coe, ContinuousLinearMap.iteratedFDeriv_comp_right _ hu z le_rfl]
+        have hle := (iteratedFDeriv ℝ n u (L z)).norm_compContinuousLinearMap_le
+          fun _ : Fin n ↦ (L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)
+        rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_comm] at hle
+        simp only [← ofReal_norm]
+        rw [← ENNReal.ofReal_pow (norm_nonneg _), ← ENNReal.ofReal_mul (by positivity)]
+        exact ENNReal.ofReal_le_ofReal hle
+    _ = ‖(L : EuclideanSpace ℝ (Fin n) →L[ℝ] E)‖ₑ ^ n *
+          ∫⁻ w, ‖iteratedFDeriv ℝ n u w‖ₑ ∂(Measure.map L volume) := by
+        rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top eNorm_ne_top), lintegral_map
+          (hu.continuous_iteratedFDeriv le_rfl).eNorm.measurable L.continuous.measurable]
+    _ = _ := by
+        rw [hmap, lintegral_smul_measure, eLpNorm_one_eq_lintegral_eNorm
+          (hu.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable, ENNReal.smul_def,
+          smul_eq_mul, ENNReal.coe_mul, ENNReal.coe_pow, eNorm_eq_nnNorm]
+        ring
 
 end TauCeti

@@ -57,8 +57,7 @@ bounds `‖f‖_∞` by the `W^{k,p}` norm. Together they give the algebra estim
 Test functions are dense in `W^{k,p}(E)` (`TauCeti.Wkp.denseRange_ofTestFunctionₗ_top`), and by the
 estimate the products of approximating test functions form a Cauchy sequence; its limit has as
 value the product of the values, since multiplication `L^∞ × Lᵖ → Lᵖ` is continuous and the values
-converge in `L^∞` by the embedding. The Hölder embedding, and the product estimate at `p = n`,
-are where `p > 1` is used.
+converge in `L^∞` by the embedding. The Hölder embedding is where `p > 1` is used.
 
 ## References
 
@@ -129,10 +128,10 @@ private theorem eLpNorm_iteratedFDeriv_le_enorm (z : Wkp (volume : Measure E) �
   exact (ENNReal.le_ofReal_iff_toReal_le hmem.eLpNorm_ne_top (norm_nonneg z)).2 hle
 
 omit [Fact (1 ≤ p)] in
-/-- The product estimate for real functions: for `1 < p < ∞`, `k p > dim E` and `i ≤ k`,
+/-- The product estimate for real functions: for `1 ≤ p < ∞`, `k p > dim E` and `i ≤ k`,
 `‖Dⁱ (f g)‖_p ≤ c (‖f‖_∞ + ∑_{l ≤ k} ‖Dˡ f‖_p) (‖g‖_∞ + ∑_{l ≤ k} ‖Dˡ g‖_p)` for compactly
 supported `Cᵏ` functions `f` and `g`. -/
-private theorem exists_eLpNorm_iteratedFDeriv_mul_le (hp : 1 < p) (hp' : p ≠ ∞)
+private theorem exists_eLpNorm_iteratedFDeriv_mul_le (hp : 1 ≤ p) (hp' : p ≠ ∞)
     (hk : (finrank ℝ E : ℝ) < k * p.toReal) {i : ℕ} (hik : i ≤ k) :
     ∃ c : ℝ≥0, ∀ f g : E → ℝ, ContDiff ℝ k f → HasCompactSupport f →
       ContDiff ℝ k g → HasCompactSupport g →
@@ -142,8 +141,8 @@ private theorem exists_eLpNorm_iteratedFDeriv_mul_le (hp : 1 < p) (hp' : p ≠ �
         (eLpNorm g ∞ volume +
           ∑ l ∈ Finset.range (k + 1), eLpNorm (iteratedFDeriv ℝ l g) p volume) := by
   have hpp : ((p.toNNReal : ℝ≥0) : ℝ≥0∞) = p := ENNReal.coe_toNNReal hp'
-  have hp₁ : 1 < p.toNNReal := by
-    rw [← ENNReal.coe_lt_coe, hpp, ENNReal.coe_one]
+  have hp₁ : 1 ≤ p.toNNReal := by
+    rw [← ENNReal.coe_le_coe, hpp, ENNReal.coe_one]
     exact hp
   have hk' : (finrank ℝ E : ℝ) < k * p.toNNReal := by rwa [ENNReal.coe_toNNReal_eq_toReal]
   have hB : ‖ContinuousLinearMap.mul ℝ ℝ‖ₑ ≤ 1 := by
@@ -203,7 +202,7 @@ private theorem exists_value_ae_eq_mul_and_norm_le_of_hasCompactSupport (hp : 1 
         ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   -- The constants of the product estimate, extended by zero beyond `k`.
   have hc (i : ℕ) := (em (i ≤ k)).elim
-    (fun hik ↦ (exists_eLpNorm_iteratedFDeriv_mul_le hp hp' hk hik).imp fun _ hc _ ↦ hc)
+    (fun hik ↦ (exists_eLpNorm_iteratedFDeriv_mul_le hp.le hp' hk hik).imp fun _ hc _ ↦ hc)
     fun hik ↦ ⟨0, fun h ↦ absurd h hik⟩
   choose c hc using hc
   refine ⟨∑ i ∈ Finset.range (k + 1), c i * (‖J‖ + (k + 1)) ^ 2,

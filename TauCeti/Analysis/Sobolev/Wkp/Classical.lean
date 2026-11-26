@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -191,11 +192,8 @@ theorem Wkp.lpNorm_iteratedFDeriv_le_of_contDiffOn (k : ℕ) (u : Wkp mu Omega p
       subst i
       have he : eLpNorm (iteratedFDeriv ℝ 0 f) p (mu.restrict Omega) =
           eLpNorm (value 0 u) p (mu.restrict Omega) := by
-        refine eLpNorm_congr_norm_ae
-          ((ContinuousOn.continuousOn_iteratedFDeriv hf Omega.isOpen (by simp)).aestronglyMeasurable
-            Omega.isOpen.measurableSet) (Lp.aestronglyMeasurable _) ?_
-        filter_upwards [hu] with x hx
-        rw [norm_iteratedFDeriv_zero, hx]
+        rw [eLpNorm_iteratedFDeriv_zero]
+        exact eLpNorm_congr_ae hu.symm
       simpa only [lpNorm, he, ← Lp.norm_def, value_zero] using le_rfl (a := ‖u‖)
   | succ k ih =>
       intro i hi

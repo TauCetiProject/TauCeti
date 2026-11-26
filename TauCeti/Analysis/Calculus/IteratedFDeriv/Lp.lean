@@ -233,6 +233,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E
 
 /-- The zeroth derivative of a function has its `eLpNorm`, since the two differ by a linear
 isometry equivalence. -/
+@[simp]
 theorem eLpNorm_iteratedFDeriv_zero (f : E → F) (p : ENNReal) (μ : Measure E) :
     eLpNorm (iteratedFDeriv 𝕜 0 f) p μ = eLpNorm f p μ := by
   rw [iteratedFDeriv_zero_eq_comp, Function.comp_def]
