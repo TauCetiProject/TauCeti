@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedChainComplex
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import Mathlib.LinearAlgebra.DirectSum.Finsupp
 
 /-!
 # Changing the orientations and the coefficients of the integral Morse complex
