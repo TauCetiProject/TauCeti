@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.DifferentialForm.Codifferential
-import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The exterior derivative, the codifferential and the Hodge Laplacian in an orthonormal frame
@@ -19,7 +19,8 @@ the direction `eᵢ`. This file computes the exterior derivative `extDeriv`, the
 
 * `dω = ∑ᵢ eⁱ ∧ ∂ᵢω` (`TauCeti.alternatingFormEquiv_symm_extDeriv`), stated on the elements of
   the exterior powers representing the forms, where wedging with a vector is
-  `TauCeti.ExteriorAlgebra.wedgeLeft`;
+  `TauCeti.ExteriorAlgebra.wedgeLeft`. It specializes the frame formula for alternation,
+  `TauCeti.alternatingFormEquiv_symm_alternatizeUncurryFin`;
 * `δω = -∑ᵢ ι_{eᵢ} ∂ᵢω` (`Orientation.codifferential_eq_neg_sum_curryLeft`), where the interior
   product `ι_u α` is `α.curryLeft u`. Although the codifferential is built from the Hodge star of
   the orientation, it is a first-order operator in contractions alone;
@@ -27,19 +28,20 @@ the direction `eᵢ`. This file computes the exterior derivative `extDeriv`, the
   (`Orientation.codifferential_extDeriv_add_extDeriv_codifferential_eq_neg_laplacian`), where
   `Δ = ∑ᵢ ∂ᵢ²` is Mathlib's Laplacian of maps from an inner product space, acting on the form as a
   vector-valued function. In degree zero only `δ d` occurs
-  (`Orientation.codifferential_extDeriv_eq_neg_laplacian`) and in the top degree only `d δ`
-  (`Orientation.extDeriv_codifferential_eq_neg_laplacian`).
+  (`Orientation.codifferential_extDeriv_eq_neg_laplacian_zero`) and in the top degree only `d δ`
+  (`Orientation.extDeriv_codifferential_eq_neg_laplacian_of_eq_finrank`); these two need only a
+  differentiable derivative, not symmetry of second derivatives.
 
 So the Hodge Laplacian of Euclidean space is the nonnegative Laplacian `-∑ᵢ ∂ᵢ²` acting on the
 coefficients of a form. The proof expands `δ d + d δ` with the first two formulas and uses the
-anticommutation relation `ι_{eⱼ} (eⁱ ∧ α) + eⁱ ∧ ι_{eⱼ} α = ⟪eⱼ, eᵢ⟫ α` of the Koszul complex
-(`TauCeti.wedgeLeft_comp_koszulDifferential_add`), together with the symmetry of second
-derivatives.
+anticommutation relation `ι_{eⱼ} (eⁱ ∧ α) + eⁱ ∧ ι_{eⱼ} α = ⟪eⱼ, eᵢ⟫ α` of the interior product
+and exterior multiplication `TauCeti.wedgeCovector` (`TauCeti.curryLeftFlipL_wedgeCovector_add`),
+together with the symmetry of second derivatives.
 
-These are the flat, chart-level frame formulas behind the Bochner–Weitzenböck formula and behind
-Witten's computation of the deformed Laplacian in an orthonormal frame, whose coordinate version is
-`TauCeti.euclideanWittenLaplacian_apply`: they identify the operators built from the Hodge star
-with the coordinate operators `∑ᵢ εᵢ ∂ᵢ`, `-∑ᵢ ιᵢ ∂ᵢ` and `-∑ᵢ ∂ᵢ²`.
+These are the flat, chart-level frame formulas for the undeformed operators. They have the same
+shape as the coordinate operators `∑ᵢ εᵢ ∂ᵢ`, `-∑ᵢ ιᵢ ∂ᵢ` and `-∑ᵢ ∂ᵢ²` of the Witten complex in
+`TauCeti.euclideanWittenLaplacian_apply`, which act on coefficient families rather than on forms;
+the identification of the two is not proved here.
 
 ## References
 
@@ -59,34 +61,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {ι : Type*} [Fintype ι]
 
 namespace TauCeti
-
-/-- **Alternation in an orthonormal frame**: the alternation `f ↦ ∑ⱼ (-1)ʲ f(vⱼ)(v̂ⱼ)` of a
-linear map `f` from `V` to `k`-forms is `∑ᵢ eⁱ ∧ f(eᵢ)`, read on the elements of the exterior
-powers representing the forms. -/
-theorem alternatingFormEquiv_symm_alternatizeUncurryFin (b : OrthonormalBasis ι ℝ V) {k : ℕ}
-    (f : V →L[ℝ] V [⋀^Fin k]→L[ℝ] ℝ) :
-    (alternatingFormEquiv V (k + 1)).symm (ContinuousAlternatingMap.alternatizeUncurryFin f) =
-      ∑ i, ExteriorAlgebra.wedgeLeft (b i) k ((alternatingFormEquiv V k).symm (f (b i))) := by
-  rw [LinearEquiv.symm_apply_eq]
-  ext v
-  -- Each summand pairs `eᵢ ∧ aᵢ` with `v₀ ∧ ⋯ ∧ vₖ`, which contracts `⟪eᵢ, ·⟫` into one `vⱼ`.
-  have h (i : ι) : alternatingFormEquiv V (k + 1)
-      (ExteriorAlgebra.wedgeLeft (b i) k ((alternatingFormEquiv V k).symm (f (b i)))) v =
-      ∑ j : Fin (k + 1), (-1 : ℝ) ^ (j : ℕ) * (⟪b i, v j⟫ * f (b i) (j.removeNth v)) := by
-    rw [alternatingFormEquiv_apply, inner_wedgeLeft_eq_inner_koszulDifferential,
-      koszulDifferential_ιMulti, inner_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [real_inner_smul_right, ← alternatingFormEquiv_apply, LinearEquiv.apply_symm_apply,
-      innerₗ_apply_apply]
-    ring
-  rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply, map_sum,
-    ContinuousAlternatingMap.sum_apply, Finset.sum_congr rfl fun i _ ↦ h i, Finset.sum_comm]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  -- Summing over the frame reassembles `vⱼ = ∑ᵢ ⟪eᵢ, vⱼ⟫ eᵢ`.
-  conv_lhs => rw [← b.sum_repr' (v j)]
-  simp only [map_sum, map_smul, ContinuousAlternatingMap.sum_apply,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg,
-    Int.cast_one, Finset.mul_sum]
 
 /-- **The exterior derivative in an orthonormal frame**: `dω = ∑ᵢ eⁱ ∧ ∂ᵢω`, read on the elements
 of the exterior powers representing the forms. -/
@@ -125,10 +99,10 @@ theorem codifferential_eq_neg_sum_curryLeft (b : OrthonormalBasis ι ℝ V)
     have ha : fderiv ℝ ω x (b i) = alternatingFormEquiv V (k + 1) a := by simp [a]
     rw [ha, ← alternatingFormEquiv_koszulDifferential, LinearEquiv.symm_apply_apply,
       o.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (b i) hkl hlk, smul_smul, hn,
-      ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_smul]
+      ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul]
   have hsign : (-1 : ℝ) ^ (n * (k + 2) + 1) * (-1) ^ (n * k) = -1 := by
-    rw [← pow_add, show n * (k + 2) + 1 + n * k = 2 * (n * k + n) + 1 by ring, pow_succ, pow_mul,
-      neg_one_sq, one_pow, one_mul]
+    rw [← pow_add]
+    exact Odd.neg_one_pow ⟨n * (k + 1), by ring⟩
   rw [codifferential_apply o hkl hlk,
     ← LinearEquiv.apply_symm_apply (alternatingFormEquiv V (l + 1)) (extDeriv _ x),
     alternatingFormEquiv_symm_extDeriv b, hstar, formHodgeStar_alternatingFormEquiv]
@@ -144,67 +118,13 @@ section HodgeLaplacian
 
 open ContinuousAlternatingMap (curryLeftFlipL curryLeftFlipL_apply_apply)
 
-/-- Exterior multiplication `α ↦ ⟪u, ·⟫ ∧ α` of forms, through the exterior powers. -/
-private def wedgeCovector (u : V) (k : ℕ) :
-    (V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] V [⋀^Fin (k + 1)]→L[ℝ] ℝ :=
-  LinearMap.toContinuousLinearMap ((alternatingFormEquiv V (k + 1)).toLinearMap ∘ₗ
-    ExteriorAlgebra.wedgeLeft u k ∘ₗ (alternatingFormEquiv V k).symm.toLinearMap)
-
-private theorem wedgeCovector_apply (u : V) (k : ℕ) (α : V [⋀^Fin k]→L[ℝ] ℝ) :
-    wedgeCovector u k α = alternatingFormEquiv V (k + 1)
-      (ExteriorAlgebra.wedgeLeft u k ((alternatingFormEquiv V k).symm α)) :=
-  (rfl)
-
-/-- The interior product of the form of `x` is the form of the contraction of `x`. -/
-private theorem curryLeftFlipL_alternatingFormEquiv (u : V) (k : ℕ) (x : ⋀[ℝ]^(k + 1) V) :
-    curryLeftFlipL (n := k) u (alternatingFormEquiv V (k + 1) x) =
-      alternatingFormEquiv V k (koszulDifferential (innerₗ V u) k x) := by
-  rw [curryLeftFlipL_apply_apply, alternatingFormEquiv_koszulDifferential]
-
-/-- **The anticommutation relation** `ι_u (⟪w, ·⟫ ∧ α) + ⟪w, ·⟫ ∧ ι_u α = ⟪u, w⟫ α` on forms of
-positive degree. -/
-private theorem curryLeftFlipL_wedgeCovector_add (u w : V) (k : ℕ) (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
-    curryLeftFlipL (n := k + 1) u (wedgeCovector w (k + 1) α) +
-      wedgeCovector w k (curryLeftFlipL (n := k) u α) = ⟪u, w⟫ • α := by
-  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V (k + 1)).surjective α
-  have h := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add (innerₗ V u) w k) a
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  rw [wedgeCovector_apply, LinearEquiv.symm_apply_apply, curryLeftFlipL_alternatingFormEquiv,
-    curryLeftFlipL_alternatingFormEquiv, wedgeCovector_apply, LinearEquiv.symm_apply_apply,
-    ← map_add, ← map_smul]
-  exact congrArg _ ((add_comm _ _).trans h)
-
-/-- The anticommutation relation on functions: `ι_u (⟪w, ·⟫ ∧ α) = ⟪u, w⟫ α` for `0`-forms. -/
-private theorem curryLeftFlipL_wedgeCovector_zero (u w : V) (α : V [⋀^Fin 0]→L[ℝ] ℝ) :
-    curryLeftFlipL (n := 0) u (wedgeCovector w 0 α) = ⟪u, w⟫ • α := by
-  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V 0).surjective α
-  have h := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero (innerₗ V u) w) a
-  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  rw [wedgeCovector_apply, LinearEquiv.symm_apply_apply, curryLeftFlipL_alternatingFormEquiv, h,
-    map_smul]
-
-/-- The anticommutation relation on top-degree forms: `⟪w, ·⟫ ∧ ι_u α = ⟪u, w⟫ α`, since there
-are no nonzero forms of degree above the dimension. -/
-private theorem wedgeCovector_curryLeftFlipL_of_eq_finrank (u w : V) {k : ℕ}
-    (hk : k + 1 = finrank ℝ V) (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
-    wedgeCovector w k (curryLeftFlipL (n := k) u α) = ⟪u, w⟫ • α := by
-  have h0 : wedgeCovector w (k + 1) α = 0 := by
-    ext v
-    refine (wedgeCovector w (k + 1) α).toAlternatingMap.map_linearDependent v fun hv ↦ ?_
-    have := hv.fintype_card_le_finrank
-    simp only [Fintype.card_fin] at this
-    omega
-  rw [← curryLeftFlipL_wedgeCovector_add, h0, map_zero, zero_add]
-
 /-- The exterior derivative in an orthonormal frame, as a sum of exterior multiplications. -/
 private theorem extDeriv_eq_sum_wedgeCovector (b : OrthonormalBasis ι ℝ V) {k : ℕ}
     (ω : V → V [⋀^Fin k]→L[ℝ] ℝ) (x : V) :
     extDeriv ω x = ∑ i, wedgeCovector (b i) k (fderiv ℝ ω x (b i)) := by
   rw [← LinearEquiv.apply_symm_apply (alternatingFormEquiv V (k + 1)) (extDeriv ω x),
     alternatingFormEquiv_symm_extDeriv b, map_sum]
-  rfl
+  simp only [wedgeCovector_apply]
 
 /-- The derivative of `y ↦ ∑ᵢ Lᵢ (∂ᵢ ω y)` for fixed linear maps `Lᵢ`, when the derivative of
 `ω` is differentiable. -/
@@ -247,13 +167,6 @@ private theorem extDeriv_codifferential_eq_neg_sum (b : OrthonormalBasis ι ℝ 
   simp only [fderiv_sum_comp_fderiv_apply (fun j ↦ -curryLeftFlipL (n := k) (b j)) b hω]
   simp only [neg_apply, map_neg, map_sum, Finset.sum_neg_distrib]
 
-/-- The Laplacian in an orthonormal frame, through the second derivative. -/
-private theorem laplacian_eq_sum (b : OrthonormalBasis ι ℝ V) {k : ℕ}
-    (ω : V → V [⋀^Fin k]→L[ℝ] ℝ) (x : V) :
-    Δ ω x = ∑ i, fderiv ℝ (fderiv ℝ ω) x (b i) (b i) := by
-  simp [InnerProductSpace.laplacian_eq_iteratedFDeriv_orthonormalBasis ω b,
-    iteratedFDeriv_two_apply]
-
 /-- **The Hodge Laplacian of Euclidean space**: for a `(k + 1)`-form `ω` of class `C²` at `x`,
 in an intermediate degree `0 < k + 1 < n`, `δ d ω + d δ ω = -Δω` at `x`, where `Δ = ∑ᵢ ∂ᵢ²` is the
 Laplacian of `ω` as a vector-valued function. -/
@@ -267,8 +180,8 @@ theorem codifferential_extDeriv_add_extDeriv_codifferential_eq_neg_laplacian {l'
   have hS : ∀ v w, fderiv ℝ (fderiv ℝ ω) x v w = fderiv ℝ (fderiv ℝ ω) x w v :=
     hω.isSymmSndFDerivAt (by simp)
   rw [o.codifferential_extDeriv_eq_neg_sum b hkl' hω',
-    o.extDeriv_codifferential_eq_neg_sum b hkl hω', laplacian_eq_sum b, Finset.sum_comm, ← neg_add,
-    ← Finset.sum_add_distrib]
+    o.extDeriv_codifferential_eq_neg_sum b hkl hω', laplacian_eq_sum_fderiv_fderiv b,
+    Finset.sum_comm, ← neg_add, ← Finset.sum_add_distrib]
   -- By symmetry of second derivatives and the anticommutation relation, the `i`-th summand is
   -- `∑ⱼ ⟪eⱼ, eᵢ⟫ ∂ᵢ∂ⱼω = ∂ᵢ²ω`.
   congr 1
@@ -277,29 +190,25 @@ theorem codifferential_extDeriv_add_extDeriv_codifferential_eq_neg_laplacian {l'
     rw [hS (b j) (b i), curryLeftFlipL_wedgeCovector_add]]
   simp [orthonormal_iff_ite.mp b.orthonormal]
 
-/-- **The Laplacian of Euclidean space on functions**: for a `0`-form `ω` of class `C²` at `x`,
-`δ d ω = -Δω` at `x`. -/
-theorem codifferential_extDeriv_eq_neg_laplacian (hkl : 0 + 1 + l = finrank ℝ V)
-    {ω : V → V [⋀^Fin 0]→L[ℝ] ℝ} (hω : ContDiffAt ℝ 2 ω x) :
+/-- **The Laplacian of Euclidean space on functions**: for a `0`-form `ω` whose derivative is
+differentiable at `x`, `δ d ω = -Δω` at `x`. -/
+theorem codifferential_extDeriv_eq_neg_laplacian_zero (hkl : 0 + 1 + l = finrank ℝ V)
+    {ω : V → V [⋀^Fin 0]→L[ℝ] ℝ} (hω : DifferentiableAt ℝ (fderiv ℝ ω) x) :
     o.codifferential hkl (extDeriv ω) x = -Δ ω x := by
   set b := stdOrthonormalBasis ℝ V
-  have hω' : DifferentiableAt ℝ (fderiv ℝ ω) x :=
-    (hω.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [o.codifferential_extDeriv_eq_neg_sum b hkl hω', laplacian_eq_sum b]
+  rw [o.codifferential_extDeriv_eq_neg_sum b hkl hω, laplacian_eq_sum_fderiv_fderiv b]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Finset.sum_congr rfl fun i _ ↦ curryLeftFlipL_wedgeCovector_zero (b j) (b i) _]
   simp [orthonormal_iff_ite.mp b.orthonormal]
 
 /-- **The Hodge Laplacian of Euclidean space in the top degree**: for a form `ω` of degree
-`k + 1 = n` of class `C²` at `x`, `d δ ω = -Δω` at `x`. -/
-theorem extDeriv_codifferential_eq_neg_laplacian (hkl : k + 1 + 0 = finrank ℝ V)
-    {ω : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ} (hω : ContDiffAt ℝ 2 ω x) :
+`k + 1 = n` whose derivative is differentiable at `x`, `d δ ω = -Δω` at `x`. -/
+theorem extDeriv_codifferential_eq_neg_laplacian_of_eq_finrank (hkl : k + 1 + 0 = finrank ℝ V)
+    {ω : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ} (hω : DifferentiableAt ℝ (fderiv ℝ ω) x) :
     extDeriv (o.codifferential hkl ω) x = -Δ ω x := by
   set b := stdOrthonormalBasis ℝ V
-  have hω' : DifferentiableAt ℝ (fderiv ℝ ω) x :=
-    (hω.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  rw [o.extDeriv_codifferential_eq_neg_sum b hkl hω', laplacian_eq_sum b]
+  rw [o.extDeriv_codifferential_eq_neg_sum b hkl hω, laplacian_eq_sum_fderiv_fderiv b]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finset.sum_congr rfl fun j _ ↦ wedgeCovector_curryLeftFlipL_of_eq_finrank (b j) (b i) hkl _]
