@@ -40,6 +40,8 @@ the other.
   are the affine and inverted coordinates of `OnePoint 𝕜`.
 * `OnePoint.contMDiff_equivProjectivization` and `OnePoint.contMDiff_equivProjectivization_symm`:
   the identification and its inverse are analytic.
+* `OnePoint.exists_contMDiffAt_eventually_equivProjectivization_eq_mk`: a map to `OnePoint 𝕜` that
+  is `C^n` at a point has `C^n` nonzero homogeneous coordinates near that point.
 * `OnePoint.diffeomorphProjectivization`: the identification as a `C^n` diffeomorphism.
 
 ## References
@@ -52,7 +54,7 @@ the other.
 public noncomputable section
 
 open Set
-open scoped ContDiff Manifold LinearAlgebra.Projectivization
+open scoped ContDiff Manifold LinearAlgebra.Projectivization Topology
 
 namespace OnePoint
 
@@ -128,6 +130,17 @@ theorem contMDiff_equivProjectivization_symm :
     rw [equivProjectivization_mem_affineOpen_one_iff] at hq
     obtain ⟨z, rfl⟩ := ne_infty_iff_exists.1 hq
     simp
+
+/-- **Local homogeneous coordinates of a `C^n` map to the projective line.** A map to `OnePoint 𝕜`
+that is `C^n` at `x₀` has, near `x₀`, nonzero homogeneous coordinates that are `C^n` at `x₀`. -/
+theorem exists_contMDiffAt_eventually_equivProjectivization_eq_mk {E H M : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω} {f : M → OnePoint 𝕜} {x₀ : M}
+    (hf : ContMDiffAt I 𝓘(𝕜) n f x₀) :
+    ∃ F : M → Fin 2 → 𝕜, ContMDiffAt I 𝓘(𝕜, Fin 2 → 𝕜) n F x₀ ∧
+      ∀ᶠ x in 𝓝 x₀, ∃ hx : F x ≠ 0, equivProjectivization 𝕜 (f x) = .mk 𝕜 (F x) hx :=
+  Projectivization.exists_contMDiffAt_eventually_eq_mk
+    ((contMDiff_equivProjectivization.of_le le_top).contMDiffAt.comp x₀ hf)
 
 /-! ### The diffeomorphism -/
 
