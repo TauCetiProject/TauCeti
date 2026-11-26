@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.ComplexShape.ZMod
-public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Basic
+public import TauCeti.Algebra.Homology.HomotopyCategory.Bounded.Generation
 public import TauCeti.Algebra.Homology.Periodic.Acyclic
 public import TauCeti.Algebra.Homology.TotalComplex.AcyclicAssembly
 public import TauCeti.Algebra.Homology.TotalComplex.Additive
@@ -190,40 +190,6 @@ section Abelian
 
 variable [Abelian C]
 
-/-- A double complex of acyclic `n`-periodic complexes, whose columns vanish outside `[a, a + k)`,
-has an acyclic total complex. -/
-private lemma acyclic_total_zmod_of_isZero_X (k : ℕ) :
-    ∀ (a : ℤ) (L : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up (ZMod n)))
-      [L.HasTotal (ComplexShape.up (ZMod n))], (∀ p, p < a ∨ a + k ≤ p → IsZero (L.X p)) →
-      (∀ p, (L.X p).Acyclic) → (L.total (ComplexShape.up (ZMod n))).Acyclic := by
-  induction k with
-  | zero =>
-    intro a L _ hL _ r
-    refine ShortComplex.exact_of_isZero_X₂ _ ?_
-    rw [IsZero.iff_id_eq_zero]
-    exact total.hom_ext _ fun p q h ↦
-      ((HomologicalComplex.eval C _ q).map_isZero (hL p (by omega))).eq_of_src _ _
-  | succ k ih =>
-    -- Split off the column `a` by the short exact sequence `σ^{≥ a + 1} L ⟶ L ⟶ σ^{≤ a} L`.
-    intro a L _ hL hc
-    have h₁ : ∀ p, p < a + 1 ∨ a + 1 + k ≤ p →
-        IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntGE (a + 1))).X p) := by
-      rintro p (hp | hp)
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X L (a + 1) hp
-      · exact L.isZero_stupidTrunc_X_of_isZero _ (hL p (by omega))
-    have h₃ : ∀ p, p ≠ a → IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntLE a)).X p) := by
-      intro p hp
-      rcases lt_or_gt_of_ne hp with hp | hp
-      · exact L.isZero_stupidTrunc_X_of_isZero _ (hL p (by omega))
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X L a hp
-    have := hasTotal_zmod_of_isZero_X _ (a + 1) (a + k) fun p hp ↦ h₁ p (by omega)
-    have := hasTotal_zmod_of_isZero_X _ a a fun p hp ↦ h₃ p (by omega)
-    exact (totalShortComplex_shortExact (ComplexShape.up (ZMod n))
-      (CochainComplex.stupidTruncShortComplex L a)
-      fun p q ↦ (CochainComplex.stupidTruncShortComplexSplitting L a p).map _).acyclic_X₂
-      (ih (a + 1) _ h₁ (L.acyclic_stupidTrunc_X _ hc))
-      (acyclic_total_zmod_of_isZero _ a h₃ (L.acyclic_stupidTrunc_X _ hc a))
-
 /-- **Totalization of acyclic periodic complexes.** In an abelian category, let `K` be a double
 complex of `n`-periodic complexes `K.X p`, only finitely many of them nonzero. If every `K.X p` is
 acyclic, then the total complex of `K` is acyclic. -/
@@ -231,11 +197,31 @@ theorem acyclic_total_zmod_of_bounded
     (K : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up (ZMod n)))
     [K.HasTotal (ComplexShape.up (ZMod n))] (hK : CochainComplex.bounded _ K)
     (hc : ∀ p, (K.X p).Acyclic) : (K.total (ComplexShape.up (ZMod n))).Acyclic := by
-  obtain ⟨a, b, ha, hb⟩ := (CochainComplex.bounded_iff _ K).1 hK
-  refine acyclic_total_zmod_of_isZero_X (b + 1 - a).toNat a K (fun p hp ↦ ?_) hc
-  rcases hp with hp | hp
-  · exact CochainComplex.isZero_of_isStrictlyGE K a p hp
-  · exact CochainComplex.isZero_of_isStrictlyLE K b p (by omega)
+  refine CochainComplex.bounded_induction
+    (motive := fun (L : HomologicalComplex₂ C (ComplexShape.up ℤ) (ComplexShape.up (ZMod n))) ↦
+      ∀ [L.HasTotal (ComplexShape.up (ZMod n))], (∀ p, (L.X p).Acyclic) →
+        (L.total (ComplexShape.up (ZMod n))).Acyclic)
+    ?_ ?_ K hK hc
+  · intro L hL _ _ r
+    refine ShortComplex.exact_of_isZero_X₂ _ ?_
+    rw [IsZero.iff_id_eq_zero]
+    exact total.hom_ext _ fun p q h ↦ ((HomologicalComplex.eval C _ q).map_isZero
+      ((HomologicalComplex.eval _ _ p).map_isZero hL)).eq_of_src _ _
+  · -- Split off the top column `b + 1` by the short exact sequence `σ^{≥ b + 1} L ⟶ L ⟶ σ^{≤ b} L`.
+    intro L b hL _ ih _ hc
+    have h₁ : ∀ p, p ≠ b + 1 →
+        IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntGE (b + 1))).X p) := by
+      intro p hp
+      rcases lt_or_gt_of_ne hp with hp | hp
+      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X L (b + 1) hp
+      · exact L.isZero_stupidTrunc_X_of_isZero _ (CochainComplex.isZero_of_isStrictlyLE L _ p hp)
+    have := hasTotal_zmod_of_isZero_X _ (b + 1) (b + 1) fun p hp ↦ h₁ p (by omega)
+    have := hasTotal_zmod_of_bounded (CochainComplex.bounded_stupidTrunc_embeddingUpIntLE hL b)
+    exact (totalShortComplex_shortExact (ComplexShape.up (ZMod n))
+      (CochainComplex.stupidTruncShortComplex L b)
+      fun p q ↦ (CochainComplex.stupidTruncShortComplexSplitting L b p).map _).acyclic_X₂
+      (acyclic_total_zmod_of_isZero _ (b + 1) h₁ (L.acyclic_stupidTrunc_X _ hc (b + 1)))
+      (ih (L.acyclic_stupidTrunc_X _ hc))
 
 end Abelian
 
