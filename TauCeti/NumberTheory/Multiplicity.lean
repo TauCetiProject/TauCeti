@@ -51,6 +51,13 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
 (NSW (7.4.1)), this chooses the exponent through which a generator of tame inertia acts on the
 `p`-power roots of unity.
 
+## The geometric sum `1 + a + ⋯ + a ^ (p - 1)`
+
+If `a ≡ 1 (mod p)`, and moreover `a ≡ 1 (mod 4)` when `p = 2`, then `p ^ 2` does not divide
+`1 + a + ⋯ + a ^ (p - 1)`. An automorphism of order `p` fixing the `p`-th roots of unity (the
+fourth roots of unity when `p = 2`) acts on a `p`-power root of unity `η` by such an exponent `a`,
+so the product of the `p` conjugates of `η` is `η ^ (1 + a + ⋯ + a ^ (p - 1))`.
+
 ## Main statements
 
 * `Nat.multiplicity_pow_sub_pow_of_not_dvd`: for any prime `p` with `p ∣ x - y`, `p ∤ x` and
@@ -63,6 +70,8 @@ In the computation of the generator rank of the absolute Galois group of a `p`-a
 * `Nat.multiplicity_pow_two_sub_pow_of_even`: for odd `y < x` and even `n ≠ 0`,
   `v₂(x ^ n - y ^ n) + 1 = v₂(x ^ 2 - y ^ 2) + v₂(n)`.
 * `Nat.two_pow_dvd_three_pow_sub_one_iff`: `2 ^ r ∣ 3 ^ r - 1` exactly for `r ∈ {0, 1, 2, 4}`.
+* `Nat.not_sq_dvd_geom_sum`: `p ^ 2 ∤ 1 + a + ⋯ + a ^ (p - 1)` when `a ≡ 1 (mod p)`, and
+  `a ≡ 1 (mod 4)` if `p = 2`.
 * `TauCeti.exists_modEq_pow_sub_one_eq_mul`: the lift with `b ^ n - 1 = p ^ k * c`, `p ∤ c`.
 
 ## References
@@ -155,6 +164,25 @@ theorem two_pow_dvd_three_pow_sub_one_iff {r : ℕ} :
   · have hv := multiplicity_pow_two_sub_pow_of_odd (by decide : Odd 3) odd_one hodd
     rw [one_pow, show 3 - 1 = 2 by norm_num, multiplicity_self (by norm_num)] at hv
     omega
+
+/-- If `a ≡ 1 (mod p)`, and moreover `a ≡ 1 (mod 4)` when `p = 2`, then `p ^ 2` does not divide
+`1 + a + ⋯ + a ^ (p - 1)`. The condition at `p = 2` is needed: `1 + 3 = 4`. -/
+theorem not_sq_dvd_geom_sum {a : ℕ} (ha : a ≡ 1 [MOD p]) (h2 : p = 2 → a ≡ 1 [MOD 4]) :
+    ¬p ^ 2 ∣ ∑ i ∈ Finset.range p, a ^ i := by
+  rcases hp.out.eq_two_or_odd' with rfl | hodd
+  · have h4 : a % 4 = 1 := h2 rfl
+    simp only [Finset.sum_range_succ, Finset.range_one, Finset.sum_singleton, pow_zero, pow_one]
+    omega
+  -- for odd `p`, Mathlib's `emultiplicity_geom_sum₂_eq_one` gives the valuation `1`
+  intro h
+  have hpZ : _root_.Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp.out
+  have hxy : (p : ℤ) ∣ (a : ℤ) - 1 := by simpa using Nat.modEq_iff_dvd.1 ha.symm
+  have hx : ¬(p : ℤ) ∣ a := fun hpa ↦ hpZ.not_dvd_one ((dvd_sub_right hpa).1 hxy)
+  have hv := emultiplicity_geom_sum₂_eq_one hpZ hodd hxy hx
+  simp only [one_pow, mul_one] at hv
+  have h' : (p : ℤ) ^ 2 ∣ ∑ i ∈ Finset.range p, (a : ℤ) ^ i := by exact_mod_cast h
+  rw [pow_dvd_iff_le_emultiplicity, hv] at h'
+  exact absurd h' (by norm_num)
 
 end Nat
 
