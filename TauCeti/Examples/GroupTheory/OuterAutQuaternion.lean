@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.Automorphism.Outer
 public import TauCeti.Topology.Algebra.Group.ContinuousAut.Discrete
 
 import Mathlib.Data.Finite.Perm
+import TauCeti.GroupTheory.SpecificGroups.Quaternion.Basic
 
 /-!
 # The outer automorphism group of the quaternion group
@@ -184,17 +185,10 @@ theorem nonempty_mulEquiv_perm : Nonempty (MulAut Q₈ ≃* Equiv.Perm (Fin 4)) 
   ⟨MulEquiv.ofBijective toPerm <| toPerm_injective.bijective_of_nat_card_le
     (by rw [card_mulAut, Nat.card_perm, Nat.card_fin]; decide)⟩
 
-/-- The centre of `Q₈` has order `2`. -/
-theorem card_center : Nat.card (Subgroup.center Q₈) = 2 := by
-  rw [Nat.card_eq_fintype_card]
-  decide +kernel
-
 /-- The inner automorphisms of `Q₈` form a group of order `4 = |Q₈ / Z(Q₈)|`. -/
 theorem card_range_conj : Nat.card (MulAut.conj : Q₈ →* MulAut Q₈).range = 4 := by
-  have h := Subgroup.card_eq_card_quotient_mul_card_subgroup (Subgroup.center Q₈)
-  rw [card_center, Nat.card_eq_fintype_card, QuaternionGroup.card] at h
-  rw [← Nat.card_congr (QuotientGroup.quotientKerEquivRange _).toEquiv, MulAut.ker_conj]
-  omega
+  rw [← Nat.card_congr (QuotientGroup.quotientKerEquivRange _).toEquiv, MulAut.ker_conj,
+    ← Subgroup.index_eq_card, index_center_quaternionGroup (by decide)]
 
 /-- `OuterAut Q₈` has order `24 / 4 = 6`. -/
 theorem card_outerAut : Nat.card (OuterAut Q₈) = 6 := by

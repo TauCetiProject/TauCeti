@@ -15,6 +15,7 @@ public import TauCeti.RingTheory.Ideal.LiesOver
 import Mathlib.Algebra.CharZero.Infinite
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
+import TauCeti.Algebra.MvPolynomial.Eval
 import TauCeti.RepresentationTheory.Stabilizer
 import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 import TauCeti.RepresentationTheory.SymmetricAlgebra.ShephardTodd
@@ -328,9 +329,7 @@ theorem exists_bijective_aeval_symmetricAlgebraInvariants_dual_stabilizer_of_isR
   obtain ⟨f, hf, hbij⟩ := (dual (ρ.comp (ρ.stabilizer v).subtype)
     ).exists_bijective_aeval_symmetricAlgebraInvariants_of_isRegularLocalRing
   let e := finCongr (Subspace.dual_finrank_eq (K := K) (V := V)).symm
-  have hcomp : MvPolynomial.aeval (R := K) (f ∘ e) =
-      (MvPolynomial.aeval f).comp (MvPolynomial.rename e) := by ext; simp
-  exact ⟨f ∘ e, fun i ↦ hf (e i), hcomp ▸ hbij.comp (MvPolynomial.renameEquiv K e).bijective⟩
+  exact ⟨f ∘ e, fun i ↦ hf (e i), (MvPolynomial.bijective_aeval_comp_equiv_iff e).mpr hbij⟩
 
 /-- **Characteristic-free polynomiality of `Sym(V*)^{G_v}` when `Sym(V*)^G` is regular.** Over any
 field `K`, if `Sym(V*)^G` is a regular ring, then for every `v : V`, `Sym(V*)^{G_v}` is a polynomial

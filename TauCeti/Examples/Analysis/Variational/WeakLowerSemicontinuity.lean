@@ -95,6 +95,11 @@ theorem e_apply (n : ℕ) : e n = lp.single 2 n (1 : ℝ) := by
   rw [← e.repr_symm_single n]
   simp [e, LinearIsometryEquiv.symm_apply_eq]
 
+/-- The unit vectors of `ℓ²` have norm `1`. -/
+@[simp]
+theorem norm_e (n : ℕ) : ‖e n‖ = 1 :=
+  e.orthonormal.1 n
+
 /-- The unit vectors of `ℓ²` converge weakly to `0`. -/
 theorem tendsto_toWeakSpace_e :
     Tendsto (fun n ↦ toWeakSpace ℝ _ (e n)) atTop (𝓝 (toWeakSpace ℝ _ 0)) :=
@@ -123,7 +128,7 @@ theorem not_seqLowerSemicontinuous_neg_norm_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ :=
   not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_forall_le_neg (f := fun u ↦ -‖u‖)
-    (c := -1) (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
+    (c := -1) (by norm_num) (by simp) fun n ↦ by simp
 
 /-- The norm of `ℓ²` is weakly lower semicontinuous. -/
 theorem lowerSemicontinuous_norm_comp_toWeakSpace_symm :
@@ -145,6 +150,6 @@ theorem not_seqLowerSemicontinuous_neg_norm_sq_comp_toWeakSpace_symm :
     ¬ SeqLowerSemicontinuous fun w : WeakSpace ℝ (lp (fun _ : ℕ ↦ ℝ) 2) ↦
       -‖(toWeakSpace ℝ _).symm w‖ ^ 2 :=
   not_seqLowerSemicontinuous_comp_toWeakSpace_symm_of_forall_le_neg (f := fun u ↦ -‖u‖ ^ 2)
-    (c := -1) (by norm_num) (by simp) fun n ↦ by simp [e.orthonormal.1 n]
+    (c := -1) (by norm_num) (by simp) fun n ↦ by simp
 
 end TauCeti.VariationalChecks

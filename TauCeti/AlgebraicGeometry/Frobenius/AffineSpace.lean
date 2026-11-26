@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import TauCeti.AlgebraicGeometry.Frobenius.Etale
 import Mathlib.Algebra.Field.ULift
+import TauCeti.AlgebraicGeometry.AffineSpace.Expand
 import TauCeti.AlgebraicGeometry.Frobenius.Iterate
 import TauCeti.AlgebraicGeometry.Scheme.ToSpecZMod
 import TauCeti.RingTheory.MvPolynomial.Expand
@@ -115,18 +116,16 @@ private theorem exists_isPullback_relativeFrobenius :
 /-- **The relative Frobenius of affine space is flat.** -/
 instance flat_relativeFrobenius : Flat ((𝔸(σ; S) ↘ S).relativeFrobenius p hS) := by
   obtain ⟨a, b, h⟩ := exists_isPullback_relativeFrobenius σ hS
-  refine of_isPullback h ?_
-  rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom]
-  exact TauCeti.MvPolynomial.flat_expand (Fact.out : p.Prime).pos
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  exact of_isPullback h inferInstance
 
 variable [Finite σ]
 
 /-- **The relative Frobenius of affine space in finitely many variables is finite.** -/
 instance isFinite_relativeFrobenius : IsFinite ((𝔸(σ; S) ↘ S).relativeFrobenius p hS) := by
   obtain ⟨a, b, h⟩ := exists_isPullback_relativeFrobenius σ hS
-  refine of_isPullback h ?_
-  rw [IsFinite.SpecMap_iff, CommRingCat.hom_ofHom]
-  exact TauCeti.MvPolynomial.finite_expand (Fact.out : p.Prime).pos
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
+  exact of_isPullback h inferInstance
 
 /-- The relative Frobenius of affine space in finitely many variables is locally of finite
 presentation. -/
@@ -144,18 +143,9 @@ finite locally free of constant rank `p ^ Nat.card σ`. -/
 theorem finrank_relativeFrobenius :
     ((𝔸(σ; S) ↘ S).relativeFrobenius p hS).finrank = fun _ ↦ p ^ Nat.card σ := by
   obtain ⟨a, b, h⟩ := exists_isPullback_relativeFrobenius σ hS
-  have hp := (Fact.out : p.Prime).pos
-  have hfin := TauCeti.MvPolynomial.finite_expand (σ := σ) (R := ULift.{u} (ZMod p)) hp
-  have hflat := TauCeti.MvPolynomial.flat_expand (σ := σ) (R := ULift.{u} (ZMod p)) hp
-  have : IsFinite (Spec.map (CommRingCat.ofHom
-      (MvPolynomial.expand p : MvPolynomial σ (ULift.{u} (ZMod p)) →ₐ[_] _).toRingHom)) :=
-    (IsFinite.SpecMap_iff _).2 hfin
-  have : Flat (Spec.map (CommRingCat.ofHom
-      (MvPolynomial.expand p : MvPolynomial σ (ULift.{u} (ZMod p)) →ₐ[_] _).toRingHom)) :=
-    Flat.SpecMap_iff.2 hflat
+  have : NeZero p := ⟨(Fact.out : p.Prime).ne_zero⟩
   ext x
-  rw [Hom.finrank_of_isPullback _ _ _ _ h, Hom.finrank_SpecMap_eq_finrank hfin hflat,
-    CommRingCat.hom_ofHom, TauCeti.MvPolynomial.finrank_expand hp]
+  rw [Hom.finrank_of_isPullback _ _ _ _ h, finrank_SpecMap_expand]
 
 section Etale
 

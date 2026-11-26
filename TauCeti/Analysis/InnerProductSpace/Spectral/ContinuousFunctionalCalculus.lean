@@ -15,7 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.Topology.LocallyConstant.Basic
 import Mathlib.Analysis.CStarAlgebra.Spectrum
 import TauCeti.Topology.Algebra.Indicator
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Spectral projections of self-adjoint operators
