@@ -292,7 +292,9 @@ noncomputable def coneOrbitEquiv (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) :
   let eCone :
       (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)) ≃
         {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
-    (Equiv.subtypeEquivRight fun _ ↦ and_comm).trans
+    (Equiv.subtypeEquivRight
+      (p := fun x : mixedSpace K ↦ x ∈ (fundamentalCone K ∩ idealLattice K I : Set (mixedSpace K)))
+      fun x ↦ (Set.mem_inter_iff x _ _).trans and_comm).trans
       (Equiv.subtypeSubtypeEquivSubtypeInter
         (fun x : mixedSpace K ↦ x ∈ idealLattice K I)
         (fun x : mixedSpace K ↦ x ∈ fundamentalCone K)).symm
@@ -309,18 +311,14 @@ theorem coneOrbitEquiv_apply_coe (I : (FractionalIdeal (𝓞 K)⁰ K)ˣ)
     (g : (𝓞 K)ˣ ⧸ Units.torsion K) :
     ((coneOrbitEquiv I (a, g) : {x : idealLattice K I // x ≠ 0}) : mixedSpace K) =
       (Quotient.out g : (𝓞 K)ˣ) • (a : mixedSpace K) := by
-  set x : {x : idealLattice K I // (x : mixedSpace K) ∈ fundamentalCone K} :=
-    ⟨⟨a.val, a.property.right⟩, a.property.left⟩
-  set p := (idealLatticeFundamentalConeEquiv I).symm x
-  have hp : ((idealLatticeFundamentalConeEquiv I p : idealLattice K I) : mixedSpace K) =
-      (a : mixedSpace K) := by
-    simp only [p, Equiv.apply_symm_apply, x]
   simp only [coneOrbitEquiv, Equiv.trans_apply, Equiv.prodCongr_apply, Prod.map_apply,
     Equiv.coe_refl, id_eq, Equiv.prodAssoc_apply, Equiv.prodComm_apply,
     Prod.swap_prod_mk, Subgroup.groupEquivQuotientProdSubgroup_symm_apply,
     coe_idealLatticeNeZeroEquiv]
-  change (Quotient.out g * (p.2 : (𝓞 K)ˣ)) • mixedEmbedding K (coneGen I p.1) = _
-  rw [mul_smul, ← coe_idealLatticeFundamentalConeEquiv I p, hp]
+  rw [mul_smul, ← coe_idealLatticeFundamentalConeEquiv, Equiv.apply_symm_apply]
+  simp only [Equiv.subtypeSubtypeEquivSubtypeInter, Equiv.subtypeEquivRight,
+    Equiv.subtypeSubtypeEquivSubtypeExists, Equiv.subtypeEquiv, Equiv.symm_trans_apply,
+    Equiv.coe_fn_mk, Equiv.coe_fn_symm_mk, Equiv.refl_symm, Equiv.coe_refl, id_eq]
 
 /-- **The cone in unit rank `0`.** When the unit rank is `0`, as for `ℚ` and the imaginary
 quadratic fields, there is no logarithmic condition to impose, and the fundamental cone is the set

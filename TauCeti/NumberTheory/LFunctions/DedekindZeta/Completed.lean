@@ -236,11 +236,13 @@ private theorem classNumber_mul_two_mul_mellinConstant :
     (classNumber K * (2 * mellinConstant K) : ℂ) =
       (2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
         torsionOrder K : ℝ) := by
-  exact_mod_cast show (classNumber K : ℝ) * (2 * mellinConstant K) =
+  -- Perform the arithmetic in `ℝ` because `two_mul_mellinConstant` is stated over `ℝ`, then cast.
+  have h : (classNumber K : ℝ) * (2 * mellinConstant K) =
       2 ^ (nrRealPlaces K + nrComplexPlaces K) * classNumber K * regulator K /
-        torsionOrder K by
+        torsionOrder K := by
     rw [two_mul_mellinConstant]
     ring
+  exact_mod_cast h
 
 /-- **Residue of `Λ_K` at `s = 1`**:
 `lim_{s → 1} (s - 1) Λ_K(s) = 2 ^ (r₁ + r₂) h R / w`. -/
