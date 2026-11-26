@@ -39,9 +39,6 @@ recursion `σ_{k+1}(c₀, c') = σ_{k+1}(c') + c₀ σ_k(c')` of the elementary 
 
 ## Main results
 
-* `ContinuousAlternatingMap.pairedWedge_curryLeftTopological_wedgePow_succ_apply`: inserting a
-  vector `q` into `φ ^ (k + 1)` and wedging with `ψ` gives `(k + 1) φ(q, p) (φ ^ k ∧ ψ)(R)` on
-  `(p, R)` when `φ(q, ·)` kills `R`.
 * `ContinuousAlternatingMap.pairedWedge_wedgePow_wedgePow_apply_finProdFinEquiv`: the value
   `k! l! σ_k(c)` of `α ^ k ∧ ω ^ l` on diagonal pairs.
 -/
@@ -53,39 +50,6 @@ open TauCeti
 namespace ContinuousAlternatingMap
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
-
-/-- **Inserting a vector into a power and wedging.** For a two-form `φ`, a form `ψ` of degree `d`
-and vectors `q`, `p`, `R` such that `φ(q, Rᵢ) = 0` for every `i`, the interior product of `q` with
-`φ ^ (k + 1)`, wedged with `ψ`, takes the value `(k + 1) φ(q, p) (φ ^ k ∧ ψ)(R)` on `(p, R)`.
-The tuple `R` may be indexed by any `Fin n` with `n = 2 k + d`. -/
-theorem pairedWedge_curryLeftTopological_wedgePow_succ_apply (φ : E [⋀^Fin 2]→L[ℝ] ℝ) (k : ℕ)
-    {d n : ℕ} (ψ : E [⋀^Fin d]→L[ℝ] ℝ) (q p : E) (R : Fin n → E) (h : 2 * k + 1 + d = n + 1)
-    (hqR : ∀ i, φ ![q, R i] = 0) :
-    pairedWedge (ContinuousLinearMap.mul ℝ ℝ) (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (curryLeftTopological (n := 2 * k + 1) (wedgePow φ (k + 1)) q) ψ
-        (Matrix.vecCons p R ∘ Fin.cast h) =
-      (k + 1) * (φ ![q, p] * pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂ (wedgePow φ k) ψ (R ∘ Fin.cast (by omega))) := by
-  obtain rfl : n = 2 * k + d := by omega
-  rw [pairedWedge_apply_of_left_eq_smul_cast _ _ (Nat.add_comm 1 (2 * k)) ((k : ℝ) + 1)
-    (fun w ↦ by rw [curryLeftTopological_apply_apply, wedgePow_succ_apply_vecCons, smul_eq_mul]),
-    smul_eq_mul, pairedWedge_mul_assoc, Fin.cast_refl, Function.comp_id]
-  congr 1
-  rw [Fin.comp_cast_comp_cast, Fin.comp_cast_comp_cast,
-    pairedWedge_apply_vecCons_of_forall _ _ _ _ _ _ fun i ↦ by
-      rw [curryLeftTopological_apply_apply]
-      simpa using hqR i,
-    curryLeftTopological_apply_apply, ContinuousLinearMap.mul_apply']
-
-/-- Under the diagonal conditions, the one-form `φ(q₀, ·)` kills the later pairs. -/
-private theorem apply_zero_comp_succ_eq_zero (φ : E [⋀^Fin 2]→L[ℝ] ℝ) {m : ℕ}
-    (b : Fin (m + 1) × Fin 2 → E) (c : Fin (m + 1) → ℝ) (h₀₀ : ∀ i j, φ ![b (i, 0), b (j, 0)] = 0)
-    (h₀₁ : ∀ i j, φ ![b (i, 0), b (j, 1)] = if i = j then c i else 0) (ij : Fin m × Fin 2) :
-    φ ![b (0, 0), (b ∘ Prod.map Fin.succ id) ij] = 0 := by
-  obtain ⟨j, k⟩ := ij
-  fin_cases k
-  · exact h₀₀ 0 j.succ
-  · simpa [(Fin.succ_ne_zero j).symm] using h₀₁ 0 j.succ
 
 /-- **The expansion along the first vector.** If `α(q, ·)` and `ω(q, ·)` kill the vectors of
 `T`, then `(α ^ (k + 1) ∧ ω ^ (l + 1))(q, p, T)` is `(k + 1) α(q, p) (α ^ k ∧ ω ^ (l + 1))(T)` plus

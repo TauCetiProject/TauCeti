@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Basic
+public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 
 /-!
@@ -33,6 +34,8 @@ frame.
 * `ContinuousAlternatingMap.apply_relEigenvectorBasis_eq_zero`,
   `ContinuousAlternatingMap.apply_relEigenvectorBasis_I_smul`: on the eigenbasis `u` of `H_α`,
   `α(uᵢ, uⱼ) = 0` and `α(uᵢ, i uⱼ) = λᵢ[α] δᵢⱼ`, so `α` is diagonal on the real frame `(uᵢ, i uᵢ)`.
+* `ContinuousAlternatingMap.apply_relEigenvectorBasis_ofComplexModule`: the same diagonal values
+  with the complex structure `TauCeti.AlmostComplexStructure.ofComplexModule E` in place of `i`.
 
 ## References
 
@@ -87,5 +90,15 @@ theorem apply_relEigenvectorBasis_I_smul (hn : finrank ℂ E = n) (i j : Fin n) 
       if i = j then (isSymm_hermitianSesqForm hα).relEigenvalues hn i else 0 := by
   have h := congrArg Complex.re ((isSymm_hermitianSesqForm hα).apply_relEigenvectorBasis hn i j)
   simpa [hermitianSesqForm_apply, re_hermitianForm, apply_ite] using h
+
+/-- **A (1,1)-form is diagonal on its eigenbasis**, with the complex structure
+`J = TauCeti.AlmostComplexStructure.ofComplexModule E` of multiplication by `i`: on the
+orthonormal eigenbasis `u` of `H_α`, `α(uᵢ, J uⱼ) = λᵢ[α] δᵢⱼ`. -/
+theorem apply_relEigenvectorBasis_ofComplexModule (hn : finrank ℂ E = n) (i j : Fin n) :
+    α ![(isSymm_hermitianSesqForm hα).relEigenvectorBasis hn i,
+      TauCeti.AlmostComplexStructure.ofComplexModule E
+        ((isSymm_hermitianSesqForm hα).relEigenvectorBasis hn j)] =
+      if i = j then (isSymm_hermitianSesqForm hα).relEigenvalues hn i else 0 := by
+  simpa using apply_relEigenvectorBasis_I_smul hα hn i j
 
 end ContinuousAlternatingMap

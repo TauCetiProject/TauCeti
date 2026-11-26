@@ -69,7 +69,7 @@ theorem wedgePow_apply_complexRealFrame_relEigenvectorBasis {n : ℕ} (hn : finr
   exact wedgePow_apply_finProdFinEquiv_eq_mul_prod α
     (fun p : Fin n × Fin 2 ↦ ![u p.1, ofComplexModule E (u p.1)] p.2)
     ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (apply_relEigenvectorBasis_eq_zero hα hn)
-    (fun i j ↦ by simpa using apply_relEigenvectorBasis_I_smul hα hn i j)
+    (apply_relEigenvectorBasis_ofComplexModule hα hn)
 
 /-- **The top power of a (1,1)-form**: on a complex inner product space of dimension `n`, with
 `ω` the Kähler form of multiplication by `i`, a real two-form `α` of type (1,1) satisfies
@@ -81,7 +81,7 @@ theorem wedgePow_ofComplexModule {n : ℕ} (hn : finrank ℂ E = n) :
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
   rw [eq_smul_kahlerPowerForm real_inner_ofComplexModule_ofComplexModule
       (by rw [finrank_real_of_complex, hn]) u.orthonormal.real
-      (fun i j ↦ by simpa using u.orthonormal.real_inner_I_smul_eq_zero i j) (α.wedgePow n),
+      u.orthonormal.real_inner_ofComplexModule_eq_zero (α.wedgePow n),
     wedgePow_apply_complexRealFrame_relEigenvectorBasis hα hn,
     kahlerPowerForm_def, smul_smul]
   congr 1

@@ -83,9 +83,9 @@ theorem wedge_wedgePow_wedgePow_apply_complexRealFrame {n k l : ℕ} (hn : finra
   exact pairedWedge_wedgePow_wedgePow_apply_finProdFinEquiv α _ hkl
     (fun p : Fin n × Fin 2 ↦ ![u p.1, ofComplexModule E (u p.1)] p.2)
     ((isSymm_hermitianSesqForm hα).relEigenvalues hn) (apply_relEigenvectorBasis_eq_zero hα hn)
-    (fun i j ↦ by simpa using apply_relEigenvectorBasis_I_smul hα hn i j)
+    (apply_relEigenvectorBasis_ofComplexModule hα hn)
     (alternatingFormEquiv_kahlerForm_vecCons_eq_zero real_inner_ofComplexModule_ofComplexModule
-      fun i j ↦ by simpa using u.orthonormal.real_inner_I_smul_eq_zero i j)
+      u.orthonormal.real_inner_ofComplexModule_eq_zero)
     (alternatingFormEquiv_kahlerForm_vecCons_apply real_inner_ofComplexModule_ofComplexModule
       u.orthonormal.real)
 
@@ -103,8 +103,7 @@ theorem wedge_wedgePow_wedgePow_ofComplexModule {n k l : ℕ} (hn : finrank ℂ 
         (alternatingFormEquiv E 2 (ofComplexModule E).kahlerForm).wedgePow n v := by
   set u := (isSymm_hermitianSesqForm hα).relEigenvectorBasis hn
   have huR : Orthonormal ℝ (u : Fin n → E) := u.orthonormal.real
-  have hJu (i j : Fin n) : inner ℝ ((ofComplexModule E) (u i)) (u j) = 0 := by
-    simpa using u.orthonormal.real_inner_I_smul_eq_zero i j
+  have hJu := u.orthonormal.real_inner_ofComplexModule_eq_zero
   have hJ := real_inner_ofComplexModule_ofComplexModule (E := E)
   -- The real frame of the eigenbasis is a basis of `E`, indexed by `Fin (2 n)`.
   let B : Basis (Fin (2 * n)) ℝ E := basisOfLinearIndependentOfCardEqFinrank' _
