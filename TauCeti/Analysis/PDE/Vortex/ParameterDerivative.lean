@@ -711,10 +711,14 @@ private theorem eLpNorm_exp_mul_smul_sobolevFieldValues_le_of_sub_and_abs_inner_
       sobolevFieldValues (P₁ k), sobolevFieldValues (P₂ k)])
     (A := ![A₀, A₁, A₂]) hπ hkc
     (fun k hk i _ ↦ by
-      fin_cases i
+      fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+        Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
       exacts [eLpNorm_exp_mul_smul_sobolevFieldValues_holderL_add_add_le hQn b₀ b₁ b₂ (hkn k hk)
         (hP₁ k hk) (hP₂ k hk), hP₁ k hk, hP₂ k hk])
-    y fun k hk ↦ by rw [Fin.sum_univ_three]; exact hpair k hk
+    y fun k hk ↦ by
+      simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
+        Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+      exact hpair k hk
   simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one,
     Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons] at hker
   refine hker.trans ?_
@@ -800,9 +804,11 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInve
     ((hQ' v f).trans_eq (by push_cast; ring)) (hqc f)
     ((hQ' v f).trans_eq (by push_cast; ring)) ((hQ' w f).trans_eq (by push_cast; ring)) hsplit
     fun k hk ↦ ?_).trans ?_
-  · rw [hpair k hk]
-    refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans
-      (add_le_add (le_of_eq ?_) (le_of_eq ?_))) (le_of_eq ?_)) <;> rw [real_inner_comm]
+  · have hcomm (u u' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : |⟪u, u'⟫| ≤ |⟪u', u⟫| :=
+      (congrArg abs (real_inner_comm u' u)).le
+    rw [hpair k hk]
+    exact (abs_sub _ _).trans
+      (add_le_add ((abs_sub _ _).trans (add_le_add (hcomm _ _) (hcomm _ _))) (hcomm _ _))
   · exact coe_mul_le_coe_add_mul_add_mul (by ring) _
 
 /-- **The weighted estimate for the second parameter derivative of the orthogonal kernel
@@ -877,10 +883,11 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
     (eLpNorm_exp_mul_smul_sobolevFieldValues_sub_le hπe)
     ((hπ'c v).trans_eq (by push_cast; ring)) ((hπ'c w).trans_eq (by push_cast; ring)) hsplit
     fun k hk ↦ ?_).trans ?_
-  · rw [hpair k hk]
-    refine (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans
-      (add_le_add (le_of_eq ?_) (le_of_eq ?_))) (le_of_eq ?_)) <;> rw [real_inner_comm]
-    exact abs_neg _
+  · have hcomm (u u' : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) : |⟪u, u'⟫| ≤ |⟪u', u⟫| :=
+      (congrArg abs (real_inner_comm u' u)).le
+    rw [hpair k hk]
+    exact (abs_sub _ _).trans (add_le_add ((abs_sub _ _).trans
+      (add_le_add ((abs_neg _).trans_le (hcomm _ _)) (hcomm _ _))) (hcomm _ _))
   · exact coe_mul_le_coe_add_mul_add_mul (by ring) _
 
 /-! ### The weighted Sobolev estimate for the parameter derivative -/
