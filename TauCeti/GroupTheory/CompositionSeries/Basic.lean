@@ -6,13 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.NormalSubgroup.Lattice
+public import Mathlib.Data.SetLike.Fintype
 public import Mathlib.GroupTheory.IsSubnormal
 public import Mathlib.Order.RelSeries
-
-import Mathlib.Algebra.Group.Subgroup.Finite
-import Mathlib.Data.SetLike.Fintype
-import Mathlib.GroupTheory.QuotientGroup.Basic
-import Mathlib.Order.Atoms.Finite
 
 /-!
 # Composition series of groups
@@ -20,9 +16,10 @@ import Mathlib.Order.Atoms.Finite
 A group composition series is a finite strictly increasing chain from the trivial subgroup to
 the whole group, with each term normal in the next and each successive quotient simple.
 
-`exists_relSeries_isCompositionStep_between` refines any normal inclusion into a finite subgroup.
-In particular, every finite group has a composition series. Every term of a composition series is
-subnormal in the ambient group.
+`exists_relSeries_isCompositionStep_between` refines any normal inclusion whose upper subgroup
+satisfies both chain conditions on subgroups. In particular, every finite group has a composition
+series. The terminal step uses `TauCeti.NormalSubgroup.isCoatom_iff_isSimpleGroup` to characterize
+simple quotients. Every term of a composition series is subnormal in the ambient group.
 -/
 
 public section
@@ -35,7 +32,20 @@ variable {G : Type*} [Group G]
 structure IsCompositionStep (H K : Subgroup G) : Prop where
   lt : H < K
   normal : (H.subgroupOf K).Normal
-  isSimple : letI := normal; IsSimpleGroup (K ⧸ H.subgroupOf K)
+  isSimpleGroup_quotient : letI := normal; IsSimpleGroup (K ⧸ H.subgroupOf K)
+
+/-- A normal inclusion is a composition step exactly when its lower term is a coatom in the
+lattice of normal subgroups of the upper term. -/
+theorem isCompositionStep_iff_isCoatom {H K : Subgroup G} (hHK : H ≤ K)
+    (hNormal : (H.subgroupOf K).Normal) :
+    H.IsCompositionStep K ↔
+      IsCoatom (⟨H.subgroupOf K, TauCeti.mem_normalSubgroups.mpr hNormal⟩ :
+        TauCeti.NormalSubgroup K) := by
+  have := hNormal
+  refine ⟨fun h ↦ TauCeti.NormalSubgroup.isCoatom_iff_isSimpleGroup.mpr
+    h.isSimpleGroup_quotient, fun h ↦ ⟨?_, hNormal,
+      TauCeti.NormalSubgroup.isCoatom_iff_isSimpleGroup.mp h⟩⟩
+  exact lt_of_le_of_ne hHK fun he ↦ h.1 (Subtype.ext (by simp [he]))
 
 end Subgroup
 
@@ -51,44 +61,72 @@ structure GroupCompositionSeries extends
 
 variable {G}
 
-/-- A finite normal interval admits a series of composition steps. -/
-theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G} [Finite B]
+/-- A proper normal inclusion has a terminal composition step when subgroups satisfy the
+ascending chain condition. -/
+private theorem exists_terminal_isCompositionStep {A B : Subgroup G}
+    [WellFoundedGT (Subgroup B)] (hAB : A < B) (hN : (A.subgroupOf B).Normal) :
+    ∃ C : Subgroup G, A ≤ C ∧ (A.subgroupOf C).Normal ∧ C.IsCompositionStep B := by
+  let NA : NormalSubgroup B := ⟨A.subgroupOf B, mem_normalSubgroups.mpr hN⟩
+  have hNA : NA ≠ ⊤ := by
+    intro he
+    exact hAB.ne (le_antisymm hAB.le
+      (Subgroup.subgroupOf_eq_top.mp congr(Subtype.val $he)))
+  obtain ⟨M, hM, hAM⟩ := (eq_top_or_exists_le_coatom NA).resolve_left hNA
+  let C : Subgroup G := (M : Subgroup B).map B.subtype
+  have hCM : C.subgroupOf B = (M : Subgroup B) :=
+    (Subgroup.MapSubtype.orderIso B).symm_apply_apply (M : Subgroup B)
+  have hCBlt : C < B := by
+    simpa only [Subgroup.map_top, Subgroup.range_subtype] using
+      (Subgroup.map_subtype_lt_map_subtype.mpr
+        (show (M : Subgroup B) < ⊤ from Subtype.coe_lt_coe.mpr hM.lt_top))
+  have hCB : C ≤ B := hCBlt.le
+  have hAC : A ≤ C := by
+    simpa only [Subgroup.map_subgroupOf_eq_of_le hAB.le] using
+      (Subgroup.map_mono hAM : (A.subgroupOf B).map B.subtype ≤ C)
+  have hNC : (A.subgroupOf C).Normal := by
+    simpa only [Subgroup.comap_inclusion_subgroupOf] using
+      hN.comap (Subgroup.inclusion hCB)
+  have hNormal : (C.subgroupOf B).Normal := hCM ▸ inferInstance
+  refine ⟨C, hAC, hNC, (Subgroup.isCompositionStep_iff_isCoatom hCB hNormal).mpr ?_⟩
+  convert hM using 1
+  exact Subtype.ext hCM
+
+/-- A normal interval admits a series of composition steps when the upper subgroup satisfies
+both the ascending and descending chain conditions on subgroups. -/
+theorem exists_relSeries_isCompositionStep_between {A B : Subgroup G}
+    [WellFoundedLT (Subgroup B)] [WellFoundedGT (Subgroup B)]
     (hAB : A ≤ B) (hN : (A.subgroupOf B).Normal) :
     ∃ s : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2},
       s.head = A ∧ s.last = B := by
-  induction n : Nat.card B using Nat.strong_induction_on generalizing A B with
-  | ind n ih =>
-    by_cases h : A = B
+  have : WellFoundedLT {C : Subgroup G // C ≤ B} :=
+    (Subgroup.MapSubtype.orderIso B).symm.toOrderEmbedding.wellFoundedLT
+  suffices ∀ C : {C : Subgroup G // C ≤ B}, ∀ A ≤ C.val, (A.subgroupOf C.val).Normal →
+      ∃ s : RelSeries {p : Subgroup G × Subgroup G | p.1.IsCompositionStep p.2},
+        s.head = A ∧ s.last = C.val from this ⟨B, le_rfl⟩ A hAB hN
+  intro C
+  induction C using WellFoundedLT.induction with
+  | ind C ih =>
+    intro A hAC hN
+    by_cases h : A = C.val
     · subst A
-      exact ⟨.singleton _ B, rfl, rfl⟩
-    let NA : NormalSubgroup B := ⟨A.subgroupOf B, mem_normalSubgroups.mpr hN⟩
-    have hNA : NA ≠ ⊤ := by
-      intro he
-      exact h (le_antisymm hAB (Subgroup.subgroupOf_eq_top.mp congr(Subtype.val $he)))
-    obtain ⟨M, hM, hAM⟩ := (eq_top_or_exists_le_coatom NA).resolve_left hNA
-    let C : Subgroup G := (M : Subgroup B).map B.subtype
-    have hCB : C ≤ B := Subgroup.map_subtype_le _
-    have hCM : C.subgroupOf B = (M : Subgroup B) := by
-      rw [← Subgroup.comap_subtype, Subgroup.comap_map_eq_self_of_injective B.subtype_injective]
-    have hCBlt : C < B := lt_of_le_of_ne hCB fun he ↦ hM.1 (Subtype.ext (by
-      rw [← hCM, he, Subgroup.subgroupOf_self, CompleteSublattice.coe_top]))
-    have hAC : A ≤ C := by
-      simpa only [Subgroup.map_subgroupOf_eq_of_le hAB] using
-        (Subgroup.map_mono hAM : (A.subgroupOf B).map B.subtype ≤ C)
-    have hNC : (A.subgroupOf C).Normal := by
-      simpa only [Subgroup.comap_inclusion_subgroupOf] using
-        hN.comap (Subgroup.inclusion hCB)
-    have : Finite C := ((Set.toFinite (B : Set G)).subset hCB).to_subtype
-    obtain ⟨s, hsA, hsC⟩ := ih (Nat.card C) (n ▸ Subgroup.card_lt_of_lt hCBlt) hAC hNC rfl
-    have hstep : Subgroup.IsCompositionStep C B := by
-      have : (C.subgroupOf B).Normal := hCM ▸ inferInstance
-      refine ⟨hCBlt, this, ?_⟩
-      exact (QuotientGroup.quotientMulEquivOfEq hCM).isSimpleGroup_congr.mpr
-        (NormalSubgroup.isCoatom_iff_isSimpleGroup.mp hM)
-    exact ⟨s.snoc B (hsC ▸ hstep), by simpa using hsA, by simp⟩
+      exact ⟨.singleton _ C.val, RelSeries.head_singleton _, RelSeries.last_singleton _⟩
+    let e : Subgroup C.val ↪o Subgroup B := OrderEmbedding.ofMapLEIff
+      (fun D ↦ D.map (Subgroup.inclusion C.property))
+      (fun _ _ ↦ Subgroup.map_le_map_iff_of_injective (Subgroup.inclusion_injective _))
+    have : WellFoundedGT (Subgroup C.val) := e.wellFoundedGT
+    obtain ⟨D, hAD, hND, hstep⟩ := exists_terminal_isCompositionStep (lt_of_le_of_ne hAC h) hN
+    obtain ⟨s, hsA, hsD⟩ := ih ⟨D, hstep.lt.le.trans C.property⟩ hstep.lt A hAD hND
+    exact ⟨s.snoc C.val (hsD ▸ hstep), by simpa using hsA, by simp⟩
 
-/-- Every finite group has a composition series. -/
-theorem nonempty_groupCompositionSeries [Finite G] : Nonempty (GroupCompositionSeries G) := by
+/-- Every group satisfying both chain conditions on subgroups has a composition series.
+In particular, this applies to every finite group. -/
+theorem nonempty_groupCompositionSeries [WellFoundedLT (Subgroup G)]
+    [WellFoundedGT (Subgroup G)] : Nonempty (GroupCompositionSeries G) := by
+  let e : Subgroup (⊤ : Subgroup G) ↪o Subgroup G :=
+    (Subgroup.MapSubtype.orderIso (⊤ : Subgroup G)).toOrderEmbedding.trans
+    (OrderEmbedding.subtype _)
+  have : WellFoundedLT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedLT
+  have : WellFoundedGT (Subgroup (⊤ : Subgroup G)) := e.wellFoundedGT
   obtain ⟨s, h0, h1⟩ := exists_relSeries_isCompositionStep_between (G := G) bot_le
     (inferInstance : ((⊥ : Subgroup G).subgroupOf ⊤).Normal)
   exact ⟨⟨s, h0, h1⟩⟩
@@ -130,15 +168,15 @@ theorem strictMono (s : GroupCompositionSeries G) : StrictMono s :=
   LTSeries.strictMono (s.toRelSeries.ofLE fun _ h ↦ h.lt)
 
 /-- Each term of a composition series is normal in its successor. -/
-theorem normal (s : GroupCompositionSeries G) (i : Fin s.length) :
+theorem normal_subgroupOf_succ (s : GroupCompositionSeries G) (i : Fin s.length) :
     ((s i.castSucc).subgroupOf (s i.succ)).Normal :=
   (s.step i).normal
 
 /-- The successive quotients of a composition series are simple, on their actual carriers. -/
-theorem isSimple (s : GroupCompositionSeries G) (i : Fin s.length) :
-    letI := s.normal i
+theorem isSimpleGroup_quotient (s : GroupCompositionSeries G) (i : Fin s.length) :
+    letI := s.normal_subgroupOf_succ i
     IsSimpleGroup (s i.succ ⧸ (s i.castSucc).subgroupOf (s i.succ)) :=
-  (s.step i).isSimple
+  (s.step i).isSimpleGroup_quotient
 
 /-- Every term of a composition series is subnormal in the ambient group. -/
 theorem isSubnormal (s : GroupCompositionSeries G) (i : Fin (s.length + 1)) :
