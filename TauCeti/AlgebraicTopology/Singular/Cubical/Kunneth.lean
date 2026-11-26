@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.CrossProduct
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
+public import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 
 /-!
 # The cubical Eilenberg–Zilber theorem and the Künneth theorem for cubical homology
@@ -37,6 +38,11 @@ cubes (an instance in `Cubical/Normalization.lean`).
   ideal domain.
 * `TauCeti.tensorHom_comp_singularHomologyKunneth`: the cubical Künneth map corresponds to the
   singular Künneth map (`TopCat.singularHomologyKunneth`) under the comparison isomorphism.
+* `TauCeti.singularCubicalHomologyIso_inv_homologyMap_cubicalCrossProduct_homologyCross`: on
+  classes, the comparison isomorphism carries the cubical cross product to the singular one
+  (`TopCat.singularHomologyCrossBilinear`).
+* `TauCeti.homologyMap_cubicalCrossProduct_homologyCross_homologyπ`: the cubical cross product of
+  the classes of two cubes that are cycles is the class of their cross product cube.
 -/
 
 public section
@@ -44,6 +50,7 @@ public section
 noncomputable section
 
 open CategoryTheory MonoidalCategory HomologicalComplex Limits
+open scoped TensorProduct
 
 universe u
 
@@ -223,6 +230,94 @@ theorem tensorHom_comp_singularHomologyKunneth (n : ℕ) :
   rw [h2] at h
   rw [TopCat.singularHomologyKunneth_def]
   exact (congrArg (_ ≫ ·) (Category.assoc _ _ _)).trans h
+
+/-- **The comparison carries the cubical cross product to the singular cross product**: for
+classes `a` of `X` and `b` of `Y` in normalized cubical homology, the class of the cubical cross
+product `a × b` is sent by the comparison isomorphism to the singular cross product, with the
+coefficients `k ⊗ k` identified with `k`, of the classes of `a` and `b`. This is the restriction of
+`TauCeti.tensorHom_comp_singularHomologyKunneth` to the summand of bidegree `(p, q)`. -/
+theorem singularCubicalHomologyIso_inv_homologyMap_cubicalCrossProduct_homologyCross
+    (p q n : ℕ) (h : p + q = n)
+    (a : ((normalizedCubicalChainComplex k).obj X).homology p)
+    (b : ((normalizedCubicalChainComplex k).obj Y).homology q) :
+    (singularCubicalHomologyIso k (X ⊗ Y) n).inv
+        (homologyMap (cubicalCrossProduct k X Y) n
+          (homologyCross ((normalizedCubicalChainComplex k).obj X)
+            ((normalizedCubicalChainComplex k).obj Y) p q n h (a ⊗ₜ b))) =
+      TopCat.singularHomologyCrossBilinear k X Y p q n h
+        ((singularCubicalHomologyIso k X p).inv a) ((singularCubicalHomologyIso k Y q).inv b) := by
+  have key : (homologyMap ((cubicalToSingular k).app X) p ⊗ₘ
+        homologyMap ((cubicalToSingular k).app Y) q) ≫
+        TopCat.singularHomologyCross X Y (𝟙_ (ModuleCat.{u} k)) (𝟙_ _) p q n h ≫
+          ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) n).map
+            (λ_ (𝟙_ _)).hom).app (X ⊗ Y) =
+      (homologyCross ((normalizedCubicalChainComplex k).obj X)
+          ((normalizedCubicalChainComplex k).obj Y) p q n h ≫
+        homologyMap (cubicalCrossProduct k X Y) n) ≫
+        homologyMap ((cubicalToSingular k).app (X ⊗ Y)) n := by
+    have e := congrArg (GradedObject.Monoidal.ιTensorObj _ _ p q n h ≫ ·)
+      (tensorHom_comp_singularHomologyKunneth k X Y n)
+    rw [GradedObject.Monoidal.ι_tensorHom_assoc] at e
+    rw [← TopCat.ι_singularHomologyKunneth X Y _ _ n p q h,
+      ← ι_cubicalHomologyKunneth k X Y p q n h]
+    simp only [Category.assoc] at e ⊢
+    exact e
+  have e' := congrArg (fun f ↦ f (a ⊗ₜ b)) key
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul] at e'
+  rw [singularCubicalHomologyIso_inv, singularCubicalHomologyIso_inv,
+    singularCubicalHomologyIso_inv, TopCat.singularHomologyCrossBilinear_apply]
+  exact e'.symm
+
+variable {X Y} in
+/-- **The cross product of the classes of two cubes.** If cycles `z₁` of `X` and `z₂` of `Y` have
+the cubes `c` and `d` as underlying chains, then the cubical cross product of their classes is the
+class of any cycle of `X × Y` whose underlying chain is the cross product cube `c × d`. -/
+theorem homologyMap_cubicalCrossProduct_homologyCross_homologyπ {p q : ℕ}
+    {c : SingularCube X p} {d : SingularCube Y q}
+    (z₁ : ((normalizedCubicalChainComplex k).obj X).cycles p)
+    (hz₁ : ((normalizedCubicalChainComplex k).obj X).iCycles p z₁ =
+      NormalizedCubicalChain.ofCube X k c)
+    (z₂ : ((normalizedCubicalChainComplex k).obj Y).cycles q)
+    (hz₂ : ((normalizedCubicalChainComplex k).obj Y).iCycles q z₂ =
+      NormalizedCubicalChain.ofCube Y k d)
+    (w : ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).cycles (p + q))
+    (hw : ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).iCycles (p + q) w =
+      NormalizedCubicalChain.ofCube (X × Y) k (SingularCube.crossProduct c d)) :
+    homologyMap (cubicalCrossProduct k X Y) (p + q)
+        (homologyCross ((normalizedCubicalChainComplex k).obj X)
+          ((normalizedCubicalChainComplex k).obj Y) p q (p + q) rfl
+          (((normalizedCubicalChainComplex k).obj X).homologyπ p z₁ ⊗ₜ
+            ((normalizedCubicalChainComplex k).obj Y).homologyπ q z₂)) =
+      ((normalizedCubicalChainComplex k).obj (X ⊗ Y)).homologyπ (p + q) w := by
+  -- The cross product of the classes is the class of the cross product of the cycles.
+  have h₁ := ConcreteCategory.congr_hom (homologyπ_tensorHom_homologyCross
+    ((normalizedCubicalChainComplex k).obj X) ((normalizedCubicalChainComplex k).obj Y) p q (p + q)
+    rfl) (z₁ ⊗ₜ z₂)
+  rw [ConcreteCategory.comp_apply, ModuleCat.MonoidalCategory.tensorHom_tmul] at h₁
+  rw [h₁]
+  have h₂ := ConcreteCategory.congr_hom (homologyπ_naturality (cubicalCrossProduct k X Y) (p + q))
+    ((cyclesCross ((normalizedCubicalChainComplex k).obj X)
+      ((normalizedCubicalChainComplex k).obj Y) p q (p + q) rfl).hom (z₁ ⊗ₜ z₂))
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h₂
+  refine h₂.trans (congrArg _ (moduleCat_iCycles_injective _ _ ?_))
+  -- On chains, the cross product of the two cubes is the cube `c × d`.
+  have h₃ := ConcreteCategory.congr_hom (cyclesCross_iCycles
+    ((normalizedCubicalChainComplex k).obj X) ((normalizedCubicalChainComplex k).obj Y) p q (p + q)
+    rfl) (z₁ ⊗ₜ z₂)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
+    ModuleCat.MonoidalCategory.tensorHom_tmul, hz₁, hz₂] at h₃
+  have h₄ := ConcreteCategory.congr_hom (ι_cubicalCrossProduct_f (R := k) (X := X) (Y := Y)
+    (rfl : p + q = p + q))
+    (NormalizedCubicalChain.ofCube X k c ⊗ₜ NormalizedCubicalChain.ofCube Y k d)
+  simp only [ModuleCat.hom_comp] at h₄
+  -- The cycles of the tensor product are named through `HomologicalComplex.tensorObj`, which agrees
+  -- with the monoidal tensor product only after unfolding, so the steps are chained by
+  -- transitivity rather than rewritten.
+  refine (moduleCat_iCycles_cyclesMap_apply _ _ _ _).trans ?_
+  refine ((congrArg _ h₃).trans h₄).trans ?_
+  refine (cubicalCrossProductSummand_apply k X Y p q (p + q) rfl _ _).trans ?_
+  rw [NormalizedCubicalChain.cast_rfl, NormalizedCubicalChain.crossProduct_ofCube, hw]
 
 variable [NoZeroDivisors k] [IsPrincipalIdealRing k]
 
