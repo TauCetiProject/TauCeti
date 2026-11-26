@@ -220,9 +220,8 @@ theorem contMDiffOn_coordChange_doubledBundleCore (C : FiniteRankBundleCore ℂ 
   have hdom : (doubledBundleCore C hC).core.baseSet i ∩ (doubledBundleCore C hC).core.baseSet j =
       DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
         C.core.baseSet (DoubleAlong.fold A j)) := by
-    ext y
-    rw [doubledBundleCore_eq, Set.mem_inter_iff, FiniteRankBundleCore.mem_baseSet_doubleAlong,
-      FiniteRankBundleCore.mem_baseSet_doubleAlong, Set.mem_preimage, Set.mem_inter_iff]
+    rw [doubledBundleCore_eq]
+    exact FiniteRankBundleCore.baseSet_inter_baseSet_doubleAlong hC hC i j
   rw [hdom]
   -- The doubled core has rank `C.rank` and transitions `doubleAlongCoordChange C A`, both by
   -- definition (`doubledBundleCore_eq`, `rank_doubleAlong`, `coordChange_doubleAlong`). The rank
@@ -270,13 +269,13 @@ theorem contMDiffOn_inChartCoordinates_doubleAlongMap {C C' : FiniteRankBundleCo
         ((FiniteRankBundleCore.doubleAlongMap hC hC' φ hφ).fiberMap y))
       ((C.doubleAlong hC).core.baseSet i ∩ (C'.doubleAlong hC').core.baseSet j) := by
   -- The chart domains of the doubled cores are the preimages of those of `C`, `C'` under the fold.
-  have hdom : (C.doubleAlong hC).core.baseSet i ∩ (C'.doubleAlong hC').core.baseSet j =
-      DoubleAlong.fold A ⁻¹' (C.core.baseSet (DoubleAlong.fold A i) ∩
-        C'.core.baseSet (DoubleAlong.fold A j)) := by
-    ext y
-    rw [Set.mem_inter_iff, FiniteRankBundleCore.mem_baseSet_doubleAlong,
-      FiniteRankBundleCore.mem_baseSet_doubleAlong, Set.mem_preimage, Set.mem_inter_iff]
-  rw [hdom]
+  rw [FiniteRankBundleCore.baseSet_inter_baseSet_doubleAlong]
+  -- The doubles have ranks `C.rank` and `C'.rank` by definition (`rank_doubleAlong`). The ranks
+  -- occur in the model of the target, so the statement is restated rather than rewritten.
+  change ContMDiffOn (M' := (Fin C.rank → ℂ) →L[ℂ] (Fin C'.rank → ℂ)) 𝓘(ℝ, ℂ)
+    𝓘(ℝ, (Fin C.rank → ℂ) →L[ℂ] (Fin C'.rank → ℂ)) n
+    (fun y ↦ (C.doubleAlong hC).core.inChartCoordinates (C'.doubleAlong hC').core i j y
+      ((FiniteRankBundleCore.doubleAlongMap hC hC' φ hφ).fiberMap y)) _
   refine (contMDiffOn_of_eq_sheets_of_collar
     ((C.core.isOpen_baseSet _).inter (C'.core.isOpen_baseSet _)) (hφs _ _)
     (fun x _ ↦ DoubleAlong.conjExtend_inl A _ x)
