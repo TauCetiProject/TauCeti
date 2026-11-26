@@ -35,9 +35,12 @@ maps to the circle, a model of `B ℤ`, by a map that is not null-homotopic.
 * `TauCeti.fundamentalGroupCWFunctor`: the fundamental group on them.
 * `TauCeti.fundamentalGroupClassifyingSpaceAdjunction`: the adjunction `π₁ ⊣ B`.
 * `TauCeti.classifyingSpaceCWFunctorFullyFaithful`: as the counit is an isomorphism, `B` is fully
-  faithful.
+  faithful, with the corresponding `Full` and `Faithful` instances.
 
 ## Main results
+
+* `TauCeti.PointedHomotopyCat.isPathConnectedCWComplex_iff`,
+  `TauCeti.PointedHomotopyCat.isPathConnectedCWComplex_of`: membership in the subcategory.
 
 * `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply`: the hom-set bijection
   sends a pointed homotopy class to the homomorphism it induces on fundamental groups.
@@ -68,9 +71,36 @@ def isPathConnectedCWComplex : ObjectProperty PointedHomotopyCat.{u} :=
   fun X ↦ T2Space X.as.carrier ∧ Nonempty (Topology.CWComplex (Set.univ : Set X.as.carrier)) ∧
     PathConnectedSpace X.as.carrier
 
+theorem isPathConnectedCWComplex_iff {X : PointedHomotopyCat.{u}} :
+    isPathConnectedCWComplex X ↔ T2Space X.as.carrier ∧
+      Nonempty (Topology.CWComplex (Set.univ : Set X.as.carrier)) ∧
+        PathConnectedSpace X.as.carrier :=
+  Iff.rfl
+
+/-- A path-connected Hausdorff CW complex lies in `isPathConnectedCWComplex`. -/
+theorem isPathConnectedCWComplex_of {X : PointedHomotopyCat.{u}} [T2Space X.as.carrier]
+    [Topology.CWComplex (Set.univ : Set X.as.carrier)] [PathConnectedSpace X.as.carrier] :
+    isPathConnectedCWComplex X :=
+  ⟨‹_›, ⟨‹_›⟩, ‹_›⟩
+
+instance (X : isPathConnectedCWComplex.{u}.FullSubcategory) : T2Space X.obj.as.carrier :=
+  (isPathConnectedCWComplex_iff.1 X.property).1
+
+instance (X : isPathConnectedCWComplex.{u}.FullSubcategory) :
+    PathConnectedSpace X.obj.as.carrier :=
+  (isPathConnectedCWComplex_iff.1 X.property).2.2
+
+/-- A CW structure on an object of `isPathConnectedCWComplex`, chosen from its property. It is a
+local instance only: the property records that a CW structure exists, not which one. -/
+@[instance_reducible] private def cwComplex (X : isPathConnectedCWComplex.{u}.FullSubcategory) :
+    Topology.CWComplex (Set.univ : Set X.obj.as.carrier) :=
+  (isPathConnectedCWComplex_iff.1 X.property).2.1.some
+
 end PointedHomotopyCat
 
 open PointedHomotopyCat
+
+attribute [local instance] PointedHomotopyCat.cwComplex
 
 /-- Milnor's classifying space is a path-connected Hausdorff CW complex. -/
 theorem isPathConnectedCWComplex_classifyingSpaceHomotopyFunctor_obj (G : GrpCat.{u}) :
@@ -85,15 +115,35 @@ the pointed homotopy category. -/
   ObjectProperty.lift _ classifyingSpaceHomotopyFunctor
     isPathConnectedCWComplex_classifyingSpaceHomotopyFunctor_obj
 
+-- Not `@[simp]`: it rewrites objects inside the types of morphisms.
+theorem classifyingSpaceCWFunctor_obj_obj (G : GrpCat.{u}) :
+    (classifyingSpaceCWFunctor.obj G).obj = classifyingSpaceHomotopyFunctor.obj G :=
+  rfl
+
+@[simp]
+theorem classifyingSpaceCWFunctor_map_hom {G G' : GrpCat.{u}} (φ : G ⟶ G') :
+    (classifyingSpaceCWFunctor.map φ).hom = classifyingSpaceHomotopyFunctor.map φ :=
+  rfl
+
 /-- The fundamental group of a path-connected Hausdorff CW complex in the pointed homotopy
 category. -/
 @[expose] def fundamentalGroupCWFunctor :
     isPathConnectedCWComplex.{u}.FullSubcategory ⥤ GrpCat.{u} :=
   isPathConnectedCWComplex.ι ⋙ fundamentalGroupFunctor
 
+-- Not `@[simp]`: it rewrites objects inside the types of morphisms.
+theorem fundamentalGroupCWFunctor_obj (X : isPathConnectedCWComplex.{u}.FullSubcategory) :
+    fundamentalGroupCWFunctor.obj X = fundamentalGroupFunctor.obj X.obj :=
+  rfl
+
+@[simp]
+theorem fundamentalGroupCWFunctor_map {X Y : isPathConnectedCWComplex.{u}.FullSubcategory}
+    (f : X ⟶ Y) : fundamentalGroupCWFunctor.map f = fundamentalGroupFunctor.map f.hom :=
+  rfl
+
 /-- The identification `π₁(BG) ≅ G` of
 `classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`, typed for the objects of
-`classifyingSpaceCWFunctor`. -/
+`classifyingSpaceCWFunctor` (definitionally `classifyingSpaceHomotopyFunctor.obj G`). -/
 private def counitApp (G : GrpCat.{u}) :
     fundamentalGroupFunctor.obj (classifyingSpaceCWFunctor.obj G).obj ⟶ G :=
   classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G
@@ -104,23 +154,18 @@ private theorem map_comp_counitApp {G G' : GrpCat.{u}} (φ : G ⟶ G') :
   classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.naturality φ
 
 /-- The bijection `(π₁(X) ⟶ G) ≃ (X ⟶ BG)` underlying the adjunction: the inverse of
-`classifyingSpaceHomotopyFunctorHomEquiv`. -/
+`classifyingSpaceHomotopyFunctorHomEquiv`, transported along the inclusion of the full
+subcategory. The object `X.obj` is `PointedHomotopyCat.quotient.obj X.obj.as` by definition. -/
 private def homEquiv (X : isPathConnectedCWComplex.{u}.FullSubcategory) (G : GrpCat.{u}) :
     (fundamentalGroupCWFunctor.obj X ⟶ G) ≃ (X ⟶ classifyingSpaceCWFunctor.obj G) :=
-  have := X.property.1
-  have := X.property.2.2
-  let _ := X.property.2.1.some
   (classifyingSpaceHomotopyFunctorHomEquiv X.obj.as G).symm.trans
     (isPathConnectedCWComplex.fullyFaithfulι.homEquiv (X := X)
       (Y := classifyingSpaceCWFunctor.obj G)).symm
 
 private theorem homEquiv_symm_apply (X : isPathConnectedCWComplex.{u}.FullSubcategory)
     (G : GrpCat.{u}) (f : X ⟶ classifyingSpaceCWFunctor.obj G) :
-    (homEquiv X G).symm f = fundamentalGroupFunctor.map f.hom ≫ counitApp G := by
-  have := X.property.1
-  have := X.property.2.2
-  let _ := X.property.2.1.some
-  exact classifyingSpaceHomotopyFunctorHomEquiv_apply X.obj.as G f.hom
+    (homEquiv X G).symm f = fundamentalGroupFunctor.map f.hom ≫ counitApp G :=
+  classifyingSpaceHomotopyFunctorHomEquiv_apply X.obj.as G f.hom
 
 /-- **The fundamental group is left adjoint to the classifying space** on path-connected Hausdorff
 CW complexes: pointed homotopy classes `X ⟶ BG` correspond to homomorphisms `π₁(X) ⟶ G`. -/
@@ -128,14 +173,19 @@ def fundamentalGroupClassifyingSpaceAdjunction :
     fundamentalGroupCWFunctor.{u} ⊣ classifyingSpaceCWFunctor.{u} :=
   Adjunction.mkOfHomEquiv
     { homEquiv := homEquiv
-      homEquiv_naturality_left_symm := fun {X' X G} f g ↦ by
-        simp only [homEquiv_symm_apply, ObjectProperty.FullSubcategory.comp_hom, Functor.map_comp,
-          Category.assoc]
+      homEquiv_naturality_left_symm := fun f g ↦ by
+        rw [homEquiv_symm_apply, homEquiv_symm_apply, ObjectProperty.FullSubcategory.comp_hom,
+          Functor.map_comp, Category.assoc, fundamentalGroupCWFunctor_map]
+        -- As in `homEquiv_naturality_right`, the sides differ only in implicit objects, related
+        -- by `fundamentalGroupCWFunctor_obj` and `classifyingSpaceCWFunctor_obj_obj`.
         rfl
       homEquiv_naturality_right := fun {X G G'} f φ ↦ (homEquiv X G').symm.injective <| by
-        rw [Equiv.symm_apply_apply, homEquiv_symm_apply, ObjectProperty.FullSubcategory.comp_hom,
-          Functor.map_comp, Category.assoc, map_comp_counitApp, ← Category.assoc,
-          ← homEquiv_symm_apply, Equiv.symm_apply_apply]
+        simp only [Equiv.symm_apply_apply, homEquiv_symm_apply,
+          ObjectProperty.FullSubcategory.comp_hom, Functor.map_comp, Category.assoc,
+          map_comp_counitApp]
+        rw [← Category.assoc, ← homEquiv_symm_apply, Equiv.symm_apply_apply]
+        -- The two sides differ only in the implicit source, `fundamentalGroupCWFunctor.obj X`
+        -- against `fundamentalGroupFunctor.obj X.obj`, equal by `fundamentalGroupCWFunctor_obj`.
         rfl }
 
 /-- The hom-set bijection of `fundamentalGroupClassifyingSpaceAdjunction` sends a pointed homotopy
@@ -157,8 +207,8 @@ theorem fundamentalGroupClassifyingSpaceAdjunction_counit_app (G : GrpCat.{u}) :
     fundamentalGroupClassifyingSpaceAdjunction.counit.app G =
       classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G := by
   have h := fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply _ G (𝟙 _)
-  rw [Adjunction.homEquiv_counit, CategoryTheory.Functor.map_id, Category.id_comp] at h
-  erw [ObjectProperty.FullSubcategory.id_hom, CategoryTheory.Functor.map_id, Category.id_comp] at h
+  simp only [Adjunction.homEquiv_counit, ObjectProperty.FullSubcategory.id_hom,
+    fundamentalGroupCWFunctor_map, CategoryTheory.Functor.map_id] at h
   exact h
 
 instance (G : GrpCat.{u}) : IsIso (fundamentalGroupClassifyingSpaceAdjunction.counit.app G) := by
@@ -172,5 +222,9 @@ instance : IsIso fundamentalGroupClassifyingSpaceAdjunction.{u}.counit :=
 complexes, since the counit of `fundamentalGroupClassifyingSpaceAdjunction` is an isomorphism. -/
 def classifyingSpaceCWFunctorFullyFaithful : classifyingSpaceCWFunctor.{u}.FullyFaithful :=
   fundamentalGroupClassifyingSpaceAdjunction.fullyFaithfulROfIsIsoCounit
+
+instance : classifyingSpaceCWFunctor.{u}.Full := classifyingSpaceCWFunctorFullyFaithful.full
+
+instance : classifyingSpaceCWFunctor.{u}.Faithful := classifyingSpaceCWFunctorFullyFaithful.faithful
 
 end TauCeti
