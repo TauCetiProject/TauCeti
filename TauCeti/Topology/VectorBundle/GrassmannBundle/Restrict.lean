@@ -24,6 +24,9 @@ induced by the inclusion `W → B` covered by the identities of the fibres.
   an open embedding (`TauCeti.grassmannBundle.isOpenEmbedding_inclusion`), as is every continuous
   map of Grassmann bundles induced by an open embedding of the bases
   (`TauCeti.grassmannBundle.isOpenEmbedding_map`).
+* For open `W ⊆ B` and open `W' ⊆ W`, the Grassmann bundle of `(E|_W)|_{W'}` is homeomorphic to
+  that of `E|_{W'}` over the inclusions into `G_k(E)`
+  (`TauCeti.grassmannBundle.restrictRestrictHomeomorph`).
 
 This is the carrier of the restriction of a varifold on `B` to an open subset
 (`TauCeti.grassmannBundle.restrictOpens`).
@@ -105,6 +108,14 @@ theorem image_inclusion_preimage_proj (A : Set W) :
   rw [mem_preimage, ← Subtype.val_injective hx]
   exact hxA
 
+/-- The planes of `G_k(E)` reached through the two inclusions `G_k((E|_W)|_{W'}) → G_k(E|_W)` and
+`G_k(E|_W) → G_k(E)` are those reached through the single inclusion `G_k(E|_{W'}) → G_k(E)`,
+`W'` being read as a subset of `B`: in both cases the planes over `W'`. -/
+theorem range_inclusion_comp_inclusion {W' : Set W} :
+    range (inclusion F E k W ∘ inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W') =
+      range (inclusion F E k (Subtype.val '' W')) := by
+  rw [range_comp, range_inclusion, image_inclusion_preimage_proj, range_inclusion]
+
 end Map
 
 variable {B F : Type*} {E : B → Type*} [TopologicalSpace B]
@@ -140,6 +151,46 @@ variable [T2Space B] [FiniteDimensional ℝ F] [ContinuousFiberNorm F E]
 finite rank and continuous fibre norm and `B` is Hausdorff. -/
 theorem isOpenEmbedding_inclusion (hW : IsOpen W) : IsOpenEmbedding (inclusion F E k W) :=
   isOpenEmbedding_map hW.isOpenEmbedding_subtypeVal (continuous_inclusion W)
+
+section Transitivity
+
+variable {W} {W' : Set W}
+
+variable (F E k) in
+/-- **Transitivity of restriction for Grassmann bundles.** For open `W ⊆ B` and open `W' ⊆ W`,
+the Grassmann bundle of the iterated restriction `(E|_W)|_{W'}` is homeomorphic to that of the
+single restriction `E|_{W'}`, with `W'` read as a subset of `B`, compatibly with the inclusions
+into `G_k(E)` (`TauCeti.grassmannBundle.inclusion_restrictRestrictHomeomorph`). Both inclusions
+are open embeddings onto the planes over `W'`. -/
+def restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W') :
+    grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k ≃ₜ
+      grassmannBundle F (ContinuousMap.subtypeVal (Subtype.val '' W') *ᵖ E) k :=
+  ((isOpenEmbedding_inclusion W hW).comp
+    (isOpenEmbedding_inclusion W' hW')).isEmbedding.toHomeomorph |>.trans <|
+    (Homeomorph.setCongr (range_inclusion_comp_inclusion W)).trans
+      (isOpenEmbedding_inclusion _ (hW.isOpenMap_subtypeVal W' hW')).isEmbedding.toHomeomorph.symm
+
+/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` commutes with the inclusions into
+`G_k(E)`. -/
+@[simp]
+theorem inclusion_restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W')
+    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
+    inclusion F E k (Subtype.val '' W') (restrictRestrictHomeomorph F E k hW hW' p) =
+      inclusion F E k W (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' p) := by
+  rw [← IsEmbedding.toHomeomorph_apply_coe
+    (isOpenEmbedding_inclusion _ (hW.isOpenMap_subtypeVal W' hW')).isEmbedding]
+  simp [restrictRestrictHomeomorph, Homeomorph.setCongr]
+
+/-- The homeomorphism `G_k((E|_W)|_{W'}) ≃ₜ G_k(E|_{W'})` covers the identification of `W'` with
+its image in `B`. -/
+@[simp]
+theorem coe_proj_restrictRestrictHomeomorph (hW : IsOpen W) (hW' : IsOpen W')
+    (p : grassmannBundle F (ContinuousMap.subtypeVal W' *ᵖ (ContinuousMap.subtypeVal W *ᵖ E)) k) :
+    ((proj (restrictRestrictHomeomorph F E k hW hW' p) : Subtype.val '' W') : B) =
+      ((proj p : W') : B) := by
+  rw [← proj_inclusion, inclusion_restrictRestrictHomeomorph, proj_inclusion, proj_inclusion]
+
+end Transitivity
 
 end grassmannBundle
 
