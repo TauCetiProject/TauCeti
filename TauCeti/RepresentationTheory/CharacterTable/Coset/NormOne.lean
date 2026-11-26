@@ -10,7 +10,6 @@ public import TauCeti.RepresentationTheory.CharacterTable.VirtualCharacter
 public import TauCeti.RepresentationTheory.Induction.ClassFunction
 import TauCeti.NumberTheory.NumberField.ComplexConjugation.NormOne
 import TauCeti.RepresentationTheory.CharacterTable.Coset.Orthogonality
-import TauCeti.RepresentationTheory.CharacterTable.Gallagher
 import TauCeti.RepresentationTheory.Induction.Clifford.CharacterPackets
 
 /-!
