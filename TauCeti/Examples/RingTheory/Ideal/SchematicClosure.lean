@@ -23,7 +23,7 @@ uniformizer of a discrete valuation ring). Two examples of the schematic closure
   special fibre (`TauCeti.Examples.subsingleton_residueField_tensorProduct_closure_span_X_sub_inv`):
   the `K`-point `x = ϖ⁻¹` does not extend to an `O`-point.
 * the failure of `(0)^♮ = 0` without flatness: the closure of the zero ideal is the `O`-torsion
-  ideal, which for `A = O × O ⧸ (ϖ)` is `0 × O ⧸ (ϖ)`, not `0`
+  ideal, which for `A = O × O ⧸ (ϖ)` is `0 × O ⧸ (ϖ)`, not `0` when `ϖ` is a nonunit
   (`TauCeti.Examples.mem_closureIdeal_bot_prod_iff`).
 -/
 
@@ -95,9 +95,9 @@ theorem subsingleton_residueField_tensorProduct_closure_span_X_sub_inv [IsLocalR
     ← Algebra.smul_def, ← TensorProduct.smul_tmul]
   simp [Algebra.smul_def, (IsLocalRing.residue_eq_zero_iff ϖ).mpr hϖ]
 
-/-- **The closure of the zero ideal is the torsion, not `0`, without flatness.** For
-`A = O × O ⧸ (ϖ)`, which is not torsion-free, `(a, b) ∈ (0)^♮` exactly when `a = 0`: the closure
-of the zero ideal of the generic fibre is `0 × O ⧸ (ϖ)`. -/
+/-- **The closure of the zero ideal is the torsion, without flatness.** For `A = O × O ⧸ (ϖ)`,
+`(a, b) ∈ (0)^♮` exactly when `a = 0`: the closure of the zero ideal of the generic fibre is
+`0 × O ⧸ (ϖ)`. When `ϖ` is a nonunit, `A` is not torsion-free and this closure is not `0`. -/
 theorem mem_closureIdeal_bot_prod_iff (hϖ0 : ϖ ≠ 0) (a : O) (b : O ⧸ Ideal.span {ϖ}) :
     (a, b) ∈ closureIdeal K (⊥ : Ideal (K ⊗[O] (O × O ⧸ Ideal.span {ϖ}))) ↔ a = 0 := by
   have : IsDomain O := (IsFractionRing.isDomain_iff_isField (K := K)).mpr (Field.toIsField K)
