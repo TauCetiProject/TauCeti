@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Fundament
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Face
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundamentalClass
 import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Collar
-import TauCeti.Geometry.Manifold.Morse.Stable.TrajectorySpace
 
 /-!
 # Representing chain systems of the Morse trajectory spaces in index difference at most two
@@ -29,14 +28,17 @@ boundary is understood: index differences at most two. Writing `ind` for the Mor
 
 * the interior `L(x, y) ∖ ∂L(x, y)`, the unbroken trajectories, is a topological manifold of
   dimension `ind x - ind y - 1` in every index difference
-  (`IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`): it is a copy
-  of the space of unparametrized trajectories;
+  (`IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`, in
+  `TauCeti.Geometry.Manifold.Morse.Stable.Broken.Boundary`): it is a copy of the space of
+  unparametrized trajectories;
 * the boundary is empty when `ind x ≤ ind y + 1`
   (`IsMorseSmale.morseBrokenTrajectorySpaceBoundary_eq_empty`), since a broken trajectory passes
   through a critical point of intermediate index, and it is discrete when `ind x ≤ ind y + 2`
   (`IsMorseSmale.discreteTopology_morseBrokenTrajectorySpaceBoundary`): then every broken
   trajectory breaks once, at a critical point `z` with `ind x = ind z + 1 = ind y + 2`, and the
-  face of `z` is an open copy of the product of two discrete spaces of rigid trajectories.
+  face of `z` is an open copy of the product of two discrete spaces of rigid trajectories. Both
+  facts are in `TauCeti.Geometry.Manifold.Morse.Stable.Broken.Face`, in the namespace
+  `TauCeti.IsAdaptedPseudoGradient`.
 
 Together with the collar of the boundary in index difference two
 (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.isCollared_morseBrokenTrajectorySpaceBoundary`),
@@ -57,14 +59,6 @@ several times, which is not treated here.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale`:
 
-* `nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`: the unbroken trajectories form
-  a manifold of dimension `ind x - ind y - 1`.
-* `morseBrokenTrajectorySpaceBoundary_eq_empty`: there are no broken trajectories in index
-  difference at most one.
-* `exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two`: in index difference at most two, a
-  broken trajectory breaks once, into two unbroken trajectories.
-* `discreteTopology_morseBrokenTrajectorySpaceBoundary`: the broken trajectories form a discrete
-  space in index difference at most two.
 * `exists_isRepresenting_of_subsingleton_units`: in index differences at most two, fundamental
   classes relative to the boundaries exist and are represented by a twisting chain system.
 
@@ -91,7 +85,7 @@ namespace IsAdaptedPseudoGradient
 
 namespace IsMorseSmale
 
-section Interior
+section Boundary
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
@@ -101,41 +95,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {c : ι → ℝ} (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
 include h hf hc
 
-/-- **In index difference at most one, no trajectory breaks.** A broken trajectory from `x` to `y`
-passes through a critical point whose Morse index lies strictly between those of `x` and `y`, so
-the boundary of `L(x, y)` is empty when `ind x ≤ ind y + 1`. -/
-theorem morseBrokenTrajectorySpaceBoundary_eq_empty {x y : criticalPoints 𝓘(ℝ, E) f}
-    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 1) :
-    hX.morseBrokenTrajectorySpaceBoundary c x y = ∅ := by
-  refine eq_empty_iff_forall_notMem.2 fun w hw ↦ ?_
-  obtain ⟨z, a, b, -, -⟩ :=
-    hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
-  have hxz := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf a.property
-  have hzy := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf b.property
-  omega
-
-/-- **In index difference at most two, a broken trajectory breaks once.** When
-`ind x ≤ ind y + 2`, every point of the boundary of `L(x, y)` is the concatenation of two unbroken
-trajectories, at a critical point `z` with `ind x = ind z + 1 = ind y + 2`. -/
-theorem exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two
-    {x y : criticalPoints 𝓘(ℝ, E) f}
-    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2)
-    {w : hX.morseBrokenTrajectorySpace c x y}
-    (hw : w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y) :
-    ∃ (z : criticalPoints 𝓘(ℝ, E) f) (a : hX.morseBrokenTrajectorySpace c x z)
-      (b : hX.morseBrokenTrajectorySpace c z y),
-      manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f z + 1 ∧
-      manifoldMorseIndex 𝓘(ℝ, E) f z = manifoldMorseIndex 𝓘(ℝ, E) f y + 1 ∧
-      a ∉ hX.morseBrokenTrajectorySpaceBoundary c x z ∧
-      b ∉ hX.morseBrokenTrajectorySpaceBoundary c z y ∧
-      hX.morseBrokenTrajectorySpaceComp hc x z y (a, b) = w := by
-  obtain ⟨z, a, b, ha, hab⟩ :=
-    hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
-  have hxz := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf a.property
-  have hzy := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf b.property
-  refine ⟨z, a, b, by omega, by omega, ha, ?_, hab⟩
-  rw [h.morseBrokenTrajectorySpaceBoundary_eq_empty hf hc (by omega)]
-  exact notMem_empty b
+omit h hf hc in
+/-- The boundary of `L(x, y)` is the complement of the range of the inclusion of the unbroken
+trajectories. -/
+private theorem compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary
+    (x y : criticalPoints 𝓘(ℝ, E) f) :
+    (range (Subtype.val : ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
+      TopCat.of (hX.morseBrokenTrajectorySpace c x y)))ᶜ =
+      hX.morseBrokenTrajectorySpaceBoundary c x y := by
+  rw [Subtype.range_coe, compl_compl]
 
 omit h hf in
 /-- The face of `z` restricted to pairs of unbroken trajectories, as the image of the product of
@@ -170,79 +138,14 @@ private theorem dense_setOf_mem_range_morseBrokenTrajectorySpaceComp
         hX.morseBrokenTrajectorySpaceComp hc x z y (r.1, r.2)} := by
   convert dense_univ with a
   obtain ⟨a, ha⟩ := a
-  rw [Subtype.range_coe, compl_compl] at ha
+  rw [compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary] at ha
   refine iff_of_true ?_ trivial
   obtain ⟨z, a₁, b₁, hxz, hzy, ha₁, hb₁, hab⟩ :=
-    h.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two hf hc hxy ha
+    h.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two hc hf hxy ha
   exact ⟨z, by omega, by omega, ⟨(⟨a₁, ha₁⟩, ⟨b₁, hb₁⟩), hab⟩⟩
 
 variable (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
 include hdense
-
-/-- **The unbroken trajectories form a manifold of dimension `ind x - ind y - 1`.** For countably
-many levels, dense between the critical values and none of which is a critical value, the
-interior of the trajectory space `L(x, y)`, the records of its unbroken trajectories, is a
-topological manifold modelled on `ℝᵈ`, `d + ind y + 1 = ind x`: it is a copy of the space of
-unparametrized trajectories from `x` to `y`. When `ind x ≤ ind y` it is empty, and every `d`
-serves. -/
-theorem nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary [Countable ι]
-    {x y : criticalPoints 𝓘(ℝ, E) f} {d : ℕ}
-    (hd : manifoldMorseIndex 𝓘(ℝ, E) f y < manifoldMorseIndex 𝓘(ℝ, E) f x →
-      d + manifoldMorseIndex 𝓘(ℝ, E) f y + 1 = manifoldMorseIndex 𝓘(ℝ, E) f x) :
-    Nonempty (ChartedSpace (EuclideanSpace ℝ (Fin d))
-      ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ) := by
-  by_cases hne : x ≠ y ∧ (hX.flow.unstableSet (x : M) ∩ hX.flow.stableSet (y : M)).Nonempty
-  · obtain ⟨hxy, hne⟩ := hne
-    have hxy' : (x : M) ≠ y := Subtype.coe_injective.ne hxy
-    obtain ⟨L, hL, C, -⟩ := h.exists_isManifold_orbitQuotient hf hxy' hne
-    obtain ⟨j, hj, hrange⟩ := h.exists_isOpenEmbedding_orbitQuotient hf hc hdense hxy
-    have hdL : finrank ℝ L = finrank ℝ (EuclideanSpace ℝ (Fin d)) := by
-      rw [finrank_euclideanSpace_fin]
-      have := hd (by omega)
-      omega
-    -- Change the model of the space of unparametrized trajectories from `L` to `ℝᵈ`, and carry
-    -- its charts to the unbroken trajectories.
-    let := C
-    let : ChartedSpace (EuclideanSpace ℝ (Fin d)) L :=
-      (ContinuousLinearEquiv.ofFinrankEq hdL).toHomeomorph.symm.chartedSpace
-    let := ChartedSpace.comp (EuclideanSpace ℝ (Fin d)) L
-      (Quotient (Flow.connectingOrbitSetoid hX.flow (x : M) y))
-    exact ⟨(hj.isEmbedding.toHomeomorph.trans (Homeomorph.setCongr hrange)).chartedSpace⟩
-  · -- Without trajectories from `x` to `y`, every broken trajectory lies in the boundary.
-    have : IsEmpty ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ := by
-      refine ⟨fun w ↦ hne ⟨fun hxy ↦ ?_, ?_⟩⟩
-      · exact (mem_morseBrokenTrajectorySpace.1 w.val.property).1 (congrArg Subtype.val hxy)
-      · obtain ⟨v, hv, -⟩ :=
-          hX.mem_morseTrajectoryRecords.1 (notMem_morseBrokenTrajectorySpaceBoundary.1 w.property)
-        exact ⟨v, hv⟩
-    exact ⟨ChartedSpace.empty _ _⟩
-
-/-- **In index difference at most two, the broken trajectories form a discrete space.** Every
-broken trajectory from `x` to `y` breaks once, at a critical point `z` with
-`ind x = ind z + 1 = ind y + 2`, and the face of `z` is an open copy of the product of the discrete
-spaces of trajectories from `x` to `z` and from `z` to `y`. -/
-theorem discreteTopology_morseBrokenTrajectorySpaceBoundary [Countable ι]
-    {x y : criticalPoints 𝓘(ℝ, E) f}
-    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2) :
-    DiscreteTopology (hX.morseBrokenTrajectorySpaceBoundary c x y) := by
-  refine discreteTopology_iff_isOpen_singleton.2 fun w ↦ ?_
-  obtain ⟨z, a, b, hxz, hzy, ha, hb, hw⟩ :=
-    h.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two hf hc hxy w.property
-  -- Both factors are rigid.
-  obtain ⟨C₁⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
-    (x := x) (y := z) (d := 0) fun _ ↦ by omega
-  obtain ⟨C₂⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
-    (x := z) (y := y) (d := 0) fun _ ↦ by omega
-  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0))
-    ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ
-  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0))
-    ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ
-  -- The face of `z` is open, and so is the image of a point under it.
-  have hopen := h.isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hf hdense
-    x z y
-  convert hopen.isOpenMap {(⟨a, ha⟩, ⟨b, hb⟩)} (isOpen_discrete _)
-  rw [image_singleton]
-  exact congrArg singleton (Subtype.ext hw.symm)
 
 /-- **The boundary is collared in index differences one and two**, written as the complement of
 the unbroken trajectories. In index difference one it is empty, and in index difference two this is
@@ -254,17 +157,17 @@ private theorem isCollared_morseBrokenTrajectorySpaceBoundary_of_le [Countable �
     IsCollared (Subtype.val : ↥(range (Subtype.val :
       ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ → hX.morseBrokenTrajectorySpace c x y))ᶜ →
         hX.morseBrokenTrajectorySpace c x y) := by
-  rw [Subtype.range_coe, compl_compl]
+  rw [compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary]
   rcases (by omega : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 1 ∨
       manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 2) with h₁ | h₂
   · have : IsEmpty (hX.morseBrokenTrajectorySpaceBoundary c x y) := by
-      rw [h.morseBrokenTrajectorySpaceBoundary_eq_empty hf hc h₁]
+      rw [h.morseBrokenTrajectorySpaceBoundary_eq_empty hc hf h₁]
       infer_instance
     exact isCollared_iff.2 ⟨fun x ↦ isEmptyElim x.1, IsOpenEmbedding.of_isEmpty _,
       fun x ↦ isEmptyElim x⟩
   · exact h.isCollared_morseBrokenTrajectorySpaceBoundary hf hc (hdense x y) h₂
 
-end Interior
+end Boundary
 
 /-! ### Representing chain systems -/
 
@@ -309,7 +212,8 @@ private theorem exists_span_localHomologyRestriction_eq_top (k : Type) [CommRing
       manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat))
     finrank_euclideanSpace_fin (IsOpen.isOpenEmbedding_subtypeVal
       (h.isClosed_morseBrokenTrajectorySpaceBoundary hf hc hdense x y).isOpen_compl)
-    ((compl_compl _).symm.trans (congrArg compl Subtype.range_coe).symm) k hcol
+    (by rw [compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary]
+        simp only [Subtype.range_coe]) k hcol
   refine ⟨(TopPair.singularCubicalHomologyIso k _ _).hom.hom γ, fun _ r ↦ ?_⟩
   rw [ModuleCat.inv_hom_apply]
   exact hγ r
@@ -343,12 +247,10 @@ private theorem exists_isRepresenting_compl_range [Fintype (criticalPoints 𝓘(
           (fun x y : criticalPoints 𝓘(ℝ, E) f ↦ (range (Subtype.val :
             ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
               TopCat.of (hX.morseBrokenTrajectorySpace c x y)))ᶜ) S μ := by
-  classical
   -- The inclusion of the unbroken trajectories, whose range is the complement of the boundary.
   let j (x y : criticalPoints 𝓘(ℝ, E) f) : ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
       TopCat.of (hX.morseBrokenTrajectorySpace c x y) := Subtype.val
-  have hjB (x y) : (range (j x y))ᶜ = hX.morseBrokenTrajectorySpaceBoundary c x y :=
-    (congrArg compl Subtype.range_coe).trans (compl_compl _)
+  have hjB := compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary (hX := hX) (c := c)
   have := h.compactSpace_morseBrokenTrajectorySpace hf hc
   let (x y : criticalPoints 𝓘(ℝ, E) f) : ChartedSpace (EuclideanSpace ℝ
       (Fin ((manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) - manifoldMorseIndex 𝓘(ℝ, E) f y - 1).toNat))
@@ -357,8 +259,10 @@ private theorem exists_isRepresenting_compl_range [Fintype (criticalPoints 𝓘(
       fun _ ↦ by omega).some
   let (x y : criticalPoints 𝓘(ℝ, E) f) :
       ChartedSpace (EuclideanSpace ℝ (Fin 0)) ↥(range (j x y))ᶜ :=
-    have := h.discreteTopology_morseBrokenTrajectorySpaceBoundary hf hc hdense (hind x y)
-    (hjB x y).symm ▸ ChartedSpace.ofDiscreteTopology
+    have := h.discreteTopology_morseBrokenTrajectorySpaceBoundary hc hf hdense (hind x y)
+    let := ChartedSpace.ofDiscreteTopology (H := EuclideanSpace ℝ (Fin 0))
+      (M := hX.morseBrokenTrajectorySpaceBoundary c x y)
+    (Homeomorph.setCongr (hjB x y).symm).chartedSpace
   -- The fundamental classes relative to the boundary.
   choose μ hμ using fun x y ↦ h.exists_span_localHomologyRestriction_eq_top hf hc hdense k x y
     (hind x y)
@@ -401,9 +305,9 @@ critical points have Morse indices differing by more than two, as for every Mors
 surface. Let `k` be a commutative ring whose only unit is `1`, such as `ZMod 2`. Then every
 trajectory space `L(x, y)` with `ind y < ind x` has a class `μ x y` of
 `H_{ind x - ind y - 1}(L(x, y), ∂L(x, y); k)` whose image in the local homology
-`H(L(x, y), L(x, y) ∖ {r}; k)` at every unbroken trajectory `r` generates it, the mod `2`
-fundamental class relative to the boundary, and some twisting chain system on the trajectory
-spaces represents these classes. -/
+`H(L(x, y), L(x, y) ∖ {r}; k)` at every unbroken trajectory `r` generates it, the fundamental
+class relative to the boundary with coefficients in `k` (the mod `2` class when `k = ZMod 2`), and
+some twisting chain system on the trajectory spaces represents these classes. -/
 theorem exists_isRepresenting_of_subsingleton_units [Fintype (criticalPoints 𝓘(ℝ, E) f)]
     (k : Type) [CommRing k] [Subsingleton kˣ]
     (hind : ∀ x y : criticalPoints 𝓘(ℝ, E) f,
@@ -430,11 +334,6 @@ theorem exists_isRepresenting_of_subsingleton_units [Fintype (criticalPoints �
           (ι := hX.morseBrokenTrajectorySpaceComp hc)
           (fun x y ↦ hX.morseBrokenTrajectorySpaceBoundary c x y) S μ := by
   obtain ⟨μ, hμ, S, hS⟩ := h.exists_isRepresenting_compl_range hf hc hdense k hind
-  have hjB (x y : criticalPoints 𝓘(ℝ, E) f) :
-      (range (Subtype.val : ↥(hX.morseBrokenTrajectorySpaceBoundary c x y)ᶜ →
-        TopCat.of (hX.morseBrokenTrajectorySpace c x y)))ᶜ =
-        hX.morseBrokenTrajectorySpaceBoundary c x y :=
-    (congrArg compl Subtype.range_coe).trans (compl_compl _)
   -- Transport the classes and the representing system along the equality of the complement of
   -- the unbroken trajectories with the boundary.
   let G (A : ∀ x y : criticalPoints 𝓘(ℝ, E) f,
@@ -458,7 +357,8 @@ theorem exists_isRepresenting_of_subsingleton_units [Fintype (criticalPoints �
     have := hμ x y (Nat.cast_lt.2 hyx) r
     rwa [localHomologyRestriction_def] at this
   obtain ⟨μ', hμ', hS'⟩ : G fun x y ↦ hX.morseBrokenTrajectorySpaceBoundary c x y :=
-    funext₂ hjB ▸ hG
+    funext₂ (compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary (hX := hX) (c := c)) ▸
+      hG
   exact ⟨μ', hμ', S, hS'⟩
 
 end Representing
