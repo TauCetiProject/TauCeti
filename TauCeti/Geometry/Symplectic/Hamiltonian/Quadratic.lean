@@ -67,6 +67,8 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
 * `TauCeti.SymplecticForm.quadraticPoissonBracket_eq_zero_iff`: `{Q, R} = 0` exactly when `A_Q`
   and `A_R` commute.
+* `TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`: if
+  `{R, P} = 0` then `A_P` is skew for the polar form of `R`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_prod`,
   `TauCeti.SymplecticForm.quadraticPoissonBracket_prod`: `A_{Q₁ ⊕ Q₂} = A_{Q₁} × A_{Q₂}` and
   `{Q₁ ⊕ Q₂, R₁ ⊕ R₂} = {Q₁, R₁} ⊕ {Q₂, R₂}` for the direct-sum symplectic form.
@@ -324,6 +326,19 @@ theorem quadraticPoissonBracket_eq_zero_iff {Q R : QuadraticForm ℝ V} :
   rw [commute_iff_lie_eq, ← hamiltonianEnd_quadraticPoissonBracket,
     ← map_zero ω.hamiltonianEnd, ω.hamiltonianEnd_injective.eq_iff]
 
+/-- If a quadratic form `R` Poisson-commutes with `P`, then `A_P` is skew for the polar form of `R`:
+`polar R (A_P u) v = -polar R u (A_P v)`, since `A_R` commutes with `A_P ∈ sp(V, ω)`. -/
+theorem polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero
+    {R P : QuadraticForm ℝ V} (hR : ω.quadraticPoissonBracket R P = 0) (u v : V) :
+    QuadraticMap.polar R (ω.hamiltonianEnd P u) v =
+      -QuadraticMap.polar R u (ω.hamiltonianEnd P v) := by
+  have hcomm : ω.hamiltonianEnd R (ω.hamiltonianEnd P u) =
+      ω.hamiltonianEnd P (ω.hamiltonianEnd R u) := by
+    simpa only [mul_apply_eq_comp] using
+      LinearMap.congr_fun (ω.quadraticPoissonBracket_eq_zero_iff.1 hR).eq u
+  rw [← apply_hamiltonianEnd, ← apply_hamiltonianEnd, hcomm, apply_hamiltonianEnd,
+    apply_hamiltonianEnd_right, neg_neg]
+
 /-- The Poisson bracket with the zero form vanishes. -/
 @[simp]
 theorem quadraticPoissonBracket_zero_left (R : QuadraticForm ℝ V) :
@@ -337,6 +352,26 @@ theorem quadraticPoissonBracket_zero_right (Q : QuadraticForm ℝ V) :
     ω.quadraticPoissonBracket Q 0 = 0 := by
   ext v
   simp
+
+/-- **Forms in the span of a Poisson-commuting family Poisson-commute**, by bilinearity of the
+quadratic Poisson bracket. -/
+theorem quadraticPoissonBracket_eq_zero_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0) {R R' : QuadraticForm ℝ V}
+    (hR : R ∈ Submodule.span ℝ (Set.range Q)) (hR' : R' ∈ Submodule.span ℝ (Set.range Q)) :
+    ω.quadraticPoissonBracket R R' = 0 := by
+  induction hR using Submodule.span_induction with
+  | mem R hR =>
+    obtain ⟨i, rfl⟩ := hR
+    induction hR' using Submodule.span_induction with
+    | mem R' hR' =>
+      obtain ⟨j, rfl⟩ := hR'
+      exact hQ i j
+    | zero => exact ω.quadraticPoissonBracket_zero_right _
+    | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_right, h, h', add_zero]
+    | smul c _ _ h => rw [quadraticPoissonBracket_smul_right, h, smul_zero]
+  | zero => exact ω.quadraticPoissonBracket_zero_left _
+  | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_left, h, h', add_zero]
+  | smul c _ _ h => rw [quadraticPoissonBracket_smul_left, h, smul_zero]
 
 /-! ### Direct sums -/
 

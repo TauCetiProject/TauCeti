@@ -349,21 +349,25 @@ fields. Its inverse is `L₀⁻¹ = L₀* (-Δ + 1 / 4)⁻¹` (`vacuumOperatorEq
 `(-Δ + 1 / 4)⁻¹` multiplies the Fourier transform by `(4π² |ξ|² + 1 / 4)⁻¹`, this inverts the
 symbol of `L₀` as `L₀(ξ)* / (4π² |ξ|² + 1 / 4)`. -/
 def vacuumOperatorEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-  .equivOfInverse vacuumOperator (vacuumAdjoint ∘L laplacianResolvent (1 / 4))
-    (fun x ↦ vacuumOperator_injective <| by
-      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
-    (fun y ↦ by
-      rw [ContinuousLinearMap.comp_apply, vacuumOperator_vacuumAdjoint_laplacianResolvent])
+  .ofContinuousLinearMap vacuumOperator (vacuumAdjoint ∘L laplacianResolvent (1 / 4))
+    (ContinuousLinearMap.ext fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        vacuumOperator_vacuumAdjoint_laplacianResolvent, ContinuousLinearMap.id_apply])
+    (ContinuousLinearMap.ext fun x ↦ vacuumOperator_injective <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        vacuumOperator_vacuumAdjoint_laplacianResolvent, ContinuousLinearMap.id_apply])
 
 /-- **The adjoint of the vacuum operator is invertible**: `L₀*` as a continuous linear automorphism
 of the Schwartz fields. Its inverse is `(L₀*)⁻¹ = L₀ (-Δ + 1 / 4)⁻¹`
 (`vacuumAdjointEquiv_symm_apply`). -/
 def vacuumAdjointEquiv : 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) ≃L[ℝ] 𝓢(ℂ, EuclideanSpace ℝ (Fin 4)) :=
-  .equivOfInverse vacuumAdjoint (vacuumOperator ∘L laplacianResolvent (1 / 4))
-    (fun x ↦ vacuumAdjoint_injective <| by
-      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
-    (fun y ↦ by
-      rw [ContinuousLinearMap.comp_apply, vacuumAdjoint_vacuumOperator_laplacianResolvent])
+  .ofContinuousLinearMap vacuumAdjoint (vacuumOperator ∘L laplacianResolvent (1 / 4))
+    (ContinuousLinearMap.ext fun y ↦ by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        vacuumAdjoint_vacuumOperator_laplacianResolvent, ContinuousLinearMap.id_apply])
+    (ContinuousLinearMap.ext fun x ↦ vacuumAdjoint_injective <| by
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+        vacuumAdjoint_vacuumOperator_laplacianResolvent, ContinuousLinearMap.id_apply])
 
 @[simp]
 theorem coe_vacuumOperatorEquiv : ⇑vacuumOperatorEquiv = vacuumOperator :=

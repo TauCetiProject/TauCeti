@@ -143,6 +143,11 @@ theorem Submodule.coe_orbitRelQuotientMkHom :
     ⇑p.orbitRelQuotientMkHom = _root_.Quotient.mk (AddAction.orbitRel p M) :=
   (rfl)
 
+/-- The orbit projection for translation by `p` is surjective. -/
+theorem Submodule.orbitRelQuotientMkHom_surjective :
+    Function.Surjective p.orbitRelQuotientMkHom :=
+  _root_.Quotient.mk_surjective
+
 /-- Two points of `M` have the same image in the orbit space of translation by `p` exactly when
 their difference lies in `p`. -/
 theorem Submodule.orbitRelQuotient_mk_eq_mk_iff {x y : M} :
@@ -349,11 +354,11 @@ noncomputable def Submodule.orbitRelQuotientComapQuotientEquiv :
   -- Both sides are quotients of `f⁻¹(q)`: by `σ`, through the orbit projection, and by `ρ`,
   -- through `f`. The two maps have the same kernel `(ker f + p) ∩ f⁻¹(q)`.
   let ι : q.comap f →+ K :=
-    { toFun x := ⟨_root_.Quotient.mk _ x, x, x.2, rfl⟩
+    { toFun x := ⟨_root_.Quotient.mk _ x, x, x.property, rfl⟩
       map_zero' := by ext; simp
       map_add' x y := by ext; simp }
   let θ : q.comap f →+ ↥(q ⊓ LinearMap.range f) :=
-    { toFun x := ⟨f x, x.2, x, rfl⟩
+    { toFun x := ⟨f x, x.property, x, rfl⟩
       map_zero' := by ext; simp
       map_add' x y := by ext; simp }
   let σ := (QuotientAddGroup.mk' K₀).comp ι

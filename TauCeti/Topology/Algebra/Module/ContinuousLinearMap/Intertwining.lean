@@ -15,14 +15,21 @@ import Mathlib.Algebra.Polynomial.Div
 A linear map `T : E →ₗ[R] F` between topological modules, possibly discontinuous, is
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
-taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
-and their powers. Polynomial evaluation with zero constant coefficient commutes with extending
-an endomorphism along a continuous linear retract; no complement is needed.
+taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`, their
+powers, and polynomials in the intertwined operators (`Function.Semiconj.aeval`). Polynomial
+evaluation with zero constant coefficient commutes with extending an endomorphism along a
+continuous linear retract; no complement is needed. Along a splitting `i r + j s = id` for which
+an operator is upper triangular, the inclusion `i` intertwines its diagonal block with the
+operator.
 
 ## Main results
 
 * `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
   up to continuous errors again intertwine `T` up to a continuous error.
+* `Function.Semiconj.aeval`: a linear intertwiner intertwines every polynomial in the intertwined
+  continuous endomorphisms.
+* `ContinuousLinearMap.semiconj_of_split`: along a splitting, the inclusion of the first summand
+  intertwines the diagonal block of an upper triangular operator with the operator.
 * `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
   coefficient commutes with extension along a retract.
 -/
@@ -93,6 +100,16 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
+/-- If `u` is upper triangular for a splitting `i r + j s = id`, that is `s u i = 0`, then `i`
+intertwines the diagonal block `r u i` with `u`. -/
+theorem semiconj_of_split {K M F N : Type*} [Semiring K] [AddCommMonoid M]
+    [TopologicalSpace M] [ContinuousAdd M] [Module K M] [AddCommMonoid F] [TopologicalSpace F]
+    [Module K F] [AddCommMonoid N] [TopologicalSpace N] [Module K N] {u : M →L[K] M}
+    (i : F →L[K] M) (r : M →L[K] F) (j : N →L[K] M) (s : M →L[K] N)
+    (hsplit : i.comp r + j.comp s = .id K M) (htri : s.comp (u.comp i) = 0) :
+    Function.Semiconj (i : F →ₗ[K] M) (r.comp (u.comp i)) u := fun x ↦ by
+  simpa [show s (u (i x)) = 0 from congr($htri x)] using congr($hsplit (u (i x)))
+
 variable {R M N : Type*} [CommSemiring R]
   [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
   [ContinuousConstSMul R M]
@@ -129,3 +146,24 @@ theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
   rw [← hQ]
 
 end ContinuousLinearMap
+
+namespace Function.Semiconj
+
+variable {R M N : Type*} [CommSemiring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+  {f : M →ₗ[R] N} {u : M →L[R] M} {v : N →L[R] N}
+
+/-- A linear intertwiner intertwines every polynomial in the intertwined endomorphisms. -/
+theorem aeval (hf : Function.Semiconj f u v) (P : Polynomial R) :
+    Function.Semiconj f (Polynomial.aeval u P) (Polynomial.aeval v P) := by
+  have hP : (Polynomial.aeval v P).toLinearMap.comp f =
+      f.comp (Polynomial.aeval u P).toLinearMap := by
+    rw [ContinuousLinearMap.toLinearMap_aeval, ContinuousLinearMap.toLinearMap_aeval]
+    exact Module.End.aeval_comp_of_comp_eq (LinearMap.ext fun x ↦ (hf x).symm) P
+  intro x
+  exact (LinearMap.congr_fun hP x).symm
+
+end Function.Semiconj

@@ -80,8 +80,9 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
       (I.isInteriorPoint_iff.mp (BoundarylessManifold.isInteriorPoint (I := I)))) hsymmV
   have hws' : ContDiffOn ℝ (((⊤ : ℕ∞) : WithTop ℕ∞) + 1) w
       W := by simpa using hws
-  obtain ⟨φ, hφ, hφ0, hφadd, hφderiv⟩ :=
-    ODE.exists_contDiffAt_localFlow (n := (⊤ : ℕ∞)) w hws' hatarget
+  obtain ⟨φ, A, hA, hbase, hflow, hφ0, hφadd, hφderiv⟩ :=
+    ODE.exists_contDiffOn_localFlow (n := (⊤ : ℕ∞)) w hws' hatarget
+  have hφ := hflow.contDiffAt (hA.mem_nhds hbase)
   have hφ' : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0) := by simpa using hφ
   have htarget : ∀ᶠ p in nhds ((extChartAt I a a, 0) : E × ℝ),
       φ p.1 p.2 ∈ interior (extChartAt I a).target := by
@@ -106,13 +107,13 @@ theorem exists_contMDiffAt_localFlow [FiniteDimensional ℝ E] [I.Boundaryless]
   refine ⟨?_, ?_, ?_⟩
   · simp only [hφ0]
     exact (extChartAt I a).left_inv hx.2
-  · exact isMIntegralCurveOn_extChartAt_symm_comp v a hsopen
-      (fun t ht ↦ hmem hxcoord.2 (hst ht).2) fun t ht ↦ hderiv hxcoord.1 (hst ht).1
+  · refine IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt (fun t ht ↦ ?_)
+      fun t ht ↦ interior_subset (hmem hxcoord.2 (hst ht).2)
+    rw [← TangentBundle.trivializationAt_snd_eq_tangentCoordChange]
+    exact (hderiv hxcoord.1 (hst ht).1).hasDerivWithinAt
   · intro t ht u
-    have hφtarget : φ (extChartAt I a x) t ∈ (extChartAt I a).target :=
-      interior_subset (hmem hxcoord.2 (hst ht).2)
     simp only
-    rw [(extChartAt I a).right_inv hφtarget, hφadd]
+    rw [(extChartAt I a).right_inv (interior_subset (hmem hxcoord.2 (hst ht).2)), hφadd]
 
 end TauCeti.Manifold
 

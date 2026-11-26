@@ -79,7 +79,7 @@ noncomputable def indVirtualCharacterAddHom (S : Subgroup G) [S.FiniteIndex] :
   ((Subgroup.indClassFunAddHom S).comp (virtualCharacters k S).subtype).codRestrict
     (virtualCharacters k G) fun ψ ↦ by
       rw [AddMonoidHom.comp_apply, Subgroup.indClassFunAddHom_apply]
-      exact Subgroup.indClassFun_mem_virtualCharacters S ψ.2
+      exact Subgroup.indClassFun_mem_virtualCharacters S ψ.property
 
 /-- Forgetting the target subtype after induction on virtual characters gives
 `Subgroup.indClassFun`. -/

@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
-public import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+public import TauCeti.RepresentationTheory.Continuous.LpKoopman
+public import TauCeti.MeasureTheory.Function.Lp.CountBasis
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Group.Measure
-import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
 
 /-!
 # The left regular representation on vector-valued `Lᵖ`
@@ -36,10 +36,14 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
 
 * `MeasureTheory.Measure.leftRegular_apply` and `MeasureTheory.Measure.coeFn_leftRegular`:
   `λ g` is `Lp.compMeasurePreserving (g⁻¹ * ·)`, represented by `x ↦ f (g⁻¹ * x)`.
-* `MeasureTheory.Measure.isUnitary_leftRegular`: the action on `L²(G, E)` is unitary.
+* `MeasureTheory.Measure.isUnitary_leftRegular` and `MeasureTheory.Measure.star_leftRegular`: the
+  action on `L²(G, E)` is unitary and `star (λ g) = λ g⁻¹`.
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
 * `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
   `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
+* `MeasureTheory.Measure.leftRegular_indicatorConstLp_singleton` and
+  `MeasureTheory.Measure.leftRegular_countHilbertBasis`: left translation by `g` sends the
+  singleton indicator (and point-mass basis vector) at `h` to that at `g * h`.
 
 For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
 *Kazhdan's Property (T)*, Appendix G.5.
@@ -52,66 +56,76 @@ open scoped ENNReal
 
 namespace MeasureTheory.Measure
 
+section LeftInvariant
+
 variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
   [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
   (μ : Measure G) [μ.IsMulLeftInvariant] (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
 variable (𝕜 E) in
 /-- **The left regular representation** of `G` on `Lᵖ(G, E)` for a left-invariant measure `μ`:
-the element `g` acts by `f ↦ (x ↦ f (g⁻¹ * x))`. -/
+the element `g` acts by `f ↦ (x ↦ f (g⁻¹ * x))`. It is the `Lᵖ` pullback representation
+`TauCeti.lpKoopman` of the action of `G` on itself by left multiplication. -/
 noncomputable def leftRegular : ContRepresentation 𝕜 G (Lp E p μ) :=
-  .ofMonoidHom
-    { toFun g := (Lp.compMeasurePreservingₗᵢ 𝕜 (g⁻¹ * ·)
-        (measurePreserving_mul_left μ g⁻¹)).toContinuousLinearMap
-      map_one' := ContinuousLinearMap.ext fun f => by
-        simp only [one_apply_eq_self, LinearIsometry.coe_toContinuousLinearMap,
-          Lp.compMeasurePreservingₗᵢ_apply, inv_one, one_mul, ← Function.id_def]
-        exact Lp.compMeasurePreserving_id_apply f
-      map_mul' g h := ContinuousLinearMap.ext fun f => by
-        have hfun : (fun x : G => (g * h)⁻¹ * x) =
-            (fun x : G => h⁻¹ * x) ∘ (fun x : G => g⁻¹ * x) := by
-          funext x
-          simp only [Function.comp_apply, mul_inv_rev, mul_assoc]
-        simp only [mul_apply_eq_comp, hfun]
-        exact Lp.compMeasurePreserving_comp_apply f
-          (measurePreserving_mul_left μ h⁻¹) (measurePreserving_mul_left μ g⁻¹) }
+  TauCeti.lpKoopman 𝕜 E p μ (measurePreserving_mul_left μ)
+
+/-- The left regular representation is the `Lᵖ` pullback representation of left multiplication. -/
+theorem leftRegular_eq_lpKoopman :
+    μ.leftRegular 𝕜 E p = TauCeti.lpKoopman 𝕜 E p μ (measurePreserving_mul_left μ) :=
+  (rfl)
 
 /-- Left translation on `Lᵖ(G, E)`, unfolded to the underlying `Lp.compMeasurePreserving`. -/
 theorem leftRegular_apply (g : G) (f : Lp E p μ) :
     μ.leftRegular 𝕜 E p g f =
       Lp.compMeasurePreserving (g⁻¹ * ·) (measurePreserving_mul_left μ g⁻¹) f :=
-  (rfl)
+  TauCeti.lpKoopman_apply g f
 
 /-- Left translation on `Lᵖ(G, E)` is represented by left translation of functions. -/
 theorem coeFn_leftRegular (g : G) (f : Lp E p μ) :
-    μ.leftRegular 𝕜 E p g f =ᵐ[μ] fun x => f (g⁻¹ * x) := by
-  rw [leftRegular_apply]
-  exact Lp.coeFn_compMeasurePreserving f _
+    μ.leftRegular 𝕜 E p g f =ᵐ[μ] fun x => f (g⁻¹ * x) :=
+  TauCeti.coeFn_lpKoopman g f
 
 /-- Left translation preserves the `Lᵖ` norm. -/
 @[simp]
-theorem norm_leftRegular_apply (g : G) (f : Lp E p μ) : ‖μ.leftRegular 𝕜 E p g f‖ = ‖f‖ := by
-  rw [leftRegular_apply]
-  exact Lp.norm_compMeasurePreserving f _
+theorem norm_leftRegular_apply (g : G) (f : Lp E p μ) : ‖μ.leftRegular 𝕜 E p g f‖ = ‖f‖ :=
+  TauCeti.norm_lpKoopman_apply g f
 
 /-- **The left regular representation on `L²(G, E)` is unitary**, because left translation
 preserves the left-invariant measure. -/
 theorem isUnitary_leftRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E]
-    [InnerProductSpace 𝕜 E] : (μ.leftRegular 𝕜 E 2).IsUnitary := by
-  rw [ContRepresentation.isUnitary_iff_norm_map]
-  exact norm_leftRegular_apply μ 2
+    [InnerProductSpace 𝕜 E] : (μ.leftRegular 𝕜 E 2).IsUnitary :=
+  TauCeti.isUnitary_lpKoopman
+
+/-- On a Hilbert space `E`, the operator `star` of left translation by `g` is left translation by
+`g⁻¹`. -/
+@[simp]
+theorem star_leftRegular {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+    [CompleteSpace E] (g : G) :
+    star (μ.leftRegular 𝕜 E 2 g) = μ.leftRegular 𝕜 E 2 g⁻¹ :=
+  TauCeti.star_lpKoopman g
 
 /-- **The left regular representation is strongly continuous** for `p < ∞` and a locally finite
 measure that is inner regular with respect to compact sets on sets of finite measure: every orbit
 map `g ↦ λ g f` is continuous. -/
 theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G] [BorelSpace G]
     [μ.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure μ] (hp : p ≠ ∞) (f : Lp E p μ) :
-    Continuous fun g : G => μ.leftRegular 𝕜 E p g f := by
-  have hg : Continuous fun g : G => ContinuousMap.mulLeft (X := G) g⁻¹ :=
-    (ContinuousMap.curry
-      ⟨fun q : G × G => q.1⁻¹ * q.2, continuous_fst.inv.mul continuous_snd⟩).continuous
-  simp only [leftRegular_apply]
-  exact continuous_const.compMeasurePreservingLp hg _ hp
+    Continuous fun g : G => μ.leftRegular 𝕜 E p g f :=
+  TauCeti.continuous_lpKoopman_apply hp f
+
+/-- Left translation by `g` on `Lᵖ(G, E)` sends the singleton indicator at `h` to that at
+`g * h`. -/
+@[simp]
+theorem leftRegular_indicatorConstLp_singleton (g h : G)
+    (hs : MeasurableSet ({h} : Set G)) (hμ : μ {h} ≠ ∞) (c : E) :
+    μ.leftRegular 𝕜 E p g (indicatorConstLp p hs hμ c) =
+      indicatorConstLp (s := ({g * h} : Set G)) p
+        (by simpa using hs.preimage (measurable_const_mul g⁻¹))
+        (by simpa using
+          ((measurePreserving_mul_left μ g⁻¹).measure_preimage hs.nullMeasurableSet).trans_ne hμ)
+        c := by
+  rw [leftRegular_apply, Lp.indicatorConstLp_compMeasurePreserving]
+  congr! 1
+  simp
 
 section Invariants
 
@@ -135,5 +149,16 @@ theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ 
   exact Lp.ext (.of_forall fun x ↦ by simp [hconst x, hz])
 
 end Invariants
+
+end LeftInvariant
+
+/-- Left translation by `g` on counting-measure `L²(G)` sends the `h`-th point-mass basis vector to
+the `(g * h)`-th. -/
+@[simp]
+theorem leftRegular_countHilbertBasis {G 𝕜 : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G]
+    [MeasurableSingletonClass G] [RCLike 𝕜] (g h : G) :
+    (count : Measure G).leftRegular 𝕜 𝕜 2 g (L2.countHilbertBasis 𝕜 G h) =
+      L2.countHilbertBasis 𝕜 G (g * h) := by
+  simp [L2.countHilbertBasis_apply]
 
 end MeasureTheory.Measure

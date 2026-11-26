@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Dimension
 
 /-!

@@ -40,7 +40,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
   reached, respectively strictly exceeded, are bounded below;
 * `MeasureTheory.Measure.continuousAt_cdf_iff` characterizes continuity of a real probability
   law's cdf at a point by vanishing singleton mass;
-* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` proves continuity for atomless real laws;
+* `MeasureTheory.Measure.continuous_cdf_of_noAtoms` and `MeasureTheory.Measure.continuous_cdf_iff`
+  characterize global cdf continuity of real probability laws by null singletons;
 * `MeasureTheory.Measure.measure_Ioo_eq_zero_of_cdf_eq` shows that an open interval on which the
   cdf is constant is null;
 * `MeasureTheory.Measure.measure_plateau_eq_zero` and
@@ -97,6 +98,8 @@ nonnegative point `x` it is the mass `μ` gives to the initial segment below the
 * `MeasureTheory.Measure.cdf_map_natCast_of_neg` evaluates it below the origin;
 * `MeasureTheory.Measure.cdf_map_intCast` evaluates an integer-valued law's cdf using the
   integer floor, including at negative points;
+* `MeasureTheory.Measure.cdf_map_coe_nnreal` evaluates the cdf of an almost-everywhere measurable
+  `ℝ≥0`-valued function cast to `ℝ`;
 * `MeasureTheory.Measure.exists_nat_le_measureReal_Iic` and
   `MeasureTheory.Measure.exists_nat_lt_measureReal_Iic` show that every level below one is
   reached, respectively strictly exceeded, by a finite cumulative mass of a natural-valued law.
@@ -120,7 +123,7 @@ atomless standard-Borel space with the unit interval proved as Theorem A.7 in S.
 public section
 
 open Filter Function MeasureTheory ProbabilityTheory Set Topology
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace ProbabilityTheory
 
@@ -295,6 +298,22 @@ theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
   rw [cdf_map _ _ (by fun_prop), Int.preimage_Iic]
 
+/-- The cdf of an almost-everywhere measurable `ℝ≥0`-valued function cast to `ℝ` is
+`μ.real {ω | f ω ≤ x.toNNReal}` at nonnegative points and `0` below the origin. -/
+theorem cdf_map_coe_nnreal {Ω : Type*} [MeasurableSpace Ω] (μ : Measure Ω)
+    [IsProbabilityMeasure μ] {f : Ω → ℝ≥0} (hf : AEMeasurable f μ) (x : ℝ) :
+    cdf (μ.map fun ω ↦ (f ω : ℝ)) x =
+      if 0 ≤ x then μ.real {ω | f ω ≤ x.toNNReal} else 0 := by
+  rw [cdf_map μ _ hf.coe_nnreal_real]
+  split_ifs with hx
+  · congr 1
+    ext ω
+    simp only [mem_preimage, mem_Iic, mem_ofPred_eq, ← NNReal.coe_le_coe, Real.coe_toNNReal x hx]
+  · have hempty : (fun ω ↦ (f ω : ℝ)) ⁻¹' Iic x = ∅ :=
+      eq_empty_of_forall_notMem fun ω hω ↦
+        not_le.2 (lt_of_not_ge hx) ((f ω).coe_nonneg.trans hω)
+    rw [hempty, measureReal_empty]
+
 section Nat
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
@@ -354,6 +373,13 @@ probability measure on `ℝ` is continuous when every singleton has measure zero
 theorem continuous_cdf_of_noAtoms (ν : Measure ℝ) [IsProbabilityMeasure ν]
     [NullSingletonClass ν] : Continuous (cdf ν) :=
   continuous_iff_continuousAt.2 fun x ↦ (continuousAt_cdf_iff ν x).2 (measure_singleton x)
+
+/-- The cumulative distribution function of a real probability measure `ν` is continuous if and
+only if every singleton has `ν`-measure zero. -/
+theorem continuous_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] :
+    Continuous (cdf ν) ↔ NullSingletonClass ν :=
+  ⟨fun h ↦ ⟨fun x ↦ (continuousAt_cdf_iff ν x).1 h.continuousAt⟩,
+    fun _ ↦ continuous_cdf_of_noAtoms ν⟩
 
 /-- A real probability law gives no mass to an open interval on which its cumulative distribution
 function is constant. -/

@@ -74,6 +74,12 @@ def h2MuToBr : continuousCohomology 2 (muNRep n F) →+ Br F :=
   unitsEquiv.toAddMonoidHom.comp <|
     (h2KummerToUnits F n).hom.toAddMonoidHom.comp muEquiv.symm.toAddMonoidHom
 
+/-- Every class in the image of roots-of-unity cohomology is killed by `n`. -/
+@[simp]
+theorem nsmul_h2MuToBr (y : continuousCohomology 2 (muNRep n F)) :
+    n • h2MuToBr n F y = 0 := by
+  rw [← map_nsmul, ZModModule.char_nsmul_eq_zero, map_zero]
+
 /-- `h2MuToBr` is the inverse coefficient transport to the separable-closure model, followed by
 the Kummer-sequence map and the coefficient transport to `Br F`. -/
 theorem h2MuToBr_apply (y : continuousCohomology 2 (muNRep n F)) :

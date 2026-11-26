@@ -42,6 +42,8 @@ to `1` above the period `N (γ i)`. It is a unit with inverse the Euler product 
   many factors differing from one below each cutoff.
 * `TauCeti.NovikovSeries.tprod_sub_prod_mem_periodFiltration`,
   `TauCeti.NovikovSeries.coeff_tprod_eq_coeff_prod`: computing such products by finite cutoffs.
+* `TauCeti.NovikovSeries.tprod_sub_tprod_mem_periodFiltration`: two such products agree below a
+  cutoff when their factors below it do.
 * `TauCeti.NovikovSeries.hasProd_eulerProduct`, `TauCeti.NovikovSeries.isUnit_eulerProduct`,
   `TauCeti.NovikovSeries.eulerProduct_sub_one_mem_periodFiltration`: convergence of the Euler
   product, which is a unit congruent to `1` above every lower bound of the periods.
@@ -78,7 +80,7 @@ theorem prod_sub_one_mem_periodFiltration (s : Finset ι)
         (f i : NovikovSeries R H N) * ((∏ j ∈ s, (f j : NovikovSeries R H N)) - 1) +
           ((f i : NovikovSeries R H N) - 1) := by ring
     rw [heq]
-    have hi0 := mem_periodFiltration.2 (mem_nonnegSubring.1 (f i).2)
+    have hi0 := mem_periodFiltration.2 (mem_nonnegSubring.1 (f i).property)
     have hmul := mul_mem_periodFiltration hi0
       (ih fun j hj => hf j (Finset.mem_insert_of_mem hj))
     exact add_mem (by simpa only [zero_add] using hmul) (hf i (Finset.mem_insert_self _ _))
@@ -92,7 +94,7 @@ theorem prod_sub_prod_mem_periodFiltration {s t : Finset ι} (hst : s ⊆ t)
   classical
   have hs : (∏ i ∈ s, (f i : NovikovSeries R H N)) ∈ periodFiltration R N 0 :=
     mem_periodFiltration.2 (mem_nonnegSubring.1
-      ((nonnegSubring R N).prod_mem fun i _ => (f i).2))
+      ((nonnegSubring R N).prod_mem fun i _ => (f i).property))
   have h := mul_mem_periodFiltration (prod_sub_one_mem_periodFiltration (t \ s)
     fun i hi => hf i (Finset.mem_sdiff.1 hi).1 (Finset.mem_sdiff.1 hi).2) hs
   simpa only [add_zero, sub_mul, one_mul, Finset.prod_sdiff hst] using h
@@ -141,6 +143,33 @@ theorem coeff_tprod_eq_coeff_prod
       (∏ i ∈ s, (f i : NovikovSeries R H N)).coeff h := by
   have heq := mem_periodFiltration.1 (tprod_sub_prod_mem_periodFiltration hf s hs) h hh
   simpa only [coeff_sub, sub_eq_zero] using heq
+
+/-- **Filtered products agree below a cutoff when their factors do.** Let `f i - 1` and
+`g i - 1` lie above the period `c i`, where only finitely many `c i` lie below each cutoff. If
+`f i = g i` whenever `c i < C`, then the products `∏' f` and `∏' g` agree below `C`. -/
+theorem tprod_sub_tprod_mem_periodFiltration {c : ι → ℝ} (hc : Tendsto c cofinite atTop)
+    {g : ι → nonnegSubring R N}
+    (hf : ∀ i, (f i : NovikovSeries R H N) - 1 ∈ periodFiltration R N (c i))
+    (hg : ∀ i, (g i : NovikovSeries R H N) - 1 ∈ periodFiltration R N (c i))
+    (hfg : ∀ i, c i < C → (f i : NovikovSeries R H N) = g i) :
+    (∏' i, (f i : NovikovSeries R H N)) - ∏' i, (g i : NovikovSeries R H N) ∈
+      periodFiltration R N C := by
+  have hcut (D : ℝ) : {i | c i < D}.Finite := by
+    simpa using eventually_cofinite.1 (hc.eventually_ge_atTop D)
+  have hfin {u : ι → nonnegSubring R N}
+      (hu : ∀ i, (u i : NovikovSeries R H N) - 1 ∈ periodFiltration R N (c i)) (D : ℝ) :
+      {i | (u i : NovikovSeries R H N) - 1 ∉ periodFiltration R N D}.Finite :=
+    (hcut D).subset fun i hi => lt_of_not_ge fun hD => hi (antitone_periodFiltration hD (hu i))
+  -- Both products agree below `C` with the finite product over `{i | c i < C}`.
+  let s := (hcut C).toFinset
+  have hs {u : ι → nonnegSubring R N}
+      (hu : ∀ i, (u i : NovikovSeries R H N) - 1 ∈ periodFiltration R N (c i)) (i : ι)
+      (hi : i ∉ s) : (u i : NovikovSeries R H N) - 1 ∈ periodFiltration R N C :=
+    antitone_periodFiltration (by simpa [s] using hi) (hu i)
+  have h := sub_mem (tprod_sub_prod_mem_periodFiltration (hfin hf) s (hs hf))
+    (tprod_sub_prod_mem_periodFiltration (hfin hg) s (hs hg))
+  rwa [Finset.prod_congr rfl fun i hi => hfg i (by simpa [s] using hi),
+    sub_sub_sub_cancel_right] at h
 
 /-- A family of arbitrary Novikov series has an unordered product if only finitely
 many factors differ from one below each cutoff. No uniform lower bound on the
@@ -209,7 +238,7 @@ theorem hasProd_eulerProduct (hfin : Tendsto (fun i => N (γ i)) cofinite atTop)
 theorem eulerProduct_mem_nonnegSubring (r : ι → R) (m : ι → ℤ) :
     eulerProduct γ hγ r m ∈ nonnegSubring R N :=
   tprod_mem isClosed_nonnegSubring fun i => (↑(unitsOneSubSingle (hγ i) (r i) ^ m i) :
-    nonnegSubring R N).2
+    nonnegSubring R N).property
 
 /-- The Euler product is congruent to `1` above every lower bound `c` of the periods. In
 particular, when `c > 0`, its coefficients of period `< c`, so all those of nonpositive period,

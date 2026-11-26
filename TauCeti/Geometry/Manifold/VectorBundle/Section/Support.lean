@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 public import Mathlib.Topology.Perfect
 public import Mathlib.Topology.Sets.Compacts
 
@@ -17,23 +17,40 @@ map into the total space: the zero vector varies with the base point. We define 
 support on native `ContMDiffSection`, the submodules of sections supported in a prescribed set,
 and their compactly supported submodule. The latter is the directed supremum of the
 fixed-compact stages. These are algebraic carriers; no topology on section spaces is installed
-here.
+here. Support-preserving linear equivalences preserve both native support submodules.
 
-Smooth scalar multiplication preserves support and compact support. A compactly supported
+Nonzero constant scalars from a normed algebra over the base field preserve exact support
+(`ContMDiffSection.tsupport_smul_of_normedAlgebra`). Smooth scalar multiplication preserves
+support and compact support. A compactly supported
 scalar function localizes even a section without compact support, and a cutoff equal to one
 on the support acts as the identity. These operations provide the support stages and
 localizations used in test sections and their inductive-limit topologies.
 
+For fields of continuous linear maps `η : ∀ x, V x →L[𝕜] G`,
+`ContMDiffSection.tsupport_clm_apply_subset` bounds the pairing support by the section support.
+`ContMDiffSection.continuousOn_clm_apply` gives continuity of the pairing on a set `U`,
+and `ContMDiffSection.continuous_clm_apply_of_tsupport_subset` gives global continuity
+when the section is supported in an open `U`. Continuity of the field on `U` means
+continuity of total-space evaluation `p ↦ η p.proj p.snd` on `(π F V) ⁻¹' U`.
+These lemmas allow arbitrary topological module targets `G`.
+
 The smoothness of multiplication is supplied by Mathlib's `ContMDiff.smul_section`.
 
 Over a base without isolated points, two sections that agree off a point are equal
-(`ContMDiffSection.eq_of_forall_ne`).
+(`ContMDiffSection.eq_of_forall_ne`). Any section vanishes off the closure of its nonzero locus
+(`Bundle.apply_eq_zero_of_notMem_closure`).
 -/
 
 public section
 
 open Set Bundle TopologicalSpace
 open scoped Manifold ContDiff Topology
+
+/-- A section vanishes off the closure of its nonzero locus. -/
+theorem Bundle.apply_eq_zero_of_notMem_closure {M : Type*} [TopologicalSpace M] {V : M → Type*}
+    [∀ x, Zero (V x)] {σ : Π x, V x} {y : M} (hy : y ∉ closure {x | σ x ≠ 0}) : σ y = 0 := by
+  by_contra h
+  exact hy (subset_closure h)
 
 namespace ContMDiffSection
 
@@ -79,11 +96,15 @@ theorem tsupport_def (s : Cₛ^n⟮I; F, V⟯) : s.tsupport = closure {x | s x �
 theorem isClosed_tsupport (s : Cₛ^n⟮I; F, V⟯) : IsClosed s.tsupport :=
   isClosed_closure
 
+/-- A point where a section is nonzero lies in its closed support. -/
+theorem mem_tsupport_of_ne_zero (s : Cₛ^n⟮I; F, V⟯) {x : M} (hx : s x ≠ 0) :
+    x ∈ s.tsupport :=
+  subset_closure hx
+
 /-- A section vanishes off its closed support. -/
 theorem eq_zero_of_notMem_tsupport (s : Cₛ^n⟮I; F, V⟯) {x : M}
-    (hx : x ∉ s.tsupport) : s x = 0 := by
-  by_contra h
-  exact hx (subset_closure h)
+    (hx : x ∉ s.tsupport) : s x = 0 :=
+  Bundle.apply_eq_zero_of_notMem_closure hx
 
 /-- Containment of closed support in a closed set is equivalent to vanishing outside it. -/
 theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed K) :
@@ -93,6 +114,55 @@ theorem tsupport_subset_iff {s : Cₛ^n⟮I; F, V⟯} {K : Set M} (hK : IsClosed
   exact closure_minimal (fun x hx => by by_contra hxK; exact hx (h x hxK)) hK
 
 end Support
+
+section Pairing
+
+variable [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  {G : Type*} [TopologicalSpace G] [AddCommMonoid G] [Module 𝕜 G]
+
+/-- Fibrewise continuous linear map evaluation does not enlarge the support of a
+`C^n` section. -/
+theorem tsupport_clm_apply_subset (s : Cₛ^n⟮I; F, V⟯) (η : ∀ x, V x →L[𝕜] G) :
+    _root_.tsupport (fun x ↦ η x (s x)) ⊆ s.tsupport := by
+  apply closure_minimal _ s.isClosed_tsupport
+  exact Function.support_subset_iff'.2 fun x hx ↦ by
+    simp [s.eq_zero_of_notMem_tsupport hx]
+
+/-- A field of continuous linear maps evaluates continuously on a `C^n` section on its
+continuity domain. -/
+theorem continuousOn_clm_apply (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M}
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U)) :
+    ContinuousOn (fun x ↦ η x (s x)) U :=
+  hη.comp s.contMDiff.continuous.continuousOn (fun _ hx ↦ hx)
+
+/-- Evaluating a field of continuous linear maps on a `C^n` section supported in an open
+continuity domain gives a continuous `G`-valued function on the whole base. -/
+theorem continuous_clm_apply_of_tsupport_subset (s : Cₛ^n⟮I; F, V⟯)
+    {η : ∀ x, V x →L[𝕜] G} {U : Set M} (hU : IsOpen U)
+    (hη : ContinuousOn (fun p : TotalSpace F V ↦ η p.proj p.snd) ((π F V) ⁻¹' U))
+    (hsU : s.tsupport ⊆ U) : Continuous (fun x ↦ η x (s x)) := by
+  exact (s.continuousOn_clm_apply hη).continuous_of_tsupport_subset hU
+    ((s.tsupport_clm_apply_subset η).trans hsU)
+
+end Pairing
+
+section NormedAlgebra
+
+variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜']
+  [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F]
+  [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
+
+/-- A nonzero extension scalar preserves closed support under the native normed-algebra action. -/
+theorem tsupport_smul_of_normedAlgebra (c : 𝕜') (s : Cₛ^n⟮I; F, V⟯) (hc : c ≠ 0) :
+    (c • s).tsupport = s.tsupport := by
+  rw [tsupport_def, tsupport_def]
+  congr 1
+  ext x
+  simp only [Set.mem_ofPred_eq, coe_smul_of_normedAlgebra, Pi.smul_apply]
+  exact not_congr (smul_eq_zero_iff_right hc)
+
+end NormedAlgebra
 
 variable [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
@@ -123,10 +193,8 @@ theorem tsupport_smul_subset (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) :
 
 /-- Multiplication by a nonzero scalar preserves closed support. -/
 theorem tsupport_smul (c : 𝕜) (s : Cₛ^n⟮I; F, V⟯) (hc : c ≠ 0) :
-    (c • s).tsupport = s.tsupport := by
-  refine (tsupport_smul_subset c s).antisymm ?_
-  have h := tsupport_smul_subset c⁻¹ (c • s)
-  simpa [smul_smul, hc] using h
+    (c • s).tsupport = s.tsupport :=
+  tsupport_smul_of_normedAlgebra c s hc
 
 variable (I F n V) in
 /-- The submodule of native smooth sections whose closed support lies in `K`. -/
@@ -228,6 +296,22 @@ theorem compactlySupported_eq_top [CompactSpace M] : compactlySupported I F n V 
   intro s _
   exact s.isClosed_tsupport.isCompact
 
+/-- A support-preserving linear equivalence maps each prescribed-support submodule to itself. -/
+theorem map_supportedIn_of_tsupport_eq (e : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; F, V⟯)
+    (he : ∀ s, (e s).tsupport = s.tsupport) (K : Set M) :
+    (supportedIn I F n V K).map e.toLinearMap = supportedIn I F n V K := by
+  ext s
+  rw [Submodule.mem_map_equiv, mem_supportedIn, mem_supportedIn,
+    ← he (e.symm s), e.apply_symm_apply]
+
+/-- A support-preserving linear equivalence maps the compactly supported submodule to itself. -/
+theorem map_compactlySupported_of_tsupport_eq (e : Cₛ^n⟮I; F, V⟯ ≃ₗ[𝕜] Cₛ^n⟮I; F, V⟯)
+    (he : ∀ s, (e s).tsupport = s.tsupport) :
+    (compactlySupported I F n V).map e.toLinearMap = compactlySupported I F n V := by
+  ext s
+  rw [Submodule.mem_map_equiv, mem_compactlySupported, mem_compactlySupported,
+    ← he (e.symm s), e.apply_symm_apply]
+
 /-- Multiplication of sections by a smooth scalar function as a linear map. -/
 def smulLinearMap (f : C^n⟮I, M; 𝕜⟯) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] Cₛ^n⟮I; F, V⟯ where
   toFun s := ⟨fun x => f x • s x, f.contMDiff.smul_section s.contMDiff⟩
@@ -259,18 +343,22 @@ theorem tsupport_smul_function_subset (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I;
     simp [s.eq_zero_of_notMem_tsupport hs]
   · simp [_root_.image_eq_zero_of_notMem_tsupport hf]
 
+/-- Multiplication by a smooth scalar function does not enlarge the support of a section. -/
+theorem tsupport_smul_function_subset_right (f : C^n⟮I, M; 𝕜⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    (f • s).tsupport ⊆ s.tsupport :=
+  (tsupport_smul_function_subset f s).trans inter_subset_right
+
 /-- Smooth multiplication preserves each fixed-support stage. -/
 theorem smul_function_mem_supportedIn (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     {K : Set M} (hs : s ∈ supportedIn I F n V K) :
     f • s ∈ supportedIn I F n V K :=
-  (tsupport_smul_function_subset f s).trans (inter_subset_right.trans hs)
+  (tsupport_smul_function_subset_right f s).trans hs
 
 /-- Smooth multiplication preserves compact support of the section. -/
 theorem smul_function_mem_compactlySupported (f : C^n⟮I, M; 𝕜⟯) {s : Cₛ^n⟮I; F, V⟯}
     (hs : s ∈ compactlySupported I F n V) :
     f • s ∈ compactlySupported I F n V :=
-  hs.of_isClosed_subset (isClosed_tsupport _) ((tsupport_smul_function_subset f s).trans
-    inter_subset_right)
+  hs.of_isClosed_subset (isClosed_tsupport _) (tsupport_smul_function_subset_right f s)
 
 /-- A compactly supported smooth scalar function localizes any smooth section to compact
 support, even when the original section is not compactly supported. -/

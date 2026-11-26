@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 
 /-!
 # Naturality of the explicit low-degree cup products in compatible pairs
@@ -302,13 +302,13 @@ one-cocycles, for compatible pairs intertwining the coefficient pairings. -/
 theorem cocyclesMap2_cup11 (a : Z1 G M) (b : Z1 G N) :
     cocyclesMap2 G P H P' φ fP hcP hfP
         ⟨fun q : G × G => μ ((a : G → M) q.1) (q.1 • (b : G → N) q.2),
-          cup11_mem_Z2 G M N P μ hμ hequiv a.2 b.2⟩ =
+          cup11_mem_Z2 G M N P μ hμ hequiv a.property b.property⟩ =
       ⟨fun q : H × H =>
           μ' ((cocyclesMap1 G M H M' φ fM hcM hfM a : H → M') q.1)
             (q.1 • (cocyclesMap1 G N H N' φ fN hcN hfN b : H → N') q.2),
         cup11_mem_Z2 H M' N' P' μ' hμ' hequiv'
-          (cocyclesMap1 G M H M' φ fM hcM hfM a).2
-          (cocyclesMap1 G N H N' φ fN hcN hfN b).2⟩ := by
+          (cocyclesMap1 G M H M' φ fM hcM hfM a).property
+          (cocyclesMap1 G N H N' φ fN hcN hfN b).property⟩ := by
   apply Subtype.ext
   ext ⟨h, k⟩
   simp [coe_cocyclesMap1, coe_cocyclesMap2, hpair, hfN]

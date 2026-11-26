@@ -169,13 +169,13 @@ theorem translate_add (h₁ h₂ : E) (k : ℕ) (u : Wkp mu ⊤ p k) :
 
 private theorem translate_one_eq_jet (h : E) (u : Wkp mu ⊤ p 1) :
     translate h 1 u =
-      ⟨(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h u.1,
-        Sobolev1JetLp.translateLp_mem_w1pSubmodule h u.2⟩ := by
+      ⟨(mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h u.val,
+        Sobolev1JetLp.translateLp_mem_w1pSubmodule h u.property⟩ := by
   rw [translate_one_eq_translateOne]
   apply W1p.ext_value
   rw [← value_one (translateOne h u), value_translateOne, value_one u]
   simp only [W1p.value_coe, W1p.value_coe u]
-  exact (Sobolev1JetLp.value_translateLp h u.1).symm
+  exact (Sobolev1JetLp.value_translateLp h u.val).symm
 
 /-- For finite `p`, translation of a fixed whole-space Sobolev function varies continuously
 with the translation vector. -/
@@ -188,6 +188,17 @@ theorem continuous_translate (hp : p ≠ ∞) :
         by simpa only [iteratedGradient_translate] using
           Measure.continuous_translateLp hp (iteratedGradient k u)⟩
 
+open Filter Topology in
+/-- For finite `p`, the whole-space translates `x ↦ w (x + g t)` of a fixed `w ∈ W^{1,p}` tend to
+`w` along any filter on which the translation vectors `g t` tend to zero. -/
+theorem _root_.TauCeti.W1p.tendsto_translate (hp : p ≠ ∞) {X : Type*} {l : Filter X} {g : X → E}
+    (hg : Tendsto g l (𝓝 0)) (w : W1p mu ⊤ p) :
+    Tendsto (fun t => W1p.translate (Omega := ⊤) (V := ⊤) (h := g t) (fun _ _ => by simp) w) l
+      (𝓝 w) := by
+  have h := ((continuous_translate hp 1 w).tendsto 0).comp hg
+  rw [translate_zero 1 w] at h
+  exact h.congr fun t => translate_one_eq_W1p_translate (g t) w
+
 /-- Translation preserves the iterated graph norm at every Sobolev order. -/
 @[simp]
 theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
@@ -196,7 +207,7 @@ theorem norm_translate (h : E) : ∀ (k : ℕ) (u : Wkp mu ⊤ p k),
       exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u
   | 1, u => by
       rw [translate_one_eq_jet]
-      exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.1
+      exact (mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h |>.norm_map u.val
   | k + 2, u => by
       have hv := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k
         (translate h (k + 2) u)

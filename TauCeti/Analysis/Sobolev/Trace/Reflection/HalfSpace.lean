@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.TangentCone.Prod
 public import Mathlib.Analysis.Calculus.TangentCone.Real
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
+public import Mathlib.Analysis.Normed.Operator.Prod
 public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Higher
 
@@ -39,6 +40,8 @@ noncomputable section
 
 namespace TauCeti.HalfSpaceExtension
 
+section TimeScale
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
 
@@ -49,6 +52,14 @@ def timeScale (a : ℝ) : (ℝ × E) →L[ℝ] ℝ × E :=
 /-- Time dilation multiplies only the time coordinate. -/
 @[simp] theorem timeScale_apply (a : ℝ) (x : ℝ × E) :
     timeScale a x = (a * x.1, x.2) := (rfl)
+
+/-- A time dilation by `a` has operator norm at most `max |a| 1`. -/
+theorem norm_timeScale_le (a : ℝ) : ‖(timeScale a : (ℝ × E) →L[ℝ] ℝ × E)‖ ≤ max |a| 1 := by
+  rw [timeScale, ContinuousLinearMap.opNorm_prod, Prod.norm_mk]
+  refine max_le_max ((ContinuousLinearMap.opNorm_smul_le _ _).trans ?_)
+    (ContinuousLinearMap.norm_snd_le ℝ ℝ E)
+  rw [Real.norm_eq_abs]
+  exact mul_le_of_le_one_right (abs_nonneg a) (ContinuousLinearMap.norm_fst_le ℝ ℝ E)
 
 /-- Expand a time-dilated multilinear term by its subset of time-direction slots. -/
 theorem map_timeScale_eq_sum_pow_card_smul {m : ℕ}
@@ -96,31 +107,65 @@ theorem sum_higherReflectionCoeff_smul_compContinuousLinearMap_timeScale
   funext i
   ext <;> simp
 
+end TimeScale
+
 /-- The closed nonnegative-time half-space, with unrestricted spatial coordinate. -/
 def upperHalfSpace (E : Type*) : Set (ℝ × E) := Ici 0 ×ˢ univ
 
 /-- The closed nonpositive-time half-space, with unrestricted spatial coordinate. -/
 def lowerHalfSpace (E : Type*) : Set (ℝ × E) := Iic 0 ×ˢ univ
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+section HalfSpaceSet
+
+variable {E : Type*}
+
 /-- Membership in the upper half-space is nonnegativity of time. -/
 @[simp] theorem mem_upperHalfSpace {x : ℝ × E} : x ∈ upperHalfSpace E ↔ 0 ≤ x.1 := by
   simp [upperHalfSpace]
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Membership in the lower half-space is nonpositivity of time. -/
 @[simp] theorem mem_lowerHalfSpace {x : ℝ × E} : x ∈ lowerHalfSpace E ↔ x.1 ≤ 0 := by
   simp [lowerHalfSpace]
 
-omit [NormedSpace ℝ E] in
+/-- The two closed time half-spaces cover the whole product space. -/
+theorem upperHalfSpace_union_lowerHalfSpace : upperHalfSpace E ∪ lowerHalfSpace E = univ := by
+  ext x
+  simp only [mem_union, mem_upperHalfSpace, mem_lowerHalfSpace, mem_univ, iff_true]
+  exact le_total 0 x.1
+
+end HalfSpaceSet
+
+section HalfSpaceClosed
+
+variable {E : Type*} [TopologicalSpace E]
+
 /-- The upper half-space is closed. -/
 theorem isClosed_upperHalfSpace : IsClosed (upperHalfSpace E) :=
   isClosed_Ici.prod isClosed_univ
 
-omit [NormedSpace ℝ E] in
 /-- The lower half-space is closed. -/
 theorem isClosed_lowerHalfSpace : IsClosed (lowerHalfSpace E) :=
   isClosed_Iic.prod isClosed_univ
+
+end HalfSpaceClosed
+
+section HalfSpaceConvex
+
+variable {E : Type*} [AddCommMonoid E] [Module ℝ E]
+
+/-- The upper half-space is convex. -/
+theorem convex_upperHalfSpace : Convex ℝ (upperHalfSpace E) :=
+  (convex_Ici 0).prod convex_univ
+
+/-- The lower half-space is convex. -/
+theorem convex_lowerHalfSpace : Convex ℝ (lowerHalfSpace E) :=
+  (convex_Iic 0).prod convex_univ
+
+end HalfSpaceConvex
+
+section HalfSpaceUniqueDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- Within-set derivatives are unique on the upper half-space. -/
 theorem uniqueDiffOn_upperHalfSpace : UniqueDiffOn ℝ (upperHalfSpace E) :=
@@ -130,37 +175,50 @@ theorem uniqueDiffOn_upperHalfSpace : UniqueDiffOn ℝ (upperHalfSpace E) :=
 theorem uniqueDiffOn_lowerHalfSpace : UniqueDiffOn ℝ (lowerHalfSpace E) :=
   (uniqueDiffOn_Iic 0).prod uniqueDiffOn_univ
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- The two closed time half-spaces cover the whole product space. -/
-theorem upperHalfSpace_union_lowerHalfSpace : upperHalfSpace E ∪ lowerHalfSpace E = univ := by
-  ext x
-  simp only [mem_union, mem_upperHalfSpace, mem_lowerHalfSpace, mem_univ, iff_true]
-  exact le_total 0 x.1
+end HalfSpaceUniqueDiff
+
+section ReflectionBasic
+
+variable {E F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- `K`-term higher-order reflection of `f` along each time line `t ↦ f (t, x.2)`, extending
 `f` from the upper half-space. -/
 def halfSpaceReflection (K : ℕ) (f : ℝ × E → F) (x : ℝ × E) : F :=
   higherReflection K (fun t ↦ f (t, x.2)) x.1
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Half-space reflection is additive in the input. -/
 theorem halfSpaceReflection_add (K : ℕ) (f g : ℝ × E → F) :
     halfSpaceReflection K (f + g) = halfSpaceReflection K f + halfSpaceReflection K g := by
   funext x
   exact congrFun (higherReflection_add K (fun t ↦ f (t, x.2)) (fun t ↦ g (t, x.2))) x.1
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Half-space reflection commutes with real scalar multiplication. -/
 theorem halfSpaceReflection_smul (K : ℕ) (c : ℝ) (f : ℝ × E → F) :
     halfSpaceReflection K (c • f) = c • halfSpaceReflection K f := by
   funext x
   exact congrFun (higherReflection_smul K c (fun t ↦ f (t, x.2))) x.1
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- Reflection agrees with the input at nonnegative times. -/
 @[simp] theorem halfSpaceReflection_of_nonneg (K : ℕ) (f : ℝ × E → F)
     {x : ℝ × E} (hx : 0 ≤ x.1) : halfSpaceReflection K f x = f x :=
   higherReflection_of_nonneg K _ hx
+
+/-- Reflection extends the input on the closed upper half-space. -/
+theorem halfSpaceReflection_eqOn_upperHalfSpace (K : ℕ) (f : ℝ × E → F) :
+    EqOn (halfSpaceReflection K f) f (upperHalfSpace E) :=
+  fun _ hx ↦ halfSpaceReflection_of_nonneg K f (mem_upperHalfSpace.mp hx)
+
+/-- Reflection depends only on the input on the upper half-space. -/
+theorem halfSpaceReflection_congr {K : ℕ} {f g : ℝ × E → F}
+    (hfg : EqOn f g (upperHalfSpace E)) : halfSpaceReflection K f = halfSpaceReflection K g := by
+  funext x
+  exact congrFun (higherReflection_congr
+    (fun t ht ↦ hfg ((mem_upperHalfSpace (x := (t, x.2))).mpr ht))) x.1
+
+end ReflectionBasic
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- At negative times reflection is the coefficient-weighted sum of time dilations. -/
 @[simp] theorem halfSpaceReflection_of_neg (K : ℕ) (f : ℝ × E → F)
@@ -170,24 +228,10 @@ omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
   simp only [halfSpaceReflection, higherReflection_of_neg K _ hx,
     higherReflectionLower_apply, timeScale_apply]
 
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- Reflection extends the input on the closed upper half-space. -/
-theorem halfSpaceReflection_eqOn_upperHalfSpace (K : ℕ) (f : ℝ × E → F) :
-    EqOn (halfSpaceReflection K f) f (upperHalfSpace E) :=
-  fun _ hx ↦ halfSpaceReflection_of_nonneg K f (mem_upperHalfSpace.mp hx)
-
 /-- Reflecting a nonpositive time at a negative node lands in the upper half-space. -/
 theorem timeScale_higherReflectionNode_mem_upperHalfSpace {K : ℕ} (j : Fin K)
     {x : ℝ × E} (hx : x.1 ≤ 0) : timeScale (higherReflectionNode j) x ∈ upperHalfSpace E :=
   mem_upperHalfSpace.mpr (mul_nonneg_of_nonpos_of_nonpos (higherReflectionNode_neg j).le hx)
-
-omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
-/-- Reflection depends only on the input on the upper half-space. -/
-theorem halfSpaceReflection_congr {K : ℕ} {f g : ℝ × E → F}
-    (hfg : EqOn f g (upperHalfSpace E)) : halfSpaceReflection K f = halfSpaceReflection K g := by
-  funext x
-  exact congrFun (higherReflection_congr
-    (fun t ht ↦ hfg ((mem_upperHalfSpace (x := (t, x.2))).mpr ht))) x.1
 
 /-- The `K`-term reflection of a Cⁿ map on the closed upper half-space is globally Cⁿ
 whenever `n < K`. -/

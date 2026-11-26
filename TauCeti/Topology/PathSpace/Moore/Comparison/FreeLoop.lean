@@ -83,31 +83,31 @@ theorem coe_toClosedUnitPath (γ : MooreFreeLoopSpace X) :
   (rfl)
 
 theorem toClosedUnitPath_zero (γ : MooreFreeLoopSpace X) :
-    (toClosedUnitPath γ).1 0 = γ.basepoint := by
+    (toClosedUnitPath γ).val 0 = γ.basepoint := by
   rw [coe_toClosedUnitPath, MoorePath.toUnitPath_zero, source_toMoorePath]
 
 /-- Regard a closed path on the unit interval as a free Moore loop of duration one. -/
 def ofClosedUnitPath : C(ClosedUnitPath X, MooreFreeLoopSpace X) where
-  toFun p := ⟨MoorePath.ofUnitPath p.1,
-    (MoorePath.target_ofUnitPath p.1).trans
-      (p.2.symm.trans (MoorePath.source_ofUnitPath p.1).symm)⟩
+  toFun p := ⟨MoorePath.ofUnitPath p.val,
+    (MoorePath.target_ofUnitPath p.val).trans
+      (p.property.symm.trans (MoorePath.source_ofUnitPath p.val).symm)⟩
   continuous_toFun := isEmbedding_toMoorePath.continuous_iff.2
-    (MoorePath.continuous_ofUnitPath.comp continuous_subtype_val)
+    (MoorePath.continuous_ofUnitPath.comp continuous_subtypeVal)
 
 @[simp]
 theorem toMoorePath_ofClosedUnitPath (p : ClosedUnitPath X) :
-    (ofClosedUnitPath p).toMoorePath = MoorePath.ofUnitPath p.1 :=
+    (ofClosedUnitPath p).toMoorePath = MoorePath.ofUnitPath p.val :=
   (rfl)
 
 @[simp]
 theorem basepoint_ofClosedUnitPath (p : ClosedUnitPath X) :
-    (ofClosedUnitPath p).basepoint = p.1 0 := by
+    (ofClosedUnitPath p).basepoint = p.val 0 := by
   rw [← source_toMoorePath, toMoorePath_ofClosedUnitPath, MoorePath.source_ofUnitPath]
 
 @[simp]
 theorem toClosedUnitPath_ofClosedUnitPath (p : ClosedUnitPath X) :
     toClosedUnitPath (ofClosedUnitPath p) = p :=
-  Subtype.ext (MoorePath.toUnitPath_ofUnitPath p.1)
+  Subtype.ext (MoorePath.toUnitPath_ofUnitPath p.val)
 
 /-- Send a free Moore loop to a circle map via `toClosedUnitPath` and
 `circleMapHomeomorphClosedUnitPath.symm`. -/
@@ -158,7 +158,7 @@ theorem toCircleMap_ofCircleMap (f : C(Circle, X)) : toCircleMap (ofCircleMap f)
 /-- On the based Moore loop fibre over `x`, `toCircleMap` agrees with `MooreLoopSpace.toPath`
 composed with `(basedMapCircleOneHomeomorphPath x).symm`. -/
 theorem toCircleMap_toFreeLoop (x : X) (γ : MooreLoopSpace X x) :
-    toCircleMap γ.toFreeLoop = ((basedMapCircleOneHomeomorphPath x).symm γ.toPath).1 := by
+    toCircleMap γ.toFreeLoop = ((basedMapCircleOneHomeomorphPath x).symm γ.toPath).val := by
   ext z
   obtain ⟨t, rfl⟩ := unitToCircle_surjective z
   rw [toCircleMap_unitToCircle, basedMapCircleOneHomeomorphPath_symm_unitToCircle]
@@ -169,10 +169,16 @@ theorem toCircleMap_toFreeLoop_eq_toCircle (x : X) (γ : MooreLoopSpace X x) :
     toCircleMap γ.toFreeLoop = γ.toPath.toCircle :=
   (toCircleMap_toFreeLoop x γ).trans (coe_basedMapCircleOneHomeomorphPath_symm x γ.toPath)
 
+/-- A free Moore loop `γ`, as a circle map, is the circle map of the loop `γ.toMooreLoop.toPath` at
+its base point. -/
+theorem toCircleMap_eq_toCircle (γ : MooreFreeLoopSpace X) :
+    toCircleMap γ = γ.toMooreLoop.toPath.toCircle := by
+  rw [← toCircleMap_toFreeLoop_eq_toCircle, toFreeLoop_toMooreLoop]
+
 /-- On the based circle-map fibre over `x`, `ofCircleMap` agrees with
 `basedMapCircleOneHomeomorphPath x` followed by `Path.toMooreLoop` and `toFreeLoop`. -/
 theorem ofCircleMap_coe_basedMap (x : X) (f : BasedMap Circle X 1 x) :
-    ofCircleMap f.1 = (basedMapCircleOneHomeomorphPath x f).toMooreLoop.toFreeLoop := by
+    ofCircleMap f.val = (basedMapCircleOneHomeomorphPath x f).toMooreLoop.toFreeLoop := by
   apply ext
   refine MoorePath.ext (by simp) fun t ↦ ?_
   rw [toMoorePath_ofCircleMap, MoorePath.ofUnitPath_apply, ContinuousMap.comp_apply,
@@ -329,28 +335,28 @@ theorem unitHomotopy_mem_contractibleLoops (s : I) {γ : MooreFreeLoopSpace X}
 
 /-- Forward comparison restricted to contractible free loops. -/
 def toCircleMapContractible : C(contractibleLoops X, TauCeti.contractibleLoops X) where
-  toFun γ := ⟨toCircleMap γ.1, toCircleMap_mem_contractibleLoops γ.2⟩
-  continuous_toFun := (toCircleMap.continuous.comp continuous_subtype_val).subtype_mk _
+  toFun γ := ⟨toCircleMap γ.val, toCircleMap_mem_contractibleLoops γ.property⟩
+  continuous_toFun := (toCircleMap.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_toCircleMapContractible (γ : contractibleLoops X) :
-    (toCircleMapContractible γ : C(Circle, X)) = toCircleMap γ.1 :=
+    (toCircleMapContractible γ : C(Circle, X)) = toCircleMap γ.val :=
   (rfl)
 
 /-- Reverse comparison restricted to contractible free loops. -/
 def ofCircleMapContractible : C(TauCeti.contractibleLoops X, contractibleLoops X) where
-  toFun f := ⟨ofCircleMap f.1, ofCircleMap_mem_contractibleLoops f.2⟩
-  continuous_toFun := (ofCircleMap.continuous.comp continuous_subtype_val).subtype_mk _
+  toFun f := ⟨ofCircleMap f.val, ofCircleMap_mem_contractibleLoops f.property⟩
+  continuous_toFun := (ofCircleMap.continuous.comp continuous_subtypeVal).subtype_mk _
 
 @[simp]
 theorem coe_ofCircleMapContractible (f : TauCeti.contractibleLoops X) :
-    (ofCircleMapContractible f : MooreFreeLoopSpace X) = ofCircleMap f.1 :=
+    (ofCircleMapContractible f : MooreFreeLoopSpace X) = ofCircleMap f.val :=
   (rfl)
 
 @[simp]
 theorem toCircleMapContractible_ofCircleMapContractible (f : TauCeti.contractibleLoops X) :
     toCircleMapContractible (ofCircleMapContractible f) = f :=
-  Subtype.ext (toCircleMap_ofCircleMap f.1)
+  Subtype.ext (toCircleMap_ofCircleMap f.val)
 
 @[simp]
 theorem toCircleMapContractible_constContractible (x : X) :
@@ -368,11 +374,11 @@ def unitHomotopyContractible :
     ContinuousMap.HomotopyWith ((ofCircleMapContractible (X := X)).comp toCircleMapContractible)
       (ContinuousMap.id (contractibleLoops X))
       (fun h ↦ ∀ γ, basepointContractible X (h γ) = basepointContractible X γ) where
-  toFun p := ⟨unitHomotopy (p.1, p.2.1), unitHomotopy_mem_contractibleLoops p.1 p.2.2⟩
+  toFun p := ⟨unitHomotopy (p.1, p.2.val), unitHomotopy_mem_contractibleLoops p.1 p.2.property⟩
   continuous_toFun := ((unitHomotopy (X := X)).continuous.comp
-    (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd))).subtype_mk _
-  map_zero_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_zero γ.1)
-  map_one_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_one γ.1)
+    (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))).subtype_mk _
+  map_zero_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_zero γ.val)
+  map_one_left γ := Subtype.ext ((unitHomotopy (X := X)).apply_one γ.val)
   prop' s γ := by simp
 
 variable (X) in

@@ -53,6 +53,8 @@ abstract algebra, where invertibility makes the factor an element of the unitary
   `Units.sqrt_star_mul_eq`: the two positive factors are conjugate by the unitary factor.
 * `Units.polarUnitary_unitary_mul_mul_unitary`, `Units.sqrt_unitary_mul_mul_unitary`: unitary
   equivariance.
+* `Units.coe_polarUnitary_map`: naturality of the unitary factor for unital star ring
+  homomorphisms.
 
 ## References
 
@@ -86,7 +88,7 @@ theorem sqrt_unitary_mul_mul_star (u : unitary A) (x : A) :
     calc (u : A) * sqrt x * star (u : A) * ((u : A) * sqrt x * star (u : A))
         = u * sqrt x * (star (u : A) * u) * sqrt x * star (u : A) := by noncomm_ring
       _ = u * x * star (u : A) := by
-        rw [Unitary.star_mul_self_of_mem u.2, mul_one, mul_assoc (u : A) (sqrt x),
+        rw [Unitary.star_mul_self_of_mem u.property, mul_one, mul_assoc (u : A) (sqrt x),
           sqrt_mul_sqrt_self x]
   · have hux : ¬0 ≤ (u : A) * x * star (u : A) := by
       rwa [Unitary.isUnit_coe.star_right_conjugate_nonneg_iff]
@@ -157,7 +159,7 @@ theorem sqrt_mul_star_eq_of_mul_eq {p : A} (hp : 0 ≤ p) {v : unitary A} (h : p
     CFC.sqrt ((a : A) * star (a : A)) = p := by
   refine CFC.sqrt_unique ?_ hp
   rw [← h, star_mul, hp.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (v : A),
-    Unitary.mul_star_self_of_mem v.2, one_mul]
+    Unitary.mul_star_self_of_mem v.property, one_mul]
 
 /-- **Uniqueness of the unitary factor.** If `a = p v` with `p ≥ 0` and `v` unitary, then `v`
 is `a.polarUnitary`. -/
@@ -191,14 +193,15 @@ theorem sqrt_star_mul_eq :
       = star (a.polarUnitary : A) * CFC.sqrt ((a : A) * star (a : A)) *
           ((a.polarUnitary : A) * star (a.polarUnitary : A)) *
           CFC.sqrt ((a : A) * star (a : A)) * a.polarUnitary := by noncomm_ring
-    _ = _ := by rw [Unitary.mul_star_self_of_mem a.polarUnitary.2, mul_one]; noncomm_ring
+    _ = _ := by rw [Unitary.mul_star_self_of_mem a.polarUnitary.property, mul_one]; noncomm_ring
 
 /-- **The right polar decomposition** `a = u √(a⋆ a)` of a unit, with the same unitary factor
 `u = a.polarUnitary` as the left one. -/
 @[simp]
 theorem polarUnitary_mul_sqrt_star_mul :
     a.polarUnitary * CFC.sqrt (star (a : A) * a) = a := by
-  rw [sqrt_star_mul_eq, ← mul_assoc, ← mul_assoc, Unitary.mul_star_self_of_mem a.polarUnitary.2,
+  rw [sqrt_star_mul_eq, ← mul_assoc, ← mul_assoc,
+      Unitary.mul_star_self_of_mem a.polarUnitary.property,
     one_mul, sqrt_mul_star_mul_polarUnitary]
 
 /-- **Uniqueness of the right positive factor.** If `a = v q` with `v` unitary and `q ≥ 0`, then
@@ -207,14 +210,14 @@ theorem sqrt_star_mul_eq_of_mul_eq {q : A} (hq : 0 ≤ q) {v : unitary A} (h : v
     CFC.sqrt (star (a : A) * a) = q := by
   refine CFC.sqrt_unique ?_ hq
   rw [← h, star_mul, hq.isSelfAdjoint.star_eq, mul_assoc, ← mul_assoc (star (v : A)),
-    Unitary.star_mul_self_of_mem v.2, one_mul]
+    Unitary.star_mul_self_of_mem v.property, one_mul]
 
 /-- **Uniqueness of the unitary factor, on the right.** If `a = v q` with `v` unitary and
 `q ≥ 0`, then `v` is `a.polarUnitary`. -/
 theorem polarUnitary_eq_of_mul_eq' {q : A} (hq : 0 ≤ q) {v : unitary A} (h : v * q = a) :
     a.polarUnitary = v := by
   refine polarUnitary_eq_of_mul_eq a (star_right_conjugate_nonneg hq (v : A)) ?_
-  rw [mul_assoc, Unitary.star_mul_self_of_mem v.2, mul_one, h]
+  rw [mul_assoc, Unitary.star_mul_self_of_mem v.property, mul_one, h]
 
 /-- The right polar decomposition characterizes its two factors: `a = v q` with `v` unitary and
 `q ≥ 0` exactly when `v = a.polarUnitary` and `q = √(a⋆ a)`. -/
@@ -260,7 +263,7 @@ private theorem unitary_mul_mul_unitary_eq (v w : unitary A) :
         ((v : A) * a.polarUnitary * w)
       = v * CFC.sqrt ((a : A) * star (a : A)) * (star (v : A) * v) * a.polarUnitary * w := by
         noncomm_ring
-    _ = _ := by rw [Unitary.star_mul_self_of_mem v.2, mul_one, mul_assoc (v : A)]
+    _ = _ := by rw [Unitary.star_mul_self_of_mem v.property, mul_one, mul_assoc (v : A)]
 
 /-- **Unitary equivariance of the unitary factor.** For unitaries `v` and `w`, the unitary factor
 of `v a w` is `v u w`. -/
@@ -280,5 +283,18 @@ theorem sqrt_unitary_mul_mul_unitary (v w : unitary A) :
   sqrt_mul_star_eq_of_mul_eq _
     (star_right_conjugate_nonneg (CFC.sqrt_nonneg ((a : A) * star (a : A))) (v : A))
     (unitary_mul_mul_unitary_eq a v w)
+
+
+/-- **Naturality of the unitary factor**: a unital star ring homomorphism sends the unitary factor
+of `a` to the unitary factor of the image of `a`. -/
+theorem coe_polarUnitary_map {B : Type*} [PartialOrder B] [Ring B] [StarRing B]
+    [StarOrderedRing B] [TopologicalSpace B] [Algebra ℝ B]
+    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
+    [IsSemitopologicalRing B] [T2Space B] {F : Type*} [FunLike F A B] [RingHomClass F A B]
+    [StarHomClass F A B] (φ : F) :
+    ((Units.map (φ : A →* B) a).polarUnitary : B) = φ (a.polarUnitary : A) :=
+  congrArg Subtype.val (polarUnitary_eq_of_mul_eq (v := ⟨_, Unitary.map_mem φ a.polarUnitary.prop⟩)
+    _ (map_nonneg φ (CFC.sqrt_nonneg ((a : A) * star (a : A))))
+    (by simp [← map_mul, sqrt_mul_star_mul_polarUnitary]))
 
 end Units

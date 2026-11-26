@@ -124,7 +124,7 @@ private theorem maximal_comap_orthogonal_span_pair (hW : Maximal Q.IsTotallyIsot
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hy
     obtain ⟨s, hs, rfl⟩ := Submodule.mem_map.mp hz
     obtain ⟨hws, -⟩ : polar Q w s = 0 ∧ polar Q f s = 0 := by
-      simpa [U, LinearMap.BilinForm.orthogonal] using s.2
+      simpa [U, LinearMap.BilinForm.orthogonal] using s.property
     rw [QuadraticMap.map_add Q, Q.map_smul, hTI.apply_eq_zero hwW,
       (isTotallyIsotropic_restrict_iff.mp hT).apply_eq_zero (Submodule.mem_map_of_mem hs),
       polar_smul_left, Submodule.subtype_apply, hws]

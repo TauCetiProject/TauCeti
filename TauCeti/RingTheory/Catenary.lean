@@ -136,9 +136,10 @@ theorem krullDim_Icc {p q : PrimeSpectrum R} (hpq : p ≤ q) :
   have hQ : Q.asIdeal = q.asIdeal.map (Ideal.Quotient.mk p.asIdeal) := rfl
   -- The primes of `R / p` below `q / p` correspond to the primes of `R` between `p` and `q`.
   let f : Set.Icc p q ≃o Set.Iic Q :=
-    { toFun x := ⟨e.symm ⟨x, hmem.2 (Set.mem_Icc.1 x.2).1⟩,
-        e.symm.monotone (Subtype.mk_le_mk.2 (Set.mem_Icc.1 x.2).2)⟩
-      invFun y := ⟨e y, hmem.1 (e y).2, Subtype.coe_le_coe.2 ((e.monotone y.2).trans_eq
+    { toFun x := ⟨e.symm ⟨x, hmem.2 (Set.mem_Icc.1 x.property).1⟩,
+        e.symm.monotone (Subtype.mk_le_mk.2 (Set.mem_Icc.1 x.property).2)⟩
+      invFun y := ⟨e y, hmem.1 (e y).property, Subtype.coe_le_coe.2
+          ((e.monotone y.property).trans_eq
         (by simp [Q]) : e y ≤ ⟨q, hmem.2 hpq⟩)⟩
       left_inv x := by simp
       right_inv y := by simp

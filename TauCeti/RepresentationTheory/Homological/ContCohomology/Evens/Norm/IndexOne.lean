@@ -179,11 +179,11 @@ private theorem indexOneProj_ι_apply [LinearOrder (G ⧸ U.toSubgroup)] : ∀ x
     (indexOneProj hU).hom
         ((smoothTensorInducedGradedResolutionContraction U.toSubgroup U.isOpen' (oneTransversal hU)
           (coeffs (U := U)) (fun a ↦ by
-            simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)).ι.hom x).1 =
+            simpa only [two_nsmul] using trivialF2_two_nsmul_eq_zero U.toSubgroup a)).ι.hom x).val =
       ((TopRep.gradedResolutionContraction (isSmoothDiscrete_trivialF2 U.toSubgroup)).ι.hom
         (((TopRep.resFunctor (U.toSubgroup.subtype)).map
           (smoothTensorInducedTrivialF2Iso G U.toSubgroup U.isOpen' (oneTransversal hU)).hom.hom ≫
-          eqToHom (res_trivialF2_hom _)).hom x)).1 := by
+          eqToHom (res_trivialF2_hom _)).hom x)).val := by
   let : Module ℤ (DiscreteRep.trivialF2 U.toSubgroup).V :=
     (DiscreteRep.trivialF2 U.toSubgroup).module
   let : Module ℤ (coeffs (U := U)).obj.V := TopRep.hV2 _

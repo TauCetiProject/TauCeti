@@ -42,17 +42,31 @@ namespace TauCeti
 
 universe u
 
-variable (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-variable [Field K] [Algebra R K] [IsFractionRing R K]
-
 namespace Model
 
-/-- The identification of the generic fibre of `ℙ¹_R` with `ℙ¹_K`, over `K`. -/
+section BaseChange
+
+variable (R K : Type u) [CommRing R] [CommRing K] [Algebra R K]
+
+/-- The identification of the scalar-extended fibre of `ℙ¹_R` along `R → K` with `ℙ¹_K`, over
+`K`. -/
 def projectiveLineGenericFiberIso :
     genericFiber R K (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R)) ≅
       Over.mk (AlgebraicGeometry.projectiveLine K ↘ Spec (.of K)) :=
   Over.isoMk (AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection R K).isoPullback.symm
     (IsPullback.isoPullback_inv_snd _)
+
+/-- The inverse of the scalar-extended fibre identification is the canonical pullback
+isomorphism. -/
+lemma projectiveLineGenericFiberIso_inv_left :
+    (projectiveLineGenericFiberIso R K).inv.left =
+      (AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection R K).isoPullback.hom :=
+  (rfl)
+
+end BaseChange
+
+variable (R K : Type u) [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
+variable [Field K] [Algebra R K] [IsFractionRing R K]
 
 /-- **The projective line `ℙ¹_R` as a model of `ℙ¹_K`**: its generic fibre is identified with
 `ℙ¹_K` through the base change of the projective line along `R → K`. -/
@@ -61,22 +75,11 @@ def projectiveLine :
       (AlgebraicGeometry.projectiveLine K ↘ Spec (.of K)) where
   total := AlgebraicGeometry.projectiveLine R
   toBase := AlgebraicGeometry.projectiveLine R ↘ Spec (.of R)
-  flat := by
-    have := SmoothOfRelativeDimension.smooth 1 (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R))
-    infer_instance
-  locallyOfFinitePresentation := by
-    have := SmoothOfRelativeDimension.smooth 1 (AlgebraicGeometry.projectiveLine R ↘ Spec (.of R))
-    infer_instance
+  flat := inferInstance
+  locallyOfFinitePresentation := inferInstance
   quasiCompact := inferInstance
   quasiSeparated := inferInstance
   genericFiberIso := projectiveLineGenericFiberIso R K
-
-omit [IsDomain R] [IsDiscreteValuationRing R] [IsFractionRing R K] in
-/-- The inverse of the generic-fibre identification is the canonical pullback isomorphism. -/
-lemma projectiveLineGenericFiberIso_inv_left :
-    (projectiveLineGenericFiberIso R K).inv.left =
-      (AlgebraicGeometry.projectiveLine.isPullback_baseChangeProjection R K).isoPullback.hom :=
-  (rfl)
 
 /-- The total space of the model `ℙ¹_R` is the projective line over `R`. -/
 @[simp]

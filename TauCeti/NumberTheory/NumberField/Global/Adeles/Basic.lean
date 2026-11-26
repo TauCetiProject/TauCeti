@@ -58,10 +58,10 @@ noncomputable def InfiniteAdeleRing.homeomorphMixedSpace :
     (Homeomorph.piEquivPiSubtypeProd (fun v : InfinitePlace K ↦ v.IsReal)
         (fun v ↦ v.Completion)).trans
       ((Homeomorph.piCongrRight fun v ↦
-          (InfinitePlace.Completion.isometryEquivRealOfIsReal v.2).toHomeomorph).prodCongr
+          (InfinitePlace.Completion.isometryEquivRealOfIsReal v.property).toHomeomorph).prodCongr
         ((Homeomorph.piCongrRight fun v ↦
           (InfinitePlace.Completion.isometryEquivComplexOfIsComplex
-              (InfinitePlace.not_isReal_iff_isComplex.mp v.2)).toHomeomorph).trans
+              (InfinitePlace.not_isReal_iff_isComplex.mp v.property)).toHomeomorph).trans
           (Homeomorph.piCongrLeft (Y := fun _ : {w : InfinitePlace K // w.IsComplex} ↦ ℂ)
             (Equiv.subtypeEquivRight fun _ ↦ InfinitePlace.not_isReal_iff_isComplex))))
   have h (x : InfiniteAdeleRing K) :
@@ -169,9 +169,9 @@ theorem InfiniteAdeleRing.mixedEmbedding_norm_ringEquiv_mixedSpace [NumberField 
     (x : InfiniteAdeleRing K) :
     mixedEmbedding.norm
       (fun (v : {w : InfinitePlace K // w.IsReal}) ↦
-        InfinitePlace.Completion.extensionEmbeddingOfIsReal v.2 (x v),
+        InfinitePlace.Completion.extensionEmbeddingOfIsReal v.property (x v),
        fun (v : {w : InfinitePlace K // w.IsComplex}) ↦
-        InfinitePlace.Completion.extensionEmbedding v.1 (x v)) = ‖x‖ := by
+        InfinitePlace.Completion.extensionEmbedding v.val (x v)) = ‖x‖ := by
   rw [mixedEmbedding.norm_apply, InfiniteAdeleRing.norm_def]
   refine Finset.prod_congr rfl fun w _ ↦ congrArg (· ^ w.mult) ?_
   by_cases hw : w.IsReal

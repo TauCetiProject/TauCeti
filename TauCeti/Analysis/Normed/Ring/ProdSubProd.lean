@@ -44,33 +44,20 @@ theorem norm_prod_sub_prod_le_sum_norm_sub {ι R : Type*} [SeminormedCommRing R]
     (s : Finset ι) {a b : ι → R}
     (ha : ∀ i ∈ s, ‖a i‖ ≤ 1) (hb : ∀ i ∈ s, ‖b i‖ ≤ 1) :
     ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ ≤ ∑ i ∈ s, ‖a i - b i‖ := by
-  classical
-  induction s using Finset.induction with
-  | empty => simp
-  | insert j s hj ih =>
-    rcases s.eq_empty_or_nonempty with rfl | hne
-    · simp
-    · have hmem : ∀ i ∈ s, i ∈ insert j s := fun i hi => Finset.mem_insert_of_mem hi
-      have hjs : j ∈ insert j s := Finset.mem_insert_self j s
-      have ihs := ih (fun i hi => ha i (hmem i hi)) (fun i hi => hb i (hmem i hi))
-      have hprodb : ‖∏ i ∈ s, b i‖ ≤ 1 :=
-        norm_prod_le_one_of_nonempty hne fun i hi => hb i (hmem i hi)
-      rw [Finset.prod_insert hj, Finset.prod_insert hj, Finset.sum_insert hj]
-      have hsplit : a j * ∏ i ∈ s, a i - b j * ∏ i ∈ s, b i
-          = a j * (∏ i ∈ s, a i - ∏ i ∈ s, b i) + (a j - b j) * ∏ i ∈ s, b i := by ring
-      rw [hsplit]
-      refine (norm_add_le _ _).trans ?_
-      have h1 : ‖a j * (∏ i ∈ s, a i - ∏ i ∈ s, b i)‖ ≤ ∑ i ∈ s, ‖a i - b i‖ :=
-        calc ‖a j * (∏ i ∈ s, a i - ∏ i ∈ s, b i)‖
-            ≤ ‖a j‖ * ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ := norm_mul_le _ _
-          _ ≤ 1 * ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ := by gcongr; exact ha j hjs
-          _ = ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ := one_mul _
-          _ ≤ ∑ i ∈ s, ‖a i - b i‖ := ihs
-      have h2 : ‖(a j - b j) * ∏ i ∈ s, b i‖ ≤ ‖a j - b j‖ :=
-        calc ‖(a j - b j) * ∏ i ∈ s, b i‖ ≤ ‖a j - b j‖ * ‖∏ i ∈ s, b i‖ := norm_mul_le _ _
-          _ ≤ ‖a j - b j‖ * 1 := by gcongr
-          _ = ‖a j - b j‖ := mul_one _
-      linarith
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton j => simp
+  | cons j s hj hs ih =>
+    simp only [mem_cons, forall_eq_or_imp] at ha hb
+    rw [prod_cons, prod_cons, sum_cons]
+    calc _ = ‖a j * (∏ i ∈ s, a i - ∏ i ∈ s, b i) + (a j - b j) * ∏ i ∈ s, b i‖ := by
+          congr 1; ring
+      _ ≤ ‖a j‖ * ‖∏ i ∈ s, a i - ∏ i ∈ s, b i‖ + ‖a j - b j‖ * ‖∏ i ∈ s, b i‖ :=
+          (norm_add_le _ _).trans (add_le_add (norm_mul_le _ _) (norm_mul_le _ _))
+      _ ≤ 1 * ∑ i ∈ s, ‖a i - b i‖ + ‖a j - b j‖ * 1 := by
+          gcongr; exacts [ha.1, ih ha.2 hb.2, norm_prod_le_one_of_nonempty hs hb.2]
+      _ = _ := by ring
 
 /-- **Real-valued form** of `norm_prod_sub_prod_le_sum_norm_sub`, phrased with `|·|`: if
 `|a i| ≤ 1` and `|b i| ≤ 1` for every `i ∈ s`, then the difference of the products is at most the

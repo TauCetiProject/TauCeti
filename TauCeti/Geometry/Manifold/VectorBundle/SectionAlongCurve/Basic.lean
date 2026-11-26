@@ -5,21 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
+public import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Basic
 
 /-!
 # Coordinates of vector-bundle sections along curves
 
-This file records the coordinate reading of a section of a vector bundle along a curve in one of
-the bundle's canonical trivializations. It also relates manifold differentiability of the
-corresponding total-space map to differentiability and higher regularity of that coordinate
-reading.
+This file specializes `TauCeti.Manifold.sectionCoord` from
+`VectorBundle/SectionAlongMap/Basic.lean` to curves, relating manifold differentiability of the
+total-space section to `DifferentiableWithinAt` and `ContDiffWithinAt` regularity of its reading.
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.Manifold.sectionCoord`: the coordinate reading of a section along a curve.
-* `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for that
-  reading within a parameter set.
+* `TauCeti.Manifold.differentiableWithinAt_sectionCoord`: a differentiability entry point for
+  `sectionCoord` within a parameter set.
+* `TauCeti.Manifold.differentiableWithinAt_repr_sectionCoord`,
+  `TauCeti.Manifold.differentiableAt_repr_sectionCoord`: differentiability of basis coordinates of
+  `sectionCoord`.
 * `TauCeti.Manifold.differentiableWithinAt_sectionCoord_sum`: finite sums of sections with
   differentiable readings have differentiable readings.
 * `TauCeti.Manifold.contDiffWithinAt_sectionCoord_iff`: the `C^n` coordinate characterization
@@ -47,76 +48,31 @@ variable
 
 variable (γ : 𝕜 → M) (W : ∀ t, V (γ t))
 
-/-- The model-fibre reading of a section `W` along `γ` in the vector-bundle trivialization
-centred at `x`. The continuous linear map is defined everywhere, carrying Mathlib's junk value
-`0` at parameters with `γ t` outside `(trivializationAt F V x).baseSet`. -/
-def sectionCoord (x : M) (t : 𝕜) : F :=
-  (trivializationAt F V x).continuousLinearMapAt 𝕜 (γ t) (W t)
-
-/-- The defining formula for the coordinate reading of a section along a curve. -/
-@[simp]
-theorem sectionCoord_apply (x : M) (t : 𝕜) :
-    sectionCoord (F := F) (V := V) γ W x t =
-      (trivializationAt F V x).continuousLinearMapAt 𝕜 (γ t) (W t) :=
-  (rfl)
-
-/-- Coordinate reading commutes with pointwise addition of sections along a curve. -/
-@[simp]
-theorem sectionCoord_add (W' : ∀ t, V (γ t)) (x : M) :
-    sectionCoord (F := F) γ (fun t ↦ W t + W' t) x =
-      sectionCoord (F := F) γ W x + sectionCoord (F := F) γ W' x := by
-  funext t
-  exact map_add _ _ _
-
-/-- Coordinate reading commutes with pointwise subtraction of sections along a curve. -/
-@[simp]
-theorem sectionCoord_sub (W' : ∀ t, V (γ t)) (x : M) :
-    sectionCoord (F := F) γ (fun t ↦ W t - W' t) x =
-      sectionCoord (F := F) γ W x - sectionCoord (F := F) γ W' x := by
-  funext t
-  exact map_sub _ _ _
-
-/-- Coordinate reading commutes with finite sums of sections along a curve. -/
-@[simp]
-theorem sectionCoord_sum {ι : Type*} (A : Finset ι) (U : ι → ∀ t, V (γ t)) (x : M) :
-    sectionCoord (F := F) γ (fun t ↦ ∑ i ∈ A, U i t) x =
-      fun t ↦ ∑ i ∈ A, sectionCoord (F := F) γ (U i) x t := by
-  classical
-  funext t
-  simp only [sectionCoord_apply, map_sum]
-
-/-- Coordinate reading commutes with pointwise scalar multiplication of a section along a curve. -/
-@[simp]
-theorem sectionCoord_smul (f : 𝕜 → 𝕜) (x : M) :
-    sectionCoord (F := F) γ (fun t ↦ f t • W t) x = f • sectionCoord (F := F) γ W x := by
-  funext t
-  exact map_smul _ _ _
-
-/-- The zero section along a curve has zero coordinate reading. -/
-@[simp]
-theorem sectionCoord_zero (x : M) :
-    sectionCoord (F := F) γ (fun t : 𝕜 ↦ (0 : V (γ t))) x = (0 : 𝕜 → F) := by
-  funext t
-  exact map_zero _
-
-/-- The coordinate reading of a reparametrized section is the composition of its reading with the
-reparametrizing function. -/
-@[simp]
-theorem sectionCoord_comp (φ : 𝕜 → 𝕜) (x : M) :
-    sectionCoord (F := F) (γ ∘ φ) (fun t ↦ W (φ t)) x =
-      sectionCoord (F := F) γ W x ∘ φ := by
-  ext t
-  simp only [sectionCoord_apply, Function.comp_apply]
-
 /-! ### Differentiability of the coordinate reading -/
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable within `s` at `t`, then each
+coordinate function in a model-fibre basis `b` is differentiable within `s` at `t`. -/
+theorem differentiableWithinAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {s : Set 𝕜} {t : 𝕜}
+    (hW : DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) s t) (i : ι) :
+    DifferentiableWithinAt 𝕜 (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) s t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp_differentiableWithinAt t hW
+
+/-- If the coordinate reading `sectionCoord γ W x` is differentiable at `t`, then each coordinate
+function in a model-fibre basis `b` is differentiable at `t`. -/
+theorem differentiableAt_repr_sectionCoord [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    {ι : Type*} (b : Module.Basis ι 𝕜 F) {x : M} {t : 𝕜}
+    (hW : DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) t) (i : ι) :
+    DifferentiableAt 𝕜 (fun r ↦ b.repr (sectionCoord 𝕜 (F := F) γ W x r) i) t :=
+  (b.coord i).toContinuousLinearMap.differentiableAt.comp t hW
 
 /-- A finite sum of sections along a curve whose coordinate readings are differentiable within
 `s` at `t` again has a coordinate reading differentiable within `s` at `t`. -/
 theorem differentiableWithinAt_sectionCoord_sum {ι : Type*} {A : Finset ι}
     {U : ι → ∀ t, V (γ t)} {x : M} {s : Set 𝕜} {t : 𝕜}
-    (hU : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (U i) x) s t) :
-    DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ (fun r ↦ ∑ i ∈ A, U i r) x) s t := by
-  rw [sectionCoord_sum]
+    (hU : ∀ i ∈ A, DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := F) γ (U i) x) s t) :
+    DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := F) γ (fun r ↦ ∑ i ∈ A, U i r) x) s t := by
+  rw [sectionCoord_fun_sum]
   exact DifferentiableWithinAt.fun_sum hU
 
 /-- Given a `C^n` base curve, a section along it is `C^n` as a map into the total space if
@@ -126,26 +82,11 @@ theorem contDiffWithinAt_sectionCoord_iff {n : ℕ∞ω} {s : Set 𝕜} {x : M} 
     [ContMDiffVectorBundle n F V I]
     (hγ : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ s t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    ContDiffWithinAt 𝕜 n (sectionCoord (F := F) γ W x) s t ↔
+    ContDiffWithinAt 𝕜 n (sectionCoord 𝕜 (F := F) γ W x) s t ↔
       ContMDiffWithinAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, F)) n
         (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t := by
-  let e := trivializationAt F V x
-  have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
-    hγ.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
-  have heq : sectionCoord (F := F) γ W x =ᶠ[𝓝[s] t]
-      fun r ↦ (e (TotalSpace.mk' F (γ r) (W r))).2 := by
-    filter_upwards [hbase] with r hr
-    exact e.continuousLinearMapAt_apply_of_mem 𝕜 hr _
-  have heq₀ : sectionCoord (F := F) γ W x t =
-      (e (TotalSpace.mk' F (γ t) (W t))).2 :=
-    e.continuousLinearMapAt_apply_of_mem 𝕜 hx _
-  rw [e.contMDiffWithinAt_iff (f := fun r ↦ TotalSpace.mk' F (γ r) (W r))
-    ((e.coe_mem_source).2 hx)]
-  constructor
-  · intro h
-    exact ⟨hγ, (h.congr_of_eventuallyEq heq.symm heq₀.symm).contMDiffWithinAt⟩
-  · intro h
-    exact h.2.contDiffWithinAt.congr_of_eventuallyEq heq heq₀
+  rw [← contMDiffWithinAt_iff_contDiffWithinAt]
+  exact contMDiffWithinAt_sectionCoord_iff γ W hγ hx
 
 /-- A section along a curve which is differentiable within `s` at `t` as a map into the total
 space has a differentiable coordinate reading in the canonical trivialization at any point `x`
@@ -155,19 +96,8 @@ theorem differentiableWithinAt_sectionCoord {s : Set 𝕜} {x : M} {t : 𝕜}
     (h : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, F))
       (fun r ↦ TotalSpace.mk' F (γ r) (W r)) s t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    DifferentiableWithinAt 𝕜 (sectionCoord (F := F) γ W x) s t := by
-  let e := trivializationAt F V x
-  rw [e.mdifferentiableWithinAt_totalSpace_iff I] at h
-  · obtain ⟨hproj, hcoord⟩ := h
-    have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
-      hproj.continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
-    refine hcoord.differentiableWithinAt.congr_of_eventuallyEq
-      (hbase.mono fun r hr ↦ ?_) ?_
-    · rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hr]
-    · rw [sectionCoord_apply,
-        Bundle.Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hx]
-  · exact (Bundle.Trivialization.coe_mem_source e).2 hx
+    DifferentiableWithinAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) s t :=
+  (mdifferentiableWithinAt_sectionCoord γ W h hx).differentiableWithinAt
 
 /-- A section along a curve which is differentiable at `t` as a map into the total space has a
 differentiable coordinate reading in the canonical trivialization at any point `x` whose base set
@@ -176,9 +106,8 @@ theorem differentiableAt_sectionCoord {x : M} {t : 𝕜} [ContMDiffVectorBundle 
     (h : MDifferentiableAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, F))
       (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    DifferentiableAt 𝕜 (sectionCoord (F := F) γ W x) t := by
-  rw [← differentiableWithinAt_univ]
-  exact differentiableWithinAt_sectionCoord γ W h.mdifferentiableWithinAt hx
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) t :=
+  (mdifferentiableAt_sectionCoord γ W h hx).differentiableAt
 
 /-- Given a differentiable base curve, differentiability of a section along it is equivalent
 to differentiability of its reading in any bundle chart containing the current base point. -/
@@ -186,17 +115,10 @@ theorem differentiableAt_sectionCoord_iff {x : M} {t : 𝕜}
     [ContMDiffVectorBundle 1 F V I]
     (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t)
     (hx : γ t ∈ (trivializationAt F V x).baseSet) :
-    DifferentiableAt 𝕜 (sectionCoord (F := F) γ W x) t ↔
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := F) γ W x) t ↔
       MDifferentiableAt 𝓘(𝕜, 𝕜) (I.prod 𝓘(𝕜, F))
         (fun r ↦ TotalSpace.mk' F (γ r) (W r)) t := by
-  refine ⟨fun h ↦ ?_, fun h ↦ differentiableAt_sectionCoord γ W h hx⟩
-  let e := trivializationAt F V x
-  rw [e.mdifferentiableAt_totalSpace_iff I
-    (fun r ↦ TotalSpace.mk' F (γ r) (W r)) (x₀ := t) ((e.coe_mem_source).2 hx)]
-  refine ⟨hγ, h.mdifferentiableAt.congr_of_eventuallyEq ?_⟩
-  have he : ∀ᶠ r in 𝓝 t, γ r ∈ e.baseSet :=
-    hγ.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx)
-  filter_upwards [he] with r hr
-  exact (e.continuousLinearMapAt_apply_of_mem 𝕜 hr (W r)).symm
+  rw [← mdifferentiableAt_iff_differentiableAt]
+  exact mdifferentiableAt_sectionCoord_iff γ W hγ hx
 
 end TauCeti.Manifold

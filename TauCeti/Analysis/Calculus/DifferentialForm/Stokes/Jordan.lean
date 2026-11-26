@@ -8,6 +8,10 @@ module
 public import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 public import TauCeti.Analysis.Green.Jordan
 public import TauCeti.Analysis.Normed.Module.Alternating.Complex
+import TauCeti.Analysis.Complex.PlaneSeparation.Inside
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.JordanCurve
+import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 /-!
 # Stokes' formula for one-forms on Jordan domains
@@ -21,6 +25,10 @@ of its trace. Then `ω` integrates around `γ` to the Jordan orientation sign
 `TauCeti.Green.green_ac_jordan`, and the Jordan-domain companion of the disc and annulus formulas
 `TauCeti.integral_extDeriv_closedBall` and `TauCeti.integral_extDeriv_annulus`. No convexity,
 smoothness of the boundary, or restriction on its corners is needed.
+
+`TauCeti.integral_oneForm_of_isCompact` expresses the same formula on a compact planar region
+with nonempty interior whose frontier is the trace of `γ`. The Jordan curve theorem identifies
+that region with the filled hull of its frontier, and the frontier has area zero.
 
 ## References
 
@@ -69,5 +77,32 @@ theorem integral_oneForm_jordan {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {γ 
   rw [hcirc] at h
   refine ⟨h.1, h.2.1.congr_fun (fun z hz ↦ hcurl z (hregion hz.1)) hD, ?_⟩
   rw [h.2.2, setIntegral_congr_fun hD fun z hz ↦ hcurl z (hregion hz.1)]
+
+/-- **Stokes' formula on a compact planar region.** If a compact set with nonempty interior
+has frontier equal to the trace of a simple closed absolutely continuous curve, a real one-form
+that is `C¹` near the set integrates around the curve to its Jordan orientation sign times
+the integral of its exterior derivative over the compact set. Both integrals exist. -/
+theorem integral_oneForm_of_isCompact {D : Set ℂ} (hD : IsCompact D)
+    (hint : (interior D).Nonempty)
+    {ω : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ} {γ : ℝ → ℂ} {a b : ℝ} {U : Set ℂ}
+    (hab : a < b) (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
+    (htrace : γ '' uIcc a b = frontier D) (hU : IsOpen U) (hregion : D ⊆ U)
+    (hω : ContDiffOn ℝ 1 ω U) :
+    IntervalIntegrable (fun t ↦ ω (γ t) fun _ ↦ deriv γ t) volume a b ∧
+      IntegrableOn (fun z ↦ extDeriv ω z ![1, Complex.I]) D ∧
+      (∫ t in a..b, ω (γ t) fun _ ↦ deriv γ t) =
+        (Contour.jordanSign γ a b : ℝ) * ∫ z in D, extDeriv ω z ![1, Complex.I] := by
+  have hJ : IsJordanCurve (frontier D) := htrace ▸ hγ.isJordanCurve_image_uIcc hab hclosed hinj
+  have hhull : filledHull (γ '' uIcc a b) = D := by
+    rw [htrace, hJ.filledHull_frontier_eq hD hint]
+  have hins : filledHull (γ '' uIcc a b) \ γ '' uIcc a b = interior D := by
+    rw [hhull, htrace, self_sdiff_frontier]
+  have hnull : volume (frontier D) = 0 := by
+    rw [← htrace]
+    exact hγ.addHaar_image_uIcc_eq_zero volume (by rw [Complex.finrank_real_complex]; decide)
+  have hμ := Measure.restrict_congr_set (interior_ae_eq_of_null_frontier hnull)
+  simpa only [hins, IntegrableOn, hμ] using integral_oneForm_jordan hab hγ hclosed hinj hU
+    (by rwa [hhull]) hω
 
 end TauCeti

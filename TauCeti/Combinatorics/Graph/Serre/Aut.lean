@@ -152,13 +152,15 @@ theorem smulPath_def (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
 dart. -/
 @[simp] theorem smulPath_cons (φ : Γ.Aut) {a b c : Γ.V} (p : Γ.Path a b) (e : Quiver.Hom b c) :
     φ.smulPath (p.cons e) =
-      (φ.smulPath p).cons ⟨φ • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :=
+      (φ.smulPath p).cons ⟨φ • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :=
   (rfl)
 
 /-- The translate of a one-dart path is the one-dart path through the translated dart. -/
 @[simp] theorem smulPath_toPath (φ : Γ.Aut) {a b : Γ.V} (e : Quiver.Hom a b) :
     φ.smulPath e.toPath =
-      Quiver.Hom.toPath (⟨φ • e.1, by rw [src_smul, e.2.1], by rw [tgt_smul, e.2.2]⟩ :
+      Quiver.Hom.toPath (⟨φ • e.val, by rw [src_smul, e.property.1], by rw [tgt_smul,
+          e.property.2]⟩ :
         Quiver.Hom (φ • a) (φ • b)) :=
   (rfl)
 
@@ -194,7 +196,7 @@ theorem mul_smulPath (φ ψ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
 /-- The translate of a path is reduced exactly when the path is. -/
 @[simp] theorem isReduced_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :
     Path.IsReduced Γ (φ.smulPath p) ↔ Path.IsReduced Γ p :=
-  Hom.isReduced_mapPath_iff Γ φ.toHom φ.toHom_mapE_injective p
+  Hom.isReduced_mapPath_iff Γ φ.toHom (fun _ _ _ h => φ.toHom_mapE_injective h) p
 
 /-- The translate of a path has the same length as the path. -/
 @[simp] theorem length_smulPath (φ : Γ.Aut) {a b : Γ.V} (p : Γ.Path a b) :

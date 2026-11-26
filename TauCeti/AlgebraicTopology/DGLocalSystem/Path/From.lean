@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Support
 public import TauCeti.Topology.PathSpace.Moore.From
 
 /-!
@@ -22,7 +23,8 @@ The based path space is contractible, by truncation of paths
 quasi-isomorphism onto `R` with the action of `C_*(Ω_b B; R)` through its augmentation:
 
 * it is linear over the augmentation of the loop algebra,
-  `ε (a · m) = ε(a) ε(m)` (`TauCeti.pathFromChainAugmentation_smul`);
+  `ε (a · m) = ε(a) ε(m)` (`TauCeti.pathFromChainAugmentation_smul`), and so is the push-forward
+  along the end point map `P_b B → B` (`TauCeti.cubicalChainModuleLinearMap_endpoint_smul`);
 * it vanishes on boundaries (`TauCeti.cubicalChainModuleAugmentation_differential`) and is onto
   (`TauCeti.cubicalChainModuleAugmentation_surjective`);
 * a cycle of augmentation zero is a boundary
@@ -34,6 +36,14 @@ truncation does not commute with concatenation in front.
 
 This is the augmentation of the path fibration `Ω_b B → P_b B → B` against which a semi-free
 resolution of `R` over `C_*(Ω_b B; R)` is compared, as in Brown's twisted tensor products.
+
+The Moore paths from `b` to a point `c` are the fibre over `c` of the end point map
+`P_b B → B`. Pushing their chains forward along the inclusion
+(`TauCeti.cubicalChainModuleLinearMap`) identifies `C_*(P_{b→c} B; R)` with the chains of `P_b B`
+supported in that fibre (`TauCeti.cubicalChainModuleLinearMap_injective`,
+`TauCeti.range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom`). Since the inclusion
+commutes with the concatenation of loops in front (`TauCeti.MoorePathBetween.toMoorePathFrom_smul`),
+the push-forward is linear over `C_*(Ω_b B; R)` (`TauCeti.cubicalChainModuleLinearMap_smul`).
 
 The monoid `H` is the phantom parameter of `TauCeti.cubicalChainModule`: no monoid acts on the free
 end point of a path from `b`, and it plays no role.
@@ -71,6 +81,17 @@ theorem pathFromChainAugmentation_smul (a : loopChainAlgebra B b R)
   rw [loopChainAugmentation_def]
   exact cubicalChainModuleAugmentation_smul a m
 
+/-- **The end point map is linear over the augmentation of the loop chains**: pushing a chain on
+the based path space forward to `B` along the end point, `ev_* (a · m) = ε(a) ev_* m` for a chain
+`a` on the Moore loops at `b`. -/
+theorem cubicalChainModuleLinearMap_endpoint_smul {H' : Type*} (a : loopChainAlgebra B b R)
+    (m : cubicalChainModule (MoorePathFrom B b) H R) :
+    cubicalChainModuleLinearMap (G' := H') R (MoorePathFrom.endpoint B b) (a • m) =
+      loopChainAugmentation B b R a •
+        cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) m := by
+  rw [loopChainAugmentation_def]
+  exact cubicalChainModuleLinearMap_smul_of_apply_smul _ MoorePathFrom.endpoint_leftAct a m
+
 /-- **The augmented chains on the based path space are acyclic**: a cycle of `C_*(P_b B; R)` of
 augmentation zero is a boundary. -/
 theorem exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
@@ -79,5 +100,17 @@ theorem exists_pathFromChainDifferential_eq_of_augmentation_eq_zero
     (hε : cubicalChainModuleAugmentation (MoorePathFrom B b) H R m = 0) :
     ∃ n, cubicalChainModuleDifferential (MoorePathFrom B b) H R n = m :=
   exists_cubicalChainModuleDifferential_eq_of_augmentation_eq_zero hd hε
+
+/-! ### The chains on a fibre of the end point map -/
+
+/-- **The chains on the paths from `b` to `c` are the chains of `P_b B` supported over `c`**: the
+image of the push-forward along the inclusion of the Moore paths from `b` to `c` is the chains
+supported in the fibre of the end point map over `c`. -/
+theorem range_cubicalChainModuleLinearMap_moorePathBetweenToMoorePathFrom {G : Type*} (c : B) :
+    LinearMap.range (cubicalChainModuleLinearMap (G := G) (G' := H) R
+      (MoorePathBetween.toMoorePathFrom b c)) =
+      cubicalChainModuleSupportedIn H R (MoorePathFrom.endpoint B b ⁻¹' {c}) := by
+  rw [← MoorePathBetween.range_toMoorePathFrom]
+  exact range_cubicalChainModuleLinearMap MoorePathBetween.isEmbedding_toMoorePathFrom.isInducing
 
 end TauCeti

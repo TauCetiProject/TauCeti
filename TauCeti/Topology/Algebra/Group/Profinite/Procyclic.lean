@@ -49,7 +49,7 @@ noncomputable def closedZpowersLift (x : G) : zHat.{u} →ₜ* closedZpowers x :
 theorem coe_closedZpowersLift (x : G) (a : zHat.{u}) :
     (closedZpowersLift x a : G) = zHat.lift x a :=
   zHat.map_lift
-    (⟨(closedZpowers x).subtype, continuous_subtype_val⟩ : closedZpowers x →ₜ* G)
+    (⟨(closedZpowers x).subtype, continuous_subtypeVal⟩ : closedZpowers x →ₜ* G)
     ⟨x, mem_closedZpowers x⟩ a
 
 /-- Every element of the closed procyclic subgroup is reached by the canonical lift. -/
@@ -92,7 +92,7 @@ even when the ambient group is not pro-`p`. -/
 theorem zpowHat_idem_of_isProP_closedZpowers {p : ℕ} [Fact p.Prime] {x : G}
     (hx : IsProP p (closedZpowers x)) : x ^ᶻ zHat.idem.{u} p = x := by
   let y : closedZpowers x := ⟨x, mem_closedZpowers x⟩
-  let f : closedZpowers x →ₜ* G := ⟨(closedZpowers x).subtype, continuous_subtype_val⟩
+  let f : closedZpowers x →ₜ* G := ⟨(closedZpowers x).subtype, continuous_subtypeVal⟩
   have h := congrArg f (zpowHat_idem_of_isProP.{u} hx y)
   rw [map_zpowHat] at h
   exact h

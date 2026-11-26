@@ -7,9 +7,9 @@ module
 
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.Localization.Integral
-import Mathlib.RingTheory.Unramified.Field
 import TauCeti.RingTheory.Etale.IntegralClosure
 import TauCeti.RingTheory.IntegralClosure.TensorProduct
+import TauCeti.RingTheory.Unramified.Field
 
 /-!
 # Base change of unramified extensions of a discrete valuation ring
@@ -62,8 +62,7 @@ theorem isUnramifiedWRT_of_surjective (χ : K ⊗[R] S →ₐ[K] L) (hχ : Funct
     (isIntegrallyClosed_iff_isIntegrallyClosedIn K).mp inferInstance
   have : Algebra.Etale R (integralClosure R L) := etale_integralClosure_of_surjective χ hχ
   have : FiniteDimensional K L := Module.Finite.of_surjective χ.toLinearMap hχ
-  have : Algebra.FormallyUnramified K L := .of_surjective χ hχ
-  have : Algebra.IsSeparable K L := (Algebra.FormallyUnramified.iff_isSeparable K L).mp ‹_›
+  have : Algebra.IsSeparable K L := χ.isSeparable_of_surjective hχ
   exact (isUnramifiedWRT_iff_etale R K L).mpr ‹_›
 
 end AlgHom

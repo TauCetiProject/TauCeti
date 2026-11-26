@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
+public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.SetTheory.Cardinal.NatCard
 import Mathlib.Algebra.Algebra.Equiv
 
@@ -34,13 +35,21 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
 other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 
+Scalar restriction of endomorphisms is packaged as a ring homomorphism, with identity, product,
+power and nilpotence compatibility (`Module.End.restrictScalarsRingHom`).
+
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 (`Module.End.pow_eq_one_of_apply_eq_smul`).
 
+Iterates of endomorphisms intertwined by a semilinear map are intertwined
+(`Module.End.pow_apply_of_comp_eq`).
+
 A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
-(`Submodule.le_comap_of_fixed`), and a submodule invariant under two endomorphisms is invariant
-under their difference (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
+(`Submodule.le_comap_of_fixed`). If `f` maps `p` into `p ⊔ q` and leaves `q` invariant, then so
+does each power of `f` (`Submodule.le_comap_pow_of_le_comap_sup`). A submodule invariant under
+two endomorphisms is invariant under their difference
+(`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
 -/
 
 public section
@@ -74,6 +83,54 @@ theorem injective_one_sub_of_pow_eq_smul_one {A M : Type*} [CommRing A] [IsDomai
 end TauCeti
 
 namespace Module.End
+
+section RestrictScalars
+
+variable {R S M : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
+  [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S]
+
+/-- Scalar restriction of endomorphisms as a ring homomorphism. -/
+def restrictScalarsRingHom (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
+    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] :
+    Module.End S M →+* Module.End R M where
+  toFun := LinearMap.restrictScalars R
+  map_zero' := rfl
+  map_one' := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
+
+/-- Restricting the scalars of the identity endomorphism gives the identity. -/
+@[simp]
+theorem restrictScalars_one : (1 : Module.End S M).restrictScalars R = 1 :=
+  (restrictScalarsRingHom R S M).map_one
+
+/-- Restricting the scalars of endomorphisms preserves their products. -/
+@[simp]
+theorem restrictScalars_mul (D E : Module.End S M) :
+    (D * E).restrictScalars R = D.restrictScalars R * E.restrictScalars R :=
+  (restrictScalarsRingHom R S M).map_mul D E
+
+/-- Restricting the scalars of an endomorphism preserves its powers. -/
+@[simp]
+theorem restrictScalars_pow (D : Module.End S M) (n : ℕ) :
+    (D ^ n).restrictScalars R = (D.restrictScalars R) ^ n :=
+  (restrictScalarsRingHom R S M).map_pow D n
+
+/-- Restricting the scalars of an endomorphism preserves and reflects nilpotence. -/
+@[simp]
+theorem isNilpotent_restrictScalars_iff {D : Module.End S M} :
+    IsNilpotent (D.restrictScalars R) ↔ IsNilpotent D :=
+  IsNilpotent.map_iff (f := restrictScalarsRingHom R S M) (LinearMap.restrictScalars_injective R)
+
+/-- The scalar-restriction ring homomorphism is the underlying scalar-restriction map. It has
+`low` priority so that the generic morphism lemmas such as `map_mul` fire first; see Mathlib's
+library note on hom simp lemma priority. -/
+@[simp low]
+theorem restrictScalarsRingHom_apply (R S M : Type*) [Semiring R] [Semiring S] [AddCommMonoid M]
+    [Module R M] [Module S M] [LinearMap.CompatibleSMul M M R S] (D : Module.End S M) :
+    restrictScalarsRingHom R S M D = D.restrictScalars R := (rfl)
+
+end RestrictScalars
 
 /-- A product of endomorphisms each of which acts on `s` by the scalar `z` acts on `s` by
 `z ^ l.length`. -/
@@ -120,6 +177,14 @@ theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid 
     (hk : a ^ k = 1) : S ^ k = 1 :=
   LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
 
+/-- Iterates of intertwined endomorphisms are intertwined: if `f ∘ g = g₂ ∘ f`, then
+`(g₂ ^ k) (f m) = f ((g ^ k) m)`. This is the pointwise form of `commute_pow_left_of_commute`. -/
+theorem pow_apply_of_comp_eq {R R₂ M M₂ : Type*} [Semiring R] [Semiring R₂] [AddCommMonoid M]
+    [Module R M] [AddCommMonoid M₂] [Module R₂ M₂] {σ₁₂ : R →+* R₂} {f : M →ₛₗ[σ₁₂] M₂}
+    {g : Module.End R M} {g₂ : Module.End R₂ M₂} (h : f.comp g = g₂.comp f) (k : ℕ) (m : M) :
+    (g₂ ^ k) (f m) = f ((g ^ k) m) :=
+  LinearMap.congr_fun (commute_pow_left_of_commute h.symm k) m
+
 end Module.End
 
 namespace Submodule
@@ -129,6 +194,14 @@ theorem le_comap_of_fixed {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R
     (p : Submodule R V) (f : Module.End R V)
     (hfix : ∀ y ∈ p, f y = y) : p ≤ p.comap f :=
   fun y hy ↦ by rw [Submodule.mem_comap, hfix y hy]; exact hy
+
+/-- If an endomorphism maps `p` into `p ⊔ q` and leaves `q` invariant, so does each of its powers.
+This is the relative form of `Submodule.le_comap_pow_of_le_comap`. -/
+theorem le_comap_pow_of_le_comap_sup {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (p : Submodule R V) {q : Submodule R V} {f : Module.End R V} (hp : p ≤ (p ⊔ q).comap f)
+    (hq : q ≤ q.comap f) (k : ℕ) : p ≤ (p ⊔ q).comap (f ^ k) :=
+  le_sup_left.trans <|
+    (p ⊔ q).le_comap_pow_of_le_comap (sup_le hp (hq.trans (comap_mono le_sup_right))) k
 
 end Submodule
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.PDCode.Kauffman
+public import TauCeti.KnotTheory.PDCode.Oriented.Component
 public import TauCeti.KnotTheory.PDCode.Planar
 
 /-!
@@ -27,12 +28,15 @@ so the faces and planarity, and the crossing turn, and so the components. It exc
 local smoothings at `i` exactly as it flips the over-pair indicator, so every state smooths the
 diagram into the same circles, and the Kauffman bracket is unchanged. On an oriented code it keeps
 the orientation of every half-edge and the sign of every crossing, so the writhe-normalized bracket
-is unchanged too.
+is unchanged too, and every link component keeps its half-edge representatives and crossing-free
+label.
 
 ## Main definitions
 
 * `TauCeti.PDCode.rotateCrossing`: read one crossing of a PD-code from its next slot.
 * `TauCeti.OrientedPDCode.rotateCrossing`: the same for an oriented PD-code.
+* `TauCeti.OrientedPDCode.rotateCrossingComponentEquiv`: the labelled component bijection across a
+  crossing-slot rotation.
 
 ## Main results
 
@@ -102,6 +106,55 @@ variable (D : PDCode n) (i : Fin n)
 @[simp] theorem rotateCrossing_overPair_of_ne {j : Fin n} (hj : j ≠ i) :
     (D.rotateCrossing i).overPair j = D.overPair j := by
   simp [rotateCrossing, hj]
+
+/-- Rotating a crossing `k` times shifts the slots of that crossing by `k • 1`. -/
+@[simp] theorem iterate_rotateCrossing_crossing_self (k : ℕ) (slot : Fin 4) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (i, slot)) =
+      D.halfEdge (crossingSlotEquiv n (i, slot + k • 1)) := by
+  induction k generalizing slot with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_crossing_self, ih, succ_nsmul, add_assoc,
+      add_comm 1]
+
+/-- Rotating a crossing `k` times keeps the slots of all other crossings. -/
+@[simp] theorem iterate_rotateCrossing_crossing_of_ne (k : ℕ) {j : Fin n} (hj : j ≠ i)
+    (slot : Fin 4) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).halfEdge (crossingSlotEquiv n (j, slot)) =
+      D.halfEdge (crossingSlotEquiv n (j, slot)) :=
+  congrFun (Function.iterate_invariant
+    (g := fun E : PDCode n ↦ E.halfEdge (crossingSlotEquiv n (j, slot)))
+    (funext fun E ↦ rotateCrossing_crossing_of_ne E i hj slot) k) D
+
+/-- Rotating a crossing `k` times keeps the arc pairing. -/
+@[simp] theorem iterate_rotateCrossing_edgePair (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).edgePair = D.edgePair :=
+  congrFun (Function.iterate_invariant (g := fun E : PDCode n ↦ E.edgePair)
+    (funext fun E ↦ rotateCrossing_edgePair E i) k) D
+
+/-- Rotating a crossing `k` times keeps the crossing-free component count. -/
+@[simp] theorem iterate_rotateCrossing_crossinglessComponentCount (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).crossinglessComponentCount =
+      D.crossinglessComponentCount :=
+  congrFun (Function.iterate_invariant (g := fun E : PDCode n ↦ E.crossinglessComponentCount)
+    (funext fun E ↦ rotateCrossing_crossinglessComponentCount E i) k) D
+
+/-- Rotating a crossing `k` times flips its over-pair indicator when `k` is odd. -/
+@[simp] theorem iterate_rotateCrossing_overPair_self (k : ℕ) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).overPair i =
+      (D.overPair i ^^ decide (k % 2 = 1)) := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', rotateCrossing_overPair_self, ih]
+    rcases Nat.mod_two_eq_zero_or_one k with h | h <;>
+      simp [h, Nat.succ_mod_two_eq_one_iff]
+
+/-- Rotating a crossing `k` times keeps the over-pair indicators of all other crossings. -/
+@[simp] theorem iterate_rotateCrossing_overPair_of_ne (k : ℕ) {j : Fin n} (hj : j ≠ i) :
+    ((fun E : PDCode n ↦ E.rotateCrossing i)^[k] D).overPair j = D.overPair j :=
+  congrFun (Function.iterate_invariant (g := fun E : PDCode n ↦ E.overPair j)
+    (funext fun E ↦ rotateCrossing_overPair_of_ne E i hj) k) D
 
 /-- Every half-edge of the rotated code is the one in a slot of `D`, read at the same crossing;
 the rotation only shifts the slots of `i`. -/
@@ -264,6 +317,26 @@ variable (D : OrientedPDCode n) (i : Fin n)
 @[simp] theorem rotateCrossing_crossinglessComponents :
     (D.rotateCrossing i).crossinglessComponents = D.crossinglessComponents := (rfl)
 
+/-- Forgetting orientation commutes with rotating a crossing `k` times. -/
+@[simp] theorem toPDCode_iterate_rotateCrossing (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).toPDCode =
+      (fun E : PDCode n ↦ E.rotateCrossing i)^[k] D.toPDCode :=
+  Function.Semiconj.iterate_right (f := OrientedPDCode.toPDCode)
+    (fun E ↦ toPDCode_rotateCrossing E i) k D
+
+/-- Rotating a crossing `k` times keeps the orientation of every half-edge. -/
+@[simp] theorem iterate_rotateCrossing_orientation (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).orientation = D.orientation :=
+  congrFun (Function.iterate_invariant (g := fun E : OrientedPDCode n ↦ E.orientation)
+    (funext fun E ↦ rotateCrossing_orientation E i) k) D
+
+/-- Rotating a crossing `k` times keeps the oriented crossing-free circles. -/
+@[simp] theorem iterate_rotateCrossing_crossinglessComponents (k : ℕ) :
+    ((fun E : OrientedPDCode n ↦ E.rotateCrossing i)^[k] D).crossinglessComponents =
+      D.crossinglessComponents :=
+  congrFun (Function.iterate_invariant (g := fun E : OrientedPDCode n ↦ E.crossinglessComponents)
+    (funext fun E ↦ rotateCrossing_crossinglessComponents E i) k) D
+
 /-- Mirroring commutes with changing the starting slot of an oriented crossing. -/
 @[simp] theorem mirror_rotateCrossing :
     (D.rotateCrossing i).mirror = D.mirror.rotateCrossing i := by
@@ -303,6 +376,75 @@ parity of slots `0` and `1` and the over-pair indicator flip. -/
 @[simp] theorem normalizedKauffmanBracket_rotateCrossing {R : Type*} [CommRing R] (a : Rˣ) :
     (D.rotateCrossing i).normalizedKauffmanBracket a = D.normalizedKauffmanBracket a := by
   simp [normalizedKauffmanBracket_def]
+
+/-- Reading a crossing from its next slot preserves outgoing half-edges while keeping every
+half-edge label fixed. -/
+abbrev rotateCrossingOutgoingEquiv :
+    {h : Fin (4 * n) // D.orientation h = true} ≃
+      {h : Fin (4 * n) // (D.rotateCrossing i).orientation h = true} :=
+  Equiv.subtypeEquivRight fun _ ↦ by simp
+
+/-- Reading a crossing from its next slot conjugates outgoing component traversal along the
+identity on half-edge labels. -/
+@[simp] theorem componentPermOutgoing_rotateCrossing :
+    (D.rotateCrossing i).componentPermOutgoing =
+      (D.rotateCrossingOutgoingEquiv i).permCongr D.componentPermOutgoing := by
+  ext h
+  simp
+
+noncomputable section
+
+/-- Reading a crossing from its next slot preserves every component's outgoing half-edge
+representatives and every crossing-free circle label. -/
+def rotateCrossingComponentEquiv : D.Component ≃ (D.rotateCrossing i).Component :=
+  D.componentEquiv (D.rotateCrossing i) (D.rotateCrossingOutgoingEquiv i)
+    (D.componentPermOutgoing_rotateCrossing i) (finCongr (by simp))
+
+/-- Rotating a crossing slot preserves the component represented by each outgoing half-edge. -/
+@[simp] theorem rotateCrossingComponentEquiv_componentOfOutgoing
+    (h : {h : Fin (4 * n) // D.orientation h = true}) :
+    D.rotateCrossingComponentEquiv i (D.componentOfOutgoing h) =
+      (D.rotateCrossing i).componentOfOutgoing (D.rotateCrossingOutgoingEquiv i h) :=
+  D.componentEquiv_componentOfOutgoing _ _ _ _ h
+
+/-- Rotating a crossing slot preserves the component of every half-edge, incoming or outgoing. -/
+@[simp] theorem rotateCrossingComponentEquiv_inl_halfEdge (x : Fin (4 * n)) :
+    D.rotateCrossingComponentEquiv i (.inl (D.crossingComponentOfHalfEdge x)) =
+      .inl ((D.rotateCrossing i).crossingComponentOfHalfEdge x) :=
+  D.componentEquiv_inl_crossingComponentOfHalfEdge (D.rotateCrossing i)
+    (D.rotateCrossingOutgoingEquiv i) (D.componentPermOutgoing_rotateCrossing i)
+    (finCongr (by simp)) id (fun _ ↦ by simp) (fun _ ↦ by simp) x
+
+/-- Rotating a crossing slot fixes every crossing-free component label. -/
+@[simp] theorem rotateCrossingComponentEquiv_inr (j : Fin D.crossinglessComponentCount) :
+    D.rotateCrossingComponentEquiv i (.inr j) = .inr (Fin.cast (by simp) j) := by
+  simp [rotateCrossingComponentEquiv]
+
+/-- Inverse component transport across a crossing-slot rotation fixes outgoing representatives. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_componentOfOutgoing
+    (h : {h : Fin (4 * n) // (D.rotateCrossing i).orientation h = true}) :
+    (D.rotateCrossingComponentEquiv i).symm ((D.rotateCrossing i).componentOfOutgoing h) =
+      D.componentOfOutgoing ((D.rotateCrossingOutgoingEquiv i).symm h) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+/-- Inverse component transport across a crossing-slot rotation preserves every half-edge's
+component. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_inl_halfEdge (x : Fin (4 * n)) :
+    (D.rotateCrossingComponentEquiv i).symm
+        (.inl ((D.rotateCrossing i).crossingComponentOfHalfEdge x)) =
+      .inl (D.crossingComponentOfHalfEdge x) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+/-- Inverse component transport across a crossing-slot rotation fixes every crossing-free label. -/
+@[simp] theorem rotateCrossingComponentEquiv_symm_inr
+    (j : Fin (D.rotateCrossing i).crossinglessComponentCount) :
+    (D.rotateCrossingComponentEquiv i).symm (.inr j) = .inr (Fin.cast (by simp) j) := by
+  apply (D.rotateCrossingComponentEquiv i).injective
+  simp
+
+end
 
 end RotateCrossing
 

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.RelativeBound
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Relative.Bound
 public import TauCeti.Analysis.Normed.Operator.Surjective
 
 /-!
@@ -56,13 +56,14 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 private theorem sq_norm_apply_le_of_isRelativelyBounded {A V : E →ₗ.[𝕜] E} {a b : ℝ}
     (hAV : V.IsRelativelyBounded A a b) (ha : 0 ≤ a) (hb : 0 ≤ b) {μ : ℝ} (hμ : 0 < μ)
     (x : A.domain) :
-    ‖V ⟨x, hAV.domain_le x.2⟩‖ ^ 2 ≤ (a / μ + b) ^ 2 * (μ ^ 2 * ‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2) := by
+    ‖V ⟨x, hAV.domain_le x.property⟩‖ ^ 2 ≤ (a / μ + b) ^ 2 * (μ ^ 2 * ‖(x : E)‖ ^ 2 + ‖A x‖ ^ 2)
+        := by
   have hp : 0 ≤ a / μ := by positivity
   have hX : 0 ≤ μ * ‖(x : E)‖ := by positivity
-  have h₁ : ‖V ⟨x, hAV.domain_le x.2⟩‖ ≤ a / μ * (μ * ‖(x : E)‖) + b * ‖A x‖ := by
+  have h₁ : ‖V ⟨x, hAV.domain_le x.property⟩‖ ≤ a / μ * (μ * ‖(x : E)‖) + b * ‖A x‖ := by
     rw [← mul_assoc, div_mul_cancel₀ _ hμ.ne']
     exact hAV.norm_apply_le x
-  calc ‖V ⟨x, hAV.domain_le x.2⟩‖ ^ 2 ≤ (a / μ * (μ * ‖(x : E)‖) + b * ‖A x‖) ^ 2 :=
+  calc ‖V ⟨x, hAV.domain_le x.property⟩‖ ^ 2 ≤ (a / μ * (μ * ‖(x : E)‖) + b * ‖A x‖) ^ 2 :=
         pow_le_pow_left₀ (norm_nonneg _) h₁ 2
     _ ≤ (a / μ + b) ^ 2 * ((μ * ‖(x : E)‖) ^ 2 + ‖A x‖ ^ 2) := by
         nlinarith [mul_nonneg (mul_nonneg hp hb) (sq_nonneg (μ * ‖(x : E)‖ - ‖A x‖)),

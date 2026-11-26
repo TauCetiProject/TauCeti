@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.ClosedBall.Basic
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 
-import TauCeti.Analysis.Complex.Circle
+import TauCeti.Analysis.Complex.Circle.Basic
 
 /-!
 # The sphere as the actual smooth boundary of the closed ball
@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local instance : IsManifold (𝓡 n) ω
     ((𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :=
-  isManifold_boundary (n := n) (closedBall (0 : E) 1) (by simp)
+  isManifold_boundary (n := n) (closedBall (0 : E) 1)
 
 /-- The standard unit sphere is analytically diffeomorphic to the actual intrinsic boundary
 of the closed unit ball. The map preserves the underlying ambient point. -/
@@ -51,14 +51,13 @@ def sphereDiffeomorphBoundaryClosedBall :
       left_inv := fun _ ↦ rfl
       right_inv := fun _ ↦ rfl }
   contMDiff_toFun := by
-    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n) (by simp)).mpr
+    apply (contMDiff_iff_comp_subtypeVal_boundary (n := n)).mpr
     apply (contMDiff_iff_comp_subtypeVal_closedBall (n := n + 1)).mpr
     exact contMDiff_coe_sphere
   contMDiff_invFun := by
     apply ContMDiff.codRestrict_sphere
     exact contMDiff_subtypeVal_closedBall.comp
-      (isSmoothEmbedding_subtypeVal_boundary (n := n) (closedBall (0 : E) 1)
-        (by simp : (ω : ℕ∞ω) ≠ 0)).contMDiff
+      (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := ω) (closedBall (0 : E) 1)).contMDiff
 
 /-- The identification of the sphere with the intrinsic boundary preserves its ambient point. -/
 @[simp]
@@ -70,6 +69,13 @@ theorem sphereDiffeomorphBoundaryClosedBall_apply_coe (x : sphere (0 : E) 1) :
 theorem sphereDiffeomorphBoundaryClosedBall_symm_apply_coe
     (x : (𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :
     ((sphereDiffeomorphBoundaryClosedBall (n := n)).symm x).val = x.val.val := (rfl)
+
+/-- The intrinsic boundary of the closed unit ball is nonempty. -/
+instance instNonemptyBoundaryClosedBall :
+    Nonempty ((𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :=
+  haveI : Nontrivial E :=
+    Module.nontrivial_of_finrank_eq_succ (Fact.out : Module.finrank ℝ E = n + 1)
+  (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype.map sphereDiffeomorphBoundaryClosedBall
 
 /-- The unit circle `Circle` is homeomorphic to the actual intrinsic boundary of the closed unit
 disc of `ℂ`. The map preserves the underlying complex number. -/

@@ -101,7 +101,8 @@ private noncomputable def shortComplexLimCone (F : J ⥤ ShortComplex C) : Cone 
         dsimp
         rw [Category.id_comp, Category.assoc,
           ← ShortComplex.diagramEvaluationIso_hom_naturality,
-          ← Category.assoc, lim_π_comp_mapNatTrans_evaluation] }
+          ← Category.assoc]
+        exact congrArg (· ≫ _) (lim_π_comp_mapNatTrans_evaluation F f).symm }
 
 /-- The cone `shortComplexLimCone F` is limiting: each of its three components is the chosen limit
 cone of the corresponding diagram in `C`, up to the identities contributed by the counit of
@@ -164,7 +165,8 @@ private noncomputable def shortComplexHomologyLimitConeIso (F : J ⥤ ShortCompl
   Cone.ext (((ShortComplex.functorEquivalence J C).inverse.obj F).mapHomologyIso lim).symm
     (fun j ↦ by
       dsimp [shortComplexLimCone, ShortComplex.homologyFunctor]
-      rw [ShortComplex.homologyDiagramIso_inv_app, shortComplexHomologyLimit_compatibility])
+      rw [ShortComplex.homologyDiagramIso_inv_app]
+      exact shortComplexHomologyLimit_compatibility F j)
 
 /-- Homology of short complexes preserves limits of any exact shape. -/
 instance shortComplexHomologyFunctor_preservesLimitsOfShape :

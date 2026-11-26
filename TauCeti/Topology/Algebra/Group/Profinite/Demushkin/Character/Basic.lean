@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Present
 import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.NumberTheory.Padics.Matrix
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 
 /-!
@@ -117,7 +118,7 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
   have h₀ : ∀ j, (p : ℤ_[p]) ∣ A 1 j := fun j ↦ by
     rw [hA 1 hone j]
     exact (isCrossedHom_crossedHom _ _).dvd_apply_of_mem_pLowerCentralSeries_one
-      (isProP_freeProP p X) (continuous_crossedHom _ _) n.2
+      (isProP_freeProP p X) (continuous_crossedHom _ _) n.property
   -- The linearisation of the Newton map is the lifted matrix of the degree-one form.
   have hlin : ∀ v v' : X → ℤ_[p], (∀ i, (p : ℤ_[p]) ∣ v i - (1 : X → ℤ_[p]) i) →
       (∀ i, (p : ℤ_[p]) ∣ v' i - (1 : X → ℤ_[p]) i) → ∀ k : ℕ, 1 ≤ k →
@@ -132,9 +133,6 @@ private theorem existsUnique_character_forall_crossedHom_single_eq_zero [Finite 
     simp only [hψ] at key
     exact key
   -- Newton's method: the unique zero of `A` congruent to `1` modulo `p`.
-  have : IsAdicComplete (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
-    rw [← PadicInt.maximalIdeal_eq_span_p]
-    infer_instance
   obtain ⟨v, ⟨hv, hAv⟩, huniq⟩ :=
     IsAdicComplete.existsUnique_eq_zero_of_isUnit_det (p : ℤ_[p]) A hMdet 1 h₀ hlin
   have hv₁ : ∀ i, (p : ℤ_[p]) ∣ v i - 1 := fun i ↦ by simpa using hv i

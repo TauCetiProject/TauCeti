@@ -34,15 +34,19 @@ Over a principal ideal domain every module has such a presentation, by a free mo
 kernel, which is again free; applied to the tensor product, this computes `Tor₁` in the Künneth
 and universal coefficient theorems.
 
-The file also records four general facts. The natural transformation `LₙF ⟶ LₙG` induced by
+The file also records five general facts. The natural transformation `LₙF ⟶ LₙG` induced by
 `α : F ⟶ G` is additive in `α` (`CategoryTheory.NatTrans.leftDerived_add`), so that a derived
 functor depending on a parameter through a natural transformation, such as `Tor` in its underived
 variable, is an additive functor of that parameter. In degree zero it is compatible with the
 comparison maps `L₀F ⟶ F` and `L₀G ⟶ G`
-(`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`). An exact additive functor
-has no positive left derived functors (`CategoryTheory.Functor.isZero_leftDerived_succ`). If an
-additive functor sends projective objects into a class closed under subobjects and quotients, for
-instance a Serre class, all its left derived functors take values in that class
+(`CategoryTheory.NatTrans.leftDerived_zero_comp_fromLeftDerivedZero`), and on a projective
+resolution `P` of `X` the comparison `L₀F(X) ⟶ F(X)` sends the class of a degree `0` cycle of
+`F(P)` to its image under `F(P₀ ⟶ X)`
+(`CategoryTheory.ProjectiveResolution.homologyπ_isoLeftDerivedObj_inv_fromLeftDerivedZero_app`).
+An exact additive functor has no positive left derived functors
+(`CategoryTheory.Functor.isZero_leftDerived_succ`). If an additive functor sends projective objects
+into a class closed under subobjects and quotients, for instance a Serre class, all its left
+derived functors take values in that class
 (`CategoryTheory.ObjectProperty.prop_leftDerived_obj`). Applied to tensoring with a fixed object,
 this turns closure of such a class under tensor products into closure under Tor.
 
@@ -286,13 +290,25 @@ theorem NatTrans.leftDerived_zero_comp_fromLeftDerivedZero {F G : C ⥤ D} [F.Ad
   have h : HomologicalComplex.opcyclesMap ((NatTrans.mapHomologicalComplex α _).app P.complex) 0 ≫
       P.fromLeftDerivedZero' G = P.fromLeftDerivedZero' F ≫ α.app X := by
     rw [← cancel_epi (HomologicalComplex.pOpcycles _ 0), HomologicalComplex.p_opcyclesMap_assoc]
-    simpa using (α.naturality (P.π.f 0)).symm
+    simp
   simp only [NatTrans.comp_app, P.leftDerived_app_eq, P.fromLeftDerivedZero_eq, Category.assoc,
     Iso.inv_hom_id_assoc]
   -- `erw`: the homology of `F(P)` appears both as `homologyFunctor.obj` and as `homology 0`.
-  erw [HomologicalComplex.homologyι_naturality_assoc, h,
-    Category.assoc (ChainComplex.isoHomologyι₀ _).hom]
+  erw [HomologicalComplex.homologyι_naturality_assoc, h]
   rfl
+
+/-- **The comparison `F.leftDerived 0 ⟶ F` on a projective resolution.** For a projective
+resolution `P` of `X`, a cycle of `F(P)` in degree `0`, identified with a class of
+`(F.leftDerived 0).obj X` through `P.isoLeftDerivedObj F 0`, is sent by `F.fromLeftDerivedZero` to
+its image under `F.map (P.π.f 0)`. -/
+@[reassoc]
+lemma ProjectiveResolution.homologyπ_isoLeftDerivedObj_inv_fromLeftDerivedZero_app {X : C}
+    (P : ProjectiveResolution X) (F : C ⥤ D) [F.Additive] :
+    ((F.mapHomologicalComplex _).obj P.complex).homologyπ 0 ≫ (P.isoLeftDerivedObj F 0).inv ≫
+        F.fromLeftDerivedZero.app X =
+      ((F.mapHomologicalComplex _).obj P.complex).iCycles 0 ≫ F.map (P.π.f 0) := by
+  rw [P.fromLeftDerivedZero_eq F, Iso.inv_hom_id_assoc, HomologicalComplex.isoHomologyι_hom,
+    HomologicalComplex.homology_π_ι_assoc, pOpcycles_comp_fromLeftDerivedZero']
 
 /-- An exact additive functor has no positive left derived functors. -/
 theorem Functor.isZero_leftDerived_succ (F : C ⥤ D) [F.Additive] [F.PreservesHomology]

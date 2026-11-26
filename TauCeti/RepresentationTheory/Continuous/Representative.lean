@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Continuous.Character
 public import TauCeti.RepresentationTheory.Continuous.Conjugate
 public import TauCeti.RepresentationTheory.Continuous.TensorProduct
 public import TauCeti.RepresentationTheory.Continuous.Transport
+public import TauCeti.LinearAlgebra.Span.FiniteRange
 
 /-!
 # The representative ring of a monoid with a topology
@@ -83,6 +84,8 @@ it is a corollary of the analytic density theorem, proved in
 * `TauCeti.mul_mem_representativeSubmodule`, `TauCeti.star_mem_representativeSubmodule`: the same
   closure properties for their span.
 * `ContRepresentation.character_mem_representativeSubmodule`: characters lie in `𝓡(G)`.
+* `TauCeti.finiteDimensional_span_range_comp_mulRight`: the right translates of a function in
+  `𝓡(G)` span a finite-dimensional space.
 
 The uniform density of this algebra in `C(G)` is the analytic core of Peter-Weyl. The mathematical
 development follows Daniel Bump, *Lie Groups*, second edition, Chapter 2, and
@@ -159,6 +162,35 @@ theorem matrixCoeff_mem_representativeSubmodule (π : ContRepresentation 𝕜 G 
   mem_representativeSubmodule_of_isRepresentative (isRepresentative_matrixCoeff π hπ v w)
 
 end Membership
+
+section Translation
+
+variable {𝕜 G : Type*} [RCLike 𝕜] [Monoid G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- **The right translates of a function in `𝓡(G)` span a finite-dimensional space.** For a
+matrix coefficient of a representation on `V`, they are matrix coefficients of the same
+representation with the same second vector, so their span has dimension at most `dim V`. -/
+theorem finiteDimensional_span_range_comp_mulRight {f : C(G, 𝕜)}
+    (hf : f ∈ representativeSubmodule 𝕜 G) :
+    FiniteDimensional 𝕜
+      (Submodule.span 𝕜 (Set.range fun g : G => f.comp (ContinuousMap.mulRight g))) := by
+  suffices hle : representativeSubmodule 𝕜 G ≤ finiteSpanRangeSubmodule fun g : G =>
+      (ContinuousMap.compRightAlgHom 𝕜 𝕜 (ContinuousMap.mulRight g)).toLinearMap by
+    have hT : (fun g : G =>
+        (ContinuousMap.compRightAlgHom 𝕜 𝕜 (ContinuousMap.mulRight g)).toLinearMap f) =
+        fun g => f.comp (ContinuousMap.mulRight g) := by
+      simp
+    have h := mem_finiteSpanRangeSubmodule.1 (hle hf)
+    rwa [hT] at h
+  refine Submodule.span_le.2 ?_
+  rintro _ ⟨n, π, hπ, v, w, rfl⟩
+  rw [SetLike.mem_coe, mem_finiteSpanRangeSubmodule]
+  refine Submodule.finiteDimensional_of_le (S₂ := LinearMap.range ((matrixCoeffₛₗ π hπ).flip w))
+    (Submodule.span_le.2 ?_)
+  rintro _ ⟨g, rfl⟩
+  exact ⟨π g v, by simp⟩
+
+end Translation
 
 section Algebra
 

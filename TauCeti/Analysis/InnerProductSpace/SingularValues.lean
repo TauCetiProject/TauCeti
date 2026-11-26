@@ -15,6 +15,8 @@ public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
 
+import Mathlib.Analysis.InnerProductSpace.Trace
+
 /-!
 # Singular values, the two Gram spectra, and the singular system
 
@@ -58,6 +60,7 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.operatorAbs_rightSingularBasis`: `|A| vᵢ = σᵢ vᵢ`.
 * `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
   singular value is `‖A x‖` for a unit vector `x`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
@@ -74,6 +77,8 @@ of `A` run over the whole basis without splitting off the kernel.
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+* `LinearMap.trace_adjoint_comp_eq_sum_singularValues_mul_inner`:
+  `tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`.
 
 ## Comparison of singular values
 
@@ -324,6 +329,15 @@ theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
 
+/-- Applying the operator modulus `|A| = √(A† A)` to a right singular vector `vᵢ` scales it by
+the singular value `σᵢ`. -/
+theorem operatorAbs_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
+    A.operatorAbs (A.rightSingularBasis i) =
+      ((A.singularValues i : ℝ) : 𝕜) • A.rightSingularBasis i := by
+  rw [(isPositive_adjoint_comp_self A).sqrt_unique A.isPositive_operatorAbs A.operatorAbs_sq,
+    (isPositive_adjoint_comp_self A).sqrt_apply_of_apply_eq_smul
+      (A.adjoint_comp_self_rightSingularBasis i), Real.sqrt_sq (A.singularValues_nonneg i)]
+
 /-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
 least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
@@ -416,7 +430,7 @@ theorem orthonormal_leftSingularVector :
       A.leftSingularVector i := by
   classical
   refine orthonormal_iff_ite.mpr fun i j ↦ ?_
-  simp [inner_leftSingularVector, i.2, Subtype.ext_iff]
+  simp [inner_leftSingularVector, i.property, Subtype.ext_iff]
 
 /-- A left singular vector vanishes exactly when its singular value does. -/
 @[simp]
@@ -494,9 +508,9 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
     if h : (j : ℕ) < finrank 𝕜 E then A.leftSingularVector ⟨j, h⟩ else 0
   let s : Set (Fin (finrank 𝕜 F)) := {j | A.singularValues j ≠ 0}
   have hu : s.domRestrict u = (fun i : {i : Fin (finrank 𝕜 E) // A.singularValues i ≠ 0} ↦
-      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.1, hlt j.2⟩, j.2⟩ := by
+      A.leftSingularVector i) ∘ fun j ↦ ⟨⟨j.val, hlt j.property⟩, j.property⟩ := by
     ext j
-    simp [u, hlt j.2]
+    simp [u, hlt j.property]
   have hs : Orthonormal 𝕜 (s.domRestrict u) := by
     rw [hu]
     exact A.orthonormal_leftSingularVector.comp _ fun j k h ↦ by
@@ -506,6 +520,16 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   have hj : j ∈ s := by simpa [s, ← hij] using hi
   rw [hw j hj]
   simp [u, ← hij]
+
+/-- The Hilbert–Schmidt trace pairing `tr (A† B)` expanded in the singular system of `B`:
+`tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_singularValues_mul_inner (B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint A ∘ₗ B) =
+      ∑ i : Fin (finrank 𝕜 E), ((B.singularValues i : ℝ) : 𝕜) *
+        ⟪A (B.rightSingularBasis i), B.leftSingularVector i⟫ := by
+  rw [trace_eq_sum_inner _ B.rightSingularBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
 
 end SingularSystem
 
@@ -769,11 +793,11 @@ theorem exists_orthonormal_eq_sum_singularValues_smul_rankOne (A : E →ₗ[𝕜
   rw [Matrix.toLin_of_ite_val_eq_apply (d := fun i ↦ (A.singularValues i : 𝕜))]
   have hiE (i : Fin (min (finrank 𝕜 E) (finrank 𝕜 F))) : iE i = k ↔ (i : ℕ) = k := Fin.ext_iff
   split_ifs with hk
-  · rw [Finset.sum_eq_single ⟨k, lt_min k.2 hk⟩
+  · rw [Finset.sum_eq_single ⟨k, lt_min k.isLt hk⟩
       (fun i _ hi ↦ by simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hi (Fin.ext h)]) (by simp)]
     simp [hiE, iF, f]
   · rw [Finset.sum_eq_zero fun i _ ↦ by
-      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.2.trans_le (min_le_right _ _))]]
+      simp [hiE, show (i : ℕ) ≠ k from fun h ↦ hk (h ▸ i.isLt.trans_le (min_le_right _ _))]]
     simp
 
 end Diagonal
@@ -797,7 +821,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
       (T : E →ₗ[𝕜] F).singularValues n := by
   let A : E →ₗ[𝕜] F := T
   refine opNorm_le_bound _ (A.singularValues_nonneg n) fun x ↦ ?_
-  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.2
+  have hx := e.mem_spanIndices_le_of_mem_orthogonal x.property
   by_cases hn : n < m
   · exact A.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis e he
       (A.singularValues_nonneg n) (fun i hi ↦ by
@@ -806,7 +830,7 @@ theorem norm_comp_orthogonal_spanIndices_le_of_adjoint_comp_self_eigenbasis
   · have htail : {i : Fin m | n ≤ (i : ℕ)} = ∅ := by
       ext i
       simp only [Set.mem_ofPred_eq, Set.mem_empty_iff_false, iff_false]
-      exact not_le.mpr (i.2.trans_le (le_of_not_gt hn))
+      exact not_le.mpr (i.isLt.trans_le (le_of_not_gt hn))
     have hx0 : (x : E) = 0 := by
       simpa only [htail, e.spanIndices_eq_span, Set.image_empty, Submodule.span_empty,
         Submodule.mem_bot] using hx

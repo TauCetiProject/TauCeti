@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Module.AuslanderReiten.DoubleTranspose.Basic
 public import TauCeti.Algebra.Module.AuslanderReiten.ProjectiveSummand
 public import TauCeti.Algebra.Category.ModuleCat.ProjectiveStable.Isomorphism
 public import TauCeti.Algebra.Module.AuslanderReiten.Translate
-import TauCeti.LinearAlgebra.Dual.Equivalence
 
 /-!
 # Recovery by minimal transposition
@@ -22,11 +21,11 @@ Transposing `P` recovers `N` up to actual isomorphism
 exactly when `N` has no nonzero projective retracts, provided `N` and the transpose of `P`
 have finite length.
 The first map of `P` must have superfluous kernel, as it does for a minimal presentation.
-The presentation `Q` need not be minimal. The scalar-dual characterization gives the
-corresponding recovery by the Auslander–Reiten translate.
+The presentation `Q` need not be minimal. Dualizing with Matlis biduality gives the
+corresponding recovery by the Auslander–Reiten translate: `D Tr (Tr N) ≅ D N`.
 
 This removes the projective ambiguity from one composite of the Auslander–Bridger
-correspondence. Applied to a scalar dual, it is the recovery step for the inverse `Tr D`
+correspondence. Applied to a Matlis dual, it is the recovery step for the inverse `Tr D`
 of the Auslander–Reiten translate. Using the `A`-valued right transpose keeps the recovery
 linear over `Aᵐᵒᵖ`, even for a noncommutative ring.
 
@@ -42,7 +41,7 @@ namespace TauCeti.FiniteProjectivePresentation
 
 open CategoryTheory CategoryTheory.Limits
 
-universe u v
+universe u v w
 
 variable {A : Type u} [Ring A] {N : ModuleCat.{max u v} Aᵐᵒᵖ}
 
@@ -78,31 +77,23 @@ theorem nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retr
           ⟨i ≪≫ (T).mapIso e.toModuleIso⟩
     exact ⟨j.toLinearEquiv⟩
 
-variable {k : Type*} [CommSemiring k] [Algebra k A]
-  [Module k N] [IsScalarTower k Aᵐᵒᵖ N] [Module.IsReflexive k N]
-  {E : Type*} [AddCommGroup E] [Module A E] [Module k E]
+variable {R : Type*} [CommRing R] [Algebra R A] [Module R N] [IsScalarTower R Aᵐᵒᵖ N]
+  {E : Type w} [AddCommGroup E] [Module R E] [Module.Injective R E] [Small.{w} R]
 
-/-- Applying `D Tr` to a presentation of the right transpose of `N` recovers the scalar
-dual `D N` exactly when `N` has no nonzero projective retracts. The scalar dual is specified by
-an equivariant pairing, and reflexivity suffices in place of a finite-dimensional field
-hypothesis. This is the recovery composite for the inverse `Tr D` correspondence. -/
+/-- Applying `D Tr` to a presentation of the right transpose of `N` recovers the Matlis dual
+`D N` exactly when `N` has no nonzero projective retracts, for `N` and the transpose of finite
+length over `R`. This is the recovery composite for the inverse `Tr D` correspondence. -/
 theorem nonempty_linearEquiv_translate_rightTranspose_iff_isZero_projective_retract
+    (hE : ∀ 𝔪 : Ideal R, 𝔪.IsMaximal → Module.length R (R ⧸ 𝔪 →ₗ[R] E) = 1)
     (Q : FiniteProjectivePresentation N) (P : FiniteProjectivePresentation Q.rightTranspose)
-    (hP : IsSuperfluous (LinearMap.ker P.p))
-    (hN : IsFiniteLength Aᵐᵒᵖ N)
-    (hTr : IsFiniteLength Aᵐᵒᵖ (AuslanderReitenTranspose P.p))
-    [Module.IsReflexive k (AuslanderReitenTranspose P.p)]
-    (e : E ≃ₗ[k] Module.Dual k N)
-    (he : ∀ (a : A) (x : E) (n : N), e (a • x) n = e x (MulOpposite.op a • n)) :
-    Nonempty (AuslanderReitenTranslate k P.p ≃ₗ[A] E) ↔
-      ∀ {R : ModuleCat.{max u v} Aᵐᵒᵖ}, Retract R N → Projective R → IsZero R := by
-  rw [← Q.nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retract P hP hN hTr]
-  constructor
-  · rintro ⟨f⟩
-    exact ⟨((LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).ofEquivariantDual e
-      (fun a φ n ↦ AuslanderReitenTranslate.smul_apply a φ n) he f).symm⟩
-  · rintro ⟨d⟩
-    exact ⟨(LinearEquiv.refl k (AuslanderReitenTranslate k P.p)).toEquivariantDual e
-      (fun a φ n ↦ AuslanderReitenTranslate.smul_apply a φ n) he d.symm⟩
+    (hP : IsSuperfluous (LinearMap.ker P.p)) (hN : IsFiniteLength R N)
+    (hTr : IsFiniteLength R (AuslanderReitenTranspose P.p)) :
+    Nonempty (AuslanderReitenTranslate R E P.p ≃ₗ[A] MatlisDual R E N) ↔
+      ∀ {X : ModuleCat.{max u v} Aᵐᵒᵖ}, Retract X N → Projective X → IsZero X := by
+  rw [← Q.nonempty_linearEquiv_transpose_rightTranspose_iff_isZero_projective_retract P hP
+    (isFiniteLength_of_tower R hN) (isFiniteLength_of_tower R hTr)]
+  exact ⟨fun ⟨f⟩ ↦ ⟨(MatlisDual.evalEquivOp hE hTr).trans
+      ((MatlisDual.congr f.symm).trans (MatlisDual.evalEquivOp hE hN).symm)⟩,
+    fun ⟨d⟩ ↦ ⟨MatlisDual.congrOp d.symm⟩⟩
 
 end TauCeti.FiniteProjectivePresentation

@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.FieldTheory.GaloisCohomology.Hilbert90
 public import TauCeti.FieldTheory.GaloisCohomology.Units.CoeffMap
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.CohomologyComparison
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.ConnectingMapComparison
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DeltaNaturality
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.LongExact
 public import TauCeti.RingTheory.Norm.Units
@@ -96,6 +97,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
 * `TauCeti.finite_H1_kummerCoeff`: `H¹(G_K, μₙ)` is finite when `Kˣ ⧸ (Kˣ)ⁿ` is.
+* `TauCeti.nsmul_H1_kummerCoeff_eq_zero`: `n` kills `H¹(G_K, μₙ)`.
 * `TauCeti.finite_H1_of_isPrimitiveRoot_of_natCard_eq`: the same for every cyclic trivial module of
   order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`: the power map `μₙ → μₘ` sends the Kummer
@@ -408,6 +410,14 @@ theorem finite_H1_kummerCoeff (hn : IsUnit (n : K)) [Finite (powerClassQuotient 
   Finite.of_equiv _ ((kummerIso K n hn).toEquiv.trans Multiplicative.toAdd)
 
 variable {K n} in
+/-- **`n` kills `H¹(G_K, μₙ)`**, as it kills the coefficients `μₙ`. -/
+theorem nsmul_H1_kummerCoeff_eq_zero (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
+    n • x = 0 :=
+  nsmul_H1_eq_zero (fun c ↦ Additive.toMul.injective <| Subtype.ext <| by
+    rw [toMul_nsmul, SubmonoidClass.coe_pow, toMul_zero, OneMemClass.coe_one]
+    exact (mem_rootsOfUnity _ _).1 c.toMul.property) x
+
+variable {K n} in
 /-- **`H¹` of a cyclic trivial module over a field containing the roots of unity.** Let `K` be a
 field containing a primitive `n`th root of unity and with `Kˣ ⧸ (Kˣ)ⁿ` finite, and `H` a
 topological group isomorphic to `G_K`. Then `H¹(H, M)` is finite for every cyclic discrete
@@ -450,7 +460,7 @@ def kummerCoeffPow {m : ℕ} (h : m ∣ n) :
     KummerCoeff K n →+[AbsoluteGaloisGroup K] KummerCoeff K m where
   toFun x := Additive.ofMul ⟨(x.toMul : (SeparableClosure K)ˣ) ^ (n / m), by
     rw [mem_rootsOfUnity, ← pow_mul, Nat.div_mul_cancel h]
-    exact (mem_rootsOfUnity _ _).1 x.toMul.2⟩
+    exact (mem_rootsOfUnity _ _).1 x.toMul.property⟩
   map_zero' := Additive.toMul.injective (Subtype.ext (by simp))
   map_add' x y := Additive.toMul.injective (Subtype.ext (by simp [mul_pow]))
   map_smul' g x := Additive.toMul.injective (Subtype.ext (by simp [smul_pow']))
@@ -517,11 +527,22 @@ theorem explicitIso_kummerMap (hn : IsUnit (n : K)) (a : Kˣ) :
   -- comparison isomorphism. Not a `rw` chain: each `rw` step re-checks a large motive.
   (rfl)
 
+/-- **The canonical Kummer map is the connecting map of the Kummer sequence.** The class of a unit
+`a` is the image under the degree-zero connecting map `δ⁰` of `kummerShortExact` of `a`, read in
+`H⁰(G_K, (Kˢ)ˣ)` through `baseUnitsEquivInvariants` and `explicitH0IsoContinuousCohomology`. -/
+theorem toAdd_kummerMapCanonical (hn : IsUnit (n : K)) (a : Kˣ) :
+    Multiplicative.toAdd (kummerMapCanonical K n hn a) =
+      (dsimp% only ((kummerShortExact K n hn).delta 0).hom
+        ((explicitH0IsoContinuousCohomology (AbsoluteGaloisGroup K) (UnitsCoeff K)).hom
+          (baseUnitsEquivInvariants K (Additive.ofMul a)))) := by
+  rw [ContCohomology.DiscreteShortExact.explicitIso_delta0, explicitIso_kummerMap, kummerMap_apply,
+    toAdd_ofAdd, explicitH1IsoContinuousCohomology_hom_apply, AddEquiv.apply_symm_apply]
+
 /-! ### Transport to another coefficient model -/
 
 /-- An equivariant equivalence from the Kummer coefficients to a discrete additive module
 transports continuity of the Galois action to that module. -/
-theorem kummerIsoTransportContinuousSMul
+theorem continuousSMul_of_kummerCoeff_equiv
     (μ : Type*) [AddCommGroup μ] [TopologicalSpace μ]
     [DiscreteTopology μ] [DistribMulAction (AbsoluteGaloisGroup K) μ]
     (e : KummerCoeff K n ≃+ μ)
@@ -541,9 +562,9 @@ def kummerIsoTransport (hn : IsUnit (n : K))
     (e : KummerCoeff K n ≃+ μ)
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact powerClassQuotient Kˣ n ≃* Multiplicative (H1 (AbsoluteGaloisGroup K) μ) := by
-  letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+  letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   exact (kummerIso K n hn).trans <| AddEquiv.toMultiplicative <|
     explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
       continuous_of_discreteTopology continuous_of_discreteTopology hequiv
@@ -558,13 +579,13 @@ theorem kummerIsoTransport_apply (hn : IsUnit (n : K))
     (hequiv : ∀ (g : AbsoluteGaloisGroup K) (x : KummerCoeff K n), e (g • x) = g • e x)
     (x : powerClassQuotient Kˣ n) :
     by
-      letI := kummerIsoTransportContinuousSMul K n μ e hequiv
+      letI := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
       exact kummerIsoTransport K n hn μ e hequiv x =
         Multiplicative.ofAdd
           (explicitCoeff1Equiv (AbsoluteGaloisGroup K) (KummerCoeff K n) e
             continuous_of_discreteTopology continuous_of_discreteTopology hequiv
             (Multiplicative.toAdd (kummerIso K n hn x))) := by
-  let _ := kummerIsoTransportContinuousSMul K n μ e hequiv
+  let _ := continuousSMul_of_kummerCoeff_equiv K n μ e hequiv
   rw [kummerIsoTransport, MulEquiv.trans_apply, AddEquiv.toMultiplicative_apply_apply]
 
 /-! ### Restriction along a field extension -/

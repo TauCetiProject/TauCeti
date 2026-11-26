@@ -111,17 +111,13 @@ noncomputable def mackeyInclusion (s : G) (A : Rep.{u} k H) :
     mackeySummand H K s A ⟶ res K.subtype (ind H.subtype A) :=
   (indResHomEquiv _ _ _).symm <| ofHom
     ⟨IndV.mk H.subtype A.ρ s⁻¹, fun m ↦ LinearMap.ext fun a ↦ by
-      have h := TauCeti.indV_mk_apply_inv H.subtype A.ρ (TauCeti.mackeyToH s H K m)⁻¹ s⁻¹ a
-      rw [inv_inv] at h
       -- The two sides are the restricted actions on `mackeySummand` and on `Rep.res K.subtype`,
       -- both of which are `Representation.ind` by definition of `Rep.res` and `Rep.ind`; `rw`
       -- cannot reach inside those sealed wrappers, so the goal is restated definitionally.
       change IndV.mk H.subtype A.ρ s⁻¹ (A.ρ (TauCeti.mackeyToH s H K m) a) =
         Representation.ind H.subtype A.ρ ((m : K) : G) (IndV.mk H.subtype A.ρ s⁻¹ a)
-      rw [Representation.ind_mk, h]
-      congr 1
-      simp only [Subgroup.coe_subtype, InvMemClass.coe_inv, TauCeti.coe_mackeyToH_apply]
-      group⟩
+      rw [Representation.indV_mk_apply_eq_ind, Subgroup.coe_subtype, TauCeti.coe_mackeyToH_apply]
+      simp [mul_assoc]⟩
 
 -- The public generator-evaluation lemmas in this file deliberately are not simp lemmas: their
 -- `IndV.mk` arguments unfold under simp, so `@[simp]` would violate the `simpNF` linter.
@@ -254,7 +250,8 @@ private theorem mackeyComponent_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
   have hm : u' * u⁻¹ ∈ (TauCeti.mackeySubgroup D.out H K).subgroupOf K := by
     rw [Subgroup.mem_subgroupOf, TauCeti.mem_mackeySubgroup_iff, Subgroup.coe_mul,
       InvMemClass.coe_inv]
-    exact ⟨K.mul_mem u'.2 (K.inv_mem u.2), hconj ▸ H.mul_mem (H.inv_mem h'.2) h.2⟩
+    exact ⟨K.mul_mem u'.property (K.inv_mem u.property), hconj ▸ H.mul_mem
+        (H.inv_mem h'.property) h.property⟩
   have key := TauCeti.indV_mk_apply_inv
     ((TauCeti.mackeySubgroup D.out H K).subgroupOf K).subtype
     (A.ρ.comp (TauCeti.mackeyToH D.out H K)) ⟨_, hm⟩ u (A.ρ h'⁻¹ a)
@@ -286,7 +283,8 @@ private theorem mackeyDecompAux_eq (D : DoubleCoset.Quotient (K : Set G) (H : Se
         (fun D ↦ (mackeySummand H K D.out A : Type u)) D
         (IndV.mk _ (A.ρ.comp (TauCeti.mackeyToH D.out H K)) u (A.ρ h⁻¹ a)) := by
   have hD : DoubleCoset.mk K H ((h : G) * D.out⁻¹ * u)⁻¹ = D :=
-    ((DoubleCoset.eq.mpr ⟨(u : G)⁻¹, K.inv_mem u.2, (h : G)⁻¹, H.inv_mem h.2, by group⟩).symm).trans
+    ((DoubleCoset.eq.mpr ⟨(u : G)⁻¹, K.inv_mem u.property, (h : G)⁻¹, H.inv_mem h.property,
+        by group⟩).symm).trans
       (DoubleCoset.out_eq' D)
   -- Generalize the double coset of `g⁻¹` so that it can be identified with `D`.
   have key : ∀ (D' : DoubleCoset.Quotient (K : Set G) (H : Set G)) (_ : D' = D)
