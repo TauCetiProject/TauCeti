@@ -115,42 +115,6 @@ private theorem clearDenom_minpoly {K : Type*} [Field K] [CharZero K] {f : K⟦X
   exact (injective_iff_map_eq_zero _).mp (FaithfulSMul.algebraMap_injective K[X] K⸨X⸩) D
     (by simpa [IsScalarTower.algebraMap_apply K[X] K⟮X⟯ K⸨X⸩] using hD0)
 
-/-- Divisibility of a polynomial `p ∈ K[X]` by `X ^ m` from the vanishing of its low
-coefficients. -/
-private theorem polynomial_X_pow_dvd_iff {K : Type*} [CommRing K] {m : ℕ} {p : K[X]} :
-    Polynomial.X ^ m ∣ p ↔ ∀ i < m, p.coeff i = 0 := by
-  refine ⟨fun ⟨q, hq⟩ i hi ↦ ?_, fun h ↦ Polynomial.X_pow_dvd_iff.mpr h⟩
-  rw [hq, mul_comm, Polynomial.coeff_mul_X_pow', ite_eq_right (not_le.mpr hi)]
-
-/-- Factoring a common divisor `d : K[X]` out of every coefficient of `T : K[X][Y]`. -/
-private theorem exists_eq_C_mul_of_dvd {K : Type*} [Field K] {d : K[X]} (hd_ne : d ≠ 0)
-    (T : K[X][X]) (hd : ∀ k, d ∣ T.coeff k) :
-    ∃ Q : K[X][X], T = Polynomial.C d * Q ∧ ∀ k, d * Q.coeff k = T.coeff k := by
-  classical
-  let Q : K[X][X] := ∑ k ∈ T.support, Polynomial.monomial k (T.coeff k / d)
-  have hcoeff (k : ℕ) : d * Q.coeff k = T.coeff k := by
-    dsimp [Q]
-    rw [← Polynomial.lcoeff_apply, map_sum]
-    simp only [Polynomial.lcoeff_apply, Polynomial.coeff_monomial, Finsupp.single_apply]
-    by_cases hk : k ∈ T.support
-    · rw [Finset.sum_eq_single k (fun j _ hjk ↦ ite_eq_right hjk) (fun h ↦ absurd hk h),
-        ite_eq_left rfl]
-      exact EuclideanDomain.mul_div_cancel' hd_ne (hd k)
-    · rw [Finset.sum_eq_zero fun j hj ↦ ite_eq_right fun h ↦ hk (by simpa [h] using hj),
-        mul_zero, Polynomial.notMem_support_iff.mp hk]
-  refine ⟨Q, ?_, hcoeff⟩
-  ext k
-  rw [Polynomial.coeff_C_mul, hcoeff k]
-
-/-- Splitting a power series at index `N` into its `N`-truncation plus `X ^ N` times the tail. -/
-private theorem eq_trunc_add_X_pow_mul {K : Type*} [CommRing K] (f : K⟦X⟧) (N : ℕ) :
-    f = (trunc N f : K⟦X⟧) + X ^ N * mk fun n ↦ coeff (n + N) f := by
-  ext n
-  rw [map_add, Polynomial.coeff_coe, coeff_trunc, coeff_X_pow_mul']
-  by_cases h : n < N
-  · simp [h, not_le.mpr h]
-  · simp [h, not_lt.mp h, coeff_mk]
-
 /-- Evaluating `P(b + X ^ N * g)` at `g` via the shifted Taylor polynomial
 `T = (P.taylor b)(X ^ N * Y)`. -/
 private theorem aeval_taylor_comp_X_pow_mul {K : Type*} [CommRing K] (P : K[X][X]) (b : K[X])
@@ -173,7 +137,8 @@ private theorem deriv_eval_trunc_coeff {K : Type*} [CommRing K] (P : K[X][X]) (f
     (P.derivative.eval (trunc N f)).coeff i = coeff i (Polynomial.aeval f P.derivative) := by
   let b : K[X] := trunc N f
   let g : K⟦X⟧ := mk fun n ↦ coeff (n + N) f
-  have hfb : X ^ N ∣ f - (b : K⟦X⟧) := ⟨g, by rw [eq_trunc_add_X_pow_mul f N]; ring⟩
+  have hfb : X ^ N ∣ f - (b : K⟦X⟧) :=
+    ⟨g, by rw [PowerSeries.eq_X_pow_mul_shift_add_trunc N f]; ring⟩
   obtain ⟨w, hw⟩ := Polynomial.sub_dvd_eval_sub f (b : K⟦X⟧)
     (P.derivative.map (algebraMap K[X] K⟦X⟧))
   obtain ⟨v, hv⟩ := hfb.trans ⟨w, by
@@ -196,7 +161,7 @@ private theorem X_pow_dvd_coeff_zero_of_aeval_eq_zero {K : Type*} [Field K] {T :
     {g : K⟦X⟧} {m : ℕ} (hT : Polynomial.aeval g T = 0)
     (hdvd : ∀ k, 1 ≤ k → Polynomial.X ^ m ∣ T.coeff k) :
     Polynomial.X ^ m ∣ T.coeff 0 := by
-  rw [polynomial_X_pow_dvd_iff]
+  rw [Polynomial.X_pow_dvd_iff]
   intro i hi
   have hev := congrArg (coeff i) hT
   rw [Polynomial.aeval_eq_sum_range, map_sum, map_zero] at hev
@@ -230,12 +195,12 @@ private theorem taylor_comp_X_pow_dvd {K : Type*} [Field K] {f : K⟦X⟧} {P : 
   let g : K⟦X⟧ := mk fun n ↦ coeff (n + N) f
   have hT_eval : Polynomial.aeval g T = 0 := by
     dsimp [T, b, g]
-    rw [aeval_taylor_comp_X_pow_mul, ← eq_trunc_add_X_pow_mul f N, hf]
+    rw [aeval_taylor_comp_X_pow_mul, add_comm, ← PowerSeries.eq_X_pow_mul_shift_add_trunc N f, hf]
   have hT_coeff (k : ℕ) : T.coeff k = (P.taylor b).coeff k * Polynomial.X ^ (N * k) := by
     dsimp [T, b]; rw [Polynomial.comp_C_mul_X_coeff, pow_mul]
   have hT1_dvd : Polynomial.X ^ (N + s) ∣ T.coeff 1 := by
     rw [hT_coeff 1, mul_one, Polynomial.taylor_coeff_one, pow_add, mul_comm (Polynomial.X ^ N)]
-    refine mul_dvd_mul_right (polynomial_X_pow_dvd_iff.mpr fun i hi ↦ ?_) _
+    refine mul_dvd_mul_right (Polynomial.X_pow_dvd_iff.mpr fun i hi ↦ ?_) _
     rw [deriv_eval_trunc_coeff P f hi.le (Nat.lt_succ_self s)]
     exact coeff_of_lt_order i (by
       rw [← ENat.natCast_toNat_eq_self.mpr (order_eq_top.not.mpr hfd)]
@@ -266,13 +231,15 @@ private theorem exists_div_X_pow_eq_zero_of_aeval_eq_zero {K : Type*} [Field K] 
   let N : ℕ := s + 1
   let b : K[X] := trunc N f
   let g : K⟦X⟧ := mk fun n ↦ coeff (n + N) f
-  have hfg : f = (b : K⟦X⟧) + X ^ N * g := eq_trunc_add_X_pow_mul f N
+  have hfg : f = (b : K⟦X⟧) + X ^ N * g := by
+    simpa only [add_comm] using PowerSeries.eq_X_pow_mul_shift_add_trunc N f
   let T : K[X][X] := (P.taylor b).comp (Polynomial.C (Polynomial.X ^ N) * Polynomial.X)
   have hT_eval : Polynomial.aeval g T = 0 := by
     dsimp [T]; rw [aeval_taylor_comp_X_pow_mul, ← hfg, hf]
   obtain ⟨-, hT_ge_dvd, hTdvd⟩ := taylor_comp_X_pow_dvd hf hfd
-  obtain ⟨Q, hTQ, hQcoeff⟩ :=
-    exists_eq_C_mul_of_dvd (pow_ne_zero _ Polynomial.X_ne_zero) T hTdvd
+  obtain ⟨Q, hTQ⟩ := (Polynomial.C_dvd_iff_dvd_coeff (Polynomial.X ^ (N + s)) T).mpr hTdvd
+  have hQcoeff (k : ℕ) : Polynomial.X ^ (N + s) * Q.coeff k = T.coeff k := by
+    rw [← Polynomial.coeff_C_mul, ← hTQ]
   have hQ_eval : Polynomial.aeval g Q = 0 := by
     have hmul : X ^ (N + s) * Polynomial.aeval g Q = 0 := by
       have := hT_eval
@@ -349,7 +316,7 @@ private theorem exists_eq_X_mul_aeval_of_linear_const {K : Type*} [Field K] {g :
   have hQ2_map : Q₂.map (Polynomial.evalRingHom 0) = Polynomial.X :=
     map_eval_zero_normalize_taylor hQ_eval hQ1 hQ_ge
   have hQ2_sub_dvd (k : ℕ) : Polynomial.X ∣ (Polynomial.X - Q₂).coeff k := by
-    rw [← pow_one Polynomial.X, polynomial_X_pow_dvd_iff]
+    rw [← pow_one Polynomial.X, Polynomial.X_pow_dvd_iff]
     intro i hi
     rw [Nat.lt_one_iff.mp hi]
     have h := congrArg (fun p : K[X] ↦ p.coeff k) hQ2_map
@@ -364,8 +331,8 @@ private theorem exists_eq_X_mul_aeval_of_linear_const {K : Type*} [Field K] {g :
       rw [Polynomial.coeff_sub, Polynomial.coeff_X_of_ne_one hk, zero_sub, Polynomial.coeff_neg,
         Polynomial.coeff_zero_eq_eval_zero, neg_eq_zero]
       exact hk0
-  obtain ⟨R, hQ2_eq, -⟩ :=
-    exists_eq_C_mul_of_dvd Polynomial.X_ne_zero (Polynomial.X - Q₂) hQ2_sub_dvd
+  obtain ⟨R, hQ2_eq⟩ :=
+    (Polynomial.C_dvd_iff_dvd_coeff Polynomial.X (Polynomial.X - Q₂)).mpr hQ2_sub_dvd
   refine ⟨R, ?_⟩
   have h0 :
       Polynomial.aeval u (Polynomial.X - Q₂) = Polynomial.aeval u (Polynomial.C Polynomial.X * R) :=
