@@ -63,17 +63,12 @@ theorem ofMatrix_toMatrix_toPEquiv [DecidableEq n] [Zero A] [One A] (e : m ≃ n
 theorem reindexMatrix_trans [Fintype n] [DecidableEq n] [DecidableEq o] [NonAssocSemiring A]
     (e₁ : m ≃ n) (e₂ : n ≃ o) :
     reindexMatrix A (e₁.trans e₂) = reindexMatrix A e₁ * reindexMatrix A e₂ :=
-  ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_reindexMatrix, Equiv.toPEquiv_trans, PEquiv.toMatrix_trans,
-      ofMatrix_symm_mul, ofMatrix_symm_reindexMatrix, ofMatrix_symm_reindexMatrix]
+  ofMatrix.symm.injective <| by simp [Equiv.toPEquiv_trans, PEquiv.toMatrix_trans]
 
 @[simp] theorem conjTranspose_reindexMatrix [DecidableEq m] [DecidableEq n]
     [NonAssocSemiring A] [StarRing A] (e : m ≃ n) :
-    (reindexMatrix A e).conjTranspose = reindexMatrix A e.symm :=
-  ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_conjTranspose, ofMatrix_symm_reindexMatrix, ofMatrix_symm_reindexMatrix,
-      Matrix.conjTranspose, ← PEquiv.toMatrix_symm, ← Equiv.toPEquiv_symm]
-    ext; simp only [Matrix.map_apply, PEquiv.toMatrix_apply]; split_ifs <;> simp
+    (reindexMatrix A e).conjTranspose = reindexMatrix A e.symm := by
+  ext i j; by_cases h : e j = i <;> simp [h, Equiv.eq_symm_apply, eq_comm]
 
 @[simp] theorem star_reindexMatrix [DecidableEq n] [NonAssocSemiring A] [StarRing A]
     (σ : Equiv.Perm n) : star (reindexMatrix A σ) = reindexMatrix A σ⁻¹ :=
@@ -82,17 +77,12 @@ theorem reindexMatrix_trans [Fintype n] [DecidableEq n] [DecidableEq o] [NonAsso
 theorem reindexMatrix_mul [Fintype m] [DecidableEq m] [Semiring R] [NonAssocSemiring A]
     [Module R A] (e : l ≃ m) (M : CStarMatrix m n A) :
     reindexMatrix A e * M = reindexₗ R A e.symm (.refl n) M :=
-  ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_reindexMatrix, PEquiv.toMatrix_toPEquiv_mul,
-      ofMatrix_symm_reindexₗ, Matrix.reindex_apply, Equiv.symm_symm, Equiv.refl_symm,
-      Equiv.coe_refl]
+  ofMatrix.symm.injective <| by simp [PEquiv.toMatrix_toPEquiv_mul, Matrix.reindex_apply]
 
 theorem mul_reindexMatrix [Fintype m] [DecidableEq n] [Semiring R] [NonAssocSemiring A]
     [Module R A] (M : CStarMatrix l m A) (e : m ≃ n) :
     M * reindexMatrix A e = reindexₗ R A (.refl l) e M :=
-  ofMatrix.symm.injective <| by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_reindexMatrix, PEquiv.mul_toMatrix_toPEquiv,
-      ofMatrix_symm_reindexₗ, Matrix.reindex_apply, Equiv.refl_symm, Equiv.coe_refl]
+  ofMatrix.symm.injective <| by simp [PEquiv.mul_toMatrix_toPEquiv, Matrix.reindex_apply]
 
 @[simp] theorem reindexMatrix_mul_symm [Fintype n] [DecidableEq m] [DecidableEq n]
     [NonAssocSemiring A] (e : m ≃ n) : reindexMatrix A e * reindexMatrix A e.symm = 1 := by
@@ -156,9 +146,8 @@ theorem permutationUnitary_mul_mul_star [Semiring R] [Module R A]
     (σ : Equiv.Perm n) (M : CStarMatrix n n A) :
     (permutationUnitary A σ : CStarMatrix n n A) * M *
         star (permutationUnitary A σ : CStarMatrix n n A) = reindexₐ R A σ M := by
-  rw [coe_permutationUnitary, star_eq_conjTranspose, conjTranspose_reindexMatrix,
-    Equiv.Perm.inv_def, Equiv.symm_symm, ← conjTranspose_reindexMatrix σ,
-    conjTranspose_reindexMatrix_mul_mul (R := R)]
+  simpa [Equiv.Perm.inv_def, star_eq_conjTranspose] using
+    conjTranspose_reindexMatrix_mul_mul (R := R) σ M
 
 end PermutationUnitary
 

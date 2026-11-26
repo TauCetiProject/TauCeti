@@ -34,12 +34,13 @@ homomorphisms, sum-reindexing laws, and the block-diagonal operator-norm formula
   `CStarMatrix.fromCols_mul_fromRows`, `CStarMatrix.fromRows_mul_fromCols`,
   `CStarMatrix.fromBlocks_mul_fromRows`: conjugate-transpose and product identities for row- and
   column-partitioned matrices, transported from `Matrix`.
-* `CStarMatrix.isStarProjection_fromBlocks_zero`: `fromBlocks p 0 0 q` is a star projection iff
-  `p` and `q` are star projections.
+* `CStarMatrix.isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff`: `fromBlocks p 0 0 q` is a star
+  projection iff `p` and `q` are star projections.
 * `CStarMatrix.reindexₗ_sumComm_fromBlocks`, `CStarMatrix.reindexₐ_sumComm_fromBlocks`,
-  `CStarMatrix.reindexₗ_sumAssoc_fromBlocks_zero`, `CStarMatrix.reindexₐ_sumAssoc_fromBlocks_zero`:
-  reindexing `2 × 2` and nested block matrices by `Equiv.sumComm` and `Equiv.sumAssoc`.
-* `CStarMatrix.norm_fromBlocks_zero`: `‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖` for rectangular
+  `CStarMatrix.reindexₗ_sumAssoc_fromBlocks_zero₁₂_zero₂₁`,
+  `CStarMatrix.reindexₐ_sumAssoc_fromBlocks_zero₁₂_zero₂₁`: reindexing `2 × 2` and nested block
+  matrices by `Equiv.sumComm` and `Equiv.sumAssoc`.
+* `CStarMatrix.norm_fromBlocks_zero₁₂_zero₂₁`: `‖fromBlocks M 0 0 N‖ = max ‖M‖ ‖N‖` for rectangular
   matrices `M` and `N`.
 
 ## References
@@ -168,7 +169,7 @@ theorem fromBlocks_multiply [Fintype n₁] [Fintype n₂] [NonUnitalNonAssocSemi
     fromBlocks (1 : CStarMatrix n₁ n₁ A) 0 0 (1 : CStarMatrix n₂ n₂ A) = 1 :=
   ofMatrix.symm.injective Matrix.fromBlocks_one
 
-@[simp] theorem isStarProjection_fromBlocks_zero [Fintype n₁] [Fintype n₂]
+@[simp] theorem isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff [Fintype n₁] [Fintype n₂]
     [NonUnitalNonAssocSemiring A] [StarAddMonoid A]
     {p : CStarMatrix n₁ n₁ A} {q : CStarMatrix n₂ n₂ A} :
     IsStarProjection (fromBlocks p 0 0 q) ↔ IsStarProjection p ∧ IsStarProjection q := by
@@ -187,8 +188,8 @@ and off-diagonal blocks. -/
   rw [reindexₐ_eq_reindexₗ, reindexₗ_sumComm_fromBlocks]
 
 /-- Reindexing nested block-diagonal sums by `Equiv.sumAssoc` reassociates the blocks. -/
-@[simp] theorem reindexₗ_sumAssoc_fromBlocks_zero [Semiring R] [AddCommMonoid A] [Module R A]
-    (L : CStarMatrix m₁ n₁ A) (M : CStarMatrix m₂ n₂ A) (N : CStarMatrix m₃ n₃ A) :
+@[simp] theorem reindexₗ_sumAssoc_fromBlocks_zero₁₂_zero₂₁ [Semiring R] [AddCommMonoid A]
+    [Module R A] (L : CStarMatrix m₁ n₁ A) (M : CStarMatrix m₂ n₂ A) (N : CStarMatrix m₃ n₃ A) :
     reindexₗ R A (Equiv.sumAssoc m₁ m₂ m₃) (Equiv.sumAssoc n₁ n₂ n₃)
         (fromBlocks (fromBlocks L 0 0 M) 0 0 N) =
       fromBlocks L 0 0 (fromBlocks M 0 0 N) :=
@@ -197,12 +198,12 @@ and off-diagonal blocks. -/
 
 /-- Reindexing nested square block-diagonal sums by `Equiv.sumAssoc` via `reindexₐ` reassociates
 the blocks. -/
-@[simp] theorem reindexₐ_sumAssoc_fromBlocks_zero [Fintype n₁] [Fintype n₂] [Fintype n₃]
+@[simp] theorem reindexₐ_sumAssoc_fromBlocks_zero₁₂_zero₂₁ [Fintype n₁] [Fintype n₂] [Fintype n₃]
     [Semiring R] [AddCommMonoid A] [Mul A] [Module R A] [Star A]
     (L : CStarMatrix n₁ n₁ A) (M : CStarMatrix n₂ n₂ A) (N : CStarMatrix n₃ n₃ A) :
     reindexₐ R A (Equiv.sumAssoc n₁ n₂ n₃) (fromBlocks (fromBlocks L 0 0 M) 0 0 N) =
       fromBlocks L 0 0 (fromBlocks M 0 0 N) := by
-  rw [reindexₐ_eq_reindexₗ, reindexₗ_sumAssoc_fromBlocks_zero]
+  rw [reindexₐ_eq_reindexₗ, reindexₗ_sumAssoc_fromBlocks_zero₁₂_zero₂₁]
 
 section BlockHoms
 
@@ -341,7 +342,7 @@ section BlockNorm
 
 variable {m₁ m₂ n₁ n₂ A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-private theorem norm_fromBlocks_zero_sq [Fintype n₁] [Fintype n₂]
+private theorem norm_fromBlocks_zero₁₂_zero₂₁_sq [Fintype n₁] [Fintype n₂]
     (X : CStarMatrix n₁ n₁ A) (Y : CStarMatrix n₂ n₂ A) :
     ‖fromBlocks X (0 : CStarMatrix n₁ n₂ A) (0 : CStarMatrix n₂ n₁ A) Y‖ = max ‖X‖ ‖Y‖ := by
   simpa [Prod.norm_def] using
@@ -350,14 +351,14 @@ private theorem norm_fromBlocks_zero_sq [Fintype n₁] [Fintype n₂]
 /-- The operator norm of a block-diagonal `CStarMatrix` is the maximum of the norms of its
 diagonal blocks. -/
 @[simp]
-theorem norm_fromBlocks_zero [Fintype m₁] [Fintype m₂] [Fintype n₁] [Fintype n₂]
+theorem norm_fromBlocks_zero₁₂_zero₂₁ [Fintype m₁] [Fintype m₂] [Fintype n₁] [Fintype n₂]
     (M : CStarMatrix m₁ n₁ A) (N : CStarMatrix m₂ n₂ A) :
     ‖fromBlocks M (0 : CStarMatrix m₁ n₂ A) (0 : CStarMatrix m₂ n₁ A) N‖ = max ‖M‖ ‖N‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (le_max_iff.mpr (.inl (norm_nonneg M))),
     ← norm_conjTranspose_mul_self]
   simp only [fromBlocks_conjTranspose, conjTranspose_zero, fromBlocks_multiply,
     CStarMatrix.mul_zero, CStarMatrix.zero_mul, add_zero, zero_add]
-  rw [norm_fromBlocks_zero_sq, norm_conjTranspose_mul_self, norm_conjTranspose_mul_self]
+  rw [norm_fromBlocks_zero₁₂_zero₂₁_sq, norm_conjTranspose_mul_self, norm_conjTranspose_mul_self]
   rcases le_total ‖M‖ ‖N‖ with h | h
   · rw [max_eq_right h, max_eq_right ((sq_le_sq₀ (norm_nonneg M) (norm_nonneg N)).mpr h)]
   · rw [max_eq_left h, max_eq_left ((sq_le_sq₀ (norm_nonneg N) (norm_nonneg M)).mpr h)]

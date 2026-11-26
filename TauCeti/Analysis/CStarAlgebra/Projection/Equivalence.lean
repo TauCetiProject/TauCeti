@@ -36,15 +36,14 @@ projection cancellation is assumed.
 * `CStarMatrix.isStarProjection_stabilizedRotationPath`: every point along
   `stabilizedRotationPath p q v` is a star projection when `v` is a rectangular partial isometry
   with initial projection `p` and final projection `q`.
-* `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left`,
-  `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right`: equivalence
-  between Murray–von Neumann equivalence and stabilized projection homotopy over possibly non-unital
+* `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks`,
+  `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero`: equivalence between
+  Murray–von Neumann equivalence and stabilized projection homotopy over possibly non-unital
   C⋆-algebras.
-* Equivalence between Murray–von Neumann equivalence and stabilized unitary conjugacy in the
-  identity path component over unital C⋆-algebras:
-`CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_zero_right_left`
-  and
-  `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_zero_right`.
+* `CStarMatrix.isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_mul_fromBlocks_mul_star`
+  and `isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_mul_fromBlocks_zero_mul_star`
+  (in `CStarMatrix`): equivalence between Murray–von Neumann equivalence and stabilized unitary
+  conjugacy in the identity path component over unital C⋆-algebras.
 
 ## References
 
@@ -98,18 +97,13 @@ noncomputable def stabilizedRotationPath [NonUnitalCStarAlgebra A]
       ((Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) • v)
       (Real.sin (π / 2 * t) ^ 2 • q)
   continuous_toFun := by
-    have hfun : (fun t : I ↦
-        fromBlocks (Real.cos (π / 2 * t) ^ 2 • p)
-          ((Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) • v.conjTranspose)
-          ((Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) • v)
-          (Real.sin (π / 2 * t) ^ 2 • q)) =
-      fun t : I ↦
-        Real.cos (π / 2 * t) ^ 2 • fromBlocks p 0 0 (0 : CStarMatrix n n A) +
-          (Real.cos (π / 2 * t) * Real.sin (π / 2 * t)) •
-            fromBlocks (0 : CStarMatrix m m A) v.conjTranspose v (0 : CStarMatrix n n A) +
-          Real.sin (π / 2 * t) ^ 2 • fromBlocks (0 : CStarMatrix m m A) 0 0 q := by
-      ext t (i | i) (j | j) <;> simp
-    rw [hfun]; fun_prop
+    conv =>
+      enter [1, t]
+      rw [← ofMatrix.apply_symm_apply (fromBlocks _ _ _ _), ofMatrix_symm_fromBlocks,
+        ofMatrix_eq_ofMatrixL]
+      simp only [ofMatrix_symm_smul]
+    exact ofMatrixL.continuous.comp
+      (Continuous.matrix_fromBlocks (by fun_prop) (by fun_prop) (by fun_prop) (by fun_prop))
   source' := by simp
   target' := by simp
 
@@ -164,7 +158,7 @@ theorem isStarProjection_stabilizedRotationPath [NonUnitalCStarAlgebra A]
 `q : CStarMatrix n n A` have Murray–von Neumann equivalent underlying matrices if and only if
 `fromBlocks p 0 0 0` and `fromBlocks 0 0 0 q` are joined by a continuous path of star
 projections. -/
-theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left
+theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks
     [NonUnitalCStarAlgebra A] {p : CStarMatrix m m A} {q : CStarMatrix n n A} :
     Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) ↔
       ∃ γ : Path (fromBlocks p 0 0 (0 : CStarMatrix n n A))
@@ -172,17 +166,14 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left
   refine ⟨fun h ↦ ?_, fun ⟨γ, hγ⟩ ↦ ?_⟩
   · obtain ⟨v, hvp, hvq, hv⟩ := h.exists_mul_conjTranspose_mul_self_eq
     refine ⟨stabilizedRotationPath p q (ofMatrix v),
-      isStarProjection_stabilizedRotationPath ?_ ?_ ?_⟩
-    · exact ofMatrix.symm.injective (by simpa only [ofMatrix_symm_mul,
-        ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply] using hv)
-    · exact ofMatrix.symm.injective (by simpa only [ofMatrix_symm_mul,
-        ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply] using hvp)
-    · exact ofMatrix.symm.injective (by simpa only [ofMatrix_symm_mul,
-        ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply] using hvq)
+      isStarProjection_stabilizedRotationPath ?_ ?_ ?_⟩ <;>
+      apply ofMatrix.symm.injective <;>
+      simp only [ofMatrix_symm_mul, ofMatrix_symm_conjTranspose, Equiv.symm_apply_apply]
+    exacts [hv, hvp, hvq]
   · have hp : IsStarProjection (ofMatrix.symm p) := isStarProjection_ofMatrix_symm_iff.mpr
-      (isStarProjection_fromBlocks_zero.mp (γ.source ▸ hγ 0)).1
+      (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp (γ.source ▸ hγ 0)).1
     have hq : IsStarProjection (ofMatrix.symm q) := isStarProjection_ofMatrix_symm_iff.mpr
-      (isStarProjection_fromBlocks_zero.mp (γ.target ▸ hγ 1)).2
+      (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp (γ.target ▸ hγ 1)).2
     have hpath := isMurrayVonNeumannEquivalent_of_path γ hγ
     simp only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] at hpath
     exact hp.isMurrayVonNeumannEquivalent_fromBlocks_zero.trans
@@ -192,7 +183,7 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left
 have Murray–von Neumann equivalent underlying matrices if and only if `fromBlocks p 0 0 0` and
 `fromBlocks 0 0 0 q` are conjugate by a unitary in the identity path component of
 `unitary (CStarMatrix (m ⊕ n) (m ⊕ n) A)`. -/
-theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_zero_right_left
+theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_mul_fromBlocks_mul_star
     [DecidableEq m] [DecidableEq n] [CStarAlgebra A]
     {p : CStarMatrix m m A} {q : CStarMatrix n n A} (hp : IsStarProjection p) :
     Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) ↔
@@ -202,40 +193,35 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_ze
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   have hp0 : IsStarProjection (fromBlocks p 0 0 (0 : CStarMatrix n n A)) :=
-    isStarProjection_fromBlocks_zero.mpr ⟨hp, .zero _⟩
-  rw [isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left,
+    isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mpr ⟨hp, .zero _⟩
+  rw [isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks,
     hp0.exists_path_iff_exists_joined_one_mul_mul_star_eq]
 
 /-- Over a (possibly non-unital) C⋆-algebra, two matrix elements `p, q : CStarMatrix n n A` have
 Murray–von Neumann equivalent underlying matrices if and only if `fromBlocks p 0 0 0` and
 `fromBlocks q 0 0 0` are joined by a continuous path of star projections. -/
-theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right [NonUnitalCStarAlgebra A]
+theorem isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero [NonUnitalCStarAlgebra A]
     {p q : CStarMatrix n n A} :
     Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) ↔
       ∃ γ : Path (fromBlocks p 0 0 (0 : CStarMatrix n n A))
         (fromBlocks q 0 0 (0 : CStarMatrix n n A)), ∀ t, IsStarProjection (γ t) := by
   refine ⟨fun h ↦ ?_, fun ⟨γ, hγ⟩ ↦ ?_⟩
-  · obtain ⟨γ₁, hγ₁⟩ :=
-      isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left.mp h
+  · obtain ⟨γ₁, hγ₁⟩ := isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks.mp h
     obtain ⟨γ₂, hγ₂⟩ :=
-      isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right_left.mp
-        (.refl h.isStarProjection_right)
+      isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks.mp (.refl h.isStarProjection_right)
     refine ⟨γ₁.trans γ₂.symm, fun t ↦ ?_⟩
     rw [Path.trans_apply]; split_ifs <;> simp [hγ₁, hγ₂]
-  · have hp : IsStarProjection (ofMatrix.symm p) := isStarProjection_ofMatrix_symm_iff.mpr
-      (isStarProjection_fromBlocks_zero.mp (γ.source ▸ hγ 0)).1
-    have hq : IsStarProjection (ofMatrix.symm q) := isStarProjection_ofMatrix_symm_iff.mpr
-      (isStarProjection_fromBlocks_zero.mp (γ.target ▸ hγ 1)).1
-    have hpath := isMurrayVonNeumannEquivalent_of_path γ hγ
-    simp only [ofMatrix_symm_fromBlocks, ofMatrix_symm_zero] at hpath
-    exact hp.isMurrayVonNeumannEquivalent_fromBlocks_zero.trans
-      (hpath.trans hq.isMurrayVonNeumannEquivalent_fromBlocks_zero.symm)
+  · have hq : IsStarProjection (ofMatrix.symm q) := isStarProjection_ofMatrix_symm_iff.mpr
+      (isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mp (γ.target ▸ hγ 1)).1
+    obtain ⟨γ₂, hγ₂⟩ := isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks.mp (.refl hq)
+    refine isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks.mpr ⟨γ.trans γ₂, fun t ↦ ?_⟩
+    rw [Path.trans_apply]; split_ifs <;> simp [hγ, hγ₂]
 
 /-- Over a unital C⋆-algebra, a star projection `p : CStarMatrix n n A` and `q : CStarMatrix n n A`
 have Murray–von Neumann equivalent underlying matrices if and only if `fromBlocks p 0 0 0` and
 `fromBlocks q 0 0 0` are conjugate by a unitary in the identity path component of
 `unitary (CStarMatrix (n ⊕ n) (n ⊕ n) A)`. -/
-theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_zero_right
+theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_mul_fromBlocks_zero_mul_star
     [DecidableEq n] [CStarAlgebra A]
     {p q : CStarMatrix n n A} (hp : IsStarProjection p) :
     Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) ↔
@@ -245,8 +231,8 @@ theorem isMurrayVonNeumannEquivalent_iff_exists_joined_one_unitary_fromBlocks_ze
   let : PartialOrder A := CStarAlgebra.spectralOrder A
   let : StarOrderedRing A := CStarAlgebra.spectralOrderedRing A
   have hp0 : IsStarProjection (fromBlocks p 0 0 (0 : CStarMatrix n n A)) :=
-    isStarProjection_fromBlocks_zero.mpr ⟨hp, .zero _⟩
-  rw [isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero_right,
+    isStarProjection_fromBlocks_zero₁₂_zero₂₁_iff.mpr ⟨hp, .zero _⟩
+  rw [isMurrayVonNeumannEquivalent_iff_exists_path_fromBlocks_zero,
     hp0.exists_path_iff_exists_joined_one_mul_mul_star_eq]
 
 end CStarMatrix
