@@ -42,8 +42,8 @@ and free over the local Bézout domain `V`, and of rank `n` because `M` has rank
 
 * `TauCeti.IsQuadraticallyPresented.of_isTorsion`: a finitely presented torsion `V`-module is
   quadratically presented.
-* `TauCeti.exists_linearEquiv_map_eq_pi_span_singleton`: a finitely generated submodule of `V^n`
-  is diagonal after an automorphism of `V^n`.
+* `Submodule.exists_linearEquiv_map_eq_pi_span_singleton`: a finitely generated submodule of
+  `V^n` is diagonal after an automorphism of `V^n`.
 * `TauCeti.exists_linearEquiv_pi_quotient_span_singleton`: a finitely presented `V`-module is
   isomorphic to `∏ i : Fin n, V ⧸ (x i)`.
 * `TauCeti.exists_linearEquiv_pi_quotient_span_singleton_of_isTorsion`: a finitely presented
@@ -123,8 +123,9 @@ private theorem exists_linearEquiv_pivot {n : ℕ} {N : Submodule V (Fin (n + 1)
 /-- **Stacked bases over a valuation ring.** A finitely generated submodule `N` of `V^n` over a
 valuation ring `V` is carried by an automorphism of `V^n` onto the diagonal submodule
 `∏ i, (x i)`. -/
-theorem exists_linearEquiv_map_eq_pi_span_singleton {n : ℕ} (N : Submodule V (Fin n → V))
-    (hN : N.FG) : ∃ (E : (Fin n → V) ≃ₗ[V] (Fin n → V)) (x : Fin n → V),
+theorem _root_.Submodule.exists_linearEquiv_map_eq_pi_span_singleton {n : ℕ}
+    (N : Submodule V (Fin n → V)) (hN : N.FG) :
+    ∃ (E : (Fin n → V) ≃ₗ[V] (Fin n → V)) (x : Fin n → V),
       N.map E.toLinearMap = Submodule.pi Set.univ fun i ↦ Ideal.span {x i} := by
   induction n with
   | zero => exact ⟨.refl V _, 0, by ext y; simp [Subsingleton.elim y 0]⟩
@@ -196,7 +197,7 @@ theorem exists_linearEquiv_pi_quotient_span_singleton [Module.FinitePresentation
     ∃ (n : ℕ) (x : Fin n → V), Nonempty (M ≃ₗ[V] ((i : Fin n) → V ⧸ Ideal.span {x i})) := by
   classical
   obtain ⟨n, π, hπ⟩ := Module.Finite.exists_fin' V M
-  obtain ⟨E, x, hE⟩ := exists_linearEquiv_map_eq_pi_span_singleton (ker π)
+  obtain ⟨E, x, hE⟩ := (ker π).exists_linearEquiv_map_eq_pi_span_singleton
     (Module.FinitePresentation.fg_ker π hπ)
   exact ⟨n, x, ⟨(π.quotKerEquivOfSurjective hπ).symm.trans <|
     (Submodule.Quotient.equiv _ _ E hE).trans (quotientPi _)⟩⟩
