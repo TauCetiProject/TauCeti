@@ -34,6 +34,17 @@ When `orderOf h ∣ N`, membership does not depend on the choice of representati
 def orbitMarks (N : ℕ) (y h : G) (S : Set G) : Set (ZMod N) :=
   ((↑) : ℤ → ZMod N) '' {i | y * h ^ i ∈ S}
 
+/-- A position is marked iff some integer representative exponent lands in `S`. This holds
+for every period; `intCast_mem_orbitMarks_iff` simplifies it at compatible periods. -/
+theorem mem_orbitMarks_iff {S : Set G} {i : ZMod N} :
+    i ∈ orbitMarks N y h S ↔ ∃ k : ℤ, y * h ^ k ∈ S ∧ (k : ZMod N) = i :=
+  Iff.rfl
+
+/-- Enlarging the target set enlarges the set of marks. -/
+theorem orbitMarks_mono {S S' : Set G} (hSS' : S ⊆ S') :
+    orbitMarks N y h S ⊆ orbitMarks N y h S' :=
+  image_mono fun _ hk ↦ hSS' hk
+
 /-- At a compatible period, testing a mark at an integer position requires only the orbit point
 at that exponent. -/
 @[simp]

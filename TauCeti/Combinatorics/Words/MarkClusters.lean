@@ -30,6 +30,33 @@ def HasMarkClusters (S : Set (ZMod N)) (j : ℕ) : Prop :=
   ∀ i ∈ S, ∀ e : ℕ, 0 < e → e ≤ j → i - e ∈ S →
     ∀ d : ℕ, 0 < d → d ≤ e + j → i - d ∈ S → d = e
 
+/-- Unfolds `Set.HasMarkClusters` to its defining condition. -/
+theorem hasMarkClusters_def : S.HasMarkClusters j ↔
+    ∀ i ∈ S, ∀ e : ℕ, 0 < e → e ≤ j → i - e ∈ S →
+      ∀ d : ℕ, 0 < d → d ≤ e + j → i - d ∈ S → d = e :=
+  Iff.rfl
+
+/-- Uses a mark at `i` and a marked predecessor at distance `e ≤ j` to identify any marked
+predecessor within distance `e + j`. -/
+theorem HasMarkClusters.eq (h : S.HasMarkClusters j) {i : ZMod N} (hi : i ∈ S) {d e : ℕ}
+    (he : 0 < e) (hej : e ≤ j) (hem : i - e ∈ S) (hd : 0 < d) (hdj : d ≤ e + j)
+    (hdm : i - d ∈ S) : d = e :=
+  h i hi e he hej hem d hd hdj hdm
+
+/-- The empty set of marks has clusters of every depth. -/
+@[simp]
+theorem hasMarkClusters_empty : (∅ : Set (ZMod N)).HasMarkClusters j :=
+  fun _ hi ↦ hi.elim
+
+/-- At most one mark gives clusters of every depth below the period. The bound on the depth is
+needed: for `N = 1` a single mark is its own predecessor at every distance. -/
+theorem HasMarkClusters.of_subsingleton (hS : S.Subsingleton) (hj : j < N) :
+    S.HasMarkClusters j := by
+  intro i hi e he hej hem
+  have h0 : ((e : ℕ) : ZMod N) = 0 := sub_eq_self.1 (hS hem hi)
+  have hdvd : N ∣ e := (ZMod.natCast_eq_zero_iff e N).1 h0
+  exact absurd (Nat.le_of_dvd he hdvd) (by omega)
+
 /-- Each marked position is either isolated from its preceding `j` positions or has a unique
 marked predecessor within the enlarged window. -/
 theorem hasMarkClusters_iff : S.HasMarkClusters j ↔
