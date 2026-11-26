@@ -16,6 +16,7 @@ public import TauCeti.RingTheory.Subring.Torsion
 public import TauCeti.RingTheory.Valuation.ValuativeRel.Extension
 import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Basic
 import TauCeti.RingTheory.AdicCompletion.Finite
+import TauCeti.RingTheory.Ideal.GoingUp
 
 /-!
 # The ring of integers of an extension of local fields is a finite free module
@@ -161,9 +162,9 @@ theorem ramificationIndex_eq_ramificationIdx_integralClosure
   let e := integerRingEquivIntegralClosure K L
   have : IsDiscreteValuationRing (integralClosure 𝒪[K] L) :=
     IsDiscreteValuationRing.RingEquivClass.isDiscreteValuationRing e
-  have : (maximalIdeal (integralClosure 𝒪[K] L)).LiesOver 𝓂[K] :=
-    ⟨(IsLocalRing.eq_maximalIdeal
-      (Ideal.IsMaximal.under 𝒪[K] (maximalIdeal (integralClosure 𝒪[K] L)))).symm⟩
+  -- Supplied directly: instance search tries Mathlib's `IsLocalHom` route first and times out.
+  have := Ideal.liesOver_maximalIdeal_of_isIntegral (R := 𝒪[K])
+    (maximalIdeal (integralClosure 𝒪[K] L))
   rw [ramificationIndex_eq_ramificationIdx,
     ← Ideal.ramificationIdx'_eq_ramificationIdx 𝓂[K]
       (maximalIdeal (integralClosure 𝒪[K] L)) (IsDiscreteValuationRing.not_a_field 𝒪[K]),
