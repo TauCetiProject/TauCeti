@@ -58,12 +58,12 @@ Laplace equation; it needs no hypothesis on `R`.
 
 ## Main results
 
+* `TauCeti.ite_conj_ae_eq_twistedReflection`: the reflection that keeps the values of `ξ` on the
+  real axis agrees almost everywhere with the twisted reflection.
 * `TauCeti.twistedReflection_starL'_ae_eq_starSchwarzReflection` and
   `TauCeti.twistedReflection_id_ae_eq_evenReflection`: twisted by `star` or by the identity, the
   reflection agrees almost everywhere with `TauCeti.starSchwarzReflection` or
   `TauCeti.evenReflection`.
-* `TauCeti.ite_conj_ae_eq_twistedReflection`: the reflection that keeps the values of `ξ` on the
-  real axis agrees almost everywhere with the twisted reflection.
 * `TauCeti.locallyIntegrableOn_twistedReflection`: the reflection of a function locally integrable
   up to the real axis is locally integrable on the doubled domain.
 * `MeasureTheory.AEStronglyMeasurable.twistedReflection`: the same for almost everywhere strong
@@ -185,28 +185,6 @@ theorem twistedReflection_ae_eq_restrict (R : V →L[ℝ] V) (ξ : ℂ → V) :
   filter_upwards [ae_restrict_mem hm, ae_restrict_of_ae hne] with z hz hz'
   exact twistedReflection_of_im_pos (lt_of_le_of_ne (mem_ofPred.1 hz) hz'.symm)
 
-/-- Twisted by `star`, the reflection agrees almost everywhere with `starSchwarzReflection`: they
-differ only on the real axis. -/
-theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [StarModule ℝ V]
-    [ContinuousStar V] (ξ : ℂ → V) :
-    twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
-      starSchwarzReflection ξ := by
-  filter_upwards [Complex.ae_im_ne_zero] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · rw [twistedReflection_of_im_neg hz, starSchwarzReflection_of_im_neg hz,
-      ContinuousLinearEquiv.coe_coe, starL'_apply]
-  · rw [twistedReflection_of_im_pos hz, starSchwarzReflection_of_im_nonneg hz.le]
-
-/-- Twisted by the identity, the reflection agrees almost everywhere with `evenReflection`: they
-differ only on the real axis. -/
-theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
-    twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ := by
-  filter_upwards [Complex.ae_im_ne_zero] with z hz
-  rcases lt_or_gt_of_ne hz with hz | hz
-  · rw [twistedReflection_of_im_neg hz, evenReflection_of_nonpos hz.le,
-      ContinuousLinearMap.id_apply]
-  · rw [twistedReflection_of_im_pos hz, evenReflection_of_nonneg hz.le]
-
 /-- The reflection twisted by `R` that keeps the values of `ξ` on the real axis, `ξ` on the closed
 upper half-plane and `R (ξ (conj z))` below it, agrees almost everywhere with
 `TauCeti.twistedReflection R ξ`, which vanishes on the null real axis. -/
@@ -216,6 +194,24 @@ theorem ite_conj_ae_eq_twistedReflection (R : V →L[ℝ] V) (ξ : ℂ → V) :
   rcases hz.lt_or_gt with hz | hz
   · simp [twistedReflection_of_im_neg hz, not_le.2 hz]
   · simp [twistedReflection_of_im_pos hz, hz.le]
+
+/-- Twisted by `star`, the reflection agrees almost everywhere with `starSchwarzReflection`: they
+differ only on the real axis. -/
+theorem twistedReflection_starL'_ae_eq_starSchwarzReflection [StarAddMonoid V] [StarModule ℝ V]
+    [ContinuousStar V] (ξ : ℂ → V) :
+    twistedReflection ((starL' ℝ : V ≃L[ℝ] V) : V →L[ℝ] V) ξ =ᵐ[volume]
+      starSchwarzReflection ξ :=
+  (ite_conj_ae_eq_twistedReflection _ ξ).symm.trans <|
+    .of_eq <| funext fun z ↦ (starSchwarzReflection_def ξ z).symm
+
+/-- Twisted by the identity, the reflection agrees almost everywhere with `evenReflection`: they
+differ only on the real axis. -/
+theorem twistedReflection_id_ae_eq_evenReflection (ξ : ℂ → V) :
+    twistedReflection (ContinuousLinearMap.id ℝ V) ξ =ᵐ[volume] evenReflection ξ :=
+  (ite_conj_ae_eq_twistedReflection _ ξ).symm.trans <| .of_eq <| funext fun z ↦ by
+    rcases le_or_gt 0 z.im with hz | hz
+    · rw [ite_eq_left hz, evenReflection_of_nonneg hz]
+    · rw [ite_eq_right hz.not_ge, evenReflection_of_nonpos hz.le, ContinuousLinearMap.id_apply]
 
 /-! ### Local integrability -/
 
