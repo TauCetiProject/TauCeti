@@ -61,7 +61,9 @@ namespace TauCeti.Toric
 
 open AddMonoidAlgebra AdicCompletion
 
-variable (R : Type*) [CommRing R] (ι : Type*) (Q : Type*)
+section Semiring
+
+variable (R : Type*) [Semiring R] (ι : Type*) (Q : Type*)
 
 /-- The coefficient families of the completion of a regular chart along its boundary: the
 families `c : (ι →₀ ℕ) × Q → R` such that, for every `h`, only finitely many exponents `(a, b)`
@@ -103,7 +105,9 @@ private theorem coeff_truncation (c : completedChartFamilies R ι Q) (h : ℕ)
     (truncation c h).coeff p = if ∃ i, p.1 i < h then c.val p else 0 := by
   simp [truncation, Finsupp.ofSupportFinite_coe]
 
-variable [Fintype ι] [AddCommMonoid Q]
+end Semiring
+
+variable {R ι Q : Type*} [CommRing R] [Fintype ι] [AddCommMonoid Q]
 
 /-- The truncations of an admissible family form an adic Cauchy sequence. -/
 private theorem isAdicCauchy_truncation (c : completedChartFamilies R ι Q) :
