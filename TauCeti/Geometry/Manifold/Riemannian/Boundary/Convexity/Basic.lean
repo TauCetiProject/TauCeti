@@ -32,7 +32,9 @@ Let `M` be a Riemannian manifold with boundary modelled on the half-space `𝓡�
   concavity at a point exclude each other.
 * `TauCeti.isStrictlyConvexAt_of_eq_zero`, `TauCeti.isStrictlyConcaveAt_of_eq_zero`: in dimension
   one (`n = 0`), `T_q∂M = 0` and the boundary is both strictly convex and strictly concave at every
-  point, so the exclusion needs `n ≥ 1`.
+  point, so the exclusion needs `n ≥ 1`. Likewise the uniform bound `II_q(u, u) ≥ c h_q(u, u)`
+  holds for every `c` there
+  (`TauCeti.mul_boundaryInducedForm_le_boundarySecondFundamentalForm_of_eq_zero`).
 * `TauCeti.RiemannianIsometry.isStrictlyConvexAt_iff`, `isConvexAt_iff`,
   `isStrictlyConcaveAt_iff`, `isStrictlyConvexOn_iff` and `isStrictlyConvexBoundary_iff`: the
   predicates are invariant under isometries of Riemannian manifolds with boundary, since
@@ -167,6 +169,13 @@ strictly concave at every point. -/
 theorem isStrictlyConcaveAt_of_eq_zero (hn : n = 0) (q : (𝓡∂ (n + 1)).boundary M) :
     IsStrictlyConcaveAt q :=
   isStrictlyConcaveAt_iff.2 fun u hu ↦ (hu (eq_zero_of_eq_zero hn u)).elim
+
+/-- In dimension one (`n = 0`) the tangent space of the boundary is zero, so the uniform bound
+`II_q(u, u) ≥ c h_q(u, u)` holds for every constant `c`. -/
+theorem mul_boundaryInducedForm_le_boundarySecondFundamentalForm_of_eq_zero (hn : n = 0) (c : ℝ)
+    (q : (𝓡∂ (n + 1)).boundary M) (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    c * boundaryInducedForm q u u ≤ boundarySecondFundamentalForm q u u := by
+  rw [eq_zero_of_eq_zero hn u, map_zero, map_zero, mul_zero]
 
 /-! ### Invariance under isometries -/
 
