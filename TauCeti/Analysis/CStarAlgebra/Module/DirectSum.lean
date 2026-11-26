@@ -48,9 +48,10 @@ covered throughout by taking `A = Bᵐᵒᵖ`.
 * `TauCeti.HilbertDirectSum.equivWithCStarModulePi`: agreement with `C⋆ᵐᵒᵈ(A, Π i, E i)` when
   `[Fintype ι]`.
 * `TauCeti.HilbertDirectSum.ofLp`, `TauCeti.HilbertDirectSum.equivLp`: contractive, injective
-  continuous linear map `lp E 2 →L[ℂ] HilbertDirectSum A E` with `mem_range_ofLp_iff` and dense
-  range (`denseRange_ofLp`), and complex linear isometric equivalence
-  `HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2` when `A = ℂ`.
+  continuous linear map `lp E 2 →L[ℂ] HilbertDirectSum A E` (via `norm_sq_le_tsum_norm_sq`) with
+  `mem_range_ofLp_iff` and dense range (`denseRange_ofLp`), and complex linear isometric
+  equivalence `HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2` when `A = ℂ` (via `hasSum_norm_sq` and
+  `norm_sq_eq_tsum_norm_sq`).
 
 ## References
 
@@ -291,6 +292,17 @@ theorem sqrt_norm_sum_inner_self_le_norm (s : Finset ι) (x : HilbertDirectSum A
 theorem norm_apply_le (x : HilbertDirectSum A E) (i : ι) : ‖x i‖ ≤ ‖x‖ := by
   simpa [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x i)] using
     sqrt_norm_sum_inner_self_le_norm {i} x
+
+omit [StarOrderedRing A] in
+/-- Whenever the squared coordinate norms of `x : HilbertDirectSum A E` are summable,
+`‖x‖ ^ 2 ≤ ∑' i, ‖x i‖ ^ 2`. -/
+theorem norm_sq_le_tsum_norm_sq (x : HilbertDirectSum A E)
+    (hx : Summable fun i ↦ ‖x i‖ ^ 2) :
+    ‖x‖ ^ 2 ≤ ∑' i, ‖x i‖ ^ 2 := by
+  rw [norm_def, Real.sq_sqrt (norm_nonneg _)]
+  refine (norm_tsum_le_tsum_norm ?_).trans_eq
+    (tsum_congr fun i ↦ (CStarModule.norm_sq_eq A).symm)
+  simpa only [← CStarModule.norm_sq_eq A] using hx
 
 end CStarModule
 
@@ -742,14 +754,11 @@ def ofLp : lp E 2 →L[ℂ] HilbertDirectSum A E :=
       map_add' := fun _ _ ↦ by ext i; rfl
       map_smul' := fun _ _ ↦ by ext i; rfl }
     1 fun x ↦ by
-      have hsq : ‖∑' i, inner A (x i) (x i)‖ ≤ ‖x‖ ^ 2 := by
-        calc ‖∑' i, inner A (x i) (x i)‖
-            ≤ ∑' i, ‖inner A (x i) (x i)‖ :=
-              norm_tsum_le_tsum_norm (x.prop.summable_norm_inner_self (A := A))
-          _ = ∑' i, ‖x i‖ ^ 2 := by simp_rw [CStarModule.norm_sq_eq A]
-          _ = ‖x‖ ^ 2 := (lp.norm_sq_eq_tsum x).symm
-      simpa [one_mul, norm_def] using
-        (Real.sqrt_le_sqrt hsq).trans_eq (Real.sqrt_sq (norm_nonneg x))
+      let y : HilbertDirectSum A E := ⟨⇑x, x.prop.summable_inner_self⟩
+      have hsq : ‖y‖ ^ 2 ≤ ‖x‖ ^ 2 :=
+        (norm_sq_le_tsum_norm_sq y (memℓp_two_iff.mp x.prop)).trans_eq (lp.norm_sq_eq_tsum x).symm
+      simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul] using
+        (pow_le_pow_iff_left₀ (norm_nonneg y) (norm_nonneg x) two_ne_zero).mp hsq
 
 @[simp]
 theorem ofLp_apply (x : lp E 2) (i : ι) : ofLp A E x i = x i := (rfl)
@@ -794,6 +803,26 @@ section Complex
 
 open scoped ComplexOrder
 
+section NormSq
+
+variable {ι : Type*} {E : ι → Type*}
+  [∀ i, AddCommGroup (E i)] [∀ i, Norm (E i)] [∀ i, Module ℂ (E i)] [∀ i, CStarModule ℂ (E i)]
+
+/-- Over `A = ℂ`, the squared coordinate norms `‖x i‖ ^ 2` have unconditional sum `‖x‖ ^ 2`. -/
+theorem hasSum_norm_sq (x : HilbertDirectSum ℂ E) :
+    HasSum (fun i ↦ ‖x i‖ ^ 2) (‖x‖ ^ 2) := by
+  refine Complex.hasSum_ofReal.mp ?_
+  have h := hasSum_inner x x
+  rw [CStarModule.inner_self_eq_norm_sq_complex x] at h
+  simpa only [CStarModule.inner_self_eq_norm_sq_complex] using h
+
+/-- Over `A = ℂ`, the squared norm on `HilbertDirectSum ℂ E` is `∑' i, ‖x i‖ ^ 2`. -/
+theorem norm_sq_eq_tsum_norm_sq (x : HilbertDirectSum ℂ E) :
+    ‖x‖ ^ 2 = ∑' i, ‖x i‖ ^ 2 :=
+  (hasSum_norm_sq x).tsum_eq.symm
+
+end NormSq
+
 section Memℓp
 
 variable {ι : Type*} {E : ι → Type*}
@@ -801,11 +830,8 @@ variable {ι : Type*} {E : ι → Type*}
 
 /-- Over `A = ℂ`, every element of `HilbertDirectSum ℂ E` lies in the `ℓ²` sum `lp E 2`
 (`Memℓp ⇑x 2`). -/
-theorem memℓp_two (x : HilbertDirectSum ℂ E) : Memℓp ⇑x 2 := by
-  refine memℓp_two_iff.mpr ?_
-  have hsum : Summable fun i ↦ ((‖x i‖ ^ 2 : ℝ) : ℂ) := by
-    simpa only [CStarModule.inner_self_eq_norm_sq_complex] using x.summable_inner_self
-  exact Complex.summable_ofReal.mp hsum
+theorem memℓp_two (x : HilbertDirectSum ℂ E) : Memℓp ⇑x 2 :=
+  memℓp_two_iff.mpr (hasSum_norm_sq x).summable
 
 end Memℓp
 
@@ -827,16 +853,10 @@ def equivLp : HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2 where
   norm_map' x := by
     set z : lp E 2 := ⟨⇑x, memℓp_two x⟩
     have hz : ∀ i, z i = x i := fun _ ↦ rfl
-    have htsum : ∑' i, ‖x i‖ ^ 2 = ‖z‖ ^ 2 :=
-      (tsum_congr fun i ↦ by rw [hz i]).symm.trans (lp.norm_sq_eq_tsum z).symm
-    have hinner : inner ℂ x x = ((‖z‖ ^ 2 : ℝ) : ℂ) := by
-      rw [inner_def]
-      simp_rw [CStarModule.inner_self_eq_norm_sq_complex]
-      rw [← Complex.ofReal_tsum, htsum]
-    have hsq : ‖z‖ ^ 2 = ‖x‖ ^ 2 := by
-      rw [CStarModule.norm_sq_eq ℂ (x := x), hinner, Complex.norm_real,
-        Real.norm_of_nonneg (sq_nonneg ‖z‖)]
-    exact (sq_eq_sq₀ (norm_nonneg z) (norm_nonneg x)).mp hsq
+    refine (sq_eq_sq₀ (norm_nonneg z) (norm_nonneg x)).mp ?_
+    calc ‖z‖ ^ 2 = ∑' i, ‖z i‖ ^ 2 := lp.norm_sq_eq_tsum z
+      _ = ∑' i, ‖x i‖ ^ 2 := tsum_congr fun i ↦ by rw [hz i]
+      _ = ‖x‖ ^ 2 := (norm_sq_eq_tsum_norm_sq x).symm
 
 @[simp]
 theorem equivLp_apply (x : HilbertDirectSum ℂ E) (i : ι) : equivLp E x i = x i := (rfl)

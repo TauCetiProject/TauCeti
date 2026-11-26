@@ -42,7 +42,10 @@ nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or
 linearly independent, and vectors in the span of single-coordinate vectors vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent; over a ring
 with the strong rank condition, for instance a field, `lp` over an infinite index type is therefore
-not a finite module (`lp.not_finite`). Finite sums of single-coordinate vectors over a finset `s`
+not a finite module (`lp.not_finite`). Single-coordinate vectors commute with `star`
+(`lp.star_single`), and in `ℓ^∞` their pointwise product multiplies entries at equal indices and
+vanishes at distinct indices (`lp.single_mul_single`, `lp.single_mul_single_of_ne`). Finite sums of
+single-coordinate vectors over a finset `s`
 along a map `g` evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
 (`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
 (`lp.sum_single_apply_eq_zero_of_forall_ne`). Subtracting a finite sum of coordinate vectors
@@ -257,6 +260,31 @@ theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E
 section Single
 
 variable [DecidableEq ι]
+
+/-- Conjugating a single-coordinate vector conjugates its entry. -/
+@[simp]
+protected theorem star_single [∀ i, StarAddMonoid (E i)] [∀ i, NormedStarGroup (E i)]
+    (p : ℝ≥0∞) (i : ι) (a : E i) :
+    star (lp.single p i a) = lp.single p i (star a) :=
+  lp.ext <| Pi.star_single i a
+
+/-- Multiplying two single-coordinate vectors in `ℓ^∞` at the same index multiplies their
+entries. -/
+@[simp]
+protected theorem single_mul_single {B : ι → Type*} [∀ i, NonUnitalNormedRing (B i)]
+    (i : ι) (a b : B i) :
+    lp.single ∞ i a * lp.single ∞ i b = lp.single ∞ i (a * b) :=
+  lp.ext <| (Pi.single_mul i a b).symm
+
+/-- Multiplying two single-coordinate vectors in `ℓ^∞` at distinct indices gives zero. -/
+@[simp]
+protected theorem single_mul_single_of_ne {B : ι → Type*} [∀ i, NonUnitalNormedRing (B i)]
+    {i j : ι} (hij : i ≠ j) (a : B i) (b : B j) :
+    lp.single ∞ i a * lp.single ∞ j b = 0 := by
+  ext k
+  by_cases hki : k = i
+  · subst k; simp [Pi.single_eq_of_ne hij]
+  · simp [Pi.single_eq_of_ne hki]
 
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :

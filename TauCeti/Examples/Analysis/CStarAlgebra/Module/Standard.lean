@@ -49,8 +49,8 @@ open scoped lp ENNReal NNReal
 namespace TauCeti.StandardHilbertModule
 
 private theorem antitone_inv_add_one :
-    Antitone (fun n : ℕ ↦ (⟨((n : ℝ) + 1)⁻¹, by positivity⟩ : ℝ≥0)) := fun m n hmn ↦
-  Subtype.mk_le_mk.mpr <| inv_anti₀ (by positivity) (by exact_mod_cast Nat.add_le_add_right hmn 1)
+    Antitone (fun n : ℕ ↦ ((n : ℝ≥0) + 1)⁻¹) := fun _ _ hmn ↦
+  inv_anti₀ (by positivity) (by gcongr)
 
 private abbrev harmonicDiag : ℓ^∞(ℕ, ℂ) :=
   lp.ofAntitone ℂ antitone_inv_add_one
@@ -59,8 +59,8 @@ private theorem tendsto_norm_harmonicDiag :
     Tendsto (fun n : ℕ ↦ ‖harmonicDiag n‖) cofinite (𝓝 0) := by
   rw [Nat.cofinite_eq_atTop]
   refine tendsto_one_div_add_atTop_nhds_zero_nat.congr fun n ↦ ?_
-  rw [one_div]
-  exact (lp.norm_ofAntitone_apply ℂ antitone_inv_add_one n).symm
+  rw [lp.norm_ofAntitone_apply ℂ antitone_inv_add_one n]
+  simp [one_div]
 
 private def harmonicCoord (n : ℕ) :
     TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ) :=
@@ -82,25 +82,8 @@ private theorem star_mul_self_harmonicCoord (n : ℕ) :
         TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ)) :
       ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) =
       lp.diagonalCLM (p := 2) (lp.single ∞ n (harmonicDiag n)) := by
-  set e : ℓ^∞(ℕ, ℂ) := lp.single ∞ n (((√((n : ℝ) + 1))⁻¹ : ℝ) : ℂ) with ← he
-  have hself : IsSelfAdjoint (lp.diagonalCLM (p := 2) e) :=
-    (lp.isSelfAdjoint_diagonalCLM_iff e).mpr fun i ↦ by
-      by_cases hi : i = n
-      · subst i; simp [e]
-      · simp [e, Pi.single_eq_of_ne hi]
-  have he_sq : e * e = lp.single ∞ n (harmonicDiag n) := by
-    refine lp.ext (funext fun i ↦ ?_)
-    have hmul : (e * e) i = e i * e i := congrFun (lp.infty_coeFn_mul e e) i
-    rw [hmul]
-    by_cases hi : i = n
-    · subst i
-      have hpos : 0 ≤ (n : ℝ) + 1 := by positivity
-      simp only [e, lp.single_apply_self, ← Complex.ofReal_mul]
-      rw [← mul_inv, Real.mul_self_sqrt hpos]
-      exact (lp.ofAntitone_apply ℂ antitone_inv_add_one n).symm
-    · simp [e, Pi.single_eq_of_ne hi]
-  simp only [MulMemClass.coe_mul, StarMemClass.coe_star, coe_harmonicCoord, he, hself.star_eq,
-    ContinuousLinearMap.mul_def, ← lp.diagonalCLM_mul, he_sq]
+  rw [lp.ofAntitone_apply ℂ antitone_inv_add_one n]
+  simp [← mul_inv, ← Complex.ofReal_mul, Real.mul_self_sqrt (by positivity : (0 : ℝ) ≤ n + 1)]
 
 private theorem hasSum_star_mul_self_harmonicCoord :
     HasSum (fun n ↦ star (harmonicCoord n) * harmonicCoord n)

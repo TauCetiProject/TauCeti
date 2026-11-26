@@ -121,6 +121,13 @@ theorem diagonalCLM_mul (d e : ℓ^∞(ι, 𝕜)) :
   ext x i
   simp [mul_assoc]
 
+/-- The product of two diagonal multipliers is the diagonal multiplier of the product of their
+coefficient families. -/
+@[simp]
+theorem diagonalCLM_mul_diagonalCLM (d e : ℓ^∞(ι, 𝕜)) :
+    diagonalCLM (p := p) d * diagonalCLM (p := p) e = diagonalCLM (p := p) (d * e) := by
+  rw [ContinuousLinearMap.mul_def, diagonalCLM_mul]
+
 /-- A diagonal operator is injective exactly when none of its coefficients vanishes. -/
 theorem injective_diagonalCLM_iff (d : ℓ^∞(ι, 𝕜)) :
     Function.Injective (diagonalCLM (p := p) d) ↔ ∀ i, d i ≠ 0 := by

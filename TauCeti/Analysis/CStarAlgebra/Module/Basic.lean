@@ -209,9 +209,7 @@ variable {E : Type*} [AddCommGroup E] [Module ℂ E] [Norm E] [CStarModule ℂ E
 /-- For a Hilbert C⋆-module over `ℂ`, the self inner product `⟪x, x⟫_ℂ` equals `(‖x‖ ^ 2 : ℂ)`. -/
 theorem inner_self_eq_norm_sq_complex (x : E) :
     inner ℂ x x = ((‖x‖ ^ 2 : ℝ) : ℂ) := by
-  have hnn : (0 : ℂ) ≤ inner ℂ x x := inner_self_nonneg
-  rw [Complex.eq_re_of_ofReal_le (r := 0) (z := inner ℂ x x) (by simpa using hnn),
-    Complex.re_eq_norm.mpr hnn, norm_sq_eq ℂ]
+  rw [norm_sq_eq ℂ, Complex.norm_of_nonneg' inner_self_nonneg]
 
 end Complex
 
