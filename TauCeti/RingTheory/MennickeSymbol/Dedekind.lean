@@ -66,9 +66,7 @@ theorem ofLE_surjective {J : Ideal A} (h : J ≤ I) (hJ : J ≠ ⊥) : Function.
     simp only [p₁, MennickePair.shiftFst_fst, MennickePair.shiftSnd_snd,
       MennickePair.shiftSnd_fst]
     linear_combination -hjz
-  have hJ₁ : 1 - p₁.fst ∈ J := by
-    rw [← neg_sub, hp₁]
-    exact J.neg_mem hj
+  have hJ₁ : 1 - p₁.fst ∈ J := sub_mem_comm_iff.mp (hp₁ ▸ hj)
   refine ⟨of ⟨p₁.fst, p₁.snd * (1 - p₁.fst), hp₁ ▸ hj, J.mul_mem_left _ hJ₁,
     p₁.isCoprime.mul_right ⟨1, 1, by ring⟩⟩, ?_⟩
   rw [ofLE_of]
@@ -172,17 +170,11 @@ theorem commute_of (p q : MennickePair I) : Commute (of p) (of q) := by
 
 /-- **The universal Mennicke group of a Dedekind domain is commutative.** -/
 theorem commute (x y : MennickeGroup I) : Commute x y := by
-  have h : ∀ p, ∀ z : MennickeGroup I, Commute (of p) z := fun p z ↦ by
-    induction z using induction_on with
-    | one => exact Commute.one_right _
-    | of q => exact commute_of p q
-    | mul z w hz hw => exact hz.mul_right hw
-    | inv z hz => exact hz.inv_right
-  induction x using induction_on with
-  | one => exact Commute.one_left _
-  | of p => exact h p y
-  | mul z w hz hw => exact hz.mul_left hw
-  | inv z hz => exact hz.inv_left
+  have h := Subgroup.closure_le_centralizer_centralizer (Set.range (of : MennickePair I → _))
+  rw [closure_range_of] at h
+  exact Set.centralizer_centralizer_comm_of_comm
+    (by rintro _ ⟨p, rfl⟩ _ ⟨q, rfl⟩ -; exact commute_of p q) x (h (Subgroup.mem_top x)) y
+    (h (Subgroup.mem_top y))
 
 instance instIsMulCommutative : IsMulCommutative (MennickeGroup I) :=
   ⟨⟨fun x y ↦ (commute x y).eq⟩⟩

@@ -323,17 +323,13 @@ theorem map_eq_of_snd_eq_mul_one_sub (hs : IsMennickeSymbol s) {p q : MennickePa
 /-- The sign of the second entry does not matter: `[-b/a] = [b/a]`. -/
 theorem map_eq_of_snd_eq_neg (hs : IsMennickeSymbol s) {p q : MennickePair I}
     (hfst : q.fst = p.fst) (hsnd : q.snd = -p.snd) : s q = s p := by
-  -- Both `[-b/a] [(1 - a)/a]` and `[b/a] [(a - 1)/a]` are `[-b (1 - a)/a]`, and the two auxiliary
-  -- symbols are trivial because `a ≡ 1` modulo `1 - a`.
-  let r : MennickePair I := ⟨p.fst, 1 - p.fst, p.fst_sub_one_mem,
-    by rw [← neg_sub]; exact I.neg_mem p.fst_sub_one_mem, ⟨1, 1, by ring⟩⟩
-  let r' : MennickePair I := ⟨p.fst, p.fst - 1, p.fst_sub_one_mem, p.fst_sub_one_mem,
+  -- `[-b/a] = [-b (1 - a)/a] = [b (a - 1)/a] = [b/a] [(a - 1)/a]`, and the last symbol is
+  -- trivial because `a ≡ 1` modulo `a - 1`.
+  let r : MennickePair I := ⟨p.fst, p.fst - 1, p.fst_sub_one_mem, p.fst_sub_one_mem,
     ⟨1, -1, by ring⟩⟩
-  have hr : s r = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨-1, by simp [r]⟩
-  have hr' : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one dvd_rfl
-  have h := hs.map_eq_mul_of_snd_eq_mul (q := q.mulSnd r hfst) (p₁ := p) (p₂ := r') hfst.symm
-    hfst.symm (by simp [r, r', hsnd]; ring)
-  rwa [hs.map_mulSnd, hr, hr', mul_one, mul_one] at h
+  have hr : s r = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one dvd_rfl
+  rw [← hs.map_eq_of_snd_eq_mul_one_sub (q := p.mulSnd r rfl) (p := q) (by simp [hfst])
+    (by simp [r, hfst, hsnd]; ring), hs.map_mulSnd, hr, mul_one]
 
 /-- Composing a Mennicke symbol with a group homomorphism gives a Mennicke symbol. -/
 theorem monoidHom_comp (hs : IsMennickeSymbol s) (φ : C →* E) : IsMennickeSymbol (φ ∘ s) where
