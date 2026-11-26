@@ -53,28 +53,26 @@ restricted at radius `1` yields a series restricted at radius `1`. -/
 theorem IsRestricted.subst_one {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {f g : R⟦X⟧}
     (hg : g.IsRestricted 1) (hf : f.IsRestricted 1) (hfn : ∀ k, ‖coeff k f‖ ≤ 1)
     (hf0 : constantCoeff f = 0) : PowerSeries.IsRestricted 1 (g.subst f) := by
-  rw [isRestricted_iff']; simp only [one_pow, mul_one]
-  refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
-  have hg_lim : Tendsto (fun m ↦ ‖coeff m g‖) atTop (𝓝 0) := by
-    simpa only [one_pow, mul_one] using (isRestricted_iff' 1 g).mp hg
-  obtain ⟨M, hM⟩ := Metric.tendsto_atTop.mp hg_lim (ε / 2) (half_pos hε)
+  rw [← tendsto_coeff_atTop_iff_isRestricted_one, NormedAddGroup.tendsto_nhds_zero]
+  intro ε hε
+  obtain ⟨M, hM⟩ := eventually_atTop.mp <|
+    NormedAddGroup.tendsto_nhds_zero.mp
+      (tendsto_coeff_atTop_iff_isRestricted_one.mpr hg) (ε / 2) (half_pos hε)
   have hhead : ∀ m ∈ Finset.range (M + 1),
-      ∀ᶠ k in atTop, ‖coeff m g * coeff k (f ^ m)‖ < ε / 2 := fun m _ ↦ by
-    have h0 : Tendsto (fun k ↦ coeff k (f ^ m)) atTop (𝓝 0) := by
-      simpa [tendsto_zero_iff_norm_tendsto_zero] using
-        (isRestricted_iff' 1 (f ^ m)).mp ((IsRestricted.subring (R := R) 1).pow_mem hf m)
-    exact NormedAddGroup.tendsto_nhds_zero.mp
-      (by simpa only [mul_zero] using h0.const_mul (coeff m g)) (ε / 2) (half_pos hε)
+      ∀ᶠ k in atTop, ‖coeff m g * coeff k (f ^ m)‖ < ε / 2 := fun m _ ↦
+    NormedAddGroup.tendsto_nhds_zero.mp
+      (by simpa only [mul_zero] using
+        (tendsto_coeff_atTop_iff_isRestricted_one.mpr (hf.pow m)).const_mul (coeff m g))
+      (ε / 2) (half_pos hε)
   obtain ⟨K, hK⟩ := eventually_atTop.mp ((Finset.range (M + 1)).eventually_all.mpr hhead)
-  refine ⟨K, fun k hk ↦ ?_⟩
-  rw [Real.dist_eq, sub_zero, abs_norm, coeff_subst_eq_sum_range g hf0 k]
+  refine eventually_atTop.mpr ⟨K, fun k hk ↦ ?_⟩
+  rw [coeff_subst_eq_sum_range g hf0 k]
   refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (half_pos hε).le
     fun m _ ↦ ?_).trans_lt (half_lt_self hε)
   rw [smul_eq_mul]
   rcases lt_or_ge m (M + 1) with hm | hm
   · exact (hK k hk m (Finset.mem_range.mpr hm)).le
-  · have hgm : ‖coeff m g‖ < ε / 2 := by simpa [Real.dist_eq, abs_norm] using hM m (by omega)
-    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
-      (norm_coeff_pow_le_one hfn (by omega) k)).trans hgm.le
+  · exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
+      (norm_coeff_pow_le_one hfn (by omega) k)).trans (hM m (by omega)).le
 
 end PowerSeries

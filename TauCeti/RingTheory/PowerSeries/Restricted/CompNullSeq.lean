@@ -70,12 +70,6 @@ private theorem norm_coeff_pow_smul_le (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (e :
   · exact (norm_smul_le _ _).trans
       (mul_le_of_le_one_left (norm_nonneg e) (norm_coeff_pow_le_one hgn hn k))
 
-private theorem tendsto_coeff_pow_cofinite (hg : g.IsRestricted 1) (n : ℕ) :
-    Tendsto (fun k ↦ coeff k (g ^ n)) cofinite (𝓝 0) := by
-  rw [Nat.cofinite_eq_atTop]
-  have hp : (g ^ n).IsRestricted 1 := (IsRestricted.subring (R := R) 1).pow_mem hg n
-  simpa [tendsto_zero_iff_norm_tendsto_zero] using (isRestricted_iff' 1 (g ^ n)).mp hp
-
 private theorem norm_coeff_pow_le_max_one (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (k n : ℕ) :
     ‖coeff k (g ^ n)‖ ≤ max 1 ‖(1 : R)‖ := by
   rcases eq_or_ne n 0 with rfl | hn
@@ -92,7 +86,8 @@ noncomputable def compNullSeq (S : Type*) [Semiring S] [Module S E] [ContinuousC
     [SMulCommClass R S E] (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1) :
     C₀(ℕ, E) →L[S] C₀(ℕ, E) :=
   Matrix.toZeroAtInftySMulCLM S (Matrix.of fun k n ↦ coeff k (g ^ n))
-    (tendsto_coeff_pow_cofinite hg) ⟨max 1 ‖(1 : R)‖, norm_coeff_pow_le_max_one hgn⟩
+    (fun n ↦ tendsto_coeff_cofinite_iff_isRestricted_one.mpr (hg.pow n))
+    ⟨max 1 ‖(1 : R)‖, norm_coeff_pow_le_max_one hgn⟩
 
 variable (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass R S E]
 

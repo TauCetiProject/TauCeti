@@ -35,6 +35,9 @@ an algebra homomorphism; it gives the comparisons used in Weierstrass division a
   `TauCeti.PowerSeries.isRestrictedSubring_le_of_abs_le` is the resulting containment of subrings.
 * `TauCeti.PowerSeries.isRestricted_polynomial`: every polynomial is restricted, in particular
   `X - a` (`TauCeti.PowerSeries.isRestricted_X_sub_C`).
+* `PowerSeries.tendsto_coeff_cofinite_iff_isRestricted_one` and
+  `PowerSeries.tendsto_coeff_atTop_iff_isRestricted_one`: `f` is restricted at radius `1` if and
+  only if its coefficients tend to `0`.
 * `PowerSeries.IsRestricted.summable_norm_coeff_mul_pow`: weighted coefficient norms are
   summable strictly inside the radius of restrictedness.
 * `PowerSeries.IsRestricted.mul_of_abs_lt`: over any normed ring, a product of series restricted
@@ -321,6 +324,18 @@ theorem IsRestricted.subring_abs (c : ℝ) :
   Subring.ext fun f ↦ by simp only [IsRestricted.mem_subring, isRestricted_abs_iff]
 
 end Subring
+
+/-- The coefficients of `f` tend to `0` along `cofinite` if and only if `f` is restricted at
+radius `1`. -/
+theorem tendsto_coeff_cofinite_iff_isRestricted_one :
+    Tendsto (fun n ↦ coeff n f) cofinite (𝓝 0) ↔ f.IsRestricted 1 := by
+  simp [isRestricted_iff, tendsto_zero_iff_norm_tendsto_zero]
+
+/-- The coefficients of `f` tend to `0` along `atTop` if and only if `f` is restricted at
+radius `1`. -/
+theorem tendsto_coeff_atTop_iff_isRestricted_one :
+    Tendsto (fun n ↦ coeff n f) atTop (𝓝 0) ↔ f.IsRestricted 1 := by
+  rw [← Nat.cofinite_eq_atTop, tendsto_coeff_cofinite_iff_isRestricted_one]
 
 /-- The weighted coefficient norms of a restricted series are summable at every strictly
 smaller radius. No completeness or ultrametric hypothesis is needed. -/

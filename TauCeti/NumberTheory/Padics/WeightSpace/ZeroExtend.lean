@@ -100,7 +100,7 @@ theorem zeroExtend_apply_zero (κ : WeightSpace p R) : κ.zeroExtend 0 = 0 :=
 
 /-- Because `pℤ_p` is a prime ideal (`IsUnit (x * y) ↔ IsUnit x ∧ IsUnit y`), the zero-extension
 of a weight is multiplicative on all of `ℤ_p`. -/
-theorem zeroExtend_apply_mul (κ : WeightSpace p R) (x y : ℤ_[p]) :
+@[simp] theorem zeroExtend_apply_mul (κ : WeightSpace p R) (x y : ℤ_[p]) :
     κ.zeroExtend (x * y) = κ.zeroExtend x * κ.zeroExtend y := by
   by_cases hx : IsUnit x
   · by_cases hy : IsUnit y
@@ -116,7 +116,7 @@ theorem zeroExtend_apply_mul (κ : WeightSpace p R) (x y : ℤ_[p]) :
 
 /-- Zero-extension commutes with all natural powers `x ^ n` on `ℤ_p` (including `n = 0`, where both
 sides equal `1`). -/
-theorem zeroExtend_apply_pow (κ : WeightSpace p R) (x : ℤ_[p]) (n : ℕ) :
+@[simp] theorem zeroExtend_apply_pow (κ : WeightSpace p R) (x : ℤ_[p]) (n : ℕ) :
     κ.zeroExtend (x ^ n) = κ.zeroExtend x ^ n := by
   induction n with
   | zero => simp
