@@ -44,7 +44,7 @@ coefficient exponent, which for the Laplacian is arbitrary).
   gradient `-x / ((d - 1) ‖x‖)` of the solution `-‖x‖ / (d - 1)` has no representative continuous
   at the origin (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`).
 
-The same solutions, with `1 < γ < 2`, show that the global Hölder estimate for the Dirichlet
+The same solutions, with `0 < γ < 2`, show that the global Hölder estimate for the Dirichlet
 problem `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, `u = 0` on `∂Ω`, with `f ∈ Lᵠ` and `q > d / 2`
 (`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_add_divergence`), cannot give a Hölder
 exponent larger than `2 - d / q`, even for the Laplacian on the unit ball `B`.
@@ -52,8 +52,8 @@ exponent larger than `2 - d / q`, even for the Laplacian on the unit ball `B`.
 * **The exponent `2 - d / q` cannot be raised.** On `B` the shifted solution
   `(1 - ‖x‖ ^ (2 - γ)) / ((2 - γ) (d - γ))` vanishes on the unit sphere, so it lies in `H¹₀(B)`,
   and it differs from its value at the origin by a multiple of `t ^ (2 - γ)` at distance `t`.
-  Letting `γ ↑ d / q` shows that for `d ≥ 2` every exponent `β > 2 - d / q` fails for some datum
-  in `Lᵠ(B)`
+  Letting `γ ↑ min 2 (d / q)` shows that for `d ≥ 2` every exponent `β > 2 - d / q` fails for
+  some datum in `Lᵠ(B)`
   (`TauCeti.PDE.exists_memLp_and_mem_w1p0Submodule_forall_energyFormH1_eq_and_not_holderOnWith`).
   The datum need not be square integrable; the weak equation holds against all of `H¹₀(B)`
   because it is in `Lʳ(B)` for some `r > 2d / (d + 2)`.
@@ -445,24 +445,22 @@ private theorem not_holderOnWith_of_eqOn_radialSolution_add [Nonempty ι] (hγ :
   have he : ‖e‖ = 1 := by simp [e]
   set c : ℝ := ((2 - γ) * (Fintype.card ι - γ))⁻¹
   have hc : 0 < c := inv_pos.2 (mul_pos (by linarith) (by linarith))
-  -- Choose `t ∈ (0, r)` with `C t ^ (β - (2 - γ)) < c`.
-  obtain ⟨t, hCt, ht⟩ := ((eventually_mul_rpow_lt_nhdsGT_zero (sub_pos.2 hβ) C hc).and
-    (Ioo_mem_nhdsGT hr)).exists
+  -- At distance `t ∈ (0, r / 2]` the Hölder bound reads `c t ^ (2 - γ) ≤ C t ^ β`.
+  refine absurd (le_of_forall_mem_Ioc_rpow_le_mul_rpow (C := C / c) (half_pos hr)
+    fun t ht ↦ ?_) (not_le.2 hβ)
   have hnorm : ‖t • e‖ = t := by rw [norm_smul, he, mul_one, Real.norm_of_nonneg ht.1.le]
   have hmem : t • e ∈ ball (0 : EuclideanSpace ℝ ι) r := by
     rw [mem_ball_zero_iff, hnorm]
-    exact ht.2
+    linarith [ht.2]
   have hdist := h.dist_le hmem (mem_ball_self hr)
   rw [hg hmem, hg (mem_ball_self hr), dist_zero_right, hnorm, Real.dist_eq] at hdist
   have hval : radialSolution γ (t • e) + k - (radialSolution (ι := ι) γ 0 + k) =
       -(c * t ^ (2 - γ)) := by
     simp only [radialSolution, hnorm, norm_zero, Real.zero_rpow (by linarith : 2 - γ ≠ 0), c]
     ring
-  have hpos : 0 < t ^ (2 - γ) := Real.rpow_pos_of_pos ht.1 _
-  have hsplit : t ^ (β : ℝ) = t ^ ((β : ℝ) - (2 - γ)) * t ^ (2 - γ) := by
-    rw [← Real.rpow_add ht.1, sub_add_cancel]
-  rw [hval, abs_neg, abs_of_pos (mul_pos hc hpos), hsplit, ← mul_assoc] at hdist
-  linarith [mul_lt_mul_of_pos_right hCt hpos]
+  rw [hval, abs_neg, abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos ht.1 _))] at hdist
+  rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+  linarith
 
 /-- For `d ≥ 2` and `0 < γ < 2` there is an exponent `r > max 1 (2d / (d + 2))` with `γ r < d`, so
 that `‖x‖ ^ (-γ)` is `r`-integrable near the origin and acts continuously on `H¹₀`. -/
@@ -508,8 +506,7 @@ private theorem exists_mem_w1p0Submodule_ball_one_radialSolution_add [DecidableE
     (g := fun x ↦ radialSolution γ x + k)
     ((radialSolution_continuous hγ2).add continuous_const).continuousOn (fun x hx ↦ ?_) hu, hu, ?_⟩
   · -- On the unit sphere the shifted solution vanishes.
-    rw [show (Ω : Set (EuclideanSpace ℝ ι)) = ball 0 1 from rfl, frontier_ball 0 one_ne_zero,
-      mem_sphere_zero_iff_norm] at hx
+    rw [Opens.coe_mk, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
     simp only [radialSolution, hx, Real.one_rpow, k]
     ring
   -- The weak equation against test functions extends to `H¹₀(B)`, the datum being in `Lʳ(B)`

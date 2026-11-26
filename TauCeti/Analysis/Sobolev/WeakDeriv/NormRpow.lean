@@ -71,8 +71,9 @@ the coordinates above.
   weakly differentiable on every open set, with its classical derivative.
 * `TauCeti.locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow`: for `p > -1`, the `d`-th power
   of the norm of that derivative is locally integrable.
-* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt`: for `p > -d`, so is the radial
-  field `‖x‖ ^ p • x`, which for `p ≤ -1` is unbounded or discontinuous at the origin.
+* `TauCeti.hasWeakFDerivOn_norm_rpow_smul_self_of_neg_finrank_lt`: for `p > -d`, the radial field
+  `‖x‖ ^ p • x` is weakly differentiable on every open set, with its classical derivative; for
+  `p ≤ -1` it is unbounded or discontinuous at the origin.
 -/
 
 public section
