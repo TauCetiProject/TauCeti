@@ -25,7 +25,7 @@ whose ramification index it divides.
 
 * `Ideal.inertiaDeg_eq_of_bijective`: `r.inertiaDeg S = r.inertiaDeg R`.
 * `Ideal.ramificationIdx_eq_of_surjective`: `r.ramificationIdx S = r.ramificationIdx R`.
-* `Ideal.inertiaDeg_eq_one_of_surjective`: a maximal ideal of `T` has residue degree `1` over `S`
+* `Ideal.inertiaDeg_eq_one_of_surjective`: a prime ideal of `T` has residue degree `1` over `S`
   when `algebraMap S T` is surjective.
 * `Ideal.ramificationIdx_map_algEquiv`: `(P.map e).ramificationIdx R = P.ramificationIdx R` for
   an `R`-algebra isomorphism `e`.
@@ -66,20 +66,16 @@ theorem ramificationIdx_eq_of_surjective
 
 end ChangeOfBase
 
-/-- If the algebra map `S → T` is surjective, a maximal ideal of `T` has inertia degree `1` over
+/-- If the algebra map `S → T` is surjective, a prime ideal of `T` has inertia degree `1` over
 `S`. -/
 theorem inertiaDeg_eq_one_of_surjective {S T : Type*} [CommRing S] [CommRing T]
-    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsMaximal] :
+    [Algebra S T] (h : Function.Surjective (algebraMap S T)) (q : Ideal T) [q.IsPrime] :
     q.inertiaDeg S = 1 := by
-  have : (q.under S).IsMaximal := comap_isMaximal_of_surjective _ h
-  rw [inertiaDeg_eq_of_isMaximal (q.under S) q]
-  let : Field (S ⧸ q.under S) := Quotient.field _
-  let : Field (T ⧸ q) := Quotient.field _
-  refine Algebra.finrank_eq_one_iff_bijective_algebraMap.mpr
-    ⟨(algebraMap (S ⧸ q.under S) (T ⧸ q)).injective, fun y ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Quotient.mk_surjective y
-  obtain ⟨s, rfl⟩ := h x
-  exact ⟨Quotient.mk _ s, Quotient.algebraMap_mk_of_liesOver ..⟩
+  let := Localization.AtPrime.algebraOfLiesOver (q.under S) q
+  rw [inertiaDeg_def, Algebra.finrank_eq_one_iff_bijective_algebraMap]
+  -- The residue-field algebra map induced by `algebraOfLiesOver` is, by definition,
+  -- `ResidueField.map` of `algebraMap S T`.
+  exact (RingHom.surjectiveOnStalks_of_surjective h).residueFieldMap_bijective _ q rfl
 
 /-- The ramification index over `R` is invariant under `R`-algebra isomorphisms: the image of an
 ideal `P` under `e : S ≃ₐ[R] T` has the same ramification index over `R` as `P`. -/

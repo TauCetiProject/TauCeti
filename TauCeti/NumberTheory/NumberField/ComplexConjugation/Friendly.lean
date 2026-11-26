@@ -181,11 +181,12 @@ theorem isFriendly_iff_mod_four_eq_three [IsCyclotomicExtension {4} ℚ K]
   · rw [IsCyclotomicExtension.Rat.inertiaDeg_eq 4 K v.asIdeal (p := 2) (k := 1) (m := 1)
       rfl (by decide), orderOf_eq_one_iff.mpr (Subsingleton.elim _ _)]
     decide
-  · have h4 : ¬p ∣ 4 := fun h ↦ by
-      have := (Nat.prime_dvd_prime_iff_eq hp.out Nat.prime_two).mp
-        (hp.out.dvd_of_dvd_pow (show p ∣ 2 ^ 2 from h))
-      subst this
-      exact absurd hodd (by decide)
+  · -- An odd prime divisor of `4` would lie in `[2, 4]`, and none there is odd and divides `4`.
+    have h4 : ¬p ∣ 4 := fun h ↦ by
+      have := Nat.le_of_dvd (by norm_num) h
+      have := hp.out.two_le
+      have := Nat.odd_iff.mp hodd
+      interval_cases p <;> omega
     rw [IsCyclotomicExtension.Rat.inertiaDeg_eq_of_not_dvd p K v.asIdeal h4, ← ZMod.natCast_mod]
     have hp4 : p % 4 = 1 ∨ p % 4 = 3 := by
       rcases hodd with ⟨k, rfl⟩
