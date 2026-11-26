@@ -51,13 +51,6 @@ theorem negLogDerivTaylorCoeff_def (χ : DirichletCharacter ℂ N) (k : ℕ) (s 
     χ.negLogDerivTaylorCoeff 0 s = -logDeriv (LFunction χ) s := by
   simp [negLogDerivTaylorCoeff_def]
 
-omit [NeZero N] in
-/-- A Dirichlet twist of the von Mangoldt series has abscissa of absolute convergence at most 1. -/
-theorem abscissaOfAbsConv_twist_vonMangoldt_le_one (χ : DirichletCharacter ℂ N) :
-    abscissaOfAbsConv (↗χ * ↗Λ) ≤ 1 := by
-  apply abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable'
-  exact fun _ hz ↦ LSeriesSummable_twist_vonMangoldt χ (by exact_mod_cast hz)
-
 /-- Right of the line `Re s = 1`, the Taylor coefficient is the twisted von Mangoldt
 Dirichlet series weighted by `(log n)^k / k!`. -/
 theorem negLogDerivTaylorCoeff_eq_LSeries (χ : DirichletCharacter ℂ N) (k : ℕ) {s : ℂ}
@@ -88,37 +81,6 @@ theorem hasSum_negLogDerivTaylorCoeff (χ : DirichletCharacter ℂ N) (k : ℕ) 
     Complex.ofReal_pow]
   rw [div_mul_eq_mul_div]
 
-omit [NeZero N] in
-private theorem norm_add_term_twist_vonMangoldt_le (χ ψ : DirichletCharacter ℂ N)
-    {σ : ℝ} {s : ℂ} (hs : σ ≤ s.re) (n : ℕ) (hψ : (ψ n).im = 0) :
-    ‖term (↗χ * ↗Λ) s n + term (↗(χ * ψ) * ↗Λ) s n‖ ≤
-      (term (↗(1 : DirichletCharacter ℂ N) * ↗Λ) σ n + term (↗ψ * ↗Λ) σ n).re := by
-  let A : ℕ → ℂ := ↗(1 : DirichletCharacter ℂ N) * ↗Λ + ↗ψ * ↗Λ
-  let B : ℕ → ℂ := ↗χ * ↗Λ + ↗(χ * ψ) * ↗Λ
-  have hA : 0 ≤ A n := by
-    rw [Complex.le_def]
-    simp only [A, Pi.add_apply, Pi.mul_apply, ← add_mul, Complex.zero_re, Complex.zero_im,
-      mul_comm _ (↑(Λ n) : ℂ), Complex.re_ofReal_mul, Complex.im_ofReal_mul]
-    by_cases hu : IsUnit (n : ZMod N)
-    · simp only [MulChar.one_apply hu, Complex.add_re, Complex.add_im, Complex.one_re,
-        Complex.one_im, hψ, add_zero, mul_zero, and_true]
-      have h := (Complex.abs_re_le_norm (ψ n)).trans (ψ.norm_le_one n)
-      exact mul_nonneg vonMangoldt_nonneg (by linarith [(abs_le.mp h).1])
-    · rw [MulChar.map_nonunit _ hu, ψ.map_nonunit hu]
-      simp
-  have hB : B n = χ n * A n := by
-    have hχ : χ n * (1 : DirichletCharacter ℂ N) n = χ n := by
-      rw [← MulChar.mul_apply, mul_one]
-    simp only [A, B, Pi.add_apply, Pi.mul_apply, MulChar.mul_apply]
-    rw [mul_add, ← mul_assoc, ← mul_assoc, hχ]
-  simp only [← term_add_apply]
-  calc
-    ‖term B s n‖ ≤ ‖term A s n‖ := norm_term_le s (by
-      rw [hB, norm_mul]
-      exact mul_le_of_le_one_left (norm_nonneg _) (χ.norm_le_one n))
-    _ ≤ ‖term A σ n‖ := norm_term_le_of_re_le_re A (by simpa using hs) n
-    _ = (term A σ n).re := (Complex.re_eq_norm.mpr (term_nonneg hA σ)).symm
-
 /-- **Four-character Taylor coefficient bound.** For a real-valued character `ψ`, the
 principal and `ψ` coefficients at real `σ > 1` dominate the norm of the sum for `χ` and
 `χψ` at any `s` with `σ ≤ Re s`. In particular the sum of the real parts of all four
@@ -139,7 +101,7 @@ theorem norm_add_negLogDerivTaylorCoeff_le (χ ψ : DirichletCharacter ℂ N)
   have hw : 0 ≤ Real.log n ^ k / (k.factorial : ℝ) :=
     div_nonneg (pow_nonneg (Real.log_natCast_nonneg n) k) (Nat.cast_nonneg _)
   simp only [← mul_add, norm_mul, Complex.norm_of_nonneg hw, Complex.re_ofReal_mul]
-  exact mul_le_mul_of_nonneg_left (norm_add_term_twist_vonMangoldt_le χ ψ hs n (hψ n)) hw
+  exact mul_le_mul_of_nonneg_left (χ.norm_add_term_twist_vonMangoldt_le ψ hs n (hψ n)) hw
 
 /-- The four Taylor coefficients in the Deuring–Heilbronn argument have nonnegative sum
 of real parts. This holds for every `σ > 1`, and hence at the usual centres `2` and `2 + it`. -/
