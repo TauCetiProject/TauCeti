@@ -8,8 +8,6 @@ module
 public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Tactic.FinCases
-import Mathlib.Tactic.Linarith
 
 /-!
 # Holes obstruct simple connectivity
@@ -25,10 +23,6 @@ while it is `±1`.
 
 ## Main definitions
 
-* `TauCeti.faceSum c f`: the sum `c(f, e₁) + c(f, e₂) − c(f, e₃)` of a cochain round a face, so
-  that `c` is closed on `R` when it vanishes on every face of `R`.
-* `TauCeti.faceSign f`: `1` on white faces and `−1` on black ones, the orientation making
-  `faceSign f * faceSum c f` the counterclockwise circulation of `c` round `f`.
 * `TauCeti.rayCochain q`: the cochain dual to the ray of faces to the right of the face `q`.
 
 ## Main statements
@@ -50,65 +44,7 @@ public section
 
 namespace TauCeti
 
-/-- The sum `c(f, e₁) + c(f, e₂) − c(f, e₃)` of a cochain round a face `f`. A cochain is closed on
-a region when this vanishes on every face of the region. -/
-def faceSum (c : TriEdge → ℤ) (f : TriFace) : ℤ :=
-  c (f.edge 0) + c (f.edge 1) - c (f.edge 2)
-
-/-- The orientation sign of a face: `1` for white faces and `−1` for black ones. Round a white face
-`faceSum` runs counterclockwise and round a black face clockwise. -/
-def faceSign (f : TriFace) : ℤ :=
-  if f.isWhite then 1 else -1
-
-variable {R : Set TriFace} {c : TriEdge → ℤ} {f : TriFace}
-
-theorem faceSum_def (c : TriEdge → ℤ) (f : TriFace) :
-    faceSum c f = c (f.edge 0) + c (f.edge 1) - c (f.edge 2) := (rfl)
-
-theorem faceSign_def (f : TriFace) : faceSign f = if f.isWhite then 1 else -1 := (rfl)
-
-theorem isClosedCochainOn_iff_faceSum : IsClosedCochainOn R c ↔ ∀ f ∈ R, faceSum c f = 0 := by
-  simp only [isClosedCochainOn_def, faceSum_def, sub_eq_zero]
-
-/-- The coboundary of a function sums to zero round every face. -/
-theorem faceSum_coboundary (g : ℤ × ℤ → ℤ) (f : TriFace) :
-    faceSum (fun e => g e.target - g e.v) f = 0 :=
-  isClosedCochainOn_iff_faceSum.1 (isClosedCochainOn_coboundary Set.univ g) f (Set.mem_univ f)
-
-/-! ### The other face across an edge -/
-
-/-- The face across the edge of direction `k` of `f`. -/
-def TriFace.across (f : TriFace) (k : Fin 3) : TriFace :=
-  if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace
-
-theorem TriFace.across_def (f : TriFace) (k : Fin 3) :
-    f.across k = if f.isWhite then (f.edge k).blackFace else (f.edge k).whiteFace := (rfl)
-
-@[simp] theorem TriFace.isWhite_across (f : TriFace) (k : Fin 3) :
-    (f.across k).isWhite = !f.isWhite := by
-  rw [TriFace.across_def]
-  cases f.isWhite <;> simp
-
-theorem TriFace.edge_mem_edges_across (f : TriFace) (k : Fin 3) :
-    f.edge k ∈ (f.across k).edges := by
-  rw [TriFace.across_def]
-  split_ifs
-  · exact (f.edge k).mem_blackFace_edges
-  · exact (f.edge k).mem_whiteFace_edges
-
-@[simp] theorem TriFace.edge_across (f : TriFace) (k : Fin 3) : (f.across k).edge k = f.edge k := by
-  have := TriFace.mem_edges_iff_edge_eq.1 (f.edge_mem_edges_across k)
-  rwa [TriFace.edge_k] at this
-
-theorem TriFace.across_ne (f : TriFace) (k : Fin 3) : f.across k ≠ f := fun h => by
-  have := congrArg TriFace.isWhite h
-  cases hf : f.isWhite <;> simp [hf] at this
-
-@[simp] theorem TriFace.across_across (f : TriFace) (k : Fin 3) : (f.across k).across k = f := by
-  rw [TriFace.across_def (f.across k), TriFace.edge_across, TriFace.isWhite_across]
-  cases hf : f.isWhite
-  · exact (TriEdge.eq_blackFace_of_mem_edges (f.edge_mem_edges k) hf).symm
-  · exact (TriEdge.eq_whiteFace_of_mem_edges (f.edge_mem_edges k) hf).symm
+variable {R : Set TriFace} {f : TriFace}
 
 /-! ### Discrete Stokes -/
 
@@ -133,10 +69,7 @@ theorem sum_faceSign_mul_faceSum_eq_zero (Q : Finset TriFace) (d : TriEdge → �
     have hq : q ∈ Q := (Finset.mem_product.1 ha).1
     dsimp only
     split_ifs with h
-    · have : faceSign (q.across k) = -faceSign q := by
-        simp only [faceSign_def, TriFace.isWhite_across]
-        cases q.isWhite <;> simp
-      rw [this, TriFace.edge_across]
+    · rw [faceSign_across, TriFace.edge_across]
       ring
     · rw [hd q hq k h]
       ring
@@ -177,23 +110,13 @@ theorem rayCochain_def (q : TriFace) (e : TriEdge) :
 theorem faceSum_rayCochain_of_ne {q : TriFace} (hf : f ≠ q) : faceSum (rayCochain q) f = 0 := by
   obtain ⟨⟨a, b⟩, cq⟩ := q
   obtain ⟨⟨x, y⟩, cf⟩ := f
-  have hxy : cf = cq → ¬(x = a ∧ y = b) := fun h1 h2 => hf (by rw [h1, h2.1, h2.2])
-  clear hf
-  cases cf <;> cases cq <;>
-    simp only [Bool.true_eq_false, Bool.false_eq_true, false_implies, true_implies] at hxy <;>
-    simp only [faceSum_def, Fin.isValue, TriFace.edge_mk_false, TriFace.edge_mk_true, ↓reduceIte,
-      Prod.mk_add_mk, add_zero, rayCochain_def, ne_eq, not_true_eq_false, false_and,
-      TriEdge.mk.injEq, Prod.mk.injEq, Fin.reduceEq, and_false, one_ne_zero, not_false_eq_true,
-      true_and, zero_add, and_true, sub_add_cancel_left, neg_eq_zero, ite_eq_right_iff, imp_false,
-      not_and, Bool.true_eq_false, and_self, sub_self, zero_ne_one] <;>
-    (try split_ifs) <;> omega
+  cases cf <;> cases cq <;> simp [faceSum_def, rayCochain_def, TriFace.ext_iff] at hf ⊢ <;> grind
 
 /-- The circulation of the ray cochain of `q` round `q` is `1`. -/
 theorem faceSign_mul_faceSum_rayCochain_self (q : TriFace) :
     faceSign q * faceSum (rayCochain q) q = 1 := by
   obtain ⟨⟨a, b⟩, cq⟩ := q
-  cases cq <;>
-    simp [faceSign_def, faceSum_def, rayCochain_def, TriFace.edge_mk_true, TriFace.edge_mk_false]
+  cases cq <;> simp [faceSum_def, rayCochain_def]
 
 /-! ### Holes -/
 
@@ -211,16 +134,14 @@ theorem not_isSimplyConnectedRegion_of_hole {Q : Finset TriFace} (hQ : Q.Nonempt
       faceSum_rayCochain_of_ne fun h => hQR q₀ hq₀ (h ▸ hf)
   obtain ⟨g, hg⟩ := isExactCochainOn_def.1 (hR.isExactCochainOn_of_isClosedCochainOn _ hclosed)
   rw [isCochainPrimitiveOn_def] at hg
-  set d : TriEdge → ℤ := fun e => rayCochain q₀ e - (g e.target - g e.v) with hd_def
+  set d : TriEdge → ℤ := rayCochain q₀ - fun e => g e.target - g e.v with hd_def
   have hface : ∀ f, faceSum d f = faceSum (rayCochain q₀) f := fun f => by
-    have := faceSum_coboundary g f
-    simp only [faceSum_def, hd_def] at this ⊢
-    linarith
+    rw [hd_def, faceSum_sub, faceSum_coboundary, sub_zero]
   have hzero := sum_faceSign_mul_faceSum_eq_zero Q d fun q hq k hk => by
     have hR' : q.across k ∈ R :=
       (hnbr q hq _ _ (q.edge_mem_edges k) (q.edge_mem_edges_across k)).resolve_left hk
-    simp only [hd_def]
-    rw [hg _ (mem_regionEdges.2 ⟨_, hR', q.edge_mem_edges_across k⟩), sub_self]
+    rw [hd_def, Pi.sub_apply, hg _ (mem_regionEdges.2 ⟨_, hR', q.edge_mem_edges_across k⟩),
+      sub_self]
   simp_rw [hface] at hzero
   rw [Finset.sum_eq_single_of_mem q₀ hq₀ fun f _ hf => by
     rw [faceSum_rayCochain_of_ne hf, mul_zero], faceSign_mul_faceSum_rayCochain_self] at hzero

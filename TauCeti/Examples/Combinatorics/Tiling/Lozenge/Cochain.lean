@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
+public import TauCeti.Combinatorics.Tiling.Lozenge.HexGraph
 public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 /-!
@@ -13,11 +14,12 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 * A single face `W(0)` is simply connected.
 * The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)` is not simply
-  connected: the cochain equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for `i ≥ 1`
-  (those crossed by the path of faces `B(1,0), W(1,0), B(2,0), W(2,0), …`) and `0` elsewhere is
-  closed on every face except `W(0)`, while it sums to `1` around the boundary of `W(0)`, whose
-  three edges are edges of `R_ring`. The same cochain shows that the plane minus `W(0)` is not
-  simply connected, so the simple connectivity of the plane needs every face.
+  connected: the ray cochain `TauCeti.rayCochain W(0)`, equal to `1` on the edges `((i, 0), 2)`
+  and `((i, 0), 3)` for `i ≥ 1` (those crossed by the path of faces `B(1,0), W(1,0), B(2,0),
+  W(2,0), …`) and `0` elsewhere, is closed on every face except `W(0)`, while it sums to `1`
+  around the boundary of `W(0)`, whose three edges are edges of `R_ring`. The same cochain shows
+  that the plane minus `W(0)` is not simply connected, so the simple connectivity of the plane
+  needs every face.
 * The unit hexagon around `0` is simply connected, by shelling in the order `W(0)`, `B(0)`,
   `W(−e₁)`, `B(−e₃)`, `W(−e₃)` (each glued along one edge, adding one new vertex) and `B(−e₂)`
   (glued along two edges).
@@ -38,41 +40,32 @@ open TauCeti
 example : IsSimplyConnectedRegion {(⟨(0, 0), true⟩ : TriFace)} :=
   isSimplyConnectedRegion_singleton _
 
-/-- The cochain equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for `i ≥ 1`, and `0`
-elsewhere. -/
-def ringCochain (e : TriEdge) : ℤ :=
-  if e.k ≠ 0 ∧ 1 ≤ e.v.1 ∧ e.v.2 = 0 then 1 else 0
+/-- The ray cochain of `W(0)`, equal to `1` on the edges `((i, 0), 2)` and `((i, 0), 3)` for
+`i ≥ 1` and `0` elsewhere, is closed on every face other than `W(0)`. -/
+theorem isClosedCochainOn_rayCochain_whiteZero :
+    IsClosedCochainOn {f | f ≠ ⟨(0, 0), true⟩} (rayCochain ⟨(0, 0), true⟩) :=
+  isClosedCochainOn_iff_faceSum.2 fun _ hf => faceSum_rayCochain_of_ne hf
 
-/-- `ringCochain` is closed on every face other than `W(0)`. -/
-theorem isClosedCochainOn_ringCochain :
-    IsClosedCochainOn {f | f ≠ ⟨(0, 0), true⟩} ringCochain := by
-  refine isClosedCochainOn_def.2 ?_
-  rintro ⟨⟨x, y⟩, _ | _⟩ hf
-  · simp only [TriFace.edge_mk_false, ringCochain]
-    split_ifs <;> simp_all
-  · simp only [Set.mem_ofPred_eq, ne_eq, TriFace.mk.injEq, Prod.mk.injEq, and_true] at hf
-    simp only [TriFace.edge_mk_true, ringCochain]
-    split_ifs <;> simp_all <;> omega
-
-/-- `ringCochain` is not exact on any region containing the three faces `B(0, −1)`, `B(1, 0)` and
-`B(0, 0)`, which carry the three edges of `W(0)`. -/
-theorem not_isExactCochainOn_ringCochain {R : Set TriFace} (h₁ : ⟨(0, -1), false⟩ ∈ R)
-    (h₂ : ⟨(1, 0), false⟩ ∈ R) (h₃ : ⟨(0, 0), false⟩ ∈ R) : ¬ IsExactCochainOn R ringCochain := by
+/-- The ray cochain of `W(0)` is not exact on any region containing the three faces `B(0, −1)`,
+`B(1, 0)` and `B(0, 0)`, which carry the three edges of `W(0)`. -/
+theorem not_isExactCochainOn_rayCochain_whiteZero {R : Set TriFace} (h₁ : ⟨(0, -1), false⟩ ∈ R)
+    (h₂ : ⟨(1, 0), false⟩ ∈ R) (h₃ : ⟨(0, 0), false⟩ ∈ R) :
+    ¬ IsExactCochainOn R (rayCochain ⟨(0, 0), true⟩) := by
   intro h
   obtain ⟨g, hg⟩ := isExactCochainOn_def.1 h
   rw [isCochainPrimitiveOn_def] at hg
   have e₁ := hg ⟨(0, 0), 0⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₁)))
   have e₂ := hg ⟨(1, 0), 1⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₂)))
   have e₃ := hg ⟨(0, 0), 2⟩ (mem_regionEdges_iff.2 (Or.inr (by simpa using h₃)))
-  simp only [ringCochain, TriEdge.target_mk, latticeDir_zero, latticeDir_one,
+  simp only [rayCochain_def, TriEdge.target_mk, latticeDir_zero, latticeDir_one,
     latticeDir_two] at e₁ e₂ e₃
   norm_num at e₁ e₂ e₃
   omega
 
 /-- The plane minus `W(0)` is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion {f | f ≠ ⟨(0, 0), true⟩} := fun h =>
-  not_isExactCochainOn_ringCochain (by simp) (by simp) (by simp)
-    (h.isExactCochainOn_of_isClosedCochainOn _ isClosedCochainOn_ringCochain)
+  not_isExactCochainOn_rayCochain_whiteZero (by simp) (by simp) (by simp)
+    (h.isExactCochainOn_of_isClosedCochainOn _ isClosedCochainOn_rayCochain_whiteZero)
 
 /-- The ring `R_ring` of the twelve faces other than `W(0)` that meet `W(0)`. -/
 def ringRegion : Set TriFace :=
@@ -82,12 +75,13 @@ def ringRegion : Set TriFace :=
 
 /-- The ring around `W(0)` is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion ringRegion := fun h =>
-  not_isExactCochainOn_ringCochain (by simp [ringRegion]) (by simp [ringRegion])
+  not_isExactCochainOn_rayCochain_whiteZero (by simp [ringRegion]) (by simp [ringRegion])
     (by simp [ringRegion])
-    (h.isExactCochainOn_of_isClosedCochainOn _ (isClosedCochainOn_ringCochain.mono fun f hf => by
-      simp only [ringRegion, Set.mem_insert_iff, Set.mem_singleton_iff] at hf
-      rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-        simp))
+    (h.isExactCochainOn_of_isClosedCochainOn _
+      (isClosedCochainOn_rayCochain_whiteZero.mono fun f hf => by
+        simp only [ringRegion, Set.mem_insert_iff, Set.mem_singleton_iff] at hf
+        rcases hf with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+          simp))
 
 /-- The unit hexagon around `0` is simply connected, by shelling. -/
 example : IsSimplyConnectedRegion
@@ -118,14 +112,6 @@ example : IsCochainPrimitiveOn Set.univ (fun e => if e.k = 1 then 0 else 1) fun 
 /-- The cochain of the all-type-3 tiling `M₃` is `0`, with primitive `0`. -/
 example : IsCochainPrimitiveOn Set.univ 0 0 := isCochainPrimitiveOn_def.2 fun _ _ => by simp
 
-/-- The faces sharing an edge with `W(0)` are `W(0)` itself and `B(0, −1)`, `B(1, 0)`, `B(0)`. -/
-theorem eq_of_mem_edges_whiteZero {g : TriFace} {e : TriEdge}
-    (he : e ∈ (⟨(0, 0), true⟩ : TriFace).edges) (hg : e ∈ g.edges) :
-    g = ⟨(0, 0), true⟩ ∨ g = ⟨(0, -1), false⟩ ∨ g = ⟨(1, 0), false⟩ ∨ g = ⟨(0, 0), false⟩ := by
-  simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he
-  rcases TriFace.mem_edges_iff.1 hg with rfl | rfl <;> rcases he with rfl | rfl | rfl <;>
-    simp [Prod.ext_iff]
-
 /-- `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
 `not_isSimplyConnectedRegion_of_hole`, so it is not simply connected. -/
 example : ¬ IsSimplyConnectedRegion ringRegion :=
@@ -133,6 +119,11 @@ example : ¬ IsSimplyConnectedRegion ringRegion :=
     (fun q hq => by rw [Finset.mem_singleton.1 hq]; simp [ringRegion])
     (fun q hq g e he hg => by
       rw [Finset.mem_singleton.1 hq] at he
-      rcases eq_of_mem_edges_whiteZero he hg with rfl | rfl | rfl | rfl <;> simp [ringRegion])
+      by_cases hne : g = ⟨(0, 0), true⟩
+      · exact Or.inl (Finset.mem_singleton.2 hne)
+      have hadj := hexGraph_adj_of_mem_edges (Ne.symm hne) he hg
+      rw [← SimpleGraph.mem_neighborSet, hexGraph_neighborSet_mk_true] at hadj
+      simp only [Set.mem_insert_iff, Set.mem_singleton_iff] at hadj
+      rcases hadj with rfl | rfl | rfl <;> simp [ringRegion])
 
 end TauCeti.Examples.Cochain
