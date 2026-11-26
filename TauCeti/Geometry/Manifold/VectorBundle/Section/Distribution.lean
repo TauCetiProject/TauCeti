@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupport.Topo
 public import TauCeti.Geometry.Manifold.VectorBundle.Density
 public import TauCeti.Analysis.Distribution.TestFunction.DualEquiv
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
@@ -59,6 +59,8 @@ charts whose source does not contain `x`
   test topology of any covering family of smooth frames, continuously identified with bundle tests.
 * `Bundle.Trivialization.chartTestCLM`: extension of native test functions on a chart target to
   bundle tests, as a continuous linear map.
+* `Bundle.Trivialization.chartLocalizationCLM`: the chart localization of bundle tests, as a
+  continuous linear map into the test functions supported in a compact subset of the chart target.
 * `Bundle.Trivialization.chartDistributionCLM`: the local representative of a functional on bundle
   tests, a distribution on the chart target with values in `F →L[ℝ] W`.
 * `TauCeti.BundleTest.ext_chartDistributionCLM`: functionals on bundle tests are determined by
@@ -457,6 +459,48 @@ theorem chartDistributionCLM_delta_of_notMem {x : M} (hx : x ∉ c.source) (ℓ 
     t.chartDistributionCLM c hc hct (BundleTest.delta x ℓ) = 0 := by
   ext φ v
   simp [t.chartTestCLM_apply_of_notMem c hc hct _ hx]
+
+end Bundle.Trivialization
+
+/-! ### Chart localizations of bundle tests -/
+
+namespace Bundle.Trivialization
+
+open TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+  (c : OpenPartialHomeomorph M E)
+  (hc : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) (hct : c.source ⊆ t.baseSet)
+  (ψ : C^∞⟮I, M; ℝ⟯) (L : Compacts E) (hL : (L : Set E) ⊆ c.target)
+  (hψ : MapsTo c (tsupport ψ) L)
+
+/-- The **chart localization** `Φ ↦ (ψ Φ) ∘ c⁻¹` of bundle tests, read in the frame `t`
+(`Bundle.Trivialization.chartLocalization`), as a continuous linear map into the test functions
+supported in the compact set `L`. -/
+def chartLocalizationCLM : BundleTest I F V →L[ℝ] 𝓓_{L}(E, F) where
+  toLinearMap := t.chartLocalization (n := ⊤) c hc hct ψ L hL hψ ∘ₗ
+    (compactlySupported I F ∞ V).subtype ∘ₗ (BundleTest.ofCompactlySupported I F V).symm.toLinearMap
+  cont := by
+    let := frameTopology (I := I) (n := ∞) (fun x : M ↦ trivializationAt F V x)
+      (fun x ↦ ⟨_, (trivializationAt F V x).open_baseSet⟩) fun _ ↦ subset_rfl
+    exact (t.continuous_chartLocalization c hc hct ψ L hL hψ _ _ _
+        fun x ↦ ⟨x, mem_baseSet_trivializationAt F V x⟩).comp
+      (continuous_val_compactlySupportedTopology (I := I) (n := ∞) _ _ _)
+
+/-- The chart localization of a bundle test `Φ` is the chart localization of its underlying
+section. -/
+theorem chartLocalizationCLM_apply (Φ : BundleTest I F V) :
+    t.chartLocalizationCLM c hc hct ψ L hL hψ Φ =
+      t.chartLocalization c hc hct ψ L hL hψ ((BundleTest.ofCompactlySupported I F V).symm Φ).val :=
+  (rfl)
 
 end Bundle.Trivialization
 
