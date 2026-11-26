@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Schmidt
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 public import TauCeti.MeasureTheory.Function.L2Space
-public import TauCeti.Order.Northcott.Enumeration
+public import TauCeti.Analysis.InnerProductSpace.Variational.Eigenbasis
 
 /-!
 # The Dirichlet eigenvalues as a sequence
@@ -40,7 +40,8 @@ The eigenvalues are indexed by `ℕ` with `λₖ → ∞` because
   the eigenvalues is finite.
 
 Any infinite family with finite sublevel sets can be listed in nondecreasing order
-(`exists_equiv_monotone_comp_of_finite_setOf_le`), and reindexing the eigenbasis of
+(`exists_equiv_monotone_comp_of_finite_setOf_le`, applied to eigenbases in
+`IsCoercive.exists_equiv_nat_monotone_of_hilbertBasis`), and reindexing the eigenbasis of
 `TauCeti.PDE.exists_hilbertBasis_forall_isDirichletEigenvalue` along that enumeration gives the
 sequence. In dimension zero `L²(Ω)` is one-dimensional and the spectrum is a single eigenvalue,
 which is why positive dimension is assumed.
@@ -111,20 +112,13 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
           (dirichletSolutionOperator hcoeff hcoercive f) := by
   obtain ⟨s, B, kappa, u, hB, hpos, heig, hvalue, heq, hsum⟩ :=
     exists_hilbertBasis_forall_isDirichletEigenvalue hcoeff hcoercive hOmega hsymm
-  have hfin (R : ℝ) : {g : s | kappa g ≤ R}.Finite :=
-    hcoercive.finite_setOf_le_of_orthonormal
-      (W1p0.isCompactOperator_valueL (by simp) hOmega) B.orthonormal hpos (u := u)
-      (fun g ↦ by rw [hB]; simpa only [W1p0.valueL_apply] using hvalue g)
-      (fun g v ↦ by
-        simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq g v) R
-  -- The basis is infinite, since `L²(Ω)` is infinite-dimensional.
-  have : Infinite s := by
-    rw [← not_finite_iff_infinite]
-    intro hs
-    have := Fintype.ofFinite s
-    exact L2.not_finiteDimensional_restrict_of_isOpen (𝕜 := ℝ) mu Omega.isOpen
-      hOmega_nonempty (Module.Finite.of_basis B.toOrthonormalBasis.toBasis)
-  obtain ⟨e, he⟩ := exists_equiv_monotone_comp_of_finite_setOf_le kappa hfin
+  have hvalue' (g : s) : W1p.value (u g : W1p mu Omega 2) = B g := by
+    rw [hvalue g, hB]
+  obtain ⟨e, he, htend⟩ := hcoercive.exists_equiv_nat_monotone_of_hilbertBasis
+    (W1p0.isCompactOperator_valueL (by simp) hOmega)
+    (L2.not_finiteDimensional_restrict_of_isOpen (𝕜 := ℝ) mu Omega.isOpen hOmega_nonempty) B hpos
+    (u := u) (fun g ↦ by simpa only [W1p0.valueL_apply] using hvalue' g)
+    (fun g v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using heq g v)
   -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
   let basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
     HilbertBasis.mk (B.orthonormal.comp e e.injective)
@@ -133,8 +127,6 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
     simp only [basis, HilbertBasis.coe_mk, Function.comp_apply]
   have hrepr (f : Lp ℝ 2 (mu.restrict Omega)) (k : ℕ) : basis.repr f k = B.repr f (e k) := by
     rw [HilbertBasis.repr_apply_apply, HilbertBasis.repr_apply_apply, hbasis]
-  have hvalue' (g : s) : W1p.value (u g : W1p mu Omega 2) = B g := by
-    rw [hvalue g, hB]
   -- A Dirichlet eigenvalue occurs in the sequence: otherwise its eigenfunction would be
   -- orthogonal to the whole eigenbasis.
   have hiff (kappa' : ℝ) :
@@ -147,7 +139,7 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
       (fun u v ↦ by simpa only [energyFormH1L0_apply] using hsymm u v) hw
       fun v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using hweq v
     exact ⟨e.symm g, by rw [Equiv.apply_symm_apply, hg]⟩
-  refine ⟨basis, kappa ∘ e, u ∘ e, he, tendsto_comp_atTop_of_finite_setOf_le hfin e.injective,
+  refine ⟨basis, kappa ∘ e, u ∘ e, he, htend,
     ?_, fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq (e k) v, hiff,
     fun f ↦ ?_⟩
   · obtain ⟨k, hk⟩ := (hiff _).1

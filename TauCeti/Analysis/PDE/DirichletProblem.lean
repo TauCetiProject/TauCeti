@@ -1131,11 +1131,6 @@ theorem memLp_energyIntegrand_one_zero_zero [DecidableEq ι] :
     aestronglyMeasurable_const aestronglyMeasurable_const aestronglyMeasurable_const
     (fun _x hx eta xi ↦ h1.upper_bound hx eta xi) (fun _ _ ↦ by simp) (fun _ _ ↦ by simp)
 
-/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
-theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u := by
-  rw [energyFormH1_one_zero_zero_eq_inner, energyFormH1_one_zero_zero_eq_inner, real_inner_comm]
-
 /-- The energy form of the Laplacian model `-Δ` is nonnegative: `a(w, w) = ∫_Ω |∇w|²`. -/
 theorem energyFormH1_one_zero_zero_self_nonneg [DecidableEq ι] (w : W1p mu Omega 2) :
     0 ≤ energyFormH1 (fun _ => 1) 0 0 w w := by

@@ -31,7 +31,8 @@ along a compact map of dense range
 with every eigenvalue moved by `-β`, and finitely many of its eigenvalues
 lie below any bound (`TauCeti.IsCoercive.finite_setOf_le_of_orthonormal`). The basis is
 infinite because `H` is infinite-dimensional, so it can be enumerated by `ℕ` in nondecreasing
-order of eigenvalue (`TauCeti.exists_equiv_monotone_comp_of_finite_setOf_le`). Every eigenvalue
+order of eigenvalue (`IsCoercive.exists_equiv_nat_monotone_of_hilbertBasis`, through
+`TauCeti.exists_equiv_monotone_comp_of_finite_setOf_le`). Every eigenvalue
 occurs, since an eigenfunction of any other value would be orthogonal to the whole basis
 (`IsCoercive.exists_eq_of_hilbertBasis_of_forall_apply_eq_smul_inner`).
 
@@ -52,6 +53,35 @@ noncomputable section
 
 open Filter
 open scoped InnerProductSpace
+
+namespace IsCoercive
+
+variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+  [NormedAddCommGroup H] [InnerProductSpace ℝ H]
+  {B : V →L[ℝ] V →L[ℝ] ℝ} {J : V →L[ℝ] H}
+
+/-- **An eigenbasis in nondecreasing order of eigenvalue.** Let `J` be compact and let the images
+`J uᵢ` of eigenfunctions of a coercive form `B`, with eigenvalues `κᵢ > 0`, form an orthonormal
+basis of an infinite-dimensional `H`. Then the index set can be enumerated by `ℕ` so that the
+eigenvalues are nondecreasing and tend to infinity: finitely many of them lie below any bound
+(`IsCoercive.finite_setOf_le_of_orthonormal`), and the basis is infinite. -/
+theorem exists_equiv_nat_monotone_of_hilbertBasis (hB : IsCoercive B) (hJc : IsCompactOperator J)
+    (hH : ¬ FiniteDimensional ℝ H) {ι : Type*} (b : HilbertBasis ι ℝ H) {κ : ι → ℝ} {u : ι → V}
+    (hκ : ∀ i, 0 < κ i) (hJu : ∀ i, J (u i) = b i)
+    (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) :
+    ∃ σ : ℕ ≃ ι, Monotone (κ ∘ σ) ∧ Tendsto (κ ∘ σ) atTop atTop := by
+  have hfin (R : ℝ) : {i | κ i ≤ R}.Finite :=
+    hB.finite_setOf_le_of_orthonormal hJc b.orthonormal hκ hJu heq R
+  -- The basis is infinite, since `H` is infinite-dimensional.
+  have : Infinite ι := by
+    rw [← not_finite_iff_infinite]
+    intro hι
+    have := Fintype.ofFinite ι
+    exact hH (Module.Finite.of_basis b.toOrthonormalBasis.toBasis)
+  obtain ⟨σ, hσ⟩ := TauCeti.exists_equiv_monotone_comp_of_finite_setOf_le κ hfin
+  exact ⟨σ, hσ, TauCeti.tendsto_comp_atTop_of_finite_setOf_le hfin σ.injective⟩
+
+end IsCoercive
 
 namespace TauCeti
 
@@ -85,21 +115,13 @@ theorem exists_hilbertBasis_nat_monotone_of_garding (hJc : IsCompactOperator J)
   obtain ⟨s, b, κ, u, hb, hκ, -, hJu, heq, -⟩ :=
     hB.exists_hilbertBasis_forall_apply_eq_smul_inner hJc hJ hsymmB
   have hJu' (x : s) : J (u x) = b x := by rw [hJu, hb]
-  have hfin (R : ℝ) : {x : s | κ x ≤ R}.Finite :=
-    hB.finite_setOf_le_of_orthonormal hJc b.orthonormal hκ hJu' heq R
   -- The eigenvalue equations of `B` are those of `Q`, moved by `β`.
   have heqQ (x : s) (v : V) : Q (u x) v = (κ x - β) * ⟪J (u x), J v⟫_ℝ := by
     have h := heq x v
     rw [hBQ] at h
     rw [sub_mul]
     linarith
-  -- The basis is infinite, since `H` is infinite-dimensional.
-  have : Infinite s := by
-    rw [← not_finite_iff_infinite]
-    intro hs
-    have := Fintype.ofFinite s
-    exact hH (Module.Finite.of_basis b.toOrthonormalBasis.toBasis)
-  obtain ⟨σ, hσ⟩ := exists_equiv_monotone_comp_of_finite_setOf_le κ hfin
+  obtain ⟨σ, hσ, htend⟩ := hB.exists_equiv_nat_monotone_of_hilbertBasis hJc hH b hκ hJu' heq
   have hiff (kappa' : ℝ) : (∃ w : V, w ≠ 0 ∧ ∀ v, Q w v = kappa' * ⟪J w, J v⟫_ℝ) ↔
       ∃ k, κ (σ k) - β = kappa' := by
     refine ⟨fun ⟨w, hw, hweq⟩ ↦ ?_, fun ⟨k, hk⟩ ↦ ⟨u (σ k), fun h0 ↦ ?_, hk ▸ heqQ (σ k)⟩⟩
@@ -112,7 +134,7 @@ theorem exists_hilbertBasis_nat_monotone_of_garding (hJc : IsCompactOperator J)
   refine ⟨b.reindex σ.symm, fun k ↦ κ (σ k) - β, u ∘ σ,
     fun i j hij ↦ sub_le_sub_right (hσ hij) β, ?_, fun k ↦ ?_, fun k v ↦ heqQ (σ k) v, hiff⟩
   · simpa only [sub_eq_add_neg, Function.comp_apply] using
-      tendsto_atTop_add_const_right _ (-β) (tendsto_comp_atTop_of_finite_setOf_le hfin σ.injective)
+      tendsto_atTop_add_const_right _ (-β) htend
   · rw [HilbertBasis.reindex_apply, Equiv.symm_symm, Function.comp_apply, hJu']
 
 end TauCeti

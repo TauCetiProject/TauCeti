@@ -133,6 +133,7 @@ theorem isMixedEigenvalue_iff (kappa : ℝ) :
 
 /-- **The mixed eigenvalues at the whole frontier are the Dirichlet eigenvalues**, since
 `H¹_Γ(Ω) = H¹₀(Ω)` for `Γ = frontier Ω` (`TauCeti.w1pVanishingOnSubmodule_frontier`). -/
+@[simp]
 theorem isMixedEigenvalue_frontier_iff (kappa : ℝ) :
     IsMixedEigenvalue mu Omega (frontier (Omega : Set (EuclideanSpace ℝ ι))) a b c kappa ↔
       IsDirichletEigenvalue mu Omega a b c kappa := by
@@ -210,6 +211,7 @@ private theorem dirichletEigenvalue_eq_minMaxValue (k : ℕ) :
 
 /-- **The mixed eigenvalues at the whole frontier are the Dirichlet eigenvalues**, as min–max
 values. -/
+@[simp]
 theorem mixedEigenvalue_frontier :
     mixedEigenvalue mu Omega (frontier (Omega : Set (EuclideanSpace ℝ ι))) a b c =
       dirichletEigenvalue mu Omega a b c := by
@@ -401,11 +403,12 @@ theorem isMixedEigenvalue_iff_exists_mixedEigenvalue_eq (kappa' : ℝ) :
     exists_hilbertBasis_mixedEigenvalue_properties hcoeff hJ hΓ hOmega hsymm hC₀ hgarding
   exact hiff kappa'
 
-omit hOmega in
+omit hΓ hOmega in
 /-- **Monotonicity in the Dirichlet part.** If `Γ ⊆ Γ'` and `Γ' ∩ Ω = ∅`, every mixed eigenvalue
 for `Γ` is at most the corresponding one for `Γ'`: `λₖ(Γ) ≤ λₖ(Γ')`. The hypotheses are those of
 `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue` for `Γ`, except that `Ω` may be empty (then
-both sides are `sInf ∅`); they pass to the smaller space `H¹_{Γ'}(Ω) ⊆ H¹_Γ(Ω)`. -/
+both sides are `sInf ∅`) and `Γ ∩ Ω = ∅` follows from `Γ' ∩ Ω = ∅`; they pass to the smaller
+space `H¹_{Γ'}(Ω) ⊆ H¹_Γ(Ω)`. -/
 theorem mixedEigenvalue_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Disjoint Γ' Omega) (k : ℕ) :
     mixedEigenvalue mu Omega Γ a b c k ≤ mixedEigenvalue mu Omega Γ' a b c k := by
   rcases (Omega : Set (EuclideanSpace ℝ ι)).eq_empty_or_nonempty with hempty | hOmega
@@ -437,7 +440,8 @@ theorem mixedEigenvalue_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Disjoint Γ' 
         energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2) +
           β * ‖W1p.value (w : W1p mu Omega 2)‖ ^ 2 :=
     hgarding ⟨w, hle w.property⟩
-  refine csInf_le_csInf (isLeast_mixedEigenvalue hcoeff hJ hΓ hOmega hsymm hC₀ hgarding k).bddBelow
+  refine csInf_le_csInf
+    (isLeast_mixedEigenvalue hcoeff hJ (hΓ'.mono_left hΓΓ') hOmega hsymm hC₀ hgarding k).bddBelow
     (isLeast_mixedEigenvalue hcoeff hJ' hΓ' hOmega hsymm' hC₀ hgarding' k).nonempty ?_
   -- A subspace admissible for `Γ'` is admissible for `Γ`, through the inclusion.
   rintro C ⟨W, hW, hC⟩
@@ -491,7 +495,8 @@ theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
           mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k *
             ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
   exists_hilbertBasis_mixedEigenvalue memLp_energyIntegrand_one_zero_zero hJ hΓ hOmega
-    (fun u v ↦ energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v) one_pos laplacian_garding
+    (fun _ _ ↦ energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _) one_pos
+    laplacian_garding
 
 /-- **The min–max principle for the mixed eigenvalues of `-Δ` is attained**: `λₖ` is the least
 `C` for which some subspace `W` of `H¹_Γ(Ω)`, whose values span a subspace of `L²(Ω)` of
@@ -505,7 +510,8 @@ theorem isLeast_mixedEigenvalue_laplacian (k : ℕ) :
           C * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2}
       (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
   isLeast_mixedEigenvalue memLp_energyIntegrand_one_zero_zero hJ hΓ hOmega
-    (fun u v ↦ energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v) one_pos laplacian_garding k
+    (fun _ _ ↦ energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _) one_pos
+    laplacian_garding k
 
 /-- **The mixed spectrum of `-Δ`.** Under the hypotheses of
 `TauCeti.PDE.exists_hilbertBasis_mixedEigenvalue_laplacian`, the mixed eigenvalues form a
@@ -517,25 +523,27 @@ theorem mixedEigenvalue_laplacian_spectrum :
       ∀ kappa : ℝ, IsMixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 kappa ↔
         ∃ k, mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k = kappa := by
   have hcoeff := memLp_energyIntegrand_one_zero_zero (mu := mu) (Omega := Omega) (ι := ι)
-  have hsymm (u v : W1pVanishingOn mu Omega 2 Γ) :=
-    energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) (v : W1p mu Omega 2)
+  have hsymm (u v : W1pVanishingOn mu Omega 2 Γ) :
+      energyFormH1 (fun _ ↦ 1) 0 0 (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) (u : W1p mu Omega 2) :=
+    energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _
   refine ⟨mixedEigenvalue_nonneg (fun v ↦ energyFormH1_one_zero_zero_self_nonneg _) 0,
     monotone_mixedEigenvalue hcoeff hJ hΓ hOmega hsymm one_pos laplacian_garding,
     tendsto_mixedEigenvalue_atTop hcoeff hJ hΓ hOmega hsymm one_pos laplacian_garding,
     isMixedEigenvalue_iff_exists_mixedEigenvalue_eq hcoeff hJ hΓ hOmega hsymm one_pos
       laplacian_garding⟩
 
-omit hOmega in
-/-- **More Dirichlet boundary raises the eigenvalues of `-Δ`.** For `Γ ⊆ Γ'`, both disjoint from
-`Ω`, and a compact value map `H¹_Γ(Ω) → L²(Ω)`, `λₖ(Γ) ≤ λₖ(Γ')` for every `k`. With
-`Γ = ∅` and `Γ' = frontier Ω`, every Neumann eigenvalue is at most the corresponding Dirichlet
-eigenvalue (`TauCeti.PDE.mixedEigenvalue_frontier`). -/
+omit hΓ hOmega in
+/-- **More Dirichlet boundary raises the eigenvalues of `-Δ`.** For `Γ ⊆ Γ'` with `Γ'` disjoint
+from `Ω` (so that `Γ` is too), and a compact value map `H¹_Γ(Ω) → L²(Ω)`, `λₖ(Γ) ≤ λₖ(Γ')` for
+every `k`. With `Γ = ∅` and `Γ' = frontier Ω`, every Neumann eigenvalue is at most the
+corresponding Dirichlet eigenvalue (`TauCeti.PDE.mixedEigenvalue_frontier`). -/
 theorem mixedEigenvalue_laplacian_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Disjoint Γ' Omega)
     (k : ℕ) :
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤ mixedEigenvalue mu Omega Γ' (fun _ ↦ 1) 0 0 k :=
-  mixedEigenvalue_le_of_subset memLp_energyIntegrand_one_zero_zero hJ hΓ
-    (fun u v ↦ energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v) one_pos laplacian_garding
-    hΓΓ' hΓ' k
+  mixedEigenvalue_le_of_subset memLp_energyIntegrand_one_zero_zero hJ
+    (fun _ _ ↦ energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _) one_pos
+    laplacian_garding hΓΓ' hΓ' k
 
 end Laplacian
 
