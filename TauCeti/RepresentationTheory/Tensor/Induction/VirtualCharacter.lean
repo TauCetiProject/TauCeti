@@ -22,7 +22,6 @@ import TauCeti.GroupTheory.GroupAction.Orbit.Finset
 import TauCeti.GroupTheory.GroupAction.FinRotate
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.GroupTheory.Perm.OrbitCount.Basic
-import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.GroupTheory.Perm.WreathProduct.Monomial
 import TauCeti.GroupTheory.QuotientGroup.Index
 import TauCeti.RepresentationTheory.Induction.Character
@@ -499,23 +498,9 @@ private theorem sum_orbit_finRotate_eq {k : Type*} [AddCommMonoid k] {l : ℕ} (
     {S : Finset (Fin l)} (hne : S.Nonempty) (hS : S ≠ Finset.univ)
     (F : Finset (Fin l) → k) [Fintype (MulAction.orbit (Subgroup.zpowers (finRotate l)) S)] :
     (∑ j : Fin l, F ((finRotate l ^ (j : ℕ)) • S)) =
-      ∑ T : MulAction.orbit (Subgroup.zpowers (finRotate l)) S, F T.val := by
-  have hord : orderOf (finRotate l) = l := TauCeti.orderOf_finRotate hl.ne_zero
-  have hfin : IsOfFinOrder (finRotate l) := orderOf_pos_iff.mp (hord.symm ▸ hl.pos)
-  have := TauCeti.isPretransitive_of_finRotate_mem (Subgroup.mem_zpowers (finRotate l))
-  have hbot : MulAction.stabilizer (Subgroup.zpowers (finRotate l)) S = ⊥ :=
-    TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive
-      (by rwa [Nat.card_zpowers, hord]) hne hS
-  -- `j ↦ finRotate l ^ j` enumerates `⟨finRotate l⟩`, which acts freely on the orbit of `S`.
-  let e : Fin l ≃ MulAction.orbit (Subgroup.zpowers (finRotate l)) S :=
-    (finCongr hord.symm).trans <| (finEquivZPowers hfin).trans <|
-      QuotientGroup.quotientBot.symm.toEquiv.trans <|
-        (Subgroup.quotientEquivOfEq hbot.symm).trans
-          (MulAction.orbitEquivQuotientStabilizer _ S).symm
-  refine Fintype.sum_equiv e _ _ fun j ↦ congrArg F ?_
-  rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply, Equiv.trans_apply,
-    finEquivZPowers_apply]
-  exact (MulAction.orbitEquivQuotientStabilizer_symm_apply _ S _).symm
+      ∑ T : MulAction.orbit (Subgroup.zpowers (finRotate l)) S, F T.val :=
+  Fintype.sum_equiv (TauCeti.finRotateOrbitEquiv hl hne hS) _ _ fun j ↦ by
+    rw [TauCeti.finRotateOrbitEquiv_apply]
 
 private theorem sum_finRotate_orbit_indClassFun_eq {k G : Type*} [CommRing k] [Group G]
     (H : Subgroup G) [H.Normal] [H.FiniteIndex] {l : ℕ} (hl : l.Prime) (hH : H.index = l)
