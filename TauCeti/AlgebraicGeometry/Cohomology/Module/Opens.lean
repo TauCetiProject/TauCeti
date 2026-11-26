@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.MayerVietoris
 public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Modules.Unit
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 import TauCeti.CategoryTheory.Sites.SheafCohomology.MayerVietoris
 
@@ -31,9 +30,8 @@ action is the action of the restriction of `r` to `U` on the sections of `M` ove
 `Scheme.Modules.cohomologyOnZeroEquiv` of `H⁰(U, M)` with the sections of `M` over `U` from
 `TauCeti.AlgebraicGeometry.Cohomology.Basic`. At `U = ⊤` the module `Hⁿ(⊤, M)` is the module
 `Hⁿ(X, M)` of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`
-(`Scheme.Modules.cohomologyOnTopLinearEquiv`). For the structure sheaf, `H⁰(⊤, 𝒪)` is the ring
-`Γ(X, 𝒪)` of global functions, linearly over itself
-(`Scheme.Modules.cohomologyOnZeroTopUnitLinearEquiv`).
+(`Scheme.Modules.cohomologyOnTopLinearEquiv`). In degree zero, `H⁰(⊤, M)` is the module of global
+sections of `M` (`Scheme.Modules.cohomologyOnZeroTopLinearEquiv`).
 
 The construction mirrors the action of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` on the
 cohomology of the whole scheme, with the cohomology presheaf `U ↦ Hⁿ(U, M)` in place of the
@@ -246,24 +244,20 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopLinearEquiv_apply (
     (x : cohomologyOn M n ⊤) : cohomologyOnTopLinearEquiv M n x = (cohomologyOnTopIso M n).hom x :=
   (rfl)
 
-variable (X) in
-/-- The degree-zero cohomology `H⁰(X, 𝒪)` of the structure sheaf on the whole scheme is the ring
-`Γ(X, 𝒪)` of global functions, linearly over itself. -/
-def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopUnitLinearEquiv :
-    cohomologyOn (Scheme.Modules.unit X) 0 ⊤ ≃ₗ[Γ(X, ⊤)] Γ(X, ⊤) where
-  __ := cohomologyOnZeroEquiv (Scheme.Modules.unit X) ⊤
+/-- The degree-zero cohomology `H⁰(⊤, M)` on the whole scheme is the module `Γ(M, ⊤)` of global
+sections of `M`, linearly over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopLinearEquiv :
+    cohomologyOn M 0 ⊤ ≃ₗ[Γ(X, ⊤)] Γ(M, ⊤) where
+  __ := cohomologyOnZeroEquiv M ⊤
   map_smul' r x := by
-    refine (cohomologyOnZeroEquiv_smul _ ⊤ r x).trans ?_
-    -- A global function acts through its restriction to `⊤`, which is the identity; `Γ(X, ⊤)`
-    -- acts on the global sections of `𝒪_X`, viewed as a module over itself, by multiplication.
+    refine (cohomologyOnZeroEquiv_smul M ⊤ r x).trans ?_
+    -- A global function acts through its restriction to `⊤`, which is the identity.
     rw [show (Opens.leTop ⊤ : (⊤ : X.Opens) ⟶ ⊤) = 𝟙 ⊤ from rfl, op_id, X.presheaf.map_id]
     rfl
 
-variable (X) in
 @[simp]
-lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopUnitLinearEquiv_apply
-    (x : cohomologyOn (Scheme.Modules.unit X) 0 ⊤) :
-    cohomologyOnZeroTopUnitLinearEquiv X x = cohomologyOnZeroEquiv (Scheme.Modules.unit X) ⊤ x :=
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopLinearEquiv_apply
+    (x : cohomologyOn M 0 ⊤) : cohomologyOnZeroTopLinearEquiv M x = cohomologyOnZeroEquiv M ⊤ x :=
   (rfl)
 
 end Scheme.Modules

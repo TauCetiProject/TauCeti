@@ -192,6 +192,17 @@ lemma cohomologyWithSupportSuccComplBasicOpenLinearEquiv_cohomologyWithSupportδ
 
 end QuasiCompactQuasiSeparated
 
+/-- A localization `Γ(X, 𝒪) → A` of the global functions, composed with the identification of
+`H⁰(⊤, 𝒪_X)` with the global sections of `𝒪_X`, is a localization of `H⁰(⊤, 𝒪_X)`. This is
+`IsLocalizedModule.of_linearEquiv_right`; instance search cannot apply it directly because the
+global sections of `𝒪_X` are the ring `Γ(X, 𝒪)` as a module over itself only after unfolding
+beyond instance transparency. -/
+instance isLocalizedModule_algebraLinearMap_comp_cohomologyOnZeroTopLinearEquiv_unit
+    {S : Submonoid Γ(X, ⊤)} {A : Type*} [CommRing A] [Algebra Γ(X, ⊤) A] [IsLocalization S A] :
+    IsLocalizedModule S (Algebra.linearMap Γ(X, ⊤) A ∘ₗ
+      (cohomologyOnZeroTopLinearEquiv (Scheme.Modules.unit X)).toLinearMap) :=
+  IsLocalizedModule.of_linearEquiv_right _ _ _
+
 variable (X) [IsAffine X]
 
 /-- **Local cohomology of the structure sheaf in degree one along `V(f)`.** For a global function
@@ -202,7 +213,7 @@ noncomputable def cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv :
       Localization.Away f ⧸ LinearMap.range (Algebra.linearMap Γ(X, ⊤) (Localization.Away f)) :=
   ((Scheme.Modules.unit X).cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule f
     (Algebra.linearMap Γ(X, ⊤) (Localization.Away f) ∘ₗ
-      (cohomologyOnZeroTopUnitLinearEquiv X).toLinearMap)).trans
+      (cohomologyOnZeroTopLinearEquiv (Scheme.Modules.unit X)).toLinearMap)).trans
     (Submodule.quotEquivOfEq _ _ (LinearEquiv.range_comp _ _))
 
 /-- The identification of `H¹_{V(f)}(X, 𝒪)` with `Γ(X, 𝒪)_f / Γ(X, 𝒪)` sends the image under the
@@ -214,7 +225,7 @@ lemma cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv_cohomologyWithSuppor
         ((Scheme.Modules.unit X).cohomologyWithSupportδ (X.basicOpen f).compl ⊤ (add_zero 1) x) =
       Submodule.Quotient.mk ((Scheme.Modules.unit X).cohomologyOnComplComplBasicOpenLinearEquiv f
         (Algebra.linearMap Γ(X, ⊤) (Localization.Away f) ∘ₗ
-          (cohomologyOnZeroTopUnitLinearEquiv X).toLinearMap) x) := by
+          (cohomologyOnZeroTopLinearEquiv (Scheme.Modules.unit X)).toLinearMap) x) := by
   rw [cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv, LinearEquiv.trans_apply,
     cohomologyWithSupportSuccComplBasicOpenLinearEquivOfIsLocalizedModule_cohomologyWithSupportδ,
     Submodule.quotEquivOfEq_mk]
@@ -228,7 +239,7 @@ lemma cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv_symm_mk (y : Localiz
       (Scheme.Modules.unit X).cohomologyWithSupportδ (X.basicOpen f).compl ⊤ (add_zero 1)
         (((Scheme.Modules.unit X).cohomologyOnComplComplBasicOpenLinearEquiv f
           (Algebra.linearMap Γ(X, ⊤) (Localization.Away f) ∘ₗ
-            (cohomologyOnZeroTopUnitLinearEquiv X).toLinearMap)).symm y) := by
+            (cohomologyOnZeroTopLinearEquiv (Scheme.Modules.unit X)).toLinearMap)).symm y) := by
   rw [LinearEquiv.symm_apply_eq,
     cohomologyWithSupportOneComplBasicOpenUnitLinearEquiv_cohomologyWithSupportδ,
     LinearEquiv.apply_symm_apply]
