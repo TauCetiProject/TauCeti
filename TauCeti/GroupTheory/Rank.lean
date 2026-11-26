@@ -16,6 +16,7 @@ public import TauCeti.GroupTheory.Finiteness
 import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
+import TauCeti.GroupTheory.Coprod.Rank
 
 /-!
 # Generator rank of groups and abelian groups
@@ -100,23 +101,9 @@ generator ranks. -/
   /-- The generator rank of a product of two finitely generated additive groups is at most the sum
   of their generator ranks. -/]
 theorem rank_prod_le (G H : Type*) [Group G] [Group H] [Group.FG G] [Group.FG H] :
-    Group.rank (G × H) ≤ Group.rank G + Group.rank H := by
-  classical
-  obtain ⟨S, hScard, hS⟩ := Group.rank_spec G
-  obtain ⟨T, hTcard, hT⟩ := Group.rank_spec H
-  let U : Finset (G × H) := S.image (MonoidHom.inl G H) ∪ T.image (MonoidHom.inr G H)
-  refine (Group.rank_le (S := U) ?_).trans ?_
-  · rw [Finset.coe_union, Subgroup.closure_union, Finset.coe_image, Finset.coe_image,
-      ← MonoidHom.map_closure, ← MonoidHom.map_closure, hS, hT]
-    refine eq_top_iff.mpr fun ⟨g, h⟩ _ ↦ ?_
-    have hg : (g, (1 : H)) ∈ (⊤ : Subgroup G).map (MonoidHom.inl G H) := ⟨g, trivial, rfl⟩
-    have hh : ((1 : G), h) ∈ (⊤ : Subgroup H).map (MonoidHom.inr G H) := ⟨h, trivial, rfl⟩
-    simpa using Subgroup.mul_mem_sup hg hh
-  · calc U.card
-      _ ≤ (S.image (MonoidHom.inl G H)).card + (T.image (MonoidHom.inr G H)).card :=
-        Finset.card_union_le _ _
-      _ ≤ S.card + T.card := add_le_add Finset.card_image_le Finset.card_image_le
-      _ = Group.rank G + Group.rank H := by rw [hScard, hTcard]
+    Group.rank (G × H) ≤ Group.rank G + Group.rank H :=
+  (Group.rank_le_of_surjective _ Monoid.Coprod.toProd_surjective).trans
+    (Monoid.Coprod.rank_le_add G H)
 
 /-- The generator rank of a finite indexed product of finitely generated groups is at most the sum
 of the generator ranks of the factors. -/

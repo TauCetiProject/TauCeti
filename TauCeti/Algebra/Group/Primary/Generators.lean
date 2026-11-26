@@ -24,8 +24,8 @@ over all primes); for the trivial group the prime-divisor set is empty and the m
 ## Main statements
 
 * `TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`
-* `TauCeti.AddCommGroup.rank_primaryComponent_le`
 * `AddGroup.rank_eq_sup_primaryComponents`
+* `AddGroup.rank_primaryComponent_le`
 * `AddGroup.rank_eq_ciSup_primaryComponent`
 
 ## References
@@ -75,27 +75,20 @@ theorem rank_eq_sup_primaryComponents (A : Type*) [AddCommGroup A] [Finite A] :
   exact h.trans (Finset.sup_attach (Nat.card A).primeFactors
     (fun p ↦ AddGroup.rank (AddCommGroup.primaryComponent A p)))
 
-end AddGroup
-
-namespace TauCeti.AddCommGroup
-
 /-- A prime-primary component of a finite abelian group needs at most as many generators as the
 group itself. -/
 theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : ℕ}
     (hp : p.Prime) :
-    AddGroup.rank (_root_.AddCommGroup.primaryComponent A p) ≤ AddGroup.rank A := by
+    AddGroup.rank (AddCommGroup.primaryComponent A p) ≤ AddGroup.rank A := by
   by_cases h : p ∣ Nat.card A
-  · rw [AddGroup.rank_eq_sup_primaryComponents A]
-    exact Finset.le_sup (f := fun p ↦ AddGroup.rank (_root_.AddCommGroup.primaryComponent A p))
+  · rw [rank_eq_sup_primaryComponents A]
+    exact Finset.le_sup (f := fun p ↦ AddGroup.rank (AddCommGroup.primaryComponent A p))
       (Nat.mem_primeFactors.mpr ⟨hp, h, Nat.card_pos.ne'⟩)
-  · have : Subsingleton (_root_.AddCommGroup.primaryComponent A p) :=
+  · have : Subsingleton (AddCommGroup.primaryComponent A p) :=
       (Nat.card_eq_one_iff_unique.mp (by
-        rw [natCard_primaryComponent A hp, Nat.factorization_eq_zero_of_not_dvd h, pow_zero])).1
+        rw [TauCeti.AddCommGroup.natCard_primaryComponent A hp,
+          Nat.factorization_eq_zero_of_not_dvd h, pow_zero])).1
     simp [AddGroup.rank_eq_zero]
-
-end TauCeti.AddCommGroup
-
-namespace AddGroup
 
 /-- Nikulin's formula `l(A) = max_p l(A_p)` over all primes `p`. -/
 theorem rank_eq_ciSup_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] :
@@ -106,9 +99,9 @@ theorem rank_eq_ciSup_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] :
       AddGroup.rank (AddCommGroup.primaryComponent A p.val)) :=
     ⟨AddGroup.rank A, by
       rintro _ ⟨p, rfl⟩
-      exact TauCeti.AddCommGroup.rank_primaryComponent_le A p.property⟩
+      exact rank_primaryComponent_le A p.property⟩
   refine le_antisymm ?_
-    (ciSup_le fun p ↦ TauCeti.AddCommGroup.rank_primaryComponent_le A p.property)
+    (ciSup_le fun p ↦ rank_primaryComponent_le A p.property)
   rw [rank_eq_sup_primaryComponents A]
   refine Finset.sup_le fun p hp ↦ ?_
   exact le_ciSup hbdd ⟨p, Nat.prime_of_mem_primeFactors hp⟩

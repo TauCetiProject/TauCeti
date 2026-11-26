@@ -21,8 +21,9 @@ products of additive commutative groups.
 ## Main definitions and statements
 
 * `ModN.basis_repr_mkQ`, `ModN.basis_repr_mk`: `(ModN.basis b).repr [v] i = (b.repr v i : ℤ / n)`.
-* `ModN.range_lsmul_toAddSubgroup_eq_range_nsmul`, `ModN.quotientRangeNSMulAddEquiv`:
-  identification of `ModN G n` with `G ⧸ (nsmulAddMonoidHom n).range`.
+* `LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom`,
+  `ModN.quotientRangeNSMulAddEquiv`: identification of `ModN G n` with
+  `G ⧸ (nsmulAddMonoidHom n).range`.
 * `ModN.prodLinearEquiv`: `ModN (G × H) n ≃ₗ[ZMod n] ModN G n × ModN H n`.
 * `ModN.piLinearEquiv`: `ModN (∀ i, G i) n ≃ₗ[ZMod n] ∀ i, ModN (G i) n`.
 -/
@@ -62,28 +63,35 @@ end
 
 public section
 
-namespace ModN
+namespace LinearMap
 
 /-- The `ℤ`-linear multiplication-by-`n` range equals the additive range of
 `nsmulAddMonoidHom n`. -/
-theorem range_lsmul_toAddSubgroup_eq_range_nsmul (G : Type*) [AddCommGroup G] (n : ℕ) :
+theorem range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom (G : Type*) [AddCommGroup G]
+    (n : ℕ) :
     (LinearMap.range (LinearMap.lsmul ℤ G (n : ℤ))).toAddSubgroup =
       (nsmulAddMonoidHom (α := G) n).range := by
   ext x
   simp [natCast_zsmul]
 
+end LinearMap
+
+namespace ModN
+
 /-- Canonical additive equivalence identifying `ModN G n` with
 `G ⧸ (nsmulAddMonoidHom (α := G) n).range`. -/
 noncomputable def quotientRangeNSMulAddEquiv (G : Type*) [AddCommGroup G] (n : ℕ) :
     ModN G n ≃+ G ⧸ (nsmulAddMonoidHom (α := G) n).range :=
-  QuotientAddGroup.quotientAddEquivOfEq (range_lsmul_toAddSubgroup_eq_range_nsmul G n)
+  QuotientAddGroup.quotientAddEquivOfEq
+    (LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom G n)
 
 /-- `ModN.quotientRangeNSMulAddEquiv` maps `mkQ n x` to the quotient class of `x`. -/
 @[simp]
 theorem quotientRangeNSMulAddEquiv_mkQ (G : Type*) [AddCommGroup G] (n : ℕ) (x : G) :
     quotientRangeNSMulAddEquiv G n (mkQ n x) =
       (x : G ⧸ (nsmulAddMonoidHom (α := G) n).range) :=
-  QuotientAddGroup.quotientAddEquivOfEq_mk (range_lsmul_toAddSubgroup_eq_range_nsmul G n) x
+  QuotientAddGroup.quotientAddEquivOfEq_mk
+    (LinearMap.range_lsmul_toAddSubgroup_eq_range_nsmulAddMonoidHom G n) x
 
 /-- The inverse of `ModN.quotientRangeNSMulAddEquiv` maps the quotient class of `x` to
 `mkQ n x`. -/
