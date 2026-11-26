@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # Wirtinger's inequality with one vanishing endpoint
@@ -197,16 +198,6 @@ theorem mul_integral_sq_le_integral_deriv_sq_of_eq_zero_right
 end AbsolutelyContinuousOnInterval
 
 namespace TauCeti
-
-/-- For an interval integrable `F` that is nonnegative on `(a, b)`, the lower integral of
-`ofReal ∘ F` over `(a, b)` is `ofReal` of the interval integral of `F`. -/
-theorem setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral (hab : a ≤ b) {F : ℝ → ℝ}
-    (hF : IntervalIntegrable F volume a b) (hF0 : ∀ t ∈ Ioo a b, 0 ≤ F t) :
-    ∫⁻ t in Ioo a b, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in a..b, F t) := by
-  rw [intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
-    ofReal_integral_eq_lintegral_ofReal
-      (((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).1 hF).mono_set Ioo_subset_Ioc_self)
-      (ae_restrict_of_forall_mem measurableSet_Ioo hF0)]
 
 /-- **Wirtinger's inequality with one Dirichlet endpoint, for lower integrals.** A `C¹` function
 `f` vanishing at `a < b` satisfies `∫⁻_{(a, b)} k² f² ≤ ∫⁻_{(a, b)} f'²` with

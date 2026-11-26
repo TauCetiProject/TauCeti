@@ -15,8 +15,8 @@ import TauCeti.Analysis.Sobolev.LipschitzDomain.Examples.BoxDomain
 import TauCeti.Analysis.Sobolev.Poincare.SharpConstant
 import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.MeasureTheory.Function.Lp.Integral.L2NormSq
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Wirtinger
-import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The mixed Laplacian on a box with one Dirichlet face
@@ -82,51 +82,6 @@ namespace TauCeti.PDE
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {a b : ι → ℝ} {i : ι}
-
-variable [DecidableEq ι] in
-/-- Along the line through `x` parallel to the `i`-th axis, the integral over the box is the
-integral over the `i`-th side when the other coordinates of `x` lie in the box, and `0`
-otherwise. -/
-private theorem lintegral_indicator_boxDomain_toLp_update (F : EuclideanSpace ℝ ι → ℝ≥0∞)
-    (x : ι → ℝ) :
-    ∫⁻ t, (boxDomain a b : Set (EuclideanSpace ℝ ι)).indicator F
-        (WithLp.toLp 2 (Function.update x i t)) =
-      if ∀ j ≠ i, x j ∈ Ioo (a j) (b j) then
-        ∫⁻ t in Ioo (a i) (b i), F (WithLp.toLp 2 (Function.update x i t)) else 0 := by
-  classical
-  split_ifs with hx
-  · rw [← lintegral_indicator measurableSet_Ioo]
-    congr 1
-    ext t
-    simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, and_iff_left hx]
-  · simp only [Set.indicator_apply, toLp_update_mem_boxDomain_iff, hx, and_false, ite_false,
-      lintegral_zero]
-
-variable [DecidableEq ι] in
-/-- **Comparison of integrals over a box along the lines parallel to one axis.** If `F, G ≥ 0` are
-continuous and the integral of `F` over each segment of the box parallel to the `i`-th axis is at
-most that of `G`, then `∫_Ω F ≤ ∫_Ω G`. -/
-private theorem setIntegral_boxDomain_le {F G : EuclideanSpace ℝ ι → ℝ} (hF : Continuous F)
-    (hG : Continuous G) (hF0 : ∀ x, 0 ≤ F x) (hG0 : ∀ x, 0 ≤ G x)
-    (h : ∀ x : ι → ℝ, (∀ j ≠ i, x j ∈ Ioo (a j) (b j)) →
-      ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (F (WithLp.toLp 2 (Function.update x i t))) ≤
-        ∫⁻ t in Ioo (a i) (b i), ENNReal.ofReal (G (WithLp.toLp 2 (Function.update x i t)))) :
-    ∫ x in boxDomain a b, F x ∂mu ≤ ∫ x in boxDomain a b, G x ∂mu := by
-  have hΩ : MeasurableSet (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
-    (boxDomain a b).isOpen.measurableSet
-  rw [← ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hΩ fun x _ => hG0 x),
-    ofReal_integral_eq_lintegral_ofReal (f := F) (integrableOn_boxDomain hF.continuousOn)
-      (ae_of_all _ hF0),
-    ofReal_integral_eq_lintegral_ofReal (f := G) (integrableOn_boxDomain hG.continuousOn)
-      (ae_of_all _ hG0),
-    ← lintegral_indicator hΩ, ← lintegral_indicator hΩ]
-  refine lintegral_le_lintegral_of_forall_lintegral_update_le mu
-    (hF.measurable.ennreal_ofReal.indicator hΩ) (hG.measurable.ennreal_ofReal.indicator hΩ) i
-    fun x => ?_
-  rw [lintegral_indicator_boxDomain_toLp_update, lintegral_indicator_boxDomain_toLp_update]
-  split_ifs with hx
-  · exact h x hx
-  · exact le_rfl
 
 variable [DecidableEq ι] in
 /-- **Wirtinger's inequality on a box, for a `C¹` function vanishing on one face.** If `φ` is `C¹`
@@ -210,18 +165,6 @@ private theorem setIntegral_comp_apply_le (hab : a i ≤ b i) {F G : ℝ → ℝ
 
 /-! ### The extremal function -/
 
-variable [DecidableEq ι] in
-/-- The gradient of `x ↦ sin (k (xᵢ - aᵢ))` is `k cos (k (xᵢ - aᵢ)) eᵢ`. -/
-private theorem hasGradientAt_sin_mul_sub (k : ℝ) (x : EuclideanSpace ℝ ι) :
-    HasGradientAt (fun y : EuclideanSpace ℝ ι => Real.sin (k * (y i - a i)))
-      ((k * Real.cos (k * (x i - a i))) • EuclideanSpace.single i 1) x := by
-  rw [hasGradientAt_iff_hasFDerivAt]
-  have h := (Real.hasDerivAt_sin _).comp_hasFDerivAt x
-    (((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).hasFDerivAt.sub_const (a i)).const_mul k)
-  refine h.congr_fderiv (ContinuousLinearMap.ext fun y => ?_)
-  simp [EuclideanSpace.inner_single_left]
-  ring
-
 /-- The square of `sin (k (xᵢ - aᵢ))`, `k = π / (2 (bᵢ - aᵢ))`, has positive integral over the box
 `∏ⱼ (aⱼ, bⱼ)`: it is positive there, since `0 < k (xᵢ - aᵢ) < π / 2`. -/
 private theorem setIntegral_boxDomain_sin_sq_pos (hab : ∀ j, a j < b j) :
@@ -270,7 +213,9 @@ private theorem exists_mem_w1pVanishingOnSubmodule_boxDomain_norm_gradient_sq_eq
       ∫ x in Ω, (fun t => (k * Real.cos (k * (t - a i))) ^ 2) (x i) ∂mu := by
     rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
     refine integral_congr_ae (hg.mono fun x hx => ?_)
-    simp [hx, s, (hasGradientAt_sin_mul_sub k x).gradient, norm_smul, mul_pow, PiLp.norm_single]
+    have hsg : HasGradientAt s _ x :=
+      (((hasDerivAt_id' (x i)).sub_const (a i)).const_mul k).sin.hasGradientAt_comp_apply
+    simp [hx, hsg.gradient, norm_smul, mul_pow, PiLp.norm_single, mul_comm]
   -- Along the `i`-th side, `∫ cos² = ∫ sin²`.
   obtain ⟨hsin, hcos⟩ := integral_sin_sq_and_integral_cos_sq_quarter_period (hab i)
   have hside : ∫ t in a i..b i, (k * Real.cos (k * (t - a i))) ^ 2 =
