@@ -97,12 +97,11 @@ theorem mem_affineOpen_twistSumCore_indexAt (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)
   rw [← twistSumCore_baseSet k]
   exact (twistSumCore k).mem_baseSet_at x
 
-/-- `⨁ₗ 𝒪(k l)` and each `𝒪(k')` have the same preferred charts, those of the manifold structure
-of projective space: both cores choose the affine open `(exists_mem_affineOpen x).choose` at `x`
-(`Projectivization.twistCore_indexAt`), so this holds by definition. -/
-theorem twistSumCore_indexAt (k' : ℤ) (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
-    (twistSumCore k).indexAt x = (twistCore k').indexAt x :=
-  (twistCore_indexAt k' x).symm
+/-- The preferred chart of `⨁ₗ 𝒪(k l)` at `x` is the affine open chosen by
+`exists_mem_affineOpen`, as for each `𝒪(k')` (`Projectivization.twistCore_indexAt`). -/
+theorem twistSumCore_indexAt (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    (twistSumCore (𝕜 := 𝕜) k).indexAt x = (exists_mem_affineOpen x).choose :=
+  (rfl)
 
 /-- The coordinate change of `⨁ₗ 𝒪(k l)` from the chart `i` to the chart `j` multiplies the
 coordinate `l` by the transition of `𝒪(k l)`. -/
@@ -154,7 +153,8 @@ theorem contMDiff_twistSumCore_apply (l : κ) {r : ℕ∞ω} :
   refine (((contDiff_apply 𝕜 (fun _ : κ ↦ 𝕜) l).contMDiff.contMDiffAt).comp p
     hid.2).congr_of_eventuallyEq (Filter.Eventually.of_forall fun ⟨x, v⟩ ↦ ?_)
   have h := twistSumCore_trivializationAt_apply_snd k p.proj x v l
-  rw [twistSumCore_indexAt k (k l), twistSumCore_indexAt k (k l)] at h
+  rw [twistSumCore_indexAt, twistSumCore_indexAt, ← twistCore_indexAt (k l),
+    ← twistCore_indexAt (k l)] at h
   exact (twistCore_trivializationAt_apply_snd (k l) p.proj x (v l)).trans h.symm
 
 /-- **The inclusion of a summand is analytic.** The map of total spaces from `𝒪(k l)` to
@@ -179,7 +179,8 @@ theorem contMDiff_twistSumCore_single [DecidableEq κ] (l : κ) {r : ℕ∞ω} :
   · subst h
     -- The fibre `(twistCore (k l')).Fiber x` is `𝕜` only up to unfolding, hence `erw`.
     erw [Pi.single_eq_same]
-    rw [twistSumCore_indexAt k (k l'), twistSumCore_indexAt k (k l')]
+    rw [twistSumCore_indexAt, twistSumCore_indexAt, ← twistCore_indexAt (k l'),
+      ← twistCore_indexAt (k l')]
     exact (twistCore_trivializationAt_apply_snd (k l') p.proj x c).symm
   · erw [Pi.single_eq_of_ne h, mul_zero]
 
