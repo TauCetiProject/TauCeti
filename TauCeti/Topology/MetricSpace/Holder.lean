@@ -13,6 +13,7 @@ public import Mathlib.Topology.ExtendFrom
 import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import Mathlib.Topology.Instances.ENNReal.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 
 /-!
@@ -65,7 +66,8 @@ particular by an isometric star), and satisfies the Leibniz estimate
 `[f g]_r ≤ ‖f‖_∞ [g]_r + ‖g‖_∞ [f]_r` for products of bounded maps into a seminormed ring.
 
 By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
-`α ≤ 1`.
+`α ≤ 1`, and on `ℝ` the odd cusp `x ↦ |x| ^ (α - 1) x`, equal to `± |x| ^ α` on the two half-lines,
+is `α`-Hölder with constant `2` for `0 < α ≤ 1`.
 
 For an `α`-Hölder `f` and a `β`-Hölder `g` between pseudo-extended metric spaces, the
 `α β`-Hölder seminorm of `f ∘ g` is at most the seminorm of `f` times the `α`-th power of the
@@ -157,6 +159,8 @@ positive exponent, is equicontinuous on that set
 * `TauCeti.eHolderNorm_mul_le`: the Leibniz estimate for the Hölder seminorm of a product.
 * `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
   `α ≤ 1`.
+* `TauCeti.holderWith_abs_rpow_sub_one_mul_self`: the odd cusp `x ↦ |x| ^ (α - 1) x` on `ℝ` is
+  `α`-Hölder with constant `2` for `0 < α ≤ 1`.
 -/
 
 public section
@@ -974,6 +978,43 @@ theorem holderWith_norm_rpow {E : Type*} [SeminormedAddCommGroup E] {α : ℝ≥
     refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
     rw [abs_sub_comm] at hxy
     exact (le_abs_self _).trans hxy
+
+/-- For `0 < α ≤ 1`, the odd cusp `x ↦ |x| ^ (α - 1) * x` on `ℝ`, which is `|x| ^ α` for `x ≥ 0`
+and `-|x| ^ α` for `x ≤ 0`, is `α`-Hölder with constant `2`. -/
+theorem holderWith_abs_rpow_sub_one_mul_self {α : ℝ≥0} (hα0 : 0 < α) (hα : α ≤ 1) :
+    HolderWith 2 α (fun x : ℝ ↦ |x| ^ ((α : ℝ) - 1) * x) := by
+  have hα0' : (α : ℝ) ≠ 0 := by exact_mod_cast hα0.ne'
+  have hpos (x : ℝ) (hx : 0 ≤ x) : |x| ^ ((α : ℝ) - 1) * x = |x| ^ (α : ℝ) := by
+    rw [abs_of_nonneg hx, ← Real.rpow_eq_rpow_sub_one_mul hx hα0']
+  have hneg (x : ℝ) (hx : x ≤ 0) : |x| ^ ((α : ℝ) - 1) * x = -|x| ^ (α : ℝ) := by
+    have h := hpos (-x) (neg_nonneg.2 hx)
+    rw [abs_neg] at h
+    linarith
+  -- On each half-line the odd cusp is `± |x| ^ α`, which is `α`-Hölder with constant `1`.
+  have hH (x y : ℝ) : dist (|x| ^ (α : ℝ)) (|y| ^ (α : ℝ)) ≤ dist x y ^ (α : ℝ) := by
+    simpa using (holderWith_norm_rpow (E := ℝ) hα).dist_le x y
+  -- Across the origin, both `|x|` and `|y|` are at most `|x - y|`.
+  have hcross (x y : ℝ) (hx : 0 ≤ x) (hy : y ≤ 0) :
+      |x| ^ (α : ℝ) + |y| ^ (α : ℝ) ≤ 2 * dist x y ^ (α : ℝ) := by
+    have h1 : |x| ≤ dist x y := by
+      rw [Real.dist_eq, abs_of_nonneg hx, abs_of_nonneg (by linarith)]; linarith
+    have h2 : |y| ≤ dist x y := by
+      rw [Real.dist_eq, abs_of_nonpos hy, abs_of_nonneg (by linarith)]; linarith
+    linarith [Real.rpow_le_rpow (abs_nonneg x) h1 α.coe_nonneg,
+      Real.rpow_le_rpow (abs_nonneg y) h2 α.coe_nonneg]
+  rw [← holderOnWith_univ]
+  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
+  have hd := Real.rpow_nonneg (dist_nonneg (x := x) (y := y)) α
+  push_cast
+  rcases le_total 0 x with hx | hx <;> rcases le_total 0 y with hy | hy
+  · rw [hpos x hx, hpos y hy]; linarith [hH x y]
+  · rw [hpos x hx, hneg y hy, Real.dist_eq, sub_neg_eq_add,
+      abs_of_nonneg (by positivity)]
+    exact hcross x y hx hy
+  · rw [hneg x hx, hpos y hy, Real.dist_eq, abs_sub_comm, sub_neg_eq_add,
+      abs_of_nonneg (by positivity), dist_comm]
+    exact hcross y x hy hx
+  · rw [hneg x hx, hneg y hy, dist_neg_neg]; linarith [hH x y]
 
 /-- **Common local Hölder bounds give equicontinuity.** If each point `x ∈ s` has a neighbourhood
 on which all the maps `f i` are `r`-Hölder with one constant, for a fixed exponent `r > 0`, then the
