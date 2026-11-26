@@ -50,9 +50,11 @@ and for an odd weight `χ` the pushforward `f ↦ ∫ χ x f (|x|, 0) dx` is zer
 
 ## The argument
 
-For a linear injective map `A` the lower bound is a computation with the Fourier transform: the
-localized Fourier transform of `A_* (χ T)` with cutoff `f` at `η` is the Fourier transform of
-`χ (f ∘ A)` at `Aᵀ η` (`Distribution.localFourier_cutoffPushforwardCLM`). Along the frequencies
+For a linear injective map `A` the lower bound
+(`Distribution.not_isMicrolocallySmoothAt_cutoffPushforwardCLM_continuousLinearMap_ofFun_one`) is a
+computation with the Fourier transform: the localized Fourier transform of `A_* (χ T)` with cutoff
+`f` at `η` is the Fourier transform of `χ (f ∘ A)` at `Aᵀ η`
+(`Distribution.localFourier_cutoffPushforwardCLM`). Along the frequencies
 `t η + w` with `Aᵀ η = 0` it does not depend on `t`, so rapid decay in a cone around `η` forces the
 Fourier transform of `χ (f ∘ A)` to vanish at every `Aᵀ w`, that is everywhere, since `Aᵀ` is
 surjective. Hence `χ (f ∘ A) = 0`, which fails at `x₀` when `χ x₀ ≠ 0` and `f (A x₀) ≠ 0`.
@@ -93,8 +95,9 @@ variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finite
 injective linear map and `χ` a test function with `χ x₀ ≠ 0`. The pushforward `A_* (χ dx)` of the
 smooth density `χ dx` is not microlocally smooth at `(A x₀, η)` for any nonzero `η` with
 `Aᵀ η = 0`. -/
-theorem not_isMicrolocallySmoothAt_cutoffPushforwardCLM_ofFun_one {A : E →L[ℝ] E'}
-    (hA : Injective A) {x₀ : E} (hχ : χ x₀ ≠ 0) {η : E'} (hη : η ≠ 0) (hAη : (A†) η = 0) :
+theorem not_isMicrolocallySmoothAt_cutoffPushforwardCLM_continuousLinearMap_ofFun_one
+    {A : E →L[ℝ] E'} (hA : Injective A) {x₀ : E} (hχ : χ x₀ ≠ 0) {η : E'} (hη : η ≠ 0)
+    (hAη : (A†) η = 0) :
     ¬ (cutoffPushforwardCLM χ A A.contDiff.contDiffOn
       (ofFun Ω (1 : E → ℂ) volume ⊤) : 𝓓'(Ω', ℂ)).IsMicrolocallySmoothAt (A x₀) η := by
   intro hS
@@ -202,7 +205,8 @@ theorem mem_waveFrontSet_cutoffPushforwardCLM_ofFun_one {Φ : E → E'}
     rw [hθd, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_apply]
     exact ⟨hη, (isMicrolocallySmoothAt_restrictCLM_iff hΩ'' hyΩ'').2 hT⟩
   rw [hS] at hsmooth
-  refine not_isMicrolocallySmoothAt_cutoffPushforwardCLM_ofFun_one hinj ?_ hη hη₀ hsmooth
+  refine not_isMicrolocallySmoothAt_cutoffPushforwardCLM_continuousLinearMap_ofFun_one hinj ?_ hη
+    hη₀ hsmooth
   simp [cutoffCompCLM_apply, hκy, hχ]
 
 /-- **The wave front set over a point of an immersed submanifold is its conormal space.** Let `Φ`
