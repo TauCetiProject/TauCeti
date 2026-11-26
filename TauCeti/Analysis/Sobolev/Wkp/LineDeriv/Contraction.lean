@@ -13,27 +13,26 @@ import TauCeti.MeasureTheory.Function.Lp.Basic
 # Contractions and all-order symmetry of iterated directional derivatives on `W^{k,p}`
 
 At positive number of directions, `TauCeti.Wkp.iteratedLineDerivZeroL (j + 1) m u` agrees with
-`(IteratedGradient.evalL j m).compLp` applied to `iteratedGradient j u`
-(`TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalL_compLp`), so every weak derivative field
+`(IteratedGradient.evalTupleL j (m ∘ Fin.rev)).compLp` applied to `iteratedGradient j u`
+(`TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp`), so every weak derivative field
 `iteratedGradient j u` is symmetric almost everywhere as a continuous multilinear form
 (`TauCeti.Wkp.domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae`), and every
 directional evaluation `(D^{j+1} u)(m 0, …, m j)` of `u ∈ W^{k+j+1,p}(Ω)` is the value of an
-element of `W^{k,p}(Ω)` (`TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`). Differentiating
-`i` times in a repeated direction `h` contracts the `i` outermost slots of `iteratedGradient` at
-`h` (`TauCeti.Wkp.iteratedGradient_iteratedLineDerivL_const`).
+element of `W^{k,p}(Ω)` (`TauCeti.Wkp.value_iteratedLineDerivL_eq_evalTupleL_compLp`).
+Differentiating `i` times in a repeated direction `h` contracts the `i` outermost slots of
+`iteratedGradient` at `h` (`TauCeti.Wkp.iteratedGradient_iteratedLineDerivL_const`).
 
 No boundedness or boundary regularity of `Ω` is assumed.
 
 ## Main declarations
 
-* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalL_compLp` and
+* `TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp` and
   `TauCeti.Wkp.iteratedLineDerivZeroL_succ_ae`: identification of `iteratedLineDerivZeroL` with
-  multilinear evaluation of `Wkp.iteratedGradient`.
-* `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`,
+  tuple evaluation of `Wkp.iteratedGradient`.
+* `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalTupleL_compLp`,
   `TauCeti.Wkp.value_iteratedLineDerivL_ae`, and
   `TauCeti.Wkp.value_iteratedLineDerivL_const`: identification of general-order iterated
-  directional derivatives with multilinear evaluations and full contractions of
-  `Wkp.iteratedGradient`.
+  directional derivatives with tuple evaluations and full contractions of `Wkp.iteratedGradient`.
 * `TauCeti.Wkp.iteratedGradient_iteratedLineDerivL` and
   `TauCeti.Wkp.iteratedGradient_iteratedLineDerivL_const`: arbitrary-tuple and repeated-direction
   outer-slot contraction of `Wkp.iteratedGradient`.
@@ -66,69 +65,76 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 /-! ### Contraction and multilinear evaluation of iterated derivatives -/
 
 /-- **Iterated directional derivatives evaluate `iteratedGradient`.** Differentiating
-`u ∈ W^{j+1,p}(Ω)` along `m : Fin (j + 1) → E` produces `(IteratedGradient.evalL j m).compLp`
-applied to `iteratedGradient j u`. -/
-theorem iteratedLineDerivZeroL_succ_eq_evalL_compLp :
+`u ∈ W^{j+1,p}(Ω)` along `m : Fin (j + 1) → E` produces
+`(IteratedGradient.evalTupleL j (m ∘ Fin.rev)).compLp` applied to `iteratedGradient j u`. -/
+theorem iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp :
     ∀ (j : ℕ) (m : Fin (j + 1) → E) (u : Wkp mu Omega p (j + 1)),
       iteratedLineDerivZeroL (j + 1) m u =
-        (IteratedGradient.evalL j m).compLp (iteratedGradient j u)
+        (IteratedGradient.evalTupleL j (m ∘ Fin.rev)).compLp (iteratedGradient j u)
   | 0, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply, iteratedLineDerivZeroL_zero,
-        ContinuousLinearMap.id_apply, lineDerivL_zero_apply, IteratedGradient.evalL_zero]
+        ContinuousLinearMap.id_apply, lineDerivL_zero_apply, IteratedGradient.evalTupleL_zero,
+        Function.comp_apply, Fin.rev_zero, Fin.last_zero]
   | j + 1, m, u => by
       rw [iteratedLineDerivZeroL_succ, ContinuousLinearMap.comp_apply,
-        iteratedLineDerivZeroL_succ_eq_evalL_compLp j (Fin.tail m) (lineDerivL (m 0) (j + 1) u),
-        iteratedGradient_lineDerivL, ← IteratedGradient.contractL_one,
-        ContinuousLinearMap.compLp_compLp, IteratedGradient.evalL_comp_contractL_one,
-        Fin.cons_self_tail]
+        iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp j (Fin.tail m)
+          (lineDerivL (m 0) (j + 1) u),
+        iteratedGradient_lineDerivL, ContinuousLinearMap.compLp_compLp]
+      congr 1
+      ext G
+      rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+        ← IteratedGradient.evalTupleL_snoc_apply, ← Fin.cons_comp_rev, Fin.cons_self_tail]
 
 /-- Almost-everywhere pointwise form of
-`TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalL_compLp`. -/
+`TauCeti.Wkp.iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp`. -/
 theorem iteratedLineDerivZeroL_succ_ae (j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (j + 1)) :
     ∀ᵐ x ∂mu.restrict Omega,
       iteratedLineDerivZeroL (j + 1) m u x =
-        IteratedGradient.evalL j m (iteratedGradient j u x) := by
-  rw [iteratedLineDerivZeroL_succ_eq_evalL_compLp]
-  exact (IteratedGradient.evalL j m).coeFn_compLp (iteratedGradient j u)
+        IteratedGradient.evalTupleL j (m ∘ Fin.rev) (iteratedGradient j u x) := by
+  rw [iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp]
+  exact (IteratedGradient.evalTupleL j (m ∘ Fin.rev)).coeFn_compLp (iteratedGradient j u)
 
 /-- `Lᵖ` bound for `(j + 1)`-fold directional derivatives in terms of the top seminorm. -/
 theorem norm_iteratedLineDerivZeroL_succ_apply_le (j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (j + 1)) :
     ‖iteratedLineDerivZeroL (j + 1) m u‖ ≤ (∏ r, ‖m r‖) * ‖iteratedGradient j u‖ := by
-  rw [iteratedLineDerivZeroL_succ_eq_evalL_compLp]
-  exact ((IteratedGradient.evalL j m).norm_compLp_le _).trans
-    (mul_le_mul_of_nonneg_right (IteratedGradient.norm_evalL_le j m) (norm_nonneg _))
+  rw [iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp]
+  refine ((IteratedGradient.evalTupleL j (m ∘ Fin.rev)).norm_compLp_le _).trans_eq ?_
+  rw [IteratedGradient.norm_evalTupleL]
+  congr 1
+  exact Equiv.prod_comp Fin.revPerm (fun r => ‖m r‖)
 
 /-- **Multilinear evaluations of `D^{j+1} u` belong to `W^{k,p}(Ω)` when `u ∈ W^{k+j+1,p}(Ω)`.**
 For `u ∈ W^{k+j+1,p}(Ω)`, `iteratedLineDerivL k (j + 1) m u ∈ W^{k,p}(Ω)` has `Lᵖ` value
-`(IteratedGradient.evalL j m).compLp (iteratedGradient j (toOrderL _ u))`. -/
-theorem value_iteratedLineDerivL_eq_evalL_compLp (k j : ℕ) (m : Fin (j + 1) → E)
+`(IteratedGradient.evalTupleL j (m ∘ Fin.rev)).compLp (iteratedGradient j (toOrderL _ u))`. -/
+theorem value_iteratedLineDerivL_eq_evalTupleL_compLp (k j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (k + (j + 1))) :
     value k (iteratedLineDerivL k (j + 1) m u) =
-      (IteratedGradient.evalL j m).compLp
+      (IteratedGradient.evalTupleL j (m ∘ Fin.rev)).compLp
         (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u)) := by
   rw [value_iteratedLineDerivL_eq_iteratedLineDerivZeroL,
-    iteratedLineDerivZeroL_succ_eq_evalL_compLp]
+    iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp]
 
 /-- Almost-everywhere pointwise form of
-`TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp`. -/
+`TauCeti.Wkp.value_iteratedLineDerivL_eq_evalTupleL_compLp`. -/
 theorem value_iteratedLineDerivL_ae (k j : ℕ) (m : Fin (j + 1) → E)
     (u : Wkp mu Omega p (k + (j + 1))) :
     ∀ᵐ x ∂mu.restrict Omega,
       value k (iteratedLineDerivL k (j + 1) m u) x =
-        IteratedGradient.evalL j m
+        IteratedGradient.evalTupleL j (m ∘ Fin.rev)
           (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u) x) := by
-  rw [value_iteratedLineDerivL_eq_evalL_compLp]
-  exact (IteratedGradient.evalL j m).coeFn_compLp _
+  rw [value_iteratedLineDerivL_eq_evalTupleL_compLp]
+  exact (IteratedGradient.evalTupleL j (m ∘ Fin.rev)).coeFn_compLp _
 
-/-- Specializing `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalL_compLp` to a constant direction
+/-- Specializing `TauCeti.Wkp.value_iteratedLineDerivL_eq_evalTupleL_compLp` to a constant direction
 tuple gives the scalar full contraction `TauCeti.IteratedGradient.fullContractL`. -/
 theorem value_iteratedLineDerivL_const (k j : ℕ) (h : E) (u : Wkp mu Omega p (k + (j + 1))) :
     value k (iteratedLineDerivL k (j + 1) (fun _ => h) u) =
       (IteratedGradient.fullContractL j h).compLp
         (iteratedGradient j (toOrderL (Nat.le_add_left (j + 1) k) u)) := by
-  rw [value_iteratedLineDerivL_eq_evalL_compLp, IteratedGradient.evalL_const]
+  rw [value_iteratedLineDerivL_eq_evalTupleL_compLp, Function.comp_def,
+    IteratedGradient.evalTupleL_const]
 
 /-! ### Outer-slot contractions of arbitrary and repeated directions -/
 
@@ -179,14 +185,17 @@ theorem iteratedGradient_iteratedLineDerivL_const (k : ℕ) (h : E) (i : ℕ)
 
 /-! ### Full symmetry of weak derivatives at arbitrary order -/
 
-/-- Multilinear evaluation of `iteratedGradient j u` in `Lᵖ(Ω)` is invariant under every
+/-- Tuple evaluation of `iteratedGradient j u` in `Lᵖ(Ω)` is invariant under every
 permutation of the `j + 1` directions. -/
-theorem evalL_compLp_iteratedGradient_comp_perm (j : ℕ) (u : Wkp mu Omega p (j + 1))
+theorem evalTupleL_compLp_iteratedGradient_comp_perm (j : ℕ) (u : Wkp mu Omega p (j + 1))
     (m : Fin (j + 1) → E) (σ : Equiv.Perm (Fin (j + 1))) :
-    (IteratedGradient.evalL j (m ∘ σ)).compLp (iteratedGradient j u) =
-      (IteratedGradient.evalL j m).compLp (iteratedGradient j u) := by
-  rw [← iteratedLineDerivZeroL_succ_eq_evalL_compLp, ← iteratedLineDerivZeroL_succ_eq_evalL_compLp,
-    iteratedLineDerivZeroL_comp_perm]
+    (IteratedGradient.evalTupleL j (m ∘ σ)).compLp (iteratedGradient j u) =
+      (IteratedGradient.evalTupleL j m).compLp (iteratedGradient j u) := by
+  have hm : m = (m ∘ Fin.rev) ∘ Fin.rev := funext fun i => by simp
+  have hσ : (m ∘ σ) = ((m ∘ Fin.rev) ∘ ⇑(Fin.revPerm.trans (σ.trans Fin.revPerm))) ∘ Fin.rev :=
+    funext fun i => by simp
+  rw [hσ, ← iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp, iteratedLineDerivZeroL_comp_perm]
+  conv_rhs => rw [hm, ← iteratedLineDerivZeroL_succ_eq_evalTupleL_compLp]
 
 /-- **Weak derivatives of arbitrary order are symmetric almost everywhere.** For every
 `u ∈ W^{j+1,p}(Ω)`, at almost every `x ∈ Ω` and for every permutation
@@ -201,21 +210,21 @@ theorem domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae (j : �
   let b := stdOrthonormalBasis ℝ E
   have hbasis (σ : Equiv.Perm (Fin (j + 1))) (r : Fin (j + 1) → Fin (Module.finrank ℝ E)) :
       ∀ᵐ x ∂mu.restrict Omega,
-        IteratedGradient.evalL j (fun i => b (r (σ i))) (iteratedGradient j u x) =
-          IteratedGradient.evalL j (fun k => b (r k)) (iteratedGradient j u x) := by
-    have heq := evalL_compLp_iteratedGradient_comp_perm j u (fun k => b (r k)) σ
+        IteratedGradient.evalTupleL j (fun i => b (r (σ i))) (iteratedGradient j u x) =
+          IteratedGradient.evalTupleL j (fun k => b (r k)) (iteratedGradient j u x) := by
+    have heq := evalTupleL_compLp_iteratedGradient_comp_perm j u (fun k => b (r k)) σ
     rw [Function.comp_def] at heq
-    filter_upwards [(IteratedGradient.evalL j (fun i => b (r (σ i)))).coeFn_compLp
+    filter_upwards [(IteratedGradient.evalTupleL j (fun i => b (r (σ i)))).coeFn_compLp
       (iteratedGradient j u),
-      (IteratedGradient.evalL j (fun k => b (r k))).coeFn_compLp (iteratedGradient j u)]
+      (IteratedGradient.evalTupleL j (fun k => b (r k))).coeFn_compLp (iteratedGradient j u)]
       with x hx₁ hx₂
     rw [← hx₁, ← hx₂, heq]
   filter_upwards [ae_all_iff.2 fun σ => ae_all_iff.2 fun r => hbasis σ r] with x hx σ
   refine ContinuousMultilinearMap.toMultilinearMap_injective
     (Module.Basis.ext_multilinear (fun _ => b.toBasis) fun r => ?_)
   simpa [ContinuousMultilinearMap.domDomCongr_apply,
-    IteratedGradient.coe_toContinuousMultilinearMapₗᵢ,
-    IteratedGradient.toContinuousMultilinearMap_apply] using hx σ r
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_apply, Function.comp_def] using
+    hx (Fin.revPerm.trans (σ.trans Fin.revPerm)) (r ∘ Fin.rev)
 
 end Sobolev
 

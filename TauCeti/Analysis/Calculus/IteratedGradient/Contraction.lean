@@ -15,14 +15,14 @@ import Mathlib.Analysis.Normed.Operator.NormedSpace
 # Contractions of iterated gradients
 
 An iterated gradient has continuous-linear direction slots outside a final vector. Evaluating a
-specified number of outer slots along a tuple `m : Fin i → E` is `TauCeti.IteratedGradient.applyL`,
-and partial contraction `TauCeti.IteratedGradient.contractL` specializes this to a repeated
-direction `h`. Multilinear evaluation (`TauCeti.IteratedGradient.evalL`) evaluates all direction
-slots and pairs the remaining vector with the last direction, and
-`TauCeti.IteratedGradient.toContinuousMultilinearMap` embeds `IteratedGradient E j` linearly and
-isometrically into `E [×(j + 1)]→L[ℝ] ℝ` without assuming completeness of `E`. Full contraction
-(`TauCeti.IteratedGradient.fullContractL`) is the specialisation of `evalL` to a constant tuple of
-directions. These operations turn derivative fields into the directional expressions used in
+specified number of outer slots along a tuple `m : Fin i → E` is `TauCeti.IteratedGradient.applyL`
+(which is multilinear in each slot: `TauCeti.IteratedGradient.applyL_update_add`,
+`TauCeti.IteratedGradient.applyL_update_smul`, `TauCeti.IteratedGradient.applyL_update_zero`), and
+partial contraction `TauCeti.IteratedGradient.contractL` specializes this to a repeated direction
+`h`. `TauCeti.IteratedGradient.toContinuousMultilinearMap` embeds `IteratedGradient E j` linearly
+and isometrically into `E [×(j + 1)]→L[ℝ] ℝ` without assuming completeness of `E`. Full
+contraction (`TauCeti.IteratedGradient.fullContractL`) contracts every outer slot at `h` and pairs
+the remaining vector with `h`. These operations turn derivative fields into the directional
 Taylor polynomials, without choosing coordinates.
 
 All of these operations are continuous linear in the field. Evaluating `i` outer slots along `m` has
@@ -32,11 +32,6 @@ degree `j + 1`, has norm at most `‖h‖ ^ (j + 1)`, depends smoothly on the di
 (`TauCeti.IteratedGradient.contDiff_fullContractL`), and on a Hilbert space evaluates
 `TauCeti.iteratedGradientChain` to repeated directional derivatives
 (`TauCeti.IteratedGradient.fullContractL_iteratedGradientChain_eq_iteratedFDerivAlong`).
-Precomposing `evalL` with a single outer contraction `contractL j 1 h` prepends `h` to the
-direction tuple (`TauCeti.IteratedGradient.evalL_comp_contractL_one`), `evalL` is multilinear in
-each slot (`TauCeti.IteratedGradient.evalL_update_add`,
-`TauCeti.IteratedGradient.evalL_update_smul`, `TauCeti.IteratedGradient.evalL_update_zero`), and two
-iterated gradients agree when they have the same `evalL` values (`TauCeti.IteratedGradient.ext`).
 -/
 
 public section
@@ -76,6 +71,46 @@ theorem applyL_one (j : ℕ) (m : Fin 1 → E) :
     applyL j 1 m = ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0) := by
   rw [applyL_succ, applyL_zero]
   exact ContinuousLinearMap.id_comp _
+
+/-- Updating slot `r` of the direction tuple with `v₁ + v₂` splits `applyL` as a sum. -/
+@[simp]
+theorem applyL_update_add (j : ℕ) :
+    ∀ (i : ℕ) (m : Fin i → E) (r : Fin i) (v₁ v₂ : E),
+      applyL j i (Function.update m r (v₁ + v₂)) =
+        applyL j i (Function.update m r v₁) + applyL j i (Function.update m r v₂)
+  | 0, _, r, _, _ => r.elim0
+  | i + 1, m, r, v₁, v₂ => by
+      cases r using Fin.cases with
+      | zero =>
+          simp only [applyL_succ, Function.update_self, Fin.tail_update_zero, map_add,
+            ContinuousLinearMap.comp_add]
+      | succ r =>
+          simp only [applyL_succ, Function.update_of_ne (Fin.succ_ne_zero r).symm,
+            Fin.tail_update_succ, applyL_update_add j i (Fin.tail m) r v₁ v₂,
+            ContinuousLinearMap.add_comp]
+
+/-- Updating slot `r` of the direction tuple with `c • v` scales `applyL` by `c`. -/
+@[simp]
+theorem applyL_update_smul (j : ℕ) :
+    ∀ (i : ℕ) (m : Fin i → E) (r : Fin i) (c : ℝ) (v : E),
+      applyL j i (Function.update m r (c • v)) =
+        c • applyL j i (Function.update m r v)
+  | 0, _, r, _, _ => r.elim0
+  | i + 1, m, r, c, v => by
+      cases r using Fin.cases with
+      | zero =>
+          simp only [applyL_succ, Function.update_self, Fin.tail_update_zero, map_smul,
+            ContinuousLinearMap.comp_smul]
+      | succ r =>
+          simp only [applyL_succ, Function.update_of_ne (Fin.succ_ne_zero r).symm,
+            Fin.tail_update_succ, applyL_update_smul j i (Fin.tail m) r c v,
+            ContinuousLinearMap.smul_comp]
+
+/-- Evaluating `applyL` at a tuple with zero in slot `r` gives the zero map. -/
+@[simp]
+theorem applyL_update_zero (j i : ℕ) (m : Fin i → E) (r : Fin i) :
+    applyL (E := E) j i (Function.update m r 0) = 0 := by
+  simpa using applyL_update_smul j i m r 0 0
 
 /-- The pointwise bound for outer-slot evaluation, in the operator norms of the nested linear
 maps. -/
@@ -188,114 +223,23 @@ theorem toContinuousMultilinearMap_succ_apply (j : ℕ) (G : IteratedGradient E 
   simp [toContinuousMultilinearMap, continuousMultilinearCurryLeftEquiv_symm_apply,
     LinearIsometry.postcomp]
 
-/-- Evaluate an iterated gradient of index `j` along `j + 1` directions: the first `j` directions
-feed the outer continuous-linear slots from outermost to innermost, and the last direction pairs
-with the resulting vector in `E` via the inner product. -/
-def evalL (j : ℕ) (m : Fin (j + 1) → E) : IteratedGradient E j →L[ℝ] ℝ :=
-  ((toContinuousMultilinearMap E j).toContinuousLinearMap).flipMultilinear m
-
-/-- Evaluating `toContinuousMultilinearMap E j G` at `m` agrees with `evalL j m G`. -/
-@[simp]
-theorem toContinuousMultilinearMap_apply (j : ℕ) (G : IteratedGradient E j)
-    (m : Fin (j + 1) → E) :
-    toContinuousMultilinearMap E j G m = evalL j m G :=
-  (rfl)
-
-theorem evalL_zero_apply (m : Fin 1 → E) (G : IteratedGradient E 0) :
-    evalL 0 m G = ⟪m 0, G⟫_ℝ := by
-  rw [← toContinuousMultilinearMap_apply, real_inner_comm]
-  rfl
-
-theorem evalL_succ_apply (j : ℕ) (m : Fin (j + 1 + 1) → E) (G : IteratedGradient E (j + 1)) :
-    evalL (j + 1) m G = evalL j (Fin.tail m) (G (m 0)) :=
-  toContinuousMultilinearMap_succ_apply j G m
-
-theorem evalL_zero (m : Fin 1 → E) :
-    evalL 0 m = innerSL ℝ (m 0) :=
-  ContinuousLinearMap.ext (evalL_zero_apply m)
-
-theorem evalL_succ (j : ℕ) (m : Fin (j + 1 + 1) → E) :
-    evalL (j + 1) m = (evalL j (Fin.tail m)).comp
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) (m 0)) :=
-  ContinuousLinearMap.ext (evalL_succ_apply j m)
-
-/-- Pointwise evaluation after contracting one outermost slot at `h` evaluates at `Fin.cons h m`. -/
-theorem evalL_contractL_one_apply (j : ℕ) (h : E) (m : Fin (j + 1) → E)
-    (G : IteratedGradient E (j + 1)) :
-    evalL j m (contractL j 1 h G) = evalL (j + 1) (Fin.cons h m) G := by
-  rw [contractL_one, ContinuousLinearMap.apply_apply, evalL_succ_apply, Fin.cons_zero,
-    Fin.tail_cons]
-
-/-- Contracting one outermost slot at `h` and evaluating at `m` evaluates at `Fin.cons h m`. -/
-theorem evalL_comp_contractL_one (j : ℕ) (h : E) (m : Fin (j + 1) → E) :
-    (evalL j m).comp (contractL j 1 h) = evalL (j + 1) (Fin.cons h m) := by
-  ext G
-  exact evalL_contractL_one_apply j h m G
-
-/-- Two iterated gradients are equal when they agree on every tuple of directions. -/
-@[ext]
-theorem ext {j : ℕ} {G₁ G₂ : IteratedGradient E j}
-    (h : ∀ m : Fin (j + 1) → E, evalL j m G₁ = evalL j m G₂) :
-    G₁ = G₂ :=
-  (toContinuousMultilinearMap E j).injective <| ContinuousMultilinearMap.ext h
-
-/-- Evaluating `evalL` at a tuple updated in slot `i` with `v₁ + v₂` is the sum of the
-evaluations at `v₁` and `v₂`. -/
-@[simp]
-theorem evalL_update_add (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (v₁ v₂ : E) :
-    evalL j (Function.update m i (v₁ + v₂)) =
-      evalL j (Function.update m i v₁) + evalL j (Function.update m i v₂) :=
-  ((toContinuousMultilinearMap E j).toContinuousLinearMap).flipMultilinear.map_update_add m i v₁ v₂
-
-/-- Evaluating `evalL` at a tuple updated in slot `i` with `c • v` scales the evaluation by
-`c`. -/
-@[simp]
-theorem evalL_update_smul (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) (c : ℝ) (v : E) :
-    evalL j (Function.update m i (c • v)) = c • evalL j (Function.update m i v) :=
-  ((toContinuousMultilinearMap E j).toContinuousLinearMap).flipMultilinear.map_update_smul m i c v
-
-/-- Evaluating `evalL` at a tuple with zero in slot `i` gives the zero map. -/
-@[simp]
-theorem evalL_update_zero (j : ℕ) (m : Fin (j + 1) → E) (i : Fin (j + 1)) :
-    evalL j (Function.update m i 0) = 0 :=
-  ((toContinuousMultilinearMap E j).toContinuousLinearMap).flipMultilinear.map_update_zero m i
-
-/-- Pointwise operator-norm bound for multilinear evaluation of an iterated gradient. -/
-theorem norm_evalL_apply_le (j : ℕ) (m : Fin (j + 1) → E) (G : IteratedGradient E j) :
-    ‖evalL j m G‖ ≤ ‖G‖ * ∏ k, ‖m k‖ := by
-  rw [← toContinuousMultilinearMap_apply]
-  exact ((toContinuousMultilinearMap E j G).le_opNorm m).trans_eq (by
-    rw [(toContinuousMultilinearMap E j).norm_map G])
-
-/-- Multilinear evaluation at `m` has operator norm at most `∏ k, ‖m k‖`. -/
-theorem norm_evalL_le (j : ℕ) (m : Fin (j + 1) → E) :
-    ‖evalL j m‖ ≤ ∏ k, ‖m k‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (Finset.prod_nonneg fun _ _ => norm_nonneg _)
-    fun G => ?_
-  exact (norm_evalL_apply_le j m G).trans_eq (mul_comm _ _)
-
 /-- Contract every outer slot at `h` and pair the remaining vector with `h`. Since an
 iterated gradient of index `j` has derivative order `j + 1`, this uses `j + 1` directions. -/
-def fullContractL (j : ℕ) (h : E) : IteratedGradient E j →L[ℝ] ℝ :=
-  evalL j (fun _ => h)
-
-/-- Evaluating an iterated gradient on a constant tuple of directions is `fullContractL`. -/
-@[simp]
-theorem evalL_const (j : ℕ) (h : E) :
-    evalL j (fun _ => h) = fullContractL j h :=
-  (rfl)
+def fullContractL : (j : ℕ) → E → IteratedGradient E j →L[ℝ] ℝ
+  | 0, h => innerSL ℝ h
+  | j + 1, h => (fullContractL j h).comp
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) h)
 
 @[simp]
 theorem fullContractL_zero (h : E) :
-    fullContractL 0 h = innerSL ℝ h := by
-  rw [fullContractL, evalL_zero]
+    fullContractL 0 h = innerSL ℝ h :=
+  (rfl)
 
 @[simp]
 theorem fullContractL_succ (j : ℕ) (h : E) :
     fullContractL (j + 1) h = (fullContractL j h).comp
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) h) := by
-  rw [fullContractL, evalL_succ]
-  rfl
+      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) h) :=
+  (rfl)
 
 /-- Full contraction factors through any number of partial contractions in the same direction. -/
 theorem fullContractL_add_eq_fullContractL_contractL (j i : ℕ) (h : E)
@@ -306,8 +250,7 @@ theorem fullContractL_add_eq_fullContractL_contractL (j i : ℕ) (h : E)
   | succ i ih =>
       -- The recursive equations avoid rewriting the dependent index j + (i + 1).
       calc
-        fullContractL (j + (i + 1)) h G = fullContractL (j + i) h (G h) :=
-          evalL_succ_apply (j + i) (fun _ => h) G
+        fullContractL (j + (i + 1)) h G = fullContractL (j + i) h (G h) := (rfl)
         _ = fullContractL j h (contractL j i h (G h)) := ih (G h)
         _ = fullContractL j h (contractL j (i + 1) h G) := (rfl)
 
@@ -331,13 +274,24 @@ theorem fullContractL_zero_direction (j : ℕ) :
 /-- The absolute value of a full contraction is bounded by the field norm times the
 `(j + 1)`st power of the direction's norm. -/
 theorem norm_fullContractL_apply_le (j : ℕ) (h : E) (G : IteratedGradient E j) :
-    ‖fullContractL j h G‖ ≤ ‖G‖ * ‖h‖ ^ (j + 1) :=
-  (norm_evalL_apply_le j (fun _ => h) G).trans_eq (by simp)
+    ‖fullContractL j h G‖ ≤ ‖G‖ * ‖h‖ ^ (j + 1) := by
+  induction j with
+  | zero =>
+      rw [fullContractL_zero]
+      simpa [mul_comm] using (norm_inner_le_norm (𝕜 := ℝ) h G)
+  | succ j ih =>
+      calc
+        ‖fullContractL (j + 1) h G‖ ≤ ‖G h‖ * ‖h‖ ^ (j + 1) := ih (G h)
+        _ ≤ (‖G‖ * ‖h‖) * ‖h‖ ^ (j + 1) :=
+          mul_le_mul_of_nonneg_right (G.le_opNorm h) (by positivity)
+        _ = ‖G‖ * ‖h‖ ^ (j + 1 + 1) := by rw [pow_succ]; ring
 
 /-- The operator norm of full contraction is bounded by `‖h‖ ^ (j + 1)`. -/
 theorem norm_fullContractL_le (j : ℕ) (h : E) :
-    ‖fullContractL j h‖ ≤ ‖h‖ ^ (j + 1) :=
-  (norm_evalL_le j (fun _ => h)).trans_eq (by simp)
+    ‖fullContractL j h‖ ≤ ‖h‖ ^ (j + 1) := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro G
+  exact (norm_fullContractL_apply_le j h G).trans_eq (mul_comm _ _)
 
 /-- `fullContractL j` depends smoothly (`C^n` for every `n : ℕ∞ω`) on the direction vector. -/
 theorem contDiff_fullContractL {n : ℕ∞ω} : ∀ j : ℕ, ContDiff ℝ n (fullContractL (E := E) j)

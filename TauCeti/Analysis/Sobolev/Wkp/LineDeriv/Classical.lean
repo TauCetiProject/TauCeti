@@ -55,7 +55,7 @@ theorem iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn (j : ℕ) (u : Wkp mu Om
       fun x => iteratedFDeriv ℝ (j + 1) f x m := by
   filter_upwards [iteratedLineDerivZeroL_succ_ae j m u,
     iteratedGradient_ae_eq_of_contDiffOn j u hf hu] with x hx hgx
-  rw [hx, hgx, IteratedGradient.evalL_iteratedGradientChain]
+  rw [hx, hgx, IteratedGradient.evalTupleL_comp_rev_iteratedGradientChain]
 
 /-- General-order form of `TauCeti.Wkp.iteratedLineDerivZeroL_succ_ae_eq_of_contDiffOn`: only
 `C^{j+1}` regularity of `f` on `Ω` is required, even when `u` lies in `W^{k+j+1,p}(Ω)`. -/
