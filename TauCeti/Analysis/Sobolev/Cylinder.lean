@@ -75,7 +75,7 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`), and applies the Fréchet–Kolmogorov criterion
   for `C¹` functions `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`.
 * A first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with an essentially bounded coefficient field
-  `M` acts on `L²` jets by `TauCeti.jetOperator stripMeasure M`; the steps of Peetre's argument
+  `M` acts on `L²` jets by `TauCeti.jetOperator 2 stripMeasure M`; the steps of Peetre's argument
   shared with the strip with boundary conditions are in
   `TauCeti.Analysis.Sobolev.Strip.Operator`. **Peetre's argument**: if `D` satisfies the
   semi-Fredholm estimate
@@ -546,7 +546,7 @@ theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W}
 theorem norm_jetLp_le {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     {C T : ℝ} (hest : HasSemiFredholmEstimate M C T) (ξ : testSection V) :
     ‖jetLp 2 (testSection V) ξ‖ ≤
-      √(max C 0) * (‖jetOperator stripMeasure M (jetLp 2 (testSection V) ξ)‖ +
+      √(max C 0) * (‖jetOperator 2 stripMeasure M (jetLp 2 (testSection V) ξ)‖ +
         ‖restrictValue T (jetLp 2 (testSection V) ξ)‖) := by
   obtain ⟨hξ, hper, R, hR⟩ := mem_testSection_iff.1 ξ.property
   have hR₀ : ∀ s t, max R 0 ≤ |s| → (ξ : ℝ × ℝ → V) (s, t) = 0 := fun s t hs ↦
@@ -567,7 +567,7 @@ over `[a, b] × [0, 1]` for every `C²` section `ξ` of period one in `t` vanish
 theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate M C T) :
-    FiniteDimensional ℝ ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker :=
+    FiniteDimensional ℝ ((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).ker :=
   finiteDimensional_ker_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
 
@@ -577,7 +577,7 @@ theorem finiteDimensional_ker_jetOperator_comp_subtypeL [FiniteDimensional ℝ V
 theorem isClosed_range_jetOperator_comp_subtypeL [FiniteDimensional ℝ V]
     {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure) {C T : ℝ}
     (hest : HasSemiFredholmEstimate M C T) :
-    IsClosed (((jetOperator stripMeasure M).comp (H1 V).subtypeL).range :
+    IsClosed (((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).range :
       Set (Lp W 2 stripMeasure)) :=
   isClosed_range_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le
     (isCompactOperator_restrictValue_comp_subtypeL T) (norm_jetLp_le hM hest)
@@ -593,7 +593,7 @@ theorem exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL
     (hest : HasSemiFredholmEstimate M C T)
     (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
-    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator stripMeasure M).comp (H1 V).subtypeL x‖ :=
+    ∃ K : ℝ≥0, ∀ x : H1 V, ‖x‖ ≤ K * ‖(jetOperator 2 stripMeasure M).comp (H1 V).subtypeL x‖ :=
   ⟨⟨√(max C 0) * (1 + √(max C' 0)), by positivity⟩,
     norm_le_mul_norm_jetOperator_comp_subtypeL_of_forall_norm_jetLp_le (Real.sqrt_nonneg _)
       (norm_jetLp_le hM hest) fun ξ ↦
@@ -608,7 +608,7 @@ theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →
     (hM : MemLp M ∞ stripMeasure) {C T C' : ℝ} (hest : HasSemiFredholmEstimate M C T)
     (hL2 : ∀ ξ : testSection V, ∫ z, ‖(ξ : ℝ × ℝ → V) z‖ ^ 2 ∂stripMeasure ≤
       C' * ∫ z, ‖M z (jet (ξ : ℝ × ℝ → V) z)‖ ^ 2 ∂stripMeasure) :
-    ((jetOperator stripMeasure M).comp (H1 V).subtypeL).ker = ⊥ := by
+    ((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).ker = ⊥ := by
   obtain ⟨K, hK⟩ := exists_forall_norm_le_mul_norm_jetOperator_comp_subtypeL hM hest hL2
   exact LinearMap.ker_eq_bot.2 ((ContinuousLinearMap.antilipschitz_of_bound _ hK).injective)
 
@@ -619,12 +619,12 @@ direction gives the operator of the translated coefficient field `M (· + a, ·)
 translate of `f`. -/
 theorem translateLp_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    translateLp a (jetOperator stripMeasure M f) =
-      jetOperator stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
+    translateLp a (jetOperator 2 stripMeasure M f) =
+      jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
   have hMa : MemLp (fun z ↦ M (z + (a, 0))) ∞ stripMeasure :=
     hM.comp_measurePreserving (measurePreserving_add_strip a)
   refine Lp.ext ?_
-  filter_upwards [coeFn_translateLp a (jetOperator stripMeasure M f),
+  filter_upwards [coeFn_translateLp a (jetOperator 2 stripMeasure M f),
     coeFn_jetOperator hMa (translateLp a f), coeFn_translateLp a f,
     (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetOperator hM f)]
     with z h₁ h₂ h₃ h₄
@@ -639,10 +639,10 @@ the translated data, with norm at most `‖Q‖`: it is `Q` conjugated by the tr
 theorem exists_rightInverse_coprod_jetOperator_comp_add {S : Type*} [NormedAddCommGroup S]
     [NormedSpace ℝ S] {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     {ι : S →L[ℝ] Lp W 2 stripMeasure} {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × S}
-    (hQ : (((jetOperator stripMeasure M).comp (H1 V).subtypeL).coprod ι).comp Q =
+    (hQ : (((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).coprod ι).comp Q =
       ContinuousLinearMap.id ℝ _) (a : ℝ) :
     ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V × S,
-      (((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).coprod
+      (((jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).coprod
           ((translateLp (E := W) (p := 2) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
             ι)).comp Q' = ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
   refine ⟨((translate 2 (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.prodMap
@@ -673,10 +673,10 @@ field `M (· + a, ·)`, with norm at most `‖Q‖`: it is `Q` conjugated by the
 This is the case of the zero stabilizer in `exists_rightInverse_coprod_jetOperator_comp_add`. -/
 theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hM : MemLp M ∞ stripMeasure) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V}
-    (hQ : ((jetOperator stripMeasure M).comp (H1 V).subtypeL).comp Q =
+    (hQ : ((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).comp Q =
       ContinuousLinearMap.id ℝ _) (a : ℝ) :
     ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V,
-      ((jetOperator stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
+      ((jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
         ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
   obtain ⟨Q', hQ', hQ'n⟩ := exists_rightInverse_coprod_jetOperator_comp_add hM
     (ι := (0 : Unit →L[ℝ] Lp W 2 stripMeasure)) (Q := Q.prod 0)

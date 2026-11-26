@@ -21,7 +21,7 @@ Let `F` be a finite-dimensional complex inner product space with symplectic form
 `ω = Im ⟪·, ·⟫`, and let `H : F → ℝ` be an autonomous Hamiltonian. A critical point `p` of `H` is
 a rest point of `X_H`, so the constant loop at `p` is a one-periodic orbit of `H`. This file
 computes the Fredholm index of the Sobolev realization
-`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` (`TauCeti.SymplecticForm.floerSobolevOperator`) of the
+`D_u : W^{1,2}(ℝ × S¹, F) → L²(ℝ × S¹, F)` (`TauCeti.SymplecticForm.floerSobolevOperator 2`) of the
 linearized Floer operator along any cylinder `u` running from the constant orbit at `p₋` to the
 constant orbit at `p₊`, for any Floer data `(J, K_s, K_t)` with compatible almost complex
 structures which equal the Floer data of `H` near the ends:
@@ -120,7 +120,7 @@ private theorem index_floerSobolevOperator_smoothSegmentPath
     {pm pp : F}
     (haH : ∀ y ∈ segment ℝ pm pp, ‖fderiv ℝ (ω.hamiltonianVectorField H) y‖ ≤ a)
     (hpm : IsNondegenerateCriticalPoint H pm) (hpp : IsNondegenerateCriticalPoint H pp) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ smoothSegmentPath pm pp z.1)).index =
       (morseIndex H pp : ℤ) - morseIndex H pm := by
@@ -170,7 +170,7 @@ theorem index_floerSobolevOperator_eq_morseIndex_sub_morseIndex
     (hup : TendstoUniformlyOn (fun s t ↦ u (s, t)) (fun _ ↦ pp) atTop (Icc 0 1))
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun _ ↦ ω.hamiltonianVectorField H) u (s, t)) 0 atTop (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).index = (morseIndex H pp : ℤ) - morseIndex H pm := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hH₂ : ContDiff ℝ 2 H := hH.of_le (by norm_num)

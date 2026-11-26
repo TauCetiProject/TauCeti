@@ -22,7 +22,7 @@ import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 # The index of the linearized Floer operator depends only on the asymptotic data
 
 Let `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` be the Sobolev realization
-(`TauCeti.SymplecticForm.floerSobolevOperator`) of the linearized Floer operator
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) of the linearized Floer operator
 `D_u ξ = ∂s ξ + J(z, u z) ∂t ξ + A(z) ξ` along a map `u : ℝ × ℝ → V` of the cylinder into a
 finite-dimensional symplectic inner product space `V`, for Floer data that are cylindrical near
 the ends (`TauCeti.Floer.IsCylindricalNearEnds`) and `C¹` on the whole cylinder (with `C²`
@@ -562,13 +562,13 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u').IsFredholm ∧
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u').index =
-        (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u).index := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hR := le_abs_self R
@@ -659,9 +659,9 @@ theorem isFredholm_floerSobolevOperator_iff_of_cylindrical (ω : SymplecticForm 
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).IsFredholm ↔
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u').IsFredholm :=
   ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm
       hδm hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).1,
@@ -701,11 +701,11 @@ theorem index_floerSobolevOperator_eq_of_cylindrical (ω : SymplecticForm V)
     (hδ'p : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u' (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u').index =
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index :=
   (isFredholm_and_index_eq_of_cylindrical ω hcyl hJ hKs hKt hJc hu hu' hXm hxm hndm huxm hδm
     hu'xm hδ'm hXp hxp hndp huxp hδp hu'xp hδ'p h).2
@@ -749,13 +749,13 @@ theorem isFredholm_floerSobolevOperator_and_index_eq_of_family (ω : SymplecticF
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp μ₀ t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
       (fun w ↦ Ks (μ₀, w)) (fun w ↦ Kt (μ₀, w)) u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J (μ₁, w) y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J (μ₁, w) y).toLinearMap.toContinuousLinearMap)
         (fun w ↦ Ks (μ₁, w)) (fun w ↦ Kt (μ₁, w)) u).IsFredholm ∧
-      (ω.floerSobolevOperator (fun w y ↦ (J (μ₁, w) y).toLinearMap.toContinuousLinearMap)
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J (μ₁, w) y).toLinearMap.toContinuousLinearMap)
           (fun w ↦ Ks (μ₁, w)) (fun w ↦ Kt (μ₁, w)) u).index =
-        (ω.floerSobolevOperator (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J (μ₀, w) y).toLinearMap.toContinuousLinearMap)
           (fun w ↦ Ks (μ₀, w)) (fun w ↦ Kt (μ₀, w)) u).index := by
   have hR := le_abs_self R
   have hR' : -|R| ≤ -R := by linarith
@@ -834,13 +834,13 @@ private theorem isFredholm_and_index_eq_of_cylindrical_data (ω : SymplecticForm
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u).IsFredholm ∧
-      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
           u).index =
-        (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+        (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
           u).index := by
   -- The path of data from `(J, K_s, K_t)` at `μ = 0` to `(J', K'_s, K'_t)` at `μ = 1`.
   have h₀ := hJc 0 0
@@ -898,9 +898,9 @@ theorem isFredholm_floerSobolevOperator_iff_of_cylindrical_data (ω : Symplectic
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).IsFredholm ↔
-      (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u).IsFredholm :=
   ⟨fun h ↦ (isFredholm_and_index_eq_of_cylindrical_data ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc
       hJ'c hu hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h).1,
@@ -937,11 +937,11 @@ theorem index_floerSobolevOperator_eq_of_cylindrical_data (ω : SymplecticForm V
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1))
-    (h : (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (h : (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm) :
-    (ω.floerSobolevOperator (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt'
         u).index =
-      (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).index :=
   (isFredholm_and_index_eq_of_cylindrical_data ω hcyl hcyl' hJ hKs hKt hJ' hKs' hKt' hJc hJ'c hu
     hXm hxm hndm huxm hδm hXp hxp hndp huxp hδp h).2
@@ -989,7 +989,7 @@ theorem isFredholm_floerSobolevOperator_of_cylindrical_of_compatible (ω : Sympl
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).IsFredholm := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   -- The data `(i, K_s, K_t)` have the same end Hamiltonians, and their operator is Fredholm by
@@ -1039,7 +1039,7 @@ theorem isFredholm_floerSobolevOperator_of_compatible (ω : SymplecticForm F)
     (hδp : TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 atTop
         (Icc 0 1)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm := by
   have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)
   exact ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω
@@ -1073,10 +1073,10 @@ nondegenerate orbit to itself, compared with the stationary cylinder. -/
 private theorem isFredholm_floerSobolevOperator_and_index_eq_zero
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm ∧
-      (ω.floerSobolevOperator
+      (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
           (fun _ _ ↦ 0) (fun w ↦ H w.2) u).index = 0 := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
@@ -1122,7 +1122,7 @@ linearized Floer operator is Fredholm. -/
 theorem isFredholm_floerSobolevOperator_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).IsFredholm :=
   (isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω
@@ -1137,7 +1137,7 @@ index zero. -/
 theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) u).index = 0 :=
   (isFredholm_floerSobolevOperator_and_index_eq_zero ω hX hH hHp hx hxp hu hum hδm hup hδp hω
@@ -1168,7 +1168,7 @@ linearized Floer operator of these data has index zero; it is Fredholm by
 theorem index_floerSobolevOperator_eq_zero_of_isNondegenerateFixedPt_of_cylindrical
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
       u).index = 0 := by
   let : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
   have hH₂ : ContDiff ℝ 2 (uncurry H) := hH.of_le (by norm_num)

@@ -75,7 +75,7 @@ private theorem isInvertible_floerSobolevOperator_const_mul_norm_sq
     [FiniteDimensional ℂ F] {Φ : F ≃L[ℝ] V} (hΦ : ∀ v, Φ (Complex.I • v) = J (Φ v))
     (hΦω : ∀ v w, ω (Φ v) (Φ w) = (inner ℂ v w).im) {ε : ℝ} (hε : ε ≠ 0)
     (hsmall : |ε| * (2 * ‖J.toLinearMap.toContinuousLinearMap‖) < Real.log 2) (u : ℝ × ℝ → V) :
-    (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+    (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (fun _ y ↦ ε * ‖y‖ ^ 2) u).IsInvertible := by
   set Jc := J.toLinearMap.toContinuousLinearMap
   have hX : ω.hamiltonianVectorField (fun y ↦ ε * ‖y‖ ^ 2) = ⇑((ε * -2) • Jc) := by
@@ -144,7 +144,7 @@ private theorem norm_fderiv_hamiltonianVectorField_lineMap_le (hg : ∀ v w, ω 
 `(1 - τ) ε ‖y‖² + τ H` of autonomous Hamiltonians. -/
 private noncomputable def segmentOperator (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (H : V → ℝ) (γ : ℝ → V) (ε τ : ℝ) : H1 V →L[ℝ] Lp V 2 stripMeasure :=
-  ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+  ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
     (fun _ y ↦ (1 - τ) * (ε * ‖y‖ ^ 2) + τ * H y) (fun z ↦ γ z.1)
 
 omit [FiniteDimensional ℝ V] in
@@ -204,7 +204,7 @@ private theorem mul_norm_le_mul_norm_segmentOperator (hg : ∀ v w, ω v (J w) =
 
 private theorem segmentOperator_one (ω : SymplecticForm V) (J : AlmostComplexStructure V)
     (H : V → ℝ) (γ : ℝ → V) (ε : ℝ) :
-    segmentOperator ω J H γ ε 1 = ω.floerSobolevOperator
+    segmentOperator ω J H γ ε 1 = ω.floerSobolevOperator 2
       (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ ↦ H)
         (fun z ↦ γ z.1) := by
   rw [segmentOperator]
@@ -260,7 +260,7 @@ theorem exists_floerSobolevOperator_eq_of_sliceAverageLp_eq_zero
     {a : ℝ} (ha : a < 2 * π) (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (γ s)‖ ≤ a)
     {y : Lp V 2 stripMeasure} (hy : sliceAverageLp y = 0) :
     ∃ x : H1 V, sliceAverageL x = 0 ∧
-      ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
+      ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
         (fun _ ↦ H) (fun z ↦ γ z.1) x = y := by
   set Jc := J.toLinearMap.toContinuousLinearMap
   -- The quadratic end `ε ‖y‖²` of the segment is small enough for the gap and nondegenerate.
@@ -307,7 +307,7 @@ theorem mem_range_floerSobolevOperator_iff (hg : ∀ v w, ω v (J w) = ⟪v, w�
       fun s ↦ -(J.toLinearMap.toContinuousLinearMap.comp
         (fderiv ℝ (ω.hamiltonianVectorField H) (γ s))))
     (y : Lp V 2 stripMeasure) :
-    y ∈ range (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+    y ∈ range (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
       ∃ ζ : WeakDerivStep volume ⊤ 2 (ContinuousLinearMap.id ℝ
           (Lp V 2 (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)))),
