@@ -89,6 +89,13 @@ theorem inner_rieszDual {x : M} (φ : TangentSpace I x →L[ℝ] ℝ)
   let _ := FiniteDimensional.completeSpace ℝ (TangentSpace I x)
   exact InnerProductSpace.toDual_symm_apply
 
+/-- The inverse of the Riesz dual is the metric dual: it sends a tangent vector `v` to the
+covector `⟪v, ·⟫`. -/
+theorem rieszDual_symm_apply {x : M} (v : TangentSpace I x) :
+    (rieszDual (I := I) x).symm v = innerSL ℝ v := by
+  ext w
+  rw [innerSL_apply_apply, ← inner_rieszDual, LinearIsometryEquiv.apply_symm_apply]
+
 /-- A tangent vector is the Riesz dual of `φ` exactly when its inner product against every
 vector is the value of `φ` there. -/
 theorem eq_rieszDual_iff_inner_eq {x : M} {v : TangentSpace I x}

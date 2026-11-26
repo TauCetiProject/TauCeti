@@ -75,12 +75,8 @@ theorem continuous_rieszDual_symm :
       (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) v.proj
       ((Riemannian.Tensor.rieszDual (I := I) v.proj).symm.toContinuousLinearEquiv v.snd) := by
   -- The metric dual of `v` is `innerSL ℝ v`, the metric applied to `v`.
-  have h (x : M) (v : TangentSpace I x) :
-      (Riemannian.Tensor.rieszDual (I := I) x).symm v = innerSL ℝ v := by
-    ext w
-    rw [innerSL_apply_apply, ← Riemannian.Tensor.inner_rieszDual,
-      LinearIsometryEquiv.apply_symm_apply]
-  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv, h]
+  simp only [LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    Riemannian.Tensor.rieszDual_symm_apply]
   exact ((IsContMDiffRiemannianBundle.contMDiff_innerSL (I := I) (n := 0)
     (V := fun x : M ↦ TangentSpace I x)).continuous.comp
       (FiberBundle.continuous_proj E (TangentSpace I))).clm_bundle_apply continuous_id

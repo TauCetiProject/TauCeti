@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.ConcreteCategory.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Orientation
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Codisc
 public import TauCeti.Topology.VectorBundle.MayerVietoris.DirectedUnion
@@ -33,7 +34,8 @@ of symplectic homology.
 
 The norm of covectors is a continuous fibre gauge on `T*M`
 (`TauCeti.CotangentBundle.isFiberGauge_norm_snd`), whose disc and sphere bundles are `D*M` and
-`S*M`. So the inclusion of `(D*M, S*M)` into the Thom pair `(T*M, T*M ∖ 0)` of the cotangent bundle
+`S*M` (`TauCeti.CotangentBundle.codiscPair_eq_gaugeDiscSpherePair`). So the inclusion of
+`(D*M, S*M)` into the Thom pair `(T*M, T*M ∖ 0)` of the cotangent bundle
 (`TauCeti.CotangentBundle.codiscPairMap`) induces isomorphisms on relative singular homology with
 any coefficients (`TauCeti.CotangentBundle.isIso_singularHomologyMap_codiscPairMap`), by radial
 rescaling (`TauCeti.isIso_singularHomologyMap_gaugeDiscSpherePairMap`). Composing with the Thom
@@ -43,16 +45,16 @@ isomorphisms of the vector bundle `T*M`:
   `Hₘ(D*M, S*M; K) ≅ Hₚ(M; K)` for `n + p = m`, over any base
   (`TauCeti.CotangentBundle.codiscPairSingularHomologyIso`, from `TauCeti.homologyThomIso`);
 * with no orientation, when `2 = 0` in `K`, for instance `K = ZMod 2`
-  (`TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_of_two_eq_zero`);
+  (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_two_eq_zero`);
 * for an oriented manifold, over every commutative ring, `ℤ` included
-  (`TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_of_orientation`). The Riesz
+  (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_orientation`). The Riesz
   isomorphisms `p ↦ p♯` of the metric (`Riemannian.Tensor.rieszDual`) form a continuous bundle
   isomorphism `T*M ≃ TM` (`TauCeti.CotangentBundle.continuous_rieszDual`), along which an
   orientation of `M` transports to an orientation of `T*M`
   (`TauCeti.CotangentBundle.orientation`), and this has a Thom class;
 * for a compact manifold, orientable or not, over every commutative ring,
   `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; o(T*M) ⊗ K)` with coefficients in the orientation local system of
-  `T*M` (`TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_twistedHomology`),
+  `T*M` (`TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_twistedHomology`),
   from the twisted Thom isomorphism over a compact base
   (`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
   `TauCeti.VectorBundleOrientationCover`).
@@ -71,9 +73,9 @@ isomorphisms of the vector bundle `T*M`:
 * `TauCeti.CotangentBundle.isFiberGauge_norm_snd`: the norm of covectors is a fibre gauge.
 * `TauCeti.CotangentBundle.isIso_singularHomologyMap_codiscPairMap`: `(D*M, S*M)` and the Thom pair
   of `T*M` have the same relative homology.
-* `TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_of_two_eq_zero`,
-  `TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_of_orientation`,
-  `TauCeti.CotangentBundle.nonempty_codiscPair_singularHomology_iso_twistedHomology`: the Thom
+* `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_two_eq_zero`,
+  `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_of_orientation`,
+  `TauCeti.CotangentBundle.nonempty_singularHomology_codiscPair_iso_twistedHomology`: the Thom
   isomorphism of the codisc bundle in characteristic two, for oriented manifolds, and with
   orientation-twisted coefficients over a compact manifold.
 
@@ -135,6 +137,12 @@ theorem codiscPairMap_snd_apply (z : cosphereBundle I M) :
     (TopPair.Hom.snd (codiscPairMap I M) z).val = z.val :=
   (rfl)
 
+variable (I M) in
+/-- The pair `(D*M, S*M)` is the disc-sphere pair of the norm of covectors. -/
+theorem codiscPair_eq_gaugeDiscSpherePair :
+    codiscPair I M = gaugeDiscSpherePair fun z : CotangentBundle I M ↦ ‖z.snd‖ :=
+  TopPair.ofInclusion_congr _ _ (by ext; simp) (by ext; simp)
+
 variable [FiniteDimensional ℝ E]
   [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
 
@@ -145,28 +153,33 @@ theorem isFiberGauge_norm_snd : IsFiberGauge fun z : CotangentBundle I M ↦ ‖
   isFiberGauge_norm (F := E →L[ℝ] ℝ) (E := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)
     continuous_norm_snd
 
+/-- The inclusion of `(D*M, S*M)` into the Thom pair is the inclusion of the disc-sphere pair of the
+norm of covectors, once the two pairs are identified. -/
+theorem codiscPairMap_eq_eqToHom_comp :
+    codiscPairMap I M = eqToHom (codiscPair_eq_gaugeDiscSpherePair I M) ≫
+      gaugeDiscSpherePairMap isFiberGauge_norm_snd :=
+  TopPair.hom_ext_of_fst _ (by
+    ext z
+    simp only [TopPair.Hom.fst_comp, MorphismProperty.Comma.eqToHom_right, TopCat.hom_comp,
+      ContinuousMap.comp_apply]
+    refine (codiscPairMap_fst_apply z).trans (.trans ?_ (gaugeDiscSpherePairMap_fst_apply _ _).symm)
+    -- Transport along the identification of the pairs does not move the underlying covector.
+    exact (Subtype.heq_iff_coe_eq fun _ ↦ mem_codiscBundle.trans
+      (mem_gaugeDiscBundle (ρ := fun z : CotangentBundle I M ↦ ‖z.snd‖)).symm).1
+        (eqToHom_apply_heq (congrArg (fun P : TopPair.{u} ↦ P.fst)
+          (codiscPair_eq_gaugeDiscSpherePair I M)) z).symm)
+
 /-- **The codisc bundle pair has the relative homology of the Thom pair.** The inclusion of
 `(D*M, S*M)` into the Thom pair `(T*M, T*M ∖ 0)` of the cotangent bundle induces isomorphisms on
 relative singular homology, with coefficients in any abelian category with coproducts. -/
 theorem isIso_singularHomologyMap_codiscPairMap {C : Type*} [Category C] [HasCoproducts.{u} C]
     [Abelian C] (R : C) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (codiscPairMap I M) R n) := by
-  -- `D*M` and `S*M` are the disc and sphere bundles of the norm of covectors, written differently;
-  -- the inclusion into the Thom pair is that of the fibre gauge once the sets are identified.
-  suffices key : ∀ (t s : Set (CotangentBundle I M)) (h : s ⊆ t),
-      t = gaugeDiscBundle (fun z : CotangentBundle I M ↦ ‖z.snd‖) →
-      s = gaugeSphereBundle (fun z : CotangentBundle I M ↦ ‖z.snd‖) →
-      ∀ φ : TopPair.ofInclusion (X := TopCat.of (CotangentBundle I M)) h ⟶
-        thomPair (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ),
-      (∀ z, TopPair.Hom.fst φ z = z.val) → IsIso (TopPair.singularHomologyMap φ R n) from
-    key _ _ _ (by ext; simp) (by ext; simp) _ codiscPairMap_fst_apply
-  intro t s h ht hs φ hφ
-  subst ht hs
-  obtain rfl : φ = gaugeDiscSpherePairMap isFiberGauge_norm_snd :=
-    TopPair.hom_ext_of_fst _ (by
-      ext z
-      exact (hφ z).trans (gaugeDiscSpherePairMap_fst_apply _ z).symm)
-  exact isIso_singularHomologyMap_gaugeDiscSpherePairMap isFiberGauge_norm_snd R n
+  rw [codiscPairMap_eq_eqToHom_comp, TopPair.singularHomologyMap_comp,
+    TopPair.singularHomologyMap_eqToHom]
+  have := isIso_singularHomologyMap_gaugeDiscSpherePairMap (isFiberGauge_norm_snd (I := I) (M := M))
+    R n
+  infer_instance
 
 variable (I M) in
 /-- **The Thom isomorphism of the codisc bundle.** For a Thom class `u` of the cotangent bundle
@@ -187,6 +200,7 @@ def codiscPairSingularHomologyIso (K : Type u) [CommRing K] (p m : ℕ)
 
 /-- The Thom isomorphism of the codisc bundle is induced by the inclusion into the Thom pair of
 `T*M` followed by the homology Thom map `x ↦ π_*(x ⌢ u)`. -/
+@[simp]
 theorem codiscPairSingularHomologyIso_hom (K : Type u) [CommRing K] (p m : ℕ)
     (h : finrank ℝ E + p = m)
     (u : (thomPair (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)).singularCohomology
@@ -201,7 +215,7 @@ theorem codiscPairSingularHomologyIso_hom (K : Type u) [CommRing K] (p m : ℕ)
 /-- **The Thom isomorphism of the codisc bundle in characteristic two.** For a Riemannian manifold
 of dimension `n`, orientable or not, and a commutative ring `K` in which `2 = 0`, such as
 `ZMod 2`, `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; K)` in every degree `p`. -/
-theorem nonempty_codiscPair_singularHomology_iso_of_two_eq_zero (K : Type u) [CommRing K]
+theorem nonempty_singularHomology_codiscPair_iso_of_two_eq_zero (K : Type u) [CommRing K]
     (h2 : (2 : K) = 0) (p : ℕ) :
     Nonempty ((codiscPair I M).singularHomology (ModuleCat.of K K) (finrank ℝ E + p) ≅
       ((singularHomologyFunctor (ModuleCat.{u} K) p).obj (ModuleCat.of K K)).obj
@@ -224,7 +238,7 @@ variable {E H : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 /-- **The Thom isomorphism of the codisc bundle of an oriented manifold.** For an oriented
 Riemannian manifold of dimension `n` and every commutative ring `K`, `ℤ` included,
 `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; K)` in every degree `p`. -/
-theorem nonempty_codiscPair_singularHomology_iso_of_orientation
+theorem nonempty_singularHomology_codiscPair_iso_of_orientation
     (hι : Fintype.card ι = finrank ℝ E)
     (o : VectorBundleOrientation E (TangentSpace I : M → Type u) ι) (K : Type u) [CommRing K]
     (p : ℕ) :
@@ -251,7 +265,7 @@ variable {E H : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimens
 compact Riemannian manifold of dimension `n`, orientable or not, and every commutative ring `K`,
 `ℤ` included, `Hₚ₊ₙ(D*M, S*M; K) ≅ Hₚ(M; o(T*M) ⊗ K)` in every degree `p`, with coefficients in the
 orientation local system `o(T*M)` of the cotangent bundle. -/
-theorem nonempty_codiscPair_singularHomology_iso_twistedHomology
+theorem nonempty_singularHomology_codiscPair_iso_twistedHomology
     (hι : Fintype.card ι = finrank ℝ (E →L[ℝ] ℝ)) (K : Type u) [CommRing K] (p : ℕ) :
     Nonempty ((codiscPair I M).singularHomology (ModuleCat.of K K) (finrank ℝ E + p) ≅
       LocalCoefficientSystem.twistedHomology
