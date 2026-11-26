@@ -16,9 +16,10 @@ import TauCeti.LinearAlgebra.Trace.Exact
 # The subspace on which a representation acts through a character
 
 For a representation `ρ` of a monoid `G` on `V` and a character `c : G →* k`, the vectors `v` with
-`ρ g v = c g • v` for every `g` form a `G`-stable subspace `ρ.weightSpace c`, the intersection of
-the eigenspaces of the `ρ g` for the eigenvalues `c g`. For `c = 1` it is the subspace of
-invariants.
+`ρ g v = c g • v` for every `g` form a `G`-stable submodule `ρ.weightSpace c`; over a ring it is
+the intersection of the eigenspaces of the `ρ g` for the eigenvalues `c g`. For a group `G` and
+`c = 1` it is the subspace of invariants. Restricting `ρ` to a subgroup `K` gives the level spaces
+`Representation.weightSpace (ρ.comp K.subtype) χ` of the theory of Hecke operators.
 The name follows Mathlib's `LieModule.weightSpace`, the same intersection of eigenspaces for a Lie
 module. `TauCeti.weightSpace` is the analogous space for the diagonal torus of a representation of
 `GL n k`, indexed by integer weights.
@@ -33,8 +34,12 @@ Over a field, with `V` finite-dimensional, the trace of `ρ g` splits along this
 ## Main results
 
 * `Representation.mem_weightSpace`: membership is the equation `ρ g v = c g • v` for every `g`.
+* `Representation.weightSpace_eq_iInf_eigenspace`: over a ring, `ρ.weightSpace c` is the
+  intersection of the eigenspaces of the `ρ g` for the eigenvalues `c g`.
 * `Representation.weightSpace_one`: for a group `G`, the trivial character cuts out the invariants.
 * `Representation.weightSpace_le_comap`: `ρ.weightSpace c` is `G`-stable.
+* `Representation.map_mem_weightSpace_of_commute`: a linear map commuting with every `ρ g`
+  preserves `ρ.weightSpace c`.
 * `Representation.trace_eq_finrank_weightSpace_mul_add`: the splitting of the trace.
 -/
 
@@ -44,22 +49,33 @@ open Module
 
 namespace Representation
 
-variable {k G V : Type*} [CommRing k] [Monoid G] [AddCommGroup V] [Module k V]
+variable {k G V : Type*} [CommSemiring k] [Monoid G] [AddCommMonoid V] [Module k V]
 
 /-- The vectors on which the representation `ρ` acts through the character `c`. -/
-def weightSpace (ρ : Representation k G V) (c : G →* k) : Submodule k V :=
-  ⨅ g, Module.End.eigenspace (ρ g) (c g)
+def weightSpace (ρ : Representation k G V) (c : G →* k) : Submodule k V where
+  carrier := {v | ∀ g, ρ g v = c g • v}
+  add_mem' hv hw g := by rw [map_add, hv g, hw g, smul_add]
+  zero_mem' g := by rw [map_zero, smul_zero]
+  smul_mem' a v hv g := by rw [map_smul, hv g, smul_comm]
 
 @[simp]
 theorem mem_weightSpace {ρ : Representation k G V} {c : G →* k} {v : V} :
-    v ∈ ρ.weightSpace c ↔ ∀ g, ρ g v = c g • v := by
-  simp [weightSpace]
+    v ∈ ρ.weightSpace c ↔ ∀ g, ρ g v = c g • v :=
+  .rfl
+
+/-- Over a ring, `ρ.weightSpace c` is the intersection of the eigenspaces of the `ρ g` for the
+eigenvalues `c g`. -/
+theorem weightSpace_eq_iInf_eigenspace {k V : Type*} [CommRing k] [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) (c : G →* k) :
+    ρ.weightSpace c = ⨅ g, Module.End.eigenspace (ρ g) (c g) := by
+  ext
+  simp
 
 /-- For a group, the subspace on which `ρ` acts through the trivial character is the subspace of
 invariants. -/
 @[simp]
-theorem weightSpace_one {G : Type*} [Group G] (ρ : Representation k G V) :
-    ρ.weightSpace 1 = ρ.invariants := by
+theorem weightSpace_one {k G V : Type*} [CommRing k] [Group G] [AddCommGroup V] [Module k V]
+    (ρ : Representation k G V) : ρ.weightSpace 1 = ρ.invariants := by
   ext
   simp
 
@@ -72,8 +88,14 @@ theorem weightSpace_le_comap (ρ : Representation k G V) (c : G →* k) (h : G) 
   intro g
   rw [← mul_apply_eq_comp, ← map_mul, hv, hv, map_mul, mul_smul]
 
+/-- A linear map commuting with every `ρ g` preserves the subspace on which `ρ` acts through `c`. -/
+theorem map_mem_weightSpace_of_commute {ρ : Representation k G V} {c : G →* k} {v : V}
+    {a : Module.End k V} (hv : v ∈ ρ.weightSpace c) (h_comm : ∀ g, Commute (ρ g) a) :
+    a v ∈ ρ.weightSpace c := fun g ↦ by
+  rw [← mul_apply_eq_comp, (h_comm g).eq, mul_apply_eq_comp, hv g, map_smul]
+
 /-- The trace of `ρ g` splits along the vectors on which `G` acts through `c`. -/
-theorem trace_eq_finrank_weightSpace_mul_add {F : Type*} [Field F] [Module F V]
+theorem trace_eq_finrank_weightSpace_mul_add {F V : Type*} [Field F] [AddCommGroup V] [Module F V]
     [FiniteDimensional F V] (ρ : Representation F G V) (c : G →* F) (g : G) :
     LinearMap.trace F V (ρ g) = finrank F (ρ.weightSpace c) * c g +
       LinearMap.trace F _ (ρ.quotient _ (weightSpace_le_comap ρ c) g) := by
