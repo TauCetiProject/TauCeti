@@ -118,15 +118,6 @@ private theorem polarDiff_apply (κ : ℝ) (δ : (ℝ × ℝ) × (ℝ × ℝ)) :
   ext i
   fin_cases i <;> simp [polarDiff]
 
-/-- At a critical point `r₀ ≠ 0` of the effective potential `U_ℓ`, the force balances the
-centrifugal term: `U'(r₀) = ℓ² / (m r₀³)`. -/
-private theorem deriv_eq_of_deriv_effectivePotential_eq_zero (hr₀ : r₀ ≠ 0)
-    (hU : DifferentiableAt ℝ U r₀) (hc : deriv (effectivePotential m ℓ U) r₀ = 0) :
-    deriv U r₀ = ℓ ^ 2 / (m * r₀ ^ 3) := by
-  have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU.hasDerivAt hr₀
-  rw [← h.deriv, hc] at h
-  exact (hasDerivAt_effectivePotential_zero_iff hU.hasDerivAt hr₀).1 h
-
 /-- At a point `((r₀, 0), (θ₀, ℓ))` where `U'(r₀) = ℓ² / (m r₀³)`, the differential of the polar
 energy–momentum map is `δ ↦ (κ δL, δL)` with `κ = ℓ / (m r₀²)`. -/
 private theorem hasFDerivAt_polarEnergyMomentum {U' : ℝ} (hr₀ : r₀ ≠ 0)
@@ -151,10 +142,9 @@ private theorem hasFDerivAt_polarEnergyMomentum {U' : ℝ} (hr₀ : r₀ ≠ 0)
         Pi.inv_apply]
       ring
     · refine ContinuousLinearMap.ext fun δ ↦ ?_
-      simp only [mul_inv_rev, Nat.add_one_sub_one, pow_one, zero_smul, smul_zero,
-        Nat.cast_ofNat, Pi.inv_apply, Function.comp_apply, nsmul_eq_mul, hc, zero_add, add_apply,
-        smul_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', smul_eq_mul,
-        polarL_apply, x₀]
+      simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+        ContinuousLinearMap.coe_fst', Function.comp_apply, Pi.inv_apply, polarL_apply, smul_eq_mul,
+        nsmul_eq_mul, hc, x₀]
       field_simp
       ring
   rw [hasFDerivAt_pi']
@@ -192,10 +182,7 @@ private theorem hessianQuadraticForm_radial (hm : m ≠ 0) (hr₀ : r₀ ≠ 0)
     fun_prop (disch := simp [hm, hr₀])
   have hψ : ContDiffAt ℝ 2 ψ (r₀, 0) := (hVℓ.comp _ contDiffAt_fst).add (by fun_prop)
   have hquad : iteratedDeriv 2 (fun p : ℝ ↦ p ^ 2 / (2 * m)) 0 = 1 / m := by
-    simp only [iteratedDeriv_div_const, iteratedDeriv_pow, Nat.descFactorial_succ,
-      Nat.add_one_sub_one, tsub_zero, Nat.descFactorial_zero, mul_one, one_mul, Nat.cast_ofNat,
-      tsub_self, pow_zero, one_div]
-    field_simp
+    norm_num [iteratedDeriv_div_const, iteratedDeriv_pow, Nat.descFactorial, div_mul_cancel_left₀]
   have hf : (fun y : (ℝ × ℝ) × (ℝ × ℝ) ↦
       c * (effectivePotential m ℓ U y.1.1 + y.1.2 ^ 2 / (2 * m)) + C) =
       fun y ↦ (c • (ψ ∘ ContinuousLinearMap.fst ℝ (ℝ × ℝ) (ℝ × ℝ))) y + C := by
@@ -247,12 +234,7 @@ private theorem hessianQuadraticForm_polarEnergyMomentum (hm : m ≠ 0) (hr₀ :
       fin_cases i <;> simp
     simp only [Function.comp_apply, g]
     rw [hv (polarEnergyMomentum m U _), map_add, map_smul, map_smul]
-    simp only [polarEnergyMomentum, ContinuousLinearMap.prod_apply, ContinuousLinearMap.coe_fst',
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_snd', ContinuousLinearMap.inl_apply,
-      Prod.mk_add_mk, add_zero, zero_add, Prod.snd_add, Prod.fst_add, effectivePotential_apply,
-      Fin.isValue, Matrix.cons_val_zero, smul_eq_mul, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      add_left_inj, P, a]
-    ring
+    simp [polarEnergyMomentum, P, a, mul_comm, add_comm, add_left_comm]
   have hcomp := congrArg (· δ) (ContinuousLinearMap.hessianQuadraticForm_comp P hga)
   simp only [QuadraticMap.comp_apply, ContinuousLinearMap.coe_coe, hPδ] at hcomp
   rw [htr, ← hcomp, hgP, hessianQuadraticForm_radial hm hr₀ hU]
@@ -376,7 +358,7 @@ private theorem isNondegeneratePoint_polarEnergyMomentum_iff (hm : m ≠ 0) (hr�
   have hUd := hU.differentiableAt two_ne_zero
   rw [SymplecticForm.isNondegeneratePoint_iff_of_fderiv_eq
     (hasFDerivAt_polarEnergyMomentum (θ₀ := θ₀) hr₀ hUd.hasDerivAt
-      (deriv_eq_of_deriv_effectivePotential_eq_zero hr₀ hUd hc)).fderiv,
+      ((deriv_effectivePotential_eq_zero_iff hUd hr₀).1 hc)).fderiv,
     and_iff_right (contDiffAt_polarEnergyMomentum (y := x₀) hm hr₀ hU)]
   -- All transversal Hessians are multiples of the one of `H - κ L`.
   set l₀ : (Fin 2 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj 0 - κ • ContinuousLinearMap.proj 1
@@ -496,7 +478,7 @@ private theorem fderiv_apply_eq_polarDiff (hq : x.1 ≠ 0)
   set y₀ : (ℝ × ℝ) × (ℝ × ℝ) := ((‖x.1‖, 0), (θ, ℓ))
   have hr₀ : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
   have hUd := hU.hasDerivAt
-  have hcirc := deriv_eq_of_deriv_effectivePotential_eq_zero hr₀ hU hc
+  have hcirc := (deriv_effectivePotential_eq_zero_iff hU hr₀).1 hc
   have hF : DifferentiableAt ℝ (centralForceEnergyMomentum b m U) (polarCanonical (b 0) (b 1) y₀) :=
     hx ▸ (hasFDerivAt_centralForceEnergyMomentum b hUd hq).differentiableAt
   have hφ : DifferentiableAt ℝ (polarCanonical (b 0) (b 1)) y₀ :=
@@ -504,6 +486,15 @@ private theorem fderiv_apply_eq_polarDiff (hq : x.1 ≠ 0)
   have h := fderiv_comp y₀ hF hφ
   rw [hev.fderiv_eq, (hasFDerivAt_polarEnergyMomentum hr₀ hUd hcirc).fderiv, hx] at h
   rw [← hφe, ← ContinuousLinearMap.comp_apply, ← h]
+
+/-- If a linear map `f` reads `δ ↦ (κ δL, δL)` through `e`, then `e δ` lies in its kernel exactly
+when `δL = 0`. -/
+private theorem apply_mem_ker_iff_of_apply_eq_polarDiff {f : V × V →L[ℝ] Fin 2 → ℝ} {κ : ℝ}
+    {e : ((ℝ × ℝ) × (ℝ × ℝ)) ≃ₗ[ℝ] V × V} (hd : ∀ δ, f (e δ) = polarDiff κ δ)
+    {δ : (ℝ × ℝ) × (ℝ × ℝ)} :
+    e δ ∈ (f : V × V →ₗ[ℝ] Fin 2 → ℝ).ker ↔ δ.2.2 = 0 := by
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, hd, ← mem_ker_polarDiff (κ := κ),
+    LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
 
 /-- **Circular orbits have rank one.** At a point `(q, p)` with `q ≠ 0` on a circular orbit, where
 `⟪q, p⟫ = 0` and `‖q‖` is a critical point of the effective potential `U_L` of its angular
@@ -605,7 +596,7 @@ theorem hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMomentum (hm
     obtain ⟨δ', rfl⟩ := e.surjective w
     simp [hd, l₀, κ, ℓ]
   obtain ⟨δ, rfl⟩ := e.surjective v
-  have hδ : δ.2.2 = 0 := by simpa [hd] using congrFun hv 1
+  have hδ : δ.2.2 = 0 := (apply_mem_ker_iff_of_apply_eq_polarDiff hd).1 hv
   -- Pull the Hessian back to polar canonical coordinates, where it was computed.
   have hcomp := hessianQuadraticForm_comp (f := l₀ ∘ centralForceEnergyMomentum b m U)
     (hx ▸ l₀.contDiff.contDiffAt.comp x hFC) hφ (hx ▸ hcrit)
@@ -628,12 +619,12 @@ private theorem mem_orthogonal_ker_of_fderiv_radialProjection_eq_zero (hq : x.1 
   obtain ⟨θ, e, hx, he, hφe, hev, hdrad⟩ := exists_polarCanonical b (m := m) (U := U) hq h0
   have hd := fderiv_apply_eq_polarDiff b hq hU hc hx hφe hev
   obtain ⟨δ, rfl⟩ := e.surjective v
-  have hδ : δ.2.2 = 0 := by simpa [hd] using congrFun hv 1
+  have hδ : δ.2.2 = 0 := (apply_mem_ker_iff_of_apply_eq_polarDiff hd).1 hv
   have hδ₁ : δ.1 = 0 := (hdrad δ).symm.trans hr
   rw [SymplecticForm.mem_orthogonal_iff]
   intro w hw
   obtain ⟨δ', rfl⟩ := e.surjective w
-  have hδ' : δ'.2.2 = 0 := by simpa [hd] using congrFun (LinearMap.mem_ker.1 hw) 1
+  have hδ' : δ'.2.2 = 0 := (apply_mem_ker_iff_of_apply_eq_polarDiff hd).1 hw
   rw [he.apply]
   simp [hδ, hδ₁, hδ']
 
@@ -653,8 +644,7 @@ private theorem fderiv_radialProjection_eq_zero_of_mem_inf_orthogonal (hq : x.1 
   have hmem (δ' : (ℝ × ℝ) × (ℝ × ℝ)) :
       δ' ∈ (polarDiff (angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2))).ker ↔
         e δ' ∈ (fderiv ℝ (centralForceEnergyMomentum b m U) x).ker := by
-    rw [LinearMap.mem_ker, LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
-      ContinuousLinearMap.coe_coe, hd]
+    rw [mem_ker_polarDiff, apply_mem_ker_iff_of_apply_eq_polarDiff hd]
   refine (hdrad δ).trans (eq_of_mem_ker_inf_orthogonal (Submodule.mem_inf.2
     ⟨(hmem δ).2 hvK, SymplecticForm.mem_orthogonal_iff.2 fun δ' hδ' ↦ ?_⟩)).1
   rw [← he.apply]

@@ -14,6 +14,7 @@ public import Mathlib.Geometry.Euclidean.Angle.Oriented.Basic
 
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Analysis.InnerProductSpace.TwoDim
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Polar canonical coordinates for planar central forces
@@ -433,14 +434,13 @@ nondegenerate form, so it is injective, between spaces of the same dimension. -/
 theorem bijective_fderiv_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : x.1.1 ≠ 0) :
     Function.Bijective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
-  have hinj : Function.Injective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
-    refine (injective_iff_map_eq_zero _).2 fun δ hδ ↦
-      ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).nondegenerate.1 δ
-        fun δ' ↦ ?_
-    have h := stdSymplecticForm_fderiv_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
-      (b.inner_eq_zero (by decide)) hr δ δ'
-    rw [hδ] at h
-    simpa using h.symm
+  let ι : ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).toBilinForm →bᵢ
+      (stdSymplecticForm (V := V)).toBilinForm :=
+    { toLinearMap := (fderiv ℝ (polarCanonical (b 0) (b 1)) x).toLinearMap
+      map_app' := stdSymplecticForm_fderiv_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
+        (b.inner_eq_zero (by decide)) hr }
+  have hinj : Function.Injective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) :=
+    ι.injective ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).nondegenerate.1
   have hdim : Module.finrank ℝ ((ℝ × ℝ) × (ℝ × ℝ)) = Module.finrank ℝ (V × V) := by
     simp [Module.finrank_prod, Module.finrank_eq_card_basis b.toBasis]
   exact ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
