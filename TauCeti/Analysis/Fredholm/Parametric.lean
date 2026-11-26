@@ -115,6 +115,9 @@ spaces or of the scalar field is required.
 * `ContinuousLinearMap.range_parameterProj`: its range is the preimage of `range D₁` under `D₂`.
 * `ContinuousLinearMap.parameterToCoker_surjective_iff_coprod_surjective`: the total linearization
   is onto exactly when the parameter directions span the cokernel of `D₁`.
+* `ContinuousLinearMap.exact_of_linearEquiv_ker_coprod`: for a surjective total linearization,
+  the exact sequence `0 → ker D₁ → X → Λ → F ⧸ range D₁ → 0` read through an identification
+  `X ≃ ker (D₁.coprod D₂)`, and its splitting when the middle map vanishes.
 * `ContinuousLinearMap.quotientRangeParameterProjEquiv`: for a surjective total linearization, the
   cokernel of the projection is the cokernel of `D₁`.
 * `ContinuousLinearMap.parameterProj_surjective_iff`: for a surjective total linearization, the
@@ -324,6 +327,40 @@ theorem parameterToCoker_surjective_iff_coprod_surjective :
     (LinearMap.range_eq_top (f := (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))).symm
   rw [hcoprod, ← LinearMap.range_eq_top, parameterToCoker, LinearMap.range_comp,
     Submodule.map_mkQ_eq_top, range_coprod]
+
+/-- **The exact sequence of a surjective total linearization, read through an identification of
+its kernel.** Let `e : X ≃ₗ[𝕜] ker (D₁.coprod D₂)` identify a module `X` with the kernel of a
+surjective total linearization. Then the sequence `0 → ker D₁ → X → Λ → F ⧸ range D₁ → 0`, with
+maps `x ↦ e⁻¹ (x, 0)`, the parameter projection of `e` and
+`ContinuousLinearMap.parameterToCoker`, is exact. When the middle map vanishes, the first map is an
+isomorphism `ker D₁ ≃ X` and the last one an isomorphism `Λ ≃ F ⧸ range D₁`. -/
+theorem exact_of_linearEquiv_ker_coprod {X : Type*} [AddCommMonoid X] [Module 𝕜 X]
+    (e : X ≃ₗ[𝕜] (D₁.coprod D₂).ker) (hD : Function.Surjective (D₁.coprod D₂)) :
+    Function.Injective (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap) ∧
+      Function.Exact (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap)
+        ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap) ∧
+      Function.Exact ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap)
+        (parameterToCoker D₁ D₂) ∧
+      Function.Surjective (parameterToCoker D₁ D₂) ∧
+      ((parameterProj D₁ D₂).toLinearMap ∘ₗ e.toLinearMap = 0 →
+        Function.Bijective (e.symm.toLinearMap ∘ₗ (kerCoprodHom D₁ D₂).toLinearMap) ∧
+          Function.Bijective (parameterToCoker D₁ D₂)) := by
+  have ha := (LinearEquiv.conj_symm_exact_iff_exact _ _ e).2
+    (exact_kerCoprodHom_parameterProj D₁ D₂)
+  have hb := (LinearEquiv.precomp_exact_iff_exact (e := e)).2
+    (exact_parameterProj_parameterToCoker D₁ D₂)
+  have hc := (parameterToCoker_surjective_iff_coprod_surjective D₁ D₂).2 hD
+  have hi := e.symm.injective.comp (kerCoprodHom_injective D₁ D₂)
+  refine ⟨hi, ha, hb, hc, fun h ↦ ?_⟩
+  -- The middle map vanishes exactly when the parameter projection does, and then exactness at
+  -- `ker (D₁.coprod D₂)` and at `Λ` gives the two isomorphisms.
+  have h0 : (parameterProj D₁ D₂ : (D₁.coprod D₂).ker →ₗ[𝕜] Λ) = 0 :=
+    (LinearMap.cancel_right e.surjective).1 (h.trans (LinearMap.zero_comp _).symm)
+  exact ⟨e.symm.bijective.comp ⟨kerCoprodHom_injective D₁ D₂,
+    (LinearMap.surjective_iff_eq_zero_of_exact (f := (kerCoprodHom D₁ D₂ : D₁.ker →ₗ[𝕜] _))
+      (exact_kerCoprodHom_parameterProj D₁ D₂)).2 h0⟩,
+    (LinearMap.injective_iff_eq_zero_of_exact (g := parameterToCoker D₁ D₂)
+      (exact_parameterProj_parameterToCoker D₁ D₂)).2 h0, hc⟩
 
 /-! ### Exactness at the original cokernel -/
 

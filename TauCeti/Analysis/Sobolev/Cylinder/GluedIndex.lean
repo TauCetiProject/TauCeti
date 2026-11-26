@@ -67,7 +67,7 @@ Write `β = neckCutoff (-(2 / R))` for the cutoff equal to `1` on `s ≤ 0` and 
 
 **The gluing isomorphism and the obstruction map.** Since the dimensions agree, the corrected
 pregluing is a linear isomorphism `E₁ × E₂ ≃ E_R` for long necks and every right inverse `Q` of
-`A_R` with `‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)`
+`A_R` with `‖Q‖ ≤ C`, for any given bound `C`; right inverses with `‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)` exist
 (`TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`). Reading off its
 stabilizer components gives the obstruction map `b_R : E₁ × E₂ → S₁ × S₂`
 (`TauCeti.CylinderSobolev.gluingObstruction`). Through the gluing isomorphism, the exact sequence
@@ -105,8 +105,9 @@ is additive.
 
 * `exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gluedCoeff_eq`: the
   kernel of the stabilized glued operator has dimension `dim E₁ + dim E₂` for long necks.
-* `TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`: for long necks the
-  gluing map is a linear isomorphism `E₁ × E₂ ≃ E_R`.
+* `TauCeti.CylinderSobolev.exists_forall_ge_forall_gluingKerMap_bijective`: for every bound `C`
+  and long necks the gluing map along any right inverse of norm at most `C` is a linear isomorphism
+  `E₁ × E₂ ≃ E_R`.
 * `TauCeti.CylinderSobolev.gluingKerInclusion_injective`,
   `TauCeti.CylinderSobolev.exact_gluingKerInclusion_gluingObstruction`,
   `TauCeti.CylinderSobolev.exact_gluingObstruction_parameterToCoker`: when the gluing map is
@@ -658,16 +659,14 @@ private theorem abs_deriv_neckCutoff_le_add (a s : ℝ) :
 
 /-- The complementary neck cutoff is at most `1 + |a| L`. -/
 private theorem abs_one_sub_neckCutoff_le_add (a s : ℝ) :
-    |1 - neckCutoff a s| ≤ 1 + |a| * ⨆ t, deriv Real.smoothTransition t := by
-  refine le_trans ?_
+    |1 - neckCutoff a s| ≤ 1 + |a| * ⨆ t, deriv Real.smoothTransition t :=
+  (abs_one_sub_neckCutoff_le_one a s).trans
     (le_add_of_nonneg_right (mul_nonneg (abs_nonneg a) Real.smoothTransition.iSup_deriv_nonneg))
-  rw [abs_le]
-  constructor <;> linarith [neckCutoff_nonneg a s, neckCutoff_le_one a s]
 
 /-- The derivative of the complementary neck cutoff is at most `1 + |a| L`. -/
 private theorem abs_deriv_one_sub_neckCutoff_le_add (a s : ℝ) :
     |deriv (fun s ↦ 1 - neckCutoff a s) s| ≤ 1 + |a| * ⨆ t, deriv Real.smoothTransition t := by
-  rw [deriv_const_sub, abs_neg]
+  rw [abs_deriv_one_sub_neckCutoff]
   exact abs_deriv_neckCutoff_le_add a s
 
 /-- **Pregluing along a neck of length `2 R`.** The map sending `((ξ₁, σ₁), (ξ₂, σ₂))` to
@@ -857,12 +856,9 @@ private theorem finiteDimensional_and_finrank_ker_eq {M₁ M₂ : ℝ × ℝ →
     (abs_deriv_neckCutoff_le hL _ s).trans_eq (by rw [abs_neg, abs_of_pos (by positivity)])
   have hβ'1 (s : ℝ) : |deriv β s| ≤ 1 := (hβd s).trans hRL
   have hγ : ContDiff ℝ 2 fun s ↦ 1 - β s := contDiff_const.sub hβ
-  have hγ1 (s : ℝ) : |1 - β s| ≤ 1 := by
-    rw [abs_le]
-    constructor <;> linarith [neckCutoff_nonneg (-(2 / R)) s, neckCutoff_le_one (-(2 / R)) s]
-  have hγd (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 2 / R * L := by
-    rw [deriv_const_sub, abs_neg]
-    exact hβd s
+  have hγ1 (s : ℝ) : |1 - β s| ≤ 1 := abs_one_sub_neckCutoff_le_one _ s
+  have hγd (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 2 / R * L :=
+    (abs_deriv_one_sub_neckCutoff _ s).trans_le (hβd s)
   have hγ'1 (s : ℝ) : |deriv (fun s ↦ 1 - β s) s| ≤ 1 := (hγd s).trans hRL
   have hβ0 (s : ℝ) (hs : s ≤ 0) : β s = 1 := neckCutoff_neg_two_div_eq_one hR.le hs
   have hβR (s : ℝ) (hs : R / 2 ≤ s) : β s = 0 := neckCutoff_neg_two_div_eq_zero hR hs
@@ -906,8 +902,8 @@ private theorem small_errors {K L B ε R q : ℝ} (hK0 : 0 ≤ K) (hL0 : 0 ≤ L
 
 variable [CompleteSpace W] in
 /-- The kernels of glued stabilized operators for long necks: the stabilized glued operator has
-uniformly bounded right inverses, and for each of them the kernel `E_R` has dimension
-`dim E₁ + dim E₂` and the gluing map `E₁ × E₂ → E_R` is injective. -/
+uniformly bounded right inverses, and for each right inverse of norm at most a given bound `C` the
+kernel `E_R` has dimension `dim E₁ + dim E₂` and the gluing map `E₁ × E₂ → E_R` is injective. -/
 private theorem exists_forall_ge_forall_rightInverse
     {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} (hM₁ : MemLp M₁ ∞ stripMeasure) (hM₂ : MemLp M₂ ∞ stripMeasure)
@@ -922,7 +918,8 @@ private theorem exists_forall_ge_forall_rightInverse
     (hQ₂ : (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
       ContinuousLinearMap.id ℝ _)
     [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
-    [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker] :
+    [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
+    (C : ℝ) :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, (∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
       Function.RightInverse Q (((jetOperator 2 stripMeasure
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
@@ -931,7 +928,7 @@ private theorem exists_forall_ge_forall_rightInverse
         (hQ : Function.RightInverse Q (((jetOperator 2 stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
             (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))),
-        ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖) →
+        ‖Q‖ ≤ C →
         FiniteDimensional ℝ (((jetOperator 2 stripMeasure
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
           (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R)).ker ∧
@@ -943,9 +940,10 @@ private theorem exists_forall_ge_forall_rightInverse
         Function.Injective (gluingKerMap hQ) := by
   obtain ⟨L, hL⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
   have hL0 : 0 ≤ L := (norm_nonneg _).trans (hL 0)
-  -- Opaque names for the constants keep the arithmetic below away from the operator norms.
-  obtain ⟨K, hK⟩ : ∃ K, K = ‖Q₁‖ + ‖Q₂‖ := ⟨_, rfl⟩
-  have hK0 : 0 ≤ K := by rw [hK]; positivity
+  -- Opaque names for the constants keep the arithmetic below away from the operator norms. The
+  -- constant `K` bounds both the right inverses of the pieces and the given bound `C`.
+  obtain ⟨K, hK⟩ : ∃ K, K = max (‖Q₁‖ + ‖Q₂‖) C := ⟨_, rfl⟩
+  have hK0 : 0 ≤ K := by rw [hK]; exact le_max_of_le_left (by positivity)
   obtain ⟨B, hB⟩ : ∃ B, B = lpNorm M₁ ∞ stripMeasure + lpNorm M₂ ∞ stripMeasure := ⟨_, rfl⟩
   have hB0 : 0 ≤ B := by rw [hB]; exact add_nonneg lpNorm_nonneg lpNorm_nonneg
   obtain ⟨ε, hε⟩ : ∃ ε : ℝ, ε = 1 / (64 * (K + 1)) := ⟨_, rfl⟩
@@ -983,8 +981,12 @@ private theorem exists_forall_ge_forall_rightInverse
   have hB₂ : ∀ᵐ z ∂stripMeasure, ‖M₂ z‖ ≤ B := (ae_le_lpNorm_exponent_top hM₂).mono fun z h ↦
     h.trans (by rw [hB]; exact le_add_of_nonneg_left lpNorm_nonneg)
   have hRL : 2 / R * L ≤ 1 := by rw [div_mul_eq_mul_div, div_le_one hRpos]; linarith
-  obtain ⟨hsmall₁, hsmall₂⟩ := small_errors hK0 hL0 hB0 hε hRpos hRLB (hK ▸ hQn)
-  rw [hK] at hsmall₁
+  have hQK : ‖Q‖ ≤ 4 * K := by
+    have : C ≤ K := hK ▸ le_max_right _ _
+    linarith [norm_nonneg Q]
+  obtain ⟨hsmall₁, hsmall₂⟩ := small_errors hK0 hL0 hB0 hε hRpos hRLB hQK
+  have hsmall₁ : (‖Q₁‖ + ‖Q₂‖) * (2 * ε + 2 / R * L * B) < 1 :=
+    (mul_le_mul_of_nonneg_right (hK ▸ le_max_left _ _) (by positivity)).trans_lt hsmall₁
   exact finiteDimensional_and_finrank_ker_eq hM₁ hM₂ hι₁ hι₂ (by linarith) h2TR hRpos hL hRL hB0
     hB₁ hB₂ ((memLp_uncurry_gluedCoeff hM₁ hM₂ R).2.mono fun z h ↦ hB ▸ h) (by positivity)
     (ae_norm_uncurry_gluedCoeff_sub_le_left hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂) hQ₁ hQ₂ hQ hR₂₁ hR₂₂
@@ -1025,6 +1027,7 @@ theorem exists_forall_ge_finiteDimensional_and_finrank_ker_coprod_jetOperator_gl
         finrank ℝ (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker +
           finrank ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker := by
   obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_rightInverse hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
+    (4 * (‖Q₁‖ + ‖Q₂‖))
   refine ⟨R₀, fun R hR ↦ ?_⟩
   obtain ⟨⟨Q, hQ, hQn⟩, h⟩ := hR₀ R hR
   obtain ⟨hfin, hrank, -⟩ := h Q hQ hQn
@@ -1038,7 +1041,8 @@ match, `M₁(s, t) → M(t)` as `s → +∞` and `M₂(s, t) → M(t)` as `s →
 `s < -T`, such that the stabilized operators `Aᵢ (ξ, σ) = Dᵢ ξ + ιᵢ σ` have bounded linear right
 inverses `Qᵢ` and finite-dimensional kernels `Eᵢ`. Then for every sufficiently long neck the
 stabilized glued operator `A_R (ξ, σ₁, σ₂) = D_R ξ + j_R (σ₁, σ₂)` has right inverses `Q` with
-`‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)`, and for every such `Q` the gluing map
+`‖Q‖ ≤ 4 (‖Q₁‖ + ‖Q₂‖)`, and, for any given bound `C`, for every right inverse `Q` with `‖Q‖ ≤ C`
+the gluing map
 (`TauCeti.CylinderSobolev.gluingKerMap`), which preglues and corrects along the range of `Q`, is
 a linear isomorphism `E₁ × E₂ ≃ E_R`. -/
 theorem exists_forall_ge_forall_gluingKerMap_bijective
@@ -1055,7 +1059,8 @@ theorem exists_forall_ge_forall_gluingKerMap_bijective
     (hQ₂ : (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).comp Q₂ =
       ContinuousLinearMap.id ℝ _)
     [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁).ker]
-    [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker] :
+    [FiniteDimensional ℝ (((jetOperator 2 stripMeasure M₂).comp (H1 V).subtypeL).coprod ι₂).ker]
+    (C : ℝ) :
     ∃ R₀ : ℝ, ∀ R ≥ R₀, (∃ Q : Lp W 2 stripMeasure →L[ℝ] H1 V × (S₁ × S₂),
       Function.RightInverse Q (((jetOperator 2 stripMeasure
         (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
@@ -1064,8 +1069,8 @@ theorem exists_forall_ge_forall_gluingKerMap_bijective
         (hQ : Function.RightInverse Q (((jetOperator 2 stripMeasure
           (Function.uncurry (gluedCoeff (Function.curry M₁) (Function.curry M₂) R))).comp
             (H1 V).subtypeL).coprod (gluedStabilizer ι₁ ι₂ R))),
-        ‖Q‖ ≤ 4 * (‖Q₁‖ + ‖Q₂‖) → Function.Bijective (gluingKerMap hQ) := by
-  obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_rightInverse hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂
+        ‖Q‖ ≤ C → Function.Bijective (gluingKerMap hQ) := by
+  obtain ⟨R₀, hR₀⟩ := exists_forall_ge_forall_rightInverse hM₁ hM₂ h₁ h₂ hι₁ hι₂ hQ₁ hQ₂ C
   refine ⟨R₀, fun R hR ↦ ⟨(hR₀ R hR).1, fun Q hQ hQn ↦ ?_⟩⟩
   obtain ⟨hfin, hrank, hinj⟩ := (hR₀ R hR).2 Q hQ hQn
   have := free_ker (((jetOperator 2 stripMeasure M₁).comp (H1 V).subtypeL).coprod ι₁)

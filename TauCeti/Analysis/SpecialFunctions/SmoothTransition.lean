@@ -129,6 +129,9 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
   `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
   right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.abs_one_sub_neckCutoff_le_one` and `TauCeti.abs_deriv_one_sub_neckCutoff`: the
+  complementary cutoff `1 - neckCutoff a` is bounded by `1`, and its derivative is that of the neck
+  cutoff up to sign.
 * `TauCeti.neckCutoff_neg_two_div_eq_one`, `TauCeti.neckCutoff_neg_two_div_eq_zero` and their
   `two_div` counterparts: where the neck cutoffs for `a = ∓ 2 / R` equal `1` and vanish.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
@@ -862,6 +865,16 @@ theorem abs_deriv_neckCutoff_le {L : ℝ}
     |deriv (neckCutoff a) s| ≤ |a| * L := by
   rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
   exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
+
+/-- The complementary neck cutoff `1 - neckCutoff a` takes values in `[-1, 1]`. -/
+theorem abs_one_sub_neckCutoff_le_one (a s : ℝ) : |1 - neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_one_sub_le_one _
+
+/-- The derivative of the complementary neck cutoff `1 - neckCutoff a` is that of `neckCutoff a` up
+to sign. -/
+theorem abs_deriv_one_sub_neckCutoff (a s : ℝ) :
+    |deriv (fun s ↦ 1 - neckCutoff a s) s| = |deriv (neckCutoff a) s| := by
+  rw [deriv_const_sub, abs_neg]
 
 /-- The neck cutoff is `1` where `0 ≤ a s`. -/
 theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
