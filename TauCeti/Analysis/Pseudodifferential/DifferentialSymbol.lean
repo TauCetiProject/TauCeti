@@ -270,11 +270,7 @@ theorem quantizeSchwartzValue_mul_sq_add_mul_I_mul (c₂ c₁ : ℝ → ℂ) (u 
       (fun _ _ ↦ (1 : ℝ))
       ![fun y ↦ (-c₂ y) • (1 : ℂ →L[ℂ] ℂ), fun y ↦ c₁ y • (1 : ℂ →L[ℂ] ℂ)] := by
     funext p
-    simp only [differentialSymbol_def, RCLike.inner_apply, conj_trivial, one_mul,
-      Finset.prod_const, Finset.card_univ, Fintype.card_fin, mul_pow, Matrix.cons_val',
-      Matrix.cons_val_fin_one, Fin.sum_univ_two, Fin.isValue, Matrix.cons_val_zero,
-      Complex.I_sq, neg_mul, smul_smul, mul_neg, neg_neg, Matrix.cons_val_one, pow_one,
-      ← add_smul]
+    simp [differentialSymbol_def, Fin.sum_univ_two, Complex.I_sq, mul_pow]
     module
   rw [hsym, quantizeSchwartzValue_differentialSymbol_eq_sum_iteratedFDeriv]
   simp [Fin.sum_univ_two, iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod, iteratedDeriv_succ]
