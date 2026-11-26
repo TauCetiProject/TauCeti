@@ -256,6 +256,19 @@ theorem levelTrace_smul {R : Type*} [DistribSMul R M] (V U : Subgroup G) [V.IsFi
     simp only [levelTrace_mk, Pi.smul_apply]
     exact (smul_finsum' r (Set.toFinite _)).symm
 
+/-- **The level trace of `1` is the index**: for `V` of finite relative index in `U`, the trace
+from `V`-orbits to `U`-orbits of the constant function `1` is the constant `[U : V]`. -/
+@[simp]
+theorem levelTrace_one {R : Type*} [AddCommMonoidWithOne R] (V U : Subgroup G)
+    [V.IsFiniteRelIndex U] :
+    levelTrace V U (1 : orbitRel.Quotient V α → R) = fun _ ↦ (V.relIndex U : R) := by
+  funext p
+  induction p using Quotient.inductionOn' with
+  | h x =>
+    have := Fintype.ofFinite (U ⧸ V.subgroupOf U)
+    rw [levelTrace_mk, finsum_eq_sum_of_fintype]
+    simp [Subgroup.relIndex, Subgroup.index_eq_card, Nat.card_eq_fintype_card]
+
 variable {R : Type*} [CommSemiring R] [Module R M]
 
 /-- **The level trace with its multiplicities.** For `V ≤ U` of finite index and a `U`-orbit `p`

@@ -39,6 +39,8 @@ coefficients.
 
 ## Main results
 
+* `TauCeti.norm_le_norm_latticePoint`: the supremum norm of `j : ι → ℤ` is at most the Euclidean
+  norm of its lattice point.
 * `TauCeti.finite_setOf_norm_latticePoint_le`: a closed ball contains finitely many lattice
   points.
 * `TauCeti.card_le_of_forall_norm_latticePoint_le`: the bound `(e (1 + √π R / √n))ⁿ`.
@@ -79,6 +81,11 @@ theorem latticePoint_eq_sum {ι : Type*} [Fintype ι] (j : ι → ℤ) :
   simp [EuclideanSpace.basisFun_apply, Pi.single_apply]
 
 variable {ι : Type*} [Fintype ι]
+
+/-- The supremum norm of an integer vector is at most the Euclidean norm of its lattice point. -/
+theorem norm_le_norm_latticePoint (j : ι → ℤ) : ‖j‖ ≤ ‖latticePoint j‖ :=
+  (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ by
+    simpa [Int.norm_eq_abs] using PiLp.norm_apply_le (latticePoint j) i
 
 /-- Rounding the coordinates of a real vector `x` gives the integer point
 `latticePoint fun k ↦ round (x k)`, at squared distance at most

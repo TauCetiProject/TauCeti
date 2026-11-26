@@ -9,9 +9,10 @@ public import TauCeti.RepresentationTheory.Continuous.Determinant.Basic
 public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Operations
 public import TauCeti.LinearAlgebra.Determinant.ConstantRank
 public import TauCeti.LinearAlgebra.Determinant.Projective.Operations
+public import TauCeti.LinearAlgebra.Determinant.Projective.TensorProduct
 
 /-!
-# Determinant characters of restrictions, sums, twists and duals
+# Determinant characters of restrictions, sums, twists, duals and tensor products
 
 For continuous representations on finite projective modules, the determinant character
 `TauCeti.ContinuousRep.det` satisfies:
@@ -19,15 +20,18 @@ For continuous representations on finite projective modules, the determinant cha
 * `det (Res_φ ρ) = det ρ ∘ φ` (`ContinuousRep.det_res`);
 * `det (ρ × σ) = det ρ · det σ` (`ContinuousRep.det_prod`);
 * `det (ρ(χ)) = det ρ · χ^d` when `M` has constant rank `d` (`ContinuousRep.det_twist`);
-* `det (ρ^∨) = (det ρ)⁻¹` (`ContinuousRep.det_dual`).
+* `det (ρ^∨) = (det ρ)⁻¹` (`ContinuousRep.det_dual`);
+* `det (ρ ⊗ σ) = (det ρ)^n · (det σ)^m` when `M` and `N` have constant ranks `m` and `n`
+  (`ContinuousRep.det_tprod`).
 
 The determinant of a product uses `LinearMap.projectiveDet_prodMap`, that of a dual
-`LinearMap.projectiveDet_dualMap`, and that of a twist `LinearMap.projectiveDet_smul`.
+`LinearMap.projectiveDet_dualMap`, that of a twist `LinearMap.projectiveDet_smul`, and that of a
+tensor product `LinearMap.projectiveDet_tensorProductMap`.
 -/
 
 public section
 
-open Module
+open Module TensorProduct
 
 namespace TauCeti.ContinuousRep
 
@@ -64,5 +68,15 @@ theorem det_dual [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A 
     (ρ : ContinuousRep Γ A M) : ρ.dual.det = ρ.det⁻¹ := by
   ext g
   simp [dual_apply, ← LinearMap.dualMap_def, ← map_inv]
+
+/-- **The determinant of a tensor product**: for `M` and `N` of constant ranks `m` and `n`,
+`det (ρ ⊗ σ) = (det ρ) ^ n · (det σ) ^ m`. -/
+theorem det_tprod [TopologicalSpace A] [IsTopologicalRing A] [IsModuleTopology A M]
+    [IsModuleTopology A N] [TopologicalSpace (M ⊗[A] N)] [IsModuleTopology A (M ⊗[A] N)]
+    {m n : ℕ} (hM : ∀ p, rankAtStalk (R := A) M p = m) (hN : ∀ p, rankAtStalk (R := A) N p = n)
+    (ρ : ContinuousRep Γ A M) (σ : ContinuousRep Γ A N) :
+    (ρ.tprod σ).det = ρ.det ^ n * σ.det ^ m := by
+  ext g
+  simp [tprod_apply, LinearMap.projectiveDet_tensorProductMap hM hN]
 
 end TauCeti.ContinuousRep

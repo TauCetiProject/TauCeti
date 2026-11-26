@@ -62,6 +62,9 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.cancelBaseChange_comp_map`,
+  `TauCeti.BalancedExtension.congrRingHom_comp_map`: `cancelBaseChange` and `congrRingHom` are
+  natural in the module.
 * `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
   every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
@@ -381,6 +384,13 @@ theorem congrRingHom_trans {g h : R →+* S} (hfg : f = g) (hgh : g = h) :
   subst g h
   rfl
 
+/-- Transport along an equality of ring homomorphisms is natural in the module. -/
+theorem congrRingHom_comp_map {g : R →+* S} (h : f = g) {P' : Type*} [AddCommGroup P']
+    [Module R P'] (φ : P →ₗ[R] P') :
+    (congrRingHom h).toLinearMap ∘ₗ map f φ = map g φ ∘ₗ (congrRingHom h).toLinearMap := by
+  subst g
+  simp
+
 section CentralAction
 
 /-- Scalars acting compatibly with the destination ring act on the first factor of `S ⊗_R P`. -/
@@ -489,6 +499,15 @@ theorem cancelBaseChange_tmul (t : T) (s : S) (p : P) :
 theorem cancelBaseChange_symm_tmul (t : T) (p : P) :
     (cancelBaseChange f g).symm (tmul (g.comp f) t p) = tmul g t (tmul f 1 p) := by
   simp [cancelBaseChange]
+
+/-- `TauCeti.BalancedExtension.cancelBaseChange` is natural in the module. -/
+theorem cancelBaseChange_comp_map {P' : Type*} [AddCommGroup P'] [Module R P'] (φ : P →ₗ[R] P') :
+    (cancelBaseChange f g).toLinearMap ∘ₗ map g (map f φ) =
+      map (g.comp f) φ ∘ₗ (cancelBaseChange f g).toLinearMap := by
+  ext x
+  induction x using induction_on with
+  | tmul s p => simp
+  | add x y hx hy => rw [tmul_add, _root_.map_add, _root_.map_add, hx, hy]
 
 end Composition
 

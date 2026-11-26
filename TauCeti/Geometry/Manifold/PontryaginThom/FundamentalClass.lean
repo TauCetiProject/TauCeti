@@ -28,7 +28,7 @@ Hausdorff `M`
 excision (`TauCeti.IsFramedTube.isIso_singularHomologyMap_tubePairMap`) the right side is the
 homology of `(V × S, (V ∖ 0) × S)`, and the relative Künneth theorem for the free local homology of
 `V` at `0`
-(`TauCeti.bijective_homologyCross_tmul_singularChainComplex_complSingleton`) gives the suspension
+(`TauCeti.bijective_singularHomologyCrossRel_tmul_complSingleton`) gives the suspension
 by `o`. So every class `z ∈ H_{r+q}(M; k ⊗ L)` determines a unique class
 `x ∈ H_q(S; L)` whose image under the tube is the image of `z` in `H_{r+q}(M, M ∖ f(S))`
 (`TauCeti.IsFramedTube.existsUnique_singularHomologyπ_eq_singularHomologyMap_tubePairMap`).
@@ -449,20 +449,11 @@ theorem bijective_singularHomologyMap_tubePairMap_singularHomologyCrossRel
         (TopCat.of S) ↦
       TopPair.singularHomologyMap h.tubePairMap (𝟙_ (ModuleCat.{w} k) ⊗ L) n
         (TopCat.singularHomologyCrossRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ
-          (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ x)) := by
-  have hs := (quasiIsoAt_iff_isIso_homologyMap
-    (TopCat.shuffleRel (TopCat.of V) (TopCat.of S) {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L) n).1
-      inferInstance
-  have := ((ConcreteCategory.isIso_iff_bijective _).1
+          (𝟙_ (ModuleCat.{w} k)) L r q n hn (o ⊗ₜ x)) :=
+  ((ConcreteCategory.isIso_iff_bijective _).1
       (h.isIso_singularHomologyMap_tubePairMap hf (𝟙_ (ModuleCat.{w} k) ⊗ L) n)).comp
-    (((ConcreteCategory.isIso_iff_bijective _).1 hs).comp
-      (bijective_homologyCross_tmul_singularChainComplex_complSingleton
-        (OpenPartialHomeomorph.refl V) (mem_univ (0 : V))
-        ((TopCat.toSSet.obj (TopCat.of S)).chainComplex L) hr ho q n hn))
-  -- The relative cross product is the cross product of chain complexes followed by the relative
-  -- shuffle map.
-  simp only [TopCat.singularHomologyCrossRel_def]
-  exact this
+    (bijective_singularHomologyCrossRel_tmul_complSingleton (OpenPartialHomeomorph.refl V)
+      (mem_univ (0 : V)) (TopCat.of S) L hr ho q n hn)
 
 /-- **The class of the core determined by a class of the ambient space.** Let `τ : S × V → M` be a
 framed tube around `f` with closed core `f(S)`, with `V` of dimension `r`, and let `o` generate

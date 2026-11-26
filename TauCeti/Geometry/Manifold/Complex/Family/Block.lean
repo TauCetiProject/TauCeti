@@ -36,6 +36,14 @@ This file builds both directions of that correspondence on arbitrary real normed
   pseudoholomorphic at `p` if and only if `J` equals `blockEndomorphism i (connectionBlock J)
   (fiberBlock J)` at `p`.
 
+The fibres `{b} × V` of a block structure are `J`-complex: `J` sends a vertical vector `(0, w)` at
+`(b, v)` to `(0, j(b, v) w)` (`apply_zero_prodMk`). So `v ↦ j(b, v)` is a smooth almost complex
+structure on `V`, the fibre structure over `b` (`fiberAlmostComplexStructure`), and a map
+`y ↦ (b, g y)` into the fibre over `b` is pseudoholomorphic exactly when `g` is pseudoholomorphic
+for the fibre structure (`isPseudoholomorphicAt_prodMk_right_iff`). In particular the fibre
+component of a pseudoholomorphic map lying in one fibre is pseudoholomorphic for the fibre
+structure (`TauCeti.IsPseudoholomorphicAt.snd_of_forall_fst_eq`).
+
 For the manifold-level diagonal (`α = 0`) product family on `P × M`, see
 `TauCeti.SmoothAlmostComplexStructure.prodFamily`.
 
@@ -51,6 +59,10 @@ For the manifold-level diagonal (`α = 0`) product family on `P × M`, see
 * `TauCeti.ComplexStructureFamily.isPseudoholomorphicAt_fst_iff_toEndomorphism_eq_blockEndomorphism`
   and `ComplexStructureFamily.isPseudoholomorphic_fst_iff_toEndomorphism_eq_blockEndomorphism`:
   characterization of block structures via pseudoholomorphy of `Prod.fst`.
+* `TauCeti.ComplexStructureFamily.fiberAlmostComplexStructure`: the almost complex structure of
+  the fibre over a point of the base.
+* `TauCeti.ComplexStructureFamily.isPseudoholomorphicAt_prodMk_right_iff`: maps into one fibre are
+  pseudoholomorphic exactly when they are for the fibre structure.
 
 ## References
 
@@ -303,5 +315,102 @@ theorem eq_blockAlmostComplexStructure_of_isPseudoholomorphic_fst
   have hblk := (isPseudoholomorphic_fst_iff_toEndomorphism_eq_blockEndomorphism J i hi).1 hJ
   ext p w
   exact congrArg (fun L : (B × V) →L[ℝ] B × V ↦ L w) (hblk p)
+
+/-! ### The fibres of a block structure -/
+
+section Fiber
+
+variable (J : SmoothAlmostComplexStructure 𝓘(ℝ, B × V) (B × V)) {i : B →L[ℝ] B}
+  {hi : ∀ a, i (i a) = -a}
+  (hJ : IsPseudoholomorphic J (SmoothAlmostComplexStructure.const i hi) Prod.fst)
+
+include hJ in
+/-- The **fibre structure** over `b` of a block almost complex structure `J` on `B × V`: the smooth
+almost complex structure `v ↦ j(b, v)` on `V` given by the fibre block of `J` along the fibre
+`{b} × V`. The fibres `{b} × V` are `J`-complex submanifolds, and this is the structure `J`
+induces on them (`TauCeti.ComplexStructureFamily.isPseudoholomorphicAt_prodMk_right_iff`). -/
+def fiberAlmostComplexStructure (b : B) : SmoothAlmostComplexStructure 𝓘(ℝ, V) V where
+  toEndomorphism := Manifold.tangentEndomorphismOfModel (fun v ↦ fiberBlock J (b, v))
+    ((contDiff_fiberBlock J).comp (contDiff_const.prodMk contDiff_id))
+  square_neg v := by
+    ext w
+    rw [Manifold.tangentEndomorphismOfModel_apply]
+    exact (fiberBlock_apply_apply_and_connectionBlock_anticommute J i hi
+      (hJ.isPseudoholomorphicAt (b, v))).1 w
+
+@[simp]
+theorem fiberAlmostComplexStructure_toEndomorphism (b : B) (v : V) :
+    (fiberAlmostComplexStructure J hJ b).toEndomorphism v = fiberBlock J (b, v) :=
+  Manifold.tangentEndomorphismOfModel_apply _ _ v
+
+/-- The fibre structure over `b` acts on a vertical vector `w` at `v` as `J` does on `(0, w)` at
+`(b, v)`. -/
+theorem fiberAlmostComplexStructure_apply (b : B) (v w : V) :
+    fiberAlmostComplexStructure J hJ b v w = (J (b, v) (0, w)).2 :=
+  (congrArg (fun A : V →L[ℝ] V ↦ A w)
+    (fiberAlmostComplexStructure_toEndomorphism J hJ b v)).trans (fiberBlock_apply J (b, v) w)
+
+/-- A block structure sends a vertical vector `(0, w)` at `(b, v)` to the vertical vector
+`(0, j w)`, with `j` the fibre structure over `b`: the vertical subspaces are `J`-complex. -/
+theorem apply_zero_prodMk (b : B) (v w : V) :
+    J (b, v) (0, w) = ((0 : B), fiberAlmostComplexStructure J hJ b v w) := by
+  refine Prod.ext ?_ (fiberAlmostComplexStructure_apply J hJ b v w).symm
+  have h := (isPseudoholomorphicAt_fst_iff J i hi (b, v)).1 (hJ.isPseudoholomorphicAt (b, v))
+    ((0 : B), w)
+  rw [h, map_zero]
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+  {j : SmoothAlmostComplexStructure I M}
+
+variable {J}
+
+/-- **Vertical maps.** A map `y ↦ (b, g y)` into the fibre over `b` is pseudoholomorphic at `x`
+for a block structure `J` exactly when `g` is pseudoholomorphic at `x` for the fibre structure
+over `b`. -/
+theorem isPseudoholomorphicAt_prodMk_right_iff {b : B} {g : M → V} {x : M} :
+    IsPseudoholomorphicAt j J (fun y ↦ (b, g y)) x ↔
+      IsPseudoholomorphicAt j (fiberAlmostComplexStructure J hJ b) g x := by
+  -- the inclusion `v ↦ (b, v)` of the fibre has derivative `inr` at every point
+  have hinr (v : V) : HasMFDerivAt 𝓘(ℝ, V) 𝓘(ℝ, B × V) (fun v : V ↦ (b, v)) v
+      (ContinuousLinearMap.inr ℝ B V) := (hasFDerivAt_prodMk_right b v).hasMFDerivAt
+  have hsnd (p : B × V) : HasMFDerivAt 𝓘(ℝ, B × V) 𝓘(ℝ, V) Prod.snd p
+      (ContinuousLinearMap.snd ℝ B V) := (ContinuousLinearMap.snd ℝ B V).hasFDerivAt.hasMFDerivAt
+  have hfst (p : B × V) : HasMFDerivAt 𝓘(ℝ, B × V) 𝓘(ℝ, B) Prod.fst p
+      (ContinuousLinearMap.fst ℝ B V) := (ContinuousLinearMap.fst ℝ B V).hasFDerivAt.hasMFDerivAt
+  constructor
+  · intro hu
+    set u' := mfderiv I 𝓘(ℝ, B × V) (fun y ↦ (b, g y)) x
+    have hu' : HasMFDerivAt I 𝓘(ℝ, B × V) (fun y ↦ (b, g y)) x u' :=
+      hu.mdifferentiableAt.hasMFDerivAt
+    have hlin := hu.mfderiv_apply_commute
+    -- the base component of `u'` vanishes, since the base component of the map is constant
+    have h₀ : (ContinuousLinearMap.fst ℝ B V).comp u' = 0 :=
+      ((hfst _).comp x hu').mfderiv.symm.trans (hasMFDerivAt_const b x).mfderiv
+    have hu'w (w : TangentSpace I x) : u' w = ((0 : B), (u' w).2) :=
+      Prod.ext (congrArg (fun L : TangentSpace I x →L[ℝ] B ↦ L w) h₀) rfl
+    refine isPseudoholomorphicAt_of_hasMFDerivAt ((hsnd _).comp x hu') fun w ↦ ?_
+    have h := congrArg Prod.snd (hlin w)
+    -- `J (b, g x)` acts on the vertical vector `u' w` through the fibre structure
+    rw [hu'w w, apply_zero_prodMk J hJ] at h
+    exact h
+  · intro hg
+    refine isPseudoholomorphicAt_of_hasMFDerivAt
+      ((hinr (g x)).comp x hg.mdifferentiableAt.hasMFDerivAt) fun w ↦ ?_
+    -- `inr` carries the equation for `g` to the equation for `(b, g)` along the vertical vectors
+    exact (congrArg (fun v : V ↦ ((0 : B), v)) (hg.mfderiv_apply_commute w)).trans
+      (apply_zero_prodMk J hJ b (g x) _).symm
+
+/-- **Vertical curves.** If a map `u` into `B × V` is pseudoholomorphic at `x` for a block
+structure `J` and lies in the fibre over `b`, then its fibre component is pseudoholomorphic at `x`
+for the fibre structure over `b`. -/
+theorem _root_.TauCeti.IsPseudoholomorphicAt.snd_of_forall_fst_eq {b : B} {u : M → B × V} {x : M}
+    (hu : IsPseudoholomorphicAt j J u x) (hb : ∀ y, (u y).1 = b) :
+    IsPseudoholomorphicAt j (fiberAlmostComplexStructure J hJ b) (fun y ↦ (u y).2) x := by
+  have hu' : u = fun y ↦ (b, (u y).2) := funext fun y ↦ Prod.ext (hb y) rfl
+  rw [hu'] at hu
+  exact (isPseudoholomorphicAt_prodMk_right_iff hJ).1 hu
+
+end Fiber
 
 end TauCeti.ComplexStructureFamily

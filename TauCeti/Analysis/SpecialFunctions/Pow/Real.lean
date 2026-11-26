@@ -171,6 +171,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
   `M * R' ^ p < ε`.
 * `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
+* `Real.rpow_sub_pow_mul_rpow_mul_natCast`: `(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for
+  `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
   `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -545,6 +547,12 @@ theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ)
 theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
     x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
   rw [← rpow_add hx, ← add_mul, sub_add_cancel]
+
+/-- Trading `a` orders in a natural-number scaled exponent:
+`(x ^ (s - a)) ^ n x ^ (a n) = x ^ (s n)` for `0 < x`. -/
+theorem rpow_sub_pow_mul_rpow_mul_natCast {x : ℝ} (hx : 0 < x) (s a : ℝ) (n : ℕ) :
+    (x ^ (s - a)) ^ n * x ^ (a * n) = x ^ (s * n) := by
+  rw [← rpow_mul_natCast hx.le, rpow_sub_mul_mul_rpow_mul hx]
 
 /-- For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`. -/
 theorem pow_div_pow_pow_eq_rpow_of_le {x : ℝ} (hx : 0 < x) {a b : ℕ} (hab : a ≤ b) (M : ℕ) :

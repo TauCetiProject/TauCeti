@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
-public import TauCeti.NumberTheory.NumberField.CMType.Primitive
+public import TauCeti.NumberTheory.NumberField.CMType.Primitive.Basic
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import TauCeti.Analysis.Complex.Sqrt
 import TauCeti.FieldTheory.IntermediateField.Map

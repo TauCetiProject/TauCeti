@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Polynomial.PrescribedPowerSums
+public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Algebra.Ring.GeomSum
 import TauCeti.Analysis.Polynomial.Monic.RootBound
@@ -25,6 +26,9 @@ closed disc of radius `R`. This file bounds the Newton coefficients `b_j` of `M`
 
 Only finitely many moments enter: the bound on `b_j` uses `1 ≤ k ≤ j`, the bound on the roots
 uses `1 ≤ k ≤ m`.
+
+The Newton coefficients are polynomials in the moments, so they depend smoothly on moments that
+depend smoothly on a parameter (`TauCeti.contDiffAt_newtonCoeff`).
 
 Both bounds are homogeneous in `R`, as they must be: rescaling the points by `t` multiplies `M k`
 by `tᵏ` and `b_j` by `tʲ`. They hold whatever the sequence is, before `P` is known to
@@ -95,5 +99,25 @@ theorem norm_le_of_mem_roots_newtonPolynomial {M : ℕ → K} {V R : ℝ} (hV : 
   have h := coeff_newtonPolynomial_sub M (Nat.sub_le m i)
   rw [Nat.sub_sub_self hi.le] at h
   simpa [h] using norm_newtonCoeff_le hV hR fun k hk hki => hM k hk (hki.trans (Nat.sub_le m i))
+
+section Smooth
+
+variable {𝕜 E L : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedField L] [NormedAlgebra 𝕜 L]
+
+/-- **Newton coefficients of smooth families.** If every term `M u j` of a family of sequences is
+`Cⁿ` in `u` at `u₀`, then so is every Newton coefficient of `M u`. -/
+theorem contDiffAt_newtonCoeff {M : E → ℕ → L} {u₀ : E} {n : WithTop ℕ∞}
+    (hM : ∀ j, ContDiffAt 𝕜 n (fun u ↦ M u j) u₀) (k : ℕ) :
+    ContDiffAt 𝕜 n (fun u ↦ newtonCoeff (M u) k) u₀ := by
+  induction k using Nat.strong_induction_on with
+  | _ k ih =>
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa only [newtonCoeff_zero] using contDiffAt_const
+  simp_rw [newtonCoeff_of_ne_zero _ hk]
+  refine contDiffAt_const.mul (contDiffAt_const.mul (ContDiffAt.sum fun a ha ↦ ?_))
+  exact (contDiffAt_const.mul (ih a.1 (mem_filter.1 ha).2)).mul (hM a.2)
+
+end Smooth
 
 end TauCeti

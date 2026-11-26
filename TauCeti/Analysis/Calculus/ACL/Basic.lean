@@ -28,9 +28,11 @@ normed space. Openness of `Ω` is assumed only for the `C¹` result.
   Fréchet derivative wherever `u` is differentiable (`TauCeti.formalDeriv_eq_fderiv`).
 * `TauCeti.coordinateBox a b` is the closed coordinate box `Π_j [a_j, b_j]`, and
   `TauCeti.lineFunction u x i` is the line function `t ↦ u(x + (t - xᵢ) eᵢ)` of `u` through `x` in
-  the `i`-th direction. For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in
-  the box (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only
-  on the coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`).
+  the `i`-th direction. A box has volume `∏ⱼ ENNReal.ofReal (bⱼ - aⱼ)`
+  (`TauCeti.volume_coordinateBox`).
+  For `x` in a box and `t ∈ [aᵢ, bᵢ]`, the point `x + (t - xᵢ) eᵢ` stays in the box
+  (`TauCeti.add_sub_smul_single_mem_coordinateBox`), and the line function depends only on the
+  coordinates of `x` other than the `i`-th (`TauCeti.lineFunction_add_smul_single`).
 * `TauCeti.IsACLOn u Ω`: `u` is continuous on `Ω` and, for every closed coordinate box `Q ⊆ Ω` with
   `aⱼ < bⱼ` for all `j` and every `i`, the line function through `x` is absolutely continuous on
   `[aᵢ, bᵢ]` for almost every `x ∈ Q`.
@@ -144,6 +146,13 @@ theorem isClosed_coordinateBox (a b : Fin n → ℝ) : IsClosed (coordinateBox a
 /-- A closed coordinate box is measurable. -/
 theorem measurableSet_coordinateBox (a b : Fin n → ℝ) : MeasurableSet (coordinateBox a b) :=
   (isClosed_coordinateBox a b).measurableSet
+
+/-- The volume of a closed coordinate box is the product of its side lengths. -/
+theorem volume_coordinateBox (a b : Fin n → ℝ) :
+    volume (coordinateBox a b) = ∏ i, ENNReal.ofReal (b i - a i) := by
+  rw [coordinateBox_eq_preimage_Icc, PiLp.coe_continuousLinearEquiv,
+    (PiLp.volume_preserving_ofLp (Fin n)).measure_preimage measurableSet_Icc.nullMeasurableSet,
+    Real.volume_Icc_pi]
 
 /-- The **line function** of `u` through `x` in the `i`-th coordinate direction,
 `t ↦ u(x + (t - xᵢ) eᵢ)`: its value at `t` is the value of `u` at the point obtained from `x` by
