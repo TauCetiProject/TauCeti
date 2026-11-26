@@ -54,6 +54,11 @@ specializes to each closed fibre.
 
 ## Main results
 
+* `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_toHom` and
+  `AlgebraicGeometry.Scheme.Hom.toHom_toRationalMap`: `toHom` represents the rational map, and
+  recovers a morphism from its rational map.
+* `AlgebraicGeometry.Scheme.RationalMap.domain_eq_top_iff`: for `X` integral and `Y` separated, a
+  rational map is defined everywhere exactly when it is the rational map of a morphism.
 * `AlgebraicGeometry.Scheme.RationalMap.domain_eq_top_of_valuationRing`: an `S`-rational map from
   an integral scheme whose local rings are valuation rings to a universally closed `S`-scheme
   locally of finite type is defined everywhere.
@@ -144,6 +149,30 @@ theorem RationalMap.toRationalMap_toHom [IsIntegral X] [Y.IsSeparated] (f : X �
   refine eq_of_fromFunctionField_eq _ _ ?_
   rw [Hom.toRationalMap, fromFunctionField_toRationalMap, PartialMap.fromFunctionField,
     PartialMap.fromSpecStalkOfMem_toPartialMap, fromSpecStalk_genericPoint_toHom]
+
+/-- On the domain of the representative, `RationalMap.toHom` is the representative. -/
+@[reassoc]
+theorem RationalMap.representative_domain_ι_toHom [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y)
+    (hf : f.domain = ⊤) : f.representative.domain.ι ≫ f.toHom hf = f.representative.hom := by
+  rw [representative_hom_eq, toHom_def, ← Category.assoc, ← Category.assoc]
+  congr 1
+  rw [← cancel_mono (Opens.ι _), homOfLE_ι, Category.assoc, homOfLE_ι, ← Scheme.topIso_hom]
+  simp
+
+/-- `RationalMap.toHom` of the rational map of a morphism is the morphism. -/
+@[simp]
+theorem Hom.toHom_toRationalMap [IsReduced X] [Y.IsSeparated] (g : X ⟶ Y) :
+    g.toRationalMap.toHom g.domain_toRationalMap = g := by
+  have h := (PartialMap.equiv_toPartialMap_iff_of_isSeparated (terminal.from X) (terminal.from Y)
+    (g := g) (terminal.hom_ext _ _)).1
+    (PartialMap.toRationalMap_eq_iff.1 g.toRationalMap.toRationalMap_toPartialMap)
+  rw [RationalMap.toHom_def, h, homOfLE_ι_assoc, ← Scheme.topIso_hom, Iso.inv_hom_id_assoc]
+
+/-- A rational map from an integral scheme to a separated scheme is defined everywhere exactly
+when it is the rational map of a morphism. -/
+theorem RationalMap.domain_eq_top_iff [IsIntegral X] [Y.IsSeparated] (f : X ⤏ Y) :
+    f.domain = ⊤ ↔ ∃ g : X ⟶ Y, g.toRationalMap = f :=
+  ⟨fun hf => ⟨f.toHom hf, f.toRationalMap_toHom hf⟩, fun ⟨g, hg⟩ => hg ▸ g.domain_toRationalMap⟩
 
 /-! ### Rational maps into universally closed schemes -/
 

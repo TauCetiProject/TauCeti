@@ -14,7 +14,8 @@ public import TauCeti.AlgebraicGeometry.Scheme.GenericPoint.Basic
 General facts about Mathlib's partial and rational maps from an irreducible scheme `X`, read at
 the generic point of `X`: the domain of a partial map contains the generic point, the morphism
 `Spec K(X) ⟶ Y` of a rational map commutes with postcomposition by a morphism, and for an
-`S`-rational map it is a morphism over `S`.
+`S`-rational map it is a morphism over `S`. The rational map of a morphism is defined
+everywhere.
 
 For a reduced source and a separated target, a partial map representing a rational map agrees on
 its domain with the canonical representative `RationalMap.toPartialMap` on the domain of
@@ -30,6 +31,8 @@ definition.
   `Spec K(X) ⟶ Y` of an `S`-rational map is over `S`.
 * `AlgebraicGeometry.Scheme.Hom.isOver_toRationalMap`: the rational map of an `S`-morphism is an
   `S`-rational map.
+* `AlgebraicGeometry.Scheme.Hom.domain_toRationalMap`: the rational map of a morphism is defined
+  everywhere.
 * `AlgebraicGeometry.Scheme.PartialMap.hom_eq_homOfLE_comp_toPartialMap` and
   `AlgebraicGeometry.Scheme.RationalMap.representative_hom_eq`: for a reduced source and a
   separated target, any partial map representing a rational map, in particular its
@@ -75,6 +78,11 @@ instance Hom.isOver_toRationalMap {S : Scheme.{u}} [X.Over S] [Y.Over S] (g : X 
     [g.IsOver S] : g.toRationalMap.IsOver (X ↘ S) (Y ↘ S) :=
   haveI := Hom.isOver_toPartialMap (comp_over g S)
   inferInstance
+
+/-- The rational map of a morphism is defined everywhere. -/
+@[simp]
+theorem Hom.domain_toRationalMap (g : X ⟶ Y) : g.toRationalMap.domain = ⊤ :=
+  top_le_iff.1 g.toPartialMap.le_domain_toRationalMap
 
 /-- The domain of the representative `RationalMap.toPartialMap` is the domain of definition. -/
 theorem RationalMap.toPartialMap_domain [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y) :
