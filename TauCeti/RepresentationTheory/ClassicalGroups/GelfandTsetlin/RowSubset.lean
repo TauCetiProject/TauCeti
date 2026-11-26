@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.AddMonoid
+public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Tableau
 public import TauCeti.RepresentationTheory.ClassicalGroups.GelfandTsetlin.Weight
 public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Order.Monoid.Submonoid
@@ -40,6 +41,8 @@ determinant shift `TauCeti.GTPattern.shift 1`.
   entries in `{0, 1}`.
 * `TauCeti.GTPattern.closure_range_rowSubset`: the row-subset patterns generate the nonnegative
   patterns, and `TauCeti.GTPattern.fg_nonneg`: that monoid is finitely generated.
+* `TauCeti.BoundedSSYT.sum_rowSubset_colFinset`: the row-subset patterns of the columns of `T` sum
+  to `SemistandardYoungTableau.toGTPattern T.1 n`.
 
 ## References
 
@@ -289,5 +292,43 @@ theorem fg_nonneg : (AddSubmonoid.nonneg (GTPattern n)).FG :=
   AddSubmonoid.fg_iff _ |>.2 ⟨_, closure_range_rowSubset, Set.finite_range _⟩
 
 end GTPattern
+
+/-! ### Column decomposition of a tableau pattern -/
+
+/-- **Column decomposition of a tableau pattern.** Summing the row-subset Gelfand-Tsetlin patterns
+of the nonempty columns of a bounded semistandard tableau `T` produces the pattern
+`SemistandardYoungTableau.toGTPattern T.1 n` attached to `T`. -/
+@[simp]
+theorem BoundedSSYT.sum_rowSubset_colFinset {n : ℕ} {μ : YoungDiagram} (T : BoundedSSYT n μ) :
+    ∑ m ∈ range (μ.rowLen 0), GTPattern.rowSubset (T.colFinset m) =
+      SemistandardYoungTableau.toGTPattern T.val n := by
+  ext i j
+  rw [GTPattern.coe_sum, Finset.sum_apply, Finset.sum_apply,
+    SemistandardYoungTableau.toGTPattern_apply, SemistandardYoungTableau.patternEntry_def]
+  by_cases hnj : n < j
+  · rw [ite_eq_left hnj]
+    exact sum_eq_zero fun m _ ↦ by simp [GTPattern.rowSubset_apply, not_le.mpr hnj]
+  · have hjn : j ≤ n := not_lt.mp hnj
+    rw [ite_eq_right hnj]
+    -- In column `m`, `i < #{r ∈ T.colFinset m | r < j}` holds precisely when `(i, m) ∈ μ`
+    -- and `T i m < j`.
+    have hcol (m : ℕ) :
+        i < #{r ∈ T.colFinset m | r.val < j} ↔ m < μ.rowLen i ∧ T.val i m < j := by
+      by_cases him : i < μ.colLen m
+      · have hmem : m < μ.rowLen i :=
+          YoungDiagram.mem_iff_lt_rowLen.mp (YoungDiagram.mem_iff_lt_colLen.mpr him)
+        have hlt := lt_card_filter_iff_apply_orderEmbOfFin_of_imp (T.colFinset m)
+          (T.card_colFinset m) ⟨i, him⟩ (fun r : Fin n ↦ r.val < j)
+          fun _ _ hba hp ↦ lt_of_le_of_lt (Fin.le_iff_val_le_val.1 hba) hp
+        simpa [hmem] using hlt
+      · have hle : #{r ∈ T.colFinset m | r.val < j} ≤ i :=
+          (card_filter_le _ _).trans ((T.card_colFinset m).le.trans (not_lt.mp him))
+        have hnot : ¬ m < μ.rowLen i := fun hm ↦
+          him (YoungDiagram.mem_iff_lt_colLen.mp (YoungDiagram.mem_iff_lt_rowLen.mpr hm))
+        simp [hle.not_gt, hnot]
+    simp only [GTPattern.rowSubset_apply, hjn, true_and, hcol]
+    rw [sum_boole]; congr 2; ext m
+    simp only [mem_filter, mem_range]
+    have hrow := μ.rowLen_anti 0 i (Nat.zero_le i); omega
 
 end TauCeti
