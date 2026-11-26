@@ -202,7 +202,8 @@ variable {R : Type u} [CommRing R]
 theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor (γ : GL (Fin 2) R) :
     Matrix.SpecialLinearGroup.toGL γ.slFactor =
       γ * (diagGL ![1, Matrix.GeneralLinearGroup.det γ])⁻¹ :=
-  Units.ext rfl
+  Units.ext <| by
+    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.GeneralLinearGroup.slFactor]
 
 /-- An invertible `2 × 2` matrix `γ` is its special linear factor times `diag(1, det γ)`. -/
 @[simp]
@@ -215,8 +216,10 @@ theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL (γ : GL (Fin 
 theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one {γ : GL (Fin 2) R}
     (hγ : Matrix.GeneralLinearGroup.det γ = 1) :
     Matrix.SpecialLinearGroup.toGL γ.slFactor = γ := by
-  rw [Matrix.GeneralLinearGroup.toGL_slFactor, hγ,
-    show ![(1 : Rˣ), 1] = 1 by ext i; fin_cases i <;> rfl, map_one, inv_one, mul_one]
+  have h : diagGL ![(1 : Rˣ), 1] = 1 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  simp [Matrix.GeneralLinearGroup.toGL_slFactor, hγ, h]
 
 /-- The special linear factor of an element of `SL(2, R)` is the element itself. -/
 @[simp]

@@ -110,14 +110,17 @@ def modularFunctionFieldGLAction :
     GL (Fin 2) (ZMod N) →* (modularFunctionField N ≃+* modularFunctionField N)ᵐᵒᵖ where
   toFun γ := op (glActionAux γ)
   map_one' := by
-    rw [glActionAux, map_one, map_one, one_mul, ← map_one Matrix.SpecialLinearGroup.toGL,
-      Matrix.GeneralLinearGroup.slFactor_toGL, map_one, unop_one, op_one]
+    have h : (1 : GL (Fin 2) (ZMod N)).slFactor = 1 := by
+      simpa using Matrix.GeneralLinearGroup.slFactor_toGL (1 : SL(2, ZMod N))
+    simp [glActionAux, h]
   map_mul' γ δ := by
     apply unop_injective
-    rw [unop_op, unop_mul, unop_op, unop_op]
+    simp only [unop_op, unop_mul]
     apply RingEquiv.toRingHom_injective
     refine RingHom.eq_of_eqOn_of_field_closure_eq_top modularFunctionField_closure_eq_top ?_
-    rintro F (⟨c, rfl⟩ | rfl | ⟨a, -, rfl⟩) <;>
+    intro F hF
+    simp only [Set.mem_union, Set.mem_range, Set.mem_insert_iff, Set.mem_image] at hF
+    rcases hF with ⟨c, rfl⟩ | rfl | ⟨a, -, rfl⟩ <;>
       simp only [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingAut.mul_apply]
     · -- `det (γ δ) = det δ * det γ` in the commutative group of units, and the coefficient
       -- action is a homomorphism, so `γ δ` acts on constants by `det γ` and then by `det δ`.
@@ -193,9 +196,8 @@ theorem modularFunctionFieldGLAction_eq_one_iff (γ : GL (Fin 2) (ZMod N)) :
     have hγg : γ = (γ.slFactor : GL (Fin 2) (ZMod N)) :=
       (Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one hdet).symm
     rw [hγg, modularFunctionFieldGLAction_toGL, modularFunctionFieldActionZMod_eq_one_iff] at hγ
-    rw [hγg, ← Matrix.SpecialLinearGroup.toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
-      Matrix.SpecialLinearGroup.toGL_inj, Matrix.SpecialLinearGroup.toGL_inj]
-    exact hγ
+    rw [hγg]
+    rcases hγ with h | h <;> simp [h]
   · rintro (rfl | rfl)
     · exact map_one _
     · rw [modularFunctionFieldGLAction_neg, map_one]
@@ -213,16 +215,10 @@ where the two signs coincide. -/
 theorem modularFunctionFieldGLAction_injective_iff :
     Function.Injective (modularFunctionFieldGLAction N) ↔ N ∣ 2 := by
   have hsign : (-1 : GL (Fin 2) (ZMod N)) = 1 ↔ N ∣ 2 := by
-    rw [← Matrix.SpecialLinearGroup.toGL_neg_one, ← map_one Matrix.SpecialLinearGroup.toGL,
-      Matrix.SpecialLinearGroup.toGL_inj, Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two]
+    simpa using (Matrix.SpecialLinearGroup.toGL_inj (-1) 1).trans
+      Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two
   rw [← hsign, injective_iff_map_eq_one]
-  constructor
-  · intro h
-    exact h (-1) ((modularFunctionFieldGLAction_eq_one_iff _).mpr (Or.inr rfl))
-  · intro h γ hγ
-    rcases (modularFunctionFieldGLAction_eq_one_iff γ).mp hγ with hγ | hγ
-    · exact hγ
-    · exact hγ.trans h
+  simp [or_imp]
 
 /-- **At level two, the group acting on `F_2` is `GL(2, ℤ/2ℤ)`, of order six.** The signs `±1`
 coincide modulo two, so no quotient of order three arises. -/

@@ -215,12 +215,6 @@ theorem modularFunctionFieldActionZMod_eq_one_iff (g : SL(2, ZMod N)) :
 theorem modularFunctionFieldActionZMod_injective_iff :
     Function.Injective (modularFunctionFieldActionZMod N) ↔ N ∣ 2 := by
   rw [← Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two, injective_iff_map_eq_one]
-  constructor
-  · intro h
-    exact h (-1) ((modularFunctionFieldActionZMod_eq_one_iff _).mpr (Or.inr rfl))
-  · intro h g hg
-    rcases (modularFunctionFieldActionZMod_eq_one_iff g).mp hg with hg | hg
-    · exact hg
-    · exact hg.trans h
+  simp [or_imp]
 
 end TauCeti

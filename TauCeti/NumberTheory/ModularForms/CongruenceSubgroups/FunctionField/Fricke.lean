@@ -267,8 +267,8 @@ theorem forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff_l
     (∀ a : Fin 2 → ZMod 2, a ≠ 0 →
       unop (modularFunctionActionZMod 2 g) (frickeMeromorphicFunction a) =
         frickeMeromorphicFunction a) ↔ g = 1 := by
-  have hneg : (-1 : SL(2, ZMod 2)) = 1 := by ext i j; simp [ZMod.neg_eq_self_mod_two]
-  rw [forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff, hneg, or_self]
+  rw [forall_unop_modularFunctionActionZMod_frickeMeromorphicFunction_eq_iff,
+    Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two.mpr dvd_rfl, or_self]
 
 /-- An automorphism of the function field of `X(N)` in the image of `SL(2, ℤ/Nℤ)` fixing every
 Fricke function `f_a`, `a ≠ 0`, is the identity. -/
