@@ -7,6 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Birational.RationalMap.Basic
+public import Mathlib.AlgebraicGeometry.Birational.Birational
+public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Birationality
 public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Expand
 import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 import TauCeti.RingTheory.Spectrum.Prime.Topology
@@ -21,7 +23,11 @@ Examples of the topological degree on affine space:
 * the `K`-linear Frobenius `x_i ↦ x_i ^ p` of `𝔸^d_K` over a field of characteristic `p` has
   topological degree `p ^ d`, not its separable degree `1`;
 * the linear projection `(x, y) ↦ x` from `𝔸²_K` to `𝔸¹_K` is dominant, and its topological
-  degree is the junk value `0`, as `dim 𝔸² ≠ dim 𝔸¹`.
+  degree is the junk value `0`, as `dim 𝔸² ≠ dim 𝔸¹`;
+* `z ↦ z²` on the affine line is not birational: its topological degree is `2`, so its pullback
+  of rational functions is not surjective and it is the rational map of no partial isomorphism.
+  Yet the affine line is birational to itself in Mathlib's sense `Scheme.Birational`, through the
+  identity, so "birational `f`" cannot be read through that relation on the pair.
 -/
 
 public section
@@ -34,17 +40,19 @@ namespace TauCeti.TopologicalDegreeExamples
 
 variable (K : Type u) [Field K]
 
--- `z ↦ z²` on the affine line has topological degree `2`, in every characteristic.
-example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
-    (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)).toRationalMap =
-    2 := by
+/-- The squaring map `z ↦ z²` of the affine line over `K`, as `Spec` of `MvPolynomial.expand 2`. -/
+noncomputable abbrev squareMap :
+    Spec (.of (MvPolynomial PUnit.{u + 1} K)) ⟶ Spec (.of (MvPolynomial PUnit.{u + 1} K)) :=
+  Spec.map (CommRingCat.ofHom
+    (MvPolynomial.expand 2 : MvPolynomial PUnit.{u + 1} K →ₐ[K] _).toRingHom)
+
+/-- `z ↦ z²` on the affine line has topological degree `2`, in every characteristic. -/
+theorem topologicalDegree_squareMap : (squareMap K).toRationalMap.topologicalDegree = 2 := by
   rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
 
 -- In characteristic `2` as well: over `ZMod 2` the degree is still `2`.
-example : Scheme.RationalMap.topologicalDegree (Spec.map (CommRingCat.ofHom
-    (MvPolynomial.expand 2 : MvPolynomial PUnit.{1} (ZMod 2) →ₐ[ZMod 2] _).toRingHom)
-    ).toRationalMap = 2 := by
-  rw [topologicalDegree_toRationalMap_SpecMap_expand, Nat.card_unique, pow_one]
+example : (squareMap (ZMod 2)).toRationalMap.topologicalDegree = 2 :=
+  topologicalDegree_squareMap _
 
 -- The `K`-linear Frobenius of `𝔸^d_K` in characteristic `p` has topological degree `p ^ d`.
 example (p d : ℕ) [Fact p.Prime] [CharP K p] :
@@ -84,5 +92,30 @@ example : (projection K).toRationalMap.topologicalDegree = 0 := by
     TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial,
     TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec_mvPolynomial, ringKrullDim_eq_zero_of_field]
   norm_num
+
+/-! ### `z ↦ z²` is not birational -/
+
+/-- The pullback of rational functions along `z ↦ z²`, the inclusion `K(z²) ⊆ K(z)`, is not
+surjective. -/
+theorem not_surjective_functionFieldMap_squareMap :
+    ¬ Function.Surjective (squareMap K).toRationalMap.functionFieldMap.hom := by
+  rw [← Scheme.RationalMap.topologicalDegree_eq_one_iff_surjective, topologicalDegree_squareMap]
+  decide
+
+/-- `z ↦ z²` is the rational map of no partial isomorphism of the affine line: the rational map
+of a partial isomorphism has topological degree `1`. -/
+theorem toRationalMap_ne_squareMap
+    (φ : Scheme.PartialIso (Spec (.of (MvPolynomial PUnit.{u + 1} K)))
+      (Spec (.of (MvPolynomial PUnit.{u + 1} K)))) :
+    φ.toRationalMap ≠ (squareMap K).toRationalMap := fun h => by
+  have := (Scheme.RationalMap.topologicalDegree_congr h).symm.trans
+    φ.topologicalDegree_toRationalMap
+  rw [topologicalDegree_squareMap] at this
+  exact absurd this (by decide)
+
+-- Yet the affine line is birational to itself in Mathlib's sense, through the identity.
+example : Scheme.Birational (Spec (.of (MvPolynomial PUnit.{u + 1} K)))
+    (Spec (.of (MvPolynomial PUnit.{u + 1} K))) :=
+  .refl _
 
 end TauCeti.TopologicalDegreeExamples

@@ -962,3 +962,51 @@ theorem quasiIso_cechAugmentation_of_retract {Q : Cᵒᵖ ⥤ A} (h : Retract P 
   quasiIso_of_retractArrow (NatTrans.retractArrowApp (cechAugmentationNatTrans U hT) h)
 
 end TauCeti.CategoryTheory
+
+namespace CategoryTheory.Functor
+
+variable {C : Type u} [Category.{v} C] [HasFiniteProducts C]
+  {A : Type u'} [Category.{v'} A] [Preadditive A] [HasProducts.{w} A]
+  {ι : Type w} (P : Cᵒᵖ ⥤ A)
+
+open TauCeti.CategoryTheory
+
+/-- Transport of a family equality preserves the native tuple projection, including the
+restriction along the equality of its product objects. -/
+@[reassoc]
+theorem cechComplexFunctor_eqToIso_hom_app_f_π (V W : ι → C) (q : V = W)
+    (n : ℕ) (a : Fin (n + 1) → ι) :
+    ((eqToIso (congrArg (fun V ↦ cechComplexFunctor (A := A) V) q)).hom.app P).f n ≫
+        (cechXIso W P n).hom ≫ Pi.π _ a =
+      (cechXIso V P n).hom ≫ Pi.π _ a ≫
+        P.map (eqToHom (congrArg (fun V ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op := by
+  subst W
+  simp
+
+/-- Changing the family by equality preserves its augmentation from the supplied terminal
+object; no choice of a different terminal object is involved. -/
+@[reassoc]
+theorem cechAugmentation_comp_cechComplexFunctor_eqToIso_hom_app [HasZeroObject A]
+    (V W : ι → C) (q : V = W) {T : C} (hT : IsTerminal T) :
+    cechAugmentation V hT P ≫
+        (eqToIso (congrArg (cechComplexFunctor (A := A)) q)).hom.app P =
+      cechAugmentation W hT P := by
+  subst W
+  exact Category.comp_id _
+
+/-- A coefficient morphism followed by transport of the cover family has the corresponding
+coefficient component and product-equality restriction on every native tuple. -/
+@[reassoc]
+theorem cechComplexFunctor_map_comp_eqToIso_hom_app_f_π {Q : Cᵒᵖ ⥤ A}
+    (φ : P ⟶ Q) (V W : ι → C) (q : V = W) (n : ℕ) (a : Fin (n + 1) → ι) :
+    (((cechComplexFunctor V).map φ ≫
+        (eqToIso (congrArg (cechComplexFunctor (A := A)) q)).hom.app Q).f n) ≫
+        (cechXIso W Q n).hom ≫ Pi.π _ a =
+      (cechXIso V P n).hom ≫ Pi.π _ a ≫ φ.app (op (∏ᶜ fun j ↦ V (a j))) ≫
+        Q.map (eqToHom (congrArg (fun V ↦ ∏ᶜ fun j ↦ V (a j)) q.symm)).op := by
+  subst W
+  simpa only [eqToIso_refl, Iso.refl_hom, NatTrans.id_app, Category.comp_id,
+    eqToHom_refl, op_id, Functor.map_id] using
+    (cechComplexFunctor_map_f_comp_cechXIso_hom_π V φ n a)
+
+end CategoryTheory.Functor
