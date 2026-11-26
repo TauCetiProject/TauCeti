@@ -39,9 +39,9 @@ structure makes each of its trivializations a homeomorphism onto the normed mode
 
 ## Main results
 
-* `continuousAt_continuousMultilinearMap_bundle`,
-  `continuousWithinAt_continuousMultilinearMap_bundle`: a map into the total space is continuous
-  exactly when its projection and its fibre component read in coordinates are.
+* `TauCeti.continuousAt_continuousMultilinearMap_bundle`,
+  `TauCeti.continuousWithinAt_continuousMultilinearMap_bundle`: a map into the total space is
+  continuous exactly when its projection and its fibre component read in coordinates are.
 
 ## Implementation notes
 
@@ -482,6 +482,8 @@ end FiberBundle
 ### Continuity of maps into the bundle of continuous multilinear maps
 -/
 
+namespace TauCeti
+
 section Continuity
 
 variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -527,3 +529,5 @@ theorem continuousAt_continuousMultilinearMap_bundle
   FiberBundle.continuousAt_totalSpace ..
 
 end Continuity
+
+end TauCeti

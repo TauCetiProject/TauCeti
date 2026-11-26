@@ -39,8 +39,11 @@ maps, with the regularity of the family of multilinear maps read in coordinates,
 
 The statements and proofs follow Sébastien Gouëzel's smooth bundle of continuous alternating
 maps in Mathlib (`Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap`). For
-alternating maps Mathlib assumes characteristic zero, because antisymmetrization divides by a
-factorial; precomposition of multilinear maps needs no such assumption.
+alternating maps Mathlib only implements the characteristic zero case: in positive
+characteristic the result still holds in finite dimension, but can fail for `n = ω` in general.
+Precomposition of multilinear maps needs no such assumption, since it is a continuous multilinear
+map (`ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear`) composed with the
+diagonal, hence smooth at every order (`ContMDiffWithinAt.compContinuousLinearMapL`).
 -/
 
 public section
@@ -67,6 +70,8 @@ variable {𝕜 B F₁ F₂ M ι : Type*} {n : WithTop ℕ∞} [Fintype ι]
   [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁] [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
   {e₁ e₁' : Trivialization F₁ (π F₁ E₁)} {e₂ e₂' : Trivialization F₂ (π F₂ E₂)}
 
+namespace TauCeti
+
 /-- The coordinate changes of the bundle of continuous multilinear maps are `C^n` on the
 intersection of the base sets when those of `E₁` and `E₂` are. -/
 theorem contMDiffOn_continuousMultilinearMapCoordChange
@@ -80,19 +85,8 @@ theorem contMDiffOn_continuousMultilinearMapCoordChange
       (e₁.baseSet ∩ e₂.baseSet ∩ (e₁'.baseSet ∩ e₂'.baseSet)) := by
   have h₁ := contMDiffOn_coordChangeL (IB := IB) e₁' e₁ (n := n)
   have h₂ := contMDiffOn_coordChangeL (IB := IB) e₂ e₂' (n := n)
-  refine ContMDiffOn.clm_comp ?_ ?_
-  · have hc : ContDiff 𝕜 n fun L : F₁ →L[𝕜] F₁ ↦
-        ContinuousMultilinearMap.compContinuousLinearMapL (F := F₂) fun _ : ι ↦ L :=
-      (ContinuousMultilinearMap.compContinuousLinearMapContinuousMultilinear 𝕜
-        (fun _ : ι ↦ F₁) (fun _ : ι ↦ F₁) F₂).contDiff.comp (contDiff_pi.2 fun _ ↦ contDiff_id)
-    exact hc.contMDiff.comp_contMDiffOn (h₁.mono (by mfld_set_tac))
-  · -- `compContinuousMultilinearMapL` is stated for topological vector spaces; the explicit
-    -- arguments let elaboration check its spaces of operators against their normed structures.
-    have hc := @ContinuousLinearMap.contDiff 𝕜 (F₂ →L[𝕜] F₂)
-      (ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F₁) F₂ →L[𝕜]
-        ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F₁) F₂) _ _ _ _ _ n
-      (ContinuousLinearMap.compContinuousMultilinearMapL 𝕜 (fun _ : ι ↦ F₁) F₂ F₂)
-    exact hc.contMDiff.comp_contMDiffOn (h₂.mono (by mfld_set_tac))
+  exact (ContMDiffOn.compContinuousLinearMapL fun _ ↦ h₁.mono (by mfld_set_tac)).clm_comp
+    (h₂.mono (by mfld_set_tac)).compContinuousMultilinearMapL
 
 variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
@@ -151,7 +145,10 @@ theorem mdifferentiableAt_continuousMultilinearMap_bundle
           x₀ :=
   mdifferentiableAt_totalSpace ..
 
-variable [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
+end TauCeti
+
+variable [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
+  [ContMDiffVectorBundle n F₁ E₁ IB] [ContMDiffVectorBundle n F₂ E₂ IB]
 
 /-- The vector prebundle of continuous multilinear maps between two `C^n` vector bundles has
 `C^n` coordinate changes. -/
@@ -160,7 +157,7 @@ instance Bundle.ContinuousMultilinearMap.vectorPrebundle.isContMDiff :
   exists_contMDiffCoordChange := by
     rintro _ ⟨e₁, e₂, he₁, he₂, rfl⟩ _ ⟨e₁', e₂', he₁', he₂', rfl⟩
     exact ⟨continuousMultilinearMapCoordChange 𝕜 ι e₁ e₁' e₂ e₂',
-      contMDiffOn_continuousMultilinearMapCoordChange,
+      TauCeti.contMDiffOn_continuousMultilinearMapCoordChange,
       continuousMultilinearMapCoordChange_apply⟩
 
 /-- The continuous multilinear maps between two `C^n` vector bundles form a `C^n` vector
@@ -340,7 +337,7 @@ theorem ContMDiffWithinAt.continuousMultilinearMap_bundle_apply
       (fun m ↦ TotalSpace.mk' F₁ (b m) (v i m)) s x) :
     ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂)) n
       (fun m ↦ TotalSpace.mk' F₂ (b m) (ϕ m (fun i ↦ v i m))) s x := by
-  rw [contMDiffWithinAt_continuousMultilinearMap_bundle] at hϕ
+  rw [TauCeti.contMDiffWithinAt_continuousMultilinearMap_bundle] at hϕ
   exact hϕ.2.continuousMultilinearMap_apply_of_inCoordinates hv hϕ.1
 
 /-- Applying a `C^n` family of continuous multilinear maps `ϕ m` on the fibres of `E₁` over
@@ -392,7 +389,7 @@ theorem MDifferentiableWithinAt.continuousMultilinearMap_bundle_apply
       (fun m ↦ TotalSpace.mk' F₁ (b m) (v i m)) s x) :
     MDifferentiableWithinAt IM (IB.prod 𝓘(𝕜, F₂))
       (fun m ↦ TotalSpace.mk' F₂ (b m) (ϕ m (fun i ↦ v i m))) s x := by
-  rw [mdifferentiableWithinAt_continuousMultilinearMap_bundle] at hϕ
+  rw [TauCeti.mdifferentiableWithinAt_continuousMultilinearMap_bundle] at hϕ
   exact hϕ.2.continuousMultilinearMap_apply_of_inCoordinates hv hϕ.1
 
 /-- Applying a differentiable family of continuous multilinear maps `ϕ m` on the fibres of `E₁`
