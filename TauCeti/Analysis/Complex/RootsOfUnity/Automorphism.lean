@@ -66,3 +66,14 @@ theorem Units.coe_cyclotomicConjugate {N : ℕ} [NeZero N] (d : (ZMod N)ˣ)
   obtain ⟨i, -, rfl⟩ := (ZMod.isPrimitiveRoot_stdAddChar_one N).eq_pow_of_pow_eq_one hz
   rw [map_pow, map_pow, hσ, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom,
     Classical.choose_spec d.exists_ringEquiv_apply_stdAddChar_one]
+
+/-- Only `d = 1` fixes every cyclotomic constant, since `ζ_N ↦ ζ_N^d` fixes `ζ_N` only for
+`d = 1`. -/
+theorem Units.eq_one_of_forall_cyclotomicConjugate_apply_eq {N : ℕ} [NeZero N]
+    {d : (ZMod N)ˣ} (h : ∀ c, d.cyclotomicConjugate c = c) : d = 1 := by
+  obtain ⟨σ, hσ⟩ := d.exists_ringEquiv_apply_stdAddChar_one
+  have hζ : ZMod.stdAddChar (1 : ZMod N) ∈ Subfield.closure {z : ℂ | z ^ N = 1} :=
+    Subfield.subset_closure (ZMod.isPrimitiveRoot_stdAddChar_one N).pow_eq_one
+  have h' := congrArg Subtype.val (h ⟨_, hζ⟩)
+  rw [d.coe_cyclotomicConjugate (σ := (σ : ℂ →+* ℂ)) hσ, RingEquiv.coe_toRingHom, hσ] at h'
+  exact Units.val_eq_one.mp (ZMod.injective_stdAddChar h')

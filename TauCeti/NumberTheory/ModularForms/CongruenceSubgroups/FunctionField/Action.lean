@@ -214,16 +214,7 @@ theorem modularFunctionFieldActionZMod_eq_one_iff (g : SL(2, ZMod N)) :
 /-- The arithmetic modular action is faithful exactly at the positive levels dividing two. -/
 theorem modularFunctionFieldActionZMod_injective_iff :
     Function.Injective (modularFunctionFieldActionZMod N) ↔ N ∣ 2 := by
-  have hsign : (-1 : SL(2, ZMod N)) = 1 ↔ N ∣ 2 := by
-    simpa only [Gamma_mem', Matrix.SpecialLinearGroup.coe_int_neg, map_one] using
-      (neg_one_mem_Gamma_iff (N := N))
-  rw [← hsign, injective_iff_map_eq_one]
-  constructor
-  · intro h
-    exact h (-1) ((modularFunctionFieldActionZMod_eq_one_iff _).mpr (Or.inr rfl))
-  · intro h g hg
-    rcases (modularFunctionFieldActionZMod_eq_one_iff g).mp hg with hg | hg
-    · exact hg
-    · exact hg.trans h
+  rw [← Matrix.SpecialLinearGroup.neg_one_eq_one_iff_dvd_two, injective_iff_map_eq_one]
+  simp [or_imp]
 
 end TauCeti

@@ -215,14 +215,10 @@ theorem modularFunctionFieldDiagAction_frickeModularFunction (d : (ZMod N)ˣ)
 sends the constant `ζ_N` to `ζ_N^d`. -/
 theorem modularFunctionFieldDiagAction_injective :
     Function.Injective (modularFunctionFieldDiagAction N) := by
-  refine (injective_iff_map_eq_one _).mpr fun d hd ↦ ?_
-  have hζ : ZMod.stdAddChar (1 : ZMod N) ∈ Subfield.closure {z : ℂ | z ^ N = 1} :=
-    Subfield.subset_closure (ZMod.isPrimitiveRoot_stdAddChar_one N).pow_eq_one
-  have h := congrArg Subtype.val (DFunLike.congr_fun hd (modularFunctionFieldConst N ⟨_, hζ⟩))
-  rw [coe_modularFunctionFieldDiagAction_modularFunctionFieldConst
-    (diagLift_apply d), RingAut.one_apply, coe_modularFunctionFieldConst_apply,
-    diagLift_apply] at h
-  exact Units.val_eq_one.mp (ZMod.injective_stdAddChar ((algebraMap ℂ _).injective h))
+  refine (injective_iff_map_eq_one _).mpr fun d hd ↦
+    d.eq_one_of_forall_cyclotomicConjugate_apply_eq fun c ↦ ?_
+  apply (modularFunctionFieldConst N).injective
+  rw [← modularFunctionFieldDiagAction_modularFunctionFieldConst, hd, RingAut.one_apply]
 
 /-! ### Fixed fields -/
 
