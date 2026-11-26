@@ -333,12 +333,10 @@ theorem coefficientComparison_repr_trilinearProduct_pow_succ_mem_gradeBy {Γ : T
   rw [trilinearProduct_pow_succ_apply_eq_single_smul p hp hL hcL hdeg hpt hn, map_smul,
     Basis.repr_self, Finsupp.smul_apply]
   rcases eq_or_ne j 0 with rfl | hj
-  · have hdeg : d' (-q L) = 2 * ((0 : Fin (n + 1)) : ℕ) - 2 * (n + 1) := by
-      simp [hd, hcL]
-    rw [Finsupp.single_eq_same, smul_eq_mul, mul_one, Floer.coefficientComparison_single, ← hdeg]
-    exact single_mem_gradeBy _ _ _
-  · rw [Finsupp.single_eq_of_ne hj, smul_zero, map_zero]
-    exact zero_mem _
+  · simp only [Finsupp.single_eq_same, smul_eq_mul, mul_one, Floer.coefficientComparison_single]
+    convert single_mem_gradeBy d' (-q L) _ using 2
+    simp [hd, hcL]
+  · simp [hj]
 
 end GromovWitten
 

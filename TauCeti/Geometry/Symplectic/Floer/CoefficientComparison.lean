@@ -157,16 +157,16 @@ theorem map_neg_mem_gradeByCoeff (hd : ∀ A, d' (q A) = d A) {𝒱 : ℤ → Su
       NovikovSeries.gradeByCoeff (-Ω) 𝒱 (fun γ => -d' γ) D :=
   map_mem_gradeByCoeff (fun _ _ hv => hv) _ (fun A => by simp [hd]) hv
 
-/-- **The opposite comparison reverses the degree.** Under `q^A v ↦ e^(q A) v`, a monomial
-`q^A v` with `v ≠ 0` of degree `j`, of quantum degree `j + d A`, would go to `e^(q A) v`, of
-cochain degree `j - d A`. For independent pieces `𝒱` this is the quantum degree only when
-`d A = 0`. -/
-theorem single_mem_gradeByCoeff_add_iff (hd : ∀ A, d' (q A) = d A) {N : Γ →+ ℝ}
-    {𝒱 : ℤ → Submodule R V} (h𝒱 : iSupIndep 𝒱) {j : ℤ} {v : V} (hv : v ∈ 𝒱 j) (hv₀ : v ≠ 0)
-    (A : S) :
-    (single (q A) v : NovikovSeries V Γ N) ∈
-        NovikovSeries.gradeByCoeff N 𝒱 (fun γ => -d' γ) (j + d A) ↔ d A = 0 := by
-  rw [single_mem_gradeByCoeff_iff_of_mem h𝒱 hv hv₀, hd]
+/-- **The opposite comparison reverses the degree.** In the cochain grading, where `e^γ` has
+degree `-δ γ`, a monomial `e^γ v` with `v ≠ 0` of degree `j` has degree `j - δ γ`. For independent
+pieces `𝒱` this is `j + δ γ` only when `δ γ = 0`. So under `q^A v ↦ e^(q A) v`, with
+`δ (q A) = d A`, the image of `q^A v`, of quantum degree `j + d A`, would have that degree only
+when `d A = 0`. -/
+theorem single_mem_gradeByCoeff_add_iff {δ : Γ → ℤ} {N : Γ →+ ℝ} {𝒱 : ℤ → Submodule R V}
+    (h𝒱 : iSupIndep 𝒱) {j : ℤ} {v : V} (hv : v ∈ 𝒱 j) (hv₀ : v ≠ 0) (γ : Γ) :
+    (single γ v : NovikovSeries V Γ N) ∈
+        NovikovSeries.gradeByCoeff N 𝒱 (fun γ => -δ γ) (j + δ γ) ↔ δ γ = 0 := by
+  rw [single_mem_gradeByCoeff_iff_of_mem h𝒱 hv hv₀]
   omega
 
 end GradedCoefficients
