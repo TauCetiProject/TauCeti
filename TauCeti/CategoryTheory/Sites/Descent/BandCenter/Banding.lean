@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandCenter
+public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Basic
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
 
 /-!
