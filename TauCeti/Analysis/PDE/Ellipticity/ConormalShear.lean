@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Transvection
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+public import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
@@ -27,6 +28,8 @@ at a flat boundary to the case of a matrix compatible with the odd reflection.
 * `TauCeti.PDE.norm_mul_norm_conormalShearVector_le`: for elliptic `A`, `‖ν‖ ‖s‖ ≤ Λ / λ`.
 * `TauCeti.PDE.matrixBilinearForm_transvectionL_conormalShearVector_reflection`: for symmetric
   `A`, the sheared form is invariant under the reflection in `ν⊥`.
+* `TauCeti.PDE.matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq`: the same for the
+  constant matrix `A` pulled back by any map whose derivative is the shear along `s`.
 -/
 
 public section
@@ -119,6 +122,31 @@ theorem matrixBilinearForm_transvectionL_conormalShearVector_reflection {A : Mat
   rw [hAs ν η]
   field_simp
   ring
+
+/-- **The pulled-back matrix is invariant under the reflection.** For symmetric `A` with
+`⟪ν, A ν⟫ ≠ 0` and a map `Φ` whose derivative at `x` is the shear `y ↦ y + ⟪ν, y⟫ s`, `s` the
+conormal shear vector, the form of the constant matrix `A` pulled back by `Φ` at `x`
+(`TauCeti.PDE.pullbackPrincipal`) is invariant under the reflection in `ν⊥`: in the sheared
+coordinates the conormal direction of `A` is the normal `ν`. -/
+theorem matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq {A : Matrix ι ι ℝ}
+    {ν : EuclideanSpace ℝ ι} (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
+    (hAs : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ = matrixBilinearForm A ξ η)
+    {Φ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {x : EuclideanSpace ℝ ι}
+    (hΦ : fderiv ℝ Φ x = transvectionL ν (conormalShearVector A ν)) (ξ η : EuclideanSpace ℝ ι) :
+    matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x)
+        ((ℝ ∙ ν)ᗮ.reflection ξ) ((ℝ ∙ ν)ᗮ.reflection η) =
+      matrixBilinearForm (pullbackPrincipal Φ (fun _ => A) x) ξ η := by
+  have hs := inner_conormalShearVector_self hν hq
+  -- The adjoint of the inverse shear is `y ↦ y - ⟪s, y⟫ ν`.
+  have hM : transvectionL (-conormalShearVector A ν) ν =
+      transvectionL (conormalShearVector A ν) (-ν) :=
+    ContinuousLinearMap.ext fun y => by
+      rw [transvectionL_apply, transvectionL_apply, inner_neg_left, neg_smul, smul_neg]
+  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp (fun _ => A)
+      (T := transvectionL ν (-conormalShearVector A ν))
+      (by rw [hΦ, transvectionL_neg_comp_transvectionL hs]),
+    hΦ, det_transvectionL, hs, add_zero, abs_one, one_smul, adjoint_transvectionL, hM]
+  exact matrixBilinearForm_transvectionL_conormalShearVector_reflection hν hq hAs ξ η
 
 end PDE
 

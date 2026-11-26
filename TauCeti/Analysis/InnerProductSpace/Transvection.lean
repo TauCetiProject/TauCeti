@@ -32,6 +32,7 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
 * `TauCeti.abs_det_fderiv_transvectionL`: for `⟪ν, s⟫ = 0` its derivative has determinant of
   absolute value one, as the change of variables formula uses it.
 * `TauCeti.adjoint_transvectionL`: its adjoint is the transvection with `ν` and `s` exchanged.
+* `TauCeti.norm_transvectionL_comm`: exchanging `ν` and `s` does not change the operator norm.
 * `TauCeti.norm_transvectionL_le`: its operator norm is at most `1 + ‖ν‖ ‖s‖`.
 -/
 
@@ -142,6 +143,12 @@ theorem adjoint_transvectionL [CompleteSpace E] (ν s : E) :
     inner_smul_right, RCLike.conj_to_real]
   rw [real_inner_comm s x]
   ring
+
+/-- The transvections `x ↦ x + ⟪s, x⟫ ν` and `x ↦ x + ⟪ν, x⟫ s` are adjoint to each other, so
+they have the same operator norm. -/
+theorem norm_transvectionL_comm [CompleteSpace E] (ν s : E) :
+    ‖transvectionL s ν‖ = ‖transvectionL ν s‖ := by
+  rw [← adjoint_transvectionL, LinearIsometryEquiv.norm_map]
 
 /-- The transvection `x ↦ x + ⟪ν, x⟫ s` has operator norm at most `1 + ‖ν‖ ‖s‖`. -/
 theorem norm_transvectionL_le (ν s : E) : ‖transvectionL ν s‖ ≤ 1 + ‖ν‖ * ‖s‖ := by

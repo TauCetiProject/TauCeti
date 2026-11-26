@@ -385,23 +385,6 @@ private theorem matrixBilinearForm_pullbackPrincipal_transvectionL
     (x := z) (by rw [hfd, det_transvectionL, hs, add_zero]; exact one_ne_zero) η ξ
   rwa [hfd, adjoint_transvectionL, det_transvectionL, hs, add_zero, abs_one, one_mul] at h
 
-/-- The pulled-back matrix is invariant under the reflection in the hyperplane `ν⊥`: in sheared
-coordinates the conormal direction of `A` is the normal `ν`. -/
-private theorem matrixBilinearForm_pullbackPrincipal_reflection
-    (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
-    (hAs : ∀ η ξ : EuclideanSpace ℝ ι, matrixBilinearForm A η ξ = matrixBilinearForm A ξ η)
-    (hs : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) (ξ η : EuclideanSpace ℝ ι) :
-    matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z)
-        ((ℝ ∙ ν)ᗮ.reflection ξ) ((ℝ ∙ ν)ᗮ.reflection η) =
-      matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z) ξ η := by
-  set s := conormalShearVector A ν
-  have hs' : ⟪s, ν⟫_ℝ = 0 := by rw [real_inner_comm]; exact hs
-  have hBK := matrixBilinearForm_pullbackPrincipal_transvectionL (c₀ := c₀) (z := z) hs
-  have hK : ∀ x, transvectionL s ν (transvectionL s (-ν) x) = x :=
-    transvectionL_transvectionL_neg hs'
-  rw [← hK ((ℝ ∙ ν)ᗮ.reflection ξ), ← hK ((ℝ ∙ ν)ᗮ.reflection η), hBK,
-    matrixBilinearForm_transvectionL_conormalShearVector_reflection hν hq hAs, ← hBK, hK, hK]
-
 /-- The energy integrand of the reflected constant coefficient `B` is that of `B` itself. -/
 private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
@@ -421,7 +404,8 @@ private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     rw [pullbackDrift_zero, pullbackDensity_zero, Pi.zero_apply, Pi.zero_apply] at h
     rw [h]
     simp only [energyIntegrand_apply, Pi.zero_apply, driftForm_apply, inner_zero_left,
-      matrixBilinearForm_pullbackPrincipal_reflection hν hq hAs hs]
+      matrixBilinearForm_pullbackPrincipal_reflection_of_fderiv_eq hν hq hAs
+        (fderiv_boundaryShear hs z)]
   · rw [reflectPrincipal_of_le hx]
 
 /-- The pulled-back matrix is uniformly elliptic, with constants `λ / κ²` and `Λ κ²` when the
