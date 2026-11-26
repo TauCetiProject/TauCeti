@@ -12,10 +12,10 @@ public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
 # Checks for the trace pairing of the normalized trace of `Mₙ(ℂ)`
 
 Take `A = Mₙ(ℂ)`, `n ≥ 1`, with its normalized trace `τ = tr / n`, a tracial state
-(OperatorKTheory K1.5, first Check). The rank-one projection `e₀₀` of `A`, a `1 × 1` matrix
-over `A`, pairs to `1 / n`, while the identity of `M_k(A)` pairs to `k`: the pairing uses the
-unnormalized matrix trace over `A`, so the size `k` of the matrix over `A` is not divided out,
-only the normalization of `τ` on `A` itself.
+(OperatorKTheory K1.5, first Check). The rank-one projection `e₀₀ = CStarMatrix.matrixUnit 0 0`
+of `A`, a `1 × 1` matrix over `A`, pairs to `1 / n`, while the identity of `M_k(A)` pairs to `k`:
+the pairing uses the unnormalized matrix trace over `A`, so the size `k` of the matrix over `A` is
+not divided out, only the normalization of `τ` on `A` itself.
 -/
 
 public section
@@ -39,17 +39,11 @@ theorem normalizedTrace_apply (x : CStarMatrix (Fin n) (Fin n) ℂ) :
 
 variable [NeZero n]
 
-/-- The rank-one projection `e₀₀` of `Mₙ(ℂ)`. -/
-noncomputable def e₀₀ : CStarMatrix (Fin n) (Fin n) ℂ :=
-  CStarMatrix.ofMatrix (single 0 0 1)
-
-/-- `e₀₀`, written as a `1 × 1` matrix over `Mₙ(ℂ)`, is a projection. -/
-theorem isStarProjection_e₀₀ : IsStarProjection (of fun (_ _ : Fin 1) ↦ e₀₀ n) := by
-  have h₀ : IsStarProjection (single (0 : Fin n) (0 : Fin n) (1 : ℂ)) := by
-    refine ⟨?_, ?_⟩ <;> simp [IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose]
-  have h : IsStarProjection (e₀₀ n) := by
-    rw [e₀₀, CStarMatrix.ofMatrix_eq_ofMatrixStarAlgEquiv]
-    exact h₀.map CStarMatrix.ofMatrixStarAlgEquiv
+/-- The rank-one projection `e₀₀ = CStarMatrix.matrixUnit 0 0`, written as a `1 × 1` matrix over
+`Mₙ(ℂ)`, is a projection. -/
+theorem isStarProjection_of_matrixUnit :
+    IsStarProjection (of fun (_ _ : Fin 1) ↦ CStarMatrix.matrixUnit (0 : Fin n) 0) := by
+  have h := CStarMatrix.isStarProjection_matrixUnit (0 : Fin n)
   refine ⟨?_, ?_⟩
   · ext i j
     simp [Matrix.mul_apply, h.isIdempotentElem.eq]
@@ -57,11 +51,12 @@ theorem isStarProjection_e₀₀ : IsStarProjection (of fun (_ _ : Fin 1) ↦ e�
     simp [h.isSelfAdjoint.star_eq]
 
 /-- The rank-one projection `e₀₀` pairs to `1 / n` under the normalized trace. -/
-theorem kZeroPairing_e₀₀ :
+theorem kZeroPairing_of_mk_matrixUnit :
     (normalizedTrace n).kZeroPairing
-      (GrothendieckAddGroup.of (ProjectionMonoid.mk _ (isStarProjection_e₀₀ n))) = 1 / n := by
+      (GrothendieckAddGroup.of (ProjectionMonoid.mk _ (isStarProjection_of_matrixUnit n))) =
+        1 / n := by
   rw [PositiveTracialFunctional.kZeroPairing_of_mk]
-  simp [e₀₀, CStarMatrix.normalizedTrace_def, Matrix.trace_single_eq_same]
+  simp [CStarMatrix.normalizedTrace_matrixUnit]
 
 /-- The identity of `M_k(Mₙ(ℂ))` pairs to `k` under the normalized trace. -/
 theorem kZeroPairing_of_mk_one (k : ℕ) :
