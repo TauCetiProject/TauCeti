@@ -119,6 +119,14 @@ theorem _root_.Polynomial.dualNumberPolynomialQuotientAlgEquiv_mk (p : R[X]) :
   rw [dualNumberPolynomialQuotientAlgEquiv, AlgEquiv.ofAlgHom_apply, ← Ideal.Quotient.mkₐ_eq_mk R,
     ← AlgHom.comp_apply, Ideal.Quotient.liftₐ_comp]
 
+/-- The inverse of `TauCeti.dualNumberPolynomialQuotientAlgEquiv` sends `a + bε` to the class of
+`a + bX`. -/
+theorem _root_.DualNumber.dualNumberPolynomialQuotientAlgEquiv_symm_apply (z : DualNumber R) :
+    (dualNumberPolynomialQuotientAlgEquiv R).symm z =
+      Ideal.Quotient.mk _ (C z.fst + C z.snd * X) := by
+  rw [AlgEquiv.symm_apply_eq, Polynomial.dualNumberPolynomialQuotientAlgEquiv_mk]
+  ext <;> simp [TrivSqZeroExt.algebraMap_eq_inl]
+
 variable (R)
 
 /-- The inverse of `TauCeti.dualNumberPolynomialQuotientAlgEquiv` sends `ε` to the class of

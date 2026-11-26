@@ -143,7 +143,7 @@ def quotientMayerVietorisRangeEquivZMod (n : ℕ) :
     AlgebraicK1 (ZMod n) ⧸ ((map (Int.castRingHom (ZMod n))).comp (MonoidHom.fst _ _) /
       (map (Int.castRingHom (ZMod n))).comp (MonoidHom.snd _ _)).range ≃*
       (ZMod n)ˣ ⧸ Subgroup.zpowers (-1) :=
-  (quotientMayerVietorisRangeEquiv _ _ (specialAlgebraicK1_zmod n)).trans
+  (quotientMayerVietorisRangeEquiv _ _ (specialAlgebraicK1_zmod_eq_bot n)).trans
     (QuotientGroup.quotientMulEquivOfEq (by
       rw [sup_idem, Int.range_unitsMap_castRingHom]))
 
@@ -265,10 +265,9 @@ theorem quotientMayerVietorisRangeEquivCusp_symm_apply (b : Multiplicative k) :
       (ofUnits _ (Units.mapEquiv (dualNumberPolynomialQuotientAlgEquiv k).symm.toMulEquiv
         (dualNumberUnit b.toAdd)) : AlgebraicK1 _ ⧸ _) := by
   rw [MulEquiv.symm_apply_eq,
-    quotientMayerVietorisRangeEquivCusp_mk_ofUnits k _ (p := 1 + b.toAdd • X)]
+    quotientMayerVietorisRangeEquivCusp_mk_ofUnits k _ (p := 1 + C b.toAdd * X)]
   · simp [coeff_one]
-  · rw [← Ideal.Quotient.mkₐ_eq_mk k, map_add, map_one, map_smul]
-    simp
+  · simp [DualNumber.dualNumberPolynomialQuotientAlgEquiv_symm_apply]
 
 end Cusp
 
