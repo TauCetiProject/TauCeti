@@ -80,7 +80,7 @@ theorem isNisnevichCovering_diagonal : IsNisnevichCovering Q.diagonalArrows := b
       (mem_range_subschemeι_vanishingIdeal_opensRange_compl_iff _ _).2 hw
     obtain ⟨z, hz⟩ := hz
     obtain ⟨w', hw', -⟩ := AlgebraicGeometry.Scheme.Pullback.exists_preimage_pullback w z hz.symm
-    have hd := Limits.pullback.fst_eq_comp_diagonal_of_isIso_snd Q.p I.subschemeι
+    have hd := Limits.pullback.fst_eq_comp_diagonal_of_mono_snd Q.p I.subschemeι
     refine ⟨(Limits.pullback.fst (Limits.pullback.fst Q.p Q.p ≫ Q.p) I.subschemeι ≫
       Limits.pullback.fst Q.p Q.p) w', ?_⟩
     rw [← hw']
