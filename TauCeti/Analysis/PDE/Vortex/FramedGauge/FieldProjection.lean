@@ -118,8 +118,9 @@ vortex of `A_m^(k+1)`, `k ≥ 2`, lying in `A_m^j` for every `j`. There are an o
 * `σ` fixes every vortex of the Coulomb slice of `x₀` with coordinates in `S`;
 * `σ` is smooth on `S` in the real coordinates.
 
-The vortex `σ u` has the same component as `u` in the kernel of the gauge-fixed operator at `x₀`,
-read through the Coulomb slice chart (`coulombSliceChart`). -/
+In the construction (not recorded in the statement), `σ u` is the vortex of the Coulomb slice whose
+component in the kernel of the gauge-fixed operator at `x₀`, read through the Coulomb slice chart
+(`coulombSliceChart`), is that of `u`. -/
 theorem exists_isOpen_sliceVortexRetraction (hk : 2 ≤ k)
     (x₀ : SobolevFieldSpace f m (k + 1 : ℕ)) (hmem : ∀ j : ℕ, ⇑x₀ ∈ framedFieldSpace f m j)
     (hsol : ∀ z, equation x₀ z = 0) :
