@@ -64,7 +64,7 @@ theorem isStrictlyConvexAt_closedBall_rescale_exp_mul_norm_sq_iff [NeZero n] (α
   -- `rw` would synthesize the Euclidean instance for the lemma instead of the rescaled one in
   -- the goal; `simp only` takes it from the goal.
   simp only [isStrictlyConvexAt_iff_of_eq_mul (fun _ ↦ boundaryInducedForm_self_pos _)
-    (boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _),
+    fun u ↦ boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _ u u,
     mul_pos_iff_of_pos_left (Real.exp_pos _)]
   constructor <;> intro h <;> linarith
 
@@ -82,7 +82,7 @@ theorem isConvexAt_closedBall_rescale_exp_mul_norm_sq_iff [NeZero n] (α : ℝ)
         IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
       IsConvexAt q) ↔ -1 ≤ α := by
   simp only [isConvexAt_iff_of_eq_mul (fun _ ↦ boundaryInducedForm_self_pos _)
-    (boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _),
+    fun u ↦ boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _ u u,
     mul_nonneg_iff_of_pos_left (Real.exp_pos _)]
   constructor <;> intro h <;> linarith
 
@@ -100,7 +100,7 @@ theorem isStrictlyConcaveAt_closedBall_rescale_exp_mul_norm_sq_iff [NeZero n] (�
         IsContMDiffRiemannianBundle.of_le (n := ω) le_top;
       IsStrictlyConcaveAt q) ↔ α < -1 := by
   simp only [isStrictlyConcaveAt_iff_of_eq_mul (fun _ ↦ boundaryInducedForm_self_pos _)
-    (boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _),
+    fun u ↦ boundarySecondFundamentalForm_closedBall_rescale_exp_mul_norm_sq α _ u u,
     ← neg_pos, ← mul_neg, mul_pos_iff_of_pos_left (Real.exp_pos _)]
   constructor <;> intro h <;> linarith
 

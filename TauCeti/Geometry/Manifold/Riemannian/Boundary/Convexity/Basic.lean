@@ -32,9 +32,9 @@ Let `M` be a Riemannian manifold with boundary modelled on the half-space `𝓡�
 * `TauCeti.IsStrictlyConvexAt.not_isStrictlyConcaveAt`: for `n ≥ 1`, strict convexity and strict
   concavity at a point exclude each other.
 * `TauCeti.isStrictlyConvexAt_iff_of_eq_mul`, `isConvexAt_iff_of_eq_mul` and
-  `isStrictlyConcaveAt_iff_of_eq_mul`: for `n ≥ 1`, at a point where `II_q = c b` for a constant
-  `c` and a positive definite form `b` such as an induced metric, the boundary is strictly
-  convex, convex or strictly concave exactly when `0 < c`, `0 ≤ c` or `c < 0`.
+  `isStrictlyConcaveAt_iff_of_eq_mul`: for `n ≥ 1`, at a point where `II_q(u, u) = c b(u, u)` for
+  a constant `c` and a positive definite form `b` such as an induced metric, the boundary is
+  strictly convex, convex or strictly concave exactly when `0 < c`, `0 ≤ c` or `c < 0`.
 * `TauCeti.isStrictlyConvexAt_of_eq_zero`, `TauCeti.isStrictlyConcaveAt_of_eq_zero`: in dimension
   one (`n = 0`), `T_q∂M = 0` and the boundary is both strictly convex and strictly concave at every
   point, so the exclusion needs `n ≥ 1`. Likewise the uniform bound `II_q(u, u) ≥ c h_q(u, u)`
@@ -157,24 +157,24 @@ theorem IsStrictlyConvexAt.not_isStrictlyConcaveAt [NeZero n] {q : (𝓡∂ (n +
   exact (isStrictlyConvexAt_iff.1 h u hu).not_gt (isStrictlyConcaveAt_iff.1 h' u hu)
 
 /-- **Strict convexity where `II` is a multiple of a positive form.** For `n ≥ 1`, if
-`II_q = c b` for a constant `c` and a bilinear form `b` on `T_q∂M` with `b(u, u) > 0` for `u ≠ 0`
-(for instance the induced metric `h_q`, of this or of any other Riemannian metric on `M`), the
-boundary is strictly convex at `q` exactly when `0 < c`. -/
+`II_q(u, u) = c b(u, u)` for all `u`, for a constant `c` and a bilinear form `b` on `T_q∂M` with
+`b(u, u) > 0` for `u ≠ 0` (for instance the induced metric `h_q`, of this or of any other
+Riemannian metric on `M`), the boundary is strictly convex at `q` exactly when `0 < c`. -/
 theorem isStrictlyConvexAt_iff_of_eq_mul [NeZero n] {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ}
     {b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)}
-    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u w, boundarySecondFundamentalForm q u w = c * b u w) :
+    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u, boundarySecondFundamentalForm q u u = c * b u u) :
     IsStrictlyConvexAt q ↔ 0 < c := by
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
   simp only [isStrictlyConvexAt_iff, h]
   exact ⟨fun H ↦ (mul_pos_iff_of_pos_right (hb u hu)).1 (H u hu),
     fun hc v hv ↦ mul_pos hc (hb v hv)⟩
 
-/-- **Convexity where `II` is a multiple of a positive form.** For `n ≥ 1`, if `II_q = c b` for a
-constant `c` and a bilinear form `b` on `T_q∂M` with `b(u, u) > 0` for `u ≠ 0`, the boundary is
-convex at `q` exactly when `0 ≤ c`. -/
+/-- **Convexity where `II` is a multiple of a positive form.** For `n ≥ 1`, if
+`II_q(u, u) = c b(u, u)` for all `u`, for a constant `c` and a bilinear form `b` on `T_q∂M` with
+`b(u, u) > 0` for `u ≠ 0`, the boundary is convex at `q` exactly when `0 ≤ c`. -/
 theorem isConvexAt_iff_of_eq_mul [NeZero n] {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ}
     {b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)}
-    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u w, boundarySecondFundamentalForm q u w = c * b u w) :
+    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u, boundarySecondFundamentalForm q u u = c * b u u) :
     IsConvexAt q ↔ 0 ≤ c := by
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
   simp only [isConvexAt_iff, h]
@@ -183,12 +183,12 @@ theorem isConvexAt_iff_of_eq_mul [NeZero n] {q : (𝓡∂ (n + 1)).boundary M} {
   · simp
   · exact mul_nonneg hc (hb v hv).le
 
-/-- **Strict concavity where `II` is a multiple of a positive form.** For `n ≥ 1`, if `II_q = c b`
-for a constant `c` and a bilinear form `b` on `T_q∂M` with `b(u, u) > 0` for `u ≠ 0`, the boundary
-is strictly concave at `q` exactly when `c < 0`. -/
+/-- **Strict concavity where `II` is a multiple of a positive form.** For `n ≥ 1`, if
+`II_q(u, u) = c b(u, u)` for all `u`, for a constant `c` and a bilinear form `b` on `T_q∂M` with
+`b(u, u) > 0` for `u ≠ 0`, the boundary is strictly concave at `q` exactly when `c < 0`. -/
 theorem isStrictlyConcaveAt_iff_of_eq_mul [NeZero n] {q : (𝓡∂ (n + 1)).boundary M} {c : ℝ}
     {b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)}
-    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u w, boundarySecondFundamentalForm q u w = c * b u w) :
+    (hb : ∀ u, u ≠ 0 → 0 < b u u) (h : ∀ u, boundarySecondFundamentalForm q u u = c * b u u) :
     IsStrictlyConcaveAt q ↔ c < 0 := by
   obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin n))
   simp only [isStrictlyConcaveAt_iff, h]
