@@ -33,31 +33,25 @@ variable {S T : TruncationSet} {R A : Type*} [NonUnitalCommRing R] [NonUnitalCom
 /-- The big Witt Frobenius restricted to the augmentation kernel of the integral unitization. -/
 noncomputable def frobenius (n : ℕ) :
     NonUnitalBigWittVector S R →ₙ+* NonUnitalBigWittVector (S / n) R :=
-  NonUnitalRingHom.codRestrict
-    ((BigWittVector.frobenius (R := Unitization ℤ R) n).toNonUnitalRingHom.comp toBigWitt) _
+  codRestrict
+    ((BigWittVector.frobenius (R := Unitization ℤ R) n).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      -- Expose the augmentation equation defining membership in the target kernel.
-      change BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
-        (Unitization.fstHom ℤ R).toRingHom
-          (BigWittVector.frobenius n (toBigWitt x)) ∈
-            (⊥ : NonUnitalSubring (BigWittVector (S / n) ℤ))
-      rw [NonUnitalSubring.mem_bot]
-      simpa only [BigWittVector.frobenius_map, map_zero, AlgHom.toRingHom_eq_coe] using
-        congrArg (BigWittVector.frobenius n) (map_fst_toBigWitt x)
+      change BigWittVector.map _
+        (BigWittVector.frobenius (R := Unitization ℤ R) n (toBigWitt x)) = 0
+      rw [← BigWittVector.frobenius_map, map_fst_toBigWitt, map_zero]
 
 /-- The kernel inclusion intertwines nonunital Frobenius with the unital Frobenius. -/
 @[simp]
 theorem toBigWitt_frobenius (n : ℕ) (x : NonUnitalBigWittVector S R) :
     toBigWitt (frobenius n x) =
-      BigWittVector.frobenius (R := Unitization ℤ R) n (toBigWitt x) := by
-  simp only [frobenius, NonUnitalRingHom.codRestrict, NonUnitalRingHom.comp_apply,
-    toBigWitt_apply]
-  rfl
+      BigWittVector.frobenius (R := Unitization ℤ R) n (toBigWitt x) :=
+  toBigWitt_codRestrict _ _ x
 
 /-- Frobenius shifts nonunital ghost components by multiplication of their indices. -/
 @[simp]
 theorem ghostComponent_frobenius (n : ℕ) (x : NonUnitalBigWittVector S R) (k : S / n) :
-    ghostComponent k (frobenius n x) = ghostComponent ⟨n * k, k.property⟩ x := by
+    ghostComponent k (frobenius n x) =
+      ghostComponent ⟨n * k, TruncationSet.mem_div.mp k.property⟩ x := by
   apply Unitization.inr_injective (R := ℤ)
   rw [← ghostMap_toBigWitt, toBigWitt_frobenius, BigWittVector.ghostMap_frobenius,
     ghostMap_toBigWitt]
@@ -90,14 +84,15 @@ theorem frobenius_frobenius (n k : ℕ) (x : NonUnitalBigWittVector S R) :
   apply toBigWitt_injective
   simp only [toBigWitt_frobenius, toBigWitt_restrict, BigWittVector.frobenius_frobenius]
 
-/-- At index zero the target truncation set is empty. -/
+/-- Frobenius at index zero is zero because its target truncation set is empty. -/
 @[simp]
 theorem frobenius_zero (x : NonUnitalBigWittVector S R) : frobenius 0 x = 0 := by
   apply toBigWitt_injective
   rw [toBigWitt_frobenius, BigWittVector.frobenius_zero, map_zero]
 
 /-- The first coordinate of Frobenius is the corresponding original ghost component. -/
-theorem coeff_frobenius_one (n : ℕ) (hn : n ∈ S) (x : NonUnitalBigWittVector S R) :
+@[simp]
+theorem coeff_one_frobenius (n : ℕ) (hn : n ∈ S) (x : NonUnitalBigWittVector S R) :
     coeff (frobenius n x) ⟨1, TruncationSet.one_mem_div_iff.mpr hn⟩ =
       ghostComponent ⟨n, hn⟩ x := by
   have h := ghostComponent_frobenius n x ⟨1, TruncationSet.one_mem_div_iff.mpr hn⟩

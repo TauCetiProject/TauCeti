@@ -83,10 +83,6 @@ private theorem mem_augmentationKernel (y : BigWittVector S (Unitization ℤ R))
 noncomputable def toBigWitt : NonUnitalBigWittVector S R →ₙ+* BigWittVector S (Unitization ℤ R) :=
   NonUnitalSubringClass.subtype _
 
-/-- The kernel inclusion sends a vector to its underlying ambient Witt vector. -/
-theorem toBigWitt_apply (x : NonUnitalBigWittVector S R) : toBigWitt x = x.val :=
-  (rfl)
-
 /-- The kernel inclusion is injective. -/
 theorem toBigWitt_injective :
     Function.Injective
@@ -106,6 +102,21 @@ theorem map_fst_toBigWitt (x : NonUnitalBigWittVector S R) :
     BigWittVector.map (R := Unitization ℤ R) (R' := ℤ) ↑(Unitization.fstHom ℤ R)
       (toBigWitt x) = 0 :=
   (mem_augmentationKernel _).mp x.property
+
+/-- A map into the Witt ring of the unitization with zero augmentation takes values in the
+nonunital Witt ring. -/
+noncomputable def codRestrict {D : Type*} [NonUnitalNonAssocSemiring D]
+    (f : D →ₙ+* BigWittVector S (Unitization ℤ R))
+    (hf : ∀ x, BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
+      ↑(Unitization.fstHom ℤ R) (f x) = 0) : D →ₙ+* NonUnitalBigWittVector S R :=
+  NonUnitalRingHom.codRestrict f _ fun x ↦ (mem_augmentationKernel (f x)).mpr (hf x)
+
+/-- Including a codomain-restricted value in the unitization recovers the original value. -/
+@[simp]
+theorem toBigWitt_codRestrict {D : Type*} [NonUnitalNonAssocSemiring D]
+    (f : D →ₙ+* BigWittVector S (Unitization ℤ R)) (hf) (x : D) :
+    toBigWitt (codRestrict f hf x) = f x :=
+  (rfl)
 
 /-- The Witt coordinates of a nonunital Witt vector. -/
 noncomputable def coeff (x : NonUnitalBigWittVector S R) (n : S) : R :=
@@ -284,19 +295,19 @@ theorem ghostMap_toBigWitt (n : S) (x : NonUnitalBigWittVector S R) :
 /-- Restriction to a smaller truncation set, inherited from the unital Witt ring. -/
 noncomputable def restrict (h : T ≤ S) :
     NonUnitalBigWittVector S R →ₙ+* NonUnitalBigWittVector T R :=
-  NonUnitalRingHom.codRestrict
-    ((BigWittVector.restrict (R := Unitization ℤ R) h).toNonUnitalRingHom.comp toBigWitt) _
+  codRestrict
+    ((BigWittVector.restrict (R := Unitization ℤ R) h).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      apply (mem_augmentationKernel
-        (BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x))).mpr
-      rw [← RingHom.comp_apply, BigWittVector.map_comp_restrict, RingHom.comp_apply]
-      rw [map_fst_toBigWitt, map_zero]
+      change BigWittVector.map _
+        (BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x)) = 0
+      rw [← RingHom.comp_apply, BigWittVector.map_comp_restrict, RingHom.comp_apply,
+        map_fst_toBigWitt, map_zero]
 
 /-- The kernel inclusion commutes with restriction of truncation sets. -/
 @[simp]
 theorem toBigWitt_restrict (h : T ≤ S) (x : NonUnitalBigWittVector S R) :
     toBigWitt (restrict h x) = BigWittVector.restrict (R := Unitization ℤ R) h (toBigWitt x) :=
-  (rfl)
+  toBigWitt_codRestrict _ _ x
 
 /-- A coordinate of a restriction is the original coordinate at the included index. -/
 @[simp]
@@ -323,13 +334,12 @@ variable {A B : Type*} [NonUnitalCommRing A] [NonUnitalCommRing B]
 unitization and of the unital Witt ring. -/
 noncomputable def map (f : R →ₙ+* A) :
     NonUnitalBigWittVector S R →ₙ+* NonUnitalBigWittVector S A :=
-  NonUnitalRingHom.codRestrict
+  codRestrict
     ((BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
-      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt) _
+      (Unitization.map f.toIntNonUnitalAlgHom).toRingHom).toNonUnitalRingHom.comp toBigWitt)
     fun x ↦ by
-      apply (mem_augmentationKernel (BigWittVector.map
-        (R := Unitization ℤ R) (R' := Unitization ℤ A)
-        (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x))).mpr
+      change BigWittVector.map _ (BigWittVector.map (R := Unitization ℤ R) (R' := Unitization ℤ A)
+        (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x)) = 0
       apply BigWittVector.ext
       intro n
       have hx := congrArg (fun y : BigWittVector S ℤ ↦ y.coeff n)
@@ -344,7 +354,7 @@ theorem toBigWitt_map (f : R →ₙ+* A) (x : NonUnitalBigWittVector S R) :
     toBigWitt (map f x) = BigWittVector.map
       (R := Unitization ℤ R) (R' := Unitization ℤ A)
       (Unitization.map f.toIntNonUnitalAlgHom).toRingHom (toBigWitt x) :=
-  (rfl)
+  toBigWitt_codRestrict _ _ x
 
 /-- A coefficient map applies the underlying nonunital homomorphism to each coordinate. -/
 @[simp]

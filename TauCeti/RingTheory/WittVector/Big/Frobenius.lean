@@ -42,7 +42,8 @@ private theorem exists_frobeniusPolynomial (S : TruncationSet) (n : ℕ) :
   refine (ghost_image (S / n) (fun p ↦ (expand p : _ →ₐ[ℤ] _).toRingHom)
     (fun p hp _ ↦ hφ p hp) _).2 fun p hp k hk hpk ↦ ?_
   have hle : multiplicity p k ≤ multiplicity p (n * k) :=
-    (Nat.finiteMultiplicity_iff.2 ⟨hp.ne_one, S.pos_of_mem hk⟩).le_multiplicity_of_pow_dvd
+    (Nat.finiteMultiplicity_iff.2
+      ⟨hp.ne_one, S.pos_of_mem (TruncationSet.mem_div.mp hk)⟩).le_multiplicity_of_pow_dvd
       ((pow_multiplicity_dvd p k).trans (dvd_mul_left k n))
   rw [← Nat.mul_div_assoc n hpk]
   exact Ideal.mem_span_singleton.2 ((pow_dvd_pow _ hle).trans
@@ -53,7 +54,7 @@ private def frobeniusFun (n : ℕ) (x : BigWittVector S R) : BigWittVector (S / 
   mk' fun k ↦ aeval x.coeff ((exists_frobeniusPolynomial S n).choose k)
 
 private theorem ghost_frobeniusFun (n : ℕ) (x : BigWittVector S R) (k : S / n) :
-    ghostMap (frobeniusFun n x) k = ghostMap x ⟨n * k, k.property⟩ := by
+    ghostMap (frobeniusFun n x) k = ghostMap x ⟨n * k, TruncationSet.mem_div.mp k.property⟩ := by
   rw [ghostMap_apply, ghostMap_apply]
   refine (ghostPolynomial_congr fun d hd ↦
     coeff_mk'_of_mem _ ((S / n).mem_of_dvd k.property hd)).trans ?_
@@ -64,68 +65,56 @@ private theorem frobeniusFun_map (n : ℕ) (f : R →+* R') (x : BigWittVector S
     frobeniusFun n (map f x) = map f (frobeniusFun n x) := by
   ext k
   by_cases hk : k ∈ S / n
-  · simp only [frobeniusFun, coeff_mk'_of_mem _ hk, coeff_map]
-    rw [show (map f x).coeff = fun k ↦ f (x.coeff k) from funext (coeff_map f x)]
+  · have hcoeff : (map f x).coeff = fun k ↦ f (x.coeff k) :=
+      funext (coeff_map f x)
+    simp only [frobeniusFun, coeff_mk'_of_mem _ hk, coeff_map, hcoeff]
     exact (comp_aeval_apply x.coeff f.toIntAlgHom
       ((exists_frobeniusPolynomial S n).choose k)).symm
   · simp [coeff_eq_zero_of_notMem _ k hk]
 
-private theorem polynomial_ghost_injective {ι : Type*} {T : TruncationSet} :
-    Injective (ghostMap : BigWittVector T (MvPolynomial ι ℤ) →+* _) :=
-  ghostMap_injective fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)
+-- Ghosts determine the vectors over the integral polynomial ring, so their equality survives
+-- specialization by evaluating each variable at the coefficient it names.
+private theorem map_counit_eq_of_ghostMap_eq {x y : BigWittVector T (MvPolynomial R ℤ)}
+    (h : ghostMap x = ghostMap y) : map (counit R) x = map (counit R) y :=
+  congrArg (map (counit R))
+    (ghostMap_injective (fun _ _ hp ↦ .of_ne_zero (Nat.cast_ne_zero.2 hp.ne_zero)) h)
+
+private theorem map_restrict (h : T ≤ S) (f : R →+* R') (x : BigWittVector S R) :
+    map f (restrict h x) = restrict h (map f x) :=
+  DFunLike.congr_fun (map_comp_restrict h f) x
 
 private theorem frobeniusFun_one (n : ℕ) : frobeniusFun n (1 : BigWittVector S R) = 1 := by
-  have h : frobeniusFun n (1 : BigWittVector S (MvPolynomial R ℤ)) = 1 := by
-    apply polynomial_ghost_injective
-    ext k
-    simp [ghost_frobeniusFun]
-  have := congrArg (map (counit R)) h
-  simpa only [map_one, ← frobeniusFun_map] using this
+  simpa only [map_one, ← frobeniusFun_map] using
+    (map_counit_eq_of_ghostMap_eq (x := frobeniusFun n (1 : BigWittVector S (MvPolynomial R ℤ)))
+      (y := 1) (by ext k; simp [ghost_frobeniusFun]))
 
 private theorem frobeniusFun_add (n : ℕ) (x y : BigWittVector S R) :
     frobeniusFun n (x + y) = frobeniusFun n x + frobeniusFun n y := by
-  obtain ⟨a, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  obtain ⟨b, rfl⟩ := map_surjective (counit R) (counit_surjective R) y
-  have h : frobeniusFun n (a + b) = frobeniusFun n a + frobeniusFun n b := by
-    apply polynomial_ghost_injective
-    ext k
-    simp [ghost_frobeniusFun]
-  calc
-    _ = map (counit R) (frobeniusFun n (a + b)) := by
-      rw [← map_add, frobeniusFun_map]
-    _ = map (counit R) (frobeniusFun n a + frobeniusFun n b) := congrArg _ h
-    _ = _ := by rw [map_add, frobeniusFun_map, frobeniusFun_map]
+  revert x y
+  refine (map_surjective (S := S) (counit R) (counit_surjective R)).forall₂.mpr fun a b ↦ ?_
+  simpa only [map_add, ← frobeniusFun_map] using
+    (map_counit_eq_of_ghostMap_eq (x := frobeniusFun n (a + b))
+      (y := frobeniusFun n a + frobeniusFun n b) (by ext k; simp [ghost_frobeniusFun]))
 
 private theorem frobeniusFun_mul (n : ℕ) (x y : BigWittVector S R) :
     frobeniusFun n (x * y) = frobeniusFun n x * frobeniusFun n y := by
-  obtain ⟨a, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  obtain ⟨b, rfl⟩ := map_surjective (counit R) (counit_surjective R) y
-  have h : frobeniusFun n (a * b) = frobeniusFun n a * frobeniusFun n b := by
-    apply polynomial_ghost_injective
-    ext k
-    simp [ghost_frobeniusFun]
-  calc
-    _ = map (counit R) (frobeniusFun n (a * b)) := by
-      rw [← map_mul, frobeniusFun_map]
-    _ = map (counit R) (frobeniusFun n a * frobeniusFun n b) := congrArg _ h
-    _ = _ := by rw [map_mul, frobeniusFun_map, frobeniusFun_map]
+  revert x y
+  refine (map_surjective (S := S) (counit R) (counit_surjective R)).forall₂.mpr fun a b ↦ ?_
+  simpa only [map_mul, ← frobeniusFun_map] using
+    (map_counit_eq_of_ghostMap_eq (x := frobeniusFun n (a * b))
+      (y := frobeniusFun n a * frobeniusFun n b) (by ext k; simp [ghost_frobeniusFun]))
 
-/-- The big Witt Frobenius, characterized by `w_k(F_n(x)) = w_{n*k}(x)`. -/
-def frobenius (n : ℕ) : BigWittVector S R →+* BigWittVector (S / n) R where
-  toFun := frobeniusFun n
-  map_zero' := by
-    have h : frobeniusFun n (0 : BigWittVector S R) =
-        frobeniusFun n 0 + frobeniusFun n 0 := by
-      simpa only [add_zero] using frobeniusFun_add n (0 : BigWittVector S R) 0
-    exact (add_left_cancel ((add_zero _).trans h)).symm
-  map_one' := frobeniusFun_one n
-  map_add' := frobeniusFun_add n
-  map_mul' := frobeniusFun_mul n
+/-- The big Witt Frobenius, satisfying `w_k(F_n(x)) = w_{n*k}(x)`. -/
+def frobenius (n : ℕ) : BigWittVector S R →+* BigWittVector (S / n) R :=
+  RingHom.mk'
+    { toFun := frobeniusFun n
+      map_one' := frobeniusFun_one n
+      map_mul' := frobeniusFun_mul n } (frobeniusFun_add n)
 
 /-- Frobenius shifts the index of each ghost component. -/
 @[simp]
 theorem ghostMap_frobenius (n : ℕ) (x : BigWittVector S R) (k : S / n) :
-    ghostMap (frobenius n x) k = ghostMap x ⟨n * k, k.property⟩ :=
+    ghostMap (frobenius n x) k = ghostMap x ⟨n * k, TruncationSet.mem_div.mp k.property⟩ :=
   ghost_frobeniusFun n x k
 
 /-- Frobenius commutes with coefficient homomorphisms. -/
@@ -138,55 +127,41 @@ theorem frobenius_map (n : ℕ) (f : R →+* R') (x : BigWittVector S R) :
 theorem frobenius_restrict (n : ℕ) (h : T ≤ S) (x : BigWittVector S R) :
     frobenius n (restrict h x) =
       restrict (TruncationSet.div_le_div h n) (frobenius n x) := by
-  obtain ⟨a, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  have hpoly : frobenius n (restrict h a) =
-      restrict (TruncationSet.div_le_div h n) (frobenius n a) := by
-    apply polynomial_ghost_injective
-    ext k
-    simp
-  have hmap := DFunLike.congr_fun (map_comp_restrict h (counit R)) a
-  have hdiv := DFunLike.congr_fun
-    (map_comp_restrict (TruncationSet.div_le_div h n) (counit R)) (frobenius n a)
-  simp only [RingHom.comp_apply] at hmap hdiv
-  simpa only [← frobenius_map, hmap, hdiv] using congrArg (map (counit R)) hpoly
+  revert x
+  refine (map_surjective (S := S) (counit R) (counit_surjective R)).forall.mpr fun a ↦ ?_
+  simpa only [← frobenius_map, map_restrict] using
+    (map_counit_eq_of_ghostMap_eq (x := frobenius n (restrict h a))
+      (y := restrict (TruncationSet.div_le_div h n) (frobenius n a)) (by ext k; simp))
 
 /-- Frobenius at index one is the identity, with its target presented as `S / 1`. -/
 @[simp]
 theorem frobenius_one (x : BigWittVector S R) :
     frobenius 1 x = restrict (le_of_eq (TruncationSet.div_one S)) x := by
-  obtain ⟨a, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  have h : frobenius 1 a = restrict (le_of_eq (TruncationSet.div_one S)) a := by
-    apply polynomial_ghost_injective
-    ext k
-    simp
-  have hmap := DFunLike.congr_fun
-    (map_comp_restrict (le_of_eq (TruncationSet.div_one S)) (counit R)) a
-  simp only [RingHom.comp_apply] at hmap
-  simpa only [← frobenius_map, hmap] using congrArg (map (counit R)) h
+  revert x
+  refine (map_surjective (S := S) (counit R) (counit_surjective R)).forall.mpr fun a ↦ ?_
+  simpa only [← frobenius_map, map_restrict] using
+    (map_counit_eq_of_ghostMap_eq (x := frobenius 1 a)
+      (y := restrict (le_of_eq (TruncationSet.div_one S)) a) (by ext k; simp))
 
 /-- Successive Frobenius maps multiply their indices. -/
 theorem frobenius_frobenius (n k : ℕ) (x : BigWittVector S R) :
     frobenius k (frobenius n x) =
       restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) x) := by
-  obtain ⟨a, rfl⟩ := map_surjective (counit R) (counit_surjective R) x
-  have h : frobenius k (frobenius n a) =
-      restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) a) := by
-    apply polynomial_ghost_injective
-    ext i
-    simp [mul_assoc]
-  have hmap := DFunLike.congr_fun
-    (map_comp_restrict (le_of_eq (TruncationSet.div_div S n k)) (counit R))
-      (frobenius (n * k) a)
-  simp only [RingHom.comp_apply] at hmap
-  simpa only [← frobenius_map, hmap] using congrArg (map (counit R)) h
+  revert x
+  refine (map_surjective (S := S) (counit R) (counit_surjective R)).forall.mpr fun a ↦ ?_
+  simpa only [← frobenius_map, map_restrict] using
+    (map_counit_eq_of_ghostMap_eq (x := frobenius k (frobenius n a))
+      (y := restrict (le_of_eq (TruncationSet.div_div S n k)) (frobenius (n * k) a))
+      (by ext i; simp [mul_assoc]))
 
 /-- The first coordinate of Frobenius is the shifted ghost component. -/
-theorem coeff_frobenius_one (n : ℕ) (hn : n ∈ S) (x : BigWittVector S R) :
+@[simp]
+theorem coeff_one_frobenius (n : ℕ) (hn : n ∈ S) (x : BigWittVector S R) :
     (frobenius n x).coeff 1 = ghostPolynomial n x.coeff := by
   have h := ghostMap_frobenius n x ⟨1, (TruncationSet.one_mem_div_iff).2 hn⟩
   simpa only [ghostMap_apply, ghostPolynomial_one, Nat.mul_one] using h
 
-/-- At index zero the target truncation set is empty. -/
+/-- Frobenius at index zero is zero because its target truncation set is empty. -/
 @[simp]
 theorem frobenius_zero (x : BigWittVector S R) : frobenius 0 x = 0 := by
   have : Subsingleton (BigWittVector (S / 0) R) := by
