@@ -361,20 +361,27 @@ theorem mpullback_conjugation_one (g : G) (V : ∀ x : G, TangentSpace I x) :
 
 /-- **The derivative of inversion through the adjoint action.** Translated back to the identity,
 the derivative of inversion at `g` is minus `Ad_g` of the translate: `θ_{g⁻¹}(d(inv)_g v) =
--Ad_g (θ_g v)`, where `θ_g = d(L_{g⁻¹})_g` is the left Maurer–Cartan form. -/
+-Ad_g (θ_g v)`, where `θ_x = d(L_{x⁻¹})_x` is the left Maurer–Cartan form, so that
+`θ_{g⁻¹} = d(L_g)_{g⁻¹}`. -/
 theorem mfderiv_inv_mul_mfderiv_inv (g : G) (v : TangentSpace I g) :
-    mfderiv I I (g⁻¹⁻¹ * ·) g⁻¹ (mfderiv I I (fun h : G ↦ h⁻¹) g v) =
+    mfderiv I I (g * ·) g⁻¹ (mfderiv I I (fun h : G ↦ h⁻¹) g v) =
       -adjointContinuousLinearMap (I := I) g (mfderiv I I (g⁻¹ * ·) g v) := by
   obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq (I := I) (G := G) (g := g) v
   have h := mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint
     (adjointContinuousLinearMap (I := I) g ξ) g⁻¹
   rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
     adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at h
-  rw [GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField, ← h, map_neg,
-    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField]
-  -- The two negations live in the tangent space at `g⁻¹⁻¹ * g⁻¹` and in the Lie algebra, both
-  -- the model space `E` with its negation.
-  rfl
+  -- Computed with the left translation `(g⁻¹)⁻¹ * ·` back from `g⁻¹`, then `(g⁻¹)⁻¹ = g`.
+  have key : mfderiv I I (g⁻¹⁻¹ * ·) g⁻¹ (mfderiv I I (fun h : G ↦ h⁻¹) g
+      (mulInvariantVectorField ξ g)) =
+        -adjointContinuousLinearMap (I := I) g
+          (mfderiv I I (g⁻¹ * ·) g (mulInvariantVectorField ξ g)) := by
+    rw [GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField, ← h, map_neg,
+      mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField]
+    -- The two negations live in the tangent space at `g⁻¹⁻¹ * g⁻¹` and in the Lie algebra, both
+    -- the model space `E` with its negation.
+    rfl
+  rwa [inv_inv] at key
 
 end Differential
 

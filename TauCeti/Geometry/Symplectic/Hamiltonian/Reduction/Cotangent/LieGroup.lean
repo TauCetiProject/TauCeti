@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LeftTrivialization
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
 
 /-!
@@ -53,9 +54,10 @@ The proof computes in the left trivialization.
   (`TauCeti.CotangentBundle.eval₂_symplecticForm_eq_neg_of_differential_eq_zero`).
 * **Recognition.** Since `σ_c` is the pullback of `ω_c` along `G → G ⧸ G_c`, the map
   `z ↦ [π(z)⁻¹]` from the level to `G ⧸ G_c` pulls `-ω_c` back to the restriction of `ω`. It is
-  onto, its fibres are the `G_c`-orbits, because a covector of `T*G` is determined by its base point
-  and its moment map (`TauCeti.CotangentBundle.eq_of_proj_eq_of_momentMap_eq`), and both sides have
-  dimension `dim 𝔤 - dim 𝔤_c`. The recognition of reduced spaces
+  onto (`TauCeti.CotangentBundle.exists_momentMap_eq_and_proj_eq`), its fibres are the
+  `G_c`-orbits, because a covector of `T*G` is determined by its base point and its moment map
+  (`TauCeti.CotangentBundle.eq_of_proj_eq_of_momentMap_eq`), and both sides have dimension
+  `dim 𝔤 - dim 𝔤_c`. The recognition of reduced spaces
   (`TauCeti.SmoothTwoForm.exists_diffeomorph_comp_eq_and_mpullback_eq`) then gives the
   diffeomorphism.
 
@@ -155,6 +157,20 @@ private theorem eval₂_eq_neg_kirillovForm_of_forall_eval₂_eq_zero (p : G × 
     (mfderiv I I (p.1⁻¹ * ·) p.1 v.1) (mfderiv I I (p.1⁻¹ * ·) p.1 w.1)
   linear_combination hw' - hv' - hs
 
+/-- In the left trivialization, a tangent vector in `ker dμ` is `ω`-orthogonal to the fundamental
+vectors `(ξ^R(g), 0)`. -/
+private theorem eval₂_eq_zero_of_differential_eq_zero
+    (h : (symplecticForm I G).IsEquivariantMomentMap (momentMap I G)) {p : G × (E →L[ℝ] ℝ)}
+    {u : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) p}
+    (hu : h.differential _ (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
+      (leftTrivialization I G) p u) = 0) (ξ : GroupLieAlgebra I G) :
+    (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
+      (symplecticForm I G)).eval₂ p
+        ((mulRightInvariantVectorField ξ p.1, 0) : E × (E →L[ℝ] ℝ)) u = 0 := by
+  refine (SmoothForm.eval₂_mpullback _ _ _ p _ u).trans ?_
+  rw [← fundamentalVectorField_leftTrivialization, ← InfinitesimalAction.fundamental_apply,
+    ← h.differential_apply_eq_eval₂, hu, LinearMap.zero_apply]
+
 omit [FiniteDimensional ℝ E] in
 /-- Inversion of the base point, `z ↦ π(z)⁻¹`, is a smooth map `T*G → G`. -/
 private theorem contMDiff_inv_proj :
@@ -181,17 +197,6 @@ theorem eval₂_symplecticForm_eq_neg_of_differential_eq_zero
   obtain ⟨w, rfl⟩ : ∃ w, mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
       (leftTrivialization I G) p w = W :=
     ⟨_, (leftTrivialization I G).mfderiv_apply_mfderiv_symm_apply (by simp) p W⟩
-  -- Vectors in `ker dμ` are `ω`-orthogonal to the fundamental vectors `(ξ^R, 0)`.
-  have horth {u : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) p}
-      (hu : h.differential _ (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-        (leftTrivialization I G) p u) = 0) (ξ : GroupLieAlgebra I G) :
-      (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
-        (symplecticForm I G)).eval₂ p
-          ((mulRightInvariantVectorField ξ p.1, 0) : E × (E →L[ℝ] ℝ)) u = 0 := by
-    refine (SmoothForm.eval₂_mpullback _ _ _ p _ u).trans ?_
-    rw [← fundamentalVectorField_leftTrivialization, ← InfinitesimalAction.fundamental_apply,
-      ← h.differential_apply_eq_eval₂, hu]
-    rfl
   -- Both sides are computed in the left trivialization at `p = (g, a)`.
   have hfun : (fun z : CotangentBundle I G ↦ z.proj⁻¹) ∘ leftTrivialization I G =
       (fun g : G ↦ g⁻¹) ∘ Prod.fst :=
@@ -200,16 +205,16 @@ theorem eval₂_symplecticForm_eq_neg_of_differential_eq_zero
       mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I ((fun g : G ↦ g⁻¹) ∘ Prod.fst) p u =
         mfderiv I I (fun g : G ↦ g⁻¹) p.1 u.1 := by
     rw [mfderiv_comp_apply p ((contMDiff_inv I ∞).mdifferentiableAt (by simp))
-      mdifferentiableAt_fst, mfderiv_fst]
-    rfl
+      mdifferentiableAt_fst, mfderiv_fst_apply]
   rw [← SmoothForm.eval₂_mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
       (symplecticForm I G),
     ← SmoothForm.eval₂_mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff,
-    eval₂_eq_neg_kirillovForm_of_forall_eval₂_eq_zero p v w (horth hV) (horth hW),
+    eval₂_eq_neg_kirillovForm_of_forall_eval₂_eq_zero p v w
+      (eval₂_eq_zero_of_differential_eq_zero h hV) (eval₂_eq_zero_of_differential_eq_zero h hW),
     SmoothForm.mpullback_mpullback,
     SmoothForm.mpullback_congr _ ((contMDiff_inv I ∞).comp contMDiff_fst) hfun,
     SmoothForm.eval₂_mpullback, ← SmoothForm.bilinFormAt_apply, hd, hd, Function.comp_apply,
-    Module.Dual.bilinFormAt_leftInvariantKirillovForm_apply]
+    Module.Dual.bilinFormAt_leftInvariantKirillovForm_apply, inv_inv]
   -- The translates `θ_{g⁻¹}(d(inv) v)` are typed in tangent spaces of `G` at `g⁻¹`, and the
   -- brackets in the Lie algebra; both are the model space `E`, and `rw` cannot match the lemmas
   -- across these definitionally equal types, so `erw` is used.
@@ -223,17 +228,6 @@ theorem eval₂_symplecticForm_eq_neg_of_differential_eq_zero
     (Eq.trans ?_ (Lie.coadjointRepresentation_apply _ _ _).symm))
   rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
     adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
-
-variable (c) in
-/-- Every point `g` of `G` is the base point of a covector in each level `μ⁻¹(c)`, namely the
-left translate of `Ad*_{g⁻¹} c`. -/
-private theorem exists_momentMap_eq_and_proj_eq (g : G) :
-    ∃ z : CotangentBundle I G, momentMap I G z = c ∧ z.proj = g := by
-  refine ⟨leftTrivialization I G
-    (g, LinearMap.toContinuousLinearMap (Lie.coadjointRepresentation ℝ I G g⁻¹ c : E →ₗ[ℝ] ℝ)),
-    ?_, proj_leftTrivialization _⟩
-  rw [momentMap_leftTrivialization]
-  exact Representation.self_inv_apply _ _ _
 
 end Level
 
@@ -257,6 +251,9 @@ private theorem contMDiff_quotientMk_inv_proj :
           G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) := by
   let := h.levelSubMulActionChartedSpace c hreg hn
   have := h.isManifold_levelSubMulAction hreg hn
+  -- The composite `QuotientGroup.mk ∘ (fun z ↦ z.proj⁻¹) ∘ Subtype.val` is the stated map only up
+  -- to unfolding `Function.comp`, so it is elaborated first, without the expected type, and then
+  -- checked against the statement by the empty ascription.
   exact ((c.isSubmersion_quotientMk_stabilizer_coadjointRepresentation.contMDiff.comp
     contMDiff_inv_proj).comp (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff :)
 
