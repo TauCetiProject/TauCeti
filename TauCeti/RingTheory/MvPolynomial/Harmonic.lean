@@ -221,6 +221,11 @@ theorem laplacian_normSq : laplacian (normSq σ R) = 2 * (Fintype.card σ : MvPo
 
 variable {R}
 
+/-- The monomial `s`-coefficient of `normSq σ R`, expanded over the variables `k : σ`. -/
+theorem coeff_normSq [DecidableEq σ] (s : σ →₀ ℕ) :
+    (normSq σ R).coeff s = ∑ k : σ, if Finsupp.single k 2 = s then 1 else 0 := by
+  simp_rw [normSq_def, coeff_sum, coeff_X_pow]
+
 /-- **The Laplacian of `r² q`**: for `q` homogeneous of degree `e` in `n` variables,
 `Δ (r² q) = r² Δ q + (2n + 4e) q`. -/
 theorem laplacian_normSq_mul {q : MvPolynomial σ R} {e : ℕ} (hq : q.IsHomogeneous e) :

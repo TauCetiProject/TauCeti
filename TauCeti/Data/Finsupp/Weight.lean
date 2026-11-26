@@ -44,6 +44,8 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.degree_optionElim`: extending by `y` at `none` adds `y` to the degree.
 * `Finsupp.mapDomain_apply_eq_degree`: pushed forward to a type with a single element,
   a finitely supported function takes its degree as value.
+* `Finsupp.degree_tsub`: for `g ≤ f`, `(f - g).degree = f.degree - g.degree`.
+* `Finsupp.lt_degree_of_ne_zero`: if `f j ≠ 0` for `j ≠ i`, then `f i < f.degree`.
 * `Finsupp.prod_pow_sumElim`: splitting variables splits the weighted product into two factors.
 * `Finsupp.prod_pow_optionElim`, `Finsupp.sum_nsmul_optionElim`: extending by `n` at `none`
   splits off the factor `c none ^ n` from the weighted product `∏ c i ^ (f.optionElim n) i`, and
@@ -122,6 +124,19 @@ degree as value. -/
 theorem mapDomain_apply_eq_degree {σ τ M : Type*} [Unique τ] [AddCommMonoid M]
     (f : σ → τ) (e : σ →₀ M) (a : τ) : e.mapDomain f a = e.degree := by
   rw [Unique.eq_default a, ← degree_mapDomain f e, degree_eq_sum, Fintype.sum_unique]
+
+/-- For `g ≤ f`, the degree of `f - g` is `f.degree - g.degree`. -/
+theorem degree_tsub {σ R : Type*} [AddCommMonoid R] [PartialOrder R]
+    [CanonicallyOrderedAdd R] [IsOrderedCancelAddMonoid R] [Sub R] [OrderedSub R]
+    {f g : σ →₀ R} (h : g ≤ f) : (f - g).degree = f.degree - g.degree := by
+  rw [← add_tsub_cancel_right (f - g).degree g.degree, ← map_add, tsub_add_cancel_of_le h]
+
+/-- If `f` is nonzero at some `j ≠ i`, then `f i < f.degree` (strict companion to `le_degree`). -/
+theorem lt_degree_of_ne_zero {σ R : Type*} [AddCommMonoid R] [PartialOrder R]
+    [CanonicallyOrderedAdd R] [IsOrderedCancelAddMonoid R] {f : σ →₀ R} {i j : σ}
+    (hij : j ≠ i) (hj : f j ≠ 0) : f i < f.degree := by
+  simpa only [degree_single] using degree_strictMono <| Finsupp.lt_def.mpr
+    ⟨single_le_iff.mpr le_rfl, j, by rw [single_eq_of_ne hij]; exact pos_iff_ne_zero.mpr hj⟩
 
 /-- The weighted product of `f.optionElim n` splits off the factor `c none ^ n`. This is the
 form of Mathlib's `Finsupp.prod_option_index` used to separate one variable from the monomial

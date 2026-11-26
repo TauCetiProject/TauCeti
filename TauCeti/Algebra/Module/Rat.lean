@@ -21,7 +21,8 @@ Consumers activate it where they need it with
 `ℚ`-algebra such as a universal enveloping algebra, so that `Ring.choose` elaborates there.
 
 Over a semiring that is a `ℚ`-module, scaling by `(n : ℚ)⁻¹` undoes multiplication by a nonzero
-natural number `n`.
+natural number `n`. More generally, any module over a `ℚ`-algebra has unique division by positive
+natural numbers (`HasUniqueDiv.of_module_algebraRat`).
 
 ## Main definitions
 
@@ -30,6 +31,8 @@ natural number `n`.
 ## Main statements
 
 * `TauCeti.inv_natCast_smul_natCast_mul`: `(n : ℚ)⁻¹ • (n * x) = x` for `n ≠ 0`.
+* `HasUniqueDiv.of_module_algebraRat`: unique natural-number division on a module over a
+  `ℚ`-algebra.
 -/
 
 public section
@@ -48,3 +51,13 @@ theorem inv_natCast_smul_natCast_mul {A : Type*} [Semiring A] [Module ℚ A] {n 
   rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ, inv_smul_smul₀ (Nat.cast_ne_zero.2 hn)]
 
 end TauCeti
+
+/-- A module over a `ℚ`-algebra has unique division by positive natural numbers.
+This is not a global instance because `R` cannot be inferred from `M`. -/
+theorem HasUniqueDiv.of_module_algebraRat (R M : Type*) [Semiring R] [Algebra ℚ R]
+    [AddCommMonoid M] [Module R M] : HasUniqueDiv M where
+  nsmul_right_injective n hn _ _ hxy := by
+    have h (m : M) : algebraMap ℚ R (n : ℚ)⁻¹ • (n • m) = m := by
+      rw [← Nat.cast_smul_eq_nsmul R, ← map_natCast (algebraMap ℚ R), smul_smul, ← map_mul,
+        inv_mul_cancel₀ (Nat.cast_ne_zero.mpr hn), map_one, one_smul]
+    simpa only [h] using congrArg (algebraMap ℚ R (n : ℚ)⁻¹ • ·) hxy

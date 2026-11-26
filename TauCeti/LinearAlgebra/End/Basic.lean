@@ -50,6 +50,9 @@ A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
 does each power of `f` (`Submodule.le_comap_pow_of_le_comap_sup`). A submodule invariant under
 two endomorphisms is invariant under their difference
 (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
+
+An endomorphism squaring to `-1` is bijective, with inverse `-f`
+(`Module.End.bijective_of_comp_self_eq_neg_one`).
 -/
 
 public section
@@ -149,6 +152,12 @@ theorem smul_mul_smul_self_eq_one {R M : Type*} [CommSemiring R] [AddCommMonoid 
     (μ • g) * (μ • g) = 1 := by
   rw [smul_mul_smul_comm, hμ, one_smul]
   exact LinearMap.ext hg
+
+/-- An endomorphism squaring to `-1` is bijective, with inverse `-f`. -/
+theorem bijective_of_comp_self_eq_neg_one {R M : Type*} [Semiring R] [AddCommGroup M] [Module R M]
+    {f : Module.End R M} (hf : f ∘ₗ f = -1) : Function.Bijective f :=
+  ⟨fun _ _ hxy ↦ by simpa [← LinearMap.comp_apply, hf] using congrArg (-f) hxy,
+   fun y ↦ ⟨-f y, by simp [← LinearMap.comp_apply, hf]⟩⟩
 
 /-- A finite nontrivial module has more than one endomorphism: `0` and `1` differ. -/
 theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [Nontrivial M]

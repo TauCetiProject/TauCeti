@@ -30,6 +30,10 @@ identity.
 * `Module.End.eigenProjOfInvolutive_apply_of_mem_neg`: it kills the `ν`-eigenspace for `μ ν = -1`.
 * `Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg`: the projections for `μ` and
   `-μ` add up to the identity.
+* `Module.End.disjoint_eigenspace_neg`: the `μ`- and `-μ`-eigenspaces of an endomorphism are
+  disjoint when `2 * μ` acts injectively on the module.
+* `Module.End.inf_eigenspace_sup_inf_eigenspace_neg`: an invariant submodule of an involution
+  splits as the supremum of its intersections with the `μ`- and `-μ`-eigenspaces (`μ * μ = 1`).
 -/
 
 public section
@@ -84,5 +88,33 @@ theorem eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg (hg : Function.Invol
   have h := halfOneAdd_add_halfOneAdd_neg k (μ • g)
   rw [← neg_smul] at h
   exact LinearMap.congr_fun h y
+
+variable (g) in
+omit [Invertible (2 : k)] in
+/-- The `μ`- and `-μ`-eigenspaces of an endomorphism are disjoint whenever `2 * μ` acts injectively
+on `Y` (for instance when `2` and `μ` are units, as for `IsUnit (2 : k)` and `μ * μ = 1`). -/
+theorem disjoint_eigenspace_neg {μ : k} (h : IsSMulRegular Y (2 * μ)) :
+    Disjoint (g.eigenspace μ) (g.eigenspace (-μ)) :=
+  Submodule.disjoint_def.mpr fun y hy₁ hy₂ ↦ by
+    have h0 : (2 * μ) • y = (2 * μ) • 0 := by
+      rw [smul_zero, two_mul, add_smul]; nth_rw 1 [← mem_eigenspace_iff.mp hy₁]
+      rw [mem_eigenspace_iff.mp hy₂, neg_smul, neg_add_cancel]
+    exact h h0
+
+omit [Invertible (2 : k)] in
+/-- An invariant submodule of an involution over a commutative ring in which `2` is a unit is the
+supremum of its intersections with the `μ`- and `-μ`-eigenspaces (`μ * μ = 1`). -/
+theorem inf_eigenspace_sup_inf_eigenspace_neg (h2 : IsUnit (2 : k)) (hg : Function.Involutive g)
+    {μ : k} (hμ : μ * μ = 1) {N : Submodule k Y} (hN : ∀ y ∈ N, g y ∈ N) :
+    (N ⊓ g.eigenspace μ) ⊔ (N ⊓ g.eigenspace (-μ)) = N := by
+  let := h2.invertible
+  have hmem {ν : k} (hν : ν * ν = 1) {y : Y} (hy : y ∈ N) :
+      (g.eigenProjOfInvolutive hg hν y : Y) ∈ N := by
+    rw [coe_eigenProjOfInvolutive_apply]; exact N.smul_mem _ (N.add_mem hy (N.smul_mem _ (hN y hy)))
+  have hμ' : -μ * -μ = 1 := (neg_mul_neg μ μ).trans hμ
+  exact le_antisymm (sup_le inf_le_left inf_le_left) fun y hy ↦ Submodule.mem_sup.mpr
+    ⟨_, ⟨hmem hμ hy, (g.eigenProjOfInvolutive hg hμ y).property⟩,
+      _, ⟨hmem hμ' hy, (g.eigenProjOfInvolutive hg hμ' y).property⟩,
+      g.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hg hμ hμ' y⟩
 
 end Module.End
