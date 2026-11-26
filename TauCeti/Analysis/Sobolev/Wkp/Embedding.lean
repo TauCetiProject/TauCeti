@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 public import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 
 /-!
 # Higher-order embeddings from a first-order embedding
@@ -226,5 +227,42 @@ theorem exists_sobolevEmbeddingL_of_isCompact_closure (hpstar : pstar ≠ ⊤)
     S hS k
 
 end Wkp
+
+end TauCeti
+
+open scoped ENNReal
+open Module
+
+namespace TauCeti
+
+section Integrability
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {μ : Measure E} [μ.IsAddHaarMeasure]
+
+/-- Any first-order integrability improvement lifts to an improvement of higher-order Sobolev
+membership, losing one derivative and preserving the value almost everywhere. -/
+theorem Wkp.exists_value_ae_eq_of_memLp {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+    (hmem : ∀ w : W1p μ Ω p, MemLp (W1p.value w) q (μ.restrict (Ω : Set E))) :
+    ∀ j (w : Wkp μ Ω p (j + 1)), ∃ v : Wkp μ Ω q j,
+      Wkp.value j v =ᵐ[μ.restrict (Ω : Set E)] Wkp.value (j + 1) w
+  | 0, w => by
+    have h := hmem (w : W1p μ Ω p)
+    refine ⟨h.toLp _, ?_⟩
+    rw [Wkp.value_zero, Wkp.value_one]
+    exact h.coeFn_toLp
+  | j + 1, w => by
+    have hm : MemLp (Wkp.value (j + 2) w) q (μ.restrict (Ω : Set E)) := by
+      rw [← Wkp.value_firstOrder (j + 1) w]
+      exact hmem (Wkp.firstOrder (j + 1) w)
+    let b := stdOrthonormalBasis ℝ E
+    obtain ⟨v, hv⟩ := Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn b (hm.toLp _) j
+      fun i ↦ by
+        obtain ⟨d, hd⟩ := Wkp.exists_value_ae_eq_of_memLp hmem j (Wkp.lineDerivL (b i) (j + 1) w)
+        exact ⟨d, (((Wkp.hasWeakLineDerivOn_lineDerivL (b i) (j + 1) w).congr_ae
+          hm.coeFn_toLp.symm).congr_ae_deriv hd.symm)⟩
+    exact ⟨v, by rw [hv]; exact hm.coeFn_toLp⟩
+
+end Integrability
 
 end TauCeti

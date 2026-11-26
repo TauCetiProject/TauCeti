@@ -144,7 +144,6 @@ theorem rank_bigradedPartiallyBlockedHomologyGrading_piece_insert {S : Finset (F
     (fun m => GridDiagram.X_smul_mem_blockedChains (Finset.mem_insert_self t S) m)
     (fun _ hx => GridDiagram.exists_sub_X_smul_mem_blockedChains hx)
     (fun _ hm => GridDiagram.map_mem_blockedChains _ hm)
-    (fun m => (G.val.unblockedDifferential F).map_smul _ m)
     (fun _ hm => GridDiagram.mem_blockedChains_of_X_smul_mem ht hm)
     (fun m => by
       have hm : G.val.unblockedDifferential F (H m) + H (G.val.unblockedDifferential F m) =

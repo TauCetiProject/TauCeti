@@ -161,10 +161,8 @@ private theorem inducedTaylor_of_isComposableString {n : ℕ} (hn : 0 < n)
           (𝒢.toAInfinityHom.taylor (ReducedTensorWords.map (R := R) (totalHomMap R F)
             (of R _ ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i))))) := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-  choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
-  have hzg : (fun i : Fin (m + 1) ↦ z i) = fun i : Fin (m + 1) ↦ homInclusion (a i) (b i) (g i) :=
-    funext fun i ↦ (hg i).symm
-  rw [hzg, map_of_tprod, inducedTaylor_of_tprod_of_isComposablePairs 𝒢 F (fun i ↦ a i)
+  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+  rw [funext hg, map_of_tprod, inducedTaylor_of_tprod_of_isComposablePairs 𝒢 F (fun i ↦ a i)
     (fun i ↦ b i) g ((isComposablePairs_iff F a b).2 hab)]
   simp only [totalHomMap_homInclusion]
   rfl
@@ -177,10 +175,8 @@ private theorem inducedTaylor_of_not_isComposableString {n : ℕ} (hn : 0 < n)
     (hab : ¬ IsComposableString a b n) :
     inducedTaylor 𝒢 F (of R _ ⟨n, hn⟩ (PiTensorProduct.tprod R fun i : Fin n ↦ z i)) = 0 := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
-  choose g hg using fun i : Fin (m + 1) ↦ hz i i.isLt
-  have hzg : (fun i : Fin (m + 1) ↦ z i) = fun i : Fin (m + 1) ↦ homInclusion (a i) (b i) (g i) :=
-    funext fun i ↦ (hg i).symm
-  rw [hzg]
+  obtain ⟨g, hg⟩ := exists_eq_homInclusion hz
+  rw [funext hg]
   exact inducedTaylor_of_tprod_of_not_isComposablePairs 𝒢 F _ _ g
     (mt (isComposablePairs_iff F a b).1 hab)
 
@@ -327,7 +323,7 @@ theorem isPathCompatible_component_inducedHom (n : ℕ) :
       ((𝒢.inducedHom F).component n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · rw [AInfinityHom.component_zero]
-    exact ⟨fun _ _ ↦ zero_mem _, fun _ _ _ _ _ _ _ ↦ rfl⟩
+    exact .zero
   · refine (𝒢.inducedHom F).isWordPathCompatible_taylor_iff.1 ?_ n hn
     rw [taylor_inducedHom]
     exact 𝒢.isWordPathCompatible_inducedTaylor F

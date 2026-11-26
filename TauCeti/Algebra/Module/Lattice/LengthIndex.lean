@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Length.Determinant
 import Mathlib.RingTheory.KrullDimension.PID
 import Mathlib.RingTheory.Localization.Finiteness
 import Mathlib.RingTheory.OrderOfVanishing.Noetherian
+import TauCeti.Algebra.Module.Submodule.Map
+import TauCeti.Algebra.Module.Submodule.Pointwise
 
 /-!
 # The length index of two lattices
@@ -322,7 +324,7 @@ private theorem lengthIndex_comap_inv_smul [Nontrivial O] (B : Submodule O V) [B
       WithZero.log (Ring.ordFrac O (t : K)) * finrank K W := by
   have : ((t⁻¹ • B).comap (W.subtype.restrictScalars O)).IsFullLattice K :=
     isFullLattice_comap (t⁻¹ • B) W.subtype W.injective_subtype
-  rw [← smul_inv_smul t B, comap_restrictScalars_units_smul K W.subtype t (t⁻¹ • B),
+  rw [← smul_inv_smul t B, comap_restrictScalars_units_smul W.subtype t (t⁻¹ • B),
     inv_smul_smul, lengthIndex_smul_right_self K]
 
 /-- **The index of a homothety on a subspace.** For a full lattice `B`, a subspace `W` of `V` and
@@ -331,7 +333,7 @@ theorem lengthIndex_inv_smul_inf [Nontrivial O] (B : Submodule O V) [B.IsFullLat
     (W : Submodule K V) (t : Kˣ) :
     lengthIndex (t⁻¹ • B ⊓ W.restrictScalars O) (B ⊓ W.restrictScalars O) =
       WithZero.log (Ring.ordFrac O (t : K)) * finrank K W := by
-  rw [inf_restrictScalars_eq_map_comap K, inf_restrictScalars_eq_map_comap K,
+  rw [inf_restrictScalars_eq_map_comap, inf_restrictScalars_eq_map_comap,
     lengthIndex_map (f := W.subtype.restrictScalars O) W.injective_subtype,
     lengthIndex_comap_inv_smul K B W t]
 
@@ -373,7 +375,7 @@ theorem lengthIndex_inf_le_log_ordFrac_mul_finrank_add [Nontrivial O] {A B : Sub
     exact_mod_cast ENat.toNat_le_toNat h₁
       (length_quotient_comap_subtype_ne_top K (IsLattice.fg K A) (t⁻¹ • B))
   have : (B.comap ι).IsFullLattice K := isFullLattice_comap B W.subtype W.injective_subtype
-  rw [inf_restrictScalars_eq_map_comap K, inf_restrictScalars_eq_map_comap K,
+  rw [inf_restrictScalars_eq_map_comap, inf_restrictScalars_eq_map_comap,
     lengthIndex_map (f := ι) W.injective_subtype,
     ← lengthIndex_add_lengthIndex K _ ((t⁻¹ • B).comap ι), lengthIndex_comap_inv_smul K B W t]
   linarith [lengthIndex_le (A.comap ι) ((t⁻¹ • B).comap ι)]

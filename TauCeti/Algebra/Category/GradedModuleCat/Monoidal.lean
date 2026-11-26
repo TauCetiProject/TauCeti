@@ -105,6 +105,12 @@ theorem tensorObj_grading :
 theorem tensorUnit_eq : 𝟙_ (GradedModuleCat.{u} 𝒜) = regular :=
   (rfl)
 
+/-- The grading of the tensor unit is the given grading of `A`. -/
+@[simp]
+theorem tensorUnit_grading :
+    (𝟙_ (GradedModuleCat.{u} 𝒜)).grading = InternalGrading.ofDecomposition 𝒜 :=
+  (rfl)
+
 variable {M N P} {M' N' : GradedModuleCat.{u} 𝒜}
 
 /-- The underlying map of `f ⊗ₘ g` is the tensor product of the underlying maps. -/

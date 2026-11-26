@@ -169,7 +169,7 @@ operator is `D ξ` on the jet of a test section `ξ`. -/
 theorem stationarySobolevOperator_jetLp_ae_eq
     (hJc : Continuous fun t ↦ (J t).toLinearMap.toContinuousLinearMap) (hSc : Continuous S)
     (ξ : testSection V) :
-    stationarySobolevOperator J S ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩
+    stationarySobolevOperator J S ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩
       =ᵐ[stripMeasure] stationaryCylinderOperator J S ξ := by
   filter_upwards [jetOperator_jetLp_ae_eq (memLp_stationaryJetCoeff hJc hSc) ξ] with z hz
   rw [stationarySobolevOperator_def, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, hz,
@@ -313,7 +313,7 @@ theorem denseRange_stationarySobolevOperator_ofComplexModule
         (Lp.memLp η) fun ξ hξ ↦ ?_)
     -- `η` is orthogonal to `D ξ` for every test section `ξ`.
     have h₀ := (Submodule.mem_orthogonal K η).1 hη
-      (D ⟨jetLp (testSection F) ⟨ξ, hξ⟩, jetLp_mem_jetClosure _⟩) (LinearMap.mem_range_self _ _)
+      (D ⟨jetLp 2 (testSection F) ⟨ξ, hξ⟩, jetLp_mem_jetClosure _⟩) (LinearMap.mem_range_self _ _)
     rw [MeasureTheory.L2.inner_def] at h₀
     rw [← h₀]
     refine integral_congr_ae ?_

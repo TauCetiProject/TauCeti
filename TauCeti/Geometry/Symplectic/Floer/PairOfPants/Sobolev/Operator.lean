@@ -180,30 +180,40 @@ theorem mul_norm_floerLinearizationCoeff_positiveEndChart_le (ω : SymplecticFor
   have hr : 0 < r := positiveEndChartScale_pos q ζ
   exact Jw.mul_opNorm_le_of_eq_smul_sub_smul hid hdet hr
 
-/-- **The coefficient field on conformal jets on an end.** Let `u` solve the Floer equation for the
+/-- **The coefficient field on conformal jets on an end.** Let the perturbation `(K_s, K_t)` be the
 pair-of-pants perturbation of period-one `C²` Hamiltonians `H_q` at the point `w = φ'_q(ζ)` of the
-end `q`, with `ζ = (s, t)` and `s ≥ 2`, and let the structures at `w` be `J(w, ·) = J_q(t)`. If `B`
-bounds the coefficient field on jets of the end datum `H'_q(t) dt`, with the structures `J_q(t)`,
-along `u ∘ φ'_q` at `ζ`, then the coefficient field on the conformal jets of the cylindrical weight
-is at most `1 + B + (1 + B) B / 2π` at `w`. -/
+end `q`, with `ζ = (s, t)` and `s ≥ 2`, let `u` solve the Floer equation at `w`, and let the
+structures at `w` be `J(w, ·) = J_q(t)`. If `B` bounds the coefficient field on jets of the end
+datum `H'_q(t) dt`, with the structures `J_q(t)`, along `u ∘ φ'_q` at `ζ`, then the coefficient
+field on the conformal jets of the cylindrical weight is at most `1 + B + (1 + B) B / 2π` at `w`.
+The pair-of-pants perturbation itself is the case `K_s`, `K_t` equal to its components. -/
 theorem norm_floerConformalJetCoeff_positiveEndChart_le (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) {q : Puncture} (hHs : ∀ t, ContDiff ℝ 2 (H q t))
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Jq : ℝ → V → AlmostComplexStructure V}
-    {u : ℝ × ℝ → V} {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) (hJz : J (positiveEndChart q ζ) = Jq ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1)
+    (hJz : J (positiveEndChart q ζ) = Jq ζ.2)
+    (hKs : Ks (positiveEndChart q ζ) = fun x ↦
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x 1)
+    (hKt : Kt (positiveEndChart q ζ) = fun x ↦
+      pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x
+        Complex.I)
     (hu : DifferentiableAt ℝ u (positiveEndChart q ζ))
     (hfl : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (J (positiveEndChart q ζ) (u (positiveEndChart q ζ)))
-      (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
-        (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) {B : ℝ}
+      (ω.perturbedFDeriv Ks Kt u (positiveEndChart q ζ) : ℝ × ℝ →ₗ[ℝ] V)) {B : ℝ}
     (hB : ‖ω.floerJetCoeff (fun w y ↦ (Jq w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
       (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) ζ‖ ≤ B) :
     ‖ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u
       (positiveEndChart q ζ)‖ ≤ 1 + B + (1 + B) * B / (2 * π) := by
+  rw [ω.floerConformalJetCoeff_congr_data _ u rfl
+    (Ks' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    hKs hKt]
+  rw [ω.perturbedFDeriv_congr u hKs hKt
+    (Ks' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)]
+    at hfl
   -- The zeroth-order part `C(w)` is at most `(1 + B) B / (2π d)` with `d = |w - c_q|`, and the
   -- weight is at least `d⁻²`.
   have hne := equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ
@@ -252,44 +262,28 @@ theorem memLp_floerConformalJetCoeff_pairOfPants (ω : SymplecticForm V)
     MemLp (ω.floerConformalJetCoeff cylindricalWeight
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) ∞
       (volume.restrict thricePuncturedSphereReal) := by
-  set S := thricePuncturedSphereReal
   have hcont : ContinuousOn (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) S :=
+      (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u) thricePuncturedSphereReal :=
     ω.continuousOn_floerConformalJetCoeff isWeight_cylindricalWeight hJ hKs hKt hu
-  -- On the compact truncation `S_T` the field is continuous, hence bounded.
-  obtain ⟨B₀, hB₀⟩ := (isCompact_preimage_truncation T).exists_bound_of_continuousOn
-    (hcont.mono (preimage_truncation_subset_thricePuncturedSphereReal T))
   -- On each end the coefficient field of the end datum is bounded, by the estimate on cylinders.
   choose Bq hBq using fun q ↦ ω.exists_forall_norm_floerJetCoeff_le
     (contDiff_uncurry_positiveEndHamiltonian (hHs q)) (hJq q) (u ∘ positiveEndChart q) Cu Cδ
   set B := ∑ q, |Bq q|
   have hBqB (q : Puncture) : Bq q ≤ B := (le_abs_self _).trans
     (Finset.single_le_sum (f := fun q' ↦ |Bq q'|) (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ q))
-  refine memLp_top_of_bound
-    (hcont.aestronglyMeasurable isOpen_thricePuncturedSphereReal.measurableSet)
-    (max B₀ (1 + B + (1 + B) * B / (2 * π))) ?_
-  filter_upwards [ae_restrict_mem isOpen_thricePuncturedSphereReal.measurableSet] with z hz
-  by_cases hzT : Complex.equivRealProdCLM.symm z ∈ truncation T
-  · exact (hB₀ z hzT).trans (le_max_left _ _)
-  refine le_max_of_le_right ?_
-  -- A point beyond the truncation is `φ'_q(ζ)` for some end `q` and `ζ = (s, t)` with `s > T`
-  -- and `t ∈ [0, 1)`, where the data are the pair-of-pants data.
-  obtain ⟨q, ζ, ⟨hζ1, hζ2⟩, rfl⟩ := mem_iUnion.1
-    ((subset_preimage_truncation_union_iUnion_image_positiveEndChart T hz).resolve_left hzT)
+  -- Beyond the height `T` of the end `q`, the data are the pair-of-pants data.
+  refine memLp_top_of_continuousOn_of_norm_positiveEndChart_le hcont (T := T)
+    (M := 1 + B + (1 + B) * B / (2 * π)) fun q ζ hζ1 hζ2 ↦ ?_
   have hζT : T ≤ ζ.1 := le_of_lt hζ1
   have hζI : ζ.2 ∈ Icc (0 : ℝ) 1 := Ico_subset_Icc_self hζ2
-  obtain ⟨hKsq, hKtq⟩ := hKend q ζ hζT
-  rw [ω.floerConformalJetCoeff_congr_data _ u rfl
-    (Ks' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt' := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    hKsq hKtq]
-  refine ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
+  have hz : positiveEndChart q ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_mem_thricePuncturedSphereReal (by linarith)
+  exact ω.norm_floerConformalJetCoeff_positiveEndChart_le hH
     (fun t ↦ (hHs q).comp (contDiff_const.prodMk contDiff_id)) (hT.trans hζT) (hJend q ζ hζT)
+    (hKend q ζ hζT).1 (hKend q ζ hζT).2
     ((hu.differentiableOn one_ne_zero).differentiableAt
-      (isOpen_thricePuncturedSphereReal.mem_nhds hz)) ?_
+      (isOpen_thricePuncturedSphereReal.mem_nhds hz)) (hfl q ζ hζT)
     ((hBq q ζ hζI (hub q ζ hζT hζI) (hδ q ζ hζT hζI)).trans (hBqB q))
-  rw [← ω.perturbedFDeriv_congr u (Ks := Ks) (Kt := Kt) hKsq hKtq]
-  exact hfl q ζ hζT
 
 end SymplecticForm
 
