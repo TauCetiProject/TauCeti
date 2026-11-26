@@ -48,7 +48,7 @@ with their unextended forms this way.
 * `TauCeti.continuousOn_sum_cpow_smul`, `TauCeti.locallyIntegrableOn_sum_cpow_smul`,
   `TauCeti.locallyIntegrableOn_cpow_smul`: finite power sums `∑_{k<n} t^{w_k} c_k` are continuous
   on `(0, ∞)`, and multiplying by `t^z` keeps local integrability there.
-* `TauCeti.integral_one_cpow_smul_cpow_smul`, `TauCeti.integral_one_cpow_smul_sum`: for
+* `TauCeti.intervalIntegral_cpow_smul_cpow_smul`, `TauCeti.intervalIntegral_cpow_smul_sum`: for
   `z + w ≠ 0`, `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c`, and the same termwise for a
   finite power sum.
 * `TauCeti.integral_Ioc_add_integral_Ioi_eq`: moving the common endpoint of
@@ -231,7 +231,7 @@ theorem integral_Ioc_add_integral_Ioi_eq {F G : ℝ → E}
   abel
 
 /-- `∫_1^R t^{z-1} t^w c dt = (R^{z+w} - 1)/(z + w) c` for `R > 0` and `z + w ≠ 0`. -/
-theorem integral_one_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z + w ≠ 0)
+theorem intervalIntegral_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z + w ≠ 0)
     {R : ℝ} (hR : 0 < R) (c : E) :
     ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ((t : ℂ) ^ w • c) =
       ((z + w)⁻¹ * ((R : ℂ) ^ (z + w) - 1)) • c := by
@@ -247,14 +247,14 @@ theorem integral_one_cpow_smul_cpow_smul [CompleteSpace E] {z w : ℂ} (hzw : z 
   rw [div_eq_inv_mul]
 
 /-- `∫_1^R t^{z-1} ∑_{k<n} t^{w_k} c_k dt = ∑_{k<n} (R^{z+w_k} - 1)/(z + w_k) c_k`. -/
-theorem integral_one_cpow_smul_sum [CompleteSpace E] {z : ℂ} {w : ℕ → ℂ} {n : ℕ}
+theorem intervalIntegral_cpow_smul_sum [CompleteSpace E] {z : ℂ} {w : ℕ → ℂ} {n : ℕ}
     (hzw : ∀ k < n, z + w k ≠ 0) {R : ℝ} (hR : 0 < R) (c : ℕ → E) :
     ∫ t in (1 : ℝ)..R, (t : ℂ) ^ (z - 1) • ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k =
       ∑ k ∈ Finset.range n, ((z + w k)⁻¹ * ((R : ℂ) ^ (z + w k) - 1)) • c k := by
   simp_rw [Finset.smul_sum]
   rw [intervalIntegral.integral_finsetSum fun k _ ↦ ?_]
   · exact Finset.sum_congr rfl fun k hk ↦
-      integral_one_cpow_smul_cpow_smul (hzw k (Finset.mem_range.mp hk)) hR (c k)
+      intervalIntegral_cpow_smul_cpow_smul (hzw k (Finset.mem_range.mp hk)) hR (c k)
   · refine ((locallyIntegrableOn_cpow_smul (locallyIntegrableOn_cpow_smul
       (locallyIntegrableOn_const (c k)) (w k)) (z - 1)).integrableOn_compact_subset
       (fun t (ht : t ∈ uIcc 1 R) ↦ ?_) isCompact_uIcc).intervalIntegrable

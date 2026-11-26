@@ -22,8 +22,8 @@ expansions `f(t) ∼ ∑ a_s t^{s+α-1}` and `h(t) ∼ ∑ b_s t^{-s-β}`
 (`Asymptotics.HasAsymptoticExpansion`) give these for every `n`, through
 `Asymptotics.HasAsymptoticExpansion.isBigO`. Assume moreover
 `h(t) = O(t^{-c})` as `t → 0+` with `c < α`, and `f(t) = O(t^{-ρ})` as `t → +∞` with `1 < ρ + β`,
-and `0 < |α - β| < 1` (DLMF takes `0 < α, β ≤ 1` and `α ≠ β`). Then for every `x > 0`, both
-integrals below converge absolutely and
+and `0 < |α - β| < 1` (DLMF takes `0 < α, β ≤ 1` and `α ≠ β`). Then for every `x > 0`, the
+remainder integral below converges absolutely and
 
 `∫₀^∞ f(t) h(xt) dt = ∑_{j<n} a_j 𝓜h(j + α) x^{-j-α} + ∑_{k<n} b_k 𝓜f(1 - k - β) x^{-k-β}
   + ∫₀^∞ f_n(t) h_n(xt) dt`,
@@ -345,9 +345,10 @@ and `h` continuous on `(0, ∞)`, with expansions of order `n`:
 `0 < |α - β| < 1`. Then for every `x > 0`,
 `∫₀^∞ f(t) h(xt) dt = ∑_{j<n} x^{-j-α} a_j 𝓜h(j + α) + ∑_{k<n} x^{-k-β} b_k 𝓜f(1 - k - β)
   + ∫₀^∞ f_n(t) h_n(xt) dt`,
-with `𝓜h`, `𝓜f` the continued Mellin transforms of `h` at `+∞` and of `f` at `0+`. Both integrals
-converge absolutely
-(`TauCeti.integrableOn_mul_comp_mul_sub_sum`). -/
+with `𝓜h`, `𝓜f` the continued Mellin transforms of `h` at `+∞` and of `f` at `0+`. The remainder
+integrand `f_n(t) h_n(xt)` is integrable on `(0, ∞)` (`TauCeti.integrableOn_mul_comp_mul_sub_sum`);
+its `n = 0` case gives the integrability of `t ↦ f(t) h(xt)` under the order-`0` bounds
+`f(t) = O(t^{α-1})` as `t → 0+` and `h(t) = O(t^{-β})` as `t → +∞`. -/
 theorem integral_mul_comp_mul_eq_sum_mellinCont_add_integral
     (hf : LocallyIntegrableOn f (Ioi 0)) (hh : ContinuousOn h (Ioi 0)) {n : ℕ}
     (hfn : (fun t ↦ f t - ∑ j ∈ Finset.range n, (t : ℂ) ^ ((j : ℂ) + α - 1) • a j) =O[𝓝[>] 0]

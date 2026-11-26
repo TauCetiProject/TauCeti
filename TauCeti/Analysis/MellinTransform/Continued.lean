@@ -343,7 +343,7 @@ theorem mellinContAtZero_eq_split [CompleteSpace E] (hf : LocallyIntegrableOn f 
     (locallyIntegrableOn_cpow_smul hf (z - 1)) h0 h1 hR
   simp only [Pi.sub_apply] at h
   simp_rw [← smul_sub, sub_sub_cancel_left, smul_neg, intervalIntegral.integral_neg,
-    integral_one_cpow_smul_sum hz hR] at h
+    intervalIntegral_cpow_smul_sum hz hR] at h
   have hS : ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z + α k) * (z + α k)⁻¹) • a k =
       ∑ k ∈ Finset.range n, ((z + α k)⁻¹ * ((R : ℂ) ^ (z + α k) - 1)) • a k +
         ∑ k ∈ Finset.range n, (z + α k)⁻¹ • a k := by
@@ -572,7 +572,7 @@ theorem mellinContAtTop_eq_split [CompleteSpace E] (hf : LocallyIntegrableOn f (
     h0 h1 hR
   simp only [Pi.sub_apply] at h
   simp_rw [← smul_sub, sub_sub_cancel] at h
-  rw [integral_one_cpow_smul_sum (w := fun k ↦ -β k)
+  rw [intervalIntegral_cpow_smul_sum (w := fun k ↦ -β k)
     (fun k hk ↦ by rw [← sub_eq_add_neg]; exact sub_ne_zero.mpr (hz k hk)) hR] at h
   simp only [← sub_eq_add_neg] at h
   have hS : ∑ k ∈ Finset.range n, ((R : ℂ) ^ (z - β k) * (z - β k)⁻¹) • b k =
