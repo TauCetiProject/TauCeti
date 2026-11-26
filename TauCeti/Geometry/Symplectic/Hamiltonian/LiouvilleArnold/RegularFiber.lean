@@ -128,6 +128,7 @@ theorem coe_quotientHamiltonianFlowStabilizerDiffeomorph_apply
 
 /-- The inverse of the diffeomorphism `(ι → ℝ) / Λ ≃ L` sends a point `y` of `L` to the class of
 any `v` with `v • x = y`. -/
+@[simp]
 theorem ofQuotientHamiltonianFlowStabilizer_quotientHamiltonianFlowStabilizerDiffeomorph_symm_apply
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hLU : connectedComponentIn (F ⁻¹' {F x}) x ⊆ U)
