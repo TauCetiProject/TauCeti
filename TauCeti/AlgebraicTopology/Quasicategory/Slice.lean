@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.RightFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.LeftRight.Slice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 
 /-!
 # Slices and coslices of quasicategories
@@ -149,11 +150,7 @@ theorem hasLiftingProperty_map_δ_one [Quasicategory C] (g : Δ[1] ⟶ C) {p : �
   -- isomorphism, through which restricting to the source factors as restricting to `Λ[1, 0]`.
   let e : Δ[0] ⟶ (Λ[1, 0] : SSet.{u}) := horn.ι 0 1 (by decide)
   have he : e ≫ Λ[1, 0].ι = stdSimplex.δ 1 := horn.ι_ι _ _ _
-  have : IsIso e := ⟨stdSimplex.isTerminalObj₀.from _, stdSimplex.isTerminalObj₀.hom_ext _ _,
-    horn.hom_ext' fun j hj ↦ by
-      obtain rfl : j = 1 := Fin.eq_one_of_ne_zero j hj
-      rw [← Category.assoc, stdSimplex.isTerminalObj₀.hom_ext (horn.ι 0 1 hj ≫ _) (𝟙 _),
-        Category.id_comp, Category.comp_id]⟩
+  have : IsIso e := horn.isIso_ι_one 0 1 (by decide)
   have hmap : map (stdSimplex.δ 1) (𝟙 C) h = map (q := Λ[1, 0].ι ≫ g) Λ[1, 0].ι (𝟙 C) (by simp) ≫
       map e (𝟙 C) (by rw [← h, ← he]; simp) := by
     -- After `map_comp`, the two sides differ only in the restriction maps, equal by `he`.
