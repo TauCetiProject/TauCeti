@@ -32,7 +32,7 @@ open Classical in
 for nontrivial characters cancel except for `d q`, which enters with a positive sign. The
 principal constant is `b` (arithmetically `1 + γ`). Multiplication by `c` and `τ` matches the
 caps off the kernel with those on the kernel. -/
-theorem expect_frobeniusRiesz_main_term {G : Type*} [Group G] [Fintype G]
+theorem expect_off_ker_mul_log_div_sub_sum_conj_mul_eq {G : Type*} [Group G] [Fintype G]
     (q : G →* ℂˣ) (hq : q * q = 1) {c τ : G} (hc : (q c : ℂ) = -1) (hτ : q τ = 1)
     (s : Finset (G →* ℂˣ)) (hs : q ∈ s) (d : (G →* ℂˣ) → ℂ) (b : ℂ)
     (a : ℝ) (w : G → ℝ) (hw : ∀ h ∈ q.ker, w h ≠ 0) :
