@@ -140,15 +140,10 @@ lemma tripleBiprod_iso_hom_map_snd (x y : T ⊡ T) :
 The isomorphism conditions below are proved with `tripleBiprod` unfolded, as in the two
 characteristic lemmas above. The ends `(tripleBiprod T x y).fst` and `x.fst ⊞ y.fst` agree only
 up to unfolding `tripleBiprod`, so `simp` cannot apply the characteristic lemmas to composites
-whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other.
-
-The bodies of these isomorphisms are exposed because their `simps!` component lemmas are proved
-by `rfl`, and the module system validates such exported lemmas only against exposed bodies. -/
+whose objects are written one way and whose morphisms, such as `biprod.braiding`, the other. -/
 
 /-- The direct sum of isomorphisms of triples `e : x ≅ x'` and `e' : y ≅ y'`, an isomorphism
 `x ⊞ y ≅ x' ⊞ y'` whose two components are the direct sums of the components of `e` and `e'`. -/
--- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
-@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
     tripleBiprod T x y ≅ tripleBiprod T x' y' :=
   mkIso (biprod.mapIso (asIso e.hom.fst) (asIso e'.hom.fst))
@@ -164,10 +159,24 @@ noncomputable def tripleBiprodMapIso {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : 
           Functor.mapBiprod_inv_map_snd_assoc, biprod.map_fst_assoc, biprod.map_snd_assoc,
           biprod.lift_fst_assoc, biprod.lift_snd_assoc])
 
+@[simp]
+lemma tripleBiprodMapIso_hom_fst {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').hom.fst = biprod.map e.hom.fst e'.hom.fst := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_hom_snd {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').hom.snd = biprod.map e.hom.snd e'.hom.snd := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_inv_fst {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').inv.fst = biprod.map (inv e.hom.fst) (inv e'.hom.fst) := (rfl)
+
+@[simp]
+lemma tripleBiprodMapIso_inv_snd {x x' y y' : T ⊡ T} (e : x ≅ x') (e' : y ≅ y') :
+    (tripleBiprodMapIso e e').inv.snd = biprod.map (inv e.hom.snd) (inv e'.hom.snd) := (rfl)
+
 /-- The direct sum of triples is commutative: `x ⊞ y ≅ y ⊞ x` through the braidings of both
 components. -/
--- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
-@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodComm (x y : T ⊡ T) :
     tripleBiprod T x y ≅ tripleBiprod T y x :=
   mkIso (biprod.braiding _ _) (biprod.braiding _ _) (by
@@ -179,10 +188,24 @@ noncomputable def tripleBiprodComm (x y : T ⊡ T) :
         biprod.map_fst, biprod.map_snd, biprod.lift_fst_assoc, biprod.lift_snd_assoc,
         ← T.map_comp_assoc, ← T.map_comp, biprod.braiding_hom, biprod.lift_fst, biprod.lift_snd])
 
+@[simp]
+lemma tripleBiprodComm_hom_fst (x y : T ⊡ T) :
+    (tripleBiprodComm x y).hom.fst = (biprod.braiding x.fst y.fst).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_hom_snd (x y : T ⊡ T) :
+    (tripleBiprodComm x y).hom.snd = (biprod.braiding x.snd y.snd).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_inv_fst (x y : T ⊡ T) :
+    (tripleBiprodComm x y).inv.fst = (biprod.braiding x.fst y.fst).inv := (rfl)
+
+@[simp]
+lemma tripleBiprodComm_inv_snd (x y : T ⊡ T) :
+    (tripleBiprodComm x y).inv.snd = (biprod.braiding x.snd y.snd).inv := (rfl)
+
 /-- The direct sum of triples is associative: `(x ⊞ y) ⊞ z ≅ x ⊞ (y ⊞ z)` through the
 associators of both components. -/
--- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
-@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
     tripleBiprod T (tripleBiprod T x y) z ≅ tripleBiprod T x (tripleBiprod T y z) :=
   mkIso (biprod.associator _ _ _) (biprod.associator _ _ _) (by
@@ -198,10 +221,24 @@ noncomputable def tripleBiprodAssoc (x y z : T ⊡ T) :
         Functor.mapBiprod_inv_map_snd, Functor.mapBiprod_inv_map_fst_assoc, biprod.map_fst,
         biprod.map_snd, biprod.map_fst_assoc, biprod.lift_fst_assoc, biprod.lift_snd_assoc])
 
+@[simp]
+lemma tripleBiprodAssoc_hom_fst (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).hom.fst = (biprod.associator x.fst y.fst z.fst).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_hom_snd (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).hom.snd = (biprod.associator x.snd y.snd z.snd).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_inv_fst (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).inv.fst = (biprod.associator x.fst y.fst z.fst).inv := (rfl)
+
+@[simp]
+lemma tripleBiprodAssoc_inv_snd (x y z : T ⊡ T) :
+    (tripleBiprodAssoc x y z).inv.snd = (biprod.associator x.snd y.snd z.snd).inv := (rfl)
+
 /-- The direct sum of the identity triples `(S, id, S)` and `(S', id, S')` is the identity triple
 `(S ⊞ S', id, S ⊞ S')`. -/
--- The body is exposed for the `rfl`-proofs of its `simps!` lemmas; see the section note.
-@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodReflIso (S S' : C) :
     tripleBiprod T ⟨S, S, Iso.refl _⟩ ⟨S', S', Iso.refl _⟩ ≅ ⟨S ⊞ S', S ⊞ S', Iso.refl _⟩ :=
   mkIso (Iso.refl _) (Iso.refl _) (by
@@ -212,6 +249,22 @@ noncomputable def tripleBiprodReflIso (S S' : C) :
         Functor.mapBiprod_hom, Functor.mapBiprod_inv_map_fst, Functor.mapBiprod_inv_map_snd,
         biprod.map_fst, biprod.map_snd, T.map_id, Category.id_comp, Category.comp_id,
         biprod.lift_fst, biprod.lift_snd])
+
+@[simp]
+lemma tripleBiprodReflIso_hom_fst (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').hom.fst = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_hom_snd (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').hom.snd = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_inv_fst (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').inv.fst = 𝟙 (S ⊞ S') := (rfl)
+
+@[simp]
+lemma tripleBiprodReflIso_inv_snd (S S' : C) :
+    (tripleBiprodReflIso (T := T) S S').inv.snd = 𝟙 (S ⊞ S') := (rfl)
 
 end RelativeK0
 

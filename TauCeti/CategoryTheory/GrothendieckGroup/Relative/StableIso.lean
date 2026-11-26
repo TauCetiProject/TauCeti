@@ -85,9 +85,6 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasBinaryBiproducts C]
 `(P, β ∘ α, S) ⊞ (Q, id, Q)` are isomorphic. The component on `P ⊞ Q` is the identity, and the
 component `Q ⊞ S ≅ S ⊞ Q` is Whitehead's isomorphism of preimages of `β` and `β⁻¹` under `T`,
 whose image under `T` is the diagonal sum of `β` and `β⁻¹`. -/
--- The body is exposed: the `simps!` component lemmas are proved by `rfl`, and the module
--- system validates such exported lemmas only against exposed bodies.
-@[expose, simps! hom_fst hom_snd inv_fst inv_snd]
 noncomputable def tripleBiprodTransIso [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
     (β : T.obj Q ≅ T.obj S) :
     tripleBiprod T ⟨P, Q, α⟩ ⟨Q, S, β⟩ ≅ tripleBiprod T ⟨P, S, α ≪≫ β⟩ ⟨Q, Q, Iso.refl _⟩ :=
@@ -105,6 +102,26 @@ noncomputable def tripleBiprodTransIso [T.Full] {P Q S : C} (α : T.obj P ≅ T.
         add_zero, zero_add, Functor.mapBiprod_inv_map_fst_assoc,
         Functor.mapBiprod_inv_map_snd_assoc, biprod.map_fst_assoc, biprod.map_snd_assoc,
         biprod.lift_fst_assoc, biprod.lift_snd])
+
+@[simp]
+lemma tripleBiprodTransIso_hom_fst [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
+    (β : T.obj Q ≅ T.obj S) : (tripleBiprodTransIso α β).hom.fst = 𝟙 (P ⊞ Q) := (rfl)
+
+@[simp]
+lemma tripleBiprodTransIso_hom_snd [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
+    (β : T.obj Q ≅ T.obj S) :
+    (tripleBiprodTransIso α β).hom.snd =
+      (Biprod.whiteheadIso (T.preimage β.hom) (T.preimage β.inv)).hom := (rfl)
+
+@[simp]
+lemma tripleBiprodTransIso_inv_fst [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
+    (β : T.obj Q ≅ T.obj S) : (tripleBiprodTransIso α β).inv.fst = 𝟙 (P ⊞ Q) := (rfl)
+
+@[simp]
+lemma tripleBiprodTransIso_inv_snd [T.Full] {P Q S : C} (α : T.obj P ≅ T.obj Q)
+    (β : T.obj Q ≅ T.obj S) :
+    (tripleBiprodTransIso α β).inv.snd =
+      (Biprod.whiteheadIso (T.preimage β.hom) (T.preimage β.inv)).inv := (rfl)
 
 end TransIso
 
