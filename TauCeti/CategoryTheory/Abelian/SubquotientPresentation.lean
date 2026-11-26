@@ -617,6 +617,29 @@ lemma mapIso_isoOfEq (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : 
     P.mapIso (P.isoOfEq P' hB hZ) = P' :=
   ext hB hZ (by rw [π_mapIso', π_isoOfEq_hom, ofLE_comp_ofLE_assoc])
 
+@[simp]
+lemma isoOfEq_refl : P.isoOfEq P rfl rfl = Iso.refl X := by
+  ext
+  rw [← cancel_epi P.π, π_isoOfEq_hom, ofLE_refl, Category.id_comp, Iso.refl_hom, Category.comp_id]
+
+/-- Composing canonical isomorphisms between presentations by the same subobjects gives the
+canonical isomorphism for the outer pair. -/
+lemma isoOfEq_trans {P' : SubquotientPresentation A Y} {P'' : SubquotientPresentation A W}
+    (hB₁ : P.B = P'.B) (hZ₁ : P.Z = P'.Z) (hB₂ : P'.B = P''.B) (hZ₂ : P'.Z = P''.Z) :
+    P.isoOfEq P' hB₁ hZ₁ ≪≫ P'.isoOfEq P'' hB₂ hZ₂ =
+      P.isoOfEq P'' (hB₁.trans hB₂) (hZ₁.trans hZ₂) := by
+  ext
+  rw [← cancel_epi P.π, Iso.trans_hom, π_isoOfEq_hom_assoc, π_isoOfEq_hom, π_isoOfEq_hom,
+    ofLE_comp_ofLE_assoc]
+
+@[simp]
+lemma isoOfEq_symm (P' : SubquotientPresentation A Y) (hB : P.B = P'.B) (hZ : P.Z = P'.Z) :
+    (P.isoOfEq P' hB hZ).symm = P'.isoOfEq P hB.symm hZ.symm := by
+  ext
+  symm
+  rw [← cancel_mono (P.isoOfEq P' hB hZ).hom, Iso.symm_hom, Iso.inv_hom_id, ← Iso.trans_hom,
+    isoOfEq_trans, isoOfEq_refl, Iso.refl_hom]
+
 end MapIso
 
 section Naturality
@@ -734,6 +757,25 @@ lemma MapsTo.mapIso (h : P.MapsTo P' φ g) {e : X ≅ Y} {e' : X' ≅ Y'} {g' : 
   refine ⟨ofLE _ _ (P.mapIso_Z e).le ≫ ψ ≫ ofLE _ _ (P'.mapIso_Z e').ge, by simp [hψ], ?_⟩
   rw [π_mapIso', π_mapIso']
   simp [ofLE_comp_ofLE_assoc, reassoc_of% hψπ, hg]
+
+/-- If `φ` maps `P₁` to `Q₁` over `g₁` and `P₂` to `Q₂` over `g₂`, where `P₁`, `P₂` and `Q₁`,
+`Q₂` present by the same subobjects, then `g₁` and `g₂` commute with the canonical
+identifications `isoOfEq`. -/
+@[reassoc]
+lemma MapsTo.isoOfEq_hom {P₁ : SubquotientPresentation A X} {P₂ : SubquotientPresentation A Y}
+    {Q₁ : SubquotientPresentation A' X'} {Q₂ : SubquotientPresentation A' Y'}
+    {g₁ : X ⟶ X'} {g₂ : Y ⟶ Y'}
+    (h₁ : P₁.MapsTo Q₁ φ g₁) (h₂ : P₂.MapsTo Q₂ φ g₂)
+    (hBP : P₁.B = P₂.B) (hZP : P₁.Z = P₂.Z) (hBQ : Q₁.B = Q₂.B) (hZQ : Q₁.Z = Q₂.Z) :
+    (P₁.isoOfEq P₂ hBP hZP).hom ≫ g₂ = g₁ ≫ (Q₁.isoOfEq Q₂ hBQ hZQ).hom := by
+  obtain ⟨ψ₁, hψ₁, hψ₁π⟩ := h₁
+  obtain ⟨ψ₂, hψ₂, hψ₂π⟩ := h₂
+  rw [← cancel_epi P₁.π, π_isoOfEq_hom_assoc, ← hψ₂π, ← Category.assoc]
+  symm
+  rw [← Category.assoc, ← hψ₁π, Category.assoc, π_isoOfEq_hom, ← Category.assoc]
+  congr 1
+  rw [← cancel_mono Q₂.Z.arrow]
+  simp [hψ₁, hψ₂]
 
 end MapsTo
 

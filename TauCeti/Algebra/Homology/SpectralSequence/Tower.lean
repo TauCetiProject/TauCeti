@@ -283,4 +283,76 @@ lemma pullback_boundariesSubobject_of_iso (e : E ≅ E') (r : ℤ) (hr : r₀ �
 
 end Naturality
 
+section Rebase
+
+/-- **Rebasing the presentations.** Composing the presentation of the page `s` of `E` with the
+presentation of the page `r ≥ s` of `E` rebased at `s` gives the presentation of the page `r` of
+`E`. -/
+lemma pagePresentation_trans_fromPage (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.pagePresentation pq s hs).trans ((E.fromPage s hs).pagePresentation pq r hsr) =
+      E.pagePresentation pq r (hs.trans hsr) := by
+  induction r, hsr using Int.leInduction with
+  | base =>
+    rw [pagePresentation_self, SubquotientPresentation.trans_refl]
+  | succ k hk ih =>
+    rw [pagePresentation_add_one _ _ k hk, SubquotientPresentation.trans_mapIso,
+      ← SubquotientPresentation.trans_assoc, ih, pagePresentation_add_one _ _ k (hs.trans hk)]
+
+/-- The preimage under the page-`s` presentation of the rebased cycles at page `r ≥ s` is
+`Z_r(pq)`. -/
+lemma preimage_fromPage_cyclesSubobject (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).cyclesSubobject pq r hsr) =
+      E.cyclesSubobject pq r (hs.trans hsr) := by
+  rw [← (E.fromPage s hs).pagePresentation_Z pq r hsr, ← E.pagePresentation_Z pq r (hs.trans hsr),
+    ← SubquotientPresentation.trans_Z (E.pagePresentation pq s hs),
+    E.pagePresentation_trans_fromPage pq s hs r hsr]
+
+/-- The preimage under the page-`s` presentation of the rebased boundaries at page `r ≥ s` is
+`B_r(pq)`. -/
+lemma preimage_fromPage_boundariesSubobject (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.pagePresentation pq s hs).preimage ((E.fromPage s hs).boundariesSubobject pq r hsr) =
+      E.boundariesSubobject pq r (hs.trans hsr) := by
+  rw [← (E.fromPage s hs).pagePresentation_B pq r hsr, ← E.pagePresentation_B pq r (hs.trans hsr),
+    ← SubquotientPresentation.trans_B (E.pagePresentation pq s hs),
+    E.pagePresentation_trans_fromPage pq s hs r hsr]
+
+/-- Seen in `(E.page s).X pq`, the rebased cycles at page `r ≥ s` are the image of `Z_r(pq)` under
+the page-`s` presentation. -/
+lemma fromPage_cyclesSubobject_eq_image (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.fromPage s hs).cyclesSubobject pq r hsr =
+      (E.pagePresentation pq s hs).image (E.cyclesSubobject pq r (hs.trans hsr)) := by
+  rw [← E.preimage_fromPage_cyclesSubobject pq s hs r hsr, SubquotientPresentation.image_preimage]
+
+/-- Seen in `(E.page s).X pq`, the rebased boundaries at page `r ≥ s` are the image of `B_r(pq)`
+under the page-`s` presentation. -/
+lemma fromPage_boundariesSubobject_eq_image (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.fromPage s hs).boundariesSubobject pq r hsr =
+      (E.pagePresentation pq s hs).image (E.boundariesSubobject pq r (hs.trans hsr)) := by
+  rw [← E.preimage_fromPage_boundariesSubobject pq s hs r hsr,
+    SubquotientPresentation.image_preimage]
+
+/-- Under the order isomorphism of the page-`s` presentation, the rebased cycles at page `r ≥ s`
+correspond to `Z_r(pq)` in `[B_s(pq), Z_s(pq)]`. -/
+lemma orderIso_fromPage_cyclesSubobject (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.pagePresentation pq s hs).orderIso ((E.fromPage s hs).cyclesSubobject pq r hsr) =
+      ⟨E.cyclesSubobject pq r (hs.trans hsr),
+        (E.pagePresentation_B pq s hs).symm ▸
+          E.boundariesSubobject_le_cyclesSubobject pq s r hs (hs.trans hsr),
+        (E.pagePresentation_Z pq s hs).symm ▸ E.cyclesSubobject_anti pq hs hsr⟩ :=
+  Subtype.ext ((SubquotientPresentation.coe_orderIso_apply _ _).trans
+    (E.preimage_fromPage_cyclesSubobject pq s hs r hsr))
+
+/-- Under the order isomorphism of the page-`s` presentation, the rebased boundaries at page `r ≥ s`
+correspond to `B_r(pq)` in `[B_s(pq), Z_s(pq)]`. -/
+lemma orderIso_fromPage_boundariesSubobject (s : ℤ) (hs : r₀ ≤ s) (r : ℤ) (hsr : s ≤ r) :
+    (E.pagePresentation pq s hs).orderIso ((E.fromPage s hs).boundariesSubobject pq r hsr) =
+      ⟨E.boundariesSubobject pq r (hs.trans hsr),
+        (E.pagePresentation_B pq s hs).symm ▸ E.boundariesSubobject_mono pq hs hsr,
+        (E.pagePresentation_Z pq s hs).symm ▸
+          E.boundariesSubobject_le_cyclesSubobject pq r s (hs.trans hsr) hs⟩ :=
+  Subtype.ext ((SubquotientPresentation.coe_orderIso_apply _ _).trans
+    (E.preimage_fromPage_boundariesSubobject pq s hs r hsr))
+
+end Rebase
+
 end CategoryTheory.SpectralSequence
