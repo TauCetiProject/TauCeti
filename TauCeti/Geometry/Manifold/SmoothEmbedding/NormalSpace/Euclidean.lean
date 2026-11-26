@@ -54,14 +54,14 @@ private theorem isTopCompl_tangentRange_normalSubspace
     let A : E →L[ℝ] V := mfderiv I 𝓘(ℝ, V) f x
     Submodule.IsTopCompl A.range (normalSubspace I f x) := by
   let K : Submodule ℝ V := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range
-  have hclosed : IsClosed (K : Set V) := f.isClosed_tangentRange x hn
+  have hclosed : IsClosed (K : Set V) := f.isImmersion.isClosed_tangentRange x hn
   let : CompleteSpace K := hclosed.completeSpace_coe
   exact K.isTopCompl_orthogonal
 
 /-- Orthogonal representatives identify the quotient normal fibre with the orthogonal
 normal subspace, as topological vector spaces. -/
 def normalSpaceOrthogonalEquiv (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
-    (x : M) (hn : n ≠ 0) : f.NormalSpace x hn ≃L[ℝ] normalSubspace I f x :=
+    (x : M) (hn : n ≠ 0) : f.isImmersion.NormalSpace x hn ≃L[ℝ] normalSubspace I f x :=
   let A : E →L[ℝ] V := mfderiv I 𝓘(ℝ, V) f x
   A.range.quotientEquivOfIsTopCompl _ (isTopCompl_tangentRange_normalSubspace f x hn)
 
@@ -70,8 +70,8 @@ def normalSpaceOrthogonalEquiv (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (x : M) (hn : n ≠ 0)
     (v : normalSubspace I f x) :
     (f.normalSpaceOrthogonalEquiv x hn).symm v =
-      f.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm v) := by
-  rw [normalClass_def]
+      f.isImmersion.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm v) := by
+  rw [Manifold.IsImmersion.normalClass_def]
   -- In Euclidean tangent coordinates the inverse is Mathlib's quotient map on the
   -- same ambient vector. The casts in the statement make this identification explicit.
   let A : E →L[ℝ] V := mfderiv I 𝓘(ℝ, V) f x
@@ -84,14 +84,14 @@ def normalSpaceOrthogonalEquiv (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
 @[simp] theorem normalSpaceOrthogonalEquiv_normalClass
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (x : M) (hn : n ≠ 0) (v : V) :
     f.normalSpaceOrthogonalEquiv x hn
-      (f.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm v)) =
+      (f.isImmersion.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm v)) =
       (normalSubspace I f x).orthogonalProjectionOnto v := by
   let K : Submodule ℝ V := (mfderiv I 𝓘(ℝ, V) f x : E →L[ℝ] V).range
-  have hclosed : IsClosed (K : Set V) := f.isClosed_tangentRange x hn
+  have hclosed : IsClosed (K : Set V) := f.isImmersion.isClosed_tangentRange x hn
   let : CompleteSpace K := hclosed.completeSpace_coe
   apply (f.normalSpaceOrthogonalEquiv x hn).symm.injective
   rw [ContinuousLinearEquiv.symm_apply_apply, normalSpaceOrthogonalEquiv_symm_apply]
-  apply (f.normalClass_eq_iff x hn _ _).mpr
+  apply (f.isImmersion.normalClass_eq_iff x hn _ _).mpr
   -- The canonical tangent-space identification and the normal quotient use the same
   -- ambient vectors; compare them in the model space where the projections are defined.
   change v - (Kᗮ).starProjection v ∈ K
@@ -103,10 +103,10 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 1 M]
 /-- The quotient normal bundle and the orthogonal normal bundle have the same topology.
 The identification sends each class to its orthogonal representative. -/
 def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) :
-    TotalSpace F (fun x => f.NormalSpace x hn) ≃ₜ
+    TotalSpace F (fun x => f.isImmersion.NormalSpace x hn) ≃ₜ
       TotalSpace F (fun x => normalSubspace I f x) where
   toFun p := ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.snd⟩
-  invFun p := ⟨p.proj, f.normalClass p.proj hn
+  invFun p := ⟨p.proj, f.isImmersion.normalClass p.proj hn
     ((NormedSpace.fromTangentSpace (f p.proj)).symm p.snd)⟩
   left_inv p := by
     rcases p with ⟨x, v⟩
@@ -154,7 +154,7 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
 /-- The normal-bundle identification takes orthogonal representatives and preserves bases. -/
 @[simp] theorem normalBundleHomeomorphOrthogonal_apply
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
-    (p : TotalSpace F (fun x => f.NormalSpace x hn)) :
+    (p : TotalSpace F (fun x => f.isImmersion.NormalSpace x hn)) :
     f.normalBundleHomeomorphOrthogonal hn p =
       ⟨p.proj, f.normalSpaceOrthogonalEquiv p.proj hn p.snd⟩ := (rfl)
 
@@ -163,7 +163,7 @@ def normalBundleHomeomorphOrthogonal (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) 
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0)
     (p : TotalSpace F (fun x => normalSubspace I f x)) :
     (f.normalBundleHomeomorphOrthogonal hn).symm p =
-      ⟨p.proj, f.normalClass p.proj hn
+      ⟨p.proj, f.isImmersion.normalClass p.proj hn
         ((NormedSpace.fromTangentSpace (f p.proj)).symm p.snd)⟩ := (rfl)
 
 /-- Taking an ambient normal class and then its orthogonal representative is the normal
@@ -181,14 +181,14 @@ projection, with the base point fixed. -/
 theorem normalBundleHomeomorphOrthogonal_zeroSection
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (hn : n ≠ 0) (x : M) :
     f.normalBundleHomeomorphOrthogonal hn
-      (zeroSection F (fun x => f.NormalSpace x hn) x) =
+      (zeroSection F (fun x => f.isImmersion.NormalSpace x hn) x) =
       zeroSection F (fun x => normalSubspace I f x) x := by
   simp only [zeroSection, normalBundleHomeomorphOrthogonal_apply, map_zero]
 
 /-- The quotient total topology restricts on each fibre to its intrinsic quotient topology. -/
 theorem isEmbedding_normalBundle_mk (f : SmoothEmbedding I 𝓘(ℝ, V) n M V)
     (hn : n ≠ 0) (x : M) :
-    IsEmbedding (@TotalSpace.mk M F (fun x => f.NormalSpace x hn) x) := by
+    IsEmbedding (@TotalSpace.mk M F (fun x => f.isImmersion.NormalSpace x hn) x) := by
   apply (f.normalBundleHomeomorphOrthogonal (F := F) hn).isEmbedding.of_comp_iff.mp
   apply (isEmbedding_totalSpace_normalSubspace (F := F) f).of_comp_iff.mp
   convert (isEmbedding_prodMkRight x).comp (Topology.IsEmbedding.subtypeVal.comp
@@ -204,7 +204,7 @@ intrinsic normal class of the coordinate second derivative. -/
 theorem coe_normalSpaceOrthogonalEquiv_sndFDeriv
     (f : SmoothEmbedding I 𝓘(ℝ, V) n M V) (x : M) (hn : n ≠ 0) (v w : TangentSpace I x) :
     (f.normalSpaceOrthogonalEquiv x hn
-      (f.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm
+      (f.isImmersion.normalClass x hn ((NormedSpace.fromTangentSpace (f x)).symm
         (fderiv ℝ (fderiv ℝ (f ∘ (extChartAt I x).symm)) (extChartAt I x x)
           (tangentSpaceCastModel I x v) (tangentSpaceCastModel I x w)))) : V) =
       manifoldSecondFundamentalForm I f x v w := by

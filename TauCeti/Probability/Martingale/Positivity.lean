@@ -56,10 +56,12 @@ private theorem Martingale.ae_terminal_pos_imp_forall_pos_of_continuous
   by_contra h
   obtain ⟨u, hu, hMu⟩ := intermediate_value_Icc ht (hc ω).continuousOn
     (mem_Icc.mpr ⟨le_of_not_gt h, hTω.le⟩)
-  have hle : τ ω ≤ T := (isClosed_singleton.hittingAfter_le_iff (hc ω)).mpr
-    ⟨u, mem_Icc.mpr ⟨bot_le, hu.2⟩, mem_singleton_iff.mpr hMu⟩
-  obtain ⟨v, hv, -, hMv⟩ := isClosed_singleton.exists_hittingAfter_eq (hc ω)
-    (ne_top_of_le_ne_top WithTop.coe_ne_top hle)
+  have hle : τ ω ≤ T :=
+    (isClosed_singleton.hittingAfter_le_iff_of_isRightContinuous (hc ω).isRightContinuous).mpr
+      ⟨u, mem_Icc.mpr ⟨bot_le, hu.2⟩, mem_singleton_iff.mpr hMu⟩
+  obtain ⟨v, hv, -, hMv⟩ :=
+    isClosed_singleton.exists_hittingAfter_eq_of_isRightContinuous (hc ω).isRightContinuous
+      (ne_top_of_le_ne_top WithTop.coe_ne_top hle)
   have hzero : stoppedValue M (fun ω ↦ min (τ ω) T) ω = 0 :=
     (stoppedValue_of_eq (u := M) (τ := fun ω ↦ min (τ ω) T) (ω := ω)
       ((min_eq_left hle).trans hv)).trans (mem_singleton_iff.mp hMv)

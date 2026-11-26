@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
@@ -67,10 +68,14 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
-  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`.
+  continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`; sandwiched compositions obey
+  `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖` (`ContinuousLinearMap.norm_adjoint_comp_comp_le`).
 
 The adjoint commutes with real scalars whenever these act on operators through `𝕜`
 (`ContinuousLinearMap.starModule_real`).
+A continuous endomorphism of a real Hilbert space lies in the Lie algebra
+`so(V) = skewAdjointLieSubalgebra (innerₗ V)` exactly when it is skew-adjoint, `A† = -A`
+(`ContinuousLinearMap.coe_mem_skewAdjointLieSubalgebra_innerₗ_iff`).
 
 ## Further results
 
@@ -299,6 +304,35 @@ theorem norm_compAdjointL_apply_le (T S : V →L[ℂ] W) : ‖compAdjointL T S�
   exact opNorm_comp_le _ _
 
 end RealAdjointBilinear
+
+/-- Operator-norm bound `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖`. -/
+theorem norm_adjoint_comp_comp_le {G H : Type*} [SeminormedAddCommGroup G] [NormedSpace 𝕜 G]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜 H] [CompleteSpace E] [CompleteSpace F]
+    (P : E →L[𝕜] F) (T : H →L[𝕜] F) (Q : G →L[𝕜] H) : ‖P† ∘L T ∘L Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖ := by
+  calc ‖P† ∘L T ∘L Q‖ ≤ ‖P†‖ * (‖T‖ * ‖Q‖) := (opNorm_comp_le _ _).trans <|
+        mul_le_mul_of_nonneg_left (opNorm_comp_le _ _) (norm_nonneg _)
+    _ = ‖P‖ * ‖T‖ * ‖Q‖ := by rw [adjoint.norm_map]; ring
+
+section SkewAdjointLieSubalgebra
+
+/-- A continuous endomorphism of a real Hilbert space lies in `so(V)`, the Lie algebra of
+endomorphisms that are skew-adjoint for the inner product, exactly when it is a skew-adjoint
+element of the star algebra `V →L[ℝ] V`, that is `A† = -A`. -/
+theorem coe_mem_skewAdjointLieSubalgebra_innerₗ_iff {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V] {A : V →L[ℝ] V} :
+    (A : Module.End ℝ V) ∈ skewAdjointLieSubalgebra (innerₗ V) ↔ A ∈ skewAdjoint (V →L[ℝ] V) := by
+  -- Membership in `skewAdjointLieSubalgebra B` is membership in `B.skewAdjointSubmodule`, and
+  -- Mathlib states its characterization only for the submodule.
+  change _ ∈ LinearMap.skewAdjointSubmodule _ ↔ _
+  rw [LinearMap.mem_skewAdjointSubmodule, skewAdjoint.mem_iff,
+    ContinuousLinearMap.star_eq_adjoint, eq_comm, ContinuousLinearMap.eq_adjoint_iff]
+  simp only [neg_apply, inner_neg_left]
+  refine ⟨fun h x y ↦ ?_, fun h x y ↦ ?_⟩
+  · have h' : inner ℝ (A x) y = -inner ℝ x (A y) := by simpa using h x y
+    linarith
+  · simp [← h x y]
+
+end SkewAdjointLieSubalgebra
 
 end ContinuousLinearMap
 

@@ -19,6 +19,8 @@ Translating by `1` gives the same statement for the reflection `X ↦ -X - 2`, w
 The subalgebra `R[X²]` consists of the polynomials `r(X²)` (`Polynomial.mem_adjoin_X_sq_iff`).
 Over a nontrivial ring, `X` itself is not a polynomial in `X²` (`Polynomial.X_notMem_adjoin_X_sq`),
 and the substitution `X ↦ -X` is an involution (`Polynomial.algEquivAevalNegX_sq`).
+The polynomials `X² - μ`, and their products, are even (`Polynomial.X_sq_sub_C_comp_neg_X`,
+`Polynomial.prod_X_sq_sub_C_comp_neg_X`).
 -/
 
 public section
@@ -51,6 +53,15 @@ theorem algEquivAevalNegX_sq : (algEquivAevalNegX : R[X] ≃ₐ[R] R[X]) ^ 2 = 1
   AlgEquiv.ext fun p ↦ by
     simp only [pow_two, AlgEquiv.mul_apply, algEquivAevalNegX_apply, ← comp_eq_aeval,
       comp_neg_X_comp_neg_X, AlgEquiv.one_apply]
+
+/-- The polynomial `X² - μ` is even. -/
+theorem X_sq_sub_C_comp_neg_X (μ : R) : (X ^ 2 - C μ : R[X]).comp (-X) = X ^ 2 - C μ := by
+  simp [sub_comp]
+
+/-- A product of polynomials `X² - μᵢ` is even. -/
+theorem prod_X_sq_sub_C_comp_neg_X {ι : Type*} (s : Finset ι) (μ : ι → R) :
+    (∏ i ∈ s, (X ^ 2 - C (μ i)) : R[X]).comp (-X) = ∏ i ∈ s, (X ^ 2 - C (μ i)) := by
+  simp [prod_comp, sub_comp]
 
 variable [IsAddTorsionFree R]
 

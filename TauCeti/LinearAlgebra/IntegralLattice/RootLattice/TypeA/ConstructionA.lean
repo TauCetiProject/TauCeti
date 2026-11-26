@@ -46,7 +46,8 @@ private noncomputable def a1SimpleZeroIsometry :
     { a1DoublingEquiv ι with
       map_app' := by
         intro x y
-        rw [ConstructionA.zeroLattice_form, ConstructionA.form_apply, pi_form, piForm_apply]
+        rw [ConstructionA.zeroLattice_form, ConstructionA.form_apply, pi_form,
+          LinearMap.BilinForm.pi_apply]
         simp only [dotProduct, Finset.sum_div]
         apply Finset.sum_congr rfl
         intro i _
