@@ -36,8 +36,6 @@ finitely generated algebra.
 * `MvPolynomial.totalDegree_eval₂_C_comp_le`: if every `f i` with `i ∈ p.vars` has total degree
   at most `D`, then `p.eval₂ (C.comp φ) f` has total degree at most `p.totalDegree * D`.
 * `MvPolynomial.totalDegree_aeval_le`: the same bound for `aeval f p`.
-* `MvPolynomial.totalDegree_C_mul_eq`: over a ring without zero divisors, multiplying by a
-  nonzero constant preserves the total degree.
 * `MvPolynomial.totalDegree_det_le`: a determinant of polynomials of total degree at most `d` has
   total degree at most `d` times the size of the matrix.
 -/
@@ -110,15 +108,6 @@ theorem totalDegree_aeval_le {σ τ R S : Type*} [CommSemiring R] [CommSemiring 
     (aeval f p).totalDegree ≤ p.totalDegree * D := by
   rw [aeval_def, IsScalarTower.algebraMap_eq R S (MvPolynomial τ S), algebraMap_eq]
   exact totalDegree_eval₂_C_comp_le p (algebraMap R S) hf
-
-/-- Over a ring without zero divisors, multiplying by a nonzero constant preserves the total
-degree: it does not change the support. -/
-theorem totalDegree_C_mul_eq {R σ : Type*} [CommSemiring R] [NoZeroDivisors R] {a : R}
-    (ha : a ≠ 0) (p : MvPolynomial σ R) : (C a * p).totalDegree = p.totalDegree := by
-  have hsupp : (C a * p).support = p.support := by
-    ext s
-    simp [coeff_C_mul, ha]
-  rw [totalDegree, hsupp, totalDegree]
 
 /-- The determinant of a square matrix of polynomials of total degree at most `d` has total
 degree at most `d` times the size of the matrix. -/

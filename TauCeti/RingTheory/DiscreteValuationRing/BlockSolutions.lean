@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Composition
 public import Mathlib.Algebra.MvPolynomial.Equiv
 public import TauCeti.RingTheory.DiscreteValuationRing.MatlisDual
+import Mathlib.Algebra.MvPolynomial.NoZeroDivisors
 import TauCeti.RingTheory.DiscreteValuationRing.MvPolynomial
 import TauCeti.RingTheory.LocalRing.MvPolynomial
 import TauCeti.Algebra.MvPolynomial.Degrees
@@ -379,7 +380,11 @@ private theorem totalDegree_le_of_eq_C_mul_det [Fintype n] [IsDomain O]
     (hG : (Matrix.of fun (ri qj : ι × n) ↦ ∑ k, X k * C (ψ (Θ k ri.1 qj.1) ri.2 qj.2)).det =
       C a * G) :
     G.totalDegree ≤ Fintype.card (ι × n) := by
-  rw [← totalDegree_C_mul_eq ha, ← hG]
+  rcases eq_or_ne G 0 with rfl | hG0
+  · simp
+  have hCG := totalDegree_mul_of_isDomain (C_ne_zero.2 ha) hG0
+  rw [totalDegree_C, zero_add] at hCG
+  rw [← hCG, ← hG]
   refine (totalDegree_det_le fun ri qj ↦ ?_).trans_eq (mul_one _)
   rw [Matrix.of_apply]
   refine (totalDegree_finsetSum _ _).trans (Finset.sup_le fun k _ ↦ ?_)
