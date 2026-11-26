@@ -8,9 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Boundary.DualOrientation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.ReversedSign
 public import TauCeti.Geometry.Manifold.Morse.Boundary.LocalCoefficient
-public import TauCeti.Geometry.Manifold.Morse.Stable.OrientationCover
+public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation.Cover
 public import TauCeti.Topology.VectorBundle.Orientation.LocalSystem
 import TauCeti.LinearAlgebra.Orientation.Basic
+import TauCeti.Topology.Path.Basic
 
 /-!
 # The Morse boundary of the opposite function with coefficients in the orientation system
@@ -68,8 +69,6 @@ duality: there `H₂(ℝP²; ℤ) = 0` while `H⁰(ℝP²; ℤ) = ℤ`.
 * `TauCeti.IsAdaptedPseudoGradient.criticalOrientation`: the orientation of `T_x M` at a critical
   point given by an orientation of the unstable manifold of `X` followed by one of the unstable
   manifold of `-X`.
-* `TauCeti.MorseOrientation.neg`: orientation data for `-X` in the negated Morse charts of `𝔬`, with
-  chosen orientations.
 
 ## Main results
 
@@ -102,85 +101,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-/-! ### Cutting a path at its midpoint -/
-
-section Halves
-
-variable {α : Type*} [TopologicalSpace α] {a b m : α}
-
-/-- The first half of a path, ending at its midpoint `m`. -/
-private noncomputable def firstHalf (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m) :
-    Path a m where
-  toFun t := γ ⟨(t : ℝ) / 2, by have := t.property.1; positivity,
-    by have := t.property.2; linarith⟩
-  continuous_toFun := γ.continuous.comp (by fun_prop)
-  source' := by
-    convert γ.source using 2
-    ext
-    simp
-  target' := by
-    convert hm using 2
-
-/-- The second half of a path, starting at its midpoint `m`. -/
-private noncomputable def secondHalf (γ : Path a b) (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m) :
-    Path m b where
-  toFun t := γ ⟨(1 + (t : ℝ)) / 2, by have := t.property.1; positivity,
-    by have := t.property.2; linarith⟩
-  continuous_toFun := γ.continuous.comp (by fun_prop)
-  source' := by
-    convert hm using 2
-    ext
-    simp
-  target' := by
-    convert γ.target using 2
-    ext
-    norm_num
-
-private theorem firstHalf_trans_secondHalf (γ : Path a b)
-    (hm : γ ⟨1 / 2, by norm_num, by norm_num⟩ = m) :
-    (firstHalf γ hm).trans (secondHalf γ hm) = γ := by
-  ext t
-  rw [Path.trans_apply]
-  split_ifs with h
-  -- Both halves are `γ` at a reparametrized time; unfold them to compare the times.
-  · change γ _ = γ t
-    congr 1
-    ext
-    simp only
-    ring
-  · change γ _ = γ t
-    congr 1
-    ext
-    simp only
-    ring
-
-end Halves
-
 namespace IsAdaptedPseudoGradient
-
-/-- The path traced by a connecting trajectory of `X` lies in the unstable manifold of its start
-before its end. -/
-private theorem connectingPath_mem_unstableSet {hX : IsAdaptedPseudoGradient f X} {p q y : M}
-    (hpu : p ∈ hX.flow.unstableSet p) (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    {s : unitInterval} (hs : (s : ℝ) < 1) :
-    Flow.connectingPath hy.1 hy.2 s ∈ hX.flow.unstableSet p := by
-  rcases eq_or_ne s 0 with rfl | hs0
-  · rwa [Path.source]
-  · rw [Flow.connectingPath_apply_of_mem_Ioo hy.1 hy.2 ⟨unitInterval.pos_iff_ne_zero.2 hs0, hs⟩,
-      Flow.apply_mem_unstableSet_iff]
-    exact hy.1
-
-/-- The path traced by a connecting trajectory of `X` lies in the stable manifold of its end after
-its start. -/
-private theorem connectingPath_mem_stableSet {hX : IsAdaptedPseudoGradient f X} {p q y : M}
-    (hqs : q ∈ hX.flow.stableSet q) (hy : y ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
-    {s : unitInterval} (hs : 0 < (s : ℝ)) :
-    Flow.connectingPath hy.1 hy.2 s ∈ hX.flow.stableSet q := by
-  rcases eq_or_ne s 1 with rfl | hs1
-  · rwa [Path.target]
-  · rw [Flow.connectingPath_apply_of_mem_Ioo hy.1 hy.2
-      ⟨hs, unitInterval.lt_one_iff_ne_one.2 hs1⟩, Flow.apply_mem_stableSet_iff]
-    exact hy.2
 
 /-! ### The orientation at a critical point -/
 
@@ -267,21 +188,19 @@ private theorem orientationTransport_connectingPath_criticalOrientation
   set γ := Flow.connectingPath hy.1 hy.2
   have hm := Flow.connectingPath_apply_half hy.1 hy.2
   -- Cut the path at `y`: the first half lies in `W^u(p)`, the second in `W^s(q)`.
-  have h₁ : ∀ t, firstHalf γ hm t ∈ hX.flow.unstableSet p := fun t ↦
-    connectingPath_mem_unstableSet hpu hy (s := ⟨(t : ℝ) / 2,
-      by have := t.property.1; positivity, by have := t.property.2; linarith⟩)
-      -- The time of `firstHalf γ hm t` on `γ` is `t / 2`.
-      (by have := t.property.2; change (t : ℝ) / 2 < 1; linarith)
-  have h₂ : ∀ t, secondHalf γ hm t ∈ hX.flow.stableSet q := fun t ↦
-    connectingPath_mem_stableSet hqs hy (s := ⟨(1 + (t : ℝ)) / 2,
-      by have := t.property.1; positivity, by have := t.property.2; linarith⟩)
-      -- The time of `secondHalf γ hm t` on `γ` is `(1 + t) / 2`.
-      (by have := t.property.1; change 0 < (1 + (t : ℝ)) / 2; linarith)
+  have h₁ : ∀ t, γ.firstHalf hm t ∈ hX.flow.unstableSet p := fun t ↦ by
+    rw [Path.firstHalf_apply]
+    exact Flow.connectingPath_mem_unstableSet hy.1 hy.2 hpu
+      (by have := t.property.2; dsimp only; linarith)
+  have h₂ : ∀ t, γ.secondHalf hm t ∈ hX.flow.stableSet q := fun t ↦ by
+    rw [Path.secondHalf_apply]
+    exact Flow.connectingPath_mem_stableSet hy.1 hy.2 hqs
+      (by have := t.property.1; dsimp only; linarith)
   have T₁ := orientationTransport_unstableFrameOrientation hφp hf hp op op'
     (finCongr ((add_comm _ _).trans hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank))
-    (firstHalf γ hm) h₁ hpu hy.1
+    (γ.firstHalf hm) h₁ hpu hy.1
   have T₂ := orientationTransport_stableNormalOrientation hφq hf hq oq' oq
-    (finCongr hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank) (secondHalf γ hm) h₂
+    (finCongr hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank) (γ.secondHalf hm) h₂
     hy.2 hqs
   -- At `q` the frame orientation along `W^s(q)` is the one along `W^u(q)` up to the exchange sign.
   have hself : Orientation.reindex ℝ _
@@ -291,7 +210,7 @@ private theorem orientationTransport_connectingPath_criticalOrientation
         hX.criticalOrientation hφq hf hq oq oq' := by
     rw [stableNormalOrientation_self hφq hf hq oq oq' hqs hqu, Orientation.reindex_units_smul,
       criticalOrientation_def, Orientation.reindex_finCongr_reindex_finCongr]
-  rw [← firstHalf_trans_secondHalf γ hm, VectorBundleOrientationCover.orientationTransport_trans,
+  rw [← γ.firstHalf_trans_secondHalf hm, VectorBundleOrientationCover.orientationTransport_trans,
     Equiv.trans_apply, criticalOrientation_def, T₁]
   -- Compare the two frame orientations at `y`, both indexed by `Fin n`.
   split_ifs with hc
@@ -349,62 +268,7 @@ theorem neg_trajectorySign_eq_ite_orientationTransport (hMS : hX.IsMorseSmale)
 
 end SignRule
 
-end IsAdaptedPseudoGradient
-
-/-! ### Orientation data for the reversed pseudo-gradient -/
-
-namespace MorseOrientation
-
-variable (𝔬 : MorseOrientation f X) (hf : IsMorse 𝓘(ℝ, E) f)
-
-/-- **Orientation data for `-X` with chosen orientations.** The negated Morse charts of `𝔬`, in
-which `-X` is linear, with the orientations `o' p` of their coordinates of negative weight, the
-unstable directions of `-X`. On an oriented manifold, choosing for `o' p` the orientation that
-completes `𝔬.orientation p` to the orientation of `M` gives the dual orientation data
-(`TauCeti.MorseOrientation.dual`); without an orientation there is no preferred choice. -/
--- The body is exposed: the type of `orientation` depends on `chart`, and stating
--- `neg_orientation` needs `(𝔬.neg hf o').chart` to reduce to the negated chart.
-@[expose]
-noncomputable def neg (o' : ∀ p : criticalPoints 𝓘(ℝ, E) (-f),
-      Orientation ℝ ({i // ((𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
-        (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-          (Set.equivOfEq criticalPoints_neg p).property)).weight i < 0} → ℝ)
-        (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p))) :
-    MorseOrientation (-f) (-X) where
-  chart p := (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (Set.equivOfEq criticalPoints_neg p).property)
-  coord_mfderiv_chart _ := (𝔬.chart _).coord_mfderiv_neg (𝔬.coord_mfderiv_chart _) _
-  orientation := o'
-
-variable (o' : ∀ p : criticalPoints 𝓘(ℝ, E) (-f),
-  Orientation ℝ ({i // ((𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (Set.equivOfEq criticalPoints_neg p).property)).weight i < 0} → ℝ)
-    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The charts of `𝔬.neg hf o'` are the negated charts of `𝔬`. -/
-@[simp]
-theorem neg_chart (p : criticalPoints 𝓘(ℝ, E) (-f)) :
-    (𝔬.neg hf o').chart p = (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
-      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-        (Set.equivOfEq criticalPoints_neg p).property) :=
-  rfl
-
-omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
-/-- The orientations of `𝔬.neg hf o'` are the chosen orientations `o'`. -/
-@[simp]
-theorem neg_orientation (p : criticalPoints 𝓘(ℝ, E) (-f)) :
-    (𝔬.neg hf o').orientation p = o' p :=
-  rfl
-
-end MorseOrientation
-
 /-! ### The Morse boundary of `-f` with coefficients in the orientation system -/
-
-namespace IsAdaptedPseudoGradient
-
 
 variable {hX : IsAdaptedPseudoGradient f X} (𝔬 : MorseOrientation f X) (hf : IsMorse 𝓘(ℝ, E) f)
   (o' : ∀ p : criticalPoints 𝓘(ℝ, E) (-f),
@@ -414,6 +278,7 @@ variable {hX : IsAdaptedPseudoGradient f X} (𝔬 : MorseOrientation f X) (hf : 
       (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
   {R : Type*} [Ring R]
 
+open scoped Classical in
 /-- **One trajectory of the opposite function with coefficients in the orientation system.** For a
 trajectory of `X` from `p` to `q` through `y`, run backwards as a trajectory of `-X`, its sign for
 `-f` times transport in `o(TM)` along it, read at the orientations of `q` and `p`, is
@@ -454,15 +319,22 @@ private theorem trajectorySign_smul_signLocalSystemFiberEquiv_transport (hMS : h
   set Θq := hX.criticalOrientation (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q))
     hf _ (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q)
   set γ := Flow.connectingPath hy.1 hy.2
-  have hsign := neg_trajectorySign_eq_ite_orientationTransport
-    (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
-    (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q)) hf _ _
-    (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p)
-    (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q) hMS hpq hy
-  have hpe : manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg p) =
-      manifoldMorseIndex 𝓘(ℝ, E) f p := rfl
-  -- The fibres over `p` and over its image in the critical points of `f` are the same, so the
-  -- steps below are made by unification rather than by rewriting.
+  -- The sign rule at the charts and orientations of `𝔬.neg hf o'`, which unfold to the negated
+  -- charts of `𝔬` and to `o'`, and at the points `p` and `q` of `M`.
+  have hsign : (hX.neg hf).trajectorySign ((𝔬.neg hf o').chart q) ((𝔬.neg hf o').chart p)
+      ((𝔬.neg hf o').orientation q) ((𝔬.neg hf o').orientation p) hqp y =
+      (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f p *
+        (if VectorBundleOrientationCover.orientationTransport (TangentSpace 𝓘(ℝ, E) : M → Type _)
+            (Fintype.card_fin _) γ Θp = Θq then 1 else -1) *
+        hX.trajectorySign (𝔬.chart (Set.equivOfEq criticalPoints_neg p))
+          (𝔬.chart (Set.equivOfEq criticalPoints_neg q))
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg p))
+          (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) hpq y :=
+    neg_trajectorySign_eq_ite_orientationTransport
+      (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg p))
+      (𝔬.coord_mfderiv_chart (Set.equivOfEq criticalPoints_neg q)) hf _ _
+      (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) (o' p)
+      (𝔬.orientation (Set.equivOfEq criticalPoints_neg q)) (o' q) hMS hpq hy
   by_cases hT : VectorBundleOrientationCover.orientationTransport
     (TangentSpace 𝓘(ℝ, E) : M → Type _) (Fintype.card_fin _) γ Θp = Θq
   · -- Transport along the trajectory keeps the orientations.
@@ -471,9 +343,7 @@ private theorem trajectorySign_smul_signLocalSystemFiberEquiv_transport (hMS : h
         rw [VectorBundleOrientationCover.orientationTransport_symm, Equiv.symm_apply_eq, hT])
       c)).trans ?_
     congr 1
-    -- `hsign` is stated at the point `y` of `M`, the goal at its image in the slice of `-X`.
-    erw [hsign]
-    rw [ite_eq_left hT, hpe, mul_one]
+    rw [hsign, ite_eq_left hT, mul_one]
   · -- Transport along the trajectory reverses the orientations.
     have hT' : VectorBundleOrientationCover.orientationTransport
         (TangentSpace 𝓘(ℝ, E) : M → Type _) (Fintype.card_fin _) γ Θp = -Θq :=
@@ -485,9 +355,7 @@ private theorem trajectorySign_smul_signLocalSystemFiberEquiv_transport (hMS : h
       c).trans (VectorBundleOrientationCover.signLocalSystemFiberEquiv_neg _ Θq c))).trans
       ((smul_neg _ _).trans ((neg_smul _ _).symm.trans ?_))
     congr 1
-    -- `hsign` is stated at the point `y` of `M`, the goal at its image in the slice of `-X`.
-    erw [hsign]
-    rw [ite_eq_right hT, hpe]
+    rw [hsign, ite_eq_right hT]
     ring
 
 /-- **The Morse boundary of `-f` with coefficients in the orientation system.** Let `o(TM)` be the

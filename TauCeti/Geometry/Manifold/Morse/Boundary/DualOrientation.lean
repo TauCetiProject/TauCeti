@@ -49,7 +49,10 @@ itself, needed to speak of an integral Morse complex and its homology, is not pr
 
 ## Main definitions
 
-* `TauCeti.MorseOrientation.dual`: orientation data for `-X` dual to orientation data for `X`.
+* `TauCeti.MorseOrientation.neg`: orientation data for `-X` in the negated Morse charts of `𝔬`, with
+  chosen orientations.
+* `TauCeti.MorseOrientation.dual`: orientation data for `-X` dual to orientation data for `X`, the
+  case of `TauCeti.MorseOrientation.neg` at the complementary orientations.
 
 ## Main results
 
@@ -86,6 +89,54 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace MorseOrientation
 
+section Neg
+
+variable (𝔬 : MorseOrientation f X) (hf : IsMorse 𝓘(ℝ, E) f)
+
+/-- **Orientation data for `-X` with chosen orientations.** The negated Morse charts of `𝔬`, in
+which `-X` is linear, with the orientations `o' p` of their coordinates of negative weight, the
+unstable directions of `-X`. On an oriented manifold, choosing for `o' p` the orientation that
+completes `𝔬.orientation p` to the orientation of `M` gives the dual orientation data
+(`TauCeti.MorseOrientation.dual`); without an orientation there is no preferred choice. -/
+-- The body is exposed: the type of `orientation` depends on `chart`, and stating
+-- `neg_orientation` needs `(𝔬.neg hf o').chart` to reduce to the negated chart.
+@[expose]
+noncomputable def neg (o' : ∀ p : criticalPoints 𝓘(ℝ, E) (-f),
+      Orientation ℝ ({i // ((𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
+        (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+          (Set.equivOfEq criticalPoints_neg p).property)).weight i < 0} → ℝ)
+        (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p))) :
+    MorseOrientation (-f) (-X) where
+  chart p := (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
+    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (Set.equivOfEq criticalPoints_neg p).property)
+  coord_mfderiv_chart _ := (𝔬.chart _).coord_mfderiv_neg (𝔬.coord_mfderiv_chart _) _
+  orientation := o'
+
+variable (o' : ∀ p : criticalPoints 𝓘(ℝ, E) (-f),
+  Orientation ℝ ({i // ((𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
+    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+      (Set.equivOfEq criticalPoints_neg p).property)).weight i < 0} → ℝ)
+    (Fin (manifoldMorseIndex 𝓘(ℝ, E) (-f) p)))
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The charts of `𝔬.neg hf o'` are the negated charts of `𝔬`. -/
+@[simp]
+theorem neg_chart (p : criticalPoints 𝓘(ℝ, E) (-f)) :
+    (𝔬.neg hf o').chart p = (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
+      (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
+        (Set.equivOfEq criticalPoints_neg p).property) :=
+  rfl
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- The orientations of `𝔬.neg hf o'` are the chosen orientations `o'`. -/
+@[simp]
+theorem neg_orientation (p : criticalPoints 𝓘(ℝ, E) (-f)) :
+    (𝔬.neg hf o').orientation p = o' p :=
+  rfl
+
+end Neg
+
 variable (𝔬 : MorseOrientation f X) (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f)
   (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (Module.finrank ℝ E)))
 
@@ -93,16 +144,12 @@ variable (𝔬 : MorseOrientation f X) (hX : IsAdaptedPseudoGradient f X) (hf : 
 and an orientation `oM` of `M`: at each critical point, the negated Morse chart of `𝔬`, in which
 `-X` is linear, and the complementary orientation of its coordinates of negative weight, so that
 the orientation of the unstable manifold of `X` followed by that of the unstable manifold of `-X`
-is the orientation of `M`. -/
+is the orientation of `M`. It is `𝔬.neg hf` at these complementary orientations. -/
 -- The body is exposed: the type of `orientation` depends on `chart`, and stating `dual_orientation`
 -- needs `(𝔬.dual hX hf oM).chart` to reduce to the negated charts of `𝔬`.
 @[expose]
-noncomputable def dual : MorseOrientation (-f) (-X) where
-  chart p := (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
-    (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
-      (Set.equivOfEq criticalPoints_neg p).property)
-  coord_mfderiv_chart _ := (𝔬.chart _).coord_mfderiv_neg (𝔬.coord_mfderiv_chart _) _
-  orientation p := hX.complementaryOrientation (𝔬.coord_mfderiv_chart _) hf
+noncomputable def dual : MorseOrientation (-f) (-X) :=
+  𝔬.neg hf fun p ↦ hX.complementaryOrientation (𝔬.coord_mfderiv_chart _) hf
     (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
       (Set.equivOfEq criticalPoints_neg p).property) oM
     (𝔬.orientation (Set.equivOfEq criticalPoints_neg p))
@@ -113,7 +160,7 @@ theorem dual_chart (p : criticalPoints 𝓘(ℝ, E) (-f)) :
     (𝔬.dual hX hf oM).chart p = (𝔬.chart (Set.equivOfEq criticalPoints_neg p)).neg
       (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
         (Set.equivOfEq criticalPoints_neg p).property) :=
-  rfl
+  𝔬.neg_chart hf _ p
 
 /-- The orientations of the dual orientation data are the complementary orientations. -/
 @[simp]
@@ -123,7 +170,7 @@ theorem dual_orientation (p : criticalPoints 𝓘(ℝ, E) (-f)) :
         (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
           (Set.equivOfEq criticalPoints_neg p).property) oM
         (𝔬.orientation (Set.equivOfEq criticalPoints_neg p)) :=
-  rfl
+  𝔬.neg_orientation hf _ p
 
 end MorseOrientation
 

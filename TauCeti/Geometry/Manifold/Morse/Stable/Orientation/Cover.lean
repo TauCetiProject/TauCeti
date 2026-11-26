@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
+public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation.Basic
 public import TauCeti.Geometry.Manifold.Orientation.Cover.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
@@ -42,10 +42,10 @@ The proof reads the tangent spaces in a single chart. Near a point of `W^u(x)` o
 linear backward flow serves all nearby points of `W^u(x)`, and in the chart `φ ∘ Φ_{-T}` the frame
 and the normal coordinates at each of these points are positive multiples of those at `x` read
 in `φ` (`TauCeti.IsAdaptedPseudoGradient.map_unstableFrameOrientation_eq`). So the frame
-orientations read as one fixed orientation of the model space through this chart, and such a
-family is continuous into the orientation double cover
-(`TauCeti.Manifold.OrientationCover.continuous_mk_of_map_mfderiv_eq`). The stable manifold is
-treated in the same way with the forward flow
+orientations read as one fixed orientation of the model space through this chart, and a family
+read in this way near every point is continuous into the orientation double cover
+(`TauCeti.Manifold.OrientationCover.continuous_mk_of_forall_exists_map_mfderiv_eq`). The stable
+manifold is treated in the same way with the forward flow
 (`TauCeti.IsAdaptedPseudoGradient.map_stableNormalOrientation_eq`).
 
 ## Main results
@@ -81,7 +81,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 namespace IsAdaptedPseudoGradient
 
 variable {hX : IsAdaptedPseudoGradient f X} {φ : MorseChart E f x}
-  (hφ : ∀ y ∈ φ.toChart.source,
+
+/-- The chart `φ ∘ Φ_t` of the `C¹` maximal atlas, defined at the points that the flow carries into
+the source of `φ` in time `t`. -/
+private theorem exists_mem_maximalAtlas_coe_eq_comp_flow (t : ℝ) :
+    ∃ c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M,
+      c.source = hX.flow t ⁻¹' φ.toChart.source ∧ (c : M → E) = φ.toChart ∘ hX.flow t :=
+  ⟨(hX.flowDiffeomorph t).toHomeomorph.transOpenPartialHomeomorph φ.toChart,
+    IsManifold.maximalAtlas_subset_of_le (by simp)
+      ((hX.flowDiffeomorph t).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
+        φ.mem_maximalAtlas),
+    by ext z; simp, by funext z; simp⟩
+
+variable (hφ : ∀ y ∈ φ.toChart.source,
     φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
 
@@ -104,38 +116,19 @@ theorem continuous_mk_unstableFrameOrientation (hf : IsMorse 𝓘(ℝ, E) f)
         Manifold.OrientationCover 𝓘(ℝ, E) M) := by
   have hxu := hX.mem_unstableSet_self hx.mem_criticalPoints
   obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- One time `T` of linear backward flow serves the points of `W^u(x)` in a neighbourhood `U`.
+  refine Manifold.OrientationCover.continuous_mk_of_forall_exists_map_mfderiv_eq _ fun y₀ ↦ ?_
+  -- One time `T` of linear backward flow serves the points of `W^u(x)` near `y₀`, and there the
+  -- frame orientations read as one orientation through the chart `φ ∘ Φ_{-T}`.
   obtain ⟨T, hT⟩ := hX.exists_eventually_mem_linearBackwardTimes hφ hf y₀.property
-  obtain ⟨U, hUT, hU, hy₀U⟩ := mem_nhds_iff.1 hT
-  -- There the frame orientations read as one orientation through the chart `φ ∘ Φ_{-T}`.
-  let c := (hX.flowDiffeomorph (-T)).toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  have hcoe : (c : M → E) = φ.toChart ∘ hX.flow (-T) := by
-    funext z
-    simp [c]
-  have hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp)
-      ((hX.flowDiffeomorph (-T)).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
-        φ.mem_maximalAtlas)
-  have hS : hX.flow.unstableSet x ∩ U ⊆ c.source := fun z hz ↦ by
-    simpa [c] using ((hX.mem_linearBackwardTimes φ).1 (hUT hz.2 hz.1)).1
-  have hG := Manifold.OrientationCover.continuous_mk_of_map_mfderiv_eq hc hS
-    (Orientation.reindex ℝ E e
+  obtain ⟨c, hc, hcs, hcoe⟩ := exists_mem_maximalAtlas_coe_eq_comp_flow (hX := hX) (φ := φ) (-T)
+  refine ⟨_, hT, c, hc, fun z hz ↦ hcs ▸ ((hX.mem_linearBackwardTimes φ).1 (hz.2 hz.1)).1,
+    Orientation.reindex ℝ E e
       (Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
-        (unstableFrameOrientation hφ hf hx op op' hxu)))
-    (fun z ↦ Orientation.reindex ℝ _ e
-      (unstableFrameOrientation hφ hf hx op op' z.property.1))
-    fun z L hL ↦ by
-      rw [Orientation.map_reindex]
-      congr 1
-      exact map_unstableFrameOrientation_eq hφ hf hx op op' hxu z.property.1
-        (hUT z.property.2 z.property.1) L (hL.trans (by rw [hcoe])) eDx heDx
-  have hV : IsOpen {y : hX.flow.unstableSet x | (y : M) ∈ U} :=
-    hU.preimage continuous_subtypeVal
-  refine ContinuousOn.continuousAt ?_ (hV.mem_nhds hy₀U)
-  rw [continuousOn_iff_continuous_domRestrict]
-  exact hG.comp (f := fun y : {y : hX.flow.unstableSet x | (y : M) ∈ U} ↦
-    (⟨y.val.val, y.val.property, y.property⟩ : (hX.flow.unstableSet x ∩ U : Set M))) (by fun_prop)
+        (unstableFrameOrientation hφ hf hx op op' hxu)), fun z hz L hL ↦ ?_⟩
+  rw [Orientation.map_reindex]
+  congr 1
+  exact map_unstableFrameOrientation_eq hφ hf hx op op' hxu z.property (hz z.property) L
+    (hL.trans (by rw [hcoe])) eDx heDx
 
 /-- **The frame orientations along the stable manifold are continuous.** Reindexed to the
 dimension of `M`, the frame orientations of `T_y M` induced by `op'` and `op` form a continuous
@@ -152,38 +145,19 @@ theorem continuous_mk_stableNormalOrientation (hf : IsMorse 𝓘(ℝ, E) f)
         Manifold.OrientationCover 𝓘(ℝ, E) M) := by
   have hxs := hX.mem_stableSet_self hx.mem_criticalPoints
   obtain ⟨eDx, heDx⟩ := isInvertible_mfderiv_chart φ.mem_maximalAtlas_one φ.mem_source
-  refine continuous_iff_continuousAt.2 fun y₀ ↦ ?_
-  -- One time `T` of linear forward flow serves the points of `W^s(x)` in a neighbourhood `U`.
+  refine Manifold.OrientationCover.continuous_mk_of_forall_exists_map_mfderiv_eq _ fun y₀ ↦ ?_
+  -- One time `T` of linear forward flow serves the points of `W^s(x)` near `y₀`, and there the
+  -- frame orientations read as one orientation through the chart `φ ∘ Φ_T`.
   obtain ⟨T, hT⟩ := hX.exists_eventually_mem_linearForwardTimes hφ y₀.property
-  obtain ⟨U, hUT, hU, hy₀U⟩ := mem_nhds_iff.1 hT
-  -- There the frame orientations read as one orientation through the chart `φ ∘ Φ_T`.
-  let c := (hX.flowDiffeomorph T).toHomeomorph.transOpenPartialHomeomorph φ.toChart
-  have hcoe : (c : M → E) = φ.toChart ∘ hX.flow T := by
-    funext z
-    simp [c]
-  have hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) 1 M :=
-    IsManifold.maximalAtlas_subset_of_le (by simp)
-      ((hX.flowDiffeomorph T).transOpenPartialHomeomorph_mem_maximalAtlas le_rfl
-        φ.mem_maximalAtlas)
-  have hS : hX.flow.stableSet x ∩ U ⊆ c.source := fun z hz ↦ by
-    simpa [c] using ((hX.mem_linearForwardTimes φ).1 (hUT hz.2 hz.1)).1
-  have hG := Manifold.OrientationCover.continuous_mk_of_map_mfderiv_eq hc hS
-    (Orientation.reindex ℝ E e
+  obtain ⟨c, hc, hcs, hcoe⟩ := exists_mem_maximalAtlas_coe_eq_comp_flow (hX := hX) (φ := φ) T
+  refine ⟨_, hT, c, hc, fun z hz ↦ hcs ▸ ((hX.mem_linearForwardTimes φ).1 (hz.2 hz.1)).1,
+    Orientation.reindex ℝ E e
       (Orientation.map _ (eDx.toLinearEquiv : TangentSpace 𝓘(ℝ, E) x ≃ₗ[ℝ] E)
-        (stableNormalOrientation hφ hf hx op' op hxs)))
-    (fun z ↦ Orientation.reindex ℝ _ e
-      (stableNormalOrientation hφ hf hx op' op z.property.1))
-    fun z L hL ↦ by
-      rw [Orientation.map_reindex]
-      congr 1
-      exact map_stableNormalOrientation_eq hφ hf hx op' op hxs z.property.1
-        (hUT z.property.2 z.property.1) L (hL.trans (by rw [hcoe])) eDx heDx
-  have hV : IsOpen {y : hX.flow.stableSet x | (y : M) ∈ U} :=
-    hU.preimage continuous_subtypeVal
-  refine ContinuousOn.continuousAt ?_ (hV.mem_nhds hy₀U)
-  rw [continuousOn_iff_continuous_domRestrict]
-  exact hG.comp (f := fun y : {y : hX.flow.stableSet x | (y : M) ∈ U} ↦
-    (⟨y.val.val, y.val.property, y.property⟩ : (hX.flow.stableSet x ∩ U : Set M))) (by fun_prop)
+        (stableNormalOrientation hφ hf hx op' op hxs)), fun z hz L hL ↦ ?_⟩
+  rw [Orientation.map_reindex]
+  congr 1
+  exact map_stableNormalOrientation_eq hφ hf hx op' op hxs z.property (hz z.property) L
+    (hL.trans (by rw [hcoe])) eDx heDx
 
 /-! ### Transport along paths in the stable and unstable manifolds -/
 

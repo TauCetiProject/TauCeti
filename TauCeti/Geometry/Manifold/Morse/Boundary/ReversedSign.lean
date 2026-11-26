@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Sign
-public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
+public import TauCeti.Geometry.Manifold.Morse.Stable.Orientation.Basic
 public import TauCeti.LinearAlgebra.Orientation.Exact.Pair
 import TauCeti.LinearAlgebra.Ray
 
