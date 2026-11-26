@@ -200,17 +200,6 @@ theorem isBigO_coordinateScalarCurvature_sub_linearizedScalarCurvature (ht : 0 <
     ring_nf
   rw [h, norm_mul, Real.norm_two, norm_norm]
 
-/-- `|x|^(-s)` is integrable at infinity on `ℝⁿ` when `s > n`. -/
-private lemma integrableAtFilter_norm_rpow {s : ℝ} (hs : (n : ℝ) < s) :
-    IntegrableAtFilter (fun x : EuclideanSpace ℝ (Fin n) ↦ ‖x‖ ^ (-s)) (cobounded _) := by
-  refine ⟨(closedBall 0 1)ᶜ, (hasBasis_cobounded_compl_closedBall 0).mem_of_mem trivial, ?_⟩
-  rcases n.eq_zero_or_pos with rfl | hn
-  · -- In dimension zero, the exterior of the unit ball is empty.
-    exact integrableOn_empty.mono_set fun x hx ↦ hx (by simp [Subsingleton.elim x 0])
-  · have : Nontrivial (EuclideanSpace ℝ (Fin n)) :=
-      Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hn)
-    exact (integrableOn_norm_rpow_compl_closedBall_iff one_pos).2 (by simpa using hs)
-
 /-- **The quadratic remainder is integrable at infinity.** If `g_ij - δ_ij = O₂(|x|^(-t))` with
 `t > 0` and `2t + 2 > n`, then the coordinate scalar curvature minus the linearized scalar
 curvature is integrable on the complement of a large ball. -/
@@ -221,11 +210,8 @@ theorem integrableAtFilter_coordinateScalarCurvature_sub_linearizedScalarCurvatu
       (cobounded _) := by
   -- Near infinity the coefficients are `C²` with invertible Gram matrix, so the coordinate scalar
   -- curvature is continuous there.
-  have hdet : ∀ᶠ x in cobounded _, (Matrix.of fun i j ↦ g x i j).det ≠ 0 := by
-    have := ((continuous_id.matrix_det).tendsto _).comp
-      (tendsto_matrix_of_of_isSymbolAtInfinity ht hg)
-    simp only [id_eq, Matrix.det_one] at this
-    exact this.eventually_ne one_ne_zero
+  have hdet : ∀ᶠ x in cobounded _, (Matrix.of fun i j ↦ g x i j).det ≠ 0 :=
+    Manifold.eventually_det_ne_zero_of_tendsto_one (tendsto_matrix_of_of_isSymbolAtInfinity ht hg)
   obtain ⟨R, -, hR⟩ :=
     (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1
       ((eventually_contDiffAt_of_isSymbolAtInfinity hg).and hdet)
@@ -236,8 +222,8 @@ theorem integrableAtFilter_coordinateScalarCurvature_sub_linearizedScalarCurvatu
         (hR hx).1 (hR hx).2).continuousWithinAt) measurableSet_closedBall.compl).sub
         (measurable_linearizedScalarCurvature g).aestronglyMeasurable⟩
   have hO := isBigO_coordinateScalarCurvature_sub_linearizedScalarCurvature ht hg
-  have hint := integrableAtFilter_norm_rpow (n := n) htn
-  rw [show -2 * t - 2 = -(2 * t + 2) by ring] at hO
+  have hint := integrableAtFilter_norm_rpow_cobounded (E := EuclideanSpace ℝ (Fin n))
+    (mu := volume) (s := -2 * t - 2) (by rw [finrank_euclideanSpace_fin]; linarith)
   rw [cobounded_eq_cocompact] at hO hm hint ⊢
   exact hO.integrableAtFilter hm hint
 

@@ -54,8 +54,9 @@ This is the input for the openness of positive scalar curvature under `C²` pert
 uniform scalar-curvature bounds over compact families of metrics.
 
 Near the Euclidean jet `(1, 0, 0)` the scalar curvature is linear up to quadratic terms: along any
-filter on which `g - 1 = O(a)`, `∂g = O(b)` and `∂²g = O(c)` with `g → 1`, the scalar curvature
-differs from its linearization `Σ_j Σ_i (∂_j ∂_i g_ij - ∂_j ∂_j g_ii)` by `O(|a| |c| + |b|²)`
+filter on which `g - 1 = O(a)`, `∂g = O(b)` and `∂²g = O(c)` with `g → 1` and the second
+derivatives symmetric in the two differentiation indices, the scalar curvature differs from its
+linearization `Σ_j Σ_i (∂_j ∂_i g_ij - ∂_j ∂_j g_ii)` by `O(|a| |c| + |b|²)`
 (`TauCeti.Manifold.isBigO_scalarCurvatureOfJet_sub`). For asymptotically Euclidean metrics this
 is the estimate by which integrability of the scalar curvature controls the ADM flux.
 
@@ -279,6 +280,13 @@ private lemma isBigO_mul_of_right (hf : f =O[L] b) (hh : h =O[L] b) :
     rw [norm_mul, ← sq]
     exact (le_add_of_nonneg_left (by positivity)).trans (Real.le_norm_self _)
 
+/-- Gram matrices tending to the identity are eventually invertible. -/
+theorem eventually_det_ne_zero_of_tendsto_one (hg : Tendsto g L (𝓝 1)) :
+    ∀ᶠ x in L, (g x).det ≠ 0 := by
+  have := ((continuous_id.matrix_det).tendsto (1 : Matrix ι ι ℝ)).comp hg
+  simp only [id_eq, Matrix.det_one] at this
+  exact this.eventually_ne one_ne_zero
+
 /-- Gram matrices tending to the identity have bounded inverses. -/
 private lemma isBigO_inv_apply (hg : Tendsto g L (𝓝 1)) (k l : ι) :
     (fun x ↦ (g x)⁻¹ k l) =O[L] fun _ ↦ (1 : ℝ) := by
@@ -291,10 +299,7 @@ private lemma isBigO_inv_apply (hg : Tendsto g L (𝓝 1)) (k l : ι) :
 private lemma isBigO_inv_sub_one_apply (hg : Tendsto g L (𝓝 1))
     (hga : ∀ i j, (fun x ↦ (g x - 1) i j) =O[L] a) (k l : ι) :
     (fun x ↦ ((g x)⁻¹ - 1) k l) =O[L] a := by
-  have hdet : ∀ᶠ x in L, (g x).det ≠ 0 := by
-    have := ((continuous_id.matrix_det).tendsto (1 : Matrix ι ι ℝ)).comp hg
-    simp only [id_eq, Matrix.det_one] at this
-    exact this.eventually_ne one_ne_zero
+  have hdet := eventually_det_ne_zero_of_tendsto_one hg
   have hsum : (fun x ↦ -∑ m, (g x)⁻¹ k m * (g x - 1) m l) =O[L] a :=
     (IsBigO.fun_sum fun m _ ↦ isBigO_one_mul (isBigO_inv_apply hg k m) (hga m l)).neg_left
   refine hsum.congr' ?_ .rfl
