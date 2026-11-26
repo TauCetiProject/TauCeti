@@ -8,8 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Order.UpperLowerSetTopology
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
+import TauCeti.Data.Set.Restrict
 import TauCeti.Geometry.Manifold.Boundary.Charts
 import TauCeti.Geometry.Manifold.Instances.Icc.Boundary
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Cell-like stratifications
@@ -178,19 +180,11 @@ of the same dimension in the subspace `Z`. -/
 theorem IsManifoldBoundaryPair.preimage_subtypeVal {Y B Z : Set X} {n : ℤ}
     (h : IsManifoldBoundaryPair Y B n) (hYZ : Y ⊆ Z) :
     IsManifoldBoundaryPair (Subtype.val ⁻¹' Y : Set Z) (Subtype.val ⁻¹' B) n := by
-  -- The subspace `Y` of `X` and the subspace `Y` of `Z` are homeomorphic.
-  let φ : (Subtype.val ⁻¹' Y : Set Z) ≃ₜ Y :=
-    { toFun y := ⟨y.val.val, y.property⟩
-      invFun y := ⟨⟨y.val, hYZ y.property⟩, y.property⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      continuous_toFun := (continuous_subtypeVal.comp continuous_subtypeVal).subtype_mk _
-      continuous_invFun := (continuous_subtypeVal.subtype_mk _).subtype_mk _ }
+  -- Read the charts of the subspace `Y` of `X` on the subspace `Y` of `Z`.
+  let φ := Homeomorph.Set.preimageVal hYZ
   refine ⟨fun y hy ↦ h.1 hy, fun y hy ↦ ?_⟩
-  rcases h.2 y.val hy with ⟨m, hm, c, hyc, hcB⟩ | ⟨m, hm, c, hyc, hcB⟩
-  · exact Or.inl ⟨m, hm, φ.toOpenPartialHomeomorph.trans c, by simpa [φ] using hyc,
-      fun z hz ↦ hcB (φ z) (by simpa using hz)⟩
-  · exact Or.inr ⟨m, hm, φ.toOpenPartialHomeomorph.trans c, by simpa [φ] using hyc,
+  rcases h.2 y.val hy with ⟨m, hm, c, hyc, hcB⟩ | ⟨m, hm, c, hyc, hcB⟩ <;> [left; right] <;>
+    exact ⟨m, hm, φ.toOpenPartialHomeomorph.trans c, by simpa [φ] using hyc,
       fun z hz ↦ hcB (φ z) (by simpa using hz)⟩
 
 /-- The empty set is a manifold with empty boundary in every dimension. -/
@@ -240,7 +234,7 @@ private theorem subtypeFst_trans_prod_refl_apply {y : P} (hy : y.val ∈ e.sourc
     (e.subtypeFst hP ⟨x, hxP⟩ hxe).trans (c.prod (OpenPartialHomeomorph.refl G)) y =
       (c ⟨(e y).1, (hP _ hy).1 y.property⟩, (e y).2) := by
   rw [OpenPartialHomeomorph.trans_apply, OpenPartialHomeomorph.subtypeFst_apply _ _ _ _ hy]
-  rfl
+  simp only [OpenPartialHomeomorph.prod_apply, OpenPartialHomeomorph.refl_apply, id_eq]
 
 end SubtypeFstTrans
 
@@ -354,22 +348,6 @@ end IsCellLike
 section RestrictPreimage
 
 variable {σ : X → S} {L : Set S}
-
-omit [TopologicalSpace X] in
-/-- For an element `t` of a set `L`, the points of `σ⁻¹(L)` whose image in `L` is at most `t` are
-the points of `σ⁻¹(Iic t)`. -/
-theorem _root_.Set.preimage_restrictPreimage_Iic (t : L) :
-    L.restrictPreimage σ ⁻¹' Iic t = Subtype.val ⁻¹' (σ ⁻¹' Iic (t : S)) := by
-  ext x
-  simp [← Subtype.coe_le_coe]
-
-omit [TopologicalSpace X] in
-/-- For an element `t` of a set `L`, the points of `σ⁻¹(L)` whose image in `L` is below `t` are
-the points of `σ⁻¹(Iio t)`. -/
-theorem _root_.Set.preimage_restrictPreimage_Iio (t : L) :
-    L.restrictPreimage σ ⁻¹' Iio t = Subtype.val ⁻¹' (σ ⁻¹' Iio (t : S)) := by
-  ext x
-  simp [← Subtype.coe_lt_coe]
 
 /-- A stratification restricts to a stratification of the preimage `σ⁻¹(L)` of a set `L` by `L`. -/
 theorem IsStratification.restrictPreimage (hσ : IsStratification σ) (L : Set S) :

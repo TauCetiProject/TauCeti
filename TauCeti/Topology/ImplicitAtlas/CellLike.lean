@@ -58,8 +58,6 @@ constrains the thickenings outside their regular loci.
   (`TauCeti.IsManifoldBoundaryPair.exists_openPartialHomeomorph_prod`). It is cell-like stratified
   by `(S^≤s, S^<s)`
   (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.restrictCellLikeStratification`).
-  The local consequences of these models, the stratified virtual complex and the normal lines of
-  the strata are built on these restrictions.
 * **The interval.** The interval atlas `[0, 1]` stratified by `{0} < (0, 1) > {1}`, with
   dimensions `0`, `1`, `0` and the two endpoints as boundary faces, is a cell-like stratified atlas
   (`TauCeti.ImplicitAtlasWithBoundary.unitIntervalCellLikeStratification`, in

@@ -116,6 +116,11 @@ private def zeroSetInclusion {I J : Finset A}
     (x : kuranishiZeroSet (subKuranishi 𝒜 C) I J) : kuranishiZeroSet 𝒜.kuranishi I J :=
   ⟨x.val, mem_kuranishiZeroSet_subKuranishi.1 x.property⟩
 
+@[simp]
+private theorem coe_zeroSetInclusion {I J : Finset A}
+    (x : kuranishiZeroSet (subKuranishi 𝒜 C) I J) : (zeroSetInclusion x : T J) = x.val :=
+  (rfl)
+
 /-- The lift of a point of `Z_IJ` lying in `C_J` to `Z_IJ ∩ C_J`. -/
 private def zeroSetLift {I J : Finset A} (z : kuranishiZeroSet 𝒜.kuranishi I J) (hz : z.val ∈ C J) :
     kuranishiZeroSet (subKuranishi 𝒜 C) I J :=
@@ -130,7 +135,7 @@ private theorem isClosedEmbedding_zeroSetInclusion (hC : ∀ I, IsClosed (C I)) 
     IsClosedEmbedding (zeroSetInclusion (𝒜 := 𝒜) (C := C) (I := I) (J := J)) := by
   have hcomp : Subtype.val ∘ zeroSetInclusion (𝒜 := 𝒜) (C := C) (I := I) (J := J) =
       fun x ↦ (x.val : T J) :=
-    rfl
+    funext coe_zeroSetInclusion
   refine ⟨⟨IsInducing.subtypeVal.of_comp_iff.1 ?_,
     Function.Injective.of_comp (f := Subtype.val) ?_⟩, ?_⟩
   · rw [hcomp]
@@ -222,8 +227,7 @@ noncomputable def restrictThickening (hC : 𝒜.IsClosedSubthickening C) (Y : Se
     rw [Subtype.ext_iff]
     refine (𝒜.footprintMap_eq_footprintMap_iff h (zeroSetInclusion x)
       (zeroSetInclusion y)).trans ?_
-    simp only [Subtype.ext_iff, coe_restrictAct_apply]
-    rfl
+    simp only [Subtype.ext_iff, coe_restrictAct_apply, coe_zeroSetInclusion]
   mem_regLocus_of_footprintMap_mem _ _ h x hx :=
     𝒜.mem_regLocus_of_footprintMap_mem h (zeroSetInclusion x) hx
   eq_one_of_act_eq _ _ h x hx g hg hgx :=
