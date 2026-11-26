@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 
+import TauCeti.CategoryTheory.MorphismProperty.Limits
+
 /-!
 # Quasi-compact morphisms
 
@@ -26,7 +28,8 @@ quasi-separated structure map is quasi-compact
 Quasi-compactness descends along surjections, and quasi-separatedness along quasi-compact
 surjections: if `f ≫ g` has the property and `f` is surjective (and quasi-compact), then so does
 `g` (`AlgebraicGeometry.QuasiCompact.of_comp_surjective`,
-`AlgebraicGeometry.QuasiSeparated.of_comp_surjective`). Mathlib's `QuasiCompact.of_comp` and
+`AlgebraicGeometry.QuasiSeparated.of_comp_surjective`), recorded as instances of Mathlib's
+`MorphismProperty.HasOfPrecompProperty`. Mathlib's `QuasiCompact.of_comp` and
 `QuasiSeparated.of_comp` are the cancellations on the other side.
 
 Quasi-compactness and quasi-separatedness are local on the target, as instances that instance
@@ -117,15 +120,25 @@ quasi-separated and `f` is quasi-compact and surjective, then `g` is quasi-separ
 `f ≫ Δ_g` is the diagonal of `f ≫ g` followed by the quasi-compact map `f ×_Z f`, so it is
 quasi-compact, and quasi-compactness descends along the surjection `f`. -/
 theorem QuasiSeparated.of_comp_surjective [QuasiSeparated (f ≫ g)] [QuasiCompact f]
-    [Surjective f] : QuasiSeparated g := by
-  have : QuasiCompact (pullback.map (f ≫ g) (f ≫ g) g g f f (𝟙 Z) (by simp) (by simp)) :=
-    MorphismProperty.pullbackMap (P := @QuasiCompact) ‹_› ‹_› rfl rfl
-  have : QuasiCompact (f ≫ pullback.diagonal g) := by
-    rw [pullback.comp_diagonal]
-    infer_instance
-  exact ⟨.of_comp_surjective f (pullback.diagonal g)⟩
+    [Surjective f] : QuasiSeparated g :=
+  have : QuasiCompact (f ≫ pullback.diagonal g) :=
+    MorphismProperty.comp_diagonal f g ‹_› inferInstance
+  ⟨.of_comp_surjective f (pullback.diagonal g)⟩
 
 end OfCompSurjective
+
+/-- Quasi-compactness descends along surjections (`QuasiCompact.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @QuasiCompact @Surjective.{u} where
+  of_precomp f g _ (_ : QuasiCompact (f ≫ g)) := .of_comp_surjective f g
+
+/-- Quasi-separatedness descends along quasi-compact surjections
+(`QuasiSeparated.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @QuasiSeparated
+    (@QuasiCompact.{u} ⊓ @Surjective) where
+  of_precomp f g hf (_ : QuasiSeparated (f ≫ g)) :=
+    have : QuasiCompact f := hf.1
+    have : Surjective f := hf.2
+    .of_comp_surjective f g
 
 /-- The affine target property of quasi-compact morphisms: the source is quasi-compact. -/
 abbrev compactSpaceAffineTarget : AffineTargetMorphismProperty.{u} :=

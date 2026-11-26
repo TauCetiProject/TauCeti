@@ -19,7 +19,8 @@ integral, universally injective, surjective morphism.
 This criterion applies to Frobenius without imposing finiteness or reducedness assumptions. It
 also shows that being a universal homeomorphism descends along surjections: if `f ≫ g` is a
 universal homeomorphism and `f` is surjective, so is `g`
-(`AlgebraicGeometry.IsUniversalHomeomorphism.of_comp_surjective`).
+(`TauCeti.AlgebraicGeometry.IsUniversalHomeomorphism.of_comp_surjective`). This, and the same
+descent for universal closedness, are also instances of `MorphismProperty.HasOfPrecompProperty`.
 
 For a ring map `B → R` with `Spec R → Spec B` a universal homeomorphism and any `B`-algebra `C`,
 contraction along `C → R ⊗[B] C` is a homeomorphism of prime spectra
@@ -234,6 +235,16 @@ theorem IsUniversalHomeomorphism.of_comp_surjective (f : X ⟶ Y) (g : Y ⟶ Z)
     [IsUniversalHomeomorphism (f ≫ g)] [Surjective f] : IsUniversalHomeomorphism g :=
   (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective g).mpr
     ⟨.of_comp_surjective f g, .of_comp_surjective f g, .of_comp f g⟩
+
+/-- Universal closedness descends along surjections (Mathlib's
+`UniversallyClosed.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @UniversallyClosed @Surjective.{u} where
+  of_precomp f g _ (_ : UniversallyClosed (f ≫ g)) := .of_comp_surjective f g
+
+/-- Being a universal homeomorphism descends along surjections
+(`IsUniversalHomeomorphism.of_comp_surjective`). -/
+instance : MorphismProperty.HasOfPrecompProperty @IsUniversalHomeomorphism @Surjective.{u} where
+  of_precomp f g _ (_ : IsUniversalHomeomorphism (f ≫ g)) := .of_comp_surjective f g
 
 /-- Every isomorphism of schemes is a universal homeomorphism. -/
 instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
