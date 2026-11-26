@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Embedding
+public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Comodule
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Embedding
 public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Lift
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.FunctorOfPoints
@@ -18,11 +19,11 @@ import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
 
 Let `H` be the coordinate Hopf algebra of a commutative affine group of finite type over a field
 `k` of characteristic zero, so that `H` is commutative and cocommutative. If the group is
-unipotent, in the comodule sense that every nonzero finite-dimensional representation has a
-nonzero fixed vector, then `H` is the symmetric algebra on its primitive elements: the bialgebra
-map `SymmetricAlgebra k P → H` extending the inclusion of the primitive elements `P` is an
-isomorphism. Geometrically, the group is the vector group of the dual of `P`, and the primitive
-elements are its additive characters, the homomorphisms to `𝔾ₐ`.
+unipotent, in the comodule sense `TauCeti.unipotentCommHopfAlgProperty` that every nonzero
+finite-dimensional representation has a nonzero fixed vector, then `H` is the symmetric algebra on
+its primitive elements: the bialgebra map `SymmetricAlgebra k P → H` extending the inclusion of the
+primitive elements `P` is an isomorphism. Geometrically, the group is the vector group of the dual
+of `P`, and the primitive elements are its additive characters, the homomorphisms to `𝔾ₐ`.
 
 The proof uses the finite logarithm of a unipotent coefficient matrix. A faithful representation
 of the unipotent group has, in a suitable basis, an upper-unitriangular coefficient matrix `X`
@@ -124,12 +125,12 @@ private theorem adjoin_primitive_eq_top_of_isUpperUnitriangular {M : Type v} [Ad
   exact (g y).property
 
 /-- **A commutative unipotent group over a field of characteristic zero is a vector group.** If
-`H` is commutative, cocommutative and of finite type over a field of characteristic zero, and every
-nonzero finite-dimensional comodule has a nonzero fixed vector, then the symmetric algebra on the
-primitive elements of `H` maps bijectively onto `H`. -/
+`H` is commutative, cocommutative and of finite type over a field of characteristic zero, and
+unipotent (`unipotentCommHopfAlgProperty`: every nonzero finite-dimensional comodule has a nonzero
+fixed vector), then the symmetric algebra on the primitive elements of `H` maps bijectively onto
+`H`. -/
 theorem liftBialgHom_primitive_bijective [Algebra.FiniteType k H]
-    (hfixed : ∀ (V : Type v) [AddCommGroup V] [Module k V] [Comodule k H V]
-      [FiniteDimensional k V] [Nontrivial V], Comodule.HasNonzeroFixedVector k H V) :
+    (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H)) :
     Function.Bijective (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
       fun p ↦ p.property) := by
   refine ⟨SymmetricAlgebra.liftBialgHom_injective _ Subtype.val_injective, ?_⟩
@@ -137,8 +138,7 @@ theorem liftBialgHom_primitive_bijective [Algebra.FiniteType k H]
   obtain ⟨M, m, c, hc⟩ := Comodule.exists_coordinateBialgHom_surjective (k := k) (H := H)
   let : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
   let : Module.Finite k M := Module.Finite.of_basis c
-  obtain ⟨n, b, hb⟩ :=
-    Comodule.exists_basis_coefficientMatrix_isUpperUnitriangular_of_fixed_vectors (M := M) hfixed
+  obtain ⟨n, b, hb⟩ := hH.exists_basis_coefficientMatrix_isUpperUnitriangular (M := M)
   have hsurj := (Comodule.coordinateBialgHom_surjective_iff_of_bases c b).mp hc
   -- Its primitive logarithm generates `H`, and the range of the lift contains the primitives.
   suffices h : (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
@@ -150,34 +150,31 @@ theorem liftBialgHom_primitive_bijective [Algebra.FiniteType k H]
   exact ⟨SymmetricAlgebra.ι k _ ⟨p, hp⟩, SymmetricAlgebra.liftBialgHom_ι _ _ _⟩
 
 /-- **The coordinate Hopf algebra of a commutative unipotent group over a field of characteristic
-zero is the symmetric algebra on its primitive elements.** Here unipotence means that every
-nonzero finite-dimensional comodule has a nonzero fixed vector; the isomorphism extends the
-inclusion of the primitive elements. -/
+zero is the symmetric algebra on its primitive elements.** Here unipotence is
+`unipotentCommHopfAlgProperty`: every nonzero finite-dimensional comodule has a nonzero fixed
+vector. The isomorphism extends the inclusion of the primitive elements. -/
 noncomputable def symmetricAlgebraPrimitiveBialgEquiv [Algebra.FiniteType k H]
-    (hfixed : ∀ (V : Type v) [AddCommGroup V] [Module k V] [Comodule k H V]
-      [FiniteDimensional k V] [Nontrivial V], Comodule.HasNonzeroFixedVector k H V) :
+    (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H)) :
     SymmetricAlgebra k (Coalgebra.skewPrimitive k (1 : H) 1) ≃ₐc[k] H :=
-  BialgEquiv.ofBijective _ (liftBialgHom_primitive_bijective hfixed)
+  BialgEquiv.ofBijective _ (liftBialgHom_primitive_bijective hH)
 
 /-- The isomorphism `symmetricAlgebraPrimitiveBialgEquiv` sends each generator to the primitive
 element it names. -/
 @[simp]
 theorem symmetricAlgebraPrimitiveBialgEquiv_ι [Algebra.FiniteType k H]
-    (hfixed : ∀ (V : Type v) [AddCommGroup V] [Module k V] [Comodule k H V]
-      [FiniteDimensional k V] [Nontrivial V], Comodule.HasNonzeroFixedVector k H V)
+    (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H))
     (p : Coalgebra.skewPrimitive k (1 : H) 1) :
-    symmetricAlgebraPrimitiveBialgEquiv hfixed (SymmetricAlgebra.ι k _ p) = p :=
+    symmetricAlgebraPrimitiveBialgEquiv hH (SymmetricAlgebra.ι k _ p) = p :=
   SymmetricAlgebra.liftBialgHom_ι _ _ p
 
 /-- The inverse of `symmetricAlgebraPrimitiveBialgEquiv` sends a primitive element to the
 corresponding generator. -/
 @[simp]
 theorem symmetricAlgebraPrimitiveBialgEquiv_symm_apply_coe [Algebra.FiniteType k H]
-    (hfixed : ∀ (V : Type v) [AddCommGroup V] [Module k V] [Comodule k H V]
-      [FiniteDimensional k V] [Nontrivial V], Comodule.HasNonzeroFixedVector k H V)
+    (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H))
     (p : Coalgebra.skewPrimitive k (1 : H) 1) :
-    (symmetricAlgebraPrimitiveBialgEquiv hfixed).symm p = SymmetricAlgebra.ι k _ p := by
-  rw [← symmetricAlgebraPrimitiveBialgEquiv_ι hfixed p, BialgEquiv.symm_apply_apply]
+    (symmetricAlgebraPrimitiveBialgEquiv hH).symm p = SymmetricAlgebra.ι k _ p := by
+  rw [← symmetricAlgebraPrimitiveBialgEquiv_ι hH p, BialgEquiv.symm_apply_apply]
 
 /-- **Over an algebraically closed field of characteristic zero, a commutative affine group of
 finite type whose rational points are unipotent is a vector group:** the symmetric algebra on the
@@ -187,7 +184,6 @@ theorem liftBialgHom_primitive_bijective_of_forall_isUnipotentPoint [IsAlgClosed
     Function.Bijective (SymmetricAlgebra.liftBialgHom (Coalgebra.skewPrimitive k (1 : H) 1).subtype
       fun p ↦ p.property) :=
   have := isReduced_of_charZero k H
-  liftBialgHom_primitive_bijective fun _ _ _ _ _ _ ↦
-    Comodule.hasNonzeroFixedVector_of_forall_isUnipotentPoint hH
+  liftBialgHom_primitive_bijective (unipotentCommHopfAlgProperty_of_forall_isUnipotentPoint hH)
 
 end TauCeti.HopfAlgebra
