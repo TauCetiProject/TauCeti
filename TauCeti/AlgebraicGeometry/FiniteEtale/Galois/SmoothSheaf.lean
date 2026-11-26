@@ -111,6 +111,16 @@ noncomputable def jointlySurjectiveSheafEquiv :
         (ContAction.jointlySurjectiveTopology Gal(Ω/K)) A).functor :=
   (rfl)
 
+/-- The underlying presheaf of `(jointlySurjectiveSheafEquiv K Ω A).functor.obj F` is that of `F`
+restricted to finite étale `K`-schemes and composed with `galoisEquivalence K Ω`: both functors in
+`jointlySurjectiveSheafEquiv` act on underlying presheaves by precomposition. -/
+theorem jointlySurjectiveSheafEquiv_functor_obj_obj
+    (F : Sheaf (Scheme.smallEtaleTopology (Spec (.of K))) A) :
+    ((jointlySurjectiveSheafEquiv K Ω A).functor.obj F).obj =
+      (galoisEquivalence K Ω).inverse.op ⋙ (toEtale _).op ⋙ F.obj := by
+  rw [jointlySurjectiveSheafEquiv_functor, Functor.comp_obj, fieldSheafEquiv_functor]
+  rfl
+
 /-- The inverse of `jointlySurjectiveSheafEquiv K Ω A` transports a sheaf back along
 `galoisEquivalence K Ω` and then inverts the restriction to finite étale `K`-schemes. -/
 @[simp] theorem jointlySurjectiveSheafEquiv_inverse :

@@ -31,6 +31,9 @@ function of `card ι` variables.
   value by value.
 * `Finset.card_biUnion_range_piAntidiag_le`: there are at most `T ^ card ι` multi-indices
   `α : ι → ℕ` of total degree `< T`.
+* `Finset.sigmaPiAntidiagUnivEquiv`: the disjoint union of the antidiagonals
+  `Finset.piAntidiag univ n` over all `n` is the type of all functions `ι → μ`, so a series over
+  multi-indices can be grouped by total degree.
 -/
 
 public section
@@ -91,5 +94,19 @@ theorem card_biUnion_range_piAntidiag_le {ι : Type*} [Fintype ι] [DecidableEq 
         exact Fintype.mem_piFinset.2 fun i ↦ mem_range.2 <|
           (single_le_sum (fun _ _ ↦ Nat.zero_le _) (mem_univ i)).trans_lt (hαk.1 ▸ hk)
     _ = T ^ Fintype.card ι := by simp
+
+/-- The disjoint union `Σ n, piAntidiag univ n` of the function antidiagonals over a finite type
+`ι` is the type `ι → μ` of all functions, by forgetting the sum `n`. -/
+@[expose, simps]
+def sigmaPiAntidiagUnivEquiv (ι μ : Type*) [Fintype ι] [DecidableEq ι] [AddCommMonoid μ]
+    [HasAntidiagonal μ] [DecidableEq μ] :
+    (Σ n : μ, piAntidiag (univ : Finset ι) n) ≃ (ι → μ) where
+  toFun x := x.2
+  invFun f := ⟨∑ i, f i, f, mem_piAntidiag.2 ⟨rfl, fun i _ ↦ mem_univ i⟩⟩
+  left_inv := by
+    rintro ⟨n, f, hf⟩
+    obtain ⟨rfl, -⟩ := mem_piAntidiag.1 hf
+    rfl
+  right_inv _ := rfl
 
 end Finset

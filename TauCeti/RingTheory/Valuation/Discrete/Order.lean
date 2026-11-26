@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Valuation.Discrete.Basic
+public import Mathlib.RingTheory.Valuation.Extension
 import TauCeti.Algebra.GroupWithZero.Range
 import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
 
@@ -31,7 +32,9 @@ involve the order are in `TauCeti.RingTheory.Valuation.Surjective` and the files
 As `WithZero.log 0 = 0`, the order has the junk value `ord_v f = 0` whenever `v f = 0`.
 On a division ring, `v f = 0` is equivalent to `f = 0`; hypotheses excluding zero are
 included where necessary.
-
+Along a field extension, a ramification formula `ord_w = e · ord_v` with `e > 0` makes `w` an
+extension of `v` in the sense of `Valuation.HasExtension`
+(`Valuation.HasExtension.of_ord_algebraMap_eq_mul`).
 -/
 
 public section
@@ -189,6 +192,14 @@ theorem ord_add_eq_min_of_ord_ne (v : _root_.Valuation F ℤᵐ⁰) {f g : F}
   rw [ord_def, v.map_add_of_distinct_val fun hfg ↦ h (by rw [ord_def, ord_def, hfg])]
   exact hanti.map_max hf hg
 
+/-- If `r + s = 1` and `r` has positive order, then `s` has order zero. -/
+theorem ord_eq_zero_of_add_eq_one_of_ord_pos (v : _root_.Valuation F ℤᵐ⁰) {r s : F}
+    (h : r + s = 1) (hr : 0 < ord v r) : ord v s = 0 := by
+  rw [eq_sub_of_add_eq' h, sub_eq_add_neg, ord_add_eq_min_of_ord_ne v (by simp)
+    (by rw [map_neg]; exact valuation_ne_zero_of_ord_ne_zero v hr.ne')
+    (by rw [ord_one, ord_neg]; omega), ord_one, ord_neg]
+  omega
+
 /-- The valuation of a finite sum with a strict minimum of orders: the summand of least order
 dominates.  It is stated on the valuation because both
 `Valuation.map_sum_ne_zero_of_forall_ord_lt` and
@@ -315,6 +326,18 @@ theorem mem_valuationSubring_iff_ord_nonneg (v : _root_.Valuation F ℤᵐ⁰) {
       valuation_eq_exp_neg_ord v (v.ne_zero_iff.mpr hf), ← WithZero.exp_zero, WithZero.exp_le_exp]
     omega
 
+/-- **A valuation extension from a ramification formula.** Let `L / K` be a field extension and
+`v`, `w` be `ℤᵐ⁰`-valued valuations on `K` and `L` with `ord_w r = e · ord_v r` for every `r ∈ K`
+and some `e > 0`. Then `w` extends `v` in the sense of `Valuation.HasExtension`; this supplies the
+local map between the valuation rings and the induced embedding of residue fields. -/
+theorem HasExtension.of_ord_algebraMap_eq_mul {L : Type*} [Field L] [Algebra F L]
+    {v : _root_.Valuation F ℤᵐ⁰} {w : _root_.Valuation L ℤᵐ⁰} {e : ℤ} (he : 0 < e)
+    (h : ∀ r : F, ord w (algebraMap F L r) = e * ord v r) : v.HasExtension w where
+  val_isEquiv_comap := isEquiv_of_val_le_one fun x => by
+    rw [comap_apply, ← mem_valuationSubring_iff, ← mem_valuationSubring_iff,
+      mem_valuationSubring_iff_ord_nonneg, mem_valuationSubring_iff_ord_nonneg, h,
+      mul_nonneg_iff_of_pos_left he]
+
 /-- For a `ℤᵐ⁰`-valued valuation, any integer of valuation `exp (-1)` generates the maximal ideal
 of the valuation ring. -/
 theorem maximalIdeal_eq_span_of_map_eq_exp_neg_one (v : _root_.Valuation F ℤᵐ⁰)
@@ -366,6 +389,14 @@ theorem unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos (v : _root_.Valua
     Subgroup.coe_subtype, ValuationSubring.mem_principalUnitGroup_iff]
   exact (v.valuationSubring.valuation_lt_one_iff ⟨_, hmem⟩).1
     ((mem_maximalIdeal_iff_ord_pos v (f := ⟨_, hmem⟩) hne).2 h)
+
+/-- If `r + s = 1` with `r` of positive order and `s` a unit of the valuation ring, then the
+residue of `s` is one. -/
+theorem unitGroupToResidueFieldUnits_eq_one_of_add_eq_one (v : _root_.Valuation F ℤᵐ⁰) {r : F}
+    {s : v.valuationSubring.unitGroup} (h : r + ((s : Fˣ) : F) = 1) (hr : 0 < ord v r) :
+    v.valuationSubring.unitGroupToResidueFieldUnits s = 1 :=
+  unitGroupToResidueFieldUnits_eq_one_of_ord_sub_one_pos v s (by
+    rwa [show ((s : Fˣ) : F) - 1 = -r by rw [← h]; ring, ord_neg])
 
 end Field
 

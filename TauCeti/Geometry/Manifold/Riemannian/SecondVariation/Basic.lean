@@ -8,11 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.MFDeriv.Variation
 public import TauCeti.Geometry.Manifold.Riemannian.Energy
 public import TauCeti.Geometry.Manifold.Riemannian.IndexForm.Basic
-import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Acceleration
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Metric
@@ -49,6 +48,8 @@ covariant derivatives up to curvature give
 
 * `TauCeti.Manifold.hasDerivAt_deriv_norm_sq_curveVelocity`: the second transverse derivative of
   the squared speed.
+* `TauCeti.Manifold.hasDerivAt_deriv_energy_integral`: the second variation of energy as half the
+  integral of the second transverse derivatives of the squared speed.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy`: **the second variation of energy** of a `C³`
   family, with endpoint terms and the acceleration term of the central curve.
 * `TauCeti.Manifold.hasDerivAt_deriv_energy_of_acceleration_eq_zero`: the second variation of
@@ -209,54 +210,19 @@ omit [FiniteDimensional ℝ E] [T2Space M] in
 every point of `{0} × [a, b]`, the second transverse derivatives `∂_s² ‖∂_t F (0, t)‖²` of the
 squared speed are integrable on `[a, b]`, and the derivative of the energy of `F s` has at `s = 0`
 the derivative half their integral. -/
-private theorem hasDerivAt_deriv_energy_integral {a b : ℝ}
+theorem hasDerivAt_deriv_energy_integral {a b : ℝ}
     (hF : ∀ t ∈ uIcc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 3 (fun z : ℝ × ℝ ↦ F z.1 z.2) (0, t)) :
     IntervalIntegrable (fun t ↦ deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0)
         volume a b ∧
       HasDerivAt (deriv fun s ↦ energy I (F s) a b)
         ((∫ t in a..b, deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0) / 2) 0 := by
-  obtain ⟨U, V, hUo, hVo, h0U, hV, hFUV⟩ :=
-    TauCeti.exists_isOpen_prod_contMDiffOn isCompact_uIcc (by simp) hF
-  have hUVo : IsOpen (U ×ˢ V) := hUo.prod hVo
-  -- The squared speed `G` as a `C²` function of `(s, t)` on `U ×ˢ V`, and its partial derivative
-  -- `G₁` in `s`, which is `C¹` there.
-  set G : ℝ × ℝ → ℝ := fun z ↦
-    inner ℝ (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun z : ℝ × ℝ ↦ F z.1 z.2) z ((0 : ℝ), (1 : ℝ)))
-  have hG : ContDiffOn ℝ 2 G (U ×ˢ V) := hFUV.contDiffOn_inner_mfderiv (by norm_num) hUVo _ _
-  set G₁ : ℝ × ℝ → ℝ := fun z ↦ fderiv ℝ G z (1, 0)
-  have hG₁ : ContDiffOn ℝ 1 G₁ (U ×ˢ V) :=
-    (hG.fderiv_of_isOpen hUVo (by norm_num)).clm_apply contDiffOn_const
-  have hGeq {s t : ℝ} (hs : s ∈ U) (ht : t ∈ V) : G (s, t) = ‖curveVelocity I (F s) t‖ ^ 2 := by
-    rw [← real_inner_self_eq_norm_sq, curveVelocity_eq_mfderiv_snd
-      ((hFUV.contMDiffAt (hUVo.mem_nhds ⟨hs, ht⟩)).mdifferentiableAt (by norm_num))]
-  -- Near `0` the derivative of the energy is `½ ∫ G₁ (s, t) dt`, and the derivative of that at
-  -- `0` is `½ ∫ ∂_s G₁ (0, t) dt`.
-  have hderiv : deriv (fun s ↦ energy I (F s) a b) =ᶠ[𝓝 0]
-      fun s ↦ (∫ t in a..b, G₁ (s, t)) / 2 := by
-    filter_upwards [hUo.mem_nhds h0U] with s hs
-    refine (((TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo (hG.of_le (by norm_num))
-      (prod_mono (singleton_subset_iff.mpr hs) hV)).2.div_const 2).congr_of_eventuallyEq ?_).deriv
-    filter_upwards [hUo.mem_nhds hs] with s' hs'
-    rw [energy_def]
-    exact congrArg (· / 2) (intervalIntegral.integral_congr fun t ht ↦ (hGeq hs' (hV ht)).symm)
-  obtain ⟨hint, hmain⟩ := TauCeti.hasDerivAt_intervalIntegral_of_contDiffOn hUVo hG₁
-    (prod_mono (singleton_subset_iff.mpr h0U) hV)
-  -- On `[a, b]`, `∂_s G₁ (0, t)` is the second derivative of the squared speed.
-  have hpt : EqOn (fun t ↦ fderiv ℝ G₁ (0, t) (1, 0))
-      (fun t ↦ deriv (deriv fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) 0) (uIcc a b) := by
-    intro t ht
-    have h₁ : deriv (fun s ↦ ‖curveVelocity I (F s) t‖ ^ 2) =ᶠ[𝓝 0] fun s ↦ G₁ (s, t) := by
-      filter_upwards [hUo.mem_nhds h0U] with s hs
-      refine ((hasDerivAt_slice_left ((hG.differentiableOn (by norm_num) _ ⟨hs, hV ht⟩)
-        |>.differentiableAt (hUVo.mem_nhds ⟨hs, hV ht⟩))).congr_of_eventuallyEq ?_).deriv
-      filter_upwards [hUo.mem_nhds hs] with s' hs'
-      exact (hGeq hs' (hV ht)).symm
-    exact ((hasDerivAt_slice_left ((hG₁.differentiableOn one_ne_zero _ ⟨h0U, hV ht⟩)
-      |>.differentiableAt (hUVo.mem_nhds ⟨h0U, hV ht⟩))).congr_of_eventuallyEq h₁).deriv.symm
-  refine ⟨hint.congr_uIoo fun t ht ↦ hpt (uIoo_subset_uIcc_self ht), ?_⟩
-  rw [← intervalIntegral.integral_congr hpt]
-  exact (hmain.div_const 2).congr_of_eventuallyEq hderiv
+  obtain ⟨U, V, hUo, hVo, h0U, hV, -, hG⟩ :=
+    exists_isOpen_prod_contDiffOn_norm_sq_curveVelocity (m := 2) (by norm_num) (by simp) hF
+  obtain ⟨hint, hmain⟩ := TauCeti.hasDerivAt_deriv_intervalIntegral_of_contDiffOn (hUo.prod hVo)
+    hG (prod_mono (singleton_subset_iff.mpr h0U) hV)
+  refine ⟨hint, (hmain.div_const 2).congr_of_eventuallyEq (Eventually.of_forall fun s ↦ ?_)⟩
+  -- the energy is half the integral of the squared speed
+  simp only [energy_def, deriv_div_const]
 
 /-- **The second variation of energy.** Let `F` be a two-parameter family which is `C³` at every
 point of `{0} × [a, b]`, with central curve `γ = F 0`, variation field `V` and transverse

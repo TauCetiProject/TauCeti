@@ -20,6 +20,8 @@ that statement for the base ring `ℤ`, read at the unit `1`, and that is how it
 
 The file also records that, in a ring without zero divisors, a unit `u` other than `±1` is not
 its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at `δ = u + u⁻¹`.
+It finally records that a pair of units `r + s = 1` gives the pair `r⁻¹ + (-(s r⁻¹)) = 1`, the
+step reducing the Steinberg relation for the tame symbol from negative to positive order.
 
 ## Main results
 
@@ -30,6 +32,8 @@ its own inverse in the form `u - u⁻¹ ≠ 0`, as used for quantum integers at 
 * `Units.one_add_sq_eq_mul_add_inv`: for a unit `q`, `1 + q ^ 2 = q * (q + q⁻¹)`.
 * `Units.mul_sub_val_inv_mul_one_sub`: for a unit `q`,
   `q * (q * η - q⁻¹ * (1 - η)) = (1 + q ^ 2) * η - 1`.
+* `Units.val_inv_add_val_neg_mul_inv_eq_one`: if `r + s = 1` for units, then
+  `r⁻¹ + (-(s r⁻¹)) = 1`.
 -/
 
 public section
@@ -67,8 +71,17 @@ theorem mul_sub_val_inv_mul_one_sub (q : Rˣ) (η : R) :
   rw [mul_sub, ← mul_assoc, ← sq, ← mul_assoc, Units.mul_inv, one_mul, add_mul, one_mul]
   abel
 
+/-- If `r + s = 1` for units `r` and `s`, then `r⁻¹ + (-(s r⁻¹)) = 1`. This trades a pair adding
+up to one for another such pair whose first entry is `r⁻¹`, as in the Steinberg relation. -/
+theorem val_inv_add_val_neg_mul_inv_eq_one {r s : Rˣ} (h : (r : R) + s = 1) :
+    ((r⁻¹ : Rˣ) : R) + ((-(s * r⁻¹) : Rˣ) : R) = 1 := by
+  rw [Units.val_neg, Units.val_mul, ← sub_eq_add_neg, ← one_sub_mul, ← eq_sub_of_add_eq h,
+    Units.mul_inv]
+
+variable [NoZeroDivisors R]
+
 /-- In a ring without zero divisors, a unit `u ≠ ±1` satisfies `u - u⁻¹ ≠ 0`. -/
-theorem val_sub_val_inv_ne_zero [NoZeroDivisors R] {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
+theorem val_sub_val_inv_ne_zero {u : Rˣ} (hu₁ : u ≠ 1) (hu₂ : u ≠ -1) :
     (u : R) - ↑u⁻¹ ≠ 0 := fun h ↦
   ((inv_eq_self_iff u).1 (Units.ext (sub_eq_zero.1 h).symm)).elim hu₁ hu₂
 

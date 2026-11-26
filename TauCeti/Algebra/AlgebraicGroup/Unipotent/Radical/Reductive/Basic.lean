@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Reductive.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Construction
+import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Connected.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.BaseChange
 
 /-!
@@ -25,6 +28,8 @@ ground field is trivial.
   geometric unipotent radical.
 * `TauCeti.reductiveCommHopfAlgProperty.unipotentRadicalDefiningIdeal_eq_augmentation`:
   a reductive group's unipotent radical over the ground field is trivial.
+* `TauCeti.reductiveCommHopfAlgProperty.of_baseChange_algebraicClosure`: a finite-type affine
+  group is reductive once its geometric fibre is.
 
 ## References
 
@@ -33,6 +38,8 @@ ground field is trivial.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace TauCeti
 
@@ -81,6 +88,21 @@ theorem unipotentRadicalDefiningIdeal_eq_augmentation
       (K := AlgebraicClosure k)
       ((reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation
         k H).mp hH |>.2.2)
+
+/-- A finite-type affine group over `k` is reductive once its base change to an algebraic closure
+of `k` is reductive. -/
+theorem of_baseChange_algebraicClosure
+    (hH : reductiveCommHopfAlgProperty (AlgebraicClosure k)
+      (FiniteTypeCommHopfAlgCat.baseChange (K := AlgebraicClosure k) H)) :
+    reductiveCommHopfAlgProperty k H := by
+  let _ : Algebra.Smooth (AlgebraicClosure k) (AlgebraicClosure k ⊗[k] H.obj) :=
+    smooth_baseChange_obj hH.smooth
+  exact (reductiveCommHopfAlgProperty_iff_unipotentRadicalDefiningIdeal_baseChange_eq_augmentation
+      k H).2
+    ⟨Algebra.Smooth.of_smooth_tensorProduct_of_faithfullyFlat (R := k) (S := H.obj)
+        (AlgebraicClosure k),
+      geometricallyConnectedCommHopfAlgProperty.of_baseChange k _ H.obj hH.geometricallyConnected,
+      hH.unipotentRadicalDefiningIdeal_eq_augmentation⟩
 
 end reductiveCommHopfAlgProperty
 

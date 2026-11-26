@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.Exponential.EuclideanCLM
 import TauCeti.Analysis.Normed.Operator.Exponential
 
 /-!
@@ -42,8 +43,7 @@ theorem exp_mulVec_eq_self_iff {a : Matrix m m 𝕜} (ha : ‖a‖ < Real.log 2)
   have h := ContinuousLinearMap.exp_apply_eq_self_iff (𝕜 := 𝕜)
     (B := toEuclideanCLM (n := m) (𝕜 := 𝕜) a) (x := WithLp.toLp 2 v)
     (by rwa [← cstar_norm_def])
-  let +nondep : NormedAlgebra ℚ (Matrix m m 𝕜) := .restrictScalars ℚ 𝕜 _
-  rw [← NormedSpace.map_exp _ continuous_toEuclideanCLM, toEuclideanCLM_toLp, toEuclideanCLM_toLp,
+  rw [← toEuclideanCLM_exp, toEuclideanCLM_toLp, toEuclideanCLM_toLp,
     ← WithLp.toLp_zero 2, (WithLp.toLp_injective 2).eq_iff, (WithLp.toLp_injective 2).eq_iff] at h
   exact h
 

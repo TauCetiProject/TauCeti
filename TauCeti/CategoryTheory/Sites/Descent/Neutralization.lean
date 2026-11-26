@@ -10,6 +10,7 @@ public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Category.Cat
 public import Mathlib.CategoryTheory.Groupoid
 public import Mathlib.CategoryTheory.Limits.Shapes.IsTerminal
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 
 /-!
 # Neutralizations of a pseudofunctor
@@ -26,6 +27,12 @@ every object of `C`, and that neutrality does not depend on the chosen terminal 
 neutralization over an object that is not terminal only gives objects over the objects of `C`
 with an arrow to it.
 
+Neutralizations are compatible with restriction to a slice: the neutralizations of the
+restriction `F.over U` over `V : Over U` are those of `F` over `V.left`, compatibly with pullback.
+Since `Over U` has the terminal object `Over.mk (𝟙 U)`, `F.over U` is neutral exactly when the
+fibre of `F` over `U` is nonempty: an object over an arbitrary object `U` of `C` is a
+neutralization of `F` on the slice over `U`, and a neutral `F` restricts to a neutral `F.over U`.
+
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.Neutralization`: the neutralizations of `F` over `S`.
@@ -39,6 +46,10 @@ with an arrow to it.
   every object of `C`.
 * `CategoryTheory.Pseudofunctor.isNeutral_iff_of_isTerminal`: neutrality does not depend on the
   terminal object.
+* `CategoryTheory.Pseudofunctor.Neutralization.overEquiv`: neutralizations of `F.over U` over
+  `V : Over U` are equivalent to neutralizations of `F` over `V.left`.
+* `CategoryTheory.Pseudofunctor.isNeutral_over_iff`: `F.over U` is neutral if and only if the
+  fibre of `F` over `U` is nonempty.
 
 ## References
 
@@ -172,6 +183,28 @@ lemma pullbackComp_inv_hom (f : V ⟶ S) (g : W ⟶ V) (x : Neutralization F S) 
     (pullbackComp f g x).inv.hom = (F.mapComp f.op.toLoc g.op.toLoc).inv.toNatTrans.app x.obj :=
   (rfl)
 
+section Over
+
+variable {U : C}
+
+/-- Neutralizations of the restriction `F.over U` over an object `V` of `Over U` are equivalent to
+neutralizations of `F` over `V.left`: both are objects of the fibre of `F` over `V.left`, and the
+functors keep the objects and the morphisms. Its body is exposed because the statements of its
+`simps` lemmas need its functors to reduce on objects. -/
+@[expose, simps! functor_obj_obj inverse_obj_obj functor_map_hom inverse_map_hom]
+def overEquiv (V : Over U) : Neutralization (F.over U) V ≌ Neutralization F V.left :=
+  (equivFiber (F.over U) V).trans (equivFiber F V.left).symm
+
+/-- The equivalence `overEquiv` is compatible with pullback: pulling back a neutralization of
+`F.over U` along a morphism `g` of `Over U` corresponds to pulling back along `g.left`. -/
+@[simp]
+lemma overEquiv_functor_obj_pullback {V W : Over U} (g : W ⟶ V)
+    (x : Neutralization (F.over U) V) :
+    (overEquiv W).functor.obj (pullback g x) = pullback g.left ((overEquiv V).functor.obj x) :=
+  (rfl)
+
+end Over
+
 end Neutralization
 
 /-- A pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` is neutral, relative to a terminal object `S`
@@ -201,5 +234,18 @@ lemma IsNeutral.of_isTerminal (h : IsNeutral F S hS) {S' : C} (hS' : IsTerminal 
 lemma isNeutral_iff_of_isTerminal {S' : C} (hS' : IsTerminal S') :
     IsNeutral F S hS ↔ IsNeutral F S' hS' :=
   ⟨fun h ↦ h.of_isTerminal hS', fun h ↦ h.of_isTerminal hS⟩
+
+/-- The restriction `F.over U` of `F` to the slice over `U` is neutral, relative to any terminal
+object of `Over U`, if and only if the fibre of `F` over `U` is nonempty. -/
+lemma isNeutral_over_iff {U : C} {T : Over U} (hT : IsTerminal T) :
+    IsNeutral (F.over U) T hT ↔ Nonempty (F.obj (.mk (op U))) := by
+  rw [isNeutral_iff_of_isTerminal Over.mkIdTerminal, isNeutral_iff]
+  -- The fibre of `F.over U` over `Over.mk (𝟙 U)` is the fibre of `F` over `U` by definition.
+  exact Iff.rfl
+
+/-- The restriction of a neutral pseudofunctor to any slice is neutral. -/
+lemma IsNeutral.over (h : IsNeutral F S hS) (U : C) {T : Over U} (hT : IsTerminal T) :
+    IsNeutral (F.over U) T hT :=
+  (isNeutral_over_iff hT).2 (h.nonempty_obj U)
 
 end CategoryTheory.Pseudofunctor

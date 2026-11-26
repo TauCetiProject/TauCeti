@@ -38,7 +38,8 @@ Weierstrass's general factorization theorem follows: every nonzero entire functi
 admits admissible genera `p` on its set of nonzero zeros and an entire function `g` (unique up to
 `2πiℤ`) such that
 `f z = z ^ (analyticOrderNatAt f 0) * exp (g z) * ∏' a, E_{p a}(z / a) ^ (analyticOrderNatAt f a)`,
-without any growth hypothesis on `f`.
+without any growth hypothesis on `f`. The product may equally run over all nonzero complex
+numbers, since the points where `f` does not vanish have order `0` and contribute the factor `1`.
 
 ## Main results
 
@@ -60,6 +61,8 @@ without any growth hypothesis on `f`.
   comparison between a nonzero entire function and its origin-plus-zero-subtype Weierstrass product.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable`:
   exponential factorization of an entire function against any admissible genus assignment `p`.
+* `Differentiable.exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow`: the same
+  factorization with the product over all nonzero complex numbers `{a : ℂ // a ≠ 0}`.
 * `Differentiable.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow`: Weierstrass's entire
   factorization theorem for an arbitrary nonzero entire function without growth hypotheses.
 
@@ -432,6 +435,33 @@ theorem exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable {f
   refine ⟨g, hg, fun z ↦ ?_, fun g' hg' hfg' ↦ huniq g' hg' fun z ↦ ?_⟩
   · simpa only [F, mul_left_comm (Complex.exp (g z)), mul_assoc] using hfg z
   · simpa only [F, mul_left_comm (Complex.exp (g' z)), mul_assoc] using hfg' z
+
+/-- A nonzero entire function `f` factors as
+`f z = z ^ m₀ * exp (g z) * ∏' α, E_{p α}(z / α) ^ m_α` with `g` entire, the product running over
+all nonzero complex numbers `α` with the analytic orders `m_α` of `f` as exponents, for any genera
+`p` for which `∑' α, m_α * (R / ‖α‖) ^ (p α + 1)` converges for every `R > 0`. -/
+theorem exists_eq_pow_mul_exp_mul_tprod_nonzero_weierstrassFactor_div_pow {f : ℂ → ℂ}
+    (hf : Differentiable ℂ f) (hf0 : ∃ z, f z ≠ 0) {p : {a : ℂ // a ≠ 0} → ℕ}
+    (hm : ∀ R : ℝ, 0 < R → Summable fun α : {a : ℂ // a ≠ 0} ↦
+      (analyticOrderNatAt f α : ℝ) * (R / ‖(α : ℂ)‖) ^ (p α + 1)) :
+    ∃ g : ℂ → ℂ, Differentiable ℂ g ∧ ∀ z, f z = z ^ analyticOrderNatAt f 0 * Complex.exp (g z) *
+      ∏' α : {a : ℂ // a ≠ 0}, weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α := by
+  let ι : {a : ℂ // a ≠ 0 ∧ f a = 0} → {a : ℂ // a ≠ 0} := fun a ↦ ⟨a, a.property.1⟩
+  have hι : Function.Injective ι := fun a b h ↦ Subtype.ext (by simpa [ι] using h)
+  have hm' (R : ℝ) (hR : 0 < R) : Summable fun a : {a : ℂ // a ≠ 0 ∧ f a = 0} ↦
+      (analyticOrderNatAt f a : ℝ) * (R / ‖(a : ℂ)‖) ^ (p (ι a) + 1) :=
+    ((hm R hR).comp_injective hι).congr fun a ↦ by simp [ι]
+  obtain ⟨g, hg, hfg, -⟩ :=
+    hf.exists_eq_pow_mul_exp_mul_tprod_weierstrassFactor_div_pow_of_summable hf0 hm'
+  refine ⟨g, hg, fun z ↦ ?_⟩
+  rw [hfg z]
+  congr 1
+  -- Points where `f` does not vanish contribute the factor `1`.
+  refine hι.tprod_eq (f := fun α : {a : ℂ // a ≠ 0} ↦
+    weierstrassFactor (p α) (z / α) ^ analyticOrderNatAt f α) fun α hα ↦ ?_
+  have hord : analyticOrderNatAt f α ≠ 0 := fun h ↦ hα (by simp [h])
+  refine ⟨⟨α, α.property, by_contra fun hfα ↦ hord ?_⟩, rfl⟩
+  rw [analyticOrderNatAt, (hf.analyticAt _).analyticOrderAt_eq_zero.mpr hfα, ENat.toNat_zero]
 
 /-- **Weierstrass's entire factorization theorem** (Rudin, Theorem 15.10). Every entire function
 `f : ℂ → ℂ` that is not identically zero admits admissible genera

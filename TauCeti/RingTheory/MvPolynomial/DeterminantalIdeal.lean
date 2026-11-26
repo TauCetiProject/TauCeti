@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.Complement
 public import Mathlib.RingTheory.MvPolynomial.DeterminantalIdeal
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 import TauCeti.Data.Fintype.Sort
 import TauCeti.LinearAlgebra.Matrix.Determinant.PluckerRelation
 
