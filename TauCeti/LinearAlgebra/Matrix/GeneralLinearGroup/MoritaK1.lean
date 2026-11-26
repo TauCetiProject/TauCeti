@@ -12,7 +12,7 @@ import TauCeti.Data.Matrix.Composition
 import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
-# Morita invariance of algebraic `K₁`
+# Morita invariance of `GL_∞` and of algebraic `K₁`
 
 An `m × m` matrix whose entries are `ι × ι` matrices over a ring `R` is the same as an
 `(m × ι) × (m × ι)` matrix over `R`: Mathlib's `Matrix.compRingEquiv` flattens the blocks. On
@@ -28,20 +28,24 @@ is no room for this commutator: for `R ≠ 0`, `E₁(M₂(R))` is trivial while 
 
 Flattening `k × k` block matrices to `Fin (k * n)`, where `n` is the number of elements of `ι`,
 is compatible with the stabilizations `u ↦ u ⊕ 1`, so it induces a homomorphism
-`K₁(Mι(R)) → K₁(R)`. It is surjective because flattening is bijective at each finite size, and
-injective because, after stabilizing to at least two blocks, elementary matrices over `R` come
-from elementary matrices over `Mι(R)`. This is the **Morita invariance of `K₁`**:
+`GL_∞(Mι(R)) → GL_∞(R)` of stable general linear groups. For nonempty `ι` it is an isomorphism,
+because flattening is bijective at each finite size and every stage is dominated by a stage
+`k * n`. Passing to abelianizations gives the **Morita invariance of `K₁`**:
 
   `K₁(Mₙ(R)) ≃* K₁(R)` for `n ≥ 1`,
 
 `TauCeti.AlgebraicK1.matrixEquiv`, natural in ring homomorphisms `R →+* S`. For `ι` empty,
-`Mι(R)` is the zero ring and the statement fails, as `K₁(ℤ) = {±1}` is not trivial.
+`Mι(R)` is the zero ring and the statement fails, as `K₁(ℤ) = {±1}` is not trivial. The
+isomorphism of `GL_∞` also gives the Morita invariance of the Steinberg group and of `K₂`
+(`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Morita`).
 
 ## Main definitions
 
 * `TauCeti.compGL`: block flattening `GL m (Matrix ι ι R) ≃* GL (m × ι) R`.
 * `TauCeti.flattenGL`: block flattening `GL (Fin k) (Matrix ι ι R) ≃* GL (Fin (k * n)) R`,
   with `n = Fintype.card ι`, compatible with stabilization.
+* `TauCeti.StableGeneralLinearGroup.matrixEquiv`: the Morita isomorphism
+  `GL_∞(Matrix ι ι R) ≃* GL_∞(R)` for nonempty `ι`.
 * `TauCeti.AlgebraicK1.matrixEquiv`: the Morita isomorphism `K₁(Matrix ι ι R) ≃* K₁(R)` for
   nonempty `ι`.
 
@@ -50,9 +54,13 @@ from elementary matrices over `Mι(R)`. This is the **Morita invariance of `K₁
 * `TauCeti.map_compGL_elementarySubgroup`: flattening maps `E m (Matrix ι ι R)` onto
   `E (m × ι) R` when `m` has two distinct elements.
 * `TauCeti.flattenGL_stabilizeGL`: flattening commutes with stabilization.
+* `TauCeti.StableGeneralLinearGroup.matrixEquiv_of`,
+  `TauCeti.StableGeneralLinearGroup.matrixEquiv_symm_of`: the Morita isomorphism of `GL_∞` and its
+  inverse on images of invertible matrices.
 * `TauCeti.AlgebraicK1.matrixEquiv_mk`, `TauCeti.AlgebraicK1.matrixEquiv_symm_mk`: the Morita
   isomorphism and its inverse on classes of invertible matrices.
-* `TauCeti.AlgebraicK1.map_matrixEquiv`: naturality in ring homomorphisms.
+* `TauCeti.StableGeneralLinearGroup.map_matrixEquiv`, `TauCeti.AlgebraicK1.map_matrixEquiv`:
+  naturality in ring homomorphisms.
 
 ## References
 
@@ -243,70 +251,94 @@ theorem flattenGL_stabilizeGL {k l : ℕ} (h : k ≤ l) (u : GL (Fin k) (Matrix 
 
 end Elementary
 
+/-! ## Morita invariance of `GL_∞` -/
+
+namespace StableGeneralLinearGroup
+
+variable {R : Type*} [Ring R] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+variable (R ι) in
+/-- Flattening block matrices induces `GL_∞(Matrix ι ι R) →* GL_∞(R)`. -/
+private def flattenHom : StableGeneralLinearGroup (Matrix ι ι R) →* StableGeneralLinearGroup R :=
+  lift (fun k ↦ (of R (k * Fintype.card ι)).comp (flattenGL ι R k).toMonoidHom)
+    fun _ _ h u ↦ by
+      simp only [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, flattenGL_stabilizeGL,
+        of_stabilizeGL]
+
+private theorem flattenHom_of (k : ℕ) (u : GL (Fin k) (Matrix ι ι R)) :
+    flattenHom R ι (of _ k u) = of R (k * Fintype.card ι) (flattenGL ι R k u) :=
+  lift_of ..
+
+/-- Flattening is injective on `GL_∞`, since it is injective at each finite stage. -/
+private theorem flattenHom_injective : Function.Injective (flattenHom R ι) := by
+  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
+  obtain ⟨k, u, rfl⟩ := exists_of x
+  rw [flattenHom_of, (of_injective _).eq_iff' (map_one _), MulEquiv.map_eq_one_iff] at hx
+  rw [hx, map_one]
+
+/-- Flattening is surjective on `GL_∞`: every element of `GL_∞(R)` is represented at a stage
+`k * n`, where flattening is bijective. -/
+private theorem flattenHom_surjective [Nonempty ι] : Function.Surjective (flattenHom R ι) := by
+  intro x
+  obtain ⟨k, u, rfl⟩ := exists_of x
+  have hk : k ≤ k * Fintype.card ι := Nat.le_mul_of_pos_right _ Fintype.card_pos
+  exact ⟨of _ k ((flattenGL ι R k).symm (stabilizeGL R hk u)), by
+    rw [flattenHom_of, MulEquiv.apply_symm_apply, of_stabilizeGL]⟩
+
+variable (R ι) [Nonempty ι]
+
+/-- **Morita invariance of the stable general linear group**: for a nonempty finite index type
+`ι`, flattening block matrices is an isomorphism `GL_∞(Matrix ι ι R) ≃* GL_∞(R)`. -/
+def matrixEquiv : StableGeneralLinearGroup (Matrix ι ι R) ≃* StableGeneralLinearGroup R :=
+  MulEquiv.ofBijective (flattenHom R ι) ⟨flattenHom_injective, flattenHom_surjective⟩
+
+variable {R ι}
+
+/-- The Morita isomorphism of `GL_∞` sends the image of an invertible `k × k` block matrix to the
+image of its flattening, of size `k * n`. -/
+@[simp]
+theorem matrixEquiv_of (k : ℕ) (u : GL (Fin k) (Matrix ι ι R)) :
+    matrixEquiv R ι (of _ k u) = of R (k * Fintype.card ι) (flattenGL ι R k u) :=
+  flattenHom_of k u
+
+/-- The inverse Morita isomorphism of `GL_∞` sends the image of an invertible matrix of size
+`k * n` to the image of the `k × k` block matrix with the same entries. -/
+@[simp]
+theorem matrixEquiv_symm_of (k : ℕ) (u : GL (Fin (k * Fintype.card ι)) R) :
+    (matrixEquiv R ι).symm (of R (k * Fintype.card ι) u) = of _ k ((flattenGL ι R k).symm u) := by
+  rw [MulEquiv.symm_apply_eq, matrixEquiv_of, MulEquiv.apply_symm_apply]
+
+/-- The Morita isomorphism of `GL_∞` is natural in ring homomorphisms `f : R →+* S`: it
+intertwines `GL_∞(f)` with `GL_∞` of `f` applied to the entries of `ι × ι` matrices. -/
+theorem map_matrixEquiv {S : Type*} [Ring S] (f : R →+* S)
+    (x : StableGeneralLinearGroup (Matrix ι ι R)) :
+    map f (matrixEquiv R ι x) = matrixEquiv S ι (map f.mapMatrix x) := by
+  obtain ⟨k, u, rfl⟩ := exists_of x
+  rw [matrixEquiv_of, map_of, map_of, matrixEquiv_of, unitsMap_mapMatrix_flattenGL]
+
+end StableGeneralLinearGroup
+
 /-! ## Morita invariance of `K₁` -/
 
 namespace AlgebraicK1
 
-variable {R : Type*} [Ring R] (ι : Type*) [Fintype ι] [DecidableEq ι]
-
-/-- The class of a flattened block matrix in `K₁(R)` does not change under stabilization. -/
-private theorem mk_flattenGL_stabilizeGL {k l : ℕ} (h : k ≤ l) (u : GL (Fin k) (Matrix ι ι R)) :
-    mk R (l * Fintype.card ι) (flattenGL ι R l (stabilizeGL (Matrix ι ι R) h u)) =
-      mk R (k * Fintype.card ι) (flattenGL ι R k u) := by
-  rw [flattenGL_stabilizeGL, mk_stabilizeGL]
-
-variable (R) in
-/-- Flattening block matrices induces `K₁(Matrix ι ι R) →* K₁(R)`. -/
-private def flattenHom : AlgebraicK1 (Matrix ι ι R) →* AlgebraicK1 R :=
-  lift (fun k ↦ (mk R (k * Fintype.card ι)).comp (flattenGL ι R k).toMonoidHom)
-    fun _ _ h u ↦ mk_flattenGL_stabilizeGL ι h u
-
-private theorem flattenHom_mk (k : ℕ) (u : GL (Fin k) (Matrix ι ι R)) :
-    flattenHom R ι (mk _ k u) = mk R (k * Fintype.card ι) (flattenGL ι R k u) :=
-  lift_mk ..
-
-/-- Flattening is injective on `K₁`: a block matrix whose flattening is stably elementary is
-itself stably elementary, after stabilizing to at least two blocks. -/
-private theorem flattenHom_injective [Nonempty ι] : Function.Injective (flattenHom R ι) := by
-  refine (injective_iff_map_eq_one _).2 fun x hx ↦ ?_
-  obtain ⟨k, u, rfl⟩ := exists_mk x
-  rw [flattenHom_mk, mk_eq_one_iff] at hx
-  obtain ⟨N, hN, hNu⟩ := hx
-  have hn : 1 ≤ Fintype.card ι := Fintype.card_pos
-  set l := max (max k N) 2
-  have hkl : k ≤ l := le_max_of_le_left (le_max_left _ _)
-  have hNl : N ≤ l * Fintype.card ι :=
-    (le_max_of_le_left (le_max_right _ _) : N ≤ l).trans (Nat.le_mul_of_pos_right _ hn)
-  rw [mk_eq_one_iff]
-  refine ⟨l, hkl, ?_⟩
-  have hflat := map_stabilizeGL_elementarySubgroup_le hNl ⟨_, hNu, rfl⟩
-  rw [stabilizeGL_stabilizeGL, ← flattenGL_stabilizeGL hkl] at hflat
-  exact (flattenGL_mem_elementarySubgroup_iff (le_max_right _ _)).1 hflat
-
-/-- Flattening is surjective on `K₁`: every class of `R` is represented at a stage `k * n`, where
-flattening is bijective. -/
-private theorem flattenHom_surjective [Nonempty ι] : Function.Surjective (flattenHom R ι) := by
-  intro x
-  obtain ⟨k, u, rfl⟩ := exists_mk x
-  have hk : k ≤ k * Fintype.card ι := Nat.le_mul_of_pos_right _ Fintype.card_pos
-  refine ⟨mk _ k ((flattenGL ι R k).symm (stabilizeGL R hk u)), ?_⟩
-  rw [flattenHom_mk, MulEquiv.apply_symm_apply, mk_stabilizeGL]
-
-variable (R) [Nonempty ι]
+variable (R : Type*) [Ring R] (ι : Type*) [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
 /-- **Morita invariance of algebraic `K₁`**: for a nonempty finite index type `ι`, flattening
-block matrices is an isomorphism `K₁(Matrix ι ι R) ≃* K₁(R)`. -/
+block matrices is an isomorphism `K₁(Matrix ι ι R) ≃* K₁(R)`. It is induced on abelianizations
+by the Morita isomorphism `TauCeti.StableGeneralLinearGroup.matrixEquiv` of `GL_∞`. -/
 def matrixEquiv : AlgebraicK1 (Matrix ι ι R) ≃* AlgebraicK1 R :=
-  MulEquiv.ofBijective (flattenHom R ι) ⟨flattenHom_injective ι, flattenHom_surjective ι⟩
+  (StableGeneralLinearGroup.matrixEquiv R ι).abelianizationCongr
 
-variable {R}
+variable {R ι}
 
 /-- The Morita isomorphism sends the class of an invertible `k × k` block matrix to the class of
 its flattening, of size `k * n`. -/
 @[simp]
 theorem matrixEquiv_mk (k : ℕ) (u : GL (Fin k) (Matrix ι ι R)) :
-    matrixEquiv R ι (mk _ k u) = mk R (k * Fintype.card ι) (flattenGL ι R k u) :=
-  flattenHom_mk ι k u
+    matrixEquiv R ι (mk _ k u) = mk R (k * Fintype.card ι) (flattenGL ι R k u) := by
+  rw [mk_apply, mk_apply, matrixEquiv, Group.abelianizationCongr_of,
+    StableGeneralLinearGroup.matrixEquiv_of]
 
 /-- The inverse Morita isomorphism sends the class of an invertible matrix of size `k * n` to the
 class of the `k × k` block matrix with the same entries. -/
