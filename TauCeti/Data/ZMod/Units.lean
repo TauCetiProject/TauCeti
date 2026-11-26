@@ -66,6 +66,10 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   element in `TauCeti/NumberTheory/Cyclotomic/Stickelberger/Smoothing.lean`.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
+* `ZMod.unitOfCoprime_mem_ker_unitsMap_iff` — the class of `a` prime to `n` lies in the kernel
+  of `ZMod.unitsMap` to a divisor `m` of `n` exactly when `a ≡ 1 (mod m)`. Its consumer is the
+  group form of the Jacobi symbol on the class of `1` in
+  `TauCeti/NumberTheory/LegendreSymbol/JacobiSymbol/ClassOfOne.lean`.
 * `ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -285,6 +289,14 @@ theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : 
       ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
   Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hmn])
+
+/-- For `m ∣ n`, the class of a natural number `a` prime to `n` lies in the kernel of the reduction
+`ZMod.unitsMap : (ZMod n)ˣ →* (ZMod m)ˣ` exactly when `a ≡ 1 (mod m)`. -/
+theorem ZMod.unitOfCoprime_mem_ker_unitsMap_iff {m n : ℕ} (hmn : m ∣ n) {a : ℕ}
+    (ha : Nat.Coprime a n) :
+    ZMod.unitOfCoprime a ha ∈ (ZMod.unitsMap hmn).ker ↔ a ≡ 1 [MOD m] := by
+  rw [MonoidHom.mem_ker, ZMod.unitsMap_unitOfCoprime, Units.ext_iff, ZMod.coe_unitOfCoprime,
+    Units.val_one, ← Nat.cast_one, ZMod.natCast_eq_natCast_iff]
 
 /-- **A unit with an integer lift `c`, `c n ≡ 1` modulo a divisor `Q`, reduces to `n⁻¹`.** If the
 unit `u` of `ZMod N` is the class of an integer `c` with `c n = 1 + Q t`, where `Q ∣ N` and `n` is
