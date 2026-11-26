@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.Homotopy.Monodromy.Basic
 public import TauCeti.Topology.IsLocalHomeomorph.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Fiberwise
+import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 
 import Mathlib.Algebra.Category.ModuleCat.Projective
 import TauCeti.Topology.Homotopy.Covering
@@ -312,20 +313,13 @@ theorem signLocalSystem_map_mk_signLocalSystemFiberEquiv_symm (e : Trivializatio
     ((signLocalSystem F E R hι).map (Path.Homotopic.Quotient.mk γ)).hom
         ((signLocalSystemFiberEquiv hι ((e.mapOrientation ι hx).symm ω)).symm r) =
       (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).symm r := by
-  -- The orientations read as `ω` form a continuous section of the cover over the base set, which
-  -- lifts `γ`, so the monodromy along `γ` carries the one at `x` to the one at `y`.
-  let Γ : C(unitInterval, VectorBundleOrientationCover F E ι) :=
-    ⟨fun t ↦ ⟨γ t, (e.mapOrientation ι (hγ t)).symm ω⟩,
-      (continuous_mk_mapOrientation_symm hι e ω).comp (γ.continuous.subtype_mk hγ)⟩
-  have hmk {x y : B} (h : x = y) (hx : x ∈ e.baseSet) (hy : y ∈ e.baseSet) :
-      (⟨x, (e.mapOrientation ι hx).symm ω⟩ : VectorBundleOrientationCover F E ι) =
-        ⟨y, (e.mapOrientation ι hy).symm ω⟩ := by
-    subst h
-    rfl
+  -- Orientation transport along `γ` keeps the reading `ω` in `e`, so the monodromy along `γ`
+  -- carries the orientation read as `ω` at `x` to the one at `y`.
   have hm : (isCoveringMap_proj hι).monodromy (Path.Homotopic.Quotient.mk γ)
       ⟨⟨x, (e.mapOrientation ι hx).symm ω⟩, rfl⟩ = ⟨⟨y, (e.mapOrientation ι hy).symm ω⟩, rfl⟩ :=
-    Subtype.ext (((isCoveringMap_proj hι).monodromy_eq_apply_one (Γ := Γ) rfl
-      (hmk γ.source _ _)).trans (hmk γ.target _ _))
+    (fiberEquiv F E ι y).injective (by
+      rw [← orientationTransport_apply hι, orientationTransport_mapOrientation_symm hι e γ hγ hx hy,
+        fiberEquiv_mk])
   apply (signLocalSystemFiberEquiv hι ((e.mapOrientation ι hy).symm ω)).injective
   rw [LinearEquiv.apply_symm_apply]
   exact (signLocalSystemFiberEquiv_map hι _ hm _).trans
