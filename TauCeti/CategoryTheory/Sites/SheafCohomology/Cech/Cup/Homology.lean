@@ -305,9 +305,8 @@ theorem cechUnitClass_eq_homologyMap_cechAugmentation {T : C} (hT : IsTerminal T
         ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0 (P.obj (op T))).inv e₀) =
       cechUnitClass U P (fun X ↦ P.map (hT.from X.unop).op e₀)
         (fun {X Y} f ↦ by
-          rw [← ModuleCat.comp_apply, ← P.map_comp,
-            show (hT.from X.unop).op ≫ f = (hT.from Y.unop).op from
-              Quiver.Hom.unop_inj (hT.hom_ext _ _)]) := by
+          rw [← ModuleCat.comp_apply, ← P.map_comp, ← Quiver.Hom.op_unop f, ← op_comp,
+            hT.hom_ext (f.unop ≫ hT.from X.unop) (hT.from Y.unop)]) := by
   rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
     moduleCat_homologyMap_homologyπ, cechUnitClass]
   congr 1; apply moduleCat_iCycles_injective
@@ -357,6 +356,15 @@ def cechCupHomology (p q n : ℕ) (h : p + q = n) :
     (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
     (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
     (fun X ↦ LinearMap.mul R (F.obj X)) (cechAlgebraMul_naturality F) p q n h
+
+/-- `cechCupHomology` is `cechComplexCup` applied to algebra multiplication. -/
+theorem cechCupHomology_eq_cechComplexCup (p q n : ℕ) (h : p + q = n) :
+    cechCupHomology U F p q n h =
+      cechComplexCup U (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+        (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+        (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+        (fun X ↦ LinearMap.mul R (F.obj X)) (cechAlgebraMul_naturality F) p q n h :=
+  (rfl)
 
 /-- **The cup product on classes**: the cup product of the classes of two cocycles is the class of
 the cup product of the cocycles. -/
@@ -418,6 +426,13 @@ whose factors are `1`. -/
 def cechOneHomology : (cechAlgebraComplex U F).homology 0 :=
   cechUnitClass U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) (fun X ↦ (1 : F.obj X))
     (cechAlgebraOne_naturality F)
+
+/-- `cechOneHomology` is `cechUnitClass` for the unit sections `1 : F.obj X`. -/
+theorem cechOneHomology_eq_cechUnitClass :
+    cechOneHomology U F =
+      cechUnitClass U (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) (fun X ↦ (1 : F.obj X))
+        (cechAlgebraOne_naturality F) :=
+  (rfl)
 
 /-- The unit class is the class of the unit cocycle. -/
 theorem cechOneHomology_def :
@@ -516,19 +531,6 @@ section Augmentation
 
 variable {T : C} (hT : IsTerminal T)
 
-/-- The class in `H⁰(U, F)` of the augmentation of a section over the terminal object is the class
-of the cycle that the augmentation maps it to. -/
-private lemma homologyMap_cechAugmentation_apply (s : F.obj (op T)) :
-    (homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
-        ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
-            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s) =
-      ((cechAlgebraComplex U F).homologyπ 0).hom
-        (cyclesMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0
-          ((singleObjCyclesSelfIso (ComplexShape.up ℕ) 0
-            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s)) := by
-  rw [← singleObjCyclesSelfIso_inv_homologyπ, ModuleCat.comp_apply,
-    moduleCat_homologyMap_homologyπ]
-
 /-- **The cup product in degree zero is the product of sections.** For a terminal object `T`, the
 class in `H⁰(U, F)` of the augmentation of a product `s * t` of sections of `F` over `T` is the cup
 product of the classes of the augmentations of `s` and `t`. -/
@@ -542,14 +544,12 @@ theorem homologyMap_cechAugmentation_mul (s t : F.obj (op T)) :
             ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom s))
         ((homologyMap (cechAugmentation U hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) 0).hom
           ((singleObjHomologySelfIso (ComplexShape.up ℕ) 0
-            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom t)) := by
-  simp only [homologyMap_cechAugmentation_apply, cechCupHomology_homologyπ]
-  congr 1
-  apply moduleCat_iCycles_injective
-  refine cechCochain_ext fun a ↦ ?_
-  simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk, cechComponent_cechCup,
-    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechFace_cechAugmentation_f_zero,
-    cechComponent_cechAugmentation_f_zero, map_mul]
+            ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom t)) :=
+  (cechComplexCup_homologyMap_cechAugmentation U hT
+    (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ LinearMap.mul R (F.obj X)) (cechAlgebraMul_naturality F) s t).symm
 
 /-- **The unit class in degree zero is the class of the unit section.** For a terminal object `T`,
 the class in `H⁰(U, F)` of the augmentation of the section `1` of `F` over `T` is the unit class. -/
@@ -559,13 +559,12 @@ theorem homologyMap_cechAugmentation_one :
             ((F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj (op T))).inv.hom
           (1 : F.obj (op T))) =
       cechOneHomology U F := by
-  rw [homologyMap_cechAugmentation_apply, cechOneHomology_def]
-  congr 1
-  apply moduleCat_iCycles_injective
-  refine cechCochain_ext fun a ↦ ?_
-  simp only [moduleCat_iCycles_cyclesMap_apply, iCycles_moduleCatCyclesMk,
-    CochainComplex.iCycles_singleObjCyclesSelfIso_inv, cechComponent_cechAugmentation_f_zero,
-    map_one, cechComponent_cechOne]
+  refine (cechUnitClass_eq_homologyMap_cechAugmentation U hT
+    (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) (1 : F.obj (op T))).trans ?_
+  rw [cechOneHomology, cechUnitClass, cechUnitClass]
+  congr 2
+  refine cechComplex_ext fun a ↦ ?_
+  rw [cechUnitCochain_π, cechUnitCochain_π, cechAlgebraOne_naturality]
 
 end Augmentation
 

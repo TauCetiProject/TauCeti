@@ -402,9 +402,8 @@ theorem cechCohomologyZeroIso_hom_eq_cechCohomologyUnitClass (P : Cᵒᵖ ⥤ Mo
     (cechCohomologyZeroIso E hE hT P hP).hom e₀ =
       cechCohomologyUnitClass E hE P (fun X ↦ P.map (hT.from X.unop).op e₀)
         (fun {X Y} f ↦ by
-          rw [← ModuleCat.comp_apply, ← P.map_comp,
-            show (hT.from X.unop).op ≫ f = (hT.from Y.unop).op from
-              Quiver.Hom.unop_inj (hT.hom_ext _ _)]) := by
+          rw [← ModuleCat.comp_apply, ← P.map_comp, ← Quiver.Hom.op_unop f, ← op_comp,
+            hT.hom_ext (f.unop ≫ hT.from X.unop) (hT.from Y.unop)]) := by
   rw [cechCohomologyZeroIso_hom_apply E hE hT P hP (Classical.arbitrary J),
     cechCohomologyUnitClass_eq_ι E hE P _ _ (Classical.arbitrary J),
     cechUnitClass_eq_homologyMap_cechAugmentation]
@@ -452,18 +451,11 @@ def cechCohomologyCup (p q n : ℕ) (h : p + q = n) :
           (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) →ₗ[R]
         (cechCohomology (ModuleCat.{w} R) E hE n).obj
           (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) :=
-  TauCeti.ModuleCat.colimitMap₂
-    (M := (cechCohomologyDiagram (ModuleCat.{w} R) E hE p).flip.obj
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
-    (N := (cechCohomologyDiagram (ModuleCat.{w} R) E hE q).flip.obj
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
-    (P := (cechCohomologyDiagram (ModuleCat.{w} R) E hE n).flip.obj
-      (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
-    (fun j ↦ cechCupHomology (E j).obj F p q n h)
-    fun _ _ f x y ↦ by
-      simp only [cechCohomologyDiagram_flip_obj_map E hE _
-        (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) f (hE (leOfHom f)).some]
-      exact (homologyMap_cechComplexMap_cechCupHomology _ h x y).symm
+  cechCohomologyComplexCup E hE
+    (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ LinearMap.mul R (F.obj X)) (cechAlgebraMul_naturality F) p q n h
 
 /-- **The cup product on images of classes of one family.** The cup product of the images of two
 classes of the family `E j` is the image of their cup product. -/
@@ -476,9 +468,8 @@ theorem cechCohomologyCup_ι {p q n : ℕ} (h : p + q = n) (j : J)
         (((cechCohomologyι E hE q j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom b) =
       ((cechCohomologyι E hE n j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
         (cechCupHomology (E j).obj F p q n h a b) := by
-  simp only [cechCohomologyCup, cechCohomologyι_app]
-  -- the diagrams are only determined by the goal, so the universe levels are given explicitly
-  exact TauCeti.ModuleCat.colimitMap₂_ι.{t, w} _ _ j _ _
+  rw [cechCohomologyCup, cechCupHomology_eq_cechComplexCup]
+  exact cechCohomologyComplexCup_ι E hE _ (cechAlgebraMul_naturality F) p q n h j a b
 
 /-- **The cup product on images of classes of two families.** The cup product of the images of a
 class `a` of `E i` and a class `b` of `E j` is the image of the cup product of their restrictions
@@ -507,8 +498,8 @@ variable [Nonempty J]
 family of the system (`TauCeti.CategoryTheory.cechCohomologyι_app_cechOneHomology`). -/
 def cechCohomologyOne :
     (cechCohomology (ModuleCat.{w} R) E hE 0).obj (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) :=
-  ((cechCohomologyι E hE 0 (Classical.arbitrary J)).app
-    (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom (cechOneHomology (E _).obj F)
+  cechCohomologyUnitClass E hE (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ (1 : F.obj X)) (cechAlgebraOne_naturality F)
 
 /-- The unit class is the image of the unit class of every family of the system. -/
 @[simp]
@@ -516,31 +507,28 @@ theorem cechCohomologyι_app_cechOneHomology (j : J) :
     ((cechCohomologyι E hE 0 j).app (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))).hom
         (cechOneHomology (E j).obj F) =
       cechCohomologyOne E hE F := by
-  obtain ⟨k, hjk, hk⟩ := exists_ge_ge j (Classical.arbitrary J)
-  rw [cechCohomologyOne, ← cechCohomologyι_app_homologyMap E hE _ hjk (hE hjk).some,
-    ← cechCohomologyι_app_homologyMap E hE _ hk (hE hk).some,
-    homologyMap_cechComplexMap_cechOneHomology, homologyMap_cechComplexMap_cechOneHomology]
+  rw [cechCohomologyOne, cechOneHomology_eq_cechUnitClass]
+  exact (cechCohomologyUnitClass_eq_ι E hE _ _ (cechAlgebraOne_naturality F) j).symm
 
 /-- The unit class is a left unit for the cup product on Čech cohomology for the system. -/
 @[simp]
 theorem cechCohomologyOne_cechCohomologyCup {q : ℕ}
     (y : (cechCohomology (ModuleCat.{w} R) E hE q).obj
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
-    cechCohomologyCup E hE F 0 q q (zero_add q) (cechCohomologyOne E hE F) y = y := by
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
-  rw [← cechCohomologyι_app_cechOneHomology E hE F j, cechCohomologyCup_ι,
-    cechOneHomology_cechCupHomology]
+    cechCohomologyCup E hE F 0 q q (zero_add q) (cechCohomologyOne E hE F) y = y :=
+  cechCohomologyComplexCup_unit_left E hE _ (cechAlgebraMul_naturality F) _
+    (cechAlgebraOne_naturality F) (fun _ (y : F.obj _) ↦ one_mul y) q y
 
 /-- The unit class is a right unit for the cup product on Čech cohomology for the system. -/
 @[simp]
 theorem cechCohomologyCup_cechCohomologyOne {p : ℕ}
     (x : (cechCohomology (ModuleCat.{w} R) E hE p).obj
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
-    cechCohomologyCup E hE F p 0 p (add_zero p) x (cechCohomologyOne E hE F) = x := by
-  obtain ⟨j, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
-  rw [← cechCohomologyι_app_cechOneHomology E hE F j, cechCohomologyCup_ι,
-    cechCupHomology_cechOneHomology]
+    cechCohomologyCup E hE F p 0 p (add_zero p) x (cechCohomologyOne E hE F) = x :=
+  cechCohomologyComplexCup_unit_right E hE _ (cechAlgebraMul_naturality F) _
+    (cechAlgebraOne_naturality F) (fun _ (x : F.obj _) ↦ mul_one x) p x
 
+omit [Nonempty J] in
 /-- **Associativity** of the cup product on Čech cohomology for the system. -/
 theorem cechCohomologyCup_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m + r = n)
     (h₃ : q + r = l) (h₄ : p + l = n)
@@ -551,23 +539,18 @@ theorem cechCohomologyCup_assoc {p q r m l n : ℕ} (h₁ : p + q = m) (h₂ : m
     (z : (cechCohomology (ModuleCat.{w} R) E hE r).obj
       (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))) :
     cechCohomologyCup E hE F m r n h₂ (cechCohomologyCup E hE F p q m h₁ x y) z =
-      cechCohomologyCup E hE F p l n h₄ x (cechCohomologyCup E hE F q r l h₃ y z) := by
-  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
-  obtain ⟨k, c, rfl⟩ := exists_cechCohomologyι_app_eq E hE z
-  -- move the three classes to a common refinement
-  obtain ⟨s, his, hjs⟩ := exists_ge_ge i j
-  obtain ⟨t, hst, hkt⟩ := exists_ge_ge s k
-  rw [← cechCohomologyι_app_homologyMap E hE _ (his.trans hst) (hE (his.trans hst)).some a,
-    ← cechCohomologyι_app_homologyMap E hE _ (hjs.trans hst) (hE (hjs.trans hst)).some b,
-    ← cechCohomologyι_app_homologyMap E hE _ hkt (hE hkt).some c]
-  simp only [cechCohomologyCup_ι]
-  rw [cechCupHomology_assoc (E t).obj F h₁ h₂ h₃ h₄]
+      cechCohomologyCup E hE F p l n h₄ x (cechCohomologyCup E hE F q r l h₃ y z) :=
+  cechCohomologyComplexCup_assoc E hE _ _ _ _
+    (cechAlgebraMul_naturality F) (cechAlgebraMul_naturality F)
+    (cechAlgebraMul_naturality F) (cechAlgebraMul_naturality F)
+    (fun _ (x y z : F.obj _) ↦ mul_assoc x y z)
+    p q r m l n h₁ h₃ h₂ x y z
 
 section Naturality
 
 variable {F} {G : Cᵒᵖ ⥤ AlgCat.{w} R} (α : F ⟶ G)
 
+omit [Nonempty J] in
 /-- **Naturality in the coefficients.** The map on Čech cohomology for the system induced by a
 morphism of presheaves of algebras `α : F ⟶ G` preserves cup products. -/
 @[simp]
@@ -583,15 +566,13 @@ theorem cechCohomology_map_cechCohomologyCup {p q n : ℕ} (h : p + q = n)
         (((cechCohomology (ModuleCat.{w} R) E hE p).map
           (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom x)
         (((cechCohomology (ModuleCat.{w} R) E hE q).map
-          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom y) := by
-  obtain ⟨i, a, rfl⟩ := exists_cechCohomologyι_app_eq E hE x
-  obtain ⟨j, b, rfl⟩ := exists_cechCohomologyι_app_eq E hE y
-  -- move the two classes to a common refinement
-  obtain ⟨k, hik, hjk⟩ := exists_ge_ge i j
-  rw [← cechCohomologyι_app_homologyMap E hE _ hik (hE hik).some a,
-    ← cechCohomologyι_app_homologyMap E hE _ hjk (hE hjk).some b]
-  simp only [cechCohomologyCup_ι, cechCohomology_map_cechCohomologyι_app,
-    homologyMap_cechComplexFunctor_map_cechCupHomology]
+          (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom y) :=
+  cechCohomologyComplexCup_naturality E hE _ _
+    (cechAlgebraMul_naturality F) (cechAlgebraMul_naturality G)
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    (fun X (x y : F.obj X) ↦ map_mul (α.app X).hom x y) p q n h x y
 
 /-- The map on Čech cohomology for the system induced by a morphism of presheaves of algebras
 preserves the unit class. -/
@@ -600,9 +581,10 @@ theorem cechCohomology_map_cechCohomologyOne :
     ((cechCohomology (ModuleCat.{w} R) E hE 0).map
         (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))).hom
         (cechCohomologyOne E hE F) =
-      cechCohomologyOne E hE G := by
-  rw [cechCohomologyOne, cechCohomology_map_cechCohomologyι_app,
-    homologyMap_cechComplexFunctor_map_cechOneHomology, cechCohomologyι_app_cechOneHomology]
+      cechCohomologyOne E hE G :=
+  cechCohomology_map_cechCohomologyUnitClass E hE
+    (Functor.whiskerRight α (forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)))
+    _ (cechAlgebraOne_naturality F) _ (cechAlgebraOne_naturality G) fun X ↦ map_one (α.app X).hom
 
 end Naturality
 
@@ -624,11 +606,12 @@ theorem cechCohomologyZeroIso_hom_mul (s t : F.obj (op T)) :
       cechCohomologyCup E hE F 0 0 0 rfl
         ((cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom s)
         ((cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom
-          t) := by
-  rw [cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
-    cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
-    cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
-    homologyMap_cechAugmentation_mul, cechCohomologyCup_ι]
+          t) :=
+  (cechCohomologyComplexCup_cechCohomologyZeroIso_hom E hE hT
+    (P := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (Q := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (S := F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R))
+    (fun X ↦ LinearMap.mul R (F.obj X)) (cechAlgebraMul_naturality F) h h h s t).symm
 
 /-- **In degree zero the unit class is the unit section.** If `F` satisfies the sheaf condition for
 every family of the system, the identification of the degree `0` Čech cohomology with the sections
@@ -638,8 +621,13 @@ theorem cechCohomologyZeroIso_hom_one :
     (cechCohomologyZeroIso E hE hT (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h).hom.hom
         (1 : F.obj (op T)) =
       cechCohomologyOne E hE F := by
-  rw [cechCohomologyZeroIso_hom_apply E hE hT _ h (Classical.arbitrary J),
-    homologyMap_cechAugmentation_one, cechCohomologyι_app_cechOneHomology]
+  refine (cechCohomologyZeroIso_hom_eq_cechCohomologyUnitClass E hE hT
+    (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)) h (1 : F.obj (op T))).trans ?_
+  have h_eq : ∀ (e₁ e₂ : ∀ X : Cᵒᵖ, (F ⋙ forget₂ (AlgCat.{w} R) (ModuleCat.{w} R)).obj X)
+      h₁ h₂, e₁ = e₂ →
+      cechCohomologyUnitClass E hE _ e₁ h₁ = cechCohomologyUnitClass E hE _ e₂ h₂ := by
+    rintro _ _ _ _ rfl; rfl
+  exact h_eq _ _ _ _ (funext fun X ↦ cechAlgebraOne_naturality F (hT.from X.unop).op)
 
 end Zero
 

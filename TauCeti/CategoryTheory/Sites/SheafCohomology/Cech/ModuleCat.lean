@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Limits
 public import Mathlib.Algebra.Category.ModuleCat.Products
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Basic
+import TauCeti.CategoryTheory.Limits.Shapes.Products
 
 /-!
 # Čech complexes of presheaves of modules
@@ -88,7 +89,7 @@ theorem cechComplexπ_d (U : ι → C) (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : �
           (cechComplexπ U P n (c ∘ k.succAbove) a) :=
   (ModuleCat.comp_apply _ _ a).symm.trans <|
     (ConcreteCategory.congr_hom (cechComplexFunctor_obj_d_comp_cechComplexπ U P n c) a).trans <| by
-      simp [ModuleCat.hom_sum, Pi.map', Category.comp_id]
+      simp [ModuleCat.hom_sum, Pi.map'_id_eq_lift]
 
 /-- The factor of `(cechComplexMap P φ).f n a` indexed by `c` is the factor of `a` indexed by
 `φ.f ∘ c`, restricted along the product of the morphisms `φ.φ (c j)`. -/

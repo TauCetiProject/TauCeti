@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Cup.Basic
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.ModuleCat
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Ordered.HomotopyEquiv
+import TauCeti.CategoryTheory.Limits.Shapes.Products
 import TauCeti.Data.Fin.Rev
 import TauCeti.Data.Nat.Choose.Basic
 import Mathlib.SetTheory.Cardinal.Order
@@ -117,9 +118,9 @@ private lemma d_comp_restrict {m n : ℕ} (k : Fin (n + 1) → ι) (σ : Fin (m 
       ∑ j : Fin (m + 2), (-1 : ℤ) ^ (j : ℕ) • restrict U P k (σ ∘ j.succAbove) := by
   rw [restrict, reassoc_of% cechComplexFunctor_obj_d_comp_cechComplexπ, Preadditive.sum_comp]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Preadditive.zsmul_comp]
-  congr 1
-  simpa only [restrict, Pi.map', Category.comp_id] using restrict_comp_map U P k σ j.succAbove
+  have h := restrict_comp_map U P k σ j.succAbove
+  rw [restrict, Pi.map'_id_eq_lift] at h
+  rw [Preadditive.zsmul_comp, h]
 
 /-- The degree `n` component of the order-reversing operator. -/
 private def reverseX (n : ℕ) :
@@ -152,7 +153,7 @@ private lemma reverseX_comm (n : ℕ) :
       cechComplexπ U P n (k ∘ (Fin.revPerm j).succAbove) ≫
           P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) ((Fin.revPerm j).succAbove x)).op =
         restrict U P k (Fin.revPerm j).succAbove := by
-    simp only [restrict, Pi.map', Category.comp_id]
+    rw [restrict, Pi.map'_id_eq_lift]
   rw [Preadditive.comp_zsmul, hrestr, reverseX_comp_restrict, Fin.revPerm_apply, hσ, smul_smul,
     smul_smul, Fin.neg_one_pow_val_rev_mul]
 
@@ -225,8 +226,7 @@ theorem cechReverse_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) (k : Fin (n + 1) → 
   have h : ((cechReverse A U).app P).f n ≫ cechComplexπ U P n k =
       (-1 : ℤ) ^ (n + 1).choose 2 • (cechComplexπ U P n (k ∘ Fin.rev) ≫
         P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (k j)) (Fin.rev x)).op) := by
-    simpa only [cechReverse_app_f, restrict, Pi.map', Category.comp_id] using
-      reverseX_comp_cechComplexπ U P n k
+    rw [cechReverse_app_f, reverseX_comp_cechComplexπ, restrict, Pi.map'_id_eq_lift]
   simp only [cechComplexπ_eq] at h
   exact h
 
@@ -301,7 +301,7 @@ theorem fromStrictMonoCechComplex_comp_cechReverse :
       fromStrictMono_f_comp_cechComplexπ U P hk, Preadditive.zsmul_comp, smul_smul,
       neg_one_pow_card_univ_inversions_comp_rev hk, Category.assoc, ← P.map_comp, ← op_comp]
     congr 1
-    simp only [Pi.map', Category.comp_id]
+    rw [Pi.map'_id_eq_lift]
     exact strictMonoCechComplexπ_comp_map_eq U P
       (Subtype.ext (Tuple.comp_sort_eq_comp_sort_of_range_eq hk' (Fin.rev_surjective.range_comp k)))
       _ _
@@ -372,8 +372,9 @@ theorem cechComplexπ_cechReverse (P : Cᵒᵖ ⥤ ModuleCat.{w} R) (n : ℕ)
         P.map (Pi.lift fun x ↦ Pi.π (fun j ↦ U (c j)) (Fin.rev x)).op) := by
     simp only [cechComplexπ_eq]
     exact cechReverse_app_f_π U P n c
-  simpa only [ModuleCat.comp_apply, ModuleCat.hom_zsmul, LinearMap.smul_apply, Pi.map',
-    Category.comp_id] using ConcreteCategory.congr_hom hm a
+  rw [Pi.map'_id_eq_lift]
+  simpa only [ModuleCat.comp_apply, ModuleCat.hom_zsmul, LinearMap.smul_apply] using
+    ConcreteCategory.congr_hom hm a
 
 /-- **Reversal identity for the Čech cup product on cochains.** Reversing a cup product of
 reversed cochains recovers the cup product in the opposite order with the Koszul sign

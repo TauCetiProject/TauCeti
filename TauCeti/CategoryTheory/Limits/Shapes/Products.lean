@@ -434,3 +434,14 @@ lemma isIso_inj_of_isInitial {C : Type*} [Category* C] {ι : Type*} {X : ι → 
 end IsColimit
 
 end CategoryTheory.Limits.Cofan
+
+namespace CategoryTheory.Limits.Pi
+
+/-- Reindexing a product along `p : β → α` with identity maps on the factors is the lift of the
+projections `Pi.π f (p b)`. -/
+lemma map'_id_eq_lift {C : Type*} [Category* C] {α β : Type*} {f : α → C} (p : β → α)
+    [HasProduct f] [HasProduct fun b ↦ f (p b)] :
+    Pi.map' p (fun _ ↦ 𝟙 _) = Pi.lift fun b ↦ Pi.π f (p b) := by
+  simp only [Pi.map', Category.comp_id]
+
+end CategoryTheory.Limits.Pi
