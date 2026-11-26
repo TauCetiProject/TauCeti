@@ -69,15 +69,6 @@ section Cocycle
 
 variable {G : Type u} [Monoid G] [TopologicalSpace G]
 
-/-- A `1`-cocycle is additive in its first argument when that argument acts trivially on the
-coefficients: `f (g * h) = f g + f h`. -/
-theorem apply_mul_eq_add_of_mem_Z1 {B : Type v} [AddCommGroup B] [TopologicalSpace B]
-    [IsTopologicalAddGroup B] [DistribMulAction G B] {f : G → B} (hf : f ∈ Z1 G B) {g : G}
-    (hg : ∀ b : B, g • b = b) (h : G) : f (g * h) = f g + f h := by
-  have h₁ : f (g * h) = g • f h + f g := (mem_Z1_iff.1 hf).2 g h
-  rw [hg] at h₁
-  rw [h₁, add_comm]
-
 /-- A `1`-cocycle that vanishes at `n` satisfies `f (g * n) = f g` for every `g`. -/
 theorem apply_mul_eq_of_mem_Z1 {B : Type v} [AddCommGroup B] [TopologicalSpace B]
     [IsTopologicalAddGroup B] [DistribMulAction G B] {f : G → B} (hf : f ∈ Z1 G B) (g : G) {n : G}
@@ -153,7 +144,7 @@ theorem exists_openNormalSubgroup_forall_mem_Z1 {U : Subgroup G} (hU : IsOpen (U
   obtain ⟨N, hNU, hN⟩ := exists_openNormalSubgroup_forall_apply_eq_zero.{u, v} hU m
   refine ⟨N, hNU, fun B _ _ _ _ hB hU f hf n hn ↦ ?_⟩
   have hfn : f n = 0 := hN B hB f (mem_Z1_iff.1 hf).1
-    (fun g hg h _ ↦ apply_mul_eq_add_of_mem_Z1 hf (hU g hg) h) n hn
+    (fun g hg h _ ↦ map_mul_of_smul_eq_self_of_mem_Z1 hf (hU g hg) h) n hn
   exact ⟨hfn, fun g ↦ apply_mul_eq_of_mem_Z1 hf g hfn⟩
 
 end ContCohomology
