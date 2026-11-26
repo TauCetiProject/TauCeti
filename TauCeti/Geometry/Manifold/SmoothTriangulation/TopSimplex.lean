@@ -186,7 +186,8 @@ theorem contMDiffOn_coordinates_symm [IsManifold I n M] (h : IsSmoothTriangulati
   set w₀ : σ → ℝ := fun a => x₀.val a
   have hF0 : F (w₀ + ((0 : singleParityCheckCode ℝ σ) : σ → ℝ)) = κ x₀ := by
     have hmem := Realization.mem_convexHull_of_support_subset K x₀ hx₀.le
-    simpa [w₀] using hFg ⟨x₀.val, hmem⟩
+    simpa only [faceInclusion_mk_val, ZeroMemClass.coe_zero, add_zero, w₀] using
+      hFg ⟨x₀.val, hmem⟩
   rw [← hF0]
   -- The local inverse `φ` given by the inverse function theorem stays in the open simplex.
   set φ := hloc.localInverse
