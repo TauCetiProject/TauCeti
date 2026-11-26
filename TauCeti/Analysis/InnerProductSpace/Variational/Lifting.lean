@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LaxMilgram
+import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
 # Variational solutions with a lifting
@@ -18,9 +19,22 @@ Lax–Milgram correction gives a bounded linear map from `(g, ℓ)` to `u = g + 
 This is the lifting construction for nonhomogeneous boundary values: one takes `H = H¹(Ω)`,
 `V = H¹₀(Ω)` and `S` the inclusion. It requires neither symmetry of `B` nor completeness of `H`.
 
+## Dirichlet's principle
+
+For a symmetric form the solution is also characterized variationally. Put
+`J(w) = B(g + S w, g + S w) / 2 - ℓ w` on `V`, the energy of the candidate `g + S w`. If `B` is
+nonnegative on the image of `S`, then `w₀` minimizes `J` exactly when `u = g + S w₀` solves
+`B(u, S v) = ℓ v` for every `v : V` (`ContinuousLinearMap.isMinOn_iff_forall_apply_eq`, in
+`TauCeti.Analysis.Variational.QuadraticEnergy`). When `B` is moreover coercive on `V` through `S`,
+the minimizers are exactly the `w₀` with `g + S w₀` the lifted solution
+(`IsCoercive.isMinOn_iff_solutionWithLifting_eq`). When `S` is injective, as for the inclusion of
+a subspace, `w` is determined by `u = g + S w`, and minimizing `J` is minimizing
+`B(u, u) / 2 - ℓ (u - g)` over the affine space `g + S V`.
+
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.2.1–§6.2.2.
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §6.2.1–§6.2.2, and §2.2.5, Theorem 17
+  (Dirichlet's principle for Poisson's equation).
 -/
 
 public section
@@ -130,6 +144,19 @@ theorem solutionWithLifting_map (h : IsCoercive (B.bilinearComp S S))
     h.solutionWithLifting (S w, ℓ) = S (h.solutionOfFunctional ℓ) := by
   rw [← h.solutionWithLifting_zero ℓ]
   exact (h.solutionWithLifting_eq_iff_sub_mem_range _ _ ℓ).2 ⟨w, by simp⟩
+
+/-- **Dirichlet's principle for the lifted solution.** Let `B` be symmetric and coercive on `V`
+through `S`. Then `w₀` minimizes the energy `J(w) = B(g + S w, g + S w) / 2 - ℓ w` on `V` exactly
+when `g + S w₀` is the lifted solution for `(g, ℓ)`. -/
+theorem isMinOn_iff_solutionWithLifting_eq (h : IsCoercive (B.bilinearComp S S))
+    (hsymm : ∀ x y, B x y = B y x) (g : H) (ℓ : StrongDual ℝ V) (w₀ : V) :
+    IsMinOn (fun w => B (g + S w) (g + S w) / 2 - ℓ w) Set.univ w₀ ↔
+      h.solutionWithLifting (g, ℓ) = g + S w₀ := by
+  have hnonneg (w : V) : 0 ≤ B (S w) (S w) := by
+    simpa only [ContinuousLinearMap.bilinearComp_apply] using h.apply_self_nonneg w
+  rw [B.isMinOn_iff_forall_apply_eq S hsymm hnonneg, h.solutionWithLifting_eq_iff,
+    add_sub_cancel_left]
+  exact (and_iff_right (Set.mem_range_self w₀)).symm
 
 variable (h : IsCoercive (B.bilinearComp S S)) {C : ℝ} (hC : 0 < C)
   (hlower : ∀ v : V, C * ‖v‖ ^ 2 ≤ B (S v) (S v))
