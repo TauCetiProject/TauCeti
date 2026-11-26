@@ -12,7 +12,7 @@ import TauCeti.Analysis.Fredholm.CompactPerturbation
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
-# The trajectory operator over a compactly embedded domain is Fredholm
+# Fredholm property and index of the trajectory operator over a compactly embedded domain
 
 Let `ι : D →L[ℝ] H` be a compact embedding of a Banach space `D` into a Hilbert space `H`, and
 let `A : ℝ → (D →L[ℝ] H)` be an essentially bounded family of operators, given as a class `AL` in
@@ -55,8 +55,25 @@ Since the Fredholm property holds along the segment between two such families wi
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq`). In particular, a family with
 equal limits `B₋ = B₊` gives an operator of index zero
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero`), the index of the
-autonomous operator `D_{B}`. The identification of the index with minus the spectral flow of `A`
-is not treated here.
+autonomous operator `D_{B}`.
+
+**Catenation.** Gluing two operators along an invertible model adds their indices. Let `D_B` be
+invertible, and let `A₁ = B` on `[a, ∞)` and `A₂ = B` on `(-∞, b]`, with `a < b`. The glued
+coefficient `A₃ = A₁ + A₂ - B` agrees with `A₁` on `(-∞, a]` and with `A₂` on `[b, ∞)`, and
+`D_{A₃} = D_{A₁} + D_{A₂} - D_B`. With `G = D_B⁻¹` and `Mᵢ = D_{Aᵢ} - D_B`, so that
+`D_{Aᵢ} G = 1 + Mᵢ G`, this reads `D_{A₃} G = (D_{A₁} G) (D_{A₂} G) - M₁ G M₂ G`. For a cutoff `χ`
+vanishing on `(-∞, a]` and equal to one on `[b, ∞)`, `M₂ = χ M₂` and `M₁ χ = 0`, while `G` commutes
+with `χ` up to `G χ' ι G`. So the cross term is `M₁ G M₂ G = -M₁ G χ' ι G M₂ G`, which is compact by
+the Aubin–Lions lemma since `χ'` vanishes off `[a, b]`. Hence `D_{A₃}` is Fredholm when `D_{A₁}` and
+`D_{A₂}` are (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_add_sub`), with
+`ind D_{A₃} = ind D_{A₁} + ind D_{A₂}`
+(`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_add_sub`). No estimate along a long
+neck is needed. Since the index depends only on the limits, this gives the catenation law
+`ind D_{A''} = ind D_A + ind D_{A'}` for families `A` from `B₀` to `B₁`, `A'` from `B₁` to `B₂`
+and `A''` from `B₀` to `B₂`, provided `B₁ - B₂` is bounded through `ι`
+(`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_add`): cut `A` off to `B₁` and
+`A'` off to `B₁` on overlapping half-lines and glue. The identification of the index with minus
+the spectral flow of `A` is not treated here.
 
 ## Main results
 
@@ -67,6 +84,11 @@ is not treated here.
   limits `B±`.
 * `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero`: equal limits give index
   zero.
+* `TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_add_sub`,
+  `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_add_sub`: gluing two Fredholm
+  operators along an invertible model gives a Fredholm operator, and the indices add.
+* `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_add`: the index is additive under
+  catenation of families.
 
 ## References
 
@@ -119,7 +141,8 @@ private def mulGraph (ι : D →L[ℝ] H) (β : ℝ → ℝ) (hβ : ContDiff ℝ
 private def coeffL (ι : D →L[ℝ] H) (AL : Lp (D →L[ℝ] H) ∞ μ₀) (B : D →L[ℝ] H) (φ : ℝ → ℝ)
     (hφ : Continuous φ) {C : ℝ} (hC : ∀ s, |φ s| ≤ C) :
     WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀ :=
-  (mulLp φ hφ hC).comp (familyDomainTrajectoryOperator ι AL - domainTrajectoryOperator ι B)
+  (mulLp φ hφ hC).comp (familyDomainTrajectoryOperator (p := 2) ι AL -
+      domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B)
 
 private theorem coeffL_ae (AL : Lp (D →L[ℝ] H) ∞ μ₀) (B : D →L[ℝ] H) {φ : ℝ → ℝ}
     (hφ : Continuous φ) {C : ℝ} (hC : ∀ s, |φ s| ≤ C)
@@ -552,5 +575,361 @@ theorem index_familyDomainTrajectoryOperator_eq_zero (hι : IsCompactOperator ι
     fun T ↦ ⟨0, Eventually.of_forall fun s _ x ↦ by simp⟩,
     familyDomainTrajectoryOperator_toLp_const]
   exact index_domainTrajectoryOperator hSymm hB
+
+/-! ### Catenation of the index -/
+
+omit [CompleteSpace D] in
+/-- **The commutator of the trajectory operator with a cutoff.** Multiplying by a smooth cutoff `β`
+before applying `D_A` is multiplying by `β` afterwards, up to the term `β' (ι ∘ u)`:
+`D_A (β u) = β D_A u + β' (ι ∘ u)`. -/
+private theorem familyDomainTrajectoryOperator_comp_mulGraph_eq_add
+    (AL : Lp (D →L[ℝ] H) ∞ μ₀) {β : ℝ → ℝ} (hβ : ContDiff ℝ ∞ β) (hβ₀ : ∀ s, |β s| ≤ 1) {L : ℝ}
+    (hβ₁ : ∀ s, |deriv β s| ≤ L) :
+    (familyDomainTrajectoryOperator ι AL).comp (mulGraph ι β hβ hβ₀ hβ₁) =
+      (mulLp β hβ.continuous hβ₀).comp (familyDomainTrajectoryOperator ι AL) +
+        commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ := by
+  ext u : 1
+  refine Lp.ext ?_
+  filter_upwards [familyDomainTrajectoryOperator_smulLeftCLM_ae ι AL hβ.contDiffOn
+      ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hβ₀ s)⟩
+      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hβ₁ s) u,
+    Lp.coeFn_add (mulLp β hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u))
+      (commL ι (deriv β) (hβ.continuous_deriv (by simp)) hβ₁ u),
+    mulLp_ae hβ.continuous hβ₀ (familyDomainTrajectoryOperator ι AL u),
+    commL_ae (hβ.continuous_deriv (by simp)) hβ₁ u] with s h₁ h₂ h₃ h₄
+  rw [ContinuousLinearMap.comp_apply, mulGraph, h₁, add_apply,
+    ContinuousLinearMap.comp_apply, h₂, Pi.add_apply, h₃, h₄]
+
+omit [CompleteSpace D] in
+/-- Where `χ` vanishes on `(-∞, a]` and `A = B` almost everywhere on `[a, ∞)`, the coefficient
+error `A - B` annihilates `χ u`. -/
+private theorem familyDomainTrajectoryOperator_sub_mulGraph_eq_zero {AL : Lp (D →L[ℝ] H) ∞ μ₀}
+    {B : D →L[ℝ] H} {a : ℝ} (h : ∀ᵐ s ∂μ₀, a ≤ s → AL s = B) {χ : ℝ → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχ₀ : ∀ s, |χ s| ≤ 1) {L : ℝ} (hχ₁ : ∀ s, |deriv χ s| ≤ L) (hχa : ∀ s, s ≤ a → χ s = 0)
+    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL -
+      domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B)
+      (mulGraph ι χ hχ hχ₀ hχ₁ u) = 0 := by
+  refine Lp.ext ?_
+  filter_upwards [familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B
+      (mulGraph ι χ hχ hχ₀ hχ₁ u),
+    prev_smulLeftCLM_ae hχ.contDiffOn ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hχ₀ s)⟩
+      (exists_forall_norm_fderiv_le_of_abs_deriv_le fun s _ ↦ hχ₁ s)
+      ι.compLpL_multiplicationOperator u,
+    h, Lp.coeFn_zero H 2 μ₀] with s hs hp hsa h0
+  rw [sub_apply, hs, h0, Pi.zero_apply, mulGraph, hp, map_smul]
+  rcases le_total s a with h' | h'
+  · rw [hχa s h', zero_smul]
+  · rw [hsa h', sub_self, zero_apply, smul_zero]
+
+omit [CompleteSpace D] in
+/-- Where `χ` is one on `[b, ∞)` and `A = B` almost everywhere on `(-∞, b]`, multiplying the
+coefficient error `(A - B) u` by `χ` does not change it. -/
+private theorem mulLp_familyDomainTrajectoryOperator_sub {AL : Lp (D →L[ℝ] H) ∞ μ₀}
+    {B : D →L[ℝ] H} {b : ℝ} (h : ∀ᵐ s ∂μ₀, s ≤ b → AL s = B) {χ : ℝ → ℝ} (hχ : Continuous χ)
+    (hχ₀ : ∀ s, |χ s| ≤ 1) (hχb : ∀ s, b ≤ s → χ s = 1)
+    (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+    mulLp χ hχ hχ₀ ((familyDomainTrajectoryOperator (p := 2) ι AL -
+      domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B) u) =
+      (familyDomainTrajectoryOperator (p := 2) ι AL -
+      domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B) u := by
+  refine Lp.ext ?_
+  filter_upwards [mulLp_ae hχ hχ₀
+      ((familyDomainTrajectoryOperator (p := 2) ι AL -
+      domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B) u),
+    familyDomainTrajectoryOperator_sub_domainTrajectoryOperator_ae ι AL B u, h] with s hs hs' hsb
+  rw [hs, sub_apply, hs']
+  rcases le_total s b with h' | h'
+  · rw [hsb h', sub_self, zero_apply, smul_zero]
+  · rw [hχb s h', one_smul]
+
+omit [CompleteSpace D] in
+/-- **The inverse of `D_B` commutes with a cutoff up to a compact term.** If `e` identifies `D_B`
+with an isomorphism, then `e⁻¹ (χ f) = χ e⁻¹ f - e⁻¹ (χ' ι (e⁻¹ f))`. -/
+private theorem symm_mulLp_eq_mulGraph_symm_sub {B : D →L[ℝ] H}
+    (e : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) ≃L[ℝ] Lp H 2 μ₀)
+    (he : (e : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀) =
+      domainTrajectoryOperator ι B) {χ : ℝ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχ₀ : ∀ s, |χ s| ≤ 1)
+    {L : ℝ} (hχ₁ : ∀ s, |deriv χ s| ≤ L) (f : Lp H 2 μ₀) :
+    e.symm (mulLp χ hχ.continuous hχ₀ f) = mulGraph ι χ hχ hχ₀ hχ₁ (e.symm f) -
+      e.symm (commL ι (deriv χ) (hχ.continuous_deriv (by simp)) hχ₁ (e.symm f)) := by
+  have h := congrArg (· (e.symm f)) (familyDomainTrajectoryOperator_comp_mulGraph_eq_add (ι := ι)
+    ((memLp_top_const (μ := μ₀) B).toLp _) hχ hχ₀ hχ₁)
+  simp only [familyDomainTrajectoryOperator_toLp_const, ← he, ContinuousLinearMap.comp_apply,
+    add_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] at h
+  rw [eq_sub_of_add_eq h.symm, map_sub, ContinuousLinearEquiv.symm_apply_apply]
+
+/-- **The glued operator through an invertible model.** Let `e` identify `D_B` with an isomorphism,
+and let `A₁ = B` on `[a, ∞)` and `A₂ = B` on `(-∞, b]`, with `a < b`. For the glued coefficient
+`A₃ = A₁ + A₂ - B`, the operator `D_{A₃} e⁻¹` is the product `(D_{A₁} e⁻¹) (D_{A₂} e⁻¹)` up to a
+compact operator. -/
+private theorem exists_isCompactOperator_familyDomainTrajectoryOperator_add_sub_comp_eq
+    (hι : IsCompactOperator ι) {B : D →L[ℝ] H}
+    (e : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) ≃L[ℝ] Lp H 2 μ₀)
+    (he : (e : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ] Lp H 2 μ₀) =
+      domainTrajectoryOperator ι B) {AL₁ AL₂ : Lp (D →L[ℝ] H) ∞ μ₀} {a b : ℝ} (hab : a < b)
+    (h₁ : ∀ᵐ s ∂μ₀, a ≤ s → AL₁ s = B) (h₂ : ∀ᵐ s ∂μ₀, s ≤ b → AL₂ s = B) :
+    ∃ K : Lp H 2 μ₀ →L[ℝ] Lp H 2 μ₀, IsCompactOperator K ∧
+      (familyDomainTrajectoryOperator ι (AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _)).comp
+          (e.symm : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) =
+        ((familyDomainTrajectoryOperator ι AL₁).comp
+          (e.symm : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀))).comp
+          ((familyDomainTrajectoryOperator ι AL₂).comp
+            (e.symm : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀))) + K := by
+  obtain ⟨χ, hχ, hχ₀, hχa, hχb, hχ₁, hχ'⟩ := exists_contDiff_step hab
+  set DB := domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B
+  set G : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) := ↑e.symm
+  set M₁ := familyDomainTrajectoryOperator ι AL₁ - DB
+  set M₂ := familyDomainTrajectoryOperator ι AL₂ - DB
+  set Mχ := mulGraph ι χ hχ hχ₀ hχ₁
+  set Cχ := commL ι (deriv χ) (hχ.continuous_deriv (by simp)) hχ₁
+  have hDG (f : Lp H 2 μ₀) : DB (G f) = f := by simp [DB, G, ← he]
+  -- The glued operator is `D_{A₁} + (D_{A₂} - D_B)`.
+  have hD₃ : familyDomainTrajectoryOperator ι (AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _) =
+      familyDomainTrajectoryOperator ι AL₁ + M₂ := by
+    rw [← sub_eq_iff_eq_add', familyDomainTrajectoryOperator_sub,
+      show AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _ - AL₁ =
+        AL₂ - (memLp_top_const (μ := μ₀) B).toLp _ by abel,
+      ← familyDomainTrajectoryOperator_sub, familyDomainTrajectoryOperator_toLp_const]
+  -- `A₁ - B` vanishes where `χ` does not, and `χ = 1` where `A₂ - B` does not vanish.
+  have hM₁ (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) : M₁ (Mχ u) = 0 :=
+    familyDomainTrajectoryOperator_sub_mulGraph_eq_zero h₁ hχ hχ₀ hχ₁ hχa u
+  have hM₂ (u : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+      mulLp χ hχ.continuous hχ₀ (M₂ u) = M₂ u :=
+    mulLp_familyDomainTrajectoryOperator_sub h₂ hχ.continuous hχ₀ hχb u
+  -- The inverse `G` of `D_B` commutes with `χ` up to `G Cχ G`.
+  have hG (f : Lp H 2 μ₀) : G (mulLp χ hχ.continuous hχ₀ f) = Mχ (G f) - G (Cχ (G f)) :=
+    symm_mulLp_eq_mulGraph_symm_sub e he hχ hχ₀ hχ₁ f
+  refine ⟨M₁.comp (G.comp (Cχ.comp (G.comp (M₂.comp G)))), ?_, ?_⟩
+  · have hc (s : ℝ) (hs : s ∉ Ioo (-(|a| + |b|)) (|a| + |b|)) : deriv χ s = 0 :=
+      hχ' s fun h ↦ hs ⟨by linarith [h.1, neg_abs_le a, abs_nonneg b],
+        by linarith [h.2, le_abs_self b, abs_nonneg a]⟩
+    exact (((isCompactOperator_commL hι (hχ.continuous_deriv (by simp)) hχ₁ hc).comp_clm
+      (G.comp (M₂.comp G))).clm_comp G).clm_comp M₁
+  -- Expand both sides through `D_{Aᵢ} = D_B + Mᵢ` and `D_B G = 1`.
+  ext f : 1
+  have hD₁ (v : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+      familyDomainTrajectoryOperator ι AL₁ v = DB v + M₁ v := by simp [M₁]
+  have hD₂ (v : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)) :
+      familyDomainTrajectoryOperator ι AL₂ v = DB v + M₂ v := by simp [M₂]
+  have hcross : M₁ (G (M₂ (G f))) = -M₁ (G (Cχ (G (M₂ (G f))))) := by
+    have h := hG (M₂ (G f))
+    rw [hM₂] at h
+    rw [congrArg M₁ h, map_sub, hM₁, zero_sub]
+  simp only [ContinuousLinearMap.comp_apply, add_apply, hD₃, hD₁, hD₂, hDG,
+    map_add, hcross]
+  abel
+
+variable {B : D →L[ℝ] H} {AL₁ AL₂ : Lp (D →L[ℝ] H) ∞ μ₀} {a b : ℝ}
+
+/-- **Gluing preserves the Fredholm property.** Let `ι` be compact and `D_B` invertible, and let
+`A₁ = B` almost everywhere on `[a, ∞)` and `A₂ = B` almost everywhere on `(-∞, b]`, with `a < b`.
+If `D_{A₁}` and `D_{A₂}` are Fredholm, then so is the operator `D_{A₃}` of the glued coefficient
+`A₃ = A₁ + A₂ - B`, which is `A₁` on `(-∞, a]` and `A₂` on `[b, ∞)`. Here
+`D_A u = (ι ∘ u)' + A u`. -/
+theorem isFredholm_familyDomainTrajectoryOperator_add_sub (hι : IsCompactOperator ι)
+    (hB : (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B).IsInvertible)
+    (hab : a < b) (h₁ : ∀ᵐ s ∂μ₀, a ≤ s → AL₁ s = B) (h₂ : ∀ᵐ s ∂μ₀, s ≤ b → AL₂ s = B)
+    (hF₁ : (familyDomainTrajectoryOperator (p := 2) ι AL₁).IsFredholm)
+    (hF₂ : (familyDomainTrajectoryOperator (p := 2) ι AL₂).IsFredholm) :
+    (familyDomainTrajectoryOperator (p := 2) ι
+      (AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _)).IsFredholm := by
+  obtain ⟨e, he⟩ := hB
+  obtain ⟨K, hK, hEq⟩ :=
+    exists_isCompactOperator_familyDomainTrajectoryOperator_add_sub_comp_eq hι e he hab h₁ h₂
+  have hG : (e.symm : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀)).IsFredholm :=
+    ContinuousLinearMap.IsInvertible.isFredholm ⟨e.symm, rfl⟩
+  have h₃ := ((hF₁.comp hG).comp (hF₂.comp hG)).add_of_isCompactOperator hK
+  rw [← hEq] at h₃
+  simpa using h₃.comp (ContinuousLinearMap.IsInvertible.isFredholm ⟨e, rfl⟩)
+
+/-- **The index is additive under gluing.** Let `ι` be compact and `D_B` invertible, and let
+`A₁ = B` almost everywhere on `[a, ∞)` and `A₂ = B` almost everywhere on `(-∞, b]`, with `a < b`.
+If `D_{A₁}` and `D_{A₂}` are Fredholm, then the operator `D_{A₃}` of the glued coefficient
+`A₃ = A₁ + A₂ - B`, which is `A₁` on `(-∞, a]` and `A₂` on `[b, ∞)`, has index
+`ind D_{A₃} = ind D_{A₁} + ind D_{A₂}`. Here `D_A u = (ι ∘ u)' + A u`. -/
+theorem index_familyDomainTrajectoryOperator_add_sub (hι : IsCompactOperator ι)
+    (hB : (domainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι B).IsInvertible)
+    (hab : a < b) (h₁ : ∀ᵐ s ∂μ₀, a ≤ s → AL₁ s = B) (h₂ : ∀ᵐ s ∂μ₀, s ≤ b → AL₂ s = B)
+    (hF₁ : (familyDomainTrajectoryOperator (p := 2) ι AL₁).IsFredholm)
+    (hF₂ : (familyDomainTrajectoryOperator (p := 2) ι AL₂).IsFredholm) :
+    (familyDomainTrajectoryOperator (p := 2) ι
+      (AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _)).index =
+      (familyDomainTrajectoryOperator (p := 2) ι AL₁).index +
+        (familyDomainTrajectoryOperator (p := 2) ι AL₂).index := by
+  obtain ⟨e, he⟩ := hB
+  obtain ⟨K, hK, hEq⟩ :=
+    exists_isCompactOperator_familyDomainTrajectoryOperator_add_sub_comp_eq hι e he hab h₁ h₂
+  set G : Lp H 2 μ₀ →L[ℝ] WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) := ↑e.symm
+  have hG : G.IsFredholm := ContinuousLinearMap.IsInvertible.isFredholm ⟨e.symm, rfl⟩
+  have hF := (hF₁.comp hG).comp (hF₂.comp hG)
+  set D₃ := familyDomainTrajectoryOperator (p := 2) ι
+    (AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B).toLp _)
+  -- `D_{A₃} = (D_{A₃} G) e`, and composing with an isomorphism does not change the index.
+  have hD₃ : D₃ = (D₃.comp G).comp (e : WeakDerivStep volume ⊤ 2 (ι.compLpL 2 μ₀) →L[ℝ]
+      Lp H 2 μ₀) := by
+    ext u
+    simp [G]
+  rw [hD₃, ContinuousLinearMap.index_comp_equiv, hEq,
+    ContinuousLinearMap.index_add_of_isCompactOperator hF hK,
+    ContinuousLinearMap.index_comp (hF₁.comp hG) (hF₂.comp hG)]
+  simp only [G, ContinuousLinearMap.index_comp_equiv]
+
+omit [CompleteSpace H] [CompleteSpace D] in
+/-- An `L∞` class of the interpolation `s ↦ (1 - φ s) • A s + φ s • A' s` of two coefficients by a
+continuous function `φ` with `|φ| ≤ 1`. -/
+private theorem exists_ae_eq_one_sub_smul_add_smul {A A' : ℝ → D →L[ℝ] H}
+    {AL AL' : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A) (hAL' : AL' =ᵐ[μ₀] A') {φ : ℝ → ℝ}
+    (hφ : Continuous φ) (hφ₀ : ∀ s, |φ s| ≤ 1) :
+    ∃ AL₁ : Lp (D →L[ℝ] H) ∞ μ₀, AL₁ =ᵐ[μ₀] fun s ↦ (1 - φ s) • A s + φ s • A' s := by
+  have h₂ : ∃ C, ∀ s ∈ ((⊤ : Opens ℝ) : Set ℝ), ‖1 - φ s‖ ≤ C := ⟨2, fun s _ ↦ by
+    rw [Real.norm_eq_abs]
+    linarith [abs_sub (1 : ℝ) (φ s), abs_one (α := ℝ), hφ₀ s]⟩
+  have h₁ : ∃ C, ∀ s ∈ ((⊤ : Opens ℝ) : Set ℝ), ‖φ s‖ ≤ C :=
+    ⟨1, fun s _ ↦ (Real.norm_eq_abs _).trans_le (hφ₀ s)⟩
+  refine ⟨Lp.multiplicationOperator (linftyOfContinuousOn volume
+      (continuous_const.sub hφ).continuousOn (⊤ : Opens ℝ).isOpen.measurableSet h₂) AL +
+    Lp.multiplicationOperator (linftyOfContinuousOn volume hφ.continuousOn
+      (⊤ : Opens ℝ).isOpen.measurableSet h₁) AL', ?_⟩
+  filter_upwards [Lp.coeFn_add (Lp.multiplicationOperator (linftyOfContinuousOn volume
+      (continuous_const.sub hφ).continuousOn (⊤ : Opens ℝ).isOpen.measurableSet h₂) AL)
+      (Lp.multiplicationOperator (linftyOfContinuousOn volume hφ.continuousOn
+        (⊤ : Opens ℝ).isOpen.measurableSet h₁) AL'),
+    Lp.multiplicationOperator_linftyOfContinuousOn_ae _ _ _ AL,
+    Lp.multiplicationOperator_linftyOfContinuousOn_ae _ _ _ AL', hAL, hAL'] with s h h₃ h₄ h₅ h₆
+  rw [h, Pi.add_apply, h₃, h₄, h₅, h₆]
+  rfl
+
+omit [CompleteSpace H] [CompleteSpace D] in
+/-- **Cutting a family off to its limit at `+∞`.** A family `A` with limit `B₁` at `+∞`, differing
+from `B₁` on bounded windows by operators bounded through `ι`, agrees with a family `A₁` on
+`(-∞, 0]` such that `A₁ = B₁` on `[1, ∞)` and `A₁ - B₁` is still bounded through `ι` on bounded
+windows. -/
+private theorem exists_eq_of_le_zero_and_eq_of_one_le {B₁ : D →L[ℝ] H} {A : ℝ → D →L[ℝ] H}
+    {AL : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A)
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - B₁) x‖ ≤ c * ‖ι x‖) :
+    ∃ (A₁ : ℝ → D →L[ℝ] H) (AL₁ : Lp (D →L[ℝ] H) ∞ μ₀), AL₁ =ᵐ[μ₀] A₁ ∧
+      (∀ s, s ≤ 0 → A₁ s = A s) ∧ (∀ s, 1 ≤ s → A₁ s = B₁) ∧
+      ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A₁ s - B₁) x‖ ≤ c * ‖ι x‖ := by
+  obtain ⟨AL₁, hAL₁⟩ := exists_ae_eq_one_sub_smul_add_smul hAL
+    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp Real.smoothTransition.continuous
+    Real.smoothTransition.abs_le_one
+  refine ⟨_, AL₁, hAL₁, fun s hs ↦ by simp [Real.smoothTransition.zero_of_nonpos hs],
+    fun s hs ↦ by simp [Real.smoothTransition.one_of_one_le hs], fun T ↦ ?_⟩
+  obtain ⟨c, hc⟩ := hc T
+  refine ⟨c, ?_⟩
+  filter_upwards [hc] with s hs hsT x
+  have : ((1 - Real.smoothTransition s) • A s + Real.smoothTransition s • B₁ - B₁) x =
+      (1 - Real.smoothTransition s) • (A s - B₁) x := by
+    simp only [sub_apply, add_apply, smul_apply]
+    module
+  rw [this, norm_smul, Real.norm_eq_abs]
+  exact abs_mul_norm_le (Real.smoothTransition.abs_one_sub_le_one _)
+    ((norm_nonneg _).trans (hs hsT x)) fun _ ↦ hs hsT x
+
+omit [CompleteSpace H] [CompleteSpace D] in
+/-- **Cutting a family off to its limit at `-∞`.** A family `A'` from `B₁` to `B₂`, differing from
+`B₂` on bounded windows by operators bounded through `ι`, agrees with a family `A₂` on `[3, ∞)` such
+that `A₂ = B₁` on `(-∞, 2]` and, if `B₁ - B₂` is bounded through `ι`, `A₂ - B₂` is still bounded
+through `ι` on bounded windows. -/
+private theorem exists_eq_of_le_two_and_eq_of_three_le {B₁ B₂ : D →L[ℝ] H}
+    (h₁₂ : ∃ c, ∀ x, ‖(B₁ - B₂) x‖ ≤ c * ‖ι x‖) {A' : ℝ → D →L[ℝ] H}
+    {AL' : Lp (D →L[ℝ] H) ∞ μ₀} (hAL' : AL' =ᵐ[μ₀] A')
+    (hc' : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A' s - B₂) x‖ ≤ c * ‖ι x‖) :
+    ∃ (A₂ : ℝ → D →L[ℝ] H) (AL₂ : Lp (D →L[ℝ] H) ∞ μ₀), AL₂ =ᵐ[μ₀] A₂ ∧
+      (∀ s, s ≤ 2 → A₂ s = B₁) ∧ (∀ s, 3 ≤ s → A₂ s = A' s) ∧
+      ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A₂ s - B₂) x‖ ≤ c * ‖ι x‖ := by
+  obtain ⟨AL₂, hAL₂⟩ := exists_ae_eq_one_sub_smul_add_smul
+    (memLp_top_const (μ := μ₀) B₁).coeFn_toLp hAL' (φ := fun s ↦ Real.smoothTransition (s - 2))
+    (by fun_prop) fun s ↦ Real.smoothTransition.abs_le_one _
+  refine ⟨_, AL₂, hAL₂,
+    fun s hs ↦ by simp [Real.smoothTransition.zero_of_nonpos (by linarith : s - 2 ≤ 0)],
+    fun s hs ↦ by simp [Real.smoothTransition.one_of_one_le (by linarith : 1 ≤ s - 2)],
+    fun T ↦ ?_⟩
+  obtain ⟨c₁₂, h₁₂⟩ := h₁₂
+  obtain ⟨c, hc⟩ := hc' T
+  refine ⟨c₁₂ + c, ?_⟩
+  filter_upwards [hc] with s hs hsT x
+  have : ((1 - Real.smoothTransition (s - 2)) • B₁ + Real.smoothTransition (s - 2) • A' s - B₂) x =
+      (1 - Real.smoothTransition (s - 2)) • (B₁ - B₂) x +
+        Real.smoothTransition (s - 2) • (A' s - B₂) x := by
+    simp only [sub_apply, add_apply, smul_apply]
+    module
+  rw [this, add_mul]
+  refine (norm_add_le _ _).trans (add_le_add ?_ ?_) <;> rw [norm_smul, Real.norm_eq_abs]
+  · exact abs_mul_norm_le (Real.smoothTransition.abs_one_sub_le_one _)
+      ((norm_nonneg _).trans (h₁₂ x)) fun _ ↦ h₁₂ x
+  · exact abs_mul_norm_le (Real.smoothTransition.abs_le_one _)
+      ((norm_nonneg _).trans (hs hsT x)) fun _ ↦ hs hsT x
+
+/-- **The index is additive under catenation.** Let `ι` be compact and let `B₀`, `B₁`, `B₂` be
+invertible `ι`-symmetric operators, with `B₁ - B₂` bounded through `ι`. Let `A` run from `B₀` at
+`-∞` to `B₁` at `∞`, and `A'` and `A''` from `B₁` and from `B₀` to `B₂`, each differing from its
+limit at `∞` on every bounded interval by an operator bounded through `ι`, as in
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`. Then the Fredholm indices of
+`D_A u = (ι ∘ u)' + A u` satisfy `ind D_{A''} = ind D_A + ind D_{A'}`. -/
+theorem index_familyDomainTrajectoryOperator_eq_add (hι : IsCompactOperator ι)
+    {B₀ B₁ B₂ : D →L[ℝ] H} (hSymm₀ : ∀ x y : D, ⟪B₀ x, ι y⟫_ℝ = ⟪ι x, B₀ y⟫_ℝ)
+    (hB₀ : B₀.IsInvertible) (hSymm₁ : ∀ x y : D, ⟪B₁ x, ι y⟫_ℝ = ⟪ι x, B₁ y⟫_ℝ)
+    (hB₁ : B₁.IsInvertible) (hSymm₂ : ∀ x y : D, ⟪B₂ x, ι y⟫_ℝ = ⟪ι x, B₂ y⟫_ℝ)
+    (hB₂ : B₂.IsInvertible) (h₁₂ : ∃ c, ∀ x, ‖(B₁ - B₂) x‖ ≤ c * ‖ι x‖)
+    {A A' A'' : ℝ → D →L[ℝ] H} {AL AL' AL'' : Lp (D →L[ℝ] H) ∞ μ₀}
+    (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 B₀)) (htop : Tendsto A atTop (𝓝 B₁))
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - B₁) x‖ ≤ c * ‖ι x‖)
+    (hAL' : AL' =ᵐ[μ₀] A') (hbot' : Tendsto A' atBot (𝓝 B₁)) (htop' : Tendsto A' atTop (𝓝 B₂))
+    (hc' : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A' s - B₂) x‖ ≤ c * ‖ι x‖)
+    (hAL'' : AL'' =ᵐ[μ₀] A'') (hbot'' : Tendsto A'' atBot (𝓝 B₀))
+    (htop'' : Tendsto A'' atTop (𝓝 B₂))
+    (hc'' : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A'' s - B₂) x‖ ≤ c * ‖ι x‖) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL'').index =
+      (familyDomainTrajectoryOperator (p := 2) ι AL).index +
+        (familyDomainTrajectoryOperator (p := 2) ι AL').index := by
+  -- Replace `A` by `A₁ = B₁` on `[1, ∞)` and `A'` by `A₂ = B₁` on `(-∞, 2]`, and glue them.
+  obtain ⟨A₁, AL₁, hAL₁, hA₁l, hA₁r, hc₁⟩ := exists_eq_of_le_zero_and_eq_of_one_le hAL hc
+  obtain ⟨A₂, AL₂, hAL₂, hA₂l, hA₂r, hc₂⟩ := exists_eq_of_le_two_and_eq_of_three_le h₁₂ hAL' hc'
+  have hbot₁ : Tendsto A₁ atBot (𝓝 B₀) :=
+    hbot.congr' ((eventually_le_atBot 0).mono fun s hs ↦ (hA₁l s hs).symm)
+  have htop₁ : Tendsto A₁ atTop (𝓝 B₁) :=
+    tendsto_const_nhds.congr' ((eventually_ge_atTop 1).mono fun s hs ↦ (hA₁r s hs).symm)
+  have hbot₂ : Tendsto A₂ atBot (𝓝 B₁) :=
+    tendsto_const_nhds.congr' ((eventually_le_atBot 2).mono fun s hs ↦ (hA₂l s hs).symm)
+  have htop₂ : Tendsto A₂ atTop (𝓝 B₂) :=
+    htop'.congr' ((eventually_ge_atTop 3).mono fun s hs ↦ (hA₂r s hs).symm)
+  -- The glued family `A₃ = A₁ + A₂ - B₁` runs from `B₀` to `B₂`.
+  have hAL₃ : AL₁ + AL₂ - (memLp_top_const (μ := μ₀) B₁).toLp _ =ᵐ[μ₀]
+      fun s ↦ A₁ s + A₂ s - B₁ := by
+    filter_upwards [Lp.coeFn_sub (AL₁ + AL₂) ((memLp_top_const (μ := μ₀) B₁).toLp _),
+      Lp.coeFn_add AL₁ AL₂, hAL₁, hAL₂, (memLp_top_const (μ := μ₀) B₁).coeFn_toLp]
+      with s h h' h₁ h₂ h₃
+    rw [h, Pi.sub_apply, h', Pi.add_apply, h₁, h₂, h₃]
+  have hbot₃ : Tendsto (fun s ↦ A₁ s + A₂ s - B₁) atBot (𝓝 B₀) :=
+    hbot.congr' ((eventually_le_atBot 0).mono fun s hs ↦ by
+      beta_reduce
+      rw [hA₁l s hs, hA₂l s (by linarith), add_sub_cancel_right])
+  have htop₃ : Tendsto (fun s ↦ A₁ s + A₂ s - B₁) atTop (𝓝 B₂) :=
+    htop'.congr' ((eventually_ge_atTop 3).mono fun s hs ↦ by
+      beta_reduce
+      rw [hA₁r s (by linarith), hA₂r s hs, add_sub_cancel_left])
+  have hc₃ (T : ℝ) : ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T →
+      ∀ x, ‖((A₁ s + A₂ s - B₁) - B₂) x‖ ≤ c * ‖ι x‖ := by
+    obtain ⟨c₁, hc₁⟩ := hc₁ T
+    obtain ⟨c₂, hc₂⟩ := hc₂ T
+    refine ⟨c₁ + c₂, ?_⟩
+    filter_upwards [hc₁, hc₂] with s hs₁ hs₂ hsT x
+    rw [show (A₁ s + A₂ s - B₁ - B₂) x = (A₁ s - B₁) x + (A₂ s - B₂) x by
+      simp only [sub_apply, add_apply]; abel, add_mul]
+    exact (norm_add_le _ _).trans (add_le_add (hs₁ hsT x) (hs₂ hsT x))
+  rw [index_familyDomainTrajectoryOperator_eq hι hSymm₀ hB₀ hSymm₂ hB₂ hAL'' hbot'' htop'' hc''
+      hAL₃ hbot₃ htop₃ hc₃,
+    index_familyDomainTrajectoryOperator_add_sub hι
+      (isInvertible_domainTrajectoryOperator hSymm₁ hB₁) one_lt_two
+      (hAL₁.mono fun s hs h ↦ hs.trans (hA₁r s h))
+      (hAL₂.mono fun s hs h ↦ hs.trans (hA₂l s h))
+      (isFredholm_familyDomainTrajectoryOperator hι hSymm₀ hB₀ hSymm₁ hB₁ hAL₁ hbot₁ htop₁ hc₁)
+      (isFredholm_familyDomainTrajectoryOperator hι hSymm₁ hB₁ hSymm₂ hB₂ hAL₂ hbot₂ htop₂ hc₂),
+    index_familyDomainTrajectoryOperator_eq hι hSymm₀ hB₀ hSymm₁ hB₁ hAL₁ hbot₁ htop₁ hc₁ hAL hbot
+      htop hc,
+    index_familyDomainTrajectoryOperator_eq hι hSymm₁ hB₁ hSymm₂ hB₂ hAL₂ hbot₂ htop₂ hc₂ hAL'
+      hbot' htop' hc']
 
 end TauCeti.WeakDerivStep
