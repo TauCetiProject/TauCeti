@@ -42,18 +42,6 @@ namespace DirichletCharacter
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-omit [NeZero N] in
-open scoped Classical in
-/-- Shifting the real gamma factor by `a`, which is `2` for even and `1` for odd characters,
-moves the gamma pole at the origin into the rational term `(a - 1) / s`. -/
-theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : 0 < s.re) :
-    let a : ℝ := if χ.Even then 2 else 1
-    logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + a) - (a - 1 : ℝ) / s := by
-  rcases χ.even_or_odd with he | ho
-  · norm_num [he, he.logDeriv_gammaFactor, one_div]
-    exact (sub_eq_of_eq_add (logDeriv_Gammaℝ_add_two (Gammaℝ_ne_zero_of_re_pos hs))).symm
-  · simp [ho.not_even, ho.logDeriv_gammaFactor]
-
 variable (hχ : χ.IsPrimitive)
 
 open scoped Classical in
@@ -84,7 +72,8 @@ private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
   have hz' : 1 < z.re := hz
   have hlog := logDeriv_dirichletData_entireCompletion χ hχ hne (one_pos.trans hz')
     (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz'.le)
-  rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div (one_pos.trans hz')] at hlog
+  rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
+    (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hz'))] at hlog
   dsimp only [g]
   push_cast only [ofReal_sub, ofReal_one] at hlog
   linear_combination -hlog

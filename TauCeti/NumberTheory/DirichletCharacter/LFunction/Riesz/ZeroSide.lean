@@ -148,8 +148,10 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
   rw [mul_add, mul_add, ho.mul_integral_rieszZeroSeries_mul_cpow hd hF₀ hF₁ hσ hs,
     mul_integral_rieszGammaCorrection_eq_logDeriv_Gammaℝ ha (by linarith),
     hlog hs.le, hlog (by simp : 1 ≤ (1 : ℂ).re),
-    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div (one_pos.trans hs),
-    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div (by simp : 0 < (1 : ℂ).re)]
+    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
+      (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hs)),
+    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
+      (χ.gammaFactor_ne_zero_of_re_pos (by simp : 0 < (1 : ℂ).re))]
   rw [hm, hc]
   push_cast only [ofReal_sub, ofReal_one]
   field_simp

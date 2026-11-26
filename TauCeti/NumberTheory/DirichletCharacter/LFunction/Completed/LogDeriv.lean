@@ -68,6 +68,17 @@ theorem logDeriv_gammaFactor_eq_digamma {s : ℂ} (hs : χ.gammaFactor s ≠ 0) 
   · rw [ite_eq_right ho.not_even] at hn
     exact (gammaFactor_eq_zero_iff_of_odd ho).mpr ⟨n, hn⟩
 
+open scoped Classical in
+/-- Off its poles, shifting the real gamma factor by `a`, which is `2` for even and `1` for odd
+characters, moves the gamma pole at the origin into the rational term `(a - 1) / s`. -/
+theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : χ.gammaFactor s ≠ 0) :
+    let a : ℝ := if χ.Even then 2 else 1
+    logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + a) - (a - 1 : ℝ) / s := by
+  rcases χ.even_or_odd with he | ho
+  · norm_num [he, he.logDeriv_gammaFactor, one_div]
+    exact (sub_eq_of_eq_add (logDeriv_Gammaℝ_add_two (he.gammaFactor_def s ▸ hs))).symm
+  · simp [ho.not_even, ho.logDeriv_gammaFactor]
+
 /-- On every compact subset of the positive half-plane, the logarithmic derivatives of the
 archimedean factors of all Dirichlet characters are bounded by one constant. -/
 theorem exists_norm_logDeriv_gammaFactor_le (K : Set ℂ) (hK : IsCompact K)
