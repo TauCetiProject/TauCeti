@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.CircleMethod.TypeISum
 import Mathlib.Data.Nat.Dist
+import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Finset.WeightedCauchySchwarz
 
 /-!
@@ -84,27 +85,6 @@ private theorem norm_sum_filter_Ioc_expTwoPiI_le (M N : ℕ) {n n' : ℕ} (hn : 
     refine min_le_min hlen ?_
     rw [one_div, mul_inv]
     exact mul_le_of_le_one_left (inv_nonneg.2 hpos.le) (by norm_num)
-
-/-- For `0 < n ≤ H`, the values `|n - n'|` with `0 < n' ≤ H` lie in `[0, H)` and each is taken at
-most twice, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 ≤ h ≤ H} w(h)` for `w ≥ 0`. -/
-private theorem sum_Ioc_dist_le {w : ℕ → ℝ} (hw : ∀ k, 0 ≤ w k) {n H : ℕ} (hn : n ∈ Ioc 0 H) :
-    ∑ n' ∈ Ioc 0 H, w (Nat.dist n n') ≤ 2 * w 0 + 2 * ∑ k ∈ Icc 1 H, w k := by
-  have hmaps : ∀ n' ∈ Ioc 0 H, Nat.dist n n' ∈ insert 0 (Icc 1 H) := by
-    intro n' hn'
-    simp only [mem_Ioc] at hn hn'
-    simp only [mem_insert, mem_Icc, Nat.dist]
-    omega
-  rw [← sum_fiberwise_of_maps_to hmaps, ← mul_add, ← sum_insert (by simp), mul_sum]
-  refine sum_le_sum fun k _ ↦ ?_
-  rw [sum_congr rfl fun n' hn' ↦ by rw [(mem_filter.1 hn').2], sum_const, nsmul_eq_mul]
-  refine mul_le_mul_of_nonneg_right ?_ (hw k)
-  have hcard : {n' ∈ Ioc 0 H | Nat.dist n n' = k}.card ≤ ({n + k, n - k} : Finset ℕ).card :=
-    card_le_card fun n' hn' ↦ by
-      obtain ⟨-, hk⟩ := mem_filter.1 hn'
-      unfold Nat.dist at hk
-      simp only [mem_insert, mem_singleton]
-      omega
-  exact_mod_cast hcard.trans card_le_two
 
 /-- For `M ≤ m`, the inner sum over `n ≤ N / m` is the sum over `n ≤ N / M` cut off at
 `mn ≤ N`. -/

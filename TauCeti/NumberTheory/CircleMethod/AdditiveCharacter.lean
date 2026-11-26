@@ -33,7 +33,9 @@ This file sets up the additive toolkit of the Hardy–Littlewood circle method o
 
 The bound `1 / (2‖β‖)` is stated with the value `N` when `‖β‖ = 0`, by an explicit `if`: with
 Lean's convention `1 / 0 = 0` the minimum would be `0` there, while the sum has norm exactly `N`
-at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`).
+at the integers (`TauCeti.sum_expTwoPiI_of_distInt_eq_zero`). The capped minimum
+`if ‖x‖ = 0 then Y else min(Y, 1 / ‖x‖)` is monotone in the cap `Y`
+(`TauCeti.ite_min_inv_distInt_le_of_le`).
 
 ## References
 
@@ -313,6 +315,14 @@ theorem norm_sum_expTwoPiI_le (N : ℕ) (β : ℝ) :
   · exact norm_sum_expTwoPiI_le_natCast N β
   · exact le_min (norm_sum_expTwoPiI_le_natCast N β)
       (norm_sum_expTwoPiI_le_one_div N hβ)
+
+/-- Raising the cap `Y` raises the capped minimum `min(Y, 1 / ‖x‖)`, taken to be `Y` when
+`‖x‖ = 0`. -/
+theorem ite_min_inv_distInt_le_of_le {x Y Y' : ℝ} (h : Y ≤ Y') :
+    (if distInt x = 0 then Y else min Y (distInt x)⁻¹) ≤
+      if distInt x = 0 then Y' else min Y' (distInt x)⁻¹ := by
+  split_ifs
+  exacts [h, min_le_min_right _ h]
 
 /-- The geometric-sum bound over an interval of naturals:
 `|∑_{A < m ≤ B} e(mβ)| ≤ min(B - A, 1 / (2‖β‖))`, with the value `B - A` when `‖β‖ = 0`. -/
