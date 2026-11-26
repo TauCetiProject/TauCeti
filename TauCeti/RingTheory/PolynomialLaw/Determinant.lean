@@ -119,6 +119,16 @@ theorem apply_eq_lid_toFun (x : R) :
     D x = TensorProduct.lid A A (D.toLaw.toFun A (1 ⊗ₜ x)) := by
   rw [← ground_toLaw, PolynomialLaw.ground_apply, PolynomialLaw.toFun'_eq_toFun]
 
+/-- Specialising a scalar extension: if an `A`-algebra map `φ : S →ₐ[A] A` sends `z ∈ S ⊗ R` to
+`1 ⊗ x`, then `D x = φ (D(z))`, since the law commutes with `φ`. -/
+theorem apply_eq_rid_toFun_of_rTensor_eq {S : Type*} [CommSemiring S] [Algebra A S]
+    (φ : S →ₐ[A] A) {z : S ⊗[A] R} {x : R} (hz : φ.toLinearMap.rTensor R z = 1 ⊗ₜ x) :
+    D x = φ (Algebra.TensorProduct.rid A A S (D.toLaw.toFun S z)) := by
+  rw [apply_eq_lid_toFun, ← hz, ← PolynomialLaw.isCompat_apply]
+  induction D.toLaw.toFun S z using TensorProduct.inductionOn with
+  | tmul s a => simp [mul_comm]
+  | add y w hy hw => simp only [map_add, hy, hw]
+
 /-- A determinant sends `1` to `1`. -/
 @[simp]
 theorem map_one : D 1 = 1 :=
