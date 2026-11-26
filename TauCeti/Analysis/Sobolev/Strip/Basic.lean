@@ -169,10 +169,10 @@ instance (p : ℝ≥0∞) : HasLpJets p (testSection F₀ F₁) :=
 
 /-- The jet of a test section does not depend on the boundary conditions it is considered
 with. -/
-theorem jetLp_inclusion (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
-    jetLp 2 (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
-      jetLp 2 (testSection F₀ F₁) ξ := by
-  rw [jetLp_apply 2, jetLp_apply 2]
+theorem jetLp_inclusion {p : ℝ≥0∞} (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') (ξ : testSection F₀ F₁) :
+    jetLp p (testSection F₀' F₁') (Submodule.inclusion (testSection_mono h₀ h₁) ξ) =
+      jetLp p (testSection F₀ F₁) ξ := by
+  rw [jetLp_apply p, jetLp_apply p]
   rfl
 
 variable (F₀ F₁) in

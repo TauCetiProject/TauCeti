@@ -83,7 +83,7 @@ namespace TauCeti.CylinderSobolev
 
 open StripSobolev (jet jet_apply stripMeasure toJetClosure coe_toJetClosure
   norm_toJetClosure denseRange_toJetClosure jetClosure_induction translate_toJetClosure coeFn_jetLp
-  exists_forall_mem_strip_norm_le)
+  exists_forall_mem_strip_norm_le exists_seq_tendsto_toJetClosure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -198,20 +198,12 @@ private theorem continuous_eval_const_continuousValue (z : ℝ × ℝ) :
     Continuous fun x : W1p V p ↦ continuousValue p x z :=
   (BoundedContinuousFunction.evalCLM ℝ z).continuous.comp (continuousValue p).continuous
 
-omit [CompleteSpace V] in
-/-- Every element of `W1p V p` is the limit of the jets of a sequence of test sections. -/
-private theorem exists_seq_tendsto_toW1p (x : W1p V p) :
-    ∃ ξ : ℕ → testSection V, Tendsto (fun n ↦ toW1p p (ξ n)) atTop (𝓝 x) := by
-  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p (testSection V) x)
-  choose ξ hξ using hy
-  exact ⟨ξ, by simpa only [hξ] using hlim⟩
-
 /-- **The continuous representative.** For `2 < p < ∞`, the value of an element of
 `W^{1,p}(ℝ × S¹, V)` agrees almost everywhere on the strip with its image under the Sobolev
 embedding, a bounded continuous function. -/
 theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     valueL p x =ᵐ[stripMeasure] continuousValue p x := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
   -- The values converge in `Lᵖ`, so a subsequence converges almost everywhere.
   obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
     (((valueL p).continuous.tendsto x).comp hξ)).exists_seq_tendsto_ae
@@ -239,7 +231,7 @@ element of `W^{1,p}(ℝ × S¹, V)` under the Sobolev embedding tends to zero as
 uniformly in `t`. -/
 theorem tendsto_continuousValue_comap_fst_cocompact (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     Tendsto (continuousValue p x) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
   have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
     (((continuousValue p).continuous.tendsto x).comp hξ)
   refine hunif.tendsto_of_eventually_tendsto (L := fun _ ↦ 0)

@@ -788,6 +788,14 @@ theorem jetClosure_induction₂ {P : jetClosure p S → jetClosure p S → Prop}
     P x y :=
   (denseRange_toJetClosure p S).induction_on₂ hP h x y
 
+/-- Every element of `jetClosure p S` is the limit of the jets of a sequence of elements of
+`S`. -/
+theorem exists_seq_tendsto_toJetClosure (x : jetClosure p S) :
+    ∃ ξ : ℕ → S, Tendsto (fun n ↦ toJetClosure p S (ξ n)) atTop (𝓝 x) := by
+  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p S x)
+  choose ξ hξ using hy
+  exact ⟨ξ, by simpa only [hξ] using hlim⟩
+
 end JetLp
 
 /-! ### Spaces of sections invariant under translation -/
