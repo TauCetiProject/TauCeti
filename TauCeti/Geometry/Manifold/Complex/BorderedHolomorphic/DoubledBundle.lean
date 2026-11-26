@@ -40,11 +40,10 @@ second copy, so they are continuous but in general not differentiable across the
 smooth when `C` is constant along the fibres of a collar projection near the boundary:
 
 * `TauCeti.SchottkyDouble.contMDiffOn_of_eq_sheets_of_collar`: an operator-valued function on the
-  Schottky double which is `g` on the first copy and the intrinsic conjugate of `g` on the second
-  copy is real `C^n` if `g` is real `C^n` on `M` and constant along the fibres of a map `ρ` from an
-  open neighbourhood of the boundary into the boundary which is `C^n` when read on the double
-  through the fold. This applies to the transitions of the doubled bundle and to the chart
-  expressions of a doubled bundle map alike.
+  Schottky double which, over an open set `S ⊆ M`, is `g` on the first copy and the intrinsic
+  conjugate of `g` on the second copy is real `C^n` on the preimage of `S` under the fold, if `g`
+  is real `C^n` on `S` and constant along the fibres of a map `ρ` from an open neighbourhood of the
+  boundary into the boundary which is `C^n` when read on the double through the fold.
 * `TauCeti.SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`: if the transitions of `C` are
   real `C^n` on `M`, and constant along the fibres of such a `ρ`, then the transitions of the
   doubled bundle are real `C^n` on the Schottky double.
@@ -145,14 +144,8 @@ first copy of `M` and the intrinsic conjugate `star ∘ g ∘ star` of `g` on th
 be real `C^n` on `S`, and let `ρ : M → M` be a collar projection on an open neighbourhood `U` of the
 boundary: it maps `U` into the boundary, it is `C^n` when read on the double through the fold, and
 `g` is constant along its fibres in `U ∩ S`. Then `h` is real `C^n` on the preimage of `S` under
-the fold.
-
-Since the boundary points of `S` lie on both copies, `g` is real there. Near the seam `h` is `g`
-at the collar projection on both copies, since `g` is constant along `ρ` and real on its image.
-Away from the seam the fold is a local diffeomorphism onto the interior of `M`, followed on the
-second copy by conjugation of operators. Applied to the transitions of a bundle pair this is
-`contMDiffOn_coordChange_doubledBundleCore`; applied to the chart expressions of a bundle map it
-gives the smoothness of the doubled map. -/
+the fold. Applied to the transitions of a bundle pair this is
+`contMDiffOn_coordChange_doubledBundleCore`. -/
 theorem contMDiffOn_of_eq_sheets_of_collar {n : ℕ∞ω} {S : Set M} (hS : IsOpen S)
     {g : M → E →L[ℂ] F} (hg : ContMDiffOn closedUpperHalfPlaneModel 𝓘(ℝ, E →L[ℂ] F) n g S)
     {h : SchottkyDouble M → E →L[ℂ] F} (hl : ∀ x ∈ S, h (DoubleAlong.inl A x) = g x)
@@ -168,7 +161,8 @@ theorem contMDiffOn_of_eq_sheets_of_collar {n : ℕ∞ω} {S : Set M} (hS : IsOp
   intro y hyS
   refine ContMDiffAt.contMDiffWithinAt ?_
   by_cases hyU : DoubleAlong.fold A y ∈ U
-  · -- Near the seam `h` is `g` at the collar projection, on both copies.
+  · -- Near the seam `h` is `g` at the collar projection on both copies, since `g` is constant
+    -- along `ρ` and real on its image: the boundary points of `S` lie on both copies.
     obtain ⟨hρS, -⟩ := hgρ _ ⟨hyU, hyS⟩
     refine ((hg.contMDiffAt (hS.mem_nhds hρS)).comp y
       (hρ.contMDiffAt ((hU.preimage hfold).mem_nhds hyU))).congr_of_eventuallyEq ?_
@@ -184,7 +178,9 @@ theorem contMDiffOn_of_eq_sheets_of_collar {n : ℕ∞ω} {S : Set M} (hS : IsOp
       -- `g` is real at the boundary point `ρ x`, which lies on both copies.
       rw [hr x hz.2, ← hzρ, ← hr _ hzρS, ← DoubleAlong.inl_coe_eq_inr A ⟨ρ x, hρA hz.1⟩,
         hl _ hzρS]
-  · exact contMDiffAt_of_eq_sheets_of_mem_borderedInterior hS hl hr
+  · -- Away from the seam the fold is a local diffeomorphism onto the interior of `M`, followed on
+    -- the second copy by conjugation of operators.
+    exact contMDiffAt_of_eq_sheets_of_mem_borderedInterior hS hl hr
       (hg.contMDiffAt (hS.mem_nhds hyS)) hyS (not_not.1 fun h ↦ hyU (hAU h))
 
 end Collar
