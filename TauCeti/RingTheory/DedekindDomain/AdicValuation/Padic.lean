@@ -277,6 +277,8 @@ private theorem finrank_padic_adicCompletion_int (v : HeightOneSpectrum ℤ)
     AlgEquiv.ofRingEquiv
       (f := (Rat.HeightOneSpectrum.adicCompletion.padicRingEquivOfCharP v p).symm)
       fun x ↦ (DFunLike.congr_fun (algebraMap_padic_adicCompletion_int v p) x).symm
+  -- State `finrank_self` over an abstract field `k` so typeclass search does not unfold
+  -- `Padic.normedField` to synthesize `StrongRankCondition ℚ_[p]`.
   have hself (k : Type) [Field k] : Module.finrank k k = 1 := Module.finrank_self k
   exact (LinearEquiv.finrank_eq (R := ℚ_[p]) e.toLinearEquiv).symm.trans (hself ℚ_[p])
 

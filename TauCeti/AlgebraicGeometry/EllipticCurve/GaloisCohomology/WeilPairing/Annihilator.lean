@@ -94,11 +94,6 @@ open IsDedekindDomain TauCeti TauCeti.ContCohomology
 
 namespace WeierstrassCurve
 
-private theorem natCard_submodule_torsionBy_eq {G : Type*} [AddCommGroup G] (m : ℕ) :
-    Nat.card (Submodule.torsionBy ℤ G m) = Nat.card (AddSubgroup.torsionBy G m) :=
-  Nat.card_congr <| Equiv.subtypeEquivRight fun _ ↦ by
-    rw [Submodule.mem_torsionBy_iff, AddSubgroup.torsionBy.nsmul_iff, natCast_zsmul]
-
 section FinitePadicExtension
 
 variable {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
@@ -115,11 +110,12 @@ theorem natCard_range_kummerMap_sq_eq_natCard_H1 [DecidableEq K] :
   have hm0 : m ≠ 0 := by
     rintro rfl
     exact hm.ne_zero Nat.cast_zero
+  -- `AddSubgroup.torsionBy` is `@[reducible]` for `(Submodule.torsionBy ℤ _ _).toAddSubgroup`.
   rw [W.natCard_range_kummerMap m hm,
     W.index_range_nsmul_eq_natCard_torsionBy_mul_of_localField hm.ne_zero,
-    natCard_submodule_torsionBy_eq,
     natCard_quotient_span_natCast_eq_pow_finrank_mul_padicValNat K p m hm0,
-    W.natCard_H1_torsionCoeff hm0 p]
+    W.natCard_H1_torsionCoeff hm0 p, ← SetLike.coe_sort_coe (AddSubgroup.torsionBy _ _),
+    Submodule.coe_toAddSubgroup, SetLike.coe_sort_coe]
 
 include p in
 /-- **The local `[m]`-Kummer image is its own exact annihilator under local Tate duality**: over a
@@ -187,7 +183,8 @@ theorem natCard_range_kummerMap_adicCompletion :
           Ideal.span {(m : u.adicCompletionIntegers F)}) := by
   rw [W.natCard_range_kummerMap m hm,
     W.index_range_nsmul_eq_natCard_torsionBy_mul u (natCast_ne_zero_of_isUnit_adicCompletion u hm),
-    natCard_submodule_torsionBy_eq]
+    ← SetLike.coe_sort_coe (AddSubgroup.torsionBy _ _), Submodule.coe_toAddSubgroup,
+    SetLike.coe_sort_coe]
 
 /-- The local `[m]`-Kummer image in `H¹(F_u, E[m])` is finite whenever `m` is invertible in
 `F_u`. -/

@@ -68,15 +68,12 @@ theorem natCard_H1_torsionCoeff [DecidableEq K] {m : ℕ} (hm0 : m ≠ 0) (p : �
   have := FinitePadicExtension.charZero K p
   have : NeZero m := ⟨hm0⟩
   have hm : IsUnit (m : K) := isUnit_iff_ne_zero.mpr (Nat.cast_ne_zero.mpr hm0)
+  -- `padicValNat.pow` is deprecated in favor of `Nat.multiplicity_pow`, so pass between
+  -- `padicValNat` and `multiplicity` via `Nat.padicValNat_def`.
   rw [natCard_H1_eq_mul p K (W.TorsionCoeff m),
     ← Nat.card_congr (W.baseTorsionEquivInvariants m).toEquiv,
     W.natCard_H2_torsionCoeff m hm, W.natCard_torsionCoeff hm, Nat.padicValNat_def,
     Nat.multiplicity_pow m 2, ← Nat.padicValNat_def]
-  have hpow : p ^ (Module.finrank ℚ_[p] K * (2 * padicValNat p m)) =
-      (p ^ (Module.finrank ℚ_[p] K * padicValNat p m)) ^ 2 := by
-    rw [← pow_mul]
-    exact congrArg (p ^ ·) (by ring)
-  rw [hpow]
   ring
 
 end WeierstrassCurve

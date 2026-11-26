@@ -177,6 +177,10 @@ open CategoryTheory in
 /-- For a discrete `R`-module `M` with a `G`-action commuting with `R`, the identity on `M` is an
 isomorphism in `TopRep ℤ G` between `ofDiscreteModule ℤ G M` and
 `TopRep.restrictScalarsInt.obj (ofDiscreteModule R G M)`. -/
+-- Both `@[expose]`d objects have carrier `M` with the same `AddCommGroup M` and canonical
+-- `AddCommGroup.toIntModule` `ℤ`-action (`TopRep.restrictScalarsInt` forgets `Module R M` in favor
+-- of `AddCommGroup.toIntModule` rather than `Module.compHom`), so `map_add'`, `map_smul'`, and the
+-- round-trip composites hold by `rfl`.
 private def ofDiscreteModuleIntIsoRestrictScalarsInt {R : Type*} [Ring R] [TopologicalSpace R]
     {G : Type u} [Monoid G] (M : Type u) [AddCommGroup M] [Module R M] [TopologicalSpace M]
     [DiscreteTopology M] [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] :
