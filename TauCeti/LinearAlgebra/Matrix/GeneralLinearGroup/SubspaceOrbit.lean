@@ -12,20 +12,24 @@ public import TauCeti.LinearAlgebra.Submodule.CardFinrank
 
 import Mathlib.GroupTheory.Index
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit
 
 /-!
 # The action of `GL_n(k)` on the subspaces of `kⁿ`
 
 The group `GL_n(k)` of a field `k` acts on the subspaces of `kⁿ` by the pointwise action,
-`g • W = {g v : v ∈ W}`. This action preserves the dimension, and it is transitive on the
-subspaces of each fixed dimension: an isomorphism `W ≃ W'` extends to an automorphism of `kⁿ`
-(`Submodule.exists_linearEquiv_restrict_eq`). By the orbit-stabilizer theorem the index of the
-stabilizer of `W` is the number of subspaces of the dimension of `W`, which over a finite field
-with `q` elements is the Gaussian binomial coefficient `[n, dim W]_q`
-(`TauCeti.card_submodule_finrank_eq_gaussianBinomial`).
+`g • W = {g v : v ∈ W}`. Through `Matrix.GeneralLinearGroup.toLin` this is the action of the
+automorphisms of `kⁿ` (`Matrix.GeneralLinearGroup.toLin_smul_submodule`), so the general results
+of `TauCeti.LinearAlgebra.GeneralLinearGroup.SubmoduleOrbit` apply: the action preserves the
+dimension, and it is transitive on the subspaces of each fixed dimension. By the
+orbit-stabilizer theorem the index of the stabilizer of `W` is the number of subspaces of the
+dimension of `W`, which over a finite field with `q` elements is the Gaussian binomial coefficient
+`[n, dim W]_q` (`TauCeti.card_submodule_finrank_eq_gaussianBinomial`).
 
 ## Main results
 
+* `Matrix.GeneralLinearGroup.toLin_smul_submodule`: `g` acts on subspaces as the automorphism
+  `toLin g`.
 * `Matrix.GeneralLinearGroup.finrank_smul_submodule`: `dim (g • W) = dim W`.
 * `Matrix.GeneralLinearGroup.exists_smul_eq_of_finrank_eq`: subspaces of the same dimension are
   carried to one another by some `g ∈ GL_n(k)`.
@@ -48,29 +52,22 @@ variable {k : Type*} [Field k] {n : Type*} [Fintype n] [DecidableEq n]
 theorem smul_eq_mulVec (g : GL n k) (v : n → k) : g • v = (g : Matrix n n k) *ᵥ v :=
   (rfl)
 
+/-- An invertible matrix acts on the subspaces of `kⁿ` as the automorphism `toLin g`. -/
+theorem toLin_smul_submodule (g : GL n k) (W : Submodule k (n → k)) : toLin g • W = g • W :=
+  (rfl)
+
 /-- The action of `GL_n(k)` on the subspaces of `kⁿ` preserves the dimension. -/
 theorem finrank_smul_submodule (g : GL n k) (W : Submodule k (n → k)) :
     finrank k ↥(g • W) = finrank k W := by
-  have hinj : Function.Injective (DistribSMul.toLinearMap k (n → k) g) :=
-    MulAction.injective g
-  exact (Submodule.equivMapOfInjective _ hinj W).finrank_eq.symm
+  rw [← toLin_smul_submodule]
+  exact Submodule.finrank_units_smul _ W
 
 /-- **`GL_n(k)` acts transitively on the subspaces of `kⁿ` of each dimension.** Two subspaces of
 the same dimension are carried to one another by some invertible matrix. -/
 theorem exists_smul_eq_of_finrank_eq {W W' : Submodule k (n → k)}
     (h : finrank k W = finrank k W') : ∃ g : GL n k, g • W = W' := by
-  obtain ⟨f, hf⟩ := W.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq W W' h)
-  set g : GL n k := toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv f)
-  have hg (v : n → k) : g • v = f v := by
-    rw [smul_eq_mulVec, ← mulVecLin_apply, ← coe_toLin, MulEquiv.apply_symm_apply,
-      LinearMap.GeneralLinearGroup.coe_ofLinearEquiv]
-  refine ⟨g, le_antisymm ?_ fun x hx ↦ ?_⟩
-  · rintro _ ⟨v, hv, rfl⟩
-    rw [DistribSMul.toLinearMap_apply, ← Units.smul_def, hg, ← hf ⟨v, hv⟩]
-    exact Submodule.coe_mem _
-  · set y : W := (LinearEquiv.ofFinrankEq W W' h).symm ⟨x, hx⟩
-    refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨y, y.property, ?_⟩
-    rw [hg, ← hf y, LinearEquiv.apply_symm_apply]
+  obtain ⟨g, hg⟩ := Submodule.mem_orbit_units_iff.2 h.symm
+  exact ⟨toLin.symm g, by rw [← toLin_smul_submodule, MulEquiv.apply_symm_apply]; exact hg⟩
 
 /-- The orbit of a subspace `W` of `kⁿ` under `GL_n(k)` consists of the subspaces of the dimension
 of `W`. -/

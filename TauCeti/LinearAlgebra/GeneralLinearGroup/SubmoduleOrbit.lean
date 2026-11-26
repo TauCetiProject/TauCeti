@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.End.Invariant
+public import TauCeti.LinearAlgebra.GeneralLinearGroup.Basic
 import Mathlib.GroupTheory.Index
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
@@ -19,19 +20,21 @@ import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
 /-!
 # The action of `GL(V)` on the subspaces of `V`
 
-The automorphisms of a finite-dimensional vector space `V` act on its subspaces by taking images.
-An automorphism maps a subspace `U` onto `Y` as soon as it maps `U` into `Y` and the two have the
-same dimension, so the orbit of `U` consists of the subspaces of the dimension of `U`. With the
-orbit-stabiliser theorem this counts the subspaces of a given dimension through the stabiliser of
-one of them.
+The automorphisms of a vector space `V` act on its subspaces by taking images. An automorphism
+maps a finite-dimensional subspace `U` onto `Y` as soon as it maps `U` into `Y` and the two have
+the same dimension, so the orbit of `U` consists of the finite-dimensional subspaces of the
+dimension of `U`. With the orbit-stabiliser theorem this counts, when `V` is finite-dimensional,
+the subspaces of a given dimension through the stabiliser of one of them.
 
 ## Main results
 
+* `Submodule.finrank_units_smul`: automorphisms preserve the dimension of subspaces.
 * `Submodule.units_smul_eq_of_forall_mem`: an automorphism mapping `U` into a subspace `Y` of the
   same dimension maps `U` onto `Y`.
 * `Submodule.mem_invtSubmodule_of_mem_stabilizer`: an automorphism stabilising `U` leaves `U`
   invariant.
-* `Submodule.mem_orbit_units_iff`: the orbit of `U` is the set of subspaces of the dimension of `U`.
+* `Submodule.mem_orbit_units_iff`: the orbit of a finite-dimensional subspace `U` is the set of
+  finite-dimensional subspaces of the dimension of `U`.
 * `Submodule.stabilizerBlockEquiv`: for a complement `Z` of `U`, the stabiliser of `U` is
   parametrised by the automorphisms of `U` and of `Z` and the maps `Z → U`, through the block
   automorphisms `Submodule.blockUnit`.
@@ -62,22 +65,26 @@ theorem mem_invtSubmodule_of_mem_stabilizer {R M : Type*} [Semiring R] [AddCommM
 
 variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
 
+/-- The action of `GL(V)` on the subspaces of `V` preserves the dimension. -/
+theorem finrank_units_smul (g : (Module.End K V)ˣ) (U : Submodule K V) :
+    finrank K ↥(g • U) = finrank K U :=
+  ((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).finrank_map_eq U
+
 /-- An automorphism mapping `U` into a finite-dimensional subspace `Y` of the same dimension maps
 `U` onto `Y`. -/
 theorem units_smul_eq_of_forall_mem (g : (Module.End K V)ˣ) {U Y : Submodule K V}
     [FiniteDimensional K Y] (h : ∀ x ∈ U, (g : Module.End K V) x ∈ Y)
     (hd : finrank K Y = finrank K U) : g • U = Y :=
   Submodule.eq_of_le_of_finrank_eq (Submodule.map_le_iff_le_comap.2 h)
-    (((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).finrank_map_eq U |>.trans hd.symm)
+    (finrank_units_smul g U |>.trans hd.symm)
 
-variable [FiniteDimensional K V]
-
-/-- The subspaces in the orbit of `U` under `GL(V)` are those of the dimension of `U`. -/
-theorem mem_orbit_units_iff {U Y : Submodule K V} :
+/-- The finite-dimensional subspaces in the orbit of a finite-dimensional subspace `U` under
+`GL(V)` are those of the dimension of `U`. -/
+theorem mem_orbit_units_iff {U Y : Submodule K V} [FiniteDimensional K U] [FiniteDimensional K Y] :
     Y ∈ orbit (Module.End K V)ˣ U ↔ finrank K Y = finrank K U := by
   refine ⟨?_, fun hY ↦ ?_⟩
   · rintro ⟨g, rfl⟩
-    exact ((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).finrank_map_eq U
+    exact finrank_units_smul g U
   · obtain ⟨g, hg⟩ :=
       Submodule.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq U Y hY.symm)
     refine ⟨LinearMap.GeneralLinearGroup.ofLinearEquiv g,
@@ -86,7 +93,7 @@ theorem mem_orbit_units_iff {U Y : Submodule K V} :
 
 /-- Orbit-stabiliser: the order of the stabiliser of `U` in `GL(V)` times the number of subspaces
 of the dimension of `U` is the order of `GL(V)`. -/
-theorem card_stabilizer_mul_card_finrank_eq (U : Submodule K V) :
+theorem card_stabilizer_mul_card_finrank_eq [FiniteDimensional K V] (U : Submodule K V) :
     Nat.card (stabilizer (Module.End K V)ˣ U) *
         Nat.card {Y : Submodule K V // finrank K Y = finrank K U} =
       Nat.card (Module.End K V)ˣ := by
@@ -110,7 +117,6 @@ noncomputable def blockUnit (a : (Module.End K U)ˣ) (b : (Module.End K Z)ˣ)
         (LinearMap.GeneralLinearGroup.toLinearEquiv a) x ≪≫ₗ
       LinearEquiv.prodComm K Z U ≪≫ₗ U.prodEquivOfIsCompl Z hUZ)
 
-omit [FiniteDimensional K V] in
 /-- In the splitting `V ≅ U × Z`, the block automorphism acts as the block map
 `(u, z) ↦ (a u + x z, b z)`. -/
 theorem blockUnit_apply (a : (Module.End K U)ˣ) (b : (Module.End K Z)ˣ)
@@ -123,11 +129,16 @@ theorem blockUnit_apply (a : (Module.End K U)ˣ) (b : (Module.End K Z)ˣ)
 /-- The block automorphism stabilises `U`. -/
 theorem blockUnit_mem_stabilizer (a : (Module.End K U)ˣ) (b : (Module.End K Z)ˣ)
     (x : Z →ₗ[K] U) : blockUnit hUZ a b x ∈ stabilizer (Module.End K V)ˣ U := by
-  refine mem_stabilizer_iff.2 (units_smul_eq_of_forall_mem _ ?_ rfl)
-  intro v hv
-  obtain ⟨u, rfl⟩ : ∃ u : U, (u : V) = v := ⟨⟨v, hv⟩, rfl⟩
-  rw [blockUnit_apply, Submodule.prodEquivOfIsCompl_symm_apply_left]
-  simp
+  -- The block map sends `u ∈ U` to `a u ∈ U`, and `a⁻¹ u ∈ U` to `u`.
+  have h_apply (u : U) : (blockUnit hUZ a b x : Module.End K V) u = (a : Module.End K U) u := by
+    rw [blockUnit_apply, Submodule.prodEquivOfIsCompl_symm_apply_left]
+    simp
+  refine mem_stabilizer_iff.2 (le_antisymm ?_ fun v hv ↦ ?_)
+  · rintro _ ⟨v, hv, rfl⟩
+    exact (h_apply ⟨v, hv⟩).symm ▸ Submodule.coe_mem _
+  · refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).2
+      ⟨_, Submodule.coe_mem ((↑a⁻¹ : Module.End K U) ⟨v, hv⟩), ?_⟩
+    rw [Units.smul_def, Module.End.smul_def, h_apply, Module.End.units_apply_inv_apply]
 
 /-- The block parametrisation of the stabiliser of `U` in `GL(V)`, as a function. -/
 private noncomputable def blockParam
@@ -159,17 +170,40 @@ private theorem blockParam_surjective : Function.Surjective (blockParam hUZ) := 
     (mem_invtSubmodule_of_mem_stabilizer hg)
   have hg_inj : Function.Injective (g : Module.End K V) :=
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).injective
+  have hg_surj : Function.Surjective (g : Module.End K V) :=
+    ((LinearMap.GeneralLinearGroup.generalLinearEquiv K V) g).surjective
+  have h_split (w : V) : ((e.symm w).1 : V) + (e.symm w).2 = w := by
+    rw [← Submodule.coe_prodEquivOfIsCompl' U Z hUZ, LinearEquiv.apply_symm_apply]
   -- The three blocks of `g`: `g` on `U`, and the two components of `g` on `Z`.
   let a₀ : Module.End K U := (g : Module.End K V).restrict hU
   let b₀ : Module.End K Z := LinearMap.snd K U Z ∘ₗ e.symm.toLinearMap ∘ₗ
     (g : Module.End K V) ∘ₗ Z.subtype
   let x₀ : Z →ₗ[K] U := LinearMap.fst K U Z ∘ₗ e.symm.toLinearMap ∘ₗ
     (g : Module.End K V) ∘ₗ Z.subtype
-  have ha₀ : IsUnit a₀ := (LinearMap.isUnit_iff_ker_eq_bot _).2 <| LinearMap.ker_eq_bot.2
-    fun u u' h ↦ Subtype.ext (hg_inj (congrArg Subtype.val h))
-  -- If `g z ∈ U` then `g z = g u` for some `u ∈ U`, so `z ∈ U ∩ Z = 0`.
+  -- Since `g • U = U`, the restriction of `g` maps `U` onto `U`.
+  have ha₀ : IsUnit a₀ := by
+    refine (Module.End.isUnit_iff _).2
+      ⟨fun u u' h ↦ Subtype.ext (hg_inj (congrArg Subtype.val h)), fun u ↦ ?_⟩
+    obtain ⟨w, hw, h_eq⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1
+      ((mem_stabilizer_iff.1 hg).symm ▸ u.prop : (u : V) ∈ g • U)
+    exact ⟨⟨w, hw⟩, Subtype.ext h_eq⟩
   have hb₀ : IsUnit b₀ := by
-    refine (LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun z hz ↦ ?_)
+    refine (Module.End.isUnit_iff _).2 ⟨LinearMap.ker_eq_bot.1
+      (LinearMap.ker_eq_bot'.2 fun z hz ↦ ?_), fun z' ↦ ?_⟩
+    swap
+    -- If `g v = z'` with `v = u + z`, then `g z = z' - g u` with `g u ∈ U`, so `b₀ z = z'`.
+    · obtain ⟨v, hv⟩ := hg_surj z'
+      refine ⟨(e.symm v).2, ?_⟩
+      have h_gu : (e.symm ((g : Module.End K V) (e.symm v).1)).2 = 0 :=
+        (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero U Z hUZ).2 (hU _ (e.symm v).1.prop)
+      have h_v : (g : Module.End K V) (e.symm v).2 =
+          z' - (g : Module.End K V) (e.symm v).1 := by
+        rw [eq_sub_iff_add_eq, ← map_add, add_comm, h_split v, hv]
+      simp only [b₀, LinearMap.comp_apply, Submodule.subtype_apply, LinearEquiv.coe_coe,
+        LinearMap.snd_apply]
+      rw [h_v, map_sub, Prod.snd_sub, h_gu, sub_zero,
+        Submodule.prodEquivOfIsCompl_symm_apply_right]
+    -- If `g z ∈ U` then `g z = g u` for some `u ∈ U`, so `z ∈ U ∩ Z = 0`.
     have h_mem : (g : Module.End K V) z ∈ U :=
       (Submodule.prodEquivOfIsCompl_symm_apply_snd_eq_zero U Z hUZ).1 hz
     rw [← mem_stabilizer_iff.1 hg] at h_mem
@@ -179,8 +213,6 @@ private theorem blockParam_surjective : Function.Surjective (blockParam hUZ) := 
   refine ⟨(ha₀.unit, hb₀.unit, x₀), Subtype.ext (Units.ext (LinearMap.ext fun v ↦ ?_))⟩
   -- On `v = u + z`, the block map gives `g u + (x₀ z + b₀ z) = g u + g z`.
   obtain ⟨⟨u, z⟩, rfl⟩ := e.surjective v
-  have h_split (w : V) : ((e.symm w).1 : V) + (e.symm w).2 = w := by
-    rw [← Submodule.coe_prodEquivOfIsCompl' U Z hUZ, LinearEquiv.apply_symm_apply]
   simp only [blockParam, blockUnit_apply, Submodule.coe_prodEquivOfIsCompl',
     Module.End.blockTriangular_apply, IsUnit.unit_spec, Submodule.coe_add]
   simp only [e, a₀, b₀, x₀, LinearMap.coe_restrict_apply, LinearMap.comp_apply,
