@@ -93,10 +93,12 @@ and proves:
   (`TauCeti.ClassicalSymbol.commute_coefficient_toSymbol_scalar`);
 * `TauCeti.ClassicalSymbol.IsElliptic`: ellipticity, the invertibility of the principal symbol at
   every nonzero frequency; its pointwise inverse is the homogeneous symbol
-  `TauCeti.HomogeneousSymbol.inverse` of degree `-m`. By
-  `TauCeti.ClassicalSymbol.isElliptic_iff_forall_isCompact`, a classical symbol with a complete
-  source space is elliptic exactly when, on every compact set of positions, its full symbol
-  `a(x, ξ)` is invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. This bound is
+  `TauCeti.HomogeneousSymbol.inverse` of degree `-m`. A classical symbol with a complete source
+  space is elliptic exactly when, on every compact set of positions, its full symbol `a(x, ξ)` is
+  invertible at all large frequencies with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`
+  (`TauCeti.ClassicalSymbol.isElliptic_iff_forall_isCompact`, in
+  `TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic`, from
+  `TauCeti.ClassicalSymbol.isInvertible_principal_of_forall_smul`). This bound is
   what the derivative estimates of the inverse symbol, and the parametrix built from it, start
   from. The radius beyond which `a(x, ξ)` is invertible depends on the compact set in general.
   Ellipticity does not see terms of order `m - 1`
@@ -1292,21 +1294,22 @@ private theorem isInvertible_and_norm_inverse_le_of_norm_sub_le [CompleteSpace V
 variable [CompleteSpace V]
 
 /-- **Invertibility at large frequencies from the principal symbol.** Let `K` be a compact set of
-positions at which the principal symbol `a_m(x, ξ)` of a classical symbol of order `m` is invertible
-for `‖ξ‖ ≥ 2`, with `‖a_m(x, ξ)⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)`. Then the full symbol `a(x, ξ)` is invertible for
-`x ∈ K` at all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`.
-Nothing is assumed at positions outside `K`. -/
+positions and `Γ` a set of frequencies such that the principal symbol `a_m(x, ξ)` of a classical
+symbol of order `m` is invertible for `x ∈ K`, `ξ ∈ Γ` and `‖ξ‖ ≥ 2`, with
+`‖a_m(x, ξ)⁻¹‖ ≤ C₀ ⟨ξ⟩^(-m)`. Then the full symbol `a(x, ξ)` is invertible for `x ∈ K` and `ξ ∈ Γ`
+of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. Nothing is assumed at positions
+outside `K` or at frequencies outside `Γ`. -/
 theorem exists_isInvertible_and_norm_inverse_le_of_principal {a : ClassicalSymbol n V W m}
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) {C₀ : ℝ}
-    (h : ∀ x ∈ K, ∀ ξ, 2 ≤ ‖ξ‖ → (a.principal.coefficient (x, ξ)).IsInvertible ∧
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) {Γ : Set (CoordinateSpace n)} {C₀ : ℝ}
+    (h : ∀ x ∈ K, ∀ ξ ∈ Γ, 2 ≤ ‖ξ‖ → (a.principal.coefficient (x, ξ)).IsInvertible ∧
       ‖(a.principal.coefficient (x, ξ)).inverse‖ ≤ C₀ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
-    ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
+    ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ ∈ Γ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
       ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) := by
   obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le hK
-  refine ⟨max 2 (2 * C₀ * C₁), 2 * C₀, fun x hx ξ hξ ↦ ?_⟩
+  refine ⟨max 2 (2 * C₀ * C₁), 2 * C₀, fun x hx ξ hξΓ hξ ↦ ?_⟩
   have h2 : 2 ≤ ‖ξ‖ := (le_max_left _ _).trans hξ
-  exact isInvertible_and_norm_inverse_le_of_norm_sub_le (h x hx ξ h2).1 (by positivity)
-    (le_max_right _ _) hξ (h x hx ξ h2).2 (hC₁ x hx ξ h2)
+  exact isInvertible_and_norm_inverse_le_of_norm_sub_le (h x hx ξ hξΓ h2).1 (by positivity)
+    (le_max_right _ _) hξ (h x hx ξ hξΓ h2).2 (hC₁ x hx ξ h2)
 
 /-- **Invertibility of an elliptic symbol at large frequencies.** On every compact set `K` of
 positions, the full symbol `a(x, ξ)` of an elliptic classical symbol of order `m` is invertible at
@@ -1320,10 +1323,12 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le {a : ClassicalSymbol 
   have ha' := isElliptic_def.1 ha
   obtain ⟨C₀, hC₀⟩ :=
     (cutoffSymbol default (a.principal.inverse ha')).exists_norm_coefficient_le K hK
-  refine exists_isInvertible_and_norm_inverse_le_of_principal hK (C₀ := C₀) fun x hx ξ h2 ↦
-    ⟨isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith)), ?_⟩
-  have hM := hC₀ x hx ξ
-  rwa [coefficient_cutoffSymbol_of_two_le_norm _ _ h2, HomogeneousSymbol.coefficient_inverse] at hM
+  obtain ⟨R, C, hRC⟩ := exists_isInvertible_and_norm_inverse_le_of_principal hK (Γ := Set.univ)
+    (C₀ := C₀) fun x hx ξ _ h2 ↦ ⟨isElliptic_iff.1 ha x ξ (norm_pos_iff.1 (by linarith)), by
+      have hM := hC₀ x hx ξ
+      rwa [coefficient_cutoffSymbol_of_two_le_norm _ _ h2,
+        HomogeneousSymbol.coefficient_inverse] at hM⟩
+  exact ⟨R, C, fun x hx ξ ↦ hRC x hx ξ (Set.mem_univ ξ)⟩
 
 /-- **Ellipticity on compact sets of positions.** On every compact set `K` of positions, an
 elliptic classical symbol is elliptic at the frequencies of norm at least some radius `R`, in the
@@ -1349,17 +1354,16 @@ theorem IsElliptic.exists_isEllipticAbove {a : ClassicalSymbol n V W m} (ha : a.
     rw [hxy ξ]
     exact hRC y hy ξ hξ
 
-/-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
-symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with
-`‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`, then the classical symbol is elliptic. -/
-theorem isElliptic_of_forall_exists_norm_inverse_le {a : ClassicalSymbol n V W m}
-    (h : ∀ x, ∃ R C : ℝ, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
-      ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
-    a.IsElliptic := by
-  -- At `ξ ≠ 0` and large `t`, the principal symbol `a_m(x, t ξ) = t^m a_m(x, ξ)` differs from the
-  -- full symbol `a(x, t ξ)` by `O(t^(m - 1))`, small against the bound `O(t^m)` on its inverse.
-  refine isElliptic_iff.2 fun x ξ hξ ↦ ?_
-  obtain ⟨R, C, hRC⟩ := h x
+/-- **The principal symbol from the full symbol along a ray.** If, at a nonzero frequency `ξ`, the
+full symbol `a(x, t ξ)` is invertible with `‖a(x, t ξ)⁻¹‖ ≤ C ⟨t ξ⟩^(-m)` for every `t > 0` with
+`‖t ξ‖ ≥ R`, then the principal symbol `a_m(x, ξ)` is invertible. -/
+theorem isInvertible_principal_of_forall_smul {a : ClassicalSymbol n V W m}
+    {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) {R C : ℝ}
+    (h : ∀ t : ℝ, 0 < t → R ≤ ‖t • ξ‖ → (a.toSymbol.coefficient (x, t • ξ)).IsInvertible ∧
+      ‖(a.toSymbol.coefficient (x, t • ξ)).inverse‖ ≤ C * (1 + ‖t • ξ‖ ^ 2) ^ (-m / 2)) :
+    (a.principal.coefficient (x, ξ)).IsInvertible := by
+  -- At large `t`, the principal symbol `a_m(x, t ξ) = t^m a_m(x, ξ)` differs from the full symbol
+  -- `a(x, t ξ)` by `O(t^(m - 1))`, small against the bound `O(t^m)` on its inverse.
   obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le (isCompact_singleton (x := x))
   -- Rescale `ξ` to the frequency `t • ξ` of norm `T`, beyond `R`, `2` and `2 C C₁`.
   set T := max (max R 2) (2 * C * C₁)
@@ -1368,7 +1372,7 @@ theorem isElliptic_of_forall_exists_norm_inverse_le {a : ClassicalSymbol n V W m
   have ht : 0 < T / ‖ξ‖ := div_pos (by linarith) hn
   have htξ : ‖(T / ‖ξ‖) • ξ‖ = T := by
     rw [norm_smul, Real.norm_of_nonneg ht.le, div_mul_cancel₀ _ hn.ne']
-  obtain ⟨hB, hM⟩ := hRC ((T / ‖ξ‖) • ξ) (htξ.symm ▸ (le_max_left _ _).trans (le_max_left _ _))
+  obtain ⟨hB, hM⟩ := h _ ht (htξ.symm ▸ (le_max_left _ _).trans (le_max_left _ _))
   have hd := hC₁ x rfl ((T / ‖ξ‖) • ξ) (htξ.symm ▸ hT2)
   rw [← norm_neg, neg_sub] at hd
   -- The principal symbol at `t • ξ` is close to the invertible full symbol, hence invertible.
@@ -1377,17 +1381,6 @@ theorem isElliptic_of_forall_exists_norm_inverse_le {a : ClassicalSymbol n V W m
   rw [a.principal.homogeneous x ξ _ ht, ← Complex.coe_smul,
     ContinuousLinearMap.isInvertible_smul_iff (by simp [(Real.rpow_pos_of_pos ht m).ne'])] at hA
   exact hA
-
-/-- **Ellipticity as invertibility at large frequencies.** A classical symbol of order `m` is
-elliptic exactly when, on every compact set of positions, its full symbol `a(x, ξ)` is invertible
-at all frequencies of norm at least some radius `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`. -/
-theorem isElliptic_iff_forall_isCompact {a : ClassicalSymbol n V W m} :
-    a.IsElliptic ↔ ∀ K : Set (CoordinateSpace n), IsCompact K → ∃ R C : ℝ, ∀ x ∈ K, ∀ ξ,
-      R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
-        ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) :=
-  ⟨fun ha _ hK ↦ ha.exists_isInvertible_and_norm_inverse_le hK, fun h ↦
-    isElliptic_of_forall_exists_norm_inverse_le fun x ↦
-      (h {x} isCompact_singleton).imp fun _ ↦ .imp fun _ hC ξ ↦ hC x rfl ξ⟩
 
 end Elliptic
 
