@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Complex.RealDeriv
+import Mathlib.Topology.Algebra.Order.Floor
 
 /-!
 # Lipschitz bounds for first Riesz sums
@@ -112,10 +113,9 @@ theorem hasDerivWithinAt_rieszSum (c : ℕ → ℂ) (x : ℝ) :
       ((HasDerivAt.div_const (hasDerivAt_id' x).ofReal_comp (n : ℂ)).sub_const 1).const_mul (c n)
   simp only [Complex.ofReal_one, mul_one_div] at hlin
   refine hlin.hasDerivWithinAt.congr_of_eventuallyEq ?_ (rieszSum_def c x)
-  filter_upwards [Ico_mem_nhdsGE (Nat.lt_floor_add_one x)] with t ht
-  have hlt : ⌊t⌋₊ < ⌊x⌋₊ + 1 :=
-    (Nat.floor_lt' (Nat.succ_ne_zero _)).2 (by exact_mod_cast ht.2)
-  rw [rieszSum_def, le_antisymm (Nat.lt_succ_iff.1 hlt) (Nat.floor_le_floor ht.1)]
+  filter_upwards [Filter.tendsto_pure.mp (tendsto_floor_right_pure_floor x)] with t ht
+  have h : ⌊t⌋₊ = ⌊x⌋₊ := by rw [← Int.floor_toNat, ← Int.floor_toNat, ht]
+  rw [rieszSum_def, h]
 
 /-! ### Real coefficients -/
 
