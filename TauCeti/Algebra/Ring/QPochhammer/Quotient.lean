@@ -59,6 +59,14 @@ def qPochhammerRatioDomain (A B : List R) (q : Rˣ) : Set ℤ :=
 
 variable {A B : List R} {q : Rˣ}
 
+/-- An index is admissible exactly when its denominator is a unit. The denominator uses `B`
+at nonnegative indices and the shifted parameters of `A` at negative indices. -/
+theorem mem_qPochhammerRatioDomain_iff {j : ℤ} :
+    j ∈ A.qPochhammerRatioDomain B q ↔
+      if 0 ≤ j then IsUnit ((B.map fun b ↦ qPochhammer b q.val j.toNat).prod)
+      else IsUnit ((A.map fun a ↦ qPochhammer (a * (q ^ j).val) q.val (-j).toNat).prod) := by
+  simp only [qPochhammerRatioDomain, Set.mem_ofPred_eq, ratioNumerator, apply_ite IsUnit]
+
 /-- At a natural index only the shifted factorials of `B` occur in the denominator. -/
 theorem natCast_mem_qPochhammerRatioDomain_iff (n : ℕ) :
     (n : ℤ) ∈ A.qPochhammerRatioDomain B q ↔
@@ -86,6 +94,21 @@ private theorem ratio_eq_mul_inverse {j : ℤ} (h : j ∈ A.qPochhammerRatioDoma
       ratioNumerator A B q j * Ring.inverse (ratioNumerator B A q j) := by
   have hu : IsUnit (ratioNumerator B A q j) := h
   rw [qPochhammerRatio, ← Ring.inverse_unit, hu.unit_spec]
+
+/-- At a nonnegative integer index the regular quotient uses the finite products for `A` and `B`. -/
+theorem qPochhammerRatio_of_nonneg {j : ℤ} (hj : 0 ≤ j) (h : j ∈ A.qPochhammerRatioDomain B q) :
+    A.qPochhammerRatio B q j h =
+      (A.map fun a ↦ qPochhammer a q.val j.toNat).prod *
+        Ring.inverse ((B.map fun b ↦ qPochhammer b q.val j.toNat).prod) := by
+  simp only [ratio_eq_mul_inverse, ratioNumerator, ite_eq_left hj]
+
+/-- At a negative integer index the regular quotient exchanges the parameter lists and shifts
+each parameter by `q ^ j`. -/
+theorem qPochhammerRatio_of_neg {j : ℤ} (hj : j < 0) (h : j ∈ A.qPochhammerRatioDomain B q) :
+    A.qPochhammerRatio B q j h =
+      (B.map fun b ↦ qPochhammer (b * (q ^ j).val) q.val (-j).toNat).prod *
+        Ring.inverse ((A.map fun a ↦ qPochhammer (a * (q ^ j).val) q.val (-j).toNat).prod) := by
+  simp only [ratio_eq_mul_inverse, ratioNumerator, ite_eq_right hj.not_ge]
 
 /-- The regular quotient at `n ≥ 0` is the ordinary finite product ratio. -/
 @[simp] theorem qPochhammerRatio_natCast (n : ℕ) (h : (n : ℤ) ∈ A.qPochhammerRatioDomain B q) :
@@ -168,7 +191,7 @@ private theorem isUnit_prod_shifted_iff (C : List R) (n : ℕ) :
 
 /-- When the integer-indexed products for `B` exist, the regular quotient is defined exactly
 when those for `A` exist and the product for `B` is a unit. -/
-theorem mem_qPochhammerRatioDomain_iff_isUnit {j : ℤ}
+theorem mem_qPochhammerRatioDomain_iff_forall_mem_and_isUnit {j : ℤ}
     (hB : ∀ b ∈ B, j ∈ qPochhammerIntDomain b q) :
     j ∈ A.qPochhammerRatioDomain B q ↔
       (∀ a ∈ A, j ∈ qPochhammerIntDomain a q) ∧
@@ -188,7 +211,7 @@ theorem qPochhammerRatio_eq_prod_qPochhammerInt_mul_inverse {j : ℤ}
     (hB : ∀ b ∈ B, j ∈ qPochhammerIntDomain b q) :
     A.qPochhammerRatio B q j h =
       (A.attach.map fun a ↦ qPochhammerInt a.val q j
-        (((mem_qPochhammerRatioDomain_iff_isUnit hB).mp h).1 a.val a.property)).prod *
+        (((mem_qPochhammerRatioDomain_iff_forall_mem_and_isUnit hB).mp h).1 _ a.property)).prod *
         Ring.inverse
           ((B.attach.map fun b ↦ qPochhammerInt b.val q j (hB b.val b.property)).prod) := by
   rcases le_or_gt 0 j with hj | hj
