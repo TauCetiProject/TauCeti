@@ -80,6 +80,9 @@ smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 *
   their coordinates agree, with the angles compared modulo `2π`.
 * `TauCeti.polarCanonical_polarAngle`, `TauCeti.polarCanonical_radialProjection`: every point
   off the collision set is the image of its polar coordinates.
+* `TauCeti.norm_smul_polarRadialUnit`, `TauCeti.polarAngle_smul_polarRadialUnit`,
+  `TauCeti.exists_pos_smul_polarRadialUnit_eq`: the point `r e_r(θ)`, `r > 0`, has length `r` and
+  angle `θ`, and every nonzero point is of this form.
 * `TauCeti.fderiv_smul_polarRadialUnit_apply`, `TauCeti.det_fderiv_smul_polarRadialUnit`: the
   derivative of polar coordinates `(r, θ) ↦ r e_r` of the plane, and the area form
   `dx ∧ dy = r dr ∧ dθ`.
@@ -218,6 +221,11 @@ theorem norm_polarRadialUnit (θ : ℝ) : ‖polarRadialUnit u w θ‖ = 1 := by
 theorem norm_polarAngularUnit (θ : ℝ) : ‖polarAngularUnit u w θ‖ = 1 := by
   have h := inner_polarAngularUnit_self hu hw huw θ
   rwa [real_inner_self_eq_norm_sq, pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero] at h
+
+/-- The point with polar coordinates `(r, θ)`, `r ≥ 0`, has length `r`: `‖r e_r(θ)‖ = r`. -/
+theorem norm_smul_polarRadialUnit {r : ℝ} (hr : 0 ≤ r) (θ : ℝ) :
+    ‖r • polarRadialUnit u w θ‖ = r := by
+  rw [norm_smul, norm_polarRadialUnit hu hw huw, mul_one, Real.norm_of_nonneg hr]
 
 /-- In the frame `(e_r, e_θ)`, the inner product of `a e_r + b e_θ` and `c e_r + d e_θ` is
 `a c + b d`. -/
@@ -507,6 +515,12 @@ theorem polarAngle_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : 0 < x
         Complex.sin_ofReal_re]
   rw [polarAngle, h, Complex.arg_mul_cos_add_sin_mul_I_coe_angle hr]
 
+/-- The point with polar coordinates `(r, θ)`, `r > 0`, has angle `θ` modulo `2π`. -/
+@[simp]
+theorem polarAngle_smul_polarRadialUnit {r : ℝ} (hr : 0 < r) (θ : ℝ) :
+    polarAngle u w (r • polarRadialUnit u w θ) = θ :=
+  polarAngle_polarCanonical hu hw huw (x := ((r, 0), (θ, 0))) hr
+
 /-- **Polar coordinates determine the point, with the angle taken modulo `2π`.** Two points with
 `r, r' > 0` have the same image under the polar canonical parametrization exactly when their
 radial pairs `(r, p_r)` and angular momenta agree and their angles agree modulo `2π`. -/
@@ -570,6 +584,14 @@ theorem norm_smul_polarRadialUnit_of_coe_eq_polarAngle {q : V} (hq : q ≠ 0) {�
     (hθ : (θ : Real.Angle) = polarAngle (b 0) (b 1) q) :
     ‖q‖ • polarRadialUnit (b 0) (b 1) θ = q := by
   simpa using congrArg Prod.fst (polarCanonical_polarAngle b 0 hq hθ)
+
+/-- **Every nonzero position has polar coordinates**: `q ≠ 0` is `r e_r(θ)` for some `r > 0` and
+`θ`. -/
+theorem exists_pos_smul_polarRadialUnit_eq {q : V} (hq : q ≠ 0) :
+    ∃ x : ℝ × ℝ, 0 < x.1 ∧ x.1 • polarRadialUnit (b 0) (b 1) x.2 = q :=
+  ⟨(‖q‖, (polarAngle (b 0) (b 1) q).toReal), norm_pos_iff.2 hq,
+    norm_smul_polarRadialUnit_of_coe_eq_polarAngle b hq
+      (Real.Angle.coe_toReal (polarAngle (b 0) (b 1) q))⟩
 
 /-- **The area form in polar coordinates is `r dr ∧ dθ`.** For an orthonormal basis `b` of a plane,
 the determinant `dx ∧ dy` of `b` evaluates on the images of `δ` and `δ'` under the derivative of
