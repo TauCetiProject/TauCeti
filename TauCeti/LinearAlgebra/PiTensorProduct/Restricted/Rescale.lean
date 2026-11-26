@@ -63,9 +63,10 @@ variable (w w') in
 scalars `c i`. -/
 def rescale (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
     RestrictedTensor R W w ≃ₗ[R] RestrictedTensor R W w' :=
-  LinearEquiv.ofLinearMap (map (fun i ↦ (c i : R) • LinearMap.id) fun i ↦ (hw i).symm)
-    (map (fun i ↦ (((c i)⁻¹ : Rˣ) : R) • LinearMap.id) fun i ↦
-      ((eq_inv_smul_iff (g := c i)).2 (hw i).symm).symm)
+  LinearEquiv.ofLinearMap
+    (map (fun i ↦ (c i : R) • LinearMap.id) fun i ↦ by
+      rw [LinearMap.smul_apply, LinearMap.id_apply, hw])
+    (map (fun i ↦ (((c i)⁻¹ : Rˣ) : R) • LinearMap.id) fun i ↦ by simp [hw, smul_smul])
     (by rw [← map_comp, ← map_id w']; congr 1; ext i x; simp [smul_smul])
     (by rw [← map_comp, ← map_id w]; congr 1; ext i x; simp [smul_smul])
 
@@ -100,7 +101,7 @@ theorem rescale_tprod_ref (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i
 @[simp]
 theorem rescale_symm (c : ι → Rˣ) (hw : ∀ i, w' i = (c i : R) • w i) :
     (rescale w w' c hw).symm =
-      rescale w' w (fun i ↦ (c i)⁻¹) fun i ↦ (eq_inv_smul_iff (g := c i)).2 (hw i).symm := by
+      rescale w' w (fun i ↦ (c i)⁻¹) (fun i ↦ by simp [hw, smul_smul]) := by
   ext y
   rw [LinearEquiv.symm_apply_eq]
   obtain ⟨S, x, rfl⟩ := exists_ofFinite y
