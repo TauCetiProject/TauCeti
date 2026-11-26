@@ -332,9 +332,10 @@ theorem pderiv_surjective [Algebra ℚ≥0 R] (i : σ) : Function.Surjective (pd
     exact ⟨p' + q', map_add _ _ _⟩
   | monomial s a =>
     refine ⟨monomial (s + Finsupp.single i 1) ((s i + 1 : ℚ≥0)⁻¹ • a), ?_⟩
-    rw [pderiv_monomial, add_tsub_cancel_right, Finsupp.add_apply, Finsupp.single_eq_same,
-      smul_mul_assoc, ← nsmul_eq_mul']
-    simp [← Nat.cast_smul_eq_nsmul ℚ≥0, smul_smul]
+    -- Turn the factor `(s + eᵢ) i` from `pderiv_monomial` into a `ℚ≥0` scalar, which `simp`
+    -- then cancels against `(s i + 1)⁻¹`.
+    simp only [pderiv_monomial, ← nsmul_eq_mul', ← Nat.cast_smul_eq_nsmul ℚ≥0]
+    simp
 
 end CommSemiring
 
