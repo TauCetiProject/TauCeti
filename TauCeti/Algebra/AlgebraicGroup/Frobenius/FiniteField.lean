@@ -409,7 +409,7 @@ theorem geometricFrobeniusBialgHom_tmul (s : k) (h : H) :
 
 /-- The `n`-th iterate of the geometric Frobenius `id ⊗ Frob` of the base change `Spec (k ⊗[K] H)`
 of an affine monoid scheme over a finite field `K`. -/
-@[expose] noncomputable def iterateGeometricFrobeniusBialgHom (n : ℕ) :
+noncomputable def iterateGeometricFrobeniusBialgHom (n : ℕ) :
     k ⊗[K] H →ₐc[k] k ⊗[K] H :=
   Nat.rec (BialgHom.id k _) (fun _ f => (geometricFrobeniusBialgHom K k H).comp f) n
 
@@ -417,7 +417,7 @@ of an affine monoid scheme over a finite field `K`. -/
 @[simp]
 theorem iterateGeometricFrobeniusBialgHom_zero :
     iterateGeometricFrobeniusBialgHom K k H 0 = BialgHom.id k (k ⊗[K] H) :=
-  rfl
+  (rfl)
 
 /-- Each successor iterate of the geometric Frobenius composes the geometric Frobenius with the
 preceding iterate. -/
@@ -425,7 +425,7 @@ preceding iterate. -/
 theorem iterateGeometricFrobeniusBialgHom_succ (n : ℕ) :
     iterateGeometricFrobeniusBialgHom K k H (n + 1) =
       (geometricFrobeniusBialgHom K k H).comp (iterateGeometricFrobeniusBialgHom K k H n) :=
-  rfl
+  (rfl)
 
 variable {K k H}
 variable {R : Type*} [CommRing R] [Algebra k R] [Algebra K R] [IsScalarTower K k R]

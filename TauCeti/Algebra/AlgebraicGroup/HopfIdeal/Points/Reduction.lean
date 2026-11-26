@@ -43,7 +43,7 @@ variable (A : Type w) [CommSemiring A] [IsReduced A] [Algebra R A]
 
 /-- Every point of `H` valued in a reduced `R`-algebra factors uniquely through the reduced
 quotient `H ⧸ (HopfIdeal.reduction R H).toIdeal`. -/
-@[expose] noncomputable def reductionPointsMulEquiv :
+noncomputable def reductionPointsMulEquiv :
     WithConv ((H ⧸ (reduction R H).toIdeal) →ₐ[R] A) ≃* WithConv (H →ₐ[R] A) :=
   let I := reduction R H
   let q := Bialgebra.Quotient.mkBialgHom I.toIdeal
@@ -62,7 +62,7 @@ theorem reductionPointsMulEquiv_apply
     (g : WithConv ((H ⧸ (reduction R H).toIdeal) →ₐ[R] A)) :
     reductionPointsMulEquiv R H A g =
       BialgHom.mapDomain (A := A) (Bialgebra.Quotient.mkBialgHom (reduction R H).toIdeal) g :=
-  rfl
+  (rfl)
 
 variable {R H A}
 
