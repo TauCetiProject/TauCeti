@@ -42,7 +42,8 @@ this one holds in every dimension and needs only the `L²` norm of `∇u`. The e
 invariant under dilations, and the factor `|B_R|^(1/p - 1/2)` turns the `L²` norm of `∇u` into its
 `Lᵖ` scale. It is quantitative in `u`, as it must be: `u ↦ M u` scales both sides. The membership
 `∇u ∈ Lᵖ(B_R)` is an a priori assumption: the estimate bounds the norm, it does not prove that it
-is finite.
+is finite. For uniformly elliptic coefficients the assumption is removed, by approximation, in
+`TauCeti.Analysis.PDE.Regularity.VanishingMeanOscillation.Regularity`.
 
 ## The argument
 
