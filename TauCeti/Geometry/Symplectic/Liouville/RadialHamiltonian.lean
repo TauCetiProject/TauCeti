@@ -245,6 +245,16 @@ theorem exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff
 
 variable {R c : ℝ}
 
+/-- A function that agrees with `φ ∘ r` on the region `{r > R}` agrees with it near each point of
+that region. -/
+theorem eventuallyEq_comp_liouvilleRadialCoordinate_of_lt (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val)
+    (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
+    (hx : R < liouvilleRadialCoordinate Z W x) :
+    F =ᶠ[𝓝 x] φ ∘ liouvilleRadialCoordinate Z W := by
+  filter_upwards [(isOpen_lt continuous_const (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds
+    hx] with y hy using hF y hy
+
 /-- On the region `{r > R}`, `R ≥ 1`, where a Hamiltonian agrees with `φ ∘ r`, its Hamiltonian
 vector field is `φ'(r) X_r`. -/
 private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion ω α W)
@@ -254,11 +264,10 @@ private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion 
     (hφ : DifferentiableAt ℝ φ (liouvilleRadialCoordinate Z W x)) :
     ω.hamiltonianVectorField F x =
       deriv φ (liouvilleRadialCoordinate Z W x) •
-        ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x := by
-  refine h.hamiltonianVectorField_eq_smul_of_eventuallyEq hZ
-    ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hx)) ?_ hφ
-  filter_upwards [(isOpen_lt continuous_const (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds
-    hx] with y hy using hF y hy
+        ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x :=
+  h.hamiltonianVectorField_eq_smul_of_eventuallyEq hZ
+    ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hx))
+    (h.eventuallyEq_comp_liouvilleRadialCoordinate_of_lt hZ hF hx) hφ
 
 /-- **Orbits of radial Hamiltonians stay on the levels of the radial coordinate.** On a
 completion, let `F` agree with `φ ∘ r` on the region `{r > R}`, `R ≥ 1`, with `φ` differentiable
