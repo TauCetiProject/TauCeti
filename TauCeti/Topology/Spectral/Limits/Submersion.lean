@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Category.TopCat.Limits.Basic
 public import TauCeti.Topology.Spectral.Limits.Descent
 public import TauCeti.Topology.Spectral.Limits.Detection
 public import TauCeti.Topology.Spectral.Limits.Maps
@@ -43,7 +44,6 @@ the conclusion cannot be strengthened to `Topology.IsQuotientMap`.
 * `TopCat.isSpectralMap_isLimitMap`, `TopCat.isLimitMap_surjective` — the induced map is spectral
   when `η` is levelwise spectral, and, for cofiltered diagrams, surjective when `η` is levelwise
   surjective and spectral.
-* `TopCat.isLimitMap_π_apply` — the coordinates of the induced map at a point.
 
 ## References
 
@@ -58,13 +58,6 @@ open Set Topology TopologicalSpace CategoryTheory CategoryTheory.Limits
 namespace TopCat
 
 universe v u
-
-/-- The `j`-th coordinate of the image of a point `x` under the map `hd.map c η` between limit
-cones in `TopCat` is the image under `η j` of the `j`-th coordinate of `x`. -/
-theorem isLimitMap_π_apply {K : Type*} [Category K] {F G : K ⥤ TopCat} (c : Cone F) {d : Cone G}
-    (hd : IsLimit d) (η : F ⟶ G) (j : K) (x : c.pt) :
-    d.π.app j (hd.map c η x) = η.app j (c.π.app j x) :=
-  ConcreteCategory.congr_hom (IsLimit.map_π c hd η j) x
 
 variable {J : Type v} [SmallCategory J] [IsCofiltered J]
   (F G : J ⥤ TopCat.{max v u}) [∀ j, SpectralSpace (F.obj j)] [∀ j, SpectralSpace (G.obj j)]

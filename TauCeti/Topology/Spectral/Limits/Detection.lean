@@ -12,11 +12,11 @@ import Mathlib.Topology.WithTopology
 /-!
 # Finite-stage detection in spectral limits
 
-Containment and equality between inverse images of compact opens in a cofiltered spectral
-limit hold after some transition map. In particular, emptiness and covering the whole limit
-are detected at a finite stage. Neither the transitions nor the limit projections need to be
-surjective. The compactness argument works more generally for pro-constructible subsets, and
-equality of inverse images of constructible subsets is detected in the same way.
+Containment and equality between inverse images of constructible subsets, such as compact
+opens, in a cofiltered spectral limit hold after some transition map. In particular, emptiness
+and covering the whole limit are detected at a finite stage. Neither the transitions nor the
+limit projections need to be surjective. Emptiness is detected more generally for
+pro-constructible subsets.
 
 Pass to the compact Hausdorff constructible topologies and use finite-stage emptiness there.
 These detection results allow relations between finite-stage opens to be imposed simultaneously
@@ -83,68 +83,45 @@ theorem exists_preimage_eq_empty_of_isProConstructible {i : J} {s : Set (F.obj i
   rw [hf] at hm
   exact hm
 
-/-- Containment of pullbacks of compact opens in a spectral limit is detected after a
-transition map. -/
-theorem exists_preimage_subset_of_isLimit {i : J} {s t : Set (F.obj i)}
-    (hso : IsOpen s) (hsc : IsCompact s) (hto : IsOpen t) (htc : IsCompact t)
-    (h : c.π.app i ⁻¹' s ⊆ c.π.app i ⁻¹' t) :
+/-- Containment of pullbacks of constructible subsets to a cofiltered spectral limit already
+holds after some transition map. -/
+theorem exists_preimage_subset_of_isConstructible {i : J} {s t : Set (F.obj i)}
+    (hs : IsConstructible s) (ht : IsConstructible t) (h : c.π.app i ⁻¹' s ⊆ c.π.app i ⁻¹' t) :
     ∃ (j : J) (f : j ⟶ i), F.map f ⁻¹' s ⊆ F.map f ⁻¹' t := by
-  have hst : TauCeti.IsProConstructible (s \ t) := by
-    apply TauCeti.isProConstructible_iff_isClosed.mpr
-    have hscl := hsc.isClopen_constructibleTopology_of_isOpen hso
-    have htcl := htc.isClopen_constructibleTopology_of_isOpen hto
-    let : TopologicalSpace (F.obj i) := constructibleTopology (F.obj i)
-    exact hscl.isClosed.sdiff htcl.isOpen
   have hempty : c.π.app i ⁻¹' (s \ t) = ∅ := by
     rw [preimage_sdiff, sdiff_eq_empty]
     exact h
-  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc hst hempty
+  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
+    (hs.sdiff ht).isProConstructible hempty
   exact ⟨j, f, by rwa [preimage_sdiff, sdiff_eq_empty] at hf⟩
-
-/-- Equality of pullbacks of compact opens in a spectral limit is detected at a single
-common later stage. -/
-theorem exists_preimage_eq_of_isLimit {i : J} {s t : Set (F.obj i)}
-    (hso : IsOpen s) (hsc : IsCompact s) (hto : IsOpen t) (htc : IsCompact t)
-    (h : c.π.app i ⁻¹' s = c.π.app i ⁻¹' t) :
-    ∃ (j : J) (f : j ⟶ i), F.map f ⁻¹' s = F.map f ⁻¹' t := by
-  obtain ⟨j, f, hf⟩ := exists_preimage_subset_of_isLimit F hF c hc hso hsc hto htc h.subset
-  obtain ⟨k, g, hg⟩ := exists_preimage_subset_of_isLimit F hF c hc hto htc hso hsc h.symm.subset
-  obtain ⟨l, a, b, hab⟩ := IsCofiltered.cospan f g
-  refine ⟨l, a ≫ f, Subset.antisymm ?_ ?_⟩
-  · simpa only [F.map_comp, coe_comp, preimage_comp] using preimage_mono (f := F.map a) hf
-  · rw [hab]
-    simpa only [F.map_comp, coe_comp, preimage_comp] using preimage_mono (f := F.map b) hg
 
 /-- Equality of pullbacks of constructible subsets to a cofiltered spectral limit already holds
 after some transition map. -/
 theorem exists_preimage_eq_of_isConstructible {i : J} {s t : Set (F.obj i)}
     (hs : IsConstructible s) (ht : IsConstructible t) (h : c.π.app i ⁻¹' s = c.π.app i ⁻¹' t) :
     ∃ (j : J) (f : j ⟶ i), F.map f ⁻¹' s = F.map f ⁻¹' t := by
-  have hempty : c.π.app i ⁻¹' (s \ t ∪ t \ s) = ∅ := by
-    rw [preimage_union, preimage_sdiff, preimage_sdiff, h, sdiff_self, union_self]
-  obtain ⟨j, f, hf⟩ := exists_preimage_eq_empty_of_isProConstructible F hF c hc
-    ((hs.sdiff ht).union (ht.sdiff hs)).isProConstructible hempty
-  rw [preimage_union, preimage_sdiff, preimage_sdiff, union_empty_iff, sdiff_eq_empty,
-    sdiff_eq_empty] at hf
-  exact ⟨j, f, hf.1.antisymm hf.2⟩
+  -- Two sets are equal exactly when their union is contained in their intersection.
+  obtain ⟨j, f, hf⟩ := exists_preimage_subset_of_isConstructible F hF c hc (hs.union ht)
+    (hs.inter ht) (by rw [preimage_union, preimage_inter, h, union_self, inter_self])
+  rw [preimage_union, preimage_inter, union_subset_iff] at hf
+  exact ⟨j, f, (hf.1.trans inter_subset_right).antisymm (hf.2.trans inter_subset_left)⟩
 
-/-- Finitely many containments between pullbacks of compact opens are detected at one
-common stage. This applies in particular to finite lists of union and intersection relations. -/
-theorem exists_preimage_subset_of_isLimit_finset {κ : Type*} (K : Finset κ) {i : J}
-    (s t : κ → Set (F.obj i)) (hso : ∀ k ∈ K, IsOpen (s k))
-    (hsc : ∀ k ∈ K, IsCompact (s k)) (hto : ∀ k ∈ K, IsOpen (t k))
-    (htc : ∀ k ∈ K, IsCompact (t k))
+/-- Finitely many containments between pullbacks of constructible subsets to a cofiltered
+spectral limit are detected at one common stage. This applies in particular to finite lists of
+union and intersection relations. -/
+theorem exists_preimage_subset_of_isConstructible_finset {κ : Type*} (K : Finset κ) {i : J}
+    (s t : κ → Set (F.obj i)) (hs : ∀ k ∈ K, IsConstructible (s k))
+    (ht : ∀ k ∈ K, IsConstructible (t k))
     (h : ∀ k ∈ K, c.π.app i ⁻¹' s k ⊆ c.π.app i ⁻¹' t k) :
     ∃ (j : J) (f : j ⟶ i), ∀ k ∈ K, F.map f ⁻¹' s k ⊆ F.map f ⁻¹' t k := by
   classical
   induction K using Finset.induction_on with
   | empty => exact ⟨i, 𝟙 i, by simp⟩
   | @insert k K hk ih =>
-    obtain ⟨j, f, hf⟩ := exists_preimage_subset_of_isLimit F hF c hc
-      (hso k (by simp)) (hsc k (by simp)) (hto k (by simp)) (htc k (by simp)) (h k (by simp))
-    obtain ⟨l, g, hg⟩ := ih (fun k hk ↦ hso k (by simp [hk]))
-      (fun k hk ↦ hsc k (by simp [hk])) (fun k hk ↦ hto k (by simp [hk]))
-      (fun k hk ↦ htc k (by simp [hk])) (fun k hk ↦ h k (by simp [hk]))
+    obtain ⟨j, f, hf⟩ := exists_preimage_subset_of_isConstructible F hF c hc
+      (hs k (by simp)) (ht k (by simp)) (h k (by simp))
+    obtain ⟨l, g, hg⟩ := ih (fun k hk ↦ hs k (by simp [hk]))
+      (fun k hk ↦ ht k (by simp [hk])) (fun k hk ↦ h k (by simp [hk]))
     obtain ⟨m, a, b, hab⟩ := IsCofiltered.cospan f g
     refine ⟨m, a ≫ f, fun r hr ↦ ?_⟩
     rcases Finset.mem_insert.mp hr with rfl | hr

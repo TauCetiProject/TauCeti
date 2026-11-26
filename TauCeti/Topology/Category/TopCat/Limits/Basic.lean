@@ -12,7 +12,10 @@ public import Mathlib.Topology.Coherent
 public import TauCeti.Topology.Coherent
 
 /-!
-# Basic facts about colimits in `TopCat`
+# Basic facts about limits and colimits in `TopCat`
+
+The `j`-th coordinate of the image of a point under the map `IsLimit.map c hd η` between limit
+cones in `TopCat` is the image under `η j` of its `j`-th coordinate (`TopCat.isLimitMap_π_apply`).
 
 The initial object of `TopCat` is empty, through Mathlib's isomorphism `TopCat.initialIsoPEmpty`.
 As an instance, this makes the separation properties of the empty space, such as being Hausdorff,
@@ -59,6 +62,16 @@ namespace TopCat
 /-- The initial topological space is empty. -/
 instance initial_isEmpty : IsEmpty (⊥_ TopCat.{u}) :=
   Function.isEmpty initialIsoPEmpty.hom
+
+/-- The `j`-th coordinate of the image of a point `x` under the map `hd.map c η` between limit
+cones in `TopCat` is the image under `η j` of the `j`-th coordinate of `x`. -/
+@[simp]
+theorem isLimitMap_π_apply {K : Type*} [Category K] {F G : K ⥤ TopCat} (c : Cone F) {d : Cone G}
+    (hd : IsLimit d) (η : F ⟶ G) (j : K) (x : c.pt) :
+    -- The source of `d.π.app j` is given as `d.pt`, as `elementwise` does, so that the left-hand
+    -- side is in simp normal form; `simp` still rewrites the usual `d.π.app j (hd.map c η x)`.
+    ConcreteCategory.hom (X := d.pt) (d.π.app j) (hd.map c η x) = η.app j (c.π.app j x) :=
+  ConcreteCategory.congr_hom (IsLimit.map_π c hd η j) x
 
 end TopCat
 
