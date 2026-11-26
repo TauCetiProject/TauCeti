@@ -109,15 +109,11 @@ theorem IsNaturallyComplete.t2Space (h : IsNaturallyComplete A M) :
     @T2Space M (moduleTopology A M) :=
   h.2
 
-/-- **Natural completeness is invariant under mutually inverse topological semilinear maps.** If
-`σ : A →+* B` and `σ' : B →+* A` are continuous ring homomorphisms and `f : M →ₛₗ[σ] N` and
-`g : N →ₛₗ[σ'] M` are mutually inverse semilinear maps, then `N` is naturally complete over `B`
-whenever `M` is naturally complete over `A`. -/
-theorem IsNaturallyComplete.of_semilinear {B N : Type*} [Semiring B] [TopologicalSpace B]
-    [AddCommGroup N] [Module B N] {σ : A →+* B} {σ' : B →+* A} (hσ : Continuous σ)
-    (hσ' : Continuous σ') (f : M →ₛₗ[σ] N) (g : N →ₛₗ[σ'] M)
-    (hfg : Function.LeftInverse g f) (hgf : Function.RightInverse g f)
-    (h : IsNaturallyComplete A M) : IsNaturallyComplete B N := by
+/-- **Natural completeness is invariant under topological semilinear equivalence.** -/
+theorem IsNaturallyComplete.of_semilinearEquiv {B N : Type*} [Semiring B] [TopologicalSpace B]
+    [AddCommGroup N] [Module B N] {σ : A →+* B} {σ' : B →+* A} [RingHomInvPair σ σ']
+    [RingHomInvPair σ' σ] (hσ : Continuous σ) (hσ' : Continuous σ')
+    (e : M ≃ₛₗ[σ] N) (h : IsNaturallyComplete A M) : IsNaturallyComplete B N := by
   let _ : TopologicalSpace M := moduleTopology A M; let _ : TopologicalSpace N := moduleTopology B N
   let _ := IsModuleTopology.isTopologicalAddGroup A M
   let _ := IsModuleTopology.isTopologicalAddGroup B N
@@ -127,19 +123,13 @@ theorem IsNaturallyComplete.of_semilinear {B N : Type*} [Semiring B] [Topologica
   have _ : IsUniformAddGroup N := isUniformAddGroup_of_addCommGroup
   have _ : IsModuleTopology A M := ⟨rfl⟩; have _ : IsModuleTopology B N := ⟨rfl⟩
   have _ : T2Space M := h.2
-  have hf := IsModuleTopology.continuous_of_linearMapₛₗ hσ f
-  have hg := IsModuleTopology.continuous_of_linearMapₛₗ hσ' g
-  let ue : M ≃ᵤ N := ⟨⟨f, g, hfg, hgf⟩,
-    uniformContinuous_addMonoidHom_of_continuous (f := f.toAddMonoidHom) hf,
-    uniformContinuous_addMonoidHom_of_continuous (f := g.toAddMonoidHom) hg⟩
-  exact ⟨(UniformEquiv.completeSpace_iff ue).mp h.1, .of_injective_continuous hgf.injective hg⟩
-
-/-- **Natural completeness is invariant under topological semilinear equivalence.** -/
-theorem IsNaturallyComplete.of_semilinearEquiv {B N : Type*} [Semiring B] [TopologicalSpace B]
-    [AddCommGroup N] [Module B N] {σ : A →+* B} {σ' : B →+* A} [RingHomInvPair σ σ']
-    [RingHomInvPair σ' σ] (hσ : Continuous σ) (hσ' : Continuous σ')
-    (e : M ≃ₛₗ[σ] N) (h : IsNaturallyComplete A M) : IsNaturallyComplete B N :=
-  IsNaturallyComplete.of_semilinear hσ hσ' e.toLinearMap e.symm.toLinearMap e.left_inv e.right_inv h
+  have hf := IsModuleTopology.continuous_of_linearMapₛₗ hσ e.toLinearMap
+  have hg := IsModuleTopology.continuous_of_linearMapₛₗ hσ' e.symm.toLinearMap
+  let ue : M ≃ᵤ N := ⟨e.toEquiv,
+    uniformContinuous_addMonoidHom_of_continuous (f := e.toLinearMap.toAddMonoidHom) hf,
+    uniformContinuous_addMonoidHom_of_continuous (f := e.symm.toLinearMap.toAddMonoidHom) hg⟩
+  exact ⟨(UniformEquiv.completeSpace_iff ue).mp h.1,
+    .of_injective_continuous e.right_inv.injective hg⟩
 
 /-- **Natural completeness is invariant under linear equivalence.** -/
 theorem IsNaturallyComplete.of_equiv {N : Type*} [AddCommGroup N] [Module A N] (e : M ≃ₗ[A] N)

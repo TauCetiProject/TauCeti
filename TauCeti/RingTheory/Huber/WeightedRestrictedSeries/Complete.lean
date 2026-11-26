@@ -81,8 +81,9 @@ specialisations are discharged with.
   the two coefficient-map results are theorems. This is the case the comparison needs.
 * `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` : the comparison — `A⟨X₁,…,Xₖ⟩` is
   the plain restricted-series ring, whenever that ring is complete and Hausdorff.
-* `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` : the same comparison as an
-  `A`-algebra equivalence.
+* `TauCeti.Huber.restrictedMvPowerSeriesCompletionAlgEquiv` and
+  `TauCeti.Huber.restrictedMvPowerSeriesCompletionSubringAlgEquiv` : the same comparison as
+  `A`-algebra equivalences with `weightedRestrictedSubring` and `restrictedMvPowerSeriesSubring`.
 * `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv` and
   `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm` : the
   comparison and its inverse are uniformly continuous. The inverse is the canonical map into
@@ -348,6 +349,27 @@ theorem coe_restrictedMvPowerSeriesCompletionAlgEquiv_symm :
       = ⇑(restrictedMvPowerSeriesCompletionEquiv k A).symm :=
   UniformSpace.Completion.coe_completeAlgEquivSelf_symm _ A
 
+variable (k A) in
+/-- The `A`-algebra isomorphism `A⟨X₁, …, Xₖ⟩ ≃ₐ[A] restrictedMvPowerSeriesSubring k A` when the
+trivial-weight restricted-series subring is complete and Hausdorff. -/
+noncomputable def restrictedMvPowerSeriesCompletionSubringAlgEquiv :
+    restrictedMvPowerSeriesCompletion k A ≃ₐ[A] restrictedMvPowerSeriesSubring k A :=
+  (restrictedMvPowerSeriesCompletionAlgEquiv k A).trans <|
+    AlgEquiv.ofRingEquiv (f := RingEquiv.subringCongr weightedRestrictedSubring_one_weight)
+      subringCongr_one_weight_weightedC
+
+/-- `restrictedMvPowerSeriesCompletionSubringAlgEquiv` agrees with
+`restrictedMvPowerSeriesCompletionEquiv` on underlying power series. -/
+@[simp]
+theorem coe_restrictedMvPowerSeriesCompletionSubringAlgEquiv
+    (f : restrictedMvPowerSeriesCompletion k A) :
+    ((restrictedMvPowerSeriesCompletionSubringAlgEquiv k A f : restrictedMvPowerSeriesSubring k A) :
+        MvPowerSeries (Fin k) A) =
+      ((restrictedMvPowerSeriesCompletionEquiv k A f :
+        weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          MvPowerSeries (Fin k) A) := by
+  simp [restrictedMvPowerSeriesCompletionSubringAlgEquiv]
+
 /-- A scalar acting injectively on `A` acts injectively on `A⟨X₁,…,Xₖ⟩`: the comparison carries
 the action to the coefficientwise action on power series. -/
 theorem isSMulRegular_restrictedMvPowerSeriesCompletion {a : A} (ha : IsSMulRegular A a) :
@@ -360,5 +382,80 @@ theorem isSMulRegular_restrictedMvPowerSeriesCompletion {a : A} (ha : IsSMulRegu
       MvPowerSeries (Fin k) A) Subtype.val_injective (Pi.isSMulRegular_iff.mpr fun _ ↦ ha)
 
 end Comparison
+
+section RestrictedCoeff
+
+variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [CompleteSpace A]
+  [T0Space A] [NonarchimedeanRing A]
+
+/-- **The `n`-th coefficient `A⟨T⟩ →ₗ[A] A`** of a one-variable completed restricted power series,
+read through `restrictedMvPowerSeriesCompletionEquiv`. -/
+noncomputable def restrictedCoeff (n : ℕ) : restrictedMvPowerSeriesCompletion 1 A →ₗ[A] A where
+  toFun f := MvPowerSeries.coeff (Finsupp.single 0 n)
+    ((restrictedMvPowerSeriesCompletionEquiv 1 A f :
+      weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+        MvPowerSeries (Fin 1) A)
+  map_add' f g := by simp [map_add]
+  map_smul' a f := by
+    have hsmul := map_smul (restrictedMvPowerSeriesCompletionAlgEquiv 1 A) a f
+    rw [coe_restrictedMvPowerSeriesCompletionAlgEquiv] at hsmul
+    rw [hsmul]; simp [Algebra.smul_def]
+
+/-- Evaluation of `restrictedCoeff n` through `restrictedMvPowerSeriesCompletionEquiv`. -/
+theorem restrictedCoeff_apply (n : ℕ) (f : restrictedMvPowerSeriesCompletion 1 A) :
+    restrictedCoeff n f = MvPowerSeries.coeff (Finsupp.single 0 n)
+      ((restrictedMvPowerSeriesCompletionEquiv 1 A f :
+        weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+          MvPowerSeries (Fin 1) A) := (rfl)
+
+/-- On the uncompleted subring, `restrictedCoeff n` reads the `(0 ↦ n)` coefficient. -/
+@[simp]
+theorem restrictedCoeff_coe (n : ℕ)
+    (f : weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :
+    restrictedCoeff n (f : restrictedMvPowerSeriesCompletion 1 A) =
+      MvPowerSeries.coeff (Finsupp.single 0 n) (f : MvPowerSeries (Fin 1) A) := by
+  simp [restrictedCoeff]
+
+/-- On a constant series `weightedC`, `restrictedCoeff n` returns `a` at `n = 0` and `0` otherwise.
+Tagged `@[simp high]` to fire before `restrictedCoeff_coe`. -/
+@[simp high]
+theorem restrictedCoeff_weightedC (n : ℕ) (a : A) :
+    restrictedCoeff n
+        ((weightedC (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight a :
+          weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion 1 A) =
+      if n = 0 then a else 0 := by
+  rw [restrictedCoeff_coe, coe_weightedC, MvPowerSeries.coeff_C]
+  simp [Finsupp.single_eq_zero (a := (0 : Fin 1))]
+
+-- Deliberately not `@[simp]`: `algebraMap_completion_weightedRestrictedSubring_apply` (`@[simp]`)
+-- rewrites the inner `algebraMap` to `weightedC` bottom-up before any root lemma matches, so
+-- `simpNF` rejects `@[simp]` here and `simp` reaches the RHS via `restrictedCoeff_weightedC`.
+/-- On `algebraMap`, `restrictedCoeff n` returns `a` at `n = 0` and `0` otherwise. -/
+theorem restrictedCoeff_algebraMap (n : ℕ) (a : A) :
+    restrictedCoeff n (algebraMap A (restrictedMvPowerSeriesCompletion 1 A) a) =
+      if n = 0 then a else 0 := by simp
+
+/-- On the variable `T` (`weightedX _ isWeightFamily_one_weight 0`), `restrictedCoeff n` returns `1`
+for `n = 1` and `0` otherwise. Tagged `@[simp high]` to fire before `restrictedCoeff_coe`. -/
+@[simp high]
+theorem restrictedCoeff_weightedX (n : ℕ) :
+    restrictedCoeff n
+        ((weightedX (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight 0 :
+          weightedRestrictedSubring _ _) : restrictedMvPowerSeriesCompletion 1 A) =
+      if n = 1 then 1 else 0 := by
+  rw [restrictedCoeff_coe, coe_weightedX, MvPowerSeries.coeff_X]; simp
+
+/-- Each coefficient map `restrictedCoeff n` is uniformly continuous. -/
+theorem uniformContinuous_restrictedCoeff (n : ℕ) :
+    UniformContinuous (restrictedCoeff (A := A) n) :=
+  (uniformContinuous_coeff_one_weight (Finsupp.single 0 n)).comp
+    uniformContinuous_restrictedMvPowerSeriesCompletionEquiv
+
+/-- Each coefficient map `restrictedCoeff n` is continuous. -/
+theorem continuous_restrictedCoeff (n : ℕ) :
+    Continuous (restrictedCoeff (A := A) n) :=
+  (uniformContinuous_restrictedCoeff n).continuous
+
+end RestrictedCoeff
 
 end TauCeti.Huber

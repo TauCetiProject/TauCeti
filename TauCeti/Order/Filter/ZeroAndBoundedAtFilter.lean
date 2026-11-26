@@ -147,8 +147,7 @@ def zeroAtFilterComap {κ ι : Type*} {l₁ : Filter κ} {l₂ : Filter ι} {j :
     (hj : Tendsto j l₁ l₂) :
     zeroAtFilterSubmodule (β := M) A l₂ →ₗ[A] zeroAtFilterSubmodule (β := M) A l₁ where
   toFun g := ⟨(g : ι → M) ∘ j, Tendsto.comp g.2 hj⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
+  map_add' _ _ := rfl; map_smul' _ _ := rfl
 
 variable {A M} in
 /-- The underlying function of `zeroAtFilterComap` is precomposition with `j`. -/
@@ -168,13 +167,10 @@ families along `Filter.cofinite`. -/
 def zeroAtFilterCofiniteCongr {ι κ : Type*} (e : ι ≃ κ) :
     zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) ≃ₗ[A]
       zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ) :=
-  LinearEquiv.ofLinearMap
-    (zeroAtFilterComap A M e.symm.injective.tendsto_cofinite)
+  LinearEquiv.ofLinearMap (zeroAtFilterComap A M e.symm.injective.tendsto_cofinite)
     (zeroAtFilterComap A M e.injective.tendsto_cofinite)
-    (LinearMap.ext fun g ↦ Subtype.ext <| funext fun k ↦
-      congrArg (g : κ → M) (e.apply_symm_apply k))
-    (LinearMap.ext fun f ↦ Subtype.ext <| funext fun i ↦
-      congrArg (f : ι → M) (e.symm_apply_apply i))
+    (LinearMap.ext fun g ↦ Subtype.ext <| funext fun k ↦ congrArg g.1 (e.apply_symm_apply k))
+    (LinearMap.ext fun f ↦ Subtype.ext <| funext fun i ↦ congrArg f.1 (e.symm_apply_apply i))
 
 variable {A M} in
 /-- Applying `zeroAtFilterCofiniteCongr` evaluates at `e.symm k`. -/
@@ -196,8 +192,7 @@ noncomputable def zeroAtFilterExtend {κ ι : Type*} (j : κ → ι) :
     zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ) →ₗ[A]
       zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) :=
   ((Function.ExtendByZero.linearMap A M j).comp
-      (zeroAtFilterSubmodule (β := M) A cofinite).subtype).codRestrict
-    (zeroAtFilterSubmodule (β := M) A cofinite) fun f ↦
+    (zeroAtFilterSubmodule (β := M) A cofinite).subtype).codRestrict _ fun f ↦
       f.2.extend_cofinite j (pure_le_nhds 0)
 
 variable {A M} in
@@ -210,30 +205,24 @@ theorem coe_zeroAtFilterExtend {κ ι : Type*} (j : κ → ι)
 /-- Extension by zero composes along injective maps. -/
 theorem zeroAtFilterExtend_comp {κ ι γ : Type*} {j₁ : κ → ι} {j₂ : ι → γ}
     (hj₁ : Function.Injective j₁) (hj₂ : Function.Injective j₂) :
-    zeroAtFilterExtend A M j₂ ∘ₗ zeroAtFilterExtend A M j₁ =
-      zeroAtFilterExtend A M (j₂ ∘ j₁) :=
-  LinearMap.ext fun f ↦ Subtype.ext <| by
-    simp only [LinearMap.comp_apply, coe_zeroAtFilterExtend]
-    exact (hj₁.extend_comp hj₂ (f : κ → M) 0).symm
+    zeroAtFilterExtend A M j₂ ∘ₗ zeroAtFilterExtend A M j₁ = zeroAtFilterExtend A M (j₂ ∘ j₁) :=
+  LinearMap.ext fun f ↦ Subtype.ext <| (hj₁.extend_comp hj₂ (f : κ → M) 0).symm
 
 /-- Pulling back along an injective map `j` after extending by zero recovers the original family. -/
 theorem zeroAtFilterComap_comp_extend {κ ι : Type*} {j : κ → ι} (hj : Function.Injective j) :
     zeroAtFilterComap A M hj.tendsto_cofinite ∘ₗ zeroAtFilterExtend A M j = LinearMap.id :=
-  LinearMap.ext fun f ↦ Subtype.ext <| by
-    simpa only [LinearMap.comp_apply, LinearMap.id_apply, coe_zeroAtFilterComap,
-      coe_zeroAtFilterExtend] using Function.extend_comp hj (f : κ → M) 0
+  LinearMap.ext fun f ↦ Subtype.ext <| Function.extend_comp hj (f : κ → M) 0
 
 /-- For any countable index type `ι`, the module of `ι`-indexed null families is an `A`-linear
-retract of the module of `ℕ`-indexed null families: choose an injection `ι → ℕ`, extend outside
-its image by `0`, and pull back along the injection. -/
+retract of the module of `ℕ`-indexed null families. -/
 theorem exists_retract_zeroAtFilterSubmodule_nat (ι : Type*) [Countable ι] :
     ∃ (emb : zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) →ₗ[A]
           zeroAtFilterSubmodule (β := M) A (cofinite : Filter ℕ))
       (proj : zeroAtFilterSubmodule (β := M) A (cofinite : Filter ℕ) →ₗ[A]
           zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι)),
-      proj ∘ₗ emb = LinearMap.id := by
-  obtain ⟨j, hj⟩ := Countable.exists_injective_nat ι
-  exact ⟨zeroAtFilterExtend A M j, zeroAtFilterComap A M hj.tendsto_cofinite,
+      proj ∘ₗ emb = LinearMap.id :=
+  let ⟨j, hj⟩ := Countable.exists_injective_nat ι
+  ⟨zeroAtFilterExtend A M j, zeroAtFilterComap A M hj.tendsto_cofinite,
     zeroAtFilterComap_comp_extend A M hj⟩
 
 end SubmoduleMaps

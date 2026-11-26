@@ -29,7 +29,8 @@ where the convergent/restricted power series ring is (5.6.1) in §5.6.
 * `restrictedMvPowerSeriesSubmodule k A M`: the `A`-submodule of restricted power series with
   coefficients in a topological `A`-module `M`, denoted `M⟨T₁, …, Tₖ⟩`. This is the object
   Wedhorn's Remark 8.29 compares with `M ⊗[A] A⟨T₁, …, Tₖ⟩`. It *is* Mathlib's
-  `Filter.zeroAtFilterSubmodule` at the cofinite filter, under the Huber-theoretic name.
+  `Filter.zeroAtFilterSubmodule` at the cofinite filter, under the Huber-theoretic name
+  (`restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter`).
 * `restrictedMvPowerSeriesSubringVal`: the inclusion `A⟨T₁, …, Tₖ⟩ → MvPowerSeries (Fin k) A` as
   an `A`-algebra map. `A⟨T⟩` is a `Subring` carrying an `Algebra A` instance rather than a
   `Subalgebra`, so `Subalgebra.val` does not apply.
@@ -559,6 +560,35 @@ theorem mem_restrictedMvPowerSeriesSubmodule {k : ℕ} {A M : Type*} [Semiring A
     [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousConstSMul A M]
     {f : MvPowerSeries (Fin k) M} :
     f ∈ restrictedMvPowerSeriesSubmodule k A M ↔ IsRestricted f := (Iff.rfl)
+
+/-- Unfolding `restrictedMvPowerSeriesSubmodule k A M` as `Filter.zeroAtFilterSubmodule` at
+`Filter.cofinite` on `Fin k →₀ ℕ`. -/
+def restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter (k : ℕ) (A M : Type*) [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] :
+    restrictedMvPowerSeriesSubmodule k A M ≃ₗ[A]
+      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter (Fin k →₀ ℕ)) where
+  toFun f := ⟨(f.1 : (Fin k →₀ ℕ) → M),
+    isRestricted_iff.mp (mem_restrictedMvPowerSeriesSubmodule.mp f.2)⟩
+  invFun g := ⟨(g : (Fin k →₀ ℕ) → M),
+    mem_restrictedMvPowerSeriesSubmodule.mpr (isRestricted_iff.mpr g.2)⟩
+  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl; map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter {k : ℕ} {A M : Type*} [Semiring A]
+    [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M] (f : restrictedMvPowerSeriesSubmodule k A M) :
+    ((restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter k A M f :
+        Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter (Fin k →₀ ℕ))) :
+      (Fin k →₀ ℕ) → M) = (f.1 : (Fin k →₀ ℕ) → M) := (rfl)
+
+@[simp]
+theorem coe_restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter_symm {k : ℕ} {A M : Type*}
+    [Semiring A] [AddCommMonoid M] [TopologicalSpace M] [Module A M] [ContinuousAdd M]
+    [ContinuousConstSMul A M]
+    (g : Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter (Fin k →₀ ℕ))) :
+    (((restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter k A M).symm g).1 : (Fin k →₀ ℕ) → M) =
+      (g : (Fin k →₀ ℕ) → M) := (rfl)
 
 /-- Restricted series with additive-group coefficients and continuous negation have additive
 inverses even over semiring scalars. The usual submodule instance takes precedence when the

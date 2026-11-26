@@ -9,6 +9,8 @@ public import TauCeti.Algebra.Module.PseudoCoherent.Basic
 public import TauCeti.RingTheory.Huber.LocalizationTopology.RatLoc
 public import TauCeti.RingTheory.Huber.ModuleTopology.NaturallyComplete
 public import TauCeti.RingTheory.Huber.StronglyNoetherian
+import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Iterated
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import TauCeti.RingTheory.Huber.FiniteModuleTopology
 import TauCeti.RingTheory.Huber.LocalizationTopology.StronglyNoetherian
 import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
@@ -45,6 +47,9 @@ finite module is naturally complete.
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_equiv`: it is invariant under linear equivalence.
 * `TauCeti.Huber.IsStablyPseudoCoherent.isNaturallyComplete`: over a complete Hausdorff Huber ring,
   a stably pseudocoherent module is itself naturally complete.
+* `TauCeti.Huber.IsStablyPseudoCoherent.ratLoc_of_isPseudoCoherentOver`: a base change of a stably
+  pseudocoherent module to a rational localisation is stably `m`-pseudocoherent as soon as it is
+  `m`-pseudocoherent (analytic half of Kedlaya–Liu II, Remark 2.4.5).
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_projective`: finite projective modules are stably
   pseudocoherent.
 * `TauCeti.Huber.IsStablyPseudoCoherent.of_isStronglyNoetherian`: over a noetherian, strongly
@@ -53,7 +58,7 @@ finite module is naturally complete.
 ## References
 
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory, II: Imperfect period rings*, §2.4,
-  Definition 2.4.1 and Remark 2.4.2, and §2.5, Theorem 2.5.1.
+  Definition 2.4.1 and Remarks 2.4.2 and 2.4.5, and §2.5, Theorem 2.5.1.
 -/
 
 public section
@@ -117,25 +122,35 @@ theorem isNaturallyComplete {A : Type*} [CommRing A] [UniformSpace A] [IsUniform
   have hT : IsOpen ((Ideal.span (({1} : Finset A) : Set A) : Ideal A) : Set A) := by
     simp [Ideal.span_singleton_one]
   have hpb : ∀ t ∈ ({1} : Finset A), IsPowerBounded t := by simp [isPowerBounded_one]
-  set B := ratLoc P {1} 1 hden
-  let σ : A ≃+* B := P.toCompletionLocEquivDenomOne {1} hpb (Localization.Away (1 : A))
-  have hσ_alg (a : A) : σ a = algebraMap A B a :=
-    (P.toCompletionLocEquivDenomOne_apply {1} hpb (Localization.Away (1 : A)) a).trans
-      (algebraMap_ratLoc P {1} 1 hden ▸ rfl)
-  let σₐ : A ≃ₐ[A] B := AlgEquiv.ofRingEquiv (f := σ) hσ_alg
-  let e : B ⊗[A] M ≃ₗ[A] M := σₐ.symm.toLinearEquiv.rTensor M ≪≫ₗ TensorProduct.lid A M
-  let fwdₛ : B ⊗[A] M →ₛₗ[(σ.symm : B →+* A)] M :=
-    { toFun := e, map_add' := e.map_add, map_smul' := fun b z ↦ by
-        induction z using TensorProduct.inductionOn with
-        | tmul b' x => simp [e, σₐ, TensorProduct.smul_tmul', smul_eq_mul, mul_smul]
-        | add z₁ z₂ ih₁ ih₂ => simp [smul_add, map_add, ih₁, ih₂] }
-  let bwdₛ : M →ₛₗ[(σ : A →+* B)] B ⊗[A] M :=
-    { toFun := e.symm, map_add' := e.symm.map_add, map_smul' := fun a x ↦ by
-        simp [e, σₐ, hσ_alg, TensorProduct.smul_tmul', Algebra.smul_def] }
-  exact (h.isNaturallyComplete_tensor P {1} 1 hden hT).of_semilinear
+  let σ : A ≃+* ratLoc P {1} 1 hden :=
+    P.toCompletionLocEquivDenomOne {1} hpb (Localization.Away (1 : A))
+  have hσ_alg (a : A) : σ a = algebraMap A (ratLoc P {1} 1 hden) a := by
+    rw [algebraMap_ratLoc]
+    exact P.toCompletionLocEquivDenomOne_apply {1} hpb (Localization.Away (1 : A)) a
+  have := RingHomInvPair.of_ringEquiv σ.symm
+  have := RingHomInvPair.of_ringEquiv_symm σ.symm
+  exact ((h.isNaturallyComplete_tensor P {1} 1 hden hT).of_semilinearEquiv
     (P.continuous_toCompletionLocEquivDenomOne_symm {1} hpb (Localization.Away (1 : A)))
-    ((funext hσ_alg).symm ▸ continuous_algebraMap_ratLoc P {1} 1 hden)
-    fwdₛ bwdₛ e.left_inv e.right_inv
+    ((continuous_algebraMap_ratLoc P {1} 1 hden).congr fun a ↦ (hσ_alg a).symm)
+    (TensorProduct.baseChangeTowerSemilinearEquiv A A M σ.symm fun a ↦ by
+      simp [← hσ_alg a])).of_equiv (TensorProduct.lid A (A ⊗[A] M) ≪≫ₗ TensorProduct.lid A M)
+
+/-- **Analytic half of Kedlaya–Liu II, Remark 2.4.5.** If `M` is stably `m'`-pseudocoherent over
+`A`, `B = A⟨T/s⟩` is a completed rational localisation whose numerators span an open ideal, and
+`B ⊗[A] M` is `m`-pseudocoherent over `B`, then `B ⊗[A] M` is stably `m`-pseudocoherent over `B`. -/
+theorem ratLoc_of_isPseudoCoherentOver {m' : ℕ∞} (hM : IsStablyPseudoCoherent A M m')
+    (P : PairOfDefinition A) (T : Finset A) (s : A)
+    (hden : P.HasDenominatorPower T s (Localization.Away s))
+    (hT : IsOpen ((Ideal.span (T : Set A) : Ideal A) : Set A))
+    (hcoh : IsPseudoCoherentOver (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m) :
+    IsStablyPseudoCoherent (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m := by
+  refine ⟨hcoh, fun P_B T_B s_B hden_B hT_B ↦ ?_⟩
+  obtain ⟨T'', s'', hden'', hT'', e, he, he_symm, halg⟩ :=
+    exists_ratLoc_ringEquiv_ratLoc P T s hden hT P_B T_B s_B hden_B hT_B
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  exact (hM.isNaturallyComplete_tensor P T'' s'' hden'' hT'').of_semilinearEquiv he he_symm
+    (TensorProduct.baseChangeTowerSemilinearEquiv A (ratLoc P T s hden) M e halg)
 
 /-- **Finite projective modules are stably pseudocoherent** (Kedlaya–Liu II, Definition 2.4.1 and
 Remark 1.2.4): each base change `A⟨T/s⟩ ⊗[A] M` is finite projective over the complete Hausdorff

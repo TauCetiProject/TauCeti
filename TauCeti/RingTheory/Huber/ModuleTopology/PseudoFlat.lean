@@ -9,46 +9,31 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.Huber.ModuleTopology.StablyPseudoCoherent
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Iterated
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 
 /-!
 # Pseudoflat modules and base change of stable pseudocoherence
 
-Let `A` be a topological commutative ring and `m ∈ ℕ ∪ {∞}`. Following Kedlaya and Liu
-(*Relative p-adic Hodge theory, II*, §2.4, Definition 2.4.4), an `A`-module `B` is
-*`m`-pseudoflat* over `A` if `Tor₁^A(Q, B) = 0` for every stably `m`-pseudocoherent `A`-module `Q`,
-i.e. `K ⊗[A] B → (Fin n → A) ⊗[A] B` is injective whenever `(Fin n → A) ⧸ K` is stably
-`m`-pseudocoherent over `A`.
+Let `A` be a topological commutative ring and `m ∈ ℕ ∪ {∞}`. An `A`-module `B` is *`m`-pseudoflat*
+over `A` (Kedlaya–Liu II, Definition 2.4.4) if `Tor₁^A(Q, B) = 0` for every stably
+`m`-pseudocoherent `A`-module `Q`, i.e. `K ⊗[A] B → (Fin n → A) ⊗[A] B` is injective whenever
+`(Fin n → A) ⧸ K` is stably `m`-pseudocoherent over `A`. When `B` is a `2`-pseudoflat commutative
+`A`-algebra, base change sends stably `2`-pseudocoherent `A`-modules to `2`-pseudocoherent
+`B`-modules (`IsPseudoFlat.isPseudoCoherentOver_two_baseChange`); combining with
+`IsStablyPseudoCoherent.ratLoc_of_isPseudoCoherentOver` gives Kedlaya–Liu II, Remark 2.4.5
+(`IsStablyPseudoCoherent.ratLoc_two` and `IsPseudoFlat.comp_ratLoc`).
 
-When `B` is a `2`-pseudoflat commutative `A`-algebra, base change carries stably `2`-pseudocoherent
-`A`-modules to `2`-pseudocoherent `B`-modules
-(`TauCeti.Huber.IsPseudoFlat.isPseudoCoherentOver_two_baseChange`). Combining this with transitivity
-of completed rational localisations (`TauCeti.Huber.exists_ratLoc_ringEquiv_ratLoc`) yields
-Kedlaya–Liu II, Remark 2.4.5: base change to a `2`-pseudoflat rational localisation preserves stable
-`2`-pseudocoherence (`TauCeti.Huber.IsStablyPseudoCoherent.ratLoc_two`) and `2`-pseudoflatness
-composes across `A → A⟨T/s⟩` (`TauCeti.Huber.IsPseudoFlat.comp_ratLoc`).
-
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.Huber.IsPseudoFlat A B m`: the `A`-module `B` is `m`-pseudoflat over `A`.
-
-## Main results
-
-* `TauCeti.Huber.IsPseudoFlat.mono`, `TauCeti.Huber.IsPseudoFlat.of_flat`,
-  `TauCeti.Huber.IsPseudoFlat.of_equiv`, `TauCeti.Huber.IsPseudoFlat.of_retract`,
-  `TauCeti.Huber.IsPseudoFlat.prod`: monotonicity, flatness, and permanence properties.
-* `TauCeti.Huber.IsPseudoFlat.rTensor_injective` and
-  `TauCeti.Huber.isPseudoFlat_iff_injective_rTensor`: projective presentation characterisation.
-* `TauCeti.Huber.IsPseudoFlat.isPseudoCoherentOver_two_baseChange`: `2`-pseudoflat base change of
-  `2`-pseudocoherence.
-* `TauCeti.Huber.IsStablyPseudoCoherent.ratLoc_of_isPseudoCoherentOver`,
-  `TauCeti.Huber.IsStablyPseudoCoherent.ratLoc_two`,
-  `TauCeti.Huber.IsPseudoFlat.comp_of_forall_baseChange`, and
-  `TauCeti.Huber.IsPseudoFlat.comp_ratLoc`: base change of stable pseudocoherence and composition
-  of pseudoflatness along rational localisations.
-* `TauCeti.Huber.not_isPseudoFlat_quotient_span_singleton`: `A ⧸ (f)` by a non-unit regular
-  element is not `m`-pseudoflat when stably `m`-pseudocoherent.
+* `TauCeti.Huber.IsPseudoFlat.mono`, `of_flat`, `of_equiv`, `of_retract`, `prod`,
+  `rTensor_injective`, `isPseudoFlat_iff_injective_rTensor`: permanence and projective presentation
+  characterisation.
+* `TauCeti.Huber.IsPseudoFlat.isPseudoCoherentOver_two_baseChange`,
+  `TauCeti.Huber.IsStablyPseudoCoherent.ratLoc_two`, `comp_of_forall_baseChange`, and `comp_ratLoc`:
+  Remark 2.4.5 base change and composition.
+* `TauCeti.Huber.not_isPseudoFlat_quotient_span_singleton`: non-pseudoflatness of `A ⧸ (f)`.
 
 ## References
 
@@ -79,10 +64,8 @@ def IsPseudoFlat (m : ℕ∞) : Prop :=
 
 theorem isPseudoFlat_iff {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
     {B : Type v} [AddCommGroup B] [Module A B] {m : ℕ∞} :
-    IsPseudoFlat A B m ↔
-      ∀ (n : ℕ) (K : Submodule A (Fin n → A)),
-        IsStablyPseudoCoherent A ((Fin n → A) ⧸ K) m →
-          Function.Injective (K.subtype.rTensor B) :=
+    IsPseudoFlat A B m ↔ ∀ (n : ℕ) (K : Submodule A (Fin n → A)),
+      IsStablyPseudoCoherent A ((Fin n → A) ⧸ K) m → Function.Injective (K.subtype.rTensor B) :=
   (Iff.rfl)
 
 end Definition
@@ -109,17 +92,8 @@ theorem self : IsPseudoFlat A A m :=
 
 /-- If `B'` is a linear retract of an `m`-pseudoflat `A`-module `B`, then `B'` is `m`-pseudoflat. -/
 theorem of_retract {B' : Type*} [AddCommGroup B'] [Module A B'] {i : B' →ₗ[A] B} {r : B →ₗ[A] B'}
-    (hri : r ∘ₗ i = LinearMap.id) (h : IsPseudoFlat A B m) : IsPseudoFlat A B' m := by
-  intro n K hK
-  have hli : LinearMap.lTensor K r ∘ₗ LinearMap.lTensor K i = LinearMap.id := by
-    rw [← LinearMap.lTensor_comp, hri, LinearMap.lTensor_id]
-  have hinj_i : Function.Injective (LinearMap.lTensor K i) :=
-    Function.LeftInverse.injective fun x ↦ congr($hli x)
-  have hsq : LinearMap.lTensor (Fin n → A) i ∘ₗ K.subtype.rTensor B' =
-      K.subtype.rTensor B ∘ₗ LinearMap.lTensor K i := by ext; rfl
-  exact Function.Injective.of_comp (f := LinearMap.lTensor (Fin n → A) i) <| by
-    rw [← LinearMap.coe_comp, hsq]
-    exact (h n K hK).comp hinj_i
+    (hri : r ∘ₗ i = LinearMap.id) (h : IsPseudoFlat A B m) : IsPseudoFlat A B' m :=
+  fun n K hK ↦ K.subtype.injective_rTensor_of_comp_eq_id hri (h n K hK)
 
 /-- `m`-pseudoflatness is invariant under `A`-linear equivalence. -/
 theorem of_equiv {B' : Type*} [AddCommGroup B'] [Module A B'] (e : B ≃ₗ[A] B')
@@ -135,9 +109,11 @@ theorem prod {B' : Type*} [AddCommGroup B'] [Module A B'] (h₁ : IsPseudoFlat A
   have hz₀ : K.subtype.rTensor (B × B') z = 0 := by rw [map_sub, hz, sub_self]
   let p₁ := LinearMap.fst A B B'; let p₂ := LinearMap.snd A B B'
   have hsq₁ : K.subtype.rTensor B ∘ₗ LinearMap.lTensor K p₁ =
-      LinearMap.lTensor (Fin n → A) p₁ ∘ₗ K.subtype.rTensor (B × B') := by ext <;> rfl
+      LinearMap.lTensor (Fin n → A) p₁ ∘ₗ K.subtype.rTensor (B × B') := by
+    rw [LinearMap.rTensor_comp_lTensor, LinearMap.lTensor_comp_rTensor]
   have hsq₂ : K.subtype.rTensor B' ∘ₗ LinearMap.lTensor K p₂ =
-      LinearMap.lTensor (Fin n → A) p₂ ∘ₗ K.subtype.rTensor (B × B') := by ext <;> rfl
+      LinearMap.lTensor (Fin n → A) p₂ ∘ₗ K.subtype.rTensor (B × B') := by
+    rw [LinearMap.rTensor_comp_lTensor, LinearMap.lTensor_comp_rTensor]
   have hz₁ : LinearMap.lTensor K p₁ z = 0 := (h₁ n K hK) <| by
     rw [← LinearMap.comp_apply, hsq₁, LinearMap.comp_apply, hz₀, map_zero, map_zero]
   have hz₂ : LinearMap.lTensor K p₂ z = 0 := (h₂ n K hK) <| by
@@ -178,7 +154,7 @@ theorem rTensor_injective {M N P : Type*} [AddCommGroup M] [Module A M]
     exact (congrArg Subtype.val ((LinearEquiv.ofInjective i hi).apply_symm_apply _)).trans
       congr($hfg (i x))
   have hcomp : g.rTensor B ∘ₗ i.rTensor B = K.subtype.rTensor B ∘ₗ gK.rTensor B := by
-    rw [← LinearMap.rTensor_comp, ← LinearMap.rTensor_comp]; rfl
+    rw [← LinearMap.rTensor_comp, ← LinearMap.rTensor_comp, LinearMap.subtype_comp_codRestrict]
   exact Function.Injective.of_comp (f := g.rTensor B) <| by
     rw [← LinearMap.coe_comp, hcomp]
     exact (hB n K hK).comp (Function.LeftInverse.injective fun z ↦ congr($hfKgK z))
@@ -205,13 +181,14 @@ theorem isPseudoFlat_iff_injective_rTensor {A : Type u} [CommRing A] [Topologica
 
 namespace IsPseudoFlat
 
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
+  {B : Type*} [CommRing B] [Algebra A B] {M : Type*} [AddCommGroup M] [Module A M]
+
 /-- **Algebraic half of Kedlaya–Liu II, Remark 2.4.5.** If `B` is an `m`-pseudoflat commutative
 `A`-algebra with `2 ≤ m` and `M` is stably `m`-pseudocoherent over `A`, then `B ⊗[A] M` is
 `2`-pseudocoherent over `B`. -/
-theorem isPseudoCoherentOver_two_of_le {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] {B : Type*} [CommRing B] [Algebra A B] {M : Type*} [AddCommGroup M]
-    [Module A M] {m : ℕ∞} (hB : IsPseudoFlat A B m) (hM : IsStablyPseudoCoherent A M m)
-    (hm : 2 ≤ m) : IsPseudoCoherentOver B (B ⊗[A] M) 2 := by
+theorem isPseudoCoherentOver_two_of_le {m : ℕ∞} (hB : IsPseudoFlat A B m)
+    (hM : IsStablyPseudoCoherent A M m) (hm : 2 ≤ m) : IsPseudoCoherentOver B (B ⊗[A] M) 2 := by
   classical
   obtain ⟨n₀, ε, hε, hK₀⟩ := IsPseudoCoherentOver.succ_iff.mp
     (hM.isPseudoCoherentOver.mono hm : IsPseudoCoherentOver A M ((1 : ℕ∞) + 1))
@@ -254,10 +231,8 @@ theorem isPseudoCoherentOver_two_of_le {A : Type*} [CommRing A] [TopologicalSpac
 
 /-- If `B` is a `2`-pseudoflat commutative `A`-algebra and `M` is stably `2`-pseudocoherent over
 `A`, then `B ⊗[A] M` is `2`-pseudocoherent over `B` (Kedlaya–Liu II, Remark 2.4.5). -/
-theorem isPseudoCoherentOver_two_baseChange {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] {B : Type*} [CommRing B] [Algebra A B] {M : Type*} [AddCommGroup M]
-    [Module A M] (hB : IsPseudoFlat A B 2) (hM : IsStablyPseudoCoherent A M 2) :
-    IsPseudoCoherentOver B (B ⊗[A] M) 2 :=
+theorem isPseudoCoherentOver_two_baseChange (hB : IsPseudoFlat A B 2)
+    (hM : IsStablyPseudoCoherent A M 2) : IsPseudoCoherentOver B (B ⊗[A] M) 2 :=
   hB.isPseudoCoherentOver_two_of_le hM le_rfl
 
 end IsPseudoFlat
@@ -266,29 +241,12 @@ end IsPseudoFlat
 
 section RatLocTransitivity
 
-/-- **Analytic half of Kedlaya–Liu II, Remark 2.4.5.** If `M` is stably `m'`-pseudocoherent over
-`A`, `B = A⟨T/s⟩` is a completed rational localisation whose numerators span an open ideal, and
-`B ⊗[A] M` is `m`-pseudocoherent over `B`, then `B ⊗[A] M` is stably `m`-pseudocoherent over `B`. -/
-theorem IsStablyPseudoCoherent.ratLoc_of_isPseudoCoherentOver {A : Type*} [CommRing A]
-    [TopologicalSpace A] [IsTopologicalRing A] {M : Type*} [AddCommGroup M] [Module A M]
-    {m m' : ℕ∞} (hM : IsStablyPseudoCoherent A M m') (P : PairOfDefinition A) (T : Finset A)
-    (s : A) (hden : P.HasDenominatorPower T s (Localization.Away s))
-    (hT : IsOpen ((Ideal.span (T : Set A) : Ideal A) : Set A))
-    (hcoh : IsPseudoCoherentOver (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m) :
-    IsStablyPseudoCoherent (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m := by
-  refine ⟨hcoh, fun P_B T_B s_B hden_B hT_B ↦ ?_⟩
-  obtain ⟨T'', s'', hden'', hT'', e, he, he_symm, halg⟩ :=
-    exists_ratLoc_ringEquiv_ratLoc P T s hden hT P_B T_B s_B hden_B hT_B
-  have := RingHomInvPair.of_ringEquiv e
-  have := RingHomInvPair.of_ringEquiv_symm e
-  exact (hM.isNaturallyComplete_tensor P T'' s'' hden'' hT'').of_semilinearEquiv he he_symm
-    (TensorProduct.baseChangeTowerSemilinearEquiv A (ratLoc P T s hden) M e halg)
+variable {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A]
 
 /-- **Base change of stable `2`-pseudocoherence along a `2`-pseudoflat rational localisation**
 (Kedlaya–Liu II, Remark 2.4.5). If `A⟨T/s⟩` is `2`-pseudoflat over `A` and `M` is stably
 `2`-pseudocoherent over `A`, then `A⟨T/s⟩ ⊗[A] M` is stably `2`-pseudocoherent over `A⟨T/s⟩`. -/
-theorem IsStablyPseudoCoherent.ratLoc_two {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] {M : Type*} [AddCommGroup M] [Module A M]
+theorem IsStablyPseudoCoherent.ratLoc_two {M : Type*} [AddCommGroup M] [Module A M]
     (hM : IsStablyPseudoCoherent A M 2) (P : PairOfDefinition A) (T : Finset A) (s : A)
     (hden : P.HasDenominatorPower T s (Localization.Away s))
     (hT : IsOpen ((Ideal.span (T : Set A) : Ideal A) : Set A))
@@ -300,10 +258,9 @@ theorem IsStablyPseudoCoherent.ratLoc_two {A : Type*} [CommRing A] [TopologicalS
 (Kedlaya–Liu II, Remark 2.4.5). If `B` is an `m`-pseudoflat commutative `A`-algebra such that base
 change to `B` sends stably `m`-pseudocoherent `A`-modules to stably `m'`-pseudocoherent
 `B`-modules, and `C` is an `m'`-pseudoflat `B`-module, then `C` is `m`-pseudoflat over `A`. -/
-theorem IsPseudoFlat.comp_of_forall_baseChange {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
-    [Algebra A B] {C : Type*} [AddCommGroup C] [Module A C] [Module B C] [IsScalarTower A B C]
-    {m m' : ℕ∞} (hAB : IsPseudoFlat A B m)
+theorem IsPseudoFlat.comp_of_forall_baseChange {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] [Algebra A B] {C : Type*} [AddCommGroup C] [Module A C] [Module B C]
+    [IsScalarTower A B C] {m m' : ℕ∞} (hAB : IsPseudoFlat A B m)
     (hstab : ∀ (n : ℕ) (K : Submodule A (Fin n → A)),
       IsStablyPseudoCoherent A ((Fin n → A) ⧸ K) m →
       IsStablyPseudoCoherent B (B ⊗[A] ((Fin n → A) ⧸ K)) m')
@@ -313,31 +270,29 @@ theorem IsPseudoFlat.comp_of_forall_baseChange {A : Type*} [CommRing A] [Topolog
   have hinj_B : Function.Injective (K.subtype.baseChange B) := by
     simpa only [LinearMap.baseChange_eq_lTensor] using
       (K.subtype.lTensor_inj_iff_rTensor_inj B).2 (hAB n K hK)
-  have hsurj_B := K.mkQ.baseChange_surjective B (Submodule.mkQ_surjective K)
   have hex_B : Function.Exact (K.subtype.baseChange B) (K.mkQ.baseChange B) := by
     simpa only [LinearMap.baseChange_eq_lTensor] using
       lTensor_exact B (LinearMap.exact_subtype_mkQ K) (Submodule.mkQ_surjective K)
   have := Module.Finite.equiv (TensorProduct.piScalarRight A B B (Fin n)).symm
   have := Module.Projective.of_equiv (TensorProduct.piScalarRight A B B (Fin n)).symm
-  have hinj_BC := hBC.rTensor_injective hinj_B hsurj_B hex_B (hstab n K hK)
+  have hinj_BC := hBC.rTensor_injective hinj_B
+    (K.mkQ.baseChange_surjective B (Submodule.mkQ_surjective K)) hex_B (hstab n K hK)
   let cancelK := TensorProduct.cancelBaseChangeLeft A B K C
   let cancelF := TensorProduct.cancelBaseChangeLeft A B (Fin n → A) C
   have hnat : cancelF.toLinearMap ∘ₗ ((K.subtype.baseChange B).rTensor C).restrictScalars A =
-      K.subtype.rTensor C ∘ₗ cancelK.toLinearMap :=
-    LinearMap.ext fun z ↦ by
-      induction z with
-      | tmul x c => induction x with
-        | tmul b k => simp [cancelK, cancelF]
-        | add _ _ ih₁ ih₂ => simp_all [TensorProduct.add_tmul]
-      | add _ _ ih₁ ih₂ => simp_all
+      K.subtype.rTensor C ∘ₗ cancelK.toLinearMap := LinearMap.ext fun z ↦ by
+    induction z with
+    | tmul x c => induction x with
+      | tmul b k => simp [cancelK, cancelF]
+      | add _ _ _ _ => simp_all [TensorProduct.add_tmul]
+    | add _ _ _ _ => simp_all
   have hinj_comp : Function.Injective (K.subtype.rTensor C ∘ₗ cancelK.toLinearMap) :=
     hnat ▸ cancelF.injective.comp hinj_BC
   exact fun z₁ z₂ hz ↦ cancelK.symm.injective <| hinj_comp <| by simpa using hz
 
 /-- **Composition of `2`-pseudoflatness along a `2`-pseudoflat rational localisation**
 (Kedlaya–Liu II, Remark 2.4.5). -/
-theorem IsPseudoFlat.comp_ratLoc {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] (P : PairOfDefinition A) (T : Finset A) (s : A)
+theorem IsPseudoFlat.comp_ratLoc (P : PairOfDefinition A) (T : Finset A) (s : A)
     (hden : P.HasDenominatorPower T s (Localization.Away s))
     (hT : IsOpen ((Ideal.span (T : Set A) : Ideal A) : Set A))
     {C : Type*} [AddCommGroup C] [Module A C] [Module (ratLoc P T s hden) C]
@@ -361,9 +316,9 @@ theorem not_isPseudoFlat_quotient_span_singleton {A : Type*} [CommRing A] [Topol
   intro hflat
   set I : Ideal A := Ideal.span {f}; set Q := A ⧸ I
   let mul_f : A →ₗ[A] I :=
-    { toFun := fun a ↦ ⟨a * f, Ideal.mem_span_singleton.mpr ⟨a, mul_comm a f⟩⟩
-      map_add' := fun a b ↦ Subtype.ext (add_mul a b f)
-      map_smul' := fun r a ↦ Subtype.ext (mul_assoc r a f) }
+    { toFun a := ⟨a * f, Ideal.mem_span_singleton.mpr ⟨a, mul_comm a f⟩⟩
+      map_add' a b := Subtype.ext (add_mul a b f)
+      map_smul' r a := Subtype.ext (mul_assoc r a f) }
   let eI : A ≃ₗ[A] I := LinearEquiv.ofBijective mul_f
     ⟨fun a b hab ↦ hf_reg (by simpa [mul_f, mul_comm] using congrArg Subtype.val hab),
       fun ⟨_, hx⟩ ↦ let ⟨a, ha⟩ := Ideal.mem_span_singleton.mp hx
@@ -377,7 +332,7 @@ theorem not_isPseudoFlat_quotient_span_singleton {A : Type*} [CommRing A] [Topol
       exact Ideal.subset_span (Set.mem_singleton f)
     calc I.subtype.rTensor Q z = (1 * f : A) ⊗ₜ[A] Submodule.Quotient.mk (p := I) 1 := rfl
       _ = (f • (1 : A)) ⊗ₜ[A] Submodule.Quotient.mk (p := I) 1 := by
-          rw [one_mul, smul_eq_mul, mul_one]
+        rw [one_mul, smul_eq_mul, mul_one]
       _ = 0 := by rw [TensorProduct.smul_tmul, hf0, TensorProduct.tmul_zero]
   have hz : z = 0 := hinj (hz_zero.trans (map_zero _).symm)
   have hproj : ((TensorProduct.lid A Q).toLinearMap ∘ₗ

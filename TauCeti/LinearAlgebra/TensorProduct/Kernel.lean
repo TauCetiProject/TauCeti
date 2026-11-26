@@ -37,6 +37,9 @@ where flatness of the cokernel is its torsion-freeness.
 * `LinearMap.finite_tensorProduct_ker`: over a flat coefficient algebra, the scalar extension of
   the kernel of a surjection is finite if the extended source is finite and the extended target is
   finitely presented.
+* `Ideal.exists_smul_eq_of_rTensor_subtype_span_pair_injective`: if `I = Ideal.span {x, y}` has
+  only Koszul relations and `I ⊗[R] B → R ⊗[R] B` is injective, then `x • b₁ = y • b₂` in `B`
+  forces a common witness `b : B` with `y • b = b₁` and `x • b = b₂`.
 
 ## References
 
@@ -47,6 +50,7 @@ where flatness of the cokernel is its torsion-freeness.
 public section
 
 open TensorProduct
+open scoped TensorProduct
 
 namespace LinearMap
 
@@ -101,3 +105,55 @@ theorem finite_tensorProduct_ker {S : Type*} [Ring S] [Algebra R S] [Module.Flat
   exact Module.Finite.equiv (Submodule.toBaseChange.toLinearEquiv S (ker f)).symm
 
 end LinearMap
+
+namespace Ideal
+
+/-- **Two-generator Koszul `Tor₁` criterion.** If every relation `u * x + v * y = 0` in `R` is a
+multiple of `(y, -x)` and `(Ideal.span {x, y}).subtype.rTensor B` is injective, then every relation
+`x • b₁ = y • b₂` in `B` comes from a common element `b : B` with `y • b = b₁` and `x • b = b₂`. -/
+theorem exists_smul_eq_of_rTensor_subtype_span_pair_injective {R : Type*} [CommRing R]
+    {B : Type*} [AddCommGroup B] [Module R B] {x y : R}
+    (hkoszul : ∀ u v : R, u * x + v * y = 0 → ∃ a : R, u = a * y ∧ v = -(a * x))
+    (hinj : Function.Injective ((Ideal.span ({x, y} : Set R)).subtype.rTensor B))
+    {b₁ b₂ : B} (hrel : x • b₁ = y • b₂) :
+    ∃ b : B, y • b = b₁ ∧ x • b = b₂ := by
+  set I : Ideal R := Ideal.span ({x, y} : Set R)
+  let φ : (R × R) →ₗ[R] I :=
+    { toFun p := ⟨p.1 * x + p.2 * y, Ideal.mem_span_pair.mpr ⟨p.1, p.2, rfl⟩⟩
+      map_add' _ _ := Subtype.ext (by
+        simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add]; ring)
+      map_smul' _ _ := Subtype.ext (by
+        simp only [RingHom.id_apply, SetLike.val_smul, Prod.smul_fst, Prod.smul_snd, smul_eq_mul]
+        ring) }
+  have hφ_surj : Function.Surjective φ := fun ⟨_, hr⟩ ↦
+    let ⟨u, v, huv⟩ := Ideal.mem_span_pair.mp hr; ⟨(u, v), Subtype.ext huv⟩
+  let κ : R →ₗ[R] R × R := (LinearMap.mulRight R y).prod (-LinearMap.mulRight R x)
+  have hex : Function.Exact κ φ := fun p ↦ by
+    refine ⟨fun hp ↦ ?_, fun ⟨a, ha⟩ ↦ ?_⟩
+    · obtain ⟨a, hu, hv⟩ := hkoszul p.1 p.2 (congrArg Subtype.val hp)
+      exact ⟨a, Prod.ext hu.symm hv.symm⟩
+    · subst ha
+      refine Subtype.ext ?_
+      simp only [φ, κ, LinearMap.prod_apply, Function.prod_apply, LinearMap.mulRight_apply,
+        LinearMap.neg_apply, LinearMap.coe_mk, AddHom.coe_mk, ZeroMemClass.coe_zero]
+      ring
+  let w : (R × R) ⊗[R] B := (1, 0) ⊗ₜ[R] b₁ - (0, 1) ⊗ₜ[R] b₂
+  have hw_ker : φ.rTensor B w = 0 := hinj <| by
+    have hx₁ : x ⊗ₜ[R] b₁ = (1 : R) ⊗ₜ[R] (x • b₁) := by rw [← smul_tmul, smul_eq_mul, mul_one]
+    have hy₂ : y ⊗ₜ[R] b₂ = (1 : R) ⊗ₜ[R] (y • b₂) := by rw [← smul_tmul, smul_eq_mul, mul_one]
+    simp only [w, map_sub, LinearMap.rTensor_tmul, Submodule.coe_subtype, φ, LinearMap.coe_mk,
+      AddHom.coe_mk, one_mul, zero_mul, add_zero, zero_add, map_zero, hx₁, hy₂, hrel, sub_self]
+  obtain ⟨t, ht⟩ := (_root_.rTensor_exact B hex hφ_surj w).mp hw_ker
+  have ht' : t = (1 : R) ⊗ₜ[R] TensorProduct.lid R B t := by
+    rw [← lid_symm_apply, LinearEquiv.symm_apply_apply]
+  refine ⟨TensorProduct.lid R B t, ?_, ?_⟩
+  · have h₁ := congrArg ((TensorProduct.lid R B).toLinearMap ∘ₗ
+      (LinearMap.fst R R R).rTensor B) ht
+    conv_lhs at h₁ => rw [ht']
+    simpa [w, κ] using h₁
+  · have h₂ := congrArg ((TensorProduct.lid R B).toLinearMap ∘ₗ
+      (LinearMap.snd R R R).rTensor B) ht
+    conv_lhs at h₂ => rw [ht']
+    exact neg_inj.mp (by simpa [w, κ] using h₂)
+
+end Ideal

@@ -14,21 +14,12 @@ import TauCeti.RingTheory.Huber.OpenIdeal
 /-!
 # Transitivity of completed rational localisations
 
-`TauCeti.Huber.PairOfDefinition.iteratedLocalizationRingEquiv` identifies `A⟨T''/s''⟩` with the
-completed rational localisation `B⟨ρ(T'')/ρ(s'')⟩` of `B = A⟨T/s⟩` when `(T'', s'')` refines
-`(T, s)` syntactically and `B` carries the canonical pair of definition `P.completionLocalization`.
-This file combines that algebraic identification with Wedhorn's Proposition 8.2(1)–(2) to remove
-both the syntactic refinement hypothesis and the choice of pair of definition on `B`: for *any*
-completed rational localisation `C = B⟨T_B/s_B⟩` whose numerators `T` and `T_B` generate open
-ideals, `C` is topologically isomorphic over `A` to a single completed rational localisation
-`A⟨T''/s''⟩` with open numerator ideal.
-
-Specifically, Proposition 8.2(2) (`exists_mem_spaRationalOpens_locOpensComap_eq`) writes the
-rational open `R(T_B/s_B)` of `Spa(B, B⁺)` as the pullback of a rational open `R(T'/s') ⊆ R(T/s)`
-of `Spa(A, A°)`. Taking the common refinement `(T'', s'')` of `(T, s)` and `(T', s')` produces a
-syntactic refinement of `(T, s)` whose pullback to `Spa(B, B⁺)` still equals `R(T_B/s_B)`, so the
-geometric universal property (`existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset`)
-identifies `B⟨ρ(T'')/ρ(s'')⟩` with `C` across the two pairs of definition on `B`.
+`TauCeti.Huber.PairOfDefinition.iteratedLocalizationRingEquiv` identifies `A⟨T''/s''⟩` with
+`B⟨ρ(T'')/ρ(s'')⟩` for `B = A⟨T/s⟩` when `(T'', s'')` refines `(T, s)` syntactically and `B`
+carries `P.completionLocalization`. Combining this with Wedhorn's Proposition 8.2(1)–(2)
+(`exists_mem_spaRationalOpens_locOpensComap_eq`), common refinements, and the geometric universal
+property (`existsUnique_continuous_ringHom_of_forall_comap_mem_rationalSubset`) removes both the
+syntactic refinement hypothesis and the choice of pair of definition on `B`.
 
 ## Main results
 

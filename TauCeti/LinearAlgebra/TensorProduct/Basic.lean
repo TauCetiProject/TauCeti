@@ -29,8 +29,8 @@ pure tensors over a finite spanning family of the right factor.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
 * `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator on
   `N ⊗ N` composed with itself, for an involution anticommuting with `b`.
-* `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
-  of `M`.
+* `LinearMap.injective_rTensor_congr` and `LinearMap.injective_rTensor_of_comp_eq_id`: injectivity
+  of `f ⊗ 𝟙 M` is invariant under isomorphisms of `M` and descends to linear retracts of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
 * `LinearMap.tensorComponentEquiv`: tensors as linear maps from the dual of a finite projective
   right factor.
@@ -98,6 +98,18 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
   have h : e.lTensor P ∘ f.rTensor M = f.rTensor Q ∘ e.lTensor N :=
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
+
+/-- If `Q` is a linear retract of `M` (`r ∘ₗ j = id`), then injectivity of `f ⊗ 𝟙 M` implies
+injectivity of `f ⊗ 𝟙 Q`. -/
+theorem injective_rTensor_of_comp_eq_id (f : N →ₗ[R] P) {j : Q →ₗ[R] M} {r : M →ₗ[R] Q}
+    (hrj : r ∘ₗ j = id) (hf : Function.Injective (f.rTensor M)) :
+    Function.Injective (f.rTensor Q) := by
+  have hli : r.lTensor N ∘ₗ j.lTensor N = id := by rw [← lTensor_comp, hrj, lTensor_id]
+  have hsq : j.lTensor P ∘ₗ f.rTensor Q = f.rTensor M ∘ₗ j.lTensor N := by
+    rw [lTensor_comp_rTensor, rTensor_comp_lTensor]
+  exact .of_comp (f := j.lTensor P) <| by
+    rw [← coe_comp, hsq]
+    exact hf.comp (Function.LeftInverse.injective fun x ↦ congr($hli x))
 
 /-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is

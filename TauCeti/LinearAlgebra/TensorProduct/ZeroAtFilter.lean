@@ -63,7 +63,7 @@ theorem exists_countable_lTensor_zeroAtFilterExtend_eq {A M N ι : Type*} [CommS
     rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp,
       ← LinearMap.lTensor_comp,
       zeroAtFilterExtend_comp A N (Set.inclusion_injective _) Subtype.val_injective,
-      zeroAtFilterExtend_comp A N (Set.inclusion_injective _) Subtype.val_injective]
-    rfl
+      zeroAtFilterExtend_comp A N (Set.inclusion_injective _) Subtype.val_injective,
+      Set.val_comp_inclusion, Set.val_comp_inclusion]
 
 end TensorProduct

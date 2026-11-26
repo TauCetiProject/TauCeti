@@ -43,8 +43,10 @@ a placement hazard:
 
 ## Main definitions
 
-* `TauCeti.Huber.twoSidedRestrictedSubmodule`: the `A`-module of two-sided restricted families,
-  the coefficient object underlying `A⟨X, X⁻¹⟩`.
+* `TauCeti.Huber.twoSidedRestrictedSubmodule` and
+  `TauCeti.Huber.twoSidedRestrictedSubmoduleEquivZeroAtFilter`: the `A`-module of two-sided
+  restricted families, the coefficient object underlying `A⟨X, X⁻¹⟩`, and its linear equivalence
+  with `Filter.zeroAtFilterSubmodule`.
 
 ## Main results
 
@@ -115,6 +117,28 @@ variable {A M}
 @[simp]
 theorem mem_twoSidedRestrictedSubmodule {f : ℤ → M} :
     f ∈ twoSidedRestrictedSubmodule A M ↔ ZeroAtFilter cofinite f := (Iff.rfl)
+
+variable (A M) in
+/-- Unfolding `twoSidedRestrictedSubmodule A M` as `Filter.zeroAtFilterSubmodule` at
+`Filter.cofinite` on `ℤ`. -/
+def twoSidedRestrictedSubmoduleEquivZeroAtFilter :
+    twoSidedRestrictedSubmodule A M ≃ₗ[A]
+      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℤ) where
+  toFun f := ⟨(f : ℤ → M), mem_twoSidedRestrictedSubmodule.mp f.2⟩
+  invFun g := ⟨(g : ℤ → M), mem_twoSidedRestrictedSubmodule.mpr g.2⟩
+  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl; map_smul' _ _ := rfl
+
+@[simp]
+theorem coe_twoSidedRestrictedSubmoduleEquivZeroAtFilter (f : twoSidedRestrictedSubmodule A M) :
+    ((twoSidedRestrictedSubmoduleEquivZeroAtFilter A M f :
+        Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℤ)) : ℤ → M) =
+      (f : ℤ → M) := (rfl)
+
+@[simp]
+theorem coe_twoSidedRestrictedSubmoduleEquivZeroAtFilter_symm
+    (g : Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℤ)) :
+    (((twoSidedRestrictedSubmoduleEquivZeroAtFilter A M).symm g :
+        twoSidedRestrictedSubmodule A M) : ℤ → M) = (g : ℤ → M) := (rfl)
 
 /-- **Coefficientwise extensionality**: two members of the submodule that agree at every index are
 equal. This is subtype-and-function extensionality, nothing more — in particular it does *not* say
