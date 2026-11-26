@@ -19,11 +19,12 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 Let `J` be a target structure on a finite-dimensional real inner product space `V`, of class `C^ℓ`
 with `ℓ ≥ 2` on an open set `W`, and let `u` be a finite-energy solution of the Cauchy--Riemann
 equation `∂ₜu = J(u) ∂ₛu` on a punctured disc, of class `C³` there, with image in a compact set
-`K ⊆ W` on which `J` is a complex structure, uniformly tamed by a symplectic form along `u`. Then
-`u` has a limit `q` at the puncture, and the filling of the puncture by `q` is of class `C^ℓ` on
-the whole disc and solves the Cauchy--Riemann equation there, the puncture included
-(`SymplecticForm.exists_contDiffOn_update_of_finite_energy`). In particular the filling is smooth
-when `J` is.
+`K ⊆ W` on which `J` is a complex structure, uniformly tamed along `u` by a symplectic form `ω`
+compatible with the inner product of `V` through a linear complex structure `J₀`, that is
+`ω(v, J₀ w) = ⟨v, w⟩`. Then `u` has a limit `q` at the puncture, and the filling of the puncture
+by `q` is of class `C^ℓ` on the whole disc and solves the Cauchy--Riemann equation there, the
+puncture included (`SymplecticForm.exists_contDiffOn_update_of_finite_energy`). In particular the
+filling is smooth when `J` is.
 
 This completes the interior removal of singularities. The filling is a continuous weak solution
 with derivative in `Lᵖ` for some `p > 2` near the puncture
@@ -70,9 +71,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 open Classical in
 /-- **Removal of singularities.** Let `J` be `C^ℓ`, `ℓ ≥ 2`, on an open set `W`. A finite-energy
 solution `u` of `∂ₜu = J(u) ∂ₛu` on the punctured disc `0 < ‖z - z₀‖ < R`, of class `C³` there,
-with image in a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by `ω`,
-has a limit `q ∈ K` at `z₀`. Its filling by `q` takes values in `K`, is of class `C^ℓ` on the
-whole disc `‖z - z₀‖ < R`, and solves `∂ₜu = J(u) ∂ₛu` at every point of it, including `z₀`. -/
+with image in a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by a
+symplectic form `ω` compatible with the inner product through a linear complex structure `J₀`
+(`ω(v, J₀ w) = ⟨v, w⟩`), has a limit `q ∈ K` at `z₀`. Its filling by `q` takes values in `K`, is
+of class `C^ℓ` on the whole disc `‖z - z₀‖ < R`, and solves `∂ₜu = J(u) ∂ₛu` at every point of
+it, including `z₀`. -/
 theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -129,9 +132,11 @@ open Classical in
 /-- **Removal of the end of a plane.** Let `J` be `C^ℓ`, `ℓ ≥ 2`, on an open set `W`. For a
 finite-energy solution `u` of `∂ₜu = J(u) ∂ₛu` on the exterior `‖z‖ > R` of a disc, of class `C³`
 there, with image in a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed
-by `ω`, the limit `q ∈ K` of `u` at infinity exists. The inverted map `w ↦ u w⁻¹`, filled at `0`
-by `q`, is of class `C^ℓ` on the disc `‖w‖ < R⁻¹` and solves `∂ₜv = J(v) ∂ₛv` at every point of
-it. This is the chart of the Riemann sphere at the point at infinity of the plane. -/
+by a symplectic form `ω` compatible with the inner product through a linear complex structure `J₀`
+(`ω(v, J₀ w) = ⟨v, w⟩`), the limit `q ∈ K` of `u` at infinity exists. The inverted map
+`w ↦ u w⁻¹`, filled at `0` by `q`, is of class `C^ℓ` on the disc `‖w‖ < R⁻¹` and solves
+`∂ₜv = J(v) ∂ₛv` at every point of it. This is the chart of the Riemann sphere at the point at
+infinity of the plane. -/
 theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -167,8 +172,10 @@ theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
 
 /-- **Finite-energy planes extend to spheres.** Let `J` be `C^ℓ`, `ℓ ≥ 2`, on an open set `W`. A
 finite-energy `C³` solution `u` of `∂ₜu = J(u) ∂ₛu` on the whole plane, with image in a compact set
-`K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by `ω`, extends to a map of class `C^ℓ`
-on the Riemann sphere `OnePoint ℂ`, sending the point at infinity to a point `q ∈ K`. -/
+`K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by a symplectic form `ω` compatible
+with the inner product through a linear complex structure `J₀` (`ω(v, J₀ w) = ⟨v, w⟩`), extends
+to a map of class `C^ℓ` on the Riemann sphere `OnePoint ℂ`, sending the point at infinity to a
+point `q ∈ K`. -/
 theorem exists_contMDiff_onePoint_elim_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
