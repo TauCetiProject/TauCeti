@@ -17,13 +17,13 @@ In polar coordinates `z = r e^{iθ}`, `-π < θ ≤ π`, the principal logarithm
 
 `Re (1 / log z) = log r / ((log r)² + θ²)`
 
-(`Complex.inv_log_re`), where `log z ≠ 0` exactly when `z ≠ 0` and `z ≠ 1`
-(`Complex.log_ne_zero`). The logarithm jumps across the negative real axis, but only through the
-sign of `θ`, which this expression does not see: `Re (1 / log z)` is continuous at every point
-other than `1`, where the logarithm vanishes, including `0`, where it tends to `0` because
-`|Re (1 / log z)| ≤ 1 / |log ‖z‖|` (`Complex.continuousAt_inv_log_re`). Away from the negative
-real axis and from `1` it is the real part of a holomorphic function, hence harmonic
-(`Complex.harmonicAt_inv_log_re`), and it is negative on the punctured unit disc
+(`Complex.inv_log_re`), where `log z = 0` exactly when `z = 0` or `z = 1`
+(`Complex.log_eq_zero`, `Complex.log_ne_zero`). The logarithm jumps across the negative real
+axis, but only through the sign of `θ`, which this expression does not see: `Re (1 / log z)` is
+continuous at every point other than `1`, where the logarithm vanishes, including `0`, where it
+tends to `0` because `|Re (1 / log z)| ≤ 1 / |log ‖z‖|` (`Complex.continuousAt_inv_log_re`).
+Away from the negative real axis and from `1` it is the real part of a holomorphic function, hence
+harmonic (`Complex.harmonicAt_inv_log_re`), and it is negative on the punctured unit disc
 (`Complex.inv_log_re_neg`).
 
 So `-Re (1 / log z)` is a harmonic function on the unit disc slit along a radius, positive and
@@ -45,9 +45,14 @@ open scoped Topology
 namespace Complex
 
 /-- The principal logarithm vanishes only at `0`, where it is `0` by convention, and at `1`. -/
+@[simp]
+theorem log_eq_zero {z : ℂ} : log z = 0 ↔ z = 0 ∨ z = 1 := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hz0 ↦ by rw [← exp_log hz0, h, exp_zero], ?_⟩
+  rintro (rfl | rfl) <;> simp
+
+/-- The principal logarithm is nonzero exactly away from `0` and `1`. -/
 theorem log_ne_zero {z : ℂ} : log z ≠ 0 ↔ z ≠ 0 ∧ z ≠ 1 := by
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz0, hz1⟩ h ↦ hz1 (by rw [← exp_log hz0, h, exp_zero])⟩ <;>
-    rintro rfl <;> simp at h
+  simpa only [not_or] using log_eq_zero.not
 
 /-- **`Re (1 / log z)` in polar coordinates.** For every `z`,
 `Re (1 / log z) = log ‖z‖ / ((log ‖z‖)² + (arg z)²)`. At `z = 0` both sides vanish. -/
