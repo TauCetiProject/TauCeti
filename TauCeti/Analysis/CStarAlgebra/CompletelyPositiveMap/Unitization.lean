@@ -12,6 +12,8 @@ public import TauCeti.Algebra.Algebra.Unitization
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Contraction
 import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
@@ -46,6 +48,8 @@ continuous `2`-positive map is the limit of `‖φ e‖` along any increasing ap
   `CompletelyPositiveMapClass.tendsto_norm_nhds_opNorm_ofClass`.
 * `CompletelyPositiveMap.unitization`: the unital completely positive extension `A⁺¹ →CP B⁺¹` of
   a completely positive contraction.
+* `CompletelyPositiveMap.unitalExtension`: the unital completely positive extension
+  `A⁺¹ →CP B` when the target is already unital.
 
 ## References
 
@@ -169,6 +173,8 @@ namespace CompletelyPositiveMap
 
 open TauCeti
 
+section
+
 variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
@@ -212,5 +218,48 @@ theorem unitization_apply_inl (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a
 theorem unitization_apply_one (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) :
     φ.unitization hφ 1 = 1 := by
   simp [unitization_apply]
+
+end
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- The extension `λ + a ↦ λ • 1 + φ a` of a completely positive contraction to the unitization
+of its domain, with values in its original unital target. -/
+noncomputable def unitalExtension (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : A⁺¹ →CP B :=
+  (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap
+    (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B))).comp (φ.unitization hφ)
+
+/-- The extension sends the scalar coordinate to a scalar multiple of the target unit. -/
+@[simp]
+theorem unitalExtension_apply (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
+    φ.unitalExtension hφ x = x.fst • 1 + φ x.snd := by
+  simp [unitalExtension, Unitization.starLift_apply_apply, Algebra.algebraMap_eq_smul_one]
+
+/-- The extension agrees with the original map on the embedded algebra. -/
+theorem unitalExtension_apply_inr (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (a : A) :
+    φ.unitalExtension hφ (a : A⁺¹) = φ a := by
+  simp
+
+/-- The extension sends the unit to the unit. -/
+theorem unitalExtension_apply_one (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) :
+    φ.unitalExtension hφ 1 = 1 := by
+  simp
+
+/-- The extension is contractive for the unitization norm. -/
+theorem norm_unitalExtension_apply_le (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
+    ‖φ.unitalExtension hφ x‖ ≤ ‖x‖ :=
+  (CompletelyPositiveMapClass.norm_map_one_le_one_iff _).mp
+    (by simpa only [unitalExtension_apply_one] using (CStarRing.norm_one_le (E := B))) x
+
+/-- The multiplicativity defect of the extension is the defect of the original map on the
+algebra coordinates. -/
+theorem unitalExtension_map_mul_sub (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x y : A⁺¹) :
+    φ.unitalExtension hφ (x * y) - φ.unitalExtension hφ x * φ.unitalExtension hφ y =
+      φ (x.snd * y.snd) - φ x.snd * φ y.snd := by
+  simp only [unitalExtension_apply, Unitization.fst_mul, Unitization.snd_mul,
+    map_add, map_smul, mul_add, add_mul, smul_mul_assoc, mul_smul_comm, one_mul, mul_one,
+    smul_add, smul_smul, mul_comm]
+  abel
 
 end CompletelyPositiveMap

@@ -22,7 +22,7 @@ approximation arguments for traces on C⋆-algebras, and the Choi–Effros facto
 completely positive map from a nonzero unital C⋆-algebra into a matrix algebra, or more generally
 into a unital C⋆-algebra in which `φ 1` has finite spectrum.
 
-* `CompletelyPositiveMap.exists_pos_matrix_approximant`: replace a matrix contraction by one
+* `CompletelyPositiveMap.exists_matrix_approximant_with_pos_size`: replace a matrix map by one
   into a positive-size matrix algebra, preserving its normalized trace and both defect norms.
 * `CompletelyPositiveMap.blockDiagonal`: the block-diagonal sum `a ↦ diag(φ_i(a))` of completely
   positive maps into matrix algebras over a C⋆-algebra, built from the corner embeddings
@@ -76,22 +76,25 @@ section PositiveMatrixSize
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- An approximant may be taken into a nonzero matrix algebra: a map into `M_0` is replaced by the
-zero map into `M_1`, which has the same normalized trace `0` and multiplicativity defect `0`. -/
-theorem exists_pos_matrix_approximant {k : ℕ} (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ)
-    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ), 0 < l ∧
-      (∀ a, ‖ψ a‖ ≤ ‖a‖) ∧
+/-- A completely positive matrix approximant can be taken into a matrix algebra of positive size
+with the same pointwise norm and normalized trace, and the same multiplicativity defect in both
+the normalized 2-norm and the operator norm. For size zero, use the zero map into `M_1`. -/
+theorem exists_matrix_approximant_with_pos_size {k : ℕ}
+    (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ) :
+    ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ), 0 < l ∧
+      (∀ a, ‖ψ a‖ = ‖φ a‖) ∧
       (∀ a, CStarMatrix.normalizedTrace (ψ a) = CStarMatrix.normalizedTrace (φ a)) ∧
       (∀ a b, CStarMatrix.normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) =
         CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b)) ∧
       ∀ a b, ‖ψ (a * b) - ψ a * ψ b‖ = ‖φ (a * b) - φ a * φ b‖ := by
   rcases Nat.eq_zero_or_pos k with rfl | hk
-  · exact ⟨1, 0, one_pos, fun _ => by simp,
-      fun _ => by simp [CStarMatrix.normalizedTrace_of_isEmpty], fun _ _ => by simp,
-      fun a b => by
-        rw [show φ (a * b) - φ a * φ b = 0 by ext i; exact Fin.elim0 i]
-        simp⟩
-  · exact ⟨k, φ, hk, hφ, fun _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩
+  · have hzero (m : CStarMatrix (Fin 0) (Fin 0) ℂ) : m = 0 := by
+      ext i
+      exact Fin.elim0 i
+    exact ⟨1, 0, one_pos, fun a => by rw [hzero (φ a)]; simp,
+      fun a => by rw [hzero (φ a)]; simp, fun a b => by simp [hzero (φ (a * b) - φ a * φ b)],
+      fun a b => by simp [hzero (φ (a * b) - φ a * φ b)]⟩
+  · exact ⟨k, φ, hk, fun _ => rfl, fun _ => rfl, fun _ _ => rfl, fun _ _ => rfl⟩
 
 end PositiveMatrixSize
 

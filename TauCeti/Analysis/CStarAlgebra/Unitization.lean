@@ -45,6 +45,17 @@ open scoped MultiplierAlgebra
 
 namespace Unitization
 
+/-- The algebra coordinate of a unitization element has norm at most twice the unitization
+norm. -/
+theorem norm_snd_le_two_mul_norm {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
+    [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A]
+    [RegularNormedAlgebra 𝕜 A] (x : Unitization 𝕜 A) : ‖x.snd‖ ≤ 2 * ‖x‖ := by
+  -- The canonical metric inherits the extended distance from the auxiliary metric.
+  have h : LipschitzWith 2 (addEquiv 𝕜 A) := fun a b => lipschitzWith_addEquiv a b
+  have hbound := (norm_snd_le (addEquiv 𝕜 A x)).trans (h.norm_le_mul (map_zero _) x)
+  rw [NNReal.coe_ofNat] at hbound
+  exact hbound
+
 section RightAction
 
 /-- For any regular C⋆-algebra `A` over a nontrivially normed field `𝕜` (with or without identity

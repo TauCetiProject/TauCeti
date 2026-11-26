@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
 import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
+import TauCeti.Analysis.CStarAlgebra.State.AmenableTrace.Approximation
 
 /-!
 # Amenable, quasidiagonal and uniform amenable traces
@@ -96,6 +97,7 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 public section
 
 open Set WeakDual
+open TauCeti (ApproxBy RecoverOn RecoverUniform)
 open scoped CStarAlgebra ComplexOrder
 
 namespace PositiveContinuousLinearMap
@@ -152,27 +154,6 @@ theorem isUniformAmenableTrace_iff : τ.IsUniformAmenableTrace ↔
       ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε * ‖a‖ :=
   Iff.rfl
 
-/-- The approximation property shared by the three trace predicates: completely positive
-contractions into `M_k` whose multiplicativity defect, measured by `d`, is `< ε` on `F` and which
-satisfy the recovery clause `R F ε`. -/
-private def ApproxBy (d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ)
-    (R : Finset A → ℝ → ∀ k : ℕ, (A →CP CStarMatrix (Fin k) (Fin k) ℂ) → Prop)
-    (F : Finset A) (ε : ℝ) : Prop :=
-  ∃ (k : ℕ) (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ), (∀ a, ‖φ a‖ ≤ ‖a‖) ∧
-    (∀ a ∈ F, ∀ b ∈ F, d k (φ (a * b) - φ a * φ b) < ε) ∧ R F ε k φ
-
-/-- The recovery clause of amenable and quasidiagonal traces: `tr_k ∘ φ` is `ε`-close to `τ` on
-`F`. -/
-private def RecoverOn (τ : A →P[ℂ] ℂ) (F : Finset A) (ε : ℝ) (k : ℕ)
-    (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ) : Prop :=
-  ∀ a ∈ F, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ < ε
-
-/-- The recovery clause of uniform amenable traces: `tr_k ∘ φ` is `ε`-close to `τ` in the norm of
-the dual. -/
-private def RecoverUniform (τ : A →P[ℂ] ℂ) (_F : Finset A) (ε : ℝ) (k : ℕ)
-    (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ) : Prop :=
-  ∀ a, ‖CStarMatrix.normalizedTrace (φ a) - τ a‖ ≤ ε * ‖a‖
-
 private theorem isAmenableTrace_iff_approxBy : τ.IsAmenableTrace ↔ ∀ (F : Finset A) (ε : ℝ),
     0 < ε → ApproxBy (fun _ => CStarMatrix.normalizedTwoNorm) (RecoverOn τ) F ε :=
   Iff.rfl
@@ -208,7 +189,7 @@ private theorem forall_approxBy_iff_exists_superset
         ApproxBy d R F' ε' :=
   ⟨fun h F ε hε => ⟨F, subset_rfl, ε, le_rfl, h F ε hε⟩, fun h F ε hε => by
     obtain ⟨F', hF, ε', hε', h'⟩ := h F ε hε
-    exact h'.mono hR hF hε'⟩
+    exact ApproxBy.mono hR hF hε' h'⟩
 
 /-- **Monotonicity of amenability.** A witness for `(F', ε')` is a witness for every `F ⊆ F'`
 and `ε ≥ ε'`, so it suffices to find, for each `(F, ε)`, a witness for some larger finite set
@@ -278,11 +259,9 @@ private theorem ApproxBy.comp {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ 
     (hR : ∀ ⦃k : ℕ⦄ ⦃φ : B →CP CStarMatrix (Fin k) (Fin k) ℂ⦄,
       RB (S.image f) ε k φ → RA S ε k (φ.comp (f : A →CP B)))
     (h : ApproxBy d RB (S.image f) ε) : ApproxBy d RA S ε := by
-  obtain ⟨k, φ, hφ, hmul, hrec⟩ := h
-  exact ⟨k, φ.comp (f : A →CP B),
+  refine h.transport f le_rfl fun k φ hφ hrec => ⟨k, φ.comp (f : A →CP B),
     fun a => by simpa using (hφ (f a)).trans (NonUnitalStarAlgHom.norm_apply_le f a),
-    fun a ha b hb => by
-      simpa using hmul (f a) (Finset.mem_image_of_mem f ha) (f b) (Finset.mem_image_of_mem f hb),
+    fun a b => by simp,
     hR hrec⟩
 
 /-- **Pullback of amenable traces.** If `σ` is an amenable trace of `B`, then so is its composite
@@ -292,27 +271,27 @@ with any star homomorphism `f : A → B`: an approximant `φ` of `σ` gives the 
 theorem IsAmenableTrace.comp (hσ : σ.IsAmenableTrace) (f : F) :
     (σ.comp (.ofClass f)).IsAmenableTrace := by
   classical
-  exact isAmenableTrace_iff_approxBy.2 fun S ε hε =>
-    (isAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f fun _ _ h a ha => by
-      simpa using h (f a) (Finset.mem_image_of_mem f ha)
+  refine isAmenableTrace_iff_approxBy.2 fun S ε hε =>
+    ApproxBy.comp f (fun _ _ h a ha => ?_) (isAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+  simpa using h (f a) (Finset.mem_image_of_mem f ha)
 
 /-- **Pullback of quasidiagonal traces** along any star homomorphism `f : A → B`. -/
 theorem IsQuasidiagonalTrace.comp (hσ : σ.IsQuasidiagonalTrace) (f : F) :
     (σ.comp (.ofClass f)).IsQuasidiagonalTrace := by
   classical
-  exact isQuasidiagonalTrace_iff_approxBy.2 fun S ε hε =>
-    (isQuasidiagonalTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f fun _ _ h a ha => by
-      simpa using h (f a) (Finset.mem_image_of_mem f ha)
+  refine isQuasidiagonalTrace_iff_approxBy.2 fun S ε hε =>
+    ApproxBy.comp f (fun _ _ h a ha => ?_) (isQuasidiagonalTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+  simpa using h (f a) (Finset.mem_image_of_mem f ha)
 
 /-- **Pullback of uniform amenable traces** along any star homomorphism `f : A → B`; the
 recovery error at `a` is the error of `σ` at `f a`, and `‖f a‖ ≤ ‖a‖`. -/
 theorem IsUniformAmenableTrace.comp (hσ : σ.IsUniformAmenableTrace) (f : F) :
     (σ.comp (.ofClass f)).IsUniformAmenableTrace := by
   classical
-  exact isUniformAmenableTrace_iff_approxBy.2 fun S ε hε =>
-    (isUniformAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε).comp f fun _ _ h a => by
-      simpa using (h (f a)).trans
-        (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
+  refine isUniformAmenableTrace_iff_approxBy.2 fun S ε hε =>
+    ApproxBy.comp f (fun _ _ h a => ?_) (isUniformAmenableTrace_iff_approxBy.1 hσ (S.image f) ε hε)
+  simpa using (h (f a)).trans
+    (mul_le_mul_of_nonneg_left (NonUnitalStarAlgHom.norm_apply_le f a) hε.le)
 
 /-- Amenability of traces is invariant under star isomorphisms. -/
 theorem isAmenableTrace_comp_iff (e : A ≃⋆ₐ[ℂ] B) :
@@ -440,14 +419,15 @@ private theorem exists_approximant_of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} {
       ∀ a, ‖CStarMatrix.normalizedTrace (Φ a) - τ a‖ ≤
         max ‖CStarMatrix.normalizedTrace (φ₁ a) - τ₁ a‖
           ‖CStarMatrix.normalizedTrace (φ₂ a) - τ₂ a‖ + η * (‖τ₁ a‖ + ‖τ₂ a‖) := by
-  obtain ⟨l₁, ψ₁, hl₁, hψ₁, tr₁, d₁, n₁⟩ := exists_pos_matrix_approximant φ₁ h₁
-  obtain ⟨l₂, ψ₂, hl₂, hψ₂, tr₂, d₂, n₂⟩ := exists_pos_matrix_approximant φ₂ h₂
+  obtain ⟨l₁, ψ₁, hl₁, hnorm₁, tr₁, d₁, n₁⟩ := φ₁.exists_matrix_approximant_with_pos_size
+  obtain ⟨l₂, ψ₂, hl₂, hnorm₂, tr₂, d₂, n₂⟩ := φ₂.exists_matrix_approximant_with_pos_size
   -- The weight `w = ⌊θ N⌋ / N` is within `1 / N < η` of `θ`.
   obtain ⟨N, hN⟩ := exists_nat_gt η⁻¹
   have hN0 : (0 : ℝ) < N := (inv_pos.2 hη).trans hN
   have hp : ⌊θ * N⌋₊ ≤ N := Nat.floor_le_of_le (by nlinarith)
   obtain ⟨K, Φ, hΦ, htr, hd, hn⟩ :=
-    exists_blockDiagonal_approximant ψ₁ ψ₂ hψ₁ hψ₂ hl₁ hl₂ (by exact_mod_cast hN0) hp
+    exists_blockDiagonal_approximant ψ₁ ψ₂ (fun a => (hnorm₁ a).le.trans (h₁ a))
+      (fun a => (hnorm₂ a).le.trans (h₂ a)) hl₁ hl₂ (by exact_mod_cast hN0) hp
   set w : ℝ := (⌊θ * N⌋₊ / N : ℝ)
   have hw₀ : 0 ≤ w := by positivity
   have hw₁ : w ≤ 1 := div_le_one_of_le₀ (by exact_mod_cast hp) hN0.le
