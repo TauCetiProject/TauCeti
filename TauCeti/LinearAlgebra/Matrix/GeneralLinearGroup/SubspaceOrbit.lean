@@ -45,7 +45,7 @@ namespace Matrix.GeneralLinearGroup
 variable {k : Type*} [Field k] {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The pointwise action of `g ∈ GL_n(k)` on vectors is multiplication by its matrix. -/
-theorem smul_vec_eq_mulVec (g : GL n k) (v : n → k) : g • v = (g : Matrix n n k) *ᵥ v :=
+theorem smul_eq_mulVec (g : GL n k) (v : n → k) : g • v = (g : Matrix n n k) *ᵥ v :=
   (rfl)
 
 /-- The action of `GL_n(k)` on the subspaces of `kⁿ` preserves the dimension. -/
@@ -62,12 +62,11 @@ theorem exists_smul_eq_of_finrank_eq {W W' : Submodule k (n → k)}
   obtain ⟨f, hf⟩ := W.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq W W' h)
   set g : GL n k := toLin.symm (LinearMap.GeneralLinearGroup.ofLinearEquiv f)
   have hg (v : n → k) : g • v = f v := by
-    rw [smul_vec_eq_mulVec, ← mulVecLin_apply, ← coe_toLin, MulEquiv.apply_symm_apply]
-    rfl
+    rw [smul_eq_mulVec, ← mulVecLin_apply, ← coe_toLin, MulEquiv.apply_symm_apply,
+      LinearMap.GeneralLinearGroup.coe_ofLinearEquiv]
   refine ⟨g, le_antisymm ?_ fun x hx ↦ ?_⟩
   · rintro _ ⟨v, hv, rfl⟩
-    change g • v ∈ W'
-    rw [hg, ← hf ⟨v, hv⟩]
+    rw [DistribSMul.toLinearMap_apply, ← Units.smul_def, hg, ← hf ⟨v, hv⟩]
     exact Submodule.coe_mem _
   · set y : W := (LinearEquiv.ofFinrankEq W W' h).symm ⟨x, hx⟩
     refine (Submodule.mem_smul_pointwise_iff_exists _ _ _).mpr ⟨y, y.property, ?_⟩
@@ -87,8 +86,7 @@ subspaces of the dimension of `W`. -/
 theorem index_stabilizer_submodule_eq_natCard (W : Submodule k (n → k)) :
     (MulAction.stabilizer (GL n k) W).index =
       Nat.card {W' : Submodule k (n → k) // finrank k W' = finrank k W} := by
-  rw [MulAction.index_stabilizer, orbit_submodule_eq, ← Nat.card_coe_set_eq]
-  rfl
+  rw [MulAction.index_stabilizer, orbit_submodule_eq, ← Nat.card_coe_set_eq, Set.coe_ofPred]
 
 /-- **The index of the stabilizer of a subspace over a finite field.** If `k` has `q` elements,
 the stabilizer of a subspace `W` of `kⁿ` has index the Gaussian binomial coefficient

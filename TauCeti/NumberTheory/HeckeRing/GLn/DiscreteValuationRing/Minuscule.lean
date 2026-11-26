@@ -53,9 +53,10 @@ is the number of `(n - j)`-dimensional subspaces of `kⁿ`, namely `[n, n - j]_q
 * `HeckeRing.GLn.map_mem_conjAct_minusculeDiag_iff`: the integral points of `η_j GL_n(R) η_j⁻¹`.
 * `HeckeRing.GLn.relIndex_conjAct_minusculeDiag`: `[K : K ∩ η_j K η_j⁻¹]` is the index of the
   stabilizer of `S_j` in `GL_n(k)`.
-* `HeckeRing.GLn.degree_minusculeCoset`: `K η_j K` is the union of `[n, j]_q` left cosets, and
-  `HeckeRing.GLn.degree_minusculeCoset_eq_natCard` identifies this with the number of
-  `j`-dimensional subspaces of `kⁿ`.
+* `HeckeRing.GLn.degree_minusculeCoset`: for `j ≤ n`, `K η_j K` is the union of `[n, j]_q` left
+  cosets, and `HeckeRing.GLn.degree_minusculeCoset_eq_natCard` identifies the number of left
+  cosets with the number of `(n - j)`-dimensional subspaces of `kⁿ` (for `j ≤ n`, the subspaces
+  of codimension `j`).
 
 ## References
 
@@ -90,9 +91,17 @@ restriction to the coordinates `i < j`. Its stabilizer in `GL_n(k)` is the reduc
 def zeroPrefixSubspace : Submodule k (Fin n → k) :=
   LinearMap.ker (LinearMap.funLeft k k (Subtype.val : {i : Fin n // (i : ℕ) < j} → Fin n))
 
+/-- The defining equation of `zeroPrefixSubspace`, for modules that import it: the definition is
+not exposed. -/
+theorem zeroPrefixSubspace_def :
+    zeroPrefixSubspace k n j =
+      LinearMap.ker (LinearMap.funLeft k k (Subtype.val : {i : Fin n // (i : ℕ) < j} → Fin n)) :=
+  (rfl)
+
 variable {k n j}
 
 /-- A vector lies in `S_j` exactly when its first `j` coordinates vanish. -/
+@[simp]
 theorem mem_zeroPrefixSubspace {v : Fin n → k} :
     v ∈ zeroPrefixSubspace k n j ↔ ∀ i : Fin n, (i : ℕ) < j → v i = 0 := by
   simp [zeroPrefixSubspace, funext_iff, LinearMap.funLeft_apply]
@@ -100,6 +109,7 @@ theorem mem_zeroPrefixSubspace {v : Fin n → k} :
 /-- The subspace `S_j` has dimension `n - j` (it is `0` for `j ≥ n`). -/
 theorem finrank_zeroPrefixSubspace :
     finrank k (zeroPrefixSubspace k n j) = n - j := by
+  rw [zeroPrefixSubspace_def]
   set f := LinearMap.funLeft k k (Subtype.val : {i : Fin n // (i : ℕ) < j} → Fin n)
   have hf : LinearMap.range f = ⊤ :=
     LinearMap.range_eq_top.mpr
@@ -109,7 +119,6 @@ theorem finrank_zeroPrefixSubspace :
   have h := f.finrank_range_add_finrank_ker
   rw [hf, finrank_top, finrank_fintype_fun_eq_card, hcard, finrank_fintype_fun_eq_card,
     Fintype.card_fin] at h
-  change finrank k (LinearMap.ker f) = n - j
   have := min_le_left n j
   have := min_le_right n j
   rcases le_total n j with h' | h' <;> simp only [min_eq_left, min_eq_right, h'] at h ⊢ <;> omega
@@ -124,10 +133,10 @@ theorem smul_zeroPrefixSubspace_le_iff (g : GL (Fin n) k) :
     have heb : (Pi.single b 1 : Fin n → k) ∈ zeroPrefixSubspace k n j :=
       mem_zeroPrefixSubspace.mpr fun i hi ↦ Pi.single_eq_of_ne (by omega) _
     have := mem_zeroPrefixSubspace.mp (h (Submodule.smul_mem_pointwise_smul _ g _ heb)) a ha
-    rwa [GeneralLinearGroup.smul_vec_eq_mulVec, mulVec_single_one] at this
+    rwa [GeneralLinearGroup.smul_eq_mulVec, mulVec_single_one] at this
   · rintro h _ ⟨v, hv, rfl⟩
     refine mem_zeroPrefixSubspace.mpr fun a ha ↦ ?_
-    change ((g : Matrix (Fin n) (Fin n) k) *ᵥ v) a = 0
+    rw [DistribSMul.toLinearMap_apply, Matrix.smul_eq_mulVec]
     simp only [mulVec, dotProduct]
     refine Finset.sum_eq_zero fun b _ ↦ ?_
     by_cases hb : (b : ℕ) < j
@@ -235,12 +244,8 @@ theorem map_mem_conjAct_minusculeDiag_iff (hϖ : Irreducible ϖ) (hπ : algebraM
       · exact ⟨(γ : Matrix (Fin n) (Fin n) R) a b * ϖ, by simp [ha, hb, hπ]⟩
       · exact ⟨(γ : Matrix (Fin n) (Fin n) R) a b, by simp [ha, hb]⟩
     choose A hA using hent
-    refine mem_integralGL_of_map_eq (injective_algebraMap hϖ hπ) (A := Matrix.of A)
-      (u := GeneralLinearGroup.det γ) (by ext a b; exact hA a b) ?_
-    rw [Units.val_mul, Units.val_mul, det_mul, det_mul, mul_comm, ← mul_assoc, ← det_mul,
-      ← Units.val_mul, mul_inv_cancel, Units.val_one, det_one, one_mul,
-      GeneralLinearGroup.val_map_apply, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-      GeneralLinearGroup.val_det_apply]
+    exact inv_mul_map_mul_mem_integralGL_of_map_eq (injective_algebraMap hϖ hπ)
+      (A := Matrix.of A) (by ext a b; exact hA a b)
 
 /-- `GL_n(R) ∩ η_j GL_n(R) η_j⁻¹` is the preimage of the stabilizer of `S_j` under reduction
 `GL_n(R) → GL_n(k)`: an entry reduces to zero exactly when it lies in the maximal ideal. -/
@@ -275,9 +280,8 @@ theorem relIndex_conjAct_minusculeDiag (hϖ : Irreducible ϖ) (hπ : algebraMap 
     ext γ
     exact map_mem_conjAct_minusculeDiag_iff_mem_stabilizer hϖ hπ j γ
   have hmap : H ⊓ φ.range = (H.comap φ).map φ := by rw [Subgroup.map_comap_eq, inf_comm]
-  rw [← Subgroup.inf_relIndex_right]
-  change (H ⊓ φ.range).relIndex φ.range = _
-  rw [hmap, MonoidHom.range_eq_map, Subgroup.relIndex_map_map_of_injective _ _ hφ,
+  rw [← Subgroup.inf_relIndex_right, integralGL, hmap, MonoidHom.range_eq_map,
+    Subgroup.relIndex_map_map_of_injective _ _ hφ,
     Subgroup.relIndex_top_right, hcomap, Subgroup.index_comap_of_surjective _ hρ]
 
 variable (R) in
@@ -307,10 +311,11 @@ theorem degree_minusculeCoset [Finite (ResidueField R)] (hϖ : Irreducible ϖ)
     finrank_zeroPrefixSubspace, Fintype.card_fin, gaussianBinomial_symm _ hj,
     Nat.card_eq_fintype_card]
 
-/-- **`K η_j K` is the union of as many left cosets as there are subspaces of `kⁿ` of codimension
-`j`**, where `k` is the residue field: the coset `g GL_n(R)` corresponds to the image of the
-lattice `g Rⁿ` in `kⁿ = Rⁿ / ϖ Rⁿ`. There are as many of them as `j`-dimensional subspaces; for a
-finite residue field `degree_minusculeCoset` gives their number. -/
+/-- **`K η_j K` is the union of as many left cosets as there are `(n - j)`-dimensional subspaces
+of `kⁿ`**, where `k` is the residue field. For `j ≤ n` these are the subspaces of codimension `j`,
+and the coset `g GL_n(R)` corresponds to the image of the lattice `g Rⁿ` in `kⁿ = Rⁿ / ϖ Rⁿ`;
+for `j > n` there is a single coset. For a finite residue field `degree_minusculeCoset` gives
+the number for `j ≤ n`. -/
 theorem degree_minusculeCoset_eq_natCard (hϖ : Irreducible ϖ) (hπ : algebraMap R K ϖ = π)
     (j : ℕ) :
     (minusculeCoset R π n j).degree =

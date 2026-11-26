@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiscreteValuationRing.Minuscule
 public import TauCeti.NumberTheory.HeckeRing.Normalizer
-public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 

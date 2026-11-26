@@ -25,9 +25,9 @@ valuation ring of a nonarchimedean local field, **every element of `GL_ι(K)` co
 `GL_ι(R)`** (`HeckeRing.GLn.commensurator_integralGL_eq_top`), so `(⊤, GL_ι(R))` is a Hecke pair
 and `𝕋 ⊤ (integralGL R K ι) S` is the local Hecke ring `H(GL_ι(K), GL_ι(R))` over any coefficient
 semiring `S`. For a nonarchimedean local field `L` with valuation ring `O_L` this is the spherical
-Hecke ring `H(GL_n(L), GL_n(O_L))`. The cases `ℤ ⊂ ℚ` and `ℤ_p ⊂ ℚ_p` are
+Hecke ring `H(GL_n(L), GL_n(O_L))`. The cases `ℤ ⊂ ℚ` and `ℤ_p ⊂ ℚ_p`,
 `HeckeRing.GLn.commensurator_GLnZ_eq_top` and `HeckeRing.GLn.commensurator_glPadicInt_eq_top`,
-proved there for their own presentations of the integral subgroup.
+are derived from this one.
 
 The proof is the usual congruence argument. For `g ∈ GL_ι(K)` clear denominators, `b g = A` and
 `c g⁻¹ = B` with `A`, `B` integral and `b, c ∈ R` nonzero. If `γ ∈ GL_ι(R)` is congruent to `1`
@@ -44,6 +44,9 @@ finite group `GL_ι(R ⧸ (b c))`, so it has finite index in `GL_ι(R)`, and it 
 
 * `HeckeRing.GLn.mem_integralGL_iff`: `g ∈ GL_ι(R)` exactly when `g` is the image of an integral
   matrix with unit determinant.
+* `HeckeRing.GLn.inv_mul_map_mul_mem_integralGL_of_map_eq`: a conjugate `g⁻¹ γ g` of
+  `γ ∈ GL_ι(R)` with integral entries lies in `GL_ι(R)`, since its determinant is that of `γ`
+  (`HeckeRing.GLn.det_inv_mul_map_mul`).
 * `HeckeRing.GLn.commensurator_integralGL_eq_top`: the commensurator of `GL_ι(R)` in `GL_ι(K)` is
   the whole group.
 * the `IsHeckeTriple` instance for `(⊤, GL_ι(R))`.
@@ -102,8 +105,25 @@ theorem exists_det_eq_algebraMap_of_mem_integralGL {g : GL ι K} (hg : g ∈ int
     ∃ u : Rˣ, (g : Matrix ι ι K).det = algebraMap R K u := by
   obtain ⟨k, rfl⟩ := hg
   refine ⟨GeneralLinearGroup.det k, ?_⟩
-  rw [GeneralLinearGroup.val_det_apply, RingHom.map_det]
-  rfl
+  rw [GeneralLinearGroup.val_det_apply, RingHom.map_det, GeneralLinearGroup.val_map_apply,
+    RingHom.mapMatrix_apply]
+
+/-- The determinant of a conjugate `g⁻¹ γ g` of an element `γ` of `GL_ι(R)` by `g ∈ GL_ι(K)` is
+the image of the determinant of `γ`. -/
+theorem det_inv_mul_map_mul (g : GL ι K) (γ : GL ι R) :
+    ((g⁻¹ * GeneralLinearGroup.map (algebraMap R K) γ * g : GL ι K) : Matrix ι ι K).det =
+      algebraMap R K (GeneralLinearGroup.det γ : R) := by
+  rw [← GeneralLinearGroup.val_det_apply, map_mul, map_mul, mul_right_comm, map_inv,
+    inv_mul_cancel, one_mul, GeneralLinearGroup.val_det_apply, GeneralLinearGroup.val_map_apply,
+    GeneralLinearGroup.val_det_apply, RingHom.map_det, RingHom.mapMatrix_apply]
+
+/-- When `R → K` is injective, a conjugate `g⁻¹ γ g` of an element `γ` of `GL_ι(R)` lies in
+`GL_ι(R)` as soon as its entries lie in `R`. -/
+theorem inv_mul_map_mul_mem_integralGL_of_map_eq (hinj : Function.Injective (algebraMap R K))
+    {g : GL ι K} {γ : GL ι R} {A : Matrix ι ι R}
+    (hA : A.map (algebraMap R K) = ↑(g⁻¹ * GeneralLinearGroup.map (algebraMap R K) γ * g)) :
+    g⁻¹ * GeneralLinearGroup.map (algebraMap R K) γ * g ∈ integralGL R K ι :=
+  mem_integralGL_of_map_eq hinj hA (det_inv_mul_map_mul g γ)
 
 section Commensurator
 
@@ -132,22 +152,17 @@ private theorem inv_mul_map_mul_mem_integralGL {g : GL ι K} {b c : R} {A B : Ma
     ext i j
     simp [hC]
   -- `g⁻¹ γ g = g⁻¹ (1 + b c C) g = 1 + (c g⁻¹) C (b g) = 1 + B C A`
-  refine mem_integralGL_of_map_eq (IsFractionRing.injective R K)
-    (A := 1 + B * Matrix.of C * A) (u := GeneralLinearGroup.det γ) ?_ ?_
-  · have hg : (↑g⁻¹ : Matrix ι ι K) * g = 1 := by
-      rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
-    set f := (Algebra.ofId R K).mapMatrix (m := ι)
-    have hA' : f A = b • (g : Matrix ι ι K) := hA
-    have hB' : f B = c • (↑g⁻¹ : Matrix ι ι K) := hB
-    have hγ' : (GeneralLinearGroup.map (algebraMap R K) γ : Matrix ι ι K) = f γ := rfl
-    change f (1 + B * Matrix.of C * A) = _
-    rw [map_add, map_one, map_mul, map_mul, hA', hB', Units.val_mul, Units.val_mul, hγ', hγC,
-      map_add, map_one, map_smul, mul_add, add_mul, Matrix.mul_one, hg]
-    simp only [smul_mul_assoc, mul_smul_comm, smul_smul, Matrix.mul_assoc]
-  · rw [Units.val_mul, Units.val_mul, det_mul, det_mul, mul_comm, ← mul_assoc,
-      ← det_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one, det_one, one_mul,
-      GeneralLinearGroup.val_map_apply, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-      GeneralLinearGroup.val_det_apply]
+  refine inv_mul_map_mul_mem_integralGL_of_map_eq (IsFractionRing.injective R K)
+    (A := 1 + B * Matrix.of C * A) ?_
+  have hg : (↑g⁻¹ : Matrix ι ι K) * g = 1 := by
+    rw [← Units.val_mul, inv_mul_cancel, Units.val_one]
+  rw [← RingHom.mapMatrix_apply, map_add, map_one, map_mul, map_mul]
+  simp only [RingHom.mapMatrix_apply]
+  rw [hA, hB, Units.val_mul, Units.val_mul, GeneralLinearGroup.val_map_apply, hγC,
+    Matrix.map_add _ (map_add _), Matrix.map_one _ (map_zero _) (map_one _),
+    Matrix.map_smul _ _ fun a ↦ by rw [smul_eq_mul, map_mul, Algebra.smul_def], mul_add, add_mul,
+    Matrix.mul_one, hg]
+  simp only [smul_mul_assoc, mul_smul_comm, smul_smul, Matrix.mul_assoc]
 
 variable [Ring.HasFiniteQuotients R]
 
