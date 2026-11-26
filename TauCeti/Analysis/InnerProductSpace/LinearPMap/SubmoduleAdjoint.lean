@@ -19,29 +19,40 @@ As a consequence, the adjoint of a closable partial linear map has dense domain.
 ## Main results
 
 * `Submodule.le_adjoint_adjoint`: double adjoints contain the original submodule.
+* `Submodule.topologicalClosure_adjoint`: the adjoint of the topological closure of a
+  submodule is the adjoint of the submodule.
 * `Submodule.adjoint_adjoint_eq_topologicalClosure`: the double adjoint is the
   topological closure.
 * `Submodule.adjoint_adjoint`: equality for complete submodules.
 * `LinearPMap.dense_adjoint_domain`: a closable operator has a densely defined
   adjoint.
-* `LinearPMap.tendsto_inner_apply_of_isClosable`: for closable `A`, a family `uᵢ → 0` of
-  `dom A` with `‖A uᵢ‖` eventually bounded has `A uᵢ → 0` weakly.
+* `LinearPMap.adjoint_zero`: the adjoint of the zero partial linear map is zero.
+* `LinearPMap.closure_adjoint`: taking the closure of a partial linear map does not
+  change its adjoint.
 * `LinearPMap.adjoint_adjoint_eq_closure`: `T†† = closure T` for a closable densely defined
   operator.
 * `LinearPMap.adjoint_adjoint`, `LinearPMap.adjoint_adjoint_apply`: `T†† = T` for a closed
   densely defined operator.
+* `LinearPMap.tendsto_inner_apply_of_isClosable`: for closable `A`, a family `uᵢ → 0` of
+  `dom A` with `‖A uᵢ‖` eventually bounded has `A uᵢ → 0` weakly.
 
 ## Provenance
 
 Adapted from the Kitware DKPS formalization, originally authored in `ForTauCeti`
 (copyright (c) 2026 Kitware, Inc.; authors Jon Crall and Claude Opus 5; Apache-2.0).
 
+## References
+
+* J. Weidmann, *Linear Operators in Hilbert Spaces*, Graduate Texts in Mathematics 68,
+  Springer (1980), Theorem 5.3.
+* T. Kato, *Perturbation Theory for Linear Operators*, Springer (1995), §V.3.3.
+
 -/
 
 public section
 
 open Filter Topology
-open scoped InnerProductSpace
+open scoped InnerProductSpace LinearPMap
 
 namespace Submodule
 
@@ -60,6 +71,19 @@ theorem le_adjoint_adjoint (g : Submodule 𝕜 (E × F)) : g ≤ g.adjoint.adjoi
   have h2 := congrArg (starRingEnd 𝕜) h
   simp only [map_sub, inner_conj_symm, map_zero] at h2
   exact sub_eq_zero.mpr (sub_eq_zero.mp h2).symm
+
+/-- Taking the topological closure of a submodule does not change its adjoint, without
+completeness assumptions. -/
+@[simp]
+theorem topologicalClosure_adjoint (g : Submodule 𝕜 (E × F)) :
+    g.topologicalClosure.adjoint = g.adjoint := by
+  ext x
+  simp only [Submodule.mem_adjoint_iff]
+  refine ⟨fun h a b hab ↦ h a b (g.le_topologicalClosure hab), fun h a b hab ↦ ?_⟩
+  have hcl : IsClosed {p : E × F | inner 𝕜 p.2 x.1 - inner 𝕜 p.1 x.2 = 0} :=
+    isClosed_eq ((continuous_snd.inner continuous_const).sub
+      (continuous_fst.inner continuous_const)) continuous_const
+  exact closure_minimal (fun p hp ↦ h p.1 p.2 hp) hcl (by rwa [← topologicalClosure_coe])
 
 /-- Transport of the double adjoint to the `L²` product: a point of `g.adjoint.adjoint` lies in
 the double orthogonal complement of the copy of `g` in `WithLp 2 (E × F)`. -/
@@ -121,6 +145,71 @@ theorem adjoint_adjoint (g : Submodule 𝕜 (E × F)) (hg : IsComplete (g : Set 
 end Submodule
 
 namespace LinearPMap
+
+section CompleteSource
+
+variable {𝕜 E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+
+private theorem closure_adjoint_domain {T : E →ₗ.[𝕜] F} (hTc : T.IsClosable) :
+    T.closure†.domain = T†.domain := by
+  refine le_antisymm (fun y hy ↦ ?_) (fun y hy ↦ ?_)
+  · rw [mem_adjoint_domain_iff] at hy ⊢
+    have hfun : ⇑((innerₛₗ 𝕜 y).comp T.toFun) =
+        fun x : T.domain ↦ ((innerₛₗ 𝕜 y).comp T.closure.toFun) ⟨x, T.le_closure.1 x.property⟩ := by
+      funext x; simp [T.le_closure.2 (y := ⟨x, T.le_closure.1 x.property⟩) rfl]
+    rw [hfun]
+    exact hy.comp (continuous_subtypeVal.subtype_mk _)
+  · rw [mem_adjoint_domain_iff] at hy ⊢
+    let φ : StrongDual 𝕜 T.domain := ⟨(innerₛₗ 𝕜 y).comp T.toFun, hy⟩
+    have hcl : _root_.IsClosed {p : E × F | ‖inner 𝕜 y p.2‖ ≤ ‖φ‖ * ‖p.1‖} :=
+      isClosed_le (continuous_const.inner continuous_snd).norm
+        (continuous_const.mul continuous_fst.norm)
+    have hsub : (T.closure.graph : Set (E × F)) ⊆
+        {p : E × F | ‖inner 𝕜 y p.2‖ ≤ ‖φ‖ * ‖p.1‖} := by
+      rw [← hTc.graph_closure_eq_closure_graph, Submodule.topologicalClosure_coe]
+      refine closure_minimal (fun p hp ↦ ?_) hcl
+      obtain ⟨u, rfl⟩ := (mem_graph_iff' T).mp hp
+      exact φ.le_opNorm u
+    exact (((innerₛₗ 𝕜 y).comp T.closure.toFun).mkContinuous ‖φ‖
+      fun x ↦ hsub (T.closure.mem_graph x)).continuous
+
+/-- Taking the closure of a partial linear map does not change its adjoint. No closability or
+density hypothesis is required: if `T` is not closable then `T.closure = T`, and if `T` is not
+densely defined then neither is `T.closure`, so both adjoints share the same domain and take the
+junk value `0`. -/
+@[simp]
+theorem closure_adjoint (T : E →ₗ.[𝕜] F) : T.closure† = T† := by
+  by_cases hTc : T.IsClosable
+  · by_cases hd : Dense (T.domain : Set E)
+    · refine eq_of_eq_graph ?_
+      rw [adjoint_graph_eq_graph_adjoint (hd.mono T.le_closure.1),
+        adjoint_graph_eq_graph_adjoint hd, ← hTc.graph_closure_eq_closure_graph,
+        Submodule.topologicalClosure_adjoint]
+    · have hd' : ¬Dense (T.closure.domain : Set E) := fun h ↦ hd <| by
+        refine dense_iff_closure_eq.mpr (Set.Subset.antisymm (Set.subset_univ _) ?_)
+        refine (dense_iff_closure_eq.mp h).symm.trans_subset (closure_minimal (fun x hx ↦ ?_)
+          isClosed_closure)
+        have hmem : ((x : E), T.closure ⟨x, hx⟩) ∈ _root_.closure (T.graph : Set (E × F)) := by
+          rw [← Submodule.topologicalClosure_coe, SetLike.mem_coe,
+            hTc.graph_closure_eq_closure_graph]
+          exact T.closure.mem_graph ⟨x, hx⟩
+        have hfst := image_closure_subset_closure_image continuous_fst ⟨_, hmem, rfl⟩
+        exact closure_mono (by rintro _ ⟨_, hp, rfl⟩; exact mem_domain_of_mem_graph hp) hfst
+      refine LinearPMap.ext (closure_adjoint_domain hTc) fun y hy hy' ↦ ?_
+      rw [adjoint_apply_of_not_dense hd' ⟨y, hy⟩, adjoint_apply_of_not_dense hd ⟨y, hy'⟩]
+  · rw [closure_def' hTc]
+
+/-- The adjoint of the zero partial linear map (on `⊤`) is zero. -/
+@[simp]
+theorem adjoint_zero : (0 : E →ₗ.[𝕜] F)† = 0 := by
+  have hd : Dense (((0 : E →ₗ.[𝕜] F).domain : Set E)) := by simp [dense_univ]
+  have hdom : (0 : E →ₗ.[𝕜] F)†.domain = ⊤ := eq_top_iff.mpr fun y _ ↦
+    mem_adjoint_domain_of_exists y ⟨0, fun _ ↦ by simp⟩
+  exact LinearPMap.ext hdom fun y hy _ ↦ adjoint_apply_eq hd ⟨y, hy⟩ fun _ ↦ by simp
+
+end CompleteSource
 
 variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -193,3 +282,4 @@ theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClos
   simpa using this
 
 end LinearPMap
+

@@ -46,7 +46,10 @@ linear maps used by the semigroup development.
   map is real.
 * `LinearPMap.IsFormalAdjoint.norm_smul_sub_sq`: the square-sum identity for a shift, and the
   graph-norm lower bounds `abs_im_mul_norm_le_norm_smul_sub` (equivalently the resolvent bound
-  `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`.
+  `norm_le_inv_abs_im_mul_norm_smul_sub`) and `norm_apply_le_mul_norm_smul_sub`; for any partial
+  map whose real quadratic form is bounded below by `γ * ‖x‖ ^ 2`,
+  `LinearPMap.sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner` bounds `‖c • x - A x‖`
+  below by `(γ - re c) * ‖x‖`.
 * `LinearPMap.IsFormalAdjoint.two_mul_re_inner_sub_le`: the variational inequality of a
   symmetric map bounded below by `t`, with the quadratic form of the real shift `A - t` computed
   by `LinearPMap.re_inner_apply_sub_smul_self`.
@@ -62,7 +65,8 @@ linear maps used by the semigroup development.
   eigenvector for `conj c`.
 * `LinearPMap.orthogonal_range_eq_ker_adjoint`: for a densely defined `T`,
   `(range T)ᗮ = ker T†`, and `LinearPMap.topologicalClosure_range_eq_orthogonal_ker_adjoint`:
-  `closure (range T) = (ker T†)ᗮ`; for a closed densely defined `T`,
+  `closure (range T) = (ker T†)ᗮ`; `LinearPMap.adjoint_apply_mem_orthogonal_ker`: every value of
+  `T†` lies in `(ker T)ᗮ` unconditionally; for a closed densely defined `T`,
   `LinearPMap.orthogonal_range_adjoint_eq_ker`: `(range T†)ᗮ = ker T` and
   `LinearPMap.topologicalClosure_range_adjoint_eq_orthogonal_ker`: `closure (range T†) = (ker T)ᗮ`.
 * `LinearPMap.IsFormalAdjoint.range_le_orthogonal_ker` and `IsSelfAdjoint.orthogonal_range_eq_ker`:
@@ -221,6 +225,15 @@ theorem orthogonal_range_eq_ker_adjoint [CompleteSpace E] {F : Type*} [NormedAdd
   · rintro ⟨z, rfl, hz⟩ _ ⟨x, rfl⟩
     exact (adjoint_isFormalAdjoint hd z x).symm.trans (by rw [hz, inner_zero_left])
 
+/-- Every value `T† y` of the adjoint of a partial linear map lies in `(ker T)ᗮ`. No density or
+closedness assumption is required: when `T.domain` is not dense, `T†` takes the value `0`. -/
+theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] (T : E →ₗ.[𝕜] F) (y : T†.domain) : T† y ∈ T.kerᗮ := by
+  by_cases hd : Dense (T.domain : Set E)
+  · exact (adjoint_isFormalAdjoint hd).apply_mem_orthogonal_ker y
+  · rw [adjoint_apply_of_not_dense hd]
+    exact zero_mem _
+
 /-- For a self-adjoint `A`, the orthogonal complement of the range is the kernel. -/
 theorem _root_.IsSelfAdjoint.orthogonal_range_eq_ker [CompleteSpace E] {A : E →ₗ.[𝕜] E}
     (hA : IsSelfAdjoint A) : (LinearMap.range A.toFun)ᗮ = A.ker := by
@@ -340,6 +353,29 @@ theorem IsFormalAdjoint.norm_re_smul_sub_le_norm_smul_sub {A : E →ₗ.[𝕜] E
   apply (sq_le_sq₀ (norm_nonneg _) (norm_nonneg _)).mp
   rw [hA.norm_smul_sub_sq c x]
   exact le_add_of_nonneg_left (by positivity)
+
+/-- A partial linear map whose real quadratic form is bounded below by `γ * ‖x‖ ^ 2` satisfies
+`(γ - re c) * ‖x‖ ≤ ‖c • x - A x‖` for every scalar `c`. No symmetry assumption on `A` is
+needed. -/
+theorem sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner
+    {A : E →ₗ.[𝕜] E} {γ : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x) (x : E)))
+    (c : 𝕜) (x : A.domain) : (γ - RCLike.re c) * ‖(x : E)‖ ≤ ‖c • (x : E) - A x‖ := by
+  rcases eq_or_ne (x : E) 0 with hx0 | hx0
+  · simp [hx0]
+  have hre :
+      (γ - RCLike.re c) * ‖(x : E)‖ ^ 2 ≤ RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) := by
+    have heq : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) =
+        RCLike.re (inner 𝕜 (A x) (x : E)) - RCLike.re c * ‖(x : E)‖ ^ 2 := by
+      simp [inner_sub_left, inner_smul_left]
+    linarith [hγ x, heq]
+  have hcs : RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E)) ≤
+      ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by
+    calc RCLike.re (inner 𝕜 (A x - c • (x : E)) (x : E))
+        ≤ ‖inner 𝕜 (A x - c • (x : E)) (x : E)‖ := RCLike.re_le_norm _
+      _ ≤ ‖A x - c • (x : E)‖ * ‖(x : E)‖ := norm_inner_le_norm _ _
+      _ = ‖c • (x : E) - A x‖ * ‖(x : E)‖ := by rw [norm_sub_rev]
+  exact (mul_le_mul_iff_left₀ (norm_pos_iff.mpr hx0)).mp (by nlinarith [hre, hcs])
 
 /-- A nonreal shift dominates the image, up to the constant `1 + |re c| / |im c|`: together with
 `abs_im_mul_norm_le_norm_smul_sub` this bounds the graph norm `max ‖x‖ ‖A x‖` by the shift. -/

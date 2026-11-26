@@ -13,12 +13,14 @@ public import TauCeti.Analysis.Normed.Operator.Resolvent.LowerBound
 
 A scalar `z` at which the shift `x ↦ z • x - A x` of a self-adjoint partial linear map is
 bounded below by `c‖x‖`, with `c > 0`, is a resolvent point, and `‖R(z)‖ ≤ c⁻¹`; at a real `z`
-this is the quantitative form of `z ∉ σ(A)`; in particular, a real number strictly below a lower
-bound `γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` is a resolvent point. Every nonreal scalar `z` is such a point with
-`c = |im z|`, which gives the sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. The spectrum is therefore
-real. Taking the adjoint of a resolvent conjugates its scalar parameter; in particular, resolvents
-at real points are self-adjoint. These facts provide the bounded inverses used in Cayley
-transforms and imaginary-shift approximations of unbounded self-adjoint operators.
+this is the quantitative form of `z ∉ σ(A)`; when the quadratic form is bounded below by
+`γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫`, every scalar in the open half-plane `re z < γ` (and in particular every
+real number `t < γ`) is a resolvent point with `‖R(z)‖ ≤ (γ - re z)⁻¹`. Every nonreal scalar `z`
+is such a point with `c = |im z|`, which gives the sharp upper bound `‖R(z)‖ ≤ |im z|⁻¹`. The
+spectrum is therefore real. Taking the adjoint of a resolvent conjugates its scalar parameter; in
+particular, resolvents at real points are self-adjoint. These
+facts provide the bounded inverses used in Cayley transforms, positive square roots, and
+imaginary-shift approximations of unbounded self-adjoint operators.
 
 The off-real estimates and surjectivity come from
 `TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint`; the bounded inverse uses
@@ -59,22 +61,6 @@ theorem _root_.IsSelfAdjoint.mem_resolventSet_of_norm_le (hA : IsSelfAdjoint A) 
   mem_resolventSet_of_surjective_of_norm_le (hA.smul_sub_surjective_of_norm_le hc hbound) hc
     hbound
 
-/-- **A real number below a lower bound is a resolvent point.** If a self-adjoint partial linear
-map `A` satisfies `γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain and `t < γ`, then `t` lies in the
-resolvent set of `A`. -/
-theorem _root_.IsSelfAdjoint.ofReal_mem_resolventSet_of_lt (hA : IsSelfAdjoint A) {γ t : ℝ}
-    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜) (ht : t < γ) :
-    (t : 𝕜) ∈ A.resolventSet := by
-  refine hA.mem_resolventSet_of_norm_le (sub_pos.2 ht) fun x => ?_
-  have hle := re_inner_le_norm (𝕜 := 𝕜) (A x - (t : 𝕜) • (x : E)) (x : E)
-  rw [re_inner_apply_sub_smul_self, norm_sub_rev] at hle
-  have key : (γ - t) * ‖(x : E)‖ * ‖(x : E)‖ ≤ ‖(t : 𝕜) • (x : E) - A x‖ * ‖(x : E)‖ := by
-    nlinarith [hγ x]
-  rcases (norm_nonneg (x : E)).eq_or_lt with h0 | hpos
-  · rw [← h0, mul_zero]
-    exact norm_nonneg _
-  · exact le_of_mul_le_mul_right key hpos
-
 /-- **Resolvent bound from a lower bound.** If the shift `x ↦ z • x - A x` of a self-adjoint
 partial linear map dominates `c * ‖x‖` on the domain for some `c > 0`, then the resolvent at `z`
 has norm at most `c⁻¹`. -/
@@ -82,6 +68,31 @@ theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_norm_le (hA : IsSelfAdjoint A)
     (hc : 0 < c) (hbound : ∀ x : A.domain, c * ‖(x : E)‖ ≤ ‖z • (x : E) - A x‖) :
     ‖A.resolvent z‖ ≤ c⁻¹ :=
   (isResolventAt_resolvent (hA.mem_resolventSet_of_norm_le hc hbound)).norm_le_inv hc hbound
+
+/-- **Half-plane resolvent membership.** If a self-adjoint partial linear map `A` satisfies
+`γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain and `re z < γ`, then `z` lies in the resolvent set of
+`A`. -/
+theorem _root_.IsSelfAdjoint.mem_resolventSet_of_re_lt (hA : IsSelfAdjoint A) {γ : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜)
+    (hz : RCLike.re z < γ) : z ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_norm_le (sub_pos.mpr hz)
+    (sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner hγ z)
+
+/-- **Half-plane resolvent norm bound.** If a self-adjoint partial linear map `A` satisfies
+`γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain and `re z < γ`, then `‖R(z, A)‖ ≤ (γ - re z)⁻¹`. -/
+theorem _root_.IsSelfAdjoint.norm_resolvent_le_of_re_lt (hA : IsSelfAdjoint A) {γ : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜)
+    (hz : RCLike.re z < γ) : ‖A.resolvent z‖ ≤ (γ - RCLike.re z)⁻¹ :=
+  hA.norm_resolvent_le_of_norm_le (sub_pos.mpr hz)
+    (sub_re_mul_norm_le_norm_smul_sub_of_mul_norm_sq_le_re_inner hγ z)
+
+/-- **A real number below a lower bound is a resolvent point.** If a self-adjoint partial linear
+map `A` satisfies `γ ‖x‖ ^ 2 ≤ re ⟪A x, x⟫` on its domain and `t < γ`, then `t` lies in the
+resolvent set of `A`. -/
+theorem _root_.IsSelfAdjoint.ofReal_mem_resolventSet_of_lt (hA : IsSelfAdjoint A) {γ t : ℝ}
+    (hγ : ∀ x : A.domain, γ * ‖(x : E)‖ ^ 2 ≤ RCLike.re ⟪A x, (x : E)⟫_𝕜) (ht : t < γ) :
+    (t : 𝕜) ∈ A.resolventSet :=
+  hA.mem_resolventSet_of_re_lt hγ (by simpa using ht)
 
 /-- Every nonreal scalar is a resolvent point of a self-adjoint partial linear map. -/
 theorem _root_.IsSelfAdjoint.mem_resolventSet_of_im_ne_zero

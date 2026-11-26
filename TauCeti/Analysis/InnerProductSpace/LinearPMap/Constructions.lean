@@ -16,9 +16,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.SelfAdjoint
 public import TauCeti.Topology.Algebra.Module.LinearPMap.Conj
+public import TauCeti.LinearAlgebra.LinearPMap.Basic
 
 /-!
-# Bounded perturbations and unitary conjugation of partial linear maps
+# Bounded perturbations, compositions, and unitary conjugation of partial linear maps
 
 * `LinearPMap.isSelfAdjoint_toPMap_top`: a bounded self-adjoint operator,
   viewed as a partial map on the full domain, is self-adjoint.
@@ -29,6 +30,9 @@ public import TauCeti.Topology.Algebra.Module.LinearPMap.Conj
   is `U A† U⁻¹`.
 * `LinearPMap.isSelfAdjoint_conj_iff`: `U A U⁻¹` is self-adjoint exactly when
   `A` is.
+* `ContinuousLinearMap.compPMap_adjoint`: the adjoint of `W ∘ M` for a bounded
+  operator `W` and an arbitrary partial linear map `M` is `M† ∘ W†` on its maximal
+  domain.
 
 The algebraic, domain-defined perturbation API is in
 `TauCeti.LinearAlgebra.LinearPMap.Perturbation`, and conjugation by linear and
@@ -201,3 +205,44 @@ end Conj
 end HilbertSpace
 
 end LinearPMap
+
+namespace ContinuousLinearMap
+
+open scoped InnerProductSpace LinearPMap
+
+variable {𝕜 G E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- The adjoint of a bounded operator composed on the left with an arbitrary partial linear map
+`M` is `M† ∘ W†` on its maximal domain `{y | W† y ∈ M†.domain}`. No closedness or density
+assumption on `M` is needed. -/
+theorem compPMap_adjoint (W : E →L[𝕜] F) (M : G →ₗ.[𝕜] E) :
+    ((W : E →ₗ[𝕜] F).compPMap M)† = M†.compLinearMap (W.adjoint : F →ₗ[𝕜] E) := by
+  have hdom : ((W : E →ₗ[𝕜] F).compPMap M)†.domain =
+      (M†.compLinearMap (W.adjoint : F →ₗ[𝕜] E)).domain := by
+    ext y
+    rw [LinearPMap.mem_compLinearMap_domain, coe_coe,
+      LinearPMap.mem_adjoint_domain_iff, LinearPMap.mem_adjoint_domain_iff]
+    have hfun : ⇑((innerₛₗ 𝕜 y).comp ((W : E →ₗ[𝕜] F).compPMap M).toFun) =
+        ⇑((innerₛₗ 𝕜 (W.adjoint y)).comp M.toFun) := by
+      funext x
+      exact (W.adjoint_inner_left (M x) y).symm
+    exact Iff.of_eq congr(Continuous $hfun)
+  refine LinearPMap.ext hdom fun y hy hy' ↦ ?_
+  rw [LinearPMap.compLinearMap_apply]
+  by_cases hd : Dense (M.domain : Set G)
+  · have hd' : Dense (((W : E →ₗ[𝕜] F).compPMap M).domain : Set G) := by
+      rwa [LinearMap.compPMap_domain]
+    refine LinearPMap.adjoint_apply_eq hd' ⟨y, hy⟩ fun x ↦ ?_
+    let xM : M.domain := ⟨x, by simpa using x.property⟩
+    have hx : ((W : E →ₗ[𝕜] F).compPMap M) x = W (M xM) := LinearMap.compPMap_apply _ M x
+    rw [hx, LinearPMap.adjoint_isFormalAdjoint hd _ xM]
+    exact W.adjoint_inner_left (M xM) y
+  · have hd' : ¬Dense (((W : E →ₗ[𝕜] F).compPMap M).domain : Set G) := by
+      rwa [LinearMap.compPMap_domain]
+    rw [LinearPMap.adjoint_apply_of_not_dense hd' ⟨y, hy⟩,
+      LinearPMap.adjoint_apply_of_not_dense hd]
+
+end ContinuousLinearMap
