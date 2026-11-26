@@ -333,12 +333,18 @@ def orientedLineHomeomorph :
     ((Equiv.ofBijective _ T.bijective_restrictedLine).toHomeomorphOfContinuousClosed
       T.continuous_restrictedLine T.isClosedMap_restrictedLine)
 
+/-- The homeomorphism is `Λ` on the phase cylinder. -/
 @[simp]
-theorem coe_orientedLineHomeomorph_apply (s : ℝ) (δ : Ioo 0 Real.pi) :
-    (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ := by
+theorem coe_orientedLineHomeomorph_apply (x : AddCircle ℓ × Ioo 0 Real.pi) :
+    (T.orientedLineHomeomorph x : Circle × ℝ) = T.addCircleOrientedLine (x.1, x.2) := by
   -- Keep the preimage subtype unnormalised, so that the coercions still match.
   simp [orientedLineHomeomorph, restrictedLine, closedLine, coe_phaseCylinderEquiv_apply,
     -preimage_ofPred_eq]
+
+/-- The homeomorphism sends the state `(s, δ)` to the line `Λ(s, δ)`. -/
+theorem coe_orientedLineHomeomorph_apply_mk (s : ℝ) (δ : Ioo 0 Real.pi) :
+    (T.orientedLineHomeomorph ((s : AddCircle ℓ), δ) : Circle × ℝ) = T.orientedLine s δ := by
+  simp
 
 /-- The inverse of `Λ` sends the line `Λ(s, δ)` to its entry state `(s, δ)`. -/
 @[simp]
@@ -346,7 +352,7 @@ theorem orientedLineHomeomorph_symm_apply_mk (s : ℝ) (δ : Ioo 0 Real.pi)
     (h : (orientedLineSet (T.orientedLine s δ) ∩ interior T.region).Nonempty) :
     T.orientedLineHomeomorph.symm ⟨T.orientedLine s δ, h⟩ = ((s : AddCircle ℓ), δ) :=
   T.orientedLineHomeomorph.symm_apply_eq.2
-    (Subtype.ext (T.coe_orientedLineHomeomorph_apply s δ).symm)
+    (Subtype.ext (T.coe_orientedLineHomeomorph_apply_mk s δ).symm)
 
 end ConvexTable
 
