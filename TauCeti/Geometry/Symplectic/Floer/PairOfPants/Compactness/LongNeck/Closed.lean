@@ -38,7 +38,7 @@ fields bounded.
 
 * **The pair of pants.** On a truncation `S_T` with `T ≤ R + 1`, the data of the family are the
   pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation H` and the capped structure
-  with necks of length `T - 1`, which do not depend on `R`
+  with necks of length `T`, which do not depend on `R`
   (`TauCeti.Floer.cappedPerturbation_eq_smul_pairOfPantsPerturbation`,
   `TauCeti.SmoothTwoForm.Compatible.cappedAlmostComplex_eq_pairOfPantsAlmostComplex`).
 * **The caps of the PSS planes.** At the center `c_q` of the end `q`, its pole for an input end,
@@ -114,18 +114,6 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H : Puncture → ℝ → M → ℝ}
   {J₀ : SmoothAlmostComplexStructure I M} {J : Puncture → ℝ → SmoothAlmostComplexStructure I M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] in
-/-- For `R ≥ 2`, the components of the comparison datum `K_R` are differentiable in the target
-point, at every point of the plane. -/
-private theorem mdifferentiableAt_cappedComparisonPerturbation (hH : ∀ r, Periodic (H r) 1)
-    (hHs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H r))) {R : ℝ} (hR : 2 ≤ R)
-    (z : ℝ × ℝ) (x : M) (v : ℂ) :
-    MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v) x := by
-  rw [cappedComparisonPerturbation_of_two_le H hR]
-  exact ((contMDiff_cappedPerturbation_apply hH hHs 1 (R - 1) v).contMDiffAt (x := (z, x))
-    ).curry_right.mdifferentiableAt one_ne_zero
-
 /-- **The Floer equation on the caps of the PSS plane pieces in a manifold.** For `R ≥ 2`, let `χ`
 be the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length
 along the end `q`. At a point `w` which is the center `c_q` of the end, its pole for an input end,
@@ -154,12 +142,16 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_endShift (ω : Smooth
       (ω.perturbedMFDeriv (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.endShift (R - 1))) w).toLinearMap := by
+  -- The components of `K_R` are differentiable in the target point.
+  have hK (z : ℝ × ℝ) (v : ℂ) : MDifferentiable I 𝓘(ℝ)
+      fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v := by
+    rw [cappedComparisonPerturbation_of_two_le H hR]
+    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v
   rw [equivRealProdCLM_symm_realChart, h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR,
     h₀.cappedAlmostComplex_endShift J hJ hJp 1 (by linarith) hw] at h
   have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
     ((q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w) hu
-    (mdifferentiableAt_cappedComparisonPerturbation hH hHs hR _ _ 1)
-    (mdifferentiableAt_cappedComparisonPerturbation hH hHs hR _ _ Complex.I)
+    ((hK _ 1).mdifferentiableAt) ((hK _ Complex.I).mdifferentiableAt)
     (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_endShift _ _)) h
   rwa [ω.perturbedMFDeriv_congr_perturbation
     (Ks' := fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
@@ -189,11 +181,15 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.endShift (R - 1))) w := by
+  -- The components of `K_R` are differentiable in the target point.
+  have hK (z : ℝ × ℝ) (v : ℂ) : MDifferentiable I 𝓘(ℝ)
+      fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v := by
+    rw [cappedComparisonPerturbation_of_two_le H hR]
+    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v
   rw [ω.integral_floerEnergyDensity_image hΩm (realChart_injective (q.endShift_injective _)).injOn
     (fun w _ ↦ (q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_endShift _ _)) hu
-    (fun w _ ↦ mdifferentiableAt_cappedComparisonPerturbation hH hHs hR _ _ 1)
-    (fun w _ ↦ mdifferentiableAt_cappedComparisonPerturbation hH hHs hR _ _ Complex.I)]
+    (fun w _ ↦ (hK _ 1).mdifferentiableAt) (fun w _ ↦ (hK _ Complex.I).mdifferentiableAt)]
   refine setIntegral_congr_fun hΩm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ ?_) (funext fun x ↦ ?_)
   · rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR (hΩ w hw),
@@ -235,7 +231,7 @@ private theorem contDiffOn_almostComplexInChartAt_cappedAlmostComplex (h₀ : ω
 omit [I.Boundaryless] [CompactSpace M] in
 /-- On a truncation `S_T` with `T ≤ R + 1` and `R ≥ 2`, the comparison datum `K_R` is the
 pair-of-pants perturbation and the comparison structure `J_R` is the capped structure with necks of
-length `T - 1`. -/
+length `T`. -/
 private theorem cappedComparison_eq_of_mem_truncation (h₀ : ω.Compatible J₀)
     (hJ : ∀ q t, ω.Tames (J q t)) {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {z : ℝ × ℝ}
     (hz : equivRealProdCLM.symm z ∈ truncation T) :
@@ -264,7 +260,7 @@ uniformly along the long necks.** Let `ω` be a nondegenerate two-form on a clos
 `J_q(t)` be `ω`-tame structures of period one in `t` which are `C²` jointly in `t` and the point of
 `M`. Let `e : M → F` be injective and differentiable, such as the Whitney embedding of `M`, and fix
 a truncation `S_T` of the pair of pants. Over `S_T` let the capped structures `J_T` with necks of
-length `T - 1` be uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J_T v)` with `c > 0`, and
+length `T` be uniformly tame with respect to `e`, `c ‖d e v‖² ≤ ω(v, J_T v)` with `c > 0`, and
 let the pushforwards through `e` of the Hamiltonian vector fields of the two components of the
 pair-of-pants perturbation be at most `L`. There is a threshold `δ > 0` with the following property.
 Let `uₖ` be `C³` maps of the plane chart `ℝ × ℝ ≅ ℂ` of the three-pole sphere into `M` solving the
@@ -507,7 +503,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_endShift_subseq_off_fin
 with `|H_q| ≤ B_q`, let `J₀` be `ω`-compatible, and let `J_q(t)` be `ω`-tame structures of period
 one in `t` which are `C²` jointly in `t` and the point of `M`. Let `e : M → F` be injective and
 differentiable, fix a truncation `S_T` of the pair of pants and compact windows `D_q ⊆ ℝ × ℝ` of
-the plane for the three PSS planes. Let the capped structures with necks of length `T - 1` over
+the plane for the three PSS planes. Let the capped structures with necks of length `T` over
 `S_T`, and with no neck over each `D_q`, be uniformly tame with respect to `e` with constant
 `c > 0`, and let the pushforwards through `e` of the Hamiltonian vector fields of the pair-of-pants
 perturbation over `S_T`, and of the datum `TauCeti.Floer.cappedPerturbation 1 0 H` with no neck
