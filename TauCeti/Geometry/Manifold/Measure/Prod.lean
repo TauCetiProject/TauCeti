@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
+public import Mathlib.Geometry.Manifold.ChartedSpace
 public import Mathlib.MeasureTheory.Measure.Prod
 
 /-!
@@ -16,16 +16,12 @@ A measure on a product `M × N` of second countable charted spaces is the produc
 `s ×ˢ t` of measurable subsets of chart sources (`TauCeti.eq_prod_of_apply_prod_chart_source`):
 countably many product chart sources cover `M × N`, and on each of them the two measures agree by
 `MeasureTheory.Measure.prod_eq`. This is the localization step behind product formulas for
-measures defined chart by chart, such as the measure of a top form or the Riemannian volume, whose
-chart computations use the chart image of a product set
-(`TauCeti.extChartAt_prod_image_prod`).
+measures defined chart by chart, such as the measure of a top form or the Riemannian volume.
 
 ## Main results
 
 * `TauCeti.eq_prod_of_apply_prod_chart_source`: a measure on `M × N` that agrees with `ν₁ ⊗ ν₂` on
   products of measurable subsets of chart sources is `ν₁ ⊗ ν₂`.
-* `TauCeti.extChartAt_prod_image_prod`: the product chart maps a product set to the product of its
-  images in the factor charts.
 -/
 
 public section
@@ -65,20 +61,5 @@ theorem eq_prod_of_apply_prod_chart_source {μ : Measure (M × N)} {ν₁ : Meas
   exact h q.1 q.2 _ _ (hs.inter hU) (ht.inter hV) inter_subset_right inter_subset_right
 
 end Measure
-
-section Chart
-
-variable {E H M F G N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup F]
-  [NormedSpace ℝ F] [TopologicalSpace G] {J : ModelWithCorners ℝ F G} [TopologicalSpace N]
-  [ChartedSpace G N]
-
-/-- The preferred chart of `M × N` at `(α, β)` maps a product set `s ×ˢ t` to the product of the
-images of `s` and `t` in the preferred charts of the factors. -/
-theorem extChartAt_prod_image_prod (α : M) (β : N) (s : Set M) (t : Set N) :
-    extChartAt (I.prod J) (α, β) '' (s ×ˢ t) = (extChartAt I α '' s) ×ˢ (extChartAt J β '' t) := by
-  rw [extChartAt_prod, PartialEquiv.prod_coe, prod_image_image_eq]
-
-end Chart
 
 end TauCeti

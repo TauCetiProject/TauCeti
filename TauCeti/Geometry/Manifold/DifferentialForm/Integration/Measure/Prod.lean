@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
 
+import TauCeti.Geometry.Manifold.ExtChartAt.Prod
 import TauCeti.Geometry.Manifold.Measure.Prod
 import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.MeasureTheory.Integral.Lebesgue.Alternating

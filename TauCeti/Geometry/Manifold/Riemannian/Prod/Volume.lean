@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 public import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Geometry.Manifold.ExtChartAt.Prod
 import TauCeti.Geometry.Manifold.Measure.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Gram
 

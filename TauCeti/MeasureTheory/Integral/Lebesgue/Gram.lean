@@ -26,9 +26,10 @@ volume. The weighted measure does not depend on the basis
 `P` multiplies the Gram determinant by `(det P)²`, hence the density by `|det P|`, and the Haar
 measure by `|det P|⁻¹` (`Module.Basis.addHaar_withDensity_eq_of_eq_abs_det_mul`).
 
-Consequently, for fields of forms `B₁` on `E` and `B₂` on `F`, the Gram density of the
-block-diagonal field `(B₁ x).prod (B₂ y)` on `E × F`, integrated over a product set, is the product
-of the integrals of the two Gram densities
+Consequently, for fields of forms `B₁` on `E` and `B₂` on `F`, where the Gram determinant of `B₁`
+is nonnegative on the first factor `A₁` of a product set (as for positive semidefinite forms), the
+Gram density of the block-diagonal field `(B₁ x).prod (B₂ y)` on `E × F`, integrated over
+`A₁ ×ˢ A₂`, is the product of the integrals of the two Gram densities
 (`Module.Basis.setLIntegral_ofReal_sqrt_det_toMatrix_prod`): in a product basis the Gram matrix is
 block diagonal and the Haar measure is the product of the Haar measures
 (`Module.Basis.setLIntegral_prod_of_addHaar_withDensity_eq`). This is the computation behind the
@@ -43,7 +44,8 @@ Both results follow their top-form versions for the density `|ω(b)|` of a top-d
 * `Module.Basis.addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq`: the Haar measure weighted by
   the Gram density does not depend on the basis.
 * `Module.Basis.setLIntegral_ofReal_sqrt_det_toMatrix_prod`: the integral of the Gram density of a
-  block-diagonal field of forms over a product set is the product of the factor integrals.
+  block-diagonal field of forms over a product set is the product of the factor integrals, when the
+  Gram determinant of the first field is nonnegative there.
 -/
 
 public section
@@ -74,9 +76,12 @@ theorem addHaar_withDensity_ofReal_sqrt_det_toMatrix_eq (b b' : Basis ι ℝ E)
     Real.sqrt_sq_eq_abs, b.det_apply, ENNReal.ofReal_mul (abs_nonneg _)]
 
 /-- **Gram densities of block-diagonal forms integrate as products.** Let `B₁` and `B₂` be fields of
-bilinear forms on `E` and on `F`. Over a product `A₁ ×ˢ A₂` of measurable sets, the Gram density of
-the block-diagonal forms `(B₁ x).prod (B₂ y)` on `E × F`, in any basis `b₀`, integrates to the
-product of the integrals of the Gram densities of `B₁` and `B₂` in bases `b₁` and `b₂`. The Borel
+bilinear forms on `E` and on `F`, and let `A₁ ×ˢ A₂` be a product of measurable sets such that the
+Gram determinant of `B₁ x` in `b₁` is nonnegative for `x ∈ A₁` (as for positive semidefinite
+forms). Then over `A₁ ×ˢ A₂` the Gram density of the block-diagonal forms `(B₁ x).prod (B₂ y)` on
+`E × F`, in any basis `b₀`, integrates to the product of the integrals of the Gram densities of
+`B₁` and `B₂` in bases `b₁` and `b₂`. The nonnegativity is needed: if both Gram determinants were
+negative, the left side would be positive and the right side zero. The Borel
 structure on `E × F` is arbitrary, so this applies to the chart measurable structure of a manifold
 model space. -/
 theorem setLIntegral_ofReal_sqrt_det_toMatrix_prod [MeasurableSpace F] [BorelSpace F]
