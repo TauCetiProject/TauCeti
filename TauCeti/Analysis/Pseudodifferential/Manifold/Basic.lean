@@ -795,9 +795,7 @@ theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators
     ContMDiffMap.re ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
       differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators (fun b y ↦ by
-    ext x
-    simp [ContMDiffMap.re_apply]) hQ
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.re_ofReal_mul hQ
 
 omit [T2Space M] in
 /-- **The imaginary part of a complex differential operator.** If `Q` is a complex differential
@@ -811,9 +809,7 @@ theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators
     ContMDiffMap.im ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
       differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators (fun b y ↦ by
-    ext x
-    simp [ContMDiffMap.im_apply]) hQ
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.im_ofReal_mul hQ
 
 /-- **Complex differential operators are classical pseudodifferential operators.** A
 complex-linear operator `Q` on the complex-valued smooth functions on `M` which is a differential

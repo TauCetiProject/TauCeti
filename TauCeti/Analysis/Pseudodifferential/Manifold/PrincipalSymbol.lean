@@ -942,12 +942,8 @@ theorem classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {k : ℕ}
     rw [smulCommutator_pow_comp_comp (fun u ↦ by simp [smul_eq_mul]) hσ,
       smulCommutator_pow_restrictScalars]
     simp [Y]
-  have hre := hcomm ContMDiffMap.re fun y ↦ by
-    ext y'
-    simp [ContMDiffMap.re_apply]
-  have him := hcomm ContMDiffMap.im fun y ↦ by
-    ext y'
-    simp [ContMDiffMap.im_apply]
+  have hre := hcomm ContMDiffMap.re (ContMDiffMap.re_ofReal_mul f)
+  have him := hcomm ContMDiffMap.im (ContMDiffMap.im_ofReal_mul f)
   -- `Q = A + i B` for the complexifications of its real and imaginary parts `A` and `B`.
   conv_lhs =>
     rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
@@ -955,9 +951,9 @@ theorem classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {k : ℕ}
       (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB)),
     classicalPrincipalSymbol_smul (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB),
     classicalPrincipalSymbol_complexifyLinearMap hA x hf,
-    classicalPrincipalSymbol_complexifyLinearMap hB x hf,
-    smoothPrincipalSymbol_mvfderiv, smoothPrincipalSymbol_mvfderiv, hre, him,
-    ContMDiffMap.re_apply, ContMDiffMap.im_apply]
+    classicalPrincipalSymbol_complexifyLinearMap hB x hf]
+  simp only [smoothPrincipalSymbol_mvfderiv, hre, him, ContMDiffMap.re_apply,
+    ContMDiffMap.im_apply]
   conv_rhs => rw [← Complex.re_add_im (Y 1 x)]
   push_cast
   ring

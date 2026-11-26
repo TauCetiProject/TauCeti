@@ -86,22 +86,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {k : ℕ}
   {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
 
-omit [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] [FiniteDimensional ℂ V]
-  [ContMDiffVectorBundle ∞ V E 𝓘(ℝ, CoordinateSpace n)] [FiniteDimensional ℂ W]
-  [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)] in
-/-- The `k`-fold commutator with a real function `f` of the real operator underlying `P` is the
-real operator underlying the `k`-fold commutator of `P` with `f` viewed as a complex function,
-since real functions act on sections through their complex inclusions. -/
-private theorem smulCommutator_pow_restrictScalars_ofReal
-    (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) :
-    (smulCommutator ℝ f ^ k) (P.restrictScalars ℝ) =
-      ((smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) P).restrictScalars ℝ := by
-  have h : (smulCommutator ℝ (ContMDiffMap.ofReal f) : Module.End ℝ
-      (Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℝ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)) =
-      smulCommutator ℝ f :=
-    LinearMap.ext fun D ↦ LinearMap.ext fun s ↦ by simp
-  rw [← h, smulCommutator_pow_restrictScalars]
-
 variable (hP : P ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
   Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ k)
 
@@ -156,8 +140,9 @@ theorem sectionClassicalPrincipalSymbol_apply_of_mem_differentialOperators (x : 
     (sectionEntry_mem_differentialOperators t ψ hψ v t' χ hχ ℓ hP) x f hξ,
     smulCommutator_pow_sectionEntry, sectionEntry_apply, hψx, hχx] at hentry
   simp only [one_smul, mul_one, Complex.ofReal_one, one_mul] at hentry
-  rw [← hentry, LinearMap.restrictScalars_apply, ← algebraMap_smul ℂ (k.factorial : ℝ)⁻¹,
-    map_smul, map_smul, map_smul, map_smul, smul_eq_mul, smul_eq_mul, Complex.coe_algebraMap]
+  rw [← hentry]
+  simp only [LinearMap.restrictScalars_apply, ← algebraMap_smul ℂ (k.factorial : ℝ)⁻¹, map_smul,
+    smul_eq_mul, Complex.coe_algebraMap]
   push_cast
   ring
 

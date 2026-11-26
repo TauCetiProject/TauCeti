@@ -189,6 +189,18 @@ theorem ofReal_im (f : C^n⟮I, M; ℝ⟯) : (ofReal f).im = 0 := by
   ext x
   simp
 
+/-- The real part is linear over real-valued functions. -/
+theorem re_ofReal_mul (b : C^n⟮I, M; ℝ⟯) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal b * f).re = b * f.re := by
+  ext x
+  simp
+
+/-- The imaginary part is linear over real-valued functions. -/
+theorem im_ofReal_mul (b : C^n⟮I, M; ℝ⟯) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (ofReal b * f).im = b * f.im := by
+  ext x
+  simp
+
 /-- Inclusion of real-valued functions is injective. -/
 theorem ofReal_injective :
     Function.Injective (ofReal (I := I) (M := M) (n := n)) := by
