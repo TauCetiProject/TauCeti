@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Rigid.Braided
 public import TauCeti.Algebra.Homology.LinearHomComplex.ExactPairing
 public import TauCeti.Algebra.Homology.LinearHomComplex.Functional
 public import TauCeti.Algebra.Homology.Monoidal.Braiding
-public import TauCeti.CategoryTheory.Monoidal.Rigid.Braided
 
 /-!
 # Right evaluation, the identity functional and sewing of functionals
@@ -40,8 +40,11 @@ with coefficient `(-1)^|a|` on `a ⊗ a*`, and not the evaluation.
 (`TauCeti.linearHomComplexCoevaluation`), for instance when `B` is a finite complex of finitely
 generated projective modules, the right evaluation is the evaluation of the exact pairing
 `(B∨, B)` obtained from `(B, B∨)` by the braiding
-(`CategoryTheory.BraidedCategory.exactPairing_swap`). Its coevaluation `R[0] ⟶ B∨ ⊗ B` is the
-coevaluation of `B` followed by the interchange, so on a line spanned by `e` in degree `p` it is
+(`CategoryTheory.BraidedCategory.exactPairing_swap`,
+`TauCeti.exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation`). Its coevaluation
+`R[0] ⟶ B∨ ⊗ B` is the coevaluation of `B` followed by the interchange
+(`TauCeti.exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp`), so on a line
+spanned by `e` in degree `p` it is
 `1 ↦ (-1)^p e* ⊗ e`, with the dual factor first. The **sewing** of functionals `F` on `A ⊗ B∨`
 and `G` on `B ⊗ C∨` (`TauCeti.linearHomComplexSewing`) inserts this coevaluation between `A` and
 `C∨`,
@@ -213,6 +216,25 @@ noncomputable def linearHomComplexSewing (F : A ⊗ linearDual R B ⟶ 𝟙_ _)
     (A ◁ (linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv)) ▷ linearDual R C ⊗≫
       (F ⊗ₘ G) ≫ (λ_ _).hom
 
+/-- The evaluation of the braided exact pairing `(B∨, B)`, obtained from `(B, B∨)` by
+`CategoryTheory.BraidedCategory.exactPairing_swap`, is the right evaluation of `B`. -/
+@[simp]
+lemma exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation :
+    @ExactPairing.evaluation _ _ _ (linearDual R B) B
+        (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) =
+      linearHomComplexRightEvaluation R B :=
+  (rfl)
+
+/-- The coevaluation of the braided exact pairing `(B∨, B)`, obtained from `(B, B∨)` by
+`CategoryTheory.BraidedCategory.exactPairing_swap`, is the coevaluation of `B` followed by the
+interchange of the factors. -/
+@[simp]
+lemma exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp :
+    @ExactPairing.coevaluation _ _ _ (linearDual R B) B
+        (@exactPairing_swap _ _ _ _ B (linearDual R B) (exactPairingLinearHomComplex B)) =
+      linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv :=
+  (rfl)
+
 /-- The sewing inserts the braided coevaluation of `B` and applies `F ⊗ G`. -/
 lemma linearHomComplexSewing_def (F : A ⊗ linearDual R B ⟶ 𝟙_ _)
     (G : B ⊗ linearDual R C ⟶ 𝟙_ _) :
@@ -241,12 +263,10 @@ theorem linearHomComplexTensorDualHomEquiv_linearHomComplexSewing
     linearHomComplexSewing_def]
   -- The coevaluation followed by the interchange and the right evaluation of `B` are the
   -- coevaluation and the evaluation of the braided exact pairing `(B∨, B)`.
+  rw [← exactPairing_swap_coevaluation_eq_linearHomComplexCoevaluation_comp,
+    ← exactPairing_swap_evaluation_eq_linearHomComplexRightEvaluation]
   let : ExactPairing B (linearDual R B) := exactPairingLinearHomComplex B
   let := exactPairing_swap B (linearDual R B)
-  have hη : linearHomComplexCoevaluation R B ≫ (β_ (linearDual R B) B).inv =
-      η_ (linearDual R B) B := (rfl)
-  have hε : linearHomComplexRightEvaluation R B = ε_ (linearDual R B) B := (rfl)
-  rw [hη, hε]
   set G' := S ▷ linearDual R C ≫ linearHomComplexRightEvaluation R C
   -- Pull `T` below the coevaluation; the remaining zigzag of `(B∨, B)` is the identity of `B`.
   calc
