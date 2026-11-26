@@ -26,7 +26,12 @@ Checks for `TauCeti.lpKoopman`, the representation `π(g) f = f ∘ (g⁻¹ • 
   so the forward-element pullback `f ↦ f ∘ (g • ·)` would compose in the reverse order;
 * for the translations `x ↦ t + x` of `ℝ` with Lebesgue measure (the action of
   `Multiplicative ℝ`), `π(t) 1_[0,1] = 1_[t,t+1]`, of `Lᵖ` norm `1` for every `1 ≤ p ≤ ∞`,
-  although the total measure is infinite.
+  although the total measure is infinite;
+* for the same translations, `‖π(t) 1_[0,1] - 1_[0,1]‖_∞ = 1` for every `t ≠ 0`, so
+  `t ↦ π(t) 1_[0,1]` is not continuous at `0` in `L^∞`: strong continuity needs `p ≠ ∞` even for a
+  continuous measure-preserving flow;
+* the dilation `x ↦ 2 x` of `ℝ` is continuous but does not preserve Lebesgue measure, and its
+  pullback of `1_[0,1]` has `L²` norm `1 / √2`: continuity alone does not give the isometry.
 -/
 
 public section
@@ -150,6 +155,107 @@ theorem norm_lpKoopman_unitIcc_zero (t : ℝ) :
   rw [norm_lpKoopman_apply, norm_indicatorConstLp' (zero_lt_one.trans_le Fact.out).ne' (by simp)]
   simp
 
+/-- The difference `1_[t,t+1] - 1_[0,1]` has norm `1` exactly on the symmetric difference of the
+two intervals and `0` elsewhere. -/
+private theorem norm_indicator_sub_indicator (t x : ℝ) :
+    ‖(Icc t (t + 1)).indicator (fun _ ↦ (1 : ℂ)) x - (Icc 0 (0 + 1)).indicator (fun _ ↦ 1) x‖ =
+      ‖((Icc t (t + 1) \ Icc 0 (0 + 1)) ∪ (Icc 0 (0 + 1) \ Icc t (t + 1))).indicator
+        (fun _ ↦ (1 : ℂ)) x‖ := by
+  simp only [zero_add]
+  by_cases h₁ : x ∈ Icc t (t + 1) <;> by_cases h₂ : x ∈ Icc (0 : ℝ) 1 <;>
+    simp [indicator_of_mem, indicator_of_notMem, mem_sdiff, h₁, h₂]
+
+/-- For `t ≠ 0` the intervals `[t, t + 1]` and `[0, 1]` differ on a set of positive measure. -/
+private theorem volume_diff_union_diff_ne_zero {t : ℝ} (ht : t ≠ 0) :
+    volume ((Icc t (t + 1) \ Icc (0 : ℝ) (0 + 1)) ∪ (Icc 0 (0 + 1) \ Icc t (t + 1))) ≠ 0 := by
+  rcases ht.lt_or_gt with ht | ht
+  · refine ne_of_gt (lt_of_lt_of_le ?_ (measure_mono (s := Ioo t (min 0 (t + 1))) ?_))
+    · simp [lt_min ht (by linarith : t < t + 1)]
+    · rintro x ⟨hx₁, hx₂⟩
+      have hx₃ := hx₂.trans_le (min_le_left _ _)
+      have hx₄ := hx₂.trans_le (min_le_right _ _)
+      exact Or.inl ⟨⟨hx₁.le, hx₄.le⟩, fun h ↦ by linarith [h.1]⟩
+  · refine ne_of_gt (lt_of_lt_of_le ?_ (measure_mono (s := Ioo (max 1 t) (t + 1)) ?_))
+    · simp [max_lt (by linarith : (1 : ℝ) < t + 1) (by linarith : t < t + 1)]
+    · rintro x ⟨hx₁, hx₂⟩
+      have hx₃ := (le_max_left _ _).trans_lt hx₁
+      have hx₄ := (le_max_right _ _).trans_lt hx₁
+      exact Or.inl ⟨⟨hx₄.le, hx₂.le⟩, fun h ↦ by linarith [h.2]⟩
+
+/-- **Check.** In `L^∞`, `‖π(t) 1_[0,1] - 1_[0,1]‖ = 1` for every `t ≠ 0`. -/
+theorem norm_lpKoopman_unitIcc_sub_top {t : ℝ} (ht : t ≠ 0) :
+    ‖lpKoopman ℂ ℂ ∞ volume (measurePreserving_multiplicative_smul volume)
+      (Multiplicative.ofAdd t) (unitIcc ∞ 0) - unitIcc ∞ 0‖ = 1 := by
+  rw [lpKoopman_unitIcc_zero, Lp.norm_def]
+  have hsub := Lp.coeFn_sub (unitIcc ∞ t) (unitIcc ∞ 0)
+  have h₁ := indicatorConstLp_coeFn (p := ∞) (μ := volume)
+    (hs := measurableSet_Icc (a := t) (b := t + 1)) (hμs := by simp) (c := (1 : ℂ))
+  have h₂ := indicatorConstLp_coeFn (p := ∞) (μ := volume)
+    (hs := measurableSet_Icc (a := (0 : ℝ)) (b := 0 + 1)) (hμs := by simp) (c := (1 : ℂ))
+  have hm : MeasurableSet
+      ((Icc t (t + 1) \ Icc (0 : ℝ) (0 + 1)) ∪ (Icc 0 (0 + 1) \ Icc t (t + 1))) :=
+    (measurableSet_Icc.diff measurableSet_Icc).union
+      (measurableSet_Icc.diff measurableSet_Icc)
+  rw [eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _)
+      ((aestronglyMeasurable_const (b := (1 : ℂ))).indicator hm) (by
+        filter_upwards [hsub, h₁, h₂] with x hx hx₁ hx₂
+        rw [hx, Pi.sub_apply, hx₁, hx₂]
+        exact norm_indicator_sub_indicator t x),
+    eLpNorm_indicator_const' hm.nullMeasurableSet (volume_diff_union_diff_ne_zero ht) (by simp)]
+  simp
+
+/-- **Check.** In `L^∞` the orbit `t ↦ π(t) 1_[0,1]` of the translations is not continuous at `0`,
+although the flow is continuous and measure-preserving: strong continuity needs `p ≠ ∞`. -/
+theorem not_continuousAt_lpKoopman_unitIcc_top :
+    ¬ ContinuousAt (fun t : ℝ ↦ lpKoopman ℂ ℂ ∞ volume
+      (measurePreserving_multiplicative_smul volume) (Multiplicative.ofAdd t) (unitIcc ∞ 0)) 0 := by
+  intro h
+  obtain ⟨δ, hδ, hδ'⟩ := Metric.continuousAt_iff.mp h 1 one_pos
+  have hd := hδ' (x := δ / 2) (by rw [Real.dist_eq, sub_zero, abs_of_pos (by positivity)]; linarith)
+  rw [dist_eq_norm, ofAdd_zero, map_one] at hd
+  change ‖_ - unitIcc ∞ 0‖ < 1 at hd
+  rw [norm_lpKoopman_unitIcc_sub_top (by positivity)] at hd
+  exact lt_irrefl _ hd
+
 end Translation
+
+section Dilation
+
+/-- **Check.** The dilation `x ↦ 2 x` of `ℝ` does not preserve Lebesgue measure, although it is
+continuous. -/
+theorem not_measurePreserving_two_mul :
+    ¬ MeasurePreserving (fun x : ℝ ↦ 2 * x) volume volume := by
+  intro h
+  have := congrArg (· (Icc (0 : ℝ) 1)) (h.map_eq.symm.trans
+    (Real.map_volume_mul_left (a := 2) two_ne_zero))
+  norm_num [Real.volume_Icc] at this
+  exact (ENNReal.ofReal_lt_one.mpr (by norm_num)).ne this.symm
+
+/-- **Check.** The pullback `x ↦ 1_[0,1] (2 x)` of `1_[0,1]` by the dilation `x ↦ 2 x` has `L²`
+norm `1 / √2`, while `1_[0,1]` has `L²` norm `1`: continuity of the map alone does not give the
+isometry. -/
+theorem eLpNorm_indicator_two_mul :
+    eLpNorm (fun x : ℝ ↦ (Icc (0 : ℝ) 1).indicator (fun _ ↦ (1 : ℂ)) (2 * x)) 2 volume =
+      ENNReal.ofReal (√2)⁻¹ ∧
+    eLpNorm ((Icc (0 : ℝ) 1).indicator fun _ ↦ (1 : ℂ)) 2 volume = 1 := by
+  have hfun : (fun x : ℝ ↦ (Icc (0 : ℝ) 1).indicator (fun _ ↦ (1 : ℂ)) (2 * x)) =
+      (Icc (0 : ℝ) (1 / 2)).indicator fun _ ↦ 1 := by
+    ext x
+    by_cases hx : x ∈ Icc (0 : ℝ) (1 / 2)
+    · rw [indicator_of_mem hx, indicator_of_mem]
+      exact ⟨by linarith [hx.1], by linarith [hx.2]⟩
+    · rw [indicator_of_notMem hx, indicator_of_notMem]
+      exact fun h ↦ hx ⟨by linarith [h.1], by linarith [h.2]⟩
+  refine ⟨?_, ?_⟩
+  · rw [hfun, eLpNorm_indicator_const measurableSet_Icc.nullMeasurableSet (by simp) (by simp),
+      Real.volume_Icc]
+    simp only [eNorm_one, one_mul, ENNReal.toReal_ofNat, sub_zero]
+    rw [ENNReal.ofReal_rpow_of_nonneg (by norm_num) (by norm_num)]
+    congr 1
+    rw [← Real.sqrt_eq_rpow, one_div, Real.sqrt_inv]
+  · rw [eLpNorm_indicator_const measurableSet_Icc.nullMeasurableSet (by simp) (by simp)]
+    simp
+
+end Dilation
 
 end TauCeti.Examples.LpKoopman
