@@ -59,7 +59,7 @@ variable (X : Scheme.{u})
 
 /-- Tensoring on the right with a member of the family of extensions by zero `j_! 𝒪_U` of the
 structure sheaf of the opens `U` of `X` preserves acyclic complexes, since these sheaves are flat
-(`HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits`). -/
+(`HomologicalComplex.Acyclic.mapHomologicalComplex_tensorRight`). -/
 lemma acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj (G : X.Modules)
     (hG : ObjectProperty.ofObj (SheafOfModules.freeYonedaFunctor X.ringCatSheaf).obj G)
     (E : CochainComplex X.Modules ℤ) (hE : E.Acyclic) :
@@ -67,7 +67,7 @@ lemma acyclic_tensorRight_of_ofObj_freeYonedaFunctor_obj (G : X.Modules)
   have : PreservesFiniteLimits (tensorLeft G) := by
     obtain ⟨U⟩ := hG
     exact SheafOfModules.preservesFiniteLimits_tensorLeft_freeYonedaFunctor_obj (R := X.sheaf) U
-  exact HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits G hE
+  exact hE.mapHomologicalComplex_tensorRight G
 
 variable [HasDerivedCategory.{w} X.Modules]
 

@@ -58,8 +58,8 @@ K-flat. K-flat resolutions of unbounded complexes are constructed in
 * `CochainComplex.isKFlat_single_of_flat`, `CochainComplex.isKFlat_tensorUnit`,
   `CochainComplex.isKFlat_of_bounded_flat`: flat objects, the monoidal unit complex, and bounded
   complexes of flat objects are K-flat.
-* `HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits`: in a
-  braided category, tensoring on the right with a flat object preserves acyclic complexes.
+* `HomologicalComplex.Acyclic.mapHomologicalComplex_tensorRight`: in a braided category,
+  tensoring on the right with a flat object preserves acyclic complexes.
 * `CochainComplex.isKFlat_of_isColimit`: closure under suitable colimits.
 * `CochainComplex.isKFlat_of_boundedAbove_flat`: bounded above complexes of flat objects are
   K-flat.
@@ -176,10 +176,9 @@ end CategoryTheory.ShortComplex.ShortExact
 omit [∀ K L : CochainComplex C ℤ, HasTensor K L] in
 /-- In a braided monoidal abelian category, tensoring on the right with a flat object `G` preserves
 acyclic complexes: by the braiding, `- ⊗ G` is isomorphic to `G ⊗ -`, which is exact. -/
-theorem HomologicalComplex.acyclic_mapHomologicalComplex_tensorRight_of_preservesFiniteLimits
-    [BraidedCategory C] (G : C) [PreservesFiniteLimits (tensorLeft G)]
-    [PreservesFiniteColimits (tensorLeft G)] {ι : Type*} {c : ComplexShape ι}
-    {E : HomologicalComplex C c} (hE : E.Acyclic) :
+theorem HomologicalComplex.Acyclic.mapHomologicalComplex_tensorRight [BraidedCategory C]
+    {ι : Type*} {c : ComplexShape ι} {E : HomologicalComplex C c} (hE : E.Acyclic) (G : C)
+    [PreservesFiniteLimits (tensorLeft G)] [PreservesFiniteColimits (tensorLeft G)] :
     (((tensorRight G).mapHomologicalComplex c).obj E).Acyclic := by
   have : PreservesFiniteLimits (tensorRight G) :=
     preservesFiniteLimits_of_natIso (BraidedCategory.tensorLeftIsoTensorRight G)
