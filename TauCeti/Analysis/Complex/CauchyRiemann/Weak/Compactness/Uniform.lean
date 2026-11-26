@@ -11,6 +11,7 @@ import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Estimate
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
+import TauCeti.Analysis.Calculus.ContDiff.Compactness
 import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Bound.Higher
 import TauCeti.Analysis.Sobolev.Local.Compactness.ContDiff
@@ -41,6 +42,9 @@ their weak derivatives are bounded in `Lᵖ(W)` on every open `W` with compact c
   limiting equation `TauCeti.IsWeakCauchyRiemannOn p Ω J η v`
   (`TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`). Here `p = ∞` is
   allowed: the hypotheses for `p` give those for the finite exponent `min p 3`.
+* *Smooth data.* If the data are smooth and converge in `C^∞` on compact sets, a subsequence
+  converges in `C^∞` on compact subsets of `Ω` to a smooth solution of the limiting equation
+  (`TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`).
 
 ## The argument
 
@@ -68,6 +72,12 @@ subsequence converging in `C^ℓ` on compact subsets. Each `u n` is `C^ℓ` by
 (`TauCeti.isWeakCauchyRiemannOn_iff_of_contDiffOn`); for `ℓ ≥ 1` the pointwise equations pass to
 the limit.
 
+For smooth data, every subsequence has, for each `ℓ`, a further subsequence converging in `C^ℓ`,
+so a diagonal extraction
+(`IsOpen.exists_strictMono_forall_tendstoLocallyUniformlyOn_iteratedFDeriv`) gives one subsequence
+converging in every order to a smooth map. It solves the limiting equation because it agrees on
+`Ω` with the limit given by the case `ℓ = 1` along a further subsequence.
+
 ## Main results
 
 * `TauCeti.exists_eLpNormWkp_succ_le_of_isWeakCauchyRiemannOn`: the interior estimates for the
@@ -77,6 +87,9 @@ the limit.
   sequences of solutions with `C^ℓ`-bounded data.
 * `TauCeti.exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`: a subsequence
   converges in `C^ℓ` on compact subsets to a solution of the limiting equation.
+* `TauCeti.exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn`: for smooth
+  data converging in `C^∞`, a subsequence converges in `C^∞` on compact subsets to a smooth
+  solution of the limiting equation.
 
 ## References
 
@@ -475,5 +488,57 @@ theorem exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : �
     fun z hz w => ?_
   simpa [Function.comp_def, iteratedFDeriv_one_apply] using
     ((continuous_eval_const (fun _ : Fin 1 => w)).tendsto _).comp ((hconv 1 hℓ).tendsto_at hz)
+
+/-- **Smooth compactness for the nonlinear Cauchy–Riemann equation** (McDuff–Salamon, Theorem
+B.4.2 and Remark B.4.3, planar interior case, for smooth data). Let `p > 2`, possibly `p = ∞`. Let
+`J n` and `η n` be smooth jointly in `(z, x)`, converging to `J₀` and `η₀` in `C^∞` on compact
+subsets of `ℂ × V`: their derivatives of every order converge locally uniformly. Let `u n` be weak
+solutions on `Ω` of `∂ₛu + J n (z, u) ∂ₜu = η n (z, u)` with `J n (z, u n z)² = -1` almost
+everywhere, such that the images under the `u n` of each compact `K ⊆ Ω` lie in one compact set
+and, on each open `W` with compact closure in `Ω`, their weak derivatives are bounded in `Lᵖ(W)`.
+Then a subsequence `u (φ n)` converges in `C^∞` on compact subsets of `Ω` to a map `v`, smooth on
+`Ω`, that solves the limiting equation `∂ₛv + J₀ (z, v) ∂ₜv = η₀ (z, v)`. -/
+theorem exists_subseq_forall_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn {p : ℝ≥0∞}
+    (hp : 2 < p) {J : ℕ → ℂ → V → V →L[ℝ] V} {η : ℕ → ℂ → V → V} {J₀ : ℂ → V → V →L[ℝ] V}
+    {η₀ : ℂ → V → V} {u : ℕ → ℂ → V}
+    (hJ : ∀ n, ContDiff ℝ (⊤ : ℕ∞) (fun x : ℂ × V => J n x.1 x.2))
+    (hη : ∀ n, ContDiff ℝ (⊤ : ℕ∞) (fun x : ℂ × V => η n x.1 x.2))
+    (hJt : ∀ i : ℕ, TendstoLocallyUniformly
+      (fun n => iteratedFDeriv ℝ i (fun x : ℂ × V => J n x.1 x.2))
+      (iteratedFDeriv ℝ i (fun x : ℂ × V => J₀ x.1 x.2)) atTop)
+    (hηt : ∀ i : ℕ, TendstoLocallyUniformly
+      (fun n => iteratedFDeriv ℝ i (fun x : ℂ × V => η n x.1 x.2))
+      (iteratedFDeriv ℝ i (fun x : ℂ × V => η₀ x.1 x.2)) atTop)
+    (hJ2 : ∀ n, ∀ᵐ z ∂volume.restrict Ω, J n z (u n z) * J n z (u n z) = -1)
+    (hu : ∀ n, IsWeakCauchyRiemannOn p Ω (J n) (η n) (u n))
+    (hK : ∀ K ⊆ (Ω : Set ℂ), IsCompact K → ∃ K' : Set V, IsCompact K' ∧ ∀ n, MapsTo (u n) K K')
+    (hd : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ c : ℝ≥0, ∀ n, ∃ D, HasWeakFDerivOn volume W (u n) D ∧ eLpNorm D p (volume.restrict W) ≤ c) :
+    ∃ (φ : ℕ → ℕ) (v : ℂ → V), StrictMono φ ∧ ContDiffOn ℝ (⊤ : ℕ∞) v Ω ∧
+      IsWeakCauchyRiemannOn p Ω J₀ η₀ v ∧ ∀ k : ℕ, TendstoLocallyUniformlyOn
+        (fun n => iteratedFDeriv ℝ k (u (φ n))) (iteratedFDeriv ℝ k v) atTop Ω := by
+  have hℓ (ℓ : ℕ) : (ℓ : WithTop ℕ∞) ≤ (⊤ : ℕ∞) := by exact_mod_cast le_top
+  -- Along every subsequence, the compactness theorem of each order `ℓ ≥ 1` applies.
+  have hsub (ℓ : ℕ) (h1 : 1 ≤ ℓ) (ψ : ℕ → ℕ) (hψ : StrictMono ψ) :=
+    exists_subseq_tendstoLocallyUniformlyOn_of_isWeakCauchyRiemannOn hp h1
+      (u := fun n => u (ψ n)) (fun n => (hJ (ψ n)).of_le (hℓ ℓ))
+      (fun n => (hη (ψ n)).of_le (hℓ ℓ)) (fun i _ => (hJt i).comp_tendsto hψ.tendsto_atTop)
+      (fun i _ => (hηt i).comp_tendsto hψ.tendsto_atTop) (fun n => hJ2 (ψ n)) (fun n => hu (ψ n))
+      (fun K hKΩ hKc => (hK K hKΩ hKc).imp fun _ h => ⟨h.1, fun n => h.2 (ψ n)⟩)
+      fun W hWc hWΩ => (hd W hWc hWΩ).imp fun _ h n => h (ψ n)
+  -- A diagonal subsequence converges in every order to a smooth map `v`.
+  obtain ⟨σ, hσ, v, hv, hconv⟩ :=
+    Ω.isOpen.exists_strictMono_forall_tendstoLocallyUniformlyOn_iteratedFDeriv
+      (fun n => contDiffOn_of_isWeakCauchyRiemannOn hp (ℓ := ⊤) isOpen_univ (hJ n).contDiffOn
+        (hη n).contDiffOn (fun _ _ => mem_univ _) (hJ2 n) (hu n)) fun k ψ hψ => by
+      obtain ⟨ψ', w, hψ', -, -, hw⟩ := hsub (k + 1) (Nat.le_add_left 1 k) ψ hψ
+      exact ⟨ψ', hψ', _, hw k (Nat.le_succ k)⟩
+  -- The case `ℓ = 1` along a further subsequence gives a solution, which agrees with `v` on `Ω`.
+  obtain ⟨ψ', w, hψ', -, hw, hconv'⟩ := hsub 1 le_rfl σ hσ
+  have hvw : EqOn w v Ω := fun z hz => tendsto_nhds_unique
+    ((tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconv' 0 (Nat.zero_le 1))).tendsto_at hz)
+    (((tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconv 0)).comp_tendsto
+      hψ'.tendsto_atTop).tendsto_at hz)
+  exact ⟨σ, v, hσ, hv, hw.congr hvw, hconv⟩
 
 end TauCeti
