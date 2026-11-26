@@ -40,17 +40,24 @@ unit vectors therefore assume `Nontrivial E`.
 * `LinearMap.isLeast_minimalStretch`: `ℓ(A)` is the least value of `‖A v‖` on the unit sphere.
 * `LinearMap.minimalStretch_le_norm`, `LinearMap.minimalStretch_eq_norm_iff`: `ℓ(A) ≤ ‖A‖`, with
   equality if and only if `A = 0` or `A` is conformal.
-* `LinearMap.minimalStretch_pos_iff`: `0 < ℓ(A)` if and only if `A` is injective.
+* `LinearMap.minimalStretch_pos_iff`: `0 < ℓ(A)` if and only if `A` is injective;
+  `LinearMap.minimalStretch_eq_zero_of_not_injective`: `ℓ(A) = 0` when `A` is not injective.
 * `LinearMap.minimalStretch_mul_norm_symm`: `ℓ(A) ‖A⁻¹‖ = 1` for a linear equivalence `A`.
 * `LinearMap.minimalStretch_mul_le_minimalStretch_comp`: `ℓ(B) ℓ(A) ≤ ℓ(B ∘ A)`.
 * `LinearMap.minimalStretch_pow_le_normDet`: `ℓ(A)ⁿ ≤ normDet(A)`; the upper bound
   `normDet(A) ≤ ‖A‖ⁿ` is `ContinuousLinearMap.normDet_le_norm_pow`.
+* `LinearMap.norm_mul_minimalStretch_pow_le_normDet`,
+  `LinearMap.normDet_le_norm_pow_mul_minimalStretch`: the sharper sandwich
+  `‖A‖ ℓ(A)ⁿ⁻¹ ≤ normDet(A) ≤ ‖A‖ⁿ⁻¹ ℓ(A)`, the latter for `n > 0`;
+  `LinearMap.minimalStretch_pos_of_normDet_ne_zero`: hence `normDet(A) ≠ 0` gives `ℓ(A) > 0`.
 * `LinearMap.minimalStretch_smul`, `LinearMap.minimalStretch_linearIsometry_comp`,
   `LinearMap.minimalStretch_comp_linearIsometryEquiv`: `ℓ(c A) = ‖c‖ ℓ(A)`, and `ℓ` is unchanged
   by linear isometries on the left and isometric isomorphisms on the right.
 * `LinearMap.lipschitzWith_minimalStretch`: `ℓ` is `1`-Lipschitz for the operator norm, by
   Weyl's perturbation bound `LinearMap.abs_singularValues_sub_singularValues_le`; hence it is
   continuous and Borel measurable.
+* `Submodule.minimalStretch_starProjection_eq_zero`: the orthogonal projection onto a proper
+  subspace has minimal stretch `0`.
 
 ## References
 
@@ -163,6 +170,12 @@ theorem minimalStretch_pos_iff [Nontrivial E] (A : E →ₗ[𝕜] F) :
   exact hAv ▸ norm_pos_iff.mpr
     ((map_ne_zero_iff A h).mpr (ne_zero_of_mem_sphere one_ne_zero ⟨v, hv⟩))
 
+/-- A linear map that is not injective has minimal stretch `0`. -/
+theorem minimalStretch_eq_zero_of_not_injective (A : E →ₗ[𝕜] F)
+    (h : ¬ Function.Injective A) : A.minimalStretch = 0 := by
+  nontriviality E
+  exact le_antisymm (not_lt.1 (mt A.minimalStretch_pos_iff.1 h)) A.minimalStretch_nonneg
+
 /-- On a nonzero space, the minimal stretch of a linear equivalence is the reciprocal of the
 operator norm of its inverse: `ℓ(A) ‖A⁻¹‖ = 1`. -/
 theorem minimalStretch_mul_norm_symm [Nontrivial E] (A : E ≃ₗ[𝕜] F) :
@@ -196,6 +209,40 @@ theorem minimalStretch_pow_le_normDet (A : E →ₗ[𝕜] F) :
     A.minimalStretch ^ finrank 𝕜 E ≤ A.normDet :=
   A.pow_finrank_le_normDet_of_mul_norm_le A.minimalStretch_nonneg
     A.minimalStretch_mul_norm_le_norm_apply
+
+/-- On a nonzero space of dimension `n`, the Jacobian `normDet` is at most `‖A‖ⁿ⁻¹ ℓ(A)`: in
+terms of the singular values, `σ₁ ⋯ σₙ ≤ σ₁ⁿ⁻¹ σₙ`. In dimension `0` the right side is `0`
+while `normDet(A) = 1`. -/
+theorem normDet_le_norm_pow_mul_minimalStretch (hE : 0 < finrank 𝕜 E) (A : E →ₗ[𝕜] F) :
+    A.normDet ≤ ‖toContinuousLinearMap A‖ ^ (finrank 𝕜 E - 1) * A.minimalStretch := by
+  rw [normDet_eq_prod_singularValues, norm_toContinuousLinearMap_eq_singularValues_zero,
+    minimalStretch_def]
+  obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero hE.ne'
+  rw [hm, Nat.add_sub_cancel, Finset.prod_range_succ]
+  refine mul_le_mul_of_nonneg_right ?_ (A.singularValues_nonneg m)
+  exact (Finset.prod_le_prod₀ (fun i _ ↦ A.singularValues_nonneg i)
+    fun i _ ↦ A.singularValues_antitone (Nat.zero_le i)).trans_eq (by simp)
+
+/-- The Jacobian `normDet` is at least `‖A‖ ℓ(A)ⁿ⁻¹`, `n = dim E`: in terms of the singular
+values, `σ₁ σₙⁿ⁻¹ ≤ σ₁ ⋯ σₙ`. -/
+theorem norm_mul_minimalStretch_pow_le_normDet (A : E →ₗ[𝕜] F) :
+    ‖toContinuousLinearMap A‖ * A.minimalStretch ^ (finrank 𝕜 E - 1) ≤ A.normDet := by
+  rw [normDet_eq_prod_singularValues, norm_toContinuousLinearMap_eq_singularValues_zero,
+    minimalStretch_def]
+  rcases h : finrank 𝕜 E with - | m
+  · simp [A.singularValues_of_finrank_le h.le]
+  rw [Nat.add_sub_cancel, Finset.prod_range_succ', mul_comm]
+  refine mul_le_mul_of_nonneg_right ?_ (A.singularValues_nonneg 0)
+  refine (Finset.prod_le_prod₀ (fun _ _ ↦ A.singularValues_nonneg m)
+    fun i hi ↦ A.singularValues_antitone ?_).trans_eq' (by simp)
+  simp only [Finset.mem_range] at hi
+  omega
+
+/-- On a nonzero space, a map with nonzero Jacobian `normDet` has positive minimal stretch. -/
+theorem minimalStretch_pos_of_normDet_ne_zero (hE : 0 < finrank 𝕜 E) {A : E →ₗ[𝕜] F}
+    (h : A.normDet ≠ 0) : 0 < A.minimalStretch := by
+  refine A.minimalStretch_nonneg.lt_of_ne fun h0 ↦ h (le_antisymm ?_ A.normDet_nonneg)
+  simpa [← h0] using A.normDet_le_norm_pow_mul_minimalStretch hE
 
 /-- The zero map has minimal stretch `0`. -/
 @[simp]
@@ -258,3 +305,18 @@ theorem measurable_minimalStretch [MeasurableSpace (E →L[𝕜] F)]
   continuous_minimalStretch.measurable
 
 end LinearMap
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E] {V : Submodule 𝕜 E}
+
+/-- The orthogonal projection onto a proper subspace `V` has minimal stretch zero: it is not
+injective. -/
+theorem minimalStretch_starProjection_eq_zero (hV : V ≠ ⊤) :
+    ((V.starProjection : E →L[𝕜] E) : E →ₗ[𝕜] E).minimalStretch = 0 :=
+  LinearMap.minimalStretch_eq_zero_of_not_injective _ <| by
+    rw [← LinearMap.ker_eq_bot]
+    exact V.ker_starProjection.trans_ne (orthogonal_eq_bot_iff.not.2 hV)
+
+end Submodule

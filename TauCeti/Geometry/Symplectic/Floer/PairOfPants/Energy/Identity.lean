@@ -13,7 +13,6 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -223,36 +222,6 @@ private theorem truncation_le_truncation {T T' : ℝ} (h : T ≤ T') (z : ℝ ×
   · exact le_rfl
   · exact Finset.prod_le_prod₀ (fun q _ ↦ sub_nonneg.2 (smoothTransition.le_one _))
       fun q _ ↦ sub_le_sub_left (smoothTransition.monotone (by linarith)) 1
-
-private theorem truncation_mul_nonneg {f : ℝ × ℝ → ℝ}
-    (hf : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ f z) (T : ℝ) (z : ℝ × ℝ) :
-    0 ≤ truncation T z * f z := by
-  by_cases hz : z ∈ thricePuncturedSphereReal
-  · exact mul_nonneg (truncation_mem_Icc _ z).1 (hf z hz)
-  · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hz (mem_tsupport_truncation h), zero_mul]
-
-private theorem tendsto_lintegral_truncation_mul {f : ℝ × ℝ → ℝ}
-    (hf : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ f z) {T : ℕ → ℝ} (hT : Tendsto T atTop atTop)
-    (hTm : Monotone T) (hint : ∀ n, Integrable fun z ↦ truncation (T n) z * f z) :
-    Tendsto (fun n ↦ ∫⁻ z, ENNReal.ofReal (truncation (T n) z * f z)) atTop
-      (𝓝 (∫⁻ z, ENNReal.ofReal (f z))) := by
-  refine lintegral_tendsto_of_tendsto_of_monotone
-    (fun n ↦ (hint n).aestronglyMeasurable.aemeasurable.ennreal_ofReal) ?_ ?_
-  · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz m n hmn
-    exact ENNReal.ofReal_le_ofReal
-      (mul_le_mul_of_nonneg_right (truncation_le_truncation (hTm hmn) z) (hf z hz))
-  · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-    have h := (ENNReal.continuous_ofReal.tendsto _).comp
-      (((tendsto_truncation hz).comp hT).mul_const (f z))
-    rwa [one_mul] at h
-
-private theorem abs_integral_truncation_mul_le {f : ℝ × ℝ → ℝ} (hf : Integrable f) (T : ℝ) :
-    |∫ z, truncation T z * f z| ≤ ∫ z, ‖f z‖ := by
-  rw [← Real.norm_eq_abs]
-  refine (MeasureTheory.norm_integral_smul_le_of_support_subset (g := truncation T) (s := univ)
-    (K := 1) hf (subset_univ _) fun z _ ↦ ?_).trans_eq (one_mul _)
-  rw [Real.norm_of_nonneg (truncation_mem_Icc T z).1]
-  exact (truncation_mem_Icc T z).2
 
 end Cutoff
 
@@ -575,6 +544,33 @@ private theorem hasFDerivWithinAt_endChart (q : Puncture) (ζ : ℝ × ℝ) (s :
     HasFDerivWithinAt (endChart q) (fderiv ℝ (endChart q) ζ) s ζ :=
   (hasFDerivAt_endChart q ζ).differentiableAt.hasFDerivAt.hasFDerivWithinAt
 
+private theorem integral_image_endChart_eq_of_eqOn {q : Puncture} {B : ℝ × ℝ → ℝ}
+    (F : ℝ × ℝ → ℝ) {A : ℝ → ℝ} (hB : Integrable B)
+    (hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • B (endChart q ζ)) F (endStrip q))
+    (hinner : ∀ s ∈ {s : ℝ | 1 / 2 < q.endSign * s},
+      ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t) = -(q.endSign * A s))
+    (hzero : ∀ s ∉ {s : ℝ | 1 / 2 < q.endSign * s}, A s = 0) :
+    ∫ z in endChart q '' endStrip q, B z = -(q.endSign * ∫ s, A s) ∧ Integrable A := by
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
+    measurableSet_lt measurable_const (measurable_const.mul measurable_id)
+  have hint : IntegrableOn F (endStrip q) :=
+    ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
+      (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q) _).1
+      hB.integrableOn).congr_fun hcongr (measurableSet_endStrip q)
+  rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
+  have hA : IntegrableOn A {s : ℝ | 1 / 2 < q.endSign * s} :=
+    IntegrableOn.congr_fun (hint.integral_prod_left.const_mul (-q.endSign)) (fun s hs ↦ by
+      rw [hinner s hs]
+      linear_combination (A s) * q.endSign_mul_self) hS₁
+  refine ⟨?_, hA.integrable_of_forall_notMem_eq_zero hzero⟩
+  rw [integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_endStrip q)
+    (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q),
+    setIntegral_congr_fun (measurableSet_endStrip q) hcongr, endStrip_def,
+    Measure.volume_eq_prod, setIntegral_prod _ (by rwa [IntegrableOn, ← Measure.prod_restrict]),
+    setIntegral_congr_fun hS₁ hinner, integral_neg, integral_const_mul,
+    setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+
 /-- **The boundary term on one end.** For `T ≥ 2` with `K = H_q dt` beyond height `T₀ ≤ T`, the
 integral of `dχ ∧ α` over the end `q` is `-±∫ β'(±s - T) A_q(s) ds`, where `A_q(s)` is the action
 of the loop `t ↦ u(φ_q(s, t))`; the weighted actions are integrable. -/
@@ -590,54 +586,27 @@ private theorem integral_image_endChart_boundaryForm (ω : SymplecticForm V)
         -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
           ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) ∧
       Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-        ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set F : ℝ × ℝ → ℝ := fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
-    (H q ζ.2 (u (endChart q ζ)) +
-      1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag)))
-  set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-    ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))
-  have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
-    measurableSet_lt measurable_const (measurable_const.mul measurable_id)
-  -- In end coordinates the integrand is `F`.
-  have hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • boundaryForm ω K u T (endChart q ζ))
-      F (endStrip q) := fun ζ hζ ↦ by
-    dsimp only
-    rw [smul_eq_mul, boundaryForm]
-    exact abs_det_mul_wedge_endChart ω hKH hH hu (by linarith) hT₀
-      (endSign_mul_pos_of_mem_endStrip hζ)
-  have hint : IntegrableOn F (endStrip q) :=
-    ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-      (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q) _).1
-      (integrable_boundaryForm ω hK hu T).integrableOn).congr_fun hcongr
-      (measurableSet_endStrip q)
-  -- Integrating out the angular coordinate gives the actions of the loops.
-  have hinner (s : ℝ) (hs : s ∈ {s : ℝ | 1 / 2 < q.endSign * s}) :
-      ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t) = -(q.endSign * A s) := by
-    have hs' : 0 < q.endSign * s := by
-      have : 1 / 2 < q.endSign * s := hs
-      linarith
-    simp only [F, A]
-    rw [integral_neg, integral_const_mul, integral_Ico_eq_hamiltonianAction ω hH hHc hu hs']
-    ring
-  have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
-    have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
-  rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
-  have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
-      {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
-  have hA : IntegrableOn A {s : ℝ | 1 / 2 < q.endSign * s} := by
-    refine IntegrableOn.congr_fun (hint'.const_mul (-q.endSign)) (fun s hs ↦ ?_) hS₁
-    rw [hinner s hs]
-    linear_combination (A s) * q.endSign_mul_self
-  refine ⟨?_, hA.integrable_of_forall_notMem_eq_zero hzero⟩
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-    (fun ζ _ ↦ hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q),
-    setIntegral_congr_fun (measurableSet_endStrip q) hcongr, endStrip_def,
-    Measure.volume_eq_prod, setIntegral_prod _ (by rwa [IntegrableOn, ← Measure.prod_restrict]),
-    setIntegral_congr_fun hS₁ hinner, integral_neg, integral_const_mul,
-    setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+        ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t))) :=
+  integral_image_endChart_eq_of_eqOn
+    (fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
+      (H q ζ.2 (u (endChart q ζ)) +
+        1 / 2 * ω (u (endChart q ζ)) (fderiv ℝ (u ∘ endChart q) ζ stdComplexLineImag))))
+    (integrable_boundaryForm ω hK hu T)
+    (fun ζ hζ ↦ by
+      dsimp only
+      rw [smul_eq_mul, boundaryForm]
+      exact abs_det_mul_wedge_endChart ω hKH hH hu (by linarith) hT₀
+        (endSign_mul_pos_of_mem_endStrip hζ))
+    (fun s hs ↦ by
+      have hs' : 0 < q.endSign * s := by
+        have : 1 / 2 < q.endSign * s := hs
+        linarith
+      dsimp only
+      rw [integral_neg, integral_const_mul, integral_Ico_eq_hamiltonianAction ω hH hHc hu hs']
+      ring)
+    fun s hs ↦ by
+      have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
+      simp [smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0)]
 
 /-- Away from the three end strips the cutoff at height `T ≥ 2` is locally constant, so its
 derivative vanishes there. -/
@@ -708,6 +677,40 @@ private theorem tendsto_integral_truncation_mul {f : ℝ × ℝ → ℝ} (hf : I
       exact (truncation_mem_Icc T z).2)
   · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
     simpa using (tendsto_truncation hz).mul_const (f z)
+
+/-- The integral against a cutoff is bounded in norm by the `L¹` norm. -/
+private theorem norm_integral_truncation_mul_le {f : ℝ × ℝ → ℝ} (hf : Integrable f) (T : ℝ) :
+    ‖∫ z, truncation T z * f z‖ ≤ ∫ z, ‖f z‖ :=
+  (norm_integral_le_integral_norm _).trans <|
+    integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _) hf.norm <|
+      Eventually.of_forall fun z ↦ by
+        dsimp only
+        rw [norm_mul, Real.norm_of_nonneg (truncation_mem_Icc T z).1]
+        exact mul_le_of_le_one_left (norm_nonneg _) (truncation_mem_Icc T z).2
+
+/-- Monotone convergence of the truncated integrals at heights `n + max 2 T₀` of a function
+nonnegative on `S`. -/
+private theorem tendsto_ofReal_integral_truncation_mul {e : ℝ × ℝ → ℝ} (T₀ : ℝ)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ e z)
+    (hχe : ∀ n : ℕ, Integrable fun z ↦ truncation (n + max 2 T₀) z * e z) :
+    Tendsto (fun n : ℕ ↦ ENNReal.ofReal (∫ z, truncation (n + max 2 T₀) z * e z)) atTop
+      (𝓝 (∫⁻ z, ENNReal.ofReal (e z))) := by
+  have hT : Tendsto (fun n : ℕ ↦ (n : ℝ) + max 2 T₀) atTop atTop :=
+    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
+  have hχe₀ (n : ℕ) (z : ℝ × ℝ) : 0 ≤ truncation (n + max 2 T₀) z * e z := by
+    by_cases hz : z ∈ thricePuncturedSphereReal
+    · exact mul_nonneg (truncation_mem_Icc _ z).1 (he z hz)
+    · rw [image_eq_zero_of_notMem_tsupport fun h ↦ hz (mem_tsupport_truncation h), zero_mul]
+  simp only [fun n ↦ ofReal_integral_eq_lintegral_ofReal (hχe n) (ae_of_all _ (hχe₀ n))]
+  refine lintegral_tendsto_of_tendsto_of_monotone
+    (fun n ↦ (hχe n).aestronglyMeasurable.aemeasurable.ennreal_ofReal) ?_ ?_
+  · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz m n hmn
+    exact ENNReal.ofReal_le_ofReal
+      (mul_le_mul_of_nonneg_right (truncation_le_truncation (by gcongr) z) (he z hz))
+  · filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
+    have h := (ENNReal.continuous_ofReal.tendsto _).comp
+      (((tendsto_truncation hz).comp hT).mul_const (e z))
+    rwa [one_mul] at h
 
 /-- The energy density of a `C²` map is continuous on `S` for data which is `C¹` there. -/
 private theorem continuousOn_floerEnergyDensity_thricePuncturedSphereReal (ω : SymplecticForm V)
@@ -857,46 +860,35 @@ theorem lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm (ω : Symplect
       ENNReal.ofReal (∑ q, q.endSign * A q - ∫ z, ω.hamiltonianCurvature
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
-  set e : ℝ × ℝ → ℝ := ω.floerEnergyDensity
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
-  set r : ℝ × ℝ → ℝ := fun z ↦ ω.hamiltonianCurvature
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-    (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)
   have hKs (v : ℂ) : ContDiffOn ℝ 1 (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
-      (thricePuncturedSphereReal ×ˢ univ) :=
-    fun p hp ↦ (hK p.1 hp.1 p.2 v).contDiffWithinAt
-  have he' : ContinuousOn e thricePuncturedSphereReal :=
+      (thricePuncturedSphereReal ×ˢ univ) := fun p hp ↦ (hK p.1 hp.1 p.2 v).contDiffWithinAt
+  have he' : ContinuousOn (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) thricePuncturedSphereReal :=
     continuousOn_floerEnergyDensity_thricePuncturedSphereReal ω hK hu
-  have hr' : ContinuousOn r thricePuncturedSphereReal :=
-    ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal hu.continuousOn
-      (hKs 1) (hKs Complex.I)
-  -- The heights `n + max 2 T₀` exhaust `S`.
-  set T : ℕ → ℝ := fun n ↦ n + max 2 T₀
-  have hT : Tendsto T atTop atTop := tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
-  have hT₂ (n : ℕ) : 2 ≤ T n := by
-    simp only [T]; linarith [n.cast_nonneg (α := ℝ), le_max_left 2 T₀]
-  have hT₀ (n : ℕ) : T₀ ≤ T n := by
-    simp only [T]; linarith [n.cast_nonneg (α := ℝ), le_max_right 2 T₀]
-  have hχe (n : ℕ) : Integrable fun z ↦ truncation (T n) z * e z := integrable_truncation_mul _ he'
-  have hχr (n : ℕ) : Integrable fun z ↦ truncation (T n) z * r z := integrable_truncation_mul _ hr'
-  -- On each truncation the weighted energy is the averaged actions minus the weighted curvature.
-  have hid (n : ℕ) : ∫ z, truncation (T n) z * e z =
-      (∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T n) *
+  have hr' := ω.continuousOn_hamiltonianCurvature_comp isOpen_thricePuncturedSphereReal
+    hu.continuousOn (hKs 1) (hKs Complex.I)
+  have hT : Tendsto (fun n : ℕ ↦ (n : ℝ) + max 2 T₀) atTop atTop :=
+    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
+  have hid (n : ℕ) : ∫ z, truncation (n + max 2 T₀) z * ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∑ q, q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - (n + max 2 T₀)) *
         ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (s, t)))) -
-        ∫ z, truncation (T n) z * r z := by
-    rw [← integral_truncation_mul_eq_sum ω hK hKH hH hHc hu (hT₂ n) (hT₀ n), eq_sub_iff_add_eq,
-      ← integral_add (hχe n) (hχr n)]
-    simp only [e, r, mul_add]
-  have hrlim : Tendsto (fun n ↦ ∫ z, truncation (T n) z * r z) atTop (𝓝 (∫ z, r z)) :=
-    (tendsto_integral_truncation_mul hR).comp hT
-  have helim := tendsto_lintegral_truncation_mul he hT
-    (fun m n hmn ↦ by dsimp [T]; gcongr) hχe
-  refine tendsto_nhds_unique helim ?_
-  simp only [fun n ↦ (ofReal_integral_eq_lintegral_ofReal (hχe n)
-    (ae_of_all _ (truncation_mul_nonneg he (T n)))).symm, hid]
+        ∫ z, truncation (n + max 2 T₀) z * ω.hamiltonianCurvature
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
+    rw [← integral_truncation_mul_eq_sum ω hK hKH hH hHc hu
+      (by linarith [n.cast_nonneg (α := ℝ), le_max_left 2 T₀])
+      (by linarith [n.cast_nonneg (α := ℝ), le_max_right 2 T₀]), eq_sub_iff_add_eq,
+      ← integral_add (integrable_truncation_mul _ he') (integrable_truncation_mul _ hr')]
+    simp only [mul_add]
+  refine tendsto_nhds_unique
+    (tendsto_ofReal_integral_truncation_mul T₀ he fun _ ↦ integrable_truncation_mul _ he') ?_
+  simp only [hid]
   exact (ENNReal.continuous_ofReal.tendsto _).comp
-    (((tendsto_sum_integral_deriv_smoothTransition_mul ω hK hKH hH hHc hu hA).comp hT).sub hrlim)
+    (((tendsto_sum_integral_deriv_smoothTransition_mul ω hK hKH hH hHc hu hA).comp hT).sub
+      ((tendsto_integral_truncation_mul hR).comp hT))
 
 /-- **A nonnegative energy density is integrable.** Under the hypotheses of
 `lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm`, the Floer energy density of `u` is
@@ -1179,50 +1171,23 @@ private theorem integral_image_endChart_boundaryForm
         -(q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
           ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) ∧
       Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-        ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  set F : ℝ × ℝ → ℝ := fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
-    H q ζ.2 (u (endChart q ζ)))
-  set A : ℝ → ℝ := fun s ↦ deriv smoothTransition (q.endSign * s - T) *
-    ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))
-  have hS₁ : MeasurableSet {s : ℝ | 1 / 2 < q.endSign * s} :=
-    measurableSet_lt measurable_const (measurable_const.mul measurable_id)
-  -- In end coordinates the integrand is `F`.
-  have hcongr : EqOn (fun ζ ↦ |(fderiv ℝ (endChart q) ζ).det| • boundaryForm K u T (endChart q ζ))
-      F (endStrip q) := fun ζ hζ ↦ by
-    dsimp only
-    rw [smul_eq_mul]
-    exact abs_det_mul_boundaryForm_endChart hKH hH (by linarith) hT₀
-      (endSign_mul_pos_of_mem_endStrip hζ)
-  have hint : IntegrableOn F (endStrip q) :=
-    ((integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-      (fun ζ _ ↦ SymplecticForm.hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q) _).1
-      (integrable_boundaryForm hK hu T).integrableOn).congr_fun hcongr
-      (measurableSet_endStrip q)
-  -- Integrating out the angular coordinate gives the integrals of the end Hamiltonian.
-  have hinner (s : ℝ) (_ : s ∈ {s : ℝ | 1 / 2 < q.endSign * s}) :
-      ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t) = -(q.endSign * A s) := by
-    simp only [F, A]
-    rw [integral_neg, integral_const_mul, integral_Ico_eq_intervalIntegral hH q s]
-    ring
-  have hzero (s : ℝ) (hs : s ∉ {s : ℝ | 1 / 2 < q.endSign * s}) : A s = 0 := by
-    have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
-    simp only [A, smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0), zero_mul]
-  rw [endStrip_def, Measure.volume_eq_prod, IntegrableOn, ← Measure.prod_restrict] at hint
-  have hint' : IntegrableOn (fun s ↦ ∫ t in Ico (-1 / 2 : ℝ) (1 / 2), F (s, t))
-      {s : ℝ | 1 / 2 < q.endSign * s} := hint.integral_prod_left
-  have hA : IntegrableOn A {s : ℝ | 1 / 2 < q.endSign * s} := by
-    refine IntegrableOn.congr_fun (hint'.const_mul (-q.endSign)) (fun s hs ↦ ?_) hS₁
-    rw [hinner s hs]
-    linear_combination (A s) * q.endSign_mul_self
-  refine ⟨?_, hA.integrable_of_forall_notMem_eq_zero hzero⟩
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume (measurableSet_endStrip q)
-    (fun ζ _ ↦ SymplecticForm.hasFDerivWithinAt_endChart q ζ _) (injOn_endChart q),
-    setIntegral_congr_fun (measurableSet_endStrip q) hcongr, endStrip_def,
-    Measure.volume_eq_prod, setIntegral_prod _ (by rwa [IntegrableOn, ← Measure.prod_restrict]),
-    setIntegral_congr_fun hS₁ hinner, integral_neg, integral_const_mul,
-    setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+        ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) :=
+  SymplecticForm.integral_image_endChart_eq_of_eqOn
+    (fun ζ ↦ -(q.endSign * deriv smoothTransition (q.endSign * ζ.1 - T) *
+      H q ζ.2 (u (endChart q ζ))))
+    (integrable_boundaryForm hK hu T)
+    (fun ζ hζ ↦ by
+      dsimp only
+      rw [smul_eq_mul]
+      exact abs_det_mul_boundaryForm_endChart hKH hH (by linarith) hT₀
+        (endSign_mul_pos_of_mem_endStrip hζ))
+    (fun s _ ↦ by
+      dsimp only
+      rw [integral_neg, integral_const_mul, integral_Ico_eq_intervalIntegral hH q s]
+      ring)
+    fun s hs ↦ by
+      have : q.endSign * s ≤ 1 / 2 := not_lt.1 hs
+      simp [smoothTransition.deriv_of_nonpos (by linarith : q.endSign * s - T ≤ 0)]
 
 /-- **The truncated energy identity, for a manifold target.** For `T ≥ 2` with `K = H_q dt`
 beyond height `T₀ ≤ T`, the energy density weighted by the cutoff at height `T` integrates to the
@@ -1342,91 +1307,6 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm
   exact (hω.integral_truncation_mul_floerEnergyDensity_eq_sum hK hKH hH hu hR
     (le_of_max_le_left hT) (le_of_max_le_right hT)).symm
 
-omit [TopologicalSpace M] in
-/-- Per-end bound for the boundary term in
-`IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm`. -/
-private theorem abs_endSign_mul_integral_deriv_smoothTransition_mul_le
-    {H : ℝ → M → ℝ} {u : ℝ × ℝ → M} (q : Puncture) {S T C : ℝ} (hST : S ≤ T)
-    (hS : ∀ σ, S ≤ σ → |∫ t in (0 : ℝ)..1, H t (u (endChart q (q.endSign * σ, t)))| ≤ C) :
-    |q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - T) *
-      ∫ t in (0 : ℝ)..1, H t (u (endChart q (s, t)))| ≤ max C 0 := by
-  rw [abs_mul, abs_endSign, one_mul, ← Real.norm_eq_abs]
-  simp_rw [mul_comm (deriv smoothTransition _)]
-  have hint : Integrable fun s ↦ deriv smoothTransition (q.endSign * s - T) :=
-    (smoothTransition.integrable_deriv.comp_sub_right T).comp_mul_left' q.endSign_ne_zero
-  have hbound : ‖∫ s, (∫ t in (0 : ℝ)..1, H t (u (endChart q (s, t)))) •
-        deriv smoothTransition (q.endSign * s - T)‖ ≤
-      max C 0 * ∫ s, ‖deriv smoothTransition (q.endSign * s - T)‖ := by
-    refine MeasureTheory.norm_integral_smul_le_of_support_subset
-      (s := {s | T ≤ q.endSign * s}) hint (fun s hs ↦ ?_) fun s hs ↦ ?_
-    · by_contra hle
-      exact hs (smoothTransition.deriv_of_nonpos (sub_nonpos.2 (not_le.1 hle).le))
-    · have h := hS (q.endSign * s) (hST.trans hs)
-      rw [endSign_mul_endSign_mul] at h
-      exact (Real.norm_eq_abs _).trans_le (h.trans (le_max_left _ _))
-  refine hbound.trans_eq ?_
-  simp_rw [Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg]
-  rw [smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one, mul_one]
-
-/-- **A nonnegative energy density with bounded end-loop Hamiltonian integrals is integrable, for a
-manifold target.** Only an eventual bound on the end-loop integrals
-`∫₀¹ H_q(t, u(φ_q(±σ, t))) dt` is needed, not their convergence. -/
-theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
-    (hω : ω.IsNondegenerate)
-    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
-      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
-    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
-    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
-    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
-    {C : Puncture → ℝ}
-    (hC : ∀ q, ∀ᶠ σ in atTop,
-      |∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * σ, t)))| ≤ C q) :
-    Integrable (ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) := by
-  obtain ⟨S, hS⟩ := eventually_atTop.1 (eventually_all.2 hC)
-  set T : ℕ → ℝ := fun n ↦ n + max (max 2 T₀) S
-  have hT : Tendsto T atTop atTop := tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
-  have hM (n : ℕ) : max (max 2 T₀) S ≤ T n := le_add_of_nonneg_left n.cast_nonneg
-  have hχe (n : ℕ) := (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR (T n)).1
-  -- Stage 1: measurability as an a.e. limit of the integrable truncated energy densities.
-  refine ⟨aestronglyMeasurable_of_tendsto_ae (u := atTop) (fun n ↦ (hχe n).1)
-    (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦ by
-      simpa using ((SymplecticForm.tendsto_truncation hz).comp hT).mul_const _), ?_⟩
-  -- Stage 2: finite integral via monotone convergence of the truncated energies.
-  rw [HasFiniteIntegral, lintegral_congr_ae (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦
-    Real.eNorm_eq_ofReal (he z hz))]
-  refine lt_of_le_of_lt (le_of_tendsto (SymplecticForm.tendsto_lintegral_truncation_mul he hT
-    (fun m n hmn ↦ by dsimp [T]; gcongr) hχe) (Eventually.of_forall fun n ↦ ?_))
-    (ENNReal.ofReal_lt_top (r := (∫ z, ‖(SmoothBundleForm.eval₂ ω (u z)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
-        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)‖) + (∑ q, max (C q) 0) +
-      ∫ z, ‖ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖))
-  -- Stage 3: uniform bound on each truncated identity using area, curvature, and end bounds.
-  rw [← ofReal_integral_eq_lintegral_ofReal (hχe n)
-    (ae_of_all _ (SymplecticForm.truncation_mul_nonneg he (T n)))]
-  refine ENNReal.ofReal_le_ofReal ?_
-  rw [hω.integral_truncation_mul_floerEnergyDensity_eq_sum hK hKH hH hu hR
-    (((le_max_left 2 T₀).trans (le_max_left _ S)).trans (hM n))
-    (((le_max_right 2 T₀).trans (le_max_left _ S)).trans (hM n)), sub_eq_add_neg]
-  refine add_le_add (add_le_add
-    ((le_abs_self _).trans (SymplecticForm.abs_integral_truncation_mul_le hA (T n)))
-    (Finset.sum_le_sum (s := Finset.univ) fun q _ ↦ (le_abs_self _).trans
-      (abs_endSign_mul_integral_deriv_smoothTransition_mul_le q
-        ((le_max_right _ S).trans (hM n)) fun σ hσ ↦ hS σ hσ q)))
-    ((neg_le_abs _).trans (SymplecticForm.abs_integral_truncation_mul_le hR (T n)))
-
 /-- **The energy identity for a nonnegative energy density, for a manifold target.** Under the
 hypotheses of
 `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm`, suppose
@@ -1464,11 +1344,140 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularFor
         ∫ z, ω.hamiltonianCurvature
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) := by
-  have hE := hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
-    (C := fun q ↦ |h q| + 1) fun q ↦
-      ((hh q).abs.eventually (Iio_mem_nhds (lt_add_one _))).mono fun _ ↦ le_of_lt
-  rw [← ofReal_integral_eq_lintegral_ofReal hE (ae_mem_thricePuncturedSphereReal.mono he),
-    hω.integral_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu hE hA hR hh]
+  have hT : Tendsto (fun n : ℕ ↦ (n : ℝ) + max 2 T₀) atTop atTop :=
+    tendsto_atTop_add_const_right _ _ tendsto_natCast_atTop_atTop
+  refine tendsto_nhds_unique (SymplecticForm.tendsto_ofReal_integral_truncation_mul T₀ he fun n ↦
+    (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR (n + max 2 T₀)).1) ?_
+  simp only [fun n : ℕ ↦ hω.integral_truncation_mul_floerEnergyDensity_eq_sum (T := n + max 2 T₀)
+    hK hKH hH hu hR (by linarith [n.cast_nonneg (α := ℝ), le_max_left 2 T₀])
+    (by linarith [n.cast_nonneg (α := ℝ), le_max_right 2 T₀])]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    ((((SymplecticForm.tendsto_integral_truncation_mul hA).comp hT).add
+      ((tendsto_sum_integral_deriv_smoothTransition_mul hK hKH hH hu hh).comp hT)).sub
+      ((SymplecticForm.tendsto_integral_truncation_mul hR).comp hT))
+
+/-- **The Floer energy density of a `C¹` map into a manifold is a.e. strongly measurable.** -/
+theorem IsNondegenerate.aestronglyMeasurable_floerEnergyDensity
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) :
+    AEStronglyMeasurable (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) volume := by
+  refine aestronglyMeasurable_of_tendsto_ae (u := atTop) (f := fun n : ℕ ↦ fun z ↦
+    SymplecticForm.truncation n z * ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (fun n ↦ (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR n).1.1) ?_
+  filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
+  simpa using ((SymplecticForm.tendsto_truncation hz).comp
+    tendsto_natCast_atTop_atTop).mul_const _
+
+/-- **A nonnegative energy density is integrable, for a manifold target.** Under the hypotheses of
+`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm`, the
+Floer energy density of `u` is integrable, so
+`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_eq_smul_endAngularForm` applies to
+it. -/
+theorem IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+    {h : Puncture → ℝ}
+    (hh : ∀ q, Tendsto (fun σ ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * σ, t))))
+      atTop (𝓝 (h q))) :
+    Integrable (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u) := by
+  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu hR, ?_⟩
+  rw [HasFiniteIntegral, lintegral_congr_ae (g := fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) (by
+        filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
+        exact Real.eNorm_eq_ofReal (he z hz)),
+    hω.lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm hK hKH hH hu he hA hR hh]
+  exact ENNReal.ofReal_lt_top
+
+/-- **An upper bound on a nonnegative energy density, without asymptotic convergence.** For `ω`
+nondegenerate on a finite-dimensional manifold `M`, `K` of class `C¹` on `S × M` equal to
+`H_q(t) dt` beyond `T₀` on each end `q` for `1`-periodic Hamiltonians `H_q`, and `u` of class `C¹`
+on `S` with nonnegative Floer energy density and integrable area density and curvature, if
+`|∫₀¹ H_q(t, u(φ_q(s, t))) dt| ≤ C q` for `±s ≥ max 2 T₀`, then the Lebesgue integral of the Floer
+energy density is at most `∫ ‖u^*ω‖ + ∑_q C_q + ∫ ‖R_K(u)‖`. -/
+theorem IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm
+    (hω : ω.IsNondegenerate)
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x))
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    (he : ∀ z ∈ thricePuncturedSphereReal, 0 ≤ ω.floerEnergyDensity
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)
+    (hA : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z))
+    {C : Puncture → ℝ}
+    (hC : ∀ q s, max 2 T₀ ≤ q.endSign * s →
+      |∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))| ≤ C q) :
+    ∫⁻ z, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) ≤
+      ENNReal.ofReal ((∫ z, ‖(SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)‖) +
+        ∑ q, C q +
+        ∫ z, ‖ω.hamiltonianCurvature
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖) := by
+  have hbnd_end (n : ℕ) (q : Puncture) :
+      ‖q.endSign * ∫ s, deriv smoothTransition (q.endSign * s - (n + max 2 T₀)) *
+          ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))‖ ≤ C q := by
+    rw [norm_mul, Real.norm_eq_abs q.endSign, abs_endSign, one_mul]
+    refine (norm_integral_le_integral_norm _).trans <|
+      (integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ norm_nonneg _)
+        (((smoothTransition.integrable_deriv.comp_sub_right (n + max 2 T₀)).comp_mul_left'
+          q.endSign_ne_zero).mul_const (C q)) <| Eventually.of_forall fun s ↦ ?_).trans_eq ?_
+    · dsimp only
+      by_cases hs : q.endSign * s - (n + max 2 T₀) ≤ 0
+      · simp [smoothTransition.deriv_of_nonpos hs]
+      · rw [norm_mul, Real.norm_of_nonneg smoothTransition.monotone.deriv_nonneg]
+        exact mul_le_mul_of_nonneg_left
+          ((Real.norm_eq_abs _).trans_le (hC q s (by linarith [n.cast_nonneg (α := ℝ)])))
+          smoothTransition.monotone.deriv_nonneg
+    · rw [integral_mul_const, smoothTransition.integral_deriv_mul_sub, abs_endSign, inv_one,
+        one_mul]
+  refine le_of_tendsto' (SymplecticForm.tendsto_ofReal_integral_truncation_mul T₀ he fun n ↦
+    (hω.integral_truncation_mul_floerEnergyDensity_eq hK hu hR (n + max 2 T₀)).1) fun n ↦ ?_
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [hω.integral_truncation_mul_floerEnergyDensity_eq_sum (T := n + max 2 T₀) hK hKH hH hu hR
+    (by linarith [n.cast_nonneg (α := ℝ), le_max_left 2 T₀])
+    (by linarith [n.cast_nonneg (α := ℝ), le_max_right 2 T₀])]
+  refine (le_norm_self _).trans ((norm_sub_le _ _).trans (add_le_add
+    ((norm_add_le _ _).trans (add_le_add
+      (SymplecticForm.norm_integral_truncation_mul_le hA (n + max 2 T₀))
+      ((norm_sum_le _ _).trans (Finset.sum_le_sum fun q _ ↦ hbnd_end n q))))
+    (SymplecticForm.norm_integral_truncation_mul_le hR (n + max 2 T₀))))
 
 end Limit
 

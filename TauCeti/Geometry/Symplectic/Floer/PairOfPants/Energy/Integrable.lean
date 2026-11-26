@@ -17,8 +17,9 @@ map on `S` with image in a compact set `B ⊆ M`, nonnegative Floer energy densi
 symplectic area density and curvature over `S`.
 
 Because `[0, 1] × B` is compact, each `|H_q(t, u(φ_q(±σ, t)))|` is uniformly bounded on the
-ends without any global bound on `H_q` or pointwise end limits. By the bounded-end-integral
-criterion `SmoothTwoForm.IsNondegenerate.integrable_floerEnergyDensity_of_eq_smul_endAngularForm`
+ends without any global bound on `H_q` or pointwise end limits. By the measurability lemma
+`SmoothTwoForm.IsNondegenerate.aestronglyMeasurable_floerEnergyDensity` and the upper bound
+`SmoothTwoForm.IsNondegenerate.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm`
 of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity`, the Floer energy density of
 `u` is integrable over `S`
 (`IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularForm_of_isCompact`).
@@ -69,14 +70,17 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_eq_smul_endAngularFor
   have hbound : ∀ q, ∃ C : ℝ, ∀ p ∈ Icc (0 : ℝ) 1 ×ˢ B, ‖uncurry (H q) p‖ ≤ C := fun q ↦
     (isCompact_Icc.prod hB).exists_bound_of_continuousOn (hHc q).continuousOn
   choose C hC using hbound
-  refine hω.integrable_floerEnergyDensity_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
-    (C := C) fun q ↦ ?_
-  filter_upwards [eventually_gt_atTop (0 : ℝ)] with σ hσ
-  have hmem (t : ℝ) : endChart q (q.endSign * σ, t) ∈ thricePuncturedSphereReal :=
-    endChart_mem_thricePuncturedSphereReal (by simpa only [endSign_mul_endSign_mul] using hσ)
+  refine ⟨hω.aestronglyMeasurable_floerEnergyDensity hK hu hR, ?_⟩
+  rw [HasFiniteIntegral, lintegral_congr_ae (ae_mem_thricePuncturedSphereReal.mono fun z hz ↦
+    Real.eNorm_eq_ofReal (he z hz))]
+  refine lt_of_le_of_lt
+    (hω.lintegral_floerEnergyDensity_le_of_eq_smul_endAngularForm hK hKH hH hu he hA hR
+      (C := C) fun q s hs ↦ ?_) ENNReal.ofReal_lt_top
+  have hmem (t : ℝ) : endChart q (s, t) ∈ thricePuncturedSphereReal :=
+    endChart_mem_thricePuncturedSphereReal (lt_of_lt_of_le two_pos ((le_max_left 2 T₀).trans hs))
   simpa only [Real.norm_eq_abs, uncurry_apply_pair, sub_zero, abs_one, mul_one] using
     intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦
-      hC q (t, u (endChart q (q.endSign * σ, t)))
+      hC q (t, u (endChart q (s, t)))
         ⟨Ioc_subset_Icc_self (uIoc_of_le (zero_le_one : (0 : ℝ) ≤ 1) ▸ ht), huB _ (hmem t)⟩
 
 end TauCeti.SmoothTwoForm

@@ -58,7 +58,9 @@ covector `p ∘ df_x` at `x`. For a family of covectors over a parameter manifol
 the differential does. It gives the smoothness of the cotangent lift of a diffeomorphism
 (`Diffeomorph.cotangent`). The map may also vary smoothly with the parameter
 (`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv_uncurry`), as the slice inclusions of a
-product manifold do. Over an arbitrary topological parameter space, pairing a continuous family of
+product manifold do. Over an arbitrary topological parameter space, pulling back a continuous
+family of covectors along a `C¹` map gives a continuous family
+(`TauCeti.CotangentBundle.continuousAt_mk_comp_mfderiv`), and pairing a continuous family of
 covectors at `f x` with the images under `df_x` of a continuous family of tangent vectors at `x` is
 continuous when `f` is `C¹` (`TauCeti.CotangentBundle.continuousAt_snd_apply_mfderiv`).
 
@@ -83,7 +85,7 @@ already supply the cotangent total space with its manifold structure.
 public section
 
 open Bundle Set
-open scoped Manifold
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -323,21 +325,17 @@ variable {E' H' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [Topologi
   {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
   {m n : WithTop ℕ∞}
 
-/-- In bundle coordinates, a family of covectors `Ψ z` at `f z (g z)` pulled back along the
-differentials of `f z` is the coordinate expression of `Ψ z` composed with that of the
-differentials. Hence the pulled-back family is `C^m` once `Ψ`, `g` and the differentials in
-tangent coordinates are. -/
-private theorem contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates {Ψ : X → CotangentBundle J N}
-    {g : X → M} {f : X → M → N} {z₀ : X} (hΨg : ∀ z, (Ψ z).proj = f z (g z))
-    (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
-    (hfg : ContinuousAt (fun z ↦ f z (g z)) z₀)
-    (hd : ContMDiffAt IX 𝓘(𝕜, E →L[𝕜] E') m
-      (inTangentCoordinates I J g (fun z ↦ f z (g z)) (fun z ↦ mfderiv I J (f z) (g z)) z₀) z₀) :
-    ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
-      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
-        CotangentBundle I M)) z₀ := by
-  rw [contMDiffAt_hom_bundle] at hΨ ⊢
-  refine ⟨hg, (hΨ.2.clm_comp hd).congr_of_eventuallyEq ?_⟩
+/-- In bundle coordinates near `z₀`, a family of covectors `Ψ z` at `f z (g z)` pulled back along
+the differentials of `f z` is the coordinate expression of `Ψ z` composed with that of the
+differentials. -/
+private theorem eventuallyEq_inCoordinates_comp_mfderiv {S : Type*} [TopologicalSpace S]
+    {Ψ : S → CotangentBundle J N} {g : S → M} {f : S → M → N} {z₀ : S}
+    (hΨg : ∀ z, (Ψ z).proj = f z (g z)) (hfg : ContinuousAt (fun z ↦ f z (g z)) z₀) :
+    (fun z ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) 𝕜 (fun _ : M ↦ 𝕜) (g z₀) (g z)
+        (g z₀) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z))) =ᶠ[𝓝 z₀]
+      fun z ↦ ContinuousLinearMap.inCoordinates E' (TangentSpace J) 𝕜 (fun _ : N ↦ 𝕜) (Ψ z₀).proj
+          (Ψ z).proj (Ψ z₀).proj (Ψ z).proj (Ψ z).snd ∘L
+        inTangentCoordinates I J g (fun z ↦ f z (g z)) (fun z ↦ mfderiv I J (f z) (g z)) z₀ z := by
   filter_upwards [hfg.preimage_mem_nhds
       ((trivializationAt E' (TangentSpace J) (f z₀ (g z₀))).open_baseSet.mem_nhds
         (FiberBundle.mem_baseSet_trivializationAt' _))] with z hz
@@ -352,6 +350,23 @@ private theorem contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates {Ψ : X → 
     ContinuousLinearMap.comp_apply, Trivial.fiberBundle_trivializationAt',
     Trivial.continuousLinearMapAt_trivialization, ContinuousLinearMap.id_apply]
   rw [Trivialization.symmL_continuousLinearMapAt _ (b := f z (g z)) hz]
+
+/-- In bundle coordinates, a family of covectors `Ψ z` at `f z (g z)` pulled back along the
+differentials of `f z` is the coordinate expression of `Ψ z` composed with that of the
+differentials. Hence the pulled-back family is `C^m` once `Ψ`, `g` and the differentials in
+tangent coordinates are. -/
+private theorem contMDiffAt_mk_comp_mfderiv_of_inTangentCoordinates {Ψ : X → CotangentBundle J N}
+    {g : X → M} {f : X → M → N} {z₀ : X} (hΨg : ∀ z, (Ψ z).proj = f z (g z))
+    (hΨ : ContMDiffAt IX (J.prod 𝓘(𝕜, E' →L[𝕜] 𝕜)) m Ψ z₀) (hg : ContMDiffAt IX I m g z₀)
+    (hfg : ContinuousAt (fun z ↦ f z (g z)) z₀)
+    (hd : ContMDiffAt IX 𝓘(𝕜, E →L[𝕜] E') m
+      (inTangentCoordinates I J g (fun z ↦ f z (g z)) (fun z ↦ mfderiv I J (f z) (g z)) z₀) z₀) :
+    ContMDiffAt IX (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜)) m
+      (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J (f z) (g z)) :
+        CotangentBundle I M)) z₀ := by
+  rw [contMDiffAt_hom_bundle] at hΨ ⊢
+  exact ⟨hg, (hΨ.2.clm_comp hd).congr_of_eventuallyEq
+    (eventuallyEq_inCoordinates_comp_mfderiv hΨg hfg)⟩
 
 /-- **Pulling covectors back along a map is smooth.** Let `Ψ z` be a covector at `f (g z)`,
 depending on a parameter `z`. Its pullback along the differential of `f` at `g z`,
@@ -378,6 +393,23 @@ theorem contMDiff_mk_comp_mfderiv {Ψ : X → CotangentBundle J N} {g : X → M}
       (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
         CotangentBundle I M)) :=
   fun z ↦ contMDiffAt_mk_comp_mfderiv hΨg (hΨ z) (hg z) (hf (g z)) hmn
+
+/-- **Pulling continuous covector fields back along a `C¹` map is continuous.** Let `Ψ z` be a
+covector at `f (g z)`, depending on a parameter `z` in a topological space. If `Ψ` and `g` are
+continuous at `z₀` and `f` is `C¹` at `g z₀`, the family of pulled-back covectors
+`Ψ z ∘ df_(g z)` is continuous at `z₀`. This is the continuous counterpart of
+`TauCeti.CotangentBundle.contMDiffAt_mk_comp_mfderiv`. -/
+theorem continuousAt_mk_comp_mfderiv {S : Type*} [TopologicalSpace S]
+    {Ψ : S → CotangentBundle J N} {g : S → M} {f : M → N} {z₀ : S}
+    (hΨg : ∀ z, (Ψ z).proj = f (g z)) (hΨ : ContinuousAt Ψ z₀) (hg : ContinuousAt g z₀)
+    (hf : ContMDiffAt I J 1 f (g z₀)) :
+    ContinuousAt (fun z ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (g z) ((Ψ z).snd ∘L mfderiv I J f (g z)) :
+      CotangentBundle I M)) z₀ := by
+  rw [continuousAt_hom_bundle] at hΨ ⊢
+  -- The differential of a `C¹` map is continuous in tangent coordinates.
+  have hd := (hf.mfderiv_const (m := 0) (by simp)).continuousAt.comp hg
+  exact ⟨hg, (hΨ.2.clm_comp hd).congr_of_eventuallyEq
+    (eventuallyEq_inCoordinates_comp_mfderiv (f := fun _ ↦ f) hΨg (hf.continuousAt.comp hg))⟩
 
 /-- **Pulling covectors back along a family of maps is smooth.** Let `Ψ z` be a covector at
 `f z (g z)`, depending on a parameter `z`. Its pullback along the differential of `f z` at `g z`,

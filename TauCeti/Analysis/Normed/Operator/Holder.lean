@@ -36,8 +36,10 @@ continuous linear maps at a vector of norm at most one keeps the Hölder constan
 Composing a family of bilinear maps with two families of linear maps, `(f x).bilinearComp (g x)
 (h x)`, preserves Hölder continuity when the three families are bounded
 (`ContinuousLinearMap.holderOnWith_bilinearComp`); this is how a second derivative transforms
-under a change of variables. Likewise the bilinear maps `(h, k) ↦ B x h k • c x` form a Hölder
-family when `B` and `c` are Hölder and bounded
+under a change of variables. Applying a bounded Hölder family of bilinear maps to a bounded Hölder
+family of vectors in its second slot, `(f x).flip (g x)`, gives a Hölder family of linear maps
+(`ContinuousLinearMap.holderOnWith_flip_apply`). Likewise the bilinear maps
+`(h, k) ↦ B x h k • c x` form a Hölder family when `B` and `c` are Hölder and bounded
 (`ContinuousLinearMap.holderOnWith_smulRightL_flip_comp`).
 
 For a scalar-valued continuous multilinear map `L`, the map `L.smulRight (g x - g y)` has norm at
@@ -206,6 +208,39 @@ theorem holderOnWith_bilinearComp {α Kf Kg Kh Mf Mg Mh : ℝ≥0} {f : X → E 
     _ = _ := by
       push_cast
       ring
+
+/-- Applying a family of bilinear maps to a family of vectors in its second slot preserves Hölder
+continuity on a set when both families are bounded there: `x ↦ (f x).flip (g x)`, the linear map
+`v ↦ f x v (g x)`, is Hölder with constant `Kf Mg + Mf Kg`. This is the bilinear estimate
+`ContinuousLinearMap.holderOnWith_comp₂` for the bilinear map `(f, g) ↦ f.flip g`. -/
+theorem holderOnWith_flip_apply {α Kf Kg Mf Mg : ℝ≥0} {f : X → E →L[𝕜] F →L[𝕜] G} {g : X → F}
+    {s : Set X} (hf : HolderOnWith Kf α f s) (hg : HolderOnWith Kg α g s)
+    (hfnorm : ∀ x ∈ s, ‖f x‖ ≤ Mf) (hgnorm : ∀ x ∈ s, ‖g x‖ ≤ Mg) :
+    HolderOnWith (Kf * Mg + Mf * Kg) α (fun x ↦ (f x).flip (g x)) s := by
+  -- Proved directly rather than from `holderOnWith_comp₂`: instance search does not find the
+  -- operator norm on maps whose domain is itself a space of bilinear maps, which the constant
+  -- `‖B‖₊` of `holderOnWith_comp₂` needs for `B = (f, g) ↦ f.flip g`.
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hfd := hf.dist_le hx hy
+  have hgd := hg.dist_le hx hy
+  rw [dist_eq_norm (f x) (f y)] at hfd
+  rw [dist_eq_norm (g x) (g y)] at hgd
+  rw [dist_eq_norm]
+  refine opNorm_le_bound _ (by positivity) fun v => ?_
+  have hsplit : ((f x).flip (g x) - (f y).flip (g y)) v =
+      (f x - f y) v (g x) + f y v (g x - g y) := by
+    simp only [sub_apply, flip_apply, map_sub]
+    abel
+  rw [hsplit]
+  calc ‖(f x - f y) v (g x) + f y v (g x - g y)‖
+      ≤ ‖f x - f y‖ * ‖v‖ * ‖g x‖ + ‖f y‖ * ‖v‖ * ‖g x - g y‖ :=
+        (norm_add_le _ _).trans (add_le_add ((f x - f y).le_opNorm₂ v (g x))
+          ((f y).le_opNorm₂ v (g x - g y)))
+    _ ≤ Kf * dist x y ^ (α : ℝ) * ‖v‖ * Mg + Mf * ‖v‖ * (Kg * dist x y ^ (α : ℝ)) := by
+        have := hgnorm x hx
+        have := hfnorm y hy
+        gcongr
+    _ = ↑(Kf * Mg + Mf * Kg) * dist x y ^ (α : ℝ) * ‖v‖ := by push_cast; ring
 
 section SMulRight
 

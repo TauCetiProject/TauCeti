@@ -66,6 +66,12 @@ theorem basisRestrictSupport_apply_coe (c : s) :
   refine (basisRestrictSupport R s).repr.injective (Finsupp.ext fun d ↦ ?_)
   simp [Finsupp.single_apply, coeff_monomial, Subtype.ext_iff]
 
+/-- The basis vector of `basisRestrictSupport` at `c` is the monomial `X ^ c` with coefficient `1`,
+as an element of `restrictSupport R s`. -/
+theorem basisRestrictSupport_apply (c : s) :
+    basisRestrictSupport R s c = ⟨monomial (c : σ →₀ ℕ) 1, by simp⟩ :=
+  Subtype.ext (basisRestrictSupport_apply_coe c)
+
 /-- Two polynomials supported on `s` whose coefficients agree on `s` are equal. -/
 theorem eq_of_mem_restrictSupport_of_coeff_eq {p q : MvPolynomial σ R}
     (hp : p ∈ restrictSupport R s) (hq : q ∈ restrictSupport R s)

@@ -26,12 +26,15 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * Only subsingleton rings have stable range at most `0`, while every possibly noncommutative local
   ring (in particular every division ring and field) has stable range at most `1`. The ring `ℤ`
   does not have stable range at most `1`, witnessed by the unimodular row `(2, 5)`.
+* **Stable range one in unit form:** `R` has stable range at most `1` exactly when `aR + bR = R`
+  forces `a + b * c` to be a unit for some `c`. Such a ring is Dedekind-finite: a one-sided inverse
+  is two-sided.
 * **Vaserstein's first theorem:** `HasStableRangeLE R s` allows shortening the final coordinate of
   a unimodular row `(a, d)` on `ι ⊕ Unit` into any chosen finite subset of `ι` of cardinality at
   least `s`. Consequently `HasStableRangeLE R s` is monotone in `s` and equivalent to shortening
   all unimodular `(m + 1)`-rows of length `m ≥ s`.
 * Passage along surjective ring homomorphisms, invariance under ring equivalence, and compatibility
-  with finite products of rings.
+  with products of rings, binary and indexed.
 * **Vaserstein's second theorem:** `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`, so left and
   right stable range agree for every ring.
 
@@ -44,16 +47,24 @@ This file develops the ring-theoretic properties of `HasStableRangeLE`:
 * `TauCeti.hasStableRangeLE_zero_iff`: `HasStableRangeLE R 0 ↔ Subsingleton R`.
 * `TauCeti.hasStableRangeLE_one_of_isLocalRing`: a local ring has stable range at most `1`.
 * `TauCeti.not_hasStableRangeLE_one_int`: `ℤ` does not have stable range at most `1`.
+* `TauCeti.HasStableRangeLE.isDedekindFiniteMonoid`: a ring of stable range at most `1` is
+  Dedekind-finite.
+* `TauCeti.hasStableRangeLE_one_iff`: the unit form of stable range at most `1`.
 * `TauCeti.HasStableRangeLE.exists_isUnimodular_add_mul_of_subset`: shortening into any finite
   subset of cardinality at least `s`.
+* `TauCeti.HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: the same shortening in
+  coordinates, with a functional vanishing at the shortened coordinate.
 * `TauCeti.hasStableRangeLE_iff_forall_le`: equivalence with shortening all rows of length at least
   `s + 1` (Vaserstein).
 * `TauCeti.HasStableRangeLE.mono`: monotonicity in the bound `s`.
 * `TauCeti.HasStableRangeLE.of_surjective` and `RingEquiv.hasStableRangeLE_iff`: quotient
   monotonicity and ring-isomorphism invariance.
-* `TauCeti.hasStableRangeLE_prod_iff`: stable range of a product ring `R × S`.
+* `TauCeti.hasStableRangeLE_prod_iff`, `TauCeti.hasStableRangeLE_pi_iff`: stable range of a
+  product ring `R × S` and of an indexed product `Π i, R i`.
 * `TauCeti.hasStableRangeLE_mop_iff`: `HasStableRangeLE Rᵐᵒᵖ s ↔ HasStableRangeLE R s`
   (Vaserstein).
+* `TauCeti.HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one`: the left-handed form of the
+  coordinate shortening, deduced from the right-handed one through `Rᵐᵒᵖ`.
 
 ## References
 
@@ -147,6 +158,47 @@ theorem not_hasStableRangeLE_one_int : ¬ HasStableRangeLE ℤ 1 := fun h ↦ by
     (by simp [Fin.sum_univ_two])
   have h25 : (2 + 5 * c 0) * d 0 = 1 := by simpa using hcd
   rcases Int.eq_one_or_neg_one_of_mul_eq_one h25 with h1 | h1 <;> omega
+
+/-! ## Stable range one -/
+
+/-- A ring of stable range at most `1` is Dedekind-finite: if `x * y = 1` then `y * x = 1`. -/
+theorem HasStableRangeLE.isDedekindFiniteMonoid {R : Type*} [Ring R] (hR : HasStableRangeLE R 1) :
+    IsDedekindFiniteMonoid R := by
+  refine ⟨fun {x y} hxy ↦ ?_⟩
+  -- The row `(y, 1 - y * x)` is unimodular with witness `(x, 1)`, so some `w = y + (1 - y * x) * c`
+  -- has a right inverse `d 0`. Then `x * w = 1` forces `d 0 = x`, and `w = w * (x * y) = y`.
+  obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp hR ![y, 1 - y * x] ![x, 1]
+    (by simp [Fin.sum_univ_two])
+  set w := y + (1 - y * x) * c 0 with hw
+  have hwd : w * d 0 = 1 := by simpa using hcd
+  have hxw : x * w = 1 := by
+    simp [hw, mul_add, mul_sub, ← mul_assoc, hxy]
+  have hdx : d 0 = x := by
+    calc d 0 = x * w * d 0 := by rw [hxw, one_mul]
+      _ = x := by rw [mul_assoc, hwd, mul_one]
+  have hwx : w * x = 1 := hdx ▸ hwd
+  have hwy : w = y := by
+    calc w = w * x * y := by rw [mul_assoc, hxy, mul_one]
+      _ = y := by rw [hwx, one_mul]
+  exact hwy ▸ hwx
+
+/-- **Stable range one in unit form.** A ring `R` has stable range at most `1` exactly when, for
+all `a` and `b` generating `R` as a right ideal, some `a + b * c` is a unit, not merely right
+invertible. -/
+theorem hasStableRangeLE_one_iff {R : Type*} [Ring R] :
+    HasStableRangeLE R 1 ↔ ∀ a b x y : R, a * x + b * y = 1 → ∃ c, IsUnit (a + b * c) := by
+  constructor
+  · intro hR a b x y h
+    -- The shortened row has a right inverse, hence is a unit since `R` is Dedekind-finite.
+    have := hR.isDedekindFiniteMonoid
+    obtain ⟨c, d, hcd⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp hR ![a, b] ![x, y]
+      (by simpa [Fin.sum_univ_two] using h)
+    exact ⟨c 0, IsUnit.of_mul_eq_one (d 0) (by simpa using hcd)⟩
+  · intro h
+    refine hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_
+    obtain ⟨c, u, hu⟩ := h (a 0) (a 1) (b 0) (b 1) (by simpa [Fin.sum_univ_two] using hab)
+    refine ⟨fun _ ↦ c, fun _ ↦ ↑u⁻¹, ?_⟩
+    simp [← hu]
 
 /-! ## Subset shortening and longer rows (Vaserstein's first theorem) -/
 
@@ -260,6 +312,24 @@ theorem HasStableRangeLE.exists_isUnimodular_add_mul_subtype_ne {R ι : Type*} [
     exact ha
   exact hR.exists_isUnimodular_add_mul hcard ha'
 
+/-- Shortening a chosen coordinate, in coordinates: over a ring of stable range at most `s`, a
+unimodular vector `a : ι → R` with `s + 1 ≤ Fintype.card ι` becomes unimodular through a
+functional `b` vanishing at `i₀` after adding the multiples `a i₀ * c i` of its coordinate `i₀` to
+the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_add_smul_dotProduct_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : Module.IsUnimodular R a) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ (a + a i₀ • c) ⬝ᵥ b = 1 := by
+  classical
+  obtain ⟨c, hc⟩ := hR.exists_isUnimodular_add_mul_subtype_ne hι ha i₀
+  obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hc
+  -- extend functions on the coordinates other than `i₀` by zero
+  let ext : ({i // i ≠ i₀} → R) → ι → R := fun f i => if h : i = i₀ then 0 else f ⟨i, h⟩
+  refine ⟨ext b, ext c, by simp [ext], by simp [ext], ?_⟩
+  rw [dotProduct, Fintype.sum_eq_add_sum_subtype_ne _ i₀, ← hb]
+  simp only [ext, ↓reduceDIte, mul_zero, zero_add]
+  exact Finset.sum_congr rfl fun i _ => by simp [i.property]
+
 /-- **Vaserstein's first theorem:** `HasStableRangeLE R s` holds if and only if every unimodular
 `(m + 1)`-row of length `m ≥ s` can be shortened to a unimodular `m`-row. -/
 theorem hasStableRangeLE_iff_forall_le {R : Type*} [Ring R] {s : ℕ} :
@@ -331,6 +401,19 @@ theorem hasStableRangeLE_prod_iff {R S : Type*} [Ring R] [Ring S] {s : ℕ} :
   · exact (map_sum (RingHom.fst R S) _ _).trans h₁
   · exact (map_sum (RingHom.snd R S) _ _).trans h₂
 
+/-- Stable range of an indexed product of rings `Π i, R i` is the supremum of the stable ranges of
+the factors: a unimodular row is shortened componentwise. No finiteness of the index type is
+needed. -/
+@[simp]
+theorem hasStableRangeLE_pi_iff {ι : Type*} {R : ι → Type*} [∀ i, Ring (R i)] {s : ℕ} :
+    HasStableRangeLE (Π i, R i) s ↔ ∀ i, HasStableRangeLE (R i) s := by
+  refine ⟨fun h i ↦ h.of_surjective (f := Pi.evalRingHom R i) (Function.surjective_eval i),
+    fun h ↦ hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_⟩
+  have hab' (i : ι) : ∑ k, a k i * b k i = 1 := by
+    simpa [Finset.sum_apply] using congrFun hab i
+  choose c d hcd using fun i ↦ hasStableRangeLE_iff_exists_sum_eq_one.mp (h i) _ _ (hab' i)
+  exact ⟨fun k i ↦ c i k, fun k i ↦ d i k, funext fun i ↦ by simpa [Finset.sum_apply] using hcd i⟩
+
 /-! ## Opposite ring (Vaserstein's second theorem) -/
 
 /-- One direction of Vaserstein's second theorem: if `R` has stable range at most `s`, then so
@@ -395,6 +478,26 @@ theorem hasStableRangeLE_mop_iff {R : Type*} [Ring R] {s : ℕ} :
       map_add' := fun _ _ ↦ rfl }
   exact (hasStableRangeLE_mop_of_hasStableRangeLE h).of_surjective (f := unop₂)
     fun r ↦ ⟨MulOpposite.op (MulOpposite.op r), rfl⟩
+
+/-- The left-handed form of `HasStableRangeLE.exists_add_smul_dotProduct_eq_one`: over a ring of
+stable range at most `s`, a vector `a : ι → R` with a left inverse `b ⬝ᵥ a = 1` and
+`s + 1 ≤ Fintype.card ι` keeps a left inverse `b` vanishing at `i₀` after adding the right
+multiples `c i * a i₀` of its coordinate `i₀` to the others, where `c i₀ = 0`. -/
+theorem HasStableRangeLE.exists_dotProduct_add_op_smul_eq_one {R ι : Type*} [Ring R] [Fintype ι]
+    {s : ℕ} (hR : HasStableRangeLE R s) (hι : s + 1 ≤ Fintype.card ι)
+    {a : ι → R} (ha : ∃ b : ι → R, b ⬝ᵥ a = 1) (i₀ : ι) :
+    ∃ b c : ι → R, b i₀ = 0 ∧ c i₀ = 0 ∧ b ⬝ᵥ (a + MulOpposite.op (a i₀) • c) = 1 := by
+  -- apply the right-handed form over the opposite ring
+  obtain ⟨b, hb⟩ := ha
+  obtain ⟨b', c', hb', hc', h⟩ :=
+    (hasStableRangeLE_mop_iff.mpr hR).exists_add_smul_dotProduct_eq_one hι
+      (a := fun i ↦ MulOpposite.op (a i))
+      (TauCeti.Module.isUnimodular_pi_iff.mpr ⟨fun i ↦ MulOpposite.op (b i), by
+        simpa [dotProduct, ← MulOpposite.op_mul, ← Finset.op_sum] using
+          congrArg MulOpposite.op hb⟩) i₀
+  refine ⟨fun i ↦ (b' i).unop, fun i ↦ (c' i).unop, by simp [hb'], by simp [hc'], ?_⟩
+  simpa [dotProduct, mul_add, Finset.sum_add_distrib] using
+    congrArg MulOpposite.unop h
 
 end TauCeti
 

@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Pullback
-import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit
 import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Translation
 
@@ -56,12 +55,9 @@ and `u ∘ φ'_q` is a finite-energy Floer half-cylinder for `H'_q` and `J'_q`
 `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` about finite-energy Floer half-cylinders
 apply at each end of the pair of pants.
 
-**Orbits at the ends.** Reversing the time of an orbit of `H'_∞` gives an orbit of `H_∞`
-(`TauCeti.SymplecticForm.hasDerivAt_comp_endSign_mul`, in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.PeriodicOrbit`), and reversing the time of a
-loop negates its action for the reversed Hamiltonian
-(`TauCeti.SymplecticForm.hamiltonianAction_positiveEndHamiltonian`, in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action`). Read back in the end chart `φ_q`, this
+**Orbits at the ends.** Reversing the time of an orbit of `H'_∞` gives an orbit of `H_∞`, and
+reversing the time of a loop negates its action for the reversed Hamiltonian
+(`TauCeti.SymplecticForm.hamiltonianAction_comp_neg`). Read back in the end chart `φ_q`, this
 gives, for each end `q`:
 
 * a one-periodic orbit `y_q` of `X_{H_q}` and `s_n → ∞` such that the loops
@@ -117,6 +113,57 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω : Symplectic
   {K : ℂ → V → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → V → ℝ} {T₀ : ℝ}
 
 variable [FiniteDimensional ℝ V]
+
+/-! ### Orbits and actions in positive end charts -/
+
+/-- At the time `±t` of the end, the Hamiltonian vector field of the positive end Hamiltonian
+`H'_q` is `±` that of `H_q` at the time `t`: `X_{H'_q(±t)} = ±X_{H_q(t)}`. -/
+theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture) (t : ℝ) :
+    ω.hamiltonianVectorField (positiveEndHamiltonian H q (q.endSign * t)) =
+      q.endSign • ω.hamiltonianVectorField (H q t) := by
+  -- This is the manifold statement for the constant form.
+  funext y
+  have h := SmoothTwoForm.hamiltonianVectorField_positiveEndHamiltonian_endSign_mul
+    (ω := ω.constSmooth) (H := H) q t y
+  rw [hamiltonianVectorField_constSmooth, hamiltonianVectorField_constSmooth] at h
+  exact h
+
+/-- Reading an orbit of the positive end Hamiltonian `H'_q` with the time `±t` of the end gives
+an orbit of `H_q`. -/
+theorem hasDerivAt_comp_endSign_mul {q : Puncture} {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x t)) t)
+    (t : ℝ) :
+    HasDerivAt (fun t ↦ x (q.endSign * t))
+      (ω.hamiltonianVectorField (H q t) (x (q.endSign * t))) t := by
+  have h := (hx (q.endSign * t)).scomp t ((hasDerivAt_id' t).const_mul q.endSign)
+  rw [hamiltonianVectorField_positiveEndHamiltonian_endSign_mul, mul_one, Pi.smul_apply,
+    smul_smul, endSign_mul_self, one_smul] at h
+  exact h
+
+/-- Reading an orbit of `H_q` with the time `±t` of the end gives an orbit of the positive end
+Hamiltonian `H'_q`. This is the converse of `hasDerivAt_comp_endSign_mul`. -/
+theorem hasDerivAt_comp_endSign_mul_positiveEndHamiltonian {q : Puncture} {y : ℝ → V}
+    (hy : ∀ t, HasDerivAt y (ω.hamiltonianVectorField (H q t) (y t)) t) (t : ℝ) :
+    HasDerivAt (fun t ↦ y (q.endSign * t))
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (y (q.endSign * t))) t :=
+  hasDerivAt_comp_endSign_mul (H := positiveEndHamiltonian H)
+    (by simpa only [positiveEndHamiltonian_positiveEndHamiltonian] using hy) t
+
+omit [FiniteDimensional ℝ V] in
+/-- The action of a loop for the positive end Hamiltonian `H'_q` is `±` the action, for `H_q`,
+of the loop read with the time `±t` of the end. -/
+theorem hamiltonianAction_positiveEndHamiltonian {q : Puncture} (hH : Periodic (H q) 1)
+    {x : ℝ → V} (hx : Periodic x 1) :
+    ω.hamiltonianAction (positiveEndHamiltonian H q) x =
+      q.endSign * ω.hamiltonianAction (H q) (fun t ↦ x (q.endSign * t)) := by
+  rcases q.endSign_eq_one_or_eq_neg_one with h | h
+  · simp [positiveEndHamiltonian_of_endSign_eq_one H h, h]
+  · have hx' : Periodic (fun t ↦ x (-t)) 1 := by
+      simpa only [h, neg_one_mul] using periodic_comp_endSign_mul (q := q) hx
+    have h' := ω.hamiltonianAction_comp_neg hH hx'
+    simp only [neg_neg] at h'
+    rw [positiveEndHamiltonian_of_endSign_eq_neg_one H h, h]
+    simpa using h'
 
 /-! ### The ends of a Floer pair of pants as Floer half-cylinders -/
 
@@ -277,14 +324,11 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq
       ∫⁻ z in (fun z ↦ positiveEndChart q (z + (R, 0))) '' s, ENNReal.ofReal
         (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  have h := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
-    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
-    ((· + ((R, 0) : ℝ × ℝ)) '' s)
-  rw [preimage_image_eq _ (add_left_injective _)] at h
-  simp only [floerEnergyDensity_constSmooth, Prod.snd_add, add_zero, comp_apply] at h
-  rw [h, setLIntegral_floerEnergyDensity_comp_positiveEndChart_eq_of_subset hKH hH hHd hu q
-    ((measurableEmbedding_addRight _).measurableSet_image' hs)
-    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz), image_image]
+  -- This is the manifold statement for the constant form.
+  simpa only [floerEnergyDensity_constSmooth] using
+    SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq
+      (ω := ω.constSmooth) q (hKH q) (hH q) (fun t ↦ (hHd q t).mdifferentiable)
+      hu.mdifferentiableOn R hs hst
 
 /-- **The energy of a translated end of a Floer pair of pants.** Under the hypotheses of
 `TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_positiveEndChart`, let `R` be a
@@ -528,7 +572,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_endChart_of_floer
   have hAq (y : ℝ → V) (hy : Periodic y 1) :
       ω.hamiltonianAction (H q) (fun t ↦ y (q.endSign * t)) =
         q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q) y := by
-    rw [ω.hamiltonianAction_positiveEndHamiltonian (hH q) hy, endSign_mul_endSign_mul]
+    rw [hamiltonianAction_positiveEndHamiltonian (hH q) hy, ← mul_assoc, endSign_mul_self,
+      one_mul]
   have hAs : (fun s ↦ ω.hamiltonianAction (H q) (fun t ↦ u (endChart q (q.endSign * s, t)))) =
       fun s ↦ q.endSign * ω.hamiltonianAction (positiveEndHamiltonian H q)
         (fun t ↦ (u ∘ positiveEndChart q) (s, t)) :=

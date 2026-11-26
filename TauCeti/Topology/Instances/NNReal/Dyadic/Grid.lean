@@ -9,25 +9,28 @@ public import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Dyadic nonnegative rationals and downward floor approximations
+# Dyadic nonnegative rationals and floor approximations
 
 For each level `n : ℕ`, the dyadic nonnegative rationals `k / 2 ^ n : ℚ≥0` form a nested grid of
 mesh `2⁻ⁿ` on `ℝ≥0`. Every `t : ℝ≥0` is approximated from below by
-`approxDyadicNNRat n t = ⌊(t : ℝ) * 2 ^ n⌋₊ / 2 ^ n`, at distance at most `2⁻ⁿ`, and these
+`approxDyadicNNRat n t = ⌊(t : ℝ) * 2 ^ n⌋₊ / 2 ^ n` and strictly from above by
+`dyadicNNRat n (⌊(t : ℝ) * 2 ^ n⌋₊ + 1)`, each within `2⁻ⁿ` of `t`, and the downward
 approximants converge to `t` as `n → ∞`.
 
 ## Main definitions and results
 
-* `TauCeti.dyadicNNRat`: the `k`-th level-`n` dyadic nonnegative rational `k / 2 ^ n : ℚ≥0`.
+* `TauCeti.dyadicNNRat`: the `k`-th level-`n` dyadic nonnegative rational `k / 2 ^ n : ℚ≥0`,
+  with `TauCeti.dyadicNNRat_strictMono` and `TauCeti.dyadicNNRat_add`.
 * `TauCeti.dyadicNNRat_double` and `TauCeti.dyadicNNRat_scale`: nesting identities across dyadic
   levels.
 * `TauCeti.dist_dyadicNNRat_succ` and `TauCeti.edist_dyadicNNRat_succ`: adjacent dyadic grid points
   at level `n` are at distance `2⁻ⁿ`.
 * `TauCeti.approxDyadicNNRat`: downward level-`n` dyadic floor approximation of `t : ℝ≥0` in `ℚ≥0`.
-* `TauCeti.coe_approxDyadicNNRat_le`, `TauCeti.dist_approxDyadicNNRat_le`,
+* `TauCeti.coe_approxDyadicNNRat_le`, `TauCeti.lt_coe_dyadicNNRat_floor_add_one`,
+  `TauCeti.coe_dyadicNNRat_floor_add_one_sub_le`, `TauCeti.dist_approxDyadicNNRat_le`,
   `TauCeti.edist_approxDyadicNNRat_le`, `TauCeti.tendsto_approxDyadicNNRat`, and
-  `TauCeti.tendsto_approxDyadicNNRat_apply_of_continuousAt`: error bounds and convergence of
-  `approxDyadicNNRat n t` to `t` and through functions continuous at `t` on `Iic T`.
+  `TauCeti.tendsto_approxDyadicNNRat_apply_of_continuousAt`: bracketing, error bounds, and
+  convergence of `approxDyadicNNRat n t` to `t` and through functions continuous at `t` on `Iic T`.
 -/
 
 public section
@@ -52,6 +55,15 @@ theorem dyadicNNRat_zero (n : ℕ) : dyadicNNRat n 0 = 0 := by
 @[simp]
 theorem dyadicNNRat_zero_left (k : ℕ) : dyadicNNRat 0 k = k := by
   simp [dyadicNNRat_def]
+
+/-- At each level `n`, `dyadicNNRat n` is strictly increasing in its index. -/
+theorem dyadicNNRat_strictMono (n : ℕ) : StrictMono (dyadicNNRat n) := fun _ _ hk ↦
+  div_lt_div_of_pos_right (Nat.cast_lt.mpr hk) (by positivity)
+
+/-- `dyadicNNRat n` is additive in the numerator index. -/
+theorem dyadicNNRat_add (n k i : ℕ) :
+    dyadicNNRat n (k + i) = dyadicNNRat n k + dyadicNNRat n i := by
+  rw [dyadicNNRat_def, dyadicNNRat_def, dyadicNNRat_def, Nat.cast_add, add_div]
 
 /-- Coercion of `dyadicNNRat n k` to `ℝ≥0`. -/
 @[simp]
@@ -108,6 +120,21 @@ theorem coe_approxDyadicNNRat_le (n : ℕ) (t : ℝ≥0) :
   rw [← NNReal.coe_le_coe, approxDyadicNNRat_def, coe_dyadicNNRat]
   push_cast
   exact (div_le_iff₀ (by positivity)).2 (Nat.floor_le (by positivity))
+
+/-- The successor of the floor index `⌊(t : ℝ) * 2 ^ n⌋₊` gives a level-`n` dyadic rational
+strictly above `t`. -/
+theorem lt_coe_dyadicNNRat_floor_add_one (n : ℕ) (t : ℝ≥0) :
+    t < (dyadicNNRat n (⌊(t : ℝ) * 2 ^ n⌋₊ + 1) : ℝ≥0) := by
+  rw [← NNReal.coe_lt_coe, coe_dyadicNNRat]
+  push_cast
+  exact (lt_div_iff₀ (by positivity)).2 (Nat.lt_floor_add_one _)
+
+/-- The upper bracketing level-`n` dyadic rational `dyadicNNRat n (⌊(t : ℝ) * 2 ^ n⌋₊ + 1)` lies
+within `2⁻ⁿ` of `t`. -/
+theorem coe_dyadicNNRat_floor_add_one_sub_le (n : ℕ) (t : ℝ≥0) :
+    (dyadicNNRat n (⌊(t : ℝ) * 2 ^ n⌋₊ + 1) : ℝ≥0) - t ≤ 2⁻¹ ^ n :=
+  (tsub_le_tsub_left (coe_approxDyadicNNRat_le n t) _).trans_eq
+    (by simp [approxDyadicNNRat_def, dyadicNNRat_add, inv_pow])
 
 /-- The downward level-`n` dyadic floor approximation is within `2⁻ⁿ` of `t`. -/
 theorem dist_approxDyadicNNRat_le (n : ℕ) (t : ℝ≥0) :
