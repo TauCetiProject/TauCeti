@@ -28,7 +28,8 @@ almost every `t`
 (`TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_lipschitz`). For
 `∂ₜu - ∂ᵢ(aⁱʲ(t, x) ∂ⱼu) = f` with symmetric, uniformly elliptic coefficients `aⁱʲ` and `∂ₜa`
 bounded, applied to `A(t)` the energy form of `a(t, ·)` on `H¹₀(Ω)`, this is
-`∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))`; that instantiation is not formalized here.
+`∂ₜu ∈ L²(0, T; L²(Ω))` and `u ∈ L^∞(0, T; H¹₀(Ω))`
+(`TauCeti.PDE.exists_memLp_hasWeakLineDerivOn_valueL_energyFormH1_of_isSymm_of_lipschitz`).
 When `A` does not depend on time,
 `TauCeti.HasWeakLineDerivOn.exists_memLp_hasWeakLineDerivOn_of_gelfandDual_of_symm` proves these
 estimates by a shifted Gelfand triple, which has no counterpart for time-dependent `A`.
