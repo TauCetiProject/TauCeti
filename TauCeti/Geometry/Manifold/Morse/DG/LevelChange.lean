@@ -33,7 +33,7 @@ of the chain system (`TauCeti.IsAdaptedPseudoGradient.morseLevelChangeChainSyste
   it is a bijection between the twisting chain systems for the two families of levels;
 * it carries a representing chain system of classes `μ` relative to the boundaries to a
   representing chain system of the images of `μ`
-  (`TauCeti.IsAdaptedPseudoGradient.IsRepresenting.morseLevelChangeChainSystem`), such as the
+  (`TauCeti.TwistingChainSystem.IsRepresenting.morseLevelChangeChainSystem`), such as the
   fundamental classes rel boundary of the trajectory spaces;
 * the Barraud–Cornea cocycle of the change of levels is the Barraud–Cornea cocycle of the original
   system (`TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_morseLevelChangeChainSystem`), since
@@ -53,7 +53,7 @@ systems (or all the representing chain systems) for the levels of `c` and of `c'
 
 * `TauCeti.IsAdaptedPseudoGradient.morseLevelChangeChainSystem_morseLevelChangeChainSystem`: the
   change of levels is invertible.
-* `TauCeti.IsAdaptedPseudoGradient.IsRepresenting.morseLevelChangeChainSystem`: it preserves
+* `TauCeti.TwistingChainSystem.IsRepresenting.morseLevelChangeChainSystem`: it preserves
   representing chain systems.
 * `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_morseLevelChangeChainSystem`: it does not
   change the Barraud–Cornea cocycle.
@@ -105,8 +105,8 @@ def morseLevelChangeChainSystem
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc') R :=
   S.map (fun x y ↦ hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y)
-    fun x z y u v ↦
-      hX.morseBrokenTrajectorySpaceLevelHomeomorph_comp hf hdense hdense' hc hc' x z y (u, v)
+    fun x z y u v ↦ hX.morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp hf
+      hdense hdense' hc hc' x z y (u, v)
 
 /-- The chains of the change of levels are the push-forwards of the chains along the changes of
 levels of the trajectory spaces. -/
@@ -126,10 +126,9 @@ theorem morseLevelChangeChainSystem_morseLevelChangeChainSystem
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
     hX.morseLevelChangeChainSystem hf hdense' hdense hc' hc
         (hX.morseLevelChangeChainSystem hf hdense hdense' hc hc' S) = S := by
-  refine TwistingChainSystem.ext fun x y ↦ ?_
-  rw [morseLevelChangeChainSystem_chain, morseLevelChangeChainSystem_chain, ← LinearMap.comp_apply,
-    ← cubicalChainSumMap_comp, ← morseBrokenTrajectorySpaceLevelHomeomorph_symm,
-    Homeomorph.symm_comp_toContinuousMap, cubicalChainSumMap_id, LinearMap.id_apply]
+  simp only [morseLevelChangeChainSystem, TwistingChainSystem.map_map,
+    ← morseBrokenTrajectorySpaceLevelHomeomorph_symm hX hf hdense hdense' hc hc',
+    Homeomorph.symm_comp_toContinuousMap, TwistingChainSystem.map_id]
 
 /-! ### Representing chain systems -/
 
@@ -138,7 +137,8 @@ of the trajectory spaces for the levels of `c` relative to their boundaries, suc
 fundamental classes rel boundary, its change of levels represents the images of the classes `μ`
 under the changes of levels of the trajectory spaces, which carry the boundaries onto the
 boundaries. -/
-theorem IsRepresenting.morseLevelChangeChainSystem {ι₁ ι₂ : Type v} {c₁ : ι₁ → ℝ} {c₂ : ι₂ → ℝ}
+theorem _root_.TauCeti.TwistingChainSystem.IsRepresenting.morseLevelChangeChainSystem
+    {ι₁ ι₂ : Type v} {c₁ : ι₁ → ℝ} {c₂ : ι₂ → ℝ}
     (hdense₁ : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c₁))
     (hdense₂ : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c₂))
     (hc₁ : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c₁ i ≠ f x)
@@ -167,6 +167,17 @@ theorem IsRepresenting.morseLevelChangeChainSystem {ι₁ ι₂ : Type v} {c₁ 
 variable {Y : Type*} [TopologicalSpace Y] {θ : C(M, Y)} {y₀ : Y}
   (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
 
+/-- The Barraud–Cornea cocycle is the twisting cocycle of the evaluation into Moore loops,
+restricted to the trajectory spaces. -/
+private theorem barraudCorneaCocycle_eq_twistingCocycle
+    (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
+    hX.barraudCorneaCocycle hf hdense hθ hc S =
+      S.twistingCocycle (fun x y ↦ (hX.morseLoopEvaluation hf hdense hθ x y).comp
+          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
+        (hX.morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hθ hc) :=
+  TwistingCocycle.ext fun x y ↦ by
+    rw [barraudCorneaCocycle_m, TwistingChainSystem.twistingCocycle_m]
+
 /-- **The Barraud–Cornea cocycle does not depend on the levels**: the Barraud–Cornea cocycle of the
 change of levels of a twisting chain system is the Barraud–Cornea cocycle of the system. A broken
 trajectory and its re-recording on other levels have the same Moore path. -/
@@ -176,12 +187,10 @@ theorem barraudCorneaCocycle_morseLevelChangeChainSystem
     hX.barraudCorneaCocycle hf hdense' hθ hc'
         (hX.morseLevelChangeChainSystem hf hdense hdense' hc hc' S) =
       hX.barraudCorneaCocycle hf hdense hθ hc S := by
-  refine TwistingCocycle.ext fun x y ↦ ?_
-  rw [barraudCorneaCocycle_m, barraudCorneaCocycle_m, morseLevelChangeChainSystem_chain,
-    ← LinearMap.comp_apply, ← cubicalChainSumMap_comp]
-  congr 2
-  refine ContinuousMap.ext fun w ↦ ?_
-  apply MooreLoopSpace.ext
+  rw [barraudCorneaCocycle_eq_twistingCocycle, barraudCorneaCocycle_eq_twistingCocycle,
+    morseLevelChangeChainSystem, TwistingChainSystem.twistingCocycle_map]
+  congr 1
+  refine funext fun x ↦ funext fun y ↦ ContinuousMap.ext fun w ↦ MooreLoopSpace.ext ?_
   simp only [ContinuousMap.comp_apply, ContinuousMap.coe_ofClass, toMoorePath_morseLoopEvaluation]
   exact congrArg (MoorePath.map θ)
     (hX.morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y w)

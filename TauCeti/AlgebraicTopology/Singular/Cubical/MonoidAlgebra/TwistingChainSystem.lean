@@ -72,6 +72,8 @@ broken trajectories are recorded, carries chain systems and their cocycles.
 * `TauCeti.cubicalChainSumMap_twistingChainSum_of_comp`,
   `TauCeti.TwistingChainSystem.twistingCocycle_map`: push-forward along maps compatible with the
   composition maps.
+* `TauCeti.TwistingChainSystem.map_id`, `TauCeti.TwistingChainSystem.map_map`: the push-forward is
+  functorial.
 
 ## References
 
@@ -360,6 +362,28 @@ theorem map_chain (S : TwistingChainSystem ind ι R)
     (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
     (x y : P) : (S.map g hg).chain x y = cubicalChainSumMap R (g x y) (S.chain x y) :=
   (rfl)
+
+/-- Pushing a twisting chain system forward along the identities gives it back. -/
+@[simp]
+theorem map_id (S : TwistingChainSystem ind ι R)
+    (hg : ∀ x z y (u : M x z) (v : M z y), ContinuousMap.id (M x y) (ι x z y (u, v)) =
+      ι x z y (ContinuousMap.id (M x z) u, ContinuousMap.id (M z y) v)) :
+    S.map (fun x y ↦ ContinuousMap.id (M x y)) hg = S :=
+  ext fun x y ↦ (S.map_chain _ x y).trans <| by rw [cubicalChainSumMap_id, LinearMap.id_apply]
+
+/-- Pushing a twisting chain system forward along `g` and then along `g'` is pushing it forward
+along the composites `g' x y ∘ g x y`. -/
+@[simp]
+theorem map_map {M'' : P → P → Type*} [∀ x y, TopologicalSpace (M'' x y)]
+    {ι'' : ∀ x y z, C(M'' x y × M'' y z, M'' x z)} {g' : ∀ x y, C(M' x y, M'' x y)}
+    (S : TwistingChainSystem ind ι R)
+    (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
+    (hg' : ∀ x z y (u : M' x z) (v : M' z y),
+      g' x y (ι' x z y (u, v)) = ι'' x z y (g' x z u, g' z y v)) :
+    (S.map g hg).map g' hg' = S.map (fun x y ↦ (g' x y).comp (g x y))
+      fun x z y u v ↦ by simp only [ContinuousMap.comp_apply, hg, hg'] :=
+  ext fun x y ↦ by
+    rw [map_chain, map_chain, map_chain, cubicalChainSumMap_comp, LinearMap.comp_apply]
 
 variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {q : ∀ x y, C(M' x y, G)}
 

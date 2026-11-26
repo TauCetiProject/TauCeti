@@ -29,7 +29,8 @@ re-records on the levels of `c`. It is compatible with all the structure of the 
 spaces:
 
 * it commutes with the composition maps, the concatenation of broken trajectories at a critical
-  point (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceLevelHomeomorph_comp`);
+  point (`morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp`, in the
+  namespace `TauCeti.IsAdaptedPseudoGradient`);
 * it carries the boundary, the broken trajectories that are not unbroken, onto the boundary
   (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff`),
   since the boundary is the union of the images of the composition maps;
@@ -47,12 +48,15 @@ Barraud–Cornea cocycle from the levels.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceLevelHomeomorph_comp`: it commutes
-  with the composition maps.
-* `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff`: it
-  preserves the boundary.
-* `TauCeti.IsAdaptedPseudoGradient.morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph`: it
-  preserves the Moore paths of broken trajectories.
+In the namespace `TauCeti.IsAdaptedPseudoGradient`:
+
+* `morseLevelPoint_morseBrokenTrajectorySpaceLevelHomeomorph`: a broken trajectory and its
+  re-recording have the same point on every level.
+* `morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp`: the change of levels
+  commutes with the composition maps.
+* `morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary_iff`: it preserves the boundary.
+* `morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph`: it preserves the Moore paths of
+  broken trajectories.
 
 ## References
 
@@ -85,6 +89,13 @@ variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ} {c' : ι' → ℝ}
 
 /-! ### Recording on other levels -/
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- Levels avoiding the critical values are not the value of `f` at any point where its derivative
+vanishes. -/
+private theorem ne_apply_of_mfderiv_eq_zero (hc' : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c' i ≠ f x)
+    (i : ι') (m : M) (hm : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f m = 0) : c' i ≠ f m :=
+  hc' i ⟨m, mem_criticalPoints_iff_mfderiv_eq_zero.2 hm⟩
+
 section LevelMap
 
 include hf hdense hc'
@@ -100,7 +111,7 @@ private theorem morseLevelPoint_mem_morseBrokenTrajectorySpace (x y : criticalPo
     hX.mem_morseBrokenTrajectoryRecords_morseLevelPoint hf
       (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
       (morseBrokenTrajectorySpace_subset _ _ w.property) (fun i ↦ Ioo_subset_Icc_self i.property)
-      fun i m hm ↦ hc' i ⟨m, mem_criticalPoints_iff_mfderiv_eq_zero.2 hm⟩⟩
+      fun i ↦ ne_apply_of_mfderiv_eq_zero hc' i⟩
 
 /-- Recording the broken trajectories of the trajectory space for the levels of `c` on the levels
 of `c'`, as a continuous map between the trajectory spaces. -/
@@ -114,6 +125,20 @@ private noncomputable def morseBrokenTrajectorySpaceLevelMap (x y : criticalPoin
       (continuous_subtypeVal.prodMk continuous_const)
       fun w ↦ ⟨morseBrokenTrajectorySpace_subset _ _ w.property, mem_univ _⟩
 
+include hdense' in
+/-- A broken trajectory re-recorded on the levels of `c'` has the same point on every level as the
+original record. -/
+private theorem morseLevelPoint_morseBrokenTrajectorySpaceLevelMap
+    (x y : criticalPoints 𝓘(ℝ, E) f) (w : hX.morseBrokenTrajectorySpace c x y) (a : ℝ) :
+    hX.morseLevelPoint x y ((c' ⁻¹' Ioo (f y) (f x)).domRestrict c')
+        (hX.morseBrokenTrajectorySpaceLevelMap hf hdense hc' x y w) a =
+      hX.morseLevelPoint x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) w a :=
+  hX.morseLevelPoint_morseLevelPoint hf
+    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
+    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y))
+    (morseBrokenTrajectorySpace_subset _ _ w.property) (fun i ↦ Ioo_subset_Icc_self i.property)
+    (fun i ↦ ne_apply_of_mfderiv_eq_zero hc' i) a
+
 end LevelMap
 
 /-- Re-recording on the levels of `c` a broken trajectory first re-recorded on the levels of `c'`
@@ -121,14 +146,12 @@ gives back the original record. -/
 private theorem morseBrokenTrajectorySpaceLevelMap_morseBrokenTrajectorySpaceLevelMap
     (x y : criticalPoints 𝓘(ℝ, E) f) (w : hX.morseBrokenTrajectorySpace c x y) :
     hX.morseBrokenTrajectorySpaceLevelMap hf hdense' hc x y
-      (hX.morseBrokenTrajectorySpaceLevelMap hf hdense hc' x y w) = w := by
-  have hd := subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y)
-  have hd' := subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y)
-  have hw := morseBrokenTrajectorySpace_subset _ _ w.property
-  refine Subtype.ext (funext fun i ↦ ?_)
-  exact (hX.morseLevelPoint_morseLevelPoint hf hd hd' hw (fun i ↦ Ioo_subset_Icc_self i.property)
-      (fun i m hm ↦ hc' i ⟨m, mem_criticalPoints_iff_mfderiv_eq_zero.2 hm⟩) (c i)).trans
-    (hX.morseLevelPoint_apply_level hf hd hw i)
+      (hX.morseBrokenTrajectorySpaceLevelMap hf hdense hc' x y w) = w :=
+  Subtype.ext <| funext fun i ↦
+    (hX.morseLevelPoint_morseBrokenTrajectorySpaceLevelMap hf hdense hdense' hc' x y w (c i)).trans
+      (hX.morseLevelPoint_apply_level hf
+        (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
+        (morseBrokenTrajectorySpace_subset _ _ w.property) i)
 
 /-! ### The homeomorphism of trajectory spaces -/
 
@@ -166,6 +189,16 @@ theorem morseBrokenTrajectorySpaceLevelHomeomorph_symm (x y : criticalPoints �
       hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense' hdense hc' hc x y :=
   (rfl)
 
+/-- **The change of levels keeps the broken trajectory**: a broken trajectory and its re-recording
+on the levels of `c'` have the same point on every level. -/
+@[simp]
+theorem morseLevelPoint_morseBrokenTrajectorySpaceLevelHomeomorph
+    (x y : criticalPoints 𝓘(ℝ, E) f) (w : hX.morseBrokenTrajectorySpace c x y) (a : ℝ) :
+    hX.morseLevelPoint x y ((c' ⁻¹' Ioo (f y) (f x)).domRestrict c')
+        (hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y w) a =
+      hX.morseLevelPoint x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) w a :=
+  hX.morseLevelPoint_morseBrokenTrajectorySpaceLevelMap hf hdense hdense' hc' x y w a
+
 /-- **The change of levels preserves the Moore paths** of broken trajectories, parametrized by the
 values of `f`. -/
 theorem morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph (x y : criticalPoints 𝓘(ℝ, E) f)
@@ -176,16 +209,12 @@ theorem morseLevelPath_morseBrokenTrajectorySpaceLevelHomeomorph (x y : critical
       hX.morseLevelPath hf (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
         (inclusion (morseBrokenTrajectorySpace_subset _ _) w) := by
   refine MoorePath.ext (by simp only [length_morseLevelPath]) fun t ↦ ?_
-  simp only [morseLevelPath_apply]
-  exact hX.morseLevelPoint_morseLevelPoint hf
-    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense x y))
-    (subset_closure_range_domRestrict_preimage isOpen_Ioo (hdense' x y))
-    (morseBrokenTrajectorySpace_subset _ _ w.property) (fun i ↦ Ioo_subset_Icc_self i.property)
-    (fun i m hm ↦ hc' i ⟨m, mem_criticalPoints_iff_mfderiv_eq_zero.2 hm⟩) _
+  simp only [morseLevelPath_apply, morseLevelPoint_morseBrokenTrajectorySpaceLevelHomeomorph]
 
 /-- **The change of levels commutes with the composition maps**: re-recording the concatenation of
 two broken trajectories at a critical point is concatenating their re-recordings. -/
-theorem morseBrokenTrajectorySpaceLevelHomeomorph_comp (x z y : criticalPoints 𝓘(ℝ, E) f)
+theorem morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp
+    (x z y : criticalPoints 𝓘(ℝ, E) f)
     (w : hX.morseBrokenTrajectorySpace c x z × hX.morseBrokenTrajectorySpace c z y) :
     hX.morseBrokenTrajectorySpaceLevelHomeomorph hf hdense hdense' hc hc' x y
         (hX.morseBrokenTrajectorySpaceComp hc x z y w) =
@@ -219,7 +248,7 @@ private theorem morseBrokenTrajectorySpaceLevelHomeomorph_mem_boundary
       hX.morseBrokenTrajectorySpaceBoundary c' x y := by
   obtain ⟨z, a, b, -, rfl⟩ :=
     hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
-  rw [morseBrokenTrajectorySpaceLevelHomeomorph_comp]
+  rw [morseBrokenTrajectorySpaceLevelHomeomorph_morseBrokenTrajectorySpaceComp]
   exact hX.morseBrokenTrajectorySpaceComp_mem_morseBrokenTrajectorySpaceBoundary hc' hdense' _ _ _ _
 
 /-- **The change of levels preserves the boundary**: a broken trajectory is not unbroken exactly
