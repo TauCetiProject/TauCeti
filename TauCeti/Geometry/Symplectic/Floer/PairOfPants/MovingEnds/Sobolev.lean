@@ -338,7 +338,7 @@ at most the sum of the constants of the input ends times their `W^{1,2}` energie
 `20π² (4 |ι| + 1)` times the `W^{1,2}` energy on the output end. -/
 private theorem lintegral_ends_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {T : ℝ} (hT : 2 ≤ T)
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {T : ℝ} (hT : 2 ≤ T)
     {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
     (hξU : tsupport ξ ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}) :
     ∫⁻ w in (⋃ i, realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) '' (Ioi T ×ˢ Ico 0 1)) ∪
@@ -373,8 +373,7 @@ private theorem lintegral_ends_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     gcongr
     exact setLIntegral_Ioi_prod_Ico_le (integrableOn_sobolevDensity_comp_realChart_of_movingEnds ha
       hξ hξc hξU i T) fun ζ ↦ sobolevDensity_nonneg _ ζ
-  · refine (lintegral_image_positiveEndChart_inf_le
-      (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) measurableSet_Ioi
+  · refine (lintegral_image_positiveEndChart_inf_le hc measurableSet_Ioi
       (fun s hs ↦ by linarith [mem_Ioi.1 hs]) fun ζ _ ↦ hd _).trans ?_
     rw [ENNReal.ofReal_mul (p := (4 * Fintype.card ι + 1) * (20 * π ^ 2)) (by positivity)]
     gcongr
@@ -383,9 +382,9 @@ private theorem lintegral_ends_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
       fun ζ ↦ sobolevDensity_nonneg _ ζ
 
 /-- **The weighted energy, from the energy of the semi-Fredholm estimate.** Let the discs
-`‖w - c i‖ < ‖a i‖ / 2` be pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero
-scales. For `T ≥ 2` there is `A ≥ 0` such that every `C¹` section `ξ` with compact support in the
-sphere minus the centers satisfies
+`‖w - c i‖ < ‖a i‖ / 2` be pairwise disjoint with nonzero scales, and the centers lie in the disc
+`‖w‖ ≤ 2 exp (2π)`. For `T ≥ 2` there is `A ≥ 0` such that every `C¹` section `ξ` with compact
+support in the sphere minus the centers satisfies
 
 `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)`
 `  ≤ A (∑_i ∫_{(T, ∞) × [0, 1]} (‖∂s (ξ ∘ ψ_i)‖² + ‖∂t (ξ ∘ ψ_i)‖² + ‖ξ ∘ ψ_i‖²)`
@@ -398,7 +397,7 @@ operator bounds. -/
 theorem exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add_of_movingEnds
     (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {T : ℝ} (hT : 2 ≤ T) :
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {T : ℝ} (hT : 2 ≤ T) :
     ∃ A, 0 ≤ A ∧ ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 1 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i} →
       ∫ z in {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}, (movingEndsWeight c z * ‖ξ z‖ ^ 2 +
@@ -435,7 +434,7 @@ theorem exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add_of_m
   have hlin := (lintegral_mono_set (subset_preimage_puncturedSphereTruncation_union ha T)).trans
     ((lintegral_union_le _ _ _).trans (add_le_add
       (setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity hK (abs_nonneg B) hBK hξ)
-      (lintegral_ends_le_of_movingEnds ha hsep hout hT hξ hξc hξU)))
+      (lintegral_ends_le_of_movingEnds ha hsep hc hT hξ hξc hξU)))
   rw [← ENNReal.ofReal_add (by positivity) (by positivity),
     ← ENNReal.ofReal_add (by positivity) (by positivity)] at hlin
   have hFm : AEStronglyMeasurable (fun z ↦ movingEndsWeight c z * ‖ξ z‖ ^ 2 +
@@ -685,8 +684,8 @@ theorem memLp_floerConformalJetCoeff_of_movingEnds (ω : SymplecticForm V)
         (((hT s hs.le).1.2 t (Ico_subset_Icc_self ht)).trans (le_abs_self _))))
 
 /-- **Peetre's estimate on a sphere with moving input ends, from the semi-Fredholm estimate.** Let
-the discs `‖w - c i‖ < ‖a i‖ / 2` be pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`,
-with nonzero scales, let the coefficient field of the linearized Floer operator `D_u` on the
+the discs `‖w - c i‖ < ‖a i‖ / 2` be pairwise disjoint with nonzero scales, let the centers lie in
+the disc `‖w‖ ≤ 2 exp (2π)`, let the coefficient field of the linearized Floer operator `D_u` on the
 conformal jets of `movingEndsWeight c` be essentially bounded, and let `D_u` satisfy the
 semi-Fredholm estimate for some `T ≥ 2`, as along a map that solves the Floer equation on the ends
 by
@@ -698,7 +697,7 @@ such that the jet `y ∈ W^{1,2}_0` of every test section `ξ` satisfies
 theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_movingEnds_of_estimate
     (ω : SymplecticForm V) (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {J : ℝ × ℝ → V → V →L[ℝ] V}
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerConformalJetCoeff (movingEndsWeight c) J Ks Kt u) ∞
       (volume.restrict {z | ∀ i, Complex.equivRealProdCLM.symm z ≠ c i}))
@@ -722,7 +721,7 @@ theorem exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_movi
           (Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a (T + 1)) y‖) := by
   obtain ⟨A, hA, hW⟩ :=
     exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add_of_movingEnds (V := V) ha
-      hsep hout hT
+      hsep hc hT
   -- The weighted energy is at most `A` times the left side of the semi-Fredholm estimate.
   exact ω.exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_integral_le
     (isWeight_movingEndsWeight c) hM (isCompact_preimage_puncturedSphereTruncation c a _)
@@ -811,7 +810,7 @@ private theorem exists_norm_le_floerConformalSobolevOperator_of_movingEnds
       hJoutq hJ hu hF hFout hux hδ huxout hδout
     obtain ⟨C', hC'⟩ :=
       exists_forall_norm_le_mul_norm_floerConformalSobolevOperator_add_of_movingEnds_of_estimate ω
-        ha hsep hout hM hT hest
+        ha hsep (fun i ↦ by linarith [hout i, norm_nonneg (a i)]) hM hT hest
     exact ⟨_, isCompact_preimage_puncturedSphereTruncation c a _,
       preimage_puncturedSphereTruncation_subset ha _, C', hC'⟩
 
