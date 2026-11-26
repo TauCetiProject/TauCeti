@@ -439,7 +439,7 @@ theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernel
     ∑ᶠ s, e.val s * m s p₂ p₀ - φ p₂ p₀ = kernelComp h δ₀ p₂ p₀ + kernelComp δ₂ h p₂ p₀ := by
   -- On the support of `e` the cochain twist is `(-1)^(n n) = (-1)^n`.
   have hsum : ∑ᶠ s, e.val s * m s p₂ p₀ = negOnePowCast R n * ∑ᶠ s, e.val s * t (s, p₂) p₀ := by
-    rw [(isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self n)).mul_finsum]
+    rw [negOnePowCast_mul_finsum]
     refine finsum_congr fun s => ?_
     by_cases hs : e.val s = 0
     · simp [hs]
@@ -452,21 +452,20 @@ theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernel
       (kernelReadout μ₀ h) p₂ p₀ =
         negOnePowCast R n * functionalBoundary μ₂ μ₀ δ₂ δ₀ (kernelReadout μ₀ h) p₂ p₀ := by
     have h₁ : kernelComp (negOnePowCast R n • δ₂) (kernelReadout μ₀ h) p₂ p₀ =
-        negOnePowCast R n * kernelComp δ₂ (kernelReadout μ₀ h) p₂ p₀ := by
-      rw [kernelComp_apply, kernelComp_apply,
-        (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self n)).mul_finsum]
-      exact finsum_congr fun q => by rw [Pi.smul_apply, Pi.smul_apply, smul_eq_mul, mul_assoc]
+        negOnePowCast R n * kernelComp δ₂ (kernelReadout μ₀ h) p₂ p₀ :=
+      kernelComp_mul_left (c := fun _ => _) δ₂ _ (isLeftRegular_negOnePowCast n) p₀
     rw [functionalBoundary_apply, functionalBoundary_apply, h₁, add_assoc, negOnePowCast_add]
     ring
   rw [hb, functionalBoundary_kernelReadout (j := 1) hh, kernelReadout_apply, kernelReadout_apply,
     kernelReadout_apply, show (1 : ℤ) + 1 = 2 * 1 by norm_num, negOnePowCast_two_mul,
     negOnePowCast_one] at hψ
-  rw [hsum]
-  linear_combination (-(negOnePowCast R n * negOnePowCast R (μ₀ p₀))) * hψ +
-    (kernelComp h δ₀ p₂ p₀ + kernelComp δ₂ h p₂ p₀ + φ p₂ p₀) *
-      (negOnePowCast R n * negOnePowCast R n * negOnePowCast_mul_self (R := R) (μ₀ p₀) +
-        negOnePowCast_mul_self (R := R) n) -
-    negOnePowCast R n * (∑ᶠ s, e.val s * t (s, p₂) p₀) * negOnePowCast_mul_self (R := R) (μ₀ p₀)
+  -- Both sides of `hψ` carry the output sign `(-1)^(μ₀ p₀)`, which cancels.
+  have hψ' : negOnePowCast R n * (kernelComp h δ₀ p₂ p₀ + kernelComp δ₂ h p₂ p₀) =
+      ∑ᶠ s, e.val s * t (s, p₂) p₀ - negOnePowCast R n * φ p₂ p₀ :=
+    isLeftRegular_negOnePowCast (μ₀ p₀) (by linear_combination hψ)
+  -- Multiplying by `(-1)^n`, whose square is `1`, turns `hψ'` into the claim.
+  refine isLeftRegular_negOnePowCast n ?_
+  simp only [hsum, hψ', mul_sub, ← mul_assoc, negOnePowCast_mul_self, one_mul]
 
 /-- **A unit in the second input from a functional in the raw grading.** Let `t` be the raw
 operator kernel of a product and `m(p₁, p₂, p₀) = (-1)^(n μ₁ p₁) t((p₁, p₂), p₀)` its cochain
@@ -495,18 +494,16 @@ theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernel
     ∑ᶠ s, e.val s * m p₁ s p₀ - φ p₁ p₀ = kernelComp k δ₀ p₁ p₀ + kernelComp δ₁ k p₁ p₀ := by
   set A := negOnePowCast R (n * μ₁ p₁)
   have hsum : ∑ᶠ s, e.val s * m p₁ s p₀ = A * ∑ᶠ s, e.val s * t (p₁, s) p₀ := by
-    rw [(isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ p₁))).mul_finsum]
+    rw [negOnePowCast_mul_finsum]
     exact finsum_congr fun s => by rw [hmt]; ring
   -- The homotopy carries the twist of its input, which `δ₁` changes by `(-1)^n`.
   have hk₀ : kernelComp k δ₀ p₁ p₀ = A * negOnePowCast R n * kernelComp h δ₀ p₁ p₀ := by
     rw [show A * negOnePowCast R n = negOnePowCast R (n * (μ₁ p₁ - 1)) by
         rw [show n * (μ₁ p₁ - 1) = n * μ₁ p₁ + -n by ring, negOnePowCast_add, negOnePowCast_neg],
-      kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₁ p₁ - 1)))).mul_finsum]
-    exact finsum_congr fun p => by rw [hkh]; ring
+      show k = fun p q => negOnePowCast R (n * (μ₁ p - 1)) * h p q from funext₂ hkh]
+    exact kernelComp_mul_left h δ₀ (isLeftRegular_negOnePowCast _) p₀
   have hk₁ : kernelComp δ₁ k p₁ p₀ = A * kernelComp δ₁ h p₁ p₀ := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ p₁))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum]
     refine finsum_congr fun p => ?_
     by_cases hp : δ₁ p₁ p = 0
     · simp [hp]
@@ -519,15 +516,15 @@ theorem finsum_mul_sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernel
   rw [hb, kernelReadout_apply, kernelReadout_apply, kernelReadout_apply,
     show 1 - n + 1 = n + 2 * (1 - n) by ring, negOnePowCast_add, negOnePowCast_two_mul,
     show 1 - n = 1 + -n by ring, negOnePowCast_add, negOnePowCast_one, negOnePowCast_neg] at hψ
+  -- Both sides of `hψ` carry the output sign `(-1)^(μ₀ p₀)`, which cancels.
+  have hψ' : negOnePowCast R n * kernelComp h δ₀ p₁ p₀ +
+      negOnePowCast R n * negOnePowCast R n * kernelComp δ₁ h p₁ p₀ =
+      ∑ᶠ s, e.val s * t (p₁, s) p₀ - A * φ p₁ p₀ :=
+    isLeftRegular_negOnePowCast (μ₀ p₀) (by linear_combination hψ)
+  -- With `(-1)^n (-1)^n = 1`, the claim is `A` times `hψ'`, using `A A = 1` on `φ`.
+  rw [negOnePowCast_mul_self, one_mul] at hψ'
   rw [hsum, hk₀, hk₁]
-  set N := negOnePowCast R n
-  set b := negOnePowCast R (μ₀ p₀)
-  set U := ∑ᶠ s, e.val s * t (p₁, s) p₀
-  linear_combination (-(A * b)) * hψ +
-    (A * N * kernelComp h δ₀ p₁ p₀ + A * N * N * kernelComp δ₁ h p₁ p₀ + A * A * φ p₁ p₀ -
-      A * U) * negOnePowCast_mul_self (R := R) (μ₀ p₀) +
-    φ p₁ p₀ * negOnePowCast_mul_self (R := R) (n * μ₁ p₁) +
-    A * kernelComp δ₁ h p₁ p₀ * negOnePowCast_mul_self (R := R) n
+  linear_combination -A * hψ' + φ p₁ p₀ * negOnePowCast_mul_self (R := R) (n * μ₁ p₁)
 
 end Identity
 

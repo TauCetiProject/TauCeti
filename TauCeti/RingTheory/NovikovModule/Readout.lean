@@ -217,14 +217,12 @@ theorem functionalBoundary_kernelReadout {t : S → S₀ → R}
   -- The input breakings carry the sign of the fixed output `q`.
   have h₁ : kernelComp δ (kernelReadout d₀ t) x q =
       negOnePowCast R (d₀ q) * kernelComp δ t x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (d₀ q))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (d₀ q)]
     exact finsum_congr fun x' => by rw [kernelReadout_apply]; ring
   -- At the output breakings, `t` is supported in degree `d x + j`.
   have h₂ : kernelComp (kernelReadout d₀ t) δ₀ x q =
       negOnePowCast R (d x + j) * kernelComp t δ₀ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (d x + j))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (d x + j)]
     refine finsum_congr fun p => ?_
     by_cases hp : t x p = 0
     · simp [kernelReadout_apply, hp]

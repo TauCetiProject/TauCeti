@@ -330,8 +330,7 @@ theorem functionalBoundary_regradeProductFunctional
   have h₁ : kernelComp (tensorDifferential (fun p => n - μ₁ p) δ₁ δ₂)
       (regradeProductFunctional n μ₂ μ₀ ψ) x q =
       negOnePowCast R (n * (μ₂ x.2 + μ₀ q)) * kernelComp (tensorDifferential μ₁ δ₁ δ₂) ψ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n * (μ₂ x.2 + μ₀ q))]
     refine finsum_congr fun x' => ?_
     rw [tensorDifferential_cochain hδ₂, regradeProductFunctional_apply,
       ← negOnePowCast_eq_of_even_sub (a := n * (μ₂ x.2 + μ₂ x'.2) + n * (μ₂ x'.2 + μ₀ q))
@@ -340,8 +339,7 @@ theorem functionalBoundary_regradeProductFunctional
   -- At the output breakings the output sign changes by `(-1)^n`.
   have h₂ : kernelComp (regradeProductFunctional n μ₂ μ₀ ψ) δ₀ x q =
       negOnePowCast R (n + n * (μ₂ x.2 + μ₀ q)) * kernelComp ψ δ₀ x q := by
-    rw [kernelComp_apply, kernelComp_apply,
-      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n + n * (μ₂ x.2 + μ₀ q)))).mul_finsum]
+    rw [kernelComp_apply, kernelComp_apply, negOnePowCast_mul_finsum (n + n * (μ₂ x.2 + μ₀ q))]
     refine finsum_congr fun p => ?_
     by_cases hp : δ₀ p q = 0
     · simp [hp]
