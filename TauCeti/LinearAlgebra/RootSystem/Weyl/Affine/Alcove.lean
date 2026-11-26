@@ -325,6 +325,59 @@ variable [LinearOrder R] [IsStrictOrderedRing R] {P : RootPairing ι R M N} (b :
 
 /-! ### Transitivity -/
 
+/-- Descent records its wall word and one letter for each separating root removed. -/
+private lemma exists_wallWord_apply_mem_closedFundamentalAlcove_aux {x : N}
+    (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) :
+    ∃ ω : List (Option b.support),
+      let f := (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
+        (fun i ↦ P.affineCoreflection i 0)).prod
+      f x ∈ closedFundamentalAlcove P b ∧
+        ω.length + (sepSet b (f x)).ncard = (sepSet b x).ncard := by
+  induction hn : (sepSet b x).ncard using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+  by_cases hxA : x ∈ closedFundamentalAlcove P b
+  · exact ⟨[], by simpa using hxA, by simpa using hn⟩
+  -- Choose a wall beyond which `x` lies; reflecting in it removes one separating root.
+  obtain ⟨k, j₀, c, hk, hpres, w, hw, hwx⟩ : ∃ (k : Option b.support) (j₀ : ι) (c : ℤ),
+      k.elim (P.affineCoreflection b.highestRoot 1) (fun i ↦ P.affineCoreflection i 0) =
+        P.affineCoreflection j₀ c ∧
+      (∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
+        (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p)) ∧
+      ∃ w, (w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c)) ∧ w ∈ sepSet b x := by
+    simp only [mem_closedFundamentalAlcove, not_and_or, not_forall, not_le] at hxA
+    rcases hxA with ⟨i, hi, hix⟩ | hθx
+    · refine ⟨some ⟨i, hi⟩, i, 0, by simp, fun p ↦ isAffinePos_wallPerm_simple b hi,
+        (i, 0), .inl rfl, ?_, ?_⟩
+      · exact .inr ⟨rfl, b.isPos_of_mem_support hi⟩
+      · simpa using hix
+    · refine ⟨none, b.highestRoot, 1, by simp, fun p ↦ isAffinePos_wallPerm_highestRoot b,
+        (P.reflectionPerm b.highestRoot b.highestRoot, -1), .inr rfl, .inl (by omega), ?_⟩
+      simpa [root'_reflectionPerm_self] using hθx
+  have hlt := ncard_sepSet_affineCoreflection_add_one b hpres hx hw hwx
+  obtain ⟨ω, hω, hlen⟩ := ih (sepSet b (P.affineCoreflection j₀ c x)).ncard (by omega)
+    (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup
+      (P.affineCoreflection_mem_affineWeylGroup j₀ c) hx) rfl
+  refine ⟨ω ++ [k], ?_, ?_⟩
+  · simpa only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
+      hk, AffineEquiv.coe_mul, Function.comp_apply] using hω
+  · simp only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
+      List.length_append, List.length_singleton, hk, AffineEquiv.coe_mul, Function.comp_apply]
+    omega
+
+/-- A point whose roots are bounded below by integers can be carried into the closed fundamental
+alcove by a wall word. Each letter removes one separating affine root. The node `none` denotes
+`s_{θ,1}` and `some i` denotes `s_{αᵢ,0}`. -/
+theorem exists_wallWord_apply_mem_closedFundamentalAlcove {x y : N}
+    (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y) :
+    ∃ ω : List (Option b.support),
+      let f := (ω.map fun k ↦ k.elim (P.affineCoreflection b.highestRoot 1)
+        (fun i ↦ P.affineCoreflection i 0)).prod
+      f y ∈ closedFundamentalAlcove P b ∧
+        ω.length + (P.separatingAffineRoots x (f y)).ncard =
+          (P.separatingAffineRoots x y).ncard := by
+  simpa only [separatingAffineRoots_eq_sepSet b hx] using
+    exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hy
+
 /-- **The reflections in the walls of the fundamental alcove carry a point into the closed
 fundamental alcove.** If a subgroup `G` of the affine automorphisms of the coweight space contains
 the reflections `s_{αᵢ,0}` in the simple walls and the reflection `s_{θ,1}` in the wall `θ = 1`,
@@ -335,31 +388,13 @@ theorem exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem
     (hθ : P.affineCoreflection b.highestRoot 1 ∈ G) {x : N}
     (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) :
     ∃ f ∈ G, f x ∈ closedFundamentalAlcove P b := by
-  -- Induction on the number of affine root hyperplanes separating `x` from the alcove.
-  induction hn : (sepSet b x).ncard using Nat.strong_induction_on generalizing x with
-  | _ n ih =>
-  by_cases hxA : x ∈ closedFundamentalAlcove P b
-  · exact ⟨1, one_mem _, hxA⟩
-  -- Otherwise `x` is beyond a wall `αⱼ₀ = c` of the alcove, and reflecting in it lowers `n`.
-  obtain ⟨j₀, c, hpres, hG₀, w, hw, hwx⟩ : ∃ (j₀ : ι) (c : ℤ),
-      (∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
-        (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p)) ∧
-      P.affineCoreflection j₀ c ∈ G ∧
-      ∃ w, (w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c)) ∧ w ∈ sepSet b x := by
-    simp only [mem_closedFundamentalAlcove, not_and_or, not_forall, not_le] at hxA
-    rcases hxA with ⟨i, hi, hix⟩ | hθx
-    · refine ⟨i, 0, fun p ↦ isAffinePos_wallPerm_simple b hi, by simpa using hG i hi, (i, 0),
-        .inl rfl, ?_, ?_⟩
-      · exact .inr ⟨rfl, b.isPos_of_mem_support hi⟩
-      · simpa using hix
-    · refine ⟨b.highestRoot, 1, fun p ↦ isAffinePos_wallPerm_highestRoot b, by simpa using hθ,
-        (P.reflectionPerm b.highestRoot b.highestRoot, -1), .inr rfl, .inl (by omega), ?_⟩
-      simpa [root'_reflectionPerm_self] using hθx
-  have hlt := ncard_sepSet_affineCoreflection_add_one b hpres hx hw hwx
-  obtain ⟨f, hf, hfx⟩ := ih (sepSet b (P.affineCoreflection j₀ c x)).ncard (by omega)
-    (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup
-      (P.affineCoreflection_mem_affineWeylGroup j₀ c) hx) rfl
-  exact ⟨f * P.affineCoreflection j₀ c, mul_mem hf hG₀, hfx⟩
+  obtain ⟨ω, hω, -⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hx
+  refine ⟨_, G.list_prod_mem ?_, hω⟩
+  intro f hf
+  obtain ⟨k, -, rfl⟩ := List.mem_map.mp hf
+  cases k with
+  | none => exact hθ
+  | some i => exact hG i i.property
 
 /-- **Reflecting in a simple wall removes one separating hyperplane.** For a point `x` of the
 fundamental alcove and a point `y` on the far side of the wall `αᵢ = 0`, at which every root is
