@@ -64,8 +64,8 @@ degree `n`, and an element whose image has total tensor degree `n` has PBW degre
 theorem envelopingEquivOfIsCompl_mem_tensorFiltration_iff {n : ℕ} {x : UL} :
     envelopingEquivOfIsCompl R I J h x ∈ T n ↔ x ∈ pbwFiltration R L n := by
   rw [← map_pbwFiltration_envelopingEquivOfIsCompl R I J h, AlgEquiv.toAlgHom_toLinearMap,
-    Submodule.mem_map_equiv, ← AlgEquiv.toLinearEquiv_symm, AlgEquiv.toLinearEquiv_apply,
-    AlgEquiv.symm_apply_apply]
+    Submodule.mem_map_equiv]
+  simp
 
 /-- Inverse compatibility: the inverse of `envelopingEquivOfIsCompl` sends total tensor degree `n`
 into PBW degree `n`, and conversely. -/
