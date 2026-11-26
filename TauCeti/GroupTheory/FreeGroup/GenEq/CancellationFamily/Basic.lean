@@ -16,9 +16,12 @@ Let `S` be a finite system of equations `s = 1` and inequations `t ≠ 1` over t
 `F(A)`, in the variables of a finite type `X`. An inequation `t ≠ 1` holds exactly when `t = z`
 for some `z ≠ 1`, so `S` is equivalent to a system of equations in the variables `X` and one new
 *witness* `z_t` for each inequation, together with the conditions `z_t ≠ 1`. This file defines
-the finite family of *cancellation schemes* of `S` and proves its soundness: solutions of the
-generalised equations of the schemes give solutions of `S`. The cancellation schemes of `S` are
-the partition tables of the system of words
+the *cancellation schemes* of `S`, over any alphabet `A`, and proves their soundness: solutions of
+the generalised equations of the schemes give solutions of `S`. When `A` is finite, the schemes
+over the auxiliary alphabet `Z = Fin (systemSize S.toWords)` form a finite family, the
+*cancellation family* of `S`; the entries of such a scheme are words over `Z ⊕ A`, which may
+contain constants of `A` and need not use every auxiliary letter. The cancellation schemes of `S`
+are the partition tables of the system of words
 
 * `s`, for each equation `s = 1`;
 * `t z_t⁻¹` and `z_t z_t⁻¹`, for each inequation `t ≠ 1`;
@@ -28,7 +31,8 @@ in which the words of the occurrences of the witnesses are nonempty. A solution 
 generalised equation `Ω_T` of a scheme gives the solution `x ↦ P_x(U)` of `S`, inequations
 included; in a group `H` with a homomorphism `F(A) → H`, a solution of the system `Ω_T*` gives a
 solution of the equations of `S`, and of its inequations exactly when the witnesses stay
-nontrivial.
+nontrivial. The converse, that every solution of `S` comes from a scheme, is
+`TauCeti.GroupTheory.FreeGroup.GenEq.CancellationFamily.Completeness`.
 
 ## Main definitions
 
@@ -39,8 +43,8 @@ nontrivial.
 * `TauCeti.EqIneqSystem.genEq`, `TauCeti.EqIneqSystem.wordMap`,
   `TauCeti.EqIneqSystem.witnessWord`: the generalised equation of a table, the word maps `P_x` of
   the variables and of the witnesses.
-* `TauCeti.EqIneqSystem.cancellationFamily`: the finite set of cancellation schemes with
-  `systemSize S.toWords` letters.
+* `TauCeti.EqIneqSystem.cancellationFamily`: for a finite alphabet `A`, the finite set of
+  cancellation schemes over the auxiliary alphabet `Fin (systemSize S.toWords)`.
 
 ## Main results
 
@@ -67,11 +71,11 @@ nontrivial.
   nontrivial.
 * `TauCeti.EqIneqSystem.IsCancellationScheme.isSolution`: a solution of the generalised equation
   of a scheme gives a solution of `S`, inequations included.
-* `TauCeti.EqIneqSystem.card_cancellationFamily_le`: the cancellation family has at most
-  `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
-* `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: the
-  cancellation family of the empty system in no variables has one member, the empty table, and its
-  generalised equation is empty.
+* `TauCeti.EqIneqSystem.card_cancellationFamily_le`: for a finite alphabet `A`, the cancellation
+  family has at most `(2 (n + |A|) + 1) ^ n` members, for `n = systemSize S.toWords`.
+* `TauCeti.EqIneqSystem.cancellationFamily_empty`, `TauCeti.EqIneqSystem.genEq_empty`: every table
+  of the empty system in no variables has the empty generalised equation, and for a finite
+  alphabet its cancellation family has one member, the empty table.
 
 ## Implementation notes
 
@@ -442,8 +446,9 @@ section Family
 variable [Finite A]
 
 open scoped Classical in
-/-- The cancellation family of a system of equations and inequations: the finite set of its
-cancellation schemes with letters `Z = Fin (systemSize S.toWords)`. Each member `T` gives the
+/-- The cancellation family of a system of equations and inequations over a finite alphabet `A`:
+the finite set of its cancellation schemes over the auxiliary alphabet
+`Z = Fin (systemSize S.toWords)`, whose entries are words over `Z ⊕ A`. Each member `T` gives the
 generalised equation `S.genEq T` and the word maps `S.wordMap T`. -/
 noncomputable def cancellationFamily (S : EqIneqSystem X A) :
     Finset (Occurrence S.toWords → List ((Fin (systemSize S.toWords) ⊕ A) × Bool)) :=
@@ -465,7 +470,8 @@ theorem cancellationFamily_subset (S : EqIneqSystem X A) :
 
 /-- The cancellation family of a system over a finite alphabet `A` whose words have size
 `n = systemSize S.toWords` has at most `(2 (n + |A|) + 1) ^ n` members: there are at most that
-many cancellation schemes with letters `Z = Fin n`. -/
+many cancellation schemes over the auxiliary alphabet `Z = Fin n`, with entries words over
+`Z ⊕ A`. -/
 theorem card_cancellationFamily_le (S : EqIneqSystem X A) :
     S.cancellationFamily.card ≤
       (2 * (systemSize S.toWords + Nat.card A) + 1) ^ systemSize S.toWords :=
@@ -492,8 +498,8 @@ theorem genEq_empty (T : Occurrence (empty X A).toWords → List ((Z ⊕ A) × B
     (empty X A).genEq T = GenEq.empty :=
   eq_empty_of_numItems_eq_zero (by rw [numItems_ofEntries, length_flatMap_tableEntries]; simp)
 
-/-- The cancellation family of the empty system in no variables has exactly one member, the empty
-table. -/
+/-- Over a finite alphabet, the cancellation family of the empty system in no variables has exactly
+one member, the empty table. -/
 @[simp]
 theorem cancellationFamily_empty [Finite A] :
     (empty X A).cancellationFamily = {fun o => isEmptyElim o} :=
