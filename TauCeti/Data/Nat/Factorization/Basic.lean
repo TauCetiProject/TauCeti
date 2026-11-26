@@ -20,7 +20,8 @@ prime-power blocks. For a divisor `n ∣ m`, the `p`-free parts are related by
 `m / n * ordCompl[p] n = ordCompl[p] m * p ^ (v_p(m) - v_p(n))`, which is how a power map
 `x ↦ x ^ (m / n)` between groups of roots of unity acts on their `p`-primary parts. For a prime `p`,
 a divisor of `p * k` with the same `p`-free part as `k` either divides `k` or is `p * k`, and a
-divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`.
+divisor of `n` that does not divide `n / p` is divisible by the full `p`-part `p ^ v_p(n)` of `n`;
+for `n ≠ 0`, `n.factorization p = k` holds precisely when `p ^ k ∣ n` and `¬p ^ (k + 1) ∣ n`.
 The product of any set of prime factors of `n` divides `n`, and for `n ≠ 0` a number is coprime to
 the product of all the prime factors of `n` exactly when it is coprime to `n`. Monomial products of
 an injective family of primes (or fixed positive powers of their casts in characteristic zero) are
@@ -140,6 +141,13 @@ theorem forall_mem_primeFactors_mem_empty_iff {n : ℕ} (hn : n ≠ 0) :
     (∀ p ∈ n.primeFactors, p ∈ (∅ : Set ℕ)) ↔ n = 1 := by
   simp only [Set.mem_empty_iff_false, imp_false, ← Finset.eq_empty_iff_forall_notMem,
     primeFactors_eq_empty]
+  omega
+
+/-- For a prime `p` and nonzero `n`, the `p`-adic valuation `n.factorization p` equals `k` if and
+only if `p ^ k ∣ n` and `¬p ^ (k + 1) ∣ n`. -/
+theorem Prime.factorization_eq_iff_pow_dvd_and_not_pow_dvd {p n k : ℕ} (hp : p.Prime)
+    (hn : n ≠ 0) : n.factorization p = k ↔ p ^ k ∣ n ∧ ¬p ^ (k + 1) ∣ n := by
+  rw [hp.pow_dvd_iff_le_factorization hn, hp.pow_dvd_iff_le_factorization hn]
   omega
 
 end Nat

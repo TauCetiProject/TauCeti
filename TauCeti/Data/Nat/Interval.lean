@@ -12,7 +12,7 @@ import Mathlib.Data.Nat.Factorization.Basic
 /-!
 # Counting in natural intervals
 
-The exact number of multiples of `d` in `(a, b]` is `b / d - a / d`.
+The exact number of multiples of `d` in `(a, b]` is `b / d - a / d`, and in `[1, N]` is `N / d`.
 This supplies the exact local counts for interval sieves. A sum over the multiples of `p` in
 `[1, K]` is the sum over `p * k` for `k ∈ [1, K / p]`.
 The counting argument is adapted from [Arend Mellendijk, PNT+, BrunTitchmarsh.lean]
@@ -40,6 +40,12 @@ theorem Ioc_filter_dvd_card (a b d : ℕ) :
       Nat.Ioc_filter_dvd_card_eq_div, Nat.Ioc_filter_dvd_card_eq_div] at hcard
     omega
   · simp [Finset.Ioc_eq_empty_of_le h, Nat.div_le_div_right h]
+
+open scoped Finset in
+/-- Exactly `N / d` natural numbers in `[1, N]` are multiples of `d`. -/
+theorem card_filter_Icc_one_dvd (N d : ℕ) : #{n ∈ Finset.Icc 1 N | d ∣ n} = N / d := by
+  have h : Finset.Icc 1 N = Finset.Ioc 0 N := by ext; simp; omega
+  rw [h, Ioc_filter_dvd_card_eq_div]
 
 /-- A sum over the multiples of `p` in `[1, K]` is a sum over `p * k` for `k ∈ [1, K / p]`. Both
 sides vanish for `p = 0`. -/

@@ -28,7 +28,9 @@ If `n ∣ m` but `q * n ∤ m` for a prime `q`, then `m` and `n` have the same `
 a level `q * n` with a multiple `q * m` of the same `q`-part, as for congruence subgroups.
 
 For coprime natural bases `b ≤ a`, a prime dividing `a ^ n - b ^ n` with `n > 0` divides
-neither base; this ensures that their ratio modulo the prime is a unit.
+neither base; this ensures that their ratio modulo the prime is a unit. If two prime powers
+`p ^ k` and `q ^ l` both divide a nonzero natural number `n < p ^ k * q ^ l`, coprimality of
+distinct primes forces `p = q`.
 
 ## Main declarations
 
@@ -41,6 +43,8 @@ neither base; this ensures that their ratio modulo the prime is a unit.
   `a ^ n - b ^ n` and `a * b`, with `b ≤ a` and `n > 0`, divides `a.gcd b`.
 * `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: for coprime natural bases `b ≤ a`, prime
   divisors of `a ^ n - b ^ n` with `n > 0` do not divide the product of the bases.
+* `Nat.Prime.eq_of_pow_dvd_of_lt_mul`: if `p ^ k ∣ n`, `q ^ l ∣ n`, `n ≠ 0`, and
+  `n < p ^ k * q ^ l` for primes `p, q`, then `p = q`.
 -/
 
 public section
@@ -105,5 +109,13 @@ theorem Coprime.not_dvd_mul_of_dvd_pow_sub_pow {a b n p : ℕ} (hab : a.Coprime 
   have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
   rw [hab.gcd_eq_one] at h
   exact hp.not_dvd_one h
+
+/-- If two prime powers `p ^ k` and `q ^ l` divide `n ≠ 0` and their product exceeds `n`, then
+`p = q`. -/
+theorem Prime.eq_of_pow_dvd_of_lt_mul {p q k l n : ℕ} (hp : p.Prime) (hq : q.Prime) (hn : n ≠ 0)
+    (hp_dvd : p ^ k ∣ n) (hq_dvd : q ^ l ∣ n) (hlt : n < p ^ k * q ^ l) : p = q := by
+  by_contra hpq
+  exact hlt.not_ge (le_of_dvd (Nat.pos_of_ne_zero hn)
+    ((((coprime_primes hp hq).mpr hpq).pow k l).mul_dvd_of_dvd_of_dvd hp_dvd hq_dvd))
 
 end Nat
