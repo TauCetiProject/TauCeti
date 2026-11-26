@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.MeasureTheory.Function.Lp.StoppedPath
+import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Topology.Order.ProjIcc
 
 /-!
 # The index of the trajectory operator is localized at the crossings
@@ -74,11 +77,6 @@ variable {D H : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D] [NormedAddComm
 
 /-! ### Reparametrized paths -/
 
-/-- A bounded continuous path, reparametrized by a continuous `φ`, is essentially bounded. -/
-private theorem memLp_top_comp {C : ℝ} (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C) {φ : ℝ → ℝ}
-    (hφ : Continuous φ) : MemLp (fun s ↦ A (φ s)) ∞ μ₀ :=
-  memLp_top_of_bound (hA.comp hφ).aestronglyMeasurable C (ae_of_all _ fun s ↦ hC (φ s))
-
 /-- For a continuous path, an almost everywhere bound of `A s - B` through `ι` on bounded windows
 holds at every time of every compact interval. -/
 private theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
@@ -91,9 +89,7 @@ private theorem forall_norm_sub_apply_le {B : D →L[ℝ] H} (hA : Continuous A)
     exact isClosed_iInter fun x ↦ isClosed_le
       (((hA.sub continuous_const).clm_apply continuous_const).norm) continuous_const
   have hr' : r ∈ Ioo (-(R + 1)) (R + 1) := ⟨by linarith [hr.1], by linarith [hr.2]⟩
-  refine closure_minimal ?_ hP ((Measure.dense_of_ae hc).open_subset_closure_inter isOpen_Ioo hr')
-  rintro s ⟨hs₁, hs₂⟩
-  exact hs₂ hs₁
+  exact hP.closure_subset (isOpen_Ioo.subset_closure_of_ae_le (t := {s | ∀ x, _}) hc hr')
 
 /-- If `A r - B` is bounded through `ι` for `r` in compact intervals, then so is `A (φ s) - B'` for
 `s` in bounded windows, for a continuous reparametrization `φ` and any `B'` with `B' - B`
@@ -118,107 +114,6 @@ private theorem exists_norm_sub_apply_le {B : D →L[ℝ] H}
     ∃ c, ∀ x, ‖(A r - B) x‖ ≤ c * ‖ι x‖ :=
   (hb |r|).imp fun _ hc ↦ hc r ⟨neg_abs_le r, le_abs_self r⟩
 
-/-- The path `s ↦ A (min s t)` has the same limit at `-∞` as `A`. -/
-private theorem tendsto_comp_min_atBot {B : D →L[ℝ] H} (h : Tendsto A atBot (𝓝 B)) (t : ℝ) :
-    Tendsto (fun s ↦ A (min s t)) atBot (𝓝 B) :=
-  h.congr' ((eventually_le_atBot t).mono fun s hs ↦ by simp only [min_eq_left hs])
-
-/-- The path `s ↦ A (min s t)` is eventually `A t`. -/
-private theorem tendsto_comp_min_atTop (t : ℝ) :
-    Tendsto (fun s ↦ A (min s t)) atTop (𝓝 (A t)) :=
-  tendsto_const_nhds.congr' ((eventually_ge_atTop t).mono fun s hs ↦ by simp only [min_eq_right hs])
-
-/-- The path `s ↦ A (max s t)` is `A t` near `-∞`. -/
-private theorem tendsto_comp_max_atBot (t : ℝ) :
-    Tendsto (fun s ↦ A (max s t)) atBot (𝓝 (A t)) :=
-  tendsto_const_nhds.congr' ((eventually_le_atBot t).mono fun s hs ↦ by simp only [max_eq_right hs])
-
-/-- The path `s ↦ A (max s t)` has the same limit at `∞` as `A`. -/
-private theorem tendsto_comp_max_atTop {B : D →L[ℝ] H} (h : Tendsto A atTop (𝓝 B)) (t : ℝ) :
-    Tendsto (fun s ↦ A (max s t)) atTop (𝓝 B) :=
-  h.congr' ((eventually_ge_atTop t).mono fun s hs ↦ by simp only [max_eq_left hs])
-
-/-! ### Stopped paths -/
-
-/-- If `min t t' ≤ s` and `t'` is within `δ` of `t`, then so are `min s t` and `min s t'`. -/
-private theorem abs_min_sub_lt {s t t' δ : ℝ} (hs : min t t' ≤ s) (ht' : |t' - t| < δ) :
-    |min s t - t| < δ ∧ |min s t' - t| < δ := by
-  rw [abs_sub_lt_iff] at ht' ⊢
-  rw [abs_sub_lt_iff]
-  have hδ : 0 < δ := by linarith [ht'.1, ht'.2]
-  rcases min_cases t t' with ⟨h, h'⟩ | ⟨h, h'⟩ <;> rw [h] at hs <;>
-    rcases min_cases s t with ⟨h₁, h₁'⟩ | ⟨h₁, h₁'⟩ <;>
-    rcases min_cases s t' with ⟨h₂, h₂'⟩ | ⟨h₂, h₂'⟩ <;> rw [h₁, h₂] <;>
-    refine ⟨⟨?_, ?_⟩, ?_, ?_⟩ <;> linarith
-
-variable {C : ℝ}
-
-/-- The class in `L∞` of the path `s ↦ A (min s t)` stopped at time `t`. -/
-private def stoppedPath (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C) (t : ℝ) :
-    Lp (D →L[ℝ] H) ∞ μ₀ :=
-  (memLp_top_comp hA hC (φ := fun s ↦ min s t) (by fun_prop)).toLp _
-
-private theorem stoppedPath_ae (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C) (t : ℝ) :
-    stoppedPath hA hC t =ᵐ[μ₀] fun s ↦ A (min s t) :=
-  MemLp.coeFn_toLp _
-
-/-- The stopped path depends continuously on the stopping time, uniformly in `s`. -/
-private theorem continuous_stoppedPath (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C) :
-    Continuous (stoppedPath hA hC) := by
-  refine Metric.continuous_iff.2 fun t ε hε ↦ ?_
-  obtain ⟨δ, hδ, hAδ⟩ := Metric.continuous_iff.1 hA t (ε / 4) (by positivity)
-  refine ⟨δ, hδ, fun t' ht' ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (Lp.norm_le_of_ae_bound_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
-  filter_upwards [Lp.coeFn_sub (stoppedPath hA hC t') (stoppedPath hA hC t),
-    stoppedPath_ae hA hC t', stoppedPath_ae hA hC t] with s hs h' h
-  rw [hs, Pi.sub_apply, h', h, ← dist_eq_norm]
-  rcases le_total s (min t t') with hst | hst
-  · rw [min_eq_left (hst.trans (min_le_right _ _)), min_eq_left (hst.trans (min_le_left _ _)),
-      dist_self]
-    positivity
-  · rw [Real.dist_eq] at ht'
-    obtain ⟨h₁, h₂⟩ := abs_min_sub_lt hst ht'
-    calc dist (A (min s t')) (A (min s t))
-        ≤ dist (A (min s t')) (A t) + dist (A (min s t)) (A t) := dist_triangle_right _ _ _
-      _ ≤ ε / 4 + ε / 4 := add_le_add (hAδ _ (by rwa [Real.dist_eq])).le
-          (hAδ _ (by rwa [Real.dist_eq])).le
-      _ = ε / 2 := by ring
-
-/-- Stopped at very negative times, the path is uniformly close to its limit at `-∞`. -/
-private theorem tendsto_stoppedPath_atBot (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C)
-    {Bbot : D →L[ℝ] H} (hbot : Tendsto A atBot (𝓝 Bbot)) :
-    Tendsto (stoppedPath hA hC) atBot (𝓝 ((memLp_top_const (μ := μ₀) Bbot).toLp _)) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := eventually_atBot.1 (Metric.tendsto_nhds.1 hbot (ε / 2) (half_pos hε))
-  refine eventually_atBot.2 ⟨N, fun t ht ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (Lp.norm_le_of_ae_bound_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
-  filter_upwards [Lp.coeFn_sub (stoppedPath hA hC t) ((memLp_top_const (μ := μ₀) Bbot).toLp _),
-    stoppedPath_ae hA hC t, (memLp_top_const (μ := μ₀) Bbot).coeFn_toLp] with s hs h h'
-  rw [hs, Pi.sub_apply, h, h', ← dist_eq_norm]
-  exact (hN _ ((min_le_right s t).trans ht)).le
-
-/-- Stopped at very positive times, the path is uniformly close to the whole path. -/
-private theorem tendsto_stoppedPath_atTop (hA : Continuous A) (hC : ∀ s, ‖A s‖ ≤ C)
-    {Btop : D →L[ℝ] H} (htop : Tendsto A atTop (𝓝 Btop)) {AL : Lp (D →L[ℝ] H) ∞ μ₀}
-    (hAL : AL =ᵐ[μ₀] A) : Tendsto (stoppedPath hA hC) atTop (𝓝 AL) := by
-  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendsto_nhds.1 htop (ε / 4) (by positivity))
-  refine eventually_atTop.2 ⟨N, fun t ht ↦ ?_⟩
-  rw [dist_eq_norm]
-  refine (Lp.norm_le_of_ae_bound_top (half_pos hε).le ?_).trans_lt (half_lt_self hε)
-  filter_upwards [Lp.coeFn_sub (stoppedPath hA hC t) AL, stoppedPath_ae hA hC t, hAL]
-    with s hs h h'
-  rw [hs, Pi.sub_apply, h, h', ← dist_eq_norm]
-  rcases le_total s t with hst | hst
-  · rw [min_eq_left hst, dist_self]
-    positivity
-  · rw [min_eq_right hst]
-    calc dist (A t) (A s) ≤ dist (A t) Btop + dist (A s) Btop := dist_triangle_right _ _ _
-      _ ≤ ε / 4 + ε / 4 := add_le_add (hN t ht).le (hN s (ht.trans hst)).le
-      _ = ε / 2 := by ring
-
 /-! ### The index -/
 
 variable [CompleteSpace D] [CompleteSpace H] {Bbot Btop : D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀}
@@ -239,11 +134,13 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
   have hb := forall_norm_sub_apply_le hA hc
   have hSymmbot (x y : D) : ⟪Bbot x, ι y⟫_ℝ = ⟪ι x, Bbot y⟫_ℝ :=
     ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot (.of_forall fun s ↦ hSymm s x y)
+  -- The class in `L∞` of the path stopped at `t`.
+  have hm (t : ℝ) : MemLp (fun s ↦ A (min s t)) ∞ μ₀ := memLp_top_of_bound
+    (hA.comp (continuous_id.min continuous_const)).aestronglyMeasurable C (.of_forall fun s ↦ hC _)
   -- The path stopped at `t` runs from `Bbot` to the invertible `A t`, so its operator is Fredholm.
-  have hFred (t : ℝ) :
-      (familyDomainTrajectoryOperator (p := 2) ι (stoppedPath hA hC t)).IsFredholm :=
+  have hFred (t : ℝ) : (familyDomainTrajectoryOperator (p := 2) ι ((hm t).toLp _)).IsFredholm :=
     isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot (hSymm t) (hInv t)
-      (stoppedPath_ae hA hC t) (tendsto_comp_min_atBot hbot t) (tendsto_comp_min_atTop t)
+      (hm t).coeFn_toLp (hbot.comp_min_atBot t) (tendsto_comp_min_atTop t)
       (ae_norm_comp_sub_apply_le hb (exists_norm_sub_apply_le hb t) (by fun_prop))
   have hD := continuous_familyDomainTrajectoryOperator (mu := volume) (Omega := ⊤) (p := 2) ι
   have hFredbot : (familyDomainTrajectoryOperator (p := 2) ι
@@ -251,16 +148,18 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
     rw [familyDomainTrajectoryOperator_toLp_const]
     exact isFredholm_domainTrajectoryOperator hSymmbot hBbot
   -- The index vanishes when stopping very early, and is that of `A` when stopping very late.
-  obtain ⟨t₀, -, ht₀⟩ := (((hD.tendsto _).comp (tendsto_stoppedPath_atBot hA hC hbot)).eventually
+  obtain ⟨t₀, -, ht₀⟩ := (((hD.tendsto _).comp (tendsto_atBot_of_ae_eq_comp_min hbot
+    (fun t ↦ (hm t).coeFn_toLp) (memLp_top_const Bbot).coeFn_toLp)).eventually
     hFredbot.eventually_isFredholm_and_index_eq).exists
   have hSymmtop (x y : D) : ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ :=
     ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (.of_forall fun s ↦ hSymm s x y)
   have hFredA := isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot hSymmtop hBtop hAL
     hbot htop hc
-  obtain ⟨t₁, -, ht₁⟩ :=
-    (((hD.tendsto _).comp (tendsto_stoppedPath_atTop hA hC htop hAL)).eventually
-      hFredA.eventually_isFredholm_and_index_eq).exists
-  have hconst := (hD.comp (continuous_stoppedPath hA hC)).index_eq_of_preconnectedSpace hFred t₀ t₁
+  obtain ⟨t₁, -, ht₁⟩ := (((hD.tendsto _).comp (tendsto_atTop_of_ae_eq_comp_min htop
+    (fun t ↦ (hm t).coeFn_toLp) hAL)).eventually
+    hFredA.eventually_isFredholm_and_index_eq).exists
+  have hconst := (hD.comp (continuous_of_ae_eq_comp_min hA
+    fun t ↦ (hm t).coeFn_toLp)).index_eq_of_preconnectedSpace hFred t₀ t₁
   simp only [Function.comp_apply] at ht₀ ht₁ hconst
   rw [← ht₁, ← hconst, ht₀, familyDomainTrajectoryOperator_toLp_const,
     index_domainTrajectoryOperator hSymmbot hBbot]
@@ -291,9 +190,11 @@ theorem index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend (hι : IsComp
   have ha : a ∉ Ioo a b := fun h ↦ lt_irrefl a h.1
   have hb' : b ∉ Ioo a b := fun h ↦ lt_irrefl b h.2
   -- The pieces: `A` up to `a`, `A` from `a` on, `A` on `[a, b]`, and `A` from `b` on.
-  have hL := memLp_top_comp hA hC (φ := fun s ↦ min s a) (by fun_prop)
-  have hM := memLp_top_comp hA hC (φ := fun s ↦ max s a) (by fun_prop)
-  have hR := memLp_top_comp hA hC (φ := fun s ↦ max s b) (by fun_prop)
+  have hm {φ : ℝ → ℝ} (hφ : Continuous φ) : MemLp (fun s ↦ A (φ s)) ∞ μ₀ :=
+    memLp_top_of_bound (hA.comp hφ).aestronglyMeasurable C (.of_forall fun s ↦ hC _)
+  have hL := hm (φ := fun s ↦ min s a) (by fun_prop)
+  have hM := hm (φ := fun s ↦ max s a) (by fun_prop)
+  have hR := hm (φ := fun s ↦ max s b) (by fun_prop)
   have hAL'' : AL' =ᵐ[μ₀] fun s ↦ A (max a (min b s)) := by
     refine hAL'.trans (EventuallyEq.of_eq (funext fun s ↦ ?_))
     rw [IccExtend_apply, domRestrict_apply]
@@ -307,25 +208,25 @@ theorem index_familyDomainTrajectoryOperator_eq_of_ae_eq_IccExtend (hι : IsComp
   have hL₀ : (familyDomainTrajectoryOperator (p := 2) ι (hL.toLp _)).index = 0 :=
     index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι (by fun_prop)
       (fun s ↦ hSymm _) (fun s ↦ hInv _ fun h ↦ (min_le_right s a).not_gt h.1) hBbot (hInv a ha)
-      hL.coeFn_toLp (tendsto_comp_min_atBot hbot a) (tendsto_comp_min_atTop a)
+      hL.coeFn_toLp (hbot.comp_min_atBot a) (tendsto_comp_min_atTop a)
       (ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
   have hR₀ : (familyDomainTrajectoryOperator (p := 2) ι (hR.toLp _)).index = 0 :=
     index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι (by fun_prop)
       (fun s ↦ hSymm _) (fun s ↦ hInv _ fun h ↦ (le_max_right s b).not_gt h.2) (hInv b hb')
-      hBtop hR.coeFn_toLp (tendsto_comp_max_atBot b) (tendsto_comp_max_atTop htop b)
+      hBtop hR.coeFn_toLp (tendsto_comp_max_atBot b) (htop.comp_max_atTop b)
       (ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop))
   -- Cut at `a`, then at `b`.
   rw [index_familyDomainTrajectoryOperator_eq_add hι hSymmbot hBbot (hSymm a) (hInv a ha)
-      hSymmtop hBtop (hpt a) hL.coeFn_toLp (tendsto_comp_min_atBot hbot a)
+      hSymmtop hBtop (hpt a) hL.coeFn_toLp (hbot.comp_min_atBot a)
       (tendsto_comp_min_atTop a) (ae_norm_comp_sub_apply_le hb (hpt a) (by fun_prop))
-      hM.coeFn_toLp (tendsto_comp_max_atBot a) (tendsto_comp_max_atTop htop a)
+      hM.coeFn_toLp (tendsto_comp_max_atBot a) (htop.comp_max_atTop a)
       (ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hAL hbot htop hc,
     hL₀, zero_add,
     index_familyDomainTrajectoryOperator_eq_add hι (hSymm a) (hInv a ha) (hSymm b) (hInv b hb')
       hSymmtop hBtop (hpt b) hAL'' hbotI htopI (ae_norm_comp_sub_apply_le hb (hpt b) (by fun_prop))
-      hR.coeFn_toLp (tendsto_comp_max_atBot b) (tendsto_comp_max_atTop htop b)
+      hR.coeFn_toLp (tendsto_comp_max_atBot b) (htop.comp_max_atTop b)
       (ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)) hM.coeFn_toLp (tendsto_comp_max_atBot a)
-      (tendsto_comp_max_atTop htop a) (ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)),
+      (htop.comp_max_atTop a) (ae_norm_comp_sub_apply_le hb hb₀ (by fun_prop)),
     hR₀, add_zero]
 
 end TauCeti.WeakDerivStep
