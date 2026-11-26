@@ -21,6 +21,10 @@ spaces, modelled on `ModelWithCorners.pi I`:
   counterpart of `Fin.snocEquiv` (composed with `Equiv.prodComm`);
 * `Diffeomorph.mfderiv_piSnoc_apply` computes the differential of `Diffeomorph.piSnoc` on tangent
   vectors as `Fin.snoc`, using `TauCeti.mfderiv_pi`;
+* `Diffeomorph.piCons` prepends a first factor via `Fin.cons`, identifying
+  `M 0 × (∀ i : Fin m, M i.succ)` with `∀ i : Fin (m + 1), M i`, the smooth counterpart of
+  `Fin.consEquiv`; its inverse `g ↦ (g 0, Fin.tail g)` splits off the first factor, and its
+  differential acts on tangent vectors by `Fin.cons` (`Diffeomorph.mfderiv_piCons_apply`);
 * `Diffeomorph.piAddCases` concatenates two blocks of factors via `Fin.addCases`, identifying
   `(∀ i : Fin m, M (Fin.castAdd k i)) × (∀ j : Fin k, M (Fin.natAdd m j))` with
   `∀ i : Fin (m + k), M i`, the dependent smooth counterpart of `Fin.appendEquiv`; its differential
@@ -32,6 +36,8 @@ spaces, modelled on `ModelWithCorners.pi I`:
   `[Unique ι]`.
 * `Diffeomorph.piSnoc`: canonical diffeomorphism
   `((∀ i : Fin m, M i.castSucc) × M (Fin.last m)) ≃ₘ^n (∀ i : Fin (m + 1), M i)`.
+* `Diffeomorph.piCons`: canonical diffeomorphism
+  `(M 0 × ∀ i : Fin m, M i.succ) ≃ₘ^n (∀ i : Fin (m + 1), M i)`.
 * `Diffeomorph.piAddCases`: canonical diffeomorphism
   `((∀ i : Fin m, M (Fin.castAdd k i)) × (∀ j : Fin k, M (Fin.natAdd m j))) ≃ₘ^n
   (∀ i : Fin (m + k), M i)`.
@@ -39,6 +45,8 @@ spaces, modelled on `ModelWithCorners.pi I`:
 ## Main results
 
 * `Diffeomorph.mfderiv_piSnoc_apply`: the differential of `Diffeomorph.piSnoc` acts by `Fin.snoc`
+  on tangent vectors.
+* `Diffeomorph.mfderiv_piCons_apply`: the differential of `Diffeomorph.piCons` acts by `Fin.cons`
   on tangent vectors.
 * `Diffeomorph.mfderiv_piAddCases_apply`: the differential of `Diffeomorph.piAddCases` acts by
   `Fin.addCases` on tangent vectors.
@@ -159,6 +167,78 @@ theorem mfderiv_piSnoc_apply (p : (∀ i : Fin m, M i.castSucc) × M (Fin.last m
   exact (hcomp i).2
 
 end PiSnoc
+
+section PiCons
+
+variable {m : ℕ}
+  {E : Fin (m + 1) → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
+  {H : Fin (m + 1) → Type*} [∀ i, TopologicalSpace (H i)]
+  (I : ∀ i, ModelWithCorners 𝕜 (E i) (H i))
+  (M : Fin (m + 1) → Type*) [∀ i, TopologicalSpace (M i)] [∀ i, ChartedSpace (H i) (M i)]
+  (n : ℕ∞ω)
+
+/-- Prepending a first factor via `Fin.cons` defines a `C^n` diffeomorphism between
+`M 0 × (∀ i : Fin m, M i.succ)` and `∀ i : Fin (m + 1), M i`, with inverse
+`g ↦ (g 0, Fin.tail g)`, the association map splitting off the first factor. This is the smooth
+counterpart of `Fin.consEquiv`. -/
+def piCons :
+    (M 0 × ∀ i : Fin m, M i.succ) ≃ₘ^n⟮
+      (I 0).prod (ModelWithCorners.pi fun i : Fin m ↦ I i.succ),
+      ModelWithCorners.pi I⟯ (∀ i : Fin (m + 1), M i) where
+  toEquiv := Fin.consEquiv M
+  contMDiff_toFun := contMDiff_pi_iff.2 fun i ↦ by
+    induction i using Fin.cases with
+    | zero =>
+      simp only [Fin.consEquiv_apply, Fin.cons_zero]
+      exact contMDiff_fst
+    | succ k =>
+      simp only [Fin.consEquiv_apply, Fin.cons_succ]
+      exact (contMDiff_apply (i := k)).comp contMDiff_snd
+  contMDiff_invFun :=
+    (contMDiff_apply (i := 0)).prodMk (contMDiff_pi_iff.2 fun k ↦ contMDiff_apply (i := k.succ))
+
+/-- `Diffeomorph.piCons` prepends the first component to the second via `Fin.cons`. -/
+@[simp]
+theorem piCons_apply (p : M 0 × ∀ i : Fin m, M i.succ) :
+    piCons I M n p = Fin.cons p.1 p.2 := (rfl)
+
+/-- The inverse of `Diffeomorph.piCons` splits a tuple into its first entry and its tail. -/
+@[simp]
+theorem piCons_symm_apply (g : ∀ i : Fin (m + 1), M i) :
+    (piCons I M n).symm g = (g 0, Fin.tail g) := (rfl)
+
+/-- The underlying equivalence of `Diffeomorph.piCons` is `Fin.consEquiv`. -/
+@[simp]
+theorem piCons_toEquiv : (piCons I M n).toEquiv = Fin.consEquiv M := (rfl)
+
+/-- The differential of `Diffeomorph.piCons` acts by `Fin.cons` on tangent vectors. -/
+theorem mfderiv_piCons_apply (p : M 0 × ∀ i : Fin m, M i.succ) (u : E 0)
+    (w : ∀ i : Fin m, E i.succ) :
+    mfderiv ((I 0).prod (ModelWithCorners.pi fun i : Fin m ↦ I i.succ))
+      (ModelWithCorners.pi I) (piCons I M n) p (u, w) =
+      Fin.cons (α := E) u w := by
+  let J := (I 0).prod (ModelWithCorners.pi fun i : Fin m ↦ I i.succ)
+  have hcomp : ∀ i : Fin (m + 1),
+      MDifferentiableAt J (I i) (fun q ↦ piCons I M n q i) p ∧
+        mfderiv J (I i) (fun q ↦ piCons I M n q i) p (u, w) = Fin.cons (α := E) u w i := by
+    intro i
+    induction i using Fin.cases with
+    | zero =>
+      have h := hasMFDerivAt_fst (I := I 0)
+        (I' := ModelWithCorners.pi fun i : Fin m ↦ I i.succ) p
+      rw [show (fun q ↦ piCons I M n q 0) = Prod.fst from funext fun q ↦ by simp, Fin.cons_zero]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
+    | succ k =>
+      have h := (TauCeti.hasMFDerivAt_apply (I := fun i : Fin m ↦ I i.succ) k p.2).comp p
+        (hasMFDerivAt_snd (I := I 0) p)
+      rw [show (fun q ↦ piCons I M n q k.succ) = (fun f ↦ f k) ∘ Prod.snd from
+        funext fun q ↦ by simp, Fin.cons_succ]
+      exact ⟨h.mdifferentiableAt, DFunLike.congr_fun h.mfderiv (u, w)⟩
+  rw [TauCeti.mfderiv_pi fun i ↦ (hcomp i).1]
+  funext i
+  exact (hcomp i).2
+
+end PiCons
 
 section PiAddCases
 
