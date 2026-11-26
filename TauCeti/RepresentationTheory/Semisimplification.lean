@@ -61,6 +61,15 @@ theorem semisimplification_apply (g : G) (x : TauCeti.semisimplification k[G] ρ
     ρ.semisimplification g x = MonoidAlgebra.single g (1 : k) • x :=
   TauCeti.Representation.ofModule'_apply _ g x
 
+/-- The action of `g` on `V^ss` is the action of the basis element `MonoidAlgebra.of k G g` of
+`k[G]` on the module semisimplification, as a `k`-linear map. This links `ρ.semisimplification` to
+the module-level API of `TauCeti.semisimplification`. -/
+theorem semisimplification_apply_eq_lsmul (g : G) :
+    ρ.semisimplification g =
+      Algebra.lsmul k k (TauCeti.semisimplification k[G] ρ.asModule) (MonoidAlgebra.of k G g) := by
+  ext x
+  rw [semisimplification_apply, Algebra.lsmul_coe, MonoidAlgebra.of_apply]
+
 /-- The `k[G]`-module attached to `ρ.semisimplification` is the semisimplification of the module
 attached to `ρ`. -/
 noncomputable def semisimplificationAsModuleEquiv :
@@ -103,17 +112,14 @@ same characteristic polynomial on `V^ss` as on `V`. -/
 @[simp]
 theorem charpoly_semisimplification_apply (g : G) :
     (ρ.semisimplification g).charpoly = (ρ g).charpoly := by
-  have h : ρ.semisimplification g = Algebra.lsmul k k _ (MonoidAlgebra.of k G g) := by
-    ext x
-    rw [semisimplification_apply, Algebra.lsmul_coe, MonoidAlgebra.of_apply]
-  rw [h, ← charpoly_lsmul_asModule_of ρ g, TauCeti.charpoly_lsmul_semisimplification]
+  rw [semisimplification_apply_eq_lsmul, ← charpoly_lsmul_asModule_of ρ g,
+    TauCeti.charpoly_lsmul_semisimplification]
 
 /-- The semisimplification has the traces of `ρ`. -/
 @[simp]
 theorem trace_semisimplification_apply (g : G) :
-    LinearMap.trace k _ (ρ.semisimplification g) = LinearMap.trace k _ (ρ g) := by
-  rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, LinearMap.trace_eq_neg_charpoly_nextCoeff,
-    charpoly_semisimplification_apply]
+    LinearMap.trace k _ (ρ.semisimplification g) = LinearMap.trace k _ (ρ g) :=
+  LinearMap.trace_eq_of_charpoly_eq (ρ.charpoly_semisimplification_apply g)
 
 /-- The semisimplification has the character of `ρ`. -/
 @[simp]
@@ -123,9 +129,7 @@ theorem char_semisimplification : ρ.semisimplification.character = ρ.character
 /-- The semisimplification has the determinants of `ρ`. -/
 @[simp]
 theorem det_semisimplification_apply (g : G) :
-    LinearMap.det (ρ.semisimplification g) = LinearMap.det (ρ g) := by
-  rw [LinearMap.det_eq_sign_charpoly_coeff, LinearMap.det_eq_sign_charpoly_coeff,
-    ← LinearMap.charpoly_natDegree (ρ.semisimplification g), ← LinearMap.charpoly_natDegree (ρ g),
-    charpoly_semisimplification_apply]
+    LinearMap.det (ρ.semisimplification g) = LinearMap.det (ρ g) :=
+  LinearMap.det_eq_of_charpoly_eq (ρ.charpoly_semisimplification_apply g)
 
 end Representation
