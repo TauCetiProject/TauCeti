@@ -57,7 +57,8 @@ gradient in `TauCeti.Analysis.PDE.Regularity.MeanOscillation`.
   `κ⁻² ⨍_{B_r} ‖∇u‖² + κ^(n + 1) (⨍_{B_r} ‖G‖² + δ^(1/q') (⨍_{B_r} ‖∇u‖^(2q))^(1/q))`, up to
   constants, for Hölder conjugate exponents `q, q'`.
 * **Sharp function and absorption.** These bounds on all balls give the estimate by Krylov's sharp
-  function method (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`): the
+  function method with mean oscillation in `L²`
+  (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le` at the exponent `2`): the
   Fefferman–Stein inequality and the maximal inequality bound `∫ ‖∇u‖^p` by
   `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖∇u‖^p + c₂ ∫ ‖G‖^p`. Choosing first `κ` large and then `δ`
   small, the first term is absorbed, since `∫ ‖∇u‖^p` is finite.

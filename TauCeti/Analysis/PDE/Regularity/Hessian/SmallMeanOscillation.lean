@@ -49,10 +49,11 @@ Hessian in `TauCeti.Analysis.PDE.Regularity.Hessian.MeanOscillation`.
   `κ⁻² ⨍_{B_r} ‖D²u‖² + κ^(n + 1) (⨍_{B_r} f² + δ^(1/q') (⨍_{B_r} ‖D²u‖^(2q))^(1/q))`, up to
   constants, for Hölder conjugate exponents `q, q'`.
 * **Sharp function and absorption.** These bounds on all balls give the estimate by Krylov's sharp
-  function method (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le`), applied to
-  the operator-valued field `D²u`: the Fefferman–Stein inequality and the maximal inequality bound
-  `∫ ‖D²u‖^p` by `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖D²u‖^p + c₂ ∫ |f|^p`. Choosing first `κ` large and
-  then `δ` small, the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
+  function method with mean oscillation in `L²`
+  (`TauCeti.PDE.exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le` at the exponent `2`),
+  applied to the operator-valued field `D²u`: the Fefferman–Stein inequality and the maximal
+  inequality bound `∫ ‖D²u‖^p` by `(c₁ κ^(-p) + c₃ δ^(p/(2q'))) ∫ ‖D²u‖^p + c₂ ∫ |f|^p`. Choosing
+  first `κ` large and then `δ` small, the first term is absorbed, since `∫ ‖D²u‖^p` is finite.
 
 The restriction `p > 2` comes from the `L²` mean oscillation estimate. The argument is the same as
 for the divergence-form estimate in `TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation`, with
