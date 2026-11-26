@@ -146,6 +146,13 @@ lemma toPseudofunctor_eqToHom_arr {U : LocallyDiscrete Cᵒᵖ} {x y : (toPseudo
     (h : x = y) : (eqToHom h).arr = G.e.hom.app U.as x.as :=
   Fiber.eqToHom_arr h
 
+/-- The inverse of a morphism of the pseudofunctor of `G` is the inverse arrow `i φ`
+(`Fiber.inv_arr` for the fibres of `toPseudofunctor G`). -/
+@[simp]
+lemma toPseudofunctor_inv_arr {U : LocallyDiscrete Cᵒᵖ} {x y : (toPseudofunctor.{w'} G).obj U}
+    (φ : x ⟶ y) : (inv φ).arr = G.i.hom.app U.as φ.arr :=
+  Fiber.inv_arr φ
+
 /-- Pulling back an object of the pseudofunctor of `G` restricts the underlying section of
 `X`. -/
 @[simp]
@@ -222,10 +229,20 @@ def presheafHomIso {S : C} (x y : (toPseudofunctor.{w'} G).obj (.mk (op S))) :
       ext φ
       exact Subtype.ext (pullHom_arr φ p.unop.left _ _ (Over.w p.unop) (Over.w p.unop)))
 
-/-- The section of `R` attached to a morphism by `presheafHomIso` is its underlying arrow. -/
+/-- The section of `R` attached to a morphism by `presheafHomIso` is its underlying arrow. This
+and `presheafHomIso_inv_app_arr` are not `simp` lemmas: `simp` first rewrites the implicit types
+`presheafHom_obj` and `Subfunctor.toFunctor_obj` of their left-hand sides, after which they no
+longer match, so use them with `rw`. -/
 lemma presheafHomIso_hom_app_coe {S : C} (x y : (toPseudofunctor.{w'} G).obj (.mk (op S)))
     (T : (Over S)ᵒᵖ) (φ : ((toPseudofunctor.{w'} G).presheafHom x y).obj T) :
     ((presheafHomIso x y).hom.app T φ).val = φ.arr :=
+  (rfl)
+
+/-- The morphism attached by the inverse of `presheafHomIso` to a section of `homSubfunctor` has
+that section as its underlying arrow. -/
+lemma presheafHomIso_inv_app_arr {S : C} (x y : (toPseudofunctor.{w'} G).obj (.mk (op S)))
+    (T : (Over S)ᵒᵖ) (r : (homSubfunctor G x.as y.as).toFunctor.obj T) :
+    ((presheafHomIso x y).inv.app T r).arr = r.val :=
   (rfl)
 
 /-- The pseudofunctor of a groupoid object in `J`-sheaves of sets is a prestack for `J`: the
