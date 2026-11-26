@@ -103,7 +103,7 @@ theorem edgeCond_nonneg (e : Sym2 V) : 0 ≤ N.edgeCond e := by
 /-- Every edge of the graph of a network has positive conductance. -/
 theorem edgeCond_pos_of_mem_edgeSet {e : Sym2 V} (h : e ∈ N.graph.edgeSet) : 0 < N.edgeCond e := by
   induction e with
-  | _ x y => simpa using N.cond_pos_of_adj h
+  | _ x y => simpa using N.cond_pos_of_adj (N.graph.mem_edgeSet.1 h)
 
 variable [Fintype V]
 
