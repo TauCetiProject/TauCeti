@@ -108,6 +108,11 @@ def contragredientSubrepresentation [FiniteDimensional k 𝔤] : Subrepresentati
   toSubmodule := M.contragredientSubmodule.toSubmodule
   apply_mem_toSubmodule g _ hf := apply_mem_gFiniteSubmodule M.ρ.dual hf g
 
+@[simp]
+theorem mem_contragredientSubrepresentation [FiniteDimensional k 𝔤] {f : Dual k V} :
+    f ∈ M.contragredientSubrepresentation ↔ M.ρ.dual.IsGFinite f :=
+  M.mem_contragredientSubmodule
+
 /-- **The contragredient `(𝔤, K)`-module** `M^∨`: the `K`-finite linear forms on `V`, with the
 dual actions of `𝔤` and `K`. -/
 def contragredient [FiniteDimensional k 𝔤] : GKModule Ad M.contragredientSubmodule where
@@ -143,7 +148,7 @@ def dualMap (φ : Hom M N) : Hom N.contragredient M.contragredient where
 @[simp]
 theorem coe_dualMap_apply (φ : Hom M N) (f : N.contragredientSubmodule) (v : V) :
     (φ.dualMap f : Dual k V) v = (f : Dual k W) (φ v) :=
-  φ.toIntertwiningMap.dualMap_apply_apply f v
+  (φ.toIntertwiningMap.dualMap_apply_apply f v).trans (by rw [coe_toIntertwiningMap])
 
 @[simp]
 theorem dualMap_id : (id M).dualMap = id M.contragredient :=

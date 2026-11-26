@@ -30,7 +30,7 @@ A **morphism** of `(𝔤, K)`-modules `M → N` is a `𝔤`-module morphism comm
   Math. 199 (2014), 45–111, §4.1.
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -73,6 +73,15 @@ instance instLinearMapClass : LinearMapClass (Hom M N) k V W where
 theorem coe_toLieModuleHom (φ : Hom M N) : ⇑φ.toLieModuleHom = φ :=
   (rfl)
 
+@[simp]
+theorem coe_mk (f : V →ₗ⁅k,𝔤⁆ W) (h : ∀ (g : K) (v : V), f (M.ρ g v) = N.ρ g (f v)) :
+    ⇑(⟨f, h⟩ : Hom M N) = f :=
+  (rfl)
+
+theorem toLieModuleHom_injective :
+    Function.Injective (toLieModuleHom : Hom M N → V →ₗ⁅k,𝔤⁆ W) := fun _ _ h ↦
+  DFunLike.ext _ _ (LieModuleHom.congr_fun h)
+
 @[ext]
 theorem ext {φ ψ : Hom M N} (h : ∀ v, φ v = ψ v) : φ = ψ :=
   DFunLike.ext _ _ h
@@ -100,6 +109,9 @@ def id : Hom M M where
   map_ρ _ _ := rfl
 
 @[simp]
+theorem coe_id : ⇑(id M) = _root_.id :=
+  (rfl)
+
 theorem id_apply (v : V) : id M v = v :=
   (rfl)
 
@@ -107,6 +119,10 @@ theorem id_apply (v : V) : id M v = v :=
 def comp (ψ : Hom N P) (φ : Hom M N) : Hom M P where
   toLieModuleHom := ψ.toLieModuleHom.comp φ.toLieModuleHom
   map_ρ g v := (congrArg ψ (φ.map_ρ g v)).trans (ψ.map_ρ g (φ v))
+
+@[simp]
+theorem coe_comp (ψ : Hom N P) (φ : Hom M N) : ⇑(ψ.comp φ) = ψ ∘ φ :=
+  (rfl)
 
 @[simp]
 theorem comp_apply (ψ : Hom N P) (φ : Hom M N) (v : V) : ψ.comp φ v = ψ (φ v) :=
