@@ -80,7 +80,8 @@ degree `p ^ h`: two laws of height `h` become laws whose `p`-series have the sam
   group laws have multiplication series of the same order.
 * `TauCeti.FormalGroupHom.height_eq` and `TauCeti.FormalGroupIso.height_eq`: formal group laws
   related by a nonzero homomorphism, in particular isomorphic ones, have the same height.
-* `FormalGroup.height_smul`: the height is unchanged by a change of coordinate.
+* `FormalGroup.order_nsmulSeries_smul` and `FormalGroup.height_smul`: the order of `[n]_F` and
+  the height are unchanged by a change of coordinate.
 * `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow`: a homomorphism `u T + ⋯` relates
   the leading coefficients `a` of `[p]_F` and `b` of `[p]_G` by `b u ^ (p ^ h) = u a`; over a
   ring, `TauCeti.FormalGroupHom.coeff_nsmulSeries_mul_coeff_one_pow_of_le_order` gives the same
@@ -419,6 +420,13 @@ theorem FormalGroupIso.height_eq {K : Type*} [Field K] {F G : FormalGroup K}
 end TauCeti
 
 namespace FormalGroup
+
+/-- The order of `[n]_F` is unchanged by a change of coordinate `φ • F`. -/
+@[simp]
+theorem order_nsmulSeries_smul {R : Type*} [CommRing R] (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) (n : ℕ) :
+    ((φ • F).nsmulSeries n).order = (F.nsmulSeries n).order :=
+  ((smulIso φ F).order_nsmulSeries_eq n).symm
 
 /-- The height is unchanged by a change of coordinate `φ • F`. -/
 @[simp]

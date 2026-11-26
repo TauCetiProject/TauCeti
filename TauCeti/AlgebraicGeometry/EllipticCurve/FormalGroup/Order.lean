@@ -34,6 +34,9 @@ for general Weierstrass curves:
   degree (`TauCeti.Isogeny.order_formalSeries`) gives `ord [n]_Ê = deg_i [n]`
   (`WeierstrassCurve.order_zsmulSeries_formalGroup_of_ne_zero`,
   `WeierstrassCurve.order_nsmulSeries_formalGroup_of_ne_zero`).
+* Multiplication series commute with base change (`WeierstrassCurve.map_nsmulSeries_formalGroup`),
+  so base change cannot decrease the order of `[m]_Ê`
+  (`WeierstrassCurve.le_order_nsmulSeries_formalGroup_map`).
 * Over an arbitrary commutative ring `R`, whenever `IsNilpotent W.Δ` and `¬ IsNilpotent W.c₄` (so
   at least one residue-field fiber is nodal) and `m ≠ 0`, `[m]_Ê` has order at most `m`
   (`WeierstrassCurve.order_nsmulSeries_formalGroup_le_of_isNilpotent_Δ_of_not_isNilpotent_c₄`), and
@@ -82,6 +85,21 @@ end Field
 
 section OrderBounds
 
+/-- Base change commutes with taking the multiplication-by-`m` series of a Weierstrass formal
+group. -/
+theorem map_nsmulSeries_formalGroup {R S : Type*} [CommRing R] [CommRing S]
+    (W : WeierstrassCurve R) (f : R →+* S) (m : ℕ) :
+    PowerSeries.map f ((formalGroup W).nsmulSeries m) =
+      (formalGroup (W.map f)).nsmulSeries m := by
+  rw [map_formalGroup, FormalGroup.map_nsmulSeries]
+
+/-- Base change cannot decrease the order of `[m]_Ê`. -/
+theorem le_order_nsmulSeries_formalGroup_map {R S : Type*} [CommRing R] [CommRing S]
+    (W : WeierstrassCurve R) (f : R →+* S) (m : ℕ) :
+    ((formalGroup W).nsmulSeries m).order ≤ ((formalGroup (W.map f)).nsmulSeries m).order := by
+  rw [← map_nsmulSeries_formalGroup]
+  exact PowerSeries.le_order_map f
+
 /-- Over the algebraic closure, a singular Weierstrass curve (`Δ = 0`) can be transformed by a
 change of variables into `y² + a x y = x³` with `a⁴ = c₄`, preserving the order of `[m]_Ê`. -/
 private theorem exists_order_nsmulSeries_formalGroup_eq_of_Δ_eq_zero {K : Type*} [Field K]
@@ -105,10 +123,9 @@ private theorem exists_order_nsmulSeries_formalGroup_eq_of_Δ_eq_zero {K : Type*
         = (PowerSeries.map ι ((formalGroup W).nsmulSeries m)).order :=
             (PowerSeries.order_map_of_injective ι.injective _).symm
       _ = ((formalGroup W₁).nsmulSeries m).order := by
-            rw [FormalGroup.map_nsmulSeries, ← map_formalGroup]
-      _ = ((formalGroup (VariableChange.mk 1 x α y • W₁)).nsmulSeries m).order := by
-            rw [← VariableChange.formalCoordinate_smul_formalGroup _ W₁]
-            exact ((FormalGroup.smulIso _ _).order_nsmulSeries_eq m).symm
+            rw [map_nsmulSeries_formalGroup]
+      _ = ((formalGroup (VariableChange.mk 1 x α y • W₁)).nsmulSeries m).order :=
+            (VariableChange.order_nsmulSeries_formalGroup_variableChange _ W₁ m).symm
       _ = ((formalGroup (⟨W₁.a₁ + 2 * α, 0, 0, 0, 0⟩ : WeierstrassCurve Ω)).nsmulSeries m).order :=
             by rw [hV]
 
@@ -124,9 +141,8 @@ private theorem order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_f
     exact hc₄ ((algebraMap K (AlgebraicClosure K)).injective (by simpa using ha.symm))
   have hgm : ((formalGroup (⟨a, 0, 0, 0, 0⟩ : WeierstrassCurve (AlgebraicClosure K))).nsmulSeries
       m).order = ((FormalGroup.𝔾ₘ : FormalGroup (AlgebraicClosure K)).nsmulSeries m).order := by
-    rw [formalGroup_eq_homothety_smul_𝔾ₘ (Units.mk0 a ha0) rfl rfl rfl rfl rfl]
-    exact ((FormalGroup.smulIso _
-      (FormalGroup.𝔾ₘ : FormalGroup (AlgebraicClosure K))).order_nsmulSeries_eq m).symm
+    rw [formalGroup_eq_homothety_smul_𝔾ₘ (Units.mk0 a ha0) rfl rfl rfl rfl rfl,
+      FormalGroup.order_nsmulSeries_smul]
   rw [hord, hgm]
   have hcoeff : PowerSeries.coeff m
       ((FormalGroup.𝔾ₘ : FormalGroup (AlgebraicClosure K)).nsmulSeries m) = 1 := by
@@ -182,13 +198,8 @@ theorem order_nsmulSeries_formalGroup_le_of_c₄_notMem_radical {R : Type*} [Com
     rwa [map_Δ, Ideal.algebraMap_residueField_eq_zero]
   have hc₄f : (W.map f).c₄ ≠ 0 := by
     rwa [map_c₄, ne_eq, Ideal.algebraMap_residueField_eq_zero]
-  calc
-    ((formalGroup W).nsmulSeries m).order
-      ≤ (PowerSeries.map f ((formalGroup W).nsmulSeries m)).order := PowerSeries.le_order_map f
-    _ = ((formalGroup (W.map f)).nsmulSeries m).order := by
-        rw [FormalGroup.map_nsmulSeries, ← map_formalGroup]
-    _ ≤ m := order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field (W.map f) hm
-        hΔf hc₄f
+  exact (W.le_order_nsmulSeries_formalGroup_map f m).trans
+    (order_nsmulSeries_formalGroup_le_of_Δ_eq_zero_of_c₄_ne_zero_field (W.map f) hm hΔf hc₄f)
 
 /-- **Nodal order bound for `[m]_Ê` under non-nilpotency**: over any commutative ring `R`, if
 `IsNilpotent W.Δ`, `¬ IsNilpotent W.c₄` (so all residue-field fibers are singular and at least one
@@ -229,12 +240,8 @@ theorem order_nsmulSeries_formalGroup_le_sq_of_not_isNilpotent {R : Type*} [Comm
     rwa [ne_eq, Ideal.algebraMap_residueField_eq_zero]
   have hmap : (W.map f).c₄ ≠ 0 ∨ (W.map f).Δ ≠ 0 :=
     hPmem.imp (fun hc₄ ↦ by rw [map_c₄]; exact hf_ne hc₄) (fun hΔ ↦ by rw [map_Δ]; exact hf_ne hΔ)
-  calc
-    ((formalGroup W).nsmulSeries m).order
-      ≤ (PowerSeries.map f ((formalGroup W).nsmulSeries m)).order := PowerSeries.le_order_map f
-    _ = ((formalGroup (W.map f)).nsmulSeries m).order := by
-        rw [FormalGroup.map_nsmulSeries, ← map_formalGroup]
-    _ ≤ (m ^ 2 : ℕ) := order_nsmulSeries_formalGroup_le_sq_field (W.map f) hm hmap
+  exact (W.le_order_nsmulSeries_formalGroup_map f m).trans
+    (order_nsmulSeries_formalGroup_le_sq_field (W.map f) hm hmap)
 
 /-- **Order bound for `[m]_Ê` over reduced rings**: over a reduced commutative ring, whenever
 `c₄ ≠ 0 ∨ Δ ≠ 0` (so at least one residue-field fiber is smooth or nodal) and `m ≠ 0`, the
@@ -260,7 +267,7 @@ theorem nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero {R : Type*
   have hz := nsmulSeries_formalGroup_eq_zero_of_Δ_eq_zero_of_c₄_eq_zero_field (W.map f)
     (by simp [hΔ]) (by simp [hc₄]) (by rw [← map_natCast f, hm, map_zero])
   have hk : f (PowerSeries.coeff k ((formalGroup W).nsmulSeries m)) = 0 := by
-    rw [← FormalGroup.coeff_nsmulSeries_map, ← map_formalGroup, hz, map_zero]
+    rw [← PowerSeries.coeff_map, map_nsmulSeries_formalGroup, hz, map_zero]
   exact Ideal.algebraMap_residueField_eq_zero.mp hk
 
 end OrderBounds

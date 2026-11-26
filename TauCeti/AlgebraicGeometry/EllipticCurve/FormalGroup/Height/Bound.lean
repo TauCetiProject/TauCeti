@@ -131,7 +131,7 @@ private theorem span_coeff_nsmulSeries_eq_top_iff {N : ℕ} (hp : p ≠ 0)
             m ↔
           ((N : ℕ) : ℕ∞) ≤ ((formalGroup (W.map π)).nsmulSeries p).order := by
       nth_rw 1 [← Ideal.mk_ker (I := m)]
-      rw [PowerSeries.span_coeff_le_ker_iff, FormalGroup.map_nsmulSeries, ← map_formalGroup]
+      rw [PowerSeries.span_coeff_le_ker_iff, map_nsmulSeries_formalGroup]
     have hgen :
         Ideal.span {(p : R), W.c₄, W.Δ} ≤ m ↔
           (p : R ⧸ m) = 0 ∧ (W.map π).c₄ = 0 ∧ (W.map π).Δ = 0 := by
