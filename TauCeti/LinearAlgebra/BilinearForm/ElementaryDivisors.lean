@@ -56,7 +56,8 @@ finishes the proof.
   form** `[[0, D, 0], [-D, 0, 0], [0, 0, 0]]` of an alternating form on a finite free module over a
   principal ideal domain.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate`: the normal form
-  `[[0, D], [-D, 0]]` of a nondegenerate alternating form.
+  `[[0, D], [-D, 0]]` of a nondegenerate alternating form, and
+  `LinearMap.BilinForm.IsAlt.even_finrank_of_isPrincipalIdealRing`: the module then has even rank.
 * `LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate`: over an
   ordered principal ideal domain, such as `ℤ`, the elementary divisors can be taken positive.
 * `LinearMap.BilinForm.det_toMatrix_eq_prod_sq_of_toMatrix_eq_fromBlocks`: over `ℤ` the
@@ -302,6 +303,15 @@ theorem IsAlt.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate {M : Type*} [
   refine ⟨g, b.reindex (Equiv.sumEmpty _ _), d, hd0, hdd, Matrix.ext fun x y => ?_⟩
   rw [toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply, hbv]
   rcases x with x | x <;> rcases y with y | y <;> simp
+
+/-- A finite free module over a principal ideal domain carrying a nondegenerate alternating form
+has even rank. -/
+theorem IsAlt.even_finrank_of_isPrincipalIdealRing {M : Type*} [AddCommGroup M] [Module R M]
+    [Module.Free R M] [Module.Finite R M] {B : BilinForm R M} (hB : B.IsAlt)
+    (hnd : B.Nondegenerate) : Even (finrank R M) := by
+  obtain ⟨g, b, -⟩ := hB.exists_basis_toMatrix_eq_fromBlocks_of_nondegenerate hnd
+  rw [finrank_eq_card_basis b, Fintype.card_sum, Fintype.card_fin]
+  exact ⟨g, rfl⟩
 
 end PID
 
