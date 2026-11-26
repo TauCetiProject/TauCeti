@@ -30,9 +30,10 @@ extended multilinearly through the coordinates of the algebra inputs in the basi
 and chords. In general `m_{n+1}(x, a₁, …, aₙ)` is `x` times the product of the coordinates of
 `ρ_ij` in `a₁`, of `ρ_kj` in `a₂, …, aₙ₋₁` and of `ρ_ki` in `aₙ`, for `n ≥ 2`
 (`TauCeti.StrandsAlgebra.threePointTypeA_act_add_two_apply`). The module is strictly unital for the
-idempotents (`TauCeti.StrandsAlgebra.isStrictlyUnital_threePointTypeA`), and its operations do not
-vanish in any arity (`TauCeti.StrandsAlgebra.threePointTypeA_act_cons_snoc`), so it is not a
-differential module.
+idempotents (`TauCeti.StrandsAlgebra.isStrictlyUnital_threePointTypeA`). Its operation `m₁`
+vanishes, while `m₂` and every `m_{n+3}` are nonzero
+(`TauCeti.StrandsAlgebra.threePointTypeA_act_one_oneStrandIdem`,
+`TauCeti.StrandsAlgebra.threePointTypeA_act_cons_snoc`), so it is not a differential module.
 
 For the genus-one pointed matched circle, whose points `0, 1, 2, 3` are matched as `{0, 2}` and
 `{1, 3}`, the triples `(1, 2, 3)` and `(0, 1, 2)` give the operations
@@ -223,7 +224,9 @@ private theorem wordWeight_relation (L : List A) :
     rw [hA, hB]
     match L with
     | [] =>
-      simp [wordWeight, tailWeight, he]
+      simp only [wordWeight, tailWeight, he, List.length_nil, zero_add, range_one,
+        List.drop_succ_cons, List.drop_nil, List.take_succ_cons, List.take_nil, zero_mul,
+        sum_const_zero, mul_zero, add_zero, range_zero, sum_empty]
       linear_combination e x * e y * h2
     | z :: L =>
       have hrel := tailWeight_relation f hq hr y z L
@@ -239,11 +242,6 @@ end Word
 section OfFn
 
 variable {A : Type*} [Mul A]
-
-omit [Mul A] in
-private theorem ofFn_drop {n : ℕ} (a : Fin n → A) (s : ℕ) (h : ∀ l : Fin (n - s), s + l < n) :
-    List.ofFn (fun l : Fin (n - s) ↦ a ⟨s + l, h l⟩) = (List.ofFn a).drop s :=
-  List.ext_getElem (by simp) fun m _ _ ↦ by simp
 
 private theorem ofFn_contractNth {n : ℕ} (a : Fin (n + 1) → A) (l : Fin n) :
     List.ofFn (Fin.contractNth l.castSucc (· * ·) a) = contractAt l (List.ofFn a) := by
@@ -376,7 +374,7 @@ private theorem threePointAct_stasheff [CharP R 2] (N : ℕ) (a : Fin N → matc
     rw [ungradedStasheffComp_def, sum_mul, ← Fin.sum_univ_eq_sum_range]
     refine sum_congr rfl fun s _ ↦ ?_
     -- The inner inputs `fun l ↦ a ⟨l, _⟩` are `Fin.take s _ a` by the definition of `Fin.take`.
-    rw [threePointAct_apply, threePointAct_apply, ofFn_drop,
+    rw [threePointAct_apply, threePointAct_apply, Fin.ofFn_drop_eq_drop_ofFn,
       show List.ofFn (fun l : Fin s ↦ a ⟨l, by omega⟩) = (List.ofFn a).take s from
         Fin.ofFn_take_eq_take_ofFn (Nat.lt_succ_iff.1 s.isLt) a, mul_assoc]
   have hmul : ungradedStasheffMul (threePointAct R M hki hij) N a x =
@@ -463,8 +461,8 @@ theorem threePointTypeA_act_add_two_apply (n : ℕ) (a : Fin (n + 2) → matched
   ring
 
 /-- **The defining operations** of the module of three points:
-`m_{n+3}(x, ρ_ij, ρ_kj, …, ρ_kj, ρ_ki) = x`, with `n` copies of `ρ_kj`. In particular the
-operations do not vanish in any arity at least two, so this is not a differential module. -/
+`m_{n+3}(x, ρ_ij, ρ_kj, …, ρ_kj, ρ_ki) = x`, with `n` copies of `ρ_kj`. In particular every
+operation `m_{n+3}` is nonzero, so this is not a differential module. -/
 theorem threePointTypeA_act_cons_snoc (n : ℕ) (x : R) :
     (threePointTypeA R M hki hij hM hbetween).act (n + 2)
         (Fin.cons (oneStrandChord R M hij)

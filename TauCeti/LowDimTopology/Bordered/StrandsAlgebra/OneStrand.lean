@@ -106,6 +106,12 @@ strand. -/
 def oneStrandIdemCoord (p : Set.range M) : Module.Dual R (matchedSummand R M 1) :=
   (oneStrandSummandBasis R M).coord (.inl p)
 
+/-- The idempotent coordinates are the coordinates of the basis of the matched summand with one
+strand. -/
+theorem oneStrandIdemCoord_eq_coord (p : Set.range M) :
+    oneStrandIdemCoord R M p = (oneStrandSummandBasis R M).coord (.inl p) :=
+  (rfl)
+
 /-- The coordinate of an idempotent on an idempotent is `1` if they agree and `0` otherwise. -/
 @[simp]
 theorem oneStrandIdemCoord_oneStrandIdem (p q : Set.range M) :
@@ -179,6 +185,17 @@ theorem oneStrandIdemCoord_mul (p : Set.range M) (x y : matchedSummand R M 1) :
     fun b b' ↦ by simpa using oneStrandIdemCoord_basis_mul_basis M p b b'
   simpa using LinearMap.congr_fun₂ this x y
 
+omit [DecidableEq β] in
+/-- The sum over the intermediate points `u < m < v` of `c_{um}(ρ_{ac}) c_{mv}(ρ_{a'c'})` vanishes
+unless `a = u`, `c = a'` and `c' = v`. -/
+private theorem sum_oneStrandChordCoord_mul_eq_zero {u v a c a' c' : α} (hac : a < c)
+    (hac' : a' < c') (h : ¬(a = u ∧ c = a' ∧ c' = v)) :
+    ∑ m : {m : α // u < m ∧ m < v}, oneStrandChordCoord R M m.property.1 (oneStrandChord R M hac) *
+      oneStrandChordCoord R M m.property.2 (oneStrandChord R M hac') = 0 := by
+  refine Finset.sum_eq_zero fun m _ ↦ ?_
+  simp only [oneStrandChordCoord_oneStrandChord]
+  split_ifs with h₁ h₂ <;> simp_all
+
 /-- The chord coordinate of a product of two basis elements. -/
 private theorem oneStrandChordCoord_basis_mul_basis {u v : α} (h : u < v)
     (b b' : Set.range M ⊕ {p : α × α // p.1 < p.2}) :
@@ -224,13 +241,10 @@ private theorem oneStrandChordCoord_basis_mul_basis {u v : α} (h : u < v)
           have hm' : c ≠ m := fun h ↦ hm (Subtype.ext h.symm)
           simp [oneStrandChordCoord_oneStrandChord, hm']
       · simp only [hcase, ↓reduceIte]
-        refine (Finset.sum_eq_zero fun m _ ↦ ?_).symm
-        simp only [oneStrandChordCoord_oneStrandChord]
-        split_ifs with h₁ h₂ <;> simp_all
+        exact (sum_oneStrandChordCoord_mul_eq_zero M hac hac' fun ⟨h₁, _, h₃⟩ ↦
+          hcase ⟨h₁, h₃⟩).symm
     · rw [oneStrandChord_mul_oneStrandChord_of_ne M hac hac' hca, map_zero]
-      refine (Finset.sum_eq_zero fun m _ ↦ ?_).symm
-      simp only [oneStrandChordCoord_oneStrandChord]
-      split_ifs with h₁ h₂ <;> simp_all
+      exact (sum_oneStrandChordCoord_mul_eq_zero M hac hac' fun ⟨_, h₂, _⟩ ↦ hca h₂).symm
 
 /-- **The chord coordinates of a product.** The coefficient of the chord from `u` to `v` in `x y`
 is `c_{I(u)}(x) c_{uv}(y) + c_{uv}(x) c_{I(v)}(y) + ∑_{u < m < v} c_{um}(x) c_{mv}(y)`, where `I(u)`

@@ -23,6 +23,7 @@ the entry of an insertion at one of them in the other position, and compares upd
 insertions there. It also shows how `Fin.snoc` interacts with reindexing along a map extended to
 send the last position to the last position. The image of an initial segment under `Fin.cons`
 is obtained by inserting the first entry into the corresponding image for the tail.
+Dropping the first entries of a tuple corresponds to `List.drop` on its list of entries.
 A tuple of length three is determined by its three entries. A tuple in a sum type that starts on
 the left, ends on the right and never steps from right to left steps from left to right exactly
 once. Finally, a tuple can be built by finite dependent choice, each entry chosen relative to the
@@ -100,6 +101,8 @@ set of the earlier ones.
   tuple.
 * `Fin.insertNth_comp_succAbove_eq_comp_swap`: inserting `f i.castSucc` at `i.succ.succ` and
   deleting `i.castSucc.castSucc` swaps the entries of `f` at `i.castSucc` and `i.succ`.
+* `Fin.ofFn_drop_eq_drop_ofFn`: dropping the first `s` entries of a tuple is `List.drop s` of
+  its list of entries.
 * `Fin.exists_tuple_forall_image_Iio`: finite dependent choice, building a tuple each of whose
   entries is chosen relative to the set of the earlier entries.
 -/
@@ -639,5 +642,10 @@ theorem exists_tuple_forall_image_Iio {α : Type*} {Q : Set α → α → Prop} 
       rwa [hIio, ← Set.range_comp, snoc_comp_castSucc, snoc_last]
     · rw [← image_castSucc_Iio, ← Set.image_comp, snoc_comp_castSucc, snoc_castSucc]
       exact hp i
+
+/-- Dropping the first `s` entries of a tuple intertwines with `List.drop` via `List.ofFn`. -/
+theorem ofFn_drop_eq_drop_ofFn {α : Type*} {n : ℕ} (s : ℕ) (a : Fin n → α) :
+    List.ofFn (fun l : Fin (n - s) ↦ a ⟨s + l, by have := l.isLt; omega⟩) = (List.ofFn a).drop s :=
+  List.ext_getElem (by simp) fun m _ _ ↦ by simp
 
 end Fin
