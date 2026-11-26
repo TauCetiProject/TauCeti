@@ -88,7 +88,8 @@ orientation-reversing isometry exchanges the labels.
   `dim E⁻ = dim E⁺`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul`: in positive dimension,
   the half-spin spaces of a spinor module, its `1`- and `-1`-eigenspaces of `Γ`, have dimension
-  `2 ^ (n / 2 - 1)`.
+  `2 ^ (n / 2 - 1)`, and `AlgHom.finrank_eigenspace_complexVolume_of_bijective`: the `AlgHom`-form
+  for a bijective representation `ρ : Cℓ →ₐ[ℂ] End_ℂ S`.
 * `CliffordAlgebra.finrank_eigenspace_complexVolume_eq_mul_finrank_linearMap`: in positive
   dimension, given a spinor module, `dim E^± = 2 ^ (n / 2 - 1) · dim Hom_Cℓ(S, E)`.
 
@@ -356,14 +357,27 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   (o : Orientation ℝ V (Fin n)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
 include hQ
 
-/-- For `Q v = -‖v‖²`, the element `Γ` acts as an involution in every representation. -/
-theorem involutive_complexVolume : Function.Involutive (ρ (complexVolume Q o)) := fun s ↦ by
-  rw [← mul_apply_eq_comp, map_complexVolume_mul_self o hQ ρ, one_apply_eq_self]
-
 /-- **The chirality decomposition of a representation**: for `Q v = -‖v‖²`, the `1`- and
 `-1`-eigenspaces of `ρ(Γ)` are complementary. -/
 theorem isCompl_eigenspace_complexVolume :
     IsCompl ((ρ (complexVolume Q o)).eigenspace 1) ((ρ (complexVolume Q o)).eigenspace (-1)) :=
   isCompl_eigenspace_one_neg_one two_ne_zero.isUnit (ρ.involutive_complexVolume o hQ)
+
+/-- **The half-spin spaces of a spinor representation**: in positive dimension, the `1`- and
+`-1`-eigenspaces of `ρ(Γ)` for a bijective representation `ρ : Cℓ →ₐ[ℂ] End_ℂ S` both have
+dimension `2 ^ (n / 2 - 1)`. -/
+theorem finrank_eigenspace_complexVolume_of_bijective (hρ : Function.Bijective ρ) (hn0 : n ≠ 0)
+    {μ : ℂ} (hμ : μ = 1 ∨ μ = -1) :
+    finrank ℂ ((ρ (complexVolume Q o)).eigenspace μ) = 2 ^ (n / 2 - 1) := by
+  let : Module (CliffordAlgebra (Q.baseChange ℂ)) S := Module.compHom S ρ.toRingHom
+  have hsmul (a : CliffordAlgebra (Q.baseChange ℂ)) (s : S) : a • s = ρ a s := rfl
+  have : IsScalarTower ℂ (CliffordAlgebra (Q.baseChange ℂ)) S :=
+    ⟨fun c a s ↦ by rw [hsmul, hsmul, map_smul, LinearMap.smul_apply]⟩
+  have hlsmul : (Algebra.lsmul ℂ ℂ S :
+      CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ S) = ρ :=
+    AlgHom.ext fun a ↦ LinearMap.ext fun s ↦ hsmul a s
+  rw [← hlsmul]
+  exact CliffordAlgebra.finrank_eigenspace_complexVolume_of_bijective_lsmul o hQ
+    (hlsmul.symm ▸ hρ) hn0 hμ
 
 end AlgHom
