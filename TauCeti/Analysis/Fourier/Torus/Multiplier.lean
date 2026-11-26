@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Diagonal
 
 /-!
@@ -40,6 +41,8 @@ are shown to converge.
 * `TauCeti.UnitAddTorus.norm_fourierMultiplier`: `‖T_m‖ = ‖m‖`.
 * `TauCeti.UnitAddTorus.fourierMultiplier_injective`: the symbol is determined by the operator.
 * `TauCeti.UnitAddTorus.hasSum_fourierMultiplier`: the Fourier series of `T_m f`.
+* `TauCeti.UnitAddTorus.isSelfAdjoint_fourierMultiplier`: a multiplier with a real symbol is
+  self-adjoint.
 * `TauCeti.UnitAddTorus.hasSum_norm_sq_mFourierCoeff`: Parseval's identity
   `‖f‖² = ∑ₙ ‖f̂(n)‖²` in `L²(𝕋ᵈ)`.
 * `TauCeti.UnitAddTorus.tendsto_fourierMultiplier_apply`: strong continuity in the symbol.
@@ -111,6 +114,21 @@ theorem fourierMultiplier_mFourierLp (m : ℓ^∞(d → ℤ, ℂ)) (n : d → �
 theorem hasSum_fourierMultiplier (m : ℓ^∞(d → ℤ, ℂ)) (f : L²(UnitAddTorus d)) :
     HasSum (fun n ↦ (m n * mFourierCoeff f n) • mFourierLp 2 n) (fourierMultiplier m f) := by
   simpa using hasSum_mFourier_series_L2 (fourierMultiplier m f)
+
+/-- A Fourier multiplier with a self-adjoint, that is real, symbol is self-adjoint:
+`⟪T_m a, b⟫ = ⟪a, T_m b⟫`. -/
+theorem isSelfAdjoint_fourierMultiplier {m : ℓ^∞(d → ℤ, ℂ)} (hm : IsSelfAdjoint m) :
+    IsSelfAdjoint (fourierMultiplier m) := by
+  refine ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 fun a b ↦ ?_
+  simp_rw [ContinuousLinearMap.coe_coe, L2.inner_def, RCLike.inner_apply,
+    mul_comm _ ((starRingEnd ℂ) _)]
+  refine (hasSum_prod_mFourierCoeff (fourierMultiplier m a) b).unique ?_
+  convert hasSum_prod_mFourierCoeff a (fourierMultiplier m b) using 1
+  ext n
+  have hn : (starRingEnd ℂ) (m n) = m n := by
+    simpa [lp.star_apply] using congrArg (fun m : ℓ^∞(d → ℤ, ℂ) ↦ m n) hm.star_eq
+  simp only [mFourierCoeff_fourierMultiplier, map_mul, hn]
+  ring
 
 /-- The operator norm of a Fourier multiplier is the supremum norm of its symbol. -/
 @[simp]

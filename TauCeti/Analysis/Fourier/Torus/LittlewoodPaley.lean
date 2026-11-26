@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 public import TauCeti.Analysis.Fourier.Torus.Multiplier
@@ -170,14 +169,9 @@ theorem norm_littlewoodPaleyBlock_le (j : ℕ) : ‖littlewoodPaleyBlock φ j‖
 /-- The periodic Littlewood–Paley blocks are self-adjoint, since their symbols are real:
 `⟪Δⱼ a, b⟫ = ⟪a, Δⱼ b⟫`. -/
 theorem isSelfAdjoint_littlewoodPaleyBlock (j : ℕ) : IsSelfAdjoint (littlewoodPaleyBlock φ j) := by
-  refine ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2 fun a b ↦ ?_
-  simp_rw [ContinuousLinearMap.coe_coe, L2.inner_def, RCLike.inner_apply,
-    mul_comm _ ((starRingEnd ℂ) _)]
-  refine (hasSum_prod_mFourierCoeff (littlewoodPaleyBlock φ j a) b).unique ?_
-  convert hasSum_prod_mFourierCoeff a (littlewoodPaleyBlock φ j b) using 1
-  ext n
-  simp only [mFourierCoeff_littlewoodPaleyBlock, map_mul, Complex.conj_ofReal]
-  ring
+  rw [littlewoodPaleyBlock_eq_fourierMultiplier]
+  exact isSelfAdjoint_fourierMultiplier <| lp.ext <| funext fun n ↦ by
+    simp [lp.star_apply, littlewoodPaleySymbol_apply]
 
 /-! ### Spectral localization -/
 

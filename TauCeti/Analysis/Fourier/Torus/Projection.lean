@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.Analysis.Fourier.Torus.UnitCube
+import TauCeti.MeasureTheory.Constructions.EuclideanSpace
 
 /-!
 # The projection from Euclidean space onto the torus
@@ -19,19 +23,30 @@ turns the Fourier modes of the torus into plane waves: `eₙ (π y) = 𝐞 ⟪y,
 `n ∈ ℤᵈ` (`TauCeti.UnitAddTorus.mFourier_proj`). This is how Fourier multipliers on `ℝᵈ` with
 Schwartz kernels are transferred to the torus.
 
+The projection is a continuous additive homomorphism whose kernel is the lattice `ℤᵈ`
+(`TauCeti.UnitAddTorus.proj_eq_zero_iff`). It has the right inverse
+`UnitAddTorus.lift : 𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, which carries the measure of the torus onto the closed
+unit cube `[0, 1]ᵈ` (`UnitAddTorus.measurePreserving_lift`), so integrals over the torus are
+integrals of periodic functions over the unit cube. The lift takes a point of the torus, so it and
+its lemmas live in Mathlib's `UnitAddTorus` namespace, where dot notation finds them.
+
 ## Main declarations
 
-* `TauCeti.UnitAddTorus.proj`: the projection `ℝᵈ → 𝕋ᵈ`.
-* `TauCeti.UnitAddTorus.proj_add`, `TauCeti.UnitAddTorus.continuous_proj`: it is additive and
-  continuous.
+* `TauCeti.UnitAddTorus.proj`: the projection `ℝᵈ → 𝕋ᵈ`, as a continuous additive homomorphism.
+* `TauCeti.UnitAddTorus.proj_eq_zero_iff`, `TauCeti.UnitAddTorus.proj_eq_proj_iff`: its kernel
+  is the lattice `ℤᵈ`.
 * `TauCeti.UnitAddTorus.mFourier_proj`: the Fourier modes read on `ℝᵈ` are plane waves.
+* `UnitAddTorus.lift`, `UnitAddTorus.proj_lift`, `TauCeti.UnitAddTorus.proj_surjective`: the
+  lift `𝕋ᵈ → (0, 1]ᵈ`, a right inverse of the projection.
+* `UnitAddTorus.measurableEmbedding_lift`, `UnitAddTorus.measurePreserving_lift`: the lift is a
+  measurable embedding carrying the measure of the torus onto the unit cube.
 -/
 
 public section
 
 noncomputable section
 
-open Complex
+open Complex MeasureTheory Set
 open scoped Real RealInnerProductSpace FourierTransform
 
 namespace TauCeti.UnitAddTorus
@@ -40,30 +55,101 @@ open _root_.UnitAddTorus
 
 variable {d : Type*}
 
+/-! ### The projection -/
+
 /-- The projection `π : ℝᵈ → 𝕋ᵈ`, reducing each coordinate modulo one. -/
-def proj (v : EuclideanSpace ℝ d) : UnitAddTorus d := fun i ↦ (v i : UnitAddCircle)
+def proj : EuclideanSpace ℝ d →ₜ+ UnitAddTorus d where
+  toFun v i := (v i : UnitAddCircle)
+  map_zero' := by
+    ext i
+    simp
+  map_add' v w := by
+    ext i
+    simp
+  continuous_toFun :=
+    continuous_pi fun i ↦ (AddCircle.continuous_mk' 1).comp (PiLp.continuous_apply 2 _ i)
 
 @[simp]
 theorem proj_apply (v : EuclideanSpace ℝ d) (i : d) : proj v i = (v i : UnitAddCircle) :=
   (rfl)
 
-theorem proj_add (v w : EuclideanSpace ℝ d) : proj (v + w) = proj v + proj w := by
-  ext i
-  simp
+/-- The kernel of the projection is the lattice `ℤᵈ`. -/
+theorem proj_eq_zero_iff {v : EuclideanSpace ℝ d} :
+    proj v = 0 ↔ ∃ n : d → ℤ, latticePoint n = v := by
+  simp only [funext_iff, proj_apply, Pi.zero_apply, AddCircle.coe_eq_zero_iff, zsmul_eq_mul,
+    mul_one, Classical.skolem]
+  refine exists_congr fun n ↦ ⟨fun h ↦ ?_, fun h i ↦ ?_⟩
+  · ext i
+    rw [latticePoint_apply, h i]
+  · rw [← h, latticePoint_apply]
 
-theorem continuous_proj : Continuous (proj (d := d)) :=
-  continuous_pi fun i ↦ (AddCircle.continuous_mk' 1).comp (PiLp.continuous_apply 2 _ i)
+@[simp]
+theorem proj_latticePoint (n : d → ℤ) : proj (latticePoint n) = 0 :=
+  proj_eq_zero_iff.2 ⟨n, rfl⟩
+
+/-- Two points of `ℝᵈ` have the same projection exactly when they differ by a lattice point. -/
+theorem proj_eq_proj_iff {v w : EuclideanSpace ℝ d} :
+    proj v = proj w ↔ ∃ n : d → ℤ, latticePoint n = v - w := by
+  rw [← sub_eq_zero, ← map_sub, proj_eq_zero_iff]
 
 /-- The Fourier mode `eₙ`, read on `ℝᵈ`, is the plane wave `y ↦ 𝐞 ⟪y, n⟫`. -/
 theorem mFourier_proj [Fintype d] (n : d → ℤ) (y : EuclideanSpace ℝ d) :
     mFourier n (proj y) = (𝐞 ⟪y, latticePoint n⟫ : ℂ) := by
-  have h := mFourier_coe_apply n (WithLp.ofLp y)
-  rw [Real.fourierChar_apply]
-  refine h.trans (congrArg cexp ?_)
+  have hy : proj y = fun i ↦ (WithLp.ofLp y i : UnitAddCircle) := funext (proj_apply y)
+  rw [hy, mFourier_coe_apply, Real.fourierChar_apply]
+  congr 1
   simp only [PiLp.inner_apply, latticePoint_apply, RCLike.inner_apply, conj_trivial]
   push_cast
   rw [Finset.mul_sum, Finset.mul_sum, Finset.sum_mul]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
+
+/-! ### The lift onto the unit cube -/
+
+/-- The lift `𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`, a right inverse of the projection. -/
+def _root_.UnitAddTorus.lift (t : UnitAddTorus d) : EuclideanSpace ℝ d :=
+  WithLp.toLp 2 ((measurableEquivPiIoc 0 t : _) : d → ℝ)
+
+theorem _root_.UnitAddTorus.lift_apply (t : UnitAddTorus d) (i : d) :
+    lift t i = ((measurableEquivPiIoc 0 t : _) : d → ℝ) i :=
+  (rfl)
+
+/-- The coordinates of the lift lie in `(0, 1]`. -/
+theorem _root_.UnitAddTorus.lift_apply_mem_Ioc (t : UnitAddTorus d) (i : d) :
+    lift t i ∈ Ioc (0 : ℝ) 1 := by
+  have h := (measurableEquivPiIoc 0 t).property i
+  simp only [Pi.zero_apply, zero_add] at h
+  rwa [lift_apply]
+
+@[simp]
+theorem _root_.UnitAddTorus.proj_lift (t : UnitAddTorus d) : proj (lift t) = t := by
+  ext i
+  simp [lift_apply]
+
+theorem proj_surjective : Function.Surjective (proj (d := d)) :=
+  fun t ↦ ⟨lift t, proj_lift t⟩
+
+theorem _root_.UnitAddTorus.measurableEmbedding_lift [Countable d] :
+    MeasurableEmbedding (lift (d := d)) :=
+  (MeasurableEquiv.toLp 2 (d → ℝ)).measurableEmbedding.comp
+    measurableEmbedding_coe_measurableEquivPiIoc
+
+-- The torus carries the product of the Haar probability measures on its circle factors, the
+-- measure on which Mathlib's `mFourierBasis` is defined.
+attribute [local instance 2000] instMeasureSpaceUnitAddCircle in
+/-- The lift carries the product of the Haar probability measures on the circle factors of the
+torus onto Lebesgue measure on the closed unit cube `[0, 1]ᵈ`. -/
+theorem _root_.UnitAddTorus.measurePreserving_lift [Fintype d] :
+    MeasurePreserving (lift (d := d)) volume
+      (volume.restrict {v : EuclideanSpace ℝ d | ∀ i, v i ∈ Icc (0 : ℝ) 1}) := by
+  have h := (PiLp.volume_preserving_toLp d).restrict_preimage
+    (EuclideanSpace.measurableSet_setOf_forall_mem fun _ ↦
+      measurableSet_Icc (a := (0 : ℝ)) (b := 1))
+  have hpre : (WithLp.toLp 2 : (d → ℝ) → EuclideanSpace ℝ d) ⁻¹'
+      {v : EuclideanSpace ℝ d | ∀ i, v i ∈ Icc (0 : ℝ) 1} = univ.pi fun _ ↦ Icc (0 : ℝ) 1 := by
+    ext x
+    simp only [mem_ofPred_eq, mem_preimage, mem_univ_pi]
+  rw [hpre] at h
+  exact h.comp measurePreserving_coe_measurableEquivPiIoc
 
 end TauCeti.UnitAddTorus

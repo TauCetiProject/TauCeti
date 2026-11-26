@@ -110,22 +110,11 @@ local notation "L²(" α ")" => Lp ℂ 2 (volume : Measure α)
 
 /-! ### Periodic functions on `ℝᵈ`, the unit cube and the box `(-1, 2]ᵈ` -/
 
-/-- The lift `𝕋ᵈ → (0, 1]ᵈ ⊆ ℝᵈ`. -/
-private def _root_.UnitAddTorus.lift (t : UnitAddTorus d) : EuclideanSpace ℝ d :=
-  WithLp.toLp 2 ((measurableEquivPiIoc 0 t : _) : d → ℝ)
-
-private theorem _root_.UnitAddTorus.proj_lift (t : UnitAddTorus d) : proj (lift t) = t := by
-  ext i
-  simp [UnitAddTorus.lift]
-
 /-- The closed unit cube `[0, 1]ᵈ` of `ℝᵈ`. -/
 private def cube : Set (EuclideanSpace ℝ d) := {v | ∀ i, v i ∈ Icc (0 : ℝ) 1}
 
-private theorem _root_.UnitAddTorus.lift_mem_cube (t : UnitAddTorus d) : lift t ∈ cube := by
-  intro i
-  have h := (measurableEquivPiIoc 0 t).property i
-  simp only [Pi.zero_apply, zero_add] at h
-  exact Ioc_subset_Icc_self h
+private theorem _root_.UnitAddTorus.lift_mem_cube (t : UnitAddTorus d) : lift t ∈ cube :=
+  fun i ↦ Ioc_subset_Icc_self (lift_apply_mem_Ioc t i)
 
 /-- The box `(-1, 2]ᵈ`, which contains the points at distance less than one from the unit cube. -/
 private def box : Set (EuclideanSpace ℝ d) := {v | ∀ i, v i ∈ Ioc (-1 : ℝ) 2}
@@ -172,39 +161,30 @@ private theorem memLp_box_indicator {G : EuclideanSpace ℝ d → ℂ} (hG : Con
   have hb : Bornology.IsBounded (box (d := d)) :=
     ((isCompact_univ_pi fun _ : d ↦ isCompact_Icc (a := (-1 : ℝ)) (b := 2)).image
       (PiLp.continuous_toLp 2 _)).isBounded.subset fun v hv ↦
-        ⟨WithLp.ofLp v, fun i _ ↦ Ioc_subset_Icc_self (hv i), rfl⟩
+        ⟨WithLp.ofLp v, fun i _ ↦ Ioc_subset_Icc_self (hv i), WithLp.toLp_ofLp 2 v⟩
   have : IsFiniteMeasure (volume.restrict (box (d := d))) :=
     ⟨by rw [Measure.restrict_apply_univ]; exact hb.measure_lt_top⟩
   exact MemLp.of_bound hG.aestronglyMeasurable _ (.of_forall hGM)
 
-omit [Fintype d] in
-private theorem measurableEmbedding_lift [Countable d] : MeasurableEmbedding (lift (d := d)) :=
-  (MeasurableEquiv.toLp 2 (d → ℝ)).measurableEmbedding.comp
-    measurableEmbedding_coe_measurableEquivPiIoc
-
 /-- The lift preserves measure onto the unit cube. -/
-private theorem measurePreserving_lift :
+private theorem measurePreserving_lift_cube :
     MeasurePreserving (lift (d := d)) volume (volume.restrict cube) := by
-  have h := (PiLp.volume_preserving_toLp d).restrict_preimage (s := cube) measurableSet_cube
-  have hpre : (WithLp.toLp 2 : (d → ℝ) → EuclideanSpace ℝ d) ⁻¹' cube =
-      univ.pi fun _ ↦ Icc (0 : ℝ) 1 := by
-    ext x
-    simp only [cube, mem_ofPred_eq, mem_preimage, mem_univ_pi]
-  rw [hpre] at h
-  exact h.comp measurePreserving_coe_measurableEquivPiIoc
+  rw [cube]
+  exact measurePreserving_lift
 
 /-- Lifting to the unit cube does not increase `Lᵖ` norms. -/
 private theorem eLpNorm_comp_lift_le {F : EuclideanSpace ℝ d → ℝ≥0∞} (hF : AEMeasurable F)
     (p : ℝ≥0∞) : eLpNorm (fun t ↦ F (lift t)) p volume ≤ eLpNorm F p volume :=
-  (eLpNorm_comp_measurePreserving hF.restrict.aestronglyMeasurable measurePreserving_lift).trans_le
+  (eLpNorm_comp_measurePreserving hF.restrict.aestronglyMeasurable
+    measurePreserving_lift_cube).trans_le
     (eLpNorm_mono_measure _ Measure.restrict_le_self)
 
 /-- A periodic function integrates over every translate of the unit cube to its integral over the
 torus. -/
 private theorem setLIntegral_cube_comp_proj_add (H : UnitAddTorus d → ℝ≥0∞)
     (z : EuclideanSpace ℝ d) : ∫⁻ w in cube, H (proj (w + z)) = ∫⁻ t, H t := by
-  rw [← measurePreserving_lift.lintegral_comp_emb measurableEmbedding_lift]
-  simp_rw [proj_add, proj_lift]
+  rw [← measurePreserving_lift_cube.lintegral_comp_emb measurableEmbedding_lift]
+  simp_rw [map_add, proj_lift]
   exact lintegral_add_right_eq_self H (proj z)
 
 /-- A periodic function integrates over the box to at most `3ᵈ` times its integral over the
@@ -244,7 +224,7 @@ private theorem eLpNorm_box_indicator_comp_proj_le {F : UnitAddTorus d → ℂ} 
       (3 ^ Fintype.card d) ^ (1 / p.toReal) * eLpNorm F p volume := by
   rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_box.nullMeasurableSet,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (f := fun y ↦ F (proj y))
-      (hF.comp continuous_proj).aestronglyMeasurable,
+      (hF.comp proj.continuous).aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hF.aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   gcongr
@@ -262,20 +242,20 @@ private theorem eLpNorm_lintegral_mul_comp_proj_lift_sub_le {κ : EuclideanSpace
   have hq0 : 0 < p.toReal := zero_lt_one.trans_le hq
   have hf : Measurable (Function.uncurry fun w z ↦ κ z * ‖F (proj (w - z))‖ₑ) :=
     (hκ.comp measurable_snd).mul (hF.eNorm.measurable.comp
-      (continuous_proj.measurable.comp (measurable_fst.sub measurable_snd)))
+      (proj.continuous.measurable.comp (measurable_fst.sub measurable_snd)))
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top
       (f := fun t ↦ ∫⁻ z, κ z * ‖F (proj (lift t - z))‖ₑ)
       ((Measurable.lintegral_prod_right' hf).comp
         measurableEmbedding_lift.measurable).aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top hF.aestronglyMeasurable]
   simp only [eNorm_eq_self]
-  rw [measurePreserving_lift.lintegral_comp_emb measurableEmbedding_lift
+  rw [measurePreserving_lift_cube.lintegral_comp_emb measurableEmbedding_lift
     (fun w ↦ (∫⁻ z, κ z * ‖F (proj (w - z))‖ₑ) ^ p.toReal)]
   refine (lintegral_Lp_lintegral_le hf.aemeasurable hq).trans (le_of_eq ?_)
   rw [← lintegral_mul_const _ hκ]
   refine lintegral_congr fun z ↦ ?_
   have hHz : Measurable fun w ↦ ‖F (proj (w - z))‖ₑ ^ p.toReal :=
-    (hF.eNorm.measurable.comp (continuous_proj.measurable.comp
+    (hF.eNorm.measurable.comp (proj.continuous.measurable.comp
       (measurable_id.sub_const z))).pow_const _
   simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hq0.le]
   rw [lintegral_const_mul _ hHz, ENNReal.mul_rpow_of_nonneg _ _ (by positivity), one_div,
@@ -300,7 +280,7 @@ private theorem integral_fourierInv_sub_mul_sum_mFourier (σ : 𝓢(EuclideanSpa
     simp_rw [h, integral_const_mul, mFourier_proj, σ.integral_fourierInv_sub_mul_fourierChar]
     ring
   · exact ((𝓕⁻ σ).integrable.comp_sub_left w).mul_bdd (c := ‖c n‖)
-      (((mFourier n).continuous.comp continuous_proj).mul continuous_const).aestronglyMeasurable
+      (((mFourier n).continuous.comp proj.continuous).mul continuous_const).aestronglyMeasurable
       (.of_forall fun y ↦ by simp [norm_mFourier_apply])
 
 /-! ### The square function of a trigonometric polynomial -/
@@ -333,7 +313,7 @@ private theorem ae_fourierMultiplierCLM_lift_eq_integral (σ : ℕ → 𝓢(Eucl
     filter_upwards [(σ j).coeFn_fourierMultiplierCLM_toLp (hh.toLp h)] with w hw
     rw [hw]
     exact integral_congr_ae (hh.coeFn_toLp.mono fun y hy ↦ by simp [hy])
-  exact measurePreserving_lift.quasiMeasurePreserving.ae (ae_restrict_of_ae hV)
+  exact measurePreserving_lift_cube.quasiMeasurePreserving.ae (ae_restrict_of_ae hV)
 
 /-- The tail `1_{‖z‖ ≥ 1} |𝓕⁻ σ (z)|` of the kernel of the Fourier multiplier with symbol `σ`. -/
 private def kernelTail (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) : EuclideanSpace ℝ d → ℝ≥0∞ :=
@@ -421,7 +401,7 @@ private theorem ae_rpow_sum_sq_littlewoodPaleyBlock_le
           ‖F (proj (lift t - z))‖ₑ := by
   set σ := φ.inhomogeneousLittlewoodPaleySchwartz
   set G : EuclideanSpace ℝ d → ℂ := fun y ↦ F (proj y)
-  have hG : Continuous G := hF.comp continuous_proj
+  have hG : Continuous G := hF.comp proj.continuous
   filter_upwards [hgF, ae_fourierMultiplierCLM_lift_eq_integral σ hmem] with t hbt hPt
   -- Each block is at most `a j + c j`, the near part plus the tail part.
   have hac (j : ℕ) : ‖littlewoodPaleyBlock φ j g t‖ₑ ≤
@@ -480,7 +460,7 @@ private theorem exists_eLpNorm_sum_sq_le_of_mFourierCoeff_eq_zero
   have hFM : ∀ t, ‖F t‖ ≤ ∑ n ∈ s, ‖mFourierCoeff g n‖ := fun t ↦
     (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦ by simp [norm_mFourier_apply])
   have hmem : MemLp (box.indicator fun y ↦ F (proj y)) 2 volume :=
-    memLp_box_indicator (hFc.comp continuous_proj) fun y ↦ hFM _
+    memLp_box_indicator (hFc.comp proj.continuous) fun y ↦ hFM _
   have hA : AEMeasurable fun w ↦ (∑' j, ‖Lp.fourierMultiplierCLM ℂ ((σ j).toLp ∞)
       (hmem.toLp _) w‖ₑ ^ 2) ^ (2⁻¹ : ℝ) :=
     (AEMeasurable.tsum fun j ↦ (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
