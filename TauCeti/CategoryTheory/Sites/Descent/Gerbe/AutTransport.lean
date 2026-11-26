@@ -352,7 +352,7 @@ private theorem localConjugate_pullbackLocalIsos {V : C} (f : V ⟶ U) (e : Loca
   have h : (pullbackCompIso f j.obj.hom).app x ≪≫ pullbackLocalIsos f e j =
       e ⟨Over.mk (j.obj.hom ≫ f), j.property⟩ ≪≫ (pullbackCompIso f j.obj.hom).app y := by
     simp [pullbackLocalIsos]
-  rw [localConjugate, localConjugate, ← Functor.mapAut_comp,
+  rw [localConjugate, localConjugate, ← Functor.comp_mapAut,
     Functor.mapAut_eq_autMulEquivOfIso_app (pullbackCompIso f j.obj.hom)]
   simpa only [Aut.autMulEquivOfIso_trans, MulEquiv.trans_apply] using
     DFunLike.congr_fun (congrArg Aut.autMulEquivOfIso h) _
@@ -369,7 +369,7 @@ theorem conjugateCoverAut_baseChange {V : C} (f : V ⟶ U) {S : Sieve V} (hR : R
   rw [conjugateCoverAut_cover_independent hF hS (J.pullback_stable f hR) d
     (pullbackLocalIsos f e)]
   refine conjugateCoverAut_unique hF _ _ _ _ fun j ↦ ?_
-  rw [localConjugate_pullbackLocalIsos, ← Functor.mapAut_comp,
+  rw [localConjugate_pullbackLocalIsos, ← Functor.comp_mapAut,
     Functor.mapAut_eq_autMulEquivOfIso_app (pullbackCompIso f j.obj.hom)]
   exact congrArg _ (conjugateCoverAut_mapIso hF hR e a ⟨Over.mk (j.obj.hom ≫ f), j.property⟩)
 
