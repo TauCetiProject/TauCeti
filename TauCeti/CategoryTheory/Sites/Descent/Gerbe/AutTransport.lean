@@ -29,9 +29,11 @@ automorphism of `y` restricting to `conj(e_i)(i^* a)` along every `i` of `R`
 and when `x ≅ y` globally it is conjugation along any global isomorphism
 (`conjugateCoverAut_of_iso`). It is a group isomorphism `Aut x ≃* Aut y`
 (`conjugateCoverEquiv`) whose inverse is transport along the `e_i⁻¹`, and transports compose
-(`conjugateCoverAut_comp`). This is the choice independence and local gluing step in the Stacks
-Project, Lemma 8.11.8 (tag 0CJY), which identifies all automorphism groups of a gerbe with abelian
-inertia with each other.
+(`conjugateCoverAut_comp`). Transport is natural in `x` and `y` (`conjugateCoverAut_naturality`)
+and commutes with restriction along any `f : V ⟶ U`, whatever covering sieve of `V` and local
+isomorphisms are used there (`conjugateCoverAut_baseChange`). This is the choice independence and
+local gluing step in the Stacks Project, Lemma 8.11.8 (tag 0CJY), which identifies all
+automorphism groups of a gerbe with abelian inertia with each other.
 
 ## Main declarations
 
@@ -45,6 +47,8 @@ In the namespace `CategoryTheory.Pseudofunctor.GerbeAutTransport`:
 * `conjugateCoverAut_of_iso`: agreement with conjugation along a global isomorphism.
 * `conjugateCoverHom`, `conjugateCoverAut_comp`, `conjugateCoverAut_reverse`,
   `conjugateCoverEquiv`, `conjugateCoverEquiv_of_iso`: the group isomorphism `Aut x ≃* Aut y`.
+* `conjugateCoverAut_naturality`: naturality along isomorphisms `x₁ ≅ x₂`, `y₁ ≅ y₂`.
+* `pullbackLocalIsos`, `conjugateCoverAut_baseChange`: compatibility with base change.
 
 ## References
 
@@ -295,5 +299,67 @@ theorem conjugateCoverEquiv_cover_independent {S : Sieve U} (hR : R ∈ J U) (hS
 theorem conjugateCoverEquiv_of_iso (hR : R ∈ J U) (e : LocalIsos R x y) (d : x ≅ y) :
     conjugateCoverEquiv hF hR e = Aut.autMulEquivOfIso d :=
   MulEquiv.ext (conjugateCoverAut_of_iso hF hR e d)
+
+/-- **Naturality.** Let `c : x₁ ≅ x₂` and `d : y₁ ≅ y₂`, and let `a₁ : Aut x₁`, `a₂ : Aut x₂` be
+related by `a₁ ≫ c = c ≫ a₂`. Then the transports of `a₁` along local isomorphisms `x₁ ≅ y₁` on
+`R` and of `a₂` along local isomorphisms `x₂ ≅ y₂` on `S` are related by `d`. The two families of
+local isomorphisms and the two covering sieves are arbitrary. -/
+theorem conjugateCoverAut_naturality {x₁ x₂ y₁ y₂ : F.obj (.mk (op U))} {S : Sieve U}
+    (hR : R ∈ J U) (hS : S ∈ J U) (e₁ : LocalIsos R x₁ y₁) (e₂ : LocalIsos S x₂ y₂)
+    (c : x₁ ≅ x₂) (d : y₁ ≅ y₂) (a₁ : Aut x₁) (a₂ : Aut x₂)
+    (ha : a₁.asIso.hom ≫ c.hom = c.hom ≫ a₂.asIso.hom) :
+    (conjugateCoverAut hF hR e₁ a₁).asIso.hom ≫ d.hom =
+      d.hom ≫ (conjugateCoverAut hF hS e₂ a₂).asIso.hom := by
+  have ha₂ : a₂ = Aut.autMulEquivOfIso c a₁ :=
+    Aut.ext (Iso.ext (by
+      rw [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom, ha,
+        Iso.inv_hom_id_assoc]))
+  have h : Aut.autMulEquivOfIso d (conjugateCoverAut hF hR e₁ a₁) =
+      conjugateCoverAut hF hS e₂ a₂ := by
+    let dR : LocalIsos R y₁ y₂ := fun i ↦ (F.map i.obj.hom.op.toLoc).toFunctor.mapIso d
+    let cS : LocalIsos S x₁ x₂ := fun i ↦ (F.map i.obj.hom.op.toLoc).toFunctor.mapIso c
+    rw [← conjugateCoverAut_of_iso hF hR dR d, ha₂, ← conjugateCoverAut_of_iso hF hS cS c,
+      conjugateCoverAut_comp hF hR e₁ dR (fun i ↦ e₁ i ≪≫ dR i),
+      conjugateCoverAut_comp hF hS cS e₂ (fun i ↦ cS i ≪≫ e₂ i)]
+    exact conjugateCoverAut_cover_independent hF hR hS _ _ a₁
+  rw [← h, Aut.autMulEquivOfIso_apply_asIso]
+  simp
+
+/-- The local isomorphisms `j^* (f^* x) ≅ j^* (f^* y)` on the pullback of `R` along `f : V ⟶ U`
+induced by local isomorphisms `e_i : i^* x ≅ i^* y` on `R`, through the composition isomorphisms
+`(j ≫ f)^* ≅ j^* f^*`. -/
+noncomputable def pullbackLocalIsos {V : C} (f : V ⟶ U) (e : LocalIsos R x y) :
+    LocalIsos (R.pullback f) ((F.map f.op.toLoc).toFunctor.obj x)
+      ((F.map f.op.toLoc).toFunctor.obj y) := fun j ↦
+  ((Cat.Hom.toNatIso (F.mapComp' f.op.toLoc j.obj.hom.op.toLoc (j.obj.hom ≫ f).op.toLoc
+      (by rw [← Quiver.Hom.comp_toLoc, ← op_comp]))).app x).symm ≪≫
+    e ⟨Over.mk (j.obj.hom ≫ f), j.property⟩ ≪≫
+      (Cat.Hom.toNatIso (F.mapComp' f.op.toLoc j.obj.hom.op.toLoc (j.obj.hom ≫ f).op.toLoc
+        (by rw [← Quiver.Hom.comp_toLoc, ← op_comp]))).app y
+
+/-- **Base change.** For `f : V ⟶ U`, the restriction along `f` of the transport of `a` along
+local isomorphisms on a covering sieve `R` of `U` is the transport of the restriction of `a` along
+arbitrary local isomorphisms on an arbitrary covering sieve `S` of `V`. -/
+theorem conjugateCoverAut_baseChange {V : C} (f : V ⟶ U) {S : Sieve V} (hR : R ∈ J U)
+    (hS : S ∈ J V) (e : LocalIsos R x y)
+    (d : LocalIsos S ((F.map f.op.toLoc).toFunctor.obj x) ((F.map f.op.toLoc).toFunctor.obj y))
+    (a : Aut x) :
+    (F.map f.op.toLoc).toFunctor.mapAut y (conjugateCoverAut hF hR e a) =
+      conjugateCoverAut hF hS d ((F.map f.op.toLoc).toFunctor.mapAut x a) := by
+  rw [conjugateCoverAut_cover_independent hF hS (J.pullback_stable f hR) d
+    (pullbackLocalIsos f e)]
+  refine conjugateCoverAut_unique hF _ _ _ _ fun j ↦ ?_
+  let m := Cat.Hom.toNatIso (F.mapComp' f.op.toLoc j.obj.hom.op.toLoc (j.obj.hom ≫ f).op.toLoc
+    (by rw [← Quiver.Hom.comp_toLoc, ← op_comp]))
+  have hy := Functor.mapAut_eq_autMulEquivOfIso_app m y (conjugateCoverAut hF hR e a)
+  have hx := Functor.mapAut_eq_autMulEquivOfIso_app m x a
+  have hi : (F.map (j.obj.hom ≫ f).op.toLoc).toFunctor.mapAut y (conjugateCoverAut hF hR e a) =
+      localConjugate (j.obj.hom ≫ f) (e ⟨Over.mk (j.obj.hom ≫ f), j.property⟩) a :=
+    conjugateCoverAut_mapIso hF hR e a ⟨Over.mk (j.obj.hom ≫ f), j.property⟩
+  simp only [Cat.Hom.comp_toFunctor, Functor.mapAut_comp] at hx hy
+  rw [hy, hi, localConjugate, localConjugate, hx, pullbackLocalIsos, ← MulEquiv.trans_apply,
+    ← MulEquiv.trans_apply, ← Aut.autMulEquivOfIso_trans, ← Aut.autMulEquivOfIso_trans]
+  congr 2
+  exact (Iso.self_symm_id_assoc _ _).symm
 
 end CategoryTheory.Pseudofunctor.GerbeAutTransport
