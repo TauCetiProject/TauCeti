@@ -23,6 +23,8 @@ The property is the exchange step behind the optimality criteria for bases of ma
 
 ## Main declarations
 
+* `Matroid.IsBase.mem_fundCircuit_iff_isBase_exchange`: the fundamental circuit of `e` in a
+  base `B` consists of `e` and the elements of `B` that can be exchanged for `e`.
 * `Matroid.IsBase.exists_symm_exchange`: the symmetric exchange property of bases.
 
 ## References
@@ -37,7 +39,15 @@ open Set
 
 namespace Matroid
 
-variable {α : Type*} {M : Matroid α} {B B' : Set α} {e : α}
+variable {α : Type*} {M : Matroid α} {B B' : Set α} {e f : α}
+
+/-- For a base `B` and `e ∈ M.E \ B`, an element `f ≠ e` lies on the fundamental circuit of `e` in
+`B` if and only if exchanging `f` for `e` gives a base. -/
+theorem IsBase.mem_fundCircuit_iff_isBase_exchange (hB : M.IsBase B) (heE : e ∈ M.E)
+    (heB : e ∉ B) (hfe : f ≠ e) : f ∈ M.fundCircuit e B ↔ M.IsBase (insert e (B \ {f})) := by
+  rw [hB.indep.mem_fundCircuit_iff (by rwa [hB.closure_eq]) heB,
+    ← insert_sdiff_singleton_comm hfe.symm]
+  exact ⟨hB.exchange_isBase_of_indep heB, IsBase.indep⟩
 
 /-- **Symmetric exchange** (Brualdi). If `B` and `B'` are bases and `e ∈ B \ B'`, there is
 `f ∈ B' \ B` such that both `insert f (B \ {e})` and `insert e (B' \ {f})` are bases. -/
@@ -54,15 +64,10 @@ theorem IsBase.exists_symm_exchange (hB : M.IsBase B) (hB' : M.IsBase B') (he : 
   have hfB' : f ∈ B' := ((M.fundCircuit_subset_insert e B') hfC).resolve_left hfe
   have hfB : f ∉ B := fun hfB ↦ hfe <| by
     simpa [M.fundCocircuit_inter_eq he.1] using (show f ∈ M.fundCocircuit e B ∩ B from ⟨hfK, hfB⟩)
-  refine ⟨f, ⟨hfB', hfB⟩, hB.exchange_isBase_of_indep hfB ?_, hB'.exchange_isBase_of_indep he.2 ?_⟩
-  · -- `f` lies in the fundamental cocircuit of `e` in `B`, so `e` lies on the fundamental
-    -- circuit of `f` in `B`.
-    rw [insert_sdiff_singleton_comm hfe, ← hB.indep.mem_fundCircuit_iff
-      (by rw [hB.closure_eq]; exact hB'.subset_ground hfB') hfB,
-      ← hB.mem_fundCocircuit_iff_mem_fundCircuit]
-    exact hfK
-  · rw [insert_sdiff_singleton_comm hfe.symm, ← hB'.indep.mem_fundCircuit_iff
-      (by rw [hB'.closure_eq]; exact heE) he.2]
-    exact hfC
+  -- `f` lies in the fundamental cocircuit of `e` in `B`, so `e` lies on the fundamental circuit
+  -- of `f` in `B`.
+  exact ⟨f, ⟨hfB', hfB⟩, (hB.mem_fundCircuit_iff_isBase_exchange (hB'.subset_ground hfB') hfB
+      hfe.symm).1 (hB.mem_fundCocircuit_iff_mem_fundCircuit.1 hfK),
+    (hB'.mem_fundCircuit_iff_isBase_exchange heE he.2 hfe).1 hfC⟩
 
 end Matroid

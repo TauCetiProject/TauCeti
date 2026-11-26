@@ -14,8 +14,8 @@ public import TauCeti.Combinatorics.Matroid.SymmExchange
 /-!
 # Bases of maximum weight
 
-Let `M` be a matroid on `α` and `w : α → R` a weight with values in a linearly ordered
-commutative monoid. The weight of a finite set `X` is `∑ᶠ e ∈ X, w e`. A base of maximum weight
+Let `M` be a matroid on `α` and `w : α → R` a weight with values in an ordered commutative
+monoid. The weight of a finite set `X` is `∑ᶠ e ∈ X, w e`. A base of maximum weight
 is a base whose weight is at least that of every other base.
 
 For a matroid of finite rank and a base `B`, the following are equivalent:
@@ -28,8 +28,8 @@ For a matroid of finite rank and a base `B`, the following are equivalent:
    `w e ≤ w (φ e)` for all `e ∈ B'`.
 
 Conditions 2 and 3 are equivalent for every base of every matroid and every weight with values in
-a linear order, and 2 implies 4 for every matroid of finite rank. Each of 2, 3 and 4 implies 1
-in every linearly ordered commutative monoid; the converse needs cancellation in `R`. With weights
+a preorder, and 2 implies 4 for every matroid of finite rank. Each of 2, 3 and 4 implies 1
+in every ordered commutative monoid; the converse needs cancellation in `R`. With weights
 in `WithTop ℕ`, two bases of weight `⊤` are both of maximum weight while only one of them may
 satisfy 2.
 
@@ -112,10 +112,8 @@ theorem IsBase.isBasis_inter_preimage_of_forall_exchange [LE R] (hB : M.IsBase B
   obtain ⟨f, hfC, hfI⟩ := not_subset.1 fun hsub ↦ hC.not_indep (hind.subset hsub)
   have hfe : f ≠ e := fun hfe ↦ hfI (hfe ▸ mem_insert _ _)
   have hfB : f ∈ B := ((M.fundCircuit_subset_insert e B) hfC).resolve_left hfe
-  rw [hB.indep.mem_fundCircuit_iff (by rw [hB.closure_eq]; exact heE) heB,
-    ← insert_sdiff_singleton_comm hfe.symm] at hfC
-  exact hfI <| mem_insert_of_mem _
-    ⟨hfB, hU (h heB hfB (hB.exchange_isBase_of_indep heB hfC)) heU⟩
+  rw [hB.mem_fundCircuit_iff_isBase_exchange heE heB hfe] at hfC
+  exact hfI <| mem_insert_of_mem _ ⟨hfB, hU (h heB hfB hfC) heU⟩
 
 section Preorder
 
@@ -148,9 +146,13 @@ theorem IsBase.exists_bijOn_of_forall_exchange [M.RankFinite] (hB : M.IsBase B)
     -- Exchange `e` for some `f ∈ B \ B'` in both bases; the exchange criterion gives
     -- `w e ≤ w f`, and `insert f (B' \ {e})` has one element fewer outside `B`.
     obtain ⟨f, ⟨hfB, hfB'⟩, hB'', hBe⟩ := hB'.exists_symm_exchange hB ⟨heB', heB⟩
+    have hset : insert f (B' \ {e}) \ B = (B' \ B) \ {e} := by
+      ext x
+      simp only [mem_sdiff, mem_insert_iff, mem_singleton_iff]
+      grind
     obtain ⟨φ, hφ, hφw⟩ := ih hB'' (by
-      rw [insert_sdiff_of_mem _ hfB, sdiff_sdiff_comm,
-        ncard_sdiff_singleton_of_mem (show e ∈ B' \ B from ⟨heB', heB⟩), hn, Nat.add_sub_cancel])
+      rw [hset, ncard_sdiff_singleton_of_mem (show e ∈ B' \ B from ⟨heB', heB⟩), hn]
+      omega)
     refine ⟨φ ∘ Equiv.swap e f, hφ.comp (Equiv.swap_bijOn_exchange heB' hfB'), fun x hx ↦ ?_⟩
     by_cases hxe : x = e
     · subst hxe
@@ -158,21 +160,15 @@ theorem IsBase.exists_bijOn_of_forall_exchange [M.RankFinite] (hB : M.IsBase B)
     · have hxf : x ≠ f := by rintro rfl; exact hfB' hx
       simpa [Equiv.swap_apply_of_ne_of_ne hxe hxf] using hφw x (mem_insert_of_mem _ ⟨hx, hxe⟩)
 
-end Preorder
-
-section LinearOrder
-
-variable [LinearOrder R]
-
 /-- The threshold criterion implies the exchange criterion. -/
 theorem le_of_forall_isBasis_inter
     (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) (he : e ∉ B) (hf : f ∈ B)
     (hB' : M.IsBase (insert e (B \ {f}))) : w e ≤ w f := by
-  by_contra! hlt
+  by_contra hlt
   have heE : e ∈ M.E := hB'.subset_ground (mem_insert _ _)
   -- The elements of `B` at least as heavy as `e` span `e` and avoid `f`.
   have hsub : B ∩ {x | w e ≤ w x} ⊆ B \ {f} :=
-    fun x hx ↦ ⟨hx.1, by rintro rfl; exact hx.2.not_gt hlt⟩
+    fun x hx ↦ ⟨hx.1, by rintro rfl; exact hlt hx.2⟩
   have hcl : e ∈ M.closure (B \ {f}) :=
     M.closure_subset_closure hsub ((h (w e)).subset_closure ⟨heE, le_rfl⟩)
   have hind := hB'.indep
@@ -181,13 +177,13 @@ theorem le_of_forall_isBasis_inter
   exact hind.2 hcl
 
 /-- For a base, the exchange criterion and the threshold criterion are equivalent. This holds in
-every matroid and for weights with values in any linear order. -/
+every matroid and for weights with values in any preorder. -/
 theorem IsBase.forall_exchange_iff_forall_isBasis (hB : M.IsBase B) :
     (∀ ⦃e f⦄, e ∉ B → f ∈ B → M.IsBase (insert e (B \ {f})) → w e ≤ w f) ↔
       ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e}) :=
   ⟨hB.isBasis_inter_of_forall_exchange, fun h _ _ ↦ le_of_forall_isBasis_inter h⟩
 
-end LinearOrder
+end Preorder
 
 /-! ### The optimality criteria -/
 
@@ -213,13 +209,12 @@ theorem IsBase.isMaxWeightBase_of_forall_exchange [M.RankFinite] (hB : M.IsBase 
     M.IsMaxWeightBase w B :=
   hB.isMaxWeightBase_of_forall_exists_bijOn fun _ hB' ↦ hB.exists_bijOn_of_forall_exchange h hB'
 
-end OrderedMonoid
-
 /-- The threshold criterion implies maximality, without cancellation in `R`. -/
-theorem IsBase.isMaxWeightBase_of_forall_isBasis [AddCommMonoid R] [LinearOrder R]
-    [IsOrderedAddMonoid R] [M.RankFinite] (hB : M.IsBase B)
+theorem IsBase.isMaxWeightBase_of_forall_isBasis [M.RankFinite] (hB : M.IsBase B)
     (h : ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e})) : M.IsMaxWeightBase w B :=
   hB.isMaxWeightBase_of_forall_exchange fun _ _ ↦ le_of_forall_isBasis_inter h
+
+end OrderedMonoid
 
 section OrderedCancelMonoid
 
@@ -229,11 +224,12 @@ variable [AddCommMonoid R] [PartialOrder R] [IsOrderedCancelAddMonoid R]
 `f` by a strictly heavier element. This needs cancellation in `R`. -/
 theorem IsMaxWeightBase.le_of_isBase_exchange [M.RankFinite] (hB : M.IsMaxWeightBase w B)
     (he : e ∉ B) (hf : f ∈ B) (hB' : M.IsBase (insert e (B \ {f}))) : w e ≤ w f := by
-  have hfin : (B \ {f}).Finite := hB.isBase.finite.subset sdiff_subset
   have hle := hB.finsum_le hB'
-  rwa [finsum_mem_insert _ (show e ∉ B \ {f} from fun h ↦ he h.1) hfin,
-    ← insert_sdiff_self_of_mem hf, finsum_mem_insert _ (show f ∉ B \ {f} from fun h ↦ h.2 rfl) hfin,
-    insert_sdiff_self_of_mem hf, add_le_add_iff_right] at hle
+  rw [finsum_mem_insert _ (show e ∉ B \ {f} from fun h ↦ he h.1)
+      (hB.isBase.finite.subset sdiff_subset),
+    ← finsum_mem_add_sdiff (singleton_subset_iff.2 hf) hB.isBase.finite,
+    finsum_mem_singleton] at hle
+  exact le_of_add_le_add_right hle
 
 /-- **Exchange criterion.** A base `B` of a matroid of finite rank is of maximum weight if and
 only if no exchange `insert e (B \ {f})` that is again a base replaces `f` by a strictly heavier
@@ -258,6 +254,13 @@ theorem IsMaxWeightBase.isBasis_inter_preimage [M.RankFinite] (hB : M.IsMaxWeigh
     {U : Set R} (hU : IsUpperSet U) : M.IsBasis (B ∩ w ⁻¹' U) (M.E ∩ w ⁻¹' U) :=
   hB.isBase.isBasis_inter_preimage_of_forall_exchange (fun _ _ ↦ hB.le_of_isBase_exchange) hU
 
+/-- **Threshold criterion.** A base `B` of a matroid of finite rank is of maximum weight if and
+only if, for every `t`, the elements of `B` of weight at least `t` form a basis of the elements of
+the ground set of weight at least `t`. -/
+theorem IsBase.isMaxWeightBase_iff_forall_isBasis [M.RankFinite] (hB : M.IsBase B) :
+    M.IsMaxWeightBase w B ↔ ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e}) := by
+  rw [hB.isMaxWeightBase_iff_forall_exchange, hB.forall_exchange_iff_forall_isBasis]
+
 /-- Two bases of maximum weight of a matroid of finite rank have, for every weight `r`, the same
 number of elements of weight `r`. -/
 theorem IsMaxWeightBase.encard_inter_preimage_singleton_eq [M.RankFinite]
@@ -267,9 +270,8 @@ theorem IsMaxWeightBase.encard_inter_preimage_singleton_eq [M.RankFinite]
   -- number of elements, and `w ⁻¹' Ici r` is the disjoint union of `w ⁻¹' Ioi r` and `w ⁻¹' {r}`.
   have hsplit (B : Set α) : (B ∩ w ⁻¹' Ici r).encard =
       (B ∩ w ⁻¹' Ioi r).encard + (B ∩ w ⁻¹' {r}).encard := by
-    rw [← insert_Ioi, insert_eq, preimage_union, inter_union_distrib_left, union_comm,
-      encard_union_eq]
-    exact (disjoint_singleton_right.2 (lt_irrefl r)).preimage w |>.inter_left' B |>.inter_right' B
+    rw [← Ioi_union_left, preimage_union, inter_union_distrib_left]
+    exact encard_union_eq (disjoint_left.2 fun _ hx hx' ↦ hx.2.ne' hx'.2)
   have hIci := (hB.isBasis_inter_preimage (IsUpperSet.Ici r)).encard_eq_eRk.trans
     (hB'.isBasis_inter_preimage (IsUpperSet.Ici r)).encard_eq_eRk.symm
   have hIoi := (hB.isBasis_inter_preimage (IsUpperSet.Ioi r)).encard_eq_eRk.trans
@@ -292,13 +294,5 @@ theorem IsMaxWeightBase.eq_of_injOn [M.RankFinite] (hB : M.IsMaxWeightBase w B)
     (le_antisymm hfe hef) ▸ heB)
 
 end OrderedCancelMonoid
-
-/-- **Threshold criterion.** A base `B` of a matroid of finite rank is of maximum weight if and
-only if, for every `t`, the elements of `B` of weight at least `t` form a basis of the elements of
-the ground set of weight at least `t`. -/
-theorem IsBase.isMaxWeightBase_iff_forall_isBasis [AddCommMonoid R] [LinearOrder R]
-    [IsOrderedCancelAddMonoid R] [M.RankFinite] (hB : M.IsBase B) :
-    M.IsMaxWeightBase w B ↔ ∀ t, M.IsBasis (B ∩ {e | t ≤ w e}) (M.E ∩ {e | t ≤ w e}) := by
-  rw [hB.isMaxWeightBase_iff_forall_exchange, hB.forall_exchange_iff_forall_isBasis]
 
 end Matroid
