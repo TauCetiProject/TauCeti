@@ -39,8 +39,9 @@ coefficients.
 
 ## Main results
 
-* `TauCeti.norm_le_norm_latticePoint`: the supremum norm of `j : ι → ℤ` is at most the Euclidean
-  norm of its lattice point.
+* `TauCeti.norm_le_norm_latticePoint` and `TauCeti.norm_latticePoint_le`: the supremum norm of
+  `j : ι → ℤ` is at most the Euclidean norm of its lattice point, which is at most `card ι` times
+  the supremum norm.
 * `TauCeti.finite_setOf_norm_latticePoint_le`: a closed ball contains finitely many lattice
   points.
 * `TauCeti.card_le_of_forall_norm_latticePoint_le`: the bound `(e (1 + √π R / √n))ⁿ`.
@@ -86,6 +87,16 @@ variable {ι : Type*} [Fintype ι]
 theorem norm_le_norm_latticePoint (j : ι → ℤ) : ‖j‖ ≤ ‖latticePoint j‖ :=
   (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 fun i ↦ by
     simpa [Int.norm_eq_abs] using PiLp.norm_apply_le (latticePoint j) i
+
+/-- The Euclidean norm of a lattice point is at most `card ι` times the supremum norm of its integer
+coordinates. -/
+theorem norm_latticePoint_le (j : ι → ℤ) : ‖latticePoint j‖ ≤ Fintype.card ι * ‖j‖ := by
+  rw [latticePoint_eq_sum]
+  refine (norm_sum_le _ _).trans ?_
+  calc ∑ i, ‖(j i : ℝ) • EuclideanSpace.basisFun ι ℝ i‖ ≤ ∑ _i : ι, ‖j‖ :=
+        sum_le_sum fun i _ ↦ by
+          simpa [norm_smul, Int.norm_eq_abs] using norm_le_pi_norm j i
+    _ = Fintype.card ι * ‖j‖ := by simp
 
 /-- Rounding the coordinates of a real vector `x` gives the integer point
 `latticePoint fun k ↦ round (x k)`, at squared distance at most
