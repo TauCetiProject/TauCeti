@@ -47,6 +47,8 @@ along relative spectrum.
   contravariantly natural in the coordinate bialgebra.
 * `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation`: Mathlib's spectrum-points equivalence with
   its target transported across a named presentation.
+* `TauCeti.CommHopfAlgCat.mapMulEquiv_eq_algSpec_map`: the spectrum-points equivalence
+  expressed as a map of the relative spectrum functor.
 * `TauCeti.CommHopfAlgCat.mapMulEquivOfPresentation_apply_left`: the underlying spectrum map of
   the transported equivalence.
 * `TauCeti.CommHopfAlgCat.mapMulEquiv_mapValue`: a value-algebra map becomes
@@ -167,7 +169,9 @@ private theorem schemePointsAlgΓEquiv_symm_apply
       (Opposite.op (CommAlgCat.of R H))) (CommAlgCat.ofHom p.ofConv).op = _
   rw [Adjunction.homEquiv_unit]
 
-private theorem mapMulEquiv_eq_algSpec_map
+/-- The spectrum-points equivalence sends a convolution point to the map induced by its
+algebra homomorphism under the relative spectrum functor. -/
+theorem mapMulEquiv_eq_algSpec_map
     (H : Type u) [CommRing H] [Bialgebra R H]
     (A : Type u) [CommRing A] [Algebra R A]
     (p : WithConv (H →ₐ[R] A)) :
@@ -175,6 +179,7 @@ private theorem mapMulEquiv_eq_algSpec_map
       (algSpec (CommRingCat.of R)).map (CommAlgCat.ofHom p.ofConv).op := by
   apply Over.OverMorphism.ext
   rw [mapMulEquiv_left, algSpec_map_left]
+  -- Bundling and then projecting the algebra homomorphism recovers its ring homomorphism.
   rfl
 
 private theorem algΓPointSchemePoint_eq_symm

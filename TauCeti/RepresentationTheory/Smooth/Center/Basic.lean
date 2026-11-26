@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Center.Linear
-public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
+public import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 public import TauCeti.RepresentationTheory.Smooth.Category
 import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.RepresentationTheory.Intertwining

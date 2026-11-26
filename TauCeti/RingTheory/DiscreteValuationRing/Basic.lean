@@ -26,7 +26,8 @@ distinct, a discrete valuation ring is also infinite. Writing elements as a unit
 uniformizer `x` also shows that a ring map to a reduced semiring is injective as soon as it does
 not kill `x`, and that a ring map to a cancellative commutative semiring reflects divisibility when
 it sends `x` to a nonzero nonunit. Since a discrete valuation ring is not a field, an integral
-extension of a ring of dimension at most one in it is injective.
+extension of a ring of dimension at most one in it is injective, and a discrete valuation ring in
+which a natural number generates a positive power of the maximal ideal has characteristic zero.
 
 ## Main results
 
@@ -66,6 +67,8 @@ extension of a ring of dimension at most one in it is injective.
   semiring that sends a uniformizer `x` to a nonzero nonunit reflects divisibility.
 * `TauCeti.IsDiscreteValuationRing.faithfulSMul_of_isIntegral`: an integral extension of a ring
   of dimension at most one in a discrete valuation ring is injective.
+* `TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow`: if
+  `(n) = 𝔪 ^ e` for some `n : ℕ` and `e > 0`, the discrete valuation ring has characteristic zero.
 -/
 
 public section
@@ -266,5 +269,25 @@ theorem faithfulSMul_of_isIntegral {R : Type*} [CommRing R] [Ring.DimensionLEOne
     RingHom.ker_eq_comap_bot]
   exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
     bot_lt_iff_ne_bot.2 (_root_.IsDiscreteValuationRing.not_a_field S)
+
+/-- If a natural number generates a positive power of the maximal ideal of a discrete valuation
+ring, the ring has characteristic zero: a nonzero nonunit natural number cannot exist in prime
+characteristic. -/
+theorem charZero_of_span_natCast_eq_maximalIdeal_pow {n e : ℕ} (he : 0 < e)
+    (hne : Ideal.span {(n : S)} = maximalIdeal S ^ e) : CharZero S := by
+  have hn0 : (n : S) ≠ 0 := fun h0 ↦
+    _root_.IsDiscreteValuationRing.not_a_field S
+      ((Ideal.pow_eq_bot he.ne').mp (by simpa [h0] using hne.symm))
+  have hnu : ¬ IsUnit (n : S) := fun hu ↦
+    notMem_maximalIdeal.mpr hu (Ideal.pow_le_self he.ne' (hne ▸ Ideal.mem_span_singleton_self _))
+  rcases CharP.char_is_prime_or_zero S (ringChar S) with hq | h0
+  · have hcop : IsCoprime ((ringChar S : ℤ) : S) ((n : ℤ) : S) :=
+      (Nat.isCoprime_iff_coprime.mpr
+        (hq.coprime_iff_not_dvd.mpr (mt (ringChar.spec S n).mpr hn0))).map (Int.castRingHom S)
+    rw [Int.cast_natCast, Int.cast_natCast, CharP.cast_eq_zero S (ringChar S),
+      isCoprime_zero_left] at hcop
+    exact absurd hcop hnu
+  · have := ringChar.of_eq h0
+    exact CharP.charP_to_charZero S
 
 end TauCeti.IsDiscreteValuationRing

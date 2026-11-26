@@ -77,6 +77,8 @@ basis `b` of `U`, and hence by `‖A‖ ^ Module.finrank 𝕜 U`. Equality holds
   `IsConformalMap.normDet_eq_norm_pow`, `ContinuousLinearMap.norm_apply_eq_of_normDet_eq_norm_pow`,
   `ContinuousLinearMap.normDet_eq_norm_pow_iff`: Hadamard's inequality for `normDet` and its
   conformality equality characterization.
+* `ContinuousLinearMap.normDet_adjoint_le_norm_pow`: the coarea Jacobian `f.adjoint.normDet` is at
+  most `‖f‖ ^ dim F`.
 * `LinearMap.pow_finrank_le_normDet_of_mul_norm_le`, `LinearMap.normDet_le_pow_finrank_of_norm_le`,
   `LinearMap.normDet_eq_pow_finrank_of_norm_eq`: uniform lower, upper, and exact norm bounds on a
   linear map control its `normDet` by the `finrank`-th power of the factor.
@@ -466,6 +468,15 @@ theorem ContinuousLinearMap.normDet_eq_norm_pow_iff (A : E →L[𝕜] F) :
     · exact hconf.normDet_eq_norm_pow
 
 end Hadamard
+
+/-- The coarea Jacobian `f.adjoint.normDet` of a continuous linear map `f : E →L[𝕜] F` into a
+finite-dimensional inner product space is at most `‖f‖ ^ dim F`. The domain need only be
+complete, not finite-dimensional. -/
+theorem ContinuousLinearMap.normDet_adjoint_le_norm_pow {𝕜 E F : Type*} [RCLike 𝕜]
+    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [CompleteSpace F] (f : E →L[𝕜] F) :
+    f.adjoint.normDet ≤ ‖f‖ ^ Module.finrank 𝕜 F :=
+  f.adjoint.normDet_le_norm_pow.trans_eq (by rw [LinearIsometryEquiv.norm_map])
 
 namespace LinearMap
 

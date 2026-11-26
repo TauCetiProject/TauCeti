@@ -126,8 +126,8 @@ theorem exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet (hf : IsMorse �
   obtain ⟨z, hz, hzx, n, t, hn, ht, hlim⟩ :=
     Flow.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet (half_pos hε)
       (isClosed_sphere.isCompact)
-      (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
-      (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hy hu hux
+      (fun w ↦ hX.mem_stableSet_of_forall_mem isClosed_closedBall hK)
+      (fun w ↦ hX.mem_unstableSet_of_forall_mem isClosed_closedBall hK) hy hu hux
   refine ⟨z, hz, fun h ↦ ?_, n, t, hn, ht, hlim⟩
   rw [h, dist_self] at hzx
   exact (half_pos hε).ne hzx
@@ -151,8 +151,8 @@ theorem exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet (hf : IsMorse �
   obtain ⟨z, hz, hzx, n, t, hn, ht, hlim⟩ :=
     Flow.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet (half_pos hε)
       (isClosed_sphere.isCompact)
-      (fun w ↦ hX.mem_stableSet_of_forall_mem hf isClosed_closedBall hK)
-      (fun w ↦ hX.mem_unstableSet_of_forall_mem hf isClosed_closedBall hK) hy hu hux
+      (fun w ↦ hX.mem_stableSet_of_forall_mem isClosed_closedBall hK)
+      (fun w ↦ hX.mem_unstableSet_of_forall_mem isClosed_closedBall hK) hy hu hux
   refine ⟨z, hz, fun h ↦ ?_, n, t, hn, ht, hlim⟩
   rw [h, dist_self] at hzx
   exact (half_pos hε).ne hzx
@@ -204,7 +204,7 @@ theorem reflTransGen_of_mem_closure_unstableSet {hX : IsAdaptedPseudoGradient f 
     · exact Relation.ReflTransGen.refl
     obtain ⟨z, hz, hza⟩ := hX.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet
       hf (Flow.isInvariant_unstableSet _ p) (Flow.disjoint_unstableSet hpa) ⟨hy, hya⟩
-    obtain ⟨b, hb, hzb⟩ := hX.exists_tendsto_atBot hf z
+    obtain ⟨b, hb, hzb⟩ := hX.exists_tendsto_atBot z
     have hzb : z ∈ hX.flow.unstableSet b := Flow.mem_unstableSet.2 hzb
     have hba : b ≠ a := fun hba ↦
       hza (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hba ▸ hzb, hz.2⟩)
@@ -234,7 +234,7 @@ theorem reflTransGen_of_mem_closure_stableSet {hX : IsAdaptedPseudoGradient f X}
     · exact Relation.ReflTransGen.refl
     obtain ⟨z, hz, hzb⟩ := hX.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet
       hf (Flow.isInvariant_stableSet _ q) (Flow.disjoint_stableSet hqb) ⟨hy, hyb⟩
-    obtain ⟨a, ha, hza⟩ := hX.exists_tendsto_atTop hf z
+    obtain ⟨a, ha, hza⟩ := hX.exists_tendsto_atTop z
     have hza : z ∈ hX.flow.stableSet a := Flow.mem_stableSet.2 hza
     have hba : b ≠ a := fun hba ↦
       hzb (hX.eq_of_mem_unstableSet_inter_stableSet ⟨hz.2, hba ▸ hza⟩)
@@ -292,7 +292,7 @@ theorem nonempty_unstableSet_inter_stableSet_of_mem_closure_unstableSet_inter_un
   obtain ⟨y, hy⟩ := hne
   obtain ⟨z, hz, hza⟩ := hX.exists_mem_closure_inter_stableSet_of_mem_closure_inter_unstableSet hf
     (Flow.isInvariant_unstableSet _ p) (Flow.disjoint_unstableSet hap.symm) hy
-  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atBot hf z
+  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atBot z
   have hzc : z ∈ hX.flow.unstableSet c := Flow.mem_unstableSet.2 hzc
   by_cases hcp : c = p
   · exact ⟨z, hcp ▸ hzc, hz.2⟩
@@ -319,7 +319,7 @@ theorem nonempty_unstableSet_inter_stableSet_of_mem_closure_stableSet_inter_stab
   obtain ⟨y, hy⟩ := hne
   obtain ⟨z, hz, hzb⟩ := hX.exists_mem_closure_inter_unstableSet_of_mem_closure_inter_stableSet hf
     (Flow.isInvariant_stableSet _ q) (Flow.disjoint_stableSet hbq.symm) hy
-  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atTop hf z
+  obtain ⟨c, -, hzc⟩ := hX.exists_tendsto_atTop z
   have hzc : z ∈ hX.flow.stableSet c := Flow.mem_stableSet.2 hzc
   by_cases hcq : c = q
   · exact ⟨z, hz.2, hcq ▸ hzc⟩
@@ -350,8 +350,8 @@ theorem IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level
   have hyc : f y = c := (isClosed_eq hdf.continuous continuous_const).closure_subset
     (closure_mono inter_subset_right hy)
   -- The limit `y` lies on a trajectory from some critical point `a` to some critical point `b`.
-  obtain ⟨a, -, hya⟩ := hX.exists_tendsto_atBot hf y
-  obtain ⟨b, -, hyb⟩ := hX.exists_tendsto_atTop hf y
+  obtain ⟨a, -, hya⟩ := hX.exists_tendsto_atBot y
+  obtain ⟨b, -, hyb⟩ := hX.exists_tendsto_atTop y
   have hya : y ∈ hX.flow.unstableSet a := Flow.mem_unstableSet.2 hya
   have hyb : y ∈ hX.flow.stableSet b := Flow.mem_stableSet.2 hyb
   -- A trajectory from a critical point to itself is constant, and lies off the level `c`.
@@ -432,7 +432,7 @@ theorem mem_of_tendsto_upperLevelPoint_of_mem_unstableSet {hX : IsAdaptedPseudoG
     hX.exists_tendsto_mem_stableSet_of_tendsto_mem_unstableSet hf hy hlim
       (Frequently.of_forall fun k ↦ (Flow.disjoint_unstableSet hpa).notMem_of_mem_left (hu k))
   -- The backward limit of `z` is `p`, as no index fits strictly between those of `a` and `p`.
-  obtain ⟨p', -, hp'⟩ := hX.exists_tendsto_atBot hf z
+  obtain ⟨p', -, hp'⟩ := hX.exists_tendsto_atBot z
   have hzp' : z ∈ hX.flow.unstableSet p' := Flow.mem_unstableSet.2 hp'
   have hzcl : z ∈ closure (hX.flow.unstableSet p) := mem_closure_of_tendsto hzlim
     (.of_forall fun k ↦ (Flow.apply_mem_unstableSet_iff _ _).2 (hu _))
@@ -453,14 +453,14 @@ theorem mem_of_tendsto_upperLevelPoint_of_mem_unstableSet {hX : IsAdaptedPseudoG
     hw.congr' (hbelow₀.mono fun m hm ↦ hX.upperLevelPoint_of_lt hm)
   have hbelow : ∀ᶠ k in atTop, f (u (n k)) < c := hn.eventually hbelow₀
   have hex : ∀ᶠ k in atTop, ∃ s, f (hX.flow s (u (n k))) = c :=
-    hbelow.mono fun k hk ↦ hX.exists_flow_eq_of_mem_unstableSet hf (hu _) hcp hk
+    hbelow.mono fun k hk ↦ hX.exists_flow_eq_of_mem_unstableSet (hu _) hcp hk
   -- The level points of the shifted points converge to the level point of `z`.
   have h1 := hX.tendsto_levelPoint ⟨hzp', hz⟩ hac hcp hzlim (hex.mono fun k ⟨s, hs⟩ ↦
     ⟨s - t k, by rwa [← Flow.map_add, sub_add_cancel]⟩)
   have h2 : ∀ᶠ k in atTop,
       hX.levelPoint c (hX.flow (t k) (u (n k))) = hX.levelPoint c (u (n k)) := by
     filter_upwards [hbelow, hex] with k hk hk'
-    obtain ⟨a', hpa', hxa'⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet hf
+    obtain ⟨a', hpa', hxa'⟩ := hX.exists_mem_unstableSet_inter_stableSet_of_mem_unstableSet
       (hu (n k)) (ne_of_apply_ne f (hk.trans hcp).ne)
     exact hX.levelPoint_flow hpa' hxa' hk' _
   obtain ⟨hmem, hc⟩ := hX.mapsTo_levelPoint hpa hac hcp ⟨hzp', hz⟩

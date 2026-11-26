@@ -59,6 +59,9 @@ Two integers whose images in `ℂ` are at distance less than `1` are equal, and 
 subset of `ℂ` avoiding the nonpositive integers `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` have a
 positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`).
 
+The oriented area `Im (conj ω₁ ω₂)` of the parallelogram spanned by `ω₁`, `ω₂` satisfies
+`2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`).
+
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
 
@@ -310,6 +313,14 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
+
+open Complex in
+/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
+theorem two_mul_I_mul_im_conj_mul {ω₁ ω₂ : ℂ} :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
+  have h := sub_conj (conj ω₁ * ω₂)
+  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
+  linear_combination -h
 
 /-- Reverse triangle lower bound for a natural-number shift: `(n : ℝ) - ‖c‖ ≤ ‖(n : ℂ) + c‖`. -/
 theorem _root_.Complex.sub_norm_le_norm_natCast_add (n : ℕ) (c : ℂ) :

@@ -10,7 +10,10 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
 public import TauCeti.AlgebraicGeometry.Restrict
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Descent
 
 /-!
 # Smooth morphisms of pure relative dimension
@@ -41,6 +44,8 @@ Cartier divisor.
 * `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_surjective`: if `g` is surjective and smooth
   of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f` is smooth of
   relative dimension `m + n`, then `f` is smooth of relative dimension `n`.
+* `AlgebraicGeometry.SmoothOfRelativeDimension.descendsAlong_surjective_inf_flat_inf_quasiCompact`:
+  being smooth of relative dimension `n` descends along flat, surjective, quasi-compact morphisms.
 -/
 
 public section
@@ -114,5 +119,19 @@ theorem of_comp_surjective {m n : ℕ} {X Y S : Scheme.{u}} (g : X ⟶ Y) (f : Y
     have hkn : m + k = m + n := PureRelativeDimension.unique (W.ι ≫ g ≫ f)
     exact ⟨V, hy, Nat.add_left_cancel hkn ▸ hk⟩
   exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
+
+open MorphismProperty in
+/-- **Being smooth of relative dimension `n` descends along flat, surjective, quasi-compact
+morphisms.** Smoothness descends along such morphisms, and so does being syntomic of relative
+dimension `n`, which gives pure relative dimension `n`. In particular a scheme over a field `k` is
+smooth of relative dimension `n` if its base change to an extension field is. -/
+instance descendsAlong_surjective_inf_flat_inf_quasiCompact (n : ℕ) :
+    DescendsAlong (@SmoothOfRelativeDimension n) (@Surjective.{u} ⊓ @Flat ⊓ @QuasiCompact) := by
+  refine ⟨fun {A X Y Z fst snd f g} h hf hfst ↦ ?_⟩
+  have : SmoothOfRelativeDimension n fst := hfst
+  have : Smooth g := of_isPullback_of_descendsAlong h hf (SmoothOfRelativeDimension.smooth n fst)
+  have : SyntomicOfRelativeDimension n g := of_isPullback_of_descendsAlong h hf inferInstance
+  exact (smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension g).mpr
+    ⟨inferInstance, inferInstance⟩
 
 end AlgebraicGeometry.SmoothOfRelativeDimension
