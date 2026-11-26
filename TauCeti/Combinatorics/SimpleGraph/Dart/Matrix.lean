@@ -102,7 +102,7 @@ theorem dartSymmMatrix_apply (a b : G.Dart) :
 
 /-- The reversal matrix has zero diagonal: no dart is its own reversal. -/
 theorem dartSymmMatrix_apply_self (a : G.Dart) : G.dartSymmMatrix R a a = 0 := by
-  simp [(Dart.symm_ne a).symm]
+  simp
 
 /-- The entry of the reversal matrix at a dart and its reversal is `1`. -/
 theorem dartSymmMatrix_apply_symm (a : G.Dart) : G.dartSymmMatrix R a a.symm = 1 := by
@@ -228,7 +228,10 @@ theorem dartSndMatrix_mul_transpose_dartSndMatrix :
     G.dartSndMatrix R * (G.dartSndMatrix R)ᵀ = G.degMatrix R := by
   rw [← dartFstMatrix_mul_transpose_dartFstMatrix]
   ext u w
-  exact Fintype.sum_equiv (Function.Involutive.toPerm _ Dart.symm_involutive) _ _ fun a => by simp
+  rw [Matrix.mul_apply, Matrix.mul_apply]
+  exact Fintype.sum_equiv (Function.Involutive.toPerm _ Dart.symm_involutive)
+    (fun a => G.dartSndMatrix R u a * (G.dartSndMatrix R)ᵀ a w)
+    (fun a => G.dartFstMatrix R u a * (G.dartFstMatrix R)ᵀ a w) fun a => by simp
 
 end NonAssocSemiring
 
