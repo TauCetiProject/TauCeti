@@ -124,6 +124,8 @@ with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
+* `TauCeti.IsNondegenerateFixedPt.exists_pos_forall_mem_closedBall_isFixedPt_eq`: on a metric
+  manifold, some closed ball around a nondegenerate fixed point contains no other fixed point.
 * `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
   space over a complete field, a compact set of nondegenerate fixed points is finite.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
@@ -331,6 +333,16 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
   filter_upwards [htends.eventually hne, hsource, hfsource] with y hy hys _ hfix
   apply hy
   rw [(extChartAt I x).left_inv hys, hfix.eq, sub_self]
+
+/-- **A closed ball isolating a nondegenerate fixed point.** On a metric manifold modelled on a
+finite-dimensional space over a complete field, a nondegenerate fixed point `x` of `g` is the only
+fixed point of `g` in some closed ball of positive radius around `x`. -/
+theorem exists_pos_forall_mem_closedBall_isFixedPt_eq {X : Type*} [PseudoMetricSpace X]
+    [ChartedSpace H X] {g : X → X} {x : X} (h : IsNondegenerateFixedPt I g x) :
+    ∃ r > 0, ∀ y ∈ Metric.closedBall x r, IsFixedPt g y → y = x := by
+  obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis Metric.nhds_basis_closedBall _).eventually_iff.1
+    h.eventually_not_isFixedPt
+  exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
 
 end IsNondegenerateFixedPt
 

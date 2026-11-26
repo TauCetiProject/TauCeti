@@ -370,10 +370,8 @@ theorem eventually_forall_fixedPoints_iterate_inter_eq (hK : IsCompact K) (hf : 
   have hFfin : F.Finite := (hK.inter_left (isClosed_fixedPoints (hf.continuous.iterate k)))
     |>.finite_of_isNondegenerateFixedPt fun x hx ↦ hnd x hx.2 hx.1
   -- Each point of `F` has a closed ball around it containing no other point of period `k`.
-  have hiso (x : E) (hx : x ∈ F) : ∃ ρ > 0, ∀ y ∈ closedBall x ρ, IsFixedPt f^[k] y → y = x := by
-    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1
-      (hnd x hx.2 hx.1).eventually_not_isFixedPt
-    exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
+  have hiso (x : E) (hx : x ∈ F) : ∃ ρ > 0, ∀ y ∈ closedBall x ρ, IsFixedPt f^[k] y → y = x :=
+    (hnd x hx.2 hx.1).exists_pos_forall_mem_closedBall_isFixedPt_eq
   choose! ρ hρ0 hρ using hiso
   -- On `K₂ = K ∪ ⋃ x ∈ F, closedBall x (ρ x)` the points of period `k` are those of `F`, and they
   -- lie in the interior of `K₂`, so they persist bijectively.

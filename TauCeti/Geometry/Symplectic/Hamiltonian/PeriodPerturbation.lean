@@ -150,21 +150,6 @@ private theorem isPerturbation_iff {U : Set V} {ψ : V → V} :
   exact ⟨HasCompactSupport.intro hS fun w hw ↦ by simp [hψS w hw],
     (closure_minimal hsupp hS.isClosed).trans hSU⟩
 
-omit [FiniteDimensional ℝ V] in
-/-- Closeness of two successive perturbations adds up: if `g ∘ ψ₁` is within `a` of `g` and
-`g ∘ ψ₁ ∘ ψ₂` within `b` of `g ∘ ψ₁`, in value and derivative, then `g ∘ ψ₁ ∘ ψ₂` is within any
-`c ≥ a + b` of `g`. -/
-private theorem norm_comp_comp_sub_le {g ψ₁ ψ₂ : V → V} {a b c : ℝ}
-    (h₁₀ : ∀ y, ‖g (ψ₁ y) - g y‖ ≤ a) (h₁₁ : ∀ y, ‖fderiv ℝ (g ∘ ψ₁) y - fderiv ℝ g y‖ ≤ a)
-    (h₂₀ : ∀ y, ‖g (ψ₁ (ψ₂ y)) - g (ψ₁ y)‖ ≤ b)
-    (h₂₁ : ∀ y, ‖fderiv ℝ (g ∘ ψ₁ ∘ ψ₂) y - fderiv ℝ (g ∘ ψ₁) y‖ ≤ b) (habc : a + b ≤ c) :
-    (∀ y, ‖g (ψ₁ (ψ₂ y)) - g y‖ ≤ c) ∧
-      ∀ y, ‖fderiv ℝ (g ∘ ψ₁ ∘ ψ₂) y - fderiv ℝ g y‖ ≤ c :=
-  ⟨fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (g (ψ₁ y)) _).trans
-      ((add_comm a b ▸ add_le_add (h₂₀ y) (h₁₀ y)).trans habc),
-    fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderiv ℝ (g ∘ ψ₁) y) _).trans
-      ((add_comm a b ▸ add_le_add (h₂₁ y) (h₁₁ y)).trans habc)⟩
-
 /-- The time-one map of a smooth Hamiltonian that is the identity outside a compact subset `S` of
 `U` is one of the perturbations of this file. -/
 private theorem isPerturbation_hamiltonianFlow {H : V → ℝ} (hH : ContDiff ℝ (⊤ : ℕ∞) H)
@@ -326,11 +311,8 @@ theorem exists_forall_isNondegenerateFixedPt_iterate_comp {φ : V → V} (hφ : 
   have hZ : IsCompact Z :=
     (hK.inter_right (isClosed_fixedPoints (hφ.continuous.iterate k))).inter_right
     (isClosed_biUnion_finset fun j _ ↦ isClosed_fixedPoints (hφ.continuous.iterate j))
-  have hr : ∀ z ∈ Z, ∃ r > 0, ∀ y ∈ closedBall z r, IsFixedPt φ^[k] y → y = z := by
-    intro z hz
-    obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis nhds_basis_closedBall _).eventually_iff.1
-      (hlowZ z hz).eventually_not_isFixedPt
-    exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyz ↦ hr' ⟨hy, hyz⟩ hyfix⟩
+  have hr : ∀ z ∈ Z, ∃ r > 0, ∀ y ∈ closedBall z r, IsFixedPt φ^[k] y → y = z :=
+    fun z hz ↦ (hlowZ z hz).exists_pos_forall_mem_closedBall_isFixedPt_eq
   choose! r hr0 hrfix using hr
   obtain ⟨t, htZ, hcover⟩ := hZ.elim_nhds_subcover (fun z ↦ ball z (r z))
     fun z hz ↦ ball_mem_nhds z (hr0 z hz)

@@ -45,7 +45,8 @@ then `f ∘ ψ` is `C¹`-close to `f` at every point, not only on `S`
 Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to the identity in `C¹`
 (`TauCeti.IsNearId`). Such maps compose with an explicit bound (`TauCeti.IsNearId.comp`), and a
 `C¹`-open condition on `g` holds for `g ∘ ψ` once `ψ` is close enough to the identity
-(`TauCeti.eventually_forall_isNearId_comp`).
+(`TauCeti.eventually_forall_isNearId_comp`). The `C¹` distances of successive perturbations
+`g ∘ ψ₁` and `g ∘ ψ₁ ∘ ψ₂` of `g` add up (`TauCeti.norm_comp_comp_sub_le`).
 
 ## Main results
 
@@ -60,6 +61,8 @@ Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to
 * `IsCompact.eventually_forall_norm_iterate_sub_le`: iterates of maps `C¹`-close everywhere.
 * `IsCompact.exists_pos_forall_norm_comp_sub_le`: composition with a compactly supported
   `C¹`-small perturbation of the identity.
+* `TauCeti.norm_comp_comp_sub_le`: the `C¹` distances of two successive perturbations
+  `g ∘ ψ₁` and `g ∘ ψ₁ ∘ ψ₂` of `g` add up.
 
 ## References
 
@@ -235,6 +238,20 @@ theorem IsCompact.exists_pos_forall_norm_comp_sub_le {S : Set E} (hS : IsCompact
     simp [hε.le]
 
 namespace TauCeti
+
+/-- **Closeness of successive perturbations adds up.** If `g ∘ ψ₁` is within `a` of `g` and
+`g ∘ ψ₁ ∘ ψ₂` within `b` of `g ∘ ψ₁`, in value and derivative at every point, then `g ∘ ψ₁ ∘ ψ₂` is
+within any `c ≥ a + b` of `g`. -/
+theorem norm_comp_comp_sub_le {g : E → F} {ψ₁ ψ₂ : E → E} {a b c : ℝ}
+    (h₁₀ : ∀ y, ‖g (ψ₁ y) - g y‖ ≤ a) (h₁₁ : ∀ y, ‖fderiv 𝕜 (g ∘ ψ₁) y - fderiv 𝕜 g y‖ ≤ a)
+    (h₂₀ : ∀ y, ‖g (ψ₁ (ψ₂ y)) - g (ψ₁ y)‖ ≤ b)
+    (h₂₁ : ∀ y, ‖fderiv 𝕜 (g ∘ ψ₁ ∘ ψ₂) y - fderiv 𝕜 (g ∘ ψ₁) y‖ ≤ b) (habc : a + b ≤ c) :
+    (∀ y, ‖g (ψ₁ (ψ₂ y)) - g y‖ ≤ c) ∧
+      ∀ y, ‖fderiv 𝕜 (g ∘ ψ₁ ∘ ψ₂) y - fderiv 𝕜 g y‖ ≤ c :=
+  ⟨fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (g (ψ₁ y)) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₀ y) (h₁₀ y)).trans habc),
+    fun y ↦ (norm_sub_le_norm_sub_add_norm_sub _ (fderiv 𝕜 (g ∘ ψ₁) y) _).trans
+      ((add_comm a b ▸ add_le_add (h₂₁ y) (h₁₁ y)).trans habc)⟩
 
 /-! ### Maps close to the identity in `C¹` -/
 
