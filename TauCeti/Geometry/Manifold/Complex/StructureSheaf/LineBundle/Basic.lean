@@ -388,6 +388,17 @@ theorem hom_ext {f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectio
   intro s
   exact ext (h U s)
 
+/-- A finite sum of morphisms between sheaves of holomorphic sections acts on sections by the
+pointwise sum of their actions. -/
+@[simp]
+theorem sum_hom_app_apply {ι : Type*} (t : Finset ι)
+    (f : ι → (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂))
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (∑ i ∈ t, f i).hom.app U s x = ∑ i ∈ t, (f i).hom.app U s x :=
+  map_sum (AddMonoidHom.mk' (fun g : holomorphicSectionSheaf I F₁ V₁ ⟶
+    holomorphicSectionSheaf I F₂ V₂ ↦ g.hom.app U s x) fun _ _ ↦ rfl) f t
+
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/
 def homOfLinearMap (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
