@@ -12,6 +12,7 @@ import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 
 /-!
 # The grading of domains in bordered Heegaard diagrams
@@ -354,14 +355,6 @@ theorem cornerCount_eq_card (r : Region) :
 
 variable [Fintype Region]
 
-/-- Summing `D` over a finite family of corners, the corner `c` lying in the region `f c`, counts
-each region with its number of corners. -/
-private theorem sum_mul_card_fiber {ι : Type*} [Fintype ι] (f : ι → Region) (D : Region → ℤ) :
-    ∑ r, (D r : ℚ) * #{c | f c = r} = ∑ c, (D (f c) : ℚ) := by
-  rw [← sum_fiberwise univ f fun c => (D (f c) : ℚ)]
-  refine sum_congr rfl fun r _ => ?_
-  rw [sum_congr rfl fun c hc => by rw [(mem_filter.mp hc).2], sum_const, nsmul_eq_mul, mul_comm]
-
 /-- The Euler measure `e(D) = ∑ D(R) (χ(R) - k(R) / 4)` of a domain, where `χ(R)` is the Euler
 characteristic of the region `R`, supplied as `χ`, and `k(R)` is its number of corners, at the
 intersection points and at the ends of the arcs. -/
@@ -375,6 +368,11 @@ theorem eulerMeasure_apply (χ : Region → ℤ) (D : Region → ℤ) :
     H.eulerMeasure χ D = ∑ r, (D r : ℚ) * (χ r - H.cornerCount r / 4) :=
   (rfl)
 
+/-- The Euler measure of a single region `R` is `χ(R) - k(R) / 4`. -/
+theorem eulerMeasure_single (χ : Region → ℤ) (r : Region) :
+    H.eulerMeasure χ (Pi.single r 1) = χ r - H.cornerCount r / 4 := by
+  simp [Pi.single_apply]
+
 /-- Each corner contributes a quarter of the multiplicity at its region to the point measure at
 its vertex, so the Euler measure is `∑ χ(R) D(R) - ∑ₚ n_p(D) - ∑ᵢ m_D(i) / 2`, the two corners at
 the boundary point `i` contributing `m_D(i) / 2`. -/
@@ -383,13 +381,16 @@ theorem eulerMeasure_eq_sub_sum_pointMeasure (χ : Region → ℤ) (D : Region �
       (∑ i, H.borderPointMultiplicity D i) / 2 := by
   have hcorner : ∑ r, (D r : ℚ) * #{c : Point × Fin 4 | H.cornerRegion c.1 c.2 = r} =
       ∑ p, 4 * H.pointMeasure D p := by
-    rw [sum_mul_card_fiber fun c : Point × Fin 4 => H.cornerRegion c.1 c.2,
-      Fintype.sum_prod_type]
+    simp_rw [mul_comm (D _ : ℚ), ← nsmul_eq_mul]
+    rw [sum_card_filter_nsmul_eq_sum_comp (g := fun c : Point × Fin 4 => H.cornerRegion c.1 c.2)
+      (fun _ _ => mem_univ _), Fintype.sum_prod_type]
     refine sum_congr rfl fun p _ => ?_
     rw [pointMeasure_apply_eq_sum, mul_div_cancel₀ _ four_ne_zero]
   have hborder : ∑ r, (D r : ℚ) * #{c : Fin n × Fin 2 | H.borderCornerRegion c.1 c.2 = r} =
       ∑ i, 2 * H.borderPointMultiplicity D i := by
-    rw [sum_mul_card_fiber fun c : Fin n × Fin 2 => H.borderCornerRegion c.1 c.2,
+    simp_rw [mul_comm (D _ : ℚ), ← nsmul_eq_mul]
+    rw [sum_card_filter_nsmul_eq_sum_comp
+      (g := fun c : Fin n × Fin 2 => H.borderCornerRegion c.1 c.2) (fun _ _ => mem_univ _),
       Fintype.sum_prod_type]
     refine sum_congr rfl fun i _ => ?_
     rw [borderPointMultiplicity_apply, mul_div_cancel₀ _ two_ne_zero, Fin.sum_univ_two,
