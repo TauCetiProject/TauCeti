@@ -251,6 +251,42 @@ theorem Equivalent.prod {H₁ : SignedHermitianSpace K V₁ σ ε}
     Equivalent (H₁.prod H₂) (H₃.prod H₄) :=
   h.elim fun f ↦ h'.elim fun g ↦ ⟨f.prod g⟩
 
+/-- The orthogonal sum is commutative: `H₁ ⊥ H₂ ≅ H₂ ⊥ H₁`. -/
+def IsometryEquiv.prodComm (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) : IsometryEquiv (H₁.prod H₂) (H₂.prod H₁) :=
+  { LinearEquiv.prodComm K V₁ V₂ with
+    map_app' := fun x y ↦ by simp [add_comm] }
+
+@[simp]
+theorem IsometryEquiv.prodComm_apply (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (x : V₁ × V₂) :
+    IsometryEquiv.prodComm H₁ H₂ x = x.swap :=
+  (rfl)
+
+/-- The orthogonal sum is associative: `(H₁ ⊥ H₂) ⊥ H₃ ≅ H₁ ⊥ (H₂ ⊥ H₃)`. -/
+def IsometryEquiv.prodAssoc (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (H₃ : SignedHermitianSpace K V₃ σ ε) :
+    IsometryEquiv ((H₁.prod H₂).prod H₃) (H₁.prod (H₂.prod H₃)) :=
+  { LinearEquiv.prodAssoc K V₁ V₂ V₃ with
+    map_app' := fun x y ↦ by simp [add_assoc] }
+
+@[simp]
+theorem IsometryEquiv.prodAssoc_apply (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (H₃ : SignedHermitianSpace K V₃ σ ε)
+    (x : (V₁ × V₂) × V₃) :
+    IsometryEquiv.prodAssoc H₁ H₂ H₃ x = (x.1.1, (x.1.2, x.2)) :=
+  (rfl)
+
+/-! ### Isometric maps -/
+
+/-- A linear map carrying the form of a signed hermitian space to the form of another is
+injective, because the first form is nondegenerate. -/
+theorem injective_of_form_apply_eq {H₁ : SignedHermitianSpace K V₁ σ ε}
+    {H₂ : SignedHermitianSpace K V₂ σ ε} {f : V₁ →ₗ[K] V₂}
+    (hf : ∀ x y, H₂.form (f x) (f y) = H₁.form x y) : Function.Injective f :=
+  (injective_iff_map_eq_zero f).2 fun x hx ↦ H₁.separatingLeft x fun y ↦ by
+    rw [← hf, hx, map_zero, LinearMap.zero_apply]
+
 /-! ### Nondegenerate subspaces -/
 
 variable (H : SignedHermitianSpace K V σ ε)
