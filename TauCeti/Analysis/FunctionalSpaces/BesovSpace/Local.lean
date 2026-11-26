@@ -211,30 +211,12 @@ theorem isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered [Fact (1 
   refine ⟨fun h ↦ ?_, fun ⟨χ, hχx, hT⟩ ↦ ?_⟩
   · obtain ⟨χ, hχ, hT⟩ := isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.1 h
     exact ⟨χ, by simp [hχ.self_of_nhds], hT⟩
-  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ hχx)
-  -- Near `x`, every test function is a smooth multiple of `χ`.
-  obtain ⟨U, hU, hUg⟩ := TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul hχx
-  -- A cutoff `ρ` equal to one near `x` and supported in `U ∩ Ω`, so `ρ = χ g` for a smooth `g`.
-  obtain ⟨ρ, hρ1, hρU⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
-    isCompact_singleton isOpen_interior
-    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 (inter_mem hU (Ω.isOpen.mem_nhds hxΩ))))
-    (interior_subset.trans inter_subset_right)
-  rw [nhdsSet_singleton] at hρ1
-  obtain ⟨g, hg, hρg⟩ := hUg ρ (hρU.trans (interior_subset.trans inter_subset_left))
-  -- A second cutoff `ρ'` equal to one on `tsupport ρ` makes the multiplier `ρ' g` a test function.
-  obtain ⟨ρ', hρ'1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
-    ρ.hasCompactSupport Ω.isOpen ρ.tsupport_subset subset_rfl
-  let h : 𝓓(Ω, ℂ) := ⟨fun y ↦ ρ' y * g y, ρ'.contDiff.mul hg, ρ'.hasCompactSupport.mul_right,
-    tsupport_mul_subset_left.trans ρ'.tsupport_subset⟩
-  have hhχ (y : E) : h y * χ y = ρ y := by
-    by_cases hy : ρ y = 0
-    · simp [h, hy, mul_assoc, mul_comm (g y), ← hρg y]
-    · simp [h, (hρ'1.self_of_nhdsSet y (subset_tsupport _ hy)), mul_comm (g y), ← hρg y]
-  have hρT : (T.cutoffTempered ρ).MemBesov φ s p q := by
-    rw [← smulLeftCLM_cutoffTempered_of_mul_eq T
-      (h.hasCompactSupport.hasTemperateGrowth h.contDiff) hhχ]
-    exact hT.smulLeftCLM_testFunction h
-  exact isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2 ⟨ρ, hρ1, hρT⟩
+  -- A cutoff `ρ` equal to one near `x` is a test-function multiple `h χ`, so `ρ T = h (χ T)`.
+  obtain ⟨ρ, h, hρ1, hhχ⟩ := TestFunction.exists_eventually_eq_one_and_mul_eq hχx
+  refine isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2 ⟨ρ, hρ1, ?_⟩
+  rw [← smulLeftCLM_cutoffTempered_of_mul_eq T
+    (h.hasCompactSupport.hasTemperateGrowth h.contDiff) hhχ]
+  exact hT.smulLeftCLM_testFunction h
 
 /-- A tempered distribution in `B^s_{p,q}` is `B^s_{p,q}` near every point, as a distribution on
 `Ω`. -/
