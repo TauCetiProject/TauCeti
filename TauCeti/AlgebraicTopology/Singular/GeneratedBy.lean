@@ -80,8 +80,8 @@ instance isIso_toSSet_map_generatedByCounit (X : TopCat.{u}) :
     (CategoryTheory.isIso_iff_bijective _).2 (by
       have h := bijective_toSSet_map_generatedByCounit_app G X n
       rw [← GeneratedByTopCat.adjCounit_app_hom] at h
-      -- The composite functor's object is definitionally `of (WithGeneratedByTopology G X)`,
-      -- so `ofHom_hom` identifies the two counit morphisms.
+      -- After rewriting with `adjCounit_app_hom`, the source object is definitionally
+      -- `of (WithGeneratedByTopology G X)`, and `ofHom` of the underlying map recovers the counit.
       exact h)
   exact NatIso.isIso_of_isIso_app _
 

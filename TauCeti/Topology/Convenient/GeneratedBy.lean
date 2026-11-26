@@ -23,6 +23,10 @@ categorical isomorphism in `TopCat`) if and only if the target is already genera
 (`Topology.WithGeneratedByTopology.isHomeomorph_counit_iff`,
 `GeneratedByTopCat.isIso_adjCounit_app_iff`).
 
+If a functor sends the generated-topology counits to isomorphisms, `TauCeti.generatedByFunctorIso`
+gives a natural isomorphism from that functor precomposed with refinement to the original functor.
+The singular simplicial set and normalized cubical chain comparisons both use this construction.
+
 When `Y` is locally compact, `G`-generated, and every product `G i × Y` with a generator is
 `G`-generated, currying through `C(Y, -)` shows that `X × Y` is `G`-generated whenever `X` is
 (`Topology.IsGeneratedBy.prod_right`), and more generally that refining `X × Y` agrees up to
