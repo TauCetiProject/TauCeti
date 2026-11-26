@@ -256,18 +256,6 @@ private lemma mapsTo_id_diskBoundaryNorthPole :
   rintro _ rfl h
   exact southPole_ne_diskBoundaryNorthPole n h.symm
 
-private lemma diskHomeomorphCube_symm_diskHomeomorphCube_down (z : TopCat.disk.{w} (n + 1)) :
-    ((diskHomeomorphCube.{0} (n + 1)).symm (diskHomeomorphCube.{w} (n + 1) z)).down =
-      (z : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down := by
-  let z₀ : TopCat.disk.{0} (n + 1) :=
-    (ULift.up (z : ULift.{w} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :
-      ULift.{0} (closedBall (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
-  have hz : diskHomeomorphCube.{w} (n + 1) z = diskHomeomorphCube.{0} (n + 1) z₀ := by
-    rw [diskHomeomorphCube_apply, diskHomeomorphCube_apply]
-    refine congrArg _ (Subtype.ext ?_)
-    rw [coe_diskHomeomorphClosedBall_apply, coe_diskHomeomorphClosedBall_apply]
-  rw [hz, Homeomorph.symm_apply_apply]
-
 /-- The tautological loop on `∂𝔻 (n + 2)`, read on the disk, is the collapse map: the composite
 `(𝔻 (n + 1), ∂𝔻 (n + 1)) ⟶ (Iⁿ⁺¹, ∂Iⁿ⁺¹) ⟶ (∂𝔻 (n + 2), {N}) ⟶ (∂𝔻 (n + 2), ∂𝔻 (n + 2) ∖ {s})`
 equals

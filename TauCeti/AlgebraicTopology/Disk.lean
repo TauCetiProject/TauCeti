@@ -420,14 +420,17 @@ theorem nonempty_diskBoundary_iff {n : ℕ} : Nonempty (TopCat.diskBoundary.{u} 
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   nonempty_diskBoundary_succ n
 
-/-- The standard basepoint `(1, 0, …, 0)` of `TopCat.sphere (d + 1)`. -/
-def sphereBasePoint (d : ℕ) : TopCat.sphere.{u} (d + 1) :=
-  ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩
+/-- The positive first-coordinate pole `e₀ = (1, 0, …, 0)` of `TopCat.sphere n`. -/
+def sphereBasepoint (n : ℕ) : TopCat.sphere.{u} n :=
+  (ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩ :
+    ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1))
 
-/-- The underlying vector of `TauCeti.sphereBasePoint d` is the first standard basis vector. -/
+/-- The underlying vector of `TauCeti.sphereBasepoint n` is the first standard basis vector. -/
 @[simp]
-lemma coe_sphereBasePoint_down (d : ℕ) :
-    ((sphereBasePoint.{u} d).down : EuclideanSpace ℝ (Fin (d + 2))) = EuclideanSpace.single 0 1 :=
+lemma coe_sphereBasepoint_down (n : ℕ) :
+    (((sphereBasepoint.{u} n : TopCat.sphere.{u} n) :
+      ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)).down :
+        EuclideanSpace ℝ (Fin (n + 1))) = EuclideanSpace.single 0 1 :=
   (rfl)
 
 /-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`. -/
@@ -569,6 +572,30 @@ abbrev cubeBoundaryPair : TopPair.{u} :=
   TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n))))
     (ULift.down ⁻¹' Cube.boundary (Fin n))
 
+/-- The isomorphism of pairs `(Iᵐ × Iⁿ, ∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ) ≅ (Iᵐ⁺ⁿ, ∂Iᵐ⁺ⁿ)` induced by
+`Fin.appendHomeomorph`. -/
+def cubeBoundaryPairProdIso (m n : ℕ) :
+    TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+      ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ Set.univ ∪
+        Set.univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n))) ≅
+      cubeBoundaryPair.{u} (m + n) :=
+  TopPair.ofSubsetIso
+    (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+    (Y := TopCat.of (ULift.{u} (I^(Fin (m + n)))))
+    ((Homeomorph.ulift.prodCongr Homeomorph.ulift).trans
+      ((Fin.appendHomeomorph (X := I) m n).trans Homeomorph.ulift.symm))
+    fun ⟨_, _⟩ ↦
+      ⟨fun h ↦ Cube.append_mem_boundary_iff.2 (h.imp And.left And.right),
+       fun h ↦ (Cube.append_mem_boundary_iff.1 h).imp (⟨·, trivial⟩) (⟨trivial, ·⟩)⟩
+
+@[simp]
+lemma cubeBoundaryPairProdIso_hom_fst_apply (m n : ℕ)
+    (p : ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))) :
+    TopPair.Hom.fst (cubeBoundaryPairProdIso.{u} m n).hom p =
+      ULift.up (Fin.append p.1.down p.2.down) := by
+  rw [cubeBoundaryPairProdIso]
+  apply TopPair.ofSubsetIso_hom_fst_apply
+
 /-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
 the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/
 def cubeBoundaryPairHom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
@@ -636,6 +663,25 @@ lemma diskHomeomorphCube_apply (z : TopCat.disk.{u} n) :
     diskHomeomorphCube n z =
       (cubeHomeomorphClosedBall (Fin n)).symm (diskHomeomorphClosedBall n z) := by
   rw [diskHomeomorphCube, Homeomorph.trans_apply]
+
+variable {n} in
+/-- `TauCeti.diskHomeomorphCube` depends only on the underlying point of the closed Euclidean ball,
+so inverting it in another universe recovers that point; in particular this compares
+`TauCeti.diskHomeomorphCube.{u}` with `TauCeti.diskHomeomorphCube.{0}`, where
+`TauCeti.cubeToSphere` is fixed at universe `0`. -/
+lemma diskHomeomorphCube_symm_diskHomeomorphCube_down.{v} (z : TopCat.disk.{u} n) :
+    ((diskHomeomorphCube.{v} n).symm (diskHomeomorphCube.{u} n z) :
+        ULift.{v} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down =
+      (z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down := by
+  let z' : TopCat.disk.{v} n :=
+    (ULift.up (z : ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)).down :
+      ULift.{v} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1))
+  have hcb : diskHomeomorphClosedBall.{u} n z = diskHomeomorphClosedBall.{v} n z' :=
+    Subtype.ext ((coe_diskHomeomorphClosedBall_apply z).trans
+      (coe_diskHomeomorphClosedBall_apply z').symm)
+  have hcube : diskHomeomorphCube.{u} n z = diskHomeomorphCube.{v} n z' := by
+    rw [diskHomeomorphCube_apply, diskHomeomorphCube_apply, hcb]
+  rw [hcube, Homeomorph.symm_apply_apply]
 
 variable {n} in
 /-- `TauCeti.diskHomeomorphCube` carries the boundary sphere of the disk onto the boundary of the
@@ -715,6 +761,13 @@ def diskBoundaryPairIsoCube : diskBoundaryPair.{u} n ≅ cubeBoundaryPair.{u} n 
 lemma diskBoundaryPairIsoCube_hom : (diskBoundaryPairIsoCube.{u} n).hom =
     diskBoundaryPairToCube n :=
   (rfl)
+
+variable {n} in
+/-- On the disk, `TauCeti.diskBoundaryPairIsoCube` sends `z` to `TauCeti.diskHomeomorphCube n z`. -/
+lemma diskBoundaryPairIsoCube_hom_fst_apply_down (z : TopCat.disk.{u} n) :
+    (TopPair.Hom.fst (diskBoundaryPairIsoCube.{u} n).hom z).down = diskHomeomorphCube n z := by
+  rw [diskBoundaryPairIsoCube_hom]
+  exact diskBoundaryPairToCube_fst_apply_down z
 
 /-- In dimension one the radial rescaling `TauCeti.diskHomeomorphClosedBall` is the identity on
 coordinates, since the Euclidean and the sup norms on `ℝ¹` agree. -/

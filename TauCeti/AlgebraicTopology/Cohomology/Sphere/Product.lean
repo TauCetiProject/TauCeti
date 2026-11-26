@@ -334,16 +334,17 @@ theorem singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singula
 
 /-- **The cohomology of `Sᵈ × Y` across all sphere dimensions `d ≥ 0`**: a `k`-linear equivalence
 `Hⁿ⁺ᵈ(Sᵈ × Y; M) ≃ Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M)`, given by `TopCat.singularCohomologySphereZeroProdEquiv`
-for `d = 0` and `TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d` for
-`d + 1`. In every dimension `d ≥ 0`, its inverse sends `(b, c)` to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`,
-where `θ ∈ Hᵈ(Sᵈ; k)` is `TauCeti.singularCohomologyTopCatSphereTopClass`. -/
+for `d = 0` and `TopCat.singularCohomologySphereProdSlantEquiv` at
+`TauCeti.sphereBasepoint (d + 1)` for `d + 1`. In every dimension `d ≥ 0`, its inverse sends
+`(b, c)` to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`, where `θ ∈ Hᵈ(Sᵈ; k)` is
+`TauCeti.singularCohomologyTopCatSphereTopClass`. -/
 def singularCohomologySphereTopProdEquiv (Y : TopCat.{w}) :
     (d : ℕ) → (n : ℕ) →
       (sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ≃ₗ[k]
         Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
           Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n
   | 0, n => singularCohomologySphereZeroProdEquiv M Y n
-  | d + 1, n => singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n
+  | d + 1, n => singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasepoint (d + 1)) n
 
 /-- For `d = 0`, `TopCat.singularCohomologySphereTopProdEquiv` is
 `TopCat.singularCohomologySphereZeroProdEquiv`. -/
@@ -354,11 +355,11 @@ lemma singularCohomologySphereTopProdEquiv_zero (Y : TopCat.{w}) (n : ℕ) :
   (rfl)
 
 /-- For `d + 1`, `TopCat.singularCohomologySphereTopProdEquiv` is
-`TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d`. -/
+`TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasepoint (d + 1)`. -/
 @[simp]
 lemma singularCohomologySphereTopProdEquiv_succ (Y : TopCat.{w}) (d n : ℕ) :
     singularCohomologySphereTopProdEquiv M Y (d + 1) n =
-      singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n :=
+      singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasepoint (d + 1)) n :=
   (rfl)
 
 /-- For every `d ≥ 0`, the inverse of `TopCat.singularCohomologySphereTopProdEquiv` sends `(b, c)`

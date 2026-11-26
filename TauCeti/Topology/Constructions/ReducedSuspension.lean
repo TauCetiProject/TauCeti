@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Subpath
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.Quotient
+import TauCeti.Topology.Separation.Hausdorff
 
 /-!
 # The reduced suspension
@@ -280,6 +281,70 @@ theorem meridian_map {Y : Type v} [TopologicalSpace Y] {y₀ : Y} (f : C(X, Y)) 
       ((meridian x).map (map f hf).continuous).cast (map_basepoint f hf).symm
         (map_basepoint f hf).symm :=
   Path.ext <| funext fun s ↦ by simp
+
+/-- Induction principle for `ΣX`: every point is of the form `mk (x, t)`. -/
+@[elab_as_elim]
+lemma ind {motive : ReducedSuspension X x₀ → Prop}
+    (hmk : ∀ x t, motive (mk (x, t))) (z : ReducedSuspension X x₀) : motive z :=
+  let ⟨⟨x, t⟩, h⟩ := mk_surjective z; h ▸ hmk x t
+
+lemma isOpen_iff {s : Set (ReducedSuspension X x₀)} : IsOpen s ↔ IsOpen (mk ⁻¹' s) :=
+  (reducedSuspensionPair X x₀).isOpen_ordinaryPairQuotient_iff
+
+lemma isClosed_iff {s : Set (ReducedSuspension X x₀)} : IsClosed s ↔ IsClosed (mk ⁻¹' s) :=
+  (reducedSuspensionPair X x₀).isClosed_ordinaryPairQuotient_iff
+
+instance [CompactSpace X] : CompactSpace (ReducedSuspension X x₀) :=
+  haveI : CompactSpace (reducedSuspensionPair X x₀).fst := inferInstanceAs (CompactSpace (X × I))
+  (reducedSuspensionPair X x₀).compactSpace_ordinaryPairQuotient
+
+/-- The reduced suspension of a Hausdorff space is Hausdorff. -/
+instance instT2Space [T2Space X] : T2Space (ReducedSuspension X x₀) := by
+  -- `ReducedSuspension X x₀` is the quotient of `reducedSuspensionPair X x₀`, whose ambient
+  -- space `TopCat.of (X × I)` has carrier and topology `X × I` (`TopCat.coe_of`).
+  have : T2Space (reducedSuspensionPair X x₀).fst := inferInstanceAs (T2Space (X × I))
+  have hsub : reducedSuspensionLocus X x₀ =
+      Set.univ ×ˢ ({0, 1} : Set I) ∪ {x₀} ×ˢ Set.univ := by
+    ext ⟨u, s⟩
+    simp [reducedSuspensionLocus, or_comm]
+  refine (reducedSuspensionPair X x₀).t2Space_ordinaryPairQuotient_of_disjoint_nhdsSet
+    fun ⟨x, t⟩ h ↦ ?_
+  rw [TopPair.range_ofSubset_map] at h ⊢
+  rw [hsub]
+  exact isCompact_singleton.disjoint_nhdsSet_univ_prod_union_prod_univ
+    (Set.toFinite ({0, 1} : Set I)).isCompact
+    (fun hx ↦ h (Or.inl hx))
+    (fun ht ↦ h (Or.inr (ht.imp id Set.eq_of_mem_singleton)))
+
+instance [Subsingleton X] : Subsingleton (ReducedSuspension X x₀) :=
+  subsingleton_of_forall_eq basepoint (ind fun x t ↦ Subsingleton.elim x x₀ ▸ mk_basepoint t)
+
+/-- A pointed homeomorphism `X ≃ₜ Y` induces a homeomorphism `ΣX ≃ₜ ΣY`. -/
+def congrHomeomorph {Y : Type v} [TopologicalSpace Y] {y₀ : Y} (e : X ≃ₜ Y) (he : e x₀ = y₀) :
+    ReducedSuspension X x₀ ≃ₜ ReducedSuspension Y y₀ where
+  toFun := map (e : C(X, Y)) he
+  invFun := map (e.symm : C(Y, X)) (e.symm_apply_eq.2 he.symm)
+  left_inv := ind fun x t ↦ by simp
+  right_inv := ind fun y t ↦ by simp
+  continuous_toFun := (map (e : C(X, Y)) he).continuous
+  continuous_invFun := (map (e.symm : C(Y, X)) (e.symm_apply_eq.2 he.symm)).continuous
+
+@[simp]
+lemma congrHomeomorph_mk {Y : Type v} [TopologicalSpace Y] {y₀ : Y}
+    (e : X ≃ₜ Y) (he : e x₀ = y₀) (p : X × I) :
+    congrHomeomorph e he (mk p) = mk (e p.1, p.2) :=
+  map_mk (e : C(X, Y)) he p
+
+@[simp]
+lemma congrHomeomorph_basepoint {Y : Type v} [TopologicalSpace Y] {y₀ : Y}
+    (e : X ≃ₜ Y) (he : e x₀ = y₀) :
+    congrHomeomorph e he (basepoint : ReducedSuspension X x₀) = basepoint :=
+  map_basepoint (e : C(X, Y)) he
+
+@[simp]
+lemma congrHomeomorph_symm {Y : Type v} [TopologicalSpace Y] {y₀ : Y}
+    (e : X ≃ₜ Y) (he : e x₀ = y₀) :
+    (congrHomeomorph e he).symm = congrHomeomorph e.symm (e.symm_apply_eq.2 he.symm) := (rfl)
 
 /-- The reduced suspension of any pointed space is path connected: every point `[x, s]` is joined
 to the basepoint along the meridian through `x`. -/
