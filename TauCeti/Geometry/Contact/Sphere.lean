@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Rotation
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
@@ -38,6 +40,12 @@ the metric `ω(u, J v)` of a compatible complex structure `J`, then `K = J`, and
 rotates each point along the complex line through it. For the standard form above `K x = J x / 2`,
 so `R_α(z) = i z` on `S^(2n+1) ⊂ ℂ^(n+1)`, the generator of the Hopf fibration.
 
+For `E = ℂ^ι` with its Kähler form `Ω(v, w) = Im ⟪v, w⟫_ℂ`, the contact form `λ|S` is invariant
+under the circle action `z ↦ u z` of the unit complex numbers
+(`TauCeti.SymplecticForm.mpullback_smul_sphereContactForm`), since multiplication by `u` preserves
+the Hermitian inner product, and it takes the value `1 / 2` on the generator `i z` of that action
+(`TauCeti.SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul`).
+
 In the compatible case the Reeb orbits are the great circles `cos (2 t) x + sin (2 t) J x` of the
 complex lines through the points of `S`, the fibres of the Hopf fibration
 (`TauCeti.SymplecticForm.isMIntegralCurve_reebVectorField_sphereContactForm_iff`), since the
@@ -59,6 +67,10 @@ the Reeb periods of the sphere are exactly the multiples `k π`
   contact type.
 * `TauCeti.SymplecticForm.isContactForm_sphereContactForm`: `λ|S` is a contact form.
 * `TauCeti.SymplecticForm.mvfderiv_reebVectorField_sphereContactForm`: its Reeb vector field.
+* `TauCeti.SymplecticForm.mpullback_smul_sphereContactForm`: for the Kähler form of `ℂ^ι`, it is
+  invariant under the circle action.
+* `TauCeti.SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul`: for the Kähler form of
+  `ℂ^ι`, it takes the value `1 / 2` on the generator `i z` of the circle action.
 * `TauCeti.SymplecticForm.isMIntegralCurve_reebVectorField_sphereContactForm_iff`: the Reeb
   orbits of the unit sphere are the great circles `cos (2 t) x + sin (2 t) J x`.
 * `TauCeti.SymplecticForm.periodic_iff_of_isMIntegralCurve_reebVectorField_sphereContactForm`:
@@ -205,6 +217,61 @@ theorem mvfderiv_reebVectorField_sphereContactForm {K : E → E}
 end SymplecticForm
 
 end Sphere
+
+/-! ### Invariance under the circle action -/
+
+section Circle
+
+namespace SymplecticForm
+
+variable {ι : Type*} [Fintype ι] {d : ℕ} [Fact (finrank ℝ (EuclideanSpace ℂ ι) = d + 1)]
+  {Ω : SymplecticForm (EuclideanSpace ℂ ι)}
+
+/-- **The contact form of the sphere of `ℂ^ι` is invariant under the circle action.** For the
+Kähler form `Ω(v, w) = Im ⟪v, w⟫_ℂ` of `ℂ^ι`, the rotation `z ↦ u z` of the unit sphere by a unit
+complex number `u` pulls the contact form `λ|S` back to itself. -/
+theorem mpullback_smul_sphereContactForm (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im) (u : Circle) :
+    SmoothForm.mpullback (fun z : sphere (0 : EuclideanSpace ℂ ι) 1 ↦ u • z)
+      (ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) u) (Ω.sphereContactForm d) =
+        Ω.sphereContactForm d := by
+  refine SmoothBundleForm.ext fun z v ↦ ?_
+  have hv : v = ![v 0] := (FinVec.etaExpand_eq v).symm
+  set L : EuclideanSpace ℂ ι →L[ℝ] EuclideanSpace ℂ ι :=
+    ((u : ℂ) • ContinuousLinearMap.id ℂ (EuclideanSpace ℂ ι)).restrictScalars ℝ
+  have hL (x : EuclideanSpace ℂ ι) : L x = (u : ℂ) • x := by simp [L]
+  -- Read in `ℂ^ι`, the rotation of the sphere is the restriction of `L`.
+  have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) ∘
+      (fun z ↦ u • z) = L ∘ (↑) :=
+    funext fun z ↦ by simp [hL, Circle.coe_smul_sphere]
+  have hd : mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) (u • z)
+      (mfderiv (𝓡 d) (𝓡 d) (fun z ↦ u • z) z (v 0)) =
+        L (mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) z
+          (v 0)) := by
+    rw [← mvfderiv_comp_apply z ((contMDiff_coe_sphere (n := d) (m := 1) _).mdifferentiableAt
+      one_ne_zero) ((ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) (n := 1) u z).mdifferentiableAt
+        one_ne_zero) (v 0), hcomp,
+      L.mvfderiv_comp_apply ((contMDiff_coe_sphere (n := d) (m := 1) z).mdifferentiableAt
+        one_ne_zero)]
+  rw [hv, SmoothForm.mpullback_apply_one, sphereContactForm_apply, sphereContactForm_apply, hd, hL,
+    hΩ, hΩ, Circle.coe_smul_sphere, inner_smul_left, inner_smul_right, ← mul_assoc,
+    Complex.conj_mul', Circle.norm_coe]
+  simp
+
+/-- **The contact form on the generator of the circle action.** For the Kähler form
+`Ω(v, w) = Im ⟪v, w⟫_ℂ` of `ℂ^ι`, the contact form `λ|S` takes the value `1 / 2` on a tangent
+vector at `z` that reads as `i z`, the velocity of the circle orbit `t ↦ e^(it) z`. -/
+theorem sphereContactForm_apply_of_mvfderiv_eq_I_smul (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im)
+    {z : sphere (0 : EuclideanSpace ℂ ι) 1} {v : TangentSpace (𝓡 d) z}
+    (hv : mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) z v =
+      Complex.I • (z : EuclideanSpace ℂ ι)) :
+    (Ω.sphereContactForm d).val z ![v] = 1 / 2 := by
+  rw [sphereContactForm_apply, hv, hΩ, inner_smul_right, inner_self_eq_norm_sq_to_K,
+    norm_eq_of_mem_sphere z]
+  simp
+
+end SymplecticForm
+
+end Circle
 
 /-! ### The Reeb flow of the unit sphere -/
 
