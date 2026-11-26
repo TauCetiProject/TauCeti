@@ -216,17 +216,18 @@ private lemma addDiff_eq_of_smul {U : Cᵒᵖ} {p q : P.sheaf.obj.obj U} {a : F.
   simpa using this
 
 private lemma addDiff_add_addDiff {U : Cᵒᵖ} (p q r : P.sheaf.obj.obj U) :
-    addDiff P p q + addDiff P q r = addDiff P p r :=
-  (addDiff_eq_of_smul P (by rw [ofAdd_add, map_mul, mul_smul, addDiff_smul, addDiff_smul])).symm
+    addDiff P p q + addDiff P q r = addDiff P p r := by
+  rw [addDiff, addDiff, addDiff, ← toAdd_mul, ← map_mul, diff_mul_diff]
 
-private lemma addDiff_self {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) : addDiff P p p = 0 :=
-  addDiff_eq_of_smul P (by simp)
+private lemma addDiff_self {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) : addDiff P p p = 0 := by
+  rw [addDiff, diff_self, map_one, toAdd_one]
 
 private lemma map_addDiff {U V : Cᵒᵖ} (f : U ⟶ V) (p q : P.sheaf.obj.obj U) :
     F.obj.map f (addDiff P p q) = addDiff P (P.sheaf.obj.map f p) (P.sheaf.obj.map f q) := by
-  refine (addDiff_eq_of_smul P ?_).symm
-  rw [← toAdd_ofAdd (addDiff P p q), ← abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv,
-    ← P.map_smul, addDiff_smul]
+  rw [addDiff, addDiff, ← map_diff,
+    ← MulEquiv.apply_symm_apply (abelianSheafToGrpSheafObjEquiv F U) (P.diff p q),
+    abelianSheafToGrpSheaf_map_abelianSheafToGrpSheafObjEquiv, MulEquiv.symm_apply_apply,
+    MulEquiv.symm_apply_apply, toAdd_ofAdd]
 
 private lemma lift_addDiff {U : Cᵒᵖ} (p₀ p₁ : P.sheaf.obj.obj U) (x : FreeAddCommGroup _) :
     FreeAddCommGroup.lift (addDiff P · p₀) x =

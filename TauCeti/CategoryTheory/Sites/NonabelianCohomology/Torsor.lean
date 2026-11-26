@@ -114,7 +114,9 @@ lemma smul_left_injective (p : P.sheaf.obj.obj U) :
 
 variable {U} in
 /-- The difference of two sections `p` and `q` of a torsor over `U`: the unique section `g` of
-`G` over `U` with `g • q = p` (`diff_smul_self`, `eq_diff_of_smul_eq`). -/
+`G` over `U` with `g • q = p` (`diff_smul_self`, `eq_diff_of_smul_eq`). It is trivial on the
+diagonal (`diff_self`), multiplicative (`diff_mul_diff`) and compatible with restriction
+(`map_diff`). -/
 noncomputable def diff (p q : P.sheaf.obj.obj U) : G.obj.obj U :=
   (MulAction.exists_smul_eq (G.obj.obj U) q p).choose
 
@@ -129,6 +131,23 @@ variable {U} in
 lemma eq_diff_of_smul_eq {p q : P.sheaf.obj.obj U} {g : G.obj.obj U} (hg : g • q = p) :
     g = P.diff p q :=
   P.smul_left_injective q (hg.trans (P.diff_smul_self p q).symm)
+
+variable {U} in
+/-- The difference of a section with itself is trivial. -/
+@[simp]
+lemma diff_self (p : P.sheaf.obj.obj U) : P.diff p p = 1 :=
+  (P.eq_diff_of_smul_eq (one_smul _ p)).symm
+
+variable {U} in
+/-- Differences compose: the difference of `p` and `q` times that of `q` and `r` is the
+difference of `p` and `r`. -/
+lemma diff_mul_diff (p q r : P.sheaf.obj.obj U) : P.diff p q * P.diff q r = P.diff p r :=
+  P.eq_diff_of_smul_eq (by rw [mul_smul, diff_smul_self, diff_smul_self])
+
+/-- Differences are compatible with restriction. -/
+lemma map_diff {U V : Cᵒᵖ} (f : U ⟶ V) (p q : P.sheaf.obj.obj U) :
+    G.obj.map f (P.diff p q) = P.diff (P.sheaf.obj.map f p) (P.sheaf.obj.map f q) :=
+  P.eq_diff_of_smul_eq (by rw [← P.map_smul, diff_smul_self])
 
 end Action
 

@@ -205,19 +205,15 @@ private lemma map_diff_val {T : Over S} (s t : GlueSection ((toSheafDescentData 
     h hh _ (Torsor.diff_smul_self (torsorObj D i) (U := op Z) (t.val i Z h hh) (s.val i Z h hh))
   have hB := smul_val_hom (D := D) (s := s) (t := t) ((c ≫ h) ≫ T.hom) (c ≫ Z.hom) Z'.hom
     (by simp [hh]) hh'.symm W (c ≫ h) (by simp [W]) _ hA
-  have hC := smul_val_map (b := (Over.homMk (𝟙 Z'.left) (by simp [W]) :
-    Z' ⟶ (Over.map Z'.hom).obj W)) (c ≫ h) _ _ hB
-  have e : (G.over (X i')).obj.map (Over.homMk (𝟙 Z'.left) (by simp [W]) :
-      Z' ⟶ (Over.map Z'.hom).obj W).op
-        (G.obj.map c.op ((torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh))) =
-      G.obj.map c.op ((torsorObj D i).diff (U := op Z) (t.val i Z h hh) (s.val i Z h hh)) :=
-    -- The restriction is along a morphism whose underlying morphism of `C` is an identity.
-    (over_obj_map_apply G _ _).trans
-      ((ConcreteCategory.congr_hom (G.obj.map_id _) _).trans (id_apply _))
-  refine Torsor.eq_diff_of_smul_eq _ (Eq.trans ?_ (hC.trans (t.val_congr (Category.id_comp _) _)))
-  exact congrArg₂ (fun (y : (G.over (X i')).obj.obj (op Z'))
-    (x : (torsorObj D i').sheaf.obj.obj (op Z')) ↦ y • x) e.symm
-      (s.val_congr (Category.id_comp _).symm _)
+  -- The difference at `(Over.map Z'.hom).obj W` restricts, along a morphism `b` from `Z'` whose
+  -- underlying morphism of `C` is an identity, to the difference at `Z'`.
+  let b : Z' ⟶ (Over.map Z'.hom).obj W := Over.homMk (𝟙 Z'.left) (by simp [W])
+  refine (over_obj_map_apply_of_left_eq_id G b rfl _).symm.trans
+    ((congrArg ((G.over (X i')).obj.map b.op) ((torsorObj D i').eq_diff_of_smul_eq hB)).trans
+      (((torsorObj D i').map_diff b.op _ _).trans ?_))
+  exact congrArg₂ (torsorObj D i').diff
+    ((t.map_val b (c ≫ h) _).trans (t.val_congr (Category.id_comp _) _))
+    ((s.map_val b (c ≫ h) _).trans (s.val_congr (Category.id_comp _) _))
 
 variable (D)
 
@@ -292,7 +288,7 @@ lemma exists_smulGlueSection_eq (hf : Sieve.ofArrows X f ∈ J S) {T : Over S}
     refine (hG.valid_glue hx h hk).trans ?_
     refine Eq.trans ?_ (map_diff_val s t (Over.mk (mor _ h hk)) Z h h (fac _ h hk) hh (𝟙 _)
       (Category.id_comp h))
-    exact ((ConcreteCategory.congr_hom (G.obj.map_id _) _).trans (id_apply _)).symm
+    exact (Functor.map_id_apply G.obj _ _).symm
   exact (smulGlueSection_val D _ s i Z h hh).trans
     ((congrArg (fun y : (G.over (X i)).obj.obj (op Z) ↦
       y • (show (torsorObj D i).sheaf.obj.obj (op Z) from s.val i Z h hh)) E).trans
@@ -372,7 +368,7 @@ def toDescentDataGlueTorsorIso :
             (glueRestrictIso_hom_hom_app_apply i (op Z) s).symm)))
       refine congrArg (fun y : (G.over (X i)).obj.obj (op Z) ↦ y •
         (show (torsorObj D i).sheaf.obj.obj (op Z) from s.val i Z (𝟙 _) (by simp))) ?_
-      exact (ConcreteCategory.congr_hom (G.obj.map_id _) g).trans (id_apply g)))
+      exact Functor.map_id_apply G.obj _ g))
     (comm_of_hom_eq _ (((torsorPseudofunctorForget G).toDescentDataCompMapDescentDataIso f).hom.app
       (glueTorsor D hf) ≫ (toDescentDataGlueIso ((toSheafDescentData f).obj D)).hom)
       (fun i ↦ (DescentData.comp_hom _ _ i).trans ((Category.id_comp _).trans

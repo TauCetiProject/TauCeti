@@ -28,9 +28,8 @@ faithful (and therefore jointly reflect epimorphisms) for any coefficient catego
   `CategoryTheory.GrothendieckTopology.CoversTop.jointlyReflectEpimorphisms_overPullback`:
   restrictions to slice sites over a covering family are jointly faithful and jointly reflect
   epimorphisms.
-* `CategoryTheory.GrothendieckTopology.CoversTop.nonempty_of_isCocontinuous`: local
-  nonemptiness of a presheaf of types is preserved by precomposition with a cocontinuous
-  functor.
+* `CategoryTheory.GrothendieckTopology.CoversTop.of_isCocontinuous`: local nonemptiness of a
+  presheaf of types is preserved by precomposition with a cocontinuous functor.
 -/
 
 public section
@@ -105,7 +104,7 @@ theorem jointlyReflectEpimorphisms_overPullback {I : Type*} {Y : I → C}
 object for `J`, then for a cocontinuous functor `u : D ⥤ C` the objects `Z` such that `F` has a
 section over `u Z` cover the terminal object for `K`. This restricts locally nonempty sheaves,
 such as torsors, along `u`. -/
-theorem nonempty_of_isCocontinuous {D : Type*} [Category* D] {J : GrothendieckTopology C}
+theorem of_isCocontinuous {D : Type*} [Category* D] {J : GrothendieckTopology C}
     {K : GrothendieckTopology D} (u : D ⥤ C) [u.IsCocontinuous K J] (F : Cᵒᵖ ⥤ Type*)
     (h : J.CoversTop fun X : {X : C // Nonempty (F.obj (Opposite.op X))} ↦ X.val) :
     K.CoversTop fun Z : {Z : D // Nonempty (F.obj (Opposite.op (u.obj Z)))} ↦ Z.val := by

@@ -22,7 +22,7 @@ file restricts torsors under `G.over U` along a morphism `a : V ⟶ U` to torsor
 Mathlib's `GrothendieckTopology.overMapPullback`, the sections of `G` act as before, since the
 sections of `G.over V` over `X` and those of `G.over U` over `(Over.map a).obj X` are both the
 sections of `G` over `X.left`, and the restriction stays locally nonempty because `Over.map a` is
-cocontinuous (`GrothendieckTopology.CoversTop.nonempty_of_isCocontinuous`).
+cocontinuous (`GrothendieckTopology.CoversTop.of_isCocontinuous`).
 
 The restrictions along identities and composites are identified, up to the identifications of
 `Over.mapId` and `Over.mapComp`, by the isomorphisms `Torsor.overMapPullbackId` and
@@ -76,7 +76,7 @@ apply the action of `P` to them. -/
   sheaf := (J.overMapPullback (Type w) a).obj P.sheaf
   mulAction X := P.mulAction (op ((Over.map a).obj X.unop))
   map_smul _ _ f g p := P.map_smul ((Over.map a).map f.unop).op g p
-  coversTop := P.coversTop.nonempty_of_isCocontinuous (Over.map a) P.sheaf.obj
+  coversTop := P.coversTop.of_isCocontinuous (Over.map a) P.sheaf.obj
   bijective X := P.bijective (op ((Over.map a).obj X.unop))
 
 /-- The restriction of torsors along `a : V ⟶ U`, from torsors under `G.over U` to torsors under
@@ -91,6 +91,16 @@ exposed for the same reason as that of `overMapPullbackObj`. -/
 @[simp]
 lemma overMapPullback_obj_sheaf (a : V ⟶ U) (P : Torsor (G.over U)) :
     ((overMapPullback a).obj P).sheaf = (J.overMapPullback (Type w) a).obj P.sheaf :=
+  (rfl)
+
+/-- The sections of `G` act on the sections of the restriction of a torsor as on the sections of
+the torsor over the image under `Over.map a`: the right-hand side is the action of `P` on its
+sections over `(Over.map a).obj X`. -/
+@[simp]
+lemma overMapPullback_obj_smul (a : V ⟶ U) (P : Torsor (G.over U)) {X : Over V}
+    (g : (G.over V).obj.obj (op X)) (p : ((overMapPullback a).obj P).sheaf.obj.obj (op X)) :
+    g • p = HSMul.hSMul (α := (G.over U).obj.obj (op ((Over.map a).obj X)))
+      (β := P.sheaf.obj.obj (op ((Over.map a).obj X))) g p :=
   (rfl)
 
 /-- The underlying morphism of sheaves of the restriction of a morphism of torsors is the
@@ -108,8 +118,7 @@ def overMapPullbackId (U : C) : overMapPullback (G := G) (𝟙 U) ≅ 𝟭 _ :=
     (fun X g p ↦ by
       refine ((P.map_smul ((Over.mapId U).inv.app X.unop).op g p).trans (congrArg (· • _) ?_))
       -- The restriction is along a morphism whose underlying morphism of `C` is an identity.
-      exact (over_obj_map_apply G ((Over.mapId U).inv.app X.unop).op g).trans
-        ((ConcreteCategory.congr_hom (G.obj.map_id _) g).trans (id_apply g))))
+      exact over_obj_map_apply_of_left_eq_id G ((Over.mapId U).inv.app X.unop) rfl g))
     (fun φ ↦ by ext1; exact (J.overMapPullbackId (Type w) U).hom.naturality φ.hom)
 
 variable (G) in
@@ -130,9 +139,7 @@ def overMapPullbackComp (a : V ⟶ U) (b : W ⟶ V) (ab : W ⟶ U) (h : b ≫ a 
       refine (P.map_smul (Over.homMk (𝟙 X.left) (by simp [← h]) :
         (Over.map a).obj ((Over.map b).obj X) ⟶ (Over.map ab).obj X).op g p).trans
           (congrArg (· • _) ?_)
-      exact (over_obj_map_apply G (Over.homMk (𝟙 X.left) (by simp [← h]) :
-        (Over.map a).obj ((Over.map b).obj X) ⟶ (Over.map ab).obj X).op g).trans
-          ((ConcreteCategory.congr_hom (G.obj.map_id _) g).trans (id_apply g))))
+      exact over_obj_map_apply_of_left_eq_id (U := U) G _ rfl g))
     (fun φ ↦ by
       ext1
       exact ((J.pseudofunctorOver (Type w)).mapComp' a.op.toLoc b.op.toLoc ab.op.toLoc
