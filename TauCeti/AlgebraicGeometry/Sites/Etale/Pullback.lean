@@ -29,7 +29,9 @@ weak sheafification) inverse image `f.smallEtalePullback A`:
   and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`.
 * **Geometric stalks and exactness**: `smallEtalePullbackCompSheafFiberIso` identifies stalks at
   `s : Spec Ω ⟶ X` with stalks at `s ≫ f`, and `preservesFiniteLimits_smallEtalePullback` deduces
-  left exactness from the conservative family of geometric points.
+  left exactness from the conservative family of geometric points. For an étale monomorphism
+  `j`, `smallEtaleMapCompFiberIso` identifies the fibre at `s ≫ j` of an étale `X`-scheme regarded
+  over `Y` with its fibre at `s`.
 
 ## References
 
@@ -338,6 +340,38 @@ noncomputable abbrev pointSmallEtaleComapIso :
       pointSmallEtale (s ≫ f) :=
   (pointSmallEtale s).comapIsoOfFiberIso
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange (f.pointSmallEtaleFiberCompIso s)
+
+/-- For an étale monomorphism `f` and a geometric point `s : Spec Ω ⟶ X`, lifts of `s ≫ f` to an
+étale `X`-scheme regarded over `Y` are the lifts of `s`. -/
+noncomputable def smallEtaleMapCompFiberIso [Etale f] [Mono f] :
+    f.smallEtaleMap ⋙ (pointSmallEtale (s ≫ f)).fiber ≅ (pointSmallEtale s).fiber :=
+  NatIso.ofComponents
+    (fun _ ↦ Equiv.toIso
+      { toFun t := CategoryTheory.Over.homMk t.left
+          ((cancel_mono f).1 ((Category.assoc _ _ _).trans (CategoryTheory.Over.w t)))
+        invFun t := CategoryTheory.Over.homMk t.left
+          ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ f) (CategoryTheory.Over.w t)))
+        left_inv _ := rfl
+        right_inv _ := rfl })
+    -- `(pointSmallEtale s).fiber` is `Etale.forget X ⋙ coyoneda.obj (op (Over.mk s))`, which acts
+    -- on morphisms by postcomposition, so both composites keep the underlying morphism.
+    (fun _ ↦ by ext; rfl)
+
+/-- The isomorphism `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_hom_app_left [Etale f] [Mono f] (V : X.Etale)
+    (t : (pointSmallEtale (s ≫ f)).fiber.obj (f.smallEtaleMap.obj V)) :
+    dsimp% ((f.smallEtaleMapCompFiberIso s).hom.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
+  (rfl)
+
+/-- The inverse of `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_inv_app_left [Etale f] [Mono f] (V : X.Etale)
+    (t : (pointSmallEtale s).fiber.obj V) :
+    dsimp% ((f.smallEtaleMapCompFiberIso s).inv.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
+  (rfl)
 
 end PointFiber
 

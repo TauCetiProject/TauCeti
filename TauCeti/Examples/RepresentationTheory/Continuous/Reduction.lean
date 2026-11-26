@@ -8,9 +8,13 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.NumberTheory.Padics.ProperSpace
+public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.NumberTheory.Padics.Basic
+public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Cyclotomic.Character
+public import TauCeti.RepresentationTheory.Continuous.IntegralModel.Reduction
 public import TauCeti.RepresentationTheory.Continuous.Reduction
 public import TauCeti.Topology.Algebra.Ring.Compact
+import TauCeti.NumberTheory.Padics.RingHoms
 
 /-!
 # Examples for the raw reduction of a continuous representation
@@ -25,6 +29,11 @@ after extending scalars to `ℚ_ℓ`, so both are lattices of the same `ℚ_ℓ`
 raw reductions are not isomorphic: the first is a non-trivial unipotent representation of `ℤ` on
 `𝔽_ℓ²`, the second is trivial. So the raw reduction depends on the lattice, and no
 semisimplification is applied.
+
+For a field `K` in which `ℓ` is invertible, any integral model of the line `ℚ_ℓ(1)` of the
+`ℓ`-adic cyclotomic character of `G_K` reduces to the mod `ℓ` cyclotomic character: `g` acts on
+the reduction by the residue of a natural number `a` with `g ζ = ζ ^ a` for every `ℓ`-th root of
+unity `ζ` (`exists_reduction_qlOne`).
 -/
 
 public section
@@ -46,12 +55,13 @@ local instance : ContinuousSMul ℤ_[ℓ] (ResidueField ℤ_[ℓ]) :=
   continuousSMul_of_algebraMap _ _ (by
     simpa only [ResidueField.algebraMap_eq] using continuous_residue (isOpen_maximalIdeal ℤ_[ℓ]))
 
-/-- The module topology on `𝔽_ℓ ⊗ ℤ_ℓ²`. -/
-local instance : TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
+/-- The module topology on the reduction `𝔽_ℓ ⊗ M` of a `ℤ_ℓ`-module. -/
+local instance (M : Type*) [AddCommGroup M] [Module ℤ_[ℓ] M] :
+    TopologicalSpace (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] M) :=
   moduleTopology (ResidueField ℤ_[ℓ]) _
 
-local instance :
-    IsModuleTopology (ResidueField ℤ_[ℓ]) (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] (Fin 2 → ℤ_[ℓ])) :=
+local instance (M : Type*) [AddCommGroup M] [Module ℤ_[ℓ] M] :
+    IsModuleTopology (ResidueField ℤ_[ℓ]) (ResidueField ℤ_[ℓ] ⊗[ℤ_[ℓ]] M) :=
   ⟨rfl⟩
 
 /-- The module topology on `ℚ_ℓ ⊗ ℤ_ℓ²`. -/
@@ -158,6 +168,39 @@ theorem isEmpty_iso_reduction {a : ℤ_[ℓ]} (ha : IsUnit a) :
     IsEmpty (Iso (unipotent ℓ a).reduction (unipotent ℓ (ℓ * a)).reduction) := by
   refine ⟨fun e ↦ reduction_unipotent_ne_one ℓ ha (LinearMap.ext fun x ↦ EquivLike.injective e ?_)⟩
   rw [e.isIntertwining, reduction_unipotent_ell_mul_eq_one, one_apply_eq_self, one_apply_eq_self]
+
+/-! ### Models of `ℚ_ℓ(1)` -/
+
+section Cyclotomic
+
+variable (K : Type*) [Field K] [NeZero (ℓ : K)]
+
+/-- The line `ℚ_ℓ(1)`: the absolute Galois group of `K` acting on `ℚ_ℓ` through the `ℓ`-adic
+cyclotomic character. -/
+abbrev qlOne : ContinuousRep (Field.absoluteGaloisGroup K) ℚ_[ℓ] ℚ_[ℓ] :=
+  ofCharacter (unitsMapCharacter ℚ_[ℓ] (continuousLocalCyclotomicCharacter ℓ K))
+
+/-- **Any model of `ℚ_ℓ(1)` reduces to the mod `ℓ` cyclotomic character.** For an integral model
+`Λ` of `ℚ_ℓ(1)` (with its `ℤ_ℓ`-module topology) and `g ∈ G_K`, there is a natural number `a`
+with `g ζ = ζ ^ a` for every `ℓ`-th root of unity `ζ` in `K^alg`, and `g` acts on the reduction
+of `Λ` by `a mod ℓ`. -/
+theorem exists_reduction_qlOne (Λ : GaloisLattice.IntegralModel ℤ_[ℓ] (qlOne ℓ K))
+    [IsModuleTopology ℤ_[ℓ] Λ.lattice] (g : Field.absoluteGaloisGroup K) :
+    ∃ a : ℕ, (∀ ζ : AlgebraicClosure K, ζ ^ ℓ = 1 → g.toRingEquiv ζ = ζ ^ a) ∧
+      ∀ y, Λ.toContinuousRep.reduction g y = (a : ResidueField ℤ_[ℓ]) • y := by
+  set u : ℤ_[ℓ] := (localCyclotomicCharacter ℓ K g : ℤ_[ℓ])
+  refine ⟨u.appr 1, fun ζ hζ ↦ ?_, fun y ↦ ?_⟩
+  · have (i : ℕ) : HasEnoughRootsOfUnity (AlgebraicClosure K) (ℓ ^ i) :=
+      AlgebraicClosure.hasEnoughRootsOfUnity_pow K ℓ i
+    simpa only [u, localCyclotomicCharacter_apply, PadicInt.val_toZModPow_eq_appr] using
+      cyclotomicCharacter.spec ℓ (n := 1) g.toRingEquiv ζ (by rwa [pow_one])
+  · rw [Λ.reduction_toContinuousRep_ofCharacter_apply (c := u) (by simp [u]),
+      ← map_natCast (residue ℤ_[ℓ])]
+    congr 1
+    exact Ideal.Quotient.eq.2 <| by
+      simpa [PadicInt.maximalIdeal_eq_span_p] using PadicInt.appr_spec 1 u
+
+end Cyclotomic
 
 end TauCeti.ContinuousRep.ReductionCheck
 

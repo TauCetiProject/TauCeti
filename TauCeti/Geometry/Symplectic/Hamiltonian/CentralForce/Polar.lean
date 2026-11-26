@@ -78,8 +78,8 @@ smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 *
   `TauCeti.hasDerivAt_polarCanonical_comp`: Hamilton's equations in polar coordinates.
 * `TauCeti.polarCanonical_eq_polarCanonical_iff`: for `r, r' > 0` two points agree exactly when
   their coordinates agree, with the angles compared modulo `2π`.
-* `TauCeti.polarCanonical_polarAngle`: every point off the collision set is the image of its
-  polar coordinates.
+* `TauCeti.polarCanonical_polarAngle`, `TauCeti.polarCanonical_radialProjection`: every point
+  off the collision set is the image of its polar coordinates.
 * `TauCeti.fderiv_smul_polarRadialUnit_apply`, `TauCeti.det_fderiv_smul_polarRadialUnit`: the
   derivative of polar coordinates `(r, θ) ↦ r e_r` of the plane, and the area form
   `dx ∧ dy = r dr ∧ dθ`.
@@ -582,6 +582,14 @@ theorem det_fderiv_smul_polarRadialUnit (x δ δ' : ℝ × ℝ) :
   simp [polarRadialUnit_apply, polarAngularUnit_apply, Module.Basis.det_apply, Matrix.det_fin_two,
     Module.Basis.toMatrix_apply]
   linear_combination (x.1 * (δ.1 * δ'.2 - δ'.1 * δ.2)) * (sin_sq_add_cos_sq x.2)
+
+/-- Every point off the collision set is the image of its radial projection, its angle and its
+angular momentum under the polar canonical parametrization. -/
+theorem polarCanonical_radialProjection {x : V × V} (hx : x.1 ≠ 0) :
+    polarCanonical (b 0) (b 1) (radialProjection x,
+      ((polarAngle (b 0) (b 1) x.1).toReal, angularMomentum (b 0) (b 1) x)) = x := by
+  rw [← Prod.mk.eta (p := radialProjection x), radialProjection_fst, radialProjection_snd]
+  exact polarCanonical_polarAngle b x.2 hx (Real.Angle.coe_toReal _)
 
 end Angle
 
