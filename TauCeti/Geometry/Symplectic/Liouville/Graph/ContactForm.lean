@@ -75,10 +75,8 @@ with the following property: if the Liouville graph of `f` over `ι` is the regu
 some set `V`, then `β` has a closed Reeb orbit `γ` whose loop `ι ∘ γ`, run at another speed, is
 contractible in `M`.
 
-The function is `f = c g`, where `β = g ι^* α` and `c` is a nonzero constant on each connected
-component of `S`; the closed Reeb orbits of `f ι^* α = c β` are those of `β`. This is the step of
-the proof of Corollary E of Barraud–Damian–Humilière–Oancea that reaches every contact form
-defining `ξ`. -/
+This is the step of the proof of Corollary E of Barraud–Damian–Humilière–Oancea that reaches every
+contact form defining `ξ`. -/
 theorem exists_one_lt_forall_exists_isMIntegralCurve_reebVectorField [FiniteDimensional ℝ E']
     (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
     (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
@@ -95,6 +93,8 @@ theorem exists_one_lt_forall_exists_isMIntegralCurve_reebVectorField [FiniteDime
             ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = ι (γ (ψ t)) := by
   have hα₀ (s : S) : (SmoothForm.mpullback ι hι α).val s ≠ 0 := fun h₀ ↦
     hβ.apply_ne_zero s ((SmoothForm.apply_eq_zero_iff_of_kerDistribution_eq hker s).2 h₀)
+  -- Take `f` with `a β = f ι^* α` for a nonzero constant `a` on each connected component of `S`;
+  -- the closed Reeb orbits of `f ι^* α = a β` are those of `β`, reparametrized.
   obtain ⟨a, f, ha, ha₀, hf, hf₁, haf⟩ :=
     SmoothForm.exists_isLocallyConstant_smul_eq_smul_one_lt hα₀ hker
   refine ⟨f, hf, hf₁, fun hK hreg hlevel hV ↦ ?_⟩

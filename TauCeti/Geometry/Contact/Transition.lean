@@ -80,13 +80,13 @@ theorem IsContactForm.isContactForm_of_kerDistribution_eq (hα : α.IsContactFor
 /-- **Rescaling a form with the same hyperplanes to a multiplier above `1`.** Let `α` be a nowhere
 vanishing smooth one-form on a compact manifold and `β` a smooth one-form with the same
 hyperplanes. Multiplying `β` by a nonzero constant on each connected component, through a locally
-constant nowhere vanishing `c`, makes it `f α` for a smooth `f > 1`. The constant `c` has the sign
-of the multiplier `β / α`, and its modulus is twice the reciprocal of the least modulus of the
-multiplier, which exists by compactness. -/
+constant nowhere vanishing `c`, makes it `f α` for a smooth `f > 1`. -/
 theorem exists_isLocallyConstant_smul_eq_smul_one_lt [CompactSpace M] (hα : ∀ x, α.val x ≠ 0)
     (hker : β.kerDistribution = α.kerDistribution) :
     ∃ c f : M → ℝ, IsLocallyConstant c ∧ (∀ x, c x ≠ 0) ∧ ContMDiff I 𝓘(ℝ) ∞ f ∧
       (∀ x, 1 < f x) ∧ ∀ x, c x • β.val x = f x • α.val x := by
+  -- With `β = g α`, take `c = ± 2 / m` with the sign of `g`, where `m > 0` bounds `|g|` from
+  -- below by compactness, and `f = c g`.
   obtain ⟨g, ⟨hg, hg₀, hβ⟩, -⟩ := (kerDistribution_eq_iff_existsUnique_fun_smul hα).1 hker
   -- A lower bound `m > 0` for `|g|` on the compact `M`.
   obtain ⟨m, hm, hgm⟩ : ∃ m : ℝ, 0 < m ∧ ∀ x, m ≤ |g x| := by
