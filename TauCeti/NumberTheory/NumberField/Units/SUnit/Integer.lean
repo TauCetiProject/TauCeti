@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Units.SUnit.FundamentalSystem
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Unit.Torsion
 
 import TauCeti.Algebra.Module.Torsion.Int
+import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 
 /-!
 # The unit group of a ring of `S`-integers
@@ -63,13 +64,6 @@ namespace TauCeti.NumberField.SUnit
 variable {K : Type*} [Field K] [NumberField K]
   (S : Set (HeightOneSpectrum (RingOfIntegers K)))
 
-/-- The rank of the units of `𝒪_K`, plus one, is the number of infinite places of `K`. -/
-private theorem rank_add_one_eq_natCard_infinitePlace :
-    Units.rank K + 1 = Nat.card (InfinitePlace K) := by
-  have := Fintype.card_pos (α := InfinitePlace K)
-  rw [Units.rank, Nat.card_eq_fintype_card]
-  omega
-
 /-! ### Torsion -/
 
 /-- **The torsion of the units of the `S`-integers has order `torsionOrder K`**, the number of
@@ -106,7 +100,7 @@ are the numbers of real and complex places of `K`. -/
 theorem finrank_units_integer_add_one :
     Module.finrank ℤ (Additive (S.integer K)ˣ) + 1 =
       InfinitePlace.nrRealPlaces K + InfinitePlace.nrComplexPlaces K + Nat.card S := by
-  rw [finrank_units_integer, add_right_comm, rank_add_one_eq_natCard_infinitePlace,
+  rw [finrank_units_integer, add_right_comm, Units.rank_add_one K,
     Nat.card_eq_fintype_card, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
 
 /-! ### The fundamental-system decomposition -/
@@ -136,7 +130,7 @@ theorem exist_unique_eq_mul_prod_units_integer (u : (S.integer K)ˣ) :
 theorem finrank_units_integer_pos_iff :
     0 < Module.finrank ℤ (Additive (S.integer K)ˣ) ↔
       2 ≤ Nat.card (InfinitePlace K) + Nat.card S := by
-  rw [finrank_units_integer, ← rank_add_one_eq_natCard_infinitePlace]
+  rw [finrank_units_integer, ← Units.rank_add_one K]
   omega
 
 /-- **The units of the `S`-integers have an element of infinite order exactly when
