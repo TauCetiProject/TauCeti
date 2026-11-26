@@ -84,15 +84,18 @@ private theorem coeff_laguerre_mul_Gamma (hα : -1 < α) (j : ℕ) {n k : ℕ} (
     have := Nat.choose_mul_factorial_mul_factorial (Nat.le_add_right k d)
     rw [Nat.add_sub_cancel_left] at this
     exact_mod_cast this
-  rw [coeff_laguerre_of_le α hk, h₁, h₂, h₃, hΓ, hΓ, Nat.add_sub_cancel_left, ← eval_eq_smeval,
-    Rat.smul_def, zsmul_eq_mul, ← hfact]
+  -- the sign `(-1) ^ (n - k) = (-1) ^ d` of the forward-difference summand meets the `(-1) ^ d`
+  -- split off from `(-1) ^ n = (-1) ^ k * (-1) ^ d`
+  have hsign : (-1 : ℝ) ^ d * (-1) ^ d = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  rw [coeff_laguerre_of_le α hk, h₁, h₂, h₃, hΓ, hΓ, ← eval_eq_smeval, ← hfact]
+  simp only [Nat.add_sub_cancel_left, Rat.smul_def, zsmul_eq_mul, pow_add]
   push_cast
   have : (k.factorial : ℝ) ≠ 0 := by positivity
   have : (d.factorial : ℝ) ≠ 0 := by positivity
   have : ((k + d).choose k : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.choose_pos (Nat.le_add_right k d)).ne'
-  rw [pow_add]
-  rcases neg_one_pow_eq_or ℝ d with h | h <;> rw [h] <;> field_simp <;> ring
+  field_simp
+  linear_combination (-((ascPochhammer ℝ j).eval s * (ascPochhammer ℝ d).eval s)) * hsign
 
 /-- The integral of `x ^ j Lₙ^{(α)}(x)` against the Laguerre measure is `(-1)ⁿ Γ(n + α + 1) / n!`
 times the `n`-th forward difference at `α + 1` of the rising factorial `t ↦ (t)ⱼ`. -/
@@ -172,9 +175,10 @@ theorem integral_laguerre_mul_laguerre_laguerreMeasure (hα : -1 < α) (m n : �
   · rw [ite_eq_left rfl, integral_eval_mul_laguerre_laguerreMeasure hα (natDegree_laguerre_le α m),
       coeff_laguerre_self]
     have : (m.factorial : ℝ) ≠ 0 := by positivity
-    rw [map_div₀, map_pow, map_neg, map_one, map_natCast]
+    have hsign : (-1 : ℝ) ^ m * (-1) ^ m = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+    simp only [map_div₀, map_pow, map_neg, map_one, map_natCast]
     field_simp
-    rw [← pow_mul, pow_mul', neg_one_sq, one_pow, one_mul]
+    linear_combination Gamma (m + α + 1) * hsign
   · simp_rw [mul_comm ((laguerre α m).eval _)]
     rw [ite_eq_right hmn.ne', integral_eval_mul_laguerre_laguerreMeasure_of_degree_lt hα
       ((degree_laguerre_le α n).trans_lt (by exact_mod_cast hmn))]
