@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Schrodinger.Duhamel
 public import TauCeti.Analysis.Semigroups.CauchyProblem.Unitary
 import Mathlib.Analysis.Distribution.FourierMultiplier
+import TauCeti.Analysis.Fourier.LaplacianSymbol
 
 /-!
 # Weak solutions of the Schrödinger equation
@@ -30,6 +31,12 @@ Duhamel's formula solves the equation in the weak sense, in particular in the se
 distributions in space (`TauCeti.inner_toLp_schrodingerDuhamel`), and it is the only weak
 solution in `C([0, ∞); L²)`: the Cauchy problem is uniquely solvable in the energy class.
 
+Uniqueness needs only Schwartz test functions, and holds on every bounded interval: a function
+continuous on `[0, T]` with values in `L²` that solves the free equation with zero initial value
+against Schwartz functions vanishes there (`TauCeti.eqOn_zero_of_forall_inner_toLp_eq`). This is
+the form used for solutions whose forcing does not take values in `L²`, which can only be paired
+with Schwartz functions.
+
 ## The argument
 
 The Schrödinger group `S(t) = exp(itΔ)` is the unitary group `exp(itω(D))` of the phase
@@ -43,6 +50,12 @@ unitary group, mild solutions are exactly the weak solutions tested against the 
 (`TauCeti.Semigroups.StronglyContinuousGroup.IsUnitary.isForcedMildSolution_iff_forall_inner_eq`);
 with `A ψ = i Δψ` that weak formulation is the one above, since `⟪i Δψ, u⟫ = -i ⟪Δψ, u⟫`.
 
+For uniqueness against Schwartz functions on `[0, T]`, the Schwartz functions are a core for the
+Laplacian on `L²` (`TauCeti.exists_tendsto_toLp_and_tendsto_toLp_laplacian`), so the weak
+formulation passes to every `ψ` with `Δψ ∈ L²`. Continued past `T` by the free flow
+`S(t - T) u(T)`, the solution becomes a weak solution on `[0, ∞)`, to which the uniqueness above
+applies.
+
 ## Main declarations
 
 * `TauCeti.exists_complexGenerator_phaseGroup_laplacianSymbol_eq_I_smul`: if
@@ -55,6 +68,9 @@ with `A ψ = i Δψ` that weak formulation is the one above, since `⟪i Δψ, u
 * `TauCeti.inner_schrodingerDuhamel`: Duhamel's formula satisfies the weak formulation.
 * `TauCeti.inner_toLp_schrodingerDuhamel`: the weak formulation tested against Schwartz functions,
   the Schrödinger equation in the sense of distributions in space.
+* `TauCeti.eqOn_zero_of_forall_inner_toLp_eq`: on a bounded interval `[0, T]`, a continuous weak
+  solution of the free equation with zero initial value, tested against Schwartz functions only,
+  vanishes.
 
 ## References
 
@@ -192,5 +208,98 @@ theorem inner_toLp_schrodingerDuhamel (hG : LocallyIntegrableOn G (Ici 0)) (φ :
     (𝓕 φ)).coeFn_toLp 2] with ξ h₁ h₂
   rw [h₂, h₁, SchwartzMap.smulLeftCLM_apply_apply hasTemperateGrowth_laplacianSymbol,
     Complex.coe_smul]
+
+/-- A weak solution of the free equation with zero initial value against Schwartz functions is
+one against every `ψ` with `Δψ ∈ L²`, since Schwartz functions are a core for the Laplacian. -/
+private theorem inner_eq_of_forall_inner_toLp_eq {T : ℝ} {u : ℝ → Lp F 2 (volume : Measure E)}
+    (hu : ContinuousOn u (Icc 0 T))
+    (h : ∀ φ : 𝓢(E, F), ∀ t ∈ Icc 0 T,
+      ⟪φ.toLp 2, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, u s⟫_ℂ)
+    {ψ χ : Lp F 2 (volume : Measure E)}
+    (hχ : 𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) {t : ℝ} (ht : t ∈ Icc 0 T) :
+    ⟪ψ, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪χ, u s⟫_ℂ := by
+  obtain ⟨φ, hφψ, hφχ⟩ := exists_tendsto_toLp_and_tendsto_toLp_laplacian hχ
+  have hint : IntegrableOn u (Ioc 0 t) :=
+    (hu.mono (Icc_subset_Icc_right ht.2)).integrableOn_Icc.mono_set Ioc_subset_Icc_self
+  rw [integral_inner hint]
+  refine tendsto_nhds_unique (hφψ.inner tendsto_const_nhds)
+    (((hφχ.inner tendsto_const_nhds).const_mul I).congr fun n ↦ ?_)
+  rw [h (φ n) t ht, integral_inner hint]
+
+/-- For `w` continuous on `[0, ∞)`, equal to `u` on `[0, T]` and to the free flow `S(t - T) u(T)`
+after `T`, the time integral of `⟪χ, w⟫` over `(0, t]` splits at `T`. -/
+private theorem setIntegral_Ioc_inner_eq_add {T t : ℝ} (hT : 0 ≤ T) (hTt : T ≤ t)
+    {u w : ℝ → Lp F 2 (volume : Measure E)} (χ : Lp F 2 (volume : Measure E))
+    (hwc : ContinuousOn w (Ici 0)) (hwu : EqOn w u (Icc 0 T))
+    (hwS : EqOn w (fun t ↦ schrodingerPropagator F (t - T) (u T)) (Ici T)) :
+    ∫ s in Ioc 0 t, ⟪χ, w s⟫_ℂ = (∫ s in Ioc 0 T, ⟪χ, u s⟫_ℂ) +
+      ∫ s in Ioc 0 (t - T), ⟪χ, schrodingerPropagator F s (u T)⟫_ℂ := by
+  have hii (a b : ℝ) (ha : 0 ≤ a) (hb : 0 ≤ b) :
+      IntervalIntegrable (fun s ↦ ⟪χ, w s⟫_ℂ) volume a b :=
+    ((continuous_const.inner continuous_id).comp_continuousOn (hwc.mono
+      fun s (hs : s ∈ uIcc a b) ↦ mem_Ici.2 ((le_min ha hb).trans hs.1))).intervalIntegrable
+  rw [← intervalIntegral.integral_of_le (hT.trans hTt),
+    ← intervalIntegral.integral_add_adjacent_intervals (hii 0 T le_rfl hT)
+      (hii T t hT (hT.trans hTt)), intervalIntegral.integral_of_le hT,
+    setIntegral_congr_fun measurableSet_Ioc fun s (hs : s ∈ Ioc 0 T) ↦ by
+      rw [hwu ⟨hs.1.le, hs.2⟩],
+    intervalIntegral.integral_congr fun s hs ↦ by
+      rw [hwS (show s ∈ Ici T from (uIcc_of_le hTt ▸ hs).1)],
+    intervalIntegral.integral_comp_sub_right (fun s ↦ ⟪χ, schrodingerPropagator F s (u T)⟫_ℂ),
+    sub_self, intervalIntegral.integral_of_le (sub_nonneg.2 hTt)]
+
+/-- **Uniqueness of weak solutions on a bounded interval, tested against Schwartz functions.** Let
+`u` be continuous on `[0, T]` with values in `L²(E, F)`, and suppose that `u` solves the free
+Schrödinger equation `i ∂ₜu + Δu = 0` with `u(0) = 0` weakly against Schwartz functions: for every
+`φ ∈ 𝓢(E, F)` and every `t ∈ [0, T]`,
+
+`⟪φ, u t⟫ = i ∫_{(0,t]} ⟪Δφ, u s⟫ ds`.
+
+Then `u = 0` on `[0, T]`. So a solution of the inhomogeneous equation on `[0, T]` that is
+continuous with values in `L²` is determined by its data and its forcing, through its weak
+formulation against Schwartz functions alone. -/
+theorem eqOn_zero_of_forall_inner_toLp_eq {T : ℝ} {u : ℝ → Lp F 2 (volume : Measure E)}
+    (hu : ContinuousOn u (Icc 0 T))
+    (h : ∀ φ : 𝓢(E, F), ∀ t ∈ Icc 0 T,
+      ⟪φ.toLp 2, u t⟫_ℂ = I * ∫ s in Ioc 0 t, ⟪(Δ φ).toLp 2, u s⟫_ℂ) :
+    EqOn u 0 (Icc 0 T) := by
+  intro t₀ ht₀
+  have hT : 0 ≤ T := ht₀.1.trans ht₀.2
+  -- Continue `u` past `T` by the free flow of `u T`.
+  set w : ℝ → Lp F 2 (volume : Measure E) :=
+    fun t ↦ if t ≤ T then u t else schrodingerPropagator F (t - T) (u T) with hw
+  have hwu : EqOn w u (Icc 0 T) := fun t ht ↦ by simp [hw, ht.2]
+  have hwS : EqOn w (fun t ↦ schrodingerPropagator F (t - T) (u T)) (Ici T) := by
+    intro t ht
+    rcases (mem_Ici.1 ht).eq_or_lt with rfl | hlt
+    · simp [hw, phasePropagator_zero]
+    · simp [hw, not_le.2 hlt]
+  have hwc : ContinuousOn w (Ici 0) := by
+    rw [← Icc_union_Ici_eq_Ici hT]
+    exact (hu.congr hwu).union_of_isClosed
+      (((continuous_phasePropagator_apply laplacianSymbol (u T)).comp
+        (continuous_sub_right T)).continuousOn.congr hwS) isClosed_Icc isClosed_Ici
+  -- The continuation is a weak solution of the free equation with zero initial value on `[0, ∞)`.
+  have hweak : ∀ ψ χ : Lp F 2 (volume : Measure E),
+      (𝓕 χ =ᵐ[volume] fun ξ ↦ (laplacianSymbol ξ : ℂ) • 𝓕 ψ ξ) → ∀ t : ℝ, 0 ≤ t →
+        ⟪ψ, w t⟫_ℂ = ⟪ψ, (0 : Lp F 2 (volume : Measure E))⟫_ℂ +
+          I * ((∫ s in Ioc 0 t, ⟪χ, w s⟫_ℂ) - ∫ s in Ioc 0 t,
+            ⟪ψ, (0 : ℝ → Lp F 2 (volume : Measure E)) s⟫_ℂ) := by
+    intro ψ χ hχ t ht
+    simp only [inner_zero_right, Pi.zero_apply, integral_zero, sub_zero, zero_add]
+    rcases le_or_gt t T with htT | hTt
+    · rw [hwu ⟨ht, htT⟩, inner_eq_of_forall_inner_toLp_eq hu h hχ ⟨ht, htT⟩]
+      exact congrArg _ (setIntegral_congr_fun measurableSet_Ioc fun s hs ↦
+        by rw [hwu ⟨hs.1.le, hs.2.trans htT⟩])
+    -- After `T`, the time integral splits at `T`, and the free flow solves the free equation.
+    have hfree := inner_schrodingerDuhamel (f := u T) (G := 0) locallyIntegrableOn_zero hχ
+      (sub_nonneg.2 hTt.le)
+    simp only [schrodingerDuhamel_zero_right, Pi.zero_apply, inner_zero_right, integral_zero,
+      sub_zero] at hfree
+    rw [hwS hTt.le, hfree, inner_eq_of_forall_inner_toLp_eq hu h hχ ⟨hT, le_rfl⟩,
+      setIntegral_Ioc_inner_eq_add hT hTt.le χ hwc hwu hwS, mul_add]
+  have hw0 := (eqOn_schrodingerDuhamel_iff (f := 0) (G := 0) locallyIntegrableOn_zero hwc).2
+    hweak ht₀.1
+  rw [← hwu ht₀, hw0, schrodingerDuhamel_zero_right, map_zero, Pi.zero_apply]
 
 end TauCeti
