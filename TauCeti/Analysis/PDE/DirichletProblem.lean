@@ -1119,6 +1119,25 @@ theorem energyFormH1_one_zero_zero_eq_inner [DecidableEq ι] (u v : W1p mu Omega
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [EuclideanSpace.inner_eq_star_dotProduct])
 
+/-- The energy form of the Laplacian model `-Δ` is symmetric. -/
+theorem energyFormH1_one_zero_zero_comm [DecidableEq ι] (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => 1) 0 0 u v = energyFormH1 (fun _ => 1) 0 0 v u :=
+  energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ => Matrix.isSymm_one) _ _
+
+/-- The energy of the Laplacian model `-Δ` is `‖∇v‖²_{L²}`, so it is nonnegative. -/
+theorem energyFormH1_one_zero_zero_self_nonneg [DecidableEq ι] (v : W1p mu Omega 2) :
+    0 ≤ energyFormH1 (fun _ => 1) 0 0 v v := by
+  rw [energyFormH1_one_zero_zero_eq_inner]
+  exact real_inner_self_nonneg
+
+/-- The `H¹` norm is the energy of the Laplacian model `-Δ` plus the `L²` norm of the value:
+`‖v‖²_{H¹} = ∫_Ω |∇v|² + ‖v‖²_{L²}`. In particular the energy form of `-Δ` satisfies a Gårding
+inequality on `H¹(Ω)` with constants `θ = ω = 1`. -/
+theorem norm_sq_eq_energyFormH1_one_zero_zero_add [DecidableEq ι] (v : W1p mu Omega 2) :
+    ‖v‖ ^ 2 = energyFormH1 (fun _ => 1) 0 0 v v + ‖W1p.value v‖ ^ 2 := by
+  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
+    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq, add_comm]
+
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichlet_one_zero_zero_iff [DecidableEq ι]

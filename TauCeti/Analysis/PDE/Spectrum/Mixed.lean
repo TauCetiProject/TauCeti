@@ -198,6 +198,11 @@ private theorem shiftedForm_apply
       energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) +
         omega * ⟪valueL mu Omega Γ u, valueL mu Omega Γ v⟫_ℝ := by
   rw [← energyFormH1L_apply hcoeff]
+  -- Definitional unfolding: `shiftedForm` is `B.bilinearComp ι ι + ω • (toSesqForm J).comp J`
+  -- for the inclusion `ι = subtypeL` and `J = valueL`, and evaluating it uses only
+  -- `ContinuousLinearMap.add_apply`, `smul_apply`, `bilinearComp_apply`, `comp_apply` and
+  -- `toSesqForm_apply_coe`, which all hold by `rfl`. Rewriting with them after unfolding
+  -- `shiftedForm` (by `rw` or `simp only`) exceeds the heartbeat limit.
   rfl
 
 /-- The eigenvalue equations of the energy form and of its shift by `ω` correspond, with
@@ -590,27 +595,7 @@ theorem mixedEigenvalue_le_of_subset [Nonempty ι] (hΓΓ' : Γ ⊆ Γ')
 
 section Laplacian
 
-variable [DecidableEq ι]
-
-/-- The energy form of `-Δ` is symmetric. -/
-private theorem energyFormH1_laplacian_comm (u v : W1p mu Omega 2) :
-    energyFormH1 (fun _ ↦ 1) 0 0 u v = energyFormH1 (fun _ ↦ 1) 0 0 v u :=
-  energyFormH1_comm_of_isSymm_ae (ae_of_all _ fun _ ↦ Matrix.isSymm_one) _ _
-
-/-- The energy of `-Δ` is `‖∇v‖²_{L²}`, so it is nonnegative. -/
-private theorem energyFormH1_laplacian_self_nonneg (v : W1p mu Omega 2) :
-    0 ≤ energyFormH1 (fun _ ↦ 1) 0 0 v v := by
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq]
-  positivity
-
-/-- **The Gårding inequality for `-Δ`** with `θ = ω = 1`: `‖v‖²_{H¹} = ∫ |∇v|² + ‖v‖²_{L²}`. -/
-private theorem norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2) :
-    1 * ‖v‖ ^ 2 ≤ energyFormH1 (fun _ ↦ 1) 0 0 v v + 1 * ‖W1p.value v‖ ^ 2 := by
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq,
-    W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq]
-  linarith
-
-variable [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable [DecidableEq ι] [Nonempty ι] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
   (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
   (hOmega_nonempty : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty)
@@ -623,8 +608,9 @@ theorem mixedEigenvalue_laplacian_le_of_subset (hΓΓ' : Γ ⊆ Γ') (hΓ' : Dis
     mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k ≤ mixedEigenvalue mu Omega Γ' (fun _ ↦ 1) 0 0 k :=
   mixedEigenvalue_le_of_subset hΓΓ' (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ'
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
-    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
+    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    hOmega_nonempty k
 
 /-- **The mixed eigenvalues of `-Δ` lie below the Dirichlet ones**: on a nonempty bounded
 Lipschitz domain `Ω` and for a boundary part `Γ ⊆ ∂Ω`, `λₖ(Γ) ≤ λₖ(∂Ω)`, the `k`-th Dirichlet
@@ -655,8 +641,9 @@ theorem exists_hilbertBasis_mixedEigenvalue_laplacian :
             ⟪W1p.value (u k : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
   exists_hilbertBasis_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
-    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
+    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    hOmega_nonempty
 
 /-- **The min–max principle for `-Δ` is attained**: `λₖ` is the least `C` for which some subspace
 `W` of `H¹_Γ(Ω)`, whose values span a subspace of `L²(Ω)` of dimension at least `k + 1`, satisfies
@@ -672,8 +659,9 @@ theorem isLeast_mixedEigenvalue_laplacian (k : ℕ) :
       (mixedEigenvalue mu Omega Γ (fun _ ↦ 1) 0 0 k) :=
   isLeast_mixedEigenvalue (memLp_energyIntegrand_const_zero_zero 1)
     (W1p.isCompactOperator_valueL_of_isLipschitzDomain hΩ hb) hΓ
-    (fun _ _ ↦ energyFormH1_laplacian_comm _ _) one_pos
-    (fun _ ↦ norm_sq_le_energyFormH1_laplacian_add _) hOmega_nonempty k
+    (fun _ _ ↦ energyFormH1_one_zero_zero_comm _ _) one_pos
+    (fun _ ↦ by rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add])
+    hOmega_nonempty k
 
 /-- **The mixed spectrum of `-Δ`.** On a nonempty bounded Lipschitz domain and for `Γ` missing
 `Ω`, the mixed eigenvalues of `-Δ` satisfy `0 ≤ λ₀ ≤ λ₁ ≤ ⋯ → ∞`, and a real number is a
@@ -687,11 +675,13 @@ theorem mixedEigenvalue_laplacian_spectrum :
   have hcoeff := memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
     (1 : Matrix ι ι ℝ)
   have hsymm (u v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
-    energyFormH1_laplacian_comm (u : W1p mu Omega 2) v
+    energyFormH1_one_zero_zero_comm (u : W1p mu Omega 2) v
   have hnonneg (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
-    energyFormH1_laplacian_self_nonneg (v : W1p mu Omega 2)
-  have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :=
-    norm_sq_le_energyFormH1_laplacian_add (v : W1p mu Omega 2)
+    energyFormH1_one_zero_zero_self_nonneg (v : W1p mu Omega 2)
+  have hgarding (v : (w1pVanishingOnSubmodule mu Omega 2 Γ).toSubmodule) :
+      1 * ‖(v : W1p mu Omega 2)‖ ^ 2 ≤ energyFormH1 (fun _ ↦ 1) 0 0 (v : W1p mu Omega 2) v +
+        1 * ‖W1p.value (v : W1p mu Omega 2)‖ ^ 2 := by
+    rw [one_mul, one_mul, norm_sq_eq_energyFormH1_one_zero_zero_add]
   have hrellich := W1p.isCompactOperator_valueL_of_isLipschitzDomain (mu := mu) (p := 2) hΩ hb
   exact ⟨mixedEigenvalue_nonneg hnonneg 0,
     monotone_mixedEigenvalue hcoeff hrellich hΓ hsymm one_pos hgarding hOmega_nonempty,
