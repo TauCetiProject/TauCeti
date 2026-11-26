@@ -21,7 +21,8 @@ combinations `s a + t b - r` with real weights and subtrahend behave, and that n
 distributes over a nonnegative combination in `ℝ≥0∞` read in `EReal`. The named
 inclusion `WithTop.toEReal` embeds real heights with a possible top value into `EReal` without
 installing a coercion; it is additive. Finally, the adjunction `a + b ≤ c ↔ b ≤ c - a` is
-recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`.
+recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c = ⊤` or `a = ⊥`, and
+a positive finite multiple of a supremum is bounded termwise.
 
 ## Main results
 
@@ -72,6 +73,7 @@ recorded for arbitrary operands, with `c - a` replaced by `⊤` in the cases `c 
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`;
 * `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
   hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`;
+* `EReal.mul_iSup_le` — a positive finite multiple of a supremum is bounded termwise;
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -341,6 +343,13 @@ theorem add_le_iff_le_ite {a b c : EReal} :
   by_cases h : c = ⊤ ∨ a = ⊥
   · rcases h with rfl | rfl <;> simp
   · rw [ite_eq_right h, le_sub_iff_add_le (.inl (not_or.mp h).2) (.inr (not_or.mp h).1), add_comm]
+
+/-- A positive finite multiple of a supremum is at most `c` when the same multiple of every term
+is. -/
+theorem mul_iSup_le {a : EReal} (ha : 0 < a) (ha' : a ≠ ⊤) {ι : Sort*} {f : ι → EReal}
+    {c : EReal} (h : ∀ i, a * f i ≤ c) : a * ⨆ i, f i ≤ c := by
+  rw [mul_comm, ← le_div_iff_mul_le ha ha']
+  exact iSup_le fun i ↦ (le_div_iff_mul_le ha ha').2 (mul_comm a (f i) ▸ h i)
 
 end EReal
 

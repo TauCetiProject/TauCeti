@@ -130,9 +130,8 @@ private theorem nonempty_chartData [CompactSpace X] {s : Π x, L x}
   refine ⟨fun z ↦ ⟨A.center (i z), A.image (i z), C (i z), A.dom_subset_chart_source _ (hi z),
     A.dom_subset_baseSet _ (hi z), (A.image _).isOpen, A.mem_image.2 ⟨z, hi z, rfl⟩, ?_, ?_⟩⟩
   · rw [hc]
-    -- The reading of `s` is `C¹` on the chart image, which lies over the base set.
-    exact (A.contDiffOn_coord hs (i z)).mono
-      ((A.image_subset_chart_image_closure_dom _).trans (A.chart_image_closure_dom_subset _))
+    -- The reading of `s` is `C¹` on the chart image.
+    exact A.contDiffOn_coord_image hs (i z)
   · rw [hc]
     -- On `ℂ`, `\bar∂` is the complex antilinear part of the derivative.
     exact fun y hy ↦ ContinuousLinearMap.opNorm_le_bound _

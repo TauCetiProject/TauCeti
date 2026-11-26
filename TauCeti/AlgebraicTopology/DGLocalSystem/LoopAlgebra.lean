@@ -11,7 +11,7 @@ public import TauCeti.Topology.PathSpace.Moore
 public import TauCeti.RingTheory.GradedAlgebra.Trivial
 public import TauCeti.Algebra.Homology.DG.Algebra.Cohomology
 public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 public import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!

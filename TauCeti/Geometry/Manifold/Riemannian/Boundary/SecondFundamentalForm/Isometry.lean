@@ -13,7 +13,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Isometry.LeviCivita
 
 An isometry `Φ : M → M'` of Riemannian manifolds with boundary maps `∂M` onto `∂M'`, and it
 preserves the second fundamental form of the boundary: if `u, w ∈ T_q∂M` and `u', w' ∈ T_{Φ q}∂M'`
-correspond under `dΦ`, that is `dι' u' = dΦ (dι u)` and `dι' w' = dΦ (dι w)`, then
+correspond under `dΦ` (`TauCeti.BoundaryTangentCorr`), that is `dι' u' = dΦ (dι u)` and
+`dι' w' = dΦ (dι w)`, then
 `II'_{Φ q}(u', w') = II_q(u, w)`
 (`TauCeti.RiemannianIsometry.boundarySecondFundamentalForm_map`). In other words
 `(Φ|∂M)^* II' = II`.
@@ -56,16 +57,8 @@ theorem RiemannianIsometry.boundarySecondFundamentalForm_map
     (u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q)
     (u' w' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
       (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M'))
-    (hu : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' =
-      mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u))
-    (hw : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-        (Subtype.val : (𝓡∂ (n + 1)).boundary M' → M') ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w' =
-      mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q
-        (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-          (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q w)) :
+    (hu : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u u')
+    (hw : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ w w') :
     boundarySecondFundamentalForm ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u' w' =
       boundarySecondFundamentalForm q u w := by
   have hΦ := Φ.isLocalRiemannianIsometry
