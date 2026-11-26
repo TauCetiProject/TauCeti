@@ -17,7 +17,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 Let `E` be a finite-dimensional real inner product space and `F` a finite-dimensional real normed
 space. If `f : E → F` is harmonic at `x`, then so is each of its directional derivatives
 `y ↦ Df(y) v` (`InnerProductSpace.HarmonicAt.fderiv_apply`), and so is its Fréchet derivative
-`y ↦ Df(y)` with values in `E →L[ℝ] F` (`InnerProductSpace.HarmonicAt.harmonicAt_fderiv`). For
+`y ↦ Df(y)` with values in `E →L[ℝ] F` (`InnerProductSpace.HarmonicAt.fderiv`). For
 `f : E → ℝ` the gradient `∇f`, whose coordinates in an orthonormal basis are directional
 derivatives, is harmonic as well (`InnerProductSpace.HarmonicAt.gradient`).
 Consequently every estimate proved for harmonic functions, such as the decay of their oscillation
@@ -31,8 +31,8 @@ case.
 * `InnerProductSpace.HarmonicAt.fderiv_apply`: a directional derivative of a function harmonic at
   `x` is harmonic at `x`.
 * `InnerProductSpace.HarmonicOnNhd.fderiv_apply`: the same on a set.
-* `InnerProductSpace.HarmonicAt.harmonicAt_fderiv` and
-  `InnerProductSpace.HarmonicOnNhd.harmonicOnNhd_fderiv`: the Fréchet derivative of a harmonic
+* `InnerProductSpace.HarmonicAt.fderiv` and
+  `InnerProductSpace.HarmonicOnNhd.fderiv`: the Fréchet derivative of a harmonic
   function is harmonic.
 * `InnerProductSpace.HarmonicAt.gradient` and `InnerProductSpace.HarmonicOnNhd.gradient`: the
   gradient of a harmonic function is harmonic.
@@ -110,7 +110,7 @@ theorem HarmonicOnNhd.gradient {f : E → ℝ} {s : Set E} (hf : HarmonicOnNhd f
 /-- **The derivative of a harmonic function is harmonic.** If `f` is harmonic at `x`, then so is
 its Fréchet derivative `y ↦ Df(y)`, as a function with values in `E →L[ℝ] F`: in an orthonormal
 basis `(bᵢ)` of `E`, `Df(y) = ∑ᵢ ⟪bᵢ, ·⟫ Df(y) bᵢ`, and each `y ↦ Df(y) bᵢ` is harmonic. -/
-theorem HarmonicAt.harmonicAt_fderiv {x : E} (hf : HarmonicAt f x) :
+protected theorem HarmonicAt.fderiv {x : E} (hf : HarmonicAt f x) :
     HarmonicAt (fderiv ℝ f) x := by
   set b := stdOrthonormalBasis ℝ E
   have h : fderiv ℝ f = fun y => ∑ i, (innerSL ℝ (b i)).smulRight (fderiv ℝ f y (b i)) := by
@@ -126,8 +126,8 @@ theorem HarmonicAt.harmonicAt_fderiv {x : E} (hf : HarmonicAt f x) :
 
 /-- **The derivative of a harmonic function is harmonic.** If `f` is harmonic on `s`, then so is
 its Fréchet derivative `y ↦ Df(y)`, with values in `E →L[ℝ] F`. -/
-theorem HarmonicOnNhd.harmonicOnNhd_fderiv {s : Set E} (hf : HarmonicOnNhd f s) :
+protected theorem HarmonicOnNhd.fderiv {s : Set E} (hf : HarmonicOnNhd f s) :
     HarmonicOnNhd (fderiv ℝ f) s :=
-  fun x hx => (hf x hx).harmonicAt_fderiv
+  fun x hx => (hf x hx).fderiv
 
 end InnerProductSpace

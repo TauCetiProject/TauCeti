@@ -65,7 +65,7 @@ Laplacian.
 * **Decay.** The weak Hessian of `u` is then the classical Hessian `D²g` almost everywhere
   (`TauCeti.Wkp.iteratedGradient_ae_eq_of_contDiffOn`). Its composite with `e` is the derivative
   of the harmonic field `∇g ∘ e` followed by `e⁻¹`, so it is harmonic
-  (`InnerProductSpace.HarmonicOnNhd.harmonicOnNhd_fderiv`), and the `L¹` decay of harmonic
+  (`InnerProductSpace.HarmonicOnNhd.fderiv`), and the `L¹` decay of harmonic
   functions after a linear change of variables
   (`TauCeti.setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp`) applies, with
   `‖e⁻¹‖ ≤ λ^(-1/2)` and `‖e‖ ≤ Λ^(1/2)`.
@@ -286,7 +286,7 @@ theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inne
     (ContinuousLinearMap.compL ℝ _ _ _).flip
       (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)
   have hUe : HarmonicOnNhd (fderiv ℝ (∇ g) ∘ e) (e ⁻¹' ball x₀ R) := by
-    convert hW.harmonicOnNhd_fderiv.comp_CLM M using 1
+    convert hW.fderiv.comp_CLM M using 1
     funext y
     ext v
     simp [M, e.comp_right_fderiv]
