@@ -28,6 +28,17 @@ open scoped ComplexConjugate Topology
 
 namespace TauCeti
 
+/-- If a complex input and its conjugate have Laplace transforms at the same parameter,
+then the real part of the input has transform equal to the average of those values. -/
+theorem HasLaplace.ofReal_re_of_conj {f : ℝ → ℂ} {s z z' : ℂ} {μ : Measure ℝ}
+    (h : HasLaplace f s z μ) (h' : HasLaplace (fun u ↦ conj (f u)) s z' μ) :
+    HasLaplace (fun u ↦ ((f u).re : ℂ)) s ((z + z') / 2) μ := by
+  have heq (u : ℝ) : (2 : ℂ)⁻¹ * (f u + conj (f u)) = ((f u).re : ℂ) := by
+    rw [Complex.add_conj, Complex.ofReal_mul, Complex.ofReal_ofNat, ← mul_assoc,
+      inv_mul_cancel₀ two_ne_zero, one_mul]
+  simpa only [Pi.smul_apply, smul_eq_mul, heq, div_eq_inv_mul] using
+    (h.fun_add h').fun_const_smul (2 : ℂ)⁻¹
+
 /-- A meromorphic continuation of a real Laplace transform agrees with its conjugate reflection
 as a punctured germ throughout its half-plane of meromorphicity. -/
 theorem eventuallyEq_conj_conj_of_hasLaplace {g : ℝ → ℝ} {F : ℂ → ℂ} {A θ : ℝ}
