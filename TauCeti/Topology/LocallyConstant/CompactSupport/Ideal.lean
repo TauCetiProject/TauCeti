@@ -89,11 +89,9 @@ theorem charFn_support_mul (f : LocallyConstant X R) : charFn R f.isClopen_suppo
 /-- In a Hausdorff space, the characteristic function `1_U` of a compact open set `U` has compact
 support. -/
 theorem _root_.TopologicalSpace.CompactOpens.charFn_mem_compactlySupportedIdeal [T2Space X]
-    (U : CompactOpens X) : U.charFn R ∈ compactlySupportedIdeal X R :=
-  mem_compactlySupportedIdeal.2 <| by
-    rw [CompactOpens.coe_charFn]
-    exact LocallyConstant.charFn_mem_compactlySupportedIdeal (R := R) U.toClopens.isClopen
-      U.isCompact
+    (U : CompactOpens X) : U.charFn R ∈ compactlySupportedIdeal X R := by
+  rw [CompactOpens.charFn_def]
+  exact LocallyConstant.charFn_mem_compactlySupportedIdeal _ U.isCompact
 
 /-- In a Hausdorff space, every `f ∈ C_c(X, R)` is fixed by `1_U` for some compact open `U`, for
 instance its support. -/
@@ -101,9 +99,9 @@ theorem exists_charFn_mul_eq_of_mem_compactlySupportedIdeal [T2Space X] {f : Loc
     (hf : f ∈ compactlySupportedIdeal X R) : ∃ U : CompactOpens X, U.charFn R * f = f := by
   let U : CompactOpens X :=
     ⟨⟨support f, hasCompactSupport_iff_isCompact_support.1 hf⟩, f.isClopen_support.isOpen⟩
-  have hU : U.charFn R = charFn R f.isClopen_support :=
-    ext fun x => by simp [CompactOpens.coe_charFn, coe_charFn, U]
-  exact ⟨U, by rw [hU, charFn_support_mul]⟩
+  refine ⟨U, ?_⟩
+  rw [CompactOpens.charFn_def]
+  exact charFn_support_mul f
 
 end Semiring
 
