@@ -7,12 +7,13 @@ module
 
 public import TauCeti.Dynamics.Expansive
 import Mathlib.Topology.UniformSpace.Separation
+import TauCeti.Topology.Homeomorph.Semiconj
 
 /-!
 # Finite-window forms of expansiveness
 
 On a compact space, the separation of orbits in an expansive system is uniform in a finite window
-of times. If continuous maps `f i : X → X` separate points through a closed entourage `V`
+of times. If continuous maps `f i : X → Y` separate points through a closed set `V`
 (`∀ i, (f i x, f i y) ∈ V` implies `x = y`), then for every entourage `W` there is a finite set
 `F` of indices such that `∀ i ∈ F, (f i x, f i y) ∈ V` already implies `(x, y) ∈ W`
 (`TauCeti.exists_finset_forall_mem_of_isClosed`). This is the compactness argument: the closed
@@ -37,11 +38,11 @@ open scoped Uniformity Topology
 
 variable {X : Type*} [UniformSpace X] [CompactSpace X]
 
-/-- **Finite windows.** On a compact uniform space, if continuous maps `f i` separate points
-through a closed set `V`, then for every entourage `W` a finite set `F` of indices suffices:
-`(f i x, f i y) ∈ V` for every `i ∈ F` implies `(x, y) ∈ W`. -/
-theorem exists_finset_forall_mem_of_isClosed {ι : Type*} {f : ι → X → X}
-    (hf : ∀ i, Continuous (f i)) {V : Set (X × X)} (hV : IsClosed V)
+/-- **Finite windows.** On a compact uniform space, if continuous maps `f i` into a topological
+space `Y` separate points through a closed set `V`, then for every entourage `W` a finite set `F`
+of indices suffices: `(f i x, f i y) ∈ V` for every `i ∈ F` implies `(x, y) ∈ W`. -/
+theorem exists_finset_forall_mem_of_isClosed {ι Y : Type*} [TopologicalSpace Y] {f : ι → X → Y}
+    (hf : ∀ i, Continuous (f i)) {V : Set (Y × Y)} (hV : IsClosed V)
     (hsep : ∀ x y, (∀ i, (f i x, f i y) ∈ V) → x = y) {W : Set (X × X)} (hW : W ∈ 𝓤 X) :
     ∃ F : Finset ι, ∀ x y, (∀ i ∈ F, (f i x, f i y) ∈ V) → (x, y) ∈ W := by
   have hK : IsCompact (interior W)ᶜ := isOpen_interior.isClosed_compl.isCompact
@@ -88,17 +89,6 @@ end TauCeti
 
 namespace TauCeti
 
-/-- The integer powers of a permutation that is continuous with continuous inverse are
-continuous. -/
-theorem continuous_perm_zpow {Y : Type*} [TopologicalSpace Y] {T : Equiv.Perm Y}
-    (hT : Continuous T) (hT' : Continuous T.symm) (n : ℤ) : Continuous ⇑(T ^ n) := by
-  induction n using Int.induction_on with
-  | zero => simpa using continuous_id
-  | succ n ih => rw [zpow_add_one, Equiv.Perm.coe_mul]; exact ih.comp hT
-  | pred n ih =>
-    rw [zpow_sub_one, Equiv.Perm.coe_mul, Equiv.Perm.inv_def]
-    exact ih.comp hT'
-
 variable {X : Type*} [PseudoMetricSpace X] [CompactSpace X]
 
 /-- **Finite windows for expansive homeomorphisms.** On a compact metric space, if `T` is expansive
@@ -107,13 +97,10 @@ that points staying `δ`-close for all times `|n| ≤ N` are `ε`-close. -/
 theorem IsExpansive.exists_window {T : Equiv.Perm X} {δ : ℝ} (h : IsExpansive T δ)
     (hT : Continuous T) (hT' : Continuous T.symm) {ε : ℝ} (hε : 0 < ε) :
     ∃ N : ℕ, ∀ x y, (∀ n : ℤ, |n| ≤ N → dist ((T ^ n) x) ((T ^ n) y) ≤ δ) → dist x y < ε := by
-  obtain ⟨F, hF⟩ := exists_finset_forall_mem_of_isClosed (continuous_perm_zpow hT hT')
+  obtain ⟨F, hF⟩ := exists_finset_forall_mem_of_isClosed
+    (fun n ↦ by simpa only [Homeomorph.coe_zpow] using ((⟨T, hT, hT'⟩ : X ≃ₜ X) ^ n).continuous)
     (V := {p | dist p.1 p.2 ≤ δ}) (isClosed_le continuous_dist continuous_const)
-    (fun x y hxy ↦ by
-      by_contra hne
-      obtain ⟨n, hn⟩ := h.exists_lt_dist hne
-      exact (hxy n).not_gt hn)
-    (Metric.dist_mem_uniformity hε)
+    (fun _ _ ↦ h.eq_of_forall_dist_le) (Metric.dist_mem_uniformity hε)
   refine ⟨F.sup Int.natAbs, fun x y hxy ↦ hF x y fun n hn ↦ hxy n ?_⟩
   rw [Int.abs_eq_natAbs]
   exact_mod_cast Finset.le_sup (f := Int.natAbs) hn
@@ -126,11 +113,7 @@ theorem IsPositivelyExpansive.exists_window {T : X → X} {δ : ℝ} (h : IsPosi
     ∃ N : ℕ, ∀ x y, (∀ n ≤ N, dist (T^[n] x) (T^[n] y) ≤ δ) → dist x y < ε := by
   obtain ⟨F, hF⟩ := exists_finset_forall_mem_of_isClosed (fun n ↦ hT.iterate n)
     (V := {p | dist p.1 p.2 ≤ δ}) (isClosed_le continuous_dist continuous_const)
-    (fun x y hxy ↦ by
-      by_contra hne
-      obtain ⟨n, hn⟩ := h.exists_lt_dist hne
-      exact (hxy n).not_gt hn)
-    (Metric.dist_mem_uniformity hε)
+    (fun _ _ ↦ h.eq_of_forall_dist_le) (Metric.dist_mem_uniformity hε)
   exact ⟨F.sup id, fun x y hxy ↦ hF x y fun n hn ↦ hxy n (Finset.le_sup (f := id) hn)⟩
 
 end TauCeti
