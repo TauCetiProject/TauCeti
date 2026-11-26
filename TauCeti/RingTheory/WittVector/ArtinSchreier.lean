@@ -162,16 +162,6 @@ theorem frobeniusMod_constantsMod (n : ℕ) (z : ZMod (p ^ n)) :
 
 variable {p k}
 
-/-- Every scalar equation remains solvable after reduction modulo any power of `p`. -/
-theorem surjective_frobeniusMod_sub_mul {K : Type*} [Field K] [CharP K p] [IsAlgClosed K]
-    (n : ℕ) (s : _root_.WittVector p K ⧸ Ideal.span {(p : _root_.WittVector p K) ^ n}) :
-    Function.Surjective fun y ↦ frobeniusMod p K n y - s * y := by
-  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
-  intro a
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
-  obtain ⟨y, hy⟩ := _root_.WittVector.surjective_frobenius_sub_mul s a
-  exact ⟨Ideal.Quotient.mk _ y, by simp [← map_mul, ← map_sub, hy]⟩
-
 /-- A p-adic constant is divisible by `p^n` in `W(k)` exactly when it is divisible by `p^n`
 in `ℤ_p`. -/
 theorem padicConstants_mem_span_pow_iff (n : ℕ) (z : ℤ_[p]) :
@@ -240,12 +230,36 @@ theorem exact_constantsMod_artinSchreierMod [IsDomain k] (n : ℕ) :
   intro x
   simpa only [artinSchreierMod_apply, sub_eq_zero] using frobeniusMod_eq_self_iff n x
 
+end TauCeti.WittVector
+
+namespace WittVector
+
+open TauCeti.WittVector
+
+variable {p : ℕ} [Fact p.Prime]
+
+/-- Every scalar equation remains solvable after reduction modulo any power of `p`. -/
+theorem surjective_frobeniusMod_sub_mul {K : Type*} [Field K] [CharP K p] [IsAlgClosed K]
+    (n : ℕ) (s : _root_.WittVector p K ⧸ Ideal.span {(p : _root_.WittVector p K) ^ n}) :
+    Function.Surjective fun y ↦ frobeniusMod p K n y - s * y := by
+  obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
+  intro a
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
+  obtain ⟨y, hy⟩ := _root_.WittVector.surjective_frobenius_sub_mul s a
+  exact ⟨Ideal.Quotient.mk _ y, by simp [← map_mul, ← map_sub, hy]⟩
+
+end WittVector
+
+namespace TauCeti.WittVector
+
+variable {p : ℕ} [Fact p.Prime]
+
 /-- Over an algebraically closed field the finite Artin–Schreier–Witt operator is surjective,
 completing `0 → ℤ/p^n → W(k)/p^n → W(k)/p^n → 0`. -/
 theorem artinSchreierMod_surjective {K : Type*} [Field K] [CharP K p] [IsAlgClosed K] (n : ℕ) :
     Function.Surjective (artinSchreierMod (p := p) (k := K) n) := by
   intro a
-  obtain ⟨y, hy⟩ := surjective_frobeniusMod_sub_mul (p := p) (K := K) n 1 a
+  obtain ⟨y, hy⟩ := _root_.WittVector.surjective_frobeniusMod_sub_mul (p := p) (K := K) n 1 a
   exact ⟨y, by simpa only [artinSchreierMod_apply, one_mul] using hy⟩
 
 end TauCeti.WittVector
