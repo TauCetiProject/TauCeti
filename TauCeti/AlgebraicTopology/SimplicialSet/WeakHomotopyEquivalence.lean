@@ -243,11 +243,13 @@ instance IsWeaklyContractible.op (K : SSet.{u}) [IsWeaklyContractible K] :
     have H' := H.op.postcomp (ε.hom.app Z)
     have h₀ : opFunctor.map (ε.inv.app K ≫ opFunctor.map g) ≫ ε.hom.app Z = g := by
       ext m y
-      rfl
+      simp [ε, opFunctor_map]
     have h₁ : opFunctor.map (const z : K ⟶ Z.op) ≫ ε.hom.app Z =
         const (opObjEquiv z) := by
       ext m y
-      rfl
+      have hrev : SimplexCategory.rev.map (m.unop.const ⦋0⦌ 0) = m.unop.const ⦋0⦌ 0 :=
+        Subsingleton.elim (α := m.unop ⟶ ⦋0⦌) _ _
+      simp [ε, opFunctor_map, op_map, hrev]
     rw [h₀, h₁] at H'
     obtain ⟨H'⟩ := Homotopy.nonempty_symm (Z := Z) H'
     exact ⟨const (opObjEquiv z), by simpa only [comp_const] using Nonempty.intro H'⟩
