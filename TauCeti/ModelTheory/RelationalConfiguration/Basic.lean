@@ -413,6 +413,11 @@ theorem eval_perm_smul (σ : Equiv.Perm V) (c : RelationalConfiguration L V) (a 
     (σ • c).eval a = c.eval (a.map σ.symm) := by
   rw [perm_smul_def, eval_restrict, Equiv.Perm.coe_inv]
 
+/-- Relabelling by `σ` reads the atom `R (σ ∘ v)` as the original configuration reads `R v`. -/
+theorem eval_perm_smul_atom_comp (σ : Equiv.Perm V) (c : RelationalConfiguration L V) {n : ℕ}
+    (R : L.Relations n) (v : Fin n → V) : (σ • c).eval (atom R (σ ∘ v)) = c.eval (atom R v) := by
+  simp [Function.comp_def]
+
 /-- Relabelling by permutations is a left action on configurations. -/
 instance instMulActionPerm : MulAction (Equiv.Perm V) (RelationalConfiguration L V) where
   one_smul c := by rw [perm_smul_def, inv_one, Equiv.Perm.coe_one, restrict_id]

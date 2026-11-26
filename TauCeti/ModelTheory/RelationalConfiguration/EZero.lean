@@ -15,9 +15,10 @@ public import TauCeti.SetTheory.Descriptive.EZero
 # `E₀` reduces to isomorphism on every Borel complete class
 
 Eventual equality `E₀` of binary sequences (`TauCeti.eZero`) is Borel reducible to isomorphism of
-countable structures, and so to isomorphism on every Borel complete class. Consequently such a
-class has exactly continuum many isomorphism types, and its isomorphism relation is not smooth: no
-Borel map into Cantor space gives complete invariants.
+countable structures, and so to isomorphism on every Borel complete class. Consequently the
+isomorphism relation of such a class is not smooth: no Borel map into Cantor space gives complete
+invariants. In a language with countably many relation symbols of each arity, such a class has
+exactly continuum many isomorphism types.
 
 The reduction lives in the relational language `copiesLanguage` with one binary symbol `S` and
 two unary symbols `Z` and `P`. The code of `x : ℕ → Bool` (`copiesCode x`) has carrier
@@ -138,8 +139,9 @@ theorem eval_copiesCode_flipSymb (x : ℕ → Bool) (v : Fin 1 → Finset ℕ ×
   rw [copiesCode, @eval_ofStructure _ _ (copiesStructure x)]
   exact decide_eq_decide.2 Iff.rfl
 
-/-- **`copiesCode` is continuous**: each coordinate is constant or reads one bit of `x`. -/
+/-- **`copiesCode` is continuous.** -/
 theorem continuous_copiesCode : Continuous copiesCode := by
+  -- Each coordinate is constant or reads one bit of `x`.
   refine continuous_iff.2 fun a => ?_
   induction a using Atom.induction_atom with | @h n R v => ?_
   cases R
@@ -155,17 +157,17 @@ theorem continuous_copiesCode : Continuous copiesCode := by
 
 variable {x y : ℕ → Bool}
 
-/-- If `x` and `y` are eventually equal, their codes are isomorphic: with `D` the finite set where
-they differ, `F ↦ F ∆ D` carries the copy of `F` for `x` onto the copy of `F ∆ D` for `y`. -/
+/-- If `x` and `y` are eventually equal, their codes are isomorphic. -/
 theorem isoSetoid_copiesCode (h : eZero x y) :
     isoSetoid copiesLanguage (Finset ℕ × ℕ) (copiesCode x) (copiesCode y) := by
+  -- With `D` the finite set where `x` and `y` differ, `F ↦ F ∆ D` carries the copy of `F` for `x`
+  -- onto the copy of `F ∆ D` for `y`.
   set D := (eZero_iff_finite.1 h).toFinset
   have hD (n : ℕ) : n ∈ D ↔ x n ≠ y n := by simp [D]
-  let τ : Equiv.Perm (Finset ℕ) :=
-    Function.Involutive.toPerm (· ∆ D) fun F => symmDiff_symmDiff_cancel_right D F
+  let τ : Equiv.Perm (Finset ℕ) := (symmDiff_left_involutive D).toPerm
   let ρ := τ.prodCongr (Equiv.refl ℕ)
   have hρ (p : Finset ℕ × ℕ) : ρ.symm p = (p.1 ∆ D, p.2) := by
-    simp [ρ, τ, Function.Involutive.toPerm, Prod.map]
+    simp [ρ, τ, Equiv.prodCongr_symm, Prod.map_apply']
   refine isoSetoid_iff_exists_perm_smul_eq.2 ⟨ρ, ext fun a => ?_⟩
   induction a using Atom.induction_atom with | @h n R v => ?_
   rw [eval_perm_smul, Atom.map_atom]
@@ -176,17 +178,17 @@ theorem isoSetoid_copiesCode (h : eZero x y) :
     by_cases hF : (v 0).2 ∈ (v 0).1 <;> cases hx : x (v 0).2 <;> cases hy : y (v 0).2 <;>
       simp_all
 
-/-- If the codes of `x` and `y` are isomorphic, then `x` and `y` are eventually equal: an
-isomorphism maps the copy of `∅` for `x` onto a copy `{G} × ℕ` for `y`, following `Z` and then
-`S`, and comparing `P` along the two copies shows that `x` and `y` differ exactly on `G`. -/
+/-- If the codes of `x` and `y` are isomorphic, then `x` and `y` are eventually equal. -/
 theorem eZero_of_isoSetoid_copiesCode
     (h : isoSetoid copiesLanguage (Finset ℕ × ℕ) (copiesCode x) (copiesCode y)) : eZero x y := by
+  -- An isomorphism `σ` maps the copy of `∅` for `x` onto a copy `{G} × ℕ` for `y`, following `Z`
+  -- and then `S`, and comparing `P` along the two copies shows that `x` and `y` differ exactly
+  -- on `G`.
   obtain ⟨σ, hσ⟩ := isoSetoid_iff_exists_perm_smul_eq.1 h
   -- `σ` carries every atom of `copiesCode x` to an atom of `copiesCode y` with the same value.
   have hmap {k : ℕ} (R : copiesLanguage.Relations k) (v : Fin k → Finset ℕ × ℕ) :
-      (copiesCode y).eval (atom R (σ ∘ v)) = (copiesCode x).eval (atom R v) := by
-    rw [← hσ, eval_perm_smul, Atom.map_atom, ← Function.comp_assoc, Equiv.symm_comp_self,
-      Function.id_comp]
+      (copiesCode y).eval (atom R (σ ∘ v)) = (copiesCode x).eval (atom R v) :=
+    hσ ▸ eval_perm_smul_atom_comp σ _ R v
   set G := (σ (∅, 0)).1
   have hcopy (n : ℕ) : σ (∅, n) = (G, n) := by
     induction n with
