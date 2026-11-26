@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Complex.Circle
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Adjoint.Representation.Basic
+import TauCeti.Geometry.Symplectic.AlmostComplex
 
 /-!
 # Root characters of a torus
@@ -134,7 +135,9 @@ omit [FiniteDimensional ℝ E] [T2Space G] in
 private theorem injective_reImMap (h : IsRootPlane B t α V J) {v : V} (hv : v ≠ 0) :
     Function.Injective (reImMap J v) := by
   refine (injective_iff_map_eq_zero _).2 fun z hz ↦ ?_
-  have := LinearIndependent.pair_iff.1 (h.linearIndependent_pair hv) z.re z.im
+  have := LinearIndependent.pair_iff.1
+    ((⟨J, LinearMap.ext h.apply_apply⟩ : AlmostComplexStructure V).linearIndependent_pair hv)
+    z.re z.im
     (Subtype.ext (by simpa [reImMap_apply] using hz))
   exact Complex.ext this.1 this.2
 
