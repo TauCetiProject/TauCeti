@@ -261,7 +261,7 @@ theorem Homotopy.eq_zero_of_isIdempotentElem {𝕜 A : Type*} [Monoid 𝕜] [Non
       (norm_pos_iff.mpr he0)
   obtain ⟨t, ht⟩ : (2⁻¹ : ℝ) ∈ Set.range fun t : I => ‖H.toHom e t‖ :=
     intermediate_value_univ (1 : I) 0 (H.toHom e).continuous.norm
-      ⟨by simp, by simp; linarith⟩
+      ⟨by simp, by simp only [toHom_apply_zero, NonUnitalStarAlgHom.coe_id, id_eq]; linarith⟩
   have hidem_t : H.toHom e t * H.toHom e t = H.toHom e t := by
     rw [← ContinuousMap.mul_apply, ← map_mul, he.eq]
   have hle : ‖H.toHom e t‖ ≤ ‖H.toHom e t‖ * ‖H.toHom e t‖ := by

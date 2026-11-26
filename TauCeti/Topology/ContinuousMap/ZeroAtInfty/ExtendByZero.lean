@@ -50,6 +50,17 @@ section Extend
 
 variable [R1Space Y] [Zero R] {e : X → Y}
 
+private theorem extend_mem_of_notMem_image {X Y R : Type*} [Zero R] {e : X → Y}
+    (he : Function.Injective e) (f : X → R) {V : Set R} {K : Set X} {z : Y}
+    (hKV : Kᶜ ⊆ f ⁻¹' V) (h0 : (0 : R) ∈ V) (hz : z ∉ e '' K) :
+    Function.extend e f (0 : Y → R) z ∈ V := by
+  by_cases hze : z ∈ range e
+  · obtain ⟨x, rfl⟩ := hze
+    rw [he.extend_apply]
+    exact hKV fun hx => hz (mem_image_of_mem e hx)
+  · rw [Function.extend_apply' f (0 : Y → R) z hze, Pi.zero_apply]
+    exact h0
+
 /-- Extend `f : C₀(X, R)` by `0` outside `Set.range e` along an open embedding `e : X → Y` into an
 `R₁` space `Y`. -/
 noncomputable def extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) : C₀(Y, R) where
@@ -67,22 +78,12 @@ noncomputable def extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) : C₀(
       have hcl : closure (e '' K) ⊆ range e :=
         (hK.image he.continuous).closure_subset_of_isOpen he.isOpen_range (image_subset_range e K)
       refine mem_of_superset (isClosed_closure.isOpen_compl.mem_nhds fun hyc => hy (hcl hyc))
-        fun z hz => ?_
-      by_cases hze : z ∈ range e
-      · obtain ⟨x, rfl⟩ := hze
-        simpa only [mem_preimage, he.injective.extend_apply] using
-          hKV fun hx => hz (subset_closure (mem_image_of_mem e hx))
-      · simpa only [mem_preimage, Function.extend_apply' f (0 : Y → R) z hze, Pi.zero_apply]
-          using mem_of_mem_nhds hV
+        fun z hz => extend_mem_of_notMem_image he.injective f hKV (mem_of_mem_nhds hV)
+          fun hzk => hz (subset_closure hzk)
   zero_at_infty' := fun V hV => by
     obtain ⟨K, hK, hKV⟩ := mem_cocompact.mp (zero_at_infty f hV)
-    refine mem_cocompact.mpr ⟨e '' K, hK.image he.continuous, fun z hz => ?_⟩
-    by_cases hze : z ∈ range e
-    · obtain ⟨x, rfl⟩ := hze
-      simpa only [mem_preimage, he.injective.extend_apply] using
-        hKV fun hx => hz (mem_image_of_mem e hx)
-    · simpa only [mem_preimage, Function.extend_apply' f (0 : Y → R) z hze, Pi.zero_apply]
-        using mem_of_mem_nhds hV
+    exact mem_cocompact.mpr ⟨e '' K, hK.image he.continuous, fun z hz =>
+      extend_mem_of_notMem_image he.injective f hKV (mem_of_mem_nhds hV) hz⟩
 
 theorem coe_extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) :
     ⇑(extendByZero he f) = Function.extend e f (0 : Y → R) := (rfl)

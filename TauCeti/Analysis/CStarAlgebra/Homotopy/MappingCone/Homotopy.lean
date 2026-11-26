@@ -275,14 +275,8 @@ private def warpConePath (G : CStarCone C(I, B)) : C(I, CStarCone C(I, B)) where
     (((((CStarCone.toPath G).uncurry.comp warpHomotopy).curry).curry) r)
     (by ext t; simp [ContinuousMap.curry_apply, Function.uncurry])
   continuous_toFun := by
-    rw [(CStarCone.isometry_toPath (A := C(I, B))).isUniformInducing.isInducing.continuous_iff]
-    have hcomp : (CStarCone.toPath (A := C(I, B)) ∘ fun r => CStarCone.ofPathEqZero
-        (((((CStarCone.toPath G).uncurry.comp warpHomotopy).curry).curry) r)
-        (by ext t; simp [ContinuousMap.curry_apply, Function.uncurry])) =
-        (((CStarCone.toPath G).uncurry.comp warpHomotopy).curry).curry := by
-      ext r s t; simp
-    rw [hcomp]
-    exact ((((CStarCone.toPath G).uncurry.comp warpHomotopy).curry).curry).continuous
+    exact CStarCone.continuous_ofPathEqZero
+      ((((CStarCone.toPath G).uncurry.comp warpHomotopy).curry).curry).continuous _
 
 private theorem evalOne_warpConePath (Φ : NonUnitalStarAlgHom.Homotopy φ₀ φ₁)
     (y : MappingCone Φ.toHom) (r : I) :

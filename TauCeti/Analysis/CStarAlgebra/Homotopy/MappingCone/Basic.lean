@@ -30,7 +30,7 @@ the supremum product norm `‖(a, f)‖ = max ‖a‖ ‖f‖` (Blackadar, *Oper
   `(a, b)` if and only if `φ (a * b) = 0`.
 * `TauCeti.MappingCone.idEquivCone`, `TauCeti.MappingCone.isContractible_id`,
   `TauCeti.MappingCone.zeroEquivProd`, `TauCeti.MappingCone.not_isContractible_zero_of_nontrivial`,
-  and `TauCeti.MappingCone.isEmpty_starHomotopyEquiv_id_zero_complex`: special cases `φ = id` and
+  and `TauCeti.MappingCone.isEmpty_starHomotopyEquiv_id_zero`: special cases `φ = id` and
   `φ = 0`.
 
 ## References
@@ -544,15 +544,13 @@ theorem not_isContractible_zero_of_nontrivial (A B : Type*) [CStarAlgebra A] [No
     rw [IsIdempotentElem]; ext <;> simp
   exact one_ne_zero (congrArg Prod.fst (hprod.eq_zero_of_isIdempotentElem hidem))
 
-theorem not_isContractible_zero_complex :
-    ¬IsContractibleCStarAlgebra (MappingCone (0 : ℂ →⋆ₙₐ[ℂ] ℂ)) :=
-  not_isContractible_zero_of_nontrivial ℂ ℂ
-
-/-- `MappingCone (.id ℂ ℂ)` and `MappingCone (0 : ℂ →⋆ₙₐ[ℂ] ℂ)` are not `⋆`-homotopy equivalent. -/
-theorem isEmpty_starHomotopyEquiv_id_zero_complex :
-    IsEmpty (StarHomotopyEquiv (MappingCone (.id ℂ ℂ)) (MappingCone (0 : ℂ →⋆ₙₐ[ℂ] ℂ))) :=
-  ⟨fun e => not_isContractible_zero_complex
-    ((IsContractibleCStarAlgebra.iff_of_starHomotopyEquiv e).mp (isContractible_id ℂ))⟩
+/-- For any nontrivial unital C⋆-algebra `A` and any non-unital C⋆-algebra `B`,
+`MappingCone (.id ℂ A)` and `MappingCone (0 : A →⋆ₙₐ[ℂ] B)` are not `⋆`-homotopy equivalent. -/
+theorem isEmpty_starHomotopyEquiv_id_zero (A B : Type*) [CStarAlgebra A] [Nontrivial A]
+    [NonUnitalCStarAlgebra B] :
+    IsEmpty (StarHomotopyEquiv (MappingCone (.id ℂ A)) (MappingCone (0 : A →⋆ₙₐ[ℂ] B))) :=
+  ⟨fun e => not_isContractible_zero_of_nontrivial A B
+    ((IsContractibleCStarAlgebra.iff_of_starHomotopyEquiv e).mp (isContractible_id A))⟩
 
 end SpecialCases
 

@@ -142,6 +142,14 @@ theorem toPath_ofPathEqZero (g : C(I, A)) (hg0 : g 0 = 0) : toPath (ofPathEqZero
     ofPathEqZero (toPath f) (toPath_apply_zero f) = f :=
   toPath_injective (toPath_ofPathEqZero _ _)
 
+/-- A continuous family of paths `F : X → C(unitInterval, A)` vanishing at `0` induces a
+continuous map `X → CStarCone A` via `ofPathEqZero`. -/
+theorem continuous_ofPathEqZero {X : Type*} [TopologicalSpace X] {F : X → C(I, A)}
+    (hF : Continuous F) (hF0 : ∀ x, F x 0 = 0) :
+    Continuous fun x => ofPathEqZero (F x) (hF0 x) := by
+  rw [(isometry_toPath (A := A)).isUniformInducing.isInducing.continuous_iff]
+  simpa only [Function.comp_def, toPath_ofPathEqZero] using hF
+
 theorem mem_range_toPath_iff {g : C(I, A)} :
     g ∈ range (toPath (A := A)) ↔ g 0 = 0 :=
   ⟨fun ⟨f, hf⟩ => hf ▸ toPath_apply_zero f,
@@ -233,10 +241,7 @@ private noncomputable def contractionPath (f : CStarCone A) : C(I, CStarCone A) 
     rw [ContinuousMap.curry_apply, ContinuousMap.comp_apply, truncatedShift_zero_right,
       toPath_apply_zero])
   continuous_toFun := by
-    rw [(isometry_toPath (A := A)).isUniformInducing.isInducing.continuous_iff]
-    convert ((toPath f).comp truncatedShift).curry.continuous using 1
-    ext t s
-    simp
+    exact continuous_ofPathEqZero ((toPath f).comp truncatedShift).curry.continuous _
 
 @[simp] private theorem contractionPath_apply (f : CStarCone A) (t : I) (s : Ioc (0 : ℝ) 1) :
     contractionPath f t s = toPath f (truncatedShift (t, Set.inclusion Ioc_subset_Icc_self s)) := by
