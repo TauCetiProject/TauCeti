@@ -89,17 +89,25 @@ open SmoothAlmostComplexStructure
 
 variable {L : Submodule ℤ ℂ} {ψ : AddChar L Circle}
 
+/-- The real-linear map of `ℂ × ℂ` that fixes the base direction and multiplies the fibre
+direction by the holonomy `ψ γ` of a lattice vector `γ`. -/
+private def holonomyCLM (γ : FlatLineLattice ψ) : ℂ × ℂ →L[ℝ] ℂ × ℂ :=
+  (ContinuousLinearMap.fst ℝ ℂ ℂ).prod
+    ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
+      (ContinuousLinearMap.snd ℝ ℂ ℂ))
+
+@[simp]
+private theorem holonomyCLM_apply (γ : FlatLineLattice ψ) (v : ℂ × ℂ) :
+    holonomyCLM γ v = (v.1, ψ (FlatLineLattice.toLattice ψ γ) * v.2) :=
+  rfl
+
 /-- The differential of the action of a lattice vector `γ` on `ℂ × ℂ` fixes the base direction and
 multiplies the fibre direction by the holonomy `ψ γ`. -/
 private theorem mfderiv_vadd (γ : FlatLineLattice ψ) (p : ℂ × ℂ) :
-    mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ) (γ +ᵥ · : ℂ × ℂ → ℂ × ℂ) p =
-      (ContinuousLinearMap.fst ℝ ℂ ℂ).prod
-        ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
-          (ContinuousLinearMap.snd ℝ ℂ ℂ)) := by
+    mfderiv 𝓘(ℝ, ℂ × ℂ) 𝓘(ℝ, ℂ × ℂ) (γ +ᵥ · : ℂ × ℂ → ℂ × ℂ) p = holonomyCLM γ := by
   -- The action is this real-linear map followed by a translation.
-  have h : (γ +ᵥ · : ℂ × ℂ → ℂ × ℂ) = fun q ↦ (ContinuousLinearMap.fst ℝ ℂ ℂ).prod
-      ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
-        (ContinuousLinearMap.snd ℝ ℂ ℂ)) q + (((FlatLineLattice.toLattice ψ γ : L) : ℂ), 0) := by
+  have h : (γ +ᵥ · : ℂ × ℂ → ℂ × ℂ) =
+      fun q ↦ holonomyCLM γ q + (((FlatLineLattice.toLattice ψ γ : L) : ℂ), 0) := by
     funext q
     simp
   rw [h]
@@ -113,18 +121,10 @@ theorem mpullback_vadd_constSmooth (γ : FlatLineLattice ψ) :
         (stdComplexSymplecticForm.prod stdComplexSymplecticForm).constSmooth =
       (stdComplexSymplecticForm.prod stdComplexSymplecticForm).constSmooth := by
   have key (v w : ℂ × ℂ) :
-      stdComplexSymplecticForm.prod stdComplexSymplecticForm
-          ((ContinuousLinearMap.fst ℝ ℂ ℂ).prod
-            ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
-              (ContinuousLinearMap.snd ℝ ℂ ℂ)) v)
-          ((ContinuousLinearMap.fst ℝ ℂ ℂ).prod
-            ((ContinuousLinearMap.mul ℝ ℂ (ψ (FlatLineLattice.toLattice ψ γ))).comp
-              (ContinuousLinearMap.snd ℝ ℂ ℂ)) w) =
+      stdComplexSymplecticForm.prod stdComplexSymplecticForm (holonomyCLM γ v) (holonomyCLM γ w) =
         stdComplexSymplecticForm.prod stdComplexSymplecticForm v w := by
-    simp only [ContinuousLinearMap.prod_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.mul_apply',
-      SymplecticForm.prod_apply, stdComplexSymplecticForm_mul_mul, Circle.norm_coe, one_pow,
-      one_mul]
+    simp only [holonomyCLM_apply, SymplecticForm.prod_apply, stdComplexSymplecticForm_mul_mul,
+      Circle.norm_coe, one_pow, one_mul]
   refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
   rw [SmoothForm.eval₂_mpullback, mfderiv_vadd]
   exact (SymplecticForm.constSmooth_apply _ _ _ _).trans
