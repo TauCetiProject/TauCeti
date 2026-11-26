@@ -74,12 +74,9 @@ private theorem continuousAt_boundarySecondFundamentalForm_symmL (q₀ : (𝓡�
   have hq₀ : q₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' q₀
   have hsec : ∀ y : EuclideanSpace ℝ (Fin n),
       ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent 0
-        (T% (fun q ↦ e.symmL ℝ q y)) q₀ := by
-    intro y
-    refine (e.contMDiffOn_section_baseSet_iff.2 ((contMDiffOn_const (c := y)).congr ?_)).contMDiffAt
-      (e.open_baseSet.mem_nhds hq₀)
-    intro q hq
-    simp [hq]
+        (T% (fun q ↦ e.symmL ℝ q y)) q₀ := fun y ↦
+    ((Manifold.contMDiffOn_symm_baseSet (e := e) y).congr fun q hq ↦ by
+      rw [e.symmL_apply hq]).contMDiffAt (e.open_baseSet.mem_nhds hq₀)
   exact (contMDiffAt_boundarySecondFundamentalForm_apply (k := 0) (m := 2) (l := 1) (by norm_num)
     (by norm_num) (hsec v) (hsec w)).continuousAt
 
