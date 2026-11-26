@@ -749,9 +749,9 @@ theorem exists_eLpNorm_le_div_mul_sum_eLpNorm_of_mFourierCoeff_eq (θ : ℝ) :
             (hg i).aestronglyMeasurable).trans ?_
           gcongr
           exact Finset.single_le_sum (fun j _ ↦ hA j) (Finset.mem_univ i)
-    _ = _ := by
-        rw [← Finset.mul_sum, ← Finset.mul_sum, ← mul_assoc, ← ENNReal.ofReal_mul
-          (inv_nonneg.2 hR.le), inv_mul_eq_div]
+    _ = ENNReal.ofReal R⁻¹ * ENNReal.ofReal (∑ i, A i) * ∑ i, eLpNorm (g i) p volume := by
+        simp only [Finset.mul_sum, mul_assoc]
+    _ = _ := by rw [← ENNReal.ofReal_mul (inv_nonneg.2 hR.le), inv_mul_eq_div]
 
 end ReverseBernstein
 

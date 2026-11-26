@@ -134,7 +134,7 @@ theorem exists_norm_littlewoodPaleyBlockLp_partialDeriv_le :
       ‖littlewoodPaleyBlockLp φ p j (partialDeriv i c)‖ ≤
         C * 2 ^ j * ‖littlewoodPaleyBlockLp φ p j c‖ := by
   classical
-  obtain ⟨C₀, hC₀, hB⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul (d := d)
+  obtain ⟨C₀, -, hB⟩ := exists_eLpNorm_le_of_mFourierCoeff_eq_prod_smul (d := d)
   set M : ℝ := max 1 φ.rOut
   have hM : 1 ≤ M := le_max_left _ _
   refine ⟨C₀ ^ 2 * M, by positivity, fun p _ i j c ↦ ?_⟩
@@ -155,11 +155,11 @@ theorem exists_norm_littlewoodPaleyBlockLp_partialDeriv_le :
       rw [Finset.sum_eq_single i (fun x _ hx ↦ by simp [hx]) (by simp)]
       simp
   rw [volume_eq_pi_haarAddCircle] at h
-  have hv : ∏ _l : Fin 1, ‖(Pi.single i 1 : d → ℝ)‖ = 1 := by simp [Pi.norm_single]
-  rw [hv, sub_self, mul_zero, add_zero, Nat.cast_one, Real.rpow_one, mul_one] at h
+  have hv : ‖(Pi.single i 1 : d → ℝ)‖ = 1 := by simp [Pi.norm_single]
+  norm_num [hv] at h
   rw [Lp.norm_def, Lp.norm_def]
   calc (eLpNorm g p volume).toReal
-      ≤ (ENNReal.ofReal (C₀ ^ (1 + 1) * (2 ^ j * M)) * eLpNorm f p volume).toReal :=
+      ≤ (ENNReal.ofReal (C₀ ^ 2 * (2 ^ j * M)) * eLpNorm f p volume).toReal :=
         ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (Lp.eLpNorm_ne_top f)) h
     _ = C₀ ^ 2 * M * 2 ^ j * (eLpNorm f p volume).toReal := by
         rw [ENNReal.toReal_mul, ENNReal.toReal_ofReal (by positivity)]
@@ -191,11 +191,9 @@ theorem exists_pow_mul_norm_littlewoodPaleyBlockLp_succ_le_mul_sum :
     (fun n hn ↦ by
       rw [hθR] at hn
       rw [mFourierCoeff_littlewoodPaleyBlockLp]
-      rcases hn with hn | hn
-      · rw [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le hn.le, Complex.ofReal_zero,
-          zero_mul]
-      · rw [φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le, Complex.ofReal_zero,
-          zero_mul])
+      rcases hn with hn | hn <;>
+        simp [φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le,
+          φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm, hn.le])
     fun i n ↦ mFourierCoeff_littlewoodPaleyBlockLp_partialDeriv i (j + 1) c n
   rw [volume_eq_pi_haarAddCircle] at h
   have hfin (i : d) : eLpNorm (g i) p volume ≠ ∞ := Lp.eLpNorm_ne_top _
