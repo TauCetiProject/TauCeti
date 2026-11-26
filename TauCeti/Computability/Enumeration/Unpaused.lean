@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.Enumeration.Serialization
 public import TauCeti.Computability.RecursiveIn
+public import TauCeti.Data.Nat.BitIndices
 import TauCeti.Computability.Primrec.FiniteSet
 
 /-!
@@ -221,6 +222,13 @@ def entryAt (A : ℕ → Finset ℕ) (n : ℕ) : Part ℕ :=
     if (A s).card = n then
       Nat.leastBitIndex (Finset.equivBitIndices.symm (fresh A s))
     else none
+
+/-- The entry search selects the least fresh element at the first transition of the
+requested rank that has a fresh entry. -/
+theorem entryAt_def (A : ℕ → Finset ℕ) (n : ℕ) :
+    entryAt A n = Nat.rfindOpt (fun s =>
+      if (A s).card = n then Nat.leastBitIndex (Finset.equivBitIndices.symm (fresh A s))
+      else none) := (rfl)
 
 /-- At a transition containing at most one new element, the least new element is exactly
 the element that enters, if any. -/
