@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Complete
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.MovedNorm
 import TauCeti.GroupTheory.Perm.FinThree.Basic
 import Mathlib.Data.List.GetD
 import TauCeti.Algebra.BigOperators.Finset.Filter
@@ -148,75 +149,67 @@ theorem witness8_def : witness8 = Cochain.ofLt (complete (Fin 8)) edge8 := (rfl)
 
 /-- `witness5` has moved-point defect `10`. -/
 theorem defect_witness5 : witness5.defect (movedNorm (Fin 3)) = 10 := by
-  rw [witness5, Cochain.defect_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
-  have h10 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 × Fin 5 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-      (edge5 p.1 p.2.1 * edge5 p.2.1 p.2.2 * (edge5 p.1 p.2.2)⁻¹).support.card = 10 := by
-    decide +kernel
-  exact_mod_cast h10
+  rw [witness5, Cochain.defect_ofLt_complete_movedNorm]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 5 × Fin 5 × Fin 5 =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      (edge5 p.1 p.2.1 * edge5 p.2.1 p.2.2 * (edge5 p.1 p.2.2)⁻¹).support.card = 10)
 
 /-- `witness6` has moved-point defect `36`. -/
 theorem defect_witness6 : witness6.defect (movedNorm (Fin 3)) = 36 := by
-  rw [witness6, Cochain.defect_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
-  have h36 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 × Fin 6 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-      (edge6 p.1 p.2.1 * edge6 p.2.1 p.2.2 * (edge6 p.1 p.2.2)⁻¹).support.card = 36 := by
-    decide +kernel
-  exact_mod_cast h36
+  rw [witness6, Cochain.defect_ofLt_complete_movedNorm]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 6 × Fin 6 × Fin 6 =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      (edge6 p.1 p.2.1 * edge6 p.2.1 p.2.2 * (edge6 p.1 p.2.2)⁻¹).support.card = 36)
 
 /-- `witness7` has moved-point defect `28`. -/
 theorem defect_witness7 : witness7.defect (movedNorm (Fin 3)) = 28 := by
-  rw [witness7, Cochain.defect_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
-  have h28 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 × Fin 7 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-      (edge7 p.1 p.2.1 * edge7 p.2.1 p.2.2 * (edge7 p.1 p.2.2)⁻¹).support.card = 28 := by
-    decide +kernel
-  exact_mod_cast h28
+  rw [witness7, Cochain.defect_ofLt_complete_movedNorm]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 7 × Fin 7 × Fin 7 =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      (edge7 p.1 p.2.1 * edge7 p.2.1 p.2.2 * (edge7 p.1 p.2.2)⁻¹).support.card = 28)
 
 /-- `witness8` has moved-point defect `72`. -/
 theorem defect_witness8 : witness8.defect (movedNorm (Fin 3)) = 72 := by
-  rw [witness8, Cochain.defect_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
-  have h72 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 × Fin 8 => p.1 < p.2.1 ∧ p.2.1 < p.2.2,
-      (edge8 p.1 p.2.1 * edge8 p.2.1 p.2.2 * (edge8 p.1 p.2.2)⁻¹).support.card = 72 := by
-    decide +kernel
-  exact_mod_cast h72
+  rw [witness8, Cochain.defect_ofLt_complete_movedNorm]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 8 × Fin 8 × Fin 8 =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      (edge8 p.1 p.2.1 * edge8 p.2.1 p.2.2 * (edge8 p.1 p.2.2)⁻¹).support.card = 72)
 
 /-- The identity gauge costs `6` against `witness5`. -/
 theorem cost_one_witness5 : witness5.cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [witness5, Cochain.cost_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
+  rw [witness5, Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
-  have h6 : ∑ p ∈ univ.filter fun p : Fin 5 × Fin 5 => p.1 < p.2,
-      (edge5 p.1 p.2).support.card = 6 := by decide +kernel
-  exact_mod_cast h6
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 5 × Fin 5 => p.1 < p.2),
+      (edge5 p.1 p.2).support.card = 6)
 
 /-- The identity gauge costs `18` against `witness6`. -/
 theorem cost_one_witness6 : witness6.cost (movedNorm (Fin 3)) (fun _ => 1) = 18 := by
-  rw [witness6, Cochain.cost_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
+  rw [witness6, Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
-  have h18 : ∑ p ∈ univ.filter fun p : Fin 6 × Fin 6 => p.1 < p.2,
-      (edge6 p.1 p.2).support.card = 18 := by decide +kernel
-  exact_mod_cast h18
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 6 × Fin 6 => p.1 < p.2),
+      (edge6 p.1 p.2).support.card = 18)
 
 /-- The identity gauge costs `12` against `witness7`. -/
 theorem cost_one_witness7 : witness7.cost (movedNorm (Fin 3)) (fun _ => 1) = 12 := by
-  rw [witness7, Cochain.cost_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
+  rw [witness7, Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
-  have h12 : ∑ p ∈ univ.filter fun p : Fin 7 × Fin 7 => p.1 < p.2,
-      (edge7 p.1 p.2).support.card = 12 := by decide +kernel
-  exact_mod_cast h12
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 7 × Fin 7 => p.1 < p.2),
+      (edge7 p.1 p.2).support.card = 12)
 
 /-- The identity gauge costs `27` against `witness8`. -/
 theorem cost_one_witness8 : witness8.cost (movedNorm (Fin 3)) (fun _ => 1) = 27 := by
-  rw [witness8, Cochain.cost_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
+  rw [witness8, Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
-  have h27 : ∑ p ∈ univ.filter fun p : Fin 8 × Fin 8 => p.1 < p.2,
-      (edge8 p.1 p.2).support.card = 27 := by decide +kernel
-  exact_mod_cast h27
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 8 × Fin 8 => p.1 < p.2),
+      (edge8 p.1 p.2).support.card = 27)
 
 end Sym3
 
@@ -317,6 +310,8 @@ private theorem search_step {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D
 
 private theorem sum_edgeList {k : ℕ} (f : Fin k × Fin k → ℕ) :
     ((edgeList k).map f).sum = ∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2, f p := by
+  -- Keep the list enumeration used by the executable search. First sum over its rows,
+  -- then turn each filtered row into a finset using that `finRange` has no duplicates.
   rw [edgeList, List.flatMap_def, List.map_flatten, List.sum_flatten, List.map_map,
     ← List.ofFn_eq_map, List.map_ofFn, List.sum_ofFn, ← univ_product_univ,
     sum_filter_product univ univ (· < ·) fun u v => f (u, v)]
@@ -370,8 +365,7 @@ private theorem le_cost_of_search {m : ℕ}
   have he : List.ofFn β = [g0] ++ List.ofFn fun i : Fin m => β i.succ := by
     rw [List.ofFn_succ, hβ, g0, ← List.singleton_append]
   rw [← he] at hs
-  rw [Cochain.cost_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
+  rw [Cochain.cost_ofLt_complete_movedNorm]
   have hsum := pcost_ofFn α β
   simp only [movedFast_eq] at hsum
   rw [hsum] at hs

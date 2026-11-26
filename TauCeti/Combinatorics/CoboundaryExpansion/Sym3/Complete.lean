@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Replication
-import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
+import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.MovedNorm
 import TauCeti.Combinatorics.CoboundaryExpansion.Staircase
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
@@ -46,13 +46,8 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
   (`h1_complete_movedNorm_le_of_card_eq_mul`).
 * `k = 4 q`: the `k = 4` seed `Sym3.seed`, with the three transpositions on the pairs `(1, 2)`,
   `(1, 3)`, `(2, 3)`, replicated on `Fin 4 ×ₗ Fin q`. Its defect is `8 q ^ 3`
-  (`Cochain.defect_ofLt_lex`; `8` by `decide` for the seed), and every gauge costs at least
-  `6 q ^ 2`: the cost is `3` times the cross-degree pair cost
-  (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`), replication multiplies its infimum by at least
-  `q ^ 2` (`card_sq_mul_ciInf_le_ciInf_sum_distErr_lex`) and the seed infimum is `2`
-  (`ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap`). So `h1_le_div` gives
-  `h1 ≤ 8 q ^ 3 / (6 q ^ 2) = 4 q / 3`.
-  The same witness is also stated through `Cochain.replicate`:
+  and its gauge distance is `6 q ^ 2` by `Cochain.gaugeDist_replicate`, giving the required
+  quotient `4 q / 3`.
   `Sym3.replicatedSeed q = (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)` has defect
   `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`, `gaugeDist_replicatedSeed`,
   from `defect_ofLt_seed` and `gaugeDist_seed`), the identity gauge costs `6 q ^ 2`
@@ -110,25 +105,21 @@ theorem insert_seed_eq_setOf_isSwap :
 holonomy. -/
 theorem defect_ofLt_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).defect (movedNorm (Fin 3)) = 8 := by
-  rw [Cochain.defect_ofLt_complete]
-  simp only [movedNorm_apply, ← Nat.cast_sum]
-  have h8 :
-      ∑ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
-        #(seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support = 8 := by
-    decide +kernel
-  rw [h8]
-  norm_num
+  rw [Cochain.defect_ofLt_complete_movedNorm]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 4 × Fin 4 × Fin 4 =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      (seed p.1 p.2.1 * seed p.2.1 p.2.2 * (seed p.1 p.2.2)⁻¹).support.card = 8)
 
 /-- The identity gauge costs `6` against the seed: its three non-identity edges are
 transpositions. -/
 theorem cost_one_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
-  rw [Cochain.cost_ofLt_complete]
-  simp only [inv_one, one_mul, mul_one, movedNorm_apply, ← Nat.cast_sum]
-  have h6 : ∑ p ∈ univ.filter fun p : Fin 4 × Fin 4 => p.1 < p.2,
-      (seed p.1 p.2).support.card = 6 := by
-    decide +kernel
-  exact_mod_cast h6
+  rw [Cochain.cost_ofLt_complete_movedNorm]
+  simp only [inv_one, one_mul, mul_one]
+  exact_mod_cast
+    (by decide +kernel : ∑ p ∈ univ.filter (fun p : Fin 4 × Fin 4 => p.1 < p.2),
+      (seed p.1 p.2).support.card = 6)
 
 /-- The seed has gauge distance `6`, attained by the identity gauge. -/
 theorem gaugeDist_seed :
@@ -136,14 +127,7 @@ theorem gaugeDist_seed :
   refine le_antisymm (((Cochain.ofLt (complete (Fin 4)) seed).gaugeDist_le_cost _
     (fun _ => 1)).trans cost_one_seed.le) ?_
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
-  rw [← Cochain.mul_costErr_eq_cost, Cochain.costErr_complete]
-  have hsum : ∀ p ∈ univ.filter (fun p : Fin 4 × Fin 4 => p.1 < p.2),
-      (Cochain.ofLt (complete (Fin 4)) seed) p.1 p.2 = seed p.1 p.2 := by
-    intro p hp
-    exact Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne)
-      (mem_filter.mp hp).2
-  simp only [Finset.sum_congr rfl fun p hp => congrArg
-    (fun x => distErr x (β p.1 * (β p.2)⁻¹)) (hsum p hp)]
+  rw [← Cochain.mul_costErr_eq_cost, Cochain.costErr_ofLt_complete]
   have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed seed_zero_of_pos
     insert_seed_eq_setOf_isSwap β
   linarith

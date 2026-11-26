@@ -72,6 +72,23 @@ variable {ι : Type*} [Fintype ι]
     α.replicate ι x y = α (ofLex x).1 (ofLex y).1 :=
   comapComplete_apply α _ x y
 
+/-- On increasing pairs, replication uses the seed between distinct clusters and gives the
+identity within a cluster. -/
+theorem replicate_ofLt [LinearOrder V] [LinearOrder ι] (f : V → V → G) :
+    (ofLt (complete V) f).replicate ι =
+      ofLt (complete (V ×ₗ ι)) fun x y =>
+        if (ofLex x).1 = (ofLex y).1 then 1 else f (ofLex x).1 (ofLex y).1 := by
+  apply ext_of_lt
+  intro x y hxy hadj
+  rw [replicate_apply, ofLt_apply_of_lt _ hadj hxy]
+  have h : (ofLex x).1 < (ofLex y).1 ∨ (ofLex x).1 = (ofLex y).1 := by
+    rcases Prod.Lex.toLex_lt_toLex.mp hxy with h | ⟨h, -⟩
+    · exact Or.inl h
+    · exact Or.inr h
+  rcases h with h | h
+  · rw [ite_eq_right h.ne, ofLt_apply_of_lt _ ((adj_complete _ _).mpr h.ne) h]
+  · rw [ite_eq_left h, h, apply_self]
+
 @[simp] theorem replicate_one : (1 : Cochain (complete V) G).replicate ι = 1 :=
   comapComplete_one _
 
