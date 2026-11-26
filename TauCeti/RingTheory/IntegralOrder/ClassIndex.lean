@@ -44,6 +44,14 @@ theorem classIndex_def : O.classIndex e =
       Module.freeClassIndex O e M := by
   rfl
 
+/-- The class index for right modules over an order, viewed as left modules over its opposite. -/
+noncomputable def rightClassIndex : ℕ∞ :=
+  O.op.classIndex e
+
+/-- The right class index is the left class index of the opposite order. -/
+theorem rightClassIndex_def : O.rightClassIndex e = O.op.classIndex e := by
+  rfl
+
 /-- The least free index of a full stable lattice is bounded by the class index. -/
 theorem freeClassIndex_le_classIndex (M : Submodule O (Fin e → D))
     [(M.restrictScalars ℤ).IsFullLattice ℚ] :
@@ -103,18 +111,7 @@ theorem classIndex_map {E : Type*} [Ring E] [Algebra ℚ E] (f : D ≃ₐ[ℚ] E
       ext x
       simp only [Submodule.restrictScalars_mem, Submodule.mem_map,
         LinearMap.restrictScalars_apply, h_apply]
-    rw [heq]
-    constructor
-    · intro h
-      have := h
-      have hh := Submodule.isFullLattice_comap
-        ((M.restrictScalars ℤ).map (c.toLinearMap.restrictScalars ℤ))
-        c.toLinearMap c.injective
-      have hc : Function.Injective (c.toLinearMap.restrictScalars ℤ) := c.injective
-      rwa [Submodule.comap_map_eq_of_injective hc] at hh
-    · intro h
-      have := h
-      exact Submodule.isFullLattice_map _ c.toLinearMap c.surjective
+    rw [heq, Submodule.isFullLattice_map_iff]
   rw [classIndex_def, classIndex_def]
   rw [← (Submodule.orderIsoMapComapOfBijective a.toLinearMap a.bijective).toEquiv.iSup_comp]
   refine iSup_congr fun M => ?_
@@ -159,26 +156,28 @@ theorem IsOrder.exists_injective_index_ne_zero (hO : IsOrder ℚ O)
   let u : ℚˣ := Units.mk0 (n : ℚ) (Int.cast_ne_zero.mpr hn)
   let P : Submodule ℤ (Fin e → D) := u • N
   have : P.IsFullLattice ℚ := inferInstance
-  -- View the same scaling first as a rational unit, then as an integer multiple.
+  have hu (y : Fin e → D) : u • y = n • y := by
+    dsimp only [u]
+    rw [Units.smul_def, Units.val_mk0, Int.cast_smul_eq_zsmul]
+  have hP (x : Fin e → D) : x ∈ P ↔ ∃ y ∈ N, n • y = x := by
+    exact (Submodule.mem_smul_pointwise_iff_exists x u N).trans (by simp only [hu])
+  -- The map `f` was constructed by scaling `g` and bundling the result in `M`.
+  have hf_apply (y : Fin e → O) : (f y : Fin e → D) = n • g y := rfl
   have hgroup : (LinearMap.range f).toAddSubgroup =
       P.toAddSubgroup.comap (M.subtype.toAddMonoidHom) := by
     ext x
-    change (∃ y, f y = x) ↔ ∃ y ∈ N, u • y = (x : Fin e → D)
+    simp only [Submodule.mem_toAddSubgroup, LinearMap.mem_range, AddSubgroup.mem_comap,
+      LinearMap.toAddMonoidHom_coe, Submodule.subtype_apply, hP]
     constructor
     · rintro ⟨y, rfl⟩
-      exact ⟨g y, (by intro i _; exact (y i).property), by
-        change (n : ℚ) • g y = n • g y
-        exact Int.cast_smul_eq_zsmul ℚ n (g y)⟩
+      exact ⟨g y, (by intro i _; exact (y i).property), (hf_apply y).symm⟩
     · rintro ⟨y, hy, hxy⟩
-      refine ⟨fun i => ⟨y i, hy i (Set.mem_univ _)⟩, Subtype.ext ?_⟩
-      change n • y = (x : Fin e → D)
-      change (n : ℚ) • y = (x : Fin e → D) at hxy
-      simpa only [Int.cast_smul_eq_zsmul] using hxy
+      exact ⟨fun i => ⟨y i, hy i (Set.mem_univ _)⟩, Subtype.ext ((hf_apply _).trans hxy)⟩
   refine ⟨f, hf, ?_⟩
   rw [hgroup, AddSubgroup.index_comap]
   have hM : M.subtype.toAddMonoidHom.range = (M.restrictScalars ℤ).toAddSubgroup := by
-    rw [← LinearMap.range_toAddSubgroup, Submodule.range_subtype]
-    rfl
+    rw [← LinearMap.range_toAddSubgroup, Submodule.range_subtype,
+      ← Submodule.toIntSubmodule_toAddSubgroup, AddSubgroup.toIntSubmodule_toAddSubgroup]
   rw [hM]
   exact Submodule.IsFullLattice.relIndex_ne_zero
 
@@ -195,8 +194,7 @@ theorem IsOrder.freeClassIndex_exists_eq (hO : IsOrder ℚ O)
 uniform bound over all lattices. -/
 theorem IsOrder.freeClassIndex_ne_top (hO : IsOrder ℚ O)
     (M : Submodule O (Fin e → D)) [(M.restrictScalars ℤ).IsFullLattice ℚ] :
-    Module.freeClassIndex O e M ≠ ⊤ := by
-  obtain ⟨f, hf, hi⟩ := hO.exists_injective_index_ne_zero M
-  exact ne_top_of_le_ne_top (ENat.natCast_ne_top _) (Module.freeClassIndex_le f hf hi)
+    Module.freeClassIndex O e M ≠ ⊤ :=
+  Module.freeClassIndex_ne_top_iff.mpr (hO.exists_injective_index_ne_zero M)
 
 end TauCeti.IntegralOrder

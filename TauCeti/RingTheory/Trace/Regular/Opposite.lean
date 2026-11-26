@@ -38,14 +38,12 @@ theorem trace_lmul_op (hB : (regularTraceForm K A).Nondegenerate) (a : A) :
     obtain ⟨x, rfl⟩ := e.surjective f
     have hs : eop.symm (e x) = op x := by
       apply eop.injective
-      rw [LinearEquiv.apply_symm_apply]
-      rfl
-    rw [LinearEquiv.conj_apply_apply, hs, Module.Dual.transpose_apply,
-      LinearMap.comp_apply]
-    -- Normalize the evaluations of multiplication and of the canonical opposite equivalence.
-    change e (x * a) y = e x (a * y)
-    simp only [e, BilinForm.toDual_def hB]
-    simp only [regularTraceForm_apply, mul_assoc]
+      simp only [LinearEquiv.apply_symm_apply, eop, LinearEquiv.trans_apply,
+        coe_opLinearEquiv_symm, unop_op]
+    simp only [LinearEquiv.conj_apply_apply, hs, Module.Dual.transpose_apply,
+      LinearMap.comp_apply, Algebra.coe_lmul_eq_mul, mul_apply',
+      ← op_mul, eop, LinearEquiv.trans_apply, coe_opLinearEquiv_symm, unop_op, e,
+      BilinForm.toDual_def hB, regularTraceForm_apply, mul_assoc]
   rw [← trace_conj' _ eop, hc, trace_transpose']
 
 /-- Passing to the opposite algebra preserves the regular trace form. -/

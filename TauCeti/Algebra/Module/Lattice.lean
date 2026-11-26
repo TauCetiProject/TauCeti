@@ -367,6 +367,20 @@ theorem isFullLattice_map (S : Submodule R V) [S.IsFullLattice A] (f : V →ₗ[
     simp [Submodule.map_coe, Submodule.span_image, _root_.Submodule.IsFullLattice.span_eq_top,
       LinearMap.range_eq_top.mpr hf]
 
+/-- A linear equivalence over the fraction field preserves and reflects full lattices. -/
+theorem isFullLattice_map_iff (S : Submodule R V) (f : V ≃ₗ[A] W) :
+    (S.map (f.toLinearMap.restrictScalars R)).IsFullLattice A ↔ S.IsFullLattice A := by
+  constructor
+  · intro h
+    let := h
+    have hmap := isFullLattice_map (S.map (f.toLinearMap.restrictScalars R))
+      f.symm.toLinearMap f.symm.surjective
+    simpa only [← map_comp, ← LinearMap.restrictScalars_comp, LinearEquiv.symm_comp,
+      LinearMap.restrictScalars_id, map_id] using hmap
+  · intro h
+    let := h
+    exact isFullLattice_map S f.toLinearMap f.surjective
+
 end Map
 
 section Pointwise

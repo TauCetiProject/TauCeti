@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Equiv.Defs
 public import Mathlib.Algebra.Module.Pi
-public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.Algebra.Module.Submodule.Equiv
 public import Mathlib.Data.ENat.Lattice
 public import Mathlib.GroupTheory.Index
 import TauCeti.Algebra.Module.LinearMap.Defs
@@ -64,6 +63,19 @@ theorem freeClassIndex_le (f : (Fin e → R) →ₗ[R] M) (hf : Function.Injecti
     freeClassIndex R e M ≤ (LinearMap.range f).toAddSubgroup.index :=
   (freeClassIndex_le_natCast_iff _).2 ⟨f, hf, hi, le_rfl⟩
 
+/-- The least free index is finite exactly when a free submodule of the given rank has
+positive finite additive index. -/
+theorem freeClassIndex_ne_top_iff : freeClassIndex R e M ≠ ⊤ ↔
+    ∃ f : (Fin e → R) →ₗ[R] M,
+      Function.Injective f ∧ (LinearMap.range f).toAddSubgroup.index ≠ 0 := by
+  constructor
+  · intro h
+    obtain ⟨n, hn⟩ := ENat.ne_top_iff_exists.mp h
+    obtain ⟨f, hf, hi, _⟩ := (freeClassIndex_le_natCast_iff n).mp hn.ge
+    exact ⟨f, hf, hi⟩
+  · rintro ⟨f, hf, hi⟩
+    exact ne_top_of_le_ne_top (ENat.natCast_ne_top _) (freeClassIndex_le f hf hi)
+
 /-- Every least free index is at least one, including when no embedding exists. -/
 theorem one_le_freeClassIndex : 1 ≤ freeClassIndex R e M := by
   rw [freeClassIndex_def]
@@ -98,15 +110,14 @@ private theorem freeClassIndex_le_semilinearEquiv {S : Type*} [Ring S] {N : Type
       right_inv := fun x => funext fun i => RingHomInvPair.comp_apply_eq
       map_add' := fun x y => funext fun i => τ.map_add _ _
       map_smul' := fun r x => funext fun i => τ.map_mul _ _ }
-  let g : (Fin e → S) →ₗ[S] N := a.toLinearMap.comp (f.val.comp c.toLinearMap)
-  have hr : g.toAddMonoidHom.range = f.val.toAddMonoidHom.range.map a.toAddMonoidHom := by
-    dsimp only [g]
-    rw [LinearMap.toAddMonoidHom_comp, LinearMap.toAddMonoidHom_comp]
-    rw [AddMonoidHom.range_comp, AddMonoidHom.range_comp]
-    rw [AddMonoidHom.range_eq_top.mpr c.surjective, AddSubgroup.map_top]
+  let h : (Fin e → R) →ₛₗ[σ] N := a.toLinearMap.comp f.val
+  let g : (Fin e → S) →ₗ[S] N := h.comp c.toLinearMap
   have hi : (LinearMap.range g).toAddSubgroup.index =
       (LinearMap.range f.val).toAddSubgroup.index := by
-    rw [LinearMap.range_toAddSubgroup, LinearMap.range_toAddSubgroup, hr]
+    dsimp only [g]
+    rw [LinearEquiv.range_comp, LinearMap.range_toAddSubgroup, LinearMap.range_toAddSubgroup]
+    dsimp only [h]
+    rw [LinearMap.toAddMonoidHom_comp, AddMonoidHom.range_comp]
     exact AddSubgroup.index_map_equiv _ a.toAddEquiv
   simpa only [hi] using freeClassIndex_le g
     (a.injective.comp (f.property.1.comp c.injective)) (hi ▸ f.property.2)
@@ -125,6 +136,21 @@ theorem freeClassIndex_pi : freeClassIndex R e (Fin e → R) = 1 := by
   apply le_antisymm _ one_le_freeClassIndex
   simpa using freeClassIndex_le (LinearMap.id : (Fin e → R) →ₗ[R] (Fin e → R))
     Function.injective_id (by simp)
+
+/-- The least free index is one exactly when the module is linearly equivalent to the
+standard free module of the given rank. -/
+theorem freeClassIndex_eq_one_iff : freeClassIndex R e M = 1 ↔
+    Nonempty ((Fin e → R) ≃ₗ[R] M) := by
+  constructor
+  · intro h
+    obtain ⟨f, hf, hi, hle⟩ := (freeClassIndex_le_natCast_iff 1).mp (by simpa using h.le)
+    have hind : (LinearMap.range f).toAddSubgroup.index = 1 :=
+      le_antisymm hle (Nat.one_le_iff_ne_zero.mpr hi)
+    have hr : LinearMap.range f = ⊤ :=
+      Submodule.toAddSubgroup_injective (by simpa using AddSubgroup.index_eq_one.mp hind)
+    exact ⟨LinearEquiv.ofBijective f ⟨hf, LinearMap.range_eq_top.mp hr⟩⟩
+  · rintro ⟨f⟩
+    rw [← freeClassIndex_equiv f, freeClassIndex_pi]
 
 /-- A zero-rank free module has index one in a trivial module. -/
 @[simp]
