@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.MeanOscillation
+public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import TauCeti.Analysis.PDE.Regularity.SharpFunctionMethod
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -13,9 +14,12 @@ import TauCeti.MeasureTheory.Function.SmallMeanOscillation
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.PDE.DirichletProblem.HomogeneousSobolev
 import TauCeti.Analysis.PDE.EnergyForm.Measurability
 import TauCeti.Analysis.PDE.FundamentalSolution.Divergence
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
+import TauCeti.Analysis.Sobolev.D1p0.Restriction
+import TauCeti.Analysis.Sobolev.D1p0.W1p
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -44,6 +48,16 @@ for every such `u` whose gradient lies in `Lᵖ`, with `C` and the threshold `δ
 mean oscillation of `a` is controlled, not its modulus of continuity. The membership `∇u ∈ Lᵖ` is
 the a priori integrability that the Fefferman–Stein inequality requires; no further integrability
 of `∇u`, such as `∇u ∈ L¹`, is needed.
+
+Neither is `u ∈ L²`: the estimate holds for every element `u` of the homogeneous Sobolev space
+`D^{1,2}(ℝ^{n+1})` (`TauCeti.D1p0`) that solves the equation, an `L²` gradient field which is a
+limit of gradients of test functions
+(`TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le`). These
+are the finite-energy solutions of the whole-space problem
+(`TauCeti.PDE.existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner`), which need not be
+square integrable themselves. The argument only looks at `u` on balls, where it is the gradient of a
+function in `H¹` of the ball (`TauCeti.D1p0.exists_w1p_gradient_ae_eq`), and the estimate for
+`u ∈ H¹(ℝ^{n+1})` is the special case of the gradient of `u`.
 
 ## The argument
 
@@ -103,8 +117,11 @@ since `|B|^(1/q - 1/p)` is a dimensional multiple of `R`.
 
 ## Main declarations
 
-* `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`: the
-  `W^{1,p}` estimate for coefficients of small mean oscillation, `2 < p < ∞`.
+* `TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le`: the
+  `W^{1,p}` estimate for coefficients of small mean oscillation, `2 < p < ∞`, for solutions in
+  `D^{1,2}(ℝ^{n+1})`.
+* `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`: the same
+  estimate for solutions in `H¹(ℝ^{n+1})`.
 * `TauCeti.PDE.exists_eqOn_ball_and_forall_setAverage_le`: a coefficient field of small mean
   oscillation below a radius `r₀` agrees on a ball `B(x₀, R)`, `4R ≤ r₀`, with a field of small
   mean oscillation at every scale.
@@ -154,27 +171,28 @@ private noncomputable def decayConst (n : ℕ) (lam Lam : ℝ) : ℝ :=
 private noncomputable def forcingConst (n : ℕ) (lam Lam : ℝ) : ℝ :=
   2 * (4 * oscConst n lam Lam + 2) / lam ^ 2
 
-/-- **The mean oscillation estimate on one ball, in averages.** Let `u ∈ H¹(ℝ^{n+1})` solve
-`-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, let `κ ≥ 1`, and freeze the coefficients on `B_{κρ}` at an elliptic
-constant matrix `A` whose mean deviation from `a` there is at most `δ`. Then the square mean
-oscillation of `g = ∇u` on `B_ρ` is bounded by the averages over `B_{κρ}` of `‖g‖²`, of `‖G‖²` and
-of `‖g‖^(2q)`, the first with the small factor `κ⁻²` and the last with the factor `δ^(1/q')`. -/
+/-- **The mean oscillation estimate on one ball, in averages.** Let `κ ≥ 1` and let `u ∈ H¹(Ω)`
+solve `-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly on an open set `Ω ⊇ B_{κρ}`, with `∇u, G ∈ Lᵖ(B_{κρ})`.
+Freeze the coefficients on `B_{κρ}` at an elliptic constant matrix `A` whose mean deviation from
+`a` there is at most `δ`. Then the square mean oscillation of `g = ∇u` on `B_ρ` is bounded by the
+averages over `B_{κρ}` of `‖g‖²`, of `‖G‖²` and of `‖g‖^(2q)`, the first with the small factor
+`κ⁻²` and the last with the factor `δ^(1/q')`. -/
 private theorem setAverage_norm_gradient_sub_sq_le
     {lam Lam : ℝ} {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ha : AEStronglyMeasurable a volume)
     (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
-    {u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2}
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume Omega 2}
     {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hu : ∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
-      energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume ⊤ 2 φ) =
-        ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : EuclideanSpace ℝ (Fin (n + 1))}
+    {ρ κ δ : ℝ} (hρ : 0 < ρ) (hκ : 1 ≤ κ) (hball : ball c (κ * ρ) ⊆ Omega)
     {p : ℝ≥0∞} (h2p : 2 ≤ p)
     (hgp : MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)))
-      p volume)
-    (hGp : MemLp G p volume) {q q' : ℝ} (hq : q.HolderConjugate q')
+      p (volume.restrict (ball c (κ * ρ))))
+    (hGp : MemLp G p (volume.restrict (ball c (κ * ρ)))) {q q' : ℝ} (hq : q.HolderConjugate q')
     (hqp : ENNReal.ofReal (2 * q) ≤ p)
-    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : EuclideanSpace ℝ (Fin (n + 1))}
-    {ρ κ δ : ℝ} (hρ : 0 < ρ) (hκ : 1 ≤ κ)
     (hA : UniformlyEllipticOn (ball c (κ * ρ)) (fun _ => A) lam Lam)
     (hδ : ⨍ y in ball c (κ * ρ), ‖matrixBilinearForm (a y) - matrixBilinearForm A‖ ≤ δ) :
     ⨍ y in ball c ρ, ‖W1p.gradient u y - ⨍ z in ball c ρ, W1p.gradient u z‖ ^ 2 ≤
@@ -195,13 +213,13 @@ private theorem setAverage_norm_gradient_sub_sq_le
     (norm_sub_le (matrixBilinearForm (a y)) (matrixBilinearForm A)).trans (by
       linarith [hbd y,
         hA.opNorm_matrixBilinearForm_le (mem_ball_self hr)])
-  have hg2 := (hgp.restrict (ball c r)).mono_exponent h2p
-  have hG2 := (hGp.restrict (ball c r)).mono_exponent h2p
-  have hgq := (hgp.restrict (ball c r)).mono_exponent hqp
+  have hg2 := hgp.mono_exponent h2p
+  have hG2 := hGp.mono_exponent h2p
+  have hgq := hgp.mono_exponent hqp
   -- Krylov's mean oscillation estimate, with `c = 0`.
   have key :=
     setAverage_ball_norm_gradient_sub_setAverage_sq_le_of_norm_matrixBilinearForm_sub_le
-      hA ha.restrict haK (G := G) (c := 0) (u := u) (fun φ => by simpa using hu φ) (by simp)
+      hA ha.restrict haK (G := G) (c := 0) (u := u) hu hball
       (by simpa using hG2) hq hgq hρ hρr
   simp only [sub_zero] at key
   rw [show ρ / r = κ⁻¹ by rw [hr_def]; field_simp, show r / ρ = κ by rw [hr_def]; field_simp]
@@ -228,6 +246,106 @@ private theorem setAverage_norm_gradient_sub_sq_le
   -- The exponent `1/q'` of that power is nonnegative.
   · exact inv_nonneg.2 hq.symm.pos.le
 
+/-- **The mean oscillation estimate on one ball, for a field agreeing with the gradient.** The
+estimate `setAverage_norm_gradient_sub_sq_le` for a field `g ∈ Lᵖ` that agrees on `B_{κρ}` with the
+gradient of `u`: all the averages it involves are averages over balls inside `B_{κρ}`. -/
+private theorem setAverage_norm_sub_sq_le
+    {lam Lam : ℝ} {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    (ha : AEStronglyMeasurable a volume)
+    (hbd : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam)
+    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {u : W1p volume Omega 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    {g : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    {p : ℝ≥0∞} (h2p : 2 ≤ p) (hgp : MemLp g p volume)
+    (hGp : MemLp G p volume) {q q' : ℝ} (hq : q.HolderConjugate q')
+    (hqp : ENNReal.ofReal (2 * q) ≤ p)
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c : EuclideanSpace ℝ (Fin (n + 1))}
+    {ρ κ δ : ℝ} (hρ : 0 < ρ) (hκ : 1 ≤ κ) (hball : ball c (κ * ρ) ⊆ Omega)
+    (hug : W1p.gradient u =ᵐ[volume.restrict (ball c (κ * ρ))] g)
+    (hA : UniformlyEllipticOn (ball c (κ * ρ)) (fun _ => A) lam Lam)
+    (hδ : ⨍ y in ball c (κ * ρ), ‖matrixBilinearForm (a y) - matrixBilinearForm A‖ ≤ δ) :
+    ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ 2 ≤
+      decayConst n lam Lam / κ ^ 2 * (⨍ y in ball c (κ * ρ), ‖g y‖ ^ 2) +
+        forcingConst n lam Lam * κ ^ (n + 1) * ((⨍ y in ball c (κ * ρ), ‖G y‖ ^ 2) +
+          ((2 * Lam) ^ (2 * q' - 1) * δ) ^ q'⁻¹ *
+            (⨍ y in ball c (κ * ρ), ‖g y‖ ^ (2 * q)) ^ q⁻¹) := by
+  set g' : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := ⇑(W1p.gradient u)
+  have hugρ : g' =ᵐ[volume.restrict (ball c ρ)] g := ae_restrict_of_ae_restrict_of_subset
+    (ball_subset_ball (le_mul_of_one_le_left hρ.le hκ)) hug
+  have havgρ : ⨍ z in ball c ρ, g z = ⨍ z in ball c ρ, g' z := (average_congr hugρ).symm
+  have hosc : ⨍ y in ball c ρ, ‖g y - ⨍ z in ball c ρ, g z‖ ^ 2 =
+      ⨍ y in ball c ρ, ‖g' y - ⨍ z in ball c ρ, g' z‖ ^ 2 :=
+    average_congr (hugρ.mono fun y hy => by dsimp only; rw [hy, havgρ])
+  have hsq : ⨍ y in ball c (κ * ρ), ‖g y‖ ^ 2 = ⨍ y in ball c (κ * ρ), ‖g' y‖ ^ 2 :=
+    average_congr (hug.mono fun y hy => by dsimp only; rw [hy])
+  have hpow : ⨍ y in ball c (κ * ρ), ‖g y‖ ^ (2 * q) = ⨍ y in ball c (κ * ρ), ‖g' y‖ ^ (2 * q) :=
+    average_congr (hug.mono fun y hy => by dsimp only; rw [hy])
+  rw [hosc, hsq, hpow]
+  exact setAverage_norm_gradient_sub_sq_le ha hbd hu hρ hκ hball h2p
+    ((hgp.restrict _).ae_eq hug.symm) (hGp.restrict _) hq hqp hA hδ
+
+/-- **The `W^{1,p}` estimate in `D^{1,2}(ℝ^{n+1})` for coefficients of small mean oscillation.** Let
+`2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
+and `Λ`, with the following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}`
+bounded by `Λ`, such that on every ball `B` some constant matrix `A`, uniformly elliptic with
+constants `λ, Λ`, has mean deviation `⨍_B ‖a - A‖ ≤ δ` from `a`; both norms are operator norms of
+the attached bilinear forms. Let `u` be an element of the homogeneous Sobolev space
+`D^{1,2}_0(ℝ^{n+1})` (`TauCeti.D1p0`), recorded by its gradient field, which solves
+`-∂ᵢ(aⁱʲ ∂ⱼu) = -div G` weakly, that is `∫ ⟨a ∇u, ∇φ⟩ = ∫ ⟨G, ∇φ⟩` for every test function `φ`,
+with `G ∈ Lᵖ`, and let `∇u` lie in `Lᵖ`. Then
+
+`‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`.
+
+Unlike `TauCeti.PDE.exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le`, the
+function `u` itself need not be square integrable: only its gradient is. This is the class of the
+finite-energy weak solutions of the whole-space problem, which need not be square integrable. -/
+theorem exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le {p : ℝ≥0∞}
+    (hp : 2 < p) (hp_top : p ≠ ∞) (lam Lam : ℝ) :
+    ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
+      ∀ {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ},
+        AEStronglyMeasurable a volume → (∀ x, ‖matrixBilinearForm (a x)‖ ≤ Lam) →
+        (∀ (c : EuclideanSpace ℝ (Fin (n + 1))) (r : ℝ), 0 < r →
+          ∃ A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
+            UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam ∧
+              ⨍ x in ball c r, ‖matrixBilinearForm (a x) - matrixBilinearForm A‖ ≤ δ) →
+        ∀ (u : D1p0 volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2)
+          (G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))),
+          (∀ φ : 𝓓((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))), ℝ),
+            ∫ x, matrixBilinearForm (a x) (∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x)
+                ((u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) x) =
+              ∫ x, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) →
+          MemLp (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1))))))
+            p volume →
+          MemLp G p volume →
+          eLpNorm (u : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1))))))
+            p volume ≤ C * eLpNorm G p volume := by
+  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le (n := n)
+    (E := EuclideanSpace ℝ (Fin (n + 1))) (F := EuclideanSpace ℝ (Fin (n + 1))) one_le_two
+    (by rwa [ENNReal.ofReal_ofNat]) hp_top
+    (decayConst n lam Lam) (forcingConst n lam Lam) (forcingConst n lam Lam) (2 * Lam)
+  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hgp hGp =>
+    h hgp hGp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
+  simp only [Real.rpow_two]
+  -- Freeze the coefficients on `B = B_{κρ}`, where `u` is the gradient of some `v ∈ H¹(B)`.
+  set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball c (κ * ρ), isOpen_ball⟩
+  obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
+  obtain ⟨v, hv⟩ := D1p0.exists_w1p_gradient_ae_eq (le_top : B ≤ ⊤) (convex_ball c (κ * ρ))
+    isBounded_ball u
+  -- The potential `v` solves the equation on `B`.
+  have hvB := energyFormH1_ofTestFunctionₗ_eq_integral_inner_of_gradient_ae_eq (le_top : B ≤ ⊤)
+    (fun ψ => by simpa only [Opens.coe_top, Measure.restrict_univ] using hu ψ) hv
+  exact (setAverage_norm_sub_sq_le ha hbd hvB hp.le hgp hGp hq hqp hρ hκ subset_rfl hv hA
+    hδA).trans_eq (by ring)
+
 /-- **The `W^{1,p}` estimate for coefficients of small mean oscillation.** Let `2 < p < ∞` and
 `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ` and `Λ`, with the
 following property. Let `a` be a measurable coefficient matrix on `ℝ^{n+1}` bounded by `Λ`, such
@@ -239,7 +357,9 @@ Then
 
 `‖∇u‖_{Lᵖ} ≤ C ‖G‖_{Lᵖ}`.
 
-Neither continuity nor symmetry of `a` is assumed. -/
+Neither continuity nor symmetry of `a` is assumed. This is the case of
+`TauCeti.PDE.exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le` where the
+gradient field comes from a square integrable function. -/
 theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p : ℝ≥0∞}
     (hp : 2 < p) (hp_top : p ≠ ∞) (lam Lam : ℝ) :
     ∃ C : ℝ≥0, ∃ δ : ℝ, 0 < δ ∧
@@ -259,17 +379,24 @@ theorem exists_eLpNorm_gradient_le_of_forall_energyFormH1_eq_of_setAverage_le {p
           MemLp G p volume →
           eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
             EuclideanSpace ℝ (Fin (n + 1))) p volume ≤ C * eLpNorm G p volume := by
-  obtain ⟨C, δ, hδ, h⟩ := exists_eLpNorm_le_of_forall_setAverage_norm_sub_rpow_le (n := n)
-    (E := EuclideanSpace ℝ (Fin (n + 1))) (F := EuclideanSpace ℝ (Fin (n + 1))) one_le_two
-    (by rwa [ENNReal.ofReal_ofNat]) hp_top
-    (decayConst n lam Lam) (forcingConst n lam Lam) (forcingConst n lam Lam) (2 * Lam)
-  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hgp hGp =>
-    h hgp hGp fun q q' hq hqp c ρ κ hρ hκ => ?_⟩
-  simp only [Real.rpow_two]
-  -- Freeze the coefficients on `B_{κρ}` and apply the mean oscillation estimate on one ball.
-  obtain ⟨A, hA, hδA⟩ := hosc c (κ * ρ) (mul_pos (zero_lt_one.trans_le hκ) hρ)
-  exact (setAverage_norm_gradient_sub_sq_le ha hbd hu hp.le hgp hGp hq hqp hρ hκ hA hδA).trans_eq
-    (by ring)
+  obtain ⟨C, δ, hδ, h⟩ :=
+    exists_eLpNorm_le_of_forall_integral_matrixBilinearForm_eq_of_setAverage_le (n := n) hp hp_top
+      lam Lam
+  refine ⟨C, δ, hδ, fun {a} ha hbd hosc u G hu hgp hGp => ?_⟩
+  -- The gradient of `u ∈ H¹(ℝ^{n+1})` lies in `D^{1,2}(ℝ^{n+1})`.
+  set w := W1p0.toD1p0L ⟨u, W1p.mem_w1p0Submodule_top (by norm_num) u⟩
+  have hw : (w : Lp (EuclideanSpace ℝ (Fin (n + 1))) 2
+                (volume.restrict ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) :
+                  Set (EuclideanSpace ℝ (Fin (n + 1)))))) =
+      W1p.gradient u :=
+    W1p0.coe_toD1p0L_apply _
+  rw [← hw] at hgp ⊢
+  refine h ha hbd hosc w G (fun φ => ?_) hgp hGp
+  rw [← hu φ, energyFormH1_zero_zero_eq_setIntegral, hw]
+  simp only [Opens.coe_top, Measure.restrict_univ]
+  refine integral_congr_ae ?_
+  filter_upwards [W1p.gradient_ofTestFunctionₗ_top_ae (mu := volume) (p := 2) φ] with x hx
+  rw [hx]
 
 /-! ### Localization to small balls -/
 
@@ -315,8 +442,8 @@ theorem exists_eqOn_ball_and_forall_setAverage_le {lam Lam δ r₀ R : ℝ}
   obtain ⟨ψ, hψm, hψ, hψ1, P₀, ⟨A₀, rfl, hA₀⟩, hosc'⟩ :=
     TauCeti.exists_forall_setAverage_norm_cutoff_sub_le
       (F := EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] ℝ)
-      ((memLp_top_of_bound (continuous_matrixBilinearForm.comp_aestronglyMeasurable ha) Lam
-        (.of_forall hbd)).locallyIntegrable le_top)
+      (MemLp.locallyIntegrable (memLp_top_matrixBilinearForm (μ := volume) ha
+        (.of_forall hbd)) le_top)
       (Q := fun c r P => ∃ A, matrixBilinearForm A = P ∧
         UniformlyEllipticOn (ball c r) (fun _ => A) lam Lam)
       (fun c r hr hrr₀ => by

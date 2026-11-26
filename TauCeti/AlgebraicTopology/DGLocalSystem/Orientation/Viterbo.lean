@@ -62,8 +62,6 @@ identification `i_M^* η₀ ≃ o_M` of the twist along the constant loops.
   it is the orientation local system.
 * `TauCeti.HomologicalOrientation.viterboOrientationTwist_eq_one`: it is trivial on an orientable
   manifold.
-* `TauCeti.RankOneLocalSystem.mapRingHom_viterboOrientationTwist`: it is compatible with change
-  of coefficients.
 
 ## References
 
@@ -115,12 +113,12 @@ theorem viterboOrientationTwist_def (γ : MooreFreeLoopSpace M) :
           (orientation R hd γ.basepoint ^ (-signExponent (orientationCharacter hd) γ)) := by
   rw [viterboOrientationTwist_eq_freeLoopTwist, freeLoopTwist_def, orientation_def]
 
-/-- **The orientation part of the Viterbo twist is defined over `ℤ`**: change of coefficients along
-`φ : R →+* S` sends it with coefficients in `R` to it with coefficients in `S`. -/
+/-- **The orientation part of the Viterbo twist is defined over `ℤ`**: extending its coefficients
+along a ring homomorphism `φ : R →+* R'` gives the orientation part with coefficients in `R'`. -/
 @[simp]
-theorem mapRingHom_viterboOrientationTwist {S : Type*} [CommRing S] (φ : R →+* S)
+theorem mapRingHom_viterboOrientationTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
     (γ : MooreFreeLoopSpace M) :
-    mapRingHom φ (viterboOrientationTwist R hd γ) = viterboOrientationTwist S hd γ :=
+    mapRingHom φ (viterboOrientationTwist R hd γ) = viterboOrientationTwist R' hd γ :=
   mapRingHom_freeLoopTwist φ γ
 
 /-! ### The rotation of a loop -/

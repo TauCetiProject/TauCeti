@@ -97,6 +97,15 @@ theorem twist_mem_degenerate {n : ℕ} {g : CubicalChain G R n}
     rw [map_smul]
     exact Submodule.smul_mem _ r hf
 
+/-- Change of coefficients along `φ : R →+* S` turns the twist by a weight `w` into the twist by
+`φ ∘ w`. -/
+theorem mapRingHom_twist {S : Type*} [CommRing S] (φ : R →+* S) {n : ℕ} (g : CubicalChain G R n) :
+    mapRingHom G φ n (twist w n g) = twist (φ ∘ w) n (mapRingHom G φ n g) := by
+  induction g using Finsupp.induction_linear with
+  | zero => simp only [map_zero]
+  | add f g hf hg => rw [map_add, map_add, hf, hg, map_add, map_add]
+  | single c a => simp only [twist_single, mapRingHom_single, Function.comp_apply, map_mul]
+
 end CubicalChain
 
 namespace NormalizedCubicalChain
@@ -130,21 +139,18 @@ theorem twist_comp (w w' : G → R) (n : ℕ) :
 theorem twist_one (n : ℕ) : twist (1 : G → R) n = LinearMap.id :=
   linearMap_ext fun c ↦ by simp
 
+/-- Change of coefficients along `φ : R →+* S` turns the twist by a weight `w` into the twist by
+`φ ∘ w`. -/
+theorem mapRingHom_twist {S : Type*} [CommRing S] (φ : R →+* S) {n : ℕ}
+    (g : NormalizedCubicalChain G R n) :
+    mapRingHom G φ n (twist w n g) = twist (φ ∘ w) n (mapRingHom G φ n g) := by
+  induction g using Submodule.Quotient.induction_on with
+  | H g => rw [twist_mk, mapRingHom_mk, mapRingHom_mk, twist_mk, CubicalChain.mapRingHom_twist]
+
 /-- Pushing chains forward along `f` turns the twist by the weight `w ∘ f` into the twist by `w`. -/
 theorem map_comp_twist {G' : Type*} [TopologicalSpace G'] (f : C(G, G')) (w : G' → R) (n : ℕ) :
     map R f n ∘ₗ twist (w ∘ f) n = twist w n ∘ₗ map R f n :=
   linearMap_ext fun c ↦ by simp
-
-/-- **The twist commutes with change of coefficients**: along a ring homomorphism `φ : R →+* S`,
-the twist by a weight `w` with values in `R` becomes the twist by the weight `φ ∘ w`. -/
-theorem mapRingHom_twist {S : Type*} [CommRing S] (φ : R →+* S) (w : G → R) {n : ℕ}
-    (g : NormalizedCubicalChain G R n) :
-    mapRingHom G φ n (twist w n g) = twist (φ ∘ w) n (mapRingHom G φ n g) := by
-  induction g using induction_on with
-  | zero => simp
-  | add a b ha hb => rw [map_add, map_add, ha, hb, map_add, map_add]
-  | smul r a ha => rw [map_smul, map_smulₛₗ, ha, map_smulₛₗ, map_smul]
-  | ofCube c => simp
 
 variable {w}
 
