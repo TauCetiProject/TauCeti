@@ -234,8 +234,8 @@ theorem re_lt_one_of_dirichletFamilyRieszRemainderMellin_pole
   not_le.mp fun h ↦ hp.not_ge
     (analyticAt_dirichletFamilyRieszRemainderMellin_of_one_le_re w h).meromorphicOrderAt_nonneg
 
-/-- At any positive real pole the family expression has a strictly positive real residue,
-which equals the leading Laurent coefficient because the pole is simple. -/
+/-- For nonnegative weights, at any positive real pole the family expression has a strictly
+positive real residue, which equals the leading Laurent coefficient because the pole is simple. -/
 theorem exists_pos_meromorphicTrailingCoeffAt_dirichletFamilyRieszRemainderMellin
     {w : PrimitiveDirichletCharacter →₀ ℝ} (hw : 0 ≤ w) {β : ℝ} (hβ : 0 < β)
     (hp : meromorphicOrderAt (dirichletFamilyRieszRemainderMellin w) (β : ℂ) < 0) :
