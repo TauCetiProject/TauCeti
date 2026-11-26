@@ -129,6 +129,7 @@ theorem euclideanSoThreeEquiv_symm_apply
 attribute [local instance 100] LieRing.ofAssociativeRing in
 /-- **The hat map carries the cross product to the commutator**: `⁅û, v̂⁆ = (u ⨯₃ v)^`, by the
 Jacobi identity of the cross product. -/
+@[simp]
 theorem lie_euclideanSoThreeEquiv (u v : EuclideanSpace ℝ (Fin 3)) :
     ⁅euclideanSoThreeEquiv u, euclideanSoThreeEquiv v⁆ =
       euclideanSoThreeEquiv (toLp 2 (ofLp u ⨯₃ ofLp v)) := by

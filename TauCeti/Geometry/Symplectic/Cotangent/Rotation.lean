@@ -375,9 +375,10 @@ theorem momentMap_unitary_apply_eq_inner_angularMomentum
   rw [inner_angularMomentum, momentMap_unitary_eq_cotangentMomentMap_comp]
   obtain ⟨u, hu⟩ := euclideanSoThreeEquiv.surjective
     (orthogonalLieAlgebraEquiv (EuclideanSpace ℝ (Fin 3)) ξ)
-  simp [← hu, cotangentMomentMap_apply]
-  -- The two sides differ only in reading the argument of `p` in `TangentSpace` or in `ℝ³`.
-  rfl
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hu, LinearEquiv.symm_apply_apply,
+    LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, cotangentMomentMap_apply]
+  exact congrArg z.snd
+    ((coe_euclideanSoThreeEquiv_apply u z.proj).trans (euclideanCrossProduct_apply u z.proj).symm)
 
 end CotangentBundle
 
