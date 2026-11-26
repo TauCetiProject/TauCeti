@@ -8,6 +8,7 @@ module
 public import TauCeti.ModelTheory.Infinitary.FiniteInstances
 public import TauCeti.ModelTheory.ModelExistence.Isolation
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
+import TauCeti.ModelTheory.Satisfiability
 
 /-!
 # Omitting types in countable fragments
@@ -19,7 +20,9 @@ Consequently a partial type realized in every countable nonempty model is isolat
 Over a language with countably many symbols, applying the theorem to the first-order image
 fragment gives the first-order omitting types theorem, for a first-order theory satisfiable in the
 sense of Mathlib's `Theory.IsSatisfiable` and first-order partial types not isolated by a
-first-order formula modulo the theory.
+first-order formula modulo the theory. Consequently, over a countable language, a first-order
+partial type realized in every countable nonempty model of a satisfiable theory is isolated modulo
+that theory; over a complete theory the converse also holds.
 
 The key refutation lemma applies to the consistency property of satisfiable finite instances.
 Projecting those instances onto a prescribed tuple of Henkin constants gives a consistent
@@ -36,10 +39,17 @@ requests supplies the final model.
   realized in every countable nonempty model of the theory is isolated.
 * `FirstOrder.Language.Theory.exists_countable_model_omitting`: the first-order omitting types
   theorem.
+* `FirstOrder.Language.Theory.exists_isolating_of_realized_in_every_countable_model`: over a
+  countable language, a first-order partial type realized in every countable nonempty model of a
+  satisfiable theory is isolated modulo that theory.
+* `FirstOrder.Language.Theory.IsComplete.exists_isolating_iff_realized_in_every_countable_model`:
+  over a complete theory in a countable language, a first-order partial type is isolated if and
+  only if it is realized in every countable nonempty model.
 
 ## References
 
 * D. Marker, *Lectures on Infinitary Model Theory*, Cambridge University Press, 2016, Chapter 4.
+* D. Marker, *Model Theory: An Introduction*, Springer, 2002, Section 4.2.
 * H. J. Keisler, *Model Theory for Infinitary Logic*, North-Holland, 1971.
 -/
 
@@ -179,6 +189,37 @@ theorem exists_countable_model_omitting [Countable (Σ l, L.Functions l)]
   refine ⟨M, inferInstance, hMc, hMne, Theoryω.model_image_toOmega_iff.1 hMT, fun i a => ?_⟩
   obtain ⟨_, ⟨ψ, hψ, rfl⟩, hψa⟩ := omitsType_iff.1 (hMo i) a
   exact ⟨ψ, hψ, fun h => hψa ((BoundedFormula.realize_toInf ψ Empty.elim a).2 h)⟩
+
+/-- Over a language with countably many function and relation symbols, a first-order partial type
+realized in every countable nonempty model of a satisfiable first-order theory `T` (tested in any
+one universe `w`) is isolated by a first-order formula modulo `T`. -/
+theorem exists_isolating_of_realized_in_every_countable_model [Countable (Σ l, L.Functions l)]
+    [Countable (Σ l, L.Relations l)] {T : L.Theory} (hT : T.IsSatisfiable)
+    {n : ℕ} {p : Set (L.BoundedFormula Empty n)}
+    (h : ∀ (M : Type w) [L.Structure M] [Countable M] [Nonempty M] [M ⊨ T],
+      ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a) :
+    ∃ φ : L.BoundedFormula Empty n,
+      (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls := by
+  by_contra hnp
+  obtain ⟨M, _, _, _, hMT, hMo⟩ := exists_countable_model_omitting.{u, v, w} hT
+    (fun _ : Unit => p) (fun _ => hnp)
+  let := hMT
+  obtain ⟨a, ha⟩ := h M
+  obtain ⟨ψ, hψ, hψa⟩ := hMo () a
+  exact hψa (ha ψ hψ)
+
+/-- Over a complete first-order theory `T` in a language with countably many function and relation
+symbols, a partial type is isolated by a first-order formula modulo `T` if and only if it is
+realized in every countable nonempty model of `T` in a given universe `w`. -/
+theorem IsComplete.exists_isolating_iff_realized_in_every_countable_model
+    [Countable (Σ l, L.Functions l)] [Countable (Σ l, L.Relations l)]
+    {T : L.Theory} (hT : T.IsComplete) {n : ℕ} {p : Set (L.BoundedFormula Empty n)} :
+    (∃ φ : L.BoundedFormula Empty n,
+        (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p, T ⊨ᵇ (φ.imp ψ).alls) ↔
+      ∀ (M : Type w) [L.Structure M] [Countable M] [Nonempty M] [M ⊨ T],
+        ∃ a : Fin n → M, ∀ ψ ∈ p, ψ.Realize Empty.elim a :=
+  ⟨fun ⟨_, hsat, himp⟩ M _ _ _ _ => hT.exists_realize_of_isolating hsat himp M,
+    exists_isolating_of_realized_in_every_countable_model hT.1⟩
 
 end Theory
 

@@ -6,17 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Semantics
+public import TauCeti.ModelTheory.Syntax
 
 /-!
-# Realization of first-order terms and universally closed formulas
+# Realization of first-order terms and closed bounded formulas
 
 `FirstOrder.Language.Term.realize_congr_varFinsetLeft` says that a term over `α ⊕ β` has the same
 realization under two valuations of `α` that agree on the variables `Term.varFinsetLeft` it
 mentions. It is derived from Mathlib's `Term.realize_restrictVarLeft'`, since Mathlib has no
 direct congruence lemma of this form.
 
-`FirstOrder.Language.Sentence.realize_alls` characterizes satisfaction of the universal closure
-of a bounded formula with no free variables as realization at every tuple of bound variables.
+`FirstOrder.Language.Sentence.realize_alls` and `FirstOrder.Language.Sentence.realize_exs`
+characterize satisfaction of the universal and existential closures of a bounded formula with no
+free variables as realization at every tuple or some tuple of bound variables, and
+`FirstOrder.Language.BoundedFormula.realize_evalAtConstants` characterizes satisfaction of
+`BoundedFormula.evalAtConstants` at the adjoined constants of `L[[Fin n]]`.
 
 `FirstOrder.Language.Sentence.realize_ex_bdEqual_self_iff` says that a sentence `∃ x, t = t`,
 such as `∃ x, x = x`, holds exactly in the nonempty structures.
@@ -51,12 +55,37 @@ theorem Sentence.realize_alls {L : Language} {M : Type*} [L.Structure M] {n : �
   rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
     BoundedFormula.realize_alls]
 
+/-- An existentially closed sentence holds iff its body holds at some tuple. -/
+@[simp]
+theorem Sentence.realize_exs {L : Language} {M : Type*} [L.Structure M] {n : ℕ}
+    (φ : L.BoundedFormula Empty n) :
+    M ⊨ φ.exs ↔ ∃ a : Fin n → M, φ.Realize Empty.elim a := by
+  rw [Sentence.Realize, Subsingleton.elim (default : Empty → M) Empty.elim,
+    BoundedFormula.realize_exs]
+
 /-- For every term `t` in one bound variable, the sentence `∃ x, t(x) = t(x)` holds exactly in
 the nonempty structures. The case `t = x` is the sentence `∃ x, x = x`. -/
 @[simp]
 theorem Sentence.realize_ex_bdEqual_self_iff {L : Language} {M : Type*} [L.Structure M]
     (t : L.Term (Empty ⊕ Fin 1)) : M ⊨ (∃' (t =' t) : L.Sentence) ↔ Nonempty M := by
   simp [Sentence.Realize, Formula.Realize]
+
+namespace BoundedFormula
+
+variable {L : Language} {n : ℕ}
+
+/-- A closed bounded formula evaluated at the adjoined constants of `L[[Fin n]]` holds in an
+expansion iff the formula holds at the interpretations of those constants. -/
+@[simp]
+theorem realize_evalAtConstants {M : Type*} [L.Structure M] [L[[Fin n]].Structure M]
+    [(L.lhomWithConstants (Fin n)).IsExpansionOn M] (φ : L.BoundedFormula Empty n) :
+    M ⊨ φ.evalAtConstants ↔ φ.Realize Empty.elim fun i => (L.con i : M) := by
+  rw [evalAtConstants_def, Formula.realize_equivSentence, Formula.realize_relabel,
+    BoundedFormula.realize_toFormula, Function.comp_assoc, Sum.elim_comp_inl,
+    Function.comp_assoc, Sum.elim_comp_inr, Function.comp_id,
+    Subsingleton.elim ((fun i : Fin n => (L.con i : M)) ∘ Empty.elim) Empty.elim]
+
+end BoundedFormula
 
 end Language
 
