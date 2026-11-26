@@ -7,18 +7,24 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Topology.Algebra.InfiniteSum.Defs
+import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
-# Grouping infinite products over finite fibers
+# Grouping infinite products over fibers
 
-This file supplements Mathlib's results on infinite products and sums with the grouping of a
-product or sum indexed by `β × γ`, for a finite type `γ`, into the products or sums over its
-finite fibers, with no hypothesis on the topology of the target.
+This file supplements Mathlib's results on infinite products and sums with:
+
+* grouping a product or sum indexed by `β × γ`, for a finite type `γ`, into the products or sums
+  over its finite fibers, with no hypothesis on the topology of the target;
+* preservation of finite support under fiberwise products and sums along any map `π : α → β`.
 
 ## Main results
 
 * `HasProd.prod_fiberwise_of_fintype`, `HasSum.sum_fiberwise_of_fintype`: a family on `β × γ` for
   a finite type `γ` has the same product (sum) as the products (sums) of its finite fibers.
+* `Function.HasFiniteMulSupport.tprod_fiber`, `Function.HasFiniteSupport.tsum_fiber`: pushing a
+  finitely supported function forward by fiberwise `tprod` (`tsum`) along any map preserves finite
+  support.
 -/
 
 public section
@@ -39,3 +45,17 @@ theorem HasProd.prod_fiberwise_of_fintype {β γ E : Type*} [CommMonoid E] [Topo
     exact Finset.mem_product.2 ⟨hT (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
   rw [HasProd, SummationFilter.unconditional_filter] at hf ⊢
   exact (hf.comp h).congr fun T ↦ by simp [Finset.prod_product]
+
+/-- Fiberwise infinite product along any map `π : α → β` preserves finite multiplicative support,
+since every fiber outside `π '' f.mulSupport` consists of points where `f = 1`. -/
+@[to_additive /-- Fiberwise infinite sum along any map `π : α → β` preserves finite support, since
+every fiber outside `π '' f.support` consists of points where `f = 0`. -/]
+theorem Function.HasFiniteMulSupport.tprod_fiber {α β E : Type*} [CommMonoid E] [TopologicalSpace E]
+    {f : α → E} (hf : f.HasFiniteMulSupport) (π : α → β) :
+    (fun y : β ↦ ∏' x : π ⁻¹' {y}, f x).HasFiniteMulSupport := by
+  refine (hf.image π).subset fun y hy ↦ ?_
+  by_contra hnot
+  have h1 (x : π ⁻¹' {y}) : f x = 1 := by
+    by_contra hfx
+    exact hnot ⟨x.val, hfx, x.property⟩
+  exact hy (by simp [h1])

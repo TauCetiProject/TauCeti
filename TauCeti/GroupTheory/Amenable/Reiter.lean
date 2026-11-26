@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Amenable.Foelner
 public import TauCeti.GroupTheory.Amenable.LevelSet
+public import TauCeti.Topology.Algebra.InfiniteSum.Constructions
 
 /-!
 # Følner sets from almost invariant finitely supported functions
@@ -43,6 +44,10 @@ weighted sums holds at some level, giving the desired set without measure-theore
   `TauCeti.exists_finset_sum_card_smul_symmDiff_lt_of_tsum_eq_one`: truncating a summable
   probability density with small `ℓ¹` translation variation on `K` produces a finitely supported
   almost invariant density, hence a finite nonempty set `F` with `∑_{g ∈ K} |g • F ∆ F| < ε |F|`.
+* `TauCeti.tsum_abs_tsum_fiber_smul_sub_le` and
+  `TauCeti.exists_finset_card_smul_symmDiff_lt_of_equivariant`: fiberwise summation along any
+  `G`-equivariant map `π : X → Y` contracts `ℓ¹` translation variation and pushes Reiter functions
+  forward to Følner sets on `Y`.
 * `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`: a group satisfying Reiter's
   condition, for its left regular action, has Følner sets.
 
@@ -107,6 +112,7 @@ theorem exists_finsupp_sum_tsum_lt_of_tsum_eq_one {q : X → ℝ} (hq0 : ∀ x, 
     ∃ p : X → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ (∀ x, p x ≠ 0 → q x ≠ 0) ∧
       ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| < ε * ∑' x, p x := by
   classical
+  -- Truncate `q` to a finite set `T` capturing at least `1 - δ` of its mass.
   set η : ℝ := ε / (8 * (#K + 1))
   have hη : 0 < η := by positivity
   set δ : ℝ := min (1 / 4) η
@@ -136,6 +142,7 @@ theorem exists_finsupp_sum_tsum_lt_of_tsum_eq_one {q : X → ℝ} (hq0 : ∀ x, 
     have hδ4 : δ ≤ 1 / 4 := min_le_left _ _
     linarith [hT, hp_tsum]
   refine ⟨p, hp0, hp_fin, fun x hx hqx ↦ hx (by simp [p, hqx]), ?_⟩
+  -- Control the `ℓ¹` variation of `p` by that of `q` plus twice the tail mass `∑' x, r x < δ`.
   have hg_bound (g : G) (hg : g ∈ K) :
       ∑' x, |p (g⁻¹ • x) - p x| ≤ ε / (4 * (#K + 1)) + 2 * δ := by
     have hq_diff_sum : Summable (fun x ↦ |q (g⁻¹ • x) - q x|) := by
@@ -199,6 +206,67 @@ theorem exists_finset_sum_card_smul_symmDiff_lt_of_tsum_eq_one {q : X → ℝ} (
   obtain ⟨p, hp0, hp_fin, -, hp_lt⟩ :=
     exists_finsupp_sum_tsum_lt_of_tsum_eq_one hq0 hq_sum hq1 K hε hvar
   exact exists_finset_sum_card_smul_symmDiff_lt_of_sum_tsum_lt hp0 hp_fin hp_lt
+
+omit [DecidableEq X] in
+/-- **Equivariant fiberwise `ℓ¹` variation contraction.** For any `G`-equivariant map `π : X → Y`
+and summable function `p : X → ℝ`, fiberwise summation `y ↦ ∑' x : π ⁻¹' {y}, p x` contracts the
+`ℓ¹` translation variation under every `g : G`. -/
+theorem tsum_abs_tsum_fiber_smul_sub_le {Y : Type*} [MulAction G Y] {π : X → Y}
+    (hπ : ∀ (g : G) x, π (g • x) = g • π x) {p : X → ℝ} (hp : Summable p) (g : G) :
+    (∑' y : Y, |(∑' x : π ⁻¹' {g⁻¹ • y}, p x) - ∑' x : π ⁻¹' {y}, p x|) ≤
+      ∑' x : X, |p (g⁻¹ • x) - p x| := by
+  have hp_inv : Summable (fun x ↦ p (g⁻¹ • x)) := (MulAction.toPerm g⁻¹).summable_iff.mpr hp
+  have hdiff : Summable (fun x ↦ |p (g⁻¹ • x) - p x|) := (hp_inv.sub hp).abs
+  have hfib_hasSum : HasSum (fun y : Y ↦ ∑' x : π ⁻¹' {y}, |p (g⁻¹ • x) - p x|)
+      (∑' x : X, |p (g⁻¹ • x) - p x|) :=
+    hdiff.hasSum.tsum_fiberwise π
+  have hbound (y : Y) :
+      |(∑' x : π ⁻¹' {g⁻¹ • y}, p x) - ∑' x : π ⁻¹' {y}, p x| ≤
+        ∑' x : π ⁻¹' {y}, |p (g⁻¹ • x) - p x| := by
+    let e : π ⁻¹' {y} ≃ π ⁻¹' {g⁻¹ • y} :=
+      { toFun x := ⟨g⁻¹ • x.val, by
+          simp only [Set.mem_preimage, Set.mem_singleton_iff, hπ]
+          exact congrArg (g⁻¹ • ·) x.property⟩
+        invFun z := ⟨g • z.val, by
+          have hz : π z.val = g⁻¹ • y := z.property
+          simp only [Set.mem_preimage, Set.mem_singleton_iff, hπ, hz, smul_inv_smul]⟩
+        left_inv x := Subtype.ext (smul_inv_smul g x.val)
+        right_inv z := Subtype.ext (inv_smul_smul g z.val) }
+    have hshift : (∑' z : π ⁻¹' {g⁻¹ • y}, p z) = ∑' x : π ⁻¹' {y}, p (g⁻¹ • x) :=
+      (e.tsum_eq fun z ↦ p z).symm
+    have hd : Summable (fun x : π ⁻¹' {y} ↦ p (g⁻¹ • x) - p x) :=
+      (hp_inv.subtype _).sub (hp.subtype _)
+    have hsub : (∑' x : π ⁻¹' {y}, p (g⁻¹ • x)) - ∑' x : π ⁻¹' {y}, p x =
+        ∑' x : π ⁻¹' {y}, (p (g⁻¹ • x) - p x) :=
+      ((hp_inv.subtype _).tsum_sub (hp.subtype _)).symm
+    rw [hshift, hsub, abs_le]
+    refine ⟨?_, hd.tsum_le_tsum (fun _ ↦ le_abs_self _) (hdiff.subtype _)⟩
+    rw [← tsum_neg]
+    exact (hdiff.subtype _).neg.tsum_le_tsum (fun _ ↦ neg_abs_le _) hd
+  have hlhs_sum :
+      Summable (fun y : Y ↦ |(∑' x : π ⁻¹' {g⁻¹ • y}, p x) - ∑' x : π ⁻¹' {y}, p x|) :=
+    .of_nonneg_of_le (fun _ ↦ abs_nonneg _) hbound hfib_hasSum.summable
+  exact (hlhs_sum.tsum_le_tsum hbound hfib_hasSum.summable).trans_eq hfib_hasSum.tsum_eq
+
+omit [DecidableEq X] in
+/-- **Equivariant Reiter pushforward.** Pushing a nonnegative finitely supported Reiter function
+`p : X → ℝ` with `∑_{g ∈ K} ∑_x |p (g⁻¹ • x) - p x| < ε · ∑_x p x` forward by fiberwise summation
+along a `G`-equivariant map `π : X → Y` yields a finite nonempty set `F ⊆ Y` with
+`|g • F ∆ F| < ε |F|` for all `g ∈ K`. -/
+theorem exists_finset_card_smul_symmDiff_lt_of_equivariant {Y : Type*} [MulAction G Y]
+    [DecidableEq Y] {π : X → Y} (hπ : ∀ (g : G) x, π (g • x) = g • π x) {p : X → ℝ} (hp0 : 0 ≤ p)
+    (hp_fin : p.HasFiniteSupport) {K : Finset G} {ε : ℝ}
+    (h : ∑ g ∈ K, ∑' x, |p (g⁻¹ • x) - p x| < ε * ∑' x, p x) :
+    ∃ F : Finset Y, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F := by
+  have hp_sum : Summable p := summable_of_hasFiniteSupport hp_fin
+  let q : Y → ℝ := fun y ↦ ∑' x : π ⁻¹' {y}, p x
+  have hq0 : 0 ≤ q := fun _ ↦ tsum_nonneg fun x ↦ hp0 x.val
+  have hq_fin : q.HasFiniteSupport := hp_fin.tsum_fiber π
+  have hq_mass : ∑' y, q y = ∑' x, p x := (hp_sum.hasSum.tsum_fiberwise π).tsum_eq
+  have hsum_q : ∑ g ∈ K, ∑' y, |q (g⁻¹ • y) - q y| < ε * ∑' y, q y := by
+    rw [hq_mass]
+    exact (sum_le_sum fun g _ ↦ tsum_abs_tsum_fiber_smul_sub_le hπ hp_sum g).trans_lt h
+  exact exists_finset_card_smul_symmDiff_lt_of_sum_tsum_lt hq0 hq_fin hsum_q
 
 /-- A group satisfying **Reiter's condition** has Følner sets: if for every finite `K` and
 `ε > 0` there is a finitely supported probability density `p` with

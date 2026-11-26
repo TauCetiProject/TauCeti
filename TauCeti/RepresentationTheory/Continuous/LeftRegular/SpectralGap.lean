@@ -61,26 +61,6 @@ open scoped ENNReal Pointwise symmDiff
 
 namespace MeasureTheory.Measure
 
-section P2Inequality
-
-variable {G 𝕜 E : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [NormedRing 𝕜]
-  [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (μ : Measure G) [μ.IsMulLeftInvariant]
-
-/-- **$P_2$ squared-density variation bound for left translation.** For `f ∈ L²(G, E; μ)` and
-`g : G`, the `L¹(μ)` variation of `x ↦ ‖f x‖²` under left translation is at most
-`2 ‖f‖ ‖λ g f - f‖`. -/
-theorem integral_abs_norm_sq_leftRegular_sub_le (g : G) (f : Lp E 2 μ) :
-    ∫ x, |‖f (g⁻¹ * x)‖ ^ 2 - ‖f x‖ ^ 2| ∂μ ≤ 2 * ‖f‖ * ‖μ.leftRegular 𝕜 E 2 g f - f‖ := by
-  rw [← koopman_eq_leftRegular]
-  exact integral_abs_norm_sq_koopman_sub_le (G := G) (𝕜 := 𝕜) μ g f
-
-/-- Unit-vector specialization of `integral_abs_norm_sq_leftRegular_sub_le`. -/
-theorem integral_abs_norm_sq_leftRegular_sub_le_two_mul (g : G) {f : Lp E 2 μ} (hf : ‖f‖ = 1) :
-    ∫ x, |‖f (g⁻¹ * x)‖ ^ 2 - ‖f x‖ ^ 2| ∂μ ≤ 2 * ‖μ.leftRegular 𝕜 E 2 g f - f‖ := by
-  simpa [hf] using integral_abs_norm_sq_leftRegular_sub_le (𝕜 := 𝕜) μ g f
-
-end P2Inequality
-
 section AlmostInvariant
 
 /-- **Hulanicki–Reiter converse.** Almost invariant vectors in `ℓ²(G, E)` yield Følner sets in
@@ -110,8 +90,7 @@ theorem hasAlmostInvariantVectors_count_leftRegular_iff :
     refine ⟨?_, hasFoelnerSets_of_hasAlmostInvariantVectors_count_leftRegular h⟩
     by_contra hsub
     rw [not_nontrivial_iff_subsingleton] at hsub
-    obtain ⟨v, hv⟩ := h.exists_ne_zero
-    exact hv (Lp.eq_zero_iff_ae_eq_zero.mpr (ae_of_all _ fun x ↦ Subsingleton.elim (v x) 0))
+    exact ContRepresentation.not_hasAlmostInvariantVectors_of_subsingleton h
   · rintro ⟨hE, hG⟩
     exact hasAlmostInvariantVectors_count_leftRegular hG
 
@@ -159,22 +138,12 @@ theorem hasSpectralGap_count_leftRegular_iff :
     obtain ⟨hinf, hnontriv, hG⟩ := hnot
     have hinv : ((count : Measure G).leftRegular 𝕜 E 2).invariants = ⊥ :=
       invariants_count_leftRegular (by norm_num)
-    have horth : ((count : Measure G).leftRegular 𝕜 E 2).invariantsᗮ = ⊤ := by
-      rw [hinv, Submodule.bot_orthogonal_eq_top]
     have hunit := isUnitary_leftRegular (𝕜 := 𝕜) (E := E) (count : Measure G)
-    have haiv : ((count : Measure G).leftRegular 𝕜 E 2).HasAlmostInvariantVectors :=
-      hasAlmostInvariantVectors_count_leftRegular_iff.mpr ⟨hnontriv, hG⟩
-    let e := LinearIsometryEquiv.ofTop _ _ horth
-    have haiv_orth : hunit.invariantsOrthogonal.HasAlmostInvariantVectors :=
-      (ContRepresentation.hasAlmostInvariantVectors_iff_of_linearIsometryEquiv e
-        fun g v ↦ hunit.coe_invariantsOrthogonal_apply g v).mpr haiv
-    exact (ContRepresentation.hasSpectralGap_iff_not_hasAlmostInvariantVectors _ hunit).mp
-      hgap haiv_orth
+    exact (hunit.hasSpectralGap_iff_not_hasAlmostInvariantVectors_of_invariants_eq_bot hinv).mp
+      hgap (hasAlmostInvariantVectors_count_leftRegular_iff.mpr ⟨hnontriv, hG⟩)
   · rintro (hfin | hsub | hnotG)
     · exact ContRepresentation.hasSpectralGap_of_finite _
-    · have : Subsingleton (Lp E 2 (count : Measure G)) :=
-        ⟨fun f g ↦ Lp.ext (ae_of_all _ fun x ↦ Subsingleton.elim (f x) (g x))⟩
-      exact ContRepresentation.hasSpectralGap_of_subsingleton _
+    · exact ContRepresentation.hasSpectralGap_of_subsingleton _
     · exact hasSpectralGap_count_leftRegular_of_not_hasFoelnerSets hnotG
 
 /-- Scalar specialization of `hasSpectralGap_count_leftRegular_iff`: `ℓ²(G, 𝕜)` has spectral gap if

@@ -8,10 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+public import TauCeti.MeasureTheory.Function.Lp.Subsingleton
 public import TauCeti.MeasureTheory.Group.Action
-public import TauCeti.RepresentationTheory.Continuous.AlmostInvariant
 public import TauCeti.RepresentationTheory.Continuous.LeftRegular.Basic
 import Mathlib.MeasureTheory.Function.LpSpace.ContinuousCompMeasurePreserving
+import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # The Koopman representation on vector-valued `Lᵖ`
@@ -26,10 +27,9 @@ and for `G` acting on itself by left multiplication it recovers `MeasureTheory.M
 No σ-finiteness, countability, or probability assumption on `μ` is imposed. On `L²(X, E; μ)`,
 Cauchy–Schwarz relates the `L¹` variation of the pointwise density `x ↦ ‖f x‖²` under `g` to the
 `L²` displacement `‖κ g f - f‖`, supplying the measure-theoretic direction of the $P_2$ criterion
-between `L²` almost invariant vectors and `L¹` Reiter densities. For counting measure on any space
-with measurable singletons, we also establish finite-set indicator displacements, the shared
-action-level construction of almost invariant vectors from finite Følner sets, support restrictions
-on invariants and their orthogonal complement, and equivariance of
+between `L²` almost invariant vectors and `L¹` Reiter densities. For counting measure, we record
+pointwise evaluation, the `tsum` form of the $P_2$ squared-density variation bound, support
+restrictions on invariants and their orthogonal complement, and equivariance of
 `MeasureTheory.L2.countHilbertBasis`.
 
 ## Main definitions
@@ -38,16 +38,14 @@ on invariants and their orthogonal complement, and equivariance of
 
 ## Main statements
 
-* `MeasureTheory.Measure.koopman_apply`, `MeasureTheory.Measure.coeFn_koopman`, and
-  `MeasureTheory.Measure.koopman_eq_leftRegular`: unfolding and comparison with `leftRegular`.
+* `MeasureTheory.Measure.koopman_apply`, `MeasureTheory.Measure.coeFn_koopman`,
+  `MeasureTheory.Measure.coeFn_count_koopman`, and `MeasureTheory.Measure.koopman_eq_leftRegular`:
+  unfolding, pointwise evaluation on counting measure, and comparison with `leftRegular`.
 * `MeasureTheory.Measure.isUnitary_koopman` and `MeasureTheory.Measure.continuous_koopman_apply`:
   unitarity on `L²` and strong continuity for continuous actions on R₁ Borel spaces.
-* `MeasureTheory.Measure.integral_abs_norm_sq_koopman_sub_le`: `∫ |‖f (g⁻¹ • x)‖² - ‖f x‖²| ∂μ ≤
-  2 * ‖f‖ * ‖μ.koopman G 𝕜 E 2 g f - f‖`.
-* `Finset.norm_count_koopman_sub_indicatorConstLp` and
-  `MeasureTheory.Measure.hasAlmostInvariantVectors_count_koopman_of_forall_exists_finset`:
-  displacement of finite-set indicators and the action-level Følner-indicator construction of almost
-  invariant vectors in counting-measure `L²(X, E)`.
+* `MeasureTheory.Measure.integral_abs_norm_sq_koopman_sub_le` and
+  `MeasureTheory.Measure.tsum_abs_norm_sq_count_koopman_sub_le`: `∫ |‖f (g⁻¹ • x)‖² - ‖f x‖²| ∂μ ≤
+  2 * ‖f‖ * ‖μ.koopman G 𝕜 E 2 g f - f‖` and its counting-measure `tsum` form.
 * `MeasureTheory.Measure.apply_eq_zero_of_infinite_orbit_of_mem_invariants_count_koopman` and
   `MeasureTheory.Measure.apply_eq_zero_of_mem_orthogonal_invariants_count_koopman`: support
   restrictions on invariants and their orthogonal complement in counting-measure `L²`.
@@ -62,8 +60,8 @@ on invariants and their orthogonal complement, and equivariance of
 
 public section
 
-open MeasureTheory Finset
-open scoped ENNReal InnerProductSpace Pointwise symmDiff
+open MeasureTheory
+open scoped ENNReal InnerProductSpace
 
 namespace MeasureTheory.Measure
 
@@ -158,11 +156,6 @@ theorem integral_abs_norm_sq_koopman_sub_le (g : G) (f : Lp E 2 μ) :
         rw [norm_koopman_apply]
         ring
 
-/-- Unit-vector specialization of `integral_abs_norm_sq_koopman_sub_le`. -/
-theorem integral_abs_norm_sq_koopman_sub_le_two_mul (g : G) {f : Lp E 2 μ} (hf : ‖f‖ = 1) :
-    ∫ x, |‖f (g⁻¹ • x)‖ ^ 2 - ‖f x‖ ^ 2| ∂μ ≤ 2 * ‖μ.koopman G 𝕜 E 2 g f - f‖ := by
-  simpa [hf] using integral_abs_norm_sq_koopman_sub_le (𝕜 := 𝕜) μ g f
-
 end General
 
 section Count
@@ -170,56 +163,27 @@ section Count
 variable {G X 𝕜 E : Type*} [Group G] [MeasurableSpace X] [MeasurableSingletonClass X]
   [MulAction G X] [MeasurableConstSMul G X]
 
-/-- In counting-measure `L²`, the Koopman displacement of a constant indicator supported on a
-finite set `F` is `√|g • F ∆ F| * ‖c‖`. -/
-theorem _root_.Finset.norm_count_koopman_sub_indicatorConstLp [DecidableEq X] [NormedRing 𝕜]
-    [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
-    (F : Finset X) (g : G) (c : E) :
-    ‖(count : Measure X).koopman G 𝕜 E 2 g
-        (indicatorConstLp 2 F.measurableSet (by simp) c) -
-      indicatorConstLp 2 F.measurableSet (by simp) c‖ =
-        Real.sqrt (#((g • F) ∆ F) : ℝ) * ‖c‖ := by
-  have hpre : (fun x : X ↦ g⁻¹ • x) ⁻¹' (F : Set X) = (g • F : Finset X) := by
-    ext x
-    simp only [Set.mem_preimage, Finset.mem_coe, Finset.mem_smul_finset]
-    exact ⟨fun hx ↦ ⟨g⁻¹ • x, hx, smul_inv_smul g x⟩,
-      fun ⟨y, hy, hyx⟩ ↦ by rwa [← hyx, inv_smul_smul]⟩
-  rw [koopman_apply, Lp.indicatorConstLp_compMeasurePreserving, ← dist_eq_norm_sub,
-    dist_indicatorConstLp_eq_norm, norm_indicatorConstLp (p := 2) (by simp) (by simp)]
-  simp [hpre, ← Finset.coe_symmDiff, measureReal_def, Real.sqrt_eq_rpow,
-    -Finset.coe_smul_finset, mul_comm]
+omit [MeasurableSingletonClass X] in
+/-- On counting measure, the representative of `κ g f` equals `x ↦ f (g⁻¹ • x)` everywhere. -/
+@[simp]
+theorem coeFn_count_koopman [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
+    (p : ℝ≥0∞) [Fact (1 ≤ p)] (g : G) (f : Lp E p (count : Measure X)) :
+    ⇑((count : Measure X).koopman G 𝕜 E p g f) = fun x ↦ f (g⁻¹ • x) :=
+  funext (ae_count_iff.mp (coeFn_koopman (G := G) (𝕜 := 𝕜) count p g f))
 
-/-- **Action-level Følner-indicator almost invariant vectors.** If `E` is nontrivial and a `G`-set
-`X` admits finite nonempty Følner sets for every finite subset of `G` and positive tolerance, then
-the counting-measure Koopman representation on `ℓ²(X, E)` has almost invariant vectors. -/
-theorem hasAlmostInvariantVectors_count_koopman_of_forall_exists_finset [DecidableEq X]
-    [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Nontrivial E]
-    (hF : ∀ K : Finset G, ∀ ε : ℝ, 0 < ε →
-      ∃ F : Finset X, F.Nonempty ∧ ∀ g ∈ K, (#((g • F) ∆ F) : ℝ) < ε * #F) :
-    ((count : Measure X).koopman G 𝕜 E 2).HasAlmostInvariantVectors := by
-  obtain ⟨w, hw⟩ := exists_ne (0 : E)
-  rw [ContRepresentation.hasAlmostInvariantVectors_def]
-  intro K ε hε
-  let c : E := (‖w‖⁻¹ : 𝕜) • w
-  have hc : ‖c‖ = 1 := norm_smul_inv_norm hw
-  obtain ⟨F, hF_ne, hboundary⟩ := hF K (ε ^ 2) (sq_pos_of_pos hε)
-  let ξ : Lp E 2 (count : Measure X) := indicatorConstLp 2 F.measurableSet (by simp) c
-  have hnorm : ‖ξ‖ = Real.sqrt (#F : ℝ) := by
-    rw [norm_indicatorConstLp (by simp) (by simp)]
-    simp [hc, measureReal_def, Real.sqrt_eq_rpow]
-  have hcard : (0 : ℝ) < #F := Nat.cast_pos.mpr hF_ne.card_pos
-  have hξ : ξ ≠ 0 := norm_ne_zero_iff.mp (by rw [hnorm]; positivity)
-  refine ⟨(‖ξ‖⁻¹ : 𝕜) • ξ, norm_smul_inv_norm hξ, fun g hg ↦ ?_⟩
-  rw [map_smul, ← smul_sub]
-  have hdisp : ‖(count : Measure X).koopman G 𝕜 E 2 g ξ - ξ‖ =
-      Real.sqrt (#((g • F) ∆ F) : ℝ) := by
-    simpa [hc] using F.norm_count_koopman_sub_indicatorConstLp (G := G) (𝕜 := 𝕜) g c
-  have hroot : Real.sqrt (#((g • F) ∆ F) : ℝ) < ε * Real.sqrt (#F : ℝ) := by
-    apply (sq_lt_sq₀ (Real.sqrt_nonneg _) (by positivity)).mp
-    rw [Real.sq_sqrt (by positivity), mul_pow, Real.sq_sqrt hcard.le]
-    exact hboundary g hg
-  simpa [norm_smul, hnorm, hdisp, abs_of_nonneg (Real.sqrt_nonneg _)] using
-    (inv_mul_lt_iff₀ (Real.sqrt_pos.mpr hcard)).mpr (by simpa [mul_comm] using hroot)
+omit [MeasurableSingletonClass X] in
+/-- **Counting-measure $P_2$ squared-density variation bound.** For any `v ∈ ℓ²(X, E)` and `g : G`,
+the `ℓ¹` variation of `x ↦ ‖v x‖²` under `g` is at most
+`2 * ‖v‖ * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖`. -/
+theorem tsum_abs_norm_sq_count_koopman_sub_le [NormedRing 𝕜] [NormedAddCommGroup E]
+    [Module 𝕜 E] [IsBoundedSMul 𝕜 E] (g : G) (v : Lp E 2 (count : Measure X)) :
+    ∑' x, |‖v (g⁻¹ • x)‖ ^ 2 - ‖v x‖ ^ 2| ≤
+      2 * ‖v‖ * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ := by
+  have hd_int : Integrable (fun x ↦ |‖v (g⁻¹ • x)‖ ^ 2 - ‖v x‖ ^ 2|) (count : Measure X) := by
+    simpa only [coeFn_count_koopman] using
+      (Lp.integrable_norm_sq_sub ((count : Measure X).koopman G 𝕜 E 2 g v) v).abs
+  rw [← integral_count_eq_tsum hd_int]
+  exact integral_abs_norm_sq_koopman_sub_le (𝕜 := 𝕜) count g v
 
 /-- Any `G`-invariant vector in counting-measure `Lᵖ` (`1 ≤ p < ∞`) vanishes at every point whose
 `G`-orbit is infinite. -/
@@ -232,9 +196,9 @@ theorem apply_eq_zero_of_infinite_orbit_of_mem_invariants_count_koopman [NormedR
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
   have hconst : ∀ y ∈ MulAction.orbit G x, f y = f x := by
     rintro _ ⟨g, rfl⟩
-    have hg := ae_count_iff.mp (coeFn_koopman (G := G) (𝕜 := 𝕜) count p g f) (g • x)
-    rw [hf g] at hg
-    simpa using hg
+    have hg : ((count : Measure X).koopman G 𝕜 E p g f : X → E) (g • x) = f (g • x) := by
+      rw [hf g]
+    simpa using hg.symm
   let ι := horb.natEmbedding
   let T : Set X := Set.range (Subtype.val ∘ ι)
   have hT_cnt : T.Countable := Set.countable_range _

@@ -85,9 +85,8 @@ normality of it is equivalent to freeness of the action of the image.
   inverse map the set into itself.
 * `TauCeti.smul_eq_smul_iff_inv_mul_mem_stabilizer`: two group elements carry `x₀` to the same
   point exactly when they differ on the right by an element of the stabilizer of `x₀`.
-* `Finset.finite_stabilizer` and `MulAction.finite_stabilizer_of_finset_invariant`: any nonempty
-  finite subset of a group `G` has finite left-translation stabilizer, and so does any element of a
-  `G`-set whose stabilizer preserves a finite nonempty subset of `G`.
+* `MulAction.finite_stabilizer_of_finset_invariant`: any element of a `G`-set whose stabilizer
+  preserves a finite nonempty subset of `G` has finite stabilizer.
 * `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
   translation on its nonempty proper finite subsets.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
@@ -582,18 +581,6 @@ section FinsetStabilizer
 
 open scoped Pointwise
 
-/-- Under left multiplication of a group `G` on `Finset G`, every finite nonempty subset `S` has
-finite stabilizer. -/
-theorem Finset.finite_stabilizer {G : Type*} [Group G] [DecidableEq G] {S : Finset G}
-    (hS : S.Nonempty) : Finite (MulAction.stabilizer G S) := by
-  obtain ⟨x₀, hx₀⟩ := hS
-  have hmem (g : MulAction.stabilizer G S) : (g : G) * x₀ ∈ S := by
-    have hx' : (g : G) * x₀ ∈ (g : G) • S := Finset.mem_smul_finset.mpr ⟨x₀, hx₀, rfl⟩
-    rwa [g.property] at hx'
-  refine Finite.of_injective (fun g : MulAction.stabilizer G S ↦ (⟨(g : G) * x₀, hmem g⟩ : S)) ?_
-  intro g₁ g₂ h
-  exact Subtype.ext (mul_right_cancel (congrArg Subtype.val h))
-
 /-- Any element `x` of a `G`-set `X` whose stabilizer preserves a finite nonempty subset `S ⊆ G`
 (for example, the support of a nonzero finitely supported configuration in a Bernoulli shift) has
 finite stabilizer. -/
@@ -601,9 +588,10 @@ theorem MulAction.finite_stabilizer_of_finset_invariant {G X : Type*} [Group G] 
     [MulAction G X] {x : X} {S : Finset G} (hS : S.Nonempty)
     (hinv : ∀ g : G, g • x = x → g • S = S) :
     Finite (MulAction.stabilizer G x) := by
-  have : Finite (MulAction.stabilizer G S) := S.finite_stabilizer hS
-  have hle : MulAction.stabilizer G x ≤ MulAction.stabilizer G S := hinv
-  exact Finite.of_injective (Subgroup.inclusion hle) (Subgroup.inclusion_injective hle)
+  have hfin : (MulAction.stabilizer G S : Set G).Finite := by
+    rw [← MulAction.stabilizer_coe_finset]
+    exact MulAction.stabilizer_finite (Finset.coe_nonempty.mpr hS) S.finite_toSet
+  exact (hfin.subset (SetLike.coe_subset_coe.mpr hinv)).to_subtype
 
 end FinsetStabilizer
 

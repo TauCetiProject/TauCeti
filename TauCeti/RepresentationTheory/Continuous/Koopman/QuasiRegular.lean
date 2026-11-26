@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Amenable.Coset
-public import TauCeti.RepresentationTheory.Continuous.Koopman.Basic
+public import TauCeti.RepresentationTheory.Continuous.Koopman.Foelner
 public import TauCeti.RepresentationTheory.Continuous.SpectralGap
-import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 
 /-!
 # Quasi-regular, permutation, and counting-measure Koopman spectral gap
@@ -25,7 +24,7 @@ Koopman representation on `ℓ²(X, E)` — and any representation permuting a `
 
 For the quasi-regular representation on `ℓ²(G ⧸ H, E)` with `HasFoelnerSets H`, we obtain complete
 necessary and sufficient characterizations of both almost invariant vectors and spectral gap.
-Combined with `Finset.finite_stabilizer` and `MulAction.finite_stabilizer_of_finset_invariant` in
+Combined with `MulAction.finite_stabilizer_of_finset_invariant` in
 `TauCeti.GroupTheory.GroupAction.Stabilizer.Basic`, the finite-stabilizer criteria apply directly
 to Bernoulli-shift cylinder configurations.
 
@@ -82,16 +81,9 @@ theorem exists_finset_sum_card_smul_symmDiff_lt_of_norm_koopman_sub_lt [Decidabl
   have hq1 : ∑' x, q x = 1 := by
     rw [← L2.norm_sq_eq_tsum_apply v, hv, one_pow]
   have hvar (g : G) (hg : g ∈ K) : ∑' x, |q (g⁻¹ • x) - q x| ≤ ε / (4 * (#K + 1)) := by
-    have hd_int : Integrable (fun x ↦ |q (g⁻¹ • x) - q x|) (count : Measure X) := by
-      have hcongr : (fun x ↦ |q (g⁻¹ • x) - q x|) =ᵐ[count]
-          fun x ↦ |‖((count : Measure X).koopman G 𝕜 E 2 g v) x‖ ^ 2 - ‖v x‖ ^ 2| := by
-        filter_upwards [coeFn_koopman (G := G) (𝕜 := 𝕜) count 2 g v] with x hx
-        simp [q, hx]
-      exact (integrable_congr hcongr).mpr (Lp.integrable_norm_sq_sub _ _).abs
-    rw [← integral_count_eq_tsum hd_int]
-    calc ∫ x, |q (g⁻¹ • x) - q x| ∂(count : Measure X)
-        ≤ 2 * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ :=
-          integral_abs_norm_sq_koopman_sub_le_two_mul (𝕜 := 𝕜) count g hv
+    calc ∑' x, |q (g⁻¹ • x) - q x|
+        ≤ 2 * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ := by
+          simpa [q, hv] using tsum_abs_norm_sq_count_koopman_sub_le (𝕜 := 𝕜) g v
       _ ≤ 2 * (ε / (8 * (#K + 1))) := mul_le_mul_of_nonneg_left (hdisp g hg) zero_le_two
       _ = ε / (4 * (#K + 1)) := by
           have : (0 : ℝ) < #K + 1 := by positivity
@@ -134,13 +126,11 @@ theorem hasAlmostInvariantVectors_count_koopman_quotient_iff {H : Subgroup G}
   classical
   constructor
   · intro h
-    refine ⟨?_, ?_⟩
-    · by_contra hsub
-      rw [not_nontrivial_iff_subsingleton] at hsub
-      obtain ⟨v, hv⟩ := h.exists_ne_zero
-      exact hv (Lp.eq_zero_iff_ae_eq_zero.mpr (ae_of_all _ fun x ↦ Subsingleton.elim (v x) 0))
-    · exact (TauCeti.hasFoelnerSets_iff_exists_finset_quotient hH).mpr
-        (exists_finset_card_smul_symmDiff_lt_of_hasAlmostInvariantVectors_count_koopman h)
+    refine ⟨?_, (TauCeti.hasFoelnerSets_iff_exists_finset_quotient hH).mpr
+      (exists_finset_card_smul_symmDiff_lt_of_hasAlmostInvariantVectors_count_koopman h)⟩
+    by_contra hsub
+    rw [not_nontrivial_iff_subsingleton] at hsub
+    exact ContRepresentation.not_hasAlmostInvariantVectors_of_subsingleton h
   · rintro ⟨hE, hG⟩
     exact hasAlmostInvariantVectors_count_koopman_of_forall_exists_finset
       ((TauCeti.hasFoelnerSets_iff_exists_finset_quotient hH).mp hG)
@@ -162,6 +152,8 @@ theorem hasSpectralGap_count_koopman_of_not_hasFoelnerSets {X : Type*} [Measurab
   apply hG
   rw [TauCeti.hasFoelnerSets_iff]
   intro K ε hε
+  -- Restrict the probability density `x ↦ ‖v x‖²` of an almost invariant vector `v ∈ invariantsᗮ`
+  -- to the invariant complement `U = (fixedPoints G X)ᶜ`, since `v` vanishes on fixed points.
   let U : SubMulAction G X :=
     { carrier := (MulAction.fixedPoints G X)ᶜ
       smul_mem' := fun g x hx hfix ↦ hx fun h ↦
@@ -185,12 +177,6 @@ theorem hasSpectralGap_count_koopman_of_not_hasFoelnerSets {X : Type*} [Measurab
         (f := qX) fun x hx ↦ ⟨⟨x, fun hfix ↦ hx (by simp [qX, hv_fix x hfix])⟩, rfl⟩
     exact htsum.trans hqX1
   have hvar (g : G) (hg : g ∈ K) : ∑' y, |q (g⁻¹ • y) - q y| ≤ (ε / 2) / (4 * (#K + 1)) := by
-    have hd_int : Integrable (fun x ↦ |qX (g⁻¹ • x) - qX x|) (count : Measure X) := by
-      have hcongr : (fun x ↦ |qX (g⁻¹ • x) - qX x|) =ᵐ[count]
-          fun x ↦ |‖((count : Measure X).koopman G 𝕜 E 2 g v) x‖ ^ 2 - ‖v x‖ ^ 2| := by
-        filter_upwards [coeFn_koopman (G := G) (𝕜 := 𝕜) count 2 g v] with x hx
-        simp [qX, hx]
-      exact (integrable_congr hcongr).mpr (Lp.integrable_norm_sq_sub _ _).abs
     have hd_sub : (∑' y : U, |q (g⁻¹ • y) - q y|) = ∑' x, |qX (g⁻¹ • x) - qX x| :=
       Function.Injective.tsum_eq (g := (Subtype.val : U → X)) Subtype.val_injective
         (f := fun x ↦ |qX (g⁻¹ • x) - qX x|) fun x hx ↦
@@ -199,15 +185,16 @@ theorem hasSpectralGap_count_koopman_of_not_hasFoelnerSets {X : Type*} [Measurab
             rw [hfix g⁻¹, sub_self, abs_zero])⟩, rfl⟩
     have hdisp_v : ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ < ε / (16 * (#K + 1)) := by
       simpa [v, ← Submodule.norm_coe] using hu_disp g hg
-    rw [hd_sub, ← integral_count_eq_tsum hd_int]
-    calc ∫ x, |qX (g⁻¹ • x) - qX x| ∂(count : Measure X)
-        ≤ 2 * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ :=
-          integral_abs_norm_sq_koopman_sub_le_two_mul (𝕜 := 𝕜) count g hv_norm
+    rw [hd_sub]
+    calc ∑' x, |qX (g⁻¹ • x) - qX x|
+        ≤ 2 * ‖(count : Measure X).koopman G 𝕜 E 2 g v - v‖ := by
+          simpa [qX, hv_norm] using tsum_abs_norm_sq_count_koopman_sub_le (𝕜 := 𝕜) g v
       _ ≤ 2 * (ε / (16 * (#K + 1))) := mul_le_mul_of_nonneg_left hdisp_v.le zero_le_two
       _ = (ε / 2) / (4 * (#K + 1)) := by
           have : (0 : ℝ) < #K + 1 := by positivity
           field_simp
           ring
+  -- Truncate `q` to a Følner subset of `U`, select an orbit slice by pigeonhole, and lift to `G`.
   obtain ⟨F_U, _, hF_U⟩ :=
     TauCeti.exists_finset_sum_card_smul_symmDiff_lt_of_tsum_eq_one hq0 hq_sum hq1 K
       (half_pos hε) hvar
@@ -248,30 +235,13 @@ theorem hasSpectralGap_count_koopman_quotient_iff {H : Subgroup G}
     by_contra! hnot
     obtain ⟨hinf, hnontriv, hG⟩ := hnot
     have horb (q : G ⧸ H) : (MulAction.orbit G q).Infinite := by
-      have huniv : MulAction.orbit G q = Set.univ := by
-        ext q'
-        simp only [MulAction.mem_orbit_iff, Set.mem_univ, iff_true]
-        induction q using QuotientGroup.induction_on with
-        | H x =>
-          induction q' using QuotientGroup.induction_on with
-          | H y =>
-            refine ⟨y * x⁻¹, ?_⟩
-            rw [MulAction.Quotient.smul_coe, smul_eq_mul, inv_mul_cancel_right]
-      rw [huniv]
+      rw [MulAction.orbit_eq_univ]
       exact Set.infinite_univ
     have hinv : ((count : Measure (G ⧸ H)).koopman G 𝕜 E 2).invariants = ⊥ :=
       invariants_count_koopman_of_infinite_orbit (by norm_num) horb
-    have horth : ((count : Measure (G ⧸ H)).koopman G 𝕜 E 2).invariantsᗮ = ⊤ := by
-      rw [hinv, Submodule.bot_orthogonal_eq_top]
     have hunit := isUnitary_koopman (G := G) (𝕜 := 𝕜) (E := E) (count : Measure (G ⧸ H))
-    have haiv : ((count : Measure (G ⧸ H)).koopman G 𝕜 E 2).HasAlmostInvariantVectors :=
-      (hasAlmostInvariantVectors_count_koopman_quotient_iff hH).mpr ⟨hnontriv, hG⟩
-    let e := LinearIsometryEquiv.ofTop _ _ horth
-    have haiv_orth : hunit.invariantsOrthogonal.HasAlmostInvariantVectors :=
-      (ContRepresentation.hasAlmostInvariantVectors_iff_of_linearIsometryEquiv e
-        fun g v ↦ hunit.coe_invariantsOrthogonal_apply g v).mpr haiv
-    exact (ContRepresentation.hasSpectralGap_iff_not_hasAlmostInvariantVectors _ hunit).mp
-      hgap haiv_orth
+    exact (hunit.hasSpectralGap_iff_not_hasAlmostInvariantVectors_of_invariants_eq_bot hinv).mp
+      hgap ((hasAlmostInvariantVectors_count_koopman_quotient_iff hH).mpr ⟨hnontriv, hG⟩)
   · rintro (hfin | hsub | hnotG)
     · have : H.FiniteIndex := Subgroup.finiteIndex_of_finite_quotient
       refine ContRepresentation.hasSpectralGap_of_finite_quotient _ H.normalCore fun n hn ↦ ?_
@@ -284,9 +254,7 @@ theorem hasSpectralGap_count_koopman_quotient_iff {H : Subgroup G}
       ext f : 1
       rw [one_apply_eq_self, koopman_apply]
       simpa only [hsmul] using Lp.compMeasurePreserving_id_apply f
-    · have : Subsingleton (Lp E 2 (count : Measure (G ⧸ H))) :=
-        ⟨fun f g ↦ Lp.ext (ae_of_all _ fun x ↦ Subsingleton.elim (f x) (g x))⟩
-      exact ContRepresentation.hasSpectralGap_of_subsingleton _
+    · exact ContRepresentation.hasSpectralGap_of_subsingleton _
     · refine hasSpectralGap_count_koopman_of_not_hasFoelnerSets hnotG fun q _ ↦ ?_
       induction q using QuotientGroup.induction_on with
       | H x =>
@@ -338,17 +306,12 @@ theorem HilbertBasis.hasSpectralGap_of_not_hasFoelnerSets {G X 𝕜 V : Type*} [
     let L₂ : V →L[𝕜] Lp 𝕜 2 (Measure.count : Measure X) :=
       ((Measure.count : Measure X).koopman G 𝕜 𝕜 2 g).comp
         e.toLinearIsometry.toContinuousLinearMap
-    have hspan : ∀ w ∈ Submodule.span 𝕜 (Set.range b), L₁ w = L₂ w := fun w hw ↦
-      Submodule.span_induction (fun _ ⟨x, hx⟩ ↦ by
-        subst hx
-        simp [L₁, L₂, hb, he_basis, δ])
-        (by simp) (fun _ _ _ _ h1 h2 ↦ by simp [h1, h2])
-        (fun c _ _ h1 ↦ by simp [h1]) hw
-    have hcl : ∀ w ∈ (Submodule.span 𝕜 (Set.range b)).topologicalClosure, L₁ w = L₂ w := by
-      intro w hw
-      have hclosed : IsClosed {u : V | L₁ u = L₂ u} := isClosed_eq L₁.continuous L₂.continuous
-      exact hclosed.closure_subset_iff.mpr hspan hw
-    exact hcl v (b.dense_span.symm ▸ Submodule.mem_top)
+    have hrange : Set.EqOn L₁ L₂ (Set.range b) := by
+      rintro _ ⟨x, rfl⟩
+      simp [L₁, L₂, hb, he_basis, δ]
+    have hmem : v ∈ (Submodule.span 𝕜 (Set.range b)).topologicalClosure :=
+      b.dense_span.symm ▸ Submodule.mem_top
+    exact ContinuousLinearMap.eqOn_closure_span hrange hmem
   exact (ContRepresentation.hasSpectralGap_iff_of_linearIsometryEquiv e he).mpr
     (MeasureTheory.Measure.hasSpectralGap_count_koopman_of_not_hasFoelnerSets hG hstab)
 

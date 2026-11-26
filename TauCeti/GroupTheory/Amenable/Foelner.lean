@@ -9,11 +9,11 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Data.Finset.SymmDiff
-public import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import Mathlib.MeasureTheory.Measure.Count
+public import TauCeti.Algebra.Group.Action.Pointwise.Finset
+public import TauCeti.GroupTheory.GroupAction.Quotient
 import Mathlib.Algebra.Group.Equiv.TypeTags
-import TauCeti.Algebra.Group.Action.Pointwise.Finset
 import TauCeti.Data.ENNReal.NatCastDiv
 import TauCeti.MeasureTheory.MeasurableSpace.TypeTags
 
@@ -350,114 +350,46 @@ theorem exists_quotient_finset_of_sum_card_smul_symmDiff_lt {Z : Type*} [MulActi
     ∃ z₀ ∈ F, ∃ F₁ : Finset (G ⧸ MulAction.stabilizer G z₀),
       F₁.Nonempty ∧ ∀ g ∈ K, (#((g • F₁) ∆ F₁) : ℝ) < ε * #F₁ := by
   classical
+  -- Decompose `F` and each translation boundary fiberwise over the `G`-orbit space.
   let π : Z → MulAction.orbitRel.Quotient G Z := Quotient.mk _
-  have hπ_smul (g : G) (z : Z) : π (g • z) = π z := Quotient.sound ⟨g, rfl⟩
+  have hπ (g : G) (z : Z) : π (g • z) = π z := Quotient.sound ⟨g, rfl⟩
   let O : Finset (MulAction.orbitRel.Quotient G Z) := F.image π
   let slice (o : MulAction.orbitRel.Quotient G Z) : Finset Z := F.filter (π · = o)
   have hcard_F : (#F : ℝ) = ∑ o ∈ O, (#(slice o) : ℝ) := by
     exact_mod_cast Finset.card_eq_sum_card_image π F
-  have hfilter_symm (g : G) (o : MulAction.orbitRel.Quotient G Z) :
-      ((g • F) ∆ F).filter (π · = o) = (g • slice o) ∆ slice o := by
-    ext z
-    simp only [mem_filter, mem_symmDiff, mem_smul_finset, slice]
-    constructor
-    · rintro ⟨h1 | h1, hzo⟩
-      · left
-        rcases h1.1 with ⟨w, hw, rfl⟩
-        refine ⟨⟨w, ⟨hw, ?_⟩, rfl⟩, fun hw' ↦ h1.2 hw'.1⟩
-        rwa [← hπ_smul g w]
-      · right
-        refine ⟨⟨h1.1, hzo⟩, ?_⟩
-        rintro ⟨w, ⟨hw, _⟩, rfl⟩
-        exact h1.2 ⟨w, hw, rfl⟩
-    · rintro (h1 | h1)
-      · rcases h1.1 with ⟨w, ⟨hw, hwo⟩, rfl⟩
-        refine ⟨Or.inl ⟨⟨w, hw, rfl⟩, fun hw' ↦ h1.2 ⟨hw', ?_⟩⟩, ?_⟩
-        · rwa [hπ_smul g w]
-        · rwa [hπ_smul g w]
-      · refine ⟨Or.inr ⟨h1.1.1, ?_⟩, h1.1.2⟩
-        rintro ⟨w, hw, rfl⟩
-        refine h1.2 ⟨w, ⟨hw, ?_⟩, rfl⟩
-        have := h1.1.2
-        rwa [hπ_smul g w] at this
-  have hcard_symm (g : G) : (#((g • F) ∆ F) : ℝ) = ∑ o ∈ O, (#((g • slice o) ∆ slice o) : ℝ) := by
-    have hmaps : ∀ z ∈ (g • F) ∆ F, π z ∈ O := by
-      intro z hz
-      rw [mem_symmDiff] at hz
-      rcases hz with ⟨hz, _⟩ | ⟨hz, _⟩
-      · rcases mem_smul_finset.mp hz with ⟨w, hw, rfl⟩
-        rw [hπ_smul]
-        exact mem_image_of_mem π hw
-      · exact mem_image_of_mem π hz
-    have hnat : #((g • F) ∆ F) = ∑ o ∈ O, #(((g • F) ∆ F).filter (π · = o)) :=
-      Finset.card_eq_sum_card_fiberwise hmaps
-    simp_rw [hfilter_symm] at hnat
-    exact_mod_cast hnat
+  have hcard_symm (g : G) :
+      (#((g • F) ∆ F) : ℝ) = ∑ o ∈ O, (#((g • slice o) ∆ slice o) : ℝ) := by
+    exact_mod_cast Finset.card_smul_finset_symmDiff_eq_sum_image (hπ g) F
   have hsum_lt : ∑ o ∈ O, ∑ g ∈ K, (#((g • slice o) ∆ slice o) : ℝ) <
       ∑ o ∈ O, ε * #(slice o) := by
     rw [sum_comm]
     simp_rw [← hcard_symm, ← mul_sum, ← hcard_F]
     exact h
+  -- Pigeonhole selects a nonempty orbit slice `S = slice (π z₀)` with small total boundary.
   obtain ⟨o, hoO, ho_lt⟩ := exists_lt_of_sum_lt hsum_lt
   obtain ⟨z₀, hz₀F, rfl⟩ := mem_image.mp hoO
-  have hz₀_mem : z₀ ∈ slice (π z₀) := mem_filter.mpr ⟨hz₀F, rfl⟩
-  let e := MulAction.orbitEquivQuotientStabilizer G z₀
-  have he_smul (g : G) (u : MulAction.orbit G z₀) : e (g • u) = g • e u := by
-    apply e.symm.injective
-    obtain ⟨q, rfl⟩ := e.symm.surjective u
-    rw [e.symm_apply_apply, e.apply_symm_apply]
-    induction q using QuotientGroup.induction_on with
-    | H x =>
-      ext
-      simp [e, smul_eq_mul, mul_smul]
-  have hmem_orb (z : Z) (hz : z ∈ slice (π z₀)) : z ∈ MulAction.orbit G z₀ :=
+  let S : Finset Z := slice (π z₀)
+  have hz₀S : z₀ ∈ S := mem_filter.mpr ⟨hz₀F, rfl⟩
+  have hmem_orb (z : Z) (hz : z ∈ S) : z ∈ MulAction.orbit G z₀ :=
     Quotient.exact (mem_filter.mp hz).2
-  let F' : Finset (MulAction.orbit G z₀) :=
-    (slice (π z₀)).attach.image fun z ↦ ⟨z.val, hmem_orb z.val z.property⟩
+  -- Transport `S` into `orbit G z₀` and then to `G ⧸ stabilizer G z₀`.
+  let F' : Finset (MulAction.orbit G z₀) := S.subtype (· ∈ MulAction.orbit G z₀)
+  let e := MulAction.orbitEquivQuotientStabilizer G z₀
   let F₁ : Finset (G ⧸ MulAction.stabilizer G z₀) := F'.image e
-  have hF'_ne : F'.Nonempty :=
-    ⟨⟨z₀, MulAction.mem_orbit_self z₀⟩,
-      mem_image.mpr ⟨⟨z₀, hz₀_mem⟩, mem_attach _ _, rfl⟩⟩
-  have hF₁_ne : F₁.Nonempty := hF'_ne.image e
-  have hval_F' : F'.image Subtype.val = slice (π z₀) := by
-    ext z
-    simp only [F', mem_image, mem_attach, true_and]
-    constructor
-    · rintro ⟨_, ⟨a, rfl⟩, rfl⟩
-      exact a.property
-    · intro hz
-      exact ⟨⟨z, hmem_orb z hz⟩, ⟨⟨z, hz⟩, rfl⟩, rfl⟩
-  have hF₁_card : #F₁ = #(slice (π z₀)) := by
-    dsimp only [F₁]
+  have hval_F' : F'.image Subtype.val = S := by
+    simpa [F', map_eq_image] using subtype_map_of_mem hmem_orb
+  have hF'_ne : F'.Nonempty := ⟨⟨z₀, MulAction.mem_orbit_self z₀⟩, mem_subtype.mpr hz₀S⟩
+  have hF₁_card : #F₁ = #S := by
     rw [card_image_of_injective _ e.injective, ← hval_F',
       card_image_of_injective _ Subtype.val_injective]
-  refine ⟨z₀, hz₀F, F₁, hF₁_ne, fun g hg ↦ ?_⟩
-  have hsingle : (#((g • slice (π z₀)) ∆ slice (π z₀)) : ℝ) < ε * #(slice (π z₀)) :=
-    (single_le_sum (f := fun g ↦ (#((g • slice (π z₀)) ∆ slice (π z₀)) : ℝ))
+  refine ⟨z₀, hz₀F, F₁, hF'_ne.image e, fun g hg ↦ ?_⟩
+  have hsingle : (#((g • S) ∆ S) : ℝ) < ε * #S :=
+    (single_le_sum (f := fun g ↦ (#((g • S) ∆ S) : ℝ))
       (fun _ _ ↦ Nat.cast_nonneg _) hg).trans_lt ho_lt
-  have hsmul_F₁ : g • F₁ = (g • F').image e := by
-    ext q
-    simp only [F₁, mem_smul_finset, mem_image]
-    constructor
-    · rintro ⟨_, ⟨u, hu, rfl⟩, rfl⟩
-      exact ⟨g • u, ⟨u, hu, rfl⟩, he_smul g u⟩
-    · rintro ⟨_, ⟨u, hu, rfl⟩, rfl⟩
-      exact ⟨e u, ⟨u, hu, rfl⟩, (he_smul g u).symm⟩
-  have hsmul_val : (g • F').image Subtype.val = g • slice (π z₀) := by
-    rw [← hval_F']
-    ext z
-    simp only [mem_image, mem_smul_finset]
-    constructor
-    · rintro ⟨_, ⟨u, hu, rfl⟩, rfl⟩
-      exact ⟨u.val, ⟨u, hu, rfl⟩, rfl⟩
-    · rintro ⟨_, ⟨u, hu, rfl⟩, rfl⟩
-      exact ⟨g • u, ⟨u, hu, rfl⟩, rfl⟩
-  have hsymm_eq : #((g • F₁) ∆ F₁) = #((g • slice (π z₀)) ∆ slice (π z₀)) := by
-    rw [hsmul_F₁]
-    dsimp only [F₁]
-    rw [← image_symmDiff _ _ e.injective, card_image_of_injective _ e.injective,
-      ← hsmul_val, ← hval_F', ← image_symmDiff _ _ Subtype.val_injective,
-      card_image_of_injective _ Subtype.val_injective]
+  have hsymm_eq : #((g • F₁) ∆ F₁) = #((g • S) ∆ S) := by
+    rw [card_smul_finset_symmDiff_image e.injective
+        (orbitEquivQuotientStabilizer_smul z₀ g),
+      ← hval_F', card_smul_finset_symmDiff_image Subtype.val_injective (fun _ ↦ rfl)]
   rwa [hsymm_eq, hF₁_card]
 
 /-- If `S` generates `G`, then `G` has Følner sets exactly when the finite-set condition holds for

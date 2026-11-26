@@ -8,7 +8,7 @@ module
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.RepresentationTheory.Continuous.AlmostInvariant
 public import TauCeti.RepresentationTheory.Continuous.InvariantComplement
-import Mathlib.Algebra.Order.Chebyshev
+public import TauCeti.RepresentationTheory.Continuous.Unitary.Displacement
 
 /-!
 # Spectral gap of a representation
@@ -19,19 +19,22 @@ removed: in particular a trivial representation has spectral gap.
 
 For a unitary monoid representation the orthogonal complement carries a unitary representation,
 `IsUnitary.invariantsOrthogonal`. Spectral gap is equivalent to the absence of almost invariant
-vectors in this representation. Every representation of a finite group — and more generally every
-group representation with finite image — has spectral gap. Spectral gap is invariant under linear
-isometric equivalences and surjective group or monoid pullbacks, passes to invariant subspaces
-admitting an orthogonal projection, and for a unitary group representation may be tested on any
-finite generating set.
+vectors in this representation (and in the representation itself when `ρ.invariants = ⊥`). Every
+representation of a finite group — and more generally every group representation with finite image —
+has spectral gap. Spectral gap is invariant under linear isometric equivalences and surjective group
+or monoid pullbacks, passes to invariant subspaces admitting an orthogonal projection, and for a
+unitary group representation may be tested on any finite generating set.
 Neither completeness nor a topology on the acting group is needed here.
 
 ## Main definitions and results
 
 * `ContRepresentation.HasSpectralGap`: finite quadratic control of `ρ.invariantsᗮ`.
-* `ContRepresentation.hasSpectralGap_iff_not_hasAlmostInvariantVectors`: equivalence with the
-  absence of almost invariant vectors in `hρ.invariantsOrthogonal`.
-* `ContRepresentation.hasSpectralGap_restrict_iff_of_surjective` and
+* `ContRepresentation.hasSpectralGap_iff_not_hasAlmostInvariantVectors` and
+  `IsUnitary.hasSpectralGap_iff_not_hasAlmostInvariantVectors_of_invariants_eq_bot`:
+  equivalence with the absence of almost invariant vectors in `hρ.invariantsOrthogonal` (or in `ρ`
+  when `ρ.invariants = ⊥`).
+* `ContRepresentation.invariants_restrict_of_surjective`,
+  `ContRepresentation.hasSpectralGap_restrict_iff_of_surjective`, and
   `ContRepresentation.hasSpectralGap_iff_of_linearIsometryEquiv`: invariance under surjective
   pullbacks and isometric equivalences.
 * `ContRepresentation.hasSpectralGap_of_finite` and
@@ -55,6 +58,15 @@ open scoped InnerProductSpace
 
 namespace ContRepresentation
 
+/-- Restriction along a surjective monoid homomorphism leaves the invariant subspace unchanged. -/
+theorem invariants_restrict_of_surjective {R G H V : Type*} [Ring R] [Monoid G] [Monoid H]
+    [AddCommGroup V] [TopologicalSpace V] [IsTopologicalAddGroup V] [Module R V]
+    (ρ : ContRepresentation R G V) {f : H →* G} (hf : Function.Surjective f) :
+    (ρ.restrict f).invariants = ρ.invariants := by
+  ext v
+  simp only [mem_invariants, restrict_apply_apply]
+  exact ⟨fun h g ↦ by obtain ⟨x, rfl⟩ := hf g; exact h x, fun h x ↦ h (f x)⟩
+
 variable {𝕜 G V : Type*} [RCLike 𝕜] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
 
 section Monoid
@@ -77,14 +89,6 @@ theorem hasSpectralGap_def (ρ : ContRepresentation 𝕜 G V) :
 theorem hasSpectralGap_of_subsingleton [Subsingleton V] (ρ : ContRepresentation 𝕜 G V) :
     ρ.HasSpectralGap :=
   ⟨∅, 1, zero_lt_one, fun v _ ↦ by simp [Subsingleton.elim v 0]⟩
-
-/-- Restriction along a surjective monoid homomorphism leaves the invariant subspace unchanged. -/
-theorem invariants_restrict_of_surjective {H : Type*} [Monoid H] (ρ : ContRepresentation 𝕜 G V)
-    {f : H →* G} (hf : Function.Surjective f) :
-    (ρ.restrict f).invariants = ρ.invariants := by
-  ext v
-  simp only [mem_invariants, restrict_apply_apply]
-  exact ⟨fun h g ↦ by obtain ⟨x, rfl⟩ := hf g; exact h x, fun h x ↦ h (f x)⟩
 
 /-- Restriction along a surjective monoid homomorphism preserves and reflects spectral gap. -/
 theorem hasSpectralGap_restrict_iff_of_surjective {H : Type*} [Monoid H]
@@ -177,6 +181,17 @@ theorem hasSpectralGap_iff_not_hasAlmostInvariantVectors
       _ ≤ c⁻¹ * ∑ g ∈ F, ‖ρ g v - v‖ ^ 2 :=
         mul_le_mul_of_nonneg_left hbound (inv_nonneg.mpr hc.le)
 
+/-- When a unitary representation has no nonzero invariant vectors, spectral gap is equivalent to
+the absence of almost invariant vectors in the representation itself. -/
+theorem IsUnitary.hasSpectralGap_iff_not_hasAlmostInvariantVectors_of_invariants_eq_bot
+    {ρ : ContRepresentation 𝕜 G V} (hρ : ρ.IsUnitary) (hinv : ρ.invariants = ⊥) :
+    ρ.HasSpectralGap ↔ ¬ρ.HasAlmostInvariantVectors := by
+  have horth : ρ.invariantsᗮ = ⊤ := by rw [hinv, Submodule.bot_orthogonal_eq_top]
+  let e := LinearIsometryEquiv.ofTop _ _ horth
+  rw [ρ.hasSpectralGap_iff_not_hasAlmostInvariantVectors hρ,
+    hasAlmostInvariantVectors_iff_of_linearIsometryEquiv e
+      fun g v ↦ hρ.coe_invariantsOrthogonal_apply g v]
+
 end Monoid
 
 section Group
@@ -247,57 +262,6 @@ theorem HasSpectralGap.subrepresentation {ρ : ContRepresentation 𝕜 G V}
       _ = 0 := by rw [h1, h2, add_zero]
   simpa only [← Submodule.norm_coe, Submodule.coe_sub, coe_subrepresentation_apply] using
     hF (x : V) hx'
-
-/-- **1-cocycle word-length bound.** For a unitary group representation, the displacement by any
-element in the subgroup generated by a finite set `S` is uniformly bounded by a multiple of the
-sum of displacements over `S`. -/
-theorem IsUnitary.exists_norm_sub_le_sum_of_mem_closure {ρ : ContRepresentation 𝕜 G V}
-    (hρ : ρ.IsUnitary) (S : Finset G) {g : G} (hg : g ∈ Subgroup.closure (S : Set G)) :
-    ∃ N : ℕ, ∀ v : V, ‖ρ g v - v‖ ≤ N * ∑ s ∈ S, ‖ρ s v - v‖ := by
-  induction hg using Subgroup.closure_induction with
-  | mem s hs =>
-    refine ⟨1, fun v ↦ ?_⟩
-    rw [Nat.cast_one, one_mul]
-    exact Finset.single_le_sum (f := fun t ↦ ‖ρ t v - v‖) (fun _ _ ↦ norm_nonneg _) hs
-  | one =>
-    exact ⟨0, fun v ↦ by simp⟩
-  | mul x y _ _ ihx ihy =>
-    obtain ⟨Nx, hNx⟩ := ihx
-    obtain ⟨Ny, hNy⟩ := ihy
-    refine ⟨Nx + Ny, fun v ↦ ?_⟩
-    have hdecomp : ρ (x * y) v - v = ρ x (ρ y v - v) + (ρ x v - v) := by
-      rw [map_mul, mul_apply_eq_comp, map_sub, sub_add_sub_cancel]
-    calc ‖ρ (x * y) v - v‖
-        = ‖ρ x (ρ y v - v) + (ρ x v - v)‖ := by rw [hdecomp]
-      _ ≤ ‖ρ x (ρ y v - v)‖ + ‖ρ x v - v‖ := norm_add_le _ _
-      _ = ‖ρ y v - v‖ + ‖ρ x v - v‖ := by rw [hρ.norm_map]
-      _ ≤ Ny * ∑ s ∈ S, ‖ρ s v - v‖ + Nx * ∑ s ∈ S, ‖ρ s v - v‖ :=
-          add_le_add (hNy v) (hNx v)
-      _ = (Nx + Ny : ℕ) * ∑ s ∈ S, ‖ρ s v - v‖ := by push_cast; ring
-  | inv x _ ihx =>
-    obtain ⟨Nx, hNx⟩ := ihx
-    refine ⟨Nx, fun v ↦ ?_⟩
-    have hinv : ρ x⁻¹ (ρ x v - v) = v - ρ x⁻¹ v := by
-      rw [map_sub, ← mul_apply_eq_comp, ← map_mul, inv_mul_cancel, map_one, one_apply_eq_self]
-    calc ‖ρ x⁻¹ v - v‖
-        = ‖v - ρ x⁻¹ v‖ := norm_sub_rev _ _
-      _ = ‖ρ x⁻¹ (ρ x v - v)‖ := by rw [hinv]
-      _ = ‖ρ x v - v‖ := hρ.norm_map _ _
-      _ ≤ Nx * ∑ s ∈ S, ‖ρ s v - v‖ := hNx v
-
-/-- Squared form of `IsUnitary.exists_norm_sub_le_sum_of_mem_closure`. -/
-theorem IsUnitary.exists_norm_sub_sq_le_sum_of_mem_closure {ρ : ContRepresentation 𝕜 G V}
-    (hρ : ρ.IsUnitary) (S : Finset G) {g : G} (hg : g ∈ Subgroup.closure (S : Set G)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ v : V, ‖ρ g v - v‖ ^ 2 ≤ C * ∑ s ∈ S, ‖ρ s v - v‖ ^ 2 := by
-  obtain ⟨N, hN⟩ := hρ.exists_norm_sub_le_sum_of_mem_closure S hg
-  refine ⟨(N : ℝ) ^ 2 * S.card, by positivity, fun v ↦ ?_⟩
-  calc ‖ρ g v - v‖ ^ 2
-      ≤ ((N : ℝ) * ∑ s ∈ S, ‖ρ s v - v‖) ^ 2 :=
-        pow_le_pow_left₀ (norm_nonneg _) (hN v) 2
-    _ = (N : ℝ) ^ 2 * (∑ s ∈ S, ‖ρ s v - v‖) ^ 2 := mul_pow _ _ 2
-    _ ≤ (N : ℝ) ^ 2 * (S.card * ∑ s ∈ S, ‖ρ s v - v‖ ^ 2) :=
-        mul_le_mul_of_nonneg_left sq_sum_le_card_mul_sum_sq (sq_nonneg _)
-    _ = (N : ℝ) ^ 2 * S.card * ∑ s ∈ S, ‖ρ s v - v‖ ^ 2 := (mul_assoc _ _ _).symm
 
 /-- If a unitary group representation has spectral gap and `S` is a finite generating set of `G`,
 then `S` itself witnesses the spectral-gap inequality. -/

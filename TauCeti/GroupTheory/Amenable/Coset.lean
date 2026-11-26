@@ -7,7 +7,6 @@ module
 
 public import Mathlib.GroupTheory.GroupAction.Quotient
 public import TauCeti.GroupTheory.Amenable.DiscreteFoelner
-import TauCeti.Algebra.Group.Action.Pointwise.Finset
 
 /-!
 # Følner sets on homogeneous coset spaces
@@ -22,8 +21,8 @@ transfers of finite Følner sets between `G` and `G ⧸ H`:
   chosen coset representatives of `F₁` on the right by a Følner set of `H` adapted to the section
   1-cocycle `c(g, q) = s(q)⁻¹ g s(g⁻¹ • q) ∈ H`.
 * **Reiter coset pushforward** (`TauCeti.exists_finset_quotient_card_smul_symmDiff_lt`): when `G`
-  has Følner sets, summing a finitely supported Reiter probability density on `G` along the fibers
-  of `G → G ⧸ H` produces an almost invariant probability density on `G ⧸ H`, hence finite
+  has Følner sets, pushing a finitely supported Reiter probability density on `G` forward along
+  `G → G ⧸ H` (`TauCeti.exists_finset_card_smul_symmDiff_lt_of_equivariant`) produces finite
   nonempty Følner sets in `G ⧸ H` for every finite `K ⊆ G` and `ε > 0`.
 
 Together these imply `TauCeti.hasFoelnerSets_iff_exists_finset_quotient`: when `H` has Følner sets,
@@ -64,6 +63,7 @@ theorem exists_finset_card_smul_symmDiff_lt_of_quotient [DecidableEq G] {H : Sub
     (hF₁ : ∀ g ∈ K, (#((g • F₁) ∆ F₁) : ℝ) < (ε / 2) * #F₁) :
     ∃ E : Finset G, E.Nonempty ∧ ∀ g ∈ K, (#((g • E) ∆ E) : ℝ) < ε * #E := by
   classical
+  -- Step 1: Identify `(G ⧸ H) × H` injectively with `G` via `Quotient.out` and form the 1-cocycle.
   let s : G ⧸ H → G := Quotient.out
   have hs (q : G ⧸ H) : (s q : G ⧸ H) = q := QuotientGroup.out_eq' q
   let φ : (G ⧸ H) × H → G := fun p ↦ s p.1 * (p.2 : G)
@@ -79,8 +79,7 @@ theorem exists_finset_card_smul_symmDiff_lt_of_quotient [DecidableEq G] {H : Sub
     rcases p₂ with ⟨q₂, h₂⟩
     dsimp only at h1
     subst h1
-    have h2 : (h₁ : G) = h₂ := mul_left_cancel hp
-    exact Prod.ext rfl (Subtype.ext h2)
+    exact Prod.ext rfl (Subtype.ext (mul_left_cancel hp))
   have hc_mem (g : G) (q : G ⧸ H) : (s q)⁻¹ * (g * s (g⁻¹ • q)) ∈ H := by
     apply QuotientGroup.eq.mp
     rw [hs q, ← smul_eq_mul, MulAction.Quotient.mk_smul_out, smul_inv_smul]
@@ -88,12 +87,14 @@ theorem exists_finset_card_smul_symmDiff_lt_of_quotient [DecidableEq G] {H : Sub
   have hgφ (g : G) (q : G ⧸ H) (h : H) : g * φ (g⁻¹ • q, h) = φ (q, c g q * h) := by
     simp only [φ, c, Subgroup.coe_mul]
     group
+  -- Step 2: Choose a Følner set `F₂ ⊆ H` for the finite set of cocycle values `c(K × F₁)`.
   let K_H : Finset H := (K ×ˢ F₁).image fun p ↦ c p.1 p.2
   obtain ⟨F₂, hF₂_ne, hF₂⟩ := hasFoelnerSets_iff.mp hH K_H (ε / 4) (by positivity)
   let E : Finset G := (F₁ ×ˢ F₂).map ⟨φ, hφ_inj⟩
   have hE_ne : E.Nonempty := (hF₁_ne.product hF₂_ne).map
   have hE_card : #E = #F₁ * #F₂ := by simp [E]
   refine ⟨E, hE_ne, fun g hg ↦ ?_⟩
+  -- Step 3: Decompose `E \ g • E` into cosets outside `g • F₁` and fiberwise cocycle boundaries.
   have hE_symm : #((g • E) ∆ E) = 2 * #(E \ g • E) := by
     rw [card_smul_finset_symmDiff, card_sdiff_comm (card_smul_finset g E)]
   have hF₁_symm : #((g • F₁) ∆ F₁) = 2 * #(F₁ \ g • F₁) := by
@@ -135,6 +136,7 @@ theorem exists_finset_card_smul_symmDiff_lt_of_quotient [DecidableEq G] {H : Sub
           exact Nat.add_le_add_left card_biUnion_le _
       _ = #(F₁ \ g • F₁) * #F₂ + ∑ q ∈ F₁, #((c g q • F₂) ∆ F₂) := by
           simp
+  -- Step 4: Combine the `(ε / 2)` coset boundary bound and the `(ε / 4)` fiber boundary bounds.
   have hterm1 : 2 * ((#(F₁ \ g • F₁) : ℝ) * #F₂) < (ε / 2) * (#F₁ * #F₂) := by
     have hpos2 : (0 : ℝ) < #F₂ := Nat.cast_pos.mpr hF₂_ne.card_pos
     have h1 : 2 * (#(F₁ \ g • F₁) : ℝ) < (ε / 2) * #F₁ := by
@@ -166,82 +168,14 @@ every finite `K ⊆ G`, and `ε > 0`, there is a finite nonempty `F₁ : Finset 
 theorem exists_finset_quotient_card_smul_symmDiff_lt (hG : HasFoelnerSets G) (H : Subgroup G)
     [DecidableEq (G ⧸ H)] (K : Finset G) {ε : ℝ} (hε : 0 < ε) :
     ∃ F₁ : Finset (G ⧸ H), F₁.Nonempty ∧ ∀ g ∈ K, (#((g • F₁) ∆ F₁) : ℝ) < ε * #F₁ := by
-  classical
   let : TopologicalSpace G := ⊥
   have : DiscreteTopology G := ⟨rfl⟩
   have : IsTopologicalGroup G := {}
   have : Amenable G := .of_hasFoelnerSets hG
   obtain ⟨p, hp0, hp_fin, hp1, hp_lt⟩ := Amenable.exists_sum_tsum_abs_sub_lt K hε
-  let S : Finset G := hp_fin.toFinset
-  have hp_out (x : G) (hx : x ∉ S) : p x = 0 := by
-    by_contra hne
-    exact hx (hp_fin.mem_toFinset.mpr hne)
-  let π : G → G ⧸ H := QuotientGroup.mk
-  have hπ_smul (a b : G) : π (a * b) = a • π b :=
-    (MulAction.Quotient.smul_mk H a b).symm
-  let q : G ⧸ H → ℝ := fun y ↦ ∑ x ∈ S with π x = y, p x
-  have hq0 (y : G ⧸ H) : 0 ≤ q y := sum_nonneg fun x _ ↦ hp0 x
-  have hq_out (y : G ⧸ H) (hy : y ∉ S.image π) : q y = 0 :=
-    sum_eq_zero fun x hx ↦
-      absurd ((mem_filter.mp hx).2 ▸ mem_image_of_mem π (mem_filter.mp hx).1) hy
-  have hq_fin : q.HasFiniteSupport := (S.image π).finite_toSet.subset fun y hy ↦ by
-    by_contra hnot
-    exact hy (hq_out y hnot)
-  have hq1 : ∑' y, q y = 1 := by
-    have hp_sum_eq : ∑' x, p x = ∑ x ∈ S, p x := tsum_eq_sum (s := S) hp_out
-    rw [tsum_eq_sum (s := S.image π) hq_out]
-    have hfib : (∑ y ∈ S.image π, ∑ x ∈ S with π x = y, p x) = ∑ x ∈ S, p x :=
-      sum_fiberwise_of_maps_to (fun _ ↦ mem_image_of_mem π) _
-    rw [hfib, ← hp_sum_eq, hp1]
-  have hq_var (g : G) : ∑' y, |q (g⁻¹ • y) - q y| ≤ ∑' x, |p (g⁻¹ * x) - p x| := by
-    let T : Finset G := S ∪ g • S
-    have hS_sub : S ⊆ T := subset_union_left
-    have hp_T (x : G) (hx : x ∉ T) : p (g⁻¹ * x) - p x = 0 := by
-      have hx1 : x ∉ S := fun h ↦ hx (subset_union_left h)
-      have hx2 : g⁻¹ * x ∉ S := fun h ↦ hx (subset_union_right
-        (mem_smul_finset.mpr ⟨g⁻¹ * x, h, mul_inv_cancel_left g x⟩))
-      simp [hp_out x hx1, hp_out (g⁻¹ * x) hx2]
-    have hq_T (y : G ⧸ H) : q y = ∑ x ∈ T with π x = y, p x := by
-      refine sum_subset (filter_subset_filter _ hS_sub) fun x hxT hxS ↦ ?_
-      rw [mem_filter] at hxT hxS
-      exact hp_out x fun hs ↦ hxS ⟨hs, hxT.2⟩
-    have hq_T_inv (y : G ⧸ H) : q (g⁻¹ • y) = ∑ x ∈ T with π x = y, p (g⁻¹ * x) := by
-      have hsub : S ⊆ g⁻¹ • T := fun z hz ↦ mem_smul_finset.mpr
-        ⟨g * z, subset_union_right (mem_smul_finset.mpr ⟨z, hz, rfl⟩), inv_mul_cancel_left g z⟩
-      have h1 : q (g⁻¹ • y) = ∑ z ∈ g⁻¹ • T with π z = g⁻¹ • y, p z := by
-        refine sum_subset (filter_subset_filter _ hsub) fun z hzT hzS ↦ ?_
-        rw [mem_filter] at hzT hzS
-        exact hp_out z fun hs ↦ hzS ⟨hs, hzT.2⟩
-      rw [h1]
-      refine sum_bij (fun z _ ↦ g * z) (fun z hz ↦ ?_) (fun _ _ _ _ h ↦ mul_left_cancel h)
-        (fun x hx ↦ ?_) (fun z _ ↦ by simp)
-      · rw [mem_filter] at hz ⊢
-        rcases mem_smul_finset.mp hz.1 with ⟨x, hx, rfl⟩
-        refine ⟨by simpa using hx, ?_⟩
-        rw [hπ_smul, hz.2, smul_inv_smul]
-      · rw [mem_filter] at hx
-        refine ⟨g⁻¹ * x, mem_filter.mpr ⟨mem_smul_finset.mpr ⟨x, hx.1, rfl⟩, ?_⟩,
-          mul_inv_cancel_left g x⟩
-        rw [hπ_smul, hx.2]
-    have hdiff_out (y : G ⧸ H) (hy : y ∉ T.image π) : |q (g⁻¹ • y) - q y| = 0 := by
-      rw [hq_T y, hq_T_inv y]
-      have hemp : {x ∈ T | π x = y} = ∅ := filter_eq_empty_iff.mpr fun x hx hxy ↦
-        hy (hxy ▸ mem_image_of_mem π hx)
-      simp [hemp]
-    rw [tsum_eq_sum (s := T.image π) hdiff_out,
-      tsum_eq_sum (s := T) fun x hx ↦ by simp [hp_T x hx]]
-    calc ∑ y ∈ T.image π, |q (g⁻¹ • y) - q y|
-        = ∑ y ∈ T.image π, |∑ x ∈ T with π x = y, (p (g⁻¹ * x) - p x)| := by
-          refine sum_congr rfl fun y _ ↦ ?_
-          rw [hq_T y, hq_T_inv y, ← sum_sub_distrib]
-      _ ≤ ∑ y ∈ T.image π, ∑ x ∈ T with π x = y, |p (g⁻¹ * x) - p x| :=
-          sum_le_sum fun y _ ↦ abs_sum_le_sum_abs _ _
-      _ = ∑ x ∈ T, |p (g⁻¹ * x) - p x| :=
-          sum_fiberwise_of_maps_to (fun _ ↦ mem_image_of_mem π) _
-  have hsum_q : ∑ g ∈ K, ∑' y, |q (g⁻¹ • y) - q y| < ε * ∑' y, q y := by
-    rw [hq1, mul_one]
-    exact (sum_le_sum fun g _ ↦ hq_var g).trans_lt hp_lt
-  exact exists_finset_card_smul_symmDiff_lt_of_sum_tsum_lt hq0 hq_fin hsum_q
+  exact exists_finset_card_smul_symmDiff_lt_of_equivariant
+    (π := (QuotientGroup.mk : G → G ⧸ H)) (fun g x ↦ (MulAction.Quotient.smul_mk H g x).symm)
+    hp0 hp_fin (by simpa [hp1] using hp_lt)
 
 /-- **Mackey–Eymard coset Følner equivalence.** When `H` has Følner sets, `G` has Følner sets if and
 only if the left coset space `G ⧸ H` admits finite nonempty Følner sets for every finite `K ⊆ G` and
