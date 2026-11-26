@@ -47,10 +47,6 @@ induction for disjoint unions.
   restriction (`TauCeti.deRhamHom_map`), so it is bijective on the union when it is on every `s i`
   (`TauCeti.bijective_deRhamHom_iSup`).
 
-What remains of the induction is its Mayer–Vietoris step, the compatibility of the de Rham
-homomorphism with the connecting maps `TauCeti.deRhamCohomology.mayerVietorisδ` and
-`TopCat.singularCohomologyMayerVietorisδ`.
-
 ## Main results
 
 * `TauCeti.singularCohomologyZeroEval_deRhamHom`: in degree zero, the de Rham homomorphism
@@ -189,7 +185,7 @@ theorem bijective_deRhamHom_iSup {ι : Type} {s : ι → TopologicalSpace.Opens 
     (contMDiff_inclusion (le_iSup s i) : ContMDiff I I ∞ _) k
   refine ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦ hρ.1 (funext fun i ↦ ?_), fun u ↦ ?_⟩
   · refine (h i).1 ?_
-    rw [LinearMap.pi_apply, hnat, hc, map_zero, map_zero, Pi.zero_apply, map_zero]
+    simp [hnat, hc]
   · choose c hc using fun i ↦ (h i).2 (TopCat.singularCohomologyMap
       (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion (le_iSup s i),
         continuous_inclusion (le_iSup s i)⟩) k u)

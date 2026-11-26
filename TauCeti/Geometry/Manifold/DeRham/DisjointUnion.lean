@@ -133,8 +133,7 @@ private theorem mem_exactForms_of_forall (hs : Pairwise (Disjoint on s))
     choose ψ hψ using h
     obtain ⟨η, hη⟩ := SmoothForm.surjective_pi_mpullback_inclusion_iSup (I := I) hs ψ
     refine ⟨η, SmoothForm.injective_pi_mpullback_inclusion_iSup (s := s) (funext fun i ↦ ?_)⟩
-    rw [LinearMap.pi_apply, LinearMap.pi_apply, ← SmoothForm.mextDerivₗ_mpullback, ← hψ i,
-      ← congrFun hη i, LinearMap.pi_apply]
+    simp [← SmoothForm.mextDerivₗ_mpullback, ← hψ i, ← congrFun hη i]
 
 /-- **De Rham cohomology of a disjoint union of open sets.** Restriction identifies the de Rham
 cohomology of a union of pairwise disjoint open sets `s i` with the product of the de Rham
