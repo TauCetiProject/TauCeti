@@ -51,7 +51,7 @@ fundamental class of `S²ⁿ⁺¹` to `±[S¹]`; the sign depends on the orienta
   lives over the fundamental class of `CPⁿ` at every point.
 * `TauCeti.IsFundamentalClass.livesOverFundamentalClass_hopfSphere2`: a fundamental class of `S³`
   lives over the fundamental class of `S²` at every point, for the Hopf map `S³ → S²`.
-* `ComplexProjectiveSpace.exists_isFundamentalClass_and_livesOverFundamentalClass_hopfSphere2`:
+* `TauCeti.exists_isFundamentalClass_and_livesOverFundamentalClass_hopfSphere2`:
   such a fundamental class exists.
 
 ## References
@@ -104,20 +104,6 @@ theorem hopfShriek_apply (R : Type) [Ring R] (k : Fin (n + 1)) {b : ComplexProje
         (2 * n + 1) (by rw [finrank_real_of_complex, Module.finrank_fin_fun]; ring)).hom.hom
         ((fiberLocalization (ModuleCat.of R R) (hopfHom n) b (2 * n + 1)).hom μ) :=
   (rfl)
-
-/-- The parametrization `t ↦ e^{2πit} v` of the fibre of the Hopf fibration over `[v]` by the
-circle `ℝ / ℤ`. -/
-def hopfFiberCircleHomeomorph (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) :
-    AddCircle (1 : ℝ) ≃ₜ mk n ⁻¹' {mk n v} :=
-  ((AddCircle.homeomorphCircle one_ne_zero).trans Circle.homeomorphSphere).trans
-    (hopfFiberHomeomorph v)
-
-@[simp]
-theorem coe_hopfFiberCircleHomeomorph_apply (v : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1)
-    (t : AddCircle (1 : ℝ)) :
-    (hopfFiberCircleHomeomorph v t : EuclideanSpace ℂ (Fin (n + 1))) =
-      (AddCircle.toCircle t : ℂ) • (v : EuclideanSpace ℂ (Fin (n + 1))) := by
-  simp [hopfFiberCircleHomeomorph, AddCircle.homeomorphCircle_apply]
 
 /-- The **class of the fibre** of the Hopf fibration over `[v]`: the integral class of the loop
 `t ↦ e^{2πit} v`, the image of the circuit class of `ℝ / ℤ` under
@@ -233,8 +219,6 @@ theorem livesOverFundamentalClass_hopfSphere2 [Nontrivial R]
 
 end IsFundamentalClass
 
-namespace ComplexProjectiveSpace
-
 /-- **`S³` has a fundamental class living over `[S²]`** for the Hopf map `S³ → S²`, with
 coefficients in every nontrivial ring: the sphere `S³` has a fundamental class
 (`TauCeti.exists_isFundamentalClass_sphere`), and every fundamental class lives over the
@@ -249,7 +233,5 @@ theorem exists_isFundamentalClass_and_livesOverFundamentalClass_hopfSphere2 (R :
   have ⟨μ, hμ⟩ := exists_isFundamentalClass_sphere (E := EuclideanSpace ℂ (Fin 2)) (d := 2)
     (by rw [finrank_real_of_complex, finrank_euclideanSpace_fin]) R
   ⟨μ, hμ, hμ.livesOverFundamentalClass_hopfSphere2⟩
-
-end ComplexProjectiveSpace
 
 end TauCeti

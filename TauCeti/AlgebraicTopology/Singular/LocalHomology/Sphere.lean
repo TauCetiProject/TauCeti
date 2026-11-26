@@ -37,7 +37,7 @@ class whose image under a map `Sⁿ ⟶ Y` computes local degrees.
 * `TauCeti.exists_isFundamentalClass_sphere`: so the unit sphere of every real normed space of
   finite dimension at least `2` has a fundamental class.
 
-Coefficients are an object `R` of an abelian category with coproducts, except in the last two
+Coefficients are an object `R` of an abelian category with coproducts, except in the last three
 results, which are about `k`-modules.
 -/
 
