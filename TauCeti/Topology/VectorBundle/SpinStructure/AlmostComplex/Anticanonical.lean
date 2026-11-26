@@ -182,6 +182,22 @@ def unitaryFrameWedge {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
     ((unitaryFrameBasis h₀ h₂ hJc p).reindex (finCongr (finrank_model_eq_two hF).symm)))
 
 include h₀ h₂ hJc in
+/-- The wedge of a unitary frame `p` is `p e₀ ∧ p e₂`, the wedge of the vectors `p (e (2i))`. -/
+theorem unitaryFrameWedge_eq_ιMulti {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) :
+    unitaryFrameWedge (G := G) h₀ h₂ hJc p =
+      (DetBundle.linearEquiv ℂ G Jc.Fiber x).symm (exteriorPower.ιMulti ℂ (finrank ℂ G)
+        fun i ↦ (Jc.fiberEquiv x).symm (p.val.frame (e ⟨2 * i.val, by
+          have := (Fact.out : finrank ℝ F = 2 * finrank ℂ G)
+          omega⟩))) := by
+  rw [unitaryFrameWedge]
+  congr 2
+  ext i
+  rw [Basis.coe_reindex, Function.comp_apply, unitaryFrameBasis_apply,
+    Bundle.ContinuousComplexStructure.fiberEquiv_symm_apply]
+  -- The two frame indices agree, `finCongr` leaving the value of an index unchanged.
+  rfl
+
+include h₀ h₂ hJc in
 /-- **The wedge of a unitary frame transforms by the complex determinant**: the wedge of `p • g`
 is `det_ℂ g` times the wedge of `p`, `det_ℂ g` the determinant of the unitary matrix of `g` in the
 model frame `e`. -/
@@ -244,8 +260,11 @@ include hJc in
 private theorem unitaryFrameDetLinearMap_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
     (w : SpinCStructure.LiftDeterminantModel (unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂)) :
     unitaryFrameDetLinearMap (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x (AssociatedBundle.mk _ p w) =
-      SpinCStructure.LiftDeterminantModel.toComplex w • unitaryFrameWedge (G := G) h₀ h₂ hJc p := by
-  exact unitaryFrameDetLinearMap_mk_aux h₀ h₂ hJc _ p w
+      SpinCStructure.LiftDeterminantModel.toComplex w • unitaryFrameWedge (G := G) h₀ h₂ hJc p :=
+  -- By definition, `unitaryFrameDetLinearMap` applies as the left side of
+  -- `unitaryFrameDetLinearMap_mk_aux` for the frame `q := Classical.arbitrary _`; unfolding it
+  -- with `rw [unitaryFrameDetLinearMap]` instead exceeds the heartbeat limit.
+  unitaryFrameDetLinearMap_mk_aux h₀ h₂ hJc _ p w
 
 include hJc in
 /-- The anticanonical comparison is injective: the wedge of a unitary frame does not vanish. -/
@@ -274,21 +293,19 @@ bundle, with values in the total space of `Λ²_ℂ (E, J)`. -/
 theorem continuous_unitaryFrameWedge :
     Continuous fun p : TotalSpace (Subgroup.centralizer {J₀}) (unitaryFrameLift hJ hJ₂ hJ₀ hF).P ↦
       TotalSpace.mk' ℂ p.proj (unitaryFrameWedge (G := G) h₀ h₂ hJc p.snd) := by
+  have := finrank_model_eq_two (G := G) hF
+  simp_rw [unitaryFrameWedge_eq_ιMulti]
   refine DetBundle.continuous_totalSpaceMk_ιMulti (FiberBundle.continuous_proj _ _) fun i ↦ ?_
-  set j : Fin 2 := (finCongr (finrank_model_eq_two (G := G) hF).symm).symm i
   refine ((Jc.totalSpaceHomeomorph G).symm.continuous.comp
-    (continuous_frame_apply (e ⟨2 * j.val, by omega⟩))).congr fun p ↦ ?_
-  -- `Jc.Fiber` is `E` with the same vectors, `Jc.fiberEquiv` being the identity.
-  simp [j, Basis.coe_reindex, unitaryFrameBasis_apply,
-    Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply,
-    Bundle.ContinuousComplexStructure.fiberEquiv_symm_apply]
+    (continuous_frame_apply (e ⟨2 * i.val, by omega⟩))).congr fun p ↦ ?_
+  simp [Bundle.ContinuousComplexStructure.totalSpaceHomeomorph_symm_apply]
 
 variable (hJ hJ₂ hJ₀ hF e)
 
 include hJc in
 /-- **The determinant line `P ×_{det_ℂ} ℂ` is the anticanonical line** `Λ²_ℂ (E, J)`, at a
 fibre: the complex linear isomorphism sending `[p, w]` to `w (p e₀ ∧ p e₂)` in every unitary frame
-`p` (`TauCeti.OrthonormalFrameBundle.unitaryFrameDetLinearMap_mk`). -/
+`p` (`TauCeti.OrthonormalFrameBundle.unitaryFrameDetEquiv_mk`). -/
 def unitaryFrameDetEquiv (x : X) :
     AssociatedBundle (Subgroup.centralizer {J₀}) (unitaryFrameLift hJ hJ₂ hJ₀ hF).P
         (SpinCStructure.LiftDeterminantModel (unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂)) x
@@ -315,6 +332,9 @@ theorem unitaryFrameDetEquiv_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF
     unitaryFrameDetEquiv (G := G) hJ hJ₂ hJ₀ hF e h₀ h₂ hJc x (AssociatedBundle.mk _ p w) =
       SpinCStructure.LiftDeterminantModel.toComplex w • unitaryFrameWedge (G := G) h₀ h₂ hJc p := by
   rw [← unitaryFrameDetLinearMap_mk h₀ h₂ hJc p w]
+  -- `unitaryFrameDetEquiv` is `LinearEquiv.ofBijective unitaryFrameDetLinearMap` with continuity
+  -- proofs attached, so it applies as `unitaryFrameDetLinearMap` by definition; Mathlib has no
+  -- rewrite lemma for the coercion of such a `ContinuousLinearEquiv` structure instance.
   rfl
 
 /-- **The anticanonical comparison is continuous** on total spaces. -/

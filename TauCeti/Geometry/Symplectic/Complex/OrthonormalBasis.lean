@@ -1067,25 +1067,8 @@ theorem coe_centralizerToUnitaryGroup_apply_eq_inner (g : Subgroup.centralizer {
           (e ⟨2 * j.val, by omega⟩)) : ℂ) +
         Complex.I * inner ℝ (e ⟨2 * i.val + 1, by omega⟩) (((g : unitary (V →L[ℝ] V)) :
           V →L[ℝ] V) (e ⟨2 * j.val, by omega⟩)) := by
-  let J : TauCeti.AlmostComplexStructure V :=
-    ⟨(J₀ : V →L[ℝ] V).toLinearMap, LinearMap.ext fun v ↦ by simpa using hJ₀ v⟩
-  let := J.complexModule
-  let b := TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour (J := J) (e := e) h₀ h₂
-  have hb (w : V) : e.complexCoords 2 w = b.equivFun w :=
-    (TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_equivFun_apply h₀ h₂ w).symm
-  have hj : (e.complexCoords 2).symm (Pi.single j 1) = e ⟨2 * j.val, by omega⟩ := by
-    have hbj : b j = e ⟨2 * j.val, by omega⟩ := by
-      fin_cases j
-      exacts [TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_zero h₀ h₂,
-        TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_one h₀ h₂]
-    rw [LinearEquiv.symm_apply_eq, hb, ← hbj]
-    ext k
-    rw [Module.Basis.equivFun_self]
-    simp [Pi.single_apply, eq_comm]
-  rw [coe_centralizerToUnitaryGroup_apply, hj, hb, Module.Basis.equivFun_apply]
-  fin_cases i
-  exacts [TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_zero h₀ h₂ _,
-    TauCeti.AlmostComplexStructure.basisOfOrthonormalBasisFinFour_repr_apply_one h₀ h₂ _]
+  rw [coe_centralizerToUnitaryGroup_apply, complexCoords_two_symm_apply, complexCoords_two_apply]
+  fin_cases i <;> fin_cases j <;> simp [mul_comm]
 
 /-- The matrix of a complex rotation depends continuously on it, for the operator norm. -/
 @[fun_prop]
