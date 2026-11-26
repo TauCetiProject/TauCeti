@@ -323,11 +323,8 @@ theorem lengthIndex_inv_smul_inf [Nontrivial O] (B : Submodule O V) [B.IsFullLat
     (W : Submodule K V) (t : Kˣ) :
     lengthIndex (t⁻¹ • B ⊓ W.restrictScalars O) (B ⊓ W.restrictScalars O) =
       WithZero.log (Ring.ordFrac O (t : K)) * finrank K W := by
-  -- `S ⊓ W` is the image in `V` of the pullback of `S` to `W`.
-  have e (S : Submodule O V) : S ⊓ W.restrictScalars O =
-      (S.comap (W.subtype.restrictScalars O)).map (W.subtype.restrictScalars O) := by
-    rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
-  rw [e, e, lengthIndex_map (f := W.subtype.restrictScalars O) W.injective_subtype,
+  rw [inf_restrictScalars_eq_map_comap K, inf_restrictScalars_eq_map_comap K,
+    lengthIndex_map (f := W.subtype.restrictScalars O) W.injective_subtype,
     lengthIndex_comap_inv_smul K B W t]
 
 /-- **The index on subspaces.** For full lattices `A`, `B`, a subspace `W` of `V` and `t ∈ Kˣ`,
@@ -368,9 +365,8 @@ theorem lengthIndex_inf_le_log_ordFrac_mul_finrank_add [Nontrivial O] {A B : Sub
     exact_mod_cast ENat.toNat_le_toNat h₁
       (length_quotient_comap_subtype_ne_top K (IsLattice.fg K A) (t⁻¹ • B))
   have : (B.comap ι).IsFullLattice K := isFullLattice_comap B W.subtype W.injective_subtype
-  have e (S : Submodule O V) : S ⊓ W.restrictScalars O = (S.comap ι).map ι := by
-    rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
-  rw [e, e, lengthIndex_map (f := ι) W.injective_subtype,
+  rw [inf_restrictScalars_eq_map_comap K, inf_restrictScalars_eq_map_comap K,
+    lengthIndex_map (f := ι) W.injective_subtype,
     ← lengthIndex_add_lengthIndex K _ ((t⁻¹ • B).comap ι), lengthIndex_comap_inv_smul K B W t]
   linarith [lengthIndex_le (A.comap ι) ((t⁻¹ • B).comap ι)]
 

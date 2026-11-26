@@ -52,6 +52,8 @@ group of `L`, hence `GL_n` of the coefficients in a basis of `L`.
 * `Module.Finite.of_isFullLattice`: a module containing a full lattice is finite.
 * `Submodule.comap_restrictScalars_units_smul`: pulling back along a `K`-linear map commutes with
   homotheties.
+* `Submodule.inf_restrictScalars_eq_map_comap`: `S ⊓ W` for a subspace `W` is the image of the
+  pullback of `S` to `W`.
 * `Submodule.isFullLattice_map_of_det_ne_zero`: a `K`-linear map with nonzero determinant maps a
   full lattice to a full lattice.
 * `Submodule.finrank_eq_finrank`: a full lattice and its ambient space have the
@@ -369,16 +371,22 @@ theorem comap_restrictScalars_units_smul {V' : Type*} [AddCommGroup V'] [Module 
     [Module O V'] [IsScalarTower O K V'] (f : V' →ₗ[K] V) (t : Kˣ) (S : Submodule O V) :
     (t • S).comap (f.restrictScalars O) = t • S.comap (f.restrictScalars O) := by
   ext x
-  simp only [mem_comap, LinearMap.restrictScalars_apply]
+  -- `t • S` is the action of the scalar `(t : K)`; test membership with its preimage `(t : K)⁻¹`.
+  simp only [Units.smul_def, mem_comap, mem_smul_pointwise_iff_exists,
+    LinearMap.restrictScalars_apply]
   constructor
   · rintro ⟨s, hs, hsx⟩
-    refine ⟨t⁻¹ • x, ?_, smul_inv_smul t x⟩
-    rwa [SetLike.mem_coe, mem_comap, LinearMap.restrictScalars_apply, f.map_smul_of_tower, ← hsx,
-      DistribSMul.toLinearMap_apply, ← Units.smul_def, inv_smul_smul]
+    refine ⟨(t : K)⁻¹ • x, ?_, smul_inv_smul₀ t.ne_zero x⟩
+    rwa [map_smul, ← hsx, inv_smul_smul₀ t.ne_zero]
   · rintro ⟨y, hy, rfl⟩
-    refine ⟨f y, hy, ?_⟩
-    rw [DistribSMul.toLinearMap_apply, DistribSMul.toLinearMap_apply, ← Units.smul_def,
-      ← Units.smul_def, f.map_smul_of_tower]
+    exact ⟨f y, hy, (map_smul f _ y).symm⟩
+
+/-- For a subspace `W`, `S ⊓ W` is the image in `V` of the pullback of the `O`-submodule `S` to
+`W`. -/
+theorem inf_restrictScalars_eq_map_comap (S : Submodule O V) (W : Submodule K V) :
+    S ⊓ W.restrictScalars O =
+      (S.comap (W.subtype.restrictScalars O)).map (W.subtype.restrictScalars O) := by
+  rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
 
 /-- A `K`-linear `g` with nonzero determinant maps a full lattice `L` to a full lattice. -/
 theorem isFullLattice_map_of_det_ne_zero (L : Submodule O V) [L.IsFullLattice K]
