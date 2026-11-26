@@ -399,6 +399,28 @@ theorem eq_matchingFamilyAlgEquiv_symm_apply_left_iff
   exact ⟨by rintro rfl; exact ⟨hf, hg⟩, fun h =>
     hinj a (Prod.ext (h.1.trans hf.symm) (h.2.trans hg.symm))⟩
 
+/-- The first incident map sends the bundled lift's face value to its prescribed chamber value. -/
+@[simp]
+theorem fst_algebraSectionsLift_apply_left {E : Type*} [Semiring E] [Algebra R E]
+    (α : ∀ b, E →ₐ[R] I.right b)
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (hα : ∀ x a, (α (J.fst a) x, α (J.snd a) x) ∈
+      ((I.fst a).hom.prod (I.snd a).hom).range) (x : E) (a : J.L) :
+    (I.fst a).hom ((I.algebraSectionsLift α hinj hα x).val (.left a)) = α (J.fst a) x := by
+  simp only [algebraSectionsLift, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    fst_matchingFamilyAlgEquiv_symm_apply_left, AlgHom.coe_codRestrict, AlgHom.pi_apply]
+
+/-- The second incident map sends the bundled lift's face value to its prescribed chamber value. -/
+@[simp]
+theorem snd_algebraSectionsLift_apply_left {E : Type*} [Semiring E] [Algebra R E]
+    (α : ∀ b, E →ₐ[R] I.right b)
+    (hinj : ∀ a, Function.Injective ((I.fst a).hom.prod (I.snd a).hom))
+    (hα : ∀ x a, (α (J.fst a) x, α (J.snd a) x) ∈
+      ((I.fst a).hom.prod (I.snd a).hom).range) (x : E) (a : J.L) :
+    (I.snd a).hom ((I.algebraSectionsLift α hinj hα x).val (.left a)) = α (J.snd a) x := by
+  simp only [algebraSectionsLift, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
+    snd_matchingFamilyAlgEquiv_symm_apply_left, AlgHom.coe_codRestrict, AlgHom.pi_apply]
+
 section Maps
 
 variable {I} {I' I'' : MultispanIndex J (AlgCat.{t} R)}
