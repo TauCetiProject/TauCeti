@@ -153,6 +153,7 @@ infrastructure independent of the diamond operators.
   index.
 * `CongruenceSubgroup.Gamma0_one_top`: `Γ₀(1)` is the whole group.
 * `CongruenceSubgroup.Gamma0_prime_index`: `[SL₂(ℤ) : Γ₀(p)] = p + 1` for prime `p`.
+* `CongruenceSubgroup.Gamma1_prime_index`: `[SL₂(ℤ) : Γ₁(p)] = (p - 1) (p + 1)` for prime `p`.
 * `CongruenceSubgroup.Gamma0_relIndex_pow_succ`: `[Γ₀(pᵏ) : Γ₀(p^(k+1))] = p` for `0 < p`
   and `0 < k`.
 * `CongruenceSubgroup.Gamma0_prime_power_index`: `[SL₂(ℤ) : Γ₀(pᵏ)] = p^(k-1) * (p + 1)` for
@@ -847,6 +848,12 @@ private lemma Gamma0_prime_index_surj :
 theorem Gamma0_prime_index : (Gamma0 p).index = p + 1 :=
   Nat.card_eq_of_equiv_fin (Equiv.ofBijective _
     ⟨Gamma0_prime_index_inj p hp, Gamma0_prime_index_surj p hp⟩).symm
+
+/-- `[SL₂(ℤ) : Γ₁(p)] = (p - 1) (p + 1)` for prime `p`. -/
+theorem Gamma1_prime_index : (Gamma1 p).index = (p - 1) * (p + 1) := by
+  have : Fact p.Prime := ⟨hp⟩
+  rw [Gamma1_index, Gamma0_prime_index p hp, Nat.card_eq_fintype_card, ZMod.card_units_eq_totient,
+    Nat.totient_prime hp]
 
 end BaseCase
 

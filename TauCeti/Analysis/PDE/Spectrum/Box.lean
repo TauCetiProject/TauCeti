@@ -12,7 +12,7 @@ import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.Fourier.SineSeries
+import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
