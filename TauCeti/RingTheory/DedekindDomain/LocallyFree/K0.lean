@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.LocallyFree.IdealClass
+public import Mathlib.GroupTheory.Torsion
 import TauCeti.LinearAlgebra.Dimension.Pi
 import TauCeti.LinearAlgebra.Dimension.Prod
 import TauCeti.RingTheory.FractionalIdeal.LinearEquiv
@@ -45,6 +46,11 @@ ideal-class homomorphism and its identification with the locally free class grou
   exactly the classes of rank zero.
 * `TauCeti.LocallyFree.mem_classGroup_iff_rankSteinitz_fst_eq_zero`: the locally free classes are
   exactly the classes of rank zero.
+* `TauCeti.FiniteProjectiveModules.torsion_eq_map_idealClassHom`,
+  `TauCeti.FiniteProjectiveModules.torsion_eq_range_idealClassHom`: the torsion subgroup of
+  projective `K₀` is the image of the torsion subgroup of the class group, hence, for a torsion
+  class group (for instance a finite one, such as that of a ring of integers), a copy of the class
+  group.
 
 ## References
 
@@ -152,6 +158,30 @@ theorem mem_range_idealClassHom_iff
     simp
   · rw [rankSteinitzEquiv_apply, rankSteinitzEquiv_apply, rankSteinitz_idealClassHom]
     exact Prod.ext hx.symm rfl
+
+/-- **Torsion in projective `K₀` of a Dedekind domain.** The torsion subgroup of `K₀(A)` is the
+image of the torsion subgroup of the ideal class group under `c ↦ [I] - [A]` for `I` of class
+`c`. -/
+theorem torsion_eq_map_idealClassHom :
+    AddCommGroup.torsion (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) =
+      (AddCommGroup.torsion (Additive (ClassGroup A))).map (idealClassHom A) := by
+  ext x
+  rw [← (rankSteinitzEquiv A).comap_torsion, AddSubgroup.mem_comap, AddCommGroup.mem_torsion,
+    IsOfFinAddOrder.prod_iff, isOfFinAddOrder_iff_eq_zero, AddSubgroup.mem_map]
+  refine ⟨fun ⟨h1, h2⟩ ↦ ⟨_, h2, (rankSteinitzEquiv A).injective ?_⟩, ?_⟩
+  · simp [← h1]
+  · rintro ⟨c, hc, rfl⟩
+    simpa [AddCommGroup.mem_torsion] using hc
+
+/-- **Torsion in projective `K₀` of a Dedekind domain with torsion class group**, for instance a
+finite one such as that of the ring of integers of a number field (`isAddTorsion_of_finite`): the
+torsion subgroup of `K₀(A)` consists of the reduced ideal classes `[I] - [A]`, a copy of the ideal
+class group. -/
+theorem torsion_eq_range_idealClassHom (h : IsAddTorsion (Additive (ClassGroup A))) :
+    AddCommGroup.torsion (SplitK0.{u} (finiteProjectiveModules A).FullSubcategory) =
+      (idealClassHom A).range := by
+  rw [torsion_eq_map_idealClassHom, AddCommGroup.torsion_eq_top_iff.2 h,
+    ← AddMonoidHom.range_eq_map]
 
 end FiniteProjectiveModules
 
