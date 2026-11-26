@@ -7,8 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restriction.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
+public import TauCeti.Topology.Compactness.SigmaCompact
 import TauCeti.Data.Set.Image
-import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
 # Proper-map base change for Borel–Moore open restriction
@@ -245,25 +245,6 @@ private lemma baseChange_right_square (hf' : IsProperMap f'.hom)
 
 end Helpers
 
-/-- In a Cartesian square `i ≫ f = f' ≫ j` with `f` proper and `i, j` open embeddings, any
-compact exhaustion `KU` of `U` satisfies the closure condition `closure (i '' KU n) ⊆ Set.range i`
-whenever a compact exhaustion `K` of `V` satisfies `closure (j '' K n) ⊆ Set.range j`. -/
-lemma closure_image_subset_range_of_cartesian {U V X Y : TopCat.{v}}
-    {f : X ⟶ Y} {f' : U ⟶ V} {i : U ⟶ X} {j : V ⟶ Y}
-    (hf : IsProperMap f.hom) (hi : IsOpenEmbedding i.hom) (hj : IsOpenEmbedding j.hom)
-    (hsq : i ≫ f = f' ≫ j) (hpre : Set.range i.hom = f.hom ⁻¹' Set.range j.hom)
-    (K : CompactExhaustion V) (KU : CompactExhaustion U)
-    (hK : ∀ n, closure (j.hom '' K n) ⊆ Set.range j.hom) (n : ℕ) :
-    closure (i.hom '' KU n) ⊆ Set.range i.hom := by
-  have hcomm : f.hom ∘ i.hom = j.hom ∘ f'.hom := congrArg (fun g : U ⟶ Y ↦ ⇑g.hom) hsq
-  have hf' : IsProperMap f'.hom :=
-    hf.of_isEmbedding_of_range_eq hi.isEmbedding hj.isEmbedding hcomm hpre
-  obtain ⟨N, hN⟩ := (K.preimage hf').exists_superset_of_isCompact (KU.isCompact n)
-  refine (closure_mono (Set.image_mono hN)).trans ?_
-  simp only [CompactExhaustion.preimage_apply,
-    hj.injective.image_preimage_eq_preimage_image hcomm hpre, hpre]
-  exact (f.hom.continuous.closure_preimage_subset _).trans (Set.preimage_mono (hK N))
-
 /-- **Proper-map base change for exhaustion-explicit open restriction.** For a Cartesian square
 `i ≫ f = f' ≫ j` with `f` proper and `i, j` open embeddings (`range i = f⁻¹(range j)`), the
 pulled-back map `f'` is automatically proper by `IsProperMap.of_isEmbedding_of_range_eq`, and
@@ -279,7 +260,8 @@ theorem borelMooreHomologyMap_comp_borelMooreHomologyRestrictOfExhaustion
     (hK : ∀ n, closure (j.hom '' K n) ⊆ Set.range j.hom) (k : ℕ) :
     borelMooreHomologyMap f hf L k ≫ borelMooreHomologyRestrictOfExhaustion L hj K hK k =
       borelMooreHomologyRestrictOfExhaustion ((pullback f.hom).obj L) hi KU
-          (closure_image_subset_range_of_cartesian hf hi hj hsq hpre K KU hK) k ≫
+          (K.closure_image_subset_range_of_cartesian hf hi.isEmbedding hj.isEmbedding
+            (congrArg (fun g : U ⟶ Y ↦ ⇑g.hom) hsq) hpre KU hK) k ≫
         borelMooreHomologyCoefficientMap
           ((pullbackSquareIso i.hom f.hom f'.hom j.hom (congrArg (·.hom) hsq)).hom.app L) k ≫
         borelMooreHomologyMap f'
@@ -289,9 +271,11 @@ theorem borelMooreHomologyMap_comp_borelMooreHomologyRestrictOfExhaustion
   have hcomm : f.hom ∘ i.hom = j.hom ∘ f'.hom := congrArg (fun g : U ⟶ Y ↦ ⇑g.hom) hsq
   have hf' : IsProperMap f'.hom :=
     hf.of_isEmbedding_of_range_eq hi.isEmbedding hj.isEmbedding hcomm hpre
-  have hKU := closure_image_subset_range_of_cartesian hf hi hj hsq hpre K KU hK
+  have hKU :=
+    K.closure_image_subset_range_of_cartesian hf hi.isEmbedding hj.isEmbedding hcomm hpre KU hK
   let KU' := K.preimage hf'
-  have hKU' := closure_image_subset_range_of_cartesian hf hi hj hsq hpre K KU' hK
+  have hKU' :=
+    K.closure_image_subset_range_of_cartesian hf hi.isEmbedding hj.isEmbedding hcomm hpre KU' hK
   rw [borelMooreHomologyRestrictOfExhaustion_eq ((pullback f.hom).obj L) hi KU KU' hKU hKU' k]
   have := quasiIso_locallyFiniteChainComplexToLimComplexOfInjective L K hj hK
   have hrK :=

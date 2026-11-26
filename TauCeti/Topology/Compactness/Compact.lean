@@ -188,6 +188,19 @@ theorem _root_.IsCompact.closure_image_subset_range {Y : Type*} [TopologicalSpac
   rw [(hs.image_of_continuousOn hf).isClosed.closure_eq]
   exact Set.image_subset_range _ _
 
+/-- If `j : V → Y` is an embedding and the closure of `(j ∘ i) '' s` lies in `Set.range (j ∘ i)`,
+then the closure of `i '' s` lies in `Set.range i`. -/
+theorem _root_.Topology.IsEmbedding.closure_image_subset_range_of_comp {W Y : Type*}
+    [TopologicalSpace Y] {i : W → X} {j : X → Y} (hj : Topology.IsEmbedding j) {s : Set W}
+    (hs : closure ((j ∘ i) '' s) ⊆ Set.range (j ∘ i)) :
+    closure (i '' s) ⊆ Set.range i := by
+  rw [hj.closure_eq_preimage_closure_image]
+  intro v hv
+  have hv' : j v ∈ closure ((j ∘ i) '' s) := by
+    simpa only [Set.mem_preimage, Set.image_image, Function.comp_apply] using hv
+  obtain ⟨w, hw⟩ := hs hv'
+  exact ⟨w, hj.injective hw⟩
+
 /-- If the values `u i z` at one point `z ∈ S` tend to the cocompact filter, then no compact set
 contains the images `u i '' S` for every `i`. -/
 theorem not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact {ι α : Type*} {l : Filter ι}

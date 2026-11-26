@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Excision
-public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Basic
 public import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!

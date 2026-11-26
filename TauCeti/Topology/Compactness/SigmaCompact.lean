@@ -9,7 +9,9 @@ public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.Compactness.SigmaCompact
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.Sets.Opens
+import TauCeti.Data.Set.Image
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Compact exhaustions
@@ -22,8 +24,10 @@ of open sets:
 * `CompactExhaustion.unionImage`: enlarging a compact exhaustion by the images of a compact
   exhaustion along a continuous open map.
 * `CompactExhaustion.preimage`: pulling back a compact exhaustion along a proper map.
-* `CompactExhaustion.closure_image_subset_range`: in a Hausdorff codomain, the closure of the image
-  of each stage of a compact exhaustion lies in the range of a continuous map.
+* `CompactExhaustion.closure_image_subset_range` and
+  `CompactExhaustion.closure_image_subset_range_of_cartesian`: in a Hausdorff codomain, the
+  closure of the image of each stage of a compact exhaustion lies in the range of a continuous map,
+  and its Cartesian-square stability along a proper map.
 * `CompactExhaustion.subtype` and `TauCeti.isOpen_of_subset_interior_succ`: conversely, compact
   subsets `Kₙ ⊆ U` of the ambient space with `Kₙ ⊆ interior Kₙ₊₁` that cover a subset `U` trace
   a compact exhaustion of the subspace `U`, and such a `U` is open.
@@ -145,6 +149,25 @@ theorem closure_image_subset_range {V X : Type*} [TopologicalSpace V] [Topologic
     [T2Space X] (K : CompactExhaustion V) {f : V → X} (hf : Continuous f) (n : ℕ) :
     closure (f '' K n) ⊆ Set.range f :=
   (K.isCompact n).closure_image_subset_range hf.continuousOn
+
+/-- In a Cartesian square `f ∘ i = j ∘ f'` with `f` proper and `i, j` embeddings
+(`Set.range i = f ⁻¹' Set.range j`), any compact exhaustion `KU` of `U` satisfies
+`closure (i '' KU n) ⊆ Set.range i` whenever a compact exhaustion `K` of `V` satisfies
+`closure (j '' K n) ⊆ Set.range j`. -/
+theorem closure_image_subset_range_of_cartesian {U V X Y : Type*}
+    [TopologicalSpace U] [TopologicalSpace V] [TopologicalSpace X] [TopologicalSpace Y]
+    {f : X → Y} {f' : U → V} {i : U → X} {j : V → Y}
+    (hf : IsProperMap f) (hi : Topology.IsEmbedding i) (hj : Topology.IsEmbedding j)
+    (hcomm : f ∘ i = j ∘ f') (hpre : Set.range i = f ⁻¹' Set.range j)
+    (K : CompactExhaustion V) (KU : CompactExhaustion U)
+    (hK : ∀ n, closure (j '' K n) ⊆ Set.range j) (n : ℕ) :
+    closure (i '' KU n) ⊆ Set.range i := by
+  have hf' : IsProperMap f' := hf.of_isEmbedding_of_range_eq hi hj hcomm hpre
+  obtain ⟨N, hN⟩ := (K.preimage hf').exists_superset_of_isCompact (KU.isCompact n)
+  refine (closure_mono (Set.image_mono hN)).trans ?_
+  simp only [CompactExhaustion.preimage_apply,
+    hj.injective.image_preimage_eq_preimage_image hcomm hpre, hpre]
+  exact (hf.continuous.closure_preimage_subset _).trans (Set.preimage_mono (hK N))
 
 section Subtype
 

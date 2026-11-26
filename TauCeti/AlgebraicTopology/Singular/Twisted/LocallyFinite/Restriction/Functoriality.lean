@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Restriction.Basic
+public import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
@@ -262,6 +263,74 @@ private lemma comp_middle_square (hj : Function.Injective j.hom)
       (fun n ↦ (KW.isCompact n).image i.hom.continuous) KV'.isCompact hsub hj,
     ← ComplexTower.limComplexMap_comp]
 
+private lemma comp_right_square_level (hi : Function.Injective i.hom)
+    (hj : Function.Injective j.hom) (hij : Function.Injective (i ≫ j).hom)
+    (KW : CompactExhaustion W) (n : ℕ) :
+    (TopPair.ofSubset (KW n)ᶜ).twistedChainComplexCoefficientMap
+          ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+        TopPair.twistedChainComplexMapOfFstEq
+          (TopPair.ofSubsetMap i (Set.SurjOn.mapsTo_compl (Set.surjOn_image i.hom (KW n)) hi))
+          (TopPair.ofSubsetMap_fst _ _) ((pullback j.hom).obj L) ≫
+        (compTowerExcisionJ (i := i) (j := j) L hj KW).app (op n) =
+      TopPair.twistedChainComplexMapOfFstEq
+        (TopPair.ofSubsetMap (i ≫ j)
+          (Set.SurjOn.mapsTo_compl (Set.surjOn_image (i ≫ j).hom (KW n)) hij))
+        (TopPair.ofSubsetMap_fst _ _) L := by
+  let φ := compTowerExcisionJ (i := i) (j := j) L hj KW
+  let pᵢ := TopPair.ofSubsetMap i (Set.SurjOn.mapsTo_compl (Set.surjOn_image i.hom (KW n)) hi)
+  let pⱼ := TopPair.ofSubsetMap j
+    (Set.SurjOn.mapsTo_compl (Set.surjOn_image j.hom (i.hom '' KW n)) hj)
+  let pᵢⱼ := TopPair.ofSubsetMap (i ≫ j)
+    (Set.SurjOn.mapsTo_compl (Set.surjOn_image (i ≫ j).hom (KW n)) hij)
+  apply (TopPair.ofSubset (KW n)ᶜ).twistedChainComplex_hom_ext _
+  -- `(TopPair.ofSubset _).fst` is only definitionally `W`/`V`/`X`; `trans` aligns ambient types.
+  trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+      (TopPair.ofSubset (KW n)ᶜ).twistedChainComplexπ
+        ((pullback i.hom).obj ((pullback j.hom).obj L)) ≫
+      TopPair.twistedChainComplexMapOfFstEq pᵢ (TopPair.ofSubsetMap_fst _ _)
+        ((pullback j.hom).obj L) ≫
+      φ.app (op n)
+  · exact TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
+      (TopPair.ofSubset (KW n)ᶜ) ((pullbackCompIso i.hom j.hom).hom.app L) _
+  trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+      twistedChainComplexMap i ((pullback j.hom).obj L) ≫
+      (TopPair.ofSubset (i.hom '' KW n)ᶜ).twistedChainComplexπ ((pullback j.hom).obj L) ≫
+      (excisionRelativeChainComplexTowerMap L (fun n ↦ i.hom '' KW n)
+        (fun n ↦ Set.image_mono (KW.subset_succ n)) hj).app (op n) ≫
+      (relativeChainComplexTowerMap L (fun n ↦ Set.image_mono (KW.subset_succ n))
+        (fun n ↦ Set.image_mono (Set.image_mono (KW.subset_succ n)))
+        (fun n ↦ (Set.image_image j.hom i.hom (KW n)).ge)).app (op n)
+  · exact congrArg (_ ≫ ·)
+      (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq_assoc
+        pᵢ (TopPair.ofSubsetMap_fst _ _) ((pullback j.hom).obj L) _)
+  trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+      twistedChainComplexMap i ((pullback j.hom).obj L) ≫
+      twistedChainComplexMap j L ≫
+      (TopPair.ofSubset (j.hom '' (i.hom '' KW n))ᶜ).twistedChainComplexπ L ≫
+      (relativeChainComplexTowerMap L (fun n ↦ Set.image_mono (KW.subset_succ n))
+        (fun n ↦ Set.image_mono (Set.image_mono (KW.subset_succ n)))
+        (fun n ↦ (Set.image_image j.hom i.hom (KW n)).ge)).app (op n)
+  · rw [excisionRelativeChainComplexTowerMap_app]
+    exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·)
+      (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq_assoc pⱼ
+        (TopPair.ofSubsetMap_fst _ _) L _))
+  trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+      twistedChainComplexMap i ((pullback j.hom).obj L) ≫
+      twistedChainComplexMap j L ≫
+      (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
+  · exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·)
+      (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L _ _ _ n)))
+  trans (twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
+        twistedChainComplexMap i ((pullback j.hom).obj L) ≫
+        twistedChainComplexMap j L) ≫
+      (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
+  · exact (Category.assoc _ _ _).symm.trans (Category.assoc _ _ _).symm
+  trans twistedChainComplexMap (i ≫ j) L ≫
+      (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
+  · exact congrArg (· ≫ _) (twistedChainComplexMap_comp i j L).symm
+  · exact (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq pᵢⱼ
+      (TopPair.ofSubsetMap_fst _ _) L).symm
+
 private lemma comp_right_square (hi : Function.Injective i.hom) (hj : Function.Injective j.hom)
     (hij : Function.Injective (i ≫ j).hom) (KW : CompactExhaustion W) :
     locallyFiniteChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
@@ -273,64 +342,6 @@ private lemma comp_right_square (hi : Function.Injective i.hom) (hj : Function.I
   rintro ⟨n⟩
   let φ := compTowerExcisionJ (i := i) (j := j) L hj KW
   let pᵢ := TopPair.ofSubsetMap i (Set.SurjOn.mapsTo_compl (Set.surjOn_image i.hom (KW n)) hi)
-  let pⱼ := TopPair.ofSubsetMap j
-    (Set.SurjOn.mapsTo_compl (Set.surjOn_image j.hom (i.hom '' KW n)) hj)
-  let pᵢⱼ := TopPair.ofSubsetMap (i ≫ j)
-    (Set.SurjOn.mapsTo_compl (Set.surjOn_image (i ≫ j).hom (KW n)) hij)
-  have hmap : (TopPair.ofSubset (KW n)ᶜ).twistedChainComplexCoefficientMap
-        ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-      TopPair.twistedChainComplexMapOfFstEq pᵢ (TopPair.ofSubsetMap_fst _ _)
-          ((pullback j.hom).obj L) ≫
-        φ.app (op n) =
-      TopPair.twistedChainComplexMapOfFstEq pᵢⱼ (TopPair.ofSubsetMap_fst _ _) L := by
-    apply (TopPair.ofSubset (KW n)ᶜ).twistedChainComplex_hom_ext _
-    -- `(TopPair.ofSubset _).fst` is only definitionally `W`/`V`/`X`; `trans` aligns ambient types.
-    trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-        (TopPair.ofSubset (KW n)ᶜ).twistedChainComplexπ
-          ((pullback i.hom).obj ((pullback j.hom).obj L)) ≫
-        TopPair.twistedChainComplexMapOfFstEq pᵢ (TopPair.ofSubsetMap_fst _ _)
-          ((pullback j.hom).obj L) ≫
-        φ.app (op n)
-    · exact TopPair.twistedChainComplexπ_comp_twistedChainComplexCoefficientMap_assoc
-        (TopPair.ofSubset (KW n)ᶜ) ((pullbackCompIso i.hom j.hom).hom.app L) _
-    trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-        twistedChainComplexMap i ((pullback j.hom).obj L) ≫
-        (TopPair.ofSubset (i.hom '' KW n)ᶜ).twistedChainComplexπ ((pullback j.hom).obj L) ≫
-        (excisionRelativeChainComplexTowerMap L (fun n ↦ i.hom '' KW n)
-          (fun n ↦ Set.image_mono (KW.subset_succ n)) hj).app (op n) ≫
-        (relativeChainComplexTowerMap L (fun n ↦ Set.image_mono (KW.subset_succ n))
-          (fun n ↦ Set.image_mono (Set.image_mono (KW.subset_succ n)))
-          (fun n ↦ (Set.image_image j.hom i.hom (KW n)).ge)).app (op n)
-    · exact congrArg (_ ≫ ·)
-        (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq_assoc
-          pᵢ (TopPair.ofSubsetMap_fst _ _) ((pullback j.hom).obj L) _)
-    trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-        twistedChainComplexMap i ((pullback j.hom).obj L) ≫
-        twistedChainComplexMap j L ≫
-        (TopPair.ofSubset (j.hom '' (i.hom '' KW n))ᶜ).twistedChainComplexπ L ≫
-        (relativeChainComplexTowerMap L (fun n ↦ Set.image_mono (KW.subset_succ n))
-          (fun n ↦ Set.image_mono (Set.image_mono (KW.subset_succ n)))
-          (fun n ↦ (Set.image_image j.hom i.hom (KW n)).ge)).app (op n)
-    · rw [excisionRelativeChainComplexTowerMap_app]
-      exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·)
-        (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq_assoc pⱼ
-          (TopPair.ofSubsetMap_fst _ _) L _))
-    trans twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-        twistedChainComplexMap i ((pullback j.hom).obj L) ≫
-        twistedChainComplexMap j L ≫
-        (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
-    · exact congrArg (_ ≫ ·) (congrArg (_ ≫ ·) (congrArg (_ ≫ ·)
-        (twistedChainComplexπ_comp_relativeChainComplexTowerMap_app L _ _ _ n)))
-    trans (twistedChainComplexCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) ≫
-          twistedChainComplexMap i ((pullback j.hom).obj L) ≫
-          twistedChainComplexMap j L) ≫
-        (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
-    · exact (Category.assoc _ _ _).symm.trans (Category.assoc _ _ _).symm
-    trans twistedChainComplexMap (i ≫ j) L ≫
-        (TopPair.ofSubset ((i ≫ j).hom '' KW n)ᶜ).twistedChainComplexπ L
-    · exact congrArg (· ≫ _) (twistedChainComplexMap_comp i j L).symm
-    · exact (TopPair.twistedChainComplexπ_comp_twistedChainComplexMapOfFstEq pᵢⱼ
-        (TopPair.ofSubsetMap_fst _ _) L).symm
   simp only [ComplexTower.limComplexCone_π_app, Category.assoc,
     ComplexTower.limComplexMap_comp_π,
     locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexπ,
@@ -355,7 +366,7 @@ private lemma comp_right_square (hi : Function.Injective i.hom) (hj : Function.I
       TopPair.locallyFiniteChainComplexCoefficientMap_comp_locallyFiniteChainComplexToRelative_assoc
         (TopPair.ofSubset (KW n)ᶜ) ((pullbackCompIso i.hom j.hom).hom.app L)
         (KW.isCompact n).compl_range_ofSubset_compl_map _
-  · exact congrArg (_ ≫ ·) hmap
+  · exact congrArg (_ ≫ ·) (comp_right_square_level L hi hj hij KW n)
 
 private lemma quasiIso_locallyFiniteChainComplexToLimComplexOfInjective_comp
     (hi : IsOpenEmbedding i.hom) (hj : IsOpenEmbedding j.hom) (KW : CompactExhaustion W)
@@ -381,20 +392,6 @@ private lemma quasiIso_locallyFiniteChainComplexToLimComplexOfInjective_comp
 
 end CompHelpers
 
-/-- If `j : V ⟶ X` is an embedding and the closure of `(i ≫ j) '' S` lies in `Set.range (i ≫ j)`,
-then the closure of `i '' S` lies in `Set.range i`. -/
-lemma closure_image_subset_range_of_comp {W : TopCat.{v}} {i : W ⟶ V}
-    (hj : Topology.IsEmbedding j.hom) {S : Set W}
-    (hS : closure ((i ≫ j).hom '' S) ⊆ Set.range (i ≫ j).hom) :
-    closure (i.hom '' S) ⊆ Set.range i.hom := by
-  rw [hj.closure_eq_preimage_closure_image]
-  intro v hv
-  have hv' : j.hom v ∈ closure ((i ≫ j).hom '' S) := by
-    simpa only [Set.mem_preimage, Set.image_image, TopCat.hom_comp, ContinuousMap.coe_comp,
-      Function.comp_apply] using hv
-  obtain ⟨w, hw⟩ := hS hv'
-  exact ⟨w, hj.injective hw⟩
-
 /-- Composition law for exhaustion-explicit open restrictions. -/
 theorem borelMooreHomologyRestrictOfExhaustion_comp {W : TopCat.{v}} {i : W ⟶ V}
     (hi : IsOpenEmbedding i.hom) (hj : IsOpenEmbedding j.hom)
@@ -403,14 +400,14 @@ theorem borelMooreHomologyRestrictOfExhaustion_comp {W : TopCat.{v}} {i : W ⟶ 
     (hKV_X : ∀ n, closure (j.hom '' KV n) ⊆ Set.range j.hom) (k : ℕ) :
     borelMooreHomologyRestrictOfExhaustion L hj KV hKV_X k ≫
         borelMooreHomologyRestrictOfExhaustion ((pullback j.hom).obj L) hi KW
-          (fun n ↦ closure_image_subset_range_of_comp hj.isEmbedding (hKW_X n)) k =
+          (fun n ↦ hj.isEmbedding.closure_image_subset_range_of_comp (hKW_X n)) k =
       borelMooreHomologyRestrictOfExhaustion L (j := i ≫ j) (hj.comp hi) KW hKW_X k ≫
         borelMooreHomologyCoefficientMap ((pullbackCompIso i.hom j.hom).hom.app L) k := by
   -- Enlarge `KV` to `KV' := KV.unionImage KW` so `i '' KW n ⊆ KV' n` for every `n`, then cancel
   -- the quasi-isomorphism `locallyFiniteChainComplexToLimComplexOfInjective … ≫ limComplexMap`
   -- on the right and chase the three commuting squares (`comp_middle_square`,
   -- `locallyFiniteChainComplexToLimComplex_comp_limComplexMap`, and `comp_right_square`).
-  have hKW_V (n : ℕ) := closure_image_subset_range_of_comp hj.isEmbedding (hKW_X n)
+  have hKW_V (n : ℕ) := hj.isEmbedding.closure_image_subset_range_of_comp (hKW_X n)
   let KV' := KV.unionImage KW hi.continuous hi.isOpenMap
   have hsub (n : ℕ) : i.hom '' KW n ⊆ KV' n := by
     simp only [KV', CompactExhaustion.unionImage_apply]

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.TowerExcision
+public import TauCeti.AlgebraicTopology.Singular.Twisted.LocallyFinite.Tower.Excision
 import TauCeti.Topology.Compactness.SigmaCompact
 
 /-!
@@ -35,9 +35,9 @@ composition with projection to any relative stage is given by
 `borelMooreHomologyRestrictOfExhaustion_comp_locallyFiniteChainComplexToRelative`.
 
 Any two compact exhaustions `K` and `K'` of `V` are dominated by their pointwise union
-`K.union K'`, and enlarging the compact sets induces compatible triple-quotient maps on both
-towers (`TauCeti.LocalCoefficientSystem.relativeChainComplexTowerMap`), so the restriction
-morphism is independent of the chosen exhaustion
+`K.unionImage K' continuous_id IsOpenMap.id`, and enlarging the compact sets induces compatible
+triple-quotient maps on both towers (`TauCeti.LocalCoefficientSystem.relativeChainComplexTowerMap`),
+so the restriction morphism is independent of the chosen exhaustion
 (`TauCeti.LocalCoefficientSystem.borelMooreHomologyRestrictOfExhaustion_eq`). When `X` is Hausdorff
 and `V` is weakly locally compact and sigma-compact, choosing `CompactExhaustion.choice V` defines
 the canonical open restriction `TauCeti.LocalCoefficientSystem.borelMooreHomologyRestrict`.
@@ -127,6 +127,8 @@ lemma locallyFiniteChainComplexToLimComplexOfInjective_comp_limComplexπ (K : Co
     ComplexTower.limComplexMap_comp_π,
     locallyFiniteChainComplexIsoLimComplex_hom_comp_limComplexπ_assoc,
     excisionRelativeChainComplexTowerMap_app]
+  -- `(relativeChainComplexTower …).obj (op n)` is definitionally
+  -- `(TopPair.ofSubset _).twistedChainComplex` on both sides.
   rfl
 
 /-- For an open embedding `j : V ⟶ X` and a compact exhaustion `K` with
