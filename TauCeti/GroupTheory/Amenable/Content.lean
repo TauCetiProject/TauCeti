@@ -191,16 +191,14 @@ theorem toContent_injective : Function.Injective (toContent : Mean G → _) :=
 left translation of sets. -/
 theorem isLeftInvariant_iff_toContent_smul (m : Mean G) :
     m.IsLeftInvariant ↔ ∀ (g : G) (s : Set G), m.toContent (g • s) = m.toContent s := by
-  refine ⟨fun hm => hm.toContent_smul, fun h => isLeftInvariant_iff.2 fun g f => ?_⟩
-  -- Pushing `m` forward along `x ↦ g⁻¹ * x` translates its content by `g`, so fixes it.
-  have hmap : m.mapOfDiscrete (g⁻¹ * ·) = m := by
-    refine toContent_injective (AddContent.ext fun s => ?_)
-    -- The left regular action `g⁻¹ • x` is multiplication `g⁻¹ * x`.
-    have hs : (g⁻¹ * ·) ⁻¹' s = g • s := preimage_smul_inv g s
-    rw [toContent_mapOfDiscrete, AddContent.map_apply, hs, h]
-  have hf : UCB.compRightAlgHomOfDiscrete (g⁻¹ * ·) f = UCB.leftTranslation g f :=
-    UCB.ext fun x => by simp [UCB.compRightAlgHomOfDiscrete_apply, UCB.leftTranslation_apply]
-  rw [← hf, ← mapOfDiscrete_apply, hmap]
+  -- Left multiplication by `g⁻¹` is the left regular action of `g⁻¹`.
+  have hg (g : G) : ContinuousMap.mulLeft g⁻¹ = ⟨(g⁻¹ • ·), continuous_of_discreteTopology⟩ :=
+    ContinuousMap.ext fun x => (smul_eq_mul g⁻¹ x).symm
+  simp only [isLeftInvariant_iff_boundedContinuousFunction, hg,
+    PositiveLinearMap.forall_apply_compContinuous_smul_iff_toAddContent_smul, toContent,
+    AddContent.ofReal_apply]
+  exact forall₂_congr fun g s => (ENNReal.ofReal_eq_ofReal_iff
+    (PositiveLinearMap.toAddContent_nonneg _ _) (PositiveLinearMap.toAddContent_nonneg _ _)).symm
 
 end Mean
 
