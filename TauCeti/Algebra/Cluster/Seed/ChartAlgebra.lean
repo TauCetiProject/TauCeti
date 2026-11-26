@@ -39,6 +39,15 @@ noncomputable def chartAlgebra (s : Seed c row u B)
     (fun i : I ↦ (((s.chart.monomial (Finsupp.single i 1))⁻¹ : Bˣ) : B)) ''
       (Set.range row ∪ Subtype.val '' S))
 
+/-- The chart algebra is obtained by adjoining the chart coordinates and the specified inverses. -/
+theorem chartAlgebra_def (s : Seed c row u B)
+    (S : Set {i : I // i ∉ Set.range row}) :
+    s.chartAlgebra S =
+      Algebra.adjoin R (Set.range (fun i : I ↦ (s.chart.monomial (Finsupp.single i 1) : B)) ∪
+        (fun i : I ↦ (((s.chart.monomial (Finsupp.single i 1))⁻¹ : Bˣ) : B)) ''
+          (Set.range row ∪ Subtype.val '' S)) :=
+  (rfl)
+
 /-- Every coordinate belongs to the chart algebra, whether mutable or frozen. -/
 theorem coordinate_mem_chartAlgebra (s : Seed c row u B)
     (S : Set {i : I // i ∉ Set.range row}) (i : I) :
@@ -78,6 +87,23 @@ theorem chartAlgebra_le_iff (s : Seed c row u B)
     · rcases hi with ⟨k, rfl⟩ | ⟨j, hj, rfl⟩
       · exact hm k
       · exact hf j hj
+
+/-- An element belongs to the chart algebra exactly when it lies in every subalgebra
+containing all the coordinates, mutable inverses, and selected frozen inverses. -/
+theorem mem_chartAlgebra_iff (s : Seed c row u B)
+    (S : Set {i : I // i ∉ Set.range row}) {x : B} :
+    x ∈ s.chartAlgebra S ↔ ∀ A : Subalgebra R B,
+      (∀ i, (s.chart.monomial (Finsupp.single i 1) : B) ∈ A) →
+      (∀ k, (((s.chart.monomial (Finsupp.single (row k) 1))⁻¹ : Bˣ) : B) ∈ A) →
+      (∀ j : {i : I // i ∉ Set.range row}, j ∈ S →
+        (((s.chart.monomial (Finsupp.single j.val 1))⁻¹ : Bˣ) : B) ∈ A) →
+      x ∈ A := by
+  constructor
+  · intro hx A hc hm hf
+    exact (s.chartAlgebra_le_iff S A).mpr ⟨hc, hm, hf⟩ hx
+  · intro h
+    exact h _ (s.coordinate_mem_chartAlgebra S) (s.inv_mutable_mem_chartAlgebra S)
+      (s.inv_frozen_mem_chartAlgebra S)
 
 /-- Selecting more frozen inverses enlarges the chart algebra. -/
 theorem chartAlgebra_mono (s : Seed c row u B)
@@ -121,8 +147,8 @@ theorem monomial_mem_chartAlgebra_univ (s : Seed c row u B) (a : I →₀ ℤ) :
     rw [← Finsupp.smul_single_one, ← s.chart.monomial_zpow s.isAlt]
     cases n with
     | ofNat n =>
-      change (s.chart.monomial (Finsupp.single i 1) : B) ^ n ∈ A
-      exact A.pow_mem (s.coordinate_mem_chartAlgebra Set.univ i) n
+      simpa only [Int.ofNat_eq_natCast, zpow_natCast, Units.val_pow_eq_pow_val] using
+        A.pow_mem (s.coordinate_mem_chartAlgebra Set.univ i) n
     | negSucc n =>
       simpa only [zpow_negSucc, ← inv_pow, Units.val_pow_eq_pow_val] using
         A.pow_mem (hinv i) (n + 1)
@@ -134,11 +160,12 @@ theorem monomial_mem_chartAlgebra_univ (s : Seed c row u B) (a : I →₀ ℤ) :
     exact A.mul_mem (hs i n) ih
 
 /-- Full frozen inversion is exactly the full chart range, without ambient generation. -/
+@[simp]
 theorem chartAlgebra_univ_eq_range (s : Seed c row u B) :
     s.chartAlgebra Set.univ = s.chart.eval.range := by
   refine le_antisymm (s.chartAlgebra_le_range Set.univ) ?_
-  rintro x ⟨p, rfl⟩
-  change s.chart.eval p ∈ s.chartAlgebra Set.univ
+  intro x hx
+  obtain ⟨p, rfl⟩ := (AlgHom.mem_range s.chart.eval).mp hx
   rw [← (QuantumTorus.basis u s.form).repr.symm_apply_apply p, s.chart.eval_repr_symm]
   exact Subalgebra.sum_mem _ fun a _ ↦
     (s.chartAlgebra Set.univ).smul_mem (s.monomial_mem_chartAlgebra_univ a) _
