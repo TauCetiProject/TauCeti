@@ -30,10 +30,12 @@ of its eigenfunction expansion `w = ∑ ⟪b i, J w⟫ u i`, which converges in 
 
 `B w v = ∑ κ i ⟪b i, J w⟫ ⟪b i, J v⟫` (`IsCoercive.hasSum_mul_inner_mul_inner`).
 
-Equivalently, `J V` is the domain of the diagonal operator `√κ` in the basis `b`, which is the
-square root `A^{1/2}` of the operator `A` with eigenvalues `κ i`, and `‖A^{1/2} J w‖² = B w w`
-(`IsCoercive.range_eq_diagonalPMap_sqrt_domain`, `IsCoercive.norm_diagonalPMap_sqrt_sq`). So the
-energy space `V` is the form domain of `A`, the first space of the spectral Sobolev scale of `A`.
+Equivalently, `J V` is the domain of the diagonal operator `S` with entries `√κ i` in the basis
+`b`, and for injective `J` also `‖S (J w)‖² = B w w`
+(`IsCoercive.range_eq_diagonalPMap_sqrt_domain`, `IsCoercive.norm_diagonalPMap_sqrt_sq`).
+Informally, `S` is the square root `A^{1/2}` of the operator `A` with eigenvalues `κ i`, so for
+injective `J` these identify `V`, with its energy norm, with the form domain of `A`; no operator
+`A` is defined here, and the identification of `S` with a power of a given operator is not proved.
 For a closed manifold, `A` is informally `Δ⁺ + 1` and this identifies `H¹(M)` with the domain
 of the diagonal operator with entries `√(μ i + 1)`, with equal norms.
 
@@ -207,9 +209,9 @@ end Injective
 
 /-! ### The square root of the diagonal operator -/
 
-/-- **The range of `J` is the domain of `A^{1/2}`.** The image of `J` is the domain of the
-diagonal operator with entries `√κ i` in the basis `b`, the square root of the operator with
-eigenvalues `κ i`. -/
+/-- **The range of `J` is the domain of the diagonal operator `√κ`.** The image of `J` is the
+domain of the diagonal operator with entries `√κ i` in the basis `b` (informally, the square root
+of the operator with eigenvalues `κ i`). -/
 theorem range_eq_diagonalPMap_sqrt_domain (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
     (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) :
     Set.range J = (b.diagonalPMap fun i ↦ √(κ i)).domain := by
@@ -219,8 +221,8 @@ theorem range_eq_diagonalPMap_sqrt_domain (hB : IsCoercive B) (hsymm : ∀ v w, 
   refine summable_congr fun i ↦ ?_
   rw [Real.norm_eq_abs, sq_abs, mul_pow, Real.sq_sqrt (pos_of_hilbertBasis hB hJu heq i).le]
 
-/-- **`A^{1/2}` measures the energy.** For injective `J`, the diagonal operator `√κ` in the
-basis `b` sends `J w` to a vector of squared norm `B w w`. -/
+/-- **The diagonal operator `√κ` measures the energy.** For injective `J`, the diagonal operator
+with entries `√κ i` in the basis `b` sends `J w` to a vector of squared norm `B w w`. -/
 theorem norm_diagonalPMap_sqrt_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
     (hJ : Function.Injective J) (hJu : ∀ i, J (u i) = b i)
     (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V)
