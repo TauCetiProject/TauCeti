@@ -203,6 +203,16 @@ def ofCovectorL : Covector V k ≃L[ℝ] (V [⋀^Fin k]→L[ℝ] ℝ) :=
 
 variable {V k}
 
+/-- Evaluation of a Gram-normed covector on a fixed tuple of vectors, as a continuous linear
+functional. -/
+def coefficientCLM (v : Fin k → V) : Covector V k →L[ℝ] ℝ :=
+  (ContinuousAlternatingMap.apply ℝ V ℝ v).comp (ofCovectorL V k).toContinuousLinearMap
+
+/-- The coefficient functional evaluates the underlying alternating form on the fixed tuple. -/
+@[simp] theorem coefficientCLM_apply (v : Fin k → V) (α : Covector V k) :
+    coefficientCLM v α = α.ofCovector v := by
+  simp [coefficientCLM]
+
 /-- In an orthonormal basis the Gram inner product is the sum of products of coefficients. -/
 theorem inner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
     (b : OrthonormalBasis ι ℝ V) (α β : Covector V k) :

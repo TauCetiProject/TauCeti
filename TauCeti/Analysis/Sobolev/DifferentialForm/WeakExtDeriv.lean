@@ -9,6 +9,7 @@ public import TauCeti.Analysis.InnerProductSpace.Covector
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 import Mathlib.Analysis.Distribution.Distribution
+import TauCeti.Analysis.Sobolev.DifferentialForm.LocallyIntegrable
 
 /-!
 # Weak exterior derivatives
@@ -91,15 +92,6 @@ theorem HasWeakExtDerivOn.integral_testFunction_fderiv (h : HasWeakExtDerivOn μ
   convert h.integral_testFunction φ v using 1
   simp_rw [(φ.contDiff.differentiable (by simp) _).lineDeriv_eq_fderiv]
 
-private def coefficientCLM (v : Fin k → V) : Covector V k →L[ℝ] ℝ :=
-  (ContinuousAlternatingMap.apply ℝ V ℝ v).comp (Covector.ofCovectorL V k).toContinuousLinearMap
-
-private theorem locallyIntegrableOn_coefficient {f : V → Covector V k}
-    (hf : LocallyIntegrableOn f Ω μ) (v : Fin k → V) :
-    LocallyIntegrableOn (fun x ↦ (f x).ofCovector v) Ω μ := by
-  simpa [coefficientCLM, Function.comp_def] using
-    (coefficientCLM v).locallyIntegrableOn_comp hf
-
 /-- Weak exterior derivatives restrict to smaller open sets. -/
 theorem HasWeakExtDerivOn.mono {Ω' : Opens V} (h : HasWeakExtDerivOn μ Ω u w)
     (hΩ : Ω' ≤ Ω) : HasWeakExtDerivOn μ Ω' u w :=
@@ -115,7 +107,7 @@ variable [OpensMeasurableSpace V]
 theorem HasWeakExtDerivOn.integrable_testFunction (h : HasWeakExtDerivOn μ Ω u w)
     (φ : 𝓓(Ω, ℝ)) (v : Fin (k + 1) → V) :
     Integrable (fun x ↦ φ x • (w x).ofCovector v) μ :=
-  φ.integrable_smul (locallyIntegrableOn_coefficient h.locallyIntegrableOn_deriv v)
+  φ.integrable_smul (h.locallyIntegrableOn_deriv.covector_coefficient v)
 
 /-- Each directional testing term is integrable, so the defining integrals are genuine. -/
 theorem HasWeakExtDerivOn.integrable_lineDeriv_testFunction
@@ -124,7 +116,7 @@ theorem HasWeakExtDerivOn.integrable_lineDeriv_testFunction
     Integrable (fun x ↦ lineDeriv ℝ (φ : V → ℝ) x (v i) •
       (u x).ofCovector (i.removeNth v)) μ :=
   integrable_lineDeriv_smul_of_locallyIntegrableOn
-    (locallyIntegrableOn_coefficient h.locallyIntegrableOn _) φ _
+    (h.locallyIntegrableOn.covector_coefficient _) φ _
 
 omit [OpensMeasurableSpace V] in
 /-- The zero form has zero weak exterior derivative for every measure. -/
@@ -186,12 +178,12 @@ theorem HasWeakFDerivOn.hasWeakExtDerivOn {U : V → V →L[ℝ] Covector V k}
   · simpa [L, Function.comp_def] using hw
   intro φ v
   have hi (i : Fin (k + 1)) :=
-    ((h.hasWeakLineDerivOn (v i)).clm_comp (coefficientCLM (i.removeNth v)))
+    ((h.hasWeakLineDerivOn (v i)).clm_comp (Covector.coefficientCLM (i.removeNth v)))
       |>.integral_lineDeriv_smul_eq_neg_integral_smul φ
   have hI (i : Fin (k + 1)) :
       Integrable (fun x ↦ φ x • (U x (v i)).ofCovector (i.removeNth v)) μ :=
-    φ.integrable_smul (locallyIntegrableOn_coefficient
-      (h.hasWeakLineDerivOn (v i)).locallyIntegrableOn_deriv _)
+    φ.integrable_smul
+      ((h.hasWeakLineDerivOn (v i)).locallyIntegrableOn_deriv.covector_coefficient _)
   simp only [ContinuousAlternatingMap.alternatizeUncurryFin_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, Covector.ofCovectorL_apply, Finset.smul_sum]
   simp only [← Int.cast_smul_eq_zsmul ℝ, Int.cast_pow, Int.cast_neg, Int.cast_one]
@@ -213,7 +205,7 @@ theorem HasWeakFDerivOn.hasWeakExtDerivOn {U : V → V →L[ℝ] Covector V k}
       ∫ x, lineDeriv ℝ (φ : V → ℝ) x (v i) •
         (u x).ofCovector (i.removeNth v) ∂μ =
       -∫ x, φ x • (U x (v i)).ofCovector (i.removeNth v) ∂μ := by
-    simpa [coefficientCLM, Function.comp_def] using hi i
+    simpa only [Function.comp_def, Covector.coefficientCLM_apply] using hi i
   simp_rw [hi', smul_neg, Finset.sum_neg_distrib, neg_neg]
 
 omit [OpensMeasurableSpace V] in
@@ -232,9 +224,8 @@ theorem hasWeakExtDerivOn_zero_iff {f : V → ℝ} {U : V → V →L[ℝ] ℝ} :
     intro v
     apply hasWeakLineDerivOn_iff_testFunction.mpr
     refine ⟨inferInstance, ?_, ?_, ?_⟩
-    · simpa using locallyIntegrableOn_coefficient h.locallyIntegrableOn (0 : Fin 0 → V)
-    · simpa using locallyIntegrableOn_coefficient h.locallyIntegrableOn_deriv
-        (fun _ : Fin 1 ↦ v)
+    · simpa using h.locallyIntegrableOn.covector_coefficient (0 : Fin 0 → V)
+    · simpa using h.locallyIntegrableOn_deriv.covector_coefficient (fun _ : Fin 1 ↦ v)
     · intro φ
       have hh := h.integral_testFunction φ (fun _ : Fin 1 ↦ v)
       simpa [Nat.zero_add, Fin.sum_univ_one] using (congrArg Neg.neg hh).symm
@@ -297,11 +288,11 @@ theorem HasWeakExtDerivOn.ae_eq {w₁ w₂ : V → Covector V (k + 1)}
   have hc (v : Fin (k + 1) → V) :
       (fun x ↦ (w₁ x).ofCovector v) =ᵐ[μ.restrict Ω] fun x ↦ (w₂ x).ofCovector v := by
     apply Distribution.ofFun_injective (n := ⊤)
-      (locallyIntegrableOn_coefficient h₁.locallyIntegrableOn_deriv v)
-      (locallyIntegrableOn_coefficient h₂.locallyIntegrableOn_deriv v)
+      (h₁.locallyIntegrableOn_deriv.covector_coefficient v)
+      (h₂.locallyIntegrableOn_deriv.covector_coefficient v)
     ext φ
-    rw [Distribution.ofFun_apply (locallyIntegrableOn_coefficient h₁.locallyIntegrableOn_deriv v),
-      Distribution.ofFun_apply (locallyIntegrableOn_coefficient h₂.locallyIntegrableOn_deriv v)]
+    rw [Distribution.ofFun_apply (h₁.locallyIntegrableOn_deriv.covector_coefficient v),
+      Distribution.ofFun_apply (h₂.locallyIntegrableOn_deriv.covector_coefficient v)]
     exact (h₁.integral_testFunction φ v).trans (h₂.integral_testFunction φ v).symm
   let b := Module.finBasis ℝ V
   have hb (f : Fin (k + 1) → Fin (Module.finrank ℝ V)) := hc (fun i ↦ b (f i))
