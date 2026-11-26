@@ -37,7 +37,8 @@ divisible by `C ϖ`, so it acts injectively on `R⟦X⟧ ⧸ (ϖ ^ m)`.
 
 A series whose coefficients lie in an ideal `J` has square zero modulo any ideal containing
 `J * J`. For a finitely generated ideal `I`, the same kernel computation describes `I.map C` by
-its coefficients and shows that it is prime when `I` is.
+its coefficients and shows that it is prime when `I` is. Reducing to finitely generated
+subideals, `X` is a nonzerodivisor modulo `I.map C` for every ideal `I`.
 
 ## Main results
 
@@ -49,6 +50,8 @@ its coefficients and shows that it is prime when `I` is.
 * `PowerSeries.mem_map_C_iff_of_fg`, `PowerSeries.isPrime_map_C_of_fg`: for a finitely generated
   ideal `I`, the series in `I.map C` are those with all coefficients in `I`, and `I.map C` is prime
   when `I` is.
+* `PowerSeries.X_pow_mul_mem_map_C_iff`: for any ideal `I`, `X ^ k` is a nonzerodivisor modulo
+  `I.map C`.
 * `PowerSeries.prime_C_iff`: `C r` is prime in `R⟦X⟧` if and only if `r` is prime in `R`.
 * `PowerSeries.torsionBy_quotient_span_C_pow_eq_bot`: a series with nonzero reduction modulo the
   maximal ideal has no nonzero torsion on `R⟦X⟧ ⧸ (ϖ ^ m)` for a prime `ϖ` of a local domain.
@@ -119,6 +122,24 @@ theorem mem_map_C_iff_of_fg {I : Ideal R} (hI : I.FG) {f : R⟦X⟧} :
   rw [← Ideal.mk_ker (I := I), ← ker_map_of_fg _ (by rwa [Ideal.mk_ker]), RingHom.mem_ker,
     PowerSeries.ext_iff]
   simp [Ideal.Quotient.eq_zero_iff_mem]
+
+/-- Modulo the extension of an ideal of `R`, multiplication by a power of `X` on `R⟦X⟧` is
+injective. -/
+theorem X_pow_mul_mem_map_C_iff {I : Ideal R} (k : ℕ) {a : R⟦X⟧} :
+    X ^ k * a ∈ I.map C ↔ a ∈ I.map C := by
+  classical
+  refine ⟨fun h ↦ ?_, fun h ↦ Ideal.mul_mem_left _ _ h⟩
+  -- A membership witness involves finitely many elements of `I`; they span a finitely generated
+  -- ideal `J ≤ I`, where membership is read off coefficientwise.
+  rw [Ideal.map] at h
+  obtain ⟨T, hT, hmem⟩ := Submodule.mem_span_finite_of_mem_span h
+  obtain ⟨s, hs, rfl⟩ := Finset.subset_set_image_iff.mp hT
+  have hJ : (Ideal.span (s : Set R)).FG := ⟨s, rfl⟩
+  have hJmem : X ^ k * a ∈ (Ideal.span (s : Set R)).map C := by
+    rwa [Ideal.map_span, ← Finset.coe_image]
+  refine Ideal.map_mono (Ideal.span_le.mpr hs) ?_
+  rw [mem_map_C_iff_of_fg hJ] at hJmem ⊢
+  exact fun n ↦ by simpa [coeff_X_pow_mul'] using hJmem (n + k)
 
 /-- The extension `I.map C` of a finitely generated prime ideal `I` of `R` is a prime ideal of
 `R⟦X⟧`: it is the kernel of `R⟦X⟧ → (R ⧸ I)⟦X⟧`, whose target is a domain. -/

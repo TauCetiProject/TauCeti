@@ -44,9 +44,8 @@ standard lattice is the only lattice bounded by `0`
 (`TauCeti.ProjectiveLattice.isBounded_zero_iff`).
 
 This file uses the `R⟦X⟧`-algebra structure of `R⸨X⸩` from Mathlib, the one making `R⸨X⸩` the
-localization of `R⟦X⟧` at the powers of `X`, and the coefficientwise action of `R` on `R⸨X⸩`; it
-records as instances that they form a scalar tower `R → R⟦X⟧ → R⸨X⸩` and that `R⟦X⟧ → R⸨X⸩` is
-injective.
+localization of `R⟦X⟧` at the powers of `X`, and the coefficientwise action of `R` on `R⸨X⸩`, which
+form a scalar tower `R → R⟦X⟧ → R⸨X⸩` by an instance of `TauCeti.RingTheory.LaurentSeries.Basic`.
 
 ## Main declarations
 
@@ -60,8 +59,6 @@ injective.
   between `X ^ N R⟦X⟧^ι` and `X ^ (-N) R⟦X⟧^ι` is finite projective over `R⟦X⟧` exactly when its
   cokernel in `M_N` is finite projective over `R`.
 * `TauCeti.ProjectiveLattice.exists_isBounded`: every lattice is bounded by some `N`.
-* `TauCeti.diagonalLattice_eq_toSubmodule_map`: the lattice of a cocharacter is the image of the
-  standard lattice, so it is finite projective.
 
 ## References
 
@@ -76,19 +73,7 @@ open HahnSeries
 
 namespace TauCeti.LaurentSeries
 
-variable (R : Type*) [CommRing R]
-
-/-- Power series act on Laurent series compatibly with the coefficientwise action of `R`. -/
-instance : IsScalarTower R R⟦X⟧ R⸨X⸩ where
-  smul_assoc r p f := by
-    rw [Algebra.smul_def (r • p) f, Algebra.smul_def p f, LaurentSeries.coe_algebraMap,
-      PowerSeries.coe_smul, smul_mul_assoc]
-
-/-- Power series embed into Laurent series. -/
-instance : FaithfulSMul R⟦X⟧ R⸨X⸩ :=
-  (faithfulSMul_iff_algebraMap_injective _ _).mpr ofPowerSeries_injective
-
-variable {R}
+variable {R : Type*} [CommRing R]
 
 /-- The unit `X` of `R⸨X⸩`, the localization of `R⟦X⟧` at the powers of `X`, is `unitX`. -/
 private theorem isUnit_unit_eq_unitX :
@@ -117,57 +102,6 @@ theorem mem_piLattice_iff {a : ℤ} {v : ι → R⸨X⸩} :
 
 end TauCeti.LaurentSeries
 
-namespace TauCeti
-
-section Diagonal
-
-variable {B K : Type*} [CommRing B] [CommRing K] [Algebra B K] [FaithfulSMul B K] {ξ : B}
-  {n : Type*} [Finite n]
-
-/-- The lattice `μ(ξ) Bⁿ` of a cocharacter `μ = (k_i)` is the image of the standard lattice under
-the diagonal automorphism `μ(ξ)`, which multiplies the `i`-th coordinate by the unit `ξ ^ k_i`. -/
-theorem diagonalLattice_eq_toSubmodule_map (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    diagonalLattice k hξ =
-      ((ProjectiveLattice.standard B K n).map
-        (LinearEquiv.piCongrRight fun i ↦ LinearEquiv.smulOfUnit (hξ.unit ^ k i))).toSubmodule := by
-  ext v
-  rw [ProjectiveLattice.mem_toSubmodule, ProjectiveLattice.mem_map,
-    ProjectiveLattice.mem_standard, mem_diagonalLattice]
-  refine forall_congr' fun i ↦ ⟨fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩, fun ⟨b, hb⟩ ↦ ⟨b, ?_⟩⟩
-  · simp [LinearEquiv.smulOfUnit, Units.smul_def, hb]
-  · exact (Units.inv_mul_eq_iff_eq_mul _).mp
-      (by simpa [LinearEquiv.smulOfUnit, Units.smul_def] using hb.symm)
-
-/-- The lattice of a cocharacter is projective, as the image of the standard lattice. -/
-instance (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    Module.Projective B (diagonalLattice k hξ) :=
-  .of_equiv (LinearEquiv.ofEq _ _ (diagonalLattice_eq_toSubmodule_map k hξ).symm)
-
-/-- The lattice of a cocharacter is finitely generated. -/
-theorem fg_diagonalLattice (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    (diagonalLattice k hξ).FG := by
-  rw [diagonalLattice_eq_toSubmodule_map]
-  exact ProjectiveLattice.fg _
-
-/-- The lattice of a cocharacter spans `Kⁿ`. -/
-theorem span_diagonalLattice (k : n → ℤ) (hξ : IsUnit (algebraMap B K ξ)) :
-    Submodule.span K (diagonalLattice k hξ : Set (n → K)) = ⊤ := by
-  rw [diagonalLattice_eq_toSubmodule_map, ProjectiveLattice.coe_toSubmodule]
-  exact ProjectiveLattice.span_coe_eq_top _
-
-variable (n) in
-/-- The standard lattice is the lattice of the zero cocharacter. -/
-theorem toSubmodule_standard_eq_diagonalLattice_zero (hξ : IsUnit (algebraMap B K ξ)) :
-    (ProjectiveLattice.standard B K n).toSubmodule = diagonalLattice (fun _ : n ↦ (0 : ℤ)) hξ := by
-  ext v
-  simp only [ProjectiveLattice.mem_toSubmodule, ProjectiveLattice.mem_standard, Set.mem_range,
-    mem_diagonalLattice, zpow_zero, Units.val_one, one_mul]
-  exact forall_congr' fun i ↦ ⟨fun ⟨b, hb⟩ ↦ ⟨b, hb.symm⟩, fun ⟨b, hb⟩ ↦ ⟨b, hb.symm⟩⟩
-
-end Diagonal
-
-end TauCeti
-
 namespace TauCeti.LaurentSeries
 
 variable {R : Type*} [CommRing R] {ι : Type*}
@@ -179,9 +113,10 @@ theorem piLattice_antitone :
     lattice_antitone hab (mem_piLattice_iff.mp hv i)
 
 variable (R ι) in
-/-- The finite-jet module `M_N = X ^ (-N) R⟦X⟧^ι / X ^ N R⟦X⟧^ι` over `R⟦X⟧`. Its `R`-module
-structure is free of rank `2 N · #ι`, with coordinates the Laurent coefficients at the exponents
-`-N ≤ n < N` (`TauCeti.LaurentSeries.boundedLatticeQuotientEquiv`). -/
+/-- The finite-jet module `M_N = X ^ (-N) R⟦X⟧^ι / X ^ N R⟦X⟧^ι` over `R⟦X⟧`. As an `R`-module its
+coordinates are the Laurent coefficients at the exponents `-N ≤ n < N`
+(`TauCeti.LaurentSeries.boundedLatticeQuotientEquiv`); for finite `ι` it is free of rank
+`2 N · #ι`. -/
 abbrev boundedLatticeQuotient (N : ℕ) :=
   piLattice R ι (-N : ℤ) ⧸
     (piLattice R ι (N : ℤ)).comap
@@ -228,11 +163,10 @@ private theorem boundedCoeff_surjective (N : ℕ) :
   intro g
   choose f hf using fun i ↦
     Submodule.Quotient.mk_surjective _ ((latticeQuotientEquiv R R (-N) N).symm (g i))
-  refine ⟨⟨fun i ↦ f i, mem_piLattice_iff.mpr fun i ↦ (f i).property⟩, ?_⟩
-  funext i
-  rw [boundedCoeff, LinearMap.pi_apply, LinearMap.comp_apply, LinearMap.comp_apply,
-    show boundedCoord N i _ = f i from Subtype.ext (coe_boundedCoord N i _), Submodule.mkQ_apply,
-    hf, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+  let v : piLattice R ι (-N : ℤ) := ⟨fun i ↦ f i, mem_piLattice_iff.mpr fun i ↦ (f i).property⟩
+  have hv (i : ι) : boundedCoord N i v = f i := Subtype.ext (coe_boundedCoord N i v)
+  refine ⟨v, funext fun i ↦ ?_⟩
+  simp [boundedCoeff, hv, hf]
 
 variable (R ι) in
 /-- The coordinates of `M_N = X ^ (-N) R⟦X⟧^ι / X ^ N R⟦X⟧^ι`: the Laurent coefficients of the
@@ -278,7 +212,8 @@ theorem X_pow_smul_mem_piLattice (N : ℕ) {v : ι → R⸨X⸩}
   rw [mem_piLattice_iff] at hv ⊢
   intro i
   have h := mul_mem_lattice (single_mem_lattice (R := R) (le_refl ((2 * N : ℕ) : ℤ)) 1) (hv i)
-  rw [show ((2 * N : ℕ) : ℤ) + -N = N by push_cast; ring] at h
+  have he : ((2 * N : ℕ) : ℤ) + -N = N := by push_cast; ring
+  rw [he] at h
   simpa [Algebra.smul_def, ofPowerSeries_X_pow] using h
 
 /-- `M_N` is killed by `X ^ (2 N)`. -/
@@ -441,6 +376,12 @@ def IsBounded (N : ℕ) (Λ : ProjectiveLattice R⟦X⟧ R⸨X⸩ (ι → R⸨X�
   piLattice R ι (N : ℤ) ≤ Λ.toSubmodule ∧
     Λ.toSubmodule ≤ piLattice R ι (-N : ℤ)
 
+/-- A lattice is bounded by `N` exactly when `X ^ N R⟦X⟧^ι ⊆ Λ ⊆ X ^ (-N) R⟦X⟧^ι`. -/
+theorem isBounded_iff {N : ℕ} {Λ : ProjectiveLattice R⟦X⟧ R⸨X⸩ (ι → R⸨X⸩)} :
+    Λ.IsBounded N ↔
+      piLattice R ι (N : ℤ) ≤ Λ.toSubmodule ∧ Λ.toSubmodule ≤ piLattice R ι (-N : ℤ) :=
+  Iff.rfl
+
 variable [Finite ι] {N : ℕ}
 
 /-- The lattice `jetPreimage N W` of an `X`-stable `R`-submodule `W ⊆ M_N` with finite projective
@@ -528,7 +469,7 @@ theorem mem_boundedEquiv_symm_apply_iff
 /-- The lattices bounded by `0` are the standard lattice only. -/
 theorem isBounded_zero_iff {Λ : ProjectiveLattice R⟦X⟧ R⸨X⸩ (ι → R⸨X⸩)} :
     Λ.IsBounded 0 ↔ Λ = standard R⟦X⟧ R⸨X⸩ ι := by
-  rw [IsBounded, ← toSubmodule_inj, toSubmodule_standard_eq_diagonalLattice_zero ι
+  rw [isBounded_iff, ← toSubmodule_inj, toSubmodule_standard_eq_diagonalLattice_zero ι
     (IsLocalization.Away.algebraMap_isUnit (PowerSeries.X : R⟦X⟧)), Nat.cast_zero, neg_zero,
     le_antisymm_iff, and_comm]
 
@@ -541,24 +482,26 @@ theorem exists_isBounded (Λ : ProjectiveLattice R⟦X⟧ R⸨X⸩ (ι → R⸨X
     Λ.exists_smul_mem (Submonoid.powers PowerSeries.X) (standard R⟦X⟧ R⸨X⸩ ι)
   obtain ⟨_, ⟨b, rfl⟩, hb⟩ :=
     (standard R⟦X⟧ R⸨X⸩ ι).exists_smul_mem (Submonoid.powers PowerSeries.X) Λ
-  refine ⟨max a b, fun v hv ↦ ?_, fun v hv ↦ ?_⟩
+  have hb' : (b : ℤ) ≤ (max a b : ℕ) := by omega
+  have ha' : -((max a b : ℕ) : ℤ) ≤ 0 - a := by omega
+  refine ⟨max a b, isBounded_iff.mpr ⟨fun v hv ↦ ?_, fun v hv ↦ ?_⟩⟩
   · -- `v = X ^ b • w` with `w = X ^ (-b) • v` in the standard lattice.
     set w : ι → R⸨X⸩ := (hX.unit ^ (-(b : ℤ))) • v
+    have hwi (i : ι) : w i = single (-(b : ℤ)) 1 * v i := by
+      simp only [w]
+      rw [Pi.smul_apply, Units.smul_def, isUnit_unit_eq_unitX, val_unitX_zpow, smul_eq_mul]
     have hw : (PowerSeries.X ^ b : R⟦X⟧) • w = v := by
       funext i
-      rw [Pi.smul_apply, Algebra.smul_def, show w i = single (-(b : ℤ)) 1 * v i by
-          simp only [w]
-          rw [Pi.smul_apply, Units.smul_def, isUnit_unit_eq_unitX, val_unitX_zpow, smul_eq_mul],
-        ← mul_assoc, LaurentSeries.coe_algebraMap,
+      rw [Pi.smul_apply, Algebra.smul_def, hwi, ← mul_assoc, LaurentSeries.coe_algebraMap,
         ofPowerSeries_X_pow, single_mul_single]
       simp
     rw [← hw]
     refine hb w (mem_toSubmodule.mp (hstd ▸ ?_))
-    have hv' := piLattice_antitone (show (b : ℤ) ≤ (max a b : ℕ) by omega) hv
+    have hv' := piLattice_antitone hb' hv
     rw [← hw, pow_smul_mem_diagonalLattice_iff] at hv'
     simpa using hv'
   · have hv' := (pow_smul_mem_diagonalLattice_iff hX (fun _ : ι ↦ (0 : ℤ)) a).mp
       (hstd ▸ mem_toSubmodule.mpr (ha v hv))
-    exact piLattice_antitone (show -((max a b : ℕ) : ℤ) ≤ 0 - a by omega) hv'
+    exact piLattice_antitone ha' hv'
 
 end TauCeti.ProjectiveLattice

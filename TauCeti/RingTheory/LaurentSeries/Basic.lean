@@ -31,7 +31,9 @@ unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every c
 valuations.
 
 It also packages the variable `X` as a unit of `R⸨X⸩` over any semiring `R`, whose integer
-powers are the monomials `Xⁿ`.
+powers are the monomials `Xⁿ`, and records as instances that the coefficientwise action of `R` and
+the action of `R⟦X⟧` on `R⸨X⸩` form a scalar tower `R → R⟦X⟧ → R⸨X⸩`, and that `R⟦X⟧` acts
+faithfully on `R⸨X⸩`.
 
 Over a domain, evaluating a polynomial `Q` at a Laurent series `x` of negative order is dominated
 by the leading term: `Q(x)` has order `deg Q` times that of `x`, and leading coefficient that of
@@ -176,6 +178,16 @@ theorem ringHom_ext {R A : Type*} [CommRing R] [Semiring A] {f g : R⸨X⸩ →+
 theorem algHom_ext {R A : Type*} [CommRing R] [Semiring A] [Algebra R A]
     {f g : R⸨X⸩ →ₐ[R] A} (h : ∀ p : R⟦X⟧, f p = g p) : f = g :=
   AlgHom.toRingHom_injective <| ringHom_ext h
+
+/-- Power series act on Laurent series compatibly with the coefficientwise action of `R`. -/
+instance : IsScalarTower R R⟦X⟧ R⸨X⸩ where
+  smul_assoc r p f := by
+    rw [Algebra.smul_def (r • p) f, Algebra.smul_def p f, LaurentSeries.coe_algebraMap,
+      PowerSeries.coe_smul, smul_mul_assoc]
+
+/-- Power series embed into Laurent series. -/
+instance : FaithfulSMul R⟦X⟧ R⸨X⸩ :=
+  (faithfulSMul_iff_algebraMap_injective _ _).mpr HahnSeries.ofPowerSeries_injective
 
 section UnitX
 

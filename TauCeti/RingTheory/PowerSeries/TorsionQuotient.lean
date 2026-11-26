@@ -7,12 +7,12 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Quotient
 public import Mathlib.RingTheory.Flat.EquationalCriterion
-public import Mathlib.RingTheory.MvPowerSeries.Ideal
 public import Mathlib.RingTheory.PowerSeries.Trunc
 public import Mathlib.RingTheory.Regular.IsSMulRegular
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Module.Projective.Schanuel
 public import TauCeti.RingTheory.Flat.Extensions
+public import TauCeti.RingTheory.PowerSeries.Ideal
 
 /-!
 # Submodules of power-series modules with an `X`-power-torsion quotient
@@ -26,13 +26,13 @@ coefficient ring `R`, for arbitrary `R`, including nonreduced and non-Noetherian
 * If `F` is projective and `Q` is projective over `R`, then `Λ` is projective over `R⟦X⟧`
   (`PowerSeries.projective_of_projective_quotient`). The proof resolves `Q` by
   `0 → R⟦X⟧ ⊗[R] Q → R⟦X⟧ ⊗[R] Q → Q → 0`, whose first map is `X ⊗ 1 - 1 ⊗ X`
-  (`PowerSeries.koszulDiff`): its range is the kernel of the multiplication map for every module
-  killed by a power of `X` (`PowerSeries.range_koszulDiff`), and it is injective when `Q` is flat
-  over `R` (`PowerSeries.injective_koszulDiff`). Schanuel's lemma then compares the two
+  (`PowerSeries.koszulDiff`): for every module killed by a power of `X`, its range is the kernel
+  of the multiplication map (`PowerSeries.range_koszulDiff`) and it is injective
+  (`PowerSeries.injective_koszulDiff`). Schanuel's lemma then compares the two
   presentations `F → Q` and `R⟦X⟧ ⊗[R] Q → Q`.
 * If `Λ` is flat over `R⟦X⟧` and `F ⧸ Λ₀` is flat over `R` for a submodule `Λ₀ ≤ Λ`, then `Q` is
-  flat over `R` (`PowerSeries.flat_quotient_of_flat`). The point is that for a finitely
-  generated ideal `I` of `R`, `X` is a nonzerodivisor on `Λ ⧸ I Λ`, so `Λ ∩ I F = I Λ`
+  flat over `R` (`PowerSeries.flat_quotient_of_flat`). The point is that for an ideal `I` of `R`,
+  `X` is a nonzerodivisor on `Λ ⧸ I Λ`, so `Λ ∩ I F = I Λ`
   (`PowerSeries.mem_smul_of_mem_of_mem_smul_top`).
 
 The second statement is applied with `Λ₀ = X ^ N R⟦X⟧ⁿ ⊆ F = X ^ (-N) R⟦X⟧ⁿ`, where `F ⧸ Λ₀` is
@@ -59,27 +59,10 @@ variable {R : Type*} [CommRing R]
 
 section Ideal
 
-/-- Modulo the extension of a finitely generated ideal of `R`, multiplication by a power of `X`
-on `R⟦X⟧` is injective. -/
-theorem X_pow_mul_mem_map_C_iff {I : Ideal R} (hI : I.FG) (k : ℕ) {a : R⟦X⟧} :
-    X ^ k * a ∈ I.map C ↔ a ∈ I.map C := by
-  -- `PowerSeries.C` is `MvPowerSeries.C` on `Unit`, so coefficients characterize membership.
-  have key (b : R⟦X⟧) : b ∈ I.map C ↔ ∀ n, coeff n b ∈ I := by
-    rw [show (C : R →+* R⟦X⟧) = MvPowerSeries.C from rfl, MvPowerSeries.mem_map_C_iff_of_fg hI]
-    refine ⟨fun h n ↦ h _, fun h m ↦ ?_⟩
-    rw [show m = Finsupp.single () (m ()) from Finsupp.ext fun _ ↦ by simp]
-    exact h _
-  rw [key, key]
-  refine ⟨fun h n ↦ by simpa [coeff_X_pow_mul'] using h (n + k), fun h n ↦ ?_⟩
-  rw [coeff_X_pow_mul']
-  split_ifs
-  · exact h _
-  · exact I.zero_mem
-
-/-- In a flat `R⟦X⟧`-module `P`, divisibility of `X ^ k • p` by the extension of a finitely
-generated ideal of `R` implies that of `p`: `X` is a nonzerodivisor on `P ⧸ I P`. -/
+/-- In a flat `R⟦X⟧`-module `P`, divisibility of `X ^ k • p` by the extension of an ideal of `R`
+implies that of `p`: `X` is a nonzerodivisor on `P ⧸ I P`. -/
 theorem mem_map_C_smul_top_of_X_pow_smul_mem {P : Type*} [AddCommGroup P] [Module R⟦X⟧ P]
-    [Module.Flat R⟦X⟧ P] {I : Ideal R} (hI : I.FG) {k : ℕ} {p : P}
+    [Module.Flat R⟦X⟧ P] {I : Ideal R} {k : ℕ} {p : P}
     (h : (X ^ k : R⟦X⟧) • p ∈ I.map C • (⊤ : Submodule R⟦X⟧ P)) :
     p ∈ I.map C • (⊤ : Submodule R⟦X⟧ P) := by
   set J := I.map (C : R →+* R⟦X⟧)
@@ -91,7 +74,7 @@ theorem mem_map_C_smul_top_of_X_pow_smul_mem {P : Type*} [AddCommGroup P] [Modul
     rw [← Submodule.Quotient.mk_smul, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq,
       smul_eq_mul, smul_eq_mul, ← mul_sub] at hab
     rw [Submodule.Quotient.eq]
-    exact (X_pow_mul_mem_map_C_iff hI k).mp hab
+    exact (X_pow_mul_mem_map_C_iff k).mp hab
   let e := quotTensorEquivQuotSMul P J
   have he : (X ^ k : R⟦X⟧) • e.symm (Submodule.Quotient.mk p) = (X ^ k : R⟦X⟧) • 0 := by
     rw [← map_smul, ← Submodule.Quotient.mk_smul, (Submodule.Quotient.mk_eq_zero _).mpr h,
@@ -100,10 +83,10 @@ theorem mem_map_C_smul_top_of_X_pow_smul_mem {P : Type*} [AddCommGroup P] [Modul
   exact IsSMulRegular.rTensor P hreg he
 
 /-- Let `Λ ⊆ F` be a flat `R⟦X⟧`-submodule containing `X ^ k F`. Then `Λ ∩ I F = I Λ` for every
-finitely generated ideal `I` of `R`. -/
+ideal `I` of `R`. -/
 theorem mem_smul_of_mem_of_mem_smul_top {F : Type*} [AddCommGroup F] [Module R⟦X⟧ F]
     [Module R F] [IsScalarTower R R⟦X⟧ F] {Λ : Submodule R⟦X⟧ F} [Module.Flat R⟦X⟧ Λ] {k : ℕ}
-    (hk : ∀ f : F, (X ^ k : R⟦X⟧) • f ∈ Λ) {I : Ideal R} (hI : I.FG) {m : F} (hm : m ∈ Λ)
+    (hk : ∀ f : F, (X ^ k : R⟦X⟧) • f ∈ Λ) {I : Ideal R} {m : F} (hm : m ∈ Λ)
     (hmI : m ∈ I • (⊤ : Submodule R F)) : m ∈ I • Λ.restrictScalars R := by
   have hsmul : (X ^ k : R⟦X⟧) • m ∈ I • Λ.restrictScalars R := by
     refine Submodule.smul_induction_on (p := fun x ↦ (X ^ k : R⟦X⟧) • x ∈ I • Λ.restrictScalars R)
@@ -115,7 +98,7 @@ theorem mem_smul_of_mem_of_mem_smul_top {F : Type*} [AddCommGroup F] [Module R�
   rw [← Ideal.smul_restrictScalars, Submodule.restrictScalars_mem, algebraMap_eq] at hsmul ⊢
   have hX : (X ^ k : R⟦X⟧) • (⟨m, hm⟩ : Λ) ∈ I.map C • (⊤ : Submodule R⟦X⟧ Λ) :=
     (Submodule.mem_smul_top_iff _ Λ _).mpr hsmul
-  exact (Submodule.mem_smul_top_iff _ Λ ⟨m, hm⟩).mp (mem_map_C_smul_top_of_X_pow_smul_mem hI hX)
+  exact (Submodule.mem_smul_top_iff _ Λ ⟨m, hm⟩).mp (mem_map_C_smul_top_of_X_pow_smul_mem hX)
 
 /-- **Flatness of an `X`-power-torsion quotient.** Let `Λ₀ ≤ Λ` be `R⟦X⟧`-submodules of `F` such
 that `Λ` contains `X ^ k F`, `Λ` is flat over `R⟦X⟧` and `F ⧸ Λ₀` is flat over `R`. Then `F ⧸ Λ`
@@ -128,7 +111,7 @@ theorem flat_quotient_of_flat {F : Type*} [AddCommGroup F] [Module R⟦X⟧ F] [
   let q : F →ₗ[R] F ⧸ Λ₀ := Λ₀.mkQ.restrictScalars R
   have hq : Function.Surjective q := Λ₀.mkQ_surjective
   refine Module.Flat.of_surjective_of_ker_inf_smul_top_le g (Submodule.factor_surjective hΛ₀)
-    fun I hI y ⟨hy, hyI⟩ ↦ ?_
+    fun I _ y ⟨hy, hyI⟩ ↦ ?_
   rw [← LinearMap.range_eq_top.mpr hq, LinearMap.range_eq_map, ← Submodule.map_smul''] at hyI
   obtain ⟨m, hmI, rfl⟩ := hyI
   have hm : m ∈ Λ := by
@@ -138,7 +121,7 @@ theorem flat_quotient_of_flat {F : Type*} [AddCommGroup F] [Module R⟦X⟧ F] [
     simpa [g, q, Submodule.Quotient.mk_eq_zero] using hx
   refine Submodule.smul_mono le_rfl hle ?_
   rw [← Submodule.map_smul'']
-  exact Submodule.mem_map_of_mem (mem_smul_of_mem_of_mem_smul_top hk hI hm hmI)
+  exact Submodule.mem_map_of_mem (mem_smul_of_mem_of_mem_smul_top hk hm hmI)
 
 end Ideal
 
@@ -202,10 +185,10 @@ theorem fg_restrictScalars_of_fg (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0)
       obtain ⟨⟨i, y⟩, hiy, rfl⟩ := Finset.mem_image.mp hx
       rw [Finset.mem_product, Finset.mem_range] at hiy
       simp only [f, smul_smul, ← pow_succ']
-      rcases (Nat.succ_le_of_lt (show i < k from hiy.1)).lt_or_eq with h | h
+      rcases (Nat.add_one_le_iff.mpr hiy.1).lt_or_eq with h | h
       · exact Submodule.subset_span (Finset.mem_image.mpr
           ⟨⟨i + 1, y⟩, Finset.mem_product.mpr ⟨Finset.mem_range.mpr h, hiy.2⟩, rfl⟩)
-      · rw [show i + 1 = k from h, hk]
+      · rw [h, hk]
         exact T.zero_mem
     | zero => simp
     | add x y _ _ hx hy => rw [smul_add]; exact add_mem hx hy
@@ -217,7 +200,9 @@ theorem fg_restrictScalars_of_fg (hk : ∀ m : M, (X ^ k : R⟦X⟧) • m = 0)
   · have : Submodule.span R⟦X⟧ (s : Set M) ≤ submoduleOfXSMulMem hk T hT := by
       refine Submodule.span_le.mpr fun y hy ↦ ?_
       rcases Nat.eq_zero_or_pos k with rfl | hk0
-      · simpa using (show y = 0 by simpa using hk y) ▸ T.zero_mem
+      · have hy0 : y = 0 := by simpa using hk y
+        rw [hy0]
+        exact zero_mem _
       · exact Submodule.subset_span (Finset.mem_image.mpr
           ⟨⟨0, y⟩, Finset.mem_product.mpr ⟨Finset.mem_range.mpr hk0, hy⟩, one_smul _ _⟩)
     exact fun x hx ↦ this hx
@@ -230,7 +215,7 @@ variable (Q : Type*) [AddCommGroup Q] [Module R⟦X⟧ Q] [Module R Q] [IsScalar
 
 variable (R) in
 /-- The map `X ⊗ 1 - 1 ⊗ X` on `R⟦X⟧ ⊗[R] Q`, for an `R⟦X⟧`-module `Q`. When `Q` is killed by a
-power of `X` and flat over `R`, it is injective with cokernel `Q`. -/
+power of `X`, it is injective with cokernel `Q`. -/
 noncomputable def koszulDiff : R⟦X⟧ ⊗[R] Q →ₗ[R⟦X⟧] R⟦X⟧ ⊗[R] Q :=
   (X : R⟦X⟧) • LinearMap.id - ((LinearMap.lsmul R⟦X⟧ Q X).restrictScalars R).baseChange R⟦X⟧
 
@@ -287,9 +272,8 @@ theorem range_koszulDiff {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q = 0
   intro x hx
   simpa [LinearMap.mem_ker.mp hx] using hsub x
 
-/-- For `Q` killed by a power of `X` and flat over `R`, the map `X ⊗ 1 - 1 ⊗ X` on
-`R⟦X⟧ ⊗[R] Q` is injective. -/
-theorem injective_koszulDiff [Module.Flat R Q] {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q = 0) :
+/-- For `Q` killed by a power of `X`, the map `X ⊗ 1 - 1 ⊗ X` on `R⟦X⟧ ⊗[R] Q` is injective. -/
+theorem injective_koszulDiff {k : ℕ} (hk : ∀ q : Q, (X ^ k : R⟦X⟧) • q = 0) :
     Function.Injective (koszulDiff R Q) := by
   set f : Module.End R Q := (LinearMap.lsmul R⟦X⟧ Q X).restrictScalars R
   set x : Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q) := f.baseChange R⟦X⟧
@@ -298,23 +282,34 @@ theorem injective_koszulDiff [Module.Flat R Q] {k : ℕ} (hk : ∀ q : Q, (X ^ k
     induction n generalizing q with
     | zero => simp
     | succ n ih => rw [pow_succ', mul_apply_eq_comp, ih, pow_succ', mul_smul]; rfl
+  have hfk : f ^ k = 0 := LinearMap.ext fun q ↦ by simp [hf, hk]
   have hxk : x ^ k = 0 := by
-    rw [← LinearMap.baseChange_pow, show f ^ k = 0 from LinearMap.ext fun q ↦ by simp [hf, hk],
-      LinearMap.baseChange_zero]
-  -- `(∑ yⁱ x^(k-1-i)) (y - x) = y ^ k - x ^ k = X ^ k`, and `X ^ k` is injective by flatness.
+    rw [← LinearMap.baseChange_pow, hfk, LinearMap.baseChange_zero]
+  -- `(∑ yⁱ x^(k-1-i)) (y - x) = y ^ k - x ^ k = X ^ k`, and `X ^ k ⊗ 1` has a left inverse.
+  have hd : koszulDiff R Q = y - x := by rw [koszulDiff, ← Module.End.one_eq_id]
   have hgeom : (∑ i ∈ Finset.range k, y ^ i * x ^ (k - 1 - i)) * koszulDiff R Q = y ^ k := by
     have hc : Commute y x := (Commute.one_left x).smul_left (X : R⟦X⟧)
-    rw [show koszulDiff R Q = y - x from rfl,
-      Commute.geom_sum₂_mul (R := Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q)) hc k, hxk]
+    rw [hd, Commute.geom_sum₂_mul (R := Module.End R⟦X⟧ (R⟦X⟧ ⊗[R] Q)) hc k, hxk]
     exact sub_zero (y ^ k)
+  have hyk : y ^ k = (X ^ k : R⟦X⟧) • 1 := by simp [y, smul_pow]
   have hy (z : R⟦X⟧ ⊗[R] Q) : (y ^ k) z = (LinearMap.mulLeft R (X ^ k : R⟦X⟧)).rTensor Q z := by
-    rw [show y ^ k = (X ^ k : R⟦X⟧) • 1 by simp [y, smul_pow]]
+    rw [hyk]
     induction z with
     | tmul a q => simp [smul_tmul']
     | add z w hz hw => simp only [map_add, ← hz, ← hw]
+  -- Multiplication by `X ^ k` on `R⟦X⟧` has the `R`-linear left inverse shifting coefficients.
+  let s : R⟦X⟧ →ₗ[R] R⟦X⟧ :=
+    { toFun a := mk fun i ↦ coeff (i + k) a
+      map_add' a b := by ext; simp
+      map_smul' r a := by ext; simp }
+  have hs : s ∘ₗ LinearMap.mulLeft R (X ^ k : R⟦X⟧) = LinearMap.id :=
+    LinearMap.ext fun a ↦ by ext n; simp [s, coeff_X_pow_mul']
+  have hl : Function.LeftInverse (s.rTensor Q) ((LinearMap.mulLeft R (X ^ k : R⟦X⟧)).rTensor Q) :=
+    fun z ↦ by rw [← LinearMap.comp_apply, ← LinearMap.rTensor_comp, hs, LinearMap.rTensor_id,
+      LinearMap.id_apply]
   have hinj : Function.Injective (y ^ k) := fun u v h ↦ by
     rw [hy, hy] at h
-    exact Module.Flat.rTensor_preserves_injective_linearMap _ X_pow_mul_injective h
+    exact hl.injective h
   intro u v huv
   apply hinj
   rw [← hgeom, mul_apply_eq_comp, mul_apply_eq_comp]
