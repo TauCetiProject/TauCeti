@@ -9,7 +9,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroCount
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
+import TauCeti.Data.Sum.Infinite
 import TauCeti.Geometry.Manifold.Connected
+import TauCeti.Topology.VectorBundle.FiniteDimensional
 
 /-!
 # Evaluating the kernel of a real Cauchy–Riemann operator at points
@@ -23,7 +25,7 @@ family of points `x : ι → M`, this file defines the evaluation map
 When `V = L` is a line bundle over a connected `M`, with first Chern number `d = c₁(L)[M]`, the
 zero count of `TauCeti.IsRealCauchyRiemannOperator.ncard_le_evalFundamentalClass_complexEulerClass`
 makes the evaluation at any `d + 1` distinct points injective
-(`TauCeti.IsRealCauchyRiemannOperator.injective_kerSobolevLEval`). So the kernel has real
+(`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_injective`). So the kernel has real
 dimension at most `2 (d + 1)` (`TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevL_le`),
 and the Fredholm index of `D_p`, which is at most this dimension, is at most `2 (d + 1)`
 (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_le`).
@@ -32,31 +34,32 @@ This is the automatic regularity of line operators of degree `d ≥ -1` used for
 four-manifolds: there the Riemann–Roch theorem gives `ind D_p = χ(S²) + 2 d = 2 (d + 1)`. Under the
 hypothesis `2 (d + 1) ≤ ind D_p`, for `1 < p < ∞` and `d ≥ -1`:
 
-* `D_p` is onto (`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index`) and its
+* `D_p` is onto (`TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index`) and its
   kernel has real dimension exactly `2 (d + 1)`
   (`TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevL_eq_of_le_index`);
 * the evaluation at at most `d + 1` distinct points is onto
-  (`TauCeti.IsRealCauchyRiemannOperator.surjective_kerSobolevLEval_of_le_index`), and at exactly
+  (`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_surjective_of_le_index`), and at exactly
   `d + 1` distinct points it is bijective
-  (`TauCeti.IsRealCauchyRiemannOperator.bijective_kerSobolevLEval_of_le_index`);
+  (`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_bijective_of_le_index`);
 * in particular, if `d ≥ 0`, every value at every point is taken by a smooth section in the kernel
   of `D` (`TauCeti.IsRealCauchyRiemannOperator.exists_contMDiff_apply_eq_of_le_index`), so a
-  solution of `D ξ = η` can be corrected by an element of the kernel to vanish at a given point.
+  smooth solution of `D ξ = η` can be corrected by an element of the kernel to vanish at a given
+  point.
 
 For `d = -1` the kernel is zero and the hypothesis is `0 ≤ ind D_p`, so `D_p` is an isomorphism.
 
 ## Main results
 
 * `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval`: evaluation of the kernel at points.
-* `TauCeti.IsRealCauchyRiemannOperator.injective_kerSobolevLEval`: on a line bundle, evaluation at
+* `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_injective`: on a line bundle, evaluation at
   more than `c₁(L)[M]` distinct points is injective.
 * `TauCeti.IsRealCauchyRiemannOperator.finrank_ker_sobolevL_le`: the kernel has real dimension at
   most `2 (c₁(L)[M] + 1)`.
 * `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_le`: the index is at most
   `2 (c₁(L)[M] + 1)`.
-* `TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index`: automatic surjectivity
+* `TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index`: automatic surjectivity
   in degree `≥ -1` when the index is `2 (c₁(L)[M] + 1)`.
-* `TauCeti.IsRealCauchyRiemannOperator.bijective_kerSobolevLEval_of_le_index`: the kernel is then
+* `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval_bijective_of_le_index`: the kernel is then
   identified with the fibres at `c₁(L)[M] + 1` distinct points.
 
 ## Implementation notes
@@ -136,6 +139,17 @@ theorem kerSobolevLEval_apply (hp : 1 < p) {ι : Type*} (x : ι → M)
       (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
   simp [kerSobolevLEval, h]
 
+/-- The evaluation of a kernel element which is the Sobolev section of a `C¹` section `s` is the
+evaluation of `s`. -/
+theorem kerSobolevLEval_apply_of_eq (hp : 1 < p) {ι : Type*} (x : ι → M)
+    {w : (hD.sobolevL A hDs volume p).ker} {s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯}
+    (hws : (w : SobolevSection A volume p 1) = SobolevSection.ofContMDiffSection A volume p 1 s)
+    (i : ι) :
+    kerSobolevLEval A hD hDs hp x w i = s (x i) := by
+  obtain ⟨w, hw⟩ := w
+  subst hws
+  exact kerSobolevLEval_apply A hD hDs hp x hw i
+
 end Evaluation
 
 section LineBundle
@@ -155,26 +169,6 @@ variable [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas
   (hDs : ContMDiffCovariantDerivativeOn ℂ ∞ D univ)
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-omit [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M] [T2Space M] [∀ x, IsTopologicalAddGroup (L x)]
-  [∀ x, ContinuousSMul ℝ (L x)] [∀ x, ContinuousSMul ℂ (L x)]
-  [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] in
-/-- The product of the fibres at finitely many points is finite-dimensional. -/
-private theorem finiteDimensional_pi_fiber {ι : Type*} [Finite ι] (x : ι → M) :
-    FiniteDimensional ℝ (Π i, L (x i)) :=
-  have (i : ι) : FiniteDimensional ℝ (L (x i)) := VectorBundle.finiteDimensional ℝ ℂ L (x i)
-  inferInstance
-
-omit [ChartedSpace ℂ M] [IsManifold 𝓘(ℂ) ∞ M] [T2Space M] [∀ x, IsTopologicalAddGroup (L x)]
-  [∀ x, ContinuousSMul ℝ (L x)] [∀ x, ContinuousSMul ℂ (L x)]
-  [ContMDiffVectorBundle ∞ ℂ L 𝓘(ℝ, ℂ)] in
-/-- The product of the fibres at finitely many points has real dimension twice their number. -/
-private theorem finrank_pi_fiber {ι : Type*} [Finite ι] (x : ι → M) :
-    finrank ℝ (Π i, L (x i)) = 2 * Nat.card ι := by
-  have := Fintype.ofFinite ι
-  have (i : ι) : FiniteDimensional ℝ (L (x i)) := VectorBundle.finiteDimensional ℝ ℂ L (x i)
-  rw [Module.finrank_pi_fintype, Nat.card_eq_fintype_card, mul_comm]
-  simp [VectorBundle.finrank_eq ℝ ℂ L, Complex.finrank_real_complex]
-
 variable [CompactSpace M] [ConnectedSpace M] {d : ℤ}
   (hd : ((complexHomologicalOrientation M).evalFundamentalClass Complex.finrank_real_complex
     (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
@@ -186,7 +180,7 @@ surface, the evaluation of the kernel of the realization `W^{1,p}(M, L) → Lᵖ
 `p > 1`, of a smooth real Cauchy–Riemann operator on a complex line bundle `L` at a family of
 distinct points is injective as soon as there are more than `c₁(L)[M]` of them (`Nat.card ι` is `0`
 for an infinite family). -/
-theorem injective_kerSobolevLEval (hp : 1 < p) {ι : Type*} {x : ι → M}
+theorem kerSobolevLEval_injective (hp : 1 < p) {ι : Type*} {x : ι → M}
     (hx : Injective x)
     (hlt : ((complexHomologicalOrientation M).evalFundamentalClass Complex.finrank_real_complex
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.id M)
@@ -216,10 +210,12 @@ theorem finrank_ker_sobolevL_le (hp : 1 < p) :
   have : Infinite M := infinite_of_nontrivial_model (E := ℂ)
   -- Any `d + 1` distinct points of the infinite surface `M`.
   let x : Fin (d + 1).toNat ↪ M := Fin.valEmbedding.trans (Infinite.natEmbedding M)
-  have := finiteDimensional_pi_fiber (L := L) x
+  have := VectorBundle.finiteDimensional_pi ℝ ℂ L x
   have h := LinearMap.finrank_le_finrank_of_injective
-    (injective_kerSobolevLEval A hD hDs hp x.injective (by simp; omega))
-  rwa [finrank_pi_fiber, Nat.card_fin] at h
+    (kerSobolevLEval_injective A hD hDs hp x.injective (by rw [Nat.card_fin]; omega))
+  have hdim : finrank ℝ (Π i, L (x i)) = (d + 1).toNat * 2 := by
+    rw [VectorBundle.finrank_pi ℝ ℂ L, Nat.card_fin, Complex.finrank_real_complex]
+  omega
 
 include hD hDs hd in
 /-- **An upper bound for the index.** On a compact connected Riemann surface, the index of the
@@ -238,7 +234,7 @@ connected Riemann surface, let `D` be a smooth real Cauchy–Riemann operator on
 bundle `L` of degree `d = c₁(L)[M] ≥ -1`, whose realization
 `W^{1,p}(M, L) → Lᵖ(M, Λ^{0,1} ⊗ L)`, `1 < p < ∞`, has index at least `2 (d + 1)`; on the sphere
 this is the index given by the Riemann–Roch theorem. Then the realization is onto. -/
-theorem surjective_sobolevL_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤) (hd₁ : -1 ≤ d)
+theorem sobolevL_surjective_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤) (hd₁ : -1 ≤ d)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     Surjective (hD.sobolevL A hDs volume p) := by
   have := (isFredholm_sobolevL A hD hDs hp hp_top).finite_coker
@@ -254,7 +250,7 @@ theorem surjective_sobolevL_of_le_index (hp : 1 < p) (hp_top : p ≠ ⊤) (hd₁
 
 include hD hDs hd in
 /-- Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index`, the kernel of the
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index`, the kernel of the
 realization has real dimension exactly `2 (d + 1)`, where `d = c₁(L)[M]`. -/
 theorem finrank_ker_sobolevL_eq_of_le_index (hp : 1 < p) (hd₁ : -1 ≤ d)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
@@ -265,33 +261,30 @@ theorem finrank_ker_sobolevL_eq_of_le_index (hp : 1 < p) (hd₁ : -1 ≤ d)
 
 include hD hDs hd in
 /-- **The kernel takes all values at few points.** Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index`, the evaluation of the
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index`, the evaluation of the
 kernel at at most `d + 1` distinct points is onto, where `d = c₁(L)[M]`. -/
-theorem surjective_kerSobolevLEval_of_le_index (hp : 1 < p) {ι : Type*} [Finite ι] {x : ι → M}
+theorem kerSobolevLEval_surjective_of_le_index (hp : 1 < p) {ι : Type*} [Finite ι] {x : ι → M}
     (hx : Injective x) (hcard : Nat.card ι ≤ d + 1)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     Surjective (kerSobolevLEval A hD hDs hp x) := by
   have : Infinite M := infinite_of_nontrivial_model (E := ℂ)
   -- Complete `x` to a family `z` of `d + 1` distinct points.
   set m := (d + 1).toNat - Nat.card ι
-  have hs := (finite_range x).infinite_compl
-  let e := Set.Infinite.natEmbedding _ hs
-  let y : Fin m → M := fun j ↦ e j
-  have hy : Injective y := fun j k h ↦ Fin.val_injective (e.injective (Subtype.ext h))
-  let z := Sum.elim x y
-  have hz : Injective z := hx.sumElim hy fun i j h ↦ (e j).property ⟨i, h⟩
+  obtain ⟨y, hz⟩ := hx.exists_sumElim_injective (β := Fin m)
+  set z := Sum.elim x y
   have hcardz : Nat.card (ι ⊕ Fin m) = (d + 1).toNat := by
     rw [Nat.card_sum, Nat.card_fin]
     omega
   -- At these points the evaluation is injective between spaces of the same dimension.
-  have := finiteDimensional_pi_fiber (L := L) z
-  have hinj := injective_kerSobolevLEval A hD hDs hp hz (by rw [hcardz, hd]; omega)
+  have := VectorBundle.finiteDimensional_pi ℝ ℂ L z
+  have hinj := kerSobolevLEval_injective A hD hDs hp hz (by rw [hcardz, hd]; omega)
   have hsurj : Surjective (kerSobolevLEval A hD hDs hp z) := by
     have hfin : FiniteDimensional ℝ (hD.sobolevL A hDs volume p).ker :=
       Module.Finite.of_injective _ hinj
     have hk := finrank_ker_sobolevL_eq_of_le_index A hD hDs hd hp (by omega) hind
+    have hdim : finrank ℝ (Π k, L (z k)) = (d + 1).toNat * 2 := by
+      rw [VectorBundle.finrank_pi ℝ ℂ L, hcardz, Complex.finrank_real_complex]
     have h : finrank ℝ (hD.sobolevL A hDs volume p).ker = finrank ℝ (Π k, L (z k)) := by
-      rw [finrank_pi_fiber, hcardz]
       omega
     exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (K := ℝ)
       (V := (hD.sobolevL A hDs volume p).ker) (V₂ := Π k, L (z k)) h).1 hinj
@@ -299,36 +292,36 @@ theorem surjective_kerSobolevLEval_of_le_index (hp : 1 < p) {ι : Type*} [Finite
   obtain ⟨w, hw⟩ := hsurj (Sum.rec g fun _ ↦ 0)
   refine ⟨w, funext fun i ↦ ?_⟩
   have hi := congrFun hw (Sum.inl i)
-  rw [kerSobolevLEval_apply_eq_kerSobolevLEquivComap_symm] at hi ⊢
-  exact hi
+  -- `z (Sum.inl i)` is `x i` and the target value there is `g i`, by `Sum.elim_inl` and `Sum.rec`.
+  simp only [z, kerSobolevLEval_apply_eq_kerSobolevLEquivComap_symm, Sum.elim_inl] at hi
+  rwa [kerSobolevLEval_apply_eq_kerSobolevLEquivComap_symm]
 
 include hD hDs hd in
 /-- **The kernel is the space of values at `d + 1` points.** Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index`, the evaluation of the
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index`, the evaluation of the
 kernel at `d + 1` distinct points is bijective, where `d = c₁(L)[M]`. -/
-theorem bijective_kerSobolevLEval_of_le_index (hp : 1 < p) {ι : Type*} [Finite ι] {x : ι → M}
+theorem kerSobolevLEval_bijective_of_le_index (hp : 1 < p) {ι : Type*} [Finite ι] {x : ι → M}
     (hx : Injective x) (hcard : Nat.card ι = d + 1)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) :
     Bijective (kerSobolevLEval A hD hDs hp x) :=
-  ⟨injective_kerSobolevLEval A hD hDs hp hx (by omega),
-    surjective_kerSobolevLEval_of_le_index A hD hDs hd hp hx hcard.le hind⟩
+  ⟨kerSobolevLEval_injective A hD hDs hp hx (by omega),
+    kerSobolevLEval_surjective_of_le_index A hD hDs hd hp hx hcard.le hind⟩
 
 include hD hDs hd in
 /-- **Prescribing the value at a point.** Under the hypotheses of
-`TauCeti.IsRealCauchyRiemannOperator.surjective_sobolevL_of_le_index` with `d = c₁(L)[M] ≥ 0`,
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL_surjective_of_le_index` with `d = c₁(L)[M] ≥ 0`,
 every vector `v` in a fibre `L y` is the value at `y` of a smooth section in the kernel of `D`. So a
-solution of `D ξ = η` can be corrected by an element of the kernel to vanish at `y`. -/
+smooth solution of `D ξ = η` can be corrected by an element of the kernel to vanish at `y`. -/
 theorem exists_contMDiff_apply_eq_of_le_index (hp : 1 < p) (hd₀ : 0 ≤ d)
     (hind : 2 * (d + 1) ≤ (hD.sobolevL A hDs volume p).index) (y : M) (v : L y) :
     ∃ s : Π x, L x, ContMDiff 𝓘(ℝ, ℂ) (𝓘(ℝ, ℂ).prod 𝓘(ℝ, ℂ)) ∞ (T% s) ∧ (∀ x, D s x = 0) ∧
       s y = v := by
-  obtain ⟨w, hw⟩ := surjective_kerSobolevLEval_of_le_index A hD hDs hd hp
-    (x := fun _ : Unit ↦ y) (injective_of_subsingleton _) (by simp; omega) hind fun _ ↦ v
+  obtain ⟨w, hw⟩ := kerSobolevLEval_surjective_of_le_index A hD hDs hd hp
+    (x := fun _ : Unit ↦ y) (injective_of_subsingleton _) (by rw [Nat.card_unique]; omega) hind
+    fun _ ↦ v
   obtain ⟨s, hs, hws, hDs0⟩ := exists_contMDiff_of_sobolevL_eq_zero A hD hDs hp w.property
-  refine ⟨s, hs, hDs0, ?_⟩
-  have hw' : w = ⟨_, hws ▸ w.property⟩ := Subtype.ext hws
-  rw [hw'] at hw
-  simpa using congrFun hw ()
+  exact ⟨s, hs, hDs0,
+    (kerSobolevLEval_apply_of_eq A hD hDs hp _ hws ()).symm.trans (congrFun hw ())⟩
 
 end LineBundle
 
