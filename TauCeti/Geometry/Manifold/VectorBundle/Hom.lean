@@ -75,7 +75,13 @@ morphisms and equivalences of holomorphic vector bundles. They are the `C^n` cou
 `TauCeti.continuous_hom_bundle_iff`, `TauCeti.bundleHomeomorph`, and
 `TauCeti.bundleHomeomorphOfHom`. A family of fibrewise linear
 maps is realized by a `C^n` diffeomorphism of total spaces exactly when its total-space map is
-`C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`).
+`C^n` and its fibre maps are bijective (`TauCeti.exists_bundleDiffeomorph_iff`). Likewise, over
+arbitrary base maps `b₁ : M → B₁` and `b₂ : M → B₂` with finite-dimensional model source `F₁`, a
+family of fibrewise continuous linear maps `ϕ m : E₁ (b₁ m) →L[𝕜] E₂ (b₂ m)` is `C^n` at `m₀` (or
+within `s` at `m₀`) in `ContinuousLinearMap.inCoordinates` if and only if it maps every `C^n` lift
+along `b₁` to a `C^n` lift along `b₂` (`TauCeti.contMDiffWithinAt_inCoordinates_iff`,
+`TauCeti.contMDiffAt_inCoordinates_iff`, and the tangent-bundle specialization
+`TauCeti.Manifold.contMDiffAt_inTangentCoordinates_iff`).
 
 For the tangent bundle, a parametrized family of endomorphisms of the tangent spaces that is a
 `C^n` Hom-bundle section along `P × M → M`, read at a fixed base point `x`, is a `C^n` family of
@@ -873,6 +879,123 @@ theorem MDifferentiableAt.clm_bundle_comp
   MDifferentiableWithinAt.clm_bundle_comp hC hA
 
 end Composition
+
+section InCoordinatesIff
+
+namespace TauCeti
+
+variable {𝕜 F₁ F₂ B₁ B₂ M : Type*} {E₁ : B₁ → Type*} {E₂ : B₂ → Type*}
+  [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [∀ x, AddCommGroup (E₁ x)] [∀ x, Module 𝕜 (E₁ x)]
+  [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁] [FiniteDimensional 𝕜 F₁]
+  [TopologicalSpace (TotalSpace F₁ E₁)] [∀ x, TopologicalSpace (E₁ x)]
+  [∀ x, AddCommGroup (E₂ x)] [∀ x, Module 𝕜 (E₂ x)]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [TopologicalSpace (TotalSpace F₂ E₂)] [∀ x, TopologicalSpace (E₂ x)]
+  {EB₁ : Type*} [NormedAddCommGroup EB₁] [NormedSpace 𝕜 EB₁]
+  {HB₁ : Type*} [TopologicalSpace HB₁] {IB₁ : ModelWithCorners 𝕜 EB₁ HB₁}
+  [TopologicalSpace B₁] [ChartedSpace HB₁ B₁]
+  {EB₂ : Type*} [NormedAddCommGroup EB₂] [NormedSpace 𝕜 EB₂]
+  {HB₂ : Type*} [TopologicalSpace HB₂] {IB₂ : ModelWithCorners 𝕜 EB₂ HB₂}
+  [TopologicalSpace B₂] [ChartedSpace HB₂ B₂]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
+  [TopologicalSpace M] [ChartedSpace HM M]
+  [FiberBundle F₁ E₁] [VectorBundle 𝕜 F₁ E₁]
+  [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
+  {n : ℕ∞ω} {b₁ : M → B₁} {b₂ : M → B₂} {s : Set M} {m₀ : M}
+
+/-- **Intrinsic characterization of smoothness in `ContinuousLinearMap.inCoordinates` within a
+set.** Over a finite-dimensional model source fibre `F₁`, a family of continuous linear maps
+`ϕ m : E₁ (b₁ m) →L[𝕜] E₂ (b₂ m)` along `C^n` base maps `b₁` and `b₂` within `s` at `m₀` is `C^n`
+within `s` at `m₀` in `inCoordinates` if and only if it maps every `C^n` lift along `b₁` within `s`
+at `m₀` to a `C^n` lift along `b₂` within `s` at `m₀`. No `IsManifold` or `ContMDiffVectorBundle`
+assumption is required. -/
+theorem contMDiffWithinAt_inCoordinates_iff
+    (hb₁ : ContMDiffWithinAt IM IB₁ n b₁ s m₀) (hb₂ : ContMDiffWithinAt IM IB₂ n b₂ s m₀)
+    (ϕ : ∀ m : M, E₁ (b₁ m) →L[𝕜] E₂ (b₂ m)) :
+    ContMDiffWithinAt IM 𝓘(𝕜, F₁ →L[𝕜] F₂) n
+        (fun m ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m))
+        s m₀ ↔
+      ∀ v : ∀ m : M, E₁ (b₁ m),
+        ContMDiffWithinAt IM (IB₁.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b₁ m) (v m)) s m₀ →
+        ContMDiffWithinAt IM (IB₂.prod 𝓘(𝕜, F₂)) n
+          (fun m ↦ TotalSpace.mk' F₂ (b₂ m) (ϕ m (v m))) s m₀ := by
+  refine ⟨fun hϕ _ hv ↦ hϕ.clm_apply_of_inCoordinates hv hb₂, fun h ↦ ?_⟩
+  rw [← contMDiffWithinAt_insert_self] at hb₁ hb₂ ⊢
+  rw [TauCeti.contMDiffWithinAt_clm_apply]
+  intro w
+  let v : ∀ m : M, E₁ (b₁ m) :=
+    fun m ↦ (trivializationAt F₁ E₁ (b₁ m₀)).symmL 𝕜 (b₁ m) w
+  have hv : ContMDiffWithinAt IM (IB₁.prod 𝓘(𝕜, F₁)) n
+      (fun m ↦ TotalSpace.mk' F₁ (b₁ m) (v m)) s m₀ := by
+    rw [← contMDiffWithinAt_insert_self, contMDiffWithinAt_totalSpace_iff]
+    refine ⟨hb₁, (contMDiffWithinAt_const (c := w)).congr_of_eventuallyEq_of_mem ?_
+      (mem_insert m₀ s)⟩
+    filter_upwards [hb₁.continuousWithinAt.preimage_mem_nhdsWithin
+      ((trivializationAt F₁ E₁ (b₁ m₀)).open_baseSet.mem_nhds
+        (mem_baseSet_trivializationAt F₁ E₁ (b₁ m₀)))] with m hm
+    simp only [v, (trivializationAt F₁ E₁ (b₁ m₀)).symmL_apply hm,
+      (trivializationAt F₁ E₁ (b₁ m₀)).apply_mk_symm hm]
+  have hϕv := h v hv
+  rw [← contMDiffWithinAt_insert_self, contMDiffWithinAt_totalSpace_iff] at hϕv
+  refine hϕv.2.congr_of_eventuallyEq_of_mem ?_ (mem_insert m₀ s)
+  filter_upwards [hb₂.continuousWithinAt.preimage_mem_nhdsWithin
+    ((trivializationAt F₂ E₂ (b₂ m₀)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ E₂ (b₂ m₀)))] with m hm₂
+  simp only [v, ContinuousLinearMap.inCoordinates, ContinuousLinearMap.coe_comp,
+    Function.comp_apply,
+    Trivialization.continuousLinearMapAt_apply_of_mem 𝕜 (trivializationAt F₂ E₂ (b₂ m₀)) hm₂]
+
+/-- **Intrinsic characterization of smoothness in `ContinuousLinearMap.inCoordinates` at a
+point.** Over a finite-dimensional model source fibre `F₁`, a family of continuous linear maps
+`ϕ m : E₁ (b₁ m) →L[𝕜] E₂ (b₂ m)` along `C^n` base maps `b₁` and `b₂` at `m₀` is `C^n` at `m₀` in
+`inCoordinates` if and only if it maps every `C^n` lift along `b₁` at `m₀` to a `C^n` lift along
+`b₂` at `m₀`. -/
+theorem contMDiffAt_inCoordinates_iff
+    (hb₁ : ContMDiffAt IM IB₁ n b₁ m₀) (hb₂ : ContMDiffAt IM IB₂ n b₂ m₀)
+    (ϕ : ∀ m : M, E₁ (b₁ m) →L[𝕜] E₂ (b₂ m)) :
+    ContMDiffAt IM 𝓘(𝕜, F₁ →L[𝕜] F₂) n
+        (fun m ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ (b₁ m₀) (b₁ m) (b₂ m₀) (b₂ m) (ϕ m))
+        m₀ ↔
+      ∀ v : ∀ m : M, E₁ (b₁ m),
+        ContMDiffAt IM (IB₁.prod 𝓘(𝕜, F₁)) n (fun m ↦ TotalSpace.mk' F₁ (b₁ m) (v m)) m₀ →
+        ContMDiffAt IM (IB₂.prod 𝓘(𝕜, F₂)) n
+          (fun m ↦ TotalSpace.mk' F₂ (b₂ m) (ϕ m (v m))) m₀ := by
+  simp only [← contMDiffWithinAt_univ] at hb₁ hb₂ ⊢
+  exact contMDiffWithinAt_inCoordinates_iff hb₁ hb₂ ϕ
+
+end TauCeti
+
+namespace TauCeti.Manifold
+
+variable {𝕜 F E E' K H H' Q M N : Type*}
+  [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
+  {J : ModelWithCorners 𝕜 F K} [TopologicalSpace Q] [ChartedSpace K Q]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H']
+  {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold I' 1 N]
+
+/-- **Intrinsic characterization of smoothness in `inTangentCoordinates` at a point.** Over a
+finite-dimensional tangent model `E`, a family of continuous linear maps
+`ϕ q : T_(f q) M →L[𝕜] T_(g q) N` along `C^m` maps `f : Q → M` and `g : Q → N` at `q₀` is `C^m` at
+`q₀` in `inTangentCoordinates` if and only if it sends every `C^m` tangent lift along `f` at `q₀`
+to a `C^m` tangent lift along `g` at `q₀`. -/
+theorem contMDiffAt_inTangentCoordinates_iff {m : ℕ∞ω}
+    {f : Q → M} {g : Q → N} {q₀ : Q}
+    (hf : ContMDiffAt J I m f q₀) (hg : ContMDiffAt J I' m g q₀)
+    (ϕ : ∀ q : Q, TangentSpace I (f q) →L[𝕜] TangentSpace I' (g q)) :
+    ContMDiffAt J 𝓘(𝕜, E →L[𝕜] E') m (inTangentCoordinates I I' f g ϕ q₀) q₀ ↔
+      ∀ v : ∀ q : Q, TangentSpace I (f q),
+        ContMDiffAt J (I.prod 𝓘(𝕜, E)) m (fun q ↦ TotalSpace.mk' E (f q) (v q)) q₀ →
+        ContMDiffAt J (I'.prod 𝓘(𝕜, E')) m (fun q ↦ TotalSpace.mk' E' (g q) (ϕ q (v q))) q₀ :=
+  TauCeti.contMDiffAt_inCoordinates_iff hf hg ϕ
+
+end TauCeti.Manifold
+
+end InCoordinatesIff
 
 namespace TauCeti
 

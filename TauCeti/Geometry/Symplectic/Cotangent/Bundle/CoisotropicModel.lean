@@ -13,8 +13,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.Flat
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
 import TauCeti.Geometry.Manifold.Distribution.Complement
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Geometry.Manifold.TwoForm.Kernel
+import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 import TauCeti.Topology.VectorBundle.Hom
 
 /-!
@@ -63,9 +63,9 @@ coisotropic embedding theorem.
   (`TauCeti.CotangentBundle.exists_opens_isSymplectic_mpullback_coisotropicModelForm`).
 * **Gotay's coisotropic embedding theorem.** If `σ` is closed and its kernels have constant
   dimension, a smooth complement `D` of its kernel distribution exists
-  (`TauCeti.IsContMDiffDistribution.exists_isCompl`), so on a Hausdorff σ-compact boundaryless
-  manifold the model applies with no choice supplied: the zero section is a coisotropic embedding
-  of `Q` into an open neighbourhood on which `Ω` is symplectic, pulling `Ω` back to `σ`
+  (`TauCeti.IsContMDiffDistribution.exists_isCompl`), so on a Hausdorff σ-compact manifold the model
+  applies with no choice supplied: the zero section is a coisotropic embedding of `Q` into an open
+  neighbourhood on which `Ω` is symplectic, pulling `Ω` back to `σ`
   (`TauCeti.CotangentBundle.exists_isCoisotropicEmbedding_coisotropicModelForm`). Every
   presymplectic manifold is therefore an embedded coisotropic submanifold of a symplectic
   manifold, with the induced form.
@@ -335,10 +335,10 @@ theorem exists_opens_isSymplectic_mpullback_coisotropicModelForm [FiniteDimensio
 
 section Existence
 
-variable [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space Q] [SigmaCompactSpace Q]
+variable [FiniteDimensional ℝ E] [T2Space Q] [SigmaCompactSpace Q]
 
 /-- **Gotay's coisotropic embedding theorem.** Let `σ` be a closed two-form on a Hausdorff
-σ-compact boundaryless manifold `Q`, whose kernels all have dimension `r`, and let
+σ-compact manifold `Q`, whose kernels all have dimension `r`, and let
 `k + r = dim Q`. Then there is a smooth distribution `D` of rank `k` complementary to the kernels of
 `σ`, and an open neighbourhood `U` of the zero section of its annihilator bundle `D⁰ ≅ (ker σ)*`,
 of rank `r`, on which the coisotropic model form is symplectic. The zero section, as a map
@@ -376,11 +376,10 @@ theorem exists_isCoisotropicEmbedding_coisotropicModelForm {k r : ℕ} (hσ : σ
   set hι := hD.contMDiff_annihilatorInclusion hk
   obtain ⟨U, hζU, hU⟩ :=
     exists_opens_isSymplectic_mpullback_coisotropicModelForm σ hσ hD hk fun q ↦ (hDK q).symm
-  -- The zero section is a smooth embedding, with the projection as a smooth left inverse.
+  -- The zero section is a smooth embedding.
   let ζ := zeroSection (Fin r → ℝ) (fun x ↦ annihilatorSpace I D x)
   have hζ : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ ζ :=
-    (contMDiff_zeroSection ℝ _).isSmoothEmbedding_of_leftInverse (by simp)
-      ((Bundle.contMDiff_proj (n := ∞) _).of_le (by simp)) fun q ↦ by simp
+    Bundle.isSmoothEmbedding_zeroSection
   let z : Q → U := fun q ↦ ⟨ζ q, hζU q⟩
   have hzζ : (Subtype.val : U → _) ∘ z = ζ := rfl
   have hz : Manifold.IsSmoothEmbedding I (I.prod 𝓘(ℝ, Fin r → ℝ)) ∞ z :=

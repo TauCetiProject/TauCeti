@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
+public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.MFDeriv
+import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
 /-!
-# Tangent spaces along the zero section
+# Tangent spaces and smooth embedding of the zero section
 
 The tangent space of a vector bundle at its zero vector splits canonically into the tangent
 space of the base and the fibre. The horizontal summand is the differential of the zero
@@ -20,6 +22,12 @@ This decomposition lets one compute the total differential of a map out of a vec
 from its restriction to the zero section and its derivatives along the fibres. In particular,
 these are the two parts of the differential of the normal exponential in the tubular
 neighbourhood theorem.
+
+When the base and total space carry `C^n` manifold structures, the zero section is a `C^n`
+smooth embedding (`Bundle.isSmoothEmbedding_zeroSection`), with neither finite-dimensionality
+nor boundarylessness required: in the preferred bundle chart over a trivialization base set it
+is the first-factor inclusion `y ↦ (y, 0)`, and the bundle projection is a continuous left
+inverse.
 
 The horizontal computation generalizes Mathlib's
 `TangentBundle.tangentMap_tangentBundle_pure`, by Sébastien Gouëzel and Floris van Doorn,
@@ -147,3 +155,60 @@ theorem zeroSectionTangentEquiv_symm_eq (b : B) (u : TangentSpace I b) (v : V b)
   simp
 
 end TauCeti.Bundle
+
+namespace Bundle
+
+variable {𝕜 B E H F : Type*} [NontriviallyNormedField 𝕜] {n : WithTop ℕ∞}
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace B] [ChartedSpace H B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ b, AddCommMonoid (V b)] [∀ b, Module 𝕜 (V b)]
+  [∀ b, TopologicalSpace (V b)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [IsManifold I n B] [IsManifold (I.prod 𝓘(𝕜, F)) n (TotalSpace F V)]
+
+/-- The zero section of a `C^n` vector bundle is a `C^n` immersion with the model fibre as
+complement: over the base set of a local trivialization, the preferred bundle chart sends `0_b` to
+`(y, 0)`. -/
+theorem isImmersionOfComplement_zeroSection :
+    Manifold.IsImmersionOfComplement F I (I.prod 𝓘(𝕜, F)) n (zeroSection F V) := by
+  intro b
+  let s := (trivializationAt F V b).baseSet
+  have hs : IsOpen s := (trivializationAt F V b).open_baseSet
+  refine Manifold.IsImmersionAtOfComplement.mk_of_continuousAt
+    (Trivialization.continuous_zeroSection 𝕜 (E := V)).continuousAt
+    (ContinuousLinearEquiv.refl 𝕜 (E × F))
+    ((chartAt H b).restr s) (chartAt _ (zeroSection F V b))
+    (by simp [s, hs.interior_eq, mem_chart_source, mem_baseSet_trivializationAt])
+    (mem_chart_source _ _)
+    (restr_mem_maximalAtlas (contDiffGroupoid n I) (IsManifold.chart_mem_maximalAtlas b) hs)
+    (IsManifold.chart_mem_maximalAtlas _) fun y hy ↦ ?_
+  -- Restricting `chartAt H b` to `s` does not change `.symm`.
+  have hext : (((chartAt H b).restr s).extend I).symm y = (extChartAt I b).symm y := by
+    rw [OpenPartialHomeomorph.extend_coe_symm, extChartAt_coe_symm, Function.comp_apply,
+      Function.comp_apply, (chartAt H b).restr_symm_apply]
+  have hmem : (extChartAt I b).symm y ∈ (chartAt H b).source ∩ s := by
+    have hsrc := (((chartAt H b).restr s).extend I).map_target hy
+    rwa [hext, OpenPartialHomeomorph.extend_source, (chartAt H b).restr_source' s hs] at hsrc
+  have hy_ext : y ∈ (extChartAt I b).target := by
+    rw [OpenPartialHomeomorph.extend_target, (chartAt H b).restr_target] at hy
+    rw [extChartAt_target]
+    exact ⟨hy.1.1, hy.2⟩
+  rw [← extChartAt]
+  simp only [Function.comp_apply, hext, extChartAt_zeroSection_of_mem_baseSet (IB := I) b hmem.2,
+    ContinuousLinearEquiv.refl_apply, (extChartAt I b).right_inv hy_ext]
+
+/-- The zero section of a `C^n` vector bundle is a `C^n` immersion. -/
+theorem isImmersion_zeroSection :
+    Manifold.IsImmersion I (I.prod 𝓘(𝕜, F)) n (zeroSection F V) :=
+  (isImmersionOfComplement_zeroSection (I := I) (V := V)).isImmersion
+
+/-- The zero section of a `C^n` vector bundle is a `C^n` smooth embedding, without
+finite-dimensionality or boundarylessness assumptions. -/
+theorem isSmoothEmbedding_zeroSection :
+    Manifold.IsSmoothEmbedding I (I.prod 𝓘(𝕜, F)) n (zeroSection F V) := by
+  have hproj : Function.LeftInverse (π F V) (zeroSection F V) := zeroSection_proj F V
+  exact ⟨isImmersion_zeroSection,
+    hproj.isEmbedding (FiberBundle.continuous_proj F V) (Trivialization.continuous_zeroSection 𝕜)⟩
+
+end Bundle

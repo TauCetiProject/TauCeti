@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Manifold.RelativeMoser
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.Diffeomorph.Empty
 import TauCeti.Geometry.Manifold.TubularNeighborhood.PrescribedDifferential
 import TauCeti.Geometry.Symplectic.Manifold.NeighborhoodGerm
 import TauCeti.Geometry.Symplectic.Manifold.Opens
@@ -233,11 +234,8 @@ theorem exists_diffeomorph_opens_mfderiv_eq (i : SmoothEmbedding J I ∞ Q M) {g
       simpa only [← SetLike.mem_coe, Opens.coe_bot] using x.property⟩
     have : IsEmpty (⊥ : Opens N) := ⟨fun y ↦ Set.notMem_empty (y : N) <| by
       simpa only [← SetLike.mem_coe, Opens.coe_bot] using y.property⟩
-    let φ : (⊥ : Opens M) ≃ₘ⟮I, K⟯ (⊥ : Opens N) :=
-      { toEquiv := Equiv.equivOfIsEmpty _ _
-        contMDiff_toFun := fun x ↦ isEmptyElim x
-        contMDiff_invFun := fun y ↦ isEmptyElim y }
-    exact ⟨⊥, ⊥, φ, fun q ↦ isEmptyElim q, Subtype.ext (funext fun x ↦ isEmptyElim x)⟩
+    exact ⟨⊥, ⊥, Diffeomorph.ofIsEmpty, fun q ↦ isEmptyElim q,
+      Subtype.ext (funext fun x ↦ isEmptyElim x)⟩
   -- Realize `A` as the differential of a partial diffeomorphism `Ψ`, then correct `Ψ` by the
   -- relative Moser theorem without changing its differential along `i(Q)`.
   obtain ⟨Ψ, hsrc, -, -, hval, hd⟩ := i.exists_partialDiffeomorph_mfderiv_eq hg hgi hA hAinv hAi

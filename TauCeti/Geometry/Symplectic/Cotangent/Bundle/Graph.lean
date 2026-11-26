@@ -10,7 +10,9 @@ public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
+public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
+import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 
 /-!
 # Graphs of one-forms in a cotangent bundle
@@ -33,8 +35,10 @@ tangent-image predicates of `TauCeti.Geometry.Symplectic.Lagrangian.Manifold`:
   exactly when `α` is closed (`TauCeti.CotangentBundle.isLagrangianMap_section_iff`).
 
 In particular the zero section of `T*M` is a Lagrangian map
-(`TauCeti.CotangentBundle.isLagrangianMap_zeroSection`), and so is the graph of the differential
-`df` of a smooth function (`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`).
+(`TauCeti.CotangentBundle.isLagrangianMap_zeroSection`) and a Lagrangian embedding
+(`TauCeti.CotangentBundle.isLagrangianEmbedding_zeroSection`), and the graph of the differential
+`df` of a smooth function is a Lagrangian map
+(`TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`).
 
 Since `s_α^*λ = α`, the graph of `α` is an exact Lagrangian map for the primitive `λ` of `ω`, with
 primitive `h`, exactly when `α = dh` (`TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`).
@@ -52,6 +56,8 @@ Lagrangian with primitive `0` (`TauCeti.CotangentBundle.isExactLagrangianMap_zer
 * `TauCeti.CotangentBundle.isLagrangianMap_section_iff`: the graph of `α` is Lagrangian iff
   `dα = 0`.
 * `TauCeti.CotangentBundle.isLagrangianMap_zeroSection`: the zero section is Lagrangian.
+* `TauCeti.CotangentBundle.isLagrangianEmbedding_zeroSection`: the zero section is a Lagrangian
+  embedding.
 * `TauCeti.CotangentBundle.isLagrangianMap_section_mextDerivₗ`: the graph of `df` is Lagrangian.
 * `TauCeti.CotangentBundle.isExactLagrangianMap_section_iff`: the graph of `α` is exact Lagrangian
   with primitive `h` iff `α = dh`.
@@ -140,6 +146,15 @@ theorem isLagrangianMap_zeroSection :
   -- The section of the zero one-form is the zero section.
   convert h using 2 with x
   simp [zeroSection]
+
+/-- **The zero section is a Lagrangian embedding.** On a finite-dimensional smooth manifold, the
+zero section of the cotangent bundle is a smooth Lagrangian embedding for the canonical symplectic
+form. Neither boundarylessness nor compactness is required. -/
+theorem isLagrangianEmbedding_zeroSection :
+    (isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.IsLagrangianEmbedding I
+      (zeroSection (E →L[ℝ] ℝ) (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ)) :=
+  { __ := Bundle.isSmoothEmbedding_zeroSection
+    isLagrangianMap := isLagrangianMap_zeroSection }
 
 /-- **The graph of an exact one-form is Lagrangian.** On a finite-dimensional manifold, the section
 of the cotangent bundle defined by the differential `df` of a smooth function `f` is a Lagrangian

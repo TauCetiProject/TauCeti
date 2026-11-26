@@ -30,7 +30,8 @@ partial coordinates, and pulling back a `C^m` maximal-atlas chart along a `C^n` 
 (`m ≤ n`) preserves membership in the maximal `C^m` atlas (`Diffeomorph.trans_mem_maximalAtlas`,
 `Diffeomorph.trans_mem_maximalAtlas_iff`).
 The linear map underlying the differential of a diffeomorphism viewed as a linear equivalence
-(`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential.
+(`Diffeomorph.mfderivToContinuousLinearEquiv_toLinearMap`) is the differential, and its inverse acts
+by the differential of `h.symm` (`Diffeomorph.mfderivToContinuousLinearEquiv_symm_apply`).
 -/
 
 public section
@@ -247,6 +248,16 @@ by the differential. -/
 theorem mfderivToContinuousLinearEquiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
     (v : TangentSpace I x) : h.mfderivToContinuousLinearEquiv hn x v = mfderiv I J h x v := by
   rw [← ContinuousLinearEquiv.coe_coe, h.mfderivToContinuousLinearEquiv_coe hn]
+
+/-- The inverse of `Diffeomorph.mfderivToContinuousLinearEquiv` acts on tangent vectors at `h x`
+by the differential of `h.symm`. -/
+-- Not `@[simp]` so `ContinuousLinearEquiv.apply_symm_apply` continues to fire before unfolding.
+theorem mfderivToContinuousLinearEquiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
+    (v : TangentSpace J (h x)) :
+    (h.mfderivToContinuousLinearEquiv hn x).symm v = mfderiv J I h.symm (h x) v :=
+  ((h.mfderivToContinuousLinearEquiv hn x).symm_apply_eq).2 <|
+    (h.mfderiv_apply_mfderiv_symm_apply hn x v).symm.trans
+      (h.mfderivToContinuousLinearEquiv_apply hn x _).symm
 
 /-- **Chain rule for conjugation by a diffeomorphism.** If `h ∘ f` and `g ∘ h` agree near `x`,
 then `dg_(h x) ∘ dh_x = dh_(f x) ∘ df_x`. No differentiability of `f` or `g` is assumed. -/
