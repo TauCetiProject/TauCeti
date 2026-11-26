@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Contact.Contactomorphism
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.LinearAlgebra.BilinearMap.Splitting
 
 /-!
 # Contact lifts of conformally symplectic linear maps
@@ -30,9 +28,10 @@ the `z` coordinate is what makes this exact: without it the pullback would be
 `c dz - ⟪(A w).2, d(A w).1⟫`, which differs from `c α` by a nonzero exact form in general. The lift
 fixes the origin, and its differential there is `A` on the
 contact hyperplane `V × V × {0}` and multiplication by `c` on the `z`-axis
-(`TauCeti.fderiv_conformalContactLift_zero_apply`). So for `c ≠ 0` the differential at the origin
-of a contactomorphism of the standard contact structure can be any conformally symplectic map of
-the contact hyperplane, with any multiplier on the contact line.
+(`TauCeti.fderiv_conformalContactLift_zero_apply`). So for `c ≠ 0` every conformally symplectic
+continuous linear equivalence of the contact hyperplane with multiplier `c`, together with
+multiplication by the same `c` on the contact line, is the differential at the origin of a
+contactomorphism of the standard contact structure.
 
 The lifts compose like the linear maps they lift: the lift of `A ∘ B` with multiplier `c d` is the
 lift of `A` with `c` after the lift of `B` with `d` (`TauCeti.conformalContactLift_comp`), and the
@@ -41,8 +40,11 @@ equivalence with nonzero multiplier is a diffeomorphism
 (`TauCeti.conformalContactLiftDiffeomorph`), with inverse the lift of the inverse map; it is a
 contactomorphism when `A` is conformally symplectic
 (`TauCeti.isContactomorphism_conformalContactLiftDiffeomorph`). A conformally symplectic map with
-nonzero multiplier is injective (`TauCeti.injective_of_stdSymplecticForm_map_eq_mul`), so in finite
-dimension it is a linear equivalence.
+nonzero multiplier is injective (`TauCeti.SymplecticForm.injective_of_map_eq_mul`), so in finite
+dimension it is a linear equivalence. Hence a linear map of `V × V × ℝ` preserving the hyperplane
+`z = 0` and conformally symplectic on it agrees, on the hyperplane and in the `z` coordinate, with
+the differential at the origin of such a contactomorphism
+(`TauCeti.exists_conformalContactLift_of_linearMap`).
 
 ## Main definitions
 
@@ -57,6 +59,8 @@ dimension it is a linear equivalence.
 * `TauCeti.fderiv_conformalContactLift_zero_apply`: the differential of the lift at the origin.
 * `TauCeti.conformalContactLift_comp`: lifts compose.
 * `TauCeti.isContactomorphism_conformalContactLiftDiffeomorph`: the lift is a contactomorphism.
+* `TauCeti.exists_conformalContactLift_of_linearMap`: first-order realization of a linear map
+  preserving the contact hyperplane at the origin.
 
 ## References
 
@@ -137,11 +141,22 @@ theorem conformalContactLift_comp (A B : V × V →L[ℝ] V × V) (c d : ℝ) :
   ring
 
 /-- The linear map `(q, p, z) ↦ (q, p)` onto the `(q, p)` coordinates. -/
-private def qpProj : V × V × ℝ →L[ℝ] V × V :=
+def qpProj : V × V × ℝ →L[ℝ] V × V :=
   (ContinuousLinearMap.fst ℝ V (V × ℝ)).prod
     ((ContinuousLinearMap.fst ℝ V ℝ).comp (ContinuousLinearMap.snd ℝ V (V × ℝ)))
 
-private theorem qpProj_apply (x : V × V × ℝ) : qpProj x = (x.1, x.2.1) :=
+/-- `TauCeti.qpProj` forgets the `z` coordinate. -/
+@[simp]
+theorem qpProj_apply (x : V × V × ℝ) : qpProj x = (x.1, x.2.1) :=
+  (rfl)
+
+/-- The linear map `(q, p) ↦ (q, p, 0)` onto the hyperplane `z = 0`. -/
+def qpIncl : V × V →L[ℝ] V × V × ℝ :=
+  (ContinuousLinearMap.fst ℝ V V).prod ((ContinuousLinearMap.snd ℝ V V).prod 0)
+
+/-- `TauCeti.qpIncl` adds the `z` coordinate `0`. -/
+@[simp]
+theorem qpIncl_apply (w : V × V) : qpIncl w = (w.1, w.2, 0) :=
   (rfl)
 
 /-- The contact lift has the derivative obtained by differentiating its defining formula. -/
@@ -234,19 +249,6 @@ theorem mpullback_conformalContactLift_innerProductContactForm
   rw [real_inner_comm (A (x.1, x.2.1)).1, real_inner_comm x.1 (v 0).2.1]
   linear_combination (1 / 2 : ℝ) * hAv
 
-/-- A linear map of `V × V` that is conformally symplectic with nonzero multiplier is injective,
-since the standard symplectic form is nondegenerate. -/
-theorem injective_of_stdSymplecticForm_map_eq_mul (hc : c ≠ 0)
-    (hA : ∀ u w, stdSymplecticForm (A u) (A w) = c * stdSymplecticForm u w) :
-    Function.Injective A := by
-  have hB : Function.Injective (stdSymplecticForm (V := V)).toBilinForm := LinearMap.ker_eq_bot.1
-    (LinearMap.separatingLeft_iff_ker_eq_bot.1 (stdSymplecticForm (V := V)).nondegenerate.1)
-  refine LinearMap.injective_left_of_compl₁₂_eq_compr₂
-    (q := (stdSymplecticForm (V := V)).toBilinForm) (b := (A : V × V →ₗ[ℝ] V × V))
-    (φ := c • LinearMap.id) ?_ hB (smul_right_injective ℝ hc)
-  refine LinearMap.ext₂ fun u w ↦ ?_
-  simpa using hA u w
-
 /-- The contact lift of a continuous linear equivalence `A` of `V × V` with a nonzero multiplier
 `c`, as a diffeomorphism of `V × V × ℝ`. Its inverse is the lift of `A⁻¹` with multiplier
 `c⁻¹`. -/
@@ -280,7 +282,8 @@ theorem coe_conformalContactLiftDiffeomorph_symm (A : (V × V) ≃L[ℝ] V × V)
 
 /-- The contact lift of a conformally symplectic linear equivalence with multiplier `c ≠ 0` pulls
 the standard contact form back to `c` times itself. -/
-theorem mpullback_conformalContactLiftDiffeomorph (A : (V × V) ≃L[ℝ] V × V) (hc : c ≠ 0)
+theorem mpullback_conformalContactLiftDiffeomorph_innerProductContactForm
+    (A : (V × V) ≃L[ℝ] V × V) (hc : c ≠ 0)
     (hA : ∀ u w, stdSymplecticForm (A u) (A w) = c * stdSymplecticForm u w) :
     SmoothForm.mpullback (conformalContactLiftDiffeomorph A hc)
         (conformalContactLiftDiffeomorph A hc).contMDiff (innerProductContactForm V) =
@@ -295,7 +298,66 @@ theorem isContactomorphism_conformalContactLiftDiffeomorph (A : (V × V) ≃L[�
     (hc : c ≠ 0) (hA : ∀ u w, stdSymplecticForm (A u) (A w) = c * stdSymplecticForm u w) :
     (conformalContactLiftDiffeomorph A hc).IsContactomorphism (innerProductContactForm V)
       (innerProductContactForm V) := by
-  rw [Diffeomorph.isContactomorphism_def, mpullback_conformalContactLiftDiffeomorph A hc hA]
+  rw [Diffeomorph.isContactomorphism_def,
+    mpullback_conformalContactLiftDiffeomorph_innerProductContactForm A hc hA]
   exact SmoothForm.kerDistribution_smul hc
+
+/-- A linear map of `V × V × ℝ` preserving the hyperplane `z = 0` multiplies the `z` coordinate
+by the `z` coordinate of the image of `(0, 0, 1)`. -/
+theorem _root_.LinearMap.snd_snd_apply_eq_mul (S : V × V × ℝ →ₗ[ℝ] V × V × ℝ)
+    (hS : ∀ y : V × V × ℝ, y.2.2 = 0 → (S y).2.2 = 0) (y : V × V × ℝ) :
+    (S y).2.2 = (S (0, 0, 1)).2.2 * y.2.2 := by
+  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : V × V × ℝ) := by
+    ext <;> simp
+  rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
+  simp [mul_comm]
+
+/-- **First-order realization on the standard contact space.** Let `S` be a linear map of
+`V × V × ℝ` with `S y` in the hyperplane `z = 0` exactly when `y` is, and conformally symplectic on
+that hyperplane with multiplier `c = (S (0, 0, 1)).2.2`. Then `c ≠ 0`, and `S` agrees on the
+hyperplane, and in its `z` coordinate everywhere, with the differential at the origin of the
+contact lift of a conformally symplectic linear equivalence with multiplier `c`. -/
+theorem exists_conformalContactLift_of_linearMap [FiniteDimensional ℝ V]
+    (S : V × V × ℝ →ₗ[ℝ] V × V × ℝ) (hS : ∀ y : V × V × ℝ, (S y).2.2 = 0 ↔ y.2.2 = 0)
+    (hSω : ∀ u v : V × V × ℝ, u.2.2 = 0 → v.2.2 = 0 →
+      stdSymplecticForm ((S u).1, (S u).2.1) ((S v).1, (S v).2.1) =
+        (S (0, 0, 1)).2.2 * stdSymplecticForm (u.1, u.2.1) (v.1, v.2.1)) :
+    ∃ A : (V × V) ≃L[ℝ] V × V, (S (0, 0, 1)).2.2 ≠ 0 ∧
+      (∀ u w, stdSymplecticForm (A u) (A w) = (S (0, 0, 1)).2.2 * stdSymplecticForm u w) ∧
+      (∀ y : V × V × ℝ, y.2.2 = 0 →
+        fderiv ℝ (conformalContactLift (A : V × V →L[ℝ] V × V) (S (0, 0, 1)).2.2) 0 y = S y) ∧
+      ∀ y : V × V × ℝ,
+        (fderiv ℝ (conformalContactLift (A : V × V →L[ℝ] V × V) (S (0, 0, 1)).2.2) 0 y).2.2 =
+          (S y).2.2 := by
+  set c := (S (0, 0, 1)).2.2
+  have hc : c ≠ 0 := fun h ↦ one_ne_zero ((hS (0, 0, 1)).1 h)
+  -- The restriction of `S` to the hyperplane `z = 0`, read in the `(q, p)` coordinates.
+  let A₀ : V × V →L[ℝ] V × V := LinearMap.toContinuousLinearMap
+    ((qpProj (V := V)).toLinearMap ∘ₗ S ∘ₗ (qpIncl (V := V)).toLinearMap)
+  have hA₀ (w : V × V) : A₀ w = ((S (w.1, w.2, 0)).1, (S (w.1, w.2, 0)).2.1) := by
+    simp [A₀]
+  have hA (u w : V × V) : stdSymplecticForm (A₀ u) (A₀ w) = c * stdSymplecticForm u w := by
+    rw [hA₀, hA₀]
+    exact hSω (u.1, u.2, 0) (w.1, w.2, 0) rfl rfl
+  have hinj := (stdSymplecticForm (V := V)).injective_of_map_eq_mul hc hA
+  let A : (V × V) ≃L[ℝ] V × V :=
+    (LinearEquiv.ofInjectiveEndo (A₀ : V × V →ₗ[ℝ] V × V) hinj).toContinuousLinearEquiv
+  have hAA₀ : (A : V × V →L[ℝ] V × V) = A₀ := by
+    ext w <;> simp [A]
+  -- On the hyperplane `z = 0`, `S` is determined by its `(q, p)` coordinates.
+  have hS₀ (y : V × V × ℝ) (hy : y.2.2 = 0) :
+      S y = ((A₀ (y.1, y.2.1)).1, (A₀ (y.1, y.2.1)).2, 0) := by
+    have hy' : y = (y.1, y.2.1, 0) := by
+      ext <;> simp [hy]
+    have hz := (hS y).2 hy
+    rw [hA₀, ← hy']
+    ext <;> simp [hz]
+  refine ⟨A, hc, fun u w ↦ ?_, fun y hy ↦ ?_, fun y ↦ ?_⟩
+  · have hu : A u = A₀ u := congrArg (· u) hAA₀
+    have hw : A w = A₀ w := congrArg (· w) hAA₀
+    rw [hu, hw]
+    exact hA u w
+  · rw [hAA₀, fderiv_conformalContactLift_zero_apply, hS₀ y hy, hy, mul_zero]
+  · rw [fderiv_conformalContactLift_zero_apply, S.snd_snd_apply_eq_mul (fun y hy ↦ (hS y).2 hy) y]
 
 end TauCeti
