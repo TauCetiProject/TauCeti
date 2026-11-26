@@ -78,9 +78,8 @@ theorem w1pVanishingOnSubmodule_empty_of_isLipschitzDomainWith (hp : p ≠ (∞ 
     (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
     (hb : Bornology.IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
     w1pVanishingOnSubmodule volume Ω p ∅ = ⊤ :=
-  eq_top_iff.2 fun u _ => (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb).induction_on u
-    (w1pVanishingOnSubmodule volume Ω p ∅).isClosed fun _ =>
-      W1p.restrictL_ofTestFunctionₗ_mem_w1pVanishingOnSubmodule (by simp)
+  w1pVanishingOnSubmodule_empty_eq_top_iff.2
+    (W1p.denseRange_restrictL_ofTestFunctionₗ_top hp hΩ hb)
 
 /-- **Functions vanishing on `Γ` have zero trace on `Γ`.** On a bounded Lipschitz domain and for
 `p < ∞`, the trace of every `u ∈ W^{1,p}_Γ(Ω)` vanishes almost everywhere on `Γ` for surface

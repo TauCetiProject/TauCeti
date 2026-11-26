@@ -14,6 +14,7 @@ public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.PreservesHomology
 public import Mathlib.Algebra.Homology.ShortComplex.Preadditive
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.ShortComplex.PreservesHomology
 
 /-!
 # Additional API for homological complexes
@@ -63,9 +64,18 @@ isomorphism in the degrees around `j` identifies exactness at `j` of its source 
 (`HomologicalComplex.exactAt_iff_of_isIso_f`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
-degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
-(`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`. Stated for the mapped complex, whose
+short complex in degree `i` is `(K.sc i).map F` only up to unfolding, it carries the class map of
+the mapped complex to the image of the class map
+(`CategoryTheory.Functor.homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app`,
+`CategoryTheory.Functor.map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app`),
+and `ShortComplex.mapCyclesIso` carries the image of the inclusion of cycles to the inclusion of
+cycles of the mapped complex (`CategoryTheory.Functor.mapCyclesIso_hom_comp_map_iCycles`,
+`CategoryTheory.Functor.mapCyclesIso_inv_comp_iCycles`); so a morphism from a complex mapped along
+`F` to one mapped along another such functor acts on cycles as on chains
+(`CategoryTheory.Functor.mapCyclesIso_inv_comp_cyclesMap_comp_mapCyclesIso_hom_comp_map_iCycles`).
+Exactness of a mapped complex in degree `i` reduces to exactness of the mapped short complex
+`(K.sc i).map F` (`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -549,5 +559,71 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
     (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
       ((K.sc i).mapHomologyIso F).hom :=
   (rfl)
+
+@[simp]
+lemma mapHomologicalComplexCompHomologyFunctorIso_inv_app (K : HomologicalComplex C c) :
+    (F.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K =
+      ((K.sc i).mapHomologyIso F).inv :=
+  (rfl)
+
+/-- Under `mapHomologicalComplexCompHomologyFunctorIso`, the class map of `F` applied to `K` is
+`F` applied to the class map of `K`, up to the identification `ShortComplex.mapCyclesIso` of the
+cycles. This is `ShortComplex.homologyπ_comp_mapHomologyIso_hom` stated for the mapped complex,
+whose short complex in degree `i` is `(K.sc i).map F` only up to unfolding, so that it can be
+rewritten with directly. -/
+@[reassoc, elementwise nosimp]
+lemma homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_hom_app
+    (K : HomologicalComplex C c) :
+    ((F.mapHomologicalComplex c).obj K).homologyπ i ≫
+        (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
+      ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.homologyπ i) :=
+  (K.sc i).homologyπ_comp_mapHomologyIso_hom F
+
+/-- The inverse of `mapHomologicalComplexCompHomologyFunctorIso` sends `F` applied to the class
+map of `K` to the class map of `F` applied to `K`, up to the identification
+`ShortComplex.mapCyclesIso` of the cycles. This is
+`ShortComplex.map_homologyπ_comp_mapHomologyIso_inv` stated for the mapped complex. -/
+@[reassoc, elementwise nosimp]
+lemma map_homologyπ_comp_mapHomologicalComplexCompHomologyFunctorIso_inv_app
+    (K : HomologicalComplex C c) :
+    F.map (K.homologyπ i) ≫ (F.mapHomologicalComplexCompHomologyFunctorIso c i).inv.app K =
+      ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).homologyπ i :=
+  (K.sc i).map_homologyπ_comp_mapHomologyIso_inv F
+
+/-- Under the identification `ShortComplex.mapCyclesIso` of the cycles, `F` applied to the
+inclusion of the cycles of `K` is the inclusion of the cycles of `F` applied to `K`. This is
+`ShortComplex.mapCyclesIso_hom_iCycles` stated for the mapped complex. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma mapCyclesIso_hom_comp_map_iCycles (K : HomologicalComplex C c) :
+    ((K.sc i).mapCyclesIso F).hom ≫ F.map (K.iCycles i) =
+      ((F.mapHomologicalComplex c).obj K).iCycles i :=
+  (K.sc i).mapCyclesIso_hom_iCycles F
+
+/-- The inverse form of `mapCyclesIso_hom_comp_map_iCycles`: under the identification
+`ShortComplex.mapCyclesIso` of the cycles, the inclusion of the cycles of `F` applied to `K` is `F`
+applied to the inclusion of the cycles of `K`. This is `ShortComplex.mapCyclesIso_inv_comp_iCycles`
+stated for the mapped complex. -/
+@[reassoc (attr := simp), elementwise (attr := simp)]
+lemma mapCyclesIso_inv_comp_iCycles (K : HomologicalComplex C c) :
+    ((K.sc i).mapCyclesIso F).inv ≫ ((F.mapHomologicalComplex c).obj K).iCycles i =
+      F.map (K.iCycles i) :=
+  (K.sc i).mapCyclesIso_inv_comp_iCycles F
+
+variable {E : Type*} [Category* E] [Preadditive E] [CategoryWithHomology E] (G : E ⥤ D)
+  [G.Additive] [G.PreservesHomology]
+
+/-- A morphism `Φ` from `F` applied to `K` to `G` applied to `L` acts on cycles as it acts on the
+underlying chains: carried along the identifications `ShortComplex.mapCyclesIso` of the cycles,
+its map of cycles followed by `G` applied to the inclusion of the cycles of `L` is `F` applied to
+the inclusion of the cycles of `K` followed by `Φ`. -/
+@[reassoc, elementwise nosimp]
+lemma mapCyclesIso_inv_comp_cyclesMap_comp_mapCyclesIso_hom_comp_map_iCycles
+    (K : HomologicalComplex C c) (L : HomologicalComplex E c)
+    (Φ : (F.mapHomologicalComplex c).obj K ⟶ (G.mapHomologicalComplex c).obj L) :
+    ((K.sc i).mapCyclesIso F).inv ≫ HomologicalComplex.cyclesMap Φ i ≫
+        ((L.sc i).mapCyclesIso G).hom ≫ G.map (L.iCycles i) =
+      F.map (K.iCycles i) ≫ Φ.f i := by
+  rw [mapCyclesIso_hom_comp_map_iCycles, HomologicalComplex.cyclesMap_i,
+    mapCyclesIso_inv_comp_iCycles_assoc]
 
 end CategoryTheory.Functor
