@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import TauCeti.AlgebraicGeometry.Sites.Nisnevich.DistinguishedSquare.EmptyOpen
+import TauCeti.AlgebraicGeometry.ResidueField
 
 /-!
 # Examples: morphisms that are not the `p` of a square with empty open part
@@ -19,7 +20,11 @@ isomorphism (`ElementaryDistinguishedSquare.isIso_p_of_isEmpty`). Hence:
   separable);
 * over `X = Spec ℝ`, no such `Q` has `p` isomorphic over `X` to the morphism
   `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`, which has two points over the single point of `X`: the structure
-  rejects it, although it has exactly one point with residue field `ℝ` over that point.
+  rejects it, although it has exactly one point with residue field `ℝ` over that point
+  (`existsUnique_realComplexToReal_isIso_residueFieldMap`): the point of `Spec ℂ` has residue
+  field `ℂ` (`not_isIso_residueFieldMap_realComplexToReal_inr`). So the pointwise condition "one
+  preimage with trivial residue field extension" holds while the uniqueness of the preimage
+  fails (`not_existsUnique_realComplexToReal`).
 -/
 
 public section
@@ -73,5 +78,59 @@ open part has `p` isomorphic over `Spec ℝ` to `Spec ℝ ⨿ Spec ℂ ⟶ Spec 
 theorem isEmpty_iso_realComplexToReal (Q : ElementaryDistinguishedSquare (Spec (.of ℝ)))
     [IsEmpty Q.U] : IsEmpty (Over.mk Q.p ≅ Over.mk realComplexToReal) :=
   Q.isEmpty_iso_of_not_isIso _ not_isIso_realComplexToReal
+
+/-- `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ` restricts to the identity on `Spec ℝ`. -/
+theorem realComplexToReal_inl (a : Spec (.of ℝ)) :
+    realComplexToReal ((coprod.inl : Spec (.of ℝ) ⟶ _) a) = a := by
+  rw [← Scheme.Hom.comp_apply, coprod.inl_desc]
+  rfl
+
+/-- `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ` induces an isomorphism of residue fields at the points of
+`Spec ℝ`. -/
+theorem isIso_residueFieldMap_realComplexToReal_inl (a : Spec (.of ℝ)) :
+    IsIso (realComplexToReal.residueFieldMap ((coprod.inl : Spec (.of ℝ) ⟶ _) a)) := by
+  have : IsIso ((coprod.inl ≫ realComplexToReal).residueFieldMap a) := by
+    rw [coprod.inl_desc]
+    infer_instance
+  exact Scheme.Hom.isIso_residueFieldMap_of_comp coprod.inl realComplexToReal a
+
+/-- `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ` does not induce an isomorphism of residue fields at the point of
+`Spec ℂ`. -/
+theorem not_isIso_residueFieldMap_realComplexToReal_inr (b : Spec (.of ℂ)) :
+    ¬ IsIso (realComplexToReal.residueFieldMap ((coprod.inr : Spec (.of ℂ) ⟶ _) b)) := by
+  intro h
+  have : IsIso ((coprod.inr ≫ realComplexToReal).residueFieldMap b) := by
+    have : IsOpenImmersion (coprod.inr : Spec (.of ℂ) ⟶ Spec (.of ℝ) ⨿ Spec (.of ℂ)) :=
+      inferInstance
+    rw [Scheme.residueFieldMap_comp]
+    exact IsIso.comp_isIso' h inferInstance
+  rw [coprod.inr_desc, RingHom.isIso_SpecMap_residueFieldMap_iff_surjective] at this
+  -- `i` is not real.
+  obtain ⟨r, hr⟩ := this Complex.I
+  simpa using congrArg Complex.im hr
+
+/-- **The pointwise clause holds for `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`**: over the point of `Spec ℝ`
+there is exactly one point with an isomorphism of residue fields, the point of `Spec ℝ`. -/
+theorem existsUnique_realComplexToReal_isIso_residueFieldMap (x : Spec (.of ℝ)) :
+    ∃! v, realComplexToReal v = x ∧ IsIso (realComplexToReal.residueFieldMap v) := by
+  refine ⟨(coprod.inl : Spec (.of ℝ) ⟶ _) x,
+    ⟨realComplexToReal_inl x, isIso_residueFieldMap_realComplexToReal_inl x⟩, ?_⟩
+  rintro v ⟨-, hv⟩
+  obtain ⟨a, rfl⟩ | ⟨b, rfl⟩ : v ∈ Set.range (coprod.inl : Spec (.of ℝ) ⟶ _) ∪
+      Set.range (coprod.inr : Spec (.of ℂ) ⟶ _) := by
+    rw [(isCompl_range_inl_inr _ _).sup_eq_top]
+    trivial
+  · rw [Subsingleton.elim a x]
+  · exact (not_isIso_residueFieldMap_realComplexToReal_inr b hv).elim
+
+/-- **The uniqueness clause fails for `Spec ℝ ⨿ Spec ℂ ⟶ Spec ℝ`**: the points of `Spec ℝ` and of
+`Spec ℂ` both lie over the point of `Spec ℝ`. -/
+theorem not_existsUnique_realComplexToReal (x : Spec (.of ℝ)) :
+    ¬ ∃! v, realComplexToReal v = x := by
+  rintro ⟨v, -, hv⟩
+  obtain ⟨b⟩ : Nonempty (Spec (.of ℂ)) := inferInstance
+  have h₁ := hv ((coprod.inl : Spec (.of ℝ) ⟶ _) x) (realComplexToReal_inl x)
+  have h₂ := hv ((coprod.inr : Spec (.of ℂ) ⟶ _) b) (Subsingleton.elim _ _)
+  exact inl_ne_inr _ _ x b (h₁.trans h₂.symm)
 
 end TauCeti.AlgebraicGeometry.DistinguishedSquareEmptyOpenExample
