@@ -67,12 +67,8 @@ private theorem norm_hyperplaneTrace_ofTestFunction_rpow_le (hp : p ≠ ∞) (a 
     have hφ := testFunctionLp_apply_ae (mu := volume) p φ
     simp only [Opens.coe_top, Measure.restrict_univ] at hφ
     exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
-  have hg : W1p.gradient v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] ∇ φ := by
-    apply (W1p.gradient_restrictL_ae le_top _).trans
-    rw [W1p.gradient_ofTestFunctionₗ]
-    have hφ := gradientTestFunctionLp_apply_ae (mu := volume) p φ
-    simp only [Opens.coe_top, Measure.restrict_univ] at hφ
-    exact hφ.filter_mono (ae_mono Measure.restrict_le_self)
+  have hg : W1p.gradient v =ᵐ[volume.restrict (normalHalfSpace (E := E) a)] ∇ φ :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae le_top φ
   -- The left side of the one-sided trace inequality, as a power of an `Lᵖ` norm.
   have htr : ‖W1p.hyperplaneTrace hp a (W1p.ofTestFunctionₗ volume ⊤ p φ)‖ ^ p.toReal =
       ∫ y : E, |φ (WithLp.toLp 2 (a, y))| ^ p.toReal := by

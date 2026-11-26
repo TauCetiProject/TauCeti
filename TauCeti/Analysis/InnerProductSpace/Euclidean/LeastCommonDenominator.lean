@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Cover
 public import TauCeti.Analysis.InnerProductSpace.Compressible
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.IntegerPoints
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Normed.Module.Normalize
 import TauCeti.Topology.MetricSpace.CoveringNumbers
 

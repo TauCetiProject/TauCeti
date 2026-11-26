@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+public import Mathlib.GroupTheory.NoncommCoprod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Kernel
 public import TauCeti.LinearAlgebra.QuadraticForm.Basic
 
@@ -49,6 +50,8 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
   `CliffordAlgebra.spinCGroup.lift`: the descent of homomorphisms trivial on `(-1, -1)`.
 * `CliffordAlgebra.spinCGroup.ofSpin Q hQ` and `CliffordAlgebra.spinCGroup.ofCircle Q hQ`: the
   injective homomorphisms `s ↦ [s, 1]` and `z ↦ [1, z]`.
+* `CliffordAlgebra.spinCGroup.mulCircle Q hQ`: multiplication by the central circle
+  `Spinᶜ(Q) × U(1) → Spinᶜ(Q)`, `(a, w) ↦ a [1, w]`.
 * `CliffordAlgebra.spinCGroup.det Q hQ`: the determinant character `[s, z] ↦ z²`.
 * `CliffordAlgebra.spinCGroup.toSpecialOrthogonal Q hQ`: the rotation homomorphism
   `[s, z] ↦ π(s)`.
@@ -78,7 +81,10 @@ Taubes's identification `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)` at the l
   `Spinᶜ(Q) → SO(Q) × U(1)`.
 * `CliffordAlgebra.spinCGroup.det_chargeConj`,
   `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_chargeConj`: charge conjugation inverts the
-  determinant character and covers the identity rotation.
+  determinant character and covers the identity rotation;
+  `CliffordAlgebra.spinCGroup.chargeConj_comp_chargeConj` and
+  `CliffordAlgebra.spinCGroup.toSpecialOrthogonal_comp_chargeConj` are the involution and
+  rotation identities as identities of homomorphisms.
 * `CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`,
   `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`: charge conjugation is twisting by the
   inverse determinant, and the conjugate of `x` twisted by `z` is `x` twisted by `(det x)⁻¹ z⁻¹`.
@@ -315,6 +321,43 @@ theorem toSpecialOrthogonal_ofCircle (z : Circle) :
     toSpecialOrthogonal Q hQ (ofCircle Q hQ z) = 1 := by
   simp [ofCircle_apply]
 
+/-- **Multiplication by the central circle**, `Spinᶜ(Q) × U(1) → Spinᶜ(Q)`, `(a, w) ↦ a [1, w]`;
+on classes, `([s, z], w) ↦ [s, z w]`. It is a homomorphism because the circle `[1, w]` is
+central (`CliffordAlgebra.spinCGroup.ofCircle_mem_center`). -/
+def mulCircle : spinCGroup Q hQ × Circle →* spinCGroup Q hQ :=
+  (MonoidHom.id _).noncommCoprod (ofCircle Q hQ) fun a w ↦
+    Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ w) a
+
+@[simp]
+theorem mulCircle_apply (a : spinCGroup Q hQ) (w : Circle) :
+    mulCircle Q hQ (a, w) = a * ofCircle Q hQ w :=
+  (rfl)
+
+/-- Multiplication by the central circle sends `([s, z], w)` to `[s, z w]`. -/
+theorem mulCircle_mk (s : spinGroup Q) (z w : Circle) :
+    mulCircle Q hQ (mk Q hQ (s, z), w) = mk Q hQ (s, z * w) := by
+  rw [mulCircle_apply, ofCircle_apply, ← map_mul, Prod.mk_mul_mk, mul_one]
+
+/-- Multiplying `a [1, w]` on the left by the central element `[1, z]` gives `a [1, z w]`. -/
+theorem ofCircle_mul_mulCircle (z : Circle) (a : spinCGroup Q hQ) (w : Circle) :
+    ofCircle Q hQ z * mulCircle Q hQ (a, w) = mulCircle Q hQ (a, z * w) := by
+  rw [mulCircle_apply, mulCircle_apply, ← mul_assoc,
+    ← Subgroup.mem_center_iff.1 (ofCircle_mem_center Q hQ z) a, mul_assoc, map_mul]
+
+/-- Multiplication by the central circle does not change the rotation. -/
+@[simp]
+theorem toSpecialOrthogonal_mulCircle (g : spinCGroup Q hQ × Circle) :
+    toSpecialOrthogonal Q hQ (mulCircle Q hQ g) = toSpecialOrthogonal Q hQ g.1 := by
+  obtain ⟨a, w⟩ := g
+  rw [mulCircle_apply, map_mul, toSpecialOrthogonal_ofCircle, mul_one]
+
+/-- Multiplication by the central circle lifts the first projection along the rotation
+homomorphism. -/
+theorem toSpecialOrthogonal_comp_mulCircle :
+    (toSpecialOrthogonal Q hQ).comp (mulCircle Q hQ) =
+      (toSpecialOrthogonal Q hQ).comp (MonoidHom.fst _ _) :=
+  MonoidHom.ext (toSpecialOrthogonal_mulCircle Q hQ)
+
 /-- **The kernel of the rotation homomorphism `Spinᶜ(Q) → SO(Q)` is the central circle**
 `{[1, z]}`, for a finite-dimensional nondegenerate quadratic form. -/
 theorem mem_ker_toSpecialOrthogonal_iff [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
@@ -503,6 +546,20 @@ theorem toSpecialOrthogonal_chargeConj (x : spinCGroup Q hQ) :
     toSpecialOrthogonal Q hQ (chargeConj Q hQ x) = toSpecialOrthogonal Q hQ x := by
   obtain ⟨p, rfl⟩ := mk_surjective Q hQ x
   simp
+
+/-- Charge conjugation is an involution, as a homomorphism: `chargeConj ∘ chargeConj = id`. -/
+theorem chargeConj_comp_chargeConj :
+    (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ).comp (chargeConj Q hQ) =
+      MonoidHom.id _ :=
+  (chargeConj Q hQ).toMonoidHom_comp_toMonoidHom_symm
+
+/-- **Charge conjugation covers the identity rotation**, as a homomorphism: `π ∘ chargeConj = π`,
+where `π : Spinᶜ(Q) → SO(Q)` is the rotation homomorphism. This is the compatibility that makes
+the charge conjugate of a `Spinᶜ` structure a `Spinᶜ` structure on the same oriented bundle. -/
+theorem toSpecialOrthogonal_comp_chargeConj :
+    (toSpecialOrthogonal Q hQ).comp (chargeConj Q hQ : spinCGroup Q hQ →* spinCGroup Q hQ) =
+      toSpecialOrthogonal Q hQ :=
+  MonoidHom.ext (toSpecialOrthogonal_chargeConj Q hQ)
 
 /-- **Charge conjugation is twisting by the inverse determinant**:
 `chargeConj x = x [1, (det x)⁻¹]`. Since `[s, z⁻¹] = [s, z] [1, (z²)⁻¹]`, the conjugate of a

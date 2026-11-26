@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.Spectral.Flow
 import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Topology.Algebra.Indicator
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The spectral flow of the negated path

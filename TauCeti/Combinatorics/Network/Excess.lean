@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Group.Submonoid.BigOperators
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Tactic.Abel
+public import TauCeti.Algebra.Order.Group.ZMultiples
 public import TauCeti.Combinatorics.Network.Basic
 
 /-!
@@ -47,6 +48,8 @@ at the sink `t`. A loop at `v` enters and leaves `v`, so it contributes nothing 
 * `TauCeti.sum_excessAt`: the total excess over all vertices vanishes.
 * `TauCeti.sum_excessAt_eq_zero_of_forall_mem_iff`: the total excess vanishes on a vertex set
   that no arrow enters or leaves.
+* `TauCeti.exists_nsmul_eq_arrowSum`: the sum of a nonnegative assignment in `zmultiples d` is a
+  natural multiple of a positive `d`.
 * `TauCeti.excessAt_single`: a single arrow from `x` to `y` carrying `q` has excess `q` at `y` and
   `-q` at `x`.
 * `TauCeti.excessAt_source_eq_neg_sink`: an assignment conserved away from `s` and `t` has opposite
@@ -289,6 +292,21 @@ theorem sum_sum_single_out [Fintype V] [DecidableEq V] {x y : V} (e : Q x y) (q 
       Assignment.single_apply_of_ne e q fun h ↦ hv (congrArg Sigma.fst h)
 
 end AddCommMonoid
+
+section AddCommGroup
+
+variable [AddCommGroup K] [∀ v w, Fintype (Q v w)] [Preorder K] [AddLeftMono K]
+
+/-- The sum over two vertex sets of a nonnegative assignment in `zmultiples d`, for positive `d`,
+is a natural multiple of `d`. -/
+theorem exists_nsmul_eq_arrowSum {cap : Assignment Q K} {d : K} (hd : 0 < d)
+    (hcap_nonneg : 0 ≤ cap)
+    (hcap : ∀ ⦃v w⦄ (e : Q v w), cap e ∈ AddSubgroup.zmultiples d) (S T : Finset V) :
+    ∃ n : ℕ, n • d = arrowSum cap S T :=
+  exists_nsmul_eq_of_nonneg_of_mem_zmultiples hd
+    (by simpa only [arrowSum_zero] using arrowSum_mono hcap_nonneg S T) (arrowSum_mem hcap S T)
+
+end AddCommGroup
 
 /-- The unit assignment counts arrows: its total value on the arrows from `S` to `T` is the
 number of these arrows, with parallel arrows counted separately. -/
@@ -604,6 +622,14 @@ theorem map_sub [AddGroup K] [AddGroup L] [AddMonoidHomClass F K L] (φ : F)
     (f g : Assignment Q K) : (f - g).map φ = f.map φ - g.map φ := by
   funext _ _ e
   simp
+
+/-- Reading natural values in `K` and then applying an additive map `φ` with `φ 1 = 1` reads them
+in `L`. -/
+theorem map_map_natCast [AddMonoidWithOne K] [AddMonoidWithOne L] [AddMonoidHomClass F K L]
+    (φ : F) (hφ : φ 1 = 1) (a : Assignment Q ℕ) :
+    (a.map (Nat.cast : ℕ → K)).map φ = a.map Nat.cast := by
+  funext x y e
+  exact map_natCast' φ hφ (a e)
 
 end Algebra
 

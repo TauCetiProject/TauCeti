@@ -35,6 +35,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `TauCeti.volume_parallelepiped`: the parallelepiped spanned by `v` has volume `√(det G)`.
 * `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
   volume one.
+* `TauCeti.volume_setOf_apply_mem_eq_zero`: in `EuclideanSpace ℝ ι`, the points whose `i`-th
+  coordinate lies in a null set of `ℝ` form a null set.
 * `TauCeti.volume_ball_eq_of_finrank_eq`, `TauCeti.volume_closedBall_eq_of_finrank_eq`: in
   finite-dimensional real inner product spaces of the same dimension, open (respectively closed)
   balls of the same radius have equal volume.
@@ -43,6 +45,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
+* `AffineIsometryEquiv.isFiniteMeasure_volume_restrict_preimage`: an affine-isometric preimage of
+  a bounded set has finite volume.
 * `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
   space linearly isomorphic to `K × Kᗮ` holds, for almost every `a`, at the image of the
   components of `a` along `K` and `Kᗮ`.
@@ -116,6 +120,15 @@ theorem volume_parallelepiped (v : ι → E) (hv : Fintype.card ι = finrank ℝ
   rw [← hf, ← image_parallelepiped, Measure.addHaar_image_linearMap, o.volume_parallelepiped,
     mul_one, ← f.normDet_eq_abs_det, hf, ← hsq, Real.sqrt_sq f.normDet_nonneg]
 
+omit [DecidableEq ι] in
+/-- In `EuclideanSpace ℝ ι`, the set of points whose `i`-th coordinate lies in a null set of `ℝ`
+is null. -/
+theorem volume_setOf_apply_mem_eq_zero {s : Set ℝ} (hs : volume s = 0) (i : ι) :
+    volume {x : EuclideanSpace ℝ ι | x i ∈ s} = 0 := by
+  have hpi := Measure.pi_eval_preimage_null (μ := fun _ : ι ↦ (volume : Measure ℝ)) (i := i) hs
+  rw [← volume_pi] at hpi
+  exact (PiLp.volume_preserving_ofLp ι).quasiMeasurePreserving.preimage_null hpi
+
 end TauCeti
 
 namespace Module.Basis
@@ -172,6 +185,13 @@ theorem measurePreserving (f : E ≃ᵃⁱ[ℝ] F) : MeasurePreserving f := by
     simpa using f.map_vadd 0 x
   rw [hf]
   exact (measurePreserving_add_right volume (f 0)).comp f.linearIsometryEquiv.measurePreserving
+
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+/-- **A rigid copy of a bounded set has finite volume.** For an affine isometric equivalence `g`
+and a bounded set `t`, the restriction of the volume to `g⁻¹(t)` is a finite measure. -/
+theorem isFiniteMeasure_volume_restrict_preimage (g : E ≃ᵃⁱ[ℝ] F) {t : Set F}
+    (ht : Bornology.IsBounded t) : IsFiniteMeasure (volume.restrict (g ⁻¹' t)) :=
+  isFiniteMeasure_restrict.2 (g.isometry.antilipschitzWith.isBounded_preimage ht).measure_lt_top.ne
 
 end AffineIsometryEquiv
 
