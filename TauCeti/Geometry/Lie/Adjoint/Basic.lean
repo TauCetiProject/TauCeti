@@ -36,6 +36,8 @@ The construction works over any nontrivially normed field. Its differential only
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
 * `TauCeti.Lie.mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint`: the
   left-invariant vector field of `X` at `g` is the right-invariant vector field of `Ad_g X` at `g`.
+* `TauCeti.Lie.mfderiv_inv_mul_mfderiv_inv`: translated back to the identity, the derivative of
+  inversion at `g` is `-Ad_g`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
 * `TauCeti.Lie.adjointContinuousLinearMap_eq_id`: the adjoint action of a commutative Lie group is
@@ -356,6 +358,23 @@ theorem mpullback_conjugation_one (g : G) (V : ∀ x : G, TangentSpace I x) :
     simp only [conjDiffeomorph_apply, mul_one, inv_inv, inv_mul_cancel]
   exact congrArg (fun y : G ↦ mfderiv I I
     (conjDiffeomorph (I := I) (n := 1) g) 1 (V y)) hpoint
+
+/-- **The derivative of inversion through the adjoint action.** Translated back to the identity,
+the derivative of inversion at `g` is minus `Ad_g` of the translate: `θ_{g⁻¹}(d(inv)_g v) =
+-Ad_g (θ_g v)`, where `θ_g = d(L_{g⁻¹})_g` is the left Maurer–Cartan form. -/
+theorem mfderiv_inv_mul_mfderiv_inv (g : G) (v : TangentSpace I g) :
+    mfderiv I I (g⁻¹⁻¹ * ·) g⁻¹ (mfderiv I I (fun h : G ↦ h⁻¹) g v) =
+      -adjointContinuousLinearMap (I := I) g (mfderiv I I (g⁻¹ * ·) g v) := by
+  obtain ⟨ξ, rfl⟩ := exists_mulInvariantVectorField_eq (I := I) (G := G) (g := g) v
+  have h := mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint
+    (adjointContinuousLinearMap (I := I) g ξ) g⁻¹
+  rw [← ContinuousLinearMap.comp_apply, ← adjointContinuousLinearMap_mul, inv_mul_cancel,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at h
+  rw [GroupLieAlgebra.mfderiv_inv_mulInvariantVectorField, ← h, map_neg,
+    mfderiv_inv_mul_mulInvariantVectorField, mfderiv_inv_mul_mulInvariantVectorField]
+  -- The two negations live in the tangent space at `g⁻¹⁻¹ * g⁻¹` and in the Lie algebra, both
+  -- the model space `E` with its negation.
+  rfl
 
 end Differential
 
