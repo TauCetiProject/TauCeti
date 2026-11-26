@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-import TauCeti.Algebra.Order.Floor.Semifield
 
 /-!
 # Elementary bounds on real powers
@@ -74,9 +73,6 @@ For every real exponent `β` and `0 ≤ t ≤ x`, `(x + t) ^ β ≤ max 1 (2 ^ �
 power of either sign uniformly across `[x, 2 * x]` as needed for derivative remainder bounds on
 dyadic intervals.
 
-For `x ≥ 0`, the unit-fraction powers `x ^ (1 / k)` over `3 ≤ k ≤ ⌊log x / log 2⌋₊` satisfy
-`∑_{3 ≤ k ≤ log x / log 2} x ^ (1 / k) ≤ (log x / log 2 - 2)⁺ x ^ (1 / 3)`.
-
 For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`. With `b = 2` this bounds the
 length `(2 ^ ε - 2 ^ (-ε)) X` of the window `(2 ^ (-ε) X, 2 ^ ε X)` on which a sharp cutoff at
 `X` and its smoothing at scale `ε` differ.
@@ -111,9 +107,6 @@ all the weights `n ^ p` of a partial sum `∑_{n ≤ x}` at once, whatever the s
   for `α ≤ 0`.
 * `Real.add_rpow_le_max_two_rpow_mul`: `(x + t) ^ β ≤ max 1 (2 ^ β) * x ^ β` for `0 ≤ t ≤ x`
   and every real `β`.
-* `Real.sum_rpow_one_div_le`:
-  `∑ k ∈ Finset.Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) ≤`
-  `max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3)` for `0 ≤ x`.
 * `Real.rpow_sub_rpow_neg_le`: `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε` for `0 < b` and `0 ≤ ε ≤ 1`.
 * `Real.natCast_rpow_le_max_one_rpow`: `n ^ p ≤ max 1 (x ^ p)` for a natural number `n ≤ x` and
   every real `p`.
@@ -384,25 +377,6 @@ theorem add_rpow_le_max_two_rpow_mul (β : ℝ) {x t : ℝ} (ht₀ : 0 ≤ t) (h
         _ = 1 * x ^ β := (one_mul _).symm
         _ ≤ max 1 (2 ^ β) * x ^ β :=
           mul_le_mul_of_nonneg_right (le_max_left _ _) (rpow_nonneg hx.le β)
-
-/-- The roots `x ^ (1 / k)` with `3 ≤ k ≤ log x / log 2` add up to at most
-`(log x / log 2 − 2)⁺ x ^ (1 / 3)`, for `x ≥ 0`. -/
-theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
-    ∑ k ∈ Finset.Icc 3 ⌊log x / log 2⌋₊, x ^ ((1 : ℝ) / k) ≤
-      max (log x / log 2 - 2) 0 * x ^ ((1 : ℝ) / 3) := by
-  rcases lt_or_ge x 1 with hx1 | hx1
-  · have : ⌊log x / log 2⌋₊ = 0 :=
-      Nat.floor_eq_zero.mpr ((div_nonpos_of_nonpos_of_nonneg
-        (log_nonpos hx hx1.le) (log_nonneg one_le_two)).trans_lt one_pos)
-    simp only [this, Finset.Icc_eq_empty_of_lt (by norm_num : 0 < 3), Finset.sum_empty]
-    positivity
-  refine (TauCeti.sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
-    (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦ rpow_le_rpow_of_exponent_le hx1 ?_).trans_eq ?_
-  · have : (3 : ℝ) ≤ k := by exact_mod_cast (Finset.mem_Icc.mp hk).1
-    gcongr
-  · congr 2
-    push_cast
-    ring
 
 /-- For `0 < b` and `0 ≤ ε ≤ 1`, `b ^ ε - b ^ (-ε) ≤ 2 (b - 1) ε`: by Bernoulli's inequality
 `b ^ ε ≤ 1 + (b - 1) ε`, and then `b ^ (-ε) ≥ (1 + (b - 1) ε)⁻¹ ≥ 1 - (b - 1) ε`. -/
