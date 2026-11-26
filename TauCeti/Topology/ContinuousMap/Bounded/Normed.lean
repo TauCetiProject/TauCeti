@@ -76,10 +76,19 @@ quotient by pinning at `0`.
 `BoundedContinuousFunction.compactSlice` views a compactly supported continuous function
 on space-time as a bounded continuous spatial function at a fixed time.
 
+`BoundedContinuousFunction.exists_norm_le_of_eventually_Ici` and
+`BoundedContinuousFunction.ofEventuallyBoundedIci` package a continuous map `f : Set.Ici a → E`
+that is eventually bounded along `atTop` on a linearly ordered space with compact closed intervals
+as `Set.Ici a →ᵇ E`.
+
+`BoundedContinuousFunction.eventually_forall_compact_norm_lt_add` and
+`BoundedContinuousFunction.eventually_forall_compact_norm_lt` upgrade pointwise eventual norm
+estimates along a filter `l` to compact-uniform eventual norm estimates for a family
+`F : X → (α →ᵇ E)` continuous in the sup norm on a compact set `K ⊆ X`.
+
 Formalization references for compact slices:
 https://github.com/frenzymath/lean-eval-submissions and
 https://github.com/frenzymath/PoincareConjecture.
-
 -/
 
 public section
@@ -535,5 +544,114 @@ noncomputable def compactSlice (f : V × ℝ → F) (hf : Continuous f)
 theorem compactSlice_apply (f : V × ℝ → F) (hf : Continuous f)
     (hc : HasCompactSupport f) (t : ℝ) (x : V) :
     compactSlice f hf hc t x = f (x, t) := (rfl)
+
+section EventuallyBoundedIci
+
+open Filter Set Topology
+
+/-- A continuous map `f : Set.Ici a → E` into a seminormed group on a linearly ordered space with
+compact closed intervals that is eventually bounded along `atTop` is globally bounded on
+`Set.Ici a`. -/
+theorem exists_norm_le_of_eventually_Ici {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α} {f : Ici a → E}
+    (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    ∃ M, ∀ t : Ici a, ‖f t‖ ≤ M := by
+  obtain ⟨C, hC⟩ := hf_bdd
+  obtain ⟨T, hT⟩ := eventually_atTop.mp hC
+  have hincl : Continuous (fun s : Icc a (T : α) ↦ (⟨s.val, s.property.1⟩ : Ici a)) :=
+    Continuous.subtype_mk continuous_subtypeVal _
+  obtain ⟨M₁, hM₁⟩ := (isCompact_range (hf_cont.norm.comp hincl)).bddAbove
+  refine ⟨max M₁ C, fun t ↦ (le_total t T).elim (fun htT ↦ ?_) fun hTt ↦ ?_⟩
+  · exact (hM₁ ⟨⟨(t : α), t.property, htT⟩, rfl⟩).trans (le_max_left M₁ C)
+  · exact (hT t hTt).trans (le_max_right M₁ C)
+
+/-- Package a continuous map `f : Set.Ici a → E` that is eventually bounded along `atTop` as a
+bounded continuous function `Set.Ici a →ᵇ E`. -/
+noncomputable def ofEventuallyBoundedIci {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    Ici a →ᵇ E :=
+  ofNormedAddCommGroup f hf_cont
+    (Classical.choose (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
+    (Classical.choose_spec (exists_norm_le_of_eventually_Ici hf_cont hf_bdd))
+
+@[simp]
+theorem ofEventuallyBoundedIci_apply {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C)
+    (t : Ici a) : ofEventuallyBoundedIci f hf_cont hf_bdd t = f t := (rfl)
+
+@[simp]
+theorem coe_ofEventuallyBoundedIci {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [CompactIccSpace α] [SeminormedAddCommGroup E] {a : α}
+    (f : Ici a → E) (hf_cont : Continuous f) (hf_bdd : ∃ C, ∀ᶠ t in atTop, ‖f t‖ ≤ C) :
+    ⇑(ofEventuallyBoundedIci f hf_cont hf_bdd) = f := (rfl)
+
+end EventuallyBoundedIci
+
+section CompactUniform
+
+open Filter Set Topology
+
+/-- Finite-subcover upgrade from pointwise eventual bounds along `l : Filter α` to a
+compact-uniform eventual bound for a family `F : X → (α →ᵇ E)` continuous on a compact set `K`. -/
+theorem eventually_forall_compact_norm_lt_add
+    {α X E : Type*} [TopologicalSpace α] [TopologicalSpace X] [SeminormedAddCommGroup E]
+    {l : Filter α} {F : X → (α →ᵇ E)} {g : X → ℝ} {K : Set X}
+    (hK : IsCompact K) (hF : ContinuousOn F K) (hg : ContinuousOn g K)
+    (hlim : ∀ x ∈ K, ∀ {δ : ℝ}, 0 < δ → ∀ᶠ t in l, ‖F x t‖ < g x + δ)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ t in l, ∀ x ∈ K, ‖F x t‖ < g x + ε := by
+  have hε3 : 0 < ε / 3 := by linarith
+  have hnhds : ∀ x : K, ∃ U : Set X, IsOpen U ∧ (x : X) ∈ U ∧
+      ∀ y ∈ K, y ∈ U → ‖F y - F x‖ < ε / 3 ∧ g x < g y + ε / 3 := by
+    intro ⟨x, hxK⟩
+    have hFx : ∀ᶠ y in 𝓝[K] x, dist (F y) (F x) < ε / 3 :=
+      (hF x hxK).eventually (ball_mem_nhds (F x) hε3)
+    have hgx : ∀ᶠ y in 𝓝[K] x, dist (g y) (g x) < ε / 3 :=
+      (hg x hxK).eventually (ball_mem_nhds (g x) hε3)
+    obtain ⟨U, hU_nhds, hU_sub⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp (hFx.and hgx)
+    obtain ⟨V, hV_sub, hV_open, hxV⟩ := mem_nhds_iff.mp hU_nhds
+    refine ⟨V, hV_open, hxV, fun y hyK hyV ↦ ?_⟩
+    obtain ⟨hdF, hdg⟩ := hU_sub ⟨hV_sub hyV, hyK⟩
+    rw [dist_eq_norm] at hdF
+    rw [Real.dist_eq] at hdg
+    exact ⟨hdF, by linarith [(abs_lt.mp hdg).1]⟩
+  choose U hU_open hxU hU_est using hnhds
+  obtain ⟨s, hs_cover⟩ :=
+    hK.elim_finite_subcover (fun i : K ↦ U i) (fun i ↦ hU_open i) fun x hx ↦
+      mem_iUnion.mpr ⟨⟨x, hx⟩, hxU ⟨x, hx⟩⟩
+  have hev_all : ∀ᶠ t in l, ∀ i ∈ s, ‖F i t‖ < g i + ε / 3 :=
+    (eventually_all_finset s).mpr fun i _ ↦ hlim i.val i.property hε3
+  filter_upwards [hev_all] with t ht x hxK
+  obtain ⟨i, his, hxi⟩ := mem_iUnion₂.mp (hs_cover hxK)
+  obtain ⟨hFi, hgi⟩ := hU_est i x hxK hxi
+  have hti := ht i his
+  have hdiff_t : ‖F x t - F i t‖ ≤ ‖F x - F i‖ :=
+    (F x - F i).norm_coe_le_norm t
+  have htri : ‖F x t‖ ≤ ‖F x - F i‖ + ‖F i t‖ :=
+    calc
+      ‖F x t‖ = ‖(F x t - F i t) + F i t‖ := by rw [sub_add_cancel]
+      _ ≤ ‖F x t - F i t‖ + ‖F i t‖ := norm_add_le _ _
+      _ ≤ ‖F x - F i‖ + ‖F i t‖ := add_le_add_left hdiff_t _
+  linarith
+
+/-- Finite-subcover upgrade from pointwise convergence to `0` along `l : Filter α` to a
+compact-uniform eventual norm bound for a family `F : X → (α →ᵇ E)` continuous on a compact set
+`K`. -/
+theorem eventually_forall_compact_norm_lt
+    {α X E : Type*} [TopologicalSpace α] [TopologicalSpace X] [SeminormedAddCommGroup E]
+    {l : Filter α} {F : X → (α →ᵇ E)} {K : Set X}
+    (hK : IsCompact K) (hF : ContinuousOn F K)
+    (hlim : ∀ x ∈ K, Tendsto (fun t ↦ F x t) l (𝓝 0))
+    {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ t in l, ∀ x ∈ K, ‖F x t‖ < ε := by
+  have h := eventually_forall_compact_norm_lt_add (g := fun _ ↦ 0) hK hF continuousOn_const
+    (fun x hx {δ} hδ ↦ by
+      simpa only [zero_add] using
+        (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp (hlim x hx))).2 δ hδ) hε
+  simpa only [zero_add] using h
+
+end CompactUniform
 
 end BoundedContinuousFunction

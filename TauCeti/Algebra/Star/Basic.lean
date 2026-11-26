@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.Center
 public import Mathlib.Algebra.Star.Module
+import TauCeti.Algebra.Module.Basic
 
 /-!
 # Involution-closed absorption, proper-star annihilators, scalar commutation, and star-linearity
@@ -33,6 +34,12 @@ A star-linear (conjugate-linear) equivalence `V ≃ₗ⋆[S] W` is linear over a
 `S` with trivial star (`LinearEquiv.restrictScalarsₛₗ`). For example, a conjugate-linear
 equivalence of complex vector spaces is real-linear.
 
+When `2` is invertible in `R` with trivial star, applying the noncommutative parallelogram identity
+(`TauCeti.invOf_two_smul_add_mul_self_add_sub_mul_self`) to the Cartesian decomposition
+`z = selfAdjointPart R z + skewAdjointPart R z` and
+`star z = selfAdjointPart R z - skewAdjointPart R z` expresses `selfAdjointPart R (z * z)` as the
+sum of squares `(selfAdjointPart R z)² + (skewAdjointPart R z)²`.
+
 ## Main results
 
 * `StarMemClass.mul_mem_right_of_mul_mem_left`: left absorption implies right absorption on
@@ -58,6 +65,9 @@ equivalence of complex vector spaces is real-linear.
   fixes the unit `-1`.
 * `RingHom.star_comp_right`: conjugating a ring homomorphism into a star ring commutes with
   precomposition.
+* `TauCeti.selfAdjointPart_sub_skewAdjointPart` and
+  `TauCeti.selfAdjointPart_mul_self_add_skewAdjointPart_mul_self`: Cartesian recovery of `star z`
+  and symmetrized-square decomposition into self-adjoint and skew-adjoint parts.
 -/
 
 public section
@@ -215,3 +225,27 @@ theorem star_comp_right (ψ : S →+* R) (f : T →+* S) : star (ψ.comp f) = (s
   (rfl)
 
 end RingHom
+
+namespace TauCeti
+
+/-- Subtracting `skewAdjointPart R z` from `selfAdjointPart R z` recovers `star z`. -/
+theorem selfAdjointPart_sub_skewAdjointPart (R : Type*) {A : Type*}
+    [Semiring R] [StarMul R] [TrivialStar R] [Invertible (2 : R)]
+    [AddCommGroup A] [StarAddMonoid A] [Module R A] [StarModule R A] (z : A) :
+    (selfAdjointPart R z : A) - skewAdjointPart R z = star z := by
+  rw [selfAdjointPart_apply_coe, skewAdjointPart_apply_coe, ← smul_sub, add_sub_sub_cancel,
+    smul_add, invOf_two_smul_add_invOf_two_smul]
+
+/-- **Symmetrized-square identity.** In any star ring `A` over `R` with `2` invertible and trivial
+star on `R`, `selfAdjointPart R (z * z)` equals `(selfAdjointPart R z)² + (skewAdjointPart R z)²`.
+-/
+theorem selfAdjointPart_mul_self_add_skewAdjointPart_mul_self (R : Type*) {A : Type*}
+    [Semiring R] [StarMul R] [TrivialStar R] [Invertible (2 : R)]
+    [NonUnitalNonAssocRing A] [StarRing A] [Module R A] [StarModule R A] (z : A) :
+    (selfAdjointPart R z : A) * selfAdjointPart R z +
+      (skewAdjointPart R z : A) * skewAdjointPart R z = selfAdjointPart R (z * z) := by
+  rw [← invOf_two_smul_add_mul_self_add_sub_mul_self (R := R),
+    StarModule.selfAdjointPart_add_skewAdjointPart, selfAdjointPart_sub_skewAdjointPart,
+    ← star_mul, selfAdjointPart_apply_coe]
+
+end TauCeti
