@@ -83,6 +83,10 @@ theorem gc_kernelHopfIdeal_coinvariants :
   intro B I
   rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe, HopfSubalgebra.coe_kernelHopfIdeal,
     NormalHopfIdeal.coe_coinvariants, ← HopfIdeal.forall_hom_mem_coinvariants_iff]
-  exact ⟨fun h x hx ↦ h ⟨x, hx⟩, fun h x ↦ h x.property⟩
+  refine ⟨fun h x hx ↦ ?_, fun h x ↦ ?_⟩
+  · have hx' := h ⟨x, hx⟩
+    rwa [hopfSubalgebraι_apply] at hx'
+  · rw [hopfSubalgebraι_apply]
+    exact h x.property
 
 end TauCeti.CommHopfAlgCat
