@@ -365,10 +365,12 @@ lemma cayleyCoord_of_not_isUnit (hJ : ¬IsUnit (j + J)) : cayleyCoord j J = 0 :=
 lemma cayleyCoord_one_eq_ringInverse_mul (x : A) :
     cayleyCoord 1 x = Ring.inverse (1 + x) * (1 - x) := by
   by_cases hx : IsUnit (1 + x)
-  · have h : (1 + x) * (1 - x) = (1 - x) * (1 + x) := by noncomm_ring
-    rw [cayleyCoord_def, ← hx.mul_right_inj, ← mul_assoc, h, mul_assoc,
-      Ring.mul_inverse_cancel _ hx, mul_one, ← mul_assoc,
-      Ring.mul_inverse_cancel _ hx, one_mul]
+  · -- `1 + x` commutes with `1 - x`, hence so does its inverse.
+    have h : Commute (hx.unit : A) (1 - x) := by
+      rw [hx.unit_spec]
+      exact (Commute.one_right _).sub_right ((Commute.one_left x).add_left (Commute.refl x))
+    rw [cayleyCoord_def, ← hx.unit_spec, Ring.inverse_unit]
+    exact h.units_inv_left.eq.symm
   · simp [cayleyCoord_def, Ring.inverse_non_unit _ hx]
 
 /-- The left multiplication form of the defining equation of the Cayley coordinate at `1`. -/
