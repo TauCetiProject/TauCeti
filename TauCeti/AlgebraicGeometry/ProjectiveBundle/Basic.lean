@@ -133,13 +133,18 @@ theorem affineOpenIso_inv_left_snd :
   let h := ((gradedSymmetricAlgebra S).obj F).obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩
   let e := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
     (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
+  let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
+  let grades := TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U) M
+  have hinv (c : Over.mk (Proj.toSpecCoeff grades) ≅
+      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U) M))
+      (hc : c.inv.left = 𝟙 _) :
+      (h.isoOverPullback.symm ≪≫ e ≪≫ c).inv.left =
+        e.inv.left ≫ h.isoOverPullback.hom.left := by
+    simp only [Iso.trans_inv, Iso.symm_inv, Over.comp_left, hc, Category.id_comp]
   calc
     _ = (e.inv.left ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ := by
-      simp only [affineOpenIso, Iso.trans, Iso.symm]
-      -- Taking left components preserves composition, and the coefficient comparison is
-      -- built from the identity on the underlying projective spectrum.
-      exact congrArg (fun f ↦ (f ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _)
-        (Category.id_comp e.inv.left)
+      refine congrArg (· ≫ pullback.snd _ _) (hinv _ ?_)
+      exact (Over.isoMk_inv_left _ _).trans (Iso.refl_inv _)
     _ = _ := by rw [Category.assoc, h.isoOverPullback_hom_left_comp_snd]
 
 end Affine
