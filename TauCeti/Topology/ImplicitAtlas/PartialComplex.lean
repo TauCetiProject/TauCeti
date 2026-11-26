@@ -413,8 +413,17 @@ theorem partialVirtualComplexArrow_def (hII' : I ⊆ I') (hI'J' : I' ⊆ J') (hJ
 @[simp]
 theorem partialVirtualComplexArrow_self (hIJ : I ⊆ J) (hJB : J ⊆ B) :
     𝒜.partialVirtualComplexArrow k hΓ subset_rfl hIJ subset_rfl hJB = 𝟙 _ := by
-  rw [partialVirtualComplexArrow_def, Finset.sdiff_self, Finset.prod_empty, inv_one,
-    Units.val_one, one_smul, partialVirtualComplexMap_self]
+  simp [partialVirtualComplexArrow_def]
+
+omit [∀ α, Group (Γ α)] [∀ α, Finite (Γ α)] in
+/-- The weights of the interval arrows multiply: for `J'' ⊆ J' ⊆ J`, the set `J ∖ J''` is the
+disjoint union of `J' ∖ J''` and `J ∖ J'`, so that
+`|Γ_(J' ∖ J'')|⁻¹ |Γ_(J ∖ J')|⁻¹ = |Γ_(J ∖ J'')|⁻¹`. -/
+private theorem inv_prod_sdiff_mul_inv_prod_sdiff (hJ'J : J' ⊆ J) (hJ''J' : J'' ⊆ J') :
+    (∏ α ∈ J' \ J'', (hΓ α).unit)⁻¹ * (∏ α ∈ J \ J', (hΓ α).unit)⁻¹ =
+      (∏ α ∈ J \ J'', (hΓ α).unit)⁻¹ := by
+  rw [← mul_inv_rev, ← Finset.prod_union (Finset.sdiff_disjoint.mono_right Finset.sdiff_subset),
+    Finset.sdiff_union_sdiff_cancel hJ'J hJ''J']
 
 /-- **The interval arrows compose**, for `I ⊆ I' ⊆ I'' ⊆ J'' ⊆ J' ⊆ J ⊆ B`: the comparisons
 compose, and the weights multiply, since `J ∖ J''` is the disjoint union of `J ∖ J'` and
@@ -426,11 +435,8 @@ theorem partialVirtualComplexArrow_comp_partialVirtualComplexArrow (hII' : I ⊆
     𝒜.partialVirtualComplexArrow k hΓ hII' hI'J' hJ'J hJB ≫
         𝒜.partialVirtualComplexArrow k hΓ hI'I'' hI''J'' hJ''J' (hJ'J.trans hJB) =
       𝒜.partialVirtualComplexArrow k hΓ (hII'.trans hI'I'') hI''J'' (hJ''J'.trans hJ'J) hJB := by
-  rw [partialVirtualComplexArrow_def, partialVirtualComplexArrow_def,
-    partialVirtualComplexArrow_def, Linear.smul_comp, Linear.comp_smul, smul_smul,
-    partialVirtualComplexMap_comp_partialVirtualComplexMap, ← Units.val_mul, ← mul_inv,
-    ← Finset.prod_union (Finset.sdiff_disjoint.mono_right Finset.sdiff_subset),
-    Finset.sdiff_union_sdiff_cancel hJ'J hJ''J']
+  simp [partialVirtualComplexArrow_def, smul_smul, ← Units.val_mul,
+    inv_prod_sdiff_mul_inv_prod_sdiff hΓ hJ'J hJ''J']
 
 variable (𝒜 k) in
 /-- **The interval diagram of partial virtual complexes** of a finite set `B` of indices (Pardon,
