@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.HeatKernel.Basic
-import Mathlib.MeasureTheory.Measure.OpenPos
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 
 /-!
 # Exact norms of the heat kernel
@@ -36,6 +36,7 @@ theorem heatKernel_rpow {t r : ℝ} (ht : 0 < t) (hr : 0 < r) (x : E) :
       (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2 * (r - 1)) *
         r ^ (-(Module.finrank ℝ E : ℝ) / 2) * heatKernel (t / r) x := by
   have hc : 0 < 4 * π * t := by positivity
+  have htime : 4 * π * (t / r) = (4 * π * t) / r := by ring
   have he : (-‖x‖ ^ 2 / (4 * t)) * r = -‖x‖ ^ 2 / (4 * (t / r)) := by
     field_simp
   have hcoef : (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2 * (r - 1)) *
@@ -50,7 +51,7 @@ theorem heatKernel_rpow {t r : ℝ} (ht : 0 < t) (hr : 0 < r) (x : E) :
   simp only [heatKernel_apply]
   rw [mul_rpow (rpow_nonneg hc.le (-(Module.finrank ℝ E : ℝ) / 2))
       (exp_pos (-‖x‖ ^ 2 / (4 * t))).le, ← exp_mul, he,
-    show 4 * π * (t / r) = (4 * π * t) / r by ring,
+    htime,
     ← rpow_mul hc.le, ← mul_assoc, hcoef]
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -64,6 +65,28 @@ theorem integral_heatKernel_rpow {t r : ℝ} (ht : 0 < t) (hr : 0 < r) :
   simp_rw [heatKernel_rpow ht hr, integral_const_mul, integral_heatKernel (div_pos ht hr),
     mul_one]
 
+private theorem eLpNorm_heatKernel_eq_mul_gaussian {t : ℝ}
+    (hb : 0 < ((1 / (4 * t) : ℝ) : ℂ).re) (r : ℝ≥0∞) :
+    eLpNorm (heatKernel t : E → ℝ) r volume =
+      ENNReal.ofReal ((4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2)) *
+        eLpNorm (SchwartzMap.gaussian (V := E) hb) r volume := by
+  have ht : 0 < t := by
+    simpa only [Complex.ofReal_re, one_div_pos,
+      mul_pos_iff_of_pos_left (by norm_num : (0 : ℝ) < 4)] using hb
+  have hn : eLpNorm (heatKernel t : E → ℝ) r volume =
+      eLpNorm ((4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2) •
+        (SchwartzMap.gaussian (V := E) hb : E → ℂ)) r volume := by
+    refine eLpNorm_congr_norm_ae
+      (contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable
+      ((SchwartzMap.gaussian hb).continuous.const_smul _).aestronglyMeasurable
+      (.of_forall fun x => ?_)
+    rw [Real.norm_of_nonneg (heatKernel_pos ht x).le, Pi.smul_apply, norm_smul,
+      Real.norm_of_nonneg (rpow_nonneg (by positivity) _),
+      SchwartzMap.norm_gaussian_apply, Complex.ofReal_re, heatKernel_apply]
+    congr 2
+    ring
+  rw [hn, eLpNorm_const_smul, ← ofReal_norm, Real.norm_of_nonneg (by positivity)]
+
 /-- The exact finite, positive exponent `Lʳ` norm of the heat kernel. -/
 @[simp]
 theorem eLpNorm_heatKernel {t : ℝ} (ht : 0 < t) {r : ℝ≥0∞} (hr₀ : r ≠ 0) (hr : r ≠ ∞) :
@@ -72,39 +95,28 @@ theorem eLpNorm_heatKernel {t : ℝ} (ht : 0 < t) {r : ℝ≥0∞} (hr₀ : r �
         (-(Module.finrank ℝ E : ℝ) / 2 * (1 - 1 / r.toReal)) *
           r.toReal ^ (-(Module.finrank ℝ E : ℝ) / (2 * r.toReal))) := by
   have hrpos := ENNReal.toReal_pos hr₀ hr
-  have hm : AEStronglyMeasurable (heatKernel t : E → ℝ) volume :=
-    (contDiff_heatKernel (k := ⊤) t).continuous.aestronglyMeasurable
-  have hi : Integrable (fun x : E => heatKernel t x ^ r.toReal) := by
-    simp_rw [heatKernel_rpow ht hrpos]
-    exact (integrable_heatKernel (div_pos ht hrpos)).const_mul _
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hr₀ hr hm]
-  have hn (x : E) : ‖heatKernel t x‖ₑ ^ r.toReal =
-      ENNReal.ofReal (heatKernel t x ^ r.toReal) := by
-    rw [Real.eNorm_eq_ofReal (heatKernel_pos ht x).le,
-      ENNReal.ofReal_rpow_of_pos (heatKernel_pos ht x)]
-  simp_rw [hn]
-  rw [← ofReal_integral_eq_lintegral_ofReal hi
-      (.of_forall fun x => (rpow_pos_of_pos (heatKernel_pos ht x) _).le),
-    integral_heatKernel_rpow ht hrpos, ENNReal.ofReal_rpow_of_pos (by positivity),
-    mul_rpow (by positivity) (by positivity), ← rpow_mul (by positivity : 0 ≤ 4 * π * t),
-    ← rpow_mul hrpos.le]
+  have hb : 0 < ((1 / (4 * t) : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  have hc : 0 < 4 * π * t := by positivity
+  have hbase : π / (1 / (4 * t) * r.toReal) = (4 * π * t) / r.toReal := by
+    field_simp
+  rw [eLpNorm_heatKernel_eq_mul_gaussian hb, SchwartzMap.eLpNorm_gaussian hb hr₀ hr,
+    Complex.ofReal_re, hbase, ← ENNReal.ofReal_mul (by positivity),
+    div_rpow hc.le hrpos.le, div_eq_mul_inv _ (r.toReal ^ _),
+    ← rpow_neg hrpos.le, ← mul_assoc,
+    ← rpow_add hc]
   congr 2 <;> congr 1 <;> field_simp
+  ring
 
 /-- The `L∞` norm of the heat kernel equals its value at the origin. -/
 @[simp]
 theorem eLpNorm_heatKernel_top {t : ℝ} (ht : 0 < t) :
     eLpNorm (heatKernel t : E → ℝ) ∞ volume =
       ENNReal.ofReal ((4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2)) := by
-  apply le_antisymm
-  · simpa using eLpNorm_heatKernel_le (E := E) ht (q := ∞) le_top
-  · have hm := (contDiff_heatKernel (E := E) (k := ⊤) t).continuous
-    have hclosed : IsClosed {x : E | ‖heatKernel t x‖ₑ ≤
-        eLpNormEssSup (heatKernel t : E → ℝ) volume} :=
-      isClosed_le hm.eNorm continuous_const
-    have h := hclosed.closure_subset
-      (volume.dense_of_ae (eNorm_ae_le_eLpNormEssSup (heatKernel t : E → ℝ) volume) (0 : E))
-    rw [← eLpNorm_exponent_top hm.aestronglyMeasurable] at h
-    simpa [heatKernel_apply, Real.eNorm_eq_ofReal (by positivity :
-      0 ≤ (4 * π * t) ^ (-(Module.finrank ℝ E : ℝ) / 2))] using h
+  have hb : 0 < ((1 / (4 * t) : ℝ) : ℂ).re := by
+    rw [Complex.ofReal_re]
+    positivity
+  rw [eLpNorm_heatKernel_eq_mul_gaussian hb, SchwartzMap.eLpNorm_gaussian_top hb, mul_one]
 
 end TauCeti
