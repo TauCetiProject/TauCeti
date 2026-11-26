@@ -40,8 +40,8 @@ self-adjoint operator.
   `∫ (Δ f) · conj g dμ = ∫ (∂ₓ f · conj (∂ₓ g) + ∂ᵧ f · conj (∂ᵧ g)) dx dy`.
 * `TauCeti.UpperHalfPlane.integral_hyperbolicLaplacian_mul_conj_self`: the quadratic form
   `∫ (Δ f) · conj f dμ` is the real Dirichlet energy `∫ (|∂ₓ f|² + |∂ᵧ f|²) dx dy`.
-* `TauCeti.UpperHalfPlane.integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj`: the
-  symmetry `∫ (Δ f) · conj g dμ = ∫ f · conj (Δ g) dμ`.
+* `integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLaplacian` (in
+  `TauCeti.UpperHalfPlane`): the symmetry `∫ (Δ f) · conj g dμ = ∫ f · conj (Δ g) dμ`.
 -/
 
 public section
@@ -145,7 +145,7 @@ theorem integral_hyperbolicLaplacian_mul_conj_self
 
 /-- **The hyperbolic Laplacian is symmetric** on compactly supported functions: for `f, g : ℍ → ℂ`
 of class `C²` with compact support in `ℍ`, `∫_ℍ (Δ f) · conj g dμ = ∫_ℍ f · conj (Δ g) dμ`. -/
-theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj
+theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj_hyperbolicLaplacian
     (hf : ContDiffOn ℝ 2 (f ∘ ofComplex) upperHalfPlaneSet) (hfc : HasCompactSupport f)
     (hg : ContDiffOn ℝ 2 (g ∘ ofComplex) upperHalfPlaneSet) (hgc : HasCompactSupport g) :
     ∫ z, hyperbolicLaplacian f z * conj (g z) = ∫ z, f z * conj (hyperbolicLaplacian g z) := by

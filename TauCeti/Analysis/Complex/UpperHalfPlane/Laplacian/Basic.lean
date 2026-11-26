@@ -280,9 +280,7 @@ private theorem comp_J_smul_comp_ofComplex_eventuallyEq (f : ℍ → ℂ) (z : �
       (f ∘ ofComplex) ∘ (conjLIE.trans (LinearIsometryEquiv.neg ℝ)) := by
   rw [← isOpenEmbedding_coe.map_nhds_eq, eventuallyEq_map]
   filter_upwards with τ
-  have h : ofComplex (-(starRingEnd ℂ) (τ : ℂ)) = J • τ := by
-    rw [← coe_J_smul, ofComplex_apply]
-  simp [ofComplex_apply, h]
+  simp [ofComplex_apply, ← J_smul]
 
 /-- **The reflection commutes with the hyperbolic Laplacian**: for the orientation-reversing
 isometry `τ ↦ J • τ = -conj τ` of `ℍ`, `Δ (f ∘ J) = (Δ f) ∘ J` for every `f : ℍ → ℂ`. In
@@ -291,12 +289,9 @@ Laplacian. -/
 @[simp]
 theorem hyperbolicLaplacian_comp_J_smul (f : ℍ → ℂ) (z : ℍ) :
     hyperbolicLaplacian (fun τ ↦ f (J • τ)) z = hyperbolicLaplacian f (J • z) := by
-  have him : (J • z).im = z.im := by
-    rw [← coe_im, coe_J_smul]
-    simp
   rw [hyperbolicLaplacian_apply, hyperbolicLaplacian_apply,
     (laplacian_congr_nhds (comp_J_smul_comp_ofComplex_eventuallyEq f z)).self_of_nhds,
-    laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, coe_J_smul, him]
+    laplacian_comp_linearIsometryEquiv_right, Function.comp_apply, coe_J_smul, J_smul_im]
   simp
 
 /-- **Isometry invariance of the hyperbolic Laplacian**: for every `g ∈ GL(2, ℝ)`,
