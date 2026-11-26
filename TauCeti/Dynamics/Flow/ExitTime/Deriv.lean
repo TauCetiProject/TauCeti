@@ -18,14 +18,16 @@ import TauCeti.Dynamics.Flow.Deriv
 Let `ϕ` be a flow of `ℝ` on a topological space `α` and let `P` be a set described near a point by
 finitely many inequalities `g_i ≥ 0`, such as a compact block bounded by faces. A *derivative of
 `g : α → ℝ` along the flow* at `y` is the derivative at time `0` of `t ↦ g (ϕ t y)`; for the flow of
-a vector field `V` on a manifold and a differentiable function `g` it is `dg(V)`. This file decides,
-by the signs of such derivatives, whether trajectories leave `P` at once or stay in it for a
-while. These are the two conditions on the exit time `Flow.exitTime` from `P` in the index-pair
-arguments of Conley index theory: its zeros are the points leaving `P` at once, and it is
-continuous on a closed set `P` (`Flow.continuousOn_exitTime`) when every point of `P` of positive
-exit time has a trajectory lying in `interior P` at every positive time before its exit, and has
-neighbours staying in `P` for a common time. The tests below give the second of these conditions;
-the interior-trajectory condition is a separate hypothesis.
+a vector field `V` on a manifold and a differentiable function `g` it is `dg(V)`. This file gives
+sufficient conditions, by the signs of such derivatives, for trajectories to leave `P` at once or
+to stay in it for a common time. They serve the exit time `Flow.exitTime` from `P` in the
+index-pair arguments of Conley index theory: its zeros are the points leaving `P` at once, and it
+is continuous on a closed set `P` (`Flow.continuousOn_exitTime`) when every point of `P` of
+positive exit time has a trajectory lying in `interior P` at every positive time before its exit,
+and has neighbours staying in `P` for a common time. The two strict exit tests below give points
+of exit time zero, and the inflow test supplies the common-initial-interval hypothesis `hin` of
+`Flow.continuousOn_exitTime`; the interior-trajectory hypothesis `hint` is not addressed here and
+must be proved separately.
 
 * **Strict first-order exit.** If `g ≥ 0` on `P` near `x`, `g x ≤ 0` and the derivative of `g`
   along the flow at `x` is negative, then the trajectory of `x` leaves `P` at once: its exit time
