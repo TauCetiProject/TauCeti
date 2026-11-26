@@ -491,13 +491,8 @@ theorem IsInvariantForm.equivDual_apply (hB : IsInvariantForm ρ B) (hB' : B.Non
 `B⁻¹ : V* → V` of `v ↦ B v` satisfies `B⁻¹ (ρ.dual g ν) = ρ g (B⁻¹ ν)`. -/
 theorem IsInvariantForm.toDual_symm_dual_apply (hB : IsInvariantForm ρ B)
     (hB' : B.Nondegenerate) (g : G) (ν : Module.Dual k V) :
-    (B.toDual hB').symm (ρ.dual g ν) = ρ g ((B.toDual hB').symm ν) := by
-  rw [LinearEquiv.symm_apply_eq]
-  have hν : B ((B.toDual hB').symm ν) = ν :=
-    LinearMap.ext (LinearMap.BilinForm.apply_toDual_symm_apply ν)
-  conv_lhs => rw [← hν, hB.dual_apply]
-  ext w
-  rw [LinearMap.BilinForm.toDual_def]
+    (B.toDual hB').symm (ρ.dual g ν) = ρ g ((B.toDual hB').symm ν) :=
+  (hB.equivDual hB').symm.toIntertwiningMap.isIntertwining _ _ g ν
 
 end Nondegenerate
 

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Critical
 
@@ -53,11 +52,11 @@ the differential of the component of `μ` along the frozen element `β x`:
   vector field whose negative flow drives the norm-square stratification.
 
 The norm square is smooth (`TauCeti.SmoothTwoForm.IsMomentMap.contMDiff_momentNormSq`). For a
-coadjoint-equivariant `μ` and a `K` intertwining the coadjoint and adjoint actions, as the
-inverse of a nondegenerate `Ad`-invariant form does
-(`TauCeti.Representation.IsInvariantForm.toDual_symm_dual_apply` for the adjoint representation,
-whose dual is the coadjoint representation), `f` is invariant under the group
-(`TauCeti.momentNormSq_smul`).
+representation `ρ` of a group on `𝔤`, a `ρ.dual`-equivariant `μ` and a `K` intertwining `ρ.dual`
+with `ρ`, as the inverse of a nondegenerate `ρ`-invariant form does
+(`TauCeti.Representation.IsInvariantForm.toDual_symm_dual_apply`), `f` is invariant under the
+group (`TauCeti.momentNormSq_smul`). For the adjoint representation, whose dual is the coadjoint
+representation, this covers a coadjoint-equivariant `μ` and an `Ad`-invariant inner product.
 
 ## Main definitions
 
@@ -270,21 +269,19 @@ end SmoothTwoForm.IsMomentMap
 
 section Invariance
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I 1 G]
-  {M : Type*} [SMul G M] {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
-  {K : Module.Dual ℝ (GroupLieAlgebra I G) →ₗ[ℝ] GroupLieAlgebra I G}
+variable {G M 𝔤 : Type*} [Group G] [AddCommGroup 𝔤] [Module ℝ 𝔤] [SMul G M]
+  {ρ : Representation ℝ G 𝔤} {μ : M → Module.Dual ℝ 𝔤} {K : Module.Dual ℝ 𝔤 →ₗ[ℝ] 𝔤}
 
-/-- **Invariance of the norm square.** If `μ` is coadjoint-equivariant and `K` intertwines the
-coadjoint and adjoint actions, `K (Ad*_g ν) = Ad_g (K ν)`, then `‖μ‖²` is invariant under `G`. -/
-theorem momentNormSq_smul
-    (hμ : ∀ (g : G) x, μ (g • x) = Lie.coadjointRepresentation ℝ I G g (μ x))
-    (hK : ∀ g ν, K (Lie.coadjointRepresentation ℝ I G g ν) =
-      Lie.adjointContinuousLinearMap (I := I) g (K ν)) (g : G) (x : M) :
+/-- **Invariance of the norm square.** If `μ` is equivariant for the dual `ρ.dual` of a
+representation `ρ` of `G` on `𝔤` and `K` intertwines `ρ.dual` with `ρ`,
+`K (ρ.dual g ν) = ρ g (K ν)`, then `‖μ‖²` is invariant under `G`. For the adjoint
+representation, whose dual is the coadjoint representation, this is the invariance under a
+coadjoint-equivariant moment map. -/
+theorem momentNormSq_smul (hμ : ∀ (g : G) x, μ (g • x) = ρ.dual g (μ x))
+    (hK : ∀ g ν, K (ρ.dual g ν) = ρ g (K ν)) (g : G) (x : M) :
     momentNormSq μ K (g • x) = momentNormSq μ K x := by
-  rw [momentNormSq_apply, momentNormSq_apply, hμ, hK, Lie.coadjointRepresentation_apply,
-    Lie.adjointContinuousLinearMap_inv_adjointContinuousLinearMap]
+  rw [momentNormSq_apply, momentNormSq_apply, hμ, hK, Representation.dual_apply,
+    Module.Dual.transpose_apply, LinearMap.comp_apply, Representation.inv_self_apply]
 
 end Invariance
 
