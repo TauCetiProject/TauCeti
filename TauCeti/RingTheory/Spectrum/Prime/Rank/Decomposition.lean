@@ -30,7 +30,7 @@ locally constant rank.
 * **Connectedness.** A nontrivial commutative ring has connected spectrum exactly when every finite
   projective module has constant rank.
 * **Clopen gluing.** Every locally constant function `f : Spec R → ℕ` is the rank of a finite
-  projective module: `PrimeSpectrum.clopenGlued f` is the product, over the values `n` of `f`, of
+  projective module: `PrimeSpectrum.ClopenGlued f` is the product, over the values `n` of `f`, of
   `n` copies of `R eₙ`, a module free of rank one on the fibre `f ⁻¹' {n}` and zero elsewhere. The
   constant function `n` gives `Rⁿ`.
 
@@ -49,7 +49,7 @@ used.
   rank pieces.
 * `PrimeSpectrum.connectedSpace_iff_forall_exists_rankAtStalk_eq`: for a nontrivial ring, `Spec R`
   is connected exactly when every finite projective module has constant rank.
-* `PrimeSpectrum.clopenGlued`, `PrimeSpectrum.rankAtStalk_clopenGlued`: the clopen-glued module of
+* `PrimeSpectrum.ClopenGlued`, `PrimeSpectrum.rankAtStalk_clopenGlued`: the clopen-glued module of
   a locally constant function `f` is finite projective of rank `f`;
   `PrimeSpectrum.nonempty_linearEquiv_clopenGlued_const`: for constant `n` it is `Rⁿ`.
 
@@ -159,7 +159,7 @@ the finitely many values `n` of `f`, of `n` copies of the principal ideal `R e�
 idempotent `eₙ` of `f` at `n`. On the fibre `f ⁻¹' {n}` it is free of rank `n`; it is finite
 projective (`PrimeSpectrum.projective_clopenGlued`) of rank `f`
 (`PrimeSpectrum.rankAtStalk_clopenGlued`). -/
-abbrev clopenGlued (f : LocallyConstant (PrimeSpectrum R) ℕ) : Type u :=
+abbrev ClopenGlued (f : LocallyConstant (PrimeSpectrum R) ℕ) : Type u :=
   Π n : f.range_finite.toFinset,
     Fin n → ↥(fiberIdempotent f.isLocallyConstant (n : ℕ) • (⊤ : Submodule R R))
 
@@ -167,13 +167,13 @@ variable (f : LocallyConstant (PrimeSpectrum R) ℕ)
 
 /-- The clopen-glued module is projective: each factor `R eₙ` is a direct summand of `R`. It is
 finite as a finite product of cyclic modules. -/
-instance projective_clopenGlued : Module.Projective R (clopenGlued f) :=
+instance projective_clopenGlued : Module.Projective R (ClopenGlued f) :=
   inferInstance
 
 /-- **Every locally constant rank is realized**: the clopen-glued module of a locally constant
 function `f : Spec R → ℕ` has rank `f`. -/
 @[simp]
-theorem rankAtStalk_clopenGlued : Module.rankAtStalk (R := R) (clopenGlued f) = f := by
+theorem rankAtStalk_clopenGlued : Module.rankAtStalk (R := R) (ClopenGlued f) = f := by
   classical
   ext p
   have : Nontrivial R := nonempty_iff_nontrivial.mp ⟨p⟩
@@ -188,7 +188,7 @@ theorem rankAtStalk_clopenGlued : Module.rankAtStalk (R := R) (clopenGlued f) = 
 /-- **A constant rank glues to a free module**: the clopen-glued module of the constant function
 `n` is isomorphic to `Rⁿ`. -/
 theorem nonempty_linearEquiv_clopenGlued_const (n : ℕ) :
-    Nonempty (clopenGlued (.const (PrimeSpectrum R) n) ≃ₗ[R] (Fin n → R)) := by
+    Nonempty (ClopenGlued (.const (PrimeSpectrum R) n) ≃ₗ[R] (Fin n → R)) := by
   cases subsingleton_or_nontrivial R
   · exact ⟨.ofSubsingleton _ _⟩
   -- The only value is `n`, and its fibre idempotent is `1`.
