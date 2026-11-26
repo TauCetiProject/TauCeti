@@ -143,12 +143,10 @@ private lemma
       ((presheafCechDoubleComplexSpectralSequence U I).page 2).iCycles (-(k : ℤ) - 2 * p, p) ≫
         (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I p k e).hom ≫
           (((cechComplexFunctor U).obj P).iCycles p).op := by
-  have h {Z : A} (f : Z ⟶ ((cechComplexFunctor U).obj P).X p) :
-      (((cechComplexFunctor U).obj P).sc' q p (p + 1)).cyclesOpIso.hom ≫
-        (f ≫ (((cechComplexFunctor U).obj P).sc' q p (p + 1)).pOpcycles).op =
-      (((cechComplexFunctor U).obj P).sc' q p (p + 1)).op.iCycles ≫ f.op := by
-    rw [op_comp, ← ShortComplex.cyclesOpIso_inv_op_iCycles, Category.assoc, Iso.hom_inv_id_assoc]
-  simp [presheafCechDoubleComplexSpectralSequenceSecondPageXIsoOfHom, ← op_comp, h]
+  -- The first call merges the opposite maps into the Čech side into `(iCycles ≫ pOpcycles).op`;
+  -- the second splits it again so that `cyclesOpIso_hom_pOpcycles_op` applies.
+  simp [presheafCechDoubleComplexSpectralSequenceSecondPageXIsoOfHom, ← op_comp]
+  simp
 
 /-- The zero morphism to the Čech cochains of degree `0` from the object at `(-k + 2, -1)` of the
 first page is a monomorphism: that object is zero, the first page vanishing in negative Čech
@@ -164,7 +162,7 @@ its object at `(-k - 2p, p)` (the first page being numbered `2`) is the opposite
 cohomology `Hᵖ(Č(U, P))` of a presheaf `P` isomorphic to the cohomology presheaf `Hᵏ(I)`: the
 cohomology in degree `p` of the Čech complex `Č(U, P)`. -/
 def presheafCechDoubleComplexSpectralSequenceSecondPageXIso
-    [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin n → ι)) A] : (p : ℕ) →
+    [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → ι)) A] : (p : ℕ) →
     ((presheafCechDoubleComplexSpectralSequence U I).page 3).X (-(k : ℤ) - 2 * p, p) ≅
       op (((cechComplexFunctor U).obj P).homology p)
   | 0 =>
@@ -178,17 +176,16 @@ def presheafCechDoubleComplexSpectralSequenceSecondPageXIso
       (ComplexShape.next_eq' _ (by ext <;> simp; lia))
       (((-1 : ℤˣ) ^ k) • presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I p k e).hom
       (by
-        rw [Preadditive.smul_iso_hom, Units.smul_def, Preadditive.comp_zsmul,
-          presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso, Preadditive.comp_zsmul,
-          smul_smul]
-        simp [← mul_pow])
+        simp only [Preadditive.smul_iso_hom, Units.smul_def, Preadditive.comp_zsmul]
+        rw [presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso]
+        simp [smul_smul, ← mul_pow])
 
 /-- `presheafCechDoubleComplexSpectralSequenceSecondPageXIso` is characterized on cycles: a cycle of
 the first page at `(-k - 2p, p)`, sent to the second page and then to the opposite of the Čech
 cohomology `Hᵖ(Č(U, P))`, is the Čech cochain it corresponds to under
 `presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso`, as a Čech cocycle. -/
 lemma homologyπ_presheafCechDoubleComplexSpectralSequenceSecondPageXIso_hom_homologyπ_op
-    [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin n → ι)) A] (p : ℕ) :
+    [∀ n : ℕ, HasExactLimitsOfShape (Discrete (Fin (n + 1) → ι)) A] (p : ℕ) :
     ((presheafCechDoubleComplexSpectralSequence U I).page 2).homologyπ (-(k : ℤ) - 2 * p, p) ≫
         ((presheafCechDoubleComplexSpectralSequence U I).iso 2 3 (-(k : ℤ) - 2 * p, p)).hom ≫
         (presheafCechDoubleComplexSpectralSequenceSecondPageXIso U I k e p).hom ≫

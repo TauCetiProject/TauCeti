@@ -15,7 +15,9 @@ complex `S.op` with the opposite of the homology of `S` (`ShortComplex.homologyO
 cycles of `S.op` with the opposite of the opcycles of `S` (`ShortComplex.cyclesOpIso`). This file
 records that, under these identifications, the projection `S.op.homologyπ` of the cycles of `S.op`
 onto its homology is the opposite of the inclusion `S.homologyι` of the homology of `S` into its
-opcycles (`CategoryTheory.ShortComplex.op_homologyπ_homologyOpIso_hom`).
+opcycles (`CategoryTheory.ShortComplex.op_homologyπ_homologyOpIso_hom`). It also records the
+`hom` form `CategoryTheory.ShortComplex.cyclesOpIso_hom_pOpcycles_op` of Mathlib's
+`CategoryTheory.ShortComplex.cyclesOpIso_inv_op_iCycles`.
 -/
 
 public section
@@ -23,7 +25,15 @@ public section
 namespace CategoryTheory.ShortComplex
 
 variable {C : Type*} [Category* C] [Limits.HasZeroMorphisms C] (S : ShortComplex C)
-  [S.HasHomology]
+
+/-- Under the identification `cyclesOpIso`, the opposite of the projection `S.pOpcycles` onto the
+opcycles is the inclusion of the cycles of the opposite short complex. -/
+@[reassoc (attr := simp)]
+lemma cyclesOpIso_hom_pOpcycles_op [S.HasRightHomology] :
+    S.cyclesOpIso.hom ≫ S.pOpcycles.op = S.op.iCycles := by
+  rw [← cyclesOpIso_inv_op_iCycles, Iso.hom_inv_id_assoc]
+
+variable [S.HasHomology]
 
 /-- Under the identifications `homologyOpIso` and `cyclesOpIso`, the projection of the cycles of
 the opposite short complex onto its homology is the opposite of `S.homologyι`. -/
