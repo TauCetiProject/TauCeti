@@ -260,19 +260,11 @@ theorem sectionClassicalPrincipalSymbol_toSpanSingleton_comp_comp_cutoffFrameCoe
     simp [B, mul_assoc]
   refine (sectionClassicalPrincipalSymbol_eq_iff hP t₀ ψ hψ t₀' χ hχ (by simp [hψx])
     (by simp [hχx]) ξ B).2 fun v ℓ' ↦ ?_
-  -- The matrix entry is `A` multiplied on both sides by smooth functions `g` and `h`.
-  set g := t₀'.cutoffFrameCoeff χ hχ ℓ' σ
-  set h := t.cutoffFrameCoeff ρ hρ ℓ (t₀.cutoffFrameSection ψ hψ v)
-  have hentry : sectionEntry t₀ ψ hψ v t₀' χ hχ ℓ'
-      ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ) =
-      LinearMap.mulLeft ℂ g ∘ₗ A ∘ₗ LinearMap.mulLeft ℂ h := by
-    ext f y
-    simp [g, h, Bundle.Trivialization.cutoffFrameCoeff_smul_function]
-    ring
-  rw [hentry, classicalPrincipalSymbol_mulLeft_comp
-      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA h),
+  -- The matrix entry is `A` multiplied on both sides by smooth functions.
+  rw [sectionEntry_toSpanSingleton_comp_comp_cutoffFrameCoeff, classicalPrincipalSymbol_mulLeft_comp
+      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _),
     classicalPrincipalSymbol_comp_mulLeft hA]
-  simp only [g, h, B, Bundle.Trivialization.cutoffFrameCoeff_apply,
+  simp only [B, Bundle.Trivialization.cutoffFrameCoeff_apply,
     Bundle.Trivialization.cutoffFrameSection_apply, hψx, hχx, one_smul, mul_one,
     LinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply,
     ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_comp, LinearMap.toSpanSingleton_apply,
