@@ -8,11 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.SemiFredholm
 public import TauCeti.Analysis.Normed.Module.Annihilator
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Estimate
 import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
+import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
 import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
