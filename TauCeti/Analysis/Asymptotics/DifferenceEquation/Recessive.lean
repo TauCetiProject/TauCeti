@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.Asymptotics.AsymptoticExpansion
 public import TauCeti.Analysis.Asymptotics.DifferenceEquation.FormalSolution
 import Mathlib.Algebra.Order.Field.GeomSum
-import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Algebra.ContinuedFractions.ReductionOfOrder
 import TauCeti.Analysis.Asymptotics.DiscreteVolterra
+import TauCeti.Analysis.PSeries
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
@@ -310,33 +310,6 @@ private lemma norm_kernel_le {g u : ℕ → ℂ} {R γ a : ℝ} {n₀ : ℕ} (hn
 
 /-! ### Solutions near an approximate solution -/
 
-/-- If `0 ≤ b m ≤ E * (m + n₀) ^ (e - 2)` with `e ≤ 0`, then the tails satisfy
-`∑_{m > n} b m ≤ E * S * (n + 1 + n₀) ^ e`, where `S = ∑ m, (m + n₀) ^ (-2)`. -/
-private lemma tsum_Ioi_le_of_le_rpow {b : ℕ → ℝ} {E e : ℝ} {n₀ : ℕ} (hn₀ : 1 ≤ n₀) (hE : 0 ≤ E)
-    (he : e ≤ 0) (hb0 : ∀ m, 0 ≤ b m) (hb : ∀ m, b m ≤ E * ((m + n₀ : ℕ) : ℝ) ^ (e - 2))
-    (n : ℕ) : ∑' m : Set.Ioi n, b m ≤
-      E * (∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ)) * ((n + 1 + n₀ : ℕ) : ℝ) ^ e := by
-  have hsumm₂ : Summable fun m : ℕ ↦ ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ) :=
-    (summable_nat_add_iff n₀).2 (Real.summable_nat_rpow.2 (by norm_num))
-  have hbs : Summable b := (((summable_nat_add_iff n₀).2
-    (Real.summable_nat_rpow.2 (by linarith))).mul_left E).of_nonneg_of_le hb0 hb
-  have hbound (m : Set.Ioi n) :
-      b m ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ) := by
-    have hm : n < (m : ℕ) := m.property
-    have hX : (0 : ℝ) < ((m + n₀ : ℕ) : ℝ) := by exact_mod_cast (by omega : 0 < (m : ℕ) + n₀)
-    refine (hb m).trans ?_
-    rw [sub_eq_add_neg, Real.rpow_add hX, ← mul_assoc]
-    exact mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_nonpos (by positivity) (Nat.cast_le.2 (by omega)) he) hE)
-      (by positivity)
-  calc _ ≤ ∑' m : Set.Ioi n, E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ) :=
-        (hbs.subtype _).tsum_le_tsum hbound ((hsumm₂.subtype _).mul_left _)
-    _ ≤ E * ((n + 1 + n₀ : ℕ) : ℝ) ^ e * ∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ) := by
-        rw [tsum_mul_left]
-        exact mul_le_mul_of_nonneg_left (hsumm₂.tsum_subtype_le _ _ fun m ↦ by positivity)
-          (by positivity)
-    _ = _ := by ring
-
 /-- Undoing the shift: if `n ↦ u (n + 1 + n₀) * (1 + h n)` solves the difference equation shifted
 by `n₀`, then `w k = u k * (1 + h (k - (n₀ + 1)))` solves it for `k > n₀`, and a bound on `h`
 gives one on `w - u`. -/
@@ -429,7 +402,7 @@ private theorem exists_solution_of_tail_bounds {f g u : ℕ → ℂ} {R γ a t C
     (g := fun k ↦ g (k + n₀)) (u := fun k ↦ u (k + n₀)) hu' hg' hQ hK hr'
   -- the tails of the weighted residual decay like `(n + 1 + n₀) ^ e`
   set S := ∑' m : ℕ, ((m + n₀ : ℕ) : ℝ) ^ (-2 : ℝ)
-  have htail := tsum_Ioi_le_of_le_rpow hn₀ hE ht (fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)) hres
+  have htail := tsum_Ioi_le_of_le_rpow hE ht (fun m ↦ mul_nonneg (hQ m) (norm_nonneg _)) hres
   have hpow_le (n : ℕ) : ((n + 1 + n₀ : ℕ) : ℝ) ^ e ≤ 1 :=
     Real.rpow_le_one_of_one_le_of_nonpos (by exact_mod_cast (by omega)) ht
   have hh (n : ℕ) : ‖h n‖ ≤ E * S * Real.exp (E * S) * ((n + 1 + n₀ : ℕ) : ℝ) ^ e := by
