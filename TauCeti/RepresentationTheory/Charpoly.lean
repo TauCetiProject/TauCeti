@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.RepresentationTheory.Intertwining
 public import TauCeti.RepresentationTheory.AsModule
+import TauCeti.LinearAlgebra.Charpoly.Comp
 import TauCeti.LinearAlgebra.Charpoly.Dual
 import TauCeti.LinearAlgebra.Charpoly.Inverse
 import TauCeti.LinearAlgebra.Charpoly.Quotient
@@ -16,12 +17,13 @@ import TauCeti.LinearAlgebra.Charpoly.Quotient
 # Characteristic polynomials of representations
 
 For a representation `ρ` of a monoid on a finite free module and an element `g`, the
-characteristic polynomial of `ρ g` is invariant under isomorphism of representations,
-multiplicative on products, and equal to `(X - 1) ^ dim V` for the trivial representation. The
-determinant of `ρ g` is invariant under isomorphism too, on any module.
+characteristic polynomial of `ρ g` is invariant under isomorphism of representations and cyclic
+permutation `g * h ↔ h * g`, multiplicative on products, and equal to `(X - 1) ^ dim V` for the
+trivial representation. The determinant of `ρ g` is invariant under isomorphism too, on any module.
 
-For a representation of a group, `g⁻¹` acts with the reverse of the characteristic polynomial of
-`g`, up to a unit, and so does `g` in the contragredient representation `ρ.dual`. Hence in any
+For a representation of a group, `(ρ g).charpoly` is invariant under conjugation; `g⁻¹` acts with
+the reverse of the characteristic polynomial of `g`, up to a unit, and so does `g` in the
+contragredient representation `ρ.dual`. Hence in any
 field over the coefficients, the characteristic roots of `g` in `ρ.dual` are the inverses of those
 of `g` in `ρ`, counted with multiplicity. Applied to a Frobenius element, this compares the
 eigenvalues of arithmetic and geometric Frobenius.
@@ -30,6 +32,8 @@ eigenvalues of arithmetic and geometric Frobenius.
 
 * `Representation.Equiv.charpoly_apply_eq`, `Representation.Equiv.det_apply_eq`: invariance of
   the characteristic polynomial and of the determinant under isomorphism.
+* `Representation.charpoly_apply_mul_comm` and `Representation.charpoly_apply_conj`: cyclic and
+  conjugation invariance.
 * `Representation.charpoly_prod_apply`: multiplicativity on products.
 * `Representation.charpoly_trivial_apply`: the characteristic polynomial of the trivial
   representation.
@@ -67,6 +71,13 @@ variable [Monoid G] {ρ : Representation R G V} {σ : Representation R G W}
 /-- Isomorphic representations have the same characteristic polynomials. -/
 theorem Equiv.charpoly_apply_eq (φ : ρ.Equiv σ) (g : G) : (ρ g).charpoly = (σ g).charpoly := by
   rw [← φ.conj_apply_self g, LinearEquiv.charpoly_conj]
+
+variable (ρ) in
+/-- Cyclic invariance of the characteristic polynomial:
+`(ρ (g * h)).charpoly = (ρ (h * g)).charpoly` for any elements `g, h` of the acting monoid `G`. -/
+theorem charpoly_apply_mul_comm (g h : G) : (ρ (g * h)).charpoly = (ρ (h * g)).charpoly := by
+  rw [map_mul, map_mul]
+  exact LinearMap.charpoly_comp_comm (ρ h) (ρ g) rfl
 
 variable (ρ σ) in
 /-- The characteristic polynomial is multiplicative on products of representations. -/
@@ -119,6 +130,10 @@ end Monoid
 section Group
 
 variable [Group G] (ρ : Representation R G V)
+
+/-- Conjugation invariance of the characteristic polynomial in a group representation. -/
+theorem charpoly_apply_conj (g h : G) : (ρ (g * h * g⁻¹)).charpoly = (ρ h).charpoly := by
+  rw [ρ.charpoly_apply_mul_comm, inv_mul_cancel_left]
 
 /-- In a representation of a group on a finite free module of rank `d`, the characteristic
 polynomial of `g⁻¹` is `(-1) ^ d * det (ρ g⁻¹)` times the reverse `det (1 - X ρ(g))` of that of
