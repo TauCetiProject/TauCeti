@@ -144,6 +144,17 @@ end RingEquiv
 
 namespace Matrix
 
+/-- The coordinate sesquilinear form of a matrix is a dot product with its matrix-vector
+product, with the first vector twisted by the ring homomorphism. -/
+theorem toLinearMapₛₗ₂'_apply' {R n m : Type*} [CommSemiring R]
+    [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
+    (σ : R →+* R) (S : Matrix n m R) (x : n → R) (y : m → R) :
+    toLinearMapₛₗ₂' R σ (RingHom.id R) S x y = (σ ∘ x) ⬝ᵥ S *ᵥ y := by
+  simp only [toLinearMapₛₗ₂'_apply, RingHom.id_apply, smul_eq_mul, dotProduct, mulVec,
+    Finset.mul_sum, Function.comp_apply]
+  apply Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+  ac_rfl
+
 section GramMatrix
 
 variable {R n : Type*} [CommSemiring R] [Fintype n] {Q : Matrix n n R} {σ : R →+* R}

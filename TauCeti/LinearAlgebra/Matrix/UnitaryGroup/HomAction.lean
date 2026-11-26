@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Vec
 public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.LinearAlgebra.SesquilinearForm.IsometryGroup
 
 /-!
@@ -52,38 +53,29 @@ variable {R n m : Type*} [CommRing R] [StarRing R]
 namespace unitaryGroupOf
 
 /-- Matrix unitary isometries are exactly native isometries of the coordinate form. -/
-theorem mem_isometryGroup_iff (S : Matrix n n R) (g : GL n R) :
+theorem generalLinearEquiv_toLin_mem_isometryGroup_iff (S : Matrix n n R) (g : GL n R) :
     ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
       (GeneralLinearGroup.toLin g)) ∈
         (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S).isometryGroup ↔
       g ∈ unitaryGroupOf S := by
-  have hform (x y : n → R) :
-      toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S x y =
-        star x ⬝ᵥ S *ᵥ y := by
-    simp only [toLinearMapₛₗ₂'_apply, starRingEnd_apply, RingHom.id_apply, smul_eq_mul,
-      dotProduct, mulVec, Finset.mul_sum]
-    apply Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [Pi.star_apply]
-    ring
   rw [LinearMap.mem_isometryGroup_iff, mem_unitaryGroupOf_iff_forall_dotProduct]
-  simp only [hform]
+  simp only [toLinearMapₛₗ₂'_apply',
+    LinearMap.GeneralLinearGroup.coeFn_generalLinearEquiv, GeneralLinearGroup.toLin_apply,
+    mulVecLin_apply]
+  -- The pointwise star and the function obtained by composing with star have the same values.
   rfl
 
 /-- The matrix and native sesquilinear isometry groups of a Gram matrix are isomorphic. -/
 noncomputable def isometryGroupEquiv (S : Matrix n n R) :
     unitaryGroupOf S ≃*
-      (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S).isometryGroup where
-  toFun g := ⟨(LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
-    (GeneralLinearGroup.toLin g), (mem_isometryGroup_iff S g).mpr g.property⟩
-  invFun e := ⟨GeneralLinearGroup.toLin.symm
-    ((LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R)).symm e),
-      (mem_isometryGroup_iff S _).mp (by simp)⟩
-  left_inv g := by ext; simp
-  right_inv e := by apply Subtype.ext; simp
-  map_mul' g h := by
-    apply Subtype.ext
-    exact (GeneralLinearGroup.toLin.trans
-      (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))).map_mul _ _
+      (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S).isometryGroup := by
+  let e := GeneralLinearGroup.toLin.trans
+    (LinearMap.GeneralLinearGroup.generalLinearEquiv R (n → R))
+  refine (e.subgroupMap (unitaryGroupOf S)).trans (MulEquiv.subgroupCongr ?_)
+  rw [Subgroup.map_equiv_eq_comap_symm]
+  ext f
+  exact (generalLinearEquiv_toLin_mem_isometryGroup_iff S (e.symm f)).symm.trans
+    (by simp [e])
 
 /-- The native isometry corresponding to a unitary matrix acts by matrix-vector multiplication. -/
 @[simp]
@@ -91,16 +83,37 @@ theorem isometryGroupEquiv_apply (S : Matrix n n R) (g : unitaryGroupOf S) (x : 
     ((isometryGroupEquiv S g : (n → R) ≃ₗ[R] n → R) x) =
       ((g : GL n R) : Matrix n n R) *ᵥ x := (rfl)
 
+/-- Recovering the unitary matrix of a native isometry gives its coordinate matrix. -/
+@[simp]
+theorem isometryGroupEquiv_symm_apply (S : Matrix n n R)
+    (e : (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S).isometryGroup) :
+    (((isometryGroupEquiv S).symm e : GL n R) : Matrix n n R) =
+      LinearMap.toMatrix' (e : (n → R) →ₗ[R] n → R) := by
+  obtain ⟨g, rfl⟩ := (isometryGroupEquiv S).surjective e
+  simp only [MulEquiv.symm_apply_apply]
+  apply Matrix.toLin'.injective
+  apply LinearMap.ext
+  intro x
+  rw [toLin'_apply, toLin'_toMatrix']
+  exact (isometryGroupEquiv_apply S g x).symm
+
 /-- The inverse-transpose source action preserves the dual Gram matrix. -/
-theorem transpose_inv_mem {S : Matrix n n R} (g : unitaryGroupOf S) :
+theorem transpose_inv_mem_unitaryGroupOf_transpose_inv {S : Matrix n n R} (g : unitaryGroupOf S) :
     (GeneralLinearGroup.transposeMulEquiv n (g : GL n R)⁻¹).unop ∈
       unitaryGroupOf S⁻¹ᵀ := by
-  have h := congrArg (fun A : Matrix n n R ↦ A⁻¹ᵀ)
-    (mem_unitaryGroupOf_iff.mp g.property)
-  simpa only [mem_unitaryGroupOf_iff, GeneralLinearGroup.coe_unop_transposeMulEquiv,
-    GeneralLinearGroup.coe_inv, star_eq_conjTranspose, conjTranspose_transpose,
-    ← conjTranspose_nonsing_inv, Matrix.mul_inv_rev, transpose_mul,
-    transpose_conjTranspose] using h
+  rw [mem_unitaryGroupOf_iff, GeneralLinearGroup.coe_unop_transposeMulEquiv,
+    GeneralLinearGroup.coe_inv, star_eq_conjTranspose, transpose_conjTranspose]
+  have hg := congrArg (fun A : Matrix n n R ↦ A⁻¹) (mem_unitaryGroupOf_iff.mp g.property)
+  rw [Matrix.mul_inv_rev, Matrix.mul_inv_rev, star_eq_conjTranspose,
+    ← conjTranspose_nonsing_inv, ← Matrix.mul_assoc] at hg
+  calc
+    (((g : GL n R) : Matrix n n R)⁻¹).map (starRingEnd R) * S⁻¹ᵀ *
+        (((g : GL n R) : Matrix n n R)⁻¹)ᵀ =
+        ((((g : GL n R) : Matrix n n R)⁻¹ * S⁻¹ *
+          (((g : GL n R) : Matrix n n R)⁻¹)ᴴ))ᵀ := by
+            simp only [transpose_mul, conjTranspose_transpose, Matrix.mul_assoc]
+            rfl
+    _ = S⁻¹ᵀ := congrArg transpose hg
 
 variable (S : Matrix n n R) (T : Matrix m m R)
 
@@ -110,11 +123,12 @@ noncomputable def homAction :
   MonoidHom.mk'
     (fun p ↦ ⟨GeneralLinearGroup.kronecker (p.2 : GL m R)
       (GeneralLinearGroup.transposeMulEquiv n (p.1 : GL n R)⁻¹).unop, by
-        have hg := mem_unitaryGroupOf_iff.mp (transpose_inv_mem p.1)
-        have hh := mem_unitaryGroupOf_iff.mp p.2.property
-        simpa only [mem_unitaryGroupOf_iff, GeneralLinearGroup.kronecker,
-          star_eq_conjTranspose, conjTranspose_kronecker, ← mul_kronecker_mul] using
-          congrArg₂ (fun A B ↦ A ⊗ₖ B) hh hg⟩)
+        rw [mem_unitaryGroupOf_iff]
+        simp only [GeneralLinearGroup.kronecker, star_eq_conjTranspose,
+          conjTranspose_kronecker, ← mul_kronecker_mul]
+        rw [← star_eq_conjTranspose, ← star_eq_conjTranspose,
+          mem_unitaryGroupOf_iff.mp p.2.property,
+          mem_unitaryGroupOf_iff.mp (transpose_inv_mem_unitaryGroupOf_transpose_inv p.1)]⟩)
     (fun p q ↦ unitaryGroupOf.ext (by
       simp [GeneralLinearGroup.kronecker, ← mul_kronecker_mul]))
 
@@ -163,16 +177,24 @@ theorem commute_homIsometryAction
   (MonoidHom.commute_inl_inr g h).map (homIsometryAction S T)
 
 /-- The native isometry corresponding to the Hom action evaluates as `X ↦ h * X * g⁻¹`. -/
-theorem homIsometryAction_apply_vec_transpose (g : unitaryGroupOf S) (h : unitaryGroupOf T)
+theorem homIsometryAction_apply_vec_transpose
+    (e : (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) S).isometryGroup)
+    (f : (toLinearMapₛₗ₂' R (starRingEnd R) (RingHom.id R) T).isometryGroup)
     (X : Matrix m n R) :
-    ((homIsometryAction S T (isometryGroupEquiv S g, isometryGroupEquiv T h) :
-        (m × n → R) ≃ₗ[R] m × n → R) Xᵀ.vec) =
-      (((h : GL m R) : Matrix m m R) * X *
-        (((g : GL n R)⁻¹ : GL n R) : Matrix n n R))ᵀ.vec := by
-  rw [homIsometryAction_apply, isometryGroupEquiv_apply, homAction_mulVec_vec_transpose]
+    ((homIsometryAction S T (e, f) : (m × n → R) ≃ₗ[R] m × n → R) Xᵀ.vec) =
+      (LinearMap.toMatrix' (f : (m → R) →ₗ[R] m → R) * X *
+        LinearMap.toMatrix' (e⁻¹).val.toLinearMap)ᵀ.vec := by
+  rw [← isometryGroupEquiv_symm_apply T f,
+    ← isometryGroupEquiv_symm_apply S (e⁻¹), map_inv]
+  obtain ⟨g, rfl⟩ := (isometryGroupEquiv S).surjective e
+  obtain ⟨h, rfl⟩ := (isometryGroupEquiv T).surjective f
+  rw [homIsometryAction_apply, isometryGroupEquiv_apply, homAction_mulVec_vec_transpose,
+    MulEquiv.symm_apply_apply, MulEquiv.symm_apply_apply]
+  simp only [Subgroup.coe_inv]
 
 /-- The Hom action preserves the sesquilinear pairing in row-first coordinates. -/
-theorem homAction_preserves_pairing (p : unitaryGroupOf S × unitaryGroupOf T)
+theorem star_vec_transpose_dotProduct_kronecker_mulVec_mul_mul_inv
+    (p : unitaryGroupOf S × unitaryGroupOf T)
     (X Y : Matrix m n R) :
     star ((((p.2 : GL m R) : Matrix m m R) * X *
       (((p.1 : GL n R)⁻¹ : GL n R) : Matrix n n R))ᵀ.vec) ⬝ᵥ
@@ -188,7 +210,8 @@ end unitaryGroupOf
 omit [StarRing R] [DecidableEq m] in
 /-- The Hom Gram matrix `T ⊗ₖ S⁻¹ᵀ` represents the pairing
 `(X, Y) ↦ trace (Xᴴ * T * Y * S⁻¹)` in row-first coordinates. -/
-theorem star_vec_transpose_dotProduct_homGram [Star R] (S : Matrix n n R) (T : Matrix m m R)
+theorem star_vec_transpose_dotProduct_kronecker_mulVec_vec_transpose [Star R]
+    (S : Matrix n n R) (T : Matrix m m R)
     (X Y : Matrix m n R) :
     star Xᵀ.vec ⬝ᵥ (T ⊗ₖ S⁻¹ᵀ) *ᵥ Yᵀ.vec = (Xᴴ * T * Y * S⁻¹).trace := by
   rw [kronecker_mulVec_vec, star_vec_dotProduct_vec]
@@ -201,15 +224,15 @@ theorem star_vec_transpose_dotProduct_homGram [Star R] (S : Matrix n n R) (T : M
 namespace unitaryGroupOf
 
 /-- The trace pairing on matrix Hom spaces is invariant under `X ↦ h * X * g⁻¹`. -/
-theorem homAction_preserves_trace (S : Matrix n n R) (T : Matrix m m R)
+theorem trace_conjTranspose_mul_mul_mul_inv_conj_eq (S : Matrix n n R) (T : Matrix m m R)
     (g : unitaryGroupOf S) (h : unitaryGroupOf T) (X Y : Matrix m n R) :
     ((((h : GL m R) : Matrix m m R) * X *
       (((g : GL n R)⁻¹ : GL n R) : Matrix n n R))ᴴ * T *
         (((h : GL m R) : Matrix m m R) * Y *
           (((g : GL n R)⁻¹ : GL n R) : Matrix n n R)) * S⁻¹).trace =
       (Xᴴ * T * Y * S⁻¹).trace := by
-  simpa only [star_vec_transpose_dotProduct_homGram] using
-    homAction_preserves_pairing S T (g, h) X Y
+  simpa only [star_vec_transpose_dotProduct_kronecker_mulVec_vec_transpose] using
+    star_vec_transpose_dotProduct_kronecker_mulVec_mul_mul_inv S T (g, h) X Y
 
 end unitaryGroupOf
 end Matrix
