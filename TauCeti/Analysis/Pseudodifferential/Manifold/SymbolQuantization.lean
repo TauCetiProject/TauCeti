@@ -390,8 +390,8 @@ every classical pseudodifferential operator `P` of order `m` differs from its sy
 localization `∑ᵢ χᵢ P χᵢ` by an operator of order `m - 1`, so both have the same principal symbol.
 Each `χᵢ P χᵢ` is the chart quantization of the symbol of the compression of `P` by `χᵢ`
 (`OpenPartialHomeomorph.chartQuantization_eq_mulLeft_comp_comp_mulLeft`); for the ordinary
-localization `∑ᵢ ρᵢ P χᵢ` by a partition of unity `ρᵢ`, with `χᵢ = 1` near the support of `ρᵢ`,
-the difference has order `-∞` instead
+localization `∑ᵢ ρᵢ P χᵢ` by a finite partition of unity `ρᵢ`, with `χᵢ = 1` near the support of
+`ρᵢ`, the difference has order `-∞` instead
 (`TauCeti.sub_sum_chartQuantization_mem_smoothingPseudodifferentialOperators`). -/
 theorem sub_locallyFiniteSum_mulLeft_comp_comp_mulLeft_mem_classicalPseudodifferentialOperators
     (hP : P ∈ classicalPseudodifferentialOperators m)

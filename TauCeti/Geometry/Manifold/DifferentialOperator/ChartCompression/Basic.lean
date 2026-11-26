@@ -165,6 +165,7 @@ theorem tsupport_cutoffPullback_subset (ψ : 𝓓(⟨e.target, e.open_target⟩,
 
 /-- The pullback `ψ ∘ e` of a cutoff, extended by `0`, is supported exactly in the image of the
 support of `ψ` under the inverse of the chart. -/
+@[simp]
 theorem tsupport_cutoffPullback_one (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
     tsupport (e.cutoffPullback he ψ 1) = e.symm '' tsupport ψ := by
   refine subset_antisymm (e.tsupport_cutoffPullback_subset he ψ 1) ?_
