@@ -585,13 +585,8 @@ theorem
       (fun ζ _ ↦ by rw [det_fderiv_positiveEndChart, endCenter_inf, sub_zero])
   refine ⟨C * (4 * π ^ 2), R, hR, fun η hη hηc hηR ↦ ?_⟩
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hηc hηR
-  have hψo : IsOpenMap (positiveEndChart inf) := by
-    rw [show positiveEndChart inf = realChart inf.cylindricalEndLift ∘ (inf.endSign • ·) from
-      funext fun z ↦ by rw [positiveEndChart_apply, endChart_eq_realChart]; rfl]
-    exact (isOpenMap_realChart_of_deriv_ne_zero (inf.contDiff_cylindricalEndLift 1)
-      inf.deriv_cylindricalEndLift_ne_zero).comp (isOpenMap_smul₀ (by simp))
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
-    hH hHs hHout hHouts ha hψo
+    hH hHs hHout hHouts ha (isOpenMap_positiveEndChart inf)
     (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)) hJ
     (fun ζ hζ ↦ (hu ζ hζ).of_le one_le_two) (by fun_prop) hη hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_
