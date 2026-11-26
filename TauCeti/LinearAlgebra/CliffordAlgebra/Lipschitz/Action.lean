@@ -39,7 +39,7 @@ surjectivity results.
   twisted conjugation by any Clifford unit `x`, the vector part of `involute x * ι v * x⁻¹`.
 * `CliffordAlgebra.lipschitzVectorAction Q x`: the automorphism of the quadratic space
   induced by twisted conjugation by a Lipschitz element, the restriction of the action
-  `CliffordAlgebra.vectorNormalizerAction` of the vector normalizer, read off through `ιInv`.
+  `CliffordAlgebra.vectorNormalizerAction` of the vector normalizer.
 * `CliffordAlgebra.lipschitzToOrthogonal Q`: the resulting homomorphism to `O(Q)`.
 
 ## Main results
@@ -208,19 +208,14 @@ private theorem vectorMap_eq_reflection (v : M) [Invertible (Q v)] {x : (Cliffor
 
 /-! ### The action of the Lipschitz group -/
 
-private theorem lipschitzGroup_le_vectorNormalizer : lipschitzGroup Q ≤ vectorNormalizer Q :=
-  fun _ hx => (mem_vectorNormalizer_iff Q _).mpr
-    ⟨lipschitzGroup.involute_act_ι_mem_range_ι hx, by
-      simpa only [inv_inv] using lipschitzGroup.involute_act_ι_mem_range_ι (inv_mem hx)⟩
-
-private def vectorActionHom : lipschitzGroup Q →* M ≃ₗ[R] M :=
-  (vectorNormalizerAction (ι_leftInverse Q)).comp
+private noncomputable def vectorActionHom : lipschitzGroup Q →* M ≃ₗ[R] M :=
+  (vectorNormalizerAction (ι_injective Q)).comp
     (Subgroup.inclusion (lipschitzGroup_le_vectorNormalizer Q))
 
 /-- The automorphism of the quadratic space induced by twisted conjugation by an element of the
 Lipschitz group. It is characterized by `ι_lipschitzVectorAction_apply`, which identifies it with
 twisted conjugation inside the Clifford algebra. -/
-def lipschitzVectorAction (x : lipschitzGroup Q) : M ≃ₗ[R] M :=
+noncomputable def lipschitzVectorAction (x : lipschitzGroup Q) : M ≃ₗ[R] M :=
   vectorActionHom Q x
 
 /-- The identity Lipschitz element acts by the identity linear equivalence. -/
@@ -276,7 +271,7 @@ variable (Q)
 
 /-- The twisted-conjugation homomorphism from the Lipschitz group to the orthogonal group of the
 quadratic form. -/
-def lipschitzToOrthogonal : lipschitzGroup Q →* QuadraticMap.orthogonalGroup Q where
+noncomputable def lipschitzToOrthogonal : lipschitzGroup Q →* QuadraticMap.orthogonalGroup Q where
   toFun x :=
     ⟨lipschitzVectorAction Q x,
       QuadraticMap.mem_orthogonalGroup_iff.mpr (lipschitzVectorAction_map_app x)⟩

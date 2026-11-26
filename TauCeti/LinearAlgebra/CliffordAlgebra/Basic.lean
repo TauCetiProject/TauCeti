@@ -281,12 +281,9 @@ theorem isUnit_of_isUnit_ι_of_free {Q : QuadraticForm R M} {m : M} (h : IsUnit 
   have hsq : IsUnit (algebraMap R (CliffordAlgebra Q) (Q m)) := by
     rw [← ι_sq_scalar]
     exact h.mul h
-  obtain ⟨w, hw⟩ := hsq.exists_right_inv
   obtain ⟨f, hf⟩ := exists_leftInverse_algebraMap_of_free Q
-  have h1 := congrArg f hw
-  rw [← Algebra.smul_def, map_smul, smul_eq_mul, ← map_one (algebraMap R (CliffordAlgebra Q)),
-    hf] at h1
-  exact IsUnit.of_mul_eq_one _ h1
+  simpa only [Algebra.algebraMap_self, RingHom.id_apply] using
+    hsq.algebraMap_of_algebraMap f (by simpa only [map_one] using hf 1)
 
 end Free
 
