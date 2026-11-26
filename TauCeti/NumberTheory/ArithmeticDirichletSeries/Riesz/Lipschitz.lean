@@ -36,9 +36,9 @@ the coefficients are nonnegative, it is continuous, and it has right derivative
 
 ## References
 
-* The ramp decomposition and the Lipschitz bounds in the weight are the ingredients of the bounds
-  for the Riesz remainder in the formal proof of the Riemann hypothesis for Dirichlet
-  `L`-functions, https://github.com/leanprover-community/riemann-hypothesis.
+* These bounds feed the Riesz-remainder bounds of `TauCeti.NumberTheory.Chebyshev.RieszRemainder`,
+  whose Riesz remainder and absolute-constant form are those of the formal proof of the Riemann
+  hypothesis for Dirichlet `L`-functions, https://github.com/leanprover-community/riemann-hypothesis.
 -/
 
 public section
