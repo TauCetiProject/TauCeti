@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Examples.Algebra.Homology.SpectralObject.NatRecipeNeedsClass
 public import TauCeti.Algebra.Homology.SpectralObject.Tower.FirstPage
-import Mathlib.Algebra.Homology.HomologySequence
-import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Stabilization
 
 /-!
 # The kernel of `δ` into `H^{n+1}(⊥ ≤ q)` can be smaller than every cycle subobject
@@ -17,8 +16,9 @@ For a spectral object `X` indexed by `EInt` and the recipe `coreE₂Cohomologica
 target `H^{n+1}(q - r + 2 ≤ q)` of the `δ` cutting out `Z_r(p, q)` by `H^{n+1}(⊥ ≤ q)` gives a
 subobject of `E_2^{p,q}` contained in every `Z_r`
 (`SpectralObject.kernelSubobject_δ_le_cyclesSubobject_spectralSequence`). This file shows that
-the containment can be strict for every `r` at once, so that this subobject is in general smaller
-than the permanent cycles.
+the containment can be strict for every `r` at once: the subobject is strictly smaller than every
+`Z_r(0, 0)`. Informally, since every `Z_r(0, 0)` is `⊤` here, it is then also strictly smaller
+than the permanent cycles at `(0, 0)`; this file does not state the comparison with `Z_∞`.
 
 Let `K = (ℤ →(id) ℤ)` in degrees `0, 1`
 (`TauCeti.Examples.NatRecipeNeedsClass.idComplex`), with the increasing filtration `G_t = K^1`
@@ -78,66 +78,35 @@ theorem filtration_of_le_zero {t : ℤ} (ht : t ≤ 0) :
   simp [filtration, ht]
 
 /-- The piece `G_1` is `K`. -/
-theorem filtration_one : filtration 1 = Subobject.mk (𝟙 idComplex) := by
-  simp [filtration, Subobject.top_eq_id]
-
-/-- `H^n(K) = 0` for `K = (ℤ →(id) ℤ)`, which is contractible. -/
-theorem isZero_homology_filtrationFunctor_one (n : ℤ) :
-    IsZero ((filtrationFunctor.obj ((1 : ℤ) : EInt)).homology n) :=
-  ((exactAt_iff_isZero_homology _ _).1
-    ((mappingCone.homotopyToZeroOfId degreeOne).acyclic n)).of_iso
-      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ filtration_one) n)
+theorem filtration_one : filtration 1 = ⊤ := by
+  simp [filtration]
 
 /-- **`H^n(i ≤ 0) = 0` for every integer `i ≤ 0`**: it is the homology of `G_0 / G_i = 0`. -/
 theorem isZero_H_of_le_zero {i : ℤ} (hi : i ≤ 0) (n : ℤ) :
     IsZero ((spectralObject.H n).obj (mk₁ (eIntHomOfLE hi))) := by
-  have : IsIso (filtrationFunctor.map (eIntHomOfLE hi)) := by
-    have h : filtrationEInt filtration (i : EInt) = filtrationEInt filtration ((0 : ℤ) : EInt) := by
-      rw [filtrationEInt_coe, filtrationEInt_coe, filtration_of_le_zero hi,
-        filtration_of_le_zero le_rfl]
-    have := (Subobject.isoOfEq _ _ h).isIso_hom
-    have : IsIso (filtrationFunctor.map (eIntHomOfLE hi) ≫
-        (filtrationFunctorObjIso filtration monotone_filtration _).hom) := by
-      rw [filtrationFunctor_map_comp_objIso_hom]
-      exact IsIso.comp_isIso' inferInstance this
-    exact IsIso.of_isIso_comp_right _ (filtrationFunctorObjIso filtration monotone_filtration _).hom
+  have := isIso_filtrationFunctor_map_of_eq filtration monotone_filtration (eIntHomOfLE hi)
+    (by rw [filtrationEInt_coe, filtrationEInt_coe, filtration_of_le_zero hi,
+      filtration_of_le_zero le_rfl])
   exact ((acyclic_of_isZero _ (isZero_cokernel_of_epi _) n).isZero_homology).of_iso
     (spectralObjectHIsoCokernel filtrationFunctor _ n)
 
-/-- **`H^0(⊥ ≤ 1) = 0`**: it is `H^0(G_1) = H^0(K)`. -/
-theorem isZero_H_bot_one :
-    IsZero ((spectralObject.H 0).obj (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((1 : ℤ) : EInt))))) := by
-  have hS := TauCeti.cokernelSequence_shortExact
-    (filtrationFunctor.map (homOfLE (bot_le : (⊥ : EInt) ≤ ((1 : ℤ) : EInt))))
-  have hbot : IsZero ((filtrationFunctor.obj ⊥).homology 1) :=
-    (acyclic_of_isZero _ (isZero_filtrationFunctor_obj_bot _ _) 1).isZero_homology
-  refine IsZero.of_iso ?_ (spectralObjectHIsoCokernel filtrationFunctor _ 0)
-  exact (hS.homology_exact₃ 0 1 (by simp)).isZero_X₂
-    ((isZero_homology_filtrationFunctor_one 0).eq_of_src _ _) (hbot.eq_of_tgt _ _)
-
-/-- **`H^0(0 ≤ 1) ≠ 0`**: it is `H^0(K/K^1) = ℤ`. If it vanished, `H^1(K^1) = ℤ` would inject
-into `H^1(K) = 0`. -/
+/-- **`H^0(0 ≤ 1) ≠ 0`**: it is `H^0(K/K^1) = ℤ`. -/
 theorem not_isZero_H_zero_one :
     ¬ IsZero ((spectralObject.H 0).obj (mk₁ (eIntHomOfLE (zero_le_one : (0 : ℤ) ≤ 1)))) :=
-  fun h => by
-  set f := eIntHomOfLE (zero_le_one : (0 : ℤ) ≤ 1)
-  have hS := TauCeti.cokernelSequence_shortExact (filtrationFunctor.map f)
-  have hQ : IsZero ((cokernel (filtrationFunctor.map f)).homology 0) :=
-    h.of_iso (spectralObjectHIsoCokernel filtrationFunctor f 0).symm
-  have : Mono (homologyMap (filtrationFunctor.map f) 1) :=
-    (hS.homology_exact₁ 0 1 (by simp)).mono_g (hQ.eq_of_src _ _)
-  exact not_isZero_homology_degreeOne ((IsZero.of_mono (homologyMap
-    (filtrationFunctor.map f) 1) (isZero_homology_filtrationFunctor_one 1)).of_iso
-      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ (filtration_of_le_zero le_rfl)) 1).symm)
+  not_isZero_H_zero_of_eq monotone_filtration zero_le_one (filtration_of_le_zero le_rfl)
+    filtration_one
 
-/-- **`δ : H^0(0 ≤ 1) ⟶ H^1(⊥ ≤ 0)` is a monomorphism**, by exactness of
-`H^0(⊥ ≤ 1) ⟶ H^0(0 ≤ 1) ⟶ H^1(⊥ ≤ 0)` and `H^0(⊥ ≤ 1) = 0`. The target degree is written
-`0 + 1`, the form of `kernelSubobject_δ_le_cyclesSubobject_spectralSequence`. -/
+/-- **`δ : H^0(0 ≤ 1) ⟶ H^1(⊥ ≤ 0)` is a monomorphism.** The target degree is written `0 + 1`, the
+form of `kernelSubobject_δ_le_cyclesSubobject_spectralSequence`. -/
 theorem mono_δ_bot :
     Mono (spectralObject.δ (homOfLE (bot_le : (⊥ : EInt) ≤ ((0 : ℤ) : EInt)))
       (eIntHomOfLE (zero_le_one : (0 : ℤ) ≤ 1)) 0 (0 + 1)) :=
+  -- In the exact sequence `H^0(⊥ ≤ 1) ⟶ H^0(0 ≤ 1) ⟶ H^1(⊥ ≤ 0)`, the first term is
+  -- `H^0(G_1) = H^0(K) = 0`.
   (spectralObject.exact₃ _ _ (homOfLE bot_le) (Subsingleton.elim _ _) 0 (0 + 1)).mono_g
-    (isZero_H_bot_one.eq_of_src _ _)
+    ((isZero_spectralObject_H_bot filtration monotone_filtration 1 0 (by
+      rw [← filtrationFunctor_obj_coe filtration monotone_filtration]
+      exact isZero_homology_filtrationFunctor_obj_of_eq_top _ filtration_one 0)).eq_of_src _ _)
 
 /-- The first-page identification `E_2^{0,0} ≅ H^0(0 ≤ 1)`. -/
 abbrev firstPageXIso :=
@@ -151,7 +120,7 @@ theorem cyclesSubobject_eq_top (r : ℤ) (hr : 2 ≤ r) :
       ((0 : ℤ), (0 : ℤ)) r hr = ⊤ := by
   rw [spectralObject.cyclesSubobject_spectralSequence_eq_kernelSubobject_δ
     SpectralObject.coreE₂Cohomological ((0 : ℤ), (0 : ℤ)) r hr ((2 - r : ℤ) : EInt)
-    ((0 : ℤ) : EInt) ((1 : ℤ) : EInt) (by simp; lia) rfl rfl 0 rfl]
+    ((0 : ℤ) : EInt) ((1 : ℤ) : EInt) (congrArg _ (by lia : 2 - r = 0 - r + 2)) rfl rfl 0 rfl]
   convert kernelSubobject_zero using 2
   exact (isZero_H_of_le_zero (by lia : 2 - r ≤ 0) (0 + 1)).eq_of_tgt _ _
 
