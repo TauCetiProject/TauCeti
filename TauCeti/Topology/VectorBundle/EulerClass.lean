@@ -10,7 +10,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import TauCeti.AlgebraicTopology.Cohomology.HomotopyInvariance
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.Topology.Category.TopPair.ContinuousLinearEquiv
-public import TauCeti.Topology.VectorBundle.ModelFiber
+public import TauCeti.Topology.FiberBundle.ModelFiber
 public import TauCeti.Topology.VectorBundle.ZeroSection
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -143,6 +143,16 @@ theorem thomPairModelFiberIso_hom_fst_apply {F' : Type*} [TopologicalSpace (Tota
   simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_hom]
   exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F' E))
     (B := zeroSectionCompl F' E) _ _ p).trans (totalSpaceModelFiberHomeomorph_apply h_ind p)
+
+variable {F E} in
+@[simp]
+theorem thomPairModelFiberIso_inv_fst_apply {F' : Type*} [TopologicalSpace (TotalSpace F' E)]
+    (h_ind : Topology.IsInducing fun p : TotalSpace F' E ↦ TotalSpace.mk' F p.proj p.snd)
+    (p : TotalSpace F E) :
+    TopPair.Hom.fst (thomPairModelFiberIso h_ind).inv p = TotalSpace.mk' F' p.proj p.snd := by
+  simp only [thomPairModelFiberIso, TopPair.ofSubsetIso_inv]
+  exact (TopPair.ofSubsetMap_fst_apply (X := TopCat.of (TotalSpace F E))
+    (B := zeroSectionCompl F E) _ _ p).trans (totalSpaceModelFiberHomeomorph_symm_apply h_ind p)
 
 /-- The Thom pair `(E|_W, E₀|_W)` of the restriction of a bundle to a subset `W` of its base: the
 vectors over `W`, relative to the nonzero ones, as subspaces of the total space. -/

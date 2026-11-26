@@ -14,7 +14,7 @@ public import TauCeti.Topology.VectorBundle.Orientation.Cover.SignRepresentation
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.ChainMap
 public import TauCeti.Topology.VectorBundle.Thom.EquivariantCap
 public import TauCeti.Topology.VectorBundle.Thom.Orientation.TwistedLift
-
+import TauCeti.Topology.VectorBundle.ModelFiber
 
 /-!
 # The Thom isomorphism with orientation-twisted coefficients over every ring
@@ -80,7 +80,7 @@ equivariant cap product need the acting group in the universe `w`, so `ℤˣ` ac
 `ULift ℤˣ` there (`IsQuotientCoveringMap.ulift`). The descent also needs the model fibre in the
 universe `w`. Over a compact base the model fibre may lie in any universe, such as
 `Fin r → ℝ : Type`: the bundle is read with the model fibre `ULift (ι → ℝ)` instead
-(`FiberBundle.ofModelFiberHomeomorph`), which changes neither its Thom pair
+(`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`), which changes neither its Thom pair
 (`TauCeti.thomPairModelFiberIso`) nor its orientation local system.
 
 ## Main definitions and results
@@ -274,12 +274,7 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [
   -- the fibres, with the topology on its total space induced along the identity of points.
   let L : F ≃L[ℝ] ULift.{w} (ι → ℝ) :=
     (ContinuousLinearEquiv.ofFinrankEq (by simp [hι])).trans ContinuousLinearEquiv.ulift.symm
-  let _ : TopologicalSpace (TotalSpace (ULift.{w} (ι → ℝ)) E) :=
-    .induced (fun v ↦ TotalSpace.mk' F v.proj v.snd) inferInstance
-  have h_ind : Topology.IsInducing fun v : TotalSpace (ULift.{w} (ι → ℝ)) E ↦
-      TotalSpace.mk' F v.proj v.snd := ⟨rfl⟩
-  let _ := FiberBundle.ofModelFiberHomeomorph F L.toHomeomorph h_ind
-  have := VectorBundle.ofModelFiberContinuousLinearEquiv F L h_ind
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
   have hι' : Fintype.card ι = finrank ℝ (ULift.{w} (ι → ℝ)) := hι.trans L.toLinearEquiv.finrank_eq
   -- For the model fibre `F'`, the lift to the orientation cover of the Thom class with
   -- coefficients in the orientation system, normalized by any orientation of `F'`, is a Thom

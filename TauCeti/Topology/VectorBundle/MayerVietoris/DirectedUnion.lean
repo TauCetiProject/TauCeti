@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.DirectedUnion
 import TauCeti.Algebra.Module.Equiv.SpanSingleton
 import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.VectorBundle.ModelFiber
 
 /-!
 # Thom-pair vanishing and gluing over arbitrary bases
@@ -571,12 +572,7 @@ theorem isZero_singularHomology_thomPair {F : Type*} [NormedAddCommGroup F] [Nor
   -- the fibres, with the topology on its total space induced along the identity of points.
   let L : F ≃L[ℝ] ULift.{w} (Fin (finrank ℝ F) → ℝ) :=
     (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
-  let _ : TopologicalSpace (TotalSpace (ULift.{w} (Fin (finrank ℝ F) → ℝ)) E) :=
-    .induced (fun v ↦ TotalSpace.mk' F v.proj v.snd) inferInstance
-  have h_ind : Topology.IsInducing fun v : TotalSpace (ULift.{w} (Fin (finrank ℝ F) → ℝ)) E ↦
-      TotalSpace.mk' F v.proj v.snd := ⟨rfl⟩
-  let _ := FiberBundle.ofModelFiberHomeomorph F L.toHomeomorph h_ind
-  have := VectorBundle.ofModelFiberContinuousLinearEquiv F L h_ind
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
   exact (isZero_singularHomology_thomPair_sameUniverse R
     (by rwa [← L.toLinearEquiv.finrank_eq])).of_iso
     ((thomPair F E).singularHomologyMapIso R (thomPairModelFiberIso h_ind).symm n)
