@@ -69,26 +69,31 @@ variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace X]
 theorem rankEquiv_pullback : D.rankEquiv = ContinuousLinearEquiv.refl 𝕜 (Fin C.rank → 𝕜) := by
   ext v l
   simp only [rankEquiv_apply, Fin.cast_eq_self]
+  -- `v l` and `refl v l` agree by definition; `simp` does not see it, because `v` has coordinates
+  -- indexed by `Fin (C.pullback f).rank`, which is `Fin C.rank` only by `rank_pullback`, a `rfl`.
   rfl
 
 /-- The chart of the glued core labelled by a point of `V` is the chart of the pullback, inside
 `V`. -/
 theorem mem_baseSet_glue_pullback_iff (hi : i ∈ D.V) :
     x ∈ D.glue.core.baseSet i ↔ f x ∈ C.core.baseSet (f i) ∧ x ∈ D.V := by
-  rw [baseSet_glue, D.baseSet_of_mem hi]
-  exact Iff.rfl
+  rw [baseSet_glue, D.baseSet_of_mem hi, mem_inter_iff, mem_baseSet_pullback]
 
 /-- Between charts of the pullback, the transitions of the glued core are those of `C` at the
 images under `f`. -/
 theorem coordChange_glue_pullback (hi : i ∈ D.V) (hj : j ∈ D.V) :
     D.glue.core.coordChange i j x = C.core.coordChange (f i) (f j) (f x) := by
   rw [coordChange_glue, D.coordChange_of_mem_of_mem hi hj, rankEquiv_pullback]
+  -- Composing with the identity reindexing; the coordinate types agree by `rank_pullback`, which
+  -- holds by definition.
   rfl
 
 /-- On `V`, the comparison of the glued core with `C` is `Φ`. -/
 theorem fiberMap_glueIso_hom_pullback (hx : x ∈ D.V) :
     D.glueIso.hom.fiberMap x = Φ.fiberMap x := by
   rw [glueIso_hom, D.fiberMap_glueHom_of_mem hx, rankEquiv_pullback]
+  -- Composing with the identity reindexing; the coordinate types agree by `rank_pullback`, which
+  -- holds by definition.
   rfl
 
 /-- **Constancy along the fibres of `f`.** On a subset `W` of `K` which `f` maps into `V` and on
@@ -189,6 +194,7 @@ theorem exists_iso_contMDiffOn_coordChange_doubledBundleCore (hA : IsCompact A)
     D.contMDiffOn_coordChange_glue hg hΦ hP, D.contMDiffOn_inChartCoordinates_glueIso_hom hg hΦ,
     D.contMDiffOn_inChartCoordinates_glueIso_inv hg hΦ, fun a ha v ↦ ?_, fun i j ↦ ?_⟩
   · rw [D.fiberMap_glueIso_hom_pullback (hAV ha), hΦA a ha]
+    -- The identity applied to `star v` and to `v`; `D.glue.rank` is `C.rank` by definition.
     rfl
   · exact contMDiffOn_coordChange_doubledBundleCore _ _ (D.contMDiffOn_coordChange_glue hg hΦ hP)
       (hU.inter isOpen_interior) hAW (hρA.mono_left hWU)
