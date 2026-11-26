@@ -100,12 +100,7 @@ support is a compact subset of `Ω`, and let `f` and `g` be smooth on `Ω`. If `
 `‖Df‖, ‖Dg‖ ≤ L` on the support of `T`, then the pushforwards `T ∘ (χ f^*)` and `T ∘ (χ g^*)`
 satisfy
 
-`|g_# T (ω) - f_# T (ω)| ≤ ε (L ^ (k + 1) M(T) sup ‖dω‖ + L ^ k M(∂T) sup ‖ω‖)`.
-
-The difference is `R ω + S (dω)` for the homotopy decomposition
-`ContinuousLinearMap.exists_comp_cutoffPullbackCLM_sub_eq_add_comp_extDerivCLM` of the
-straight-line homotopy `(1 - t) f + t g`. Its hypotheses are on the support of the cutoff; as the
-maps are smooth, they hold up to any `η > 0` near the support of `T`, and `η → 0`. -/
+`|g_# T (ω) - f_# T (ω)| ≤ ε (L ^ (k + 1) M(T) sup ‖dω‖ + L ^ k M(∂T) sup ‖ω‖)`. -/
 theorem norm_map_cutoffPullbackCLM_sub_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ}
     (hT : IsNormal T) {χ : 𝓓(Ω, ℝ)} (hχ : ∀ᶠ x in 𝓝ˢ (dsupport T), χ x = 1)
     (hf : ContDiffOn ℝ (⊤ : ℕ∞) f Ω) (hg : ContDiffOn ℝ (⊤ : ℕ∞) g Ω) {ε L : ℝ≥0}
@@ -116,6 +111,9 @@ theorem norm_map_cutoffPullbackCLM_sub_le {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[
           ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (k + 1 + 1)]→L[ℝ] F)‖ +
         L ^ k * (mass (T ∘L extDerivCLM)).toReal *
           ‖(ω : E' →ᵇ E' [⋀^Fin (k + 1)]→L[ℝ] F)‖) := by
+  -- The difference is `R ω + S (dω)` for the homotopy decomposition
+  -- `ContinuousLinearMap.exists_comp_cutoffPullbackCLM_sub_eq_add_comp_extDerivCLM` of the
+  -- straight-line homotopy `(1 - t) f + t g`, whose hypotheses are on the support of the cutoff.
   -- It suffices to prove the bound with `ε + η` and `L + η` for every `η > 0`.
   refine ge_of_tendsto (f := fun η : ℝ ↦ (ε + η) * ((L + η) ^ (k + 1) * (mass T).toReal *
       ‖(extDerivCLM ω : E' →ᵇ E' [⋀^Fin (k + 1 + 1)]→L[ℝ] F)‖ +
@@ -295,7 +293,8 @@ private theorem IsApproximable.exists_forall_tendsto (h : IsApproximable T f) :
   obtain ⟨S, -, hS⟩ := exists_tendsto_of_mass_le
     (fun j ↦ T ∘L (cutoffPullbackCLM χ₀ (g₀ j) (hg₀ j) : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _))
     (C := L₀ ^ k * mass T) (ENNReal.mul_ne_top (by simp) hT.mass_ne_top)
-    (fun j ↦ mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport hTf hχ₀ (hg₀L j))
+    (fun j ↦ mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport hTf
+      (fun x hx ↦ by simp [hχ₀.self_of_nhdsSet x hx]) (hg₀L j))
     (cauchySeq_map_cutoffPullbackCLM hT hχ₀ hg₀ hg₀f hg₀L)
   refine ⟨S, fun χ hχ g hg hgf L hgL ω ↦ ?_⟩
   -- Change the cutoff to `χ₀`, then compare with the sequence `g₀`.
@@ -491,7 +490,8 @@ theorem mass_lipschitzPushforward_le (hT : IsNormal T) (hKc : IsCompact (dsuppor
       𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)))
     (tendsto_lipschitzPushforward hT hχ hg hgf hgL)).trans
     (liminf_le_of_frequently_le' (Frequently.of_forall fun j ↦
-      mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport hTf hχ (hgL j)))
+      mass_comp_cutoffPullbackCLM_le_of_forall_mem_dsupport hTf
+        (fun x hx ↦ by simp [hχ.self_of_nhdsSet x hx]) (hgL j)))
 
 /-- **The pushforward commutes with the boundary**: `∂ (f_# T) = f_# (∂ T)` for a normal
 `(k + 1)`-current `T` with compact support in `Ω` and a map `f` Lipschitz on a neighbourhood of
