@@ -31,7 +31,7 @@ Serre's homological finiteness and Euler characteristic multiplicativity theorem
 Chapter II, Section 4, Proposition 3; see also Klein--Malkiewich--Ramzi, Introduction, pp. 1--2):
 
 * **Invariance of the fibre Euler characteristic along paths.** By path transport on fibre
-  singular homology (`TauCeti.TopCat.fiberIsoOfPath` applied to
+  singular homology (`CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath` applied to
   `TauCeti.TopCat.weakEquivalences_isInvertedBy_singularHomologyFunctor`), fibres over points in the
   same path component have the same Euler characteristic whenever both have finite CW type
   (`TauCeti.TopCat.eulerChar_fiber_eq_of_joined`).
@@ -106,9 +106,8 @@ theorem eulerChar_fiber_eq_of_joined {E B : _root_.TopCat.{u}} {p : E ⟶ B}
   rw [eulerChar_eq_finsum_finrank_singularHomology (p.fiber b₀) (ULift.{u} ℚ),
     eulerChar_eq_finsum_finrank_singularHomology (p.fiber b₁) (ULift.{u} ℚ)]
   exact finsum_congr fun i ↦ by
-    rw [(fiberIsoOfPath
-      (weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of (ULift.{u} ℚ)
-        (ULift.{u} ℚ)) i) hp h.somePath).toLinearEquiv.finrank_eq]
+    rw [((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of (ULift.{u} ℚ)
+        (ULift.{u} ℚ)) i).fiberIsoOfPath hp h.somePath).toLinearEquiv.finrank_eq]
 
 end PathTransport
 
@@ -294,7 +293,7 @@ private lemma eulerChar_serreSpectralSequence_page_two [RelCWComplex.Finite C]
     rw [ComplexShape.coe_χ_up'_sub_of_add_eq_neg _ (serreFirstPagePos_add m q),
       (serreSpectralSequencePullbackFirstPageXIsoSigma hp R C g m q (serreFirstPagePos m q)
         (serreFirstPagePos_snd m q) (serreFirstPagePos_add m q)).toLinearEquiv.finrank_eq,
-      ModuleCat.finrank_sigma]
+      ModuleCat.finrank_sigma _ fun _ ↦ Module.rank_lt_aleph0 _ _]
     push_cast
     simp [Finset.mul_sum, pow_add, mul_left_comm, mul_assoc]
   simp_rw [hterm]
@@ -549,17 +548,18 @@ finsum_finrank_singularHomology_of_mem_serreFibrations_of_forall_finite_of_foral
 /-! ### Specializations to isomorphic fibres, path-connected bases, and fibres of finite CW type -/
 
 /-- Over a base `B` of finite CW type, if the singular homology of every fibre `p.fiber b` of a
-Serre fibration `p : E ⟶ B` is isomorphic to a fixed graded module `M` that vanishes in all large
-degrees over a ring `R`, then `H_n(E; R)` vanishes in all large degrees. -/
+Serre fibration `p : E ⟶ B` is eventually isomorphic to a fixed graded module `M` that vanishes in
+all large degrees over a ring `R`, then `H_n(E; R)` vanishes in all large degrees. -/
 theorem eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso
     (R : Type u) [Ring R] {M : ℕ → ModuleCat.{u} R}
-    (e : ∀ (b : B) (q : ℕ),
-      ((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b) ≅ M q)
+    (e : ∀ b : B, ∀ᶠ q in Filter.atTop, Nonempty
+      (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b) ≅
+        M q))
     (hvanish : ∀ᶠ q in Filter.atTop, IsZero (M q)) :
     ∀ᶠ n in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
   eventually_isZero_singularHomology_of_mem_serreFibrations_of_forall_eventually_isZero hp R
-    fun b ↦ hvanish.mono fun q hq ↦ hq.of_iso (e b q)
+    fun b ↦ ((e b).and hvanish).mono fun _ ⟨⟨iso⟩, hq⟩ ↦ hq.of_iso iso
 
 /-- Over a base `B` of finite CW type and a Noetherian ring `R`, if the singular homology of every
 fibre `p.fiber b` of a Serre fibration `p : E ⟶ B` in degrees `q ≤ n` is isomorphic to a finitely
@@ -606,9 +606,9 @@ eventually_isZero_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_
     ∀ᶠ n in Filter.atTop,
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
   eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso hp R
-    (fun b' q ↦ (fiberIsoOfPath
-      (weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q) hp
-      (PathConnectedSpace.somePath b b')).symm)
+    (fun b' ↦ Filter.Eventually.of_forall fun q ↦
+      ⟨((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
+        hp (PathConnectedSpace.somePath b b')).symm⟩)
     hvanish
 
 /-- Over a path-connected base `B` of finite CW type and a Noetherian ring `R`, if a single fibre
@@ -621,9 +621,9 @@ theorem finite_singularHomology_of_mem_serreFibrations_of_pathConnectedSpace_of_
     Module.Finite R
       (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).obj E) :=
   finite_singularHomology_of_mem_serreFibrations_of_iso hp R n
-    (fun b' q _ ↦ (fiberIsoOfPath
-      (weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q) hp
-      (PathConnectedSpace.somePath b b')).symm)
+    (fun b' q _ ↦
+      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
+        hp (PathConnectedSpace.somePath b b')).symm)
     hfin
 
 /-- **Multiplicativity of the Euler characteristic in a Serre fibration with homologically finite
@@ -645,9 +645,9 @@ theorem finsum_finrank_singularHomology_of_mem_serreFibrations_of_pathConnectedS
       eulerChar B * ∑ᶠ q : ℕ, (-1 : ℤ) ^ q * finrank R
         (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj (p.fiber b)) :=
   finsum_finrank_singularHomology_of_mem_serreFibrations_of_iso hp R
-    (fun b' q ↦ (fiberIsoOfPath
-      (weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q) hp
-      (PathConnectedSpace.somePath b b')).symm)
+    (fun b' q ↦
+      ((weakEquivalences_isInvertedBy_singularHomologyFunctor (ModuleCat.of R R) q).fiberIsoOfPath
+        hp (PathConnectedSpace.somePath b b')).symm)
     hfin hvanish
 
 /-- Over a path-connected base `B` of finite CW type, if a single fibre `p.fiber b` of a Serre

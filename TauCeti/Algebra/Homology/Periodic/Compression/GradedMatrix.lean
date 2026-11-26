@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ModuleCat.GradedMatrix
 public import TauCeti.Algebra.Homology.Periodic.Compression.Homology
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # Compression of complexes of graded matrices
@@ -213,9 +214,8 @@ theorem sum_finrank_homology_gradedMatrixComplex_intCast (a b : ℤ) (ha : ∀ i
   have := isStrictlyGE_gradedMatrixComplex (hD := hD) (hDD := hDD) ha
   have := isStrictlyLE_gradedMatrixComplex (hD := hD) (hDD := hDD) hb
   have (j : ℤ) : Module.Finite k ((gradedMatrixComplex e D hD hDD).homology j) :=
-    have : IsNoetherian k ((gradedMatrixComplex e D hD hDD).sc j).X₂ :=
-      inferInstanceAs (IsNoetherian k ((gradedMatrixComplex e D hD hDD).X j))
-    inferInstanceAs (Module.Finite k ((gradedMatrixComplex e D hD hDD).sc j).homology)
+    have : IsNoetherian k ((gradedMatrixComplex e D hD hDD).X j) := inferInstance
+    inferInstance
   rw [← sum_finrank_homology_compression n _ a b]
   exact Finset.sum_congr rfl fun r _ ↦ ((HomologicalComplex.homologyFunctor _ _ r).mapIso
     (compressionGradedMatrixComplexIso n e D hD hDD)).toLinearEquiv.finrank_eq.symm

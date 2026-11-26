@@ -23,50 +23,58 @@ Let `p : E ⟶ B` be a Serre fibration (`TauCeti.TopCat.serreFibrations`), and l
 coefficients (or singular cohomology viewed as a covariant functor into the opposite coefficient
 category). Over a contractible base `B`, every fibre inclusion `p.fiberι b` is a weak homotopy
 equivalence (`TauCeti.TopCat.isWeakHomotopyEquivalence_fiberι_of_contractibleSpace`), so
-`F.map (p.fiberι b)` is an isomorphism (`TauCeti.TopCat.isIso_map_fiberι_of_contractibleSpace`).
+`F.map (p.fiberι b)` is an isomorphism
+(`CategoryTheory.MorphismProperty.IsInvertedBy.isIso_map_fiberι_of_contractibleSpace`).
 
 More generally, for any map `g : K ⟶ B` from a contractible parameter space `K` and points
 `k₀, k₁ : K` over `b₀, b₁ : B`, the fibre inclusions `p.pullbackFiberι g` into the base change
 of `p` along `g` are weak homotopy equivalences
 (`TauCeti.TopCat.isWeakHomotopyEquivalence_pullbackFiberι`), so `F` sends them to isomorphisms
-(`TauCeti.TopCat.isIso_map_pullbackFiberι`). Composing the forward isomorphism at `k₀` with the
-inverse isomorphism at `k₁` yields a transport isomorphism
-`F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)` (`TauCeti.TopCat.pullbackFiberIso`). This transport is
-transitive (`pullbackFiberIso_trans`), trivial along paths in `K` on which `g` is constant
+(`CategoryTheory.MorphismProperty.IsInvertedBy.isIso_map_pullbackFiberι`). Composing the forward
+isomorphism at `k₀` with the inverse isomorphism at `k₁` yields a transport isomorphism
+`F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)`
+(`CategoryTheory.MorphismProperty.IsInvertedBy.pullbackFiberIso`). This transport is transitive
+(`pullbackFiberIso_trans`), trivial along paths in `K` on which `g` is constant
 (`pullbackFiberIso_eq_refl`), natural in maps of parameter spaces (`pullbackFiberIso_comp_left`),
 maps of Serre fibrations (`pullbackFiberIso_naturality`), and natural transformations
 (`pullbackFiberIso_hom_comp_app`).
 
 Specializing `pullbackFiberIso` to the interval morphism `(TopCat.pathEquiv.symm γ).hom` of a path
 `γ : Path b₀ b₁` produces path transport `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)`
-(`TauCeti.TopCat.fiberIsoOfPath`). It commutes with the fibre inclusions into `E`
-(`fiberIsoOfPath_hom_comp_map_fiberι`), reduces to the zig-zag of fibre inclusions over a
-contractible base (`fiberIsoOfPath_eq_of_contractibleSpace`), agrees with the transport of a
-lifting function when `p` is a Hurewicz fibration (`fiberIsoOfPath_hom_eq_map_transport`), is
-natural in maps of Serre fibrations (`fiberIsoOfPath_naturality`), base change
-(`fiberIsoOfPath_pullbackFst`), and natural transformations `F ⟶ G`
-(`fiberIsoOfPath_hom_comp_app`), and depends only on the endpoint-fixing homotopy class of `γ`
-(`fiberIsoOfPath_refl`, `fiberIsoOfPath_symm`, `fiberIsoOfPath_trans`, `fiberIsoOfPath_congr`).
+(`CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath`). It commutes with the fibre
+inclusions into `E` (`fiberIsoOfPath_hom_comp_map_fiberι`), reduces to the zig-zag of fibre
+inclusions over a contractible base (`fiberIsoOfPath_eq_of_contractibleSpace`), agrees with the
+transport of a lifting function when `p` is a Hurewicz fibration
+(`fiberIsoOfPath_hom_eq_map_transport`), is natural in maps of Serre fibrations
+(`fiberIsoOfPath_naturality`), base change (`fiberIsoOfPath_pullbackFst`), and natural
+transformations `F ⟶ G` (`fiberIsoOfPath_hom_comp_app`), and depends only on the endpoint-fixing
+homotopy class of `γ` (`fiberIsoOfPath_refl`, `fiberIsoOfPath_symm`, `fiberIsoOfPath_trans`,
+`fiberIsoOfPath_congr`).
 
 ## Main declarations
 
-* `TauCeti.TopCat.isIso_map_fiberι_of_contractibleSpace`: over a contractible base, a functor
-  inverting weak homotopy equivalences sends every fibre inclusion of a Serre fibration to an
-  isomorphism.
-* `TauCeti.TopCat.isIso_map_pullbackFiberι`: a functor inverting weak homotopy equivalences sends
-  every fibre inclusion into a base change over a contractible space to an isomorphism.
-* `TauCeti.TopCat.pullbackFiberIso`: transport isomorphism `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)`
-  over a contractible parameter space.
-* `TauCeti.TopCat.fiberIsoOfPath`: path transport isomorphism
+* `CategoryTheory.MorphismProperty.IsInvertedBy.isIso_map_fiberι_of_contractibleSpace`: over a
+  contractible base, a functor inverting weak homotopy equivalences sends every fibre inclusion of
+  a Serre fibration to an isomorphism.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.isIso_map_pullbackFiberι`: a functor inverting weak
+  homotopy equivalences sends every fibre inclusion into a base change over a contractible space
+  to an isomorphism.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.pullbackFiberIso`: transport isomorphism
+  `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)` over a contractible parameter space.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath`: path transport isomorphism
   `F.obj (p.fiber b₀) ≅ F.obj (p.fiber b₁)` induced by a path `γ : Path b₀ b₁`.
-* `TauCeti.TopCat.fiberIsoOfPath_eq_of_contractibleSpace`,
-  `TauCeti.TopCat.fiberIsoOfPath_hom_eq_map_transport`,
-  `TauCeti.TopCat.fiberIsoOfPath_pullbackFst`, `TauCeti.TopCat.fiberIsoOfPath_naturality`, and
-  `TauCeti.TopCat.fiberIsoOfPath_hom_comp_app`: characterization over contractible bases, agreement
-  with lifting-function transport, base change compatibility, and naturality.
-* `TauCeti.TopCat.fiberIsoOfPath_refl`, `TauCeti.TopCat.fiberIsoOfPath_symm`,
-  `TauCeti.TopCat.fiberIsoOfPath_trans`, and `TauCeti.TopCat.fiberIsoOfPath_congr`: groupoid
-  functoriality and homotopy invariance in the path `γ`.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_eq_of_contractibleSpace`,
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_hom_eq_map_transport`,
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_pullbackFst`,
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_naturality`, and
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_hom_comp_app`: characterization over
+  contractible bases, agreement with lifting-function transport, base change compatibility, and
+  naturality.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_refl`,
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_symm`,
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_trans`, and
+  `CategoryTheory.MorphismProperty.IsInvertedBy.fiberIsoOfPath_congr`: groupoid functoriality and
+  homotopy invariance in the path `γ`.
 
 ## References
 
@@ -77,12 +85,12 @@ natural in maps of Serre fibrations (`fiberIsoOfPath_naturality`), base change
 
 public section
 
-open CategoryTheory CategoryTheory.Limits
+open CategoryTheory CategoryTheory.Limits TauCeti TauCeti.TopCat
 open scoped Topology unitInterval ContinuousMap
 
 universe u v w
 
-namespace TauCeti.TopCat
+namespace CategoryTheory.MorphismProperty.IsInvertedBy
 
 variable {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} ⥤ C}
   {E B : _root_.TopCat.{u}} {p : E ⟶ B}
@@ -516,4 +524,4 @@ theorem fiberIsoOfPath_hom_eq_map_transport (Λ : LiftingFunction p.hom) {b₀ b
 
 end Path
 
-end TauCeti.TopCat
+end CategoryTheory.MorphismProperty.IsInvertedBy

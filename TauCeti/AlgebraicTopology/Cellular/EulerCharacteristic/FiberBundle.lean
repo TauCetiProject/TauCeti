@@ -96,7 +96,8 @@ theorem eventually_isZero_singularHomology_of_exists_trivialization_of_eventuall
         (TopCat.of E)) :=
   TopCat.eventually_isZero_singularHomology_of_mem_serreFibrations_of_iso
     (TopCat.mem_serreFibrations_of_exists_trivialization (p := locallyTrivialHom h) h) R
-    (locallyTrivialFiberSingularHomologyIso h R) hF
+    (fun b ↦ Filter.Eventually.of_forall fun q ↦ ⟨locallyTrivialFiberSingularHomologyIso h R b q⟩)
+    hF
 
 /-- Over a Noetherian ring `R`, if `p : E → B` is locally trivial with model fibre `F` over a space
 `B` of finite CW type and `H_q(F; R)` is finitely generated in all degrees `q ≤ n`, then

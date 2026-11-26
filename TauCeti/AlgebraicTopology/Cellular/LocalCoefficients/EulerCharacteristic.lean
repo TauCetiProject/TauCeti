@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWTyp
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Coproduct
 public import TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.Homology
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # Finiteness and Euler--Poincaré for homology with local coefficients
@@ -140,9 +141,9 @@ coefficients in a degree with finitely many cells is finitely generated. -/
 theorem finite_twistedCellularHomology [IsNoetherianRing R] [∀ x, Module.Finite R (L.obj x)]
     (n : ℕ) [Finite (cell C n)] :
     Module.Finite R ((twistedCellularChainComplex C L).homology n) :=
-  have : Module.Finite R ((twistedCellularChainComplex C L).sc n).X₂ :=
+  have : Module.Finite R ((twistedCellularChainComplex C L).X n) :=
     finite_twistedCellularChainComplex_X C L n
-  inferInstanceAs (Module.Finite R ((twistedCellularChainComplex C L).sc n).homology)
+  inferInstance
 
 /-- Over a noetherian ring, with finitely generated fibres, the relative homology with local
 coefficients of a relative CW complex is finitely generated in each degree with finitely many

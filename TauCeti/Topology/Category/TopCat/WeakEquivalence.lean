@@ -33,8 +33,8 @@ It also records homotopy invariance for functors inverting weak homotopy equival
 * The instances `HasTwoOutOfThreeProperty`, `IsMultiplicative` and `IsStableUnderRetracts` for
   `TauCeti.TopCat.weakEquivalences`; the isomorphisms belong to the class through
   `MorphismProperty.isomorphisms_le_of_containsIdentities`.
-* `TauCeti.TopCat.map_eq_of_homotopy`: any functor inverting weak homotopy equivalences maps freely
-  homotopic continuous maps to equal morphisms.
+* `CategoryTheory.MorphismProperty.IsInvertedBy.map_eq_of_homotopy`: any functor inverting weak
+  homotopy equivalences maps freely homotopic continuous maps to equal morphisms.
 
 ## References
 
@@ -89,11 +89,15 @@ instance : weakEquivalences.{u}.IsStableUnderRetracts where
 
 example : weakEquivalences.{u}.RespectsIso := inferInstance
 
+end TauCeti.TopCat
+
+namespace CategoryTheory.MorphismProperty.IsInvertedBy
+
 /-- Any functor inverting weak homotopy equivalences maps freely homotopic continuous maps to equal
 morphisms. -/
 theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} ⥤ C}
-    (hF : weakEquivalences.{u}.IsInvertedBy F) {X Y : _root_.TopCat.{u}} {f₀ f₁ : X ⟶ Y}
-    (H : ContinuousMap.Homotopy f₀.hom f₁.hom) :
+    (hF : TauCeti.TopCat.weakEquivalences.{u}.IsInvertedBy F) {X Y : _root_.TopCat.{u}}
+    {f₀ f₁ : X ⟶ Y} (H : ContinuousMap.Homotopy f₀.hom f₁.hom) :
     F.map f₀ = F.map f₁ := by
   let IX := _root_.TopCat.of (_root_.TopCat.I.{u} × X)
   let snd : IX ⟶ X := _root_.TopCat.ofHom ContinuousMap.snd
@@ -108,7 +112,8 @@ theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} 
     ext ⟨t, x⟩
     simp [e]
   have hsnd : IsIso (F.map snd) :=
-    hF _ ((mem_weakEquivalences_iff _).2 (by simpa [snd, he] using e.isWeakHomotopyEquivalence))
+    hF _ ((TauCeti.TopCat.mem_weakEquivalences_iff _).2
+      (by simpa [snd, he] using e.isWeakHomotopyEquivalence))
   have hi : F.map i₀ = F.map i₁ := by
     refine (cancel_mono (F.map snd)).1 ?_
     rw [← F.map_comp, ← F.map_comp]
@@ -123,4 +128,4 @@ theorem map_eq_of_homotopy {C : Type v} [Category.{w} C] {F : _root_.TopCat.{u} 
     exact H.apply_one x
   rw [← hf₀, ← hf₁, F.map_comp, F.map_comp, hi]
 
-end TauCeti.TopCat
+end CategoryTheory.MorphismProperty.IsInvertedBy

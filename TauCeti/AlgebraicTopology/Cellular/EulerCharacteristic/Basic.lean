@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
 public import TauCeti.AlgebraicTopology.Cellular.Projective
 
-import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
+import TauCeti.Algebra.Homology.ModuleCat.Noetherian
 
 /-!
 # Euler--Poincaré for cellular chains
@@ -149,10 +149,10 @@ theorem eulerChar_cellularChainComplex [StrongRankCondition k] [Module.Free k M]
 with finitely many cells is finitely generated. -/
 theorem finite_cellularHomology [IsNoetherianRing k] [Module.Finite k M] (n : ℕ)
     [Finite (cell C n)] : Module.Finite k ((cellularChainComplex C M).homology n) :=
-  have : Module.Finite k ((cellularChainComplex C M).sc n).X₂ := by
-    rw [HomologicalComplex.shortComplexFunctor_obj_X₂, cellularChainComplex_X]
+  have : Module.Finite k ((cellularChainComplex C M).X n) := by
+    rw [cellularChainComplex_X]
     infer_instance
-  inferInstanceAs (Module.Finite k ((cellularChainComplex C M).sc n).homology)
+  inferInstance
 
 end Ring
 
@@ -167,7 +167,8 @@ satisfies `finrank = Nat.card (cell C n) * finrank k M`. -/
 theorem finrank_cellularChainGroup_of_finite (n : ℕ) [Finite (cell C n)] :
     finrank k (cellularChainGroup C M n : ModuleCat k) = Nat.card (cell C n) * finrank k M := by
   let _ : Fintype (cell C n) := Fintype.ofFinite (cell C n)
-  rw [(cellularChainGroupIso C M n).toLinearEquiv.finrank_eq, ModuleCat.finrank_sigma,
+  rw [(cellularChainGroupIso C M n).toLinearEquiv.finrank_eq,
+    ModuleCat.finrank_sigma _ fun _ ↦ Module.rank_lt_aleph0 _ _,
     Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
 
 /-- For finitely generated coefficients `M` over a ring satisfying the strong rank condition and

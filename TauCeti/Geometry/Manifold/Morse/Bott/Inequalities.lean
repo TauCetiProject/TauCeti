@@ -407,7 +407,7 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_finrank_thomPair
     h.contMDiff.continuous.isProperMap hac hcb hcrit n
   have := Module.Finite.equiv e'.toLinearEquiv
   have := ModuleCat.finite_of_finite_biproduct V
-  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct]
+  rw [e'.toLinearEquiv.finrank_eq, ModuleCat.finrank_biproduct _ fun _ ↦ Module.rank_lt_aleph0 _ _]
 
 variable (hV : letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)

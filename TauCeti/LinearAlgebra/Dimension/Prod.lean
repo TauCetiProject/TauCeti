@@ -27,13 +27,14 @@ and finite dependent products of finite free modules. This file records five res
   (`Module.finrank_prod_eq_succ`). The sum is written `d + 1` together with a proof of
   `(m + 1) + (n + 1) = d + 1`, the form used for products of local orientations.
 * Without freeness, rank is still additive on products over any ring with the rank-nullity
-  property, for instance any domain: the first projection `M × N → M` is onto with kernel `N`
-  (`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same formula
-  for `finrank` (`Module.finrank_prod_of_hasRankNullity`).
-* Over a ring satisfying the strong rank condition and rank--nullity (`HasRankNullity`), the
-  `finrank` of a finite dependent product of finitely generated modules is the sum of their
-  `finrank`s (`Module.finrank_pi_fintype_of_hasRankNullity`), covering finitely generated modules
-  with torsion (such as finite abelian groups).
+  property, for instance any commutative domain: the first projection `M × N → M` is onto with
+  kernel `N` (`Module.rank_prod_of_hasRankNullity`). For modules of finite rank this gives the same
+  formula for `finrank` (`Module.finrank_prod_of_hasRankNullity`).
+* Over a ring satisfying rank--nullity (`HasRankNullity`), the `finrank` of a finite dependent
+  product of modules of finite rank (`Module.rank R (M i) < Cardinal.aleph0`) is the sum of
+  their `finrank`s (`Module.finrank_pi_fintype_of_hasRankNullity`), covering
+  non-finitely-generated modules of finite rank (such as `ℚ` over `ℤ`) as well as finitely
+  generated modules with torsion (such as finite abelian groups).
 * For a finite-dimensional vector space `V` over a field `K`, the space `V × V^* × K`, the linear
   model of the one-jet space of `V`, has dimension `2 * finrank K V + 1`
   (`Module.finrank_prod_dual_prod_self`).
@@ -94,32 +95,36 @@ end RankNullity
 
 section HasRankNullity
 
-/-- Over a ring satisfying the strong rank condition and rank--nullity, the `finrank` of a finite
-dependent product of finitely generated modules is the sum of their `finrank`s (without assuming
-freeness). The index type `ι` may lie in any universe `w`; only `HasRankNullity.{v} R` is required
-in the universe `v` of the modules `M i`. -/
+/-- Over a ring satisfying rank--nullity, the `finrank` of a finite dependent product of modules
+of finite rank (`Module.rank R (M i) < Cardinal.aleph0`) is the sum of their `finrank`s (without
+assuming freeness, finite generation, or the strong rank condition). The index type `ι` may lie
+in any universe `w`; only `HasRankNullity.{v} R` is required in the universe `v` of the modules
+`M i`. -/
 theorem finrank_pi_fintype_of_hasRankNullity {R : Type u} {ι : Type w} [Fintype ι]
-    {M : ι → Type v} [Ring R] [StrongRankCondition R] [HasRankNullity.{v} R]
-    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Finite R (M i)] :
+    {M : ι → Type v} [Ring R] [HasRankNullity.{v} R]
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)]
+    (hM : ∀ i, Module.rank R (M i) < Cardinal.aleph0) :
     finrank R (∀ i, M i) = ∑ i, finrank R (M i) := by
-  suffices hfin : ∀ (n : ℕ) (N : Fin n → Type v) [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)]
-      [∀ i, Module.Finite R (N i)],
-      finrank R (∀ i, N i) = ∑ i, finrank R (N i) by
+  suffices hfin : ∀ (n : ℕ) (N : Fin n → Type v) [∀ i, AddCommGroup (N i)] [∀ i, Module R (N i)],
+      (∀ i, Module.rank R (N i) < Cardinal.aleph0) →
+      Module.rank R (∀ i, N i) < Cardinal.aleph0 ∧ finrank R (∀ i, N i) = ∑ i, finrank R (N i) by
     let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
-    have : ∀ j, Module.Finite R (M (e j)) := fun j ↦ inferInstance
-    rw [(LinearEquiv.piCongrLeft R M e).symm.finrank_eq, hfin (Fintype.card ι) (fun j ↦ M (e j))]
+    rw [(LinearEquiv.piCongrLeft R M e).symm.finrank_eq,
+      (hfin (Fintype.card ι) (fun j ↦ M (e j)) fun j ↦ hM (e j)).2]
     exact Fintype.sum_equiv e _ _ fun _ ↦ rfl
   intro n
   induction n with
   | zero =>
     intro N _ _ _
-    simp [finrank_zero_of_subsingleton]
+    exact ⟨by simp [Cardinal.aleph0_pos], by simp [finrank_zero_of_subsingleton]⟩
   | succ n ih =>
-    intro N _ _ _
-    have : Module.Finite R (∀ i : Fin n, N i.succ) := Module.Finite.pi
-    rw [(Fin.consLinearEquiv R N).symm.finrank_eq,
-      finrank_prod_of_hasRankNullity (Module.rank_lt_aleph0 R _) (Module.rank_lt_aleph0 R _),
-      ih (fun i ↦ N i.succ), Fin.sum_univ_succ]
+    intro N _ _ hN
+    obtain ⟨hrank, hsum⟩ := ih (fun i ↦ N i.succ) fun i ↦ hN i.succ
+    refine ⟨?_, ?_⟩
+    · rw [(Fin.consLinearEquiv R N).symm.rank_eq, rank_prod_of_hasRankNullity]
+      exact Cardinal.add_lt_aleph0 (hN 0) hrank
+    · rw [(Fin.consLinearEquiv R N).symm.finrank_eq,
+        finrank_prod_of_hasRankNullity (hN 0) hrank, hsum, Fin.sum_univ_succ]
 
 end HasRankNullity
 
