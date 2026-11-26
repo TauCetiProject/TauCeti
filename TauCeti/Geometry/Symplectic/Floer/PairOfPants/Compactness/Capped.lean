@@ -419,13 +419,10 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_ca
       (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x 1)
       (fun z x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x Complex.I)
       (u k) z ≤
-        A + 2 * ∑ q, B q := by
-    have habs := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
+        A + 2 * ∑ q, B q :=
+    hω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le hH
       (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
-      (hint k) (hcurv k)
-    refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-      floerEnergyDensity_nonneg hω (hJt _ _ _) (hfl k z))).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+      (fun z ↦ hJt _ _ _) (hfl k) (hint k) (hcurv k) (harea k) Ω
   exact hconv hΩ hΩD hRC (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z) huK
     (fun k ↦ (hint k).integrableOn) hE
 
@@ -533,13 +530,10 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_comp_subseq_off_fins
   -- The Floer energy over `Ω` is at most the energy over the plane, which exceeds the area by at
   -- most `2 (B₀ + B₁ + B_∞)`.
   refine hconv hΩ hΩD hRC (fun k ↦ (hu k).contMDiffOn) (fun k z _ ↦ hfl k z)
-    (fun k ↦ (hint k).integrableOn) fun k ↦ ?_
-  have habs := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH
-    (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
-    (hint k) (hcurv k)
-  refine (setIntegral_le_integral (hint k) (Eventually.of_forall fun z ↦
-    floerEnergyDensity_nonneg hω (hJt _ _ _) (hfl k z))).trans ?_
-  linarith [(abs_sub_le_iff.1 habs).1, harea k]
+    (fun k ↦ (hint k).integrableOn) fun k ↦
+      hω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le hH
+        (fun q ↦ (hHs q).of_le (by norm_num)) hB (hC₀ (hRC k)) ((hu k).of_le (by norm_num))
+        (fun z ↦ hJt _ _ _) (hfl k) (hint k) (hcurv k) (harea k) Ω
 
 open TauCeti.Complex (realChart) in
 /-- **Solutions of the capped comparison family in a closed manifold converge near the pole `∞`.**
@@ -649,12 +643,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_cappe
       (Kt' := fun _ _ ↦ 0) (hzero k hz 1) (hzero k hz Complex.I)] at h
   · -- The area outside the disc of radius `T` is at most the energy, which exceeds the total area
     -- by at most `2 (B₀ + B₁ + B_∞)`.
-    have habs := hω.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB
-      (hC₀ (hRC k)) (hu k) (hint k) (hcurv k)
-    have hle := setIntegral_le_integral (s := S) (hint k) (Eventually.of_forall fun z ↦
-      floerEnergyDensity_nonneg hω (hJt _ _ _) (hfl k z))
-    refine ((setIntegral_congr_fun hSm fun z hz ↦ hdens k z hz).trans_le hle).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, harea k]
+    exact (setIntegral_congr_fun hSm fun z hz ↦ hdens k z hz).trans_le
+      (hω.setIntegral_floerEnergyDensity_cappedComparisonPerturbation_le hH hHs hB (hC₀ (hRC k))
+        (hu k) (fun z ↦ hJt _ _ _) (hfl k) (hint k) (hcurv k) (harea k) S)
 
 end Closed
 

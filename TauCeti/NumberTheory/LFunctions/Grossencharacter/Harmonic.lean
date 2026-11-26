@@ -463,7 +463,7 @@ theorem exists_norm_archWeight_mul_harmonicFactor_mul_archGaussian_le
   have hsplit : archGaussian y x =
       archGaussian (fun _ ↦ 1 / 2) z * archGaussian ((1 / 2 : ℝ) • y) x := by
     rw [← hhalf, ← archGaussian_one_archGaussianDilation y hy, archGaussian_one,
-      archGaussian_const, ← Complex.ofReal_mul, ← Real.exp_add]
+      archGaussian_const, mixedGaussian_apply, ← Complex.ofReal_mul, ← Real.exp_add]
     congr 2
     ring
   rw [← hpoly, hsplit, ← mul_assoc, norm_mul]

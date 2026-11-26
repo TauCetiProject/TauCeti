@@ -18,8 +18,11 @@ import TauCeti.AlgebraicGeometry.Morphisms.Integral.TargetLocal
 
 The structure morphism `Spec_X(A) ⟶ X` of a quasi-coherent algebra has finite type, finite
 presentation, finiteness, flatness, étaleness, integrality, or the closed-immersion property
-exactly when its sections algebra has the corresponding property over each affine open of `X`.
-These criteria let one check a geometric property directly on the algebra from which the relative
+exactly when its sections algebra has the corresponding property over each affine open of `X`
+(`CategoryTheory.CommMon.relativeSpecToBase_iff` reduces any Zariski-local property to these
+affine charts). In particular, if the unit `𝒪_X ⟶ A` is an isomorphism, the structure morphism
+is an isomorphism (`CategoryTheory.CommMon.isIso_relativeSpecToBase_of_isIso_one`). These
+criteria let one check a geometric property directly on the algebra from which the relative
 spectrum is built.
 
 The finite-type and finite-presentation criteria use Mathlib's `LocallyOfFiniteType` and
@@ -42,7 +45,7 @@ morphisms of affine schemes.
 
 public section
 
-open CategoryTheory Limits Opposite AlgebraicGeometry
+open CategoryTheory Limits Opposite AlgebraicGeometry MonObj
 
 namespace CategoryTheory.CommMon
 
@@ -52,7 +55,9 @@ noncomputable section
 
 variable {X : Scheme.{u}} (A : CommMon X.Modules) [A.X.IsQuasicoherent]
 
-private lemma relativeSpecToBase_iff (P : MorphismProperty Scheme.{u})
+/-- A Zariski-local property of morphisms holds for the structure morphism `Spec_X(A) ⟶ X` exactly
+when it holds for `Spec` of the structure map `Γ(X, U) ⟶ Γ(A, U)` on every affine open `U`. -/
+lemma relativeSpecToBase_iff (P : MorphismProperty Scheme.{u})
     [IsZariskiLocalAtTarget P] :
     P A.relativeSpecToBase ↔
       ∀ U : X.affineOpens,
@@ -66,6 +71,19 @@ private lemma relativeSpecToBase_iff (P : MorphismProperty Scheme.{u})
     h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso,
     toSectionsPresheaf_app]
   rfl
+
+/-- **The relative spectrum of a trivial algebra is the base.** If the unit `𝒪_X ⟶ A` of a
+quasi-coherent commutative `𝒪_X`-algebra is an isomorphism, the structure morphism
+`Spec_X A ⟶ X` is an isomorphism: over an affine open `U`, it is `Spec` of the structure map
+`Γ(X, U) ⟶ Γ(A, U)`, which is bijective. -/
+theorem isIso_relativeSpecToBase_of_isIso_one [IsIso η[A.X]] :
+    IsIso A.relativeSpecToBase :=
+  (MorphismProperty.isomorphisms.iff _).mp <|
+    (A.relativeSpecToBase_iff (.isomorphisms _)).mpr fun U ↦
+      have := (ConcreteCategory.isIso_iff_bijective
+        (CommRingCat.ofHom (algebraMap Γ(X, U.val) Γ(A.X, U.val)))).2
+          (A.bijective_algebraMap_of_isIso_one U.val)
+      inferInstanceAs (IsIso (Spec.map _))
 
 /-- The relative spectrum is of finite type over the base exactly when its sections algebra
 is of finite type over the structure ring on every affine open. Affineness already supplies

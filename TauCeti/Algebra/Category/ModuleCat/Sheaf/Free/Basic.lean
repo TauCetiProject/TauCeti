@@ -38,7 +38,11 @@ which generators and relations of a finitely presented sheaf are handled locally
 * `TauCeti.SheafOfModules.evaluationFreeIso`: the sections of a finite free sheaf are tuples of
   sections of the coefficient sheaf;
 * `TauCeti.SheafOfModules.freeBasis`: the corresponding basis of sections, consisting of the
-  tautological sections `freeSection i`;
+  tautological sections `freeSection i`, whose coordinates show that the restriction maps of a
+  finite free sheaf are injective wherever those of the sheaf of rings are
+  (`TauCeti.SheafOfModules.free_map_injective`);
+* `TauCeti.SheafOfModules.bijective_linearCombination_of_isIso`: if a finite family of sections
+  defines an isomorphism out of a free sheaf, it is a basis of the sections over every object;
 * `TauCeti.SheafOfModules.exists_eq_sum_smul_freeSection`: every section of a finite free sheaf
   is a linear combination of the tautological sections;
 * `TauCeti.SheafOfModules.freeHomEquiv_symm_val_app_sum_smul`: evaluation of the morphism out
@@ -277,6 +281,57 @@ theorem freeBasis_map {W W' : Cᵒᵖ} (f : W ⟶ W') (i : I) :
       freeBasis (R := R) I W' i := by
   rw [freeBasis_apply, freeBasis_apply]
   exact PresheafOfModules.sections_property _ f
+
+variable {I}
+
+/-- The restriction maps of a finite free sheaf of modules are injective wherever those of the sheaf
+of rings are: the coordinates in the standard basis are restricted one by one. -/
+theorem free_map_injective {W W' : Cᵒᵖ} (f : W ⟶ W') (hf : Function.Injective (R.obj.map f)) :
+    Function.Injective ((free (R := ringCatSheaf R) I).val.map f) := by
+  have := Fintype.ofFinite I
+  rw [injective_iff_map_eq_zero]
+  intro a ha
+  have hmap : (free (R := ringCatSheaf R) I).val.map f a =
+      ∑ k, R.obj.map f ((freeBasis (R := R) I W).repr a k) • freeBasis (R := R) I W' k := by
+    conv_lhs => rw [← (freeBasis (R := R) I W).sum_repr a]
+    rw [map_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [PresheafOfModules.map_smul, freeBasis_map]
+    -- The restriction of a coefficient in `ringCatSheaf R` is its restriction in `R`.
+    rfl
+  rw [ha] at hmap
+  have h0 := Fintype.linearIndependent_iff.mp (freeBasis (R := R) I W').linearIndependent _
+    hmap.symm
+  apply (freeBasis (R := R) I W).repr.injective
+  ext k
+  rw [map_zero, Finsupp.zero_apply]
+  exact hf ((h0 k).trans (map_zero _).symm)
+
+omit [Finite I] in
+/-- **Bases of sections from a free presentation.** If the morphism `free I ⟶ M` defined by a
+finite family of sections `s` of `M` is an isomorphism, then over every object `W` the sections
+`s i` form a basis of `M(W)`: the map `(I → R(W)) → M(W)` sending `c` to `∑ i, c i • s i` is
+bijective. -/
+theorem bijective_linearCombination_of_isIso [Fintype I] {M : SheafOfModules.{u} (ringCatSheaf R)}
+    (s : I → M.sections) [hs : IsIso (M.freeHomEquiv.symm s)] (W : Cᵒᵖ) :
+    Function.Bijective (Fintype.linearCombination (R.obj.obj W)
+      (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val W) fun k ↦ (s k).eval W) := by
+  have : IsIso ((M.freeHomEquiv.symm s).val.app W) :=
+    Functor.map_isIso (SheafOfModules.forget _ ⋙ PresheafOfModules.evaluation _ W)
+      (M.freeHomEquiv.symm s)
+  have hφ : Function.Bijective ((M.freeHomEquiv.symm s).val.app W) :=
+    (ConcreteCategory.isIso_iff_bijective _).mp inferInstance
+  -- Through the basis `freeBasis I W`, the linear combination map is the component at `W` of the
+  -- isomorphism `free I ⟶ M`.
+  have heq : ⇑(Fintype.linearCombination (R.obj.obj W)
+      (M := PresheafOfModulesOfCommRing.obj (R := R.obj) M.val W) fun k ↦ (s k).eval W) =
+      (M.freeHomEquiv.symm s).val.app W ∘ (freeBasis (R := R) I W).equivFun.symm := by
+    funext c
+    simp only [Fintype.linearCombination_apply, Function.comp_apply,
+      Module.Basis.equivFun_symm_apply, freeBasis_apply]
+    exact (freeHomEquiv_symm_val_app_sum_smul s W c).symm
+  rw [heq]
+  exact hφ.comp (freeBasis (R := R) I W).equivFun.symm.bijective
 
 end SheafOfModules
 
