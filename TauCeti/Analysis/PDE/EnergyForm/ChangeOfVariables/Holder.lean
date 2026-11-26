@@ -119,7 +119,7 @@ private theorem isC1HolderNear_comp {F : Type*} [NormedAddCommGroup F] [NormedSp
     IsC1HolderNear α x (fun y => g (Φ y)) := by
   -- On the open set `t`, the derivative of `g` within `t` is its derivative.
   have hH : HolderOnWith C α (iteratedFDerivWithin ℝ 1 g t) (t ∩ ball (Φ x) ρ) :=
-    (holderOnWith_iteratedFDeriv_succ_iff.2 (holderOnWith_iteratedFDeriv_zero_iff.2 hgH)).congr
+    (holderOnWith_iteratedFDeriv_one_iff.2 hgH).congr
       fun y hy => (iteratedFDerivWithin_of_isOpen 1 ht hy.1).symm
   obtain ⟨r, hr, K, hK⟩ := exists_holderOnWith_iteratedFDerivWithin_comp hα (hs.mem_nhds hx)
     ht.uniqueDiffOn (hΦ.of_le (by norm_num)) hg hmaps
@@ -164,10 +164,9 @@ theorem exists_holderOnWith_fderiv_pullbackPrincipal_apply
     have hU : IsOpen ((U : Set (EuclideanSpace ℝ ι)) ∩ ball (Φ x) ρ) := U.isOpen.inter isOpen_ball
     exact isC1HolderNear_comp (g := fun v => ℓ m k (fderiv ℝ Ψ v)) hα hs U.isOpen hΦ2
       (fun y hy => hΦ.mapsTo (hsU hy)) ((ℓ m k).contDiff.comp_contDiffOn hDΨ) hx hρ
-      (holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_iteratedFDeriv_succ_iff.1
+      (holderOnWith_iteratedFDeriv_one_iff.1
         ((ℓ m k).holderOnWith_iteratedFDeriv_comp_left hU (hDΨ.mono inter_subset_left)
-          (holderOnWith_iteratedFDeriv_succ_iff.2
-            (holderOnWith_iteratedFDeriv_zero_iff.2 (hK.mono inter_subset_right))))))
+          (holderOnWith_iteratedFDeriv_one_iff.2 (hK.mono inter_subset_right))))
   -- The factors `aₖₗ ∘ Φ` are `C^{1,α}` near `x`.
   have hA (k l : ι) : IsC1HolderNear α x (fun y => a (Φ y) k l) := by
     obtain ⟨ρ, hρ, K, hK⟩ := haH
@@ -187,8 +186,8 @@ theorem exists_holderOnWith_fderiv_pullbackPrincipal_apply
     ((eventually_all.2 fun i => eventually_all.2 (hentry i)).and self_mem_nhdsWithin).exists
   choose K hK using fun ij : ι × ι => (hρK ij.1 ij.2).2
   refine ⟨ρ, hρ, ∑ ij, K ij, fun i j => ?_⟩
-  exact holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_iteratedFDeriv_succ_iff.1
-    ((hK (i, j)).mono_const (Finset.single_le_sum (fun _ _ => by positivity) (Finset.mem_univ _))))
+  exact holderOnWith_iteratedFDeriv_one_iff.1 ((hK (i, j)).mono_const
+    (Finset.single_le_sum (fun _ _ => by positivity) (Finset.mem_univ _)))
 
 end PDE
 
