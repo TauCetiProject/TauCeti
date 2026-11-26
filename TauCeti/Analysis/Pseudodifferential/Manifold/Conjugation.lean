@@ -41,7 +41,8 @@ operators of the same order
 
 ## Main results
 
-* `TauCeti.IsProperlySupported.intrinsicConj`: conjugation preserves proper support.
+* `TauCeti.IsProperlySupported.intrinsicConj`: conjugation preserves proper support, and
+  `TauCeti.isProperlySupported_intrinsicConj_iff` is the converse.
 * `TauCeti.intrinsicConj_mem_classicalPseudodifferentialOperators_iff`: `Pᶜ` is a classical
   pseudodifferential operator of order `m` exactly when `P` is.
 * `TauCeti.classicalPrincipalSymbol_intrinsicConj`: `σ_m(Pᶜ)(x, ξ) = conj σ_m(P)(x, -ξ)`.
@@ -79,6 +80,13 @@ theorem IsProperlySupported.intrinsicConj (hP : IsProperlySupported P) :
     exact hsupp _ ((ContMDiffMap.tsupport_conj f).trans_subset hf)
   · rw [ContMDiffMap.intrinsicConj_apply, ContMDiffMap.conj_apply,
       hloc _ (hf.mono fun y hy ↦ by simp [hy]) x hx, star_zero]
+
+/-- An operator is properly supported exactly when its conjugate is. -/
+@[simp]
+theorem isProperlySupported_intrinsicConj_iff :
+    IsProperlySupported (ContMDiffMap.intrinsicConj P) ↔ IsProperlySupported P :=
+  ⟨fun h ↦ ContMDiffMap.intrinsicConj_intrinsicConj P ▸ h.intrinsicConj,
+    IsProperlySupported.intrinsicConj⟩
 
 variable [T2Space M]
 
