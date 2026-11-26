@@ -29,7 +29,7 @@ integer `(y, z)` chart coordinates, in which `yzStep` lists the six unit lattice
 into `Fin 3 → ℝ`, and the planar embedding `Vertex.plane` sends `(x,y,z)` to
 `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
-`IsUnitEdge` and `UnitEdge` record unit lattice edges (`sqDist = 2`, planar length `1`), and
+`IsUnitEdge` records unit lattice edges (`sqDist = 2`, planar length `1`), and
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
 `a,c`. Its short diagonal has barycentric squared length 2, its long diagonal has squared length 6
 (`Vertex.sqDist_eq_six_iff`), its diagonals are orthogonal (`IsRhombus.diagonal_inner_eq_zero`),
@@ -368,12 +368,14 @@ instance uniqueZero : Unique (Vertex 0) where
 
 /-- The triangular lattice `Vertex n` has `(n + 1) * (n + 2) / 2` vertices. -/
 @[simp] theorem card (n : ℕ) : Fintype.card (Vertex n) = (n + 1) * (n + 2) / 2 := by
-  rw [Fintype.card_congr (equivAntidiagonalTuple.trans
-    ((Equiv.subtypeEquivRight fun _ => Finset.Nat.mem_antidiagonalTuple).trans
-      (Sym.equivNatSumOfFintype (Fin 3) n).symm)),
-    Sym.card_sym_eq_choose, Fintype.card_fin,
-    show 3 + n - 1 = n + 2 by omega, ← Nat.choose_symm (by omega : n ≤ n + 2),
-    show n + 2 - n = 2 by omega, Nat.choose_two_right, show n + 2 - 1 = n + 1 by omega, mul_comm]
+  have hcard : Fintype.card (Vertex n) = (n + 2).choose 2 := by
+    rw [Fintype.card_congr (equivAntidiagonalTuple.trans
+      ((Equiv.subtypeEquivRight fun _ => Finset.Nat.mem_antidiagonalTuple).trans
+        (Sym.equivNatSumOfFintype (Fin 3) n).symm)),
+      Sym.card_sym_eq_choose, Fintype.card_fin, show 3 + n - 1 = n + 2 by omega,
+      Nat.choose_symm_add]
+  rw [hcard, Nat.choose_two_right]
+  simp [mul_comm]
 
 /-- Construct a lattice vertex `(n - y - z, y, z)` from nonnegative `(y, z)` with `y + z ≤ n`. -/
 def ofYZ (n : ℕ) (y z : ℕ) (h : y + z ≤ n) : Vertex n := ⟨n - y - z, y, z, by omega⟩
@@ -568,9 +570,6 @@ theorem isUnitEdge_def {n : ℕ} (p q : Vertex n) : IsUnitEdge p q ↔ p.sqDist 
 instance {n : ℕ} (p q : Vertex n) : Decidable (IsUnitEdge p q) :=
   decidable_of_iff (p.sqDist q = 2) (isUnitEdge_def p q).symm
 
-/-- The finite type of ordered unit edges in `Vertex n`. -/
-abbrev UnitEdge (n : ℕ) := {e : Vertex n × Vertex n // IsUnitEdge e.1 e.2}
-
 namespace IsUnitEdge
 
 variable {n : ℕ} {p q : Vertex n}
@@ -582,7 +581,7 @@ theorem one_le (h : IsUnitEdge p q) : 1 ≤ n := by
   by_contra hn; obtain rfl : n = 0 := by omega
   exact h.ne (Subsingleton.elim p q)
 theorem dist_plane_sq (h : IsUnitEdge p q) : dist p.plane q.plane ^ 2 = 1 := by
-  have hsq : p.sqDist q = 2 := h; rw [Vertex.dist_plane_sq, hsq]; norm_num
+  rw [Vertex.dist_plane_sq, (isUnitEdge_def p q).mp h]; norm_num
 theorem dist_plane (h : IsUnitEdge p q) : dist p.plane q.plane = 1 := by
   nlinarith [h.dist_plane_sq, dist_nonneg (x := p.plane) (y := q.plane)]
 theorem rotate (h : IsUnitEdge p q) : IsUnitEdge p.rotate q.rotate := by simpa [IsUnitEdge] using h

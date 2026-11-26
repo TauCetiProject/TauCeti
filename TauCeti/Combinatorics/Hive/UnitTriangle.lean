@@ -500,6 +500,10 @@ theorem iUnion_cell_eq_barycentricSimplex (m : ℕ) :
        refine ⟨up ⟨b 0, b 1 - 1, b 2, by omega⟩, hx, ?_⟩;
        refine ⟨up ⟨b 0, b 1, b 2 - 1, by omega⟩, hx, ?_⟩] <;>
       exact fun i => by fin_cases i <;> simp [hx_eq _, Nat.cast_sub hb]
+/-- Every point of `barycentricSimplex (m + 1)` lies in at least one unit-triangle cell. -/
+theorem exists_mem_cell {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex (m + 1)) :
+    ∃ T : UnitTriangle (m + 1), x ∈ T.cell :=
+  mem_iUnion.mp ((iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
 end UnitTriangle
 
 variable {n m k : ℕ}

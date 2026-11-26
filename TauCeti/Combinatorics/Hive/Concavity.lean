@@ -81,20 +81,18 @@ theorem triangleAffine_adjacentUp_sub_down (f : Vertex (m + 2) → ℝ) (s : Ver
   let B := triangleAffine (UnitTriangle.down s) f + c • (UnitTriangle.down s).weight i
   have hB : B x = triangleAffine (adjacentUp s i) f x :=
     eq_triangleAffine_of_vertex (A := B.toAffineMap) (fun j => by
+      have hne1 : i ≠ i + 1 := by fin_cases i <;> decide
+      have hne2 : i ≠ i + 2 := by fin_cases i <;> decide
       rcases (by fin_cases i <;> fin_cases j <;> decide : j = i ∨ j = i + 1 ∨ j = i + 2) with
         hj | hj | hj
       · rw [hj]; fin_cases i <;> simp [B, c, triangleAffine_apply, Fin.sum_univ_three,
           vertex_adjacentUp, rhombusSlack_def] <;> ring
-      · rw [hj, vertex_adjacentUp_add_one]
+      all_goals
+        rw [hj]
         simp only [B, ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.add_apply,
-          ContinuousAffineMap.smul_apply, smul_eq_mul, triangleAffine_vertex,
-          UnitTriangle.weight_vertex, show i ≠ i + 2 by fin_cases i <;> decide, ↓reduceIte,
-          mul_zero, add_zero]
-      · rw [hj, vertex_adjacentUp_add_two]
-        simp only [B, ContinuousAffineMap.coe_toAffineMap, ContinuousAffineMap.add_apply,
-          ContinuousAffineMap.smul_apply, smul_eq_mul, triangleAffine_vertex,
-          UnitTriangle.weight_vertex, show i ≠ i + 1 by fin_cases i <;> decide, ↓reduceIte,
-          mul_zero, add_zero]) hx
+          ContinuousAffineMap.smul_apply, smul_eq_mul, vertex_adjacentUp_add_one,
+          vertex_adjacentUp_add_two, triangleAffine_vertex, UnitTriangle.weight_vertex,
+          hne1, hne2, ↓reduceIte, mul_zero, add_zero]) hx
   simp only [B, ContinuousAffineMap.add_apply, ContinuousAffineMap.smul_apply, smul_eq_mul,
     UnitTriangle.weight_down_apply] at hB
   linarith
@@ -158,7 +156,7 @@ theorem concaveOn_barycentricSimplex_interpolate_iff (f : Vertex n → ℝ) :
       (convex_barycentricSimplex n)).congr fun x hx => ?_
     · obtain ⟨hx_pos, hx_sum⟩ := mem_barycentricSimplex_iff.mp hx
       refine mem_yzTriangle.mpr ⟨hx_pos 1, hx_pos 2, ?_⟩
-      change x 1 + x 2 ≤ (n : ℝ)
+      simp [yzProj]
       have hsum : x 0 + x 1 + x 2 = (n : ℝ) := by simpa [Fin.sum_univ_three, add_assoc] using hx_sum
       linarith [hx_pos 0]
     · exact (interpolate_eq_interpolation f hx).symm
@@ -187,45 +185,40 @@ theorem concaveOn_planarSimplex_planarInterpolate (h : RealHive n) :
 
 /-! ### Discrete supporting planes and tropical affine-envelope formula -/
 
+private theorem IsRhombusConcave.le_triangleAffine_barycentric_aux {f : Vertex n → ℝ}
+    (hf : IsRhombusConcave f) (T : UnitTriangle n) (k : Fin 6) (c₀ α β γ : ℝ)
+    (hL : ∀ w : Vertex n, barycentricLinear c₀ α β γ w = triangleAffine T f w.barycentric)
+    (hq : (T.vertex 1).yz = (T.vertex 0).yz + yzStep k)
+    (hr : (T.vertex 2).yz = (T.vertex 0).yz + yzStep (k + 1)) (v : Vertex n) :
+    f v ≤ triangleAffine T f v.barycentric := by
+  rw [← hL v]
+  exact hf.le_barycentricLinear hq hr
+    (by rw [hL, triangleAffine_vertex]) (by rw [hL, triangleAffine_vertex])
+    (by rw [hL, triangleAffine_vertex]) v
+
 private theorem IsRhombusConcave.le_triangleAffine_barycentric {f : Vertex n → ℝ}
     (hf : IsRhombusConcave f) (T : UnitTriangle n) (v : Vertex n) :
     f v ≤ triangleAffine T f v.barycentric := by
   cases T with
   | up b =>
-    rename_i k
-    let c₀ : ℝ := -(f ((UnitTriangle.up b).vertex 0) * b.x +
-      f ((UnitTriangle.up b).vertex 1) * b.y + f ((UnitTriangle.up b).vertex 2) * b.z)
-    let α := f ((UnitTriangle.up b).vertex 0)
-    let β := f ((UnitTriangle.up b).vertex 1)
-    let γ := f ((UnitTriangle.up b).vertex 2)
-    have hL (w : Vertex (k + 1)) : barycentricLinear c₀ α β γ w =
-        triangleAffine (UnitTriangle.up b) f w.barycentric := by
-      simp [c₀, α, β, γ, barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring
-    rw [← hL v]
-    exact hf.le_barycentricLinear (k := 0) (c₀ := c₀) (α := α) (β := β) (γ := γ)
-      (p := (UnitTriangle.up b).vertex 0) (q := (UnitTriangle.up b).vertex 1)
-      (r := (UnitTriangle.up b).vertex 2)
-      (by ext <;> simp [yzStep_def]) (by ext <;> simp [yzStep_def])
-      (by rw [hL, triangleAffine_vertex]) (by rw [hL, triangleAffine_vertex])
-      (by rw [hL, triangleAffine_vertex]) v
+    -- Upward triangle edges from `vertex 0` follow `yzStep 0 = (1, 0)` and `yzStep 1 = (0, 1)`.
+    exact hf.le_triangleAffine_barycentric_aux (UnitTriangle.up b) 0
+      (-(f ((UnitTriangle.up b).vertex 0) * b.x + f ((UnitTriangle.up b).vertex 1) * b.y +
+        f ((UnitTriangle.up b).vertex 2) * b.z))
+      (f ((UnitTriangle.up b).vertex 0)) (f ((UnitTriangle.up b).vertex 1))
+      (f ((UnitTriangle.up b).vertex 2))
+      (fun w => by simp [barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring)
+      (by ext <;> simp [yzStep_def]) (by ext <;> simp [yzStep_def]) v
   | down b =>
-    rename_i k
-    let c₀ : ℝ := f ((UnitTriangle.down b).vertex 0) * ((b.x : ℝ) + 1) +
-      f ((UnitTriangle.down b).vertex 1) * ((b.y : ℝ) + 1) +
-      f ((UnitTriangle.down b).vertex 2) * ((b.z : ℝ) + 1)
-    let α := -f ((UnitTriangle.down b).vertex 0)
-    let β := -f ((UnitTriangle.down b).vertex 1)
-    let γ := -f ((UnitTriangle.down b).vertex 2)
-    have hL (w : Vertex (k + 2)) : barycentricLinear c₀ α β γ w =
-        triangleAffine (UnitTriangle.down b) f w.barycentric := by
-      simp [c₀, α, β, γ, barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring
-    rw [← hL v]
-    exact hf.le_barycentricLinear (k := 3) (c₀ := c₀) (α := α) (β := β) (γ := γ)
-      (p := (UnitTriangle.down b).vertex 0) (q := (UnitTriangle.down b).vertex 1)
-      (r := (UnitTriangle.down b).vertex 2)
-      (by ext <;> simp [yzStep_def]) (by ext <;> simp [yzStep_def])
-      (by rw [hL, triangleAffine_vertex]) (by rw [hL, triangleAffine_vertex])
-      (by rw [hL, triangleAffine_vertex]) v
+    -- Downward triangle edges from `vertex 0` follow `yzStep 3 = (-1, 0)` and `yzStep 4 = (0, -1)`.
+    exact hf.le_triangleAffine_barycentric_aux (UnitTriangle.down b) 3
+      (f ((UnitTriangle.down b).vertex 0) * ((b.x : ℝ) + 1) +
+        f ((UnitTriangle.down b).vertex 1) * ((b.y : ℝ) + 1) +
+        f ((UnitTriangle.down b).vertex 2) * ((b.z : ℝ) + 1))
+      (-f ((UnitTriangle.down b).vertex 0)) (-f ((UnitTriangle.down b).vertex 1))
+      (-f ((UnitTriangle.down b).vertex 2))
+      (fun w => by simp [barycentricLinear_apply, triangleAffine_apply, Fin.sum_univ_three]; ring)
+      (by ext <;> simp [yzStep_def]) (by ext <;> simp [yzStep_def]) v
 
 /-- Every affine piece `triangleAffine T f` globally upper-bounds `interpolate f` on
 `barycentricSimplex n` whenever `f` is rhombus-concave. -/
@@ -233,7 +226,7 @@ theorem IsRhombusConcave.interpolate_le_triangleAffine {f : Vertex n → ℝ}
     (hf : IsRhombusConcave f) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) : interpolate f x ≤ triangleAffine T f x := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := by cases T <;> exact ⟨_, rfl⟩
-  obtain ⟨T', hxT'⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+  obtain ⟨T', hxT'⟩ := UnitTriangle.exists_mem_cell hx
   rw [interpolate_eq_triangleAffine f hxT']
   exact le_of_forall_le_of_mem_convexHull (a := (triangleAffine T' f).toAffineMap)
     (b := (triangleAffine T f).toAffineMap)
@@ -250,7 +243,7 @@ theorem IsRhombusConcave.interpolate_eq_inf'_triangleAffine {f : Vertex (m + 1) 
     (hf : IsRhombusConcave f) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex (m + 1)) :
     interpolate f x = Finset.univ.inf' Finset.univ_nonempty
       (fun T : UnitTriangle (m + 1) => triangleAffine T f x) := by
-  obtain ⟨T₀, hT₀⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+  obtain ⟨T₀, hT₀⟩ := UnitTriangle.exists_mem_cell hx
   exact le_antisymm (Finset.le_inf' _ _ fun T _ => hf.interpolate_le_triangleAffine T hx)
     ((Finset.inf'_le _ (Finset.mem_univ T₀)).trans (interpolate_eq_triangleAffine f hT₀).ge)
 

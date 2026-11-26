@@ -104,8 +104,8 @@ theorem triangleGradient_comp (S : Type*) {R' F : Type*} [Semiring S] [AddCommGr
     [Module S R'] [FunLike F R R'] [AddMonoidHomClass F R R'] (φ : F) (f : Vertex n → R)
     (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient S (φ ∘ f) T s = φ (triangleGradient ℤ f T s) := by cases T <;> simp
-@[simp] theorem triangleGradient_map (S : Type*) [PartialOrder R] {R' : Type*} [AddCommGroup R']
-    [PartialOrder R'] [Semiring S] [Module S R'] (φ : R →+o R') (h : Hive n R)
+@[simp] theorem triangleGradient_map (S : Type*) [Preorder R] {R' : Type*} [AddCommGroup R']
+    [Preorder R'] [Semiring S] [Module S R'] (φ : R →+o R') (h : Hive n R)
     (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient S (h.map φ) T s = φ (triangleGradient ℤ h T s) := by cases T <;> simp
 @[simp] theorem triangleGradient_ofInt (S R : Type*) [Semiring S] [Ring R] [PartialOrder R]
@@ -119,29 +119,26 @@ theorem triangleGradient_comp (S : Type*) {R' F : Type*} [Semiring S] [AddCommGr
 @[simp high] theorem triangleGradient_affine (S : Type*) [Preorder R] [Semiring S] [Module S R]
     (β γ : R) (T : UnitTriangle n) :
     triangleGradient S (affine n β γ) T = ![β, γ - β, -γ] := by
-  have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
-  simp [hcoe]
+  ext s; cases T <;> fin_cases s <;> simp [add_nsmul] <;> abel
 theorem triangleGradient_comp_add (S : Type*) [Semiring S] [Module S R]
     (f : Vertex (m + k) → R) (p : Vertex m) (T : UnitTriangle k) (s : Fin 3) :
     triangleGradient S (fun q => f (p.add q)) T s = triangleGradient S f (T.addLeft p) s := by
   cases T <;> simp only [triangleGradient_up, triangleGradient_down, UnitTriangle.addLeft_up,
     UnitTriangle.addLeft_down, ← UnitTriangle.vertex_addLeft]
-@[simp] theorem triangleGradient_subtriangle (S : Type*) [PartialOrder R] [IsOrderedAddMonoid R]
+@[simp] theorem triangleGradient_subtriangle (S : Type*) [Preorder R] [IsOrderedAddMonoid R]
     [Semiring S] [Module S R] (h : Hive (m + k) R) (p : Vertex m) (T : UnitTriangle k)
     (s : Fin 3) :
     triangleGradient S (h.subtriangle p) T s = triangleGradient S h (T.addLeft p) s := by
-  rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, map_sub]
+  rw [coe_subtriangle, ← Pi.sub_def, map_sub]
   simp [triangleGradient_comp_add]
 theorem triangleGradient_comp_rotate (S : Type*) [Semiring S] [Module S R]
     (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient S (fun p => f p.rotate) T s = triangleGradient S f T.rotate (s + 1) := by
   cases T <;> simp
-@[simp] theorem triangleGradient_rotate (S : Type*) [PartialOrder R] [IsOrderedAddMonoid R]
+@[simp] theorem triangleGradient_rotate (S : Type*) [Preorder R] [IsOrderedAddMonoid R]
     [Semiring S] [Module S R] (h : Hive n R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient S h.rotate T s = triangleGradient S h T.rotate (s + 1) := by
-  rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, map_sub]
+  rw [coe_rotate, ← Pi.sub_def, map_sub]
   simp [triangleGradient_comp_rotate]
 theorem triangleGradient_comp_reflect (S : Type*) [Semiring S] [Module S R]
     (f : Vertex n → R) (T : UnitTriangle n) (s : Fin 3) :
@@ -150,7 +147,7 @@ theorem triangleGradient_comp_reflect (S : Type*) [Semiring S] [Module S R]
   have h2 : -s = s.rev + 1 := by fin_cases s <;> rfl
   cases T <;> simp only [triangleGradient_up, triangleGradient_down, UnitTriangle.reflect_up,
     UnitTriangle.reflect_down, ← UnitTriangle.vertex_reflect, h1, h2] <;> abel
-@[simp] theorem triangleGradient_reflect (S : Type*) [PartialOrder R] [Semiring S] [Module S R]
+@[simp] theorem triangleGradient_reflect (S : Type*) [Preorder R] [Semiring S] [Module S R]
     (h : Hive n R) (T : UnitTriangle n) (s : Fin 3) :
     triangleGradient S h.reflect T s = -triangleGradient S h T.reflect s.rev := by
   rw [coe_reflect]; exact triangleGradient_comp_reflect S h T s
@@ -190,7 +187,7 @@ theorem triangleGradient_adjacentUp_sub_down_add_two (S : Type*) [Semiring S] [M
 
 /-- At size `m + 2`, rhombus concavity over any ordered additive abelian group is completely
 determined by the unit rhombi `isRhombus_adjacent s i` across shared interior unit edges. -/
-theorem isRhombusConcave_iff_adjacent [PartialOrder R] [IsOrderedAddMonoid R]
+theorem isRhombusConcave_iff_adjacent [Preorder R] [IsOrderedAddMonoid R]
     (f : Vertex (m + 2) → R) :
     IsRhombusConcave f ↔ ∀ (s : Vertex m) (i : Fin 3),
       0 ≤ rhombusSlack f ((UnitTriangle.down s).vertex (i + 2)) ((adjacentUp s i).vertex i)
@@ -236,8 +233,7 @@ theorem triangleAffine_const (c : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
 theorem triangleAffine_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f)
     (T : UnitTriangle n) {x : Fin 3 → ℝ} (hx : ∑ i, x i = (n : ℝ)) :
     triangleAffine T (ofRhombusConcave f hf) x = triangleAffine T f x - f (Vertex.cornerA n) := by
-  rw [show ⇑(ofRhombusConcave f hf) = f - fun _ => f (Vertex.cornerA n)
-    from funext fun _ => ofRhombusConcave_apply _ _ _, map_sub,
+  rw [coe_ofRhombusConcave, ← Pi.sub_def, map_sub,
     ContinuousAffineMap.sub_apply, triangleAffine_const _ T hx]
 theorem triangleAffine_addLeft (f : Vertex (m + n) → ℝ) (p : Vertex m) (T : UnitTriangle n)
     (x : Fin 3 → ℝ) : triangleAffine (T.addLeft p) f (p.barycentric + x) =
@@ -246,8 +242,7 @@ theorem triangleAffine_addLeft (f : Vertex (m + n) → ℝ) (p : Vertex m) (T : 
 theorem triangleAffine_subtriangle (h : RealHive (m + k)) (p : Vertex m) (T : UnitTriangle k)
     {x : Fin 3 → ℝ} (hx : ∑ i, x i = (k : ℝ)) : triangleAffine T (h.subtriangle p) x =
       triangleAffine (T.addLeft p) h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
-  rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, map_sub,
+  rw [coe_subtriangle, ← Pi.sub_def, map_sub,
     ContinuousAffineMap.sub_apply, ← triangleAffine_addLeft, triangleAffine_const _ T hx]
 theorem triangleAffine_comp_rotate (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
     triangleAffine T (fun p => f p.rotate) x = triangleAffine T.rotate f (fun k => x (k - 1)) := by
@@ -257,8 +252,7 @@ theorem triangleAffine_comp_rotate (f : Vertex n → ℝ) (T : UnitTriangle n) (
 theorem triangleAffine_rotate (h : RealHive n) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) : triangleAffine T h.rotate x =
       triangleAffine T.rotate h (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
-  rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, map_sub, ContinuousAffineMap.sub_apply,
+  rw [coe_rotate, ← Pi.sub_def, map_sub, ContinuousAffineMap.sub_apply,
     triangleAffine_comp_rotate, triangleAffine_const _ T hx]
 theorem triangleAffine_comp_reflect (f : Vertex n → ℝ) (T : UnitTriangle n) (x : Fin 3 → ℝ) :
     triangleAffine T (fun p => f p.reflect) x = triangleAffine T.reflect f (fun k => x (-k)) := by
@@ -298,8 +292,9 @@ theorem triangleAffine_barycentricLinear (c₀ α β γ : ℝ) (T : UnitTriangle
     (fun i => by simp [A, p, mul_comm]) hx).symm
 theorem triangleAffine_affine (β γ : ℝ) (T : UnitTriangle n) {x : Fin 3 → ℝ}
     (hx : ∑ i, x i = (n : ℝ)) : triangleAffine T (affine n β γ) x = x 1 * β + x 2 * γ := by
-  have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
-  simpa [hcoe] using triangleAffine_barycentricLinear (0 : ℝ) 0 β γ T hx
+  let p (i : Fin 3) : (Fin 3 → ℝ) →ᴬ[ℝ] ℝ := (ContinuousLinearMap.proj i).toContinuousAffineMap
+  simpa [p, mul_comm] using (eq_triangleAffine_of_vertex (A := (β • p 1 + γ • p 2).toAffineMap)
+    (fun i => by simp [p, mul_comm]) hx).symm
 
 /-- The `s`-th clockwise perimeter unit-step vector `(-1, 1, 0)`, `(0, -1, 1)`, `(1, 0, -1)`. -/
 def unitStepVec (s : Fin 3) : Fin 3 → ℝ := Pi.single (s + 1) (1 : ℝ) - Pi.single s 1
@@ -381,7 +376,7 @@ private theorem exists_linearMap_interpolateFun (n : ℕ) (x : Fin 3 → ℝ) :
     · rw [barycentricSimplex_zero, mem_singleton_iff] at hx
       refine ⟨LinearMap.proj (Vertex.cornerA 0), fun f => ?_⟩
       simpa [interpolateFun, hx] using interpolation_vertex f (Vertex.cornerA 0)
-    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+    · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
       refine ⟨{ toFun := fun f => triangleAffine T f x
                 map_add' := fun f g => by simp
                 map_smul' := fun c f => by simp },
@@ -440,7 +435,7 @@ theorem eqOn_interpolate_of_affineOn_cell {f : Vertex n → ℝ} {g : (Fin 3 →
   rcases n with _ | m
   · rw [barycentricSimplex_zero, mem_singleton_iff] at hx
     rw [hx, ← Vertex.barycentric_cornerA_zero, hg_vert, interpolate_rank_zero]
-  · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+  · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
     obtain ⟨A, hA⟩ := hg_aff T; rw [hA hT, interpolate_eq_triangleAffine f hT]
     exact eqOn_triangleAffine_of_vertex
       (fun i => (hA (T.barycentric_vertex_mem_cell i)).symm.trans (hg_vert _)) hT
@@ -478,33 +473,35 @@ theorem continuousOn_interpolate (f : Vertex n → ℝ) :
   by_cases hx : x ∈ barycentricSimplex n
   · rcases n with _ | m
     · simp
-    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+    · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
       rw [interpolate_eq_triangleAffine _ hT]
       exact triangleAffine_const c T (mem_barycentricSimplex_iff.mp hx).2
   · exact interpolate_of_notMem_barycentricSimplex _ hx
 theorem interpolate_ofRhombusConcave (f : Vertex n → ℝ) (hf : IsRhombusConcave f) (x : Fin 3 → ℝ) :
     interpolate (ofRhombusConcave f hf) x = interpolate f x - f (Vertex.cornerA n) := by
-  rw [show ⇑(ofRhombusConcave f hf) = f - fun _ => f (Vertex.cornerA n)
-    from funext fun _ => ofRhombusConcave_apply _ _ _, map_sub, Pi.sub_apply, interpolate_const]
+  rw [coe_ofRhombusConcave, ← Pi.sub_def, map_sub, Pi.sub_apply, interpolate_const]
 theorem interpolate_barycentricLinear (c₀ α β γ : ℝ) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex n) :
     interpolate (barycentricLinear (n := n) c₀ α β γ) x = c₀ + x 0 * α + x 1 * β + x 2 * γ := by
   rcases n with _ | m
   · rw [barycentricSimplex_zero, mem_singleton_iff] at hx; subst hx; simp
-  · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+  · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
     rw [interpolate_eq_triangleAffine _ hT,
       triangleAffine_barycentricLinear _ _ _ _ T (mem_barycentricSimplex_iff.mp hx).2]
 theorem interpolate_affine (β γ : ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate (affine n β γ) x = x 1 * β + x 2 * γ := by
-  have hcoe : ⇑(affine n β γ) = barycentricLinear 0 0 β γ := funext fun _ => by simp
-  simpa [hcoe] using interpolate_barycentricLinear (n := n) (0 : ℝ) 0 β γ hx
+  rcases n with _ | m
+  · rw [barycentricSimplex_zero, mem_singleton_iff] at hx; subst hx; simp
+  · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
+    rw [interpolate_eq_triangleAffine _ hT,
+      triangleAffine_affine _ _ T (mem_barycentricSimplex_iff.mp hx).2]
 /-- Compatibility of `interpolate` with lattice translation by `p : Vertex m`. -/
 theorem interpolate_comp_add (f : Vertex (m + k) → ℝ) (p : Vertex m) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex k) :
     interpolate (fun q : Vertex k => f (p.add q)) x = interpolate f (p.barycentric + x) := by
   rcases k with _ | k'
   · rw [barycentricSimplex_zero, mem_singleton_iff] at hx; subst hx; simp
-  · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex k').symm ▸ hx)
+  · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
     rw [interpolate_eq_triangleAffine _ hT,
       interpolate_eq_triangleAffine _ (UnitTriangle.mem_cell_addLeft_iff.mpr hT),
       triangleAffine_addLeft]
@@ -512,8 +509,7 @@ theorem interpolate_comp_add (f : Vertex (m + k) → ℝ) (p : Vertex m) {x : Fi
 theorem interpolate_subtriangle (h : RealHive (m + k)) (p : Vertex m) {x : Fin 3 → ℝ}
     (hx : x ∈ barycentricSimplex k) : interpolate (h.subtriangle p) x =
       interpolate h (p.barycentric + x) - h (p.add (Vertex.cornerA k)) := by
-  rw [show ⇑(h.subtriangle p) = (fun q => h (p.add q)) - fun _ => h (p.add (Vertex.cornerA k))
-    from funext fun _ => subtriangle_apply _ _ _, map_sub, Pi.sub_apply,
+  rw [coe_subtriangle, ← Pi.sub_def, map_sub, Pi.sub_apply,
     interpolate_comp_add h p hx, interpolate_const]
 /-- Compatibility of `interpolate` with clockwise rotation on `barycentricSimplex n`. -/
 theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
@@ -521,15 +517,14 @@ theorem interpolate_comp_rotate (f : Vertex n → ℝ) {x : Fin 3 → ℝ} (hx :
   rcases n with _ | m
   · rw [interpolate_rank_zero, interpolate_rank_zero,
       Subsingleton.elim (Vertex.cornerA 0).rotate (Vertex.cornerA 0)]
-  · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+  · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
     rw [interpolate_eq_triangleAffine _ hT,
       interpolate_eq_triangleAffine _ (UnitTriangle.mem_cell_rotate_iff.mpr hT),
       triangleAffine_comp_rotate]
 /-- Compatibility of `interpolate` with `Hive.rotate` on `barycentricSimplex n`. -/
 theorem interpolate_rotate (h : RealHive n) {x : Fin 3 → ℝ} (hx : x ∈ barycentricSimplex n) :
     interpolate h.rotate x = interpolate h (fun k => x (k - 1)) - h (Vertex.cornerA n).rotate := by
-  rw [show ⇑h.rotate = (fun p => h p.rotate) - fun _ => h (Vertex.cornerA n).rotate
-    from funext fun _ => rotate_apply _ _, map_sub, Pi.sub_apply, interpolate_comp_rotate h hx,
+  rw [coe_rotate, ← Pi.sub_def, map_sub, Pi.sub_apply, interpolate_comp_rotate h hx,
     interpolate_const]
 /-- Compatibility of `interpolate` with reflection fixing `A = (n, 0, 0)`. -/
 theorem interpolate_comp_reflect (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
@@ -537,7 +532,7 @@ theorem interpolate_comp_reflect (f : Vertex n → ℝ) (x : Fin 3 → ℝ) :
   by_cases hx : x ∈ barycentricSimplex n
   · rcases n with _ | m
     · simp [Vertex.reflect_cornerA]
-    · obtain ⟨T, hT⟩ := mem_iUnion.mp ((UnitTriangle.iUnion_cell_eq_barycentricSimplex m).symm ▸ hx)
+    · obtain ⟨T, hT⟩ := UnitTriangle.exists_mem_cell hx
       rw [interpolate_eq_triangleAffine _ hT,
         interpolate_eq_triangleAffine _ (UnitTriangle.mem_cell_reflect_iff.mpr hT),
         triangleAffine_comp_reflect]
