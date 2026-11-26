@@ -62,15 +62,15 @@ Hence the twisted hat differential of the connected sum is `∂ ⊗ 1 + 1 ⊗ κ
 twisted hat differential of the original diagram with its coefficients extended to the larger
 group ring, and `κ` is the Koszul differential `p ↦ (1 + t) q`, `q ↦ 0`, of the new factor
 (`TauCeti.HeegaardRegionSystem.twistedHatDifferential_sumCircleTimesSphere_single`). Under the
-augmentation `t ↦ 1` the coefficient `1 + t` becomes `0`, so `κ` vanishes and the untwisted
-statement
-`TauCeti.HeegaardRegionSystem.hatDifferential_sumCircleTimesSphere_comp_addBasepointChainEquiv`
-follows.
+augmentation `t ↦ 1` the coefficient `1 + t` becomes `0`, so `κ` vanishes. For weakly admissible
+nice diagrams this recovers the untwisted statement
+`TauCeti.HeegaardRegionSystem.hatDifferential_sumCircleTimesSphere_comp_addBasepointChainEquiv`,
+which itself holds without these hypotheses.
 Since `1 + t` is a nonzerodivisor, informally the twisted homology of the connected sum is the
-twisted homology of the original diagram, extended to the larger group ring, modulo `1 + t`. On a
-geometric diagram the periodic domains of the connected sum are the second homology of
-`Y # (S¹ × S²)` and the counted domains are the holomorphic disks; neither identification is
-formalized here.
+homology of the extended twisted complex of the original diagram taken modulo `1 + t`; this
+quotient complex and its homology are not formalized here. On a geometric diagram the periodic
+domains of the connected sum are the second homology of `Y # (S¹ × S²)` and the counted domains
+are the holomorphic disks; neither identification is formalized here.
 
 ## Main definitions
 
