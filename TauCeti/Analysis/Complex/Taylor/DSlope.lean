@@ -19,17 +19,10 @@ import Mathlib.Tactic.Ring
 /-!
 # Cauchy estimates for divided differences
 
-Let `a` be inside the disc of radius `R` about `c`. On the boundary, division by `z - a`
-costs at most the reciprocal of `R - dist a c`, the distance from `a` to the circle.
-This gives a Cauchy estimate for the derivatives of the holomorphic divided difference
-`dslope f a` at `c`.
-
-For a Laplace transform written as the divided difference of a holomorphic function at `1`,
-one takes `c = 1 + H` and `R = H + η`. The normalized Taylor coefficient then gains a factor
-`(H / (H + η)) ^ (k + 1)`, bounded by `exp (-(k + 1) * η / (H + η))`.
-For `0 < η ≤ H`, the prefactor `2 * M * R / η` is at most `4 * M * H / η`, and the
-exponential is at most `exp (-(k + 1) * η / (2 * H))`. These are the bounds used in the
-rate form of the Tauberian argument.
+Let `f` take values in a complex Banach space and let `a` be inside the disc of radius `R`
+about `c`. On the boundary, division by `z - a` costs at most the reciprocal of
+`R - dist a c`, the distance from `a` to the circle. This gives a Cauchy estimate for the
+derivatives of the holomorphic divided difference `dslope f a` at `c`.
 
 ## Main results
 
@@ -38,6 +31,20 @@ rate form of the Tauberian argument.
 * `Complex.norm_scaled_taylorCoeff_dslope_le` uses a bound on the boundary values of the original
   function and gives the geometric gain.
 * `Complex.norm_scaled_taylorCoeff_dslope_le_exp` gives its exponential form.
+
+## Specialization
+
+For `a = 1`, `c = 1 + H`, and `R = H + η` with `0 < η ≤ H`, the gap is `η`. In this
+case the geometric factor is `(H / (H + η)) ^ (k + 1)`, and the exponential factor is
+`exp (-(k + 1) * η / (H + η))`. Since `R ≤ 2 * H`, the prefactor is at most
+`4 * M * H / η` and the exponential factor is at most `exp (-(k + 1) * η / (2 * H))`.
+
+## References
+
+* [FormalProof] L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet
+  L-functions, <https://github.com/leanprover-community/riemann-hypothesis>.
+  These estimates generalize `New.norm_iteratedDeriv_dslope_le` and
+  `New.norm_taylorCoeff_dslope_le` in `rh-new/src/Lib/Analytic/PrimeNumberTheorem/Tauberian.lean`.
 -/
 
 @[expose] public section
@@ -48,7 +55,9 @@ namespace Complex
 
 /-- Cauchy's estimate for a divided difference, with the boundary oscillation measured relative
 to the value at an interior anchor. -/
-theorem norm_iteratedDeriv_dslope_le_of_forall_mem_sphere {f : ℂ → ℂ} {a c : ℂ} {R B : ℝ}
+theorem norm_iteratedDeriv_dslope_le_of_forall_mem_sphere {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f : ℂ → E} {a c : ℂ} {R B : ℝ}
     (ha : a ∈ ball c R) (hf : DiffContOnCl ℂ f (ball c R))
     (hB : ∀ z ∈ sphere c R, ‖f z - f a‖ ≤ B) (k : ℕ) :
     ‖iteratedDeriv k (dslope f a) c‖ ≤ k.factorial * (B / (R - dist a c)) / R ^ k := by
@@ -69,13 +78,15 @@ theorem norm_iteratedDeriv_dslope_le_of_forall_mem_sphere {f : ℂ → ℂ} {a c
     _ = ‖f z - f a‖ := by rw [← norm_smul, sub_smul_dslope]
     _ ≤ B := hB z hz
 
-/-- Multiply the Taylor coefficient of the divided difference by `(c - a) ^ (k + 1)`.
-The resulting bound has a geometric factor in `dist a c / R`. The maximum modulus principle
-supplies the bound at the anchor from the same bound on the circle. -/
-theorem norm_scaled_taylorCoeff_dslope_le {f : ℂ → ℂ} {a c : ℂ} {R M : ℝ}
+/-- The Taylor coefficient of the divided difference, scaled by `(c - a) ^ (k + 1)`,
+has a bound with a geometric factor in `dist a c / R`. The only norm bound assumed is on
+`‖f‖` over the circle `sphere c R`. -/
+theorem norm_scaled_taylorCoeff_dslope_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f : ℂ → E} {a c : ℂ} {R M : ℝ}
     (ha : a ∈ ball c R) (hf : DiffContOnCl ℂ f (ball c R))
     (hM : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (k : ℕ) :
-    ‖(c - a) ^ (k + 1) / k.factorial * iteratedDeriv k (dslope f a) c‖ ≤
+    ‖((c - a) ^ (k + 1) / k.factorial) • iteratedDeriv k (dslope f a) c‖ ≤
       (2 * M * R / (R - dist a c)) * (dist a c / R) ^ (k + 1) := by
   have hgap : 0 < R - dist a c := sub_pos.mpr (mem_ball.mp ha)
   have hR : 0 < R := dist_nonneg.trans_lt (mem_ball.mp ha)
@@ -85,7 +96,7 @@ theorem norm_scaled_taylorCoeff_dslope_le {f : ℂ → ℂ} {a c : ℂ} {R M : �
     calc
       ‖f z - f a‖ ≤ ‖f z‖ + ‖f a‖ := norm_sub_le _ _
       _ ≤ 2 * M := by linarith [hM z hz]
-  rw [norm_mul, norm_div, norm_pow, Complex.norm_natCast, ← dist_eq_norm, dist_comm c a]
+  rw [norm_smul, norm_div, norm_pow, Complex.norm_natCast, ← dist_eq_norm, dist_comm c a]
   calc
     _ ≤ dist a c ^ (k + 1) / k.factorial *
         (k.factorial * (2 * M / (R - dist a c)) / R ^ k) :=
@@ -97,10 +108,12 @@ theorem norm_scaled_taylorCoeff_dslope_le {f : ℂ → ℂ} {a c : ℂ} {R M : �
 
 /-- Exponential form of the bound for the scaled Taylor coefficient. The decay is controlled by
 the ratio of the gap `R - dist a c` to the radius. -/
-theorem norm_scaled_taylorCoeff_dslope_le_exp {f : ℂ → ℂ} {a c : ℂ} {R M : ℝ}
+theorem norm_scaled_taylorCoeff_dslope_le_exp {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {f : ℂ → E} {a c : ℂ} {R M : ℝ}
     (ha : a ∈ ball c R) (hf : DiffContOnCl ℂ f (ball c R))
     (hM : ∀ z ∈ sphere c R, ‖f z‖ ≤ M) (k : ℕ) :
-    ‖(c - a) ^ (k + 1) / k.factorial * iteratedDeriv k (dslope f a) c‖ ≤
+    ‖((c - a) ^ (k + 1) / k.factorial) • iteratedDeriv k (dslope f a) c‖ ≤
       (2 * M * R / (R - dist a c)) *
         Real.exp (-(k + 1) * ((R - dist a c) / R)) := by
   have haR : dist a c < R := mem_ball.mp ha
