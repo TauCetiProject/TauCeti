@@ -361,15 +361,15 @@ theorem toLieSubalgebra_isSl2Triple_single_eq_top [Nontrivial R] {i j : Fin 2} (
 /-! ### The centre of `sl₂` and faithfulness of the adjoint representation -/
 
 /-- **The centre of `sl₂`.** A trace-zero `2 × 2` matrix is central in `sl (Fin 2) R` exactly when
-its off-diagonal entries vanish and twice its diagonal entry vanishes. Such a matrix
-`!![a, 0; 0, -a]` with `2a = 0` is the scalar matrix `a • 1`, since `-a = a`; conversely,
-bracketing with `e = E₀₁` and `f = E₁₀` reads off the three conditions. -/
+its off-diagonal entries vanish and twice its diagonal entry vanishes, that is, the centre
+consists of the matrices `!![a, 0; 0, -a]` with `2a = 0`, which are the scalar matrices `a • 1`. -/
 theorem mem_center_slFinTwo_iff (A : SpecialLinear.sl (Fin 2) R) :
     A ∈ LieAlgebra.center R (SpecialLinear.sl (Fin 2) R) ↔
       A.val 0 1 = 0 ∧ A.val 1 0 = 0 ∧ 2 * A.val 0 0 = 0 := by
   rw [LieModule.mem_maxTrivSubmodule]
   constructor
-  · intro h
+  · -- Bracketing with `e = E₀₁` and `f = E₁₀` reads off the three conditions.
+    intro h
     have he := congr(($(h (SpecialLinear.single 0 1 zero_ne_one 1))).val)
     have hf := congr(($(h (SpecialLinear.single 1 0 one_ne_zero 1))).val)
     have he00 : A.val 1 0 = 0 := by
@@ -379,7 +379,8 @@ theorem mem_center_slFinTwo_iff (A : SpecialLinear.sl (Fin 2) R) :
     have hf00 : A.val 0 1 = 0 := by
       simpa [Ring.lie_def, Matrix.mul_apply, Matrix.single_apply] using congr_fun₂ hf 0 0
     exact ⟨hf00, he00, by linear_combination -he01⟩
-  · rintro ⟨h01, h10, h00⟩ y
+  · -- Conversely, such a matrix is the scalar matrix `a • 1`, since `-a = a`.
+    rintro ⟨h01, h10, h00⟩ y
     have hA : A.val = Matrix.scalar (Fin 2) (A.val 0 0) := by
       ext i j
       fin_cases i <;> fin_cases j

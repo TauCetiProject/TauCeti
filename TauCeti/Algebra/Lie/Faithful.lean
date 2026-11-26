@@ -76,6 +76,7 @@ theorem toEnd_compLieHom (f : L₁ →ₗ⁅R⁆ L₂) :
   let _ := LieRingModule.compLieHom M f
   have _ := LieModule.compLieHom (R := R) M f
   ext x m
+  rw [toEnd_apply_apply, LieHom.comp_apply, toEnd_apply_apply]
   exact LieRingModule.compLieHom_apply M f x m
 
 /-- The kernel of the action of `L₁` on a Lie module pulled back along `f : L₁ →ₗ⁅R⁆ L₂` is the
