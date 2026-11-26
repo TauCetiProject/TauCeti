@@ -36,12 +36,24 @@ every line in an interval, hence is convex
 `TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.LocallyFree`, this needs no local normal form at
 points whose isotropy algebra is neither `0` nor `𝔤`, which exist for actions of `T²`.
 
+The same argument applies to the projection of `μ` to a plane of `𝔤*`, for a group of any
+dimension, commutative or not. For a subspace `s ⊆ 𝔤` of dimension at most two, the components of
+`x ↦ (μ x)|_s` are the components `μ^ξ` with `ξ ∈ s`, whose level sets are connected, so the image
+of this projection is convex
+(`TauCeti.SmoothTwoForm.IsMomentMap.convex_range_domRestrict_of_finrank_le_two`). For the coadjoint
+orbit of a compact connected group, with the orbit map as moment map, this gives the convexity of
+the projections of the orbit to planes of the dual of a maximal torus, and hence Kostant's
+convexity theorem for those planes
+(`TauCeti.Lie.range_domRestrict_coadjointRepresentation_eq_convexHull_of_le`).
+
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsMomentMap.convex_range_of_finrank_le_two`: the image of a moment map of
   a compact group of dimension at most two is convex.
 * `TauCeti.SmoothTwoForm.IsMomentMap.range_eq_convexHull_image_fixedPoints_of_finrank_le_two`: for
   a torus of dimension at most two, the image is the convex hull of the fixed-point images.
+* `TauCeti.SmoothTwoForm.IsMomentMap.convex_range_domRestrict_of_finrank_le_two`: for a compact
+  group of any dimension, the projection of the image to a plane of `𝔤*` is convex.
 
 ## References
 
@@ -104,5 +116,23 @@ theorem range_eq_convexHull_image_fixedPoints_of_finrank_le_two [IsMulCommutativ
     range μ = convexHull ℝ (μ '' MulAction.fixedPoints G M) :=
   (h.range_subset_convexHull_image_fixedPoints hσ).antisymm
     (convexHull_min (image_subset_range μ _) (h.convex_range_of_finrank_le_two hσ hσG hE))
+
+/-- **Planar projections of a moment image are convex.** Let a compact Lie group `G` act smoothly
+on a compact connected boundaryless finite-dimensional manifold `M`, preserving a nondegenerate
+two-form `σ`, with moment map `μ`, and let `s` be a subspace of the Lie algebra `𝔤` of dimension at
+most two. Then the image of the projection `x ↦ (μ x)|_s` of `μ` to `s*` is convex. No assumption
+is made on the dimension of `G` or on its commutativity. -/
+theorem convex_range_domRestrict_of_finrank_le_two
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G 𝓘(ℝ, E') M) μ)
+    (hσ : σ.IsNondegenerate)
+    (hσG : ∀ (a : G) (x : M) (u v : TangentSpace 𝓘(ℝ, E') x),
+      σ.eval₂ (a • x) (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x u)
+        (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') (a • ·) x v) = σ.eval₂ x u v)
+    {s : Submodule ℝ (GroupLieAlgebra I G)} (hs : Module.finrank ℝ s ≤ 2) :
+    Convex ℝ (range fun x ↦ (μ x).domRestrict s) :=
+  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
+  -- The components of the projection are the components `μ^ξ` with `ξ ∈ s`.
+  convex_range_of_isPreconnected_setOf_apply_eq hs (fun ξ ↦ (h.contMDiff ξ).continuous)
+    fun ξ ↦ h.isPreconnected_setOf_apply_eq hσ hσG ξ
 
 end TauCeti.SmoothTwoForm.IsMomentMap
