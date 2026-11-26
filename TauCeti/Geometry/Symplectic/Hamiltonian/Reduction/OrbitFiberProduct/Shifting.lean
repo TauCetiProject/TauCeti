@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Prod
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.ReducedForm
 
+import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
 import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
@@ -184,19 +185,18 @@ private def levelDiffeomorphOrbitFiberProduct :
   letI := (h.prod_neg_coadjointOrbitForm c).levelSubMulActionChartedSpace 0
     (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀
   letI := h.orbitFiberProductChartedSpace c hreg (finBasis ℝ (GroupLieAlgebra I G))
-  { toFun z := ⟨z.val, h.mem_orbitFiberProduct z⟩
-    invFun p := ⟨p.val, (h.prod_neg_coadjointOrbitForm c).mem_levelSubMulAction.2
-      (sub_eq_zero.2 ((components_eq_orbitMap_iff_apply_eq _).1 p.property))⟩
-    left_inv _ := rfl
-    right_inv _ := rfl
-    contMDiff_toFun :=
-      (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _).contMDiff_iff_comp.2
-        ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-          (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀).contMDiff
-    contMDiff_invFun :=
-      ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
-          (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀).contMDiff_iff_comp.2
-        (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _).contMDiff }
+  -- Both atlases make the inclusion into `M × G ⧸ G_c` a smooth embedding, so the identity of
+  -- `M × G ⧸ G_c` restricts to a diffeomorphism between them.
+  (Diffeomorph.refl _ (M × G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c)
+    ∞).subtypeOfIsSmoothEmbedding
+    (s := ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0 : Set _))
+    (t := {p | (fun i ↦ μ p.1 (finBasis ℝ (GroupLieAlgebra I G) i)) =
+      fun i ↦ (Lie.coadjointRepresentation ℝ I G).orbitMap c p.2
+        (finBasis ℝ (GroupLieAlgebra I G) i)})
+    ((h.prod_neg_coadjointOrbitForm c).isSmoothEmbedding_coe_levelSubMulAction
+      (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀)
+    (h.isSmoothEmbedding_coe_orbitFiberProduct hreg _) fun _ ↦ by
+      simp [components_eq_orbitMap_iff_apply_eq, sub_eq_zero]
 
 variable (c) in
 /-- The orbit projection `(x, g G_c) ↦ [g⁻¹ • x]` from the zero level of the shifting map onto the
@@ -205,15 +205,6 @@ private def zeroLevelProj (z : (h.prod_neg_coadjointOrbitForm c).levelSubMulActi
     MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
       (h.levelSubMulAction c) :=
   h.orbitFiberProductProj c (finBasis ℝ (GroupLieAlgebra I G)) ⟨z.val, h.mem_orbitFiberProduct z⟩
-
-omit [I'.Boundaryless] [ProperSMul G M]
-  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
-/-- `(x, g G_c) ↦ [g⁻¹ • x]`, for every representative `g`. -/
-private theorem zeroLevelProj_eq (z : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0)
-    {g : G} (hg : (g : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = z.val.2)
-    (hz : g⁻¹ • z.val.1 ∈ h.levelSubMulAction c) :
-    h.zeroLevelProj c z = Quotient.mk _ ⟨g⁻¹ • z.val.1, hz⟩ :=
-  h.orbitFiberProductProj_eq _ _ hg
 
 omit [I'.Boundaryless] [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
@@ -259,9 +250,11 @@ private theorem isSubmersion_zeroLevelProj :
   have := h.isManifold_orbitRelQuotient hreg hn d
   have hq := h.isSubmersion_orbitFiberProductProj hreg hn d (finBasis ℝ (GroupLieAlgebra I G))
   set ι := h.levelDiffeomorphOrbitFiberProduct hreg hn₀
-  -- By definition `zeroLevelProj = q_W ∘ ι`, and precomposing the submersion `q_W` with the
-  -- diffeomorphism `ι` keeps the differentials onto.
-  have hι : h.zeroLevelProj c = h.orbitFiberProductProj c _ ∘ ι := rfl
+  -- `zeroLevelProj = q_W ∘ ι`, as `ι` is the identity on points, and precomposing the submersion
+  -- `q_W` with the diffeomorphism `ι` keeps the differentials onto.
+  have hι : h.zeroLevelProj c = h.orbitFiberProductProj c _ ∘ ι :=
+    funext fun z ↦ congrArg (h.orbitFiberProductProj c _) (Subtype.ext
+      (Diffeomorph.subtypeOfIsSmoothEmbedding_apply_coe (Diffeomorph.refl _ _ ∞) _ _ _ z).symm)
   rw [hι]
   refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
     (hq.contMDiff.comp ι.contMDiff) (by simp) fun z ↦ ?_).isSubmersion
@@ -303,6 +296,10 @@ def shiftingReducedSpaceDiffeomorph :
   letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
     (h.differential_prod_neg_coadjointOrbitForm_surjective hreg) hn₀ d₀
   letI := h.orbitRelQuotientChartedSpace c hreg hn d
+  -- `ProperSMul.diffeomorphOfOrbitSubmersion` does not apply: its source carries the atlas
+  -- `ProperSMul.orbitRelQuotientChartedSpace`, and the body of `orbitRelQuotientChartedSpace`
+  -- that unfolds to it is not exposed here. So descend `zeroLevelProj` through the submersion
+  -- lemmas stated for the exposed atlases.
   Equiv.diffeomorphOfSubmersions
     ((Quotient.congrRight fun z z' ↦ (h.zeroLevelProj_eq_zeroLevelProj_iff z z').symm).trans
       (Setoid.quotientKerEquivOfSurjective _ h.zeroLevelProj_surjective))
@@ -333,7 +330,7 @@ theorem shiftingReducedSpaceDiffeomorph_mk (x : M) (g : G)
   -- The underlying bijection computes on orbits by `Quotient.congrRight` and
   -- `Setoid.quotientKerEquivOfSurjective`, both of which send `[z]` to `zeroLevelProj z`.
   exact (Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _).trans
-    (h.zeroLevelProj_eq ⟨_, hp⟩ rfl _)
+    (h.orbitFiberProductProj_eq _ ⟨_, h.mem_orbitFiberProduct ⟨_, hp⟩⟩ rfl)
 
 /-- The inverse of the shifting diffeomorphism sends the orbit of `z` to the orbit of
 `(z, G_c)`. -/
@@ -375,6 +372,8 @@ private theorem mpullback_prodMk_one_prod_neg_coadjointOrbitForm :
   let _ := h.levelSubMulActionChartedSpace c hreg hn
   have := h.isManifold_levelSubMulAction hreg hn
   rw [prod_def, map_add, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback]
+  -- The first summand is the right-hand side: `Prod.fst ∘ (fun z ↦ (↑z, 1))` is `Subtype.val` by
+  -- unfolding `Function.comp` and `Prod.fst`, so it remains to kill the second summand.
   refine add_eq_left.2 (Subtype.ext ?_)
   rw [SmoothForm.coe_mpullback]
   exact mpullback_const two_ne_zero _ _
