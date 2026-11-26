@@ -84,7 +84,7 @@ theorem encard_setOf_finrank_eq_two_padicTwo :
   rw [setOf_finrank_eq_of_prime Nat.prime_two,
     Set.encard_insert_of_notMem (unramifiedExtension_notMem_totallyRamifiedOfDegree one_lt_two),
     encard_totallyRamifiedOfDegree_two_padicTwo]
-  rfl
+  norm_num
 
 /-- The residue degrees split the quadratic extensions of `ℚ_2`: `ℚ_4` alone has residue
 degree `2`. -/
@@ -152,9 +152,9 @@ theorem etaleMass_two_padicTwo : etaleMass ℚ_[2] 2 = 3 / 2 := by
   -- Read the coercion of the set of transitive Galois sets back as a subtype.
   change (Nat.factorial 2 : ℝ≥0∞)⁻¹ * (∑' ρ : {ρ : GaloisSet ℚ_[2] 2 // ρ.IsTransitive},
     1 / (2 : ℝ≥0∞) ^ ρ.val.discriminantExponent + _) = _
-  rw [tsum_isTransitive_two_one_div_pow_discriminantExponent_padicTwo]
+  rw [tsum_isTransitive_two_one_div_pow_discriminantExponent_padicTwo,
+    ENNReal.div_eq_inv_mul (a := 3) (b := 2)]
   norm_num
-  exact ENNReal.div_eq_inv_mul.symm
 
 /-- The independent value agrees with Bhargava's formula `M_2(K) = 1 + q⁻¹` at `q = 2`. -/
 example : etaleMass ℚ_[2] 2 = 1 + 1 / (Nat.card 𝓀[ℚ_[2]] : ℝ≥0∞) := by
