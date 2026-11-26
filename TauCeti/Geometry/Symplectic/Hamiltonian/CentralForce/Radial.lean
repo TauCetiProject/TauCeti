@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
 public import Mathlib.Analysis.Calculus.Deriv.Prod
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import TauCeti.Analysis.InnerProductSpace.QuadraticForm.TwoVector
+import Mathlib.Analysis.Calculus.Deriv.ZPow
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -74,6 +77,7 @@ Two consequences describe the qualitative radial motion:
   projection carries `X_H` to `X_{H_ℓ}`.
 * `TauCeti.hasDerivAt_radialProjection_comp`: integral curves of `H` project to integral curves
   of `H_ℓ`.
+* `TauCeti.iteratedDeriv_two_effectivePotential`: `U_ℓ''(r) = 3 ℓ² / (m r⁴) + U''(r)`.
 * `TauCeti.effectivePotential_le_centralForceHamiltonian`,
   `TauCeti.centralForceHamiltonian_eq_effectivePotential_iff`: the effective potential bounds the
   energy, with equality exactly at the radial turning points.
@@ -161,6 +165,28 @@ theorem hasDerivAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : �
     · simp [hm]
     · field_simp
       ring
+
+/-- Away from `r = 0`, the second derivative of the effective potential is
+`U_ℓ''(r) = 3 ℓ² / (m r⁴) + U''(r)`. -/
+theorem iteratedDeriv_two_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hU : ContDiffAt ℝ 2 U r) (hr : r ≠ 0) :
+    iteratedDeriv 2 (effectivePotential m ℓ U) r =
+      3 * ℓ ^ 2 / (m * r ^ 4) + iteratedDeriv 2 U r := by
+  -- The centrifugal term is `ℓ² / (2m)` times `r⁻²`.
+  have h : effectivePotential m ℓ U = (fun s ↦ ℓ ^ 2 / (2 * m) * s ^ (-2 : ℤ)) + U := by
+    funext s
+    simp only [effectivePotential, Pi.add_apply, zpow_neg]
+    norm_cast
+    ring
+  have hc : ContDiffAt ℝ 2 (fun s : ℝ ↦ ℓ ^ 2 / (2 * m) * s ^ (-2 : ℤ)) r := by
+    simp only [zpow_neg]
+    norm_cast
+    exact contDiffAt_const.mul ((contDiffAt_id.pow 2).inv (pow_ne_zero 2 hr))
+  rw [h, iteratedDeriv_add hc hU, iteratedDeriv_const_mul_field, iteratedDeriv_eq_iterate,
+    iter_deriv_zpow]
+  simp [Finset.prod_range_succ, zpow_neg]
+  field_simp
+  ring
 
 /-- Away from `r = 0`, the effective potential is continuous wherever `U` is. -/
 theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} (hU : ContinuousAt U r)
