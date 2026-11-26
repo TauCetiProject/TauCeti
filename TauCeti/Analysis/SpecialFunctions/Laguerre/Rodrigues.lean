@@ -87,44 +87,13 @@ private theorem hasDerivAt_exp_neg_mul_rpow_mul_laguerre (γ : ℝ) (j : ℕ) {t
   rw [hpow]
   linear_combination (exp (-t) * t ^ γ) * h
 
-/-- The derivatives of `exp (-t) * t ^ β`: for real `β` and `t ≠ 0` (or `j ≤ β`, where the
-origin is allowed),
-`dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
-The right-hand side is `j! * (exp (-t) * t ^ (β - j))` times a value of a Laguerre polynomial, not
-a bare Laguerre value. At `β = n + α`, `j = n` it reads
-`dⁿ/dtⁿ (exp (-t) * t ^ (n + α)) = n! * (exp (-t) * t ^ α) * Lₙ^{(α)}(t)`, which rearranges to the
-Rodrigues formula `TauCeti.laguerre_rodrigues` only for `t > 0`. -/
-theorem iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre (β : ℝ) (j : ℕ) {t : ℝ}
-    (ht : t ≠ 0 ∨ (j : ℝ) ≤ β) :
-    iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) t =
-      j.factorial * (exp (-t) * t ^ (β - j)) * (laguerre (β - j) j).eval t := by
-  induction j generalizing t with
-  | zero => simp
-  | succ j ih =>
-    have hβ : β - j = β - (j + 1 : ℕ) + 1 := by push_cast; ring
-    have hev : ∀ᶠ s in nhds t, s ≠ 0 ∨ (j : ℝ) ≤ β := by
-      rcases ht with ht | ht
-      · filter_upwards [eventually_ne_nhds ht] with s hs using Or.inl hs
-      · exact Filter.Eventually.of_forall fun _ => Or.inr (by push_cast at ht; linarith)
-    have h : iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) =ᶠ[nhds t] fun s =>
-        j.factorial * (exp (-s) * s ^ (β - (j + 1 : ℕ) + 1) *
-          (laguerre (β - (j + 1 : ℕ) + 1) j).eval s) := by
-      filter_upwards [hev] with s hs
-      rw [ih hs, hβ, mul_assoc]
-    have hγ : t ≠ 0 ∨ 0 ≤ β - (j + 1 : ℕ) :=
-      ht.imp_right fun h => by push_cast at h ⊢; linarith
-    rw [iteratedDeriv_succ, h.deriv_eq,
-      ((hasDerivAt_exp_neg_mul_rpow_mul_laguerre _ j hγ).const_mul _).deriv, Nat.factorial_succ]
-    push_cast
-    ring
-
-/-- The derivative of the `j`-th derivative of `exp (-t) * t ^ β`: for real `β` and `t ≠ 0` (or
-`j + 1 ≤ β`, where the origin is allowed),
-`iteratedDeriv j (fun s => exp (-s) * s ^ β)` has at `t` the derivative
-`(j + 1)! * (exp (-t) * t ^ (β - (j + 1))) * L_{j+1}^{(β - (j + 1))}(t)`. This is the statement
-used for integration by parts against `exp (-t) * t ^ β`. -/
-theorem hasDerivAt_iteratedDeriv_exp_neg_mul_rpow (β : ℝ) (j : ℕ) {t : ℝ}
-    (ht : t ≠ 0 ∨ ((j + 1 : ℕ) : ℝ) ≤ β) :
+/-- The inductive step of the derivative formula: if the `j`-th derivative of
+`exp (-t) * t ^ β` is given by the formula at every `s` with `s ≠ 0` or `j ≤ β`, then for `t ≠ 0`
+(or `j + 1 ≤ β`) it has at `t` the derivative given by the formula of order `j + 1`. -/
+private theorem hasDerivAt_iteratedDeriv_exp_neg_mul_rpow_of_eq (β : ℝ) (j : ℕ)
+    (hj : ∀ s : ℝ, s ≠ 0 ∨ (j : ℝ) ≤ β → iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) s =
+      j.factorial * (exp (-s) * s ^ (β - j)) * (laguerre (β - j) j).eval s)
+    {t : ℝ} (ht : t ≠ 0 ∨ ((j + 1 : ℕ) : ℝ) ≤ β) :
     HasDerivAt (iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β))
       ((j + 1).factorial * (exp (-t) * t ^ (β - (j + 1 : ℕ))) *
         (laguerre (β - (j + 1 : ℕ)) (j + 1)).eval t) t := by
@@ -137,13 +106,43 @@ theorem hasDerivAt_iteratedDeriv_exp_neg_mul_rpow (β : ℝ) (j : ℕ) {t : ℝ}
       j.factorial * (exp (-s) * s ^ (β - (j + 1 : ℕ) + 1) *
         (laguerre (β - (j + 1 : ℕ) + 1) j).eval s) := by
     filter_upwards [hev] with s hs
-    rw [iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre β j hs, hβ, mul_assoc]
+    rw [hj s hs, hβ, mul_assoc]
   have hγ : t ≠ 0 ∨ 0 ≤ β - (j + 1 : ℕ) := ht.imp_right fun h => by linarith
   refine (((hasDerivAt_exp_neg_mul_rpow_mul_laguerre _ j hγ).const_mul _).congr_of_eventuallyEq
     h).congr_deriv ?_
   rw [Nat.factorial_succ]
   push_cast
   ring
+
+/-- The derivatives of `exp (-t) * t ^ β`: for real `β` and `t ≠ 0` (or `j ≤ β`, where the
+origin is allowed),
+`dʲ/dtʲ (exp (-t) * t ^ β) = j! * (exp (-t) * t ^ (β - j)) * L_j^{(β - j)}(t)`.
+At `β = n + α`, `j = n` it reads
+`dⁿ/dtⁿ (exp (-t) * t ^ (n + α)) = n! * (exp (-t) * t ^ α) * Lₙ^{(α)}(t)`, which rearranges to the
+Rodrigues formula `TauCeti.laguerre_rodrigues` only for `t > 0`. -/
+theorem iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre (β : ℝ) (j : ℕ) {t : ℝ}
+    (ht : t ≠ 0 ∨ (j : ℝ) ≤ β) :
+    iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β) t =
+      j.factorial * (exp (-t) * t ^ (β - j)) * (laguerre (β - j) j).eval t := by
+  induction j generalizing t with
+  | zero => simp
+  | succ j ih =>
+    rw [iteratedDeriv_succ,
+      (hasDerivAt_iteratedDeriv_exp_neg_mul_rpow_of_eq β j (fun _ hs => ih hs) ht).deriv]
+
+/-- The derivative of the `j`-th derivative of `exp (-t) * t ^ β`: for real `β` and `t ≠ 0` (or
+`j + 1 ≤ β`, where the origin is allowed),
+`iteratedDeriv j (fun s => exp (-s) * s ^ β)` has at `t` the derivative
+`(j + 1)! * (exp (-t) * t ^ (β - (j + 1))) * L_{j+1}^{(β - (j + 1))}(t)`. It supplies the
+derivatives of the boundary terms `dʲ/dtʲ (exp (-t) * t ^ (n + α))`, `j < n`, in the integration by
+parts behind the Laguerre orthogonality relation. -/
+theorem hasDerivAt_iteratedDeriv_exp_neg_mul_rpow (β : ℝ) (j : ℕ) {t : ℝ}
+    (ht : t ≠ 0 ∨ ((j + 1 : ℕ) : ℝ) ≤ β) :
+    HasDerivAt (iteratedDeriv j (fun s : ℝ => exp (-s) * s ^ β))
+      ((j + 1).factorial * (exp (-t) * t ^ (β - (j + 1 : ℕ))) *
+        (laguerre (β - (j + 1 : ℕ)) (j + 1)).eval t) t :=
+  hasDerivAt_iteratedDeriv_exp_neg_mul_rpow_of_eq β j
+    (fun _ hs => iteratedDeriv_exp_neg_mul_rpow_eq_mul_eval_laguerre β j hs) ht
 
 /-- The **Rodrigues formula** for the generalized Laguerre polynomials (DLMF 18.5.5 with
 Table 18.5.1), as an identity of real functions on `(0, ∞)`:
