@@ -13,6 +13,9 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 
 /-!
 # The mixed spectrum of `-Δ` on a rectangle with one Dirichlet side
@@ -43,7 +46,8 @@ of the quarter-wave sines of `(a 0, b 0)`, which vanish at `a 0` and have zero d
   it vanishes; then almost every slice is orthogonal to every quarter-wave sine
   (`TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`).
 * **No other eigenvalues.** The form `∫ ∇u · ∇v` is symmetric, so an eigenfunction for a `κ`
-  outside the list would be orthogonal to every mode, hence zero.
+  outside the list would be orthogonal to every mode, hence zero
+  (`TauCeti.PDE.exists_ne_zero_forall_inner_gradient_eq_iff_of_complete`).
 
 The least eigenvalue is `(π / (2 L₀))²`, of `sin (π (x 0 - a 0) / (2 L₀))`. On the unit square it
 is `π² / 4`, and the next one is `5 π² / 4 = (π / 2)² + π²`, not `9 π² / 4 = (3 π / 2)²`.
@@ -130,36 +134,9 @@ private theorem setIntegral_Icc_mul_fderiv_add_eq {g₀ g₀' g₁ g₁' : ℝ �
 
 /-! ### The rectangle in coordinates -/
 
-/-- The coordinates `(x, y) ↦ (x, y)` from `ℝ × ℝ` onto the Euclidean plane. -/
-private def planeEquiv : (ℝ × ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  (ContinuousLinearEquiv.finTwoArrow ℝ ℝ).symm.trans (EuclideanSpace.equiv (Fin 2) ℝ).symm
-
-@[simp]
-private theorem planeEquiv_apply_zero (p : ℝ × ℝ) : planeEquiv p 0 = p.1 := rfl
-
-@[simp]
-private theorem planeEquiv_apply_one (p : ℝ × ℝ) : planeEquiv p 1 = p.2 := rfl
-
-private theorem planeEquiv_one_zero : planeEquiv (1, 0) = EuclideanSpace.single 0 1 := by
-  ext i
-  fin_cases i <;> simp
-
-private theorem planeEquiv_zero_one : planeEquiv (0, 1) = EuclideanSpace.single 1 1 := by
-  ext i
-  fin_cases i <;> simp
-
-private theorem measurePreserving_planeEquiv : MeasurePreserving planeEquiv volume volume := by
-  have h : (planeEquiv : ℝ × ℝ → EuclideanSpace ℝ (Fin 2)) =
-      WithLp.toLp 2 ∘ (MeasurableEquiv.finTwoArrow (α := ℝ)).symm := by
-    funext p
-    ext i
-    fin_cases i <;> rfl
-  rw [h]
-  exact (PiLp.volume_preserving_toLp (Fin 2)).comp (volume_preserving_finTwoArrow ℝ).symm
-
 /-- The rectangle `boxDomain a b` in the coordinates of `ℝ × ℝ`. -/
-private theorem preimage_planeEquiv_boxDomain (a b : Fin 2 → ℝ) :
-    planeEquiv ⁻¹' (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) =
+private theorem preimage_euclideanPlaneEquivProd_symm_boxDomain (a b : Fin 2 → ℝ) :
+    euclideanPlaneEquivProd.symm ⁻¹' (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) =
       Ioo (a 0) (b 0) ×ˢ Ioo (a 1) (b 1) := by
   ext p
   simp [Fin.forall_fin_two]
@@ -167,34 +144,36 @@ private theorem preimage_planeEquiv_boxDomain (a b : Fin 2 → ℝ) :
 /-- An integral over the rectangle `boxDomain a b` of the plane is an integral over the closed
 rectangle `[a 0, b 0] × [a 1, b 1]` of `ℝ × ℝ`. -/
 private theorem setIntegral_boxDomain_eq (a b : Fin 2 → ℝ) (F : EuclideanSpace ℝ (Fin 2) → ℝ) :
-    ∫ x in boxDomain a b, F x = ∫ p in Icc (a 0, a 1) (b 0, b 1), F (planeEquiv p) := by
-  rw [← measurePreserving_planeEquiv.setIntegral_preimage_emb
-    planeEquiv.toHomeomorph.measurableEmbedding, preimage_planeEquiv_boxDomain, ← Icc_prod_Icc,
-    Measure.volume_eq_prod]
+    ∫ x in boxDomain a b, F x =
+      ∫ p in Icc (a 0, a 1) (b 0, b 1), F (euclideanPlaneEquivProdL.symm p) := by
+  rw [coe_euclideanPlaneEquivProdL_symm, ← measurePreserving_euclideanPlaneEquivProd.symm
+    |>.setIntegral_preimage_emb euclideanPlaneEquivProd.symm.measurableEmbedding,
+    preimage_euclideanPlaneEquivProd_symm_boxDomain, ← Icc_prod_Icc, Measure.volume_eq_prod]
   exact setIntegral_congr_set (Measure.set_prod_ae_eq Ioo_ae_eq_Icc Ioo_ae_eq_Icc)
 
 /-- In the coordinates of `ℝ × ℝ`, the restriction of the Lebesgue measure to the rectangle is the
 product of its restrictions to `(a 0, b 0]` and `(a 1, b 1]`. -/
-private theorem measurePreserving_planeEquiv_restrict (a b : Fin 2 → ℝ) :
-    MeasurePreserving planeEquiv.toHomeomorph.toMeasurableEquiv
+private theorem measurePreserving_euclideanPlaneEquivProd_symm_restrict (a b : Fin 2 → ℝ) :
+    MeasurePreserving euclideanPlaneEquivProd.symm
       ((volume.restrict (Ioc (a 0) (b 0))).prod (volume.restrict (Ioc (a 1) (b 1))))
       (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) := by
-  have h := measurePreserving_planeEquiv.restrict_preimage (boxDomain a b).isOpen.measurableSet
-  rw [preimage_planeEquiv_boxDomain, Measure.volume_eq_prod,
+  have h := measurePreserving_euclideanPlaneEquivProd.symm.restrict_preimage
+    (boxDomain a b).isOpen.measurableSet
+  rw [preimage_euclideanPlaneEquivProd_symm_boxDomain, Measure.volume_eq_prod,
     Measure.restrict_congr_set (Measure.set_prod_ae_eq Ioo_ae_eq_Ioc Ioo_ae_eq_Ioc),
     ← Measure.prod_restrict] at h
   exact h
 
 /-- The gradient pairing of a separated function `g₀ (x 0) g₁ (x 1)` with a `C¹` function `φ`, in
 the coordinates of `ℝ × ℝ`. -/
-private theorem inner_gradient_planeEquiv {g₀ g₀' g₁ g₁' : ℝ → ℝ}
+private theorem inner_gradient_euclideanPlaneEquivProdL_symm {g₀ g₀' g₁ g₁' : ℝ → ℝ}
     (h₀ : ∀ t, HasDerivAt g₀ (g₀' t) t) (h₁ : ∀ t, HasDerivAt g₁ (g₁' t) t)
     (φ : EuclideanSpace ℝ (Fin 2) → ℝ) (p : ℝ × ℝ) :
-    ⟪∇ (fun x : EuclideanSpace ℝ (Fin 2) => g₀ (x 0) * g₁ (x 1)) (planeEquiv p),
-        ∇ φ (planeEquiv p)⟫_ℝ =
-      g₀' p.1 * g₁ p.2 * fderiv ℝ (φ ∘ planeEquiv) p (1, 0) +
-        g₀ p.1 * g₁' p.2 * fderiv ℝ (φ ∘ planeEquiv) p (0, 1) := by
-  set z := planeEquiv p
+    ⟪∇ (fun x : EuclideanSpace ℝ (Fin 2) => g₀ (x 0) * g₁ (x 1)) (euclideanPlaneEquivProdL.symm p),
+        ∇ φ (euclideanPlaneEquivProdL.symm p)⟫_ℝ =
+      g₀' p.1 * g₁ p.2 * fderiv ℝ (φ ∘ euclideanPlaneEquivProdL.symm) p (1, 0) +
+        g₀ p.1 * g₁' p.2 * fderiv ℝ (φ ∘ euclideanPlaneEquivProdL.symm) p (0, 1) := by
+  set z := euclideanPlaneEquivProdL.symm p
   have hG : HasFDerivAt (fun x : EuclideanSpace ℝ (Fin 2) => g₀ (x 0) * g₁ (x 1))
       (g₀ (z 0) • (g₁' (z 1) • EuclideanSpace.proj (𝕜 := ℝ) (1 : Fin 2)) +
         g₁ (z 1) • (g₀' (z 0) • EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin 2))) z := by
@@ -203,8 +182,9 @@ private theorem inner_gradient_planeEquiv {g₀ g₀' g₁ g₁' : ℝ → ℝ}
         (EuclideanSpace.proj (𝕜 := ℝ) (1 : Fin 2)).hasFDerivAt)).congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun x => ?_)
     simp
-  simp only [planeEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, planeEquiv_one_zero, planeEquiv_zero_one]
+  simp only [euclideanPlaneEquivProdL.symm.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, euclideanPlaneEquivProdL_symm_one_zero,
+    euclideanPlaneEquivProdL_symm_zero_one]
   rw [EuclideanSpace.inner_eq_star_dotProduct, dotProduct, Fin.sum_univ_two]
   simp only [gradient_apply_eq_fderiv_apply_single, hG.fderiv, star_trivial]
   simp [z]
@@ -212,15 +192,16 @@ private theorem inner_gradient_planeEquiv {g₀ g₀' g₁ g₁' : ℝ → ℝ}
 
 /-- The points `(a 0, y)`, `y ∈ [a 1, b 1]`, lie in the closure of the left side
 `{a 0} × (a 1, b 1)` of the rectangle. -/
-private theorem planeEquiv_mem_closure_leftSide {a b : Fin 2 → ℝ} (hab : a 1 < b 1) {y : ℝ}
-    (hy : y ∈ Icc (a 1) (b 1)) :
-    planeEquiv (a 0, y) ∈
+private theorem euclideanPlaneEquivProdL_symm_mem_closure_leftSide {a b : Fin 2 → ℝ}
+    (hab : a 1 < b 1) {y : ℝ} (hy : y ∈ Icc (a 1) (b 1)) :
+    euclideanPlaneEquivProdL.symm (a 0, y) ∈
       closure {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)} := by
-  have himage : planeEquiv '' ({a 0} ×ˢ Ioo (a 1) (b 1)) ⊆
+  have himage : euclideanPlaneEquivProdL.symm '' ({a 0} ×ˢ Ioo (a 1) (b 1)) ⊆
       {x : EuclideanSpace ℝ (Fin 2) | x 0 = a 0 ∧ x 1 ∈ Ioo (a 1) (b 1)} := by
     rintro _ ⟨q, ⟨hq1, hq2⟩, rfl⟩
     exact ⟨by simpa using hq1, by simpa using hq2⟩
-  refine closure_mono himage (image_closure_subset_closure_image planeEquiv.continuous ?_)
+  refine closure_mono himage
+    (image_closure_subset_closure_image euclideanPlaneEquivProdL.symm.continuous ?_)
   refine ⟨(a 0, y), ?_, rfl⟩
   rw [closure_prod_eq, closure_singleton, closure_Ioo hab.ne]
   exact ⟨rfl, hy⟩
@@ -263,8 +244,8 @@ private theorem inner_gradient_eq_of_mem_w1pVanishingOnSubmodule {a b : Fin 2 �
   have hvφ := W1p.value_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := 2)
     (le_top : boxDomain a b ≤ ⊤) φ
   -- Both pairings are integrals over the closed rectangle of `ℝ × ℝ`.
-  have hψ : ContDiff ℝ 1 ((φ : EuclideanSpace ℝ (Fin 2) → ℝ) ∘ planeEquiv) :=
-    (φ.contDiff.of_le (by exact_mod_cast le_top)).comp planeEquiv.contDiff
+  have hψ : ContDiff ℝ 1 ((φ : EuclideanSpace ℝ (Fin 2) → ℝ) ∘ euclideanPlaneEquivProdL.symm) :=
+    (φ.contDiff.of_le (by exact_mod_cast le_top)).comp euclideanPlaneEquivProdL.symm.contDiff
   have e1 : ⟪W1p.gradient u, W1p.gradient (W1p.restrictL le_top
       (W1p.ofTestFunctionₗ volume ⊤ 2 φ))⟫_ℝ =
         ∫ x in boxDomain a b, ⟪∇ G x, ∇ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x⟫_ℝ := by
@@ -275,12 +256,17 @@ private theorem inner_gradient_eq_of_mem_w1pVanishingOnSubmodule {a b : Fin 2 �
     rw [W1p.inner_value_eq_setIntegral]
     exact integral_congr_ae (by filter_upwards [hu, hvφ] with x h1 h2; rw [h1, h2])
   rw [e1, e2, setIntegral_boxDomain_eq, setIntegral_boxDomain_eq]
-  simp_rw [hG, inner_gradient_planeEquiv h₀ h₁]
+  simp_rw [hG, inner_gradient_euclideanPlaneEquivProdL_symm h₀ h₁]
+  -- The coordinates of `euclideanPlaneEquivProdL.symm p` are those of `p`.
+  have hp (p : ℝ × ℝ) : euclideanPlaneEquivProdL.symm p 0 = p.1 ∧
+      euclideanPlaneEquivProdL.symm p 1 = p.2 := by
+    simp
+  simp only [hp]
   refine setIntegral_Icc_mul_fderiv_add_eq h₀ h₀' h₁ h₁' hψ
     (Prod.mk_le_mk.2 ⟨(hab 0).le, (hab 1).le⟩) hb₀ ha₁ hb₁ fun y hy => ?_
   exact image_eq_zero_of_notMem_tsupport (f := (φ : EuclideanSpace ℝ (Fin 2) → ℝ))
-    (x := planeEquiv (a 0, y)) fun h =>
-      hφ.notMem_of_mem_left h (planeEquiv_mem_closure_leftSide (hab 1) hy)
+    (x := euclideanPlaneEquivProdL.symm (a 0, y)) fun h =>
+      hφ.notMem_of_mem_left h (euclideanPlaneEquivProdL_symm_mem_closure_leftSide (hab 1) hy)
 
 /-- The quarter-wave sine `sin ((2k + 1) π (x 0 - a 0) / (2 (b 0 - a 0)))`, times any function
 `χ (x 1)` vanishing at `a 1 - 1` and `b 1 + 1`, vanishes on the frontier of the rectangle
@@ -391,14 +377,6 @@ theorem exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq_boxDomain {a b : Fi
   set c₁ : ℝ := l * π / (b 1 - a 1) with hc₁
   have h0 := (sub_pos.2 (hab 0)).ne'
   have h1 := (sub_pos.2 (hab 1)).ne'
-  have hsin (c a t : ℝ) :
-      HasDerivAt (fun s => Real.sin (c * (s - a))) (c * Real.cos (c * (t - a))) t := by
-    convert (((hasDerivAt_id' t).sub_const a).const_mul c).sin using 1
-    ring
-  have hcos (c a t : ℝ) :
-      HasDerivAt (fun s => Real.cos (c * (s - a))) (-c * Real.sin (c * (t - a))) t := by
-    convert (((hasDerivAt_id' t).sub_const a).const_mul c).cos using 1
-    ring
   obtain ⟨u, hu, hval⟩ := exists_mem_w1pVanishingOnSubmodule_value_ae_eq_sin_mul_cos hab k c₁
   refine ⟨⟨u, hu⟩, hval.trans (Filter.EventuallyEq.of_eq (funext fun x => ?_)), fun v => ?_⟩
   · rw [hc₁]
@@ -406,8 +384,10 @@ theorem exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq_boxDomain {a b : Fi
   refine inner_gradient_eq_of_mem_w1pVanishingOnSubmodule hab (κ₀ := c₀ ^ 2) (κ₁ := c₁ ^ 2)
     (g₀' := fun t => c₀ * Real.cos (c₀ * (t - a 0)))
     (g₁' := fun t => -c₁ * Real.sin (c₁ * (t - a 1)))
-    (hsin c₀ (a 0)) (fun t => by convert (hcos c₀ (a 0) t).const_mul c₀ using 1; ring)
-    (hcos c₁ (a 1)) (fun t => by convert (hsin c₁ (a 1) t).const_mul (-c₁) using 1; ring)
+    (hasDerivAt_sin_mul_sub c₀ (a 0))
+    (fun t => by convert (hasDerivAt_cos_mul_sub c₀ (a 0) t).const_mul c₀ using 1; ring)
+    (hasDerivAt_cos_mul_sub c₁ (a 1))
+    (fun t => by convert (hasDerivAt_sin_mul_sub c₁ (a 1) t).const_mul (-c₁) using 1; ring)
     ?_ (by simp) ?_ hval v.property
   · -- `c₀ (b 0 - a 0) = k π + π / 2`, where the cosine vanishes.
     rw [show c₀ * (b 0 - a 0) = k * π + π / 2 by rw [hc₀]; field_simp,
@@ -429,8 +409,8 @@ theorem eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain {a b : F
     f = 0 := by
   set μ₀ := volume.restrict (Ioc (a 0) (b 0))
   set μ₁ := volume.restrict (Ioc (a 1) (b 1))
-  set e := planeEquiv.toHomeomorph.toMeasurableEquiv
-  have hmp := measurePreserving_planeEquiv_restrict a b
+  set e := euclideanPlaneEquivProd.symm
+  have hmp := measurePreserving_euclideanPlaneEquivProd_symm_restrict a b
   have : IsFiniteMeasure (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2)))) :=
     isFiniteMeasure_restrict.2 (isBounded_boxDomain a b).measure_lt_top.ne
   set s : ℕ → ℝ → ℝ := fun k t => Real.sin ((2 * k + 1) * π * (t - a 0) / (2 * (b 0 - a 0)))
@@ -473,17 +453,18 @@ private theorem exists_mem_boxDomain_sin_mul_cos_ne_zero {a b : Fin 2 → ℝ} (
   have h0 := sub_pos.2 (hab 0)
   have h1 := sub_pos.2 (hab 1)
   have hl : (0 : ℝ) < l + 1 := by positivity
-  refine ⟨planeEquiv (a 0 + (b 0 - a 0) / (2 * (2 * k + 1)), a 1 + (b 1 - a 1) / (4 * (l + 1))),
-    ?_, ?_⟩
+  refine ⟨euclideanPlaneEquivProdL.symm
+    (a 0 + (b 0 - a 0) / (2 * (2 * k + 1)), a 1 + (b 1 - a 1) / (4 * (l + 1))), ?_, ?_⟩
   · have hk' : (b 0 - a 0) / (2 * (2 * k + 1)) < b 0 - a 0 :=
       div_lt_self h0 (by nlinarith)
     have hl' : (b 1 - a 1) / (4 * (l + 1)) < b 1 - a 1 := div_lt_self h1 (by nlinarith)
     have hk0 : 0 < (b 0 - a 0) / (2 * (2 * k + 1)) := by positivity
     have hl0 : 0 < (b 1 - a 1) / (4 * (l + 1)) := by positivity
-    simp only [SetLike.mem_coe, mem_boxDomain, Fin.forall_fin_two, planeEquiv_apply_zero,
-      planeEquiv_apply_one, mem_Ioo]
+    simp only [SetLike.mem_coe, mem_boxDomain, Fin.forall_fin_two,
+      euclideanPlaneEquivProdL_symm_apply, Matrix.cons_val_zero, Matrix.cons_val_one, mem_Ioo]
     exact ⟨⟨by linarith, by linarith⟩, by linarith, by linarith⟩
-  · simp only [planeEquiv_apply_zero, planeEquiv_apply_one]
+  · simp only [euclideanPlaneEquivProdL_symm_apply, PiLp.toLp_apply, Matrix.cons_val_zero,
+      Matrix.cons_val_one]
     rw [show (2 * k + 1) * π * (a 0 + (b 0 - a 0) / (2 * (2 * k + 1)) - a 0) /
         (2 * (b 0 - a 0)) = π / 4 by field_simp; ring,
       show l * π * (a 1 + (b 1 - a 1) / (4 * (l + 1)) - a 1) / (b 1 - a 1) =
@@ -515,38 +496,25 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_boxDomain_left {a b : Fin 2 
             W1p.value (v : W1p volume (boxDomain a b) 2)⟫_ℝ) ↔
       ∃ k l : ℕ, kappa = ((2 * k + 1) * π / (2 * (b 0 - a 0))) ^ 2 + (l * π / (b 1 - a 1)) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_sin_mul_cos_and_inner_gradient_eq_boxDomain hab
-  constructor
-  · rintro ⟨u, hu0, hu⟩
-    by_contra hne
-    push Not at hne
-    refine hu0 (W1pVanishingOn.valueL_injective ?_)
-    rw [map_zero, W1pVanishingOn.valueL_apply]
-    refine eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain hab _ fun k l => ?_
-    -- `κ ⟪u, w k l⟫ = ∫ ∇u · ∇(w k l) = κₖₗ ⟪u, w k l⟫`, and `κ ≠ κₖₗ`.
-    have h1 := hu (w k l)
-    rw [real_inner_comm, hw k l u, real_inner_comm (W1p.value _)] at h1
-    have h2 : (kappa - (((2 * k + 1) * π / (2 * (b 0 - a 0))) ^ 2 +
-        (l * π / (b 1 - a 1)) ^ 2)) * ⟪W1p.value (u : W1p volume (boxDomain a b) 2),
-          W1p.value (w k l : W1p volume (boxDomain a b) 2)⟫_ℝ = 0 := by
-      linarith
-    rw [← (mul_eq_zero.1 h2).resolve_left (sub_ne_zero.2 (hne k l)), L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwv k l] with x hx
-    simp [hx, mul_comm]
-  · rintro ⟨k, l, rfl⟩
-    refine ⟨w k l, fun h => ?_, hw k l⟩
-    have hval : W1p.value (w k l : W1p volume (boxDomain a b) 2) = 0 := by
-      rw [← W1pVanishingOn.valueL_apply, h, map_zero]
-    obtain ⟨x, hx, hne⟩ := exists_mem_boxDomain_sin_mul_cos_ne_zero hab k l
-    have hc : Continuous fun y : EuclideanSpace ℝ (Fin 2) =>
-        Real.sin ((2 * k + 1) * π * (y 0 - a 0) / (2 * (b 0 - a 0))) *
-          Real.cos (l * π * (y 1 - a 1) / (b 1 - a 1)) := by fun_prop
-    refine hne (Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (boxDomain a b).isOpen
-      hc.continuousOn continuousOn_const hx)
-    filter_upwards [hwv k l, Lp.coeFn_zero ℝ 2
-      (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))))] with y h1 h2
-    rw [← h1, hval, h2]
-    rfl
+  refine (exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
+    (kappas := fun kl : ℕ × ℕ =>
+      ((2 * kl.1 + 1) * π / (2 * (b 0 - a 0))) ^ 2 + (kl.2 * π / (b 1 - a 1)) ^ 2)
+    (fun (kl : ℕ × ℕ) (x : EuclideanSpace ℝ (Fin 2)) =>
+      Real.sin ((2 * kl.1 + 1) * π * (x 0 - a 0) / (2 * (b 0 - a 0))) *
+      Real.cos (kl.2 * π * (x 1 - a 1) / (b 1 - a 1)))
+    (fun kl => w kl.1 kl.2) (fun kl => hwv kl.1 kl.2) (fun kl hval => ?_) (fun kl => hw kl.1 kl.2)
+    fun f hf => eq_zero_of_forall_setIntegral_mul_sin_mul_cos_eq_zero_boxDomain hab f
+      fun k l => hf (k, l)).trans Prod.exists
+  -- The mode is continuous and nonzero somewhere in the open rectangle, so its value is nonzero.
+  obtain ⟨x, hx, hne⟩ := exists_mem_boxDomain_sin_mul_cos_ne_zero hab kl.1 kl.2
+  have hc : Continuous fun y : EuclideanSpace ℝ (Fin 2) =>
+      Real.sin ((2 * kl.1 + 1) * π * (y 0 - a 0) / (2 * (b 0 - a 0))) *
+        Real.cos (kl.2 * π * (y 1 - a 1) / (b 1 - a 1)) := by fun_prop
+  refine hne (Measure.eqOn_open_of_ae_eq (μ := volume) ?_ (boxDomain a b).isOpen
+    hc.continuousOn continuousOn_const hx)
+  filter_upwards [hwv kl.1 kl.2, Lp.coeFn_zero ℝ 2
+    (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))))] with y h1 h2
+  rw [← h1, hval, h2, Pi.zero_apply]
 
 /-- **The first mixed eigenvalue of a rectangle with one Dirichlet side** is
 `(π / (2 (b 0 - a 0)))²`, the case `k = l = 0`, with eigenfunction

@@ -58,6 +58,8 @@ Small pieces of product-measure theory with no `L²` or inner-product content.
   majorant.
 * `TauCeti.mul_integral_le_integral_prod_of_forall` integrates a slicewise lower bound
   `c F x ≤ ∫ g (x, y) dy` over the first factor: `c ∫ F ≤ ∫ g` over the product measure.
+* `TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`: a system complete in one variable
+  passes its completeness to integrable functions of two variables, coefficient by coefficient.
 -/
 
 public section
@@ -329,6 +331,29 @@ theorem mul_integral_le_integral_prod_of_forall [SFinite μ] [SFinite ν] {F : �
     c * ∫ x, F x ∂μ ≤ ∫ p, g p ∂μ.prod ν := by
   rw [integral_prod _ hg, ← integral_const_mul]
   exact integral_mono (hF.const_mul c) hg.integral_prod_left h
+
+/-- **Completeness in the first variable of a product.** Let `s k`, `k` in a countable type, be
+functions such that every `μ`-integrable `g` with `∫ g (s k) dμ = 0` for every `k` vanishes
+`μ`-almost everywhere. If `G` is integrable on `α × β` and for every `k` the coefficient
+`y ↦ ∫ G (t, y) s k t dμ(t)` vanishes for `ν`-almost every `y`, then `G` vanishes almost
+everywhere: for almost every `y` the slice `G (·, y)` is orthogonal to every `s k`, so it vanishes,
+and Tonelli concludes. -/
+theorem ae_eq_zero_prod_of_forall_integral_mul_eq_zero [SFinite μ] [SFinite ν] {ι : Type*}
+    [Countable ι] {s : ι → α → ℝ}
+    (hs : ∀ g : α → ℝ, Integrable g μ → (∀ k, ∫ t, g t * s k t ∂μ = 0) → g =ᵐ[μ] 0)
+    {G : α × β → ℝ} (hG : Integrable G (μ.prod ν))
+    (h : ∀ k, (fun y => ∫ t, G (t, y) * s k t ∂μ) =ᵐ[ν] 0) :
+    G =ᵐ[μ.prod ν] 0 := by
+  have hslice : ∀ᵐ y ∂ν, (fun t => G (t, y)) =ᵐ[μ] 0 := by
+    filter_upwards [ae_all_iff.2 h, hG.prod_left_ae] with y hy hyi
+    exact hs _ hyi hy
+  have hlin : ∫⁻ z, ‖G z‖ₑ ∂μ.prod ν = 0 := by
+    rw [lintegral_prod_symm _ hG.aestronglyMeasurable.eNorm]
+    refine lintegral_eq_zero_of_ae_eq_zero ?_
+    filter_upwards [hslice] with y hy
+    exact lintegral_eq_zero_of_ae_eq_zero (by filter_upwards [hy] with t ht; simp [ht])
+  filter_upwards [(lintegral_eq_zero_iff' hG.aestronglyMeasurable.eNorm).1 hlin] with z hz
+  simpa using hz
 
 /-- The integral of `f s t` over a region `{(s, t) | s ∈ S t}` is bounded by the iterated
 integral of `‖f s t‖`: `|∫ ∫_{s ∈ S t} f s t ds dt| ≤ ∫∫ |f s t| ds dt`.
