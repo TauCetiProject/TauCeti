@@ -465,6 +465,8 @@ def contractedProductCompIsoOfSection {D : Type*} [Category D] (u : D ⥤ C)
         (contractedProduct_map_contractedProductMk _ _ _).symm
 
 /-- The isomorphism `contractedProductCompIsoOfSection` sends `x` over `u d` to `[s d, x]`. -/
+-- Apply before `Functor.comp_obj` and `Functor.op_obj` normalize the types of the component.
+@[simp↓]
 lemma contractedProductCompIsoOfSection_hom_app_apply {D : Type*} [Category D] (u : D ⥤ C)
     (s : ∀ d : D, P.sheaf.obj.obj (op (u.obj d)))
     (hs : ∀ ⦃d d' : D⦄ (f : d ⟶ d'), P.sheaf.obj.map (u.map f).op (s d') = s d) (d : Dᵒᵖ)

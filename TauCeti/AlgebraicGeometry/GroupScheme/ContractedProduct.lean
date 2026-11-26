@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicGeometry.GroupScheme.Torsor
 public import TauCeti.AlgebraicGeometry.Morphisms.Affine.BaseChange
+public import TauCeti.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Yoneda
 
 /-!
 # Contracted products of torsors under a group scheme
@@ -63,16 +65,6 @@ public noncomputable section
 open CategoryTheory Opposite AlgebraicGeometry
 
 universe w u
-
-/-- The comparison `uniqueUpToIso` of two representing objects carries the representation `e'` to
-the representation `e`. -/
-private lemma CategoryTheory.Functor.RepresentableBy.homEquiv_comp_uniqueUpToIso_inv
-    {C : Type*} [Category C] {F : Cᵒᵖ ⥤ Type*} {Y Y' : C} (e : F.RepresentableBy Y)
-    (e' : F.RepresentableBy Y') {T : C} (x : T ⟶ Y') :
-    e.homEquiv (x ≫ (e.uniqueUpToIso e').inv) = e'.homEquiv x := by
-  have h : e.homEquiv (e.uniqueUpToIso e').inv = e'.homEquiv (𝟙 Y') :=
-    e.homEquiv.apply_symm_apply _
-  rw [e.homEquiv_comp, h, ← e'.homEquiv_comp, Category.comp_id]
 
 namespace CategoryTheory.Sheaf.Torsor
 
@@ -148,6 +140,7 @@ def pullbackContractedProductSchemeIsoOfSection {T : Over S} (ξ : P.sheaf.obj.o
 /-- The isomorphism `pullbackContractedProductSchemeIsoOfSection ξ` sends a point `y` of the base
 change of `X` to the point of `P ×^G X` corresponding to the class `[ξ, x]`, for `x` the point of
 `X` adjoint to `y`. -/
+@[simp]
 lemma contractedProductSchemeRepresentableBy_homEquiv_pullbackIsoOfSection_inv {T : Over S}
     (ξ : P.sheaf.obj.obj (op T)) {T' : Over T.left}
     (y : T' ⟶ (Over.pullback T.hom).obj X) :
@@ -193,22 +186,22 @@ trivial torsor, the sheaf of points of `G` acting on itself, with `X` is isomorp
 def contractedProductSchemeTrivialIso :
     (trivial ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G)).contractedProductScheme X ≅
       X :=
-  ((trivial _).contractedProductSchemeRepresentableBy X).uniqueUpToIso
-    ((uliftYonedaMulActionSheafRepresentableBy G X).ofIso
-      ((sheafToPresheaf _ _).mapIso (contractedProductTrivialIso _).symm))
+  (trivial _).contractedProductSchemeIsoOfSection X
+    ⟨fun U ↦ (1 : ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G).obj.obj U),
+      fun f ↦ map_one (((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G).obj.map f).hom⟩
 
 /-- The isomorphism `contractedProductSchemeTrivialIso` sends a point `x : T ⟶ X` to the point of
-`G ×^G X` corresponding to the image of `x` under the inverse of `contractedProductTrivialIso`, the
-class `[1, x]`. -/
+`G ×^G X` corresponding to the class `[1, x]`. -/
 @[simp]
 lemma contractedProductSchemeRepresentableBy_homEquiv_comp_trivialIso_inv {T : Over S}
     (x : T ⟶ X) :
     ((trivial _).contractedProductSchemeRepresentableBy X).homEquiv
         (x ≫ (contractedProductSchemeTrivialIso G X).inv) =
-      (contractedProductTrivialIso _).inv.hom.app (op T)
+      contractedProductMk (P := trivial _)
+        (1 : ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G).obj.obj (op T))
         ((uliftYonedaMulActionSheafSectionEquiv G X (op T)).symm x) := by
-  rw [contractedProductSchemeTrivialIso, Functor.RepresentableBy.homEquiv_comp_uniqueUpToIso_inv]
-  exact congrArg _ (uliftYonedaMulActionSheafRepresentableBy_homEquiv G X x)
+  exact (trivial _).contractedProductSchemeRepresentableBy_homEquiv_comp_isoOfSection_inv
+    (G := G) X _ x
 
 end CategoryTheory.Sheaf.Torsor
 
@@ -260,27 +253,6 @@ open scoped MonObj Obj
 
 variable {S S' : Scheme.{u}} (p : S' ⟶ S)
 
-/-- The transpose along `Over.map p ⊣ Over.pullback p` of `g • y`, for points `g` and `y` of the
-base changes of `M` and `Y`, is the action of the transpose of `g` on the transpose of `y`. -/
-private lemma mapPullbackAdj_homEquiv_symm_smul {M Y : Over S} [MonObj M] [ModObj M Y]
-    {T : Over S'} (g : T ⟶ (Over.pullback p).obj M) (y : T ⟶ (Over.pullback p).obj Y) :
-    letI := (Over.pullback p).modObjObj M Y
-    ((Over.mapPullbackAdj p).homEquiv _ _).symm (g • y) =
-      ((Over.mapPullbackAdj p).homEquiv _ _).symm g •
-        ((Over.mapPullbackAdj p).homEquiv _ _).symm y := by
-  let := (Over.pullback p).modObjObj M Y
-  have h : ((Over.mapPullbackAdj p).homEquiv _ _).symm
-      (lift g y ≫ Functor.LaxMonoidal.μ (Over.pullback p) M Y) =
-        lift (((Over.mapPullbackAdj p).homEquiv _ _).symm g)
-          (((Over.mapPullbackAdj p).homEquiv _ _).symm y) := by
-    ext1
-    · rw [lift_fst, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
-        Functor.Monoidal.μ_fst, lift_fst]
-    · rw [lift_snd, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
-        Functor.Monoidal.μ_snd, lift_snd]
-  rw [Hom.smul_def, Hom.smul_def, Functor.modObjObj_smul, ← Category.assoc,
-    Adjunction.homEquiv_naturality_right_symm, h]
-
 variable {G : Grp (Over S)} {P : Over S} [ModObj G.X P]
   (h : (Scheme.fppfTopology.over S).IsTorsor G P) (X : Over S) [ModObj G.X X]
 
@@ -313,15 +285,6 @@ private def groupPoint (G : Grp (Over S)) (T : (Over S')ᵒᵖ)
   (uliftYonedaGrpObjEquiv G _).symm (((Over.mapPullbackAdj p).homEquiv _ _).symm
     (uliftYonedaGrpObjEquiv _ T g))
 
-/-- The transpose of a point of the base change of `P` over `T`, a point of `P` over the scheme
-`T` over `S`. -/
-private def torsorPoint {T : (Over S')ᵒᵖ} (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
-    (h.toTorsor.{w}).sheaf.obj.obj ((Over.map p).op.obj T) :=
-  letI : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
-    (Over.pullback p).modObjObj G.X P
-  (h.toTorsorSectionEquiv _).symm (((Over.mapPullbackAdj p).homEquiv _ _).symm
-    ((isTorsor_pullback_obj p h).toTorsorSectionEquiv T a))
-
 /-- The transpose of a point of the base change of `X` over `T`, a point of `X` over the scheme
 `T` over `S`. -/
 private def mulActionPoint {T : (Over S')ᵒᵖ}
@@ -333,18 +296,6 @@ private def mulActionPoint {T : (Over S')ᵒᵖ}
   (uliftYonedaMulActionSheafSectionEquiv G X _).symm
     (((Over.mapPullbackAdj p).homEquiv _ _).symm
       (uliftYonedaMulActionSheafSectionEquiv _ _ T b))
-
-private lemma torsorPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
-    (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
-    torsorPoint p h ((baseChangeTorsor.{w} p h).sheaf.obj.map f a) =
-      (h.toTorsor.{w}).sheaf.obj.map ((Over.map p).op.map f) (torsorPoint p h a) := by
-  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
-    (Over.pullback p).modObjObj G.X P
-  apply (h.toTorsorSectionEquiv _).injective
-  rw [torsorPoint, torsorPoint, IsTorsor.toTorsorSectionEquiv_map, Equiv.apply_symm_apply,
-    Equiv.apply_symm_apply]
-  exact (congrArg _ (IsTorsor.toTorsorSectionEquiv_map (isTorsor_pullback_obj p h) f a)).trans
-    (Adjunction.homEquiv_naturality_left_symm ..)
 
 private lemma mulActionPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
     (b : (baseChangeMulActionSheaf.{w} p (G := G) X).sheaf.obj.obj T) :
@@ -359,19 +310,6 @@ private lemma mulActionPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
   exact (congrArg _ (uliftYonedaMulActionSheafSectionEquiv_map _ _ f b)).trans
     (Adjunction.homEquiv_naturality_left_symm ..)
 
-private lemma torsorPoint_smul {T : (Over S')ᵒᵖ}
-    (g : ((Scheme.fppfTopology.over S').uliftYonedaGrp.{w}.obj
-      ((Over.pullback p).mapGrp.obj G)).obj.obj T)
-    (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
-    torsorPoint p h (g • a) = groupPoint p G T g • torsorPoint p h a := by
-  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
-    (Over.pullback p).modObjObj G.X P
-  apply (h.toTorsorSectionEquiv _).injective
-  rw [torsorPoint, torsorPoint, groupPoint, IsTorsor.toTorsorSectionEquiv_smul,
-    Equiv.apply_symm_apply, MulEquiv.apply_symm_apply, Equiv.apply_symm_apply]
-  exact (congrArg _ (IsTorsor.toTorsorSectionEquiv_smul (isTorsor_pullback_obj p h) g a)).trans
-    (mapPullbackAdj_homEquiv_symm_smul p _ _)
-
 private lemma mulActionPoint_smul {T : (Over S')ᵒᵖ}
     (g : ((Scheme.fppfTopology.over S').uliftYonedaGrp.{w}.obj
       ((Over.pullback p).mapGrp.obj G)).obj.obj T)
@@ -383,7 +321,59 @@ private lemma mulActionPoint_smul {T : (Over S')ᵒᵖ}
   rw [mulActionPoint, mulActionPoint, groupPoint, uliftYonedaMulActionSheafSectionEquiv_smul,
     Equiv.apply_symm_apply, MulEquiv.apply_symm_apply, Equiv.apply_symm_apply]
   exact (congrArg _ (uliftYonedaMulActionSheafSectionEquiv_smul _ _ g b)).trans
-    (mapPullbackAdj_homEquiv_symm_smul p _ _)
+    (Over.mapPullbackAdj_homEquiv_symm_smul p _ _)
+
+/-- Transport the common point transpose through the section equivalences of the torsors
+of points. This avoids unfolding either functor of points across module boundaries. -/
+private def torsorPoint {T : (Over S')ᵒᵖ} (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
+    (h.toTorsor.{w}).sheaf.obj.obj ((Over.map p).op.obj T) :=
+  letI : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+    (Over.pullback p).modObjObj G.X P
+  (h.toTorsorSectionEquiv _).symm
+    (uliftYonedaMulActionSheafSectionEquiv.{w} G P _
+      (mulActionPoint p ((uliftYonedaMulActionSheafSectionEquiv _ _ T).symm
+        ((isTorsor_pullback_obj p h).toTorsorSectionEquiv T a))))
+
+private lemma torsorPoint_map {T T' : (Over S')ᵒᵖ} (f : T ⟶ T')
+    (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
+    torsorPoint p h ((baseChangeTorsor.{w} p h).sheaf.obj.map f a) =
+      (h.toTorsor.{w}).sheaf.obj.map ((Over.map p).op.map f) (torsorPoint p h a) := by
+  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+    (Over.pullback p).modObjObj G.X P
+  apply (h.toTorsorSectionEquiv _).injective
+  simp only [torsorPoint, IsTorsor.toTorsorSectionEquiv_map, Equiv.apply_symm_apply]
+  rw [← uliftYonedaMulActionSheafSectionEquiv_map, ← mulActionPoint_map]
+  congr 2
+  apply (uliftYonedaMulActionSheafSectionEquiv _ _ _).injective
+  simp only [Equiv.apply_symm_apply]
+  exact ((isTorsor_pullback_obj p h).toTorsorSectionEquiv_map f a).trans (by
+    simpa only [Equiv.apply_symm_apply] using
+      (uliftYonedaMulActionSheafSectionEquiv_map (J := Scheme.fppfTopology.over S')
+        ((Over.pullback p).mapGrp.obj G) ((Over.pullback p).obj P) f
+        ((uliftYonedaMulActionSheafSectionEquiv.{w} (J := Scheme.fppfTopology.over S')
+          ((Over.pullback p).mapGrp.obj G) ((Over.pullback p).obj P) T).symm
+          ((isTorsor_pullback_obj p h).toTorsorSectionEquiv T a))).symm)
+
+private lemma torsorPoint_smul {T : (Over S')ᵒᵖ}
+    (g : ((Scheme.fppfTopology.over S').uliftYonedaGrp.{w}.obj
+      ((Over.pullback p).mapGrp.obj G)).obj.obj T)
+    (a : (baseChangeTorsor.{w} p h).sheaf.obj.obj T) :
+    torsorPoint p h (g • a) = groupPoint p G T g • torsorPoint p h a := by
+  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+    (Over.pullback p).modObjObj G.X P
+  apply (h.toTorsorSectionEquiv _).injective
+  simp only [torsorPoint, IsTorsor.toTorsorSectionEquiv_smul, Equiv.apply_symm_apply]
+  rw [← uliftYonedaMulActionSheafSectionEquiv_smul, ← mulActionPoint_smul]
+  congr 2
+  apply (uliftYonedaMulActionSheafSectionEquiv _ _ _).injective
+  simp only [Equiv.apply_symm_apply]
+  exact ((isTorsor_pullback_obj p h).toTorsorSectionEquiv_smul g a).trans (by
+    simpa only [Equiv.apply_symm_apply] using
+      (uliftYonedaMulActionSheafSectionEquiv_smul (J := Scheme.fppfTopology.over S')
+        ((Over.pullback p).mapGrp.obj G) ((Over.pullback p).obj P) g
+        ((uliftYonedaMulActionSheafSectionEquiv.{w} (J := Scheme.fppfTopology.over S')
+          ((Over.pullback p).mapGrp.obj G) ((Over.pullback p).obj P) T).symm
+          ((isTorsor_pullback_obj p h).toTorsorSectionEquiv T a))).symm)
 
 variable (X) [HasWeakSheafify (Scheme.fppfTopology.over S) (Type (max u w))]
   [(Scheme.fppfTopology.over S).WEqualsLocallyBijective (Type (max u w))]
@@ -454,6 +444,43 @@ def pullbackContractedProductSchemeIso [IsAffineHom X.hom] :
       (((baseChangeTorsor.{w} p h).contractedProductSchemeRepresentableBy
         ((Over.pullback p).obj X)).ofIso
           ((sheafToPresheaf _ _).mapIso (asIso (baseChangeDesc p h X))))
+
+/-- The inverse base-change comparison sends the class `[a, b]` of points of the base changes
+to the class of their adjoint transposes, viewed as points over `S`. -/
+@[simp]
+lemma contractedProductSchemeRepresentableBy_homEquiv_pullbackContractedProductSchemeIso_inv
+    [IsAffineHom X.hom] {T : Over S'}
+    (a : T ⟶ (Over.pullback p).obj P) (b : T ⟶ (Over.pullback p).obj X) :
+    letI : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+      (Over.pullback p).modObjObj G.X P
+    letI : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj X) :=
+      (Over.pullback p).modObjObj G.X X
+    ((h.toTorsor.{w}).contractedProductSchemeRepresentableBy X).homEquiv
+      (((Over.mapPullbackAdj p).homEquiv _ _).symm
+        ((((isTorsor_pullback_obj p h).toTorsor.{w}).contractedProductSchemeRepresentableBy
+          ((Over.pullback p).obj X)).homEquiv.symm
+            (Sheaf.Torsor.contractedProductMk
+              (((isTorsor_pullback_obj p h).toTorsorSectionEquiv (op T)).symm a)
+              ((uliftYonedaMulActionSheafSectionEquiv _ _ (op T)).symm b)) ≫
+          (pullbackContractedProductSchemeIso p h X).inv)) =
+      Sheaf.Torsor.contractedProductMk
+        ((h.toTorsorSectionEquiv _).symm (((Over.mapPullbackAdj p).homEquiv _ _).symm a))
+        ((uliftYonedaMulActionSheafSectionEquiv G X _).symm
+          (((Over.mapPullbackAdj p).homEquiv _ _).symm b)) := by
+  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj P) :=
+    (Over.pullback p).modObjObj G.X P
+  let : ModObj ((Over.pullback p).mapGrp.obj G).X ((Over.pullback p).obj X) :=
+    (Over.pullback p).modObjObj G.X X
+  rw [← Adjunction.representableByComp_homEquiv_apply, pullbackContractedProductSchemeIso,
+    Functor.RepresentableBy.homEquiv_comp_uniqueUpToIso_inv]
+  refine (Functor.RepresentableBy.ofIso_homEquiv_apply ..).trans ?_
+  rw [Equiv.apply_symm_apply]
+  exact (Sheaf.Torsor.contractedProductDesc_hom_app_contractedProductMk _ _ _ _).trans
+    (by
+      simp only [ObjectProperty.homMk_hom]
+      erw [TypeCat.ofHom_apply]
+      simp only [torsorPoint, mulActionPoint, Equiv.apply_symm_apply, Functor.op_obj]
+      rfl)
 
 end BaseChange
 

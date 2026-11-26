@@ -275,21 +275,21 @@ lemma toTorsor_sheaf : h.toTorsor.sheaf = J.uliftYoneda.{w}.obj X :=
 /-- The sections over `T` of the torsor of points of `X` are the morphisms `T ⟶ X`. -/
 noncomputable def toTorsorSectionEquiv (T : Cᵒᵖ) :
     (toTorsor.{w} h).sheaf.obj.obj T ≃ (unop T ⟶ X) :=
-  Equiv.ulift
+  uliftYonedaMulActionSheafSectionEquiv G X T
 
 /-- Restriction of sections of the torsor of points is precomposition. -/
 @[simp]
 lemma toTorsorSectionEquiv_map {T T' : Cᵒᵖ} (f : T ⟶ T') (x : (toTorsor.{w} h).sheaf.obj.obj T) :
     h.toTorsorSectionEquiv T' ((toTorsor.{w} h).sheaf.obj.map f x) =
       f.unop ≫ h.toTorsorSectionEquiv T x :=
-  (rfl)
+  uliftYonedaMulActionSheafSectionEquiv_map G X f x
 
 /-- A point `g : T ⟶ G` acts on a point `x : T ⟶ X` by the action of `G` on `X`. -/
 @[simp]
 lemma toTorsorSectionEquiv_smul {T : Cᵒᵖ} (g : (J.uliftYonedaGrp.{w}.obj G).obj.obj T)
     (x : (toTorsor.{w} h).sheaf.obj.obj T) :
     h.toTorsorSectionEquiv T (g • x) = uliftYonedaGrpObjEquiv G T g • h.toTorsorSectionEquiv T x :=
-  (rfl)
+  uliftYonedaMulActionSheafSectionEquiv_smul G X g x
 
 variable (h' : J.IsTorsor G Y)
 
