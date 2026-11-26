@@ -40,8 +40,8 @@ almost complex structures for which every Floer trajectory is regular.
   of finite codimension. Hence finitely many variations `Y₁, …, Y_N` already make
   `(ξ, c) ↦ D_u ξ + ∑ cᵢ Yᵢ(u) (∂t u - X_H(u))` onto
   (`TauCeti.SymplecticForm.exists_surjective_floerSobolevOperator_coprod`), by
-  `Submodule.sup_eq_top_of_dense` and `Submodule.exists_finset_subset_sup_span_eq_top`. This is
-  the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
+  `Submodule.sup_eq_top_of_dense` and `LinearMap.exists_surjective_coprod_fintypeLinearCombination`.
+  This is the universal operator of the family `J + ∑ cᵢ Yᵢ`, in the form taken by the parametric
   transversality theorem of `TauCeti.Analysis.Fredholm.Parametric`.
 
 ## References
@@ -257,17 +257,12 @@ theorem exists_surjective_floerSobolevOperator_coprod (ω : SymplecticForm F)
     filter_upwards [hm.coeFn_toLp] with z hz
     rw [hz]
   -- Finitely many variations already span a complement of the closed range of `D_u`.
-  obtain ⟨t, hts, htop⟩ := Submodule.exists_finset_subset_sup_span_eq_top (by
+  obtain ⟨N, y, hyS, hsurj⟩ := LinearMap.exists_surjective_coprod_fintypeLinearCombination (by
     simpa only [← sup_assoc, sup_idem] using Submodule.sup_eq_top_of_dense hD.isClosed_range hdense)
-  choose! Y hY using fun y (hy : y ∈ t) ↦ hts hy
-  set e := t.equivFin
-  refine ⟨t.card, fun i ↦ Y (e.symm i), fun i ↦ e.symm i, fun i ↦ hY _ (e.symm i).property, ?_⟩
-  have hrange : Set.range (fun i ↦ ((e.symm i : t) : Lp F 2 stripMeasure)) = t := by
-    ext y
-    exact ⟨fun ⟨i, hi⟩ ↦ hi ▸ (e.symm i).property, fun hy ↦ ⟨e ⟨y, hy⟩, by simp⟩⟩
-  refine LinearMap.range_eq_top.1 ?_
-  rw [ContinuousLinearMap.range_coprod, ← htop, ← hrange, ← Fintype.range_linearCombination]
-  rw [LinearMap.coe_toContinuousLinearMap]
+  choose Y hY using hyS
+  refine ⟨N, Y, y, hY, ?_⟩
+  rwa [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coprod,
+    LinearMap.coe_toContinuousLinearMap]
 
 end Surjective
 
