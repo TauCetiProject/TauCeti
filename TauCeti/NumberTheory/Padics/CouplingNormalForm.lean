@@ -120,7 +120,9 @@ theorem le_order_subst_coupling_pow {p : ℕ} {pr : ℕ → Φ → Φ} {τ : Typ
   calc (((p ^ e + 1) * p ^ j : ℕ) : ℕ∞)
       = p ^ j • ((p ^ e + 1 : ℕ) : ℕ∞) := by rw [nsmul_eq_mul, Nat.cast_mul, mul_comm]
     _ ≤ p ^ j • ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z).order :=
-        nsmul_le_nsmul_right ((le_order_coupling e).trans (order_le_order_subst hZ _)) _
+        nsmul_le_nsmul_right
+          ((le_order_coupling e).trans
+            (order_le_order_subst (hasSubst_of_constantCoeff_zero hZ) hZ _)) _
     _ ≤ _ := le_order_pow (p ^ j)
 
 /-- `Γ_e ^ p ^ j` has order at least `(p ^ e + 1) * p ^ j`. -/
@@ -204,7 +206,7 @@ theorem coeff_subst_couplingSum_eq_sum [TopologicalSpace R] [T2Space R] {p : ℕ
   have hzero : coeff d
       ((couplingSum p S pr l - ∑ x ∈ s, l x.1 x.2 • coupling p pr x.1 ^ p ^ x.2).subst Z) = 0 :=
     coeff_of_lt_order ((Nat.cast_lt.2 (Nat.lt_succ_self d.degree)).trans_le
-      (hord0.trans (order_le_order_subst hZ _)))
+      (hord0.trans (order_le_order_subst hsub hZ _)))
   rw [← coe_substAlgHom hsub, map_sub, map_sum, map_sub, map_sum, sub_eq_zero] at hzero
   simpa only [coe_substAlgHom, subst_smul hsub, subst_pow hsub] using hzero
 
@@ -265,7 +267,7 @@ theorem norm_coeff_subst_couplingSum_le [IsUltrametricDist R] (hp : 1 < p) {τ :
     _ = ‖coeff d ((coupling p pr e : MvPowerSeries (Φ × c) R).subst Z ^ p ^ j)‖ := one_mul _
     _ ≤ r := ?_
   obtain h_le | h_lt := le_or_gt e (p.log B)
-  · exact MvPowerSeries.norm_coeff_pow_le_of_degree_le hr0 hr1 (hΓ e he h_le)
+  · exact MvPowerSeries.norm_coeff_pow_le_of_degree_le hr1 (hΓ e he h_le)
       (pow_ne_zero j hp0.ne') hd
   · have hdeg : d.degree < (p ^ e + 1) * p ^ j :=
       lt_of_lt_of_le

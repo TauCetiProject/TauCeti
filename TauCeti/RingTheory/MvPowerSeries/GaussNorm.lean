@@ -102,12 +102,13 @@ theorem norm_coeff_pow_succ_mul_prod_le (hc : 0 ≤ c) {g : MvPowerSeries σ R}
     rw [pow_succ g, pow_succ ρ]
     exact norm_coeff_mul_mul_prod_le hc (fun m hm ↦ ih fun m' hm' ↦ hg m' (hm'.trans hm)) hg
 
-/-- If `0 ≤ r ≤ 1` and every coefficient of `g` through degree `B` has norm at most `r`, then every
+/-- If `r ≤ 1` and every coefficient of `g` through degree `B` has norm at most `r`, then every
 coefficient of `g ^ j` (`j ≠ 0`) through degree `B` has norm at most `r`. -/
-theorem norm_coeff_pow_le_of_degree_le {g : MvPowerSeries σ R} {r : ℝ} (hr0 : 0 ≤ r)
+theorem norm_coeff_pow_le_of_degree_le {g : MvPowerSeries σ R} {r : ℝ}
     (hr1 : r ≤ 1) {B : ℕ} (hg : ∀ d : σ →₀ ℕ, d.degree ≤ B → ‖coeff d g‖ ≤ r) {j : ℕ}
     (hj : j ≠ 0) {d : σ →₀ ℕ} (hd : d.degree ≤ B) :
     ‖coeff d (g ^ j)‖ ≤ r := by
+  have hr0 : 0 ≤ r := (norm_nonneg (coeff 0 g)).trans (hg 0 (by simp))
   rcases Nat.exists_eq_succ_of_ne_zero hj with ⟨k, rfl⟩
   have h1 := norm_coeff_pow_succ_mul_prod_le (c := fun _ : σ ↦ (1 : ℝ))
     (fun _ ↦ zero_le_one) (g := g) (n := d) (ρ := r) (fun m hm ↦ by
