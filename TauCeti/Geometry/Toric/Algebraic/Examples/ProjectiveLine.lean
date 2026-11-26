@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Algebraic.Examples.AffineRay
-public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.Weights
+public import TauCeti.Geometry.Toric.Algebraic.Fan.Divisor.GradedCone
 
 /-!
 # The fan of the projective line
@@ -20,6 +20,9 @@ and `∞`. Identifying a character `u` with the integer `u 1`, the divisor of `u
 `(u 1, -u 1)`, and the character weights of the divisor with coefficients `a₊` at `0` and `a₋` at
 `∞` are the integers in `[-a₊, a₋]`. For `d • D₋` these are `0, 1, …, d`, the exponents of the
 monomial sections of `O(d)`; they are empty exactly when the degree `a₊ + a₋` is negative.
+Likewise the graded cone of that divisor consists of the pairs `(u, j)` with
+`-j a₊ ≤ u 1 ≤ j a₋`; for `D₋` it is the cone `0 ≤ u 1 ≤ j`, whose degree-`j` points are the
+weights of the sections of `O(j)`.
 
 ## References
 
@@ -279,5 +282,30 @@ theorem divisorWeights_projectiveLineFan_nonempty_iff (a : projectiveLineFan.Ray
     simp only [AddMonoidHom.smul_apply, Pi.evalAddMonoidHom_apply, Pi.one_apply, smul_eq_mul,
       mul_one]
     omega
+
+/-- On the projective line, identifying a character `u` with `u 1`, the graded cone of the divisor
+with coefficients `a₊` at `0` and `a₋` at `∞` consists of the pairs `(u, j)` with
+`-j a₊ ≤ u 1 ≤ j a₋`. -/
+theorem mk_mem_gradedDivisorCone_projectiveLineFan {R : Type*} [CommRing R] [PartialOrder R]
+    [IsOrderedRing R] (a : projectiveLineFan.Ray → ℤ) (u : (Fin 1 → ℤ) →+ R) (j : R) :
+    (u, j) ∈ projectiveLineFan.gradedDivisorCone R a ↔
+      -(j * a projectiveLinePositiveRay) ≤ u 1 ∧ u 1 ≤ j * a projectiveLineNegativeRay := by
+  rw [Fan.mem_gradedDivisorCone]
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun h rho ↦ ?_⟩
+  · simpa [neg_le_iff_add_nonneg] using h projectiveLinePositiveRay
+  · simpa [neg_add_eq_sub] using h projectiveLineNegativeRay
+  · rcases projectiveLineFan_ray_eq_or rho with rfl | rfl
+    · simpa [neg_le_iff_add_nonneg] using h.1
+    · simpa [neg_add_eq_sub] using h.2
+
+/-- On the projective line, the graded cone of the divisor `D₋ = ∞` consists of the pairs `(u, j)`
+with `0 ≤ u 1 ≤ j`. -/
+theorem mk_mem_gradedDivisorCone_projectiveLineFan_of_eq {R : Type*} [CommRing R]
+    [PartialOrder R] [IsOrderedRing R] {a : projectiveLineFan.Ray → ℤ}
+    (hpos : a projectiveLinePositiveRay = 0) (hneg : a projectiveLineNegativeRay = 1)
+    (u : (Fin 1 → ℤ) →+ R) (j : R) :
+    (u, j) ∈ projectiveLineFan.gradedDivisorCone R a ↔ 0 ≤ u 1 ∧ u 1 ≤ j := by
+  rw [mk_mem_gradedDivisorCone_projectiveLineFan, hpos, hneg]
+  simp
 
 end TauCeti.Toric
