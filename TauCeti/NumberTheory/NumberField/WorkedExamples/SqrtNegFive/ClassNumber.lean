@@ -40,6 +40,7 @@ This file specializes the class-number interfaces of the model `QuadraticAlgebra
 * `TauCeti.NumberField.SqrtNegFive.classNumber_eq_two`: the class number of `ℚ(√-5)` is `2`.
 * `TauCeti.NumberField.SqrtNegFive.isDedekindDomain`: `ℤ[√-5]` is a Dedekind domain.
 * `TauCeti.NumberField.SqrtNegFive.natCard_classGroup_eq_two`: `ℤ[√-5]` has two ideal classes.
+* `TauCeti.NumberField.SqrtNegFive.finite_classGroup`: the class group of `ℤ[√-5]` is finite.
 * `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_omega_sub_one`,
   `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_integralSqrt_sub_one`: the prime
   above `2` is not principal, in `ℤ[√-5]` and in the ring of integers.
@@ -95,6 +96,11 @@ theorem classNumber_eq_two : classNumber (QuadraticAlgebra ℚ ((-5 : ℤ) : ℚ
 theorem natCard_classGroup_eq_two : Nat.card (ClassGroup (QuadraticAlgebra ℤ (-5) 0)) = 2 :=
   (natCard_classGroup_eq_classNumber_of_mod_four_ne_one squarefree_neg_five (by decide)).trans
     classNumber_eq_two
+
+/-- `ℤ[√-5]` has finitely many ideal classes, namely two
+(`TauCeti.NumberField.SqrtNegFive.natCard_classGroup_eq_two`). -/
+instance finite_classGroup : Finite (ClassGroup (QuadraticAlgebra ℤ (-5) 0)) :=
+  Nat.finite_of_card_ne_zero (by simp [natCard_classGroup_eq_two])
 
 /-- **The prime of `ℤ[√-5]` above `2` is not principal**: the maximal ideal `(2, √-5 - 1)` has no
 single generator. -/

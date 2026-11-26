@@ -168,9 +168,9 @@ theorem splitK0RingEquiv_classOf :
 @[simp]
 theorem splitK0RingEquiv_of :
     splitK0RingEquiv (SplitK0.of.{0} (of (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo)) =
-      TrivSqZeroExt.inl 1 + TrivSqZeroExt.inr 1 := by
+      1 + TrivSqZeroExt.inr 1 := by
   rw [splitK0_of_eq_classOf_add _ 1, Nat.cast_one, map_add, map_one, splitK0RingEquiv_classOf,
-    TrivSqZeroExt.inl_one, add_comm]
+    add_comm]
 
 /-- **The reduced class `[𝔭] - [A]` squares to zero** in the ring `K₀(ℤ[√-5])`. -/
 theorem classOf_mul_classOf :
@@ -197,8 +197,6 @@ theorem torsion_splitK0_eq_zmultiples :
     AddCommGroup.torsion
         (SplitK0.{0} (finiteProjectiveModules (QuadraticAlgebra ℤ (-5) 0)).FullSubcategory) =
       AddSubgroup.zmultiples (classOf (QuadraticAlgebra ℤ (-5) 0) primeAboveTwo 1) := by
-  have : Finite (ClassGroup (QuadraticAlgebra ℤ (-5) 0)) :=
-    Nat.finite_of_card_ne_zero (by simp [natCard_classGroup_eq_two])
   rw [torsion_eq_range_idealClassHom, AddMonoidHom.range_eq_map,
     ← idealClassHom_mk0 ⟨primeAboveTwo, primeAboveTwo.mem_nonZeroDivisors⟩,
     ← AddMonoidHom.map_zmultiples]
