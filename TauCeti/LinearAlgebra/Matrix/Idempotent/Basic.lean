@@ -307,10 +307,10 @@ theorem idempotentEquivalent_pi_iff {J : Type*} {B : J → Type*}
   refine ⟨fun h j ↦ h.map (Pi.evalNonUnitalRingHom B j), fun h ↦ ?_⟩
   choose x y hxy hyx hex hxf hfy hye using h
   -- The witnesses over the product are assembled from the component witnesses.
-  have hx (j : J) : (Matrix.piEquiv.symm x).map (· j) = x j :=
-    congr_fun (Matrix.piEquiv.apply_symm_apply x) j
-  have hy (j : J) : (Matrix.piEquiv.symm y).map (· j) = y j :=
-    congr_fun (Matrix.piEquiv.apply_symm_apply y) j
+  have hx (j : J) : (Matrix.piEquiv.symm x).map (· j) = x j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
+  have hy (j : J) : (Matrix.piEquiv.symm y).map (· j) = y j := by
+    rw [← Matrix.piEquiv_apply, Equiv.apply_symm_apply]
   refine ⟨Matrix.piEquiv.symm x, Matrix.piEquiv.symm y, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;>
     exact Matrix.mul_eq_of_forall_map_apply fun j ↦ by simp only [*]
 
