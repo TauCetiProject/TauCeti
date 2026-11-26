@@ -66,7 +66,7 @@ public section
 noncomputable section
 
 open Bundle MeasureTheory Set Filter Topology
-open scoped ENNReal NNReal Manifold ContDiff
+open scoped ENNReal Manifold ContDiff
 
 namespace TauCeti.LpSection
 
@@ -115,8 +115,8 @@ private theorem continuous_compBundleMapₗᵢ_ofCompactlySupported [IsFiniteMea
     simpa [neg_one_smul, ← sub_eq_add_neg, Function.comp_def] using
       (ContinuousFiberNorm.continuous_norm (F := F') (E := E')).comp hsub
   -- The constant relating uniform bounds to `Lᵖ` norms.
-  set C : ℝ := ((measureUnivNNReal ν ^ p.toReal⁻¹ : ℝ≥0) : ℝ)
-  have hC : 0 ≤ C := NNReal.coe_nonneg _
+  set C : ℝ := (measureUnivNNReal ν : ℝ) ^ p.toReal⁻¹
+  have hC : 0 ≤ C := by positivity
   set δ := ε / (C + 1)
   have hδ : 0 < δ := div_pos hε (by positivity)
   -- By compactness of `N`, the difference is uniformly small for `g` near `g₀`.
