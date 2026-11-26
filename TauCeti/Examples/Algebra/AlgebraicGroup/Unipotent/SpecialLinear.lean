@@ -19,10 +19,11 @@ vector fixed, hence fixed by every `k`-point; but the transvection `1 + E₀₁`
 
 Over `ℚ`, the point `diag(2, 1/2)` of `SL₂` (Mathlib's `Matrix.SpecialLinearGroup.diag2`)
 satisfies that `diag(2, 1/2) - 1` is invertible
-(`TauCeti.Examples.UnipotentSpecialLinear.isUnit_diag_two_half_sub_one`). Hence this `ℚ`-point
-fixes no nonzero vector of the standard representation `ℚ²`, which directly witnesses that `SL₂`
-is not unipotent, whereas the absence of nontrivial characters of `SL₂` does not. The general
-theorem uses the transvection instead, because it works over every field.
+(`TauCeti.Examples.UnipotentSpecialLinear.isUnit_diag_two_half_sub_one`); this invertibility is
+all the file proves about this point. Informally (not formalized here), it means this `ℚ`-point
+fixes no nonzero vector of the standard representation `ℚ²`, which would also witness that `SL₂`
+is not unipotent, whereas the absence of nontrivial characters of `SL₂` would not. The theorem
+above is proved with the transvection instead, because that works over every field.
 -/
 
 public section
@@ -62,9 +63,8 @@ theorem not_unipotent_specialLinear {n : ℕ} (hn : 2 ≤ n) :
 
 /-- For the point `diag(2, 1/2)` of `SL₂(ℚ)`, the matrix `diag(2, 1/2) - 1` is invertible.
 
-Hence this `ℚ`-point fixes no nonzero vector of the standard representation `ℚ²`, which directly
-witnesses that `SL₂` is not unipotent, whereas the absence of nontrivial characters of `SL₂` does
-not. -/
+Informal remark (not formalized here): consequently this `ℚ`-point fixes no nonzero vector of
+the standard representation `ℚ²`, so it too would witness that `SL₂` is not unipotent. -/
 theorem isUnit_diag_two_half_sub_one :
     IsUnit ((Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero : Matrix (Fin 2) (Fin 2) ℚ) -
       1) := by
