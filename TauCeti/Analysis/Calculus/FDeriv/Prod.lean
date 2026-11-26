@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -77,6 +78,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   `(y, t)`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `DifferentiableAt.isInvertible_fderiv_comp_inr_iff`: for a differentiable scalar-target map,
+  invertibility of the right partial Fréchet derivative is equivalent to nonvanishing of the
+  slice derivative.
 * `TauCeti.differentiableAt_comp_snd_iff` and `TauCeti.fderiv_comp_snd`: a function of the
   second variable alone is differentiable exactly when the function is, and its derivative is the
   derivative of the function read on the second component, with no differentiability assumption.
@@ -194,6 +198,16 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- For a differentiable scalar-target map `f : E × 𝕜 → 𝕜`, the right Fréchet partial derivative
+`fderiv 𝕜 f u ∘L .inr 𝕜 E 𝕜` is invertible if and only if the slice derivative
+`deriv (fun t ↦ f (u.1, t)) u.2` is nonzero. -/
+theorem _root_.DifferentiableAt.isInvertible_fderiv_comp_inr_iff {f : E × 𝕜 → 𝕜} {u : E × 𝕜}
+    (hf : DifferentiableAt 𝕜 f u) :
+    (fderiv 𝕜 f u ∘L ContinuousLinearMap.inr 𝕜 E 𝕜).IsInvertible ↔
+      deriv (fun t ↦ f (u.1, t)) u.2 ≠ 0 := by
+  rw [← fderiv_slice_right hf, ← toSpanSingleton_deriv,
+    ContinuousLinearMap.isInvertible_toSpanSingleton_iff]
 
 /-- The derivative of a function on a product is the sum of the derivatives of its two slices,
 applied to the two components of the direction. -/
