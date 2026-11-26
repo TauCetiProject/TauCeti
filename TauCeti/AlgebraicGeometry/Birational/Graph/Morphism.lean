@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Birational.Graph.Basic
-public import TauCeti.AlgebraicGeometry.Birational.RationalMap.ValuationRing
 
 /-!
 # The graph of a morphism
