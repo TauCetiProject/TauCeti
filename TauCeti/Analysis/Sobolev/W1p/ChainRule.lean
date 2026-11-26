@@ -204,9 +204,7 @@ private theorem hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ (hF : ContDiff 
   have hv := W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) hVΩ phi
   have hg : ⇑(W1p.gradient (W1p.restrictL hVΩ (W1p.ofTestFunctionₗ mu Omega p phi)))
       =ᵐ[mu.restrict (V : Set E)] fun x => ∇ (phi : E → ℝ) x :=
-    (W1p.gradient_restrictL_ae hVΩ _).trans (ae_restrict_of_ae_restrict_of_subset
-      (SetLike.coe_subset_coe.2 hVΩ) (by
-        rw [W1p.gradient_ofTestFunctionₗ]; exact gradientTestFunctionLp_apply_ae p _))
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae hVΩ phi
   refine (((hasWeakFDerivOn_comp_testFunction (mu := mu) hF phi).mono hVΩ).congr_ae
     ?_).congr_ae_deriv ?_
   · filter_upwards [hv] with x hx; rw [hx]

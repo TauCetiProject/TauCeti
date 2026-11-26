@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Quotient
 public import TauCeti.Geometry.Manifold.Quotient.BundleMap
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Pullback.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Tensor
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.ExteriorPower
 

@@ -51,12 +51,17 @@ case.
   supremum of the invariants of the compact open subgroups.
 * `Representation.le_smoothVectors_iff`: `V^∞` is the largest smooth subrepresentation.
 * `Representation.smoothVectors_eq_top_iff`: `V^∞ = V` exactly when the representation is smooth.
+* `Representation.isSmooth_of_iSup_range_eq_top`: a representation spanned by the images of
+  intertwining maps out of smooth representations is smooth.
 * `Representation.IsSmooth.of_injective`, `Representation.IsSmooth.of_surjective`: smoothness
   passes to subrepresentations and quotients, and equivalent representations are smooth together
   (`Representation.Equiv.isSmooth_iff`).
 * `Representation.IsSmooth.comp`, `Representation.isSmooth_ofQuotient_iff`: smoothness passes
   to the restriction along a continuous homomorphism (in particular to subgroups), and descends
   iff it holds on `G ⧸ S` for a trivially acting normal subgroup `S`.
+* `Representation.instIsSmoothProd`, `Representation.instIsSmoothPi`,
+  `Representation.instIsSmoothDirectSum`: binary products, finite products and direct sums of
+  smooth representations are smooth.
 * `Representation.isSmooth_ofMulAction_iff`: over a nontrivial semiring, the permutation
   representation on `A[X]` is smooth exactly when every point of `X` has an open stabilizer, as
   for `X = G ⧸ U` with `U` open (`Representation.isSmooth_ofMulAction_quotient`).
@@ -172,6 +177,17 @@ instance instIsSmoothPi {ι : Type*} [Finite ι] {M : ι → Type*}
     rw [stabilizer_pi, Subgroup.coe_iInf]
     exact isOpen_iInter_of_finite fun i ↦ IsSmooth.isOpen_stabilizer (x i)
 
+/-- The direct sum of a family of smooth representations is smooth: the stabilizer of a vector is
+the intersection of the stabilizers of its finitely many nonzero components. -/
+instance instIsSmoothDirectSum {ι : Type*} {V : ι → Type*} [∀ i, AddCommMonoid (V i)]
+    [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i)) [∀ i, IsSmooth (ρ i)] :
+    IsSmooth (directSum ρ) where
+  isOpen_stabilizer x := by
+    classical
+    rw [stabilizer_directSum_eq_iInf_support]
+    simp only [Subgroup.coe_iInf]
+    exact x.support.finite_toSet.isOpen_biInter fun i _ ↦ IsSmooth.isOpen_stabilizer (x i)
+
 /-- Every representation of a discrete group is smooth. -/
 instance [DiscreteTopology G] : IsSmooth ρ :=
   ⟨fun _ ↦ isOpen_discrete _⟩
@@ -251,6 +267,19 @@ theorem isSmooth_iff_forall_mem_smoothVectors : IsSmooth ρ ↔ ∀ v, v ∈ ρ.
 /-- Every vector of a smooth representation is smooth. -/
 theorem IsSmooth.mem_smoothVectors [IsSmooth ρ] (v : V) : v ∈ ρ.smoothVectors :=
   IsSmooth.isOpen_stabilizer v
+
+/-- **A representation spanned by smooth images is smooth.** If the ranges of a family of
+intertwining maps out of smooth representations span `W`, then `W` is smooth. -/
+theorem isSmooth_of_iSup_range_eq_top {κ : Type*} {V : κ → Type*} [∀ k, AddCommMonoid (V k)]
+    [∀ k, Module A (V k)] {ρ : ∀ k, Representation A G (V k)} [∀ k, IsSmooth (ρ k)]
+    (f : ∀ k, (ρ k).IntertwiningMap σ)
+    (hf : ⨆ k, LinearMap.range (f k).toLinearMap = ⊤) : IsSmooth σ := by
+  refine isSmooth_iff_forall_mem_smoothVectors.2 fun w ↦ ?_
+  have hle : ⨆ k, LinearMap.range (f k).toLinearMap ≤ σ.smoothVectors.toSubmodule :=
+    iSup_le fun k ↦ by
+      rintro _ ⟨v, rfl⟩
+      exact (f k).apply_mem_smoothVectors (IsSmooth.mem_smoothVectors v)
+  exact hle (hf ▸ Submodule.mem_top)
 
 /-- `V^∞` is smooth. -/
 instance : IsSmooth ρ.smoothVectors.toRepresentation :=

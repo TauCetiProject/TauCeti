@@ -19,12 +19,22 @@ A compact exhaustion also gives a countable criterion for local finiteness and f
 on compact sets. This criterion is useful when checking these properties simultaneously
 almost surely for a random measure.
 
+Finiteness on compact sets passes to smaller measures, a sum of two measures is finite on
+compact sets exactly when both summands are, and multiplication by a nonzero nonnegative real
+both preserves and reflects it.
+
 ## Main results
 
 * `MeasureTheory.measure_Iic_lt_top`
 * `MeasureTheory.measure_Ici_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
+* `MeasureTheory.isFiniteMeasureOnCompacts_of_le`: finiteness on compact sets passes to smaller
+  measures.
+* `MeasureTheory.isFiniteMeasureOnCompacts_add_iff`: a sum is finite on compact sets if and only
+  if both summands are.
+* `MeasureTheory.isFiniteMeasureOnCompacts_smul_nnreal_iff`: scaling by a nonzero scalar
+  preserves and reflects finiteness on compact sets.
 -/
 
 public section
@@ -59,6 +69,33 @@ instance isLocallyFiniteMeasureSMulCoeNNReal {α : Type*} [TopologicalSpace α]
     [MeasurableSpace α] (μ : Measure α) [IsLocallyFiniteMeasure μ] (c : ℝ≥0) :
     IsLocallyFiniteMeasure ((c : ℝ≥0∞) • μ) :=
   μ.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
+
+/-- The sum of two measures that are finite on compact sets is finite on compact sets. -/
+instance IsFiniteMeasureOnCompacts.add {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    (μ ν : Measure α) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
+    IsFiniteMeasureOnCompacts (μ + ν) :=
+  ⟨fun _ hK ↦ by simp [hK.measure_lt_top]⟩
+
+/-- A measure below a measure that is finite on compact sets is finite on compact sets. -/
+theorem isFiniteMeasureOnCompacts_of_le {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    {μ : Measure α} (ν : Measure α) [IsFiniteMeasureOnCompacts ν] (h : μ ≤ ν) :
+    IsFiniteMeasureOnCompacts μ :=
+  ⟨fun _ hK ↦ (h _).trans_lt hK.measure_lt_top⟩
+
+/-- A sum of two measures is finite on compact sets if and only if both summands are. -/
+theorem isFiniteMeasureOnCompacts_add_iff {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    {μ ν : Measure α} :
+    IsFiniteMeasureOnCompacts (μ + ν) ↔ IsFiniteMeasureOnCompacts μ ∧ IsFiniteMeasureOnCompacts ν :=
+  ⟨fun _ ↦ ⟨isFiniteMeasureOnCompacts_of_le (μ + ν) (Measure.le_add_right le_rfl),
+    isFiniteMeasureOnCompacts_of_le (μ + ν) (Measure.le_add_left le_rfl)⟩,
+    fun ⟨_, _⟩ ↦ inferInstance⟩
+
+/-- Scaling by a nonzero nonnegative real preserves and reflects finiteness on compact sets. -/
+theorem isFiniteMeasureOnCompacts_smul_nnreal_iff {α : Type*} [TopologicalSpace α]
+    [MeasurableSpace α] {μ : Measure α} {c : ℝ≥0} (hc : c ≠ 0) :
+    IsFiniteMeasureOnCompacts (c • μ) ↔ IsFiniteMeasureOnCompacts μ := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  simpa [smul_smul, inv_mul_cancel₀ hc] using IsFiniteMeasureOnCompacts.smul_nnreal (c • μ) c⁻¹
 
 variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
   {m : MeasurableSpace α} {μ : Measure α} [IsLocallyFiniteMeasure μ] {a : α}

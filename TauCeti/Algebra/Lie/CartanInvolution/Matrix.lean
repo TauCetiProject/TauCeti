@@ -25,12 +25,16 @@ for `X ∈ 𝔤₀` the adjoint of `ad X` for this inner product is `ad Xᴴ`, s
 `-B(X, θ Y) = tr(ad X ∘ ad Yᴴ)` and `-B(X, θ X) = tr(ad X ∘ (ad X)*)`, which is nonnegative and
 vanishes only when `ad X = 0`, that is, when `X` is central.
 
-The applications to `𝔰𝔬(p, q)` and `𝔰𝔭(2n, ℝ)` are in `TauCeti.Algebra.Lie.Orthogonal.Cartan` and
+The applications to `𝔰𝔬(p, q)`, `𝔰𝔲(p, q)` and `𝔰𝔭(2n, ℝ)` are in
+`TauCeti.Algebra.Lie.Orthogonal.Cartan`, `TauCeti.Algebra.Lie.IndefiniteUnitary.Cartan` and
 `TauCeti.Algebra.Lie.Symplectic.Cartan`.
 
 ## Main results
 
 * `TauCeti.reTraceForm_lie_apply`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`.
+* `LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff`,
+  `LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff`: for `θ X = -Xᴴ`, `𝔨` is the
+  skew-Hermitian and `𝔭` the Hermitian elements of `𝔤₀`.
 * `LieSubalgebra.killingForm_restrictNegConjTranspose`: `B(X, θ Y) = -tr(ad X ∘ ad Yᴴ)`.
 * `LieSubalgebra.isCartanInvolution_restrictNegConjTranspose_iff`: `X ↦ -Xᴴ` is a Cartan
   involution of a real Lie subalgebra closed under conjugate transpose exactly when its centre is
@@ -57,9 +61,8 @@ variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 /-- The adjoint of `ad X` for `Re tr(X Yᴴ)` is `ad Xᴴ`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`. -/
 theorem reTraceForm_lie_apply (X Y Z : Matrix n n 𝕜) :
     reTraceForm 𝕜 n n ⁅X, Y⁆ Z = reTraceForm 𝕜 n n Y ⁅Xᴴ, Z⁆ := by
-  simp only [reTraceForm_apply, Ring.lie_def, conjTranspose_sub, conjTranspose_mul,
-    conjTranspose_conjTranspose, sub_mul, mul_sub, trace_sub, Matrix.mul_assoc]
-  rw [trace_mul_comm X, Matrix.mul_assoc]
+  simp only [reTraceForm_eq_frobenius_real_inner, frobenius_real_inner_eq_re_inner (𝕜 := 𝕜),
+    frobenius_inner_lie_left]
 
 end TauCeti
 
@@ -69,6 +72,17 @@ open TauCeti
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
+
+/-- The fixed subalgebra `𝔨` of `θ X = -Xᴴ` consists of the skew-Hermitian elements. -/
+theorem mem_fixedSubalgebra_restrictNegConjTranspose_iff {X : L} :
+    X ∈ (L.restrictNegConjTranspose hL).toLieHom.fixedSubalgebra ↔
+      (X : Matrix n n 𝕜)ᴴ = -(X : Matrix n n 𝕜) := by
+  simp [LieHom.mem_fixedSubalgebra, Subtype.ext_iff, neg_eq_iff_eq_neg]
+
+/-- The `-1`-eigenspace `𝔭` of `θ X = -Xᴴ` consists of the Hermitian elements. -/
+theorem mem_cartanP_restrictNegConjTranspose_iff {X : L} :
+    X ∈ (L.restrictNegConjTranspose hL).cartanP ↔ (X : Matrix n n 𝕜)ᴴ = (X : Matrix n n 𝕜) := by
+  simp [LieEquiv.mem_cartanP, Subtype.ext_iff]
 
 /-- The Killing form twisted by `θ X = -Xᴴ` is minus the trace pairing of `ad X` and `ad Yᴴ`:
 `B(X, θ Y) = -tr(ad X ∘ ad Yᴴ)`. -/

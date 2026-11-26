@@ -198,6 +198,13 @@ theorem zero_harmonicFactor (x : mixedSpace K) :
 theorem harmonicFactor_one (t : ContinuousInfinityType K) : t.harmonicFactor 1 = 1 := by
   classical simp [harmonicFactor_def]
 
+/-- When the total harmonic degree vanishes, the harmonic polynomial is the constant `1`. -/
+theorem harmonicFactor_eq_one_of_harmonicDegree_eq_zero (t : ContinuousInfinityType K)
+    (h : t.harmonicDegree = 0) (x : mixedSpace K) : t.harmonicFactor x = 1 := by
+  classical
+  obtain ⟨hr, hc⟩ := t.harmonicDegree_eq_zero_iff.mp h
+  simp [harmonicFactor_def, hr, hc, TauCeti.complexHarmonicMonomial_zero]
+
 /-- `harmonicFactor` is completely multiplicative on the commutative ring `mixedSpace K`. -/
 theorem harmonicFactor_mul (t : ContinuousInfinityType K) (x z : mixedSpace K) :
     t.harmonicFactor (x * z) = t.harmonicFactor x * t.harmonicFactor z := by

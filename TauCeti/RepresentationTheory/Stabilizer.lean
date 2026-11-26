@@ -33,7 +33,9 @@ and subset stabilizers across standard constructions on representations:
 * restriction along a group homomorphism (`Representation.stabilizer_comp` and
   `Representation.map_stabilizer_comp_of_surjective`), trivial and subsingleton representations,
   binary and arbitrary products (`Representation.stabilizer_prod`, `Representation.stabilizer_pi`,
-  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`);
+  `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`), and kernels of tensor
+  products and Hom representations (`Representation.ker_inf_ker_le_ker_tprod`,
+  `Representation.ker_inf_ker_le_ker_linHom`);
 * permutation and left regular representations (`Representation.stabilizer_ofMulAction_single`,
   `Representation.finite_stabilizer_leftRegular`) and trivial subgroup restrictions
   (`Representation.isTrivial_comp_subtype_iff` and
@@ -69,11 +71,16 @@ equals `ρ.stabilizer v` for a single general-position vector `v ∈ U`, via sub
 * `Representation.Equiv.stabilizer_apply`
 * `Representation.stabilizer_prod`, `Representation.stabilizer_pi`, and
   `Representation.stabilizer_pi_ofMulAction_quotient_basepoint`
+* `Representation.stabilizer_directSum`, `Representation.stabilizer_directSum_eq_iInf_support`:
+  stabilizers in direct sums, where only the finitely many nonzero components of a vector
+  constrain its stabilizer.
 * `Subrepresentation.le_stabilizer_quotient_mk`
 * `Representation.stabilizer_ofMulAction_single` and `Representation.finite_stabilizer_leftRegular`
 * `Representation.isTrivial_comp_subtype_iff` and
   `Representation.le_stabilizer_of_isTrivial_comp_subtype`
 * `Representation.mem_invariants_comp_subtype_iff`
+* `Representation.le_stabilizer_ofMulAction`
+* `Representation.le_stabilizer_dual`
 * `Representation.orbitMap_smul`, `Representation.orbitMap_injective`,
   `Representation.range_orbitMap`
 * `Representation.biInf_stabilizer_span`: pointwise stabilizer of `Submodule.span R s`.
@@ -170,6 +177,29 @@ theorem stabilizer_pi {ι : Type*} {M : ι → Type*} [∀ i, AddCommMonoid (M i
   ext g
   simp [Subgroup.mem_iInf, funext_iff]
 
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its components. -/
+@[simp]
+theorem stabilizer_directSum {ι : Type*} {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] (ρ : ∀ i, Representation A G (V i))
+    (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i, (ρ i).stabilizer (x i) := by
+  ext g
+  simp [mem_stabilizer, DirectSum.ext_iff]
+
+/-- The stabilizer of a vector of a direct sum of a family is the intersection of the stabilizers
+of its finitely many nonzero components. -/
+theorem stabilizer_directSum_eq_iInf_support {ι : Type*} [DecidableEq ι] {V : ι → Type*}
+    [∀ i, AddCommMonoid (V i)] [∀ i, Module A (V i)] [∀ i (v : V i), Decidable (v ≠ 0)]
+    (ρ : ∀ i, Representation A G (V i)) (x : DirectSum ι V) :
+    (directSum ρ).stabilizer x = ⨅ i ∈ x.support, (ρ i).stabilizer (x i) := by
+  rw [stabilizer_directSum]
+  refine le_antisymm (le_iInf₂ fun i _ ↦ iInf_le _ i) (le_iInf fun i ↦ ?_)
+  by_cases hi : i ∈ x.support
+  · exact iInf₂_le i hi
+  · rw [DFinsupp.notMem_support_iff.1 hi]
+    exact fun g _ ↦ mem_stabilizer.2 (map_zero _)
+
 section MulAction
 
 variable {X : Type*} [MulAction G X]
@@ -201,6 +231,19 @@ theorem stabilizer_pi_ofMulAction_quotient_basepoint [Nontrivial A] {ι : Type*}
   simp only [stabilizer_pi, stabilizer_ofMulAction_single _ one_ne_zero,
     MulAction.stabilizer_quotient]
 
+/-- A subgroup fixing every point of `X` fixes every vector of the permutation representation on
+`A[X]`. -/
+theorem le_stabilizer_ofMulAction {U : Subgroup G}
+    (h : ∀ x : X, U ≤ MulAction.stabilizer G x) (v : MonoidAlgebra A X) :
+    U ≤ (ofMulAction A G X).stabilizer v := by
+  intro g hg
+  induction v using MonoidAlgebra.induction_linear with
+  | zero => exact mem_stabilizer.2 (map_zero _)
+  | add f₁ f₂ h₁ h₂ =>
+    exact mem_stabilizer.2 (by rw [map_add, mem_stabilizer.1 h₁, mem_stabilizer.1 h₂])
+  | single x r =>
+    exact mem_stabilizer.2 (by rw [ofMulAction_single, MulAction.mem_stabilizer_iff.1 (h x hg)])
+
 end MulAction
 
 /-- **Every nonzero vector in the left regular representation has finite stabilizer.** -/
@@ -231,6 +274,32 @@ theorem le_stabilizer_of_isTrivial_comp_subtype (ρ : Representation A G V) (H :
   (ρ.isTrivial_comp_subtype_iff H).mp ‹_› v
 
 end Semiring
+
+section CommSemiring
+
+variable {A G V : Type*} [CommSemiring A] [Group G] [AddCommMonoid V] [Module A V]
+  {ρ : Representation A G V}
+
+/-- A subgroup fixing every vector fixes every linear form in the dual representation. -/
+theorem le_stabilizer_dual {U : Subgroup G} (h : ∀ v, U ≤ ρ.stabilizer v)
+    (f : Module.Dual A V) : U ≤ ρ.dual.stabilizer f := fun g hg ↦
+  mem_stabilizer.2 <| LinearMap.ext fun v ↦ by
+    simp only [dual_apply, Module.Dual.transpose_apply, LinearMap.comp_apply,
+      mem_stabilizer.1 (h v (inv_mem hg))]
+
+/-- An element acting trivially on both factors acts trivially on their tensor product. -/
+theorem ker_inf_ker_le_ker_tprod {W : Type*} [AddCommMonoid W] [Module A W]
+    (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.tprod σ).ker :=
+  fun g hg ↦ by simp [MonoidHom.mem_ker.mp hg.1, MonoidHom.mem_ker.mp hg.2]
+
+/-- An element acting trivially on both modules acts trivially on their Hom representation. -/
+theorem ker_inf_ker_le_ker_linHom {W : Type*} [AddCommMonoid W] [Module A W]
+    (ρ : Representation A G V) (σ : Representation A G W) : ρ.ker ⊓ σ.ker ≤ (ρ.linHom σ).ker :=
+  fun g hg ↦ by
+    ext f x
+    simp [linHom_apply, MonoidHom.mem_ker.mp hg.2, MonoidHom.mem_ker.mp (ρ.ker.inv_mem hg.1)]
+
+end CommSemiring
 
 section CommRing
 

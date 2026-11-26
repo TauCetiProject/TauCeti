@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SpecialOrthogonal
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Basic
 
 /-!
 # Orthonormal frames adapted to a unit section
@@ -141,7 +141,8 @@ private theorem exists_trivialization_of_correction (e : Trivialization F (π F 
       simp only [e.orthonormalFrameBundle_symm_apply' cF, op_one, one_smul, mem_sectionFrames_iff,
         frame_smul_apply, proj_smul, unop_op, hcv y hy, LinearIsometryEquiv.apply_symm_apply])
     hU hc hx
-  exact ⟨t, ht ▸ hx, fun g p hp ↦ hteq g p (ht ▸ hp)⟩
+  exact ⟨t, ht ▸ hx, fun g p hp ↦
+    SMulMemIff.apply_smul_eq_of_apply_mk_eq fun hgp ↦ hteq g p hgp (ht ▸ hp)⟩
 
 /-- **The frames adapted to a continuous unit section are locally trivial.** For a bundle of rank
 `N` with continuous fibre norms, a continuous section `σ` of unit vectors and a unit vector `v₀`

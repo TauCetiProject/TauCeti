@@ -75,6 +75,16 @@ theorem simplyConnectedWeylWordProd_append (l l' : List (Fin t.rank)) :
       t.simplyConnectedWeylWordProd ht l * t.simplyConnectedWeylWordProd ht l' := by
   simp [simplyConnectedWeylWordProd]
 
+/-- The abstract Weyl-group element spelled by a node word is the product of the corresponding
+pinned simple reflections. -/
+theorem simplyConnectedWeylWordProd_eq_prod_map (l : List (Fin t.rank)) :
+    t.simplyConnectedWeylWordProd ht l =
+      (l.map fun i =>
+        RootPairing.weylGroup.ofIdx (t.simplyConnectedRootDatum ht)
+          (t.simpleIndex ht i)).prod := by
+  rw [simplyConnectedWeylWordProd, RootPairing.Base.wordProd_def, List.map_map]
+  simp only [Function.comp_def, coe_simpleSupportEquivSimplyConnectedBase_apply]
+
 /-- Multiplying the simple reflections indexed by a Bourbaki-node word transported along
 `simpleSupportEquivSimplyConnectedBase` recovers `simplyConnectedWeylWordProd`. -/
 @[simp]
