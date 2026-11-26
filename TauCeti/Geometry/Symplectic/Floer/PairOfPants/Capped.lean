@@ -702,6 +702,15 @@ theorem contDiff_cappedComparisonPerturbation_apply {n : ℕ∞} (hH : ∀ q, Pe
     (contDiff_fst.comp contDiff_snd)).prodMk
       (contDiff_fst.prodMk (contDiff_snd.comp contDiff_snd)))).clm_apply contDiff_const
 
+/-- The components of a member `R` of the comparison family, read in the plane chart, are `C^n`
+jointly in the real coordinates of `ℂ` and the target point, for `C^n` Hamiltonians on a vector
+space. -/
+theorem contDiff_cappedComparisonPerturbation_equivRealProdCLM {n : ℕ∞}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (R : ℝ) (v : ℂ) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × M ↦
+      cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm p.1) p.2 v :=
+  (contDiff_cappedComparisonPerturbation_apply hH hHs v).comp (contDiff_const.prodMk contDiff_id)
+
 end SmoothNormed
 
 end TauCeti.Floer

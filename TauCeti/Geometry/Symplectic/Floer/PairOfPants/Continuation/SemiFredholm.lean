@@ -67,23 +67,6 @@ namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
-/-- Beyond a height `R ≥ 2 + ∑_q |L_q|` on every end, past every neck and collar, the components of
-the pair-of-pants perturbation with continuation necks are those of the pair-of-pants
-perturbation of the outer Hamiltonians. -/
-private theorem pairOfPantsContinuationPerturbation_components_eq {M : Type*}
-    {G H : Puncture → ℝ → M → ℝ}
-    {L : Puncture → ℝ} {R : ℝ} (hR : 2 + ∑ r, |L r| ≤ R) (q : Puncture) {z : ℝ × ℝ}
-    (hz : R ≤ (positiveEndCoord q z).1) :
-    (fun x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1) =
-        (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
-      (fun x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x
-          Complex.I) =
-        fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I := by
-  rw [fst_positiveEndCoord] at hz
-  have h (y : M) := pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_sum_le
-    (G := G) (H := H) (hR.trans hz) y
-  exact ⟨funext fun y ↦ congrArg (· 1) (h y), funext fun y ↦ congrArg (· Complex.I) (h y)⟩
-
 /-- **The semi-Fredholm estimate along a pair of pants with continuation necks.** Let `G_q` and
 `H_q` be jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, the inner and
 outer Hamiltonians of the pair-of-pants perturbation with continuation necks at the positions `L_q`
