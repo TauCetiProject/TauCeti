@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CutoffFrame
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.TestFunction
-import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 
 /-!
 # Classical pseudodifferential operators between vector bundles
@@ -242,6 +241,21 @@ theorem sectionEntry_apply
       χ x • ℓ (t'.continuousLinearMapAt ℂ x (P (f • t.cutoffFrameSection ψ hψ v) x)) :=
   by simp [sectionEntry]
 
+/-- The matrix entries of an operator `s ↦ Q (c s) σ`, for a scalar operator `Q`, a map `c` from
+the sections of `E` to functions which is linear over functions and a section `σ` of `F`, are `Q`
+multiplied on both sides by smooth functions. -/
+theorem sectionEntry_smulRight
+    (Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    {c : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hc : ∀ (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) s, c (f • s) = f * c s)
+    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ ((Q ∘ₗ c).smulRight σ) =
+      LinearMap.mulLeft ℂ (t'.cutoffFrameCoeff χ hχ ℓ σ) ∘ₗ Q ∘ₗ
+        LinearMap.mulLeft ℂ (c (t.cutoffFrameSection ψ hψ v)) := by
+  ext f x
+  simp [hc, mul_comm, mul_assoc]
+
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
     {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
@@ -404,15 +418,7 @@ theorem exists_quantizeSchwartzValue_eq_apply_chartCutoffSection [FiniteDimensio
           (P (t.chartCutoffSection he hE ψ u) (e.symm y)) := by
   -- A cutoff `ρ` on `M`, supported in the chart source and equal to `1` over the supports of `φ`
   -- and `ψ`, gives cut-off frames which are frames there.
-  obtain ⟨χ, hχ⟩ := TestFunction.exists_eventually_eq_one_nhdsSet_tsupport_union φ ψ
-  set ρ := e.cutoffPullback he χ 1
-  have hρs : tsupport ρ ⊆ e.source := (e.tsupport_cutoffPullback_subset he χ 1).trans <| by
-    rintro _ ⟨y, hy, rfl⟩
-    exact e.map_target (χ.tsupport_subset hy)
-  have hρ (y : CoordinateSpace n) (hy : y ∈ tsupport φ ∪ tsupport ψ) : ρ (e.symm y) = 1 := by
-    have hyt : y ∈ e.target := (union_subset φ.tsupport_subset ψ.tsupport_subset) hy
-    rw [e.cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
-    exact hχ.self_of_nhdsSet y hy
+  obtain ⟨ρ, hρs, hρ⟩ := e.exists_tsupport_subset_source_and_eq_one he φ ψ
   set bV := Module.finBasis ℂ V
   set bW := Module.finBasis ℂ W
   -- The entries of `P` in these frames have symbols `a i j` in the chart.
