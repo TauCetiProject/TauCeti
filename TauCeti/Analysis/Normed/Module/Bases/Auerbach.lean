@@ -13,12 +13,11 @@ import Mathlib.Analysis.Normed.Ring.Lemmas
 import Mathlib.LinearAlgebra.Determinant
 import Mathlib.LinearAlgebra.Dual.Basis
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.LinearAlgebra.Matrix.Adjugate
-import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.RingTheory.Finiteness.Cardinality
 import Mathlib.Topology.Instances.Matrix
 import Mathlib.Topology.Order.Compact
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 
 /-!
 # Auerbach's lemma for a compact family of linear forms
@@ -35,7 +34,7 @@ classical Auerbach basis.
 
 ## Main statements
 
-* `TauCeti.exists_auerbachBasis`: existence of an Auerbach basis for a compact separating family
+* `RingHom.exists_auerbachBasis`: existence of an Auerbach basis for a compact separating family
   of linear forms measured through a ring homomorphism into a normed field.
 
 ## References
@@ -48,7 +47,7 @@ classical Auerbach basis.
 * L. Alpöge, Lean formalization of the Riemann hypothesis for Dirichlet `L`-functions,
   `New.exists_auerbach` in `src/Lib/General/LinearAlgebra/MatrixNormBounds.lean`,
   <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
-  `TauCeti.exists_auerbachBasis` generalizes that lemma.
+  `RingHom.exists_auerbachBasis` generalizes that lemma.
 -/
 
 public section
@@ -92,12 +91,6 @@ private lemma evalMatrix_update (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → 
     simp
   · simp [hik]
 
-/-- Cramer's rule for one replaced row of the identity matrix. -/
-private lemma det_updateRow_one (k : Fin n) (v : Fin n → K) :
-    ((1 : Matrix (Fin n) (Fin n) K).updateRow k v).det = v k := by
-  rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one]
-  rfl
-
 private lemma exists_evalMatrix_det_ne_zero [FiniteDimensional K U] (ℓ : 𝒜 → Module.Dual K U)
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
     ∃ f : Fin (Module.finrank K U) → 𝒜, (evalMatrix ℓ (Module.finBasis K U) f).det ≠ 0 := by
@@ -134,7 +127,7 @@ private lemma exists_evalMatrix_det_ne_zero [FiniteDimensional K U] (ℓ : 𝒜 
 
 /-- If `a` maximizes `‖φ (det (evalMatrix ℓ b ·))‖`, then every `ℓ x` has image norm at most `1`
 on the vectors `∑ j, (evalMatrix ℓ b a)⁻¹ j k • b j`. -/
-private lemma norm_eval_le_one_of_isMaxOn {L : Type*} [NormedField L] (φ : K →+* L)
+private lemma _root_.RingHom.norm_eval_le_one_of_isMaxOn {L : Type*} [NormedField L] (φ : K →+* L)
     (ℓ : 𝒜 → Module.Dual K U) (b : Fin n → U) (a : Fin n → 𝒜)
     (ha_max : ∀ f : Fin n → 𝒜, ‖φ (evalMatrix ℓ b f).det‖ ≤ ‖φ (evalMatrix ℓ b a).det‖)
     (x : 𝒜) (k : Fin n) :
@@ -146,7 +139,7 @@ private lemma norm_eval_le_one_of_isMaxOn {L : Type*} [NormedField L] (φ : K �
   -- replaced by `ℓ x ∘ z`, so Cramer's rule computes `ℓ x (z k)` as a ratio of determinants.
   have hdet : ℓ x (z k) =
       (evalMatrix ℓ b (Function.update a k x)).det / (evalMatrix ℓ b a).det := by
-    rw [← det_updateRow_one k fun j => ℓ x (z j), ← evalMatrix_inv_eq_one ℓ b a ha,
+    rw [← Matrix.det_updateRow_one k fun j => ℓ x (z j), ← evalMatrix_inv_eq_one ℓ b a ha,
       ← evalMatrix_update, ← evalMatrix_mul, Matrix.det_mul, Matrix.det_nonsing_inv,
       Ring.inverse_eq_inv', div_eq_mul_inv]
   rw [hdet, map_div₀, norm_div]
@@ -159,7 +152,7 @@ a ring homomorphism into a normed field `L` such that `a ↦ φ (ℓ a v)` is co
 `v : U`. Then there exist `a : Fin (finrank K U) → 𝒜` and a basis
 `z : Module.Basis (Fin (finrank K U)) K U` such that `ℓ (a i) (z j) = if i = j then 1 else 0`
 and `‖φ (ℓ x (z k))‖ ≤ 1` for all `x : 𝒜` and all `k`. -/
-theorem exists_auerbachBasis {L : Type*} [FiniteDimensional K U] [TopologicalSpace 𝒜]
+theorem _root_.RingHom.exists_auerbachBasis {L : Type*} [FiniteDimensional K U] [TopologicalSpace 𝒜]
     [CompactSpace 𝒜] [NormedField L] (φ : K →+* L) (ℓ : 𝒜 → Module.Dual K U)
     (hcont : ∀ v : U, Continuous fun a : 𝒜 => φ (ℓ a v))
     (hsep : ∀ v : U, (∀ a : 𝒜, ℓ a v = 0) → v = 0) :
@@ -198,6 +191,6 @@ theorem exists_auerbachBasis {L : Type*} [FiniteDimensional K U] [TopologicalSpa
     simp [z, coe_basisOfLinearIndependentOfCardEqFinrank']
   refine ⟨a, z, fun i j => by rw [hz_apply]; exact hdual i j, fun x k => ?_⟩
   rw [hz_apply]
-  exact norm_eval_le_one_of_isMaxOn φ ℓ b a (fun f => ha_max (Set.mem_univ f)) x k
+  exact φ.norm_eval_le_one_of_isMaxOn ℓ b a (fun f => ha_max (Set.mem_univ f)) x k
 
 end TauCeti
