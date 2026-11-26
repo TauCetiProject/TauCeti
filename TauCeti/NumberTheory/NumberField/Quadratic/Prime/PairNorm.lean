@@ -73,7 +73,7 @@ theorem exists_natAbs_norm_eq_mul_of_classNumber_lt_card {K : Type*} [Field K] [
 imaginary quadratic field, of size greater than its class number, contains two distinct primes
 whose product is the integral norm of an algebraic integer. Complete splitting is expressed by
 the number of primes above each rational prime. -/
-theorem exists_norm_eq_mul_of_classNumber_lt_card_of_splitsCompletely {K : Type*}
+theorem exists_norm_eq_mul_of_classNumber_lt_card_of_ncard_primesOver_eq_finrank {K : Type*}
     [Field K] [NumberField K] [IsTotallyComplex K] (hK : finrank ℚ K = 2) {S : Finset ℕ}
     (hcard : classNumber K < S.card)
     (hsplit : ∀ p ∈ S, ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K) :
