@@ -14,14 +14,13 @@ public import Mathlib.Topology.Homotopy.Basic
 
 In a topological group `G`, a path `γ` from `w₁` to `w₂` yields the homotopy
 `(t, x) ↦ γ t * x * (γ t)⁻¹` from `MulAut.conj w₁` to `MulAut.conj w₂` relative to `{(1 : G)}`.
-Specializing to `w₁ = 1` shows that inner conjugation by any element joined to `1` — and hence by
-every element when `G` is path-connected — is homotopic relative to `{(1 : G)}` to `id`.
+Specializing to `w₁ = 1` shows that inner conjugation by any element joined to `1` is homotopic
+relative to `{(1 : G)}` to `id`.
 
 ## Main results
 
 * `Joined.homotopicRel_conj`, `Joined.homotopicRel_id_conj`: pointed homotopies between inner
   conjugations along paths.
-* `TauCeti.homotopicRel_conj`, `TauCeti.homotopicRel_id_conj`: path-connected specializations.
 -/
 
 public section
@@ -63,23 +62,3 @@ theorem homotopicRel_id_conj {w : G} (hw : Joined (1 : G) w) :
   exact hid ▸ hw.homotopicRel_conj
 
 end Joined
-
-namespace TauCeti
-
-variable {G : Type*} [TopologicalSpace G] [Group G] [IsTopologicalGroup G] [PathConnectedSpace G]
-
-/-- In a path-connected topological group, any two inner automorphisms are homotopic relative to
-`{(1 : G)}`. -/
-theorem homotopicRel_conj (w₁ w₂ : G) :
-    (⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ : C(G, G)).HomotopicRel
-      ⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ {(1 : G)} :=
-  (PathConnectedSpace.joined w₁ w₂).homotopicRel_conj
-
-/-- In a path-connected topological group, every inner automorphism is homotopic relative to
-`{(1 : G)}` to the identity map. -/
-theorem homotopicRel_id_conj (w : G) :
-    (ContinuousMap.id G).HomotopicRel
-      ⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ {(1 : G)} :=
-  (PathConnectedSpace.joined 1 w).homotopicRel_id_conj
-
-end TauCeti

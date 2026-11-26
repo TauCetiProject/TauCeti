@@ -201,16 +201,6 @@ theorem map_conj_eq_of_joined {w₁ w₂ : G} (hw : Joined w₁ w₂)
   (map_eq_of_homotopicRel (N := N) (x := (1 : G)) (y := (1 : G)) h₁ (Set.mem_singleton (1 : G))
     hw.homotopicRel_conj).trans (funext (map_congr rfl _ h₂))
 
-/-- Inner conjugations by path-connected elements induce the same homomorphism on `π_N(G, 1)`. -/
-theorem mapHom_conj_eq_of_joined [DecidableEq N] [Nonempty N] {w₁ w₂ : G} (hw : Joined w₁ w₂)
-    (h₁ : (⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ : C(G, G)) 1 = 1 :=
-      (MulAut.conj w₁).map_one)
-    (h₂ : (⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ : C(G, G)) 1 = 1 :=
-      (MulAut.conj w₂).map_one) :
-    mapHom (N := N) ⟨MulAut.conj w₁, IsTopologicalGroup.continuous_conj w₁⟩ h₁ =
-      mapHom (N := N) ⟨MulAut.conj w₂, IsTopologicalGroup.continuous_conj w₂⟩ h₂ :=
-  MonoidHom.ext fun a ↦ congrFun (map_conj_eq_of_joined hw h₁ h₂) a
-
 /-- **Inner conjugation by an element joined to `1` induces `id` on `π_N(G, 1)`.** -/
 theorem map_conj_eq_id_of_joined {w : G} (hw : Joined (1 : G) w)
     (h : (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) 1 = 1 :=

@@ -754,8 +754,8 @@ theorem realCliffordCoordReflection_zero_comp_firstInclusionIsometry (n : ℕ) :
   ext v i
   exact Fin.cases (by simp) (fun j ↦ by simp) i
 
-/-- First-coordinate reflection acts trivially via `spinGroupMap` on elements stabilized by
-`realCliffordSpinFirstInclusion`. -/
+/-- First-coordinate reflection fixes every element in the image of
+`realCliffordSpinFirstInclusion n` via `spinGroupMap`. -/
 @[simp]
 theorem spinGroupMap_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
     (x : realCliffordSpinGroupZero n) :
@@ -766,16 +766,16 @@ theorem spinGroupMap_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
     realCliffordCoordReflection_zero_comp_firstInclusionIsometry]
 
 -- Not `@[simp]`: `IsometryEquiv.spinGroupEquiv_apply` rewrites the LHS to `spinGroupMap`.
-/-- The Spin automorphism induced by first-coordinate reflection fixes every element stabilized by
-`realCliffordSpinFirstInclusion`. -/
+/-- The Spin automorphism induced by first-coordinate reflection fixes every element in the image
+of `realCliffordSpinFirstInclusion n`. -/
 theorem spinGroupEquiv_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
     (x : realCliffordSpinGroupZero n) :
     (realCliffordCoordReflection (0 : Fin (n + 1))).spinGroupEquiv
         (realCliffordSpinFirstInclusion n x) =
       realCliffordSpinFirstInclusion n x := by simp
 
-/-- Conjugating by first-coordinate reflection in `O(n + 1)` fixes every element stabilized by
-`realCliffordSpecialOrthogonalFirstInclusion`. -/
+/-- Conjugating by first-coordinate reflection in `O(n + 1)` fixes every element in the image of
+`realCliffordSpecialOrthogonalFirstInclusion n`. -/
 @[simp]
 theorem specialOrthogonalGroupCongr_realCliffordCoordReflection_zero_firstInclusion (n : ℕ)
     (g : specialOrthogonalGroup (realCliffordForm n 0)) :

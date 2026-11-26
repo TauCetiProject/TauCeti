@@ -452,7 +452,7 @@ theorem toComplexMatrix_coe_realSpinFourEquivQuaternionUnitaryProd_symm_apply
 
 /-- `realSpinFourEquivSpecialUnitaryProd` factors through `realSpinFourEquivQuaternionUnitaryProd`
 and `Quaternion.unitaryEquivSpecialUnitaryGroup`. -/
-theorem realSpinFourEquivSpecialUnitaryProd_eq :
+theorem realSpinFourEquivSpecialUnitaryProd_def :
     realSpinFourEquivSpecialUnitaryProd =
       realSpinFourEquivQuaternionUnitaryProd.trans
         (Quaternion.unitaryEquivSpecialUnitaryGroup.prodCongr
@@ -491,7 +491,7 @@ noncomputable def realSpinFourCalibratedEquivQuaternionUnitaryProd :
 
 /-- `realSpinFourCalibratedEquivQuaternionUnitaryProd` is an instance of
 `CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd`. -/
-theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_eq :
+theorem realSpinFourCalibratedEquivQuaternionUnitaryProd_def :
     realSpinFourCalibratedEquivQuaternionUnitaryProd =
       CliffordAlgebra.spinGroupEquivQuaternionUnitaryProd (realCliffordForm 4 0)
         (nondegenerate_realCliffordForm 4 0) (by simp)
@@ -613,7 +613,7 @@ noncomputable def realSpinFourCalibratedEquivSpecialUnitaryProd :
       Quaternion.unitaryEquivSpecialUnitaryGroup)
 
 /-- Factorization of `realSpinFourCalibratedEquivSpecialUnitaryProd`. -/
-theorem realSpinFourCalibratedEquivSpecialUnitaryProd_eq :
+theorem realSpinFourCalibratedEquivSpecialUnitaryProd_def :
     realSpinFourCalibratedEquivSpecialUnitaryProd =
       realSpinFourCalibratedEquivQuaternionUnitaryProd.trans
         (Quaternion.unitaryEquivSpecialUnitaryGroup.prodCongr
