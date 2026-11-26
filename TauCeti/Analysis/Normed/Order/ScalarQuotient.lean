@@ -114,27 +114,16 @@ theorem norm_sub_midpoint_smul_eq_norm_quotient_mk (h : IsOrderUnitNorm e) (a : 
 /-- The line spanned by the order unit is closed in the order-unit norm. -/
 theorem isClosed_scalarLine (h : IsOrderUnitNorm e) :
     IsClosed ((ℝ ∙ e : Submodule ℝ E) : Set E) := by
-  refine closure_subset_iff_isClosed.mp fun a ha => ?_
-  have hq : ‖(Submodule.Quotient.mk a : E ⧸ (ℝ ∙ e))‖ = 0 :=
-    QuotientAddGroup.norm_mk_eq_zero_iff_mem_closure.mpr ha
-  let midpoint := ((⨆ φ : OrderUnit.stateSpace e, φ.val a) +
-    (⨅ φ : OrderUnit.stateSpace e, φ.val a)) / 2
-  have hn : ‖a - midpoint • e‖ ≤ 0 :=
-    ((h.norm_sub_midpoint_smul_eq_norm_quotient_mk a).trans hq).le
-  obtain ⟨hl, hu⟩ := (h.norm_le_iff (le_refl (0 : ℝ))).mp hn
-  simp only [zero_smul, neg_zero] at hl hu
-  have heq : a - midpoint • e = 0 := le_antisymm hu hl
-  exact Submodule.mem_span_singleton.mpr ⟨midpoint, (sub_eq_zero.mp heq).symm⟩
+  have := h.orderClosedTopology
+  exact (ℝ ∙ e).isClosed_of_finiteDimensional
 
 private theorem exists_extension_stateSpaceEval (h : IsOrderUnitNorm e) (f : StrongDual ℝ E) :
     let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
     ∃ g : StrongDual ℝ C(OrderUnit.stateSpace e, ℝ),
       (∀ a, g (h.stateSpaceEval a) = f a) ∧ ‖g‖ = ‖f‖ := by
   let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  let : NormedAddCommGroup E := .ofSeparation fun a ha => by
-    obtain ⟨hl, hu⟩ := (h.norm_le_iff (le_refl (0 : ℝ))).mp ha.le
-    simp only [zero_smul, neg_zero] at hl hu
-    exact le_antisymm hu hl
+  have := h.orderClosedTopology
+  let : NormedAddCommGroup E := .ofSeparation fun _ ha => (inseparable_zero_iff_norm.mpr ha).eq
   obtain ⟨g, hg, hg_norm⟩ := h.stateSpaceEval.exists_extension_norm_eq f
   exact ⟨g, fun a => DFunLike.congr_fun hg a, hg_norm⟩
 
