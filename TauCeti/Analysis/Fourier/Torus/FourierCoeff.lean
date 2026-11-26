@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.AddCircleMulti
 import TauCeti.Analysis.Fourier.Monomial
+import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Measure.Haar.UnitAddTorus
 
 /-!
@@ -223,12 +224,9 @@ norm. -/
 theorem norm_mFourierCoeffContinuousMapCLM_le (n : d → ℤ) :
     ‖mFourierCoeffContinuousMapCLM (d := d) n‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun f ↦ by
-    have h : ‖ContinuousMap.toLp (E := ℂ) ∞ volume ℂ f‖ ≤ 1 * ‖f‖ := by
-      refine (ContinuousMap.toLp (E := ℂ) ∞ volume ℂ).le_of_opNorm_le ?_ f
-      refine (ContinuousMap.toLp_norm_le volume).trans_eq ?_
-      rw [ENNReal.toReal_top, inv_zero, Real.rpow_zero]
-    rw [mFourierCoeffContinuousMapCLM, ContinuousLinearMap.comp_apply, mFourierCoeffCLM_apply]
-    exact (norm_mFourierCoeff_le_norm _ n).trans h
+    rw [mFourierCoeffContinuousMapCLM, ContinuousLinearMap.comp_apply, mFourierCoeffCLM_apply,
+      one_mul]
+    exact (norm_mFourierCoeff_le_norm _ n).trans (ContinuousMap.norm_toLp_top_le volume f)
 
 end Lp
 
