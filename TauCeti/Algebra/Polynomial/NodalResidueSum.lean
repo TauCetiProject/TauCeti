@@ -15,14 +15,12 @@ For a finite family of distinct nodes `x : ι → K`, the nodal polynomial
 `Lagrange.nodal Finset.univ x = ∏ j, (X - C (x j))` is the monic polynomial with simple roots
 `x j`. Its derivative at a node `x i` evaluates to `∏ j ∈ univ.erase i, (x i - x j)`.
 
-This file records two classical residue-sum identities over a field for rational functions `F / p`
-and `F / ((X - C c) * p)` with `deg F < deg p`, and the alternating signs of `p'(x i)` when the
+This file records the classical residue-sum identity over a field for rational functions
+`F / ((X - C c) * p)` with `deg F < deg p`, and the alternating signs of `p'(x i)` when the
 nodes are strictly monotone or antitone in a linearly ordered commutative ring.
 
 ## Main results
 
-* `Lagrange.sum_eval_div_eval_derivative_nodal`: for `x` injective on `s : Finset ι` and `F` of
-  degree `< #s`, `∑ i ∈ s, F.eval (x i) / (derivative (nodal s x)).eval (x i) = F.coeff (#s - 1)`.
 * `Lagrange.sum_eval_div_sub_mul_eval_derivative_nodal`: for `x` injective on `s`, `deg F < #s`,
   and `c ∉ x '' s`,
   `∑ i ∈ s, F.eval (x i) / ((x i - c) * (derivative (nodal s x)).eval (x i)) =
@@ -35,8 +33,7 @@ nodes are strictly monotone or antitone in a linearly ordered commutative ring.
 
 * J.-L. Lagrange, *Leçons élémentaires sur les mathématiques* (1795), Lecture V (Lagrange
   interpolation and residue identities).
-* L. Alpöge, `New.DiscreteSeries.sum_eval_div_eval_derivative_nodal` and
-  `New.DiscreteSeries.sum_eval_div_sub_mul_eval_derivative_nodal` in
+* L. Alpöge, `New.DiscreteSeries.sum_eval_div_sub_mul_eval_derivative_nodal` in
   `src/Lib/General/Algebra/ResidueSums.lean`,
   <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
 -/
@@ -52,15 +49,6 @@ namespace Lagrange
 section Residues
 
 variable {ι K : Type*} [Field K] {s : Finset ι} {x : ι → K} {F : K[X]}
-
-/-- For nodes `x : ι → K` injective on `s : Finset ι` and a polynomial `F` with `F.degree < #s`,
-the sum of residues `F(x i) / p'(x i)` over `i ∈ s` equals `F.coeff (#s - 1)`. -/
-theorem sum_eval_div_eval_derivative_nodal (hx : Set.InjOn x s) (hdeg : F.degree < #s) :
-    ∑ i ∈ s, F.eval (x i) / (derivative (nodal s x)).eval (x i) = F.coeff (#s - 1) := by
-  classical
-  rw [coeff_eq_sum hx hdeg]
-  refine sum_congr rfl fun i hi ↦ ?_
-  rw [eval_nodal_derivative_eval_node_eq hi, eval_nodal]
 
 /-- For nodes `x : ι → K` injective on `s : Finset ι`, `F` with `F.degree < #s`, and `c` not a
 node in `s`, the sum of residues `F(x i) / ((x i - c) * p'(x i))` over `i ∈ s` equals
