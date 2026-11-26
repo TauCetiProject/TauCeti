@@ -42,9 +42,10 @@ the reading of `u` (`TauCeti.chartDistributionCLM_ofSection_apply_apply`).
   `TauCeti.LocallyIntegrableSection.add` and `TauCeti.LocallyIntegrableSection.smul`.
 * `TauCeti.BundleDistribution.ofSection`: the distributional section of a section, zero unless
   the section is locally integrable, with `TauCeti.BundleDistribution.ofSection_apply`,
-  `TauCeti.BundleDistribution.ofSection_add` and `TauCeti.BundleDistribution.ofSection_smul`.
-* `TauCeti.integrableDensity_chartTestCLM`, `TauCeti.integralDensity_chartTestCLM`: the pairing
-  with a test extended through a restriction of a preferred chart.
+  `TauCeti.BundleDistribution.ofSection_zero`, `TauCeti.BundleDistribution.ofSection_add` and
+  `TauCeti.BundleDistribution.ofSection_smul`.
+* `TauCeti.integralDensity_chartTestCLM`: the pairing with a test extended through a restriction
+  of a preferred chart.
 * `TauCeti.chartDistributionCLM_ofSection_apply_apply`: the local representative.
 
 ## References
@@ -257,9 +258,10 @@ private theorem tsupport_chartTestCLM_pairing (ψ : 𝓓(⟨c.target, c.open_tar
   · exact image_subset_iff.2 fun _ hy ↦ c.map_target (ψ.tsupport_subset hy)
 
 include hcα in
-/-- The density paired from a locally integrable section and a test extended through a restriction
-of the preferred chart at `α` and the preferred frame is integrable. -/
-theorem integrableDensity_chartTestCLM (hu : LocallyIntegrableSection I G u)
+/-- The density paired from a section with locally integrable reading and a test extended through a
+restriction of the preferred chart at `α` and the preferred frame is integrable. -/
+private theorem integrableDensity_chartTestCLM
+    (hu : LocallyIntegrableOn (sectionInChartAt I G u α) c.target (Module.finBasis ℝ E).addHaar)
     (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
     IntegrableDensity fun x ↦
       (trivializationAt (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] DensityBundle I M x) α
@@ -267,15 +269,17 @@ theorem integrableDensity_chartTestCLM (hu : LocallyIntegrableSection I G u)
   obtain ⟨hK, hs⟩ := tsupport_chartTestCLM_pairing c hc hct ψ (u := u)
   rw [RoughDensity.integrableDensity_iff_of_tsupport_subset_chart (Module.finBasis ℝ E) α hK
     (hs.trans fun x hx ↦ (source_subset_of_subset_baseSet c hct hx).1)]
-  have h := ψ.integrable_bilin (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ))
-    ((hu α).mono_set (target_subset c hct hcα)) (μ := (Module.finBasis ℝ E).addHaar)
+  have h := ψ.integrable_bilin (ContinuousLinearMap.id ℝ (G →L[ℝ] ℝ)) hu
+    (μ := (Module.finBasis ℝ E).addHaar)
   exact h.congr (ae_of_all _ fun y ↦ (inChartAt_chartTestCLM c hc hct hcα ψ y).symm)
 
 include hcα in
 /-- The integral of the density paired from a locally integrable section and a test extended
 through a restriction of the preferred chart at `α` and the preferred frame is the integral of the
-test against the reading of the section. -/
-theorem integralDensity_chartTestCLM (hu : LocallyIntegrableSection I G u)
+test against the reading of the section, provided that reading is locally integrable on the chart
+target. -/
+theorem integralDensity_chartTestCLM
+    (hu : LocallyIntegrableOn (sectionInChartAt I G u α) c.target (Module.finBasis ℝ E).addHaar)
     (ψ : 𝓓(⟨c.target, c.open_target⟩, G →L[ℝ] ℝ)) :
     integralDensity (fun x ↦
       (trivializationAt (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] DensityBundle I M x) α
@@ -287,7 +291,7 @@ theorem integralDensity_chartTestCLM (hu : LocallyIntegrableSection I G u)
       (Module.finBasis ℝ E) α fun x hx ↦ by
         rw [extChartAt_source]
         exact (source_subset_of_subset_baseSet c hct (hs (subset_tsupport _ hx))).1,
-    TestFunction.integralAgainstBilinCLM_eq_integral ((hu α).mono_set (target_subset c hct hcα))]
+    TestFunction.integralAgainstBilinCLM_eq_integral hu]
   simp_rw [inChartAt_chartTestCLM c hc hct hcα ψ, ContinuousLinearMap.id_apply]
 
 /-! ### The functional of a section -/
@@ -371,7 +375,8 @@ private theorem integrableDensity_and_integralDensity_eq_sum (hu : LocallyIntegr
     funext x
     rw [BundleTest.sum_apply, sum_apply, Finset.sum_apply]
   have hi (α : M) (_ : α ∈ A.meeting K hK) := integrableDensity_chartTestCLM (A.chart α)
-    (A.contMDiffOn_chart α) (hA α) (hAα α) hu (TestFunction.ofSupportedIn
+    (A.contMDiffOn_chart α) (hA α) (hAα α)
+    ((hu α).mono_set (target_subset (A.chart α) (hA α) (hAα α))) (TestFunction.ofSupportedIn
       (A.chartSupport_subset_target α)
       ((trivializationAt (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] DensityBundle I M x) α
         ).chartLocalizationCLM (A.chart α) (A.contMDiffOn_chart_symm α) (hA α) (A.cutoff α)
@@ -379,7 +384,8 @@ private theorem integrableDensity_and_integralDensity_eq_sum (hu : LocallyIntegr
   rw [hd]
   refine ⟨IntegrableDensity.sum (Module.finBasis ℝ E) _ _ hi, ?_⟩
   rw [integralDensity_sum _ _ hi]
-  exact Finset.sum_congr rfl fun α _ ↦ integralDensity_chartTestCLM _ _ _ (hAα α) hu _
+  exact Finset.sum_congr rfl fun α _ ↦ integralDensity_chartTestCLM _ _ _ (hAα α)
+    ((hu α).mono_set (target_subset (A.chart α) (hA α) (hAα α))) _
 
 /-- The density paired from a locally integrable section and a dual-density test is integrable. -/
 theorem LocallyIntegrableSection.integrableDensity (hu : LocallyIntegrableSection I G u)
@@ -481,9 +487,10 @@ theorem chartDistributionCLM_ofSection_apply_apply (hu : LocallyIntegrableSectio
     (trivializationAt (G →L[ℝ] ℝ) (fun x ↦ W x →L[ℝ] DensityBundle I M x) α).chartDistributionCLM
         c hc hct (BundleDistribution.ofSection I G u) φ v =
       ∫ y, φ y * v (sectionInChartAt I G u α y) ∂(Module.finBasis ℝ E).addHaar := by
+  have hloc := (hu α).mono_set (target_subset c hct hcα)
   rw [Bundle.Trivialization.chartDistributionCLM_apply_apply, BundleDistribution.ofSection_apply hu,
-    integralDensity_chartTestCLM c hc hct hcα hu,
-    TestFunction.integralAgainstBilinCLM_eq_integral ((hu α).mono_set (target_subset c hct hcα))]
+    integralDensity_chartTestCLM c hc hct hcα hloc,
+    TestFunction.integralAgainstBilinCLM_eq_integral hloc]
   simp
 
 /-- The distributional section of a sum of locally integrable sections is the sum of their
@@ -500,17 +507,35 @@ theorem BundleDistribution.ofSection_add {u v : (x : M) → W x}
   funext x
   exact map_add (φ x) (u x) (v x)
 
+/-- The distributional section of the zero section is zero. -/
+@[simp]
+theorem BundleDistribution.ofSection_zero :
+    BundleDistribution.ofSection I G (fun x ↦ (0 : W x)) = 0 := by
+  by_cases hu : LocallyIntegrableSection I G fun x ↦ (0 : W x)
+  · ext φ
+    rw [BundleDistribution.ofSection_apply hu, zero_apply]
+    simp only [map_zero]
+    exact integralDensity_zero
+  · exact BundleDistribution.ofSection_of_not_locallyIntegrableSection hu
+
 /-- The distributional section of a constant multiple of a section is the multiple of its
 distributional section. -/
-theorem BundleDistribution.ofSection_smul (hu : LocallyIntegrableSection I G u) (a : ℝ) :
+theorem BundleDistribution.ofSection_smul (u : (x : M) → W x) (a : ℝ) :
     BundleDistribution.ofSection I G (fun x ↦ a • u x) =
       a • BundleDistribution.ofSection I G u := by
-  ext φ
-  rw [smul_apply, BundleDistribution.ofSection_apply (hu.smul a),
-    BundleDistribution.ofSection_apply hu, smul_eq_mul, ← integralDensity_smul]
-  congr 1
-  funext x
-  exact map_smul (φ x) a (u x)
+  by_cases hu : LocallyIntegrableSection I G u
+  · ext φ
+    rw [smul_apply, BundleDistribution.ofSection_apply (hu.smul a),
+      BundleDistribution.ofSection_apply hu, smul_eq_mul, ← integralDensity_smul]
+    congr 1
+    funext x
+    exact map_smul (φ x) a (u x)
+  · rcases eq_or_ne a 0 with rfl | ha
+    · simp only [zero_smul]
+      exact BundleDistribution.ofSection_zero
+    · rw [BundleDistribution.ofSection_of_not_locallyIntegrableSection hu, smul_zero]
+      refine BundleDistribution.ofSection_of_not_locallyIntegrableSection fun h ↦ hu ?_
+      simpa [smul_smul, inv_mul_cancel₀ ha] using h.smul a⁻¹
 
 end Global
 
