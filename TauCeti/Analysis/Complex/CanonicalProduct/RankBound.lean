@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Analysis.PSeries
+import TauCeti.Analysis.Complex.CanonicalProduct.PrimaryProduct
 
 /-!
 # Rank bounds of subsets of the complex plane
@@ -86,7 +87,7 @@ theorem HasRankBound.summable_div_pow (h : Λ.HasRankBound p) (R : ℝ) :
 theorem HasRankBound.subset (h : Λ.HasRankBound p) (hΛ : Λ' ⊆ Λ) : Λ'.HasRankBound p := by
   rw [hasRankBound_def] at h ⊢
   exact (h.comp_injective (inclusion_injective (sdiff_subset_sdiff_left (t := {0}) hΛ))).congr
-    fun _ ↦ rfl
+    fun _ ↦ by rw [Function.comp_apply, coe_inclusion]
 
 /-- A rank bound passes to every larger exponent: the finitely many points of norm below one do
 not affect summability, and beyond them the summands decrease with the exponent. -/
@@ -127,19 +128,14 @@ theorem HasRankBound.countable (h : Λ.HasRankBound p) : Λ.Countable := by
 /-- A rank-bounded set has only finitely many points in each closed disk about the origin. -/
 theorem HasRankBound.finite_inter_closedBall (h : Λ.HasRankBound p) (R : ℝ) :
     (Λ ∩ closedBall 0 R).Finite := by
-  rw [hasRankBound_def] at h
-  rcases le_or_gt R 0 with hR | hR
-  · refine (finite_singleton 0).subset fun z hz ↦ ?_
-    exact norm_le_zero_iff.mp ((mem_closedBall_zero_iff.mp hz.2).trans hR)
-  have hfin : {w : ↥(Λ \ {0}) | ¬(‖(w : ℂ)‖ ^ (p + 1))⁻¹ < (R ^ (p + 1))⁻¹}.Finite :=
-    h.tendsto_cofinite_zero.eventually (gt_mem_nhds (by positivity))
+  have hfin : {w : ↥(Λ \ {0}) | ¬R < ‖(w : ℂ)‖}.Finite :=
+    (Complex.tendsto_norm_cofinite_atTop_of_summable_div_pow (p := fun _ ↦ p)
+      (fun w ↦ w.property.2) fun R _ ↦ h.summable_div_pow R).eventually_gt_atTop R
   refine ((hfin.image Subtype.val).union (finite_singleton 0)).subset ?_
   rintro z ⟨hzΛ, hzR⟩
   by_cases hz : z = 0
   · exact Or.inr hz
-  · refine Or.inl ⟨⟨z, hzΛ, hz⟩, not_lt.mpr ?_, rfl⟩
-    exact inv_anti₀ (by positivity)
-      (pow_le_pow_left₀ (norm_nonneg _) (mem_closedBall_zero_iff.mp hzR) _)
+  · exact Or.inl ⟨⟨z, hzΛ, hz⟩, not_lt.mpr (mem_closedBall_zero_iff.mp hzR), rfl⟩
 
 /-- The integers have rank bound `p` exactly when `0 < p`: the harmonic series over `ℤ` diverges
 and the series of inverse squares converges, so their rank is `1`. -/
