@@ -89,7 +89,7 @@ lemma mapPullHom_id ⦃X : C⦄ ⦃M : F.obj (.mk (op X))⦄ ⦃Y : C⦄ (f : Y 
   simp [mapPullHom]
 
 /-- The image of a composite is the composite of the images. -/
-@[reassoc]
+@[simp, reassoc]
 lemma mapPullHom_comp ⦃X₁ X₂ X₃ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
     ⦃M₃ : F.obj (.mk (op X₃))⦄ ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄ ⦃f₃ : Y ⟶ X₃⦄
     (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂)
@@ -98,6 +98,7 @@ lemma mapPullHom_comp ⦃X₁ X₂ X₃ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))�
   simp [mapPullHom]
 
 /-- The image of the pullback `f^* φ` of a morphism `φ` is the pullback `f^* (η φ)`. -/
+@[simp]
 lemma mapPullHom_map ⦃X : C⦄ ⦃M N : F.obj (.mk (op X))⦄ (φ : M ⟶ N) ⦃Y : C⦄ (f : Y ⟶ X) :
     η.mapPullHom ((F.map f.op.toLoc).toFunctor.map φ) =
       (G.map f.op.toLoc).toFunctor.map ((η.app (.mk (op X))).toFunctor.map φ) := by
@@ -105,6 +106,7 @@ lemma mapPullHom_map ⦃X : C⦄ ⦃M N : F.obj (.mk (op X))⦄ (φ : M ⟶ N) �
   exact η.naturality_naturality_1 f.op.toLoc φ
 
 /-- Taking images under `η` commutes with pulling back morphisms between pullbacks. -/
+@[simp]
 lemma mapPullHom_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
     ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
     (φ : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) ⦃Y' : C⦄
@@ -270,7 +272,10 @@ lemma liftDescentDataHom_comp ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f�
 
 /-- For a strong transformation `η : F ⟶ G` with fully faithful components, the descent datum for
 `F` with objects `M i` lifting a descent datum `D` for `G` along isomorphisms
-`e i : η (M i) ≅ D.obj i`. -/
+`e i : η (M i) ≅ D.obj i`. Its body is exposed so that its objects are the `M i` by definition,
+which the statements of `StrongTrans.liftDescentData_hom` and of the components of
+`StrongTrans.mapDescentDataLiftDescentDataIso` need. -/
+@[expose]
 noncomputable def liftDescentData : F.DescentData f where
   obj := M
   hom Y q _ _ f₁ f₂ hf₁ hf₂ :=
@@ -285,19 +290,52 @@ noncomputable def liftDescentData : F.DescentData f where
   hom_self Y q i g hg := (η.mapPullHomEquiv _ _ g g (hη Y)).injective (by
     simp [liftDescentDataHom, D.hom_self q g hg])
   hom_comp Y q i₁ i₂ i₃ f₁ f₂ f₃ hf₁ hf₂ hf₃ := (η.mapPullHomEquiv _ _ f₁ f₃ (hη Y)).injective (by
-    simp [liftDescentDataHom, mapPullHom_comp])
+    simp [liftDescentDataHom])
 
 /-- The objects of the lift of `D` are the `M i`. -/
+@[simp]
 lemma liftDescentData_obj (i : ι) : (η.liftDescentData f hη D e).obj i = M i :=
   (rfl)
+
+/-- The compatibility morphisms of the lift of `D` are the preimages under
+`StrongTrans.mapPullHom` of the transported compatibility morphisms of `D`. Their images under
+`StrongTrans.mapPullHom` are rewritten by the simp lemma
+`StrongTrans.mapPullHom_liftDescentData_hom`. -/
+lemma liftDescentData_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁) (f₂ : Y ⟶ X i₂)
+    (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
+    (η.liftDescentData f hη D e).hom q f₁ f₂ hf₁ hf₂ =
+      (η.mapPullHomEquiv _ _ f₁ f₂ (hη Y)).symm (η.liftDescentDataHom f D e q f₁ f₂ hf₁ hf₂) :=
+  (rfl)
+
+/-- The images under `StrongTrans.mapPullHom` of the compatibility morphisms of the lift of `D`
+are the transported compatibility morphisms of `D`. -/
+@[simp]
+lemma mapPullHom_liftDescentData_hom ⦃Y : C⦄ (q : Y ⟶ S) ⦃i₁ i₂ : ι⦄ (f₁ : Y ⟶ X i₁)
+    (f₂ : Y ⟶ X i₂) (hf₁ : f₁ ≫ f i₁ = q) (hf₂ : f₂ ≫ f i₂ = q) :
+    η.mapPullHom ((η.liftDescentData f hη D e).hom q f₁ f₂ hf₁ hf₂) =
+      η.liftDescentDataHom f D e q f₁ f₂ hf₁ hf₂ :=
+  mapPullHom_mapPullHomEquiv_symm η _ _ f₁ f₂ (hη Y) _
 
 /-- The image under `η.mapDescentData f` of the lift of a descent datum `D` along isomorphisms
 `e i : η (M i) ≅ D.obj i` is isomorphic to `D`. -/
 noncomputable def mapDescentDataLiftDescentDataIso :
     (η.mapDescentData f).obj (η.liftDescentData f hη D e) ≅ D :=
   DescentData.isoMk e (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
-    simp only [mapDescentData_obj_hom, liftDescentData, mapPullHom_mapPullHomEquiv_symm]
+    rw [mapDescentData_obj_hom, mapPullHom_liftDescentData_hom]
     exact (η.liftDescentDataHom_comp f D e q f₁ f₂ hf₁ hf₂).symm)
+
+/-- The components of `StrongTrans.mapDescentDataLiftDescentDataIso` are the isomorphisms `e`. -/
+@[simp]
+lemma mapDescentDataLiftDescentDataIso_hom_hom (i : ι) :
+    (η.mapDescentDataLiftDescentDataIso f hη D e).hom.hom i = (e i).hom :=
+  (rfl)
+
+/-- The components of the inverse of `StrongTrans.mapDescentDataLiftDescentDataIso` are the
+inverses of the isomorphisms `e`. -/
+@[simp]
+lemma mapDescentDataLiftDescentDataIso_inv_hom (i : ι) :
+    (η.mapDescentDataLiftDescentDataIso f hη D e).inv.hom i = (e i).inv :=
+  (rfl)
 
 end lift
 
