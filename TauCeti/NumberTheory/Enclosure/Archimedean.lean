@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Interval.Basic
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Algebra.Order.Archimedean.Basic
 
 /-!
 # Rational enclosures of real and complex numbers
@@ -59,8 +60,9 @@ An enclosure of width zero, on the other hand, determines the enclosed number
   `|z|² ≤ max (l_R², u_R²) + max (l_I², u_I²)`.
 * `TauCeti.ComplexEnclosure.hasPrecision_ofReal_iff`: a real enclosure viewed as a complex one
   keeps its absolute precision.
-* `NonemptyInterval.Icc_ratCast_subset_Icc_ratCast`: nested rational intervals span nested real
-  intervals.
+* `NonemptyInterval.Icc_ratCast_subset_Icc_ratCast`,
+  `NonemptyInterval.reProdIm_Icc_ratCast_subset`: nested rational intervals and rectangles span
+  nested real intervals and complex rectangles.
 * `TauCeti.RealEnclosure.bisect_interval_of_le`, `TauCeti.RealEnclosure.bisect_interval_of_lt`:
   the half kept by a bisection.
 * `TauCeti.RealEnclosure.length_refine`, `TauCeti.RealEnclosure.refine_interval_antitone`: the
@@ -87,13 +89,14 @@ theorem NonemptyInterval.Icc_ratCast_subset_Icc_ratCast {K : Type*} [Field K] [L
   Set.Icc_subset_Icc (Rat.cast_le.mpr (NonemptyInterval.le_def.mp h).1)
     (Rat.cast_le.mpr (NonemptyInterval.le_def.mp h).2)
 
-/-- Every rational number `w` satisfies `w / 2 ^ m ≤ 2⁻ⁿ` for some `m`. -/
-private theorem exists_div_two_pow_le (w : ℚ) (n : ℕ) :
-    ∃ m : ℕ, w / 2 ^ m ≤ ((2 : ℚ) ^ n)⁻¹ := by
-  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (w * 2 ^ n) one_lt_two
-  refine ⟨m, ?_⟩
-  rw [div_le_iff₀ (by positivity), ← div_eq_inv_mul, le_div_iff₀ (by positivity)]
-  exact hm.le
+open Complex in
+/-- Nested rational rectangles span nested rectangles of `ℂ`. -/
+theorem NonemptyInterval.reProdIm_Icc_ratCast_subset {R R' J J' : NonemptyInterval ℚ}
+    (hR : R' ≤ R) (hJ : J' ≤ J) :
+    Set.Icc (R'.fst : ℝ) R'.snd ×ℂ Set.Icc (J'.fst : ℝ) J'.snd ⊆
+      Set.Icc (R.fst : ℝ) R.snd ×ℂ Set.Icc (J.fst : ℝ) J.snd :=
+  reProdIm_subset_iff.mpr <| Set.prod_mono (Icc_ratCast_subset_Icc_ratCast hR)
+    (Icc_ratCast_subset_Icc_ratCast hJ)
 
 namespace TauCeti
 
@@ -311,7 +314,9 @@ theorem HasPrecision.refine {E : RealEnclosure t} {k : ℕ} (h : E.HasPrecision 
 /-- Every enclosure has refinements of every absolute precision. -/
 theorem exists_hasPrecision_refine (E : RealEnclosure t) (n : ℕ) :
     ∃ m, (E.refine m).HasPrecision n := by
-  simpa only [hasPrecision_iff, length_refine] using exists_div_two_pow_le E.interval.length n
+  simpa only [hasPrecision_iff, length_refine] using
+    (exists_div_pow_lt E.interval.length one_lt_two (by positivity : (0 : ℚ) < (2 ^ n)⁻¹)).imp
+      fun _ => le_of_lt
 
 end RealEnclosure
 
@@ -440,9 +445,11 @@ theorem refine_zero (E : ComplexEnclosure z) : E.refine 0 = E :=
 
 /-- The boxes of the refinements of a complex enclosure are nested. -/
 theorem refine_box_antitone (E : ComplexEnclosure z) : Antitone fun n => (E.refine n).box :=
-  fun _ _ hmn => reProdIm_subset_iff.mpr <| Set.prod_mono
-    (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast (E.re.refine_interval_antitone hmn))
-    (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast (E.im.refine_interval_antitone hmn))
+  fun m n hmn => by
+    change (E.refine n).box ⊆ (E.refine m).box
+    rw [box_def, box_def]
+    exact NonemptyInterval.reProdIm_Icc_ratCast_subset (E.re.refine_interval_antitone hmn)
+      (E.im.refine_interval_antitone hmn)
 
 /-- The refinement at level `n` has width `2⁻ⁿ` times the width of the enclosure. -/
 @[simp]
@@ -459,7 +466,9 @@ theorem HasPrecision.refine {E : ComplexEnclosure z} {k : ℕ} (h : E.HasPrecisi
 /-- Every complex enclosure has refinements of every absolute precision. -/
 theorem exists_hasPrecision_refine (E : ComplexEnclosure z) (n : ℕ) :
     ∃ m, (E.refine m).HasPrecision n := by
-  simpa only [hasPrecision_iff_width_le, width_refine] using exists_div_two_pow_le E.width n
+  simpa only [hasPrecision_iff_width_le, width_refine] using
+    (exists_div_pow_lt E.width one_lt_two (by positivity : (0 : ℚ) < (2 ^ n)⁻¹)).imp
+      fun _ => le_of_lt
 
 /-- The rational upper bound `max (l_R², u_R²) + max (l_I², u_I²)` for `|z|²` read off from a
 complex enclosure `([l_R, u_R], [l_I, u_I])`. -/

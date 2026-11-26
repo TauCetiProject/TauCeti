@@ -366,14 +366,12 @@ noncomputable def refineBox (D : RootIsolation σ z) {R J : NonemptyInterval ℚ
       ((D.toComplexEnclosureOfBox h).im.refine n).interval)
     (RationalRegion.mem_toSet_box.mpr ⟨((D.toComplexEnclosureOfBox h).re.refine n).mem_Icc,
       ((D.toComplexEnclosureOfBox h).im.refine n).mem_Icc⟩) <| by
-    have hR := (D.toComplexEnclosureOfBox h).re.refine_interval_le n
-    have hJ := (D.toComplexEnclosureOfBox h).im.refine_interval_le n
-    rw [toComplexEnclosureOfBox_re_interval] at hR
-    rw [toComplexEnclosureOfBox_im_interval] at hJ
     rw [h, RationalRegion.toSet_box, RationalRegion.toSet_box]
-    exact reProdIm_subset_iff.mpr <| Set.prod_mono
-      (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast hR)
-      (NonemptyInterval.Icc_ratCast_subset_Icc_ratCast hJ)
+    exact NonemptyInterval.reProdIm_Icc_ratCast_subset
+      (((D.toComplexEnclosureOfBox h).re.refine_interval_le n).trans_eq
+        (D.toComplexEnclosureOfBox_re_interval h))
+      (((D.toComplexEnclosureOfBox h).im.refine_interval_le n).trans_eq
+        (D.toComplexEnclosureOfBox_im_interval h))
 
 @[simp]
 theorem refineBox_poly (D : RootIsolation σ z) {R J : NonemptyInterval ℚ}

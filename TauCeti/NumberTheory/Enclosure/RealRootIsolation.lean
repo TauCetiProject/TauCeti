@@ -200,17 +200,15 @@ theorem toRealRootIsolation_poly (D : RootIsolation σ z) (hz : (σ z).im = 0)
 `Re (σ z)` as a real root of the same polynomial. -/
 def toRealRootIsolationOfBox (D : RootIsolation σ z) (hz : (σ z).im = 0)
     {R J : NonemptyInterval ℚ} (h : D.region = .box R J) : RealRootIsolation (σ z).re :=
-  have hmem : (σ z).re ∈ Set.Icc (R.fst : ℝ) R.snd ∧ (σ z).im ∈ Set.Icc (J.fst : ℝ) J.snd :=
-    RationalRegion.mem_toSet_box.mp (h ▸ D.mem_region)
-  D.toRealRootIsolation hz ⟨R, hmem.1.1, hmem.1.2⟩ fun t ht => by
+  D.toRealRootIsolation hz (D.toComplexEnclosureOfBox h).re fun t ht => by
     rw [h, RationalRegion.mem_toSet_box]
-    exact ⟨by simpa using ht, by simpa [hz] using hmem.2⟩
+    exact ⟨by simpa using ht, by simpa [hz] using (D.toComplexEnclosureOfBox h).im.mem_Icc⟩
 
 @[simp]
 theorem toRealRootIsolationOfBox_interval (D : RootIsolation σ z) (hz : (σ z).im = 0)
     {R J : NonemptyInterval ℚ} (h : D.region = .box R J) :
     (D.toRealRootIsolationOfBox hz h).interval = R :=
-  (rfl)
+  D.toComplexEnclosureOfBox_re_interval h
 
 @[simp]
 theorem toRealRootIsolationOfBox_poly (D : RootIsolation σ z) (hz : (σ z).im = 0)

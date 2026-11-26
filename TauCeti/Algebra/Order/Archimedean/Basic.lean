@@ -34,6 +34,7 @@ lines, and that the inverse of a positive twist lift twists negatively.
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
+* `TauCeti.exists_div_pow_lt`: for `1 < r` and `0 < ε` there is `m` with `w / r ^ m < ε`.
 * `TauCeti.exists_div_pow_lt_and_forall_mul_pow_lt_one`: for `1 < r`, `s < r` and `0 < p`
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
@@ -64,6 +65,15 @@ theorem exists_div_pow_lt_and_forall_mul_pow_lt_one [ExistsAddOfLE K] {r s p : K
     calc s * r ^ k < r * r ^ k := by gcongr
       _ = r ^ (k + 1) := (pow_succ' r k).symm
       _ ≤ r ^ (m + 1) := pow_le_pow_right₀ hr.le hk
+
+/-- For `r > 1` and `ε > 0`, dividing any `w` by a large enough power of `r` brings it below
+`ε`. -/
+theorem exists_div_pow_lt [ExistsAddOfLE K] (w : K) {r ε : K} (hr : 1 < r) (hε : 0 < ε) :
+    ∃ m : ℕ, w / r ^ m < ε := by
+  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (w / ε) hr
+  refine ⟨m, ?_⟩
+  rw [div_lt_iff₀ (pow_pos (zero_lt_one.trans hr) m), ← div_lt_iff₀' hε]
+  exact hm
 
 /-- For any `L` and `c > 0` there is a positive integer `n` with `L * n⁻¹ < c`. -/
 theorem exists_pos_nat_mul_inv_lt (L : K) {c : K} (hc : 0 < c) :
