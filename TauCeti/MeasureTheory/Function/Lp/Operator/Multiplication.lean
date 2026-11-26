@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
 public import Mathlib.Topology.ContinuousMap.Bounded.Star
 public import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.Analysis.InnerProductSpace.StrongUnitary.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.Dense
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
@@ -189,6 +190,31 @@ theorem mulStrong_comp {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 
 
 end Algebra
 
+section Hilbert
+
+variable {𝕜 H H' : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+  [NormedAddCommGroup H'] [InnerProductSpace 𝕜 H'] [CompleteSpace H']
+
+/-- If the pointwise adjoint field is strongly continuous, it acts on `L²` by the adjoint of the
+original multiplication operator. -/
+theorem adjoint_mulStrong (F : X → H →L[𝕜] H') (hF : ∀ v, Continuous fun x ↦ F x v)
+    (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C)
+    (hF' : ∀ v, Continuous fun x ↦ ContinuousLinearMap.adjoint (F x) v) :
+    ContinuousLinearMap.adjoint (mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB) =
+      mulStrong (p := 2) μ ENNReal.ofNat_ne_top (fun x ↦ ContinuousLinearMap.adjoint (F x)) hF'
+        (by
+          obtain ⟨C, hC⟩ := hB
+          exact ⟨C, fun x ↦ by simpa only [ContinuousLinearMap.adjoint.norm_map] using hC x⟩) := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_mulStrong μ ENNReal.ofNat_ne_top _ hF' _ f,
+    coeFn_mulStrong μ ENNReal.ofNat_ne_top F hF hB g] with x hx hy
+  rw [hx, hy, ContinuousLinearMap.adjoint_inner_left]
+
+end Hilbert
+
 /-- Pointwise multiplication by a uniformly bounded family acts strongly continuously on
 `Lᵖ` when the symbol is jointly continuous after evaluation at each fixed vector. The parameter
 space can be arbitrary, so this also applies to nets in groups without a countability axiom. -/
@@ -253,34 +279,20 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem mulStrong_mem_unitary (F : X → H →L[𝕜] H) (hF : ∀ v, Continuous fun x ↦ F x v)
     (hB : ∃ C : ℝ, ∀ x, ‖F x‖ ≤ C) (hU : ∀ x, F x ∈ unitary (H →L[𝕜] H)) :
     mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB ∈ unitary (Lp H 2 μ →L[𝕜] Lp H 2 μ) := by
-  have hstar (v : H) : Continuous fun x ↦ star (F x) v := by
-    refine continuous_iff_continuousAt.2 fun x ↦ Metric.continuousAt_iff'.2 fun ε hε ↦ ?_
-    have h := (Metric.continuousAt_iff' (b := x)).1 (hF (star (F x) v)).continuousAt ε hε
-    filter_upwards [h] with y hy
-    let U : unitary (H →L[𝕜] H) := ⟨F y, hU y⟩
-    have hUy : F y (star (F y) v) = v :=
-      DFunLike.congr_fun (Unitary.mul_star_self_of_mem (hU y)) v
-    have hUx : F x (star (F x) v) = v :=
-      DFunLike.congr_fun (Unitary.mul_star_self_of_mem (hU x)) v
-    have hisom : Isometry (F y) := (Unitary.linearIsometryEquiv U).isometry
-    rw [← hisom.dist_eq, hUy, dist_comm]
-    simpa only [hUx] using hy
+  have hF' := TauCeti.StrongUnitary.continuous_adjoint_apply_of_mem_unitary hF hU
+  have hB' : ∃ C : ℝ, ∀ x, ‖ContinuousLinearMap.adjoint (F x)‖ ≤ C := by
+    simpa only [ContinuousLinearMap.adjoint.norm_map] using hB
   let T := mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB
-  let S := mulStrong (p := 2) μ ENNReal.ofNat_ne_top (fun x ↦ star (F x)) hstar
-    (by
-      obtain ⟨C, hC⟩ := hB
-      exact ⟨C, fun x ↦ by simpa only [norm_star] using hC x⟩)
-  have hS (f : Lp H 2 μ) : S f =ᵐ[μ] fun x ↦ star (F x) (f x) :=
-    coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ f
+  let S := mulStrong (p := 2) μ ENNReal.ofNat_ne_top
+    (fun x ↦ ContinuousLinearMap.adjoint (F x)) hF' hB'
+  have hS (f : Lp H 2 μ) : S f =ᵐ[μ] fun x ↦ star (F x) (f x) := by
+    simpa only [ContinuousLinearMap.star_eq_adjoint] using
+      coeFn_mulStrong μ ENNReal.ofNat_ne_top _ hF' hB' f
   have hT (f : Lp H 2 μ) : T f =ᵐ[μ] fun x ↦ F x (f x) :=
     coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ f
   have hadj : S = star T := by
     rw [ContinuousLinearMap.star_eq_adjoint]
-    refine (ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_
-    rw [L2.inner_def, L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hS f, hT g] with x hx hy
-    rw [hx, hy, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+    exact (adjoint_mulStrong μ F hF hB hF').symm
   refine Unitary.mem_iff.2 ⟨?_, ?_⟩
   · rw [← hadj]
     ext1 f
@@ -388,12 +400,13 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem adjoint_mulLp (F : X →ᵇ (H →L[𝕜] H)) :
     ContinuousLinearMap.adjoint (F.mulLp μ 2 ENNReal.ofNat_ne_top) =
       (star F).mulLp μ 2 ENNReal.ofNat_ne_top := by
-  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [(star F).coeFn_mulLp ENNReal.ofNat_ne_top f,
-    F.coeFn_mulLp ENNReal.ofNat_ne_top g] with x hF hG
-  simp [hF, hG, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+  unfold mulLp
+  have hF' (v : H) : Continuous fun x ↦ ContinuousLinearMap.adjoint (F x) v := by
+    simpa only [BoundedContinuousFunction.star_apply, ContinuousLinearMap.star_eq_adjoint] using
+      (star F).continuous.clm_apply (continuous_const (y := v))
+  simpa only [← ContinuousLinearMap.star_eq_adjoint, ← BoundedContinuousFunction.star_apply] using
+    Lp.adjoint_mulStrong μ F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
+      ⟨‖F‖, F.norm_coe_le_norm⟩ hF'
 
 variable (μ) in
 /-- Multiplication of `L²(X, H)` by bounded continuous operator-valued functions, as a unital
