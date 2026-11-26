@@ -5,144 +5,157 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.RegularLocalRing.Frobenius
-import Mathlib.RingTheory.KrullDimension.Field
-import TauCeti.Algebra.CharP.Frobenius.Flat
+public import Mathlib.Algebra.CharP.Frobenius
+public import Mathlib.RingTheory.RegularLocalRing.Defs
+public import Mathlib.RingTheory.RingHom.Flat
+import Mathlib.Algebra.CharP.Algebra
+import Mathlib.Algebra.Algebra.ZMod
+import Mathlib.FieldTheory.IsPerfectClosure
+import Mathlib.FieldTheory.PerfectClosure
+import TauCeti.Algebra.CharP.Frobenius.Basic
+import TauCeti.Algebra.CharP.Frobenius.Localization
 import TauCeti.Algebra.CharP.Lemmas
+import TauCeti.RingTheory.AdicCompletion.Flat.Basic
 import TauCeti.RingTheory.AdicCompletion.Flat.Frobenius
-import TauCeti.RingTheory.AdicCompletion.LocalRing
-import TauCeti.RingTheory.KrullDimension.PowerSeries
+import TauCeti.RingTheory.AdicCompletion.Noetherian
+import TauCeti.RingTheory.Flat.ProjectiveDimension
 import TauCeti.RingTheory.LocalRing.CoefficientField
 import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.Perfect.PerfectClosure
 import TauCeti.RingTheory.Perfect.Projective.Dimension
-import TauCeti.RingTheory.RegularLocalRing.PowerSeries
+import TauCeti.RingTheory.RegularLocalRing.Descent
+import TauCeti.RingTheory.RegularLocalRing.Frobenius
+import TauCeti.RingTheory.RegularLocalRing.MvPowerSeries
+import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 /-!
-# Kunz's theorem: regularity from flatness of Frobenius
+# Kunz's theorem: flat Frobenius characterizes regularity
 
-Let `R` be a Noetherian ring of prime characteristic `p`. Kunz's theorem characterizes regularity
-of `R` by the flatness of its Frobenius endomorphism `a ↦ a ^ p`. The forward implication is
-`TauCeti.IsRegularRing.flat_frobenius`; this file proves the converse via perfection, following
-Bhatt and Scholze (Corollary 11.35), and packages the full equivalence.
+Let `R` be a Noetherian ring of prime characteristic `p`. If the Frobenius endomorphism
+`x ↦ x ^ p` of `R` is flat, then `R` is a regular ring (`TauCeti.IsRegularRing.of_flat_frobenius`).
+Together with the converse `TauCeti.IsRegularRing.flat_frobenius`, this is Kunz's
+characterization of regular rings in characteristic `p`
+(`TauCeti.isRegularRing_iff_flat_frobenius`).
 
-For a Noetherian local ring `(R, 𝔪)` of prime characteristic `p` with flat Frobenius:
+We follow the proof of Bhatt–Scholze through perfection rather than Kunz's length count.
 
-1. Pass to the `𝔪`-adic completion `R̂`, whose Frobenius is again flat
-   (`TauCeti.AdicCompletion.flat_frobenius`) and which is regular if and only if `R` is
-   (`TauCeti.AdicCompletion.isRegularLocalRing_iff`).
-2. By Cohen's structure theorem (`TauCeti.exists_surjective_mvPowerSeries_spanFinrank`), `R̂` is a
-   quotient of a multivariate power series ring `P₀ = κ⟦x₁, …, xₑ⟧` over its residue field `κ`.
-   The ring `P₀` is a regular local ring (`TauCeti.MvPowerSeries.isRegularLocalRing`) of Krull
-   dimension `e` (`MvPowerSeries.ringKrullDim_of_isNoetherianRing_of_finite`).
-3. Passing to colimit perfections yields a surjection `P₀_perf → R̂_perf`
-   (`PerfectRing.lift_surjective_of_surjective`), so every `R̂_perf`-module has projective
-   dimension at most `e + 1`
-   (`IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`).
-4. Since Frobenius on `R̂` is flat, `R̂ → R̂_perf` is faithfully flat
-   (`RingHom.FaithfullyFlat.of_isPerfectClosure`), so the projective dimension bound descends to
-   the residue field of `R̂` (`ModuleCat.hasProjectiveDimensionLT_of_tensorProduct`). By Serre's
-   theorem (`TauCeti.IsRegularLocalRing.of_hasProjectiveDimensionLE`), `R̂` is regular.
-
-The global converse (`TauCeti.IsRegularRing.of_flat_frobenius`) follows by localizing at every
-prime ideal using `TauCeti.flat_frobenius_of_isLocalization`.
-
-Prime characteristic is essential: in characteristic zero (`p = 1`), Frobenius is the identity and
-is flat for every ring regardless of regularity.
+* Flatness of Frobenius localizes, so it suffices to treat a Noetherian local ring `R`. It passes
+  to the completion `R̂` (`TauCeti.AdicCompletion.flat_frobenius`), and regularity descends from
+  `R̂` along the faithfully flat map `R → R̂` (`TauCeti.IsRegularLocalRing.of_faithfullyFlat`), so
+  we may assume that `R` is complete.
+* By the Cohen structure theorem (`TauCeti.exists_surjective_mvPowerSeries_spanFinrank`), a
+  complete Noetherian local ring of characteristic `p` is a quotient of a power series ring
+  `P₀ = κ⟦x₁, …, x_e⟧` over its residue field, which is a regular local ring
+  (`TauCeti.MvPowerSeries.isRegularLocalRing`).
+* The perfection `R_perf` is then a perfect quotient of the perfection of the regular ring `P₀`,
+  so every `R_perf`-module has projective dimension at most `dim P₀ + 1`
+  (`IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective`).
+* Because Frobenius of `R` is flat, so is `R → R_perf` (`RingHom.Flat.of_isPerfectClosure`), and
+  this map is faithfully flat since it induces a homeomorphism of prime spectra. Projective
+  dimension of finite modules over a Noetherian ring descends along faithfully flat maps
+  (`ModuleCat.projectiveDimension_tensorProduct`), so the residue field of `R` has finite
+  projective dimension, and `R` is regular by Serre's criterion
+  (`TauCeti.isRegularLocalRing_iff_projectiveDimension_ne_top`).
 
 ## Main results
 
-* `TauCeti.IsRegularLocalRing.of_flat_frobenius`: a Noetherian local ring of prime characteristic
-  `p` with flat Frobenius is regular.
-* `TauCeti.IsRegularRing.of_flat_frobenius`: a Noetherian ring of prime characteristic `p` with
-  flat Frobenius is regular.
-* `TauCeti.isRegularLocalRing_iff_flat_frobenius` and `TauCeti.isRegularRing_iff_flat_frobenius`:
-  **Kunz's theorem**, a Noetherian (local) ring of prime characteristic `p` is regular if and only
-  if its Frobenius endomorphism is flat.
+* `TauCeti.IsRegularLocalRing.of_flat_frobenius`: a Noetherian local ring of characteristic `p`
+  with flat Frobenius is a regular local ring.
+* `TauCeti.IsRegularRing.of_flat_frobenius`: a Noetherian ring of characteristic `p` with flat
+  Frobenius is a regular ring.
+* `TauCeti.isRegularLocalRing_iff_flat_frobenius`, `TauCeti.isRegularRing_iff_flat_frobenius`:
+  **Kunz's theorem**, a Noetherian (local) ring of characteristic `p` is regular exactly when its
+  Frobenius endomorphism is flat.
 
 ## References
 
 * E. Kunz, *Characterizations of regular local rings of characteristic p*, Amer. J. Math. 91
-  (1969), 772–784.
-* B. Bhatt and P. Scholze, *Projectivity of the Witt vector affine Grassmannian*, Invent. Math.
-  209 (2017), Corollary 11.35.
-* [Stacks Project, Lemma 51.17.6](https://stacks.math.columbia.edu/tag/0EC0).
+  (1969), 772–784, Theorem 2.1.
+* B. Bhatt and P. Scholze, *Projectivity of the Witt vector affine Grassmannian*,
+  Invent. Math. 209 (2017), Corollary 11.35 and its proof.
+* [Stacks Project, Tag 0EC0](https://stacks.math.columbia.edu/tag/0EC0).
 -/
 
 public section
 
-open CategoryTheory IsLocalRing
-
-namespace TauCeti
+open IsLocalRing CategoryTheory
 
 universe u
 
-/-- **Converse of Kunz's theorem (local case).** A Noetherian local ring of prime characteristic
-`p` whose Frobenius endomorphism is flat is a regular local ring. -/
-theorem IsRegularLocalRing.of_flat_frobenius {R : Type u} [CommRing R] [IsLocalRing R]
-    [IsNoetherianRing R] (p : ℕ) [Fact p.Prime] [ExpChar R p] (h : (frobenius R p).Flat) :
+namespace TauCeti
+
+variable {R : Type u} [CommRing R] (p : ℕ) [hp : Fact p.Prime] [CharP R p]
+
+/-- The case of a complete local ring: through a Cohen presentation, the perfection of `R` is a
+perfect quotient of the perfection of a regular local ring, so it has finite global dimension, and
+this descends to the residue field of `R` along the faithfully flat map `R → R_perf`. -/
+private theorem isRegularLocalRing_of_flat_frobenius_of_isAdicComplete [IsLocalRing R]
+    [IsNoetherianRing R] [IsAdicComplete (maximalIdeal R) R] (h : (frobenius R p).Flat) :
     IsRegularLocalRing R := by
-  refine AdicCompletion.isRegularLocalRing_iff.mp ?_
-  let R' := AdicCompletion (maximalIdeal R) R
-  have hF : (frobenius R' p).Flat := AdicCompletion.flat_frobenius p h
-  have hp : p.Prime := Fact.out
-  have : CharP R' p := (expChar_prime_iff (R := R') hp).1 inferInstance
-  -- Present `R'` as a quotient of a regular power series ring `P₀` by Cohen's structure theorem.
-  let : Algebra (ZMod p) R' := (ZMod.castHom dvd_rfl R').toAlgebra
+  -- A Cohen presentation `φ : κ⟦x₁, …, x_e⟧ → R` over the residue field `κ`.
+  let := ZMod.algebra R p
   obtain ⟨-, -, φ, hφ, -, -⟩ :=
-    exists_surjective_mvPowerSeries_spanFinrank (ZMod p) R' (maximalIdeal R').fg_of_isNoetherianRing
-  let e := (maximalIdeal R').spanFinrank
-  let P₀ := _root_.MvPowerSeries (Fin e) (ResidueField R')
-  have : CharP (ResidueField R') p :=
-    CharP.of_ringHom_of_prime (residue R') p hp (CharP.cast_eq_zero R' p)
-  have : CharP P₀ p := charP_of_injective_ringHom _root_.MvPowerSeries.C_injective p
-  have hdim : ringKrullDim P₀ ≤ e := by
-    simp [P₀, ringKrullDim_eq_zero_of_field]
-  -- Lift `φ : P₀ →+* R'` to a surjection of colimit perfections to bound global dimension of
-  -- `PerfectClosure R' p`.
-  have hψ : Function.Surjective
-      (PerfectRing.lift (PerfectClosure.of P₀ p) ((PerfectClosure.of R' p).comp φ) p) :=
-    PerfectRing.lift_surjective_of_surjective
-      (PerfectClosure.of P₀ p) (PerfectClosure.of R' p) hφ p
-  have hS : ∀ M : ModuleCat.{u} (PerfectClosure R' p), HasProjectiveDimensionLE M (e + 1) :=
+    exists_surjective_mvPowerSeries_spanFinrank (ZMod p) R (maximalIdeal R).fg_of_isNoetherianRing
+  let P₀ := MvPowerSeries (Fin (maximalIdeal R).spanFinrank) (ResidueField R)
+  have : CharP (ResidueField R) p := charP_of_ringHom_of_prime (residue R) p
+  have : CharP P₀ p := charP_of_injective_algebraMap (algebraMap (ResidueField R) P₀).injective p
+  -- The perfection of `φ` is a surjection onto `R_perf` from the perfection of a regular ring.
+  let f : PerfectClosure P₀ p →+* PerfectClosure R p :=
+    PerfectRing.lift (PerfectClosure.of P₀ p) ((PerfectClosure.of R p).comp φ) p
+  have hf : Function.Surjective f := PerfectRing.lift_surjective _ _ p fun x ↦ by
+    obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem (PerfectClosure.of R p) p x
+    obtain ⟨z, rfl⟩ := hφ y
+    exact ⟨n, z, hy⟩
+  have hd : ringKrullDim P₀ ≤ (maximalIdeal P₀).spanFinrank :=
+    (IsRegularLocalRing.spanFinrank_maximalIdeal (R := P₀)).ge
+  -- `R → R_perf` is faithfully flat.
+  let := (PerfectClosure.of R p).toAlgebra
+  have : Module.Flat R (PerfectClosure R p) :=
+    RingHom.flat_algebraMap_iff.mp (RingHom.Flat.of_isPerfectClosure (PerfectClosure.of R p) p h)
+  have : Module.FaithfullyFlat R (PerfectClosure R p) :=
+    .of_comap_surjective (IsPRadical.isHomeomorph_comap (PerfectClosure.of R p) p).surjective
+  have : Module.Finite R (Shrink.{u} (R ⧸ maximalIdeal R)) :=
+    Module.Finite.equiv (Shrink.linearEquiv R _).symm
+  refine isRegularLocalRing_iff_projectiveDimension_ne_top.mpr ?_
+  rw [← ModuleCat.projectiveDimension_tensorProduct (PerfectClosure R p)]
+  exact (projectiveDimension_ne_top_iff _).mpr ⟨_,
     IsPerfectClosure.hasProjectiveDimensionLE_succ_of_isRegularRing_of_surjective
-      (PerfectClosure.of P₀ p) p hdim hψ
-  -- Descend finite projective dimension of the residue field along the faithfully flat map
-  -- `R' → PerfectClosure R' p`, then conclude regularity by Serre's theorem.
-  have hff : (PerfectClosure.of R' p).FaithfullyFlat :=
-    RingHom.FaithfullyFlat.of_isPerfectClosure (PerfectClosure.of R' p) p hF
-  algebraize [PerfectClosure.of R' p]
-  have : Module.Finite R' (Shrink.{u} (R' ⧸ maximalIdeal R')) :=
-    Module.Finite.equiv (Shrink.linearEquiv R' _).symm
-  have : HasProjectiveDimensionLE (ModuleCat.of R' (Shrink.{u} (R' ⧸ maximalIdeal R'))) (e + 1) :=
-    ModuleCat.hasProjectiveDimensionLT_of_tensorProduct (PerfectClosure R' p) _ (hS _)
-  exact IsRegularLocalRing.of_hasProjectiveDimensionLE (e + 1)
+      (PerfectClosure.of P₀ p) p hd hf _⟩
 
-/-- **Converse of Kunz's theorem (global case).** A Noetherian ring of prime characteristic `p`
-whose Frobenius endomorphism is flat is a regular ring. -/
+/-- **The converse of Kunz's theorem, local form.** A Noetherian local ring of prime
+characteristic `p` whose Frobenius endomorphism is flat is a regular local ring. -/
 @[stacks 0EC0 "flatness of Frobenius implies regularity"]
-theorem IsRegularRing.of_flat_frobenius {R : Type u} [CommRing R] [IsNoetherianRing R] (p : ℕ)
-    [Fact p.Prime] [ExpChar R p] (h : (frobenius R p).Flat) : IsRegularRing R := by
-  have hp : p.Prime := Fact.out
-  have : CharP R p := (expChar_prime_iff (R := R) hp).1 inferInstance
-  refine isRegularRing_iff.mpr fun q _ ↦ ?_
-  have : CharP (Localization.AtPrime q) p :=
-    CharP.of_ringHom_of_prime (algebraMap R (Localization.AtPrime q)) p hp (CharP.cast_eq_zero R p)
-  exact IsRegularLocalRing.of_flat_frobenius p (flat_frobenius_of_isLocalization p q.primeCompl h)
+theorem IsRegularLocalRing.of_flat_frobenius [IsLocalRing R] [IsNoetherianRing R]
+    (h : (frobenius R p).Flat) : IsRegularLocalRing R := by
+  -- Pass to the completion, which is faithfully flat over `R` and has flat Frobenius.
+  have : CharP (AdicCompletion (maximalIdeal R) R) p :=
+    charP_of_ringHom_of_prime (algebraMap R _) p
+  have := isRegularLocalRing_of_flat_frobenius_of_isAdicComplete p
+    (AdicCompletion.flat_frobenius p h)
+  exact IsRegularLocalRing.of_faithfullyFlat (S := AdicCompletion (maximalIdeal R) R)
 
-/-- **Kunz's theorem (local case).** A Noetherian local ring of prime characteristic `p` is regular
-if and only if its Frobenius endomorphism is flat. -/
-@[stacks 0EC0 "local case"]
-theorem isRegularLocalRing_iff_flat_frobenius {R : Type u} [CommRing R] [IsLocalRing R]
-    [IsNoetherianRing R] (p : ℕ) [Fact p.Prime] [ExpChar R p] :
+/-- **The converse of Kunz's theorem.** A Noetherian ring of prime characteristic `p` whose
+Frobenius endomorphism is flat is a regular ring (Bhatt–Scholze, Corollary 11.35). -/
+@[stacks 0EC0 "flatness of Frobenius implies regularity"]
+theorem IsRegularRing.of_flat_frobenius [IsNoetherianRing R] (h : (frobenius R p).Flat) :
+    IsRegularRing R := by
+  refine isRegularRing_iff.mpr fun J hJ ↦ ?_
+  have h' := h.localRingHom J J (hJ.comap_frobenius p).symm
+  rw [localRingHom_frobenius] at h'
+  exact IsRegularLocalRing.of_flat_frobenius p h'
+
+/-- **Kunz's theorem, local form.** A Noetherian local ring of prime characteristic `p` is a
+regular local ring exactly when its Frobenius endomorphism is flat. -/
+@[stacks 0EC0]
+theorem isRegularLocalRing_iff_flat_frobenius [IsLocalRing R] [IsNoetherianRing R] :
     IsRegularLocalRing R ↔ (frobenius R p).Flat :=
   ⟨fun _ ↦ IsRegularLocalRing.flat_frobenius p, IsRegularLocalRing.of_flat_frobenius p⟩
 
-/-- **Kunz's theorem.** A Noetherian ring of prime characteristic `p` is regular if and only if its
-Frobenius endomorphism is flat. -/
+/-- **Kunz's theorem.** A Noetherian ring of prime characteristic `p` is a regular ring exactly
+when its Frobenius endomorphism is flat (Kunz, Theorem 2.1). -/
 @[stacks 0EC0]
-theorem isRegularRing_iff_flat_frobenius {R : Type u} [CommRing R] [IsNoetherianRing R] (p : ℕ)
-    [Fact p.Prime] [ExpChar R p] : IsRegularRing R ↔ (frobenius R p).Flat :=
+theorem isRegularRing_iff_flat_frobenius [IsNoetherianRing R] :
+    IsRegularRing R ↔ (frobenius R p).Flat :=
   ⟨fun _ ↦ IsRegularRing.flat_frobenius p, IsRegularRing.of_flat_frobenius p⟩
 
 end TauCeti

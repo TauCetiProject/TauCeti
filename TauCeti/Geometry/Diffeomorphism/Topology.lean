@@ -73,6 +73,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace G N]
   {n : ℕ∞ω}
 
+/-- The underlying `C^n` map of a diffeomorphism has the same underlying function. -/
+@[simp]
+theorem coe_toContMDiffMap (Φ : M ≃ₘ^n⟮I, J⟯ N) : ⇑Φ.toContMDiffMap = ⇑Φ :=
+  (rfl)
+
 /-- A diffeomorphism is determined by its underlying `C^n` map. -/
 theorem toContMDiffMap_injective :
     Function.Injective (toContMDiffMap : (M ≃ₘ^n⟮I, J⟯ N) → C^n⟮I, M; J, N⟯) := fun _ _ h ↦

@@ -12,7 +12,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
 import TauCeti.RingTheory.RingHom.Flat
-import TauCeti.RingTheory.Spectrum.Prime.IsPRadical
+import TauCeti.RingTheory.Perfect.IsPRadical
 
 /-!
 # Perfect closures of flat algebras over a perfect ring
@@ -37,6 +37,9 @@ a regular ring of characteristic `p` is faithfully flat over it, by Kunz's theor
 
 * `IsPRadical.pow_mem_of_finite`: finitely many elements of a `p`-radical extension have
   `p ^ n`-th powers in the base for a common exponent `n`.
+* `PerfectRing.lift_surjective`: the lift of `j : K →+* M` along a `p`-radical map to a perfect
+  ring is surjective when every element of `M` has a `p ^ n`-th power in the image of `j`; for
+  instance, the perfection of a surjective ring map is surjective.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
 * `IsPerfectClosure.injective_of_flat_frobenius`: a perfect closure of a ring with flat
@@ -80,6 +83,25 @@ theorem IsPRadical.pow_mem_of_finite {ι : Type*} [Finite ι] (z : ι → L) :
     Nat.add_sub_cancel' (Finset.le_sup (Finset.mem_univ j))]
 
 end IsPRadical
+
+section Lift
+
+variable {K L M : Type*} [CommRing K] [CommRing L] [CommRing M] (i : K →+* L) (j : K →+* M)
+  (p : ℕ) [ExpChar K p] [ExpChar L p] [PerfectRing L p] [ExpChar M p] [PerfectRing M p]
+  [IsPRadical i p]
+
+/-- Let `i : K →+* L` be `p`-radical with `L` perfect. If every element of the perfect ring `M`
+has a `p ^ n`-th power in the image of `j : K →+* M`, then the lift `L →+* M` of `j` is
+surjective. For instance, the perfection of a surjective ring map is surjective. -/
+theorem PerfectRing.lift_surjective (hj : ∀ x : M, ∃ (n : ℕ) (y : K), j y = x ^ p ^ n) :
+    Function.Surjective (PerfectRing.lift i j p) := fun x ↦ by
+  obtain ⟨n, y, hy⟩ := hj x
+  refine ⟨(iterateFrobeniusEquiv L p n).symm (i y), ?_⟩
+  rw [PerfectRing.lift_apply i j p _ n y ((iterateFrobeniusEquiv L p n).apply_symm_apply _).symm,
+    hy]
+  exact (iterateFrobeniusEquiv M p n).symm_apply_apply x
+
+end Lift
 
 namespace Module.Flat
 

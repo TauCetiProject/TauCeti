@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.CategoryTheory.Limits.Constructions.Over.Products
-import Mathlib.CategoryTheory.MorphismProperty.Limits
 import TauCeti.Topology.Sets.Opens
 
 /-!
@@ -15,17 +13,20 @@ import TauCeti.Topology.Sets.Opens
 
 Mathlib's `IsClosedImmersion.lift` factors a scheme morphism through a closed immersion
 when the defining ideal vanishes on the source. The factor remains over the same base.
+When the morphism is itself a closed immersion, so is the lift
+(`AlgebraicGeometry.IsClosedImmersion.isClosedImmersion_lift`).
 This file packages that lift in `Over S`, for use with structure maps of group schemes.
 Sections over a base with at most one point are also closed immersions.
-Products of closed immersions in `Over S` remain closed immersions.
 
 A closed immersion also preserves the height of every point for the specialization order
 (`AlgebraicGeometry.Scheme.Hom.height_apply_eq_height`): the closure of a point of the source is
 carried homeomorphically onto the closure of its image. So the dimension of the closure of a point
 can be computed in a closed subscheme or in the ambient scheme alike.
 
-An open subscheme with closed underlying set has a closed-immersion inclusion, as does every
-member of a pairwise-disjoint open cover. These inclusions support clopen decompositions.
+The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
+closed (an instance when closedness is recorded by `Fact`), so every member of a
+pairwise-disjoint open cover has a closed-immersion inclusion.
+These inclusions support clopen decompositions.
 -/
 
 public section
@@ -66,6 +67,15 @@ theorem closedImmersionOverLift_comp (i : X ⟶ Y) (f : Z ⟶ Y)
 
 end TauCeti
 
+/-- The lift of a closed immersion `g` along a closed immersion `f` is a closed immersion. -/
+instance AlgebraicGeometry.IsClosedImmersion.isClosedImmersion_lift {X Y Z : Scheme}
+    (f : X ⟶ Z) (g : Y ⟶ Z) [IsClosedImmersion f] [IsClosedImmersion g] (H : f.ker ≤ g.ker) :
+    IsClosedImmersion (IsClosedImmersion.lift f g H) :=
+  have : IsClosedImmersion (IsClosedImmersion.lift f g H ≫ f) := by
+    rw [IsClosedImmersion.lift_fac]
+    infer_instance
+  .of_comp_isClosedImmersion _ f
+
 namespace AlgebraicGeometry.Scheme.Hom
 
 /-- A closed immersion preserves the height of points for the specialization order, that is, the
@@ -86,46 +96,21 @@ theorem height_apply_eq_height {X Y : Scheme} (f : X ⟶ Y) [IsClosedImmersion f
 
 end AlgebraicGeometry.Scheme.Hom
 
-namespace AlgebraicGeometry
-
-open CategoryTheory.Limits
-
-/-- The product of two closed immersions over a common base is a closed immersion. -/
-theorem isClosedImmersion_over_prod_map {S : Scheme.{u}} {X Y X' Y' : Over S}
-    (f : X ⟶ X') (g : Y ⟶ Y') [IsClosedImmersion f.left] [IsClosedImmersion g.left] :
-    IsClosedImmersion (prod.map f g).left := by
-  let m := pullback.map X.hom Y.hom X'.hom Y'.hom f.left g.left (𝟙 S)
-    (by simp [Over.w]) (by simp [Over.w])
-  have : MorphismProperty.IsStableUnderComposition
-      (@IsClosedImmersion : MorphismProperty Scheme.{u}) :=
-    ⟨fun f g _ _ ↦ IsClosedImmersion.comp f g⟩
-  have hm : IsClosedImmersion m :=
-    MorphismProperty.pullbackMap (P := (@IsClosedImmersion : MorphismProperty Scheme.{u}))
-      (inferInstance : IsClosedImmersion f.left) (inferInstance : IsClosedImmersion g.left)
-      f.w.symm g.w.symm
-  have he : (prod.map f g).left ≫ (Over.prodLeftIsoPullback X' Y').hom =
-      (Over.prodLeftIsoPullback X Y).hom ≫ m := by
-    apply pullback.hom_ext
-    · simp only [Category.assoc, Over.prodLeftIsoPullback_hom_fst, m,
-        pullback.map, pullback.lift_fst, Over.prodLeftIsoPullback_hom_fst_assoc]
-      exact congrArg (fun k ↦ k.left) (prod.map_fst f g)
-    · simp only [Category.assoc, Over.prodLeftIsoPullback_hom_snd, m,
-        pullback.map, pullback.lift_snd, Over.prodLeftIsoPullback_hom_snd_assoc]
-      exact congrArg (fun k ↦ k.left) (prod.map_snd f g)
-  have : IsClosedImmersion ((prod.map f g).left ≫ (Over.prodLeftIsoPullback X' Y').hom) := by
-    rw [he]
-    infer_instance
-  exact IsClosedImmersion.of_comp_isClosedImmersion _ (Over.prodLeftIsoPullback X' Y').hom
-
-end AlgebraicGeometry
-
 namespace AlgebraicGeometry.Scheme.Opens
 
-/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion. -/
-theorem isClosedImmersion_ι_of_isClosed {X : Scheme} (U : X.Opens)
-    (hU : IsClosed (U : Set X)) : IsClosedImmersion U.ι :=
-  IsClosedImmersion.of_isPreimmersion _
-    (by simpa only [AlgebraicGeometry.Scheme.Opens.range_ι] using hU)
+/-- The inclusion of an open subscheme is a closed immersion exactly when its underlying set is
+closed. -/
+@[simp]
+theorem isClosedImmersion_ι_iff {X : Scheme} (U : X.Opens) :
+    IsClosedImmersion U.ι ↔ IsClosed (U : Set X) := by
+  rw [IsClosedImmersion.iff_isPreimmersion, range_ι]
+  exact and_iff_right inferInstance
+
+/-- The inclusion of an open subscheme whose underlying set is closed is a closed immersion, as an
+instance for a clopen subscheme recorded by `Fact`. -/
+instance isClosedImmersion_ι_of_fact_isClosed {X : Scheme} (U : X.Opens)
+    [h : Fact (IsClosed (U : Set X))] : IsClosedImmersion U.ι :=
+  U.isClosedImmersion_ι_iff.mpr h.out
 
 end AlgebraicGeometry.Scheme.Opens
 
@@ -138,7 +123,7 @@ theorem isClosedImmersion_ι_of_pairwiseDisjoint_iSup_eq_top {X : Scheme} {J : T
     (U : J → X.Opens)
     (hcover : ⨆ j, U j = ⊤) (hdisj : Pairwise fun i j ↦ Disjoint (U i) (U j)) (j : J) :
     IsClosedImmersion (U j).ι :=
-  (U j).isClosedImmersion_ι_of_isClosed
+  (U j).isClosedImmersion_ι_iff.mpr
     (TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
       U hcover hdisj j).isClosed
 

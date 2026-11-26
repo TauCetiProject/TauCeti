@@ -34,6 +34,9 @@ subgroups with simple quotient.
 
 ## Main results
 
+* `Subgroup.IsMinimalNormal.map_mulEquiv`: minimal normality is transported by isomorphisms.
+* `Subgroup.IsMinimalNormal.disjoint_of_ne`, `Subgroup.IsMinimalNormal.commute_of_ne`: two distinct
+  minimal normal subgroups intersect trivially and commute elementwise.
 * `TauCeti.NormalSubgroup.instIsModularLattice`: the normal subgroups form a modular lattice.
 * `TauCeti.NormalSubgroup.isAtom_iff_isMinimalNormal`: the atoms of `NormalSubgroup G` are the
   minimal normal subgroups.
@@ -55,6 +58,55 @@ def Subgroup.IsMinimalNormal (N : Subgroup G) : Prop :=
 theorem Subgroup.isMinimalNormal_iff {N : Subgroup G} :
     N.IsMinimalNormal ↔ N.Normal ∧ N ≠ ⊥ ∧ ∀ M ≤ N, M.Normal → M = ⊥ ∨ M = N :=
   Iff.rfl
+
+namespace Subgroup.IsMinimalNormal
+
+variable {N M : Subgroup G}
+
+theorem normal (hN : N.IsMinimalNormal) : N.Normal :=
+  (isMinimalNormal_iff.1 hN).1
+
+theorem ne_bot (hN : N.IsMinimalNormal) : N ≠ ⊥ :=
+  (isMinimalNormal_iff.1 hN).2.1
+
+/-- A normal subgroup of `G` contained in a minimal normal subgroup `N` is `⊥` or `N`. -/
+theorem eq_bot_or_eq (hN : N.IsMinimalNormal) (hM : M.Normal) (hMN : M ≤ N) : M = ⊥ ∨ M = N :=
+  (isMinimalNormal_iff.1 hN).2.2 M hMN hM
+
+/-- The image of a minimal normal subgroup under a group isomorphism is minimal normal. -/
+theorem map_mulEquiv {G' : Type*} [Group G'] (hN : N.IsMinimalNormal) (e : G ≃* G') :
+    (N.map (e : G →* G')).IsMinimalNormal := by
+  have := hN.normal
+  refine isMinimalNormal_iff.2 ⟨this.map _ e.surjective,
+    (map_eq_bot_iff_of_injective _ e.injective).not.2 hN.ne_bot, fun M hM hMn ↦ ?_⟩
+  -- Pull `M` back along `e`, apply minimality of `N` there, and push forward again.
+  have hM' : M.map (e.symm : G' →* G) ≤ N := by
+    simpa [map_map] using map_mono (f := (e.symm : G' →* G)) hM
+  have hback : (M.map (e.symm : G' →* G)).map (e : G →* G') = M := by
+    simp [map_map]
+  rcases hN.eq_bot_or_eq (hMn.map _ e.symm.surjective) hM' with h | h
+  · exact Or.inl (by rw [← hback, h, Subgroup.map_bot])
+  · exact Or.inr (by rw [← hback, h])
+
+/-- A minimal normal subgroup `N` either lies in a normal subgroup `M` or meets it trivially. -/
+theorem le_or_disjoint (hN : N.IsMinimalNormal) (hM : M.Normal) : N ≤ M ∨ Disjoint N M := by
+  have := hN.normal
+  rcases hN.eq_bot_or_eq (normal_inf_normal N M) inf_le_left with h | h
+  · exact Or.inr (disjoint_iff.2 h)
+  · exact Or.inl (inf_eq_left.1 h)
+
+/-- Two distinct minimal normal subgroups intersect trivially. -/
+theorem disjoint_of_ne (hN : N.IsMinimalNormal) (hM : M.IsMinimalNormal) (hne : N ≠ M) :
+    Disjoint N M :=
+  (hN.le_or_disjoint hM.normal).resolve_left fun hle ↦
+    hne <| (hM.eq_bot_or_eq hN.normal hle).resolve_left hN.ne_bot
+
+/-- Two distinct minimal normal subgroups commute elementwise. -/
+theorem commute_of_ne (hN : N.IsMinimalNormal) (hM : M.IsMinimalNormal) (hne : N ≠ M) {x y : G}
+    (hx : x ∈ N) (hy : y ∈ M) : Commute x y :=
+  commute_of_normal_of_disjoint N M hN.normal hM.normal (hN.disjoint_of_ne hM hne) x y hx hy
+
+end Subgroup.IsMinimalNormal
 
 namespace TauCeti
 
@@ -90,6 +142,11 @@ theorem coe_sup (M N : NormalSubgroup G) :
 theorem coe_inf (M N : NormalSubgroup G) :
     ((M ⊓ N : NormalSubgroup G) : Subgroup G) = (M : Subgroup G) ⊓ N :=
   rfl
+
+@[simp, norm_cast]
+theorem coe_finset_sup {ι : Type*} (s : Finset ι) (f : ι → NormalSubgroup G) :
+    ((s.sup f : NormalSubgroup G) : Subgroup G) = s.sup fun i ↦ (f i : Subgroup G) :=
+  map_finset_sup (normalSubgroups G).subtype s f
 
 /-- **Dedekind's modular law** for normal subgroups: for normal `A ≤ C` and normal `B`,
 `(A ⊔ B) ⊓ C = A ⊔ (B ⊓ C)`. -/

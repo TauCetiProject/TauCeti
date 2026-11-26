@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Regularization
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Probability.Distributions.Cauchy.ApproximateIdentity
+import TauCeti.Topology.Instances.NNReal
 
 /-!
 # The Sokhotski–Plemelj jump of the Cauchy transform
@@ -289,11 +290,8 @@ theorem tendsto_integral_smul_cauchyTransform_sub (u : 𝓓'((⊤ : Opens ℝ), 
   obtain ⟨A, hA0, hA⟩ := χ.hasCompactSupport.isCompact.isBounded.subset_closedBall_lt 0 0
   obtain ⟨B, hB0, hB⟩ := φ.hasCompactSupport.isCompact.isBounded.subset_closedBall_lt 0 0
   let b : ContDiffBump (0 : ℝ) := ⟨A + B + 1, A + B + 2, by positivity, by linarith⟩
-  have hlim : Tendsto Real.toNNReal (𝓝[>] 0) (𝓝[≠] 0) :=
-    tendsto_nhdsWithin_iff.2 ⟨(continuous_real_toNNReal.tendsto' 0 0 (by simp)).mono_left
-      nhdsWithin_le_nhds, eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦
-        (Real.toNNReal_pos.2 hε).ne'⟩
-  refine ((tendsto_apply_poissonRegularization u φ b).comp hlim).congr' ?_
+  refine ((tendsto_apply_poissonRegularization u φ b).comp
+    Real.tendsto_toNNReal_nhdsGT_zero_nhdsNE).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with ε (hε : 0 < ε)
   rw [Function.comp_apply, ← integral_smul_cauchyTransform_sub_eq u hχ φ hA hB le_rfl,
     Real.coe_toNNReal ε hε.le]

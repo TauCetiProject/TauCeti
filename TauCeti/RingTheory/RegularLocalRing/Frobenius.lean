@@ -9,8 +9,7 @@ public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Basic
-import TauCeti.Algebra.CharP.Lemmas
-import Mathlib.RingTheory.Localization.AtPrime.Basic
+import TauCeti.Algebra.CharP.Frobenius.Localization
 import TauCeti.RingTheory.CohenMacaulay.RegularSequence
 import TauCeti.RingTheory.Flat.LocalCriterion
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
@@ -30,7 +29,8 @@ ideal of the source to a regular sequence is flat (`RingHom.Flat.of_isWeaklyRegu
 gives the local case `TauCeti.IsRegularLocalRing.flat_frobenius`. This replaces the appeal to
 miracle flatness in the Stacks proof: the dimension count is only needed to see that the powers
 form a regular sequence. Flatness is local on the target, and Frobenius commutes with
-localization, so the local case gives the global one.
+localization (`TauCeti.localRingHom_frobenius`, using `Ideal.IsPrime.comap_frobenius`), so the
+local case gives the global one.
 
 The theorems are stated for an exponential characteristic `p`, so that in characteristic zero,
 where `p = 1` and Frobenius is the identity, they hold trivially.
@@ -43,7 +43,9 @@ where `p = 1` and Frobenius is the identity, they hold trivially.
 
 Frobenius is a local homomorphism by `TauCeti.isLocalHom_frobenius`, and regularity cannot be
 dropped: a ring of exponential characteristic `p > 1` with flat Frobenius is reduced
-(`TauCeti.isReduced_of_flat_frobenius`).
+(`TauCeti.isReduced_of_flat_frobenius`). Conversely, a Noetherian ring of prime characteristic
+`p` with flat Frobenius is regular (`TauCeti.IsRegularRing.of_flat_frobenius`, in
+`TauCeti.RingTheory.RegularLocalRing.Kunz`).
 
 ## References
 
@@ -87,20 +89,13 @@ theorem IsRegularRing.flat_frobenius [IsRegularRing R] : (frobenius R p).Flat :=
   · exact RingHom.Flat.of_bijective (f := frobenius R 1)
       ⟨fun a b h ↦ by simpa [frobenius_def] using h, fun a ↦ ⟨a, by simp [frobenius_def]⟩⟩
   refine RingHom.Flat.ofLocalizationPrime _ fun J hJ ↦ ?_
-  -- Frobenius of `R` induces Frobenius of `R_J`, since `a ^ p ∈ J` exactly when `a ∈ J`.
-  have hQ : J.comap (frobenius R p) = J.comap (RingHom.id R) := by
-    ext a
-    exact hJ.pow_mem_iff_mem p hp.pos
-  have : CharP (Localization.AtPrime J) p :=
-    CharP.of_ringHom_of_prime (algebraMap R (Localization.AtPrime J)) p hp (CharP.cast_eq_zero R p)
-  have : ExpChar (Localization.AtPrime J) p := .prime hp
-  have hcomp : Localization.localRingHom _ J (frobenius R p) rfl =
-      (frobenius (Localization.AtPrime J) p).comp
-        (Localization.localRingHom _ J (RingHom.id R) hQ) :=
-    IsLocalization.ringHom_ext (J.comap (frobenius R p)).primeCompl <| RingHom.ext fun a ↦ by
-      simp [Localization.localRingHom_to_map, frobenius_def]
-  rw [hcomp]
-  exact (RingHom.Flat.localRingHom (RingHom.Flat.id R) J _ hQ).comp
-    (IsRegularLocalRing.flat_frobenius p)
+  have := Fact.mk hp
+  -- `Flat.ofLocalizationPrime` localizes the source at `J.comap (frobenius R p)`, which is `J`.
+  suffices ∀ (I : Ideal R) [I.IsPrime] (hI : I = J.comap (frobenius R p)),
+      (Localization.localRingHom I J _ hI).Flat from this _ rfl
+  rintro I _ hI
+  obtain rfl : I = J := hI.trans (hJ.comap_frobenius p)
+  rw [localRingHom_frobenius]
+  exact IsRegularLocalRing.flat_frobenius p
 
 end TauCeti

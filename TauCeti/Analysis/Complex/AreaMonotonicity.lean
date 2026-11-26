@@ -67,6 +67,11 @@ The proof has three steps.
 * `TauCeti.setIntegral_mul_norm_deriv_sq_eq`: the monotonicity identity.
 * `TauCeti.monotoneOn_setIntegral_mul_norm_deriv_sq_div_sq`: the weighted area divided by `t²` is
   nondecreasing.
+* `TauCeti.monotoneOn_setIntegral_norm_deriv_sq_div_sq`: the area over the preimage of the ball of
+  radius `t` divided by `t²` is nondecreasing.
+* `TauCeti.integrableOn_norm_deriv_sq_sep_norm_sub_lt` and
+  `TauCeti.ofReal_setIntegral_norm_deriv_sq_eq_setLIntegral_enorm_deriv_sq`: the area over the
+  preimage of a ball is finite, and its Bochner and lower Lebesgue integral forms agree.
 * `TauCeti.ofReal_analyticOrderNatAt_mul_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over
   the ball of radius `r` is at least `m π r²`, for the local multiplicity `m`.
 * `TauCeti.ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`: the area over the ball of radius `r`
@@ -103,6 +108,10 @@ private theorem lt_of_notMem_sep {U : Set ℂ} {f : ℂ → ℝ} {ρ : ℝ} {z :
 /-- Beyond radius `t`, the squared ratio `a ^ 2 / t ^ 2` exceeds `1`. -/
 private theorem one_lt_sq_div_sq {a t : ℝ} (ht : 0 < t) (h : t < a) : 1 < a ^ 2 / t ^ 2 :=
   (one_lt_div (by positivity)).2 (pow_lt_pow_left₀ h ht.le two_ne_zero)
+
+/-- From radius `t` on, the squared ratio `a ^ 2 / t ^ 2` is at least `1`. -/
+private theorem one_le_sq_div_sq {a t : ℝ} (ht : 0 < t) (h : t ≤ a) : 1 ≤ a ^ 2 / t ^ 2 :=
+  (one_le_div (by positivity)).2 (pow_le_pow_left₀ ht.le h 2)
 
 /-- A nonincreasing cutoff vanishing on `(1, ∞)` is nonnegative. -/
 private theorem cutoff_nonneg {χ : ℝ → ℝ} (hχa : Antitone χ) (hχ1 : ∀ s, 1 < s → χ s = 0)
@@ -471,6 +480,161 @@ theorem monotoneOn_setIntegral_mul_norm_deriv_sq_div_sq {U : Set ℂ} {u : ℂ �
       two_mul_integral_cutoff_le hU hu hχ hχa hχ1 ht.1 (hK t ht.2))
   simpa [Real.rpow_two] using this
 
+omit [InnerProductSpace ℂ E] [CompleteSpace E] in
+/-- The preimage `{z ∈ U | ‖u z - x₀‖ < t}` of an open ball is measurable. -/
+private theorem measurableSet_sep_norm_sub_lt {U : Set ℂ} {u : ℂ → E} {x₀ : E} (hU : IsOpen U)
+    (hu : ContinuousOn u U) (t : ℝ) : MeasurableSet {z ∈ U | ‖u z - x₀‖ < t} := by
+  have : {z ∈ U | ‖u z - x₀‖ < t} = U ∩ (fun z ↦ ‖u z - x₀‖) ⁻¹' Iio t := by ext; simp
+  rw [this]
+  exact (ContinuousOn.isOpen_inter_preimage (by fun_prop) hU isOpen_Iio).measurableSet
+
+omit [InnerProductSpace ℂ E] [CompleteSpace E] in
+/-- A point of `U` outside the preimage `{z ∈ U | ‖u z - x₀‖ < t}` of the open ball of radius
+`t > 0` satisfies `1 ≤ ‖u z - x₀‖² / t²`. -/
+private theorem one_le_sq_div_sq_of_notMem {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ} {z : ℂ}
+    (ht : 0 < t) (hz : z ∈ U) (hzS : z ∉ {z ∈ U | ‖u z - x₀‖ < t}) :
+    1 ≤ ‖u z - x₀‖ ^ 2 / t ^ 2 :=
+  one_le_sq_div_sq ht (not_lt.1 fun h ↦ hzS ⟨hz, h⟩)
+
+/-- The area density `‖u'‖²` of a holomorphic map `u` is integrable on the preimage
+`{z ∈ U | ‖u z - x₀‖ < t}` of the open ball of radius `t` around `x₀` when the sublevel set
+`{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact. -/
+theorem integrableOn_norm_deriv_sq_sep_norm_sub_lt {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ}
+    (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    IntegrableOn (fun z ↦ ‖deriv u z‖ ^ 2) {z ∈ U | ‖u z - x₀‖ < t} :=
+  ((((hu.analyticOnNhd hU).deriv.continuousOn.norm.pow 2).mono
+    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ ≤ t}) ↦ hz.1).integrableOn_compact hK).mono_set
+    fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ < t}) ↦ ⟨hz.1, hz.2.le⟩
+
+/-- When the sublevel set `{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact, the area `∫ ‖u'‖²` of a
+holomorphic map `u` over the preimage of the open ball of radius `t` around `x₀` agrees with the
+lower Lebesgue integral `∫⁻ ‖u'‖ₑ²` used in
+`TauCeti.ofReal_pi_mul_sq_le_setLIntegral_enorm_deriv_sq`. -/
+theorem ofReal_setIntegral_norm_deriv_sq_eq_setLIntegral_enorm_deriv_sq {U : Set ℂ} {u : ℂ → E}
+    {x₀ : E} {t : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U)
+    (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    ENNReal.ofReal (∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2) =
+      ∫⁻ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ₑ ^ 2 := by
+  rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_norm_deriv_sq_sep_norm_sub_lt hU hu hK)
+    (Eventually.of_forall fun _ ↦ sq_nonneg _)]
+  simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- The area density restricted to the preimage `{z ∈ U | ‖u z - x₀‖ < t}` of an open ball is
+integrable on `U` when the sublevel set `{z ∈ U | ‖u z - x₀‖ ≤ t}` is compact. -/
+private theorem integrableOn_indicator_norm_deriv_sq {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ}
+    (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    IntegrableOn ({z ∈ U | ‖u z - x₀‖ < t}.indicator fun z ↦ ‖deriv u z‖ ^ 2) U :=
+  (integrableOn_norm_deriv_sq_sep_norm_sub_lt hU hu hK).integrable_indicator
+    (measurableSet_sep_norm_sub_lt hU hu.continuousOn t) |>.integrableOn
+
+omit [CompleteSpace E] in
+/-- The integral over `U` of the area density restricted to `{z ∈ U | ‖u z - x₀‖ < t}` is the
+area over that set. -/
+private theorem setIntegral_indicator_norm_deriv_sq {U : Set ℂ} {u : ℂ → E} {x₀ : E}
+    (hU : IsOpen U) (hu : ContinuousOn u U) (t : ℝ) :
+    ∫ z in U, {z ∈ U | ‖u z - x₀‖ < t}.indicator (fun z ↦ ‖deriv u z‖ ^ 2) z =
+      ∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2 := by
+  rw [setIntegral_indicator (measurableSet_sep_norm_sub_lt hU hu t),
+    inter_eq_right.2 fun z (hz : z ∈ {z ∈ U | ‖u z - x₀‖ < t}) ↦ hz.1]
+
+omit [CompleteSpace E] in
+/-- At each point of `U`, the area density weighted by `χ(‖u - x₀‖² / t²)`, for a cutoff `χ ≤ 1`
+vanishing on `[1, ∞)`, is at most the area density restricted to the preimage of the open ball of
+radius `t`. -/
+private theorem cutoff_mul_norm_deriv_sq_le_indicator {U : Set ℂ} {u : ℂ → E} {x₀ : E}
+    {χ : ℝ → ℝ} {t : ℝ} {z : ℂ} (hχle : ∀ x, χ x ≤ 1) (hχ1 : ∀ s, 1 ≤ s → χ s = 0)
+    (ht : 0 < t) (hz : z ∈ U) :
+    χ (‖u z - x₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2 ≤
+      {z ∈ U | ‖u z - x₀‖ < t}.indicator (fun z ↦ ‖deriv u z‖ ^ 2) z := by
+  by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
+  · rw [indicator_of_mem hzS]
+    exact mul_le_of_le_one_left (sq_nonneg _) (hχle _)
+  · rw [indicator_of_notMem hzS, hχ1 _ (one_le_sq_div_sq_of_notMem ht hz hzS), zero_mul]
+
+/-- For a cutoff `0 ≤ χ ≤ 1` vanishing on `[1, ∞)`, the area weighted by `χ(‖u - x₀‖² / t²)` is
+at most the area over the preimage of the open ball of radius `t`. -/
+private theorem setIntegral_cutoff_le_setIntegral {U : Set ℂ} {u : ℂ → E} {x₀ : E} {χ : ℝ → ℝ}
+    {t : ℝ} (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (hχ : Continuous χ)
+    (hχle : ∀ x, χ x ≤ 1) (hχ1 : ∀ s, 1 ≤ s → χ s = 0) (ht : 0 < t)
+    (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    ∫ z in U, χ (‖u z - x₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2 ≤
+      ∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2 := by
+  rw [← setIntegral_indicator_norm_deriv_sq hU hu.continuousOn]
+  refine setIntegral_mono_on (integrableOn_cutoff hU hu hχ (fun s hs ↦ hχ1 s hs.le) ht hK)
+    (integrableOn_indicator_norm_deriv_sq hU hu hK) hU.measurableSet
+    fun z hz ↦ cutoff_mul_norm_deriv_sq_le_indicator hχle hχ1 ht hz
+
+/-- The cutoffs `x ↦ smoothTransition ((1 - x) * (n + 1))` vanish on `[1, ∞)`. -/
+private theorem smoothTransition_one_sub_mul_eq_zero (n : ℕ) {x : ℝ} (hx : 1 ≤ x) :
+    Real.smoothTransition ((1 - x) * (n + 1)) = 0 :=
+  Real.smoothTransition.zero_of_nonpos
+    (mul_nonpos_of_nonpos_of_nonneg (by linarith) (by positivity))
+
+/-- The areas weighted by the cutoffs `x ↦ smoothTransition ((1 - x) * (n + 1))` at radius `t`
+converge, as `n → ∞`, to the area over the preimage of the open ball of radius `t`. -/
+private theorem tendsto_setIntegral_smoothTransition {U : Set ℂ} {u : ℂ → E} {x₀ : E} {t : ℝ}
+    (hU : IsOpen U) (hu : DifferentiableOn ℂ u U) (ht : 0 < t)
+    (hK : IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    Tendsto (fun n : ℕ ↦ ∫ z in U,
+        Real.smoothTransition ((1 - ‖u z - x₀‖ ^ 2 / t ^ 2) * (n + 1)) * ‖deriv u z‖ ^ 2) atTop
+      (𝓝 (∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2)) := by
+  rw [← setIntegral_indicator_norm_deriv_sq hU hu.continuousOn]
+  refine tendsto_integral_of_dominated_convergence _
+    (fun n ↦ (integrableOn_cutoff hU hu (χ := fun x ↦ Real.smoothTransition ((1 - x) * (n + 1)))
+      (by fun_prop) (fun s hs ↦ smoothTransition_one_sub_mul_eq_zero n hs.le) ht
+      hK).aestronglyMeasurable)
+    (integrableOn_indicator_norm_deriv_sq hU hu hK)
+    (fun n ↦ ae_restrict_of_forall_mem hU.measurableSet fun z hz ↦ ?_)
+    (ae_restrict_of_forall_mem hU.measurableSet fun z hz ↦ ?_)
+  · rw [Real.norm_eq_abs,
+      abs_of_nonneg (mul_nonneg (Real.smoothTransition.nonneg _) (sq_nonneg _))]
+    exact cutoff_mul_norm_deriv_sq_le_indicator
+      (χ := fun x ↦ Real.smoothTransition ((1 - x) * (n + 1)))
+      (fun _ ↦ Real.smoothTransition.le_one _)
+      (fun x hx ↦ smoothTransition_one_sub_mul_eq_zero n hx) ht hz
+  · by_cases hzS : z ∈ {z ∈ U | ‖u z - x₀‖ < t}
+    · rw [indicator_of_mem hzS]
+      have hlt : ‖u z - x₀‖ ^ 2 / t ^ 2 < 1 :=
+        (div_lt_one (by positivity)).2 (pow_lt_pow_left₀ hzS.2 (norm_nonneg _) two_ne_zero)
+      refine tendsto_const_nhds.congr' ((tendsto_natCast_atTop_atTop.eventually_ge_atTop
+        (1 / (1 - ‖u z - x₀‖ ^ 2 / t ^ 2))).mono fun n hn ↦ ?_)
+      dsimp only
+      rw [Real.smoothTransition.one_of_one_le, one_mul]
+      rw [div_le_iff₀ (sub_pos.2 hlt)] at hn
+      nlinarith
+    · rw [indicator_of_notMem hzS]
+      exact tendsto_const_nhds.congr fun n ↦ by
+        rw [smoothTransition_one_sub_mul_eq_zero n (one_le_sq_div_sq_of_notMem ht hz hzS),
+          zero_mul]
+
+/-- **Monotonicity of the area of a holomorphic curve.** Let `u` be holomorphic on an open set
+`U ⊆ ℂ` and `x₀` a point such that the sublevel sets `{z ∈ U | ‖u z - x₀‖ ≤ t}`, `t < r`, are
+compact. Then the area `∫ ‖u'‖²` of `u` over the preimage of the open ball of radius `t` around
+`x₀`, divided by `t²`, is nondecreasing in `t ∈ (0, r)`. -/
+theorem monotoneOn_setIntegral_norm_deriv_sq_div_sq {U : Set ℂ} {u : ℂ → E} {x₀ : E} {r : ℝ}
+    (hU : IsOpen U) (hu : DifferentiableOn ℂ u U)
+    (hK : ∀ t < r, IsCompact {z ∈ U | ‖u z - x₀‖ ≤ t}) :
+    MonotoneOn (fun t ↦ (∫ z in {z ∈ U | ‖u z - x₀‖ < t}, ‖deriv u z‖ ^ 2) / t ^ 2)
+      (Ioo 0 r) := by
+  intro s hs t ht hst
+  -- Let the cutoffs increase to the indicator of `(-∞, 1)` in the weighted monotonicity.
+  have hprof : ∀ n : ℕ,
+      (∫ z in U, Real.smoothTransition ((1 - ‖u z - x₀‖ ^ 2 / s ^ 2) * (n + 1)) *
+        ‖deriv u z‖ ^ 2) / s ^ 2 ≤
+      (∫ z in U, Real.smoothTransition ((1 - ‖u z - x₀‖ ^ 2 / t ^ 2) * (n + 1)) *
+        ‖deriv u z‖ ^ 2) / t ^ 2 := fun n ↦
+    monotoneOn_setIntegral_mul_norm_deriv_sq_div_sq
+      (χ := fun x ↦ Real.smoothTransition ((1 - x) * (n + 1))) hU hu
+      (Real.smoothTransition.contDiff.comp (by fun_prop))
+      (fun a b hab ↦ Real.smoothTransition.monotone
+        (mul_le_mul_of_nonneg_right (by linarith) (by positivity)))
+      (fun x hx ↦ smoothTransition_one_sub_mul_eq_zero n hx.le) hK hs ht hst
+  exact le_of_tendsto' ((tendsto_setIntegral_smoothTransition hU hu hs.1 (hK s hs.2)).div_const
+    _) fun n ↦ (hprof n).trans (div_le_div_of_nonneg_right
+      (setIntegral_cutoff_le_setIntegral hU hu (by fun_prop)
+        (fun _ ↦ Real.smoothTransition.le_one _)
+        (fun x hx ↦ smoothTransition_one_sub_mul_eq_zero n hx) ht.1 (hK t ht.2)) (by positivity))
+
 omit [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E] in
 /-- The area of the model branched cover `ζ ↦ ζ ^ m • c`, weighted by a radial cutoff:
 `∫_ℂ χ((|ζ| ^ m a)²) (m |ζ| ^ (m - 1) a)² = m π ∫₀^∞ χ` for `a > 0`. -/
@@ -794,10 +958,7 @@ private theorem ofReal_integral_cutoff_le_lintegral {U : Set ℂ} {u : ℂ → E
       ∫⁻ z in {z ∈ U | ‖u z - x₀‖ < r}, ‖deriv u z‖ₑ ^ 2 := by
   set S := {z ∈ U | ‖u z - x₀‖ < r}
   have hcu : ContinuousOn u U := hu.continuousOn
-  have hS : MeasurableSet S := by
-    have : S = U ∩ (fun z ↦ ‖u z - x₀‖) ⁻¹' Iio r := by ext; simp [S]
-    rw [this]
-    exact (ContinuousOn.isOpen_inter_preimage (by fun_prop) hU isOpen_Iio).measurableSet
+  have hS : MeasurableSet S := measurableSet_sep_norm_sub_lt hU hcu r
   rw [ofReal_integral_eq_lintegral_ofReal (integrableOn_cutoff hU hu hχ hχ1 ht.1 hK)
     (Eventually.of_forall fun z ↦ mul_nonneg (hχ0 _) (sq_nonneg _))]
   calc ∫⁻ z in U, ENNReal.ofReal (χ (‖u z - x₀‖ ^ 2 / t ^ 2) * ‖deriv u z‖ ^ 2)

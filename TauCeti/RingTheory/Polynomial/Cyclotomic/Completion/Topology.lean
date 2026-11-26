@@ -15,13 +15,15 @@ import Mathlib.RingTheory.AdicCompletion.Topology
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Topology.Algebra.Nonarchimedean.LinearTopology
 import TauCeti.Topology.Discrete
-import TauCeti.Topology.UniformSpace.DiscreteUniformity
 
 /-!
 # Inverse-limit topology and universal property of the cyclotomic completion
 
-We equip `CycloCompletion R S` with the inverse-limit topology induced from the product of discrete
-quotients `∀ f : cycloIndex R S, AdjoinRoot (f : R[X])`. Under this topology:
+`CycloCompletion R S` carries the inverse-limit topology of the polynomial-family limit
+`TauCeti.PolyFamilyLimit`, induced from the product of discrete quotients
+`∀ f : cycloIndex R S, AdjoinRoot (f : R[X])`; the projections are locally constant
+(`TauCeti.PolyFamilyLimit.isLocallyConstant_proj`) and continuity into it is tested coordinatewise
+(`TauCeti.PolyFamilyLimit.continuous_iff`). Under this topology:
 
 * the open-and-closed principal ideals `RingHom.ker (proj f) = Ideal.span {fromPoly R S f}` form a
   neighborhood basis of `0`, making `CycloCompletion R S` a Hausdorff linearly topologized
@@ -52,6 +54,10 @@ quotients `∀ f : cycloIndex R S, AdjoinRoot (f : R[X])`. Under this topology:
 
 * `TauCeti.CycloCompletion.hasBasis_nhds_zero`, `TauCeti.CycloCompletion.hasBasis_nhds_zero_span`:
   neighborhood basis of `0` given by `RingHom.ker (proj f)` / `Ideal.span {fromPoly R S f}`.
+* `TauCeti.CycloCompletion.exists_ker_proj_le_ker_of_continuous`,
+  `TauCeti.CycloCompletion.exists_aeval_eq_zero_of_continuous`: a continuous ring map to a discrete
+  ring kills `RingHom.ker (proj f)` for some index `f`, so under a continuous algebra map to a
+  discrete algebra the image of `q` is a root of an index.
 * `TauCeti.CycloCompletion.isCompleteSeparated`: completeness and separatedness of
   `CycloCompletion R S` for its group uniformity.
 * `TauCeti.CycloCompletion.isAdic_span_cycloProd`,
@@ -76,93 +82,22 @@ open scoped Topology Uniformity TauCeti.TopCommRingCat
 
 namespace TauCeti
 
-/-- The inverse-limit topology on `CycloCompletion R S`, induced from the product of discrete
-polynomial quotients `∀ f : cycloIndex R S, AdjoinRoot (f : R[X])`. -/
-instance instTopologicalSpaceCycloCompletion (R : Type*) [CommRing R] (S : Set ℕ) :
-    TopologicalSpace (CycloCompletion R S) :=
-  TopologicalSpace.induced Subtype.val
-    (@Pi.topologicalSpace (cycloIndex R S) (fun f ↦ AdjoinRoot (f : R[X])) (fun _ ↦ ⊥))
-
 namespace CycloCompletion
+
+open PolyFamilyLimit
 
 section InverseLimitTopology
 
 variable {R : Type*} [CommRing R] {S : Set ℕ}
 
-theorem topologicalSpace_def (R : Type*) [CommRing R] (S : Set ℕ) :
-    instTopologicalSpaceCycloCompletion R S =
-      TopologicalSpace.induced Subtype.val
-        (@Pi.topologicalSpace (cycloIndex R S) (fun f ↦ AdjoinRoot (f : R[X])) (fun _ ↦ ⊥)) :=
-  (rfl)
-
-/-- The topology on `CycloCompletion R S` is the initial topology of all quotient projections
-`proj f` into discrete `AdjoinRoot (f : R[X])`. -/
-theorem topologicalSpace_eq_iInf_induced (R : Type*) [CommRing R] (S : Set ℕ) :
-    instTopologicalSpaceCycloCompletion R S =
-      ⨅ f : cycloIndex R S, TopologicalSpace.induced (proj f) ⊥ := by
-  let _ : ∀ f : cycloIndex R S, TopologicalSpace (AdjoinRoot (f : R[X])) := fun _ ↦ ⊥
-  rw [topologicalSpace_def, Pi.topologicalSpace, induced_iInf]
-  refine iInf_congr fun f ↦ ?_
-  rw [induced_compose]
-  have hcomp : ((fun x : ∀ g : cycloIndex R S, AdjoinRoot (g : R[X]) ↦ x f) ∘ Subtype.val) =
-      (proj f : CycloCompletion R S → AdjoinRoot (f : R[X])) :=
-    funext fun x ↦ (proj_apply f x).symm
-  rw [hcomp]
-
-/-- Every coordinate projection `proj f` is locally constant on `CycloCompletion R S`. -/
-theorem isLocallyConstant_proj (f : cycloIndex R S) :
-    IsLocallyConstant (proj f : CycloCompletion R S → AdjoinRoot (f : R[X])) := by
-  let _ : TopologicalSpace (AdjoinRoot (f : R[X])) := ⊥
-  have : DiscreteTopology (AdjoinRoot (f : R[X])) := discreteTopology_bot _
-  rw [IsLocallyConstant.iff_continuous, continuous_iff_le_induced, topologicalSpace_eq_iInf_induced]
-  exact iInf_le _ f
-
-/-- Every coordinate projection `proj f` is continuous into any topological space structure on
-`AdjoinRoot (f : R[X])`. -/
-@[fun_prop, continuity]
-theorem continuous_proj (f : cycloIndex R S) [TopologicalSpace (AdjoinRoot (f : R[X]))] :
-    Continuous (proj f) :=
-  (isLocallyConstant_proj f).continuous
-
-/-- A map into `CycloCompletion R S` is continuous if and only if its composition with each
-coordinate projection `proj f` is locally constant. -/
-theorem continuous_iff {X : Type*} [TopologicalSpace X] {g : X → CycloCompletion R S} :
-    Continuous g ↔ ∀ f : cycloIndex R S, IsLocallyConstant (proj f ∘ g) := by
-  rw [topologicalSpace_eq_iInf_induced, continuous_iInf_rng]
-  refine forall_congr' fun f ↦ ?_
-  let _ : TopologicalSpace (AdjoinRoot (f : R[X])) := ⊥
-  have : DiscreteTopology (AdjoinRoot (f : R[X])) := discreteTopology_bot _
-  rw [continuous_induced_rng, IsLocallyConstant.iff_continuous]
-
-instance (R : Type*) [CommRing R] (S : Set ℕ) : IsTopologicalRing (CycloCompletion R S) := by
-  let _ : ∀ f : cycloIndex R S, TopologicalSpace (AdjoinRoot (f : R[X])) := fun _ ↦ ⊥
-  have : ∀ f : cycloIndex R S, DiscreteTopology (AdjoinRoot (f : R[X])) :=
-    fun _ ↦ discreteTopology_bot _
-  exact Subring.instIsTopologicalRing (compatSubalgebra R S).toSubring
-
-/-- The canonical additive-group uniform structure on `CycloCompletion R S` compatible with its
-inverse-limit topology. -/
-noncomputable instance (R : Type*) [CommRing R] (S : Set ℕ) :
-    UniformSpace (CycloCompletion R S) :=
-  IsTopologicalAddGroup.rightUniformSpace (CycloCompletion R S)
-
-instance (R : Type*) [CommRing R] (S : Set ℕ) : IsUniformAddGroup (CycloCompletion R S) :=
-  isUniformAddGroup_of_addCommGroup
-
-instance (R : Type*) [CommRing R] (S : Set ℕ) : T2Space (CycloCompletion R S) := by
-  let _ : ∀ f : cycloIndex R S, TopologicalSpace (AdjoinRoot (f : R[X])) := fun _ ↦ ⊥
-  have : ∀ f : cycloIndex R S, DiscreteTopology (AdjoinRoot (f : R[X])) :=
-    fun _ ↦ discreteTopology_bot _
-  exact inferInstance
-
 /-- Each projection kernel `RingHom.ker (proj f)` is open in `CycloCompletion R S`. -/
 theorem isOpen_ker_proj (f : cycloIndex R S) :
-    IsOpen (RingHom.ker (proj f) : Set (CycloCompletion R S)) :=
+    IsOpen (RingHom.ker (proj f : CycloCompletion R S →ₐ[R] _) : Set (CycloCompletion R S)) :=
   (isLocallyConstant_proj f).isOpen_fiber 0
 
 /-- Each projection kernel `RingHom.ker (proj f)` is closed in `CycloCompletion R S`. -/
 theorem isClosed_ker_proj (f : cycloIndex R S) :
-    IsClosed (RingHom.ker (proj f) : Set (CycloCompletion R S)) :=
+    IsClosed (RingHom.ker (proj f : CycloCompletion R S →ₐ[R] _) : Set (CycloCompletion R S)) :=
   (isLocallyConstant_proj f).isClosed_fiber 0
 
 /-- Each principal ideal `Ideal.span {fromPoly R S f}` (`f ∈ cycloIndex R S`) is open in
@@ -183,9 +118,10 @@ theorem isClosed_span_fromPoly (f : cycloIndex R S) :
 in `CycloCompletion R S`. -/
 theorem hasBasis_nhds_zero (R : Type*) [CommRing R] (S : Set ℕ) :
     (𝓝 (0 : CycloCompletion R S)).HasBasis (fun _ : cycloIndex R S ↦ True)
-      fun f ↦ (RingHom.ker (proj f) : Set (CycloCompletion R S)) := by
+      fun f ↦ (RingHom.ker (proj f : CycloCompletion R S →ₐ[R] _) : Set (CycloCompletion R S)) := by
   have hnhds : 𝓝 (0 : CycloCompletion R S) =
-      ⨅ f : cycloIndex R S, 𝓟 (RingHom.ker (proj f) : Set (CycloCompletion R S)) := by
+      ⨅ f : cycloIndex R S,
+        𝓟 (RingHom.ker (proj f : CycloCompletion R S →ₐ[R] _) : Set (CycloCompletion R S)) := by
     rw [topologicalSpace_eq_iInf_induced, nhds_iInf]
     refine iInf_congr fun f ↦ ?_
     rw [TauCeti.nhds_induced_bot]
@@ -210,7 +146,8 @@ theorem hasBasis_nhds_zero_span (R : Type*) [CommRing R] (S : Set ℕ) :
 of `𝓝 0` in `CycloCompletion R S`. -/
 theorem hasBasis_nhds_zero_cycloChain (R : Type*) [CommRing R] (S : Set ℕ) :
     (𝓝 (0 : CycloCompletion R S)).HasBasis (fun _ : ℕ ↦ True)
-      fun N ↦ (RingHom.ker (proj (cycloChainIndex R S N)) : Set (CycloCompletion R S)) := by
+      fun N ↦ (RingHom.ker (proj (cycloChainIndex R S N) : CycloCompletion R S →ₐ[R] _) :
+        Set (CycloCompletion R S)) := by
   refine (hasBasis_nhds_zero R S).to_hasBasis (fun f _ ↦ ?_) fun N _ ↦
     ⟨cycloChainIndex R S N, trivial, subset_rfl⟩
   obtain ⟨N, hN⟩ := exists_dvd_cycloChain f.property
@@ -227,56 +164,37 @@ instance (R : Type*) [CommRing R] (S : Set ℕ) :
 instance (R : Type*) [CommRing R] (S : Set ℕ) : NonarchimedeanRing (CycloCompletion R S) :=
   IsLinearTopology.nonarchimedeanRing (CycloCompletion R S)
 
+/-- A continuous ring map from `R[q]^S` to a discrete ring vanishes on the neighborhood
+`ker (proj f)` of zero for some index `f`. -/
+theorem exists_ker_proj_le_ker_of_continuous {T : Type*} [Semiring T] [TopologicalSpace T]
+    [DiscreteTopology T] (φ : CycloCompletion R S →+* T) (hφ : Continuous φ) :
+    ∃ f : cycloIndex R S, RingHom.ker (proj f) ≤ RingHom.ker φ := by
+  have h0 : φ ⁻¹' {0} ∈ 𝓝 (0 : CycloCompletion R S) :=
+    hφ.continuousAt.preimage_mem_nhds (by rw [map_zero]; exact (isOpen_discrete _).mem_nhds rfl)
+  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_zero R S).mem_iff.mp h0
+  exact ⟨f, fun x hx ↦ hf hx⟩
+
+/-- Under a continuous `R`-algebra map from `R[q]^S` to a discrete algebra, the image of `q` is a
+root of some index, a product of cyclotomic polynomials of orders in `S`. -/
+theorem exists_aeval_eq_zero_of_continuous {B : Type*} [Semiring B] [Algebra R B]
+    [TopologicalSpace B] [DiscreteTopology B] (φ : CycloCompletion R S →ₐ[R] B)
+    (hφ : Continuous φ) : ∃ f : cycloIndex R S, aeval (φ (fromPoly R S X)) (f : R[X]) = 0 := by
+  obtain ⟨f, hf⟩ := exists_ker_proj_le_ker_of_continuous φ.toRingHom hφ
+  refine ⟨f, ?_⟩
+  have hmem : fromPoly R S (f : R[X]) ∈ RingHom.ker (proj f) := by
+    rw [RingHom.mem_ker, proj_fromPoly, AdjoinRoot.mk_self]
+  rw [aeval_algHom_apply, aeval_algHom_apply, aeval_X_left_apply]
+  exact hf hmem
+
 end InverseLimitTopology
 
 section CompleteSeparatedAndAdic
 
-/-- `compatSubalgebra R S` is closed in the product of discrete quotients
-`∀ f : cycloIndex R S, AdjoinRoot (f : R[X])`. -/
-theorem isClosed_compatSubalgebra (R : Type*) [CommRing R] (S : Set ℕ) :
-    @IsClosed (∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))
-      (@Pi.topologicalSpace (cycloIndex R S) (fun f ↦ AdjoinRoot (f : R[X])) (fun _ ↦ ⊥))
-      (compatSubalgebra R S : Set (∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))) := by
-  let _ : ∀ f : cycloIndex R S, TopologicalSpace (AdjoinRoot (f : R[X])) := fun _ ↦ ⊥
-  have : ∀ f : cycloIndex R S, DiscreteTopology (AdjoinRoot (f : R[X])) :=
-    fun _ ↦ discreteTopology_bot _
-  have hset : (compatSubalgebra R S : Set (∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))) =
-      ⋂ (f : cycloIndex R S) (g : cycloIndex R S) (h : (f : R[X]) ∣ g),
-        {x | AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h (x g) = x f} := by
-    ext x
-    simp [mem_compatSubalgebra]
-  rw [hset]
-  refine isClosed_iInter fun f ↦ isClosed_iInter fun g ↦ isClosed_iInter fun h ↦ ?_
-  exact isClosed_eq
-    (continuous_of_discreteTopology.comp (continuous_apply g)) (continuous_apply f)
-
 /-- `CycloCompletion R S` is complete and separated for the canonical group uniformity of its
 inverse-limit topology. -/
 theorem isCompleteSeparated (R : Type u) [CommRing R] (S : Set ℕ) :
-    TopCommRingCat.IsCompleteSeparated (TopCommRingCat.of (CycloCompletion R S)) := by
-  let _ : ∀ f : cycloIndex R S, TopologicalSpace (AdjoinRoot (f : R[X])) := fun _ ↦ ⊥
-  have : ∀ f : cycloIndex R S, DiscreteTopology (AdjoinRoot (f : R[X])) :=
-    fun _ ↦ discreteTopology_bot _
-  have hfactor : ∀ f : cycloIndex R S,
-      TopCommRingCat.IsCompleteSeparated (TopCommRingCat.of (AdjoinRoot (f : R[X]))) := by
-    intro f
-    let _ : UniformSpace (AdjoinRoot (f : R[X])) :=
-      IsTopologicalAddGroup.rightUniformSpace (AdjoinRoot (f : R[X]))
-    have : IsUniformAddGroup (AdjoinRoot (f : R[X])) := isUniformAddGroup_of_addCommGroup
-    have : DiscreteUniformity (AdjoinRoot (f : R[X])) :=
-      IsRightUniformAddGroup.discreteUniformity
-    exact ⟨inferInstance, inferInstance⟩
-  have hpi : TopCommRingCat.IsCompleteSeparated
-      (TopCommRingCat.of (∀ f : cycloIndex R S, AdjoinRoot (f : R[X]))) :=
-    TopCommRingCat.IsCompleteSeparated.pi hfactor
-  let ι : TopCommRingCat.of (CycloCompletion R S) ⟶
-      TopCommRingCat.of (∀ f : cycloIndex R S, AdjoinRoot (f : R[X])) :=
-    ⟨(compatSubalgebra R S).val.toRingHom, continuous_subtypeVal⟩
-  exact TopCommRingCat.IsCompleteSeparated.of_isClosedEmbedding ι
-    (Topology.IsClosedEmbedding.subtypeVal (isClosed_compatSubalgebra R S)) hpi
-
-instance (R : Type u) [CommRing R] (S : Set ℕ) : CompleteSpace (CycloCompletion R S) :=
-  (isCompleteSeparated R S).completeSpace
+    TopCommRingCat.IsCompleteSeparated (TopCommRingCat.of (CycloCompletion R S)) :=
+  TopCommRingCat.isCompleteSeparated_of_completeSpace_of_t0Space _
 
 /-- `CycloCompletion R S` bundled as an object of `CompleteSeparatedTopCommRingCat`. -/
 noncomputable def completeSeparatedObj (R : Type u) [CommRing R] (S : Set ℕ) :
