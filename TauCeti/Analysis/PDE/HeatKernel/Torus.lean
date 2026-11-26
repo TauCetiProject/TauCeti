@@ -5,10 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Torus.Little
+public import TauCeti.Analysis.Semigroups.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.Analysis.Fourier.Torus.FourierCoeff
 import TauCeti.Analysis.Fourier.Torus.SchwartzMultiplier
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Basic
+import TauCeti.Analysis.Normed.Group.Tannery
 import TauCeti.Analysis.PDE.HeatKernel.Basic
 import TauCeti.Analysis.PDE.HeatKernel.FrequencyLocalized
 
@@ -38,6 +42,20 @@ and is fixed by `e^{tΔ}`, so its norm does not tend to `0` as `t → ∞`, whil
 (`TauCeti.UnitAddTorus.BesovSpace.exists_norm_heatSemigroupOfNeZero_le`). This is the periodic
 counterpart of `TauCeti.BesovSpace.exists_norm_heatSemigroupOfNeZero_le_rpow_neg` on `ℝᵈ`.
 
+The heat semigroup is **strongly continuous** on `B^s_{p,q}(𝕋ᵈ)` for `q < ∞`: `e^{tΔ} u → u` as
+`t → 0` for every `u` and every `1 ≤ p ≤ ∞`
+(`TauCeti.UnitAddTorus.BesovSpace.tendsto_heatSemigroup`), so it is a strongly continuous
+contraction semigroup there (`TauCeti.UnitAddTorus.BesovSpace.heatContractionSemigroup`). On
+`B^s_{p,∞}(𝕋ᵈ)` it is strongly continuous at `u` exactly when `u` lies in the periodic little Besov
+space `b^s_{p,∞}(𝕋ᵈ)`, the closure of the trigonometric polynomials
+(`TauCeti.UnitAddTorus.BesovSpace.tendsto_heatSemigroup_iff_mem_littleBesov`), for every
+`1 ≤ p ≤ ∞`. At `p = ∞` this is the periodic little Hölder–Zygmund space `c^s(𝕋ᵈ)`, on which the
+heat semigroup is a strongly continuous contraction semigroup
+(`TauCeti.UnitAddTorus.BesovSpace.heatLittleContractionSemigroup`). These are the periodic
+counterparts of `TauCeti.BesovSpace.tendsto_heatSemigroup` and
+`TauCeti.BesovSpace.tendsto_heatSemigroup_iff` on `ℝᵈ`; on the torus the characterization by
+the little space holds at `p = ∞` as well.
+
 ## The argument
 
 Everything reduces to the blocks `Δⱼ c = ∑ₙ ψⱼ(n) c(n) eₙ`, which are trigonometric polynomials. If
@@ -59,6 +77,17 @@ Finally `2^{js'} exp(-c (4^j - 1) t) ≤ A max 1 (t^{-σ}) 2^{js}` for `s' ≤ s
 (`TauCeti.exists_two_rpow_mul_exp_neg_le`), which converts the decay of the `j`-th block into
 the gain `2^{2σj}` of the weights of `B^{s+2σ}_{p,q}`.
 
+For strong continuity, the block `Δⱼ c` has frequencies in a finite set depending only on `j`, on
+which `exp(-4π² t ‖n‖²) → 1`, and its Fourier coefficients are bounded by `‖Δⱼ c‖_p`, so
+`‖Δⱼ (e^{tΔ} c - c)‖_p ≤ aⱼ(t) ‖Δⱼ c‖_p` with `aⱼ(t) → 0`
+(`TauCeti.UnitAddTorus.exists_tendsto_and_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le`). Each
+weighted block of `e^{tΔ} u - u` is also at most twice that of `u`. For `q < ∞` dominated
+convergence in `∑ⱼ (2^{js} ‖Δⱼ (e^{tΔ} u - u)‖_p)^q` gives the convergence; for `q = ∞` the decay
+of the weighted blocks of `u` controls the high blocks uniformly in `t`. Conversely, for `t > 0`
+the heat flow `e^{tΔ} u` lies in `B^{s+1}_{p,∞}(𝕋ᵈ)`, so its weighted blocks in `B^s_{p,∞}(𝕋ᵈ)`
+vanish at high frequency, and it lies in the closed subspace `b^s_{p,∞}(𝕋ᵈ)`, which then contains
+the limit `u`.
+
 ## Main declarations
 
 * `TauCeti.UnitAddTorus.heatSemigroup`: `e^{tΔ}` on formal Fourier series, with
@@ -76,6 +105,15 @@ the gain `2^{2σj}` of the weights of `B^{s+2σ}_{p,q}`.
   linear map `B^s_{p,q}(𝕋ᵈ) → B^{s'}_{p,q}(𝕋ᵈ)`, with the bounds
   `TauCeti.UnitAddTorus.BesovSpace.exists_norm_heatSemigroupOfNeZero_le` and
   `TauCeti.UnitAddTorus.BesovSpace.exists_norm_heatSemigroupOfNeZero_le_rpow_neg`.
+* `TauCeti.UnitAddTorus.BesovSpace.tendsto_heatSemigroup` and
+  `TauCeti.UnitAddTorus.BesovSpace.heatContractionSemigroup`: strong continuity on
+  `B^s_{p,q}(𝕋ᵈ)` for `q < ∞`.
+* `TauCeti.UnitAddTorus.BesovSpace.heatSemigroup_mem_littleBesov`: for `t > 0`, `e^{tΔ}` maps
+  `B^s_{p,∞}(𝕋ᵈ)` into `b^s_{p,∞}(𝕋ᵈ)`.
+* `TauCeti.UnitAddTorus.BesovSpace.tendsto_heatSemigroup_iff_mem_littleBesov` and
+  `TauCeti.UnitAddTorus.BesovSpace.heatLittleContractionSemigroup`: strong continuity on
+  `B^s_{p,∞}(𝕋ᵈ)` exactly on `b^s_{p,∞}(𝕋ᵈ)`, where `e^{tΔ}` is a strongly continuous contraction
+  semigroup.
 
 ## References
 
@@ -424,5 +462,203 @@ theorem exists_norm_heatSemigroupOfNeZero_le_rpow_neg {σ : ℝ} (hσ : 0 ≤ σ
     (by exact_mod_cast ht1) (neg_nonpos.2 hσ))]
 
 end BesovSpace
+
+/-! ### Strong continuity -/
+
+section StrongContinuity
+
+open Filter Topology
+
+variable (φ p) in
+/-- **The heat flow of a single block tends to the block.** For every `1 ≤ p ≤ ∞` and every `j`
+there is a function `a` of time with `a t → 0` as `t → 0` and
+`‖Δⱼ (e^{tΔ} c - c)‖_p ≤ a t ‖Δⱼ c‖_p` for every formal Fourier series `c`. The block `Δⱼ c` is a
+trigonometric polynomial with frequencies in a finite set independent of `c`, on which the heat
+multipliers `exp(-4π² t ‖n‖²)` tend to one, and its Fourier coefficients are bounded by its
+`Lᵖ` norm. -/
+theorem exists_tendsto_and_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le (j : ℕ) :
+    ∃ a : ℝ≥0 → ℝ, Tendsto a (𝓝 0) (𝓝 0) ∧ ∀ (t : ℝ≥0) (c : (d → ℤ) → ℂ),
+      ‖littlewoodPaleyBlockLp φ p j (heatSemigroup d t c - c)‖ ≤
+        a t * ‖littlewoodPaleyBlockLp φ p j c‖ := by
+  set S := (finite_setOf_norm_latticePoint_le (ι := d) (2 ^ j * φ.rOut)).toFinset
+  have hS : ∀ n ∉ S, φ.inhomogeneousLittlewoodPaley j (latticePoint n) = 0 := fun n hn ↦ by
+    simp only [S, Set.Finite.mem_toFinset, Set.mem_ofPred_eq, not_le] at hn
+    exact φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm hn.le
+  -- The heat multiplier minus one, at the frequency `n` and the time `t`.
+  set e : ℝ≥0 → (d → ℤ) → ℂ := fun t n ↦ (rexp (-(4 * π ^ 2 * t * ‖latticePoint n‖ ^ 2)) : ℂ) - 1
+  refine ⟨fun t ↦ ∑ n ∈ S, ‖e t n‖ * ‖mFourierLp p n‖, ?_, fun t c ↦ ?_⟩
+  · have h : Continuous fun t : ℝ≥0 ↦ ∑ n ∈ S, ‖e t n‖ * ‖mFourierLp p n‖ := by
+      simp only [e]
+      fun_prop
+    simpa [e] using h.tendsto 0
+  have hsum : littlewoodPaleyBlockLp φ p j (heatSemigroup d t c - c) =
+      ∑ n ∈ S, (e t n * ((φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n)) •
+        mFourierLp p n := by
+    rw [map_sub, littlewoodPaleyBlockLp_eq_sum hS, littlewoodPaleyBlockLp_eq_sum hS,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun n _ ↦ ?_
+    rw [← sub_smul, heatSemigroup_apply]
+    congr 1
+    simp only [e]
+    ring
+  rw [hsum, Finset.sum_mul]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun n _ ↦ ?_)
+  -- `ψⱼ(n) c(n)` is the `n`-th Fourier coefficient of `Δⱼ c`, bounded by `‖Δⱼ c‖_p`.
+  have hc : ‖(φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n‖ ≤
+      ‖littlewoodPaleyBlockLp φ p j c‖ := by
+    rw [← mFourierCoeff_littlewoodPaleyBlockLp (p := p)]
+    exact norm_mFourierCoeff_le_norm _ n
+  rw [norm_smul, norm_mul]
+  calc ‖e t n‖ * ‖(φ.inhomogeneousLittlewoodPaley j (latticePoint n) : ℂ) * c n‖ *
+        ‖mFourierLp p n‖
+      ≤ ‖e t n‖ * ‖littlewoodPaleyBlockLp φ p j c‖ * ‖mFourierLp p n‖ := by gcongr
+    _ = ‖e t n‖ * ‖mFourierLp p n‖ * ‖littlewoodPaleyBlockLp φ p j c‖ := by ring
+
+namespace BesovSpace
+
+variable [Fact (1 ≤ q)]
+
+/-- The weighted blocks of `e^{tΔ} u - u` are at most twice those of `u`. -/
+private theorem rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le (t : ℝ≥0)
+    (u : BesovSpace φ s p q) (j : ℕ) :
+    2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j (heatSemigroup φ s p q t u - u).coeff‖ ≤
+      2 * (2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) := by
+  rw [coeff_sub, coeff_heatSemigroup, map_sub, mul_left_comm,
+    two_mul ‖littlewoodPaleyBlockLp φ p j u.coeff‖]
+  gcongr
+  exact (norm_sub_le _ _).trans
+    (by gcongr; exact norm_littlewoodPaleyBlockLp_heatSemigroup_le p j t u.coeff)
+
+/-- Each weighted block of `e^{tΔ} u - u` tends to `0` as `t → 0`. -/
+private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub
+    (u : BesovSpace φ s p q) (j : ℕ) :
+    Tendsto (fun t ↦ 2 ^ (s * j) *
+      ‖littlewoodPaleyBlockLp φ p j (heatSemigroup φ s p q t u - u).coeff‖) (𝓝 0) (𝓝 0) := by
+  obtain ⟨a, ha, hau⟩ := exists_tendsto_and_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le φ p j
+  refine squeeze_zero (g := fun t ↦ 2 ^ (s * j) * (a t * ‖littlewoodPaleyBlockLp φ p j u.coeff‖))
+    (fun t ↦ by positivity) (fun t ↦ mul_le_mul_of_nonneg_left ?_ (by positivity)) ?_
+  · rw [coeff_sub, coeff_heatSemigroup]
+    exact hau t u.coeff
+  · simpa using (ha.mul_const ‖littlewoodPaleyBlockLp φ p j u.coeff‖).const_mul (2 ^ (s * j))
+
+/-- **Strong continuity of the heat semigroup on `B^s_{p,q}(𝕋ᵈ)`, `q < ∞`.** For every
+`u ∈ B^s_{p,q}(𝕋ᵈ)` with `q < ∞`, `e^{tΔ} u → u` in `B^s_{p,q}(𝕋ᵈ)` as `t → 0`. This holds for
+every `1 ≤ p ≤ ∞`, including `p = ∞`. -/
+theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace φ s p q) :
+    Tendsto (fun t ↦ heatSemigroup φ s p q t u) (𝓝 0) (𝓝 u) := by
+  have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp_rw [norm_eq_tsum_rpow hq]
+  refine TauCeti.tendsto_tsum_rpow_rpow_of_dominated hq0 (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u)
+    (((Memℓp.summable hq0 (memBesov_def.1 u.memBesov_coeff)).mul_left (2 ^ q.toReal)).congr
+      fun j ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity), Real.mul_rpow zero_le_two (by positivity)]
+
+/-- **The heat flow lies in the periodic little Besov space.** For `t > 0` and every
+`u ∈ B^s_{p,∞}(𝕋ᵈ)`, `e^{tΔ} u ∈ b^s_{p,∞}(𝕋ᵈ)`: it lies in `B^{s+1}_{p,∞}(𝕋ᵈ)`, so its weighted
+blocks in `B^s_{p,∞}(𝕋ᵈ)` are at most `2^{-j}` times its norm there. -/
+theorem heatSemigroup_mem_littleBesov {t : ℝ≥0} (ht : t ≠ 0) (u : BesovSpace φ s p ∞) :
+    heatSemigroup φ s p ∞ t u ∈ littleBesov φ s p := by
+  rw [mem_littleBesov_iff_tendsto]
+  set w := heatSemigroupOfNeZero φ s p ∞ (s + 1) ht u
+  have h (j : ℕ) : 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j
+      (heatSemigroup φ s p ∞ t u).coeff‖ ≤ ((2 : ℝ) ^ j)⁻¹ * ‖w‖ := by
+    have hw := rpow_mul_norm_littlewoodPaleyBlockLp_le w j
+    rw [coeff_heatSemigroupOfNeZero, add_mul, one_mul, Real.rpow_add two_pos,
+      Real.rpow_natCast] at hw
+    rw [coeff_heatSemigroup, le_inv_mul_iff₀ (by positivity)]
+    linarith
+  refine squeeze_zero (fun j ↦ by positivity) h ?_
+  simpa using (tendsto_inv_atTop_zero.comp
+    (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ)))).mul_const ‖w‖
+
+/-- If the weighted blocks of `u ∈ B^s_{p,∞}(𝕋ᵈ)` vanish at high frequency, the heat flow of `u`
+tends to `u`: the high blocks are small uniformly in time, and each low block converges. -/
+private theorem tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp
+    {u : BesovSpace φ s p ∞}
+    (ha : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖littlewoodPaleyBlockLp φ p j u.coeff‖) atTop
+      (𝓝 0)) :
+    Tendsto (fun t ↦ heatSemigroup φ s p ∞ t u) (𝓝 0) (𝓝 u) := by
+  rw [tendsto_iff_norm_sub_tendsto_zero]
+  simp_rw [norm_eq_ciSup]
+  exact TauCeti.tendsto_iSup_of_dominated (fun t j ↦ by positivity)
+    (fun t j ↦ rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub_le t u j)
+    (tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub u)
+    (by simpa using ha.const_mul 2)
+
+/-- **Strong continuity of the heat semigroup on `B^s_{p,∞}(𝕋ᵈ)`.** For every `1 ≤ p ≤ ∞` and
+`u ∈ B^s_{p,∞}(𝕋ᵈ)`, `e^{tΔ} u → u` in `B^s_{p,∞}(𝕋ᵈ)` as `t → 0` exactly when `u` lies in the
+periodic little Besov space `b^s_{p,∞}(𝕋ᵈ)`, the closure of the trigonometric polynomials. At
+`p = ∞` this is the periodic little Hölder–Zygmund space `c^s(𝕋ᵈ)` inside `𝒞^s(𝕋ᵈ)`. -/
+theorem tendsto_heatSemigroup_iff_mem_littleBesov (u : BesovSpace φ s p ∞) :
+    Tendsto (fun t ↦ heatSemigroup φ s p ∞ t u) (𝓝 0) (𝓝 u) ↔ u ∈ littleBesov φ s p := by
+  refine ⟨fun hu ↦ ?_, fun hu ↦ ?_⟩
+  · exact isClosed_littleBesov.mem_of_tendsto
+      (hu.mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0)))
+      (eventually_nhdsWithin_of_forall fun t (ht : 0 < t) ↦
+        heatSemigroup_mem_littleBesov (ne_of_gt ht) u)
+  · exact tendsto_heatSemigroup_of_tendsto_rpow_mul_norm_littlewoodPaleyBlockLp
+      ((mem_littleBesov_iff_tendsto u).1 hu)
+
+variable (φ s p q) in
+/-- **The heat semigroup on `B^s_{p,q}(𝕋ᵈ)`, `q < ∞`, as a strongly continuous contraction
+semigroup**, for every `1 ≤ p ≤ ∞`. Its operators are those of
+`TauCeti.UnitAddTorus.BesovSpace.heatSemigroup`, viewed as real-linear maps. -/
+def heatContractionSemigroup (hq : q ≠ ⊤) :
+    Semigroups.ContractionSemigroup (BesovSpace φ s p q) where
+  toFun t := (heatSemigroup φ s p q t).restrictScalars ℝ
+  map_zero' := by ext1 u; simp
+  map_add' t₁ t₂ := by ext1 u; simp [add_comm t₁ t₂]
+  continuousAt_zero' u := by
+    simpa [ContinuousAt] using tendsto_heatSemigroup hq u
+  contracting t := by
+    rw [ContinuousLinearMap.norm_restrictScalars]
+    exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+      rw [one_mul]; exact norm_heatSemigroup_le t u
+
+@[simp]
+theorem heatContractionSemigroup_apply (hq : q ≠ ⊤) (t : ℝ≥0) (u : BesovSpace φ s p q) :
+    heatContractionSemigroup φ s p q hq t u = heatSemigroup φ s p q t u :=
+  (rfl)
+
+/-- The heat semigroup maps the periodic little Besov space `b^s_{p,∞}(𝕋ᵈ)` into itself. -/
+theorem heatSemigroup_mem_littleBesov_of_mem {u : BesovSpace φ s p ∞}
+    (hu : u ∈ littleBesov φ s p) (t : ℝ≥0) : heatSemigroup φ s p ∞ t u ∈ littleBesov φ s p := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simpa using hu
+  · exact heatSemigroup_mem_littleBesov ht u
+
+variable (φ s p) in
+/-- **The heat semigroup on the periodic little Besov space `b^s_{p,∞}(𝕋ᵈ)` as a strongly
+continuous contraction semigroup**, for every `1 ≤ p ≤ ∞`; at `p = ∞` this is the heat semigroup
+on the periodic little Hölder–Zygmund space `c^s(𝕋ᵈ)`. Its operators are the restrictions of those
+of `TauCeti.UnitAddTorus.BesovSpace.heatSemigroup` on `B^s_{p,∞}(𝕋ᵈ)`, viewed as real-linear maps.
+-/
+def heatLittleContractionSemigroup :
+    Semigroups.ContractionSemigroup (littleBesov φ s p) where
+  toFun t := (((heatSemigroup φ s p ∞ t).comp (littleBesov φ s p).subtypeL).codRestrict _
+    fun u ↦ by simpa using heatSemigroup_mem_littleBesov_of_mem u.property t).restrictScalars ℝ
+  map_zero' := by ext1 u; ext1; simp
+  map_add' t₁ t₂ := by ext1 u; ext1; simp [add_comm t₁ t₂]
+  continuousAt_zero' u := by
+    rw [ContinuousAt, Topology.IsInducing.subtypeVal.tendsto_nhds_iff]
+    simpa [Function.comp_def] using
+      (tendsto_heatSemigroup_iff_mem_littleBesov u.val).2 u.property
+  contracting t := by
+    rw [ContinuousLinearMap.norm_restrictScalars]
+    exact ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
+      rw [one_mul]; exact norm_heatSemigroup_le t u.val
+
+@[simp]
+theorem coe_heatLittleContractionSemigroup_apply (t : ℝ≥0) (u : littleBesov φ s p) :
+    (heatLittleContractionSemigroup φ s p t u : BesovSpace φ s p ∞) =
+      heatSemigroup φ s p ∞ t u :=
+  (rfl)
+
+end BesovSpace
+
+end StrongContinuity
 
 end TauCeti.UnitAddTorus
