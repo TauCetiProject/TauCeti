@@ -20,8 +20,8 @@ the fundamental matrix `M = M_q` of the Dirac system `Ω X' = z X - Q_q X`
 `M(t, λ)* Ω M(t, z) - Ω = (z - conj λ) ∫₀ᵗ M(s, λ)* M(s, z) ds`
 (`TauCeti.diracFundamentalMatrix_christoffelDarboux`). It is stated for the operators on
 `EuclideanSpace ℂ (Fin 2)` (`Matrix.toEuclideanCLM`), where `*` is the adjoint. On the real axis
-the right side vanishes, so `M(t, x)` is `Ω`-unitary
-(`TauCeti.star_diracFundamentalMatrix_mul_mul_ofReal`).
+the right side vanishes, so the matrix `M(t, x)` is `Ω`-unitary
+(`TauCeti.conjTranspose_diracFundamentalMatrix_mul_mul_ofReal`).
 
 The proof differentiates `G(s) = M(s, λ)* Ω M(s, z)`. Writing `P_w(s) = -Ω(w - Q_q(s))` for the
 coefficient, at almost every `s` the derivative is `M(s, λ)* (P_λ(s)* Ω + Ω P_z(s)) M(s, z)`, and
@@ -99,12 +99,12 @@ theorem diracFundamentalMatrix_christoffelDarboux (hq : IntegrableOn q (uIcc 0 t
   rw [h, hN0, hN0, star_one, one_mul, mul_one]
 
 /-- On the real axis the fundamental matrix is `Ω`-unitary: for `x : ℝ`,
-`M(t, x)* Ω M(t, x) = Ω`. -/
-theorem star_diracFundamentalMatrix_mul_mul_ofReal (hq : IntegrableOn q (uIcc 0 t)) (x : ℝ) :
-    star (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q t x)) *
-        toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![0, 1; -1, 0] *
-          toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracFundamentalMatrix q t x) =
-      toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) !![0, 1; -1, 0] := by
+`M(t, x)ᴴ Ω M(t, x) = Ω`. -/
+theorem conjTranspose_diracFundamentalMatrix_mul_mul_ofReal (hq : IntegrableOn q (uIcc 0 t))
+    (x : ℝ) :
+    (diracFundamentalMatrix q t x)ᴴ * !![0, 1; -1, 0] * diracFundamentalMatrix q t x =
+      !![0, 1; -1, 0] := by
+  apply EquivLike.injective (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))
   have h := diracFundamentalMatrix_christoffelDarboux hq x x
   -- `zero_smul` does not unify with this `ℂ`-action on the operators of
   -- `EuclideanSpace ℂ (Fin 2)`, even by `rw` or as a term, so `0 • X = 0` is checked pointwise.
@@ -112,6 +112,7 @@ theorem star_diracFundamentalMatrix_mul_mul_ofReal (hq : IntegrableOn q (uIcc 0 
     ext1 v
     simp
   rw [Complex.conj_ofReal, sub_self, h0] at h
+  rw [map_mul, map_mul, ← star_eq_conjTranspose, map_star]
   exact sub_eq_zero.1 h
 
 end TauCeti
