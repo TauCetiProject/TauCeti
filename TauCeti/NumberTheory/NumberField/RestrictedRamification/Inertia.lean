@@ -203,7 +203,9 @@ private theorem ramificationIdx_eq_one_of_inertia_le_fixingSubgroup
       τ'.fieldRange.fixingSubgroup := fun g hg ↦
     τ'.mem_fixingSubgroup_fieldRange_of_forall_apply_algebraMap w fun a ↦ by
       rw [← hτL, ← absoluteGaloisGroupMap_commutes]
-      exact congrArg τ (hL (absoluteGaloisGroupMap_mem_inertiaOutsideSubgroup K hv τ hg) a)
+      have hfa := hL (absoluteGaloisGroupMap_mem_inertiaOutsideSubgroup K hv τ hg)
+      rw [IntermediateField.mem_fixingSubgroup_iff] at hfa
+      exact congrArg τ (hfa a.val a.property)
   have : Module.Finite (v.adicCompletion K) τ'.fieldRange :=
     τ'.equivFieldRange.toLinearEquiv.finiteDimensional
   let _ := finiteIntermediateFieldValuativeRel (v.adicCompletion K) _ τ'.fieldRange

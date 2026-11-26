@@ -175,12 +175,12 @@ theorem mem_fixingSubgroup_fieldRange_of_forall_apply_algebraMap {K L Ω : Type*
       τ' (algebraMap L (w.adicCompletion L) a)) :
     g ∈ τ'.fieldRange.fixingSubgroup := by
   classical
-  rintro ⟨_, y, rfl⟩
+  rw [IntermediateField.mem_fixingSubgroup_iff]
+  rintro _ ⟨y, rfl⟩
+  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe]
   let eSemi := v.adicCompletionSemilocalEquiv K (𝓞 L) L
   let z : TensorProduct K (v.adicCompletion K) L := eSemi.symm (Pi.single ⟨w, ‹_›⟩ y)
   have hz : eSemi z ⟨w, ‹_›⟩ = y := by simp [z]
-  -- `g • ⟨τ' y, _⟩ = ⟨τ' y, _⟩` is `g (τ' y) = τ' y` on the underlying element.
-  change g (τ' y) = τ' y
   rw [← hz]
   refine TensorProduct.inductionOn z (fun c a ↦ ?_) (fun _ _ h₁ h₂ ↦ by simp [h₁, h₂])
   have htmul : eSemi (TensorProduct.tmul K c a) ⟨w, ‹_›⟩ =
