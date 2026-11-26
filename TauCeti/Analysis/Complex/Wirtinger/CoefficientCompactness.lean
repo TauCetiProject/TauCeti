@@ -75,8 +75,8 @@ term of the limit, and the weak equation passes to the limit
 compactness above, a subsequence of the coefficients converges to Hölder continuous solutions of
 the limiting equation (`TauCeti.exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm`).
 
-**Frame independence.** The hypothesis on the remainders does not depend on the frame of the
-normal line. Under a change of frame `W ↦ g W` with `c ≤ |g| ≤ G` on a measurable set `K`, the
+**Change of frame.** The `Lᵖ(K)` norms of the remainders in two frames of the normal line are
+comparable. Under a change of frame `W ↦ g W` with `c ≤ |g| ≤ G` on a measurable set `K`, the
 remainders in the two frames, related by the factor `gʲ`
 (`TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`), have `Lᵖ(K)` norms within
 the factors `Gʲ` and `c⁻ʲ` of each other
@@ -466,9 +466,22 @@ theorem exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm {m : ℕ} {p : �
   exact ⟨φ, hφ, c, R₀, hc, hR₀, hweak⟩
 
 
-/-! ### Frame independence of the remainder bounds -/
+/-! ### Comparison of the remainder bounds in two frames -/
 
 section Frame
+
+/-- Multiplying by a factor `φ` continuous on a measurable set `K` with `‖φ‖ ≤ C` on `K` scales the
+`Lᵖ(K)` norm by at most `C`. -/
+private lemma eLpNorm_smul_restrict_le_of_norm_le {X E : Type*} [TopologicalSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {φ : X → ℂ} {f : X → E} {K : Set X} (hK : MeasurableSet K) (hφ : ContinuousOn φ K)
+    {C : ℝ} (hC : ∀ x ∈ K, ‖φ x‖ ≤ C) (p : ℝ≥0∞) (ρ : Measure X) :
+    eLpNorm (fun x ↦ φ x • f x) p (ρ.restrict K) ≤
+      ENNReal.ofReal C * eLpNorm f p (ρ.restrict K) := by
+  have hφ' := hφ.aestronglyMeasurable (μ := ρ) hK
+  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ').trans (mul_le_mul_left ?_ _)
+  rw [eLpNorm_exponent_top hφ']
+  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hK).mono hC)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [MeasurableSpace V]
   [OpensMeasurableSpace V] {j : ℕ} {g b : V → ℂ} {ν μ : V → V →L⋆[ℂ] ℂ} {R : V → Multiset ℂ}
@@ -493,17 +506,12 @@ theorem eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le (hK : Measurab
           ((g x / conj (g x)) • μ x)) p (ρ.restrict K) ≤
       ENNReal.ofReal (G ^ j) * eLpNorm (fun x ↦ conjWirtingerDeriv b x + (j * b x) • ν x +
         ((R x).map fun w ↦ conj w * ((R x).erase w).esymm (j - 1)).sum • μ x) p (ρ.restrict K) := by
-  have hφ : AEStronglyMeasurable (fun x ↦ g x ^ j) (ρ.restrict K) :=
-    ((continuousOn_id.pow j).comp (fun x hx ↦ (hg x hx).continuousAt.continuousWithinAt)
-      (mapsTo_univ _ _) |>.mono (subset_refl K)).aestronglyMeasurable hK
   rw [eLpNorm_congr_ae ((ae_restrict_mem hK).mono fun x hx ↦
     conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx) hj
       (ν x) (μ x) (R x))]
-  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ).trans (mul_le_mul_left ?_ _)
-  rw [eLpNorm_exponent_top hφ]
-  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hK).mono fun x hx ↦ by
-    rw [norm_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (hG x hx) j)
+  exact eLpNorm_smul_restrict_le_of_norm_le hK
+    (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
+    (fun x hx ↦ (norm_pow (g x) j).trans_le (pow_le_pow_left₀ (norm_nonneg _) (hG x hx) j)) p ρ
 
 /-- **Comparison of the remainders in two frames, from below.** Under a change of frame
 `W ↦ g W` over a measurable set `K` of the base with `c ≤ |g|` on `K`, `0 < c`, the remainder
@@ -513,8 +521,8 @@ theorem eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le (hK : Measurab
 of the equation of the elementary symmetric functions in the old frame has `Lᵖ(K)` norm at most
 `c⁻ʲ` times that of the remainder in the new frame. Together with
 `TauCeti.eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le`, the `Lᵖ` norms of the
-remainders in two frames are equivalent on every compact set of the base on which `g` is
-continuous and nonvanishing. -/
+remainders in two frames are equivalent on every compact set of the base on which `g` and `b`
+are real-differentiable and `g` does not vanish. -/
 theorem eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le (hK : MeasurableSet K)
     (hg : ∀ x ∈ K, DifferentiableAt ℝ g x) (hb : ∀ x ∈ K, DifferentiableAt ℝ b x) (hj : 0 < j)
     {c : ℝ} (hc : 0 < c) (hcK : ∀ x ∈ K, c ≤ ‖g x‖) (p : ℝ≥0∞) (ρ : Measure V) :
@@ -526,18 +534,15 @@ theorem eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le (hK : MeasurableSet K)
           conj w * (((R x).map (g x * ·)).erase w).esymm (j - 1)).sum •
           ((g x / conj (g x)) • μ x)) p (ρ.restrict K) := by
   have hgK (x : V) (hx : x ∈ K) : g x ≠ 0 := norm_pos_iff.1 (hc.trans_le (hcK x hx))
-  have hφ : AEStronglyMeasurable (fun x ↦ (g x ^ j)⁻¹) (ρ.restrict K) :=
-    (ContinuousOn.inv₀ (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
-      fun x hx ↦ pow_ne_zero j (hgK x hx)).aestronglyMeasurable hK
   rw [eLpNorm_congr_ae ((ae_restrict_mem hK).mono fun x hx ↦
     (eq_inv_smul_iff₀ (pow_ne_zero j (hgK x hx))).2
       (conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx)
         hj (ν x) (μ x) (R x)).symm)]
-  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ).trans (mul_le_mul_left ?_ _)
-  rw [eLpNorm_exponent_top hφ]
-  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hK).mono fun x hx ↦ by
-    rw [norm_inv, norm_pow]
-    exact inv_anti₀ (pow_pos hc j) (pow_le_pow_left₀ hc.le (hcK x hx) j))
+  refine eLpNorm_smul_restrict_le_of_norm_le (φ := fun x ↦ (g x ^ j)⁻¹) hK
+    (ContinuousOn.inv₀ (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
+      fun x hx ↦ pow_ne_zero j (hgK x hx)) (fun x hx ↦ ?_) p ρ
+  rw [norm_inv, norm_pow]
+  exact inv_anti₀ (pow_pos hc j) (pow_le_pow_left₀ hc.le (hcK x hx) j)
 
 end Frame
 

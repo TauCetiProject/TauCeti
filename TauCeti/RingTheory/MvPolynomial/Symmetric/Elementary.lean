@@ -189,8 +189,7 @@ theorem Multiset.sum_map_mul_esymm_erase {R : Type*} [CommRing R] [DecidableEq R
   exact congrArg Multiset.sum (Multiset.map_congr rfl fun a _ ↦ by ring)
 
 /-- Scaling a multiset `s` by `c`, with a weight `w` satisfying `w(c a) = d w(a)`, scales
-`∑_{a ∈ s} w(a) eₙ(s ∖ a)` by `cⁿ d`. No condition on `c` is needed: both sides are expanded by
-`Multiset.sum_map_mul_esymm_erase`. -/
+`∑_{a ∈ s} w(a) eₙ(s ∖ a)` by `cⁿ d`. No condition on `c` is needed. -/
 theorem Multiset.sum_map_mul_esymm_erase_map_mul {R : Type*} [CommRing R] [DecidableEq R]
     (s : Multiset R) {w : R → R} {c d : R} (hw : ∀ a, w (c * a) = d * w a) (n : ℕ) :
     ((s.map (c * ·)).map fun a ↦ w a * ((s.map (c * ·)).erase a).esymm n).sum =
