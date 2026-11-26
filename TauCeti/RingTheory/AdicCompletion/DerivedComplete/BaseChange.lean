@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import TauCeti.RingTheory.DiscreteValuationRing.Basic
 public import TauCeti.RingTheory.AdicCompletion.DerivedComplete.Module
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.TensorProduct.Pi
@@ -42,6 +42,10 @@ derived complete modules, so it is killed by a single power `πᵏ`
 
 ## References
 
+* ShortProof, `grh/src/Lib/PadicComparison/Completion.lean` in
+  <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207>,
+  Apache 2.0, Copyright 2026 Anthropic, PBC. The finite-rank construction and base-change
+  argument follow `New.Variety.IsDerivedComplete.baseChange`.
 * [Stacks Project, Section 15.93, Tag 091N](https://stacks.math.columbia.edu/tag/091N).
 -/
 
@@ -53,14 +57,6 @@ namespace TauCeti
 
 variable {W : Type*} [CommRing W] [IsDomain W] [IsDiscreteValuationRing W] {π : W}
   {X : Type*} [AddCommGroup X] [Module W X]
-
-/-- In a discrete valuation ring, every nonzero element divides a power of every non-unit. -/
-private lemma exists_dvd_pow_of_ne_zero {b : W} (hb : b ≠ 0) (hπ : ¬IsUnit π) : ∃ j, b ∣ π ^ j := by
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible W
-  obtain ⟨j, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hb hϖ
-  have hϖπ : ϖ ∣ π := Ideal.mem_span_singleton.1 <| hϖ.maximalIdeal_eq ▸
-    (IsLocalRing.mem_maximalIdeal π).2 hπ
-  exact ⟨j, (Units.mul_left_dvd).2 (pow_dvd_pow_of_dvd hϖπ j)⟩
 
 namespace IsDerivedComplete
 
@@ -96,7 +92,7 @@ theorem exists_comp_eq_pow_smul_of_rank_lt_aleph0 (hW : IsDerivedComplete (Ideal
     induction q using Submodule.Quotient.induction_on with
     | H x =>
       obtain ⟨b, hb, hbx⟩ := hdep x
-      obtain ⟨j, c, hc⟩ := exists_dvd_pow_of_ne_zero hb hπ
+      obtain ⟨j, c, hc⟩ := IsDiscreteValuationRing.exists_dvd_pow_of_ne_zero_of_not_isUnit hb hπ
       refine ⟨j, ?_⟩
       rw [← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero, hc, mul_comm, mul_smul]
       exact Submodule.smul_mem _ c hbx
@@ -125,8 +121,8 @@ theorem baseChange (hW : IsDerivedComplete (Ideal.span {π}) W)
   have hcomp : τ ∘ₗ σ = (π ^ k) • LinearMap.id := LinearMap.ext hτσ
   refine (((pi fun _ ↦ hS).of_linearEquiv (piScalarRight W S S (Fin s)).symm)).of_comp_eq_smul
     (τ.baseChange S) (σ.baseChange S) (c := algebraMap W S π ^ k) (fun z ↦ ?_) ?_
-  · rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, hcomp, LinearMap.baseChange_smul,
-      LinearMap.baseChange_id, ← map_pow, algebraMap_smul, LinearMap.smul_apply, LinearMap.id_apply]
+  · rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp, hcomp]
+    simp [LinearMap.baseChange_smul, ← map_pow, algebraMap_smul]
   · exact Ideal.span_le.2 <| Set.singleton_subset_iff.2 ⟨k, Ideal.mem_span_singleton_self _⟩
 
 end IsDerivedComplete

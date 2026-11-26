@@ -73,6 +73,11 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 
 ## References
 
+* ShortProof, `grh/src/Lib/PadicComparison/Completion.lean` in
+  <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207>,
+  Apache 2.0, Copyright 2026 Anthropic, PBC. The statements and proof plans of successive
+  approximation, Nakayama and scalar retracts follow `New.Variety.IsDerivedComplete`'s
+  `exists_apply_eq_of_approx`, `eq_zero_of_mem_of_isSMulDivisible` and `of_retract`.
 * B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
   Section 3.4, Definition 3.4.1, Proposition 3.4.2, Remark 3.4.3 and Lemma 3.4.14.
 * [Stacks Project, Section 15.93, Tag 091N](https://stacks.math.columbia.edu/tag/091N), in
@@ -116,6 +121,13 @@ theorem compLeft_comp_telescope (f : R) (g : M →ₗ[R] N) :
   ext x n
   simp
 
+/-- Applying a linear map termwise commutes with each term of the telescope map. -/
+theorem telescope_apply_compLeft (f : R) (g : M →ₗ[R] N) (x : ℕ → M) (n : ℕ) :
+    telescope N f (fun k ↦ g (x k)) n = g (telescope M f x n) := by
+  simpa only [LinearMap.comp_apply, telescope_apply, LinearMap.compLeft_apply,
+    Function.comp_apply] using
+    (congrFun (DFunLike.congr_fun (compLeft_comp_telescope f g) x) n).symm
+
 /-- The telescope map of `f` is bijective on `M` if and only if it is bijective on a module
 linearly equivalent to `M`. -/
 theorem bijective_telescope_iff_of_linearEquiv (e : M ≃ₗ[R] N) (f : R) :
@@ -148,9 +160,11 @@ theorem telescope_sum_range_pow_smul (f : R) (y : ℕ → M) (n : ℕ) :
     simp only [telescope_apply] at hk ⊢
     rw [sum_range_succ, sum_range_succ, smul_add, smul_smul f (f ^ n), ← pow_succ',
       show k + 1 + n = k + (n + 1) by omega]
-    rw [← sub_eq_zero] at hk ⊢
-    rw [← hk]
-    abel
+    calc
+      _ = (∑ j ∈ range n, f ^ j • y (k + j) -
+          f • ∑ j ∈ range n, f ^ j • y (k + 1 + j)) +
+          f ^ n • y (k + n) - f ^ (n + 1) • y (k + (n + 1)) := by abel
+      _ = _ := by rw [hk]; abel
 
 /-- The telescope map of `f` is the shift map of the tower `M ←f M ←f ⋯`. -/
 theorem ModuleTower.shift_smulTower (f : R) :
@@ -322,9 +336,7 @@ theorem le_jacobson (h : IsDerivedComplete I R) : I ≤ Ring.jacobson R := by
 
 /-- **Successive approximation.** Let `u : M → N` be a linear map between derived `I`-complete
 modules and `f ∈ I`. If every point of a set `S ⊆ N` is the sum of a point of the range of `u` and
-of `f` times a point of `S`, then `S` lies in the range of `u`. Iterating the hypothesis writes a
-point of `S` as `∑ⱼ fʲ • u eⱼ`, a series which the derived completeness of `M` sums in `M` and that
-of `N` identifies with the point. -/
+of `f` times a point of `S`, then `S` lies in the range of `u`. -/
 theorem subset_range_of_subset_range_add_smul (hM : IsDerivedComplete I M)
     (hN : IsDerivedComplete I N) {f : R} (hf : f ∈ I) (u : M →ₗ[R] N) {S : Set N}
     (hS : S ⊆ (LinearMap.range u : Set N) + f • S) : S ⊆ LinearMap.range u := by
@@ -340,8 +352,7 @@ theorem subset_range_of_subset_range_add_smul (hM : IsDerivedComplete I M)
     ext n
     have hn : (xs (n + 1) : N) = next (xs n) := by
       simp only [xs, Function.iterate_succ_apply']
-    rw [telescope_apply, telescope_apply, hn, hnext (xs n), add_sub_cancel_right, ← map_smul,
-      ← map_sub, ← telescope_apply, hz]
+    rw [telescope_apply_compLeft, hz, telescope_apply, hn, hnext (xs n), add_sub_cancel_right]
   exact ⟨z 0, (congrFun ((hN.bijective hf).1 h) 0).symm⟩
 
 /-- **Nakayama's lemma for derived complete modules.** A submodule `K` of a derived `I`-complete
@@ -368,7 +379,8 @@ theorem of_comp_eq_smul (hM : IsDerivedComplete I M) (a : M →ₗ[R] N) (b : N 
   · -- `b ∘ z` is killed by the telescope map on `M`, so `c • z = 0`, and `z = fⁿ • z(· + n)`.
     have hb : (fun k ↦ b (z k)) = 0 := (map_eq_zero_iff _ (hM.bijective hf).1).1 <| by
       ext k
-      simpa [telescope_apply] using congr(b ($hz k))
+      rw [telescope_apply_compLeft, hz]
+      simp
     funext k
     rw [eq_sum_range_add_pow_smul_of_telescope_eq hz k n, ← hr, mul_smul, ← hab,
       congrFun hb (k + n)]
@@ -377,7 +389,7 @@ theorem of_comp_eq_smul (hM : IsDerivedComplete I M) (a : M →ₗ[R] N) (b : N 
     have hc (w : ℕ → N) : c • w ∈ LinearMap.range (telescope N f) := by
       obtain ⟨e, he⟩ := (hM.bijective hf).2 fun k ↦ b (w k)
       refine ⟨fun k ↦ a (e k), funext fun k ↦ ?_⟩
-      rw [telescope_apply, ← map_smul, ← map_sub, ← telescope_apply, he, Pi.smul_apply, hab]
+      rw [telescope_apply_compLeft, he, Pi.smul_apply, hab]
     obtain ⟨w, hw⟩ := hc fun k ↦ r • y (k + n)
     refine ⟨(fun k ↦ ∑ j ∈ range n, f ^ j • y (k + j)) + w, ?_⟩
     rw [map_add, telescope_sum_range_pow_smul, hw]
