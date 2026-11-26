@@ -651,19 +651,6 @@ theorem vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn
     (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖}) :
     T.vectorWaveFrontSet ∩ U ×ˢ Γ ⊆ (quantizeDistribution ha T).vectorWaveFrontSet := by
   rintro ⟨x, ξ⟩ ⟨hp, hx, hξ⟩
-  -- Distributions which agree on a neighbourhood of `x` have the same singularities over `x`.
-  have hagree {S S' : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)} {O : Set (CoordinateSpace n)}
-      (hO : IsOpen O) (hxO : x ∈ O) (hSS' : IsVanishingOn ⇑(S - S') O) :
-      (x, ξ) ∈ S.waveFrontSet ↔ (x, ξ) ∈ S'.waveFrontSet := by
-    have hd : (S - S').IsMicrolocallySmoothAt x ξ := isMicrolocallySmoothAt_of_notMem_dsupport
-      trivial (fun h ↦ (hSS'.disjoint_dsupport hO).ne_of_mem hxO h rfl) ξ
-    rw [mem_waveFrontSet_iff, mem_waveFrontSet_iff]
-    refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ not_congr
-      ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-    · convert h.add (hd.smul (-1)) using 1
-      module
-    · convert h.add hd using 1
-      abel
   -- A cutoff `ψ` equal to `1` on an open neighbourhood `O` of `x`, and a cutoff `χ` equal to `1`
   -- on the closed `R`-neighbourhood of the support of `ψ`.
   obtain ⟨ψ, O, hO, hxO, hψO, -⟩ := TestFunction.exists_eqOn_one_tsupport_subset (n := ⊤)
@@ -682,8 +669,9 @@ theorem vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn
     obtain ⟨j, hj⟩ := mem_iUnion.1 hp
     refine mem_iUnion.2 ⟨j, ?_⟩
     rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp, hu j]
-    exact (hagree hO hxO (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦
-      hχψ y (self_subset_cthickening _ (hOψ hy)))).1 hj
+    exact (mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦
+        hχψ y (self_subset_cthickening _ (hOψ hy)))).1 hj
   -- `ψ a` agrees with `a` on `O`, so it is elliptic on `(U ∩ O) × Γ` at large frequencies, and the
   -- statement on `H^r` puts `(x, ξ)` in the wave front set of `Op(ψ a) u`.
   have hb := hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
@@ -699,8 +687,9 @@ theorem vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn
   -- on `O`.
   rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp,
     toDistr_postcomp_quantizeSobolev_smulLeft b ha hχψ T u hu ℓ] at hℓ
-  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ _ ((hagree hO hxO
-    (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦ hψO hy)).2 hℓ)
+  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ _
+    ((mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦ hψO hy)).2 hℓ)
 
 /-- **Microlocal elliptic regularity of properly supported systems.** For a symbol `a` with values
 in `V →L[ℂ] W` whose quantization has kernel supported within distance `R` of the diagonal, and
