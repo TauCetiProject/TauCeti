@@ -209,21 +209,22 @@ theorem baseChangeAut_algebraMap_ratFunc (r : RatFunc k) :
 /-- The identity automorphism of `k` over `K` induces the identity on `X`. -/
 @[simp]
 theorem baseChangeAut_one : M.baseChangeAut 1 = RingEquiv.refl X := by
-  ext x
-  obtain ⟨t, rfl⟩ := M.baseChangeEquiv.surjective x
-  induction t using TensorProduct.inductionOn with
-  | tmul y c => simp
-  | add t u ht hu => simp only [map_add, ht, hu, RingEquiv.refl_apply]
+  rw [baseChangeAut, AlgEquiv.aut_one, Algebra.TensorProduct.congr_refl]
+  -- `AlgEquiv.refl.toRingEquiv` is `RingEquiv.refl _`, a left identity for `RingEquiv.trans`.
+  exact M.baseChangeEquiv.symm_trans_self
 
 /-- Composition of automorphisms of `k` over `K` corresponds to composition of `baseChangeAut`. -/
 @[simp]
 theorem baseChangeAut_mul (σ τ : k ≃ₐ[K] k) :
     M.baseChangeAut (σ * τ) = (M.baseChangeAut τ).trans (M.baseChangeAut σ) := by
+  -- Under `AlgEquiv.aut`, `σ * τ = τ.trans σ` and `refl = refl.trans refl`.
+  have hcongr :
+      Algebra.TensorProduct.congr (AlgEquiv.refl : M.pair ≃ₐ[K] M.pair) (σ * τ) =
+        (Algebra.TensorProduct.congr AlgEquiv.refl τ).trans
+          (Algebra.TensorProduct.congr AlgEquiv.refl σ) :=
+    Algebra.TensorProduct.congr_trans AlgEquiv.refl AlgEquiv.refl τ σ
   ext x
-  obtain ⟨t, rfl⟩ := M.baseChangeEquiv.surjective x
-  induction t using TensorProduct.inductionOn with
-  | tmul y c => simp [AlgEquiv.mul_apply]
-  | add t u ht hu => simp only [map_add, RingEquiv.trans_apply, ht, hu]
+  simp [baseChangeAut, hcongr]
 
 /-- The isomorphism of algebraic Belyi pairs `X^σ ≃ X` induced by an automorphism `σ` of `k` over
 the field `K` of a model `M`. -/

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.RepresentationTheory.Stabilizer
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.Algebra.TensorProduct.BaseChange
 import TauCeti.RepresentationTheory.GaloisDescent.Discrete
@@ -85,7 +86,8 @@ field descends.
 
 ## References
 
-* A. Speiser, *Zahlentheoretische Untersuchungen*, Mathematische Annalen 80 (1919), 20–31.
+* A. Speiser, *Zahlentheoretische Sätze aus der Gruppentheorie*, Mathematische Zeitschrift 5
+  (1919), 1–6.
 * B. Köck, *Belyi's theorem revisited*, Beiträge zur Algebra und Geometrie 45 (2004), 253–265,
   (1.9) Theorem and (1.10) Lemma.
 * J.-M. Couveignes, *Calcul et rationalité de fonctions de Belyi en genre 0*, Annales de
@@ -112,6 +114,24 @@ private theorem invariants_toRepresentation_eq_fixedField (ρ : (L ≃ₐ[k] L) 
     ((toRepresentation ρ).invariants : Set F) = fixedField ρ.range := by
   ext x
   simp [Representation.mem_invariants, mem_fixedField_iff]
+
+/-- If every automorphism in an open subgroup `H` fixes `z` under `ρ`, then the stabilizer of `z`
+is open. -/
+private theorem isOpen_stabilizer_of_forall_eq {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
+    {H : Subgroup (L ≃ₐ[k] L)} (hH : IsOpen (H : Set (L ≃ₐ[k] L))) {z : F}
+    (hz : ∀ σ ∈ H, ρ σ z = z) :
+    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} :=
+  Subgroup.isOpen_mono (H₂ := (toRepresentation ρ).stabilizer z) hz hH
+
+/-- If `ρ σ z = z` whenever `ρ σ x = x` and `ρ σ y = y`, and `x` and `y` have open stabilizers,
+then so does `z`. -/
+private theorem isOpen_stabilizer_of_inter {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)} {x y z : F}
+    (hx : IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) (hy : IsOpen {σ : L ≃ₐ[k] L | ρ σ y = y})
+    (hz : ∀ σ, ρ σ x = x → ρ σ y = y → ρ σ z = z) :
+    IsOpen {σ : L ≃ₐ[k] L | ρ σ z = z} :=
+  isOpen_stabilizer_of_forall_eq
+    (H := (toRepresentation ρ).stabilizer x ⊓ (toRepresentation ρ).stabilizer y)
+    (hx.inter hy) fun σ ⟨hσx, hσy⟩ ↦ hz σ hσx hσy
 
 variable [Algebra L F]
 
@@ -146,33 +166,19 @@ def openStabilizerSubfield [Algebra.IsIntegral k L]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     IntermediateField L F :=
+  have hmem := mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)
   have h1 : IsOpen {σ : L ≃ₐ[k] L | ρ σ 1 = 1} :=
-    Subgroup.isOpen_mono (H₁ := ⊤) (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) (1 : F)).comap ρ)
-      (fun σ _ ↦ map_one (ρ σ)) isOpen_univ
+    isOpen_stabilizer_of_forall_eq (H := ⊤) isOpen_univ fun σ _ ↦ map_one (ρ σ)
   { carrier := {x : F | IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}}
-    zero_mem' := (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) 0).mp
-      (zero_mem _)
-    add_mem' {x y} hx hy :=
-      (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) (x + y)).mp <|
-        add_mem ((mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) x).mpr hx)
-          ((mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) y).mpr hy)
+    zero_mem' := (hmem 0).mp (zero_mem _)
+    add_mem' {x y} hx hy := (hmem (x + y)).mp (add_mem ((hmem x).mpr hx) ((hmem y).mpr hy))
     one_mem' := h1
-    mul_mem' {x y} hx hy := Subgroup.isOpen_mono
-      (H₁ := (MulAction.stabilizer (F ≃ₐ[k] F) x).comap ρ ⊓
-        (MulAction.stabilizer (F ≃ₐ[k] F) y).comap ρ)
-      (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) (x * y)).comap ρ)
-      (fun σ ⟨hσx, hσy⟩ ↦ (map_mul (ρ σ) x y).trans (congrArg₂ (· * ·) hσx hσy))
-      (hx.inter hy)
-    inv_mem' {x} hx := Subgroup.isOpen_mono
-      (H₁ := (MulAction.stabilizer (F ≃ₐ[k] F) x).comap ρ)
-      (H₂ := (MulAction.stabilizer (F ≃ₐ[k] F) x⁻¹).comap ρ)
-      (fun σ hσ ↦ (map_inv₀ (ρ σ) x).trans (congrArg Inv.inv hσ)) hx
-    algebraMap_mem' c := by
-      rw [Algebra.algebraMap_eq_smul_one]
-      exact (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)
-        (c • (1 : F))).mp <|
-        (openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ)).smul_mem c <|
-          (mem_openStabilizerSubmodule (ρ := toRepresentation ρ) (apply_smul hρ) 1).mpr h1 }
+    mul_mem' {x y} hx hy := isOpen_stabilizer_of_inter hx hy fun σ hσx hσy ↦ by
+      rw [map_mul, hσx, hσy]
+    inv_mem' {x} hx := isOpen_stabilizer_of_inter hx hx fun σ hσ _ ↦ by
+      rw [map_inv₀, hσ]
+    algebraMap_mem' c := Algebra.algebraMap_eq_smul_one (A := F) c ▸
+      (hmem (c • 1)).mp (Submodule.smul_mem _ c ((hmem 1).mpr h1)) }
 
 /-- Membership in `openStabilizerSubfield hρ` is openness of the stabilizer in `Gal(L/k)`. -/
 @[simp]

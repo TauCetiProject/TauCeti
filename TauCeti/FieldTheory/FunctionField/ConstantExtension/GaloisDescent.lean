@@ -76,16 +76,19 @@ variable {k L F : Type*} [Field k] [Field L] [Field F] [Algebra k L] [Algebra k 
 
 namespace GaloisDescent
 
+private theorem setRange_algebraMap (E : IntermediateField k F) :
+    Set.range (algebraMap E F) = (E : Set F) :=
+  E.toSubalgebra.setRange_algebraMap
+
 /-- **The descended field generates.** For a semilinear action `ρ` of a finite automorphism group
 of `L / k` on `F`, the field `F` is the compositum of the fixed field of `ρ` with `L`. -/
 theorem constantCompositum_fixedField_eq_top [Finite (L ≃ₐ[k] L)]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a)) :
     constantCompositum (fixedField ρ.range) L F = ⊤ := by
-  have hrange : Set.range (algebraMap (fixedField ρ.range) F) = (fixedField ρ.range : Set F) := by
-    ext x; simp
-  exact constantCompositum_eq_top_of_span_eq_top (fixedField ρ.range) L F
-    (hrange.symm ▸ span_fixedField_eq_top hρ)
+  apply constantCompositum_eq_top_of_span_eq_top
+  rw [setRange_algebraMap]
+  exact span_fixedField_eq_top hρ
 
 variable [IsScalarTower k L F]
 
@@ -97,10 +100,9 @@ theorem constantCompositum_fixedField_eq_top_of_isOpen [IsGalois k L]
     (hρ : ∀ σ a, ρ σ (algebraMap L F a) = algebraMap L F (σ a))
     (hopen : ∀ x : F, IsOpen {σ : L ≃ₐ[k] L | ρ σ x = x}) :
     constantCompositum (fixedField ρ.range) L F = ⊤ := by
-  have hrange : Set.range (algebraMap (fixedField ρ.range) F) = (fixedField ρ.range : Set F) := by
-    ext x; simp
-  exact constantCompositum_eq_top_of_span_eq_top (fixedField ρ.range) L F
-    (hrange.symm ▸ span_fixedField_eq_top_of_isOpen hρ hopen)
+  apply constantCompositum_eq_top_of_span_eq_top
+  rw [setRange_algebraMap]
+  exact span_fixedField_eq_top_of_isOpen hρ hopen
 
 private theorem linearDisjoint_fixedField [IsGalois k L]
     {ρ : (L ≃ₐ[k] L) →* (F ≃ₐ[k] F)}
@@ -137,8 +139,8 @@ private theorem finiteDimensional_fixedField_adjoin_simple [IsGalois k L]
   let b' := constantExtensionBasisOfLinearDisjoint (linearDisjoint_fixedField hρ hopen)
     (constantCompositum_fixedField_eq_top_of_isOpen hρ hopen) k⟮x⟯ b
   have hadj : IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F)) = L⟮(x : F)⟯ := by
-    rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
-    rfl
+    rw [IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right,
+      IntermediateField.algebraMap_apply]
   have : FiniteDimensional (IntermediateField.adjoin L (Set.range (algebraMap k⟮x⟯ F))) F := by
     rwa [hadj]
   have : Finite (Module.Basis.ofVectorSpaceIndex k⟮x⟯ F₀) := Module.Finite.finite_basis b'

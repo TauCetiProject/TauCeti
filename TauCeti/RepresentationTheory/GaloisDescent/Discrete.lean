@@ -9,13 +9,13 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RepresentationTheory.Stabilizer
-import Mathlib.RepresentationTheory.Subrepresentation
 import Mathlib.Topology.Algebra.OpenSubgroup
 import TauCeti.LinearAlgebra.TensorProduct.FiniteExtension
 import TauCeti.RepresentationTheory.GaloisDescent.Injective
 import TauCeti.RepresentationTheory.GaloisDescent.Range
 import TauCeti.RepresentationTheory.GaloisDescent.Span
 import TauCeti.RepresentationTheory.Quotient
+import TauCeti.RepresentationTheory.Subrepresentation
 
 /-!
 # Semilinear Galois descent for infinite Galois extensions
@@ -56,7 +56,8 @@ No characteristic restriction and no finite-dimensionality of `V` over `L` is as
 
 ## References
 
-* A. Speiser, *Zahlentheoretische Untersuchungen*, Mathematische Annalen 80 (1919), 20–31.
+* A. Speiser, *Zahlentheoretische Sätze aus der Gruppentheorie*, Mathematische Zeitschrift 5
+  (1919), 1–6.
 * N. Bourbaki, *Algebra II*, Chapters 4–7, Springer, Chapter V, §10.4, Proposition 8.
 * J. S. Milne, *Algebraic Groups* (2017), Appendix A.64 (Galois descent).
 -/
@@ -139,8 +140,7 @@ private theorem descentRep_restrictNormalHom_coe [IsGalois k L]
     (hU_fix : ∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ ⦃u : V⦄, u ∈ U → ρ g u = u)
     (g : Gal(L/k)) (u : U.restrictScalars k) :
     (descentRep hU_mem hU_fix (AlgEquiv.restrictNormalHom E g) u : V) = ρ g u := by
-  rw [descentRep, Representation.ofSurjective_apply]
-  rfl
+  rw [descentRep, Representation.ofSurjective_apply, Subrepresentation.coe_toRepresentation_apply]
 
 omit [IsScalarTower k L V] in
 private theorem descentRep_smul [IsGalois k L]
@@ -163,17 +163,27 @@ section Map
 
 variable {W : Type*} [AddCommGroup W] [Module k W]
 
+local instance (E : IntermediateField k L) : IsScalarTower k E V :=
+  E.toSubalgebra.isScalarTower_mid
+
 omit [IsScalarTower k L V] in
-/-- For `f : W →ₗ[k] V` whose `L`-multiples transform semilinearly, `Submodule.span E (Set.range f)`
-is preserved by `Gal(L/k)`, fixed pointwise by `E.fixingSubgroup`, and `E`-semilinear. -/
+private abbrev rangeSpan (f : W →ₗ[k] V) (E : IntermediateField k L) : Submodule E V :=
+  Submodule.span E (Set.range f)
+
+private abbrev codRestrictRangeSpan (f : W →ₗ[k] V) (E : IntermediateField k L) :
+    W →ₗ[k] (rangeSpan f E).restrictScalars k :=
+  f.codRestrict ((rangeSpan f E).restrictScalars k) fun w ↦
+    ((rangeSpan f E).restrictScalars_mem k _).mpr (Submodule.subset_span ⟨w, rfl⟩)
+
+omit [IsScalarTower k L V] in
+/-- For `f : W →ₗ[k] V` whose `L`-multiples transform semilinearly, `rangeSpan f E` is preserved
+by `Gal(L/k)`, fixed pointwise by `E.fixingSubgroup`, and `E`-semilinear. -/
 private theorem span_range_mem_and_fix {ρ : Representation k Gal(L/k) V}
     {f : W →ₗ[k] V} (hsemi : ∀ (g : Gal(L/k)) (a : L) (w : W), ρ g (a • f w) = g a • f w)
     (E : IntermediateField k L) [Normal k E] :
-    (∀ (g : Gal(L/k)) ⦃u : V⦄,
-      u ∈ Submodule.span E (Set.range f) → ρ g u ∈ Submodule.span E (Set.range f)) ∧
-      (∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup →
-        ∀ ⦃u : V⦄, u ∈ Submodule.span E (Set.range f) → ρ g u = u) ∧
-      (∀ (g : Gal(L/k)) (a : E) ⦃u : V⦄, u ∈ Submodule.span E (Set.range f) →
+    (∀ (g : Gal(L/k)) ⦃u : V⦄, u ∈ rangeSpan f E → ρ g u ∈ rangeSpan f E) ∧
+      (∀ ⦃g : Gal(L/k)⦄, g ∈ E.fixingSubgroup → ∀ ⦃u : V⦄, u ∈ rangeSpan f E → ρ g u = u) ∧
+      (∀ (g : Gal(L/k)) (a : E) ⦃u : V⦄, u ∈ rangeSpan f E →
         ρ g (a • u) = AlgEquiv.restrictNormalHom E g a • ρ g u) := by
   have hfw (g : Gal(L/k)) (w : W) : ρ g (f w) = f w := by simpa using hsemi g 1 w
   refine span_mem_and_fix
@@ -182,6 +192,49 @@ private theorem span_range_mem_and_fix {ρ : Representation k Gal(L/k) V}
   rintro g a _ ⟨w, rfl⟩
   rw [Subalgebra.smul_def, hsemi, ← AlgEquiv.restrictNormalHom_apply E g a, Subalgebra.smul_def,
     hfw]
+
+/-- Reduce a single tensor `z : L ⊗[k] W` to a finite Galois subextension `E / k`: choose `E` and
+`z₀ : E ⊗[k] W` mapping to `z`, build the descended `Gal(E/k)`-representation on `rangeSpan f E`,
+and record the base-change comparison at `z₀`. -/
+private theorem exists_finite_isGalois_descentRep [IsGalois k L]
+    {ρ : Representation k Gal(L/k) V} {f : W →ₗ[k] V}
+    (hsemi : ∀ (g : Gal(L/k)) (a : L) (w : W), ρ g (a • f w) = g a • f w) (z : L ⊗[k] W) :
+    ∃ (E : IntermediateField k L) (_ : FiniteDimensional k E) (_ : IsGalois k E)
+      (z₀ : E ⊗[k] W)
+      (ρE : Representation k Gal(E/k) ((rangeSpan f E).restrictScalars k)),
+      LinearMap.rTensor W E.val.toLinearMap z₀ = z ∧
+      ((codRestrictRangeSpan f E).liftBaseChange E z₀ : V) = f.liftBaseChange L z ∧
+      (∀ (g : Gal(L/k)) (u : (rangeSpan f E).restrictScalars k),
+        (ρE (AlgEquiv.restrictNormalHom E g) u : V) = ρ g u) ∧
+      (∀ (σ : Gal(E/k)) (a : E) (u : (rangeSpan f E).restrictScalars k),
+        ρE σ (a • u) = (σ • a) • ρE σ u) ∧
+      (∀ (σ : Gal(E/k)) (w : W),
+        ρE σ (codRestrictRangeSpan f E w) = codRestrictRangeSpan f E w) := by
+  obtain ⟨E, hfin, hnorm, hzE⟩ :=
+    Set.exists_normal_intermediateField_subset_range_rTensor {z} (Set.finite_singleton z)
+  obtain ⟨z₀, rfl⟩ := hzE (Set.mem_singleton z)
+  have : Algebra.IsSeparable k E := Algebra.isSeparable_tower_bot_of_isSeparable k E L
+  have hgal : IsGalois k E := ⟨⟩
+  obtain ⟨hU_mem, hU_fix, hU_smul⟩ := span_range_mem_and_fix hsemi E
+  let ρE := descentRep hU_mem hU_fix
+  have hcomp :
+      ((rangeSpan f E).restrictScalars k).subtype ∘ₗ
+        ((codRestrictRangeSpan f E).liftBaseChange E).restrictScalars k =
+      (f.liftBaseChange L).restrictScalars k ∘ₗ LinearMap.rTensor W E.val.toLinearMap :=
+    TensorProduct.ext' fun a w ↦ by
+      simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply,
+        LinearMap.liftBaseChange_tmul, Submodule.coe_subtype, LinearMap.rTensor_tmul,
+        IntermediateField.coe_val, AlgHom.toLinearMap_apply]
+      -- `restrictScalars.origModule` inherits the `E`-action of `rangeSpan f E`.
+      exact ((rangeSpan f E).coe_smul a _).trans <| by
+        rw [LinearMap.codRestrict_apply, Subalgebra.smul_def]
+  refine ⟨E, hfin, hgal, z₀, ρE, rfl, LinearMap.congr_fun hcomp z₀,
+    descentRep_restrictNormalHom_coe hU_mem hU_fix,
+    descentRep_smul hU_mem hU_fix hU_smul, fun σ w ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
+  refine Subtype.ext ((descentRep_restrictNormalHom_coe hU_mem hU_fix g _).trans ?_)
+  rw [LinearMap.codRestrict_apply]
+  simpa using hsemi g 1 w
 
 /-- **Injectivity in semilinear Galois descent for arbitrary Galois extensions.** Let `L / k` be a
 Galois extension, possibly infinite, and `ρ` a `k`-linear representation of `Gal(L/k)` on an
@@ -193,33 +246,15 @@ theorem liftBaseChange_injective_of_invariant_of_isGalois [IsGalois k L]
     (hsemi : ∀ (g : Gal(L/k)) (a : L) (w : W), ρ g (a • f w) = g a • f w) :
     Function.Injective (f.liftBaseChange L) := by
   refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
-  obtain ⟨E, hfin, hnorm, hzE⟩ :=
-    Set.exists_normal_intermediateField_subset_range_rTensor {z} (Set.finite_singleton z)
-  obtain ⟨z₀, rfl⟩ := hzE (Set.mem_singleton z)
-  have : Algebra.IsSeparable k E := Algebra.isSeparable_tower_bot_of_isSeparable k E L
-  have : IsGalois k E := ⟨⟩
-  have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
-  let U : Submodule E V := Submodule.span E (Set.range f)
-  obtain ⟨hU_mem, hU_fix, hU_smul⟩ := span_range_mem_and_fix hsemi E
-  let ρE := descentRep hU_mem hU_fix
-  let fE : W →ₗ[k] U.restrictScalars k :=
-    f.codRestrict (U.restrictScalars k) fun w ↦ Submodule.subset_span ⟨w, rfl⟩
-  have hfE : Function.Injective fE := fun _ _ h ↦ hf (congrArg Subtype.val h)
-  have hsemiE (σ : Gal(E/k)) (a : E) (w : W) : ρE σ (a • fE w) = (σ • a) • fE w := by
-    rw [descentRep_smul hU_mem hU_fix hU_smul]
-    obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    refine congrArg ((AlgEquiv.restrictNormalHom E g • a) • ·) (Subtype.ext ?_)
-    have hfEw : (fE w : V) = f w := rfl
-    rw [descentRep_restrictNormalHom_coe, hfEw]
-    simpa using hsemi g 1 w
-  have hinj := liftBaseChange_injective_of_invariant (ρ := ρE) hfE hsemiE
-  have hcomp :
-      (U.restrictScalars k).subtype ∘ₗ (fE.liftBaseChange E).restrictScalars k =
-        (f.liftBaseChange L).restrictScalars k ∘ₗ LinearMap.rTensor W E.val.toLinearMap :=
-    TensorProduct.ext' fun _ _ ↦ rfl
+  obtain ⟨E, _, _, z₀, ρE, rfl, hval, _, hρE_smul, hρE_f⟩ :=
+    exists_finite_isGalois_descentRep hsemi z
+  have hfE : Function.Injective (codRestrictRangeSpan f E) :=
+    fun _ _ h ↦ hf (congrArg Subtype.val h)
+  have hinj := liftBaseChange_injective_of_invariant (ρ := ρE) hfE fun σ a w ↦ by
+    rw [hρE_smul, hρE_f]
   have hz₀ : z₀ = 0 := hinj <| by
     rw [map_zero]
-    exact Subtype.ext (by simpa [hz] using LinearMap.congr_fun hcomp z₀)
+    exact Subtype.ext (by rw [hval, hz, ZeroMemClass.coe_zero])
   rw [hz₀, map_zero]
 
 /-- **Recognizing invariant vectors for arbitrary Galois extensions.** Let `L / k` be a Galois
@@ -234,22 +269,9 @@ theorem range_eq_invariants_of_liftBaseChange_surjective_of_isGalois [IsGalois k
     LinearMap.range f = ρ.invariants := by
   refine le_antisymm (by rintro _ ⟨w, rfl⟩; exact (ρ.mem_invariants _).mpr (hinv · w)) fun v hv ↦ ?_
   obtain ⟨z, rfl⟩ := hf v
-  obtain ⟨E, hfin, hnorm, hzE⟩ :=
-    Set.exists_normal_intermediateField_subset_range_rTensor {z} (Set.finite_singleton z)
-  obtain ⟨z₀, rfl⟩ := hzE (Set.mem_singleton z)
-  have : Algebra.IsSeparable k E := Algebra.isSeparable_tower_bot_of_isSeparable k E L
-  have : IsGalois k E := ⟨⟩
-  have : IsScalarTower k E V := E.toSubalgebra.isScalarTower_mid
-  let U : Submodule E V := Submodule.span E (Set.range f)
-  obtain ⟨hU_mem, hU_fix, hU_smul⟩ :=
-    span_range_mem_and_fix (fun g a w ↦ by rw [hsemi, hinv]) E
-  let ρE := descentRep hU_mem hU_fix
-  let fE : W →ₗ[k] U.restrictScalars k :=
-    f.codRestrict (U.restrictScalars k) fun w ↦ Submodule.subset_span ⟨w, rfl⟩
-  have hinvE (σ : Gal(E/k)) (w : W) : ρE σ (fE w) = fE w := by
-    obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    exact Subtype.ext ((descentRep_restrictNormalHom_coe hU_mem hU_fix g (fE w)).trans (hinv g w))
-  have hsurjE : Function.Surjective (fE.liftBaseChange E) := by
+  obtain ⟨E, _, _, z₀, ρE, _, hval, hρE_coe, hρE_smul, hρE_f⟩ :=
+    exists_finite_isGalois_descentRep (fun g a w ↦ by rw [hsemi, hinv]) z
+  have hsurjE : Function.Surjective ((codRestrictRangeSpan f E).liftBaseChange E) := by
     rw [← LinearMap.range_eq_top, LinearMap.range_liftBaseChange, eq_top_iff]
     rintro ⟨u, hu⟩ -
     induction hu using Submodule.span_induction with
@@ -259,22 +281,13 @@ theorem range_eq_invariants_of_liftBaseChange_surjective_of_isGalois [IsGalois k
     | zero => exact zero_mem _
     | add _ _ _ _ ihx ihy => exact add_mem ihx ihy
     | smul a _ _ ihx => exact Submodule.smul_mem _ a ihx
-  let u₀ : U.restrictScalars k := fE.liftBaseChange E z₀
-  have hcomp :
-      (U.restrictScalars k).subtype ∘ₗ (fE.liftBaseChange E).restrictScalars k =
-        (f.liftBaseChange L).restrictScalars k ∘ₗ LinearMap.rTensor W E.val.toLinearMap :=
-    TensorProduct.ext' fun _ _ ↦ rfl
-  have hu₀_val : (u₀ : V) = f.liftBaseChange L (LinearMap.rTensor W E.val.toLinearMap z₀) :=
-    LinearMap.congr_fun hcomp z₀
+  let u₀ := (codRestrictRangeSpan f E).liftBaseChange E z₀
   have hu₀_inv : u₀ ∈ ρE.invariants := (ρE.mem_invariants u₀).mpr fun σ ↦ by
     obtain ⟨g, rfl⟩ := AlgEquiv.restrictNormalHom_surjective L σ
-    apply Subtype.ext
-    rw [descentRep_restrictNormalHom_coe, hu₀_val]
-    exact (ρ.mem_invariants _).mp hv g
-  rw [← range_eq_invariants_of_liftBaseChange_surjective
-    (descentRep_smul hU_mem hU_fix hU_smul) hinvE hsurjE] at hu₀_inv
+    exact Subtype.ext (by rw [hρE_coe, hval]; exact (ρ.mem_invariants _).mp hv g)
+  rw [← range_eq_invariants_of_liftBaseChange_surjective hρE_smul hρE_f hsurjE] at hu₀_inv
   obtain ⟨w, hw⟩ := hu₀_inv
-  exact ⟨w, (congrArg Subtype.val hw).trans hu₀_val⟩
+  exact ⟨w, (congrArg Subtype.val hw).trans hval⟩
 
 end Map
 
