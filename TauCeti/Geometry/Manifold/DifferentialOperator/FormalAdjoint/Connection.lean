@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -31,6 +33,9 @@ divergence, `∫ X(f) dV = -∫ f div X dV` for compactly supported `f`
 (`TauCeti.Manifold.integral_mul_divergence`), moves `∇_X` to the other side. For the trivial line
 bundle with the flat connection this is the formula `-X - div X` for the formal transpose of a
 vector field acting on functions. Merely negating `∇_X` is wrong unless `X` is divergence-free.
+For the weighted density `e^φ dV` the formal adjoint acquires the extra term `-(X φ)`:
+it is `-∇_X - (div X + X φ)`
+(`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp`).
 
 When `X` is divergence-free, for instance a Killing field
 (`TauCeti.Manifold.IsKillingField.divergence_eq_zero`), `∇_X` is formally skew-adjoint, and so
@@ -52,6 +57,8 @@ Seiberg–Witten equations on `S¹ × Y`.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField`,
   `CovariantDerivative.IsMetricCompatible.formalAdjoint_alongVectorField_apply`: the formal
   adjoint of `∇_X` for the Riemannian volume is `-∇_X - div X`.
+* `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp`: for
+  the density `e^φ dV` it is `-∇_X - (div X + X φ)`.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField_neg`: along a
   divergence-free field, in particular along a Killing field, `∇_X` is formally skew-adjoint.
 * `CovariantDerivative.IsMetricCompatible.integral_inner_alongVectorField_alongVectorField`:
@@ -163,6 +170,36 @@ theorem IsMetricCompatible.formalAdjoint_alongVectorField_apply (hcov : cov.IsMe
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by simp [hd]
   rw [h.formalAdjoint_eq]
   simp [hd]
+
+/-- **The formal adjoint of `∇_X` for a weighted density.** For a metric connection on a
+Riemannian vector bundle over a Riemannian manifold without boundary, a smooth vector field `X`
+and a smooth function `φ`, an operator `Q` acting by `Q τ = -∇_X τ - (div X + X φ) τ` is the
+formal adjoint of `∇_X` with respect to the density `e^φ dV`. -/
+theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp
+    (hcov : cov.IsMetricCompatible) (φ : C^∞⟮I, M; ℝ⟯) {Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯}
+    (hQ : ∀ τ x, Q τ x =
+      -cov τ x (X x) - (divergence I (fun y ↦ X y) x + mvfderiv I φ x (X x)) • τ x) :
+    (cov.alongVectorField X).IsFormalAdjoint Q
+      ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
+  let ρ : C^∞⟮I, M; ℝ⟯ := ⟨Real.exp ∘ φ, ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff⟩
+  let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, X.contMDiff_divergence⟩
+  have hd : ⇑d = divergence I fun y ↦ X y := ContMDiffMap.coeFn_mk _ _
+  -- The chain rule `X (e^φ) = e^φ X φ`.
+  have hXρ (x : M) : mvfderiv I ρ x (X x) = ρ x * mvfderiv I φ x (X x) := by
+    have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
+    rw [show (ρ : M → ℝ) = Real.exp ∘ φ from ContMDiffMap.coeFn_mk _ _,
+      mvfderiv_scalar_comp hφ Real.differentiable_exp.differentiableAt, Real.deriv_exp,
+      _root_.smul_apply, smul_eq_mul, Function.comp_apply]
+  -- Change the density of the unweighted formal adjoint `-∇_X - div X`.
+  refine (hcov.isFormalAdjoint_alongVectorField X
+    (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by
+      simp [hd]).withDensity (ρ := ρ) (fun x ↦ (Real.exp_pos _).le) fun τ ↦
+    ContMDiffSection.ext fun x ↦ ?_
+  simp only [ContMDiffSection.smul_apply, LinearMap.sub_apply, LinearMap.neg_apply,
+    Algebra.lsmul_coe, ContMDiffSection.coe_sub, ContMDiffSection.coe_neg, Pi.sub_apply,
+    Pi.neg_apply, alongVectorField_smul, hXρ]
+  simp only [alongVectorField_apply, hQ, hd]
+  module
 
 /-- **`∇_X` is formally skew-adjoint along a divergence-free field.** For a metric connection on a
 Riemannian vector bundle over a Riemannian manifold without boundary, and a smooth vector field

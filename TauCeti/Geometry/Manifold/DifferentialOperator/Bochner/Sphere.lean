@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Bochner.Weighted
+public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Connection
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Circle
 import TauCeti.Analysis.Complex.Inner
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Laplacian
@@ -40,6 +41,15 @@ because the density is not the Riemannian volume:
   connection is `d + ½ cos x dx`, with potential `¼ cos² x - ½ sin x`, and it is not metric
   (`TauCeti.not_isMetricCompatible_trivialAddInner_of_coe_eq_im`).
 
+The operator `∂ₓ` here is of Dirac type: on the sections of the trivial line bundle with its
+standard fibre metric, `∂ₓ` is of Dirac type
+(`TauCeti.isDiracType_alongVectorField_circleRotationField`), and its formal adjoint for the
+density `e^(sin x) dx` is `-∂ₓ - cos x`
+(`TauCeti.isFormalAdjoint_alongVectorField_circleRotationField_withDensity_exp`). So the product
+`(-∂ₓ - cos x) ∘ ∂ₓ = -Δ_φ` is of the form `D* D` for an operator `D` of Dirac type, to which
+`TauCeti.IsDiracType.isSectionLaplaceType_comp` applies, although the density defining `D*` is not
+the Riemannian volume and the Bochner connection of `D* D` is not metric.
+
 ## Main results
 
 * `TauCeti.neg_smoothWeightedLaplacian_apply_eq_of_coe_eq_inner`: the Bochner decomposition of
@@ -49,6 +59,9 @@ because the density is not the Riemannian volume:
 * `TauCeti.isFormalTranspose_vectorFieldDerivation_circleRotationField_withDensity_exp`,
   `TauCeti.neg_smoothWeightedLaplacian_eq_comp_vectorFieldDerivation_circleRotationField`,
   `TauCeti.not_isMetricCompatible_trivialAddInner_of_coe_eq_im`: the weighted circle.
+* `TauCeti.isDiracType_alongVectorField_circleRotationField`,
+  `TauCeti.isFormalAdjoint_alongVectorField_circleRotationField_withDensity_exp`: `∂ₓ` on the
+  trivial line bundle is of Dirac type, with formal adjoint `-∂ₓ - cos x` for `e^(sin x) dx`.
 
 ## References
 
@@ -173,6 +186,36 @@ theorem not_isMetricCompatible_trivialAddInner_of_coe_eq_im
   (isMetricCompatible_trivialAddInner_iff_eq_zero_of_coe_eq_inner one_ne_zero Complex.I
     (hφ.trans (funext fun _ ↦ (Complex.real_inner_I_left _).symm)) Y V h).not.2
     Complex.I_ne_zero
+
+/-! ### `∂ₓ` as an operator of Dirac type on the trivial line bundle -/
+
+/-- **`∂ₓ` is of Dirac type.** On the sections of the trivial line bundle of the circle, with its
+standard fibre metric, differentiation along the rotation field, `∂ₓ = d_{∂ₓ}`, is of Dirac type:
+its principal symbol `ξ(∂ₓ)` satisfies `ξ(∂ₓ)² = ‖ξ‖²`. -/
+theorem isDiracType_alongVectorField_circleRotationField :
+    IsDiracType ⟨(trivial ℝ).alongVectorField circleRotationField,
+      (trivial ℝ).alongVectorField_mem_differentialOperators_one circleRotationField⟩ :=
+  (trivial ℝ).isDiracType_alongVectorField circleRotationField
+    fun z _ v ↦ eq_inner_circleRotationField_smul z v
+
+/-- **The formal adjoint of `∂ₓ` for the density `e^(sin x) dx`**, on the sections of the trivial
+line bundle of the circle: with `φ` the imaginary part and `ψ` the real part of a point of the
+circle, the formal adjoint of `∂ₓ` for the density `e^φ dV` is `-∂ₓ - ψ`, that is `-∂ₓ - cos x`. -/
+theorem isFormalAdjoint_alongVectorField_circleRotationField_withDensity_exp
+    {φ ψ : C^∞⟮𝓡 1, sphere (0 : ℂ) 1; ℝ⟯}
+    (hφ : ⇑φ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).im)
+    (hψ : ⇑ψ = fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).re) :
+    ((trivial ℝ).alongVectorField circleRotationField).IsFormalAdjoint
+      (-(trivial ℝ).alongVectorField circleRotationField -
+        Algebra.lsmul ℝ ℝ Cₛ^∞⟮𝓡 1; ℝ, Bundle.Trivial (sphere (0 : ℂ) 1) ℝ⟯ ψ)
+      ((riemannianVolume (𝓡 1) (sphere (0 : ℂ) 1)).withDensity
+        fun z ↦ ENNReal.ofReal (Real.exp (φ z))) := by
+  have hcov : (trivial (I := 𝓡 1) (M := sphere (0 : ℂ) 1) ℝ).IsMetricCompatible := by
+    rw [← trivialAddInner_zero, isMetricCompatible_trivialAddInner_iff]
+  -- The rotation field is divergence free and `∂ₓ φ = ψ`.
+  refine hcov.isFormalAdjoint_alongVectorField_withDensity_exp _ φ fun τ z ↦ ?_
+  rw [hφ, mvfderiv_im_circleRotationField, divergence_circleRotationField, zero_add]
+  simp [hψ]
 
 end Circle
 
