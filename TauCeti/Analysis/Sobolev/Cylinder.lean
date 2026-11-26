@@ -96,7 +96,7 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   strip measure (`TauCeti.StripSobolev.stripMeasure_eq_restrict_univ_prod_Ioo`).
 * **Translation in `s`.** Translation in `s` commutes with a first-order operator, the coefficient
   field being translated too (`TauCeti.CylinderSobolev.translateLp_jetOperator`), so its right
-  inverses on `W^{1,2}` translate with the same norm
+  inverses on `W^{1,p}` translate with the same norm, for every exponent `p ≥ 1`
   (`TauCeti.CylinderSobolev.exists_rightInverse_jetOperator_comp_add`).
 * **An estimate from below.** If `D` moreover bounds every test section in `L²` over the whole
   strip, `∫ ‖ξ‖² ≤ C' ∫ ‖D ξ‖²`, the compact error term disappears: the extension satisfies
@@ -596,40 +596,44 @@ theorem ker_jetOperator_comp_subtypeL_eq_bot {M : ℝ × ℝ → V × V × V →
 
 /-! #### Translation in the `s` direction -/
 
+section Translation
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
 /-- **Translation commutes with first-order operators.** Translating `D_M f` by `a` in the `s`
 direction gives the operator of the translated coefficient field `M (· + a, ·)` applied to the
 translate of `f`. -/
 theorem translateLp_jetOperator {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    (a : ℝ) (f : Lp (V × V × V) 2 stripMeasure) :
-    translateLp a (jetOperator 2 stripMeasure M f) =
-      jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
+    (a : ℝ) (f : Lp (V × V × V) p stripMeasure) :
+    translateLp a (jetOperator p stripMeasure M f) =
+      jetOperator p stripMeasure (fun z ↦ M (z + (a, 0))) (translateLp a f) := by
   have hMa : MemLp (fun z ↦ M (z + (a, 0))) ∞ stripMeasure :=
     hM.comp_measurePreserving (measurePreserving_add_strip a)
   refine Lp.ext ?_
-  filter_upwards [coeFn_translateLp a (jetOperator 2 stripMeasure M f),
+  filter_upwards [coeFn_translateLp a (jetOperator p stripMeasure M f),
     coeFn_jetOperator hMa (translateLp a f), coeFn_translateLp a f,
     (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp (coeFn_jetOperator hM f)]
     with z h₁ h₂ h₃ h₄
   simp only [Function.comp_apply] at h₄
   rw [h₁, h₂, h₃, h₄]
 
-/-- **Right inverses of stabilized operators translate.** Let `ι : S →L[ℝ] L²` be a bounded linear
+/-- **Right inverses of stabilized operators translate.** Let `ι : S →L[ℝ] Lᵖ` be a bounded linear
 map, such as the inclusion of a space of sections complementing the range of `D_M`. If the
-stabilized operator `(ξ, σ) ↦ D_M ξ + ι σ` on `W^{1,2}(ℝ × S¹, V) × S` has a bounded linear right
+stabilized operator `(ξ, σ) ↦ D_M ξ + ι σ` on `W^{1,p}(ℝ × S¹, V) × S` has a bounded linear right
 inverse `Q`, then so does the stabilized operator `(ξ, σ) ↦ D_{M(· + a, ·)} ξ + (ι σ)(· + a, ·)` of
 the translated data, with norm at most `‖Q‖`: it is `Q` conjugated by the translations by `a`. -/
 theorem exists_rightInverse_coprod_jetOperator_comp_add {S : Type*} [NormedAddCommGroup S]
     [NormedSpace ℝ S] {M : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
-    {ι : S →L[ℝ] Lp W 2 stripMeasure} {Q : Lp W 2 stripMeasure →L[ℝ] H1 V × S}
-    (hQ : (((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).coprod ι).comp Q =
+    {ι : S →L[ℝ] Lp W p stripMeasure} {Q : Lp W p stripMeasure →L[ℝ] W1p V p × S}
+    (hQ : (((jetOperator p stripMeasure M).comp (W1p V p).subtypeL).coprod ι).comp Q =
       ContinuousLinearMap.id ℝ _) (a : ℝ) :
-    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V × S,
-      (((jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).coprod
-          ((translateLp (E := W) (p := 2) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
+    ∃ Q' : Lp W p stripMeasure →L[ℝ] W1p V p × S,
+      (((jetOperator p stripMeasure (fun z ↦ M (z + (a, 0)))).comp (W1p V p).subtypeL).coprod
+          ((translateLp (E := W) (p := p) a).toContinuousLinearEquiv.toContinuousLinearMap.comp
             ι)).comp Q' = ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
-  refine ⟨((translate 2 (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.prodMap
+  refine ⟨((translate p (testSection V) a).toContinuousLinearEquiv.toContinuousLinearMap.prodMap
     (ContinuousLinearMap.id ℝ S)).comp
-    (Q.comp (translateLp (E := W) (p := 2) (-a)).toContinuousLinearEquiv.toContinuousLinearMap),
+    (Q.comp (translateLp (E := W) (p := p) (-a)).toContinuousLinearEquiv.toContinuousLinearMap),
     ?_, ?_⟩
   · refine ContinuousLinearMap.ext fun η ↦ ?_
     have h := congrArg (fun T ↦ T (translateLp (-a) η)) hQ
@@ -650,23 +654,25 @@ theorem exists_rightInverse_coprod_jetOperator_comp_add {S : Type*} [NormedAddCo
       ContinuousLinearMap.id_apply]
 
 /-- **Right inverses translate.** If the operator of the coefficient field `M` has a bounded
-linear right inverse `Q` on `W^{1,2}`, then so does the operator of the translated coefficient
+linear right inverse `Q` on `W^{1,p}`, then so does the operator of the translated coefficient
 field `M (· + a, ·)`, with norm at most `‖Q‖`: it is `Q` conjugated by the translation by `a`.
 This is the case of the zero stabilizer in `exists_rightInverse_coprod_jetOperator_comp_add`. -/
 theorem exists_rightInverse_jetOperator_comp_add {M : ℝ × ℝ → V × V × V →L[ℝ] W}
-    (hM : MemLp M ∞ stripMeasure) {Q : Lp W 2 stripMeasure →L[ℝ] H1 V}
-    (hQ : ((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).comp Q =
+    (hM : MemLp M ∞ stripMeasure) {Q : Lp W p stripMeasure →L[ℝ] W1p V p}
+    (hQ : ((jetOperator p stripMeasure M).comp (W1p V p).subtypeL).comp Q =
       ContinuousLinearMap.id ℝ _) (a : ℝ) :
-    ∃ Q' : Lp W 2 stripMeasure →L[ℝ] H1 V,
-      ((jetOperator 2 stripMeasure (fun z ↦ M (z + (a, 0)))).comp (H1 V).subtypeL).comp Q' =
+    ∃ Q' : Lp W p stripMeasure →L[ℝ] W1p V p,
+      ((jetOperator p stripMeasure (fun z ↦ M (z + (a, 0)))).comp (W1p V p).subtypeL).comp Q' =
         ContinuousLinearMap.id ℝ _ ∧ ‖Q'‖ ≤ ‖Q‖ := by
   obtain ⟨Q', hQ', hQ'n⟩ := exists_rightInverse_coprod_jetOperator_comp_add hM
-    (ι := (0 : Unit →L[ℝ] Lp W 2 stripMeasure)) (Q := Q.prod 0)
+    (ι := (0 : Unit →L[ℝ] Lp W p stripMeasure)) (Q := Q.prod 0)
     (by rw [ContinuousLinearMap.coprod_zero_comp_prod_zero, hQ]) a
   refine ⟨(ContinuousLinearMap.fst ℝ _ _).comp Q', ?_, Q'.opNorm_fst_comp_le.trans
     (hQ'n.trans_eq Q.opNorm_prod_zero)⟩
   rw [← hQ', ContinuousLinearMap.comp_zero, ContinuousLinearMap.coprod_zero_right,
     ← ContinuousLinearMap.comp_assoc]
+
+end Translation
 
 end Operator
 
