@@ -29,6 +29,11 @@ pieces of an open cover of that set (`TauCeti.integrable_of_isCompact_of_open_co
 
 A finite open chart cover of a set, `TauCeti.ChartCover`, is chosen for each compact set by
 `TauCeti.chooseChartCover`; the integrals of top forms and of densities are defined through it.
+
+A nonnegative function that is integrable and continuous on a chart target and positive at one
+target point—including boundary points—has positive integral there
+(`TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`). This is the positivity step for
+integrals of top forms and of densities.
 -/
 
 public section

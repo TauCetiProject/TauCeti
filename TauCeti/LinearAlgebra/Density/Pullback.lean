@@ -36,8 +36,9 @@ def compLinearMap (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃�
     let T' : W →ₗ[ℝ] W := (e : V →ₗ[ℝ] W) ∘ₗ T ∘ₗ (e.symm : W →ₗ[ℝ] V)
     have h₁ : L ∘ (T ∘ v) = ((S.comp T' : W →ₗ[ℝ] W) : W → W) ∘ (e ∘ v) := by ext i; simp [S, T']
     have h₂ : L ∘ v = (S : W → W) ∘ (e ∘ v) := by ext i; simp [S]
-    rw [h₁, μ.comp_apply, LinearMap.det_comp, abs_mul, mul_assoc,
-      mul_left_comm |LinearMap.det S|, ← μ.comp_apply, ← h₂, LinearMap.det_conj T e]
+    -- Factor `L` through `e` so `μ.comp_apply` and `LinearMap.det_conj` apply on `W`.
+    rw [h₁, h₂, μ.comp_apply, μ.comp_apply, LinearMap.det_comp, LinearMap.det_conj, abs_mul]
+    ring
 
 /-- Evaluation of `compLinearMap` on a tuple of vectors. -/
 @[simp] theorem compLinearMap_apply (μ : Density W m) (L : V →ₗ[ℝ] W) (h : Nonempty (V ≃ₗ[ℝ] W))

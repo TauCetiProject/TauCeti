@@ -12,10 +12,17 @@ import Mathlib.Topology.Compactness.LocallyFinite
 /-!
 # Pointwise sums and finite localization by partitions of unity
 
-Provides `PartitionOfUnity.IsSubordinate.mem_of_mem_finsupport`,
-`PartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq`, and
-`PartitionOfUnity.exists_finset_eq_sum_smul`: pointwise finite-support sum rules and finite
-localization of compactly supported functions by a partition of unity.
+Two facts about the finite set `ρ.finsupport x` of indices whose function does not vanish at `x`,
+for a partition of unity `ρ`: every such index `i` has `x ∈ U i` for any cover `U` to which `ρ` is
+subordinate (`PartitionOfUnity.IsSubordinate.mem_of_mem_finsupport`), and a weighted sum
+`∑ i ∈ ρ.finsupport x, ρ i x • w i` whose summands `w i` all equal `v` is `v`
+(`PartitionOfUnity.sum_finsupport_smul_eq_of_forall_eq`). Together they collapse the
+partition-of-unity sums that glue local constructions over the members of a cover.
+
+For a compactly supported function `f` and a partition of unity covering `tsupport f`,
+`PartitionOfUnity.exists_finset_eq_sum_smul` reduces `f` to a finite sum of localized pieces
+`x ↦ ρ i x • f x` with all remaining terms vanishing identically, as used to split integrals into
+chart-supported terms.
 -/
 
 public section

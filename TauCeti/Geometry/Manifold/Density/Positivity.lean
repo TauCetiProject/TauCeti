@@ -55,6 +55,13 @@ theorem inChartAt_nonneg {μ : RoughDensity I M m}
 
 end RoughDensity
 
+/-- Mapping a model basis along `(tangentSpaceCastModel I x).symm` preserves its underlying
+function into `TangentSpace I x`. -/
+private theorem coe_map_tangentSpaceCastModel_symm (x : M) (b : Basis (Fin m) ℝ E) :
+    (⇑(b.map (tangentSpaceCastModel I x).symm.toLinearEquiv) : Fin m → TangentSpace I x) =
+      (⇑b : Fin m → E) :=
+  rfl
+
 /-- **Nonnegativity of density integration.** A rough density nonnegative on every tangent basis
 has nonnegative integral, in every dimension `m : ℕ` (no regularity, support, or orientation). -/
 theorem integralDensity_nonneg [IsManifold I 1 M] {μ : RoughDensity I M m}
@@ -67,10 +74,7 @@ theorem integralDensity_nonneg [IsManifold I 1 M] {μ : RoughDensity I M m}
   obtain ⟨b⟩ := hi.nonempty_basis
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : LocallyCompactSpace H := I.locallyCompactSpace
-  let c := chooseChartCover (I := I) (_root_.tsupport (α := Density E m) μ) hi.isCompact
-  rw [integralDensity_eq_sum_disjointed_chart_integrals hi b c.center c.domain
-    (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
-    (fun x hx ↦ c.covers (subset_closure hx))]
+  rw [integralDensity_eq_sum_chooseChartCover hi b]
   exact Finset.sum_nonneg fun _ _ ↦
     integral_nonneg fun y ↦ RoughDensity.inChartAt_nonneg hμ b _ y
 
@@ -116,11 +120,9 @@ theorem integralDensity_pos_of_continuousOn_inChartAt [IsManifold I 1 M]
     exact (extChartAt I x₀).image_source_eq_target
   have hg₀ : 0 < μ.inChartAt b₀ x₀ (extChartAt I x₀ x₀) := by
     rw [μ.inChartAt_self b₀ x₀]
-    -- `TangentSpace I x₀` is definitionally `E`, bridging `b₀` as a basis of `TangentSpace I x₀`.
     let b₀' : Basis (Fin m) ℝ (TangentSpace I x₀) :=
       b₀.map (tangentSpaceCastModel I x₀).symm.toLinearEquiv
-    have hEq : μ x₀ b₀ = μ x₀ b₀' := rfl
-    rw [hEq, (μ x₀).apply_eq_abs_det_mul c₀ b₀']
+    rw [← coe_map_tangentSpaceCastModel_symm x₀ b₀, (μ x₀).apply_eq_abs_det_mul c₀ b₀']
     exact mul_pos (abs_pos.mpr (c₀.isUnit_det b₀').ne_zero) hpos
   rw [hpiece]
   exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b₀.addHaar) x₀
