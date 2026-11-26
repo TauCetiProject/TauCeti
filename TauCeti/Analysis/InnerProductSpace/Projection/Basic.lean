@@ -84,6 +84,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   transfers to the same bound on `‖P_U v‖²` over `V`.
 * `Submodule.eq_starProjection_of_norm_le`: a vector whose norm is at most that of its projection
   is its projection.
+* `Submodule.norm_sub_starProjection_le_of_mem`: the orthogonal projection onto `U` minimizes
+  `‖x - u‖` over `u ∈ U`.
 * `Submodule.mem_iff_forall_mem_orthogonal_norm_le_norm_add`: `v ∈ U` if and only if
   `‖v‖ ≤ ‖v + w‖` for every `w ∈ Uᗮ`.
 * `Submodule.norm_sub_add_sq_of_mem_of_mem_orthogonal`: Pythagoras for `‖v - (b + c)‖²` with
@@ -243,6 +245,12 @@ theorem eq_starProjection_of_norm_le {w : E} (hw : ‖w‖ ≤ ‖U.starProjecti
     w = U.starProjection w :=
   (starProjection_eq_self_iff.2 ((U.mem_iff_norm_starProjection w).2
     ((U.norm_starProjection_apply_le w).antisymm hw))).symm
+
+/-- The orthogonal projection onto `U` minimizes the distance `‖x - u‖` over `u ∈ U`. -/
+theorem norm_sub_starProjection_le_of_mem (x : E) {u : E} (hu : u ∈ U) :
+    ‖x - U.starProjection x‖ ≤ ‖x - u‖ := by
+  rw [← dist_eq_norm, U.dist_starProjection_eq_infDist]
+  exact (Metric.infDist_le_dist_of_mem hu).trans_eq (dist_eq_norm x u)
 
 /-- A vector lies in `U` if and only if adding a vector of `Uᗮ` never decreases its norm. -/
 theorem mem_iff_forall_mem_orthogonal_norm_le_norm_add {v : E} :

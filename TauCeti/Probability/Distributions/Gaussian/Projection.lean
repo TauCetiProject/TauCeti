@@ -107,7 +107,7 @@ theorem integrable_exp_mul_norm_sq_starProjection_stdGaussian (K : Submodule ℝ
           (TauCeti.Probability.chiSquaredMeasure (Module.finrank ℝ K)) := by
         rw [TauCeti.Probability.integrableExpSet_id_chiSquaredMeasure (Nat.cast_pos.mpr hpos)]
         simpa [one_div] using ht
-      exact ht'
+      simpa only [id_eq] using integrable_of_mem_integrableExpSet ht'
     rw [← K.map_norm_sq_starProjection_stdGaussian] at hint
     exact (integrable_map_measure (g := fun y : ℝ ↦ Real.exp (t * y))
       (f := fun x : E ↦ ‖K.starProjection x‖ ^ 2) (by fun_prop) (by fun_prop)).mp hint
