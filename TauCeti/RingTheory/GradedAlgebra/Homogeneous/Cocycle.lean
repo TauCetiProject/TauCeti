@@ -206,7 +206,7 @@ theorem isGradingCocycle_decomposeLaurent_one {σ : Type*} [SetLike σ A] [AddSu
     IsGradingCocycle 𝒜 (decomposeLaurent ℳ 1) where
   decomposeLaurent_coeff_mul e := by
     rw [coeff_decomposeLaurent]
-    exact decomposeLaurent_decompose_one_mul 𝒜 ℳ e
+    exact decomposeLaurent_decompose_one_mul ℳ 𝒜 e
   eval₂_one := eval₂_one_decomposeLaurent ℳ 1
 
 /-- A grading `ℳ` of the `A`-module `A` compatible with `𝒜` is recovered from its cocycle. -/

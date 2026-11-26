@@ -109,6 +109,14 @@ theorem decomposeLaurent_mul_of_mem {a : A} {i : ℤ} (ha : a ∈ 𝒜 i) (x : A
       LaurentPolynomial.C a * LaurentPolynomial.T i * decomposeLaurent ℳ x := by
   rw [decomposeLaurent_mul ℳ 𝒜, decomposeLaurent_of_mem 𝒜 ha]
 
+/-- The scalar coaction of the degree-`i` component `mᵢ` of `1`, times the Laurent polynomial of
+the homogeneous components of `1`, is the monomial `mᵢ Tⁱ`. -/
+theorem decomposeLaurent_decompose_one_mul (i : ℤ) :
+    decomposeLaurent 𝒜 (decompose ℳ (1 : A) i : A) * decomposeLaurent ℳ (1 : A) =
+      LaurentPolynomial.C (decompose ℳ (1 : A) i : A) * LaurentPolynomial.T i := by
+  rw [← decomposeLaurent_mul ℳ 𝒜, mul_one]
+  exact decomposeLaurent_of_mem ℳ (decompose ℳ (1 : A) i).property
+
 section CommSemiring
 
 variable {A σ : Type*} [CommSemiring A] [SetLike σ A] [AddSubmonoidClass σ A]

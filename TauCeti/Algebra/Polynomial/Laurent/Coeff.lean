@@ -32,7 +32,6 @@ over commutative semirings, needs commutativity.
 * `LaurentPolynomial.mul_T_eq_mul_T_iff`: cancelling a monomial from both sides of an equation.
 * `LaurentPolynomial.invert_T_mul_eq_self_iff`: if a nonzero Laurent polynomial `f` is fixed by
   `invert`, then `T n * f` is fixed by `invert` only for `n = 0`.
-* `LaurentPolynomial.eval₂_id_one_eq_sum_coeff`: evaluation at `T = 1` sums the coefficients.
 * `LaurentPolynomial.coeff_C_mul`: constants scale coefficients. For natural-number constants
   this is Mathlib's `AddMonoidAlgebra.coeff_natCast_mul`, which
   `TauCeti.Algebra.MonoidAlgebra.Basic` tags as a `simp` lemma.
@@ -112,12 +111,6 @@ theorem invert_T_mul_eq_self_iff {n : ℤ} {f : R[T;T⁻¹]} (hf : invert f = f)
   have h2 : T (n + n) * f = f := by
     simpa [← mul_assoc, ← T_add] using congr_arg (T n * ·) h.symm
   exact (T_mul_eq_self_iff.mp h2).imp_left (by omega)
-
-/-- Evaluating a Laurent polynomial at `T = 1` sums its coefficients. -/
-theorem eval₂_id_one_eq_sum_coeff (p : R[T;T⁻¹]) :
-    eval₂ (RingHom.id R) 1 p = ∑ n ∈ p.coeff.support, p.coeff n := by
-  rw [← Algebra.algebraMap_self, eval₂_eq_smeval, smeval_eq_sum, Finsupp.sum]
-  simp
 
 end CommSemiring
 
