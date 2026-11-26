@@ -285,9 +285,10 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.toAssoc.base.I
   refine ⟨fun {Z} g φ' hl ↦ ?_⟩
   have hφ' : φ'.toAssoc.base = φ.toAssoc.base ≫ g := isHomLift_iff.1 hl
   -- The universal property of `φ.toAssoc` for `Assoc.toFinPointed`, applied to `φ'.toAssoc`.
-  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := @IsStronglyCocartesian.universal_property' _ _ _ _
-    Assoc.toFinPointed _ _ _ _ φ.toAssoc.base φ.toAssoc hcc Z.toAssocObj g φ'.toAssoc
-    (Assoc.isHomLift_iff.2 hφ')
+  have : Assoc.toFinPointed.IsHomLift (φ.toAssoc.base ≫ g) φ'.toAssoc :=
+    Assoc.isHomLift_iff.2 hφ'
+  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := IsStronglyCocartesian.universal_property
+    Assoc.toFinPointed φ.toAssoc.base φ.toAssoc g _ rfl φ'.toAssoc
   have hχ' : χ.base = g := Assoc.isHomLift_iff.1 hχ
   -- The colors of `Y` are those of `X` along `σ`, so `χ` has the profiles of `φ'`.
   have hprofile (k : Fin Z.len) : IsProfile (Z.color k) ((χ.word k).map Y.color) := by
