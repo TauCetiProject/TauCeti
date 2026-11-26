@@ -30,9 +30,9 @@ eta quotient identity `θ(2τ) = η(2τ)⁵ / (η(τ)² η(4τ)²)` for `τ` in 
 
 ## Main results
 
-* `TauCeti.jacobi_product_specialization`:
+* `TauCeti.tsum_neg_one_pow_mul_zpow_sq`, `TauCeti.tsum_neg_one_pow_mul_zpow_sq_ne_zero`:
   `∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))`
-  for `‖q‖ < 1`.
+  and its nonvanishing for `‖q‖ < 1`.
 * `TauCeti.tsum_zpow_sq`, `TauCeti.tsum_zpow_sq_ne_zero`: the product formula and nonvanishing of
   `∑' k : ℤ, q ^ (k ^ 2)` for `‖q‖ < 1`.
 * `TauCeti.jacobiTheta_eq_tprod`: the infinite product expansion of `jacobiTheta τ` on the upper
@@ -88,32 +88,6 @@ theorem hasSum_neg_one_pow_mul_zpow_sq_eq_tprod {q : 𝕜} (hq : ‖q‖ < 1) :
     ring
   rw [mul_assoc, hmul]
 
-/-- For `‖q‖ < 1` in a complete normed field, the ratio product
-`∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)` equals
-`(∏_{n ≥ 0} (1 - q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. -/
-theorem tprod_one_sub_div_one_add_pow {q : 𝕜} (hq : ‖q‖ < 1) :
-    ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) =
-      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
-  have hm₁ : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq 1
-  have hm₂ : Multipliable fun n : ℕ ↦ 1 + q ^ (n + 1) := multipliable_one_add_pow hq
-  have heuler := tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq
-  have hP0 : ∏' n : ℕ, (1 + q ^ (n + 1)) ≠ 0 := left_ne_zero_of_mul_eq_one heuler
-  rw [hm₁.tprod_div₀ hm₂ hP0, div_eq_mul_inv, inv_eq_of_mul_eq_one_right heuler,
-    tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq]
-  ring
-
-/-- For `‖q‖ < 1` in a complete normed field,
-`∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ) = (∏_{n ≥ 1} (1 - qⁿ)) /` `∏_{n ≥ 1} (1 + qⁿ)`. -/
-theorem tprod_one_sub_div_one_add_pow_eq_div {q : 𝕜} (hq : ‖q‖ < 1) :
-    ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) =
-      (∏' n : ℕ, (1 - q ^ (n + 1))) / ∏' n : ℕ, (1 + q ^ (n + 1)) := by
-  have hm₁ : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
-    simpa using multipliable_one_sub_pow_mul hq 1
-  have hP0 : ∏' n : ℕ, (1 + q ^ (n + 1)) ≠ 0 :=
-    left_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
-  exact hm₁.tprod_div₀ (multipliable_one_add_pow hq) hP0
-
 /-- **Jacobi's product formula** in `HasSum` form: for `‖q‖ < 1`, the series
 `∑_{k ∈ ℤ} (-1)ᵏ q^{k²}` has sum `∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)`. -/
 theorem hasSum_neg_one_pow_mul_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
@@ -122,15 +96,15 @@ theorem hasSum_neg_one_pow_mul_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
   rw [tprod_one_sub_div_one_add_pow hq]
   exact hasSum_neg_one_pow_mul_zpow_sq_eq_tprod hq
 
-/-- **Jacobi's product specialization**: for `‖q‖ < 1` in a complete normed field,
+/-- **Jacobi's product formula**: for `‖q‖ < 1` in a complete normed field,
 `∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1))`. -/
-theorem jacobi_product_specialization {q : 𝕜} (hq : ‖q‖ < 1) :
+theorem tsum_neg_one_pow_mul_zpow_sq {q : 𝕜} (hq : ‖q‖ < 1) :
     ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) = ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) :=
   (hasSum_neg_one_pow_mul_zpow_sq hq).tsum_eq
 
 /-- For `‖q‖ < 1`, the alternating quadratic theta series `∑_{k ∈ ℤ} (-1)ᵏ q^{k²}`
 does not vanish. -/
-theorem jacobi_product_specialization_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
+theorem tsum_neg_one_pow_mul_zpow_sq_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
     ∑' k : ℤ, (-1) ^ k * q ^ (k ^ 2) ≠ 0 := by
   rw [(hasSum_neg_one_pow_mul_zpow_sq_eq_tprod hq).tsum_eq]
   exact mul_ne_zero (pow_ne_zero 2 (tprod_one_sub_pow_odd_ne_zero hq))
@@ -175,6 +149,15 @@ end NormedField
 
 section Complex
 
+/-- `jacobiTheta τ` written as the quadratic nome series `∑' k : ℤ, (e^{π i τ}) ^ (k ^ 2)`. -/
+theorem jacobiTheta_eq_tsum_zpow_sq (τ : ℂ) :
+    jacobiTheta τ = ∑' k : ℤ, cexp (π * I * τ) ^ (k ^ 2) := by
+  refine tsum_congr fun k ↦ ?_
+  rw [← Complex.exp_intCast_mul]
+  congr 1
+  push_cast
+  ring
+
 /-- **Jacobi's product formula** for `jacobiTheta` on the upper half-plane: with `s = e^{π i τ}`
 and `q = e^{2π i τ}`,
 `θ(τ) = (∏_{n ≥ 0} (1 + s^{2n+1}))² ∏_{n ≥ 1} (1 - qⁿ)`. -/
@@ -182,97 +165,58 @@ theorem jacobiTheta_eq_tprod {τ : ℂ} (hτ : 0 < τ.im) :
     jacobiTheta τ =
       (∏' n : ℕ, (1 + cexp (π * I * τ) ^ (2 * n + 1))) ^ 2 *
         ∏' n : ℕ, (1 - cexp (2 * π * I * τ) ^ (n + 1)) := by
-  have hterm (k : ℤ) : cexp (π * I * (k : ℂ) ^ 2 * τ) = cexp (π * I * τ) ^ (k ^ 2) := by
-    rw [← Complex.exp_intCast_mul]
-    congr 1
-    push_cast
-    ring
-  rw [jacobiTheta, tsum_congr hterm, tsum_zpow_sq (UpperHalfPlane.norm_exp_pi_I_lt_one hτ),
+  rw [jacobiTheta_eq_tsum_zpow_sq, tsum_zpow_sq (UpperHalfPlane.norm_exp_pi_I_lt_one hτ),
     ← UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq]
 
 /-- The Jacobi theta function `jacobiTheta` does not vanish on the upper half-plane. -/
 theorem jacobiTheta_ne_zero {τ : ℂ} (hτ : 0 < τ.im) : jacobiTheta τ ≠ 0 := by
-  have hterm (k : ℤ) : cexp (π * I * (k : ℂ) ^ 2 * τ) = cexp (π * I * τ) ^ (k ^ 2) := by
-    rw [← Complex.exp_intCast_mul]
-    congr 1
-    push_cast
-    ring
-  rw [jacobiTheta, tsum_congr hterm]
+  rw [jacobiTheta_eq_tsum_zpow_sq]
   exact tsum_zpow_sq_ne_zero (UpperHalfPlane.norm_exp_pi_I_lt_one hτ)
 
 /-- **Theta as a Dedekind eta quotient**: for `τ` in the upper half-plane,
 `θ(2τ) = η(2τ)⁵ / (η(τ)² η(4τ)²)`. -/
 theorem jacobiTheta_two_mul_eq_eta_div {τ : ℂ} (hτ : 0 < τ.im) :
     jacobiTheta (2 * τ) = η (2 * τ) ^ 5 / (η τ ^ 2 * η (4 * τ) ^ 2) := by
+  set s := cexp (2 * π * I * τ)
   have h2τ : 0 < (2 * τ).im := by simpa using mul_pos two_pos hτ
   have h4τ : 0 < (4 * τ).im := by simpa using mul_pos (by norm_num : (0 : ℝ) < 4) hτ
-  have hq : ‖cexp (2 * π * I * τ)‖ < 1 := by
-    simpa [mul_assoc, mul_left_comm] using UpperHalfPlane.norm_exp_pi_I_lt_one h2τ
-  have heq1 : cexp (2 * π * I * (2 * τ)) = cexp (2 * π * I * τ) ^ 2 := by
-    rw [← Complex.exp_natCast_mul]
-    congr 1
-    push_cast
-    ring
-  have heq2 : cexp (π * I * (2 * τ)) = cexp (2 * π * I * τ) := by
-    congr 1
-    ring
-  have hsplit : ∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (n + 1)) =
-      (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (2 * n + 1))) *
-        ∏' n : ℕ, (1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1)) := by
-    have hm1 : Multipliable fun n : ℕ ↦ 1 + cexp (2 * π * I * τ) ^ (2 * n + 1) :=
-      multipliable_one_add_pow_odd hq
-    have hm2 : Multipliable fun n : ℕ ↦ 1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1) :=
-      multipliable_one_add_pow (norm_pow_lt_one hq two_ne_zero)
+  have hs : ‖s‖ < 1 := by
+    simpa [s, mul_assoc, mul_left_comm] using UpperHalfPlane.norm_exp_pi_I_lt_one h2τ
+  have hs2 : cexp (2 * π * I * (2 * τ)) = s ^ 2 := by
+    simpa [s, show π * I * (2 * τ) = 2 * π * I * τ by ring] using
+      UpperHalfPlane.exp_two_pi_I_eq_exp_pi_I_sq (2 * τ)
+  have hsplit : ∏' n : ℕ, (1 + s ^ (n + 1)) =
+      (∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
+    have hm1 := multipliable_one_add_pow_odd hs
+    have hm2 := multipliable_one_add_pow (norm_pow_lt_one hs two_ne_zero)
     rw [← tprod_even_mul_odd hm1 (by simpa [← pow_mul, mul_add] using hm2)]
     simp [← pow_mul, mul_add]
   have hθ : jacobiTheta (2 * τ) =
-      (∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 2 *
-        ∏' n : ℕ, (1 - (cexp (2 * π * I * τ) ^ 2) ^ (n + 1)) := by
-    rw [jacobiTheta_eq_tprod h2τ, heq2, heq1]
+      (∏' n : ℕ, (1 + s ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1)) := by
+    rw [jacobiTheta_eq_tprod h2τ, show π * I * (2 * τ) = 2 * π * I * τ by ring, hs2]
   have hη2 : η (2 * τ) = cexp (π * I * τ / 12) * η τ *
-      ((∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (2 * n + 1))) *
-        ∏' n : ℕ, (1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1))) := by
+      ((∏' n : ℕ, (1 + s ^ (2 * n + 1))) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1))) := by
     rw [ModularForm.eta_two_mul hτ, hsplit]
-  have hη4 : η (4 * τ) = cexp (π * I * τ / 6) * η (2 * τ) *
-      ∏' n : ℕ, (1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1)) := by
-    have h4 : (4 : ℂ) * τ = 2 * (2 * τ) := by ring
-    rw [h4, ModularForm.eta_two_mul h2τ, heq1]
-    congr 2
-    congr 1
-    ring
-  have hη2_prod : η (2 * τ) = cexp (π * I * τ / 6) *
-      ∏' n : ℕ, (1 - (cexp (2 * π * I * τ) ^ 2) ^ (n + 1)) := by
-    rw [ModularForm.eta_eq_exp_mul_tprod, heq1]
-    congr 1
-    congr 1
-    ring
+  have hη4 : η (4 * τ) =
+      cexp (π * I * τ / 6) * η (2 * τ) * ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)) := by
+    rw [show (4 : ℂ) * τ = 2 * (2 * τ) by ring, ModularForm.eta_two_mul h2τ, hs2,
+      show π * I * (2 * τ) / 12 = π * I * τ / 6 by ring]
+  have hη2_prod : η (2 * τ) = cexp (π * I * τ / 6) * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1)) := by
+    rw [ModularForm.eta_eq_exp_mul_tprod, hs2,
+      show 2 * π * I * (2 * τ) / 24 = π * I * τ / 6 by ring]
   have hexp : cexp (π * I * τ / 12) ^ 2 = cexp (π * I * τ / 6) := by
-    rw [← Complex.exp_natCast_mul]
-    congr 1
-    push_cast
-    ring
-  have hden0 : η τ ^ 2 * η (4 * τ) ^ 2 ≠ 0 :=
-    mul_ne_zero (pow_ne_zero 2 (_root_.ModularForm.eta_ne_zero hτ))
-      (pow_ne_zero 2 (_root_.ModularForm.eta_ne_zero h4τ))
-  refine eq_div_of_mul_eq hden0 ?_
+    rw [← Complex.exp_natCast_mul]; congr 1; push_cast; ring
+  refine eq_div_of_mul_eq (mul_ne_zero (pow_ne_zero 2 (_root_.ModularForm.eta_ne_zero hτ))
+    (pow_ne_zero 2 (_root_.ModularForm.eta_ne_zero h4τ))) ?_
   calc
     jacobiTheta (2 * τ) * (η τ ^ 2 * η (4 * τ) ^ 2)
-      = ((∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (2 * n + 1))) ^ 2 *
-          ∏' n : ℕ, (1 - (cexp (2 * π * I * τ) ^ 2) ^ (n + 1))) *
+      = ((∏' n : ℕ, (1 + s ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1))) *
           (η τ ^ 2 * (cexp (π * I * τ / 6) * η (2 * τ) *
-            ∏' n : ℕ, (1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1))) ^ 2) := by
-          rw [hθ, hη4]
-    _ = ((cexp (π * I * τ / 12) * η τ *
-          ((∏' n : ℕ, (1 + cexp (2 * π * I * τ) ^ (2 * n + 1))) *
-            ∏' n : ℕ, (1 + (cexp (2 * π * I * τ) ^ 2) ^ (n + 1)))) ^ 2 *
-          η (2 * τ) ^ 2) *
-          (cexp (π * I * τ / 6) *
-            ∏' n : ℕ, (1 - (cexp (2 * π * I * τ) ^ 2) ^ (n + 1))) := by
-          rw [← hexp]
-          ring
-    _ = η (2 * τ) ^ 5 := by
-          rw [← hη2, ← hη2_prod]
-          ring
+            ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1))) ^ 2) := by rw [hθ, hη4]
+    _ = ((cexp (π * I * τ / 12) * η τ * ((∏' n : ℕ, (1 + s ^ (2 * n + 1))) *
+            ∏' n : ℕ, (1 + (s ^ 2) ^ (n + 1)))) ^ 2 * η (2 * τ) ^ 2) *
+          (cexp (π * I * τ / 6) * ∏' n : ℕ, (1 - (s ^ 2) ^ (n + 1))) := by rw [← hexp]; ring
+    _ = η (2 * τ) ^ 5 := by rw [← hη2, ← hη2_prod]; ring
 
 end Complex
 

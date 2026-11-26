@@ -14,8 +14,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 The principal square root has nonnegative real part, and its real part is strictly positive
 exactly on the slit plane. These facts control the branches in algebraic transformations
-involving sums of principal roots. The file also records the values `√i = e^{π i / 4}` and
-`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, the splitting `√(r z) = √r √z`
+involving sums of principal roots. The file also records the values `√i = e^{π i / 4}`,
+`√(-i τ) = (√i)⁻¹ √τ` for `τ` in the open upper half-plane, and `√(-w) = i √w` for `w` in the
+open lower half-plane, the splitting `√(r z) = √r √z`
 for real `r ≥ 0` and the identification of the real square root of `x ≥ 0` with the complex
 half-power `x ^ (1 / 2)`, records that the real square root of a nonnegative real, cast to `ℂ`,
 squares back to it, and packages the principal square root of a nonzero complex number as a unit,
@@ -80,6 +81,17 @@ theorem sqrt_neg_I_mul {τ : ℂ} (hτ : 0 < τ.im) : sqrt (-I * τ) = (sqrt I)�
     sqrt_eq_exp hτ₀, hlog, log_neg_I, log_I, ← exp_neg, ← exp_add]
   congr 1
   ring
+
+/-- In the open lower half-plane (`w.im < 0`), `√(-w) = i √w`. -/
+theorem sqrt_neg_of_im_neg {w : ℂ} (hw : w.im < 0) : sqrt (-w) = I * sqrt w := by
+  have hw0 : w ≠ 0 := fun h ↦ by simp [h] at hw
+  have hlog : log (-w) = log w + π * I := by
+    apply Complex.ext
+    · simp [log_re]
+    · simp [log_im, arg_neg_eq_arg_add_pi_of_im_neg hw]
+  have hpi : (π : ℂ) * I / 2 = π / 2 * I := by ring
+  rw [_root_.sqrt_eq_exp (neg_ne_zero.mpr hw0), _root_.sqrt_eq_exp hw0, hlog, add_div, exp_add,
+    hpi, exp_pi_div_two_mul_I, mul_comm _ I]
 
 /-- The principal square root has nonnegative real part. -/
 @[simp]

@@ -81,6 +81,10 @@ holomorphy argument is adapted from `Mathlib.NumberTheory.ModularForms.DedekindE
   `∏_{n ≥ 1} (1 + qⁿ) ∏_{n ≥ 0} (1 - q^{2n+1}) = 1` for `‖q‖ < 1`, the analytic form of the
   equinumerosity of partitions into distinct parts and into odd parts.
 * `TauCeti.tprod_one_sub_pow_odd_ne_zero`: `∏_{n ≥ 0} (1 - q^{2n+1}) ≠ 0` for `‖q‖ < 1`.
+* `TauCeti.tprod_one_sub_div_one_add_pow`, `TauCeti.tprod_one_sub_div_one_add_pow_eq_div`: the
+  ratio product `∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)` splits as
+  `(∏_{n ≥ 1} (1 - qⁿ)) / ∏_{n ≥ 1} (1 + qⁿ)` and equals
+  `(∏_{n ≥ 0} (1 - q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`.
 * `TauCeti.hasDerivAt_tprod_one_sub_pow_odd`: the odd product `∏_{n ≥ 0} (1 - s^{2n+1})` has
   derivative `-1` at `s = 0`.
 * `TauCeti.tendsto_tprod_one_sub_pow_odd_pow_sub_neg_div`: for `P(s) = ∏_{n ≥ 0} (1 - s^{2n+1})`,
@@ -405,6 +409,28 @@ vanish: by Euler's identity it is the inverse of `∏_{n ≥ 1} (1 + qⁿ)`. -/
 theorem tprod_one_sub_pow_odd_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) :
     ∏' n : ℕ, (1 - q ^ (2 * n + 1)) ≠ 0 :=
   right_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
+
+/-- For `‖q‖ < 1` in a complete normed field,
+`∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ) = (∏_{n ≥ 1} (1 - qⁿ)) / ∏_{n ≥ 1} (1 + qⁿ)`. -/
+theorem tprod_one_sub_div_one_add_pow_eq_div {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) =
+      (∏' n : ℕ, (1 - q ^ (n + 1))) / ∏' n : ℕ, (1 + q ^ (n + 1)) := by
+  have hm₁ : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) := by
+    simpa using multipliable_one_sub_pow_mul hq 1
+  have hP0 : ∏' n : ℕ, (1 + q ^ (n + 1)) ≠ 0 :=
+    left_ne_zero_of_mul_eq_one (tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq)
+  exact hm₁.tprod_div₀ (multipliable_one_add_pow hq) hP0
+
+/-- For `‖q‖ < 1` in a complete normed field, the ratio product
+`∏_{n ≥ 1} (1 - qⁿ) / (1 + qⁿ)` equals
+`(∏_{n ≥ 0} (1 - q^{2n+1}))² ∏_{n ≥ 1} (1 - q^{2n})`. -/
+theorem tprod_one_sub_div_one_add_pow {q : 𝕜} (hq : ‖q‖ < 1) :
+    ∏' n : ℕ, (1 - q ^ (n + 1)) / (1 + q ^ (n + 1)) =
+      (∏' n : ℕ, (1 - q ^ (2 * n + 1))) ^ 2 * ∏' n : ℕ, (1 - (q ^ 2) ^ (n + 1)) := by
+  have heuler := tprod_one_add_pow_mul_tprod_one_sub_pow_odd hq
+  rw [tprod_one_sub_div_one_add_pow_eq_div hq, div_eq_mul_inv,
+    inv_eq_of_mul_eq_one_right heuler, tprod_one_sub_pow_eq_tprod_one_sub_pow_odd_mul hq]
+  ring
 
 /-- The theta product at `w = -1`: `θ_q(-1) = 2 (∏_{n ≥ 1} (1 + qⁿ))²` for `‖q‖ < 1`. -/
 theorem qTheta_neg_one {q : 𝕜} (hq : ‖q‖ < 1) :

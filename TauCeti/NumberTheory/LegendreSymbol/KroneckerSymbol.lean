@@ -59,8 +59,11 @@ The character need not be primitive: `(-12 / ·)` is induced from `(-3 / ·)`.
   unrestricted power law, and value `1` on squares coprime to the denominator.
 * `TauCeti.kroneckerSym_eq_zero_iff`: `(a / b) = 0` exactly when `gcd (a, b) ≠ 1`.
 * `TauCeti.kroneckerSym_eq_jacobiSym_natAbs`: `(D / n) = J(n | |D|)` for `D ≡ 1 (mod 4)`.
-* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_quadratic_reciprocity`: the
-  first supplementary law `(-1 / b) = χ₄ b` at odd `b`, and quadratic reciprocity
+* `TauCeti.kroneckerSym_neg_neg_of_neg`: simultaneous negation `(-a / -b) = (-1 / b) (a / b)` for
+  `a < 0`.
+* `TauCeti.kroneckerSym_neg_one_left_of_odd`, `TauCeti.kroneckerSym_two_left`,
+  `TauCeti.kroneckerSym_quadratic_reciprocity`: the first supplementary law `(-1 / b) = χ₄ b` at
+  odd `b`, the second supplementary law `(2 / b) = χ₈ b`, and quadratic reciprocity
   `(n / b) = (b / n) (-1 / b) ^ ((n - 1) / 2)` at an odd positive numerator `n` and every `b`.
 * `TauCeti.kroneckerSym_mod_right'`: for `D ≡ 0, 1 (mod 4)`, `(D / ·)` is periodic modulo `D`.
 * `TauCeti.kroneckerChar_intCast`, `TauCeti.kroneckerChar_isQuadratic`,
@@ -331,6 +334,20 @@ theorem kroneckerSym_mul_sq {a u b : ℤ} (hu : u ≠ 0) (hub : u.gcd b = 1) :
   · rw [zero_mul]
   · rw [kroneckerSym_mul_left ha (pow_ne_zero 2 hu), kroneckerSym_sq_one hub, mul_one]
 
+/-- Simultaneous negation for a negative numerator: for `a < 0` and every integer `b`,
+`(-a / -b) = (-1 / b) * (a / b)`. -/
+theorem kroneckerSym_neg_neg_of_neg {a : ℤ} (ha : a < 0) (b : ℤ) :
+    kroneckerSym (-a) (-b) = kroneckerSym (-1) b * kroneckerSym a b := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · rcases eq_or_ne a (-1) with rfl | ha1
+    · simp [kroneckerSym_zero_right]
+    · simp [kroneckerSym_zero_right, ha1, show a ≠ 1 by omega, show -a ≠ 1 by omega,
+        show -a ≠ -1 by omega]
+  · rw [neg_eq_neg_one_mul a, kroneckerSym_mul_left (by norm_num) ha.ne,
+      neg_eq_neg_one_mul b, kroneckerSym_mul_right _ (by norm_num) hb,
+      kroneckerSym_mul_right _ (by norm_num) hb, kroneckerSym_neg_one_right]
+    simp [ha]
+
 /-! ### The Kronecker symbol of a discriminant -/
 
 /-- Multiplying a discriminant `D ≡ 0, 1 (mod 4)` by a square preserves the congruence condition
@@ -400,6 +417,23 @@ theorem kroneckerSym_neg_one_left_of_odd {b : ℤ} (hb : Odd b) : kroneckerSym (
   · rw [abs_of_neg h]
     simp only [h, neg_lt_zero, zero_lt_one, and_self, ite_true]
     split_ifs <;> omega
+
+/-- The second supplementary law for the Kronecker symbol: `(2 / b) = χ₈ b` for every integer `b`.
+For even `b`, both sides vanish (`kroneckerSym_eq_zero_iff` and `ZMod.χ₈_intCast_eq_zero_iff`). -/
+theorem kroneckerSym_two_left (b : ℤ) : kroneckerSym 2 b = χ₈ b := by
+  rcases Int.even_or_odd b with hb | hb
+  · obtain ⟨k, rfl⟩ := hb
+    have h2 : (2 : ℤ) ∣ k + k := ⟨k, by ring⟩
+    have h0 : kroneckerSym 2 (k + k) = 0 := kroneckerSym_eq_zero_iff.mpr fun h ↦ by
+      have hd := Int.dvd_gcd (dvd_refl 2) h2
+      rw [h] at hd
+      norm_num at hd
+    rw [h0, (χ₈_intCast_eq_zero_iff (k + k)).mpr h2]
+  · rw [kroneckerSym_of_odd 2 hb, jacobiSym.at_two (Int.natAbs_odd.mpr hb)]
+    simp only [show ¬((2 : ℤ) < 0 ∧ b < 0) by omega, ↓reduceIte, one_mul]
+    rcases Int.natAbs_eq b with h | h
+    · rw [h, Int.natAbs_natCast, Int.cast_natCast]
+    · rw [h, Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, Int.cast_natCast, χ₈_neg]
 
 /-- **Quadratic reciprocity for the Kronecker symbol** at an odd positive numerator `n`: for every
 integer `b`, `(n / b) = (b / n) · (-1 / b) ^ ((n - 1) / 2)`. For odd `b > 0` this is the
