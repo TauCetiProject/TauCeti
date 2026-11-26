@@ -58,6 +58,8 @@ as `e k = -(-1) - ∑_{m ≠ k} e m`. Having `#κ = rank ℤ^κ` elements, they 
   and the points `a e k*`.
 * `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_simplex`: for `a > 0` it has `#κ + 1`
   vertices.
+* `TauCeti.Toric.exists_activeSet_simplex_eq_none`,
+  `TauCeti.Toric.exists_activeSet_simplex_eq_some`: points lying on only one facet.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
 * `TauCeti.Toric.none_notMem_activeSet_simplex_zero`,
   `TauCeti.Toric.mem_activeSet_simplex_smul_proj_iff`: the facets active at the vertices.
@@ -331,48 +333,72 @@ theorem ncard_extremePoints_facetPolyhedron_simplex {a : ℝ} (ha : 0 < a) :
   rintro ⟨k, hk⟩
   simpa [hf, ha.ne'] using congrArg (· (Pi.single k 1)) hk
 
-/-- **The standard simplex is a Delzant polytope.** For `a > 0` and `κ` nonempty, the simplex
-`{x | 0 ≤ x (e k), ∑ k, x (e k) ≤ a}` cut out by the normals `e k` and `-1` of `ℤ^κ` is a Delzant
-polytope: the moment polytope of `ℂPⁿ` for `n = #κ`. -/
-theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
-    IsDelzant ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) := by
+/-- **A point only on the slanted facet.** For `a > 0` and `κ` nonempty, the barycentre of the
+facet `∑ k, x (e k) = a` of the simplex lies on no other facet. -/
+theorem exists_activeSet_simplex_eq_none [Nonempty κ] {a : ℝ} (ha : 0 < a) :
+    ∃ x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a),
+      activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+        (simplexSupport a) x = {none} := by
   -- The point with coordinates `y`.
   let pt (y : κ → ℝ) : StrongDual ℝ (κ → ℝ) := ∑ k, y k • ContinuousLinearMap.proj k
   have hpt (y : κ → ℝ) (m : κ) : pt y (Pi.single m 1) = y m := by
     simp [pt, Pi.single_apply]
   have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
+  refine ⟨pt fun _ ↦ a / Fintype.card κ,
+    mem_facetPolyhedron_simplex_iff.2 ⟨fun k ↦ ?_, ?_⟩, Set.ext fun o ↦ ?_⟩
+  · rw [hpt]; positivity
+  · simp [hpt, mul_div_cancel₀ _ hn.ne']
+  · cases o with
+    | none => simp [hpt, mul_div_cancel₀ _ hn.ne']
+    | some k => simp [hpt, ha.ne', hn.ne']
+
+/-- **A point only on a coordinate facet.** For `b > 0` with `(#κ - 1) b < a`, the point of the
+simplex of size `a` with the coordinate `x (e k) = 0` and all other coordinates equal to `b` lies on
+the facet `x (e k) = 0` and on no other facet. Its coordinates sum to `(#κ - 1) b`. -/
+theorem exists_activeSet_simplex_eq_some {a b : ℝ} (hb : 0 < b) (k : κ)
+    (hba : (Fintype.card κ - 1) * b < a) :
+    ∃ x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a),
+      activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+          (simplexSupport a) x = {some k} ∧
+        ∑ m, x (Pi.single m 1) = (Fintype.card κ - 1) * b := by
+  -- The point with coordinates `y`.
+  let pt (y : κ → ℝ) : StrongDual ℝ (κ → ℝ) := ∑ k, y k • ContinuousLinearMap.proj k
+  have hpt (y : κ → ℝ) (m : κ) : pt y (Pi.single m 1) = y m := by
+    simp [pt, Pi.single_apply]
+  have hsum : ∑ m, pt (fun m ↦ if m = k then 0 else b) (Pi.single m 1) =
+      (Fintype.card κ - 1) * b := by
+    have h (m : κ) : (if m = k then 0 else b) = b - if m = k then b else 0 := by
+      split_ifs <;> ring
+    simp only [hpt, h, Finset.sum_sub_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true,
+      Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+    ring
+  refine ⟨pt fun m ↦ if m = k then 0 else b,
+    mem_facetPolyhedron_simplex_iff.2 ⟨fun m ↦ ?_, by rw [hsum]; exact hba.le⟩,
+    Set.ext fun o ↦ ?_, hsum⟩
+  · rw [hpt]; split_ifs <;> simp [hb.le]
+  · cases o with
+    | none =>
+      simp only [none_mem_activeSet_simplex_iff, hsum, mem_singleton_iff, reduceCtorEq, iff_false]
+      exact hba.ne
+    | some m => simp [hpt, hb.ne']
+
+/-- **The standard simplex is a Delzant polytope.** For `a > 0` and `κ` nonempty, the simplex
+`{x | 0 ≤ x (e k), ∑ k, x (e k) ≤ a}` cut out by the normals `e k` and `-1` of `ℤ^κ` is a Delzant
+polytope: the moment polytope of `ℂPⁿ` for `n = #κ`. -/
+theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
+    IsDelzant ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) := by
   refine ⟨isBounded_facetPolyhedron_simplex a, fun x hx ↦ ?_, fun o ↦ ?_⟩
   · obtain ⟨o, ho⟩ := exists_activeSet_eq_compl_of_mem_extremePoints ha.ne' hx
     exact isSmoothVertex_simplex_of_activeSet_eq_compl ho
   · cases o with
-    | none =>
-      -- The barycentre of the facet `∑ k, x (e k) = a`.
-      refine ⟨pt fun _ ↦ a / Fintype.card κ, mem_facetPolyhedron_simplex_iff.2 ⟨fun k ↦ ?_, ?_⟩,
-        Set.ext fun o ↦ ?_⟩
-      · rw [hpt]; positivity
-      · simp [hpt, mul_div_cancel₀ _ hn.ne']
-      · cases o with
-        | none => simp [hpt, mul_div_cancel₀ _ hn.ne']
-        | some k => simp [hpt, ha.ne', hn.ne']
+    | none => exact exists_activeSet_simplex_eq_none ha
     | some k =>
       -- A point with `x (e k) = 0` and all other coordinates equal to `a / (#κ + 1)`.
-      set b := a / (Fintype.card κ + 1)
-      have hb : 0 < b := by positivity
-      have hsum : ∑ m, pt (fun m ↦ if m = k then 0 else b) (Pi.single m 1) < a := by
-        calc ∑ m, pt (fun m ↦ if m = k then 0 else b) (Pi.single m 1) ≤ ∑ _m : κ, b := by
-              refine Finset.sum_le_sum fun m _ ↦ ?_
-              rw [hpt]
-              split_ifs <;> simp [hb.le]
-          _ < a := by
-              rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, mul_div_assoc', div_lt_iff₀
-                (by positivity)]
-              nlinarith
-      refine ⟨pt fun m ↦ if m = k then 0 else b,
-        mem_facetPolyhedron_simplex_iff.2 ⟨fun m ↦ ?_, hsum.le⟩, Set.ext fun o ↦ ?_⟩
-      · rw [hpt]; split_ifs <;> simp [hb.le]
-      · cases o with
-        | none => simpa [apply_compLeft_one] using hsum.ne
-        | some m => simp [hpt, hb.ne']
+      have hba : (Fintype.card κ - 1) * (a / (Fintype.card κ + 1)) < a := by
+        rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
+        linarith
+      obtain ⟨x, hxP, hx, -⟩ := exists_activeSet_simplex_eq_some (by positivity) k hba
+      exact ⟨x, hxP, hx⟩
 
 /-! ### The edge vectors -/
 

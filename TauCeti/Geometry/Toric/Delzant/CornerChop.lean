@@ -212,6 +212,23 @@ section Coordinates
 
 variable {v : StrongDual ℝ V} {w : ι → StrongDual ℝ V}
 
+/-- The facets in `s`, active at `v`, pass through `v`. -/
+private theorem apply_eq_of_coe_eq_activeSet
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) : ∀ j ∈ s, v (i (u j)) = c j :=
+  fun j hj ↦ by rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
+
+/-- At a smooth vertex there are as many active facets as the rank of the lattice. -/
+private theorem card_eq_finrank_of_isSmoothVertex (hv : IsSmoothVertex i u c v)
+    (hs : (s : Set ι) = activeSet (facetPairing i u) c v) : s.card = Module.finrank ℤ N := by
+  rw [← hv.ncard_activeSet, ← hs, ncard_coe_finset]
+
+/-- If all the coordinates `⟨x, u j⟩ - c j`, `j ∈ s`, but the `j₀`-th vanish, their sum is the
+`j₀`-th. -/
+private theorem sum_sub_eq_of_forall_ne {j₀ : ι} (hj₀ : j₀ ∈ s)
+    (h : ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j) :
+    ∑ j ∈ s, (x (i (u j)) - c j) = x (i (u j₀)) - c j₀ :=
+  Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by rw [h k hk hkj, sub_self]
+
 /-- Evaluating a combination of the functionals `w j` dual to the normals `u j`, `j ∈ s`, on a
 normal `u k` picks out the coefficient of `w k`. -/
 private theorem sum_mul_apply_eq [DecidableEq ι]
@@ -240,9 +257,6 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   have hB (j : (s : Set ι)) : B j = i (u j) := by
     simpa [B, b', hb] using hi.isBaseChange.basis_apply b' j
   have := Module.Finite.of_basis B
-  have hvs (j) (hj : j ∈ s) : c j = v (i (u j)) := by
-    rw [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
-    exact hj.symm
   let w (j : ι) : StrongDual ℝ V :=
     if h : j ∈ s then LinearMap.toContinuousLinearMap (B.coord ⟨j, h⟩) else 0
   have hw (j) (hj : j ∈ s) (k) (hk : k ∈ s) : w j (i (u k)) = if j = k then 1 else 0 := by
@@ -254,7 +268,7 @@ theorem IsSmoothVertex.exists_coord [DecidableEq ι] (hi : IsIntegralLattice i)
   obtain ⟨k, hk⟩ := k
   simp only [ContinuousLinearMap.coe_coe, add_apply,
     sum_apply, smul_apply, smul_eq_mul, hB]
-  rw [sum_mul_apply_eq hw _ hk, hvs k hk]
+  rw [sum_mul_apply_eq hw _ hk, ← apply_eq_of_coe_eq_activeSet hs k hk]
   ring
 
 /-- **Small depths.** At a point `v` of the polyhedron with active facets `s`, every sufficiently
@@ -582,10 +596,8 @@ theorem IsDelzant.isDelzant_cornerChop [Finite ι] (hi : IsIntegralLattice i)
   classical
   have hsv := hΔ.isSmoothVertex v hv
   obtain ⟨w, hw, -⟩ := hsv.exists_coord hi hs
-  have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := by
-    rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
-  have hcard : s.card = Module.finrank ℤ N := by
-    rw [← hsv.ncard_activeSet, ← hs, ncard_coe_finset]
+  have hvs := apply_eq_of_coe_eq_activeSet hs
+  have hcard := card_eq_finrank_of_isSmoothVertex hsv hs
   have hsp : Submodule.span ℤ (u '' s) = ⊤ := by
     rw [hs]; exact (isSmoothVertex_iff_linearIndepOn.1 hsv).2
   refine ⟨hΔ.isBounded.subset facetPolyhedron_cornerChop_subset, fun x hx' ↦ ?_, fun o ↦ ?_⟩
@@ -616,8 +628,7 @@ theorem IsDelzant.eventually_isDelzant_cornerChop [Finite ι] (hi : IsIntegralLa
   classical
   have hsv := hΔ.isSmoothVertex v hv
   obtain ⟨w, -, hx⟩ := hsv.exists_coord hi hs
-  have hcard : s.card = Module.finrank ℤ N := by
-    rw [← hsv.ncard_activeSet, ← hs, ncard_coe_finset]
+  have hcard := card_eq_finrank_of_isSmoothVertex hsv hs
   have hcard2 : 2 ≤ s.card := hcard ▸ hi.finrank_eq ▸ hV
   -- Points lying on only one old facet, and their (positive) depths relative to the corner.
   choose y hyP hyj using hΔ.irredundant
@@ -653,8 +664,7 @@ theorem IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff [Finite 
         ∃ j₀ ∈ s, x (i (u j₀)) = c j₀ + ε ∧ ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j := by
   classical
   obtain ⟨w, hw, hx⟩ := hv.exists_coord hi hs
-  have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := by
-    rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
+  have hvs := apply_eq_of_coe_eq_activeSet hs
   constructor
   · intro hx'
     by_cases hnone : ∑ j ∈ s, (x (i (u j)) - c j) = ε
@@ -667,8 +677,7 @@ theorem IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff [Finite 
           exact ⟨j, hj, by simp [hne]⟩
         rwa [some_mem_activeSet_cornerChop_iff, mem_activeSet, facetPairing_apply] at hmem
       refine Or.inr ⟨j₀, hj₀, ?_, hzero⟩
-      rw [Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by rw [hzero k hk hkj, sub_self]]
-        at hnone
+      rw [sum_sub_eq_of_forall_ne hj₀ hzero] at hnone
       linarith
     · -- Off the new facet, the vertices are those of `Δ`, and the corner is cut off.
       refine Or.inl ⟨mem_extremePoints_of_none_notMem hx' (by simpa using hnone), ?_⟩
@@ -685,8 +694,7 @@ theorem IsSmoothVertex.mem_extremePoints_facetPolyhedron_cornerChop_iff [Finite 
         · subst h; rw [hxj₀]; linarith
         · rw [hxj j hj h]
       have hsum : ∑ j ∈ s, (x (i (u j)) - c j) = ε := by
-        rw [Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by rw [hxj k hk hkj, sub_self],
-          hxj₀, add_sub_cancel_left]
+        rw [sum_sub_eq_of_forall_ne hj₀ hxj, hxj₀, add_sub_cancel_left]
       have hxP : x ∈ facetPolyhedron i u c := mem_facetPolyhedron.2 fun k ↦
         if hk : k ∈ s then hxs k hk else (hε x hxs hsum.le k hk).le
       refine mem_extremePoints_facetPolyhedron_iff.2
@@ -718,8 +726,7 @@ theorem IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop [Finite ι
         1 = ((facetPolyhedron i u c).extremePoints ℝ).ncard + Module.finrank ℝ V := by
   classical
   obtain ⟨w, hw, hx⟩ := hv.exists_coord hi hs
-  have hvs (j) (hj : j ∈ s) : v (i (u j)) = c j := by
-    rwa [← Finset.mem_coe, hs, mem_activeSet, facetPairing_apply] at hj
+  have hvs := apply_eq_of_coe_eq_activeSet hs
   -- The points at depth `ε` on the edges from `v` are the points `v + ε w j`, `j ∈ s`.
   have hedge (x : StrongDual ℝ V) :
       (∃ j₀ ∈ s, x (i (u j₀)) = c j₀ + ε ∧ ∀ j ∈ s, j ≠ j₀ → x (i (u j)) = c j) ↔
@@ -745,15 +752,13 @@ theorem IsSmoothVertex.ncard_extremePoints_facetPolyhedron_cornerChop [Finite ι
     refine Set.disjoint_left.2 fun x ⟨hxΔ, hxv⟩ hx' ↦ ?_
     obtain ⟨j₀, hj₀, hxj₀, hxj⟩ := (hedge x).2 hx'
     have hlt := lt_sum_sub_of_mem_extremePoints hw hε hx hxΔ hxv
-    rw [Finset.sum_eq_single_of_mem j₀ hj₀ fun k hk hkj ↦ by rw [hxj k hk hkj, sub_self], hxj₀,
-      add_sub_cancel_left] at hlt
+    rw [sum_sub_eq_of_forall_ne hj₀ hxj, hxj₀, add_sub_cancel_left] at hlt
     exact lt_irrefl ε hlt
   have hinj : InjOn (fun j ↦ v + ε • w j) s := fun j hj k hk h ↦ by
     have h' := congrArg (· (i (u j))) h
     by_contra hne
     simp [hw j hj j hj, hw k hk j hj, Ne.symm hne, hε0.ne'] at h'
-  have hcard : s.card = Module.finrank ℝ V := by
-    rw [← ncard_coe_finset, hs, hv.ncard_activeSet, hi.finrank_eq]
+  have hcard := (card_eq_finrank_of_isSmoothVertex hv hs).trans hi.finrank_eq
   rw [hS, ncard_union_eq hdisj (hfin.subset sdiff_subset) (s.finite_toSet.image _),
     hinj.ncard_image, ncard_coe_finset, add_right_comm, ncard_sdiff_singleton_add_one hvΔ hfin,
     hcard]
@@ -788,6 +793,25 @@ private theorem coe_map_some_eq_activeSet_simplex_zero (ha : a ≠ 0) :
   | none => exact iff_of_false (by simp) (none_notMem_activeSet_simplex_zero ha)
   | some k => exact iff_of_true (by simp) (some_mem_activeSet_simplex_iff.2 (by simp))
 
+/-- Up to the depth `a`, the simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0` of the
+simplex of size `a` lies in it. -/
+theorem mem_facetPolyhedron_simplex_of_sum_le {ε : ℝ} (hεa : ε ≤ a) {x : StrongDual ℝ (Fin n → ℝ)}
+    (hxs : ∀ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+      simplexSupport a j ≤ x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)))
+    (hxε : ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
+      (x ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) - simplexSupport a j) ≤
+        ε) :
+    x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
+      (simplexSupport a) := by
+  have hu (k : Fin n) :
+      (Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) (some k)) = Pi.single k 1 := by
+    simp
+  simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
+    forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
+  simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
+    sub_zero] at hxε
+  exact mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa⟩
+
 /-- Up to the depth `a`, the slanted facet of the simplex of size `a` stays inactive on the
 simplex `{0 ≤ x(eₖ), ∑ k, x(eₖ) ≤ ε}` at the corner `0`. -/
 private theorem lt_apply_simplex_of_sum_le {ε : ℝ} (hεa : ε < a) (x : StrongDual ℝ (Fin n → ℝ))
@@ -801,20 +825,13 @@ private theorem lt_apply_simplex_of_sum_le {ε : ℝ} (hεa : ε < a) (x : Stron
     cases k with
     | none => rfl
     | some k => simp at hk
-  have hu (k : Fin n) :
-      (Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) (some k)) = Pi.single k 1 := by
-    simp
-  simp only [Finset.mem_map, Finset.mem_univ, true_and, Function.Embedding.some_apply,
-    forall_exists_index, forall_apply_eq_imp_iff, hu, simplexSupport_some] at hxs
-  simp only [Finset.sum_map, Function.Embedding.some_apply, hu, simplexSupport_some,
-    sub_zero] at hxε
-  have hxP : x ∈ facetPolyhedron ((Int.castAddHom ℝ).compLeft (Fin n)) (simplexNormal (Fin n))
-      (simplexSupport a) := mem_facetPolyhedron_simplex_iff.2 ⟨hxs, hxε.trans hεa.le⟩
+  have hxP := mem_facetPolyhedron_simplex_of_sum_le hεa.le hxs hxε
   refine (mem_facetPolyhedron.1 hxP none).lt_of_ne fun h ↦ ?_
   have hnone : none ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft (Fin n))
       (simplexNormal (Fin n))) (simplexSupport a) x := by
     rw [mem_activeSet, facetPairing_apply]
     exact h.symm
+  have hxε' : ∑ k, x (Pi.single k 1) ≤ ε := by simpa [Finset.sum_map] using hxε
   linarith [none_mem_activeSet_simplex_iff.1 hnone]
 
 /-- Up to the depth `a`, each facet of the simplex of size `a` in `ℝⁿ`, `n ≥ 2`, contains a point
@@ -829,53 +846,32 @@ private theorem exists_activeSet_simplex_eq_singleton (hn : 2 ≤ n) {ε : ℝ} 
           (y ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) -
             simplexSupport a j) := by
   have ha : 0 < a := hε.trans hεa
+  have : NeZero n := ⟨by omega⟩
   -- The depth of a point below the corner `0` is the sum of its coordinates.
   have hdepth (y : StrongDual ℝ (Fin n → ℝ)) :
       ∑ j ∈ (Finset.univ.map .some : Finset (Option (Fin n))),
         (y ((Int.castAddHom ℝ).compLeft (Fin n) (simplexNormal (Fin n) j)) -
           simplexSupport a j) = ∑ k, y (Pi.single k 1) := by
     simp [Finset.sum_map]
-  -- The point with coordinates `y`.
-  let pt (y : Fin n → ℝ) : StrongDual ℝ (Fin n → ℝ) := ∑ k, y k • ContinuousLinearMap.proj k
-  have hpt (y : Fin n → ℝ) (m : Fin n) : pt y (Pi.single m 1) = y m := by
-    simp [pt, Pi.single_apply]
-  have hn' : (0 : ℝ) < n := Nat.cast_pos.2 (by omega)
+  simp only [hdepth]
   cases o with
   | none =>
     -- The barycentre of the facet `∑ k, x (e k) = a`, at depth `a`.
-    refine ⟨pt fun _ ↦ a / n, mem_facetPolyhedron_simplex_iff.2 ⟨fun k ↦ ?_, ?_⟩,
-      Set.ext fun o ↦ ?_, ?_⟩
-    · rw [hpt]; positivity
-    · simp [hpt, mul_div_cancel₀ _ hn'.ne']
-    · cases o with
-      | none => simp [hpt, mul_div_cancel₀ _ hn'.ne']
-      | some k => simp [hpt, ha.ne', hn'.ne']
-    · simp [hdepth, hpt, mul_div_cancel₀ _ hn'.ne', hεa]
+    obtain ⟨y, hyP, hy⟩ := exists_activeSet_simplex_eq_none (κ := Fin n) ha
+    refine ⟨y, hyP, hy, ?_⟩
+    rw [none_mem_activeSet_simplex_iff.1 (hy ▸ mem_singleton none)]
+    exact hεa
   | some k =>
     -- A point with `x (e k) = 0` and all other coordinates equal, at depth `(a + ε) / 2`.
-    set b := (a + ε) / (2 * (n - 1))
     have hn1 : (0 : ℝ) < n - 1 := by
       have : (2 : ℝ) ≤ n := by exact_mod_cast hn
       linarith
-    have hb : 0 < b := by positivity
-    have hsum : ∑ m, pt (fun m ↦ if m = k then 0 else b) (Pi.single m 1) = (a + ε) / 2 := by
-      simp only [hpt]
-      rw [Finset.sum_ite, Finset.sum_const_zero, zero_add, Finset.sum_const, Finset.filter_ne',
-        Finset.card_erase_of_mem (Finset.mem_univ k), Finset.card_univ, Fintype.card_fin,
-        nsmul_eq_mul, Nat.cast_sub (by omega), Nat.cast_one]
+    have hsum : (Fintype.card (Fin n) - 1) * ((a + ε) / (2 * (n - 1))) = (a + ε) / 2 := by
+      rw [Fintype.card_fin]
       field_simp
-      simp only [b]
-      field_simp
-    refine ⟨pt fun m ↦ if m = k then 0 else b,
-      mem_facetPolyhedron_simplex_iff.2 ⟨fun m ↦ ?_, by rw [hsum]; linarith⟩, Set.ext fun o ↦ ?_,
-      by rw [hdepth, hsum]; linarith⟩
-    · rw [hpt]; split_ifs <;> simp [hb.le]
-    · cases o with
-      | none =>
-        simp only [none_mem_activeSet_simplex_iff, hsum, mem_singleton_iff, reduceCtorEq,
-          iff_false]
-        linarith
-      | some m => simp [hpt, hb.ne']
+    obtain ⟨y, hyP, hy, hy'⟩ := exists_activeSet_simplex_eq_some (a := a)
+      (b := (a + ε) / (2 * (n - 1))) (by positivity) k (by rw [hsum]; linarith)
+    exact ⟨y, hyP, hy, by rw [hy', hsum]; linarith⟩
 
 /-- **The blown-up projective space is Delzant at every depth.** For `n ≥ 2` and `0 < ε < a`,
 chopping the corner `0` off the standard simplex of size `a` in `ℝⁿ` at depth `ε` gives the
