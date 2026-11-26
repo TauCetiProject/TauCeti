@@ -43,10 +43,10 @@ groups, and each of its objects is the opposite of the expected group.
 
 ## References
 
-* Split 13 of the proof plan on
-  [lookahead/SchemeAndStackFoundations/leray-spectral-sequence](https://github.com/roed-math/TauCeti-w2-fresh/blob/877ee6253118ae038b46aca137f48841db354fe9/LOOKAHEAD.md)
-  supplied the localized-site construction and cohomology comparison. This implementation uses
-  the Čech double complex and spectral sequence already in Tau Ceti.
+* The reduction to the localized site `J.over V` and the comparison of its cohomology with the
+  cohomology on `C` follow the
+  [lookahead development](https://github.com/roed-math/TauCeti-w2-fresh/tree/877ee6253118ae038b46aca137f48841db354fe9)
+  of the Leray and Čech spectral sequences.
 
 * [Stacks: Tag 03AV](https://stacks.math.columbia.edu/tag/03AV), Section 21.10 on Čech
   cohomology and cohomology, Lemma 21.10.6 (tag 03AZ) for the spectral sequence.
