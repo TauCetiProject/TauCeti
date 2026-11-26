@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.ZMod.ExactDivisor
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The local factors of a Dirichlet character
@@ -107,6 +108,7 @@ theorem localFactor_apply_of_unitsMap (p : ℕ) (χ : DirichletCharacter R N)
 
 /-- Taking local factors commutes with a change of coefficient ring, such as Galois conjugation
 of the values. -/
+@[simp]
 theorem localFactor_ringHomComp {S S' : Type*} [CommRing S] [CommRing S'] (p : ℕ)
     (χ : DirichletCharacter S N) (f : S →+* S') :
     localFactor p (χ.ringHomComp f) = (localFactor p χ).ringHomComp f := by
@@ -120,23 +122,12 @@ theorem localFactor_changeLevel [NeZero N] {M : ℕ} (hMN : M ∣ N) (p : ℕ)
     (χ : DirichletCharacter R M) :
     localFactor p (changeLevel hMN χ) =
       changeLevel (Nat.ordProj_dvd_ordProj_of_dvd (NeZero.ne N) hMN p) (localFactor p χ) := by
-  set hM := isExactDivisor_primePow (N := M) (p := p)
-  set hN := isExactDivisor_primePow (N := N) (p := p)
   have hpp := Nat.ordProj_dvd_ordProj_of_dvd (NeZero.ne N) hMN p
   refine MulChar.ext fun a ↦ ?_
-  -- reducing the lift of `(a, 1)` modulo `M` gives the lift of the reduction of `a`
-  have hlift : ZMod.unitsMap hMN (hN.unitsEquivProd.symm (a, 1)) =
-      hM.unitsEquivProd.symm (ZMod.unitsMap hpp a, 1) := by
-    rw [MulEquiv.eq_symm_apply]
-    refine Prod.ext ?_ ?_
-    · rw [hM.unitsEquivProd_apply_fst, ← MonoidHom.comp_apply, ZMod.unitsMap_comp,
-        ← ZMod.unitsMap_comp hpp hN.dvd, MonoidHom.comp_apply, ← hN.unitsEquivProd_apply_fst,
-        MulEquiv.apply_symm_apply]
-    · rw [hM.unitsEquivProd_apply_snd, ← MonoidHom.comp_apply, ZMod.unitsMap_comp,
-        hN.unitsMap_unitsEquivProd_symm_of_dvd_div (Nat.ordCompl_dvd_ordCompl_of_dvd hMN p),
-        map_one]
-  rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd, ← ZMod.unitsMap_val hMN, hlift,
-    changeLevel_eq_cast_of_dvd, ← ZMod.unitsMap_val hpp, localFactor_apply_unit]
+  rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
+    isExactDivisor_primePow.unitsMap_unitsEquivProd_symm isExactDivisor_primePow hpp
+      (Nat.ordCompl_dvd_ordCompl_of_dvd hMN p), map_one,
+    changeLevel_apply_unitsMap, localFactor_apply_unit]
 
 /-- **A Dirichlet character is the product of its local factors**: for `N ≠ 0`, `χ` is the
 product over the primes `p ∣ N` of its local factors lifted back to level `N`. -/
@@ -149,11 +140,12 @@ theorem prod_changeLevel_localFactor [NeZero N] (χ : DirichletCharacter R N) :
   conv_rhs => rw [← prod_unitsEquivProd_symm_primePow (NeZero.ne N) u, Units.coe_prod, map_prod]
   rw [h, map_prod, MonoidHom.finsetProd_apply, Units.coe_prod]
   refine Finset.prod_congr rfl fun p _ ↦ ?_
-  rw [← h, changeLevel_eq_cast_of_dvd, ← ZMod.unitsMap_val, localFactor_apply_unit]
+  rw [← h, changeLevel_apply_unitsMap, localFactor_apply_unit]
 
 /-- **The local factors of a product of lifts**: if `ψ p` is a character of level `p ^ v_p(N)` for
 each `p`, then the local factor at `q` of the product over the primes `p ∣ N` of their lifts to
 level `N` is `ψ q`. For `q ∤ N` both sides are characters of level `1`. -/
+@[simp↓]
 theorem localFactor_prod_changeLevel (ψ : ∀ p, DirichletCharacter R (ordProj[p] N)) (q : ℕ) :
     localFactor q (∏ p ∈ N.primeFactors, changeLevel (Nat.ordProj_dvd N p) (ψ p)) = ψ q := by
   by_cases hq : q ∉ N.primeFactors
@@ -164,15 +156,13 @@ theorem localFactor_prod_changeLevel (ψ : ∀ p, DirichletCharacter R (ordProj[
   rw [not_not] at hq
   rw [map_prod, Finset.prod_eq_single q]
   · refine MulChar.ext fun a ↦ ?_
-    rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd,
-      ← ZMod.unitsMap_val (Nat.ordProj_dvd N q),
+    rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
       isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd dvd_rfl, ZMod.unitsMap_self,
       MonoidHom.id_apply]
   · -- for `p ≠ q`, the lift of `(a, 1)` is `1` modulo `p ^ v_p(N)`
     intro p _ hpq
     refine MulChar.ext fun a ↦ ?_
-    rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd,
-      ← ZMod.unitsMap_val (Nat.ordProj_dvd N p),
+    rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
       isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div
         (ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hq) hpq), map_one,
       MulChar.one_apply_coe, Units.val_one, map_one]
