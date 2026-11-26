@@ -28,9 +28,9 @@ continuous projection `P` onto `N` with `‖u - P u‖_{m+1,p} ≤ C * ‖D^{m+1
 The statements about `N` need no connectedness. On a preconnected `Ω ⊆ EuclideanSpace ℝ ι`, `N`
 consists of the classes of polynomials of total degree at most `m`, which gives the classical form
 of the lemma: the quotient norm modulo these polynomial classes and the descended top seminorm
-`TauCeti.Wkp.quotientSeminorm m` are equivalent norms, and a continuous linear projection onto the
-polynomials of degree at most `m` approximates `u` to within a multiple of `|u|_{m+1,p}`. The model
-case `F = WithLp 2 (ℝ × E)` is `e = LinearIsometryEquiv.refl`.
+`TauCeti.Wkp.quotientSeminorm m` are equivalent norms, and, when `Ω` is moreover nonempty, a
+continuous linear projection onto the polynomials of degree at most `m` approximates `u` to within a
+multiple of `|u|_{m+1,p}`. The model case `F = WithLp 2 (ℝ × E)` is `e = LinearIsometryEquiv.refl`.
 
 The proof combines the higher-order Rellich–Kondrachov theorem
 `TauCeti.Wkp.isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image` with the
