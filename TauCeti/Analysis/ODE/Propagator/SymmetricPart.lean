@@ -30,10 +30,10 @@ lengths: along a solution `x`, `(‖x‖²)' = 2 ⟪x, P x⟫`. So if `|⟪v, P(
 The proof applies Grönwall's inequality
 (`TauCeti.le_mul_exp_abs_integral_of_le_add_abs_integral_mul`) to `‖N_P(·, s) v‖²`, which is
 absolutely continuous with derivative `2 ⟪x, P x⟫` almost everywhere
-(`TauCeti.absolutelyContinuousOnInterval_norm_sq_propagator_apply`,
-`TauCeti.ae_deriv_norm_sq_propagator_apply`), by the fundamental theorem of calculus for absolutely
-continuous functions (`AbsolutelyContinuousOnInterval.integral_deriv_eq_sub`). The lower bound
-follows from the upper bound for `N_P(s, t)`, the inverse of `N_P(t, s)`.
+(`TauCeti.absolutelyContinuousOnInterval_norm_sq_propagator_apply_left`,
+`TauCeti.ae_deriv_norm_sq_propagator_apply_left`), by the fundamental theorem of calculus for
+absolutely continuous functions (`AbsolutelyContinuousOnInterval.integral_deriv_eq_sub`). The lower
+bound follows from the upper bound for `N_P(s, t)`, the inverse of `N_P(t, s)`.
 -/
 
 public section
@@ -57,8 +57,9 @@ private theorem integrableOn_Icc_min_max_of_uIcc (hP : IntegrableOn P (uIcc s t)
   exact ⟨hP, left_mem_uIcc, right_mem_uIcc⟩
 
 /-- Along a solution, `r ↦ ‖N_P(r, s) v‖²` is absolutely continuous between `s` and `t`. -/
-theorem absolutelyContinuousOnInterval_norm_sq_propagator_apply (hP : IntegrableOn P (uIcc s t))
-    (v : E) : AbsolutelyContinuousOnInterval (fun r ↦ ‖propagator P r s v‖ ^ 2) s t := by
+theorem absolutelyContinuousOnInterval_norm_sq_propagator_apply_left
+    (hP : IntegrableOn P (uIcc s t)) (v : E) :
+    AbsolutelyContinuousOnInterval (fun r ↦ ‖propagator P r s v‖ ^ 2) s t := by
   obtain ⟨hP', hs, -⟩ := integrableOn_Icc_min_max_of_uIcc hP
   have h := absolutelyContinuousOnInterval_propagator_left hP' hs
   have h' := (ContinuousLinearMap.apply 𝕜 E v).lipschitzWith.comp_absolutelyContinuousOnInterval h
@@ -71,7 +72,7 @@ theorem absolutelyContinuousOnInterval_norm_sq_propagator_apply (hP : Integrable
 
 /-- Along a solution, `(‖N_P(r, s) v‖²)' = 2 ⟪N_P(r, s) v, P(r) N_P(r, s) v⟫` for almost every `r`
 between `s` and `t`. -/
-theorem ae_deriv_norm_sq_propagator_apply (hP : IntegrableOn P (uIcc s t)) (v : E) :
+theorem ae_deriv_norm_sq_propagator_apply_left (hP : IntegrableOn P (uIcc s t)) (v : E) :
     ∀ᵐ r ∂volume.restrict (uIcc s t), deriv (fun r ↦ ‖propagator P r s v‖ ^ 2) r =
       2 * ⟪propagator P r s v, P r (propagator P r s v)⟫ := by
   obtain ⟨hP', hs, -⟩ := integrableOn_Icc_min_max_of_uIcc hP
@@ -90,7 +91,7 @@ private theorem norm_sq_propagator_apply_le (hP : IntegrableOn P (uIcc s t))
     ‖propagator P r s v‖ ^ 2 ≤
       ‖v‖ ^ 2 + |∫ u in s..r, 2 * m u * ‖propagator P u s v‖ ^ 2| := by
   set f : ℝ → ℝ := fun r ↦ ‖propagator P r s v‖ ^ 2 with hf
-  have hfac := absolutelyContinuousOnInterval_norm_sq_propagator_apply hP v
+  have hfac := absolutelyContinuousOnInterval_norm_sq_propagator_apply_left hP v
   have hβu : IntegrableOn (fun r ↦ 2 * m r * f r) (uIcc s t) :=
     IntegrableOn.mul_continuousOn (hm.const_mul 2) hfac.continuousOn isCompact_uIcc
   have hsub : uIcc s r ⊆ uIcc s t := uIcc_subset_uIcc left_mem_uIcc hr
@@ -102,7 +103,7 @@ private theorem norm_sq_propagator_apply_le (hP : IntegrableOn P (uIcc s t))
         intervalIntegral.norm_integral_le_abs_integral_norm (f := deriv f) (a := s) (b := r)
     refine hnorm.trans (intervalIntegral.abs_integral_norm_le_abs_integral_of_norm_le
       (IntegrableOn.intervalIntegrable (hβu.mono_set hsub)) ?_)
-    have hderiv := ae_deriv_norm_sq_propagator_apply hP v
+    have hderiv := ae_deriv_norm_sq_propagator_apply_left hP v
     rw [ae_restrict_iff' measurableSet_uIcc] at hderiv hPm
     filter_upwards [hderiv, hPm] with u hu hPu hu'
     have hu'' := hsub (uIoc_subset_uIcc hu')
@@ -128,7 +129,8 @@ theorem norm_propagator_apply_le_of_abs_inner_le (hP : IntegrableOn P (uIcc s t)
     nonneg_of_mul_nonneg_left ((abs_nonneg _).trans (hu w)) (pow_pos (norm_pos_iff.2 hw) 2)
   have hβu : IntegrableOn (fun r ↦ 2 * m r * ‖propagator P r s v‖ ^ 2) (uIcc s t) :=
     IntegrableOn.mul_continuousOn (hm.const_mul 2)
-      (absolutelyContinuousOnInterval_norm_sq_propagator_apply hP v).continuousOn isCompact_uIcc
+      (absolutelyContinuousOnInterval_norm_sq_propagator_apply_left hP v).continuousOn
+        isCompact_uIcc
   -- Grönwall for `‖N_P(·, s) v‖²`.
   have hg := le_mul_exp_abs_integral_of_le_add_abs_integral_mul
     (u := fun r ↦ ‖propagator P r s v‖ ^ 2) (β := fun r ↦ 2 * m r) (t₀ := s) (t := t)
