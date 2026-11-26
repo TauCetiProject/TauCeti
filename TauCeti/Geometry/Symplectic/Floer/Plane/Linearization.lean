@@ -798,8 +798,9 @@ as for the dual of `W^{1,2}`. Every PSS plane is the positive plane for the Hami
 as well.
 
 This is the plane counterpart of the end estimate of the adjoint on the pair of pants,
-`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`,
-and the proof follows that one. -/
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint`, and the
+proof follows the same steps as the estimate of the adjoint in a holomorphic end chart,
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart`. -/
 theorem
     exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 2 (uncurry H))

@@ -50,9 +50,9 @@ kernel is the cokernel of `D_u`. On each end the covector field is read in the c
 and `4π² |w|²` on the output end. If the structures are `C²` far out on the end and `u` is `C²`
 and `J` compatible along `u` there, the energy of `η'` beyond `s = 2` is controlled by
 `∫ |w - c i|² ‖D_u^* η‖²` on the input end `i`, by
-`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_inputEnd`,
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_inputEnd`,
 and by `∫ |w|² ‖D_u^* η‖²` on the output end, by
-`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_outputEnd`,
+`exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_outputEnd`,
 both in the namespace `TauCeti.SymplecticForm`. Both are instances of the estimate of the adjoint
 in a holomorphic end chart,
 `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart`.
@@ -179,19 +179,6 @@ private theorem exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero {F : Type*
     (g := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖) (by fun_prop) hmono
     norm_equivRealProdCLM_symm_positiveEndChart_inf hf hfR
     fun z _ ↦ (hlim.eventually_gt_atTop _).exists
-
-omit [Fintype ι] in
-/-- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` containing the discs of
-the input ends, so it avoids their centers. -/
-private theorem equivRealProdCLM_symm_positiveEndChart_inf_ne
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
-    Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
-  intro h
-  have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-  rw [Prod.mk.eta, h] at h₁
-  have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
-    Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-  linarith [hout j, norm_nonneg (a j)]
 
 /-- **The end estimate on an input end of a sphere with moving input ends.** Let the discs
 `‖w - c j‖ < ‖a j‖ / 2` be pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero
@@ -347,19 +334,6 @@ theorem
 
 /-! ### The formal adjoint -/
 
-/-- The Jacobian of the chart `z ↦ c + a φ₀(z)` of an input end, in real coordinates, is
-`4π² |w - c|²` at the point `w` it reaches. -/
-private theorem det_fderiv_realChart_add_mul_cylindricalEndLift_eq (c a : ℂ) (ζ : ℝ × ℝ) :
-    (fderiv ℝ (realChart fun z ↦ c + a * zero.cylindricalEndLift z) ζ).det =
-      4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm
-        (realChart (fun z ↦ c + a * zero.cylindricalEndLift z) ζ) - c‖ ^ 2 := by
-  rw [TauCeti.Complex.det_fderiv_realChart (hasDerivAt_add_mul_cylindricalEndLift c a _),
-    equivRealProdCLM_symm_realChart, add_sub_cancel_left, zero.deriv_cylindricalEndLift,
-    endCenter_zero, sub_zero, Complex.normSq_eq_norm_sq]
-  simp only [norm_mul, norm_neg, Complex.norm_ofNat, Complex.norm_real, Real.norm_eq_abs,
-    abs_of_pos Real.pi_pos]
-  ring
-
 /-- Let `ψ` be a chart of an end of a sphere with moving input ends that avoids the centers of the
 input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`, and let `g` be continuous.
 Then the formal adjoint of the linearized operator of the datum
@@ -421,7 +395,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator of these data, w
 (`TauCeti.Floer.covectorPullback`). The weight `|w - c i|²` is, up to `4π²`, the Jacobian of the
 chart at `w`. -/
 theorem
-exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_inputEnd
+exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_inputEnd
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
     (hsep : Pairwise fun i j ↦ ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
@@ -489,7 +463,7 @@ exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdj
         (prod_mono subset_rfl (by rw [zero_add]; exact Ioo_subset_Ico_self)))
       hJeq (fun ζ hζ ↦ by rw [hpb ζ hζ]; funext y; simp)
       (fun ζ hζ ↦ by rw [hpb ζ hζ]; funext y; simp) hJ hu hc hF hux hδ (fun z ↦ by positivity)
-      (fun ζ _ ↦ (det_fderiv_realChart_add_mul_cylindricalEndLift_eq (c i) (a i) ζ).le)
+      (fun ζ _ ↦ (det_fderiv_realChart_add_mul_cylindricalEndLift (c i) (a i) ζ).le)
   refine ⟨C * (4 * π ^ 2), R, hR, fun η hη hηc hηR ↦ ?_⟩
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_realChart_eq_zero (ha i) hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
@@ -517,7 +491,7 @@ for the formal adjoint `D_u^*` of the linearized Floer operator of these data, w
 (`TauCeti.Floer.covectorPullback`). The weight `|w|²` is, up to `4π²`, the Jacobian of the chart
 at `w`. -/
 theorem
-exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_outputEnd
+exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_outputEnd
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
     (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {L : ℝ≥0}
