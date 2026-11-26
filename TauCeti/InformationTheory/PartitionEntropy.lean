@@ -393,12 +393,11 @@ theorem countablePartitionEntropy_pair_of_indepFun {a : X → ι} {b : X → κ}
     have hC : ∀ i j, μ.real (a ⁻¹' {i} ∩ b ⁻¹' {j}) = 0 := fun i j ↦
       hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
         (measurableSet_singleton i) (measurableSet_singleton j)
-    have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦ by
-      simpa using hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
-        (measurableSet_singleton i) .univ
-    have hB : ∀ j, μ.real (b ⁻¹' {j}) = 0 := fun j ↦ by
-      simpa using hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
-        .univ (measurableSet_singleton j)
+    have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦
+      hab.measureReal_preimage_eq_zero_of_measure_univ_eq_top htop (measurableSet_singleton i)
+    have hB : ∀ j, μ.real (b ⁻¹' {j}) = 0 := fun j ↦
+      hab.symm.measureReal_preimage_eq_zero_of_measure_univ_eq_top htop
+        (measurableSet_singleton j)
     rw [countablePartitionEntropy_pair]
     simp [countablePartitionEntropy_def, hA, hB, hC]
   have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.mpr htop⟩

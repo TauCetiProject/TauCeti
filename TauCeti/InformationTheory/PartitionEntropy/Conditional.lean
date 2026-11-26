@@ -57,10 +57,11 @@ private theorem measure_mul_ofReal_negMulLog_cond (μ : Measure X) {B : Set X}
     (hB : MeasurableSet B) (A : Set X) :
     μ B * ENNReal.ofReal (negMulLog (μ[|B].real A)) =
       ENNReal.ofReal (μ.real (A ∩ B) * log (μ.real B / μ.real (A ∩ B))) := by
+  rw [cond_real_apply hB]
   rcases eq_or_ne (μ B) ∞ with htop | htop
-  · simp [ProbabilityTheory.cond, htop, measureReal_def]
-  rw [cond_real_apply hB, Set.inter_comm, ← ofReal_measureReal htop,
-    ← ENNReal.ofReal_mul measureReal_nonneg, mul_negMulLog_div]
+  · simp [measureReal_def, htop]
+  rw [Set.inter_comm, ← ofReal_measureReal htop, ← ENNReal.ofReal_mul measureReal_nonneg,
+    mul_negMulLog_div]
 
 /-- **Conditional entropy as an average.** For a measurable label `b`, the conditional entropy
 `H(a | b)` is the sum over the atoms `b ⁻¹' {j}` of their mass times the entropy of `a` under the
@@ -113,9 +114,8 @@ theorem conditionalPartitionEntropy_eq_of_indepFun [Countable κ] [MeasurableSpa
     have hC : ∀ i j, μ.real (a ⁻¹' {i} ∩ b ⁻¹' {j}) = 0 := fun i j ↦
       hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
         (measurableSet_singleton i) (measurableSet_singleton j)
-    have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦ by
-      simpa using hab.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top htop
-        (measurableSet_singleton i) .univ
+    have hA : ∀ i, μ.real (a ⁻¹' {i}) = 0 := fun i ↦
+      hab.measureReal_preimage_eq_zero_of_measure_univ_eq_top htop (measurableSet_singleton i)
     simp [conditionalPartitionEntropy_def, countablePartitionEntropy_def, hA, hC]
   -- Otherwise independence forces `μ` to be zero or a probability measure.
   have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.mpr htop⟩

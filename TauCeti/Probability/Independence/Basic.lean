@@ -26,8 +26,9 @@ event `F`) gives `Z` the scalar-multiple law `P A • ν` (respectively `P (A �
 
 Two independent functions force a finite measure to be zero or a probability measure
 (`ProbabilityTheory.IndepFun.isZeroOrProbabilityMeasure`), and under a measure of infinite total
-mass all their measurable cells have real mass zero
-(`ProbabilityTheory.IndepFun.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top`).
+mass all their measurable cells and preimages have real mass zero
+(`ProbabilityTheory.IndepFun.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top`,
+`ProbabilityTheory.IndepFun.measureReal_preimage_eq_zero_of_measure_univ_eq_top`).
 
 An independent, identically distributed family admits a measurable version agreeing almost
 everywhere at each index, preserving independence and identical distribution
@@ -233,6 +234,14 @@ theorem IndepFun.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top {Ω �
     simpa [hμ] using h.measure_inter_preimage_eq_mul s univ hs .univ
   rw [measureReal_def, h.measure_inter_preimage_eq_mul s t hs ht, ENNReal.toReal_mul, hf,
     ENNReal.toReal_mul_top, zero_mul]
+
+/-- Under a measure of infinite total mass, the measurable preimages under a function independent
+of another function have real mass zero. Apply it to `h.symm` for the second function. -/
+theorem IndepFun.measureReal_preimage_eq_zero_of_measure_univ_eq_top {Ω γ : Type*}
+    {mΩ : MeasurableSpace Ω} [MeasurableSpace γ] {μ : Measure Ω} {f : Ω → β} {g : Ω → γ}
+    (h : IndepFun f g μ) (hμ : μ univ = ∞) {s : Set β} (hs : MeasurableSet s) :
+    μ.real (f ⁻¹' s) = 0 := by
+  simpa using h.measureReal_inter_preimage_eq_zero_of_measure_univ_eq_top hμ hs .univ
 
 end ProbabilityTheory
 
