@@ -44,6 +44,8 @@ Dedekind zeta function of `K`.
   `p` is inert.
 * `TauCeti.Multiquadratic.ringHomComp_fundamentalDiscriminantChar_discr_ne_one`: the complex
   character `χ_D` is nontrivial.
+* `TauCeti.Multiquadratic.fundamentalDiscriminantChar_discr_apply_eq_of_algEquiv`: isomorphic
+  quadratic fields have the same character `χ_D`.
 
 ## References
 
@@ -143,5 +145,15 @@ theorem ringHomComp_fundamentalDiscriminantChar_discr_ne_one (hK : finrank ℚ K
       (Int.castRingHom ℂ) ≠ 1 :=
   (MulChar.ringHomComp_ne_one_iff Int.cast_injective).mpr
     (fundamentalDiscriminantChar_ne_one _ (NumberField.discr_ne_one (by omega)))
+
+/-- **`χ_D` is invariant under field isomorphism.** Isomorphic quadratic fields have the same
+discriminant (`NumberField.discr_eq_discr_of_algEquiv`), so their characters `χ_D` agree at every
+integer. -/
+theorem fundamentalDiscriminantChar_discr_apply_eq_of_algEquiv {L : Type*} [Field L]
+    [NumberField L] (hK : finrank ℚ K = 2) (σ : K ≃ₐ[ℚ] L) (n : ℤ) :
+    fundamentalDiscriminantChar (NumberField.discr K) (isFundamentalDiscr_discr hK) n =
+      fundamentalDiscriminantChar (NumberField.discr L)
+        (isFundamentalDiscr_discr (σ.toLinearEquiv.finrank_eq.symm.trans hK)) n := by
+  simp only [fundamentalDiscriminantChar_intCast, NumberField.discr_eq_discr_of_algEquiv K σ]
 
 end TauCeti.Multiquadratic
