@@ -26,7 +26,9 @@ the composition rules `L_{ab} = L_a ∘ L_b` and `R_{ab} = R_b ∘ R_a`
 of `L_a` with `R_b` (`ContinuousLinearMap.commute_mul_apply_flip_mul_apply`), the inverses
 `L_a⁻¹ = L_{a⁻¹}` and `R_a⁻¹ = R_{a⁻¹}` (`ContinuousLinearMap.inverse_mul_apply`,
 `ContinuousLinearMap.inverse_flip_mul_apply`), and the operator norms `‖L_a‖ = ‖R_a‖ = ‖a‖`
-(`ContinuousLinearMap.opNorm_mul_apply`, `ContinuousLinearMap.opNorm_flip_mul_apply`). Pointwise,
+(`ContinuousLinearMap.opNorm_mul_apply`,
+`ContinuousLinearMap.opNorm_mul_flip_apply_of_normOneClass`; since `ℍ` is also a C⋆-ring,
+Mathlib's `ContinuousLinearMap.opNorm_mul_flip_apply` gives the latter too). Pointwise,
 `‖a * q‖ = ‖a‖ * ‖q‖` and `‖q * a‖ = ‖q‖ * ‖a‖` are `norm_mul`.
 
 ## Main results

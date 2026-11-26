@@ -19,8 +19,10 @@ Writing `L_x = mul 𝕜 R x` and `R_x = (mul 𝕜 R).flip x`, it records the com
 `L_{xy} = L_x ∘ L_y` (`ContinuousLinearMap.mul_apply_mul`) and `R_{xy} = R_y ∘ R_x`
 (`ContinuousLinearMap.flip_mul_apply_mul`), the commutation of `L_x` with `R_y`
 (`ContinuousLinearMap.commute_mul_apply_flip_mul_apply`), and the operator norm of `R_x`, which is
-at most `‖x‖` and equals `‖x‖` when `‖1‖ = 1` (`ContinuousLinearMap.opNorm_flip_mul_apply`);
-Mathlib's `ContinuousLinearMap.opNorm_mul_apply` is the corresponding statement for `L_x`.
+at most `‖x‖` (`ContinuousLinearMap.opNorm_mul_flip_apply_le`) and equals `‖x‖` when `‖1‖ = 1`
+(`ContinuousLinearMap.opNorm_mul_flip_apply_of_normOneClass`). Mathlib's
+`ContinuousLinearMap.opNorm_mul_apply` is the corresponding statement for `L_x`, and Mathlib's
+`ContinuousLinearMap.opNorm_mul_flip_apply` gives the same equality for C⋆-rings instead.
 It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
 seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
 faithful (`RegularNormedAlgebra.faithfulSMul`). On the field itself, `c • mul 𝕜 𝕜` is invertible
@@ -73,11 +75,10 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
 
 /-- Bounded left multiplication by a product is the composite of the left multiplications by the
 factors, in the same order: `L_{xy} = L_x ∘ L_y`. This is the bounded form of
-`LinearMap.mulLeft_mul`. -/
+`LinearMap.mulLeft_mul`, and `map_mul` of `NonUnitalAlgHom.Lmul` stated as a composite. -/
 theorem mul_apply_mul (x y : R) :
-    mul 𝕜 R (x * y) = (mul 𝕜 R x).comp (mul 𝕜 R y) := by
-  ext z
-  simp [mul_assoc]
+    mul 𝕜 R (x * y) = (mul 𝕜 R x).comp (mul 𝕜 R y) :=
+  map_mul (NonUnitalAlgHom.Lmul 𝕜 R) x y
 
 /-- Bounded right multiplication by a product is the composite of the right multiplications by the
 factors, in the reverse order: `R_{xy} = R_y ∘ R_x`. This is the bounded form of
@@ -93,8 +94,10 @@ theorem commute_mul_apply_flip_mul_apply (x y : R) :
     Commute (mul 𝕜 R x) ((mul 𝕜 R).flip y) :=
   ContinuousLinearMap.ext fun z ↦ by simp [mul_assoc]
 
-/-- The operator norm of bounded right multiplication by `x` is at most `‖x‖`. -/
-theorem opNorm_flip_mul_apply_le (x : R) : ‖(mul 𝕜 R).flip x‖ ≤ ‖x‖ :=
+/-- The operator norm of bounded right multiplication by `x` is at most `‖x‖`. This is the
+right-multiplication counterpart of Mathlib's `ContinuousLinearMap.opNorm_mul_apply_le`. -/
+@[simp]
+theorem opNorm_mul_flip_apply_le (x : R) : ‖(mul 𝕜 R).flip x‖ ≤ ‖x‖ :=
   opNorm_le_bound _ (norm_nonneg x) fun y ↦ by simpa [mul_comm ‖x‖] using norm_mul_le y x
 
 /-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
@@ -157,10 +160,12 @@ theorem norm_le_opNorm_mul_apply_mul_norm_one (x : R) :
   simpa only [mul_apply', mul_one] using (mul 𝕜 R x).le_opNorm (1 : R)
 
 /-- In a seminormed algebra whose identity has norm one, the operator norm of bounded right
-multiplication by `x` is `‖x‖`. -/
+multiplication by `x` is `‖x‖`. Mathlib's `ContinuousLinearMap.opNorm_mul_flip_apply` proves the
+same equality for C⋆-rings, which need not be unital. -/
 @[simp]
-theorem opNorm_flip_mul_apply [NormOneClass R] (x : R) : ‖(mul 𝕜 R).flip x‖ = ‖x‖ :=
-  (opNorm_flip_mul_apply_le x).antisymm <| by
+theorem opNorm_mul_flip_apply_of_normOneClass [NormOneClass R] (x : R) :
+    ‖(mul 𝕜 R).flip x‖ = ‖x‖ :=
+  (opNorm_mul_flip_apply_le x).antisymm <| by
     simpa using ((mul 𝕜 R).flip x).le_opNorm (1 : R)
 
 end Unital
