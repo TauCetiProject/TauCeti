@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.Analysis.BoundedVariation.Space
+public import TauCeti.Dynamics.Ergodic.MeasurePreserving
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.Distribution.TestFunction.Translation
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.Equiv
@@ -24,10 +25,12 @@ Perimeter is transported in the same way, both for preimages and for images of s
 via `LinearIsometryEquiv.toAffineIsometryEquiv` gives the corresponding results for linear isometry
 equivalences `e : E ≃ₗᵢ[ℝ] E'`.
 
-Combining invariance of total variation with `L¹` change of variables induces the linear isometric
-equivalence `TauCeti.BV.compLinearIsometryEquiv : BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = e ⁻¹' Ω`,
-and consequently transports compactness of `BV.toL1CLM` along measure-preserving linear isometry
-equivalences with measurable inverse.
+Combining invariance of total variation with `L¹` change of variables shows that BV membership is
+invariant under such an `f` and induces the linear isometric equivalence
+`AffineIsometryEquiv.compBV : BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = f ⁻¹' Ω`, with no boundedness
+or regularity assumption on the open sets. Consequently compactness of `BV.toL1CLM` is transported
+along measure-preserving affine isometry equivalences with measurable inverse; linear isometry
+equivalences are covered via `LinearIsometryEquiv.toAffineIsometryEquiv`.
 
 The proof transports each admissible test vector field `φ` on `V` to `y ↦ L (φ (f.symm y))` on `Ω`,
 where `L` is the linear part of `f`. This preserves the pointwise norm, and its divergence is the
@@ -49,11 +52,14 @@ perimeter.
   `LinearIsometryEquiv.totalVariationOn_comap`, `LinearIsometryEquiv.perimeter_preimage_le`,
   `LinearIsometryEquiv.perimeter_preimage`, `LinearIsometryEquiv.perimeter_comap` and
   `LinearIsometryEquiv.perimeter_image`: specializations to linear isometry equivalences.
-* `TauCeti.BV.compLinearIsometryEquiv`: isometric equivalence of `TauCeti.BV` spaces along a
-  measure-preserving linear isometry equivalence with measurable inverse.
-* `TauCeti.BV.isCompactOperator_toL1CLM_of_linearIsometryEquiv` and
-  `TauCeti.BV.isCompactOperator_toL1CLM_iff_of_linearIsometryEquiv`: invariance of compactness of
-  `BV.toL1CLM` under linear isometry equivalences.
+* `AffineIsometryEquiv.memBV_comp_iff`: invariance of BV membership under affine isometries.
+* `AffineIsometryEquiv.compBV`: isometric equivalence of `TauCeti.BV` spaces along a
+  measure-preserving affine isometry equivalence with measurable inverse, with its inverse
+  `AffineIsometryEquiv.compBV_symm` and its action on representatives, `L¹` classes and total
+  variation.
+* `AffineIsometryEquiv.isCompactOperator_toL1CLM` and
+  `AffineIsometryEquiv.isCompactOperator_toL1CLM_iff`: invariance of compactness of
+  `BV.toL1CLM` under affine isometry equivalences.
 
 ## References
 
@@ -120,7 +126,7 @@ theorem totalVariationOn_comp_le (f : E ≃ᵃⁱ[ℝ] E')
     simpa [W, ← hfx x] using hVO hx
   have hWΩ : MapsTo (· + f 0) W Ω := fun _ hy => Opens.mem_comap.mp hy
   -- Transport `φ` along the linear part `L` to `W`, then translate by `f 0` to `Ω`.
-  let ψ₁ : 𝓓(W, E') := postcompCLM (L : E →L[ℝ] E') (L.transportTestFunction hVW φ)
+  let ψ₁ : 𝓓(W, E') := postcompCLM (L : E →L[ℝ] E') (L.transportTestFunction ℝ hVW φ)
   let ψ : 𝓓(Ω, E') := translateTestFunction hWΩ ψ₁
   have hdiv (y : E') : divergenceCLM ψ y = divergenceCLM φ (f.symm y) := by
     simp only [ψ, ψ₁, divergenceCLM_translateTestFunction, translateTestFunction_apply,
@@ -253,12 +259,14 @@ end LinearIsometryEquiv
 
 end VariationAndPerimeter
 
-namespace TauCeti.BV
+section BVSpace
 
 variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   [MeasurableSpace E] [OpensMeasurableSpace E] [MeasurableSpace E'] [OpensMeasurableSpace E']
   {μ : Measure E} {ν : Measure E'} {V : Opens E} {Ω : Opens E'}
+
+namespace TauCeti.BV
 
 section Aux
 
@@ -360,112 +368,127 @@ private theorem isCompactOperator_toL1CLM_of_compEquiv
 
 end Aux
 
-section LinearIsometryEquiv
+end TauCeti.BV
 
-variable {e : E ≃ₗᵢ[ℝ] E'}
+namespace AffineIsometryEquiv
 
-/-- **Isometric transport of `BV` along a linear isometry equivalence.** Precomposition with a
-measure-preserving linear isometry equivalence `e : E ≃ₗᵢ[ℝ] E'` with measurable inverse is a
-linear isometric equivalence `BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = e ⁻¹' Ω`. -/
-def compLinearIsometryEquiv (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) : BV ν Ω ≃ₗᵢ[ℝ] BV μ V :=
-  have hOV : (Ω : Set E') = e.symm ⁻¹' V := by
-    ext y
-    simp [hVO]
-  compEquivAux (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet)
-    (hOV ▸ (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩
-      he).restrict_preimage V.isOpen.measurableSet)
-    e.apply_symm_apply e.symm_apply_apply fun w =>
-      e.totalVariationOn_comp he hinv (mapsTo_iff_subset_preimage.mpr hVO.subset)
+omit [OpensMeasurableSpace E] [OpensMeasurableSpace E'] in
+/-- **BV membership is invariant under affine isometries.** If a measure-preserving affine
+isometry equivalence `f` with measurable inverse satisfies `V = f ⁻¹' Ω`, then `u ∘ f` is BV on `V`
+exactly when `u` is BV on `Ω`. -/
+theorem memBV_comp_iff {u : E' → ℝ} (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) :
+    MemBV μ V (u ∘ f) ↔ MemBV ν Ω u := by
+  have hOV : (Ω : Set E') = f.symm ⁻¹' V := hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm
+  rw [memBV_iff, memBV_iff, f.totalVariationOn_comp hf hinv
+      (mapsTo_iff_subset_preimage.mpr hVO.subset) (mapsTo_iff_subset_preimage.mpr hOV.subset),
+    hVO, hf.integrableOn_comp_preimage
+      (⟨f.toEquiv, hf.measurable, hinv⟩ : E ≃ᵐ E').measurableEmbedding]
+
+/-- **Isometric transport of `BV` along an affine isometry equivalence.** Precomposition with a
+measure-preserving affine isometry equivalence `f : E ≃ᵃⁱ[ℝ] E'` with measurable inverse is a
+linear isometric equivalence `BV ν Ω ≃ₗᵢ[ℝ] BV μ V` whenever `V = f ⁻¹' Ω`. Its inverse is the
+transport along `f.symm` (`AffineIsometryEquiv.compBV_symm`). -/
+def compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : (V : Set E) = f ⁻¹' Ω) : BV ν Ω ≃ₗᵢ[ℝ] BV μ V :=
+  have hOV : (Ω : Set E') = f.symm ⁻¹' V := hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm
+  BV.compEquivAux (hf.restrict_of_preimage_eq Ω.isOpen.measurableSet hVO)
+    (MeasurePreserving.restrict_of_preimage_eq (f := f.symm)
+      (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) V.isOpen.measurableSet hOV)
+    f.apply_symm_apply f.symm_apply_apply fun _ =>
+      f.totalVariationOn_comp hf hinv (mapsTo_iff_subset_preimage.mpr hVO.subset)
         (mapsTo_iff_subset_preimage.mpr hOV.subset)
 
-/-- The `L¹` class of a BV class pulled back along `e` is `Lp.compMeasurePreserving` of its `L¹`
+/-- The `L¹` class of a BV class pulled back along `f` is `Lp.compMeasurePreserving` of its `L¹`
 class. -/
-theorem toL1_compLinearIsometryEquiv (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
-    (compLinearIsometryEquiv he hinv hVO u).toL1 =
-      Lp.compMeasurePreserving e (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet) u.toL1 := by
-  rw [compLinearIsometryEquiv, compEquivAux_apply]
-  exact toL1_compAux _ _ u
+theorem toL1_compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : (V : Set E) = f ⁻¹' Ω) (u : BV ν Ω) :
+    (compBV f hf hinv hVO u).toL1 =
+      Lp.compMeasurePreserving f (hf.restrict_of_preimage_eq Ω.isOpen.measurableSet hVO)
+        u.toL1 := by
+  rw [compBV, BV.compEquivAux_apply]
+  exact BV.toL1_compAux _ _ u
 
-/-- The `L¹` class of the inverse of `compLinearIsometryEquiv` is `Lp.compMeasurePreserving` along
-`e.symm`. -/
-theorem toL1_compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) (v : BV μ V) :
-    ((compLinearIsometryEquiv he hinv hVO).symm v).toL1 =
-      Lp.compMeasurePreserving e.symm
-        (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩
-          (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet)) v.toL1 := by
-  rw [compLinearIsometryEquiv, compEquivAux_symm_apply]
-  exact toL1_compAux _ _ v
+/-- The `L¹` class of the inverse of `compBV f` is `Lp.compMeasurePreserving` along `f.symm`. -/
+theorem toL1_compBV_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) (v : BV μ V) :
+    ((compBV f hf hinv hVO).symm v).toL1 =
+      Lp.compMeasurePreserving f.symm
+        (hf.symm_restrict_of_preimage_eq ⟨f.toEquiv, hf.measurable, hinv⟩ hVO) v.toL1 := by
+  rw [compBV, BV.compEquivAux_symm_apply]
+  exact BV.toL1_compAux _ _ v
 
-/-- Pulling a BV class back along `e` precomposes its representative with `e` almost everywhere on
-`V`. -/
-theorem coeFn_compLinearIsometryEquiv (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
-    (compLinearIsometryEquiv he hinv hVO u : E → ℝ) =ᵐ[μ.restrict V] u ∘ e := by
-  rw [compLinearIsometryEquiv, compEquivAux_apply]
-  exact coeFn_compAux _ _ u
+/-- The pulled-back class is represented by `u ∘ f` almost everywhere on `V`. -/
+theorem coeFn_compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : (V : Set E) = f ⁻¹' Ω) (u : BV ν Ω) :
+    (compBV f hf hinv hVO u : E → ℝ) =ᵐ[μ.restrict V] u ∘ f := by
+  rw [compBV, BV.compEquivAux_apply]
+  exact BV.coeFn_compAux _ _ u
 
-/-- The inverse of `compLinearIsometryEquiv` precomposes representatives with `e.symm` almost
-everywhere on `Ω`. -/
-theorem coeFn_compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) (v : BV μ V) :
-    ((compLinearIsometryEquiv he hinv hVO).symm v : E' → ℝ) =ᵐ[ν.restrict Ω] v ∘ e.symm := by
-  rw [compLinearIsometryEquiv, compEquivAux_symm_apply]
-  exact coeFn_compAux _ _ v
+/-- The inverse of `compBV f` precomposes representatives with `f.symm` almost everywhere on
+`Ω`. -/
+theorem coeFn_compBV_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) (v : BV μ V) :
+    ((compBV f hf hinv hVO).symm v : E' → ℝ) =ᵐ[ν.restrict Ω] v ∘ f.symm := by
+  rw [compBV, BV.compEquivAux_symm_apply]
+  exact BV.coeFn_compAux _ _ v
 
-/-- Pulling a BV class back along `e` preserves its total variation. -/
+/-- Pulling a BV class back along `f` preserves its total variation. -/
 @[simp]
-theorem totalVariationOn_compLinearIsometryEquiv (he : MeasurePreserving e μ ν)
-    (hinv : Measurable e.symm) (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
-    totalVariationOn μ V (compLinearIsometryEquiv he hinv hVO u) = totalVariationOn ν Ω u := by
-  rw [compLinearIsometryEquiv, compEquivAux_apply]
-  exact totalVariationOn_compAux _ _ u
+theorem totalVariationOn_compBV (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) (u : BV ν Ω) :
+    totalVariationOn μ V (compBV f hf hinv hVO u) = totalVariationOn ν Ω u := by
+  rw [compBV, BV.compEquivAux_apply]
+  exact BV.totalVariationOn_compAux _ _ u
 
-/-- Applying the inverse of `compLinearIsometryEquiv` preserves total variation. -/
+/-- Applying the inverse of `compBV f` preserves total variation. -/
 @[simp]
-theorem totalVariationOn_compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν)
-    (hinv : Measurable e.symm) (hVO : (V : Set E) = e ⁻¹' Ω) (v : BV μ V) :
-    totalVariationOn ν Ω ((compLinearIsometryEquiv he hinv hVO).symm v) =
-      totalVariationOn μ V v := by
-  rw [compLinearIsometryEquiv, compEquivAux_symm_apply]
-  exact totalVariationOn_compAux _ _ v
+theorem totalVariationOn_compBV_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) (v : BV μ V) :
+    totalVariationOn ν Ω ((compBV f hf hinv hVO).symm v) = totalVariationOn μ V v := by
+  rw [compBV, BV.compEquivAux_symm_apply]
+  exact BV.totalVariationOn_compAux _ _ v
 
-/-- The inverse of `compLinearIsometryEquiv` along `e` is `compLinearIsometryEquiv` along
-`e.symm`. -/
-theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν) (hinv : Measurable e.symm)
-    (hVO : (V : Set E) = e ⁻¹' Ω) :
-    (compLinearIsometryEquiv he hinv hVO).symm =
-      compLinearIsometryEquiv (e := e.symm)
-        (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩ he)
-        he.measurable
-        (show (Ω : Set E') = e.symm ⁻¹' V by ext y; simp [hVO]) := by
+/-- The inverse of `compBV` along `f` is `compBV` along `f.symm`. -/
+theorem compBV_symm (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν) (hinv : Measurable f.symm)
+    (hVO : (V : Set E) = f ⁻¹' Ω) :
+    (compBV f hf hinv hVO).symm =
+      compBV f.symm (MeasurePreserving.symm ⟨f.toEquiv, hf.measurable, hinv⟩ hf) hf.measurable
+        (hVO ▸ (f.toEquiv.symm_preimage_preimage Ω).symm) := by
   ext1 v
-  exact ext <| (coeFn_compLinearIsometryEquiv_symm he hinv hVO v).trans
-    (coeFn_compLinearIsometryEquiv _ _ _ v).symm
+  exact BV.ext <| (coeFn_compBV_symm f hf hinv hVO v).trans (coeFn_compBV _ _ _ _ v).symm
 
-/-- Pulling `BV` back along a measure-preserving linear isometry equivalence `e` with measurable
-inverse and `V = e ⁻¹' Ω` transports compactness of `BV.toL1CLM` from `Ω` to `V`. -/
-theorem isCompactOperator_toL1CLM_of_linearIsometryEquiv (he : MeasurePreserving e μ ν)
-    (hinv : Measurable e.symm) (hVO : (V : Set E) = e ⁻¹' Ω)
+/-- Transport by `compBV f` commutes with forming a BV class. -/
+@[simp]
+theorem compBV_ofFunction (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) (u : E' → ℝ) (hu : MemBV ν Ω u) :
+    compBV f hf hinv hVO (BV.ofFunction u hu) =
+      BV.ofFunction (u ∘ f) ((memBV_comp_iff f hf hinv hVO).mpr hu) :=
+  BV.ext <| (coeFn_compBV f hf hinv hVO _).trans <|
+    ((hf.restrict_of_preimage_eq Ω.isOpen.measurableSet hVO).quasiMeasurePreserving.ae_eq_comp
+      (BV.coeFn_ofFunction u hu)).trans (BV.coeFn_ofFunction _ _).symm
+
+/-- Pulling `BV` back along a measure-preserving affine isometry equivalence `f` with measurable
+inverse and `V = f ⁻¹' Ω` transports compactness of `BV.toL1CLM` from `Ω` to `V`. -/
+theorem isCompactOperator_toL1CLM (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω)
     (hcpt : IsCompactOperator (BV.toL1CLM : BV ν Ω →L[ℝ] _)) :
     IsCompactOperator (BV.toL1CLM : BV μ V →L[ℝ] _) :=
-  isCompactOperator_toL1CLM_of_compEquiv
-    (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet)
-    (compLinearIsometryEquiv he hinv hVO) (toL1_compLinearIsometryEquiv he hinv hVO) hcpt
+  BV.isCompactOperator_toL1CLM_of_compEquiv
+    (hf.restrict_of_preimage_eq Ω.isOpen.measurableSet hVO)
+    (f.compBV hf hinv hVO) (f.toL1_compBV hf hinv hVO) hcpt
 
-/-- **Invariance of compactness of `BV.toL1CLM` under linear isometry equivalences.** -/
-theorem isCompactOperator_toL1CLM_iff_of_linearIsometryEquiv (he : MeasurePreserving e μ ν)
-    (hinv : Measurable e.symm) (hVO : (V : Set E) = e ⁻¹' Ω) :
+/-- **Invariance of compactness of `BV.toL1CLM` under affine isometry equivalences.** -/
+theorem isCompactOperator_toL1CLM_iff (f : E ≃ᵃⁱ[ℝ] E') (hf : MeasurePreserving f μ ν)
+    (hinv : Measurable f.symm) (hVO : (V : Set E) = f ⁻¹' Ω) :
     IsCompactOperator (BV.toL1CLM : BV μ V →L[ℝ] _) ↔
       IsCompactOperator (BV.toL1CLM : BV ν Ω →L[ℝ] _) :=
-  ⟨isCompactOperator_toL1CLM_of_compEquiv
-    (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, hinv⟩
-      (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet))
-    (compLinearIsometryEquiv he hinv hVO).symm (toL1_compLinearIsometryEquiv_symm he hinv hVO),
-    isCompactOperator_toL1CLM_of_linearIsometryEquiv he hinv hVO⟩
+  ⟨BV.isCompactOperator_toL1CLM_of_compEquiv
+    (hf.symm_restrict_of_preimage_eq ⟨f.toEquiv, hf.measurable, hinv⟩ hVO)
+    (f.compBV hf hinv hVO).symm
+    (f.toL1_compBV_symm hf hinv hVO),
+    f.isCompactOperator_toL1CLM hf hinv hVO⟩
 
-end LinearIsometryEquiv
+end AffineIsometryEquiv
 
-end TauCeti.BV
+end BVSpace

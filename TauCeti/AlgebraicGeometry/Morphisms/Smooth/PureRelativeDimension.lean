@@ -5,18 +5,32 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Smooth
+public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
+public import TauCeti.AlgebraicGeometry.Restrict
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
+import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
+import TauCeti.AlgebraicGeometry.Morphisms.FinitePresentation.SourceDescent
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
+import TauCeti.AlgebraicGeometry.Morphisms.Syntomic.Descent
 
 /-!
 # Smooth morphisms of pure relative dimension
 
 A morphism of schemes is smooth of relative dimension `n` exactly when it is smooth and has pure
-relative dimension `n`. This lets one establish a fixed smooth relative dimension from smoothness
-together with every fibre being pure of dimension `n`, without exhibiting standard smooth charts
-of that dimension.
+relative dimension `n`, since near every point a smooth morphism is smooth of some relative
+dimension, and a nonempty open has only one pure relative dimension. This lets one establish a
+fixed smooth relative dimension from smoothness together with every fibre being pure of dimension
+`n`, without exhibiting standard smooth charts of that dimension.
+
+The same comparison shows that relative dimension descends along smooth surjections: if `g` is
+surjective and smooth of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f`
+is smooth of relative dimension `m + n`, then `f` is smooth of relative dimension `n`. This
+computes the relative dimension of a smooth scheme from a smooth cover of known relative dimension,
+as for the fine modular curve `Y₁(N)`.
 
 Consequently, on the smooth locus of a morphism of pure relative dimension `n` the morphism is
 smooth of relative dimension `n`. For `n = 1`, such as the smooth locus of a nodal relative curve,
@@ -29,6 +43,17 @@ Cartier divisor.
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
 * `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_smoothLocus_ι_comp`: a morphism of
   pure relative dimension `n` is smooth of relative dimension `n` on its smooth locus.
+* `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_surjective`: if `g` is surjective and smooth
+  of relative dimension `m`, `f` is locally of finite presentation, and `g ≫ f` is smooth of
+  relative dimension `m + n`, then `f` is smooth of relative dimension `n`.
+* `AlgebraicGeometry.SmoothOfRelativeDimension.of_comp_of_etale_of_surjective`: if
+  `p : X' ⟶ X` is étale and surjective and `p ≫ f` is smooth of relative dimension `n`, then `f`
+  is smooth of relative dimension `n`.
+* `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_comp_iff_of_etale_of_surjective`: for
+  `p : X' ⟶ X` étale and surjective and `f : X ⟶ Y`, `p ≫ f` is smooth of relative dimension `n`
+  if and only if `f` is.
+* `AlgebraicGeometry.SmoothOfRelativeDimension.descendsAlong_surjective_inf_flat_inf_quasiCompact`:
+  being smooth of relative dimension `n` descends along flat, surjective, quasi-compact morphisms.
 -/
 
 public section
@@ -44,25 +69,15 @@ relative dimension `n`. -/
 theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
     {X Y : Scheme.{u}} (f : X ⟶ Y) :
     SmoothOfRelativeDimension n f ↔ Smooth f ∧ PureRelativeDimension n f := by
-  refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, inferInstance⟩, fun ⟨_, _⟩ ↦ ⟨?_⟩⟩
-  intro x
-  -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
-  -- The chart, viewed as a morphism `Spec Γ(X, V) ⟶ Y`, has pure relative dimensions `m` and `n`.
-  have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
-  have : PureRelativeDimension m (Spec.map (f.appLE U V e) ≫ hU.fromSpec) :=
-    (pureRelativeDimension_comp_iff_of_injective _ _ hU.fromSpec.isEmbedding.injective).mpr
-      inferInstance
-  have : PureRelativeDimension n (Spec.map (f.appLE U V e) ≫ hU.fromSpec) := by
-    rw [IsAffineOpen.SpecMap_appLE_fromSpec f hU hV]
-    infer_instance
-  have : Nonempty (Spec Γ(X, V)) := ⟨hV.isoSpec.hom ⟨x, hx⟩⟩
-  obtain rfl := PureRelativeDimension.unique (d := m) (e := n)
-    (Spec.map (f.appLE U V e) ≫ hU.fromSpec)
-  exact hm
+  refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, inferInstance⟩, fun ⟨_, _⟩ ↦ ?_⟩
+  -- Around every point `f` is smooth of some relative dimension `k`, and comparing pure relative
+  -- dimensions on that nonempty open gives `k = n`.
+  have key (x : X) : ∃ V : X.Opens, x ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f) := by
+    obtain ⟨V, k, hx, hk⟩ := f.exists_smoothOfRelativeDimension_ι_comp_of_smooth x
+    have : Nonempty V := ⟨⟨x, hx⟩⟩
+    obtain rfl := PureRelativeDimension.unique (d := k) (e := n) (V.ι ≫ f)
+    exact ⟨V, hx, hk⟩
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
 
 end TauCeti.AlgebraicGeometry
 
@@ -77,5 +92,82 @@ instance smoothOfRelativeDimension_smoothLocus_ι_comp {n : ℕ} {X Y : Scheme.{
     SmoothOfRelativeDimension n (f.smoothLocus.ι ≫ f) :=
   (TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension
     _).mpr ⟨inferInstance, inferInstance⟩
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.SmoothOfRelativeDimension
+
+open CategoryTheory TauCeti.AlgebraicGeometry
+
+universe u
+
+/-- **Relative dimension descends along smooth surjections.** Let `g : X ⟶ Y` be surjective and
+smooth of relative dimension `m`, and let `f : Y ⟶ S` be locally of finite presentation. If
+`g ≫ f` is smooth of relative dimension `m + n`, then `f` is smooth of relative dimension `n`. -/
+theorem of_comp_surjective {m n : ℕ} {X Y S : Scheme.{u}} (g : X ⟶ Y) (f : Y ⟶ S)
+    [SmoothOfRelativeDimension m g] [Surjective g] [LocallyOfFinitePresentation f]
+    [SmoothOfRelativeDimension (m + n) (g ≫ f)] : SmoothOfRelativeDimension n f := by
+  have : Smooth g := SmoothOfRelativeDimension.smooth m g
+  have : Smooth (g ≫ f) := SmoothOfRelativeDimension.smooth (m + n) (g ≫ f)
+  -- smoothness of `f` descends along the flat surjection `g`
+  have : Smooth f := Smooth.of_comp_surjective g f
+  -- near a point of `Y`, `f` has the relative dimension `k` of a standard smooth chart; on the
+  -- nonempty preimage of the chart, `g ≫ f` has both relative dimensions `m + k` and `m + n`
+  have key (y : Y) : ∃ V : Y.Opens, y ∈ V ∧ SmoothOfRelativeDimension n (V.ι ≫ f) := by
+    obtain ⟨V, k, hy, hk⟩ := f.exists_smoothOfRelativeDimension_ι_comp_of_smooth y
+    obtain ⟨x, rfl⟩ := g.surjective y
+    -- on the preimage `W` of `V`, the morphism `g ≫ f` has relative dimensions `m + k`, `m + n`
+    let W := g ⁻¹ᵁ V
+    have : Nonempty W := ⟨⟨x, hy⟩⟩
+    have : SmoothOfRelativeDimension m (g ∣_ V) := IsZariskiLocalAtTarget.restrict ‹_› V
+    have : SmoothOfRelativeDimension (m + k) (W.ι ≫ g ≫ f) := by
+      rw [← morphismRestrict_ι_assoc g V]
+      infer_instance
+    have : SmoothOfRelativeDimension (m + n) (W.ι ≫ g ≫ f) := IsZariskiLocalAtSource.comp ‹_› W.ι
+    have hkn : m + k = m + n := PureRelativeDimension.unique (W.ι ≫ g ≫ f)
+    exact ⟨V, hy, Nat.add_left_cancel hkn ▸ hk⟩
+  exact IsZariskiLocalAtSource.of_forall_exists_ι_comp key
+
+open MorphismProperty in
+/-- **Being smooth of relative dimension `n` descends along flat, surjective, quasi-compact
+morphisms.** Smoothness descends along such morphisms, and so does being syntomic of relative
+dimension `n`, which gives pure relative dimension `n`. In particular a scheme over a field `k` is
+smooth of relative dimension `n` if its base change to an extension field is. -/
+instance descendsAlong_surjective_inf_flat_inf_quasiCompact (n : ℕ) :
+    DescendsAlong (@SmoothOfRelativeDimension n) (@Surjective.{u} ⊓ @Flat ⊓ @QuasiCompact) := by
+  refine ⟨fun {A X Y Z fst snd f g} h hf hfst ↦ ?_⟩
+  have : SmoothOfRelativeDimension n fst := hfst
+  have : Smooth g := of_isPullback_of_descendsAlong h hf (SmoothOfRelativeDimension.smooth n fst)
+  have : SyntomicOfRelativeDimension n g := of_isPullback_of_descendsAlong h hf inferInstance
+  exact (smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension g).mpr
+    ⟨inferInstance, inferInstance⟩
+
+/-- **Smooth relative dimension descends along étale surjective morphisms on the source.** If
+`p : X' ⟶ X` is étale and surjective and `p ≫ f` is smooth of relative dimension `n`, then `f` is
+smooth of relative dimension `n`. -/
+theorem of_comp_of_etale_of_surjective {X X' Y : Scheme.{u}} {n : ℕ}
+    (p : X' ⟶ X) (f : X ⟶ Y) [Etale p] [Surjective p]
+    [SmoothOfRelativeDimension n (p ≫ f)] :
+    SmoothOfRelativeDimension n f := by
+  have : Smooth (p ≫ f) := SmoothOfRelativeDimension.smooth n (p ≫ f)
+  have : LocallyOfFinitePresentation f := LocallyOfFinitePresentation.of_comp_surjective p f
+  have : SmoothOfRelativeDimension (0 + n) (p ≫ f) := by simpa only [Nat.zero_add] using ‹_›
+  exact of_comp_surjective (m := 0) p f
+
+end AlgebraicGeometry.SmoothOfRelativeDimension
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+universe u
+
+/-- For an étale surjective morphism `p : X' ⟶ X` and any morphism `f : X ⟶ Y`, the composite
+`p ≫ f` is smooth of relative dimension `n` if and only if `f` is. -/
+theorem smoothOfRelativeDimension_comp_iff_of_etale_of_surjective {X X' Y : Scheme.{u}}
+    {n : ℕ} (p : X' ⟶ X) [Etale p] [Surjective p] (f : X ⟶ Y) :
+    SmoothOfRelativeDimension n (p ≫ f) ↔ SmoothOfRelativeDimension n f :=
+  ⟨fun _ ↦ SmoothOfRelativeDimension.of_comp_of_etale_of_surjective p f,
+    fun h ↦ by
+      have := SmoothOfRelativeDimension.smooth n f
+      exact Nat.zero_add n ▸ (inferInstance : SmoothOfRelativeDimension (0 + n) (p ≫ f))⟩
 
 end AlgebraicGeometry.Scheme.Hom

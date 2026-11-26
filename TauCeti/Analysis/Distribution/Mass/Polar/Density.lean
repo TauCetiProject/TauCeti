@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.OrderZero
 import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Basic
+import TauCeti.MeasureTheory.Integral.DualPairing
 
 /-!
 # The polar decomposition of a current of locally finite mass
@@ -35,9 +36,15 @@ mass norm of `k`-vectors, under `exteriorPower.formDualEquiv`; so `τ(x)` is Fed
 `vec T (x)` of the current, and the representation is `T = ‖T‖ ∧ vec T`. The density is unique
 `‖T‖`-almost everywhere (`Distribution.ae_eq_polarDensity`). The mass measure lives on the open
 domain `Ω` and need not be finite near its frontier, so the density is only locally integrable. The
-density is constructed for finite-dimensional `E`; the statements hold for every `E`, since on an
-infinite-dimensional space every test function is zero and `‖T‖` is the zero measure
+density is constructed for finite-dimensional `E`; the statements above hold for every `E`, since
+on an infinite-dimensional space every test function is zero and `‖T‖` is the zero measure
 (`Distribution.massMeasure_eq_zero_of_not_finiteDimensional`), so `τ = 0` represents `T`.
+
+For finite-dimensional `E` the measure is unique too: a measure `μ` finite on compact sets against
+which `T` is represented by a density of dual norm one `μ`-almost everywhere is `‖T‖`
+(`Distribution.massMeasure_eq_of_apply_eq_integral`). By the minimality of the mass measure
+`‖T‖ ≤ μ`; writing `‖T‖ = k μ`, the density of `μ` and `k` times the polar density both represent
+`T` against `μ`, so they agree `μ`-almost everywhere, and dual norm one forces `k = 1`.
 
 The proof assembles the scalar distributions `ψ ↦ T (ψ • bᵢ)` along a basis `b` of `F`. Each has
 order zero, so it is a difference of two regular measures
@@ -60,6 +67,11 @@ representation gives `‖T‖(U) ≤ ∫_U ‖τ‖ d‖T‖`, hence `‖τ‖ =
 * `Distribution.integrable_polarDensity_apply`: the integrand `x ↦ τ(x) (φ x)` is integrable.
 * `Distribution.ae_eq_polarDensity`: a locally integrable dual-valued field representing `T`
   against `‖T‖` is `τ` almost everywhere.
+* `Distribution.massMeasure_eq_of_apply_eq_integral`: a measure `μ` finite on compact sets against
+  which `T` is represented by a density of dual norm one `μ`-almost everywhere is the mass measure
+  of `T`.
+* `Distribution.ae_eq_polarDensity_of_apply_eq_integral`: the density of such a representation is
+  the polar density of `T` almost everywhere.
 * `Distribution.polarDensity_of_not_hasLocallyFiniteMass`: without locally finite mass the polar
   density is `0` by convention.
 
@@ -303,5 +315,104 @@ theorem ae_eq_polarDensity (hT : HasLocallyFiniteMass T) {τ : Ω → StrongDual
   filter_upwards [h0] with x hx
   rwa [Pi.zero_apply, nonpos_iff_eq_zero, eNorm_eq_nnNorm, ENNReal.coe_eq_zero, nnNorm_eq_zero,
     Pi.sub_apply, sub_eq_zero] at hx
+
+section Uniqueness
+
+variable [FiniteDimensional ℝ E] {μ : Measure Ω} [IsFiniteMeasureOnCompacts μ]
+  {τ : Ω → StrongDual ℝ F}
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- A functional represented against a measure finite on compact sets by a density of dual norm at
+most one has locally finite mass. -/
+private theorem hasLocallyFiniteMass_of_apply_eq_integral (hτ : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1)
+    (h : ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂μ) : HasLocallyFiniteMass T := by
+  refine (hasLocallyFiniteMass_iff_localMass_ne_top T).2 fun K hK hKΩ => ?_
+  have hKc := Topology.IsInducing.subtypeVal.isCompact_preimage' hK (by simpa using hKΩ)
+  refine ne_top_of_le_ne_top (hKc.measure_lt_top (μ := μ)).ne
+    (localMass_le_iff.2 fun φ hφK hφ => ?_)
+  rw [h φ]
+  exact TauCeti.enorm_integral_apply_le_measure hτ hKc.measurableSet
+    (f := fun x : Ω => φ x) (fun x hx => hφK (subset_tsupport _ hx)) fun x => hφ x
+
+/-- **Minimality of a unit density.** Let `τ` and `σ` be densities of dual norm one for measures
+`μ` and `m` on `Ω` finite on compact sets, with `m ≤ μ`, that give the same pairings with every
+test function. Then `m = μ`. -/
+private theorem eq_of_le_of_integral_apply_eq {m : Measure Ω} [IsFiniteMeasureOnCompacts m]
+    {σ : Ω → StrongDual ℝ F} (hτm : AEStronglyMeasurable τ μ) (hτ : ∀ᵐ x ∂μ, ‖τ x‖ = 1)
+    (hσm : Measurable σ) (hσ : ∀ᵐ x ∂m, ‖σ x‖ = 1) (hle : m ≤ μ)
+    (h : ∀ φ : 𝓓(Ω, F), ∫ x, τ x (φ x) ∂μ = ∫ x, σ x (φ x) ∂m) : m = μ := by
+  have := Ω.isOpen.locallyCompactSpace
+  have hac : m ≪ μ := Measure.absolutelyContinuous_of_le hle
+  have hk1 : ∀ᵐ x ∂μ, m.rnDeriv μ x ≤ 1 := Measure.rnDeriv_le_one_of_le hle
+  -- Where the density `k = dm/dμ` is nonzero, `σ` has norm one.
+  have hkσ : ∀ᵐ x ∂μ, m.rnDeriv μ x ≠ 0 → ‖σ x‖ = 1 := by
+    rwa [← Measure.withDensity_rnDeriv_eq m μ hac,
+      ae_withDensity_iff (Measure.measurable_rnDeriv m μ)] at hσ
+  set kσ : Ω → StrongDual ℝ F := fun x => (m.rnDeriv μ x).toReal • σ x
+  have hnorm : ∀ᵐ x ∂μ, m.rnDeriv μ x ≠ 0 → ‖kσ x‖ = (m.rnDeriv μ x).toReal := by
+    filter_upwards [hkσ] with x hxσ hk0
+    simp [kσ, norm_smul, hxσ hk0]
+  have hkσ1 : ∀ᵐ x ∂μ, ‖kσ x‖ ≤ 1 := by
+    filter_upwards [hk1, hnorm] with x hx hxn
+    by_cases hk0 : m.rnDeriv μ x = 0
+    · simp [kσ, hk0]
+    · rw [hxn hk0]
+      exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hx)
+  have hkσm : AEStronglyMeasurable kσ μ :=
+    ((Measure.measurable_rnDeriv m μ).ennreal_toReal.smul hσm).aestronglyMeasurable
+  -- `τ` and `k σ` give the same pairings against `μ`, so they agree almost everywhere.
+  have hpair (φ : 𝓓(Ω, F)) : ∫ x, (τ - kσ) x (φ x) ∂μ = 0 := by
+    have hτφ :=
+      φ.toCompactlySupportedContinuousMap.integrable_dual_apply hτm (hτ.mono fun _ hx => hx.le)
+    have hkσφ := φ.toCompactlySupportedContinuousMap.integrable_dual_apply hkσm hkσ1
+    simp only [TestFunction.toCompactlySupportedContinuousMap_apply] at hτφ hkσφ
+    simp only [Pi.sub_apply, sub_apply]
+    rw [integral_sub hτφ hkσφ, h φ]
+    simp only [kσ, smul_apply]
+    rw [integral_rnDeriv_smul hac, sub_self]
+  have hzero := TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le (k := 0)
+    (((memLp_top_of_bound hτm 1 (hτ.mono fun _ hx => hx.le)).locallyIntegrable le_top).sub
+      ((memLp_top_of_bound hkσm 1 hkσ1).locallyIntegrable le_top)) measurable_const (by simp)
+    fun U _ φ _ _ => by rw [hpair φ]; simp
+  have hτkσ : τ =ᵐ[μ] kσ := hzero.mono fun x hx => by simpa [← ofReal_norm, sub_eq_zero] using hx
+  -- `‖τ‖ = 1` forces `k = 1`.
+  have hk : m.rnDeriv μ =ᵐ[μ] 1 := by
+    filter_upwards [hτkσ, hτ, hnorm] with x hx hx1 hxn
+    have hk0 : m.rnDeriv μ x ≠ 0 := fun h0 => by simp [hx, kσ, h0] at hx1
+    rwa [hx, hxn hk0, ENNReal.toReal_eq_one_iff] at hx1
+  rw [← Measure.withDensity_rnDeriv_eq m μ hac, withDensity_congr_ae hk, withDensity_one]
+
+/-- **Uniqueness of the mass measure.** If `T` is represented as `T φ = ∫ τ(x) (φ x) dμ` by a
+measure `μ` finite on compact subsets of `Ω` and a `μ`-almost everywhere strongly measurable
+density `τ` of dual norm one at `μ`-almost every point, then `μ` is the mass measure of `T`. The
+density is then the polar density of `T` (`Distribution.ae_eq_polarDensity_of_apply_eq_integral`).
+-/
+theorem massMeasure_eq_of_apply_eq_integral (hτm : AEStronglyMeasurable τ μ)
+    (hτ : ∀ᵐ x ∂μ, ‖τ x‖ = 1) (h : ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂μ) :
+    massMeasure T = μ := by
+  have := Ω.isOpen.locallyCompactSpace
+  have hτ1 : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1 := hτ.mono fun _ hx => hx.le
+  have hT := hasLocallyFiniteMass_of_apply_eq_integral hτ1 h
+  refine eq_of_le_of_integral_apply_eq hτm hτ measurable_polarDensity
+    (ae_norm_polarDensity_eq_one hT) (massMeasure_le_of_enorm_apply_le μ fun φ => ?_)
+    fun φ => by rw [← h, ← apply_eq_integral_polarDensity hT]
+  rw [h φ]
+  exact TauCeti.enorm_integral_apply_le_lintegral_enorm hτ1 fun x : Ω => φ x
+
+/-- **Uniqueness of the polar density.** If `T` is represented as `T φ = ∫ τ(x) (φ x) dμ` by a
+measure `μ` finite on compact subsets of `Ω` and a `μ`-almost everywhere strongly measurable
+density `τ` of dual norm one at `μ`-almost every point, then `τ` is the polar density of `T` at
+`μ`-almost every point. -/
+theorem ae_eq_polarDensity_of_apply_eq_integral (hτm : AEStronglyMeasurable τ μ)
+    (hτ : ∀ᵐ x ∂μ, ‖τ x‖ = 1) (h : ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂μ) :
+    τ =ᵐ[μ] polarDensity T := by
+  have := Ω.isOpen.locallyCompactSpace
+  have hτ1 : ∀ᵐ x ∂μ, ‖τ x‖ ≤ 1 := hτ.mono fun _ hx => hx.le
+  have hμ := massMeasure_eq_of_apply_eq_integral hτm hτ h
+  rw [← hμ] at hτm hτ1 h ⊢
+  exact ae_eq_polarDensity (hasLocallyFiniteMass_of_apply_eq_integral hτ1 h)
+    ((memLp_top_of_bound hτm 1 hτ1).locallyIntegrable le_top) h
+
+end Uniqueness
 
 end Distribution

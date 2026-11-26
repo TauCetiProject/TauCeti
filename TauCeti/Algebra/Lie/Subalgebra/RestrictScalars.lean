@@ -20,6 +20,8 @@ Lie homomorphisms defined on the underlying `R`-Lie algebra.
 * `LieSubalgebra.restrictScalarsIncl_apply`: its underlying inclusion formula.
 * `LieSubalgebra.restrictScalarsIncl_injective`: the inclusion is injective.
 * `LieSubalgebra.mem_range_restrictScalarsIncl`: its range has the original carrier.
+* `LieSubalgebra.center_range_restrictScalarsIncl_eq_bot`: a Lie subalgebra with trivial centre
+  still has trivial centre after restricting scalars, for instance from `ℂ` to `ℝ`.
 
 ## References
 
@@ -69,5 +71,22 @@ theorem mem_range_restrictScalarsIncl (x : L) :
   · intro hx
     refine ⟨(RestrictScalars.addEquiv R A K).symm ⟨x, hx⟩, ?_⟩
     simp only [restrictScalarsIncl_apply, AddEquiv.apply_symm_apply]
+
+open LieAlgebra in
+/-- A Lie subalgebra with trivial centre over `A` still has trivial centre over a smaller scalar
+ring `R`: the brackets over `R` and over `A` agree. -/
+theorem center_range_restrictScalarsIncl_eq_bot (hK : center A K = ⊥) :
+    center R (K.restrictScalarsIncl R).range = ⊥ := by
+  refine (LieSubmodule.eq_bot_iff _).mpr fun ⟨Z, hZ⟩ hZc ↦ Subtype.ext ?_
+  rw [LieModule.mem_maxTrivSubmodule] at hZc
+  have hZK : Z ∈ K := (mem_range_restrictScalarsIncl K R Z).mp hZ
+  have hcK : (⟨Z, hZK⟩ : K) ∈ center A K := by
+    rw [LieModule.mem_maxTrivSubmodule]
+    rintro ⟨X, hX⟩
+    have := congrArg Subtype.val
+      (hZc ⟨X, (mem_range_restrictScalarsIncl K R X).mpr hX⟩)
+    exact Subtype.ext (by simpa only [coe_bracket, ZeroMemClass.coe_zero] using this)
+  rw [hK, LieSubmodule.mem_bot] at hcK
+  simpa using congrArg Subtype.val hcK
 
 end LieSubalgebra

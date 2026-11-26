@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.ModularCurve.ModuliProblem
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
-import TauCeti.AlgebraicGeometry.Morphisms.Smooth.SourceDescent
+import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 
 /-!
 # Transfer of smooth relative dimension along rigidifiers

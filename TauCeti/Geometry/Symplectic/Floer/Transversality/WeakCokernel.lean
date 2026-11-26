@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.Cokernel
@@ -58,8 +58,9 @@ frozen almost complex structure
 variations of `J_t` along a Floer trajectory
 (`ae_eq_zero_of_integral_floerLinearization_of_setIntegral_deriv_floerOperator`), all in the
 namespace `TauCeti.SymplecticForm`. In each case `η = 0` almost everywhere. The surjectivity of
-the universal operator on Banach spaces that follows from this, given closed range, is not treated
-here.
+the universal operator on `L²` of the cylinder that follows from this, given closed range of finite
+codimension, is `range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top` in the namespace
+`TauCeti.SymplecticForm`, in `TauCeti.Geometry.Symplectic.Floer.Transversality.Surjective`.
 
 ## Main results
 
@@ -148,7 +149,7 @@ theorem memWkpLoc_succ_of_forall_integral_apply_floerLinearization_eq_zero {Ω :
   -- A test function `φ` on `Ω` gives the test map `φ ∘ e⁻¹` supported over `Ω`.
   set U : Opens (ℝ × ℝ) := ⟨e.symm ⁻¹' Ω, Ω.isOpen.preimage e.symm.continuous⟩
   have hmaps : MapsTo e Ω U := fun w hw ↦ by simpa [U] using hw
-  set ψ : 𝓓(U, V) := e.transportTestFunction hmaps φ
+  set ψ : 𝓓(U, V) := e.transportTestFunction ℝ hmaps φ
   have hψ : (ψ : ℝ × ℝ → V) = (φ : ℂ → V) ∘ e.symm := funext fun y ↦ by simp [ψ]
   have h := hηD ψ ψ.contDiff ψ.hasCompactSupport ψ.tsupport_subset
   rw [← volume_preserving_equiv_real_prod.integral_comp measurableEquivRealProd.measurableEmbedding,

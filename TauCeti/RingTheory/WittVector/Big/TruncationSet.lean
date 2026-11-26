@@ -24,6 +24,8 @@ The empty set is a truncation set; a nonempty truncation set contains `1`.
 * `TauCeti.BigWitt.TruncationSet`: sets of positive integers closed under divisors.
 * `TauCeti.BigWitt.TruncationSet.divisors m`: the finite truncation set `Div(m)` of divisors of
   `m`, the smallest truncation set containing `m` when `m ≠ 0`.
+* `TauCeti.BigWitt.TruncationSet.FiniteSubtruncation S`: the finite truncation sets contained
+  in `S`.
 * `S / n`: the truncation set `{e | n * e ∈ S}`, the indexing set for the target of the
   Frobenius `F_n : W_S(R) → W_{S/n}(R)`.
 * `⊥` and `⊤`: the empty truncation set and the set of all positive integers.
@@ -159,6 +161,25 @@ theorem divisors_le_iff (hm : m ≠ 0) : divisors m ≤ S ↔ m ∈ S :=
 theorem divisors_le_divisors_of_dvd (hm : m ≠ 0) (h : k ∣ m) : divisors k ≤ divisors m :=
   fun _ hd ↦ mem_divisors.2 ⟨(mem_divisors.1 hd).1.trans h, hm⟩
 
+/-! ### Finite subtruncations -/
+
+/-- The finite truncation sets contained in `S`. -/
+abbrev FiniteSubtruncation (S : TruncationSet) :=
+  {T : TruncationSet // T ≤ S ∧ (T : Set ℕ).Finite}
+
+/-- The smallest finite subtruncation of `S` containing the index `n`. -/
+abbrev divisorStage (n : S) : FiniteSubtruncation S :=
+  ⟨divisors n, (divisors_le_iff (S.ne_zero_of_mem n.property)).2 n.property,
+    by simpa only [coe_divisors] using n.val.divisors.finite_toSet⟩
+
+/-- If two coordinate functions agree on every finite subtruncation of `S`,
+they agree at each index of `S`. -/
+theorem apply_eq_of_finiteSubtruncations {R : Type*} {x y : S → R}
+    (h : ∀ (T : FiniteSubtruncation S) (n : T.val),
+      x ⟨n, T.property.1 n.property⟩ = y ⟨n, T.property.1 n.property⟩) (n : S) :
+    x n = y n :=
+  h (divisorStage n) ⟨n, mem_divisors_self (S.ne_zero_of_mem n.property)⟩
+
 /-! ### Quotients `S / n` -/
 
 /-- The truncation set `S / n = {e | n * e ∈ S}`. It indexes the target of the big Witt Frobenius
@@ -194,6 +215,10 @@ theorem bot_div (n : ℕ) : (⊥ : TruncationSet) / n = ⊥ := by
 
 theorem div_le_div (h : S ≤ T) (n : ℕ) : S / n ≤ T / n :=
   fun _ he ↦ h (mem_div.1 he)
+
+/-- If `n` divides an element `m` of `S`, then `m / n` lies in `S / n`. -/
+theorem div_mem_div (hm : m ∈ S) (h : n ∣ m) : m / n ∈ S / n := by
+  rwa [mem_div, Nat.mul_div_cancel' h]
 
 /-- `S / n` is nonempty exactly when `n ∈ S`. -/
 theorem one_mem_div_iff : 1 ∈ S / n ↔ n ∈ S := by

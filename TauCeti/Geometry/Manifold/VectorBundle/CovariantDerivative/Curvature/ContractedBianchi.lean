@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor.Divergence
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
@@ -74,6 +76,12 @@ trace of `derivCurvatureTensor`.
   the trace of `∇Ric` is the derivative of scalar curvature.
 * `CovariantDerivative.IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature`:
   the twice contracted second Bianchi identity `2 div Ric = d Scal`.
+* `IsMetricCompatible.two_smul_divergenceBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature`,
+  in the namespace `CovariantDerivative`: the same identity for the divergence of the Ricci tensor
+  as a field of bilinear forms.
+* `CovariantDerivative.rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient` and
+  `CovariantDerivative.divergence_rieszDual_divergenceBilinearTensor_ricciTensor`: for the
+  Levi-Civita connection, `div Ric = ½ grad Scal` and `div (div Ric) = ½ Δ Scal`.
 
 ## References
 
@@ -416,5 +424,44 @@ theorem IsMetricCompatible.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvat
     simp only [cov.sum_inner_derivCurvatureTensor_eq_derivRicciTensor,
       hcov.derivRicciTensor_comm ht x v]
   linarith
+
+/-- **The twice contracted second Bianchi identity** `2 div Ric = d Scal`, as an identity of
+covectors with the divergence `CovariantDerivative.divergenceBilinearTensor` of the Ricci tensor. -/
+theorem IsMetricCompatible.two_smul_divergenceBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature
+    (hcov : CovariantDerivative.IsMetricCompatible
+      (V := fun y : M ↦ TangentSpace I y) cov) (ht : cov.torsion = 0) (x : M) :
+    (2 : ℝ) • cov.divergenceBilinearTensor (fun y ↦ (cov.ricciTensor y).toContinuousBilinearMap) x =
+      mvfderiv I cov.scalarCurvature x := by
+  ext v
+  rw [smul_apply, smul_eq_mul,
+    cov.divergenceBilinearTensor_apply_eq_sum _ (stdOrthonormalBasis ℝ (TangentSpace I x)),
+    ← derivRicciTensor_def, hcov.two_mul_sum_derivRicciTensor_eq_mvfderiv_scalarCurvature ht]
+
+open TauCeti.Manifold in
+/-- **The contracted second Bianchi identity for vector fields** `div Ric = ½ grad Scal`: the
+vector field dual to the divergence of the Ricci tensor of the Levi-Civita connection is half the
+gradient of scalar curvature. -/
+theorem rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient :
+    (fun y ↦ Riemannian.Tensor.rieszDual y ((leviCivitaConnection I M).divergenceBilinearTensor
+      (fun z ↦ ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y)) =
+      mgradient I ((2⁻¹ : ℝ) • (leviCivitaConnection I M).scalarCurvature) := by
+  have hLC := isLeviCivitaConnection_leviCivitaConnection (M := M) I
+  have hcov := hLC.isMetricCompatible
+  funext y
+  rw [mgradient_smul, Pi.smul_apply, mgradient_def,
+    ← hcov.two_smul_divergenceBilinearTensor_ricciTensor_eq_mvfderiv_scalarCurvature hLC.torsion y,
+    ← map_smul, smul_smul]
+  norm_num
+
+open TauCeti.Manifold in
+/-- **The doubly contracted second Bianchi identity** `div (div Ric) = ½ Δ Scal` for the
+Levi-Civita connection, with `Δ = div ∘ grad`. -/
+theorem divergence_rieszDual_divergenceBilinearTensor_ricciTensor (x : M) :
+    divergence I (fun y ↦ Riemannian.Tensor.rieszDual y
+      ((leviCivitaConnection I M).divergenceBilinearTensor
+        (fun z ↦ ((leviCivitaConnection I M).ricciTensor z).toContinuousBilinearMap) y)) x =
+      (2⁻¹ : ℝ) * laplaceBeltrami I (leviCivitaConnection I M).scalarCurvature x := by
+  rw [rieszDual_divergenceBilinearTensor_ricciTensor_eq_mgradient, ← laplaceBeltrami_def,
+    laplaceBeltrami_smul I _ ((leviCivitaConnection I M).contMDiff_scalarCurvature.of_le (by simp))]
 
 end CovariantDerivative

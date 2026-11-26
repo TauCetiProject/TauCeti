@@ -7,10 +7,11 @@ module
 
 public import TauCeti.RingTheory.PowerSeries.GaussNorm.Estimates
 public import TauCeti.RingTheory.PowerSeries.MulDistinguished
-import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 import Mathlib.Algebra.Polynomial.Div
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.Degree.IsMonicOfDegree
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.TateAlgebra
 
 /-!
@@ -279,8 +280,7 @@ private theorem exists_trunc_mul_add_of_isMulDistinguished (hg : IsMulDistinguis
       (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R)), ?_, ?_⟩
   · linear_combination (Polynomial.modByMonic_add_div P
       (Polynomial.C (u⁻¹ : Rˣ).val * (g.trunc (s + 1) : Polynomial R))).symm
-  · have hlt := Polynomial.degree_modByMonic_lt P hPm.monic
-    rwa [Polynomial.degree_eq_natDegree hPm.ne_zero, hPm.natDegree_eq] at hlt
+  · exact hPm.degree_modByMonic_lt P
 
 /-- One step of the Weierstrass division algorithm. Dividing a sufficiently long truncation of
 `f` by the polynomial part of `g` — an ordinary division of polynomials by one whose leading
@@ -330,9 +330,8 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
   -- unit: after scaling by the inverse of that unit it is monic, so division by it is possible.
   obtain ⟨Qp, rp, hdiv, hrdeg⟩ :=
     exists_trunc_mul_add_of_isMulDistinguished hg (f.trunc N : Polynomial R)
-  have hrpz : ∀ m, s ≤ m → ((rp : Polynomial R) : PowerSeries R).coeff m = 0 := fun m hm ↦ by
-    rw [Polynomial.coeff_coe]
-    exact Polynomial.coeff_eq_zero_of_degree_lt (hrdeg.trans_le (by exact_mod_cast hm))
+  have hrpz : ∀ m, s ≤ m → ((rp : Polynomial R) : PowerSeries R).coeff m = 0 := fun _ ↦
+    Polynomial.coeff_coe_eq_zero_of_degree_lt hrdeg
   have hQr : ((Qp : Polynomial R) : PowerSeries R).IsRestricted c :=
     isRestricted_polynomial Qp
   have hdivPS : ((f.trunc N : Polynomial R) : PowerSeries R)

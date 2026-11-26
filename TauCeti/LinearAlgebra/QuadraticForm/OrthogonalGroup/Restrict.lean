@@ -31,6 +31,8 @@ dimension induction in the Cartan--Dieudonné theorem.
   isometry of the associated bilinear form.
 * `TauCeti.QuadraticMap.map_orthogonal_of_mem_orthogonalGroup`: an orthogonal map mapping `W` onto
   itself maps the orthogonal complement of `W` onto itself.
+* `TauCeti.QuadraticMap.map_orthogonal_polarBilin_of_mem_orthogonalGroup`: the same for the polar
+  orthogonal complement, over any commutative ring.
 -/
 
 public section
@@ -82,6 +84,22 @@ theorem orthogonalGroup.restrict_inv (g : orthogonalGroup Q)
   simp
 
 end Restrict
+
+section PolarOrthogonal
+
+variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
+  {Q : QuadraticForm R M} {g : M ≃ₗ[R] M}
+
+/-- An orthogonal map mapping `W` onto itself maps the polar orthogonal complement of `W` onto
+itself. Unlike `map_orthogonal_of_mem_orthogonalGroup`, this needs no inverse of `2`. -/
+theorem map_orthogonal_polarBilin_of_mem_orthogonalGroup (hg : g ∈ orthogonalGroup Q)
+    {W : Submodule R M} (hW : W.map g.toLinearMap = W) :
+    (LinearMap.BilinForm.orthogonal Q.polarBilin W).map g.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q.polarBilin W :=
+  ((QuadraticForm.isIsometry_polarBilin_of_forall_map_app
+    (map_app_of_mem_orthogonalGroup hg)).map_orthogonal g.surjective W).trans (by rw [hW])
+
+end PolarOrthogonal
 
 section Orthogonal
 
