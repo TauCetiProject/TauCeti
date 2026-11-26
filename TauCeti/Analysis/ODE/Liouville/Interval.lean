@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.ODE.Liouville.Green
+import TauCeti.Analysis.ODE.Liouville.Transformation
+import TauCeti.Order.Monotone.Basic
 import Mathlib.Analysis.Calculus.Deriv.Inverse
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
@@ -64,62 +66,6 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The second derivative of a Liouville rescaling: for `u = φ'^{-1/2}`, the first-derivative
-terms cancel and `(u · h ∘ φ)'' = u'' · h ∘ φ + u φ'² · h'' ∘ φ`. -/
-private lemma iteratedDeriv_two_rpow_smul_comp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {J U : Set ℝ} (hJ : IsOpen J) (hU : IsOpen U) {φ : ℝ → ℝ} {h : ℝ → E}
-    (hφ : ContDiffOn ℝ 3 φ J) (hd : ∀ t ∈ J, 0 < deriv φ t) (hh : ContDiffOn ℝ 2 h U)
-    (hφU : MapsTo φ J U) {t : ℝ} (ht : t ∈ J) :
-    iteratedDeriv 2 (fun s ↦ deriv φ s ^ (-(1 / 2) : ℝ) • h (φ s)) t =
-      iteratedDeriv 2 (fun s ↦ deriv φ s ^ (-(1 / 2) : ℝ)) t • h (φ t) +
-        (deriv φ t ^ (-(1 / 2) : ℝ) * deriv φ t ^ 2) • iteratedDeriv 2 h (φ t) := by
-  set d := deriv φ
-  set u : ℝ → ℝ := fun s ↦ d s ^ (-(1 / 2) : ℝ)
-  have hd2 : ContDiffOn ℝ 2 d J := hφ.deriv_of_isOpen hJ (by norm_num)
-  have hu : ContDiffOn ℝ 2 u J := hd2.rpow_const_of_ne fun s hs ↦ (hd s hs).ne'
-  have hφ1 (s : ℝ) (hs : s ∈ J) : HasDerivAt φ (d s) s :=
-    ((hφ.contDiffAt (hJ.mem_nhds hs)).differentiableAt (by norm_num)).hasDerivAt
-  have hd1 (s : ℝ) (hs : s ∈ J) : HasDerivAt d (deriv d s) s :=
-    ((hd2.contDiffAt (hJ.mem_nhds hs)).differentiableAt (by norm_num)).hasDerivAt
-  have hu1 (s : ℝ) (hs : s ∈ J) :
-      HasDerivAt u (deriv d s * (-(1 / 2)) * d s ^ (-(1 / 2) - 1 : ℝ)) s :=
-    (hd1 s hs).rpow_const (Or.inl (hd s hs).ne')
-  have hu2 : HasDerivAt (deriv u) (iteratedDeriv 2 u t) t := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one]
-    exact (((hu.deriv_of_isOpen hJ (m := 1) (by norm_num)).contDiffAt
-      (hJ.mem_nhds ht)).differentiableAt (by norm_num)).hasDerivAt
-  have hh1 (y : ℝ) (hy : y ∈ U) : HasDerivAt h (deriv h y) y :=
-    ((hh.contDiffAt (hU.mem_nhds hy)).differentiableAt (by norm_num)).hasDerivAt
-  have hh2 : HasDerivAt (deriv h) (iteratedDeriv 2 h (φ t)) (φ t) := by
-    rw [iteratedDeriv_succ, iteratedDeriv_one]
-    exact (((hh.deriv_of_isOpen hU (m := 1) (by norm_num)).contDiffAt
-      (hU.mem_nhds (hφU ht))).differentiableAt (by norm_num)).hasDerivAt
-  -- the first derivative, near `t`
-  have hfirst : deriv (fun s ↦ u s • h (φ s)) =ᶠ[𝓝 t]
-      fun s ↦ (u s * d s) • deriv h (φ s) + deriv u s • h (φ s) := by
-    filter_upwards [hJ.mem_nhds ht] with s hs
-    have h1 : HasDerivAt (fun s ↦ u s • h (φ s))
-        (u s • d s • deriv h (φ s) + deriv u s • h (φ s)) s :=
-      (hu1 s hs).differentiableAt.hasDerivAt.smul ((hh1 _ (hφU hs)).scomp s (hφ1 s hs))
-    rw [h1.deriv, smul_smul]
-  have hsec : HasDerivAt (fun s ↦ (u s * d s) • deriv h (φ s) + deriv u s • h (φ s))
-      ((u t * d t) • d t • iteratedDeriv 2 h (φ t) +
-        (deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t + u t * deriv d t) •
-          deriv h (φ t) +
-        (deriv u t • d t • deriv h (φ t) + iteratedDeriv 2 u t • h (φ t))) t :=
-    (((hu1 t ht).mul (hd1 t ht)).smul (hh2.scomp t (hφ1 t ht))).add
-      (hu2.smul ((hh1 _ (hφU ht)).scomp t (hφ1 t ht)))
-  rw [iteratedDeriv_succ, iteratedDeriv_one, hfirst.deriv_eq, hsec.deriv, (hu1 t ht).deriv]
-  have hdt := hd t ht
-  have hpow : d t ^ (-(1 / 2) - 1 : ℝ) * d t = d t ^ (-(1 / 2) : ℝ) := by
-    rw [Real.rpow_sub_one hdt.ne', div_mul_cancel₀ _ hdt.ne']
-  have key : deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t + u t * deriv d t +
-      deriv d t * (-(1 / 2)) * d t ^ (-(1 / 2) - 1 : ℝ) * d t = 0 := by
-    simp only [u]
-    linear_combination (-deriv d t) * hpow
-  simp only [u] at key ⊢
-  linear_combination (norm := module) key • deriv h (φ t)
-
 /-- The right-end Liouville–Green theorem on `I`, for all admissible data. -/
 private def LiouvilleGreenRight (I : Set ℝ) : Prop :=
   ∀ ⦃f ξ : ℝ → ℝ⦄ ⦃g Φ : ℝ → ℂ⦄, ContDiffOn ℝ 2 f I → (∀ x ∈ I, 0 < f x) → ContinuousOn g I →
@@ -141,40 +87,6 @@ private lemma liouvilleGreenRight_Ioi (a : ℝ) : LiouvilleGreenRight (Ioi a) :=
   obtain ⟨w, ε, hw, hε, h⟩ := exists_liouvilleGreen_atTop hf hf0 hg hξ hΦ
     fun x hx ↦ hI x hx ▸ hΦi x hx
   exact ⟨w, ε, hw, hε, fun x hx ↦ by rw [hI x hx]; exact h x hx⟩
-
-/-- An increasing bijection `φ : J → I` maps `(t, ∞) ∩ J` onto `(φ t, ∞) ∩ I`. -/
-private lemma image_Ioi_inter {I J : Set ℝ} {φ ψ : ℝ → ℝ} (hφm : StrictMonoOn φ J)
-    (hφJ : MapsTo φ J I) (hψI : MapsTo ψ I J) (hφψ : ∀ x ∈ I, φ (ψ x) = x) {t : ℝ}
-    (ht : t ∈ J) : φ '' (Ioi t ∩ J) = Ioi (φ t) ∩ I := by
-  ext x
-  constructor
-  · rintro ⟨s, ⟨hts, hs⟩, rfl⟩
-    exact ⟨hφm ht hs hts, hφJ hs⟩
-  · rintro ⟨hx, hxI⟩
-    refine ⟨ψ x, ⟨mem_Ioi.2 (lt_of_not_ge fun hle ↦ ?_), hψI hxI⟩, hφψ x hxI⟩
-    have := hφm.monotoneOn (hψI hxI) ht hle
-    rw [hφψ x hxI] at this
-    exact (not_lt.2 this) hx
-
-/-- Change of variables `v = φ(s)` in the tail integrals of the error-control function. -/
-private lemma integrableOn_integral_Ioi_inter_comp {I J : Set ℝ} (hJ : IsOpen J)
-    {φ ψ : ℝ → ℝ} (hφ1 : ∀ s ∈ J, HasDerivAt φ (deriv φ s) s) (hd : ∀ t ∈ J, 0 < deriv φ t)
-    (hφm : StrictMonoOn φ J) (hφJ : MapsTo φ J I) (hψI : MapsTo ψ I J)
-    (hφψ : ∀ x ∈ I, φ (ψ x) = x) (Φ : ℝ → ℂ) {t : ℝ} (ht : t ∈ J) :
-    (IntegrableOn Φ (Ioi (φ t) ∩ I) ↔
-      IntegrableOn (fun s ↦ ((deriv φ s : ℝ) : ℂ) * Φ (φ s)) (Ioi t ∩ J)) ∧
-    ∫ v in Ioi (φ t) ∩ I, ‖Φ v‖ = ∫ s in Ioi t ∩ J, ‖((deriv φ s : ℝ) : ℂ) * Φ (φ s)‖ := by
-  have hm : MeasurableSet (Ioi t ∩ J) := measurableSet_Ioi.inter hJ.measurableSet
-  have hφ' (s : ℝ) (hs : s ∈ Ioi t ∩ J) : HasDerivWithinAt φ (deriv φ s) (Ioi t ∩ J) s :=
-    (hφ1 s hs.2).hasDerivWithinAt
-  have hinj : InjOn φ (Ioi t ∩ J) := hφm.injOn.mono inter_subset_right
-  rw [← image_Ioi_inter hφm hφJ hψI hφψ ht]
-  refine ⟨(integrableOn_image_iff_integrableOn_abs_deriv_smul hm hφ' hinj Φ).trans
-    (integrableOn_congr_fun (fun s hs ↦ ?_) hm), ?_⟩
-  · simp [abs_of_pos (hd s hs.2), Complex.real_smul]
-  · rw [integral_image_eq_integral_abs_deriv_smul hm hφ' hinj]
-    refine setIntegral_congr_fun hm fun s hs ↦ ?_
-    simp [abs_of_pos (hd s hs.2)]
 
 /-- `(D² a)^{-1/4} = D^{-1/2} a^{-1/4}` for positive `D` and `a`. -/
 private lemma rpow_sq_mul_rpow {D a : ℝ} (hD : 0 < D) (ha : 0 < a) :
@@ -209,7 +121,7 @@ private lemma liouvilleGreen_control_comp {I J : Set ℝ} (hI : IsOpen I) (hJ : 
     exact rpow_sq_mul_rpow (hd s hs) (hf0 _ (hφJ hs))
   have hD := hd t ht
   have hfx := hf0 _ (hφJ ht)
-  rw [(heq.iteratedDeriv 2).eq_of_nhds, iteratedDeriv_two_rpow_smul_comp hJ hI hφ hd
+  rw [(heq.iteratedDeriv 2).eq_of_nhds, iteratedDeriv_two_deriv_rpow_smul_comp hJ hI hφ hd
     (hf.rpow_const_of_ne fun x hx ↦ (hf0 x hx).ne') hφJ ht, hΦ _ (hφJ ht),
     rpow_sq_mul_rpow hD hfx, Real.sqrt_mul (by positivity), Real.sqrt_sq hD.le]
   have h1 := rpow_sq_mul_self hD
@@ -247,8 +159,8 @@ private lemma iteratedDeriv_two_eq_of_comp {I J : Set ℝ} (hI : IsOpen I) (hJ :
   have heq : W =ᶠ[𝓝 t] fun s ↦ deriv φ s ^ (-(1 / 2) : ℝ) • w (φ s) := by
     filter_upwards [hJ.mem_nhds ht] with s hs
     rw [hWw s hs, Complex.real_smul]
-  rw [(heq.iteratedDeriv 2).eq_of_nhds, iteratedDeriv_two_rpow_smul_comp hJ hI hφ hd hw hφJ ht,
-    hWw t ht] at hW
+  rw [(heq.iteratedDeriv 2).eq_of_nhds,
+    iteratedDeriv_two_deriv_rpow_smul_comp hJ hI hφ hd hw hφJ ht, hWw t ht] at hW
   have hD := hd t ht
   have hU : 0 < deriv φ t ^ (-(1 / 2) : ℝ) := Real.rpow_pos_of_pos hD _
   simp only [Complex.real_smul] at hW
@@ -303,8 +215,22 @@ private lemma LiouvilleGreenRight.exists_comp {I J : Set ℝ} (hI : IsOpen I) (h
   have hΞ (s : ℝ) (hs : s ∈ J) : HasDerivAt (fun s ↦ ξ (φ s)) (√(d s ^ 2 * f (φ s))) s := by
     rw [Real.sqrt_mul (by positivity), Real.sqrt_sq (hd s hs).le, mul_comm]
     exact (hξ _ (hφJ hs)).comp s (hφ1 s hs)
-  have hint (s : ℝ) (hs : s ∈ J) :=
-    integrableOn_integral_Ioi_inter_comp hJ hφ1 hd hφm hφJ hψI hφψ Φ hs
+  -- change of variables `v = φ(r)` in the tail integrals of `Φ`
+  have hint (s : ℝ) (hs : s ∈ J) :
+      (IntegrableOn Φ (Ioi (φ s) ∩ I) ↔
+        IntegrableOn (fun r ↦ ((deriv φ r : ℝ) : ℂ) * Φ (φ r)) (Ioi s ∩ J)) ∧
+      ∫ v in Ioi (φ s) ∩ I, ‖Φ v‖ = ∫ r in Ioi s ∩ J, ‖((deriv φ r : ℝ) : ℂ) * Φ (φ r)‖ := by
+    have hm : MeasurableSet (Ioi s ∩ J) := measurableSet_Ioi.inter hJ.measurableSet
+    have hφ' (r : ℝ) (hr : r ∈ Ioi s ∩ J) : HasDerivWithinAt φ (deriv φ r) (Ioi s ∩ J) r :=
+      (hφ1 r hr.2).hasDerivWithinAt
+    have hmono : MonotoneOn φ (Ioi s ∩ J) := hφm.monotoneOn.mono inter_subset_right
+    rw [← hφJ.image_subset.antisymm fun x hx ↦ ⟨ψ x, hψI hx, hφψ x hx⟩,
+      ← hφm.image_Ioi_inter hs,
+      integral_image_eq_integral_deriv_smul_of_monotoneOn hm hφ' hmono]
+    refine ⟨(integrableOn_image_iff_integrableOn_deriv_smul_of_monotoneOn hm hφ' hmono Φ).trans
+      (by simp only [Complex.real_smul]), setIntegral_congr_fun hm fun r hr ↦ ?_⟩
+    have hr0 : 0 < deriv φ r := hd r hr.2
+    simp [abs_of_pos hr0]
   obtain ⟨W, E, hW, hE, hWE⟩ := H ((hd2.pow 2).mul (hf.comp (hφ.of_le (by norm_num)) hφJ))
     (fun s hs ↦ mul_pos (pow_pos (hd s hs) 2) (hf0 _ (hφJ hs))) hGc hΞ
     (fun s hs ↦ liouvilleGreen_control_comp hI hJ hφ hd hφJ hf hf0 hΦ hs)
@@ -456,29 +382,6 @@ theorem exists_liouvilleGreen_right {I : Set ℝ} (hI : IsOpen I) (hIc : I.OrdCo
   · exact liouvilleGreenRight_of_bddAbove hI hIc hne hb hf hf0 hg hξ hΦ hΦi
   · exact liouvilleGreenRight_of_not_bddAbove hI hIc hb hf hf0 hg hξ hΦ hΦi
 
-/-- Reflection `v = -s` in the tail integrals. -/
-private lemma integrableOn_integral_Iio_inter_comp_neg (Φ : ℝ → ℂ) {I : Set ℝ}
-    (hI : MeasurableSet I) (t : ℝ) :
-    (IntegrableOn Φ (Iio (-t) ∩ I) ↔ IntegrableOn (fun s ↦ Φ (-s)) (Ioi t ∩ Neg.neg ⁻¹' I)) ∧
-    ∫ v in Iio (-t) ∩ I, ‖Φ v‖ = ∫ s in Ioi t ∩ Neg.neg ⁻¹' I, ‖Φ (-s)‖ := by
-  have hm : MeasurableSet (Ioi t ∩ Neg.neg ⁻¹' I) :=
-    measurableSet_Ioi.inter (measurable_neg hI)
-  have hneg (s : ℝ) (_ : s ∈ Ioi t ∩ Neg.neg ⁻¹' I) :
-      HasDerivWithinAt Neg.neg (-1) (Ioi t ∩ Neg.neg ⁻¹' I) s :=
-    (hasDerivAt_neg s).hasDerivWithinAt
-  have himg : Neg.neg '' (Ioi t ∩ Neg.neg ⁻¹' I) = Iio (-t) ∩ I := by
-    ext x
-    constructor
-    · rintro ⟨s, ⟨hs, hsI⟩, rfl⟩
-      exact ⟨mem_Iio.2 (neg_lt_neg hs), hsI⟩
-    · rintro ⟨hx, hxI⟩
-      exact ⟨-x, ⟨mem_Ioi.2 (lt_neg_of_lt_neg hx), by simpa using hxI⟩, neg_neg x⟩
-  rw [← himg]
-  refine ⟨(integrableOn_image_iff_integrableOn_abs_deriv_smul hm hneg neg_injective.injOn Φ).trans
-    (by simp), ?_⟩
-  rw [integral_image_eq_integral_abs_deriv_smul hm hneg neg_injective.injOn]
-  simp
-
 /-- **The Liouville–Green theorem, solution controlled at the left end.** Let `I` be an open
 interval `(a₁, a₂)`, let `f` be positive and `C²` and `g` continuous on `I`, let `ξ` be a
 primitive of `f^{1/2}` there, and let `Φ = f^{-1/4} (f^{-1/4})'' - g f^{-1/2}` be integrable on
@@ -499,7 +402,17 @@ theorem exists_liouvilleGreen_left {I : Set ℝ} (hI : IsOpen I) (hIc : I.OrdCon
         ‖deriv ε x‖ / (2 * √(f x)) ≤ Real.exp ((∫ v in Iio x ∩ I, ‖Φ v‖) / 2) - 1 := by
   have hneg : MapsTo Neg.neg (Neg.neg ⁻¹' I) I := fun _ ht ↦ ht
   have hneg' : MapsTo Neg.neg I (Neg.neg ⁻¹' I) := fun x hx ↦ by simpa using hx
-  have hint (t : ℝ) := integrableOn_integral_Iio_inter_comp_neg Φ hI.measurableSet t
+  -- reflection `v = -s` in the tail integrals of `Φ`
+  have hmp := Measure.measurePreserving_neg (volume : Measure ℝ)
+  have hpre (t : ℝ) : Neg.neg ⁻¹' (Iio (-t) ∩ I) = Ioi t ∩ Neg.neg ⁻¹' I := by
+    ext s
+    simp
+  have hint (t : ℝ) :
+      (IntegrableOn Φ (Iio (-t) ∩ I) ↔ IntegrableOn (fun s ↦ Φ (-s)) (Ioi t ∩ Neg.neg ⁻¹' I)) ∧
+      ∫ v in Iio (-t) ∩ I, ‖Φ v‖ = ∫ s in Ioi t ∩ Neg.neg ⁻¹' I, ‖Φ (-s)‖ := by
+    rw [← hpre]
+    exact ⟨(hmp.integrableOn_comp_preimage measurableEmbedding_neg).symm,
+      (hmp.setIntegral_preimage_emb measurableEmbedding_neg (fun v ↦ ‖Φ v‖) _).symm⟩
   obtain ⟨w, ε, hw, hε, h⟩ := exists_liouvilleGreen_right (hI.preimage continuous_neg)
     ⟨fun a ha b hb c hc ↦ hIc.out hb ha ⟨neg_le_neg hc.2, neg_le_neg hc.1⟩⟩
     (f := fun t ↦ f (-t)) (ξ := fun t ↦ -ξ (-t)) (g := fun t ↦ g (-t)) (Φ := fun t ↦ Φ (-t))
