@@ -529,7 +529,7 @@ theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic 
   exact (h.contDiff.differentiable one_ne_zero).clm_apply (differentiable_const v)
 
 /-- The capped perturbation is differentiable in the target point. -/
-private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (w v : ℂ) :
     MDifferentiable I 𝓘(ℝ) fun y ↦ cappedPerturbation a L H w y v := by
   have h : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun y ↦ cappedPerturbation a L H w y :=

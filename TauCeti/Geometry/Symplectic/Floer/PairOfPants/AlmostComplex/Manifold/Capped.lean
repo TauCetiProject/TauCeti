@@ -193,6 +193,19 @@ theorem cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (hJp : Function.P
     exact Floer.cappedAlmostComplex_cylindricalEndLift_add_endSign_mul (h₀.compatibleAt x)
       (fun t => by simp only [hJp t]) r hL hz ()
 
+/-- **The PSS plane pieces in coordinates independent of the neck length.** If `J q` has period one
+in `t`, then at the center `c_q` of the end `q`, its pole for an input end, and at every point
+beyond the neck, where the signed longitudinal coordinate is at least `2`, the capped structure with
+neck length `L ≥ 0` at the translate `TauCeti.ThricePuncturedSphere.Puncture.endShift q L w` is the
+structure with `L = 0` at `w`. -/
+theorem cappedAlmostComplex_endShift (hJp : Function.Periodic (J q) 1) (r : ℝ) (hL : 0 ≤ L)
+    {w : ℂ} (hw : w = q.endCenter ∨ 2 ≤ q.endSign * (q.endCoord w).re) :
+    h₀.cappedAlmostComplex J hJ r L (q.endShift L w) = h₀.cappedAlmostComplex J hJ r 0 w :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex]
+    exact Floer.cappedAlmostComplex_endShift (h₀.compatibleAt x) (fun t => by simp only [hJp t])
+      r hL hw ()
+
 /-- **The structure is the pair-of-pants structure up to the necks.** For `r ≥ 1`, at points of
 the pair of pants where the signed longitudinal coordinate of every end is at most `L + 2`, the
 capped structure is the pair-of-pants structure. -/
