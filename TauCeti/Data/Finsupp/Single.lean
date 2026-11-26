@@ -9,12 +9,10 @@ public import Mathlib.Data.Finsupp.Single
 public import Mathlib.Data.Int.Cast.Basic
 
 /-!
-# Casting and vanishing for `Finsupp.single`
+# Casting the values of a single integer coefficient
 
 The integer cast commutes with evaluating a finitely supported function with one-point support:
 the cast of `Finsupp.single a n b` is `Finsupp.single a (n : R) b` in any additive group with one.
-A nonzero singleton `Finsupp.single a b` vanishes away from `a`
-(`Finsupp.single_apply_eq_zero_of_ne_zero`).
 -/
 
 public section
@@ -26,11 +24,5 @@ namespace Finsupp
 theorem intCast_single_apply {α R : Type*} [AddGroupWithOne R] (a : α) (n : ℤ) (b : α) :
     ((single a n b : ℤ) : R) = single a (n : R) b :=
   apply_single' Int.cast Int.cast_zero a n b
-
-/-- Evaluation of a nonzero singleton `single a b` vanishes away from `a`. -/
-@[simp]
-theorem single_apply_eq_zero_of_ne_zero {α M : Type*} [Zero M] {a x : α} {b : M} (hb : b ≠ 0) :
-    single a b x = 0 ↔ x ≠ a :=
-  single_apply_eq_zero.trans ⟨fun h hxa ↦ hb (h hxa), fun h hxa ↦ (h hxa).elim⟩
 
 end Finsupp

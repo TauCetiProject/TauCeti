@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
 public import TauCeti.Topology.VectorBundle.SpinStructure.OfSpin
 public import TauCeti.Topology.VectorBundle.SpinStructure.Reflection.Basic
+import TauCeti.Topology.VectorBundle.Associated.Extension
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
 /-!
@@ -82,28 +83,13 @@ private theorem precompIsometryHom_smul (g : spinCGroup (realCliffordForm n 0) h
       QuadraticMap.Isometry.det_spinCGroupMap])
 
 /-- The comparison `[p, z] ↦ [[p, 1], z]` from the determinant line of `s` to that of
-`s.precompIsometry f`, at a fibre. -/
+`s.precompIsometry f`, at a fibre: the inverse of the identification
+`PrincipalBundle.Extend.associatedContinuousLinearEquiv` of associated bundles of an extended
+principal bundle. -/
 private def determinantLinePrecompEquiv (x : X) :
     s.determinantLine x ≃L[ℂ] (s.precompIsometry f).determinantLine x :=
-  (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (Classical.arbitrary (s.P x))).symm.trans
-    (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (PrincipalBundle.Extend.inl
-      (precompIsometryHom f) (continuous_precompIsometryHom f)
-      (Classical.arbitrary (s.P x))))
-
-/-- The comparison of determinant lines is the inverse of the identification
-`PrincipalBundle.Extend.associatedEquiv` of associated bundles of an extended principal bundle. -/
-private theorem determinantLinePrecompEquiv_apply {x : X} (z : s.determinantLine x) :
-    determinantLinePrecompEquiv f s x z = (PrincipalBundle.Extend.associatedEquiv
-      (precompIsometryHom f) (continuous_precompIsometryHom f)
-      (precompIsometryHom_smul f) x).symm z := by
-  obtain ⟨w, rfl⟩ := (AssociatedBundle.mkContinuousLinearEquiv ℂ _ (F := DeterminantModel n)
-    (Classical.arbitrary (s.P x))).surjective z
-  rw [determinantLinePrecompEquiv, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.symm_apply_apply, AssociatedBundle.mkContinuousLinearEquiv_apply]
-  exact (AssociatedBundle.mkContinuousLinearEquiv_apply _ _).trans
-    (PrincipalBundle.Extend.associatedEquiv_symm_mk (precompIsometryHom f)
-    (continuous_precompIsometryHom f) (precompIsometryHom_smul f) (P := s.P)
-    (Classical.arbitrary (s.P x)) w).symm
+  (PrincipalBundle.Extend.associatedContinuousLinearEquiv ℂ (P := s.P) (precompIsometryHom f)
+    (continuous_precompIsometryHom f) (precompIsometryHom_smul f) x).symm
 
 /-- **The first Chern class is unchanged by precomposing with an isometry**: for an isometry `f`
 of `ℝⁿ`, `c₁(s.precompIsometry f) = c₁(s)`. The automorphism `[g, z] ↦ [f⁻¹ g, z]` of `Spinᶜ(n)`
@@ -115,11 +101,9 @@ theorem firstChernClass_precompIsometry :
   rw [firstChernClass_def, firstChernClass_def, lineFirstChernClass_def, lineFirstChernClass_def]
   refine (complexEulerClass_eq_of_fiberwise (DeterminantModel.finrank_eq_one n)
     (DeterminantModel.finrank_eq_one n) (φ := determinantLinePrecompEquiv f s) ?_).symm
-  refine (PrincipalBundle.Extend.associatedHomeomorph (P := s.P) (precompIsometryHom f)
-    (continuous_precompIsometryHom f)
-    (precompIsometryHom_smul f)).symm.continuous.congr fun z ↦ ?_
-  rw [PrincipalBundle.Extend.associatedHomeomorph_symm_apply, determinantLinePrecompEquiv_apply]
-  rfl
+  exact PrincipalBundle.Extend.continuous_associatedContinuousLinearEquiv_symm (P := s.P)
+    (precompIsometryHom f) (continuous_precompIsometryHom f)
+    (precompIsometryHom_smul f)
 
 /-- **Orientation reversal does not change the first Chern class**: `c₁(s.reverse) = c₁(s)`. -/
 theorem firstChernClass_reverse : s.reverse.firstChernClass = s.firstChernClass :=

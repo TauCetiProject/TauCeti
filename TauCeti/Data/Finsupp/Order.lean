@@ -24,9 +24,9 @@ ordered monomials by removing one occurrence of their least variable.
 It also contains the residual step of the staircase argument: two nonnegative finitely supported
 functions of equal mass lose their smaller matched weight, leaving smaller supports; the support
 characterization `Finsupp.single_one_add_single_one_le_iff` of division by a squarefree quadratic
-monomial `single u 1 + single v 1` (`u ≠ v`); and the support and vanishing criteria for a sum of
+monomial `single u 1 + single v 1` (`u ≠ v`); and the vanishing criteria for a sum of
 two nonzero singletons (`Finsupp.single_add_single_eq_zero_iff`,
-`Finsupp.single_add_single_ne_zero_iff`, `Finsupp.support_single_add_single'`).
+`Finsupp.single_add_single_ne_zero_iff`).
 -/
 
 public section
@@ -65,17 +65,6 @@ theorem single_add_single_ne_zero_iff {α M : Type*}
     (single a b + single c d) x ≠ 0 ↔ x = a ∨ x = c := by
   simpa only [ne_eq, not_and_or, not_not] using
     not_congr (single_add_single_eq_zero_iff hb hd x)
-
-/-- The support of a sum of two nonzero singletons `single a b + single c d` is `{a, c}`, without
-assuming `a ≠ c`. -/
-@[simp]
-theorem support_single_add_single' {α M : Type*} [DecidableEq α]
-    [AddCommMonoid M] [PartialOrder M] [CanonicallyOrderedAdd M]
-    {a c : α} {b d : M} (hb : b ≠ 0) (hd : d ≠ 0) :
-    (single a b + single c d).support = {a, c} := by
-  ext x
-  rw [mem_support_iff, single_add_single_ne_zero_iff hb hd]
-  simp
 
 /-- Mapping values along a strictly monotone zero-preserving map reflects and preserves the
 pointwise `≤` order on finitely supported functions. -/

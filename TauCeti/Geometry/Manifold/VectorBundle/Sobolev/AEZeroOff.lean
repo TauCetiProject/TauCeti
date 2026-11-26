@@ -265,7 +265,7 @@ omit [CompleteSpace (C.sobolevSections μ p k)] in
 theorem chartRestrictEquiv_apply (hinj : Function.Injective (C.chartRestrictL μ p k Z i))
     (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) (w : C.aeZeroOn μ p k Z) :
     C.chartRestrictEquiv μ p k hinj hsurj w = C.chartRestrictL μ p k Z i w :=
-  (rfl)
+  LinearEquiv.ofBijective_apply _ w
 
 variable (C μ p k) in
 /-- **Extension by zero.** When the chart-`i` components of the Sobolev sections vanishing on the
@@ -333,6 +333,18 @@ theorem extendByZeroL_chartRestrictL (hinj : Function.Injective (C.chartRestrict
     (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) (w : C.aeZeroOn μ p k Z) :
     C.extendByZeroL μ p k hinj hsurj (C.chartRestrictL μ p k Z i w) = w := by
   rw [extendByZeroL_apply, ← chartRestrictEquiv_apply hinj hsurj, LinearEquiv.symm_apply_apply]
+
+/-- Sobolev sections vanishing on the sets `Z i` converge as soon as their chart-`i` components
+converge, when the chart-`i` components are bijective: extension by zero is continuous. -/
+theorem tendsto_of_tendsto_chartRestrictL (hinj : Function.Injective (C.chartRestrictL μ p k Z i))
+    (hsurj : Function.Surjective (C.chartRestrictL μ p k Z i)) {ι : Type*} {l : Filter ι}
+    {a : ι → C.aeZeroOn μ p k Z} {u : C.aeZeroOn μ p k Z}
+    (h : Tendsto (fun m ↦ C.chartRestrictL μ p k Z i (a m)) l
+      (𝓝 (C.chartRestrictL μ p k Z i u))) :
+    Tendsto a l (𝓝 u) := by
+  have hE := ((C.extendByZeroL μ p k hinj hsurj).continuous.tendsto _).comp h
+  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
+  exact tendsto_subtype_rng.2 hE
 
 end Extension
 
@@ -432,6 +444,20 @@ theorem mem_aeZeroOff_of_ae_eq_coord {L : Set M} {w : SobolevSection A μ p k} {
   rw [hy]
   exact A.coord_eq_zero hyi (hsL _ hL)
 
+/-- The chart-`i` data of an element vanishing off the points read in chart `i` inside a subset `Q`
+of the chart image vanish almost everywhere on the chart image off `Q`. -/
+theorem chartValueL_eq_zero_ae_of_mem_aeZeroOff_image {i : Fin A.n} {Q : Set E}
+    (hQ : Q ⊆ A.image i) {w : SobolevSection A μ p k}
+    (hw : w ∈ aeZeroOff A μ p k ((A.chart i).symm '' Q)) :
+    ∀ᵐ y ∂μ.restrict (A.image i), y ∉ Q → A.sectionChartData.chartValueL μ p k i w y = 0 := by
+  filter_upwards [mem_aeZeroOff.1 hw i, ae_restrict_mem (A.image i).isOpen.measurableSet]
+    with y hy hyi hyQ
+  refine hy fun ⟨z, hz, hzy⟩ ↦ hyQ ?_
+  -- The inverse chart is injective on the chart target, which contains the chart image.
+  have h (x : E) (hx : x ∈ A.image i) : A.chart i ((A.chart i).symm x) = x :=
+    (A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hx).1
+  rwa [← h y hyi, ← hzy, h z (hQ hz)]
+
 /-- Multiplication by a smooth function `φ` takes values in the elements vanishing off
 `tsupport φ`. -/
 theorem contMDiffSMulL_mem_aeZeroOff [IsManifold 𝓘(ℝ, E) ∞ M] {φ : M → ℝ}
@@ -527,6 +553,16 @@ theorem extendByZeroL_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin 
     (hL : IsClosed L) (hLi : L ⊆ A.dom i) (w : aeZeroOff A μ p k L) :
     extendByZeroL h hL hLi (chartRestrictL A μ p k i L w) = w :=
   SectionChartData.extendByZeroL_chartRestrictL (chartRestrictL_injective hLi) (h hL hLi) w
+
+/-- Elements vanishing off `L` converge as soon as their chart-`i` components converge, since
+extension by zero is continuous. -/
+theorem tendsto_of_tendsto_chartRestrictL (h : HasExtensionByZero A μ p k) {i : Fin A.n}
+    {L : Set M} (hL : IsClosed L) (hLi : L ⊆ A.dom i) {ι : Type*} {l : Filter ι}
+    {a : ι → aeZeroOff A μ p k L} {u : aeZeroOff A μ p k L}
+    (ha : Tendsto (fun m ↦ chartRestrictL A μ p k i L (a m)) l
+      (𝓝 (chartRestrictL A μ p k i L u))) :
+    Tendsto a l (𝓝 u) :=
+  SectionChartData.tendsto_of_tendsto_chartRestrictL (chartRestrictL_injective hLi) (h hL hLi) ha
 
 end Extension
 

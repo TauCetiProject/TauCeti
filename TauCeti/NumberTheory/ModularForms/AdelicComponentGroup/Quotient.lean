@@ -22,8 +22,8 @@ For `q ∈ GL₂(ℚ)` with `det q > 0` and `u ∈ U`, `Γ_{qgu,U} = qΓ_{g,U}q�
 (`TauCeti.AdelicExamples.GL2.componentGroup_mul_mul`), so the images in `PSL₂(ℝ)` are conjugate
 by the image of `q` (`TauCeti.AdelicExamples.GL2.conjAct_smul_componentGroupPSL`). Hence
 `z ↦ q • z` descends to a homeomorphism `Γ_{g,U}\ℍ ≃ₜ Γ_{qgu,U}\ℍ`
-(`TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph`), which is holomorphic when
-`Γ_{g,U}` acts properly discontinuously on `ℍ`.
+(`TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph`), which is holomorphic in both
+directions when `Γ_{g,U}` acts properly discontinuously on `ℍ`.
 
 ## Main definitions
 
@@ -39,8 +39,9 @@ by the image of `q` (`TauCeti.AdelicExamples.GL2.conjAct_smul_componentGroupPSL`
 * `TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph_mk` and
   `TauCeti.AdelicExamples.GL2.componentQuotientConjHomeomorph_symm_mk`: the homeomorphism and
   its inverse act on orbits through `q` and `q⁻¹`.
-* `TauCeti.AdelicExamples.GL2.mdifferentiable_componentQuotientConjHomeomorph`: the homeomorphism
-  is holomorphic when `Γ_{g,U}` acts properly discontinuously.
+* `TauCeti.AdelicExamples.GL2.mdifferentiable_componentQuotientConjHomeomorph` and
+  `TauCeti.AdelicExamples.GL2.mdifferentiable_componentQuotientConjHomeomorph_symm`: the
+  homeomorphism and its inverse are holomorphic when `Γ_{g,U}` acts properly discontinuously.
 
 ## References
 
@@ -62,6 +63,13 @@ half-plane. -/
 def componentGroupPSL (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
     (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) : Subgroup PSL(2, ℝ) :=
   ((componentGroup U g).subgroupOf (GLPos (Fin 2) ℚ)).map ratPosToPSL2R
+
+/-- The image of `Γ_{g,U}` in `PSL₂(ℝ)` is the image of `Γ_{g,U}`, viewed in `GL₂(ℚ)^+`, along
+`GL₂(ℚ)^+ → PSL₂(ℝ)`. -/
+theorem componentGroupPSL_def (U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ)))
+    (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)) :
+    componentGroupPSL U g = ((componentGroup U g).subgroupOf (GLPos (Fin 2) ℚ)).map ratPosToPSL2R :=
+  (rfl)
 
 /-- Membership in the image of `Γ_{g,U}` in `PSL₂(ℝ)`. -/
 @[simp]
@@ -143,6 +151,17 @@ theorem mdifferentiable_componentQuotientConjHomeomorph
       (conjAct_smul_componentGroupPSL g q hu)
     MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (componentQuotientConjHomeomorph g q hu) :=
   Subgroup.mdifferentiable_quotientConjHomeomorph _
+
+/-- **The inverse of `Γ_{g,U}\ℍ ≃ₜ Γ_{qgu,U}\ℍ` is holomorphic** when `Γ_{g,U}` acts properly
+discontinuously on `ℍ`; it is induced by `z ↦ q⁻¹ • z`. -/
+theorem mdifferentiable_componentQuotientConjHomeomorph_symm
+    {U : Subgroup (GL (Fin 2) (FiniteAdeleRing ℤ ℚ))} (g : GL (Fin 2) (FiniteAdeleRing ℤ ℚ))
+    [ProperlyDiscontinuousSMul (componentGroupPSL U g) ℍ] (q : GL(2, ℚ)⁺)
+    {u : GL (Fin 2) (FiniteAdeleRing ℤ ℚ)} (hu : u ∈ U) :
+    letI := TauCeti.properlyDiscontinuousSMul_of_conjAct_smul_eq (X := ℍ)
+      (conjAct_smul_componentGroupPSL g q hu)
+    MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (componentQuotientConjHomeomorph g q hu).symm :=
+  Subgroup.mdifferentiable_quotientConjHomeomorph_symm _
 
 end AdelicExamples.GL2
 
