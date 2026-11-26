@@ -130,13 +130,11 @@ private theorem isProperMap_restrictPreimage_range_map (f : X ⟶ Y) (hf : f ≫
       (isOpenEmbedding_of_isOpenImmersion i hi).isEmbedding ?_ ?_
   · funext x
     exact Subtype.ext (by simp [pullback.condition])
-  · ext x
-    rw [Set.mem_preimage, mem_range_map_iff_closedPoint, mem_range_map_iff_closedPoint]
-    simp only [Scheme.Hom.mem_opensRange, ← Set.mem_range]
-    rw [Scheme.Pullback.range_fst]
-    simp only [Set.mem_preimage, map_val]
-    exact (congrArg (fun y : Y ↦ y ∈ Set.range i)
-      (Scheme.Hom.comp_apply x.val f (IsLocalRing.closedPoint K))).symm.to_iff
+  · -- Both sides say that `f` maps the closed point of `x` into the chart.
+    ext x
+    rw [Set.mem_preimage, mem_range_map_iff_closedPoint, mem_range_map_iff_closedPoint,
+      Scheme.Hom.opensRange_pullbackFst, map_val]
+    rfl
 
 /-- **Proper morphisms induce proper maps of points.** Let `K` be an algebraically closed
 topological field, such as `ℂ`, whose projective spaces have compact `K`-points. A proper morphism
