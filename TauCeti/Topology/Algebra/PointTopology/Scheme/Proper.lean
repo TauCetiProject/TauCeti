@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Chow
-public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.Topology.Algebra.PointTopology.Scheme.Projective.Basic
 public import TauCeti.Topology.Maps.Proper.Basic
 public import TauCeti.Topology.Maps.Proper.LocalAtTarget
@@ -40,8 +39,9 @@ continuous map whose composite with a continuous surjection is proper is itself 
 All results assume that `K` is algebraically closed and that the `K`-points of every
 projective space `ℙⁿ_K` are compact; both hold for `K = ℂ`.
 
-* `TauCeti.SchemePointTopology.map_surjective_of_surjective`: a surjective morphism locally of
-  finite type is surjective on `K`-points; this needs only that `K` is algebraically closed.
+* `TauCeti.SchemePointTopology.isProperMap_map_of_isProper_of_finite_irreducibleComponents`:
+  a proper scheme with finitely many irreducible components over a `K`-algebra `A` has a proper
+  map of `K`-points to `Spec A`.
 * `TauCeti.SchemePointTopology.isProperMap_map_of_isProper_of_isNoetherianRing`: a proper scheme
   over a Noetherian `K`-algebra `A` has a proper map of `K`-points to `Spec A`.
 * `TauCeti.SchemePointTopology.isProperMap_map_of_isProper`: a proper morphism of `K`-schemes
@@ -59,7 +59,8 @@ projective space `ℙⁿ_K` are compact; both hold for `K = ℂ`.
 
 public section
 
-open CategoryTheory CategoryTheory.Limits AlgebraicGeometry Topology TauCeti.SymmetricAlgebra
+open CategoryTheory CategoryTheory.Limits AlgebraicGeometry Topology TopologicalSpace
+  TauCeti.SymmetricAlgebra
 
 namespace TauCeti.SchemePointTopology
 
@@ -69,27 +70,18 @@ universe u
 
 variable {K : Type u} [Field K] [IsAlgClosed K]
 
-/-- **Surjective morphisms are surjective on rational points over an algebraically closed field.**
-A surjective morphism `g : X ⟶ Y` of `K`-schemes that is locally of finite type induces a
-surjective map `X(K) → Y(K)`. -/
-theorem map_surjective_of_surjective {X Y : Scheme.{u}} {fX : X ⟶ Spec (.of K)}
-    {fY : Y ⟶ Spec (.of K)} (g : X ⟶ Y) (hg : g ≫ fY = fX) [Surjective g]
-    [LocallyOfFiniteType g] : Function.Surjective (map (R := K) g hg) := by
-  intro y
-  obtain ⟨x, hx⟩ := (Scheme.Hom.exists_comp_eq_iff_mem_range g y.val).2 (g.surjective _)
-  exact ⟨⟨x, by rw [← hg, ← Category.assoc, hx, y.property]⟩,
-    Subtype.ext ((map_val _ _ _).trans hx)⟩
-
 variable [TopologicalSpace K] [IsTopologicalDivisionRing K] [T1Space K]
   [∀ n : ℕ, CompactSpace (Points (R := K) (projToSpec K (Option (Fin n) → K)))]
 
-/-- **A proper scheme over a Noetherian `K`-algebra is proper on `K`-points.** If `g : Z ⟶ Spec A`
-is proper, where `A` is a Noetherian `K`-algebra, then `g` induces a proper map of `K`-points
-`Z(K) → (Spec A)(K)`. -/
-theorem isProperMap_map_of_isProper_of_isNoetherianRing {A : Type u} [CommRing A]
-    [Algebra K A] [IsNoetherianRing A] {Z : Scheme.{u}} (g : Z ⟶ Spec (.of A)) [IsProper g] :
+/-- **A proper scheme with finitely many irreducible components over a `K`-algebra is proper
+on `K`-points.** If `g : Z ⟶ Spec A` is proper and `Z` has finitely many irreducible components,
+then `g` induces a proper map of `K`-points `Z(K) → (Spec A)(K)`. -/
+theorem isProperMap_map_of_isProper_of_finite_irreducibleComponents {A : Type u} [CommRing A]
+    [Algebra K A] {Z : Scheme.{u}} (g : Z ⟶ Spec (.of A)) [IsProper g]
+    (hZ : (irreducibleComponents Z).Finite) :
     IsProperMap (map (R := K) g (fX := g ≫ Spec.algebraMap K A) rfl) := by
-  obtain ⟨P, _, p, -, _, _, hP⟩ := TauCeti.AlgebraicGeometry.exists_projectiveModification g
+  obtain ⟨P, _, p, -, _, _, hP⟩ :=
+    TauCeti.AlgebraicGeometry.exists_projectiveModification_of_finite_irreducibleComponents g hZ
   have hp : p ≫ g ≫ Spec.algebraMap K A = (P ↘ Spec (.of A)) ≫ Spec.algebraMap K A := by
     rw [hP, Category.assoc]
   have : LocallyOfFiniteType (p ≫ g) := by
@@ -106,6 +98,16 @@ theorem isProperMap_map_of_isProper_of_isNoetherianRing {A : Type u} [CommRing A
     (map_surjective_of_surjective p hp)
   rw [hcomp]
   exact isProperMap_map_of_isProjectiveOver
+
+/-- **A proper scheme over a Noetherian `K`-algebra is proper on `K`-points.** If `g : Z ⟶ Spec A`
+is proper, where `A` is a Noetherian `K`-algebra, then `g` induces a proper map of `K`-points
+`Z(K) → (Spec A)(K)`. -/
+theorem isProperMap_map_of_isProper_of_isNoetherianRing {A : Type u} [CommRing A]
+    [Algebra K A] [IsNoetherianRing A] {Z : Scheme.{u}} (g : Z ⟶ Spec (.of A)) [IsProper g] :
+    IsProperMap (map (R := K) g (fX := g ≫ Spec.algebraMap K A) rfl) := by
+  have : IsNoetherian Z := TauCeti.AlgebraicGeometry.isNoetherian_of_finiteType g
+  exact isProperMap_map_of_isProper_of_finite_irreducibleComponents g
+    NoetherianSpace.finite_irreducibleComponents
 
 variable {X Y : Scheme.{u}} {fX : X ⟶ Spec (.of K)} {fY : Y ⟶ Spec (.of K)}
 
@@ -128,15 +130,12 @@ private theorem isProperMap_restrictPreimage_range_map (f : X ⟶ Y) (hf : f ≫
   · funext x
     exact Subtype.ext (by simp [pullback.condition])
   · ext x
-    refine ⟨?_, ?_⟩
-    · rintro ⟨z, rfl⟩
-      exact ⟨map (pullback.snd f i) rfl z, Subtype.ext (by simp [pullback.condition])⟩
-    · rintro ⟨y, hy⟩
-      have hxy : x.val ≫ f = y.val ≫ i := by
-        simpa using (congrArg Subtype.val hy).symm
-      refine ⟨⟨pullback.lift x.val y.val hxy, ?_⟩,
-        Subtype.ext ((map_val _ _ _).trans (pullback.lift_fst _ _ _))⟩
-      rw [← Category.assoc, pullback.lift_snd, y.property]
+    rw [Set.mem_preimage, mem_range_map_iff_closedPoint, mem_range_map_iff_closedPoint]
+    simp only [Scheme.Hom.mem_opensRange, ← Set.mem_range]
+    rw [Scheme.Pullback.range_fst]
+    simp only [Set.mem_preimage, map_val]
+    exact (congrArg (fun y : Y ↦ y ∈ Set.range i)
+      (Scheme.Hom.comp_apply x.val f (IsLocalRing.closedPoint K))).symm.to_iff
 
 /-- **Proper morphisms induce proper maps of points.** Let `K` be an algebraically closed
 topological field, such as `ℂ`, whose projective spaces have compact `K`-points. A proper morphism

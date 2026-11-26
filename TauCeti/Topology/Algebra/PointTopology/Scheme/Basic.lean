@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.RationalPoint.Image
 public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 public import TauCeti.Topology.Algebra.PointTopology.Functoriality
 
@@ -81,6 +82,18 @@ theorem map_injective (g : X ⟶ Y) (hg : g ≫ fY = fX) [Mono g] :
     Function.Injective (map (R := R) g hg) := by
   intro x y h
   exact Subtype.ext ((cancel_mono g).mp (congrArg Subtype.val h))
+
+/-- **Surjective morphisms are surjective on rational points over an algebraically closed field.**
+A surjective morphism `g : X ⟶ Y` of `K`-schemes that is locally of finite type induces a
+surjective map `X(K) → Y(K)`. -/
+theorem map_surjective_of_surjective {K : Type u} [Field K] [IsAlgClosed K] {X Y : Scheme.{u}}
+    {fX : X ⟶ Spec (.of K)}
+    {fY : Y ⟶ Spec (.of K)} (g : X ⟶ Y) (hg : g ≫ fY = fX) [Surjective g]
+    [LocallyOfFiniteType g] : Function.Surjective (map (R := K) g hg) := by
+  intro y
+  obtain ⟨x, hx⟩ := (Scheme.Hom.exists_comp_eq_iff_mem_range g y.val).2 (g.surjective _)
+  exact ⟨⟨x, by rw [← hg, ← Category.assoc, hx, y.property]⟩,
+    Subtype.ext ((map_val _ _ _).trans hx)⟩
 
 /-- The image of an open immersion on points consists exactly of the morphisms whose
 image lies in the open subscheme. This algebraic statement needs no locality assumption. -/

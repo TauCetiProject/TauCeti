@@ -19,10 +19,6 @@ Closedness is already local on the target; each fibre is homeomorphic to the cor
 fibre of a restriction. In particular, this argument does not require local compactness or a
 compactly generated target, as a characterization using compact preimages alone would.
 
-The pieces of the target are often given as embeddings `j : Y' → Y` rather than as subsets, with a
-map `f' : X' → Y'` identified with the pullback of `f` along `j`. If `f'` is proper, so is the
-restriction of `f` over the range of `j` (`IsProperMap.restrictPreimage_range_of_isEmbedding`).
-
 The continuity hypothesis is essential: continuity of restrictions over an open cover of the
 *target* does not, by itself, imply continuity of the original map.
 
@@ -37,23 +33,6 @@ open Set Topology TopologicalSpace
 
 variable {X Y ι : Type*} [TopologicalSpace X] [TopologicalSpace Y]
   {f : X → Y} {U : ι → Opens Y}
-
-/-- **The restriction of a map over the range of an embedding is proper when its pullback is.**
-If `f ∘ i = j ∘ f'`, where `i` and `j` are embeddings and the range of `i` is the preimage under
-`f` of the range of `j`, and `f'` is proper, then the restriction of `f` over the range of `j` is
-proper. This is a converse of `IsProperMap.of_isEmbedding_of_range_eq`. -/
-theorem IsProperMap.restrictPreimage_range_of_isEmbedding {X' Y' : Type*} [TopologicalSpace X']
-    [TopologicalSpace Y'] {f' : X' → Y'} {i : X' → X} {j : Y' → Y} (hf' : IsProperMap f')
-    (hi : IsEmbedding i) (hj : IsEmbedding j) (hcomm : f ∘ i = j ∘ f')
-    (hrange : range i = f ⁻¹' range j) : IsProperMap ((range j).restrictPreimage f) := by
-  let ei : X' ≃ₜ f ⁻¹' range j := hi.toHomeomorph.trans (.setCongr hrange)
-  have h : (range j).restrictPreimage f = hj.toHomeomorph ∘ f' ∘ ei.symm := by
-    funext x
-    obtain ⟨x', rfl⟩ := ei.surjective x
-    apply Subtype.ext
-    simpa [ei, Homeomorph.setCongr] using congrFun hcomm x'
-  rw [h]
-  exact hj.toHomeomorph.isProperMap.comp (hf'.comp ei.symm.isProperMap)
 
 /-- Properness of a continuous map can be checked over any open cover of its target.
 No finiteness or separation hypothesis is needed. -/
