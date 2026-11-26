@@ -137,11 +137,12 @@ theorem mul_opNorm_le_of_eq_smul_sub_smul (J : AlmostComplexStructure V)
     _ = (1 + NJ) * ‖B‖ := by field_simp
 
 /-- **Inverting `a + b J` on covectors.** For an almost complex structure `J` and `a² + b² = r²`
-with `r > 0`, every covector `θ` satisfies `r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`, since
-`(a + b J) (a - b J) = a² + b²`. This is the covector counterpart of
-`mul_opNorm_le_of_eq_smul_sub_smul`. -/
-theorem mul_opNorm_le_opNorm_comp_smul_add_smul (J : AlmostComplexStructure V) (θ : V →L[ℝ] ℝ)
-    {a b r : ℝ} (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
+with `r > 0`, every continuous linear map `θ` out of `V`, such as a covector, satisfies
+`r ‖θ‖ ≤ (1 + ‖J‖) ‖θ ∘ (a + b J)‖`, since `(a + b J) (a - b J) = a² + b²`. This is the covector
+counterpart of `mul_opNorm_le_of_eq_smul_sub_smul`. -/
+theorem mul_opNorm_le_opNorm_comp_smul_add_smul {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] (J : AlmostComplexStructure V) (θ : V →L[ℝ] F) {a b r : ℝ}
+    (hab : a ^ 2 + b ^ 2 = r ^ 2) (hr : 0 < r) :
     r * ‖θ‖ ≤ (1 + ‖J.toLinearMap.toContinuousLinearMap‖) *
       ‖θ.comp (a • (1 : V →L[ℝ] V) + b • J.toLinearMap.toContinuousLinearMap)‖ := by
   set NJ := ‖J.toLinearMap.toContinuousLinearMap‖
@@ -150,11 +151,11 @@ theorem mul_opNorm_le_opNorm_comp_smul_add_smul (J : AlmostComplexStructure V) (
   have hb : |b| ≤ r := abs_le_of_sq_le_sq (by nlinarith [sq_nonneg a]) hr.le
   -- `θ' (a v - b J v) = θ ((a² + b²) v) = r² θ v`, and `‖a v - b J v‖ ≤ r (1 + ‖J‖) ‖v‖`.
   have hv (v : V) : r * ‖θ v‖ ≤ (1 + NJ) * ‖θ'‖ * ‖v‖ := by
-    have hθ' : θ' (a • v - b • J v) = r ^ 2 * θ v := by
+    have hθ' : θ' (a • v - b • J v) = r ^ 2 • θ v := by
       have h := J.smul_add_smul_apply_smul_sub_smul a b v
       simp only [θ', ContinuousLinearMap.comp_apply, add_apply,
         smul_apply, one_apply_eq_self, LinearMap.coe_toContinuousLinearMap']
-      rw [h, map_smul, hab, smul_eq_mul]
+      rw [h, map_smul, hab]
     have hw : ‖a • v - b • J v‖ ≤ r * ((1 + NJ) * ‖v‖) := by
       have hJv : ‖J v‖ ≤ NJ * ‖v‖ := J.toLinearMap.toContinuousLinearMap.le_opNorm v
       refine (norm_sub_le _ _).trans ?_
@@ -163,7 +164,7 @@ theorem mul_opNorm_le_opNorm_comp_smul_add_smul (J : AlmostComplexStructure V) (
         _ = r * ((1 + NJ) * ‖v‖) := by ring
     have h1 : r ^ 2 * ‖θ v‖ ≤ r * ((1 + NJ) * ‖θ'‖ * ‖v‖) := by
       have hn : ‖θ' (a • v - b • J v)‖ = r ^ 2 * ‖θ v‖ := by
-        rw [hθ', norm_mul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
+        rw [hθ', norm_smul, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg r)]
       rw [← hn]
       calc ‖θ' (a • v - b • J v)‖ ≤ ‖θ'‖ * ‖a • v - b • J v‖ := θ'.le_opNorm _
         _ ≤ ‖θ'‖ * (r * ((1 + NJ) * ‖v‖)) := by gcongr

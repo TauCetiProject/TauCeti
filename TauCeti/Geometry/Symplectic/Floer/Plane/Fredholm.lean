@@ -98,32 +98,6 @@ section Estimate
 
 variable {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-omit [InnerProductSpace ℝ V] in
-/-- The real and imaginary parts of the derivative of the end lift of a PSS plane in the direction
-`∂s` have squared norm the Jacobian of the end lift. -/
-private theorem sq_add_sq_fderiv_realChart_cylindricalEndLift (p : PSSPlane) (ζ : ℝ × ℝ) :
-    (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).1 ^ 2 +
-        (fderiv ℝ (realChart p.cylindricalEndLift) ζ stdComplexLineReal).2 ^ 2 =
-      (fderiv ℝ (realChart p.cylindricalEndLift) ζ).det := by
-  rw [TauCeti.Complex.fderiv_realChart_apply (p.hasDerivAt_cylindricalEndLift _),
-    TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _), Complex.normSq_apply]
-  simp [stdComplexLineReal, sq]
-
-omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- The end lift of the positive plane maps the half-strip `s > R`, `0 ≤ t < 1` onto the part
-`‖w‖ > exp (2π R)` of the plane. -/
-private theorem image_realChart_positive_Ioi_prod_Ico (R : ℝ) :
-    realChart positive.cylindricalEndLift '' (Ioi R ×ˢ Ico 0 1) =
-      {z | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} := by
-  ext z
-  constructor
-  · rintro ⟨ζ, hζ, rfl⟩
-    exact exp_lt_norm_realChart_positive hζ.1
-  · intro hz
-    obtain ⟨ζ, hζ1, hζ2, hζz⟩ := positive.exists_realChart_cylindricalEndLift_eq hz
-    rw [endSign_positive, one_mul] at hζ1
-    exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
-
 /-- The pullback `g' = g (φ ·) ∘ (a + b J)` of a `C¹` covector field `g` of compact support to the
 end of the positive plane has integrable `W^{1,2}` energy density on every half-cylinder
 `s > R`, `0 ≤ t ≤ 1`, when `J` is `C¹` along a `C¹` map `u`. -/
@@ -173,7 +147,7 @@ private theorem det_mul_norm_sq_le_mul_norm_covectorPullback_sq {B : ℝ}
   have hJζ := (J (φ ζ) (u (φ ζ))).mul_opNorm_le_opNorm_comp_smul_add_smul (g (φ ζ))
     (a := (fderiv ℝ φ ζ stdComplexLineReal).1) (b := (fderiv ℝ φ ζ stdComplexLineReal).2)
     (r := √(fderiv ℝ φ ζ).det)
-    (by rw [Real.sq_sqrt hdet.le]; exact sq_add_sq_fderiv_realChart_cylindricalEndLift positive ζ)
+    (by rw [Real.sq_sqrt hdet.le]; exact positive.sq_add_sq_fderiv_realChart_cylindricalEndLift ζ)
     (Real.sqrt_pos.2 hdet)
   rw [← covectorPullback_apply φ J' u g ζ] at hJζ
   have h3 : 0 ≤ 1 + NJ := by positivity
@@ -209,7 +183,11 @@ private theorem setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPu
       (Ioi R ×ˢ Icc 0 1) :=
     (integrableOn_sobolevDensity_covectorPullback_positive hJ hu hg hgc R).const_mul _
   -- Change variables along the end lift, which is injective on the half-strip.
-  rw [← image_realChart_positive_Ioi_prod_Ico, integral_image_eq_integral_of_eq_abs_det_smul hS
+  have hIoi : {s : ℝ | R < positive.endSign * s} = Ioi R := by
+    ext s
+    simp [endSign_positive]
+  rw [← positive.image_realChart_cylindricalEndLift_prod_Ico, hIoi,
+    integral_image_eq_integral_of_eq_abs_det_smul hS
     ((positive.injOn_realChart_cylindricalEndLift 0).mono
       (prod_mono (subset_univ _) (by rw [zero_add])))
     (fun ζ _ ↦ (hφ.differentiable (by norm_num)) ζ) (fun ζ _ ↦ rfl), ← integral_const_mul]

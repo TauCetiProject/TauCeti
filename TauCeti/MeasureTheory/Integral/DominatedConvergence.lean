@@ -245,20 +245,6 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
 
-/-- **Tails of an integral vanish.** For integrable `g`, the integral of `g` outside `ball x R`
-tends to `0` as `R → ∞`. -/
-theorem tendsto_setIntegral_compl_ball {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
-    [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X}
-    {g : X → F} (hg : Integrable g μ) (x : X) :
-    Tendsto (fun R : ℝ ↦ ∫ y in (ball x R)ᶜ, g y ∂μ) atTop (𝓝 0) := by
-  have h := tendsto_setIntegral_of_antitone (μ := μ) (f := g) (s := fun R : ℝ ↦ (ball x R)ᶜ)
-    (fun _ ↦ measurableSet_ball.compl) (fun _ _ hRS ↦ compl_subset_compl.2 (ball_subset_ball hRS))
-    ⟨0, hg.integrableOn⟩
-  have hempty : ⋂ R : ℝ, (ball x R)ᶜ = ∅ :=
-    eq_empty_of_forall_notMem fun y hy ↦ (mem_compl_iff _ _).1 (mem_iInter.1 hy (dist y x + 1))
-      (mem_ball.2 (lt_add_one _))
-  rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
-
 /-- **Tails of an integral over superlevel sets vanish.** For integrable `g` and measurable
 `ν : X → ℝ`, the integral of `g` over `{y | R ≤ ν y}` tends to `0` as `R → ∞`. -/
 theorem tendsto_setIntegral_setOf_le {X F : Type*} [MeasurableSpace X] [NormedAddCommGroup F]
@@ -271,6 +257,18 @@ theorem tendsto_setIntegral_setOf_le {X F : Type*} [MeasurableSpace X] [NormedAd
   have hempty : ⋂ R : ℝ, {y | R ≤ ν y} = ∅ :=
     eq_empty_of_forall_notMem fun y hy ↦ (lt_add_one (ν y)).not_ge (mem_iInter.1 hy (ν y + 1))
   rwa [hempty, Measure.restrict_empty, integral_zero_measure] at h
+
+/-- **Tails of an integral vanish.** For integrable `g`, the integral of `g` outside `ball x R`
+tends to `0` as `R → ∞`. -/
+theorem tendsto_setIntegral_compl_ball {X F : Type*} [PseudoMetricSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X}
+    {g : X → F} (hg : Integrable g μ) (x : X) :
+    Tendsto (fun R : ℝ ↦ ∫ y in (ball x R)ᶜ, g y ∂μ) atTop (𝓝 0) := by
+  have hset (R : ℝ) : {y | R ≤ dist y x} = (ball x R)ᶜ := by
+    ext y
+    simp
+  simpa only [hset] using tendsto_setIntegral_setOf_le (ν := fun y ↦ dist y x) hg
+    (continuous_id.dist continuous_const).measurable
 
 /-- **Dominated convergence for bounded continuous functions of converging maps.** Let
 `Φ : ℝ × V → E` be continuous, and let the maps `y i : ℝ → V` be eventually continuous on
