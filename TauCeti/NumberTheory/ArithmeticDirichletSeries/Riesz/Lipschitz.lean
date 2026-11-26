@@ -8,32 +8,33 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.Calculus.Deriv.Add
+import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
 # Lipschitz bounds for first Riesz sums
 
 For coefficients `c : ℕ → ℂ` the first Riesz sum `S(y) = TauCeti.rieszSum c y` is the sum of the
-ramps `c(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max_of_floor_le`), so it is Lipschitz
-in `y` with constant `∑_{n ≤ y} ‖c(n)‖ / n`. Its weighted form
-`w · S(a / w) = ∑_n c(n) max (a / n - w) 0` is Lipschitz in the weight `w` with constant
-`∑_{n ≤ a / w} ‖c(n)‖`.
+ramps `c(n) max (y / n - 1) 0` (`TauCeti.rieszSum_eq_sum_max_of_floor_le`). Hence:
+* on every half-line `(-∞, Y]`, `S` is Lipschitz with constant `∑_{n ≤ Y} ‖c(n)‖ / n`;
+* for `W > 0`, the weighted form `w ↦ w · S(a / w) = ∑_n c(n) max (a / n - w) 0` is Lipschitz on
+  `[W, ∞)` with constant `∑_{n ≤ a / W} ‖c(n)‖`, and its real part is antitone in `w > 0` when
+  the coefficients have nonnegative real parts;
+* the unweighted sum `S` has right derivative `∑_{n ≤ y} c(n) / n` at every `y`.
 
-For real coefficients the sum `∑ n ∈ Ioc 0 ⌊y⌋₊, c n * (y / n - 1)`, on the index set of
-Mathlib's `Chebyshev.psi`, is the real form of `TauCeti.rieszSum`
-(`TauCeti.ofReal_sum_Ioc_floor_mul_div_sub_one`). Its weighted form is antitone in the weight when
-the coefficients are nonnegative, it is continuous, and it has right derivative
-`∑_{n ≤ y} c(n) / n`.
+The real sums `∑ n ∈ Ioc 0 ⌊y⌋₊, c n * (y / n - 1)` with `c : ℕ → ℝ`, on the index set of
+Mathlib's `Chebyshev.psi`, are the real forms of `TauCeti.rieszSum`
+(`TauCeti.ofReal_sum_Ioc_floor_mul_div_sub_one`); for them the file also gives the antitonicity in
+the weight and the right derivative.
 
 ## Main results
 
 * `TauCeti.mul_rieszSum_div_eq_sum_max`: the weighted Riesz sum as a sum of ramps in the weight.
 * `TauCeti.norm_rieszSum_sub_rieszSum_le`: Lipschitz bound in `y`.
 * `TauCeti.norm_mul_rieszSum_div_sub_mul_rieszSum_div_le`: Lipschitz bound in the weight.
-* `TauCeti.ofReal_sum_Ioc_floor_mul_div_sub_one`: the real form of the Riesz sum.
-* `TauCeti.mul_sum_Ioc_floor_div_le_mul_sum`: antitonicity in the weight.
-* `TauCeti.continuous_sum_Ioc_floor_mul_div_sub_one`,
-  `TauCeti.hasDerivWithinAt_sum_Ioc_floor_mul_div_sub_one`: continuity and the right derivative of
-  the real form.
+* `TauCeti.hasDerivWithinAt_rieszSum`: the right derivative of `TauCeti.rieszSum c`.
+* `TauCeti.mul_sum_Ioc_floor_mul_div_sub_one_le`: antitonicity of the real weighted sum in the
+  weight.
+* `TauCeti.hasDerivWithinAt_sum_Ioc_floor_mul_div_sub_one`: the right derivative of the real sum.
 
 ## References
 
@@ -48,23 +49,28 @@ open Finset
 
 namespace TauCeti
 
-/-- The weighted Riesz sum `w' · S(a / w')`, `S = TauCeti.rieszSum c`, as a sum of ramps in the
-weight: for `0 < w ≤ w'` it equals `∑_{1 ≤ n ≤ a / w} c(n) max (a / n - w') 0`. -/
-theorem mul_rieszSum_div_eq_sum_max (c : ℕ → ℂ) {a w w' : ℝ} (hw : 0 < w) (hww' : w ≤ w') :
-    (w' : ℂ) * rieszSum c (a / w') =
-      ∑ n ∈ Icc 1 ⌊a / w⌋₊, c n * ((max (a / n - w') 0 : ℝ) : ℂ) := by
-  have hw' := hw.trans_le hww'
-  have hN : ⌊a / w'⌋₊ ≤ ⌊a / w⌋₊ := by
-    rcases le_total a 0 with ha | ha
-    · simp [Nat.floor_of_nonpos (div_nonpos_of_nonpos_of_nonneg ha hw'.le)]
-    · exact Nat.floor_le_floor (div_le_div_of_nonneg_left ha hw hww')
+/-- **The weighted Riesz sum as a sum of ramps in the weight.** For `w > 0` and every
+`N ≥ ⌊a / w⌋₊`, `w · rieszSum c (a / w) = ∑_{1 ≤ n ≤ N} c(n) max (a / n - w) 0`. -/
+theorem mul_rieszSum_div_eq_sum_max (c : ℕ → ℂ) {a w : ℝ} (hw : 0 < w) {N : ℕ}
+    (hN : ⌊a / w⌋₊ ≤ N) :
+    (w : ℂ) * rieszSum c (a / w) = ∑ n ∈ Icc 1 N, c n * ((max (a / n - w) 0 : ℝ) : ℂ) := by
   rw [rieszSum_eq_sum_max_of_floor_le c hN, mul_sum]
   refine sum_congr rfl fun n hn ↦ ?_
   have hn : (n : ℝ) ≠ 0 := by
     have := (mem_Icc.1 hn).1
     positivity
-  have h : w' * (a / w' / n - 1) = a / n - w' := by field_simp
-  rw [mul_left_comm, ← Complex.ofReal_mul, mul_max_of_nonneg _ _ hw'.le, mul_zero, h]
+  have h : w * (a / w / n - 1) = a / n - w := by field_simp
+  rw [mul_left_comm, ← Complex.ofReal_mul, mul_max_of_nonneg _ _ hw.le, mul_zero, h]
+
+/-- The ramp form of `w' · rieszSum c (a / w')` over the cutoff of a smaller weight `w ≤ w'`. -/
+private theorem mul_rieszSum_div_eq_sum_max_of_le (c : ℕ → ℂ) {a w w' : ℝ} (hw : 0 < w)
+    (hww' : w ≤ w') :
+    (w' : ℂ) * rieszSum c (a / w') =
+      ∑ n ∈ Icc 1 ⌊a / w⌋₊, c n * ((max (a / n - w') 0 : ℝ) : ℂ) := by
+  refine mul_rieszSum_div_eq_sum_max c (hw.trans_le hww') ?_
+  rcases le_total a 0 with ha | ha
+  · simp [Nat.floor_of_nonpos (div_nonpos_of_nonpos_of_nonneg ha (hw.trans_le hww').le)]
+  · exact Nat.floor_le_floor (div_le_div_of_nonneg_left ha hw hww')
 
 /-- **Lipschitz bound for a Riesz sum.** For `z ≤ y`,
 `‖S(y) - S(z)‖ ≤ (∑_{1 ≤ n ≤ y} ‖c(n)‖ / n) (y - z)`, where `S = TauCeti.rieszSum c`. -/
@@ -88,7 +94,7 @@ theorem norm_mul_rieszSum_div_sub_mul_rieszSum_div_le (c : ℕ → ℂ) {a w w' 
     (hww' : w ≤ w') :
     ‖(w : ℂ) * rieszSum c (a / w) - (w' : ℂ) * rieszSum c (a / w')‖ ≤
       (∑ n ∈ Icc 1 ⌊a / w⌋₊, ‖c n‖) * (w' - w) := by
-  rw [mul_rieszSum_div_eq_sum_max c hw le_rfl, mul_rieszSum_div_eq_sum_max c hw hww',
+  rw [mul_rieszSum_div_eq_sum_max c hw le_rfl, mul_rieszSum_div_eq_sum_max_of_le c hw hww',
     ← sum_sub_distrib, sum_mul]
   refine (norm_sum_le _ _).trans (sum_le_sum fun n _ ↦ ?_)
   simp only [← mul_sub, norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
@@ -96,49 +102,52 @@ theorem norm_mul_rieszSum_div_sub_mul_rieszSum_div_le (c : ℕ → ℂ) {a w w' 
   calc _ ≤ |(a / n - w) - (a / n - w')| := abs_max_sub_max_le_abs _ _ _
     _ = w' - w := by rw [sub_sub_sub_cancel_left, abs_of_nonneg (sub_nonneg.2 hww')]
 
+/-- **Right derivative of the Riesz sum.** `TauCeti.rieszSum c` has right derivative
+`∑_{1 ≤ n ≤ x} c(n) / n` at every `x`. -/
+theorem hasDerivWithinAt_rieszSum (c : ℕ → ℂ) (x : ℝ) :
+    HasDerivWithinAt (rieszSum c) (∑ n ∈ Icc 1 ⌊x⌋₊, c n / n) (Set.Ici x) x := by
+  have hlin : HasDerivAt (fun t : ℝ ↦ ∑ n ∈ Icc 1 ⌊x⌋₊, c n * ((t : ℂ) / n - 1))
+      (∑ n ∈ Icc 1 ⌊x⌋₊, c n * (((1 : ℝ) : ℂ) / n)) x :=
+    HasDerivAt.fun_sum fun n _ ↦
+      ((HasDerivAt.div_const (hasDerivAt_id' x).ofReal_comp (n : ℂ)).sub_const 1).const_mul (c n)
+  simp only [Complex.ofReal_one, mul_one_div] at hlin
+  refine hlin.hasDerivWithinAt.congr_of_eventuallyEq ?_ (rieszSum_def c x)
+  filter_upwards [Ico_mem_nhdsGE (Nat.lt_floor_add_one x)] with t ht
+  have hlt : ⌊t⌋₊ < ⌊x⌋₊ + 1 :=
+    (Nat.floor_lt' (Nat.succ_ne_zero _)).2 (by exact_mod_cast ht.2)
+  rw [rieszSum_def, le_antisymm (Nat.lt_succ_iff.1 hlt) (Nat.floor_le_floor ht.1)]
+
 /-! ### Real coefficients -/
 
-/-- **The real form of the Riesz sum.** For real coefficients, the sum
-`∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` over Mathlib's index set `Ioc 0 ⌊y⌋₊` is
-`TauCeti.rieszSum` of the coefficients cast to `ℂ`. -/
-theorem ofReal_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) (y : ℝ) :
-    ((∑ n ∈ Ioc 0 ⌊y⌋₊, c n * (y / n - 1) : ℝ) : ℂ) = rieszSum (fun n ↦ (c n : ℂ)) y := by
-  simp [rieszSum_def, ← Icc_add_one_left_eq_Ioc]
-
-/-- **The weighted Riesz sum is antitone in the weight** for nonnegative coefficients: for
+/-- **The weighted real Riesz sum is antitone in the weight** for nonnegative coefficients: for
 `0 < w ≤ w'`, `w' S(a / w') ≤ w S(a / w)`, where `S(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)`. -/
-theorem mul_sum_Ioc_floor_div_le_mul_sum {c : ℕ → ℝ} (hc : ∀ n, 0 ≤ c n) {a w w' : ℝ} (hw : 0 < w)
-    (hww' : w ≤ w') :
+theorem mul_sum_Ioc_floor_mul_div_sub_one_le {c : ℕ → ℝ} (hc : ∀ n, 0 ≤ c n) {a w w' : ℝ}
+    (hw : 0 < w) (hww' : w ≤ w') :
     w' * ∑ n ∈ Ioc 0 ⌊a / w'⌋₊, c n * (a / w' / n - 1) ≤
       w * ∑ n ∈ Ioc 0 ⌊a / w⌋₊, c n * (a / w / n - 1) := by
   have key {v : ℝ} (hv : w ≤ v) : v * ∑ n ∈ Ioc 0 ⌊a / v⌋₊, c n * (a / v / n - 1) =
       ∑ n ∈ Icc 1 ⌊a / w⌋₊, c n * max (a / n - v) 0 := by
-    have h := mul_rieszSum_div_eq_sum_max (fun n ↦ (c n : ℂ)) (a := a) hw hv
+    have h := mul_rieszSum_div_eq_sum_max_of_le (fun n ↦ (c n : ℂ)) (a := a) hw hv
     rw [← ofReal_sum_Ioc_floor_mul_div_sub_one] at h
     exact_mod_cast h
   rw [key hww', key le_rfl]
   exact sum_le_sum fun n _ ↦ mul_le_mul_of_nonneg_left (by gcongr) (hc n)
 
-/-- **The Riesz sum is continuous**: `y ↦ ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` is continuous on `ℝ`. It
-is the real part of `TauCeti.rieszSum`, continuous by `TauCeti.continuous_rieszSum`. -/
-theorem continuous_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) :
-    Continuous fun t : ℝ ↦ ∑ n ∈ Ioc 0 ⌊t⌋₊, c n * (t / n - 1) := by
-  refine (Complex.continuous_re.comp (continuous_rieszSum fun n ↦ (c n : ℂ))).congr fun t ↦ ?_
-  rw [Function.comp_apply, ← ofReal_sum_Ioc_floor_mul_div_sub_one, Complex.ofReal_re]
-
-/-- **Right derivative of the Riesz sum.** `y ↦ ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` has right
-derivative `∑_{1 ≤ n ≤ x} c(n) / n` at every `x`. -/
+/-- **Right derivative of the real Riesz sum.** `y ↦ ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` has right
+derivative `∑_{1 ≤ n ≤ x} c(n) / n` at every `x`; it is the real part of
+`TauCeti.hasDerivWithinAt_rieszSum`. -/
 theorem hasDerivWithinAt_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) (x : ℝ) :
     HasDerivWithinAt (fun t ↦ ∑ n ∈ Ioc 0 ⌊t⌋₊, c n * (t / n - 1))
-      (∑ n ∈ Ioc 0 ⌊x⌋₊, c n * (1 / n)) (Set.Ici x) x := by
-  have hlin : HasDerivAt (fun t ↦ ∑ n ∈ Ioc 0 ⌊x⌋₊, c n * (t / n - 1))
-      (∑ n ∈ Ioc 0 ⌊x⌋₊, c n * (1 / n)) x :=
-    HasDerivAt.fun_sum fun n _ ↦ (((hasDerivAt_id' x).div_const (n : ℝ)).sub_const 1).const_mul
-      (c n)
-  refine hlin.hasDerivWithinAt.congr_of_eventuallyEq ?_ rfl
-  filter_upwards [Ico_mem_nhdsGE (Nat.lt_floor_add_one x)] with t ht
-  have hlt : ⌊t⌋₊ < ⌊x⌋₊ + 1 :=
-    (Nat.floor_lt' (Nat.succ_ne_zero _)).2 (by exact_mod_cast ht.2)
-  rw [le_antisymm (Nat.lt_succ_iff.1 hlt) (Nat.floor_le_floor ht.1)]
+      (∑ n ∈ Ioc 0 ⌊x⌋₊, c n / n) (Set.Ici x) x := by
+  have h := Complex.reCLM.hasFDerivAt.comp_hasDerivWithinAt x
+    (hasDerivWithinAt_rieszSum (fun n ↦ (c n : ℂ)) x)
+  have hf : (Complex.reCLM ∘ rieszSum fun n ↦ (c n : ℂ)) =
+      fun t ↦ ∑ n ∈ Ioc 0 ⌊t⌋₊, c n * (t / n - 1) := by
+    ext t
+    rw [Function.comp_apply, Complex.reCLM_apply, ← ofReal_sum_Ioc_floor_mul_div_sub_one,
+      Complex.ofReal_re]
+  rw [hf] at h
+  refine h.congr_deriv ?_
+  simp [← Icc_add_one_left_eq_Ioc]
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
 public import Mathlib.NumberTheory.DirichletCharacter.Bounds
 
 /-!
@@ -21,6 +22,7 @@ combinations of `ζ` and `L`-functions.
 ## Main results
 
 * `DirichletCharacter.one_sub_mul_div_natCast_ne_zero`: `1 - χ(n) χ'(n) / n ≠ 0` for `1 < n`.
+* `DirichletCharacter.norm_mul_vonMangoldt_le`: `‖χ(n) Λ(n)‖ ≤ Λ(n)`.
 * `DirichletCharacter.one_add_re_nonneg`: `0 ≤ 1 + re χ(a)`.
 -/
 
@@ -41,6 +43,13 @@ theorem one_sub_mul_div_natCast_ne_zero {M N n : ℕ} (χ : DirichletCharacter �
       _ < n := by linarith
   rw [← sub_eq_zero.mp h, norm_one] at hlt
   exact lt_irrefl _ hlt
+
+/-- A Dirichlet character twist of the von Mangoldt function is dominated by it:
+`‖χ(n) Λ(n)‖ ≤ Λ(n)`. -/
+theorem norm_mul_vonMangoldt_le {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
+    ‖χ n * (ArithmeticFunction.vonMangoldt n : ℂ)‖ ≤ ArithmeticFunction.vonMangoldt n := by
+  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg ArithmeticFunction.vonMangoldt_nonneg]
+  exact mul_le_of_le_one_left ArithmeticFunction.vonMangoldt_nonneg (χ.norm_le_one n)
 
 /-- The weight `1 + re χ(a)` is nonnegative, since `‖χ(a)‖ ≤ 1`. -/
 theorem one_add_re_nonneg {N : ℕ} (χ : DirichletCharacter ℂ N) (a : ZMod N) :

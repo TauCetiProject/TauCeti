@@ -181,6 +181,20 @@ theorem continuous_rieszSum (a : ℕ → ℂ) : Continuous (rieszSum a) := by
   filter_upwards [isOpen_Iio.mem_nhds hy₀] with y hy
   exact (rieszSum_eq_sum_max_of_floor_le a (Nat.floor_le_of_le hy.le)).symm
 
+/-- **The real form of the first Riesz sum.** For real coefficients, the sum
+`∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` over Mathlib's index set `Ioc 0 ⌊y⌋₊` of `Chebyshev.psi` is
+`TauCeti.rieszSum` of the coefficients cast to `ℂ`. -/
+theorem ofReal_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) (y : ℝ) :
+    ((∑ n ∈ Finset.Ioc 0 ⌊y⌋₊, c n * (y / n - 1) : ℝ) : ℂ) = rieszSum (fun n ↦ (c n : ℂ)) y := by
+  simp [rieszSum_def, ← Finset.Icc_add_one_left_eq_Ioc]
+
+/-- **The real first Riesz sum is continuous**: `y ↦ ∑_{1 ≤ n ≤ y} c(n) (y / n - 1)` is the real
+part of `TauCeti.rieszSum`, continuous by `TauCeti.continuous_rieszSum`. -/
+theorem continuous_sum_Ioc_floor_mul_div_sub_one (c : ℕ → ℝ) :
+    Continuous fun t : ℝ ↦ ∑ n ∈ Finset.Ioc 0 ⌊t⌋₊, c n * (t / n - 1) := by
+  refine (Complex.continuous_re.comp (continuous_rieszSum fun n ↦ (c n : ℂ))).congr fun t ↦ ?_
+  rw [Function.comp_apply, ← ofReal_sum_Ioc_floor_mul_div_sub_one, Complex.ofReal_re]
+
 /-- **First Riesz mean normalization**: for every `y : ℝ`,
 `∑_{1 ≤ n ≤ y} a(n) (1 - n / y) = y⁻¹ * rieszSum (fun n ↦ n * a n) y`. -/
 theorem sum_mul_one_sub_div_eq_inv_mul_rieszSum (a : ℕ → ℂ) (y : ℝ) :

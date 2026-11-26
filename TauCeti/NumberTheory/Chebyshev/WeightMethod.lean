@@ -282,16 +282,16 @@ theorem psi_le_three_mul_self {x : ℝ} (hx : 0 ≤ x) : ψ x ≤ 3 * x := by
     have h' : 2 * √x / Real.exp 1 = 2 * (√x / Real.exp 1) := by ring
     linarith
   have h4 : Real.log 4 < 1.39 := by
-    rw [show (4 : ℝ) = 2 * 2 by norm_num, Real.log_mul two_ne_zero two_ne_zero]
+    rw [Real.log_four_eq]
     linarith [Real.log_two_lt_d9]
   have he : 4 / Real.exp 1 < 1.5 := by
     rw [div_lt_iff₀ (Real.exp_pos 1)]
     linarith [Real.exp_one_gt_d9]
   calc ψ x ≤ Real.log 4 * x + 2 * √x * Real.log x := psi_le hx1
     _ ≤ Real.log 4 * x + 2 * √x * (2 * √x / Real.exp 1) := by gcongr
+    _ = Real.log 4 * x + 4 / Real.exp 1 * √x ^ 2 := by ring
     _ = (Real.log 4 + 4 / Real.exp 1) * x := by
-      rw [show 2 * √x * (2 * √x / Real.exp 1) = 4 / Real.exp 1 * (√x * √x) by ring,
-        Real.mul_self_sqrt hx]
+      rw [Real.sq_sqrt hx]
       ring
     _ ≤ 3 * x := by gcongr; linarith
 

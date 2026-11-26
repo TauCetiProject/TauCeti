@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
-import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
 import TauCeti.NumberTheory.Chebyshev.Mertens
@@ -19,11 +17,12 @@ import TauCeti.NumberTheory.Chebyshev.WeightMethod
 # Lipschitz and size bounds for the Riesz remainder
 
 For coefficients `c : ℕ → ℂ` with `‖c(n)‖ ≤ Λ(n)` and a constant `D ∈ ℂ` put
-`G(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1) + y D = TauCeti.rieszSum c y + y D`;
-for `c(n) = χ(n) Λ(n)` and `D = (L′/L)(1, χ)` this is the *Riesz remainder* `G_χ` of a Dirichlet
-character (see `TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder`). For the
-trivial character the Riesz remainder is `G_1(y) = ∑_{1 ≤ n ≤ y} Λ(n) (y / n - 1) - y log y +
-(1 + γ) y`, with the real sum written as `∑ n ∈ Ioc 0 ⌊y⌋₊, …`, the index set of `Chebyshev.psi`.
+`G(y) = ∑_{1 ≤ n ≤ y} c(n) (y / n - 1) + y D = TauCeti.rieszSum c y + y D`. For a nonprincipal
+Dirichlet character `χ`, `c(n) = χ(n) Λ(n)` and `D = (L′/L)(1, χ)` this is the *Riesz remainder*
+`G_χ` (see `TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Remainder`). For the trivial
+character modulo `1` the Riesz remainder is
+`G_1(y) = ∑_{1 ≤ n ≤ y} Λ(n) (y / n - 1) - y log y + (1 + γ) y`, with the real sum written as
+`∑ n ∈ Ioc 0 ⌊y⌋₊, …`, the index set of `Chebyshev.psi`.
 The Lipschitz bounds for Riesz sums (`TauCeti.norm_rieszSum_sub_rieszSum_le`,
 `TauCeti.norm_mul_rieszSum_div_sub_mul_rieszSum_div_le`), Chebyshev's bound `ψ(y) ≤ 3 y`
 (`Chebyshev.psi_le_three_mul_self`) and Mertens' first theorem
@@ -32,10 +31,11 @@ give, for `a ≥ 0`, `w, w' > 0` and `y, z ≥ 1`,
 * `|w G(a / w) - w' G(a / w')| ≤ 3 (a / min w w') |w - w'|`, also for `G_1`;
 * `|G(y) - G(z)| ≤ |y - z| (log (max y z) + log 4 + 4 + ‖D‖)` and
   `|G_1(y) - G_1(z)| ≤ (log 4 + 4 + γ) |y - z|`;
-* `|G(y)| ≤ y (log y + log 4 + 4 + ‖D‖)` and `|G_1(y)| ≤ (log 4 + 6 + γ) y`.
+* `|G(y)| ≤ y (log y + log 4 + 4 + ‖D‖)` and `|G_1(y)| ≤ (log 4 + 4 + γ) y`.
 
-All constants above are at most `2 + γ + (log 4 + 4)`, so this one absolute constant serves in the
-bounds for `G_χ` and `G_1`.
+The numerical constants `log 4 + 4` and `log 4 + 4 + γ` above are at most
+`2 + γ + (log 4 + 4)`, so this one absolute constant serves in the bounds for `G_χ` and `G_1`; the
+terms `log (max y z)`, `log y` and `‖D‖` stay as they are.
 
 ## Main results
 
@@ -65,12 +65,10 @@ open TauCeti
 /-! ### The Riesz remainder of coefficients bounded by `Λ` -/
 
 /-- `ψ` bounds the partial sums of coefficients dominated by `Λ`, over the index set
-`Icc 1 ⌊y⌋₊` of `TauCeti.rieszSum`: `∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y) ≤ 3 y` for `y ≥ 0`. -/
-private theorem sum_Icc_norm_le_three_mul {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) {y : ℝ}
-    (hy : 0 ≤ y) : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ 3 * y := by
-  have h := psi_le_three_mul_self hy
-  rw [psi, ← Icc_add_one_left_eq_Ioc, zero_add] at h
-  exact (sum_le_sum fun n _ ↦ hc n).trans h
+`Icc 1 ⌊y⌋₊` of `TauCeti.rieszSum`: `∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y)`. -/
+theorem sum_Icc_norm_le_psi {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) (y : ℝ) :
+    ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ ψ y :=
+  (sum_le_sum fun n _ ↦ hc n).trans (le_of_eq (by simp [psi, ← Icc_add_one_left_eq_Ioc]))
 
 /-- Ordered case of `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`. -/
 private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ}
@@ -82,8 +80,8 @@ private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ}
     rw [← mul_assoc, ← Complex.ofReal_mul, mul_div_cancel₀ _ hv.ne']
   rw [mul_add, mul_add, hD w hw, hD w' (hw.trans_le hww'), add_sub_add_right_eq_sub]
   exact (norm_mul_rieszSum_div_sub_mul_rieszSum_div_le c hw hww').trans
-    (mul_le_mul_of_nonneg_right (sum_Icc_norm_le_three_mul hc (by positivity))
-      (sub_nonneg.2 hww'))
+    (mul_le_mul_of_nonneg_right ((sum_Icc_norm_le_psi hc _).trans
+      (psi_le_three_mul_self (by positivity))) (sub_nonneg.2 hww'))
 
 /-- **Lipschitz bound in the weight for the Riesz remainder.** Let
 `‖c(n)‖ ≤ Λ(n)` for all `n`, let `D ∈ ℂ` and `G(y) = TauCeti.rieszSum c y + y D`. For
@@ -141,12 +139,12 @@ private theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le {a w w' :
         w' * (∑ n ∈ Ioc 0 ⌊a / w'⌋₊, Λ n * (a / w' / n - 1) - a / w' * Real.log (a / w') +
           (1 + eulerMascheroniConstant) * (a / w'))| ≤ 3 * (a / w) * (w' - w) := by
   have hw' := hw.trans_le hww'
-  have hX := mul_sum_Ioc_floor_div_le_mul_sum (c := ⇑Λ) (fun n ↦ vonMangoldt_nonneg) (a := a) hw
+  have hX := mul_sum_Ioc_floor_mul_div_sub_one_le (c := ⇑Λ) (fun n ↦ vonMangoldt_nonneg)
+    (a := a) hw hww'
+  have hY := norm_mul_rieszSum_div_add_mul_sub_le_of_le (c := fun n ↦ (Λ n : ℂ))
+    (fun n ↦ (Complex.norm_real _).trans_le (Real.norm_of_nonneg vonMangoldt_nonneg).le) 0 ha hw
     hww'
-  have hY := (norm_mul_rieszSum_div_sub_mul_rieszSum_div_le (fun n ↦ (Λ n : ℂ)) (a := a) hw
-    hww').trans (mul_le_mul_of_nonneg_right (sum_Icc_norm_le_three_mul
-      (fun n ↦ (Complex.norm_real _).trans_le (Real.norm_of_nonneg vonMangoldt_nonneg).le)
-      (by positivity)) (sub_nonneg.2 hww'))
+  simp only [mul_zero, add_zero] at hY
   rw [← ofReal_sum_Ioc_floor_mul_div_sub_one, ← ofReal_sum_Ioc_floor_mul_div_sub_one] at hY
   norm_cast at hY
   rw [Real.norm_eq_abs] at hY
@@ -198,16 +196,15 @@ private theorem abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le {
     (((continuous_sum_Ioc_floor_mul_div_sub_one _).continuousOn).sub
       Real.continuous_mul_log.continuousOn).add (by fun_prop)
   have hd : ∀ x ∈ Set.Ico z y, HasDerivWithinAt (fun t ↦ ∑ n ∈ Ioc 0 ⌊t⌋₊, Λ n * (t / n - 1) -
-      t * Real.log t + (1 + eulerMascheroniConstant) * t) (∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n * (1 / n) -
+      t * Real.log t + (1 + eulerMascheroniConstant) * t) (∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n -
         (Real.log x + 1) + (1 + eulerMascheroniConstant) * 1) (Set.Ici x) x := fun x hx ↦
     ((hasDerivWithinAt_sum_Ioc_floor_mul_div_sub_one _ x).sub
       (Real.hasDerivAt_mul_log (by linarith [hx.1])).hasDerivWithinAt).add
       ((hasDerivAt_id' x).const_mul _).hasDerivWithinAt
-  have hb : ∀ x ∈ Set.Ico z y, ‖∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n * (1 / n) - (Real.log x + 1) +
+  have hb : ∀ x ∈ Set.Ico z y, ‖∑ n ∈ Ioc 0 ⌊x⌋₊, Λ n / n - (Real.log x + 1) +
       (1 + eulerMascheroniConstant) * 1‖ ≤ Real.log 4 + 4 + eulerMascheroniConstant := by
     intro x hx
     have h := abs_le.1 (abs_sum_vonMangoldt_div_sub_log_le (hz.trans hx.1))
-    simp only [mul_one_div] at h ⊢
     rw [Real.norm_eq_abs, abs_le]
     constructor <;> linarith [Real.one_half_lt_eulerMascheroniConstant]
   have key := norm_image_sub_le_of_norm_deriv_right_le_segment hf hd hb y ⟨hzy, le_rfl⟩
@@ -229,20 +226,24 @@ theorem abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le {y z : ℝ} (hy
     exact abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le_of_le hy h
 
 /-- **Size bound for the trivial Riesz remainder.** For `y ≥ 1`,
-`|∑_{1 ≤ n ≤ y} Λ(n) (y / n - 1) - y log y + (1 + γ) y| ≤ (log 4 + 6 + γ) y`. -/
+`|∑_{1 ≤ n ≤ y} Λ(n) (y / n - 1) - y log y + (1 + γ) y| ≤ (log 4 + 4 + γ) y`. It follows from
+`Chebyshev.abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le` at `z = 1`, where the
+remainder is `1 + γ`. -/
 theorem abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_le {y : ℝ} (hy : 1 ≤ y) :
     |∑ n ∈ Ioc 0 ⌊y⌋₊, Λ n * (y / n - 1) - y * Real.log y + (1 + eulerMascheroniConstant) * y| ≤
-      (Real.log 4 + 6 + eulerMascheroniConstant) * y := by
-  have hy0 : 0 ≤ y := zero_le_one.trans hy
-  have hS : ∑ n ∈ Ioc 0 ⌊y⌋₊, Λ n * (y / n - 1) = y * ∑ n ∈ Ioc 0 ⌊y⌋₊, Λ n / n - ψ y := by
-    rw [psi, mul_sum, ← sum_sub_distrib]
-    exact sum_congr rfl fun n _ ↦ by ring
-  have hE := abs_le.1 (abs_sum_vonMangoldt_div_sub_log_le hy)
-  have h1 := mul_le_mul_of_nonneg_left hE.2 hy0
-  have h2 := mul_le_mul_of_nonneg_left hE.1 hy0
-  have hγ : 0 ≤ eulerMascheroniConstant * y :=
-    mul_nonneg (by linarith [Real.one_half_lt_eulerMascheroniConstant]) hy0
-  rw [hS, abs_le]
-  constructor <;> linarith [psi_le_three_mul_self hy0, psi_nonneg y]
+      (Real.log 4 + 4 + eulerMascheroniConstant) * y := by
+  have h := abs_sum_Ioc_floor_mul_div_sub_one_sub_mul_log_add_sub_le hy le_rfl
+  have h1 : ∑ n ∈ Ioc 0 ⌊(1 : ℝ)⌋₊, Λ n * (1 / n - 1) - 1 * Real.log 1 +
+      (1 + eulerMascheroniConstant) * 1 = 1 + eulerMascheroniConstant := by
+    simp
+  rw [h1, abs_of_nonneg (sub_nonneg.2 hy)] at h
+  have h2 := abs_sub_abs_le_abs_sub (∑ n ∈ Ioc 0 ⌊y⌋₊, Λ n * (y / n - 1) - y * Real.log y +
+    (1 + eulerMascheroniConstant) * y) (1 + eulerMascheroniConstant)
+  have hγ := Real.one_half_lt_eulerMascheroniConstant
+  rw [abs_of_pos (show (0 : ℝ) < 1 + eulerMascheroniConstant by linarith)] at h2
+  have h3 : (Real.log 4 + 4 + eulerMascheroniConstant) * (y - 1) + (1 + eulerMascheroniConstant) ≤
+      (Real.log 4 + 4 + eulerMascheroniConstant) * y := by
+    linarith [Real.log_pos (show (1 : ℝ) < 4 by norm_num)]
+  linarith
 
 end Chebyshev
