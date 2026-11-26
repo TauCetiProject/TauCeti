@@ -70,8 +70,10 @@ the compact subsets of the regular part, then a single subsequence converges off
 `Z + (0, n)` of a finite set `Z` in the strip, with `#Z * δ ≤ 2E`, and the `gₖ` are bounded on
 every compact set disjoint from these translates
 (`TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic`). Here concentration is
-periodic in the second variable, so the bubbling points are determined by those in the strip; a
-unit disc meets at most two periods of the strip, which is where the factor `2` comes from.
+periodic in the second variable, so the bubbling points are determined by those in the strip.
+The factor `2` comes from counting the concentration points in the strip against the energy of
+the two adjacent periods about them
+(`TauCeti.card_mul_le_two_mul_of_forall_eventually_le_setIntegral_ball_of_periodic`).
 
 ## Main results
 

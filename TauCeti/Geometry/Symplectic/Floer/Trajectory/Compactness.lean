@@ -202,12 +202,9 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodi
     simpa using h (s, t)
   -- The energy over the unit disc about each integer point is at most `2 * E`, so the windows
   -- apply to every subsequence; they are assembled into one subsequence on the cylinder.
-  have hk (k : ℕ) : IntegrableOn (f k) (univ ×ˢ Ico 0 (0 + 1)) := by simpa using hint k
-  have hEk (k : ℕ) : ∫ z in univ ×ˢ Ico 0 (0 + 1), f k z ≤ E := by simpa using hE k
-  have hE2 (k : ℕ) (m n : ℤ) : ∫ z in ball ((m : ℝ), (n : ℝ)) 1, f k z ≤ 2 * E := by
-    have h := setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k) (m : ℝ) n
-    rw [zero_add, mul_one] at h
-    exact h.trans (mul_le_mul_of_nonneg_left (hEk k) two_pos.le)
+  have hE2 (k : ℕ) (m n : ℤ) : ∫ z in ball ((m : ℝ), (n : ℝ)) 1, f k z ≤ 2 * E :=
+    setIntegral_ball_intCast_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hint k) (hE k)
+      (m : ℝ) n
   obtain ⟨φ, Z, v, hφ, hZ, hcard, hconc, hbd, hvper, hlim⟩ :=
     exists_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic (F := u)
       (g := fun k y ↦ ‖fderiv ℝ (u k) y‖) hδ hf0 hfk hint hE hper

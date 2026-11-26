@@ -43,7 +43,7 @@ The translate `z ↦ u(z + (m, n))` of a solution solves the same equation
 translated energy density (`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_add_right`), so the
 threshold of the window theorem on the closed unit disc serves for the open unit disc about every
 integer point. The energy over such a disc is at most twice the energy over the strip
-(`TauCeti.setIntegral_ball_le_two_mul_of_periodic`), and the windows are assembled into one
+(`TauCeti.setIntegral_ball_intCast_le_two_mul_of_periodic`), and the windows are assembled into one
 statement on the cylinder by
 `TauCeti.exists_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic`, which accounts for the
 threshold `δ / 2` of the result. The limit is read back in `M` through `e`
@@ -85,6 +85,18 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDim
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {J : ℝ × ℝ → (x : M) → AlmostComplexStructure (TangentSpace I x)} {e : M → F}
+
+omit [FiniteDimensional ℝ E] [CompactSpace M] in
+/-- The Floer energy density of a `C¹` map on the plane is continuous when the Hamiltonian vector
+fields of `K_s` and `K_t`, read in the charts of `M`, are `C²`. -/
+private theorem continuous_floerEnergyDensity_of_contDiffOn_inChartAt {u : ℝ × ℝ → M}
+    (hXs : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α Ks)
+      (univ ×ˢ (extChartAt I α).target))
+    (hXt : ∀ α, ContDiffOn ℝ 2 (ω.hamiltonianVectorFieldInChartAt α Kt)
+      (univ ×ˢ (extChartAt I α).target))
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) : Continuous (ω.floerEnergyDensity Ks Kt u) :=
+  continuousOn_univ.1 (ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt isOpen_univ
+    hu.contMDiffOn (fun α ↦ (hXs α).continuousOn) fun α ↦ (hXt α).continuousOn)
 
 namespace IsNondegenerate
 
@@ -142,9 +154,8 @@ private theorem exists_pos_forall_subseq_ball_add_int (hω : ω.IsNondegenerate)
     rwa [funext (hKsper m.1 m.2), funext (hKtper m.1 m.2)] at h
   have hint (k : ℕ) (z : ℝ × ℝ) (ε : ℝ) :
       IntegrableOn (fun y ↦ ω.floerEnergyDensity Ks Kt (u k) (y + c)) (ball z ε) :=
-    ((continuousOn_univ.1 (ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt
-      isOpen_univ ((hu k).contMDiffOn.of_le (by norm_num)) (fun α ↦ (hXs α).continuousOn)
-      fun α ↦ (hXt α).continuousOn)).comp (continuous_id.add continuous_const)
+    ((continuous_floerEnergyDensity_of_contDiffOn_inChartAt hXs hXt
+      ((hu k).of_le (by norm_num))).comp (continuous_id.add continuous_const)
       |>.continuousOn.integrableOn_compact (isCompact_closedBall z ε)).mono_set
         ball_subset_closedBall
   obtain ⟨ψ, hψ, Z, -, -, hconc, hbd, v, -, hlim, -⟩ :=
@@ -238,20 +249,14 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset_of_pe
     simpa using h.symm
   -- The energy over the unit disc about each integer point is at most `2 * E₀`, so the windows
   -- apply to every subsequence; they are assembled into one subsequence on the cylinder.
-  have hk (k : ℕ) : IntegrableOn (f k) (univ ×ˢ Ico 0 (0 + 1)) := by simpa using hint k
-  have hEk (k : ℕ) : ∫ z in univ ×ˢ Ico 0 (0 + 1), f k z ≤ E₀ := by simpa using hE k
-  have hE2 (k : ℕ) (m : ℤ × ℤ) : ∫ z in ball ((m.1 : ℝ), (m.2 : ℝ)) 1, f k z ≤ 2 * E₀ := by
-    have h := setIntegral_ball_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hk k)
+  have hE2 (k : ℕ) (m : ℤ × ℤ) : ∫ z in ball ((m.1 : ℝ), (m.2 : ℝ)) 1, f k z ≤ 2 * E₀ :=
+    setIntegral_ball_intCast_le_two_mul_of_periodic (μ := volume) (hf0 k) (hfk k) (hint k) (hE k)
       (m.1 : ℝ) m.2
-    rw [zero_add, mul_one] at h
-    exact h.trans (mul_le_mul_of_nonneg_left (hEk k) two_pos.le)
-  have hcont (k : ℕ) : Continuous (f k) :=
-    continuousOn_univ.1 (ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt
-      isOpen_univ ((hu k).contMDiffOn.of_le (by norm_num)) (fun α ↦ (hXs α).continuousOn)
-      fun α ↦ (hXt α).continuousOn)
   obtain ⟨φ, Z, w, hφ, hZ, hcard, hconc, hbd, -, hlim⟩ :=
     exists_tendstoLocallyUniformlyOn_subseq_off_finset_of_periodic (F := fun k ↦ e ∘ u k)
-      hδ hf0 hfk hint hE (fun k s t ↦ by simp [hper]) hcont fun m ψ _ ↦ by
+      hδ hf0 hfk hint hE (fun k s t ↦ by simp [hper])
+      (fun k ↦ continuous_floerEnergyDensity_of_contDiffOn_inChartAt hXs hXt
+        ((hu k).of_le (by norm_num))) fun m ψ _ ↦ by
         obtain ⟨φ, Z, v, hφ, hconc, hbd, hlim⟩ := hwin (u := fun k ↦ u (ψ k)) (fun k ↦ hu _)
           (fun k ↦ hfl _) (fun k ↦ hE2 _) m
         exact ⟨φ, hφ, Z, v, hconc, hbd, hlim⟩
