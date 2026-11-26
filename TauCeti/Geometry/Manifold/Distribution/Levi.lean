@@ -27,6 +27,10 @@ hyperplane field is a contact structure when its Levi form is nondegenerate. The
 for which, when `D = ker α`, the isomorphism `T_x M ⧸ D x ≃ 𝕜` induced by `α` carries the Levi form
 to the restriction of `dα` to `D`.
 
+The Levi form is natural: since the Lie bracket commutes with pullback of vector fields along a
+`C²` map with invertible differential, a map whose differentials carry `D` onto another
+distribution `D'` carries the Levi form of `D` to that of `D'`.
+
 ## Main definitions
 
 * `TauCeti.distributionLeviForm D x`: the Levi form of `D` at `x`, computed from a `C¹` local frame
@@ -50,6 +54,9 @@ to the restriction of `dα` to `D`.
   regular tangent fields.
 * `TauCeti.isInvolutiveDistribution_iff_distributionLeviForm_eq_zero`: a `C¹` distribution is
   involutive exactly when its Levi form vanishes at every point.
+* `TauCeti.distributionLeviForm_restrict_mfderiv`: naturality, for a `C²` map whose differentials
+  carry `D` onto `D'` near a point: the differential carries the Levi form of `D` to that of `D'`,
+  up to the induced map `T_x M ⧸ D x → T_(f x) M' ⧸ D' (f x)` of quotients.
 * `TauCeti.distributionLeviForm_standardContactDistribution_ne_zero`: the Levi form of the standard
   contact distribution on `ℝ³` is nonzero at every point.
 
@@ -341,6 +348,75 @@ theorem isInvolutiveDistribution_iff_distributionLeviForm_eq_zero
   refine (distributionLeviForm_apply_eq_zero_iff hD hn (hV.mdifferentiableAt hUx)
     (hW.mdifferentiableAt hUx) (eventually_of_mem hUx hVD) (eventually_of_mem hUx hWD)).mp ?_
   rw [h x, LinearMap.zero_apply, LinearMap.zero_apply]
+
+/-! ### Naturality under maps carrying one distribution to another -/
+
+section Naturality
+
+variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [CompleteSpace E']
+  [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+  [IsManifold I' 2 M'] {k' : ℕ} {D' : Π y : M', Submodule 𝕜 (TangentSpace I' y)} {f : M → M'}
+
+omit [CompleteSpace E] [IsRCLikeNormedField 𝕜] [IsManifold I 2 M] [CompleteSpace E'] in
+/-- Every vector `u` of `D x` is the value at `x` of the pullback along `f` of a vector field `V'`
+which is differentiable at `f x`, tangent to `D'` near `f x` and equal to `df_x u` at `f x`, when
+`f` is continuous at `x` with invertible differential there and its inverse differentials map
+`D' (f y)` into `D y` near `x`. That pullback is then tangent to `D` near `x`. -/
+private theorem exists_mpullback_apply_eq (hD' : IsContMDiffDistribution I' 1 k' D')
+    (hf : ContinuousAt f x) (hfx : (mfderiv I I' f x).IsInvertible)
+    (hfD : ∀ u ∈ D x, mfderiv I I' f x u ∈ D' (f x))
+    (hfD' : ∀ᶠ y in 𝓝 x, ∀ v ∈ D' (f y), (mfderiv I I' f y).inverse v ∈ D y) (u : D x) :
+    ∃ V' : Π z : M', TangentSpace I' z, MDiffAt (T% V') (f x) ∧
+      ∃ hV'D : ∀ᶠ z in 𝓝 (f x), V' z ∈ D' z,
+        (⟨V' (f x), hV'D.self_of_nhds⟩ : D' (f x)) = (mfderiv I I' f x).toLinearMap.restrict hfD u ∧
+        ∃ hVD : ∀ᶠ y in 𝓝 x, mpullback I I' f V' y ∈ D y,
+          (⟨mpullback I I' f V' x, hVD.self_of_nhds⟩ : D x) = u := by
+  obtain ⟨U, hU, hxU, V', hV', hV'D, hV'x⟩ :=
+    hD'.exists_contMDiffOn_apply_eq ((mfderiv I I' f x).toLinearMap.restrict hfD u)
+  have hVD : ∀ᶠ y in 𝓝 x, mpullback I I' f V' y ∈ D y := by
+    filter_upwards [hfD', hf.preimage_mem_nhds (hU.mem_nhds hxU)] with y hy hyU
+    exact hy _ (hV'D _ hyU)
+  have hu : mpullback I I' f V' x = u := by
+    simp [mpullback_apply, hV'x, hfx.inverse_apply_self]
+  exact ⟨V', (hV'.contMDiffAt (hU.mem_nhds hxU)).mdifferentiableAt one_ne_zero,
+    eventually_of_mem (hU.mem_nhds hxU) hV'D, Subtype.ext hV'x, hVD, Subtype.ext hu⟩
+
+/-- **Naturality of the Levi form.** Let `f : M → M'` be `C²` at `x` with invertible differential
+there, and let `D`, `D'` be `C¹` distributions such that `df_x` maps `D x` into `D' (f x)`, while
+near `x` the inverse differentials map `D' (f y)` into `D y`. Then `df_x` carries the Levi form of
+`D` at `x` to that of `D'` at `f x`: `L_D' (df u, df v)` is the image of `L_D (u, v)` under the map
+`T_x M ⧸ D x → T_(f x) M' ⧸ D' (f x)` induced by `df_x`.
+
+The hypotheses hold at every point for a diffeomorphism whose differentials carry `D` onto `D'`,
+such as a contactomorphism of contact structures. -/
+theorem distributionLeviForm_restrict_mfderiv (hD : IsContMDiffDistribution I 1 k D)
+    (hD' : IsContMDiffDistribution I' 1 k' D') (hf : ContMDiffAt I I' n f x) (hn : 2 ≤ n)
+    (hfx : (mfderiv I I' f x).IsInvertible) (hfD : ∀ u ∈ D x, mfderiv I I' f x u ∈ D' (f x))
+    (hfD' : ∀ᶠ y in 𝓝 x, ∀ v ∈ D' (f y), (mfderiv I I' f y).inverse v ∈ D y) (u v : D x) :
+    distributionLeviForm D' (f x) ((mfderiv I I' f x).toLinearMap.restrict hfD u)
+        ((mfderiv I I' f x).toLinearMap.restrict hfD v) =
+      (D x).mapQ (D' (f x)) (mfderiv I I' f x).toLinearMap hfD (distributionLeviForm D x u v) := by
+  have : IsManifold I (minSmoothness 𝕜 2) M := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  have : IsManifold I' (minSmoothness 𝕜 2) M' := by
+    rw [minSmoothness_of_isRCLikeNormedField]; infer_instance
+  -- Extend the images of `u` and `v` to vector fields tangent to `D'` near `f x` whose pullbacks
+  -- along `f` are tangent to `D` near `x` with values `u` and `v` at `x`.
+  obtain ⟨V', hV'd, hV'D, hV'x, hVD, rfl⟩ :=
+    exists_mpullback_apply_eq hD' hf.continuousAt hfx hfD hfD' u
+  obtain ⟨W', hW'd, hW'D, hW'x, hWD, rfl⟩ :=
+    exists_mpullback_apply_eq hD' hf.continuousAt hfx hfD hfD' v
+  -- The Lie bracket is natural: `[V', W'] (f x) = df_x [f^* V', f^* W'] x`.
+  have hbracket : mlieBracket I' V' W' (f x) =
+      mfderiv I I' f x (mlieBracket I (mpullback I I' f V') (mpullback I I' f W') x) := by
+    rw [← mpullback_mlieBracket hV'd hW'd hf (by rwa [minSmoothness_of_isRCLikeNormedField]),
+      mpullback_apply, hfx.self_apply_inverse]
+  rw [← hV'x, ← hW'x, distributionLeviForm_apply hD' le_rfl hV'd hW'd hV'D hW'D,
+    distributionLeviForm_apply hD le_rfl (hV'd.mpullback_vectorField hf hfx hn)
+      (hW'd.mpullback_vectorField hf hfx hn) hVD hWD]
+  simp [hbracket]
+
+end Naturality
 
 /-- The Levi form of the standard contact distribution `ker (dz - x dy)` on `ℝ³` is nonzero at
 every point: it sends the values of the tangent fields `(1, 0, 0)` and `(0, 1, x)` to the class of

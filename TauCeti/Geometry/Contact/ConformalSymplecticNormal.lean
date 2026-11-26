@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Contact.Isotropic
 public import TauCeti.Geometry.Symplectic.Rescale
 public import TauCeti.LinearAlgebra.SesquilinearForm.SymplecticNormal
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # The conformal symplectic normal spaces of an isotropic map
@@ -34,6 +36,17 @@ applies to contact structures which are not the kernel of any global one-form.
 * It vanishes for Legendrian immersions, and a smooth isotropic immersion from a nonempty manifold
   is Legendrian exactly when all its conformal symplectic normal spaces vanish
   (`TauCeti.isLegendrianImmersion_iff_forall_subsingleton_conformalSymplecticNormal`).
+
+The construction is natural. Let `F : M → M₁` be a `C²` map whose differentials carry `ξ` onto a
+distribution `ξ₁` near `f y`, as a contactomorphism between open neighbourhoods of `f(N)` and
+`F(f(N))` does. Its differential induces an isomorphism of contact lines
+`T_(f y) M ⧸ ξ_(f y) ≃ T_(F (f y)) M₁ ⧸ ξ₁_(F (f y))` (`TauCeti.contactLineEquiv`), compatibly
+with composition (`TauCeti.contactLineEquiv_trans`), and carries the Levi form of `ξ` to that of
+`ξ₁` up to this isomorphism (`TauCeti.distributionLeviForm_restrict_mfderiv`). Hence
+`[u] ↦ [dF u]` is an isomorphism from the conformal symplectic normal space of `f` onto that of
+`F ∘ f` (`TauCeti.conformalSymplecticNormalEquiv`), conformally symplectic for the two
+line-valued forms (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`), and
+compatible with composition (`TauCeti.conformalSymplecticNormalEquiv_trans`).
 
 A local defining form `α` of `ξ` at `f y`, with `ker α_(f y) = ξ_(f y)`, identifies the contact
 line with `ℝ` and turns the line-valued form into a linear symplectic form
@@ -103,6 +116,204 @@ theorem conformalSymplecticNormalForm_mk
 /-- The form on the conformal symplectic normal space is alternating. -/
 theorem isAlt_conformalSymplecticNormalForm : (conformalSymplecticNormalForm J D f y).IsAlt :=
   isAlt_distributionLeviForm.isAlt_symplecticNormalForm
+
+/-! ### Naturality under maps carrying one distribution to another -/
+
+section Naturality
+
+variable {E₁ H₁ M₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [CompleteSpace E₁]
+  [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
+  [IsManifold I₁ 2 M₁] {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+  [CompleteSpace E₂] [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂]
+  [ChartedSpace H₂ M₂] [IsManifold I₂ 2 M₂] {k k₁ k₂ : ℕ}
+  {D₁ : Π x : M₁, Submodule ℝ (TangentSpace I₁ x)} {D₂ : Π x : M₂, Submodule ℝ (TangentSpace I₂ x)}
+  {F : M → M₁} {G : M₁ → M₂}
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- **The isomorphism of contact lines induced by a map carrying one distribution to another.** If
+the differential of `F` at `x` is invertible, maps `D x` into `D₁ (F x)`, and only vectors of
+`D x` into `D₁ (F x)`, then `[u] ↦ [dF u]` is an isomorphism of the lines
+`T_x M ⧸ D x ≃ T_(F x) M₁ ⧸ D₁ (F x)`. As a linear map it is the map of quotients induced by `dF`
+(`TauCeti.coe_contactLineEquiv`). -/
+def contactLineEquiv {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD₁ : ∀ u, mfderiv I I₁ F x u ∈ D₁ (F x) → u ∈ D x) :
+    (TangentSpace I x ⧸ D x) ≃ₗ[ℝ] TangentSpace I₁ (F x) ⧸ D₁ (F x) :=
+  Submodule.Quotient.equiv _ _ (LinearEquiv.ofBijective _ hFx.bijective)
+    (Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨hFD₁ u, hFD u⟩)
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- The isomorphism of contact lines induced by `F` sends the class of `u` to the class of
+`dF u`. -/
+@[simp]
+theorem contactLineEquiv_mk {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD₁ : ∀ u, mfderiv I I₁ F x u ∈ D₁ (F x) → u ∈ D x) (u : TangentSpace I x) :
+    contactLineEquiv hFx hFD hFD₁ (Submodule.Quotient.mk u) =
+      Submodule.Quotient.mk (mfderiv I I₁ F x u) :=
+  (rfl)
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- As a linear map, the isomorphism of contact lines induced by `F` is the map of quotients
+induced by `dF`. -/
+theorem coe_contactLineEquiv {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD₁ : ∀ u, mfderiv I I₁ F x u ∈ D₁ (F x) → u ∈ D x) :
+    (contactLineEquiv hFx hFD hFD₁ :
+      (TangentSpace I x ⧸ D x) →ₗ[ℝ] TangentSpace I₁ (F x) ⧸ D₁ (F x)) =
+      (D x).mapQ (D₁ (F x)) (mfderiv I I₁ F x).toLinearMap hFD := by
+  ext u
+  simp
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] [CompleteSpace E₂]
+  [IsManifold I₂ 2 M₂] in
+/-- **The isomorphisms of contact lines are compatible with composition.** For maps `F` and `G`
+differentiable at `x` and `F x`, the isomorphism of contact lines induced by `G ∘ F` is the
+composite of those induced by `F` and by `G`. -/
+theorem contactLineEquiv_trans {x : M} (hFx : (mfderiv I I₁ F x).IsInvertible)
+    (hFD : ∀ u ∈ D x, mfderiv I I₁ F x u ∈ D₁ (F x))
+    (hFD₁ : ∀ u, mfderiv I I₁ F x u ∈ D₁ (F x) → u ∈ D x)
+    (hGx : (mfderiv I₁ I₂ G (F x)).IsInvertible)
+    (hGD : ∀ u ∈ D₁ (F x), mfderiv I₁ I₂ G (F x) u ∈ D₂ (G (F x)))
+    (hGD₁ : ∀ u, mfderiv I₁ I₂ G (F x) u ∈ D₂ (G (F x)) → u ∈ D₁ (F x))
+    (hGFx : (mfderiv I I₂ (G ∘ F) x).IsInvertible)
+    (hGFD : ∀ u ∈ D x, mfderiv I I₂ (G ∘ F) x u ∈ D₂ (G (F x)))
+    (hGFD₁ : ∀ u, mfderiv I I₂ (G ∘ F) x u ∈ D₂ (G (F x)) → u ∈ D x)
+    (hF : MDifferentiableAt I I₁ F x) (hG : MDifferentiableAt I₁ I₂ G (F x)) :
+    (contactLineEquiv hFx hFD hFD₁).trans (contactLineEquiv hGx hGD hGD₁) =
+      contactLineEquiv hGFx hGFD hGFD₁ := by
+  ext a
+  induction a using Submodule.Quotient.induction_on with
+  | H u => simp [mfderiv_comp x hG hF]
+
+omit [CompleteSpace E] [IsManifold I 2 M] [CompleteSpace E₁] [IsManifold I₁ 2 M₁] in
+/-- The differential of `F` carries the part of the tangent image of `f` lying in `D` onto the part
+of the tangent image of `F ∘ f` lying in `D₁`. -/
+private theorem map_comap_range_mfderiv (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)))
+    (hFd : MDifferentiableAt I I₁ F (f y)) (hf : MDifferentiableAt J I f y) :
+    ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).map
+        ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules
+          _ _ hmap : D (f y) →ₗ[ℝ] D₁ (F (f y))) =
+      (LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap (D₁ ((F ∘ f) y)).subtype := by
+  ext w
+  simp [mfderiv_comp y hFd hf, LinearEquiv.eq_symm_apply]
+
+variable (J D f y) in
+/-- **The conformal symplectic normal spaces under a map carrying one distribution to another.**
+Let `F : M → M₁` be `C²` at `f y`, with invertible differential there, and let `D`, `D₁` be `C¹`
+distributions such that `dF_(f y)` maps `D (f y)` into `D₁ (F (f y))`, while near `f y` the inverse
+differentials map `D₁ (F z)` into `D z`; a contactomorphism of contact structures between open
+neighbourhoods is the main example. Then `[u] ↦ [dF u]` is an isomorphism from the conformal
+symplectic normal space of `f` at `y` onto that of `F ∘ f`. It is conformally symplectic: it carries
+the line-valued form of `D₁` to the image of the form of `D` under the isomorphism of contact lines
+induced by `dF` (`TauCeti.conformalSymplecticNormalForm_conformalSymplecticNormalEquiv`). -/
+def conformalSymplecticNormalEquiv {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y) :
+    ConformalSymplecticNormal J D f y ≃ₗ[ℝ] ConformalSymplecticNormal J D₁ (F ∘ f) y :=
+  -- The inverse differential carries `D₁ (F (f y))` back into `D (f y)`.
+  have hFD₁ (u) (hu : mfderiv I I₁ F (f y) u ∈ D₁ (F (f y))) : u ∈ D (f y) :=
+    hFx.inverse_apply_self u ▸ hFD'.self_of_nhds _ hu
+  have hmap : (D (f y)).map (LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap
+      hFx.bijective : TangentSpace I (f y) →ₗ[ℝ] TangentSpace I₁ (F (f y))) = D₁ (F (f y)) :=
+    Submodule.map_equiv_eq_iff.2 fun u ↦ ⟨hFD₁ u, hFD u⟩
+  LinearMap.symplecticNormalCongr _ _
+    ((LinearEquiv.ofBijective (mfderiv I I₁ F (f y)).toLinearMap hFx.bijective).ofSubmodules _ _
+      hmap)
+    (ℓ := (D (f y)).mapQ (D₁ (F (f y))) (mfderiv I I₁ F (f y)).toLinearMap hFD)
+    ((Submodule.mapQ_injective_iff _ _ _ hFD).2 hFD₁)
+    -- The target distribution is indexed by `(F ∘ f) y`, which `rw` does not unfold to
+    -- `F (f y)`, so the restrictions are identified in term mode.
+    (fun u v ↦ (congrArg₂ (distributionLeviForm D₁ (F (f y)) · ·)
+      (LinearEquiv.ofSubmodules_ofBijective_apply _ hFx.bijective hmap hFD u)
+      (LinearEquiv.ofSubmodules_ofBijective_apply _ hFx.bijective hmap hFD v)).trans
+      (distributionLeviForm_restrict_mfderiv hD hD₁ hF hn hFx hFD hFD' u v))
+    (map_comap_range_mfderiv hFx hmap (hF.mdifferentiableAt (two_pos.trans_le hn).ne') hf)
+
+/-- The isomorphism of conformal symplectic normal spaces induced by `F` sends the class of `u` to
+the class of `dF u`. -/
+theorem conformalSymplecticNormalEquiv_mk {n : ℕ∞ω} (hD : IsContMDiffDistribution I 1 k D)
+    (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y)
+    (u : ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+      (distributionLeviForm D (f y)))
+    (u' : ((LinearMap.range (mfderiv J I₁ (F ∘ f) y).toLinearMap).comap
+      (D₁ ((F ∘ f) y)).subtype).orthogonalBilin (distributionLeviForm D₁ ((F ∘ f) y)))
+    (hu : ((u' : D₁ ((F ∘ f) y)) : TangentSpace I₁ ((F ∘ f) y)) =
+      mfderiv I I₁ F (f y) ((u : D (f y)) : TangentSpace I (f y))) :
+    conformalSymplecticNormalEquiv J D f y hD hD₁ hF hn hFx hFD hFD' hf
+        (Submodule.Quotient.mk u) = Submodule.Quotient.mk u' := by
+  rw [conformalSymplecticNormalEquiv]
+  refine (LinearMap.symplecticNormalCongr_mk _ _ _ u).trans
+    (congrArg _ (Subtype.ext (Subtype.ext ?_)))
+  simpa using hu.symm
+
+/-- **The isomorphism of conformal symplectic normal spaces is conformally symplectic.** The
+isomorphism induced by `F` carries the line-valued form of `D₁` on the conformal symplectic normal
+space of `F ∘ f` to the image of the form of `D` under the map of contact lines
+`T_(f y) M ⧸ D (f y) → T_(F (f y)) M₁ ⧸ D₁ (F (f y))` induced by `dF`, which is the isomorphism
+`TauCeti.contactLineEquiv` (`TauCeti.coe_contactLineEquiv`). -/
+theorem conformalSymplecticNormalForm_conformalSymplecticNormalEquiv {n : ℕ∞ω}
+    (hD : IsContMDiffDistribution I 1 k D) (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁)
+    (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n) (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y) (a b : ConformalSymplecticNormal J D f y) :
+    conformalSymplecticNormalForm J D₁ (F ∘ f) y
+        (conformalSymplecticNormalEquiv J D f y hD hD₁ hF hn hFx hFD hFD' hf a)
+        (conformalSymplecticNormalEquiv J D f y hD hD₁ hF hn hFx hFD hFD' hf b) =
+      (D (f y)).mapQ (D₁ (F (f y))) (mfderiv I I₁ F (f y)).toLinearMap hFD
+        (conformalSymplecticNormalForm J D f y a b) :=
+  LinearMap.IsRefl.symplecticNormalForm_symplecticNormalCongr _ _ _ _ _ a b
+
+/-- **Naturality is compatible with composition.** For maps `F : M → M₁` and `G : M₁ → M₂` carrying
+`D` to `D₁` and `D₁` to `D₂` near `f y` and `F (f y)`, the isomorphism of conformal symplectic
+normal spaces induced by `G ∘ F` is the composite of those induced by `F` and by `G`. -/
+theorem conformalSymplecticNormalEquiv_trans {n n₁ n₂ : ℕ∞ω}
+    (hD : IsContMDiffDistribution I 1 k D) (hD₁ : IsContMDiffDistribution I₁ 1 k₁ D₁)
+    (hD₂ : IsContMDiffDistribution I₂ 1 k₂ D₂) (hF : ContMDiffAt I I₁ n F (f y)) (hn : 2 ≤ n)
+    (hFx : (mfderiv I I₁ F (f y)).IsInvertible)
+    (hFD : ∀ u ∈ D (f y), mfderiv I I₁ F (f y) u ∈ D₁ (F (f y)))
+    (hFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₁ (F z), (mfderiv I I₁ F z).inverse v ∈ D z)
+    (hG : ContMDiffAt I₁ I₂ n₁ G (F (f y))) (hn₁ : 2 ≤ n₁)
+    (hGx : (mfderiv I₁ I₂ G (F (f y))).IsInvertible)
+    (hGD : ∀ u ∈ D₁ (F (f y)), mfderiv I₁ I₂ G (F (f y)) u ∈ D₂ (G (F (f y))))
+    (hGD' : ∀ᶠ z in 𝓝 (F (f y)), ∀ v ∈ D₂ (G z), (mfderiv I₁ I₂ G z).inverse v ∈ D₁ z)
+    (hGF : ContMDiffAt I I₂ n₂ (G ∘ F) (f y)) (hn₂ : 2 ≤ n₂)
+    (hGFx : (mfderiv I I₂ (G ∘ F) (f y)).IsInvertible)
+    (hGFD : ∀ u ∈ D (f y), mfderiv I I₂ (G ∘ F) (f y) u ∈ D₂ (G (F (f y))))
+    (hGFD' : ∀ᶠ z in 𝓝 (f y), ∀ v ∈ D₂ (G (F z)), (mfderiv I I₂ (G ∘ F) z).inverse v ∈ D z)
+    (hf : MDifferentiableAt J I f y) :
+    (conformalSymplecticNormalEquiv J D f y hD hD₁ hF hn hFx hFD hFD' hf).trans
+        (conformalSymplecticNormalEquiv J D₁ (F ∘ f) y hD₁ hD₂ hG hn₁ hGx hGD hGD'
+          ((hF.mdifferentiableAt (two_pos.trans_le hn).ne').comp y hf)) =
+      conformalSymplecticNormalEquiv J D f y hD hD₂ hGF hn₂ hGFx hGFD hGFD' hf := by
+  ext a
+  induction a using Submodule.Quotient.induction_on with
+  | H u =>
+    have hcomp : mfderiv I I₂ (G ∘ F) (f y) = (mfderiv I₁ I₂ G (F (f y))).comp
+        (mfderiv I I₁ F (f y)) :=
+      mfderiv_comp (f y) (hG.mdifferentiableAt (two_pos.trans_le hn₁).ne')
+        (hF.mdifferentiableAt (two_pos.trans_le hn).ne')
+    rw [LinearEquiv.trans_apply, conformalSymplecticNormalEquiv, conformalSymplecticNormalEquiv,
+      conformalSymplecticNormalEquiv]
+    -- The base points `G ((F ∘ f) y)` and `(G ∘ F ∘ f) y` agree only up to unfolding `∘`, which
+    -- `rw` does not see through; the formula for the classes is applied in term mode instead.
+    refine ((congrArg _ (LinearMap.symplecticNormalCongr_mk _ _ _ u)).trans
+      (LinearMap.symplecticNormalCongr_mk _ _ _ _)).trans
+      ((congrArg _ (Subtype.ext (Subtype.ext ?_))).trans
+        (LinearMap.symplecticNormalCongr_mk _ _ _ u).symm)
+    simp [hcomp]
+
+end Naturality
 
 variable [FiniteDimensional ℝ E] {n : ℕ∞ω}
 
