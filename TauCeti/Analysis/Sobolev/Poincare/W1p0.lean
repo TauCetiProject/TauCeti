@@ -138,9 +138,7 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_subset_ball
     hslab hu
 
 /-- **Nonzero constants do not vanish on the boundary.** On a nonempty bounded open
-`Ω ⊆ ℝ^{n+1}`, no element of `W^{1,p}_0(Ω)` is almost everywhere equal to a constant `c ≠ 0`: its
-gradient would vanish, so the Poincaré inequality would force it to vanish almost everywhere on
-`Ω`, which has positive volume. -/
+`Ω ⊆ ℝ^{n+1}`, no element of `W^{1,p}_0(Ω)` is almost everywhere equal to a constant `c ≠ 0`. -/
 theorem W1p.not_value_ae_eq_const_of_mem_w1p0Submodule
     (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) {c : ℝ} (hc : c ≠ 0)
@@ -151,6 +149,8 @@ theorem W1p.not_value_ae_eq_const_of_mem_w1p0Submodule
   have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
   have hconst : u = W1p.const c := W1p.ext_value (Lp.ext (huc.trans (W1p.value_const_ae c).symm))
+  -- The gradient of a constant vanishes, so the Poincaré inequality forces `u = 0`; but `Ω` has
+  -- positive volume.
   obtain ⟨R, hR⟩ := hOmega.subset_ball 0
   have hzero : W1p.value u = 0 := by
     have hle := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hR hu

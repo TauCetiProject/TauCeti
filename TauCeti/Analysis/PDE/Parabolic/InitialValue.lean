@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.DirichletProblem
 public import TauCeti.Analysis.PDE.Parabolic.SolutionOperator
 public import TauCeti.Analysis.Sobolev.EvolutionSpace.InitialValue
 import TauCeti.Analysis.Convex.Uniform.Basic
-import TauCeti.Analysis.Sobolev.Poincare.W1p0
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # The pivot space is the sharp target of the energy space
@@ -36,10 +36,12 @@ For the heat equation on an open set `Ω ⊆ ℝ^{n+1}` with zero boundary value
 onto (`TauCeti.W1p0.not_surjective_valueL`): nonzero constants lie in `L²(Ω)` but not in `H¹₀(Ω)`.
 For every initial value `u₀ ∈ L²(Ω)` outside `H¹₀(Ω)`, the weak solution of `∂ₜu - Δu = 0`,
 `u(0) = u₀`, lies in `L²(0, T; H¹₀(Ω))` with `u' ∈ L²(0, T; H⁻¹(Ω))` and is continuous into
-`L²(Ω)`, but `‖u(t)‖_{H¹₀(Ω)} → ∞` as `t → 0⁺`
+`L²(Ω)`, but `‖u(t)‖_{H¹₀(Ω)} → ∞` as `t → 0⁺`, outside a null set of times
 (`TauCeti.PDE.exists_hasWeakLineDerivOn_gelfandDual_energyFormH1_and_tendsto_norm_atTop`), so it
-is not continuous into `H¹₀(Ω)`. The blow-up does not depend on the equation: it holds for every
-function whose `L²(Ω)`-valued continuous representative starts outside `H¹₀(Ω)`
+is not continuous into `H¹₀(Ω)`. For the explicit series `Σ_k e^{-k²t} sin(kx)/k` on `(0, π)` the
+norm tends to infinity pointwise; the limit here is only essential, but it holds for every initial
+value outside `H¹₀(Ω)`. The blow-up does not depend on the equation: it holds for every function
+whose `L²(Ω)`-valued continuous representative starts outside `H¹₀(Ω)`
 (`TauCeti.tendsto_norm_atTop_of_eventuallyEq_of_notMem_range`).
 
 ## References
@@ -98,8 +100,7 @@ theorem forall_exists_continuousOn_ae_eq_iff (hι : DenseRange ι) (hinj : Funct
   · obtain ⟨u₀, hu₀⟩ := not_forall.1 hsurj
     obtain ⟨u, hu⟩ := exists_toContinuousMap_left_eq hι hab u₀
     obtain ⟨v, hv, huv⟩ := h u
-    exact not_exists_continuousWithinAt_ae_eq
-      (surjective_inclusionInDoubleDual_of_innerProductSpace (𝕜 := ℝ)) hab u (hu ▸ hu₀)
+    exact not_exists_continuousWithinAt_ae_eq hab u (hu ▸ hu₀)
       ⟨v, (hv a (left_mem_Icc.2 hab.le)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGT hab), huv⟩
   · -- By the open mapping theorem `ι` is an isomorphism; pull the continuous trace back to `V`.
     let e : V ≃L[ℝ] H :=
@@ -150,9 +151,8 @@ theorem exists_hasWeakLineDerivOn_gelfandDual_energyFormH1_and_tendsto_norm_atTo
       (memLp_const (0 : StrongDual ℝ (W1p0 volume Omega 2))) u₀
   refine ⟨u, u', w, hu, hu', hd, heq, hw, hae, hw₀, ?_⟩
   -- `w` represents `u` at almost every time close to `0` on the right.
-  have hae' : ∀ᶠ t in 𝓝[>] 0 ⊓ ae volume, W1p0.valueL (u t) = w t := hae.filter_mono <| by
-    rw [ae_restrict_eq measurableSet_Ioo]
-    exact le_inf inf_le_right (inf_le_left.trans (le_principal_iff.2 (Ioo_mem_nhdsGT hT)))
+  have hae' : ∀ᶠ t in 𝓝[>] 0 ⊓ ae volume, W1p0.valueL (u t) = w t :=
+    hae.filter_mono (nhdsGT_inf_ae_le_ae_restrict_Ioo hT)
   exact tendsto_norm_atTop_of_eventuallyEq_of_notMem_range
     (surjective_inclusionInDoubleDual_of_innerProductSpace (𝕜 := ℝ))
     ((hw 0 (left_mem_Icc.2 hT.le)).mono_of_mem_nhdsWithin (Icc_mem_nhdsGT hT)) hae' (hw₀ ▸ hu₀)

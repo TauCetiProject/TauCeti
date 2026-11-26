@@ -11,7 +11,7 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
-# Initial values outside the energy space force blow-up
+# Initial values outside `V` force blow-up
 
 Let `ι : V →L[𝕜] H` be a bounded operator from a reflexive normed space, such as the inclusion
 `V ↪ H` of a Gelfand triple. An element `u` of the energy space
@@ -23,9 +23,10 @@ continuity into `V` in general: if the initial value `u(a) ∈ H` is not of the 
 `‖u(t)‖_V → ∞` as `t → a⁺`, essentially,
 
 that is, along the filter `𝓝[>] a ⊓ ae volume` of times close to `a` on the right outside a null
-set (`TauCeti.EvolutionSpace.tendsto_norm_value_atTop`). In particular `u` has no representative
-with values in `V` that is continuous from the right at `a`
-(`TauCeti.EvolutionSpace.not_exists_continuousWithinAt_ae_eq`).
+set (`TauCeti.EvolutionSpace.tendsto_norm_value_atTop`). Whether or not `V` is reflexive, `u` has
+no representative with values in `V` that is continuous from the right at `a`
+(`TauCeti.EvolutionSpace.not_exists_continuousWithinAt_ae_eq`), since `ι` of such a representative
+would tend to `u(a)`.
 
 The argument does not use the equation: it needs only a function `u : ℝ → V` and a representative
 `w` of `ι ∘ u` continuous from the right at `a`
@@ -80,23 +81,25 @@ theorem tendsto_norm_atTop_of_eventuallyEq_of_notMem_range
       (Eventually.of_forall fun n ↦ ⟨u (t n), mem_closedBall_zero_iff.2 (hut n).1, (hut n).2⟩)
   exact ha (image_subset_range _ _ hmem)
 
-/-- **No representative continuous at an initial value outside the range.** Under the hypotheses of
-`TauCeti.tendsto_norm_atTop_of_eventuallyEq_of_notMem_range`, no function `v : ℝ → V` continuous
-from the right at `a` agrees with `u` at almost every time close to `a` on the right. -/
-theorem not_exists_continuousWithinAt_eventuallyEq_of_notMem_range
-    (hV : Function.Surjective (inclusionInDoubleDual 𝕜 V)) {u : ℝ → V} {w : ℝ → H}
+/-- **No representative continuous at an initial value outside the range.** Let `ι : V →L[𝕜] H`
+be bounded, let `u : ℝ → V`, and let `w : ℝ → H` be continuous from the right at `a` and agree with
+`ι ∘ u` at almost every time close to `a` on the right. If `w a` is not of the form `ι v`, then no
+function `v : ℝ → V` continuous from the right at `a` agrees with `u` at almost every time close to
+`a` on the right. -/
+theorem not_exists_continuousWithinAt_eventuallyEq_of_notMem_range {u : ℝ → V} {w : ℝ → H}
     (hw : ContinuousWithinAt w (Ioi a) a)
     (huw : ∀ᶠ t in 𝓝[>] a ⊓ ae volume, ι (u t) = w t) (ha : w a ∉ range ι) :
     ¬ ∃ v : ℝ → V, ContinuousWithinAt v (Ioi a) a ∧ u =ᶠ[𝓝[>] a ⊓ ae volume] v := by
   rintro ⟨v, hv, huv⟩
   have := isOpen_Ioi.neBot_nhdsWithin_inf_ae (μ := volume)
     (show a ∈ closure (Ioi a) by rw [closure_Ioi]; exact self_mem_Ici)
-  have hbdd : ∀ᶠ t in 𝓝[>] a ⊓ ae volume, ‖u t‖ < ‖v a‖ + 1 :=
-    ((hv.norm.tendsto.eventually (gt_mem_nhds (lt_add_one ‖v a‖))).filter_mono inf_le_left).and
-      huv |>.mono fun t ht ↦ ht.2 ▸ ht.1
-  obtain ⟨t, hgt, hlt⟩ := ((tendsto_norm_atTop_of_eventuallyEq_of_notMem_range hV hw huw
-    ha).eventually (eventually_ge_atTop (‖v a‖ + 1))).and hbdd |>.exists
-  exact hgt.not_gt hlt
+  -- Along the nontrivial essential right filter, `ι ∘ u` tends to both `ι (v a)` and `w a`.
+  have hv' : Tendsto (fun t ↦ ι (u t)) (𝓝[>] a ⊓ ae volume) (𝓝 (ι (v a))) :=
+    (((ι.continuous.tendsto _).comp hv.tendsto).mono_left inf_le_left).congr'
+      (huv.mono fun t ht ↦ by simp only [Function.comp_apply, ht])
+  have hw' : Tendsto (fun t ↦ ι (u t)) (𝓝[>] a ⊓ ae volume) (𝓝 (w a)) :=
+    (hw.tendsto.mono_left inf_le_left).congr' (huw.mono fun _ ht ↦ ht.symm)
+  exact ha ⟨v a, tendsto_nhds_unique hv' hw'⟩
 
 end Function
 
@@ -104,12 +107,6 @@ namespace EvolutionSpace
 
 variable {V H : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
   [NormedAddCommGroup H] [InnerProductSpace ℝ H] [CompleteSpace H] {ι : V →L[ℝ] H} {a b : ℝ}
-
-/-- Almost every time close to `a` on the right is almost every time in `(a, b)`. -/
-private theorem nhdsGT_inf_ae_le_ae_restrict_Ioo (hab : a < b) :
-    𝓝[>] a ⊓ ae volume ≤ ae (volume.restrict (Ioo a b)) := by
-  rw [ae_restrict_eq measurableSet_Ioo]
-  exact le_inf inf_le_right (inf_le_left.trans (le_principal_iff.2 (Ioo_mem_nhdsGT hab)))
 
 /-- **Blow-up in the energy space.** Let `V` be reflexive and let `u` be an element of the energy
 space `L²(a, b; V) ∩ H¹(a, b; V*)` whose initial value `u(a) ∈ H`, the value at `a` of its
@@ -124,16 +121,14 @@ theorem tendsto_norm_value_atTop (hV : Function.Surjective (inclusionInDoubleDua
     ((value_ae_eq_toContinuousMap hab u).filter_mono (nhdsGT_inf_ae_le_ae_restrict_Ioo hab))
     (by simpa only [Function.comp_apply, projIcc_left])
 
-/-- **The energy space is not contained in `C([a, b]; V)`.** Let `V` be reflexive and let `u` be an
-element of the energy space whose initial value `u(a) ∈ H` is not of the form `ι v`. Then `u` has
-no representative with values in `V` that is continuous from the right at `a`, let alone one
-continuous on `[a, b]`. -/
-theorem not_exists_continuousWithinAt_ae_eq (hV : Function.Surjective (inclusionInDoubleDual ℝ V))
-    (hab : a < b) (u : EvolutionSpace ι a b)
+/-- **The energy space is not contained in `C([a, b]; V)`.** Let `u` be an element of the energy
+space whose initial value `u(a) ∈ H` is not of the form `ι v`. Then `u` has no representative with
+values in `V` that is continuous from the right at `a`, let alone one continuous on `[a, b]`. -/
+theorem not_exists_continuousWithinAt_ae_eq (hab : a < b) (u : EvolutionSpace ι a b)
     (hu : toContinuousMap hab u ⟨a, left_mem_Icc.2 hab.le⟩ ∉ range ι) :
     ¬ ∃ v : ℝ → V, ContinuousWithinAt v (Ioi a) a ∧
       value u =ᵐ[volume.restrict (Ioo a b)] v := fun ⟨v, hv, huv⟩ ↦
-  not_exists_continuousWithinAt_eventuallyEq_of_notMem_range hV
+  not_exists_continuousWithinAt_eventuallyEq_of_notMem_range
     ((toContinuousMap hab u).continuous.comp continuous_projIcc).continuousWithinAt
     ((value_ae_eq_toContinuousMap hab u).filter_mono (nhdsGT_inf_ae_le_ae_restrict_Ioo hab))
     (by simpa only [Function.comp_apply, projIcc_left])

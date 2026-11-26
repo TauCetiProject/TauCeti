@@ -46,6 +46,8 @@ set whose closure contains the point, for any measure positive on nonempty open 
 * `IsOpen.eqOn_diag_of_forall_ae_eq`: local continuous representatives of one function on balls
   around the points of `closure U` glue along the diagonal.
 * `TauCeti.eq_of_ae_eq_of_interior_closure_eq`: a.e. equal regular open sets are equal.
+* `TauCeti.nhdsGT_inf_ae_le_ae_restrict_Ioo`: a property of almost every point of `(a, b)` holds
+  at almost every point close to `a` on the right.
 * `Metric.measureReal_ball_pos`: a ball of positive radius has positive real measure.
 * `Metric.measureReal_closedBall_pos`: a closed ball of positive radius has positive real
   measure.
@@ -85,14 +87,15 @@ theorem subset_closure_of_ae_le (hs : IsOpen s) (hst : s ≤ᵐ[μ] t) : s ⊆ c
 
 /-- **Essential limits within an open set are nontrivial.** If `x` lies in the closure of an open
 set `s` and `μ` is positive on nonempty open sets, then the filter `𝓝[s] x ⊓ ae μ` of points of `s`
-near `x` outside a null set is nontrivial: every neighbourhood of `x` meets `s` in a nonempty open
-set, which is not null. For `s = Ioi a` on `ℝ` this is the filter of essential right limits. -/
+near `x` outside a null set is nontrivial. For `s = Ioi a` on `ℝ` this is the filter of essential
+right limits. -/
 theorem neBot_nhdsWithin_inf_ae (hs : IsOpen s) {x : X} (hx : x ∈ closure s) :
     (𝓝[s] x ⊓ ae μ).NeBot := by
   refine inf_neBot_iff.2 fun o ho o' ho' ↦ ?_
   obtain ⟨v, hv, hxv, hvo⟩ := mem_nhdsWithin.1 ho
   by_contra hempty
   have hsub : v ∩ s ⊆ o'ᶜ := fun y hy hy' ↦ hempty ⟨y, hvo hy, hy'⟩
+  -- Every neighbourhood of `x` meets `s` in a nonempty open set, which is not null.
   exact ((hv.inter hs).measure_pos μ (mem_closure_iff.1 hx v hv hxv)).ne'
     (measure_mono_null hsub (mem_ae_iff.1 ho'))
 
@@ -177,6 +180,14 @@ theorem eq_of_ae_eq_of_interior_closure_eq {X : Type*} [TopologicalSpace X] [Mea
     s = t := by
   have hsopen : IsOpen s := hs ▸ isOpen_interior
   rw [← hs, ← ht, hsopen.closure_eq_of_ae_eq (ht ▸ isOpen_interior) hst]
+
+/-- Almost every point close to `a` on the right is almost every point of `(a, b)`: the filter
+`𝓝[>] a ⊓ ae μ` of essential right limits at `a` refines `ae (μ.restrict (Ioo a b))`. -/
+theorem nhdsGT_inf_ae_le_ae_restrict_Ioo {X : Type*} [TopologicalSpace X] [LinearOrder X]
+    [OrderTopology X] [MeasurableSpace X] {μ : Measure X} {a b : X} (hab : a < b) :
+    𝓝[>] a ⊓ ae μ ≤ ae (μ.restrict (Ioo a b)) :=
+  (le_inf inf_le_right (inf_le_left.trans (le_principal_iff.2 (Ioo_mem_nhdsGT hab)))).trans
+    le_ae_restrict
 
 /-- In a proper space, a measure that is positive on nonempty open sets and finite on compact sets
 gives every ball of positive radius positive real measure. -/

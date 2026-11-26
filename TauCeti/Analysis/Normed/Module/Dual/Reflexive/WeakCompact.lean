@@ -10,7 +10,6 @@ import Mathlib.Analysis.LocallyConvex.WeakSpace
 import TauCeti.Analysis.Normed.Module.Dual.Goldstine
 import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.WeakSpace.SeqCompact
-import TauCeti.Topology.Algebra.Module.WeakSpace
 
 /-!
 # Reflexivity and weak compactness
@@ -115,36 +114,19 @@ theorem tendsto_subseq_toWeakSpace_of_isBounded (hF : Surjective (inclusionInDou
 
 /-- **A bounded operator on a reflexive space maps closed balls to closed sets.** If `F` is a
 reflexive real or complex normed space and `T : F →L[𝕜] G` is bounded, then `T '' closedBall x r`
-is closed in `G`. A sequence `T vₙ → y` with `vₙ` in the ball has a weakly convergent subsequence
-`vₙ ⇀ z`; the ball is weakly closed, and `T z = y` because every functional on `G` composed with `T`
-is a functional on `F`. -/
+is closed in `G`. -/
 theorem _root_.ContinuousLinearMap.isClosed_image_closedBall
     (hF : Surjective (inclusionInDoubleDual 𝕜 F)) {G : Type*} [NormedAddCommGroup G]
     [NormedSpace 𝕜 G] (T : F →L[𝕜] G) (x : F) (r : ℝ) :
     IsClosed (T '' closedBall x r) := by
-  refine isSeqClosed_iff_isClosed.1 fun y p hy hyp ↦ ?_
-  choose v hv hTv using hy
-  obtain ⟨z, φ, hφ, hz⟩ := tendsto_subseq_toWeakSpace_of_isBounded hF
-    (isBounded_closedBall.subset (range_subset_iff.2 hv))
-  rw [tendsto_toWeakSpace_iff_forall_eval_tendsto] at hz
-  refine ⟨z, ?_, ?_⟩
-  · -- The ball is weakly closed: test `z - x` against a norming functional.
-    obtain ⟨g, hg, hgz⟩ := exists_dual_vector'' 𝕜 (z - x)
-    have hlim : Tendsto (fun n ↦ ‖g (v (φ n) - x)‖) atTop (𝓝 ‖g (z - x)‖) := by
-      simpa only [map_sub] using ((hz g).sub_const (g x)).norm
-    have hle (n : ℕ) : ‖g (v (φ n) - x)‖ ≤ r :=
-      (g.le_opNorm _).trans ((mul_le_of_le_one_left (norm_nonneg _) hg).trans
-        (mem_closedBall_iff_norm.1 (hv _)))
-    have hr := le_of_tendsto' hlim hle
-    rwa [hgz, RCLike.norm_ofReal, abs_of_nonneg (norm_nonneg _), ← mem_closedBall_iff_norm] at hr
-  · -- Weak limits are unique, since the functionals on `G` separate points.
-    rw [← sub_eq_zero]
-    refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := 𝕜) fun f ↦ ?_
-    have hlim : Tendsto (fun n ↦ (f.comp T) (v (φ n))) atTop (𝓝 (f p)) := by
-      simp only [ContinuousLinearMap.comp_apply, hTv]
-      exact ((f.continuous.tendsto p).comp hyp).comp hφ.tendsto_atTop
-    rw [map_sub, ← ContinuousLinearMap.comp_apply, tendsto_nhds_unique (hz (f.comp T)) hlim,
-      sub_self]
+  -- The image of the weakly compact ball under the weakly continuous map `T` is weakly compact,
+  -- hence weakly closed, hence norm-closed.
+  have hK := (isCompact_toWeakSpace_closedBall hF x r).image (WeakSpace.map T).continuous
+  have hcomp : toWeakSpace 𝕜 G ∘ T = WeakSpace.map T ∘ toWeakSpace 𝕜 F :=
+    funext fun v ↦ (WeakSpace.map_apply T v).symm
+  rw [← image_comp, ← hcomp, image_comp] at hK
+  rw [← preimage_image_eq (T '' closedBall x r) (toWeakSpace 𝕜 G).injective]
+  exact hK.isClosed.preimage (toWeakSpaceCLM 𝕜 G).continuous
 
 end Normed
 
