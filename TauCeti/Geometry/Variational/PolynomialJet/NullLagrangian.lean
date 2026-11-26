@@ -14,8 +14,11 @@ import TauCeti.Algebra.MvPolynomial.PDeriv
 A Lagrangian `L` is a *null Lagrangian* when all its Euler expressions vanish,
 `E_a(L) = 0` for every field component `a`. Every total divergence `∑ᵢ Dᵢ Θⁱ` is one
 (`PolynomialJet.euler_totalDivergence`). This file proves the converse for polynomial jet
-expressions whose coefficients form a `ℚ`-algebra, such as `ℝ` or `ℂ`: the kernel of the Euler
-operator in top horizontal degree is the image of the horizontal differential.
+expressions whose coefficients form a `ℚ`-algebra, such as `ℝ` or `ℂ`: a null Lagrangian is a
+total divergence up to its field-degree `0` component `L₀(x)`, a polynomial in the base coordinates
+alone. When there is at least one base direction, the kernel of the Euler operator in top
+horizontal degree is therefore the image of the horizontal differential; with no base directions
+the kernel is the constants and the image is `0`.
 
 The argument is the algebraic form of the vertical homotopy that scales the field values,
 `u ↦ t u`. The scaling characteristic `Qᵃ = uᵃ` has the prolonged evolutionary derivation
