@@ -102,6 +102,7 @@ end Adjoint
 
 variable {𝕜 E} in
 /-- The vectors orthogonal to the diagonal of `WithLp 2 (E × E)` are the `(η, -η)`. -/
+@[simp]
 theorem mem_orthogonal_diagonal_iff {ζ : WithLp 2 (E × E)} :
     ζ ∈ (diagonal 2 𝕜 E)ᗮ ↔ ζ.snd = -ζ.fst := by
   rw [Submodule.mem_orthogonal]
