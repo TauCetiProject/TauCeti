@@ -23,7 +23,9 @@ product of classes of degree one induces linear maps `⋀ⁿ H₁(Tⁱ; k) → H
 (`TopCat.pontryaginExteriorPower`). This file proves that these maps are isomorphisms
 (`TauCeti.bijective_pontryaginExteriorPower_torus`, `TauCeti.torusExteriorPowerEquiv`): the
 homology of a torus is the exterior algebra on its first homology. The isomorphisms are natural
-in continuous homomorphisms of tori, by `TopCat.pontryaginExteriorPower_naturality`.
+in continuous homomorphisms of tori, by `TopCat.pontryaginExteriorPower_naturality`. Through its
+circle coordinates, the same holds for the torus `ι → AddCircle p` of additive circles of a
+nonzero period `p` (`AddCircle.bijective_pontryaginExteriorPower_pi`).
 
 The proof first shows surjectivity, by induction on the number of circle factors, splitting
 `T^{Option α}` as `S¹ × T^α`. By the Künneth theorem
@@ -46,6 +48,8 @@ same finite rank is bijective.
 * `TauCeti.bijective_pontryaginExteriorPower_torus`: the Pontryagin map
   `⋀ⁿ H₁(Tⁱ; k) → Hₙ(Tⁱ; k)` is bijective.
 * `TauCeti.torusExteriorPowerEquiv`: the resulting isomorphism `⋀ⁿ H₁(Tⁱ; k) ≃ₗ[k] Hₙ(Tⁱ; k)`.
+* `AddCircle.bijective_pontryaginExteriorPower_pi`: for `p ≠ 0`, the Pontryagin maps of the torus
+  `ι → AddCircle p` of additive circles, through its circle coordinates, are bijective.
 
 ## References
 
@@ -358,3 +362,49 @@ theorem torusExteriorPowerEquiv_apply (ι : Type u) [Finite ι] (n : ℕ)
 end Torus
 
 end TauCeti
+
+/-! ### Tori of additive circles -/
+
+namespace AddCircle
+
+variable {ι : Type} {p : ℝ}
+
+/-- Circle coordinates on the torus `ι → AddCircle p`, as a continuous homomorphism from its
+multiplicative form to the torus `ι → S¹` of unit complex numbers. -/
+private def piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle) where
+  toFun x i := ULift.up (toCircle (Multiplicative.toAdd x i))
+  map_one' := funext fun _ ↦ ULift.ext toCircle_zero
+  map_mul' x y := funext fun i ↦ ULift.ext (toCircle_add (x.toAdd i) (y.toAdd i))
+  continuous_toFun := continuous_pi fun i ↦ continuous_uliftUp.comp <|
+    continuous_toCircle.comp <| (continuous_apply i).comp continuous_toAdd
+
+/-- For `p ≠ 0` the circle coordinates are an isomorphism of topological groups. -/
+private theorem isIso_ofHom_piToCircle (hp : p ≠ 0) :
+    IsIso (TopCat.ofHom ((piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle)) :
+      C(Multiplicative (ι → AddCircle p), ι → ULift Circle))) := by
+  rw [TopCat.isIso_iff_isHomeomorph]
+  -- factorwise, the circle coordinates are the homeomorphisms `AddCircle p ≃ₜ S¹`
+  have h : IsHomeomorph fun x : ι → AddCircle p ↦ fun i ↦ ULift.up.{0} (toCircle (x i)) := by
+    convert (Homeomorph.piCongrRight fun _ : ι ↦
+      (homeomorphCircle hp).trans Homeomorph.ulift.symm).isHomeomorph using 1
+    ext x i
+    simp [homeomorphCircle_apply, Homeomorph.ulift]
+  -- `Multiplicative (ι → AddCircle p)` is a type synonym carrying the topology of the torus
+  exact h
+
+variable (ι) in
+/-- **The homology of a torus of additive circles is the exterior algebra on its first homology.**
+For `p ≠ 0` and every commutative ring `k`, the Pontryagin map `⋀ⁿ H₁(Tⁱ; k) → Hₙ(Tⁱ; k)` of the
+torus `Tⁱ = ι → AddCircle p` is bijective. The Pontryagin product is taken on the multiplicative
+form of the torus, the monoid object of `TopCat` with the same underlying space. -/
+theorem bijective_pontryaginExteriorPower_pi [Finite ι] {k : Type} [CommRing k] (hp : p ≠ 0)
+    (n : ℕ) :
+    Function.Bijective
+      (TopCat.pontryaginExteriorPower k (TopCat.of (Multiplicative (ι → AddCircle p))) n) :=
+  have := isIso_ofHom_piToCircle (ι := ι) hp
+  TopCat.bijective_pontryaginExteriorPower_of_isIso
+    (TopCat.ofHom ((piToCircle : Multiplicative (ι → AddCircle p) →ₜ* (ι → ULift Circle)) :
+      C(Multiplicative (ι → AddCircle p), ι → ULift Circle)))
+    (TauCeti.bijective_pontryaginExteriorPower_torus k ι n)
+
+end AddCircle
