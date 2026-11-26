@@ -101,9 +101,10 @@ complement of `ker (T x₀)` the derivative of these adjoints is
   projections and right inverses, `π' (e y) = e (π y)` and `Q' (σ f) = e (Q f)` when
   `T' ∘ e = σ ∘ T`. With `e` the identity, this is their uniqueness.
 * `ContinuousLinearMap.orthogonalKerProjection_conj` and
-  `ContinuousLinearMap.orthogonalRightInverse_conj`: for continuous linear equivalences `e` and
-  `σ` with `T' ∘ e = σ ∘ T`, preserving the pairings, the canonical orthogonal kernel projection
-  and right inverse of `T'` are `e ∘ π ∘ e⁻¹` and `e ∘ Q ∘ σ⁻¹`, with no hypothesis on `T`; they
+  `ContinuousLinearMap.orthogonalRightInverse_conj`: for a continuous linear equivalence `e`
+  preserving the pairings, the canonical orthogonal kernel projection of `T'` is `e ∘ π ∘ e⁻¹`
+  when `e` carries the kernel of `T` onto that of `T'`, and the canonical orthogonal right
+  inverse is `e ∘ Q ∘ σ⁻¹` when `T' ∘ e = σ ∘ T`, with no hypothesis on `T`; they
   rest on the transport lemmas `ContinuousLinearMap.IsOrthogonalKerProjection.conj` and
   `ContinuousLinearMap.IsOrthogonalRightInverse.conj`.
 * `ContinuousLinearMap.IsOrthogonalKerProjection.unique` and
@@ -394,66 +395,67 @@ theorem apply_eq_of_rightInverse_conj (hι' : Injective ι') (e : E ≃ₗ[𝕜]
 
 section Conj
 
-variable (e : E ≃L[𝕜] E') (σ : F ≃L[𝕜] F') (hTe : ∀ y, T' (e y) = σ (T y))
-  (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜)
-include hTe
-
 /-- An element of `E'` lies in the kernel of `T'` exactly when its preimage under `e` lies in the
-kernel of `T`, when `T' ∘ e = σ ∘ T`. -/
-private theorem symm_apply_mem_ker_iff (k : E') : e.symm k ∈ T.ker ↔ k ∈ T'.ker := by
-  simp only [LinearMap.mem_ker, coe_coe]
-  rw [← σ.map_eq_zero_iff, ← hTe, e.apply_symm_apply]
+kernel of `T`, when `e` carries the kernel of `T` onto the kernel of `T'`. -/
+private theorem symm_apply_mem_ker_iff (e : E ≃L[𝕜] E') (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (k : E') : e.symm k ∈ T.ker ↔ k ∈ T'.ker := by
+  rw [← hker, e.apply_symm_apply]
 
-include he
+/-- An equivalence `e` with `T' ∘ e = σ ∘ T` carries the kernel of `T` onto the kernel of `T'`. -/
+private theorem map_mem_ker_iff_of_comp_eq (e : E ≃L[𝕜] E') (σ : F ≃L[𝕜] F')
+    (hTe : ∀ y, T' (e y) = σ (T y)) (y : E) : e y ∈ T'.ker ↔ y ∈ T.ker := by
+  simp only [LinearMap.mem_ker, coe_coe, hTe, σ.map_eq_zero_iff]
 
-/-- **Transport of orthogonal kernel projections.** Let `e : E ≃L[𝕜] E'` and `σ : F ≃L[𝕜] F'`
-satisfy `T' ∘ e = σ ∘ T`, and let `e` carry the pairing through `ι` to the pairing through `ι'`.
-If `π` is the projection onto the kernel of `T` along its `ι`-orthogonal complement, then
-`e ∘ π ∘ e⁻¹` is the projection onto the kernel of `T'` along its `ι'`-orthogonal complement. -/
-theorem IsOrthogonalKerProjection.conj {π : E →L[𝕜] E} (hπ : IsOrthogonalKerProjection ι T π) :
+/-- The inverse of an equivalence carrying the pairing through `ι` to the pairing through `ι'`
+carries the pairing through `ι'` back to the pairing through `ι`. -/
+private theorem inner_symm_apply (e : E ≃L[𝕜] E')
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) (y y' : E') :
+    ⟪ι (e.symm y), ι (e.symm y')⟫_𝕜 = ⟪ι' y, ι' y'⟫_𝕜 := by
+  rw [← he, e.apply_symm_apply, e.apply_symm_apply]
+
+/-- **Transport of orthogonal kernel projections.** Let `e : E ≃L[𝕜] E'` carry the kernel of `T`
+onto the kernel of `T'` and the pairing through `ι` to the pairing through `ι'`. If `π` is the
+projection onto the kernel of `T` along its `ι`-orthogonal complement, then `e ∘ π ∘ e⁻¹` is the
+projection onto the kernel of `T'` along its `ι'`-orthogonal complement. -/
+theorem IsOrthogonalKerProjection.conj (e : E ≃L[𝕜] E') (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) {π : E →L[𝕜] E}
+    (hπ : IsOrthogonalKerProjection ι T π) :
     IsOrthogonalKerProjection ι' T' ((e : E →L[𝕜] E') ∘L π ∘L (e.symm : E' →L[𝕜] E)) where
-  mem_ker y := (symm_apply_mem_ker_iff e σ hTe _).1 (by simpa using hπ.mem_ker (e.symm y))
+  mem_ker y := (symm_apply_mem_ker_iff e hker _).1 (by simpa using hπ.mem_ker (e.symm y))
   inner_sub_eq_zero y k hk := by
     have hd : y - ((e : E →L[𝕜] E') ∘L π ∘L (e.symm : E' →L[𝕜] E)) y =
         e (e.symm y - π (e.symm y)) := by simp
     rw [hd, ← e.apply_symm_apply k, he]
-    exact hπ.inner_sub_eq_zero _ _ ((symm_apply_mem_ker_iff e σ hTe k).2 hk)
+    exact hπ.inner_sub_eq_zero _ _ ((symm_apply_mem_ker_iff e hker k).2 hk)
 
 /-- **Transport of orthogonal right inverses.** Let `e : E ≃L[𝕜] E'` and `σ : F ≃L[𝕜] F'` satisfy
 `T' ∘ e = σ ∘ T`, and let `e` carry the pairing through `ι` to the pairing through `ι'`. If `Q`
 is a right inverse of `T` with values `ι`-orthogonal to its kernel, then `e ∘ Q ∘ σ⁻¹` is a right
 inverse of `T'` with values `ι'`-orthogonal to its kernel. -/
-theorem IsOrthogonalRightInverse.conj {Q : F →L[𝕜] E} (hQ : IsOrthogonalRightInverse ι T Q) :
+theorem IsOrthogonalRightInverse.conj (e : E ≃L[𝕜] E') (σ : F ≃L[𝕜] F')
+    (hTe : ∀ y, T' (e y) = σ (T y)) (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜)
+    {Q : F →L[𝕜] E} (hQ : IsOrthogonalRightInverse ι T Q) :
     IsOrthogonalRightInverse ι' T' ((e : E →L[𝕜] E') ∘L Q ∘L (σ.symm : F' →L[𝕜] F)) where
   rightInverse f := by simp [hTe, hQ.rightInverse (σ.symm f)]
   inner_eq_zero f k hk := by
     rw [comp_apply, comp_apply, ContinuousLinearEquiv.coe_coe, ← e.apply_symm_apply k, he]
-    exact hQ.inner_eq_zero _ _ ((symm_apply_mem_ker_iff e σ hTe k).2 hk)
+    exact hQ.inner_eq_zero _ _
+      ((symm_apply_mem_ker_iff e (map_mem_ker_iff_of_comp_eq e σ hTe) k).2 hk)
 
-omit hTe he in
-/-- The hypotheses of the transport lemmas hold for the inverses `e⁻¹` and `σ⁻¹`. -/
-private theorem symm_hypotheses (hTe : ∀ y, T' (e y) = σ (T y))
-    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) :
-    (∀ y', T (e.symm y') = σ.symm (T' y')) ∧
-      ∀ y y', ⟪ι (e.symm y), ι (e.symm y')⟫_𝕜 = ⟪ι' y, ι' y'⟫_𝕜 :=
-  ⟨fun y' ↦ σ.injective (by rw [σ.apply_symm_apply, ← hTe, e.apply_symm_apply]), fun y y' ↦ by
-    rw [← he, e.apply_symm_apply, e.apply_symm_apply]⟩
-
-/-- **Conjugation law of the orthogonal kernel projections.** Let `e : E ≃L[𝕜] E'` and
-`σ : F ≃L[𝕜] F'` satisfy `T' ∘ e = σ ∘ T`, and let `e` carry the pairing through `ι` to the
-pairing through `ι'`, with `ι'` injective. Then the orthogonal kernel projection of `T'` is that
-of `T` conjugated by `e`. No finiteness of the kernels is assumed: if neither projection exists,
-both sides are `0`. -/
-theorem orthogonalKerProjection_conj (hι' : Injective ι') :
+/-- **Conjugation law of the orthogonal kernel projections.** Let `e : E ≃L[𝕜] E'` carry the
+kernel of `T` onto the kernel of `T'` and the pairing through `ι` to the pairing through `ι'`,
+with `ι'` injective. Then the orthogonal kernel projection of `T'` is that of `T` conjugated by
+`e`. No finiteness of the kernels is assumed: if neither projection exists, both sides are `0`. -/
+theorem orthogonalKerProjection_conj (e : E ≃L[𝕜] E') (hker : ∀ y, e y ∈ T'.ker ↔ y ∈ T.ker)
+    (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜) (hι' : Injective ι') :
     orthogonalKerProjection ι' T' =
       (e : E →L[𝕜] E') ∘L orthogonalKerProjection ι T ∘L (e.symm : E' →L[𝕜] E) := by
   by_cases h : ∃ π, IsOrthogonalKerProjection ι T π
   · obtain ⟨π, hπ⟩ := h
-    exact ((hπ.isOrthogonalKerProjection_orthogonalKerProjection.conj e σ hTe
+    exact ((hπ.isOrthogonalKerProjection_orthogonalKerProjection.conj e hker
       he).eq_orthogonalKerProjection hι').symm
   · have h' : ¬∃ π', IsOrthogonalKerProjection ι' T' π' := fun ⟨_, hπ'⟩ ↦
-      h ⟨_, hπ'.conj e.symm σ.symm (symm_hypotheses e σ hTe he).1
-        (symm_hypotheses e σ hTe he).2⟩
+      h ⟨_, hπ'.conj e.symm (symm_apply_mem_ker_iff e hker) (inner_symm_apply e he)⟩
     simp [orthogonalKerProjection, h, h']
 
 /-- **Conjugation law of the orthogonal right inverses.** Let `e : E ≃L[𝕜] E'` and
@@ -461,16 +463,19 @@ theorem orthogonalKerProjection_conj (hι' : Injective ι') :
 pairing through `ι'`, with `ι'` injective. Then the orthogonal right inverse of `T'` is
 `e ∘ Q ∘ σ⁻¹` for the orthogonal right inverse `Q` of `T`. No Fredholm property is assumed: if
 neither right inverse exists, both sides are `0`. -/
-theorem orthogonalRightInverse_conj (hι' : Injective ι') :
+theorem orthogonalRightInverse_conj (e : E ≃L[𝕜] E') (σ : F ≃L[𝕜] F')
+    (hTe : ∀ y, T' (e y) = σ (T y)) (he : ∀ y y', ⟪ι' (e y), ι' (e y')⟫_𝕜 = ⟪ι y, ι y'⟫_𝕜)
+    (hι' : Injective ι') :
     orthogonalRightInverse ι' T' =
       (e : E →L[𝕜] E') ∘L orthogonalRightInverse ι T ∘L (σ.symm : F' →L[𝕜] F) := by
   by_cases h : ∃ Q, IsOrthogonalRightInverse ι T Q
   · obtain ⟨Q, hQ⟩ := h
     exact ((hQ.isOrthogonalRightInverse_orthogonalRightInverse.conj e σ hTe
       he).eq_orthogonalRightInverse hι').symm
-  · have h' : ¬∃ Q', IsOrthogonalRightInverse ι' T' Q' := fun ⟨_, hQ'⟩ ↦
-      h ⟨_, hQ'.conj e.symm σ.symm (symm_hypotheses e σ hTe he).1
-        (symm_hypotheses e σ hTe he).2⟩
+  · have hTe' (y' : E') : T (e.symm y') = σ.symm (T' y') :=
+      σ.injective (by rw [σ.apply_symm_apply, ← hTe, e.apply_symm_apply])
+    have h' : ¬∃ Q', IsOrthogonalRightInverse ι' T' Q' := fun ⟨_, hQ'⟩ ↦
+      h ⟨_, hQ'.conj e.symm σ.symm hTe' (inner_symm_apply e he)⟩
     simp [orthogonalRightInverse, h, h']
 
 end Conj

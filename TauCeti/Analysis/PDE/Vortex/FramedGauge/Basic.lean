@@ -304,6 +304,7 @@ theorem gaugeForm_const (c : Circle) (z : ℂ) : gaugeForm (fun _ ↦ c) z = 0 :
 
 /-- **A constant gauge is a change of the line frame**: it acts on a field by the gauge frame at
 every point. -/
+@[simp]
 theorem gaugeTransform_const_apply (c : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     gaugeTransform (fun _ ↦ c) x z = gaugeFrame c (x z) := by
   rw [gaugeTransform_apply, gaugeForm_const, gaugeFrame_apply]

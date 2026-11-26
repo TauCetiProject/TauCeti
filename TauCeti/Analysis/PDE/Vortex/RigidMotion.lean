@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Fredholm.OrthogonalSplitting
+import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.PDE.Vortex.FramedGauge.Linearization
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreserving.AffineIsometry
@@ -596,8 +597,7 @@ theorem orthogonalKerProjection_sobolevGaugeFixedOperator_coefficientMotion (u :
           (sobolevGaugeFixedOperator c) ∘L
         ((variationMotion u a).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) :=
   ContinuousLinearMap.orthogonalKerProjection_conj (variationMotion u a)
-    (targetMotion u a).toContinuousLinearEquiv
-    (sobolevGaugeFixedOperator_coefficientMotion_apply u a c)
+    (variationMotion_mem_ker_sobolevGaugeFixedOperator_coefficientMotion_iff u a c)
     (inner_sobolevFieldValues_variationMotion u a) sobolevFieldValues_injective
 
 /-- **Rigid motions conjugate the orthogonal right inverses.** The right inverse of the
@@ -642,10 +642,10 @@ theorem gradient_variationFrame_ae (c : Circle) (y : Fin 4 → W1p (volume : Mea
     ∀ᵐ z ∂μ⊤, ∀ i, W1p.gradient (variationFrame c y i) z =
       ∑ k, gaugeFrame c (EuclideanSpace.single k 1) i • W1p.gradient (y k) z := by
   filter_upwards [gradient_w1pMotion_ae (gaugeFrame c) (.refl ℝ ℂ) y] with z hz i
-  rw [variationFrame, w1pMotionEquiv_apply, hz i]
-  -- The linear part of `AffineIsometryEquiv.refl` and its inverse are the identity by definition;
-  -- Mathlib has no rewrite lemma for `(AffineIsometryEquiv.refl 𝕜 P).linearIsometryEquiv`.
-  rfl
+  rw [variationFrame, w1pMotionEquiv_apply, hz i, ← AffineIsometryEquiv.linearIsometryEquiv_symm,
+    AffineIsometryEquiv.symm_refl, AffineIsometryEquiv.linearIsometryEquiv_refl,
+    LinearIsometryEquiv.coe_refl, AffineIsometryEquiv.coe_refl]
+  simp only [id]
 
 @[simp]
 theorem variationFrame_one : variationFrame 1 = ContinuousLinearEquiv.refl ℝ _ :=
@@ -663,10 +663,8 @@ theorem variationFrame_variationFrame (c d : Circle) (y : Fin 4 → W1p (volume 
 /-- The inverse of the change of line frame by `c` is the change by `c⁻¹`. -/
 @[simp]
 theorem variationFrame_symm (c : Circle) : (variationFrame c).symm = variationFrame c⁻¹ := by
-  rw [variationFrame, variationFrame, w1pMotionEquiv_symm, gaugeFrame_symm]
-  -- `(AffineIsometryEquiv.refl ℝ ℂ).symm` is `AffineIsometryEquiv.refl ℝ ℂ` by definition; Mathlib
-  -- has no rewrite lemma for the inverse of `AffineIsometryEquiv.refl`.
-  rfl
+  rw [variationFrame, variationFrame, w1pMotionEquiv_symm, gaugeFrame_symm,
+    AffineIsometryEquiv.symm_refl]
 
 /-- **Changes of the line frame intertwine the `L²` values of variations.** -/
 theorem sobolevFieldValues_variationFrame (c : Circle)
@@ -704,6 +702,15 @@ theorem sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply (c : Circle)
   rw [h₁, h₂, h₃, h₄, h₅, map_add, ← gaugeFixedZerothOrder_gaugeFrame,
     ← gaugeFixedFirstOrder_gaugeFrame, funext h₆]
 
+/-- A variation in the line frame changed by `c` lies in the kernel of the realization at the
+coefficient in the changed frame exactly when the variation lies in the kernel at `a`. -/
+theorem variationFrame_mem_ker_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_iff (c : Circle)
+    (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    variationFrame c y ∈ (sobolevGaugeFixedOperator ((gaugeFrame c).compLpₗᵢ ∞ μ⊤ a)).ker ↔
+      y ∈ (sobolevGaugeFixedOperator a).ker := by
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply, LinearIsometryEquiv.map_eq_zero_iff]
+
 /-- **Changes of the line frame conjugate the orthogonal kernel projections.** The projection
 onto the kernel of the realization at the coefficient in the line frame changed by `c`, along the
 `L²`-orthogonal complement of the kernel, is the projection at `a` conjugated by the change of
@@ -717,8 +724,7 @@ theorem orthogonalKerProjection_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFram
           (sobolevGaugeFixedOperator a) ∘L
         ((variationFrame c).symm : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] _) :=
   ContinuousLinearMap.orthogonalKerProjection_conj (variationFrame c)
-    ((gaugeFrame c).compLpₗᵢ 2 μ⊤).toContinuousLinearEquiv
-    (sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_apply c a)
+    (variationFrame_mem_ker_sobolevGaugeFixedOperator_compLpₗᵢ_gaugeFrame_iff c a)
     (inner_sobolevFieldValues_variationFrame c) sobolevFieldValues_injective
 
 /-- **Changes of the line frame conjugate the orthogonal right inverses.** The right inverse of the
