@@ -72,6 +72,8 @@ orthogonal to the fibre.
 
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
+* `TauCeti.isNondegenerateCriticalPoint_slice_right_of_ker_le`: at a Morse–Bott point of the zero
+  section, the restriction of `f` to the normal fibre has a nondegenerate critical point at `0`.
 * `TauCeti.eventually_fderiv_eq_zero_iff_snd_eq_zero`: near a Morse–Bott point of the zero
   section, the critical points are exactly the points of the zero section.
 * `TauCeti.exists_mul_norm_snd_le_norm_fderiv_comp_inr`,
@@ -131,6 +133,19 @@ theorem isInvertible_fderiv_fderiv_slice_right_of_ker_le [FiniteDimensional ℝ 
   have hmem : ((0 : P), v) ∈ (fderiv ℝ (fderiv ℝ f) (a, 0)).ker := LinearMap.mem_ker.mpr hD
   obtain ⟨u, hu⟩ := hker hmem
   simpa using (congrArg Prod.snd hu).symm
+
+/-- **The normal restriction at a Morse–Bott point is nondegenerate.** If `f` is `C²` at `(a, 0)`,
+every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
+consists of base directions, then the restriction `v ↦ f (a, v)` of `f` to the fibre over `a` has a
+nondegenerate critical point at `0`. -/
+theorem isNondegenerateCriticalPoint_slice_right_of_ker_le [FiniteDimensional ℝ F]
+    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
+    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
+    IsNondegenerateCriticalPoint (fun v ↦ f (a, v)) 0 :=
+  ⟨hf.comp 0 (contDiffAt_const.prodMk contDiffAt_id),
+    by rw [fderiv_slice_right (hf.differentiableAt two_ne_zero), hcrit.self_of_nhds,
+      ContinuousLinearMap.zero_comp],
+    isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker⟩
 
 /-- **The critical value is locally constant along a critical zero section.** If every point
 `(b, 0)` with `b` near `a` is a critical point of `f` at which `f` is differentiable, then

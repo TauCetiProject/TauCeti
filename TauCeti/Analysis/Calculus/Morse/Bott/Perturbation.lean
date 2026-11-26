@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Analysis.Calculus.Morse.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
 # Perturbing a Morse–Bott function by a function on its critical submanifold
@@ -53,8 +54,6 @@ indices are `ind_h(b) + ind_f(b, 0)` (`TauCeti.morseIndex_add_mul_mul`).
 
 ## Main results
 
-* `TauCeti.isNondegenerateCriticalPoint_slice_right_of_ker_le`: at a Morse–Bott point, the
-  restriction of `f` to the normal fibre has a nondegenerate critical point at `0`.
 * `TauCeti.eventually_forall_fderiv_add_comp_fst_eq_zero_iff`: near a Morse–Bott point, the
   critical points of `f + h ∘ Prod.fst` are the critical points of `h` on the zero section, for
   every `h`.
@@ -86,21 +85,6 @@ namespace TauCeti
 variable {P F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {f : P × F → ℝ} {a : P}
 
-/-! ### The fibre derivative near a Morse–Bott zero section -/
-
-/-- **The normal restriction at a Morse–Bott point is nondegenerate.** If `f` is `C²` at `(a, 0)`,
-every point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)`
-consists of base directions, then the restriction `v ↦ f (a, v)` of `f` to the fibre over `a` has a
-nondegenerate critical point at `0`. -/
-theorem isNondegenerateCriticalPoint_slice_right_of_ker_le [FiniteDimensional ℝ F]
-    (hf : ContDiffAt ℝ 2 f (a, 0)) (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0)
-    (hker : (fderiv ℝ (fderiv ℝ f) (a, 0)).ker ≤ LinearMap.range (LinearMap.inl ℝ P F)) :
-    IsNondegenerateCriticalPoint (fun v ↦ f (a, v)) 0 :=
-  ⟨hf.comp 0 (contDiffAt_const.prodMk contDiffAt_id),
-    by rw [fderiv_slice_right (hf.differentiableAt two_ne_zero), hcrit.self_of_nhds,
-      ContinuousLinearMap.zero_comp],
-    isInvertible_fderiv_fderiv_slice_right_of_ker_le hf hcrit hker⟩
-
 /-! ### Perturbing by a function on the base -/
 
 /-- Near a Morse–Bott point of the zero section, `f` is `C²`, critical along the zero section, and
@@ -117,20 +101,6 @@ private theorem eventually_fderiv_comp_inr_eq_zero_imp [FiniteDimensional ℝ F]
   rw [hv, norm_zero] at hzc
   exact norm_le_zero_iff.1 (nonpos_of_mul_nonpos_right hzc hc)
 
-/-- The derivative of `f + h ∘ Prod.fst` is that of `f` plus that of `h`, read on the base
-component. -/
-private theorem fderiv_add_comp_fst {h : P → ℝ} {z : P × F} (hzf : DifferentiableAt ℝ f z)
-    (hh : DifferentiableAt ℝ h z.1) :
-    fderiv ℝ (fun y ↦ f y + h y.1) z =
-      fderiv ℝ f z + fderiv ℝ h z.1 ∘L ContinuousLinearMap.fst ℝ P F :=
-  (hzf.hasFDerivAt.add (hh.hasFDerivAt.comp z hasFDerivAt_fst)).fderiv
-
-/-- A linear form on the base vanishes once its pullback along `Prod.fst` does. -/
-private theorem eq_zero_of_comp_fst_eq_zero {L : P →L[ℝ] ℝ}
-    (hL : L ∘L ContinuousLinearMap.fst ℝ P F = 0) : L = 0 := by
-  rw [← L.comp_id, ← ContinuousLinearMap.fst_comp_inl (R := ℝ) (M₂ := F),
-    ← ContinuousLinearMap.comp_assoc, hL, ContinuousLinearMap.zero_comp]
-
 /-- The critical points of `f + h ∘ Prod.fst` at a point `z` where `f` is critical on the zero
 section through `z`, and where the fibre derivative of `f` vanishes only on the zero section. -/
 private theorem fderiv_add_comp_fst_eq_zero_iff {h : P → ℝ} {z : P × F}
@@ -146,7 +116,7 @@ private theorem fderiv_add_comp_fst_eq_zero_iff {h : P → ℝ} {z : P × F}
       ext w
       simpa using congr($h0 (0, w))
     rw [hz h2, zero_add] at h0
-    exact ⟨h2, eq_zero_of_comp_fst_eq_zero h0⟩
+    exact ⟨h2, ContinuousLinearMap.comp_fst_eq_zero_iff.1 h0⟩
   · rintro ⟨h2, hh0⟩
     simp [hz h2, hh0]
 
@@ -220,7 +190,7 @@ theorem isNondegenerateCriticalPoint_add_comp_fst_iff [FiniteDimensional ℝ P]
   rw [isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate, hQ, hD]
   constructor
   · rintro ⟨-, hD0, hnd⟩
-    have hh0 : fderiv ℝ h a = 0 := eq_zero_of_comp_fst_eq_zero hD0
+    have hh0 : fderiv ℝ h a = 0 := ContinuousLinearMap.comp_fst_eq_zero_iff.1 hD0
     refine (isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff.1 <|
       isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate.2
         ⟨(hh.comp (a, 0) contDiffAt_fst).add (hψ.contDiffAt.comp (a, 0) contDiffAt_snd),
