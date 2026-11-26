@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.TracePairing
+public import TauCeti.Analysis.CStarAlgebra.TracePairing.Basic
 
 /-!
 # Checks for the trace pairing with `K₀`

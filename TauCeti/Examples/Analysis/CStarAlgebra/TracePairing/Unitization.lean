@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.Unitization.TracePairing
-public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing
+public import TauCeti.Analysis.CStarAlgebra.TracePairing.Unitization
+public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing.Basic
 
 /-!
 # Checks for the trace pairing with the nonunital `K₀`-group
