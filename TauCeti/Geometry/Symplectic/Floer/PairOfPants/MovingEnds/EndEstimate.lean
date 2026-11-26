@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
-import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Instances.Real.TSupport
@@ -86,7 +85,7 @@ open Filter Function Set MeasureTheory TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology NNReal Manifold Real
 open TauCeti.Complex (realChart realChart_mk equivRealProdCLM_symm_realChart contDiff_realChart
-  fderiv_realChart_apply fderiv_realChart_ne_zero)
+  fderiv_realChart_apply fderiv_realChart_ne_zero isOpenMap_realChart_of_hasStrictDerivAt)
 
 namespace TauCeti.SymplecticForm
 
@@ -376,15 +375,6 @@ theorem
 
 /-! ### The formal adjoint -/
 
-/-- The real chart of a holomorphic map of the plane without critical points is an open map. -/
-private theorem isOpenMap_realChart_of_deriv_ne_zero {f : ℂ → ℂ} (hf : ContDiff ℂ 1 f)
-    (h0 : ∀ w, deriv f w ≠ 0) : IsOpenMap (realChart f) := by
-  rw [show realChart f = Complex.equivRealProdCLM ∘ f ∘ Complex.equivRealProdCLM.symm from
-    funext (TauCeti.Complex.realChart_apply f)]
-  exact Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp ((isOpenMap_of_hasStrictDerivAt
-    (fun w ↦ hf.contDiffAt.hasStrictDerivAt_deriv one_ne_zero) h0).comp
-      Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap)
-
 /-- Let `ψ` be an open chart of an end of a sphere with moving input ends that avoids the centers of
 the input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`, and let `ρ` be a
 continuous weight. Then the formal adjoint of the datum
@@ -500,7 +490,9 @@ theorem
   obtain ⟨b, hb⟩ :=
     exists_forall_notMem_Ioo_realChart_add_mul_cylindricalEndLift_eq_zero (ha i) hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
-    hH hHs hHout hHouts ha (isOpenMap_realChart_of_deriv_ne_zero (by fun_prop) fun w ↦ by
+    hH hHs hHout hHouts ha (isOpenMap_realChart_of_hasStrictDerivAt
+      (fun _ ↦ (ContDiff.contDiffAt (n := 1) (by fun_prop)).hasStrictDerivAt_deriv one_ne_zero)
+      fun w ↦ by
       rw [(hasDerivAt_add_mul_cylindricalEndLift _ _ w).deriv]
       exact mul_ne_zero (ha i) (zero.deriv_cylindricalEndLift_ne_zero w))
     (fun ζ hζ ↦
