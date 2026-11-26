@@ -15,6 +15,7 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 import TauCeti.Analysis.Sobolev.GagliardoNirenberg
 import TauCeti.Analysis.Sobolev.Morrey.Basic
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -103,16 +104,6 @@ private theorem inv_sub_div_le_div_mul {n p i j k : ℝ} (hn : 0 < n) (hp : 0 < 
   nlinarith [mul_le_mul_of_nonneg_left hk.le (sub_nonneg.2 hji),
     mul_nonneg (mul_nonneg hj.le hp.le) (sub_nonneg.2 hik)]
 
-/-- For `i, j, p ≠ 0`, the exponent `(j p⁻¹ / i)⁻¹` is the finite exponent `i p / j`. -/
-private theorem inv_natCast_mul_inv_div_eq_coe {p : ℝ≥0} (hp : p ≠ 0) {j : ℕ} (hj : j ≠ 0) {i : ℕ}
-    (hi : i ≠ 0) : ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹ = ((i * p / j : ℝ≥0) : ℝ≥0∞) := by
-  have hij : (j * p⁻¹ / i : ℝ≥0) ≠ 0 := by positivity
-  have h : (j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i = ((j * p⁻¹ / i : ℝ≥0) : ℝ≥0∞) := by
-    simp [ENNReal.coe_div, ENNReal.coe_inv, hp, hi]
-  rw [h, ← ENNReal.coe_inv hij]
-  congr 1
-  field_simp
-
 /-- For `p < n`, the derivative `Dʲ u`, `j ≤ k`, of a compactly supported `C^k` function lies in
 `L^q` whenever `p ≤ q < ∞` and `1 / q ≥ 1 / p - (k - j) / n`, with norm controlled by the `Lᵖ`
 norms of the derivatives of `u` through order `k`. -/
@@ -191,7 +182,7 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_add_sum_of_finrank_lt_or_eq_one
 /-- For `k p > n`, and `p ≠ n` or `n = 1`, the intermediate derivative `Dʲ u` of a compactly
 supported `C^k` function `u` lies in `L^{i p / j}` for `j ≤ i ≤ k`, `i ≠ 0`, with norm controlled by
 `‖u‖_∞` and the `Lᵖ` norms of the derivatives of `u` through order `k`; the exponent is written
-`(j p⁻¹ / i)⁻¹`, as in `TauCeti.holderTriple_inv_div`. -/
+`(j p⁻¹ / i)⁻¹`, as in `ENNReal.HolderTriple.natCast_mul_inv_div`. -/
 private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp : 1 ≤ p)
     (hpn : (p : ℝ) ≠ finrank ℝ E ∨ finrank ℝ E = 1) {k : ℕ} (hk : (finrank ℝ E : ℝ) < k * p) {i : ℕ}
     (hi : i ≠ 0) (hik : i ≤ k) :
@@ -225,7 +216,7 @@ private theorem exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank {p : ℝ≥0} (hp
   have hpq : p ≤ i * p / j := by
     rw [le_div_iff₀ (by exact_mod_cast hj0), mul_comm (i : ℝ≥0)]
     exact mul_le_mul_of_nonneg_left (by exact_mod_cast hji) zero_le
-  rw [inv_natCast_mul_inv_div_eq_coe (by positivity) hj0.ne' hi]
+  rw [ENNReal.inv_natCast_mul_inv_div_eq_coe (by positivity) hj0.ne' hi]
   rcases lt_or_ge (p : ℝ) (finrank ℝ E) with hlt | hge
   · refine exists_eLpNorm_iteratedFDeriv_le_add_sum_of_lt_finrank hp hlt (hji'.trans_le hik).le
       hpq ?_
@@ -270,7 +261,7 @@ theorem exists_eLpNorm_iteratedFDeriv_bilinear_le_of_ne_finrank {p : ℝ≥0} (h
   -- The exponents `1 / q_j = j / (i p)` and `1 / r_j = (i - j) / (i p)`.
   set q : ℕ → ℝ≥0∞ := fun j ↦ ((j : ℝ≥0∞) * (p : ℝ≥0∞)⁻¹ / i)⁻¹
   have hqr : ∀ j ≤ i, ENNReal.HolderTriple (q j) (q (i - j)) p := fun j hj ↦
-    holderTriple_inv_div hi0.ne' hj
+    ENNReal.HolderTriple.natCast_mul_inv_div hi0.ne' hj
   obtain ⟨cu, hcu⟩ :=
     exists_eLpNorm_iteratedFDeriv_le_of_ne_finrank (μ := μ) (F := F) hp hpn hk hi0.ne' hik
   obtain ⟨cv, hcv⟩ :=
