@@ -403,15 +403,16 @@ private theorem ae_eq_restrict_chart_iff (p : M)
     rw [← (measurePreserving_coordEquiv_symm E).measure_preimage_emb hemb, hpre]
   rw [← himg, hvol]
 
-/-- Precomposition with `chartInvMap p` maps `Lʳ(M)` into `Lʳ(Ω)` whenever the chart density is
-bounded below on `Ω`. -/
-private theorem memLp_comp_coordEquiv_of_memLp (p : M)
+/-- If the chart density is at least `m > 0` on `Ω`, precomposition with `chartInvMap p` multiplies
+`Lʳ` norms by at most `m^(-1/r)`: `‖f ∘ chartInvMap p‖_{Lʳ(Ω)} ≤ m^(-1/r) ‖f‖_{Lʳ(M)}`. -/
+private theorem eLpNorm_comp_chartInvMap_le (p : M)
     {Ω : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
     (hΩt : MapsTo (coordEquiv E).symm Ω (extChartAt I p).target)
     {m : ℝ} (hm : 0 < m)
     (hρ : ∀ y ∈ Ω, m ≤ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y))
-    {r : ℝ≥0∞} {f : M → ℝ} (hf : MemLp f r (riemannianVolume I M)) :
-    MemLp (fun y ↦ f (chartInvMap (I := I) p y)) r (volume.restrict (Ω : Set _)) := by
+    (r : ℝ≥0∞) (f : M → ℝ) :
+    eLpNorm (fun y ↦ f (chartInvMap (I := I) p y)) r (volume.restrict (Ω : Set _)) ≤
+      ENNReal.ofReal m⁻¹ ^ (1 / r).toReal * eLpNorm f r (riemannianVolume I M) := by
   classical
   let ΩE : Set E := (coordEquiv E).symm '' (Ω : Set _)
   have hΩEo : IsOpen ΩE := (coordEquiv E).symm.toHomeomorph.isOpenMap _ Ω.isOpen
@@ -450,14 +451,25 @@ private theorem memLp_comp_coordEquiv_of_memLp (p : M)
           refine setLIntegral_comp_extChartAt_symm_le_mul_lintegral p hΩEo hΩEt hm ?_ _
           rintro _ ⟨y, hy, rfl⟩
           exact hρ y hy
-  have hmemψ : MemLp (f ∘ ψ) r (volume.restrict (Ω : Set _)) :=
-    memLp_iff.2 ((eLpNorm_comp_le_of_map_le_smul hψm.aemeasurable hmap r).trans_lt
-      (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
-        ENNReal.ofReal_ne_top) (memLp_iff.1 hf)))
-  refine hmemψ.ae_eq ?_
-  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
-  have hmemE : (coordEquiv E).symm y ∈ ΩE := ⟨y, hy, rfl⟩
-  simp only [Function.comp_apply, ψ, ψ₀, chartInvMap, piecewise_eq_of_mem _ _ _ hmemE]
+  have hψf : f ∘ ψ =ᵐ[volume.restrict (Ω : Set _)] fun y ↦ f (chartInvMap (I := I) p y) := by
+    filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet] with y hy
+    have hmemE : (coordEquiv E).symm y ∈ ΩE := ⟨y, hy, rfl⟩
+    simp only [Function.comp_apply, ψ, ψ₀, chartInvMap, piecewise_eq_of_mem _ _ _ hmemE]
+  rw [← eLpNorm_congr_ae hψf]
+  exact eLpNorm_comp_le_of_map_le_smul hψm.aemeasurable hmap r
+
+/-- Precomposition with `chartInvMap p` maps `Lʳ(M)` into `Lʳ(Ω)` whenever the chart density is
+bounded below on `Ω`. -/
+private theorem memLp_comp_coordEquiv_of_memLp (p : M)
+    {Ω : Opens (EuclideanSpace ℝ (Fin (finrank ℝ E)))}
+    (hΩt : MapsTo (coordEquiv E).symm Ω (extChartAt I p).target)
+    {m : ℝ} (hm : 0 < m)
+    (hρ : ∀ y ∈ Ω, m ≤ chartVolumeDensity (I := I) p (chartInvMap (I := I) p y))
+    {r : ℝ≥0∞} {f : M → ℝ} (hf : MemLp f r (riemannianVolume I M)) :
+    MemLp (fun y ↦ f (chartInvMap (I := I) p y)) r (volume.restrict (Ω : Set _)) :=
+  memLp_iff.2 ((eLpNorm_comp_chartInvMap_le p hΩt hm hρ r f).trans_lt
+    (ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg ENNReal.toReal_nonneg
+      ENNReal.ofReal_ne_top) (memLp_iff.1 hf)))
 
 end CoordIntegral
 
@@ -1233,40 +1245,24 @@ private theorem ChartPDEData.exists_abs_dirichletForm_le_of_wkp {p : M}
   rw [ContinuousLinearMap.comp_apply, hTu,
     hg ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩] at hD
   set v := W1p.value (W1p.ofTestFunctionₗ volume U 2 φ)
-  -- `‖φ‖²_{L²(U)} ≤ m⁻¹ ∫ ρ φ² = m⁻¹ ‖Φ‖²_{L²(M)}`, as the chart density is at least `m`.
-  have hcont : ContinuousOn (fun y ↦ Φ (chartInvMap (I := I) p y)) d.Ω :=
-    Φ.contMDiff.continuous.comp_continuousOn (contMDiffOn_chartInvMap p d.hΩt).continuousOn
-  have hv : ‖v‖ ^ 2 ≤ d.m⁻¹ * ‖toLp (ofSmooth Φ)‖ ^ 2 := by
-    have h₁ : ‖v‖ ^ 2 = ∫ y in (U : Set _), Φ (chartInvMap (I := I) p y) ^ 2 := by
-      rw [← Lp.integral_norm_sq_eq_norm_sq v]
-      refine integral_congr_ae ?_
+  -- `‖φ‖_{L²(U)} ≤ m^(-1/2) ‖Φ‖_{L²(M)}`, as the chart density is at least `m`.
+  have hv : ‖v‖ ≤ √d.m⁻¹ * ‖toLp (ofSmooth Φ)‖ := by
+    have hvΦ : (v : _ → ℝ) =ᵐ[volume.restrict (U : Set _)]
+        fun y ↦ Φ (chartInvMap (I := I) p y) := by
       filter_upwards [W1p.value_ofTestFunctionₗ_ae (p := 2) φ,
         ae_restrict_mem U.isOpen.measurableSet] with y hy hyU
-      rw [hy, Real.norm_eq_abs, sq_abs, hφ y hyU]
-    have h₂ : ‖toLp (ofSmooth Φ)‖ ^ 2 = ∫ y in (U : Set _),
-        chartVolumeDensity (I := I) p (chartInvMap (I := I) p y) *
-          Φ (chartInvMap (I := I) p y) ^ 2 := by
-      rw [← integral_toLp_sq_eq_norm_sq,
-        integral_congr_ae ((toLp_ofSmooth_ae_eq Φ).mono fun x hx ↦ by rw [hx])]
-      exact integral_riemannianVolume_eq_setIntegral_coord p hUt fun x hx ↦ by
-        rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (hΦ h), zero_pow two_ne_zero]
-    rw [h₁, h₂, ← integral_const_mul]
-    refine setIntegral_mono_on ((((hcont.mono hUΩ).pow 2).integrableOn_compact hU).mono_set
-      subset_closure) (((((d.hρ_cont.mul (hcont.pow 2)).mono hUΩ).integrableOn_compact
-        hU).mono_set subset_closure).const_mul _) U.isOpen.measurableSet fun y hy ↦ ?_
-    rw [← mul_assoc]
-    exact le_mul_of_one_le_left (sq_nonneg _) ((one_le_inv_mul₀ d.hm).2 (d.hρ_min y (hUΩ' hy)))
+      rw [hy, hφ y hyU]
+    have h := eLpNorm_comp_chartInvMap_le p hUt d.hm (fun y hy ↦ d.hρ_min y (hUΩ' hy)) 2 Φ
+    rw [← eLpNorm_congr_ae hvΦ, ← eLpNorm_congr_ae (toLp_ofSmooth_ae_eq Φ)] at h
+    have h' := ENNReal.toReal_mono (by finiteness) h
+    rwa [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (inv_nonneg.2 d.hm.le),
+      ← Lp.norm_def, ← Lp.norm_def, ENNReal.toReal_div, ENNReal.toReal_one,
+      ENNReal.toReal_ofNat, ← Real.sqrt_eq_rpow] at h'
   have hinner : ∫ y in (U : Set _), g y * v y = ⟪g, v⟫_ℝ := by
     simp only [L2.inner_def, RCLike.inner_apply, conj_trivial]
     exact integral_congr_ae (Eventually.of_forall fun y ↦ mul_comm _ _)
-  rw [hD, hinner]
-  calc |⟪g, v⟫_ℝ| ≤ ‖g‖ * ‖v‖ := abs_real_inner_le_norm g v
-    _ ≤ ‖g‖ * (√d.m⁻¹ * ‖toLp (ofSmooth Φ)‖) := by
-      refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg g)
-      rw [← Real.sqrt_sq (norm_nonneg v), ← Real.sqrt_sq (norm_nonneg (toLp (ofSmooth Φ))),
-        ← Real.sqrt_mul (inv_nonneg.2 d.hm.le)]
-      exact Real.sqrt_le_sqrt hv
-    _ = ‖g‖ * √d.m⁻¹ * ‖toLp (ofSmooth Φ)‖ := (mul_assoc _ _ _).symm
+  rw [hD, hinner, mul_assoc]
+  exact (abs_real_inner_le_norm g v).trans (mul_le_mul_of_nonneg_left hv (norm_nonneg g))
 
 /-- **Interior `H²` regularity on a closed manifold.** Let `M` be a closed smooth Riemannian
 manifold, `V` a continuous potential and `f ∈ L²(M)`. If `w ∈ H¹(M)` solves
