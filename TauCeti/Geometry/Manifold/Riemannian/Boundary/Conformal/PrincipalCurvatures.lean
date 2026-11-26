@@ -22,8 +22,8 @@ is increasing, the principal curvatures of `ĝ`, listed in decreasing order, are
 
 The comparison rests on a characterisation of the principal curvatures that does not mention the
 metric: they are the unique decreasing family `μ` for which some basis `(bᵢ)` of `T_q∂M` satisfies
-`S_q bᵢ = μᵢ bᵢ` (`TauCeti.boundaryPrincipalCurvatures_eq_of_basis`). The principal basis of `g`
-is such a basis for `S^ĝ_q`, although it is not orthonormal for `ĝ` unless `f q = 1`.
+`S_q bᵢ = μᵢ bᵢ` (`TauCeti.boundaryPrincipalCurvatures_eq_of_eigenbasis`). The principal basis of
+`g` is such a basis for `S^ĝ_q`, although it is not orthonormal for `ĝ` unless `f q = 1`.
 
 ## Main statements
 
@@ -116,7 +116,7 @@ theorem boundaryPrincipalCurvatures_rescale (hk : 1 ≤ k) (q : (𝓡∂ (n + 1)
     ⟨(g.rescale f hf hf_pos).toRiemannianMetric⟩
   let _ : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
     (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := IsContMDiffRiemannianBundle.of_le hk
-  exact congrFun (boundaryPrincipalCurvatures_eq_of_basis q b hanti hb) i
+  exact congrFun (boundaryPrincipalCurvatures_eq_of_eigenbasis q b hanti hb) i
 
 /-- **Principal curvatures under a constant rescaling**: for a constant `c > 0`, the principal
 curvatures of `c² g` are `κᵢ / c`. -/

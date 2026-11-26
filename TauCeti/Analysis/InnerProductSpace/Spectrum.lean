@@ -80,7 +80,7 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
   same namespace: in that case the positive and negative spectral subspaces have the same
   dimension.
-* `LinearMap.IsSymmetric.eigenvalues_eq_of_basis`: an antitone list of eigenvalues on a basis
+* `LinearMap.IsSymmetric.eigenvalues_eq_of_eigenbasis`: an antitone list of eigenvalues on a basis
   of eigenvectors, orthonormal or not, is the sorted eigenvalue list.
 * `LinearMap.IsSymmetric.eigenvalues_neg`: the ordered eigenvalues of `-T` are the negated
   eigenvalues of `T` in reverse order.
@@ -549,7 +549,7 @@ theorem finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_
 /-- **Sorted-eigenvalue uniqueness.**  If a basis `b`, not necessarily orthonormal,
 diagonalizes the symmetric operator `T` with an *antitone* value list `μ`,
 then `μ` is the sorted eigenvalue list: `hT.eigenvalues hn = μ`. -/
-theorem eigenvalues_eq_of_basis
+theorem eigenvalues_eq_of_eigenbasis
     (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (b : Module.Basis (Fin n) 𝕜 E)
     {μ : Fin n → ℝ} (hμ : Antitone μ) (hb : ∀ i, T (b i) = (μ i : 𝕜) • b i) :
     hT.eigenvalues hn = μ := by
@@ -567,7 +567,7 @@ theorem eigenvalues_eq_of_basis
 order: the `i`-th largest eigenvalue of `-T` is minus the `i`-th smallest eigenvalue of `T`. -/
 theorem eigenvalues_neg (hT : T.IsSymmetric) (hn : Module.finrank 𝕜 E = n) (i : Fin n) :
     hT.neg.eigenvalues hn i = -hT.eigenvalues hn i.rev :=
-  congrFun (hT.neg.eigenvalues_eq_of_basis hn
+  congrFun (hT.neg.eigenvalues_eq_of_eigenbasis hn
     ((hT.eigenvectorBasis hn).reindex Fin.revPerm).toBasis
     (fun _ _ hjk ↦ neg_le_neg (hT.eigenvalues_antitone hn (Fin.rev_le_rev.2 hjk)))
     fun j ↦ by simp [hT.apply_eigenvectorBasis]) i

@@ -115,7 +115,7 @@ theorem relEigenvalues_eq_of_orthonormalBasis (ha : a.IsSymm) (hn : finrank 𝕜
     (w : OrthonormalBasis (Fin n) 𝕜 E) {μ : Fin n → ℝ} (hμ : Antitone μ)
     (hw : ∀ i j, a (w i) (w j) = if i = j then (μ i : 𝕜) else 0) :
     ha.relEigenvalues hn = μ := by
-  refine ha.isSymmetric_toSesqForm_symm.eigenvalues_eq_of_basis hn w.toBasis hμ fun j ↦ ?_
+  refine ha.isSymmetric_toSesqForm_symm.eigenvalues_eq_of_eigenbasis hn w.toBasis hμ fun j ↦ ?_
   rw [OrthonormalBasis.coe_toBasis]
   rw [← w.sum_repr' ((toSesqForm 𝕜 E E).symm a (w j))]
   simp_rw [LinearMap.inner_toSesqForm_symm_apply, hw, ite_smul, zero_smul,
