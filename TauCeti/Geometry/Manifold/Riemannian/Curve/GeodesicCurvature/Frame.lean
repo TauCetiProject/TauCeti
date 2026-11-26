@@ -90,7 +90,8 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E n s
             inner ℝ (s 0 (γ t)) (acceleration (leviCivitaConnection I M) γ t)) /
           ‖curveVelocity I γ t‖ := by
     rw [orientedUnitNormal_eq_frameVelocityCoordinates o (ho.self_of_nhds.norm_eq_one 0) hor]
-    simp [inner_add_right, real_inner_smul_right, real_inner_comm]
+    simp only [frameVelocityCoordinates_re, frameVelocityCoordinates_im, inner_add_right,
+      real_inner_smul_right, real_inner_comm]
     ring
   have hcurv := geodesicCurvature_mul_norm_curveVelocity_sq (orientedUnitNormal o γ) hv
   rw [hnormal] at hcurv
@@ -102,6 +103,6 @@ theorem geodesicCurvature_mul_norm_curveVelocity_eq (hs : IsLocalFrameOn I E n s
   rw [← acceleration_def]
   have hvnorm := norm_ne_zero_iff.mpr hv
   field_simp at hcurv ⊢
-  nlinarith
+  linear_combination hcurv
 
 end IsLocalFrameOn

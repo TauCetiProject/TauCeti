@@ -120,6 +120,11 @@ theorem hasDerivAt_frameVelocityCoordinates (hs : IsLocalFrameOn I E n s u)
     simpa only [Pi.add_apply, frameVelocityCoordinates_re, frameVelocityCoordinates_im] using
       (Complex.re_add_im (frameVelocityCoordinates s γ r)).symm
   · simp only [connectionForm_apply, Matrix.cons_val_zero]
-    apply Complex.ext <;> simp <;> ring
+    apply Complex.ext <;>
+      simp only [Complex.add_re, Complex.add_im, Complex.sub_re, Complex.sub_im, Complex.mul_re,
+        Complex.mul_im, Complex.neg_re, Complex.neg_im, Complex.ofReal_re, Complex.ofReal_im,
+        Complex.I_re, Complex.I_im, Complex.ofReal_add, Complex.ofReal_mul, Complex.ofReal_neg,
+        frameVelocityCoordinates_re, frameVelocityCoordinates_im] <;>
+      ring
 
 end IsLocalFrameOn
