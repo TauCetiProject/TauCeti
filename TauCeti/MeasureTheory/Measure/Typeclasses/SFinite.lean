@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.SFinite
 public import Mathlib.Topology.Compactness.SigmaCompact
 
 /-!
-# σ-finiteness of restrictions to σ-compact sets
+# σ-finiteness of restrictions to countable unions and σ-compact sets
 
 A measure that is finite on compact sets is σ-finite on a σ-compact space
 (`MeasureTheory.SigmaFinite.of_isFiniteMeasureOnCompacts`). This file records the relative
@@ -25,11 +25,24 @@ compact sets are replaced by their measurable envelopes.
   restriction to every σ-compact set.
 * `IsSigmaCompact.sigmaFinite_comap_subtype`: a measure that is finite on compact sets has σ-finite
   pullback `μ.comap (↑)` to every measurable σ-compact set.
+* `Measure.sigmaFinite_restrict_iUnion`: the restriction to a countable union of finite-measure
+  measurable sets is sigma-finite.
 -/
 
 public section
 
 open Set MeasureTheory
+open scoped ENNReal
+
+/-- Restriction to a countable union of finite-measure measurable sets is sigma-finite. -/
+theorem MeasureTheory.Measure.sigmaFinite_restrict_iUnion {α : Type*} [MeasurableSpace α]
+    (μ : Measure α) (s : ℕ → Set α) (hs : ∀ n, MeasurableSet (s n))
+    (hfin : ∀ n, μ (s n) < ∞) : SigmaFinite (μ.restrict (⋃ n, s n)) := by
+  refine ⟨⟨⟨fun n ↦ s n ∪ (⋃ n, s n)ᶜ, fun _ ↦ trivial, fun n ↦ ?_, ?_⟩⟩⟩
+  · simpa only [Measure.restrict_apply ((hs n).union (MeasurableSet.iUnion hs).compl),
+      union_inter_distrib_right, compl_inter_self, union_empty,
+      inter_eq_left.mpr (subset_iUnion s n)] using hfin n
+  · rw [← iUnion_union, union_compl_self]
 
 variable {α : Type*} [MeasurableSpace α] [TopologicalSpace α] {μ : Measure α}
 
