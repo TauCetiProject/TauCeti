@@ -250,8 +250,8 @@ private theorem norm_floerConformalJetCoeff_comp_endPrincipalCoeff_sub_le (ω : 
         J₀.toLinearMap.toContinuousLinearMap‖ := by
   set L := J (positiveEndChart q ζ) (u (positiveEndChart q ζ))
   set Δ := L.toLinearMap.toContinuousLinearMap - J₀.toLinearMap.toContinuousLinearMap
-  have hc₁ := abs_fst_endUnitTangent_le q ζ
-  have hc₂ := abs_snd_endUnitTangent_le q ζ
+  have hc₁ := abs_fst_endUnitTangent_le_one q ζ
+  have hc₂ := abs_snd_endUnitTangent_le_one q ζ
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
   -- Since `L² = J₀² = -1`, the difference of the two principal parts is `c₂ Δ y + c₁ Δ z`.
   have hid : ((ω.floerConformalJetCoeff ρ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap)

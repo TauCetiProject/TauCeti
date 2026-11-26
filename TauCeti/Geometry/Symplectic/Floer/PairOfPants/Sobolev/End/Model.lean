@@ -127,12 +127,14 @@ theorem fst_endUnitTangent_sq_add_snd_sq (q : Puncture) (ζ : ℝ × ℝ) :
   exact inv_mul_cancel₀ (pow_ne_zero 2 hr)
 
 /-- The first component of the unit tangent of the end chart is at most one in absolute value. -/
-theorem abs_fst_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).1| ≤ 1 :=
+theorem abs_fst_endUnitTangent_le_one (q : Puncture) (ζ : ℝ × ℝ) :
+    |(endUnitTangent q ζ).1| ≤ 1 :=
   sq_le_one_iff_abs_le_one _ |>.1 <| by
     linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).2]
 
 /-- The second component of the unit tangent of the end chart is at most one in absolute value. -/
-theorem abs_snd_endUnitTangent_le (q : Puncture) (ζ : ℝ × ℝ) : |(endUnitTangent q ζ).2| ≤ 1 :=
+theorem abs_snd_endUnitTangent_le_one (q : Puncture) (ζ : ℝ × ℝ) :
+    |(endUnitTangent q ζ).2| ≤ 1 :=
   sq_le_one_iff_abs_le_one _ |>.1 <| by
     linarith [fst_endUnitTangent_sq_add_snd_sq q ζ, sq_nonneg (endUnitTangent q ζ).1]
 
