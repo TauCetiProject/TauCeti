@@ -25,7 +25,9 @@ cardinality raised to the prime multiplicity. Over `ℤ` itself, the absolute no
 The cardinality of the quotient of a submodule `p` by a submodule `N` of `p` is the index of the
 image of `N` in `p`, as additive subgroups of the ambient module.
 A submodule with finite quotient has nonzero index, and the index of the image of a submodule
-under an injective linear map is its index times the index of the range.
+under an injective linear map is its index times the index of the range. Preimages under a
+surjective linear map keep the index, so a linear equivalence matches the submodules of a given
+index.
 
 In a Dedekind domain that is free of finite rank over `ℤ`, congruent elements whose norms
 have nonnegative product generate principal ideals with congruent absolute norms.
@@ -40,6 +42,9 @@ nonzero `s`, so the index `Submodule.cardQuot` is multiplicative along this chai
 * `Submodule.cardQuot_ne_zero`: a submodule with finite quotient has nonzero index.
 * `Submodule.cardQuot_map_of_injective`: for an injective linear map `f`,
   `#(N ⧸ f P) = #(M ⧸ P) * #(N ⧸ range f)`.
+* `Submodule.cardQuot_comap_of_surjective`: preimages under a surjective linear map keep the
+  index.
+* `Submodule.subtypeCardQuotEquiv`: a linear equivalence matches the submodules of a given index.
 * `Ideal.absNorm_comap_of_ringEquiv`, `Ideal.absNorm_map_of_ringEquiv`: the absolute norm of an
   ideal is unchanged by transporting it along a ring isomorphism, in either direction.
 * `Ideal.absNorm_map_of_ringEquiv_eq_natCard`: the absolute norm of an ideal transported from an
@@ -90,6 +95,23 @@ theorem cardQuot_map_of_injective {R M N : Type*} [Ring R] [AddCommGroup M] [Mod
     (P : Submodule R M) : (P.map f).cardQuot = P.cardQuot * (LinearMap.range f).cardQuot := by
   rw [cardQuot, cardQuot, cardQuot, map_toAddSubgroup, LinearMap.range_toAddSubgroup]
   exact AddSubgroup.index_map_of_injective _ hf
+
+/-- Pulling a submodule back along a surjective linear map preserves its index. Adapted from
+`cardQuot_comap_of_surjective` in `src/New/Spanning/RemainingTerms/Discriminants.lean` of
+grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC). -/
+theorem cardQuot_comap_of_surjective {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {f : M →ₗ[R] N} (hf : Function.Surjective f)
+    (P : Submodule R N) : (P.comap f).cardQuot = P.cardQuot :=
+  P.toAddSubgroup.index_comap_of_surjective (f := f.toAddMonoidHom) hf
+
+/-- A linear equivalence `M ≃ N` matches the submodules of `M` of index `n` with those of `N`,
+by taking images. -/
+noncomputable def subtypeCardQuotEquiv {R M N : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N) (n : ℕ) :
+    {P : Submodule R M // P.cardQuot = n} ≃ {P : Submodule R N // P.cardQuot = n} :=
+  (orderIsoMapComap e).toEquiv.subtypeEquiv fun P ↦ by
+    rw [RelIso.coe_fn_toEquiv, orderIsoMapComap_apply, cardQuot_map_of_injective e.injective,
+      LinearEquiv.range, cardQuot_top, mul_one]
 
 end Submodule
 
