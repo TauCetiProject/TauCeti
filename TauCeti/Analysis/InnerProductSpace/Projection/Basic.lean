@@ -86,6 +86,9 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   onto `U` to `U` itself gives the identity map.
 * `Submodule.preimage_orthogonalProjectionOnto_eq`: the preimage of `s ⊆ U` under the
   orthogonal projection onto `U` is the cylinder `{y + z | y ∈ s, z ∈ Uᗮ}`.
+* `Submodule.preimage_orthogonalProjectionOnto_setOf_inner`: for `u ∈ U` and a predicate `p`,
+  the preimage of `{y ∈ U | p ⟪y, u⟫}` under the orthogonal projection onto `U` is
+  `{x | p ⟪x, u⟫}`.
 * `Submodule.adjoint_subtype`: the adjoint of subspace inclusion is orthogonal projection
   onto that subspace.
 * `Submodule.adjoint_orthogonalProjectionOnto_toLinearMap`: the adjoint of restricted
@@ -478,6 +481,14 @@ theorem preimage_orthogonalProjectionOnto_eq (s : Set U) :
   rintro ⟨y, hy, z, hz, rfl⟩
   rwa [Set.mem_preimage, map_add, U.orthogonalProjectionOnto_mem_subspace_eq_self,
     U.orthogonalProjectionOnto_eq_zero_iff.2 hz, add_zero]
+
+/-- For `u ∈ U` and any predicate `p` on `𝕜`, the cylinder over `{y ∈ U | p ⟪y, u⟫}` is
+`{x ∈ E | p ⟪x, u⟫}`. For instance, over `ℝ` with `p = (· < s)`, the cylinder over the
+half-space `{y ∈ U | ⟪y, u⟫ < s}` of `U` is the half-space `{x ∈ E | ⟪x, u⟫ < s}` of `E`. -/
+theorem preimage_orthogonalProjectionOnto_setOf_inner (u : U) (p : 𝕜 → Prop) :
+    U.orthogonalProjectionOnto ⁻¹' {y | p ⟪y, u⟫_𝕜} = {x : E | p ⟪x, (u : E)⟫_𝕜} := by
+  ext x
+  simp only [Set.mem_preimage, Set.mem_ofPred_eq, inner_orthogonalProjectionOnto_eq_of_mem_right]
 
 /-- The adjoint of the inclusion `U → E` is the orthogonal projection `E → U`.
 Both maps are regarded as finite-dimensional algebraic linear maps. -/
