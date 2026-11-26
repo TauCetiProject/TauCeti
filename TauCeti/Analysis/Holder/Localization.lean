@@ -24,11 +24,12 @@ support, together with the supremum bound at larger distances, makes the top der
 cutoff product globally Hölder
 (`TauCeti.holderWith_iteratedFDeriv_cutoff_smul_of_thickening_subset`).
 
-Both rest on the Leibniz rule `TauCeti.holderOnWith_iteratedFDeriv_smul`, which bounds the Hölder
-constant of the `k`-th derivative of `χ f` by the bounds and Hölder constants of the derivatives
-of the two factors, and on `TauCeti.dist_iteratedFDeriv_cutoff_smul_le_of_forall_mem_tsupport`,
-which reduces a Hölder bound for the cutoff product to pairs of points the first of which lies in
-the support of `χ`.
+This thickening result rests on the Leibniz rule `TauCeti.holderOnWith_iteratedFDeriv_smul`
+(through its convex specialization `TauCeti.holderOnWith_iteratedFDeriv_smul_of_convex`), which
+bounds the Hölder constant of the `k`-th derivative of `χ f` by the bounds and Hölder constants of
+the derivatives of the two factors, and on
+`TauCeti.dist_iteratedFDeriv_cutoff_smul_le_of_forall_mem_tsupport`, which reduces a Hölder
+bound for the cutoff product to pairs of points the first of which lies in the support of `χ`.
 -/
 
 public section

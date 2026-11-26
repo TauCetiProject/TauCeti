@@ -105,7 +105,7 @@ theorem restrictOnL_mem_littleHolder {f : CkHolderSpace k α E F}
       _root_.iteratedFDeriv ℝ k f ∘ Subtype.val :=
     funext fun x ↦ iteratedFDeriv_restrictOnL Ω f (Fin.last k) x
   rw [h]
-  exact hf.comp_isometry isometry_subtypeVal
+  exact hf.comp_lipschitzWith (LipschitzWith.subtypeVal _)
 
 end CkHolderSpace
 
