@@ -151,6 +151,7 @@ theorem riemannHypothesis_iff_forall_re_eq_of_zetaZeroMult_ne_zero :
 
 /-- The functional equation `Λ(1 - s) = Λ(s)` makes the zero multiset invariant under
 `ρ ↦ 1 - ρ`. -/
+@[simp]
 theorem zetaZeroMult_one_sub (ρ : ℂ) : zetaZeroMult (1 - ρ) = zetaZeroMult ρ := by
   have h := riemannZetaData_hasFunctionalEquation.divisor_entireCompletion_one_sub
     riemannZetaData_hasMeromorphicContinuation ρ
@@ -160,6 +161,7 @@ theorem zetaZeroMult_one_sub (ρ : ℂ) : zetaZeroMult (1 - ρ) = zetaZeroMult �
 
 /-- The conjugation symmetry `Λ(conj s) = conj Λ(s)` makes the zero multiset invariant under
 `ρ ↦ conj ρ`. -/
+@[simp]
 theorem zetaZeroMult_conj (ρ : ℂ) : zetaZeroMult (conj ρ) = zetaZeroMult ρ := by
   have h := riemannZetaData_hasMeromorphicContinuation.divisor_dual_entireCompletion_conj ρ
   simp only [riemannZetaData_dual, riemannZetaData_entireCompletion] at h
