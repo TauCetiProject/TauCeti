@@ -50,9 +50,9 @@ variable (M E : Type w) [TopologicalSpace M] [T2Space M]
 local homology transport to its generators. -/
 def localOrientationTransport {x y : FundamentalGroupoid M} (f : x ⟶ y) :
     LocalOrientation M x.as d ≃ LocalOrientation M y.as d :=
-  (ModuleLocalOrientation.equivLocalOrientation M x.as d).symm.trans
-    ((moduleLocalOrientationTransport (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d f).trans
-      (ModuleLocalOrientation.equivLocalOrientation M y.as d))
+  LocalOrientation.equivOfIso
+    ((localHomologySystem (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d).mapIso
+      (asIso f))
 
 /-- On local homology classes, orientation transport is the integral local homology transport. -/
 @[simp]
@@ -60,7 +60,7 @@ lemma coe_localOrientationTransport {x y : FundamentalGroupoid M} (f : x ⟶ y)
     (z : LocalOrientation M x.as d) :
     (localOrientationTransport M E d f z).val =
       localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) M E d f z.val :=
-  by simp [localOrientationTransport]
+  LocalOrientation.coe_equivOfIso _ z
 
 /-- The inverse equivalence acts on classes by transport along the reversed path. -/
 @[simp]
@@ -69,33 +69,40 @@ lemma coe_localOrientationTransport_symm {x y : FundamentalGroupoid M} (f : x �
     ((localOrientationTransport M E d f).symm z).val =
       localHomologyTransport (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
         M E d (inv f) z.val :=
-  by simp [localOrientationTransport]
+  LocalOrientation.coe_equivOfIso_symm _ z
 
 @[simp]
 lemma localOrientationTransport_id (x : FundamentalGroupoid M) :
-    localOrientationTransport M E d (𝟙 x) = Equiv.refl _ :=
-  Equiv.ext fun _ ↦ by simp [localOrientationTransport]
+    localOrientationTransport M E d (𝟙 x) = Equiv.refl _ := by
+  apply Equiv.ext
+  intro z
+  apply Subtype.ext
+  simp
 
 /-- Transport along a composite is successive transport along its two paths. -/
 @[simp]
 lemma localOrientationTransport_comp {x y z : FundamentalGroupoid M} (f : x ⟶ y)
     (g : y ⟶ z) :
     localOrientationTransport M E d (f ≫ g) =
-      (localOrientationTransport M E d f).trans (localOrientationTransport M E d g) :=
-  Equiv.ext fun _ ↦ by simp [localOrientationTransport]
+      (localOrientationTransport M E d f).trans (localOrientationTransport M E d g) := by
+  apply Equiv.ext
+  intro a
+  apply Subtype.ext
+  simp [localHomologyTransport_comp]
 
 /-- Reversing a path inverts its equivalence of local orientations. -/
 @[simp]
 lemma localOrientationTransport_inv {x y : FundamentalGroupoid M} (f : x ⟶ y) :
-    localOrientationTransport M E d (inv f) = (localOrientationTransport M E d f).symm :=
-  Equiv.ext fun _ ↦ by simp [localOrientationTransport]
+    localOrientationTransport M E d (inv f) = (localOrientationTransport M E d f).symm := by
+  ext z
+  simp
 
 /-- Transport commutes with reversal of local orientations. -/
 @[simp]
 lemma localOrientationTransport_neg {x y : FundamentalGroupoid M} (f : x ⟶ y)
     (z : LocalOrientation M x.as d) :
-    localOrientationTransport M E d f (-z) = -(localOrientationTransport M E d f z) := by
-  simp [localOrientationTransport]
+    localOrientationTransport M E d f (-z) = -(localOrientationTransport M E d f z) :=
+  LocalOrientation.equivOfIso_neg _ z
 
 /-- Transport of local orientations along loops at `x`: the action of the fundamental group
 `π₁(M, x)` on the local orientations at `x`. -/

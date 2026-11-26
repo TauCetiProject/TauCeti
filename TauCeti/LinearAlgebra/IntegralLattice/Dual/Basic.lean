@@ -90,14 +90,11 @@ theorem dualCarrier_eq_span_dualBasis (L : IntegralLattice V) [L.IsNondegenerate
       congrArg L.form.dualSubmodule b.span_range_extendOfIsFullLattice.symm
     _ = _ := L.form.dualSubmodule_span_of_basis L.form_nondegenerate (b.extendOfIsFullLattice ℚ)
 
-open Classical in
 /-- The dual carrier of a nondegenerate integral lattice is a full lattice in the same rational
 ambient space. -/
-noncomputable instance instIsFullLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
-    L.dualCarrier.IsFullLattice ℚ := by
-  let b := Module.Free.chooseBasis ℤ L.carrier
-  rw [L.dualCarrier_eq_span_dualBasis b]
-  exact isFullLattice_span_basis (L.form.dualBasis L.form_nondegenerate (b.extendOfIsFullLattice ℚ))
+instance instIsFullLatticeDualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
+    L.dualCarrier.IsFullLattice ℚ :=
+  L.form.isFullLattice_dualSubmodule L.form_nondegenerate L.carrier
 
 instance (L : IntegralLattice V) [L.IsNondegenerate] : Module.Free ℤ L.dualCarrier :=
   Submodule.IsLattice.free ℚ L.dualCarrier

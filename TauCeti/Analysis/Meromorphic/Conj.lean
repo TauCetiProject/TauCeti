@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.Divisor
 public import Mathlib.Analysis.Meromorphic.NormalForm
+public import Mathlib.Analysis.Meromorphic.TrailingCoefficient
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Meromorphic.NormalForm
 import TauCeti.Topology.ContinuousOn.PuncturedNhds
@@ -37,6 +38,8 @@ one.
   `f (a - w) = c * conj (f (conj w))`, `z ↦ a - conj z` preserves `meromorphicOrderAt f` and
   `MeromorphicOn.divisor f U`.
 * `TauCeti.toMeromorphicNFOn_conj_conj`: reflection commutes with normalization on a set.
+* `TauCeti.meromorphicTrailingCoeffAt_conj_conj`: reflection conjugates the leading Laurent
+  coefficient.
 -/
 
 public section
@@ -248,3 +251,27 @@ theorem TauCeti.toMeromorphicNFOn_conj_conj (f : ℂ → ℂ) (U : Set ℂ) :
   · simp only [toMeromorphicNFOn_of_not_meromorphicOn hf,
       toMeromorphicNFOn_of_not_meromorphicOn (meromorphicOn_conj_conj_iff.not.mpr hf),
       Pi.zero_apply, map_zero]
+
+/-- The leading Laurent coefficient is conjugated under reflection, including the totalized
+zero coefficient for a zero germ or a nonmeromorphic function. -/
+@[simp]
+theorem TauCeti.meromorphicTrailingCoeffAt_conj_conj (f : ℂ → ℂ) (c : ℂ) :
+    meromorphicTrailingCoeffAt (conj ∘ f ∘ conj) c =
+      conj (meromorphicTrailingCoeffAt f (conj c)) := by
+  by_cases hf : MeromorphicAt f (conj c)
+  · by_cases h : meromorphicOrderAt f (conj c) = ⊤
+    · simp [MeromorphicAt.meromorphicTrailingCoeffAt_of_order_eq_top h,
+        MeromorphicAt.meromorphicTrailingCoeffAt_of_order_eq_top
+          (meromorphicOrderAt_conj_conj.trans h)]
+    · obtain ⟨g, hg, hg₀, hfg⟩ := (meromorphicOrderAt_ne_top_iff hf).mp h
+      have hconj : Tendsto conj (𝓝[≠] c) (𝓝[≠] (conj c)) :=
+        Complex.continuous_conj.continuousAt.tendsto_nhdsNE (starRingEnd ℂ).injective
+      have he : (conj ∘ f ∘ conj) =ᶠ[𝓝[≠] c] fun z ↦
+          (z - c) ^ (meromorphicOrderAt f (conj c)).untop₀ • (conj ∘ g ∘ conj) z := by
+        filter_upwards [hconj.eventually hfg] with z hz
+        simp [hz]
+      rw [hg.meromorphicTrailingCoeffAt_of_ne_zero_of_eq_nhdsNE hg₀ hfg]
+      exact (analyticAt_conj_conj_iff.mpr hg).meromorphicTrailingCoeffAt_of_eq_nhdsNE
+        (by simpa only [meromorphicOrderAt_conj_conj] using he)
+  · simp [meromorphicTrailingCoeffAt_of_not_MeromorphicAt hf,
+      meromorphicTrailingCoeffAt_of_not_MeromorphicAt (meromorphicAt_conj_conj_iff.not.mpr hf)]

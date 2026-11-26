@@ -539,6 +539,13 @@ theorem primePsi_natCast_eq_sum_range (S : Set (HeightOneSpectrum (𝓞 K))) (n 
     primePsi K S (n : ℝ) = ∑ m ∈ Finset.range (n + 1), primeVonMangoldtCoeff K S m := by
   rw [primePsi_eq_sum_range, Nat.floor_natCast]
 
+/-- Chebyshev's `ψ` as the partial sum of the coefficient system over `1 ≤ n ≤ ⌊x⌋₊`, the
+indexing used by Mathlib's `LSeries` partial-summation API. The coefficient at `0` vanishes. -/
+theorem primePsi_eq_sum_Icc (S : Set (HeightOneSpectrum (𝓞 K))) (x : ℝ) :
+    primePsi K S x = ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, primeVonMangoldtCoeff K S n := by
+  rw [primePsi_eq_sum_range, Finset.range_eq_Ico, Finset.sum_eq_sum_Ico_succ_bot (by omega),
+    ArithmeticFunction.map_zero, zero_add, Finset.Ico_add_one_right_eq_Icc]
+
 open scoped Classical in
 /-- Over `ℚ`, the coefficient at `p ^ k`, for `p` the rational prime under `v`, is `log p` if
 `v ∈ S` and `0` otherwise. -/

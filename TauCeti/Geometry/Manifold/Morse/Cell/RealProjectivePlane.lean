@@ -83,7 +83,7 @@ namespace TauCeti
 
 /-- The height `[x : y : z] ↦ (y² + 2z²) / (x² + y² + z²)`, the projective moment function with
 weights `(0, 1, 2)`, in homogeneous coordinates. -/
-private theorem projectiveMomentFunction_zero_one_two_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
+theorem projectiveMomentFunction_zero_one_two_mk (v : Fin 3 → ℝ) (hv : v ≠ 0) :
     projectiveMomentFunction ℝ ![0, 1, 2] (mk ℝ v hv) =
       (v 1 ^ 2 + 2 * v 2 ^ 2) / (v 0 ^ 2 + v 1 ^ 2 + v 2 ^ 2) := by
   simp [projectiveMomentFunction_mk, Fin.sum_univ_three]
