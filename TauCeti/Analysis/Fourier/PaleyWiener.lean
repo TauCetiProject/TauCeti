@@ -13,7 +13,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Fourier.LpSpace
 import TauCeti.Analysis.LaplaceTransform.Truncated
-import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Paley–Wiener functions
@@ -196,12 +195,10 @@ theorem integral_paleyWienerFunction_mul_conj (ht : 0 ≤ t)
     (hψ : MemLp ψ 2 (volume.restrict (Ioc (-t) t))) :
     ∫ x : ℝ, paleyWienerFunction t φ x * conj (paleyWienerFunction t ψ x) =
       2 * π * ∫ s in -t..t, φ s * conj (ψ s) := by
-  have hIoc := (measure_Ioc_lt_top (μ := volume) (a := -t) (b := t)).ne
-  have hψ₁ :=
-    (hψ.integrableOn_of_subset one_le_two subset_rfl hIoc).integrable_indicator measurableSet_Ioc
+  have hψ₁ := (integrable_indicator_iff measurableSet_Ioc).2 (hψ.integrable one_le_two)
   have h := hψ₁.integral_inner_fourier_fourier
     ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hψ)
-    ((hφ.integrableOn_of_subset one_le_two subset_rfl hIoc).integrable_indicator measurableSet_Ioc)
+    ((integrable_indicator_iff measurableSet_Ioc).2 (hφ.integrable one_le_two))
     ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hφ)
   simp only [RCLike.inner_apply] at h
   simp_rw [paleyWienerFunction_ofReal_eq_fourier ht]
@@ -228,8 +225,7 @@ theorem integral_norm_paleyWienerFunction_sq (ht : 0 ≤ t)
 /-- A Paley–Wiener function of a density in `L²(-t, t)` is square integrable on `ℝ`. -/
 theorem memLp_paleyWienerFunction (ht : 0 ≤ t) (hφ : MemLp φ 2 (volume.restrict (Ioc (-t) t))) :
     MemLp (fun x : ℝ ↦ paleyWienerFunction t φ x) 2 := by
-  have hφ₁ := (hφ.integrableOn_of_subset one_le_two subset_rfl
-    measure_Ioc_lt_top.ne).integrable_indicator measurableSet_Ioc
+  have hφ₁ := (integrable_indicator_iff measurableSet_Ioc).2 (hφ.integrable one_le_two)
   have hF := hφ₁.memLp_fourier_two
     ((memLp_indicator_iff_restrict measurableSet_Ioc.nullMeasurableSet).2 hφ)
   have hc : Continuous fun x : ℝ ↦ paleyWienerFunction t φ x :=

@@ -37,8 +37,11 @@ theorem integral_sin_mul_div_sq {t : ℝ} (ht : 0 ≤ t) :
   have hae : (fun x : ℝ ↦ ‖paleyWienerFunction t 1 x‖ ^ 2) =ᵐ[volume]
       fun x ↦ 4 * (Real.sin (t * x) / x) ^ 2 := by
     filter_upwards [Measure.ae_ne volume 0] with x hx
-    rw [paleyWienerFunction_one t (ofReal_ne_zero.2 hx), ← ofReal_mul, ← ofReal_sin,
-      ← ofReal_ofNat, ← ofReal_mul, ← ofReal_div, norm_real, Real.norm_eq_abs, sq_abs]
+    have hF : paleyWienerFunction t 1 x = ((2 * Real.sin (t * x) / x : ℝ) : ℂ) := by
+      rw [paleyWienerFunction_one t (ofReal_ne_zero.2 hx)]
+      push_cast
+      ring
+    rw [hF, norm_real, Real.norm_eq_abs, sq_abs]
     ring
   rw [integral_congr_ae hae, integral_const_mul] at h
   linarith
