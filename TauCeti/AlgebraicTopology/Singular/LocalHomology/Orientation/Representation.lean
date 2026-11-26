@@ -23,7 +23,8 @@ Thus the coefficient denoted `o_E^∨` in Pardon, Definition 4.1.1, is
 `(ρ.orientation.baseChange R).dual`. The tensor and dual evaluation equations
 below specify this coefficient on the actual local-homology carrier. The module is invertible,
 so `Representation.dualTprodEquivTrivial` supplies its canonical equivariant evaluation pairing,
-including after scalar extension.
+including after scalar extension. As a functor `SingleObj G ⥤ ModuleCat R`, the coefficient
+`o_E^∨` is `Representation.dualOrientationLine`.
 
 ## References
 
@@ -210,6 +211,40 @@ theorem dual_baseChange_orientation_apply_tmul (ρ : Representation ℝ G E) (g 
   congr 1
   exact (map_zsmul (TensorProduct.mk ℤ R (orientationModule E) r)
     (SignType.sign (LinearMap.det (ρ g)) : ℤ) x).symm
+
+variable (R) in
+/-- **The dual orientation line** `o_E^∨` of a real representation `ρ` of `G` on `E`, with
+coefficients in `R`: the dual `(ρ.orientation.baseChange R).dual` of the scalar extension to `R`
+of the integral orientation line `o_E = H_m(E, E ∖ 0; ℤ)`, `m = dim E`, on which `g ∈ G` acts by
+the sign of the determinant of `ρ g` (`dual_baseChange_orientation_eq_sign_det_smul`), as a
+functor `SingleObj G ⥤ ModuleCat R`. -/
+-- The body is exposed so that the value is definitionally the dual line: the statement of
+-- `dualOrientationLine_map`, a map between values, typechecks only then.
+@[expose]
+def dualOrientationLine (ρ : Representation ℝ G E) :
+    SingleObj G ⥤ ModuleCat.{max u w} R :=
+  SingleObj.functor (X := ModuleCat.of R (Dual R (R ⊗[ℤ] orientationModule E)))
+    { toFun g := .of <| ModuleCat.ofHom (((orientation ρ).baseChange R).dual g)
+      map_one' := End.ext <| ModuleCat.hom_ext <| by
+        rw [map_one, End.one_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_id, Module.End.one_eq_id]
+      map_mul' g h := End.ext <| ModuleCat.hom_ext <| by
+        rw [map_mul, End.mul_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
+          ModuleCat.hom_ofHom, Module.End.mul_eq_comp] }
+
+variable (R) in
+/-- The dual orientation line is the dual of the scalar extension of `o_E`. -/
+@[simp]
+theorem dualOrientationLine_obj (ρ : Representation ℝ G E) (Y : SingleObj G) :
+    (dualOrientationLine R ρ).obj Y = ModuleCat.of R (Dual R (R ⊗[ℤ] orientationModule E)) :=
+  (rfl)
+
+variable (R) in
+/-- An element of `G` acts on the dual orientation line by the dual of the scalar extension of
+its action on the orientation line of `E`. -/
+theorem dualOrientationLine_map (ρ : Representation ℝ G E) (g : G) :
+    ((dualOrientationLine R ρ).map (X := SingleObj.star _) (Y := SingleObj.star _) g).hom =
+      ((orientation ρ).baseChange R).dual g :=
+  (rfl)
 
 end Dual
 

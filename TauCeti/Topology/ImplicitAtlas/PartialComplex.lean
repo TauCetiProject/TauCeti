@@ -41,7 +41,8 @@ This file constructs them, for coefficients in a commutative ring `k`.
   `TauCeti.ImplicitAtlas.deformationAction`, and the supports `Z_K` are invariant, so it acts on
   the pair `(D_(I,J,B), D_(I,J,B) ∖ Z_K)` (`TauCeti.ImplicitAtlas.deformationPairFunctor`).
 * **The coefficients.** The dual orientation line `o_(E_B)^∨`, on which `g ∈ Γ_B` acts by the sign
-  of the determinant of `g` on `E_B`, is `TauCeti.ImplicitAtlas.dualOrientationLine`.
+  of the determinant of `g` on `E_B`, is `Representation.dualOrientationLine` of the external
+  direct sum `E_B` (`Representation.externalPi`).
 * **The complexes.** `TauCeti.ImplicitAtlas.partialChains` is the complex of invariant relative
   chains `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)` in its homological grading, the limit
   of the diagonal action `TopPair.diagonalChainAction`. Placing the chains of degree `n` in
@@ -247,51 +248,14 @@ section Complexes
 
 variable (k : Type u) [CommRing k]
 
-variable (ρ) in
-/-- **The dual orientation line** `o_(E_B)^∨` of the obstruction representation
-`E_B = ⊕_(α ∈ B) E_α` of `Γ_B`, with coefficients in `k`: the dual of the scalar extension to `k`
-of the integral orientation line `o_(E_B) = H_m(E_B, E_B ∖ 0; ℤ)`, `m = dim E_B`, on which
-`g ∈ Γ_B` acts by the sign of the determinant of `g` on `E_B`
-(`Representation.dual_baseChange_orientation_eq_sign_det_smul`), as a functor
-`SingleObj Γ_B ⥤ ModuleCat k`. -/
--- The body is exposed so that the value is definitionally the dual line: the statement of
--- `dualOrientationLine_map`, a map between values, typechecks only then.
-@[expose]
-def dualOrientationLine (B : Finset A) : SingleObj ((α : B) → Γ α) ⥤ ModuleCat.{u} k :=
-  SingleObj.functor (X := ModuleCat.of k (Dual k (k ⊗[ℤ] orientationModule ((α : B) → E α))))
-    { toFun g := .of <| ModuleCat.ofHom
-        (((Representation.externalPi fun α : B ↦ ρ α).orientation.baseChange k).dual g)
-      map_one' := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_one, End.one_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_id, Module.End.one_eq_id]
-      map_mul' g h := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_mul, End.mul_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-          ModuleCat.hom_ofHom, Module.End.mul_eq_comp] }
-
-omit [DecidableEq A] [∀ α, Finite (Γ α)] in
-/-- The dual orientation line is the dual of the scalar extension of `o_(E_B)`. -/
-@[simp]
-theorem dualOrientationLine_obj (B : Finset A) (Y : SingleObj ((α : B) → Γ α)) :
-    (dualOrientationLine ρ k B).obj Y =
-      ModuleCat.of k (Dual k (k ⊗[ℤ] orientationModule ((α : B) → E α))) :=
-  (rfl)
-
-omit [DecidableEq A] [∀ α, Finite (Γ α)] in
-/-- An element of `Γ_B` acts on the dual orientation line by the dual of the scalar extension of
-its action on the orientation line of `E_B`. -/
-theorem dualOrientationLine_map (B : Finset A) (g : (α : B) → Γ α) :
-    ((dualOrientationLine ρ k B).map (X := SingleObj.star _) (Y := SingleObj.star _) g).hom =
-      ((Representation.externalPi fun α : B ↦ ρ α).orientation.baseChange k).dual g :=
-  (rfl)
-
 /-- **The invariant relative chains of a deformation pair**: the complex
 `C(D_(I,J,B), D_(I,J,B) ∖ Z_K; o_(E_B)^∨)^(Γ_B)` of the chains invariant under the diagonal action
 of `Γ_B` on the deformation pair and on the dual orientation line, in its homological grading. -/
--- The body is exposed so that the complexes are definitionally the limits: the restrictions and
--- comparisons below, maps of limits between them, typecheck only then.
-@[expose]
 def partialChains (I : Finset A) {J B : Finset A} (hJB : J ⊆ B) (K : Set X) :
     ChainComplex (ModuleCat.{u} k) ℕ :=
-  limit (TopPair.diagonalChainAction (dualOrientationLine ρ k B) (𝒜.deformationPairFunctor I hJB K))
+  limit (TopPair.diagonalChainAction
+    ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k)
+    (𝒜.deformationPairFunctor I hJB K))
 
 variable (ρ) in
 /-- **The invariant relative chains with coefficients in the dual orientation line, in cochain
@@ -299,12 +263,35 @@ degrees `n - •`**, as a functor of a pair with an action of `Γ_B`: a pair `P`
 `C(P; o_(E_B)^∨)^(Γ_B)` of the chains invariant under the diagonal action, placed in cochain degrees
 `n - •`, and an equivariant map of pairs to the induced map of invariant chains. -/
 -- The body is exposed so that the values are definitionally the extended limits: the statement of
--- `partialVirtualComplex_obj` typechecks only then.
+-- `invariantChainsFunctor_map`, a map between values, typechecks only then.
 @[expose]
 def invariantChainsFunctor (B : Finset A) (n : ℤ) :
     (SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) ⥤ CochainComplex (ModuleCat.{u} k) ℤ :=
-  TopPair.diagonalChainActionFunctor (dualOrientationLine ρ k B) ⋙ lim ⋙
+  TopPair.diagonalChainActionFunctor
+      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) ⋙ lim ⋙
     (ComplexShape.embeddingUpIntLE n).extendFunctor _
+
+omit [DecidableEq A] [∀ α, Finite (Γ α)] in
+/-- The invariant chains of a pair `P` with an action of `Γ_B`, in cochain degrees `n - •`, are the
+extension to `ℤ` of the limit of the diagonal action on its chains. -/
+@[simp]
+theorem invariantChainsFunctor_obj (B : Finset A) (n : ℤ)
+    (P : SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}) :
+    (invariantChainsFunctor ρ k B n).obj P = (limit (TopPair.diagonalChainAction
+      ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) P)).extend
+        (ComplexShape.embeddingUpIntLE n) :=
+  (rfl)
+
+omit [DecidableEq A] [∀ α, Finite (Γ α)] in
+/-- An equivariant map of pairs `τ : P ⟶ Q` induces the extension to `ℤ` of the map of limits
+induced by the equivariant chain map of `τ`. -/
+theorem invariantChainsFunctor_map (B : Finset A) (n : ℤ)
+    {P Q : SingleObj ((α : B) → Γ α) ⥤ TopPair.{u}} (τ : P ⟶ Q) :
+    (invariantChainsFunctor ρ k B n).map τ = HomologicalComplex.extendMap (lim.map
+      (TopPair.diagonalChainActionMap
+        ((Representation.externalPi fun α : B ↦ ρ α).dualOrientationLine k) τ))
+          (ComplexShape.embeddingUpIntLE n) :=
+  (rfl)
 
 -- The body is exposed so that the values are definitionally the extended chain complexes: the
 -- statement of `partialVirtualComplexMap_app`, a map between values, typechecks only then.
