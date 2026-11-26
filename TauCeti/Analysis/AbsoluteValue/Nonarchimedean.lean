@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Ring.WithAbs
+public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 
@@ -51,6 +52,8 @@ finite place of the extension.
   an injective ring homomorphism is nonarchimedean.
 * `AbsoluteValue.isNonarchimedean_trivial`: the trivial absolute value on any semiring without zero
   divisors is nonarchimedean.
+* `NormedField.isNonarchimedean_toAbsoluteValue`: the norm of a nonarchimedean normed field is a
+  nonarchimedean absolute value.
 
 ## References
 
@@ -226,6 +229,15 @@ theorem liesOver_nonarchRpow {K L : Type*} [CommSemiring K] [Semiring L] [Algebr
   simp [under_def, LiesOver.apply_algebraMap u]
 
 end AbsoluteValue
+
+namespace NormedField
+
+/-- The norm of a nonarchimedean normed field is a nonarchimedean absolute value. -/
+theorem isNonarchimedean_toAbsoluteValue (K : Type*) [NormedField K] [IsUltrametricDist K] :
+    IsNonarchimedean (toAbsoluteValue K) := fun x y ↦ by
+  simpa using IsUltrametricDist.isNonarchimedean_norm x y
+
+end NormedField
 
 /- For an archimedean absolute value a power with exponent greater than `1` need not be an
 absolute value: `|·| ^ 2` on `ℚ` violates the triangle inequality at `1 + 1`. -/
