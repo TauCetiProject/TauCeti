@@ -167,8 +167,7 @@ private theorem eventually_orientation_eq_shortExactLeft_iff_of_tendsto_basis {�
       ContinuousLinearMap.coe_injective (by simpa [S] using hs)
     have h := (ContinuousLinearMap.continuous_det.tendsto _).comp
       (((ContinuousLinearMap.compL ℝ F E F).flip S).continuous.tendsto L₀ |>.comp hL)
-    rwa [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, hS,
-      ContinuousLinearMap.det, ContinuousLinearMap.coe_id, LinearMap.det_id] at h
+    simpa [Function.comp_def, hS, ContinuousLinearMap.det] using h
   filter_upwards [B₀.eventually_orientation_eq_of_tendsto hw,
     hM.eventually (lt_mem_nhds one_pos)] with x hx hM hg ha b hb ov
   -- The basis `e' = L x ∘ s ∘ e` of `F` has the orientation of `e`, and `s ∘ e` lifts it.
