@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.TemperedDistribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 
 /-!
@@ -40,8 +41,6 @@ The density input is Mathlib's `SchwartzMap.dense_hasCompactSupport`.
 * `TemperedDistribution.eq_zero_of_forall_hasCompactSupport_fourier`: dually, a tempered
   distribution vanishing on every Schwartz function whose Fourier transform has compact support is
   zero.
-* `SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport`: a Schwartz function, as a
-  tempered distribution, vanishes off its support.
 * `TemperedDistribution.exists_pos_isVanishingOn_fourier_compl_closedBall_of_hasCompactSupport`: a
   Schwartz function whose Fourier transform has compact support is band-limited.
 * `TemperedDistribution.toDistribution`: the restriction of a tempered distribution to the test
@@ -92,25 +91,6 @@ theorem ext_real {u v : 𝓢'(E, F)}
   simp only [map_add, map_smul, hreal]
 
 end Ext
-
-section Support
-
-variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
-  [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-/-- **A Schwartz function vanishes off its support as a tempered distribution.** The tempered
-distribution `∫ g • f ∂μ` of a Schwartz function `f` vanishes on the complement of `tsupport f`. -/
-theorem _root_.SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport
-    (μ : Measure E := by volume_tac) [μ.HasTemperateGrowth] (f : 𝓢(E, F)) :
-    Distribution.IsVanishingOn (SchwartzMap.toTemperedDistributionCLM E F μ f) (tsupport f)ᶜ := by
-  intro g hg
-  simp only [SchwartzMap.toTemperedDistributionCLM_apply_apply]
-  refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
-  by_cases hx : x ∈ tsupport g
-  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hg hx h]
-  · simp [image_eq_zero_of_notMem_tsupport hx]
-
-end Support
 
 section Fourier
 

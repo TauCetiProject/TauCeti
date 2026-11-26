@@ -60,6 +60,8 @@ in Tate's local theory at the archimedean places.
 * `Distribution.TemperedDistribution.dsupport_subset_singleton_iff_mem_span`: a scalar tempered
   distribution is supported in `{x}` if and only if it lies in the span of the derivatives
   `∂^m δ_x`.
+* `SchwartzMap.isVanishingOn_toTemperedDistributionCLM_compl_tsupport`: a Schwartz function, as a
+  tempered distribution, vanishes off its support.
 
 ## References
 
@@ -234,3 +236,24 @@ theorem dsupport_subset_singleton_iff_mem_span {T : 𝓢'(E, ℂ)} {x : E} :
     exact disjoint_compl_left_iff_subset.1 (hvan.disjoint_dsupport isOpen_compl_singleton)
 
 end Distribution.TemperedDistribution
+
+namespace SchwartzMap
+
+open MeasureTheory
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- **A Schwartz function vanishes off its support as a tempered distribution.** The tempered
+distribution `∫ g • f ∂μ` of a Schwartz function `f` vanishes on the complement of `tsupport f`. -/
+theorem isVanishingOn_toTemperedDistributionCLM_compl_tsupport
+    (μ : Measure E := by volume_tac) [μ.HasTemperateGrowth] (f : 𝓢(E, F)) :
+    Distribution.IsVanishingOn (SchwartzMap.toTemperedDistributionCLM E F μ f) (tsupport f)ᶜ := by
+  intro g hg
+  simp only [SchwartzMap.toTemperedDistributionCLM_apply_apply]
+  refine integral_eq_zero_of_ae (ae_of_all _ fun x ↦ ?_)
+  by_cases hx : x ∈ tsupport g
+  · simp [image_eq_zero_of_notMem_tsupport fun h ↦ hg hx h]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+end SchwartzMap
