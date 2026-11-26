@@ -52,6 +52,11 @@ radius collapses each contour onto `[0, 1]`, yielding DLMF 15.6.2 (away from `c 
 `Complex.eulerIntegral_eq_hypergeometricLoopZero`) on the cut plane. At `a = 0` or `z = 0` with
 `ρ ∈ (0, 1)` (and `0 < re b` or `re b < re c`, respectively), parameter holomorphy evaluates both
 integrals in closed form via reciprocal Gamma factors.
+On the open unit disk, `Complex.hypergeometricLoopOne_eq_mul_regularizedGaussHGFun` continues the
+Euler-region identity in `c` for `0 < b.re`, including where its reciprocal Gamma factor vanishes.
+`Complex.regularizedGaussHGFun_eq_mul_hypergeometricLoopOne` gives the inverse formula
+([DLMF 15.6.2](https://dlmf.nist.gov/15.6.E2)) when that factor is nonzero.
+
 Pochhammer's `(0+, 1+, 0-, 1-)` double-loop integral (DLMF 15.6.5 and 5.12.12) is developed in
 `TauCeti.Analysis.SpecialFunctions.Hypergeometric.Loop.Pochhammer` using the same keyhole
 infrastructure.
@@ -675,6 +680,44 @@ theorem eulerIntegral_eq_hypergeometricLoopOne (a : ℂ) {b c z : ℂ} (hb : 0 <
   rw [hypergeometricLoopOne_eq_eulerIntegral a hb hbc hρ hρ1 hz]
   field_simp
 
+/-- The loop around one on the open unit disk equals the regularized Gauss series times its
+Gamma factor. The identity includes positive integral `c - b`, where the loop vanishes. -/
+theorem hypergeometricLoopOne_eq_mul_regularizedGaussHGFun (a : ℂ) {b c z : ℂ}
+    (hb : 0 < b.re) (hz : ‖z‖ < 1) {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1)
+    (hzρ : closedBall (1 - z) (‖z‖ * ρ) ⊆ slitPlane) :
+    hypergeometricLoopOne a b c z ρ =
+      2 * π * I * Gamma b / Gamma (1 + b - c) * regularizedGaussHGFun a b c z := by
+  have hloop : AnalyticOnNhd ℂ (fun w => hypergeometricLoopOne a b w z ρ) univ := fun w _ =>
+    (analyticOnNhd_hypergeometricLoopOne hb hρ hρ1 (a, w, z) hzρ).comp₂
+      analyticAt_const (analyticAt_id.prod analyticAt_const)
+  have hseries : AnalyticOnNhd ℂ
+      (fun w => 2 * π * I * Gamma b / Gamma (1 + b - w) * regularizedGaussHGFun a b w z)
+      univ := by
+    intro w _
+    simp only [div_eq_mul_inv]
+    exact (analyticAt_const.mul ((differentiable_one_div_Gamma.analyticAt _).comp
+      (analyticAt_const.sub analyticAt_id))).mul
+      (analyticAt_const.regularizedGaussHGFun analyticAt_const analyticAt_id analyticAt_const hz)
+  have heq := hloop.eq_of_eventuallyEq hseries (z₀ := b + 1) (by
+    filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
+      (by simp : b.re < (b + 1).re)] with w hw
+    rw [hypergeometricLoopOne_eq_eulerIntegral a hb hw hρ hρ1 hzρ,
+      regularizedGaussHGFun_eq_eulerIntegral a hb hw hz])
+  exact congrFun heq c
+
+/-- The loop around one represents the regularized Gauss series on the open unit disk for
+`0 < b.re` and `c - b ∉ {1, 2, …}` (DLMF 15.6.2). -/
+theorem regularizedGaussHGFun_eq_mul_hypergeometricLoopOne (a : ℂ) {b c z : ℂ}
+    (hb : 0 < b.re) (hcb : ∀ n : ℕ, c - b ≠ n + 1) (hz : ‖z‖ < 1)
+    {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ < 1) (hzρ : closedBall (1 - z) (‖z‖ * ρ) ⊆ slitPlane) :
+    regularizedGaussHGFun a b c z =
+      Gamma (1 + b - c) / (2 * π * I * Gamma b) * hypergeometricLoopOne a b c z ρ := by
+  have hGb := Gamma_ne_zero_of_re_pos hb
+  have hG : Gamma (1 + b - c) ≠ 0 := Gamma_ne_zero fun n hn =>
+    hcb n (by linear_combination -hn)
+  rw [hypergeometricLoopOne_eq_mul_regularizedGaussHGFun a hb hz hρ hρ1 hzρ]
+  field_simp [Real.pi_ne_zero, I_ne_zero]
+
 /-- At zero argument the `(1+)` loop integral evaluates in closed form for all complex `a` and `c`
 whenever `0 < re b` and `ρ ∈ (0, 1)`. -/
 @[simp]
@@ -682,21 +725,8 @@ theorem hypergeometricLoopOne_zero (a : ℂ) {b : ℂ} (hb : 0 < b.re) (c : ℂ)
     (hρ : 0 < ρ) (hρ1 : ρ < 1) :
     hypergeometricLoopOne a b c 0 ρ =
       2 * π * I * Gamma b / (Gamma (1 + b - c) * Gamma c) := by
-  have h0 : closedBall (1 - (0 : ℂ)) (‖(0 : ℂ)‖ * ρ) ⊆ slitPlane := by simp [one_mem_slitPlane]
-  have han₁ : AnalyticOnNhd ℂ (fun w : ℂ => hypergeometricLoopOne a b w 0 ρ) univ := fun w _ =>
-    (analyticOnNhd_hypergeometricLoopOne hb hρ hρ1 (a, w, 0) h0).comp₂
-      analyticAt_const (analyticAt_id.prod analyticAt_const)
-  have hG (s : ℂ) : AnalyticAt ℂ (fun s : ℂ => (Gamma s)⁻¹) s :=
-    Complex.differentiable_one_div_Gamma.analyticAt s
-  have han₂ : AnalyticOnNhd ℂ
-      (fun w : ℂ => 2 * π * I * Gamma b / (Gamma (1 + b - w) * Gamma w)) univ := fun w _ => by
-    simp_rw [div_eq_mul_inv, mul_inv]
-    exact analyticAt_const.mul (((hG _).comp (analyticAt_const.sub analyticAt_id)).mul (hG w))
-  refine congrFun (han₁.eq_of_eventuallyEq han₂ (z₀ := b + 1) ?_) c
-  filter_upwards [isOpen_lt continuous_const Complex.continuous_re |>.mem_nhds
-    (by simp : b.re < (b + 1).re)] with w hw
-  rw [hypergeometricLoopOne_eq_eulerIntegral a hb hw hρ hρ1 h0, eulerIntegral_zero a hb hw,
-    ← div_eq_mul_inv, div_div]
+  rw [hypergeometricLoopOne_eq_mul_regularizedGaussHGFun a hb (by simp) hρ hρ1
+    (by simp [one_mem_slitPlane]), regularizedGaussHGFun_zero, ← div_eq_mul_inv, div_div]
 
 /-- With first parameter zero, the `(1+)` loop integral is independent of `z` and evaluates in
 closed form for all complex `c` and `z` whenever `0 < re b` and `ρ ∈ (0, 1)`. -/

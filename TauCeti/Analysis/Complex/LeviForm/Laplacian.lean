@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Complex.LeviForm.Basic
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
-public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues
+public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.Basic
 
 /-!
 # The trace of the Levi form is a quarter of the Laplacian

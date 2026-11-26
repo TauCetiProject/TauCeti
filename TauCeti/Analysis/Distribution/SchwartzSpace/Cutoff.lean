@@ -13,7 +13,9 @@ import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Cutoff
 import TauCeti.Analysis.Fourier.ChangeOfVariables
+import TauCeti.Analysis.Normed.Module.Ball
 
 /-!
 # Cutting off a Schwartz function
@@ -46,6 +48,9 @@ derivatives are bounded independently of `R`, so its `(k, n)` seminorm is `O(R�
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
+* `SchwartzMap.tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero`: if the
+  derivatives of `f` of order at most `N` vanish at `x`, the seminorms of order at most `N` of the
+  products `φ (t • (· - x)) • f` with shrinking cutoffs tend to zero as `t → ∞`.
 * `SchwartzMap.tendsto_smulLeftCLM_contDiffBump`: the truncations `φ (R⁻¹ ·) • f` by a
   `ContDiffBump` converge to `f` as `R → ∞`, for complex-valued multipliers.
 * `ContDiffBump.lowPassSchwartz`: the low-pass symbol `φ (R⁻¹ ·)` of a `ContDiffBump`, as a
@@ -93,6 +98,15 @@ theorem hasCompactSupport_smulLeftCLM_comp_inv_smul
     HasCompactSupport (smulLeftCLM F (fun y ↦ χ (R⁻¹ • y)) f) :=
   (hsupp.comp_smul (inv_ne_zero hR)).isCompact.of_isClosed_subset (isClosed_tsupport _)
     ((tsupport_smulLeftCLM_subset _ f).trans Set.inter_subset_right)
+
+/-- Multiplying a Schwartz function by the shifted and dilated cutoff `φ (t • (· - x))`, for a
+smooth compactly supported `φ` and `t ≠ 0`, is pointwise multiplication. -/
+theorem smulLeftCLM_comp_smul_sub_apply {φ : E → ℝ} (hφ : ContDiff ℝ ∞ φ)
+    (hφc : HasCompactSupport φ) {t : ℝ} (ht : t ≠ 0) (x : E) (f : 𝓢(E, F)) :
+    smulLeftCLM F (fun y ↦ φ (t • (y - x))) f = fun y ↦ φ (t • (y - x)) • f y :=
+  smulLeftCLM_apply ((hφc.comp_homeomorph
+    ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero t ht))).hasTemperateGrowth
+    (hφ.comp ((contDiff_const_smul t).comp (contDiff_id.sub contDiff_const)))) f
 
 /-- Where `‖x‖ ≥ ρ > 0`, one power of `‖x‖` can be traded for `ρ⁻¹` against the next seminorm. -/
 private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {ρ : ℝ} (hρ : 0 < ρ)
@@ -203,6 +217,53 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   rw [div_lt_iff₀ (mul_pos hr hR0)]
   rw [div_lt_iff₀ (mul_pos hr hε)] at hKR
   linarith [mul_comm R (r * ε), mul_left_comm ε r R]
+
+section ShrinkingCutoff
+
+variable [FiniteDimensional ℝ E]
+
+/-- **Shrinking cutoffs at a flat point.** If the derivatives of `f` of order at most `N` vanish
+at `x`, the Schwartz seminorms of order `n ≤ N` of the products of `f` with the shrinking cutoffs
+`φ (t • (· - x))` tend to zero as `t → ∞`: by `TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`
+their derivatives of order at most `N` are `O(t⁻¹)`, and they are supported in
+`closedBall x t⁻¹`. -/
+theorem tendsto_seminorm_smulLeftCLM_comp_smul_sub_atTop_of_iteratedFDeriv_eq_zero {φ : E → ℝ}
+    (hφ : ContDiff ℝ ∞ φ) (hφs : tsupport φ ⊆ closedBall 0 1) (f : 𝓢(E, F)) {x : E} {N : ℕ}
+    (hf : ∀ i ≤ N, iteratedFDeriv ℝ i f x = 0) (k : ℕ) {n : ℕ} (hn : n ≤ N) :
+    Tendsto (fun t : ℝ ↦ (smulLeftCLM F (fun y ↦ φ (t • (y - x))) f).seminorm ℝ k n)
+      atTop (𝓝 0) := by
+  have hφc : HasCompactSupport φ :=
+    (isCompact_closedBall 0 1).of_isClosed_subset (isClosed_tsupport φ) hφs
+  obtain ⟨C, hC⟩ := TauCeti.exists_norm_iteratedFDeriv_smul_le_mul (r := N)
+    (hφ.of_le (mod_cast le_top)) hφs (f.smooth _) hf
+  have hC0 : 0 ≤ C := by simpa using (norm_nonneg _).trans (hC 1 one_pos le_rfl 0 (Nat.zero_le _) x)
+  refine squeeze_zero' (g := fun t : ℝ ↦ (‖x‖ + 1) ^ k * C * t⁻¹)
+    (.of_forall fun _ ↦ apply_nonneg _ _) ?_
+    (by simpa using tendsto_inv_atTop_zero.const_mul ((‖x‖ + 1) ^ k * C))
+  filter_upwards [eventually_ge_atTop 1] with t ht
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have ht1 : t⁻¹ ≤ 1 := inv_le_one_of_one_le₀ ht
+  refine seminorm_le_bound ℝ k n _ (by positivity) fun y ↦ ?_
+  have hy := hC t⁻¹ (inv_pos.2 ht0) ht1 n hn y
+  have hsupp := TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall hφs (inv_pos.2 ht0) x
+  simp only [inv_inv] at hy hsupp
+  rw [smulLeftCLM_comp_smul_sub_apply hφ hφc ht0.ne']
+  by_cases hyx : y ∈ closedBall x t⁻¹
+  · have hy1 : ‖y‖ ≤ ‖x‖ + 1 := by
+      calc ‖y‖ = ‖x + (y - x)‖ := by simp
+        _ ≤ ‖x‖ + ‖y - x‖ := norm_add_le _ _
+        _ ≤ ‖x‖ + 1 := by gcongr; exact (mem_closedBall_iff_norm.1 hyx).trans ht1
+    calc ‖y‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ φ (t • (y - x)) • f y) y‖
+        ≤ (‖x‖ + 1) ^ k * (C * t⁻¹) := by gcongr
+      _ = (‖x‖ + 1) ^ k * C * t⁻¹ := by ring
+  · -- Away from `closedBall x t⁻¹` the product vanishes near `y`.
+    have hy0 : y ∉ tsupport fun y ↦ φ (t • (y - x)) • f y :=
+      fun h ↦ hyx (hsupp (tsupport_smul_subset_left _ _ h))
+    rw [Function.notMem_support.mp fun h ↦ hy0 (support_iteratedFDeriv_subset n h), norm_zero,
+      mul_zero]
+    positivity
+
+end ShrinkingCutoff
 
 section Truncation
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 
 /-!
 # Power-law asymptotics
@@ -28,8 +29,8 @@ On a seminormed group, as `‖s‖ → ∞`:
   `0 < c`, so a polynomial weight turns `O(exp (-c ‖s‖))` decay into `O(exp (-a ‖s‖))` decay for
   every `a < c`;
 * `‖s‖ ^ a` is `o(‖s‖ ^ b)` whenever `a < b`, as is `x ^ a` against `x ^ b` for real `x → ∞`,
-  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, and `√x / (x ^ a) ^ k → 0`
-  for real `x → ∞` whenever `1 / 2 < a k`.
+  and `O(‖s‖ ^ b)` whenever `a ≤ b`; in particular `√‖s‖ = o(s)`, `‖s‖ ^ a` tends to `0` whenever
+  `a < 0`, and `√x / (x ^ a) ^ k → 0` for real `x → ∞` whenever `1 / 2 < a k`.
 
 These are the comparisons behind the order of growth of an entire function.
 
@@ -39,7 +40,14 @@ As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f =
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
-`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`. Likewise, near a point `w` of a normed
+group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+every `c ≤ a`.
+
+## Complex powers of a positive real variable
+
+Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
+`O(t ^ Re w)`.
 
 ## Families bounded by integer powers
 
@@ -69,6 +77,11 @@ exponent dominates every constant multiple of a larger one.
 For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
 power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
 proof of the Gelfond–Schneider theorem.
+
+## Exponential limits of rescaled powers
+
+For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
+number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
 -/
 
 public section
@@ -139,6 +152,13 @@ theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {
     ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c :=
   eventually_lt_of_isBigO_rpow hθ (isBigO_const_mul_self A _ _) hc
 
+/-- Along a filter eventually in `(0, ∞)`, the complex power `t ^ w` is `O(t ^ Re w)`. -/
+theorem isBigO_ofReal_cpow_rpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) (w : ℂ) :
+    (fun t : ℝ ↦ (t : ℂ) ^ w) =O[l] fun t ↦ t ^ w.re :=
+  IsBigO.of_bound 1 <| hl.mono fun t ht ↦ by
+    rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _),
+      one_mul]
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
@@ -208,6 +228,12 @@ theorem isBigO_norm_rpow_norm_rpow_cobounded {a b : ℝ} (hab : a ≤ b) :
   rcases hab.lt_or_eq with hab | rfl
   · exact (isLittleO_norm_rpow_norm_rpow_cobounded hab).isBigO
   · exact isBigO_refl _ _
+
+/-- For `a < 0`, `‖s‖ ^ a` tends to `0` as `‖s‖ → ∞`. -/
+theorem tendsto_norm_rpow_cobounded {a : ℝ} (ha : a < 0) :
+    Tendsto (fun s : E ↦ ‖s‖ ^ a) (cobounded E) (𝓝 0) :=
+  (Asymptotics.isLittleO_one_iff ℝ).1
+    ((isLittleO_norm_rpow_norm_rpow_cobounded ha).congr_right fun _ ↦ Real.rpow_zero _)
 
 /-- `√‖s‖` is `o(s)` as `‖s‖ → ∞`. -/
 theorem isLittleO_sqrt_norm_id_cobounded : (fun s : E ↦ √‖s‖) =o[cobounded E] fun s ↦ s := by
@@ -282,6 +308,18 @@ theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c 
   filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
   rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
+set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
+theorem IsBigO.nhdsWithin_norm_sub_rpow_of_le {E R : Type*} [NormedAddCommGroup E] [Norm R]
+    {f : E → R} {s : Set E} {w : E} {a c : ℝ} (hf : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ a)
+    (hw : w ∉ s) (h : c ≤ a) : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds w one_pos)]
+    with x hxs hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) a)]
+  exact Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.2 (sub_ne_zero.2 fun hxw ↦ hw (hxw ▸ hxs)))
+    (mem_ball_iff_norm.1 hx).le h
 
 end Asymptotics
 
@@ -401,5 +439,20 @@ theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
     Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
   simpa only [Function.comp_def, rpow_zero] using
     (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
+
+/-- For any real numbers `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `exp (a * b)` as the
+real number `x` tends to infinity. -/
+theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
+    Tendsto (fun x : ℝ ↦ (1 + a / x) ^ (b * x)) atTop (𝓝 (exp (a * b))) := by
+  have h1 : Tendsto (fun x : ℝ ↦ ((1 + a / x) ^ x) ^ b) atTop (𝓝 (exp a ^ b)) :=
+    (tendsto_one_add_div_rpow_exp a).rpow_const (Or.inl (exp_pos _).ne')
+  rw [← exp_mul] at h1
+  have hpos : ∀ᶠ x : ℝ in atTop, 0 ≤ 1 + a / x := by
+    have h0 : Tendsto (fun x : ℝ ↦ 1 + a / x) atTop (𝓝 1) := by
+      simpa using tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_id (α := ℝ)))
+    exact (h0.eventually (lt_mem_nhds zero_lt_one)).mono fun _ h ↦ h.le
+  refine h1.congr' ?_
+  filter_upwards [hpos] with x hbase
+  rw [← rpow_mul hbase, mul_comm x b]
 
 end Real

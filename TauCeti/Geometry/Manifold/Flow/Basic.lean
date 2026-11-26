@@ -45,6 +45,8 @@ compact set.
 * `TauCeti.mfderiv_flowOf_comp_apply`: the differential of `(t, s) ↦ φₜ(f s)`.
 * `TauCeti.mfderiv_flowOf_comp_prodMk_apply`: the differential of `y ↦ φ_{τ y}(f y)`.
 * `TauCeti.hasDerivAt_comp_flowOf`: the time derivative of a function along a trajectory.
+* `TauCeti.mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq`: a function that the flow rescales by
+  `e^s` is differentiated to itself by the field.
 * `TauCeti.mfderiv_flowOf_zero_apply`: the derivative of the flow at time zero.
 * `TauCeti.mfderiv_flowOf_zero_apply_eq_self`: the spatial derivative of the time-zero flow map is
   the identity.
@@ -356,6 +358,19 @@ theorem hasDerivAt_comp_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace 
       isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp hx)
   exact Manifold.hasDerivAt_comp_curve hg
     (((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt)
+
+/-- **A function rescaled by a flow is differentiated to itself by the field.** If `F` is
+differentiable at `x` and `F(φ_s x) = e^s F(x)` for `s` near `0`, then `dF(v) = F` at `x`. -/
+theorem mvfderiv_apply_eq_of_comp_flowOf_eventuallyEq [IsManifold I 1 M]
+    {v : (x : M) → TangentSpace I x} (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    {F : M → ℝ} {x : M} (hF : MDifferentiableAt I 𝓘(ℝ) F x)
+    (heq : (F ∘ fun s ↦ flowOf v s x) =ᶠ[𝓝 0] fun s ↦ Real.exp s * F x) :
+    mvfderiv I F x (v x) = F x := by
+  have hcurve := hasDerivAt_comp_flowOf hv (mem_flowDomain_zero hv x)
+    (by rwa [flowOf_zero v])
+  rw [flowOf_zero v] at hcurve
+  refine hcurve.unique (HasDerivAt.congr_of_eventuallyEq ?_ heq)
+  simpa using (Real.hasDerivAt_exp 0).mul_const (F x)
 
 /-- **The derivative of the flow at time zero.** At `(0, x)`, the derivative of
 `(t, y) ↦ flowOf v t y` sends the time direction to the field at `x` and is the identity in the
