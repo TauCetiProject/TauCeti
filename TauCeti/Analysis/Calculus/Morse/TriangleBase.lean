@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
@@ -133,7 +132,7 @@ states its own hypothesis on `C`.
 public section
 
 open Filter Set
-open scoped Gradient Manifold Topology
+open scoped Gradient Topology
 
 namespace TauCeti
 
@@ -177,13 +176,22 @@ theorem mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} :
 
 /-- The triangle is compact. -/
 theorem isCompact_triangleBase : IsCompact triangleBase := by
-  have hS : IsCompact {p : ℝ × ℝ | 0 ≤ p.2 ∧ p.2 ≤ p.1 ∧ p.1 ≤ 1} :=
+  set S := {p : ℝ × ℝ | 0 ≤ p.2 ∧ p.2 ≤ p.1 ∧ p.1 ≤ 1}
+  have hS : IsCompact S :=
     (isCompact_Icc.prod isCompact_Icc).of_isClosed_subset
       ((isClosed_le continuous_const continuous_snd).inter
         ((isClosed_le continuous_snd continuous_fst).inter
           (isClosed_le continuous_fst continuous_const)))
       fun p hp ↦ ⟨⟨hp.1.trans hp.2.1, hp.2.2⟩, ⟨hp.1, hp.2.1.trans hp.2.2⟩⟩
-  exact (WithLp.homeomorphProd 2 ℝ ℝ).isCompact_preimage.2 hS
+  -- The triangle is the image of `S` under the continuous map `toLp 2 : ℝ × ℝ → WithLp 2 (ℝ × ℝ)`.
+  have himage : triangleBase = WithLp.toLp 2 '' S := by
+    ext z
+    refine ⟨fun hz ↦ ⟨WithLp.ofLp z, by simpa [S, mem_triangleBase] using hz, WithLp.toLp_ofLp 2 z⟩,
+      ?_⟩
+    rintro ⟨p, hp, rfl⟩
+    simpa [S, mem_triangleBase] using hp
+  rw [himage]
+  exact hS.image (WithLp.prod_continuous_toLp 2 ℝ ℝ)
 
 private theorem fst_mem_Icc_of_mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
     z.fst ∈ Icc 0 1 :=
@@ -340,19 +348,8 @@ which agree at one time agree at all times. -/
 theorem eq_of_isIntegralCurve_triangleBasePotential {γ γ' : ℝ → WithLp 2 (ℝ × ℝ)}
     (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
     (hγ' : IsIntegralCurve γ' (fun _ z ↦ -∇ (triangleBasePotential C) z)) {t₀ : ℝ}
-    (h : γ t₀ = γ' t₀) : γ = γ' := by
-  -- Read the plane as a manifold modelled on itself, where the smooth field has unique integral
-  -- curves.
-  let V : (z : WithLp 2 (ℝ × ℝ)) → TangentSpace 𝓘(ℝ, WithLp 2 (ℝ × ℝ)) z :=
-    fun z ↦ -∇ (triangleBasePotential C) z
-  have hV : ContDiff ℝ 1 V :=
-    ((contDiff_triangleBasePotential C (n := ⊤)).gradient_right le_top).neg
-  have hM : ∀ c : ℝ → WithLp 2 (ℝ × ℝ),
-      IsIntegralCurve c (fun _ z ↦ -∇ (triangleBasePotential C) z) → IsMIntegralCurve c V :=
-    fun c hc ↦ isMIntegralCurve_iff_isMIntegralCurveOn.2
-      (isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
-  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (contMDiff_vectorSpace_iff_contDiff.2 hV)
-    (hM γ hγ) (hM γ' hγ') h
+    (h : γ t₀ = γ' t₀) : γ = γ' :=
+  hγ.eq_of_contDiff ((contDiff_triangleBasePotential C (n := ⊤)).gradient_right le_top).neg hγ' h
 
 /-- **The trajectories through the square are flow lines.** A trajectory of the triangle base field
 which lies in the square `[-1, 1]²` at time `s₀` is, at every time `s`, the image of that point

@@ -31,10 +31,11 @@ product of a field `X` with the base field is one (`TauCeti.isTriangleField_prod
 This file proves that the trajectories of a triangle field through the triangle are confined to it,
 run between the vertices, and admit a strict Lyapunov function.
 
-* **Confinement.** The base component of every trajectory is a flow line of the triangle base
-  (`TauCeti.IsTriangleField.snd_eq_triangleBaseFlow`). So a trajectory meeting the triangle stays in
-  it, and one meeting it away from the vertices never reaches a vertex
-  (`TauCeti.IsTriangleField.gradient_snd_ne_zero`).
+* **Confinement.** The base component of every trajectory is a trajectory of the triangle base
+  (`TauCeti.IsTriangleField.isIntegralCurve_snd`), and of a trajectory meeting the triangle it is a
+  flow line of the triangle base (`TauCeti.IsTriangleField.snd_eq_triangleBaseFlow`). So a
+  trajectory meeting the triangle stays in it, and one meeting it away from the vertices never
+  reaches a vertex (`TauCeti.IsTriangleField.gradient_snd_ne_zero`).
 * **Limits at the vertices.** For `C > 0`, a trajectory through the triangle tends at `-∞` to
   `(p, (0, 0))` for a critical point `p` of `f₀` when `u < 1`, and to `(q, (1, 0))` for a critical
   point `q` of `f₁` on the edge `u = 1` away from the sink; at `+∞` it tends to `(r, (1, 1))` for a
@@ -71,6 +72,9 @@ triangle trajectory spaces requires.
 * `TauCeti.IsTriangleField.isIntegralCurve_snd`, `TauCeti.IsTriangleField.snd_eq_triangleBaseFlow`,
   `TauCeti.IsTriangleField.snd_mem_triangleBase`, `TauCeti.IsTriangleField.gradient_snd_ne_zero`:
   confinement of the base component.
+* `TauCeti.IsTriangleField.tendsto_snd_atBot_of_tendsto_triangleBaseFlow`,
+  `TauCeti.IsTriangleField.tendsto_snd_atTop_of_tendsto_triangleBaseFlow`: the base component of a
+  trajectory through the triangle tends, within the triangle, to the limits of its base flow line.
 * `TauCeti.IsTriangleField.exists_tendsto_atBot_source`,
   `TauCeti.IsTriangleField.exists_tendsto_atBot_corner`,
   `TauCeti.IsTriangleField.exists_tendsto_atTop_sink`,
@@ -195,6 +199,26 @@ theorem gradient_snd_ne_zero (h₀ : ∇ (triangleBasePotential C) (γ s₀).2 �
     hconst (t₀ := s) rfl) s₀
   exact h₀ (h ▸ hs)
 
+/-- **Base limits at `-∞`.** If the flow line of the triangle base through the base component
+`(γ s₀).2 ∈ triangleBase` of a trajectory tends to `b` at `-∞`, the base component of the
+trajectory tends to `b` within the triangle. -/
+theorem tendsto_snd_atBot_of_tendsto_triangleBaseFlow (h₀ : (γ s₀).2 ∈ triangleBase)
+    {b : WithLp 2 (ℝ × ℝ)} (hb : Tendsto (fun s ↦ triangleBaseFlow C s (γ s₀).2) atBot (𝓝 b)) :
+    Tendsto (fun s ↦ (γ s).2) atBot (𝓝[triangleBase] b) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩
+  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
+  exact hb.comp (tendsto_atBot_add_const_right _ _ tendsto_id)
+
+/-- **Base limits at `+∞`.** If the flow line of the triangle base through the base component
+`(γ s₀).2 ∈ triangleBase` of a trajectory tends to `b` at `+∞`, the base component of the
+trajectory tends to `b` within the triangle. -/
+theorem tendsto_snd_atTop_of_tendsto_triangleBaseFlow (h₀ : (γ s₀).2 ∈ triangleBase)
+    {b : WithLp 2 (ℝ × ℝ)} (hb : Tendsto (fun s ↦ triangleBaseFlow C s (γ s₀).2) atTop (𝓝 b)) :
+    Tendsto (fun s ↦ (γ s).2) atTop (𝓝[triangleBase] b) := by
+  refine tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩
+  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
+  exact hb.comp (tendsto_atTop_add_const_right _ _ tendsto_id)
+
 end Confinement
 
 end IsTriangleField
@@ -220,12 +244,11 @@ triangle with `u < 1`, tends at `-∞` to `(p, (0, 0))` for a critical point `p`
 theorem exists_tendsto_atBot_source (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
     (hu : (γ s₀).2.fst < 1) :
     ∃ p ∈ criticalPoints 𝓘(ℝ, E) f₀, Tendsto γ atBot (𝓝 (p, WithLp.toLp 2 (0, 0))) := by
-  refine hX₀.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_source hγ
-    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
-  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
-  exact (tendsto_triangleBaseFlow_atBot_toLp_zero_zero hC ⟨by linarith [hb.1, hb.2.1], hu⟩
-    ⟨by linarith [hb.1], by linarith [hb.2.1]⟩).comp (tendsto_atBot_add_const_right _ _ tendsto_id)
+  exact hX₀.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_source hγ
+    (hW.tendsto_snd_atBot_of_tendsto_triangleBaseFlow hγ h₀
+      (tendsto_triangleBaseFlow_atBot_toLp_zero_zero hC ⟨by linarith [hb.1, hb.2.1], hu⟩
+        ⟨by linarith [hb.1], by linarith [hb.2.1]⟩))
 
 /-- **A trajectory on the edge `u = 1` comes from the corner.** For `C > 0`, an integral curve of
 a triangle field through a pseudo-gradient `X₁` adapted to `f₁`, whose base component lies on the
@@ -233,12 +256,10 @@ edge `u = 1` away from the sink, tends at `-∞` to `(q, (1, 0))` for a critical
 theorem exists_tendsto_atBot_corner (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
     (hu : (γ s₀).2.fst = 1) (hv : (γ s₀).2.snd < 1) :
     ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atBot (𝓝 (q, WithLp.toLp 2 (1, 0))) := by
-  refine hX₁.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_corner hγ
-    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
-  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
-  exact (tendsto_triangleBaseFlow_atBot_toLp_one_zero hC hu ⟨by linarith [hb.1], hv⟩).comp
-    (tendsto_atBot_add_const_right _ _ tendsto_id)
+  exact hX₁.exists_tendsto_atBot_of_tendsto_snd hW.eventually_fst_eq_corner hγ
+    (hW.tendsto_snd_atBot_of_tendsto_triangleBaseFlow hγ h₀
+      (tendsto_triangleBaseFlow_atBot_toLp_one_zero hC hu ⟨by linarith [hb.1], hv⟩))
 
 /-- **A trajectory off the edge `v = 0` goes to the sink.** For `C > 0`, an integral curve of a
 triangle field to a pseudo-gradient `X₂` adapted to `f₂`, whose base component lies in the
@@ -246,12 +267,11 @@ triangle with `0 < v`, tends at `+∞` to `(r, (1, 1))` for a critical point `r`
 theorem exists_tendsto_atTop_sink (hX₂ : IsAdaptedPseudoGradient f₂ X₂)
     (hv : 0 < (γ s₀).2.snd) :
     ∃ r ∈ criticalPoints 𝓘(ℝ, E) f₂, Tendsto γ atTop (𝓝 (r, WithLp.toLp 2 (1, 1))) := by
-  refine hX₂.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_sink hγ
-    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
-  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
   have hb := mem_triangleBase.1 h₀
-  exact (tendsto_triangleBaseFlow_atTop_toLp_one_one hC ⟨hv.trans_le hb.2.1, hb.2.2⟩
-    ⟨hv, hb.2.1.trans hb.2.2⟩).comp (tendsto_atTop_add_const_right _ _ tendsto_id)
+  exact hX₂.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_sink hγ
+    (hW.tendsto_snd_atTop_of_tendsto_triangleBaseFlow hγ h₀
+      (tendsto_triangleBaseFlow_atTop_toLp_one_one hC ⟨hv.trans_le hb.2.1, hb.2.2⟩
+        ⟨hv, hb.2.1.trans hb.2.2⟩))
 
 /-- **A trajectory on the edge `v = 0` goes to the corner.** For `C > 0`, an integral curve of a
 triangle field through a pseudo-gradient `X₁` adapted to `f₁`, whose base component lies on the
@@ -260,12 +280,9 @@ edge `v = 0` away from the source, tends at `+∞` to `(q, (1, 0))` for a critic
 theorem exists_tendsto_atTop_corner (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
     (hu : 0 < (γ s₀).2.fst) (hv : (γ s₀).2.snd = 0) :
     ∃ q ∈ criticalPoints 𝓘(ℝ, E) f₁, Tendsto γ atTop (𝓝 (q, WithLp.toLp 2 (1, 0))) := by
-  refine hX₁.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_corner hγ
-    (tendsto_nhdsWithin_iff.2 ⟨?_, .of_forall (hW.snd_mem_triangleBase hγ h₀)⟩)
-  rw [funext (hW.snd_eq_triangleBaseFlow hγ h₀)]
-  have hb := mem_triangleBase.1 h₀
-  exact (tendsto_triangleBaseFlow_atTop_toLp_one_zero hC ⟨hu, hb.2.2⟩ hv).comp
-    (tendsto_atTop_add_const_right _ _ tendsto_id)
+  exact hX₁.exists_tendsto_atTop_of_tendsto_snd hW.eventually_fst_eq_corner hγ
+    (hW.tendsto_snd_atTop_of_tendsto_triangleBaseFlow hγ h₀
+      (tendsto_triangleBaseFlow_atTop_toLp_one_zero hC ⟨hu, (mem_triangleBase.1 h₀).2.2⟩ hv))
 
 end IsTriangleField
 
@@ -413,12 +430,18 @@ theorem eventually_mul_add_sub_mem_Ioo :
     fun_prop
   -- The limits of the Lyapunov function along `γ` are its values at the two ends.
   have hbot : Tendsto (fun s ↦ K * ((γ s).2.fst + (γ s).2.snd) - F (γ s)) atBot (𝓝 (-f₀ p)) := by
-    have := (hL.tendsto (p, WithLp.toLp 2 (0, 0))).comp hp
-    simpa [Function.comp_def, hF₀.self_of_nhds p] using this
+    have hv : K * ((WithLp.toLp 2 ((0 : ℝ), (0 : ℝ))).fst +
+        (WithLp.toLp 2 ((0 : ℝ), (0 : ℝ))).snd) - F (p, WithLp.toLp 2 (0, 0)) = -f₀ p := by
+      rw [hF₀.self_of_nhds p, WithLp.toLp_fst, WithLp.toLp_snd]
+      ring
+    exact hv ▸ (hL.tendsto (p, WithLp.toLp 2 (0, 0))).comp hp
   have htop : Tendsto (fun s ↦ K * ((γ s).2.fst + (γ s).2.snd) - F (γ s)) atTop
       (𝓝 (2 * K - f₂ r)) := by
-    have := (hL.tendsto (r, WithLp.toLp 2 (1, 1))).comp hr
-    simpa [Function.comp_def, hF₂.self_of_nhds r, one_add_one_eq_two, mul_comm K] using this
+    have hv : K * ((WithLp.toLp 2 ((1 : ℝ), (1 : ℝ))).fst +
+        (WithLp.toLp 2 ((1 : ℝ), (1 : ℝ))).snd) - F (r, WithLp.toLp 2 (1, 1)) = 2 * K - f₂ r := by
+      rw [hF₂.self_of_nhds r, WithLp.toLp_fst, WithLp.toLp_snd]
+      ring
+    exact hv ▸ (hL.tendsto (r, WithLp.toLp 2 (1, 1))).comp hr
   exact ⟨(hmono.monotone.le_of_tendsto hbot (s - 1)).trans_lt (hmono (by linarith)),
     (hmono (by linarith : s < s + 1)).trans_le (hmono.monotone.ge_of_tendsto htop (s + 1))⟩
 
