@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.Bifurcation.Fold
 import TauCeti.Analysis.Calculus.Morse.Cerf.Index
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Topology.MetricSpace.Pseudo.Prod
 
 /-!
 # Birth–death points are folds of the critical locus
@@ -183,19 +184,15 @@ private theorem eventually_setOf_fderiv_eq_zero_eq_pair {c : ℝ → ℝ × E}
     exact Ioo_subset_Ioo_left (by linarith) hs
   obtain ⟨x₁, hx₁, x₂, hx₂, hset₀⟩ := h₀ hs.1
   obtain ⟨y₁, hy₁, y₂, hy₂, hset₁⟩ := h₁ hs.1
-  -- The two solutions in `(-δ₁, δ₁)` are the two solutions in `(-δ₀, δ₀)`.
-  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_setOf_eq_pair hδ hx₁.2 hx₂.1 hset₀ hy₁.2 hy₂.1 hset₁
   have hval : ∀ σ ∈ ({y₁, y₂} : Set ℝ), (c σ).1 = s := fun σ hσ ↦ by
     rw [← hset₁] at hσ
     exact hσ.2
-  refine ⟨y₁, hy₁, y₂, hy₂, hval y₁ (by simp), hval y₂ (by simp), ?_,
+  refine ⟨y₁, hy₁, y₂, hy₂, hval y₁ (by simp), hval y₂ (by simp),
+    setOf_eq_pair_of_forall_eq_curve (Z := fun s y ↦ fderiv ℝ (f s) y = 0) hδ hcrit
+      (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left) hU hx₁.2 hx₂.1 hset₀ hy₁ hy₂
+      hset₁,
     fun y hy hy0 ↦ (hcurve s y hst hy hy0).2.2 fun h ↦ ?_⟩
-  · rw [setOf_eq_image_of_forall_eq_curve (Z := fun s y ↦ fderiv ℝ (f s) y = 0) hcrit
-      (fun y hy hy0 ↦ (hcurve s y hst hy hy0).imp_right And.left) hset₀ ?_, image_pair]
-    rintro σ (rfl | rfl)
-    · exact hU _ ⟨hy₁.1, by linarith [hy₁.1, hy₁.2]⟩
-    · exact hU _ ⟨by linarith [hy₂.1, hy₂.2], hy₂.2⟩
-  · linarith [congrArg Prod.fst h, hs.1]
+  linarith [congrArg Prod.fst h, hs.1]
 
 /-! ### The critical curve through a birth–death point -/
 

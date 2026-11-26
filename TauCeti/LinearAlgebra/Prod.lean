@@ -149,7 +149,7 @@ Then the restriction `A ∘ inr` of `A` to `M₁` has determinant `det Ψ * w.1`
 `Ψ (ξ, a) = (A (a, ξ), ℓ ξ)`. With `A` the derivative of a family of maps at a zero and `w` the
 velocity of a curve of zeros, this compares the Jacobian of a member of the family with the
 parameter velocity of the curve. -/
-theorem det_comp_inr_eq_det_prod_mul [Nontrivial R] (A : R × M₁ →ₗ[R] M₁) (ℓ : M₁ →ₗ[R] R)
+theorem det_comp_inr_eq_det_prod_mul (A : R × M₁ →ₗ[R] M₁) (ℓ : M₁ →ₗ[R] R)
     {w : R × M₁} (hw : A w = 0) (hℓ : ℓ w.2 = 1) :
     LinearMap.det (A ∘ₗ inr R R M₁) =
       LinearMap.det ((A ∘ₗ (LinearEquiv.prodComm R M₁ R).toLinearMap).prod (ℓ ∘ₗ fst R M₁ R)) *
@@ -181,8 +181,8 @@ theorem det_comp_inr_eq_det_prod_mul [Nontrivial R] (A : R × M₁ →ₗ[R] M�
     have h₂ : snd R R M₁ ∘ₗ (σ.toLinearMap ∘ₗ K ∘ₗ σ.symm.toLinearMap) ∘ₗ inr R R M₁ =
         LinearMap.id :=
       LinearMap.ext fun ξ ↦ by simp [σ, K]
-    rw [h₁, h₂, LinearMap.det_id, mul_one, LinearMap.det_smul, LinearMap.det_id, mul_one,
-      Module.finrank_self, pow_one]
+    rw [h₁, h₂]
+    simp
   rw [← hΨK, LinearMap.det_comp, hK]
 
 end CommRing

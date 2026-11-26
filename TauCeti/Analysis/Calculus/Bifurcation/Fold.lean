@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.LinearAlgebra.Prod
+import TauCeti.Topology.MetricSpace.Pseudo.Prod
 
 /-!
 # Fold bifurcations of the zeros of a one-parameter family of maps
@@ -78,8 +79,8 @@ and `det Ψ` has a constant sign near `0`. So the Jacobian signs at the two zero
 * `TauCeti.exists_mem_nhds_finsum_sign_det_fderiv_eq_zero`: the signed count of the zeros near a
   fold point vanishes on both sides.
 
-The lemmas `TauCeti.exists_pos_forall_mem_of_mem_nhds` and
-`TauCeti.setOf_eq_image_of_forall_eq_curve` locate the solutions near a point on such a curve.
+The lemmas `TauCeti.setOf_eq_image_of_forall_eq_curve` and
+`TauCeti.setOf_eq_pair_of_forall_eq_curve` locate the solutions near a point on such a curve.
 
 ## References
 
@@ -103,22 +104,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddComm
 
 /-! ### Zeros along a curve -/
 
-omit [NormedSpace ℝ E] in
-/-- **Small product balls in a neighbourhood.** If `N` is a neighbourhood of `(t, x)` in `ℝ × E`
-and `g : E → ℝ` is continuous at `x`, then for some `r > 0` every `(s, y)` with `|s - t| < r` and
-`y ∈ ball x r` lies in `N` and has `g y - g x ∈ (-δ, δ)`. -/
-theorem exists_pos_forall_mem_of_mem_nhds {N : Set (ℝ × E)} (hN : N ∈ 𝓝 (t, x)) {g : E → ℝ}
-    (hg : ContinuousAt g x) {δ : ℝ} (hδ : 0 < δ) :
-    ∃ r > 0, ∀ s y, dist s t < r → y ∈ ball x r → (s, y) ∈ N ∧ g y - g x ∈ Ioo (-δ) δ := by
-  obtain ⟨r₁, hr₁, hr₁N⟩ := Metric.mem_nhds_iff.1 hN
-  obtain ⟨r₂, hr₂, hr₂g⟩ := Metric.eventually_nhds_iff.1 (Metric.tendsto_nhds.1 hg δ hδ)
-  refine ⟨min r₁ r₂, lt_min hr₁ hr₂, fun s y hs hy ↦ ⟨hr₁N ?_, ?_⟩⟩
-  · rw [mem_ball, Prod.dist_eq, max_lt_iff]
-    exact ⟨hs.trans_le (min_le_left _ _), (mem_ball.1 hy).trans_le (min_le_left _ _)⟩
-  · have := hr₂g ((mem_ball.1 hy).trans_le (min_le_right _ _))
-    rw [Real.dist_eq] at this
-    exact mem_Ioo.2 (abs_lt.1 this)
-
 /-- **The solutions over a parameter value along a curve.** Let `c` be a curve in `ℝ × X` whose
 points over `I` satisfy `Z`, and suppose that every `y ∈ U` with `Z s y` is the point `c (π y)` of
 the curve, with `π y ∈ I`. If the parameter component of `c` takes the value `s` on `I` exactly on
@@ -137,19 +122,31 @@ theorem setOf_eq_image_of_forall_eq_curve {X : Type*} {Z : ℝ → X → Prop} {
     obtain ⟨hσI, hσs⟩ := hS.symm ▸ hσ
     exact ⟨hSU σ hσ, hσs ▸ hcZ σ hσI⟩
 
+/-- **Two solutions over a parameter value after a fold of the curve.** In the setting of
+`TauCeti.setOf_eq_image_of_forall_eq_curve` with `I = (-δ₀, δ₀)`, suppose that the parameter
+component of `c` takes the value `s` exactly twice on `(-δ₀, δ₀)` and exactly at `σ₁ < 0 < σ₂` on
+the smaller interval `(-δ₁, δ₁)`, over which `c` stays over `U`. Then the points `y ∈ U` with
+`Z s y` are the space components of `c σ₁` and `c σ₂`. -/
+theorem setOf_eq_pair_of_forall_eq_curve {X : Type*} {Z : ℝ → X → Prop} {c : ℝ → ℝ × X}
+    {π : X → ℝ} {U : Set X} {s δ₀ δ₁ x₁ x₂ σ₁ σ₂ : ℝ} (hδ : δ₁ ≤ δ₀)
+    (hcZ : ∀ σ ∈ Ioo (-δ₀) δ₀, Z (c σ).1 (c σ).2)
+    (hZ : ∀ y ∈ U, Z s y → π y ∈ Ioo (-δ₀) δ₀ ∧ c (π y) = (s, y))
+    (hU : ∀ σ ∈ Ioo (-δ₁) δ₁, (c σ).2 ∈ U) (hx₁ : x₁ < 0) (hx₂ : 0 < x₂)
+    (h₀ : {σ ∈ Ioo (-δ₀) δ₀ | (c σ).1 = s} = {x₁, x₂}) (hσ₁ : σ₁ ∈ Ioo (-δ₁) 0)
+    (hσ₂ : σ₂ ∈ Ioo 0 δ₁) (h₁ : {σ ∈ Ioo (-δ₁) δ₁ | (c σ).1 = s} = {σ₁, σ₂}) :
+    {y ∈ U | Z s y} = {(c σ₁).2, (c σ₂).2} := by
+  -- The two solutions in `(-δ₁, δ₁)` are the two solutions in `(-δ₀, δ₀)`.
+  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_setOf_eq_pair hδ hx₁ hx₂ h₀ hσ₁.2 hσ₂.1 h₁
+  rw [setOf_eq_image_of_forall_eq_curve hcZ hZ h₀ ?_, image_pair]
+  rintro σ (rfl | rfl)
+  · exact hU _ ⟨hσ₁.1, (hσ₁.2.trans hσ₂.1).trans hσ₂.2⟩
+  · exact hU _ ⟨(neg_neg_of_pos (hσ₂.1.trans hσ₂.2)).trans hσ₂.1, hσ₂.2⟩
+
 section Family
 
 variable {f : ℝ → E → F}
 
 /-! ### The derivative of the family -/
-
-/-- The derivative of `(s, y) ↦ f s y` at `p` sends `(τ, ξ)` to `τ ∂ₜ f + D(f p.1)_{p.2} ξ`. -/
-private theorem fderiv_uncurry_apply {p : ℝ × E} (hf : DifferentiableAt ℝ (uncurry f) p)
-    (w : ℝ × E) :
-    fderiv ℝ (uncurry f) p w = w.1 • deriv (fun r ↦ f r p.2) p.1 + fderiv ℝ (f p.1) p.2 w.2 := by
-  obtain ⟨s, y⟩ := p
-  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hf]
-  simp only [uncurry_apply_pair, fderiv_eq_smul_deriv]
 
 /-- **The derivative of `(s, y) ↦ (f s y, ℓ y)` at a fold point is injective.** If the kernel of
 `D = D(f t)_x` is the line through `v`, `φ` vanishes on the range of `D` but not on `∂ₜ f`, and
@@ -162,10 +159,7 @@ private theorem injective_fderiv_prod (hf : DifferentiableAt ℝ (uncurry f) (t,
   refine (injective_iff_map_eq_zero _).2 fun ⟨τ, ξ⟩ h ↦ ?_
   rw [ContinuousLinearMap.prod_apply, Prod.mk_eq_zero, fderiv_uncurry_apply hf] at h
   -- Applying `φ` kills `D ξ`, so `τ = 0`; then `ξ` is a multiple of `v` on which `ℓ` vanishes.
-  have hτ : τ = 0 := by
-    have := congrArg φ h.1
-    rw [map_add, map_smul, hφ, smul_eq_mul, add_zero, map_zero, mul_eq_zero] at this
-    exact this.resolve_right ha
+  have hτ : τ = 0 := by simpa [hφ, ha] using congrArg φ h.1
   subst hτ
   have hξ : ξ ∈ LinearMap.ker (fderiv ℝ (f t) x : E →ₗ[ℝ] F) := by simpa using h.1
   rw [hker, Submodule.mem_span_singleton] at hξ
@@ -234,9 +228,8 @@ private theorem hasDerivAt_deriv_fst (hf : ContDiffAt ℝ 2 (uncurry f) (t, x)) 
       rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right
         (hG.differentiableAt one_ne_zero)]
       simp [G]
-    have h := φ.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hGc.clm_apply hw)
-    rw [comp_apply, hw0, hc0, hκ, map_add, hφ, add_zero] at h
-    exact h
+    simpa [comp_def, G, hw0, hc0, hκ, hφ] using
+      φ.hasFDerivAt.comp_hasDerivAt (0 : ℝ) (hGc.clm_apply hw)
   -- `d s = φ (∂ₜ f (c s))` tends to `φ (∂ₜ f (t, x))`.
   have hd : Tendsto (fun s ↦ φ (fderiv ℝ (uncurry f) (c s) (1, 0))) (𝓝 0)
       (𝓝 (φ (deriv (fun r ↦ f r x) t))) := by
@@ -498,25 +491,19 @@ theorem exists_mem_nhds_setOf_apply_eq_zero_eq_pair (hf : ContDiffAt ℝ 2 (uncu
   refine ⟨fun hpos y hy hy0 ↦ ?_, fun hneg ↦ ?_⟩
   · obtain ⟨hσ, hcσ⟩ := hzero s hst y hy hy0
     exact h₀.1 hpos _ hσ (by simp [hcσ])
-  -- The two parameters with value `s` are the same on `(-δ₁, δ₁)` and on `(-δ₀, δ₀)`.
   obtain ⟨σ₁, hσ₁, σ₂, hσ₂, hset₁, hd⟩ := h₁.2.2 hneg
   obtain ⟨x₁, hx₁, x₂, hx₂, hset₀, -⟩ := h₀.2.2 hneg
-  obtain ⟨rfl, rfl⟩ := eq_and_eq_of_setOf_eq_pair (hδ₁.2.le.trans (min_le_left _ _)) hx₁.2
-    hx₂.1 hset₀ hσ₁.2 hσ₂.1 hset₁
-  have hval : ∀ σ ∈ ({σ₁, σ₂} : Set ℝ), (c σ).1 = s ∧
+  have hδ : δ₁ ≤ δ₀ := hδ₁.2.le.trans (min_le_left _ _)
+  have hval : ∀ σ ∈ ({σ₁, σ₂} : Set ℝ),
       SignType.sign (LinearMap.det (fderiv ℝ (f s) (c σ).2 : E →ₗ[ℝ] E)) =
         ε * SignType.sign (deriv (fun σ ↦ (c σ).1) σ) := fun σ hσ ↦ by
-    rw [← hset₀] at hσ
+    rw [← hset₁] at hσ
     rw [← hσ.2]
-    exact ⟨rfl, (hρc (hρI σ hσ.1)).2⟩
+    exact (hρc (hρI σ (Ioo_subset_Ioo (neg_le_neg hδ) hδ hσ.1))).2
   -- The Jacobian signs are `ε` times the signs of `τ'`, which are opposite.
-  refine ⟨(c σ₁).2, (c σ₂).2, ?_, mul_neg_of_sign_eq_mul_sign hε (hval σ₁ (by simp)).2
-    (hval σ₂ (by simp)).2 hd⟩
-  rw [setOf_eq_image_of_forall_eq_curve (Z := fun s y ↦ f s y = 0) hcz (hzero s hst) hset₀ ?_,
-    image_pair]
-  rintro σ (rfl | rfl)
-  · exact hU _ ⟨hσ₁.1, hσ₁.2.trans hδ₁.1⟩
-  · exact hU _ ⟨by linarith [hσ₂.1, hδ₁.1], hσ₂.2⟩
+  exact ⟨(c σ₁).2, (c σ₂).2, setOf_eq_pair_of_forall_eq_curve (Z := fun s y ↦ f s y = 0) hδ hcz
+    (hzero s hst) hU hx₁.2 hx₂.1 hset₀ hσ₁ hσ₂ hset₁,
+    mul_neg_of_sign_eq_mul_sign hε (hval σ₁ (by simp)) (hval σ₂ (by simp)) hd⟩
 
 /-- **The signed count of zeros vanishes across a fold point.** Under the hypotheses of
 `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_eq_pair`, `x` has a neighbourhood `U` such that for
