@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.TwoSidedIdeal.Operations
+public import TauCeti.RingTheory.TwoSidedIdeal.Operations
 
 /-!
 # Quotients of possibly nonunital rings by two-sided ideals
@@ -28,6 +28,9 @@ quotient.
   with kernel `I` (`TwoSidedIdeal.Quotient.ker_mk`).
 * `TwoSidedIdeal.Quotient.lift` and `TwoSidedIdeal.Quotient.factor`: universal descent of nonunital
   ring homomorphisms through `A ⧸ I` and canonical maps between quotients.
+* `TwoSidedIdeal.Quotient.opEquiv`: the canonical ring isomorphism `(A ⧸ I)ᵐᵒᵖ ≃+* Aᵐᵒᵖ ⧸ I.op`,
+  together with quotient pushforward/pullback lemmas `TwoSidedIdeal.comap_map_mk` and
+  `TwoSidedIdeal.map_mk_eq_top_iff`.
 * `TwoSidedIdeal.quotEquivOfEq`: ring equivalence between quotients by equal two-sided ideals.
 -/
 
@@ -190,7 +193,77 @@ theorem factor_surjective {I J : TwoSidedIdeal A} (h : I ≤ J) :
     Function.Surjective (factor h) :=
   lift_surjective_of_surjective _ (mk_surjective J)
 
+/-- Canonical ring isomorphism `(A ⧸ I)ᵐᵒᵖ ≃+* Aᵐᵒᵖ ⧸ I.op` identifying the opposite of a
+quotient ring with the quotient of the opposite ring by `I.op`. -/
+def opEquiv (I : TwoSidedIdeal A) : (A ⧸ I)ᵐᵒᵖ ≃+* Aᵐᵒᵖ ⧸ I.op :=
+  let toFunAux : A ⧸ I →+ Aᵐᵒᵖ ⧸ I.op :=
+    QuotientAddGroup.lift (AddSubgroup.ofClass I)
+      ((mk I.op).toAddMonoidHom.comp (MulOpposite.opAddEquiv : A ≃+ Aᵐᵒᵖ).toAddMonoidHom)
+      fun _ ha => eq_zero_iff_mem.mpr (mem_op_iff.mpr ha)
+  let invHom : Aᵐᵒᵖ →ₙ+* (A ⧸ I)ᵐᵒᵖ :=
+    { toFun := fun u => MulOpposite.op (mk I u.unop)
+      map_zero' := rfl
+      map_add' := fun u v => by rw [MulOpposite.unop_add, map_add, MulOpposite.op_add]
+      map_mul' := fun u v => by rw [MulOpposite.unop_mul, map_mul, ← MulOpposite.op_mul] }
+  { toFun := fun x => toFunAux x.unop
+    invFun := lift I.op invHom fun u hu => by
+      rw [← invHom.coe_toMulHom]
+      simp only [invHom, MulHom.coe_mk, eq_zero_iff_mem.mpr (mem_op_iff.mp hu),
+        MulOpposite.op_zero]
+    left_inv := fun x => by
+      obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
+      obtain ⟨a, rfl⟩ := mk_surjective I x
+      rfl
+    right_inv := Quotient.forall.mpr fun _ => rfl
+    map_add' := fun x y => by rw [MulOpposite.unop_add, map_add]
+    map_mul' := fun x y => by
+      obtain ⟨x, rfl⟩ := MulOpposite.op_surjective x
+      obtain ⟨a, rfl⟩ := mk_surjective I x
+      obtain ⟨y, rfl⟩ := MulOpposite.op_surjective y
+      obtain ⟨b, rfl⟩ := mk_surjective I y
+      exact (map_mul (mk I.op) (MulOpposite.op a) (MulOpposite.op b)).symm }
+
+@[simp]
+theorem opEquiv_op_mk (I : TwoSidedIdeal A) (a : A) :
+    opEquiv I (MulOpposite.op (mk I a)) = mk I.op (MulOpposite.op a) := by rfl
+
+@[simp]
+theorem opEquiv_symm_mk (I : TwoSidedIdeal A) (u : Aᵐᵒᵖ) :
+    (opEquiv I).symm (mk I.op u) = MulOpposite.op (mk I u.unop) := by rfl
+
 end Quotient
+
+/-- Pulling back the image of `I` in `A ⧸ J` along the quotient map recovers `I ⊔ J`. -/
+@[simp]
+theorem comap_map_mk (I J : TwoSidedIdeal A) :
+    TwoSidedIdeal.comap (Quotient.mk J) (TwoSidedIdeal.map (Quotient.mk J) I) = I ⊔ J := by
+  ext a
+  rw [TwoSidedIdeal.mem_comap, mem_map_iff_of_surjective (Quotient.mk_surjective J),
+    TwoSidedIdeal.mem_sup]
+  constructor
+  · rintro ⟨x, hx, hxa⟩
+    refine ⟨x, hx, a - x, ?_, add_sub_cancel x a⟩
+    have hsub : x - a ∈ J := Quotient.eq.mp hxa
+    simpa only [neg_sub] using J.neg_mem hsub
+  · rintro ⟨x, hx, y, hy, rfl⟩
+    refine ⟨x, hx, Quotient.eq.mpr ?_⟩
+    simpa only [sub_add_cancel_left] using J.neg_mem hy
+
+/-- The image of `I` in `A ⧸ J` is the whole quotient if and only if `I ⊔ J = ⊤`. -/
+@[simp]
+theorem map_mk_eq_top_iff {I J : TwoSidedIdeal A} :
+    TwoSidedIdeal.map (Quotient.mk J) I = ⊤ ↔ I ⊔ J = ⊤ := by
+  refine ⟨fun h => ?_, fun h => ?_⟩
+  · rw [← comap_map_mk I J, h]
+    ext a
+    simp [TwoSidedIdeal.mem_comap]
+  · ext z
+    obtain ⟨a, rfl⟩ := Quotient.mk_surjective J z
+    simp only [TwoSidedIdeal.mem_top, iff_true]
+    have ha : a ∈ TwoSidedIdeal.comap (Quotient.mk J) (TwoSidedIdeal.map (Quotient.mk J) I) := by
+      rw [comap_map_mk, h]
+      exact TwoSidedIdeal.mem_top A
+    exact (TwoSidedIdeal.mem_comap (Quotient.mk J)).mp ha
 
 /-- Ring equivalence between quotients by equal two-sided ideals. -/
 def quotEquivOfEq {I J : TwoSidedIdeal A} (h : I = J) : A ⧸ I ≃+* A ⧸ J where
@@ -203,8 +276,7 @@ def quotEquivOfEq {I J : TwoSidedIdeal A} (h : I = J) : A ⧸ I ≃+* A ⧸ J wh
 
 @[simp]
 theorem quotEquivOfEq_mk {I J : TwoSidedIdeal A} (h : I = J) (a : A) :
-    quotEquivOfEq h (Quotient.mk I a) = Quotient.mk J a :=
-  (rfl)
+    quotEquivOfEq h (Quotient.mk I a) = Quotient.mk J a := (rfl)
 
 @[simp]
 theorem quotEquivOfEq_symm {I J : TwoSidedIdeal A} (h : I = J) :
@@ -241,30 +313,24 @@ def mkRingHom (I : TwoSidedIdeal A) : A →+* A ⧸ I :=
   { mk I with map_one' := rfl }
 
 @[simp]
-theorem coe_mkRingHom (I : TwoSidedIdeal A) : ⇑(mkRingHom I) = mk I :=
-  (rfl)
+theorem coe_mkRingHom (I : TwoSidedIdeal A) : ⇑(mkRingHom I) = mk I := (rfl)
 
 @[simp]
-theorem mk_one (I : TwoSidedIdeal A) : mk I (1 : A) = 1 :=
-  (rfl)
+theorem mk_one (I : TwoSidedIdeal A) : mk I (1 : A) = 1 := (rfl)
 
 theorem idealQuotientMk_asIdeal_eq_mk (I : TwoSidedIdeal A) (a : A) :
-    (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a :=
-  (rfl)
+    (Ideal.Quotient.mk I.asIdeal a : A ⧸ I) = mk I a := (rfl)
 
 theorem algebraMap_apply (I : TwoSidedIdeal A) (r : R) :
-    algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) :=
-  (rfl)
+    algebraMap R (A ⧸ I) r = mk I (algebraMap R A r) := (rfl)
 
 @[simp]
 theorem mk_algebraMap (I : TwoSidedIdeal A) (r : R) :
-    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r :=
-  (rfl)
+    mk I (algebraMap R A r) = algebraMap R (A ⧸ I) r := (rfl)
 
 @[simp]
 theorem mkRingHom_comp_algebraMap (I : TwoSidedIdeal A) :
-    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) :=
-  (rfl)
+    (mkRingHom I).comp (algebraMap R A) = algebraMap R (A ⧸ I) := (rfl)
 
 end Quotient
 
