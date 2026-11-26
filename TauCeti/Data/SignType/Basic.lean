@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 public import Mathlib.Basic.Sign.Basic
+import Mathlib.Algebra.Group.Int.Units
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -38,6 +39,8 @@ product, so when `a + b` is odd the two signs multiply to the sign of `lc`.
 * `TauCeti.coe_sign_mul_coe_sign_of_ne_zero`: the sign of a nonzero element squares to `1`.
 * `TauCeti.sign_mul_pow_mul_sign_mul_pow_of_ne_zero`: the product of the signs of `u * lc ^ a`
   and `u * lc ^ b` is the sign of `lc` when `u ≠ 0` and `a + b` is odd.
+* `TauCeti.coe_units_eq_sign_of_eq_one_iff`: a unit of `ℤ` that is `1` exactly when a nonzero `x`
+  is positive is the sign of `x`.
 -/
 
 public section
@@ -113,5 +116,15 @@ theorem sign_mul_pow_mul_sign_mul_pow_of_ne_zero {K : Type*} [Ring K] [LinearOrd
   have hsq : ∀ s : SignType, s ≠ 0 → s * s = 1 := by decide
   rw [← SignType.coe_mul, sign_mul, sign_mul, sign_pow, sign_pow,
     mul_mul_mul_comm, hsq _ (sign_ne_zero.2 hu), one_mul, ← pow_add, SignType.pow_odd _ hab]
+
+/-- In a linear order with zero, a unit `u` of `ℤ` that is `1` exactly when a nonzero `x` is
+positive is the sign of `x`. -/
+theorem coe_units_eq_sign_of_eq_one_iff {R : Type*} [Zero R] [LinearOrder R] {u : ℤˣ} {x : R}
+    (hx : x ≠ 0) (h : u = 1 ↔ 0 < x) :
+    (u : ℤ) = SignType.sign x := by
+  rcases Int.units_eq_one_or u with rfl | rfl
+  · rw [sign_pos (h.1 rfl), Units.val_one, SignType.coe_one]
+  · have hneg : x < 0 := hx.lt_or_gt.resolve_right fun hpos ↦ absurd (h.2 hpos) (by decide)
+    rw [sign_neg hneg, Units.val_neg, Units.val_one, SignType.coe_neg_one]
 
 end TauCeti

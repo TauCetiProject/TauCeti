@@ -424,14 +424,8 @@ theorem one_div_sub_le_re_logDeriv_LFunction_add {N : ℕ} [NeZero N] (χ : Diri
   have hβ1 : β < 1 := by
     simpa using (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hΛβ).2
   have hσβ : 0 < σ - β := by linarith [hσ.1]
-  have hm_pos : 1 ≤ analyticOrderNatAt χ.LFunction β := by
-    have haL := (DirichletCharacter.differentiable_LFunction hne).analyticAt (β : ℂ)
-    have hne_top : analyticOrderAt χ.LFunction β ≠ ⊤ := by
-      rw [← analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hne hβre]
-      exact analyticOrderAt_dirichletData_entireCompletion_ne_top χ hχ β
-    rw [Nat.one_le_iff_ne_zero, ← Nat.cast_ne_zero (R := ℕ∞),
-      Nat.cast_analyticOrderNatAt hne_top]
-    exact haL.analyticOrderAt_ne_zero.mpr hzero
+  have hm_pos : 1 ≤ analyticOrderNatAt χ.LFunction β :=
+    χ.one_le_analyticOrderNatAt_LFunction_iff.mpr ⟨hzero, .inr hne⟩
   have hsingle :=
     χ.analyticOrderNatAt_LFunction_div_sub_le_re_logDeriv_LFunction_add hχ hne hβ hσ.1 hσ.2
   have hle : 1 / (σ - β) ≤ (analyticOrderNatAt χ.LFunction β : ℝ) / (σ - β) :=

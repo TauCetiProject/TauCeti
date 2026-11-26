@@ -46,6 +46,8 @@ classical example of nonisomorphic groups with equal character tables.
   succeeds on the certified prime.
 * `TauCeti.isCharacterTableSpec_quaternionGroupTwo`: the displayed ordinary table, cast to `ℂ`,
   satisfies the character-table specification.
+* `TauCeti.irreducibleCharacters_quaternionGroupTwo`: the irreducible complex characters are the
+  rows of the displayed table.
 
 ## References
 
@@ -287,5 +289,14 @@ theorem isCharacterTableSpec_quaternionGroupTwo :
     IsCharacterTableSpec (QuaternionGroup 2)
       ((quaternionClassData 2).complexTableOfInteger quaternionGroupTwoCharacterTable) :=
   isIntegerCharacterTableSpec_quaternionGroupTwo.isCharacterTableSpec
+
+/-- **The irreducible characters of the quaternion group of order eight** are the five rows of
+the displayed table `TauCeti.quaternionGroupTwoCharacterTable`, read through the class numbering
+`(quaternionClassData 2).index`, whose classes have representatives `a 0`, `a 2`, `xa 2`, `a 3`
+and `xa 3`. -/
+theorem irreducibleCharacters_quaternionGroupTwo :
+    irreducibleCharacters ℂ (QuaternionGroup 2) = Set.range fun i g =>
+      (quaternionGroupTwoCharacterTable i ((quaternionClassData 2).index g) : ℂ) :=
+  isIntegerCharacterTableSpec_quaternionGroupTwo.irreducibleCharacters_eq_range
 
 end TauCeti

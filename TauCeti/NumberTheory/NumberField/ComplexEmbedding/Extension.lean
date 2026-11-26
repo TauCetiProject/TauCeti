@@ -29,6 +29,8 @@ over each complex embedding of `F`. This is the fibre count behind sums over the
 * `NumberField.ComplexEmbedding.natCard_extension`: there are `finrank F E` of them.
 * `NumberField.ComplexEmbedding.card_filter_comp_algebraMap_eq`: the same count for an extension
   `E` that is a number field, phrased with the finite set of all complex embeddings of `E`.
+* `NumberField.ComplexEmbedding.sum_comp_algebraMap`: summing a function of the restriction to `F`
+  over the complex embeddings of `E` gives `[E : F]` times the sum over those of `F`.
 * `NumberField.ComplexEmbedding.sum_filter_comp_algebraMap_eq_conjugate`: complex conjugation
   reindexes a sum over the embeddings above `σ` as a sum over those above `conj σ`.
 * `NumberField.ComplexEmbedding.sum_filter_comp_algebraMap_eq_tower`: in a tower `L/E/F`, a sum
@@ -90,6 +92,18 @@ theorem card_filter_comp_algebraMap_eq :
   have : FiniteDimensional F E := Module.Finite.of_restrictScalars_finite ℚ F E
   rw [← natCard_extension E σ, Nat.card_eq_fintype_card, Fintype.card_subtype]
   simp [liesOver_iff]
+
+/-- Summing a function of the restriction `τ|F` over the complex embeddings `τ` of an extension
+`E/F` of a number field gives `[E : F]` times the sum over the complex embeddings of `F`. -/
+theorem sum_comp_algebraMap [Fintype (F →+* ℂ)] {M : Type*} [AddCommMonoid M]
+    (g : (F →+* ℂ) → M) :
+    ∑ τ : E →+* ℂ, g (τ.comp (algebraMap F E)) = finrank F E • ∑ σ : F →+* ℂ, g σ := by
+  classical
+  rw [← Finset.sum_fiberwise Finset.univ (fun τ : E →+* ℂ ↦ τ.comp (algebraMap F E)),
+    Finset.smul_sum]
+  refine Finset.sum_congr rfl fun σ _ ↦ ?_
+  rw [Finset.sum_congr rfl fun τ hτ ↦ by rw [(Finset.mem_filter.1 hτ).2], Finset.sum_const,
+    card_filter_comp_algebraMap_eq]
 
 open scoped Classical in
 /-- Complex conjugation maps the complex embeddings of `E` over `σ` bijectively onto those over

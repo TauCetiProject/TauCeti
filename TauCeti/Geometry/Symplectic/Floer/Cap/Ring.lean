@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.SquareZero.CohomologyRing
 public import TauCeti.Geometry.Symplectic.Floer.Cap.Unit
+import TauCeti.Geometry.Symplectic.Floer.Grading
 
 /-!
 # The cohomology ring of class-indexed counts

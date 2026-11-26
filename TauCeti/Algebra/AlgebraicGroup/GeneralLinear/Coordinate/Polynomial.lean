@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Coordinate.HopfAlgebra
-public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial.Basic
 
 /-!
 # Polynomial coordinates inside the general linear coordinate algebra
