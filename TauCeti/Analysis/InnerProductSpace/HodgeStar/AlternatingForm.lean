@@ -62,6 +62,10 @@ metric this expresses the star through the inverse metric and the volume of the 
 * `Orientation.formHodgeStar_apply_eq_sum`: the star in an arbitrary basis.
 * `Orientation.formHodgeStar_apply_eq_volumeForm_mul_sum`: the star through the inverse Gram
   matrix of an arbitrary basis.
+* `Orientation.curryLeftFlipL_eq_smul_formHodgeStar_wedgeCovector_formHodgeStar`: the interior
+  product is `ι_u = (-1) ^ (n k) ⋆ ε_u ⋆` on `(k + 1)`-forms, and
+  `Orientation.neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar` absorbs the sign of
+  the codifferential, `(-1) ^ (n (k + 2) + 1) ⋆ ε_u ⋆ = -ι_u`.
 * `Orientation.contDiffAt_formHodgeStar_comp`, `Orientation.contDiff_formHodgeStar_comp`,
   `Orientation.differentiableAt_formHodgeStar_comp`: applying the star pointwise preserves the
   regularity of differential forms.
@@ -352,6 +356,41 @@ theorem formHodgeStar_apply_eq_volumeForm_mul_sum {k l : ℕ} (hkl : k + l = fin
     simp
   rw [hdual, hvol]
   ring
+
+/-! ### The interior product through the star -/
+
+section CurryLeftFlipL
+
+open ContinuousAlternatingMap (curryLeftFlipL)
+
+/-- **The interior product is conjugate to exterior multiplication by the star**: on
+`(k + 1)`-forms, `ι_u = (-1) ^ (n k) ⋆ ε_u ⋆`, where `ι_u` is the interior product
+`ContinuousAlternatingMap.curryLeftFlipL u` and `ε_u` is `TauCeti.wedgeCovector u`. This is
+`Orientation.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar` read on forms. -/
+theorem curryLeftFlipL_eq_smul_formHodgeStar_wedgeCovector_formHodgeStar (u : V) {k l : ℕ}
+    (hkl : k + 1 + l = finrank ℝ V) (hlk : l + 1 + k = finrank ℝ V)
+    (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
+    curryLeftFlipL (n := k) u α =
+      (-1 : ℝ) ^ (n * k) • o.formHodgeStar hlk (wedgeCovector u l (o.formHodgeStar hkl α)) := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V (k + 1)).surjective α
+  rw [curryLeftFlipL_alternatingFormEquiv, formHodgeStar_alternatingFormEquiv,
+    wedgeCovector_alternatingFormEquiv, formHodgeStar_alternatingFormEquiv, ← map_smul,
+    o.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar u hkl hlk, _i.out]
+
+/-- **The pointwise codifferential**: `(-1) ^ (n (k + 2) + 1) ⋆ ε_u ⋆ = -ι_u` on `(k + 1)`-forms,
+with the sign of the codifferential `δ = (-1) ^ (n (k + 2) + 1) ⋆ d ⋆`. -/
+theorem neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar (u : V) {k l : ℕ}
+    (hkl : k + 1 + l = finrank ℝ V) (hlk : l + 1 + k = finrank ℝ V)
+    (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
+    (-1 : ℝ) ^ (n * (k + 2) + 1) •
+        o.formHodgeStar hlk (wedgeCovector u l (o.formHodgeStar hkl α)) =
+      -curryLeftFlipL (n := k) u α := by
+  rw [o.curryLeftFlipL_eq_smul_formHodgeStar_wedgeCovector_formHodgeStar u hkl hlk, ← neg_smul]
+  congr 1
+  rw [pow_succ, mul_neg_one, show n * (k + 2) = n * k + 2 * n by ring, pow_add,
+    Even.neg_one_pow ⟨n, two_mul n⟩, mul_one]
+
+end CurryLeftFlipL
 
 /-! ### Applying the star pointwise -/
 

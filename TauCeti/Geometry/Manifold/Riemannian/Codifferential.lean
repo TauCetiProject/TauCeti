@@ -703,26 +703,14 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
   have hlk : l + 1 + k = m := by omega
   funext x
   have hfin := o.fact_finrank_tangentSpace x
-  obtain ⟨b, hb⟩ := (alternatingFormEquiv (TangentSpace I x) (k + 1)).surjective (β.val x)
   rw [codifferential_apply o hkl hlk, hodgeStar_funSMulₗ, codifferential_apply o hkl hlk]
   simp only [SetLike.val_smul, coe_hodgeStar, Pi.smul_apply, RoughForm.hodgeStar_apply,
     mextDerivₗ_funSMulₗ_eq_gradWedge, map_add, map_smul, smul_add, Pi.sub_apply]
-  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply, ← hb]
+  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply]
   congr 1
-  simp only [gradWedge, gradContr, ContinuousLinearMap.coe_coe,
-    Orientation.formHodgeStar_alternatingFormEquiv, wedgeCovector_alternatingFormEquiv,
-    curryLeftFlipL_alternatingFormEquiv]
-  -- `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆` on `(k + 1)`-forms, and `(-1) ^ (m (k + 2) + 1 + m k) = -1`.
-  have key := (o.orientationAt x).koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar
-    (Manifold.mgradient I f x) (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) b
-  replace key := congrArg ((-1 : ℝ) ^ (Module.finrank ℝ (TangentSpace I x) * k) • ·) key
-  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul] at key
-  have hsign :
-      (-1 : ℝ) ^ (m * (k + 2) + 1) * (-1) ^ (Module.finrank ℝ (TangentSpace I x) * k) = -1 := by
-    rw [hfin.out, ← pow_add]
-    exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
-  rw [← key, map_smul, smul_smul, hsign]
-  exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+  -- `(-1) ^ (m (k + 2) + 1) ⋆ ε_u ⋆ = -ι_u` on `(k + 1)`-forms.
+  exact (o.orientationAt x).neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar _
+    (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) _
 
 /-- **The codifferential has order one**: its double commutator with multiplication by smooth
 functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise

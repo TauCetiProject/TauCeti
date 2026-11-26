@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import TauCeti.Analysis.Calculus.DifferentialForm.Codifferential
+import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -20,7 +21,9 @@ the direction `eᵢ`. This file computes the exterior derivative `extDeriv`, the
 * `dω = ∑ᵢ eⁱ ∧ ∂ᵢω` (`TauCeti.alternatingFormEquiv_symm_extDeriv`), stated on the elements of
   the exterior powers representing the forms, where wedging with a vector is
   `TauCeti.ExteriorAlgebra.wedgeLeft`. It specializes the frame formula for alternation,
-  `TauCeti.alternatingFormEquiv_symm_alternatizeUncurryFin`;
+  `TauCeti.alternatingFormEquiv_symm_alternatizeUncurryFin`. On the forms themselves it reads
+  `dω = ∑ᵢ ε_{eᵢ} ∂ᵢω` (`TauCeti.extDeriv_eq_sum_wedgeCovector`), with `ε_u` the exterior
+  multiplication `TauCeti.wedgeCovector u`;
 * `δω = -∑ᵢ ι_{eᵢ} ∂ᵢω` (`Orientation.codifferential_eq_neg_sum_curryLeft`), where the interior
   product `ι_u α` is `α.curryLeft u`. Although the codifferential is built from the Hodge star of
   the orientation, it is a first-order operator in contractions alone;
@@ -71,6 +74,15 @@ theorem alternatingFormEquiv_symm_extDeriv (b : OrthonormalBasis ι ℝ V) {k : 
         ((alternatingFormEquiv V k).symm (fderiv ℝ ω x (b i))) :=
   alternatingFormEquiv_symm_alternatizeUncurryFin b (fderiv ℝ ω x)
 
+/-- **The exterior derivative in an orthonormal frame**, on forms: `dω = ∑ᵢ ε_{eᵢ} ∂ᵢω`, where
+`ε_u` is the exterior multiplication `TauCeti.wedgeCovector u`. -/
+theorem extDeriv_eq_sum_wedgeCovector (b : OrthonormalBasis ι ℝ V) {k : ℕ}
+    (ω : V → V [⋀^Fin k]→L[ℝ] ℝ) (x : V) :
+    extDeriv ω x = ∑ i, wedgeCovector (b i) k (fderiv ℝ ω x (b i)) := by
+  rw [← LinearEquiv.apply_symm_apply (alternatingFormEquiv V (k + 1)) (extDeriv ω x),
+    alternatingFormEquiv_symm_extDeriv b, map_sum]
+  simp only [wedgeCovector_apply]
+
 end TauCeti
 
 namespace Orientation
@@ -85,61 +97,23 @@ theorem codifferential_eq_neg_sum_curryLeft (b : OrthonormalBasis ι ℝ V)
     (hkl : k + 1 + l = finrank ℝ V) (ω : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ) (x : V) :
     o.codifferential hkl ω x = -∑ i, (fderiv ℝ ω x (b i)).curryLeft (b i) := by
   have hlk : l + 1 + k = finrank ℝ V := by omega
-  have hn : finrank ℝ V = n := Fact.out
   -- The derivative of `⋆ω` is the star of the derivative of `ω`.
   have hstar : fderiv ℝ (fun y ↦ o.formHodgeStar hkl (ω y)) x =
       ((o.formHodgeStar hkl).toContinuousLinearEquiv : _ →L[ℝ] _).comp (fderiv ℝ ω x) :=
     (o.formHodgeStar hkl).toContinuousLinearEquiv.comp_fderiv
-  -- Each `⋆ (eᵢ ∧ ⋆ aᵢ)` is the contraction `ι_{eᵢ} aᵢ` up to the sign `(-1) ^ (n k)`.
-  have hι (i : ι) : o.hodgeStar hlk (ExteriorAlgebra.wedgeLeft (b i) l
-      (o.hodgeStar hkl ((alternatingFormEquiv V (k + 1)).symm (fderiv ℝ ω x (b i))))) =
-      (-1 : ℝ) ^ (n * k) • (alternatingFormEquiv V k).symm
-        ((fderiv ℝ ω x (b i)).curryLeft (b i)) := by
-    set a := (alternatingFormEquiv V (k + 1)).symm (fderiv ℝ ω x (b i))
-    have ha : fderiv ℝ ω x (b i) = alternatingFormEquiv V (k + 1) a := by simp [a]
-    rw [ha, ← alternatingFormEquiv_koszulDifferential, LinearEquiv.symm_apply_apply,
-      o.koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar (b i) hkl hlk, smul_smul, hn,
-      ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul]
-  have hsign : (-1 : ℝ) ^ (n * (k + 2) + 1) * (-1) ^ (n * k) = -1 := by
-    rw [← pow_add]
-    exact Odd.neg_one_pow ⟨n * (k + 1), by ring⟩
-  rw [codifferential_apply o hkl hlk,
-    ← LinearEquiv.apply_symm_apply (alternatingFormEquiv V (l + 1)) (extDeriv _ x),
-    alternatingFormEquiv_symm_extDeriv b, hstar, formHodgeStar_alternatingFormEquiv]
+  -- Each summand `(-1) ^ (n (k + 2) + 1) ⋆ (ε_{eᵢ} ⋆ ∂ᵢω)` is the contraction `-ι_{eᵢ} ∂ᵢω`.
+  rw [codifferential_apply o hkl hlk, extDeriv_eq_sum_wedgeCovector b, hstar, map_sum,
+    Finset.smul_sum]
   simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
     LinearEquiv.coe_toContinuousLinearEquiv',
-    alternatingFormEquiv_symm_formHodgeStar, map_sum, hι, map_smul, LinearEquiv.apply_symm_apply,
-    ← Finset.smul_sum, smul_smul, hsign]
-  module
+    o.neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar _ hkl hlk,
+    ContinuousAlternatingMap.curryLeftFlipL_apply_apply, Finset.sum_neg_distrib]
 
 /-! ### The Hodge Laplacian -/
 
 section HodgeLaplacian
 
 open ContinuousAlternatingMap (curryLeftFlipL curryLeftFlipL_apply_apply)
-
-/-- The exterior derivative in an orthonormal frame, as a sum of exterior multiplications. -/
-private theorem extDeriv_eq_sum_wedgeCovector (b : OrthonormalBasis ι ℝ V) {k : ℕ}
-    (ω : V → V [⋀^Fin k]→L[ℝ] ℝ) (x : V) :
-    extDeriv ω x = ∑ i, wedgeCovector (b i) k (fderiv ℝ ω x (b i)) := by
-  rw [← LinearEquiv.apply_symm_apply (alternatingFormEquiv V (k + 1)) (extDeriv ω x),
-    alternatingFormEquiv_symm_extDeriv b, map_sum]
-  simp only [wedgeCovector_apply]
-
-/-- The derivative of `y ↦ ∑ᵢ Lᵢ (∂ᵢ ω y)` for fixed linear maps `Lᵢ`, when the derivative of
-`ω` is differentiable. -/
-private theorem fderiv_sum_comp_fderiv_apply {E F G : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
-    [NormedSpace ℝ G] (L : ι → F →L[ℝ] G) (b : ι → E) {ω : E → F} {x : E}
-    (hω : DifferentiableAt ℝ (fderiv ℝ ω) x) (w : E) :
-    fderiv ℝ (fun y ↦ ∑ i, L i (fderiv ℝ ω y (b i))) x w =
-      ∑ i, L i (fderiv ℝ (fderiv ℝ ω) x w (b i)) := by
-  have h (i : ι) : HasFDerivAt (fun y ↦ L i (fderiv ℝ ω y (b i)))
-      ((L i).comp ((ContinuousLinearMap.apply ℝ F (b i)).comp (fderiv ℝ (fderiv ℝ ω) x))) x :=
-    (L i).hasFDerivAt.comp x
-      ((ContinuousLinearMap.apply ℝ F (b i)).hasFDerivAt.comp x hω.hasFDerivAt)
-  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
-  simp
 
 variable {x : V}
 
@@ -180,8 +154,9 @@ theorem codifferential_extDeriv_add_extDeriv_codifferential_eq_neg_laplacian {l'
   have hS : ∀ v w, fderiv ℝ (fderiv ℝ ω) x v w = fderiv ℝ (fderiv ℝ ω) x w v :=
     hω.isSymmSndFDerivAt (by simp)
   rw [o.codifferential_extDeriv_eq_neg_sum b hkl' hω',
-    o.extDeriv_codifferential_eq_neg_sum b hkl hω', laplacian_eq_sum_fderiv_fderiv b,
-    Finset.sum_comm, ← neg_add, ← Finset.sum_add_distrib]
+    o.extDeriv_codifferential_eq_neg_sum b hkl hω',
+    laplacian_eq_sum_fderiv_fderiv_orthonormalBasis b, Finset.sum_comm, ← neg_add,
+    ← Finset.sum_add_distrib]
   -- By symmetry of second derivatives and the anticommutation relation, the `i`-th summand is
   -- `∑ⱼ ⟪eⱼ, eᵢ⟫ ∂ᵢ∂ⱼω = ∂ᵢ²ω`.
   congr 1
@@ -196,7 +171,8 @@ theorem codifferential_extDeriv_eq_neg_laplacian_zero (hkl : 0 + 1 + l = finrank
     {ω : V → V [⋀^Fin 0]→L[ℝ] ℝ} (hω : DifferentiableAt ℝ (fderiv ℝ ω) x) :
     o.codifferential hkl (extDeriv ω) x = -Δ ω x := by
   set b := stdOrthonormalBasis ℝ V
-  rw [o.codifferential_extDeriv_eq_neg_sum b hkl hω, laplacian_eq_sum_fderiv_fderiv b]
+  rw [o.codifferential_extDeriv_eq_neg_sum b hkl hω,
+    laplacian_eq_sum_fderiv_fderiv_orthonormalBasis b]
   congr 1
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [Finset.sum_congr rfl fun i _ ↦ curryLeftFlipL_wedgeCovector_zero (b j) (b i) _]
@@ -208,7 +184,8 @@ theorem extDeriv_codifferential_eq_neg_laplacian_of_eq_finrank (hkl : k + 1 + 0 
     {ω : V → V [⋀^Fin (k + 1)]→L[ℝ] ℝ} (hω : DifferentiableAt ℝ (fderiv ℝ ω) x) :
     extDeriv (o.codifferential hkl ω) x = -Δ ω x := by
   set b := stdOrthonormalBasis ℝ V
-  rw [o.extDeriv_codifferential_eq_neg_sum b hkl hω, laplacian_eq_sum_fderiv_fderiv b]
+  rw [o.extDeriv_codifferential_eq_neg_sum b hkl hω,
+    laplacian_eq_sum_fderiv_fderiv_orthonormalBasis b]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finset.sum_congr rfl fun j _ ↦ wedgeCovector_curryLeftFlipL_of_eq_finrank (b j) (b i) hkl _]
