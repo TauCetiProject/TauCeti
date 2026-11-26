@@ -13,6 +13,10 @@ public import Mathlib.Topology.Connected.TotallyDisconnected
 -- Non-public: the slope characterisation of a derivative and the module description of a slope
 -- are used only inside proofs, and no statement below mentions `slope`.
 import Mathlib.Analysis.Calculus.Deriv.Slope
+-- Non-public: the adjoint-exponential formula and the generation of a connected group by
+-- exponentials are used only inside the proof of `forall_Ad_mem_iff_forall_lie_mem`.
+import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Exponential.Generation
 
 /-!
 # The Lie subalgebra of a subgroup
@@ -83,6 +87,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
   analytic input to bracket closure.
 * `TauCeti.Lie.lie_mem_of_forall_Ad_mem`: a subspace of `𝔤` invariant under every `Ad g` is
   invariant under every `ad X`.
+* `TauCeti.Lie.forall_Ad_mem_iff_forall_lie_mem`: in a connected Lie group, a subspace of `𝔤` is
+  `Ad`-invariant exactly when it is `ad`-invariant.
 * `TauCeti.Lie.finiteDimensional_lieSubalgebraOfSubgroup`: finite-dimensional subgroup models.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
@@ -94,6 +100,8 @@ closed-subgroup theorem, promoting `K` to an embedded Lie subgroup with `Lie(K) 
   subset of `𝔤`.
 * `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup`: the Lie algebra of `K` is invariant under the
   adjoint action of the normalizer of `K`.
+* `TauCeti.Lie.Ad_mem_lieSubalgebraOfSubgroup_of_normal`: the Lie algebra of a normal subgroup is
+  `Ad`-invariant.
 * `TauCeti.Lie.exists_lieIdeal_eq_lieSubalgebraOfSubgroup_of_normal`: the Lie algebra of a normal
   subgroup is a Lie ideal.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_comap_Ad_sub_id`: for `g` in the normalizer of `K`,
@@ -255,6 +263,36 @@ theorem lie_mem_of_forall_Ad_mem {S : Submodule ℝ (LeftInvariantDerivation I G
     (Eventually.of_forall fun s => ?_)
   rw [slope_def_module]
   exact S.smul_mem _ (S.sub_mem (hS _ _ hY) (hS _ _ hY))
+
+omit [T2Space G] in
+/-- **In a connected Lie group, `Ad`-invariance is `ad`-invariance.** A subspace of `𝔤` is
+preserved by every `Ad g` exactly when it is preserved by every `ad X`. The reverse implication
+needs the connectedness of `G`: an `ad`-invariant subspace is preserved by `Ad` of the
+exponentials, which generate the identity component only. -/
+theorem forall_Ad_mem_iff_forall_lie_mem [PreconnectedSpace G]
+    {S : Submodule ℝ (LeftInvariantDerivation I G)} :
+    (∀ g : G, ∀ Y ∈ S, Ad (I := I) g Y ∈ S) ↔ ∀ X Y : LeftInvariantDerivation I G, Y ∈ S →
+      ⁅X, Y⁆ ∈ S := by
+  refine ⟨fun hS X _ hY => lie_mem_of_forall_Ad_mem hS X hY, fun h g => ?_⟩
+  have _ : T2Space G := I.t2Space_of_lieGroup ∞
+  have hg : g ∈ Subgroup.closure (Set.range (lieExp (I := I) (G := G))) := by
+    rw [closure_range_lieExp_eq_top]
+    exact Subgroup.mem_top g
+  induction hg using Subgroup.closure_induction'' with
+  | mem x hx =>
+    obtain ⟨X, rfl⟩ := hx
+    exact fun Y hY => Ad_lieExp_mem_of_forall_lie_mem (h X) hY
+  | inv_mem x hx =>
+    obtain ⟨X, rfl⟩ := hx
+    rw [← lieExp_neg]
+    refine fun Y hY => Ad_lieExp_mem_of_forall_lie_mem (fun Z hZ => ?_) hY
+    rw [neg_lie]
+    exact S.neg_mem (h X Z hZ)
+  | one => simp
+  | mul x y _ _ hx hy =>
+    intro Y hY
+    rw [Ad_mul, LieEquiv.trans_apply]
+    exact hx _ (hy Y hY)
 
 /-! ### Bracket closure -/
 
@@ -471,6 +509,15 @@ theorem Ad_mem_lieSubalgebraOfSubgroup {K : Subgroup G} {g : G}
       (L := (lieSubalgebraOfSubgroup (I := I) K).comap (Ad (I := I) g).toLieHom)
       |>.mpr (fun _ hY => mem_lieSubalgebraOfSubgroup_of_forall (lieExp_smul_Ad_mem hg hY)) hX
 
+/-- **The Lie algebra of a normal subgroup is `Ad`-invariant**: the normalizer of a normal
+subgroup is all of `G`. -/
+theorem Ad_mem_lieSubalgebraOfSubgroup_of_normal {K : Subgroup G} [K.Normal] (g : G)
+    {X : LeftInvariantDerivation I G} (hX : X ∈ lieSubalgebraOfSubgroup (I := I) K) :
+    Ad (I := I) g X ∈ lieSubalgebraOfSubgroup (I := I) K := by
+  refine Ad_mem_lieSubalgebraOfSubgroup ?_ hX
+  rw [Subgroup.normalizer_eq_top]
+  exact Subgroup.mem_top g
+
 /-- **The Lie algebra of a normal subgroup is a Lie ideal.** No hypothesis on the subgroup or on
 `G` is needed: `Ad g` preserves the Lie algebra of `K` for every `g` in the normalizer of `K`, which
 is all of `G`, and an `Ad`-invariant subspace is `ad`-invariant. -/
@@ -479,10 +526,8 @@ theorem exists_lieIdeal_eq_lieSubalgebraOfSubgroup_of_normal (K : Subgroup G) [K
       (𝔞 : LieSubalgebra ℝ (LeftInvariantDerivation I G)) = lieSubalgebraOfSubgroup (I := I) K := by
   rw [LieSubalgebra.exists_lieIdeal_coe_eq_iff]
   intro X Y hY
-  refine lie_mem_of_forall_Ad_mem (S := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
-    (fun g Z hZ => Ad_mem_lieSubalgebraOfSubgroup ?_ hZ) X hY
-  rw [Subgroup.normalizer_eq_top]
-  exact Subgroup.mem_top g
+  exact lie_mem_of_forall_Ad_mem (S := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)
+    (fun g _ hZ => Ad_mem_lieSubalgebraOfSubgroup_of_normal g hZ) X hY
 
 /-- **`Ad g - 1` preserves the Lie algebra of `K` for `g ∈ N(K)`**, in the form that lets it
 descend to the quotient `𝔤 ⧸ Lie(K)` through `Submodule.mapQ`. -/
