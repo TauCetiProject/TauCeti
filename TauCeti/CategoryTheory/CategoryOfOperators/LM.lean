@@ -222,6 +222,24 @@ def ρ (j : Fin Y.len) : Y ⟶ ⟨1, fun _ ↦ Y.color j⟩ where
 @[simp]
 lemma ρ_toAssoc (j : Fin Y.len) : (ρ j).toAssoc = Assoc.ρ j := (rfl)
 
+/-- The lift to `Assoc^⊗` assembled by `Assoc.homLiftEquiv` from the underlying lifts of a
+family of colored output lifts. The objects of `Assoc.homLiftEquiv` are fixed explicitly here:
+its statement mentions them only through their lengths, as in `FinPointed.mk X.len`, and
+unification cannot solve `?X.len =?= X.len` for `?X`. Here and in `assocLift_word` the type of
+the family fixes `X` and `Y`, so the proofs below need not supply them. -/
+private def assocLift (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
+    (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
+      toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) :
+    {f : X.toAssocObj ⟶ Y.toAssocObj // Assoc.toFinPointed.IsHomLift g f} :=
+  (Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm fun j ↦
+    ⟨(f j).val.toAssoc, Assoc.isHomLift_iff.2 (isHomLift_iff.1 (f j).property)⟩
+
+private lemma assocLift_word (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
+    (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
+      toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) (j : Fin Y.len) :
+    (assocLift g f).val.word j = (f j).val.toAssoc.word 0 :=
+  Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj) g _ j
+
 /-- Lifts of a fixed pointed map are equivalent to families of lifts to its colored outputs.
 The forward map postcomposes with the canonical inert projections. The inverse assembles
 the ordered fibres, whose profiles are supplied by the individual lifts. -/
@@ -232,20 +250,16 @@ def homLiftEquiv (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) :
   toFun f j := ⟨f.val ≫ ρ j, isHomLift_iff.2 (by
     simp [isHomLift_iff.1 f.property])⟩
   invFun f :=
-    let family j := ⟨(f j).val.toAssoc, Assoc.isHomLift_iff.2
-      (isHomLift_iff.1 (f j).property)⟩
-    let lift := (Assoc.homLiftEquiv (X := X.toAssocObj) (Y := Y.toAssocObj) g).symm family
-    ⟨⟨lift.val, fun j ↦ by
-      simpa only [lift, Assoc.homLiftEquiv_symm_apply_word
-        (X := X.toAssocObj) (Y := Y.toAssocObj)] using (f j).val.isProfile 0⟩,
-      isHomLift_iff.2 (Assoc.isHomLift_iff.1 lift.property)⟩
+    ⟨⟨(assocLift g f).val, fun j ↦ by
+      simpa only [assocLift_word] using (f j).val.isProfile 0⟩,
+      isHomLift_iff.2 (Assoc.isHomLift_iff.1 (assocLift g f).property)⟩
   left_inv f := by
     apply Subtype.ext
     apply hom_ext
     apply Assoc.hom_ext
     intro j
-    simp only [Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj),
-      comp_toAssoc, ρ_toAssoc, Assoc.comp_word, Assoc.ρ_word, List.flatMap_singleton]
+    simp only [assocLift_word, comp_toAssoc, ρ_toAssoc, Assoc.comp_word, Assoc.ρ_word,
+      List.flatMap_singleton]
   right_inv f := by
     funext j
     apply Subtype.ext
@@ -255,7 +269,7 @@ def homLiftEquiv (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len) :
     have : k = 0 := Subsingleton.elim _ _
     subst k
     simp only [comp_toAssoc, ρ_toAssoc, Assoc.comp_word, Assoc.ρ_word, List.flatMap_singleton,
-      Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj)]
+      assocLift_word]
 
 @[simp]
 lemma homLiftEquiv_apply_val
@@ -268,8 +282,8 @@ lemma homLiftEquiv_symm_apply_word
     (g : FinPointed.mk.{u} X.len ⟶ FinPointed.mk Y.len)
     (f : (j : Fin Y.len) → {f : X ⟶ LM.mk 1 (fun _ ↦ Y.color j) //
       toFinPointed.IsHomLift (g ≫ FinPointed.ρ j) f}) (j : Fin Y.len) :
-    ((homLiftEquiv g).symm f).val.toAssoc.word j = (f j).val.toAssoc.word 0 := by
-  exact Assoc.homLiftEquiv_symm_apply_word (X := X.toAssocObj) (Y := Y.toAssocObj) g _ j
+    ((homLiftEquiv g).symm f).val.toAssoc.word j = (f j).val.toAssoc.word 0 :=
+  assocLift_word g f j
 
 /-- Over an inert map, the color of each output is the color of its unique input. -/
 lemma Hom.color_eq_of_word_eq_singleton (f : X ⟶ Y) {j : Fin Y.len} {i : Fin X.len}
@@ -285,10 +299,11 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.toAssoc.base.I
   refine ⟨fun {Z} g φ' hl ↦ ?_⟩
   have hφ' : φ'.toAssoc.base = φ.toAssoc.base ≫ g := isHomLift_iff.1 hl
   -- The universal property of `φ.toAssoc` for `Assoc.toFinPointed`, applied to `φ'.toAssoc`.
-  have : Assoc.toFinPointed.IsHomLift (φ.toAssoc.base ≫ g) φ'.toAssoc :=
+  -- Both of its instance arguments, `hcc` and `hl'`, are passed explicitly.
+  have hl' : Assoc.toFinPointed.IsHomLift (φ.toAssoc.base ≫ g) φ'.toAssoc :=
     Assoc.isHomLift_iff.2 hφ'
-  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := IsStronglyCocartesian.universal_property
-    Assoc.toFinPointed φ.toAssoc.base φ.toAssoc g _ rfl φ'.toAssoc
+  obtain ⟨χ, ⟨hχ, hfac⟩, huniq⟩ := @IsStronglyCocartesian.universal_property _ _ _ _
+    Assoc.toFinPointed _ _ _ _ φ.toAssoc.base φ.toAssoc hcc _ _ g _ rfl φ'.toAssoc hl'
   have hχ' : χ.base = g := Assoc.isHomLift_iff.1 hχ
   -- The colors of `Y` are those of `X` along `σ`, so `χ` has the profiles of `φ'`.
   have hprofile (k : Fin Z.len) : IsProfile (Z.color k) ((χ.word k).map Y.color) := by
