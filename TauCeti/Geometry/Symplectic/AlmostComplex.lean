@@ -68,7 +68,9 @@ on tangent fibers rather than restating the linear algebra.
   variations `Y` of `J`, and `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the variations
   that are moreover skew-adjoint for `ω`. Among variations anticommuting with `J`, skew-adjointness
   for `ω` is self-adjointness for `ω(·, J ·)`
-  (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The smooth
+  (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The variations of `J` are
+  its complex-antilinear endomorphisms
+  (`TauCeti.AlmostComplexStructure.tangentSpace_eq_complexAntilinearMaps`). The smooth
   characterizations of these spaces as velocities of curves of tame, respectively compatible,
   structures are in `TauCeti.Geometry.Symplectic.Cayley.Tangent`.
 * `TauCeti.AlmostComplexStructure.add_mul_mul_mem_tangentSpace` and
@@ -394,6 +396,13 @@ theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.En
   refine forall_congr' fun v => ?_
   simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
   exact add_eq_zero_iff_eq_neg
+
+/-- The variations of `J` are its complex-antilinear endomorphisms. -/
+theorem tangentSpace_eq_complexAntilinearMaps (J : AlmostComplexStructure V) :
+    J.tangentSpace = complexAntilinearMaps J.toLinearMap J.toLinearMap := by
+  ext Y
+  rw [mem_tangentSpace_iff_apply, mem_complexAntilinearMaps]
+  exact ⟨isComplexAntilinear_of_apply, IsComplexAntilinear.apply⟩
 
 /-- Averaging an endomorphism with its conjugate by `J` gives a variation of `J`: `Y + J Y J`
 anticommutes with `J` for every `Y`. -/

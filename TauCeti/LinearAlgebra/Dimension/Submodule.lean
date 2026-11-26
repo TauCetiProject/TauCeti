@@ -24,7 +24,9 @@ codimension of an intersection is at most the sum of the codimensions. A set spa
 dimension at least `n` exactly when it contains `n` linearly independent vectors, and a subspace
 of rank at least `k` contains a subspace of rank exactly `k`; for `1 ≤ k ≤ rank E`, every
 vector lies in a subspace of rank exactly `k`. Two disjoint subspaces of a
-finite-dimensional subspace `U` have dimensions adding to at most that of `U`.
+finite-dimensional subspace `U` have dimensions adding to at most that of `U`, with equality
+when every element of `U` is a sum of elements of the two
+(`Submodule.finrank_inf_add_finrank_inf_eq`).
 A subspace of dimension at least three contains `x` outside `𝕜 ∙ a` and `z` outside
 `span 𝕜 {a, x}`. A proper subspace of a proper finite-dimensional subspace `P` can be enlarged to a
 distinct subspace of the same dimension as `P`.
@@ -98,6 +100,21 @@ theorem finrank_add_finrank_le_of_disjoint_of_le {S T U : Submodule 𝕜 E} [Fin
   have := finiteDimensional_of_le hT
   rw [← finrank_sup_add_finrank_inf_eq, h.eq_bot, finrank_bot, add_zero]
   exact finrank_mono (sup_le hS hT)
+
+/-- The equality case of `Submodule.finrank_add_finrank_le_of_disjoint_of_le`: if `A` and `B` are
+disjoint and every element of a finite-dimensional subspace `P` is the sum of an element of
+`P ⊓ A` and one of `P ⊓ B`, the dimensions of these two pieces add up to that of `P`. -/
+theorem finrank_inf_add_finrank_inf_eq {P A B : Submodule 𝕜 E} [FiniteDimensional 𝕜 P]
+    (hAB : Disjoint A B) (h : ∀ x ∈ P, ∃ a ∈ P ⊓ A, ∃ b ∈ P ⊓ B, a + b = x) :
+    finrank 𝕜 ↥(P ⊓ A) + finrank 𝕜 ↥(P ⊓ B) = finrank 𝕜 P := by
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ A ≤ P)
+  have := finiteDimensional_of_le (inf_le_left : P ⊓ B ≤ P)
+  have hsup : P ⊓ A ⊔ P ⊓ B = P := le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ by
+    obtain ⟨a, ha, b, hb, rfl⟩ := h x hx
+    exact add_mem_sup ha hb
+  have hinf : P ⊓ A ⊓ (P ⊓ B) = ⊥ :=
+    eq_bot_iff.2 fun x hx ↦ hAB.le_bot ⟨hx.1.2, hx.2.2⟩
+  rw [← finrank_sup_add_finrank_inf_eq, hsup, hinf, finrank_bot, add_zero]
 
 /-- Three subspaces whose dimensions sum to more than twice the dimension of the ambient
 space have nontrivial common intersection. -/

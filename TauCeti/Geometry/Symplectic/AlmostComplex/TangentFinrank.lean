@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.LinearAlgebra.BilinearForm.Symmetric
+public import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
 # Dimensions of the tame and compatible tangent spaces
@@ -48,13 +49,11 @@ the `ω`-skew-adjoint endomorphisms to the symmetric forms, of dimension `2n (2n
 when `ω` is `J`-invariant, the variations of `J` to the forms `B` with `B (J v) w = B v (J w)` and
 the complex-linear endomorphisms to those with `B (J v) w = -B v (J w)`. The symmetric forms split
 along these two conditions, and on the second condition `B ↦ B(·, J ·)` exchanges symmetric and
-antisymmetric forms, so the symmetric forms of the second kind have dimension `n²`, half of `2n²`.
+alternating forms, so the symmetric forms of the second kind have dimension `n²`, half of `2n²`.
 This leaves `2n² + n - n² = n (n + 1)` for the compatible variations.
 
 ## Main results
 
-* `TauCeti.AlmostComplexStructure.exists_conjugation`: a complex structure on a
-  finite-dimensional real space admits a real-linear involution anticommuting with it.
 * `TauCeti.AlmostComplexStructure.finrank_complexLinearMaps`,
   `TauCeti.AlmostComplexStructure.finrank_complexAntilinearMaps`: both have real dimension
   `2 n m`.
@@ -84,57 +83,7 @@ open Module
 
 variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module ℝ W]
 
-/-- Two complementary pieces of a submodule: if `A` and `B` are disjoint and every element of `P`
-is the sum of an element of `P ⊓ A` and one of `P ⊓ B`, the dimensions of these pieces add up to
-that of `P`. -/
-private theorem finrank_inf_add_finrank_inf {X : Type*} [AddCommGroup X] [Module ℝ X]
-    [FiniteDimensional ℝ X] {P A B : Submodule ℝ X} (hAB : Disjoint A B)
-    (h : ∀ x ∈ P, ∃ a ∈ P ⊓ A, ∃ b ∈ P ⊓ B, a + b = x) :
-    finrank ℝ (P ⊓ A : Submodule ℝ X) + finrank ℝ (P ⊓ B : Submodule ℝ X) = finrank ℝ P := by
-  have hsup : P ⊓ A ⊔ P ⊓ B = P := le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ by
-    obtain ⟨a, ha, b, hb, rfl⟩ := h x hx
-    exact Submodule.add_mem_sup ha hb
-  have hinf : P ⊓ A ⊓ (P ⊓ B) = ⊥ :=
-    eq_bot_iff.2 fun x hx ↦ hAB.le_bot ⟨hx.1.2, hx.2.2⟩
-  have := Submodule.finrank_sup_add_finrank_inf_eq (P ⊓ A) (P ⊓ B)
-  rw [hsup, hinf, finrank_bot, add_zero] at this
-  exact this.symm
-
 namespace AlmostComplexStructure
-
-/-- **Conjugations exist.** A complex structure `J` on a finite-dimensional real vector space
-admits a *conjugation*: a real-linear involution `K` that anticommutes with `J`, such as
-coordinatewise complex conjugation under an identification of `(V, J)` with `ℂⁿ`. -/
-theorem exists_conjugation [FiniteDimensional ℝ V] (J : AlmostComplexStructure V) :
-    ∃ K : V ≃ₗ[ℝ] V, (∀ v, K (K v) = v) ∧ ∀ v, K (J v) = -J (K v) := by
-  obtain ⟨φ, hφ⟩ := J.exists_linearEquiv_I_smul (G := Fin J.complexFinrank → ℂ) (by
-    rw [Module.finrank_fin_fun, J.finrank_real_eq_two_mul_complexFinrank])
-  let c : (Fin J.complexFinrank → ℂ) →ₗ[ℝ] (Fin J.complexFinrank → ℂ) :=
-    { toFun := fun z i ↦ star (z i)
-      map_add' := fun z w ↦ funext fun i ↦ star_add (z i) (w i)
-      map_smul' := fun r z ↦ funext fun i ↦ by
-        simp only [Pi.smul_apply, star_smul, star_trivial, RingHom.id_apply] }
-  have hc : Function.Involutive c := fun z ↦ by
-    ext i
-    simp only [c, LinearMap.coe_mk, AddHom.coe_mk, Complex.star_def, Complex.conj_conj]
-  have hcI (z : Fin J.complexFinrank → ℂ) : c (Complex.I • z) = -(Complex.I • c z) := by
-    ext i
-    simp only [c, LinearMap.coe_mk, AddHom.coe_mk, Pi.smul_apply, Pi.neg_apply, smul_eq_mul,
-      Complex.star_def, map_mul, Complex.conj_I]
-    ring
-  refine ⟨φ.symm.trans ((LinearEquiv.ofInvolutive c hc).trans φ), fun v ↦ ?_, fun v ↦ ?_⟩
-  · simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply,
-      LinearEquiv.coe_ofInvolutive, hc (φ.symm v), LinearEquiv.apply_symm_apply]
-  obtain ⟨z, rfl⟩ := φ.surjective v
-  simp only [LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply, ← hφ,
-    LinearEquiv.coe_ofInvolutive, hcI, map_neg]
-
-/-- The variations of `J` are its complex-antilinear endomorphisms. -/
-theorem tangentSpace_eq_complexAntilinearMaps (J : AlmostComplexStructure V) :
-    J.tangentSpace = complexAntilinearMaps J.toLinearMap J.toLinearMap := by
-  ext Y
-  rw [mem_tangentSpace_iff_apply, mem_complexAntilinearMaps]
-  exact ⟨isComplexAntilinear_of_apply, IsComplexAntilinear.apply⟩
 
 variable [FiniteDimensional ℝ V] [FiniteDimensional ℝ W]
   (J : AlmostComplexStructure V) (J' : AlmostComplexStructure W)
@@ -234,24 +183,11 @@ private def jAntiForms : Submodule ℝ (BilinForm ℝ V) where
     abel
   smul_mem' c B hB v w := by simp [hB v w]
 
-variable (V) in
-/-- The antisymmetric bilinear forms. -/
-private def antisymmForms : Submodule ℝ (BilinForm ℝ V) where
-  carrier := {B | ∀ v w, B v w = -B w v}
-  zero_mem' _ _ := by simp
-  add_mem' hB hC v w := by
-    simp only [LinearMap.add_apply, hB v w, hC v w]
-    abel
-  smul_mem' c B hB v w := by simp [hB v w]
-
 private theorem mem_jCommForms {B : BilinForm ℝ V} :
     B ∈ jCommForms J ↔ ∀ v w, B (J v) w = B v (J w) := Iff.rfl
 
 private theorem mem_jAntiForms {B : BilinForm ℝ V} :
     B ∈ jAntiForms J ↔ ∀ v w, B (J v) w = -B v (J w) := Iff.rfl
-
-private theorem mem_antisymmForms {B : BilinForm ℝ V} :
-    B ∈ antisymmForms V ↔ ∀ v w, B v w = -B w v := Iff.rfl
 
 /-- A bilinear form satisfying both symmetries under `J` vanishes. -/
 private theorem disjoint_jCommForms_jAntiForms : Disjoint (jCommForms J) (jAntiForms J) := by
@@ -290,53 +226,50 @@ private theorem finrank_symm_inf_jCommForms_add [FiniteDimensional ℝ V] :
       ring
     · simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.sub_apply, smul_eq_mul]
       ring
-  exact finrank_inf_add_finrank_inf (X := BilinForm ℝ V) disjoint_jCommForms_jAntiForms hs
+  exact Submodule.finrank_inf_add_finrank_inf_eq (E := BilinForm ℝ V)
+    disjoint_jCommForms_jAntiForms hs
 
-/-- Inside `jAntiForms J`, the bilinear forms split into symmetric and antisymmetric ones. -/
+/-- Inside `jAntiForms J`, the bilinear forms split into symmetric and alternating ones. -/
 private theorem finrank_jAntiForms_inf_symm_add [FiniteDimensional ℝ V] :
     finrank ℝ (jAntiForms J ⊓ BilinForm.symmSubmodule ℝ V : Submodule ℝ (BilinForm ℝ V)) +
-        finrank ℝ (jAntiForms J ⊓ antisymmForms V : Submodule ℝ (BilinForm ℝ V)) =
+        finrank ℝ (jAntiForms J ⊓ BilinForm.altSubmodule ℝ V : Submodule ℝ (BilinForm ℝ V)) =
       finrank ℝ (jAntiForms J) := by
-  have hd : Disjoint (BilinForm.symmSubmodule ℝ V) (antisymmForms V) := by
-    refine Submodule.disjoint_def.2 fun B hB hB' ↦ LinearMap.ext₂ fun v w ↦ ?_
-    have h₁ := BilinForm.isSymm_def.1 (BilinForm.mem_symmSubmodule.1 hB) v w
-    have h₂ := mem_antisymmForms.1 hB' v w
-    rw [LinearMap.zero_apply, LinearMap.zero_apply]
-    linarith
   have hs : ∀ B ∈ jAntiForms J, ∃ a ∈ jAntiForms J ⊓ BilinForm.symmSubmodule ℝ V,
-      ∃ b ∈ jAntiForms J ⊓ antisymmForms V, a + b = B := by
+      ∃ b ∈ jAntiForms J ⊓ BilinForm.altSubmodule ℝ V, a + b = B := by
     intro B hB
     have hB' := mem_jAntiForms.1 hB
     refine ⟨(1 / 2 : ℝ) • (B + B.flip), ⟨mem_jAntiForms.2 fun v w ↦ ?_,
-        BilinForm.mem_symmSubmodule.2 (BilinForm.isSymm_def.2 fun v w ↦ ?_)⟩,
+        BilinForm.mem_symmSubmodule.2 ((BilinForm.isSymm_add_flip B).smul _)⟩,
       (1 / 2 : ℝ) • (B - B.flip), ⟨mem_jAntiForms.2 fun v w ↦ ?_,
-        mem_antisymmForms.2 fun v w ↦ ?_⟩, LinearMap.ext₂ fun v w ↦ ?_⟩
+        BilinForm.mem_altSubmodule.2 ((BilinForm.isAlt_sub_flip B).smul _)⟩,
+      LinearMap.ext₂ fun v w ↦ ?_⟩
     · simp only [LinearMap.smul_apply, LinearMap.add_apply, BilinForm.flip_apply, smul_eq_mul]
       linarith [hB' v w, hB' w v]
-    · simp only [LinearMap.smul_apply, LinearMap.add_apply, BilinForm.flip_apply, smul_eq_mul]
-      ring
     · simp only [LinearMap.smul_apply, LinearMap.sub_apply, BilinForm.flip_apply, smul_eq_mul]
       linarith [hB' v w, hB' w v]
-    · simp only [LinearMap.smul_apply, LinearMap.sub_apply, BilinForm.flip_apply, smul_eq_mul]
-      ring
     · simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.sub_apply, smul_eq_mul]
       ring
-  exact finrank_inf_add_finrank_inf (X := BilinForm ℝ V) hd hs
+  exact Submodule.finrank_inf_add_finrank_inf_eq (E := BilinForm ℝ V)
+    BilinForm.disjoint_symmSubmodule_altSubmodule hs
 
-/-- On `jAntiForms J`, the map `B ↦ B (·, J ·)` exchanges symmetric and antisymmetric forms, so
+/-- On `jAntiForms J`, the map `B ↦ B (·, J ·)` exchanges symmetric and alternating forms, so
 the two have the same dimension. -/
 private theorem finrank_jAntiForms_inf_symm_eq :
     finrank ℝ (jAntiForms J ⊓ BilinForm.symmSubmodule ℝ V : Submodule ℝ (BilinForm ℝ V)) =
-      finrank ℝ (jAntiForms J ⊓ antisymmForms V : Submodule ℝ (BilinForm ℝ V)) := by
+      finrank ℝ (jAntiForms J ⊓ BilinForm.altSubmodule ℝ V : Submodule ℝ (BilinForm ℝ V)) := by
   let Ψ : BilinForm ℝ V ≃ₗ[ℝ] BilinForm ℝ V :=
     (LinearEquiv.refl ℝ V).arrowCongr (J.linearEquiv.symm.arrowCongr (LinearEquiv.refl ℝ ℝ))
   have hΨ (B : BilinForm ℝ V) (v w : V) : Ψ B v w = B v (J w) := by
     simp [Ψ]
+  have hAlt (C : BilinForm ℝ V) : C.IsAlt ↔ ∀ v w, C v w = -C w v :=
+    ⟨fun hC v w ↦ (hC.neg_eq w v).symm, fun hC v ↦ by linarith [hC v v]⟩
   have h : (jAntiForms J ⊓ BilinForm.symmSubmodule ℝ V : Submodule ℝ (BilinForm ℝ V)) =
-      (jAntiForms J ⊓ antisymmForms V).comap (Ψ : BilinForm ℝ V →ₗ[ℝ] BilinForm ℝ V) := by
+      (jAntiForms J ⊓ BilinForm.altSubmodule ℝ V).comap
+        (Ψ : BilinForm ℝ V →ₗ[ℝ] BilinForm ℝ V) := by
     ext B
     rw [Submodule.mem_comap, Submodule.mem_inf, Submodule.mem_inf, mem_jAntiForms, mem_jAntiForms,
-      mem_antisymmForms, BilinForm.mem_symmSubmodule, BilinForm.isSymm_def, LinearEquiv.coe_coe]
+      BilinForm.mem_altSubmodule, hAlt, BilinForm.mem_symmSubmodule, BilinForm.isSymm_def,
+      LinearEquiv.coe_coe]
     simp only [hΨ, AlmostComplexStructure.apply_apply, map_neg, neg_neg]
     constructor
     · rintro ⟨hA, hS⟩
