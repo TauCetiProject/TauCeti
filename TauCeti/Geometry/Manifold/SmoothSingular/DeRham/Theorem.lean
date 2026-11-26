@@ -10,17 +10,20 @@ public import TauCeti.AlgebraicTopology.Cohomology.DegreeZero
 public import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 public import TauCeti.Geometry.Manifold.DeRham.HomotopyInvariance
 import Mathlib.Geometry.Manifold.Instances.Icc
+import TauCeti.AlgebraicTopology.Cohomology.Additivity.Basic
 import TauCeti.AlgebraicTopology.Cohomology.Point
 import TauCeti.Geometry.Manifold.ContMDiff.Contraction
+import TauCeti.Geometry.Manifold.DeRham.DisjointUnion
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
-# The de Rham theorem: the base cases
+# The de Rham theorem: the base cases and disjoint unions
 
 Let `M` be a Hausdorff `σ`-compact smooth manifold modelled on a finite-dimensional real model
 with corners. The de Rham theorem asserts that the de Rham homomorphism
 `TauCeti.deRhamHom I M k : H^k_dR(M) → Hᵏ(M; ℝ)` is bijective in every degree. This file proves
-the cases on which a Mayer–Vietoris induction over open sets starts.
+the cases on which a Mayer–Vietoris induction over open sets starts, and the step of that
+induction for disjoint unions.
 
 * **Degree zero.** A degree-zero de Rham class is a locally constant function
   (`TauCeti.deRhamCohomologyZeroEquiv`), and a degree-zero singular class is determined by its
@@ -37,6 +40,12 @@ the cases on which a Mayer–Vietoris induction over open sets starts.
   every degree (`TauCeti.bijective_deRhamHom_of_contraction`). This applies to every nonempty
   open subset of a chart domain whose image in the chart is star-convex
   (`TauCeti.bijective_deRhamHom_of_starConvex_image_extChartAt`), boundary and corners included.
+* **Disjoint unions.** For pairwise disjoint open subsets `s i`, restriction identifies the de Rham
+  cohomology of `⋃ i, s i` with the product of those of the `s i`
+  (`TauCeti.deRhamCohomology.bijective_pi_map_inclusion_iSup`), and likewise its singular
+  cohomology (`TauCeti.isLimitFanSingularCohomologyOpens`). The de Rham homomorphism commutes with
+  restriction (`TauCeti.deRhamHom_map`), so it is bijective on the union when it is on every `s i`
+  (`TauCeti.bijective_deRhamHom_iSup`).
 
 ## Main results
 
@@ -46,6 +55,8 @@ the cases on which a Mayer–Vietoris induction over open sets starts.
 * `TauCeti.bijective_deRhamHom_of_isEmpty`, `TauCeti.bijective_deRhamHom_of_contraction`,
   `TauCeti.bijective_deRhamHom_of_starConvex_image_extChartAt`: the de Rham theorem on the empty
   manifold, on smoothly contractible manifolds and on star-convex chart domains.
+* `TauCeti.bijective_deRhamHom_iSup`: the de Rham theorem passes to unions of pairwise disjoint
+  open sets.
 
 ## References
 
@@ -154,5 +165,32 @@ theorem bijective_deRhamHom_of_starConvex_image_extChartAt {x : M} {U : Topologi
     (hF.comp ((contMDiff_subtypeVal_Icc.comp contMDiff_snd).prodMk contMDiff_fst))
     (fun z ↦ hF₀ z) (fun z ↦ hF₁ z) k
 
+omit [SigmaCompactSpace M] in
+open Function in
+/-- **The disjoint-union step of the de Rham theorem**: if the de Rham homomorphism is bijective in
+degree `k` on each of a family of pairwise disjoint open subsets `s i` of `M`, then it is bijective
+in degree `k` on their union. Both de Rham and singular cohomology of the union are the products
+of those of the `s i` (`TauCeti.deRhamCohomology.bijective_pi_map_inclusion_iSup`,
+`TauCeti.isLimitFanSingularCohomologyOpens`), and the de Rham homomorphism commutes with the
+restrictions (`TauCeti.deRhamHom_map`). -/
+theorem bijective_deRhamHom_iSup {ι : Type} {s : ι → TopologicalSpace.Opens M}
+    (hs : Pairwise (Disjoint on s)) [∀ i, SigmaCompactSpace (s i)]
+    [SigmaCompactSpace (⨆ i, s i : TopologicalSpace.Opens M)] (k : ℕ)
+    (h : ∀ i, Bijective (deRhamHom I (s i) k)) :
+    Bijective (deRhamHom I (⨆ i, s i : TopologicalSpace.Opens M) k) := by
+  have hρ := deRhamCohomology.bijective_pi_map_inclusion_iSup (I := I) hs k
+  -- The de Rham homomorphism of `s i` applied to the restriction of a class is the singular
+  -- restriction of its de Rham homomorphism on the union.
+  have hnat (i : ι) := deRhamHom_map (I := I) (J := I)
+    (contMDiff_inclusion (le_iSup s i) : ContMDiff I I ∞ _) k
+  refine ⟨(injective_iff_map_eq_zero _).2 fun c hc ↦ hρ.1 (funext fun i ↦ ?_), fun u ↦ ?_⟩
+  · refine (h i).1 ?_
+    simp [hnat, hc]
+  · choose c hc using fun i ↦ (h i).2 (TopCat.singularCohomologyMap
+      (TopCat.ofHom ⟨TopologicalSpace.Opens.inclusion (le_iSup s i),
+        continuous_inclusion (le_iSup s i)⟩) k u)
+    obtain ⟨c', hc'⟩ := hρ.2 c
+    refine ⟨c', singularCohomology_iSup_ext hs fun i ↦ ?_⟩
+    rw [← hc i, ← congrFun hc' i, LinearMap.pi_apply, hnat]
 
 end TauCeti

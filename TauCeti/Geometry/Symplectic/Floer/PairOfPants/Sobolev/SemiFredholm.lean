@@ -88,13 +88,15 @@ namespace Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **The weighted energy on the band of an end.** For `T ≥ 0` and a `C¹` section `ξ` with compact
-support in `S`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image of the
-band `(T, ∞) × [0, 1)` under the positive end chart `φ'_q` is at most `20π²` times the `W^{1,2}`
-energy of `ξ ∘ φ'_q` over `(T, ∞) × [0, 1]`. -/
-private theorem setLIntegral_image_positiveEndChart_le {T : ℝ} (hT : 0 ≤ T) {ξ : ℝ × ℝ → V}
-    (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ)
-    (hξS : tsupport ξ ⊆ thricePuncturedSphereReal) (q : Puncture) :
+/-- **The weighted energy on the band of an end.** For `T ≥ 0` and a `C¹` section `ξ` whose
+`W^{1,2}` energy in the positive end chart `φ'_q` is integrable over `(T, ∞) × [0, 1]`, as it is
+for a section with compact support in `S` (`integrableOn_sobolevDensity_comp_positiveEndChart`),
+the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of `ξ` over the image of the band
+`(T, ∞) × [0, 1)` under `φ'_q` is at most `20π²` times the `W^{1,2}` energy of `ξ ∘ φ'_q` over
+`(T, ∞) × [0, 1]`. -/
+theorem setLIntegral_image_positiveEndChart_le {T : ℝ} (hT : 0 ≤ T) {ξ : ℝ × ℝ → V}
+    (hξ : ContDiff ℝ 1 ξ) (q : Puncture)
+    (hint : IntegrableOn (sobolevDensity (ξ ∘ positiveEndChart q)) (Ioi T ×ˢ Icc 0 1)) :
     ∫⁻ w in positiveEndChart q '' (Ioi T ×ˢ Ico 0 1),
         ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 + ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 +
           ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
@@ -107,8 +109,7 @@ private theorem setLIntegral_image_positiveEndChart_le {T : ℝ} (hT : 0 ≤ T) 
   gcongr
   refine (le_of_eq ?_).trans ((lintegral_mono_set (prod_mono subset_rfl
     Ico_subset_Icc_self)).trans_eq (ofReal_integral_eq_lintegral_ofReal
-      (integrableOn_sobolevDensity_comp_positiveEndChart hξ hξc hξS q T)
-      (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)).symm)
+      hint (ae_of_all _ fun ζ ↦ sobolevDensity_nonneg _ ζ)).symm)
   simp_rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq, comp_apply]
 
 /-- **The weighted energy, from the energy of the semi-Fredholm estimate.** For `T ≥ 0` there is
@@ -160,7 +161,8 @@ theorem exists_forall_setIntegral_le_mul_sum_setIntegral_sobolevDensity_add {T :
         ((lintegral_union_le _ _ _).trans (add_le_add
           (setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity hK (abs_nonneg B) hBK hξ) ?_))
     exact (lintegral_iUnion_le _ _).trans_eq (tsum_fintype _) |>.trans
-      (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_positiveEndChart_le hT hξ hξc hξS q)
+      (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_positiveEndChart_le hT hξ q
+        (integrableOn_sobolevDensity_comp_positiveEndChart hξ hξc hξS q T))
   have hfm : AEStronglyMeasurable f (volume.restrict thricePuncturedSphereReal) := by
     have := hξ.continuous_fderiv one_ne_zero
     have := hξ.continuous

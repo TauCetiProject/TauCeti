@@ -38,13 +38,13 @@ records the derivatives of a section cut off by a function of `s`.
   by a function `β(s)` are `∂s (β ξ) = β ∂s ξ + β' ξ` and `∂t (β ξ) = β ∂t ξ`.
 * `TauCeti.Floer.sobolevDensity_add_le`: the density of `ξ₁ + ξ₂` is at most twice the sum of the
   densities of `ξ₁` and `ξ₂`.
+* `TauCeti.Floer.setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity`: on a compact set where a
+  conformal weight `ρ` is at most `B`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` is at
+  most `B + 1` times the `W^{1,2}` energy.
 * `TauCeti.Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity`: the density bounds `‖ξ‖²`, so
   its integral over a rectangle bounds the `L²` norm.
 * `TauCeti.Floer.setIntegral_sobolevDensity_le_of_eventuallyEq_one`: if `β = 1` near every point
   of `s` and `s ⊆ t` with `t` compact, the energy of `ξ` on `s` is at most that of `β ξ` on `t`.
-* `TauCeti.Floer.setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity`: on a compact set where a
-  weight `ρ` is at most `B`, the weighted energy `∫ (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` is at most `B + 1`
-  times the `W^{1,2}` energy.
 -/
 
 public section
@@ -168,12 +168,11 @@ theorem setIntegral_sobolevDensity_le_of_eventuallyEq_one {ξ : ℝ × ℝ → V
   refine (sobolevDensity_congr_of_eventuallyEq ((hβ1 z hz).mono fun z' h ↦ ?_)).symm
   simp [h]
 
-
 /-- **The weighted energy on a compact set.** On a compact set `K` where a weight `ρ` is at most
-`B ≥ 0`, the weighted energy `∫_K (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of a `C¹` map `ξ` is at most `B + 1`
+`B ≥ 0`, the weighted energy `∫_K (ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²)` of a `C¹` section is at most `B + 1`
 times its `W^{1,2}` energy on `K`. -/
-theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {ρ : ℝ × ℝ → ℝ}
-    {K : Set (ℝ × ℝ)} (hK : IsCompact K) {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, ρ z ≤ B)
+theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) {ρ : ℝ × ℝ → ℝ} {B : ℝ} (hB0 : 0 ≤ B) (hB : ∀ z ∈ K, ρ z ≤ B)
     {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) :
     ∫⁻ z in K, ENNReal.ofReal (ρ z * ‖ξ z‖ ^ 2 + ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 +
         ‖fderiv ℝ ξ z (0, 1)‖ ^ 2) ≤

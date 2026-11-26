@@ -47,6 +47,8 @@ the divisors of a nonzero element. All of them hold in an arbitrary Dedekind dom
 * `FractionalIdeal.mem_closure_unitOfPrime_of_count_eq_zero`: an invertible fractional ideal
   whose multiplicities vanish outside a set `T` of height one primes lies in the subgroup generated
   by the primes of `T`.
+* `FractionalIdeal.count_coeIdeal_eq_zero_iff`: the multiplicity of `v` in a nonzero integral
+  ideal vanishes exactly when `v` does not divide it.
 * `FractionalIdeal.count_div`: the multiplicity of `I / J` is the difference of the multiplicities
   of `I` and `J`, for nonzero `I` and `J`. Mathlib's `count` API has `count_mul`, `count_inv`,
   `count_pow` and `count_zpow` but no division form.
@@ -229,6 +231,14 @@ lemma mem_closure_unitOfPrime_of_count_eq_zero {T : Set (HeightOneSpectrum R)}
     Subgroup.zpow_mem _ (Subgroup.subset_closure (Set.mem_image_of_mem _ ?_)) _
   by_contra hvT
   exact hfin.mem_toFinset.mp hv (by simp only [h v hvT, zpow_zero])
+
+/-- The multiplicity of a prime `v` in a nonzero integral ideal `I` vanishes exactly when `v` does
+not divide `I`. -/
+theorem count_coeIdeal_eq_zero_iff {v : HeightOneSpectrum R} {I : Ideal R} (hI : I ≠ 0) :
+    count K v (I : FractionalIdeal R⁰ K) = 0 ↔ ¬v.asIdeal ∣ I := by
+  classical
+  rw [count_coeIdeal K v hI, Nat.cast_eq_zero, ← Associates.count_ne_zero_iff_dvd hI v.irreducible,
+    not_not]
 
 /-- **The multiplicity of a quotient of nonzero fractional ideals is the difference of the
 multiplicities.** Mathlib's `count` API has `count_mul`, `count_inv`, `count_pow` and `count_zpow`
