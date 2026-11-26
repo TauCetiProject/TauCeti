@@ -29,10 +29,8 @@ So `φ ⊗ ψ` extends by continuity to a star homomorphism of spatial tensor pr
 injective `φ` and `ψ`, and compatible with identities and composition. The extension itself is
 constructed over `𝕜 = ℝ` or `ℂ` for any `φ`, `ψ` whose tensor product is contractive for the
 spatial norms (`NonUnitalStarSubalgebra.minTensorMapOfLE`); only the contractivity uses
-representation independence, which is proved over `ℂ`.
-
-The spatial norm is also invariant under the flip `A ⊗[𝕜] B ≃ B ⊗[𝕜] A`
-(`NonUnitalStarSubalgebra.spatialNorm_comm`), for concrete operator algebras over `𝕜 = ℝ` or `ℂ`.
+representation independence, which is proved over `ℂ`. For inclusions `A ≤ A₁` and `B ≤ B₁`,
+`minTensorMap` is the inclusion `A ⊗_min B ⊆ A₁ ⊗_min B₁`.
 
 ## Main declarations
 
@@ -42,15 +40,15 @@ The spatial norm is also invariant under the flip `A ⊗[𝕜] B ≃ B ⊗[𝕜]
 * `NonUnitalStarSubalgebra.minTensorMap φ ψ`: the star homomorphism
   `A ⊗_min B → A' ⊗_min B'`, with `NonUnitalStarSubalgebra.minTensorMap_toMinTensor`,
   `NonUnitalStarSubalgebra.norm_minTensorMap_le`, `NonUnitalStarSubalgebra.norm_minTensorMap`,
-  `NonUnitalStarSubalgebra.minTensorMap_injective`, `NonUnitalStarSubalgebra.minTensorMap_id`
-  and `NonUnitalStarSubalgebra.minTensorMap_comp`.
-* `NonUnitalStarSubalgebra.spatialNorm_comm`: flip invariance of the spatial norm.
+  `NonUnitalStarSubalgebra.minTensorMap_injective`, `NonUnitalStarSubalgebra.minTensorMap_id`,
+  `NonUnitalStarSubalgebra.minTensorMap_comp` and `NonUnitalStarSubalgebra.minTensorMap_inclusion`.
+* `NonUnitalStarSubalgebra.minTensor_nonUnitalStarAlgHom_ext`: star homomorphisms from
+  `A ⊗_min B` to a C*-algebra are determined on pure tensors `a ⊗ₜ b`.
 
 ## References
 
 * B. Blackadar, *Operator Algebras: Theory of C*-Algebras and von Neumann Algebras*,
-  II.9.2.5–II.9.2.6 (functoriality of C*-tensor products, as cited by TauCetiRoadmap's
-  CStarAlgebras §5.1).
+  II.9.2.5–II.9.2.6 (functoriality of C*-tensor products).
 * M. Takesaki, *Theory of Operator Algebras I*, Chapter IV, §4 (Theorem IV.4.9 is the
   representation independence of the spatial norm).
 -/
@@ -76,17 +74,6 @@ variable {𝕜 E F E' F' : Type*} [RCLike 𝕜]
   {A : NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E)} {B : NonUnitalStarSubalgebra 𝕜 (F →L[𝕜] F)}
   {A' : NonUnitalStarSubalgebra 𝕜 (E' →L[𝕜] E')} {B' : NonUnitalStarSubalgebra 𝕜 (F' →L[𝕜] F')}
 
-/-! ### The flip -/
-
-variable (A B) in
-/-- **Flip invariance of the spatial norm**: `‖τ(x)‖_min = ‖x‖_min` for the flip
-`τ : A ⊗[𝕜] B ≃ B ⊗[𝕜] A`. -/
-@[simp]
-theorem spatialNorm_comm (x : A ⊗[𝕜] B) :
-    spatialNorm B A (TensorProduct.comm 𝕜 A B x) = spatialNorm A B x := by
-  rw [spatialNorm_def, spatialNorm_def, spatialTensorHom_apply, spatialTensorHom_apply,
-    TensorProduct.map_comm, norm_spatialTensorLinearMap_comm]
-
 /-! ### Tensor products of star homomorphisms -/
 
 /-- The spatial operator of `(φ ⊗ ψ)(x)` is that of `x` in the representations
@@ -98,15 +85,11 @@ theorem spatialTensorHom_mapNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] A') (
         ((NonUnitalStarSubalgebraClass.subtype B').comp ψ) x := by
   rw [spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply,
     coe_mapNonUnitalStarAlgHom, TensorProduct.map_map]
+  -- The linear map underlying a composite of star homomorphisms is, by definition, the composite
+  -- of the underlying linear maps.
   rfl
 
 /-! ### Extension to the spatial tensor products -/
-
-/-- Two continuous maps out of `A ⊗_min B` that agree on the algebraic tensor product agree. -/
-private theorem minTensor_funext {G : Type*} [TopologicalSpace G] [T2Space G]
-    {f g : minTensor A B → G} (hf : Continuous f) (hg : Continuous g)
-    (h : ∀ x, f (toMinTensor A B x) = g (toMinTensor A B x)) : f = g :=
-  (denseRange_toMinTensor A B).equalizer hf hg (funext h)
 
 section OfLE
 
@@ -120,12 +103,15 @@ private def minTensorMapAux :
       A' ⊗[𝕜] B' →ₗ[𝕜] (Completion (E' ⊗[𝕜] F') →L[𝕜] Completion (E' ⊗[𝕜] F'))) ∘ₗ
     (LinearMap.ofClass (mapNonUnitalStarAlgHom φ ψ) : A ⊗[𝕜] B →ₗ[𝕜] A' ⊗[𝕜] B')
 
+private theorem minTensorMapAux_apply (x : A ⊗[𝕜] B) :
+    minTensorMapAux φ ψ x = spatialTensorHom A' B' (mapNonUnitalStarAlgHom φ ψ x) :=
+  (rfl)
+
 include h in
 private theorem norm_minTensorMapAux_le (x : A ⊗[𝕜] B) :
     ‖minTensorMapAux φ ψ x‖ ≤
       1 * ‖(LinearMap.ofClass (toMinTensor A B) : A ⊗[𝕜] B →ₗ[𝕜] minTensor A B) x‖ := by
-  change ‖spatialTensorHom A' B' (mapNonUnitalStarAlgHom φ ψ x)‖ ≤ 1 * ‖toMinTensor A B x‖
-  rw [one_mul, norm_toMinTensor, ← spatialNorm_def]
+  rw [minTensorMapAux_apply, LinearMap.coe_ofClass, one_mul, norm_toMinTensor, ← spatialNorm_def]
   exact h x
 
 /-- The bounded linear extension `A ⊗_min B → B(E' ⊗₂ F')` of `x ↦ (φ ⊗ ψ)(x)`. -/
@@ -168,8 +154,7 @@ private theorem minTensorMapCLM_mul (u v : minTensor A B) :
       minTensorMapCLM φ ψ p.1 * minTensorMapCLM φ ψ p.2)
     (hc.comp (continuous_fst.mul continuous_snd))
     ((hc.comp continuous_fst).mul (hc.comp continuous_snd)) (funext fun p ↦ ?_)) (u, v)
-  change minTensorMapCLM φ ψ (toMinTensor A B p.1 * toMinTensor A B p.2) =
-    minTensorMapCLM φ ψ (toMinTensor A B p.1) * minTensorMapCLM φ ψ (toMinTensor A B p.2)
+  simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd]
   rw [← map_mul (toMinTensor A B), minTensorMapCLM_toMinTensor' φ ψ h,
     minTensorMapCLM_toMinTensor' φ ψ h, minTensorMapCLM_toMinTensor' φ ψ h,
     map_mul (NonUnitalStarAlgHom.spatialTensorHom _ _)]
@@ -183,13 +168,12 @@ private theorem minTensorMapCLM_star (u : minTensor A B) :
   refine congrFun (minTensor_funext (f := fun u ↦ minTensorMapCLM φ ψ (star u))
     (g := fun u ↦ star (minTensorMapCLM φ ψ u)) (hc.comp hs) hc.star
     fun x ↦ ?_) u
-  change minTensorMapCLM φ ψ (star (toMinTensor A B x)) =
-    star (minTensorMapCLM φ ψ (toMinTensor A B x))
   rw [← map_star (toMinTensor A B), minTensorMapCLM_toMinTensor' φ ψ h,
     minTensorMapCLM_toMinTensor' φ ψ h, map_star (NonUnitalStarAlgHom.spatialTensorHom _ _)]
 
 /-- The extension `A ⊗_min B → A' ⊗_min B'` of the tensor product `φ ⊗ ψ` of star homomorphisms,
-when `φ ⊗ ψ` is contractive for the spatial norms. Over `ℂ` this always holds, and
+when `φ ⊗ ψ` is contractive for the spatial norms. Over `ℂ`, with `A` and `B` closed, this always
+holds (`NonUnitalStarSubalgebra.spatialNorm_mapNonUnitalStarAlgHom_le`), and
 `NonUnitalStarSubalgebra.minTensorMap` is this extension. -/
 def minTensorMapOfLE : minTensor A B →⋆ₙₐ[𝕜] minTensor A' B' where
   toFun u := ⟨minTensorMapCLM φ ψ u, minTensorMapCLM_mem φ ψ h u⟩
@@ -198,6 +182,11 @@ def minTensorMapOfLE : minTensor A B →⋆ₙₐ[𝕜] minTensor A' B' where
   map_add' u v := Subtype.ext <| (minTensorMapCLM φ ψ).map_add u v
   map_mul' u v := Subtype.ext <| minTensorMapCLM_mul φ ψ h u v
   map_star' u := Subtype.ext <| minTensorMapCLM_star φ ψ h u
+
+private theorem coe_minTensorMapOfLE (u : minTensor A B) :
+    (minTensorMapOfLE φ ψ h u : Completion (E' ⊗[𝕜] F') →L[𝕜] Completion (E' ⊗[𝕜] F')) =
+      minTensorMapCLM φ ψ u :=
+  (rfl)
 
 /-- `minTensorMapOfLE φ ψ h` extends `φ ⊗ ψ`. -/
 @[simp]
@@ -213,7 +202,7 @@ theorem continuous_minTensorMapOfLE : Continuous (minTensorMapOfLE φ ψ h) :=
 
 /-- `minTensorMapOfLE φ ψ h` is contractive. -/
 theorem norm_minTensorMapOfLE_le (u : minTensor A B) : ‖minTensorMapOfLE φ ψ h u‖ ≤ ‖u‖ := by
-  change ‖minTensorMapCLM φ ψ u‖ ≤ ‖u‖
+  rw [AddSubgroupClass.coe_norm, coe_minTensorMapOfLE]
   exact (LinearMap.norm_extendOfNorm_apply_le (E := A ⊗[𝕜] B) (denseRange_toMinTensor A B) 1
     (norm_minTensorMapAux_le φ ψ h) u).trans_eq (one_mul _)
 
@@ -329,8 +318,8 @@ theorem minTensorMap_id :
   have hid : TensorProduct.map (NonUnitalStarAlgHom.id ℂ A : A →ₗ[ℂ] A)
       (NonUnitalStarAlgHom.id ℂ B : B →ₗ[ℂ] B) = LinearMap.id :=
     TensorProduct.map_id
-  rw [minTensorMap_toMinTensor, coe_mapNonUnitalStarAlgHom, hid, LinearMap.id_apply]
-  rfl
+  rw [minTensorMap_toMinTensor, coe_mapNonUnitalStarAlgHom, hid, LinearMap.id_apply,
+    NonUnitalStarAlgHom.coe_id, id_eq]
 
 /-- `minTensorMap` is compatible with composition. -/
 theorem minTensorMap_comp {E'' F'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℂ E'']
@@ -345,7 +334,39 @@ theorem minTensorMap_comp {E'' F'' : Type*} [NormedAddCommGroup E''] [InnerProdu
   simp only [NonUnitalStarAlgHom.coe_comp, Function.comp_apply, minTensorMap_toMinTensor,
     coe_mapNonUnitalStarAlgHom]
   rw [TensorProduct.map_map]
+  -- The linear map underlying a composite of star homomorphisms is, by definition, the composite
+  -- of the underlying linear maps.
   rfl
+
+/-- For inclusions `A ≤ A₁` and `B ≤ B₁`, `minTensorMap` of the inclusions is the inclusion
+`A ⊗_min B ⊆ A₁ ⊗_min B₁` (`NonUnitalStarSubalgebra.minTensor_mono`). -/
+theorem minTensorMap_inclusion {A₁ : NonUnitalStarSubalgebra ℂ (E →L[ℂ] E)}
+    {B₁ : NonUnitalStarSubalgebra ℂ (F →L[ℂ] F)} (hA : A ≤ A₁) (hB : B ≤ B₁) :
+    minTensorMap (inclusion hA) (inclusion hB) = inclusion (minTensor_mono hA hB) := by
+  refine DFunLike.coe_injective ((eq_minTensorMap_iff _ _ (T := inclusion (minTensor_mono hA hB))
+    (continuous_induced_rng.2 continuous_subtypeVal)).2 fun x ↦ Subtype.ext ?_).symm
+  have hA' : (NonUnitalStarSubalgebraClass.subtype A₁).comp (inclusion hA) =
+      NonUnitalStarSubalgebraClass.subtype A :=
+    NonUnitalStarAlgHom.ext (val_inclusion hA)
+  have hB' : (NonUnitalStarSubalgebraClass.subtype B₁).comp (inclusion hB) =
+      NonUnitalStarSubalgebraClass.subtype B :=
+    NonUnitalStarAlgHom.ext (val_inclusion hB)
+  rw [val_inclusion, coe_toMinTensor, coe_toMinTensor, spatialTensorHom_mapNonUnitalStarAlgHom,
+    hA', hB', spatialTensorHom_def]
+
+omit [IsClosed (A : Set (E →L[ℂ] E))] [IsClosed (B : Set (F →L[ℂ] F))] in
+open scoped CStarAlgebra in
+/-- Two star homomorphisms from `A ⊗_min B` to a C*-algebra agree when they agree on pure tensors
+`a ⊗ₜ b`: such star homomorphisms are continuous, and `A ⊗_min B` is a C*-algebra. -/
+@[ext]
+theorem minTensor_nonUnitalStarAlgHom_ext {G : Type*} [NonUnitalCStarAlgebra G]
+    {f g : minTensor A B →⋆ₙₐ[ℂ] G}
+    (h : ∀ a b, f (toMinTensor A B (a ⊗ₜ b)) = g (toMinTensor A B (a ⊗ₜ b))) : f = g := by
+  have hc (f : minTensor A B →⋆ₙₐ[ℂ] G) : Continuous f := by
+    have := isClosed_minTensor A B
+    exact map_continuous f
+  exact DFunLike.coe_injective congr(⇑$(minTensor_continuousLinearMap_ext
+    (f := ⟨LinearMap.ofClass f, hc f⟩) (g := ⟨LinearMap.ofClass g, hc g⟩) h))
 
 end Complex
 
