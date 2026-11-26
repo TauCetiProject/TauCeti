@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.BinaryProducts
 public import Mathlib.CategoryTheory.Limits.Types.Products
+public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Limits
 public import Mathlib.CategoryTheory.Sites.PreservesSheafification
@@ -33,7 +34,7 @@ any sections `a` of `F` and `b` of `G` over `W` are the projections of a section
 
 public section
 
-open CategoryTheory Limits Opposite
+open CategoryTheory Limits Opposite MonoidalCategory CartesianMonoidalCategory
 
 universe w
 
@@ -83,5 +84,36 @@ theorem exists_fst_eq_snd_eq {F G : Sheaf J (Type w)} {W : C} (a : F.obj.obj (op
       (Types.binaryProductIso_inv_comp_fst_apply _ _ _)
   · exact (ConcreteCategory.congr_hom (PreservesLimitPair.iso_inv_snd E F G) e₀).trans
       (Types.binaryProductIso_inv_comp_snd_apply _ _ _)
+
+section CartesianSections
+
+variable {J} {F F' K K' L : Sheaf J (Type w)}
+
+/-- A tensor product of morphisms of sheaves of sets acts componentwise on sections. -/
+lemma tensorHom_hom_app (f : F ⟶ F') (g : K ⟶ K') {U : Cᵒᵖ}
+    (x : (F ⊗ K).obj.obj U) :
+    (f ⊗ₘ g).hom.app U x = (f.hom.app U x.1, g.hom.app U x.2) := by
+  apply Prod.ext
+  · exact congrArg (fun k ↦ k.hom.app U x) (tensorHom_fst f g)
+  · exact congrArg (fun k ↦ k.hom.app U x) (tensorHom_snd f g)
+
+/-- The braiding of sheaves of sets swaps the two sections. -/
+lemma braiding_hom_app (F K : Sheaf J (Type w)) {U : Cᵒᵖ}
+    (x : (F ⊗ K).obj.obj U) : (β_ F K).hom.hom.app U x = (x.2, x.1) := by
+  apply Prod.ext
+  · exact congrArg (fun k ↦ k.app U x) (braiding_hom_fst F.obj K.obj)
+  · exact congrArg (fun k ↦ k.app U x) (braiding_hom_snd F.obj K.obj)
+
+/-- The associator of sheaves of sets rebrackets three sections. -/
+lemma associator_hom_app (F K L : Sheaf J (Type w)) {U : Cᵒᵖ}
+    (x : ((F ⊗ K) ⊗ L).obj.obj U) :
+    (α_ F K L).hom.hom.app U x = (x.1.1, x.1.2, x.2) := by
+  apply Prod.ext
+  · exact congrArg (fun k ↦ k.hom.app U x) (associator_hom_fst F K L)
+  · apply Prod.ext
+    · exact congrArg (fun k ↦ k.hom.app U x) (associator_hom_snd_fst F K L)
+    · exact congrArg (fun k ↦ k.hom.app U x) (associator_hom_snd_snd F K L)
+
+end CartesianSections
 
 end CategoryTheory.Sheaf

@@ -14,6 +14,7 @@ public import Mathlib.CategoryTheory.Sites.CartesianMonoidal
 public import Mathlib.CategoryTheory.Sites.CoversTop.Basic
 public import Mathlib.CategoryTheory.Sites.LocalProperties
 public import Mathlib.CategoryTheory.Sites.LocallyBijective
+public import Mathlib.CategoryTheory.Skeletal
 
 /-!
 # Torsors under a sheaf of groups and their classes
@@ -139,11 +140,6 @@ lemma id_hom (P : Torsor G) : Hom.hom (𝟙 P) = 𝟙 P.sheaf := rfl
 
 @[simp]
 lemma comp_hom (f : P ⟶ Q) (g : Q ⟶ R) : (f ≫ g).hom = f.hom ≫ g.hom := rfl
-
-/-- A composite of morphisms of torsors maps a section by the two morphisms in turn. -/
-lemma comp_hom_hom_app (f : P ⟶ Q) (g : Q ⟶ R) {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
-    (f ≫ g).hom.hom.app U p = g.hom.hom.app U (f.hom.hom.app U p) :=
-  rfl
 
 /-- The inverse of an isomorphism of torsors undoes its forward map on sections. -/
 @[simp]
@@ -380,21 +376,27 @@ end Torsor
 variable (G : Sheaf J GrpCat.{w})
 
 /-- The pointed set of isomorphism classes of `G`-torsors, the first cohomology of the sheaf of
-groups `G` (Stacks, Section 21.4 (03AG)).
-
-The quotient is exposed so that algebraic structures on Mathlib's `Skeleton (Torsor G)`,
-such as the monoid induced by a monoidal structure on torsors, apply to this same type. -/
-@[expose] def NonabelianH1 : Type (max u v (w + 1)) :=
+groups `G` (Stacks, Section 21.4 (03AG)). -/
+def NonabelianH1 : Type (max u v (w + 1)) :=
   _root_.Quotient (isIsomorphicSetoid (Torsor G))
 
 namespace NonabelianH1
 
 variable {G}
 
-/-- The class of a `G`-torsor. The constructor is exposed so that Mathlib's skeleton API
-can compute with these classes. -/
-@[expose] def mk (P : Torsor G) : NonabelianH1 G :=
+/-- The class of a `G`-torsor. -/
+def mk (P : Torsor G) : NonabelianH1 G :=
   _root_.Quotient.mk _ P
+
+/-- Torsor classes identify with the objects of the skeleton of the category of torsors.
+This equivalence transfers algebraic structures without exposing the quotient representation. -/
+def skeletonEquiv : NonabelianH1 G ≃ Skeleton (Torsor G) :=
+  Equiv.refl _
+
+/-- The skeleton equivalence sends a torsor class to its skeleton class. -/
+@[simp]
+lemma skeletonEquiv_mk (P : Torsor G) : skeletonEquiv (mk P) = toSkeleton P :=
+  (rfl)
 
 /-- The base point of `NonabelianH1 G` is the class of the trivial torsor. -/
 instance : One (NonabelianH1 G) :=
