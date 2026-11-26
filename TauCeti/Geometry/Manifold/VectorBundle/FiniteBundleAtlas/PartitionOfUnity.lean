@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # Partitions of unity subordinate to a finite bundle atlas
@@ -57,15 +58,11 @@ theorem exists_nested_chart_sets :
   have hK (i : Fin A.n) : IsCompact (A.chart i '' tsupport (χ i)) :=
     (isClosed_tsupport _).isCompact.image_of_continuousOn
       ((A.chart i).continuousOn.mono ((hχ i).trans (A.dom_subset_chart_source i)))
-  have step {K U : Set E} (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
-      ∃ W : Opens E, K ⊆ W ∧ closure (W : Set E) ⊆ U ∧ IsCompact (closure (W : Set E)) :=
-    let ⟨W, hW, hKW, hWU, hWc⟩ := exists_open_between_and_isCompact_closure hK hU hKU
-    ⟨⟨W, hW⟩, hKW, hWU, hWc⟩
-  choose Q₃ hK₃ hQ₃ _ using fun i ↦ step (hK i) (A.image i).isOpen
+  choose Q₃ hK₃ hQ₃ _ using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i)
     fun _ hy ↦ A.mem_image.2 (image_mono (hχ i) hy)
-  choose Q₂ hK₂ hQ₂ _ using fun i ↦ step (hK i) (Q₃ i).isOpen (hK₃ i)
-  choose Q₁ hK₁ hQ₁ hQ₁c using fun i ↦ step (hK i) (Q₂ i).isOpen (hK₂ i)
-  choose Q₀ hK₀ hQ₀ hQ₀c using fun i ↦ step (hK i) (Q₁ i).isOpen (hK₁ i)
+  choose Q₂ hK₂ hQ₂ _ using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i) (hK₃ i)
+  choose Q₁ hK₁ hQ₁ hQ₁c using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i) (hK₂ i)
+  choose Q₀ hK₀ hQ₀ hQ₀c using fun i ↦ Opens.exists_between_and_isCompact_closure (hK i) (hK₁ i)
   refine ⟨χ, Q₀, Q₁, Q₂, Q₃, fun i x hx ↦ ⟨A.chart i x, hK₀ i (mem_image_of_mem _ hx),
     (A.chart i).left_inv (A.dom_subset_chart_source i (hχ i hx))⟩, fun i ↦ ⟨hQ₀c i, hQ₀ i⟩,
     fun i ↦ ⟨hQ₁c i, hQ₁ i⟩, hQ₂, hQ₃, fun i ↦ subset_closure.trans ((hQ₀ i).trans
