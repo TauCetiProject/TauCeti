@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Algebra.Homology.Monoidal.Cap.Connecting
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Basic
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Relative.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.RelativeCup
+import TauCeti.Algebra.Homology.Bifunctor.Basic
 
 /-!
 # The cap product of absolute cohomology with relative homology
@@ -42,6 +44,8 @@ abelian monoidal category.
   absolute cocycles.
 * `TopPair.singularHomologyπ_comp_absoluteSingularCap`: compatibility with the absolute cap product,
   `j_*(x ⌢ α) = j_*x ⌢ α` for `j_* : Hₙ(X) ⟶ Hₙ(X, A)`.
+* `TopPair.absoluteSingularCap_singularCohomologyπ`: compatibility with the relative cap product,
+  `x ⌢ j^*α = j_*(x ⌢ α)` for `j^* : Hᵖ(X, A) ⟶ Hᵖ(X)` and `j_* : H_q(X) ⟶ H_q(X, A)`.
 * `TopPair.absoluteSingularCap_naturality`: naturality in maps of pairs, the projection formula
   `f_*(x ⌢ f^*α) = f_*x ⌢ α`.
 * `TopPair.absoluteSingularCap_comp_singularHomologyδ`: compatibility with the connecting morphism
@@ -52,6 +56,13 @@ sign `(-1)^p` at the connecting morphisms, with the maps of the long exact seque
 with `i_*` by `TopCat.singularCap_naturality`, with `j_*` by
 `TopPair.singularHomologyπ_comp_absoluteSingularCap`, and with `∂` by
 `TopPair.absoluteSingularCap_comp_singularHomologyδ`.
+Together with the relative cap product, capping with a class `x` of `Hₙ(X, A)` therefore maps the
+long exact cohomology sequence of the pair to its long exact homology sequence, up to the sign
+`(-1)^p` at `∂`: the relative cap product turns `δ` into `i_*`
+(`TopPair.singularCap_singularCohomologyδ`), the two cap products turn `j^*` into `j_*`
+(`TopPair.absoluteSingularCap_singularCohomologyπ`), and the absolute and relative ones turn `i^*`
+into `∂` (`TopPair.absoluteSingularCap_comp_singularHomologyδ`). This is the diagram of Hatcher's
+five-lemma proof of Lefschetz duality.
 
 ## References
 
@@ -175,5 +186,60 @@ theorem absoluteSingularCap_comp_singularHomologyδ (P : TopPair.{w}) (k : Type*
     (SSet.chainComplexPairing_naturality (TopCat.toSSet.map P.map) μ).symm
     (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)
     (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n q' n' h h' α hq hn
+
+/-- The doubly relative Alexander–Whitney diagonal `C(X, A) ⟶ C(X, A) ⊗ C(X, A)` is both relative
+diagonals followed by the quotient map on the remaining absolute factor. -/
+private lemma alexanderWhitneyDiagonal_whiskerLeft_eq (P : TopPair.{w}) (u : T ⟶ R ⊗ S) :
+    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+      P.rightAlexanderWhitneyDiagonal u ≫
+        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+  rw [← cancel_epi (P.singularChainComplexπ T)]
+  -- Term-mode steps: the ambient chains appear both as `(toSSetPair.obj P).right.chainComplex R`
+  -- and as `(TopCat.toSSet.obj P.fst).chainComplex R`, so `rw` cannot match.
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg (· ≫ _) (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans ?_
+  refine Eq.trans ?_ (Category.assoc _ _ _)
+  refine Eq.trans ?_
+    (congrArg (· ≫ _) (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)).symm
+  refine (Category.assoc _ _ _).trans (Eq.trans (congrArg (_ ≫ ·) ?_) (Category.assoc _ _ _).symm)
+  -- Both whiskerings compose to the tensor product of the two quotient maps. The identities are
+  -- those of the ambient chains in the two presentations above, hence `erw`.
+  refine (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _).symm.trans <|
+    Eq.trans ?_ (HomologicalComplex.mapBifunctorMap_comp _ _ _ _ _ _)
+  erw [Category.id_comp, Category.id_comp, Category.comp_id, Category.comp_id]
+
+/-- **Compatibility of the absolute and relative cap products on relative cohomology**: for a class
+`α` of `Hᵖ(X, A)` with image `j^*α` in `Hᵖ(X)`, and a class `x` of `Hₙ(X, A)`,
+`x ⌢ j^*α = j_*(x ⌢ α)` in `H_q(X, A)`, where `j_* : H_q(X) ⟶ H_q(X, A)`. -/
+lemma absoluteSingularCap_singularCohomologyπ (P : TopPair.{w}) (k : Type*) [Ring k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ N) (p q n : ℕ) (h : p + q = n)
+    (α : P.singularCohomology R k M p) :
+    P.absoluteSingularCap k u μ p q n h (P.singularCohomologyπ R k M p α) =
+      P.singularCap k u μ p q n h α ≫ P.singularHomologyπ N q := by
+  -- Both sides are the cap product along the doubly relative diagonal.
+  have h₁ := TauCeti.ChainComplex.cap_naturality (k := k)
+    (P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
+    ((toSSetPair.obj P).chainComplexPairing μ) (P.rightAlexanderWhitneyDiagonal u)
+    ((toSSetPair.obj P).chainComplexPairing μ) (𝟙 _) (P.singularChainComplexπ R) (𝟙 _) (𝟙 _)
+    ((Category.id_comp _).trans (alexanderWhitneyDiagonal_whiskerLeft_eq P u)) (by simp) p q n h α
+  have h₂ := TauCeti.ChainComplex.cap_naturality (k := k)
+    (P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S))
+    ((toSSetPair.obj P).chainComplexPairing μ) (P.alexanderWhitneyDiagonal u)
+    ((TopCat.toSSet.obj P.fst).chainComplexPairing μ) (𝟙 _) (𝟙 _) (P.singularChainComplexπ S)
+    (P.singularChainComplexπ N) (Category.id_comp _)
+    (SSetPair.chainComplexπ_chainComplexPairing (toSSetPair.obj P) μ).symm p q n h α
+  rw [HomologicalComplex.homologyMap_id, HomologicalComplex.homologyMap_id, Category.comp_id,
+    Category.id_comp] at h₁
+  -- As in `singularHomologyπ_comp_absoluteSingularCap`, the identity of the cochains is stated
+  -- between `linearYonedaObj` complexes for `rw` to find it.
+  have hid : HomologicalComplex.homologyMap
+      (K := (P.singularChainComplex R).linearYonedaObj k M)
+      (L := (P.singularChainComplex R).linearYonedaObj k M)
+      ((TauCeti.ChainComplex.linearYonedaFunctor k M).map (𝟙 _).op) p = 𝟙 _ := by
+    rw [op_id, CategoryTheory.Functor.map_id]
+    exact HomologicalComplex.homologyMap_id _ _
+  rw [HomologicalComplex.homologyMap_id, Category.id_comp, hid, ModuleCat.id_apply] at h₂
+  rw [absoluteSingularCap_def, singularCap_def]
+  exact h₁.trans h₂.symm
 
 end TopPair

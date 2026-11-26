@@ -16,7 +16,8 @@ Let `M` be a Hausdorff topological manifold without boundary, charted on a real 
 of finite dimension `n`. Its cohomology with compact supports vanishes above the dimension:
 `Hᵐ_c(M) = 0` for `m > n` (`TopCat.isZero_compactSupportCohomology_of_finrank_lt`), for any
 coefficients with projective chain coefficients, with no orientation and no compactness,
-connectedness or countability of `M`.
+connectedness or countability of `M`. For compact `M`, cohomology with compact supports is singular
+cohomology, so `Hᵐ(M) = 0` for `m > n` (`TopCat.isZero_singularCohomology_of_finrank_lt`).
 
 The proof is Mayer–Vietoris induction over the open subsets of `M`
 (`TauCeti.mayerVietoris_induction_extChartAt_of_directed`), for the property of an open subset `U`
@@ -79,5 +80,13 @@ theorem isZero_compactSupportCohomology_of_finrank_lt {m : ℕ} (hm : finrank �
       exact isZero_compactSupportCohomology_iSup_of_monotone hU fun i ↦ hUm i m hm
   exact (key ⊤ m hm).of_iso (compactSupportCohomologyIsoOfHomeomorph R k N
     (homeoOfIso (Opens.inclusionTopIso (TopCat.of M))) m).symm
+
+/-- **The cohomology of a compact manifold vanishes above the dimension**: for a compact Hausdorff
+manifold `M` charted on a finite-dimensional real normed space `E`, `Hᵐ(M; R, N) = 0` for every
+degree `m > dim E`, for any coefficients with projective `R`. No orientation is assumed. -/
+theorem isZero_singularCohomology_of_finrank_lt [CompactSpace M] {m : ℕ} (hm : finrank ℝ E < m) :
+    IsZero ((TopCat.of M).singularCohomology R k N m) :=
+  (isZero_compactSupportCohomology_of_finrank_lt R N hm).of_iso
+    (compactSupportCohomologyIsoOfCompactSpace m).symm
 
 end TopCat
