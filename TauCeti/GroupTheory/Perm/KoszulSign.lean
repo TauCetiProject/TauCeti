@@ -35,6 +35,8 @@ homogeneous elements of a supercommutative algebra changes when its factors are 
 * `Equiv.Perm.koszulSign_consFin`: listing the letter `j` in front of the other letters, which are
   listed in the order of `π`, multiplies the Koszul sign of `π` by the signs of moving `j` past
   the letters `i < j`.
+* `Equiv.Perm.koszulSign_swap_castSucc_succ`: exchanging two adjacent letters costs the sign of
+  exchanging them once.
 * `Equiv.Perm.koszulSign_mul`: the cocycle law
   `(σ * τ).koszulSign d = σ.koszulSign d * τ.koszulSign (d ∘ σ)`, which makes the signed
   permutation action on words of graded letters an action; `Equiv.Perm.koszulSign_inv` follows.
@@ -78,18 +80,20 @@ letter `j` past each letter `i < j`. -/
 theorem koszulSign_consFin (j : Fin (n + 1)) (π : Perm (Fin n)) (d : Fin (n + 1) → ι) :
     (consFin j π).koszulSign d =
       (∏ i ∈ Iio j, (-1) ^ (d j * d i)) * π.koszulSign (d ∘ j.succAbove) := by
-  rw [koszulSign_def, koszulSign_def, prod_univ_inversions (w := fun a b =>
-      (-1) ^ (d (consFin j π a) * d (consFin j π b))),
-    prod_univ_inversions (w := fun a b =>
-      (-1) ^ ((d ∘ j.succAbove) (π a) * (d ∘ j.succAbove) (π b)))]
-  rw [Fin.prod_univ_succ, Fin.prod_univ_succ]
-  simp only [Fin.prod_univ_succ (n := n), consFin_zero, consFin_succ, lt_self_iff_false,
-    false_and, ite_false, one_mul, Fin.succ_pos, true_and, Fin.succ_lt_succ_iff,
-    Fin.not_lt_zero, Fin.succAbove_lt_succAbove_iff, Function.comp_apply]
+  -- Delete the first position: the remaining letters are listed in the order of `π`.
+  have hπ : univ.inversions (consFin j π ∘ Fin.succAbove 0) = univ.inversions π := by
+    simp [inversions_univ, Function.comp_def, consFin_succ, Fin.succAbove_lt_succAbove_iff]
+  rw [koszulSign_def, koszulSign_def, prod_univ_inversions_eq_comp_succAbove _ 0
+    fun a b ↦ (-1) ^ (d (consFin j π a) * d (consFin j π b)), hπ]
+  simp only [Fin.not_lt_zero, false_and, filter_false, prod_empty, mul_one, consFin_zero,
+    Fin.succAbove_zero, consFin_succ, Function.comp_apply]
+  rw [mul_comm]
   congr 1
-  rw [Equiv.prod_comp π fun m => if j.succAbove m < j then (-1) ^ (d j * d (j.succAbove m)) else 1,
-    ← filter_gt_eq_Iio, prod_filter, Fin.prod_univ_succAbove _ j]
-  simp
+  -- The inversions `(0, x)` are the positions `x` of the letters `consFin j π x < j`.
+  refine prod_equiv (consFin j π) (fun x ↦ ?_) fun _ _ ↦ rfl
+  simp only [mem_filter, mem_univ, true_and, mem_Iio, and_iff_right_iff_imp, Fin.pos_iff_ne_zero]
+  rintro h rfl
+  simp at h
 
 /-- The Koszul sign as a product over the increasing pairs of positions, in the form of
 `Equiv.Perm.sign_eq_prod_prod_Ioi`. -/
@@ -102,6 +106,22 @@ theorem koszulSign_eq_prod_prod_Ioi (σ : Perm (Fin n)) (d : Fin n → ι) :
   refine prod_congr rfl fun j _ => ?_
   have := σ.injective.ne (a₁ := i) (a₂ := j)
   grind
+
+/-- Exchanging two adjacent letters costs the sign `(-1) ^ (d i.castSucc * d i.succ)`: the only
+inversion of the adjacent transposition is the exchanged pair. -/
+@[simp]
+theorem koszulSign_swap_castSucc_succ (i : Fin n) (d : Fin (n + 1) → ι) :
+    (swap i.castSucc i.succ).koszulSign d = (-1) ^ (d i.castSucc * d i.succ) := by
+  have h : univ.inversions (swap i.castSucc i.succ) = {(i.castSucc, i.succ)} := by
+    ext ⟨a, b⟩
+    simp only [inversions_univ, mem_filter, mem_univ, true_and, mem_singleton, Prod.mk.injEq]
+    constructor
+    · rintro ⟨hab, h⟩
+      rw [swap_apply_def, swap_apply_def] at h
+      split_ifs at h <;> grind [Fin.le_castSucc_iff]
+    · rintro ⟨rfl, rfl⟩
+      simp
+  rw [koszulSign_def, h, prod_singleton, swap_apply_left, swap_apply_right, mul_comm]
 
 /-- **The Koszul sign is a cocycle.** Listing letters in the order of `σ * τ` costs the Koszul
 sign of `σ`, times the Koszul sign of `τ` acting on the letters already listed in the order of
@@ -128,6 +148,7 @@ theorem koszulSign_mul (σ τ : Perm (Fin n)) (d : Fin n → ι) :
 
 /-- The Koszul sign of the inverse permutation, acting on the letters listed in the order of
 `σ`, is the Koszul sign of `σ`. -/
+@[simp]
 theorem koszulSign_inv (σ : Perm (Fin n)) (d : Fin n → ι) :
     σ⁻¹.koszulSign (d ∘ σ) = σ.koszulSign d := by
   have h := koszulSign_mul σ σ⁻¹ d
