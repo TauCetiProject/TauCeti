@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.FDeriv.Const
 
 /-!
@@ -23,6 +24,10 @@ the tangent cone of `s` at `x` into `S`. A variant asks only for the increments 
 
 Dually, a map vanishing on a subspace near one of its points has derivative vanishing on that
 subspace.
+
+Between complete inner product spaces, if `f` maps a neighbourhood of `x` into a subspace `V`,
+then the adjoint of its derivative at `x` vanishes on `Vᗮ`
+(`TauCeti.adjoint_fderiv_apply_eq_zero_of_eventually_mem`).
 -/
 
 public section
@@ -91,5 +96,24 @@ theorem _root_.HasFDerivAt.apply_eq_zero_of_eventually_eq_zero [T2Space F] {S : 
     mem_tangentConeAt_of_add_smul_mem (l := 𝓝[≠] (0 : 𝕜)) (c := id) tendsto_id
       (Eventually.of_forall fun c ↦ S.add_mem hx (S.smul_mem c hv))
   simpa using hf.hasFDerivWithinAt.unique_on h0 hv'
+
+end TauCeti
+
+namespace TauCeti
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- If `f` maps a neighbourhood of `x` into a subspace `V`, then the adjoint of its derivative at
+`x` vanishes on `Vᗮ`. -/
+theorem adjoint_fderiv_apply_eq_zero_of_eventually_mem {V : Submodule 𝕜 F} {f : E → F} {x : E}
+    (hf : ∀ᶠ y in 𝓝 x, f y ∈ V) {η : F} (hη : η ∈ Vᗮ) : (fderiv 𝕜 f x).adjoint η = 0 := by
+  -- `Df(x)` takes values in the closure of `V`, which `η` is orthogonal to.
+  refine ext_inner_right 𝕜 fun u ↦ ?_
+  rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left]
+  refine Submodule.inner_left_of_mem_orthogonal
+    (fderiv_apply_mem_of_eventually_sub_mem V.isClosed_topologicalClosure
+      (hf.mono fun y hy ↦ V.le_topologicalClosure (V.sub_mem hy hf.self_of_nhds)) u) ?_
+  rwa [Submodule.orthogonal_closure]
 
 end TauCeti
