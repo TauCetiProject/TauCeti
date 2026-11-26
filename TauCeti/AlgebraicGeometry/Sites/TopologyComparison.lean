@@ -34,7 +34,10 @@ Likewise the restriction of a big fppf sheaf to the open subschemes of `X`
 through `X_Nis` (`AlgebraicGeometry.Scheme.fppfToZariskiPushforwardIsoComp`), and by
 `AlgebraicGeometry.Scheme.aXPushforwardIsoComp` also the direct image of
 `ε : (Sch/X)_fppf → (Sch/X)_ét` followed by restriction to the small étale site and then to the
-open subschemes.
+open subschemes. When the inverse image of `a_X` exists, the inverse image of
+`(Sch/X)_fppf → X_Zar` is therefore that of `X_ét → X_Zar` followed by that of `a_X`
+(`AlgebraicGeometry.Scheme.fppfToZariskiAdjunction`,
+`AlgebraicGeometry.Scheme.fppfToZariskiPullbackIso`).
 
 All these isomorphisms are identities: each direct image is restriction along a functor, and the
 functors compose on the nose.
@@ -50,6 +53,11 @@ functors compose on the nose.
 * `AlgebraicGeometry.Scheme.fppfToZariskiPushforward`,
   `AlgebraicGeometry.Scheme.fppfToZariskiPushforwardIsoComp`: the comparison
   `(Sch/X)_fppf → X_Zar` factors through `a_X`, `X_ét` and `X_Nis`.
+* `AlgebraicGeometry.Scheme.fppfToZariskiPullback`,
+  `AlgebraicGeometry.Scheme.fppfToZariskiAdjunction`,
+  `AlgebraicGeometry.Scheme.fppfToZariskiPullbackIso`: its inverse image, when that of `a_X`
+  exists, is the inverse image of `X_ét → X_Zar` followed by that of `a_X`, and is Mathlib's
+  pullback of sheaves along `opensToEtale X ⋙ Etale.forget X`.
 
 ## References
 
@@ -187,5 +195,38 @@ theorem fppfToZariskiPushforwardIsoComp_inv_app_hom (F : Sheaf (fppfTopology.ove
     ((fppfToZariskiPushforwardIsoComp X A).inv.app F).hom = 𝟙 _ := by
   -- As in `etaleToZariskiPushforwardIsoComp_hom_app_hom`.
   ext; rfl
+
+section FppfPullback
+
+variable [HasWeakSheafify (smallEtaleTopology X) A] [HasWeakSheafify (smallNisnevichTopology X) A]
+  [(aXPushforward X A).IsRightAdjoint]
+
+/-- The inverse image of the comparison morphism of topoi `(Sch/X)_fppf → X_Zar`: the inverse
+image of `X_ét → X_Zar` followed by that of `a_X`. -/
+noncomputable abbrev fppfToZariskiPullback :
+    Sheaf (Opens.grothendieckTopology X) A ⥤ Sheaf (fppfTopology.over X) A :=
+  etaleToZariskiPullback X A ⋙ aXPullback X A
+
+/-- The inverse image of `(Sch/X)_fppf → X_Zar` is left adjoint to its direct image. -/
+noncomputable def fppfToZariskiAdjunction :
+    fppfToZariskiPullback X A ⊣ fppfToZariskiPushforward X A :=
+  ((etaleToZariskiAdjunction X A).comp (aXAdjunction X A)).ofNatIsoRight
+    (Functor.isoWhiskerLeft _ (etaleToZariskiPushforwardIsoComp X A) ≪≫
+      (fppfToZariskiPushforwardIsoComp X A).symm)
+
+noncomputable instance isRightAdjoint_fppfToZariskiPushforward :
+    (fppfToZariskiPushforward X A).IsRightAdjoint :=
+  (fppfToZariskiAdjunction X A).isRightAdjoint
+
+/-- The inverse image `fppfToZariskiPullback X A` is the general pullback of sheaves along the
+continuous functor `opensToEtale X ⋙ Etale.forget X`. -/
+noncomputable def fppfToZariskiPullbackIso :
+    (opensToEtale X ⋙ Etale.forget X).sheafPullback A (Opens.grothendieckTopology X)
+        (fppfTopology.over X) ≅
+      fppfToZariskiPullback X A :=
+  ((opensToEtale X ⋙ Etale.forget X).sheafAdjunctionContinuous A _ _).leftAdjointUniq
+    (fppfToZariskiAdjunction X A)
+
+end FppfPullback
 
 end AlgebraicGeometry.Scheme
