@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.BoundedContinuous
 public import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 public import TauCeti.Topology.ContinuousMap.Bounded.UniformContinuous
 public import TauCeti.Analysis.Holder.UniformContinuous
-import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.Holder.Iterated
 
 /-!
 # Heat regularization of bounded uniformly continuous data

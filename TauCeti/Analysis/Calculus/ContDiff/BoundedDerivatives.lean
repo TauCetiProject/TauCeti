@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Smooth functions with bounded derivatives
@@ -17,7 +18,7 @@ across orders is required.
 
 A continuous linear map applied to the derivative of a `C^{n+1}` map with bounded derivatives
 through order `n + 1` is a `C^n` map with bounded derivatives through order `n`
-(`TauCeti.contDiff_comp_fderiv_and_bounded`).
+(`ContDiff.clm_comp_fderiv_and_exists_bound_iteratedFDeriv`).
 -/
 
 public section
@@ -58,27 +59,21 @@ theorem mem_smoothBoundedDerivatives {f : E → F} :
       ContDiff 𝕜 ∞ f ∧ ∀ m : ℕ, ∃ C : ℝ, ∀ x : E, ‖iteratedFDeriv 𝕜 m f x‖ ≤ C :=
   Iff.rfl
 
+end TauCeti
+
 section CompFDeriv
 
 variable {𝕜 E F} {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
 /-- A continuous linear map `L` applied to the derivative of a `C^{n+1}` map with bounded
 derivatives through order `n + 1` gives a `C^n` map with bounded derivatives through order `n`. -/
-theorem contDiff_comp_fderiv_and_bounded {n : ℕ} {f : E → F} (hf : ContDiff 𝕜 (n + 1 : ℕ) f)
+theorem ContDiff.clm_comp_fderiv_and_exists_bound_iteratedFDeriv {n : ℕ} {f : E → F}
+    (hf : ContDiff 𝕜 (n + 1 : ℕ) f)
     (hbdd : ∀ i ≤ n + 1, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) (L : (E →L[𝕜] F) →L[𝕜] G) :
     ContDiff 𝕜 n (L ∘ fderiv 𝕜 f) ∧
       ∀ i ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i (L ∘ fderiv 𝕜 f) x‖ ≤ C := by
   have hd : ContDiff 𝕜 n (fderiv 𝕜 f) := hf.fderiv_right (by push_cast; exact le_rfl)
-  refine ⟨L.contDiff.comp hd, fun i hi ↦ ?_⟩
-  obtain ⟨C, hC⟩ := hbdd (i + 1) (by omega)
-  refine ⟨‖L‖ * C, fun x ↦ ?_⟩
-  calc ‖iteratedFDeriv 𝕜 i (L ∘ fderiv 𝕜 f) x‖
-      ≤ ‖L‖ * ‖iteratedFDeriv 𝕜 i (fderiv 𝕜 f) x‖ :=
-        L.norm_iteratedFDeriv_comp_left hd.contDiffAt (by exact_mod_cast hi)
-    _ ≤ ‖L‖ * C := by
-        rw [norm_iteratedFDeriv_fderiv]
-        exact mul_le_mul_of_nonneg_left (hC x) (norm_nonneg L)
+  exact ⟨L.contDiff.comp hd, L.exists_bound_iteratedFDeriv_comp_left hd fun i hi ↦
+    (hbdd (i + 1) (by omega)).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x⟩
 
 end CompFDeriv
-
-end TauCeti

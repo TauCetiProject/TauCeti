@@ -11,7 +11,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.OfDeriv
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
 import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 import TauCeti.Analysis.Calculus.FDeriv.Prod
-import TauCeti.Analysis.Holder.Inclusion
+import TauCeti.Analysis.Holder.Iterated
 import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Holder
 
@@ -142,7 +142,7 @@ private theorem contDiffMotive_one (hα : α ≤ 1) : ContDiffMotive E F α hab 
   let R : (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E →L[ℝ] E [×m]→L[ℝ] F :=
     (ContinuousLinearMap.inl ℝ E ℝ).precomp _
   obtain ⟨hfx, hbfx⟩ :=
-    contDiff_comp_fderiv_and_bounded (n := 1) (G := E →L[ℝ] E [×m]→L[ℝ] F) hf hbdd R
+    hf.clm_comp_fderiv_and_exists_bound_iteratedFDeriv (n := 1) (G := E →L[ℝ] E [×m]→L[ℝ] F) hbdd R
   obtain ⟨ux, hux⟩ :=
     exists_holderSpace_coe_eq_of_contDiff (a := a) (b := b) hα (by exact_mod_cast hfx) hbfx
   obtain ⟨M, hM⟩ := hbdd 0 (by omega)
@@ -185,13 +185,14 @@ private theorem contDiffMotive_add_two {k : ℕ} (hk : ContDiffMotive E F α hab
   let R : (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E →L[ℝ] E [×m]→L[ℝ] F :=
     (ContinuousLinearMap.inl ℝ E ℝ).precomp _
   obtain ⟨hfx, hbfx⟩ :=
-    contDiff_comp_fderiv_and_bounded (n := k + 2) (G := E [×(m + 1)]→L[ℝ] F) hf hbdd
+    hf.clm_comp_fderiv_and_exists_bound_iteratedFDeriv (n := k + 2) (G := E [×(m + 1)]→L[ℝ] F) hbdd
     ((e.symm : (E →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E [×(m + 1)]→L[ℝ] F).comp R)
   obtain ⟨Gm, hGm⟩ := hk₁ (m + 1) _ hfx hbfx
   let G : ParabolicCkHolderSpace (k + 1) α E (E →L[ℝ] E [×m]→L[ℝ] F) hab :=
     compLeftL (e : _ →L[ℝ] _) Gm
   -- The time derivative.
-  obtain ⟨hft, hbft⟩ := contDiff_comp_fderiv_and_bounded (n := k + 2) (G := E [×m]→L[ℝ] F) hf hbdd
+  obtain ⟨hft, hbft⟩ :=
+    hf.clm_comp_fderiv_and_exists_bound_iteratedFDeriv (n := k + 2) (G := E [×m]→L[ℝ] F) hbdd
     (ContinuousLinearMap.apply ℝ _ ((0, 1) : E × ℝ) :
       (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E [×m]→L[ℝ] F)
   obtain ⟨H, hH⟩ := hk m _ (hft.of_le (by norm_cast; omega))

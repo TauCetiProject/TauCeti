@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Holder.OpenSet.Basic
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Algebra.Order.Ring.MaxOneMul
-import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Operator.Compact.Basic
 import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
@@ -67,8 +66,6 @@ the identity of an infinite-dimensional Banach space is never compact.
   on the whole space into bounded `C^{k,α}` maps, of norm at most `k + 4`.
 * `TauCeti.CkHolderSpace.exists_coe_eq_of_le`: for `α ≤ 1`, a bounded `C^{k,α}` map is a bounded
   `C^{j,α}` map for every `j ≤ k`.
-* `TauCeti.CkHolderSpace.exists_coe_eq_of_contDiff`: for `α ≤ 1`, a `C^{k+1}` map with bounded
-  derivatives through order `k + 1` is a bounded `C^{k,α}` map.
 * `TauCeti.HolderSpace.nnHolderNorm_le_interpolate`: the interpolation inequality for the Hölder
   seminorms.
 * `TauCeti.HolderSpace.isCompactOperator_inclusionL`: the inclusion is compact for `β < α` on a
@@ -505,24 +502,6 @@ theorem exists_coe_eq_of_le (hα : α ≤ 1) {j : ℕ} (h : j ≤ k) (f : CkHold
   | succ k _ ih =>
     obtain ⟨g, hg⟩ := ih (inclusionSuccL hα f)
     exact ⟨g, hg.trans (coe_inclusionSuccL hα f)⟩
-
-/-- A `C^{k+1}` map on `E` with bounded derivatives through order `k + 1` lies in `C_b^{k,α}`, for
-`α ≤ 1`: its `k`-th derivative has a bounded derivative, so it is `α`-Hölder. -/
-theorem exists_coe_eq_of_contDiff (hα : α ≤ 1) (k : ℕ) {g : E → F}
-    (hg : ContDiff ℝ (k + 1 : ℕ) g)
-    (hbdd : ∀ i ≤ k + 1, ∃ C, ∀ x, ‖_root_.iteratedFDeriv ℝ i g x‖ ≤ C) :
-    ∃ G : CkHolderSpace k α E F, ⇑G = g := by
-  obtain ⟨N₀, hN₀⟩ := hbdd k (by omega)
-  obtain ⟨N₁, hN₁⟩ := hbdd (k + 1) le_rfl
-  have hH : HolderWith (N₁.toNNReal + 2 * N₀.toNNReal) α (_root_.iteratedFDeriv ℝ k g) :=
-    holderWith_of_norm_le_of_norm_fderiv_le hα
-      (hg.differentiable_iteratedFDeriv (by exact_mod_cast k.lt_succ_self))
-      (fun x ↦ (hN₀ x).trans (Real.le_coe_toNNReal N₀))
-      fun x ↦ by
-        rw [norm_fderiv_iteratedFDeriv]
-        exact (hN₁ x).trans (Real.le_coe_toNNReal N₁)
-  exact ⟨ofContDiff g (hg.of_le (by norm_cast; omega))
-    (fun i hi ↦ hbdd i (by omega)) hH.memHolder, coe_ofContDiff _ _ _ _⟩
 
 end CkHolderSpace
 
