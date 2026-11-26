@@ -101,9 +101,9 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
     simp [rieszRemainder_of_ne_one hi, rieszRemainder_of_ne_one hχ, character_inv,
       rieszSum_def, hlog, ← MulChar.star_apply']
 
-/-- On the half-plane of absolute convergence the remainder in logarithmic coordinates has
-one-sided Laplace transform given by the meromorphic Riesz expression. -/
-theorem hasLaplace_rieszRemainder (χ : PrimitiveDirichletCharacter) {s : ℂ}
+/-- For `1 < s.re`, the remainder in logarithmic coordinates has one-sided Laplace transform
+given by the meromorphic Riesz expression. -/
+theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s : ℂ}
     (hs : 1 < s.re) :
     HasLaplace (χ.rieszRemainder ∘ Real.exp) s (rieszRemainderMellin χ.character.LFunction s) := by
   have h₀ : s ≠ 0 := Complex.ne_zero_of_re_pos (zero_lt_one.trans hs)
@@ -155,15 +155,17 @@ theorem integrableOn_rieszRemainder_mul_cpow (χ : PrimitiveDirichletCharacter) 
     (hs : 1 < s.re) :
     IntegrableOn (fun y : ℝ ↦ χ.rieszRemainder y * (y : ℂ) ^ (-s - 1)) (Ioi 1) := by
   simpa only [Real.exp_zero, neg_add', smul_eq_mul, mul_comm] using
-    ((hasLaplace_comp_exp_iff χ.rieszRemainder s _ 0).mp (hasLaplace_rieszRemainder χ hs)).1
+    ((hasLaplace_comp_exp_iff χ.rieszRemainder s _ 0).mp
+      (hasLaplace_rieszRemainder_comp_exp χ hs)).1
 
 /-- The upper Mellin integral of the first Riesz remainder equals its meromorphic expression
-on the half-plane of absolute convergence. -/
+for `1 < s.re`. -/
 theorem integral_rieszRemainder_mul_cpow (χ : PrimitiveDirichletCharacter) {s : ℂ}
     (hs : 1 < s.re) :
     ∫ y in Ioi (1 : ℝ), χ.rieszRemainder y * (y : ℂ) ^ (-s - 1) =
       rieszRemainderMellin χ.character.LFunction s := by
   simpa only [Real.exp_zero, neg_add', smul_eq_mul, mul_comm] using
-    ((hasLaplace_comp_exp_iff χ.rieszRemainder s _ 0).mp (hasLaplace_rieszRemainder χ hs)).2
+    ((hasLaplace_comp_exp_iff χ.rieszRemainder s _ 0).mp
+      (hasLaplace_rieszRemainder_comp_exp χ hs)).2
 
 end TauCeti.PrimitiveDirichletCharacter
