@@ -57,6 +57,7 @@ def fluxJacobian (p : E) : E →L[ℝ] E :=
     ((1 + ‖p‖ ^ 2) • ContinuousLinearMap.id ℝ E - rankOne ℝ p p)
 
 /-- The flux Jacobian is the cleared-denominator principal operator scaled by the area factor. -/
+@[simp low]
 theorem fluxJacobian_apply (p v : E) :
     fluxJacobian p v = (1 + ‖p‖ ^ 2) ^ (-(3 / 2 : ℝ)) • principalOperator p v := by
   simp only [fluxJacobian, smul_apply, sub_apply, ContinuousLinearMap.id_apply, rankOne_apply,
