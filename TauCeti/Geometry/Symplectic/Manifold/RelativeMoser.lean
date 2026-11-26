@@ -74,7 +74,7 @@ The construction is natural. With the cut-off `ρ` given rather than chosen
 (`TauCeti.SmoothTwoForm.exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff`), it only needs
 `dβ = σ₁ - σ₀` on the support of `ρ`, and `Φ` commutes with every diffeomorphism `g` which
 preserves `σ₀`, `σ₁`, `β` and `ρ`: such a `g` carries the Moser field to itself, so it commutes with
-its flow (`TauCeti.apply_timeDependentFlowOf_of_mfderiv_eq`). This is the input of the equivariant
+its flow (`MDifferentiable.apply_timeDependentFlowOf`). This is the input of the equivariant
 relative Moser theorem, in `TauCeti.Geometry.Symplectic.Manifold.RelativeMoser.Equivariant`.
 
 For the submanifold version, the relative Poincaré lemma
@@ -523,8 +523,9 @@ theorem exists_diffeomorph_fix_eventually_mpullback_eq_of_cutoff {σ₀ σ₁ : 
   rotate_left
   · -- The flow of a natural field commutes with the symmetry.
     rw [hΦ]
-    exact (apply_timeDependentFlowOf_of_mfderiv_eq hc hX₁ hX₁ (g.mdifferentiable (by simp))
-      (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ) 0 1 x).symm
+    exact ((g.mdifferentiable (by simp)).apply_timeDependentFlowOf hX₁ hX₁
+      (mfderiv_moserField hinv g hg₀ hg₁ hgβ hgρ)
+      ((timeDependentFlowDomain_eq_univ hc).symm ▸ mem_univ _)).symm
   -- The trajectories starting near `K` stay, up to time `1`, where `ρ = 1` near each point.
   set V := {y : M | ∀ᶠ z in 𝓝 y, ρ z = 1}
   have hKV : K ⊆ V := fun x hx ↦ (eventually_nhdsSet_iff_forall.1 hρ1) x hx
