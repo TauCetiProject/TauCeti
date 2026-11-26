@@ -45,13 +45,12 @@ theorem units_map_zmod_two_gaussian_surjective :
       (t = 1 ∧ s = 0) ∨ (t = 0 ∧ s = 1) := by decide
   have hn : IsUnit (u.val.re ^ 2 + u.val.im ^ 2) := by
     simpa [norm_def, sq, sub_eq_add_neg, ZMod.neg_eq_self_mod_two] using hu
+  have hω := mapRingHom_omega (Int.castRingHom (ZMod 2)) (-1) 0
   rcases key _ _ hn with h | h
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.gaussianUnit, Units.ext ?_⟩
-    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      TauCeti.QuadraticAlgebra.gaussianUnit_val, mapRingHom_omega]
-    ext <;> simp [h.1, h.2]
+    ext <;> simp [hω, h.1, h.2]
 
 /-- Every unit modulo `2` in the Eisenstein integer algebra lifts to an integral unit. The
 three residues are represented by `1`, `ω`, and `ω² = ω - 1`. -/
@@ -64,18 +63,13 @@ theorem units_map_zmod_two_eisenstein_surjective :
       (t = 1 ∧ s = 0) ∨ (t = 0 ∧ s = 1) ∨ (t = 1 ∧ s = 1) := by decide
   have hn : IsUnit (u.val.re ^ 2 + u.val.re * u.val.im + u.val.im ^ 2) := by
     simpa [norm_def, sq, sub_eq_add_neg, ZMod.neg_eq_self_mod_two] using hu
+  have hω := mapRingHom_omega (Int.castRingHom (ZMod 2)) (-1) 1
   rcases key _ _ hn with h | h | h
   · refine ⟨1, Units.ext ?_⟩
     ext <;> simp [h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit, Units.ext ?_⟩
-    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      TauCeti.QuadraticAlgebra.eisensteinUnit_val, mapRingHom_omega]
-    ext <;> simp [h.1, h.2]
+    ext <;> simp [hω, h.1, h.2]
   · refine ⟨TauCeti.QuadraticAlgebra.eisensteinUnit ^ 2, Units.ext ?_⟩
-    simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
-      Units.val_pow_eq_pow_val, map_pow, TauCeti.QuadraticAlgebra.eisensteinUnit_val,
-      mapRingHom_omega]
-    rw [sq, omega_mul_omega_eq_mk]
-    ext <;> simp [h.1, h.2, ZMod.neg_eq_self_mod_two]
+    ext <;> simp [hω, h.1, h.2, sq, ZMod.neg_eq_self_mod_two]
 
 end QuadraticAlgebra

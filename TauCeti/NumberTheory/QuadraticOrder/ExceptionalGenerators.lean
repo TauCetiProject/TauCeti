@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.QuadraticAlgebra.Basic
+public import TauCeti.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
 
@@ -23,20 +23,19 @@ open scoped QuadraticAlgebra
 
 namespace TauCeti.QuadraticAlgebra
 
-private def omegaUnit {R : Type*} [CommRing R] (b : R) : (QuadraticAlgebra R (-1) b)ˣ :=
-  Units.mkOfMulEqOne ω (algebraMap R _ b - ω) (by ext <;> simp)
-
 /-- The Gaussian generator `ω = √-1` as a unit, with inverse `-ω`. -/
 def gaussianUnit : (QuadraticAlgebra ℤ (-1) 0)ˣ :=
   omegaUnit 0
 
 /-- The underlying Gaussian integer of the generator is `ω`. -/
 @[simp] theorem gaussianUnit_val :
-    (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) = ω := (rfl)
+    (gaussianUnit : QuadraticAlgebra ℤ (-1) 0) = ω := by
+  simp [gaussianUnit]
 
 /-- The inverse Gaussian generator has underlying value `-ω`. -/
 @[simp] theorem gaussianUnit_inv_val :
-    (↑(gaussianUnit⁻¹) : QuadraticAlgebra ℤ (-1) 0) = -ω := (rfl)
+    (↑(gaussianUnit⁻¹) : QuadraticAlgebra ℤ (-1) 0) = -ω := by
+  simp [gaussianUnit]
 
 /-- The Eisenstein generator `ω = (1 + √-3)/2` as a unit, with inverse `1 - ω`. -/
 def eisensteinUnit : (QuadraticAlgebra ℤ (-1) 1)ˣ :=
@@ -44,11 +43,13 @@ def eisensteinUnit : (QuadraticAlgebra ℤ (-1) 1)ˣ :=
 
 /-- The underlying Eisenstein integer of the generator is `ω`. -/
 @[simp] theorem eisensteinUnit_val :
-    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) = ω := (rfl)
+    (eisensteinUnit : QuadraticAlgebra ℤ (-1) 1) = ω := by
+  simp [eisensteinUnit]
 
 /-- The inverse Eisenstein generator has underlying value `1 - ω`. -/
 @[simp] theorem eisensteinUnit_inv_val :
-    (↑(eisensteinUnit⁻¹) : QuadraticAlgebra ℤ (-1) 1) = 1 - ω := (rfl)
+    (↑(eisensteinUnit⁻¹) : QuadraticAlgebra ℤ (-1) 1) = 1 - ω := by
+  simp [eisensteinUnit]
 
 /-- The Eisenstein generator is a root of the sixth cyclotomic polynomial `X² - X + 1`. -/
 theorem eisensteinUnit_sq_sub_add_one_eq_zero :

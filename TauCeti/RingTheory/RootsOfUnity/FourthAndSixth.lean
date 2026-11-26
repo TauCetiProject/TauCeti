@@ -38,6 +38,10 @@ open Polynomial
 
 namespace TauCeti
 
+private lemma one_ne_neg_one_of_neZero_two {R : Type*} [AddGroupWithOne R] [NeZero (2 : R)] :
+    (1 : R) ≠ -1 := by
+  simpa [eq_neg_iff_add_eq_zero, one_add_one_eq_two] using (NeZero.ne (2 : R))
+
 /-- **The exceptional fourth root of unity.** In a commutative ring where `2 ≠ 0`, a square
 root of `-1` is a primitive fourth root of unity. -/
 theorem isPrimitiveRoot_four_of_sq_eq_neg_one {R : Type*} [CommRing R] [NeZero (2 : R)]
@@ -45,9 +49,7 @@ theorem isPrimitiveRoot_four_of_sq_eq_neg_one {R : Type*} [CommRing R] [NeZero (
   apply IsPrimitiveRoot.iff_orderOf.mpr
   have hnot : θ ^ (2 ^ 1) ≠ 1 := by
     intro he
-    have hneg : (1 : R) = -1 := he.symm.trans h
-    rw [eq_neg_iff_add_eq_zero, one_add_one_eq_two] at hneg
-    exact NeZero.ne (2 : R) hneg
+    exact one_ne_neg_one_of_neZero_two (he.symm.trans h)
   have hfin : θ ^ (2 ^ (1 + 1)) = 1 := by
     rw [pow_succ (2 : ℕ) (1 : ℕ), pow_mul, pow_one, h, neg_one_sq]
   exact orderOf_eq_prime_pow (p := 2) (n := 1) hnot hfin
@@ -65,9 +67,7 @@ theorem isPrimitiveRoot_six_of_sq_sub_add_one_eq_zero {R : Type*} [CommRing R]
   rcases hp.dvd_mul.mp hpd' with hp₂ | hp₃
   · obtain rfl := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp hp₂
     intro he
-    have hneg : (1 : R) = -1 := he.symm.trans hcube
-    rw [eq_neg_iff_add_eq_zero, one_add_one_eq_two] at hneg
-    exact NeZero.ne (2 : R) hneg
+    exact one_ne_neg_one_of_neZero_two (he.symm.trans hcube)
   · obtain rfl := (Nat.prime_dvd_prime_iff_eq hp Nat.prime_three).mp hp₃
     intro he
     have htwo : μ = 2 := by linear_combination he - h

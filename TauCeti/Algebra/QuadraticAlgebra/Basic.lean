@@ -9,11 +9,13 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 import Mathlib.Algebra.Ring.Parity
 
 /-!
-# Powers of the generator of a quadratic algebra
+# The generator of a quadratic algebra
 
 For the quadratic algebra `R[√r]` over any commutative semiring, powers of the generator
 alternate between scalars at even exponents and scalar multiples of the generator at odd
 exponents. These formulas include exponent zero and do not require finite-field hypotheses.
+
+When the defining relation is `ω² = -1 + bω`, the generator is a unit, with inverse `b - ω`.
 -/
 
 public section
@@ -34,3 +36,21 @@ theorem omega_pow_of_even {R : Type*} [CommSemiring R] {r : R} {n : ℕ} (hn : E
   rw [pow_mul, sq, omega_mul_omega_eq_algebraMap, map_zero, zero_mul, add_zero, ← map_pow]
 
 end QuadraticAlgebra
+
+open scoped QuadraticAlgebra
+
+namespace TauCeti.QuadraticAlgebra
+
+/-- The coordinate generator of `QuadraticAlgebra R (-1) b` as a unit, with inverse `b - ω`. -/
+def omegaUnit {R : Type*} [CommRing R] (b : R) : (QuadraticAlgebra R (-1) b)ˣ :=
+  Units.mkOfMulEqOne ω (algebraMap R _ b - ω) (by ext <;> simp)
+
+/-- The underlying value of `omegaUnit b` is the coordinate generator `ω`. -/
+@[simp] theorem omegaUnit_val {R : Type*} [CommRing R] (b : R) :
+    (omegaUnit b : QuadraticAlgebra R (-1) b) = ω := (rfl)
+
+/-- The inverse of `omegaUnit b` has underlying value `b - ω`. -/
+@[simp] theorem omegaUnit_inv_val {R : Type*} [CommRing R] (b : R) :
+    (↑((omegaUnit b)⁻¹) : QuadraticAlgebra R (-1) b) = algebraMap R _ b - ω := (rfl)
+
+end TauCeti.QuadraticAlgebra
