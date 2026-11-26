@@ -27,6 +27,8 @@ coefficients `map f` acts on the constant coefficient.
   coefficient by `f`, as `MvPowerSeries.constantCoeff_map` does for multivariate power series.
 * `PowerSeries.coeff_mul_of_ne_zero`: for `k ≠ 0`, the `Xᵏ`-coefficient of `f * g` is
   `f₀ * gₖ + fₖ * g₀ + Σ_{0 < i < k} fᵢ * g_{k - i}`.
+* `PowerSeries.coeff_succ_mul_eq_add_sum`: the `Xⁿ⁺¹`-coefficient of `f * g` is
+  `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -90,6 +92,16 @@ theorem coeff_mul_of_ne_zero (f g : R⟦X⟧) {k : ℕ} (hk : k ≠ 0) :
   rw [coeff_mul, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk, Finset.sum_range_succ,
     Finset.sum_range_eq_add_Ico _ (Nat.pos_of_ne_zero hk), ← Finset.Ico_add_one_left_eq_Ioo]
   simp [add_right_comm]
+
+/-- The `Xⁿ⁺¹`-coefficient of `f * g`, with the term `f₀ * gₙ₊₁` of the constant coefficient of
+`f` split off: it is `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`. -/
+theorem coeff_succ_mul_eq_add_sum (f g : R⟦X⟧) (n : ℕ) :
+    coeff (n + 1) (f * g) = coeff 0 f * coeff (n + 1) g +
+      ∑ j ∈ Finset.range (n + 1), coeff (n + 1 - j) f * coeff j g := by
+  rw [coeff_mul, ← Finset.Nat.sum_antidiagonal_swap]
+  simp only [Prod.fst_swap, Prod.snd_swap]
+  rw [Finset.Nat.sum_antidiagonal_eq_sum_range_succ (fun i j ↦ coeff j f * coeff i g),
+    Finset.sum_range_succ, Nat.sub_self, add_comm]
 
 end Coeff
 
