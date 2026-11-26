@@ -117,10 +117,11 @@ theorem eq_diagonalLie_or_eq_scalarDiagonalLie_or_eq_traceEqualLie_or_eq_top
       add_mem' {A B} hA hB := by simpa using L.add_mem hA hB
       zero_mem' := L.zero_mem
       smul_mem' c {Z} hZ := by simpa using L.smul_mem c hZ
-      lie_mem {A Z} hZ := by simpa using L.lie_mem (hd (rfl : (A, A).1 = (A, A).2)) hZ }
+      lie_mem {A Z} hZ := by
+        simpa using L.lie_mem (hd ((mem_diagonalLie_iff (X := (A, A))).mpr rfl)) hZ }
   have hmem (X : Matrix ι ι K × Matrix ι ι K) : X ∈ L ↔ X.1 - X.2 ∈ fstIdeal := by
     rcases X with ⟨X₁, X₂⟩
-    have hdiag : (X₂, X₂) ∈ L := hd rfl
+    have hdiag : (X₂, X₂) ∈ L := hd (mem_diagonalLie_iff.mpr rfl)
     exact ⟨fun hX => by simpa [fstIdeal] using L.sub_mem hX hdiag,
       fun hsub => by simpa using L.add_mem hsub hdiag⟩
   rcases TauCeti.eq_bot_or_eq_center_or_eq_slIdeal_or_eq_top fstIdeal htwo with hI | hI | hI | hI
@@ -168,7 +169,8 @@ theorem isClosed_determinantEqual [T2Space R] :
 instance instPathConnectedSpaceDiagonal : PathConnectedSpace (diagonal ι ℂ) := by
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
     (diagonal_eq_graph_id (ι := ι) (R := ℂ)).ge, goursatFst_diagonal]
-  exact ⟨⟨1⟩, fun x y => Subsingleton.elim x y ▸ Joined.refl x⟩
+  exact isPathConnected_iff_pathConnectedSpace.mp
+    (Subgroup.coe_bot (G := GL ι ℂ) ▸ isPathConnected_singleton 1)
 
 /-- `scalarDiagonal ι ℂ` is path connected. -/
 instance instPathConnectedSpaceScalarDiagonal : PathConnectedSpace (scalarDiagonal ι ℂ) := by
@@ -200,25 +202,12 @@ noncomputable def pairExp (X : Matrix ι ι ℂ × Matrix ι ι ℂ) : GL ι ℂ
 @[simp] theorem coe_snd_pairExp (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
     ((pairExp X).2 : Matrix ι ι ℂ) = NormedSpace.exp X.2 := (Matrix.isUnit_exp X.2).unit_spec
 
-@[simp] theorem pairExp_zero : pairExp (0 : Matrix ι ι ℂ × Matrix ι ι ℂ) = 1 :=
-  Prod.ext (Units.ext (by simp)) (Units.ext (by simp))
-
-theorem pairExp_add_of_commute {X Y : Matrix ι ι ℂ × Matrix ι ι ℂ} (h : Commute X Y) :
-    pairExp (X + Y) = pairExp X * pairExp Y :=
-  Prod.ext (Units.ext (by simp [Matrix.exp_add_of_commute X.1 Y.1 (congrArg Prod.fst h)]))
-    (Units.ext (by simp [Matrix.exp_add_of_commute X.2 Y.2 (congrArg Prod.snd h)]))
-
-@[simp] theorem pairExp_add_smul (z w : ℂ) (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
-    pairExp ((z + w) • X) = pairExp (z • X) * pairExp (w • X) := by
-  rw [add_smul]; exact pairExp_add_of_commute (((Commute.refl X).smul_left z).smul_right w)
-
-@[simp] theorem pairExp_add_real_smul (s t : ℝ) (X : Matrix ι ι ℂ × Matrix ι ι ℂ) :
-    pairExp ((s + t) • X) = pairExp (s • X) * pairExp (t • X) := by
-  rw [← algebraMap_smul ℂ (s + t) X, map_add, pairExp_add_smul, algebraMap_smul, algebraMap_smul]
-
-@[simp] theorem pairExp_neg (X : Matrix ι ι ℂ × Matrix ι ι ℂ) : pairExp (-X) = (pairExp X)⁻¹ :=
-  eq_inv_of_mul_eq_one_left (by
-    rw [← pairExp_add_of_commute (Commute.refl X).neg_left, neg_add_cancel, pairExp_zero])
+private theorem exp_smul_one_add (c : ℂ) (Y : Matrix ι ι ℂ) :
+    NormedSpace.exp (c • (1 : Matrix ι ι ℂ) + Y) =
+      (Matrix.diagonal fun _ => NormedSpace.exp c) * NormedSpace.exp Y := by
+  rw [Matrix.exp_add_of_commute _ _ ((Commute.one_left Y).smul_left c)]
+  congr 1
+  ext; simp [Matrix.smul_one_eq_diagonal, Matrix.exp_diagonal, Pi.exp_def]
 
 /-- **Real exponential directions** of `H ≤ GL ι ℂ × GL ι ℂ`. -/
 def realDirections (H : Subgroup (GL ι ℂ × GL ι ℂ)) : Set (Matrix ι ι ℂ × Matrix ι ι ℂ) :=
@@ -235,34 +224,10 @@ theorem realDirections_mono {H₁ H₂ : Subgroup (GL ι ℂ × GL ι ℂ)} (h :
     realDirections (⊤ : Subgroup (GL ι ℂ × GL ι ℂ)) = Set.univ :=
   Set.eq_univ_of_forall fun _ _ => Subgroup.mem_top _
 
-/-- **Complex closure of `realDirections H` is equivalent to `Complex.I`-invariance.** -/
-theorem forall_pairExp_complex_smul_mem_iff_I_smul_mem (H : Subgroup (GL ι ℂ × GL ι ℂ)) :
-    (∀ X ∈ realDirections H, ∀ z : ℂ, pairExp (z • X) ∈ H) ↔
-      ∀ X ∈ realDirections H, Complex.I • X ∈ realDirections H := by
-  refine ⟨fun h X hX t => ?_, fun hI X hX z => ?_⟩
-  · rw [← algebraMap_smul ℂ t (Complex.I • X), smul_smul, Complex.coe_algebraMap]
-    exact h X hX _
-  · have hz : z • X = z.re • X + z.im • (Complex.I • X) := by
-      rw [← algebraMap_smul ℂ z.re X, ← algebraMap_smul ℂ z.im (Complex.I • X), smul_smul,
-        Complex.coe_algebraMap, ← add_smul, Complex.re_add_im]
-    have hcomm : Commute (z.re • X) (z.im • (Complex.I • X)) := by
-      rw [← algebraMap_smul ℂ z.re X, ← algebraMap_smul ℂ z.im (Complex.I • X), smul_smul]
-      exact ((Commute.refl X).smul_left _).smul_right _
-    rw [hz, pairExp_add_of_commute hcomm]
-    exact H.mul_mem (hX z.re) (hI X hX z.im)
-
-private theorem isPreconnected_diagonal : IsPreconnected (SetLike.coe (diagonal ι ℂ)) :=
-  isPreconnected_iff_preconnectedSpace.mpr (inferInstanceAs (PreconnectedSpace (diagonal ι ℂ)))
-
-private theorem isPreconnected_scalarDiagonal :
-    IsPreconnected (SetLike.coe (scalarDiagonal ι ℂ)) :=
-  isPreconnected_iff_preconnectedSpace.mpr
-    (inferInstanceAs (PreconnectedSpace (scalarDiagonal ι ℂ)))
-
-private theorem isPreconnected_determinantEqual :
-    IsPreconnected (SetLike.coe (determinantEqual ι ℂ)) :=
-  isPreconnected_iff_preconnectedSpace.mpr
-    (inferInstanceAs (PreconnectedSpace (determinantEqual ι ℂ)))
+private theorem isPreconnected_coe_of_pathConnectedSpace
+    (H : Subgroup (GL ι ℂ × GL ι ℂ)) [PathConnectedSpace H] :
+    IsPreconnected (H : Set (GL ι ℂ × GL ι ℂ)) :=
+  isPreconnected_iff_preconnectedSpace.mpr inferInstance
 
 section LieBridge
 
@@ -279,6 +244,30 @@ private theorem prodUnits_expUnit_eq_pairExp (X : Matrix ι ι ℂ × Matrix ι 
   -- Entrywise and `L∞` operator-norm topologies on `Matrix ι ι ℂ` are definitionally equal.
   refine Prod.ext (Units.ext ?_) (Units.ext ?_) <;>
     simp [TauCeti.expUnit_coe, Prod.fst_exp, Prod.snd_exp] <;> rfl
+
+@[simp] theorem pairExp_zero : pairExp (0 : Matrix ι ι ℂ × Matrix ι ι ℂ) = 1 := by
+  rw [← prodUnits_expUnit_eq_pairExp, TauCeti.expUnit_zero, map_one]
+
+theorem pairExp_add_of_commute {X Y : Matrix ι ι ℂ × Matrix ι ι ℂ} (h : Commute X Y) :
+    pairExp (X + Y) = pairExp X * pairExp Y := by
+  rw [← prodUnits_expUnit_eq_pairExp, ← prodUnits_expUnit_eq_pairExp,
+    ← prodUnits_expUnit_eq_pairExp, TauCeti.expUnit_add_of_commute h, map_mul]
+
+/-- **Complex closure of `realDirections H` is equivalent to `Complex.I`-invariance.** -/
+theorem forall_pairExp_complex_smul_mem_iff_I_smul_mem (H : Subgroup (GL ι ℂ × GL ι ℂ)) :
+    (∀ X ∈ realDirections H, ∀ z : ℂ, pairExp (z • X) ∈ H) ↔
+      ∀ X ∈ realDirections H, Complex.I • X ∈ realDirections H := by
+  refine ⟨fun h X hX t => ?_, fun hI X hX z => ?_⟩
+  · rw [← algebraMap_smul ℂ t (Complex.I • X), smul_smul, Complex.coe_algebraMap]
+    exact h X hX _
+  · have hz : z • X = z.re • X + z.im • (Complex.I • X) := by
+      rw [← algebraMap_smul ℂ z.re X, ← algebraMap_smul ℂ z.im (Complex.I • X), smul_smul,
+        Complex.coe_algebraMap, ← add_smul, Complex.re_add_im]
+    have hcomm : Commute (z.re • X) (z.im • (Complex.I • X)) := by
+      rw [← algebraMap_smul ℂ z.re X, ← algebraMap_smul ℂ z.im (Complex.I • X), smul_smul]
+      exact ((Commute.refl X).smul_left _).smul_right _
+    rw [hz, pairExp_add_of_commute hcomm]
+    exact H.mul_mem (hX z.re) (hI X hX z.im)
 
 private theorem mem_realDirections_iff_mem_lieSubalgebraOfSubgroup
     {H : Subgroup (GL ι ℂ × GL ι ℂ)} (hc : IsClosed (H : Set (GL ι ℂ × GL ι ℂ)))
@@ -413,19 +402,14 @@ private theorem mem_center_of_pairExp_sub_mem_scalarDiagonal {Z : Matrix ι ι �
   ext X
   simp only [SetLike.mem_coe, mem_scalarDiagonalLie_iff]
   refine ⟨fun hX => ?_, fun ⟨c, hc⟩ t => mem_scalarDiagonal_iff.mpr
-    ⟨(NormedSpace.isUnit_exp (t • c)).unit, Units.ext ?_⟩⟩
+    ⟨TauCeti.expUnit (t • c), Units.ext ?_⟩⟩
   · obtain ⟨c, hc⟩ := TauCeti.mem_center_matrix_iff.mp
       (mem_center_of_pairExp_sub_mem_scalarDiagonal
         (sub_zero_mem_realDirections diagonal_le_scalarDiagonal isClosed_scalarDiagonal hX))
     exact ⟨c, eq_add_of_sub_eq hc⟩
   · have hsmul : t • X.1 = (t • c) • (1 : Matrix ι ι ℂ) + t • X.2 := by
       rw [hc, smul_add, ← algebraMap_smul ℂ t (c • 1), smul_smul, ← Algebra.smul_def]
-    simp only [Prod.smul_fst, Prod.smul_snd, coe_fst_pairExp, coe_snd_pairExp, Units.val_mul]
-    rw [hsmul, Matrix.exp_add_of_commute _ _ ((Commute.one_left (t • X.2)).smul_left (t • c)),
-      Matrix.smul_one_eq_diagonal, Matrix.exp_diagonal, Pi.exp_def, GeneralLinearGroup.coe_scalar,
-      Matrix.scalar_apply]
-    exact congrArg (· * _)
-      (congrArg Matrix.diagonal (funext fun _ => (NormedSpace.isUnit_exp (t • c)).unit_spec.symm))
+    simp [hsmul, exp_smul_one_add]
 
 /-- The real exponential directions of `determinantEqual ι ℂ` form `traceEqualLie ℂ ι`. -/
 @[simp] theorem realDirections_determinantEqual :
@@ -462,14 +446,15 @@ theorem eq_diagonal_or_eq_scalarDiagonal_or_eq_determinantEqual_or_eq_top
     realDirections_mono hd (by rwa [realDirections_diagonal])
   rcases eq_diagonalLie_or_eq_scalarDiagonalLie_or_eq_traceEqualLie_or_eq_top
       (two_ne_zero : (2 : ℂ) ≠ 0) L hdL with hL | hL | hL | hL
-  · exact Or.inl <| eq_of_realDirections_eq hc hconn isClosed_diagonal isPreconnected_diagonal
+  · exact Or.inl <| eq_of_realDirections_eq hc hconn isClosed_diagonal
+      (isPreconnected_coe_of_pathConnectedSpace (diagonal ι ℂ))
       ((congrArg (SetLike.coe : LieSubalgebra ℂ _ → Set _) hL).trans realDirections_diagonal.symm)
   · exact Or.inr <| Or.inl <| eq_of_realDirections_eq hc hconn isClosed_scalarDiagonal
-      isPreconnected_scalarDiagonal
+      (isPreconnected_coe_of_pathConnectedSpace (scalarDiagonal ι ℂ))
       ((congrArg (SetLike.coe : LieSubalgebra ℂ _ → Set _) hL).trans
         realDirections_scalarDiagonal.symm)
   · exact Or.inr <| Or.inr <| Or.inl <| eq_of_realDirections_eq hc hconn isClosed_determinantEqual
-      isPreconnected_determinantEqual
+      (isPreconnected_coe_of_pathConnectedSpace (determinantEqual ι ℂ))
       ((congrArg (SetLike.coe : LieSubalgebra ℂ _ → Set _) hL).trans
         realDirections_determinantEqual.symm)
   · exact Or.inr <| Or.inr <| Or.inr <| eq_of_realDirections_eq hc hconn isClosed_univ

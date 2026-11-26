@@ -425,8 +425,10 @@ theorem IsIrreducible.of_externalTensor_left {ρ : Representation k G V} {σ : R
       apply_mem_toSubmodule := by
         rintro ⟨x, y⟩ _ ⟨t, rfl⟩
         exact ⟨_root_.TensorProduct.map (S.toRepresentation x) (σ y) t,
-          _root_.TensorProduct.inductionOn t (fun _ _ => rfl) fun _ _ h1 h2 => by
-            simp [map_add, h1, h2]⟩ }
+          _root_.TensorProduct.inductionOn t
+            (fun _ _ => by simp [externalTensor_apply, _root_.TensorProduct.map_tmul,
+              LinearMap.rTensor_tmul])
+            fun _ _ h1 h2 => by simp [map_add, h1, h2]⟩ }
   rcases h.eq_bot_or_eq_top T with hT | hT
   · have hmem : v₀ ⊗ₜ[k] w₀ ∈ T.toSubmodule := ⟨⟨v₀, hv₀S⟩ ⊗ₜ[k] w₀, rfl⟩
     rw [hT, Subrepresentation.toSubmodule_bot, Submodule.mem_bot] at hmem

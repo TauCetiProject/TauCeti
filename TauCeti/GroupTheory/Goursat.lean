@@ -33,12 +33,12 @@ variable {G : Type*} [Group G]
 /-- A subgroup of `G × G` containing the diagonal projects surjectively onto the first factor. -/
 theorem surjective_fst_of_graph_id_le {H : Subgroup (G × G)}
     (hH : (MonoidHom.id G).graph ≤ H) : Function.Surjective (Prod.fst ∘ H.subtype) :=
-  fun g => ⟨⟨(g, g), hH rfl⟩, rfl⟩
+  fun g => ⟨⟨(g, g), hH (MonoidHom.mem_graph.mpr rfl)⟩, rfl⟩
 
 /-- A subgroup of `G × G` containing the diagonal projects surjectively onto the second factor. -/
 theorem surjective_snd_of_graph_id_le {H : Subgroup (G × G)}
     (hH : (MonoidHom.id G).graph ≤ H) : Function.Surjective (Prod.snd ∘ H.subtype) :=
-  fun g => ⟨⟨(g, g), hH rfl⟩, rfl⟩
+  fun g => ⟨⟨(g, g), hH (MonoidHom.mem_graph.mpr rfl)⟩, rfl⟩
 
 /-- For `H ≤ G × G` containing the diagonal, `H.goursatFst` is normal in `G`. -/
 theorem normal_goursatFst_of_graph_id_le {H : Subgroup (G × G)}
@@ -49,7 +49,7 @@ theorem normal_goursatFst_of_graph_id_le {H : Subgroup (G × G)}
 theorem mem_iff_div_mem_goursatFst {H : Subgroup (G × G)}
     (hH : (MonoidHom.id G).graph ≤ H) {p : G × G} :
     p ∈ H ↔ p.1 / p.2 ∈ H.goursatFst := by
-  have hd : (p.2⁻¹, p.2⁻¹) ∈ H := hH rfl
+  have hd : (p.2⁻¹, p.2⁻¹) ∈ H := hH (MonoidHom.mem_graph.mpr rfl)
   rw [mem_goursatFst, ← H.mul_mem_cancel_right hd]
   simp [Prod.mul_def, div_eq_mul_inv]
 
@@ -73,7 +73,7 @@ def diagonalExt (N : Subgroup G) [hN : N.Normal] : Subgroup (G × G) where
 
 theorem graph_id_le_diagonalExt (N : Subgroup G) [N.Normal] :
     (MonoidHom.id G).graph ≤ diagonalExt N :=
-  fun p hp => by simp [show p.1 = p.2 from hp]
+  fun p hp => by rw [MonoidHom.mem_graph, MonoidHom.id_apply] at hp; simp [hp]
 
 @[simp] theorem goursatFst_diagonalExt (N : Subgroup G) [N.Normal] :
     (diagonalExt N).goursatFst = N := by ext; simp
@@ -117,7 +117,8 @@ theorem normalizer_graph_id (G : Type*) [Group G] :
   rw [mem_normalizer_iff, mem_diagonalExt, Subgroup.mem_center_iff]
   refine ⟨fun hnorm y => ?_, fun hc ⟨x, y⟩ => ?_⟩
   · have hconj : g * (h⁻¹ * y * h) * g⁻¹ = h * (h⁻¹ * y * h) * h⁻¹ := by
-      simpa [MonoidHom.mem_graph] using (hnorm (h⁻¹ * y * h, h⁻¹ * y * h)).mp rfl
+      simpa [MonoidHom.mem_graph] using
+        (hnorm (h⁻¹ * y * h, h⁻¹ * y * h)).mp (MonoidHom.mem_graph.mpr rfl)
     calc y * (g / h) = (h * (h⁻¹ * y * h) * h⁻¹) * (g / h) := by simp only [div_eq_mul_inv]; group
       _ = (g * (h⁻¹ * y * h) * g⁻¹) * (g / h) := by rw [hconj]
       _ = (g / h) * y := by simp only [div_eq_mul_inv]; group
@@ -146,7 +147,7 @@ theorem normalizer_diagonalExt_center_of_center_quotient_eq_bot
     simp only [div_eq_mul_inv]; group
   have hx : (g / h) * y * (g / h)⁻¹ * y⁻¹ ∈ Subgroup.center G :=
     hcalc.symm ▸ mem_diagonalExt.mp ((mem_normalizer_iff.mp hnorm (h⁻¹ * y * h, h⁻¹ * y * h)).mp
-      (graph_id_le_diagonalExt (Subgroup.center G) rfl))
+      (graph_id_le_diagonalExt (Subgroup.center G) (MonoidHom.mem_graph.mpr rfl)))
   have h2 : (QuotientGroup.mk (g / h) : G ⧸ Subgroup.center G) * QuotientGroup.mk y *
       (QuotientGroup.mk (g / h))⁻¹ = QuotientGroup.mk y := by
     simpa only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, mul_inv_eq_one] using

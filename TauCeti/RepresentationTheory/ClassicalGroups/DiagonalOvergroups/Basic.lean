@@ -93,15 +93,6 @@ instance instNormalDeterminantEqual : (determinantEqual ι R).Normal :=
   ⟨fun ⟨⟨_, u⟩, h⟩ => ⟨u, (congrArg Prod.fst h).symm.trans (by simp [← congrArg Prod.snd h])⟩,
    fun ⟨u, hu⟩ => ⟨(p.2, u), Prod.ext hu.symm rfl⟩⟩
 
-/-- Pairs lie in `scalarDiagonal` iff they have the same class in `PGL(ι, R)`. -/
-theorem mem_scalarDiagonal_iff_mk_eq {p : GL ι R × GL ι R} :
-    p ∈ scalarDiagonal ι R ↔ ProjGenLinGroup.mk p.1 = ProjGenLinGroup.mk p.2 := by
-  rw [mem_scalarDiagonal_iff, ProjGenLinGroup.mk_eq_mk_iff]
-  exact ⟨fun ⟨u, hu⟩ => ⟨u⁻¹, by rw [hu, GeneralLinearGroup.scalar_commute u p.2, mul_assoc,
-      ← map_mul, mul_inv_cancel, map_one, mul_one]⟩,
-    fun ⟨u, hu⟩ => ⟨u⁻¹, by rw [← hu, GeneralLinearGroup.scalar_commute u⁻¹ _, mul_assoc,
-      ← map_mul, mul_inv_cancel, map_one, mul_one]⟩⟩
-
 /-- `scalarDiagonal ι R` is the Goursat extension `Subgroup.diagonalExt` of
 `Subgroup.center (GL ι R)`. -/
 theorem scalarDiagonal_eq_diagonalExt_center :
@@ -110,6 +101,17 @@ theorem scalarDiagonal_eq_diagonalExt_center :
   rw [mem_scalarDiagonal_iff, Subgroup.mem_diagonalExt, GeneralLinearGroup.center_eq_range_scalar]
   exact ⟨fun ⟨u, hu⟩ => ⟨u, by rw [hu, mul_div_cancel_right]⟩,
     fun ⟨u, hu⟩ => ⟨u, by rw [hu, div_mul_cancel]⟩⟩
+
+/-- For `p ∈ scalarDiagonal ι R`, the ratio `p.1 / p.2` lies in `Subgroup.center (GL ι R)`. -/
+theorem div_mem_center_of_mem_scalarDiagonal {p : GL ι R × GL ι R}
+    (hp : p ∈ scalarDiagonal ι R) : p.1 / p.2 ∈ Subgroup.center (GL ι R) :=
+  Subgroup.mem_diagonalExt.mp (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ hp)
+
+/-- Pairs lie in `scalarDiagonal` iff they have the same class in `PGL(ι, R)`. -/
+theorem mem_scalarDiagonal_iff_mk_eq {p : GL ι R × GL ι R} :
+    p ∈ scalarDiagonal ι R ↔ ProjGenLinGroup.mk p.1 = ProjGenLinGroup.mk p.2 := by
+  rw [scalarDiagonal_eq_diagonalExt_center, Subgroup.mem_diagonalExt, ← ProjGenLinGroup.mk_eq_one,
+    map_div, div_eq_one]
 
 /-- `determinantEqual ι R` is the Goursat extension `Subgroup.diagonalExt` of
 `(GeneralLinearGroup.det).ker`. -/
@@ -211,9 +213,8 @@ def diagonalEquiv : GL ι R ≃* diagonal ι R where
 noncomputable def scalarDiagonalEquiv [Nonempty ι] :
     GL ι R × Rˣ ≃* scalarDiagonal ι R where
   toFun := (scalarDiagonalMap ι R).rangeRestrict
-  invFun q := (q.val.2, (GeneralLinearGroup.unitsMulEquivCenter ι).symm ⟨q.val.1 / q.val.2,
-    Subgroup.mem_diagonalExt.mp
-      (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.property)⟩)
+  invFun q := (q.val.2, (GeneralLinearGroup.unitsMulEquivCenter ι).symm
+    ⟨q.val.1 / q.val.2, div_mem_center_of_mem_scalarDiagonal q.property⟩)
   left_inv p := Prod.ext rfl (by simp [mul_div_cancel_right])
   right_inv q := Subtype.ext (Prod.ext (by simp [div_mul_cancel]) rfl)
   map_mul' := map_mul _
@@ -312,8 +313,7 @@ noncomputable def scalarDiagonalContinuousMulEquiv [IsTopologicalRing R] [Nonemp
     have hdiv : Continuous fun q : scalarDiagonal ι R => q.val.1 / q.val.2 :=
       (continuous_fst.comp continuous_subtypeVal).div' (continuous_snd.comp continuous_subtypeVal)
     let divMem (q : scalarDiagonal ι R) : Subgroup.center (GL ι R) :=
-      ⟨q.val.1 / q.val.2, Subgroup.mem_diagonalExt.mp
-        (scalarDiagonal_eq_diagonalExt_center (ι := ι) (R := R) ▸ q.property)⟩
+      ⟨q.val.1 / q.val.2, div_mem_center_of_mem_scalarDiagonal q.property⟩
     refine Units.continuous_iff.mpr
       ⟨((Units.continuous_val.comp hdiv).matrix_elem i₀ i₀).congr fun q =>
           (GeneralLinearGroup.val_unitsMulEquivCenter_symm_apply (divMem q) i₀).symm,

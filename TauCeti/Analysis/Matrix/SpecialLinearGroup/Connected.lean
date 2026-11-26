@@ -82,7 +82,7 @@ private theorem joined_one_diag2n {i j : n} (hij : i ≠ j) {c : ℂ} (hc : c �
 /-- **The complex special linear group is path connected**, including in sizes zero and one. -/
 instance instPathConnectedSpace : PathConnectedSpace (SpecialLinearGroup n ℂ) := by
   rcases subsingleton_or_nontrivial n with _ | _
-  · exact PathConnectedSpace.mk ⟨1⟩ fun x y => Subsingleton.elim x y ▸ Joined.refl x
+  · exact (Function.surjective_to_subsingleton (fun _ : ℝ => 1)).pathConnectedSpace continuous_const
   · have h1 : ∀ M : SpecialLinearGroup n ℂ, Joined 1 M := fun M =>
       diagonal_transvection_induction' (Joined 1) M
         (fun _ _ hij _ hc => joined_one_diag2n hij hc)

@@ -210,8 +210,7 @@ def determinantModulusOne (ι : Type*) [Fintype ι] [DecidableEq ι] :
 /-- `determinantEqual ι ℂ` is contained in `determinantModulusOne ι`. -/
 theorem determinantEqual_le_determinantModulusOne :
     determinantEqual ι ℂ ≤ determinantModulusOne ι := fun _ hp => by
-  rw [mem_determinantModulusOne_iff, determinantRatio_apply, mem_determinantEqual_iff.mp hp,
-    div_self', Units.val_one, norm_one]
+  simp [mem_determinantEqual_iff.mp hp]
 
 theorem graph_id_le_determinantModulusOne :
     (MonoidHom.id (GL ι ℂ)).graph ≤ determinantModulusOne ι :=
@@ -229,10 +228,13 @@ theorem isClosed_determinantModulusOne :
 /-- `determinantModulusOne ι` is path connected. -/
 instance instPathConnectedSpaceDeterminantModulusOne :
     PathConnectedSpace (determinantModulusOne ι) := by
+  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
+  · rw [top_unique ((determinantEqual_eq_top_of_isEmpty (ι := ι) (R := ℂ)).ge.trans
+      determinantEqual_le_determinantModulusOne)]
+    exact isPathConnected_iff_pathConnectedSpace.mp
+      (Subgroup.coe_top (G := GL ι ℂ × GL ι ℂ) ▸ isPathConnected_univ)
   rw [Subgroup.pathConnectedSpace_iff_pathConnectedSpace_goursatFst
     graph_id_le_determinantModulusOne]
-  rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
-  · exact ⟨⟨1⟩, fun x y => Subsingleton.elim x y ▸ Joined.refl x⟩
   let expCircle : ℝ → ℂˣ := fun θ =>
     Units.mk0 (Complex.exp (θ * Complex.I)) (Complex.exp_ne_zero _)
   have hexp_cont : Continuous expCircle := Units.continuous_iff.mpr
