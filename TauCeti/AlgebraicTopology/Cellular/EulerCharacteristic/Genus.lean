@@ -30,8 +30,9 @@ connected homologically oriented surface `M`, the native computation `χ(M) = 2 
 (`TauCeti.HomologicalOrientation.genus_eq_surfaceGenus`); so `χ(M) = 2 - 2 · genus M` holds if and
 only if `b₁(M)` is even
 (`TauCeti.HomologicalOrientation.eulerChar_eq_two_sub_two_mul_genus_iff_even_finrank`). Evenness
-of `b₁` itself needs the nondegenerate alternating intersection pairing from Poincaré duality, and
-is not asserted here.
+of `b₁` is not asserted here; for compact connected Riemann surfaces it is
+`TauCeti.RiemannSurface.even_finrank_singularHomology_one`, proved from
+`χ = 2 - 2 · genus`.
 
 ## Main definitions
 
@@ -187,8 +188,8 @@ theorem genus_eq_surfaceGenus : genus M = surfaceGenus M := by
 
 /-- **The Euler number of a closed oriented surface.** On a compact connected homologically
 oriented surface of finite CW type, `χ(M) = 2 - 2 · genus M` holds if and only if the first
-rational Betti number is even. Evenness itself follows from Poincaré duality and is not asserted
-here. -/
+rational Betti number is even. Evenness itself is not asserted here; for compact connected Riemann
+surfaces it is `TauCeti.RiemannSurface.even_finrank_singularHomology_one`. -/
 theorem eulerChar_eq_two_sub_two_mul_genus_iff_even_finrank :
     eulerChar M = 2 - 2 * genus M ↔ Even (finrank ℚ
       (((singularHomologyFunctor (ModuleCat.{0} ℚ) 1).obj (ModuleCat.of ℚ ℚ)).obj
