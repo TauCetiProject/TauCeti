@@ -50,8 +50,7 @@ theorem mellinConvergent_and_norm_mellin_le_of_sq_div {E : Type*}
         rw [integral_congr_ae heq]
         by_cases ha : 0 < a
         · rw [integral_multHaar_eq_two_smul_of_sq_div ha hsym, two_nsmul, two_mul]
-        · have hae := ae_pos_multHaar.mono fun _ ht ↦ (le_of_not_gt ha).trans_lt ht
-          rw [Measure.restrict_eq_self_of_ae_mem hae]
+        · rw [multHaar_restrict_Ioi_of_nonpos (le_of_not_gt ha)]
           exact le_mul_of_one_le_left (integral_nonneg fun _ ↦ norm_nonneg _) one_le_two
       _ ≤ _ := mul_le_mul_of_nonneg_left
         (setIntegral_mono_set htail (ae_of_all _ fun _ ↦ norm_nonneg _)

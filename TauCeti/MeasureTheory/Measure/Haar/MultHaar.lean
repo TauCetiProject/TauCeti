@@ -149,6 +149,11 @@ theorem multHaar_Iic_zero : multHaar (Iic 0) = 0 := by
 theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
   ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
 
+/-- Restricting `dt / t` to an upper ray with nonpositive cutoff leaves it unchanged. -/
+theorem multHaar_restrict_Ioi_of_nonpos {a : ℝ} (ha : a ≤ 0) :
+    multHaar.restrict (Ioi a) = multHaar :=
+  Measure.restrict_eq_self_of_ae_mem (ae_pos_multHaar.mono fun _ ht ↦ ha.trans_lt ht)
+
 instance : NullSingletonClass multHaar := by
   rw [multHaar_def]
   infer_instance
@@ -253,6 +258,11 @@ theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
     simp only [inv_div, pow_two, mul_div_cancel_left₀ _ ha.ne']
   simpa only [hpre] using hpres.restrict_preimage (measurableSet_Ioo (a := 0) (b := a))
 
+private theorem measurableEmbedding_sq_div {a : ℝ} (ha : a ≠ 0) :
+    MeasurableEmbedding (fun t : ℝ ↦ a ^ 2 / t) := by
+  simpa only [Function.comp_def, div_eq_mul_inv] using
+    (measurableEmbedding_mulLeft₀ (pow_ne_zero 2 ha)).comp measurableEmbedding_inv
+
 section Fold
 
 variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {a : ℝ}
@@ -263,21 +273,16 @@ theorem integrable_multHaar_iff_of_sq_div
     (hsym : ∀ᵐ t ∂multHaar.restrict (Ioi a), f (a ^ 2 / t) = f t) :
     Integrable f multHaar ↔ IntegrableOn f (Ioi a) multHaar := by
   by_cases hnonpos : a ≤ 0
-  · have hae := ae_pos_multHaar.mono fun _ ht ↦ hnonpos.trans_lt ht
-    rw [IntegrableOn, Measure.restrict_eq_self_of_ae_mem hae]
+  · rw [IntegrableOn, multHaar_restrict_Ioi_of_nonpos hnonpos]
   have ha := lt_of_not_ge hnonpos
   refine ⟨fun h ↦ h.integrableOn, fun h ↦ ?_⟩
-  have hemb : MeasurableEmbedding (fun t : ℝ ↦ a ^ 2 / t) := by
-    simpa only [Function.comp_def, div_eq_mul_inv] using
-      (measurableEmbedding_mulLeft₀ (pow_ne_zero 2 ha.ne')).comp measurableEmbedding_inv
-  have hlow := ((measurePreserving_sq_div_multHaar_restrict_Ioi ha).integrable_comp_emb hemb
-    (g := f)).mp (h.congr (Filter.EventuallyEq.symm hsym))
+  have hlow := ((measurePreserving_sq_div_multHaar_restrict_Ioi ha).integrable_comp_emb
+    (measurableEmbedding_sq_div ha.ne') (g := f)).mp (h.congr (Filter.EventuallyEq.symm hsym))
   have hleft : IntegrableOn f (Ioc 0 a) multHaar := by
     simpa only [IntegrableOn, Measure.restrict_congr_set (Ioo_ae_eq_Ioc (μ := multHaar))] using hlow
   -- Use `(0,a]` and `(a,∞)` to cover the support of the measure.
   have hfull := hleft.union h
-  rwa [Ioc_union_Ioi_eq_Ioi ha.le, IntegrableOn,
-    Measure.restrict_eq_self_of_ae_mem ae_pos_multHaar] at hfull
+  rwa [Ioc_union_Ioi_eq_Ioi ha.le, IntegrableOn, multHaar_restrict_Ioi_of_nonpos le_rfl] at hfull
 
 /-- A reciprocally symmetric function has twice its upper-ray integral against `dt / t`.
 If the upper-ray integral is not integrable, both Bochner integrals have the junk value zero. -/
@@ -288,14 +293,12 @@ theorem integral_multHaar_eq_two_smul_of_sq_div [NormedSpace ℝ E] (ha : 0 < a)
   · have hfull := (integrable_multHaar_iff_of_sq_div hsym).mpr h
     have hlow : (∫ t in Ioc 0 a, f t ∂multHaar) = ∫ t in Ioi a, f t ∂multHaar := by
       have hp := measurePreserving_sq_div_multHaar_restrict_Ioi ha
-      have hm := (hfull.integrableOn (s := Ioo 0 a)).aestronglyMeasurable
-      rw [← hp.map_eq] at hm
-      rw [setIntegral_congr_set (Ioo_ae_eq_Ioc (μ := multHaar)).symm, ← hp.map_eq,
-        integral_map hp.measurable.aemeasurable hm]
+      rw [setIntegral_congr_set (Ioo_ae_eq_Ioc (μ := multHaar)).symm,
+        ← hp.integral_comp (measurableEmbedding_sq_div ha.ne') f]
       exact integral_congr_ae hsym
     calc
       _ = ∫ t in Ioc 0 a ∪ Ioi a, f t ∂multHaar := by
-        rw [Ioc_union_Ioi_eq_Ioi ha.le, Measure.restrict_eq_self_of_ae_mem ae_pos_multHaar]
+        rw [Ioc_union_Ioi_eq_Ioi ha.le, multHaar_restrict_Ioi_of_nonpos le_rfl]
       _ = _ := by
         rw [setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hfull.integrableOn h,
           hlow, two_nsmul]
