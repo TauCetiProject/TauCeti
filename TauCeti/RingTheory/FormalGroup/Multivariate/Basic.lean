@@ -41,6 +41,17 @@ theorem substLaw_def (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
     (x y : Fin n → MvPowerSeries σ R) (i : Fin n) :
     substLaw φ x y i = (φ i).subst (Function.uncurry ![x, y]) := (rfl)
 
+/-- Evaluating a binary law on its two blocks of independent variables recovers the law. -/
+@[simp]
+theorem substLaw_X (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R) :
+    substLaw φ (fun i ↦ X (0, i)) (fun i ↦ X (1, i)) = φ := by
+  have h : Function.uncurry ![(fun i : Fin n ↦ X (R := R) ((0 : Fin 2), i)),
+      (fun i : Fin n ↦ X (R := R) ((1 : Fin 2), i))] = X := by
+    funext ⟨j, i⟩
+    fin_cases j <;> rfl
+  funext i
+  simp only [substLaw_def, h, subst_self, id_eq]
+
 /-- Substituting after applying a law substitutes into each of its arguments. -/
 theorem subst_substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
     {x y : Fin n → MvPowerSeries σ R} (hx : HasSubst x) (hy : HasSubst y)
@@ -52,6 +63,16 @@ theorem subst_substLaw (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
   congr 1
   funext ⟨k, j⟩
   fin_cases k <;> rfl
+
+/-- Substituting a family into a law on two universal blocks selects the corresponding tuples. -/
+private theorem subst_substLaw_blocks {k : ℕ}
+    (φ : Fin n → MvPowerSeries (Fin 2 × Fin n) R)
+    {a : Fin k → Fin n → MvPowerSeries σ R} (ha : HasSubst (Function.uncurry a))
+    (j₁ j₂ : Fin k) (i : Fin n) :
+    (substLaw φ (fun j ↦ X (j₁, j)) (fun j ↦ X (j₂, j)) i).subst (Function.uncurry a) =
+      substLaw φ (a j₁) (a j₂) i := by
+  simpa only [subst_block] using
+    (subst_substLaw φ (hasSubst_block j₁) (hasSubst_block j₂) ha i)
 
 end FormalLieGroup
 
@@ -117,11 +138,13 @@ theorem substLaw_zero_right {x : Fin n → MvPowerSeries σ R} (hx : HasSubst x)
 /-- Symmetry of the formal sum on admissible tuples. -/
 theorem substLaw_comm {x y : Fin n → MvPowerSeries σ R} (hx : HasSubst x) (hy : HasSubst y) :
     substLaw F.law x y = substLaw F.law y x := by
+  let a := ![x, y]
+  have a₀ : a 0 = x := rfl
+  have a₁ : a 1 = y := rfl
+  have ha : HasSubst (Function.uncurry a) := hx.pair hy
   funext i
-  have h := congrArg (subst (Function.uncurry ![x, y])) (congrFun F.comm i)
-  simpa only [subst_substLaw _ (hasSubst_block _) (hasSubst_block _) (hx.pair hy),
-    subst_block _ (hx.pair hy), Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one] using h
+  have h := congrArg (subst (Function.uncurry a)) (congrFun F.comm i)
+  simpa only [subst_substLaw_blocks _ ha, a₀, a₁] using h
 
 /-- The left unit identity after substitution. -/
 @[simp]
@@ -134,45 +157,50 @@ theorem substLaw_assoc {x y z : Fin n → MvPowerSeries σ R}
     (hx : HasSubst x) (hy : HasSubst y) (hz : HasSubst z) :
     substLaw F.law (substLaw F.law x y) z = substLaw F.law x (substLaw F.law y z) := by
   let a := ![x, y, z]
-  have ha : HasSubst (Function.uncurry a) :=
-    .uncurry (by intro j; fin_cases j <;> assumption)
+  have a₀ : a 0 = x := rfl
+  have a₁ : a 1 = y := rfl
+  have a₂ : a 2 = z := rfl
+  have ha : HasSubst (Function.uncurry a) := .uncurry (by
+    intro j
+    fin_cases j
+    · change HasSubst (a 0)
+      simpa only [a₀] using hx
+    · change HasSubst (a 1)
+      simpa only [a₁] using hy
+    · change HasSubst (a 2)
+      simpa only [a₂] using hz)
+  have hxy := F.hasSubst_substLaw (hasSubst_block (0 : Fin 3)) (hasSubst_block 1)
+  have hyz := F.hasSubst_substLaw (hasSubst_block (1 : Fin 3)) (hasSubst_block 2)
   funext i
   have h := congrArg (subst (Function.uncurry a)) (congrFun F.assoc i)
-  simpa only [subst_substLaw _ (F.hasSubst_substLaw (hasSubst_block _) (hasSubst_block _))
-      (hasSubst_block _) ha,
-    subst_substLaw _ (hasSubst_block _) (F.hasSubst_substLaw (hasSubst_block _)
-      (hasSubst_block _)) ha, subst_substLaw _ (hasSubst_block _) (hasSubst_block _) ha,
-    subst_block _ ha, a, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Function.comp_apply, Matrix.cons_val_succ, Matrix.vecHead, Matrix.vecTail,
-    Matrix.cons_val_fin_one] using h
-
-private theorem substLaw_X_add_X {x y : Fin n → MvPowerSeries σ R}
-    (hx : HasSubst x) (hy : HasSubst y) :
-    substLaw (fun i ↦ X ((0 : Fin 2), i) + X (1, i)) x y = x + y := by
-  funext i
-  simp [substLaw, subst_add (hx.pair hy), subst_X (hx.pair hy), Function.uncurry]
+  simpa only [subst_substLaw _ hxy (hasSubst_block 2) ha,
+    subst_substLaw _ (hasSubst_block 0) hyz ha, subst_substLaw_blocks _ ha,
+    subst_block, a₀, a₁, a₂] using h
 
 /-- The additive formal Lie group in `n` coordinates, with coordinatewise addition. -/
 def additive (R : Type*) [CommRing R] (n : ℕ) : FormalLieGroup R n where
   law i := X ((0 : Fin 2), i) + X (1, i)
-  right_unit := (substLaw_X_add_X (x := X) (y := 0) HasSubst.X HasSubst.zero).trans (add_zero _)
-  comm := by simp only [substLaw_X_add_X (hasSubst_block _) (hasSubst_block _), add_comm]
+  right_unit := by
+    funext i
+    simp [substLaw_def, Function.uncurry]
+  comm := by
+    funext i
+    simp [substLaw_def, Function.uncurry, add_comm]
   assoc := by
     dsimp only
-    simp only [substLaw_X_add_X (hasSubst_block _) (hasSubst_block _),
-      substLaw_X_add_X ((hasSubst_block _).add (hasSubst_block _)) (hasSubst_block _),
-      substLaw_X_add_X (hasSubst_block _) ((hasSubst_block _).add (hasSubst_block _)), add_assoc]
+    funext i
+    simp [substLaw_def, Function.uncurry, add_assoc]
 
 @[simp]
 theorem additive_law (i : Fin n) :
     (additive R n).law i = X ((0 : Fin 2), i) + X (1, i) := (rfl)
 
-/-- The additive formal Lie group sums admissible tuples coordinatewise. -/
+/-- The additive formal Lie group sums arbitrary tuples coordinatewise. -/
 @[simp]
-theorem substLaw_additive {x y : Fin n → MvPowerSeries σ R}
-    (hx : HasSubst x) (hy : HasSubst y) :
-    substLaw (additive R n).law x y = x + y :=
-  substLaw_X_add_X hx hy
+theorem substLaw_additive (x y : Fin n → MvPowerSeries σ R) :
+    substLaw (additive R n).law x y = x + y := by
+  funext i
+  simp [substLaw_def, Function.uncurry]
 
 end FormalLieGroup
 

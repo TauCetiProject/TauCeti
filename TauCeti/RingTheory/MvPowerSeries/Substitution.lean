@@ -231,16 +231,23 @@ theorem hasSubst_pair_of_hasSubst (hq₁ : PowerSeries.HasSubst q₁)
 
 end HasSubstPair
 
+/-- Substituting any family into the sum of two variables adds their images. -/
+@[simp]
+theorem subst_X_add_X {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    (a : σ → MvPowerSeries τ S) (i j : σ) :
+    (X (R := R) i + X j).subst a = a i + a j := by
+  simp only [← MvPolynomial.coe_X, ← MvPolynomial.coe_add, subst_coe, map_add,
+    MvPolynomial.aeval_X]
+
 section Blocks
 
 variable {R : Type*} [CommRing R] {n : ℕ}
 
-/-- Substituting a family of coordinate blocks into its variables recovers each block. -/
-theorem subst_block {k : ℕ} (a : Fin k → Fin n → MvPowerSeries σ R)
-    (ha : HasSubst (Function.uncurry a)) (j : Fin k) :
-    (fun i ↦ (X (R := R) (j, i)).subst (Function.uncurry a)) = a j := by
-  funext i
-  exact subst_X ha _
+/-- Substituting a family of coordinate blocks at a variable recovers that coordinate. -/
+@[simp]
+theorem subst_block {k : ℕ} (a : Fin k → Fin n → MvPowerSeries σ R) (j : Fin k) (i : Fin n) :
+    (X (R := R) (j, i)).subst (Function.uncurry a) = a j i := by
+  simp only [← MvPolynomial.coe_X, subst_coe, MvPolynomial.aeval_X, Function.uncurry_apply_pair]
 
 /-- The variables in one finite coordinate block form an admissible substitution family. -/
 theorem hasSubst_block {k : ℕ} (j : Fin k) :
