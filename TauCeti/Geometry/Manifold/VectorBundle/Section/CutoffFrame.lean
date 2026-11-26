@@ -197,4 +197,43 @@ theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
 
 end ChartCutoff
 
+section Frame
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {M : Type*} [TopologicalSpace M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+
+/-- **A vector in a frame.** Over the base set of a trivialization `t`, a vector `w` of the fibre is
+the combination of the frame vectors `t⁻¹ bⱼ`, for a basis `(bⱼ)` of the model fibre, with the
+coordinates of `t w` in that basis. -/
+theorem sum_repr_smul_symmL {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 F) {y : M}
+    (hy : y ∈ t.baseSet) (w : V y) :
+    ∑ j, b.repr (t.continuousLinearMapAt 𝕜 y w) j • t.symmL 𝕜 y (b j) = w := by
+  calc _ = t.symmL 𝕜 y (∑ j, b.repr (t.continuousLinearMapAt 𝕜 y w) j • b j) := by
+        simp only [map_sum, map_smul]
+    _ = w := by rw [b.sum_repr, t.symmL_continuousLinearMapAt hy]
+
+end Frame
+
+section RealComplex
+
+variable {M : Type*} [TopologicalSpace M] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
+  [∀ x, Module ℝ (V x)] [∀ x, Module ℂ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
+  [VectorBundle ℝ F V] [VectorBundle ℂ F V]
+  (t : Trivialization F (π F V)) [MemTrivializationAtlas t]
+
+/-- For a bundle whose fibres carry both a real and a complex vector space structure, the complex
+coordinates `tₓ` of a trivialization commute with real scalars, which act on the model fibre
+through `ℝ ⊆ ℂ`. -/
+theorem continuousLinearMapAt_real_smul (x : M) (c : ℝ) (w : V x) :
+    t.continuousLinearMapAt ℂ x (c • w) = (c : ℂ) • t.continuousLinearMapAt ℂ x w := by
+  have h (w : V x) : t.continuousLinearMapAt ℂ x w = t.continuousLinearMapAt ℝ x w := by
+    simp [Trivialization.linearMapAt_apply]
+  rw [h, h, map_smul, Complex.coe_smul]
+
+end RealComplex
+
 end Bundle.Trivialization

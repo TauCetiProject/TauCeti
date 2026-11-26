@@ -101,6 +101,8 @@ and `ψ`, for `χ` equal to `1` on the support of `ψ`.
 * `TauCeti.lie_mem_classicalPseudodifferentialOperators_of_local` and
   `TauCeti.lie_mulLeft_mem_classicalPseudodifferentialOperators`: commutators with local operators,
   such as multiplication by smooth functions, lose one order.
+* `TauCeti.classicalPrincipalSymbol_comp_mulLeft`: multiplying an operator on the right by a smooth
+  function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.complexifyLinearMap_comp_mem_classicalPseudodifferentialOperators`,
   `TauCeti.comp_complexifyLinearMap_mem_classicalPseudodifferentialOperators`,
   `TauCeti.classicalPrincipalSymbol_complexifyLinearMap_comp` and
@@ -417,6 +419,23 @@ theorem lie_mulLeft_mem_classicalPseudodifferentialOperators {m : ℝ}
   simpa using lie_mem_classicalPseudodifferentialOperators_of_local
     (mulLeft_mem_classicalPseudodifferentialOperators g)
     (fun f x hf ↦ by simp [hf.self_of_nhds]) hP
+
+/-- **Multiplication on the right.** For a complex-valued smooth function `g`, the principal symbol
+of `u ↦ P (g u)` is `σ_m(P g)(x, ξ) = σ_m(P)(x, ξ) g(x)`: the commutator `⁅g, P⁆` has order
+`m - 1`, so `P g` has the principal symbol of `g P`. -/
+theorem classicalPrincipalSymbol_comp_mulLeft {m : ℝ}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (P ∘ₗ LinearMap.mulLeft ℂ g) x ξ =
+      classicalPrincipalSymbol m P x ξ * g x := by
+  have h := classicalPrincipalSymbol_eq_zero_of_mem_sub_one
+    (lie_mulLeft_mem_classicalPseudodifferentialOperators hP g) x ξ
+  rw [Ring.lie_def, Module.End.mul_eq_comp, Module.End.mul_eq_comp,
+    classicalPrincipalSymbol_sub (mulLeft_comp_mem_classicalPseudodifferentialOperators hP g)
+      (comp_mulLeft_mem_classicalPseudodifferentialOperators hP g),
+    classicalPrincipalSymbol_mulLeft_comp hP, sub_eq_zero] at h
+  rw [← h, mul_comm]
 
 /-! ### Differential operators -/
 
