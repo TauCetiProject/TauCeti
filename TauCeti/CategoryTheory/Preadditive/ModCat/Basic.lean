@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
-public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
 
 /-!
 # Modules over a preadditive category
