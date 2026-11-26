@@ -90,8 +90,7 @@ theorem universalGSpaceCellularChainComplexIso_naturality (φ : G →* H) :
         ((forget₂ (Rep k G) (ModuleCat k)).mapHomologicalComplex _).map
           φ.universalGSpaceChainMap ≫
         ((universalGSpaceChainComplex k H).repResForget₂Iso φ).hom := by
-  have h := (φ.universalGSpaceSimplicialMap).cellularChainComplexRealizationIso_hom_naturality
-    (fun _ c ↦ φ.universalGSpaceSimplicialMap_strictMonoOn c) k
+  have h := (φ.universalGSpaceSimplicialMap).cellularChainComplexRealizationIso_hom_naturality k
   apply (cancel_mono (universalGSpaceChainComplexForget₂Iso k H).hom).mp
   simp only [universalGSpaceCellularChainComplexIso_def, Iso.trans_hom, Iso.symm_hom,
     Category.assoc, Iso.inv_hom_id, Category.comp_id]
