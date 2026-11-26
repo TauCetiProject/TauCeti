@@ -42,10 +42,10 @@ multiplicities of the boundary of `P` on the attaching curves.
 
 Both criteria hold for any subgroup `S` of `Region → ℤ` on which `ν` is injective
 (`TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le` and
-`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), as do the bound of finitely
-many additive functionals on `S` by the norm (`TauCeti.exists_forall_abs_le_mul_norm`) and the
-resulting strong admissibility for all of them at once
-(`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), so the versions
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), as does strong admissibility
+for finitely many additive functionals on `S` at once
+(`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), which bounds them
+all by the norm with `AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective`, so the versions
 for the sums of doubly periodic domains of Heegaard triples in
 `TauCeti.LowDimTopology.Heegaard.Triple.PeriodicNorm` use them too.
 
@@ -63,8 +63,6 @@ domains and Maslov indices with those of the original diagram, are not part of t
 -/
 
 public section
-
-open Finset
 
 namespace TauCeti
 
@@ -115,20 +113,6 @@ theorem forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le
     linarith [hC P hP]
   exact_mod_cast h
 
-/-- **Finitely many functionals are bounded by a detected norm.** If `ν` is injective on a subgroup
-`S` of domains, there is a constant `C ≥ 0` such that `|f i P| ≤ C * ‖ν P‖` for every `P ∈ S` and
-each of finitely many additive functionals `f i` on `S`. -/
-theorem exists_forall_abs_le_mul_norm {ι : Type*} [Finite ι] (hν : ∀ P ∈ S, ν P = 0 → P = 0)
-    (f : ι → S →+ ℝ) : ∃ C, 0 ≤ C ∧ ∀ i, ∀ P : S, |f i P| ≤ C * ‖ν P‖ := by
-  have := Fintype.ofFinite ι
-  have hinj : Function.Injective (ν.comp S.subtype) :=
-    (injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP)
-  choose C hC₀ hC using fun i ↦ AddMonoidHom.exists_norm_le_mul_norm_of_injective (f i) hinj
-  refine ⟨∑ i, C i, sum_nonneg fun i _ ↦ hC₀ i, fun i P ↦ ?_⟩
-  refine ((Real.norm_eq_abs _).symm.trans_le (hC i P)).trans ?_
-  exact mul_le_mul_of_nonneg_right
-    (single_le_sum (fun i _ ↦ hC₀ i) (mem_univ i)) (norm_nonneg _)
-
 /-- **Large coefficients for finitely many functionals under a detected norm.** If `ν` is injective
 on a subgroup `S` of domains, there is a constant `C ≥ 0` such that, whenever every `P ∈ S` has a
 region of multiplicity at least `D * ‖ν P‖` for some `D > C`, every nonzero `P ∈ S` has a
@@ -141,8 +125,9 @@ theorem exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le {ι : 
     ∃ C, 0 ≤ C ∧ ∀ D, C < D → (∀ P ∈ S, ∃ r, D * ‖ν P‖ ≤ P r) →
       ∀ i, ∀ P : S, (P : Region → ℤ) ≠ 0 → ∃ r, m i P / 2 < (P : Region → ℤ) r := by
   classical
-  obtain ⟨C, hC₀, hC⟩ :=
-    exists_forall_abs_le_mul_norm hν fun i ↦ (Rat.castHom ℝ).toAddMonoidHom.comp (m i)
+  obtain ⟨C, hC₀, hC⟩ := AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective
+    (fun i ↦ (Rat.castHom ℝ).toAddMonoidHom.comp (m i)) (n := ν.comp S.subtype)
+    ((injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP))
   refine ⟨C / 2, by positivity, fun D hCD hD i P hne ↦ ?_⟩
   -- Extend `m i` by `0` off `S` to apply the criterion for a single functional.
   have h := forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν
@@ -176,8 +161,11 @@ theorem exists_abs_maslovIndex_le_mul_norm
     (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) (χ : Region → ℤ) :
     ∃ C, 0 ≤ C ∧ ∀ (x : H.Generator), ∀ P ∈ H.periodicDomains,
       |(H.maslovIndex χ x x P : ℝ)| ≤ C * ‖ν P‖ := by
-  obtain ⟨C, hC₀, hC⟩ := exists_forall_abs_le_mul_norm hν fun x : H.Generator ↦
-    (Rat.castHom ℝ).toAddMonoidHom.comp ((H.maslovIndex χ x x).comp H.periodicDomains.subtype)
+  obtain ⟨C, hC₀, hC⟩ := AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective
+    (fun x : H.Generator ↦ (Rat.castHom ℝ).toAddMonoidHom.comp
+      ((H.maslovIndex χ x x).comp H.periodicDomains.subtype))
+    (n := ν.comp H.periodicDomains.subtype)
+    ((injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP))
   exact ⟨C, hC₀, fun x P hP ↦ hC x ⟨P, hP⟩⟩
 
 /-- **Strong admissibility from a detected norm.** If `ν` is injective on periodic domains, the

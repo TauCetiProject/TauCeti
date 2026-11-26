@@ -23,10 +23,10 @@ a norm. This file is the part of that argument which takes place on the incidenc
 `TauCeti.HeegaardTripleRegionSystem`, in parallel with
 `TauCeti.LowDimTopology.Heegaard.PeriodicNorm` for diagrams; both apply the criteria for subgroups
 of `Region → ℤ` of that file, `TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le`,
-`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`,
-`TauCeti.exists_forall_abs_le_mul_norm` and
-`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`, the last two to the
-finitely many changes of the Maslov index at triangle domains with given corners.
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le` and
+`TauCeti.exists_forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`, the last one to the
+finitely many changes of the Maslov index at triangle domains with given corners, which are bounded
+by the norm with the lattice bound `AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective`.
 
 The norms are the sup norms `‖ν P‖` of an additive map `ν : (Region → ℤ) →+ (κ → ℤ)`, with `κ`
 finite, injective on the sums of doubly periodic domains; in the winding argument `ν P` records the
@@ -121,8 +121,10 @@ theorem exists_abs_periodicMaslovIndex_le_mul_norm
       |(T.periodicMaslovIndex χ x w E P : ℝ)| ≤ C * ‖ν P‖ := by
   -- For fixed corners, the change of the Maslov index is one additive functional of `P`, and
   -- there are finitely many corners.
-  obtain ⟨C, hC₀, hC⟩ := exists_forall_abs_le_mul_norm hν fun c ↦
-    (Rat.castHom ℝ).toAddMonoidHom.comp (cornerMaslovIndex (T := T) χ c)
+  obtain ⟨C, hC₀, hC⟩ := AddMonoidHom.exists_forall_abs_le_mul_norm_of_injective
+    (fun c ↦ (Rat.castHom ℝ).toAddMonoidHom.comp (cornerMaslovIndex (T := T) χ c))
+    (n := ν.comp T.doublyPeriodicDomains.subtype)
+    ((injective_iff_map_eq_zero _).mpr fun P hP ↦ Subtype.ext (hν P P.property hP))
   refine ⟨C, hC₀, fun x y w E hE P hP ↦ ?_⟩
   simpa [cornerMaslovIndex_apply hE] using hC (x, y, w) ⟨P, hP⟩
 
