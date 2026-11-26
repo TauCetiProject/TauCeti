@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Region
 public import Mathlib.Combinatorics.SimpleGraph.Walk.Operations
-import Mathlib.Tactic.FinCases
 
 /-!
 # Positive steps of walks in the edge graph of a region
@@ -28,10 +27,10 @@ distance `ρ_R(u, v)` of Thurston's tileability criterion.
 
 ## Main statements
 
-* `TauCeti.exists_eq_add_or_eq_sub_of_adj`: every dart of `regionGraph R` goes from some `u` to
-  `u + e_k` or to `u − e_k`.
-* `TauCeti.isPositiveStep_iff_not_isPositiveStep_of_adj`: exactly one of a dart and its reverse
-  is a positive step.
+* `TauCeti.exists_eq_add_or_eq_sub_of_regionGraph_adj`: every dart of `regionGraph R` goes from
+  some `u` to `u + e_k` or to `u − e_k`.
+* `TauCeti.isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj`: exactly one of a dart and
+  its reverse is a positive step.
 * `TauCeti.positiveSteps_nil`, `TauCeti.positiveSteps_cons`, `TauCeti.positiveSteps_append`:
   `positiveSteps` vanishes on the empty walk and is additive under concatenation.
 * `TauCeti.positiveSteps_add_positiveSteps_reverse`: `positiveSteps p` plus `positiveSteps` of
@@ -40,7 +39,10 @@ distance `ρ_R(u, v)` of Thurston's tileability criterion.
 ## References
 
 * V. Gorin, *Lectures on random lozenge tilings*, Cambridge Stud. Adv. Math. 193 (2021),
-  Theorem 1.4.
+  Theorem 1.4. Gorin states the criterion for the height `x + y − 3H` and the oriented distance
+  along the directions `(1, 0)`, `(0, 1)`, `(−1, −1)`; here the positive directions are `e₁`, `e₂`,
+  `e₃`. Both forms characterise tileability of simply connected regions.
+* W. P. Thurston, *Conway's tiling groups*, Amer. Math. Monthly 97 (1990), 757–773.
 -/
 
 public section
@@ -67,7 +69,7 @@ instance instDecidableRelIsPositiveStep : DecidableRel IsPositiveStep := fun _ _
 
 /-- A positive step reversed is not a positive step: the coordinates of `e_k + e_j` are not both
 zero. -/
-theorem IsPositiveStep.not_symm (h : IsPositiveStep u u') : ¬ IsPositiveStep u' u := by
+theorem IsPositiveStep.asymm (h : IsPositiveStep u u') : ¬ IsPositiveStep u' u := by
   rw [isPositiveStep_iff] at h ⊢
   rcases u with ⟨x, y⟩
   rcases u' with ⟨x', y'⟩
@@ -76,7 +78,7 @@ theorem IsPositiveStep.not_symm (h : IsPositiveStep u u') : ¬ IsPositiveStep u'
 
 /-- **Darts of the edge graph.** Every dart of `regionGraph R` goes from some `u` to `u + e_k` or
 to `u − e_k`. -/
-theorem exists_eq_add_or_eq_sub_of_adj (h : (regionGraph R).Adj u u') :
+theorem exists_eq_add_or_eq_sub_of_regionGraph_adj (h : (regionGraph R).Adj u u') :
     ∃ k : Fin 3, u' = u + latticeDir k ∨ u' = u - latticeDir k := by
   obtain ⟨⟨v, k⟩, -, he⟩ := regionGraph_adj.1 h
   rw [TriEdge.endpoints_def, TriEdge.target_mk, Sym2.eq_iff] at he
@@ -85,10 +87,11 @@ theorem exists_eq_add_or_eq_sub_of_adj (h : (regionGraph R).Adj u u') :
   · exact ⟨k, Or.inr (add_sub_cancel_right _ _).symm⟩
 
 /-- Exactly one of a dart of `regionGraph R` and its reverse is a positive step. -/
-theorem isPositiveStep_iff_not_isPositiveStep_of_adj (h : (regionGraph R).Adj u u') :
+theorem isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj
+    (h : (regionGraph R).Adj u u') :
     IsPositiveStep u u' ↔ ¬ IsPositiveStep u' u := by
-  refine ⟨IsPositiveStep.not_symm, fun h' => ?_⟩
-  obtain ⟨k, hk | hk⟩ := exists_eq_add_or_eq_sub_of_adj h
+  refine ⟨IsPositiveStep.asymm, fun h' => ?_⟩
+  obtain ⟨k, hk | hk⟩ := exists_eq_add_or_eq_sub_of_regionGraph_adj h
   · exact ⟨k, hk⟩
   · exact absurd ⟨k, by rw [hk, sub_add_cancel]⟩ h'
 
@@ -105,13 +108,13 @@ theorem positiveSteps_def {u v : ℤ × ℤ} (p : (regionGraph R).Walk u v) :
     positiveSteps (SimpleGraph.Walk.nil : (regionGraph R).Walk u u) = 0 :=
   (rfl)
 
-theorem positiveSteps_cons (h : (regionGraph R).Adj u v) (p : (regionGraph R).Walk v w) :
+@[simp] theorem positiveSteps_cons (h : (regionGraph R).Adj u v) (p : (regionGraph R).Walk v w) :
     positiveSteps (.cons h p) = positiveSteps p + if IsPositiveStep u v then 1 else 0 := by
   simp only [positiveSteps_def, SimpleGraph.Walk.darts_cons, List.countP_cons,
     decide_eq_true_eq]
 
 /-- **Additivity.** The positive steps of a concatenation are those of the two walks. -/
-theorem positiveSteps_append (p : (regionGraph R).Walk u v) (q : (regionGraph R).Walk v w) :
+@[simp] theorem positiveSteps_append (p : (regionGraph R).Walk u v) (q : (regionGraph R).Walk v w) :
     positiveSteps (p.append q) = positiveSteps p + positiveSteps q := by
   simp only [positiveSteps_def, SimpleGraph.Walk.darts_append, List.countP_append]
 
@@ -128,11 +131,8 @@ theorem positiveSteps_add_positiveSteps_reverse (p : (regionGraph R).Walk u v) :
   | @cons a b _ hab p ih =>
     rw [SimpleGraph.Walk.reverse_cons, positiveSteps_append, positiveSteps_cons,
       positiveSteps_cons, positiveSteps_nil, SimpleGraph.Walk.length_cons, ← ih]
-    have := isPositiveStep_iff_not_isPositiveStep_of_adj hab
-    by_cases h : IsPositiveStep a b
-    · simp only [h, ↓reduceIte, this.1 h]
-      omega
-    · simp only [h, ↓reduceIte, show IsPositiveStep b a from not_not.1 (mt this.2 h)]
-      omega
+    have := isPositiveStep_iff_not_isPositiveStep_of_regionGraph_adj hab
+    by_cases h : IsPositiveStep b a <;>
+      simp only [this, h, not_true_eq_false, not_false_eq_true, ↓reduceIte] <;> omega
 
 end TauCeti

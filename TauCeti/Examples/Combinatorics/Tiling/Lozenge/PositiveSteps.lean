@@ -24,12 +24,6 @@ namespace TauCeti.Examples.PositiveStepsChecks
 
 open TauCeti SimpleGraph
 
-/-- An edge of a region joins its endpoints in the edge graph. -/
-theorem adj_of_mem_regionEdges {R : Set TriFace} {v : ℤ × ℤ} {k : Fin 3}
-    (he : (⟨v, k⟩ : TriEdge) ∈ regionEdges R) :
-    (regionGraph R).Adj v (v + latticeDir k) :=
-  regionGraph_adj.2 ⟨_, he, by rw [TriEdge.endpoints_def, TriEdge.target_mk]⟩
-
 /-- The white face `W(0)`. -/
 abbrev whiteZero : Set TriFace := {⟨(0, 0), true⟩}
 
@@ -39,15 +33,15 @@ theorem mem_regionEdges_whiteZero (k : Fin 3) :
   have := TriFace.edge_mem_edges ⟨(0, 0), true⟩ k
   simpa using this
 
-/-- `0 → e₁` along the edge `(0, 1)`. -/
+/-- `0 → e₁` along the edge `⟨(0, 0), 0⟩` (direction `e₁`). -/
 theorem adj₁ : (regionGraph whiteZero).Adj (0, 0) (1, 0) := by
   simpa using adj_of_mem_regionEdges (mem_regionEdges_whiteZero 0)
 
-/-- `e₁ → e₃` along the edge `(e₁, 2)`. -/
+/-- `e₁ → e₃` along the edge `⟨(1, 0), 1⟩` (direction `e₂`). -/
 theorem adj₂ : (regionGraph whiteZero).Adj (1, 0) (1, 1) := by
   simpa using adj_of_mem_regionEdges (mem_regionEdges_whiteZero 1)
 
-/-- `0 → e₃` along the edge `(0, 3)`. -/
+/-- `0 → e₃` along the edge `⟨(0, 0), 2⟩` (direction `e₃`). -/
 theorem adj₃ : (regionGraph whiteZero).Adj (0, 0) (1, 1) := by
   simpa using adj_of_mem_regionEdges (mem_regionEdges_whiteZero 2)
 
@@ -57,11 +51,11 @@ abbrev triangleWalk : (regionGraph whiteZero).Walk (0, 0) (0, 0) :=
 
 /-- The walk round `W(0)` has `2` positive steps. -/
 example : positiveSteps triangleWalk = 2 := by
-  simp [positiveSteps_cons, isPositiveStep_iff]
+  simp [isPositiveStep_iff]
 
 /-- Its reverse has `1`. -/
 example : positiveSteps triangleWalk.reverse = 1 := by
-  simp [Walk.reverse_cons, positiveSteps_cons, isPositiveStep_iff]
+  simp [Walk.reverse_cons, isPositiveStep_iff]
 
 /-- Together they make the length `3`. -/
 example : positiveSteps triangleWalk + positiveSteps triangleWalk.reverse = 3 :=
@@ -69,18 +63,18 @@ example : positiveSteps triangleWalk + positiveSteps triangleWalk.reverse = 3 :=
 
 /-- The one-dart walk `0 → e₃` has `1` positive step. -/
 example : positiveSteps (.cons adj₃ .nil : (regionGraph whiteZero).Walk (0, 0) (1, 1)) = 1 := by
-  simp [positiveSteps_cons, isPositiveStep_iff]
+  simp [isPositiveStep_iff]
 
 /-- The unit hexagon: the six faces round `0`. -/
 abbrev unitHexagon : Set TriFace := vertexFaces (0, 0)
 
-/-- `(−1, 0) → 0` along the edge `((−1, 0), 1)` of `W(−1, 0)`. -/
+/-- `(−1, 0) → 0` along the edge `⟨(−1, 0), 0⟩` (direction `e₁`) of `W(−1, 0)`. -/
 theorem adj_hex₁ : (regionGraph unitHexagon).Adj (-1, 0) (0, 0) := by
   have h : (⟨(-1, 0), 0⟩ : TriEdge) ∈ regionEdges unitHexagon :=
     mem_regionEdges.2 ⟨⟨(-1, 0), true⟩, by simp [unitHexagon], by simp⟩
   simpa using adj_of_mem_regionEdges h
 
-/-- `0 → (1, 0)` along the edge `(0, 1)` of `W(0)`. -/
+/-- `0 → (1, 0)` along the edge `⟨(0, 0), 0⟩` (direction `e₁`) of `W(0)`. -/
 theorem adj_hex₂ : (regionGraph unitHexagon).Adj (0, 0) (1, 0) := by
   have h : (⟨(0, 0), 0⟩ : TriEdge) ∈ regionEdges unitHexagon :=
     mem_regionEdges.2 ⟨⟨(0, 0), true⟩, by simp [unitHexagon], by simp⟩
@@ -94,7 +88,7 @@ example :
       positiveSteps (.cons adj_hex₁ (.cons adj_hex₂ .nil) :
         (regionGraph unitHexagon).Walk (-1, 0) (1, 0)).reverse = 0 := by
   constructor
-  · simp [positiveSteps_cons, isPositiveStep_iff]
-  · simp [Walk.reverse_cons, positiveSteps_cons, isPositiveStep_iff]
+  · simp [isPositiveStep_iff]
+  · simp [Walk.reverse_cons, isPositiveStep_iff]
 
 end TauCeti.Examples.PositiveStepsChecks
