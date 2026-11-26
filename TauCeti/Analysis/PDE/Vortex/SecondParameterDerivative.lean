@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.ParameterDerivative
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.PiLp
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -124,12 +125,18 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOpera
   have hMw : 0 ≤ Mw := (norm_nonneg _).trans (hβwb 0 0 (Nat.zero_le k) 0)
   have hM₂ : 0 ≤ M₂ := (norm_nonneg _).trans (hβ₂b 0 0 (Nat.zero_le k) 0)
   -- Each `L∞` norm is at most twice the bound on the coordinates of its field.
-  have hbv2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hbv fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβvb i 0 (Nat.zero_le k) z
-  have hbw2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hbw fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβwb i 0 (Nat.zero_le k) z
-  have hb₂2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hb₂ fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβ₂b i 0 (Nat.zero_le k) z
+  have hbv2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * Mv :=
+    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hMv hbv fun i z ↦ by
+      simpa only [norm_iteratedFDeriv_zero] using hβvb i 0 (Nat.zero_le k) z).trans_eq
+      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
+  have hbw2 : ‖fderiv ℝ a p₀ w‖ ≤ 2 * Mw :=
+    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hMw hbw fun i z ↦ by
+      simpa only [norm_iteratedFDeriv_zero] using hβwb i 0 (Nat.zero_le k) z).trans_eq
+      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
+  have hb₂2 : ‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖ ≤ 2 * M₂ :=
+    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM₂ hb₂ fun i z ↦ by
+      simpa only [norm_iteratedFDeriv_zero] using hβ₂b i 0 (Nat.zero_le k) z).trans_eq
+      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * (‖fderiv ℝ (fun p ↦ fderiv ℝ a p v) p₀ w‖₊ +
       ‖fderiv ℝ a p₀ v‖₊ * ‖fderiv ℝ a p₀ w‖₊)) (by positivity)
@@ -140,7 +147,10 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOpera
     ![M₂, Mv, Mw] (fun j ↦ by fin_cases j; exacts [hb₂, hbv, hbw])
     (fun j ↦ by fin_cases j; exacts [hβ₂, hβv, hβw])
     (fun j ↦ by fin_cases j; exacts [hβ₂b, hβvb, hβwb]) ![e₁, e₂, e₃] y ![u₁, u₂, u₃]
-    (fun j ↦ by fin_cases j; exacts [hu₁, hu₂, hu₃]) (by rw [hTy, Fin.sum_univ_three]; rfl) _
+    (fun j ↦ by fin_cases j; exacts [hu₁, hu₂, hu₃]) (by
+      rw [hTy, Fin.sum_univ_three]
+      simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
+        Matrix.head_cons, Matrix.tail_cons]) _
     hym hyn
   simp only [Fin.sum_univ_three, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
     Matrix.head_cons, Matrix.tail_cons] at hun
@@ -233,14 +243,17 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInverse
   obtain ⟨u₃, hu₃, hu₃n⟩ :=
     hKSb x D hx hbound hxb hsol hframe hD hD₀ hax hd v βv Mv hbv hβv hβvb f u₀ hu₀
   -- `Q'' f` solves `L_x y = -(Z(a'', Q f) + Z(Da v, Q'_w f) + Z(Da w, Q'_v f))`.
-  exact hK₃b x hx hxb hax v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂ hβv hβw hβ₂ hβvb hβwb hβ₂b (Q f) _ _ _
+  exact hK₃b x hx hxb hax v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂ hβv hβw hβ₂ hβvb hβwb hβ₂b (Q f)
+    (fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a p))) p₀ w f)
+    (fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
+      (sobolevGaugeFixedOperator (a p))) p₀ v f) _
     u₁ u₂ u₃ hu₁ hu₂ hu₃ (by
       rw [hT.apply_fderiv_fun_fderiv_orthogonalRightInverse_apply
         (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj
         (contDiff_sobolevGaugeFixedOperator.contDiffAt.comp p₀ ha)]
       simp only [fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply ha,
-        fderiv_sobolevGaugeFixedOperator_comp_apply hd]
-      rfl)
+        fderiv_sobolevGaugeFixedOperator_comp_apply hd, Q])
     _ _ 4 _ (by positivity) hKS (by norm_num) (norm_nonneg u₀)
     ((hu₁n.trans (mul_le_mul_of_nonneg_left (add_le_add le_rfl hQn) hK₁)).trans_eq (by ring))
     hu₂n hu₃n K₂ _ (hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v w f) hf
@@ -325,14 +338,17 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjectio
   obtain ⟨u₃, hu₃, hu₃n⟩ :=
     hKSb x D hx hbound hxb hsol hframe hD hD₀ hax hd v βv Mv hbv hβv hβvb e he
   -- `π'' e` solves `L_x y = -(Z(a'', π e) + Z(Da v, π'_w e) + Z(Da w, π'_v e))`.
-  exact hK₃b x hx hxb hax v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂ hβv hβw hβ₂ hβvb hβwb hβ₂b (π e) _ _ _
+  exact hK₃b x hx hxb hax v w βv βw β₂ Mv Mw M₂ hbv hbw hb₂ hβv hβw hβ₂ hβvb hβwb hβ₂b (π e)
+    (fderiv ℝ (fun p ↦ orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a p))) p₀ w e)
+    (fderiv ℝ (fun p ↦ orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator (a p))) p₀ v e) _
     u₁ u₂ u₃ hu₁ hu₂ hu₃ (by
       rw [hT.apply_fderiv_fun_fderiv_orthogonalKerProjection_apply
         (T := fun p ↦ sobolevGaugeFixedOperator (a p)) sobolevFieldValues_injective hsurj
         (contDiff_sobolevGaugeFixedOperator.contDiffAt.comp p₀ ha)]
       simp only [fderiv_fun_fderiv_sobolevGaugeFixedOperator_comp_apply ha,
-        fderiv_sobolevGaugeFixedOperator_comp_apply hd]
-      rfl)
+        fderiv_sobolevGaugeFixedOperator_comp_apply hd, π])
     _ _ 1 _ (by positivity) hKS zero_le_one ENNReal.toReal_nonneg
     ((hu₁n.trans (mul_le_mul_of_nonneg_left hπn hK₁)).trans_eq (by ring)) hu₂n hu₃n K₂ _
     (hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v w e)

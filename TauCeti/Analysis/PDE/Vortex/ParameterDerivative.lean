@@ -900,16 +900,6 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
 
 /-! ### The weighted Sobolev estimate for the parameter derivative -/
 
-/-- An `L∞` class equal almost everywhere to a field whose coordinates are bounded by `M` has
-norm at most `2 M`. -/
-theorem norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le
-    {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {β : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ}
-    (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i z, ‖β z i‖ ≤ M) : ‖b‖ ≤ 2 * M := by
-  have h := Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le ((norm_nonneg _).trans (hβb 0 0))
-    (hb.mono fun z hz i ↦ hz ▸ hβb i z)
-  rwa [Fintype.card_fin, Nat.cast_ofNat, show √(4 : ℝ) = 2 by
-    rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two]] at h
-
 /-- **The coordinates of the zeroth-order term.** For every order `k` there is a constant `C` with
 the following property. If `β` is a smooth field whose coordinates have derivatives bounded by `M`
 through order `k`, and `u : Fin 4 → H^(k+1)(ℂ)` are coordinates of a field `Y`, then
@@ -1090,8 +1080,10 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_fora
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
     (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v f) hf
-  have hb2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hb fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z
+  have hb2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * M :=
+    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
+      simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq
+      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
   obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax ![fderiv ℝ a p₀ v] ![β] ![M]
     (Fin.forall_fin_one.2 hb) (Fin.forall_fin_one.2 hβ) (Fin.forall_fin_one.2 hβb) ![Q f] _ ![u₀]
     (Fin.forall_fin_one.2 hu₀) (by
@@ -1180,8 +1172,10 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
     (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v e) he'
-  have hb2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hb fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z
+  have hb2 : ‖fderiv ℝ a p₀ v‖ ≤ 2 * M :=
+    (Lp.norm_le_sqrt_card_mul_of_ae_eq_of_forall_norm_apply_le hM hb fun i z ↦ by
+      simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z).trans_eq
+      (by norm_num [Real.sqrt_eq_iff_mul_self_eq_of_pos])
   obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax ![fderiv ℝ a p₀ v] ![β] ![M]
     (Fin.forall_fin_one.2 hb) (Fin.forall_fin_one.2 hβ) (Fin.forall_fin_one.2 hβb) ![π e] _ ![u₀]
     (Fin.forall_fin_one.2 hu₀) (by
