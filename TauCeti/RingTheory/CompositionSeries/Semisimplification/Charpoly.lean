@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.Charpoly.Lsmul
 public import TauCeti.LinearAlgebra.Charpoly.Quotient
+public import TauCeti.LinearAlgebra.Charpoly.Trace
 public import TauCeti.RingTheory.CompositionSeries.Semisimplification.Basic
 
 /-!
@@ -17,7 +19,8 @@ The semisimplification `M^ss` is again a finite-dimensional `k`-vector space
 (`TauCeti.semisimplification.instModule`), and every `a : A` has the same characteristic polynomial
 on `M^ss` as on `M` (`TauCeti.charpoly_lsmul_semisimplification`). Applied to `A = k[Γ]`, a
 finite-dimensional representation and its semisimplification have the same characteristic
-polynomial, hence the same trace and determinant, at every element of `Γ`.
+polynomial, hence the same trace and determinant, at every element of `Γ`
+(`TauCeti.trace_lsmul_semisimplification`, `TauCeti.det_lsmul_semisimplification`).
 
 The proof is by induction on the dimension: a nonzero proper submodule `P` gives
 `M^ss ≅ P^ss × (M/P)^ss`, and the characteristic polynomial is multiplicative on `P` and `M/P`
@@ -27,6 +30,8 @@ hence semisimple and isomorphic to `M^ss`.
 ## Main results
 
 * `TauCeti.charpoly_lsmul_semisimplification`: `charpoly (a | M^ss) = charpoly (a | M)`.
+* `TauCeti.trace_lsmul_semisimplification`: `trace (a | M^ss) = trace (a | M)`.
+* `TauCeti.det_lsmul_semisimplification`: `det (a | M^ss) = det (a | M)`.
 -/
 
 public section
@@ -93,6 +98,21 @@ theorem charpoly_lsmul_semisimplification (a : A) :
             exact ⟨⊥, isCompl_top_bot⟩ }
     obtain ⟨e⟩ := nonempty_linearEquiv_semisimplification_of_isSemisimpleModule (R := A) (M := M)
     exact e.charpoly_lsmul_eq a
+
+/-- Every `a : A` has the same trace over `k` on the semisimplification `M^ss` as on `M`. -/
+theorem trace_lsmul_semisimplification (a : A) :
+    LinearMap.trace k (semisimplification A M) (Algebra.lsmul k k (semisimplification A M) a) =
+      LinearMap.trace k M (Algebra.lsmul k k M a) := by
+  rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, LinearMap.trace_eq_neg_charpoly_nextCoeff,
+    charpoly_lsmul_semisimplification]
+
+/-- Every `a : A` has the same determinant over `k` on the semisimplification `M^ss` as on `M`. -/
+theorem det_lsmul_semisimplification (a : A) :
+    LinearMap.det (Algebra.lsmul k k (semisimplification A M) a) =
+      LinearMap.det (Algebra.lsmul k k M a) := by
+  rw [LinearMap.det_eq_sign_charpoly_coeff, LinearMap.det_eq_sign_charpoly_coeff,
+    ← LinearMap.charpoly_natDegree (Algebra.lsmul k k (semisimplification A M) a),
+    ← LinearMap.charpoly_natDegree (Algebra.lsmul k k M a), charpoly_lsmul_semisimplification]
 
 end Charpoly
 
