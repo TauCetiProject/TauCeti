@@ -137,6 +137,19 @@ theorem chartCoord_def (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
   (rfl)
 
 omit [CompleteSpace 𝕜] [CompleteSpace E] in
+/-- The coordinates of two elements of determinant lines in a kernel chart lie on the same ray
+exactly when their readings in the kernel chart `ContinuousLinearMap.detLineChartEquiv` do. -/
+theorem sameRay_chartCoord_linearEquiv_symm_iff [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
+    {T₀ : {T : E →L[𝕜] F // T.IsFredholm}} {D₂ : Λ →L[𝕜] F} {q : E × Λ →L[𝕜] G}
+    (h : ((T.val.coprod D₂).prod q).IsInvertible) (h₀ : ((T₀.val.coprod D₂).prod q).IsInvertible)
+    (u : (T.val : E →ₗ[𝕜] F).detLine) (u₀ : (T₀.val : E →ₗ[𝕜] F).detLine) :
+    SameRay 𝕜 (chartCoord D₂ q h ((linearEquiv T).symm u))
+        (chartCoord D₂ q h₀ ((linearEquiv T₀).symm u₀)) ↔
+      SameRay 𝕜 (detLineChartEquiv T.val D₂ q h u) (detLineChartEquiv T₀.val D₂ q h₀ u₀) := by
+  simp only [chartCoord_def, LinearEquiv.trans_apply, LinearEquiv.apply_symm_apply]
+  exact SameRay.sameRay_map_iff _
+
+omit [CompleteSpace 𝕜] [CompleteSpace E] in
 /-- A chart coordinate is a homeomorphism onto `𝕜`. -/
 theorem isInducing_chartCoord (D₂ : Λ →L[𝕜] F) (q : E × Λ →L[𝕜] G)
     (h : ((T.val.coprod D₂).prod q).IsInvertible) : IsInducing (chartCoord D₂ q h) :=
@@ -365,6 +378,24 @@ theorem trivialization_symm_apply {T : {T : E →L[𝕜] F // T.IsFredholm}}
     (h : ((T.val.coprod D₂).prod q).IsInvertible) (c : 𝕜) :
     (trivialization D₂ q).symm T c = (chartCoord D₂ q h).symm c :=
   pretrivialization_symm_apply h c
+
+/-- **The preferred trivializations are kernel charts.** The trivialization of the determinant line
+bundle chosen at a Fredholm operator `T` is the trivialization of a kernel chart with standard
+models. -/
+theorem exists_trivializationAt_eq_trivialization (T : {T : E →L[𝕜] F // T.IsFredholm}) :
+    ∃ (n m : ℕ) (D₂ : (Fin n → 𝕜) →L[𝕜] F) (q : E × (Fin n → 𝕜) →L[𝕜] (Fin m → 𝕜)),
+      trivializationAt 𝕜 (FredholmDetLine 𝕜 E F) T = trivialization D₂ q := by
+  obtain ⟨n, m, D₂, q, he⟩ := (mem_pretrivializationAtlas_iff 𝕜 E F _).1
+    ((vectorPrebundle 𝕜 E F).pretrivialization_mem_atlas T)
+  -- Both sides are trivializations of the prebundle built from pretrivializations of its atlas,
+  -- and these pretrivializations agree.
+  have key : ∀ (e₀ : Pretrivialization 𝕜 (π 𝕜 (FredholmDetLine 𝕜 E F)))
+      (he₀ : e₀ ∈ (vectorPrebundle 𝕜 E F).pretrivializationAtlas), e₀ = pretrivialization D₂ q →
+      (vectorPrebundle 𝕜 E F).trivializationOfMemPretrivializationAtlas he₀ =
+        trivialization D₂ q := by
+    rintro _ _ rfl
+    rfl
+  exact ⟨n, m, D₂, q, key _ _ he⟩
 
 end FredholmDetLine
 
