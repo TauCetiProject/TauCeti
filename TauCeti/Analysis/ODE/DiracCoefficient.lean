@@ -19,7 +19,8 @@ coefficient `-Ω(z - Q_q(t)) = [[f(t), -z - g(t)], [z - g(t), -f(t)]]` (`TauCeti
 It splits as `-z Ω + Ω Q_q(t)` (`TauCeti.diracCoeff_eq_smul_add`), where `-Ω = [[0, -1], [1, 0]]`
 is an isometry of `EuclideanSpace ℂ (Fin 2)` and `Ω Q_q(t) = [[f(t), -g(t)], [-g(t), -f(t)]]` is
 the coefficient at `z = 0`, which multiplies the norm of every vector by `|q(t)|`
-(`TauCeti.norm_toEuclideanCLM_diracCoeff_zero_apply`). Hence in the Euclidean operator norm
+(`TauCeti.norm_toEuclideanCLM_diracCoeff_zero_apply`) and squares to `|q(t)|²`
+(`TauCeti.diracCoeff_zero_mul_self`). Hence in the Euclidean operator norm
 `‖-Ω(z - Q_q(t))‖ ≤ |z| + |q(t)|` (`TauCeti.norm_toEuclideanCLM_diracCoeff_le`), and for `q`
 integrable on `[a, b]` the propagator of the Dirac coefficient is an entire function of `z`
 (`TauCeti.differentiable_propagator_diracCoeff`).
@@ -73,6 +74,23 @@ theorem diracCoeff_eq_smul_add (q : ℝ → ℂ) (z : ℂ) (t : ℝ) :
     diracCoeff q z t = z • !![0, -1; 1, 0] + diracCoeff q 0 t := by
   ext i j
   fin_cases i <;> fin_cases j <;> simp [diracCoeff_def] <;> ring
+
+/-- The Dirac coefficient of a constant potential `c` at `z = 0`:
+`Ω Q_c = [[Re c, -Im c], [-Im c, -Re c]]`. -/
+theorem diracCoeff_const_zero (c : ℂ) (s : ℝ) :
+    diracCoeff (fun _ ↦ c) 0 s = !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)] := by
+  simp [diracCoeff_def]
+
+/-- At `z = 0` the Dirac coefficient squares to a scalar: `(Ω Q_q(t))² = |q(t)|²`. -/
+theorem diracCoeff_zero_mul_self (q : ℝ → ℂ) (t : ℝ) :
+    diracCoeff q 0 t * diracCoeff q 0 t = (‖q t‖ : ℂ) ^ 2 • 1 := by
+  have h : (‖q t‖ : ℂ) ^ 2 = ((q t).re : ℂ) ^ 2 + ((q t).im : ℂ) ^ 2 := by
+    rw [← Complex.ofReal_pow, Complex.sq_norm, Complex.normSq_apply]
+    push_cast
+    ring
+  rw [h, diracCoeff_def]
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
 
 /-- At `z = 0` the Dirac coefficient `Ω Q_q(t)` multiplies the norm of every vector of `ℂ²` by
 `|q(t)|`. -/

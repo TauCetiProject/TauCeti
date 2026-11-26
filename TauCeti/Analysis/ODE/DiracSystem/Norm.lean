@@ -55,23 +55,6 @@ theorem norm_toEuclideanCLM_diracFundamentalMatrix_le (hq : IntegrableOn q (Icc 
   simp only [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
   rw [abs_of_nonneg (add_nonneg (by positivity) hint)]
 
-/-- The Dirac coefficient of a constant potential `c` at `z = 0`:
-`Ω Q_c = [[Re c, -Im c], [-Im c, -Re c]]`. -/
-theorem diracCoeff_const_zero (c : ℂ) (s : ℝ) :
-    diracCoeff (fun _ ↦ c) 0 s = !![(c.re : ℂ), -(c.im : ℂ); -(c.im : ℂ), -(c.re : ℂ)] := by
-  simp [diracCoeff_def]
-
-/-- `(Ω Q_c)² = |c|²`. -/
-private theorem diracCoeff_const_zero_mul_self (c : ℂ) :
-    diracCoeff (fun _ ↦ c) 0 0 * diracCoeff (fun _ ↦ c) 0 0 = (‖c‖ : ℂ) ^ 2 • 1 := by
-  have h : (‖c‖ : ℂ) ^ 2 = (c.re : ℂ) ^ 2 + (c.im : ℂ) ^ 2 := by
-    rw [← Complex.ofReal_pow, Complex.sq_norm, Complex.normSq_apply]
-    push_cast
-    ring
-  rw [h, diracCoeff_const_zero]
-  ext i j
-  fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two] <;> ring
-
 /-- **A constant potential at `z = 0`.** For a constant `c`,
 `M_c(t, 0) = cosh(t|c|) + (sinh(t|c|)/|c|) Ω Q_c`, with
 `Ω Q_c = [[Re c, -Im c], [-Im c, -Re c]]`; for `c = 0` both sides are `1`. -/
@@ -86,7 +69,7 @@ theorem diracFundamentalMatrix_const_zero (c : ℂ) (t : ℝ) :
     simp only [diracCoeff_const_zero]
   have hKK : toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 0) *
       toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ c) 0 0) = (‖c‖ : ℂ) ^ 2 • 1 := by
-    rw [← map_mul, diracCoeff_const_zero_mul_self, map_smul, map_one]
+    rw [← map_mul, diracCoeff_zero_mul_self, map_smul, map_one]
   apply EquivLike.injective (toEuclideanCLM (n := Fin 2) (𝕜 := ℂ))
   rw [toEuclideanCLM_diracFundamentalMatrix, hP,
     propagator_const_eq_cosh_add_sinh (norm_ne_zero_iff.2 hc) hKK, diracCoeff_const_zero]
@@ -102,7 +85,7 @@ private theorem exists_mulVec_eq_norm_smul (c : ℂ) :
   -- nonzero, since `|c| + Ω Q_c` has trace `2|c| ≠ 0`.
   have hK : diracCoeff (fun _ ↦ c) 0 0 * ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) =
       (‖c‖ : ℂ) • ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) := by
-    rw [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, diracCoeff_const_zero_mul_self]
+    rw [Matrix.mul_add, Matrix.mul_smul, Matrix.mul_one, diracCoeff_zero_mul_self]
     module
   obtain ⟨j, hj⟩ : ∃ j, ((‖c‖ : ℂ) • 1 + diracCoeff (fun _ ↦ c) 0 0) *ᵥ Pi.single j 1 ≠ 0 := by
     by_contra! h
