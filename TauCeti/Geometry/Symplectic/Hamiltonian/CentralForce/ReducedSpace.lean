@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Rotation
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.Naturality
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
-import Mathlib.Analysis.Complex.Isometry
 
 /-!
 # The reduced spaces of planar central forces
@@ -69,8 +68,6 @@ Marsden–Weinstein–Meyer theorem builds the atlases of the level and of the r
 
 ## Main results
 
-* `TauCeti.exists_circle_smul_eq_iff`: the rotation orbits are the common levels of the radius,
-  the radial momentum and the angular momentum.
 * `TauCeti.mpullback_angularMomentumReducedSpaceDiffeomorph`: the reduced space at angular
   momentum `ℓ` is symplectomorphic to `(T*(0, ∞), dr ∧ dp_r)`.
 * `TauCeti.centralForceHamiltonian_effectivePotential_angularMomentumReducedSpaceDiffeomorph_mk`:
@@ -99,55 +96,9 @@ attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
-/-! ### The rotations of the punctured planar phase space -/
-
 local notation "𝕄" => puncturedPhaseSpace ℂ
 
-/-- Rotations preserve the radius and the radial momentum. -/
-@[simp]
-theorem radialProjection_circle_smul (g : Circle) (x : ℂ × ℂ) :
-    radialProjection (g • x) = radialProjection x := by
-  obtain ⟨q, p⟩ := x
-  have hq : ‖(g : ℂ) * q‖ = ‖q‖ := by simp
-  have hqp : ⟪(g : ℂ) * q, (g : ℂ) * p⟫_ℝ = ⟪q, p⟫_ℝ := by
-    simpa [rotation_apply] using (rotation g).inner_map_map q p
-  simp only [Circle.smul_def, Prod.smul_mk, smul_eq_mul, radialProjection_apply, hq, hqp]
-
-/-- **The rotation orbits are the common levels of `(r, p_r, L)`.** Two states of the punctured
-planar phase space differ by a rotation exactly when they have the same radius, radial momentum
-and angular momentum. -/
-theorem exists_circle_smul_eq_iff {x x' : 𝕄} :
-    (∃ g : Circle, g • x' = x) ↔
-      radialProjection (x : ℂ × ℂ) = radialProjection (x' : ℂ × ℂ) ∧
-        angularMomentum 1 I (x : ℂ × ℂ) = angularMomentum 1 I (x' : ℂ × ℂ) := by
-  refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun ⟨hr, hL⟩ ↦ ?_⟩
-  · rw [← hg, coe_smul_puncturedPhaseSpace]
-    exact ⟨radialProjection_circle_smul g _, angularMomentum_circle_smul g _⟩
-  obtain ⟨⟨q, p⟩, hq⟩ := x
-  obtain ⟨⟨q', p'⟩, hq'⟩ := x'
-  rw [mem_puncturedPhaseSpace] at hq hq'
-  simp only [radialProjection_apply, Prod.mk.injEq] at hr
-  obtain ⟨hn, hrad⟩ := hr
-  have hn₀ : ‖q'‖ ≠ 0 := norm_ne_zero_iff.2 hq'
-  rw [hn, div_left_inj₀ hn₀] at hrad
-  rw [angularMomentum_one_I, angularMomentum_one_I] at hL
-  -- `conj q * p` is determined by `⟪q, p⟫ = Re (conj q * p)` and `L = Im (conj q * p)`.
-  have hc : conj q * p = conj q' * p' := Complex.ext (by
-    simpa [Complex.inner, mul_re, mul_comm] using hrad) hL
-  have hg : ‖q / q'‖ = 1 := by rw [norm_div, hn, div_self hn₀]
-  obtain ⟨g, hgq⟩ : ∃ g : Circle, (g : ℂ) * q' = q :=
-    ⟨⟨q / q', by simpa [Submonoid.unitSphere, mem_sphere_zero_iff_norm] using hg⟩,
-      div_mul_cancel₀ q hq'⟩
-  refine ⟨g, Subtype.ext ?_⟩
-  -- The rotation by `g = q / q'` acts on positions and momenta by multiplication by `g`.
-  simp only [coe_smul_puncturedPhaseSpace, Circle.smul_def, Prod.smul_mk, smul_eq_mul, hgq,
-    Prod.mk.injEq, true_and]
-  -- `conj q * (g p') = |g|² conj q' * p' = conj q * p`, and `q ≠ 0`.
-  have hconj : conj (g : ℂ) * g = 1 := by
-    rw [conj_mul', Circle.norm_coe, ofReal_one, one_pow]
-  refine mul_left_cancel₀ (map_ne_zero (starRingEnd ℂ) |>.2 hq) ?_
-  rw [hc, ← hgq, map_mul]
-  linear_combination (conj q' * p') * hconj
+/-! ### The phase space of the radial motion -/
 
 /-- The phase space `T*(0, ∞) = (0, ∞) × ℝ` of the radial motion, with coordinates `(r, p_r)`: an
 open subset of `ℝ × ℝ`. Its area form `dr ∧ dp_r` is the pullback of
