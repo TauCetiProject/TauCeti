@@ -419,37 +419,6 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
 
 /-! ### The formal adjoint -/
 
-/-- On the pair of pants, where `u` and `J` along `u` are `C¹` on `S`, the formal adjoint of the
-pair-of-pants perturbation on a `C¹` covector field with compact support in `S` has integrable
-square norm against the weight `4π² |z - c_q|²`, for the center `c_q` of an end. -/
-private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_pairOfPants
-    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (q : Puncture)
-    {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
-      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 1 η) (hηc : HasCompactSupport η)
-    (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
-    Integrable fun z ↦ 4 * Real.pi ^ 2 * ‖Complex.equivRealProdCLM.symm z - q.endCenter‖ ^ 2 *
-      ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u η z‖ ^ 2 := by
-  -- `D_u^* η` is continuous and vanishes off the support of `η`.
-  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-    (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ z hz)
-    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
-    (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu hη hηS
-  refine ((continuous_const.mul ((Complex.equivRealProdCLM.symm.continuous.sub
-    continuous_const).norm.pow 2)).mul (hD.norm.pow 2)).integrable_of_hasCompactSupport
-    (hηc.mono' fun z hz ↦ ?_)
-  by_contra hz'
-  simp [floerLinearizationAdjoint_of_notMem_tsupport hz'] at hz
-
 /-- **The end estimate of the formal adjoint along a Floer pair of pants.** Let `u` be a solution
 on `S = ℂ ∖ {0, 1}` of the Floer equation for the pair-of-pants perturbation of jointly `C²`
 period-one Hamiltonians `H`, `C¹` on `S`, whose end `q`, read in the positive end chart `φ'_q`,
@@ -547,8 +516,11 @@ theorem exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLineariz
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan'
           fun h ↦ hζ.2 ⟨hR.trans_le h.1, hζ.1.2⟩
         rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
-    _ ≤ _ := (hest hη hvan (integrable_mul_norm_floerLinearizationAdjoint_sq_pairOfPants ω hH hHs
-          q hJ hu (hη.of_le one_le_two) hηc fun z hz ↦ (hηR hz).1)).trans_eq
+    _ ≤ _ := (hest hη hvan (ω.integrable_mul_norm_floerLinearizationAdjoint_sq
+          isOpen_thricePuncturedSphereReal (fun z hz ↦ by simpa only [uncurry_def] using hJ z hz)
+          (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) 1)
+          (fun z hz ↦ contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz (u z) Complex.I) hu
+          (by fun_prop) (hη.of_le one_le_two) subset_rfl hηc fun z hz ↦ (hηR hz).1)).trans_eq
         (by simp_rw [mul_assoc, integral_const_mul])
 
 end TauCeti.SymplecticForm

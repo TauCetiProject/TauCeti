@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds
+import Mathlib.Analysis.Calculus.InverseFunctionTheorem.Deriv
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Instances.Real.TSupport
@@ -375,15 +376,24 @@ theorem
 
 /-! ### The formal adjoint -/
 
-/-- Let `ψ` be a chart of an end of a sphere with moving input ends that avoids the centers of the
-input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`, and let `ρ` be a continuous
-weight. Then the formal adjoint of the datum `TauCeti.Floer.puncturedSpherePerturbation c a H Hout`,
-on a `C²` covector field with compact support in `ψ ((r, ∞) × ℝ)`, has integrable `ρ`-weighted
-square norm. -/
+/-- The real chart of a holomorphic map of the plane without critical points is an open map. -/
+private theorem isOpenMap_realChart_of_deriv_ne_zero {f : ℂ → ℂ} (hf : ContDiff ℂ 1 f)
+    (h0 : ∀ w, deriv f w ≠ 0) : IsOpenMap (realChart f) := by
+  rw [show realChart f = Complex.equivRealProdCLM ∘ f ∘ Complex.equivRealProdCLM.symm from
+    funext (TauCeti.Complex.realChart_apply f)]
+  exact Complex.equivRealProdCLM.toHomeomorph.isOpenMap.comp ((isOpenMap_of_hasStrictDerivAt
+    (fun w ↦ hf.contDiffAt.hasStrictDerivAt_deriv one_ne_zero) h0).comp
+      Complex.equivRealProdCLM.symm.toHomeomorph.isOpenMap)
+
+/-- Let `ψ` be an open chart of an end of a sphere with moving input ends that avoids the centers of
+the input ends beyond the height `r`, where `u` and `J` along `u` are `C¹`, and let `ρ` be a
+continuous weight. Then the formal adjoint of the datum
+`TauCeti.Floer.puncturedSpherePerturbation c a H Hout`, on a `C²` covector field with compact
+support in `ψ ((r, ∞) × ℝ)`, has integrable `ρ`-weighted square norm. -/
 private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 2 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 2 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
-    {ψ : ℝ × ℝ → ℝ × ℝ} {r : ℝ}
+    {ψ : ℝ × ℝ → ℝ × ℝ} (hψo : IsOpenMap ψ) {r : ℝ}
     (hψ : ∀ ζ : ℝ × ℝ, r < ζ.1 → ∀ j, Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {u : ℝ × ℝ → V}
     (hJ : ∀ ζ : ℝ × ℝ, r < ζ.1 → ContDiffAt ℝ 1
@@ -398,11 +408,8 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSphere
         Complex.I) u η z‖ ^ 2 := by
   obtain ⟨hJ', hKs, hKt, hu'⟩ :=
     regularity_puncturedSpherePerturbation_of_image (V := V) hH hHs hHout hHouts ha hψ hJ hu
-  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset hJ' hKs hKt hu'
-    (hη.of_le one_le_two) hηU
-  refine (hρ.mul (hD.norm.pow 2)).integrable_of_hasCompactSupport
-    (hηc.mono' fun z hz ↦ by_contra fun hz' ↦ hz ?_)
-  simp [floerLinearizationAdjoint_of_notMem_tsupport hz']
+  exact ω.integrable_mul_norm_floerLinearizationAdjoint_sq (hψo _ (isOpen_Ioi.prod isOpen_univ))
+    hJ' hKs hKt hu' hρ.continuousOn (hη.of_le one_le_two) subset_rfl hηc hηU
 
 /-- **The end estimate of the formal adjoint on an input end of a sphere with moving input ends.**
 Let the discs `‖w - c j‖ < ‖a j‖ / 2` be pairwise disjoint and lie in the disc
@@ -493,7 +500,10 @@ theorem
   obtain ⟨b, hb⟩ :=
     exists_forall_notMem_Ioo_realChart_add_mul_cylindricalEndLift_eq_zero (ha i) hηc hηR
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
-    hH hHs hHout hHouts ha (fun ζ hζ ↦
+    hH hHs hHout hHouts ha (isOpenMap_realChart_of_deriv_ne_zero (by fun_prop) fun w ↦ by
+      rw [(hasDerivAt_add_mul_cylindricalEndLift _ _ w).deriv]
+      exact mul_ne_zero (ha i) (zero.deriv_cylindricalEndLift_ne_zero w))
+    (fun ζ hζ ↦
       equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne ha hsep i (by linarith)) hJ
     (fun ζ hζ ↦ (hu ζ hζ).of_le one_le_two) (by fun_prop) hη hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_
@@ -575,8 +585,13 @@ theorem
       (fun ζ _ ↦ by rw [det_fderiv_positiveEndChart, endCenter_inf, sub_zero])
   refine ⟨C * (4 * π ^ 2), R, hR, fun η hη hηc hηR ↦ ?_⟩
   obtain ⟨b, hb⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_eq_zero hηc hηR
+  have hψo : IsOpenMap (positiveEndChart inf) := by
+    rw [show positiveEndChart inf = realChart inf.cylindricalEndLift ∘ (inf.endSign • ·) from
+      funext fun z ↦ by rw [positiveEndChart_apply, endChart_eq_realChart]; rfl]
+    exact (isOpenMap_realChart_of_deriv_ne_zero (inf.contDiff_cylindricalEndLift 1)
+      inf.deriv_cylindricalEndLift_ne_zero).comp (isOpenMap_smul₀ (by simp))
   refine (hest hη hb (ω.integrable_mul_norm_floerLinearizationAdjoint_sq_puncturedSpherePerturbation
-    hH hHs hHout hHouts ha
+    hH hHs hHout hHouts ha hψo
     (fun ζ hζ ↦ equivRealProdCLM_symm_positiveEndChart_inf_ne hout (by linarith)) hJ
     (fun ζ hζ ↦ (hu ζ hζ).of_le one_le_two) (by fun_prop) hη hηc
     (hηR.trans (image_mono (prod_mono (Ioi_subset_Ioi hR.le) subset_rfl))))).trans_eq ?_

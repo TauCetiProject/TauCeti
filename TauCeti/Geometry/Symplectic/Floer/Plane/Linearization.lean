@@ -652,21 +652,13 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_positive (ω : 
       ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u η z‖ ^ 2 := by
-  -- `D_u^* η` is continuous and vanishes off the support of `η`.
-  have hD := ω.continuous_floerLinearizationAdjoint_of_tsupport_subset
-    (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
-    (Ks := fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (fun z hz ↦ by simpa only [Function.uncurry_def] using
+        u η z‖ ^ 2 :=
+  ω.integrable_mul_norm_floerLinearizationAdjoint_sq (isOpen_lt continuous_const (by fun_prop))
+    (fun z hz ↦ by simpa only [uncurry_def] using
       contDiffAt_of_comp_realChart_cylindricalEndLift_eq positive hJe hJeq hz (u z))
     (fun _ _ ↦ (contDiff_uncurry_perturbation (p := positive) hH hHs 1).contDiffAt)
-    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := positive) hH hHs Complex.I).contDiffAt)
-    hu hη hηr
-  refine ((continuous_const.mul (Complex.equivRealProdCLM.symm.continuous.norm.pow 2)).mul
-    (hD.norm.pow 2)).integrable_of_hasCompactSupport (hηc.mono' fun z hz ↦ ?_)
-  by_contra hz'
-  simp [floerLinearizationAdjoint_of_notMem_tsupport hz'] at hz
+    (fun _ _ ↦ (contDiff_uncurry_perturbation (p := positive) hH hHs Complex.I).contDiffAt) hu
+    (by fun_prop) hη subset_rfl hηc hηr
 
 /-- **The end estimate of the formal adjoint on the positive PSS plane.** Let `u` be `C²` on a part
 `‖w‖ > exp (2π r)` of the end of the positive PSS plane, solving there the Floer equation for the
