@@ -13,13 +13,16 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
+import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 
 /-!
 # Local integral and L² bounds for holomorphic functions
 
 Holomorphic functions with values in a complete complex normed space satisfy the mean-value
-norm bound and a local evaluation estimate in terms of their actual native `L²` class.
-The open domain need not have finite measure.
+norm bound, its squared form `‖f z‖² ≤ (π r²)⁻¹ ∫_{|y - z| < r} ‖f y‖²`
+(`TauCeti.HolomorphicFunctions.sq_norm_le_inv_mul_setIntegral_sq_norm`), and a local evaluation
+estimate in terms of their actual native `L²` class. The open domain need not have finite measure.
 
 ## References
 
@@ -52,6 +55,30 @@ theorem norm_le_ball_integral {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
     _ ≤ (volume.real (ball x r))⁻¹ * ∫ y in ball x r, ‖f y‖ :=
       mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) (inv_nonneg.2 hpos.le)
     _ = _ := by rw [Measure.addHaar_real_ball_center]
+
+/-- **The `L²` mean-value bound.** The squared norm at a point is bounded by the mean of the
+squared norm on any disc of radius `r` about it whose closure lies in the holomorphic domain:
+`‖f z‖² ≤ (π r²)⁻¹ ∫_{|y - z| < r} ‖f y‖²`. -/
+theorem sq_norm_le_inv_mul_setIntegral_sq_norm {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
+    {x : ℂ} {r : ℝ} (hr : 0 < r) (hball : closedBall x r ⊆ U) :
+    ‖f x‖ ^ 2 ≤ (Real.pi * r ^ 2)⁻¹ * ∫ y in ball x r, ‖f y‖ ^ 2 := by
+  have hV : volume.real (ball (0 : ℂ) r) = Real.pi * r ^ 2 := by
+    simp [measureReal_def, Complex.volume_ball, ENNReal.toReal_ofReal hr.le, mul_comm]
+  have hint : IntegrableOn (fun y ↦ ‖f y‖ ^ 2) (ball x r) :=
+    (((hf.continuousOn.mono hball).norm.pow 2).integrableOn_compact
+      (isCompact_closedBall x r)).mono_set ball_subset_closedBall
+  have hcs := sq_setIntegral_le_measureReal_mul_setIntegral_sq (μ := volume)
+    (fun y ↦ ‖f y‖) (ball x r) measure_ball_lt_top.ne hint
+  rw [Measure.addHaar_real_ball_center, hV] at hcs
+  have h₁ := norm_le_ball_integral hf hr hball
+  rw [hV] at h₁
+  calc ‖f x‖ ^ 2 ≤ ((Real.pi * r ^ 2)⁻¹ * ∫ y in ball x r, ‖f y‖) ^ 2 :=
+        pow_le_pow_left₀ (norm_nonneg _) h₁ 2
+    _ = ((Real.pi * r ^ 2)⁻¹) ^ 2 * (∫ y in ball x r, ‖f y‖) ^ 2 := mul_pow _ _ _
+    _ ≤ ((Real.pi * r ^ 2)⁻¹) ^ 2 * ((Real.pi * r ^ 2) * ∫ y in ball x r, ‖f y‖ ^ 2) :=
+        mul_le_mul_of_nonneg_left hcs (by positivity)
+    _ = (Real.pi * r ^ 2)⁻¹ * ∫ y in ball x r, ‖f y‖ ^ 2 := by
+        field_simp
 
 /-- Local evaluation of a holomorphic representative is controlled by its actual native `L²`
 norm, with an explicit radius-dependent constant. -/
