@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Perturbation
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Perturbation.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.EulerClass
 public import TauCeti.Topology.VectorBundle.Orientation.SectionIndex.WeakCauchyRiemann
@@ -223,7 +223,7 @@ theorem finite_setOf_toSection_eq_zero_of_perturbedSobolevL_eq_zero [ConnectedSp
   have := A.compactSpace
   obtain ⟨g, G, h⟩ := exists_weakChartData A hD hDs hp hq hqp α hξ
   choose i hi using A.exists_mem_dom
-  exact finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn
+  exact finite_setOf_section_eq_zero_of_hasWeakConjWirtingerDerivOn_of_norm_le
     (fun z ↦ chartAt ℂ (A.center (i z))) (fun z ↦ trivializationAt ℂ L (A.center (i z)))
     (fun z ↦ A.dom_subset_chart_source _ (hi z)) (fun z ↦ A.dom_subset_baseSet _ (hi z))
     (by exact_mod_cast hp) (fun z ↦ A.image (i z)) (fun z ↦ A.mem_image.2 ⟨z, hi z, rfl⟩)
@@ -232,6 +232,7 @@ theorem finite_setOf_toSection_eq_zero_of_perturbedSobolevL_eq_zero [ConnectedSp
     (Function.ne_iff.1 ((SobolevSection.toSection_eq_zero_iff
       (hasContinuousRepresentatives A hq)).not.2 hne))
 
+open VectorBundleOrientation in
 include hD hDs hq in
 /-- **The zero count.** On a compact Riemann surface `X`, let `ξ ∈ W^{1,q}(X, L)`, `2 < q ≤ p`,
 lie in the kernel of the realization of `D₀ + α`, for a smooth real Cauchy–Riemann operator `D₀`
@@ -249,8 +250,7 @@ theorem ncard_le_evalFundamentalClass_complexEulerClass_of_perturbedSobolevL_eq_
   obtain ⟨g, G, h⟩ := exists_weakChartData A hD hDs hp hq hqp α hξ
   choose i hi using A.exists_mem_dom
   rw [complexEulerClass_def]
-  exact
-    VectorBundleOrientation.ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn
+  exact ncard_le_evalFundamentalClass_eulerClass_of_hasWeakConjWirtingerDerivOn_of_norm_le
     _ Complex.finrank_real_complex _ (SobolevSection.continuous_toSection hrep ξ)
     (fun z ↦ chartAt ℂ (A.center (i z))) (fun z ↦ trivializationAt ℂ L (A.center (i z)))
     (fun _ ↦ Complex.orientation) (fun z _ ↦ A.dom_subset_chart_source _ (hi z))
