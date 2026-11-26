@@ -5,10 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.LinearAlgebra.TensorAlgebra.ToTensorPower
-
-import TauCeti.LinearAlgebra.TensorAlgebra.Basic
 
 /-!
 # Projection from the tensor algebra to a tensor power
@@ -62,12 +59,6 @@ theorem tensorPowerProjection_comp_toTensorAlgebra (d : ℕ) :
   simp only [LinearMap.compMultilinearMap_apply, LinearMap.comp_apply,
     TensorPower.toTensorAlgebra_tprod, tensorPowerProjection_tprod_self, LinearMap.id_apply]
 
-/-- Applying the degree-`d` projection after `TensorPower.toTensorAlgebra` returns the input. -/
-@[simp]
-theorem tensorPowerProjection_toTensorAlgebra (d : ℕ) (x : TensorPower R d M) :
-    tensorPowerProjection d (TensorPower.toTensorAlgebra x) = x :=
-  LinearMap.congr_fun (tensorPowerProjection_comp_toTensorAlgebra d) x
-
 /-- A power of a single generator projects to the pure tensor, with no factorial factor. -/
 @[simp]
 theorem tensorPowerProjection_ι_pow (d : ℕ) (m : M) :
@@ -100,17 +91,5 @@ theorem tensorPowerProjection_comp_lift (d : ℕ) (f : M →ₗ[R] N) :
       · subst n
         simp
       · simp
-
-/-- The degree-`d` projection vanishes on any graded piece of degree `n ≠ d`. -/
-theorem tensorPowerProjection_of_mem_range_pow_ne {d n : ℕ} (h : n ≠ d) {x : TensorAlgebra R M}
-    (hx : x ∈ LinearMap.range (ι R : M →ₗ[R] TensorAlgebra R M) ^ n) :
-    tensorPowerProjection d x = 0 := by
-  rw [← TensorPower.range_toTensorAlgebra] at hx
-  rcases hx with ⟨y, rfl⟩
-  induction y using PiTensorProduct.induction_on with
-  | smul_tprod r m =>
-    rw [map_smul, TensorPower.toTensorAlgebra_tprod, map_smul, tensorPowerProjection_tprod,
-      dite_eq_right fun h' ↦ (h h').elim, smul_zero]
-  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
 
 end TensorAlgebra

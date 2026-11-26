@@ -11,7 +11,7 @@ public import TauCeti.FieldTheory.RealClosure.Root
 public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 
 /-!
-# The sign symbol on the degree-two symbol group of an ordered field
+# The sign symbol on the degree-two symbol group of an ordered ring
 
 Let `R` be a linearly ordered commutative ring (or field `F`, such as `ℝ`). Write
 `ε a ∈ ZMod 2` (`Units.signAddHom`) for `1` if the unit `a` is negative and `0` if it is positive.

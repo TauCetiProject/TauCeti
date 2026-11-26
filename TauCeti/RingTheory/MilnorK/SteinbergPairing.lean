@@ -29,8 +29,9 @@ relation `c a a = c a (-1)`, and hence `2 • c a a = 0` (with `c a a = 0` in ch
 
 For a commutative semiring `R`, the quotient
 `TauCeti.SymbolGroup R := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`
-is the universal target of Steinberg pairings out of `Rˣ × Rˣ` into abelian groups. It models
-Milnor's `K₂ᴹ(R)` directly as a quotient of the tensor square.
+is the universal target of Steinberg pairings out of `Rˣ × Rˣ` into abelian groups. When `R` is
+a commutative ring, it is canonically isomorphic to Milnor's `K₂ᴹ(R)`
+(`TauCeti.MilnorK.degreeTwoEquiv`).
 
 ## Main definitions
 
@@ -259,7 +260,8 @@ theorem steinbergRelations_eq_span :
   rfl
 
 /-- The degree-two symbol group `(Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R`, the
-universal target of Steinberg pairings on `Rˣ`; it is canonically isomorphic to `K₂ᴹ(R)`. -/
+universal target of Steinberg pairings on `Rˣ`; for a commutative ring `R`, it is canonically
+isomorphic to `K₂ᴹ(R)`. -/
 abbrev SymbolGroup : Type u := (Additive Rˣ ⊗[ℤ] Additive Rˣ) ⧸ steinbergRelations R
 
 namespace SymbolGroup

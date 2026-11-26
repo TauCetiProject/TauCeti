@@ -14,7 +14,6 @@ public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 import Mathlib.Algebra.Ring.Parity
 import Mathlib.RingTheory.IntegralDomain
 import TauCeti.FieldTheory.Finite.Nonsquare
-import TauCeti.RingTheory.MilnorK.Grading
 
 /-!
 # Vanishing of Milnor K-theory and Steinberg pairings over finite fields

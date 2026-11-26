@@ -9,8 +9,7 @@ public import Mathlib.Algebra.DirectSum.Internal
 public import Mathlib.LinearAlgebra.TensorAlgebra.Grading
 public import Mathlib.RingTheory.Congruence.Basic
 public import Mathlib.RingTheory.Congruence.Hom
-import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.Ring
+public import TauCeti.RingTheory.MilnorK.SteinbergPairing
 import TauCeti.Algebra.Ring.Parity
 
 /-!
@@ -54,8 +53,9 @@ the Milnor ring is not an exterior algebra. The grade involution `σ`, which is 
 ## Main results
 
 * `TauCeti.MilnorK.ofUnit_mul_ofUnit_of_add_eq_one`: the Steinberg relation `{a} {b} = 0` for
-  `a + b = 1`, and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring
-  entries of any symbol.
+  `a + b = 1`, `TauCeti.MilnorK.isSteinbergPairing_mul_ofUnit` for the resulting Steinberg pairing,
+  and `TauCeti.MilnorK.symbol_append_cons_cons_of_add_eq_one` for two neighbouring entries of any
+  symbol.
 * `TauCeti.MilnorK.symbol_append_cons_mul`: symbols are additive in every entry.
 * `TauCeti.MilnorK.ringHom_ext`: ring homomorphisms out of `MilnorK R` agreeing on degree-one
   classes are equal.
@@ -205,6 +205,16 @@ theorem neg_ofUnit_neg_one : -ofUnit (-1 : Rˣ) = ofUnit (-1) := by
 theorem ofUnit_mul_ofUnit_of_add_eq_one {a b : Rˣ} (h : (a : R) + b = 1) :
     ofUnit a * ofUnit b = 0 := by
   rw [ofUnit, ofUnit, ← map_mul, mk_ι_mul_ι_of_add_eq_one h]
+
+/-- The degree-two product `(a, b) ↦ ofUnit a * ofUnit b` in `MilnorK R` is a Steinberg
+pairing. -/
+theorem isSteinbergPairing_mul_ofUnit :
+    IsSteinbergPairing (fun a b : Rˣ ↦ ofUnit a * ofUnit b) where
+  map_mul_left a₁ a₂ b := by rw [ofUnit_mul, add_mul]
+  map_mul_right a b₁ b₂ := by rw [ofUnit_mul, mul_add]
+  map_one_left b := by simp
+  map_one_right a := by simp
+  map_add_eq_one _ _ hab := ofUnit_mul_ofUnit_of_add_eq_one hab
 
 /-- The **Milnor symbol** `{a₁, …, aₙ}` of a list of units: the ordered product of their
 degree-one classes. The empty symbol is `1`. -/
@@ -639,42 +649,17 @@ variable {F : Type*} [Field F]
 
 /-- Over a field, `{a, -a} = 0` for every unit `a`. -/
 @[simp]
-theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 := by
-  by_cases ha : a = 1
-  · simp [ha]
-  have ha' : (a : F) ≠ 1 := fun h ↦ ha (Units.ext h)
-  have h₁ : (1 : F) - a ≠ 0 := sub_ne_zero.2 ha'.symm
-  have h₂ : (1 : F) - (a : F)⁻¹ ≠ 0 :=
-    sub_ne_zero.2 fun h ↦ ha' (by simpa using congrArg Inv.inv h.symm)
-  have hneg : -a = Units.mk0 _ h₁ / Units.mk0 _ h₂ := by
-    ext
-    simp only [Units.val_neg, Units.val_div_eq_div_val, Units.val_mk0]
-    rw [eq_div_iff h₂]
-    field_simp
-    ring
-  have hv : ofUnit a⁻¹ * ofUnit (Units.mk0 _ h₂) = 0 :=
-    ofUnit_mul_ofUnit_of_add_eq_one (by simp)
-  rw [hneg, ofUnit_div, mul_sub, ofUnit_mul_ofUnit_of_add_eq_one (by simp), zero_sub, neg_eq_zero]
-  rwa [ofUnit_inv, neg_mul, neg_eq_zero] at hv
+theorem ofUnit_mul_ofUnit_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
+  isSteinbergPairing_mul_ofUnit.map_neg_self a
 
 /-- Over a field, the degree-one classes anticommute: `{a, b} = -{b, a}`. -/
-theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) := by
-  have h₁ : ofUnit a * ofUnit (-(a * b)) = ofUnit a * ofUnit b := by
-    rw [← neg_mul, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, zero_add]
-  have h₂ : ofUnit b * ofUnit (-(a * b)) = ofUnit b * ofUnit a := by
-    rw [← mul_neg, ofUnit_mul, mul_add, ofUnit_mul_ofUnit_neg_self, add_zero]
-  have h := ofUnit_mul_ofUnit_neg_self (a * b)
-  rw [ofUnit_mul, add_mul, h₁, h₂] at h
-  exact eq_neg_of_add_eq_zero_left h
+theorem ofUnit_mul_ofUnit_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
+  isSteinbergPairing_mul_ofUnit.map_swap a b
 
 /-- Over a field, `{a, a} = {a, -1}`. Unlike in an exterior algebra, this class need not vanish:
 `{-1, -1} ≠ 0` over `ℝ` (Weibel, Example III.7.2(c)). -/
-theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) := by
-  have h₁ : ofUnit a * ofUnit (-1) + ofUnit a * ofUnit (-1) = 0 := by
-    rw [← mul_add, ← ofUnit_mul, neg_one_mul, neg_neg, ofUnit_one, mul_zero]
-  have h₂ := ofUnit_mul_ofUnit_neg_self a
-  rw [← neg_one_mul a, ofUnit_mul, mul_add] at h₂
-  rw [eq_neg_of_add_eq_zero_right h₂, neg_eq_of_add_eq_zero_left h₁]
+theorem ofUnit_mul_ofUnit_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
+  isSteinbergPairing_mul_ofUnit.map_self a
 
 /-- Over a field, interchanging two neighbouring entries negates a Milnor symbol. -/
 theorem symbol_append_cons_cons_swap (l₁ l₂ : List Fˣ) (a b : Fˣ) :
