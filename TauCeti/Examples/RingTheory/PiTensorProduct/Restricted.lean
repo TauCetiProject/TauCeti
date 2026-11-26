@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Basis
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import TauCeti.Algebra.MvPolynomial.Monomial
 public import TauCeti.RingTheory.PiTensorProduct.Restricted
 
 /-!
@@ -124,15 +125,6 @@ theorem eval_ofMvPolynomial (q : MvPolynomial ι R) : eval R (ofMvPolynomial R q
       simp [MvPolynomial.coe_basisMonomials]
   exact LinearMap.congr_fun this q
 
-/-- The monomial of an exponent `p : S → ℕ` on a finite set `S`, extended by zero to `ι`, is
-`∏_{i ∈ S} X_i ^ p i`. -/
-private theorem monomial_extendDomain_one (S : Finset ι) (p : S → ℕ) :
-    MvPolynomial.monomial (Finsupp.equivFunOnFinite.symm p).extendDomain (1 : R) =
-      ∏ i : S, (MvPolynomial.X (i : ι) : MvPolynomial ι R) ^ p i := by
-  rw [Finsupp.extendDomain_eq_embDomain_subtype, MvPolynomial.monomial_eq, map_one, one_mul,
-    Finsupp.prod_embDomain, Finsupp.prod_fintype _ _ fun _ ↦ pow_zero _]
-  simp
-
 @[simp]
 theorem ofMvPolynomial_eval (z : PolynomialRTA ι R) : ofMvPolynomial R (eval R z) = z := by
   obtain ⟨S, x, rfl⟩ := exists_ofFinite z
@@ -143,12 +135,11 @@ theorem ofMvPolynomial_eval (z : PolynomialRTA ι R) : ofMvPolynomial R (eval R 
       set s : ι →₀ ℕ := (Finsupp.equivFunOnFinite.symm p).extendDomain
       have hs : ∀ i : S, s i = p i := fun i ↦ by simp [s]
       have hsS : ∀ j ∉ S, s j = 0 := fun j hj ↦ by simp [s, hj]
-      have hprod : ∏ i : S, (MvPolynomial.X (i : ι) : MvPolynomial ι R) ^ p i =
-          MvPolynomial.monomial s 1 := (monomial_extendDomain_one R S p).symm
-      simp only [Basis.piTensorProduct_apply, Polynomial.coe_basisMonomials, LinearMap.coe_comp,
-        Function.comp_apply, o, LinearMap.coe_ofClass, eval_ofFinite, stageEval_tprod,
-        Polynomial.aeval_monomial, map_one, one_mul, hprod, ofMvPolynomial_monomial,
-        tprodXPow_eq_ofFinite R s S hsS, hs, Polynomial.X_pow_eq_monomial]
+      have hprod : ∏ i ∈ S.attach, (MvPolynomial.X (i : ι) : MvPolynomial ι R) ^ p i =
+          MvPolynomial.monomial s 1 := by
+        simp [s, MvPolynomial.monomial_extendDomain]
+      simp [o, hprod, hs, tprodXPow_eq_ofFinite R s S hsS, Basis.piTensorProduct_apply,
+        Polynomial.coe_basisMonomials, Polynomial.X_pow_eq_monomial]
   exact LinearMap.congr_fun this x
 
 /-- **Stabilizing `R[X_i]` by `1` gives the polynomial ring in the variables `X_i`.** -/
