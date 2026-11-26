@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 
 import Mathlib.RingTheory.PowerSeries.WellKnown
 import Mathlib.Tactic.LinearCombination
+import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
 # The substitutions `t ↦ t / (1 - t)` and `t ↦ t / (1 + t)`
@@ -57,10 +58,9 @@ theorem X_mul_mk_one_subst_X_mul_mk_neg_one_pow :
     (X * mk 1 : R⟦X⟧).subst (X * mk fun n => (-1 : R) ^ n : R⟦X⟧) = X := by
   set a : R⟦X⟧ := X * mk fun n => (-1 : R) ^ n
   have ha : HasSubst a := hasSubst_X_mul_mk_neg_one_pow
-  have h1 : (1 : R⟦X⟧).subst a = 1 := by rw [← coe_substAlgHom ha, map_one]
   -- the image `u` of `1 / (1 - t)` satisfies `u (1 - a) = 1`, where `1 - a = 1 / (1 + t)`
   have hu := congrArg (fun f : R⟦X⟧ => f.subst a) (mk_one_mul_one_sub_eq_one R)
-  rw [subst_mul ha, subst_sub ha, subst_X ha, h1] at hu
+  rw [subst_mul ha, subst_sub ha, subst_X ha, subst_one] at hu
   have hm := mk_neg_one_pow_mul_one_add_eq_one R
   rw [subst_mul ha, subst_X ha]
   -- with `m = mk fun n => (-1) ^ n`, so that `a = t m`:
@@ -73,10 +73,9 @@ theorem X_mul_mk_neg_one_pow_subst_X_mul_mk_one :
     (X * mk fun n => (-1 : R) ^ n : R⟦X⟧).subst (X * mk 1 : R⟦X⟧) = X := by
   set a : R⟦X⟧ := X * mk 1
   have ha : HasSubst a := hasSubst_X_mul_mk_one
-  have h1 : (1 : R⟦X⟧).subst a = 1 := by rw [← coe_substAlgHom ha, map_one]
   -- the image `v` of `1 / (1 + t)` satisfies `v (1 + a) = 1`, where `1 + a = 1 / (1 - t)`
   have hv := congrArg (fun f : R⟦X⟧ => f.subst a) (mk_neg_one_pow_mul_one_add_eq_one R)
-  rw [subst_mul ha, subst_add ha, subst_X ha, h1] at hv
+  rw [subst_mul ha, subst_add ha, subst_X ha, subst_one] at hv
   have hm := mk_one_mul_one_sub_eq_one R
   rw [subst_mul ha, subst_X ha]
   -- with `g = mk 1`, so that `a = t g`:

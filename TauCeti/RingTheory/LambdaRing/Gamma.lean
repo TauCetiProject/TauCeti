@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.LambdaRing.Binomial
 
-import TauCeti.RingTheory.PowerSeries.GeometricSubst
+import TauCeti.RingTheory.PowerSeries.Geometric.Subst
 import TauCeti.RingTheory.PowerSeries.Substitution
 
 /-!
