@@ -18,15 +18,12 @@ makes `M` an `H`-module. Conversely an `H`-module is a module over `A ⊕ H` thr
 equivalences `NondegMod A H ≌ ModuleCat H` (`TauCeti.nondegModEquivModuleCat`); for `H = A` this
 is `NondegMod A A ≌ ModuleCat A`.
 
+The module-level statements, `TauCeti.isNondegenerate_iff_one_smul` and the `H`-module structure
+`TauCeti.IsNondegenerate.module`, are in `TauCeti.RingTheory.Idempotented.Basic`.
+
 ## Main definitions
 
-* `TauCeti.IsNondegenerate.module`: the `H`-module structure of a nondegenerate module.
 * `TauCeti.nondegModEquivModuleCat A H`: the equivalence `NondegMod A H ≌ ModuleCat H`.
-
-## Main results
-
-* `TauCeti.isNondegenerate_iff_one_smul`: over a unital `H`, a module is nondegenerate exactly when
-  `1 ∈ H` acts as the identity.
 -/
 
 public section
@@ -39,55 +36,6 @@ namespace TauCeti
 
 variable {A : Type u₁} {H : Type u₂}
 
-section Module
-
-variable [CommSemiring A] [Semiring H] [Algebra A H]
-  {M : Type*} [AddCommMonoid M] [Module (Unitization A H) M]
-
-/-- Over a unital algebra `H`, a module over `A ⊕ H` is nondegenerate exactly when `1 ∈ H` acts
-as the identity. -/
-theorem isNondegenerate_iff_one_smul :
-    IsNondegenerate A H M ↔ ∀ m : M, ((1 : H) : Unitization A H) • m = m := by
-  refine ⟨fun hM m ↦ ?_, fun h ↦ isNondegenerate_iff.2 fun m ↦ ⟨1, .one, h m⟩⟩
-  obtain ⟨e, -, he⟩ := isNondegenerate_iff.1 hM m
-  exact inr_smul_eq_of_mul_eq he (one_mul e)
-
-/-- In a nondegenerate module over the unitization of a unital algebra, `1 ∈ H` acts as the
-identity. -/
-theorem IsNondegenerate.one_smul (hM : IsNondegenerate A H M) (m : M) :
-    ((1 : H) : Unitization A H) • m = m :=
-  isNondegenerate_iff_one_smul.1 hM m
-
-/-- In a nondegenerate module over the unitization of a unital algebra, `a ∈ A` acts as
-`a • 1 ∈ H`. -/
-theorem IsNondegenerate.inl_smul (hM : IsNondegenerate A H M) (a : A) (m : M) :
-    (Unitization.inl a : Unitization A H) • m = ((algebraMap A H a : H) : Unitization A H) • m := by
-  rw [inl_smul_eq_inr_smul (hM.one_smul m), Algebra.algebraMap_eq_smul_one]
-
-/-- The `H`-module structure of a nondegenerate module over the unitization `A ⊕ H` of a unital
-algebra `H`: `h` acts as `h ∈ A ⊕ H` (`TauCeti.IsNondegenerate.smul_def`). -/
-abbrev IsNondegenerate.module (hM : IsNondegenerate A H M) : Module H M where
-  smul h m := (h : Unitization A H) • m
-  one_smul := hM.one_smul
-  -- The axioms are those of `A ⊕ H` transported along `Unitization.inr`; each term has the
-  -- type of the field once `h • m` is unfolded to `(h : Unitization A H) • m`.
-  mul_smul h h' m :=
-    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_mul A h h')).trans (mul_smul _ _ m)
-  smul_zero h := smul_zero (h : Unitization A H)
-  smul_add h := smul_add (h : Unitization A H)
-  add_smul h h' m :=
-    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_add A h h')).trans (add_smul _ _ m)
-  zero_smul m :=
-    (congrArg (fun x : Unitization A H ↦ x • m) (Unitization.inr_zero A)).trans (zero_smul _ m)
-
-/-- In the `H`-module structure of a nondegenerate module, `h` acts as `h ∈ A ⊕ H`. -/
-theorem IsNondegenerate.smul_def (hM : IsNondegenerate A H M) (h : H) (m : M) :
-    letI := hM.module
-    h • m = (h : Unitization A H) • m :=
-  rfl
-
-end Module
-
 section ModuleCat
 
 variable [CommRing A] [Ring H] [Algebra A H]
@@ -98,10 +46,10 @@ theorem isNondegenerate_restrictScalars (M : ModuleCat.{v} H) :
     IsNondegenerate A H ((ModuleCat.restrictScalars
       (Unitization.lift (NonUnitalAlgHom.id A H) : Unitization A H →+* H)).obj M) :=
   isNondegenerate_iff_one_smul.2 fun m ↦ by
+    -- `1 ∈ A ⊕ H` acts through its image `1 ∈ H`, on the carrier `M` of the restricted module
     rw [ModuleCat.restrictScalars.smul_def]
-    simp only [Unitization.lift_apply, RingHom.coe_coe, NonUnitalAlgHom.toAlgHom_apply,
-      Unitization.fst_inr, map_zero, Unitization.snd_inr, NonUnitalAlgHom.coe_id, id_eq, zero_add]
-    exact one_smul H (show M from m)
+    refine (congrArg (· • (show M from m)) ?_).trans (one_smul H _)
+    simp
 
 variable (A H)
 
@@ -164,9 +112,11 @@ private noncomputable def unitLinearEquiv (X : NondegMod.{v} A H) :
   map_add' _ _ := rfl
   map_smul' r m := by
     have hX := (nondegenerateModuleProperty_iff _).1 X.property
-    refine Eq.trans ?_
-      ((moduleCatToNondegMod_obj_smul ((nondegModToModuleCat A H).obj X) r m).trans
-        (nondegModToModuleCat_obj_smul X _ m)).symm
+    -- unfold both actions; `m` is cast to the carrier the first lemma is stated on, which is
+    -- `X.obj` by definition
+    rw [RingHom.id_apply, moduleCatToNondegMod_obj_smul _ r
+      (show ((moduleCatToNondegMod A H).obj ((nondegModToModuleCat A H).obj X)).obj from m),
+      nondegModToModuleCat_obj_smul]
     induction r using Unitization.ind with
     | inl_add_inr a h =>
       rw [add_smul, hX.inl_smul, ← add_smul, ← Unitization.inr_add]
@@ -183,8 +133,9 @@ private noncomputable def counitLinearEquiv (M : ModuleCat.{v} H) :
   invFun m := m
   map_add' _ _ := rfl
   map_smul' h m := by
-    refine ((nondegModToModuleCat_obj_smul _ h m).trans
-      (moduleCatToNondegMod_obj_smul M _ m)).trans ?_
+    -- unfold both actions, casting `m` as in the first lemma's right side
+    rw [RingHom.id_apply, nondegModToModuleCat_obj_smul, moduleCatToNondegMod_obj_smul _ _
+      (show ((moduleCatToNondegMod A H).obj M).obj from m)]
     -- the lift `A ⊕ H → H` restricts to the identity on `H`
     exact congrArg (fun x : H ↦ x • (show M from m)) (by simp)
   left_inv _ := rfl
@@ -196,6 +147,8 @@ variable (A H)
 noncomputable def nondegModEquivModuleCat : NondegMod.{v} A H ≌ ModuleCat.{v} H where
   functor := nondegModToModuleCat A H
   inverse := moduleCatToNondegMod A H
+  -- Every component of the unit and counit is the identity function on carriers, so the
+  -- naturality squares and the triangle identity hold by `rfl`.
   unitIso := NatIso.ofComponents (fun X ↦
     (nondegenerateModuleProperty.{v} A H).fullyFaithfulι.preimageIso
       (unitLinearEquiv X).toModuleIso) fun _ ↦ rfl
