@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.MeasureTheory.Group.Arithmetic
 
 /-!
 # The multiplicative Haar measure `dt / t` on the positive reals
@@ -24,6 +25,14 @@ under every dilation `t ↦ c t` with `c > 0` (`TauCeti.map_multHaar_mul_left`,
 inversion (`TauCeti.map_multHaar_inv`), and gives the interval `[1, e]` mass one. The power map
 `t ↦ t ^ γ`, `γ ≠ 0`, sends it to `|γ|⁻¹ dt / t` (`TauCeti.map_multHaar_rpow`), so it multiplies
 `L^q(dt / t)` seminorms by `|γ| ^ (-1 / q)` (`TauCeti.eLpNorm_comp_rpow_multHaar`).
+
+The map `t ↦ c / t` for `c > 0` preserves `dt / t`
+(`TauCeti.measurePreserving_div_left_multHaar`).
+At a positive cutoff `a`, the reflection `t ↦ a² / t` carries the upper ray to the lower part of
+`(0, ∞)` with their restricted measures (`TauCeti.measurePreserving_sq_div_multHaar_restrict_Ioi`).
+Under reciprocal symmetry, integrability is equivalent to integrability on the upper ray
+(`TauCeti.integrable_multHaar_iff_of_sq_div`), and the full integral at a positive cutoff is twice
+the upper-ray integral (`TauCeti.integral_multHaar_eq_two_smul_of_sq_div`).
 
 It is the Haar measure of the multiplicative group `(0, ∞)` up to a scalar, and the scalar is
 read off `[1, e]`: a measure on `ℝ` that does not charge `(-∞, 0]`, is invariant under the
@@ -143,6 +152,12 @@ theorem multHaar_Iic_zero : multHaar (Iic 0) = 0 := by
 theorem ae_pos_multHaar : ∀ᵐ t ∂multHaar, 0 < t :=
   ae_iff.2 (by simp only [not_lt]; exact multHaar_Iic_zero)
 
+/-- Restricting `dt / t` to an upper ray with nonpositive cutoff leaves it unchanged. -/
+@[simp]
+theorem multHaar_restrict_Ioi_of_nonpos {a : ℝ} (ha : a ≤ 0) :
+    multHaar.restrict (Ioi a) = multHaar :=
+  Measure.restrict_eq_self_of_ae_mem (ae_pos_multHaar.mono fun _ ht ↦ ha.trans_lt ht)
+
 instance : NullSingletonClass multHaar := by
   rw [multHaar_def]
   infer_instance
@@ -226,6 +241,74 @@ theorem map_multHaar_inv : multHaar.map Inv.inv = multHaar := by
     simp [Real.exp_neg]
   rw [← map_volume_exp, map_map measurable_inv Real.measurable_exp, hcomp,
     ← map_map Real.measurable_exp measurable_neg, map_neg_eq_self]
+
+/-- Division of a positive constant by the variable preserves `dt / t`. -/
+theorem measurePreserving_div_left_multHaar {c : ℝ} (hc : 0 < c) :
+    MeasurePreserving (c / ·) multHaar multHaar := by
+  simpa only [Function.comp_def, div_eq_mul_inv] using
+    MeasurePreserving.comp ⟨measurable_const_mul c, map_multHaar_mul_left hc⟩
+      ⟨measurable_inv, map_multHaar_inv⟩
+
+/-- Reciprocal reflection about a positive cutoff carries `dt / t` on the upper ray to
+`dt / t` on the lower ray. -/
+theorem measurePreserving_sq_div_multHaar_restrict_Ioi {a : ℝ} (ha : 0 < a) :
+    MeasurePreserving (fun t : ℝ ↦ a ^ 2 / t) (multHaar.restrict (Ioi a))
+      (multHaar.restrict (Ioo 0 a)) := by
+  have hsq := sq_pos_of_pos ha
+  have hcomp : (fun t : ℝ ↦ a ^ 2 / t) = (a ^ 2 * ·) ∘ Inv.inv :=
+    funext fun t ↦ div_eq_mul_inv _ t
+  have hpre : (fun t : ℝ ↦ a ^ 2 / t) ⁻¹' Ioo 0 a = Ioi a := by
+    rw [hcomp, preimage_comp, preimage_const_mul_Ioo₀ _ _ hsq, zero_div, inv_preimage,
+      inv_Ioo_0_left (div_pos ha hsq)]
+    simp only [inv_div, pow_two, mul_div_cancel_left₀ _ ha.ne']
+  simpa only [hpre] using
+    (measurePreserving_div_left_multHaar hsq).restrict_preimage
+      (measurableSet_Ioo (a := 0) (b := a))
+
+section Fold
+
+variable {E : Type*} [NormedAddCommGroup E] {f : ℝ → E} {a : ℝ}
+
+/-- In the presence of reciprocal symmetry, integrability over `dt / t` can be checked just
+above the symmetry point. -/
+theorem integrable_multHaar_iff_of_sq_div
+    (hsym : ∀ᵐ t ∂multHaar.restrict (Ioi a), f (a ^ 2 / t) = f t) :
+    Integrable f multHaar ↔ IntegrableOn f (Ioi a) multHaar := by
+  by_cases hnonpos : a ≤ 0
+  · rw [IntegrableOn, multHaar_restrict_Ioi_of_nonpos hnonpos]
+  have ha := lt_of_not_ge hnonpos
+  refine ⟨fun h ↦ h.integrableOn, fun h ↦ ?_⟩
+  have hlow := ((measurePreserving_sq_div_multHaar_restrict_Ioi ha).integrable_comp_emb
+    (measurableEmbedding_divLeft₀ (pow_ne_zero 2 ha.ne')) (g := f)).mp
+      (h.congr (Filter.EventuallyEq.symm hsym))
+  have hleft : IntegrableOn f (Ioc 0 a) multHaar := by
+    simpa only [IntegrableOn, Measure.restrict_congr_set (Ioo_ae_eq_Ioc (μ := multHaar))] using hlow
+  -- Use `(0,a]` and `(a,∞)` to cover the support of the measure.
+  have hfull := hleft.union h
+  rwa [Ioc_union_Ioi_eq_Ioi ha.le, IntegrableOn, multHaar_restrict_Ioi_of_nonpos le_rfl] at hfull
+
+/-- A reciprocally symmetric function has twice its upper-ray integral against `dt / t`.
+If the upper-ray integral is not integrable, both Bochner integrals have the junk value zero. -/
+theorem integral_multHaar_eq_two_smul_of_sq_div [NormedSpace ℝ E] (ha : 0 < a)
+    (hsym : ∀ᵐ t ∂multHaar.restrict (Ioi a), f (a ^ 2 / t) = f t) :
+    ∫ t, f t ∂multHaar = 2 • ∫ t in Ioi a, f t ∂multHaar := by
+  by_cases h : IntegrableOn f (Ioi a) multHaar
+  · have hfull := (integrable_multHaar_iff_of_sq_div hsym).mpr h
+    have hlow : (∫ t in Ioc 0 a, f t ∂multHaar) = ∫ t in Ioi a, f t ∂multHaar := by
+      have hp := measurePreserving_sq_div_multHaar_restrict_Ioi ha
+      rw [setIntegral_congr_set (Ioo_ae_eq_Ioc (μ := multHaar)).symm,
+        ← hp.integral_comp (measurableEmbedding_divLeft₀ (pow_ne_zero 2 ha.ne')) f]
+      exact integral_congr_ae hsym
+    calc
+      _ = ∫ t in Ioc 0 a ∪ Ioi a, f t ∂multHaar := by
+        rw [Ioc_union_Ioi_eq_Ioi ha.le, multHaar_restrict_Ioi_of_nonpos le_rfl]
+      _ = _ := by
+        rw [setIntegral_union Ioc_disjoint_Ioi_same measurableSet_Ioi hfull.integrableOn h,
+          hlow, two_nsmul]
+  · rw [integral_undef (mt (integrable_multHaar_iff_of_sq_div hsym).mp h),
+      integral_undef h, smul_zero]
+
+end Fold
 
 /-- **Uniqueness of `dt / t`.** A measure on `ℝ` that does not charge `(-∞, 0]`, is invariant
 under the dilations `t ↦ c t` for `c > 0`, and is finite on `[1, e]` is its mass on `[1, e]` times
