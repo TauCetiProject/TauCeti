@@ -64,8 +64,6 @@ C⋆-algebra, normalized by the norm rather than by a unit, is `TauCeti.stateSpa
   points.
 * `TauCeti.IsOrderUnitNorm.norm_le_iff_forall_mem_stateSpace`,
   `TauCeti.IsOrderUnitNorm.norm_eq_iSup_states`: the norm is the supremum of `|φ a|` over states.
-* `TauCeti.IsOrderUnitNorm.stateSpaceEval`: the isometric unital order embedding into continuous
-  real functions on the state space.
 
 ## References
 
@@ -286,42 +284,6 @@ theorem norm_eq_iSup_states (h : IsOrderUnitNorm e) (a : E) :
   refine le_antisymm ?_ (ciSup_le fun φ => h.abs_apply_le_of_mem_stateSpace φ.property a)
   exact (h.norm_le_iff_forall_mem_stateSpace ((abs_nonneg _).trans (le_ciSup hb ⟨φ₀, hφ₀⟩))).2
     fun φ hφ => le_ciSup (f := g) hb ⟨φ, hφ⟩
-
-/-- The evaluation representation of an order-unit space in the continuous real functions
-on its weak-* state space. -/
-noncomputable def stateSpaceEval (h : IsOrderUnitNorm e) :
-    letI := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-    E →ₗᵢ[ℝ] C(OrderUnit.stateSpace e, ℝ) :=
-  letI := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  let evaluation (a : E) : C(OrderUnit.stateSpace e, ℝ) :=
-    ⟨fun φ => φ.val a, (eval_continuous a).comp continuous_subtypeVal⟩
-  { toFun := evaluation
-    map_add' := fun a b => by ext φ; exact map_add φ.val a b
-    map_smul' := fun r a => by ext φ; exact map_smul φ.val r a
-    norm_map' := fun a => by
-      refine le_antisymm ((ContinuousMap.norm_le _ (norm_nonneg a)).2 fun φ => ?_) ?_
-      · exact h.abs_apply_le_of_mem_stateSpace φ.property a
-      · exact (h.norm_le_iff_forall_mem_stateSpace (norm_nonneg _)).2 fun φ hφ =>
-          (evaluation a).norm_coe_le_norm ⟨φ, hφ⟩ }
-
-/-- Evaluation of the function representing a vector at a state. -/
-@[simp]
-theorem stateSpaceEval_apply (h : IsOrderUnitNorm e) (a : E) (φ : OrderUnit.stateSpace e) :
-    h.stateSpaceEval a φ = φ.val a := (rfl)
-
-/-- The evaluation representation sends the order unit to the constant function one. -/
-@[simp]
-theorem stateSpaceEval_orderUnit (h : IsOrderUnitNorm e) :
-    h.stateSpaceEval e = 1 := by
-  ext φ
-  exact φ.property.2
-
-/-- The evaluation representation preserves and reflects the order. -/
-@[simp]
-theorem stateSpaceEval_le_stateSpaceEval (h : IsOrderUnitNorm e) :
-    h.stateSpaceEval a ≤ h.stateSpaceEval b ↔ a ≤ b :=
-  ⟨fun hab => h.le_iff_forall_mem_stateSpace.2 fun φ hφ => hab ⟨φ, hφ⟩,
-    fun hab φ => (h.le_iff_forall_mem_stateSpace.1 hab) φ.val φ.property⟩
 
 end State
 

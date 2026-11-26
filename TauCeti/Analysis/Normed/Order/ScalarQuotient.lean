@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Analysis.Normed.Order.StateSpace
 public import TauCeti.Analysis.Normed.Module.Dual.Quotient
-import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
-import TauCeti.Analysis.Normed.Order.PositiveLinearMap
-import TauCeti.MeasureTheory.Integral.RieszMarkovKakutani.Signed
+import Mathlib.Analysis.LocallyConvex.Separation
+import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 
 /-!
 # The scalar quotient of an order-unit space
@@ -31,7 +30,7 @@ state distances with seminorm bounds on the quotient.
 public section
 
 open Set WeakDual
-open scoped CompactlySupported Pointwise
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -112,113 +111,10 @@ theorem norm_sub_midpoint_smul_eq_norm_quotient_mk (h : IsOrderUnitNorm e) (a : 
   (h.quotient_norm_formulas a).2
 
 /-- The line spanned by the order unit is closed in the order-unit norm. -/
-theorem isClosed_scalarLine (h : IsOrderUnitNorm e) :
+theorem isClosed_span_singleton (h : IsOrderUnitNorm e) :
     IsClosed ((ℝ ∙ e : Submodule ℝ E) : Set E) := by
   have := h.orderClosedTopology
   exact (ℝ ∙ e).isClosed_of_finiteDimensional
-
-private theorem exists_extension_stateSpaceEval (h : IsOrderUnitNorm e) (f : StrongDual ℝ E) :
-    let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-    ∃ g : StrongDual ℝ C(OrderUnit.stateSpace e, ℝ),
-      (∀ a, g (h.stateSpaceEval a) = f a) ∧ ‖g‖ = ‖f‖ := by
-  let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  have := h.orderClosedTopology
-  let : NormedAddCommGroup E := .ofSeparation fun _ ha => (inseparable_zero_iff_norm.mpr ha).eq
-  obtain ⟨g, hg, hg_norm⟩ := h.stateSpaceEval.exists_extension_norm_eq f
-  exact ⟨g, fun a => DFunLike.congr_fun hg a, hg_norm⟩
-
-private theorem exists_state_of_positive (h : IsOrderUnitNorm e) {ω : WeakDual ℝ E}
-    (hω : ω ∈ OrderUnit.stateSpace e) (P : C_c(OrderUnit.stateSpace e, ℝ) →ₚ[ℝ] ℝ) :
-    let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-    let v := CompactlySupportedContinuousMap.continuousMapEquiv
-      (α := OrderUnit.stateSpace e) (β := ℝ)
-    P (v 1) ≤ 1 → ∃ φ ∈ OrderUnit.stateSpace e, ∀ a,
-      φ a = P (v (h.stateSpaceEval a)) + (1 - P (v 1)) * ω a := by
-  dsimp only
-  intro hp
-  let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  let v := CompactlySupportedContinuousMap.continuousMapEquiv (α := OrderUnit.stateSpace e)
-    (β := ℝ)
-  let slack := 1 - P (v 1)
-  let p : E →ₚ[ℝ] ℝ :=
-    { toLinearMap :=
-        { toFun := fun a => P (v (h.stateSpaceEval a)) + slack * ω a
-          map_add' := fun a b => by
-            have hab : v (h.stateSpaceEval (a + b)) =
-                v (h.stateSpaceEval a) + v (h.stateSpaceEval b) := by
-              ext x
-              simp [v]
-            rw [hab, map_add, map_add, mul_add, add_add_add_comm]
-          map_smul' := fun c a => by
-            have hca : v (h.stateSpaceEval (c • a)) = c • v (h.stateSpaceEval a) := by
-              ext x
-              simp [v]
-            rw [hca, map_smul, map_smul]
-            simp only [smul_eq_mul, RingHom.id_apply]
-            ring }
-      monotone' := fun a b hab =>
-        add_le_add (OrderHomClass.mono P (fun x => h.stateSpaceEval_le_stateSpaceEval.mpr hab x))
-          (mul_le_mul_of_nonneg_left (OrderUnit.monotone_of_mem_stateSpace hω hab)
-            (sub_nonneg.mpr hp)) }
-  let φ : WeakDual ℝ E := StrongDual.toWeakDual
-    ⟨p.toLinearMap, PositiveLinearMap.continuous_of_forall_le_norm_smul p h.le_norm_smul⟩
-  have eval_φ (a : E) : φ a = P (v (h.stateSpaceEval a)) + slack * ω a := rfl
-  refine ⟨φ, OrderUnit.mem_stateSpace_iff.mpr ⟨OrderHomClass.mono p, ?_⟩, eval_φ⟩
-  rw [eval_φ, h.stateSpaceEval_orderUnit, OrderUnit.apply_eq_one_of_mem_stateSpace hω]
-  simp [slack]
-
-/- Extend the functional to the continuous real functions on the state space and use the Jordan
-parts `RealRMK.posPart` and `RealRMK.negPart`. Both parts have the same value at the constant one,
-so a common positive correction normalizes them and cancels in the difference. -/
-private theorem exists_states_sub_eq (h : IsOrderUnitNorm e) {f : StrongDual ℝ E}
-    (hf : f e = 0) (hn : ‖f‖ ≤ 2) :
-    ∃ φ ∈ OrderUnit.stateSpace e, ∃ ψ ∈ OrderUnit.stateSpace e,
-      φ - ψ = StrongDual.toWeakDual f := by
-  let := isCompact_iff_compactSpace.mp h.isCompact_stateSpace
-  obtain ⟨g, hg, hg_norm⟩ := h.exists_extension_stateSpaceEval f
-  have hg1 : g 1 = 0 := by simpa [hf] using hg e
-  let Λ : C_c(OrderUnit.stateSpace e, ℝ) →ₗ[ℝ] ℝ :=
-    { toFun := fun u => g u.toContinuousMap
-      map_add' := fun u v => map_add g u.toContinuousMap v.toContinuousMap
-      map_smul' := fun c u => map_smul g c u.toContinuousMap }
-  have hΛ (u : C_c(OrderUnit.stateSpace e, ℝ)) : BddAbove (Λ '' Icc 0 u) := by
-    refine ⟨‖g‖ * ‖u.toContinuousMap‖, ?_⟩
-    rintro _ ⟨v, ⟨hv₀, hvu⟩, rfl⟩
-    apply (le_abs_self _).trans ((g.le_opNorm v.toContinuousMap).trans ?_)
-    refine mul_le_mul_of_nonneg_left ((ContinuousMap.norm_le _ (norm_nonneg _)).2 fun x => ?_)
-      (norm_nonneg g)
-    rw [Real.norm_eq_abs, CompactlySupportedContinuousMap.coe_toContinuousMap,
-      abs_of_nonneg (hv₀ x)]
-    exact (hvu x).trans ((le_abs_self _).trans (u.toContinuousMap.norm_coe_le_norm x))
-  let v := CompactlySupportedContinuousMap.continuousMapEquiv (α := OrderUnit.stateSpace e)
-    (β := ℝ)
-  let p := RealRMK.posPart Λ hΛ
-  let n := RealRMK.negPart Λ hΛ
-  have hp : p (v 1) ≤ 1 := by
-    refine RealRMK.posPart_apply_le hΛ (fun x => zero_le_one) fun u hu hu₁ => ?_
-    have htest : ‖(2 : ℝ) • u.toContinuousMap - 1‖ ≤ 1 := by
-      refine (ContinuousMap.norm_le _ zero_le_one).2 fun x => ?_
-      have h₀ : 0 ≤ u x := hu x
-      have h₁ : u x ≤ 1 := hu₁ x
-      simp only [ContinuousMap.sub_apply, ContinuousMap.smul_apply, ContinuousMap.one_apply,
-        CompactlySupportedContinuousMap.coe_toContinuousMap, smul_eq_mul, Real.norm_eq_abs, abs_le]
-      constructor <;> linarith
-    have hbound := g.le_of_opNorm_le_of_le (hg_norm ▸ hn) htest
-    rw [map_sub, map_smul, smul_eq_mul, hg1, sub_zero] at hbound
-    dsimp [Λ]
-    linarith [(le_abs_self _).trans hbound, htest]
-  have hp_eq : p (v 1) = n (v 1) := by
-    have := RealRMK.posPart_sub_negPart_apply hΛ (v 1)
-    have hz : Λ (v 1) = 0 := hg1
-    exact sub_eq_zero.mp (this.trans hz)
-  obtain ⟨ω, hω⟩ := h.stateSpace_nonempty
-  obtain ⟨φ, hφ, hφa⟩ := h.exists_state_of_positive hω p hp
-  obtain ⟨ψ, hψ, hψa⟩ := h.exists_state_of_positive hω n (hp_eq ▸ hp)
-  refine ⟨φ, hφ, ψ, hψ, DFunLike.ext _ _ fun a => ?_⟩
-  rw [← toStrongDual_apply (φ - ψ), map_sub, sub_apply, toStrongDual_apply, toStrongDual_apply,
-    hφa, hψa, ← hp_eq, add_sub_add_right_eq_sub]
-  rw [RealRMK.posPart_sub_negPart_apply hΛ]
-  exact hg a
 
 /-- Differences of states are exactly the functionals vanishing at the order unit and of norm
 at most two. -/
@@ -229,17 +125,44 @@ theorem stateSpace_sub_stateSpace (h : IsOrderUnitNorm e) :
   constructor
   · rintro ⟨φ, hφ, ψ, hψ, rfl⟩
     refine ⟨?_, ?_⟩
-    · rw [← toStrongDual_apply, map_sub, sub_apply, toStrongDual_apply,
-        toStrongDual_apply, OrderUnit.apply_eq_one_of_mem_stateSpace hφ,
-        OrderUnit.apply_eq_one_of_mem_stateSpace hψ, sub_self]
+    · rw [← toStrongDual_apply (φ - ψ), map_sub]
+      simp [OrderUnit.apply_eq_one_of_mem_stateSpace hφ,
+        OrderUnit.apply_eq_one_of_mem_stateSpace hψ]
     · calc
         ‖toStrongDual (φ - ψ)‖ ≤ ‖toStrongDual φ‖ + ‖toStrongDual ψ‖ :=
           map_sub toStrongDual φ ψ ▸ norm_sub_le _ _
         _ = 2 := by rw [h.norm_toStrongDual_of_mem_stateSpace hφ,
           h.norm_toStrongDual_of_mem_stateSpace hψ]; norm_num
   · rintro ⟨hf, hn⟩
-    obtain ⟨φ, hφ, ψ, hψ, heq⟩ := h.exists_states_sub_eq (f := toStrongDual f) hf hn
-    exact ⟨φ, hφ, ψ, hψ, heq.trans (toWeakDual_toStrongDual f)⟩
+    by_contra hmem
+    -- Weak-* separation would give an evaluation strictly larger than the state oscillation.
+    have hconv := OrderUnit.convex_stateSpace (e := e)
+    have hclosed : IsClosed (OrderUnit.stateSpace e - OrderUnit.stateSpace e) := by
+      rw [← Set.sub_image_prod]
+      exact ((h.isCompact_stateSpace.prod h.isCompact_stateSpace).image continuous_sub).isClosed
+    obtain ⟨ℓ, u, hl, hlf⟩ := geometric_hahn_banach_closed_point
+      (hconv.sub hconv) hclosed hmem
+    obtain ⟨a, hℓ⟩ := exists_forall_apply_eq_apply ℓ
+    rw [hℓ] at hlf
+    let upper := ⨆ φ : OrderUnit.stateSpace e, φ.val a
+    let lower := ⨅ ψ : OrderUnit.stateSpace e, ψ.val a
+    let : Nonempty (OrderUnit.stateSpace e) := h.stateSpace_nonempty.to_subtype
+    have hosc : upper - lower ≤ u := by
+      rw [sub_le_iff_le_add]
+      refine ciSup_le fun φ => ?_
+      rw [← sub_le_iff_le_add']
+      refine le_ciInf fun ψ => ?_
+      have hlt := hl _ (Set.sub_mem_sub φ.property ψ.property)
+      rw [map_sub, hℓ, hℓ] at hlt
+      linarith
+    -- Centering at the midpoint leaves the evaluation by `f` invariant.
+    let b := a - ((upper + lower) / 2) • e
+    have hb : ‖b‖ = (upper - lower) / 2 :=
+      (h.norm_sub_midpoint_smul_eq_norm_quotient_mk a).trans (h.norm_quotient_mk_eq_half_sub a)
+    have hfb : (toStrongDual f) b = f a := by simp [b, hf]
+    have hbound := (toStrongDual f).le_of_opNorm_le_of_le hn (le_refl ‖b‖)
+    rw [hfb, hb, Real.norm_eq_abs] at hbound
+    linarith [le_abs_self (f a)]
 
 /-- A functional on the scalar quotient pulls back to a difference of two states exactly when its
 operator norm is at most two. -/
