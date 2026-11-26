@@ -106,13 +106,7 @@ theorem smul_eq_similarity_inversion_of_coe_eq_S {A : SL(2, ℂ)}
     rw [← Prod.zero_eq_mk, WithLp.toLp_zero, dist_zero_right, norm_coe_sq]
   refine ext_fst_height ?_ ?_
   · rw [fst_smul_of_coe_eq_S hA, coe_similarity_apply, coe_inversion_apply]
-    simp only [Complex.ofReal_add, Complex.ofReal_pow, EuclideanGeometry.inversion, one_div,
-      inv_pow, hd, vsub_eq_sub, vadd_eq_add, WithLp.add_fst, WithLp.smul_fst, WithLp.sub_fst,
-      WithLp.toLp_fst, sub_zero, Complex.real_smul, Complex.ofReal_inv, add_zero,
-      LinearIsometryEquiv.trans_apply, Complex.conjLIE_apply, map_mul, map_inv₀, map_add,
-      Complex.conj_ofReal, map_pow, LinearIsometryEquiv.coe_neg, smul_neg, one_smul,
-      height_inversion_apply, one_mul]
-    ring
+    simp [EuclideanGeometry.inversion, hd, div_eq_inv_mul]
   · rw [height_smul_of_coe_eq_S hA, height_similarity_apply, height_inversion_apply, div_pow,
       hd]
     field_simp
