@@ -148,9 +148,16 @@ variable (J D f) in
 the vectors `v ∈ D_(f y)` with `L_D (w, v) = 0` for every `w ∈ D_(f y)` in the tangent image
 `df_y (T_y N)`, as a subspace of `T_(f y) M`. It is the image in `T_(f y) M` of the orthogonal
 whose quotient is the conformal symplectic normal space `TauCeti.ConformalSymplecticNormal`. -/
-@[expose] def leviOrthogonal (y : N) : Submodule ℝ (TangentSpace I (f y)) :=
+def leviOrthogonal (y : N) : Submodule ℝ (TangentSpace I (f y)) :=
   (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
     (distributionLeviForm D (f y))).map (D (f y)).subtype
+
+/-- The Levi orthogonal of the tangent image is the image in `T_(f y) M` of the orthogonal, inside
+`D_(f y)`, of the part of the tangent image lying in `D_(f y)` for the Levi form. -/
+theorem map_subtype_orthogonalBilin_eq_leviOrthogonal :
+    (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+      (distributionLeviForm D (f y))).map (D (f y)).subtype = leviOrthogonal J D f y :=
+  (rfl)
 
 /-- A vector lies in the Levi orthogonal of the tangent image exactly when it lies in `D` and the
 Levi form pairs every tangent image vector in `D` with it to zero. -/
@@ -158,7 +165,8 @@ theorem mem_leviOrthogonal_iff {v : TangentSpace I (f y)} :
     v ∈ leviOrthogonal J D f y ↔ ∃ h : v ∈ D (f y), ∀ w : D (f y),
       (w : TangentSpace I (f y)) ∈ LinearMap.range (mfderiv J I f y).toLinearMap →
         distributionLeviForm D (f y) w ⟨v, h⟩ = 0 := by
-  simp only [leviOrthogonal, Submodule.mem_map, Submodule.subtype_apply]
+  simp only [← map_subtype_orthogonalBilin_eq_leviOrthogonal, Submodule.mem_map,
+    Submodule.subtype_apply]
   constructor
   · rintro ⟨u, hu, rfl⟩
     exact ⟨u.property, fun w hw ↦ hu w hw⟩
@@ -555,7 +563,10 @@ theorem IsHorizontalMap.finrank_leviOrthogonal_add [IsManifold I (n + 1) M]
   have h4 : finrank ℝ Wt = finrank ℝ E' := by
     rw [LinearEquiv.finrank_eq (Submodule.comapSubtypeEquivOfLe (hf.range_mfderiv_le y)),
       LinearMap.finrank_range_of_inj hinj]
+    -- `TangentSpace J y` is the model space `E'` by definition.
     rfl
+  -- `ConformalSymplecticNormal` and `LinearMap.SymplecticNormal` are abbreviations unfolding to
+  -- this quotient.
   have h5 : finrank ℝ (ConformalSymplecticNormal J D f y) =
       finrank ℝ (Wt.orthogonalBilin B ⧸ Wt.comap (Wt.orthogonalBilin B).subtype) := rfl
   omega
@@ -695,13 +706,10 @@ theorem mem_leviOrthogonal_iff_of_basis {k : ℕ} (hD : IsContMDiffDistribution 
     (((mextDeriv α.val (f y)).toContinuousMultilinearMap.toContinuousLinearMap
       ![0, v] 0).comp (mfderiv J I f y) : TangentSpace J y →L[ℝ] ℝ)
   have hL (w : TangentSpace J y) : L w = mextDeriv α.val (f y) ![mfderiv J I f y w, v] := by
-    have hu : Function.update ![(0 : TangentSpace I (f y)), v] 0 (mfderiv J I f y w) =
-        ![mfderiv J I f y w, v] := by
-      funext j
-      fin_cases j <;> rfl
     simp only [L, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
       ContinuousMultilinearMap.toContinuousLinearMap_apply,
-      ContinuousAlternatingMap.coe_toContinuousMultilinearMap, hu]
+      ContinuousAlternatingMap.coe_toContinuousMultilinearMap]
+    exact congrArg _ (by simp [funext_iff, Fin.forall_fin_two])
   have hL0 : L = 0 := b.ext fun i ↦ by rw [hL, LinearMap.zero_apply]; exact h i
   rw [← hL, hL0, LinearMap.zero_apply]
 

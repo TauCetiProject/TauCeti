@@ -57,8 +57,12 @@ the proof that local frames exist.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_leviOrthogonal`,
   `TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`: the Levi orthogonals of a smooth
   isotropic immersion have smooth local frames.
+* `TauCeti.contMDiffVectorBundle_leviOrthogonalPullback`: the Levi orthogonals form a smooth
+  vector bundle.
 * `TauCeti.hasLocalContMDiffSubbundleFrames_comap_range`: the tangent images have smooth local
   frames inside the bundle of Levi orthogonals.
+* `TauCeti.IsHorizontalMap.card_add_card_eq_finrank`: the rank count `dim N + (dim M - 2 dim N - 1)
+  = dim M - dim N - 1` for the quotient.
 * `TauCeti.conformalSymplecticNormalPrebundle_eq`: the conformal symplectic normal bundle is the
   quotient prebundle of the bundle of Levi orthogonals by the tangent images.
 * `TauCeti.contMDiffVectorBundle_conformalSymplecticNormalPrebundle`: the conformal symplectic
@@ -91,6 +95,18 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpa
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {y : N}
 
+omit [CompleteSpace E] [IsManifold I 2 M] in
+/-- `C^(∞ + 1)` charts on the target manifold, needed by the smooth vector bundle structure of a
+smooth distribution (`TauCeti.IsContMDiffDistribution.contMDiffVectorBundle`) at smoothness `∞`. -/
+local instance instIsManifoldConformalSymplecticNormalTarget [IsManifold I ∞ M] :
+    IsManifold I ((∞ : WithTop ℕ∞) + 1) M :=
+  IsManifold.of_le (n := ∞) (by simp)
+
+/-- `C^(∞ + 1)` charts on the source manifold, as for the target. -/
+local instance instIsManifoldConformalSymplecticNormalSource [IsManifold J ∞ N] :
+    IsManifold J ((∞ : WithTop ℕ∞) + 1) N :=
+  IsManifold.of_le (n := ∞) (by simp)
+
 /-! ### Local frames of the Levi orthogonal -/
 
 section Frames
@@ -117,10 +133,8 @@ private theorem leviOrthogonalMap_apply {k : ℕ} {f : K} (α : SmoothForm I M �
   funext j
   refine Fin.cases ?_ (fun i ↦ ?_) j
   · exact SmoothForm.degreeOneEquiv_apply_apply_vec α (f y) v
-  · have hu : Function.update ![Y i y, (0 : TangentSpace I (f y))] 1 v = ![Y i y, v] := by
-      funext j
-      fin_cases j <;> rfl
-    exact (ContinuousMultilinearMap.toContinuousLinearMap_apply _ _ _ _).trans (congrArg _ hu)
+  · exact (ContinuousMultilinearMap.toContinuousLinearMap_apply _ _ _ _).trans (congrArg _ <|
+      funext <| Fin.forall_fin_two.2 ⟨update_of_ne (by decide) _ _, update_self _ _ _⟩)
 
 omit [CompleteSpace E] [FiniteDimensional ℝ E'] [IsManifold I ∞ M] [IsManifold J ∞ N] [T2Space M] in
 /-- The bundle map `TauCeti.leviOrthogonalMap` is smooth at every point where the sections `Y i`
@@ -186,7 +200,6 @@ private theorem exists_isSubbundleFrameOn_leviOrthogonal (hD : IsContactDistribu
         IsSubbundleFrameOn (E := (f : N → M) *ᵖ (TangentSpace I)) E (leviOrthogonal J D f) X U ∧
           ∀ i, ContMDiffOn J (J.prod 𝓘(ℝ, E)) ∞
             (fun y ↦ TotalSpace.mk' E (E := (f : N → M) *ᵖ (TangentSpace I)) y (X i y)) U := by
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   obtain ⟨W, hW, hy₀W, α, hα⟩ := hD.exists_smoothForm_ker_eq_isContactFormAt (f y₀)
   let eN := trivializationAt E' (TangentSpace J) y₀
   let b := Module.finBasis ℝ E'
@@ -220,6 +233,7 @@ private theorem exists_isSubbundleFrameOn_leviOrthogonal (hD : IsContactDistribu
       exact hfD.finrank_leviOrthogonal_add hD (by simp) (hf.contMDiffAt.of_le (by simp)) (hinj y)
     have hF : finrank ℝ (Bundle.Trivial N (Fin (finrank ℝ E' + 1) → ℝ) y) = finrank ℝ E' + 1 :=
       Module.finrank_fin_fun ℝ
+    -- The fibres of `f^* TM` are the model space `E` by definition.
     have hE : finrank ℝ (((f : N → M) *ᵖ (TangentSpace I)) y) = finrank ℝ E := rfl
     refine LinearMap.range_eq_top.1 (Submodule.eq_top_of_finrank_eq ?_)
     omega
@@ -249,7 +263,7 @@ theorem hasLocalContMDiffSubbundleFrames_leviOrthogonal (hD : IsContactDistribut
     fun hy ↦ (hX.linearIndependent hy).comp _ (Fin.cast_injective hr), fun hy ↦ ?_⟩,
     fun i ↦ hXs _⟩
   rw [← hX.span_eq hy, ← (finCongr hr).surjective.range_comp]
-  rfl
+  simp only [Function.comp_def, finCongr_apply]
 
 /-- **The Levi orthogonal inside the contact structure has smooth local frames.** For a smooth
 isotropic immersion `f` into a smooth contact manifold `(M, D)`, the Levi orthogonals
@@ -277,8 +291,9 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalBilin (hD : IsContactDistribu
   let X' (i) (y : N) : D (f y) := if h : X i y ∈ D (f y) then ⟨X i y, h⟩ else 0
   have hX' {y : N} (hy : y ∈ U) (i) : (X' i y : TangentSpace I (f y)) = X i y := by
     simp only [X', hXD hy i, ↓reduceDIte]
+    -- Both sides are `X i y`, read in the fibres `(f^* TM) y` and `T_(f y) M`, which agree by
+    -- definition of the pullback.
     rfl
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   have hsmooth (i) : ContMDiffOn J (J.prod 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)) ∞
       (fun y ↦ TotalSpace.mk' (Fin (finrank ℝ E - 1) → ℝ)
         (E := (f : N → M) *ᵖ fun x ↦ D x) y (X' i y)) U := fun y hy ↦
@@ -295,8 +310,11 @@ theorem hasLocalContMDiffSubbundleFrames_orthogonalBilin (hD : IsContactDistribu
   · refine Submodule.map_injective_of_injective (D (f y)).injective_subtype ?_
     -- The fibres of `f^* D` are the subspaces `D (f y)`; restated there so that `rw` applies.
     change Submodule.map (D (f y)).subtype
-      (Submodule.span ℝ (Set.range fun i ↦ (X' i y : D (f y)))) = leviOrthogonal J D f y
-    rw [Submodule.map_span, ← Set.range_comp]
+      (Submodule.span ℝ (Set.range fun i ↦ (X' i y : D (f y)))) =
+        Submodule.map (D (f y)).subtype
+          (((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
+            (distributionLeviForm D (f y)))
+    rw [map_subtype_orthogonalBilin_eq_leviOrthogonal, Submodule.map_span, ← Set.range_comp]
     -- The composite with the inclusion of `D` is the coercion to `TM`.
     change Submodule.span ℝ (Set.range fun i ↦ (X' i y : TangentSpace I (f y))) =
       leviOrthogonal J D f y
@@ -368,8 +386,6 @@ theorem hasLocalContMDiffSubbundleFrames_comap_range (hD : IsContactDistribution
         (leviOrthogonalPullback J D f y).subtype := by
   let := hD.isContMDiffDistribution.fiberBundle
   let := hD.isContMDiffDistribution.vectorBundle
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold J ((∞ : WithTop ℕ∞) + 1) N := IsManifold.of_le (n := ∞) (by simp)
   have := hD.isContMDiffDistribution.contMDiffVectorBundle
   have := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
     (E := fun x ↦ D x) (IB := I) (IB' := J) hf
@@ -394,6 +410,8 @@ theorem hasLocalContMDiffSubbundleFrames_comap_range (hD : IsContactDistribution
   let zD (i) (y : N) : D (f y) := (Z i y).val
   have hZ {y : N} (hy : y ∈ U) (i) : (zD i y : TangentSpace I (f y)) = T i y := by
     simp only [zD, Z, hTr hy i, ↓reduceDIte]
+    -- Both sides are `T i y`, read in the fibres `(f^* TM) y` and `T_(f y) M`, which agree by
+    -- definition of the pullback.
     rfl
   have hsmooth (i) : ContMDiffOn J (J.prod 𝓘(ℝ, Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)) ∞
       (fun y ↦ TotalSpace.mk' (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)
@@ -412,17 +430,38 @@ omit [FiniteDimensional ℝ E'] [T2Space M] [ContinuousMapClass K N M] in
 /-- The ranks of the subbundles in the construction of the conformal symplectic normal bundle: the
 tangent image of rank `dim N` inside the Levi orthogonal of rank `dim M - dim N - 1`, with
 quotient of rank `dim M - 2 dim N - 1`. -/
-private theorem card_add_card_eq_finrank [Nonempty N] (hD : IsContactDistribution I ∞ D)
+theorem IsHorizontalMap.card_add_card_eq_finrank [Nonempty N] (hD : IsContactDistribution I ∞ D)
     {f : K} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
     (hinj : ∀ y, Injective (mfderiv J I f y)) :
     Fintype.card (Fin (finrank ℝ E')) + Fintype.card (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1)) =
       finrank ℝ (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) := by
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
   let y : N := Classical.arbitrary N
   have h := hfD.finrank_conformalSymplecticNormal_add hD (by simp)
     (hf.contMDiffAt.of_le (by simp)) (hinj y)
   rw [Fintype.card_fin, Fintype.card_fin, Module.finrank_fin_fun]
   omega
+
+/-- **The bundle of Levi orthogonals is a smooth vector bundle.** For a smooth isotropic immersion
+`f` into a smooth contact manifold `(M, D)`, the Levi orthogonals of the tangent images, a smooth
+subbundle of `f^* D` (`TauCeti.hasLocalContMDiffSubbundleFrames_orthogonalBilin`), form a smooth
+vector bundle. The conformal symplectic normal bundle is its quotient by the tangent images. -/
+theorem contMDiffVectorBundle_leviOrthogonalPullback (hD : IsContactDistribution I ∞ D)
+    {f : K} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
+    (hinj : ∀ y, Injective (mfderiv J I f y)) :
+    letI := hD.isContMDiffDistribution.fiberBundle
+    letI := hD.isContMDiffDistribution.vectorBundle
+    letI := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
+      (F' := Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D f)
+    letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).fiberBundle
+    letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).vectorBundle
+    ContMDiffVectorBundle ∞ (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)
+      (fun y ↦ leviOrthogonalPullback J D f y) J := by
+  let := hD.isContMDiffDistribution.fiberBundle
+  let := hD.isContMDiffDistribution.vectorBundle
+  have := hD.isContMDiffDistribution.contMDiffVectorBundle
+  have := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
+    (E := fun x ↦ D x) (IB := I) (IB' := J) hf
+  exact (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
 
 /-- **The conformal symplectic normal bundle.** Let `f : N → M` be a smooth isotropic immersion of
 a nonempty manifold into a smooth contact manifold `(M, D)`. Its conformal symplectic normal spaces
@@ -439,17 +478,13 @@ def conformalSymplecticNormalPrebundle [Nonempty N] (hD : IsContactDistribution 
       (fun y ↦ ConformalSymplecticNormal J D f y) :=
   letI := hD.isContMDiffDistribution.fiberBundle
   letI := hD.isContMDiffDistribution.vectorBundle
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have := hD.isContMDiffDistribution.contMDiffVectorBundle
-  have := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
-    (E := fun x ↦ D x) (IB := I) (IB' := J) hf
   letI := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
     (F' := Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D f)
   letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).fiberBundle
   letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).vectorBundle
-  have := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
+  have := contMDiffVectorBundle_leviOrthogonalPullback hD hf hfD hinj
   (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj).quotientPrebundle
-    (card_add_card_eq_finrank hD hf hfD hinj)
+    (hfD.card_add_card_eq_finrank hD hf hinj)
 
 open Classical in
 /-- **The conformal symplectic normal bundle is a quotient bundle.** The prebundle
@@ -461,23 +496,18 @@ quotient map and for local lifts of sections
 `TauCeti.HasLocalContMDiffSubbundleFrames.exists_contMDiffOn_mk_eq`) apply to it. -/
 theorem conformalSymplecticNormalPrebundle_eq [Nonempty N] (hD : IsContactDistribution I ∞ D)
     {f : K} (hf : ContMDiff J I ∞ f) (hfD : IsHorizontalMap J D f)
-    (hinj : ∀ y, Injective (mfderiv J I f y))
-    (hrank : Fintype.card (Fin (finrank ℝ E')) +
-      Fintype.card (Fin (finrank ℝ E - 2 * finrank ℝ E' - 1)) =
-        finrank ℝ (Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ)) :
+    (hinj : ∀ y, Injective (mfderiv J I f y)) :
     letI := hD.isContMDiffDistribution.fiberBundle
     letI := hD.isContMDiffDistribution.vectorBundle
-    haveI : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-    haveI := hD.isContMDiffDistribution.contMDiffVectorBundle
-    haveI := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
-      (E := fun x ↦ D x) (IB := I) (IB' := J) hf
     letI := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
       (F' := Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D f)
     letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).fiberBundle
     letI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).vectorBundle
-    haveI := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
+    haveI := contMDiffVectorBundle_leviOrthogonalPullback hD hf hfD hinj
     conformalSymplecticNormalPrebundle hD hf hfD hinj =
-      (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj).quotientPrebundle hrank := by
+      (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj).quotientPrebundle
+        (hfD.card_add_card_eq_finrank hD hf hinj) := by
+  unfold conformalSymplecticNormalPrebundle
   rfl
 
 /-- **The conformal symplectic normal bundle is a smooth vector bundle.** For a smooth isotropic
@@ -495,18 +525,14 @@ theorem contMDiffVectorBundle_conformalSymplecticNormalPrebundle [Nonempty N]
       (fun y ↦ ConformalSymplecticNormal J D f y) J := by
   let := hD.isContMDiffDistribution.fiberBundle
   let := hD.isContMDiffDistribution.vectorBundle
-  have : IsManifold I ((∞ : WithTop ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have := hD.isContMDiffDistribution.contMDiffVectorBundle
-  have := Bundle.Pullback.contMDiffVectorBundle (n := ∞) (F := Fin (finrank ℝ E - 1) → ℝ)
-    (E := fun x ↦ D x) (IB := I) (IB' := J) hf
   let := subbundleTopology (Fin (finrank ℝ E - 1) → ℝ) (E := (f : N → M) *ᵖ fun x ↦ D x)
     (F' := Fin (finrank ℝ E - (finrank ℝ E' + 1)) → ℝ) (leviOrthogonalPullback J D f)
   let := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).fiberBundle
   let := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).vectorBundle
-  have := (hasLocalContMDiffSubbundleFrames_orthogonalBilin hD hf hfD hinj).contMDiffVectorBundle
+  have := contMDiffVectorBundle_leviOrthogonalPullback hD hf hfD hinj
+  rw [conformalSymplecticNormalPrebundle_eq hD hf hfD hinj]
   exact (hasLocalContMDiffSubbundleFrames_comap_range hD hf hfD hinj
-    ).contMDiffVectorBundle_quotientPrebundle
-    (card_add_card_eq_finrank hD hf hfD hinj)
+    ).contMDiffVectorBundle_quotientPrebundle (hfD.card_add_card_eq_finrank hD hf hinj)
 
 end Bundle
 
