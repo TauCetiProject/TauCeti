@@ -30,19 +30,22 @@ constructed here.
 
 * `CategoryTheory.Sheaf.grpMul G`: the multiplication `G × G ⟶ G` of a sheaf of commutative
   groups.
-* `CategoryTheory.Sheaf.Torsor.mul P Q`: the contracted product `P ∧ Q`.
+* `CategoryTheory.Sheaf.Torsor.mul P Q`: the contracted product `P ∧ Q`, an extension of the
+  structure group of `P × Q` (`Torsor.mul_def`).
 * `CategoryTheory.Sheaf.Torsor.mulMk p q`: the class `[p, q]`, with `Torsor.mulMk_smul_left`,
   `Torsor.mulMk_smul_right` and `Torsor.mulMk_eq_mulMk_iff`; every section of `P ∧ Q` is locally
   such a class (`Torsor.isLocallySurjective_toMul`).
 * `CategoryTheory.Sheaf.Torsor.mulLift`: the morphism `P ∧ Q ⟶ R` induced by a bi-equivariant
   morphism `P × Q ⟶ R`; `Torsor.mul_hom_ext` is its uniqueness.
-* `CategoryTheory.Sheaf.Torsor.mulMap`: the contracted product of morphisms of torsors.
+* `CategoryTheory.Sheaf.Torsor.mulMap`: the contracted product of morphisms of torsors, with
+  `Torsor.toMul_mulMap` relating it to the product of morphisms.
 * `CategoryTheory.Sheaf.Torsor.mulAssocIso`, `CategoryTheory.Sheaf.Torsor.mulCommIso`,
   `CategoryTheory.Sheaf.Torsor.trivialMulIso` and `CategoryTheory.Sheaf.Torsor.mulTrivialIso`:
   associativity, commutativity and the unit isomorphisms, with their naturality and the
   pentagon, triangle and hexagon identities.
 * The instances `MonoidalCategory (Torsor G)` and `SymmetricCategory (Torsor G)`.
-* The instance `CommMonoid (NonabelianH1 G)`, with
+* The instance `CommMonoid (NonabelianH1 G)`, transferred from Mathlib's skeleton through
+  `CategoryTheory.Sheaf.NonabelianH1.mk_eq_toSkeleton`, with unit the existing base point and
   `CategoryTheory.Sheaf.NonabelianH1.mk_mul_mk`.
 
 ## References
@@ -88,6 +91,23 @@ lemma grpMul_hom_app_apply {U : Cᵒᵖ} (a b : G.obj.obj U) :
 
 end grpMul
 
+section Sections
+
+variable {F F' K K' : Sheaf J (Type w)}
+
+/-- A tensor product of morphisms of sheaves of sets acts componentwise on pairs of sections. This
+is the one place where sections of a product of sheaves of sets are evaluated by unfolding. -/
+private lemma tensorHom_hom_app (f : F ⟶ F') (g : K ⟶ K') {U : Cᵒᵖ} (x : (F ⊗ K).obj.obj U) :
+    (f ⊗ₘ g).hom.app U x = (f.hom.app U x.1, g.hom.app U x.2) :=
+  (rfl)
+
+/-- A composite of morphisms of sheaves of sets maps a section by the two morphisms in turn. -/
+private lemma comp_hom_app {F'' : Sheaf J (Type w)} (f : F ⟶ F') (g : F' ⟶ F'') {U : Cᵒᵖ}
+    (x : F.obj.obj U) : (f ≫ g).hom.app U x = g.hom.app U (f.hom.app U x) :=
+  (rfl)
+
+end Sections
+
 namespace Torsor
 
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
@@ -100,6 +120,11 @@ multiplication `G × G ⟶ G`. Its sections are locally the classes `[p, q]`, an
 unfolding it. -/
 def mul (P Q : Torsor G) : Torsor G :=
   (P.prod Q).map (grpMul G)
+
+/-- The contracted product is the extension of the structure group of `P × Q` along the
+multiplication `G × G ⟶ G`. -/
+lemma mul_def (P Q : Torsor G) : P.mul Q = (P.prod Q).map (grpMul G) :=
+  (rfl)
 
 variable {P Q R : Torsor G}
 
@@ -195,14 +220,10 @@ lemma mulMk_eq_mulMk_iff {U : Cᵒᵖ} {p p' : P.sheaf.obj.obj U} {q q' : Q.shea
 
 /-- Every section of the contracted product is locally a class `[p, q]`: over each object over
 which both `P` and `Q` have a section, it is the class of a pair of sections. -/
-instance isLocallySurjective_toMul : Presheaf.IsLocallySurjective J (toMul P Q).hom := by
-  refine ⟨fun {U} x ↦ J.superset_covering ?_ ((P.prod Q).coversTop U)⟩
-  rintro V a ⟨⟨W, ⟨y⟩⟩, ⟨b⟩⟩
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (G.obj.obj (op V))
-    (mulMk (P.sheaf.obj.map b.op y.1) (Q.sheaf.obj.map b.op y.2))
-    ((P.mul Q).sheaf.obj.map a.op x)
-  exact ⟨(g • P.sheaf.obj.map b.op y.1, Q.sheaf.obj.map b.op y.2), by
-    rw [toMul_hom_app, mulMk_smul_left, hg]⟩
+instance isLocallySurjective_toMul : Presheaf.IsLocallySurjective J (toMul P Q).hom :=
+  isLocallySurjective_of_exists_eq_smul (P := P.prod Q) (toMul P Q) fun _ x a ↦
+    ⟨(a • x.1, x.2), (toMul_hom_app _).trans
+      ((mulMk_smul_left a x.1 x.2).trans (congrArg (a • ·) (toMul_hom_app x).symm))⟩
 
 /-! ### Functoriality -/
 
@@ -210,19 +231,38 @@ section Functoriality
 
 variable {P' Q' P'' Q'' : Torsor G}
 
+/-- The composite `P × Q ⟶ P' × Q' ⟶ P' ∧ Q'` sends `(p, q)` to `[f p, g q]`. -/
+private lemma tensorHom_toMul_hom_app (f : P ⟶ P') (g : Q ⟶ Q') {U : Cᵒᵖ}
+    (p : P.sheaf.obj.obj U) (q : Q.sheaf.obj.obj U) :
+    ((f.hom ⊗ₘ g.hom) ≫ toMul P' Q').hom.app U (p, q) =
+      mulMk (f.hom.hom.app U p) (g.hom.hom.app U q) :=
+  (comp_hom_app _ _ _).trans ((congrArg _
+    (tensorHom_hom_app f.hom g.hom ((p, q) : (P.sheaf ⊗ Q.sheaf).obj.obj U))).trans
+      (toMul_hom_app _))
+
 /-- The morphism `P ∧ Q ⟶ P' ∧ Q'`, `[p, q] ↦ [f p, g q]`, induced by morphisms of torsors
 `f : P ⟶ P'` and `g : Q ⟶ Q'`. -/
 def mulMap (f : P ⟶ P') (g : Q ⟶ Q') : P.mul Q ⟶ P'.mul Q' :=
   mulLift ((f.hom ⊗ₘ g.hom) ≫ toMul P' Q')
-    (fun U a p _ ↦ (congrArg (mulMk · _) (f.map_smul U a p)).trans (mulMk_smul_left _ _ _))
-    (fun U a _ q ↦ (congrArg (mulMk _) (g.map_smul U a q)).trans (mulMk_smul_right _ _ _))
+    (fun U a p q ↦ (tensorHom_toMul_hom_app f g (a • p) q).trans <|
+      ((congrArg (mulMk · _) (f.map_smul U a p)).trans (mulMk_smul_left _ _ _)).trans
+        (congrArg (a • ·) (tensorHom_toMul_hom_app f g p q).symm))
+    (fun U a p q ↦ (tensorHom_toMul_hom_app f g p (a • q)).trans <|
+      ((congrArg (mulMk _) (g.map_smul U a q)).trans (mulMk_smul_right _ _ _)).trans
+        (congrArg (a • ·) (tensorHom_toMul_hom_app f g p q).symm))
 
 /-- The morphism induced by `f` and `g` sends `[p, q]` to `[f p, g q]`. -/
 @[simp]
 lemma mulMap_hom_app_mulMk (f : P ⟶ P') (g : Q ⟶ Q') {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
     (q : Q.sheaf.obj.obj U) :
     (mulMap f g).hom.hom.app U (mulMk p q) = mulMk (f.hom.hom.app U p) (g.hom.hom.app U q) :=
-  mulLift_hom_app_mulMk _ _ _ p q
+  (mulLift_hom_app_mulMk _ _ _ p q).trans (tensorHom_toMul_hom_app f g p q)
+
+/-- The canonical morphism `P × Q ⟶ P ∧ Q` is natural in the two torsors. -/
+@[reassoc]
+lemma toMul_mulMap (f : P ⟶ P') (g : Q ⟶ Q') :
+    toMul P Q ≫ (mulMap f g).hom = (f.hom ⊗ₘ g.hom) ≫ toMul P' Q' :=
+  toMul_mulLift _ _ _
 
 /-- The identities of `P` and `Q` induce the identity of `P ∧ Q`. -/
 @[simp]
@@ -260,11 +300,7 @@ private def actLeft : (trivial G).sheaf ⊗ P.sheaf ⟶ P.sheaf :=
 variable (P) in
 /-- The action `P × G ⟶ P`, `(p, a) ↦ a • p`. -/
 private def actRight : P.sheaf ⊗ (trivial G).sheaf ⟶ P.sheaf :=
-  ObjectProperty.homMk
-    { app U := ↾fun x ↦ @HSMul.hSMul (G.obj.obj U) (P.sheaf.obj.obj U) _ _ x.2 x.1
-      naturality U V f := by
-        ext x
-        exact (P.map_smul f _ _).symm }
+  (β_ P.sheaf (trivial G).sheaf).hom ≫ actLeft P
 
 variable (P) in
 /-- The trivial torsor is a left unit for the contracted product: `G ∧ P ≅ P`,
@@ -323,11 +359,7 @@ section Comm
 variable (P Q) in
 /-- The morphism `P × Q ⟶ Q ∧ P`, `(p, q) ↦ [q, p]`. -/
 private def swapMul : P.sheaf ⊗ Q.sheaf ⟶ (Q.mul P).sheaf :=
-  ObjectProperty.homMk
-    { app U := ↾fun x ↦ mulMk x.2 x.1
-      naturality U V f := by
-        ext x
-        exact (map_mulMk f x.2 x.1).symm }
+  (β_ P.sheaf Q.sheaf).hom ≫ toMul Q P
 
 variable (P Q) in
 /-- The contracted product is commutative: `P ∧ Q ≅ Q ∧ P`, `[p, q] ↦ [q, p]`. -/
@@ -371,37 +403,43 @@ private lemma grpMul₃_hom_app {U : Cᵒᵖ} (x : ((G ⊗ G) ⊗ G).obj.obj U) 
 
 /-- The morphism `(P × Q) × R ⟶ (P ∧ Q) ∧ R`, `((p, q), r) ↦ [[p, q], r]`. -/
 private def toMulMulLeft : (P.sheaf ⊗ Q.sheaf) ⊗ R.sheaf ⟶ ((P.mul Q).mul R).sheaf :=
-  ObjectProperty.homMk
-    { app U := ↾fun x ↦ mulMk (mulMk x.1.1 x.1.2) x.2
-      naturality U V f := by
-        ext x
-        exact ((map_mulMk f _ _).trans (congrArg (mulMk · _) (map_mulMk f _ _))).symm }
+  toMul P Q ▷ R.sheaf ≫ toMul (P.mul Q) R
 
 /-- The morphism `(P × Q) × R ⟶ P ∧ (Q ∧ R)`, `((p, q), r) ↦ [p, [q, r]]`. -/
 private def toMulMulRight : (P.sheaf ⊗ Q.sheaf) ⊗ R.sheaf ⟶ (P.mul (Q.mul R)).sheaf :=
-  ObjectProperty.homMk
-    { app U := ↾fun x ↦ mulMk x.1.1 (mulMk x.1.2 x.2)
-      naturality U V f := by
-        ext x
-        exact ((map_mulMk f _ _).trans (congrArg (mulMk _) (map_mulMk f _ _))).symm }
+  (α_ P.sheaf Q.sheaf R.sheaf).hom ≫ P.sheaf ◁ toMul Q R ≫ toMul P (Q.mul R)
+
+variable {P Q R} in
+/-- The morphism `(P × Q) × R ⟶ (P ∧ Q) ∧ R` sends `((p, q), r)` to `[[p, q], r]`. -/
+private lemma toMulMulLeft_hom_app {U : Cᵒᵖ}
+    (x : ((P.sheaf ⊗ Q.sheaf) ⊗ R.sheaf).obj.obj U) :
+    (toMulMulLeft P Q R).hom.app U x = mulMk (mulMk x.1.1 x.1.2) x.2 :=
+  (rfl)
+
+variable {P Q R} in
+/-- The morphism `(P × Q) × R ⟶ P ∧ (Q ∧ R)` sends `((p, q), r)` to `[p, [q, r]]`. -/
+private lemma toMulMulRight_hom_app {U : Cᵒᵖ}
+    (x : ((P.sheaf ⊗ Q.sheaf) ⊗ R.sheaf).obj.obj U) :
+    (toMulMulRight P Q R).hom.app U x = mulMk x.1.1 (mulMk x.1.2 x.2) :=
+  (rfl)
 
 /-- The morphism `P ∧ Q ∧ R ⟶ (P ∧ Q) ∧ R`, `[p, q, r] ↦ [[p, q], r]`. -/
 private def mul₃ToLeft : mul₃ P Q R ⟶ (P.mul Q).mul R :=
-  ((P.prod Q).prod R).mapLift (toMulMulLeft P Q R) fun U g x ↦
-    -- The left side is, by definition, the class of the componentwise translate of `x`.
-    calc mulMk (mulMk (g.1.1 • x.1.1) (g.1.2 • x.1.2)) (g.2 • x.2)
-        = (g.2 * (g.1.2 * g.1.1)) • mulMk (mulMk x.1.1 x.1.2) x.2 := by
-          simp only [mulMk_smul_left, mulMk_smul_right, smul_smul]
-      _ = _ := by rw [grpMul₃_hom_app, mul_comm' g.2, mul_comm' g.1.2]; rfl
+  ((P.prod Q).prod R).mapLift (toMulMulLeft P Q R) fun U g x ↦ by
+    let _ : CommGroup (G.obj.obj U) := { mul_comm := mul_comm' }
+    refine (toMulMulLeft_hom_app (g • x)).trans
+      (Eq.trans ?_ (congrArg (_ • ·) (toMulMulLeft_hom_app x).symm))
+    rw [grpMul₃_hom_app]
+    simp only [prod_smul, mulMk_smul_left, mulMk_smul_right, smul_smul, mul_comm, mul_left_comm]
 
 /-- The morphism `P ∧ Q ∧ R ⟶ P ∧ (Q ∧ R)`, `[p, q, r] ↦ [p, [q, r]]`. -/
 private def mul₃ToRight : mul₃ P Q R ⟶ P.mul (Q.mul R) :=
-  ((P.prod Q).prod R).mapLift (toMulMulRight P Q R) fun U g x ↦
-    -- The left side is, by definition, the class of the componentwise translate of `x`.
-    calc mulMk (g.1.1 • x.1.1) (mulMk (g.1.2 • x.1.2) (g.2 • x.2))
-        = (g.2 * (g.1.2 * g.1.1)) • mulMk x.1.1 (mulMk x.1.2 x.2) := by
-          simp only [mulMk_smul_left, mulMk_smul_right, smul_smul, mul_assoc]
-      _ = _ := by rw [grpMul₃_hom_app, mul_comm' g.2, mul_comm' g.1.2]; rfl
+  ((P.prod Q).prod R).mapLift (toMulMulRight P Q R) fun U g x ↦ by
+    let _ : CommGroup (G.obj.obj U) := { mul_comm := mul_comm' }
+    refine (toMulMulRight_hom_app (g • x)).trans
+      (Eq.trans ?_ (congrArg (_ • ·) (toMulMulRight_hom_app x).symm))
+    rw [grpMul₃_hom_app]
+    simp only [prod_smul, mulMk_smul_left, mulMk_smul_right, smul_smul, mul_comm, mul_left_comm]
 
 /-- The contracted product is associative: `(P ∧ Q) ∧ R ≅ P ∧ (Q ∧ R)`,
 `[[p, q], r] ↦ [p, [q, r]]`. -/
@@ -472,8 +510,7 @@ lemma mulAssocIso_hom_naturality (f : P ⟶ P') (g : Q ⟶ Q') (k : R ⟶ R') :
 lemma trivialMulIso_hom_naturality (f : P ⟶ Q) :
     mulMap (𝟙 (trivial G)) f ≫ (trivialMulIso Q).hom = (trivialMulIso P).hom ≫ f :=
   mul_hom_ext fun U a p ↦ by
-    simp only [comp_hom, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, mulMap_hom_app_mulMk, trivialMulIso_hom_hom_hom_app_mulMk]
+    simp only [comp_hom_hom_app, mulMap_hom_app_mulMk, trivialMulIso_hom_hom_hom_app_mulMk]
     exact (f.map_smul U a p).symm
 
 /-- The right unit isomorphism `P ∧ G ≅ P` is natural in `P`. -/
@@ -481,8 +518,7 @@ lemma trivialMulIso_hom_naturality (f : P ⟶ Q) :
 lemma mulTrivialIso_hom_naturality (f : P ⟶ Q) :
     mulMap f (𝟙 (trivial G)) ≫ (mulTrivialIso Q).hom = (mulTrivialIso P).hom ≫ f :=
   mul_hom_ext fun U p a ↦ by
-    simp only [comp_hom, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, mulMap_hom_app_mulMk, mulTrivialIso_hom_hom_hom_app_mulMk]
+    simp only [comp_hom_hom_app, mulMap_hom_app_mulMk, mulTrivialIso_hom_hom_hom_app_mulMk]
     exact (f.map_smul U a p).symm
 
 /-- The commutativity isomorphism is natural in the two torsors. -/
@@ -530,9 +566,8 @@ lemma mulAssocIso_triangle :
     (mulAssocIso P (trivial G) Q).hom ≫ mulMap (𝟙 P) (trivialMulIso Q).hom =
       mulMap (mulTrivialIso P).hom (𝟙 Q) :=
   mul_mul_hom_ext fun U p a q ↦ by
-    simp only [comp_hom, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
-      ConcreteCategory.comp_apply, mulAssocIso_hom_hom_hom_app_mulMk, mulMap_hom_app_mulMk,
-      id_hom, trivialMulIso_hom_hom_hom_app_mulMk, mulTrivialIso_hom_hom_hom_app_mulMk]
+    simp only [comp_hom_hom_app, mulAssocIso_hom_hom_hom_app_mulMk, mulMap_hom_app_mulMk,
+      trivialMulIso_hom_hom_hom_app_mulMk, mulTrivialIso_hom_hom_hom_app_mulMk]
     exact (mulMk_smul_right a p q).trans (mulMk_smul_left a p q).symm
 
 /-- The first hexagon identity relating the commutativity and associativity isomorphisms of the
@@ -626,15 +661,39 @@ namespace NonabelianH1
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
   {G : Sheaf J GrpCat.{w}} [∀ U, IsMulCommutative (G.obj.obj U)]
 
-/-- The classes of torsors under a sheaf of commutative groups form a commutative monoid under
-the contracted product, with the class of the trivial torsor as unit. -/
-instance : CommMonoid (NonabelianH1 G) :=
-  inferInstanceAs (CommMonoid (Skeleton (Torsor G)))
+omit [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
+  [∀ U, IsMulCommutative (G.obj.obj U)] in
+/-- The class of a torsor is its class in Mathlib's skeleton of the category of torsors: the
+bridge through which the monoid structure of the skeleton is transferred. -/
+lemma mk_eq_toSkeleton (P : Torsor G) : mk P = toSkeleton P :=
+  (rfl)
 
+/-- The unit of the skeleton of the monoidal category of torsors is the class of the trivial
+torsor. -/
+private lemma skeleton_one_eq : (1 : Skeleton (Torsor G)) = toSkeleton (Torsor.trivial G) :=
+  Skeleton.one_eq.trans (congrArg toSkeleton Torsor.tensorUnit_eq_trivial)
+
+/-- The classes of torsors under a sheaf of commutative groups form a commutative monoid under
+the contracted product, with the class of the trivial torsor as unit. The multiplication is
+that of Mathlib's skeleton of the symmetric monoidal category of torsors, and the unit is the
+existing base point `1` of `NonabelianH1 G`. -/
+instance : CommMonoid (NonabelianH1 G) where
+  toMul := inferInstanceAs (Mul (Skeleton (Torsor G)))
+  mul_assoc := mul_assoc (G := Skeleton (Torsor G))
+  one := 1
+  one_mul x := by
+    rw [one_def, mk_eq_toSkeleton, ← skeleton_one_eq]
+    exact one_mul (M := Skeleton (Torsor G)) x
+  mul_one x := by
+    rw [one_def, mk_eq_toSkeleton, ← skeleton_one_eq]
+    exact mul_one (M := Skeleton (Torsor G)) x
+  mul_comm := mul_comm (G := Skeleton (Torsor G))
+
+/-- The product of the classes of two torsors is the class of their contracted product. -/
 @[simp]
 lemma mk_mul_mk (P Q : Torsor G) : mk P * mk Q = mk (P.mul Q) := by
-  -- The two class constructors use the same quotient and inherited multiplication.
-  convert! (Skeleton.toSkeleton_tensorObj P Q).symm using 1
+  rw [mk_eq_toSkeleton, mk_eq_toSkeleton, mk_eq_toSkeleton, ← Torsor.tensorObj_eq_mul]
+  exact (Skeleton.toSkeleton_tensorObj P Q).symm
 
 end NonabelianH1
 

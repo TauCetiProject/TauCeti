@@ -32,6 +32,8 @@ relative to a fixed family of objects; here no covering is chosen.
 
 * `CategoryTheory.Sheaf.Torsor G`: a `G`-torsor; the action is objectwise and compatible with
   restriction, the local nonemptiness is phrased with Mathlib's `GrothendieckTopology.CoversTop`.
+* `CategoryTheory.Sheaf.Torsor.isLocallySurjective_of_exists_eq_smul`: a morphism of sheaves of
+  sets between torsors whose image is stable under the action is locally surjective.
 * `CategoryTheory.Sheaf.Torsor.isIso_hom`: a morphism of `G`-torsors is an isomorphism of
   sheaves, so the category of `G`-torsors is a groupoid.
 * `CategoryTheory.Sheaf.Torsor.trivial G`: the trivial torsor, `G` acting on itself by left
@@ -138,6 +140,11 @@ lemma id_hom (P : Torsor G) : Hom.hom (𝟙 P) = 𝟙 P.sheaf := rfl
 @[simp]
 lemma comp_hom (f : P ⟶ Q) (g : Q ⟶ R) : (f ≫ g).hom = f.hom ≫ g.hom := rfl
 
+/-- A composite of morphisms of torsors maps a section by the two morphisms in turn. -/
+lemma comp_hom_hom_app (f : P ⟶ Q) (g : Q ⟶ R) {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
+    (f ≫ g).hom.hom.app U p = g.hom.hom.app U (f.hom.hom.app U p) :=
+  rfl
+
 /-- The inverse of an isomorphism of torsors undoes its forward map on sections. -/
 @[simp]
 lemma _root_.CategoryTheory.Iso.torsor_hom_inv_id_apply (e : P ≅ Q) {U : Cᵒᵖ}
@@ -152,16 +159,27 @@ lemma injective_app (f : P ⟶ Q) (U : Cᵒᵖ) : Function.Injective (f.hom.hom.
   obtain rfl : g = 1 := Q.smul_left_injective _ (h.symm.trans (one_smul _ _).symm)
   exact (one_smul _ _).symm
 
+/-- A morphism of sheaves of sets from a `G`-torsor to an `H`-torsor is locally surjective as
+soon as its image is stable under the action of `H`: over an object where the source has a
+section `p`, every section of the target is a translate of the image of `p`. -/
+lemma isLocallySurjective_of_exists_eq_smul {H : Sheaf J GrpCat.{w}} {Q : Torsor H}
+    (f : P.sheaf ⟶ Q.sheaf)
+    (hf : ∀ (U : Cᵒᵖ) (p : P.sheaf.obj.obj U) (h : H.obj.obj U),
+      ∃ p' : P.sheaf.obj.obj U, f.hom.app U p' = h • f.hom.app U p) :
+    Presheaf.IsLocallySurjective J f.hom := by
+  refine ⟨fun {U} q ↦ J.superset_covering ?_ (P.coversTop U)⟩
+  rintro V a ⟨⟨W, ⟨p⟩⟩, ⟨b⟩⟩
+  obtain ⟨h, hh⟩ := MulAction.exists_smul_eq (H.obj.obj (op V))
+    (f.hom.app _ (P.sheaf.obj.map b.op p)) (Q.sheaf.obj.map a.op q)
+  obtain ⟨p', hp'⟩ := hf _ (P.sheaf.obj.map b.op p) h
+  exact ⟨p', hp'.trans hh⟩
+
 /-- A morphism of torsors is an isomorphism of the underlying sheaves: it is injective on
 sections, and locally surjective because the source is locally nonempty. -/
-instance isIso_hom (f : P ⟶ Q) : IsIso f.hom := by
-  refine (Sheaf.isLocallyBijective_iff_isIso (A := Type w) f.hom).1
-    ⟨Presheaf.isLocallyInjective_of_injective _ _ (injective_app f), ⟨fun {U} q ↦ ?_⟩⟩
-  refine J.superset_covering ?_ (P.coversTop U)
-  rintro V a ⟨⟨W, ⟨p⟩⟩, ⟨b⟩⟩
-  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq (G.obj.obj (op V))
-    (f.hom.hom.app _ (P.sheaf.obj.map b.op p)) (Q.sheaf.obj.map a.op q)
-  exact ⟨g • P.sheaf.obj.map b.op p, by rw [f.map_smul, hg]⟩
+instance isIso_hom (f : P ⟶ Q) : IsIso f.hom :=
+  (Sheaf.isLocallyBijective_iff_isIso (A := Type w) f.hom).1
+    ⟨Presheaf.isLocallyInjective_of_injective _ _ (injective_app f),
+      isLocallySurjective_of_exists_eq_smul f.hom fun U p g ↦ ⟨g • p, f.map_smul U g p⟩⟩
 
 /-- Every morphism of torsors is an isomorphism. -/
 instance : IsGroupoid (Torsor G) where
