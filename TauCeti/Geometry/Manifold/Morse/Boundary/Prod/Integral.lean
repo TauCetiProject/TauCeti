@@ -633,7 +633,8 @@ theorem signedMorseBoundaryCoeff_prod_eq_zero (hXs : hX.IsMorseSmale) (hYs : hY.
   set e := criticalPointsCompFstAddCompSndEquiv f g hX.mdifferentiable hY.mdifferentiable
   -- Whether a coefficient vanishes does not depend on the orientation data, so it suffices to
   -- treat the product orientation data.
-  rw [signedMorseBoundaryCoeff_eq_zero_iff (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) 𝔬P
+  rw [signedMorseBoundaryCoeff_eq_zero_iff_eq_zero
+    (𝔬.prod 𝔬' hX.mdifferentiable hY.mdifferentiable) 𝔬P
     (hf.comp_fst_add_comp_snd_chartedSpaceProd hg), ← e.symm_apply_apply P,
     ← e.symm_apply_apply P', hXs.signedMorseBoundaryCoeff_prod hf hg 𝔬 𝔬' hYs]
   simp [h𝔬, h𝔬']

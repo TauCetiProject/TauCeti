@@ -47,6 +47,7 @@ homology of the powers of spheres, among them the tori `Tⁿ⁺¹`
 ## Main results
 
 * `TauCeti.IsMorse.iteratedProdSum`: the iterated separated sum of a Morse function is Morse.
+* `ContMDiff.iteratedProdSum`: the iterated separated sum of a `C^k` function is `C^k`.
 * `TauCeti.IsAdaptedPseudoGradient.iteratedProd` and
   `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.iteratedProd`: the iterated product field of an
   adapted pseudo-gradient is an adapted pseudo-gradient, Morse–Smale when the factor is.
@@ -94,6 +95,7 @@ theorem iteratedProdSum_zero (f : M → ℝ) : iteratedProdSum f 0 = f :=
 
 /-- On `n + 2` copies of `M`, the iterated separated sum of `f` is the separated sum of the one on
 `n + 1` copies and of `f`. -/
+@[simp]
 theorem iteratedProdSum_succ (f : M → ℝ) (n : ℕ) :
     iteratedProdSum f (n + 1) = iteratedProdSum f n ∘ Prod.fst + f ∘ Prod.snd :=
   (rfl)
@@ -116,6 +118,7 @@ theorem iteratedProdField_zero (X : (x : M) → TangentSpace 𝓘(ℝ, E) x) :
 
 /-- On `n + 2` copies of `M`, the iterated product field of `X` is the product of the one on
 `n + 1` copies and of `X`. -/
+@[simp]
 theorem iteratedProdField_succ (X : (x : M) → TangentSpace 𝓘(ℝ, E) x) (n : ℕ) :
     iteratedProdField X (n + 1) = Manifold.prodVectorField (iteratedProdField X n) X :=
   (rfl)
@@ -130,6 +133,12 @@ theorem IsMorse.iteratedProdSum (hf : IsMorse 𝓘(ℝ, E) f) :
     ∀ n, IsMorse 𝓘(ℝ, IteratedProdModel E n) (iteratedProdSum f n)
   | 0 => hf
   | n + 1 => (IsMorse.iteratedProdSum hf n).comp_fst_add_comp_snd_chartedSpaceProd hf
+
+/-- **The iterated separated sum of a `C^k` function is `C^k`.** -/
+theorem _root_.ContMDiff.iteratedProdSum {k : WithTop ℕ∞} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) k f) :
+    ∀ n, ContMDiff 𝓘(ℝ, IteratedProdModel E n) 𝓘(ℝ) k (iteratedProdSum f n)
+  | 0 => hf
+  | n + 1 => ((ContMDiff.iteratedProdSum hf n).comp contMDiff_fst).add (hf.comp contMDiff_snd)
 
 /-- On one copy of `M`, the critical counts of the iterated separated sum of `f` are those of `f`,
 for the model `𝓘(ℝ, E)`. Not a `simp` lemma: `simp` first rewrites `iteratedProdSum f 0` to `f`
@@ -148,14 +157,8 @@ theorem criticalCount_iteratedProdSum_succ [FiniteDimensional ℝ E]
     criticalCount 𝓘(ℝ, IteratedProdModel E (n + 1)) (iteratedProdSum f (n + 1)) k =
       ∑ ij ∈ Finset.antidiagonal k,
         criticalCount 𝓘(ℝ, IteratedProdModel E n) (iteratedProdSum f n) ij.1 *
-          criticalCount 𝓘(ℝ, E) f ij.2 := by
-  have hfn : ∀ n, ContMDiff 𝓘(ℝ, IteratedProdModel E n) 𝓘(ℝ) 2 (iteratedProdSum f n) := by
-    intro n
-    induction n with
-    | zero => exact hf
-    | succ n ih =>
-      exact (ih.comp contMDiff_fst).add (hf.comp contMDiff_snd)
-  exact criticalCount_comp_fst_add_comp_snd_chartedSpaceProd (hfn n) hf k
+          criticalCount 𝓘(ℝ, E) f ij.2 :=
+  criticalCount_comp_fst_add_comp_snd_chartedSpaceProd (hf.iteratedProdSum n) hf k
 
 namespace IsAdaptedPseudoGradient
 
@@ -186,7 +189,7 @@ theorem IsMorseSmale.signedMorseBoundaryCoeff_iteratedProd_eq_zero (h : hX.IsMor
     (h𝔬 : ∀ p q, hX.signedMorseBoundaryCoeff 𝔬 p q = 0) :
     ∀ (n : ℕ) (𝔬n : MorseOrientation (iteratedProdSum f n) (iteratedProdField X n)) (p q),
       (hX.iteratedProd n).signedMorseBoundaryCoeff 𝔬n p q = 0
-  | 0, 𝔬n, p, q => (signedMorseBoundaryCoeff_eq_zero_iff 𝔬 𝔬n hf p q).2 (h𝔬 p q)
+  | 0, 𝔬n, p, q => (signedMorseBoundaryCoeff_eq_zero_iff_eq_zero 𝔬 𝔬n hf p q).2 (h𝔬 p q)
   | n + 1, 𝔬n, p, q => by
     -- Each step is a binary product, whose first factor has vanishing boundary for any choice of
     -- orientation data, by induction.
@@ -203,10 +206,9 @@ theorem IsMorseSmale.signedMorseBoundary_iteratedProd_eq_zero (h : hX.IsMorseSma
     (h𝔬 : ∀ p q, hX.signedMorseBoundaryCoeff 𝔬 p q = 0) (n : ℕ)
     (𝔬n : MorseOrientation (iteratedProdSum f n) (iteratedProdField X n))
     (hfn : IsMorse 𝓘(ℝ, IteratedProdModel E n) (iteratedProdSum f n)) (R : Type*) [Ring R] :
-    (hX.iteratedProd n).signedMorseBoundary 𝔬n hfn R = 0 :=
-  Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ by
-    rw [signedMorseBoundary_single_apply, h.signedMorseBoundaryCoeff_iteratedProd_eq_zero hf h𝔬,
-      Int.cast_zero, mul_zero, LinearMap.zero_apply, Finsupp.coe_zero, Pi.zero_apply]
+    (hX.iteratedProd n).signedMorseBoundary 𝔬n hfn R = 0 := by
+  ext p q
+  simp [h.signedMorseBoundaryCoeff_iteratedProd_eq_zero hf h𝔬]
 
 end IsAdaptedPseudoGradient
 
