@@ -283,9 +283,7 @@ theorem exists_rep (x : ConcordanceClass I M) :
 def reverse (x : ConcordanceClass I M) : ConcordanceClass I M :=
   ConcordanceClass.lift (fun K => K.reverse.toConcordanceClass)
     (fun K₁ K₂ h => by
-      have hrev (K : SmoothCircleEmbedding I M) : K.reverse = K.compDiffeomorph circleReflection :=
-        SmoothEmbedding.ext fun z => by simp
-      rw [hrev K₁, hrev K₂]
+      rw [SmoothCircleEmbedding.reverse_def, SmoothCircleEmbedding.reverse_def]
       exact (h.compDiffeomorph circleReflection).toConcordanceClass_eq) x
 
 /-- The reverse of the concordance class of `K` is the concordance class of `K.reverse`. -/
@@ -436,19 +434,21 @@ theorem transDiffeomorph_unitSphereDiffeomorph_eq_refl_of_det_eq_one {e : E ≃�
   rw [transDiffeomorph_unitSphereDiffeomorph_eq_of_det_eq (e₂ := .refl ℝ E) (by simpa using he),
     LinearIsometryEquiv.unitSphereDiffeomorph_refl, transDiffeomorph_refl]
 
+private theorem exists_det_eq_neg_one_of_fact (E : Type*) [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] (n : ℕ) [Fact (finrank ℝ E = n + 1)] :
+    ∃ e : E ≃ₗᵢ[ℝ] E, (LinearEquiv.det e.toLinearEquiv : ℝ) = -1 := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ)
+    (by rw [(Fact.out : finrank ℝ E = n + 1)]; omega)
+  exact TauCeti.exists_det_eq_neg_one (F := E)
+
 private def defaultReflection (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (n : ℕ) [Fact (finrank ℝ E = n + 1)] : E ≃ₗᵢ[ℝ] E :=
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ)
-    (by rw [(Fact.out : finrank ℝ E = n + 1)]; omega)
-  (TauCeti.exists_det_eq_neg_one (F := E)).choose
+  (exists_det_eq_neg_one_of_fact E n).choose
 
 private theorem det_defaultReflection :
-    (LinearEquiv.det (defaultReflection E n).toLinearEquiv : ℝ) = -1 := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ)
-    (by rw [(Fact.out : finrank ℝ E = n + 1)]; omega)
-  exact (TauCeti.exists_det_eq_neg_one (F := E)).choose_spec
+    (LinearEquiv.det (defaultReflection E n).toLinearEquiv : ℝ) = -1 :=
+  (exists_det_eq_neg_one_of_fact E n).choose_spec
 
 /-- **Canonical mirroring on smooth concordance classes** in the unit sphere `Sⁿ` of `E`:
 transport along any linear isometry of `E` of determinant `-1`. -/
@@ -591,30 +591,6 @@ variable [Fact (3 ≤ n)]
 private theorem two_le_of_fact (n : ℕ) [Fact (3 ≤ n)] : 2 ≤ n :=
   le_trans (by decide) (Fact.out : 3 ≤ n)
 
-/-- The zero smooth concordance class in `Sⁿ` (`n ≥ 3`): the class of any great circle. -/
-instance instZero : Zero (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
-  zero :=
-    let ι₀ := (TauCeti.nonempty_linearIsometry_complex (E := E) (by
-      have := (Fact.out : finrank ℝ E = n + 1)
-      have := (Fact.out : 3 ≤ n)
-      omega)).some
-    (greatCircle (n := n) ι₀).toConcordanceClass
-
-/-- Addition of smooth concordance classes in `Sⁿ` (`n ≥ 3`), given by the connected sum of
-positioned representatives. -/
-instance instAdd : Add (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
-  add x y :=
-    let hn2 : 2 ≤ n := le_trans (by decide) (Fact.out : 3 ≤ n)
-    let ι₀ := (TauCeti.nonempty_linearIsometry_complex (E := E) (by
-      have := (Fact.out : finrank ℝ E = n + 1)
-      have := (Fact.out : 3 ≤ n)
-      omega)).some
-    (connectedSum
-      (x.exists_rep_isConnectedSumPosition hn2 ι₀).choose
-      (y.exists_rep_isConnectedSumPosition hn2 ι₀).choose
-      (x.exists_rep_isConnectedSumPosition hn2 ι₀).choose_spec.1
-      (y.exists_rep_isConnectedSumPosition hn2 ι₀).choose_spec.1).toConcordanceClass
-
 private def defaultGreatCircle (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     (n : ℕ) [Fact (finrank ℝ E = n + 1)] [Fact (3 ≤ n)] : ℂ →ₗᵢ[ℝ] E :=
   (TauCeti.nonempty_linearIsometry_complex (E := E) (by
@@ -634,36 +610,43 @@ private theorem toConcordanceClass_posRep (x : ConcordanceClass (𝓡 n) (sphere
     (posRep x).toConcordanceClass = x :=
   (x.exists_rep_isConnectedSumPosition (two_le_of_fact n) (defaultGreatCircle E n)).choose_spec.2
 
-private theorem zero_eq_defaultGreatCircle :
+-- `@[instance_reducible] def` with `attribute [instance]` keeps the instance bodies unexposed under
+-- `module` so they can reference the `private` helpers `defaultGreatCircle` and `posRep` directly.
+/-- The zero smooth concordance class in `Sⁿ` (`n ≥ 3`): the class of any great circle. -/
+@[instance_reducible]
+def instZero : Zero (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
+  zero := (greatCircle (n := n) (defaultGreatCircle E n)).toConcordanceClass
+
+/-- Addition of smooth concordance classes in `Sⁿ` (`n ≥ 3`), given by the connected sum of
+positioned representatives. -/
+@[instance_reducible]
+def instAdd : Add (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
+  add x y :=
+    (connectedSum (posRep x) (posRep y)
+      (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass
+
+attribute [instance] instZero instAdd
+
+private theorem zero_def :
     (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) =
-      (greatCircle (n := n) (defaultGreatCircle E n)).toConcordanceClass :=
-  toConcordanceClass_greatCircle_eq (two_le_of_fact n) _ (defaultGreatCircle E n)
+      (greatCircle (n := n) (defaultGreatCircle E n)).toConcordanceClass := by
+  rfl
+
+private theorem add_def (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
+    x + y = (connectedSum (posRep x) (posRep y)
+      (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass := by
+  rfl
 
 private theorem add_toConcordanceClass_eq {ι : ℂ →ₗᵢ[ℝ] E}
     {K₁ K₂ : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)}
     (h₁ : IsConnectedSumPosition ι K₁) (h₂ : IsConnectedSumPosition ι K₂) :
     K₁.toConcordanceClass + K₂.toConcordanceClass =
       (connectedSum K₁ K₂ h₁ h₂).toConcordanceClass := by
-  obtain ⟨ι₀, hp₁, hp₂, hadd⟩ :
-      ∃ (ι₀ : ℂ →ₗᵢ[ℝ] E)
-        (hp₁ : ∃ L₁, IsConnectedSumPosition ι₀ L₁ ∧ L₁.toConcordanceClass = K₁.toConcordanceClass)
-        (hp₂ : ∃ L₂, IsConnectedSumPosition ι₀ L₂ ∧ L₂.toConcordanceClass = K₂.toConcordanceClass),
-        K₁.toConcordanceClass + K₂.toConcordanceClass =
-          (connectedSum hp₁.choose hp₂.choose
-            hp₁.choose_spec.1 hp₂.choose_spec.1).toConcordanceClass :=
-    ⟨_, _, _, rfl⟩
-  rw [hadd]
+  rw [add_def]
   exact (concordant_connectedSum_of_concordant (Fact.out : 3 ≤ n)
-    hp₁.choose_spec.1 hp₂.choose_spec.1 h₁ h₂
-    (toConcordanceClass_eq_iff.1 hp₁.choose_spec.2)
-    (toConcordanceClass_eq_iff.1 hp₂.choose_spec.2)).toConcordanceClass_eq
-
-private theorem add_eq_posRep (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
-    x + y = (connectedSum (posRep x) (posRep y)
-      (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass := by
-  conv_lhs => rw [← toConcordanceClass_posRep x, ← toConcordanceClass_posRep y]
-  exact add_toConcordanceClass_eq (isConnectedSumPosition_posRep x)
-    (isConnectedSumPosition_posRep y)
+    (isConnectedSumPosition_posRep _) (isConnectedSumPosition_posRep _) h₁ h₂
+    (toConcordanceClass_eq_iff.1 (toConcordanceClass_posRep _))
+    (toConcordanceClass_eq_iff.1 (toConcordanceClass_posRep _))).toConcordanceClass_eq
 
 /-- **The smooth knot concordance monoid.** In a sphere `Sⁿ` of dimension `n ≥ 3`, smooth
 concordance classes form an abelian monoid under the connected sum, with the class of any great
@@ -671,7 +654,7 @@ circle as zero. -/
 instance instAddCommMonoid : AddCommMonoid (ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) where
   zero_add x := by
     let ι₀ := defaultGreatCircle E n
-    rw [zero_eq_defaultGreatCircle]
+    rw [zero_def]
     conv_lhs => rw [← toConcordanceClass_posRep x]
     rw [add_toConcordanceClass_eq (isConnectedSumPosition_greatCircle ι₀)
       (isConnectedSumPosition_posRep x)]
@@ -680,18 +663,13 @@ instance instAddCommMonoid : AddCommMonoid (ConcordanceClass (𝓡 n) (sphere (0
       |>.toConcordanceClass_eq.trans (toConcordanceClass_posRep x)
   add_zero x := by
     let ι₀ := defaultGreatCircle E n
-    rw [zero_eq_defaultGreatCircle]
+    rw [zero_def]
     conv_lhs => rw [← toConcordanceClass_posRep x]
     rw [add_toConcordanceClass_eq (isConnectedSumPosition_posRep x)
       (isConnectedSumPosition_greatCircle ι₀),
       connectedSum_greatCircle, toConcordanceClass_posRep]
   add_comm x y := by
-    conv_lhs => rw [← toConcordanceClass_posRep x, ← toConcordanceClass_posRep y]
-    conv_rhs => rw [← toConcordanceClass_posRep y, ← toConcordanceClass_posRep x]
-    rw [add_toConcordanceClass_eq (isConnectedSumPosition_posRep x)
-      (isConnectedSumPosition_posRep y),
-      add_toConcordanceClass_eq (isConnectedSumPosition_posRep y)
-      (isConnectedSumPosition_posRep x)]
+    rw [add_def, add_def]
     exact (concordant_connectedSum_comm (defaultGreatCircle E n)
       (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)).toConcordanceClass_eq
   add_assoc x y z := by
@@ -699,13 +677,13 @@ instance instAddCommMonoid : AddCommMonoid (ConcordanceClass (𝓡 n) (sphere (0
         (connectedSum (posRep x) (posRep y)
           (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y))
         (posRep (x + y)) :=
-      toConcordanceClass_eq_iff.1 (add_eq_posRep x y ▸ (toConcordanceClass_posRep (x + y)).symm)
+      toConcordanceClass_eq_iff.1 (add_def x y ▸ (toConcordanceClass_posRep (x + y)).symm)
     have hyz : SmoothEmbedding.Concordant
         (connectedSum (posRep y) (posRep z)
           (isConnectedSumPosition_posRep y) (isConnectedSumPosition_posRep z))
         (posRep (y + z)) :=
-      toConcordanceClass_eq_iff.1 (add_eq_posRep y z ▸ (toConcordanceClass_posRep (y + z)).symm)
-    rw [add_eq_posRep (x + y) z, add_eq_posRep x (y + z)]
+      toConcordanceClass_eq_iff.1 (add_def y z ▸ (toConcordanceClass_posRep (y + z)).symm)
+    rw [add_def (x + y) z, add_def x (y + z)]
     exact (concordant_connectedSum_assoc (Fact.out : 3 ≤ n)
       (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)
       (isConnectedSumPosition_posRep z) (isConnectedSumPosition_posRep (x + y))
@@ -720,7 +698,7 @@ end ConcordanceClass
 @[simp]
 theorem toConcordanceClass_greatCircle [Fact (3 ≤ n)] (ι : ℂ →ₗᵢ[ℝ] E) :
     (greatCircle (n := n) ι).toConcordanceClass = 0 := by
-  rw [ConcordanceClass.zero_eq_defaultGreatCircle]
+  rw [ConcordanceClass.zero_def]
   exact toConcordanceClass_greatCircle_eq (ConcordanceClass.two_le_of_fact n) ι
     (ConcordanceClass.defaultGreatCircle E n)
 
@@ -758,7 +736,7 @@ def reverseAddEquiv :
       exists_concordant_reverse_connectedSum (two_le_of_fact n)
         (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y)
     simp only [Equiv.toFun_as_coe, reverseEquiv_apply]
-    rw [add_eq_posRep, reverse_toConcordanceClass, hc.toConcordanceClass_eq,
+    rw [add_def, reverse_toConcordanceClass, hc.toConcordanceClass_eq,
       toConcordanceClass_connectedSum hL₁ hL₂,
       ← hc₁.toConcordanceClass_eq, ← hc₂.toConcordanceClass_eq,
       ← reverse_toConcordanceClass, ← reverse_toConcordanceClass,
@@ -782,6 +760,7 @@ theorem reverse_zero : (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)).revers
   rw [← reverseAddEquiv_apply, map_zero]
 
 /-- Orientation reversal distributes over addition of smooth concordance classes. -/
+@[simp]
 theorem reverse_add (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     (x + y).reverse = x.reverse + y.reverse := by
   rw [← reverseAddEquiv_apply, map_add, reverseAddEquiv_apply, reverseAddEquiv_apply]
@@ -803,7 +782,7 @@ def transLinearIsometryAddEquiv (e : E ≃ₗᵢ[ℝ] E') :
     let ι' : ℂ →ₗᵢ[ℝ] E' := e.toLinearIsometry.comp ι₀
     have he : ∀ w, e (ι₀ w) = ι' w := fun _ => rfl
     simp only [Equiv.toFun_as_coe]
-    rw [add_eq_posRep, transDiffeomorph_toConcordanceClass,
+    rw [add_def, transDiffeomorph_toConcordanceClass,
       transDiffeomorph_connectedSum
         (isConnectedSumPosition_posRep x) (isConnectedSumPosition_posRep y) he,
       toConcordanceClass_connectedSum, ← transDiffeomorph_toConcordanceClass,
@@ -903,6 +882,7 @@ theorem mirror_zero : (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)).mirror 
   rw [← mirrorAddEquiv_apply, map_zero]
 
 /-- Mirroring distributes over addition of smooth concordance classes. -/
+@[simp]
 theorem mirror_add (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     (x + y).mirror = x.mirror + y.mirror := by
   rw [← mirrorAddEquiv_apply, map_add, mirrorAddEquiv_apply, mirrorAddEquiv_apply]
@@ -951,6 +931,7 @@ theorem reverseMirror_zero : (0 : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)).
   rw [← reverseMirrorAddEquiv_apply, map_zero]
 
 /-- Reverse-mirroring distributes over addition of smooth concordance classes. -/
+@[simp]
 theorem reverseMirror_add (x y : ConcordanceClass (𝓡 n) (sphere (0 : E) 1)) :
     (x + y).reverseMirror = x.reverseMirror + y.reverseMirror := by
   rw [← reverseMirrorAddEquiv_apply, map_add, reverseMirrorAddEquiv_apply,

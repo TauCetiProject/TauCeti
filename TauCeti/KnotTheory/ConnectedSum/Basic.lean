@@ -446,15 +446,11 @@ theorem transDiffeomorph_reverse_rotate_greatCircle
         (e.unitSphereDiffeomorph (n := n) (k := n) ∞) =
       greatCircle (n := n) ι' := by
   ext z : 2
-  simp only [SmoothEmbedding.transDiffeomorph_apply,
-    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply,
-    coe_greatCircle_apply]
-  change e (ι (((-z)⁻¹ : Circle) : ℂ)) = ι' (z : ℂ)
-  rw [show (e (ι (((-z)⁻¹ : Circle) : ℂ)) : E') =
-      ι' (-starRingEnd ℂ (((-z)⁻¹ : Circle) : ℂ)) from
-    LinearMap.map_eq_neg_conj_of_map_one_eq_neg_of_map_I
-      (f := ι.toLinearMap) (g := ι'.toLinearMap) (l := (e.toLinearEquiv : E →ₗ[ℝ] E')) h1 hI _]
-  congr 1
+  rw [SmoothEmbedding.transDiffeomorph_apply, LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply,
+    rotate_apply, neg_one_mul, reverse_apply, coe_greatCircle_apply, coe_greatCircle_apply]
+  refine (LinearMap.map_eq_neg_conj_of_map_one_eq_neg_of_map_I
+    (f := ι.toLinearMap) (g := ι'.toLinearMap) (l := (e.toLinearEquiv : E →ₗ[ℝ] E')) h1 hI _).trans
+    (congrArg ι' ?_)
   rw [Circle.coe_inv_eq_conj, Circle.coe_neg, map_neg, map_neg, Complex.conj_conj, neg_neg]
 
 /-- A linear isometry equivalence sending `ι 1` to `-ι' 1` and `ι i` to `ι' i` carries a knot `K`
@@ -473,6 +469,7 @@ theorem IsConnectedSumPosition.transDiffeomorph_reverse_rotate
     rw [← transDiffeomorph_reverse_rotate_greatCircle (n := n) h1 hI]
     filter_upwards [((continuous_inv.comp continuous_neg).tendsto z).eventually
       (h.eventuallyEq_greatCircle hneg)] with w hw
+    -- `filter_upwards` states `hw` through a composite of functions.
     have hw : K (-w)⁻¹ = greatCircle ι (-w)⁻¹ := hw
     simp only [SmoothEmbedding.transDiffeomorph_apply, rotate_apply, neg_one_mul, reverse_apply, hw]
   inner_pos {z} hz := by

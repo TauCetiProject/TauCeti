@@ -181,15 +181,21 @@ section GreatCircle
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
+private theorem smoothAmbientIsotopic_transDiffeomorph_of_final_apply_eq
+    {Φ : Diffeotopy (𝓡 n) ∞ (sphere (0 : E) 1)} {e : E ≃ₗᵢ[ℝ] E}
+    (hΦ : ∀ z, (Φ.final z : E) = e z)
+    (L : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
+    L.SmoothAmbientIsotopic (L.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
+  refine SmoothEmbedding.SmoothAmbientIsotopic.of_diffeotopy Φ fun x => Subtype.ext ?_
+  rw [hΦ, SmoothEmbedding.transDiffeomorph_apply,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply]
+
 /-- **All great circles are smoothly ambient isotopic** in a sphere of dimension `n ≥ 2`. -/
 theorem smoothAmbientIsotopic_greatCircle (hn : 2 ≤ n) (ι₁ ι₂ : ℂ →ₗᵢ[ℝ] E) :
     (greatCircle (n := n) ι₁).SmoothAmbientIsotopic (greatCircle (n := n) ι₂) := by
   obtain ⟨Φ, e, hΦ, he⟩ := exists_diffeotopy_final_apply_eq_and_forall_map_eq (m := ∞) hn ι₁ ι₂
-  have hf : Φ.final = e.unitSphereDiffeomorph (n := n) (k := n) ∞ :=
-    _root_.Diffeomorph.ext fun z =>
-      Subtype.ext ((hΦ z).trans (LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply e z).symm)
-  rw [← transDiffeomorph_unitSphereDiffeomorph_greatCircle (n := n) he, ← hf]
-  exact SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_final _ Φ
+  rw [← transDiffeomorph_unitSphereDiffeomorph_greatCircle (n := n) he]
+  exact smoothAmbientIsotopic_transDiffeomorph_of_final_apply_eq hΦ _
 
 /-- **All great circles are smoothly concordant** in a sphere of dimension `n ≥ 2`. -/
 theorem concordant_greatCircle (hn : 2 ≤ n) (ι₁ ι₂ : ℂ →ₗᵢ[ℝ] E) :
@@ -209,14 +215,10 @@ theorem concordant_connectedSum_of_concordant (hn : 3 ≤ n)
     SmoothEmbedding.Concordant (connectedSum K₁ K₂ h₁ h₂) (connectedSum K₁' K₂' h₁' h₂') := by
   obtain ⟨Φ, e, hΦ, he⟩ := exists_diffeotopy_final_apply_eq_and_forall_map_eq (n := n) (m := ∞)
     (by omega) ι₁ ι₂
-  have hf : Φ.final = e.unitSphereDiffeomorph (n := n) (k := n) ∞ :=
-    _root_.Diffeomorph.ext fun z =>
-      Subtype.ext ((hΦ z).trans (LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply e z).symm)
   have hamb (L : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
       SmoothEmbedding.Concordant L
-        (L.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
-    rw [← hf]
-    exact (SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_final L Φ).concordant le_rfl
+        (L.transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) :=
+    (smoothAmbientIsotopic_transDiffeomorph_of_final_apply_eq hΦ L).concordant le_rfl
   refine (hamb (connectedSum K₁ K₂ h₁ h₂)).trans ?_
   rw [transDiffeomorph_connectedSum h₁ h₂ he]
   exact concordant_connectedSum_of_concordant_same hn
@@ -242,13 +244,10 @@ theorem concordant_reverseMirror_of_concordant (ι₁ ι₂ : ℂ →ₗᵢ[ℝ]
   have hdet : (LinearEquiv.det (ℝ ∙ ι₂ Complex.I)ᗮ.reflection.toLinearEquiv : ℝ) = -1 :=
     linearEquiv_det_reflection_orthogonal_singleton
       ((map_ne_zero_iff ι₂ ι₂.injective).2 Complex.I_ne_zero)
-  have hrev (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
-      K.reverse = K.compDiffeomorph circleReflection :=
-    SmoothEmbedding.ext fun z => by simp
   refine (concordant_reverseMirror_of_det_eq_neg_one ι₁ hdet K₁).trans
     ((?_ : SmoothEmbedding.Concordant _ _).trans
       (concordant_reverseMirror_of_det_eq_neg_one ι₂ hdet K₂).symm)
-  rw [hrev K₁, hrev K₂]
+  rw [K₁.reverse_def, K₂.reverse_def]
   exact (hc.compDiffeomorph circleReflection).transDiffeomorph _
 
 /-- **Orientation reversal distributes over the connected sum up to smooth concordance.** In a
@@ -272,17 +271,12 @@ theorem exists_concordant_reverse_connectedSum (hn : 2 ≤ n) {ι : ℂ →ₗ�
   set e := g.trans ρ
   have he1 : e (ι 1) = -ι 1 := by simp [e, ρ, hg1]
   have heI : e (ι Complex.I) = ι Complex.I := by simp [e, ρ, hgI]
-  have hf : Φ.final = g.unitSphereDiffeomorph (n := n) (k := n) ∞ :=
-    _root_.Diffeomorph.ext fun z =>
-      Subtype.ext ((hgΦ z).trans (LinearIsometryEquiv.coe_unitSphereDiffeomorph_apply g z).symm)
   have hturn (K : SmoothCircleEmbedding (𝓡 n) (sphere (0 : E) 1)) :
       SmoothEmbedding.Concordant K.reverse
         ((K.reverse.rotate (-1)).transDiffeomorph
           (e.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
-    have hΦ' : SmoothEmbedding.Concordant K.reverse
-        (K.reverse.transDiffeomorph (g.unitSphereDiffeomorph (n := n) (k := n) ∞)) := by
-      rw [← hf]
-      exact (SmoothEmbedding.smoothAmbientIsotopic_transDiffeomorph_final _ Φ).concordant le_rfl
+    have hΦ' :=
+      (smoothAmbientIsotopic_transDiffeomorph_of_final_apply_eq hgΦ K.reverse).concordant le_rfl
     have heq : turnOver ι (K.reverse.transDiffeomorph (g.unitSphereDiffeomorph ∞)) =
         (K.reverse.rotate (-1)).transDiffeomorph (e.unitSphereDiffeomorph (n := n) (k := n) ∞) :=
       SmoothEmbedding.ext fun z => Subtype.ext (by simp [e, ρ])
