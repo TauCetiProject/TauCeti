@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Split
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.WittDecomposition
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Split.Basic
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt.Decomposition
 
 /-!
 # The Witt decomposition over the split quadratic algebra `F × F`
@@ -103,7 +103,7 @@ private theorem anisotropic_of_finrank_le_one (hσ : ∀ x, σ x = x.swap)
   obtain ⟨T, hT⟩ := H.exists_linearEquiv_form_eq_sum_split hσ rfl
   rw [anisotropic_iff]
   intro x hiso
-  obtain ⟨hxx, hx⟩ : _ ∧ _ := hiso
+  obtain ⟨hxx, hx⟩ := isIsotropic_def.1 hiso
   obtain ⟨a, rfl⟩ := T.surjective x
   have hsub : Subsingleton (Fin (finrank (F × F) V)) := Fin.subsingleton_iff_le_one.2 h
   rw [hT, sum_split_eq hσ] at hxx

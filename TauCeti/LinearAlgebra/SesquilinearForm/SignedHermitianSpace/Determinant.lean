@@ -13,26 +13,28 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Hyperb
 For a basis `b` of a signed hermitian space `(V, h)` over a commutative ring with involution `σ`,
 the Gram matrix `G_b = (h (bᵢ) (bⱼ))` is Mathlib's `LinearMap.toMatrix₂ b b h`. A change of basis
 by the matrix `P` turns it into `σ(P)ᵀ G_b P`, so the Gram determinant changes by the norm
-`σ (det P) * det P` of the unit `det P` (`TauCeti.SignedHermitianSpace.det_toMatrix₂_eq`). The
-class of `det G_b` modulo norms of units is therefore attached to the space: it does not depend on
-the basis, it is an isometry invariant (`TauCeti.SignedHermitianSpace.Equivalent.exists_det_eq`),
-and it is multiplicative under orthogonal sums
-(`TauCeti.SignedHermitianSpace.det_toMatrix₂_prod`). For a hermitian space the Gram determinant
-is fixed by `σ`, so for a quadratic extension `E/F` this is the determinant class
-`det V ∈ F^×/N(E^×)`. The hyperbolic plane has Gram determinant `-ε`
-(`TauCeti.SignedHermitianSpace.det_toMatrix₂_hyperbolic`).
+`σ (det P) * det P` of the unit `det P`
+(`TauCeti.SignedHermitianSpace.det_toMatrix₂_basis_change`). The class of `det G_b` modulo norms
+of units is therefore attached to the space: it does not depend on the basis, it is an isometry
+invariant (`TauCeti.SignedHermitianSpace.Equivalent.exists_det_eq`), and it is multiplicative
+under orthogonal sums (`TauCeti.SignedHermitianSpace.det_toMatrix₂_prod`). For a hermitian space
+the Gram determinant is fixed by `σ`, so for a quadratic extension `E/F` this is the determinant
+class `det V ∈ F^×/N(E^×)`. The hyperbolic space `H^ι` has Gram determinant `(-ε) ^ |ι|`
+(`TauCeti.SignedHermitianSpace.det_toMatrix₂_hyperbolic`); in particular the hyperbolic plane has
+Gram determinant `-ε`.
 
 ## Main statements
 
 * `TauCeti.SignedHermitianSpace.toMatrix₂_basis_change`: `G_c = σ(P)ᵀ G_b P` for `P` the matrix
   of `c` in `b`.
-* `TauCeti.SignedHermitianSpace.det_toMatrix₂_eq`: `det G_c = σ (det P) * det P * det G_b`.
+* `TauCeti.SignedHermitianSpace.det_toMatrix₂_basis_change`:
+  `det G_c = σ (det P) * det P * det G_b`.
 * `TauCeti.SignedHermitianSpace.Equivalent.exists_det_eq`: Gram determinants of isometric spaces
   differ by the norm of a unit.
 * `TauCeti.SignedHermitianSpace.det_toMatrix₂_prod`: Gram determinants multiply under orthogonal
   sums.
 * `TauCeti.SignedHermitianSpace.apply_det_toMatrix₂`: `σ (det G_b) = ε ^ n • det G_b`.
-* `TauCeti.SignedHermitianSpace.det_toMatrix₂_hyperbolic`: `det H = -ε`.
+* `TauCeti.SignedHermitianSpace.det_toMatrix₂_hyperbolic`: `det H^ι = (-ε) ^ |ι|`.
 -/
 
 public section
@@ -61,7 +63,7 @@ theorem toMatrix₂_basis_change (H : SignedHermitianSpace K V σ ε) (b c : Bas
 
 /-- **The Gram determinant changes by a norm.** If `P` is the matrix of the basis `c` in the basis
 `b`, then `det G_c = σ (det P) * det P * det G_b`, where `det P` is a unit. -/
-theorem det_toMatrix₂_eq (H : SignedHermitianSpace K V σ ε) (b c : Basis ι K V) :
+theorem det_toMatrix₂_basis_change (H : SignedHermitianSpace K V σ ε) (b c : Basis ι K V) :
     (LinearMap.toMatrix₂ c c H.form).det =
       σ (b.toMatrix c).det * (b.toMatrix c).det * (LinearMap.toMatrix₂ b b H.form).det := by
   rw [toMatrix₂_basis_change H b, det_mul, det_mul, det_transpose, ← RingHom.mapMatrix_apply,
@@ -88,7 +90,7 @@ theorem Equivalent.exists_det_eq {H₁ : SignedHermitianSpace K V₁ σ ε}
   let b := b₁.map e.toLinearEquiv
   let _ := b.invertibleToMatrix b₂
   refine ⟨(isUnit_det_of_invertible (b.toMatrix b₂)).unit, ?_⟩
-  rw [det_toMatrix₂_eq H₂ b b₂, e.toMatrix₂_map, IsUnit.unit_spec]
+  rw [det_toMatrix₂_basis_change H₂ b b₂, e.toMatrix₂_map, IsUnit.unit_spec]
 
 /-- **Gram determinants multiply under orthogonal sums.** -/
 theorem det_toMatrix₂_prod (H₁ : SignedHermitianSpace K V₁ σ ε)
@@ -107,24 +109,36 @@ theorem apply_det_toMatrix₂ (H : SignedHermitianSpace K V σ ε) (b : Basis ι
       ((ε ^ Fintype.card ι : ℤˣ) : ℤ) • (LinearMap.toMatrix₂ b b H.form).det := by
   have : (LinearMap.toMatrix₂ b b H.form).map σ =
       ((ε : ℤ) : K) • (LinearMap.toMatrix₂ b b H.form)ᵀ := by
-    have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by rw [← sq, units_cast_sq]
     ext i j
     rw [map_apply, LinearMap.toMatrix₂_apply, Matrix.smul_apply, transpose_apply,
       LinearMap.toMatrix₂_apply, smul_eq_mul, H.form_swap (b i) (b j),
-      units_smul_eq_mul, ← mul_assoc, hε, one_mul]
+      Int.units_smul_eq_cast_mul, ← mul_assoc, Int.cast_units_mul_self, one_mul]
   rw [RingHom.map_det, RingHom.mapMatrix_apply, this, det_smul, det_transpose, zsmul_eq_mul]
   push_cast
   ring
 
-/-- **The Gram determinant of the hyperbolic plane is `-ε`**, in its standard basis. -/
-theorem det_toMatrix₂_hyperbolic [RingHomInvPair σ σ] :
-    (LinearMap.toMatrix₂ ((Pi.basisFun K (Fin 1)).prod (Pi.basisFun K (Fin 1)))
-      ((Pi.basisFun K (Fin 1)).prod (Pi.basisFun K (Fin 1)))
-        (hyperbolic K σ ε (Fin 1)).form).det = -((ε : ℤ) : K) := by
-  have h₀ : finSumFinEquiv.symm (0 : Fin (1 + 1)) = Sum.inl 0 := rfl
-  have h₁ : finSumFinEquiv.symm (1 : Fin (1 + 1)) = Sum.inr 0 := rfl
-  rw [← det_reindex_self finSumFinEquiv, det_fin_two]
-  simp [h₀, h₁, units_smul_eq_mul]
+/-- **The Gram determinant of the hyperbolic space `H^ι` is `(-ε) ^ |ι|`**, in its standard
+basis. Grouping the basis vectors `(eᵢ, 0)`, `(0, eᵢ)` by `i` makes the Gram matrix block
+diagonal, with `|ι|` blocks `[[0, 1], [ε, 0]]`. -/
+theorem det_toMatrix₂_hyperbolic [RingHomInvPair σ σ] (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    (LinearMap.toMatrix₂ ((Pi.basisFun K ι).prod (Pi.basisFun K ι))
+      ((Pi.basisFun K ι).prod (Pi.basisFun K ι)) (hyperbolic K σ ε ι).form).det =
+        (-((ε : ℤ) : K)) ^ Fintype.card ι := by
+  -- Index the basis by `Fin 2 × ι`: `(0, i)` is `(eᵢ, 0)` and `(1, i)` is `(0, eᵢ)`.
+  let e : Fin 2 × ι ≃ ι ⊕ ι := (finTwoEquiv.prodCongr (Equiv.refl ι)).trans
+    (Equiv.boolProdEquivSum ι)
+  have he₀ (i : ι) : e (0, i) = Sum.inl i := rfl
+  have he₁ (i : ι) : e (1, i) = Sum.inr i := rfl
+  rw [← det_reindex_self e.symm]
+  have : reindex e.symm e.symm
+      (LinearMap.toMatrix₂ ((Pi.basisFun K ι).prod (Pi.basisFun K ι))
+        ((Pi.basisFun K ι).prod (Pi.basisFun K ι)) (hyperbolic K σ ε ι).form) =
+      blockDiagonal fun _ ↦ !![0, 1; ((ε : ℤ) : K), 0] := by
+    ext ⟨a, i⟩ ⟨b, j⟩
+    fin_cases a <;> fin_cases b <;>
+      simp [he₀, he₁, blockDiagonal_apply, Pi.single_apply, eq_comm, Int.units_smul_eq_cast_mul]
+  rw [this, det_blockDiagonal, det_fin_two_of, Finset.prod_const, Finset.card_univ]
+  ring
 
 end SignedHermitianSpace
 

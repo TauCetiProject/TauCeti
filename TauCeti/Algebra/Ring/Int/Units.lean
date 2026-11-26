@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Action.Units
 public import Mathlib.Algebra.Group.ULift
 public import Mathlib.Data.Int.Cast.Lemmas
 public import Mathlib.Data.Int.Order.Units
@@ -28,7 +29,8 @@ arbitrary universe must lie in that universe.
 
 * `Int.units_eq_iff_mul_eq_one`: `u = v ↔ u * v = 1` for signs `u v : ℤˣ`.
 * `Int.units_eq_iff_eq_of_mul_eq_mul`: if `u * v = u' * v'` then `u = v ↔ u' = v'`.
-* `Int.cast_units_sq`: the square of a sign, cast to any ring, is `1`.
+* `Int.cast_units_sq`, `Int.cast_units_mul_self`: the square of a sign, cast to any ring, is `1`.
+* `Int.units_smul_eq_cast_mul`: a sign acts on a ring by multiplication by its image.
 * `Int.unitsMap_castRingHom_eq_one_iff`: the image of a sign `u` in a ring `R` is `1` exactly when
   `u = 1` or `2 = 0` in `R`.
 * `Int.exists_apply_eq_and_apply_eq`: two `ℤ`-valued functions that take all four pairs of signs at
@@ -54,6 +56,19 @@ theorem units_eq_iff_eq_of_mul_eq_mul {u v u' v' : ℤˣ} (h : u * v = u' * v') 
 @[simp]
 theorem cast_units_sq {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) ^ 2 = 1 := by
   rcases Int.units_eq_one_or u with rfl | rfl <;> simp
+
+/-- The image of a sign `u : ℤˣ` in any ring, multiplied by itself, is `1`. -/
+theorem cast_units_mul_self {R : Type*} [Ring R] (u : ℤˣ) : ((u : ℤ) : R) * ((u : ℤ) : R) = 1 := by
+  rw [← sq, cast_units_sq]
+
+/-- The image of a sign `u : ℤˣ` in a nontrivial ring is nonzero. -/
+theorem cast_units_ne_zero {R : Type*} [Ring R] [Nontrivial R] (u : ℤˣ) : ((u : ℤ) : R) ≠ 0 :=
+  fun h ↦ by simpa [h] using cast_units_sq (R := R) u
+
+/-- A sign `u : ℤˣ` acts on a ring by multiplication by its image: `u • c = u * c`. -/
+theorem units_smul_eq_cast_mul {R : Type*} [Ring R] (u : ℤˣ) (c : R) :
+    u • c = ((u : ℤ) : R) * c := by
+  rw [Units.smul_def, zsmul_eq_mul]
 
 /-- The image of a sign `u : ℤˣ` in the units of a ring `R` is `1` exactly when `u = 1` or
 `2 = 0` in `R`. -/

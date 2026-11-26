@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.SplitWitt
+import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Split.Witt
 import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Determinant
 import Mathlib.Analysis.Complex.Basic
 
@@ -33,7 +33,9 @@ example :
   have hσ : ∃ z : ℂ, starRingEnd ℂ z ≠ z := ⟨Complex.I, by norm_num [Complex.ext_iff]⟩
   have hani : (diagonal (starRingEnd ℂ) 1 ![1, 1] (fun i ↦ by fin_cases i <;> simp)
       (fun i ↦ by fin_cases i <;> simp)).Anisotropic := by
-    rintro x ⟨hxx, hx⟩
+    rw [anisotropic_iff]
+    rintro x hiso
+    obtain ⟨hxx, hx⟩ := isIsotropic_def.1 hiso
     have h := congrArg Complex.re hxx
     simp only [diagonal_form_apply, Fin.sum_univ_two, Matrix.cons_val_zero,
       Matrix.cons_val_one, mul_one, Complex.add_re, Complex.zero_re] at h

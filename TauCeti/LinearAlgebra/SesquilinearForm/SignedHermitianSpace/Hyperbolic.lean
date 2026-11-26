@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Orthogonal
-public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt
+public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt.Basic
 
 /-!
 # Hyperbolic spaces, isotropic vectors and hyperbolic frames
@@ -14,8 +14,7 @@ public import TauCeti.LinearAlgebra.SesquilinearForm.SignedHermitianSpace.Witt
 Let `K` be a commutative ring with an involution `σ` and `ε = ±1`. The **hyperbolic space**
 `H^ι` is `(ι → K) × (ι → K)` with the `ε`-hermitian form
 `h ((a, b), (c, d)) = ∑ σ (aᵢ) dᵢ + ε σ (bᵢ) cᵢ`, whose Gram matrix in the standard basis is
-`[[0, 1], [ε, 0]]` in blocks; for `ι` with one element it is the **hyperbolic plane** `H`. The
-**diagonal space** `⟨a₁, …, aₙ⟩` is `Kⁿ` with the form `∑ σ (xᵢ) aᵢ yᵢ`.
+`[[0, 1], [ε, 0]]` in blocks; for `ι` with one element it is the **hyperbolic plane** `H`.
 
 A vector `x` of a signed hermitian space is **isotropic** if `h x x = 0` and `K x` is free of
 rank one, that is `c • x = 0` only for `c = 0`; over a field this says `x ≠ 0`, while over the
@@ -25,11 +24,12 @@ plane. A space is **anisotropic** if it has no isotropic vector. A **hyperbolic 
 equivalently, an isometric linear map `H^ι → V` (`TauCeti.SignedHermitianSpace.hyperbolicFrameMap`),
 necessarily injective.
 
-Over a field whose involution is not the identity, every linearly independent family spanning a
-totally isotropic subspace is the first half of a hyperbolic frame
+Over a field whose involution is not the identity, every finite linearly independent family
+spanning a totally isotropic subspace is the first half of a hyperbolic frame
 (`TauCeti.SignedHermitianSpace.exists_isHyperbolicFrame`); in particular every isotropic vector
-lies in a hyperbolic plane. The span of a hyperbolic frame is nondegenerate, so it splits off:
-`V ≅ H^ι ⊥ Pᗮ` (`TauCeti.SignedHermitianSpace.IsHyperbolicFrame.equivalent_hyperbolic_prod`).
+lies in a hyperbolic plane (`TauCeti.SignedHermitianSpace.IsIsotropic.exists_isHyperbolicFrame`).
+The span of a hyperbolic frame is nondegenerate, so it splits off: `V ≅ H^ι ⊥ Pᗮ`
+(`TauCeti.SignedHermitianSpace.IsHyperbolicFrame.equivalent_hyperbolic_prod`).
 
 The dual vectors `yⱼ` are first chosen with `h xᵢ yⱼ = δᵢⱼ`, which nondegeneracy allows; then
 `yⱼ` is corrected by a combination of the `xᵢ` to make the `yⱼ` mutually orthogonal and isotropic.
@@ -39,7 +39,6 @@ nontrivial involution replaces division by `2`.
 
 ## Main definitions
 
-* `TauCeti.SignedHermitianSpace.diagonal σ ε a`: the diagonal space `⟨a₁, …, aₙ⟩`.
 * `TauCeti.SignedHermitianSpace.hyperbolic K σ ε ι`: the hyperbolic space `H^ι`.
 * `TauCeti.SignedHermitianSpace.IsIsotropic`, `TauCeti.SignedHermitianSpace.Anisotropic`.
 * `TauCeti.SignedHermitianSpace.IsHyperbolicFrame`: hyperbolic frames, and
@@ -53,10 +52,12 @@ nontrivial involution replaces division by `2`.
   `h x x = 0` and `x ≠ 0`.
 * `TauCeti.SignedHermitianSpace.IsHyperbolicFrame.form_hyperbolicFrameMap`: a hyperbolic frame is
   an isometric map from `H^ι`.
-* `TauCeti.SignedHermitianSpace.exists_isHyperbolicFrame`: a linearly independent totally
-  isotropic family extends to a hyperbolic frame.
-* `TauCeti.SignedHermitianSpace.exists_form_eq_zero_form_eq_one`: every isotropic vector lies in
-  a hyperbolic plane.
+* `TauCeti.SignedHermitianSpace.exists_isHyperbolicFrame`: over a field whose involution is not
+  the identity, a finite linearly independent totally isotropic family extends to a hyperbolic
+  frame.
+* `TauCeti.SignedHermitianSpace.IsIsotropic.exists_isHyperbolicFrame`,
+  `TauCeti.SignedHermitianSpace.exists_form_eq_zero_form_eq_one`: over a field whose involution is
+  not the identity, every isotropic vector lies in a hyperbolic plane.
 * `TauCeti.SignedHermitianSpace.IsHyperbolicFrame.equivalent_hyperbolic_prod`: a hyperbolic frame
   splits off as an orthogonal summand.
 
@@ -95,38 +96,6 @@ variable {K V V₁ V₂ : Type*} [CommRing K] {σ : K →+* K} {ε : ℤˣ} [Add
 section Spaces
 
 variable [RingHomInvPair σ σ]
-
-variable (σ ε) in
-/-- The **diagonal space** `⟨a₁, …, aₙ⟩`: the module `n → K` with the form
-`h x y = ∑ σ (x i) * a i * y i`, for non-zero-divisors `a i` with `σ (a i) = ε • a i`. -/
-def diagonal {n : Type*} [Fintype n] (a : n → K) (ha : ∀ i, σ (a i) = ε • a i)
-    (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) : SignedHermitianSpace K (n → K) σ ε where
-  form := LinearMap.mk₂'ₛₗ σ (RingHom.id K) (fun x y ↦ ∑ i, σ (x i) * a i * y i)
-    (fun _ _ _ ↦ by simp [add_mul, Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by simp [Finset.mul_sum, mul_assoc])
-    (fun _ _ _ ↦ by simp [mul_add, Finset.sum_add_distrib])
-    (fun _ _ _ ↦ by
-      simp only [smul_eq_mul, Pi.smul_apply, Finset.mul_sum, RingHom.id_apply]
-      exact Finset.sum_congr rfl fun _ _ ↦ by ring)
-  form_swap x y := by
-    simp only [LinearMap.mk₂'ₛₗ_apply, map_sum, map_mul, ha, RingHomInvPair.comp_apply_eq₂,
-      Finset.smul_sum]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [units_smul_eq_mul, units_smul_eq_mul]
-    linear_combination (-(σ (y i) * a i * x i)) * units_cast_sq (R := K) (ε := ε)
-  separatingLeft x hx := funext fun j ↦ by
-    classical
-    have hj : σ (x j) * a j = 0 := by simpa [Pi.single_apply] using hx (Pi.single j 1)
-    have := (mul_right_mem_nonZeroDivisors_eq_zero_iff (ha₀ j)).1 hj
-    rw [Pi.zero_apply, ← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := x j), this,
-      map_zero]
-
-/-- The form of `⟨a₁, …, aₙ⟩` is `∑ σ (x i) * a i * y i`. -/
-@[simp]
-theorem diagonal_form_apply {n : Type*} [Fintype n] (a : n → K) (ha : ∀ i, σ (a i) = ε • a i)
-    (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) (x y : n → K) :
-    (diagonal σ ε a ha ha₀).form x y = ∑ i, σ (x i) * a i * y i :=
-  (rfl)
 
 variable (K σ ε) in
 /-- The **hyperbolic space** `H^ι`: the module `(ι → K) × (ι → K)` with the form
@@ -181,6 +150,14 @@ def IsometryEquiv.hyperbolicSum (ι κ : Type*) [Fintype ι] [Fintype κ] :
       (LinearEquiv.prodProdProdComm K _ _ _ _) with
     map_app' := fun x y ↦ by simp [Fintype.sum_sum_type] }
 
+/-- `H^(ι ⊕ κ) ≅ H^ι ⊥ H^κ` restricts both coordinates to `ι` and to `κ`. -/
+@[simp]
+theorem IsometryEquiv.hyperbolicSum_apply (ι κ : Type*) [Fintype ι] [Fintype κ]
+    (x : (ι ⊕ κ → K) × (ι ⊕ κ → K)) :
+    IsometryEquiv.hyperbolicSum (σ := σ) (ε := ε) ι κ x =
+      ((x.1 ∘ Sum.inl, x.2 ∘ Sum.inl), (x.1 ∘ Sum.inr, x.2 ∘ Sum.inr)) :=
+  (rfl)
+
 /-- Reindexing the hyperbolic space along `e : ι ≃ κ` is an isometry `H^ι ≅ H^κ`. -/
 def IsometryEquiv.hyperbolicCongr {ι κ : Type*} [Fintype ι] [Fintype κ] (e : ι ≃ κ) :
     IsometryEquiv (hyperbolic K σ ε ι) (hyperbolic K σ ε κ) :=
@@ -188,6 +165,13 @@ def IsometryEquiv.hyperbolicCongr {ι κ : Type*} [Fintype ι] [Fintype κ] (e :
     map_app' := fun x y ↦ by
       simp only [hyperbolic_form_apply]
       exact e.symm.sum_comp (fun i ↦ σ (x.1 i) * y.2 i + ε • (σ (x.2 i) * y.1 i)) }
+
+/-- Reindexing `H^ι ≅ H^κ` along `e` composes both coordinates with `e.symm`. -/
+@[simp]
+theorem IsometryEquiv.hyperbolicCongr_apply {ι κ : Type*} [Fintype ι] [Fintype κ] (e : ι ≃ κ)
+    (x : (ι → K) × (ι → K)) :
+    IsometryEquiv.hyperbolicCongr (σ := σ) (ε := ε) e x = (x.1 ∘ e.symm, x.2 ∘ e.symm) :=
+  (rfl)
 
 end Spaces
 
@@ -198,14 +182,19 @@ variable (H : SignedHermitianSpace K V σ ε)
 /-- A vector `x` of a signed hermitian space is **isotropic** if `h x x = 0` and the submodule
 `K x` is free of rank one: `c • x = 0` only for `c = 0`. Over a field the second condition says
 `x ≠ 0` (`TauCeti.SignedHermitianSpace.isIsotropic_iff`). -/
-@[expose] def IsIsotropic (x : V) : Prop :=
+def IsIsotropic (x : V) : Prop :=
   H.form x x = 0 ∧ ∀ c : K, c • x = 0 → c = 0
 
 /-- A signed hermitian space is **anisotropic** if it has no isotropic vector. -/
-@[expose] def Anisotropic : Prop :=
+def Anisotropic : Prop :=
   ∀ x, ¬H.IsIsotropic x
 
 variable {H}
+
+/-- Unfolding `IsIsotropic`. -/
+theorem isIsotropic_def {x : V} :
+    H.IsIsotropic x ↔ H.form x x = 0 ∧ ∀ c : K, c • x = 0 → c = 0 :=
+  Iff.rfl
 
 /-- Unfolding `Anisotropic`. -/
 theorem anisotropic_iff : H.Anisotropic ↔ ∀ x, ¬H.IsIsotropic x :=
@@ -251,6 +240,7 @@ def hyperbolicFrameMap {ι : Type*} [Fintype ι] (x y : ι → V) : (ι → K) �
 
 variable (K) in
 /-- The map of a pair of families sends `(a, b)` to `∑ aᵢ xᵢ + ∑ bᵢ yᵢ`. -/
+@[simp]
 theorem hyperbolicFrameMap_apply {ι : Type*} [Fintype ι] (x y : ι → V) (u : (ι → K) × (ι → K)) :
     hyperbolicFrameMap K x y u = ∑ i, u.1 i • x i + ∑ i, u.2 i • y i := by
   simp [hyperbolicFrameMap, Fintype.linearCombination_apply]
@@ -279,7 +269,7 @@ variable {ι : Type*} [DecidableEq ι] {x y : ι → V}
 /-- In a hyperbolic frame, `h (y i) (x j) = ε δᵢⱼ`. -/
 theorem form_right_left (hxy : H.IsHyperbolicFrame x y) (i j : ι) :
     H.form (y i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-  rw [H.form_swap, hxy.form_left_right, units_smul_eq_mul]
+  rw [H.form_swap, hxy.form_left_right, Int.units_smul_eq_cast_mul]
   split_ifs with h₁ h₂ h₂ <;> simp_all [eq_comm]
 
 /-- An isometric linear map carries hyperbolic frames to hyperbolic frames. -/
@@ -298,8 +288,7 @@ theorem comp {κ : Type*} [DecidableEq κ] (hxy : H.IsHyperbolicFrame x y) {e : 
   form_right i j := hxy.form_right _ _
   form_left_right i j := by simp [hxy.form_left_right, he.eq_iff]
 
-/-- A nonempty hyperbolic frame forces `σ` to be an involution: `h (x i) (c • y i) = c`, and
-applying `ε`-hermitian symmetry twice gives `σ (σ c) = c`. -/
+/-- A signed hermitian space with a nonempty hyperbolic frame has `σ ∘ σ = id`. -/
 theorem ringHomInvPair (hxy : H.IsHyperbolicFrame x y) (i : ι) : RingHomInvPair σ σ := by
   have h (c : K) : σ (σ c) = c := by
     have h₁ : H.form (x i) (c • y i) = c := by simp [hxy.form_left_right]
@@ -329,7 +318,7 @@ theorem form_hyperbolicFrameMap [RingHomInvPair σ σ] [Fintype ι] (hxy : H.IsH
     hxy.form_right_left, mul_zero, zero_add, add_zero, mul_ite,
     Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, RingHom.id_apply, hyperbolic_form_apply,
     ← Finset.sum_add_distrib]
-  exact Finset.sum_congr rfl fun _ _ ↦ by rw [units_smul_eq_mul]; ring
+  exact Finset.sum_congr rfl fun _ _ ↦ by rw [Int.units_smul_eq_cast_mul]; ring
 
 /-- The map `H^ι → V` of a hyperbolic frame is injective. -/
 theorem injective_hyperbolicFrameMap [RingHomInvPair σ σ] [Fintype ι]
@@ -347,6 +336,13 @@ theorem linearIndependent_left [RingHomInvPair σ σ] [Finite ι] (hxy : H.IsHyp
   exact congrFun (congrArg Prod.fst this)
 
 end IsHyperbolicFrame
+
+/-- The standard hyperbolic frame of `H^ι`, in the orthogonal sum `H^ι ⊥ H₁`. -/
+theorem isHyperbolicFrame_hyperbolic_prod [RingHomInvPair σ σ] {ι : Type*} [Fintype ι]
+    [DecidableEq ι] (H₁ : SignedHermitianSpace K V₁ σ ε) :
+    ((hyperbolic K σ ε ι).prod H₁).IsHyperbolicFrame (fun i ↦ ((Pi.single i 1, 0), 0))
+      (fun i ↦ ((0, Pi.single i 1), 0)) :=
+  isHyperbolicFrame_hyperbolic.map (f := LinearMap.inl K _ V₁) fun v w ↦ by simp
 
 end CommRing
 
@@ -385,15 +381,14 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
     {x : ι → V} (hx : LinearIndependent K x) (hxx : ∀ i j, H.form (x i) (x j) = 0) :
     ∃ y, H.IsHyperbolicFrame x y := by
   cases nonempty_fintype ι
-  have hε : ((ε : ℤ) : K) * ((ε : ℤ) : K) = 1 := by rw [← sq, units_cast_sq]
   -- Dual vectors `e j` with `h (x i) (e j) = δᵢⱼ`.
   choose u hu using H.exists_form_apply_eq_ite hx
   set e : ι → V := fun j ↦ ((ε : ℤ) : K) • u j
   have hxe (i j : ι) : H.form (x i) (e j) = if i = j then 1 else 0 := by
-    simp only [e, map_smul, smul_eq_mul, H.form_swap (u j), hu, units_smul_eq_mul]
-    split_ifs <;> simp [*]
+    simp only [e, map_smul, smul_eq_mul, H.form_swap (u j), hu, Int.units_smul_eq_cast_mul]
+    split_ifs <;> simp [*, Int.cast_units_mul_self]
   have hex (i j : ι) : H.form (e i) (x j) = if i = j then ((ε : ℤ) : K) else 0 := by
-    rw [H.form_swap, hxe, units_smul_eq_mul]
+    rw [H.form_swap, hxe, Int.units_smul_eq_cast_mul]
     split_ifs <;> simp_all [eq_comm]
   -- Correct `e j` by `∑ μ i j • x i`.
   obtain ⟨μ, hμ⟩ : ∃ μ : ι → ι → K, ∀ i j, H.form (e i) (e j) + ε • μ i j + σ (μ j i) = 0 := by
@@ -405,21 +400,28 @@ theorem exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {ι : Type*} [Finite 
     simp [y, map_sum, hxx, hxe]
   refine ⟨y, ⟨hxx, fun i j ↦ ?_, hxy⟩⟩
   have hey : H.form (e i) (y j) = H.form (e i) (e j) + ε • μ i j := by
-    change H.form (e i) (e j + ∑ k, μ k j • x k) = _
-    simp [map_sum, hex, units_smul_eq_mul, mul_comm]
+    rw [show y j = e j + ∑ k, μ k j • x k from rfl]
+    simp [map_sum, hex, Int.units_smul_eq_cast_mul, mul_comm]
   have hyy : H.form (y i) (y j) = H.form (e i) (y j) + σ (μ j i) := by
-    change H.form (e i + ∑ k, μ k i • x k) (y j) = _
+    rw [show y i = e i + ∑ k, μ k i • x k from rfl]
     simp [map_sum, hxy]
   rw [hyy, hey]
   exact hμ i j
+
+/-- **Every isotropic vector is the first half of a hyperbolic pair.** Over a field whose
+involution is not the identity, an isotropic vector `x` is the first half of a hyperbolic frame
+indexed by `Fin 1`. -/
+theorem IsIsotropic.exists_isHyperbolicFrame (hσ : ∃ z, σ z ≠ z) {x : V}
+    (hx : H.IsIsotropic x) : ∃ y : Fin 1 → V, H.IsHyperbolicFrame (fun _ ↦ x) y :=
+  SignedHermitianSpace.exists_isHyperbolicFrame hσ
+    (linearIndependent_unique_iff.2 (isIsotropic_iff.1 hx).2) fun _ _ ↦ hx.1
 
 /-- **Every isotropic vector lies in a hyperbolic plane.** Over a field whose involution is not
 the identity, for every nonzero `x` with `h x x = 0` there is `y` with `h y y = 0` and
 `h x y = 1`. -/
 theorem exists_form_eq_zero_form_eq_one (hσ : ∃ z, σ z ≠ z) {x : V} (hx : H.IsIsotropic x) :
     ∃ y, H.form y y = 0 ∧ H.form x y = 1 := by
-  obtain ⟨y, hy⟩ := exists_isHyperbolicFrame (ι := Fin 1) (H := H) hσ (x := fun _ ↦ x)
-    (linearIndependent_unique_iff.2 (isIsotropic_iff.1 hx).2) fun _ _ ↦ hx.1
+  obtain ⟨y, hy⟩ := hx.exists_isHyperbolicFrame hσ
   exact ⟨y 0, hy.form_right 0 0, by simpa using hy.form_left_right 0 0⟩
 
 namespace IsHyperbolicFrame

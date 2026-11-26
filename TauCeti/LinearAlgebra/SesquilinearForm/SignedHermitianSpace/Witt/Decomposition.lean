@@ -89,8 +89,10 @@ variable {K V V₁ V₂ : Type*} [CommRing K] {σ : K →+* K} {ε : ℤˣ} [Add
 /-- The **Witt index** of a signed hermitian space: the largest `k` for which `(V, h)` has a
 hyperbolic frame of size `k`, equivalently an isometric embedding of the hyperbolic space `H^k`.
 For a finite module over a nontrivial ring this is a maximum
-(`TauCeti.SignedHermitianSpace.exists_isHyperbolicFrame_wittIndex`), and over a field it is the
-largest dimension of a totally isotropic subspace. -/
+(`TauCeti.SignedHermitianSpace.exists_isHyperbolicFrame_wittIndex`). For finite-dimensional `V`
+over a field whose involution is not the identity, it is the largest dimension of a totally
+isotropic subspace (`TauCeti.SignedHermitianSpace.finrank_le_wittIndex`,
+`TauCeti.SignedHermitianSpace.exists_finrank_eq_wittIndex`). -/
 noncomputable def wittIndex : ℕ :=
   sSup {k | ∃ x y : Fin k → V, H.IsHyperbolicFrame x y}
 
@@ -172,8 +174,7 @@ theorem card_le_wittIndex_hyperbolic_prod [RingHomInvPair σ σ] [Nontrivial K] 
     [Fintype ι] (H₁ : SignedHermitianSpace K V₁ σ ε) [Module.Finite K V₁] :
     Fintype.card ι ≤ ((hyperbolic K σ ε ι).prod H₁).wittIndex := by
   classical
-  exact (isHyperbolicFrame_hyperbolic.map (f := LinearMap.inl K _ V₁) fun v w ↦ by
-    simp).card_le_wittIndex
+  exact (isHyperbolicFrame_hyperbolic_prod H₁).card_le_wittIndex
 
 end CommRing
 
@@ -232,9 +233,7 @@ private theorem not_equivalent_hyperbolic_prod_of_lt (hσ : ∃ z, σ z ≠ z) {
     ¬Equivalent ((hyperbolic K σ ε (Fin r)).prod A) ((hyperbolic K σ ε (Fin s)).prod B) := by
   intro h
   -- The standard frame of `H^s`, in `H^s ⊥ B`, and its first `r` pairs.
-  set M := (hyperbolic K σ ε (Fin s)).prod B
-  have hfull := isHyperbolicFrame_hyperbolic.map (H₂ := M) (f := LinearMap.inl K _ V₂)
-    fun v w ↦ by simp [M]
+  have hfull := isHyperbolicFrame_hyperbolic_prod (ι := Fin s) (σ := σ) (ε := ε) B
   have hxy := hfull.comp (Fin.castLE_injective hrs.le)
   have hC := (equivalent_of_equivalent_prod hσ
     (h.trans hxy.equivalent_hyperbolic_prod)).anisotropic_iff.1 hA
@@ -271,9 +270,8 @@ theorem wittIndex_eq_of_equivalent_hyperbolic_prod (hσ : ∃ z, σ z ≠ z) {r 
     {A : SignedHermitianSpace K V₁ σ ε} (hA : A.Anisotropic)
     (h : Equivalent H ((hyperbolic K σ ε (Fin r)).prod A)) : H.wittIndex = r := by
   obtain ⟨e⟩ := h.symm.nonempty
-  refine IsGreatest.csSup_eq ⟨⟨_, _, (isHyperbolicFrame_hyperbolic.map
-    (f := LinearMap.inl K _ V₁) fun v w ↦ by simp).map (f := e.toLinearEquiv.toLinearMap)
-      e.map_app⟩, ?_⟩
+  refine IsGreatest.csSup_eq ⟨⟨_, _, (isHyperbolicFrame_hyperbolic_prod A).map
+    (f := e.toLinearEquiv.toLinearMap) e.map_app⟩, ?_⟩
   rintro k ⟨x, y, hxy⟩
   by_contra hk
   exact not_equivalent_hyperbolic_prod_of_lt hσ (not_le.1 hk) _ hA
@@ -297,8 +295,7 @@ theorem wittIndex_eq_zero_iff [FiniteDimensional K V] (hσ : ∃ z, σ z ≠ z) 
     H.wittIndex = 0 ↔ H.Anisotropic := by
   rw [anisotropic_iff]
   refine ⟨fun h x hx ↦ ?_, fun h ↦ Nat.eq_zero_of_not_pos fun hpos ↦ ?_⟩
-  · obtain ⟨y, hy⟩ := exists_isHyperbolicFrame (ι := Fin 1) (H := H) hσ (x := fun _ ↦ x)
-      (linearIndependent_unique_iff.2 (isIsotropic_iff.1 hx).2) fun _ _ ↦ (isIsotropic_iff.1 hx).1
+  · obtain ⟨y, hy⟩ := hx.exists_isHyperbolicFrame hσ
     have := hy.card_le_wittIndex
     simp [h] at this
   · obtain ⟨x, y, hxy⟩ := H.exists_isHyperbolicFrame_wittIndex
@@ -331,7 +328,10 @@ theorem IsHyperbolicFrame.equivalent_hyperbolic [FiniteDimensional K V] {ι : Ty
     Equivalent (SignedHermitianSpace.hyperbolic K σ ε ι) H :=
   IsometryEquiv.equivalent
     { LinearMap.linearEquivOfInjective _ hxy.injective_hyperbolicFrameMap (by simp [← h, two_mul])
-      with map_app' := fun u v ↦ by rw [← hxy.form_hyperbolicFrameMap]; rfl }
+      with
+      map_app' := fun u v ↦ by
+        simp only [LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+          LinearMap.linearEquivOfInjective_apply, hxy.form_hyperbolicFrameMap] }
 
 /-- **Isotropic planes are hyperbolic.** Over a field whose involution is not the identity, a
 two-dimensional signed hermitian space with an isotropic vector is isometric to the hyperbolic
@@ -340,8 +340,7 @@ theorem equivalent_hyperbolic_of_finrank_eq_two (hσ : ∃ z, σ z ≠ z) (hV : 
     (h : ¬H.Anisotropic) : Equivalent (hyperbolic K σ ε (Fin 1)) H := by
   have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ hV
   obtain ⟨x, hx⟩ := not_forall_not.1 (by rwa [anisotropic_iff] at h)
-  obtain ⟨y, hy⟩ := exists_isHyperbolicFrame (ι := Fin 1) (H := H) hσ (x := fun _ ↦ x)
-    (linearIndependent_unique_iff.2 (isIsotropic_iff.1 hx).2) fun _ _ ↦ (isIsotropic_iff.1 hx).1
+  obtain ⟨y, hy⟩ := hx.exists_isHyperbolicFrame hσ
   exact hy.equivalent_hyperbolic (by simp [hV])
 
 /-- **`⟨a, -a⟩` is the hyperbolic plane.** Over a field whose involution is not the identity, for

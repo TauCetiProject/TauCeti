@@ -16,10 +16,10 @@ For signed hermitian spaces `(V₁, h₁)` and `(V₂, h₂)` over a commutative
 involution `σ`, of the same sign `ε`, this file defines the isometric equivalences between them,
 their orthogonal sum on `V₁ × V₂`, and the signed hermitian space carried by a subspace on which
 the form stays nondegenerate. These are the notions in which Witt cancellation
-(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Witt.lean`) is stated. The unitary
-group `U(V)` of a signed hermitian space is the isometry group `LinearMap.isometryGroup H.form` of
-its form; its elements are the isometric equivalences of `H` with itself
-(`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
+(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Witt/Basic.lean`) is stated. The
+unitary group `U(V)` of a signed hermitian space is the isometry group
+`LinearMap.isometryGroup H.form` of its form; its elements are the isometric equivalences of `H`
+with itself (`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
 
 ## Main definitions
 

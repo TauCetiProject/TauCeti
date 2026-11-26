@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import TauCeti.Algebra.Ring.Int.Units
 public import TauCeti.LinearAlgebra.SesquilinearForm.Separating
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Signed hermitian spaces and the adjoint of an endomorphism
@@ -29,7 +31,9 @@ hermitian spaces can be read off from it on their orthogonal sum.
 * `TauCeti.signedHermitianAdjoint H`: the adjoint, as a `σ`-semilinear map on `Module.End K V`;
 * `TauCeti.SignedHermitianSpace.standard`: the standard hermitian form `∑ σ (v i) * w i` on
   `n → K`, whose adjoint is the conjugate transpose
-  (`TauCeti.signedHermitianAdjoint_standard_toLin'`).
+  (`TauCeti.signedHermitianAdjoint_standard_toLin'`);
+* `TauCeti.SignedHermitianSpace.diagonal σ ε a`: the diagonal space `⟨a₁, …, aₙ⟩`, the form
+  `∑ σ (v i) * a i * w i` on `n → K`.
 
 ## Main statements
 
@@ -99,6 +103,46 @@ theorem nondegenerate : H.form.Nondegenerate :=
 `LinearMap.IsSymm`. -/
 theorem isSymm (H : SignedHermitianSpace K V σ 1) : H.form.IsSymm :=
   ⟨fun v w ↦ by rw [H.form_swap v w, one_smul]⟩
+
+/-! ### Diagonal spaces -/
+
+section Diagonal
+
+variable [RingHomInvPair σ σ]
+
+variable (σ ε) in
+/-- The **diagonal space** `⟨a₁, …, aₙ⟩`: the module `n → K` with the form
+`h x y = ∑ σ (x i) * a i * y i`, for non-zero-divisors `a i` with `σ (a i) = ε • a i`. -/
+def diagonal {n : Type*} [Fintype n] (a : n → K) (ha : ∀ i, σ (a i) = ε • a i)
+    (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) : SignedHermitianSpace K (n → K) σ ε where
+  form := LinearMap.mk₂'ₛₗ σ (RingHom.id K) (fun x y ↦ ∑ i, σ (x i) * a i * y i)
+    (fun _ _ _ ↦ by simp [add_mul, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by simp [Finset.mul_sum, mul_assoc])
+    (fun _ _ _ ↦ by simp [mul_add, Finset.sum_add_distrib])
+    (fun _ _ _ ↦ by
+      simp only [smul_eq_mul, Pi.smul_apply, Finset.mul_sum, RingHom.id_apply]
+      exact Finset.sum_congr rfl fun _ _ ↦ by ring)
+  form_swap x y := by
+    simp only [LinearMap.mk₂'ₛₗ_apply, map_sum, map_mul, ha, RingHomInvPair.comp_apply_eq₂,
+      Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [Int.units_smul_eq_cast_mul, Int.units_smul_eq_cast_mul]
+    linear_combination (-(σ (y i) * a i * x i)) * Int.cast_units_sq (R := K) ε
+  separatingLeft x hx := funext fun j ↦ by
+    classical
+    have hj : σ (x j) * a j = 0 := by simpa [Pi.single_apply] using hx (Pi.single j 1)
+    have := (mul_right_mem_nonZeroDivisors_eq_zero_iff (ha₀ j)).1 hj
+    rw [Pi.zero_apply, ← RingHomInvPair.comp_apply_eq₂ (σ := σ) (σ' := σ) (x := x j), this,
+      map_zero]
+
+/-- The form of `⟨a₁, …, aₙ⟩` is `∑ σ (x i) * a i * y i`. -/
+@[simp]
+theorem diagonal_form_apply {n : Type*} [Fintype n] (a : n → K) (ha : ∀ i, σ (a i) = ε • a i)
+    (ha₀ : ∀ i, a i ∈ nonZeroDivisors K) (x y : n → K) :
+    (diagonal σ ε a ha ha₀).form x y = ∑ i, σ (x i) * a i * y i :=
+  (rfl)
+
+end Diagonal
 
 end SignedHermitianSpace
 
