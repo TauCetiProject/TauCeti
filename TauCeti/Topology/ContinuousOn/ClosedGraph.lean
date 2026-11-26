@@ -14,10 +14,10 @@ A function whose graph over a set `s` is closed and whose values on `s` lie in a
 continuous on `s`. This is the relative form of Mathlib's `continuous_of_isClosed_graph`; it
 identifies a bounded single-valued closure of a graph with a continuous function.
 In the other direction, `TauCeti.isClosed_graphOn_of_continuousOn` shows that the graph of a map
-on `s` is closed when the map extends continuously to a closed set containing `s` and the extension
-leaves the image of the map at the points outside `s`. Conversely,
-`ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from its restriction to
-a relatively dense subset. This permits extending a description of a graph
+`f` on `s` is closed when `j ∘ f` extends, for a continuous injection `j` into a Hausdorff space,
+to a map continuous on a closed set `F ⊇ s` that sends `F \ s` outside the range of `j`.
+Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from its
+restriction to a relatively dense subset. This permits extending a description of a graph
 across an exceptional locus without making any choices of values there.
 -/
 
