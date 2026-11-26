@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.DoubleDual.Line
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
+import Mathlib.RingTheory.SimpleModule.Rank
 import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
@@ -71,20 +72,12 @@ theorem exists_contMDiff_section_apply_eq_one (hF : finrank 𝕜 F = 1) {f : Π 
     have := VectorBundle.continuousSMul 𝕜 F V x
     let := FiberBundle.t2Space F V x
     let := VectorBundle.finiteDimensional 𝕜 F V x
-    obtain ⟨v, hv⟩ : ∃ v, f x v ≠ 0 := by
-      by_contra! h
-      exact hf₀ x (ContinuousLinearMap.ext h)
-    have hsurj : Function.Surjective (f x) := fun c ↦
-      ⟨(c / f x v) • v, by simp [div_mul_cancel₀ _ hv]⟩
-    have hrank : finrank 𝕜 (V x) = finrank 𝕜 (Trivial B 𝕜 x) := by
+    have : IsSimpleModule 𝕜 (V x) := isSimpleModule_iff_finrank_eq_one.2 <| by
       rw [((trivializationAt F V x).continuousLinearEquivAt 𝕜 x
         (mem_baseSet_trivializationAt F V x)).toLinearEquiv.finrank_eq, hF]
-      exact (finrank_self 𝕜).symm
-    have hinj : Function.Injective (f x) :=
-      (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hrank (f := (f x).toLinearMap)).2
-        hsurj
-    exact ⟨(LinearEquiv.ofBijective (f x).toLinearMap ⟨hinj, hsurj⟩).toContinuousLinearEquiv,
-      rfl⟩
+    have hbij : Function.Bijective (f x) := LinearMap.bijective_of_ne_zero (N := 𝕜)
+      (f := (f x).toLinearMap) (ContinuousLinearMap.coe_injective.ne (hf₀ x))
+    exact ⟨(LinearEquiv.ofBijective (f x).toLinearMap hbij).toContinuousLinearEquiv, rfl⟩
   choose e he using h
   have hcont : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, 𝕜)) n
       (fun p : TotalSpace F V ↦ TotalSpace.mk' 𝕜 (E := Trivial B 𝕜) p.proj (e p.proj p.snd)) := by
