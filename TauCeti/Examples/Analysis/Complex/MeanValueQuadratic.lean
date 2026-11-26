@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Harmonic.MeanValue
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import TauCeti.Analysis.InnerProductSpace.Laplacian.PlaneWave
+import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
 
 /-!
 # Circle averages of `x² - y²` and of `x²`
@@ -32,8 +32,7 @@ value at the centre is `a² + R² / 2`.
 
 ## References
 
-* L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.2.2 (mean-value formulas) and
-  §2.2.3, Theorem 3 (the converse of the mean-value property).
+* L. C. Evans, *Partial Differential Equations*, 2nd ed., §2.2.2 (mean-value formulas).
 -/
 
 public section
@@ -84,10 +83,10 @@ theorem circleAverage_re_sq (c : ℂ) (R : ℝ) :
   rw [norm_mul_self_eq_normSq, normSq_apply]
   ring
 
-/-- **The quadratic `x²` is harmonic nowhere.** If it were harmonic at `z`, it would be harmonic on
-a closed disc of positive radius `R` about `z`, and its average over the boundary circle would be
-its value `z.re²` at the centre rather than `z.re² + R² / 2`. -/
+/-- **The quadratic `x²` is harmonic nowhere**: it is harmonic at no point of the plane. -/
 theorem not_harmonicAt_re_sq (z : ℂ) : ¬HarmonicAt (fun w : ℂ ↦ w.re ^ 2) z := by
+  -- Harmonicity at `z` would give the mean value property on a small circle about `z`, whose
+  -- average `z.re² + R² / 2` differs from the value `z.re²` at the centre.
   intro h
   obtain ⟨R, hR, hball⟩ := Metric.eventually_nhds_iff_ball.1 h.eventually
   have hR2 : 0 < R / 2 := half_pos hR
@@ -99,14 +98,10 @@ theorem not_harmonicAt_re_sq (z : ℂ) : ¬HarmonicAt (fun w : ℂ ↦ w.re ^ 2)
 /-- **The Laplacian of `x²`** is the constant `2`. -/
 theorem laplacian_re_sq : Δ (fun w : ℂ ↦ w.re ^ 2) = fun _ ↦ 2 := by
   funext z
-  have h : (fun w : ℂ ↦ w.re ^ 2) = fun w ↦ (fun t : ℝ ↦ t ^ 2) ⟪(1 : ℂ), w⟫_ℝ := by
+  have h : (fun w : ℂ ↦ w.re ^ 2) = fun w ↦ ⟪(1 : ℂ), w⟫_ℝ ^ 2 := by
     funext w
     simp [Complex.inner]
-  rw [h]
-  refine (TauCeti.laplacian_comp_inner (fun t : ℝ ↦ t ^ 2) (1 : ℂ) z).trans ?_
-  have hd : deriv (fun t : ℝ ↦ t ^ 2) = fun t ↦ 2 * t := by
-    funext t
-    simp
-  simp [hd]
+  rw [h, TauCeti.laplacian_inner_sq]
+  simp
 
 end TauCeti.Examples.MeanValueQuadratic
