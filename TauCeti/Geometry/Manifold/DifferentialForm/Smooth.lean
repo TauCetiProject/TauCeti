@@ -237,6 +237,13 @@ theorem toContMDiffSection_injective :
           (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x)) := by
   exact Function.LeftInverse.injective ofContMDiffSection_toContMDiffSection
 
+/-- A smooth section is determined by the smooth bundle-valued form it defines. -/
+theorem ofContMDiffSection_injective :
+    Function.Injective
+      (ofContMDiffSection : ContMDiffSection I (E [⋀^Fin k]→L[ℝ] F) ∞
+          (fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] V x) → SmoothBundleForm I F V k) :=
+  Function.LeftInverse.injective toContMDiffSection_ofContMDiffSection
+
 @[simp]
 theorem zero_toContMDiffSection :
     (0 : SmoothBundleForm I F V k).toContMDiffSection = 0 :=
@@ -737,12 +744,15 @@ theorem coe_funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M
 
 /-- Multiplying a smooth section of the bundle of `F`-valued `k`-forms by a smooth function
 multiplies the corresponding smooth form by it. -/
+@[simp]
 theorem _root_.TauCeti.SmoothBundleForm.ofContMDiffSection_smul_eq_funSMulₗ
     (g : C^∞⟮I, M; ℝ⟯)
     (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] F, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M F x⟯) :
     (SmoothBundleForm.ofContMDiffSection (g • s) : SmoothForm I M F k) =
       funSMulₗ g (SmoothBundleForm.ofContMDiffSection s) :=
-  Subtype.ext <| funext fun x ↦ ContMDiffSection.smul_apply g s x
+  Subtype.ext <| funext fun x ↦ by
+    rw [SmoothBundleForm.coe_ofContMDiffSection, coe_funSMulₗ,
+      SmoothBundleForm.coe_ofContMDiffSection, ContMDiffSection.smul_apply]
 
 /-- A smooth form whose degree exceeds the dimension of the model space vanishes. -/
 theorem eq_zero_of_finrank_lt [FiniteDimensional ℝ E] (h : Module.finrank ℝ E < k)

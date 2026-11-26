@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialOperator.ExteriorDerivative
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.Riemannian.Curl
@@ -43,6 +44,7 @@ is not injective at any nonzero covector.
 
 * `TauCeti.ofContMDiffSection_curlSection`: the curl on sections is the curl of the
   corresponding smooth one-forms.
+* `TauCeti.curlSection_comp_mextDerivSection`: gradients are curl-free, `curl ∘ d = 0`.
 * `TauCeti.curlSection_smul_apply`: the Leibniz rule `curl (f α) = f curl α + ⋆(df ∧ α)`.
 * `TauCeti.curlSection_mem_differentialOperators_one`: the curl has order at most one.
 * `TauCeti.tsupport_curlSection_apply_subset`: the curl does not enlarge supports.
@@ -96,12 +98,26 @@ theorem curlSection_apply
   SmoothForm.toContMDiffSection_apply _ x
 
 /-- The section `curl s` is the curl of the smooth one-form `s`. -/
+@[simp]
 theorem ofContMDiffSection_curlSection
     (s : Cₛ^∞⟮I; E [⋀^Fin 1]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M ℝ x⟯) :
     SmoothBundleForm.ofContMDiffSection (curlSection o s) =
       SmoothForm.curl o (SmoothBundleForm.ofContMDiffSection s) :=
   Subtype.ext (funext fun x ↦ by
     rw [SmoothBundleForm.coe_ofContMDiffSection, curlSection_apply])
+
+/-- **Gradients are curl-free**: `curl ∘ d = 0` on the smooth sections of the form bundles. -/
+@[simp]
+theorem curlSection_comp_mextDerivSection : curlSection o ∘ₗ mextDerivSection I M 0 = 0 := by
+  ext s x : 2
+  simp [SmoothForm.curl_mextDerivₗ]
+
+/-- `curl (d s) = 0` for every smooth section `s` of `Λ⁰ T*M`. -/
+@[simp]
+theorem curlSection_mextDerivSection
+    (s : Cₛ^∞⟮I; E [⋀^Fin 0]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin 0]→L[ℝ] Trivial M ℝ x⟯) :
+    curlSection o (mextDerivSection I M 0 s) = 0 :=
+  LinearMap.congr_fun (curlSection_comp_mextDerivSection o) s
 
 /-- **The Leibniz rule for the curl** `curl (f α) = f curl α + ⋆(df ∧ α)` for a smooth function `f`
 and a smooth section `α` of `T*M`, where `df` at `x` is the one-form `mvfderiv I f x`. -/

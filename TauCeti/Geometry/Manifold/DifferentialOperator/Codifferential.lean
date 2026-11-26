@@ -54,6 +54,7 @@ degree, including degree `0`, where it is `d*d`, and the top degree, where it is
 * `TauCeti.ofContMDiffSection_codifferentialSection`,
   `TauCeti.ofContMDiffSection_hodgeLaplacianSection`: `d*` and `Δ` on sections are the
   codifferential and the Hodge Laplacian of the corresponding smooth forms.
+* `TauCeti.codifferentialSection_comp_codifferentialSection`: `d* ∘ d* = 0` on sections.
 * `TauCeti.codifferentialSection_smul_apply`: the Leibniz rule `d*(f β) = f d*β - ι_(grad f) β`.
 * `TauCeti.codifferentialSection_mem_differentialOperators_one`: `d*` has order at most one.
 * `TauCeti.sectionPrincipalSymbol_codifferentialSection_apply`: the principal symbol of `d*` at
@@ -149,6 +150,7 @@ theorem codifferentialSection_apply
   SmoothForm.toContMDiffSection_apply _ x
 
 /-- The section `d* s` is the codifferential of the smooth form `s`. -/
+@[simp]
 theorem ofContMDiffSection_codifferentialSection
     (s : Cₛ^∞⟮I; E [⋀^Fin (k + 1)]→L[ℝ] ℝ,
       fun x : M ↦ TangentSpace I x [⋀^Fin (k + 1)]→L[ℝ] Trivial M ℝ x⟯) :
@@ -156,6 +158,21 @@ theorem ofContMDiffSection_codifferentialSection
       SmoothForm.codifferential o hkl (SmoothBundleForm.ofContMDiffSection s) :=
   Subtype.ext (funext fun x ↦ by
     rw [SmoothBundleForm.coe_ofContMDiffSection, codifferentialSection_apply])
+
+/-- `d* ∘ d* = 0` on the smooth sections of the form bundles. -/
+@[simp]
+theorem codifferentialSection_comp_codifferentialSection {l' : ℕ} (hkl' : k + 1 + 1 + l' = m) :
+    codifferentialSection o hkl ∘ₗ codifferentialSection o hkl' = 0 := by
+  ext s x : 2
+  simp [SmoothForm.codifferential_codifferential]
+
+/-- `d* (d* s) = 0` for every smooth section `s` of the form bundle. -/
+@[simp]
+theorem codifferentialSection_codifferentialSection {l' : ℕ} (hkl' : k + 1 + 1 + l' = m)
+    (s : Cₛ^∞⟮I; E [⋀^Fin (k + 1 + 1)]→L[ℝ] ℝ,
+      fun x : M ↦ TangentSpace I x [⋀^Fin (k + 1 + 1)]→L[ℝ] Trivial M ℝ x⟯) :
+    codifferentialSection o hkl (codifferentialSection o hkl' s) = 0 :=
+  LinearMap.congr_fun (codifferentialSection_comp_codifferentialSection o hkl hkl') s
 
 /-- **The Leibniz rule for the codifferential** `d*(f β) = f d*β - ι_(grad f) β` for a smooth
 function `f` and a smooth section `β` of `Λᵏ⁺¹ T*M`, evaluated on tangent vectors: the contraction
@@ -251,6 +268,7 @@ theorem hodgeLaplacianSection_apply
   SmoothForm.toContMDiffSection_apply _ x
 
 /-- The section `Δ s` is the Hodge Laplacian of the smooth form `s`. -/
+@[simp]
 theorem ofContMDiffSection_hodgeLaplacianSection
     (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x⟯) :
     SmoothBundleForm.ofContMDiffSection (hodgeLaplacianSection o hkl s) =
@@ -326,17 +344,14 @@ variable (o : Manifold.Orientation I M (Fin m))
 theorem hodgeLaplacianSection_zero_add_one_eq_comp (hkl : 0 + (l + 1) = m)
     (hkl' : 0 + 1 + l = m) :
     hodgeLaplacianSection o hkl = codifferentialSection o hkl' ∘ₗ mextDerivSection I M 0 := by
-  refine LinearMap.ext fun s ↦ ContMDiffSection.ext fun x ↦ ?_
-  rw [hodgeLaplacianSection_apply, SmoothForm.hodgeLaplacian_zero_add_one o hkl hkl',
-    LinearMap.comp_apply, codifferentialSection_apply, ofContMDiffSection_mextDerivSection]
+  refine LinearMap.ext fun s ↦ SmoothBundleForm.ofContMDiffSection_injective ?_
+  simp [SmoothForm.hodgeLaplacian_zero_add_one o hkl hkl']
 
 /-- In the top degree the Hodge Laplacian on sections is `Δ = d ∘ d*`. -/
 theorem hodgeLaplacianSection_add_one_zero_eq_comp (hkl : k + 1 + 0 = m) :
     hodgeLaplacianSection o hkl = mextDerivSection I M k ∘ₗ codifferentialSection o hkl := by
-  refine LinearMap.ext fun s ↦ ContMDiffSection.ext fun x ↦ ?_
-  rw [hodgeLaplacianSection_apply, SmoothForm.hodgeLaplacian_add_one_zero o hkl,
-    LinearMap.comp_apply, ← SmoothBundleForm.coe_ofContMDiffSection,
-    ofContMDiffSection_mextDerivSection, ofContMDiffSection_codifferentialSection]
+  refine LinearMap.ext fun s ↦ SmoothBundleForm.ofContMDiffSection_injective ?_
+  simp [SmoothForm.hodgeLaplacian_add_one_zero o hkl]
 
 /-- Strictly between degree `0` and the top degree the Hodge Laplacian on sections is
 `Δ = d* ∘ d + d ∘ d*`. -/
@@ -345,13 +360,8 @@ theorem hodgeLaplacianSection_add_one_add_one_eq_comp_add_comp (hkl : k + 1 + (l
     hodgeLaplacianSection o hkl =
       codifferentialSection o hkl' ∘ₗ mextDerivSection I M (k + 1) +
         mextDerivSection I M k ∘ₗ codifferentialSection o hkl := by
-  refine LinearMap.ext fun s ↦ ContMDiffSection.ext fun x ↦ ?_
-  rw [hodgeLaplacianSection_apply, SmoothForm.hodgeLaplacian_add_one_add_one o hkl hkl',
-    LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply, ContMDiffSection.coe_add,
-    Pi.add_apply, codifferentialSection_apply, ofContMDiffSection_mextDerivSection,
-    ← SmoothBundleForm.coe_ofContMDiffSection (mextDerivSection I M k _),
-    ofContMDiffSection_mextDerivSection, ofContMDiffSection_codifferentialSection]
-  rfl
+  refine LinearMap.ext fun s ↦ SmoothBundleForm.ofContMDiffSection_injective ?_
+  simp [SmoothForm.hodgeLaplacian_add_one_add_one o hkl hkl']
 
 end Decomposition
 

@@ -100,6 +100,7 @@ theorem mextDerivSection_apply
   simp [mextDerivSection, mextDerivₗ_apply]
 
 /-- The section `d s` is the exterior derivative of the smooth form `s`. -/
+@[simp]
 theorem ofContMDiffSection_mextDerivSection
     (s : Cₛ^∞⟮I; E [⋀^Fin k]→L[ℝ] ℝ, fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x⟯) :
     SmoothBundleForm.ofContMDiffSection (mextDerivSection I M k s) =
