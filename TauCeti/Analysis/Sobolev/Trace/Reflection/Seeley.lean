@@ -55,13 +55,12 @@ form a convergent product. Tannery's theorem passes the identities to the limit 
   `TauCeti.HalfSpaceExtension.seeleyCutoff`, with the resulting estimates.
 * `TauCeti.HalfSpaceExtension.iteratedFDeriv_seeleyExtension_of_nonneg`: at nonnegative times the
   derivatives of the extension are those of the input within the closed upper half-space.
-* `TauCeti.HalfSpaceExtension.exists_contDiff_infty_extension_halfSpace`: every function `C^∞` on
-  the closed upper half-space is the restriction of a `C^∞` function.
 * `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_upperHalfSpace`: a function `Cⁿ` on the
   half-space near a point agrees there, near the point, with a function `Cⁿ` on the whole space.
 * `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Ici_prod`,
-  `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Iic_prod`: the same for the closed half-spaces
-  `[a, ∞) × E` and `(-∞, b] × E`, by translation and reflection in time.
+  `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Iic_prod`: a function `Cⁿ` on the closed
+  half-space `[a, ∞) × E` or `(-∞, b] × E` is the restriction of a function `Cⁿ` on the whole
+  space, for every `n : ℕ∞`; by translation and reflection in time.
 * `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Icc_prod`,
   `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc`: a function `Cⁿ` on a closed slab
   `[a, b] × E`, or `E × [a, b]`, is the restriction of a function `Cⁿ` on the whole space. A cutoff
@@ -667,13 +666,6 @@ theorem norm_iteratedFDeriv_seeleyExtension_le_of_neg [CompleteSpace F] {n : ℕ
   gcongr
   exact hC _ (timeScale_neg_two_pow_mem_upperHalfSpace k hx.le)
 
-/-- Every function which is `C^∞` on the closed upper half-space is the restriction of a `C^∞`
-function on the whole space, namely its Seeley extension. -/
-theorem exists_contDiff_infty_extension_halfSpace [CompleteSpace F] {f : ℝ × E → F}
-    (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) :
-    ∃ g : ℝ × E → F, ContDiff ℝ ∞ g ∧ EqOn g f (upperHalfSpace E) :=
-  ⟨seeleyExtension f, contDiff_seeleyExtension hf, seeleyExtension_eqOn_upperHalfSpace f⟩
-
 open Metric in
 /-- **Local Seeley extension.** A function `Cⁿ` on the part of a neighbourhood `s` of `a` in the
 closed upper half-space agrees, on the half-space near `a`, with a function `Cⁿ` on the whole space:
@@ -736,6 +728,18 @@ theorem exists_contDiff_eqOn_Iic_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ ×
     (seeleyExtension_eqOn_upperHalfSpace _ (mem_upperHalfSpace.mpr (sub_nonneg.mpr hz.1))).trans
       (by simp)⟩
 
+/-- A cut-off function `χ • f` is `Cⁿ` on `t` if `t` is covered by an open set `U` on which the
+cutoff `χ` vanishes and an open set `V` whose trace on `t` lies in a set on which `f` is `Cⁿ`. -/
+private theorem contDiffOn_smul_of_eqOn_zero {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
+    {n : ℕ∞} {χ : X → ℝ} {f : X → F} {s t U V : Set X} (hχ : ContDiff ℝ n χ)
+    (hf : ContDiffOn ℝ n f s) (hU : IsOpen U) (hV : IsOpen V) (hχU : EqOn χ 0 U)
+    (htV : t ∩ V ⊆ s) (ht : t ⊆ U ∪ V) :
+    ContDiffOn ℝ n (fun z ↦ χ z • f z) t := by
+  refine contDiffOn_of_locally_contDiffOn fun z hz ↦ (ht hz).elim (fun hzU ↦ ?_) fun hzV ↦ ?_
+  · refine ⟨U, hU, hzU, (contDiffOn_const (c := (0 : F))).congr fun w hw ↦ ?_⟩
+    rw [hχU hw.2, Pi.zero_apply, zero_smul]
+  · exact ⟨V, hV, hzV, hχ.contDiffOn.smul (hf.mono htV)⟩
+
 /-- **Seeley extension from a slab.** A function `Cⁿ` on the closed slab `[a, b] × E` is the
 restriction of a function `Cⁿ` on the whole space. -/
 theorem exists_contDiff_eqOn_Icc_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ × E → F} {a b : ℝ}
@@ -753,26 +757,17 @@ theorem exists_contDiff_eqOn_Icc_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ ×
       Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith) hδpos.le)
     have hχ1 {t : ℝ} (ht : t ≤ a + δ) : χ t = 1 :=
       Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hδpos]; linarith)
-    have hf₁ : ContDiffOn ℝ n (fun z : ℝ × E ↦ χ z.1 • f z) (Ici a ×ˢ univ) := by
-      refine contDiffOn_of_locally_contDiffOn fun z _ ↦ ?_
-      by_cases hz : z.1 < b
-      · refine ⟨Iio b ×ˢ univ, isOpen_Iio.prod isOpen_univ, ⟨hz, mem_univ _⟩, ?_⟩
-        exact (hχ.comp contDiff_fst).contDiffOn.smul
-          (hf.mono fun w hw ↦ ⟨⟨hw.1.1, le_of_lt hw.2.1⟩, mem_univ _⟩)
-      · refine ⟨Ioi (a + 2 * δ) ×ˢ univ, isOpen_Ioi.prod isOpen_univ,
-          ⟨show a + 2 * δ < z.1 by linarith [not_lt.mp hz], mem_univ _⟩, ?_⟩
-        refine (contDiffOn_const (c := (0 : F))).congr fun w hw ↦ ?_
-        rw [hχ0 (le_of_lt hw.2.1), zero_smul]
-    have hf₂ : ContDiffOn ℝ n (fun z : ℝ × E ↦ (1 - χ z.1) • f z) (Iic b ×ˢ univ) := by
-      refine contDiffOn_of_locally_contDiffOn fun z _ ↦ ?_
-      by_cases hz : a < z.1
-      · refine ⟨Ioi a ×ˢ univ, isOpen_Ioi.prod isOpen_univ, ⟨hz, mem_univ _⟩, ?_⟩
-        exact (contDiff_const.sub (hχ.comp contDiff_fst)).contDiffOn.smul
-          (hf.mono fun w hw ↦ ⟨⟨le_of_lt hw.2.1, hw.1.1⟩, mem_univ _⟩)
-      · refine ⟨Iio (a + δ) ×ˢ univ, isOpen_Iio.prod isOpen_univ,
-          ⟨show z.1 < a + δ by linarith [not_lt.mp hz], mem_univ _⟩, ?_⟩
-        refine (contDiffOn_const (c := (0 : F))).congr fun w hw ↦ ?_
-        rw [hχ1 (le_of_lt hw.2.1), sub_self, zero_smul]
+    have hf₁ : ContDiffOn ℝ n (fun z : ℝ × E ↦ χ z.1 • f z) (Ici a ×ˢ univ) :=
+      contDiffOn_smul_of_eqOn_zero (hχ.comp contDiff_fst) hf (isOpen_Ioi.prod isOpen_univ)
+        (isOpen_Iio.prod isOpen_univ) (fun w hw ↦ hχ0 (le_of_lt hw.1))
+        (fun w hw ↦ ⟨⟨hw.1.1, le_of_lt hw.2.1⟩, mem_univ _⟩) fun z _ ↦ (lt_or_ge z.1 b).symm.imp
+          (fun h ↦ ⟨show a + 2 * δ < z.1 by linarith, mem_univ _⟩) fun h ↦ ⟨h, mem_univ _⟩
+    have hf₂ : ContDiffOn ℝ n (fun z : ℝ × E ↦ (1 - χ z.1) • f z) (Iic b ×ˢ univ) :=
+      contDiffOn_smul_of_eqOn_zero (contDiff_const.sub (hχ.comp contDiff_fst)) hf
+        (isOpen_Iio.prod isOpen_univ) (isOpen_Ioi.prod isOpen_univ)
+        (fun w hw ↦ by simp [hχ1 (le_of_lt hw.1)])
+        (fun w hw ↦ ⟨⟨le_of_lt hw.2.1, hw.1.1⟩, mem_univ _⟩) fun z _ ↦ (lt_or_ge a z.1).symm.imp
+          (fun h ↦ ⟨show z.1 < a + δ by linarith, mem_univ _⟩) fun h ↦ ⟨h, mem_univ _⟩
     obtain ⟨g₁, hg₁, hg₁f⟩ := exists_contDiff_eqOn_Ici_prod hf₁
     obtain ⟨g₂, hg₂, hg₂f⟩ := exists_contDiff_eqOn_Iic_prod hf₂
     refine ⟨g₁ + g₂, hg₁.add hg₂, fun z hz ↦ ?_⟩
