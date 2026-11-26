@@ -77,11 +77,10 @@ its companions), once the homology of each band is computed:
 
 Summing over the bands counts every piece once.
 
-The homology Thom isomorphism (`TauCeti.homologyThomIso`) needs the model fibre
-`Fin r → ℝ` of the negative normal bundle in the universe of its base, so the manifolds, their
-models and the coefficient field here live in `Type`, except in the cut of the values of `f`
-(`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`), which takes every
-universe.
+The statements hold in every universe `u` containing the manifolds, their models and the
+coefficient field, although the model fibre `Fin r → ℝ` of the negative normal bundle lies in
+`Type`: the homology Thom isomorphism (`TauCeti.homologyThomIso`) and the existence of Thom classes
+accept a model fibre in any universe.
 
 ## Main results
 
@@ -148,18 +147,20 @@ open Bundle CategoryTheory Function Limits Module Set Topology
 open Polynomial (monomial)
 open scoped ContDiff Manifold Polynomial
 
+universe u
+
 namespace TauCeti
 
 /-! ### The contribution of one Morse–Bott submanifold -/
 
 namespace SmoothEmbedding.IsCriticalSubmanifold
 
-variable {E : Type} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {E' H' : Type*} {S : Type} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
-  [IsManifold J 1 S] {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M} (hn : n ≠ 0)
-  [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
+variable {E : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+  [ChartedSpace H M] {E' H' : Type*} {S : Type u} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S]
+  [ChartedSpace H' S] [IsManifold J 1 S] {f : M → ℝ} {n : ℕ∞ω} {i : SmoothEmbedding J I n S M}
+  (hn : n ≠ 0) [I.Boundaryless] [IsManifold I 2 M] (h : i.IsCriticalSubmanifold f)
   {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
   (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn)
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E') {r : ℕ}
@@ -174,7 +175,7 @@ negative disc bundle `D_ε`, relative to the negative sphere bundle `S_ε`, has
 theorem finrank_singularHomology_negativeDiscSpherePair_of_isThomClass
     (hV : letI := i.normalSpaceFiberBundle hn hdim
       HasLocalSubbundleFrames P (Fin r) (h.negativeNormalSpace hn g))
-    {ε : ℝ} (hε : 0 < ε) {K : Type} [CommRing K] [Nontrivial K]
+    {ε : ℝ} (hε : 0 < ε) {K : Type u} [CommRing K] [Nontrivial K]
     (u : letI := i.normalSpaceFiberBundle hn hdim
       haveI := i.normalSpaceVectorBundle hn hdim
       letI := subbundleTopology P (F' := Fin r → ℝ) (h.negativeNormalSpace hn g)
@@ -206,7 +207,7 @@ end SmoothEmbedding.IsCriticalSubmanifold
 
 namespace SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
-variable {E : Type} {H M E' H' P : Type*} {S : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type u} {H M E' H' P : Type*} {S : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [NormedAddCommGroup E']
   [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
@@ -228,7 +229,7 @@ theorem finrank_singularHomology_negativeDiscSpherePair
     (g : letI := i.normalSpaceFiberBundle hn hdim
       letI := i.normalSpaceVectorBundle hn hdim
       ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn) {r : ℕ}
-    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) {ε : ℝ} (hε : 0 < ε) (K : Type) [CommRing K]
+    (hr : ∀ s, manifoldMorseIndex I f (i s) = r) {ε : ℝ} (hε : 0 < ε) (K : Type u) [CommRing K]
     [Nontrivial K] (h2 : (2 : K) = 0) (n : ℕ) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
@@ -252,7 +253,7 @@ negative normal bundle relative to some smooth fibre metric has a Thom class wit
 private theorem exists_isThomClass_negativeNormalSpace_of_two_eq_zero
     (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
     [T2Space M] [SigmaCompactSpace S] (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
-    {r : ℕ} (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type) [Field K]
+    {r : ℕ} (hr : ∀ s, manifoldMorseIndex I f (i s) = r) (K : Type u) [Field K]
     (h2 : (2 : K) = 0) :
     letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
@@ -275,8 +276,6 @@ private theorem exists_isThomClass_negativeNormalSpace_of_two_eq_zero
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
 
 section Cut
-
-universe u
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [CompactSpace M]
@@ -350,10 +349,10 @@ end Cut
 
 section Level
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  {ι : Type*} {E' H' P : ι → Type*} {S : ι → Type}
+  {ι : Type*} {E' H' P : ι → Type*} {S : ι → Type u}
   [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
   [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
   [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -363,7 +362,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
 namespace IsMorseBottFamily
 
 variable [T2Space M] [SecondCountableTopology M] [CompactSpace M] [Fintype ι]
-  [∀ j, (J j).Boundaryless] (h : IsMorseBottFamily i f) {r : ι → ℕ} (K : Type) [Field K]
+  [∀ j, (J j).Boundaryless] (h : IsMorseBottFamily i f) {r : ι → ℕ} (K : Type u) [Field K]
 
 /-! #### The homology of a band from the Thom pairs of its pieces -/
 
