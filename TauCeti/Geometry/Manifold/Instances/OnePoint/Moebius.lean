@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import Mathlib.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+public import TauCeti.Analysis.Matrix.Normed
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 public import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
@@ -24,21 +26,27 @@ Mathlib identifies the projective line `OnePoint 𝕜` with the projectivization
 (`OnePoint.equivProjectivization`) and lets `GL (Fin 2) 𝕜` act on it through this identification
 (`OnePoint.instGLAction`), by the Möbius transformations
 `z ↦ (a * z + b) / (c * z + d)`. This file relates that description to the two charts of the
-analytic manifold `OnePoint 𝕜`, and shows that every Möbius transformation is analytic.
+analytic manifold `OnePoint 𝕜`, and shows that the Möbius transformation `g • z` is analytic
+jointly in the matrix `g` and the point `z`, including at `∞`. Here `GL (Fin 2) 𝕜` is the open
+subset of invertible matrices, an analytic Lie group modelled on the matrices with the `L∞`
+operator norm (`Matrix.Norms.Operator`), whose topology is the entrywise one.
 
 In homogeneous coordinates, the affine chart reads the point `[v₀ : v₁]` as `v₀ / v₁` where
 `v₁ ≠ 0`, and the inverted chart reads it as `v₁ / v₀` where `v₀ ≠ 0`. The inverse of the inverted
 chart is itself the Möbius transformation of the matrix `!![0, 1; 1, 0]`, restricted to `𝕜`.
 
-Analyticity is checked on `𝕜` first: near a point `z₀` where `c * z₀ + d ≠ 0` the transformation
-is the analytic function `(a * z + b) / (c * z + d)` followed by the inclusion `𝕜 → OnePoint 𝕜`,
-and near a pole it is `(c * z + d) / (a * z + b)` followed by the inverse of the inverted chart,
-the numerator `a * z₀ + b` being nonzero there because the matrix is invertible. Near `∞`, a
-Möbius transformation precomposed with the inverse of the inverted chart is again a Möbius
-transformation restricted to `𝕜`.
+Analyticity is checked on `GL (Fin 2) 𝕜 × 𝕜` first: near a pair `(g₀, z₀)` where
+`c₀ * z₀ + d₀ ≠ 0` the transformation is the function `(a * z + b) / (c * z + d)` of the
+entries of `g` and of `z`, followed by the inclusion `𝕜 → OnePoint 𝕜`, and near a pole it is
+`(c * z + d) / (a * z + b)` followed by the inverse of the inverted chart, the numerator
+`a₀ * z₀ + b₀` being nonzero there because the matrix is invertible. Near `∞`, the inverse of the
+inverted chart is itself a Möbius transformation `σ`, so `g • x` is `(g * σ) • w` for the inverted
+coordinate `w` of `x`, which is analytic in `(g, w)`.
 
-Hence `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps (`OnePoint.instContMDiffConstSMul`),
-and so does `PSL(2, 𝕜)`, which acts through representatives (`OnePoint.instContMDiffConstSMulPSL`).
+Hence the action `GL (Fin 2) 𝕜 × OnePoint 𝕜 → OnePoint 𝕜` is analytic
+(`OnePoint.instContMDiffSMul`). In particular `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps
+(`OnePoint.instContMDiffConstSMul`), and so does `PSL(2, 𝕜)`, which acts through representatives
+(`OnePoint.instContMDiffConstSMulPSL`).
 For `𝕜 = ℂ`, each Möbius transformation is therefore a biholomorphism of the Riemann sphere, with
 inverse the transformation of the inverse matrix: this is `Diffeomorph.constSmul 𝓘(ℂ) ω g`.
 Restricting scalars, the Möbius transformations are also smooth maps of the underlying real
@@ -50,8 +58,11 @@ surface, and in the affine coordinate the transformation of `!![a, b; c, d]` has
 * `OnePoint.affineChart_equivProjectivization_symm_mk` and
   `OnePoint.invChart_equivProjectivization_symm_mk`: the two charts in homogeneous coordinates.
 * `OnePoint.invChart_symm_eq_smul`: the inverse of the inverted chart is a Möbius transformation.
+* `Matrix.GeneralLinearGroup.contMDiff_smul_coe_prod`: a Möbius transformation restricted to `𝕜`
+  is analytic jointly in the matrix and the point.
 * `Matrix.GeneralLinearGroup.contMDiff_smul_coe`: a Möbius transformation restricted to `𝕜` is
   analytic.
+* `OnePoint.instContMDiffSMul`: the action of `GL (Fin 2) 𝕜` on `OnePoint 𝕜` is jointly analytic.
 * `OnePoint.instContMDiffConstSMul`: `GL (Fin 2) 𝕜` acts on `OnePoint 𝕜` by analytic maps.
 * `OnePoint.instContMDiffConstSMulPGL`: so does `PGL(2, 𝕜)`.
 * `OnePoint.instContinuousConstSMul`: in particular it acts by homeomorphisms.
@@ -131,45 +142,81 @@ end Proper
 
 end OnePoint
 
+section JointAction
+
+/-! ### The joint action
+
+The general linear group `GL (Fin 2) 𝕜` is an open subset of the matrices
+(`Units.isOpenEmbedding_val`), which are a complete normed algebra with the `L∞` operator norm.
+This norm is scoped, and its topology is selected locally so that the topology of
+`GL (Fin 2) 𝕜` is literally that of the normed algebra; it is the entrywise topology
+(`Matrix.linftyOpTopologicalSpace_eq`). -/
+
+open scoped Matrix.Norms.Operator
+
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+
 namespace Matrix.GeneralLinearGroup
 
 open OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
-/-- **A Möbius transformation restricted to `𝕜` is analytic.** For `g = !![a, b; c, d]`, it is
-`z ↦ (a * z + b) / (c * z + d)` away from the pole and sends the pole to `∞`. -/
-theorem contMDiff_smul_coe (g : GL (Fin 2) 𝕜) :
-    ContMDiff 𝓘(𝕜) 𝓘(𝕜) ω fun z : 𝕜 ↦ g • (z : OnePoint 𝕜) := by
-  intro z₀
-  -- The transformation is the quotient of the affine forms `a * z + b` and `c * z + d`.
-  have hpc : ContDiff 𝕜 ω fun z : 𝕜 ↦ g 0 0 * z + g 0 1 := by fun_prop
-  have hqc : ContDiff 𝕜 ω fun z : 𝕜 ↦ g 1 0 * z + g 1 1 := by fun_prop
-  by_cases hq₀ : g 1 0 * z₀ + g 1 1 = 0
+/-- **A Möbius transformation restricted to `𝕜` depends analytically on the matrix and the
+point.** For `g = !![a, b; c, d]`, the map `(g, z) ↦ g • z` is
+`(a * z + b) / (c * z + d)` away from the pole and sends the pole to `∞`. Here `GL (Fin 2) 𝕜` is
+an open subset of the matrices, with the norm `Matrix.Norms.Operator`. -/
+theorem contMDiff_smul_coe_prod :
+    ContMDiff (𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜).prod 𝓘(𝕜)) 𝓘(𝕜) ω
+      fun p : GL (Fin 2) 𝕜 × 𝕜 ↦ p.1 • (p.2 : OnePoint 𝕜) := by
+  rintro ⟨g₀, z₀⟩
+  -- Read `(g, z)` in the model space, where the transformation is the quotient of the affine
+  -- forms `a * z + b` and `c * z + d`, analytic in the entries of `g` and in `z`.
+  let v : GL (Fin 2) 𝕜 × 𝕜 → Matrix (Fin 2) (Fin 2) 𝕜 × 𝕜 := fun p ↦ (p.1, p.2)
+  have hv : ContMDiff (𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜).prod 𝓘(𝕜))
+      𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜 × 𝕜) ω v :=
+    (Units.contMDiff_val.comp contMDiff_fst).prodMk_space contMDiff_snd
+  have he (i j : Fin 2) : ContDiff 𝕜 ω fun q : Matrix (Fin 2) (Fin 2) 𝕜 × 𝕜 ↦ q.1 i j :=
+    (Matrix.entryLinearMap 𝕜 𝕜 i j).toContinuousLinearMap.contDiff.comp contDiff_fst
+  have hpc : ContDiff 𝕜 ω fun q : Matrix (Fin 2) (Fin 2) 𝕜 × 𝕜 ↦ q.1 0 0 * q.2 + q.1 0 1 :=
+    ((he 0 0).mul contDiff_snd).add (he 0 1)
+  have hqc : ContDiff 𝕜 ω fun q : Matrix (Fin 2) (Fin 2) 𝕜 × 𝕜 ↦ q.1 1 0 * q.2 + q.1 1 1 :=
+    ((he 1 0).mul contDiff_snd).add (he 1 1)
+  by_cases hq₀ : g₀ 1 0 * z₀ + g₀ 1 1 = 0
   · -- At the pole, the transformation is the reciprocal quotient read in the inverted chart.
-    have hp₀ : g 0 0 * z₀ + g 0 1 ≠ 0 := by
+    have hp₀ : g₀ 0 0 * z₀ + g₀ 0 1 ≠ 0 := by
       intro hp₀
-      apply g.det_ne_zero
+      apply g₀.det_ne_zero
       rw [det_fin_two]
-      linear_combination g 0 0 * hq₀ - g 1 0 * hp₀
-    have hev : (fun z : 𝕜 ↦ g • (z : OnePoint 𝕜)) =ᶠ[𝓝 z₀]
-        fun z ↦ invChart.symm ((g 1 0 * z + g 1 1) / (g 0 0 * z + g 0 1)) := by
-      filter_upwards [hpc.continuous.continuousAt.eventually_ne hp₀] with z hz
+      linear_combination g₀ 0 0 * hq₀ - g₀ 1 0 * hp₀
+    have hev : (fun p : GL (Fin 2) 𝕜 × 𝕜 ↦ p.1 • (p.2 : OnePoint 𝕜)) =ᶠ[𝓝 (g₀, z₀)]
+        fun p ↦ invChart.symm ((p.1 1 0 * p.2 + p.1 1 1) / (p.1 0 0 * p.2 + p.1 0 1)) := by
+      filter_upwards [(hpc.continuous.comp hv.continuous).continuousAt.eventually_ne hp₀]
+        with p (hp : p.1 0 0 * p.2 + p.1 0 1 ≠ 0)
       rw [smul_some_eq_ite]
       split_ifs with h
       · rw [h, zero_div, invChart_symm_zero]
-      · rw [invChart_symm_of_ne_zero (div_ne_zero h hz), inv_div]
-    exact ((contMDiff_invChart_symm _).comp z₀
-      ((hqc.contDiffAt.div hpc.contDiffAt hp₀).contMDiffAt)).congr_of_eventuallyEq hev
+      · rw [invChart_symm_of_ne_zero (div_ne_zero h hp), inv_div]
+    exact (((contMDiff_invChart_symm _).comp _
+      (hqc.contDiffAt.div hpc.contDiffAt hp₀).contMDiffAt).comp _ (hv _)).congr_of_eventuallyEq
+        hev
   · -- Away from the pole, the transformation is the quotient followed by the inclusion.
-    have hev : (fun z : 𝕜 ↦ g • (z : OnePoint 𝕜)) =ᶠ[𝓝 z₀]
-        fun z ↦ (((g 0 0 * z + g 0 1) / (g 1 0 * z + g 1 1) : 𝕜) : OnePoint 𝕜) := by
-      filter_upwards [hqc.continuous.continuousAt.eventually_ne hq₀] with z hz
+    have hev : (fun p : GL (Fin 2) 𝕜 × 𝕜 ↦ p.1 • (p.2 : OnePoint 𝕜)) =ᶠ[𝓝 (g₀, z₀)]
+        fun p ↦ (((p.1 0 0 * p.2 + p.1 0 1) / (p.1 1 0 * p.2 + p.1 1 1) : 𝕜) : OnePoint 𝕜) := by
+      filter_upwards [(hqc.continuous.comp hv.continuous).continuousAt.eventually_ne hq₀]
+        with p (hp : p.1 1 0 * p.2 + p.1 1 1 ≠ 0)
       rw [smul_some_eq_ite]
       split_ifs with h
-      exacts [absurd h hz, rfl]
-    exact ((contMDiff_coe _).comp z₀
-      ((hpc.contDiffAt.div hqc.contDiffAt hq₀).contMDiffAt)).congr_of_eventuallyEq hev
+      exacts [absurd h hp, rfl]
+    exact (((contMDiff_coe _).comp _
+      (hpc.contDiffAt.div hqc.contDiffAt hq₀).contMDiffAt).comp _ (hv _)).congr_of_eventuallyEq
+        hev
+
+/-- **A Möbius transformation restricted to `𝕜` is analytic.** For `g = !![a, b; c, d]`, it is
+`z ↦ (a * z + b) / (c * z + d)` away from the pole and sends the pole to `∞`. -/
+theorem contMDiff_smul_coe (g : GL (Fin 2) 𝕜) :
+    ContMDiff 𝓘(𝕜) 𝓘(𝕜) ω fun z : 𝕜 ↦ g • (z : OnePoint 𝕜) :=
+  (contMDiff_smul_coe_prod (𝕜 := 𝕜)).comp (contMDiff_const.prodMk contMDiff_id)
 
 end Matrix.GeneralLinearGroup
 
@@ -177,33 +224,61 @@ namespace OnePoint
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
+/-- **The Möbius action on the projective line is jointly analytic.** The map
+`(g, x) ↦ g • x` from `GL (Fin 2) 𝕜 × OnePoint 𝕜` to `OnePoint 𝕜` is analytic, including at
+`∞`, where `GL (Fin 2) 𝕜` is an open subset of the matrices with the norm
+`Matrix.Norms.Operator`. For `𝕜 = ℂ` this is the holomorphic action of `GL(2, ℂ)` on the Riemann
+sphere. -/
+instance instContMDiffSMul :
+    ContMDiffSMul 𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜) 𝓘(𝕜) ω (GL (Fin 2) 𝕜) (OnePoint 𝕜) where
+  contMDiff_smul := by
+    rintro ⟨g₀, x₀⟩
+    induction x₀ using OnePoint.rec with
+    | infty =>
+      -- Near `∞`, read the point through the inverted chart, whose inverse is itself a Möbius
+      -- transformation `σ`, and absorb `σ` into the matrix.
+      obtain ⟨σ, hσ⟩ : ∃ σ : GL (Fin 2) 𝕜, ∀ w : 𝕜, invChart.symm w = σ • (w : OnePoint 𝕜) :=
+        ⟨_, invChart_symm_eq_smul⟩
+      have hev : (fun p : GL (Fin 2) 𝕜 × OnePoint 𝕜 ↦ p.1 • p.2) =ᶠ[𝓝 (g₀, (∞ : OnePoint 𝕜))]
+          (fun p : GL (Fin 2) 𝕜 × 𝕜 ↦ p.1 • (p.2 : OnePoint 𝕜)) ∘
+            fun p ↦ (p.1 * σ, invChart p.2) := by
+        filter_upwards [prod_mem_nhds univ_mem (invChart.open_source.mem_nhds (by simp))]
+          with p hp
+        rw [Function.comp_apply, mul_smul, ← hσ, invChart.left_inv hp.2]
+      have hc : ContMDiffAt 𝓘(𝕜) 𝓘(𝕜) ω invChart (∞ : OnePoint 𝕜) :=
+        contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inr rfl)) (by simp)
+      exact ((GeneralLinearGroup.contMDiff_smul_coe_prod (𝕜 := 𝕜) _).comp _
+        ((contMDiff_fst.mul contMDiff_const).contMDiffAt.prodMk
+          (hc.comp _ contMDiffAt_snd))).congr_of_eventuallyEq hev
+    | coe z =>
+      -- Near a finite point, read the point through the affine chart.
+      have hev : (fun p : GL (Fin 2) 𝕜 × OnePoint 𝕜 ↦ p.1 • p.2) =ᶠ[𝓝 (g₀, (z : OnePoint 𝕜))]
+          (fun p : GL (Fin 2) 𝕜 × 𝕜 ↦ p.1 • (p.2 : OnePoint 𝕜)) ∘
+            fun p ↦ (p.1, affineChart p.2) := by
+        filter_upwards [prod_mem_nhds univ_mem (affineChart.open_source.mem_nhds (by simp))]
+          with p hp
+        rw [Function.comp_apply, ← affineChart_symm_apply, affineChart.left_inv hp.2]
+      have hc : ContMDiffAt 𝓘(𝕜) 𝓘(𝕜) ω affineChart (z : OnePoint 𝕜) :=
+        contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inl rfl)) (by simp)
+      exact ((GeneralLinearGroup.contMDiff_smul_coe_prod (𝕜 := 𝕜) _).comp _
+        (contMDiffAt_fst.prodMk (hc.comp (g₀, (z : OnePoint 𝕜)) contMDiffAt_snd)))
+          |>.congr_of_eventuallyEq hev
+
 /-- **Möbius transformations of the projective line are analytic.** For `𝕜 = ℂ`, every
 transformation `z ↦ (a * z + b) / (c * z + d)` of the Riemann sphere is holomorphic, and hence a
 biholomorphism `Diffeomorph.constSmul 𝓘(ℂ) ω g` with inverse the transformation of `g⁻¹`. -/
 instance instContMDiffConstSMul : ContMDiffConstSMul 𝓘(𝕜) ω (GL (Fin 2) 𝕜) (OnePoint 𝕜) where
-  contMDiff_const_smul g x := by
-    induction x using OnePoint.rec with
-    | infty =>
-      -- Near `∞`, read the transformation through the inverted chart, whose inverse is itself a
-      -- Möbius transformation `σ`.
-      obtain ⟨σ, hσ⟩ : ∃ σ : GL (Fin 2) 𝕜, ∀ w : 𝕜, invChart.symm w = σ • (w : OnePoint 𝕜) :=
-        ⟨_, invChart_symm_eq_smul⟩
-      have hev : (fun x : OnePoint 𝕜 ↦ g • x) =ᶠ[𝓝 (∞ : OnePoint 𝕜)]
-          (fun w : 𝕜 ↦ (g * σ) • (w : OnePoint 𝕜)) ∘ invChart := by
-        filter_upwards [invChart.open_source.mem_nhds (by simp)] with x hx
-        rw [Function.comp_apply, mul_smul, ← hσ, invChart.left_inv hx]
-      exact (((g * σ).contMDiff_smul_coe _).comp _
-        (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inr rfl))
-          (by simp))).congr_of_eventuallyEq hev
-    | coe z =>
-      -- Near a finite point, read the transformation through the affine chart.
-      have hev : (fun x : OnePoint 𝕜 ↦ g • x) =ᶠ[𝓝 (z : OnePoint 𝕜)]
-          (fun w : 𝕜 ↦ g • (w : OnePoint 𝕜)) ∘ affineChart := by
-        filter_upwards [affineChart.open_source.mem_nhds (by simp)] with x hx
-        rw [Function.comp_apply, ← affineChart_symm_apply, affineChart.left_inv hx]
-      exact ((g.contMDiff_smul_coe _).comp _
-        (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inl rfl))
-          (by simp))).congr_of_eventuallyEq hev
+  contMDiff_const_smul g :=
+    ContMDiffSMul.contMDiff_const_smul (I := 𝓘(𝕜, Matrix (Fin 2) (Fin 2) 𝕜)) (I' := 𝓘(𝕜))
+      (n := ω) (M := OnePoint 𝕜) g
+
+end OnePoint
+
+end JointAction
+
+namespace OnePoint
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [DecidableEq 𝕜] [ProperSpace 𝕜]
 
 /-- **The Möbius transformations of `PGL(2, 𝕜)` are analytic**, since the class of a matrix acts
 as the matrix does. -/
