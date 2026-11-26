@@ -30,16 +30,16 @@ maps.
 
 * `TauCeti.IsLeFiberMeasure`: a measure `l` is at most the fiber measure `dμ / dν` of `π` over `b`,
   with unfolding lemma `TauCeti.isLeFiberMeasure_iff`, `TauCeti.IsLeFiberMeasure.lintegral_le`, and
-  `TauCeti.IsLeFiberMeasure.zero`.
-* `TauCeti.IsLeFiberMeasure.of_coordinates` and `TauCeti.IsLeFiberMeasure.of_measurePreserving`:
-  local coordinates or a measure-preserving product parametrization yield a measure below the fiber
-  measure.
+  `MeasureTheory.Measure.isLeFiberMeasure_zero`.
+* `Measurable.isLeFiberMeasure_of_coordinates` and
+  `MeasureTheory.MeasurePreserving.isLeFiberMeasure`: local coordinates or a measure-preserving
+  product parametrization yield a measure below the fiber measure.
 * `TauCeti.IsLeFiberMeasure.mono`, `TauCeti.IsLeFiberMeasure.congr`,
   `TauCeti.IsLeFiberMeasure.smul`, `TauCeti.IsLeFiberMeasure.comp_homeomorph`: basic closure
   properties.
 * `TauCeti.IsLeFiberMeasure.trans`: two-step fibration rule for `(π, π₂)`.
 * `TauCeti.IsLeFiberMeasure.map_prod` and `TauCeti.IsLeFiberMeasure.map`: pushforward along
-  fiber-preserving families of continuous maps.
+  fiber-preserving families with almost everywhere continuous sections.
 
 ## References
 
@@ -89,19 +89,21 @@ theorem lintegral_le (hl : IsLeFiberMeasure μ ν π b l) {K : X → ℝ≥0∞}
 
 /-- The zero measure is below every fiber measure. -/
 @[simp]
-theorem zero (μ : Measure X) (ν : Measure B) (π : X → B) (b : B) :
+theorem _root_.MeasureTheory.Measure.isLeFiberMeasure_zero
+    (μ : Measure X) (ν : Measure B) (π : X → B) (b : B) :
     IsLeFiberMeasure μ ν π b 0 := fun _ _ _ _ ↦ by simp
 
 /-- Let `(t, p) ↦ ψ t p`, for `t` in a neighborhood `V` of `b`, parametrize a part of `X` so that
 `π (ψ t p) = t` for almost every `p` with `w t p ≠ 0` and `μ` dominates `w t p dν(t) dρ(p)` there.
-If `ψ` and `w` are continuous in `t` at `b` for almost every `p`, then `(ρ.withDensity (w b)).map
-(ψ b)` is at most the fiber measure `dμ / dν` of `π` over `b`. -/
-theorem of_coordinates [OpensMeasurableSpace X] [OpensMeasurableSpace B]
+If `ψ` is continuous and `w` is lower semicontinuous in `t` at `b` for almost every `p`, then
+`(ρ.withDensity (w b)).map (ψ b)` is at most the fiber measure `dμ / dν` of `π` over `b`. -/
+theorem _root_.Measurable.isLeFiberMeasure_of_coordinates
+    [OpensMeasurableSpace X] [OpensMeasurableSpace B]
     [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] [IsLocallyFiniteMeasure ν] {ρ : Measure P}
     {ψ : B → P → X} {w : B → P → ℝ≥0∞} {V : Set B} (hπ : Measurable π)
     (hψ : Measurable ψ.uncurry) (hw : Measurable w.uncurry) (hV : V ∈ 𝓝 b)
     (h_fiber : ∀ t ∈ V, ∀ᵐ p : P ∂ρ, w t p ≠ 0 → π (ψ t p) = t)
-    (h_cont : ∀ᵐ p : P ∂ρ, ContinuousAt (ψ · p) b ∧ ContinuousAt (w · p) b)
+    (h_reg : ∀ᵐ p : P ∂ρ, ContinuousAt (ψ · p) b ∧ LowerSemicontinuousAt (w · p) b)
     (h_le : ∀ K : X → ℝ≥0∞, Measurable K →
       ∫⁻ t : B in V, ∫⁻ p : P, w t p * K (ψ t p) ∂ρ ∂ν ≤ ∫⁻ x : X, K x ∂μ) :
     IsLeFiberMeasure μ ν π b ((ρ.withDensity (w b)).map (ψ b)) := by
@@ -110,11 +112,11 @@ theorem of_coordinates [OpensMeasurableSpace X] [OpensMeasurableSpace B]
   have hK_meas : Measurable K := hK.measurable
   have hA : LowerSemicontinuousAt A b := by
     refine lowerSemicontinuousAt_lintegral (fun _ ↦ by fun_prop)
-      (h_cont.mono fun p ⟨hψ_cont, hw_cont⟩ ↦ ?_)
+      (h_reg.mono fun p ⟨hψ_cont, hw_lsc⟩ ↦ ?_)
     rw [lowerSemicontinuousAt_iff_le_liminf]
     calc
       w b p * K (ψ b p) ≤ liminf (w · p) (𝓝 b) * liminf (fun t ↦ K (ψ t p)) (𝓝 b) :=
-        mul_le_mul' hw_cont.tendsto.liminf_eq.ge
+        mul_le_mul' (lowerSemicontinuousAt_iff_le_liminf.1 hw_lsc)
           (lowerSemicontinuousAt_iff_le_liminf.1 ((hK _).comp hψ_cont))
       _ ≤ liminf (fun t ↦ w t p * K (ψ t p)) (𝓝 b) := ENNReal.le_liminf_mul
   rw [lintegral_map hK_meas hψ.of_uncurry_left,
@@ -133,19 +135,20 @@ theorem of_coordinates [OpensMeasurableSpace X] [OpensMeasurableSpace B]
     _ ≤ ∫⁻ x, (π ⁻¹' S).indicator K x ∂μ := h_le _ (hK_meas.indicator hπS)
     _ ≤ C * ν S := (lintegral_indicator hπS K).trans_le (hS hS_open)
 
-/-- If `μ` is the image of `ν.prod ρ` under a map `φ`, continuous in the first variable at `b`,
-with `π (φ (t, p)) = t`, then `ρ.map (fun p ↦ φ (b, p))` is at most the fiber measure `dμ / dν`
-of `π` over `b`. -/
-theorem of_measurePreserving [OpensMeasurableSpace X] [OpensMeasurableSpace B]
+/-- If `μ` is the image of `ν.prod ρ` under a map `φ` with `π (φ (t, p)) = t`, and `φ (·, p)`
+is continuous at `b` for almost every `p`, then `ρ.map (fun p ↦ φ (b, p))` is at most the fiber
+measure `dμ / dν` of `π` over `b`. -/
+theorem _root_.MeasureTheory.MeasurePreserving.isLeFiberMeasure
+    [OpensMeasurableSpace X] [OpensMeasurableSpace B]
     [IsCountablyGenerated (𝓝 b)] [ν.IsOpenPosMeasure] [IsLocallyFiniteMeasure ν] {ρ : Measure P}
     [SFinite ρ] {φ : B × P → X} (hφ : MeasurePreserving φ (ν.prod ρ) μ) (hπ : Measurable π)
     (h_fiber : ∀ (t : B) (p : P), π (φ (t, p)) = t)
-    (h_cont : ∀ p : P, ContinuousAt (fun t : B ↦ φ (t, p)) b) :
+    (h_cont : ∀ᵐ p : P ∂ρ, ContinuousAt (fun t : B ↦ φ (t, p)) b) :
     IsLeFiberMeasure μ ν π b (ρ.map fun p : P ↦ φ (b, p)) := by
   rw [← withDensity_one (μ := ρ)]
-  exact of_coordinates (ψ := fun t p ↦ φ (t, p)) (w := 1) hπ hφ.measurable measurable_const
-    univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
-    (.of_forall fun p ↦ ⟨h_cont p, continuousAt_const⟩) fun K hK ↦ by
+  exact hπ.isLeFiberMeasure_of_coordinates (ψ := fun t p ↦ φ (t, p)) (w := 1)
+    hφ.measurable measurable_const univ_mem (fun t _ ↦ .of_forall fun p _ ↦ h_fiber t p)
+    (h_cont.mono fun _ hp ↦ ⟨hp, continuousAt_const.lowerSemicontinuousAt⟩) fun K hK ↦ by
       simpa [← hφ.lintegral_comp hK] using
         (lintegral_prod _ (hK.comp hφ.measurable).aemeasurable).ge
 
@@ -213,20 +216,20 @@ theorem trans {ν'' : Measure B'} {π₂ : X → B'} {b' : B'} [SFinite ν''] [O
         h_sub _ (by grw [hS, hS', h_prod]) (hS_open.prod hS'_open)
     _ = C * ν'' S' * ν S := by rw [prod_prod, mul_comm (ν S), mul_assoc]
 
-/-- Let `x ↦ φ (p, x)` be a measurable family of continuous maps `X → X'` with
-`π₀ (φ (p, x)) = π x`. If `l` is at most the fiber measure `dμ / dν` of `π` over `b`, then
+/-- Let `φ` be measurable with `π₀ (φ (p, x)) = π x` and `x ↦ φ (p, x)` continuous for almost
+every `p`. If `l` is at most the fiber measure `dμ / dν` of `π` over `b`, then
 `(ρ.prod l).map φ` is at most the fiber measure of `π₀` for `(ρ.prod μ).map φ` over `b`. -/
 theorem map_prod [OpensMeasurableSpace X'] [OpensMeasurableSpace B] [FirstCountableTopology X]
     [SFinite μ] [SFinite l] {ρ : Measure P} [SFinite ρ] {φ : P × X → X'} {π₀ : X' → B}
     (hl : IsLeFiberMeasure μ ν π b l) (hφ : Measurable φ)
-    (h_cont : ∀ p : P, Continuous fun x : X ↦ φ (p, x)) (hπ₀ : Measurable π₀)
+    (h_cont : ∀ᵐ p : P ∂ρ, Continuous fun x : X ↦ φ (p, x)) (hπ₀ : Measurable π₀)
     (h_comm : ∀ (p : P) (x : X), π₀ (φ (p, x)) = π x) :
     IsLeFiberMeasure ((ρ.prod μ).map φ) ν π₀ b ((ρ.prod l).map φ) := by
   intro K hK C hC
   have hK_meas : Measurable K := hK.measurable
   have h_lsc : LowerSemicontinuous fun x ↦ ∫⁻ p, K (φ (p, x)) ∂ρ := fun x ↦
     lowerSemicontinuousAt_lintegral (fun _ ↦ by fun_prop)
-      (.of_forall fun p ↦ hK.comp (h_cont p) x)
+      (h_cont.mono fun _ hp ↦ hK.comp hp x)
   rw [lintegral_map hK_meas hφ, lintegral_prod_symm' _ (by fun_prop)]
   refine hl _ h_lsc C (hC.mono fun S hS hS_open ↦ ?_)
   have h_pre : φ ⁻¹' (π₀ ⁻¹' S) = univ ×ˢ (π ⁻¹' S) := Set.ext fun ⟨p, x⟩ ↦ by simp [h_comm]
