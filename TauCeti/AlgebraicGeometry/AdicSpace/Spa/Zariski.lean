@@ -127,6 +127,17 @@ theorem spaZeroLocus_spaVanishingIdeal_eq_closure (Z : Set (spa Aplus)) :
   rw [spaZeroLocus, spaVanishingIdeal, PrimeSpectrum.zeroLocus_vanishingIdeal_eq_closure]
   exact (h.closure_eq_preimage_closure_image Z).symm
 
+/-- Inverse images of zero loci along continuous ring homomorphisms preserving the chosen
+subrings are zero loci of extended ideals. -/
+theorem spaComap_preimage_spaZeroLocus
+    {B : Type*} [CommRing B] [TopologicalSpace B] (φ : A →+* B) (hφ : Continuous φ)
+    (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (I : Ideal A) :
+    spaComap φ hφ Aplus Bplus hplus ⁻¹' spaZeroLocus Aplus I =
+      spaZeroLocus Bplus (I.map φ) := by
+  ext x
+  simp only [mem_preimage, mem_spaZeroLocus, spaComap_val, supp_comap,
+    Ideal.map_le_iff_le_comap]
+
 /-- Inverse images of zero loci along Huber-pair morphisms are zero loci of extended ideals. -/
 @[simp]
 theorem _root_.TauCeti.Huber.Pair.Hom.preimage_spaZeroLocus
@@ -134,9 +145,7 @@ theorem _root_.TauCeti.Huber.Pair.Hom.preimage_spaZeroLocus
     [IsTopologicalRing B] [Huber.IsHuberRing B]
     {S : Huber.Pair A} {T : Huber.Pair B} (f : S.Hom T) (I : Ideal A) :
     f.spaComap ⁻¹' spaZeroLocus S.plus I = spaZeroLocus T.plus (I.map f.toRingHom) := by
-  ext x
-  simp only [mem_preimage, mem_spaZeroLocus, Huber.Pair.Hom.spaComap_val, supp_comap,
-    Ideal.map_le_iff_le_comap]
+  rw [Huber.Pair.Hom.spaComap_def, spaComap_preimage_spaZeroLocus]
 
 section Stalk
 
