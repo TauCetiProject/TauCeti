@@ -5,7 +5,9 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 public import TauCeti.Statistics.Experiments.Density
+import TauCeti.Probability.Kernel.Disintegration.Map
 
 /-!
 # Countable mixtures and the Halmos–Savage lemma
@@ -30,8 +32,12 @@ work with a dominating measure that is itself a mixture of the laws of the model
 * `TauCeti.tsum_mixtureWeight`: the weights sum to `1`.
 * `TauCeti.countableMixture_apply_eq_zero_iff`: a set is null for a mixture iff it is null for
   every component.
-* `TauCeti.countableMixture_eq_withDensity`, `TauCeti.HasDensity.countableMixture`: a mixture of
-  measures with densities has the mixed density.
+* `TauCeti.map_countableMixture`, `TauCeti.countableMixture_compProd`,
+  `TauCeti.map_prodMk_countableMixture_eq_compProd`: pushforwards, composition products, and
+  disintegrations commute with countable mixtures.
+* `TauCeti.countableMixture_eq_withDensity`, `TauCeti.countableMixture_eq_withDensity_mul`,
+  `TauCeti.HasDensity.countableMixture`: a mixture of measures with densities has the mixed
+  density.
 * `TauCeti.exists_absolutelyContinuous_countableMixture`: the Halmos–Savage lemma.
 
 ## References
@@ -46,7 +52,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Set
+open MeasureTheory ProbabilityTheory Set
 
 open scoped ENNReal
 
@@ -106,12 +112,53 @@ instance isProbabilityMeasure_countableMixture [∀ n, IsProbabilityMeasure (P (
     IsProbabilityMeasure (countableMixture P θs) :=
   ⟨by simp [countableMixture_apply]⟩
 
+instance sFinite_countableMixture [∀ n, SFinite (P (θs n))] :
+    SFinite (countableMixture P θs) := by
+  rw [countableMixture_def]
+  infer_instance
+
 /-- The mixture of a constant sequence is the measure it repeats. -/
 @[simp]
 theorem countableMixture_const (P : Θ → Measure X) (θ : Θ) :
     countableMixture P (fun _ ↦ θ) = P θ := by
   ext s -
   rw [countableMixture_apply, ENNReal.tsum_mul_right, tsum_mixtureWeight, one_mul]
+
+/-- Pushforward commutes with taking a countable mixture. -/
+theorem map_countableMixture {Y : Type*} [MeasurableSpace Y] {φ : X → Y}
+    (hφ : AEMeasurable φ (countableMixture P θs)) :
+    (countableMixture P θs).map φ = countableMixture (fun θ ↦ (P θ).map φ) θs := by
+  rw [countableMixture_def, countableMixture_def, Measure.map_sum (by rwa [← countableMixture_def])]
+  exact Measure.sum_congr fun n ↦
+    Measure.map_smul _ (hφ.mono_ac (absolutelyContinuous_countableMixture n))
+
+/-- Composition product with an s-finite kernel distributes over a countable mixture on the left. -/
+theorem countableMixture_compProd {Y : Type*} [MeasurableSpace Y] [∀ n, SFinite (P (θs n))]
+    (κ : ProbabilityTheory.Kernel X Y) [ProbabilityTheory.IsSFiniteKernel κ] :
+    countableMixture P θs ⊗ₘ κ = countableMixture (fun θ ↦ P θ ⊗ₘ κ) θs := by
+  rw [countableMixture_def, countableMixture_def, Measure.compProd_sum_left]
+  exact Measure.sum_congr fun n ↦ Measure.compProd_smul_left _
+
+/-- If an s-finite kernel `K` disintegrates each component `P (θs n)` along a measurable map `T`,
+then `K` also disintegrates the countable mixture `countableMixture P θs` along `T`. -/
+theorem map_prodMk_countableMixture_eq_compProd {S : Type*} [MeasurableSpace S]
+    {T : X → S} (hT : Measurable T)
+    {K : ProbabilityTheory.Kernel S X} [ProbabilityTheory.IsSFiniteKernel K]
+    (h : ∀ n, (P (θs n)).map (fun x ↦ (T x, x)) = (P (θs n)).map T ⊗ₘ K) :
+    (countableMixture P θs).map (fun x ↦ (T x, x)) =
+      (countableMixture P θs).map T ⊗ₘ K := by
+  have : ∀ n, SFinite (P (θs n)) := fun n ↦
+    sfinite_of_map_prodMk_eq_compProd hT.aemeasurable (h n)
+  have hpair : Measurable fun x ↦ (T x, x) := hT.prodMk measurable_id
+  calc (countableMixture P θs).map (fun x ↦ (T x, x))
+    _ = countableMixture (fun θ ↦ (P θ).map (fun x ↦ (T x, x))) θs :=
+        map_countableMixture hpair.aemeasurable
+    _ = countableMixture (fun θ ↦ (P θ).map T ⊗ₘ K) θs := by
+        rw [countableMixture_def, countableMixture_def]
+        exact Measure.sum_congr fun n ↦ by rw [h n]
+    _ = countableMixture (fun θ ↦ (P θ).map T) θs ⊗ₘ K :=
+        (countableMixture_compProd K).symm
+    _ = (countableMixture P θs).map T ⊗ₘ K := by rw [← map_countableMixture hT.aemeasurable]
 
 /-- A countable mixture of measures with densities `g n` in `ℝ≥0∞` has the mixed density
 `∑ₙ mixtureWeight n * g n`. -/
@@ -122,6 +169,18 @@ theorem countableMixture_eq_withDensity {g : ℕ → X → ℝ≥0∞} (hg : ∀
   rw [← withDensity_tsum fun n ↦ (hg n).const_smul (mixtureWeight n)]
   congr with x
   simp [ENNReal.tsum_apply]
+
+/-- A countable mixture of measures whose densities share a measurable factor `h` has the mixed
+density `(∑ₙ mixtureWeight n * g n) * h`. -/
+theorem countableMixture_eq_withDensity_mul {g : ℕ → X → ℝ≥0∞} {h : X → ℝ≥0∞}
+    (hg : ∀ n, Measurable (g n)) (hh : Measurable h)
+    (hP : ∀ n, P (θs n) = μ.withDensity fun x ↦ g n x * h x) :
+    countableMixture P θs = μ.withDensity fun x ↦ (∑' n, mixtureWeight n * g n x) * h x := by
+  rw [countableMixture_eq_withDensity (fun n ↦ (hg n).mul hh) hP]
+  congr 1
+  simp_rw [Pi.mul_apply, ← mul_assoc]
+  funext x
+  rw [ENNReal.tsum_mul_right]
 
 /-- A countable mixture that is a finite measure, of measures with real densities `f n`, has the
 real density `(∑ₙ mixtureWeight n * ofReal (f n)).toReal`. That sum is finite

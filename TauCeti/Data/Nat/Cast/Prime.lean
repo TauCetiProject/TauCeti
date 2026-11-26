@@ -19,6 +19,8 @@ other is an induction on the prime factorization.
 
 * `TauCeti.isUnit_natCast_of_forall_prime_dvd`, `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a
   nonzero natural number casts to a unit in a semiring if and only if all of its prime divisors do.
+* `TauCeti.isUnit_one_sub_natCast_pow`: `1 - p ^ e` is a unit when `e ≠ 0` and every prime `q ≠ p`
+  is a unit.
 -/
 
 public section
@@ -41,5 +43,22 @@ cast to units. -/
 theorem isUnit_natCast_iff_forall_prime_dvd {R : Type*} [Semiring R] {n : ℕ} (hn : n ≠ 0) :
     IsUnit (n : R) ↔ ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : R) :=
   ⟨fun hu _ _ hpn ↦ hu.natCast_of_dvd hpn, isUnit_natCast_of_forall_prime_dvd hn⟩
+
+/-- If every prime `q ≠ p` casts to a unit in a ring, then so does `1 - p ^ e` for `e ≠ 0`, since
+`p ^ e - 1` is prime to `p`. -/
+theorem isUnit_one_sub_natCast_pow {R : Type*} [Ring R] {p e : ℕ} (hp : 1 < p) (he : e ≠ 0)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) : IsUnit (1 - (p : R) ^ e) := by
+  have h1 : 1 ≤ p ^ e := Nat.one_le_pow _ _ (by omega)
+  have hp1 : p ^ e - 1 ≠ 0 := by
+    have := Nat.one_lt_pow he hp
+    omega
+  have hu : IsUnit ((p ^ e - 1 : ℕ) : R) := by
+    refine isUnit_natCast_of_forall_prime_dvd hp1 fun q hq hqd ↦ hunit q hq ?_
+    rintro rfl
+    have : q ∣ q ^ e - (q ^ e - 1) := Nat.dvd_sub (dvd_pow_self q he) hqd
+    rw [Nat.sub_sub_self h1] at this
+    exact hq.one_lt.ne' (Nat.dvd_one.mp this)
+  rw [Nat.cast_sub h1, Nat.cast_pow, Nat.cast_one] at hu
+  simpa using hu.neg
 
 end TauCeti

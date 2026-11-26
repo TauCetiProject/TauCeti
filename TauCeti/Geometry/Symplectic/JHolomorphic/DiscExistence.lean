@@ -22,6 +22,7 @@ import TauCeti.Analysis.Complex.Pompeiu.Rotation
 import TauCeti.Analysis.Holder.Bilinear
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
+import TauCeti.Topology.MetricSpace.BallCutoff
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -136,44 +137,26 @@ namespace TauCeti
 
 section Cutoff
 
-/-- The radial cutoff `z ↦ min 1 (max 0 (2 - 2 ‖z‖))`, written through the projection onto
-`[0, 1]`. -/
+/-- The radial cutoff `z ↦ min 1 (max 0 (2 - 2 ‖z‖))`, the cutoff of the closed ball of radius
+`1 / 2`. -/
 private def discCutoff (z : ℂ) : ℝ :=
-  (projIcc (0 : ℝ) 1 zero_le_one (2 - 2 * ‖z‖) : ℝ)
+  ballCutoff 0 2⁻¹ z
 
-private theorem discCutoff_eq_one {z : ℂ} (hz : ‖z‖ ≤ 2⁻¹) : discCutoff z = 1 := by
-  rw [discCutoff, projIcc_of_right_le _ (by linarith)]
+private theorem discCutoff_eq_one {z : ℂ} (hz : ‖z‖ ≤ 2⁻¹) : discCutoff z = 1 :=
+  ballCutoff_eq_one_of_mem_closedBall (by norm_num) (mem_closedBall_zero_iff.2 hz)
 
-private theorem discCutoff_eq_zero {z : ℂ} (hz : 1 ≤ ‖z‖) : discCutoff z = 0 := by
-  rw [discCutoff, projIcc_of_le_left _ (by linarith)]
+private theorem discCutoff_eq_zero {z : ℂ} (hz : 1 ≤ ‖z‖) : discCutoff z = 0 :=
+  ballCutoff_eq_zero_of_two_mul_le_dist (by norm_num) (by norm_num [hz])
 
 /-- The cutoff is invariant under rotations `z ↦ c z`, `|c| = 1`. -/
 private theorem discCutoff_mul_left {c : ℂ} (hc : ‖c‖ = 1) (z : ℂ) :
     discCutoff (c * z) = discCutoff z := by
-  simp [discCutoff, hc]
-
-private theorem norm_discCutoff_le (z : ℂ) : ‖discCutoff z‖ ≤ 1 := by
-  have h := (projIcc (0 : ℝ) 1 zero_le_one (2 - 2 * ‖z‖)).property
-  rw [discCutoff, Real.norm_of_nonneg h.1]
-  exact h.2
-
-private theorem lipschitzWith_discCutoff : LipschitzWith 2 discCutoff := by
-  have hg : LipschitzWith 2 fun z : ℂ ↦ 2 - 2 * ‖z‖ :=
-    LipschitzWith.of_dist_le_mul fun z w ↦ by
-      rw [Real.dist_eq, dist_eq_norm]
-      have := abs_norm_sub_norm_le z w
-      rw [show 2 - 2 * ‖z‖ - (2 - 2 * ‖w‖) = -(2 * (‖z‖ - ‖w‖)) by ring, abs_neg, abs_mul,
-        abs_two]
-      push_cast
-      linarith
-  have h := (LipschitzWith.subtypeVal _).comp ((LipschitzWith.projIcc (zero_le_one' ℝ)).comp hg)
-  rw [one_mul, one_mul] at h
-  exact h
+  simp [discCutoff, ballCutoff_apply, hc]
 
 /-- The radial cutoff as a bounded continuous function. -/
 private def cutoffBCF : ℂ →ᵇ ℝ :=
-  BoundedContinuousFunction.ofNormedAddCommGroup discCutoff lipschitzWith_discCutoff.continuous 1
-    norm_discCutoff_le
+  BoundedContinuousFunction.ofNormedAddCommGroup discCutoff
+    (lipschitzWith_ballCutoff 0 2⁻¹).continuous 1 (norm_ballCutoff_le 0 2⁻¹)
 
 private theorem coe_cutoffBCF : ⇑cutoffBCF = discCutoff :=
   BoundedContinuousFunction.coe_ofNormedAddCommGroup _ _ _ _
@@ -182,10 +165,7 @@ private theorem coe_cutoffBCF : ⇑cutoffBCF = discCutoff :=
 private def cutoffHolder : supportedHolderSubmodule (Y := ℝ) (2⁻¹ : ℝ≥0) (closedBall (0 : ℂ) 1) :=
   ⟨HolderSpace.ofBoundedContinuousFunction cutoffBCF (by
       rw [coe_cutoffBCF]
-      exact ⟨_, holderOnWith_univ.mp <|
-        lipschitzWith_discCutoff.lipschitzOnWith.holderOnWith_of_norm_le
-          (M := 1) (fun z _ ↦ (norm_discCutoff_le z).trans_eq NNReal.coe_one.symm)
-          two_inv_lt_one.le⟩),
+      exact ⟨_, holderWith_ballCutoff 0 2⁻¹ two_inv_lt_one.le⟩),
     mem_supportedHolderSubmodule_iff.mpr fun z hz ↦ by
       simp only [mem_closedBall, dist_zero_right, not_le] at hz
       rw [HolderSpace.ofBoundedContinuousFunction_apply, coe_cutoffBCF]
@@ -1247,11 +1227,6 @@ section EquivariantFamily
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-private theorem lsmul_I_mul_self :
-    (ContinuousLinearMap.lsmul ℝ ℂ I : F →L[ℝ] F) * ContinuousLinearMap.lsmul ℝ ℂ I = -1 := by
-  ext v
-  simp [smul_smul]
-
 private theorem mul_self_eq_neg_one {A : F →L[ℝ] F} (hAA : ∀ v, A (A v) = -v) : A * A = -1 := by
   ext v
   simp [hAA]
@@ -1263,7 +1238,7 @@ private theorem add_apply_neg_cayleyCoord {A : F →L[ℝ] F} (hAA : ∀ v, A (A
     A ((-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v) +
         I • (-cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) A) v = I • v - A v := by
   have h := congrArg (fun T : F →L[ℝ] F ↦ T v) (add_mul_cayleyCoord
-    ((mul_self_eq_neg_one hAA).trans lsmul_I_mul_self.symm) hA)
+    ((mul_self_eq_neg_one hAA).trans ContinuousLinearMap.lsmul_I_mul_lsmul_I.symm) hA)
   simp only [add_mul, mul_apply_eq_comp, add_apply, sub_apply,
     ContinuousLinearMap.lsmul_apply] at h
   simp only [neg_apply, map_neg, smul_neg]
@@ -1313,7 +1288,7 @@ private theorem exists_neg_cayleyCoord_local [CompleteSpace F] {J : F → F →L
     have h2 := (IsUnit.mk0 (2 : ℝ) two_ne_zero).map (algebraMap ℝ (F →L[ℝ] F))
     rw [map_ofNat] at h2
     rw [hI0, ← two_mul]
-    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 lsmul_I_mul_self
+    exact isUnit_two_mul_of_mul_self_eq_neg_one h2 ContinuousLinearMap.lsmul_I_mul_lsmul_I
   have hAC : ContDiffAt ℝ 2 (fun x ↦ ContinuousLinearMap.lsmul ℝ ℂ I + J x) 0 :=
     contDiffAt_const.add hJ
   have hinv : ContDiffAt ℝ 2 Ring.inverse (ContinuousLinearMap.lsmul ℝ ℂ I + J 0) :=
@@ -1359,8 +1334,9 @@ theorem exists_pos_exists_forall_fderiv_one_add_apply_fderiv_I_eq_zero_and_apply
   obtain ⟨v, hv, hveq⟩ := hdisc (fun x ↦ Q (t • x)) (by rw [smul_zero]; exact hQ0) hdt hAt hLt
   replace hveq := hveq fun x hx w ↦ by
     -- The Cayley coordinate of a square root of `-1` anticommutes with `i`.
-    have h := congrArg (fun T : F →L[ℝ] F ↦ T w) (cayleyCoord_mul_eq_neg_mul lsmul_I_mul_self
-      (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
+    have h := congrArg (fun T : F →L[ℝ] F ↦ T w)
+      (cayleyCoord_mul_eq_neg_mul ContinuousLinearMap.lsmul_I_mul_lsmul_I
+        (mul_self_eq_neg_one (hrJ _ (hmem x (by simpa using hx))).1))
     simp only [mul_apply_eq_comp, neg_apply, ContinuousLinearMap.lsmul_apply] at h
     simp only [Q, neg_apply, h, smul_neg]
   refine ⟨t / 2, by positivity, fun ξ z ↦ t • v ξ (t⁻¹ • z), fun ξ hξ ↦ ?_,

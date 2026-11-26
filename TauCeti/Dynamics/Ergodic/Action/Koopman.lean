@@ -44,7 +44,9 @@ and is dominated by `2 ∫₀² g (u +ᵥ x) du`.
   from `ℝ` to `Lᵖ(μ)` for `p ≠ ∞`;
 * `TauCeti.koopmanGroup`: the Koopman operators as a strongly continuous group on `Lᵖ(μ)`;
   `TauCeti.koopmanGroup_isUnitary`: on `L²(μ)` with values in a complex inner product space,
-  such as complex `L²(μ)`, it is unitary.
+  such as complex `L²(μ)`, it is unitary;
+* `TauCeti.koopmanGroup_indicatorConstLp`: the Koopman operator at time `t` sends the indicator
+  of `A` to the indicator of `(t +ᵥ ·)⁻¹' A`.
 
 The s-finiteness of `μ` cannot be dropped: for the action of `ℝ` on itself by translation with
 counting measure, which is not s-finite, `‖1_{{-t}} - 1_{{0}}‖₂ = √2` for every `t ≠ 0`. Joint
@@ -423,6 +425,15 @@ def koopmanGroup (hp : p ≠ ∞) : Semigroups.StronglyContinuousGroup (Lp E p �
 theorem koopmanGroup_apply (hp : p ≠ ∞) (t : ℝ) (f : Lp E p μ) :
     koopmanGroup μ E p hp t f = Lp.compMeasurePreserving (t +ᵥ ·) (measurePreserving_vadd t μ) f :=
   (rfl)
+
+/-- The Koopman operator at time `t` sends the indicator of `A` to the indicator of
+`(t +ᵥ ·)⁻¹' A`. -/
+theorem koopmanGroup_indicatorConstLp (hp : p ≠ ∞) {A : Set X} (hA : MeasurableSet A)
+    (hμA : μ A ≠ ∞) (c : E) (t : ℝ) :
+    koopmanGroup μ E p hp t (indicatorConstLp p hA hμA c) =
+      indicatorConstLp p (hA.preimage (measurable_const_vadd t))
+        (by rwa [(measurePreserving_vadd t μ).measure_preimage hA.nullMeasurableSet]) c :=
+  Lp.indicatorConstLp_compMeasurePreserving hA hμA c (measurePreserving_vadd t μ)
 
 /-- On `L²(μ)` with values in a complex inner product space, such as complex `L²(μ)`, the Koopman
 group is unitary. -/

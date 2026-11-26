@@ -54,8 +54,12 @@ For `n = 2` both subgroups are line stabilizers and they are conjugate.
   stabilizer equations.
 * `TauCeti.mem_lineStabilizer_iff` and `TauCeti.mem_hyperplaneStabilizer_iff`: membership in
   terms of matrix entries.
+* `TauCeti.coe_mul_apply_of_mem_lineStabilizer`: right multiplication by an element of the line
+  stabilizer scales column `i` by its diagonal entry.
 * `TauCeti.map_inverseTranspose_lineStabilizer`: inverse transpose carries the line stabilizer
   onto the hyperplane stabilizer.
+* `TauCeti.exists_conj_notMem_lineStabilizer`: a representation with no proper stable subspace
+  has no conjugate in a line stabilizer.
 * `TauCeti.exists_mem_hyperplaneStabilizer_smul_ne`: if `n` has at least three elements, the
   hyperplane stabilizer stabilizes no line.
 * `TauCeti.conj_smul_lineStabilizer_ne_hyperplaneStabilizer`: if `n` has at least three elements,
@@ -123,6 +127,14 @@ theorem mem_lineStabilizer_iff {g : GL n K} {i : n} :
       simp
     · simp [h j hj, hj]
 
+/-- If `p` stabilizes the coordinate line `K ∙ eᵢ`, then column `i` of `h p` is column `i` of `h`
+times the entry `p i i`. -/
+theorem coe_mul_apply_of_mem_lineStabilizer (h : GL n K) {p : GL n K} {i : n}
+    (hp : p ∈ lineStabilizer K i) (j : n) : (h * p) j i = h j i * p i i :=
+  calc (h * p) j i = ∑ k : n, h j k * p k i := Matrix.mul_apply
+    _ = h j i * p i i := Fintype.sum_eq_single i fun k hk ↦ by
+        rw [mem_lineStabilizer_iff.1 hp k hk, mul_zero]
+
 /-- **Membership in the hyperplane stabilizer**: an invertible matrix stabilizes the coordinate
 hyperplane `{v | v i = 0}` exactly when its row `i` vanishes off the diagonal. -/
 @[simp]
@@ -167,6 +179,47 @@ theorem map_inverseTranspose_lineStabilizer (i : n) :
   rw [Subgroup.mem_map_equiv, GeneralLinearGroup.inverseTranspose_symm, mem_lineStabilizer_iff,
     ← Subgroup.inv_mem_iff, mem_hyperplaneStabilizer_iff]
   simp [GeneralLinearGroup.coe_inverseTranspose]
+
+/-! ### Representations without stable lines -/
+
+/-- **A representation with no proper stable subspace has no conjugate in a line stabilizer**:
+if `ρ : G →* GL n K` stabilizes no subspace other than `⊥` and `⊤`, and `n` has at least two
+elements, then for every `Q : GL n K` some `Q⁻¹ * ρ g * Q` moves the line `K ∙ eᵢ`. Otherwise the
+line `K ∙ Q eᵢ` would be stable under `ρ`. -/
+theorem exists_conj_notMem_lineStabilizer [Nontrivial n] {G : Type*} [Monoid G]
+    (ρ : G →* GL n K)
+    (hirr : ∀ W : Submodule K (n → K),
+      (∀ g, ∀ x ∈ W, (ρ g : Matrix n n K) *ᵥ x ∈ W) → W = ⊥ ∨ W = ⊤)
+    (Q : GL n K) (i : n) : ∃ g, Q⁻¹ * ρ g * Q ∉ lineStabilizer K i := by
+  by_contra! h
+  have hQQ (x : n → K) : (↑Q⁻¹ : Matrix n n K) *ᵥ ((Q : Matrix n n K) *ᵥ x) = x := by
+    rw [mulVec_mulVec, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_mulVec]
+  set w := (Q : Matrix n n K) *ᵥ Pi.single i 1 with hw_def
+  -- `w = Q eᵢ` is an eigenvector of every `ρ g`.
+  have hw (g : G) : (ρ g : Matrix n n K) *ᵥ w = (Q⁻¹ * ρ g * Q : GL n K) i i • w := by
+    have hN : (ρ g : Matrix n n K) * Q = Q * (Q⁻¹ * ρ g * Q : GL n K) := by
+      rw [← Units.val_mul, ← Units.val_mul, mul_assoc, mul_inv_cancel_left]
+    have hcol : ((Q⁻¹ * ρ g * Q : GL n K) : Matrix n n K) *ᵥ Pi.single i 1 =
+        (Q⁻¹ * ρ g * Q : GL n K) i i • Pi.single i 1 := by
+      ext j
+      by_cases hj : j = i
+      · subst hj; simp
+      · simpa [hj] using mem_lineStabilizer_iff.mp (h g) j hj
+    rw [hw_def, mulVec_mulVec, hN, ← mulVec_mulVec, hcol, mulVec_smul]
+  have hstab (g : G) (x : n → K) (hx : x ∈ K ∙ w) : (ρ g : Matrix n n K) *ᵥ x ∈ K ∙ w := by
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    rw [mulVec_smul, hw, smul_smul]
+    exact Submodule.smul_mem _ _ (Submodule.mem_span_singleton_self w)
+  rcases hirr (K ∙ w) hstab with h0 | h1
+  · have := congrFun (hQQ (Pi.single i 1)) i
+    rw [← hw_def, Submodule.span_singleton_eq_bot.mp h0, mulVec_zero] at this
+    simp at this
+  · obtain ⟨j, hj⟩ := exists_ne i
+    obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.mp
+      (h1 ▸ Submodule.mem_top : (Q : Matrix n n K) *ᵥ Pi.single j 1 ∈ K ∙ w)
+    have := congrFun (congrArg ((↑Q⁻¹ : Matrix n n K) *ᵥ ·) hr) j
+    simp only [hw_def, mulVec_smul, hQQ] at this
+    simp [hj] at this
 
 /-! ### The hyperplane stabilizer fixes no line -/
 

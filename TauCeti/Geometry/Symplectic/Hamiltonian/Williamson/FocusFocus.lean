@@ -318,6 +318,15 @@ theorem focusFocusPoly_def (a b : ℝ) :
       (X ^ 2 - C (2 * a) * X + C (a ^ 2 + b ^ 2)) * (X ^ 2 + C (2 * a) * X + C (a ^ 2 + b ^ 2)) :=
   (rfl)
 
+/-- The value of `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` at `x` is
+`((x - a)² + b²)((x + a)² + b²)`. -/
+theorem aeval_focusFocusPoly {R : Type*} [CommRing R] [Algebra ℝ R] (x : R) (a b : ℝ) :
+    aeval x (focusFocusPoly a b) =
+      ((x - algebraMap ℝ R a) ^ 2 + algebraMap ℝ R b ^ 2) *
+        ((x + algebraMap ℝ R a) ^ 2 + algebraMap ℝ R b ^ 2) := by
+  simp only [focusFocusPoly, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C, map_ofNat]
+  ring
+
 /-- The polynomial `focusFocusPoly a b` is even. -/
 theorem focusFocusPoly_comp_neg_X (a b : ℝ) :
     (focusFocusPoly a b).comp (-X) = focusFocusPoly a b := by
@@ -328,13 +337,8 @@ theorem focusFocusPoly_comp_neg_X (a b : ℝ) :
 `±a ± bi`, so their real and imaginary parts have absolute values `|a|` and `|b|`. -/
 theorem abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPoly_eq_zero {a b : ℝ} (hb : b ≠ 0) {w : ℂ}
     (hw : aeval w (focusFocusPoly a b) = 0) : |w.re| = |a| ∧ |w.im| = |b| := by
-  have hf : aeval w (focusFocusPoly a b) =
-      ((w - a) ^ 2 + (b : ℂ) ^ 2) * ((w + a) ^ 2 + (b : ℂ) ^ 2) := by
-    simp only [focusFocusPoly, map_mul, map_add, map_sub, map_pow, aeval_X, aeval_C,
-      Complex.coe_algebraMap]
-    push_cast
-    ring
-  rw [hf] at hw
+  rw [aeval_focusFocusPoly] at hw
+  simp only [Complex.coe_algebraMap] at hw
   -- A root of `(w - c)² + b²` has real part `c` and imaginary part `±b`.
   have key {c : ℝ} (h : (w - c) ^ 2 + (b : ℂ) ^ 2 = 0) : w.re = c ∧ |w.im| = |b| := by
     have h1 := congrArg Complex.re h
@@ -377,6 +381,21 @@ theorem isCoprime_focusFocusPoly_focusFocusPoly_comp_neg_X {a b a' b' : ℝ} (ha
   rcases hne with h | h
   · exact h (h₁.symm.trans h₁')
   · exact h (h₂.symm.trans h₂')
+
+/-- For `a, b ≠ 0` the polynomial `(X² - 2aX + a² + b²)(X² + 2aX + a² + b²)` is coprime to
+`X² - μ` for every real `μ`: the squares of its roots `±a ± bi` are not real. -/
+theorem isCoprime_focusFocusPoly_X_sq_sub_C {a b : ℝ} (ha : a ≠ 0) (hb : b ≠ 0) (μ : ℝ) :
+    IsCoprime (focusFocusPoly a b) (X ^ 2 - C μ) := by
+  refine (isCoprime_iff_aeval_ne_zero_of_isAlgClosed ℝ ℂ _ _).2 fun w ↦ ?_
+  by_contra! hw
+  obtain ⟨h₁, h₂⟩ := abs_re_eq_and_abs_im_eq_of_aeval_focusFocusPoly_eq_zero hb hw.1
+  -- `w² = μ` is real, so `2 w.re w.im = 0`, while `|w.re| = |a|` and `|w.im| = |b|` are positive.
+  have hre : w.re ≠ 0 := fun h0 ↦ ha (abs_eq_zero.1 (by rw [← h₁, h0, abs_zero]))
+  have him : w.im ≠ 0 := fun h0 ↦ hb (abs_eq_zero.1 (by rw [← h₂, h0, abs_zero]))
+  have hsq : w ^ 2 = μ := by simpa [sub_eq_zero] using hw.2
+  have h := congrArg Complex.im hsq
+  simp only [pow_two, Complex.mul_im, Complex.ofReal_im] at h
+  exact mul_ne_zero hre him (by linear_combination h / 2)
 
 omit [FiniteDimensional ℝ V] in
 /-- For `A ∈ sp(V, ω)` and distinct points `z` and `z'` of the open first quadrant, `ω` pairs the
@@ -527,28 +546,25 @@ private theorem exists_isDarbouxBasis_block (h : ω.IsNondegenerateQuadraticFami
       (aeval A p).restrict (hmaps p) ∈ skewAdjointLieSubalgebra ω'.toBilinForm :=
     restrict_mem_skewAdjointLieSubalgebra ((LinearMap.mem_skewAdjointSubmodule _).2 <|
       ((LinearMap.mem_skewAdjointSubmodule A).1 hA).aeval_of_comp_neg_X_eq_neg hp) _ _
-  have hAP (p : ℝ[X]) (hp : p.comp (-X) = -p) :
-      ω'.hamiltonianEnd (ω'.hamiltonianEndEquiv.symm ⟨_, hmem p hp⟩) =
-        (aeval A p).restrict (hmaps p) := by
-    rw [← coe_hamiltonianEndEquiv_apply, LinearEquiv.apply_symm_apply]
-  -- Both forms Poisson-commute with the restricted family, so they lie in its span.
+  -- They commute with the restricted family, so they come from forms in its span.
   have hspan (p : ℝ[X]) (hp : p.comp (-X) = -p) :
-      ω'.hamiltonianEndEquiv.symm ⟨_, hmem p hp⟩ ∈
-        Submodule.span ℝ (Set.range fun i ↦ (Q i).comp G.subtype) := by
-    refine hnd.mem_span_of_forall_quadraticPoissonBracket_eq_zero fun i ↦
-      ω'.quadraticPoissonBracket_eq_zero_iff.2 ?_
+      ∃ R ∈ Submodule.span ℝ (Set.range fun i ↦ (Q i).comp G.subtype),
+        ω'.hamiltonianEnd R = (aeval A p).restrict (hmaps p) := by
+    refine hnd.exists_mem_span_hamiltonianEnd_eq (hmem p hp) fun i ↦ ?_
     have hQi := hcomm (Submodule.subset_span ⟨i, rfl⟩) (X : ℝ[X])
     rw [aeval_X] at hQi
     have hmapsQ : Set.MapsTo (ω.hamiltonianEnd (Q i)) G G :=
       Module.End.mapsTo_genEigenspace_aeval_of_comm hQi _ 0 ⊤
-    rw [hAP p hp, hamiltonianEnd_comp_subtype hGs fun v hv ↦ hmapsQ hv]
+    rw [hamiltonianEnd_comp_subtype hGs fun v hv ↦ hmapsQ hv]
     exact LinearMap.restrict_commute (hcomm (Submodule.subset_span ⟨i, rfl⟩) p) _ _
+  obtain ⟨R₁, hR₁, hAR₁⟩ := hspan p₁ hp₁
+  obtain ⟨R₂, hR₂, hAR₂⟩ := hspan p₂ hp₂
   -- The restrictions of `p(A)` and of `r(A)` evaluate on `G` as on `V`, definitionally.
   refine (exists_isDarbouxBasis_span_eq_span_focusFocus_iff hG
-    hnd.quadraticPoissonBracket_eq_zero).2 ⟨_, hspan p₁ hp₁, _, hspan p₂ hp₂, ?_, ?_⟩
-  · rw [hAP p₁ hp₁]
+    hnd.quadraticPoissonBracket_eq_zero).2 ⟨R₁, hR₁, R₂, hR₂, ?_, ?_⟩
+  · rw [hAR₁]
     exact LinearMap.ext fun v ↦ Subtype.ext <| (hsq hp₁sq v.property).trans (by simp)
-  · rw [hAP p₂ hp₂]
+  · rw [hAR₂]
     exact LinearMap.ext fun v ↦ Subtype.ext <| (hsq hp₂sq v.property).trans (by simp)
 
 /-- On the blocks of a Darboux basis assembled from Darboux bases of orthogonal four-dimensional

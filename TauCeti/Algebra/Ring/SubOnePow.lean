@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.CharP.Lemmas
+import Mathlib.Data.Nat.Choose.Dvd
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.RingTheory.Polynomial.Quotient
+import Mathlib.Tactic.Module
 import TauCeti.Algebra.Ring.GeomSum
 
 /-!
@@ -24,11 +26,18 @@ This is the integral shadow of the freshman's dream `(x - y) ^ p ^ k = x ^ p ^ k
 characteristic `p`. It is what makes the group-like elements `g - 1`, for `g` of `p`-power order
 in a group algebra over the `p`-adic integers, topologically nilpotent.
 
+For a prime `p > 3` the binomial coefficients `C(p, 2)` and `C(p, 3)` are both divisible by `p`, so
+the third-order expansion of `(1 + x) ^ p` gives `(1 + x) ^ p ≡ 1 + p x` modulo `c p²` whenever
+`x ^ 2` is a multiple of `c p`. This is how `p`-th powers climb the congruence filtration of
+`SL₂(ℤ_p)` in Serre's lifting lemma.
+
 ## Main results
 
 * `Nat.Prime.dvd_sub_pow_iff_dvd_pow_sub_pow`: for commuting `x` and `y`,
   `(p : A) ∣ (x - y) ^ p ^ k ↔ (p : A) ∣ x ^ p ^ k - y ^ p ^ k`.
 * `Nat.Prime.dvd_sub_one_pow_of_pow_eq_one`: `(p : A) ∣ (x - 1) ^ p ^ k` when `x ^ p ^ k = 1`.
+* `TauCeti.exists_one_add_pow_prime_eq_of_sq_eq_nsmul`: for a prime `p > 3`, if
+  `x ^ 2 = (c p) • y` then `(1 + x) ^ p = 1 + p • x + (c p²) • w` for some `w`.
 * `TauCeti.exists_one_add_pow_pow_eq`: in a commutative ring with `(p : R) = 0`,
   `(1 + a) ^ p ^ j = 1 + a ^ 2 ^ j * y` for some `y`.
 * `TauCeti.exists_one_add_pow_eq_one_of_natCast_eq_zero`: conversely, if `(p : A) = 0` for some `p`,
@@ -54,6 +63,24 @@ theorem Nat.Prime.dvd_sub_one_pow_of_pow_eq_one (hp : p.Prime) {x : A} {k : ℕ}
   (hp.dvd_sub_pow_iff_dvd_pow_sub_pow (Commute.one_right x) k).2 (by simp [hx])
 
 namespace TauCeti
+
+/-- **The `p`-th power of a perturbation of `1`.** If `x ^ 2 = (c p) • y` in a ring and `p > 3`
+is prime, then `(1 + x) ^ p = 1 + p • x + (c p²) • w` for some `w`: in the third-order binomial
+expansion the coefficients `C(p, 2)` and `C(p, 3)` are divisible by `p`, and `x ^ 4` is divisible
+by `(c p) ^ 2`. -/
+theorem exists_one_add_pow_prime_eq_of_sq_eq_nsmul (hp : p.Prime) (hp3 : 3 < p) {c : ℕ}
+    {x y : A} (hxy : x ^ 2 = (c * p) • y) :
+    ∃ w, (1 + x) ^ p = 1 + p • x + (c * p ^ 2) • w := by
+  obtain ⟨v, hv⟩ := exists_one_add_pow_eq_add_pow_four_mul x p
+  obtain ⟨m₂, hm₂⟩ := hp.dvd_choose_self (k := 2) two_ne_zero (by omega)
+  obtain ⟨m₃, hm₃⟩ := hp.dvd_choose_self (k := 3) three_ne_zero hp3
+  refine ⟨m₂ • y + m₃ • (x * y) + c • (y * y * v), ?_⟩
+  have h3 : x ^ 3 = (c * p) • (x * y) := by rw [pow_succ', hxy, mul_smul_comm]
+  have h4 : x ^ 4 = ((c * p) * (c * p)) • (y * y) := by
+    rw [show 4 = 2 + 2 from rfl, pow_add, hxy, smul_mul_smul_comm]
+  rw [hv, hm₂, hm₃, h3, h4, hxy]
+  simp only [← nsmul_eq_mul, smul_mul_assoc, smul_add, smul_smul]
+  module
 
 section Nilpotent
 

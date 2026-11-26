@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Power-law asymptotics
@@ -39,12 +41,16 @@ As `h → 0⁺`, a positive power `h ^ θ` tends to zero, so every function `f =
 particular every multiple `A * h ^ θ`, falls below any positive constant. This is how polynomial
 rates in a small scale `h` become inequalities for all small `h`. Power laws multiply: if
 `f = O(h ^ a)` and `g = O(h ^ b)` as `h → 0⁺`, then `f * g = O(h ^ (a + b))`, and a bound
-`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`.
+`f = O(h ^ a)` weakens to `f = O(h ^ c)` for every `c ≤ a`. Likewise, near a point `w` of a normed
+group, a bound `f = O(‖x - w‖ ^ a)` within a set avoiding `w` weakens to `f = O(‖x - w‖ ^ c)` for
+every `c ≤ a`.
 
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`.
+`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α` and
+`‖ρ ^ n * n ^ α * n⁻ᴹ‖ = ‖ρ‖ ^ n * n ^ (Re α - M)`. As `n → ∞`, `ρ ^ n * n ^ α = o(r ^ n)` whenever
+`‖ρ‖ < r`, and `‖ρ‖ ^ n * n ^ β = o(ρ ^ n * n ^ α)` whenever `β < Re α`.
 
 ## Families bounded by integer powers
 
@@ -74,6 +80,11 @@ exponent dominates every constant multiple of a larger one.
 For every real `C` and every natural number `r ≥ 4 C ^ 2`, `C ^ r r ^ ((1 - r) / 2) < 1`: the
 power `r ^ (r / 2)` outgrows every geometric sequence. This is the final contradiction of Gelfond's
 proof of the Gelfond–Schneider theorem.
+
+## Exponential limits of rescaled powers
+
+For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
+number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
 -/
 
 public section
@@ -151,6 +162,32 @@ theorem isBigO_ofReal_cpow_rpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) (w 
     rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _),
       one_mul]
 
+/-- The norm of `ρ ^ n * n ^ α` is `‖ρ‖ ^ n * n ^ Re α` for `n ≠ 0`. -/
+theorem norm_pow_mul_cpow (ρ α : ℂ) {n : ℕ} (hn : n ≠ 0) :
+    ‖ρ ^ n * (n : ℂ) ^ α‖ = ‖ρ‖ ^ n * (n : ℝ) ^ α.re := by
+  rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn)]
+
+/-- The norm of `ρ ^ n * n ^ α * n⁻ᴹ` is `‖ρ‖ ^ n * n ^ (Re α - M)` for `n ≠ 0`. -/
+theorem norm_pow_mul_cpow_mul_inv_pow (ρ α : ℂ) (M : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    ‖ρ ^ n * (n : ℂ) ^ α * (n : ℂ)⁻¹ ^ M‖ = ‖ρ‖ ^ n * (n : ℝ) ^ (α.re - M) := by
+  have hn' : (0 : ℝ) < n := by positivity
+  simp [Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn), Real.rpow_sub hn',
+    Real.rpow_natCast, div_eq_mul_inv, mul_assoc]
+
+/-- The comparison `ρⁿ n^α = o(rⁿ)` for `‖ρ‖ < r`. -/
+theorem isLittleO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
+    (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =o[atTop] fun n ↦ r ^ n := by
+  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) ⌈α.re⌉₊
+    (show ‖‖ρ‖‖ < r by rwa [norm_norm])
+  refine IsBigO.trans_isLittleO ?_ hlo
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  rw [norm_pow_mul_cpow ρ α (by omega), one_mul, Real.norm_of_nonneg (by positivity),
+    mul_comm ((n : ℝ) ^ _)]
+  exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
+    (Real.rpow_natCast _ _)) (by positivity)
+
 variable {E : Type*} [SeminormedAddCommGroup E]
 
 /-- For `a < b` and any real `c`, `exp (c * ‖s‖ ^ a)` is `O(exp ‖s‖ ^ b)` as `‖s‖ → ∞`. -/
@@ -200,6 +237,16 @@ theorem isLittleO_rpow_rpow_atTop {a b : ℝ} (hab : a < b) :
     exact absurd h (Real.rpow_pos_of_pos hx b).ne'
   · filter_upwards [eventually_gt_atTop 0] with x hx
     rw [← Real.rpow_sub hx, neg_sub]
+
+/-- The comparison `‖ρ‖ⁿ n^β = o(ρⁿ n^α)` for `β < Re α`. -/
+theorem isLittleO_norm_pow_mul_rpow_pow_mul_cpow (ρ : ℂ) {α : ℂ} {β : ℝ} (h : β < α.re) :
+    (fun n : ℕ ↦ ‖ρ‖ ^ n * (n : ℝ) ^ β) =o[atTop] fun n ↦ ρ ^ n * (n : ℂ) ^ α := by
+  have hβ : (fun n : ℕ ↦ (n : ℝ) ^ β) =o[atTop] fun n ↦ (n : ℝ) ^ α.re :=
+    (isLittleO_rpow_rpow_atTop h).comp_tendsto tendsto_natCast_atTop_atTop
+  refine ((isBigO_refl (fun n : ℕ ↦ ‖ρ‖ ^ n) atTop).mul_isLittleO hβ).trans_isBigO
+    (isBigO_norm_right.1 (isBigO_refl _ _ |>.congr' .rfl ?_))
+  filter_upwards [eventually_ne_atTop 0] with n hn
+  rw [norm_pow_mul_cpow ρ α hn]
 
 /-- For `1 / 2 < a * k`, the square root is negligible against the `k`-th power of `x ^ a`:
 `√x / (x ^ a) ^ k → 0` as `x → ∞`. -/
@@ -300,6 +347,18 @@ theorem IsBigO.nhdsGT_zero_rpow_of_le {R : Type*} [Norm R] {f : ℝ → R} {a c 
   filter_upwards [Ioo_mem_nhdsGT one_pos] with t ht
   rw [Real.norm_of_nonneg (Real.rpow_nonneg ht.1.le a)]
   exact Real.rpow_le_rpow_of_exponent_ge ht.1 ht.2.le h
+
+/-- Power laws in the distance weaken near a point: if `f = O(‖x - w‖ ^ a)` as `x → w` within a
+set `s` that does not contain `w`, then `f = O(‖x - w‖ ^ c)` there for every `c ≤ a`. -/
+theorem IsBigO.nhdsWithin_norm_sub_rpow_of_le {E R : Type*} [NormedAddCommGroup E] [Norm R]
+    {f : E → R} {s : Set E} {w : E} {a c : ℝ} (hf : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ a)
+    (hw : w ∉ s) (h : c ≤ a) : f =O[𝓝[s] w] fun x ↦ ‖x - w‖ ^ c := by
+  refine hf.trans (Eventually.isBigO ?_)
+  filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Metric.ball_mem_nhds w one_pos)]
+    with x hxs hx
+  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) a)]
+  exact Real.rpow_le_rpow_of_exponent_ge (norm_pos_iff.2 (sub_ne_zero.2 fun hxw ↦ hw (hxw ▸ hxs)))
+    (mem_ball_iff_norm.1 hx).le h
 
 end Asymptotics
 
@@ -419,5 +478,20 @@ theorem tendsto_const_rpow_inv_atTop {B : ℝ} (hB : B ≠ 0) :
     Tendsto (fun q : ℝ => B ^ q⁻¹) atTop (𝓝 1) := by
   simpa only [Function.comp_def, rpow_zero] using
     (continuousAt_const_rpow hB).tendsto.comp tendsto_inv_atTop_zero
+
+/-- For any real numbers `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `exp (a * b)` as the
+real number `x` tends to infinity. -/
+theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
+    Tendsto (fun x : ℝ ↦ (1 + a / x) ^ (b * x)) atTop (𝓝 (exp (a * b))) := by
+  have h1 : Tendsto (fun x : ℝ ↦ ((1 + a / x) ^ x) ^ b) atTop (𝓝 (exp a ^ b)) :=
+    (tendsto_one_add_div_rpow_exp a).rpow_const (Or.inl (exp_pos _).ne')
+  rw [← exp_mul] at h1
+  have hpos : ∀ᶠ x : ℝ in atTop, 0 ≤ 1 + a / x := by
+    have h0 : Tendsto (fun x : ℝ ↦ 1 + a / x) atTop (𝓝 1) := by
+      simpa using tendsto_const_nhds.add (tendsto_const_nhds.div_atTop (tendsto_id (α := ℝ)))
+    exact (h0.eventually (lt_mem_nhds zero_lt_one)).mono fun _ h ↦ h.le
+  refine h1.congr' ?_
+  filter_upwards [hpos] with x hbase
+  rw [← rpow_mul hbase, mul_comm x b]
 
 end Real

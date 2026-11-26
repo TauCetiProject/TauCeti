@@ -30,8 +30,9 @@ in the Novikov completion `Nov(K, H₁(Y_φ; ℤ), N)` along the time period hom
 `exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`. When `M` is compact and
 `φ` is nondegenerate up to every period, the Lefschetz fixed-point formula identifies these inner
 sums with the Lefschetz numbers `L(φⁿ)`; this is how the fixed-point form compares the orbit zeta
-function with the homological zeta function. Neither that specialization nor the Lefschetz formula
-is proved here.
+function with the homological zeta function
+(`TauCeti/Geometry/Manifold/Instances/MappingTorus/ClosedOrbit/Lefschetz.lean`). The Lefschetz
+formula itself is not proved here.
 
 This file proves that the fixed-point form is the orbit zeta function
 (`TauCeti.NovikovSeries.orbitZeta`) of the periodic orbits of `φ`, labelled by the return maps:
@@ -58,12 +59,28 @@ a surface and `φ` is area-preserving
 (`SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`),
 so this identifies that product with a sum over fixed points.
 
+**The univariate specialization.** The integral time period `N : H₁(Y_φ; ℤ) → ℤ`
+(`TauCeti.SmoothMappingTorus.intTimePeriodHom`) pushes the orbit zeta function forward to a
+Novikov series on `ℤ`, a Laurent series in `t = e^1`, forgetting the classes of the orbits and
+keeping their periods. It is the power series
+
+`exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`,
+
+Mathlib's formal exponential `PowerSeries.exp` substituted, evaluated at `t`
+(`TauCeti.SmoothMappingTorus.mapRingHom_intTimePeriodHom_orbitZeta`). Indeed the pushforward of
+the fixed-point sum has coefficient `(1 / n) ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)` at `tⁿ`,
+the fixed points of `φ^[n]` being the pairs `(n, y)` of period `n`, and the pushforward and the
+evaluation at `t` both commute with the exponential (`TauCeti.NovikovSeries.mapRingHom_exp`,
+`TauCeti.NovikovSeries.ofPowerSeries_subst_exp`).
+
 ## Main results
 
 * `TauCeti.SmoothMappingTorus.hasSum_single_sign_det_div_orbitLog`: the terms of the fixed points of
   the iterates of `φ` sum to the orbit logarithm of its periodic orbits.
 * `TauCeti.SmoothMappingTorus.orbitZeta_eq_exp_tsum_single_sign_det_div`: the orbit zeta function
   is the exponential of that sum.
+* `TauCeti.SmoothMappingTorus.mapRingHom_intTimePeriodHom_orbitZeta`: its specialization along the
+  time period is `exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`.
 
 ## References
 
@@ -150,5 +167,81 @@ theorem orbitZeta_eq_exp_tsum_single_sign_det_div :
             fixedPointDerivative I (⇑φ)^[q.val.1] ⟨q.val.2, q.property.2.eq⟩)) : ℤ) / q.val.1)) :
           NovikovSeries K _ (timePeriodHom φ))) := by
   rw [orbitZeta_def, (hasSum_single_sign_det_div_orbitLog hfin hxd hd hmin hrep K).tsum_eq]
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [LocallyCompactSpace M] in
+include hfin in
+/-- The terms of the fixed-point sum of the iterates of `φ`, specialized to their time periods,
+have coefficient `(1 / n) ∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)` at the period `n`. -/
+private theorem finsum_coeff_single_natCast (n : ℕ) :
+    ∑ᶠ q : {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2},
+        (single (q.val.1 : ℤ) (algebraMap ℚ K
+          ((SignType.sign (LinearMap.det (LinearMap.id -
+            fixedPointDerivative I (⇑φ)^[q.val.1] ⟨q.val.2, q.property.2.eq⟩)) : ℤ) / q.val.1)) :
+          NovikovSeries K ℤ (Int.castAddHom ℝ)).coeff n =
+      (n : ℚ)⁻¹ • ((∑ᶠ y : {y : M // (⇑φ)^[n] y = y}, (SignType.sign (LinearMap.det
+          (LinearMap.id - fixedPointDerivative I (⇑φ)^[n] y)) : ℤ) : ℤ) : K) := by
+  classical
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · -- No closed orbit has period `0`.
+    simp only [CharP.cast_eq_zero, inv_zero, zero_smul]
+    exact finsum_eq_zero_of_forall_eq_zero fun q ↦
+      coeff_single_of_ne (by exact_mod_cast q.property.1.ne) _
+  -- The fixed points `y` of `φ^[n]` are the pairs `(n, y)` contributing to the coefficient of `n`.
+  let e : {y : M // (⇑φ)^[n] y = y} → {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2} :=
+    fun y ↦ ⟨(n, y), hn, y.property⟩
+  have he : Injective e := fun y y' h ↦ Subtype.ext (congrArg (fun q ↦ q.val.2) h)
+  have hsupp : (Function.support fun q : {q : ℕ × M // 0 < q.1 ∧ IsPeriodicPt φ q.1 q.2} ↦
+      (single (q.val.1 : ℤ) (algebraMap ℚ K
+        ((SignType.sign (LinearMap.det (LinearMap.id -
+          fixedPointDerivative I (⇑φ)^[q.val.1] ⟨q.val.2, q.property.2.eq⟩)) : ℤ) / q.val.1)) :
+        NovikovSeries K ℤ (Int.castAddHom ℝ)).coeff n) ⊆ Set.range e := by
+    intro q hq
+    by_cases hqn : (q.val.1 : ℤ) = n
+    · exact ⟨⟨q.val.2, (Nat.cast_injective hqn) ▸ q.property.2⟩,
+        Subtype.ext (Prod.ext (Nat.cast_injective hqn).symm rfl)⟩
+    · exact absurd (coeff_single_of_ne (Ne.symm hqn) _) hq
+  have : Finite {y : M // (⇑φ)^[n] y = y} := (hfin n hn).to_subtype
+  have := Fintype.ofFinite {y : M // (⇑φ)^[n] y = y}
+  rw [← Set.indicator_eq_self.2 hsupp, ← finsum_mem_def, finsum_mem_range he,
+    finsum_eq_sum_of_fintype, finsum_eq_sum_of_fintype]
+  simp only [e, coeff_single_same, Int.cast_sum, Finset.smul_sum]
+  exact Finset.sum_congr rfl fun y _ ↦ by
+    rw [div_eq_inv_mul, _root_.map_mul, map_intCast, Algebra.smul_def]
+
+include hfin hxd hd hmin hrep in
+/-- **The univariate orbit zeta function.** Under the hypotheses of
+`TauCeti.SmoothMappingTorus.hasSum_single_sign_det_div_orbitLog`, the pushforward of the orbit
+zeta function of the periodic orbits of `φ` along the integral time period `N : H₁(Y_φ; ℤ) → ℤ`
+is the image at `t = e^1` of the power series
+`exp (∑_{n ≥ 1} (∑_{φ^[n] y = y} sgn det (1 - d(φ^[n])_y)) tⁿ / n)`, the formal exponential
+substituted. -/
+theorem mapRingHom_intTimePeriodHom_orbitZeta :
+    mapRingHom (RingHom.id K) (intTimePeriodHom φ) (exists_period_rescale_intTimePeriodHom φ)
+        (orbitZeta K (timePeriodHom φ) (fun i ↦ closedOrbitHomologyClass (hxd i))
+          (fun i n ↦ SignType.sign (LinearMap.det (LinearMap.id -
+            fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩)))) =
+      ofPowerSeries (1 : ℤ) (by simp) ((PowerSeries.exp K).subst (PowerSeries.mk fun n ↦
+        (n : ℚ)⁻¹ • ((∑ᶠ y : {y : M // (⇑φ)^[n] y = y}, (SignType.sign (LinearMap.det
+          (LinearMap.id - fixedPointDerivative I (⇑φ)^[n] y)) : ℤ) : ℤ) : K))) := by
+  have hpos i := timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i)
+  rw [orbitZeta_def, ofPowerSeries_subst_exp _ ?hc]
+  case hc => simp only [PowerSeries.constantCoeff_mk, Nat.cast_zero, inv_zero, zero_smul]
+  rw [mapRingHom_exp _ _ _ (orbitLog_mem_posIdeal hpos _)]
+  congr 1
+  -- Compare coefficients, pushing the fixed-point sum forward along the time period.
+  have hs := (hasSum_single_sign_det_div_orbitLog hfin hxd hd hmin hrep K).map
+    (mapRingHom (RingHom.id K) (intTimePeriodHom φ) (exists_period_rescale_intTimePeriodHom φ))
+    (continuous_mapRingHom _ _ _)
+  ext h
+  rw [coeff_eq_finsum_of_hasSum hs h]
+  simp only [Function.comp_apply, mapRingHom_apply, map_single,
+    intTimePeriodHom_closedOrbitHomologyClass, AddMonoidHom.coe_ofClass, RingHom.id_apply]
+  rcases lt_or_ge h 0 with hneg | hnn
+  · -- No closed orbit has negative period.
+    rw [coeff_ofPowerSeries_of_forall_nsmul_ne _ fun n hn ↦ by simp at hn; omega]
+    exact finsum_eq_zero_of_forall_eq_zero fun q ↦ coeff_single_of_ne (by omega) _
+  · lift h to ℕ using hnn with n
+    rw [finsum_coeff_single_natCast hfin, show (n : ℤ) = n • (1 : ℤ) by simp,
+      coeff_ofPowerSeries_nsmul, PowerSeries.coeff_mk]
 
 end TauCeti.SmoothMappingTorus

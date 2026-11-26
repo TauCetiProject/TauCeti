@@ -293,37 +293,19 @@ theorem riemannianJacobian_finBasis_eq_abs_det_mul_chartVolumeDensity
       |(mfderiv I 𝓘(ℝ, E) (extChartAt I α) (f x) ∘L
         mfderiv 𝓘(ℝ, E) I f x : E →L[ℝ] E).det| *
       chartVolumeDensity (I := I) α (f x) := by
-  have hα : f x ∈ (trivializationAt E (TangentSpace I) α).baseSet := by
-    simpa only [TangentBundle.trivializationAt_baseSet] using hx
-  let b := Module.finBasis ℝ E
-  let bα := (trivializationAt E (TangentSpace I) α).basisAt b hα
-  let D : E →L[ℝ] TangentSpace I (f x) := mfderiv 𝓘(ℝ, E) I f x
-  let L : E →L[ℝ] E := mfderiv I 𝓘(ℝ, E) (extChartAt I α) (f x) ∘L D
-  have hmat : LinearMap.toMatrix b bα D.toLinearMap =
-      LinearMap.toMatrix b b L.toLinearMap := by
-    ext k i
-    simp only [LinearMap.toMatrix_apply, bα, Trivialization.basisAt,
-      Module.Basis.map_repr, LinearEquiv.trans_apply, LinearEquiv.symm_symm,
-      Trivialization.linearEquivAt_apply]
-    rw [← Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hα,
-      TangentBundle.continuousLinearMapAt_trivializationAt hx]
-    rfl
-  have hgram : Matrix.gram ℝ (fun i ↦ D (b i)) =
-      LinearMap.BilinForm.toMatrix b
-        (LinearMap.BilinForm.comp (innerₗ (TangentSpace I (f x))) D.toLinearMap D.toLinearMap) := by
-    ext i j
-    simp [Matrix.gram_apply, LinearMap.BilinForm.toMatrix_apply]
-  have hdet : (Matrix.gram ℝ (fun i ↦ D (b i))).det =
-      L.det ^ 2 * (chartGramMatrix (I := I) α (f x)).det := by
-    rw [hgram, chartGramMatrix_eq_toMatrix α hα,
-      LinearMap.BilinForm.toMatrix_comp bα b, hmat, Matrix.det_mul, Matrix.det_mul,
-      Matrix.det_transpose, LinearMap.det_toMatrix, ContinuousLinearMap.det]
-    ring
+  have hb : (Module.finBasis ℝ E).map (ContinuousLinearEquiv.refl ℝ E).toLinearEquiv =
+      (Module.finBasis ℝ E).reindex (Equiv.refl _) := by
+    rw [Module.Basis.reindex_refl]
+    ext i
+    simp only [Module.Basis.map_apply, ContinuousLinearEquiv.coe_toLinearEquiv,
+      ContinuousLinearEquiv.refl_apply]
   rw [riemannianJacobian_eq_sqrt_det_gram]
-  -- As in `riemannianJacobian_changeBasis`: `D` is the differential with its domain
-  -- `TangentSpace 𝓘(ℝ, E) x` read as `E`, an identification Mathlib makes definitionally.
-  change Real.sqrt (Matrix.gram ℝ (fun i ↦ D (b i))).det = _
-  rw [hdet, Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, chartVolumeDensity_def]
+  -- Mathlib identifies the tangent space of the model with the model vector space.
+  have h := sqrt_det_gram_eq_abs_det_mul_chartVolumeDensity hb hx (mfderiv 𝓘(ℝ, E) I f x)
+  rw [ContinuousLinearEquiv.refl_symm, ContinuousLinearEquiv.coe_refl,
+    ContinuousLinearMap.id_comp] at h
+  -- Read the self-model tangent spaces as model vector spaces in the coordinate maps.
+  convert h using 2
 
 variable [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
@@ -410,7 +392,8 @@ private theorem setLIntegral_riemannianVolume_image_of_subset_chart
     (fun x hx ↦ hmap hx) (fun x hx ↦ (hf (A x) hx).comp x A.differentiableAt.mdifferentiableAt) φ
   rw [him] at hcov
   have hA : MeasurableEmbedding A := A.toHomeomorph.measurableEmbedding
-  rw [hcov, ← hμ, hA.restrict_map, hA.lintegral_map]
+  have hpres : MeasurePreserving A c.addHaar b.addHaar := ⟨A.continuous.measurable, hμ⟩
+  rw [hcov, ← hpres.setLIntegral_comp_preimage_emb hA]
   apply setLIntegral_congr_fun (hs.preimage A.continuous.measurable)
   intro x hx
   simp only [Function.comp_apply]
