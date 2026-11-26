@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Prod
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.NumberTheory.QuadraticOrder.Product
-public import TauCeti.RingTheory.CongruenceModule
+public import TauCeti.RingTheory.CongruenceModule.Basic
 
 /-!
 # Checks for congruence modules of augmented algebras

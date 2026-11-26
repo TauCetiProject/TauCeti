@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Flat.Localization
 import TauCeti.Algebra.Module.LocalizedModule.BaseChange
+import TauCeti.Algebra.Module.LocalizedModule.Submodule
 
 /-!
 # Torsion modules are those killed by localization
@@ -52,6 +53,8 @@ localization at every generator is zero. This identifies modules supported on th
   with torsion kernel and cokernel.
 * `Module.IsTorsion.of_isLocalizedModule`, `Module.IsTorsion.localizedModule`: the localization of
   a torsion module is torsion.
+* `Submodule.localized'_torsionBySet_ideal`: localization commutes with taking the
+  submodule killed by a finitely generated ideal.
 * `Module.IsTorsion'.isUnit_addOrderOf`: in an abelian group which is `S`-torsion for a submonoid
   `S` of `ℤ`, the order of every element is a unit of every ring in which `S` becomes invertible,
   such as the localization of `ℤ` at `S`.
@@ -164,6 +167,42 @@ theorem baseChange_bijective_iff_isTorsion :
   f.baseChange_bijective_iff_isTorsion' (nonZeroDivisors R) K
 
 end LinearMap
+
+namespace Submodule
+
+/-- Localizing the submodule killed by a finitely generated ideal gives the submodule
+killed by the extended ideal. The ambient module can be arbitrary. -/
+theorem localized'_torsionBySet_ideal {R B M N : Type*} [CommSemiring R] [CommSemiring B]
+    [Algebra R B] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] [Module B N]
+    [IsScalarTower R B N] (S : Submonoid R) [IsLocalization S B]
+    (f : M →ₗ[R] N) [IsLocalizedModule S f] (I : Ideal R) (hI : I.FG) :
+    (torsionBySet R M I).localized' B S f =
+      torsionBySet B N (I.map (algebraMap R B)) := by
+  classical
+  obtain ⟨t, hspan⟩ := hI
+  have hs : torsionBySet R M I = torsionBySet R M (t : Set R) := by
+    rw [← hspan, ← torsionBySet_eq_torsionBySet_span]
+  have ht' : torsionBySet B N (I.map (algebraMap R B)) =
+      torsionBySet B N (algebraMap R B '' (t : Set R)) := by
+    rw [← hspan, Ideal.map_span, ← torsionBySet_eq_torsionBySet_span]
+  ext x
+  obtain ⟨⟨m, s⟩, rfl⟩ := IsLocalizedModule.mk'_surjective S f x
+  rw [Function.uncurry_apply_pair, mk'_mem_localized'_iff B, hs, ht']
+  simp only [mem_torsionBySet_iff, SetCoe.forall, Set.forall_mem_image, Finset.mem_coe,
+    algebraMap_smul, ← IsLocalizedModule.mk'_smul, IsLocalizedModule.mk'_eq_zero' f,
+    Submonoid.smul_def]
+  constructor
+  · rintro ⟨u, hu⟩ a ha
+    exact ⟨u, by rw [smul_comm, hu a ha]⟩
+  · intro h
+    -- One denominator per generator suffices, and their product clears all of them.
+    have hgen (a : R) (ha : a ∈ t) : ∃ d : S, (d : R) • a • m = 0 := @h a ha
+    choose! d hd using hgen
+    refine ⟨∏ a ∈ t, d a, fun a ha => ?_⟩
+    rw [smul_comm, ← Finset.prod_erase_mul _ _ ha, Submonoid.coe_mul, mul_smul, hd a ha,
+      smul_zero]
+
+end Submodule
 
 namespace Module.IsTorsion
 
