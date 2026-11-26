@@ -5,6 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Cover.Directed
+public import Mathlib.CategoryTheory.Limits.Over
+public import Mathlib.CategoryTheory.ObjectProperty.ColimitsClosure
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Fiber
 public import TauCeti.CategoryTheory.Aut.Basic
 public import TauCeti.CategoryTheory.Functor.LocallySmall
@@ -15,12 +18,12 @@ public import TauCeti.RingTheory.Etale.Small
 
 The category `TauCeti.FiniteEtaleScheme S` has objects in `Type (u + 1)`, and so does the
 automorphism group `Aut (TauCeti.FiniteEtaleScheme.fiber x)` of a geometric fibre functor, the
-étale fundamental group at `x`. This file shows that the group has a model in `Type u` whenever
-the finite étale covers of `S` form an essentially small category, and that they do over an
-affine base (`TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`). The first statement is
-found by instance search, through `TauCeti.locallySmall_functor_of_small_skeleton` and
-`TauCeti.small_aut`, so `Small.{u} (Aut (fiber x))` needs no named theorem; an `example` below
-records it.
+étale fundamental group at `x`. This file shows that the finite étale covers of every scheme
+`S : Scheme.{u}` form an essentially small category
+(`TauCeti.FiniteEtaleScheme.essentiallySmall`), so that the group has a model in `Type u`. Once
+the category is essentially small, `Small.{u} (Aut (fiber x))` is found by instance search,
+through `TauCeti.locallySmall_functor_of_small_skeleton` and `TauCeti.small_aut`, and needs no
+named theorem; an `example` below records it.
 
 Over an affine base the covers are anti-equivalent to finite étale algebras over the ring of
 global functions (`TauCeti.FiniteEtaleScheme.finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme`
@@ -29,10 +32,25 @@ so they form an essentially small category by Mathlib's essential smallness of f
 algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`, in
 `TauCeti.RingTheory.Etale.Small`).
 
+Over a general base, every scheme `X` over `S` is the colimit, in `Over S`, of its restrictions
+`X ×_S U` to the affine opens `U` of `S`, indexed by the affine opens ordered by inclusion
+(`AlgebraicGeometry.Scheme.colimitPresentationAffineOpens`, from Mathlib's colimit of a locally
+directed open cover, `AlgebraicGeometry.Scheme.OpenCover.isColimitCoconeOfLocallyDirected`,
+applied to the pullback of `S.directedAffineCover`). For a finite étale `X` each restriction is a
+finite étale cover of the affine scheme `U`, pushed forward to `Over S`. These pushed-forward
+covers form an essentially small property of `Over S`, a union over the small set of affine opens
+of essential images of essentially small categories, and Mathlib's closure of an essentially
+small property under colimits of one small shape is again essentially small
+(`CategoryTheory.ObjectProperty.colimitsClosure`).
+
 ## Main results
 
+* `AlgebraicGeometry.Scheme.colimitPresentationAffineOpens`: a scheme over `S` is the colimit of
+  its restrictions to the affine opens of `S`.
 * `TauCeti.FiniteEtaleScheme.essentiallySmall_of_isAffine`: finite étale covers of an affine
   scheme form an essentially small category.
+* `TauCeti.FiniteEtaleScheme.essentiallySmall`: finite étale covers of any scheme form an
+  essentially small category.
 
 ## References
 
@@ -41,9 +59,23 @@ algebras (`TauCeti.essentiallySmall_commAlgCatFiniteEtale`, in
 
 public section
 
-open CategoryTheory AlgebraicGeometry
+open CategoryTheory Limits AlgebraicGeometry
 
 universe v u
+
+namespace AlgebraicGeometry.Scheme
+
+/-- A scheme `X` over `S` is the colimit, in `Over S`, of its restrictions `X ×_S U` to the affine
+opens `U` of `S`, ordered by inclusion, with the projections `X ×_S U ⟶ X`. -/
+noncomputable def colimitPresentationAffineOpens {S : Scheme.{u}} (X : Over S) :
+    ColimitPresentation S.affineOpens X :=
+  let 𝒱 : X.left.OpenCover := S.directedAffineCover.pullback₁ X.hom
+  { diag := _
+    ι := (Over.liftCocone 𝒱.coconeOfLocallyDirected X.hom).ι
+    isColimit := Over.isColimitLiftCocone _ X.hom
+      (Scheme.OpenCover.isColimitCoconeOfLocallyDirected 𝒱) }
+
+end AlgebraicGeometry.Scheme
 
 namespace TauCeti
 
@@ -56,12 +88,30 @@ instance essentiallySmall_of_isAffine (S : Scheme.{u}) [IsAffine S] :
   (essentiallySmall_congr ((finiteEtaleCommAlgCatOpEquivFiniteEtaleScheme _).trans
     (pullbackIsoEquiv S.isoSpec))).1 inferInstance
 
+/-- Finite étale covers of any scheme `S` form an essentially small category. Each cover `X` is
+the colimit, over the affine opens `U` of `S`, of its restrictions `X ×_S U`, which are finite
+étale covers of the affine schemes `U`; Mathlib's closure of an essentially small property under
+colimits of a small shape is essentially small. -/
+instance essentiallySmall (S : Scheme.{u}) : EssentiallySmall.{u} (FiniteEtaleScheme S) := by
+  let P : ObjectProperty (Over S) :=
+    ⨆ U : S.affineOpens, ((finiteEtaleSchemeProperty U).ι ⋙ Over.map U.val.ι).essImage
+  have hle : finiteEtaleSchemeProperty S ≤ P.colimitsClosure (fun _ : Unit ↦ S.affineOpens) := by
+    intro X hX
+    obtain ⟨_, _⟩ := (finiteEtaleSchemeProperty_iff X).1 hX
+    refine .of_colimitPresentation (a := ()) (Scheme.colimitPresentationAffineOpens X)
+      fun U ↦ .of_mem _ ((ObjectProperty.prop_iSup_iff _ _).2
+        ⟨U, ⟨Over.mk (pullback.snd X.hom U.val.ι), (finiteEtaleSchemeProperty_iff _).2
+          ⟨inferInstanceAs (IsFinite (pullback.snd _ _)),
+            inferInstanceAs (Etale (pullback.snd _ _))⟩⟩, ⟨Over.isoMk (Iso.refl _) ?_⟩⟩)
+    exact (Category.id_comp _).trans pullback.condition
+  have := ObjectProperty.EssentiallySmall.of_le hle
+  infer_instance
+
 variable {S : Scheme.{u}} {Ω : Type u} [Field Ω] [IsSepClosed Ω]
 
-/- If the finite étale covers of `S` form an essentially small category, the automorphism group
-of the geometric fibre functor at `x`, the étale fundamental group, has a model in `Type u`. -/
-example [EssentiallySmall.{u} (FiniteEtaleScheme S)] (x : Spec (.of Ω) ⟶ S) :
-    Small.{u} (Aut (fiber x)) :=
+/- The automorphism group of the geometric fibre functor at `x`, the étale fundamental group, has
+a model in `Type u`. -/
+example (x : Spec (.of Ω) ⟶ S) : Small.{u} (Aut (fiber x)) :=
   inferInstance
 
 end FiniteEtaleScheme
