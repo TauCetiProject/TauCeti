@@ -45,8 +45,8 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] (P : ObjectProperty C)
 
 /-- A nonempty property of objects closed under kernels is closed under isomorphisms: if `Z` lies
 in `P` and `e : X ≅ Y`, then `Y` is a kernel of the zero morphism `X ⟶ Z` via `e.inv`. -/
-lemma isClosedUnderIsomorphisms_of_isClosedUnderKernels [P.Nonempty] [P.IsClosedUnderKernels] :
-    P.IsClosedUnderIsomorphisms where
+instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderKernels [P.Nonempty]
+    [P.IsClosedUnderKernels] : P.IsClosedUnderIsomorphisms where
   of_iso {X Y} e hX := by
     obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
     have hk : IsLimit (KernelFork.ofι e.inv (comp_zero : e.inv ≫ (0 : X ⟶ Z) = 0)) :=
@@ -57,8 +57,8 @@ lemma isClosedUnderIsomorphisms_of_isClosedUnderKernels [P.Nonempty] [P.IsClosed
 
 /-- A nonempty property of objects closed under cokernels is closed under isomorphisms: if `Z` lies
 in `P` and `e : X ≅ Y`, then `Y` is a cokernel of the zero morphism `Z ⟶ X` via `e.hom`. -/
-lemma isClosedUnderIsomorphisms_of_isClosedUnderCokernels [P.Nonempty] [P.IsClosedUnderCokernels] :
-    P.IsClosedUnderIsomorphisms where
+instance (priority := 100) isClosedUnderIsomorphisms_of_isClosedUnderCokernels [P.Nonempty]
+    [P.IsClosedUnderCokernels] : P.IsClosedUnderIsomorphisms where
   of_iso {X Y} e hX := by
     obtain ⟨Z, hZ⟩ := P.exists_prop_of_nonempty
     have hk : IsColimit (CokernelCofork.ofπ e.hom (zero_comp : (0 : Z ⟶ X) ≫ e.hom = 0)) :=

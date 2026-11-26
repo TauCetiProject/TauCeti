@@ -78,7 +78,6 @@ homology identifies with `cokernel (kernel.lift S.g S.f S.zero)`. -/
 lemma prop_shortComplex_homology_of_isClosedUnderKernels {S : ShortComplex C} [S.HasHomology]
     [HasKernel S.g] [HasCokernel (kernel.lift S.g S.f S.zero)]
     (h₁ : P S.X₁) (h₂ : P S.X₂) (h₃ : P S.X₃) : P S.homology :=
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   P.prop_of_iso S.homologyIsoCokernelLift.symm
     (P.prop_cokernel (kernel.lift S.g S.f S.zero) h₁ (P.prop_kernel S.g h₂ h₃))
 

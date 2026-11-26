@@ -81,7 +81,6 @@ theorem sum_χ_smul_X_eq_sum_χ_smul_homology [c.EulerCharSigns]
     ∑ i ∈ s, (c.χ i : ℤ) • v (K.X i) =
       ∑ i ∈ s, (c.χ i : ℤ) • v (K.homology i) := by
   classical
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   have hP : ∀ i : ι, P (K.X i) := fun i ↦
     if hi : i ∈ s then hsP i hi else P.prop_of_isZero (hs i hi)
   have hX : ∀ i : ι, v (K.X i) =

@@ -87,7 +87,6 @@ theorem sum_negOnePow_page_eq_sum_negOnePow_page_add_one
       ∑ pq ∈ s, ((A.deg pq).negOnePow : ℤ) • v ((E.page (r + 1)).X pq) := by
   classical
   let _ : (c r).EulerCharSigns := A.eulerCharSigns r hr
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   have hP : ∀ pq : κ, P ((E.page r hr).X pq) := fun pq ↦
     if hpq : pq ∈ s then hsP pq hpq else P.prop_of_isZero (hs pq hpq)
   have hsum := (E.page r hr).sum_χ_smul_X_eq_sum_χ_smul_homology P v hv s hs hsP

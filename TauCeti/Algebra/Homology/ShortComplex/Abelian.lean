@@ -90,7 +90,6 @@ theorem map_X₂_eq_add_image (S : ShortComplex C) (P : ObjectProperty C)
     {G : Type*} [AddCommGroup G] (v : C → G) (hv : P.IsAdditiveOn v)
     (h₁ : P S.X₁) (h₂ : P S.X₂) (h₃ : P S.X₃) :
     v S.X₂ = v S.homology + v (Abelian.image S.f) + v (Abelian.image S.g) := by
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   have hK : P (kernel S.g) := P.prop_kernel S.g h₂ h₃
   have hImF : P (Abelian.image S.f) :=
     P.prop_kernel (cokernel.π S.f) h₂ (P.prop_cokernel S.f h₁ h₂)

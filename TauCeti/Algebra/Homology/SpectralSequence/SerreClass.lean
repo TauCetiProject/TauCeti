@@ -97,7 +97,6 @@ lemma prop_page_X_of_forall [P.Nonempty] [P.IsClosedUnderKernels] [P.IsClosedUnd
     {r : ℤ} (hr : r₀ ≤ r) (h : ∀ pq : κ, P ((E.page r hr).X pq))
     (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
     P ((E.page r' (hr.trans hrr')).X pq) := by
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   induction r', hrr' using Int.leInduction generalizing pq with
   | base => exact h pq
   | succ r' hrr' ih =>
@@ -114,7 +113,6 @@ lemma prop_page_X_of_finset [P.ContainsZero] [P.IsClosedUnderKernels] [P.IsClose
     (r' : ℤ) (hrr' : r ≤ r') (pq : κ) :
     P ((E.page r' (hr.trans hrr')).X pq) := by
   classical
-  have := P.isClosedUnderIsomorphisms_of_isClosedUnderKernels
   exact E.prop_page_X_of_forall P hr
     (fun i ↦ if hi : i ∈ s then hsP i hi else P.prop_of_isZero (hs i hi)) r' hrr' pq
 
