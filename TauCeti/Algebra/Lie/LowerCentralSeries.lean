@@ -28,9 +28,9 @@ contains every bracket `⁅x, m⁆` with `m` in the `k`-th term
 commutes with the whole span of `x`, `y` and `⁅x, y⁆`, and the bracket of two elements of that span
 is a multiple of `⁅x, y⁆` (`TauCeti.lie_lie_eq_zero_of_mem_span` and
 `TauCeti.lie_mem_span_singleton_of_mem_span`). The quotient `L ⧸ C k` is nilpotent of class at most
-`k`, and a Lie homomorphism into a Lie algebra whose `k`-th lower central term vanishes kills `C k`.
-These are the facts used to evaluate universal elements of free nilpotent Lie algebras in a
-nilpotent Lie algebra.
+`k`, every quotient of a nilpotent Lie algebra is nilpotent, and a Lie homomorphism into a Lie
+algebra whose `k`-th lower central term vanishes kills `C k`. These are the facts used to evaluate
+universal elements of free nilpotent Lie algebras in a nilpotent Lie algebra.
 
 ## References
 
@@ -183,6 +183,10 @@ theorem lowerCentralSeries_quotient_lowerCentralSeries_eq_bot (k : ℕ) :
 /-- The quotient of a Lie algebra by a term of its lower central series is nilpotent. -/
 instance (k : ℕ) : LieRing.IsNilpotent (L ⧸ lowerCentralSeries R L L k) :=
   (isNilpotent_iff R _ _).mpr ⟨k, lowerCentralSeries_quotient_lowerCentralSeries_eq_bot R L k⟩
+
+/-- A quotient of a nilpotent Lie algebra is nilpotent. -/
+instance [LieRing.IsNilpotent L] (I : LieIdeal R L) : LieRing.IsNilpotent (L ⧸ I) :=
+  (LieIdeal.surjective_mkQ I).lieAlgebra_isNilpotent
 
 end Quotient
 
