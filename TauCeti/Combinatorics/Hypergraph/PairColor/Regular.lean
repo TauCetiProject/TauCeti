@@ -11,6 +11,8 @@ public import Mathlib.Basic.Real.Basic
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
+import TauCeti.Combinatorics.SimpleGraph.Density
+import TauCeti.Order.Partition.Finpartition
 
 /-!
 # Regularity of pair colors and of the lower skeleton
@@ -43,6 +45,10 @@ schedule `F : ℕ → ℝ` at the lower complexity, the number of vertex cells p
   `α`-fraction of the sizes form a `max (2ε) (ε / α)`-regular pair.
 * `TauCeti.PairColorSystem.IsRegularPair.abs_card_filter_colorOfPair_sub_le`: rectangle
   discrepancy of a regular pair of disjoint sets.
+* `TauCeti.PairColorSystem.abs_card_filter_colorOfPair_sub_le_of_refines`: aggregating fine-block
+  rectangle discrepancy across a refinement `Q ≤ P` to coarse blocks.
+* `TauCeti.PairColorSystem.isRegularPair_of_abs_card_filter_colorOfPair_sub_le`: converse
+  criterion deducing `IsRegularPair` and density proximity from small rectangle count discrepancy.
 * `TauCeti.PairColorSystem.IsRegularPair.abs_sum_sum_mul_sub_le`: the same bound for tests with
   values in `[0, 1]`.
 * `TauCeti.PairSkeleton3`: vertex cells together with a pair-color system.
@@ -229,6 +235,112 @@ theorem IsRegularPair.abs_sum_sum_mul_sub_le (h : S.IsRegularPair ε s t) (hst :
   simp only [sum_sub_distrib, sum_const, nsmul_eq_mul]
   ring
 
+variable (S) in
+/-- **Coarse rectangle discrepancy from fine blocks.** Let `Q ≤ P` be finite partitions of `u`, and
+let `A, B ∈ P.parts` be coarse parts. If for `X ⊆ A`, `Y ⊆ B`, and a color `c`, every pair
+`(A', B')` of fine parts in `A` and `B` has count discrepancy at most `η * (#A' * #B')` around `d`
+on `(X ∩ A') ×ˢ (Y ∩ B')`, then `X ×ˢ Y` has count discrepancy at most `η * (#A * #B)` around
+`d`. -/
+theorem abs_card_filter_colorOfPair_sub_le_of_refines [DecidableEq V]
+    {u : Finset V} {P Q : Finpartition u} (hQP : Q ≤ P)
+    {A B : Finset V} (hA : A ∈ P.parts) (hB : B ∈ P.parts) {d η : ℝ}
+    (c : κ) {X Y : Finset V} (hX : X ⊆ A) (hY : Y ⊆ B)
+    (hfine : ∀ A' ∈ Q.parts, A' ⊆ A → ∀ B' ∈ Q.parts, B' ⊆ B →
+      |(#{q ∈ (X ∩ A') ×ˢ (Y ∩ B') | S.colorOfPair q.1 q.2 = some c} : ℝ) -
+        d * (#(X ∩ A') * #(Y ∩ B'))| ≤ η * (#A' * #B')) :
+    |(#{q ∈ X ×ˢ Y | S.colorOfPair q.1 q.2 = some c} : ℝ) - d * (#X * #Y)| ≤
+      η * (#A * #B) := by
+  let pA : P.parts := ⟨A, hA⟩
+  let pB : P.parts := ⟨B, hB⟩
+  set QA : Finset Q.parts := {A' | Finpartition.refinementParent hQP A' = pA}
+  set QB : Finset Q.parts := {B' | Finpartition.refinementParent hQP B' = pB}
+  let r (x y : V) : Prop := S.colorOfPair x y = some c
+  have hinter (s t : Finset V) :
+      {q ∈ s ×ˢ t | S.colorOfPair q.1 q.2 = some c} = Rel.interedges r s t := rfl
+  have hXA : QA.biUnion (fun A' ↦ X ∩ A'.val) = X := by
+    rw [← inter_biUnion, Finpartition.biUnion_filter_refinementParent_eq hQP pA,
+      inter_eq_left.2 hX]
+  have hYB : QB.biUnion (fun B' ↦ Y ∩ B'.val) = Y := by
+    rw [← inter_biUnion, Finpartition.biUnion_filter_refinementParent_eq hQP pB,
+      inter_eq_left.2 hY]
+  have hXcard : (#X : ℝ) = ∑ A' ∈ QA, (#(X ∩ A'.val) : ℝ) := by
+    exact_mod_cast (congrArg card (inter_eq_left.2 hX).symm).trans
+      (Finpartition.sum_card_inter_filter_refinementParent_eq hQP pA X).symm
+  have hYcard : (#Y : ℝ) = ∑ B' ∈ QB, (#(Y ∩ B'.val) : ℝ) := by
+    exact_mod_cast (congrArg card (inter_eq_left.2 hY).symm).trans
+      (Finpartition.sum_card_inter_filter_refinementParent_eq hQP pB Y).symm
+  have hAcard : (#A : ℝ) = ∑ A' ∈ QA, (#A'.val : ℝ) := by
+    exact_mod_cast (Finpartition.sum_card_filter_refinementParent_eq hQP pA).symm
+  have hBcard : (#B : ℝ) = ∑ B' ∈ QB, (#B'.val : ℝ) := by
+    exact_mod_cast (Finpartition.sum_card_filter_refinementParent_eq hQP pB).symm
+  have hcount : (#{q ∈ X ×ˢ Y | S.colorOfPair q.1 q.2 = some c} : ℝ) =
+      ∑ A' ∈ QA, ∑ B' ∈ QB,
+        (#{q ∈ (X ∩ A'.val) ×ˢ (Y ∩ B'.val) | S.colorOfPair q.1 q.2 = some c} : ℝ) := by
+    simp_rw [hinter]
+    have hnat : #(Rel.interedges r X Y) =
+        ∑ A' ∈ QA, ∑ B' ∈ QB, #(Rel.interedges r (X ∩ A'.val) (Y ∩ B'.val)) := by
+      conv_lhs => rw [← hXA, ← hYB]
+      rw [Rel.card_interedges_biUnion_left r QA _ _
+        ((Q.pairwiseDisjoint_subtype_val _).mono fun _ ↦ inter_subset_right)]
+      exact sum_congr rfl fun A' _ ↦ Rel.card_interedges_biUnion_right r _ QB _
+        ((Q.pairwiseDisjoint_subtype_val _).mono fun _ ↦ inter_subset_right)
+    exact_mod_cast hnat
+  have hmean : d * (#X * #Y) = ∑ A' ∈ QA, ∑ B' ∈ QB, d * (#(X ∩ A'.val) * #(Y ∩ B'.val)) := by
+    rw [hXcard, hYcard, sum_mul_sum, mul_sum]
+    exact sum_congr rfl fun _ _ ↦ mul_sum _ _ _
+  rw [hcount, hmean, ← sum_sub_distrib, hAcard, hBcard, sum_mul_sum, mul_sum]
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun A' hA' ↦ ?_)
+  rw [← sum_sub_distrib, mul_sum]
+  refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun B' hB' ↦ ?_)
+  exact hfine A'.val A'.property
+    ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hA').2)
+    B'.val B'.property ((Finpartition.refinementParent_eq_iff hQP).1 (mem_filter.1 hB').2)
+
+variable (S) in
+/-- Small rectangle count discrepancy on disjoint nonempty `(s, t)` around `p` implies both
+`|(pairColorDensity S c s t : ℝ) - p c| ≤ η` and `S.IsRegularPair θ s t` whenever
+`2 * η ≤ min 1 θ ^ 3` and `0 < θ`. -/
+theorem isRegularPair_of_abs_card_filter_colorOfPair_sub_le (hst : Disjoint s t) (hs : s.Nonempty)
+    (ht : t.Nonempty) {p : κ → ℝ} {η θ : ℝ} (hθ : 0 < θ) (hη : 2 * η ≤ min 1 θ ^ 3)
+    (hrect : ∀ c, ∀ s' ⊆ s, ∀ t' ⊆ t,
+      |(#{q ∈ s' ×ˢ t' | S.colorOfPair q.1 q.2 = some c} : ℝ) - p c * (#s' * #t')| ≤
+        η * (#s * #t)) :
+    S.IsRegularPair θ s t ∧ ∀ c, |(pairColorDensity S c s t : ℝ) - p c| ≤ η := by
+  classical
+  have hs0 : (0 : ℝ) < #s := Nat.cast_pos.2 hs.card_pos
+  have ht0 : (0 : ℝ) < #t := Nat.cast_pos.2 ht.card_pos
+  have hd_le {s' t' : Finset V} (hs' : s' ⊆ s) (ht' : t' ⊆ t) (c : κ) :
+      |(pairColorDensity S c s' t' : ℝ) - p c| * (#s' * #t') ≤ η * (#s * #t) := by
+    have hc : (#{q ∈ s' ×ˢ t' | S.colorOfPair q.1 q.2 = some c} : ℝ) =
+        pairColorDensity S c s' t' * (#s' * #t') :=
+      mod_cast (pairColorDensity_mul_card_of_disjoint S c (hst.mono hs' ht')).symm
+    have hr := hrect c s' hs' t' ht'
+    rwa [hc, ← sub_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ #s' * #t')] at hr
+  have hfull (c : κ) : |(pairColorDensity S c s t : ℝ) - p c| ≤ η :=
+    le_of_mul_le_mul_right (hd_le subset_rfl subset_rfl c) (mul_pos hs0 ht0)
+  refine ⟨?_, hfull⟩
+  obtain h1θ | hθ1 := le_or_gt 1 θ
+  · exact isRegularPair_of_one_le h1θ
+  rw [min_eq_right hθ1.le] at hη
+  rw [isRegularPair_iff]
+  intro c s' hs' t' ht' hs's ht't
+  have hpos : (0 : ℝ) < #s' * #t' := mul_pos ((mul_pos hθ hs0).trans_le hs's)
+    ((mul_pos hθ ht0).trans_le ht't)
+  have hsub : |(pairColorDensity S c s' t' : ℝ) - p c| ≤ θ / 2 := by
+    refine le_of_mul_le_mul_right ?_ hpos
+    calc |(pairColorDensity S c s' t' : ℝ) - p c| * (#s' * #t')
+        ≤ η * (#s * #t) := hd_le hs' ht' c
+      _ ≤ (θ ^ 3 / 2) * (#s * #t) := mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+      _ = (θ / 2) * ((θ * #s) * (θ * #t)) := by ring
+      _ ≤ (θ / 2) * (#s' * #t') := by gcongr
+  have hη_le : η ≤ θ / 2 := by
+    have : θ ^ 3 ≤ θ := by nlinarith [sq_nonneg θ]
+    linarith
+  calc |(pairColorDensity S c s' t' : ℝ) - pairColorDensity S c s t|
+      ≤ |(pairColorDensity S c s' t' : ℝ) - p c| + |p c - pairColorDensity S c s t| :=
+        abs_sub_le _ _ _
+    _ ≤ θ := by rw [abs_sub_comm (p c)]; linarith [hfull c]
+
 end Discrepancy
 
 end PairColorSystem
@@ -310,6 +422,11 @@ theorem LowerSkeletonRegular.isPairColorRegular [Fintype κ] {F : ℕ → ℝ}
     (h : S.LowerSkeletonRegular F) (hε : F (#S.vertexPart.parts + Fintype.card κ) ≤ ε) :
     S.IsPairColorRegular ε :=
   IsPairColorRegular.mono h hε
+
+/-- Lower-skeleton regularity weakens as the schedule grows. -/
+theorem LowerSkeletonRegular.mono [Fintype κ] {F F' : ℕ → ℝ} (h : S.LowerSkeletonRegular F)
+    (hF : F ≤ F') : S.LowerSkeletonRegular F' :=
+  h.isPairColorRegular (hF _)
 
 variable (S) in
 /-- Rename the pair palette of a lower skeleton along an equivalence, keeping its vertex cells. -/

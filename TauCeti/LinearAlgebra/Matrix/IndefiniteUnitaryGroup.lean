@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
+import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Matrix.DotProduct
 import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
@@ -85,12 +86,17 @@ The basic structure of these groups is recorded here.
   `g * J * star g = J`.
 * `TauCeti.Matrix.val_inv_of_mem_indefiniteUnitaryGroup`: the inverse of `g ∈ U(p, q)` is
   `J * star g * J`.
+* `TauCeti.Matrix.star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff`: a diagonal matrix
+  preserves the form of `J` exactly when its diagonal entries are unitary.
 * `TauCeti.Matrix.star_mem_indefiniteUnitaryGroup_iff`: `U(p, q)` is stable under conjugate
   transposition.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.mem_range_fromBlocksHom_iff`: the image of
   `U(p) × U(q)` is the subgroup of elements with vanishing lower-left block.
 * `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_range_scalarHom`: over a field of
   characteristic zero, the centre of `U(p, q)` is the group of unit scalars.
+* `TauCeti.Matrix.indefiniteUnitaryGroup.center_eq_comap_center`: over a field of
+  characteristic zero, an element of `U(p, q)` is central in `U(p, q)` exactly when it is central
+  in the general linear group.
 
 ## References
 
@@ -139,6 +145,14 @@ variable {A : Matrix n n R}
 theorem mem_unitaryGroupOf_iff {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
   Iff.rfl
+
+omit [DecidableEq n] in
+/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
+matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
+theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix n n R}
+    (hx : star x * A * x = A) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
+  conv_rhs => rw [← hx]
+  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
 
 /-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
 @[ext]
@@ -295,6 +309,13 @@ theorem val_reflection (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
       1 - (2 / (star v ⬝ᵥ A *ᵥ v)) • vecMulVec v (star v ᵥ* A) :=
   (rfl)
 
+/-- The reflection in `v` sends `x` to `x - (2 ⟨v, x⟩ / ⟨v, v⟩) v`. -/
+theorem reflection_mulVec (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
+    (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) (x : n → K) :
+    ((reflection hA hA' v hv : GL n K) : Matrix n n K) *ᵥ x =
+      x - (2 / (star v ⬝ᵥ A *ᵥ v) * (star v ⬝ᵥ A *ᵥ x)) • v := by
+  simp [sub_mulVec, smul_mulVec, vecMulVec_mulVec, ← dotProduct_mulVec, smul_smul]
+
 /-- The reflection in `v` sends `v` to `-v`. -/
 theorem reflection_mulVec_self (hA : A.IsHermitian) (hA' : IsUnit A) (v : n → K)
     (hv : star v ⬝ᵥ A *ᵥ v ≠ 0) :
@@ -378,6 +399,16 @@ theorem star_mem_indefiniteUnitaryGroup_iff {g : GL (p ⊕ q) R} :
     star g ∈ indefiniteUnitaryGroup p q R ↔ g ∈ indefiniteUnitaryGroup p q R := by
   simpa only [inv_indefiniteDiagonal] using
     star_mem_unitaryGroupOf_inv_iff (A := indefiniteDiagonal p q R) isUnit_indefiniteDiagonal
+
+/-- A diagonal matrix `diag(d)` satisfies `star (diag d) * J * diag d = J` exactly when every
+diagonal entry is unitary. -/
+theorem star_diagonal_mul_indefiniteDiagonal_mul_diagonal_eq_iff {d : p ⊕ q → R} :
+    star (diagonal d) * indefiniteDiagonal p q R * diagonal d = indefiniteDiagonal p q R ↔
+      ∀ i, star (d i) * d i = 1 := by
+  rw [indefiniteDiagonal, star_eq_conjTranspose, diagonal_conjTranspose, diagonal_mul_diagonal,
+    diagonal_mul_diagonal, diagonal_eq_diagonal_iff]
+  refine forall_congr' fun i => ?_
+  rcases i with i | i <;> simp [neg_eq_iff_eq_neg]
 
 namespace indefiniteUnitaryGroup
 
@@ -529,6 +560,19 @@ theorem center_eq_range_scalarHom :
     rw [Unitary.mem_iff_star_mul_self]
     exact mul_right_cancel₀ (indefiniteDiagonal_apply_self_ne_zero i₀) (by linear_combination h)
   exact ⟨⟨_, hu⟩, unitaryGroupOf.ext <| by rw [unitaryGroupOf.val_scalarHom]; exact hMs.symm⟩
+
+/-- **The centre of `U(p, q)` is cut out by the centre of the general linear group.** Over a field
+of characteristic zero, an element of `U(p, q)` commutes with every element of `U(p, q)` exactly
+when it commutes with every invertible matrix: both say that it is a scalar matrix. -/
+theorem center_eq_comap_center :
+    Subgroup.center (indefiniteUnitaryGroup p q K) =
+      (Subgroup.center (GL (p ⊕ q) K)).comap (indefiniteUnitaryGroup p q K).subtype := by
+  refine le_antisymm (fun g hg => ?_) fun g hg => Subgroup.mem_center_iff.mpr fun h =>
+    Subtype.ext (Subgroup.mem_center_iff.mp hg h)
+  rw [center_eq_range_scalarHom] at hg
+  obtain ⟨u, rfl⟩ := hg
+  exact Subgroup.mem_comap.mpr <| GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.mpr
+    ⟨u, (unitaryGroupOf.val_scalarHom (A := indefiniteDiagonal p q K) u).symm⟩
 
 end indefiniteUnitaryGroup
 

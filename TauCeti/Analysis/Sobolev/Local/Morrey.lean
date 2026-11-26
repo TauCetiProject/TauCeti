@@ -31,7 +31,8 @@ and `F`. At the endpoint `p = ∞` the exponent is `1` and `u*` is Lipschitz on 
 Applied to the weak derivative, this shows that a continuous map in `W^{2,p}_loc` is `C¹`.
 
 A real function in `MemWkpLoc p Ω 1` is represented by an element of `W1p volume W p` on every
-open `W` with compact closure in `Ω` (`TauCeti.MemWkpLoc.exists_w1p`). The scalar Morrey
+open `W` with compact closure in `Ω` (`TauCeti.MemW1pLoc.exists_w1p`, applied through
+`TauCeti.memWkpLoc_one_iff_memW1pLoc`). The scalar Morrey
 inequality is the interior Morrey inequality `TauCeti.W1p.exists_dist_preciseRepresentative_le`
 applied on such a `W`; the vector-valued statement follows coordinatewise in a basis of `F`.
 
@@ -85,13 +86,12 @@ private theorem continuousOn_preciseRepresentative_real (hp : 2 < p) {u : ℂ �
   have : Fact (1 ≤ p) := ⟨one_le_two.trans hp.le⟩
   obtain ⟨D, hD, -⟩ := hu.exists_weakFDeriv_of_isOpen
   intro x hx
-  obtain ⟨W, hxW, hWΩ, hWc⟩ :=
-    Opens.exists_between_and_isCompact_closure isCompact_singleton (singleton_subset_iff.2 hx)
-  obtain ⟨v, hv, -⟩ := hu.exists_w1p hD hWc hWΩ
+  obtain ⟨W, hxW, hWΩ, hWc⟩ := Opens.exists_mem_and_isCompact_closure hx
+  obtain ⟨v, hv, -⟩ := (memWkpLoc_one_iff_memW1pLoc.1 hu).exists_w1p hD hWc hWΩ
   have heq : EqOn (preciseRepresentative volume u) (preciseRepresentative volume (W1p.value v))
       W := fun z hz => (preciseRepresentative_congr_ae_nhds (W.isOpen.mem_nhds hz) hv).symm
   exact (((W1p.continuousOn_preciseRepresentative (finrank_real_complex_lt hp) v).congr
-    heq).continuousAt (W.isOpen.mem_nhds (hxW rfl))).continuousWithinAt
+    heq).continuousAt (W.isOpen.mem_nhds hxW)).continuousWithinAt
 
 /-- The real-valued case of `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le`. -/
 private theorem exists_dist_preciseRepresentative_le_real (hp : 2 < p) :
@@ -107,7 +107,7 @@ private theorem exists_dist_preciseRepresentative_le_real (hp : 2 < p) :
   refine ⟨C, hC, fun {Ω u D} hu hD x y hxy => ?_⟩
   obtain ⟨W, hBW, hWΩ, hWc⟩ :=
     Opens.exists_between_and_isCompact_closure (isCompact_closedBall _ _) hxy
-  obtain ⟨v, hv, hgrad⟩ := hu.exists_w1p hD hWc hWΩ
+  obtain ⟨v, hv, hgrad⟩ := (memWkpLoc_one_iff_memW1pLoc.1 hu).exists_w1p hD hWc hWΩ
   have hW : ∀ z ∈ closedBall x (2 * dist x y),
       preciseRepresentative volume (W1p.value v) z = preciseRepresentative volume u z :=
     fun z hz => preciseRepresentative_congr_ae_nhds (W.isOpen.mem_nhds (hBW hz)) hv

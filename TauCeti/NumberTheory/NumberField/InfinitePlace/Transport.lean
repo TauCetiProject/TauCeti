@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.InfinitePlace.Ramification
 public import TauCeti.NumberTheory.NumberField.InfinitePlace.Basic
 
 /-!
@@ -15,7 +16,8 @@ A ring isomorphism `e : K ≃+* L` of fields pushes infinite places forward by p
 `InfinitePlace K` and `InfinitePlace L`. Because `e` is an isomorphism, this bijection preserves
 real and complex places, multiplicities, and the canonical real embeddings at real places, and
 restricts to a bijection `NumberField.InfinitePlace.realEquivOfRingEquiv e` between the subtypes of
-real places.
+real places. When a commuting square of field isomorphisms relates two extensions, the induced
+bijections preserve unramifiedness at infinite places.
 
 Both constructions are functorial in `e` and require no number-field hypothesis on `K` or `L`. In
 particular, they identify the infinite and real places of a field with those of any isomorphic copy
@@ -52,6 +54,9 @@ in another universe, such as `Shrink K`.
   `NumberField.InfinitePlace.realEquivOfRingEquiv_trans`: functoriality of `realEquivOfRingEquiv`.
 * `NumberField.InfinitePlace.eq_equivOfRingEquiv_iff`: an infinite place `w'` equals
   `equivOfRingEquiv e w` iff `∀ x, w' (e x) = w x`.
+* `NumberField.InfinitePlace.isUnramified_equivOfRingEquiv_iff`,
+  `IsUnramifiedAtInfinitePlaces.of_equiv_equiv`, `IsUnramifiedAtInfinitePlaces.iff_of_equiv_equiv`:
+  transport of unramifiedness at infinite places across compatible field isomorphisms.
 -/
 
 public section
@@ -211,5 +216,37 @@ theorem eq_equivOfRingEquiv_iff {e : K ≃+* L} {w : InfinitePlace K} {w' : Infi
     w' = equivOfRingEquiv e w ↔ ∀ x, w' (e x) = w x := by
   refine ⟨fun h x ↦ by subst h; simp, fun h ↦ InfinitePlace.ext _ _ fun y ↦ ?_⟩
   rw [equivOfRingEquiv_apply, ← h, e.apply_symm_apply]
+
+/-- **Unramifiedness of an infinite place transports across compatible field isomorphisms.** -/
+theorem isUnramified_equivOfRingEquiv_iff {K' L' : Type*} [Field K'] [Field L']
+    [Algebra K L] [Algebra K' L'] (f : K ≃+* K') (g : L ≃+* L')
+    (hcomp : (algebraMap K' L').comp (f : K →+* K') = (g : L →+* L').comp (algebraMap K L))
+    (w : InfinitePlace L) :
+    (equivOfRingEquiv g w).IsUnramified K' ↔ w.IsUnramified K := by
+  have hsub : (equivOfRingEquiv g w).comap (algebraMap K' L') =
+      equivOfRingEquiv f (w.comap (algebraMap K L)) :=
+    eq_equivOfRingEquiv_iff.mpr fun x ↦ by
+      have hx : algebraMap K' L' (f x) = g (algebraMap K L x) := RingHom.congr_fun hcomp x
+      simp [hx]
+  rw [IsUnramified, IsUnramified, hsub, mult_equivOfRingEquiv, mult_equivOfRingEquiv]
+
+/-- **Unramifiedness at all infinite places transports across compatible field isomorphisms.** -/
+theorem _root_.IsUnramifiedAtInfinitePlaces.of_equiv_equiv {K' L' : Type*} [Field K'] [Field L']
+    [Algebra K L] [Algebra K' L'] [IsUnramifiedAtInfinitePlaces K L]
+    (f : K ≃+* K') (g : L ≃+* L')
+    (hcomp : (algebraMap K' L').comp (f : K →+* K') = (g : L →+* L').comp (algebraMap K L)) :
+    IsUnramifiedAtInfinitePlaces K' L' :=
+  ⟨fun w' ↦ by
+    obtain ⟨w, rfl⟩ := (equivOfRingEquiv g).surjective w'
+    exact (isUnramified_equivOfRingEquiv_iff f g hcomp w).mpr (w.isUnramified K)⟩
+
+/-- **Unramifiedness at all infinite places is invariant under compatible field isomorphisms.** -/
+theorem _root_.IsUnramifiedAtInfinitePlaces.iff_of_equiv_equiv {K' L' : Type*}
+    [Field K'] [Field L'] [Algebra K L] [Algebra K' L'] (f : K ≃+* K') (g : L ≃+* L')
+    (hcomp : (algebraMap K' L').comp (f : K →+* K') = (g : L →+* L').comp (algebraMap K L)) :
+    IsUnramifiedAtInfinitePlaces K L ↔ IsUnramifiedAtInfinitePlaces K' L' :=
+  ⟨fun _ ↦ .of_equiv_equiv f g hcomp,
+    fun _ ↦ .of_equiv_equiv f.symm g.symm <| RingHom.ext fun x ↦
+      g.eq_symm_apply.mpr <| by simpa using (RingHom.congr_fun hcomp (f.symm x)).symm⟩
 
 end NumberField.InfinitePlace

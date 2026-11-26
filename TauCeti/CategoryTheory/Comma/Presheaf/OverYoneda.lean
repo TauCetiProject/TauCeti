@@ -26,6 +26,9 @@ Under this equivalence the presheaf `yoneda.obj Y ⟶ yoneda.obj X` induced by a
   and presheaves of types on `Over X`.
 * `TauCeti.overYonedaEquivPresheafOverYonedaIso X`: the equivalence sends the object
   `yoneda.map Y.hom` of `Over (yoneda.obj X)` to `yoneda.obj Y`, naturally in `Y : Over X`.
+* `CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv Y F`: the resulting bijection between
+  morphisms `yoneda.map Y.hom ⟶ F` over `yoneda.obj X` and morphisms from the representable
+  presheaf `yoneda.obj Y` on `Over X`.
 
 ## References
 
@@ -99,5 +102,40 @@ lemma overYonedaEquivPresheafOverYonedaIso_hom_app_app_left (X : C) (Y Z : Over 
   rw [← overYonedaEquivPresheafOverYonedaIso_inv_app_app_val, ← ConcreteCategory.comp_apply,
     ← NatTrans.comp_app, Iso.hom_inv_id_app]
   rfl
+
+/-- Morphisms in `Over (yoneda.obj X)` from `yoneda.obj Y` lying over `yoneda.obj X` through
+`yoneda.map Y.hom` correspond to morphisms from the representable presheaf `yoneda.obj Y` on
+`Over X`, through the equivalence `overYonedaEquivPresheafOver X`. -/
+noncomputable def _root_.CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv {X : C}
+    (Y : Over X) (F : Over (yoneda.obj X)) :
+    (Over.mk (yoneda.map Y.hom) ⟶ F) ≃
+      (yoneda.obj Y ⟶ (overYonedaEquivPresheafOver X).functor.obj F) where
+  toFun g := (overYonedaEquivPresheafOverYonedaIso X).inv.app Y ≫
+    (overYonedaEquivPresheafOver X).functor.map g
+  invFun g := (overYonedaEquivPresheafOver X).functor.preimage
+    ((overYonedaEquivPresheafOverYonedaIso X).hom.app Y ≫ g)
+  left_inv g := by simp
+  right_inv g := by simp
+
+/-- `Over.overYonedaEquivPresheafOverHomEquiv Y F` applies the equivalence and precomposes with
+the comparison `overYonedaEquivPresheafOverYonedaIso X`. -/
+@[simp]
+lemma _root_.CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv_apply {X : C} (Y : Over X)
+    (F : Over (yoneda.obj X)) (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
+    Over.overYonedaEquivPresheafOverHomEquiv Y F g =
+      (overYonedaEquivPresheafOverYonedaIso X).inv.app Y ≫
+        (overYonedaEquivPresheafOver X).functor.map g :=
+  (rfl)
+
+/-- The inverse of `Over.overYonedaEquivPresheafOverHomEquiv Y F` takes the preimage under the
+equivalence after composing with the comparison `overYonedaEquivPresheafOverYonedaIso X`. -/
+@[simp]
+lemma _root_.CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv_symm_apply {X : C}
+    (Y : Over X) (F : Over (yoneda.obj X))
+    (g : yoneda.obj Y ⟶ (overYonedaEquivPresheafOver X).functor.obj F) :
+    (Over.overYonedaEquivPresheafOverHomEquiv Y F).symm g =
+      (overYonedaEquivPresheafOver X).functor.preimage
+        ((overYonedaEquivPresheafOverYonedaIso X).hom.app Y ≫ g) :=
+  (rfl)
 
 end TauCeti

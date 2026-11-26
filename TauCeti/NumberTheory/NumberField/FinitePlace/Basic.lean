@@ -146,6 +146,23 @@ theorem mk_apply_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : K) :
   exact WithZeroMulInt.toNNReal_eq_one_iff _ (HeightOneSpectrum.absNorm_ne_zero v)
     (HeightOneSpectrum.one_lt_absNorm_nnreal v).ne'
 
+/-- The norm on the adic completion `K_v` of an element of `K` is its absolute value at the finite
+place `v`. -/
+@[simp]
+theorem norm_algebraMap_adicCompletion (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    ‖algebraMap K (v.adicCompletion K) x‖ = mk v x := by
+  simp [mk_apply, embedding_apply, HeightOneSpectrum.algebraMap_adicCompletion]
+
+/-- An algebraic integer has absolute value `1` at a prime iff it lies outside that prime. -/
+theorem mk_apply_coe_eq_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : 𝓞 K) :
+    mk v (x : K) = 1 ↔ x ∉ v.asIdeal := by
+  rw [mk_apply, RingOfIntegers.coe_eq_algebraMap, norm_eq_one_iff_notMem]
+
+/-- An algebraic integer has absolute value less than `1` at a prime iff it lies in that prime. -/
+theorem mk_apply_coe_lt_one_iff (v : HeightOneSpectrum (𝓞 K)) (x : 𝓞 K) :
+    mk v (x : K) < 1 ↔ x ∈ v.asIdeal := by
+  rw [mk_apply, RingOfIntegers.coe_eq_algebraMap, norm_lt_one_iff_mem]
+
 /-- **Clearing denominators away from a finite place.** If every coordinate of a finite tuple
 `u : ι → K` lies in the unit ball of `v`, some `d ∈ 𝓞 K` outside `v.maximalIdeal` (so with
 `v d = 1`) clears all denominators simultaneously so that `(d : K) * u j` lies in `𝓞 K` for every
@@ -282,7 +299,7 @@ theorem exists_apply_eq_one_forall_apply_le (u : FinitePlace K) {T : Finset (Fin
     rw [RingOfIntegers.coe_eq_algebraMap, map_pow, map_pow, map_prod, map_prod,
       Finset.prod_eq_one, one_pow]
     intro w _
-    rw [← RingOfIntegers.coe_eq_algebraMap, ← norm_embedding_eq, norm_eq_one_iff_notMem]
+    rw [← RingOfIntegers.coe_eq_algebraMap, ← mk_maximalIdeal u, mk_apply_coe_eq_one_iff]
     exact hp_notMem w
   exact ⟨(∏ w ∈ T.attach, p w) ^ m, hut, hm⟩
 

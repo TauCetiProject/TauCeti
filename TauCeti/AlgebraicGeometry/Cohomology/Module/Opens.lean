@@ -30,7 +30,8 @@ action is the action of the restriction of `r` to `U` on the sections of `M` ove
 `Scheme.Modules.cohomologyOnZeroEquiv` of `H⁰(U, M)` with the sections of `M` over `U` from
 `TauCeti.AlgebraicGeometry.Cohomology.Basic`. At `U = ⊤` the module `Hⁿ(⊤, M)` is the module
 `Hⁿ(X, M)` of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic`
-(`Scheme.Modules.cohomologyOnTopLinearEquiv`).
+(`Scheme.Modules.cohomologyOnTopLinearEquiv`). In degree zero, `H⁰(⊤, M)` is the module of global
+sections of `M` (`Scheme.Modules.cohomologyOnZeroTopLinearEquiv`).
 
 The construction mirrors the action of `TauCeti.AlgebraicGeometry.Cohomology.Module.Basic` on the
 cohomology of the whole scheme, with the cohomology presheaf `U ↦ Hⁿ(U, M)` in place of the
@@ -179,6 +180,11 @@ lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnResLinear_apply (n : �
     cohomologyOnResLinear M n h x = cohomologyOnRes M n h x :=
   (rfl)
 
+/-- The underlying function of `cohomologyOnResLinear` is `cohomologyOnRes`. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.coe_cohomologyOnResLinear (n : ℕ)
+    {U V : X.Opens} (h : U ≤ V) : ⇑(cohomologyOnResLinear M n h) = cohomologyOnRes M n h :=
+  (rfl)
+
 /-- The connecting map `Hⁿ⁰(U ⊓ V, M) ⟶ Hⁿ¹(U ⊔ V, M)` of the Mayer-Vietoris sequence, as a linear
 map over global functions. -/
 def _root_.AlgebraicGeometry.Scheme.Modules.mayerVietorisδLinear (U V : X.Opens) (n₀ n₁ : ℕ)
@@ -236,6 +242,22 @@ def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopLinearEquiv (n : ℕ)
 @[simp]
 lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnTopLinearEquiv_apply (n : ℕ)
     (x : cohomologyOn M n ⊤) : cohomologyOnTopLinearEquiv M n x = (cohomologyOnTopIso M n).hom x :=
+  (rfl)
+
+/-- The degree-zero cohomology `H⁰(⊤, M)` on the whole scheme is the module `Γ(M, ⊤)` of global
+sections of `M`, linearly over global functions. -/
+def _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopLinearEquiv :
+    cohomologyOn M 0 ⊤ ≃ₗ[Γ(X, ⊤)] Γ(M, ⊤) where
+  __ := cohomologyOnZeroEquiv M ⊤
+  map_smul' r x := by
+    refine (cohomologyOnZeroEquiv_smul M ⊤ r x).trans ?_
+    -- A global function acts through its restriction to `⊤`, which is the identity.
+    rw [show (Opens.leTop ⊤ : (⊤ : X.Opens) ⟶ ⊤) = 𝟙 ⊤ from rfl, op_id, X.presheaf.map_id]
+    rfl
+
+@[simp]
+lemma _root_.AlgebraicGeometry.Scheme.Modules.cohomologyOnZeroTopLinearEquiv_apply
+    (x : cohomologyOn M 0 ⊤) : cohomologyOnZeroTopLinearEquiv M x = cohomologyOnZeroEquiv M ⊤ x :=
   (rfl)
 
 end Scheme.Modules

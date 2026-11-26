@@ -11,7 +11,7 @@ public import TauCeti.NumberTheory.QuadraticForm.Global.Localization
 # Operations on localized quadratic forms
 
 This file records how the canonical finite, real, and complex localizations of a quadratic form
-interact with orthogonal products, negation, and scalar multiplication.
+interact with orthogonal products, the zero form, negation, and scalar multiplication.
 
 The product comparisons are isometries because scalar extension distributes over a product only
 up to the canonical tensor-product equivalence.  The other comparisons are equalities of forms
@@ -203,6 +203,35 @@ theorem atComplexEmbedding_neg (Q : _root_.QuadraticForm K V) (place : InfiniteP
   rw [atComplexEmbedding_def, atComplexEmbedding_def, baseChange_neg]
 
 end Negation
+
+section Zero
+
+/-- Finite localization sends the zero form to the zero form. -/
+@[simp]
+theorem atFinitePlace_zero [NumberField K] (place : HeightOneSpectrum (𝓞 K)) :
+    atFinitePlace (0 : _root_.QuadraticForm K V) place = 0 := by
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  rw [atFinitePlace_def, baseChange_zero]
+
+/-- Real localization sends the zero form to the zero form. -/
+@[simp]
+theorem atRealPlace_zero (place : {w : InfinitePlace K // w.IsReal}) :
+    atRealPlace (0 : _root_.QuadraticForm K V) place = 0 := by
+  let : CharZero K := RingHom.charZero place.val.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℝ := (embedding_of_isReal place.property).toAlgebra
+  rw [atRealPlace_def, baseChange_zero]
+
+/-- Complex localization sends the zero form to the zero form. -/
+@[simp]
+theorem atComplexEmbedding_zero (place : InfinitePlace K) :
+    atComplexEmbedding (0 : _root_.QuadraticForm K V) place = 0 := by
+  let : CharZero K := RingHom.charZero place.embedding
+  let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
+  let : Algebra K ℂ := place.embedding.toAlgebra
+  rw [atComplexEmbedding_def, baseChange_zero]
+
+end Zero
 
 section Scaling
 

@@ -177,8 +177,7 @@ end Level
 field `ℚ(ζ_n)`. -/
 theorem kroneckerWeber (E : Type) [Field E] [NumberField E] [IsAbelianGalois ℚ E] :
     ∃ n : ℕ, n ≠ 0 ∧ Nonempty (E →ₐ[ℚ] CyclotomicField n ℚ) := by
-  have hf := Ideal.absNorm_eq_zero_iff.not.mpr (abelianConductor ℚ E).finitePart_ne_bot
-  have : NeZero (Ideal.absNorm (abelianConductor ℚ E).finitePart) := ⟨hf⟩
+  have hf := NeZero.ne (Ideal.absNorm (abelianConductor ℚ E).finitePart)
   exact ⟨_, hf, (nonempty_algHom_cyclotomicField_iff E _).mpr dvd_rfl⟩
 
 end TauCeti.ClassFieldTheory

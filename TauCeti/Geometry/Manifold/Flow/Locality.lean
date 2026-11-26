@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Basic
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Flows depend only on the field near a trajectory
@@ -34,6 +35,8 @@ transitions whose last leg runs where the fields agree
 * `TauCeti.flowOf_eq_of_eqOn`, `TauCeti.eventually_flowOf_eq_of_eqOn`: the flows of fields
   agreeing on an open set containing the trajectory of `x` from time `0` to `t` agree at `(t, x)`
   and on a neighbourhood of `(t, x)`.
+* `TauCeti.mfderiv_flowOf_add_eq_of_eqOn`: after reaching the trajectory at time `τ`, the flow of
+  `w` continues as the flow of `v`, and the derivatives of the time maps compose accordingly.
 
 ## References
 
@@ -90,8 +93,7 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
   -- `uIcc 0 t × {x}`; a product neighbourhood of the segment inside it contains a product of an
   -- open interval around `uIcc 0 t` and a neighbourhood of `x`.
   set O : Set (ℝ × M) := flowDomain v ∩ (fun y : ℝ × M ↦ flowOf v y.1 y.2) ⁻¹' U
-  have hO : IsOpen O := (contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage
-    (isOpen_flowDomain hv) hU
+  have hO : IsOpen O := isOpen_setOf_mem_flowDomain_and_flowOf_mem hv hU
   have hseg : uIcc 0 t ⊆ maximalIntegralCurveInterval v x :=
     ordConnected_maximalIntegralCurveInterval.uIcc_subset
       (mem_flowDomain.mp (mem_flowDomain_zero hv x)) (mem_flowDomain.mp ht)
@@ -101,18 +103,9 @@ theorem eventually_flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
   obtain ⟨u, V, hu, hV, hKu, hxV, huV⟩ :=
     generalized_tube_lemma isCompact_uIcc isCompact_singleton hO hsub
   -- Since `u` is open, it contains an open interval `Ioo a b` around `uIcc 0 t`.
-  obtain ⟨a, ha, hau⟩ := exists_Ioc_subset_of_mem_nhds (hu.mem_nhds (hKu ⟨le_rfl, inf_le_sup⟩))
-    ⟨0 ⊓ t - 1, by linarith⟩
-  obtain ⟨b, hb, hbu⟩ := exists_Ico_subset_of_mem_nhds (hu.mem_nhds (hKu ⟨inf_le_sup, le_rfl⟩))
-    ⟨0 ⊔ t + 1, by linarith⟩
-  have hab : Ioo a b ⊆ u := fun s hs ↦ by
-    rcases le_or_gt s (0 ⊓ t) with hs₁ | hs₁
-    · exact hau ⟨hs.1, hs₁⟩
-    rcases le_or_gt s (0 ⊔ t) with hs₂ | hs₂
-    · exact hKu ⟨hs₁.le, hs₂⟩
-    · exact hbu ⟨hs₂.le, hs.2⟩
-  have h0 : (0 : ℝ) ∈ Ioo a b := ⟨ha.trans_le inf_le_left, le_sup_left.trans_lt hb⟩
-  have htab : t ∈ Ioo a b := ⟨ha.trans_le inf_le_right, le_sup_right.trans_lt hb⟩
+  obtain ⟨a, b, hKab, hab⟩ := hu.exists_Ioo_subset_of_uIcc_subset hKu
+  have h0 : (0 : ℝ) ∈ Ioo a b := hKab left_mem_uIcc
+  have htab : t ∈ Ioo a b := hKab right_mem_uIcc
   filter_upwards [prod_mem_nhds (isOpen_Ioo.mem_nhds htab) (hV.mem_nhds (hxV rfl))]
     with y ⟨hy₁, hy₂⟩
   have hO' : ∀ s ∈ Ioo a b, (s, y.2) ∈ O := fun s hs ↦ huV ⟨hab hs, hy₂⟩
@@ -125,6 +118,31 @@ theorem flowOf_eq_of_eqOn (ht : (t, x) ∈ flowDomain v)
     (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
     (t, x) ∈ flowDomain w ∧ flowOf w t x = flowOf v t x :=
   (eventually_flowOf_eq_of_eqOn hv hw hU hvw ht htU).self_of_nhds
+
+/-- **Flowing on along a segment where the fields agree.** Let `w` carry `p` to `x` at time `τ`,
+and let `w` agree with `v` on an open set `U` containing the trajectory of `x` under `v` from time
+`0` to time `t`. Then `w` carries `p` at time `τ + t` to the point `flowOf v t x`, and the
+derivative of its time-`(τ + t)` map at `p` is that of its time-`τ` map followed by that of the
+time-`t` map of `v` at `x`. -/
+theorem mfderiv_flowOf_add_eq_of_eqOn {τ : ℝ} {p : M} (hτ : (τ, p) ∈ flowDomain w)
+    (hx : flowOf w τ p = x) (ht : (t, x) ∈ flowDomain v)
+    (htU : MapsTo (fun s ↦ flowOf v s x) (uIcc 0 t) U) :
+    (τ + t, p) ∈ flowDomain w ∧ flowOf w (τ + t) p = flowOf v t x ∧
+      ∀ ξ : TangentSpace I p,
+        -- The tangent spaces at the two values are both the model space `E`.
+        @Eq E (mfderiv I I (flowOf w (τ + t)) p ξ)
+          (mfderiv I I (flowOf v t) x (mfderiv I I (flowOf w τ) p ξ)) := by
+  have h := eventually_flowOf_eq_of_eqOn hv hw hU hvw ht htU
+  obtain ⟨htw, hteq⟩ := h.self_of_nhds
+  obtain ⟨hdom, hval⟩ := flowOf_add hw hτ (hx ▸ htw)
+  refine ⟨hdom, by rw [← hval, hx, hteq], fun ξ ↦ ?_⟩
+  -- Near `x` the time-`t` maps of `w` and `v` agree, so they have the same derivative at `x`.
+  have hev : flowOf w t =ᶠ[𝓝 x] flowOf v t := by
+    filter_upwards [((continuous_const.prodMk continuous_id).tendsto x).eventually h] with y hy
+    exact hy.2
+  rw [← mfderiv_flowOf_add_apply hw hτ hx htw ξ, hev.mfderiv_eq]
+  -- `tangentSpaceCast` is the identity of the model space.
+  rfl
 
 end Flow
 

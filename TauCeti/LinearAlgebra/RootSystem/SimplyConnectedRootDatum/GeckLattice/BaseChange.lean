@@ -150,8 +150,10 @@ def geckBaseChangePointsMulEquiv (B : CommAlgCat.{w} A) :
       (CommAlgCat.restrictScalarsObj (algebraMap ℤ A) B)).mulEquiv
 
 /-- Under `geckBaseChangePointsMulEquiv`, a quotient point has the same ambient invertible matrix
-as its composite with the quotient map over `A`. -/
-@[simp]
+as its composite with the quotient map over `A`.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem coe_geckBaseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
     (q : HopfAlgebra.points (R := A)
       (H := CommHopfAlgCat.quotient
@@ -171,8 +173,10 @@ theorem coe_geckBaseChangePointsMulEquiv_apply (B : CommAlgCat.{w} A)
     (t.mkQuotient_comp_geckBaseChangeCoordinateIso_hom ht A) B q
 
 /-- Under the inverse of `geckBaseChangePointsMulEquiv`, the ambient point of the quotient point
-attached to a Geck point is the one read off its invertible matrix. -/
-@[simp]
+attached to a Geck point is the one read off its invertible matrix.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem quotientPointsHom_geckBaseChangePointsMulEquiv_symm (B : CommAlgCat.{w} A)
     (g : t.geckPoints ht B) :
     CommHopfAlgCat.quotientPointsHom
@@ -190,8 +194,10 @@ theorem quotientPointsHom_geckBaseChangePointsMulEquiv_symm (B : CommAlgCat.{w} 
 algebra.** A morphism `χ : B ⟶ C` of value `A`-algebras acts on the specialized carrier's points
 by `HopfAlgebra.mapPoints` and on the Geck points by the shared presentation map along the same
 morphism with its scalars restricted to `ℤ`, and the equivalence intertwines the two. A consumer
-can therefore use it functorially without unfolding its composite implementation. -/
-@[simp]
+can therefore use it functorially without unfolding its composite implementation.
+
+This is not a `simp` lemma: simp never retrieves it, because its discrimination-tree key records
+the unreduced carriers of the points groups, so apply it by name. -/
 theorem geckBaseChangePointsMulEquiv_mapPoints {B C : CommAlgCat.{w} A} (χ : B ⟶ C)
     (q : HopfAlgebra.points (R := A)
       (H := CommHopfAlgCat.quotient

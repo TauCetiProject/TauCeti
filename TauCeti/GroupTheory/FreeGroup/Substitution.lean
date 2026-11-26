@@ -322,6 +322,22 @@ theorem IsReduced.of_substituteVars {U : X → List (A × Bool)} {w : List ((X �
     | (.inl x, b), hx => hU x b hx
     | (.inr _, _), _ => List.cons_ne_nil _ _
 
+/-- Substituting words for the variables, without free reduction, does not shorten a word when the
+variables occurring in it are assigned nonempty words. -/
+theorem length_le_length_substituteVars {U : X → List (A × Bool)} {w : List ((X ⊕ A) × Bool)}
+    (hU : ∀ x b, (Sum.inl x, b) ∈ w → U x ≠ []) : w.length ≤ (substituteVars U w).length := by
+  induction w with
+  | nil => simp
+  | cons y w ih =>
+    have hy : 1 ≤ (substituteVars U [y]).length := by
+      obtain ⟨x | a, _ | _⟩ := y
+      · simpa [Nat.one_le_iff_ne_zero] using hU x false (by simp)
+      · simpa [Nat.one_le_iff_ne_zero] using hU x true (by simp)
+      all_goals simp
+    have := ih fun x b hx ↦ hU x b (List.mem_cons_of_mem _ hx)
+    rw [substituteVars_cons, List.length_append, List.length_cons]
+    lia
+
 /-- Substituting for the variables after replacing each variable `x` by a word `τ x` in variables
 and letters, keeping the letters, is substituting the composite assignment. -/
 @[simp]

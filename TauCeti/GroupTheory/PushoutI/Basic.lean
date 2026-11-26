@@ -8,10 +8,10 @@ module
 public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.PushoutI
 public import Mathlib.GroupTheory.Subgroup.Centralizer
-import Mathlib.Algebra.Group.ULift
 import Mathlib.GroupTheory.Commutator.Basic
 import Mathlib.GroupTheory.SpecificGroups.Dihedral
 import TauCeti.Algebra.Group.Subgroup.ZPowers
+import TauCeti.GroupTheory.Coprod.Factors
 
 /-!
 # Amalgamated products: non-injective maps, centralizers, and the amalgamation of groups
@@ -27,9 +27,10 @@ This is the reason the boundary maps of a graph of groups are required to be inj
 data of an amalgam `A ∗_C B` with a non-injective map `C →* B` and an injective map `C →* A`, the
 vertex group `A` does not embed in the amalgam, and the normal form theorem fails.
 
-For a pushout of groups along `φ i : C →* G i`, an element of a factor `G i` that centralizes the
-image of `C` in `G i` commutes in the pushout with every element of the image `base φ c` of `C`,
-since that image is also the image of `φ i c` under the inclusion of `G i`.
+For a pushout of groups along `φ i : C →* G i`, the image `base φ c` of an element of `C` is also
+the image of `φ i c` under the inclusion of `G i`, so the image of `C` lies in the image of every
+factor. In particular, an element of a factor `G i` that centralizes the image of `C` in `G i`
+commutes in the pushout with every element of the image of `C`.
 
 Conversely, two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups are completed to
 a commutative square of injective homomorphisms into a group: the amalgamated product
@@ -46,6 +47,8 @@ its amalgam with that dihedral group along `g = rⁿ`. For `n = 2`, `r² = ⁅r,
   identifies every pair of elements identified by some `φ j`.
 * `Monoid.PushoutI.not_injective_of`: if `φ i` is injective and `φ j` is not, then `G i` does not
   embed in the pushout.
+* `Monoid.PushoutI.base_range_le_of_range`: the image of `C` in the pushout lies in the image of
+  every factor.
 * `Monoid.PushoutI.commute_of_base_of_mem_centralizer`: an element of a factor centralizing the
   image of `C` commutes with the image of `C` in the pushout.
 * `Monoid.PushoutI.exists_injective_comp_eq_comp`: two injective homomorphisms out of a group `C`
@@ -91,6 +94,11 @@ section Group
 variable {ι : Type*} {G : ι → Type*} {C : Type*} [∀ i, Group (G i)] [Group C]
   {φ : ∀ i, C →* G i}
 
+/-- The image of the amalgamating group in the pushout lies in the image of every factor. -/
+theorem base_range_le_of_range (i : ι) : (base φ).range ≤ (of (φ := φ) i).range := by
+  rintro _ ⟨c, rfl⟩
+  exact ⟨φ i c, of_apply_eq_base φ i c⟩
+
 /-- An element of a factor centralizing the image of the amalgamating group commutes in the
 pushout with every element of the image of the amalgamating group. -/
 theorem commute_of_base_of_mem_centralizer {i : ι} {z : G i}
@@ -105,16 +113,6 @@ section Amalgamation
 
 universe u v w
 
-/-- The two factors `A` and `B` of an amalgamated product as a `Bool`-indexed family of a common
-universe: `A` at `false` and `B` at `true`. -/
-private abbrev PairFactor (A : Type u) (B : Type v) (i : Bool) : Type (max u v) :=
-  cond i (ULift.{u} B) (ULift.{v} A)
-
-private instance (A : Type u) (B : Type v) [Group A] [Group B] (i : Bool) :
-    Group (PairFactor A B i) :=
-  Bool.rec (motive := fun i => Group (PairFactor A B i))
-    (inferInstanceAs (Group (ULift.{v} A))) (inferInstanceAs (Group (ULift.{u} B))) i
-
 /-- **Amalgamation of groups.** Two injective homomorphisms `φ : C →* A` and `ψ : C →* B` of groups
 are completed to a commutative square by two injective homomorphisms `α : A →* P` and
 `β : B →* P` into a group `P`, the amalgamated product `A ∗_C B`. -/
@@ -122,9 +120,10 @@ theorem exists_injective_comp_eq_comp {A : Type u} {B : Type v} {C : Type w} [Gr
     [Group C] {φ : C →* A} {ψ : C →* B} (hφ : Function.Injective φ) (hψ : Function.Injective ψ) :
     ∃ (P : Type (max u v w)) (_ : Group P) (α : A →* P) (β : B →* P),
       Function.Injective α ∧ Function.Injective β ∧ α.comp φ = β.comp ψ := by
-  let χ (i : Bool) : C →* PairFactor A B i := Bool.rec (motive := fun i => C →* PairFactor A B i)
-    ((MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom.comp φ)
-    ((MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom.comp ψ) i
+  let χ (i : Bool) : C →* Monoid.Coprod.Factors A B i :=
+    Bool.rec (motive := fun i => C →* Monoid.Coprod.Factors A B i)
+      ((MulEquiv.ulift.symm : A ≃* ULift.{v} A).toMonoidHom.comp φ)
+      ((MulEquiv.ulift.symm : B ≃* ULift.{u} B).toMonoidHom.comp ψ) i
   have hχ (i : Bool) : Function.Injective (χ i) := by
     cases i
     · exact MulEquiv.ulift.symm.injective.comp hφ

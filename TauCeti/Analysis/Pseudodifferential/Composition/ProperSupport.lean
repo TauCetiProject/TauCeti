@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+public import TauCeti.Analysis.Pseudodifferential.Composition.Classical
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Basic
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
@@ -46,10 +46,26 @@ cutoff `ψ` equal to `1` on that ball. This value does not depend on `b'`
   properly supported operators.
 * `TauCeti.Symbol.isAsymptoticSum_properSharp`: the **composition expansion**
   `a.properSharp ha b ∼ ∑ₖ sharpTerm a b k`, with remainders of order `m' + m - N`.
+* `TauCeti.Symbol.properSharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero`: the expansion is exact,
+  `a.properSharp ha b = ∑_{k < N} sharpTerm a b k`, when `a(x, ξ)` is a polynomial of degree less
+  than `N` in `ξ`, as for the symbol of a differential operator.
+* `TauCeti.Symbol.properSharp_add`, `TauCeti.Symbol.add_properSharp` and their companions: the
+  composition symbol is linear in each factor.
+* `TauCeti.ClassicalSymbol.properSharp`: **the composition of classical symbols with a properly
+  supported left factor is classical**, with the homogeneous terms `sharpTerms a.term b.term`, the
+  formal composition of the expansions, and principal symbol `a_{m'} ∘ b_m`
+  (`TauCeti.ClassicalSymbol.principal_properSharp`). It agrees with the composition
+  `TauCeti.ClassicalSymbol.sharp` when `b` has compact spatial support
+  (`TauCeti.ClassicalSymbol.properSharp_eq_sharp`), and is elliptic when `a` and `b` are
+  (`TauCeti.ClassicalSymbol.IsElliptic.properSharp`).
+* `TauCeti.ClassicalSymbol.exists_isSmoothing_sub_and_hasPropagationLE`: every classical symbol is,
+  up to a smoothing symbol, a classical symbol of finite propagation with the same homogeneous
+  terms.
 
 Together with `TauCeti.Symbol.exists_isSmoothing_sub_and_hasPropagationLE`, which replaces every
 symbol by one of finite propagation up to a smoothing symbol, this gives the composition calculus
-of properly supported operators without any compact support condition on the symbols.
+of properly supported operators without any compact support condition on the symbols, both for
+general symbols and within the classical symbols.
 
 ## Implementation notes
 
@@ -91,18 +107,16 @@ private def bump (r : ℝ) (x : CoordinateSpace n) : ContDiffBump x :=
 
 /-- The localization `ψ(y) b(y, ξ)` of `b` by the bump function `ψ = bump r x`. -/
 private def localize (r : ℝ) (x : CoordinateSpace n) (b : Symbol n V W m) : Symbol n V W m :=
-  inclusion (by simp) ((ofSpatial (fun y ↦ bump r x y • ContinuousLinearMap.id ℂ W)
-    ((bump r x).contDiff.smul contDiff_const)).comp b)
+  smulLeft (Complex.ofRealCLM.contDiff.comp (bump r x).contDiff) b
 
 private theorem hasCompactSpatialSupport_localize (r : ℝ) (x : CoordinateSpace n)
     (b : Symbol n V W m) : (localize r x b).HasCompactSpatialSupport :=
-  (((hasCompactSpatialSupport_ofSpatial_iff _).2
-    (bump r x).hasCompactSupport.smul_right).comp_right b).inclusion _
+  hasCompactSpatialSupport_smulLeft _ ((bump r x).hasCompactSupport.comp_left Complex.ofReal_zero) b
 
 private theorem coefficient_localize {r : ℝ} {x y : CoordinateSpace n} (hy : dist y x ≤ max r 1)
     (b : Symbol n V W m) (ξ : CoordinateSpace n) :
     (localize r x b).coefficient (y, ξ) = b.coefficient (y, ξ) := by
-  simp [localize, coefficient_comp, coefficient_ofSpatial, (bump r x).one_of_mem_closedBall hy]
+  simp [localize, (bump r x).one_of_mem_closedBall hy]
 
 private theorem coefficient_localize_of_mem_ball {r : ℝ} {x y : CoordinateSpace n}
     (hy : y ∈ ball x r) (b : Symbol n V W m) (ξ : CoordinateSpace n) :
@@ -117,6 +131,14 @@ private theorem coefficient_localize_add_one {r : ℝ} {x y z : CoordinateSpace 
     (localize (r + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
   coefficient_localize_of_mem_ball (ball_subset_ball' (add_le_add_right (mem_ball.1 hy).le r) hz)
     b ξ
+
+/-- The localization about `x` agrees with `b` near every point of the ball of radius `1` about
+`x`. -/
+private theorem eventually_coefficient_localize {r : ℝ} {x y : CoordinateSpace n}
+    (hy : y ∈ ball x 1) (b : Symbol n V W m) :
+    ∀ᶠ z in 𝓝 y, ∀ ξ, (localize r x b).coefficient (z, ξ) = b.coefficient (z, ξ) := by
+  filter_upwards [isOpen_ball.mem_nhds hy] with z hz ξ
+  exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
 
 end Auxiliary
 
@@ -255,14 +277,239 @@ theorem isAsymptoticSum_properSharp (b : Symbol n V W m) :
   rw [coefficient_sharpRemainder, Pi.sub_apply, Pi.sub_apply, Finset.sum_apply, Finset.sum_apply,
     coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦ coefficient_localize_add_one hy hz b ξ)]
   -- The terms of the expansion at `y` only involve the derivatives of `b` at `y`.
-  have hev : ∀ᶠ z in 𝓝 y, ∀ ξ, (localize (ε + 1) x b).coefficient (z, ξ) = b.coefficient (z, ξ) :=
-    by
-    filter_upwards [isOpen_ball.mem_nhds hy] with z hz ξ
-    exact coefficient_localize ((mem_ball.1 hz).le.trans (le_max_right _ _)) b ξ
   congr 1
   refine Finset.sum_congr rfl fun k _ ↦ ?_
-  exact coefficient_sharpTerm_congr_of_eventually hev a k η
+  exact coefficient_sharpTerm_congr_of_eventually (eventually_coefficient_localize hy b) a k η
+
+/-- **Exact composition with a symbol polynomial in the frequency.** If the frequency derivatives
+of `a` of order `N` vanish, so that `a(x, ξ)` is a polynomial of degree less than `N` in `ξ`, as
+for the symbol of a differential operator of order less than `N`, then the composition expansion
+is exact after `N` terms: `a.properSharp ha b = ∑_{k < N} sharpTerm a b k`, for every symbol `b`,
+with no compact support condition on `b`. -/
+theorem properSharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero {N : ℕ}
+    (hpoly : ∀ β : List (Fin n), β.length = N → ∀ x ξ, mixedDeriv [] β a.coefficient x ξ = 0)
+    (b : Symbol n V W m) :
+    a.properSharp ha b =
+      ∑ k ∈ range N, inclusion (sub_le_self _ (Nat.cast_nonneg k)) (a.sharpTerm b k) := by
+  ext1
+  funext ⟨x, ξ⟩
+  -- At `x`, the composition is `a # b'` for the localization `b'` of `b` to a ball about `x`,
+  -- whose expansion is exact; its terms at `x` only involve `b` near `x`.
+  have hb := hasCompactSpatialSupport_localize (ε + 1) x b
+  rw [coefficient_properSharp_eq_sharp ha hb (fun z hz ξ ↦
+      coefficient_localize_add_one (mem_ball_self one_pos) hz b ξ),
+    sharp_eq_sum_sharpTerm_of_mixedDeriv_nil_eq_zero hpoly hb]
+  simp only [coefficient_sum, coefficient_inclusion, Finset.sum_apply, coefficient_sharpTerm,
+    mixedDeriv_congr_of_eventually (eventually_coefficient_localize (mem_ball_self one_pos) b)]
+
+/-! ### Linearity -/
+
+/-- At the position `x`, the composition symbol is computed by the localization of `b` to the ball
+of radius `ε` about `x`. -/
+private theorem coefficient_properSharp_eq_sharp_localize (b : Symbol n V W m)
+    (x ξ : CoordinateSpace n) :
+    (a.properSharp ha b).coefficient (x, ξ) =
+      (a.sharp (localize ε x b) (hasCompactSpatialSupport_localize ε x b)).coefficient (x, ξ) :=
+  coefficient_properSharp_eq_sharp ha _ (fun _ hy ↦ coefficient_localize_of_mem_ball hy b) ξ
+
+theorem properSharp_add (b₁ b₂ : Symbol n V W m) :
+    a.properSharp ha (b₁ + b₂) = a.properSharp ha b₁ + a.properSharp ha b₂ := by
+  ext1
+  funext ⟨x, ξ⟩
+  have hb₁ := hasCompactSpatialSupport_localize ε x b₁
+  have hb₂ := hasCompactSpatialSupport_localize ε x b₂
+  rw [coefficient_properSharp_eq_sharp ha (hb₁.add hb₂) fun y hy η ↦ by
+      simp [coefficient_localize_of_mem_ball hy], sharp_add a hb₁ hb₂]
+  simp [coefficient_properSharp_eq_sharp_localize ha]
+
+@[simp]
+theorem properSharp_smul (b : Symbol n V W m) (c : ℂ) :
+    a.properSharp ha (c • b) = c • a.properSharp ha b := by
+  ext1
+  funext ⟨x, ξ⟩
+  have hb := hasCompactSpatialSupport_localize ε x b
+  rw [coefficient_properSharp_eq_sharp ha (hb.smul c) fun y hy η ↦ by
+      simp [coefficient_localize_of_mem_ball hy], sharp_smul a hb]
+  simp [coefficient_properSharp_eq_sharp_localize ha]
+
+@[simp]
+theorem properSharp_zero : a.properSharp ha (0 : Symbol n V W m) = 0 := by
+  simpa using properSharp_smul ha (0 : Symbol n V W m) 0
+
+@[simp]
+theorem properSharp_neg (b : Symbol n V W m) : a.properSharp ha (-b) = -a.properSharp ha b := by
+  simpa using properSharp_smul ha b (-1)
+
+theorem properSharp_sub (b₁ b₂ : Symbol n V W m) :
+    a.properSharp ha (b₁ - b₂) = a.properSharp ha b₁ - a.properSharp ha b₂ := by
+  rw [sub_eq_add_neg, properSharp_add, properSharp_neg, ← sub_eq_add_neg]
+
+omit ha in
+theorem add_properSharp {a₁ a₂ : Symbol n W U m'} (ha₁ : a₁.HasPropagationLE ε)
+    (ha₂ : a₂.HasPropagationLE ε) (b : Symbol n V W m) :
+    (a₁ + a₂).properSharp (ha₁.add ha₂) b = a₁.properSharp ha₁ b + a₂.properSharp ha₂ b := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_properSharp_eq_sharp_localize, add_sharp]
+
+@[simp]
+theorem smul_properSharp (c : ℂ) (b : Symbol n V W m) :
+    (c • a).properSharp (ha.smul c) b = c • a.properSharp ha b := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp [coefficient_properSharp_eq_sharp_localize]
+
+omit ha in
+@[simp]
+theorem zero_properSharp (b : Symbol n V W m) :
+    (0 : Symbol n W U m').properSharp (hasPropagationLE_zero ε) b = 0 := by
+  simpa using smul_properSharp (hasPropagationLE_zero ε) (0 : ℂ) b
+
+@[simp]
+theorem neg_properSharp (b : Symbol n V W m) :
+    (-a).properSharp ha.neg b = -a.properSharp ha b := by
+  simpa using smul_properSharp ha (-1 : ℂ) b
+
+omit ha in
+theorem sub_properSharp {a₁ a₂ : Symbol n W U m'} (ha₁ : a₁.HasPropagationLE ε)
+    (ha₂ : a₂.HasPropagationLE ε) (b : Symbol n V W m) :
+    (a₁ - a₂).properSharp (ha₁.sub ha₂) b = a₁.properSharp ha₁ b - a₂.properSharp ha₂ b := by
+  simpa [sub_eq_add_neg, neg_properSharp ha₂] using add_properSharp ha₁ ha₂.neg b
 
 end Symbol
+
+/-! ### Classical symbols -/
+
+namespace ClassicalSymbol
+
+open HomogeneousSymbol
+
+variable {n : ℕ} {m m' ε : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
+
+/-- **Every classical pseudodifferential operator is properly supported up to a smoothing
+operator**, within the classical symbols. For every `ε > 0`, every classical symbol `b` differs by a
+smoothing symbol from a classical symbol `c` of propagation at most `ε`. The two have the same
+homogeneous terms (`TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`). -/
+theorem exists_isSmoothing_sub_and_hasPropagationLE [CompleteSpace V] [CompleteSpace W]
+    (b : ClassicalSymbol n V W m) (hε : 0 < ε) :
+    ∃ c : ClassicalSymbol n V W m,
+      (c - b).toSymbol.IsSmoothing ∧ c.toSymbol.HasPropagationLE ε := by
+  obtain ⟨c, hc, hcε⟩ := b.toSymbol.exists_isSmoothing_sub_and_hasPropagationLE hε
+  refine ⟨b + ofIsSmoothing _ hc, ?_, ?_⟩
+  · simpa [toSymbol_sub, toSymbol_add] using hc
+  · simpa [toSymbol_add] using hcε
+
+variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
+
+/-- **The composition of classical symbols with a properly supported left factor is classical.**
+For a classical symbol `a` of order `m'` of propagation at most `ε` and a classical symbol `b` of
+order `m`, with no condition on the spatial support of `b`, the composition symbol
+`a.toSymbol.properSharp ha b.toSymbol`, whose quantization is `Op(a) ∘ Op(b)`
+(`TauCeti.Symbol.quantizeSchwartzValue_properSharp`), is a classical symbol of order `m' + m`. As
+for `TauCeti.ClassicalSymbol.sharp`, its homogeneous terms are the formal composition
+`sharpTerms a.term b.term` of the expansions of `a` and `b`. -/
+def properSharp (a : ClassicalSymbol n W U m') (ha : a.toSymbol.HasPropagationLE ε)
+    (b : ClassicalSymbol n V W m) : ClassicalSymbol n V U (m' + m) where
+  toSymbol := a.toSymbol.properSharp ha b.toSymbol
+  term := sharpTerms a.term b.term
+  exists_remainder' := ⟨default, exists_remainder_sharpTerms_of_isAsymptoticSum a b
+    (Symbol.isAsymptoticSum_properSharp ha b.toSymbol) default⟩
+
+variable (a : ClassicalSymbol n W U m') (ha : a.toSymbol.HasPropagationLE ε)
+  (b : ClassicalSymbol n V W m)
+
+@[simp]
+theorem toSymbol_properSharp :
+    (a.properSharp ha b).toSymbol = a.toSymbol.properSharp ha b.toSymbol :=
+  (rfl)
+
+@[simp]
+theorem term_properSharp (j : ℕ) : (a.properSharp ha b).term j = sharpTerms a.term b.term j :=
+  (rfl)
+
+/-- **The principal symbol of a composition** is the composition of the principal symbols. -/
+@[simp]
+theorem principal_properSharp :
+    (a.properSharp ha b).principal = a.principal.comp b.principal := by
+  ext1
+  funext z
+  simp
+
+/-- The term of degree `m' + m - 1` of the composition of classical symbols with a properly
+supported left factor is `a_{m'} ∘ b_{m-1} + a_{m'-1} ∘ b_m - i ∑ⱼ ∂_{ξⱼ} a_{m'} ∘ ∂_{xⱼ} b_m`. -/
+theorem coefficient_term_one_properSharp (z : CoordinateSpace n × CoordinateSpace n) :
+    ((a.properSharp ha b).term 1).coefficient z =
+      (a.principal.coefficient z).comp ((b.term 1).coefficient z) +
+        ((a.term 1).coefficient z).comp (b.principal.coefficient z) -
+        Complex.I • ∑ j, ((a.principal.frequencyDeriv (EuclideanSpace.single j 1)).coefficient
+          z).comp ((b.principal.spatialDeriv (EuclideanSpace.single j 1)).coefficient z) := by
+  rw [term_properSharp, coefficient_sharpTerms_one, principal_def, principal_def]
+  simp
+
+/-- For a right factor with compact spatial support, the composition is `a # b`. -/
+theorem properSharp_eq_sharp (hb : b.toSymbol.HasCompactSpatialSupport) :
+    a.properSharp ha b = a.sharp b hb :=
+  ext (by rw [toSymbol_properSharp, toSymbol_sharp, Symbol.properSharp_eq_sharp ha hb])
+
+/-- The composition does not depend on the propagation bound of `a` used to build it. -/
+theorem properSharp_congr {ε' : ℝ} (ha' : a.toSymbol.HasPropagationLE ε') :
+    a.properSharp ha b = a.properSharp ha' b :=
+  ext (Symbol.properSharp_congr ha ha')
+
+@[simp]
+theorem properSharp_zero : a.properSharp ha (0 : ClassicalSymbol n V W m) = 0 :=
+  ext (by simp)
+
+theorem properSharp_add (b₁ b₂ : ClassicalSymbol n V W m) :
+    a.properSharp ha (b₁ + b₂) = a.properSharp ha b₁ + a.properSharp ha b₂ :=
+  ext (by simp [Symbol.properSharp_add])
+
+@[simp]
+theorem properSharp_smul (c : ℂ) : a.properSharp ha (c • b) = c • a.properSharp ha b :=
+  ext (by simp)
+
+@[simp]
+theorem properSharp_neg : a.properSharp ha (-b) = -a.properSharp ha b :=
+  ext (by simp)
+
+theorem properSharp_sub (b₁ b₂ : ClassicalSymbol n V W m) :
+    a.properSharp ha (b₁ - b₂) = a.properSharp ha b₁ - a.properSharp ha b₂ :=
+  ext (by simp [Symbol.properSharp_sub])
+
+omit ha in
+@[simp]
+theorem zero_properSharp (ha : (0 : ClassicalSymbol n W U m').toSymbol.HasPropagationLE ε) :
+    (0 : ClassicalSymbol n W U m').properSharp ha b = 0 :=
+  ext (by simp)
+
+omit ha in
+theorem add_properSharp {a₁ a₂ : ClassicalSymbol n W U m'} (ha₁ : a₁.toSymbol.HasPropagationLE ε)
+    (ha₂ : a₂.toSymbol.HasPropagationLE ε) (ha : (a₁ + a₂).toSymbol.HasPropagationLE ε) :
+    (a₁ + a₂).properSharp ha b = a₁.properSharp ha₁ b + a₂.properSharp ha₂ b :=
+  ext (by simp [Symbol.add_properSharp ha₁ ha₂])
+
+theorem smul_properSharp (c : ℂ) (hca : (c • a).toSymbol.HasPropagationLE ε) :
+    (c • a).properSharp hca b = c • a.properSharp ha b :=
+  ext (by simp [Symbol.smul_properSharp ha])
+
+theorem neg_properSharp (hna : (-a).toSymbol.HasPropagationLE ε) :
+    (-a).properSharp hna b = -a.properSharp ha b :=
+  ext (by simp [Symbol.neg_properSharp ha])
+
+omit ha in
+theorem sub_properSharp {a₁ a₂ : ClassicalSymbol n W U m'} (ha₁ : a₁.toSymbol.HasPropagationLE ε)
+    (ha₂ : a₂.toSymbol.HasPropagationLE ε) (ha : (a₁ - a₂).toSymbol.HasPropagationLE ε) :
+    (a₁ - a₂).properSharp ha b = a₁.properSharp ha₁ b - a₂.properSharp ha₂ b :=
+  ext (by simp [Symbol.sub_properSharp ha₁ ha₂])
+
+variable {a b} in
+/-- **The composition of elliptic classical symbols is elliptic.** -/
+theorem IsElliptic.properSharp (ha' : a.IsElliptic) (hb' : b.IsElliptic) :
+    (a.properSharp ha b).IsElliptic := by
+  rw [isElliptic_def, principal_properSharp]
+  exact (isElliptic_def.1 ha').comp (isElliptic_def.1 hb')
+
+end ClassicalSymbol
 
 end TauCeti

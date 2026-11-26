@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Ideal.AffineBlowup
+public import TauCeti.RingTheory.Ideal.AffineBlowup.Basic
 public import Mathlib.RingTheory.AdjoinRoot
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
@@ -103,9 +103,7 @@ theorem toSubmodule_affineBlowup_eq_span (hI : I = Ideal.span {x, y})
   -- quadratic `W² + b W + a`, so it is spanned by `1` and `w`.
   have hmon : (X ^ 2 + C b * X + C a : A[X]).Monic := by monicity!
   have hdeg : (X ^ 2 + C b * X + C a : A[X]).natDegree = 2 := by compute_degree!
-  have hB := Ideal.affineBlowup_eq_adjoin_of_span_eq (a := x) (S := S) hI.symm
-  rw [Set.image_pair, divBy_self, Algebra.adjoin_insert_one] at hB
-  rw [hB, ← Submodule.span_range_natDegree_eq_adjoin hmon
+  rw [hI, Ideal.affineBlowup_span_pair_eq_adjoin, ← Submodule.span_range_natDegree_eq_adjoin hmon
     (by simpa using divBy_sq_add_mul_add_eq_zero S hrel), hdeg,
     show Finset.range 2 = {0, 1} from rfl]
   simp [Set.pair_comm]

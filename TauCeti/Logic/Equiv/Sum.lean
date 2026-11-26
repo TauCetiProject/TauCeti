@@ -21,6 +21,11 @@ Similarly, if `e : α ≃ β ⊕ γ`, the elements of `α` outside the image of 
 `γ` (`Equiv.complRangeSymmInl`). This counts the new elements when `α` is presented as an old part
 `β` together with new elements indexed by `γ`, as for the cells of a CW complex built from a
 subcomplex by attaching cells.
+
+The lemmas `Equiv.sumSigmaDistrib_apply_sigmaMap_inl` and `Equiv.sumSigmaDistrib_apply_sigmaMap_inr`
+compute Mathlib's `Equiv.sumSigmaDistrib` on the two parts of a disjoint union indexed by a sum,
+included by `Sigma.map`. They are not simp lemmas: Mathlib's simp lemma
+`Equiv.sumSigmaDistrib_apply` rewrites their left-hand sides first.
 -/
 
 public section
@@ -61,5 +66,17 @@ theorem inr_complRangeSymmInl_apply {α β γ : Type*} (e : α ≃ β ⊕ γ)
 theorem coe_complRangeSymmInl_symm_apply {α β γ : Type*} (e : α ≃ β ⊕ γ) (c : γ) :
     (e.complRangeSymmInl.symm c : α) = e.symm (Sum.inr c) :=
   (e.symm_apply_eq.2 (by rw [← inr_complRangeSymmInl_apply, apply_symm_apply])).symm
+
+/-- `Equiv.sumSigmaDistrib` sends the part of a disjoint union indexed by `α` to the first
+summand. -/
+theorem sumSigmaDistrib_apply_sigmaMap_inl {α β : Type*} (t : α ⊕ β → Type*)
+    (x : Σ i, t (.inl i)) : sumSigmaDistrib t (Sigma.map Sum.inl (fun _ ↦ id) x) = .inl x :=
+  (rfl)
+
+/-- `Equiv.sumSigmaDistrib` sends the part of a disjoint union indexed by `β` to the second
+summand. -/
+theorem sumSigmaDistrib_apply_sigmaMap_inr {α β : Type*} (t : α ⊕ β → Type*)
+    (x : Σ i, t (.inr i)) : sumSigmaDistrib t (Sigma.map Sum.inr (fun _ ↦ id) x) = .inr x :=
+  (rfl)
 
 end Equiv

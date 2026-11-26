@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
 # Test functions are Schwartz functions
@@ -31,10 +32,16 @@ compared with distributions on open sets.
   `ContDiffMapSupportedIn.seminorm_toSchwartzMapCLM_le`.
 * `TestFunction.toSchwartzMapCLM`: test functions on an open set as Schwartz functions, as a
   continuous linear map, with `TestFunction.coe_toSchwartzMapCLM`; it commutes with directional
-  derivatives (`TestFunction.toSchwartzMapCLM_lineDerivOp`) and with postcomposition by continuous
+  derivatives (`TestFunction.toSchwartzMapCLM_lineDerivOp`), also iterated
+  (`TestFunction.toSchwartzMapCLM_iteratedLineDerivOp`), and with postcomposition by continuous
   linear maps (`TestFunction.toSchwartzMapCLM_postcompCLM`).
+* `TestFunction.integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right`: iterated
+  integration by parts `∫ L (∂^{m} u) φ = (-1) ^ k ∫ L u (∂^{m ∘ rev} φ)` for test functions,
+  from the Schwartz-space identity.
 * `SchwartzMap.toTestFunction`: a compactly supported Schwartz function as a test function, sent
   back to itself by `TestFunction.toSchwartzMapCLM` (`SchwartzMap.toSchwartzMapCLM_toTestFunction`).
+* `TestFunction.smulSchwartzMap`: the product `ψ • u` of a real test function `ψ` and a Schwartz
+  function `u`, as a test function.
 
 ## References
 
@@ -147,6 +154,17 @@ theorem toSchwartzMapCLM_lineDerivOp (v : E) (φ : 𝓓(Ω, F)) :
   ext x
   simp [lineDerivOp_eq_lineDerivCLM ℝ, SchwartzMap.lineDerivOp_apply]
 
+/-- The inclusion of test functions in Schwartz space commutes with iterated directional
+derivatives. -/
+@[simp]
+theorem toSchwartzMapCLM_iteratedLineDerivOp {k : ℕ} (m : Fin k → E) (φ : 𝓓(Ω, F)) :
+    toSchwartzMapCLM 𝕜 (∂^{m} φ) = ∂^{m} (toSchwartzMapCLM 𝕜 φ) := by
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [LineDeriv.iteratedLineDerivOp_succ_left, LineDeriv.iteratedLineDerivOp_succ_left,
+      toSchwartzMapCLM_lineDerivOp, ih]
+
 /-- The inclusion of test functions in Schwartz space commutes with postcomposition by continuous
 linear maps. -/
 @[simp]
@@ -156,6 +174,33 @@ theorem toSchwartzMapCLM_postcompCLM {G : Type*} [NormedAddCommGroup G] [NormedS
     toSchwartzMapCLM 𝕜 (postcompCLM L φ) = (toSchwartzMapCLM 𝕜 φ).postcompCLM L := by
   ext x
   simp
+
+open MeasureTheory in
+/-- **Iterated integration by parts for test functions.** For a continuous bilinear map `L`,
+`∫ L (∂^{m} u) φ = (-1) ^ k ∫ L u (∂^{m ∘ rev} φ)`: the `k` derivatives move to `φ` in reverse
+order, each with a minus sign. -/
+theorem integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right [MeasurableSpace E]
+    [BorelSpace E] [FiniteDimensional ℝ E] {μ : Measure E} [μ.IsAddHaarMeasure] {G H : Type*}
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    (L : F →L[ℝ] G →L[ℝ] H) {k : ℕ} (m : Fin k → E) (u : 𝓓(Ω, F)) (φ : 𝓓(Ω, G)) :
+    ∫ x, L ((∂^{m} u) x) (φ x) ∂μ = (-1 : ℝ) ^ k • ∫ x, L (u x) ((∂^{m ∘ Fin.rev} φ) x) ∂μ := by
+  have h := SchwartzMap.integral_bilinear_iteratedLineDerivOp_left_eq_neg_one_pow_smul_right
+    (μ := μ) L m (toSchwartzMapCLM ℝ u) (toSchwartzMapCLM ℝ φ)
+  rw [← toSchwartzMapCLM_iteratedLineDerivOp, ← toSchwartzMapCLM_iteratedLineDerivOp] at h
+  simpa only [toSchwartzMapCLM_apply] using h
+
+/-- The test function `ψ • u` on `Ω`, the product of a real test function `ψ` on `Ω` and a Schwartz
+function `u`. -/
+def smulSchwartzMap (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) : 𝓓(Ω, F) where
+  toFun x := ψ x • u x
+  contDiff' := ψ.contDiff.smul (u.smooth ⊤)
+  hasCompactSupport' := ψ.hasCompactSupport.smul_right
+  tsupport_subset' := (tsupport_smul_subset_left _ _).trans ψ.tsupport_subset
+
+@[simp]
+theorem smulSchwartzMap_apply (ψ : 𝓓(Ω, ℝ)) (u : 𝓢(E, F)) (x : E) :
+    ψ.smulSchwartzMap u x = ψ x • u x :=
+  (rfl)
 
 end TestFunction
 

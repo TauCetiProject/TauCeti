@@ -73,8 +73,10 @@ The comparison family is `TauCeti.Floer.cappedComparisonAlmostComplex h₀ J hJ 
 with `r = 3R - 1` and the neck length `L = TauCeti.Floer.comparisonNeckLength R` of the family of
 Hamiltonian data `TauCeti.Floer.cutoffNeckFamily`. It is the domain-independent `J₀` for
 `R ≤ 1/3`, in particular at `R = 0`; it is constant, without necks, on the collar
-`2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`; and it is smooth in `R`. The
-structure is switched on during `1/3 ≤ R ≤ 2/3`, where the cutoff
+`2/3 ≤ R ≤ 3/2`; it has necks of length `R - 1` for `R ≥ 2`, so on the truncation `S_T` it is
+the structure with neck length `T` once `T ≤ R + 1`
+(`TauCeti.Floer.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`); and it
+is smooth in `R`. The structure is switched on during `1/3 ≤ R ≤ 2/3`, where the cutoff
 `TauCeti.Floer.comparisonCutoff` of the Hamiltonian data also uses `β(3R - 1)`.
 
 The structures act on a fixed symplectic vector space `(V, ω)` and may depend on a point `x` of
@@ -274,6 +276,15 @@ theorem eventually_cocompact_cappedAlmostComplex_eq_base (h₀ : ω.Compatible J
     ∀ᶠ w in cocompact ℂ, ∀ x : M, cappedAlmostComplex h₀ J hJ r L w x = J₀ := by
   filter_upwards [(isCompact_truncation (L + 3)).compl_mem_cocompact] with w hw x
   exact cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r hw x
+
+/-- **The structure is `J₀` beyond a radius depending only on a bound for the neck length.** For
+`L ≤ L₀` the capped structure is `J₀` outside the disc of radius `2 exp (2π (L₀ + 3))`, which
+contains the truncation `S_{L + 3}`. -/
+theorem cappedAlmostComplex_eq_base_of_lt_norm (h₀ : ω.Compatible J₀) (r : ℝ) {L₀ : ℝ}
+    (hL : L ≤ L₀) {w : ℂ} (hw : 2 * Real.exp (2 * π * (L₀ + 3)) < ‖w‖) (x : M) :
+    cappedAlmostComplex h₀ J hJ r L w x = J₀ :=
+  cappedAlmostComplex_eq_base_of_notMem_truncation h₀ r
+    (notMem_truncation_of_lt_norm (by linarith : L + 3 ≤ L₀ + 3) hw) x
 
 variable {q : Puncture}
 
@@ -532,6 +543,18 @@ theorem cappedComparisonAlmostComplex_of_two_le (h₀ : ω.Compatible J₀) (hR 
     cappedComparisonAlmostComplex h₀ J hJ R = cappedAlmostComplex h₀ J hJ 1 (R - 1) := by
   rw [cappedComparisonAlmostComplex_def, comparisonNeckLength_of_ge hR,
     cappedAlmostComplex_of_one_le h₀ (by linarith)]
+
+/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the structure is the capped structure
+with neck length `T`: both are the pair-of-pants structure there. -/
+theorem cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation
+    (h₀ : ω.Compatible J₀) {T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
+    (hw : w ∈ truncation T) (x : M) :
+    cappedComparisonAlmostComplex h₀ J hJ R w x = cappedAlmostComplex h₀ J hJ 1 T w x := by
+  have hσ {L : ℝ} (hL : T ≤ L + 2) (q : Puncture) : q.endSign * (q.endCoord w).re ≤ L + 2 :=
+    ((mem_truncation.1 hw).2.2 q).trans hL
+  rw [cappedComparisonAlmostComplex_of_two_le h₀ hR,
+    cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ le_rfl (hσ (by linarith)),
+    cappedAlmostComplex_eq_pairOfPantsAlmostComplex h₀ le_rfl (hσ (by linarith))]
 
 end Family
 

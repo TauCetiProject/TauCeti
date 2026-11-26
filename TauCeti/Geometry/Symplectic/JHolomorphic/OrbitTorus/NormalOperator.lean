@@ -248,16 +248,8 @@ theorem setIntegral_inner_orbitTorusOperator_eq_setIntegral_inner_orbitTorusAdjo
 `(s, t) ↦ u (-s, t)` is the reflection of `D† u`. -/
 theorem orbitTorusOperator_comp_neg_fst (z : ℝ × ℝ) :
     orbitTorusOperator J₀ S (fun w => u (-w.1, w.2)) z = orbitTorusAdjoint J₀ S u (-z.1, z.2) := by
-  set L : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ := (ContinuousLinearEquiv.neg ℝ : ℝ ≃L[ℝ] ℝ).prodCongr (.refl ℝ ℝ)
-  have hf : fderiv ℝ (fun w => u (-w.1, w.2)) z =
-      (fderiv ℝ u (-z.1, z.2)).comp (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) :=
-    L.comp_right_fderiv (f := u)
-  have h₁ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineReal = -stdComplexLineReal := by
-    simp [L, stdComplexLineReal_eq]
-  have h₂ : (L : ℝ × ℝ →L[ℝ] ℝ × ℝ) stdComplexLineImag = stdComplexLineImag := by
-    simp [L, stdComplexLineImag_eq]
-  rw [orbitTorusOperator_apply, orbitTorusAdjoint_apply, hf,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, h₁, h₂, map_neg]
+  simp only [orbitTorusOperator_apply, orbitTorusAdjoint_apply, stdComplexLineReal,
+    stdComplexLineImag, fderiv_comp_neg_fst_apply_one_zero, fderiv_comp_neg_fst_apply_zero_one]
 
 /-- **Reflection intertwines `D†` and `D`.** The formal adjoint `D†` applied to the reflection
 `(s, t) ↦ u (-s, t)` is the reflection of `D u`. -/
@@ -463,12 +455,13 @@ theorem fderiv_apply_stdComplexLineReal_eq_zero_of_orbitTorusOperator_eq_zero (h
     (by rw [sq_abs, hε₂])
   set g : ℝ × ℝ → ℝ := fun z => ‖fderiv ℝ u z stdComplexLineReal‖
   have hg₁ (t : ℝ) : Function.Periodic (fun s => g (s, t)) ℓ := fun s => by
-    have := fderiv_add_eq_smul (c := (ℓ, (0 : ℝ))) (fun ⟨a, b⟩ => by simpa using hs a b)
-      (s, t)
+    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := (ℓ, (0 : ℝ))) (a := ε₁)
+      (fun ⟨a, b⟩ => by simpa using hs a b) (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₁]
   have hg₂ (s : ℝ) : Function.Periodic (fun t => g (s, t)) d := fun t => by
-    have := fderiv_add_eq_smul (c := ((0 : ℝ), d)) (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
+    have := fderiv_add_eq_smul (𝕜 := ℝ) (c := ((0 : ℝ), d)) (a := ε₂)
+      (fun ⟨a, b⟩ => by simpa using ht a b) (s, t)
     simp only [Prod.mk_add_mk, add_zero] at this
     simp [g, this, norm_smul, habs₂]
   obtain ⟨s, t⟩ := z

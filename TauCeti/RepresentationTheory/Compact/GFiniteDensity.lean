@@ -44,6 +44,8 @@ Only the boundedness of each single orbit is used, never a uniform bound on the 
 
 * `ContRepresentation.dense_gFiniteSubmodule`: the `G`-finite vectors of a strongly continuous
   representation of a compact group on a Banach space are dense.
+* `ContRepresentation.continuousLinearMap_ext_of_isGFinite`: so two continuous linear maps out of
+  such a representation that agree on the `G`-finite vectors are equal.
 
 ## References
 
@@ -198,5 +200,14 @@ theorem dense_gFiniteSubmodule [CompleteSpace E] (π : ContRepresentation 𝕜 G
         norm_sub_le_norm_sub_add_norm_sub _ _ _
     _ < ε / 2 + ε / 2 := add_lt_add_of_lt_of_le hdiff hu_close
     _ = ε := add_halves ε
+
+/-- Two continuous linear maps out of a strongly continuous Banach representation of a compact
+group that agree on the `G`-finite vectors are equal, since those vectors are dense. -/
+theorem continuousLinearMap_ext_of_isGFinite [CompleteSpace E] (π : ContRepresentation 𝕜 G E)
+    (hπ : ∀ v, Continuous fun g => π g v) {F : Type*} [TopologicalSpace F] [T2Space F]
+    [AddCommMonoid F] [Module 𝕜 F] {T T' : E →L[𝕜] F}
+    (h : ∀ v, π.toRepresentation.IsGFinite v → T v = T' v) : T = T' :=
+  ContinuousLinearMap.coeFn_injective <| T.continuous.ext_on (dense_gFiniteSubmodule π hπ)
+    T'.continuous fun v hv => h v ((Representation.mem_gFiniteSubmodule _).1 hv)
 
 end ContRepresentation

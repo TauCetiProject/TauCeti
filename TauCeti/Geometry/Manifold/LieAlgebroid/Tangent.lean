@@ -12,8 +12,8 @@ import TauCeti.Geometry.Manifold.VectorField.LieBracket
 /-!
 # The tangent Lie algebroid
 
-The tangent bundle of a finite-dimensional real manifold, with the identity anchor and the Lie
-bracket of vector fields `VectorField.mlieBracket`, is a Lie algebroid,
+The tangent bundle of a real manifold modelled on a complete space, with the identity anchor and
+the Lie bracket of vector fields `VectorField.mlieBracket`, is a Lie algebroid,
 `TauCeti.LieAlgebroid.tangent`. Its Leibniz rule is the product rule
 `VectorField.mlieBracket_smul_right` of the bracket of vector fields, and its Jacobi identity is
 `VectorField.leibniz_identity_mlieBracket`. Over a Hausdorff base, every Lie algebroid whose
@@ -33,7 +33,7 @@ namespace TauCeti
 
 namespace LieAlgebroid
 
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
   [ChartedSpace H M] [IsManifold I ∞ M]
 
@@ -43,7 +43,15 @@ bracket of smooth vector fields. -/
 def tangent : LieAlgebroid I E (TangentSpace I : M → Type _) where
   anchor :=
     { toFun x := ContinuousLinearMap.id ℝ (TangentSpace I x)
-      contMDiff_toFun := (contMDiff_hom_bundle_iff _).2 contMDiff_id }
+      contMDiff_toFun x₀ := by
+        -- Read in a tangent trivialization, the identity anchor is locally the constant identity.
+        rw [contMDiffAt_hom_bundle]
+        refine ⟨contMDiffAt_id,
+          contMDiffAt_const (c := ContinuousLinearMap.id ℝ E).congr_of_eventuallyEq ?_⟩
+        filter_upwards [(trivializationAt E (TangentSpace I : M → Type _) x₀).open_baseSet.mem_nhds
+          (mem_baseSet_trivializationAt E _ x₀)] with x hx
+        ext v
+        exact Trivialization.continuousLinearMapAt_symmL _ hx v }
   bracket := LinearMap.mk₂ ℝ
     (fun X Y ↦
       { toFun := mlieBracket I X Y
@@ -64,8 +72,8 @@ def tangent : LieAlgebroid I E (TangentSpace I : M → Type _) where
     leibniz_identity_mlieBracket_apply (X.contMDiff.of_le (by simp)).contMDiffAt
       (Y.contMDiff.of_le (by simp)).contMDiffAt (Z.contMDiff.of_le (by simp)).contMDiffAt
   bracket_smul_apply X Y f x := by
-    have hfY : ⇑(f • Y) = ⇑f • ⇑Y := funext (ContMDiffSection.smul_apply f Y)
-    simp only [LinearMap.mk₂_apply, ContMDiffSection.coeFn_mk, ContinuousLinearMap.id_apply, hfY]
+    simp only [LinearMap.mk₂_apply, ContMDiffSection.coeFn_mk,
+      ContMDiffSection.coe_smul_contMDiffMap]
     exact (mlieBracket_smul_right (f.contMDiff.mdifferentiableAt (by simp))
       (Y.contMDiff.mdifferentiableAt (by simp))).trans (add_comm _ _)
 
@@ -116,13 +124,14 @@ def anchorLieHomOfBracket : A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections :=
     A.anchorLieHomOfBracket h (f • s) = f • A.anchorLieHomOfBracket h s :=
   (tangent I M).sectionsEquiv.injective (by simp)
 
-@[simp] theorem anchorLieHomOfBracket_lie [T2Space M] [ContMDiffVectorBundle ∞ F V I]
+@[simp] theorem anchorLieHomOfBracket_lie [FiniteDimensional ℝ E] [T2Space M]
+    [ContMDiffVectorBundle ∞ F V I]
     (s : A.Sections) (f : C^∞⟮I, M; ℝ⟯) : ⁅A.anchorLieHomOfBracket h s, f⁆ = ⁅s, f⁆ := by
   rw [Sections.lie_def, Sections.lie_def, sectionsEquiv_anchorLieHomOfBracket]; ext x; simp
 
 end OfBracket
 
-variable [T2Space M] [ContMDiffVectorBundle ∞ F V I]
+variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
 
 /-- Over a Hausdorff base, the anchor of any Lie algebroid on a smooth vector bundle induces a Lie
 algebra homomorphism `A.Sections →ₗ⁅ℝ⁆ (tangent I M).Sections` intertwining anchor actions. -/

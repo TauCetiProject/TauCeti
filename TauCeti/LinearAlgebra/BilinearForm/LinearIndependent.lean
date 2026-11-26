@@ -29,6 +29,8 @@ ring a matrix is nonsingular exactly when its determinant is a non-zero-divisor
   non-zero-divisor times a matrix of unit determinant is linearly independent.
 * `LinearMap.BilinForm.linearIndependent_of_apply_eq_J`: a family whose Gram matrix is the
   standard symplectic matrix `Matrix.J` is linearly independent.
+* `LinearMap.BilinForm.finrank_span_pair_eq_two`: a pair of vectors `q, p` with `B q q ≠ 0`,
+  `B p p ≠ 0` and `B q p = 0` for a bilinear form over a field spans a plane.
 -/
 
 public section
@@ -83,5 +85,22 @@ theorem linearIndependent_of_apply_eq_J {l : Type*} [Finite l] [DecidableEq l]
     (fun x y => by rw [one_mul, h]) (isUnit_det_J l R)
 
 end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {B : BilinForm K V} {q p : V}
+
+/-- A pair `(q, p)` with `B q q ≠ 0`, `B p p ≠ 0` and `B q p = 0` for a bilinear form `B`, for
+instance a pair orthonormal for `B`, spans a two-dimensional subspace. -/
+theorem finrank_span_pair_eq_two (hqq : B q q ≠ 0) (hqp : B q p = 0) (hpp : B p p ≠ 0) :
+    Module.finrank K (Submodule.span K {q, p}) = 2 := by
+  have hli : LinearIndependent K ![q, p] := by
+    refine LinearIndependent.pair_iff.2 fun s u h ↦ ?_
+    have hs : s = 0 := by simpa [hqq, hqp] using congrArg (B q) h
+    subst hs
+    exact ⟨rfl, by simpa [hpp] using congrArg (B p) h⟩
+  rw [← Matrix.range_cons_cons_empty q p ![], finrank_span_eq_card hli, Fintype.card_fin]
+
+end Field
 
 end LinearMap.BilinForm
