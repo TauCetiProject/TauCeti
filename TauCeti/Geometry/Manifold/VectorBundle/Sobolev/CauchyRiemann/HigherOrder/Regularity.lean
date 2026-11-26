@@ -77,17 +77,6 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
 
 namespace IsRealCauchyRiemannOperator
 
-omit [T2Space M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
-/-- Equal chart data of two `V`-valued one-forms, read in one chart of `A`. -/
-private theorem chartValueL_eq_of_chartValuesL_eq {k' : ℕ}
-    {w : SobolevSection A.tangentHom volume p k} {w' : SobolevSection A.tangentHom volume p k'}
-    (h : A.tangentHom.sectionChartData.chartValuesL volume p k w =
-      A.tangentHom.sectionChartData.chartValuesL volume p k' w') (i : Fin A.n) :
-    A.tangentHom.sectionChartData.chartValueL volume p k i w =
-      A.tangentHom.sectionChartData.chartValueL volume p k' i w' :=
-  ((A.tangentHom.sectionChartData.chartValuesL_apply volume p k _ i).symm.trans
-    (congrFun h i)).trans (A.tangentHom.sectionChartData.chartValuesL_apply volume p k' _ i)
-
 include hD hDs in
 /-- **Order-raising regularity in a chart.** Let `1 < p < ∞`, let `ξ ∈ W^{1,p}(Σ, V)` have the
 chart data of the section `s`, and let the realization `D ξ` have the chart data of a `(0,1)`-form
@@ -107,7 +96,7 @@ theorem memWkpLoc_coord_of_chartValuesL_sobolevL_eq (hp : 1 < p) (hp_top : p ≠
   have hg := SobolevSection.memWkpLoc_coord (A := A.tangentHom) _ ht i
   rw [A.image_tangentHom] at hg
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume p i ξ
-  have hi := chartValueL_eq_of_chartValuesL_eq A h i
+  have hi := SectionChartData.chartValuesL_eq_iff.1 h i
   refine memWkpLoc_succ_of_complexAntilinearPartL_add_ae_eq hp hp_top
     (Ω := A.image i) (Z := A.chartZeroOrder D i)
     ((A.contDiffOn_chartZeroOrder_image hD hDs i).of_le (by exact_mod_cast le_top))
@@ -134,14 +123,13 @@ theorem exists_chartValuesL_eq_of_chartValuesL_sobolevL_eq (hp : 1 < p) (hp_top 
         hD.sobolevSuccL A hDs volume p k ζ = η := by
   have : IsManifold 𝓘(ℝ, ℂ) ∞ M := IsManifold.restrictScalars ℝ ‹_›
   obtain ⟨s, hs⟩ := SobolevSection.exists_ae_eq_coord ξ
-  obtain ⟨ζ, hζ⟩ := SobolevSection.exists_ae_eq_coord_of_forall_memWkpLoc_coord (n := ∞)
+  obtain ⟨ζ, hζ⟩ := SobolevSection.exists_ae_eq_coord_of_forall_memWkpLoc_coord (A := A) (n := ∞)
     (by simp) (WithTop.coe_le_coe.2 le_top)
     (memWkpLoc_coord_of_chartValuesL_sobolevL_eq A hD hDs hp hp_top h hs)
   have hζξ (i : Fin A.n) : A.sectionChartData.chartValueL volume p (k + 1) i ζ =
       A.sectionChartData.chartValueL volume p 1 i ξ :=
     Lp.ext ((hζ i).trans (hs i).symm)
-  refine ⟨ζ, funext fun i ↦ ((A.sectionChartData.chartValuesL_apply volume p (k + 1) _ i).trans
-    (hζξ i)).trans (A.sectionChartData.chartValuesL_apply volume p 1 _ i).symm,
+  refine ⟨ζ, SectionChartData.chartValuesL_eq_iff.2 hζξ,
     Subtype.ext <| SectionChartData.eq_of_chartValueL_ae_eq fun (i : Fin A.n) ↦
       (ae_image_tangentHom_iff A volume i).2 ?_⟩
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume p i ξ
@@ -152,7 +140,7 @@ theorem exists_chartValuesL_eq_of_chartValuesL_sobolevL_eq (hp : 1 < p) (hp_top 
     exact hDu
   filter_upwards [chartValueL_sobolevSuccL_ae A hD hDs volume p k ζ hDu',
     chartValueL_sobolevL_ae A hD hDs volume p ξ hDu] with y h₁ h₂
-  rw [h₁, ← chartValueL_eq_of_chartValuesL_eq A h i, h₂, hζξ i]
+  rw [h₁, ← SectionChartData.chartValuesL_eq_iff.1 h i, h₂, hζξ i]
 
 end IsRealCauchyRiemannOperator
 

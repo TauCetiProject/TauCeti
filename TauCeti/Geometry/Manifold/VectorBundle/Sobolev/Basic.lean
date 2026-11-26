@@ -646,6 +646,15 @@ theorem componentsL_apply (i : Fin C.n) (w : C.sobolevSections μ p k) :
 theorem chartValuesL_injective : Function.Injective (C.chartValuesL μ p k) := fun w w' h ↦
   eq_of_chartValueL_ae_eq fun i ↦ by rw [← chartValuesL_apply, ← chartValuesL_apply, h]
 
+variable {C μ p k} in
+/-- Two Sobolev sections, possibly of different orders, have the same chart data exactly when their
+chart data agree in every chart. -/
+theorem chartValuesL_eq_iff {k' : ℕ} {w : C.sobolevSections μ p k}
+    {w' : C.sobolevSections μ p k'} :
+    C.chartValuesL μ p k w = C.chartValuesL μ p k' w' ↔
+      ∀ i, C.chartValueL μ p k i w = C.chartValueL μ p k' i w' := by
+  simp only [funext_iff, chartValuesL_apply]
+
 /-- Forgetting the highest derivative does not change the chart data. -/
 @[simp]
 theorem chartValuesL_lowerOrderL (w : C.sobolevSections μ p (k + 1)) :
