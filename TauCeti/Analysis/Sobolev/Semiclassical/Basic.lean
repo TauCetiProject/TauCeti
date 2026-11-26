@@ -394,12 +394,8 @@ theorem sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq (k : ℕ) {h : ℝ} (hh :
     (f : E → F) :
     ∑ i ∈ Finset.range (k + 1), (h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume) ^ 2 ≤
       h ^ (finrank ℝ E : ℝ) * semiclassicalSobolevNorm k h f ^ 2 := by
-  rw [rpow_mul_semiclassicalSobolevNorm_sq k hh, sq, Finset.sum_mul]
-  have ha : ∀ i, 0 ≤ h ^ i * lpNorm (iteratedFDeriv ℝ i f) 2 volume := fun i ↦
-    mul_nonneg (pow_nonneg hh.le i) lpNorm_nonneg
-  exact Finset.sum_le_sum fun i hi ↦ by
-    rw [sq]
-    exact mul_le_mul_of_nonneg_left (Finset.single_le_sum (fun j _ ↦ ha j) hi) (ha i)
+  rw [rpow_mul_semiclassicalSobolevNorm_sq k hh]
+  exact Finset.sum_sq_le_sq_sum_of_nonneg fun i _ ↦ mul_nonneg (pow_nonneg hh.le i) lpNorm_nonneg
 
 /-- **The Hilbert sum above the semiclassical norm.** `hⁿ ‖f‖_{k,h}²` is at most `k + 1` times
 the sum of squares `∑_{i ≤ k} (hⁱ ‖Dⁱ f‖₂)²`, by the Cauchy–Schwarz inequality. -/

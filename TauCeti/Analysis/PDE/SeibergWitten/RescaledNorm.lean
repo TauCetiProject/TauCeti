@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Semiclassical.ChangeOfVariables
 import Mathlib.Analysis.MeanInequalities
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
 # The rescaled Hilbert norms of Taubes's gluing construction
@@ -170,15 +171,10 @@ theorem rescaledTargetNormSq_neg (s : ℕ) (h : ℝ) (y : V → T) :
 /-- Scaling both increments by `c` scales the rescaled norm by `c²`. -/
 theorem rescaledFieldNormSq_smul (s : ℕ) (h c : ℝ) (b : V → B) (ζ : V → S) :
     rescaledFieldNormSq s h (c • b) (c • ζ) = c ^ 2 * rescaledFieldNormSq s h b ζ := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  -- Multiplication by `c ≠ 0` is a continuous linear equivalence, so it commutes with `Dʲ`.
   have hb (j : ℕ) : iteratedFDeriv ℝ j (c • b) = c • iteratedFDeriv ℝ j b :=
-    funext fun _ ↦
-      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply b c x j
   have hζ (j : ℕ) : iteratedFDeriv ℝ j (c • ζ) = c • iteratedFDeriv ℝ j ζ :=
-    funext fun _ ↦
-      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply ζ c x j
   simp only [rescaledFieldNormSq, hb, hζ, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs,
     mul_pow, sq_abs, Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
@@ -186,12 +182,8 @@ theorem rescaledFieldNormSq_smul (s : ℕ) (h c : ℝ) (b : V → B) (ζ : V →
 /-- Scaling the field by `c` scales the target norm by `c²`. -/
 theorem rescaledTargetNormSq_smul (s : ℕ) (h c : ℝ) (y : V → T) :
     rescaledTargetNormSq s h (c • y) = c ^ 2 * rescaledTargetNormSq s h y := by
-  rcases eq_or_ne c 0 with rfl | hc
-  · simp
-  -- Multiplication by `c ≠ 0` is a continuous linear equivalence, so it commutes with `Dʲ`.
   have hy (j : ℕ) : iteratedFDeriv ℝ j (c • y) = c • iteratedFDeriv ℝ j y :=
-    funext fun _ ↦
-      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply y c x j
   simp only [rescaledTargetNormSq, hy, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, mul_pow,
     sq_abs, Finset.mul_sum]
   exact Finset.sum_congr rfl fun j _ ↦ by ring
@@ -244,8 +236,7 @@ theorem rescaledFieldNormSq_eq_rpow_mul {s : ℕ} {b : V → B} {ζ : V → S} (
   -- The derivatives of `h • b (h • ·)` are `h` times those of `b (h • ·)`.
   have hD : iteratedFDeriv ℝ j (fun w ↦ h • b (h • w)) =
       h • iteratedFDeriv ℝ j (fun w ↦ b (h • w)) :=
-    funext fun _ ↦ (ContinuousLinearEquiv.smulLeft (R₁ := ℝ)
-      (Units.mk0 h hh.ne')).iteratedFDeriv_comp_left
+    funext fun x ↦ iteratedFDeriv_fun_const_smul_apply (fun w ↦ b (h • w)) h x j
   rw [hD, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, abs_of_pos hh]
   simp only [one_pow, one_mul]
   linear_combination h ^ 2 * pow_mul_lpNorm_sq_eq hbj hh + pow_mul_lpNorm_sq_eq hζj hh / 4
