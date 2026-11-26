@@ -187,7 +187,7 @@ variable (b : OrthonormalBasis (Fin 2) ℝ V)
 /-- At a point with `r ≠ 0`, the derivative of the polar canonical parametrization over a plane is
 a linear isomorphism `(ℝ × ℝ) × (ℝ × ℝ) → V × V`: it pulls the standard symplectic form back to a
 nondegenerate form, so it is injective, between spaces of the same dimension. -/
-private theorem bijective_fderiv_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : x.1.1 ≠ 0) :
+theorem bijective_fderiv_polarCanonical {x : (ℝ × ℝ) × (ℝ × ℝ)} (hr : x.1.1 ≠ 0) :
     Bijective (fderiv ℝ (polarCanonical (b 0) (b 1)) x) := by
   have : FiniteDimensional ℝ V := b.toBasis.finiteDimensional_of_finite
   let ι : ((stdSymplecticForm (V := ℝ)).prod (stdSymplecticForm (V := ℝ))).toBilinForm →bᵢ

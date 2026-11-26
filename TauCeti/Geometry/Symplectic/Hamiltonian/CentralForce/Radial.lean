@@ -171,6 +171,15 @@ theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ
   rw [hUℓ]
   exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr)).add hU
 
+/-- Away from `r = 0`, the effective potential is `C^n` wherever `U` is. -/
+theorem contDiffAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {n : WithTop ℕ∞} {r : ℝ}
+    (hU : ContDiffAt ℝ n U r) (hr : r ≠ 0) :
+    ContDiffAt ℝ n (effectivePotential m ℓ U) r := by
+  have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) / r ^ 2 + U r :=
+    funext fun r ↦ by rw [effectivePotential_apply, div_div]
+  rw [hUℓ]
+  exact (contDiffAt_const.div ((contDiffAt_id (x := r)).pow 2) (pow_ne_zero 2 hr)).add hU
+
 /-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
 `U'(r) = ℓ² / (m r³)`. -/
 theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
