@@ -86,6 +86,10 @@ The fibre of the first pullback projection has the same `Set.ncard` as the origi
 transfers `Set.ncard` of fibres over that subset (`Equiv.ncard_fiber_eq_of_preimage`). These
 identities transfer sheet counts from local models; `Set.ncard` is zero on infinite fibres.
 
+For finite sets, equality and inequality of `Set.encard` are equivalent to equality and
+inequality of `Set.ncard` (`Set.encard_eq_encard_iff_ncard_eq_ncard`,
+`Set.encard_le_encard_iff_ncard_le_ncard`).
+
 A set of lists built from an optional empty list `[]` and disjoint `List.cons a` images over a
 finite set `T` has cardinality `(if P then 1 else 0) + ∑ a ∈ hT.toFinset, (S a).ncard`
 (`Set.ncard_nil_union_biUnion_cons`).
@@ -400,6 +404,18 @@ theorem ncard_preimage_succAbove {n : ℕ} (k : Fin (n + 1)) (s : Set (Fin (n + 
     (k.succAbove ⁻¹' s).ncard = (s \ {k}).ncard := by
   rw [← ncard_image_of_injective _ Fin.succAbove_right_injective, image_preimage_eq_inter_range,
     Fin.range_succAbove, ← sdiff_eq]
+
+/-- For finite sets, equality of `Set.encard` is equivalent to equality of `Set.ncard`. -/
+theorem encard_eq_encard_iff_ncard_eq_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard = t.encard ↔ s.ncard = t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_inj]
+
+/-- For finite sets, inequality of `Set.encard` is equivalent to inequality of `Set.ncard`. -/
+theorem encard_le_encard_iff_ncard_le_ncard {α β : Type*} {s : Set α} {t : Set β}
+    (hs : s.Finite) (ht : t.Finite) :
+    s.encard ≤ t.encard ↔ s.ncard ≤ t.ncard := by
+  rw [← hs.cast_ncard_eq, ← ht.cast_ncard_eq, Nat.cast_le]
 
 /-- Cardinality of the disjoint union of an optional empty list `[]` (present when `P` holds) and
 cons-images `List.cons a '' S a` over `a ∈ T`. -/

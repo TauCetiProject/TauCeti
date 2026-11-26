@@ -64,7 +64,8 @@ a field `𝕜`. The hypothesis `[NeZero (2 : 𝕜)]` is assumed only where `½ +
 * `TauCeti.IsComplexLinear.symm`, `TauCeti.IsComplexAntilinear.symm`: the inverse of a
   complex-linear (complex-antilinear) equivalence is complex linear (complex antilinear).
 * `TauCeti.add_apply_eq_zero_iff_eq_apply`: for `K` with `K² = -1`, the equation `a + K b = 0`
-  is `b = K a`.
+  is `b = K a`; more generally `a + K b = c + K d` is `b - d = K (a - c)`
+  (`TauCeti.add_apply_eq_add_apply_iff_sub_eq_apply_sub`).
 
 The sign conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 2nd ed., Section 2.2, specialized to the pointwise linear setting.
@@ -503,6 +504,15 @@ theorem add_apply_eq_zero_iff_eq_apply {M F : Type*} [AddGroup M] [FunLike F M M
     exact (add_neg_eq_zero.1 this).symm
   · rintro rfl
     rw [hK, add_neg_cancel]
+
+/-- For an additive endomorphism `K` with `K² = -1`, the equation `a + K b = c + K d` is equivalent
+to `b - d = K (a - c)`. With `a = ∂ₛu`, `b = ∂ₜu`, `c = X 1` and `d = X i` this compares the form
+`∂ₛu + J ∂ₜu = X 1 + J (X i)` of the inhomogeneous Cauchy–Riemann equation with the form
+`∂ₜu - X i = J (∂ₛu - X 1)` of the Floer equation. -/
+theorem add_apply_eq_add_apply_iff_sub_eq_apply_sub {M F : Type*} [AddCommGroup M] [FunLike F M M]
+    [AddMonoidHomClass F M M] {K : F} (hK : ∀ v, K (K v) = -v) (a b c d : M) :
+    a + K b = c + K d ↔ b - d = K (a - c) := by
+  rw [← add_apply_eq_zero_iff_eq_apply hK, map_sub, ← sub_eq_zero, add_sub_add_comm]
 
 variable {J : V →ₗ[𝕜] V} {J' : W →ₗ[𝕜] W}
 

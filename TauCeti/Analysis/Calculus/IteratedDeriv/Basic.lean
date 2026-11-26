@@ -30,6 +30,8 @@ This file collects general results about `iteratedDeriv`:
   (`TauCeti.iteratedDerivInr_apply`, `TauCeti.iteratedDerivInr_zero`,
   `TauCeti.iteratedDerivInr_sumElim`, `TauCeti.iteratedDerivInr_const_pi`) and the
   Fréchet-derivative step (`DifferentiableAt.iteratedDerivInr_succ_eq_fderiv`).
+* `ContDiff.hasDerivAt_iteratedDeriv`: the derivative of the `r`-th iterated derivative of a `C^n`
+  function, `r < n`, is its `(r + 1)`-th iterated derivative.
 -/
 
 public section
@@ -138,6 +140,19 @@ theorem iteratedDerivInr_const_pi {α : Type*} [Fintype α] [Unique τ] (k : ℕ
   iteratedDeriv_const_pi k _ _
 
 end TauCeti
+
+section ContDiff
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The derivative of the `r`-th iterated derivative of a `C^n` function, `r < n`, is its
+`(r + 1)`-th iterated derivative. -/
+theorem ContDiff.hasDerivAt_iteratedDeriv {f : 𝕜 → F} {n : ℕ∞ω} {r : ℕ} (hf : ContDiff 𝕜 n f)
+    (hr : r < n) (x : 𝕜) : HasDerivAt (iteratedDeriv r f) (iteratedDeriv (r + 1) f x) x := by
+  rw [iteratedDeriv_succ]
+  exact (hf.differentiable_iteratedDeriv r hr x).hasDerivAt
+
+end ContDiff
 
 section IteratedDerivInr
 
