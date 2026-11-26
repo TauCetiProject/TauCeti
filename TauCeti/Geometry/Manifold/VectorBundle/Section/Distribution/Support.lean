@@ -169,7 +169,7 @@ theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
     · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
   rw [hsum, map_sum]
   refine Finset.sum_eq_zero fun i _ ↦ (hU _ (hs (f.c_mem' i))).2.2 _ ?_
-  exact (closure_smulLeftCLM_ne_zero_subset (ρ i) s).trans
+  exact (tsupport_smulLeftCLM_subset (ρ i) s).trans
     (inter_subset_left.trans (hf.toSmoothPartitionOfUnity i))
 
 /-- An additive map on bundle tests vanishes exactly on the open sets missing its support. -/
@@ -216,7 +216,7 @@ theorem dsupport_smulLeftDualCLM_subset (ρ : C^∞⟮I, M; ℝ⟯) (T : BundleT
     dsupport (smulLeftDualCLM ρ T) ⊆ dsupport T ∩ tsupport ρ := by
   refine subset_inter (dsupport_subset_dsupport fun U _ hTU s hs ↦ ?_) fun x hx ↦ ?_
   · rw [smulLeftDualCLM_apply]
-    exact hTU _ (((closure_smulLeftCLM_ne_zero_subset ρ s).trans inter_subset_right).trans hs)
+    exact hTU _ (((tsupport_smulLeftCLM_subset ρ s).trans inter_subset_right).trans hs)
   · by_contra h
     refine (notMem_dsupport_iff.2 ⟨(tsupport ρ)ᶜ, (isClosed_tsupport ρ).isOpen_compl, h,
       fun s hs ↦ ?_⟩) hx

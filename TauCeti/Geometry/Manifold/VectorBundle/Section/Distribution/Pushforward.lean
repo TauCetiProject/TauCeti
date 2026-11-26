@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Support
+import TauCeti.Geometry.Manifold.VectorBundle.Section.Trivial.Topology
 
 /-!
 # Pushforward of distribution densities along smooth maps
@@ -94,6 +95,11 @@ variable (T f) in
 condition for the pushforward `f_* T` (`TauCeti.BundleTest.pushforward`). -/
 def IsProperOnSupport : Prop :=
   ∀ K : Set Y, IsCompact K → IsCompact (dsupport T ∩ f ⁻¹' K)
+
+/-- Unfolds `TauCeti.BundleTest.IsProperOnSupport`. -/
+theorem isProperOnSupport_iff :
+    IsProperOnSupport T f ↔ ∀ K : Set Y, IsCompact K → IsCompact (dsupport T ∩ f ⁻¹' K) :=
+  Iff.rfl
 
 /-- If `f` is proper on the support of `T`, the part of the support of `T` over a compact set is
 compact. -/
