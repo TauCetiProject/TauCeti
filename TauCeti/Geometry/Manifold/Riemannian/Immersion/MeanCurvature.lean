@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.SecondFundamentalForm.Norm
 public import TauCeti.Analysis.InnerProductSpace.Trace.Basic
+import TauCeti.Analysis.InnerProductSpace.CourantFischer
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Spectrum
 import Mathlib.Analysis.InnerProductSpace.Trace
@@ -217,13 +218,9 @@ theorem immersionPrincipalCurvatures_neg (ht : cov.IsTorsionFree) {m : ℕ} (hm 
     immersionPrincipalCurvatures I f x ht hm (-ν) i =
       -immersionPrincipalCurvatures I f x ht hm ν i.rev := by
   -- `S_{-ν} = -S_ν`, and the sorted eigenvalues of `-S_ν` are known.
-  have key : ∀ {T : Module.End ℝ (TangentSpace I x)} (hT : T.IsSymmetric),
-      T = -immersionShapeOperatorAt cov f x ν →
-        hT.eigenvalues (hm : finrank ℝ (TangentSpace I x) = m) i =
-          -immersionPrincipalCurvatures I f x ht hm ν i.rev := by
-    rintro _ _ rfl
-    exact LinearMap.IsSymmetric.eigenvalues_neg _ _ i
-  exact key _ (immersionShapeOperatorAt_neg ν)
+  exact (congrFun (LinearMap.IsSymmetric.eigenvalues_congr (immersionShapeOperatorAt_neg ν) _
+    (isSymmetric_immersionShapeOperatorAt ht ν).neg _) i).trans
+      (LinearMap.IsSymmetric.eigenvalues_neg _ _ i)
 
 /-- The trace of the shape operator is the sum of the principal curvatures. -/
 theorem trace_immersionShapeOperatorAt (ht : cov.IsTorsionFree) {m : ℕ} (hm : finrank ℝ E = m)
