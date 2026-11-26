@@ -126,11 +126,8 @@ theorem sum_filter_lt_movedNorm_triple_ite_inv_isSwap (G : SimpleGraph V) [Decid
           (if G.Adj t.2.1 t.2.2 then τ else 1) * (if G.Adj t.1 t.2.2 then τ else 1)⁻¹)) =
       2 * (#{s ∈ (univ : Finset V).powersetCard 3 |
         Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} : ℝ) := by
-  have hτ₂ : τ * τ = 1 := by
-    rcases hτ with ⟨x, y, -, rfl⟩
-    exact Equiv.swap_mul_self x y
   refine (sum_congr rfl fun t _ => ?_).trans (G.sum_filter_lt_movedNorm_triple_ite_isSwap hτ)
-  rw [TauCeti.ite_inv_of_mul_self hτ₂]
+  rw [TauCeti.ite_inv_of_mul_self hτ.mul_self_eq_one]
   simp only [G.adj_comm t.1 t.2.2]
 
 /-- For a `{1, τ}`-valued vertex gauge `β`, the moved-point gauge cost of the `τ`-labelled graph `G`

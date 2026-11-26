@@ -37,6 +37,11 @@ in this file.
 
 The induction uses that `f^[k]` is `C¹` along the orbit (`TauCeti.contDiffAt_iterate`).
 
+Local perturbations are compositions `f ∘ ψ` with a map `ψ` that is the identity outside a compact
+set `S`. If `f` is `C¹` at the points of `S` and `ψ` is `C¹`-close enough to the identity on `S`,
+then `f ∘ ψ` is `C¹`-close to `f` at every point, not only on `S`
+(`IsCompact.exists_pos_forall_norm_comp_sub_le`).
+
 Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to the identity in `C¹`
 (`TauCeti.IsNearId`). Such maps compose with an explicit bound (`TauCeti.IsNearId.comp`), and a
 `C¹`-open condition on `g` holds for `g ∘ ψ` once `ψ` is close enough to the identity
@@ -52,6 +57,9 @@ Perturbations are often built as compositions `g ∘ ψ` with maps `ψ` close to
   `TauCeti.IsNearId.comp`.
 * `TauCeti.eventually_forall_isNearId_comp`: `C¹`-open conditions on `g` hold for `g ∘ ψ` with `ψ`
   close enough to the identity.
+* `IsCompact.eventually_forall_norm_iterate_sub_le`: iterates of maps `C¹`-close everywhere.
+* `IsCompact.exists_pos_forall_norm_comp_sub_le`: composition with a compactly supported
+  `C¹`-small perturbation of the identity.
 
 ## References
 
@@ -180,6 +188,51 @@ theorem IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le {K 
     exact h₁ g^[k] g (fun x hx ↦ (hk x hx).1) (fun x hx ↦ (hk x hx).2.1)
       (fun x hx ↦ (hk x hx).2.2) hg (fun y hy ↦ (hg₀ y hy).trans (min_le_left _ _))
       (fun y hy ↦ (hg₁ y hy).trans (min_le_left _ _)) x hx
+
+/-- **Iterates of maps `C¹`-close everywhere.** Let `K` be compact and let `f` be `C¹`. For every
+`ε > 0` and all small enough `δ > 0`, every differentiable map `g` that is `δ`-close to `f` in
+value and derivative at every point has its iterate `g^[k]` `ε`-close to `f^[k]` on `K`. This is
+the global form of `IsCompact.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le`, stated
+as an eventual property so that several such conditions on `δ` can be combined. -/
+theorem IsCompact.eventually_forall_norm_iterate_sub_le {K : Set E} (hK : IsCompact K) {f : E → E}
+    (hf : ContDiff 𝕜 1 f) (k : ℕ) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ g : E → E, Differentiable 𝕜 g → (∀ y, ‖g y - f y‖ ≤ δ) →
+      (∀ y, ‖fderiv 𝕜 g y - fderiv 𝕜 f y‖ ≤ δ) → ∀ x ∈ K, ‖g^[k] x - f^[k] x‖ ≤ ε := by
+  obtain ⟨δ, hδ, h⟩ := hK.exists_pos_forall_differentiableAt_iterate_and_norm_sub_le
+    (k := k) (fun _ _ _ _ ↦ hf.contDiffAt) hε univ_mem
+  filter_upwards [Ioo_mem_nhdsGT hδ] with δ' hδ' g hg h₀ h₁ x hx
+  exact (h g (fun y _ ↦ hg y) (fun y _ ↦ (h₀ y).trans hδ'.2.le)
+    (fun y _ ↦ (h₁ y).trans hδ'.2.le) x hx).2.1
+
+/-- **Compactly supported `C¹`-small perturbations of the identity.** Let `S` be compact and let
+`f` be `C¹` at the points of `S`. For every `ε > 0` there is `δ > 0` with the following property.
+If `ψ` is the identity outside `S`, differentiable at the points of `S` and `δ`-close to the
+identity there in value and derivative, then `f ∘ ψ` is `ε`-close to `f` in value and derivative
+at every point. -/
+theorem IsCompact.exists_pos_forall_norm_comp_sub_le {S : Set E} (hS : IsCompact S) {f : E → F}
+    (hf : ∀ x ∈ S, ContDiffAt 𝕜 1 f x) {ε : ℝ} (hε : 0 < ε) :
+    ∃ δ > 0, ∀ ψ : E → E, (∀ x ∉ S, ψ x = x) → (∀ x ∈ S, DifferentiableAt 𝕜 ψ x) →
+      (∀ x ∈ S, ‖ψ x - x‖ ≤ δ) → (∀ x ∈ S, ‖fderiv 𝕜 ψ x - ContinuousLinearMap.id 𝕜 E‖ ≤ δ) →
+      ∀ x, ‖f (ψ x) - f x‖ ≤ ε ∧ ‖fderiv 𝕜 (f ∘ ψ) x - fderiv 𝕜 f x‖ ≤ ε := by
+  -- `f` is `C¹` near `S`, so on this neighbourhood it is its own `0`-close perturbation.
+  have hU : {y | ContDiffAt 𝕜 1 f y} ∈ 𝓝ˢ (id '' S) := by
+    rw [image_id, mem_nhdsSet_iff_forall]
+    exact fun x hx ↦ (hf x hx).eventually (by simp)
+  obtain ⟨δ, hδ, h⟩ := hS.exists_pos_forall_differentiableAt_comp_and_norm_sub_le
+    (fun x _ ↦ differentiableAt_id) (continuousOn_const.congr fun _ _ ↦ fderiv_id)
+    (fun y hy ↦ (hf y (by simpa using hy)).differentiableAt one_ne_zero)
+    (fun y hy ↦ (hf y (by simpa using hy)).continuousAt_fderiv one_ne_zero) hε hU
+  refine ⟨δ, hδ, fun ψ hψS hψ hψ₀ hψ₁ x ↦ ?_⟩
+  by_cases hx : x ∈ S
+  · obtain ⟨-, h₀, h₁⟩ := h ψ f hψ (by simpa using hψ₀) (by simpa [fderiv_id] using hψ₁)
+      (fun y hy ↦ hy.differentiableAt one_ne_zero) (by simp [hδ.le]) (by simp [hδ.le]) x hx
+    exact ⟨by simpa using h₀, by simpa using h₁⟩
+  · -- Outside `S`, `ψ` is the identity near `x`.
+    have hev : f ∘ ψ =ᶠ[𝓝 x] f := by
+      filter_upwards [hS.isClosed.isOpen_compl.mem_nhds hx] with y hy
+      simp [hψS y hy]
+    rw [hψS x hx, hev.fderiv_eq]
+    simp [hε.le]
 
 namespace TauCeti
 

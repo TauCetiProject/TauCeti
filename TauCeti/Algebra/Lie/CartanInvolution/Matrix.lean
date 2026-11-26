@@ -32,6 +32,9 @@ The applications to `𝔰𝔬(p, q)`, `𝔰𝔲(p, q)` and `𝔰𝔭(2n, ℝ)` a
 ## Main results
 
 * `TauCeti.reTraceForm_lie_apply`: `⟪[X, Y], Z⟫ = ⟪Y, [Xᴴ, Z]⟫`.
+* `LieSubalgebra.mem_fixedSubalgebra_restrictNegConjTranspose_iff`,
+  `LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff`: for `θ X = -Xᴴ`, `𝔨` is the
+  skew-Hermitian and `𝔭` the Hermitian elements of `𝔤₀`.
 * `LieSubalgebra.killingForm_restrictNegConjTranspose`: `B(X, θ Y) = -tr(ad X ∘ ad Yᴴ)`.
 * `LieSubalgebra.isCartanInvolution_restrictNegConjTranspose_iff`: `X ↦ -Xᴴ` is a Cartan
   involution of a real Lie subalgebra closed under conjugate transpose exactly when its centre is
@@ -69,6 +72,17 @@ open TauCeti
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
+
+/-- The fixed subalgebra `𝔨` of `θ X = -Xᴴ` consists of the skew-Hermitian elements. -/
+theorem mem_fixedSubalgebra_restrictNegConjTranspose_iff {X : L} :
+    X ∈ (L.restrictNegConjTranspose hL).toLieHom.fixedSubalgebra ↔
+      (X : Matrix n n 𝕜)ᴴ = -(X : Matrix n n 𝕜) := by
+  simp [LieHom.mem_fixedSubalgebra, Subtype.ext_iff, neg_eq_iff_eq_neg]
+
+/-- The `-1`-eigenspace `𝔭` of `θ X = -Xᴴ` consists of the Hermitian elements. -/
+theorem mem_cartanP_restrictNegConjTranspose_iff {X : L} :
+    X ∈ (L.restrictNegConjTranspose hL).cartanP ↔ (X : Matrix n n 𝕜)ᴴ = (X : Matrix n n 𝕜) := by
+  simp [LieEquiv.mem_cartanP, Subtype.ext_iff]
 
 /-- The Killing form twisted by `θ X = -Xᴴ` is minus the trace pairing of `ad X` and `ad Yᴴ`:
 `B(X, θ Y) = -tr(ad X ∘ ad Yᴴ)`. -/
