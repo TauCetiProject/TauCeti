@@ -35,7 +35,7 @@ public section
 
 universe u
 
-open CategoryTheory Limits LightCondMod
+open CategoryTheory Limits
 
 namespace TauCeti
 

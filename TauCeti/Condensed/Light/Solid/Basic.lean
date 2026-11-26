@@ -70,19 +70,6 @@ lemma lightSolidDifference_naturality {M N : LightCondMod R} (f : M ⟶ N) :
   simp only [lightSolidDifference_def, Preadditive.sub_comp, Preadditive.comp_sub,
     id_comp, comp_id, MonoidalClosed.pre_comm_ihom_map]
 
-variable (R) in
-/-- The internal null-sequence difference, as a natural endomorphism of internal Hom out of
-`nullSeq R`. -/
-noncomputable def lightSolidDifferenceNatTrans : ihom (nullSeq R) ⟶ ihom (nullSeq R) where
-  app := lightSolidDifference
-  naturality _ _ f := (lightSolidDifference_naturality f).symm
-
-/-- The components of the natural null-sequence difference are the internal differences. -/
-@[simp]
-lemma lightSolidDifferenceNatTrans_app (M : LightCondMod R) :
-    (lightSolidDifferenceNatTrans R).app M = lightSolidDifference M :=
-  (rfl)
-
 end LightCondMod
 
 open TauCeti LightCondMod
@@ -104,6 +91,19 @@ end LightCondensed
 namespace TauCeti
 
 variable {R : Type u} [CommRing R]
+
+variable (R) in
+/-- The internal null-sequence difference, as a natural endomorphism of internal Hom out of
+`nullSeq R`. -/
+noncomputable def lightSolidDifferenceNatTrans : ihom (nullSeq R) ⟶ ihom (nullSeq R) where
+  app := lightSolidDifference
+  naturality _ _ f := (lightSolidDifference_naturality f).symm
+
+/-- The components of the natural null-sequence difference are the internal differences. -/
+@[simp]
+lemma lightSolidDifferenceNatTrans_app (M : LightCondMod R) :
+    (lightSolidDifferenceNatTrans R).app M = lightSolidDifference M :=
+  (rfl)
 
 /-- A light condensed module is solid if its internal null-sequence difference is invertible. -/
 def IsLightSolid : ObjectProperty (LightCondMod R) := fun M ↦ IsIso (lightSolidDifference M)
