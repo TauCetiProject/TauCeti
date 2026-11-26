@@ -11,10 +11,11 @@ public import TauCeti.CategoryTheory.Sites.Descent.Banding
 /-!
 # The groupoid of band-preserving transformations
 
-Let `F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be pseudofunctors whose fibres over `G` are groupoids, for
-instance gerbes. Every modification `m : η ⟶ θ` of strong transformations `F ⟶ G` is then
-invertible (`Pseudofunctor.isGroupoid_hom`); `BandedMorphism.modificationIso` records this as an
-explicit isomorphism with forward modification `m`.
+Let `F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be pseudofunctors such that the fibres `G.obj U` of `G` are
+groupoids, for instance when `G` is a gerbe. Every modification `m : η ⟶ θ` of strong
+transformations `F ⟶ G` is then invertible (`Pseudofunctor.isGroupoid_hom`);
+`BandedMorphism.modificationIso` records this as an explicit isomorphism with forward
+modification `m`.
 
 For `A`-bandings `bF`, `bG`, the band-preserving transformations `F ⟶ G` with all modifications
 between them form the full subcategory `BandedMorphism.HomCategory bF bG` of Mathlib's category of
