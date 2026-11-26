@@ -268,7 +268,7 @@ theorem localToGaloisGroupS_eq_one_of_mem_inertia {S : Set (HeightOneSpectrum (�
 
 private theorem isUnramified_adicCompletion_of_inertia_le_fixingSubgroup
     {S : Set (HeightOneSpectrum (𝓞 K))} {L : IntermediateField K (SeparableClosure K)}
-    [FiniteDimensional K L] [NumberField L] (hL : inertiaOutsideSubgroup K S ≤ L.fixingSubgroup)
+    [NumberField L] (hL : inertiaOutsideSubgroup K S ≤ L.fixingSubgroup)
     {v : HeightOneSpectrum (𝓞 K)} (hv : v ∉ S) (w : HeightOneSpectrum (𝓞 L))
     [w.asIdeal.LiesOver v.asIdeal] :
     IsUnramified (v.adicCompletion K) (w.adicCompletion L) := by
