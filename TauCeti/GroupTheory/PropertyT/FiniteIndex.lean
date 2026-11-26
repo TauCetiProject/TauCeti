@@ -163,12 +163,10 @@ theorem relativePropertyT_subgroupOf_iff_of_normal (Λ H : Subgroup Γ) [Λ.Norm
   have hΛNH : ((Λ.subgroupOf H).subgroupOf N_H).RelativePropertyT.{v} :=
     hΛH.subgroupOf.{v, v} N_H
   have hmap : ((Λ.subgroupOf H).subgroupOf N_H).map (H.subtype.comp N_H.subtype) = Λ ⊓ N := by
-    ext g
-    simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, MonoidHom.coe_comp,
-      Function.comp_apply, Subgroup.coe_subtype, Subgroup.mem_inf]
-    refine ⟨?_, fun ⟨hgΛ, hgN⟩ ↦ ⟨⟨⟨g, H.normalCore_le hgN⟩, hgN⟩, hgΛ, rfl⟩⟩
-    rintro ⟨⟨⟨x, _⟩, hxN⟩, hxΛ, rfl⟩
-    exact ⟨hxΛ, hxN⟩
+    rw [← Subgroup.map_map, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_inf _ _ _ H.subtype_injective, Subgroup.subgroupOf_map_subtype,
+      Subgroup.map_subgroupOf_eq_of_le H.normalCore_le, inf_assoc,
+      inf_of_le_right H.normalCore_le]
   have hinfT : (Λ ⊓ N).RelativePropertyT.{v} := by
     rw [← hmap]
     exact hΛNH.map (H.subtype.comp N_H.subtype)

@@ -15,7 +15,6 @@ import TauCeti.Analysis.PositiveDefinite.Kernel.Bounds
 import TauCeti.Analysis.PositiveDefinite.Kernel.Schoenberg
 import TauCeti.Analysis.RCLike.Basic
 import TauCeti.GroupTheory.PositiveDefinite.Metric
-import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvex
 import TauCeti.RepresentationTheory.Continuous.Unitary.OrbitConvexHull
 
 /-!
@@ -116,14 +115,8 @@ private theorem approx_invariant_of_posSemidef_approx {Λ : Subgroup Γ}
   have hφ1 : φ 1 = 1 := by
     dsimp only [φ]
     rw [map_one, one_apply_eq_self, hξ_inner]
-  have hφF (g : Γ) (hg : g ∈ F) : ‖φ g - 1‖ < δ := by
-    have hsub : φ g - 1 = ⟪ξ, ρ g ξ - ξ⟫_ℂ := by
-      dsimp only [φ]
-      rw [inner_sub_right, hξ_inner]
-    calc ‖φ g - 1‖ = ‖⟪ξ, ρ g ξ - ξ⟫_ℂ‖ := by rw [hsub]
-      _ ≤ ‖ξ‖ * ‖ρ g ξ - ξ‖ := norm_inner_le_norm _ _
-      _ = ‖ρ g ξ - ξ‖ := by rw [hξ, one_mul]
-      _ < δ := hξF g hg
+  have hφF (g : Γ) (hg : g ∈ F) : ‖φ g - 1‖ < δ :=
+    (TauCeti.norm_inner_sub_one_le hξ _).trans_lt (hξF g hg)
   have horb (k : Λ) : ‖(ρ.restrict Λ.subtype) k ξ - ξ‖ ≤ (3 / 4 : ℝ) * ε := by
     have hk := hFδ φ hφ hφ1 hφF k k.property
     have hre : 1 - (φ k).re < ε ^ 2 / 4 :=
@@ -417,15 +410,9 @@ theorem RelativePropertyT.tendstoUniformlyOn [Λ.Normal] (hΛ : Λ.RelativePrope
     {ι : Type*} {l : Filter ι} {φ : ι → Γ → ℂ}
     (hφ : ∀ i, (Matrix.of fun g h ↦ φ i (g⁻¹ * h)).PosSemidef) (hφ1 : ∀ i, φ i 1 = 1)
     (hlim : ∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) :
-    TendstoUniformlyOn φ (fun _ ↦ 1) l Λ := by
-  refine Metric.tendstoUniformlyOn_iff.mpr fun ε hε ↦ ?_
-  obtain ⟨F, δ, hδ, hF⟩ := hΛ.exists_forall_norm_sub_one_lt hε
-  have hev : ∀ᶠ i in l, ∀ g ∈ F, ‖φ i g - 1‖ < δ :=
-    (F.eventually_all).mpr fun g _ ↦ by
-      simpa [dist_eq_norm] using Metric.tendsto_nhds.mp (hlim g) δ hδ
-  filter_upwards [hev] with i hi h hh
-  rw [dist_comm, dist_eq_norm]
-  exact hF (φ i) (hφ i) (hφ1 i) hi h hh
+    TendstoUniformlyOn φ (fun _ ↦ 1) l Λ :=
+  tendstoUniformlyOn_of_posSemidef_approx
+    (fun _ hε ↦ hΛ.exists_forall_norm_sub_one_lt hε) hφ hφ1 hlim
 
 /-- **Relative property (T) from positive-definite functions, uniform form.** Let `ε < 1`. If there
 are a finite set `F` and a `δ > 0` such that every positive-definite function `φ` with `φ 1 = 1`
@@ -459,26 +446,14 @@ theorem relativePropertyT_of_forall_tendstoUniformlyOn
         (∀ g, Tendsto (fun i ↦ φ i g) l (𝓝 1)) → TendstoUniformlyOn φ (fun _ ↦ 1) l Λ) :
     Λ.RelativePropertyT.{u} := by
   classical
-  refine relativePropertyT_of_exists_forall_norm_sub_one_lt (ε := 1 / 2) (by norm_num) ?_
-  by_contra! hne
-  -- Otherwise, for each finite set `F` and each `n`, choose a normalized positive-definite
-  -- function within `1 / (n + 1)` of `1` on `F` and at least `1 / 2` away from `1` somewhere
-  -- on `Λ`.
-  have key (i : Finset Γ × ℕ) := hne i.1 (1 / (i.2 + 1)) Nat.one_div_pos_of_nat
-  choose φ hφ hφ1 hφF h hh hφh using key
-  -- These converge pointwise to `1`, but not uniformly on `Λ`.
-  have hlim (g : Γ) : Tendsto (fun i ↦ φ i g) atTop (𝓝 1) := by
-    refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
-    filter_upwards [eventually_ge_atTop (({g}, n) : Finset Γ × ℕ)] with i hi
-    rw [dist_eq_norm]
-    refine (hφF i g (hi.1 (Finset.mem_singleton_self g))).trans_le ((one_div_le_one_div_of_le
-      (by positivity) (by exact_mod_cast Nat.add_le_add_right hi.2 1)).trans hn.le)
-  obtain ⟨i, hi⟩ := ((Metric.tendstoUniformlyOn_iff.mp (hΛ _ atTop φ hφ hφ1 hlim)) (1 / 2)
-    (by norm_num)).exists
-  have := hi (h i) (hh i)
-  rw [dist_comm, dist_eq_norm] at this
-  exact (hφh i).not_gt this
+  exact relativePropertyT_of_exists_forall_norm_sub_one_lt (ε := 1 / 2) (by norm_num) <|
+    posSemidef_approx_of_tendstoUniformlyOn_of_exhaustion (l := (atTop : Filter (Finset Γ × ℕ)))
+      Prod.fst (fun i ↦ 1 / (i.2 + 1 : ℝ)) (fun _ ↦ Nat.one_div_pos_of_nat)
+      (fun g ↦ (eventually_ge_atTop (({g}, 0) : Finset Γ × ℕ)).mono
+        fun _ hi ↦ hi.1 (Finset.mem_singleton_self g))
+      (tendsto_one_div_add_atTop_nhds_zero_nat.comp
+        (tendsto_atTop.mpr fun n ↦ eventually_atTop.mpr ⟨(∅, n), fun _ h ↦ h.2⟩))
+      (hΛ _ atTop) (1 / 2) (by norm_num)
 
 /-- **Relative property (T) by positive-definite functions, uniform form.** A normal subgroup `Λ`
 has relative property (T) exactly when for every `ε > 0` there are a finite set `F` and a `δ > 0`

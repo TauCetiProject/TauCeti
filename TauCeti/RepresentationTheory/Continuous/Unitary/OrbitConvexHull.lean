@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Topology
+public import TauCeti.RepresentationTheory.Continuous.Invariants
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
 
@@ -24,6 +25,12 @@ then `ρ` has a nonzero invariant vector: the real-part bound passes from the or
 convex hull, so the minimal element is not `0`. This is how a positive-definite function which is
 uniformly close to `1` on a subgroup produces vectors fixed by that subgroup.
 
+Moreover, for any invariant vector `u` and any `m : G`, unitarity gives `⟪u, v - ρ m v⟫ = 0`, so
+`v - z` is orthogonal to `ρ.invariants` for every `z` in the closed convex hull of the orbit.
+The invariant element in the closed convex hull is therefore `ρ.invariants.starProjection v`
+(the Alaoglu–Birkhoff projection). In particular, if every element of `G` moves `v` by at most
+`ε`, then `‖ρ.invariants.starProjection v - v‖ ≤ ε`.
+
 ## Main statements
 
 * `ContRepresentation.IsUnitary.exists_mem_closedConvexHull_mem_invariants`: the closed convex
@@ -31,6 +38,18 @@ uniformly close to `1` on a subgroup produces vectors fixed by that subgroup.
 * `ContRepresentation.IsUnitary.exists_ne_zero_mem_invariants_of_le_re_inner`: a vector whose
   coefficients have real part bounded below by a positive constant yields a nonzero invariant
   vector.
+* `ContRepresentation.IsUnitary.starProjection_invariants_mem_closure_convexHull`: the orthogonal
+  projection of `v` onto `ρ.invariants` belongs to the closed convex hull of the orbit of `v`.
+* `ContRepresentation.IsUnitary.norm_starProjection_invariants_sub_le`: if `‖ρ m v - v‖ ≤ ε` for
+  every `m`, then `‖ρ.invariants.starProjection v - v‖ ≤ ε`.
+* `ContRepresentation.IsUnitary.exists_invariant_norm_sub_le`: if `‖ρ m v - v‖ ≤ ε` for every `m`,
+  there is an invariant vector within `ε` of `v`.
+
+## References
+
+* L. Alaoglu and G. Birkhoff, *General ergodic theorems*, Ann. of Math. (2) 41 (1940), 293–309.
+* B. Bekka, P. de la Harpe and A. Valette, *Kazhdan's Property (T)*, Proposition 1.1.5.
+* C. Anantharaman and S. Popa, *An Introduction to II₁ Factors*, §14.1.
 -/
 
 public section
@@ -38,6 +57,8 @@ public section
 open scoped InnerProductSpace
 
 namespace ContRepresentation.IsUnitary
+
+section
 
 variable {𝕜 G H : Type*} [RCLike 𝕜] [Monoid G] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
   [NormedSpace ℝ H] [IsScalarTower ℝ 𝕜 H] [CompleteSpace H] {ρ : ContRepresentation 𝕜 G H}
@@ -89,5 +110,74 @@ theorem exists_ne_zero_mem_invariants_of_le_re_inner (hρ : ρ.IsUnitary) {ξ : 
   have := hsub hηC
   simp only [Set.mem_preimage, Set.mem_Ici, hf, h0, inner_zero_right, map_zero] at this
   linarith
+
+end
+
+section Projection
+
+variable {𝕜 M V : Type*} [RCLike 𝕜] [Monoid M] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  {ρ : ContRepresentation 𝕜 M V}
+
+section ConvexHull
+
+variable [NormedSpace ℝ V] [IsScalarTower ℝ 𝕜 V]
+
+/-- Every vector in the closed convex hull of the orbit of `v` under a unitary representation
+differs from `v` by a vector orthogonal to `ρ.invariants`. -/
+private theorem sub_mem_invariants_orthogonal_of_mem_closedConvexHull (hρ : ρ.IsUnitary) (v : V) :
+    ∀ z ∈ closedConvexHull ℝ (Set.range fun m : M ↦ ρ m v), v - z ∈ ρ.invariantsᗮ := by
+  let S : Set V := {z | v - z ∈ ρ.invariantsᗮ}
+  have hclosed : IsClosed S :=
+    (Submodule.isClosed_orthogonal _).preimage (continuous_const.sub continuous_id)
+  have hconv : Convex ℝ S :=
+    (ρ.invariantsᗮ.restrictScalars ℝ).convex.affine_preimage
+      (AffineEquiv.constVSub ℝ v).toAffineMap
+  refine closedConvexHull_min ?_ hconv hclosed
+  rintro _ ⟨m, rfl⟩
+  rw [Set.mem_ofPred_eq, Submodule.mem_orthogonal]
+  intro u hu
+  rw [inner_sub_right]
+  nth_rw 2 [← hu m]
+  rw [hρ.inner_map_map, sub_self]
+
+/-- **Alaoglu–Birkhoff projection.** For a unitary representation `ρ` of a monoid `M` on a Hilbert
+space, the orthogonal projection of any vector `v` onto `ρ.invariants` lies in the closed real
+convex hull of the orbit `{ρ m v | m : M}`. -/
+theorem starProjection_invariants_mem_closure_convexHull [CompleteSpace V] (hρ : ρ.IsUnitary)
+    (v : V) :
+    ρ.invariants.starProjection v ∈ closure (convexHull ℝ (Set.range fun m : M ↦ ρ m v)) := by
+  obtain ⟨w, hwC, hwinv⟩ := hρ.exists_mem_closedConvexHull_mem_invariants v
+  rw [← closedConvexHull_eq_closure_convexHull]
+  exact Submodule.eq_starProjection_of_mem_orthogonal hwinv
+    (hρ.sub_mem_invariants_orthogonal_of_mem_closedConvexHull v w hwC) ▸ hwC
+
+end ConvexHull
+
+variable [CompleteSpace V]
+
+/-- If every element of `M` moves `v` by at most `ε`, the orthogonal projection of `v` onto
+`ρ.invariants` is within `ε` of `v`. -/
+theorem norm_starProjection_invariants_sub_le (hρ : ρ.IsUnitary) {v : V} {ε : ℝ}
+    (hv : ∀ m, ‖ρ m v - v‖ ≤ ε) :
+    ‖ρ.invariants.starProjection v - v‖ ≤ ε := by
+  let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  let : IsScalarTower ℝ 𝕜 V := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  have hmem : ρ.invariants.starProjection v ∈ Metric.closedBall v ε := by
+    have hmem' := hρ.starProjection_invariants_mem_closure_convexHull v
+    rw [← closedConvexHull_eq_closure_convexHull] at hmem'
+    refine closedConvexHull_min ?_ (convex_closedBall v ε) Metric.isClosed_closedBall hmem'
+    rintro _ ⟨m, rfl⟩
+    simpa only [Metric.mem_closedBall, dist_eq_norm] using hv m
+  simpa only [Metric.mem_closedBall, dist_eq_norm] using hmem
+
+/-- If every element of `M` moves `v` by at most `ε`, there is an invariant vector within `ε` of
+`v`. -/
+theorem exists_invariant_norm_sub_le (hρ : ρ.IsUnitary) {v : V} {ε : ℝ}
+    (hv : ∀ m, ‖ρ m v - v‖ ≤ ε) :
+    ∃ w ∈ ρ.invariants, ‖w - v‖ ≤ ε :=
+  ⟨ρ.invariants.starProjection v, Submodule.starProjection_apply_mem _ v,
+    hρ.norm_starProjection_invariants_sub_le hv⟩
+
+end Projection
 
 end ContRepresentation.IsUnitary
