@@ -446,8 +446,8 @@ private theorem leftPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i)
       hw).trans (by simp)
   · obtain rfl : w' = zero.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
-      simp [plumbingMap_apply, plumbingFactor_zero, cylindricalEndLift_zero,
-        cylindricalEndLift_one]
+      simp only [Fin.reduceFinMk, Matrix.cons_val, plumbingMap_apply, endCenter_zero,
+        plumbingFactor_zero, cylindricalEndLift_zero, cylindricalEndLift_one]
       ring
     exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
@@ -455,7 +455,7 @@ private theorem leftPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i)
       hw).trans (by simp)
   · obtain rfl : w' = one.cylindricalEndLift z := by
       rw [← hP]
-      simp [cylindricalEndLift_zero, cylindricalEndLift_one]
+      simp only [Fin.reduceFinMk, Matrix.cons_val, cylindricalEndLift_zero, cylindricalEndLift_one]
       ring
     exact fun hw => (plumbedAlmostComplex_cylindricalEndLift h₀ h₀
       (associativityLeftInserted J G) (associativityLeftReceiving J Jout G) _ _
@@ -492,8 +492,8 @@ private theorem rightPlumbed_cylindricalEndLift (i : Fin 3) (hJp : Periodic (J i
       hw).trans (by simp)
   · obtain rfl : w' = one.plumbingMap L (one.cylindricalEndLift z) := by
       rw [← hP]
-      simp [plumbingMap_apply, plumbingFactor_one, plumbingFactor_zero,
-        cylindricalEndLift_zero, cylindricalEndLift_one]
+      simp only [Fin.reduceFinMk, Matrix.cons_val, plumbingMap_apply, endCenter_one,
+        plumbingFactor_one, plumbingFactor_zero, cylindricalEndLift_zero, cylindricalEndLift_one]
       ring
     exact fun hw => (plumbedAlmostComplex_plumbingMap_cylindricalEndLift h₀ h₀
       (associativityRightInserted J G') (associativityRightReceiving J Jout G') _ _
