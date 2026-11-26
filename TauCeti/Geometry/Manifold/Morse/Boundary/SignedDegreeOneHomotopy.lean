@@ -28,7 +28,9 @@ of the argument that does not depend on what the slices and the signs are.
 ring `R`, sends a critical point `p` of `f₀` to the sum of the critical points `q` of `f₁` with
 `ind q = ind p + 1`, each weighted by the sum of the signs of the points of `S p q`
 (`TauCeti.signedDegreeOneCoeff`). When the signs are `±1`, it reduces modulo two to the mod-two
-degree-one map `TauCeti.morseDegreeOneMap` (`TauCeti.signedDegreeOneMap_zmod_two`).
+degree-one map `TauCeti.morseDegreeOneMap` (`TauCeti.signedDegreeOneMap_zmod_two`). It only
+depends on the signed counts of the slices (`TauCeti.signedDegreeOneMap_congr`), and vanishes when
+they do (`TauCeti.signedDegreeOneMap_eq_zero_of_finsum_eq_zero`).
 
 **Broken trajectories.** A trajectory of index `-1` can break at the source, into a trajectory of
 `X₀` from `p` to a critical point `p'` of index `ind p - 1` followed by a point of `S p' q`
@@ -37,11 +39,14 @@ trajectory of `X₁` from `q'` to `q` (`TauCeti.morseTargetBrokenDegreeOneSet`).
 trajectory is the product of the sign `TauCeti.IsAdaptedPseudoGradient.trajectorySign` of its
 trajectory and the sign of its slice point, in the order in which they occur
 (`TauCeti.IsAdaptedPseudoGradient.sourceBrokenDegreeOneSign`,
-`TauCeti.IsAdaptedPseudoGradient.targetBrokenDegreeOneSign`). When the pseudo-gradients are
-Morse–Smale and the slices finite, the `q`-coefficients of `K ∘ ∂₀` and of `∂₁ ∘ K` applied to `p`
-are the sums of the signs of the trajectories from `p` to `q` broken at the source and at the
-target. So `∂₁ ∘ K + K ∘ ∂₀ = G` holds exactly when, between any critical points `p` and `q`, these
-two signed counts add up to the `q`-coefficient of `G p`
+`TauCeti.IsAdaptedPseudoGradient.targetBrokenDegreeOneSign`). A sign-preserving map restricting to
+bijections between the slices of two families preserves the signed counts of the broken
+trajectories (`TauCeti.IsAdaptedPseudoGradient.finsum_mem_sourceBrokenDegreeOneSign_congr`,
+`TauCeti.IsAdaptedPseudoGradient.finsum_mem_targetBrokenDegreeOneSign_congr`). When the
+pseudo-gradients are Morse–Smale and the slices finite, the `q`-coefficients of `K ∘ ∂₀` and of
+`∂₁ ∘ K` applied to `p` are the sums of the signs of the trajectories from `p` to `q` broken at the
+source and at the target. So `∂₁ ∘ K + K ∘ ∂₀ = G` holds exactly when, between any critical points
+`p` and `q`, these two signed counts add up to the `q`-coefficient of `G p`
 (`TauCeti.signedMorseBoundary_comp_signedDegreeOneMap_add_eq_iff`). For the digon and triangle
 homotopies, `G` is a difference of continuation maps, and the remaining geometric input is that
 the oriented ends of the one-dimensional moduli spaces of index `0` account for these counts; that
@@ -204,6 +209,45 @@ theorem signedDegreeOneMap_zmod_two
     rw [signedDegreeOneMap_single_apply, morseDegreeOneMap_single_apply,
       intCast_signedDegreeOneCoeff (hσ p q)]
 
+/-- **The signed degree-one map only depends on the signed counts of the slices**: two signed slice
+families whose slices `S p q` and `S' p q` have the same sum of signs whenever `ind q = ind p + 1`
+have the same signed degree-one map. -/
+theorem signedDegreeOneMap_congr {β : Type*} {S' : M → M → Set β}
+    {σ' : criticalPoints 𝓘(ℝ, E) f₀ → criticalPoints 𝓘(ℝ, E) f₁ → β → ℤ}
+    (h : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 →
+        ∑ᶠ y ∈ S p q, σ p q y = ∑ᶠ y ∈ S' p q, σ' p q y) :
+    signedDegreeOneMap S σ hf₁ R = signedDegreeOneMap S' σ' hf₁ R := by
+  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
+  rw [signedDegreeOneMap_single_apply, signedDegreeOneMap_single_apply]
+  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1
+  · rw [signedDegreeOneCoeff_of_morseIndex_eq_add_one hind,
+      signedDegreeOneCoeff_of_morseIndex_eq_add_one hind, h p q hind]
+  · rw [signedDegreeOneCoeff_eq_zero_of_morseIndex_ne_add_one hind,
+      signedDegreeOneCoeff_eq_zero_of_morseIndex_ne_add_one hind]
+
+/-- **The signed degree-one map vanishes when the signed counts do**: if the signs of the points of
+`S p q` sum to zero whenever `ind q = ind p + 1`, the signed degree-one map of `S` is zero. -/
+theorem signedDegreeOneMap_eq_zero_of_finsum_eq_zero
+    (h : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 →
+        ∑ᶠ y ∈ S p q, σ p q y = 0) :
+    signedDegreeOneMap S σ hf₁ R = 0 := by
+  refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
+  rw [signedDegreeOneMap_single_apply, LinearMap.zero_apply, Finsupp.coe_zero, Pi.zero_apply]
+  by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1
+  · rw [signedDegreeOneCoeff_of_morseIndex_eq_add_one hind, h p q hind, Int.cast_zero, mul_zero]
+  · rw [signedDegreeOneCoeff_eq_zero_of_morseIndex_ne_add_one hind, Int.cast_zero, mul_zero]
+
+/-- **The signed degree-one map of a slice family with no slices raising the index vanishes**: if
+`S p q` is empty whenever `ind q = ind p + 1`, the signed degree-one map of `S` is zero. -/
+theorem signedDegreeOneMap_eq_zero_of_slice_eq_empty
+    (hS : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ q = manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 → S p q = ∅) :
+    signedDegreeOneMap S σ hf₁ R = 0 :=
+  signedDegreeOneMap_eq_zero_of_finsum_eq_zero hf₁ fun p q hind ↦ by
+    rw [hS p q hind, finsum_mem_empty]
+
 end Definitions
 
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
@@ -288,6 +332,71 @@ theorem targetBrokenDegreeOneSign_of_morseIndex_ne_add_one
     (h : manifoldMorseIndex 𝓘(ℝ, E) f₁ x.1 ≠ manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1) :
     hX₁.targetBrokenDegreeOneSign 𝔬₁ σ p q x = 0 :=
   dite_eq_right h
+
+variable {β : Type*} {S' : M → M → Set β}
+  {σ' : criticalPoints 𝓘(ℝ, E) f₀ → criticalPoints 𝓘(ℝ, E) f₁ → β → ℤ} {g : α → β}
+
+/-- **Bijective signed slice families have the same signed count of trajectories broken at the
+source.** If a map `g` restricts to bijections from every slice `S p q` onto the slice `S' p q`,
+carrying the sign `σ p q y` of each point to the sign `σ' p q (g y)` of its image, then the signs of
+the trajectories of `S` and of `S'` from `p` to `q` broken at the source have the same sum. -/
+theorem finsum_mem_sourceBrokenDegreeOneSign_congr
+    (hg : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      BijOn g (S p q) (S' p q))
+    (hσ : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      ∀ y ∈ S p q, σ' p q (g y) = σ p q y) :
+    ∑ᶠ x ∈ morseSourceBrokenDegreeOneSet f₁ S' hX₀ p q, hX₀.sourceBrokenDegreeOneSign 𝔬₀ σ' p q x =
+      ∑ᶠ x ∈ morseSourceBrokenDegreeOneSet f₁ S hX₀ p q,
+        hX₀.sourceBrokenDegreeOneSign 𝔬₀ σ p q x := by
+  refine (finsum_mem_eq_of_bijOn (Prod.map id (Prod.map id g)) ⟨?_, ?_, ?_⟩ ?_).symm
+  · rintro ⟨p', z, y⟩ hx
+    obtain ⟨h₁, h₂, hz, hy⟩ := (mem_morseSourceBrokenDegreeOneSet hX₀).1 hx
+    exact (mem_morseSourceBrokenDegreeOneSet hX₀).2 ⟨h₁, h₂, hz, (hg p' q).mapsTo hy⟩
+  · rintro ⟨p₁, z₁, y₁⟩ h₁ ⟨p₂, z₂, y₂⟩ h₂ heq
+    simp only [Prod.map_apply, id, Prod.mk.injEq] at heq
+    obtain ⟨rfl, rfl, hy⟩ := heq
+    exact Prod.ext rfl (Prod.ext rfl ((hg p₁ q).injOn
+      ((mem_morseSourceBrokenDegreeOneSet hX₀).1 h₁).2.2.2
+      ((mem_morseSourceBrokenDegreeOneSet hX₀).1 h₂).2.2.2 hy))
+  · rintro ⟨p', z, y⟩ hx
+    obtain ⟨h₁, h₂, hz, hy⟩ := (mem_morseSourceBrokenDegreeOneSet hX₀).1 hx
+    obtain ⟨y', hy', rfl⟩ := (hg p' q).surjOn hy
+    exact ⟨(p', z, y'), (mem_morseSourceBrokenDegreeOneSet hX₀).2 ⟨h₁, h₂, hz, hy'⟩, rfl⟩
+  · rintro ⟨p', z, y⟩ hx
+    obtain ⟨h₁, -, -, hy⟩ := (mem_morseSourceBrokenDegreeOneSet hX₀).1 hx
+    rw [sourceBrokenDegreeOneSign_of_morseIndex_eq_add_one h₁, ← hσ p' q y hy]
+    exact (sourceBrokenDegreeOneSign_of_morseIndex_eq_add_one (x := (p', z, g y)) h₁).symm
+
+/-- **Bijective signed slice families have the same signed count of trajectories broken at the
+target.** If a map `g` restricts to bijections from every slice `S p q` onto the slice `S' p q`,
+carrying the sign `σ p q y` of each point to the sign `σ' p q (g y)` of its image, then the signs of
+the trajectories of `S` and of `S'` from `p` to `q` broken at the target have the same sum. -/
+theorem finsum_mem_targetBrokenDegreeOneSign_congr
+    (hg : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      BijOn g (S p q) (S' p q))
+    (hσ : ∀ (p : criticalPoints 𝓘(ℝ, E) f₀) (q : criticalPoints 𝓘(ℝ, E) f₁),
+      ∀ y ∈ S p q, σ' p q (g y) = σ p q y) :
+    ∑ᶠ x ∈ morseTargetBrokenDegreeOneSet f₀ S' hX₁ p q, hX₁.targetBrokenDegreeOneSign 𝔬₁ σ' p q x =
+      ∑ᶠ x ∈ morseTargetBrokenDegreeOneSet f₀ S hX₁ p q,
+        hX₁.targetBrokenDegreeOneSign 𝔬₁ σ p q x := by
+  refine (finsum_mem_eq_of_bijOn (Prod.map id (Prod.map g id)) ⟨?_, ?_, ?_⟩ ?_).symm
+  · rintro ⟨q', y, z⟩ hx
+    obtain ⟨h₁, h₂, hy, hz⟩ := (mem_morseTargetBrokenDegreeOneSet hX₁).1 hx
+    exact (mem_morseTargetBrokenDegreeOneSet hX₁).2 ⟨h₁, h₂, (hg p q').mapsTo hy, hz⟩
+  · rintro ⟨q₁, y₁, z₁⟩ h₁ ⟨q₂, y₂, z₂⟩ h₂ heq
+    simp only [Prod.map_apply, id, Prod.mk.injEq] at heq
+    obtain ⟨rfl, hy, rfl⟩ := heq
+    exact Prod.ext rfl (Prod.ext ((hg p q₁).injOn
+      ((mem_morseTargetBrokenDegreeOneSet hX₁).1 h₁).2.2.1
+      ((mem_morseTargetBrokenDegreeOneSet hX₁).1 h₂).2.2.1 hy) rfl)
+  · rintro ⟨q', y, z⟩ hx
+    obtain ⟨h₁, h₂, hy, hz⟩ := (mem_morseTargetBrokenDegreeOneSet hX₁).1 hx
+    obtain ⟨y', hy', rfl⟩ := (hg p q').surjOn hy
+    exact ⟨(q', y', z), (mem_morseTargetBrokenDegreeOneSet hX₁).2 ⟨h₁, h₂, hy', hz⟩, rfl⟩
+  · rintro ⟨q', y, z⟩ hx
+    obtain ⟨-, h₂, hy, -⟩ := (mem_morseTargetBrokenDegreeOneSet hX₁).1 hx
+    rw [targetBrokenDegreeOneSign_of_morseIndex_eq_add_one h₂, ← hσ p q' y hy]
+    exact (targetBrokenDegreeOneSign_of_morseIndex_eq_add_one (x := (q', g y, z)) h₂).symm
 
 end Signs
 
@@ -400,7 +509,7 @@ theorem signedMorseBoundary_comp_signedDegreeOneMap_add_eq_iff
     ← signedDegreeOneMap_signedMorseBoundary_single_apply h₀ hf₀ hf₁ _ _ (hS · _)]
   constructor
   · rintro rfl p q
-    rfl
+    rw [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.comp_apply, Finsupp.add_apply]
   · intro h
     -- Both sides are linear, so it suffices to compare them on the critical points.
     exact Finsupp.lhom_ext' fun p ↦ LinearMap.ext_ring <| Finsupp.ext (h p)
@@ -447,6 +556,18 @@ theorem signedDegreeOneMapAt_single_apply
       a * (signedDegreeOneCoeff S σ p.val q.val : R) :=
   haveI := hf₁.finite_criticalPoints.to_subtype
   Finsupp.intMatrixMap_single_apply _ p a q
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- **Change of coefficients.** An additive map `g : R → R'`, for instance a ring homomorphism,
+applied to the coefficients of the chains, intertwines the graded signed degree-one maps with
+coefficients in `R` and in `R'`. -/
+theorem mapRange_signedDegreeOneMapAt {R' F : Type*} [Ring R'] [FunLike F R R']
+    [AddMonoidHomClass F R R'] (g : F)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f₀ // manifoldMorseIndex 𝓘(ℝ, E) f₀ p = i} →₀ R) :
+    Finsupp.mapRange g (map_zero g) (signedDegreeOneMapAt S σ hf₁ R i j c) =
+      signedDegreeOneMapAt S σ hf₁ R' i j (Finsupp.mapRange g (map_zero g) c) :=
+  haveI := hf₁.finite_criticalPoints.to_subtype
+  Finsupp.mapRange_intMatrixMap _ g c
 
 omit [FiniteDimensional ℝ E] [T2Space M] in
 /-- **The graded degree-one map raises the index by one**: from the chains of index `i` to those of
