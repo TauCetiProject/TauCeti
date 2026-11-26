@@ -55,6 +55,9 @@ domain.
   holomorphic map `f` evaluates the datum at `f w` on `f'(w) v`.
 * `TauCeti.Floer.perturbationPullback_one_sub`: the pullback of a datum `P` on `ℂ` along the
   exchange `w ↦ 1 - w` is `-P` at `1 - w`.
+* `TauCeti.Floer.exists_eq_mul_of_perturbationPullback`: if the pullback along a map with
+  nonzero complex-linear derivative is `h dt` at a point, then the components of the datum at the
+  image point are constant multiples of `h`.
 * `TauCeti.Floer.differentiableAt_domain_of_differentiableAt`,
   `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
   differentiable jointly in the domain and target points is differentiable in each of them, in
@@ -245,6 +248,35 @@ theorem perturbationPullback_one_sub (P : ℂ → X → ℂ →L[ℝ] ℝ) (v w 
   simp only [neg_apply, ContinuousLinearMap.id_apply, Prod.fst_neg,
     Prod.snd_neg, map_add, map_smul, smul_eq_mul]
   ring
+
+/-- **A perturbation whose pullback is cylindrical.** If the derivative of `ψ` at `ζ` is complex
+linear and nonzero, and the pullback of `(K_s, K_t)` along `ψ` at `ζ` is `(0, h)`, then the
+components of `K` at `ψ ζ` are constant multiples of `h`. -/
+theorem exists_eq_mul_of_perturbationPullback {ψ : ℝ × ℝ → ℝ × ℝ} {ζ : ℝ × ℝ}
+    (hψJ : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) (fderiv ℝ ψ ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ))
+    (hψ₀ : fderiv ℝ ψ ζ ≠ 0) {Ks Kt : ℝ × ℝ → X → ℝ} {h : X → ℝ}
+    (hKs : perturbationPullback ψ Ks Kt stdComplexLineReal ζ = 0)
+    (hKt : perturbationPullback ψ Ks Kt stdComplexLineImag ζ = h) :
+    ∃ c₁ c₂ : ℝ, Ks (ψ ζ) = (fun y ↦ c₁ * h y) ∧ Kt (ψ ζ) = fun y ↦ c₂ * h y := by
+  set a := (fderiv ℝ ψ ζ stdComplexLineReal).1
+  set b := (fderiv ℝ ψ ζ stdComplexLineReal).2
+  -- The derivative of `ψ` is multiplication by `a + i b`, so it sends `(0, 1)` to `(-b, a)`.
+  have hI : fderiv ℝ ψ ζ stdComplexLineImag = (-b, a) := hψJ.apply_stdComplexLineImag_eq
+  have hd : a ^ 2 + b ^ 2 ≠ 0 := by
+    refine fun h₀ ↦ hψ₀ (ContinuousLinearMap.coe_injective ?_)
+    refine hψJ.eq_zero_iff_apply_stdComplexLineReal.2 (Prod.ext ?_ ?_) <;>
+      simp only [ContinuousLinearMap.coe_coe, Prod.fst_zero, Prod.snd_zero] <;>
+      nlinarith [sq_nonneg a, sq_nonneg b]
+  refine ⟨-b / (a ^ 2 + b ^ 2), a / (a ^ 2 + b ^ 2), funext fun y ↦ ?_, funext fun y ↦ ?_⟩
+  all_goals
+    have h₁ := congrFun hKs y
+    have h₂ := congrFun hKt y
+    simp only [perturbationPullback_apply, hI, Pi.zero_apply] at h₁ h₂
+    rw [← h₂]
+    field_simp
+  · linear_combination a * h₁
+  · linear_combination b * h₁
 
 section Differentiable
 

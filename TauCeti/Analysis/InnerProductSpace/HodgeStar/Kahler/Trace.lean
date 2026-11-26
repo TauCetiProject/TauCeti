@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.Analysis.InnerProductSpace.RelativeEigenvalues.HermitianForm
 public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Complex
-import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # The trace identity for the normalized Kähler powers
@@ -27,11 +26,11 @@ for the Hermitian metric of `J`. For every real two-form `α`,
 `J`, the sum is the trace `∑ᵢ Re H_α(uᵢ, uᵢ)` of its Hermitian form, the sum of the eigenvalues of
 `α` relative to the metric; for `α = ω` it is `n`.
 
-Both sides are forms of top degree, so they agree once they agree on the basis
-`(u₁, J u₁, …, uₙ, J uₙ)` (`ContinuousAlternatingMap.apply_eq_det_mul`). There the left side is
-`∑ᵢ α(uᵢ, J uᵢ)` by the value of a two-form wedged with a power of `ω` on a symplectic basis
-(`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv`), and `ω ^ n / n!` is one
-(`TauCeti.AlmostComplexStructure.kahlerPowerForm_apply_complexRealFrame`).
+Both sides are forms of top degree, so the left side is its value on the basis
+`(u₁, J u₁, …, uₙ, J uₙ)` times `ω ^ n / n!`
+(`TauCeti.AlmostComplexStructure.eq_smul_kahlerPowerForm`). That value is `∑ᵢ α(uᵢ, J uᵢ)` by the
+value of a two-form wedged with a power of `ω` on a symplectic basis
+(`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv`).
 
 On a complex inner product space `E` of dimension `n`, with `J` multiplication by `i` and the real
 inner product `Re ⟪·, ·⟫_ℂ`, a two-form `α` of type (1,1) has the eigenvalues `λ[α]` of its
@@ -94,17 +93,8 @@ theorem wedge_kahlerPowerForm {m : ℕ} (hm : finrank ℝ V = 2 * (m + 1))
     {u : Fin (m + 1) → V} (hu : Orthonormal ℝ u) (hJu : ∀ i j, ⟪J (u i), u j⟫ = 0)
     (α : V [⋀^Fin 2]→L[ℝ] ℝ) :
     wedge (J.kahlerPowerForm m) α = (∑ i, α ![u i, J (u i)]) • J.kahlerPowerForm (m + 1) := by
-  have hon := (orthonormal_complexRealFrame_iff hJ).2 ⟨hu, hJu⟩
-  let B : Basis (Fin (2 * (m + 1))) ℝ V :=
-    basisOfOrthonormalOfCardEqFinrank hon (by simp [hm])
-  ext v
-  rw [apply_eq_det_mul _ B v, ContinuousAlternatingMap.smul_apply,
-    apply_eq_det_mul (J.kahlerPowerForm (m + 1)) B v]
-  have hB : (B : Fin (2 * (m + 1)) → V) = J.complexRealFrame u :=
-    coe_basisOfOrthonormalOfCardEqFinrank _ _
-  rw [hB, wedge_kahlerPowerForm_apply_complexRealFrame hJ hu hJu,
-    kahlerPowerForm_apply_complexRealFrame hJ hu hJu, smul_eq_mul]
-  ring
+  rw [eq_smul_kahlerPowerForm hJ hm hu hJu (wedge (J.kahlerPowerForm m) α),
+    wedge_kahlerPowerForm_apply_complexRealFrame hJ hu hJu]
 
 omit hJ
 
@@ -130,8 +120,7 @@ theorem wedge_kahlerPowerForm_ofComplexModule {m : ℕ} (hm : finrank ℂ E = m 
         (ofComplexModule E).kahlerPowerForm (m + 1) := by
   let b : OrthonormalBasis (Fin (m + 1)) ℂ E := (stdOrthonormalBasis ℂ E).reindex (finCongr hm)
   have hbR : Orthonormal ℝ (b : Fin (m + 1) → E) := b.orthonormal.real
-  have hm' : finrank ℝ E = 2 * (m + 1) := by
-    rw [← Module.finrank_mul_finrank ℝ ℂ E, Complex.finrank_real_complex, hm]
+  have hm' : finrank ℝ E = 2 * (m + 1) := by rw [finrank_real_of_complex, hm]
   rw [ContinuousAlternatingMap.sum_relEigenvalues_hermitianSesqForm hα hm b,
     wedge_kahlerPowerForm real_inner_ofComplexModule_ofComplexModule hm' hbR
       (fun i j ↦ ?_) α]

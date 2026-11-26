@@ -13,16 +13,19 @@ import TauCeti.Geometry.Manifold.ContMDiff.ContinuousLinearEquiv
 # Real `C^n` regularity of glued finite-rank cores
 
 Let `D : GluingData Φ` glue `P` near `K` to `Q` along `Φ : P ⟶ Q`, over a real manifold `M`, with
-scalars in a normed `ℝ`-algebra `𝕜` such as `ℂ`. If the transitions of `P` and `Q` and the chart
-operators of `Φ` are real `C^n` on their chart overlaps, then so are the transitions of the glued
-core (`GluingData.contMDiffOn_coordChange_glue`) and the chart operators of the isomorphism
-`D.glueIso` with `Q` in both directions (`GluingData.contMDiffOn_inChartCoordinates_glueIso_hom`,
+scalars in a normed `ℝ`-algebra `𝕜` such as `ℂ`. If the transitions of `Q` and the chart operators
+of `Φ` are real `C^n` on their chart overlaps, and those of `P` inside `V`, then so are the
+transitions of the glued core (`GluingData.contMDiffOn_coordChange_glue`) and the chart operators
+of the isomorphism `D.glueIso` with `Q` in both directions
+(`GluingData.contMDiffOn_inChartCoordinates_glueIso_hom`,
 `GluingData.contMDiffOn_inChartCoordinates_glueIso_inv`). Every transition and chart operator is
 built from these by composing with the fixed reindexing equivalence and by inverting operators,
 and inversion is `C^n` where it is applied (`ContMDiffOn.clm_inverse`).
 
-The transitions of `P` and `Q` are assumed real `C^n` on chart overlaps, as in
-`SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`. The morphism `Φ` is assumed real `C^n`
+The transitions of `Q` are assumed real `C^n` on chart overlaps, as in
+`SchottkyDouble.contMDiffOn_coordChange_doubledBundleCore`, and those of `P` only on the parts of
+chart overlaps inside `V`, since charts of `P` are used only there; this covers a pullback of `Q`
+along a map which is smooth only near `K`. The morphism `Φ` is assumed real `C^n`
 in charts: for all labels `i` and `j`, its fibre maps read in the chart `i` of `P` and the chart `j`
 of `Q`, `x ↦ P.core.inChartCoordinates Q.core i j x (Φ.fiberMap x)`, are real `C^n` on the overlap
 of the two charts.
@@ -99,11 +102,11 @@ theorem contMDiffOn_inChartCoordinates_glueIso_inv (k i : M) :
     D.isInvertible_chartToQ (hs hx).1 (hs hx).2).congr fun _ hx ↦
       D.inChartCoordinates_glueIso_inv hx.1 hx.2
 
-/-- The transitions of the glued core are real `C^n` when those of `P` and `Q` and the chart
-operators of `Φ` are. -/
+/-- The transitions of the glued core are real `C^n` when those of `Q` and the chart operators of
+`Φ` are, and those of `P` are inside `V`, the only place where charts of `P` are used. -/
 theorem contMDiffOn_coordChange_glue
     (hP : ∀ i j, ContMDiffOn I 𝓘(ℝ, (Fin P.rank → 𝕜) →L[𝕜] (Fin P.rank → 𝕜)) n
-      (P.core.coordChange i j) (P.core.baseSet i ∩ P.core.baseSet j)) (i j : M) :
+      (P.core.coordChange i j) (P.core.baseSet i ∩ P.core.baseSet j ∩ D.V)) (i j : M) :
     ContMDiffOn I 𝓘(ℝ, (Fin D.glue.rank → 𝕜) →L[𝕜] (Fin D.glue.rank → 𝕜)) n
       (D.glue.core.coordChange i j) (D.glue.core.baseSet i ∩ D.glue.core.baseSet j) := by
   have hpost := ContDiff.contMDiff (D.contDiff_rankEquiv_comp (n := n) (m := Q.rank))
@@ -111,8 +114,8 @@ theorem contMDiffOn_coordChange_glue
   by_cases hjV : j ∈ D.V
   · by_cases hiV : i ∈ D.V
     · have hpre := ContDiff.contMDiff (D.contDiff_comp_rankEquiv_symm (n := n) (m := P.rank))
-      exact (hpost.comp_contMDiffOn (hpre.comp_contMDiffOn
-        ((hP i j).mono (D.baseSet_inter_subset_of_mem_of_mem hiV hjV)))).congr
+      exact (hpost.comp_contMDiffOn (hpre.comp_contMDiffOn ((hP i j).mono fun x hx ↦
+        ⟨D.baseSet_inter_subset_of_mem_of_mem hiV hjV hx, (D.baseSet_of_mem hiV ▸ hx.1).2⟩))).congr
           fun x _ ↦ D.coordChange_of_mem_of_mem hiV hjV
     · have hs := D.baseSet_inter_subset_of_notMem_of_mem hiV hjV
       exact (hpost.comp_contMDiffOn (((hΦ j i).mono hs).clm_inverse fun x hx ↦

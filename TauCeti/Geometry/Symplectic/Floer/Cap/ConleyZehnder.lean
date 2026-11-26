@@ -62,8 +62,13 @@ Consequently the **Conley–Zehnder index of a smooth cap**,
 two-form, as the index read in any such frame
 (`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq`), and the recapping law holds for it
 without reference to frames or to an almost complex structure
-(`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`). Its descent to
-raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.lean`.
+(`TauCeti.Floer.IsSmoothBasedCap.conleyZehnderIndex_eq_sub_two_mul_firstChernHom`). When `Φ`
+starts at the identity and ends at a map `P` without the eigenvalue `1`, as the linearized flow
+along a nondegenerate periodic orbit, the index of a smooth cap is an integer
+(`TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`), with parity given by
+`sign det (1 - P)`
+(`TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`).
+Its descent to raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.lean`.
 
 ## Main definitions
 
@@ -83,6 +88,8 @@ raw caps and cap classes is in `TauCeti/Geometry/Symplectic/Floer/Cap/Grading.le
   smooth cap in any such frame, and its recapping law.
 * `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq`: the index along a
   nondegenerate orbit is an integer.
+* `TauCeti.Floer.IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq`: its parity
+  is the sign of `det (1 - P)` for the end value `P` of `Φ`.
 
 ## References
 
@@ -483,6 +490,31 @@ theorem IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq (h : σ.IsNondegenerat
   rw [hu.conleyZehnderIndex_eq h hχ hχ₀]
   exact exists_int_frameConleyZehnderIndex_eq _
     (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ fun _ _ ↦ rfl) hΦ hΦσ hΦ₀ hΦ₁
+
+/-- **The parity of the index of a smooth cap.** Let `u` be a smooth based cap of a loop `γ` in a
+manifold of dimension `2 n` with a fiberwise nondegenerate two-form `σ`, and let `Φ` be a
+continuous family of linear maps along `γ` preserving `σ`, starting at the identity, whose end
+value is an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, such as the linearized
+flow along a nondegenerate periodic orbit. Then the Conley–Zehnder index of `Φ` along the capped
+loop `(γ, u)` is an integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`. -/
+theorem IsSmoothBasedCap.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq
+    (h : σ.IsNondegenerate) (hu : IsSmoothBasedCap I γ u)
+    {Φ : ∀ t, TangentSpace I (γ 0) ≃L[ℝ] TangentSpace I (γ t)}
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) :
+    ∃ k : ℤ, hu.conleyZehnderIndex h hΦ hΦσ = k ∧
+      ((((finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  have : Fact _ := ⟨h.two_mul_finrank_euclideanSpace x⟩
+  obtain ⟨χ, hχ, hχ₀⟩ := hu.exists_isSymplecticFrame_eq_on_edges
+    (G := EuclideanSpace ℂ (Fin (finrank ℝ E / 2))) h
+  -- A frame over the cap that is constant on its three other edges is periodic along `γ`.
+  rw [hu.conleyZehnderIndex_eq h hχ hχ₀]
+  exact exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq _
+    (apply_zero_eq_apply_one_of_eq_on_edges hχ₀ fun _ _ ↦ rfl) hΦ hΦσ hΦ₀ hP hPdet
 
 end SmoothCap
 

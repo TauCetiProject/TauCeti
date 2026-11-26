@@ -47,7 +47,10 @@ period of a `2π`-periodic curve backwards as a loop on `[0, 1]` negates its are
 (`TauCeti.SymplecticForm.loopArea_comp_sub_mul`); in particular a circle traversed clockwise has
 minus the loop area of the counterclockwise circle
 (`TauCeti.SymplecticForm.loopArea_comp_circleMap_sub_mul`). Traversing a loop of period one
-backwards negates its area (`TauCeti.SymplecticForm.loopArea_comp_neg`).
+backwards negates its area (`TauCeti.SymplecticForm.loopArea_comp_neg`). Along a periodic variation
+`ξ` of a `C¹` loop `γ`, the loop area has first variation
+`d/dε a(γ + ε ξ) |_{ε = 0} = ∫₀¹ ω(ξ, γ') dt`
+(`TauCeti.SymplecticForm.hasDerivAt_loopArea_add_smul`).
 The area of `u` vanishes when `u` vanishes on the slices `s = a` and `s = b`
 (`TauCeti.SymplecticForm.integral_symplecticForm_fderiv_prod_Icc_eq_zero_of_periodic`).
 
@@ -243,6 +246,60 @@ theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function
   ring
 
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
+
+open intervalIntegral in
+/-- **The first variation of the symplectic area of a loop.** For `C¹` loops `γ` and `ξ` with
+`γ 1 = γ 0` and `ξ 1 = ξ 0`, the area `½ ∫₀¹ ω(γ + ε ξ, γ' + ε ξ') dt` has derivative
+`∫₀¹ ω(ξ, γ') dt` at `ε = 0`. -/
+theorem hasDerivAt_loopArea_add_smul (ω : SymplecticForm V) {γ ξ : ℝ → V} (hγ : ContDiff ℝ 1 γ)
+    (hξ : ContDiff ℝ 1 ξ) (hγ1 : γ 1 = γ 0) (hξ1 : ξ 1 = ξ 0) :
+    HasDerivAt (fun ε : ℝ ↦ ω.loopArea fun t ↦ γ t + ε • ξ t)
+      (∫ t in (0 : ℝ)..1, ω (ξ t) (deriv γ t)) 0 := by
+  have hγd : Differentiable ℝ γ := hγ.differentiable one_ne_zero
+  have hξd : Differentiable ℝ ξ := hξ.differentiable one_ne_zero
+  have hγ' : Continuous (deriv γ) := hγ.continuous_deriv le_rfl
+  have hξ' : Continuous (deriv ξ) := hξ.continuous_deriv le_rfl
+  -- The area of `γ + ε ξ` is a quadratic polynomial in `ε`.
+  have ha := (ω.continuous_apply_comp hγ.continuous hγ').intervalIntegrable (μ := volume) 0 1
+  have hb₁ := (ω.continuous_apply_comp hγ.continuous hξ').intervalIntegrable (μ := volume) 0 1
+  have hb₂ := (ω.continuous_apply_comp hξ.continuous hγ').intervalIntegrable (μ := volume) 0 1
+  have hc := (ω.continuous_apply_comp hξ.continuous hξ').intervalIntegrable (μ := volume) 0 1
+  set A := ∫ t in (0 : ℝ)..1, ω (γ t) (deriv γ t)
+  set B := ∫ t in (0 : ℝ)..1, ω (ξ t) (deriv γ t)
+  set C := ∫ t in (0 : ℝ)..1, ω (ξ t) (deriv ξ t)
+  -- Integrating `d/dt ω(γ, ξ) = ω(γ', ξ) + ω(γ, ξ')` over a period moves the derivative from `ξ`
+  -- to `γ`.
+  have hibp : ∫ t in (0 : ℝ)..1, ω (γ t) (deriv ξ t) = B := by
+    have h := integral_eq_sub_of_hasDerivAt (f := fun t ↦ ω (γ t) (ξ t))
+      (fun t _ ↦ ω.hasDerivAt_apply_comp (hγd t).hasDerivAt (hξd t).hasDerivAt)
+      ((ω.continuous_apply_comp hγ' hξ.continuous).intervalIntegrable _ _ |>.add hb₁)
+    rw [hγ1, hξ1, sub_self, integral_add
+      ((ω.continuous_apply_comp hγ' hξ.continuous).intervalIntegrable _ _) hb₁] at h
+    have hneg : ∫ t in (0 : ℝ)..1, ω (deriv γ t) (ξ t) = -B := by
+      rw [← intervalIntegral.integral_neg]
+      exact integral_congr fun t _ ↦ (ω.neg_eq _ _).symm
+    linarith
+  have hexp : (fun ε : ℝ ↦ ω.loopArea fun t ↦ γ t + ε • ξ t) =
+      fun ε ↦ (1 / 2 : ℝ) * (A + ε * (2 * B) + ε ^ 2 * C) := by
+    funext ε
+    have hd : deriv (fun t ↦ γ t + ε • ξ t) = fun t ↦ deriv γ t + ε • deriv ξ t := funext fun t ↦
+      ((hγd t).hasDerivAt.add ((hξd t).hasDerivAt.const_smul ε)).deriv
+    have hpt : ∀ t, ω (γ t + ε • ξ t) (deriv γ t + ε • deriv ξ t) =
+        ω (γ t) (deriv γ t) + ε * (ω (γ t) (deriv ξ t) + ω (ξ t) (deriv γ t)) +
+          ε ^ 2 * ω (ξ t) (deriv ξ t) := fun t ↦ by
+      simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+      ring
+    rw [loopArea_def, hd, integral_congr fun t _ ↦ hpt t, integral_add (ha.add
+      ((hb₁.add hb₂).const_mul ε)) (hc.const_mul _), integral_add ha ((hb₁.add hb₂).const_mul ε),
+      intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
+      integral_add hb₁ hb₂, hibp]
+    ring
+  rw [hexp]
+  have h := ((((hasDerivAt_id (0 : ℝ)).mul_const (2 * B)).const_add A).add
+    ((hasDerivAt_pow 2 (0 : ℝ)).mul_const C)).const_mul (1 / 2 : ℝ)
+  convert h using 1
+  · simp
+  · simp
 
 /-- **The symplectic area of a cylinder.** Let `u` be `C²` near `[a, b] × [0, 1]`, with
 `u(s, 1) = u(s, 0)` for `s ∈ [a, b]`, so that each `t ↦ u(s, t)` is a loop. Then the symplectic

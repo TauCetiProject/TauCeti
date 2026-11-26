@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.FundamentalGroupCircle
 public import TauCeti.Topology.Homotopy.LoopSpaceFibration
 public import TauCeti.Topology.Homotopy.Path
+public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
 public import TauCeti.Topology.PathSpace.Moore.Comparison.FundamentalGroup
 
 /-!
@@ -44,6 +45,17 @@ spaces of Moore loops, so the statement iterates: the induced map of positive-le
 of positive-length Moore loops, a Moore model of the double loop map, is a Hurewicz fibration
 (`TauCeti.IsHurewiczFibration.posLengthMap_posLengthMap`).
 
+Two more examples show that the unrestricted Moore loop map is not a fibration. For the projection
+`B × X → B`, a Hurewicz fibration, the fibre of the Moore loop map over the unit is a point, and
+over the constant loop of length `L > 0` it is a copy of the loop space of `X`; the constant loops
+of lengths `s L` join the two. A lift of this path of lengths, followed by the second projection,
+would lift the lengths of the Moore loops of `X`, which forces the fundamental group of `X` to be
+trivial (`TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_fst`). The inclusion of a point `x`
+is not a fibration once a path leaves `x` (`TauCeti.not_isHurewiczFibration_const_unit`), and
+neither is its Moore loop map, the inclusion `[0, ∞) → Ω_x X` of the constant loops at `x`:
+running a path from `x` up to time `s` and back joins the unit to a loop that is not constant, and
+this path of loops does not lift (`TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit`).
+
 ## Main results
 
 * `TauCeti.MooreLoopSpace.subsingleton_fundamentalGroup_of_hasHomotopyLiftingProperty_length`:
@@ -54,6 +66,14 @@ of positive-length Moore loops, a Moore model of the double loop map, is a Hurew
   fibration.
 * `TauCeti.MooreLoopSpace.not_forall_isHurewiczFibration_map`: the Moore loop map of a Hurewicz
   fibration need not be a Hurewicz fibration.
+* `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_fst`,
+  `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_fst_addCircle`: the Moore loop map of the
+  projection `B × X → B` is not a Hurewicz fibration when the fundamental group of `X` is
+  nontrivial, for instance for `X = S¹`.
+* `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit`: the Moore loop map of the
+  inclusion of a point is not a Hurewicz fibration when a path leaves the point.
+* `TauCeti.MooreLoopSpace.not_isHurewiczFibration_map_const_unit_addCircle`: the Moore loop map of
+  the inclusion of a point of `S¹` is not a Hurewicz fibration.
 * `TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`: the fibre of the Moore loop map over a
   constant loop of positive length is the loop space of the fibre.
 * `TauCeti.IsHurewiczFibration.posLengthMap`: on the Moore loops of positive length, the Moore
@@ -139,6 +159,120 @@ theorem not_forall_isHurewiczFibration_map :
   have := (AddCircle.windingNumberIso (0 : AddCircle (1 : ℝ))).toEquiv.nontrivial
   exact not_isHurewiczFibration_map_const
     (h (AddCircle (1 : ℝ)) Unit (.const _ ()) 0 isHurewiczFibration_of_subsingleton)
+
+/-! ### The projection of a product -/
+
+section Prod
+
+variable {B : Type v} [TopologicalSpace B]
+
+/-- If the Moore loop map of the projection `B × X → B` at `(b, x)` lifts homotopies from a space,
+then so does the length of the Moore loops of `X` at `x`. -/
+theorem hasHomotopyLiftingProperty_length_of_map_fst {A : Type w} [TopologicalSpace A] (b : B)
+    (h : HasHomotopyLiftingProperty
+      (map (y := b) (.fst : C(B × X, B)) rfl : MooreLoopSpace (B × X) (b, x) → _) A) :
+    HasHomotopyLiftingProperty (length : MooreLoopSpace X x → ℝ≥0) A := by
+  -- A homotopy of lengths starting at the lengths of loops `f a` is a homotopy of constant loops
+  -- at `b`, starting at the projections of the loops `(b, f a)`, and the second coordinate of a
+  -- lift of it lifts the lengths.
+  intro f H hH
+  -- the loop `(b, γ)` of the product attached to a loop `γ` of `X`
+  let ι : C(X, B × X) := (ContinuousMap.const X b).prodMk (.id X)
+  let pr₁ := map (x := (b, x)) (y := b) (.fst : C(B × X, B)) rfl
+  let pr₂ := map (x := (b, x)) (y := x) (.snd : C(B × X, X)) rfl
+  let incl := map (y := (b, x)) ι rfl
+  -- The loop `(b, γ)` projects to the constant loop at `b` of the length of `γ`, and to `γ`:
+  -- `fst.comp ι` and `snd.comp ι` are `const X b` and `id X` by definition.
+  have hpr₁ (γ : MooreLoopSpace X x) : pr₁ (incl γ) = constOfLength b γ.length :=
+    (DFunLike.congr_fun (map_comp ContinuousMap.fst ι rfl rfl) γ).symm.trans
+      (map_const_apply rfl γ)
+  have hpr₂ (γ : MooreLoopSpace X x) : pr₂ (incl γ) = γ :=
+    (DFunLike.congr_fun (map_comp ContinuousMap.snd ι rfl rfl) γ).symm.trans
+      (DFunLike.congr_fun map_id γ)
+  obtain ⟨G, hG, hG₀⟩ := h ⟨fun a ↦ incl (f a), (map_continuous _).comp f.continuous⟩
+    ⟨fun ta ↦ constOfLength b (H ta), (continuous_constOfLength b).comp H.continuous⟩
+    fun a ↦ (congrArg (constOfLength b) (hH a)).trans (hpr₁ (f a)).symm
+  refine ⟨⟨fun ta ↦ pr₂ (G ta), (map_continuous _).comp G.continuous⟩, funext fun ta ↦ ?_,
+    fun a ↦ (congrArg pr₂ (hG₀ a)).trans (hpr₂ (f a))⟩
+  -- The lift has the lengths of the constant loops it lifts. Both projections preserve lengths;
+  -- `simp` does not use `length_map` here, as the base point equations `rfl` do not typecheck
+  -- at the transparency at which it instantiates the lemma.
+  exact (length_map _ _ _).trans <| (length_map _ _ _).symm.trans <| by
+    simpa using congrArg length (congrFun hG ta)
+
+/-- **The Moore loop map of the projection `B × X → B` is not a Hurewicz fibration** when the
+fundamental group of `X` at `x` is nontrivial, although the projection is one
+(`TauCeti.isHurewiczFibration_fst`). Over the unit of `B` its fibre is a single point
+(`TauCeti.MooreLoopSpace.map_eq_one_iff`), while over the constant loop of length `L > 0` at `b` it
+is a copy of the loop space of `X` at `x` (`TauCeti.MooreLoopSpace.fiberConstOfLengthHomeomorph`),
+and the constant loops of lengths `s L`, `s ∈ [0, 1]`, join these two points of the base. -/
+theorem not_isHurewiczFibration_map_fst [Nontrivial (FundamentalGroup X x)] (b : B) :
+    ¬ IsHurewiczFibration.{w}
+      (map (y := b) (.fst : C(B × X, B)) rfl : MooreLoopSpace (B × X) (b, x) → _) :=
+  fun h ↦ not_subsingleton (FundamentalGroup X x) <|
+    subsingleton_fundamentalGroup_of_hasHomotopyLiftingProperty_length
+      (hasHomotopyLiftingProperty_length_of_map_fst b (h.hasHomotopyLiftingProperty PUnit))
+
+/-- **For the projection `B × S¹ → B`, a Hurewicz fibration, the Moore loop map is not a Hurewicz
+fibration**, for every space `B`, at every base point. -/
+theorem not_isHurewiczFibration_map_fst_addCircle (b : B) (z : AddCircle (1 : ℝ)) :
+    ¬ IsHurewiczFibration.{w} (map (y := b) (.fst : C(B × AddCircle (1 : ℝ), B)) rfl :
+      MooreLoopSpace (B × AddCircle (1 : ℝ)) (b, z) → _) := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  have := (AddCircle.windingNumberIso z).toEquiv.nontrivial
+  exact not_isHurewiczFibration_map_fst b
+
+end Prod
+
+/-! ### The inclusion of a point -/
+
+section Point
+
+variable {y : X}
+
+/-- **The Moore loop map of the inclusion of a point is not a Hurewicz fibration** as soon as a
+path leaves the point. Its image is the set of constant loops at `x`
+(`TauCeti.MooreLoopSpace.map_const_apply`), and running a path from `x` to `y ≠ x` up to time `s`
+and back, for `s ∈ [0, 1]`, is a path of Moore loops at `x` from the unit, a constant loop, to a
+loop through `y`, which is not constant. -/
+theorem not_isHurewiczFibration_map_const_unit (hxy : Joined x y) (hy : y ≠ x) :
+    ¬ IsHurewiczFibration.{w}
+      (map (y := x) (.const Unit x) rfl : MooreLoopSpace Unit () → MooreLoopSpace X x) := by
+  intro h
+  let γ : MoorePathBetween X x y := ⟨hxy.somePath.toMoorePath, by simp, by simp⟩
+  -- `δ s` runs `γ` up to time `s` and back
+  let δ := γ.retrace
+  have hδ : Continuous δ :=
+    MoorePathBetween.continuous_retrace.comp (continuous_const.prodMk continuous_id)
+  have hδ₀ : δ 0 = 1 := γ.retrace_zero
+  -- so the loops `δ s`, `s ∈ [0, 1]`, join the image of the unit to `δ 1`
+  have hjoined : Joined (map (y := x) (.const Unit x) rfl (1 : MooreLoopSpace Unit ())) (δ 1) :=
+    ((map_one (map (y := x) (.const Unit x) rfl)).trans hδ₀.symm) ▸
+      ⟨{ toFun t := δ (toNNReal t)
+         source' := by rw [toNNReal_zero]
+         target' := by rw [toNNReal_one] }⟩
+  -- a map with the homotopy lifting property lifts this path, so `δ 1` lies in the image
+  obtain ⟨⟨u, hu⟩, -⟩ :=
+    (h.hasHomotopyLiftingProperty PUnit).exists_joined_of_joined hjoined
+  -- but the image consists of constant loops at `x`, while `δ 1` passes through `y ≠ x` at time `1`
+  have hval := congrArg (fun δ : MooreLoopSpace X x ↦ δ.toMoorePath 1)
+    ((map_const_apply _ u).symm.trans hu)
+  exact hy <| by
+    simpa [δ, γ,
+      MoorePath.truncate_trans_symm_apply_self hxy.somePath.toMoorePath (s := 1) (by simp)]
+      using hval.symm
+
+/-- **For the inclusion of a point `z` of the circle, the Moore loop map `[0, ∞) → Ω_z S¹` is not
+a Hurewicz fibration**. The inclusion `Unit → S¹` of `z` is not one either, by
+`TauCeti.not_isHurewiczFibration_const_unit` applied to any point `y ≠ z`. -/
+theorem not_isHurewiczFibration_map_const_unit_addCircle (z : AddCircle (1 : ℝ)) :
+    ¬ IsHurewiczFibration.{w} (map (y := z) (.const Unit z) rfl :
+      MooreLoopSpace Unit () → MooreLoopSpace (AddCircle (1 : ℝ)) z) := by
+  have : Fact ((0 : ℝ) < 1) := ⟨one_pos⟩
+  obtain ⟨y, hy⟩ := exists_ne z
+  exact not_isHurewiczFibration_map_const_unit (PathConnectedSpace.joined z y) hy
+
+end Point
 
 /-! ### Fibres of the Moore loop map over constant loops -/
 

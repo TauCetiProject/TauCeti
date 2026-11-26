@@ -31,6 +31,8 @@ them the values of its real scalar extension.
   and an abstract complexification of the original integral module.
 * `TauCeti.Hodge.realificationComplexEquiv_conj`: compatibility of that comparison with
   conjugation.
+* `TauCeti.Hodge.integralMapToComplex_realificationComplexEquiv`: complexifying an integral map
+  is the same as extending its realification to `ℂ`.
 * `TauCeti.Hodge.exists_eq_realificationComplexEquiv_one_tmul`: every real point of the abstract
   complexification comes from the realification.
 * `TauCeti.Hodge.bilinForm_realificationComplexEquiv_one_tmul`: on such points a
@@ -128,6 +130,23 @@ theorem realificationComplexEquiv_symm_conj (hℂ : IsBaseChange ℂ ιℂ) (x :
   apply (realificationComplexEquiv hℂ).injective
   rw [realificationComplexEquiv_conj, LinearEquiv.apply_symm_apply,
     LinearEquiv.apply_symm_apply]
+
+variable {V' Vℂ' : Type*} [AddCommGroup V'] [AddCommGroup Vℂ'] [Module ℂ Vℂ']
+  {ιℂ' : V' →ₗ[ℤ] Vℂ'}
+
+/-- **Complexification through the realification.** The complexification of an integral linear map
+`f : V → V'` agrees, under the realification comparisons, with the complex extension of its real
+extension `ℝ ⊗ f`. -/
+theorem integralMapToComplex_realificationComplexEquiv (hℂ : IsBaseChange ℂ ιℂ)
+    (hℂ' : IsBaseChange ℂ ιℂ') (f : V →ₗ[ℤ] V') (x : ℂ ⊗[ℝ] Realification V) :
+    integralMapToComplex hℂ ιℂ' f (realificationComplexEquiv hℂ x) =
+      realificationComplexEquiv hℂ' ((f.baseChange ℝ).baseChange ℂ x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy => simp only [map_add, hx, hy]
+  | tmul z x =>
+      induction x using TensorProduct.inductionOn with
+      | add x y hx hy => simp only [TensorProduct.tmul_add, map_add, hx, hy]
+      | tmul r v => simp [realificationComplexEquiv_tmul_tmul, integralMapToComplex_apply_ι]
 
 /-! ### The real points of the abstract complexification -/
 

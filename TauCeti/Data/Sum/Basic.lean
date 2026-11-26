@@ -10,7 +10,9 @@ public import Mathlib.Basic.IsEmpty.Defs
 public import Mathlib.Basic.Nontrivial.Defs
 
 /-!
-# Sum types: distinct pairs and injective maps out of a sum
+# Sum types: swapping, distinct pairs, and injective maps out of a sum
+
+Swapping a sum commutes with mapping its components, with the component maps exchanged.
 
 In `α ⊕ α`, each label `p` has a partner `p.swap` with the same underlying element of `α`. Two
 labels that are neither equal nor partners have distinct underlying elements, so `α` has at least
@@ -23,6 +25,7 @@ exchanged and all three parts are reindexed by injective maps.
 
 ## Main results
 
+* `Sum.swap_map`: swapping after mapping exchanges the two component maps.
 * `Sum.nontrivial_of_ne_of_ne_swap`: if `q ≠ p` and `q ≠ p.swap` in `α ⊕ α`, then `α` is
   nontrivial.
 * `Function.Injective.sumElim_comp`: if `Sum.elim f g` is injective, so is
@@ -36,6 +39,12 @@ exchanged and all three parts are reindexed by injective maps.
 public section
 
 namespace Sum
+
+/-- Swapping a mapped sum is mapping the swapped sum with the component maps exchanged. -/
+@[simp]
+theorem swap_map {α β γ δ : Type*} (f : α → γ) (g : β → δ) (x : α ⊕ β) :
+    (x.map f g).swap = x.swap.map g f := by
+  cases x <;> rfl
 
 variable {α : Type*}
 

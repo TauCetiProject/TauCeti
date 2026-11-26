@@ -19,9 +19,8 @@ are linearly independent exactly when their Wronskian is nonzero at one, equival
 point of the domain. The latter combines the initial-jet map, whose value at a point is the
 pair `(y, y')`, with uniqueness of solutions with given initial jet.
 
-Unlike `TauCeti.wronskian_eq_of_hasDerivAt`, which treats globally defined solutions of
-`f'' = q f`, the statements here are local to the domain of the equation and allow a
-first-derivative term.
+Unlike `TauCeti.wronskian_eq_of_hasDerivAt`, which treats solutions of `f'' = q f`, the
+statements here allow a first-derivative term.
 
 ## Main results
 

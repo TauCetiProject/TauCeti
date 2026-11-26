@@ -47,8 +47,9 @@ are what they are proved for. In the same spirit,
 across `Subrepresentation.subrepresentationSubmoduleOrderIso`, so that Mathlib's simple- and
 semisimple-module API applies to minimal subrepresentations; being about `asSubmodule` it asks for
 the coefficients to be a commutative ring, as `Subrepresentation.asSubmodule` and
-`IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` is one more entry in
-the lattice dictionary, moving `IsCompl` across it, and stated with the rest of that dictionary at
+`IsSimpleModule` between them do.  `Subrepresentation.isCompl_toSubmodule` and
+`Subrepresentation.disjoint_toSubmodule` are two more entries in the lattice dictionary, moving
+`IsCompl` and `Disjoint` across it, and stated with the rest of that dictionary at
 the typeclasses `Subrepresentation` itself asks for. The same dictionary shows that the
 subrepresentations of a representation on a module over a ring form a modular lattice
 (`Subrepresentation.instIsModularLattice`), as the submodules do.  Finally,
@@ -58,7 +59,9 @@ being additive and preserving both summands, supplies the equivariance.  Being a
 `Submodule.prodEquivOfIsCompl`, it asks for the coefficients to be a ring and the module to be a
 group, as that construction does.  Its first component is the projection
 `Submodule.projectionOnto` along the complement, which therefore intertwines
-(`Subrepresentation.isIntertwiningMap_projectionOnto`); its transpose, given by
+(`Subrepresentation.isIntertwiningMap_projectionOnto`). A vector of one summand of a disjoint pair
+is fixed by `ρ g` once `ρ g v - v` lies in the other summand
+(`Subrepresentation.apply_eq_self_of_disjoint`). The transpose of the projection, given by
 `Representation.IsIntertwiningMap.dualMap`, extends linear forms on `ρ₁` by zero on `ρ₂`, which
 includes the dual of `ρ₁` equivariantly into the dual of `ρ`. Annihilators exchange
 subrepresentations of `ρ` and of its dual: `Subrepresentation.dualAnnihilator` and
@@ -113,6 +116,7 @@ algebra keeps the invariant submodules too
 * `Subrepresentation.toSubmodule_le_toSubmodule`
 * `Subrepresentation.toSubmodule_lt_toSubmodule`
 * `Subrepresentation.isCompl_toSubmodule`
+* `Subrepresentation.disjoint_toSubmodule`
 * `Subrepresentation.instIsModularLattice`
 * `Subrepresentation.toRepresentation_apply`
 * `Subrepresentation.coe_toRepresentation_apply`
@@ -139,6 +143,7 @@ algebra keeps the invariant submodules too
 * `Subrepresentation.isSimpleModule_asSubmodule_iff`
 * `Subrepresentation.equivProdOfIsCompl`
 * `Subrepresentation.isIntertwiningMap_projectionOnto`
+* `Subrepresentation.apply_eq_self_of_disjoint`
 * `Subrepresentation.instSemilatticeSupFG`
 -/
 
@@ -233,6 +238,14 @@ theorem isCompl_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
     IsCompl ρ₁.toSubmodule ρ₂.toSubmodule ↔ IsCompl ρ₁ ρ₂ := by
   simp only [isCompl_iff, disjoint_iff, codisjoint_iff, ← toSubmodule_inf, ← toSubmodule_sup,
     ← toSubmodule_bot (ρ := ρ), ← toSubmodule_top (ρ := ρ), toSubmodule_injective.eq_iff]
+
+/-- Two subrepresentations are disjoint exactly when the subspaces they carry are: the `Disjoint`
+half of `Subrepresentation.isCompl_toSubmodule`. -/
+@[simp]
+theorem disjoint_toSubmodule {ρ₁ ρ₂ : Subrepresentation ρ} :
+    Disjoint ρ₁.toSubmodule ρ₂.toSubmodule ↔ Disjoint ρ₁ ρ₂ := by
+  simp only [disjoint_iff, ← toSubmodule_inf, ← toSubmodule_bot (ρ := ρ),
+    toSubmodule_injective.eq_iff]
 
 /-- The subrepresentations of a representation on a module over a ring form a modular lattice, as
 the submodules they carry do. So Mathlib's modular-lattice API applies to them: in a semisimple
@@ -546,6 +559,13 @@ theorem isIntertwiningMap_projectionOnto {ρ₁ ρ₂ : Subrepresentation ρ} (h
       (equivProdOfIsCompl h).toIntertwiningMap,
       LinearMap.ext fun v => by simp [equivProdOfIsCompl_apply]⟩
   exact hf ▸ ⟨f.isIntertwining⟩
+
+/-- A vector `v` of a subrepresentation `ρ₂` that is disjoint from a subrepresentation `ρ₁` is
+fixed by `ρ g` as soon as `ρ g v - v` lies in `ρ₁`: that difference lies in both. -/
+theorem apply_eq_self_of_disjoint {ρ₁ ρ₂ : Subrepresentation ρ} (h : Disjoint ρ₁ ρ₂) {g : G}
+    {v : W} (hv : v ∈ ρ₂) (h₁ : ρ g v - v ∈ ρ₁) : ρ g v = v :=
+  sub_eq_zero.1 <| Submodule.disjoint_def.1 (disjoint_toSubmodule.2 h) _ h₁
+    (ρ₂.toSubmodule.sub_mem (ρ₂.apply_mem_toSubmodule g hv) hv)
 
 end Splitting
 

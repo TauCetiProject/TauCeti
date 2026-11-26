@@ -89,7 +89,6 @@ lemma cechCohomologyIsoGodement_app (n : ℕ)
 end Ring
 
 variable {R : Type u} [CommRing R]
-  [(Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
 
 /-- **Čech cohomology is derived-functor cohomology on compact Hausdorff spaces.** For sheaves of
 `R`-modules on a compact normal space `X`, the cover-colimit Čech cohomology `Hⁿ(X, F)` is

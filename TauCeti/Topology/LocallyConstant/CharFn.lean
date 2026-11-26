@@ -67,6 +67,11 @@ noncomputable def charFn (U : CompactOpens X) : LocallyConstant X R :=
 theorem coe_charFn (U : CompactOpens X) : ⇑(U.charFn R) = Set.indicator (U : Set X) 1 :=
   (rfl)
 
+/-- `U.charFn R` is the characteristic function of the clopen set underlying `U`. -/
+theorem charFn_def (U : CompactOpens X) :
+    U.charFn R = LocallyConstant.charFn R U.toClopens.isClopen :=
+  (rfl)
+
 variable {R}
 
 @[simp]

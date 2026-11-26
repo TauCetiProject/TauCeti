@@ -251,7 +251,8 @@ instance isNoetherianRing_stalk [X.IsLocallyNoetherian] (x : X) :
     IsNoetherianRing (X.presheaf.stalk x) := by
   obtain ⟨A, _, _, _, _, _, f, hf, z, rfl⟩ := IsLocallyNoetherian.exists_isNoetherianRing x
   have := Spf.isNoetherianRing_stalk (A := A) z
-  exact isNoetherianRing_of_ringEquiv _ (asIso (f.stalkMap z)).commRingCatIsoToRingEquiv.symm
+  exact isNoetherianRing_of_ringEquiv _
+    (LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv f z).symm
 
 section Spf
 

@@ -190,20 +190,12 @@ private theorem isCompactOperator_jetOperator_comp_endTransferCutoffCoeff (q : P
     (hdβ : ∀ ζ : ℝ × ℝ, ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 → fderiv ℝ β (positiveEndChart q ζ) = 0) :
     IsCompactOperator ((jetOperator stripMeasure fun ζ ↦
       (M (positiveEndChart q ζ)).comp (endTransferCutoffCoeff q β ζ)).comp
-        (CylinderSobolev.H1 V).subtypeL) := by
-  refine CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero
+        (CylinderSobolev.H1 V).subtypeL) :=
+  CylinderSobolev.isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le
     (memLp_comp_endTransferCutoffCoeff q hM hβ hB)
     (ae_of_all _ fun ζ a b ↦ by simp [endTransferCutoffCoeff_apply, Prod.mk_zero_zero])
-    fun δ hδ ↦ ⟨max |T₀| |T₁|, ae_of_all _ fun ζ hζ ↦ ?_⟩
-  have hout : ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1 := by
-    rcases lt_abs.1 hζ with h | h
-    · exact Or.inr ((le_abs_self T₁).trans ((le_max_right _ _).trans h.le))
-    · exact Or.inl (by linarith [neg_abs_le T₀, le_max_left |T₀| |T₁|])
-  have h0 : (M (positiveEndChart q ζ)).comp (endTransferCutoffCoeff q β ζ) = 0 := by
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    simp [endTransferCutoffCoeff_apply, hdβ ζ hout, Prod.mk_zero_zero]
-  rw [h0, norm_zero]
-  exact hδ.le
+    (ae_of_all _ fun ζ (hout : ζ.1 ≤ T₀ ∨ T₁ ≤ ζ.1) ↦ ContinuousLinearMap.ext fun v ↦ by
+      simp [endTransferCutoffCoeff_apply, hdβ ζ hout, Prod.mk_zero_zero])
 
 omit [FiniteDimensional ℝ V] [CompleteSpace W] in
 /-- Read along the end chart, the coefficient field minus its cutoff part and the cutoff times the
@@ -289,10 +281,7 @@ theorem exists_isCompactOperator_positiveEndChartLp_symm_jetOperator_endTransfer
       stripMeasure :=
     (hM.comp_quasiMeasurePreserving_top (quasiMeasurePreserving_positiveEndChart q)).clm_comp ∞ hT
   have hC := memLp_comp_endTransferCutoffCoeff q hM hβ fun z hz ↦ (hB z hz).2.2
-  have hβφ : MemLp (fun ζ ↦ β (positiveEndChart q ζ)) ∞ stripMeasure :=
-    memLp_top_of_bound (hβ.continuous.comp (contDiff_positiveEndChart q 0).continuous
-      |>.aestronglyMeasurable) B (ae_of_all _ fun ζ ↦ by
-        simpa using (hB _ (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ)).1)
+  have hβφ := memLp_comp_positiveEndChart q hβ.continuous fun z hz ↦ (hB z hz).1
   -- Read along the chart, the coefficient field of `D` applied to the transfer is the cutoff times
   -- the model, plus the cutoff part `C`, plus the rest `E'`, which is small.
   obtain ⟨E', hE'⟩ : ∃ E' : ℝ × ℝ → V × V × V →L[ℝ] W, E' = fun ζ ↦

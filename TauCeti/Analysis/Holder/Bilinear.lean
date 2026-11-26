@@ -134,6 +134,13 @@ theorem norm_id_compHolder₂_apply_le (f : HolderSpace α X (F →L[ℝ] G)) (g
   (norm_compHolder₂_apply_le _ f g).trans (mul_le_mul_of_nonneg_right
     (mul_le_of_le_one_left (norm_nonneg f) ContinuousLinearMap.norm_id_le) (norm_nonneg g))
 
+/-- Multiplication by a scalar Hölder function `f` has operator norm at most `‖f‖`. -/
+theorem norm_mul_compHolder₂_le (f : HolderSpace α X ℝ) :
+    ‖(ContinuousLinearMap.mul ℝ ℝ).compHolder₂ f‖ ≤ ‖f‖ :=
+  ((ContinuousLinearMap.mul ℝ ℝ).compHolder₂.le_opNorm f).trans
+    (mul_le_of_le_one_left (norm_nonneg f) ((norm_compHolder₂_le _).trans
+      (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)))
+
 /-- A scalar Hölder function times a constant vector is bounded by the product of their norms. -/
 theorem norm_lsmul_compHolder₂_const_le (f : HolderSpace α X ℝ) (c : F) :
     ‖(ContinuousLinearMap.lsmul ℝ ℝ).compHolder₂ f (HolderSpace.const c)‖ ≤ ‖f‖ * ‖c‖ :=
