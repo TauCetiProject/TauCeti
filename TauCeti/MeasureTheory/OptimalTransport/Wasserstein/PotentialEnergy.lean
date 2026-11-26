@@ -365,6 +365,18 @@ theorem integrable_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {�
   rw [abs_le] at this ⊢
   constructor <;> nlinarith [neg_abs_le (V 0), le_abs_self (V 0)]
 
+/-- A gradient that grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, maps `Lᵖ` into `Lᵖ` over a
+finite measure: for `T ∈ Lᵖ(ρ; E)`, the field `∇V ∘ T` lies in `Lᵖ(ρ; E)`. -/
+theorem memLp_gradient_comp_of_norm_gradient_le {α : Type*} [MeasurableSpace α] {ρ : Measure α}
+    [IsFiniteMeasure ρ] {p : ℝ≥0∞} {T : α → E} (hV' : ∀ x, ‖gradient V x‖ ≤ C * (1 + ‖x‖))
+    (hT : MemLp T p ρ) : MemLp (fun a ↦ gradient V (T a)) p ρ := by
+  have hbound : MemLp (fun a ↦ C * (1 + ‖T a‖)) p ρ := ((memLp_const 1).add hT.norm).const_mul C
+  refine hbound.of_le
+    ((measurable_gradient V).comp_aemeasurable hT.aemeasurable).aestronglyMeasurable
+    (.of_forall fun a ↦ ?_)
+  rw [Real.norm_eq_abs]
+  exact (hV' (T a)).trans (le_abs_self _)
+
 /-- **The first variation of the potential energy.** Let `V` be a differentiable potential whose
 gradient grows at most linearly, `‖∇V x‖ ≤ C (1 + ‖x‖)`, and let `ρ` be a finite measure with
 finite second moment. For every vector field `ξ ∈ L²(ρ; E)`, the potential energy
