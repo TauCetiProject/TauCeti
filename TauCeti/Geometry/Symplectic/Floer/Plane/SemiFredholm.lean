@@ -65,7 +65,7 @@ weight of the plane (`TauCeti.Floer.PSSPlane.cylindricalWeight`) for the dual of
   `TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint` applies, and there the weight is bounded
   below
   (`TauCeti.SymplecticForm.exists_setIntegral_norm_floerLinearizationAdjoint_sq_le_mul_integral`).
-* `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy` is the
+* `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy_positive` is the
   semi-Fredholm estimate of `D_u^*` along a finite-energy positive PSS plane, from the end estimate
   `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive`,
   whose weight `‖w‖²` is at most `ρ⁻¹`. Every PSS plane is the positive plane for a reflected
@@ -559,7 +559,7 @@ as well. This is the counterpart for `D_u^*` of
 `exists_forall_le_mul_integral_floerLinearization_add_of_finite_energy`; its end estimate is
 `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_positive`,
 whose weight `‖w‖²` is at most `ρ⁻¹ = 1 + ‖w‖²`. -/
-theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy
+theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_finite_energy_positive
     (ω : SymplecticForm V) {H : ℝ → V → ℝ} (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H))
     {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H)) {K : Set V}
     (hK : IsCompact K) {Jq : ℝ → V → AlmostComplexStructure V}
