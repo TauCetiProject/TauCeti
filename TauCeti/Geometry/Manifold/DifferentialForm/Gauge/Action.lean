@@ -32,7 +32,8 @@ This file defines the action of the gauge group on connections, with the left co
 
 * **Conjugation.** `g` acts on `𝔸`-valued forms of every degree by the pointwise conjugation
   `Ad_g φ = g φ g⁻¹` (`TauCeti.gaugeConj`), a group action by linear maps
-  (`TauCeti.gaugeConj_one`, `TauCeti.gaugeConj_mul`) that commutes with brackets of `1`-forms
+  (`TauCeti.gaugeConj_one`, `TauCeti.gaugeConj_mul`, with inverse conjugation by `g⁻¹`,
+  `TauCeti.gaugeConj_gaugeConj_inv`) that commutes with brackets of `1`-forms
   (`TauCeti.wedgeWith_gaugeConj_gaugeConj`).
 * **The Maurer–Cartan form.** The right Maurer–Cartan form `θ_g = (dg) g⁻¹`
   (`TauCeti.mrightMaurerCartan`) satisfies the cocycle law `θ_(g h) = θ_g + Ad_g θ_h`
@@ -40,7 +41,8 @@ This file defines the action of the gauge group on connections, with the left co
   (`TauCeti.mextDerivₗ_mrightMaurerCartan`). The derivative of a conjugated `1`-form is
   `d(Ad_g φ) = Ad_g dφ + [θ_g ∧ Ad_g φ]` (`TauCeti.mextDerivₗ_gaugeConj`).
 * **The gauge action.** `g · A = Ad_g A - θ_g` is a left action of the gauge group
-  (`TauCeti.mgaugeAction_one`, `TauCeti.mgaugeAction_mul`) by affine maps whose linear part is
+  (`TauCeti.mgaugeAction_one`, `TauCeti.mgaugeAction_mul`), bundled as the `MulAction`
+  `TauCeti.gaugeMulAction`, by affine maps whose linear part is
   `Ad_g` (`TauCeti.mgaugeAction_add`), and the curvature transforms by conjugation,
   `F_(g · A) = Ad_g F_A` (`TauCeti.gaugeCurvature_mgaugeAction`). In particular the gauge group
   preserves the flat connections, and the pure gauge connections `g · 0 = -θ_g` are flat.
@@ -62,6 +64,7 @@ manifold.
 * `TauCeti.gaugeConj`: conjugation `φ ↦ g φ g⁻¹` of `𝔸`-valued forms by a gauge transformation.
 * `TauCeti.mrightMaurerCartan`: the right Maurer–Cartan form `(dg) g⁻¹`.
 * `TauCeti.mgaugeAction`: the gauge action `g · A = g A g⁻¹ - (dg) g⁻¹` on connections.
+* `TauCeti.gaugeMulAction`: the gauge action bundled as a `MulAction` (not an instance).
 * `TauCeti.gaugeExp`: the gauge transformation `exp ξ` of a smooth function `ξ`.
 
 ## Main results
@@ -101,33 +104,18 @@ section Values
 
 variable (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (x : M)
 
-/-- The value at a point of a gauge transformation, as a unit of `𝔸`. -/
-private def unitAt : 𝔸ˣ where
-  val := (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x
-  inv := ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x
-  val_inv := by rw [← Pi.mul_apply, ← ContMDiffMap.coe_mul, ← Units.val_mul, mul_inv_cancel,
-    Units.val_one, ContMDiffMap.coe_one, Pi.one_apply]
-  inv_val := by rw [← Pi.mul_apply, ← ContMDiffMap.coe_mul, ← Units.val_mul, inv_mul_cancel,
-    Units.val_one, ContMDiffMap.coe_one, Pi.one_apply]
-
-private theorem coe_unitAt : (unitAt g x : 𝔸) = (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x :=
-  (rfl)
-
-private theorem coe_unitAt_inv :
-    (↑(unitAt g x)⁻¹ : 𝔸) = ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x :=
-  (rfl)
-
 /-- The differential of the inverse of a gauge transformation:
 `d(g⁻¹) = -g⁻¹ (dg) g⁻¹`. -/
 private theorem mvfderiv_inv_apply (v : TangentSpace I x) :
     mvfderiv I ((g⁻¹ : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x v =
-      -((↑(unitAt g x)⁻¹ : 𝔸) * mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x v *
-        (↑(unitAt g x)⁻¹ : 𝔸)) :=
+      -((↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x * mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x v *
+        (↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x) :=
   mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one
     ((g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯).contMDiff.mdifferentiableAt (by simp))
     ((↑g⁻¹ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯).contMDiff.mdifferentiableAt (by simp))
-    (by rw [← ContMDiffMap.coe_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
-      ContMDiffMap.coe_one]) (unitAt g x).inv_mul v
+    (.of_eq (by rw [← ContMDiffMap.coe_mul, ← Units.val_mul, mul_inv_cancel, Units.val_one,
+      ContMDiffMap.coe_one])) (by
+      simp only [← ContMDiffMap.coe_evalUnitsHom_apply, map_inv, Units.inv_mul]) v
 
 end Values
 
@@ -137,21 +125,21 @@ section GaugeExp
 
 variable [CompleteSpace 𝔸]
 
-omit [ContMDiffRing 𝓘(ℝ, 𝔸) ∞ 𝔸] in
-private theorem exp_mul_exp_neg (a : 𝔸) : exp a * exp (-a) = 1 := by
-  simpa using (exp_add_smul (𝕂 := ℝ) a 1 (-1)).symm
-
-omit [ContMDiffRing 𝓘(ℝ, 𝔸) ∞ 𝔸] in
-private theorem exp_neg_mul_exp (a : 𝔸) : exp (-a) * exp a = 1 := by
-  simpa using (exp_add_smul (𝕂 := ℝ) a (-1) 1).symm
-
 /-- The gauge transformation `exp ξ : x ↦ exp (ξ x)` of a smooth `𝔸`-valued function `ξ`, an
 element of the Lie algebra `C^∞(M, 𝔸)` of the gauge group. Its inverse is `exp (-ξ)`. -/
 def gaugeExp (ξ : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ where
   val := ⟨fun x ↦ exp (ξ x), (contDiff_exp ℝ).comp_contMDiff ξ.contMDiff⟩
   inv := ⟨fun x ↦ exp (-ξ x), (contDiff_exp ℝ).comp_contMDiff ξ.contMDiff.neg⟩
-  val_inv := ContMDiffMap.ext fun x ↦ exp_mul_exp_neg (ξ x)
-  inv_val := ContMDiffMap.ext fun x ↦ exp_neg_mul_exp (ξ x)
+  val_inv := ContMDiffMap.ext fun x ↦ by
+    let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
+    let := invertibleExp (ξ x)
+    change exp (ξ x) * exp (-ξ x) = 1
+    rw [← invOf_exp, mul_invOf_self]
+  inv_val := ContMDiffMap.ext fun x ↦ by
+    let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ ℝ 𝔸
+    let := invertibleExp (ξ x)
+    change exp (-ξ x) * exp (ξ x) = 1
+    rw [← invOf_exp, invOf_mul_self]
 
 /-- The values of `exp ξ` are the exponentials of the values of `ξ`. -/
 @[simp]
@@ -208,6 +196,18 @@ theorem gaugeConj_mul (g h : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) :
     simp only [gaugeConj_val, LinearMap.comp_apply, mul_inv_rev, Units.val_mul,
       ContMDiffMap.coe_mul, Pi.mul_apply, mul_assoc]
 
+/-- Conjugation by `g` undoes conjugation by `g⁻¹`. -/
+@[simp]
+theorem gaugeConj_gaugeConj_inv (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (φ : SmoothForm I M 𝔸 k) :
+    gaugeConj g (gaugeConj g⁻¹ φ) = φ := by
+  rw [← LinearMap.comp_apply, ← gaugeConj_mul, mul_inv_cancel, gaugeConj_one, LinearMap.id_apply]
+
+/-- Conjugation by `g⁻¹` undoes conjugation by `g`. -/
+@[simp]
+theorem gaugeConj_inv_gaugeConj (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (φ : SmoothForm I M 𝔸 k) :
+    gaugeConj g⁻¹ (gaugeConj g φ) = φ := by
+  rw [← LinearMap.comp_apply, ← gaugeConj_mul, inv_mul_cancel, gaugeConj_one, LinearMap.id_apply]
+
 /-- Conjugation commutes with the commutator bracket of `1`-forms:
 `[Ad_g φ ∧ Ad_g ψ] = Ad_g [φ ∧ ψ]`. -/
 theorem wedgeWith_gaugeConj_gaugeConj (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ)
@@ -218,9 +218,9 @@ theorem wedgeWith_gaugeConj_gaugeConj (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸�
         (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) φ ψ) :=
   SmoothBundleForm.ext_eval₂ fun x v w ↦ by
     simp only [SmoothBundleForm.eval₂_apply, SmoothForm.wedgeWith_apply_one_one, gaugeConj_val,
-      sub_apply, ContinuousLinearMap.mul_apply', ContinuousLinearMap.flip_apply,
-      ← coe_unitAt_inv]
-    simp only [← coe_unitAt, mul_sub, sub_mul, mul_assoc, Units.inv_mul_cancel_left]
+      sub_apply, ContinuousLinearMap.mul_apply', ContinuousLinearMap.flip_apply]
+    simp only [← ContMDiffMap.coe_evalUnitsHom_apply, map_inv, mul_sub, sub_mul, mul_assoc,
+      Units.inv_mul_cancel_left]
 
 /-! ### The Maurer–Cartan form -/
 
@@ -259,8 +259,8 @@ theorem mrightMaurerCartan_mul (g h : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ
     simp only [Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
       mrightMaurerCartan_val, gaugeConj_val, Units.val_mul, mul_inv_rev, ContMDiffMap.coe_mul]
     rw [hd]
-    simp only [Pi.mul_apply, ← coe_unitAt_inv]
-    simp only [← coe_unitAt, add_mul, mul_assoc, Units.mul_inv_cancel_left]
+    simp only [Pi.mul_apply, ← ContMDiffMap.coe_evalUnitsHom_apply, map_inv, add_mul, mul_assoc,
+      Units.mul_inv_cancel_left]
     abel
 
 /-! ### Exterior derivatives -/
@@ -272,19 +272,15 @@ theorem mextDerivₗ_mrightMaurerCartan (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), �
       (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip)
       (mrightMaurerCartan g) (mrightMaurerCartan g) :=
   SmoothBundleForm.ext_eval₂ fun x v w ↦ by
-    have hθ : ∀ u : TangentSpace I x, (mrightMaurerCartan g).val x ![u] =
-        mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x u * (↑(unitAt g x)⁻¹ : 𝔸) := fun u ↦ by
-      rw [mrightMaurerCartan_val, Matrix.cons_val_zero, coe_unitAt_inv]
     rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply,
       mrightMaurerCartan, SmoothForm.coe_wedgeWith, SmoothForm.mextDeriv_wedgeWith_apply_one_zero,
       mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv, ← mrightMaurerCartan]
     simp only [Submodule.coe_smul, Pi.smul_apply, ContinuousAlternatingMap.smul_apply,
       SmoothForm.wedgeWith_apply_one_one, sub_apply, ContinuousLinearMap.mul_apply',
-      ContinuousLinearMap.flip_apply, hθ, SmoothForm.coe_ofFunction,
-      mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
-      mvfderiv_inv_apply, ContinuousAlternatingMap.coe_zero, RoughForm.ofFunction_apply,
-      Pi.zero_apply, zero_mul, zero_sub, Matrix.cons_val_fin_one, ← coe_unitAt_inv, mul_neg,
-      sub_neg_eq_add, mul_assoc]
+      ContinuousLinearMap.flip_apply, mrightMaurerCartan_val, SmoothForm.coe_ofFunction,
+      mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_inv_apply,
+      ContinuousAlternatingMap.coe_zero, RoughForm.ofFunction_apply, Pi.zero_apply, zero_mul,
+      zero_sub, Matrix.cons_val_fin_one, mul_neg, sub_neg_eq_add, mul_assoc]
     module
 
 /-- The exterior derivative of a conjugated `1`-form: `d(Ad_g φ) = Ad_g dφ + [θ_g ∧ Ad_g φ]`. -/
@@ -293,20 +289,18 @@ theorem mextDerivₗ_gaugeConj (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) 
       (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip)
       (mrightMaurerCartan g) (gaugeConj g φ) :=
   SmoothBundleForm.ext_eval₂ fun x v w ↦ by
-    have hθ : ∀ u : TangentSpace I x, (mrightMaurerCartan g).val x ![u] =
-        mvfderiv I (g : C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯) x u * (↑(unitAt g x)⁻¹ : 𝔸) := fun u ↦ by
-      rw [mrightMaurerCartan_val, Matrix.cons_val_zero, coe_unitAt_inv]
     rw [SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
     conv_lhs => rw [gaugeConj_eq, SmoothForm.coe_wedgeWith,
       SmoothForm.mextDeriv_wedgeWith_apply_one_zero, SmoothForm.coe_wedgeWith,
       SmoothForm.mextDeriv_wedgeWith_apply_one_zero]
     simp only [Submodule.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
       SmoothForm.wedgeWith_apply_one_one, RoughForm.wedgeWith_apply_zero_right, gaugeConj_val,
-      sub_apply, ContinuousLinearMap.mul_apply', ContinuousLinearMap.flip_apply, hθ,
-      SmoothForm.coe_ofFunction, mextDeriv_ofFunction, mextDerivₗ_apply,
-      ContinuousAlternatingMap.ofSubsingleton_apply_apply, mvfderiv_inv_apply,
-      RoughForm.ofFunction_apply, Matrix.cons_val_fin_one, ← coe_unitAt_inv]
-    simp only [← coe_unitAt, sub_mul, mul_neg, mul_assoc, Units.inv_mul_cancel_left]
+      sub_apply, ContinuousLinearMap.mul_apply', ContinuousLinearMap.flip_apply,
+      mrightMaurerCartan_val, SmoothForm.coe_ofFunction,
+      mextDeriv_ofFunction, mextDerivₗ_apply, ContinuousAlternatingMap.ofSubsingleton_apply_apply,
+      mvfderiv_inv_apply, RoughForm.ofFunction_apply, Matrix.cons_val_fin_one]
+    simp only [← ContMDiffMap.coe_evalUnitsHom_apply, map_inv, sub_mul, mul_neg, mul_assoc,
+      Units.inv_mul_cancel_left]
     abel
 
 /-! ### The gauge action -/
@@ -346,6 +340,21 @@ theorem mgaugeAction_mul (g h : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (A :
     mrightMaurerCartan_mul, LinearMap.comp_apply, map_sub]
   abel
 
+/-- The gauge action as a `MulAction` of the gauge group on the connections, `g • A = g · A`, so
+that gauge orbits, stabilizers and orbit spaces are `MulAction.orbit`, `MulAction.stabilizer` and
+`MulAction.orbitRel.Quotient`. It is not an instance: use it through
+`letI := TauCeti.gaugeMulAction`. -/
+abbrev gaugeMulAction : MulAction (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ (SmoothForm I M 𝔸 1) where
+  smul := mgaugeAction
+  one_smul := mgaugeAction_one
+  mul_smul := mgaugeAction_mul
+
+/-- The scalar action of `TauCeti.gaugeMulAction` is the gauge action. -/
+theorem gaugeMulAction_smul_def (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (A : SmoothForm I M 𝔸 1) :
+    letI := gaugeMulAction (I := I) (M := M) (𝔸 := 𝔸)
+    g • A = mgaugeAction g A :=
+  (rfl)
+
 /-- The gauge action is affine, with linear part the conjugation:
 `g · (A + b) = g · A + g b g⁻¹`. -/
 theorem mgaugeAction_add (g : (C^∞⟮I, M; 𝓘(ℝ, 𝔸), 𝔸⟯)ˣ) (A b : SmoothForm I M 𝔸 1) :
@@ -384,8 +393,7 @@ theorem gaugeCurvature_mgaugeAction_eq_zero_iff (g : (C^∞⟮I, M; 𝓘(ℝ, �
       gaugeCurvature (ContinuousLinearMap.mul ℝ 𝔸 - (ContinuousLinearMap.mul ℝ 𝔸).flip) A = 0 := by
   rw [gaugeCurvature_mgaugeAction]
   refine ⟨fun h ↦ ?_, fun h ↦ by rw [h, map_zero]⟩
-  simpa only [← LinearMap.comp_apply, ← gaugeConj_mul, inv_mul_cancel, gaugeConj_one,
-    LinearMap.id_apply, map_zero] using congrArg (gaugeConj g⁻¹) h
+  rw [← gaugeConj_inv_gaugeConj g (gaugeCurvature _ A), h, map_zero]
 
 /-! ### The infinitesimal gauge action -/
 

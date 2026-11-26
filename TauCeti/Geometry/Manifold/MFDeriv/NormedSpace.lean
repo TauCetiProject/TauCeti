@@ -449,15 +449,16 @@ theorem mvfderiv_smul_algebra {𝕜' : Type*} [NormedRing 𝕜'] [NormedAlgebra 
     Function.id_comp] at h ⊢
   rwa [Function.comp_apply, Function.comp_apply, extChartAt_to_inv] at h
 
-/-- The derivative of a pointwise inverse in a normed algebra: if `f * g = 1` and `g x * f x = 1`,
-then `dg = -g (df) g` at `x`. -/
+/-- The derivative of a pointwise inverse in a normed algebra: if `f * g = 1` near `x` and
+`g x * f x = 1`, then `dg = -g (df) g` at `x`. -/
 theorem mvfderiv_apply_eq_neg_mul_mul_of_mul_eq_one {A : Type*} [NormedRing A]
     [NormedAlgebra 𝕜 A] {f g : M → A} {x : M} (hf : MDifferentiableAt I 𝓘(𝕜, A) f x)
-    (hg : MDifferentiableAt I 𝓘(𝕜, A) g x) (hfg : f * g = 1) (hgf : g x * f x = 1)
+    (hg : MDifferentiableAt I 𝓘(𝕜, A) g x) (hfg : f * g =ᶠ[𝓝 x] 1) (hgf : g x * f x = 1)
     (v : TangentSpace I x) :
     mvfderiv I g x v = -(g x * mvfderiv I f x v * g x) := by
+  have hfg' : f • g =ᶠ[𝓝 x] fun _ ↦ 1 := hfg
   have h := mvfderiv_smul_algebra (F := A) hf hg
-  rw [show f • g = fun _ ↦ 1 from hfg, mvfderiv_const] at h
+  rw [hfg'.mvfderiv_eq, mvfderiv_const] at h
   have h' : f x * mvfderiv I g x v + mvfderiv I f x v * g x = 0 := by
     simpa only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul,
       zero_apply] using (congrArg (fun L ↦ L v) h).symm

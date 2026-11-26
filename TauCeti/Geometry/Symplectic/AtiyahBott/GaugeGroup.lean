@@ -101,8 +101,7 @@ theorem atiyahBottMomentWith_mgaugeAction
     SmoothBundleForm.ext_eval₂ fun x v w ↦ by
       simp only [SmoothBundleForm.eval₂_apply, SmoothForm.wedgeWith_apply_zero_right,
         gaugeConj_val _ (gaugeConj g⁻¹ ξ), gaugeConj_val _ (gaugeCurvature _ A), hB]
-  rw [← LinearMap.comp_apply (gaugeConj g) (gaugeConj g⁻¹), ← gaugeConj_mul, mul_inv_cancel,
-    gaugeConj_one, LinearMap.id_apply] at h
+  rw [gaugeConj_gaugeConj_inv] at h
   rw [atiyahBottMomentWith_apply, atiyahBottMomentWith_apply, ← SmoothForm.coe_wedgeWith,
     ← SmoothForm.coe_wedgeWith, gaugeCurvature_mgaugeAction, h]
 

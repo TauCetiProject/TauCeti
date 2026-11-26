@@ -40,6 +40,8 @@ smooth functions.
   homomorphism `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] C^n⟮J, N; 𝓘(𝕜, A), A⟯`.
 * `ContMDiffMap.evalAlgHom`: evaluation at a point, as an algebra homomorphism
   `C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A`.
+* `ContMDiffMap.evalUnitsHom`: evaluation at a point of the units of `C^n⟮I, M; 𝓘(𝕜, A), A⟯`,
+  as a group homomorphism to `Aˣ`.
 * `ContMDiffMap.eq_zero_of_forall_mem_ker_evalAlgHom_smul_top`: the points of `M` separate the
   scalar `C^n` functions.
 * `ContMDiffMap.instIsReduced`, `ContMDiffMap.instHasUniqueDiv`: the `C^n` maps into a reduced
@@ -173,6 +175,20 @@ def evalAlgHom (x : M) : C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A where
 
 @[simp]
 theorem evalAlgHom_apply (x : M) (f : C^n⟮I, M; 𝓘(𝕜, A), A⟯) : evalAlgHom x f = f x :=
+  (rfl)
+
+variable {A} in
+/-- Evaluation at a point `x : M` of the units of the `C^n` functions, as a group homomorphism to
+the units of their values: the value at `x` of an invertible function is invertible, with inverse
+the value at `x` of the inverse function. -/
+def evalUnitsHom (x : M) : (C^n⟮I, M; 𝓘(𝕜, A), A⟯)ˣ →* Aˣ :=
+  Units.map (evalAlgHom x : C^n⟮I, M; 𝓘(𝕜, A), A⟯ →ₐ[𝕜] A).toMonoidHom
+
+variable {A} in
+/-- The value of `evalUnitsHom x g` is the value of `g` at `x`. -/
+@[simp]
+theorem coe_evalUnitsHom_apply (x : M) (g : (C^n⟮I, M; 𝓘(𝕜, A), A⟯)ˣ) :
+    (evalUnitsHom x g : A) = (g : C^n⟮I, M; 𝓘(𝕜, A), A⟯) x :=
   (rfl)
 
 end AlgHom
