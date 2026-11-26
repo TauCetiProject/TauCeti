@@ -32,6 +32,8 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `TauCeti.map_negOnePowCast_smul`: additive homomorphisms commute with the ground-ring signs.
 * `Int.negOnePow_smul_negOnePow_smul`, `TauCeti.neg_one_pow_smul_neg_one_pow_smul`: the
   unit-valued sign and the power `(-1) ^ n` act as involutions.
+* `TauCeti.neg_one_pow_smul_mem`: the power `(-1) ^ j` from the scalars preserves every additive
+  subgroup.
 * `TauCeti.neg_one_pow_mul_succ_div_two_succ`: the signs of successive triangular numbers, as
   natural-number powers of `-1`.
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
@@ -150,6 +152,13 @@ theorem neg_one_pow_smul_neg_one_pow_smul {R : Type uR} [Monoid R] [HasDistribNe
     {B : Type uA} [MulAction R B] (n : ℕ) (b : B) :
     (-1 : R) ^ n • (-1 : R) ^ n • b = b := by
   rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨n, rfl⟩, one_smul]
+
+/-- A sign `(-1) ^ j` from the scalars preserves membership in any set closed under negation, such
+as an additive subgroup, even one that is not closed under the scalar action. -/
+theorem neg_one_pow_smul_mem {R M S : Type*} [Ring R] [AddCommGroup M] [Module R M]
+    [SetLike S M] [NegMemClass S M] {H : S} {x : M} (hx : x ∈ H) (j : ℕ) :
+    ((-1 : R) ^ j) • x ∈ H := by
+  rcases neg_one_pow_eq_or R j with h | h <;> simp [h, hx]
 
 end NegOnePowSMul
 

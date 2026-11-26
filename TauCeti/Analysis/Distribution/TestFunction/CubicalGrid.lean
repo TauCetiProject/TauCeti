@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.CutoffPushforward
 public import TauCeti.Analysis.Distribution.TestFunction.BoxCurrent
 import Mathlib.Algebra.Group.Subgroup.Finsupp
-import TauCeti.Algebra.Module.NegOnePowSMul
+import TauCeti.Algebra.Ring.NegOnePow
 import Mathlib.Analysis.Calculus.FDeriv.Affine
 import TauCeti.Analysis.Normed.Module.Alternating.TopDegree
 

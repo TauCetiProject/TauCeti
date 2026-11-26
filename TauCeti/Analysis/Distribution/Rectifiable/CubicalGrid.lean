@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Rectifiable.CoordPlane
 public import TauCeti.Analysis.Distribution.TestFunction.CubicalGrid
-import TauCeti.Algebra.Module.NegOnePowSMul
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Coordinate boxes and cubical grid chains are integral currents
