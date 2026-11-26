@@ -98,6 +98,41 @@ theorem exists_eq_endpoint_of_mem_frontier_boxDomain {a b : ι → ℝ}
     ⟨lt_of_le_of_ne (hc i).1 (h i).1.symm, lt_of_le_of_ne (hc i).2 (h i).2⟩
   exact disjoint_frontier_iff_isOpen.mpr (boxDomain a b).isOpen |>.notMem_of_mem_right hi hx
 
+/-- A box `∏ⱼ (aⱼ, bⱼ)` with `aⱼ < bⱼ` for every `j` is nonempty: it contains its centre. -/
+theorem nonempty_boxDomain {a b : ι → ℝ} (hab : ∀ j, a j < b j) :
+    (boxDomain a b : Set (EuclideanSpace ℝ ι)).Nonempty :=
+  ⟨WithLp.toLp 2 fun j ↦ (a j + b j) / 2, mem_boxDomain.2 fun j ↦
+    ⟨by simp; linarith [hab j], by simp; linarith [hab j]⟩⟩
+
+/-- A function continuous on the closure of a box is integrable on the box, for every measure
+that is finite on compact sets. -/
+theorem integrableOn_boxDomain {E : Type*} [NormedAddCommGroup E] {a b : ι → ℝ}
+    {mu : Measure (EuclideanSpace ℝ ι)} [IsFiniteMeasureOnCompacts mu]
+    {F : EuclideanSpace ℝ ι → E} (hF : ContinuousOn F (closure (boxDomain a b))) :
+    IntegrableOn F (boxDomain a b) mu :=
+  (hF.integrableOn_compact (isBounded_boxDomain a b).isCompact_closure).mono_set subset_closure
+
+/-- The line through `x` parallel to the `i`-th axis meets the box in its `i`-th side exactly when
+the other coordinates of `x` lie in the box. -/
+theorem toLp_update_mem_boxDomain_iff [DecidableEq ι] {a b : ι → ℝ} {i : ι} (x : ι → ℝ)
+    (t : ℝ) :
+    WithLp.toLp 2 (Function.update x i t) ∈ (boxDomain a b : Set (EuclideanSpace ℝ ι)) ↔
+      t ∈ Ioo (a i) (b i) ∧ ∀ j ≠ i, x j ∈ Ioo (a j) (b j) := by
+  simp only [SetLike.mem_coe, mem_boxDomain]
+  refine ⟨fun h ↦ ⟨by simpa using h i, fun j hj ↦ by simpa [hj] using h j⟩, fun h j ↦ ?_⟩
+  by_cases hj : j = i
+  · subst hj
+    simpa using h.1
+  · simpa [hj] using h.2 j hj
+
+/-- A part of the hyperplane `xᵢ = aᵢ` misses the box `∏ⱼ (aⱼ, bⱼ)`. -/
+theorem disjoint_boxDomain {a b : ι → ℝ} {i : ι} {Γ : Set (EuclideanSpace ℝ ι)}
+    (hΓ : ∀ x ∈ Γ, x i = a i) : Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
+  Set.disjoint_left.2 fun x hx hxΩ ↦ by
+    have := (mem_boxDomain.1 hxΩ i).1
+    rw [hΓ x hx] at this
+    exact lt_irrefl _ this
+
 /-- The separated sine mode of a rectangular box, extended smoothly to the whole space. -/
 def boxSineMode (a b : ι → ℝ) (k : ι → ℕ) (x : EuclideanSpace ℝ ι) : ℝ :=
   ∏ i, Real.sin ((k i * Real.pi / (b i - a i)) * (x i - a i))

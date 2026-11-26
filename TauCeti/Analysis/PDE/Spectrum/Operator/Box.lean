@@ -7,8 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Spectrum.Box
 public import TauCeti.Analysis.PDE.Spectrum.Operator.PoincareFriedrichs
+import Mathlib.Analysis.Calculus.ContDiff.WithLp
+import TauCeti.Analysis.Calculus.FDeriv.Pi.Lp
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Complex.Euclidean.Plane
+import TauCeti.Analysis.SpecialFunctions.Integrals.Trigonometric.Oscillation
 import TauCeti.Analysis.Sobolev.LipschitzDomain.Examples.Planar
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.Poincare.SharpConstant
@@ -36,10 +39,10 @@ contribute nothing, since the Neumann condition allows functions constant in the
   (`TauCeti.lintegral_le_lintegral_of_forall_lintegral_update_le`) and combined with
   `(∂ᵢφ)² ≤ ‖∇φ‖²`. The inequality is a closed condition, so it passes to `H¹_Γ(Ω)`.
 * **The extremal function.** `sin (k (xᵢ - aᵢ))` vanishes on the hyperplane `xᵢ = aᵢ`, so it lies
-  in `H¹_Γ(Ω)` (in the namespace `TauCeti.W1p`,
-  `mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_forall_mem_closure_eq_zero`), and its
-  gradient `k cos (k (xᵢ - aᵢ)) eᵢ` has `‖∇u‖² = k² ‖u‖²`, since `sin²` and `cos²` have the
-  same integral over a quarter period.
+  in `H¹_Γ(Ω)` (`TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_eqOn_zero`), and
+  its gradient `k cos (k (xᵢ - aᵢ)) eᵢ` has `‖∇u‖² = k² ‖u‖²`, since `sin²` and `cos²` have the
+  same integral over a quarter period
+  (`TauCeti.integral_sin_sq_and_integral_cos_sq_quarter_period`).
 
 So `k²` is the best constant in `C ‖u‖² ≤ ‖∇u‖²` on `H¹_Γ(Ω)`, `1 / k = 2 (bᵢ - aᵢ) / π` is the
 optimal Poincaré–Friedrichs constant, and `k² = ‖(-Δ_Γ)⁻¹‖⁻¹`. When `Ω` has the Rellich property
@@ -85,30 +88,14 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
   [mu.IsAddHaarMeasure] {a b : ι → ℝ} {i : ι}
 
 omit [Fintype ι] in
-variable [DecidableEq ι] in
-/-- Moving the `i`-th coordinate of a point to `t` is the translation by `(t - xᵢ) eᵢ`. -/
-private theorem toLp_update_eq (x : ι → ℝ) (t : ℝ) :
-    WithLp.toLp 2 (Function.update x i t) =
-      WithLp.toLp 2 x + (t - x i) • EuclideanSpace.single i (1 : ℝ) := by
-  ext j
-  by_cases hj : j = i
-  · subst hj
-    simp
-  · simp [hj]
-
-variable [DecidableEq ι] in
-/-- The line through `x` parallel to the `i`-th axis meets the box in its `i`-th side exactly when
-the other coordinates of `x` lie in the box. -/
-private theorem toLp_update_mem_boxDomain_iff (x : ι → ℝ) (t : ℝ) :
-    WithLp.toLp 2 (Function.update x i t) ∈ (boxDomain a b : Set (EuclideanSpace ℝ ι)) ↔
-      t ∈ Ioo (a i) (b i) ∧ ∀ j ≠ i, x j ∈ Ioo (a j) (b j) := by
-  simp only [SetLike.mem_coe, mem_boxDomain]
-  refine ⟨fun h => ⟨by simpa using h i, fun j hj => by simpa [hj] using h j⟩,
-    fun h j => ?_⟩
-  by_cases hj : j = i
-  · subst hj
-    simpa using h.1
-  · simpa [hj] using h.2 j hj
+/-- For a continuous `F ≥ 0`, the lower integral of `ofReal ∘ F` over `(α, β)` is `ofReal` of the
+interval integral of `F`. -/
+private theorem setLIntegral_Ioo_ofReal_eq {α β : ℝ} (hαβ : α ≤ β) {F : ℝ → ℝ}
+    (hF : Continuous F) (hF0 : ∀ t, 0 ≤ F t) :
+    ∫⁻ t in Ioo α β, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in α..β, F t) := by
+  rw [intervalIntegral.integral_of_le hαβ, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal (hF.integrableOn_Icc.mono_set Ioo_subset_Icc_self)
+      (ae_of_all _ hF0)]
 
 omit [Fintype ι] in
 /-- **Wirtinger's inequality with one Dirichlet endpoint, for lower integrals.** A `C¹` function `h`
@@ -118,23 +105,14 @@ private theorem setLIntegral_Ioo_mul_sq_le_deriv_sq {α β : ℝ} (hαβ : α < 
     ∫⁻ t in Ioo α β, ENNReal.ofReal ((π / (2 * (β - α))) ^ 2 * h t ^ 2) ≤
       ∫⁻ t in Ioo α β, ENNReal.ofReal (deriv h t ^ 2) := by
   have hdc : Continuous (deriv h) := hh.continuous_deriv le_rfl
-  have hint {F : ℝ → ℝ} (hF : Continuous F) : IntegrableOn F (Ioo α β) :=
-    (hF.integrableOn_Icc (a := α) (b := β)).mono_set Ioo_subset_Icc_self
-  rw [← ofReal_integral_eq_lintegral_ofReal (f := fun t => (π / (2 * (β - α))) ^ 2 * h t ^ 2)
-      (hint (continuous_const.mul (hh.continuous.pow 2))) (ae_of_all _ fun t => by positivity),
-    ← ofReal_integral_eq_lintegral_ofReal (f := fun t => deriv h t ^ 2) (hint (hdc.pow 2))
-      (ae_of_all _ fun t => by positivity), integral_const_mul, ← integral_Ioc_eq_integral_Ioo,
-    ← integral_Ioc_eq_integral_Ioo, ← intervalIntegral.integral_of_le hαβ.le,
-    ← intervalIntegral.integral_of_le hαβ.le]
+  rw [setLIntegral_Ioo_ofReal_eq (F := fun t => (π / (2 * (β - α))) ^ 2 * h t ^ 2) hαβ.le
+      (continuous_const.mul (hh.continuous.pow 2)) fun t => by positivity,
+    setLIntegral_Ioo_ofReal_eq (F := fun t => deriv h t ^ 2) hαβ.le (hdc.pow 2)
+      fun t => by positivity,
+    intervalIntegral.integral_const_mul]
   exact ENNReal.ofReal_le_ofReal
     (AbsolutelyContinuousOnInterval.mul_integral_sq_le_integral_deriv_sq_of_eq_zero_left
       hh.contDiffOn.absolutelyContinuousOnInterval hαβ h0 ((hdc.pow 2).intervalIntegrable _ _))
-
-/-- A function continuous on the whole space is integrable on a box. -/
-private theorem integrableOn_boxDomain {F : EuclideanSpace ℝ ι → ℝ} (hF : Continuous F) :
-    IntegrableOn F (boxDomain a b) mu :=
-  (hF.continuousOn.integrableOn_compact (isBounded_boxDomain a b).isCompact_closure).mono_set
-    subset_closure
 
 variable [DecidableEq ι] in
 /-- Along the line through `x` parallel to the `i`-th axis, the integral over the box is the
@@ -168,8 +146,10 @@ private theorem setIntegral_boxDomain_le {F G : EuclideanSpace ℝ ι → ℝ} (
   have hΩ : MeasurableSet (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
     (boxDomain a b).isOpen.measurableSet
   rw [← ENNReal.ofReal_le_ofReal_iff (setIntegral_nonneg hΩ fun x _ => hG0 x),
-    ofReal_integral_eq_lintegral_ofReal (f := F) (integrableOn_boxDomain hF) (ae_of_all _ hF0),
-    ofReal_integral_eq_lintegral_ofReal (f := G) (integrableOn_boxDomain hG) (ae_of_all _ hG0),
+    ofReal_integral_eq_lintegral_ofReal (f := F) (integrableOn_boxDomain hF.continuousOn)
+      (ae_of_all _ hF0),
+    ofReal_integral_eq_lintegral_ofReal (f := G) (integrableOn_boxDomain hG.continuousOn)
+      (ae_of_all _ hG0),
     ← lintegral_indicator hΩ, ← lintegral_indicator hΩ]
   refine lintegral_le_lintegral_of_forall_lintegral_update_le mu
     (hF.measurable.ennreal_ofReal.indicator hΩ) (hG.measurable.ennreal_ofReal.indicator hΩ) i
@@ -197,24 +177,14 @@ private theorem mul_setIntegral_sq_le_setIntegral_norm_gradient_sq (hab : a i < 
   rw [← integral_const_mul]
   refine setIntegral_boxDomain_le (i := i) (continuous_const.mul (hφ.continuous.pow 2)) hgc
     (fun _ => by positivity) (fun _ => by positivity) fun x hx => ?_
-  -- The restriction `h` of `φ` to the line is `C¹`, with derivative `∂ᵢφ = Dφ eᵢ`.
-  set e : EuclideanSpace ℝ ι := EuclideanSpace.single i 1
-  set h : ℝ → ℝ := fun t => φ (WithLp.toLp 2 x + (t - x i) • e)
-  simp_rw [toLp_update_eq]
-  have hcd : ContDiff ℝ 1 fun t : ℝ => WithLp.toLp 2 x + (t - x i) • e :=
-    contDiff_const.add ((contDiff_id.sub contDiff_const).smul contDiff_const)
-  have hh (t : ℝ) : HasDerivAt h (fderiv ℝ φ (WithLp.toLp 2 x + (t - x i) • e) e) t := by
-    have hc : HasDerivAt (fun t : ℝ => WithLp.toLp 2 x + (t - x i) • e) e t := by
-      simpa using (((hasDerivAt_id t).sub_const (x i)).smul_const e).const_add (WithLp.toLp 2 x)
-    exact (hφ.differentiable one_ne_zero _).hasFDerivAt.comp_hasDerivAt t hc
-  -- Pointwise, `(∂ᵢφ)² ≤ ‖∇φ‖²`.
-  have hdle (t : ℝ) : deriv h t ^ 2 ≤ ‖∇ φ (WithLp.toLp 2 x + (t - x i) • e)‖ ^ 2 := by
-    have hb := (fderiv ℝ φ (WithLp.toLp 2 x + (t - x i) • e)).le_opNorm e
-    rw [PiLp.norm_single, norm_one, mul_one, Real.norm_eq_abs] at hb
-    rw [(hh t).deriv, norm_gradient_eq_norm_fderiv, ← sq_abs]
-    exact pow_le_pow_left₀ (abs_nonneg _) hb 2
-  exact (setLIntegral_Ioo_mul_sq_le_deriv_sq hab (hφ.comp hcd)
-    (by simpa [h, toLp_update_eq] using hφ0 x hx)).trans
+  -- The restriction `h` of `φ` to the line is `C¹`, and `|h'| = |∂ᵢφ| ≤ ‖∇φ‖`.
+  set h : ℝ → ℝ := fun t => φ (WithLp.toLp 2 (Function.update x i t))
+  have hhc : ContDiff ℝ 1 h := hφ.comp (PiLp.contDiff_toLp.comp (contDiff_update 1 x i))
+  have hdle (t : ℝ) : deriv h t ^ 2 ≤ ‖∇ φ (WithLp.toLp 2 (Function.update x i t))‖ ^ 2 := by
+    rw [← sq_abs, ← Real.norm_eq_abs, norm_deriv_eq_norm_fderiv,
+      PiLp.norm_fderiv_update φ x i t (hφ.differentiable one_ne_zero _)]
+    exact pow_le_pow_left₀ (norm_nonneg _) (PiLp.norm_apply_le _ i) 2
+  exact (setLIntegral_Ioo_mul_sq_le_deriv_sq hab hhc (hφ0 x hx)).trans
     (lintegral_mono fun t => ENNReal.ofReal_le_ofReal (hdle t))
 
 variable {Γ : Set (EuclideanSpace ℝ ι)}
@@ -254,44 +224,19 @@ theorem mul_norm_value_sq_le_norm_gradient_sq_of_mem_w1pVanishingOnSubmodule_box
 
 /-- Integrals over a box of functions of the `i`-th coordinate compare as their integrals over the
 `i`-th side do. -/
-private theorem setIntegral_comp_apply_le {F G : ℝ → ℝ} (hF : Continuous F) (hG : Continuous G)
-    (hF0 : ∀ t, 0 ≤ F t) (hG0 : ∀ t, 0 ≤ G t)
-    (h : ∫ t in Ioo (a i) (b i), F t ≤ ∫ t in Ioo (a i) (b i), G t) :
+private theorem setIntegral_comp_apply_le (hab : a i ≤ b i) {F G : ℝ → ℝ} (hF : Continuous F)
+    (hG : Continuous G) (hF0 : ∀ t, 0 ≤ F t) (hG0 : ∀ t, 0 ≤ G t)
+    (h : ∫ t in a i..b i, F t ≤ ∫ t in a i..b i, G t) :
     ∫ x in boxDomain a b, F (x i) ∂mu ≤ ∫ x in boxDomain a b, G (x i) ∂mu := by
   classical
   have hci : Continuous fun x : EuclideanSpace ℝ ι => x i := PiLp.continuous_apply 2 _ i
-  have hint {H : ℝ → ℝ} (hH : Continuous H) : IntegrableOn H (Ioo (a i) (b i)) :=
-    (hH.integrableOn_Icc (a := a i) (b := b i)).mono_set Ioo_subset_Icc_self
   refine setIntegral_boxDomain_le (i := i) (hF.comp hci) (hG.comp hci) (fun _ => hF0 _)
     (fun _ => hG0 _) fun x _ => ?_
   simp only [Function.update_self]
-  rw [← ofReal_integral_eq_lintegral_ofReal (hint hF) (ae_of_all _ hF0),
-    ← ofReal_integral_eq_lintegral_ofReal (hint hG) (ae_of_all _ hG0)]
+  rw [setLIntegral_Ioo_ofReal_eq hab hF hF0, setLIntegral_Ioo_ofReal_eq hab hG hG0]
   exact ENNReal.ofReal_le_ofReal h
 
 /-! ### The extremal function -/
-
-omit [Fintype ι] in
-/-- Over the side `(aᵢ, bᵢ)`, the squares of `sin (k (t - aᵢ))` and `cos (k (t - aᵢ))` have the same
-integral, `k = π / (2 (bᵢ - aᵢ))`: their difference integrates `cos (2k (t - aᵢ))` over half a
-period. -/
-private theorem setIntegral_Ioo_sin_sq_eq_cos_sq (hab : a i < b i) :
-    ∫ t in Ioo (a i) (b i), Real.sin (π / (2 * (b i - a i)) * (t - a i)) ^ 2 =
-      ∫ t in Ioo (a i) (b i), Real.cos (π / (2 * (b i - a i)) * (t - a i)) ^ 2 := by
-  set k := π / (2 * (b i - a i))
-  have hk0 : k ≠ 0 := (div_pos Real.pi_pos (by linarith)).ne'
-  have hkb : k * b i - k * a i = π / 2 := by
-    simp only [k]
-    field_simp
-  rw [← integral_Ioc_eq_integral_Ioo, ← integral_Ioc_eq_integral_Ioo,
-    ← intervalIntegral.integral_of_le hab.le, ← intervalIntegral.integral_of_le hab.le, eq_comm,
-    ← sub_eq_zero, ← intervalIntegral.integral_sub
-      ((by fun_prop : Continuous fun t => Real.cos (k * (t - a i)) ^ 2).intervalIntegrable _ _)
-      ((by fun_prop : Continuous fun t => Real.sin (k * (t - a i)) ^ 2).intervalIntegrable _ _)]
-  simp_rw [mul_sub]
-  rw [intervalIntegral.integral_comp_mul_sub (fun u => Real.cos u ^ 2 - Real.sin u ^ 2) hk0,
-    sub_self, hkb, integral_cos_sq_sub_sin_sq]
-  simp
 
 variable [DecidableEq ι] in
 /-- The gradient of `x ↦ sin (k (xᵢ - aᵢ))` is `k cos (k (xᵢ - aᵢ)) eᵢ`. -/
@@ -304,12 +249,6 @@ private theorem hasGradientAt_sin_mul_sub (k : ℝ) (x : EuclideanSpace ℝ ι) 
   refine h.congr_fderiv (ContinuousLinearMap.ext fun y => ?_)
   simp [EuclideanSpace.inner_single_left]
   ring
-
-/-- A box `∏ⱼ (aⱼ, bⱼ)` with `aⱼ < bⱼ` for every `j` is nonempty. -/
-private theorem boxDomain_nonempty (hab : ∀ j, a j < b j) :
-    (boxDomain a b : Set (EuclideanSpace ℝ ι)).Nonempty :=
-  ⟨WithLp.toLp 2 fun j => (a j + b j) / 2, mem_boxDomain.2 fun j =>
-    ⟨by simp; linarith [hab j], by simp; linarith [hab j]⟩⟩
 
 /-- The square of `sin (k (xᵢ - aᵢ))`, `k = π / (2 (bᵢ - aᵢ))`, has positive integral over the box
 `∏ⱼ (aⱼ, bⱼ)`: it is positive there, since `0 < k (xᵢ - aᵢ) < π / 2`. -/
@@ -328,7 +267,7 @@ private theorem setIntegral_boxDomain_sin_sq_pos (hab : ∀ j, a j < b j) :
   rw [setIntegral_pos_iff_support_of_nonneg_ae (ae_of_all _ fun x => by positivity)
       (integrableOn_boxDomain (by fun_prop)),
     inter_eq_right.2 fun x hx => (hpos x hx).ne']
-  exact (boxDomain a b).isOpen.measure_pos mu (boxDomain_nonempty hab)
+  exact (boxDomain a b).isOpen.measure_pos mu (nonempty_boxDomain hab)
 
 /-- **The extremal function.** If `Γ` lies in the hyperplane `xᵢ = aᵢ`, the class of
 `sin (k (xᵢ - aᵢ))`, `k = π / (2 (bᵢ - aᵢ))`, lies in `H¹_Γ(Ω)` for the box `Ω = ∏ⱼ (aⱼ, bⱼ)`, is
@@ -341,7 +280,6 @@ private theorem exists_mem_w1pVanishingOnSubmodule_boxDomain_norm_gradient_sq_eq
   set k := π / (2 * (b i - a i))
   set Ω : Set (EuclideanSpace ℝ ι) := (boxDomain a b : Set (EuclideanSpace ℝ ι))
   set s : EuclideanSpace ℝ ι → ℝ := fun x => Real.sin (k * (x i - a i))
-  have hci : Continuous fun x : EuclideanSpace ℝ ι => x i := PiLp.continuous_apply 2 _ i
   have hs : ContDiff ℝ 1 s := Real.contDiff_sin.comp
     (contDiff_const.mul ((EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).contDiff.sub
       contDiff_const))
@@ -350,11 +288,9 @@ private theorem exists_mem_w1pVanishingOnSubmodule_boxDomain_norm_gradient_sq_eq
     (isBounded_boxDomain a b).isCompact_closure subset_closure (subset_univ _)
   -- `s` vanishes on the hyperplane `xᵢ = aᵢ`, which contains `closure Γ`.
   have hmem : u ∈ w1pVanishingOnSubmodule mu (boxDomain a b) 2 Γ := by
-    refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_forall_mem_closure_eq_zero
+    refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_eqOn_zero
       (by norm_num) (isBounded_boxDomain a b) (hs.locallyLipschitz) (fun x hx => ?_) hv
-    have hxi : x i = a i :=
-      closure_minimal (fun y hy => hΓ y hy) (isClosed_eq hci continuous_const) hx
-    simp [s, hxi]
+    simp [s, hΓ x hx]
   -- The two squared norms are integrals of functions of `xᵢ` over the box.
   have hval : ‖W1p.value u‖ ^ 2 = ∫ x in Ω, (fun t => Real.sin (k * (t - a i)) ^ 2) (x i) ∂mu :=
     L2.norm_sq_eq_integral_sq_of_ae_eq hv
@@ -362,15 +298,13 @@ private theorem exists_mem_w1pVanishingOnSubmodule_boxDomain_norm_gradient_sq_eq
       ∫ x in Ω, (fun t => (k * Real.cos (k * (t - a i))) ^ 2) (x i) ∂mu := by
     rw [← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
     refine integral_congr_ae (hg.mono fun x hx => ?_)
-    simp only [hx, s]
-    rw [(hasGradientAt_sin_mul_sub k x).gradient, norm_smul, PiLp.norm_single, norm_one, mul_one,
-      Real.norm_eq_abs, sq_abs]
+    simp [hx, s, (hasGradientAt_sin_mul_sub k x).gradient, norm_smul, mul_pow, PiLp.norm_single]
   -- Along the `i`-th side, `∫ cos² = ∫ sin²`.
-  have hside := setIntegral_Ioo_sin_sq_eq_cos_sq (a := a) (b := b) (i := i) (hab i)
-  have hside' : ∫ t in Ioo (a i) (b i), (k * Real.cos (k * (t - a i))) ^ 2 =
-      ∫ t in Ioo (a i) (b i), k ^ 2 * Real.sin (k * (t - a i)) ^ 2 := by
+  obtain ⟨hsin, hcos⟩ := integral_sin_sq_and_integral_cos_sq_quarter_period (hab i)
+  have hside : ∫ t in a i..b i, (k * Real.cos (k * (t - a i))) ^ 2 =
+      ∫ t in a i..b i, k ^ 2 * Real.sin (k * (t - a i)) ^ 2 := by
     simp_rw [mul_pow]
-    rw [integral_const_mul, integral_const_mul, hside]
+    rw [intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul, hcos, hsin]
   have hcs : Continuous fun t => (k * Real.cos (k * (t - a i))) ^ 2 := by fun_prop
   have hss : Continuous fun t => k ^ 2 * Real.sin (k * (t - a i)) ^ 2 := by fun_prop
   refine ⟨u, hmem, ?_, ?_⟩
@@ -378,10 +312,10 @@ private theorem exists_mem_w1pVanishingOnSubmodule_boxDomain_norm_gradient_sq_eq
     exact setIntegral_boxDomain_sin_sq_pos hab
   · rw [hgrad, hval, ← integral_const_mul]
     exact le_antisymm
-      (setIntegral_comp_apply_le hcs hss (fun _ => by positivity) (fun _ => by positivity)
-        hside'.le)
-      (setIntegral_comp_apply_le hss hcs (fun _ => by positivity) (fun _ => by positivity)
-        hside'.ge)
+      (setIntegral_comp_apply_le (hab i).le hcs hss (fun _ => by positivity)
+        (fun _ => by positivity) hside.le)
+      (setIntegral_comp_apply_le (hab i).le hss hcs (fun _ => by positivity)
+        (fun _ => by positivity) hside.ge)
 
 /-! ### The sharp constants -/
 
@@ -420,14 +354,6 @@ theorem isLeast_norm_value_le_mul_norm_gradient_boxDomain (hab : ∀ j, a j < b 
 
 /-! ### The first mixed eigenvalue -/
 
-/-- A part of the hyperplane `xᵢ = aᵢ` misses the box `∏ⱼ (aⱼ, bⱼ)`. -/
-private theorem disjoint_boxDomain (hΓ : ∀ x ∈ Γ, x i = a i) :
-    Disjoint Γ (boxDomain a b : Set (EuclideanSpace ℝ ι)) :=
-  Set.disjoint_left.2 fun x hx hxΩ => by
-    have := (mem_boxDomain.1 hxΩ i).1
-    rw [hΓ x hx] at this
-    exact lt_irrefl _ this
-
 variable [DecidableEq ι] in
 /-- **The norm of the inverse of the mixed Laplacian on a box with a Dirichlet face.** Under the
 hypotheses of `TauCeti.PDE.isGreatest_mul_norm_value_sq_le_norm_gradient_sq_boxDomain`, `0` is a
@@ -440,7 +366,7 @@ theorem inv_norm_resolvent_mixedOperator_laplacian_zero_boxDomain (hab : ∀ j, 
     ‖(mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := boxDomain a b)
       (1 : Matrix ι ι ℝ)) Γ).resolvent 0‖⁻¹ = (π / (2 * (b i - a i))) ^ 2 :=
   (isGreatest_inv_norm_resolvent_mixedOperator_laplacian_zero_of_poincare (disjoint_boxDomain hΓ)
-    (boxDomain_nonempty hab)
+    (nonempty_boxDomain hab)
     (isLeast_norm_value_le_mul_norm_gradient_boxDomain (mu := mu) hab hΓ hface).1.2).unique
     (isGreatest_mul_norm_value_sq_le_norm_gradient_sq_boxDomain hab hΓ hface)
 
@@ -458,7 +384,7 @@ theorem isLeast_spectrum_mixedOperator_laplacian_boxDomain (hab : ∀ j, a j < b
       (Omega := boxDomain a b) (1 : Matrix ι ι ℝ)) Γ).spectrum ((π / (2 * (b i - a i))) ^ 2) := by
   rw [← inv_norm_resolvent_mixedOperator_laplacian_zero_boxDomain (mu := mu) hab hΓ hface]
   exact isLeast_spectrum_mixedOperator_laplacian_of_poincare (disjoint_boxDomain hΓ)
-    (boxDomain_nonempty hab)
+    (nonempty_boxDomain hab)
     (isLeast_norm_value_le_mul_norm_gradient_boxDomain (mu := mu) hab hΓ hface).1.2 hK
 
 /-! ### The unit square -/

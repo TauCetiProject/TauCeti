@@ -25,8 +25,8 @@ measure `(u - k)⁺` is the positive part of `u - k`, and taking positive parts 
 
 The same truncation shows that a function vanishing on a set `Γ` lies in the space `W^{1,p}_Γ(Ω)`
 of Sobolev functions vanishing on `Γ` (`TauCeti.w1pVanishingOnSubmodule`), when it agrees with a
-locally Lipschitz function on the whole space that is zero on `closure Γ`: its truncations at
-positive levels vanish near `closure Γ`.
+locally Lipschitz function on the whole space that is zero on `Γ`, hence on `closure Γ`: its
+truncations at positive levels vanish near `closure Γ`.
 
 ## Main declarations
 
@@ -41,9 +41,9 @@ positive levels vanish near `closure Γ`.
   lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPart_add_mem_w1p0Submodule`: the positive part of `ψ + G`, for `ψ ∈ W^{1,p}_0(Ω)`
   and `G` continuous up to the boundary and nonpositive there, lies in `W^{1,p}_0(Ω)`.
-* `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_forall_mem_closure_eq_zero`: a
-  Sobolev function on a bounded domain that agrees with a locally Lipschitz function vanishing on
-  `closure Γ` lies in `W^{1,p}_Γ(Ω)`.
+* `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_eqOn_zero`: a Sobolev function
+  on a bounded domain that agrees with a locally Lipschitz function vanishing on `Γ` lies in
+  `W^{1,p}_Γ(Ω)`.
 
 ## References
 
@@ -159,9 +159,7 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
     W1p.posPart_mem_of_forall_posPartAbove_mem hp hb.measure_lt_top.ne
       (w1p0Submodule mu Omega p).isClosed fun _ hk =>
         posPartAbove_mem_w1p0Submodule_of_continuousOn_closure hp hb hf hf0 hv hk
-  have hneg : W1p.value (-u) =ᵐ[mu.restrict Omega] -g := by
-    filter_upwards [hu, W1p.value_neg_ae u] with x hx hnx
-    rw [hnx, Pi.neg_apply, hx, Pi.neg_apply]
+  have hneg : W1p.value (-u) =ᵐ[mu.restrict Omega] -g := (W1p.value_neg_ae u).trans hu.neg
   rw [← W1p.posPart_sub_posPart_neg hp u]
   exact (w1p0Submodule mu Omega p).toSubmodule.sub_mem (hpos hg hg0 hu)
     (hpos hg.neg (fun x hx => by simp [hg0 x hx]) hneg)
@@ -242,20 +240,21 @@ private theorem posPartAbove_mem_w1pVanishingOnSubmodule_of_locallyLipschitz (hp
   filter_upwards [W1p.value_posPartAbove_ae hp hk.le u, hu,
     ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxg hxO
   have h1 : psi x = 1 := interior_subset (hpsi1 (subset_closure hxO))
-  have hgM : g x - k ≤ M :=
-    ((le_abs_self _).trans (hC x (subset_closure hxO))).trans (le_max_left _ _) |>.trans'
-      (by linarith)
+  have hgM : g x - k ≤ M := calc
+    g x - k ≤ |g x| := by linarith [le_abs_self (g x)]
+    _ ≤ C := hC x (subset_closure hxO)
+    _ ≤ M := le_max_left C 0
   rw [hx, hxg, hGx, h1, mul_one, min_eq_left (max_le hgM (le_max_right _ _))]
 
 /-- **A Sobolev function equal to a locally Lipschitz function vanishing on `Γ` lies in
 `W^{1,p}_Γ(Ω)`.** Let `Ω` be bounded and `1 ≤ p < ∞`. If `u ∈ W^{1,p}(Ω)` agrees almost everywhere
-on `Ω` with a locally Lipschitz function `g` on the whole space that is zero on `closure Γ`, then
+on `Ω` with a locally Lipschitz function `g` on the whole space that is zero on `Γ`, then
 `u ∈ W^{1,p}_Γ(Ω)`. No regularity of `Ω` or `Γ` is assumed, and unlike
 `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz`, `g` need not vanish near `Γ` nor
 have compact support. -/
-theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_forall_mem_closure_eq_zero
+theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_eqOn_zero
     (hp : p ≠ ∞) (hb : Bornology.IsBounded (Omega : Set E)) {g : E → ℝ} (hg : LocallyLipschitz g)
-    (hg0 : ∀ x ∈ closure Γ, g x = 0) {u : W1p mu Omega p}
+    (hg0 : EqOn g 0 Γ) {u : W1p mu Omega p}
     (hu : W1p.value u =ᵐ[mu.restrict Omega] g) : u ∈ w1pVanishingOnSubmodule mu Omega p Γ := by
   -- `u⁺` and `(-u)⁺` are limits of truncations, which vanish near `closure Γ`.
   have hpos {v : W1p mu Omega p} {f : E → ℝ} (hf : LocallyLipschitz f)
@@ -264,12 +263,12 @@ theorem W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_forall_mem_closur
     W1p.posPart_mem_of_forall_posPartAbove_mem hp hb.measure_lt_top.ne
       (w1pVanishingOnSubmodule mu Omega p Γ).isClosed fun _ hk =>
         posPartAbove_mem_w1pVanishingOnSubmodule_of_locallyLipschitz hp hb hf hf0 hv hk
-  have hneg : W1p.value (-u) =ᵐ[mu.restrict Omega] -g := by
-    filter_upwards [hu, W1p.value_neg_ae u] with x hx hnx
-    rw [hnx, Pi.neg_apply, hx, Pi.neg_apply]
+  have hneg : W1p.value (-u) =ᵐ[mu.restrict Omega] -g := (W1p.value_neg_ae u).trans hu.neg
+  -- By continuity, `g` vanishes on `closure Γ`.
+  have hgc := hg0.closure hg.continuous continuous_const
   rw [← W1p.posPart_sub_posPart_neg hp u]
-  exact (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule.sub_mem (hpos hg hg0 hu)
-    (hpos hg.neg (fun x hx => by simp [hg0 x hx]) hneg)
+  exact (w1pVanishingOnSubmodule mu Omega p Γ).toSubmodule.sub_mem (hpos hg hgc hu)
+    (hpos hg.neg (fun x hx => by simp [hgc hx]) hneg)
 
 end BoundaryPart
 
