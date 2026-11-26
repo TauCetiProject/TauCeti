@@ -9,6 +9,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.RingTheory.Localization.Away.Basic
+-- The statements only need the public imports above.
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Integrally closed algebras and subrings
@@ -323,9 +325,7 @@ theorem IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero {p : R[X]} (hp : p.Mon
     have h' := scaleRoots_eval₂_mul (p := p) f (f a / f b) b
     rw [mul_div_cancel₀ _ hfb, eval₂_at_apply, h, map_zero, eq_comm, mul_eq_zero] at h'
     exact h'.resolve_left (pow_ne_zero _ hfb)
-  obtain ⟨c, hc⟩ := IsIntegrallyClosed.isIntegral_iff.mp hint
-  exact ⟨c, IsFractionRing.injective R (FractionRing R) <| by
-    rw [map_mul, hc, mul_div_cancel₀ _ hfb]⟩
+  exact TauCeti.dvd_of_isIntegral_div (L := FractionRing R) hb hint
 
 namespace TauCeti
 
