@@ -146,6 +146,9 @@ torus.
   fixed points are the preimage of the apex, which is an extreme point of the image.
 * `TauCeti.zero_notMem_interior_range_weightMomentMap`: for a nonempty family of linearly
   independent weights, the apex is not an interior point of the image.
+* `TauCeti.weightMomentMap_eq_zero_iff_of_pos`: if one `ξ` makes every weight positive, the zero
+  level is the origin; for instance for the weights `1` and `1`
+  (`TauCeti.weightMomentMap_id_id_eq_zero_iff`).
 * `TauCeti.weightRotation_id_neg_id_eq_id_iff`, `TauCeti.range_weightMomentMap_id_neg_id`,
   `TauCeti.zero_mem_interior_range_weightMomentMap_id_neg_id`: the effective circle action on
   `ℂ²` with weights `1` and `-1` has the whole line as moment image, with the apex in its
@@ -876,6 +879,27 @@ theorem weightMomentMap_eq_zero_iff {α : ι → StrongDual ℝ 𝔱} (hα : Lin
   refine ⟨fun h ↦ ⟨fun j ↦ ?_, fun j ↦ ?_⟩, fun h j ↦ by simp [h.1 j, h.2 j]⟩ <;>
     nlinarith [h j, sq_nonneg (x.1 j), sq_nonneg (x.2 j)]
 
+/-- If some `ξ ∈ 𝔱` makes every weight positive, the origin is the only point of `ℂ^ι` mapped
+to `0`: evaluated at `ξ`, the moment map is `-½ Σ_j α_j(ξ) |z_j|²`, a negatively weighted sum of
+the `|z_j|²`. -/
+theorem weightMomentMap_eq_zero_iff_of_pos {α : ι → StrongDual ℝ 𝔱} {ξ : 𝔱}
+    (hξ : ∀ j, 0 < α j ξ) (x : EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) :
+    weightMomentMap α x = 0 ↔ x = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ weightMomentMap_zero α⟩
+  have hsum : ∑ j, α j ξ * (x.1 j ^ 2 + x.2 j ^ 2) = 0 := by
+    have hξx := congrArg (· ξ) h
+    simp only [weightMomentMap_apply, zero_apply] at hξx
+    linarith
+  have hx (j : ι) : x.1 j ^ 2 + x.2 j ^ 2 = 0 :=
+    (mul_eq_zero.1 ((Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦
+      mul_nonneg (hξ j).le (by positivity)).1 hsum j (Finset.mem_univ j))).resolve_left
+      (hξ j).ne'
+  ext j
+  · exact pow_eq_zero_iff two_ne_zero |>.1
+      ((add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).1 (hx j)).1
+  · exact pow_eq_zero_iff two_ne_zero |>.1
+      ((add_eq_zero_iff_of_nonneg (sq_nonneg _) (sq_nonneg _)).1 (hx j)).2
+
 /-- **Fixed points lie over the apex.** For linearly independent weights, a point of `ℂ^ι` is
 fixed by the whole action of `𝔱` exactly when its moment image is the apex `0` of the moment
 cone, and then it is the origin. -/
@@ -933,6 +957,16 @@ theorem weightRotation_id_neg_id_eq_id_iff (ξ : ℝ) :
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, ContinuousLinearMap.id_apply, neg_apply]
   refine ⟨fun h ↦ h.1, fun ⟨k, hk⟩ ↦ ⟨⟨k, hk⟩, ⟨-k, by push_cast; linear_combination -hk⟩⟩⟩
 
+/-- The moment map of the circle action with the weights `1` and `-1` is
+`ξ ↦ -½ ξ (|z₀|² - |z₁|²)`. -/
+theorem weightMomentMap_id_neg_id_apply (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2))
+    (ξ : ℝ) :
+    weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x ξ =
+      -(1 / 2) * ξ * ((x.1 0 ^ 2 + x.2 0 ^ 2) - (x.1 1 ^ 2 + x.2 1 ^ 2)) := by
+  simp only [weightMomentMap_apply, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, ContinuousLinearMap.id_apply, neg_apply]
+  ring
+
 /-- **The apex can be interior beyond complexity zero.** For the effective circle action on `ℂ²`
 with the weights `1` and `-1` (`TauCeti.weightRotation_id_neg_id_eq_id_iff`), the image of the
 moment map is the whole dual line. -/
@@ -942,15 +976,9 @@ theorem range_weightMomentMap_id_neg_id :
   refine Set.eq_univ_of_forall fun ν ↦ ?_
   -- A covector on `ℝ` is determined by its value `c` at `1`. Realize `c` by the coordinates
   -- `√(max (-2c) 0)` and `√(max (2c) 0)`, one of which vanishes.
-  have hμ (x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)) :
-      weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ] x 1 =
-        -(1 / 2) * ((x.1 0 ^ 2 + x.2 0 ^ 2) - (x.1 1 ^ 2 + x.2 1 ^ 2)) := by
-    simp only [weightMomentMap_apply, Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, ContinuousLinearMap.id_apply, neg_apply]
-    ring
   refine ⟨(WithLp.toLp 2 ![√(-(2 * ν 1)), √(2 * ν 1)], 0), ContinuousLinearMap.ext_ring ?_⟩
-  simp only [hμ, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-    PiLp.zero_apply, Real.sq_sqrt']
+  simp only [weightMomentMap_id_neg_id_apply, mul_one, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, PiLp.zero_apply, Real.sq_sqrt']
   linear_combination (1 / 2) * max_zero_sub_max_neg_zero_eq_self (2 * ν 1)
 
 /-- **The apex can be interior beyond complexity zero.** For the effective circle action on `ℂ²`
@@ -963,6 +991,14 @@ theorem zero_mem_interior_range_weightMomentMap_id_neg_id :
       (Set.range (weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, -ContinuousLinearMap.id ℝ ℝ])) := by
   rw [range_weightMomentMap_id_neg_id, interior_univ]
   exact Set.mem_univ _
+
+/-- For the circle action on `ℂ²` with the weights `1` and `1`, the zero level of the moment map is
+the origin: `|z₀|² + |z₁|²` vanishes only at the fixed point, so `0` is the maximum of
+`μ = -½ (|z₀|² + |z₁|²)`, attained only there. -/
+theorem weightMomentMap_id_id_eq_zero_iff
+    {x : EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin 2)} :
+    weightMomentMap ![ContinuousLinearMap.id ℝ ℝ, ContinuousLinearMap.id ℝ ℝ] x = 0 ↔ x = 0 :=
+  weightMomentMap_eq_zero_iff_of_pos (ξ := 1) (fun j ↦ by fin_cases j <;> simp) x
 
 /-! ### Rotations by multiples of `2π` -/
 
