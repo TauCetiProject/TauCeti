@@ -287,7 +287,7 @@ private theorem totallyBounded_image_restrictValue [FiniteDimensional ℝ V]
     have h : ‖jetLp 2 (testSection F₀ F₁) ξ‖ ≤ 1 := le_of_lt hξ
     rw [jetLp_apply 2, Lp.norm_toLp] at h
     simpa using
-      (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.property).eLpNorm_ne_top zero_le_one).2 h
+      (ENNReal.le_ofReal_iff_toReal_le (memLp_jet ξ.property 2).eLpNorm_ne_top zero_le_one).2 h
   have hmem : MemLp (fun z ↦ χ z • (ξ : ℝ × ℝ → V) z) 2 volume :=
     (hest _ hc).2.1.trans_lt (hξ1.trans_lt ENNReal.one_lt_top)
   obtain ⟨y, hy, hyd⟩ := mem_iUnion₂.1

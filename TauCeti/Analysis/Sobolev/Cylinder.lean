@@ -60,8 +60,9 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   equivalence of `H1 V`.
 * `TauCeti.CylinderSobolev.H1` is the closure of the jets of test sections: the completion of the
   test sections in the `W^{1,2}` norm, realized inside `L²` as a closed subspace, hence complete.
-  It is the case `p = 2` of the closure `TauCeti.CylinderSobolev.W1p V p` of the `Lᵖ` jets, the
-  Sobolev space `W^{1,p}(ℝ × S¹, V)`, whose value map is `TauCeti.CylinderSobolev.valueL p`.
+  It is the case `p = 2` of the closure `TauCeti.CylinderSobolev.W1p V p` of the `Lᵖ` jets, for
+  `1 ≤ p < ∞` the Sobolev space `W^{1,p}(ℝ × S¹, V)`, whose value map is
+  `TauCeti.CylinderSobolev.valueL p`.
   An element is an `L²` jet `(ξ, ξ_s, ξ_t)`, and it is determined by its value `ξ`
   (`TauCeti.CylinderSobolev.valueL_injective`): `H1` lies in the Sobolev space of the strip with
   no boundary conditions (`TauCeti.CylinderSobolev.H1_le_strip`), whose elements are determined
@@ -273,9 +274,10 @@ instance : IsTranslationInvariant (testSection V) :=
   ⟨fun _ hξ a ↦ comp_add_right_mem_testSection hξ a⟩
 
 variable (V) in
-/-- The Sobolev space `W^{1,p}(ℝ × S¹, V)`: the closure in `Lᵖ(ℝ × [0, 1], V × V × V)` of the
-jets of test sections, that is, the completion of the test sections in the `W^{1,p}` norm. An
-element is an `Lᵖ` jet `(ξ, ξ_s, ξ_t)`. For `p = 2` it is `TauCeti.CylinderSobolev.H1`. -/
+/-- The closure in `Lᵖ(ℝ × [0, 1], V × V × V)` of the jets of test sections. For `1 ≤ p < ∞` it
+is the Sobolev space `W^{1,p}(ℝ × S¹, V)`, the completion of the test sections in the `W^{1,p}`
+norm; for `p = ∞` it is only the closure of the test sections, not `W^{1,∞}`. An element is an
+`Lᵖ` jet `(ξ, ξ_s, ξ_t)`. For `p = 2` it is `TauCeti.CylinderSobolev.H1`. -/
 abbrev W1p (p : ℝ≥0∞) [Fact (1 ≤ p)] : Submodule ℝ (Lp (V × V × V) p stripMeasure) :=
   jetClosure p (testSection V)
 

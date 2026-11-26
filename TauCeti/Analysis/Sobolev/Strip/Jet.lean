@@ -77,9 +77,12 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   `TauCeti.StripSobolev.translateLp_symm`).
 * For a space `S` of sections with jets in `Lᵖ` (`TauCeti.StripSobolev.HasLpJets`),
   `TauCeti.StripSobolev.jetLp p S` is the `Lᵖ` jet and `TauCeti.StripSobolev.jetClosure p S` the
-  closure of the `Lᵖ` jets, the Sobolev space `W^{1,p}` shared by the strip and the cylinder. When
-  `S` is translation invariant (`TauCeti.StripSobolev.IsTranslationInvariant`), translation is a
-  linear isometric equivalence of `jetClosure p S` (`TauCeti.StripSobolev.translate`).
+  closure of the `Lᵖ` jets. For `1 ≤ p < ∞` it is the Sobolev space `W^{1,p}` shared by the strip
+  and the cylinder; for `p = ∞` it is only the closure of the jets of `S`, not `W^{1,∞}`. The jets
+  of the elements of `S` are dense in it (`TauCeti.StripSobolev.toJetClosure`,
+  `TauCeti.StripSobolev.denseRange_toJetClosure`). When `S` is translation invariant
+  (`TauCeti.StripSobolev.IsTranslationInvariant`), translation is a linear isometric equivalence
+  of `jetClosure p S` (`TauCeti.StripSobolev.translate`).
 -/
 
 public section
@@ -607,10 +610,11 @@ theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
 /-! ### The `Lᵖ` jets of a space of sections and their closure -/
 
 /-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with jet in `Lᵖ` of the
-strip. For `1 ≤ p` the closure of their `Lᵖ` jets (`TauCeti.StripSobolev.jetClosure`) is a
+strip. For `1 ≤ p < ∞` the closure of their `Lᵖ` jets (`TauCeti.StripSobolev.jetClosure`) is a
 Sobolev space `W^{1,p}` of sections over the strip, such as the space
 `TauCeti.CylinderSobolev.W1p` of the cylinder and, for `p = 2`, the space
-`TauCeti.StripSobolev.H1` of the strip with boundary conditions. -/
+`TauCeti.StripSobolev.H1` of the strip with boundary conditions. For `p = ∞` it is only the
+closure of the jets of `S`, a proper subspace of `W^{1,∞}` in general. -/
 class HasLpJets (p : ℝ≥0∞) (S : Submodule ℝ (ℝ × ℝ → V)) : Prop where
   /-- The elements of `S` are differentiable. -/
   differentiable : ∀ ξ ∈ S, Differentiable ℝ ξ
@@ -735,11 +739,48 @@ theorem jetLp_mem_jetClosure (ξ : S) : jetLp p S ξ ∈ jetClosure p S :=
   Submodule.le_topologicalClosure _ (LinearMap.mem_range_self _ ξ)
 
 variable (p S) in
+/-- The jet of an element of `S`, as an element of `jetClosure p S`. -/
+def toJetClosure : S →ₗ[ℝ] jetClosure p S :=
+  (jetLp p S).codRestrict (jetClosure p S) jetLp_mem_jetClosure
+
+/-- The jet of an element of `S` in `jetClosure p S` is its `Lᵖ` jet. -/
+@[simp]
+theorem coe_toJetClosure (ξ : S) :
+    (toJetClosure p S ξ : Lp (V × V × V) p stripMeasure) = jetLp p S ξ :=
+  (rfl)
+
+/-- The jet of an element of `S` in `jetClosure p S` is its `Lᵖ` jet, with the proof that it lies
+in `jetClosure p S`. -/
+theorem toJetClosure_apply (ξ : S) :
+    toJetClosure p S ξ = ⟨jetLp p S ξ, jetLp_mem_jetClosure ξ⟩ :=
+  (rfl)
+
+/-- The norm of the jet of an element of `S` in `jetClosure p S` is the `Lᵖ` norm of its jet on
+the strip. -/
+theorem norm_toJetClosure (ξ : S) :
+    ‖toJetClosure p S ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) p stripMeasure).toReal := by
+  rw [← Submodule.norm_coe, coe_toJetClosure, norm_jetLp]
+
+variable (p S) in
 /-- The jets of the elements of `S` are dense in `jetClosure p S`. -/
-theorem denseRange_codRestrict_jetLp :
-    DenseRange ((jetLp p S).codRestrict (jetClosure p S) jetLp_mem_jetClosure) := by
+theorem denseRange_toJetClosure : DenseRange (toJetClosure p S) := by
   rw [DenseRange, Subtype.dense_iff, ← range_comp]
   exact (coe_jetClosure p S).subset
+
+/-- A closed subset of `jetClosure p S` containing the jets of all elements of `S` is
+everything. -/
+@[elab_as_elim]
+theorem jetClosure_induction {P : jetClosure p S → Prop} (hP : IsClosed {x | P x})
+    (h : ∀ ξ : S, P (toJetClosure p S ξ)) (x : jetClosure p S) : P x :=
+  (denseRange_toJetClosure p S).induction_on x hP h
+
+/-- A closed relation on `jetClosure p S` holding for the jets of all pairs of elements of `S`
+holds for all pairs. -/
+theorem jetClosure_induction₂ {P : jetClosure p S → jetClosure p S → Prop}
+    (hP : IsClosed {x : jetClosure p S × jetClosure p S | P x.1 x.2})
+    (h : ∀ ξ η : S, P (toJetClosure p S ξ) (toJetClosure p S η)) (x y : jetClosure p S) :
+    P x y :=
+  (denseRange_toJetClosure p S).induction_on₂ hP h x y
 
 end JetLp
 
@@ -805,6 +846,13 @@ def translate (a : ℝ) : jetClosure p S ≃ₗᵢ[ℝ] jetClosure p S :=
 theorem coe_translate (a : ℝ) (x : jetClosure p S) :
     (translate p S a x : Lp (V × V × V) p stripMeasure) = translateLp a x :=
   (rfl)
+
+/-- Translation of the jet of an element of `S` is the jet of its translate. -/
+@[simp]
+theorem translate_toJetClosure (a : ℝ) (ξ : S) :
+    translate p S a (toJetClosure p S ξ) =
+      toJetClosure p S ⟨_, IsTranslationInvariant.comp_add_right_mem _ ξ.property a⟩ :=
+  Subtype.ext <| by rw [coe_translate, coe_toJetClosure, coe_toJetClosure, translateLp_jetLp]
 
 /-- The inverse of translation by `a` on `jetClosure p S` is translation by `-a`. -/
 @[simp]

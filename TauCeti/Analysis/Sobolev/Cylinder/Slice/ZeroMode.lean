@@ -271,7 +271,7 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     sliceAverageL x ∈ range (zeroModeL V) := by
   have hcl : IsClosed {x : H1 V | sliceAverageL x ∈ range (zeroModeL V)} :=
     isClosed_range_zeroModeL.preimage sliceAverageL.continuous
-  refine (denseRange_codRestrict_jetLp 2 (testSection V)).induction_on x hcl fun ξ ↦ ?_
+  refine jetClosure_induction hcl (fun ξ ↦ ?_) x
   -- The slice average of the jet of `ξ` is the jet of the section `(s, t) ↦ φ(s)`.
   obtain ⟨hψ, -, R, hR⟩ := mem_testSection_iff.1 (sliceAverage_mem_testSection ξ.property)
   set φ : ℝ → V := fun s ↦ sliceAverage (ξ : ℝ × ℝ → V) (s, 0)
@@ -289,10 +289,7 @@ theorem sliceAverageL_mem_range_zeroModeL (x : H1 V) :
     (hφ.continuous.memLp_of_hasCompactSupport hφc)
     ((hφ.continuous_fderiv two_ne_zero).memLp_of_hasCompactSupport (hφc.fderiv (𝕜 := ℝ)))
   refine ⟨u, ?_⟩
-  have hξ : (jetLp 2 (testSection V)).codRestrict (H1 V) jetLp_mem_jetClosure ξ =
-      ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ :=
-    Subtype.ext (LinearMap.codRestrict_apply _ _ ξ)
-  rw [zeroModeL_eq_jetLp hφ hφc hu, hξ, sliceAverageL_jetLp]
+  rw [zeroModeL_eq_jetLp hφ hφc hu, toJetClosure_apply, sliceAverageL_jetLp]
   congr 3
   exact hψφ.symm
 

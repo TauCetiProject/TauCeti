@@ -24,7 +24,7 @@ packages the jets of test sections as elements of `W^{1,p}`
 `ℝ × [0, 1]`, a fundamental domain of the cylinder, and does not single out a compact piece of
 it: translation along the cylinder, `TauCeti.StripSobolev.translate p (testSection V) a`, is a
 linear isometric equivalence of `W^{1,p}`, and it sends the jet of a test section to the jet of
-its translate (`TauCeti.CylinderSobolev.translate_toW1p`).
+its translate (`TauCeti.StripSobolev.translate_toJetClosure`).
 
 Since the cylinder has dimension two, for `p > 2` Morrey's estimate
 (`TauCeti.CylinderSobolev.exists_enorm_le_mul_eLpNorm_jet`) bounds a test section pointwise by the
@@ -53,7 +53,7 @@ coefficients `J(u)` and `X_K(u)`, and the quadratic estimate for the Floer opera
 (`exists_pos_forall_eLpNorm_floerOperator_sub_floerOperator_sub_floerLinearization_le_jet`, in
 the namespace `TauCeti.SymplecticForm`) is stated with the `Lᵖ` norms of jets, which are the
 norms of test sections in `W^{1,p}`
-(`TauCeti.CylinderSobolev.norm_toW1p`). For `p ≤ 2` Morrey's estimate fails, and
+(`TauCeti.StripSobolev.norm_toJetClosure`). For `p ≤ 2` Morrey's estimate fails, and
 `continuousValue p` is `0` by the convention of `LinearMap.extendOfNorm`.
 
 ## Main definitions
@@ -80,8 +80,8 @@ open scoped ENNReal NNReal BoundedContinuousFunction
 
 namespace TauCeti.CylinderSobolev
 
-open StripSobolev (jet jet_apply stripMeasure jetLp jetClosure coeFn_jetLp norm_jetLp
-  jetLp_mem_jetClosure denseRange_codRestrict_jetLp coe_translate translateLp_jetLp
+open StripSobolev (jet jet_apply stripMeasure toJetClosure coe_toJetClosure
+  norm_toJetClosure denseRange_toJetClosure jetClosure_induction translate_toJetClosure coeFn_jetLp
   exists_forall_mem_strip_norm_le)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
@@ -92,46 +92,22 @@ section W1p
 
 variable (p : ℝ≥0∞) [Fact (1 ≤ p)]
 
-/-- The jet of a test section, as an element of `W1p V p`. -/
-def toW1p : testSection V →ₗ[ℝ] W1p V p :=
-  (jetLp p (testSection V)).codRestrict (W1p V p) jetLp_mem_jetClosure
+/-- The jet of a test section, as an element of `W1p V p`: the map
+`TauCeti.StripSobolev.toJetClosure` for the test sections, whose coercion, norm, density,
+induction and translation lemmas (`TauCeti.StripSobolev.coe_toJetClosure`,
+`TauCeti.StripSobolev.norm_toJetClosure`, `TauCeti.StripSobolev.denseRange_toJetClosure`,
+`TauCeti.StripSobolev.jetClosure_induction`, `TauCeti.StripSobolev.translate_toJetClosure`) apply
+to it. -/
+abbrev toW1p : testSection V →ₗ[ℝ] W1p V p :=
+  toJetClosure p (testSection V)
 
 variable {p}
-
-@[simp]
-theorem coe_toW1p (ξ : testSection V) :
-    (toW1p p ξ : Lp (V × V × V) p stripMeasure) = jetLp p (testSection V) ξ :=
-  (rfl)
-
-/-- The norm of the jet of a test section in `W1p V p` is the `Lᵖ` norm of its jet on the
-strip. -/
-theorem norm_toW1p (ξ : testSection V) :
-    ‖toW1p p ξ‖ = (eLpNorm (jet (ξ : ℝ × ℝ → V)) p stripMeasure).toReal := by
-  rw [← Submodule.norm_coe, coe_toW1p, norm_jetLp]
-
-/-- The jets of test sections are dense in `W1p V p`. -/
-theorem denseRange_toW1p : DenseRange (toW1p (V := V) p) :=
-  denseRange_codRestrict_jetLp p _
-
-/-- A closed subset of `W1p V p` containing the jets of all test sections is everything. -/
-@[elab_as_elim]
-theorem W1p_induction {P : W1p V p → Prop} (hP : IsClosed {x | P x})
-    (h : ∀ ξ : testSection V, P (toW1p p ξ)) (x : W1p V p) : P x :=
-  denseRange_toW1p.induction_on x hP h
 
 /-- The value of the jet of a test section is the test section. -/
 theorem valueL_toW1p_ae_eq (ξ : testSection V) :
     valueL p (toW1p p ξ) =ᵐ[stripMeasure] (ξ : ℝ × ℝ → V) := by
   filter_upwards [coeFn_valueL (toW1p p ξ), coeFn_jetLp p ξ] with z h₁ h₂
-  rw [h₁, coe_toW1p, h₂, jet_apply]
-
-/-- Translation along the cylinder sends the jet of a test section to the jet of its
-translate. -/
-@[simp]
-theorem translate_toW1p (a : ℝ) (ξ : testSection V) :
-    StripSobolev.translate p (testSection V) a (toW1p p ξ) =
-      toW1p p ⟨_, comp_add_right_mem_testSection ξ.property a⟩ :=
-  Subtype.ext <| by rw [coe_translate, coe_toW1p, coe_toW1p, translateLp_jetLp]
+  rw [h₁, coe_toJetClosure, h₂, jet_apply]
 
 end W1p
 
@@ -190,7 +166,7 @@ theorem exists_norm_testSectionToBCF_le (hp : 2 < p) (hpt : p ≠ ∞) :
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top hfin)
     (hC (hξ2.of_le (by norm_num)) hper z)
   rw [ENNReal.toReal_mul, toReal_eNorm, ENNReal.coe_toReal] at h
-  rwa [coe_testSectionToBCF, norm_toW1p]
+  rwa [coe_testSectionToBCF, norm_toJetClosure]
 
 variable (p) in
 /-- **The Sobolev embedding `W^{1,p} ⊂ C⁰_b` of the cylinder**, for `2 < p < ∞`: the continuous
@@ -208,7 +184,7 @@ theorem continuousValue_toW1p (hp : 2 < p) (hpt : p ≠ ∞) (ξ : testSection V
     continuousValue p (toW1p p ξ) = testSectionToBCF ξ := by
   -- Elaborating the extension lemma with `toW1p` fixed, before matching it against the goal,
   -- keeps the unification of the two `W1p V p` structures cheap.
-  have hd : DenseRange (toW1p (V := V) p) := denseRange_toW1p
+  have hd : DenseRange (toW1p (V := V) p) := denseRange_toJetClosure p _
   have h := LinearMap.extendOfNorm_eq (f := testSectionToBCF) (e := toW1p p) hd
     (exists_norm_testSectionToBCF_le (V := V) hp hpt) ξ
   exact h
@@ -227,7 +203,7 @@ omit [CompleteSpace V] in
 /-- Every element of `W1p V p` is the limit of the jets of a sequence of test sections. -/
 private theorem exists_seq_tendsto_toW1p (x : W1p V p) :
     ∃ ξ : ℕ → testSection V, Tendsto (fun n ↦ toW1p p (ξ n)) atTop (𝓝 x) := by
-  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toW1p (V := V) (p := p) x)
+  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p (testSection V) x)
   choose ξ hξ using hy
   exact ⟨ξ, by simpa only [hξ] using hlim⟩
 
@@ -254,7 +230,7 @@ theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p
 /-- **The continuous representative is a section of the cylinder**: it has period one in `t`. -/
 theorem continuousValue_add_one (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) (s t : ℝ) :
     continuousValue p x (s, t + 1) = continuousValue p x (s, t) := by
-  refine W1p_induction (isClosed_eq (continuous_eval_const_continuousValue _)
+  refine jetClosure_induction (isClosed_eq (continuous_eval_const_continuousValue _)
       (continuous_eval_const_continuousValue _)) (fun ξ ↦ ?_) x
   simp only [coe_continuousValue_toW1p hp hpt]
   exact (mem_testSection_iff.1 ξ.property).2.1 s t
@@ -280,10 +256,10 @@ theorem continuousValue_translate (hp : 2 < p) (hpt : p ≠ ∞) (a : ℝ) (x : 
     (z : ℝ × ℝ) :
     continuousValue p (StripSobolev.translate p (testSection V) a x) z =
       continuousValue p x (z + (a, 0)) := by
-  refine W1p_induction (isClosed_eq ((continuous_eval_const_continuousValue z).comp
+  refine jetClosure_induction (isClosed_eq ((continuous_eval_const_continuousValue z).comp
     (StripSobolev.translate p (testSection V) a).continuous)
       (continuous_eval_const_continuousValue _)) (fun ξ ↦ ?_) x
-  rw [translate_toW1p, coe_continuousValue_toW1p hp hpt, coe_continuousValue_toW1p hp hpt]
+  rw [translate_toJetClosure, coe_continuousValue_toW1p hp hpt, coe_continuousValue_toW1p hp hpt]
 
 end Embedding
 
