@@ -696,6 +696,14 @@ theorem apply_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I
     σ.val x ![σ.hamiltonianVectorField f x, v] = mvfderiv I f x v :=
   apply_hamiltonianVectorField_of_isInvertible (h.isInvertible_flat x) f v
 
+/-- **A primitive on a Hamiltonian vector field.** If the one-form `α` is the contraction `ι_z σ`
+at `x` with a tangent vector `z`, then `α(X_K) = σ(z, X_K) = -dK(z)` at `x`. -/
+theorem apply_hamiltonianVectorField_of_interior_eq {α : SmoothForm I M ℝ 1} {x : M}
+    {z : TangentSpace I x} (hzα : ∀ v, σ.val x ![z, v] = α.val x ![v]) (K : M → ℝ) :
+    α.val x ![σ.hamiltonianVectorField K x] = -mvfderiv I K x z := by
+  rw [← hzα, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
+    h.eval₂_hamiltonianVectorField]
+
 /-- Pairing `a - X_f` with `b` under `σ`: `σ(a - X_f, b) = -σ(b, a) - df(b)`. This is the
 integrand of the first variation of the action functional. -/
 theorem apply_sub_hamiltonianVectorField (f : M → ℝ) (x : M) (a b : TangentSpace I x) :

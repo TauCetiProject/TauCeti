@@ -166,6 +166,13 @@ theorem isContactForm_mpullback_iff {f : M → N} (hf : ContMDiff I J ∞ f)
       (α.contMDiff.of_le (by simp) (f x)) (hdf x)).mp hx
   · exact fun h ↦ h.mpullback f hf hdf
 
+/-- The pullback of the negative of a one-form, which coorients the pulled-back hyperplanes
+oppositely, is a contact form exactly when the pullback of the form is. -/
+theorem isContactForm_mpullback_neg_iff {f : M → N} (hf : ContMDiff I J ∞ f)
+    (α : SmoothForm J N ℝ 1) :
+    (mpullback f hf (-α)).IsContactForm ↔ (mpullback f hf α).IsContactForm := by
+  rw [map_neg, isContactForm_neg_iff]
+
 /-- Diffeomorphisms preserve and reflect contactness. -/
 @[simp]
 theorem _root_.Diffeomorph.isContactForm_mpullback_iff (e : M ≃ₘ⟮I, J⟯ N)

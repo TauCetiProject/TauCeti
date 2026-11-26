@@ -59,8 +59,6 @@ carries the Reeb field of the boundary form to `-X_r`.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.IsNondegenerate.apply_hamiltonianVectorField_of_interior_eq`: if
-  `ι_Z σ = α` then `α(X_K) = -dK(Z)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mvfderiv_apply_ne_zero_of_interior_eq`: on a
   hypersurface of contact type, `dK(Z) ≠ 0`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_reebVectorField_mpullback_of_interior_eq`: the
@@ -94,30 +92,7 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
   {σ : SmoothTwoForm I M}
 
-/-- **A primitive on a Hamiltonian vector field.** If the one-form `α` is the contraction
-`ι_z σ` at `x` of a nondegenerate two-form with a tangent vector `z`, then
-`α(X_K) = σ(z, X_K) = -dK(z)` at `x`. -/
-theorem IsNondegenerate.apply_hamiltonianVectorField_of_interior_eq (hσ : σ.IsNondegenerate)
-    {α : SmoothForm I M ℝ 1} {x : M} {z : TangentSpace I x}
-    (hzα : ∀ v, σ.val x ![z, v] = α.val x ![v]) (K : M → ℝ) :
-    α.val x ![σ.hamiltonianVectorField K x] = -mvfderiv I K x z := by
-  rw [← hzα, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
-    hσ.eval₂_hamiltonianVectorField]
-
 variable [IsManifold J 2 S]
-
-omit [FiniteDimensional ℝ E] in
-/-- The restriction of `-α` is a contact form when that of `α` is. -/
-private theorem isContactForm_mpullback_neg {α : SmoothForm I M ℝ 1} {ι : S → M}
-    (hι : ContMDiff J I ∞ ι) (hα : (SmoothForm.mpullback ι hι α).IsContactForm) :
-    (SmoothForm.mpullback ι hι (-α)).IsContactForm := by
-  rwa [map_neg, SmoothForm.isContactForm_neg_iff]
-
-omit [FiniteDimensional ℝ E] [IsManifold J 2 S] in
-/-- `d(-α) = -σ` where `dα = σ`. -/
-private theorem mextDeriv_neg_eq {α : SmoothForm I M ℝ 1} {x : M}
-    (hdα : mextDeriv α.val x = σ.val x) : mextDeriv (-α).val x = -σ.val x := by
-  rw [Submodule.coe_neg, mextDeriv_neg, Pi.neg_apply, hdα]
 
 /-- `(-α)(X_K) = dK(z)` where `ι_z σ = α`. -/
 private theorem neg_apply_hamiltonianVectorField_of_interior_eq (hσ : σ.IsNondegenerate)
@@ -140,8 +115,9 @@ theorem IsNondegenerate.mvfderiv_apply_ne_zero_of_interior_eq (hσ : σ.IsNondeg
     (hK : (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) :
     mvfderiv I K (ι s) z ≠ 0 := by
   rw [← neg_apply_hamiltonianVectorField_of_interior_eq hσ hzα]
-  exact hσ.apply_hamiltonianVectorField_ne_zero hι (isContactForm_mpullback_neg hι hα)
-    (mextDeriv_neg_eq hdα) hK
+  exact hσ.apply_hamiltonianVectorField_ne_zero hι
+    ((SmoothForm.isContactForm_mpullback_neg_iff hι α).2 hα)
+    (by rw [Submodule.coe_neg, mextDeriv_neg, Pi.neg_apply, hdα]) hK
 
 /-- **The Reeb field of the opposite boundary form runs along the Hamiltonian flow.** Let
 `σ = dα` at `ι s` be nondegenerate and let `z` be a tangent vector with `ι_z σ = α` at `ι s`,
@@ -158,8 +134,10 @@ theorem IsNondegenerate.mfderiv_reebVectorField_mpullback_neg_of_interior_eq
     (hK : (mfderiv J I ι s).range = (mvfderiv I K (ι s)).ker) :
     mfderiv J I ι s ((SmoothForm.mpullback ι hι (-α)).reebVectorField s) =
       (mvfderiv I K (ι s) z)⁻¹ • σ.hamiltonianVectorField K (ι s) := by
-  rw [hσ.mfderiv_reebVectorField_mpullback hι (isContactForm_mpullback_neg hι hα)
-    (mextDeriv_neg_eq hdα) hK, neg_apply_hamiltonianVectorField_of_interior_eq hσ hzα]
+  rw [hσ.mfderiv_reebVectorField_mpullback hι
+    ((SmoothForm.isContactForm_mpullback_neg_iff hι α).2 hα)
+    (by rw [Submodule.coe_neg, mextDeriv_neg, Pi.neg_apply, hdα]) hK,
+    neg_apply_hamiltonianVectorField_of_interior_eq hσ hzα]
 
 /-- **The Reeb field of a hypersurface transverse to a Liouville field runs against the
 Hamiltonian flow.** Let `σ = dα` at `ι s` be nondegenerate and let `z` be a tangent vector with
@@ -187,8 +165,8 @@ nondegenerate two-form with primitive `α`, `dα = σ` along `ι`, and let `Z` b
 `ι_Z σ = α` along `ι`, such as a Liouville field of `α`. Let `ι : S → M` be a smooth map with
 injective differentials from a manifold of one dimension less, whose tangent images are the
 kernels of `dK`, and suppose `Z` is transverse to it, `dK(Z) ≠ 0` along `ι`. Then `ι^* α` is a
-contact form (`TauCeti.isContactFormAt_mpullback`), and the differential of `ι` sends its Reeb
-vector field to `-(dK(Z))⁻¹ • X_K`. -/
+contact form (`TauCeti.SmoothTwoForm.IsNondegenerate.isContactForm_mpullback_of_interior_eq`),
+and the differential of `ι` sends its Reeb vector field to `-(dK(Z))⁻¹ • X_K`. -/
 theorem IsNondegenerate.mfderiv_reebVectorField_mpullback_of_mvfderiv_ne_zero
     (hσ : σ.IsNondegenerate) {α : SmoothForm I M ℝ 1} {Z : (x : M) → TangentSpace I x}
     {ι : S → M} (hι : ContMDiff J I ∞ ι) (hιs : ∀ s, Function.Injective (mfderiv J I ι s))
@@ -199,14 +177,10 @@ theorem IsNondegenerate.mfderiv_reebVectorField_mpullback_of_mvfderiv_ne_zero
     (hKZ : ∀ s, mvfderiv I K (ι s) (Z (ι s)) ≠ 0) (s : S) :
     mfderiv J I ι s ((SmoothForm.mpullback ι hι α).reebVectorField s) =
       -(mvfderiv I K (ι s) (Z (ι s)))⁻¹ • σ.hamiltonianVectorField K (ι s) := by
-  refine hσ.mfderiv_reebVectorField_mpullback_of_interior_eq hι ?_ (hdα s) (hZα s) (hK s)
-  refine SmoothForm.isContactForm_iff_forall_isContactFormAt.2 fun s' ↦ ?_
-  rw [SmoothForm.coe_mpullback]
-  refine isContactFormAt_mpullback hdim ((hι s').of_le (by simp)) (hιs s') (fun v hv ↦ ?_)
-    ((α.contMDiff (ι s')).of_le (by simp)) (hdα s') (fun hZ ↦ hKZ s' ?_) (hZα s')
-  · exact (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hσ) _ v fun w ↦ by
-      simpa [SmoothBundleForm.eval₂_apply] using hv w
-  · rwa [hK s', LinearMap.mem_ker] at hZ
+  refine hσ.mfderiv_reebVectorField_mpullback_of_interior_eq hι
+    (hσ.isContactForm_mpullback_of_interior_eq hι hιs hdim hdα (z := fun s ↦ Z (ι s))
+      (fun s' hZ ↦ hKZ s' ?_) hZα) (hdα s) (hZα s) (hK s)
+  rwa [hK s', LinearMap.mem_ker] at hZ
 
 end SmoothTwoForm
 

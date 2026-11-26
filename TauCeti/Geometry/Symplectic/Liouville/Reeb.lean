@@ -174,17 +174,12 @@ theorem isContactForm_mpullback (h : IsLiouvilleCompletion ω α W)
     (SmoothForm.mpullback ι hι α).IsContactForm := by
   -- Push the boundary off to the level `e` of `r`, where the Liouville field is transverse.
   rw [← SmoothForm.isContactForm_smul_iff (Real.exp_pos 1).ne', ← h.mpullback_flowOf_comp hZ hι 1]
-  refine SmoothForm.isContactForm_iff_forall_isContactFormAt.2 fun s ↦ ?_
-  rw [SmoothForm.coe_mpullback]
-  have hx : flowOf Z 1 (ι s) ∉ W := h.flowOf_comp_notMem hZ hιW one_pos s
-  refine isContactFormAt_mpullback hdim ((h.contMDiff_flowOf_comp hZ hι 1 s).of_le (by simp))
-    (h.injective_mfderiv_flowOf_comp hZ hι hιs 1 s) (fun v hv ↦ ?_)
-    ((α.contMDiff _).of_le (by simp)) (by rw [h.mextDeriv_eq]) (z := Z (flowOf Z 1 (ι s))) ?_
-    fun v ↦ ?_
-  · exact (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 h.isNondegenerate) _ v fun w ↦ by
-      simpa [SmoothBundleForm.eval₂_apply] using hv w
+  refine h.isNondegenerate.isContactForm_mpullback_of_interior_eq _
+    (h.injective_mfderiv_flowOf_comp hZ hι hιs 1) hdim (fun s ↦ by rw [h.mextDeriv_eq])
+    (z := fun s ↦ Z (flowOf Z 1 (ι s))) (fun s ↦ ?_) fun s v ↦ ?_
   · rw [h.range_mfderiv_flowOf_comp hZ hι hιW hιs hdim one_pos s, LinearMap.mem_ker,
-      ContinuousLinearMap.coe_coe, h.mvfderiv_liouvilleRadialCoordinate_apply hZ hx]
+      ContinuousLinearMap.coe_coe,
+      h.mvfderiv_liouvilleRadialCoordinate_apply hZ (h.flowOf_comp_notMem hZ hιW one_pos s)]
     linarith [one_le_liouvilleRadialCoordinate Z W (flowOf Z 1 (ι s))]
   · simpa only [RoughForm.interior_apply, comp_apply] using congrArg (fun a ↦ a _ ![v]) hZ
 
