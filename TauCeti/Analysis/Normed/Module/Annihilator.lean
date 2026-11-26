@@ -223,6 +223,7 @@ theorem rank_quotient_orthogonalBilin_topDualPairing_eq_finrank
 
 /-- The preannihilator of a finite-dimensional subspace of the strong dual has codimension equal to
 the subspace's rank. -/
+@[simp]
 theorem lift_rank_quotient_orthogonalBilin_topDualPairing
     (G : Submodule 𝕜 (StrongDual 𝕜 E)) [FiniteDimensional 𝕜 G] :
     Cardinal.lift.{u} (Module.rank 𝕜 (E ⧸ G.orthogonalBilin (topDualPairing 𝕜 E))) =
