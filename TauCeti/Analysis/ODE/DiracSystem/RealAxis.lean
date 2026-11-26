@@ -83,7 +83,8 @@ private theorem diracFundamentalMatrix_ofReal_apply_bounds (hq : IntegrableOn q 
     ← abs_of_nonneg (intervalIntegral.integral_nonneg ht fun _ _ ↦ norm_nonneg _)]
   refine ⟨exp_neg_mul_norm_le_norm_propagator_apply_of_abs_inner_le hP hm ?_ v,
     norm_propagator_apply_le_of_abs_inner_le hP hm ?_ v⟩ <;>
-  exact .of_forall fun s w ↦ abs_re_inner_toEuclideanCLM_diracCoeff_ofReal_le q x s w
+  exact .of_forall fun s w ↦ (real_inner_eq_re_inner ℂ w _).symm ▸
+    abs_re_inner_toEuclideanCLM_diracCoeff_ofReal_le q x s w
 
 /-- For a real spectral parameter `x` and `t ≥ 0`, each vector `M_q(t, x) v` has norm at most
 `e^{∫₀ᵗ |q|} ‖v‖`. -/

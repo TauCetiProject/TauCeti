@@ -13,10 +13,10 @@ public import TauCeti.Analysis.ODE.DiracSystem.RealPotential
 
 For a real constant potential `c ≥ 0` at `z = 0`, `E(t, 0) = e^{ct}` and `E~(t, 0) = -i e^{-ct}`,
 while `∫₀ᵗ |q| = ct`. So the upper bound `|E(t, x)| ≤ e^{∫₀ᵗ |q|}` is attained by `E`
-(`TauCeti.Examples.DiracSystem.norm_diracHermiteBiehler_ofReal_const_zero`) and the lower bound
-`e^{-∫₀ᵗ |q|} ≤ |E~(t, x)|` by `E~`
-(`TauCeti.Examples.DiracSystem.norm_diracHermiteBiehlerDirichlet_ofReal_const_zero`): both bounds
-are sharp.
+(`TauCeti.Examples.DiracSystem.norm_diracHermiteBiehler_ofReal_const_spectralParam_zero`) and
+the lower bound `e^{-∫₀ᵗ |q|} ≤ |E~(t, x)|` by `E~`
+(`TauCeti.Examples.DiracSystem.norm_diracHermiteBiehlerDirichlet_ofReal_const_spectralParam_zero`):
+both bounds are sharp.
 -/
 
 public section
@@ -32,7 +32,7 @@ private theorem integral_norm_const {c t : ℝ} (hc : 0 ≤ c) :
 
 /-- **The upper bound is attained.** For a real constant `c ≥ 0`,
 `|E(t, 0)| = e^{ct} = e^{∫₀ᵗ |q|}`. -/
-theorem norm_diracHermiteBiehler_ofReal_const_zero {c t : ℝ} (hc : 0 ≤ c) :
+theorem norm_diracHermiteBiehler_ofReal_const_spectralParam_zero {c t : ℝ} (hc : 0 ≤ c) :
     ‖diracHermiteBiehler (fun _ ↦ (c : ℂ)) t 0‖ = Real.exp (∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖) := by
   rw [integral_norm_const hc, diracHermiteBiehler_def,
     diracFundamentalMatrix_ofReal_const_spectralParam_zero]
@@ -40,7 +40,7 @@ theorem norm_diracHermiteBiehler_ofReal_const_zero {c t : ℝ} (hc : 0 ≤ c) :
 
 /-- **The lower bound is attained.** For a real constant `c ≥ 0`,
 `|E~(t, 0)| = e^{-ct} = e^{-∫₀ᵗ |q|}`. -/
-theorem norm_diracHermiteBiehlerDirichlet_ofReal_const_zero {c t : ℝ} (hc : 0 ≤ c) :
+theorem norm_diracHermiteBiehlerDirichlet_ofReal_const_spectralParam_zero {c t : ℝ} (hc : 0 ≤ c) :
     ‖diracHermiteBiehlerDirichlet (fun _ ↦ (c : ℂ)) t 0‖ =
       Real.exp (-∫ _ in (0 : ℝ)..t, ‖(c : ℂ)‖) := by
   rw [integral_norm_const hc, diracHermiteBiehlerDirichlet_def,
