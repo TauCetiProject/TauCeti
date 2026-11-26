@@ -572,16 +572,7 @@ theorem eventually_nhdsWithin_Icc_diff_nondegenerate_of_crossingForm_nondegenera
     (hsymm : ∀ t ∈ Icc a b, (V t).toBilinForm.IsSymm) (hV : HasDerivWithinAt V V' (Icc a b) t₀)
     (hreg : (crossingForm (V t₀) V').Nondegenerate) :
     ∀ᶠ t in 𝓝[Icc a b \ {t₀}] t₀, (V t).toBilinForm.Nondegenerate := by
-  have hsplit : Icc a b \ {t₀} = Ico a t₀ ∪ Ioc t₀ b := by
-    ext t
-    simp only [Set.mem_sdiff, mem_Icc, mem_singleton_iff, mem_union, mem_Ico, mem_Ioc]
-    constructor
-    · rintro ⟨⟨hat, htb⟩, hne⟩
-      exact (lt_or_gt_of_ne hne).imp (fun h ↦ ⟨hat, h⟩) fun h ↦ ⟨h, htb⟩
-    · rintro (⟨hat, h⟩ | ⟨h, htb⟩)
-      · exact ⟨⟨hat, h.le.trans ht₀.2⟩, h.ne⟩
-      · exact ⟨⟨ht₀.1.trans h.le, htb⟩, h.ne'⟩
-  rw [hsplit, nhdsWithin_union, eventually_sup]
+  rw [← Ico_union_Ioc_eq_Icc_sdiff_singleton ht₀.1 ht₀.2, nhdsWithin_union, eventually_sup]
   constructor
   · rcases ht₀.1.eq_or_lt with rfl | hat
     · simp

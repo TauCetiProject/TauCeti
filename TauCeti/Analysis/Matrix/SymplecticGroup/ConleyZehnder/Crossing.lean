@@ -31,7 +31,7 @@ when its crossing form is nondegenerate.
 This file proves the crossing form formula for the Conley–Zehnder index
 `TauCeti.GLSymplectic.conleyZehnderIndex` of a path whose crossings are regular and at whose
 crossings the matrix does not have the eigenvalue `-1`
-(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one`):
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum`):
 
 `CZ(Ψ) = -((sign Γ(Ψ, 0) + sign Γ(Ψ, 1)) / 2 + ∑ᶠ t ∈ (0, 1), sign Γ(Ψ, t))`.
 
@@ -73,7 +73,7 @@ argument does not apply.
 
 * `Matrix.crossingForm_sub_one_neg_J_mul_J_mul_mul`: for `Ψ' = J S Ψ`, the crossing form is the
   form of `S` on the fixed vectors of `Ψ`.
-* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one`:
+* `TauCeti.GLSymplectic.conleyZehnderIndex_eq_neg_crossingForm_add_finsum`:
   the crossing form formula for the Conley–Zehnder index of a path with regular crossings, at
   which it does not have the eigenvalue `-1`.
 
@@ -169,15 +169,6 @@ private theorem nondegenerate_crossingForm_transpose_mul_J_sub_J_mul
     (crossingForm (Ψᵀ * J n ℝ - J n ℝ * Ψ) (Ψ'ᵀ * J n ℝ - J n ℝ * Ψ')).Nondegenerate :=
   (crossingFormIsometryEquivSymplectic hΨ h Ψ').nondegenerate_iff.2
     ((QuadraticMap.nondegenerate_smul_iff (isUnit_iff_ne_zero.2 two_ne_zero) _).2 hreg)
-
-/-- Away from the eigenvalue `-1`, the symmetric matrix `Ψᵀ J - J Ψ` of a symplectic matrix `Ψ`
-is singular exactly when `Ψ` has the eigenvalue `1`: the two matrices have the same kernel. -/
-private theorem det_transpose_mul_J_sub_J_mul_eq_zero_iff {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ}
-    (hΨ : Ψ ∈ symplecticGroup n ℝ) (h : IsUnit (Ψ + 1).det) :
-    (Ψᵀ * J n ℝ - J n ℝ * Ψ).det = 0 ↔ (Ψ - 1).det = 0 := by
-  have hker := SetLike.ext_iff.1 (ker_mulVecLin_transpose_mul_J_sub_J_mul hΨ h)
-  simp only [LinearMap.mem_ker, mulVecLin_apply] at hker
-  simp only [← exists_mulVec_eq_zero_iff, hker]
 
 /-- Along a path `Ψ` of symplectic matrices avoiding the eigenvalue `-1` on `[a, b]`, with regular
 crossings, the signature of `Ψᵀ J - J Ψ` changes by the signatures of the crossing forms of `Ψ`,
@@ -361,11 +352,11 @@ private theorem exists_mem_Icc_coe_subpath_eq
     (hab : a ≤ b) (s : I) :
     ∃ t ∈ Icc (a : ℝ) b, ((γ.subpath a b s : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t := by
   obtain ⟨t, ht, hts⟩ := (γ.range_subpath_of_le a b hab).le (mem_range_self s)
-  exact ⟨t, ht, by rw [← hts, hγ]⟩
+  exact ⟨t, ⟨Subtype.coe_le_coe.2 ht.1, Subtype.coe_le_coe.2 ht.2⟩, by rw [← hts, hγ]⟩
 
 /-- On an interval `[a, b]` of `[0, 1]` without the eigenvalue `-1`, the Conley–Zehnder index of
 the subpath of `γ` is the crossing sum. -/
-private theorem conleyZehnderIndex_subpath_of_isUnit_det_add_one
+private theorem conleyZehnderIndex_subpath_eq_crossingSum_of_isUnit_det_add_one
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t)
     (hΨc : ContinuousOn Ψ (Icc 0 1)) (hmem : ∀ t ∈ Icc (0 : ℝ) 1, Ψ t ∈ symplecticGroup n ℝ)
     (hfin : {t ∈ Icc (0 : ℝ) 1 | (Ψ t - 1).det = 0}.Finite)
@@ -392,7 +383,7 @@ private theorem conleyZehnderIndex_subpath_of_isUnit_det_add_one
 
 /-- On an interval `[a, b]` of `[0, 1]` without crossings, the Conley–Zehnder index of the
 subpath of `γ` vanishes. -/
-private theorem conleyZehnderIndex_subpath_of_det_sub_one_ne_zero
+private theorem conleyZehnderIndex_subpath_eq_zero_of_det_sub_one_ne_zero
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t) {a b : I}
     (hab : a ≤ b) (hne : ∀ t ∈ Icc (a : ℝ) b, (Ψ t - 1).det ≠ 0) :
     conleyZehnderIndex (γ.subpath a b) = 0 :=
@@ -420,10 +411,10 @@ private theorem conleyZehnderIndex_subpath_eq_crossingSum
   · rw [Path.subpath_self, conleyZehnderIndex_refl]
     simp [crossingSum]
   rcases h with hne | h₁
-  · rw [conleyZehnderIndex_subpath_of_det_sub_one_ne_zero γ hγ hlt.le hne,
+  · rw [conleyZehnderIndex_subpath_eq_zero_of_det_sub_one_ne_zero γ hγ hlt.le hne,
       crossingSum_eq_zero hlt.le hne]
-  · exact conleyZehnderIndex_subpath_of_isUnit_det_add_one γ hγ hΨc hmem hfin hd hreg hlt
-      fun t ht ↦ isUnit_iff_ne_zero.2 (h₁ t ht)
+  · exact conleyZehnderIndex_subpath_eq_crossingSum_of_isUnit_det_add_one γ hγ hΨc hmem hfin hd
+      hreg hlt fun t ht ↦ isUnit_iff_ne_zero.2 (h₁ t ht)
 
 end Subpath
 
@@ -436,7 +427,7 @@ of `Ψ t`, is nondegenerate. Then the Conley–Zehnder index of `γ` is minus th
 signatures of the crossing forms, the crossings at the endpoints counting one half. Parameters
 that are not crossings contribute zero, and away from the crossings `Ψ` may have the eigenvalue
 `-1`. -/
-theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one
+theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum
     {A B : GLSymplectic n ℝ} (γ : Path A B)
     {Ψ Ψ' : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ}
     (hγ : ∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = Ψ t)
@@ -463,15 +454,23 @@ theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one
     simp [← hγ ⟨t, ht⟩, Path.extend_extends' γ ⟨t, ht⟩]
   have hfin := finite_setOf_det_sub_one_eq_zero hΨc hmem h₁ hd hreg
   -- `[0, 1]` is covered by the parameters without the eigenvalue `1` and those without `-1`.
-  set c : Bool → Set I := fun i ↦ bif i then {t | (Ψ t - 1).det ≠ 0} else {t | (Ψ t + 1).det ≠ 0}
+  obtain ⟨c, hc₀, hc₁⟩ : ∃ c : Bool → Set I,
+      c false = {t : I | (Ψ t + 1).det ≠ 0} ∧ c true = {t : I | (Ψ t - 1).det ≠ 0} :=
+    ⟨fun i ↦ bif i then {t | (Ψ t - 1).det ≠ 0} else {t | (Ψ t + 1).det ≠ 0}, rfl, rfl⟩
   have hcopen (i : Bool) : IsOpen (c i) := by
     cases i
-    · exact isOpen_ne_fun (hΨI.add continuous_const).matrix_det continuous_const
-    · exact isOpen_ne_fun (hΨI.sub continuous_const).matrix_det continuous_const
+    · rw [hc₀]
+      exact isOpen_ne_fun (hΨI.add continuous_const).matrix_det continuous_const
+    · rw [hc₁]
+      exact isOpen_ne_fun (hΨI.sub continuous_const).matrix_det continuous_const
   have hccover : univ ⊆ ⋃ i, c i := fun t _ ↦ by
     by_cases ht : (Ψ t - 1).det = 0
-    · exact mem_iUnion.2 ⟨false, (h₁ t t.property ht).ne_zero⟩
-    · exact mem_iUnion.2 ⟨true, ht⟩
+    · refine mem_iUnion.2 ⟨false, ?_⟩
+      rw [hc₀, mem_ofPred_eq]
+      exact (h₁ t t.property ht).ne_zero
+    · refine mem_iUnion.2 ⟨true, ?_⟩
+      rw [hc₁, mem_ofPred_eq]
+      exact ht
   -- Subdivide `[0, 1]` into pieces of the cover, on each of which the index is the crossing sum.
   obtain ⟨t, ht0, htm, ⟨N, hN⟩, htc⟩ := exists_monotone_Icc_subset_open_cover_unitInterval hcopen
     hccover
@@ -479,11 +478,16 @@ theorem conleyZehnderIndex_eq_neg_crossingForm_add_finsum_of_isUnit_det_add_one
       conleyZehnderIndex (γ.subpath (t m) (t (m + 1))) = crossingSum Ψ Ψ' (t m) (t (m + 1)) := by
     obtain ⟨i, hi⟩ := htc m
     have hpt {r : ℝ} (hr : r ∈ Icc (t m : ℝ) (t (m + 1))) : (⟨r, Icc_subset_Icc
-        (unitInterval.nonneg _) (unitInterval.le_one _) hr⟩ : I) ∈ c i := hi hr
+        (unitInterval.nonneg _) (unitInterval.le_one _) hr⟩ : I) ∈ c i :=
+      hi ⟨Subtype.coe_le_coe.1 hr.1, Subtype.coe_le_coe.1 hr.2⟩
     refine conleyZehnderIndex_subpath_eq_crossingSum γ hγ hΨc hmem hfin hd hreg (htm m.le_succ) ?_
     cases i
-    · exact Or.inr fun r hr ↦ hpt hr
-    · exact Or.inl fun r hr ↦ hpt hr
+    · refine Or.inr fun r hr ↦ ?_
+      have h := hpt hr
+      rwa [hc₀, mem_ofPred_eq] at h
+    · refine Or.inl fun r hr ↦ ?_
+      have h := hpt hr
+      rwa [hc₁, mem_ofPred_eq] at h
   -- Add up the pieces.
   have hkey (m : ℕ) : conleyZehnderIndex (γ.subpath 0 (t m)) = crossingSum Ψ Ψ' 0 (t m) := by
     induction m with
