@@ -59,6 +59,7 @@ multiple of `x`.
   `TauCeti.manifoldMorseIndex_sphereHeight_neg`: the north pole has index `n` and the south pole
   has index `0`.
 * `TauCeti.criticalPoints_sphereHeight`: the critical points of the height function are the poles.
+* `TauCeti.totalCriticalCount_sphereHeight`: so it has exactly two critical points.
 * `TauCeti.criticalCount_sphereHeight`: it has one critical point of index `n` and one of index
   `0`.
 * `TauCeti.isRegularValue_sphereHeight`: every value other than `±1` is a regular value.
@@ -486,6 +487,13 @@ theorem criticalPoints_sphereHeight (v : sphere (0 : E) 1) :
     criticalPoints (𝓡 n) (sphereHeight v) = {v, -v} := by
   ext x
   simp
+
+/-- The height function on the sphere has exactly two critical points, the two poles. -/
+@[simp]
+theorem totalCriticalCount_sphereHeight (v : sphere (0 : E) 1) :
+    totalCriticalCount (𝓡 n) (sphereHeight v) = 2 := by
+  rw [totalCriticalCount_def, criticalPoints_sphereHeight,
+    encard_pair (ne_neg_of_mem_unit_sphere ℝ v)]
 
 /-- The critical points of index `m` of the height function on the sphere `Sⁿ` are the north pole
 `v` if `m = n` and the south pole `-v` if `m = 0`. -/
