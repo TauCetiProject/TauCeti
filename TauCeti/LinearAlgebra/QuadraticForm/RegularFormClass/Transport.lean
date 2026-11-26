@@ -19,9 +19,7 @@ isometry classes, packaged as `TauCeti.RegularFormClass.mapRingEquiv e`.
 
 Unlike `TauCeti.RegularFormClass.baseChange`, this equivalence takes the isomorphism explicitly and
 needs no ambient `Algebra K L` instance, which makes it usable directly along completion
-isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is present and
-`algebraMap K L` is surjective (hence bijective), `RegularFormClass.baseChange L` agrees with
-`mapRingEquiv` for `RingEquiv.ofBijective (algebraMap K L)` and is therefore bijective.
+isomorphisms such as `adicCompletionCongr`.
 
 ## Main definitions
 
@@ -51,10 +49,6 @@ isomorphisms such as `adicCompletionCongr`. When an `Algebra K L` structure is p
 * `TauCeti.RegularFormClass.mapRingEquiv_refl`, `TauCeti.RegularFormClass.mapRingEquiv_symm`,
   `TauCeti.RegularFormClass.mapRingEquiv_trans`: identity, inverse, and composition laws on
   classes.
-* `TauCeti.RegularFormClass.baseChange_bijective_of_surjective`,
-  `TauCeti.RegularFormClass.baseChange_injective_of_surjective`,
-  `TauCeti.RegularFormClass.baseChange_inj_of_surjective`: scalar extension along a surjective field
-  homomorphism is bijective on regular-form classes.
 * `TauCeti.RegularFormClass.rank_mapRingEquiv`,
   `TauCeti.RegularFormClass.mapRingEquiv_hyperbolicClass`,
   `TauCeti.RegularFormClass.discr_mapRingEquiv`,
@@ -368,49 +362,6 @@ theorem RegularFormClass.mapRingEquiv_eq_baseChange [Algebra K L] (e : K ≃+* L
   refine Quotient.inductionOn x fun p ↦ ?_
   rw [RegularFormClass.mapRingEquiv_mk, RegularFormClass.baseChange_mk,
     RegularFormPresentation.equivOfRingEquiv_eq_baseChange e he]
-
-/-- Scalar extension of regular-form classes along a surjective `algebraMap K L` is transport along
-`RingEquiv.ofBijective (algebraMap K L)`. -/
-theorem RegularFormClass.baseChange_eq_mapRingEquiv_of_surjective [Algebra K L]
-    (h : Function.Surjective (algebraMap K L)) (x : RegularFormClass K) :
-    RegularFormClass.baseChange L x =
-      RegularFormClass.mapRingEquiv
-        (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩) x :=
-  (RegularFormClass.mapRingEquiv_eq_baseChange
-    (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩)
-    (fun a ↦ (RingEquiv.ofBijective_apply _ _ a).symm) x).symm
-
-omit [Invertible (2 : L)] in
-/-- Scalar extension of regular-form classes along a surjective field homomorphism is bijective. -/
-theorem RegularFormClass.baseChange_bijective_of_surjective [Algebra K L]
-    (h : Function.Surjective (algebraMap K L)) :
-    Function.Bijective (RegularFormClass.baseChange (K := K) L) := by
-  let _ : Invertible (2 : L) :=
-    invertibleOfNonzero (by
-      rw [← map_ofNat (algebraMap K L) 2, map_ne_zero]
-      exact Invertible.ne_zero (2 : K))
-  have heq : RegularFormClass.baseChange (K := K) L =
-      RegularFormClass.mapRingEquiv
-        (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩) :=
-    funext (RegularFormClass.baseChange_eq_mapRingEquiv_of_surjective h)
-  rw [heq]
-  exact (RegularFormClass.mapRingEquiv
-    (RingEquiv.ofBijective (algebraMap K L) ⟨(algebraMap K L).injective, h⟩)).bijective
-
-omit [Invertible (2 : L)] in
-/-- Scalar extension of regular-form classes along a surjective field homomorphism is injective. -/
-theorem RegularFormClass.baseChange_injective_of_surjective [Algebra K L]
-    (h : Function.Surjective (algebraMap K L)) :
-    Function.Injective (RegularFormClass.baseChange (K := K) L) :=
-  (RegularFormClass.baseChange_bijective_of_surjective h).injective
-
-omit [Invertible (2 : L)] in
-/-- Scalar extension along a surjective field homomorphism reflects equality of regular-form
-classes. -/
-theorem RegularFormClass.baseChange_inj_of_surjective [Algebra K L]
-    (h : Function.Surjective (algebraMap K L)) {x y : RegularFormClass K} :
-    RegularFormClass.baseChange L x = RegularFormClass.baseChange L y ↔ x = y :=
-  (RegularFormClass.baseChange_injective_of_surjective h).eq_iff
 
 /-- Transporting regular-form classes along the identity field isomorphism is the identity
 semiring isomorphism. -/
