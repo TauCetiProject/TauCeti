@@ -85,23 +85,15 @@ theorem isLipschitzDomainWith_setOf_fst_mem_Ioo (hab : a < b) :
   · -- On the lower face, `y` lies in the slab exactly when `0 < y.fst - a`.
     refine isLipschitzDomainAtWith_setOf_fst_mem_Ioo_of_chart hab
       (AffineIsometryEquiv.constVAdd ℝ _ (-x)) (by simp) fun y h₁ h₂ => ?_
-    simp only [AffineIsometryEquiv.coe_constVAdd, vadd_eq_add, WithLp.add_fst, WithLp.neg_fst,
-      hxa, mem_Ioo] at h₁ h₂ ⊢
-    constructor <;> intro h
-    · linarith [h.1]
-    · constructor <;> linarith
+    simp [hxa] at h₁ h₂ ⊢
+    grind
   · -- On the upper face, `y` lies in the slab exactly when `0 < b - y.fst`.
     refine isLipschitzDomainAtWith_setOf_fst_mem_Ioo_of_chart hab
       ((AffineIsometryEquiv.constVAdd ℝ _ (-x)).trans
         (LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.neg ℝ (E := ℝ))
           (LinearIsometryEquiv.refl ℝ E)).toAffineIsometryEquiv) (by simp) fun y h₁ h₂ => ?_
-    simp only [AffineIsometryEquiv.coe_trans, LinearIsometryEquiv.coe_toAffineIsometryEquiv,
-      Function.comp_apply, AffineIsometryEquiv.coe_constVAdd, vadd_eq_add,
-      LinearIsometryEquiv.withLpProdCongr_apply, WithLp.toLp_fst, LinearIsometryEquiv.coe_neg,
-      WithLp.add_fst, WithLp.neg_fst, hxb, mem_Ioo] at h₁ h₂ ⊢
-    constructor <;> intro h
-    · linarith [h.2]
-    · constructor <;> linarith
+    simp [hxb] at h₁ h₂ ⊢
+    grind
 
 /-- Over the zero space the slab `{x | a < x.fst < b}` is the interval `(a, b)`: its preimage
 under the isometry `t ↦ (t, 0)` of the line onto `WithLp 2 (ℝ × E)`. -/
