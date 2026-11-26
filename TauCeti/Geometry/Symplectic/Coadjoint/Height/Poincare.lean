@@ -159,10 +159,7 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_two_mul_eq_ncard
     bettiNumber k (G ⧸ (coadjointRepresentation ℝ I G).stabilizer
         (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
           BoundarylessManifold.isInteriorPoint μ))) (2 * j) =
-      {p : t | (∃ w : T.normalizerQuotient, (p : GroupLieAlgebra I G) =
-          leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint (T.weylAdjointRepresentation (I := I) w μ)) ∧
-        #{i | 0 < α i p * α i X} = j}.ncard := by
+      {p : t | p ∈ Set.range (weylOrbitPoint ht μ) ∧ #{i | 0 < α i p * α i X} = j}.ncard := by
   rw [Module.Dual.bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard _ k
     (hD.isMorse_orbitMap_coadjointRepresentation_apply
       (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep hX) (2 * j)]
@@ -180,12 +177,10 @@ theorem bettiNumber_quotient_stabilizer_coadjointRepresentation_two_mul_eq_ncard
   · rintro ⟨_, ⟨⟨w, rfl⟩, hj⟩, rfl⟩
     rw [hD.manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card hB hF ht μ X w]
       at hj
-    exact ⟨weylOrbitPoint ht μ w, ⟨⟨w, coe_weylOrbitPoint ht μ w⟩, by omega⟩,
+    exact ⟨weylOrbitPoint ht μ w, ⟨⟨w, rfl⟩, by omega⟩,
       (congrArg B (coe_weylOrbitPoint ht μ w)).trans
         (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w).symm⟩
-  · rintro ⟨p, ⟨⟨w, hw⟩, hj⟩, rfl⟩
-    obtain rfl : p = weylOrbitPoint ht μ w :=
-      Subtype.ext (hw.trans (coe_weylOrbitPoint ht μ w).symm)
+  · rintro ⟨_, ⟨⟨w, rfl⟩, hj⟩, rfl⟩
     refine ⟨_, ⟨⟨w, rfl⟩, ?_⟩, (orbitMap_normalizerQuotientToCoadjointOrbit hB μ w).trans
       (congrArg B (coe_weylOrbitPoint ht μ w)).symm⟩
     rw [hD.manifoldMorseIndex_normalizerQuotientToCoadjointOrbit_eq_two_mul_card hB hF ht μ X w,
