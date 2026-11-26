@@ -18,6 +18,7 @@ public statements only:
   homogeneous set and `{0, 1, 2}` does not;
 * the pair colouring `x mod 2` (the smaller point) makes `ℕ` end-homogeneous but not homogeneous,
   and the pair colouring `y mod 2` (the larger point) does not make `{0, 1, 2}` end-homogeneous;
+* a set with at most two points, such as `{0, 1}`, is end-homogeneous for every pair colouring;
 * `0 → (0)¹_0` and `3 → (2)¹_2` hold and `2 → (2)¹_2` fails;
 * the pigeonhole instance `ℵ₁ → (ℵ₁)¹_ℵ₀`.
 -/
@@ -72,6 +73,10 @@ example : ¬ IsHomogeneousOn (fun s : Fin 2 ↪o ℕ ↦ s 0 % 2) univ := fun h 
 example : ¬ IsEndHomogeneousOn (n := 0) (fun s : Fin 2 ↪o ℕ ↦ s 1 % 2) {0, 1, 2} := fun h ↦ by
   simpa using isEndHomogeneousOn_def.1 h (pair 0 1 (by simp)) (pair 0 2 (by simp))
     (pair_mem _ (by simp) (by simp)) (pair_mem _ (by simp) (by simp)) fun k ↦ by fin_cases k; rfl
+
+-- A set with at most two points is end-homogeneous for every colouring of increasing pairs.
+example (c : (Fin 2 ↪o ℕ) → Bool) : IsEndHomogeneousOn (n := 0) c {0, 1} :=
+  isEndHomogeneousOn_of_encard_le c (by simp [encard_pair])
 
 -- `0 → (0)¹_0`: the empty set is homogeneous (Erdős and Rado's colour-witness form fails here).
 example : PartitionRel.{0} 0 0 1 0 :=

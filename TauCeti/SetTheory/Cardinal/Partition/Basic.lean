@@ -32,6 +32,8 @@ whereas their formulation asks for a homogeneous set of a named colour.
 
 * `TauCeti.IsHomogeneousOn.mono`, `TauCeti.IsEndHomogeneousOn.mono`: both notions pass to subsets.
 * `TauCeti.IsHomogeneousOn.isEndHomogeneousOn`: homogeneous sets are end-homogeneous.
+* `TauCeti.isEndHomogeneousOn_of_encard_le`: a set with at most `n + 2` points is end-homogeneous
+  for every colouring of increasing `(n + 2)`-tuples.
 * `TauCeti.isHomogeneousOn_comp_trans_iff`, `TauCeti.isHomogeneousOn_comp_orderIso_iff`:
   homogeneous sets of a colouring restricted along an order embedding, or transported along an
   order isomorphism.
@@ -115,15 +117,43 @@ theorem isHomogeneousOn_empty (c : (Fin n ↪o I) → C) : IsHomogeneousOn c ∅
   | zero => exact isHomogeneousOn_zero c ∅
   | succ n => exact fun s _ hs _ ↦ (hs 0).elim
 
+/-- The empty set is end-homogeneous for every colouring. -/
+@[simp]
+theorem isEndHomogeneousOn_empty (c : (Fin (n + 2) ↪o I) → C) : IsEndHomogeneousOn c ∅ :=
+  (isHomogeneousOn_empty c).isEndHomogeneousOn
+
+/-- A set with at most `n + 2` points is end-homogeneous for every colouring of increasing
+`(n + 2)`-tuples: two such tuples from it that agree on their first `n + 1` entries also agree on
+their last entry. -/
+theorem isEndHomogeneousOn_of_encard_le (c : (Fin (n + 2) ↪o I) → C) {H : Set I}
+    (hH : H.encard ≤ n + 2) : IsEndHomogeneousOn c H := by
+  intro s t hs ht hst
+  set R := range fun k : Fin (n + 1) ↦ s k.castSucc
+  have hRH : R ⊆ H := range_subset_iff.2 fun k ↦ hs _
+  have hR : R.encard = n + 1 := by
+    rw [Function.Injective.encard_range fun a b h ↦ Fin.castSucc_injective _ (s.injective h)]
+    simp
+  -- The last entries of `s` and `t` both lie in `H \ R`, which has at most one point.
+  have hdiff : (H \ R).encard ≤ 1 := by
+    refine (ENat.add_le_add_iff_right (k := n + 1) (by simp)).1 ?_
+    rw [← hR, encard_sdiff_add_encard_of_subset hRH, hR, add_comm 1, add_assoc,
+      one_add_one_eq_two]
+    exact hH
+  have hlast : s (Fin.last _) = t (Fin.last _) := by
+    refine encard_le_one_iff.1 hdiff _ _ ⟨hs _, ?_⟩ ⟨ht _, ?_⟩
+    · rintro ⟨k, hk⟩
+      exact Fin.castSucc_ne_last k (s.injective hk)
+    · rintro ⟨k, hk⟩
+      exact Fin.castSucc_ne_last k (t.injective ((hst k).symm.trans hk))
+  exact congrArg c <| RelEmbedding.ext <| Fin.lastCases hlast hst
+
 /-- For `n = 1`, a set is homogeneous for the colouring of points by `f` exactly when `f` is
 constant on it. -/
 theorem isHomogeneousOn_one_iff {f : I → C} {H : Set I} :
     IsHomogeneousOn (fun s : Fin 1 ↪o I ↦ f (s 0)) H ↔ ∀ x ∈ H, ∀ y ∈ H, f x = f y := by
   refine ⟨fun h x hx y hy ↦ ?_, fun h s t hs ht ↦ h _ (hs 0) _ (ht 0)⟩
-  have hmono (z : I) : StrictMono fun _ : Fin 1 ↦ z := fun a b hab ↦
-    absurd hab (Subsingleton.elim a b).not_lt
-  exact h (.ofStrictMono _ (hmono x)) (.ofStrictMono _ (hmono y))
-    (fun _ ↦ hx) (fun _ ↦ hy)
+  exact h (.ofStrictMono _ (Subsingleton.strictMono _))
+    (.ofStrictMono _ (Subsingleton.strictMono _)) (fun _ ↦ hx) (fun _ ↦ hy)
 
 /-- **Restriction of a colouring along an order embedding.** The homogeneous sets of the
 colouring `s ↦ c (s.trans e)` of increasing tuples of `K` are exactly the sets whose image under
