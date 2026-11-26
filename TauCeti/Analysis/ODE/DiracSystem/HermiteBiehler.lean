@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.ODE.DiracSystem.Basic
+public import TauCeti.Analysis.ODE.DiracSystem.Norm
 
 /-!
 # The Hermite–Biehler functions of a Dirac system
@@ -24,6 +24,14 @@ literature), built from the Neumann column `(A, C)` and the Dirichlet column `(B
 * `E(t, ·)` and `E~(t, ·)` are entire when `q` is integrable between `0` and `t`
   (`TauCeti.differentiable_diracHermiteBiehler`,
   `TauCeti.differentiable_diracHermiteBiehlerDirichlet`).
+* For `q` integrable on `[0, t]` and `t ≥ 0`, the entrywise bound on `M_q(t, z)`
+  (`TauCeti.norm_diracFundamentalMatrix_apply_le`) gives
+  `|E(t, z)|, |E~(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)` (`TauCeti.norm_diracHermiteBiehler_le`,
+  `TauCeti.norm_diracHermiteBiehlerDirichlet_le`), so `|E(t, z)| ≤ C e^{t|z|}` for a constant `C`
+  (`TauCeti.exists_norm_diracHermiteBiehler_le_mul_exp`,
+  `TauCeti.exists_norm_diracHermiteBiehlerDirichlet_le_mul_exp`), and likewise for `E~`. With the
+  differentiability above, `E(t, ·)` and `E~(t, ·)` are entire of order at most one and exponential
+  type at most `t`.
 * The integral equations `E(t, z) = 1 + ∫₀ᵗ (-izE(s, z) + q(s)(A(s, z) + iC(s, z))) ds` and
   `E~(t, z) = -i + ∫₀ᵗ (-iz E~(s, z) + q(s)(B(s, z) + iD(s, z))) ds`
   (`TauCeti.diracHermiteBiehler_eq_one_add_integral`,
@@ -94,6 +102,46 @@ theorem differentiable_diracHermiteBiehlerDirichlet (hq : IntegrableOn q (uIcc 0
     Differentiable ℂ (diracHermiteBiehlerDirichlet q t) :=
   (differentiable_diracFundamentalMatrix_apply hq 0 1).sub
     ((differentiable_diracFundamentalMatrix_apply hq 1 1).const_mul I)
+
+/-- **Growth of `E`.** If `q` is integrable on `[0, t]` and `t ≥ 0`, then
+`|E(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)`. -/
+theorem norm_diracHermiteBiehler_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) (z : ℂ) :
+    ‖diracHermiteBiehler q t z‖ ≤ 2 * Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) := by
+  rw [diracHermiteBiehler_def]
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_mul, norm_I, one_mul, two_mul]
+  exact add_le_add (norm_diracFundamentalMatrix_apply_le hq ht z 0 0)
+    (norm_diracFundamentalMatrix_apply_le hq ht z 1 0)
+
+/-- **Growth of `E~`.** If `q` is integrable on `[0, t]` and `t ≥ 0`, then
+`|E~(t, z)| ≤ 2 exp(t|z| + ∫₀ᵗ |q|)`. -/
+theorem norm_diracHermiteBiehlerDirichlet_le (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t)
+    (z : ℂ) :
+    ‖diracHermiteBiehlerDirichlet q t z‖ ≤
+      2 * Real.exp (t * ‖z‖ + ∫ s in (0 : ℝ)..t, ‖q s‖) := by
+  rw [diracHermiteBiehlerDirichlet_def]
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_mul, norm_I, one_mul, two_mul]
+  exact add_le_add (norm_diracFundamentalMatrix_apply_le hq ht z 0 1)
+    (norm_diracFundamentalMatrix_apply_le hq ht z 1 1)
+
+/-- **`E(t, ·)` has exponential type at most `t`**: `|E(t, z)| ≤ C e^{t|z|}` for a constant `C`.
+Together with `TauCeti.differentiable_diracHermiteBiehler`, `E(t, ·)` is entire of order at most
+one. -/
+theorem exists_norm_diracHermiteBiehler_le_mul_exp (hq : IntegrableOn q (Icc 0 t)) (ht : 0 ≤ t) :
+    ∃ C, ∀ z, ‖diracHermiteBiehler q t z‖ ≤ C * Real.exp (t * ‖z‖) :=
+  ⟨2 * Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖), fun z ↦ by
+    rw [mul_assoc, ← Real.exp_add, add_comm (∫ s in (0 : ℝ)..t, ‖q s‖)]
+    exact norm_diracHermiteBiehler_le hq ht z⟩
+
+/-- **`E~(t, ·)` has exponential type at most `t`**: `|E~(t, z)| ≤ C e^{t|z|}` for a constant
+`C`. Together with `TauCeti.differentiable_diracHermiteBiehlerDirichlet`, `E~(t, ·)` is entire of
+order at most one. -/
+theorem exists_norm_diracHermiteBiehlerDirichlet_le_mul_exp (hq : IntegrableOn q (Icc 0 t))
+    (ht : 0 ≤ t) : ∃ C, ∀ z, ‖diracHermiteBiehlerDirichlet q t z‖ ≤ C * Real.exp (t * ‖z‖) :=
+  ⟨2 * Real.exp (∫ s in (0 : ℝ)..t, ‖q s‖), fun z ↦ by
+    rw [mul_assoc, ← Real.exp_add, add_comm (∫ s in (0 : ℝ)..t, ‖q s‖)]
+    exact norm_diracHermiteBiehlerDirichlet_le hq ht z⟩
 
 /-- The functional `x ↦ x₀ - i x₁` and the Dirac equation it satisfies: the value at
 `-Ω (z - Q_q(s)) x` is `-iz (x₀ - i x₁) + q(s) (x₀ + i x₁)`. -/
