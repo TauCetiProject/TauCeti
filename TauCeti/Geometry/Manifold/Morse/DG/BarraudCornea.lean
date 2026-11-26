@@ -76,6 +76,8 @@ push-forwards of its chains along the restriction of `morseLoopEvaluation`.
   trajectory is its Moore path mapped by `θ`.
 * `TauCeti.IsAdaptedPseudoGradient.morseLoopEvaluation_morseRecordsConcat`: the evaluation into
   loops takes concatenation of broken trajectories to the product of Moore loops.
+* `IsAdaptedPseudoGradient.morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp`: the
+  same multiplicativity on the trajectory spaces, along their composition maps.
 * `TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectoryRecordsCocycle_m`: the entries of the
   twisting cocycle of a twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the Barraud–Cornea
@@ -144,6 +146,24 @@ theorem morseLoopEvaluation_morseRecordsConcat
   mooreLoopEvaluation_mul _ _ hθ
     (fun x z y u v ↦ hX.morseLevelPath_morseRecordsConcat hf (hdense x y) (fun i ↦ hc i z) (u, v))
     x y z u v
+
+/-- The evaluation into Moore loops, restricted to the trajectory spaces, is multiplicative along
+their composition maps: this is the hypothesis under which the push-forwards of a homotopy of chain
+systems form a continuation cocycle. -/
+theorem morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x) (x z y : criticalPoints 𝓘(ℝ, E) f)
+    (u : hX.morseBrokenTrajectorySpace c x z) (v : hX.morseBrokenTrajectorySpace c z y) :
+    (hX.morseLoopEvaluation hf hdense hθ x y).comp
+        (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _))
+        (hX.morseBrokenTrajectorySpaceComp hc x z y (u, v)) =
+      (hX.morseLoopEvaluation hf hdense hθ x z).comp
+          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)) u *
+        (hX.morseLoopEvaluation hf hdense hθ z y).comp
+          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)) v := by
+  simp only [ContinuousMap.comp_apply]
+  exact (congrArg (hX.morseLoopEvaluation hf hdense hθ x y)
+    (hX.inclusion_morseBrokenTrajectorySpaceComp hc x z y (u, v))).trans
+      (hX.morseLoopEvaluation_morseRecordsConcat hf hdense hθ hc x z y _ _)
 
 /-! ### The twisting cocycle on the compactified spaces of trajectories -/
 

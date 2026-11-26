@@ -43,6 +43,10 @@ As a consequence, two formal objects with the same normalization have isomorphic
 different normalizations (`RigidObject.normalize_rightDual_rightDual_ne`), and no comparison
 between them is produced. No pivotal structure is used.
 
+Isomorphisms `e a : f a ≅ g a` between the images of the generators extend to isomorphisms
+`RigidObject.evalIso e X : RigidObject.eval f X ≅ RigidObject.eval g X`, through the adjoint
+mate of the inverse at a dual; this extension respects identities, composites and inverses.
+
 Evaluation is compatible with substitution: `RigidObject.eval_subst` for formal objects, and
 `WindingWord.evalSubstIso` for words, which transports each replacing word through the
 integer dual level of its occurrence using `WindingWord.evalDualPowIso`.
@@ -248,6 +252,67 @@ def eval (f : α → C) : RigidObject α → C
   | tensor X Y ihX ihY => rw [subst_tensor, eval_tensor, eval_tensor, ihX, ihY]
   | rightDual X ih => rw [subst_rightDual, eval_rightDual, eval_rightDual, ih]
   | leftDual X ih => rw [subst_leftDual, eval_leftDual, eval_leftDual, ih]
+
+section EvalIso
+
+variable {f g h : α → C}
+
+/-- Isomorphisms `e a : f a ≅ g a` between the images of the generators extend to isomorphisms
+between the evaluations of every formal rigid object: tensor products go to tensor products of
+isomorphisms and the unit to its identity, and at a right or left dual the isomorphism is the
+adjoint mate of the inverse of the isomorphism at the object. -/
+def evalIso (e : ∀ a, f a ≅ g a) : (X : RigidObject α) → eval f X ≅ eval g X
+  | .of a => e a
+  | .unit => Iso.refl (𝟙_ C)
+  | .tensor X Y => evalIso e X ⊗ᵢ evalIso e Y
+  | .rightDual X => (evalIso e X).symm.rightAdjointMate
+  | .leftDual X => (evalIso e X).symm.leftAdjointMate
+
+@[simp] theorem evalIso_of (e : ∀ a, f a ≅ g a) (a : α) : evalIso e (.of a) = e a := (rfl)
+
+@[simp] theorem evalIso_unit (e : ∀ a, f a ≅ g a) :
+    evalIso e (.unit : RigidObject α) = Iso.refl (𝟙_ C) := (rfl)
+
+@[simp] theorem evalIso_tensor (e : ∀ a, f a ≅ g a) (X Y : RigidObject α) :
+    evalIso e (X.tensor Y) = evalIso e X ⊗ᵢ evalIso e Y := (rfl)
+
+@[simp] theorem evalIso_rightDual (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso e X.rightDual = (evalIso e X).symm.rightAdjointMate := (rfl)
+
+@[simp] theorem evalIso_leftDual (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso e X.leftDual = (evalIso e X).symm.leftAdjointMate := (rfl)
+
+/-- The extension of the identity isomorphisms is the identity. -/
+@[simp] theorem evalIso_refl (X : RigidObject α) :
+    evalIso (fun a ↦ Iso.refl (f a)) X = Iso.refl (eval f X) := by
+  induction X with
+  | of a => rfl
+  | unit => rfl
+  | tensor X Y ihX ihY => ext; simp [ihX, ihY]
+  | rightDual X ih => ext; simp [ih]
+  | leftDual X ih => ext; simp [ih]
+
+/-- The extension of composite isomorphisms is the composite of the extensions. -/
+@[simp] theorem evalIso_trans (e : ∀ a, f a ≅ g a) (e' : ∀ a, g a ≅ h a) (X : RigidObject α) :
+    evalIso (fun a ↦ e a ≪≫ e' a) X = evalIso e X ≪≫ evalIso e' X := by
+  induction X with
+  | of a => rfl
+  | unit => ext; simp
+  | tensor X Y ihX ihY => ext; simp [ihX, ihY]
+  | rightDual X ih => ext; simp [ih, comp_rightAdjointMate]
+  | leftDual X ih => ext; simp [ih, comp_leftAdjointMate]
+
+/-- The extension of inverse isomorphisms is the inverse of the extension. -/
+@[simp] theorem evalIso_symm (e : ∀ a, f a ≅ g a) (X : RigidObject α) :
+    evalIso (fun a ↦ (e a).symm) X = (evalIso e X).symm := by
+  induction X with
+  | of a => rfl
+  | unit => ext; simp
+  | tensor X Y ihX ihY => ext; simp [ihX, ihY]
+  | rightDual X ih => ext; simp [ih]
+  | leftDual X ih => ext; simp [ih]
+
+end EvalIso
 
 private theorem eval_rightDual_iterate (f : α → C) (n : ℕ) (X : RigidObject α) :
     eval f (rightDual^[n] X) = iteratedRightDual n (eval f X) := by
