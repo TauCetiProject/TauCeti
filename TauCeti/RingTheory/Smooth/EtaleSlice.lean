@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Determinant
-public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.RingTheory.Etale.Basic
 public import Mathlib.RingTheory.Smooth.Basic
 import Mathlib.Algebra.Algebra.Shrink
 import Mathlib.LinearAlgebra.TensorProduct.Prod
+import Mathlib.LinearAlgebra.TensorProduct.Quotient
 import Mathlib.RingTheory.Finiteness.Small
-import Mathlib.RingTheory.Smooth.StandardSmoothCotangent
+import TauCeti.Algebra.Module.Projective.FreeComplement
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Kaehler
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Smooth
 import TauCeti.RingTheory.Kaehler.BaseChange
 import TauCeti.RingTheory.Kaehler.Conormal
 import TauCeti.RingTheory.Kaehler.FormallyEtale
+import TauCeti.RingTheory.Kaehler.Localization
 
 /-!
 # Factoring closed-fibre points of smooth algebras through étale slices
@@ -37,25 +37,21 @@ yields Elkik's smooth lifting theorem (`TauCeti.HenselianRing.comp_surjective`).
 
 The construction has two steps, following Stacks Project Lemma 15.13.3 (Tag 0H74):
 1. **Free-cotangent retract** (`Algebra.Smooth.exists_retract_basis_kaehlerDifferential`): because
-   `Ω[A⁄R]` is finitely generated projective over `A`, there is a split surjection
-   `(Fin n → A) →ₗ[A] Ω[A⁄R]` with finite projective kernel `K`. Passing to
+   `Ω[A⁄R]` is finitely generated projective over `A`, it admits a finite projective complement `K`
+   with `Ω[A⁄R] × K ≃ₗ[A] (Fin n → A)` (`Module.Projective.exists_prod_linearEquiv_fin`). Passing to
    `B := SymmetricAlgebra A K` makes `A` an `R`-algebra retract of a smooth `R`-algebra `B` whose
    Jacobi–Zariski sequence splits globally, giving a global `B`-basis of `Ω[B⁄R]` of rank `n`.
 2. **Transverse coordinates along `ker ψ`**
-   (`Module.Basis.exists_ker_and_det_D_eq_one_of_surjective` and
-   `Module.Basis.exists_etale_quotient_localizationAway`): lifting the basis elements of `Ω[B⁄R]`
-   modulo `(ker ψ) • Ω[B⁄R]` via the conormal surjection
-   (`KaehlerDifferential.exists_mem_and_mk_D_eq`) produces elements `x : Fin n → B` in `ker ψ`
-   whose Jacobian matrix in the basis reduces under `ψ` to the identity matrix over `T`. Inverting
-   the Jacobian determinant `d` (`Module.Basis.exists_basis_D_localizationAway_det`) and quotienting
-   `B[1/d]` by `(x₁, …, xₙ)` cuts out an étale `R`-algebra
-   (`Module.Basis.etale_quotient_span_range`) through which `ψ` factors.
+   (`Module.Basis.exists_etale_quotient_localizationAway`): reducing the basis of `Ω[B⁄R]` modulo
+   `J • Ω[B⁄R]` (`J = ker ψ`), lifting its vectors via the conormal surjection
+   (`KaehlerDifferential.exists_mem_and_mk_D_eq`) to elements `x : ι → B` in `J`, and localizing via
+   `TauCeti.KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway` gives `d ≡ 1 (mod J)`
+   such that the differentials `D xᵢ` form a basis of `Ω[B[1/d]⁄R]`. Quotienting `B[1/d]` by `(xᵢ)`
+   then cuts out an étale `R`-algebra (`Module.Basis.etale_quotient_span_range`) through which `ψ`
+   factors.
 
 ## Main results
 
-* `Module.Basis.exists_ker_and_det_D_eq_one_of_surjective`: given a finite basis `b` of `Ω[B⁄R]` and
-  `ψ : B →ₐ[R] T` with `algebraMap R T` surjective, there are `x : ι → B` in `ker ψ` whose
-  differentials have Jacobian matrix congruent to `1` under `ψ` (in particular `ψ(det(d x)) = 1`).
 * `Module.Basis.exists_etale_quotient_localizationAway`: when `B` is smooth over `R` with free
   differentials indexed by `ι`, `ψ` factors through an explicit étale quotient `B[1/d] ⧸ (xᵢ)`.
 * `Algebra.Smooth.exists_retract_basis_kaehlerDifferential`: every smooth `R`-algebra `A` is an
@@ -79,41 +75,6 @@ open KaehlerDifferential TensorProduct
 universe u v
 
 namespace Module.Basis
-
-/-- Given an `R`-algebra `B`, a finite `B`-basis `b` of `Ω[B⁄R]`, and an `R`-algebra map
-`ψ : B →ₐ[R] T` with `algebraMap R T` surjective, there exist elements `x : ι → B` in `ker ψ` whose
-Jacobian matrix in the basis `b` maps under `ψ` to the identity matrix `1` over `T`; in particular
-`ψ (b.det (D R B ∘ x)) = 1`. -/
-theorem exists_ker_and_det_D_eq_one_of_surjective {R B T ι : Type*} [CommRing R] [CommRing B]
-    [Algebra R B] [CommRing T] [Algebra R T] [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι B Ω[B⁄R]) (hsurj : Function.Surjective (algebraMap R T)) (ψ : B →ₐ[R] T) :
-    ∃ x : ι → B, (∀ i, ψ (x i) = 0) ∧
-      ψ.toRingHom.mapMatrix (b.toMatrix (fun i ↦ D R B (x i))) = 1 ∧
-      ψ (b.det fun i ↦ D R B (x i)) = 1 := by
-  set J : Ideal B := RingHom.ker ψ
-  -- `R → B ⧸ J` is surjective since `R → T` is surjective, so `B ⧸ J` is formally unramified.
-  have hRJ : Function.Surjective (algebraMap R (B ⧸ J)) := fun z ↦ by
-    obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
-    obtain ⟨r, hr⟩ := hsurj (ψ y)
-    exact ⟨r, (Ideal.Quotient.eq.mpr (by simp [J, RingHom.mem_ker, ← hr])).symm⟩
-  have : Algebra.FormallyUnramified R (B ⧸ J) := .of_surjective (Algebra.ofId R (B ⧸ J)) hRJ
-  choose x hxJ hxb using fun j ↦
-    KaehlerDifferential.exists_mem_and_mk_D_eq J (Submodule.Quotient.mk (b j))
-  have hmat : ψ.toRingHom.mapMatrix (b.toMatrix (fun j ↦ D R B (x j))) = 1 := by
-    ext i j
-    -- `D R B (x j) - b j ∈ J • Ω[B⁄R]`, so its `i`-th coordinate in `b` lies in `J = ker ψ`.
-    have hmem : b.coord i (D R B (x j)) - b.coord i (b j) ∈ J := by
-      rw [← map_sub]
-      have hmap := Submodule.mem_map_of_mem (f := b.coord i)
-        ((Submodule.Quotient.eq _).mp (hxb j))
-      rw [Submodule.map_smul''] at hmap
-      exact Submodule.smul_le.mpr (fun r hr c _ ↦ J.mul_mem_right c hr) hmap
-    have hij : ψ (b.coord i (D R B (x j))) = ψ (b.coord i (b j)) :=
-      sub_eq_zero.mp (by rw [← map_sub]; exact RingHom.mem_ker.mp hmem)
-    simpa [Module.Basis.toMatrix_apply, Finsupp.single_apply, Matrix.one_apply, eq_comm] using hij
-  refine ⟨x, hxJ, hmat, ?_⟩
-  rw [Module.Basis.det_apply, ← AlgHom.coe_toRingHom, RingHom.map_det]
-  simpa using congrArg Matrix.det hmat
 
 /-- When `B` is smooth over `R` and `Ω[B⁄R]` admits a `B`-basis `b` indexed by `ι`, any `R`-algebra
 map `ψ : B →ₐ[R] T` with `algebraMap R T` surjective factors through an étale quotient
@@ -143,15 +104,28 @@ theorem exists_etale_quotient_localizationAway {R B T ι : Type*} [CommRing R] [
         commutes' := fun _ ↦ Subsingleton.elim _ _ }
     exact ⟨0, 0, ψC, Subsingleton.elim _ _, fun _ ↦ Subsingleton.elim _ _, inferInstance,
       Subsingleton.elim _ _⟩
-  · classical
-    have : Nontrivial B := not_subsingleton_iff_nontrivial.mp hB
+  · have : Nontrivial B := not_subsingleton_iff_nontrivial.mp hB
     have : Finite ι := Module.Finite.finite_basis b
-    let _ : Fintype ι := Fintype.ofFinite ι
-    obtain ⟨x, hψx, -, hψd⟩ := b.exists_ker_and_det_D_eq_one_of_surjective hsurj ψ
-    set d := b.det fun i ↦ D R B (x i)
+    set J : Ideal B := RingHom.ker ψ
+    -- `R → B ⧸ J` is surjective since `R → T` is surjective, so `B ⧸ J` is formally unramified.
+    have hRJ : Function.Surjective (algebraMap R (B ⧸ J)) := fun z ↦ by
+      obtain ⟨y, rfl⟩ := Ideal.Quotient.mk_surjective z
+      obtain ⟨r, hr⟩ := hsurj (ψ y)
+      exact ⟨r, (Ideal.Quotient.eq.mpr (by simp [J, RingHom.mem_ker, ← hr])).symm⟩
+    have : Algebra.FormallyUnramified R (B ⧸ J) := .of_surjective (Algebra.ofId R (B ⧸ J)) hRJ
+    -- Reduce `b` modulo `J • Ω[B⁄R]`, lift to differentials of elements of `J`, and localize.
+    let bJ : Module.Basis ι (B ⧸ J) (Ω[B⁄R] ⧸ J • (⊤ : Submodule B Ω[B⁄R])) :=
+      (b.baseChange (B ⧸ J)).map
+        ((TensorProduct.quotTensorEquivQuotSMul Ω[B⁄R] J).extendScalarsOfSurjective
+          Ideal.Quotient.mk_surjective)
+    choose x hxJ hxb using fun i ↦ KaehlerDifferential.exists_mem_and_mk_D_eq J (bJ i)
+    obtain ⟨d, hdJ, bx, hbx⟩ :=
+      TauCeti.KaehlerDifferential.exists_sub_one_mem_and_basis_localizationAway J bJ
+        fun i ↦ (hxb i).symm
+    have hψd : ψ d = 1 :=
+      sub_eq_zero.mp (by rw [← map_one ψ, ← map_sub]; exact RingHom.mem_ker.mp hdJ)
+    have hψx (i : ι) : ψ (x i) = 0 := RingHom.mem_ker.mp (hxJ i)
     let W := Localization.Away d
-    -- On `W = B[1/d]`, `d` is invertible so the images of `x i` have differentials forming a basis.
-    obtain ⟨bx, hbx⟩ := b.exists_basis_D_localizationAway_det x
     have : Algebra.Smooth R W := .comp R B W
     let xW : ι → W := algebraMap B W ∘ x
     have het : Algebra.Etale R (W ⧸ Ideal.span (Set.range xW)) := bx.etale_quotient_span_range hbx
@@ -180,29 +154,19 @@ theorem exists_retract_basis_kaehlerDifferential (R : Type u) (A : Type v) [Comm
     ∃ (n : ℕ) (B : Type v) (_ : CommRing B) (_ : Algebra R B) (_ : Algebra.Smooth R B)
       (α : A →ₐ[R] B) (β : B →ₐ[R] A),
       β.comp α = AlgHom.id R A ∧ Nonempty (Module.Basis (Fin n) B Ω[B⁄R]) := by
-  -- Choose a split surjection `(Fin n → A) →ₗ[A] Ω[A⁄R]` with finite projective kernel `K`, and
-  -- set `B := SymmetricAlgebra A K` with augmentation retract `SymmetricAlgebra.algebraMapInv`.
-  obtain ⟨n, g, hg⟩ := Module.Finite.exists_fin' A Ω[A⁄R]
-  obtain ⟨l, hl⟩ := Module.projective_lifting_property g LinearMap.id hg
-  let K := LinearMap.ker g
-  obtain ⟨e₀, -⟩ := (LinearMap.exact_subtype_ker_map g).splitSurjectiveEquiv
-    K.injective_subtype ⟨l, hl⟩
-  -- `K` is a direct summand of the finite free `A`-module `Fin n → A`, hence finite projective.
-  have hKproj : Module.Projective A K :=
-    .of_split (e₀.symm.toLinearMap ∘ₗ LinearMap.inl A K Ω[A⁄R])
-      (LinearMap.fst A K Ω[A⁄R] ∘ₗ e₀.toLinearMap) (by ext x; simp)
-  have hKfin : Module.Finite A K :=
-    .of_surjective (LinearMap.fst A K Ω[A⁄R] ∘ₗ e₀.toLinearMap)
-      (Prod.fst_surjective.comp e₀.surjective)
+  -- Choose a finite projective complement `K` with `Ω[A⁄R] × K ≃ₗ[A] (Fin n → A)`, and set
+  -- `B := SymmetricAlgebra A K` with augmentation retract `SymmetricAlgebra.algebraMapInv`.
+  obtain ⟨K, _, _, _, _, n, ⟨e⟩⟩ := Module.Projective.exists_prod_linearEquiv_fin A Ω[A⁄R]
+  let : Module R K := Module.compHom K (algebraMap R A)
+  have : IsScalarTower R A K := .of_algebraMap_smul fun _ _ ↦ rfl
   let B := SymmetricAlgebra A K
   have : Algebra.Smooth R B := .comp R A B
   obtain ⟨eB, -⟩ := TauCeti.exists_kaehlerDifferentialProdEquiv R A B
-  -- Transport `Pi.basisFun A (Fin n)` along `B ⊗[A] (Fin n → A) ≃ B ⊗[A] (K × Ω[A⁄R]) ≃ Ω[B⁄R]`.
-  let bAK : Module.Basis (Fin n) B (B ⊗[A] (K × Ω[A⁄R])) :=
-    Algebra.TensorProduct.basis B ((Pi.basisFun A (Fin n)).map e₀)
-  let eTot : (B ⊗[A] (K × Ω[A⁄R])) ≃ₗ[B] Ω[B⁄R] :=
-    TensorProduct.prodRight A B B K Ω[A⁄R] ≪≫ₗ
-      LinearEquiv.prodComm B (B ⊗[A] K) (B ⊗[A] Ω[A⁄R]) ≪≫ₗ
+  -- Transport `Pi.basisFun A (Fin n)` along `B ⊗[A] (Fin n → A) ≃ B ⊗[A] (Ω[A⁄R] × K) ≃ Ω[B⁄R]`.
+  let bAK : Module.Basis (Fin n) B (B ⊗[A] (Ω[A⁄R] × K)) :=
+    Algebra.TensorProduct.basis B ((Pi.basisFun A (Fin n)).map e.symm)
+  let eTot : (B ⊗[A] (Ω[A⁄R] × K)) ≃ₗ[B] Ω[B⁄R] :=
+    TensorProduct.prodRight A B B Ω[A⁄R] K ≪≫ₗ
       LinearEquiv.prodCongr (LinearEquiv.refl B (B ⊗[A] Ω[A⁄R]))
         (SymmetricAlgebra.kaehlerDifferentialEquiv A K).symm ≪≫ₗ
       eB.symm
