@@ -16,8 +16,9 @@ import TauCeti.RingTheory.TensorProduct.Finite
 
 Irreducibility cannot be dropped from
 `Representation.exists_isIrreducible_nonempty_equiv_externalTensor` (and simplicity cannot be
-dropped from `FDRep.externalTensor_classification`), which write every irreducible representation
-of a product `G × H` over an algebraically closed field as an external tensor product.
+dropped from `FDRep.externalTensor_classification`), which write every finite-dimensional
+irreducible representation of a product `G × H` over an algebraically closed field as an external
+tensor product.
 
 Write `C₂ = ℤˣ`, with trivial representation `1` and sign representation `sgn` on `ℂ`. The
 representation `τ = 1 ⊠ 1 ⊕ sgn ⊠ sgn` of `C₂ × C₂` on `ℂ²`, a sum of two lines, is not
