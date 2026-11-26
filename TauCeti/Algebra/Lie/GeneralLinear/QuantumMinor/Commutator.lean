@@ -79,8 +79,9 @@ private theorem lie_quantumMinor_summand (E : Matrix ι ι A) {p q : ι}
       by_cases hk : k = j <;> simp [r, f, h, hk]
     · simpa only [r, h, ite_false, P, MultilinearMap.mkPiAlgebraFin_apply] using
         (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_zero f j
-  rw [show ⁅E p q, T j (a (σ j)) (b j)⁆ = l - r from lie_shifted_entry E hE _,
-    ← hl, ← hr]
+  have hbracket : ⁅E p q, T j (a (σ j)) (b j)⁆ = l - r := by
+    simpa only [T, l, r] using lie_shifted_entry E hE (u - (j.val : K))
+  rw [hbracket, ← hl, ← hr]
   exact (MultilinearMap.mkPiAlgebraFin ℤ n A).map_update_sub f j l r
 
 /-- The commutator of a matrix unit with a quantum minor is the sum of the row-index
