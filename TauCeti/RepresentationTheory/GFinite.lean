@@ -29,6 +29,7 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 * `Representation.IsGFinite ρ v`: the orbit of `v` spans a finite-dimensional subspace.
 * `Representation.gFiniteSubmodule ρ`: the submodule of `G`-finite vectors, the case of the family
   `ρ` of `TauCeti.finiteSpanRangeSubmodule` from `TauCeti/LinearAlgebra/Span/FiniteRange.lean`.
+* `Representation.gFiniteSubrepresentation ρ`: the same vectors, as a subrepresentation of `ρ`.
 
 ## Main statements
 
@@ -47,6 +48,8 @@ representation of a compact group, this is the space of `K`-finite vectors of ha
 * `Representation.IsGFinite.of_injective`: injective intertwining maps reflect `G`-finiteness.
 * `Representation.gFiniteSubmodule_eq_top`: every vector of a finite-dimensional representation is
   `G`-finite.
+* `Representation.isGFinite_gFiniteSubrepresentation`: every vector of the `G`-finite
+  subrepresentation is `G`-finite for the restricted representation.
 
 ## References
 
@@ -175,5 +178,29 @@ theorem map_gFiniteSubmodule_le (f : IntertwiningMap ρ σ) :
 @[simp]
 theorem gFiniteSubmodule_eq_top [FiniteDimensional k V] : ρ.gFiniteSubmodule = ⊤ :=
   eq_top_iff.2 fun v _ => ρ.mem_gFiniteSubmodule.2 (IsGFinite.of_finiteDimensional v)
+
+/-- The **`G`-finite vectors** of a representation, as a subrepresentation. -/
+def gFiniteSubrepresentation : Subrepresentation ρ where
+  toSubmodule := ρ.gFiniteSubmodule
+  apply_mem_toSubmodule g _ hv := ρ.apply_mem_gFiniteSubmodule hv g
+
+@[simp]
+theorem toSubmodule_gFiniteSubrepresentation :
+    ρ.gFiniteSubrepresentation.toSubmodule = ρ.gFiniteSubmodule :=
+  (rfl)
+
+/-- Membership in the `G`-finite subrepresentation is `G`-finiteness. -/
+@[simp]
+theorem mem_gFiniteSubrepresentation {v : V} :
+    v ∈ ρ.gFiniteSubrepresentation ↔ ρ.IsGFinite v :=
+  ρ.mem_gFiniteSubmodule
+
+/-- Every vector of the `G`-finite subrepresentation is `G`-finite for the restricted
+representation. -/
+theorem isGFinite_gFiniteSubrepresentation (v : ρ.gFiniteSubrepresentation.toSubmodule) :
+    ρ.gFiniteSubrepresentation.toRepresentation.IsGFinite v :=
+  IsGFinite.of_injective ρ.gFiniteSubrepresentation.subtype
+    ρ.gFiniteSubrepresentation.subtype_injective
+    (congrFun (Subrepresentation.coe_subtype _) v ▸ ρ.mem_gFiniteSubmodule.1 v.prop)
 
 end Representation

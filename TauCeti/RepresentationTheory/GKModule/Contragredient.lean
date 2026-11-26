@@ -88,41 +88,28 @@ theorem isGFinite_dual_lie [FiniteDimensional k 𝔤] {f : Dual k V} (hf : M.ρ.
 /-- The `K`-finite linear forms on `V`, a Lie submodule of `Dual k V` when `𝔤` is
 finite-dimensional. -/
 def contragredientSubmodule [FiniteDimensional k 𝔤] : LieSubmodule k 𝔤 (Dual k V) where
-  toSubmodule := M.ρ.dual.gFiniteSubmodule
-  lie_mem {x _} hf :=
-    M.ρ.dual.mem_gFiniteSubmodule.2 (M.isGFinite_dual_lie (M.ρ.dual.mem_gFiniteSubmodule.1 hf) x)
+  toSubmodule := M.ρ.dual.gFiniteSubrepresentation.toSubmodule
+  lie_mem {x _} hf := M.ρ.dual.mem_gFiniteSubrepresentation.2
+    (M.isGFinite_dual_lie (M.ρ.dual.mem_gFiniteSubrepresentation.1 hf) x)
 
 @[simp]
 theorem mem_contragredientSubmodule [FiniteDimensional k 𝔤] {f : Dual k V} :
     f ∈ M.contragredientSubmodule ↔ M.ρ.dual.IsGFinite f :=
-  M.ρ.dual.mem_gFiniteSubmodule
+  M.ρ.dual.mem_gFiniteSubrepresentation
 
 /-- For a finite-dimensional `V`, every linear form is `K`-finite, so the contragredient is the
 whole dual. -/
 theorem contragredientSubmodule_eq_top [FiniteDimensional k 𝔤] [FiniteDimensional k V] :
     M.contragredientSubmodule = ⊤ :=
-  LieSubmodule.toSubmodule_injective M.ρ.dual.gFiniteSubmodule_eq_top
-
-/-- The `K`-finite linear forms, as a subrepresentation of the dual representation. -/
-def contragredientSubrepresentation [FiniteDimensional k 𝔤] : Subrepresentation M.ρ.dual where
-  toSubmodule := M.contragredientSubmodule.toSubmodule
-  apply_mem_toSubmodule g _ hf := apply_mem_gFiniteSubmodule M.ρ.dual hf g
-
-@[simp]
-theorem mem_contragredientSubrepresentation [FiniteDimensional k 𝔤] {f : Dual k V} :
-    f ∈ M.contragredientSubrepresentation ↔ M.ρ.dual.IsGFinite f :=
-  M.mem_contragredientSubmodule
+  LieSubmodule.toSubmodule_injective
+    (M.ρ.dual.toSubmodule_gFiniteSubrepresentation.trans M.ρ.dual.gFiniteSubmodule_eq_top)
 
 /-- **The contragredient `(𝔤, K)`-module** `M^∨`: the `K`-finite linear forms on `V`, with the
 dual actions of `𝔤` and `K`. -/
 def contragredient [FiniteDimensional k 𝔤] : GKModule Ad M.contragredientSubmodule where
-  ρ := M.contragredientSubrepresentation.toRepresentation
+  ρ := M.ρ.dual.gFiniteSubrepresentation.toRepresentation
   map_lie g x f := Subtype.ext (M.dual_lie g x f)
-  isGFinite f := IsGFinite.of_injective M.contragredientSubrepresentation.subtype
-    M.contragredientSubrepresentation.subtype_injective
-      (by
-        have h := congrFun (Subrepresentation.coe_subtype M.contragredientSubrepresentation) f
-        exact h ▸ M.mem_contragredientSubmodule.1 f.prop)
+  isGFinite := M.ρ.dual.isGFinite_gFiniteSubrepresentation
 
 @[simp]
 theorem contragredient_ρ_apply_coe [FiniteDimensional k 𝔤] (g : K)
