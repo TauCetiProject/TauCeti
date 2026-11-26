@@ -72,6 +72,15 @@ theorem quotientSheaf.mem_relSieve {T T' : C} (a b : T ⟶ U) (g : T' ⟶ T) :
         ∃ r : T' ⟶ R, r ≫ t = g ≫ b ∧ r ≫ s = g ≫ a :=
   Iff.rfl
 
+/-- The pullback of `quotientSheaf.relSieve s t a b` along `g` is the sieve of the points `g ≫ a`
+and `g ≫ b`. -/
+@[simp]
+theorem quotientSheaf.pullback_relSieve {T T' : C} (a b : T ⟶ U) (g : T' ⟶ T) :
+    Sieve.pullback g (quotientSheaf.relSieve s t a b) =
+      quotientSheaf.relSieve s t (g ≫ a) (g ≫ b) := by
+  ext
+  simp
+
 variable [J.Subcanonical] [HasSheafify J (Type (max v w))]
 
 variable {s t}
@@ -88,13 +97,10 @@ theorem quotientSheaf.uliftYoneda_map_π_eq_of_relSieve_mem {T : C} {a b : T ⟶
       r ≫ s = g ≫ y → J.uliftYoneda.{w}.map (g ≫ x) ≫ quotientSheaf.π J s t =
         J.uliftYoneda.{w}.map (g ≫ y) ≫ quotientSheaf.π J s t := by
     intro x y T' g r hx hy
-    rw [← hx, ← hy, Functor.map_comp, Functor.map_comp, Category.assoc, Category.assoc,
-      quotientSheaf.condition]
+    simp [← hx, ← hy, quotientSheaf.condition]
   apply J.uliftYonedaEquiv.injective
   refine hsep.ext fun T' g hg ↦ ?_
-  rw [GrothendieckTopology.uliftYonedaEquiv_naturality,
-    GrothendieckTopology.uliftYonedaEquiv_naturality, ← Category.assoc, ← Category.assoc,
-    ← Functor.map_comp, ← Functor.map_comp]
+  simp only [GrothendieckTopology.uliftYonedaEquiv_naturality, ← Functor.map_comp_assoc]
   rcases hg with hg | ⟨r, h₁, h₂⟩ | ⟨r, h₁, h₂⟩
   · rw [hg]
   · rw [key a b g r h₁ h₂]
@@ -116,9 +122,8 @@ theorem quotientSheaf.isIso_desc_of_relSieve_mem {q : U ⟶ M} (hq : t ≫ q = s
     J.fullyFaithfulUliftYoneda.map_preimage _
   have hb : J.uliftYoneda.{w}.map b = κ ≫ pullback.snd _ _ :=
     J.fullyFaithfulUliftYoneda.map_preimage _
-  have hab : a ≫ q = b ≫ q := J.fullyFaithfulUliftYoneda.map_injective (by
-    rw [Functor.map_comp, Functor.map_comp, ha, hb, Category.assoc, Category.assoc,
-      pullback.condition])
+  have hab : a ≫ q = b ≫ q := J.fullyFaithfulUliftYoneda.{w}.map_injective (by
+    simp [ha, hb, pullback.condition])
   rw [← Category.assoc, ← Category.assoc, ← ha, ← hb]
   exact quotientSheaf.uliftYoneda_map_π_eq_of_relSieve_mem (hR a b hab)
 
