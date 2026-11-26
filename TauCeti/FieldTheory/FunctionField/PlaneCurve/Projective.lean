@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.PlaneCurve.Genus
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 
-import TauCeti.Algebra.Polynomial.Bivariate
+import TauCeti.Algebra.Polynomial.Bivariate.Basic
 import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import TauCeti.Algebra.MvPolynomial.Units

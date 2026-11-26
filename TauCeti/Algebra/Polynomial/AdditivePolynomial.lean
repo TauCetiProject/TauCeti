@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Lagrange
-public import TauCeti.Algebra.Polynomial.Bivariate
+public import TauCeti.Algebra.Polynomial.Bivariate.Basic
 public import TauCeti.RingTheory.PowerSeries.Additive
 
 /-!
