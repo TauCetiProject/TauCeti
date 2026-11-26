@@ -11,6 +11,8 @@ public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.Analysis.Meromorphic.LogDeriv
 import Mathlib.Analysis.Calculus.LogDeriv
 import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
+import TauCeti.Analysis.Meromorphic.Conj
 import TauCeti.Analysis.Meromorphic.NormalForm
 
 /-!
@@ -47,6 +49,20 @@ noncomputable def rieszRemainderMellin (L : ℂ → ℂ) : ℂ → ℂ :=
 theorem meromorphicNFOn_rieszRemainderMellin (L : ℂ → ℂ) :
     MeromorphicNFOn (rieszRemainderMellin L) univ :=
   meromorphicNFOn_toMeromorphicNFOn _ _
+
+open scoped ComplexConjugate in
+/-- Reflecting the input across the real axis reflects its normalized Riesz Mellin expression.
+The equality holds even at poles and removable singularities because both sides use normal form. -/
+@[simp] theorem rieszRemainderMellin_conj_conj (L : ℂ → ℂ) :
+    rieszRemainderMellin (conj ∘ L ∘ conj) = conj ∘ rieszRemainderMellin L ∘ conj := by
+  have hnorm (g : ℂ → ℂ) : toMeromorphicNFOn (conj ∘ g ∘ conj) univ =
+      conj ∘ toMeromorphicNFOn g univ ∘ conj := by
+    simp only [toMeromorphicNFOn_conj_conj, preimage_univ]
+  simp only [rieszRemainderMellin, ← hnorm]
+  congr 1
+  funext s
+  simp only [logDerivFinitePart_conj_conj, meromorphicOrderAt_conj_conj, logDeriv_conj_conj,
+    Function.comp_apply, map_sub, map_mul, map_div₀, map_intCast, map_one, Complex.conj_conj]
 
 /-- The quotient defining the Mellin expression, before normalization, describes its
 punctured germ at every point. -/

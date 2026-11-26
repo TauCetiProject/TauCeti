@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.Meromorphic.NormalForm
+import TauCeti.Analysis.Calculus.LogDeriv.Symmetry
 import TauCeti.Analysis.Contour.Argument.Principle
+import TauCeti.Analysis.Meromorphic.Conj
 
 /-!
 # Finite part of a logarithmic derivative
@@ -65,5 +67,18 @@ theorem _root_.AnalyticAt.logDerivFinitePart_eq_logDeriv {f : ℂ → ℂ} {a : 
     (hf : AnalyticAt ℂ f a) (ha : f a ≠ 0) : logDerivFinitePart f a = logDeriv f a :=
   (hf.logDeriv ha).logDerivFinitePart_eq
     (by simp [hf.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr ha])
+
+open scoped ComplexConjugate in
+/-- Reflection in the real axis conjugates the finite part of the logarithmic derivative. -/
+@[simp] theorem logDerivFinitePart_conj_conj (f : ℂ → ℂ) (a : ℂ) :
+    logDerivFinitePart (conj ∘ f ∘ conj) a = conj (logDerivFinitePart f (conj a)) := by
+  have hnorm (g : ℂ → ℂ) :
+      toMeromorphicNFAt (conj ∘ g ∘ conj) a a = conj (toMeromorphicNFAt g (conj a) (conj a)) := by
+    simp only [toMeromorphicNFAt_conj_conj, Function.comp_apply]
+  simp only [logDerivFinitePart, ← hnorm]
+  congr 1
+  funext z
+  simp only [logDeriv_conj_conj, meromorphicOrderAt_conj_conj, Function.comp_apply,
+    map_sub, map_div₀, map_intCast, Complex.conj_conj]
 
 end TauCeti
