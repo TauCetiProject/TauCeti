@@ -41,10 +41,13 @@ polynomial `TauCeti.newtonMvPolynomial ℤ d k` in `a_1, …, a_d`.
 ## Main definitions
 
 * `TauCeti.SatoTate.coeff g i`: the coefficient `a_i(g)` of `T^i` in `det (1 - T g)`.
+* `TauCeti.SatoTate.trace g`: the trace `tr g`.
 * `TauCeti.SatoTate.coeffVec g`: the vector `(a_0(g), …, a_d(g))`.
 
 ## Main results
 
+* `TauCeti.SatoTate.continuous_trace`, `TauCeti.SatoTate.trace_eq_of_isConj`: the trace is a
+  continuous class function.
 * `TauCeti.SatoTate.coeff_zero`, `TauCeti.SatoTate.coeff_one`, `TauCeti.SatoTate.coeff_dim`,
   `TauCeti.SatoTate.coeff_eq_zero_of_dim_lt`: `a_0 = 1`, `a_1 = -tr g` (also for `d = 0`),
   `a_d = (-1)^d det g`, and `a_i = 0` beyond the degree.
@@ -76,6 +79,27 @@ namespace TauCeti.SatoTate
 
 variable {d : ℕ}
 
+/-- The trace `tr g` of `g ∈ U(d)`. -/
+noncomputable def trace (g : U d) : ℂ :=
+  Matrix.trace (g : Matrix (Fin d) (Fin d) ℂ)
+
+theorem trace_def (g : U d) : trace g = Matrix.trace (g : Matrix (Fin d) (Fin d) ℂ) :=
+  (rfl)
+
+/-- The trace is continuous on `U(d)`. -/
+@[continuity, fun_prop]
+theorem continuous_trace : Continuous (trace : U d → ℂ) :=
+  (continuous_id.matrix_trace).comp continuous_subtypeVal
+
+/-- `tr (gh) = tr (hg)`. -/
+theorem trace_mul_comm (g h : U d) : trace (g * h) = trace (h * g) := by
+  rw [trace_def, trace_def, Submonoid.coe_mul, Submonoid.coe_mul, Matrix.trace_mul_comm]
+
+/-- The trace is a class function on `U(d)`. -/
+theorem trace_eq_of_isConj {g h : U d} (hgh : IsConj g h) : trace g = trace h := by
+  obtain ⟨c, rfl⟩ := isConj_iff.mp hgh
+  rw [trace_mul_comm, inv_mul_cancel_left]
+
 /-- The coefficient `a_i(g)` of `T^i` in the reversed characteristic polynomial
 `det (1 - T g) = 1 + a_1 T + ⋯ + a_d T^d` of `g ∈ U(d)`. It is `(-1)^i` times the `i`-th
 elementary symmetric function of the eigenvalues of `g`
@@ -94,7 +118,7 @@ theorem coeff_zero (g : U d) : coeff g 0 = 1 :=
 
 /-- `a_1 = -tr g`; for `d = 0` both sides vanish. -/
 @[simp]
-theorem coeff_one (g : U d) : coeff g 1 = -(g : Matrix (Fin d) (Fin d) ℂ).trace :=
+theorem coeff_one (g : U d) : coeff g 1 = -trace g :=
   coeff_charpolyRev_eq_neg_trace _
 
 /-- `a_d = (-1)^d det g`. -/
@@ -177,21 +201,22 @@ theorem coeff_dim_sub_of_mem_Od {g : U d} (hg : g ∈ Od d) {i : ℕ} (hi : i �
 /-- **Newton's identities** on `U(d)`: `k a_k = -(a_(k-1) s_1 + a_(k-2) s_2 + ⋯ + a_0 s_k)`, where
 `s_j = tr (g^j)`. -/
 theorem mul_coeff_eq_neg_sum (g : U d) (k : ℕ) :
-    (k : ℂ) * coeff g k = -∑ j ∈ Finset.range k,
-      coeff g (k - (j + 1)) * ((g : Matrix (Fin d) (Fin d) ℂ) ^ (j + 1)).trace :=
-  (g : Matrix (Fin d) (Fin d) ℂ).mul_coeff_charpolyRev_eq_neg_sum k
+    (k : ℂ) * coeff g k =
+      -∑ j ∈ Finset.range k, coeff g (k - (j + 1)) * trace (g ^ (j + 1)) := by
+  simpa [coeff_def, trace_def] using
+    (g : Matrix (Fin d) (Fin d) ℂ).mul_coeff_charpolyRev_eq_neg_sum k
 
 /-- **The power sums are integer polynomials in the coefficients.** `s_k(g) = tr (g^k)` is
 `(-1)^k` times the integer Newton polynomial `TauCeti.newtonMvPolynomial ℤ d k` evaluated at the
 coefficients `a_1(g), …, a_d(g)`. -/
 theorem trace_pow_eq_aeval_coeff (g : U d) (k : ℕ) :
-    ((g : Matrix (Fin d) (Fin d) ℂ) ^ k).trace =
+    trace (g ^ k) =
       (-1) ^ k *
         MvPolynomial.aeval (fun j : Fin d ↦ coeff g (j + 1)) (newtonMvPolynomial ℤ d k) := by
   have h := ((g : Matrix (Fin d) (Fin d) ℂ).trace_pow_eq_aeval_newtonMvPolynomial k).trans
     (aeval_neg_one_pow_mul_newtonMvPolynomial _)
   rw [Fintype.card_fin] at h
-  simpa [coeff_def] using h
+  simpa [coeff_def, trace_def] using h
 
 /-- The coefficient vector `(a_0(g), a_1(g), …, a_d(g))` of `g ∈ U(d)`. -/
 noncomputable def coeffVec (g : U d) : Fin (d + 1) → ℂ :=
