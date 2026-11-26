@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.CategoryTheory.Abelian.Ext
-public import TauCeti.Algebra.Homology.Embedding.DownNatAdd
 public import TauCeti.Algebra.Homology.Embedding.MapExtend
 public import TauCeti.Algebra.Homology.LinearYoneda
 
@@ -24,10 +23,12 @@ the module of morphisms `X.X i ⟶ Y`, up to the identifications of the terms of
 (`ChainComplex.linearYonedaObjExtendIso_hom_f`, `ChainComplex.linearYonedaObjExtendIso_inv_f`), and
 it is natural in `X` (`ChainComplex.linearYonedaObjExtendIso_hom_naturality`).
 
-In particular, placing a chain complex indexed by `ℕ` `n` degrees higher
+In particular, for `e.f i = i'` the cohomology of `Hom(X.extend e, Y)` in degree `i'` is the
+cohomology of `Hom(X, Y)` in degree `i` (`ChainComplex.linearYonedaObjExtendHomologyIso`). For
+instance, placing a chain complex indexed by `ℕ` `n` degrees higher
 (`ComplexShape.embeddingDownNatAdd n`) places its cochain complex of morphisms into `Y` `n`
-degrees higher too, so that the cohomology of `Hom(X.extend e, Y)` in degree `q + n` is the
-cohomology of `Hom(X, Y)` in degree `q` (`ChainComplex.linearYonedaObjExtendHomologyIso`). This is
+degrees higher too, so that cohomology in degree `q + n` of the former is cohomology in degree
+`q` of the latter. This is
 how a chain-level identification of one complex with a shift of another, such as the cap product
 of a Thom isomorphism, computes cohomology with values in any `Y`.
 
@@ -35,9 +36,8 @@ of a Thom isomorphism, computes cohomology with values in any `Y`.
 
 * `ChainComplex.linearYonedaObjExtendIso`: the isomorphism
   `Hom(X.extend e, Y) ≅ Hom(X, Y).extend e.op`.
-* `ChainComplex.linearYonedaObjExtendHomologyIso`: for the embedding `i ↦ i + n` of
-  `ComplexShape.down ℕ` (`ComplexShape.embeddingDownNatAdd n`), the isomorphism
-  `H^{q + n}(Hom(X.extend e, Y)) ≅ H^q(Hom(X, Y))`, natural in `X`
+* `ChainComplex.linearYonedaObjExtendHomologyIso`: for `e.f i = i'`, the isomorphism
+  `H^{i'}(Hom(X.extend e, Y)) ≅ H^i(Hom(X, Y))`, natural in `X`
   (`ChainComplex.linearYonedaObjExtendHomologyIso_hom_naturality`).
 -/
 
@@ -201,51 +201,53 @@ lemma linearYonedaObjExtendIso_hom_naturality {X X' : ChainComplex C α} (φ : X
   · exact (HomologicalComplex.isZero_extend_X (X.linearYonedaObj k Y) e.op i'
       fun i h ↦ hi ⟨i, h⟩).eq_of_tgt _ _
 
-/-- **Cohomology of morphisms out of a shifted chain complex.** If a chain complex `X` indexed by
-`ℕ` is placed `n` degrees higher, the cohomology in degree `q + n` of the complex of morphisms
-from it into `Y` is the cohomology in degree `q` of the complex of morphisms from `X` into `Y`. -/
-def linearYonedaObjExtendHomologyIso (X : ChainComplex C ℕ) (n q : ℕ) :
-    (ChainComplex.linearYonedaObj (X.extend (ComplexShape.embeddingDownNatAdd n)) k Y).homology
-      (q + n) ≅
-      (X.linearYonedaObj k Y).homology q :=
-  (HomologicalComplex.homologyFunctor _ _ (q + n)).mapIso
-      (linearYonedaObjExtendIso Y X (ComplexShape.embeddingDownNatAdd n)) ≪≫
-    (X.linearYonedaObj k Y).extendHomologyIso (ComplexShape.embeddingDownNatAdd n).op
-      (j := q) (ComplexShape.embeddingDownNatAdd_f n q)
+/-- **Cohomology of morphisms out of an extended chain complex.** For an embedding `e` of complex
+shapes and `e.f i = i'`, the cohomology in degree `i'` of the complex of morphisms from
+`X.extend e` into `Y` is the cohomology in degree `i` of the complex of morphisms from `X` into
+`Y`. For `e = ComplexShape.embeddingDownNatAdd n`, which places `X` `n` degrees higher, this
+identifies the cohomology in degree `q + n` with that in degree `q`. -/
+def linearYonedaObjExtendHomologyIso (X : ChainComplex C α)
+    (e : (ComplexShape.down α).Embedding (ComplexShape.down β)) {i : α} {i' : β}
+    (h : e.f i = i') :
+    (ChainComplex.linearYonedaObj (X.extend e) k Y).homology i' ≅
+      (X.linearYonedaObj k Y).homology i :=
+  (HomologicalComplex.homologyFunctor _ _ i').mapIso (linearYonedaObjExtendIso Y X e) ≪≫
+    (X.linearYonedaObj k Y).extendHomologyIso e.op h
 
 /-- `linearYonedaObjExtendHomologyIso` is the map in cohomology of `linearYonedaObjExtendIso`,
 followed by Mathlib's identification `HomologicalComplex.extendHomologyIso` of the cohomology of an
 extension. -/
-lemma linearYonedaObjExtendHomologyIso_hom (X : ChainComplex C ℕ) (n q : ℕ) :
-    (linearYonedaObjExtendHomologyIso (k := k) Y X n q).hom =
-      HomologicalComplex.homologyMap
-          (linearYonedaObjExtendIso Y X (ComplexShape.embeddingDownNatAdd n)).hom (q + n) ≫
-        ((X.linearYonedaObj k Y).extendHomologyIso (ComplexShape.embeddingDownNatAdd n).op
-          (j := q) (ComplexShape.embeddingDownNatAdd_f n q)).hom := (rfl)
+lemma linearYonedaObjExtendHomologyIso_hom (X : ChainComplex C α)
+    (e : (ComplexShape.down α).Embedding (ComplexShape.down β)) {i : α} {i' : β}
+    (h : e.f i = i') :
+    (linearYonedaObjExtendHomologyIso (k := k) Y X e h).hom =
+      HomologicalComplex.homologyMap (linearYonedaObjExtendIso Y X e).hom i' ≫
+        ((X.linearYonedaObj k Y).extendHomologyIso e.op h).hom := (rfl)
 
 /-- **Naturality of `linearYonedaObjExtendHomologyIso` in the chain complex.** For a chain map
-`φ : X ⟶ X'`, the map in cohomology of precomposition with the shifted `φ` corresponds to the map
-in cohomology of precomposition with `φ`. -/
+`φ : X ⟶ X'`, the map in cohomology of precomposition with the extension of `φ` corresponds to the
+map in cohomology of precomposition with `φ`. -/
 @[reassoc]
-lemma linearYonedaObjExtendHomologyIso_hom_naturality {X X' : ChainComplex C ℕ} (φ : X ⟶ X')
-    (n q : ℕ) :
+lemma linearYonedaObjExtendHomologyIso_hom_naturality {X X' : ChainComplex C α} (φ : X ⟶ X')
+    (e : (ComplexShape.down α).Embedding (ComplexShape.down β)) {i : α} {i' : β}
+    (h : e.f i = i') :
     HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map
-        (HomologicalComplex.extendMap φ (ComplexShape.embeddingDownNatAdd n)).op) (q + n) ≫
-        (linearYonedaObjExtendHomologyIso Y X n q).hom =
-      (linearYonedaObjExtendHomologyIso Y X' n q).hom ≫
+        (HomologicalComplex.extendMap φ e).op) i' ≫
+        (linearYonedaObjExtendHomologyIso Y X e h).hom =
+      (linearYonedaObjExtendHomologyIso Y X' e h).hom ≫
         HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k Y).map φ.op)
-          q := by
+          i := by
   -- the map in cohomology of `linearYonedaObjExtendIso_hom_naturality`. The equations are chained
   -- as terms: `rw [← HomologicalComplex.homologyMap_comp_assoc, ...]` finds no instance, because
   -- the statement composes maps out of `(linearYonedaFunctor k Y).obj (op X)` with maps out of
   -- `X.linearYonedaObj k Y`, which agree only by unfolding `linearYonedaFunctor`
-  have h := (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
-    ((congrArg (HomologicalComplex.homologyMap · (q + n))
-      (linearYonedaObjExtendIso_hom_naturality (k := k) Y φ
-        (ComplexShape.embeddingDownNatAdd n))).trans (HomologicalComplex.homologyMap_comp _ _ _))
+  have h' := (HomologicalComplex.homologyMap_comp _ _ _).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · i')
+      (linearYonedaObjExtendIso_hom_naturality (k := k) Y φ e)).trans
+        (HomologicalComplex.homologyMap_comp _ _ _))
   rw [linearYonedaObjExtendHomologyIso_hom, linearYonedaObjExtendHomologyIso_hom]
   -- followed by the naturality of Mathlib's `extendHomologyIso`
-  exact (Category.assoc _ _ _).symm.trans ((h =≫ _).trans ((Category.assoc _ _ _).trans
+  exact (Category.assoc _ _ _).symm.trans ((h' =≫ _).trans ((Category.assoc _ _ _).trans
     (_ ≫= HomologicalComplex.extendHomologyIso_hom_naturality _ _ _)))
 
 end ChainComplex

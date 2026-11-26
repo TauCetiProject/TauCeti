@@ -353,7 +353,8 @@ def thomPairSingularCohomologyIsoTwistedCohomology
         (homotopyEquivalences_thomPairTwistedChainMap F E hι k hφ hu))
   (asIso (HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
       (thomPairTwistedChainMap F E hι k hφ).op) (p + finrank ℝ F))).symm ≪≫
-    ChainComplex.linearYonedaObjExtendHomologyIso N _ (finrank ℝ F) p
+    ChainComplex.linearYonedaObjExtendHomologyIso N _
+      (ComplexShape.embeddingDownNatAdd (finrank ℝ F)) (ComplexShape.embeddingDownNatAdd_f _ p)
 
 variable (F E) in
 /-- The inverse of `thomPairSingularCohomologyIsoTwistedCohomology` is the removal of the shift,
@@ -370,7 +371,9 @@ theorem thomPairSingularCohomologyIsoTwistedCohomology_inv
         (ModuleCat.of k k) k (ModuleCat.of k k)).homologyπ (finrank ℝ F) φ))
     (N : ModuleCat.{w} k) (p : ℕ) :
     (thomPairSingularCohomologyIsoTwistedCohomology F E hι k hφ hu N p).inv =
-      (ChainComplex.linearYonedaObjExtendHomologyIso N _ (finrank ℝ F) p).inv ≫
+      (ChainComplex.linearYonedaObjExtendHomologyIso N _
+        (ComplexShape.embeddingDownNatAdd (finrank ℝ F))
+        (ComplexShape.embeddingDownNatAdd_f _ p)).inv ≫
         HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
           (thomPairTwistedChainMap F E hι k hφ).op) (p + finrank ℝ F) :=
   (rfl)
