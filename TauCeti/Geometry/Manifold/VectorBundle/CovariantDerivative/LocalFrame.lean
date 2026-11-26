@@ -704,6 +704,20 @@ theorem christoffelMap_apply [Fintype ι] (hcov : IsCovariantDerivativeOn E cov 
         (christoffelForm b hcov x (e.symmL 𝕜 x v) (e.symmL 𝕜 x w)) :=
   bundleChristoffelMap_apply b e hcov v w
 
+/-- Reading the Christoffel map back in the tangent fibre gives the frame sum of covariant
+derivatives, weighted by the coordinates of its first argument. -/
+theorem symmL_christoffelMap_eq_sum [Fintype ι]
+    (hcov : IsCovariantDerivativeOn E cov e.baseSet) (hx : x ∈ e.baseSet) (v w : E) :
+    e.symmL 𝕜 x (christoffelMap b hcov x v w) =
+      ∑ i, b.coord i v • cov (e.localFrame b i) x (e.symmL 𝕜 x w) := by
+  rw [christoffelMap_apply, e.symmL_continuousLinearMapAt hx,
+    christoffelForm_apply b hcov hx, sum_apply]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [smul_apply, e.localFrameCoeff_eq_coeff (s := fun y ↦ e.symmL 𝕜 y v) hx]
+  dsimp only
+  rw [e.symmL_apply hx, e.apply_mk_symm hx]
+  rw [Module.Basis.coord_apply]
+
 /-- A covariant derivative on the tangent bundle differentiates the vector field with constant
 coordinates `v` in the trivialization `e`, in the direction with coordinates `u`, by the Christoffel
 map: the result has coordinates `christoffelMap b hcov x v u`. -/
