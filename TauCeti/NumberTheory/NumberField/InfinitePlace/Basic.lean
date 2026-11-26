@@ -9,6 +9,7 @@ public import Mathlib.Analysis.AbsoluteValue.Equivalence
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.TotallyRealComplex
 public import Mathlib.NumberTheory.NumberField.Discriminant.Defs
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+public import Mathlib.NumberTheory.Ostrowski
 import Mathlib.Analysis.Complex.Order
 import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
@@ -35,7 +36,8 @@ a place `v` of `k` exactly when its restriction to `k` is `v`. If `w` lies over 
 other.
 
 An infinite place is archimedean, since it takes the value `2` at `2`, and is therefore never
-equivalent to a nonarchimedean absolute value.
+equivalent to a nonarchimedean absolute value. In characteristic zero it restricts to the real
+absolute value on `ℚ`.
 
 ## Main results
 
@@ -83,6 +85,8 @@ equivalent to a nonarchimedean absolute value.
 * `NumberField.InfinitePlace.mk_eq_mk_iff_of_isUnramified`: embeddings with a common restriction
   and the same unramified infinite place are equal.
 * `NumberField.InfinitePlace.not_isNonarchimedean`: an infinite place is archimedean.
+* `NumberField.InfinitePlace.under_rat`: an infinite place restricts to the real absolute value
+  on `ℚ`.
 * `NumberField.InfinitePlace.not_isEquiv_of_isNonarchimedean`: an infinite place is never
   equivalent to a nonarchimedean absolute value.
 * `NumberField.IsTotallyReal.instIsEmptyIsComplex`: a totally real field has no complex infinite
@@ -357,6 +361,16 @@ theorem InfinitePlace.not_isNonarchimedean (v : InfinitePlace K) : ¬IsNonarchim
   have := h.apply_natCast_le_one (n := 2) (by simp) (by simp)
   rw [← InfinitePlace.coe_apply, v.map_natCast] at this
   norm_num at this
+
+/-- An infinite place of a field of characteristic zero restricts to the real absolute value on
+`ℚ`. -/
+@[simp]
+theorem InfinitePlace.under_rat [CharZero K] (v : InfinitePlace K) :
+    v.val.under ℚ = Rat.AbsoluteValue.real := by
+  ext q
+  rw [AbsoluteValue.under_apply, ← coe_apply, ← v.norm_embedding_eq, eq_ratCast (algebraMap ℚ K),
+    map_ratCast, Complex.norm_ratCast]
+  rfl
 
 /-- An infinite place is never equivalent to a nonarchimedean absolute value. -/
 theorem InfinitePlace.not_isEquiv_of_isNonarchimedean (v : InfinitePlace K)
