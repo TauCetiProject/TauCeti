@@ -61,8 +61,7 @@ theorem mvPolynomialMinor_comp_equiv {t' : Type*} [Fintype t'] [DecidableEq t'] 
     (r : t → m) (c : t → n) :
     mvPolynomialMinor R (r ∘ e) (c ∘ e) = mvPolynomialMinor R r c := by
   rw [mvPolynomialMinor_eq_det_submatrix, mvPolynomialMinor_eq_det_submatrix,
-    ← det_submatrix_equiv_self e]
-  rfl
+    ← det_submatrix_equiv_self e, Matrix.submatrix_submatrix]
 
 variable {R}
 

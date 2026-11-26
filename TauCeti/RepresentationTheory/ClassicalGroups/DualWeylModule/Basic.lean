@@ -298,8 +298,7 @@ private theorem columnOperation_mvPolynomialMinor {k : ℕ} (hk : k ≤ n) (r : 
   have h_eval : columnOperation R s t = aeval fun p : Fin N × Fin n => A p.1 p.2 :=
     columnOperation_def R s t
   have h_C : Polynomial.C (Matrix.mvPolynomialMinor R r (Fin.castLE hk)) = B.det := by
-    rw [Matrix.mvPolynomialMinor_eq_det_submatrix, RingHom.map_det]
-    rfl
+    rw [Matrix.mvPolynomialMinor_eq_det_submatrix, RingHom.map_det, RingHom.mapMatrix_apply]
   rw [h_eval, Matrix.aeval_mvPolynomialMinor, h_C]
   by_cases htk : (t : ℕ) < k
   · have hsk : (s : ℕ) < k := lt_trans hst htk

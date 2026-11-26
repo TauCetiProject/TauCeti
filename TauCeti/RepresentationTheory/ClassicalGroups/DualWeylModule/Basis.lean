@@ -189,6 +189,12 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
       (columnMinor R ν ((YoungDiagram.colLen_le_of_le h.le 0).trans hμ) (ssytFilling T) j) := by
   have h₁ := YoungDiagram.colLen_le_of_le h.le j
   have h₂ := h.colLen_le_colLen_add_one j
+  -- Reindexing the first `μ.colLen j` columns along `μ.colLen j = k` gives the first `k` columns.
+  have h_cols {k : ℕ} (heq : μ.colLen j = k) :
+      Fin.castLE ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ) ∘ finCongr heq.symm =
+        Fin.castLE (heq ▸ ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ)) := by
+    ext
+    simp
   rw [columnMinor_def, columnMinor_def]
   by_cases hlt : ν.colLen j < μ.colLen j
   · have heq : μ.colLen j = ν.colLen j + 1 := by omega
@@ -208,11 +214,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
       · have h_mem : ((a : ℕ), j) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr a.isLt
         ext
         simp [h_mem]
-    have h_cols : Fin.castLE ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ) ∘
-        finCongr heq.symm = Fin.castLE (heq ▸ ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ)) := by
-      ext
-      simp
-    rw [h_rows, h_cols]
+    rw [h_rows, h_cols heq]
     exact hasLeadingTerm_lastRowEquiv_mvPolynomialMinor_snoc _ _
   · have heq : μ.colLen j = ν.colLen j := by omega
     rw [borderExponent_of_not_lt hμ hlt,
@@ -225,11 +227,7 @@ theorem hasLeadingTerm_columnMinor_extend (h : μ.InterlacedBy ν) (hμ : μ.col
       have h_mem : ((a : ℕ), j) ∈ ν := YoungDiagram.mem_iff_lt_colLen.mpr a.isLt
       ext
       simp [h_mem]
-    have h_cols : Fin.castLE ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ) ∘
-        finCongr heq.symm = Fin.castLE (heq ▸ ((μ.colLen_anti 0 j (Nat.zero_le j)).trans hμ)) := by
-      ext
-      simp
-    rw [h_rows, h_cols, lastRowEquiv_mvPolynomialMinor_castSucc, C_apply]
+    rw [h_rows, h_cols heq, lastRowEquiv_mvPolynomialMinor_castSucc, C_apply]
     exact colex.hasLeadingTerm_monomial _ _
 
 /-- The differences `μ.rowLen s - ν.rowLen s` of the row lengths of two Young diagrams, for the

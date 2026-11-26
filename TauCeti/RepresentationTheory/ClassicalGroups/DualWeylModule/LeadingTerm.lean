@@ -260,6 +260,7 @@ theorem columnOperation_leadingCoeff_lastRowEquiv {s t : Fin n} (hst : s < t)
   have h_coeff := congrArg (fun p => p.coeff (colex.degree E)) h'
   simp only [coeff_map] at h_coeff
   rw [h_lead.coeff_eq] at h_coeff
+  rw [MonomialOrder.leadingCoeff]
   exact h_coeff.symm
 
 variable {d : Fin n → ℕ}
@@ -394,11 +395,8 @@ theorem degree_lastRowEquiv_add_le (hf : f ∈ dualWeylModule R (N + 1) d) (hf0 
   -- The coefficient of `T ^ γ i` of `x ↦ x·(1 + T·e_{ji})` applied to `f` vanishes.
   have hP : (columnOperation R j i f).coeff (γ i) = 0 :=
     coeff_columnOperation_eq_zero hf hij' h_lt
-  have hG : E.coeff γ ≠ 0 := by
-    have : colex.leadingCoeff E ≠ 0 := by
-      rw [Ne, colex.leadingCoeff_eq_zero_iff, EmbeddingLike.map_eq_zero_iff]
-      exact hf0
-    exact this
+  have hG : E.coeff γ ≠ 0 :=
+    colex.coeff_degree_ne_zero_iff.mpr (by rw [Ne, EmbeddingLike.map_eq_zero_iff]; exact hf0)
   -- Expand in the last row, with `y_i` set to `0`, so that `y_i` becomes `T * y_j`.
   let z : Fin n → MvPolynomial (Fin n) (MvPolynomial (Fin N × Fin n) R) :=
     fun l => if l = i then 0 else X l
