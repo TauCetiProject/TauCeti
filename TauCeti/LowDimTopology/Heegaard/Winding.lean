@@ -52,6 +52,9 @@ the periodic domains of Maslov index zero.
 
 ## Main results
 
+* `TauCeti.exists_lt_of_winding` and `TauCeti.exists_pos_and_neg_of_winding`: the coefficients of
+  `e P` in the winding regions, for an additive map `e` into the domains of any region system; the
+  versions for Heegaard triples in `TauCeti.LowDimTopology.Heegaard.Triple.Winding` use them too.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissible_of_winding`: sufficiently wound
   diagrams are weakly admissible.
 * `TauCeti.HeegaardRegionSystem.exists_forall_weaklyAdmissibleAt_of_winding`: sufficiently wound
@@ -74,14 +77,12 @@ namespace TauCeti
 
 universe u v w
 
-namespace HeegaardRegionSystem
+variable {L ι : Type*} [AddCommGroup L]
 
-variable {L ι : Type*} [AddCommGroup L] [Finite ι]
-
-omit [Finite ι] in
-/-- A region realizing a winding multiplicity of `e P` above `t` gives a region of `e P` above
-`t`. -/
-private theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
+/-- Let `e : L →+ (Region → ℤ)` have, for each `i`, a region on which `e P` has multiplicity
+`p_i(P) + N aᵢ(P)` and a region on which it has multiplicity `q_i(P) - N aᵢ(P)`, for all `P`. If one
+of these winding multiplicities of `P` exceeds `t`, then some coefficient of `e P` exceeds `t`. -/
+theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
     (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) {P : L} {t : ℝ}
@@ -93,10 +94,10 @@ private theorem exists_lt_of_winding {Region : Type*} {a p q : ι → L →+ ℤ
   · obtain ⟨r, hr⟩ := hq i
     exact ⟨r, by rwa [hr]⟩
 
-omit [Finite ι] in
-/-- If the winding estimate with `c = 0` holds for `P` and `-P`, then `e P` has a positive and a
-negative coefficient. -/
-private theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
+/-- Let `e : L →+ (Region → ℤ)` have the winding regions of `exists_lt_of_winding`. If the winding
+estimate `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul` with the functional `0` holds
+at `N`, then `e P` has a positive and a negative coefficient for every `P ≠ 0`. -/
+theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L →+ ℤ}
     {e : L →+ (Region → ℤ)} {N : ℕ}
     (hp : ∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P)
     (hq : ∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P)
@@ -106,6 +107,10 @@ private theorem exists_pos_and_neg_of_winding {Region : Type*} {a p q : ι → L
   obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hest P hP)
   obtain ⟨s, hs⟩ := exists_lt_of_winding hp hq (hest (-P) (neg_ne_zero.mpr hP))
   exact ⟨⟨r, by simpa using hr⟩, ⟨s, by simpa using hs⟩⟩
+
+namespace HeegaardRegionSystem
+
+variable [Finite ι]
 
 /-- **Weak admissibility by winding.** Let the coordinates `aᵢ` detect the elements of `L`.
 Then there is `N₀` such that, for every `N ≥ N₀`, a region system is weakly admissible as soon
