@@ -44,10 +44,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 sufficiently close to `y₀`. -/
 private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) (hU_uniq : UniqueDiffOn ℝ (U ∩ C)) {X : E → E} (hX : ContDiffOn ℝ 1 X (U ∩ C))
-    {x₀ y₀ : E} {r τ : ℝ} {KΦ : ℝ≥0} (hτ : 0 < τ) (h2rU : ball x₀ (2 * r) ⊆ U)
-    (hy₀ : y₀ ∈ ball x₀ r ∩ C)
-    (hmem : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
-      forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C)
+    {x₀ y₀ : E} {r τ : ℝ} {KΦ : ℝ≥0} (hτ : 0 < τ) (hy₀ : y₀ ∈ ball x₀ r ∩ C)
+    (hmemU : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ U ∩ C)
     (hint : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
       forwardSemiflow X (U ∩ C) t y =
         y + ∫ s in (0 : ℝ)..t, X (forwardSemiflow X (U ∩ C) s y))
@@ -65,14 +63,13 @@ private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : C
   have hγ_cont {z : E} (hz : z ∈ ball x₀ r ∩ C) : ContinuousOn (fun s ↦ Φ s z) (Icc 0 τ) :=
     hcontΦ.comp (continuousOn_id.prodMk continuousOn_const) fun _ hs ↦ ⟨hs, hz⟩
   have hX_cont {z : E} (hz : z ∈ ball x₀ r ∩ C) : ContinuousOn (fun s ↦ X (Φ s z)) (Icc 0 τ) :=
-    hX.continuousOn.comp (hγ_cont hz) fun s hs ↦ ⟨h2rU (hmem z hz s hs).1, (hmem z hz s hs).2⟩
+    hX.continuousOn.comp (hγ_cont hz) fun s hs ↦ hmemU z hz s hs
   -- Step 1: Bound `‖DX (Φ s y₀)‖` uniformly on `[0, τ]` by `CD ≥ 0`.
   have hM₀_cont : Continuous (fun s ↦ DX (Φ (projIcc 0 τ hτ.le s) y₀)) :=
     (hX.continuousOn_fderivWithin hU_uniq le_rfl).comp_continuous
       ((hγ_cont hy₀).comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
         fun s ↦ (projIcc 0 τ hτ.le s).property)
-      fun s ↦ ⟨h2rU (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).property).1,
-        (hmem y₀ hy₀ _ (projIcc 0 τ hτ.le s).property).2⟩
+      fun s ↦ hmemU y₀ hy₀ _ (projIcc 0 τ hτ.le s).property
   obtain ⟨BD, hBD⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hM₀_cont.norm).continuousOn (s := Icc 0 τ))
   set CD : ℝ := max BD 0; have hCD : 0 ≤ CD := le_max_right _ _
@@ -85,7 +82,7 @@ private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : C
   set η : ℝ := ε / (4 * τ * K' * Real.exp (CD * τ))
   obtain ⟨ρ, hρ, hTaylor⟩ := hC.exists_pos_norm_image_sub_sub_fderivWithin_le_of_isCompact
     hU hU_uniq hX (isCompact_Icc.image_of_continuousOn (hγ_cont hy₀))
-    (by rintro _ ⟨s, hs, rfl⟩; exact ⟨h2rU (hmem y₀ hy₀ s hs).1, (hmem y₀ hy₀ s hs).2⟩)
+    (by rintro _ ⟨s, hs, rfl⟩; exact hmemU y₀ hy₀ s hs)
     (by positivity : 0 < η)
   refine ⟨ρ / K', by positivity, fun y hy hdist ↦ ?_⟩
   -- Step 3: Bound the nonlinear Taylor remainder and form the forced Volterra integral equation.
@@ -101,7 +98,7 @@ private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : C
       ((hLipΦ s hsI).dist_le_mul y hy y₀ hy₀).trans_lt <|
         (mul_le_mul_of_nonneg_right hKΦ_le dist_nonneg).trans_lt
           ((mul_lt_mul_of_pos_left hdist hK').trans_eq (mul_div_cancel₀ ρ hK'.ne'))
-    refine (hTaylor (Φ s y₀) (mem_image_of_mem _ hsI) (Φ s y) (hmem y hy s hsI).2 hdist_s).trans ?_
+    refine (hTaylor (Φ s y₀) (mem_image_of_mem _ hsI) (Φ s y) (hmemU y hy s hsI).2 hdist_s).trans ?_
     calc η * ‖Φ s y - Φ s y₀‖ ≤ η * ((KΦ : ℝ) * ‖y - y₀‖) := by
           gcongr; simpa [dist_eq_norm] using (hLipΦ s hsI).dist_le_mul y hy y₀ hy₀
       _ ≤ R₀ := by simp only [R₀, mul_assoc]; gcongr
@@ -146,9 +143,7 @@ private theorem exists_pos_norm_sub_sub_dysonSeriesLeft_le {C U : Set E} (hC : C
 `Φ p.1 p.2 - Φ p₀.1 p.2 - (p.1 - p₀.1) • X (Φ p₀.1 p₀.2)` has norm at most `ε / 2 * ‖p - p₀‖`. -/
 private theorem norm_forwardSemiflow_time_increment_le {C U : Set E} {X : E → E}
     (hX : ContDiffOn ℝ 1 X (U ∩ C)) {x₀ : E} {r τ ε δ₁ : ℝ} (hε : 0 < ε)
-    (h2rU : ball x₀ (2 * r) ⊆ U)
-    (hmem : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
-      forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C)
+    (hmemU : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ U ∩ C)
     (hint : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
       forwardSemiflow X (U ∩ C) t y = y + ∫ s in (0 : ℝ)..t, X (forwardSemiflow X (U ∩ C) s y))
     (hcontΦ : ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (Icc 0 τ ×ˢ (ball x₀ r ∩ C)))
@@ -162,8 +157,7 @@ private theorem norm_forwardSemiflow_time_increment_le {C U : Set E} {X : E → 
       ε / 2 * ‖p - p₀‖ := by
   set Φ := forwardSemiflow X (U ∩ C)
   have hXΦ_cont : ContinuousOn (X ∘ uncurry Φ) (Icc 0 τ ×ˢ (ball x₀ r ∩ C)) :=
-    hX.continuousOn.comp hcontΦ
-      fun q hq ↦ ⟨h2rU (hmem q.2 hq.2 q.1 hq.1).1, (hmem q.2 hq.2 q.1 hq.1).2⟩
+    hX.continuousOn.comp hcontΦ fun q hq ↦ hmemU q.2 hq.2 q.1 hq.1
   have hX_y : ContinuousOn (fun s ↦ X (Φ s p.2)) (Icc 0 τ) :=
     hXΦ_cont.comp (continuousOn_id.prodMk continuousOn_const) fun _ hs ↦ ⟨hs, hpS.2⟩
   have hdiff_int : Φ p.1 p.2 - Φ p₀.1 p.2 = ∫ s in p₀.1..p.1, X (Φ s p.2) := by
@@ -198,9 +192,8 @@ private theorem norm_forwardSemiflow_time_increment_le {C U : Set E} {X : E → 
 `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`, valid up to `t = 0` and `∂C`. -/
 private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Convex ℝ C)
     (hU : IsOpen U) (hU_uniq : UniqueDiffOn ℝ (U ∩ C)) {X : E → E} (hX : ContDiffOn ℝ 1 X (U ∩ C))
-    {x₀ : E} {r τ : ℝ} {K : ℝ≥0} (hτ : 0 < τ) (h2rU : ball x₀ (2 * r) ⊆ U)
-    (hmem : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
-      forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C)
+    {x₀ : E} {r τ : ℝ} {K : ℝ≥0} (hτ : 0 < τ)
+    (hmemU : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ U ∩ C)
     (hint : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
       forwardSemiflow X (U ∩ C) t y = y + ∫ s in (0 : ℝ)..t, X (forwardSemiflow X (U ∩ C) s y))
     (hLipΦ : ∀ t ∈ Icc 0 τ,
@@ -218,12 +211,12 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
   set S := Icc 0 τ ×ˢ (ball x₀ r ∩ C)
   rw [hasFDerivWithinAt_iff_isLittleO, Asymptotics.isLittleO_iff]
   intro ε hε
-  have hXΦ_cont : ContinuousOn (X ∘ uncurry Φ) S := hX.continuousOn.comp hcontΦ
-    fun p hp ↦ ⟨h2rU (hmem p.2 hp.2 p.1 hp.1).1, (hmem p.2 hp.2 p.1 hp.1).2⟩
+  have hXΦ_cont : ContinuousOn (X ∘ uncurry Φ) S :=
+    hX.continuousOn.comp hcontΦ fun p hp ↦ hmemU p.2 hp.2 p.1 hp.1
   obtain ⟨δ₁, hδ₁, hcloseX⟩ :=
     Metric.continuousWithinAt_iff.mp (hXΦ_cont p₀ hp₀) (ε / 2) (half_pos hε)
-  obtain ⟨δ₂, hδ₂, hrem⟩ := exists_pos_norm_sub_sub_dysonSeriesLeft_le hC hU hU_uniq hX hτ h2rU
-    hp₀.2 hmem hint (fun t ht ↦ (hLipΦ t ht).weaken (Real.toNNReal_mono
+  obtain ⟨δ₂, hδ₂, hrem⟩ := exists_pos_norm_sub_sub_dysonSeriesLeft_le hC hU hU_uniq hX hτ
+    hp₀.2 hmemU hint (fun t ht ↦ (hLipΦ t ht).weaken (Real.toNNReal_mono
       (Real.exp_le_exp.mpr (mul_le_mul_of_nonneg_left ht.2 K.coe_nonneg))))
     hcontΦ hp₀.1 hε
   filter_upwards [nhdsWithin_le_nhds (Metric.ball_mem_nhds p₀ (lt_min hδ₁ hδ₂)),
@@ -236,7 +229,7 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
   let E₂ := Φ p₀.1 p.2 - Φ p₀.1 p₀.2 - dysonSeriesLeft
     (fun s ↦ fderivWithin ℝ X (U ∩ C) (Φ (projIcc 0 τ hτ.le s) p₀.2)) p₀.1 (p.2 - p₀.2)
   have ht_inc : ‖E₁‖ ≤ ε / 2 * ‖p - p₀‖ :=
-    norm_forwardSemiflow_time_increment_le hX hε h2rU hmem hint hcontΦ hp₀ hpS hp_d1
+    norm_forwardSemiflow_time_increment_le hX hε hmemU hint hcontΦ hp₀ hpS hp_d1
       (fun q hq hdist ↦ hcloseX hq hdist)
   rw [show uncurry Φ p - uncurry Φ p₀ -
       ((ContinuousLinearMap.fst ℝ ℝ E).smulRight (X (Φ p₀.1 p₀.2)) +
@@ -252,9 +245,8 @@ private theorem hasFDerivWithinAt_local_forwardSemiflow {C U : Set E} (hC : Conv
 `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`. -/
 private theorem continuousOn_dysonSeriesLeft_forwardSemiflow {C U : Set E}
     (hU_uniq : UniqueDiffOn ℝ (U ∩ C)) {X : E → E} (hX : ContDiffOn ℝ 1 X (U ∩ C)) {x₀ : E}
-    {r τ : ℝ} (hτ : 0 < τ) (h2rU : ball x₀ (2 * r) ⊆ U)
-    (hmem : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ,
-      forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r) ∩ C)
+    {r τ : ℝ} (hτ : 0 < τ)
+    (hmemU : ∀ y ∈ ball x₀ r ∩ C, ∀ t ∈ Icc 0 τ, forwardSemiflow X (U ∩ C) t y ∈ U ∩ C)
     (hcontΦ : ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) (Icc 0 τ ×ˢ (ball x₀ r ∩ C))) :
     ContinuousOn (fun p : ℝ × E ↦ dysonSeriesLeft
       (fun s ↦ fderivWithin ℝ X (U ∩ C)
@@ -269,9 +261,8 @@ private theorem continuousOn_dysonSeriesLeft_forwardSemiflow {C U : Set E}
       continuous_snd).prodMk (continuous_subtypeVal.comp continuous_fst))
       fun q ↦ ⟨(projIcc 0 τ hτ.le q.2).property, q.1.property⟩
   have hP_cont : Continuous (uncurry P) :=
-    (hX.continuousOn_fderivWithin hU_uniq le_rfl).comp_continuous hΦP fun q ↦
-      ⟨h2rU (hmem q.1.val q.1.property _ (projIcc 0 τ hτ.le q.2).property).1,
-        (hmem q.1.val q.1.property _ (projIcc 0 τ hτ.le q.2).property).2⟩
+    (hX.continuousOn_fderivWithin hU_uniq le_rfl).comp_continuous hΦP
+      fun q ↦ hmemU q.1.val q.1.property _ (projIcc 0 τ hτ.le q.2).property
   rw [continuousOn_iff_continuous_domRestrict]
   exact (continuous_parametric_dysonSeriesLeft hP_cont).comp
     (((continuous_snd.comp continuous_subtypeVal).subtype_mk fun p ↦ p.property.2).prodMk
@@ -281,10 +272,9 @@ private theorem continuousOn_dysonSeriesLeft_forwardSemiflow {C U : Set E}
 pair `(forwardSemiflow X (U ∩ C) · y, dysonSeriesLeft ·)`. -/
 private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
     (hU_uniq : UniqueDiffOn ℝ (U ∩ C)) {X : E → E} (hX : ContDiffOn ℝ 2 X (U ∩ C))
-    {x₀ y : E} {r₁ τ₁ b : ℝ} (hτ₁ : 0 < τ₁) (hb : 0 < b) (hb_le : b ≤ τ₁)
-    (h2r₁U : ball x₀ (2 * r₁) ⊆ U)
+    {y : E} {τ₁ b : ℝ} (hτ₁ : 0 < τ₁) (hb : 0 < b) (hb_le : b ≤ τ₁)
     (hsub₁ : Ico 0 (2 * τ₁) ⊆ forwardSemiflowInterval X (U ∩ C) y)
-    (hmem₁ : ∀ t ∈ Icc 0 τ₁, forwardSemiflow X (U ∩ C) t y ∈ ball x₀ (2 * r₁) ∩ C)
+    (hmemU₁ : ∀ t ∈ Icc 0 τ₁, forwardSemiflow X (U ∩ C) t y ∈ U ∩ C)
     (hcont₁ : ContinuousOn (fun t ↦ forwardSemiflow X (U ∩ C) t y) (Icc 0 τ₁))
     {t : ℝ} (ht : t ∈ Ico 0 b) :
     let X' : E × (E →L[ℝ] E) → E × (E →L[ℝ] E) :=
@@ -307,13 +297,12 @@ private theorem eq_forwardSemiflow_variational {C U : Set E} (hC : Convex ℝ C)
   have hMy_cont : Continuous M_y := hDX.continuousOn.comp_continuous
     (hcont₁.comp_continuous (continuous_subtypeVal.comp continuous_projIcc)
       fun s ↦ (projIcc 0 τ₁ hτ₁.le s).property)
-    fun s ↦ ⟨h2r₁U (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).1,
-      (hmem₁ _ (projIcc 0 τ₁ hτ₁.le s).property).2⟩
+    fun s ↦ hmemU₁ _ (projIcc 0 τ₁ hτ₁.le s).property
   refine (hX'_lip.eqOn_forwardSemiflow
     (γ := fun s ↦ (forwardSemiflow X (U ∩ C) s y, dysonSeriesLeft M_y s))
     hb (Prod.ext (forwardSemiflow_zero _ _ _) (dysonSeriesLeft_zero _))
-    (fun s hs ↦ ⟨⟨h2r₁U (hmem₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).1, trivial⟩,
-      ⟨(hmem₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).2, trivial⟩⟩) (fun s hs ↦ ?_) ht).symm
+    (fun s hs ↦ ⟨⟨(hmemU₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).1, trivial⟩,
+      ⟨(hmemU₁ s ⟨hs.1, hs.2.le.trans hb_le⟩).2, trivial⟩⟩) (fun s hs ↦ ?_) ht).symm
   have hd₂ : HasDerivWithinAt (dysonSeriesLeft M_y)
       ((fderivWithin ℝ X (U ∩ C) (forwardSemiflow X (U ∩ C) s y)).comp (dysonSeriesLeft M_y s))
       (Ico 0 b) s := by
@@ -346,15 +335,6 @@ private theorem variationalField_mem_strictInwardCone {C U : Set E} (hC : Convex
   rw [interior_prod_eq, interior_univ]
   exact ⟨ht_int, trivial⟩
 
-omit [CompleteSpace E] in
-/-- `UniqueDiffOn` for a convex set `C` and its open intersection `U ∩ C` from a strictly inward
-vector. -/
-private theorem uniqueDiffOn_convex_and_inter {C U : Set E} (hC : Convex ℝ C) (hU : IsOpen U)
-    {x₀ v : E} (hv : v ∈ strictInwardCone C x₀) :
-    UniqueDiffOn ℝ C ∧ UniqueDiffOn ℝ (U ∩ C) :=
-  have hC_uniq := uniqueDiffOn_convex hC (interior_nonempty_of_mem_strictInwardCone hv)
-  ⟨hC_uniq, inter_comm C U ▸ hC_uniq.inter hU⟩
-
 end VariationalHelpers
 
 /-- Inductive short-time `C^{k+1}` regularity of `uncurry (forwardSemiflow X (U ∩ C))` on a uniform
@@ -373,28 +353,34 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
     -- verify its continuity on `Icc 0 τ ×ˢ (ball x₀ r ∩ C)`.
     intro E _ _ _ C U hC hU X hX x₀ hx₀ hX_in
     have hX1 : ContDiffOn ℝ 1 X (U ∩ C) := by simpa using hX
-    obtain ⟨hC_uniq, hU_uniq⟩ := uniqueDiffOn_convex_and_inter hC hU hX_in
+    have hC_uniq := hC.uniqueDiffOn_of_mem_strictInwardCone hX_in
+    have hU_uniq := hC.uniqueDiffOn_inter_of_mem_strictInwardCone hU hX_in
     obtain ⟨r, hr, τ, hτ, _, h2rU, _, hsub, hmem, hint, hLipΦ, hcontΦ⟩ :=
       hC.exists_local_forwardSemiflow_continuousOn hU
         (hC.locallyLipschitzOn_inter_of_contDiffOn hU hX1) hx₀ hX_in
+    have hmemU (y : E) (hy : y ∈ ball x₀ r ∩ C) (t : ℝ) (ht : t ∈ Icc 0 τ) :
+        forwardSemiflow X (U ∩ C) t y ∈ U ∩ C := inter_subset_inter_left C h2rU (hmem y hy t ht)
     have hS_uniq : UniqueDiffOn ℝ (Icc 0 τ ×ˢ (ball x₀ r ∩ C)) :=
       (uniqueDiffOn_Icc hτ).prod (inter_comm C _ ▸ hC_uniq.inter isOpen_ball)
     refine ⟨r, hr, τ, hτ, (ball_subset_ball (by linarith)).trans h2rU, hsub, ?_⟩
     rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_hasFDerivWithinAt_of_uniqueDiffOn hS_uniq]
     refine ⟨by simp, _, ?_, fun _ hp ↦ hasFDerivWithinAt_local_forwardSemiflow hC hU hU_uniq hX1
-      hτ h2rU hmem hint hLipΦ hcontΦ hp⟩
+      hτ hmemU hint hLipΦ hcontΦ hp⟩
     exact (contDiffOn_const.smulRight (contDiffOn_zero.mpr <| hX1.continuousOn.comp hcontΦ
-      fun p hp ↦ ⟨h2rU (hmem p.2 hp.2 p.1 hp.1).1, (hmem p.2 hp.2 p.1 hp.1).2⟩)).add
+      fun p hp ↦ hmemU p.2 hp.2 p.1 hp.1)).add
       ((contDiffOn_zero.mpr <| continuousOn_dysonSeriesLeft_forwardSemiflow
-        hU_uniq hX1 hτ h2rU hmem hcontΦ).clm_comp contDiffOn_const)
+        hU_uniq hX1 hτ hmemU hcontΦ).clm_comp contDiffOn_const)
   | succ k ih =>
     -- Step 1: Obtain local `C^0`/Lipschitz semiflow data for `X` on `(r₁, τ₁)`.
     intro E _ _ _ C U hC hU X hX x₀ hx₀ hX_in
     have hX1 : ContDiffOn ℝ 1 X (U ∩ C) := hX.of_le (by norm_cast; omega)
-    obtain ⟨hC_uniq, hU_uniq⟩ := uniqueDiffOn_convex_and_inter hC hU hX_in
+    have hC_uniq := hC.uniqueDiffOn_of_mem_strictInwardCone hX_in
+    have hU_uniq := hC.uniqueDiffOn_inter_of_mem_strictInwardCone hU hX_in
     obtain ⟨r₁, hr₁, τ₁, hτ₁, _, h2r₁U, _, hsub₁, hmem₁, hint₁, hLip₁, hcont₁⟩ :=
       hC.exists_local_forwardSemiflow_continuousOn hU
         (hC.locallyLipschitzOn_inter_of_contDiffOn hU hX1) hx₀ hX_in
+    have hmem₁U (y : E) (hy : y ∈ ball x₀ r₁ ∩ C) (t : ℝ) (ht : t ∈ Icc 0 τ₁) :
+        forwardSemiflow X (U ∩ C) t y ∈ U ∩ C := inter_subset_inter_left C h2r₁U (hmem₁ y hy t ht)
     -- Step 2: Lift to the variational vector field `X'` on `E × (E →L[ℝ] E)` and apply `ih`.
     let F := E × (E →L[ℝ] E); let C' : Set F := C ×ˢ univ; let U' : Set F := U ×ˢ univ
     let X' : F → F := fun q ↦ (X q.1, (fderivWithin ℝ X (U ∩ C) q.1).comp q.2)
@@ -423,7 +409,7 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
     -- bootstrap `C^{k+2}` regularity from `HasFDerivWithinAt` and `C^{k+1}` derivative components.
     rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_hasFDerivWithinAt_of_uniqueDiffOn hS_uniq]
     refine ⟨by simp, _, ?_, fun _ hp ↦ (hasFDerivWithinAt_local_forwardSemiflow hC hU hU_uniq hX1
-      hτ₁ h2r₁U hmem₁ hint₁ hLip₁ hcont₁ (hS_sub₁ hp)).mono hS_sub₁⟩
+      hτ₁ hmem₁U hint₁ hLip₁ hcont₁ (hS_sub₁ hp)).mono hS_sub₁⟩
     let embed : ℝ × E → ℝ × F := fun p ↦ (p.1, (p.2, (1 : E →L[ℝ] E)))
     have hΨ_cd : ContDiffOn ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X' (U' ∩ C')) ∘ embed) S :=
       hCD₂.comp (contDiffOn_fst.prodMk (contDiffOn_snd.prodMk contDiffOn_const)) fun p hp ↦
@@ -435,8 +421,8 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
         (forwardSemiflow X (U ∩ C) p.1 p.2, dysonSeriesLeft (fun s ↦ fderivWithin ℝ X (U ∩ C)
           (forwardSemiflow X (U ∩ C) (projIcc 0 τ₁ hτ₁.le s) p.2)) p.1) :=
       eq_forwardSemiflow_variational hC hU hU_uniq (hX.of_le (by norm_cast; omega)) hτ₁
-        (by positivity : 0 < 2 * τ) hτ_le₁ h2r₁U (hsub₁ p.2 (hS_sub₁ hp).2)
-        (hmem₁ p.2 (hS_sub₁ hp).2)
+        (by positivity : 0 < 2 * τ) hτ_le₁ (hsub₁ p.2 (hS_sub₁ hp).2)
+        (hmem₁U p.2 (hS_sub₁ hp).2)
         (hcont₁.comp (continuousOn_id.prodMk continuousOn_const) fun _ hs ↦ ⟨hs, (hS_sub₁ hp).2⟩)
         ⟨hp.1.1, by linarith [hp.1.2]⟩
     have hΦ_cd : ContDiffOn ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C))) S :=
@@ -447,8 +433,7 @@ private theorem exists_local_forwardSemiflow_contDiffOn_nat.{u} (k : ℕ) :
       (contDiffOn_snd.comp hΨ_cd (mapsTo_univ _ _)).congr
         fun p hp ↦ congr_arg Prod.snd (hΨ_eq p hp).symm
     exact (contDiffOn_const.smulRight <| (hX.of_le (by norm_cast; omega)).comp hΦ_cd fun p hp ↦
-      ⟨h2r₁U (hmem₁ p.2 (hS_sub₁ hp).2 p.1 (hS_sub₁ hp).1).1,
-        (hmem₁ p.2 (hS_sub₁ hp).2 p.1 (hS_sub₁ hp).1).2⟩).add (hA_cd.clm_comp contDiffOn_const)
+      hmem₁U p.2 (hS_sub₁ hp).2 p.1 (hS_sub₁ hp).1).add (hA_cd.clm_comp contDiffOn_const)
 
 end TauCeti
 
@@ -457,40 +442,6 @@ section VariationalGlobal
 open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
-
-/-- Propagation of `C^{k+1}` joint regularity of `forwardSemiflow` along any forward trajectory up
-to time `T ∈ forwardSemiflowInterval X (U ∩ C) x₀`. -/
-private theorem exists_contDiffOn_Icc_prod_of_mem_forwardSemiflowInterval {C U : Set E}
-    (hC : Convex ℝ C) (hU : IsOpen U) {k : ℕ} {X : E → E}
-    (hX : ContDiffOn ℝ (k + 1 : ℕ) X (U ∩ C))
-    (hX_in : ∀ x ∈ U ∩ C, X x ∈ strictInwardCone C x) {x₀ : E} {T : ℝ}
-    (hx₀ : x₀ ∈ U ∩ C) (hT : T ∈ forwardSemiflowInterval X (U ∩ C) x₀) :
-    ∃ r > 0, ∃ δ > 0,
-      ContDiffOn ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C)))
-        (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) := by
-  have hX_lip := hC.locallyLipschitzOn_inter_of_contDiffOn hU (hX.of_le (by norm_cast; omega))
-  obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
-  obtain ⟨r, hr, δ, hδ, _, hcd⟩ := hX_lip.forwardSemiflow_prod_induction
-    (Q := ContDiffWithinAt ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C))))
-    (fun _ _ _ _ hsub h ↦ h.mono hsub) (fun _ h _ hp ↦ (h _ hp).continuousWithinAt)
-    (fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem)
-    (fun {s δ' τ B₁ B₂} hQ₁ hQ₂ hs0 hδ' hmaps hcocycle ↦ by
-      have hΦs : ContDiffOn ℝ (k + 1 : ℕ)
-          (fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) s p.2) (Icc s (s + τ) ×ˢ B₁) :=
-        ContDiffOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₁
-          (contDiffOn_const.prodMk contDiffOn_snd) fun _ hp ↦ ⟨⟨hs0, by linarith⟩, hp.2⟩
-      exact (ContDiffOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₂
-        ((contDiffOn_fst.sub contDiffOn_const).prodMk hΦs)
-        fun p hp ↦ ⟨⟨by linarith [hp.1.1], by linarith [hp.1.2]⟩, hmaps p.2 hp.2⟩).congr hcocycle)
-    (fun x hx ↦ by
-      obtain ⟨r, hr, τ, hτ, _, hsub, hcd⟩ :=
-        exists_local_forwardSemiflow_contDiffOn_nat k hC hU hX hx (hX_in x hx)
-      exact ⟨r, hr, τ, hτ, fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩,
-        hcd.mono (prod_mono Subset.rfl fun _ hy ↦ ⟨hy.1, hy.2.2⟩)⟩)
-    hx₀ hT
-  exact ⟨min r rU, lt_min hr hrU, δ, hδ, ContDiffOn.mono hcd (prod_mono Subset.rfl fun _ hy ↦
-    ⟨ball_subset_ball (min_le_left _ _) hy.1,
-      hballU (ball_subset_ball (min_le_right _ _) hy.1), hy.2⟩)⟩
 
 /-- **Joint `C^m` smoothness of the maximal forward semiflow.** For `1 ≤ m` (`m : ℕ∞`, including
 `m = ∞`), if `X` is `C^m` on `U ∩ C` and strictly inward to the convex set `C` at every point of
@@ -504,17 +455,25 @@ theorem Convex.contDiffOn_forwardSemiflow {C U : Set E} (hC : Convex ℝ C) (hU 
   set k : ℕ := max j 1 - 1
   have hk_eq : k + 1 = max j 1 := Nat.sub_add_cancel (le_max_right j 1)
   have hXk : ContDiffOn ℝ (k + 1 : ℕ) X (U ∩ C) := hX.of_le (mod_cast hk_eq ▸ max_le hj hm)
-  obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp hp
-  obtain ⟨r, hr, δ, hδ, hcd⟩ :=
-    exists_contDiffOn_Icc_prod_of_mem_forwardSemiflowInterval hC hU hXk hX_in hpU hpJ
-  exact ((hcd p ⟨⟨nonneg_of_mem_forwardSemiflowInterval hpJ, by linarith⟩,
-    mem_ball_self hr, hpU.2⟩).mono_of_mem_nhdsWithin <| mem_nhdsWithin.mpr
-      ⟨Iio (p.1 + δ) ×ˢ ball p.2 r, isOpen_Iio.prod isOpen_ball,
-        ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩,
-        fun _ (hq : _ ∈ _ ∩ forwardSemiflowDomain X (U ∩ C)) ↦
-          ⟨⟨nonneg_of_mem_forwardSemiflowInterval (mem_forwardSemiflowDomain_iff.mp hq.2).2,
-            hq.1.1.le⟩, hq.1.2, (mem_forwardSemiflowDomain_iff.mp hq.2).1.2⟩⟩).of_le
-    (by norm_cast; omega)
+  have hX_lip := hC.locallyLipschitzOn_inter_of_contDiffOn hU (hXk.of_le (by norm_cast; omega))
+  have hCD := (hX_lip.forwardSemiflow_prod_inter_induction hU
+    (Q := ContDiffWithinAt ℝ (k + 1 : ℕ) (uncurry (forwardSemiflow X (U ∩ C))))
+    (fun _ _ _ _ hsub h ↦ h.mono hsub) (fun _ h _ hq ↦ (h _ hq).continuousWithinAt)
+    (fun _ _ _ _ hmem h ↦ h.mono_of_mem_nhdsWithin hmem)
+    (fun {s _ τ B₁ B₂} hQ₁ hQ₂ hs0 _ hmaps hcocycle ↦ by
+      have hΦs : ContDiffOn ℝ (k + 1 : ℕ)
+          (fun p : ℝ × E ↦ forwardSemiflow X (U ∩ C) s p.2) (Icc s (s + τ) ×ˢ B₁) :=
+        ContDiffOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₁
+          (contDiffOn_const.prodMk contDiffOn_snd) fun _ hq ↦ ⟨⟨hs0, by linarith⟩, hq.2⟩
+      exact (ContDiffOn.comp (g := uncurry (forwardSemiflow X (U ∩ C))) hQ₂
+        ((contDiffOn_fst.sub contDiffOn_const).prodMk hΦs)
+        fun q hq ↦ ⟨⟨by linarith [hq.1.1], by linarith [hq.1.2]⟩, hmaps q.2 hq.2⟩).congr
+        hcocycle)
+    (fun x hx ↦ by
+      obtain ⟨r, hr, τ, hτ, _, hsub, hcd⟩ :=
+        exists_local_forwardSemiflow_contDiffOn_nat k hC hU hXk hx (hX_in x hx)
+      exact ⟨r, hr, τ, hτ, hsub, hcd⟩)).2 p hp
+  exact hCD.of_le (by norm_cast; omega)
 
 end VariationalGlobal
 

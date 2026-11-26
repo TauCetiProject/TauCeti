@@ -25,7 +25,9 @@ point along the positive ray.
 The cone is open and convex, is invariant under positive scaling, and has ball estimates uniform
 near each admissible point and vector (hence along any relatively continuous vector field). Any
 set admitting a strictly inward vector has nonempty interior
-(`TauCeti.interior_nonempty_of_mem_strictInwardCone`), without any convexity assumption. Curves with
+(`TauCeti.interior_nonempty_of_mem_strictInwardCone`), without any convexity assumption, and convex
+sets admitting a strictly inward vector are sets of unique differentiability
+(`Convex.uniqueDiffOn_of_mem_strictInwardCone`). Curves with
 one-sided derivatives in the strict inward cone immediately enter and remain in the interior
 (`HasDerivWithinAt.eventually_mem_interior_of_mem_strictInwardCone`,
 `Convex.mem_interior_of_hasDerivWithinAt_Iic`,
@@ -235,6 +237,18 @@ theorem Convex.strictInwardCone_nonempty (hs : Convex ℝ s) (hx : x ∈ s)
     (hi : (interior s).Nonempty) : (strictInwardCone s x).Nonempty := by
   obtain ⟨q, hq⟩ := hi
   exact ⟨q - x, hs.sub_mem_strictInwardCone hx hq⟩
+
+/-- A convex set admitting a strictly inward vector at any point is a set of unique
+differentiability. -/
+theorem Convex.uniqueDiffOn_of_mem_strictInwardCone (hs : Convex ℝ s)
+    (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ s :=
+  uniqueDiffOn_convex hs (interior_nonempty_of_mem_strictInwardCone hv)
+
+/-- The intersection of an open set with a convex set admitting a strictly inward vector is a set
+of unique differentiability. -/
+theorem Convex.uniqueDiffOn_inter_of_mem_strictInwardCone (hs : Convex ℝ s) {u : Set E}
+    (hu : IsOpen u) (hv : v ∈ strictInwardCone s x) : UniqueDiffOn ℝ (u ∩ s) :=
+  inter_comm s u ▸ (hs.uniqueDiffOn_of_mem_strictInwardCone hv).inter hu
 
 /-- The strict inward cone of a convex set is convex. -/
 theorem Convex.convex_strictInwardCone (hs : Convex ℝ s) (x : E) :

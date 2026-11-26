@@ -22,8 +22,9 @@ an interior derivative with a state-space Lipschitz bound likewise yield uniquen
 interior or boundary reference point.
 
 For an autonomous field `X` that is locally Lipschitz only on a subset `S` containing two
-trajectories (without an ambient neighborhood Lipschitz bound), compactness of `[a, c]` yields a
-single Lipschitz constant along their joint image, giving forward uniqueness on `[a, b)`.
+trajectories (without an ambient neighborhood Lipschitz bound), compactness of `uIcc c t` yields a
+single Lipschitz constant along their joint image, so the trajectories agree on any preconnected
+time set `I` once they agree at some `c ∈ I`.
 
 ## Main results
 

@@ -97,6 +97,12 @@ theorem Icc_subset_forwardSemiflowInterval_of_mem {X : E → E} {S : Set E} {x :
   let ⟨_, htb, hsub⟩ := exists_Ico_subset_of_mem_forwardSemiflowInterval ht
   fun _ hs ↦ hsub ⟨hs.1, hs.2.trans_lt htb⟩
 
+/-- `forwardSemiflowInterval X S x` contains `0` if and only if it is nonempty. -/
+theorem zero_mem_forwardSemiflowInterval_iff {X : E → E} {S : Set E} {x : E} :
+    (0 : ℝ) ∈ forwardSemiflowInterval X S x ↔ (forwardSemiflowInterval X S x).Nonempty :=
+  ⟨fun h0 ↦ ⟨0, h0⟩, fun ⟨_, ht⟩ ↦
+    Icc_subset_forwardSemiflowInterval_of_mem ht ⟨le_rfl, nonneg_of_mem_forwardSemiflowInterval ht⟩⟩
+
 /-- `forwardSemiflowInterval` is order-connected. -/
 theorem ordConnected_forwardSemiflowInterval (X : E → E) (S : Set E) (x : E) :
     (forwardSemiflowInterval X S x).OrdConnected :=
@@ -196,6 +202,14 @@ open TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {S : Set E} {X : E → E} {x : E}
 
+/-- Convert a right-half-open `Ico 0 b` within-derivative into a two-sided `HasDerivAt` on the
+interior of any subinterval `Ico 0 b'` (`b' ≤ b`). -/
+private theorem hasDerivAt_interior_Ico_of_hasDerivWithinAt {X : E → E} {φ : ℝ → E} {b b' : ℝ}
+    (hb : b' ≤ b) (hφ' : ∀ s ∈ Ico 0 b, HasDerivWithinAt φ (X (φ s)) (Ico 0 b) s)
+    {s : ℝ} (hs : s ∈ interior (Ico 0 b')) : HasDerivAt φ (X (φ s)) s := by
+  rw [interior_Ico] at hs
+  exact (hφ' s ⟨hs.1.le, hs.2.trans_le hb⟩).hasDerivAt (Ico_mem_nhds hs.1 (hs.2.trans_le hb))
+
 /-- For a locally Lipschitz field `X` on `S`, every forward integral curve on `[0, b)` starting at
 `x` agrees with `forwardSemiflow X S` on `[0, b)`. -/
 theorem eqOn_forwardSemiflow (hX : LocallyLipschitzOn S X)
@@ -209,19 +223,13 @@ theorem eqOn_forwardSemiflow (hX : LocallyLipschitzOn S X)
   dsimp only [forwardSemiflow]; rw [dite_eq_left ht_mem]
   obtain ⟨b₁, hb₁, ht₁, h0₁, hS₁, hγ₁'⟩ := ht_mem.choose_spec
   exact hX.eqOn_of_isPreconnected_of_hasDerivAt_interior isPreconnected_Ico ⟨le_rfl, lt_min hb hb₁⟩
-    (fun s hs ↦ ((hγ' s ⟨hs.1, hs.2.trans_le (min_le_left _ _)⟩).continuousWithinAt).mono
+    (fun s hs ↦ ((hγ' s (Ico_subset_Ico_right (min_le_left _ _) hs)).continuousWithinAt).mono
       (Ico_subset_Ico_right (min_le_left _ _)))
-    (fun s hs ↦ (hγ' s ⟨(interior_Ico (α := ℝ) ▸ hs).1.le,
-      (interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_left _ _)⟩).hasDerivAt
-      (Ico_mem_nhds (interior_Ico (α := ℝ) ▸ hs).1
-        ((interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_left _ _))))
+    (fun _ hs ↦ hasDerivAt_interior_Ico_of_hasDerivWithinAt (min_le_left _ _) hγ' hs)
     (hS.mono_left (Ico_subset_Ico_right (min_le_left _ _)))
-    (fun s hs ↦ ((hγ₁' s ⟨hs.1, hs.2.trans_le (min_le_right _ _)⟩).continuousWithinAt).mono
+    (fun s hs ↦ ((hγ₁' s (Ico_subset_Ico_right (min_le_right _ _) hs)).continuousWithinAt).mono
       (Ico_subset_Ico_right (min_le_right _ _)))
-    (fun s hs ↦ (hγ₁' s ⟨(interior_Ico (α := ℝ) ▸ hs).1.le,
-      (interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_right _ _)⟩).hasDerivAt
-      (Ico_mem_nhds (interior_Ico (α := ℝ) ▸ hs).1
-        ((interior_Ico (α := ℝ) ▸ hs).2.trans_le (min_le_right _ _))))
+    (fun _ hs ↦ hasDerivAt_interior_Ico_of_hasDerivWithinAt (min_le_right _ _) hγ₁' hs)
     (hS₁.mono_left (Ico_subset_Ico_right (min_le_right _ _)))
     (h0.trans h0₁.symm) ⟨ht.1, lt_min ht.2 ht₁.2⟩
 
@@ -494,20 +502,72 @@ theorem forwardSemiflow_prod_induction
         (hglue p ⟨⟨hp.1.1, by linarith [hp.1.2]⟩, hp.2⟩)) (by linarith)
   linarith
 
+/-- Specialization of `LocallyLipschitzOn.forwardSemiflow_prod_induction` to `S = U ∩ C`
+(`U` open), handling the shrinking to `ball x₀ r ⊆ U` and domain localization onto
+`forwardSemiflowDomain X (U ∩ C)`. -/
+theorem forwardSemiflow_prod_inter_induction {C U : Set E} (hX : LocallyLipschitzOn (U ∩ C) X)
+    (hU : IsOpen U) {Q : Set (ℝ × E) → ℝ × E → Prop}
+    (hQ_mono : ∀ ⦃S₁ S₂ p⦄, p ∈ S₁ → S₁ ⊆ S₂ → Q S₂ p → Q S₁ p)
+    (hQ_cont : ∀ ⦃S'⦄, (∀ p ∈ S', Q S' p) →
+      ContinuousOn (uncurry (forwardSemiflow X (U ∩ C))) S')
+    (hQ_nhds : ∀ ⦃S₁ S₂ p⦄, S₁ ⊆ S₂ → S₁ ∈ 𝓝[S₂] p → Q S₁ p → Q S₂ p)
+    (hQ_shift : ∀ {s δ τ : ℝ} {B₁ B₂ : Set E},
+      (∀ p ∈ Icc 0 (s + δ) ×ˢ B₁, Q (Icc 0 (s + δ) ×ˢ B₁) p) →
+      (∀ p ∈ Icc 0 τ ×ˢ B₂, Q (Icc 0 τ ×ˢ B₂) p) → 0 ≤ s → 0 < δ →
+      (∀ y ∈ B₁, forwardSemiflow X (U ∩ C) s y ∈ B₂) →
+      (∀ p ∈ Icc s (s + τ) ×ˢ B₁, uncurry (forwardSemiflow X (U ∩ C)) p =
+        uncurry (forwardSemiflow X (U ∩ C)) (p.1 - s, forwardSemiflow X (U ∩ C) s p.2)) →
+      ∀ p ∈ Icc s (s + τ) ×ˢ B₁, Q (Icc s (s + τ) ×ˢ B₁) p)
+    (hQ_loc : ∀ x ∈ U ∩ C, ∃ r > 0, ∃ τ > 0,
+      (∀ y ∈ ball x r ∩ C, Ico 0 (2 * τ) ⊆ forwardSemiflowInterval X (U ∩ C) y) ∧
+      ∀ p ∈ Icc 0 τ ×ˢ (ball x r ∩ C), Q (Icc 0 τ ×ˢ (ball x r ∩ C)) p) :
+    (∀ {x₀ : E} {T : ℝ}, x₀ ∈ U ∩ C → T ∈ forwardSemiflowInterval X (U ∩ C) x₀ →
+      ∃ r > 0, ∃ δ > 0, ball x₀ r ⊆ U ∧
+        (∀ y ∈ ball x₀ r ∩ C, Ico 0 (T + 2 * δ) ⊆ forwardSemiflowInterval X (U ∩ C) y) ∧
+        ∀ p ∈ Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C), Q (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) p) ∧
+      (∀ p ∈ forwardSemiflowDomain X (U ∩ C), Q (forwardSemiflowDomain X (U ∩ C)) p) := by
+  have hprod {x₀ : E} {T : ℝ} (hx₀ : x₀ ∈ U ∩ C)
+      (hT : T ∈ forwardSemiflowInterval X (U ∩ C) x₀) :
+      ∃ r > 0, ∃ δ > 0, ball x₀ r ⊆ U ∧
+        (∀ y ∈ ball x₀ r ∩ C, Ico 0 (T + 2 * δ) ⊆ forwardSemiflowInterval X (U ∩ C) y) ∧
+        ∀ p ∈ Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C), Q (Icc 0 (T + δ) ×ˢ (ball x₀ r ∩ C)) p := by
+    obtain ⟨rU, hrU, hballU⟩ := Metric.isOpen_iff.mp hU x₀ hx₀.1
+    obtain ⟨r, hr, δ, hδ, hsub, hQ⟩ := hX.forwardSemiflow_prod_induction
+      hQ_mono hQ_cont hQ_nhds hQ_shift (fun x hx ↦ by
+        obtain ⟨r, hr, τ, hτ, hsub, hQ⟩ := hQ_loc x hx
+        exact ⟨r, hr, τ, hτ, fun y hy ↦ hsub y ⟨hy.1, hy.2.2⟩,
+          fun p hp ↦ hQ_mono (S₂ := Icc 0 τ ×ˢ (ball x r ∩ C)) hp
+            (prod_mono Subset.rfl fun _ hy ↦ ⟨hy.1, hy.2.2⟩)
+            (hQ p ⟨hp.1, hp.2.1, hp.2.2.2⟩)⟩) hx₀ hT
+    set r' := min r rU
+    have hr'U : ball x₀ r' ⊆ U := (ball_subset_ball (min_le_right _ _)).trans hballU
+    have hsub_inter : ball x₀ r' ∩ C ⊆ ball x₀ r ∩ (U ∩ C) :=
+      fun _ hy ↦ ⟨ball_subset_ball (min_le_left _ _) hy.1, hr'U hy.1, hy.2⟩
+    exact ⟨r', lt_min hr hrU, δ, hδ, hr'U, fun y hy ↦ hsub y (hsub_inter hy),
+      fun p hp ↦ hQ_mono hp (prod_mono Subset.rfl hsub_inter) (hQ p ⟨hp.1, hsub_inter hp.2⟩)⟩
+  refine ⟨hprod, fun p hp ↦ ?_⟩
+  obtain ⟨hpU, hpJ⟩ := mem_forwardSemiflowDomain_iff.mp hp
+  obtain ⟨r, hr, δ, hδ, _, _, hQ⟩ := hprod hpU hpJ
+  have hp_box : p ∈ Icc 0 (p.1 + δ) ×ˢ (ball p.2 r ∩ C) :=
+    ⟨⟨nonneg_of_mem_forwardSemiflowInterval hpJ, by linarith⟩, mem_ball_self hr, hpU.2⟩
+  exact hQ_nhds (S₁ := (Icc 0 (p.1 + δ) ×ˢ (ball p.2 r ∩ C)) ∩ forwardSemiflowDomain X (U ∩ C))
+    inter_subset_right
+    (mem_nhdsWithin.mpr ⟨Iio (p.1 + δ) ×ˢ ball p.2 r, isOpen_Iio.prod isOpen_ball,
+      ⟨mem_Iio.mpr (by linarith), mem_ball_self hr⟩, fun q hq ↦
+        ⟨⟨⟨nonneg_of_mem_forwardSemiflowInterval (mem_forwardSemiflowDomain_iff.mp hq.2).2,
+          hq.1.1.le⟩, hq.1.2, (mem_forwardSemiflowDomain_iff.mp hq.2).1.2⟩, hq.2⟩⟩)
+    (hQ_mono ⟨hp_box, hp⟩ inter_subset_left (hQ p hp_box))
+
 /-- **No cluster point with uniform local restart.** If `X` is locally Lipschitz on `S`,
-`forwardSemiflowInterval X S x` is nonempty with least upper bound `b`, and every point of `S`
-near `z` admits a uniform positive forward existence time `τ > 0`, then
-`forwardSemiflow X S · x` cannot accumulate at `z` as `t → b⁻`. -/
+`0 ∈ forwardSemiflowInterval X S x` with least upper bound `b`, and every point of `S` near `z`
+admits a uniform positive forward existence time `τ > 0`, then `forwardSemiflow X S · x` cannot
+accumulate at `z` as `t → b⁻`. -/
 theorem not_mapClusterPt_nhdsLT_forwardSemiflow (hX : LocallyLipschitzOn S X) {x z : E} {b : ℝ}
-    (hne : (forwardSemiflowInterval X S x).Nonempty)
+    (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x)
     (hb : IsLUB (forwardSemiflowInterval X S x) b)
     (hrest : ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ S, τ ∈ forwardSemiflowInterval X S y) :
     ¬ MapClusterPt z (𝓝[<] b) (fun t ↦ forwardSemiflow X S t x) := by
   intro hcl
-  obtain ⟨t₀, ht₀⟩ := hne
-  have h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x :=
-    Icc_subset_forwardSemiflowInterval_of_mem ht₀
-      ⟨le_rfl, nonneg_of_mem_forwardSemiflowInterval ht₀⟩
   have hb_pos := pos_of_isLUB_forwardSemiflowInterval h0 hb
   obtain ⟨V, hV, τ, hτ, hsub⟩ := hrest
   obtain ⟨s, hs_V, hs_Ioo⟩ := ((hcl.frequently hV).and_eventually
@@ -520,37 +580,33 @@ theorem not_mapClusterPt_nhdsLT_forwardSemiflow (hX : LocallyLipschitzOn S X) {x
     (le_max_right 0 (b - τ)).trans_lt hs_Ioo.1]
 
 /-- **Forward compact-escape lemma under uniform local restart.** If `X` is locally Lipschitz on
-`S`, `forwardSemiflowInterval X S x` is nonempty with finite least upper bound `b`, and every point
-of a compact set `K` admits a neighborhood in `S` with a uniform positive forward existence time,
-then `forwardSemiflow X S · x` eventually leaves `K` as `t → b⁻`. -/
+`S`, `0 ∈ forwardSemiflowInterval X S x` with finite least upper bound `b`, and every point of a
+compact set `K` admits a neighborhood in `S` with a uniform positive forward existence time, then
+`forwardSemiflow X S · x` eventually leaves `K` as `t → b⁻`. -/
 theorem eventually_notMem_nhdsLT_forwardSemiflow (hX : LocallyLipschitzOn S X) {x : E} {b : ℝ}
-    (hne : (forwardSemiflowInterval X S x).Nonempty)
+    (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x)
     (hb : IsLUB (forwardSemiflowInterval X S x) b) {K : Set E} (hK : IsCompact K)
     (hrest : ∀ z ∈ K, ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ S, τ ∈ forwardSemiflowInterval X S y) :
     ∀ᶠ t in 𝓝[<] b, forwardSemiflow X S t x ∉ K := by
   by_contra h
   obtain ⟨z, hzK, hz⟩ := hK.exists_mapClusterPt_of_frequently (by simpa [not_eventually] using h)
-  exact hX.not_mapClusterPt_nhdsLT_forwardSemiflow hne hb (hrest z hzK) hz
+  exact hX.not_mapClusterPt_nhdsLT_forwardSemiflow h0 hb (hrest z hzK) hz
 
 /-- **Global forward existence under compact trapping and uniform local restart.** If `X` is
-locally Lipschitz on `S`, `forwardSemiflowInterval X S x` is nonempty, every point of a compact
-set `K` admits a neighborhood in `S` with a uniform positive forward existence time, and
+locally Lipschitz on `S`, `0 ∈ forwardSemiflowInterval X S x`, every point of a compact set `K`
+admits a neighborhood in `S` with a uniform positive forward existence time, and
 `forwardSemiflow X S · x` maps `forwardSemiflowInterval X S x` into `K`, then
 `forwardSemiflowInterval X S x = Ici 0`. -/
 theorem forwardSemiflowInterval_eq_Ici_of_isCompact_of_mapsTo (hX : LocallyLipschitzOn S X)
-    {x : E} (hne : (forwardSemiflowInterval X S x).Nonempty) {K : Set E} (hK : IsCompact K)
+    {x : E} (h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x) {K : Set E} (hK : IsCompact K)
     (hrest : ∀ z ∈ K, ∃ V ∈ 𝓝 z, ∃ τ > 0, ∀ y ∈ V ∩ S, τ ∈ forwardSemiflowInterval X S y)
     (hmem : MapsTo (fun t ↦ forwardSemiflow X S t x) (forwardSemiflowInterval X S x) K) :
     forwardSemiflowInterval X S x = Ici 0 := by
-  obtain ⟨t₀, ht₀⟩ := hne
-  have h0 : (0 : ℝ) ∈ forwardSemiflowInterval X S x :=
-    Icc_subset_forwardSemiflowInterval_of_mem ht₀
-      ⟨le_rfl, nonneg_of_mem_forwardSemiflowInterval ht₀⟩
   refine forwardSemiflowInterval_eq_Ici_of_not_bddAbove fun hbdd ↦ ?_
   have hlub := isLUB_csSup ⟨0, h0⟩ hbdd
   obtain ⟨t, ht, htK⟩ := ((eventually_mem_set.mpr
     (Ioo_mem_nhdsLT (pos_of_isLUB_forwardSemiflowInterval h0 hlub))).and
-      (hX.eventually_notMem_nhdsLT_forwardSemiflow ⟨0, h0⟩ hlub hK hrest)).exists
+      (hX.eventually_notMem_nhdsLT_forwardSemiflow h0 hlub hK hrest)).exists
   exact htK (hmem (hlub.forwardSemiflowInterval_eq_Ico ▸ ⟨ht.1.le, ht.2⟩))
 
 end LocallyLipschitzOn
