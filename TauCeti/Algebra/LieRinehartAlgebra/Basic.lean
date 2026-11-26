@@ -24,7 +24,7 @@ namespace LieRinehartRing
 
 /-- The Leibniz rule in the first slot of the Lie bracket of a Lie–Rinehart ring:
 `⁅a • x, y⁆ = a • ⁅x, y⁆ - ⁅y, a⁆ • x`. -/
-theorem leibniz_smul_left {A L : Type*} [CommRing A] [LieRing L] [Module A L]
+@[simp] theorem leibniz_smul_left {A L : Type*} [CommRing A] [LieRing L] [Module A L]
     [LieRingModule L A] [LieRinehartRing A L] (a : A) (x y : L) :
     ⁅a • x, y⁆ = a • ⁅x, y⁆ - ⁅y, a⁆ • x := by
   rw [← lie_skew (a • x) y, LieRinehartRing.leibniz_smul_right, neg_add, ← smul_neg,
