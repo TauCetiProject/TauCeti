@@ -44,21 +44,34 @@ variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
 variable (hχ : χ.IsPrimitive)
 
+/-- The analytic term in the Laurent expansion of `L'/L` at the origin. -/
+private noncomputable def logDerivLFunctionRegularPart (z : ℂ) : ℂ :=
+  logDeriv (dirichletData χ hχ).entireCompletion z - (Real.log N : ℂ) / 2 -
+    logDeriv Gammaℝ (z + χ.gammaPoleOffset)
+
+private theorem logDerivLFunctionRegularPart_apply (z : ℂ) :
+    χ.logDerivLFunctionRegularPart hχ z =
+      logDeriv (dirichletData χ hχ).entireCompletion z - (Real.log N : ℂ) / 2 -
+        logDeriv Gammaℝ (z + χ.gammaPoleOffset) := rfl
+
 /-- Near the origin, `L'/L` is an analytic function plus `(a - 1) / z`. -/
 private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
-    let a := χ.gammaPoleOffset
-    let g := fun z : ℂ ↦ logDeriv (dirichletData χ hχ).entireCompletion z -
-      (Real.log N : ℂ) / 2 - logDeriv Gammaℝ (z + a)
-    AnalyticAt ℂ g 0 ∧ logDeriv χ.LFunction =ᶠ[𝓝[≠] 0] fun z ↦ g z + ((a : ℂ) - 1) / z := by
-  intro a g
+    AnalyticAt ℂ (χ.logDerivLFunctionRegularPart hχ) 0 ∧
+      logDeriv χ.LFunction =ᶠ[𝓝[≠] 0] fun z ↦
+        χ.logDerivLFunctionRegularPart hχ z + ((χ.gammaPoleOffset : ℂ) - 1) / z := by
+  let a := χ.gammaPoleOffset
+  have hregular := funext (χ.logDerivLFunctionRegularPart_apply hχ)
   let F := (dirichletData χ hχ).entireCompletion
   have hF (z : ℂ) : AnalyticAt ℂ F z :=
     (dirichletData_hasMeromorphicContinuation χ hχ).analyticAt_entireCompletion z
   have hmF : Meromorphic F := fun z ↦ (hF z).meromorphicAt
   have hmG : Meromorphic (fun z : ℂ ↦ logDeriv Gammaℝ (z + a)) :=
     Meromorphic.meromorphic_fun_comp_add_const_iff_meromorphic.mpr meromorphic_Gammaℝ.logDeriv
-  have hg' : Meromorphic g := (hmF.logDeriv.fun_sub (Meromorphic.const _)).fun_sub hmG
-  have hg : AnalyticAt ℂ g 0 := by
+  have hg' : Meromorphic (χ.logDerivLFunctionRegularPart hχ) := by
+    rw [hregular]
+    exact (hmF.logDeriv.fun_sub (Meromorphic.const _)).fun_sub hmG
+  have hg : AnalyticAt ℂ (χ.logDerivLFunctionRegularPart hχ) 0 := by
+    rw [hregular]
     have hF₀ : F 0 ≠ 0 := dirichletData_entireCompletion_ne_zero_of_re_nonpos χ hχ (by simp)
     have hGa := analyticAt_logDeriv_Gammaℝ (s := (0 : ℂ) + a)
       (Gammaℝ_ne_zero_of_re_pos (by simpa using χ.gammaPoleOffset_pos))
@@ -72,7 +85,7 @@ private theorem logDeriv_LFunction_eventuallyEq_nhdsNE_zero (hne : χ ≠ 1) :
     (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz'.le)
   rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
     (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hz'))] at hlog
-  dsimp only [g]
+  rw [χ.logDerivLFunctionRegularPart_apply]
   linear_combination -hlog
 
 include hχ in
@@ -116,6 +129,7 @@ theorem logDerivFinitePart_LFunction_zero (hne : χ ≠ 1) :
   have hpart := hg.logDerivFinitePart_eq (f := χ.LFunction) (by
     filter_upwards [heq] with z hz
     rw [hz, sub_zero, χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne, add_sub_cancel_right])
-  simpa only [zero_add] using hpart
+  rw [χ.logDerivLFunctionRegularPart_apply, zero_add] at hpart
+  exact hpart
 
 end DirichletCharacter

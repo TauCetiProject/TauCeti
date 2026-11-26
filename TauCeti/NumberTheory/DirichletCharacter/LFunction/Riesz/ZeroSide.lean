@@ -89,12 +89,16 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
   have ho := dirichletData_entireCompletion_orderLE_one χ hχ
   have hd := (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
   have hZ := ho.integrableOn_rieszZeroSeries_mul_cpow hd (by norm_num) hσ hs
-  have hG := integrableOn_rieszGammaCorrection_mul_cpow (d := 2) ha (by norm_num)
-    (by linarith : -a < s.re)
+  have hneg : -a < s.re := by linarith
+  have hG := integrableOn_rieszGammaCorrection_mul_cpow (d := 2) ha (by norm_num) hneg
   have hp : (-s - 1).re < -1 := by simp only [sub_re, neg_re, one_re]; linarith
   have hE := integrableOn_cpow_mul_affine_log_Ioi_one (c + m) m hp
-  have hlog {z : ℂ} (hz : 1 ≤ z.re) := logDeriv_dirichletData_entireCompletion χ hχ hne
-    (one_pos.trans_le hz) (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz)
+  have hlog {z : ℂ} (hz : 1 ≤ z.re) := by
+    have h := logDeriv_dirichletData_entireCompletion χ hχ hne
+      (one_pos.trans_le hz) (χ.LFunction_ne_zero_of_one_le_re (.inl hne) hz)
+    rw [χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
+      (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans_le hz))] at h
+    exact h
   have h₀ : s ≠ 0 := by rintro rfl; norm_num at hs
   have h₁ : s ≠ 1 := by rintro rfl; simp at hs
   have hF₀ : F 0 ≠ 0 := dirichletData_entireCompletion_ne_zero_of_re_nonpos χ hχ (by simp)
@@ -107,21 +111,20 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
     ring
   simp only [hsplit]
   refine ⟨(hZ.add hG).add hE, ?_⟩
+  -- Substitute the Mellin integrals of the zero series, the gamma correction, and the origin term.
+  have hZval := ho.mul_integral_rieszZeroSeries_mul_cpow hd hF₀ hF₁ hσ hs
+  have hGval := mul_integral_rieszGammaCorrection_eq_logDeriv_Gammaℝ ha hneg
+  have hEval := integral_cpow_mul_affine_log_Ioi_one (c + m) m hp
+  have hexponent : -(-s - 1 + 1) = s := by ring
+  rw [hexponent] at hEval
   rw [integral_add (f := fun y : ℝ ↦ rieszZeroSeries F y * (y : ℂ) ^ (-s - 1) +
       rieszGammaCorrection a 2 y * (y : ℂ) ^ (-s - 1)) (hZ.add hG) hE,
-    integral_add hZ hG, integral_cpow_mul_affine_log_Ioi_one _ _ hp, sub_add_cancel, neg_neg,
-    χ.rieszRemainderMellin_LFunction_of_ne_one hne hs,
-    eq_div_iff_mul_eq (mul_ne_zero h₀ (sub_ne_zero.mpr h₁))]
-  conv_lhs => rw [mul_comm]
-  rw [mul_add, mul_add, ho.mul_integral_rieszZeroSeries_mul_cpow hd hF₀ hF₁ hσ hs,
-    mul_integral_rieszGammaCorrection_eq_logDeriv_Gammaℝ ha (by linarith),
-    hlog hs.le, hlog (by simp : 1 ≤ (1 : ℂ).re),
-    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
-      (χ.gammaFactor_ne_zero_of_re_pos (one_pos.trans hs)),
-    χ.logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div
-      (χ.gammaFactor_ne_zero_of_re_pos (by simp : 0 < (1 : ℂ).re))]
+    integral_add hZ hG, hEval, χ.rieszRemainderMellin_LFunction_of_ne_one hne hs]
+  rw [hlog hs.le, hlog (by simp : 1 ≤ (1 : ℂ).re)] at hZval
   dsimp only [c, m]
   rw [χ.untop₀_meromorphicOrderAt_LFunction_zero hχ hne, χ.logDerivFinitePart_LFunction_zero hχ hne]
+  apply (eq_div_iff_mul_eq (mul_ne_zero h₀ (sub_ne_zero.mpr h₁))).2
+  linear_combination (norm := skip) hZval + hGval
   field_simp
   ring
 
