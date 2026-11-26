@@ -17,7 +17,6 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.FieldTheory.Finite.Polynomial
 import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.Analysis.MvPolynomial.Jacobian
-import TauCeti.RingTheory.MvPolynomial.OrderAt
 
 /-!
 # Bounded-degree polynomial functions on Euclidean space
@@ -36,9 +35,7 @@ the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`),
 partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
 (`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`). Polynomial functions of bounded degree
 are closed under pointwise products (`TauCeti.mul_mem_polynomialsDegLE`,
-`TauCeti.finset_prod_mem_polynomialsDegLE`), subtracting a fixed translation vector
-(`TauCeti.comp_sub_mem_polynomialsDegLE`), and precomposition with affine maps
-(`TauCeti.comp_affineMap_mem_polynomialsDegLE`).
+`TauCeti.finset_prod_mem_polynomialsDegLE`, `TauCeti.prod_coord_mem_polynomialsDegLE`).
 
 The file also develops the foundational calculus of these polynomial functions on
 `EuclideanSpace ℝ ι`:
@@ -261,51 +258,6 @@ theorem prod_coord_mem_polynomialsDegLE {α : Type*} (S : Finset α) (I : α →
     (coordinate_mem_polynomialsDegLE_iff ι 1 (I l)).2 le_rfl using 1
   · simp
   · ext x; simp
-
-/-- Translating the input by subtracting a fixed vector preserves the total-degree bound. -/
-theorem comp_sub_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
-    (a : EuclideanSpace ℝ ι) (hf : f ∈ polynomialsDegLE ι m) :
-    (fun x ↦ f (x - a)) ∈ polynomialsDegLE ι m := by
-  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
-  refine (mem_polynomialsDegLE_iff ι).2 ⟨taylor (fun i ↦ -a i) p,
-    (totalDegree_taylor_le (fun i ↦ -a i) p).trans hp, ?_⟩
-  ext x
-  simp [eval_taylor, sub_eq_add_neg, Pi.add_def]
-
-/-- Precomposing a polynomial function of degree at most `m` with an affine map preserves the
-total-degree bound. -/
-theorem comp_affineMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
-    {f : EuclideanSpace ℝ ι → ℝ} (F : EuclideanSpace ℝ κ →ᵃ[ℝ] EuclideanSpace ℝ ι)
-    (hf : f ∈ polynomialsDegLE ι m) :
-    f ∘ F ∈ polynomialsDegLE κ m := by
-  classical
-  have := Fintype.ofFinite κ
-  set b := EuclideanSpace.basisFun κ ℝ
-  obtain ⟨p, hp, rfl⟩ := (mem_polynomialsDegLE_iff ι).1 hf
-  let g (i : ι) : MvPolynomial κ ℝ := C (F 0 i) + ∑ j : κ, C (F.linear (b j) i) * X j
-  have hdeg (i : ι) : (g i).totalDegree ≤ 1 :=
-    (totalDegree_add _ _).trans <| max_le (by simp) <| (totalDegree_finsetSum _ _).trans <|
-      Finset.sup_le fun j _ ↦ (totalDegree_mul _ _).trans (by simp [totalDegree_X])
-  refine (mem_polynomialsDegLE_iff κ).2 ⟨aeval g p, (mem_restrictTotalDegree κ m _).1
-      (aeval_mem_restrictTotalDegree p (fun i _ ↦ hdeg i)
-        ((mem_restrictTotalDegree ι m p).2 hp)), ?_⟩
-  ext x
-  simp only [Function.comp_apply, polynomialEvalₗ_apply, ← aeval_eq_eval, comp_aeval_apply]
-  congr 1; ext i
-  have hx : F x = F 0 + ∑ j : κ, x j • F.linear (b j) := by
-    rw [congrFun F.decomp x, Pi.add_apply, add_comm]
-    congr 1
-    conv_lhs => rw [← b.sum_repr x, map_sum]
-    simp [b]
-  simp [g, hx, mul_comm]
-
-/-- Precomposing a polynomial function of degree at most `m` with a linear map preserves the
-total-degree bound. -/
-theorem comp_linearMap_mem_polynomialsDegLE {κ : Type*} [Finite κ] {m : ℕ}
-    {f : EuclideanSpace ℝ ι → ℝ} (L : EuclideanSpace ℝ κ →ₗ[ℝ] EuclideanSpace ℝ ι)
-    (hf : f ∈ polynomialsDegLE ι m) :
-    f ∘ L ∈ polynomialsDegLE κ m :=
-  comp_affineMap_mem_polynomialsDegLE L.toAffineMap hf
 
 end Operations
 

@@ -122,7 +122,7 @@ theorem integral_eq_zero_of_odd {G E : Type*} [MeasurableSpace G] [InvolutiveNeg
 /-- Integrating an integrable even function against a negation-invariant measure over
 `{y | 0 ≤ g y}`, where `g : G → ℝ` is measurable, odd, and vanishes only on a null set, yields
 half its full-space integral. -/
-theorem setIntegral_setOf_nonneg_of_even {G F : Type*} [MeasurableSpace G] [AddGroup G]
+theorem setIntegral_setOf_nonneg_of_even {G F : Type*} [MeasurableSpace G] [InvolutiveNeg G]
     [MeasurableNeg G] [NormedAddCommGroup F] [NormedSpace ℝ F]
     {μ : Measure G} [μ.IsNegInvariant] {φ : G → F} (hφ : Integrable φ μ)
     (heven : Function.Even φ) {g : G → ℝ} (hg : Measurable g) (hodd : Function.Odd g)
