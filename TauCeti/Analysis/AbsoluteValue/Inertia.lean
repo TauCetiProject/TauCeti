@@ -64,11 +64,25 @@ lean-iwasawa (`acmepjz/lean-iwasawa` at `7fffeb8c80fbe13f989f318c23cbb0dcf223009
 `Iwasawalib/NumberTheory/AbsoluteValue/InertiaSubgroup.lean`, Apache 2.0), which is stated there
 for the group `K ≃ₐ[F] K`; here it is stated for any group acting by ring automorphisms.
 
-The statements and proofs of `AbsoluteValue.inertia_smul`, `AbsoluteValue.inertia_le_stabilizer`,
-`AbsoluteValue.subgroupOf_inertia` and `AbsoluteValue.instNormalInertiaStabilizer` follow Mathlib's
-`Ideal.inertia_smul`, `Ideal.inertia_le_stabilizer`, `AddSubgroup.subgroupOf_inertia` and the
-normality instance for `Ideal.inertia` in `Mathlib/RingTheory/Ideal/Pointwise.lean`; the
-normality proof is Mathlib's.
+The statements and proofs of `AbsoluteValue.inertia_smul`, `AbsoluteValue.inertia_le_stabilizer`
+and `AbsoluteValue.instNormalInertiaStabilizer` follow Mathlib's `Ideal.inertia_smul`,
+`Ideal.inertia_le_stabilizer` and the normality instance for `Ideal.inertia` in
+`Mathlib/RingTheory/Ideal/Pointwise.lean` (the normality proof is Mathlib's), and
+`AbsoluteValue.subgroupOf_inertia` follows Mathlib's `AddSubgroup.subgroupOf_inertia` in
+`Mathlib/Algebra/Group/Subgroup/Basic.lean`.
+
+The design (decomposition and inertia groups defined once for finite and infinite places by
+working with absolute values) follows the advice of Thomas Browning and Jz Pan on the Lean Zulip,
+https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643780662
+and
+https://leanprover.zulipchat.com/#narrow/channel/658556-Riemann-Hypothesis/topic/Library.20design.20discrepancies.20between.20RH.2FMathlib.2FTauCeti/near/643806146.
+The decomposition group as a stabilizer, the inertia group, and the hypothesis shape
+`σ ∈ MulAction.stabilizer G w ∧ ∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1` restate, for absolute
+values, `New.decompGroup`, `New.inertiaGroup` and `New.IsFrob` of the riemann-hypothesis project
+(`leanprover-community/riemann-hypothesis` at `c5451bd3ba92480e05c4218f5221bb2900c58706`, file
+`src/Lib/ClassField/Places/GaloisDefs.lean`, Apache 2.0), which are stated there for a valuation
+subring of a field acted on by an abstract group; that project's issue
+https://github.com/leanprover-community/riemann-hypothesis/issues/6836 proposes this restatement.
 
 ## References
 
@@ -120,6 +134,26 @@ section Inertia
 variable [Ring L] [MulSemiringAction G L] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
   {w : AbsoluteValue L S}
 
+/-- If `σ` in the decomposition group of a nonarchimedean `w` induces `x ↦ x ^ q` on the residue
+ring and `τ` induces `x ↦ x ^ q'`, then `σ * τ` induces `x ↦ x ^ (q * q')`. -/
+theorem forall_apply_smul_sub_pow_lt_one_mul (hw : IsNonarchimedean w) {σ τ : G} {q q' : ℕ}
+    (hσ : σ ∈ MulAction.stabilizer G w) (hσq : ∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1)
+    (hτq' : ∀ x, w x ≤ 1 → w (τ • x - x ^ q') < 1) :
+    ∀ x, w x ≤ 1 → w ((σ * τ) • x - x ^ (q * q')) < 1 := by
+  intro x hx
+  have hxq' : w (x ^ q') ≤ 1 := by
+    rcases subsingleton_or_nontrivial L with _ | _
+    · simp [Subsingleton.elim (x ^ q') 0]
+    · rw [w.map_pow]
+      exact pow_le_one₀ (w.nonneg x) hx
+  calc w ((σ * τ) • x - x ^ (q * q'))
+        = w (σ • (τ • x - x ^ q') + (σ • x ^ q' - (x ^ q') ^ q)) := by
+          rw [mul_smul, smul_sub, ← pow_mul', sub_add_sub_cancel]
+    _ ≤ max (w (σ • (τ • x - x ^ q'))) (w (σ • x ^ q' - (x ^ q') ^ q)) := hw _ _
+    _ < 1 := by
+          rw [apply_smul_of_mem_stabilizer hσ]
+          exact max_lt (hτq' x hx) (hσq _ hxq')
+
 variable (G) in
 /-- The *inertia group* of an absolute value `w` on `L`: the elements `σ` of the decomposition
 group `MulAction.stabilizer G w` such that, if `w` is nonarchimedean, `w (σ • x - x) < 1` for every
@@ -128,12 +162,9 @@ def inertia (w : AbsoluteValue L S) : Subgroup G where
   carrier := {σ | σ • w = w ∧ (IsNonarchimedean w → ∀ x, w x ≤ 1 → w (σ • x - x) < 1)}
   one_mem' := ⟨one_smul G w, fun _ _ _ ↦ by simp⟩
   mul_mem' {a b} ha hb := by
-    refine ⟨by rw [mul_smul, hb.1, ha.1], fun hw x hx ↦ ?_⟩
-    have hbx : w (b • x) ≤ 1 := (apply_smul_of_mem_stabilizer hb.1 x).trans_le hx
-    calc w ((a * b) • x - x) = w ((a • b • x - b • x) + (b • x - x)) := by
-          rw [mul_smul, sub_add_sub_cancel]
-      _ ≤ max (w (a • b • x - b • x)) (w (b • x - x)) := hw _ _
-      _ < 1 := max_lt (ha.2 hw _ hbx) (hb.2 hw x hx)
+    refine ⟨by rw [mul_smul, hb.1, ha.1], fun hw ↦ ?_⟩
+    simpa only [pow_one, mul_one] using forall_apply_smul_sub_pow_lt_one_mul (q := 1) (q' := 1) hw
+      ha.1 (by simpa only [pow_one] using ha.2 hw) (by simpa only [pow_one] using hb.2 hw)
   inv_mem' {a} ha := by
     refine ⟨inv_smul_eq_iff.mpr ha.1.symm, fun hw x hx ↦ ?_⟩
     rw [← apply_smul_of_mem_stabilizer (MulAction.mem_stabilizer_iff.mpr ha.1), smul_sub,
@@ -211,26 +242,6 @@ section Inertia
 
 variable [Ring L] [MulSemiringAction G L] [CommRing S] [LinearOrder S] [IsStrictOrderedRing S]
   {w : AbsoluteValue L S}
-
-/-- If `σ` in the decomposition group of a nonarchimedean `w` induces `x ↦ x ^ q` on the residue
-ring and `τ` induces `x ↦ x ^ q'`, then `σ * τ` induces `x ↦ x ^ (q * q')`. -/
-theorem forall_apply_smul_sub_pow_lt_one_mul (hw : IsNonarchimedean w) {σ τ : G} {q q' : ℕ}
-    (hσ : σ ∈ MulAction.stabilizer G w) (hσq : ∀ x, w x ≤ 1 → w (σ • x - x ^ q) < 1)
-    (hτq' : ∀ x, w x ≤ 1 → w (τ • x - x ^ q') < 1) :
-    ∀ x, w x ≤ 1 → w ((σ * τ) • x - x ^ (q * q')) < 1 := by
-  intro x hx
-  have hxq' : w (x ^ q') ≤ 1 := by
-    rcases subsingleton_or_nontrivial L with _ | _
-    · simp [Subsingleton.elim (x ^ q') 0]
-    · rw [w.map_pow]
-      exact pow_le_one₀ (w.nonneg x) hx
-  calc w ((σ * τ) • x - x ^ (q * q'))
-        = w (σ • (τ • x - x ^ q') + (σ • x ^ q' - (x ^ q') ^ q)) := by
-          rw [mul_smul, smul_sub, ← pow_mul', sub_add_sub_cancel]
-    _ ≤ max (w (σ • (τ • x - x ^ q'))) (w (σ • x ^ q' - (x ^ q') ^ q)) := hw _ _
-    _ < 1 := by
-          rw [apply_smul_of_mem_stabilizer hσ]
-          exact max_lt (hτq' x hx) (hσq _ hxq')
 
 /-- If `σ` in the decomposition group of a nonarchimedean `w` induces `x ↦ x ^ q` on the residue
 ring, then `σ ^ n` induces `x ↦ x ^ (q ^ n)`. -/
