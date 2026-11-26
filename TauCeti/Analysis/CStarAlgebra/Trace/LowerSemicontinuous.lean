@@ -40,8 +40,8 @@ norm-continuous map `x ↦ x⋆x` into `B₊`.
 * `TauCeti.IsTrace.iSup_eq_of_monotone`, `TauCeti.IsTrace.tendsto_comp_of_monotone`: continuity
   along increasing nets of positive elements of a lower semicontinuous trace.
 * `TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`: `x ↦ τ(x⋆x)` is lower semicontinuous.
-* `TauCeti.isSemifinite_of_lt_top`, `TauCeti.isDenselyDefined_of_lt_top`: traces finite on `B₊`
-  are semifinite and densely defined.
+* `TauCeti.IsTrace.isSemifinite_of_lt_top`, `TauCeti.isDenselyDefined_of_lt_top`: traces finite
+  on `B₊` are semifinite and densely defined.
 
 ## References
 
@@ -79,18 +79,18 @@ omit [StarOrderedRing B] in
 theorem isDenselyDefined_iff : IsDenselyDefined τ ↔ {x : B | 0 ≤ x} ⊆ closure (finitePart τ) :=
   Iff.rfl
 
-/-- A trace finite on `B₊` is semifinite. -/
-theorem isSemifinite_of_lt_top (hτ : IsTrace τ) (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) :
-    IsSemifinite τ :=
-  fun x hx ↦ le_antisymm (le_iSup₂_of_le x ⟨hx, le_rfl, hfin x hx⟩ le_rfl)
-    (iSup₂_le fun _ hy ↦ hτ.mono hy.1 hy.2.1)
-
 omit [StarOrderedRing B] in
 /-- A trace finite on `B₊` is densely defined. -/
 theorem isDenselyDefined_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) : IsDenselyDefined τ :=
   fun x hx ↦ subset_closure (mem_finitePart.2 ⟨hx, hfin x hx⟩)
 
 namespace IsTrace
+
+/-- A trace finite on `B₊` is semifinite. -/
+theorem isSemifinite_of_lt_top (hτ : IsTrace τ) (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) :
+    IsSemifinite τ :=
+  fun x hx ↦ le_antisymm (le_iSup₂_of_le x ⟨hx, le_rfl, hfin x hx⟩ le_rfl)
+    (iSup₂_le fun _ hy ↦ hτ.mono hy.1 hy.2.1)
 
 /-- For a lower semicontinuous trace and an increasing net `xᵢ → x` of positive elements,
 `τ(x) = sup τ(xᵢ)` (Dixmier 1963, Remarque 2, p. 225). -/
