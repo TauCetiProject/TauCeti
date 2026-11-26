@@ -343,8 +343,7 @@ lemma filteredSpaceSpectralSequenceSublevelCompIso_hom (σ : M ≃ₜ M') (ha : 
     (filteredSpaceSpectralSequenceSublevelCompIso R (f' := f') σ ha).hom =
       filteredSpaceSpectralSequenceMap (Y := TopCat.of M) (Y' := TopCat.of M') R
         ((sublevel_mono (f' ∘ σ)).comp ha) ((sublevel_mono f').comp ha)
-        (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ).hom
-        fun _ _ hx ↦ by simpa using hx :=
+        (TopCat.ofHom (σ : C(M, M'))) fun _ _ hx ↦ by simpa using hx :=
   filteredSpaceSpectralSequenceIso_hom ..
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
@@ -355,8 +354,7 @@ lemma filteredSpaceSpectralSequenceSublevelCompIso_inv (σ : M ≃ₜ M') (ha : 
     (filteredSpaceSpectralSequenceSublevelCompIso R (f' := f') σ ha).inv =
       filteredSpaceSpectralSequenceMap (Y := TopCat.of M') (Y' := TopCat.of M) R
         ((sublevel_mono f').comp ha) ((sublevel_mono (f' ∘ σ)).comp ha)
-        (TopCat.isoOfHomeo (X := .of M) (Y := .of M') σ).inv
-        fun _ _ hy ↦ by simpa using hy :=
+        (TopCat.ofHom (σ.symm : C(M', M))) fun _ _ hy ↦ by simpa using hy :=
   filteredSpaceSpectralSequenceIso_inv ..
 
 end Homeomorph

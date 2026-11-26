@@ -85,8 +85,8 @@ singular chains.
   (`TauCeti.filteredSpaceSpectralSequenceCoefficientMap`), functorial in `φ`. On the first page it
   is the map `Hₙ(X (q + 1), X q; R) ⟶ Hₙ(X (q + 1), X q; R')` induced by `φ` on relative singular
   chains (`TauCeti.filteredSpaceSpectralSequenceFirstPageXIso_hom_coefficient_naturality`), so if
-  these maps are isomorphisms, the morphism of spectral sequences is an isomorphism on every page
-  (`TauCeti.isIso_filteredSpaceSpectralSequenceCoefficientMap_hom_f`). It commutes with the
+  these maps are isomorphisms, the morphism of spectral sequences is an isomorphism
+  (`TauCeti.isIso_filteredSpaceSpectralSequenceCoefficientMap`). It commutes with the
   morphisms induced by maps of filtered spaces
   (`TauCeti.filteredSpaceSpectralSequenceMap_comp_filteredSpaceSpectralSequenceCoefficientMap`),
   so the spectral sequence is functorial in the pair of the filtered space and the coefficients.
@@ -744,14 +744,13 @@ theorem isIso_singularHomologyFunctor_map_of_isIso_singularHomologyMap {a b : �
     · exact h q hq.1 hq.2 m
     · exact (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX ha hb hq m).isIso
         (isZero_singularHomology_ofInclusion_of_notMem_Ico R hX' ha' hb' hq m) _
+  rw [filteredSpaceSpectralSequenceMap_def] at this
   -- Both filtrations are finite, so it is an isomorphism on the abutments.
   have habut :=
     CochainComplex.isIso_spectralObjectMap_hom_app_abutment_of_isIso_spectralSequence_page _ _ _ _
       (chainFiltrationMap (𝟙 _) hX hX' g hg) (singularChainFiltration_eq_bot R ha)
       (singularChainFiltration_eq_bot R ha') (chainFiltration_eq_top _ hb)
-      (chainFiltration_eq_top _ hb') 2 le_rfl
-      (fun _ ↦ inferInstanceAs (IsIso (((filteredSpaceSpectralSequenceMap R hX hX' g hg).hom 2
-        le_rfl).f _))) (-n)
+      (chainFiltration_eq_top _ hb') 2 le_rfl (fun _ ↦ inferInstance) (-n)
   have e := chainFiltrationAbutmentIso_hom_naturality (𝟙 ((singularChainComplexFunctor A).obj R))
     hX hX' g hg n
   rw [NatTrans.id_app, Category.comp_id, ← Iso.inv_comp_eq] at e
@@ -994,15 +993,15 @@ theorem filteredSpaceSpectralSequenceFirstPageXIso_hom_coefficient_naturality (p
 
 /-- **The comparison theorem for morphisms of coefficients.** If a morphism of coefficients
 `φ : R ⟶ R'` induces isomorphisms `Hₙ(X (q + 1), X q; R) ≅ Hₙ(X (q + 1), X q; R')` for every `q`
-and `n`, then the induced morphism of spectral sequences is an isomorphism on every object of every
-page `r ≥ 2`, that is, from the first page on. -/
-theorem isIso_filteredSpaceSpectralSequenceCoefficientMap_hom_f
+and `n`, then the induced morphism of spectral sequences is an isomorphism of spectral sequences,
+so in particular an isomorphism on every object of every page `r ≥ 2`. -/
+theorem isIso_filteredSpaceSpectralSequenceCoefficientMap
     (h : ∀ (q : ℤ) (n : ℕ), IsIso (HomologicalComplex.homologyMap
       (((SSetPair.chainComplexFunctor A).map φ).app (TopPair.toSSetPair.obj
-        (TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))))) n))
-    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) :
-    IsIso (((filteredSpaceSpectralSequenceCoefficientMap hX φ).hom r hr).f pq) := by
-  refine isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) r hr pq
+        (TopPair.ofInclusion (hX (Int.le_add_one le_rfl : q ≤ q + 1))))) n)) :
+    IsIso (filteredSpaceSpectralSequenceCoefficientMap hX φ) := by
+  refine SpectralSequence.Hom.isIso_of_isIso_hom_f _ fun pq ↦
+    isIso_hom_f_of_isIso_page_two R hX _ (fun pq n hn ↦ ?_) 2 le_rfl pq
   have e := filteredSpaceSpectralSequenceFirstPageXIso_hom_coefficient_naturality hX φ pq pq.2
     (pq.2 + 1) rfl rfl _ rfl n hn
   rw [← Iso.eq_comp_inv] at e
