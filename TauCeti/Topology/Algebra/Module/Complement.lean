@@ -30,7 +30,8 @@ For a `u`-invariant submodule `p` with topological complement `q`, the restricti
 is inclusion into the ambient module, followed by `u`, then projection onto `p` along `q`
 (`ContinuousLinearMap.restrict_eq_projectionOntoL_comp`). More generally, a continuous linear map
 preserving both summands of a topological direct sum commutes with the projection onto one summand
-along the other (`Submodule.projectionL_apply_of_mapsTo`).
+along the other (`Submodule.projectionL_apply_of_mapsTo`, and
+`Submodule.projectionOntoL_apply_of_mapsTo` for the projection valued in the summand).
 -/
 
 public section
@@ -96,6 +97,17 @@ theorem projectionL_apply_of_mapsTo (h : IsTopCompl p q) {f : M →L[R] M}
       range_projectionL, ker_projectionL]
     exact ⟨hp, hq⟩
   simpa only [mul_apply_eq_comp] using congr($hc.eq x)
+
+/-- `Submodule.projectionL_apply_of_mapsTo` for the projection `projectionOntoL` valued in `p`: a
+continuous linear map preserving both summands of a topological direct sum `M = p ⊕ q` commutes
+with the projection onto `p` along `q`, acting on `p` by its restriction. -/
+theorem projectionOntoL_apply_of_mapsTo (h : IsTopCompl p q) {f : M →L[R] M}
+    (hp : Set.MapsTo f p p) (hq : Set.MapsTo f q q) (x : M) :
+    p.projectionOntoL q h (f x) = f.restrict (fun _ hy ↦ hp hy) (p.projectionOntoL q h x) :=
+  Subtype.ext <| by
+    rw [ContinuousLinearMap.coe_restrict_apply, coe_projectionOntoL_apply,
+      coe_projectionOntoL_apply]
+    exact projectionL_apply_of_mapsTo h hp hq x
 
 end Projection
 

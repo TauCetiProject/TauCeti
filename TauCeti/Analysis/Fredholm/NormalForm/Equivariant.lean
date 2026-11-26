@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Fredholm.NormalForm.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Comp
+import TauCeti.Analysis.Fredholm.Equivariant
 import TauCeti.Topology.Algebra.Module.Complement
-import TauCeti.Topology.Algebra.Module.InvariantComplement
 
 /-!
 # The equivariant Lyapunov–Schmidt reduction
@@ -41,8 +41,8 @@ and of the finite-dimensional codomain summand. Splittings with all four invaria
 properties exist: if a finite group `G` of invertible order acts on
 `E` and `F` by continuous linear maps and `T` intertwines the two actions, then `T` has a Fredholm
 package whose four summands are `G`-invariant
-(`ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo`), obtained by averaging
-projections over `G`.
+(`ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo` in
+`TauCeti.Analysis.Fredholm.Equivariant`), obtained by averaging projections over `G`.
 
 The case of an involution acting by `-1` on the kernel and on the cokernel of `T` is the source of
 odd obstruction maps (`ContinuousLinearMap.FredholmPackage.eventually_obstructionSlice_neg`). In
@@ -60,8 +60,6 @@ abstract reduction at a fixed parameter, not these further steps or geometric id
 
 ## Main results
 
-* `ContinuousLinearMap.IsFredholm.exists_fredholmPackage_forall_mapsTo`: an equivariant Fredholm
-  operator has a Fredholm package with invariant summands.
 * `ContinuousLinearMap.FredholmPackage.mapsTo_decDom_X₀`,
   `ContinuousLinearMap.FredholmPackage.mapsTo_decCodom_X₁`: the symmetries of an equivariant map
   preserve the kernel and the range of its derivative at a fixed point.
@@ -90,38 +88,6 @@ open Set Filter Topology
 
 namespace ContinuousLinearMap
 
-section Package
-
-variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [AddCommGroup E] [AddCommGroup F] [Module 𝕜 E] [Module 𝕜 F]
-  [TopologicalSpace E] [TopologicalSpace F] [IsTopologicalAddGroup E] [IsTopologicalAddGroup F]
-  [ContinuousConstSMul 𝕜 E] [ContinuousSMul 𝕜 F]
-
-/-- **Equivariant Fredholm packages.** Let a finite group `G`, whose order is invertible in `𝕜`,
-act on `E` and on `F` by continuous linear maps, and let `u` be a Fredholm operator intertwining
-the two actions. Then `u` has a Fredholm package whose four summands are invariant under the
-actions. -/
-theorem IsFredholm.exists_fredholmPackage_forall_mapsTo {G : Type*} [Group G] [Finite G]
-    (hG : IsUnit (Nat.card G : 𝕜)) {u : E →L[𝕜] F} (hu : u.IsFredholm)
-    (ρ : G →* E →L[𝕜] E) (ρ' : G →* F →L[𝕜] F) (hρ : ∀ g x, u (ρ g x) = ρ' g (u x)) :
-    ∃ pkg : FredholmPackage u, ∀ g,
-      MapsTo (ρ g) pkg.decDom.X₀ pkg.decDom.X₀ ∧ MapsTo (ρ g) pkg.decDom.X₁ pkg.decDom.X₁ ∧
-        MapsTo (ρ' g) pkg.decCodom.X₀ pkg.decCodom.X₀ ∧
-          MapsTo (ρ' g) pkg.decCodom.X₁ pkg.decCodom.X₁ := by
-  have hker (g : G) : MapsTo (ρ g) u.ker u.ker := fun x hx ↦ by
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx ⊢
-    rw [hρ, hx, map_zero]
-  have hrange (g : G) : MapsTo (ρ' g) u.range u.range := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨ρ g x, hρ g x⟩
-  obtain ⟨dom₁, h_dom, h_dom₁⟩ :=
-    hu.closedComplemented_ker.exists_isTopCompl_forall_mapsTo hG ρ hker
-  obtain ⟨codom₀, h_codom, h_codom₀⟩ :=
-    hu.closedComplemented_range.exists_isTopCompl_forall_mapsTo hG ρ' hrange
-  exact ⟨hu.fredholmPackage h_dom h_codom, fun g ↦ ⟨hker g, h_dom₁ g, h_codom₀ g, hrange g⟩⟩
-
-end Package
-
 namespace FredholmPackage
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
@@ -138,23 +104,9 @@ include hτ₀ hτ₁ in
 /-- The projection of the codomain onto its essential summand commutes with a map preserving both
 codomain summands. -/
 private theorem proj_map (y : F) :
-    pkg.decCodom.proj (τ y) = τ.restrict (fun _ hx ↦ hτ₁ hx) (pkg.decCodom.proj y) :=
-  Subtype.ext <| by
-    rw [FredholmDecomposition.proj, coe_restrict_apply, Submodule.coe_projectionOntoL_apply,
-      Submodule.coe_projectionOntoL_apply]
-    exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl hτ₁ hτ₀ y
-
-include hσ₀ hσ₁ in
-/-- The projection of the domain onto its finite-dimensional summand commutes with a map preserving
-both domain summands. -/
-private theorem projX₀_map (x : E) :
-    pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (σ x) =
-      σ.restrict (fun _ hx ↦ hσ₀ hx)
-        (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm x) :=
-  Subtype.ext <| by
-    rw [coe_restrict_apply, Submodule.coe_projectionOntoL_apply,
-      Submodule.coe_projectionOntoL_apply]
-    exact Submodule.projectionL_apply_of_mapsTo pkg.decDom.isTopCompl.symm hσ₀ hσ₁ x
+    pkg.decCodom.proj (τ y) = τ.restrict (fun _ hx ↦ hτ₁ hx) (pkg.decCodom.proj y) := by
+  rw [FredholmDecomposition.proj]
+  exact Submodule.projectionOntoL_apply_of_mapsTo pkg.decCodom.isTopCompl hτ₁ hτ₀ y
 
 include hσ₀ hσ₁ hτ₀ hτ₁ in
 /-- **The normal-form coordinates are equivariant.** If `σ` fixes the base point `a`, preserves both
@@ -165,7 +117,7 @@ theorem normalFormMap_map (ha : σ a = a) {x : E} (hx : f (σ x) = τ (f x)) :
       Prod.map (τ.restrict fun _ hy ↦ hτ₁ hy) (σ.restrict fun _ hy ↦ hσ₀ hy)
         (pkg.normalFormMap f a x) := by
   rw [normalFormMap_apply, normalFormMap_apply, Prod.map_apply, hx, ← pkg.proj_map hτ₀ hτ₁,
-    ← pkg.projX₀_map hσ₀ hσ₁, map_sub σ, ha]
+    ← Submodule.projectionOntoL_apply_of_mapsTo pkg.decDom.isTopCompl.symm hσ₀ hσ₁, map_sub σ, ha]
 
 /-- If `f` intertwines `σ` with `τ` near a point `a` fixed by `σ`, then `σ` preserves the kernel
 of the derivative `T` of `f` at `a`, which is the finite-dimensional domain summand. -/
@@ -188,16 +140,6 @@ theorem mapsTo_decCodom_X₁ (hf : HasFDerivAt f T a) (ha : σ a = a)
 section Chart
 
 variable [CompleteSpace E]
-
-/-- Near the coordinate of the base point, the inverse normal-form chart takes values in any
-prescribed neighbourhood of `a`. -/
-private theorem eventually_normalFormOpenPartialHomeomorph_symm (hf : HasStrictFDerivAt f T a)
-    {p : E → Prop} (hp : ∀ᶠ x in 𝓝 a, p x) :
-    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
-      p ((pkg.normalFormOpenPartialHomeomorph hf).symm y) := by
-  refine ((pkg.normalFormOpenPartialHomeomorph hf).continuousAt_symm
-    (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf)).eventually ?_
-  rwa [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
 
 include hσ₁ hτ₀ in
 /-- **The inverse normal-form chart is equivariant.** Near the coordinate of the base point, the
@@ -241,10 +183,8 @@ theorem eventually_obstructionMap_prodMap (hf : HasStrictFDerivAt f T a) (ha : �
         τ.restrict (fun _ hy ↦ hτ₀ hy) (pkg.obstructionMap hf y) := by
   filter_upwards [pkg.eventually_normalFormOpenPartialHomeomorph_symm_prodMap hσ₁ hτ₀ hf ha hfσ,
     pkg.eventually_normalFormOpenPartialHomeomorph_symm hf hfσ] with y hy hfy
-  refine Subtype.ext ?_
-  rw [obstructionMap_apply, obstructionMap_apply, hy, hfy, coe_restrict_apply,
-    Submodule.coe_projectionOntoL_apply, Submodule.coe_projectionOntoL_apply]
-  exact Submodule.projectionL_apply_of_mapsTo pkg.decCodom.isTopCompl.symm hτ₀
+  rw [obstructionMap_apply, obstructionMap_apply, hy, hfy]
+  exact Submodule.projectionOntoL_apply_of_mapsTo pkg.decCodom.isTopCompl.symm hτ₀
     (pkg.mapsTo_decCodom_X₁ hf.hasFDerivAt ha hfσ) _
 
 include hσ₁ hτ₀ in

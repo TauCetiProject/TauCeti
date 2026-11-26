@@ -232,6 +232,17 @@ theorem normalFormOpenPartialHomeomorph_symm_proj_self {f : E → F} {a : E}
     (pkg.normalFormOpenPartialHomeomorph hf).symm (pkg.decCodom.proj (f a), 0) = a := by
   simpa only [Submodule.coe_projectionOntoL] using pkg.normalFormOpenPartialHomeomorph_symm_self hf
 
+/-- Near the coordinate of the base point, the inverse normal-form chart takes values in any
+prescribed neighbourhood of `a`: a property holding eventually near `a` holds eventually for the
+inverse chart near `(pkg.decCodom.proj (f a), 0)`. -/
+theorem eventually_normalFormOpenPartialHomeomorph_symm {f : E → F} {a : E}
+    (hf : HasStrictFDerivAt f T a) {p : E → Prop} (hp : ∀ᶠ x in 𝓝 a, p x) :
+    ∀ᶠ y in 𝓝 (pkg.decCodom.proj (f a), (0 : pkg.decDom.X₀)),
+      p ((pkg.normalFormOpenPartialHomeomorph hf).symm y) := by
+  refine ((pkg.normalFormOpenPartialHomeomorph hf).continuousAt_symm
+    (pkg.normalFormOpenPartialHomeomorph_self_mem_target hf)).eventually ?_
+  rwa [pkg.normalFormOpenPartialHomeomorph_symm_proj_self hf]
+
 /-! ### The finite-dimensional obstruction map -/
 
 /-- The inessential-codomain component of `f` in Fredholm normal-form coordinates. Its codomain is
