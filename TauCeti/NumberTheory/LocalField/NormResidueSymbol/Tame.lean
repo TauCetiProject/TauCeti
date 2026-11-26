@@ -172,7 +172,7 @@ theorem coe_normResidueSymbol_of_mem_unitFiltration_zero (hp : ¬ ringChar 𝓀[
   let f : Kˣ →* rootsOfUnity n K :=
     MonoidHom.mk' (fun x ↦ normResidueSymbol K n x b) fun x y ↦ normResidueSymbol_mul_left x y b
   have ha : f a = f π ^ k * f (a * π ^ (-k)) := by
-    rw [← map_zpow, ← map_mul, mul_left_comm, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]
+    rw [← map_zpow, ← map_mul, zpow_neg, mul_mul_inv_cancel'_right]
   have hfa : normResidueSymbol K n a b = normResidueSymbol K n π b ^ k := by
     simpa only [f, MonoidHom.mk'_apply,
       normResidueSymbol_eq_one_of_mem_unitFiltration_zero hp hu hb, mul_one] using ha
@@ -228,10 +228,10 @@ theorem normResidueSymbol_eq_normResidueSymbol_uniformizer (hp : ¬ ringChar �
   have hπ1 := (isUniformizer_def π).1 hπ
   obtain ⟨u, hu, ha⟩ : ∃ u ∈ unitFiltration K 0, a = π ^ α * u :=
     ⟨a * π ^ (-α), mul_zpow_neg_mem_unitFiltration_zero hπ1 a,
-      by rw [mul_left_comm, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]⟩
+      by rw [zpow_neg, mul_mul_inv_cancel'_right]⟩
   obtain ⟨w, hw, hb⟩ : ∃ w ∈ unitFiltration K 0, b = π ^ β * w :=
     ⟨b * π ^ (-β), mul_zpow_neg_mem_unitFiltration_zero hπ1 b,
-      by rw [mul_left_comm, ← zpow_add, add_neg_cancel, zpow_zero, mul_one]⟩
+      by rw [zpow_neg, mul_mul_inv_cancel'_right]⟩
   -- The values `(π, b)`, `(π, u)` and `(π, -1)` determine both sides.
   have hub : normResidueSymbol K n u b = (normResidueSymbol K n π u)⁻¹ ^ β := by
     conv_lhs => rw [hb]
@@ -248,9 +248,11 @@ theorem normResidueSymbol_eq_normResidueSymbol_uniformizer (hp : ¬ ringChar �
     rw [normResidueSymbol_mul_right, normResidueSymbol_zpow_right,
       normResidueSymbol_self_eq_normResidueSymbol_neg_one_right]
   rw [hab, normResidueSymbol_mul_right, normResidueSymbol_mul_right, normResidueSymbol_zpow_right,
-    normResidueSymbol_zpow_right, normResidueSymbol_zpow_right, hπa, mul_zpow, ← zpow_mul,
-    inv_zpow', mul_comm (_ ^ (α * β)), mul_assoc, mul_neg,
-    zpow_neg _ (α * β), mul_inv_cancel_left]
+    normResidueSymbol_zpow_right, normResidueSymbol_zpow_right, hπa]
+  -- The factors `(π, -1) ^ (α β)` and `(π, -1) ^ (-α β)` cancel, leaving
+  -- `(π, b) ^ α (π, u) ^ (-β)` on both sides.
+  rw [mul_zpow, ← zpow_mul, mul_neg, zpow_neg _ (α * β), inv_zpow',
+    mul_mul_mul_comm, mul_inv_cancel, one_mul]
 
 /-- **The tame formula.** If `n` is prime to the residue characteristic, then for all
 `a, b ∈ Kˣ` the norm-residue symbol is `(a, b) = ω(c) ^ ((q - 1) / n)`, where
