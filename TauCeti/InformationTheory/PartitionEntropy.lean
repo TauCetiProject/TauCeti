@@ -285,7 +285,7 @@ private theorem ofReal_mul_log_div_add_le {p q r : ℝ} (hp : 0 ≤ p) (hpq : p 
   have hreal : p * log (r / p) + p ≤ p * (-log q) + q * r := by
     have h0 : 0 ≤ q * r * klFun (p / (q * r)) :=
       mul_nonneg (by positivity) (klFun_nonneg (by positivity))
-    rw [mul_klFun_div_mul hq0.ne' hr.ne'] at h0
+    rw [mul_klFun_div (mul_ne_zero hq0.ne' hr.ne'), log_mul hq0.ne' hr.ne'] at h0
     rw [log_div hr.ne' hp.ne']
     linarith
   have hlog : 0 ≤ p * log (r / p) := mul_nonneg hp.le (log_nonneg ((one_le_div hp).mpr hpr))

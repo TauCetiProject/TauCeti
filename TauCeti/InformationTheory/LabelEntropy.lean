@@ -286,7 +286,10 @@ theorem indepFun_of_labelEntropy_pair_eq_add [IsZeroOrProbabilityMeasure μ] [Me
         P a * Q b = P a * Q b * klFun (p a b / (P a * Q b)) := fun a b ↦ by
       rcases (show 0 ≤ p a b from measureReal_nonneg).eq_or_lt with h0 | hp
       · simp [← h0, klFun_zero]
-      exact (mul_klFun_div_mul (hp.trans_le (hpP a b)).ne' (hp.trans_le (hpQ a b)).ne').symm
+      have hPa := (hp.trans_le (hpP a b)).ne'
+      have hQb := (hp.trans_le (hpQ a b)).ne'
+      rw [mul_klFun_div (mul_ne_zero hPa hQb), log_mul hPa hQb]
+      ring
     simp only [← hcell, Finset.sum_add_distrib, Finset.sum_sub_distrib, e1, e2, e3, hrow, hPsum]
     simp only [negMulLog, neg_mul, Finset.sum_neg_distrib] at hreal
     linarith
