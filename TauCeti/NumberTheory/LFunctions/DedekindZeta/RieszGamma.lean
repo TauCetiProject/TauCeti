@@ -16,9 +16,9 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
 
 The negative poles of the archimedean factor are spaced by two at real places and by one at
 complex places. Their first Riesz contribution is continuous on `[1, ∞)` and is `O(1/y)`.
-Its Mellin transform is obtained by removing the pole at zero from the logarithmic derivative
-of the gamma factor and subtracting the affine interpolant of the resulting function at `0`
-and `1`. This separates the negative trivial-zero contribution from the term at the origin.
+`s(s−1)` times its Mellin transform equals the logarithmic derivative of the gamma factor with
+the pole at zero removed, minus the affine interpolant of the resulting function at `0` and `1`.
+This separates the negative trivial-zero contribution from the term at the origin.
 
 The calculation uses `TauCeti.mul_integral_rieszGammaCorrection` and the digamma recurrence
 `Complex.digamma_apply_add_one` to account for the pole at zero.
@@ -45,7 +45,7 @@ theorem dedekindZetaRieszGammaCorrection_def (y : ℝ) :
         nrComplexPlaces K * rieszGammaCorrection 1 1 y :=
   (rfl)
 
-/-- The negative gamma contribution is continuous through the lower endpoint of the transform. -/
+/-- The negative gamma contribution is continuous on `[1, ∞)`, the range of the Mellin integral. -/
 theorem continuousOn_dedekindZetaRieszGammaCorrection :
     ContinuousOn (dedekindZetaRieszGammaCorrection K) (Ici 1) :=
   (continuousOn_const.mul (continuousOn_rieszGammaCorrection zero_lt_two zero_lt_two)).add
@@ -85,12 +85,7 @@ private noncomputable def regularGammaLogDeriv (s : ℂ) : ℂ :=
 private theorem regularGammaLogDeriv_eq {s : ℂ} (hs : -1 < s.re) (h₀ : s ≠ 0) :
     regularGammaLogDeriv K s = logDeriv (dedekindZetaData K).gammaFactor s +
       (↑(nrRealPlaces K) + ↑(nrComplexPlaces K)) / s := by
-  have hC (n : ℕ) : s ≠ -(n : ℂ) := by
-    rintro rfl
-    simp only [neg_re, natCast_re] at hs
-    cases n with
-    | zero => exact h₀ (by simp)
-    | succ n => linarith [Nat.cast_nonneg (α := ℝ) n, Nat.cast_succ (R := ℝ) n]
+  have hC := ne_neg_natCast_of_neg_one_lt_re_of_ne_zero hs h₀
   have hR (n : ℕ) : s ≠ -(2 * n) := by simpa using hC (2 * n)
   have hhalf (n : ℕ) : s / 2 ≠ -(n : ℂ) := by
     intro h
