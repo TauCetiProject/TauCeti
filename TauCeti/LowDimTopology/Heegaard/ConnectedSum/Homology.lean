@@ -250,6 +250,26 @@ noncomputable def hatHomologySumCircleTimesSphereEquiv (hr₀ : r₀ ∈ Set.ran
           LinearEquiv.refl_toLinearMap, LinearMap.id_comp, LinearMap.comp_id])).trans
     (H.hatHomologyAddBasepointEquiv hr₀ hd)
 
+/-- The inverse of `TauCeti.HeegaardRegionSystem.hatHomologySumCircleTimesSphereEquiv` sends the
+class of a cycle `z` tensored with `w` to the class of the cycle
+`(TauCeti.HeegaardRegionSystem.addBasepointProdEquiv r₀).symm (z ⊗ w)`, as for the added basepoint
+(`TauCeti.HeegaardRegionSystem.hatHomologyAddBasepointEquiv_symm_mk_tmul`). -/
+@[simp]
+theorem hatHomologySumCircleTimesSphereEquiv_symm_mk_tmul (hr₀ : r₀ ∈ Set.range H.basepoint)
+    (hd : H.hatDifferential χ ∘ₗ H.hatDifferential χ = 0) (z : LinearMap.ker (H.hatDifferential χ))
+    (w : ZMod 2 × ZMod 2) :
+    (hatHomologySumCircleTimesSphereEquiv hr₀ hd).symm (Submodule.Quotient.mk z ⊗ₜ w) =
+      Submodule.Quotient.mk ⟨(H.addBasepointProdEquiv r₀).symm ((z : H.Generator →₀ ZMod 2) ⊗ₜ w),
+        by
+          rw [H.hatDifferential_sumCircleTimesSphere_eq_hatDifferential_addBasepoint r₀ hr₀]
+          exact LinearMap.map_mem_ker_of_comp_eq (H.addBasepointProdEquiv r₀).symm.toLinearMap
+            (H.hatDifferential_comp_addBasepointProdEquiv_symm hr₀).symm
+            (LinearMap.tmul_mem_ker_rTensor z.property w)⟩ := by
+  rw [hatHomologySumCircleTimesSphereEquiv, LinearEquiv.symm_trans_apply,
+    hatHomologyAddBasepointEquiv_symm_mk_tmul, LinearEquiv.symm_apply_eq,
+    LinearEquiv.homologyEquiv_mk]
+  simp only [LinearEquiv.refl_apply]
+
 /-- The hat homology doubles in dimension under the connected sum with `S¹ × S²` in a region
 containing a basepoint. -/
 theorem finrank_hatHomology_sumCircleTimesSphere (hr₀ : r₀ ∈ Set.range H.basepoint)
