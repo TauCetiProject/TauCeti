@@ -12,6 +12,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Contact charts with prescribed first-order data

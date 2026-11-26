@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Contactomorphism
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.LinearAlgebra.Prod
 
 /-!
 # Contact lifts of conformally symplectic linear maps
@@ -301,18 +302,6 @@ theorem isContactomorphism_conformalContactLiftDiffeomorph (A : (V × V) ≃L[�
   rw [Diffeomorph.isContactomorphism_def,
     mpullback_conformalContactLiftDiffeomorph_innerProductContactForm A hc hA]
   exact SmoothForm.kerDistribution_smul hc
-
-/-- A linear map `E × F × R → E' × F' × R` carrying the hyperplane `z = 0` into `z = 0`
-multiplies the `z` coordinate by the `z` coordinate of the image of `(0, 0, 1)`. -/
-theorem _root_.LinearMap.snd_snd_apply_eq_mul {R E F E' F' : Type*} [CommSemiring R]
-    [AddCommMonoid E] [Module R E] [AddCommMonoid F] [Module R F] [AddCommMonoid E'] [Module R E']
-    [AddCommMonoid F'] [Module R F'] (S : E × F × R →ₗ[R] E' × F' × R)
-    (hS : ∀ y : E × F × R, y.2.2 = 0 → (S y).2.2 = 0) (y : E × F × R) :
-    (S y).2.2 = (S (0, 0, 1)).2.2 * y.2.2 := by
-  have hy : y = (y.1, y.2.1, 0) + y.2.2 • ((0, 0, 1) : E × F × R) := by
-    ext <;> simp
-  rw [hy, map_add, map_smul, Prod.snd_add, Prod.snd_add, hS _ rfl]
-  simp [mul_comm]
 
 /-- **First-order realization on the standard contact space.** Let `S` be a linear map of
 `V × V × ℝ` with `S y` in the hyperplane `z = 0` exactly when `y` is, and conformally symplectic on
