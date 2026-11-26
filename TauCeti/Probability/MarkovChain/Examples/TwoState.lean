@@ -20,6 +20,9 @@ probability `a` and from `true` to `false` with probability `b`, staying put oth
 quantity of the equilibrium theory is explicit for it, which makes it the basic test case for
 invariance, detailed balance, Kac's formula and convergence in total variation.
 
+* The one-step transition probabilities are `a`, `1 - a`, `b` and `1 - b`
+  (`twoStateChain_false_real_true`, `twoStateChain_false_real_false`,
+  `twoStateChain_true_real_false`, `twoStateChain_true_real_true`).
 * After one step the mass at `true` is `a` times the mass at `false` plus `1 - b` times the mass
   at `true` (`twoStateChain_comp_real_true`). Hence, for two initial measures of the same total
   mass, the difference of the masses at `true` is multiplied by `1 - a - b` at every step
@@ -80,6 +83,32 @@ def twoStateChain : Kernel Bool Bool :=
 instance : IsMarkovKernel (twoStateChain a b) :=
   ⟨fun x => by cases x <;> simp only [twoStateChain_false, twoStateChain_true] <;> infer_instance⟩
 
+/-- From `false` the chain moves to `true` with probability `a`. -/
+theorem twoStateChain_false_real_true : (twoStateChain a b false).real {true} = a := by
+  simp
+
+/-- From `false` the chain stays at `false` with probability `1 - a`. -/
+theorem twoStateChain_false_real_false : (twoStateChain a b false).real {false} = 1 - a := by
+  simp
+
+/-- From `true` the chain moves to `false` with probability `b`. -/
+theorem twoStateChain_true_real_false : (twoStateChain a b true).real {false} = b := by
+  simp
+
+/-- From `true` the chain stays at `true` with probability `1 - b`. -/
+theorem twoStateChain_true_real_true : (twoStateChain a b true).real {true} = 1 - b := by
+  simp
+
+/-- From `false` the chain moves to `true` with probability `a`, as an extended real. -/
+theorem twoStateChain_false_singleton_true :
+    twoStateChain a b false {true} = ENNReal.ofReal a := by
+  rw [← ofReal_measureReal, twoStateChain_false_real_true]
+
+/-- From `true` the chain moves to `false` with probability `b`, as an extended real. -/
+theorem twoStateChain_true_singleton_false :
+    twoStateChain a b true {false} = ENNReal.ofReal b := by
+  rw [← ofReal_measureReal, twoStateChain_true_real_false]
+
 /-- The absorbing chain `absorbingChain p` is the two-state chain that leaves `false` with
 probability `1 - p` and never leaves `true`. -/
 theorem absorbingChain_eq_twoStateChain (p : unitInterval) :
@@ -94,13 +123,9 @@ plus the mass `1 - b` that stays at `true`. -/
 theorem twoStateChain_comp_real_true (ν : Measure Bool) [IsFiniteMeasure ν] :
     (twoStateChain a b ∘ₘ ν).real {true} = a * ν.real {false} + (1 - b) * ν.real {true} := by
   rw [measureReal_def, Measure.bind_apply (measurableSet_singleton true)
-    (twoStateChain a b).aemeasurable, lintegral_fintype, Fintype.sum_bool]
-  simp only [twoStateChain_true, twoStateChain_false, measurableSet_singleton,
-    Set.mem_singleton_iff, Bool.false_eq_true, not_false_eq_true,
-    bernoulliMeasure_apply_of_mem_of_notMem, bernoulliMeasure_apply_of_notMem_of_mem]
-  rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul, ENNReal.toReal_mul]
-  simp only [ENNReal.coe_toReal, unitInterval.coe_toNNReal, unitInterval.coe_symm_eq,
-    measureReal_def]
+    (twoStateChain a b).aemeasurable, lintegral_fintype, Fintype.sum_bool,
+    ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_mul, ENNReal.toReal_mul]
+  simp only [← measureReal_def, twoStateChain_false_real_true, twoStateChain_true_real_true]
   ring
 
 /-- **Geometric contraction.** For two finite initial measures of the same total mass, the
@@ -178,7 +203,8 @@ theorem twoStateChain_isReversible_iff (π : Measure Bool) [IsFiniteMeasure π] 
   have hflow : π {false} * twoStateChain a b false {true} =
       π {true} * twoStateChain a b true {false} ↔ π.real {false} * a = π.real {true} * b := by
     rw [← ENNReal.toReal_eq_toReal_iff' (by finiteness) (by finiteness)]
-    simp [measureReal_def]
+    simp only [ENNReal.toReal_mul, ← measureReal_def, twoStateChain_false_real_true,
+      twoStateChain_true_real_false]
   refine ⟨fun h => hflow.mp (h false true), fun h x y => ?_⟩
   cases x <;> cases y
   · rfl
@@ -292,18 +318,18 @@ theorem twoStateChain_isIrreducible_iff :
     rintro rfl
     obtain ⟨n, hn⟩ := (Kernel.reaches_def _ _).mp (h true false)
     have hreal : ((twoStateChain a 0 ^ n) true).real {false} = 0 := by
-      rw [show ({false} : Set Bool) = {true}ᶜ by rw [Bool.compl_singleton, Bool.not_true],
-        measureReal_compl (measurableSet_singleton _), probReal_univ,
-        twoStateChain_pow_true_real_true]
+      rw [measureReal_singleton_false, probReal_univ, twoStateChain_pow_true_real_true]
       by_cases ha : (a : ℝ) = 0 <;> simp [ha]
     rw [measureReal_eq_zero_iff] at hreal
     exact hn.ne' hreal
   · cases x <;> cases y
     · exact Kernel.Reaches.refl _
-    · exact Kernel.reaches_of_pos (by simpa [← NNReal.coe_pos] using
-        unitInterval.pos_iff_ne_zero.mpr ha)
-    · exact Kernel.reaches_of_pos (by simpa [← NNReal.coe_pos] using
-        unitInterval.pos_iff_ne_zero.mpr hb)
+    · refine Kernel.reaches_of_pos ?_
+      rw [twoStateChain_false_singleton_true]
+      exact ENNReal.ofReal_pos.mpr (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr ha))
+    · refine Kernel.reaches_of_pos ?_
+      rw [twoStateChain_true_singleton_false]
+      exact ENNReal.ofReal_pos.mpr (unitInterval.coe_pos.mpr (unitInterval.pos_iff_ne_zero.mpr hb))
     · exact Kernel.Reaches.refl _
 
 /-- **Mean return time to `false`.** If `b ≠ 0`, the mean return time to `false` is
