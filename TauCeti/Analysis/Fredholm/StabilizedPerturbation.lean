@@ -36,14 +36,12 @@ The proof perturbs the stabilization. The operator `(x, σ) ↦ T' x + B σ` is 
 `(x, σ) ↦ T x + B σ`, so `Q` is an approximate right inverse of it, which a Neumann series
 corrects to a right inverse `Q'` with `‖Q'‖ ≤ 2 ‖Q‖`. Both stabilizations are thus onto, and
 `ξ ↦ ξ - Q (A ξ)` and `ξ ↦ ξ - Q' (A' ξ)` embed their kernels into each other, so the kernels have
-the same dimension (`TauCeti.exists_injective_ker_of_norm_mul_norm_sub_lt_one`). For a surjective
-stabilization the index is the dimension of the kernel minus `dim S`
+the same dimension (`ContinuousLinearMap.exists_injective_ker_of_norm_mul_norm_sub_lt_one`). For a
+surjective stabilization the index is the dimension of the kernel minus `dim S`
 (`ContinuousLinearMap.index_eq_finrank_ker_coprod_sub_of_surjective`).
 
 ## Main results
 
-* `TauCeti.exists_injective_ker_of_norm_mul_norm_sub_lt_one`: if `A` has a right inverse `Q`, the
-  kernel of every `A'` with `‖Q‖ ‖A' - A‖ < 1` embeds into the kernel of `A`.
 * `ContinuousLinearMap.IsFredholm.isFredholm_and_index_eq_of_norm_sub_mul_lt`: the Fredholm
   property and the index are stable under perturbations smaller than `1 / (2 ‖Q‖)`.
 
@@ -61,35 +59,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜
 variable {E F : Type*}
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
-
-omit [IsRCLikeNormedField 𝕜] [CompleteSpace F] in
-/-- **Kernels of operators near a surjection.** If `A` has a bounded linear right inverse `Q` and
-`‖Q‖ ‖A' - A‖ < 1`, then `ξ ↦ ξ - Q (A ξ)` embeds the kernel of `A'` linearly into that of `A`. -/
-theorem exists_injective_ker_of_norm_mul_norm_sub_lt_one {G : Type*}
-    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {A A' : G →L[𝕜] F} {Q : F →L[𝕜] G}
-    (hQ : A.comp Q = ContinuousLinearMap.id 𝕜 F) (h : ‖Q‖ * ‖A' - A‖ < 1) :
-    ∃ f : A'.ker →ₗ[𝕜] A.ker, Function.Injective f := by
-  have hAQ : ∀ y, A (Q y) = y := fun y ↦ by
-    simpa using congr($hQ y)
-  refine ⟨LinearMap.codRestrict A.ker
-    ((ContinuousLinearMap.id 𝕜 G - Q.comp A : G →L[𝕜] G).toLinearMap ∘ₗ A'.ker.subtype)
-    fun ξ ↦ by simp [hAQ], (injective_iff_map_eq_zero _).2 fun ξ hξ ↦ ?_⟩
-  -- An element of the kernel of `A'` killed by the embedding is `Q (A - A') ξ`, so it is zero.
-  have hξ : (ξ : G) = Q ((A - A') ξ) := by
-    have h0 : (ξ : G) - Q (A ξ) = 0 := congr(($hξ : G))
-    have hA' : A' ξ = 0 := ξ.property
-    rw [sub_apply, hA', sub_zero]
-    exact sub_eq_zero.1 h0
-  have hle : ‖(ξ : G)‖ ≤ ‖Q‖ * ‖A' - A‖ * ‖(ξ : G)‖ := by
-    calc ‖(ξ : G)‖ = ‖Q ((A - A') ξ)‖ := by rw [← hξ]
-      _ ≤ ‖Q‖ * (‖A - A'‖ * ‖(ξ : G)‖) :=
-        (Q.le_opNorm _).trans (mul_le_mul_of_nonneg_left ((A - A').le_opNorm _) (norm_nonneg _))
-      _ = ‖Q‖ * ‖A' - A‖ * ‖(ξ : G)‖ := by rw [norm_sub_rev, mul_assoc]
-  have hz : ‖(ξ : G)‖ = 0 := by
-    by_contra hne
-    have hpos := lt_of_le_of_ne (norm_nonneg (ξ : G)) (Ne.symm hne)
-    exact lt_irrefl _ (hle.trans_lt (mul_lt_of_lt_one_left hpos h))
-  exact Subtype.ext (norm_eq_zero.1 hz)
 
 /-- **Small perturbations of a stabilized Fredholm operator.** Let `T` be Fredholm and let
 `B : S → F`, with `S` finite-dimensional, stabilize it: the operator `(x, σ) ↦ T x + B σ` has a
@@ -125,12 +94,14 @@ theorem _root_.ContinuousLinearMap.IsFredholm.isFredholm_and_index_eq_of_norm_su
   -- The kernels of the two stabilizations embed into each other.
   have : FiniteDimensional 𝕜 T.ker := hT.finite_ker
   have : FiniteDimensional 𝕜 (T.coprod B).ker := (hT.coprod_of_finiteDimensional B).finite_ker
-  obtain ⟨g, hg⟩ := exists_injective_ker_of_norm_mul_norm_sub_lt_one hQ (by linarith)
-  obtain ⟨f, hf⟩ := exists_injective_ker_of_norm_mul_norm_sub_lt_one hQ' (by
-    rw [norm_sub_rev]
-    calc ‖Q'‖ * ‖T'.coprod B - T.coprod B‖ ≤ 2 * ‖Q‖ * ‖T'.coprod B - T.coprod B‖ :=
-          mul_le_mul_of_nonneg_right hQ'n (norm_nonneg _)
-      _ < 1 := by linarith)
+  obtain ⟨g, hg⟩ :=
+    ContinuousLinearMap.exists_injective_ker_of_norm_mul_norm_sub_lt_one hQ (by linarith)
+  obtain ⟨f, hf⟩ :=
+    ContinuousLinearMap.exists_injective_ker_of_norm_mul_norm_sub_lt_one hQ' (by
+      rw [norm_sub_rev]
+      calc ‖Q'‖ * ‖T'.coprod B - T.coprod B‖ ≤ 2 * ‖Q‖ * ‖T'.coprod B - T.coprod B‖ :=
+            mul_le_mul_of_nonneg_right hQ'n (norm_nonneg _)
+        _ < 1 := by linarith)
   have : FiniteDimensional 𝕜 (T'.coprod B).ker := Module.Finite.of_injective g hg
   have hsurj : Function.Surjective (T.coprod B) :=
     (ContinuousLinearMap.rightInverse_of_comp hQ).surjective
