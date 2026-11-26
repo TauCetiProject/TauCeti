@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSeq
 
 import TauCeti.Algebra.Category.ModuleCat.AB
 import TauCeti.Algebra.Module.Torsion.Int
-import TauCeti.RingTheory.Finiteness.Nakayama
 
 /-!
 # Integral singular homology from homology with prime field coefficients
@@ -30,8 +29,13 @@ The coefficient long exact sequence
 `⋯ ⟶ Hₙ₊₁(X; ℤ/m) ⟶ Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m) ⟶ ⋯`,
 
 whose middle map is multiplication by `m`
-(`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`), shows:
+(`TopCat.singularHomologyFunctor_map_zmodCoefficientSequence_f_app`) and whose next map is the
+reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)` (`TopCat.singularHomologyReductionMod`), shows:
 
+* a class reduces to zero exactly when it is `m` times a class
+  (`TopCat.ker_singularHomologyReductionMod`);
+* the reduction is onto in degree `n + 1` exactly when multiplication by `m` is injective on
+  `Hₙ(X; ℤ)` (`TopCat.surjective_singularHomologyReductionMod_succ_iff`);
 * if `Hₙ(X; ℤ/m) = 0`, multiplication by `m` on `Hₙ(X; ℤ)` is onto
   (`TopCat.surjective_lsmul_singularHomology_of_isZero_zmod`);
 * if `Hₙ₊₁(X; ℤ/m) = 0`, multiplication by `m` on `Hₙ(X; ℤ)` is injective
@@ -51,11 +55,15 @@ vanishing first homology over every prime field.
 
 * `TopCat.isZero_singularHomology_zmod_iff_of_ringEquiv`: homology with coefficients in the integer
   module `ℤ/m` vanishes exactly when homology over a ring `k ≅ ℤ/m` does.
+* `TopCat.singularHomologyReductionMod`: the reduction `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)` modulo `m`.
+* `TopCat.ker_singularHomologyReductionMod`,
+  `TopCat.surjective_singularHomologyReductionMod_succ_iff`: its kernel is `m Hₙ(X; ℤ)`, and it is
+  onto in degree `n + 1` exactly when multiplication by `m` on `Hₙ(X; ℤ)` is injective.
 * `TopCat.surjective_lsmul_singularHomology_of_isZero_zmod`,
   `TopCat.injective_lsmul_singularHomology_of_isZero_zmod`: vanishing of mod-`m` homology makes
   multiplication by `m` on integral homology onto, respectively injective one degree lower.
 * `TopCat.isTorsionFree_singularHomology_of_forall_isZero_zmod`: integral homology is torsion-free
-  below a degree in which homology over every prime field vanishes.
+  in the degree just below a degree in which homology over every prime field vanishes.
 * `TopCat.isZero_singularHomology_of_forall_isZero_zmod`: finitely generated integral homology
   vanishes in a degree in which homology over every prime field vanishes.
 
@@ -67,6 +75,8 @@ vanishing first homology over every prime field.
 -/
 
 public section
+
+noncomputable section
 
 open CategoryTheory Limits AlgebraicTopology
 
@@ -95,20 +105,50 @@ theorem isZero_singularHomology_zmod_iff_of_ringEquiv (X : TopCat.{u}) (m : ℕ)
   -- restriction of scalars does not change the underlying abelian group
   rfl
 
+/-- The **reduction modulo `m`** `Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/m)`, induced by the coefficient map
+`ℤ ⟶ ℤ/m`. -/
+abbrev singularHomologyReductionMod (X : TopCat.{u}) (m n : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ⟶
+      ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X :=
+  ((singularHomologyFunctor (ModuleCat.{u} ℤ) n).map
+    (TauCeti.zmodCoefficientSequence.{u} m).g).app X
+
+/-- **The kernel of the reduction modulo `m`**: an integral homology class reduces to zero modulo
+`m` exactly when it is `m` times a class. -/
+theorem ker_singularHomologyReductionMod (X : TopCat.{u}) (m : ℕ) [NeZero m] (n : ℕ) :
+    LinearMap.ker (X.singularHomologyReductionMod m n).hom =
+      LinearMap.range (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
+  rw [← X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app]
+  exact ((X.singularHomology_exact_coefficient₂
+    (TauCeti.zmodCoefficientSequence_shortExact.{u} m) n).moduleCat_range_eq_ker).symm
+
+/-- The reduction modulo `m` is onto in degree `n + 1` exactly when multiplication by `m` is
+injective on `Hₙ(X; ℤ)`. -/
+theorem surjective_singularHomologyReductionMod_succ_iff (X : TopCat.{u}) (m : ℕ) [NeZero m]
+    (n : ℕ) :
+    Function.Surjective (X.singularHomologyReductionMod m (n + 1)) ↔
+      Function.Injective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
+  have hS := TauCeti.zmodCoefficientSequence_shortExact.{u} m
+  -- both conditions say that the Bockstein homomorphism vanishes
+  rw [← ModuleCat.epi_iff_surjective,
+    (X.singularHomology_exact_coefficient₃ hS (n + 1) n).epi_f_iff,
+    ← (X.singularHomology_exact_coefficient₁ hS (n + 1) n).mono_g_iff, ModuleCat.mono_iff_injective,
+    ← X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app]
+
 /-- If the singular homology of `X` with coefficients in `ℤ/m` vanishes in degree `n`, then
 multiplication by `m` on the integral homology `Hₙ(X; ℤ)` is onto. -/
 theorem surjective_lsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m : ℕ) [NeZero m]
     (n : ℕ) (h : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
       (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X)) :
     Function.Surjective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
-  -- the image of multiplication by `m` is the kernel of the reduction modulo `m`, whose target
-  -- vanishes
-  rw [← LinearMap.range_eq_top, ← X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app]
-  refine ((X.singularHomology_exact_coefficient₂
-    (TauCeti.zmodCoefficientSequence_shortExact.{u} m) n).moduleCat_range_eq_ker).trans ?_
-  exact LinearMap.ker_eq_top.2
-    (LinearMap.ext fun _ ↦ (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _)
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) :=
+  -- every class reduces to zero, hence is `m` times a class
+  LinearMap.range_eq_top.1 ((X.ker_singularHomologyReductionMod m n).symm.trans
+    (LinearMap.ker_eq_top.2
+      (LinearMap.ext fun _ ↦ (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _)))
 
 /-- If the singular homology of `X` with coefficients in `ℤ/m` vanishes in degree `n + 1`, then
 multiplication by `m` on the integral homology `Hₙ(X; ℤ)` is injective. -/
@@ -116,15 +156,12 @@ theorem injective_lsmul_singularHomology_of_isZero_zmod (X : TopCat.{u}) (m : �
     (n : ℕ) (h : IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) (n + 1)).obj
       (ModuleCat.of ℤ (ULift.{u} (ZMod m)))).obj X)) :
     Function.Injective (LinearMap.lsmul ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) := by
-  -- multiplication by `m` is injective exactly when the Bockstein homomorphism into its source
-  -- vanishes, and that homomorphism starts at a zero group
-  rw [← X.singularHomologyFunctor_map_zmodCoefficientSequence_f_app, ← ModuleCat.mono_iff_injective,
-    (X.singularHomology_exact_coefficient₁
-      (TauCeti.zmodCoefficientSequence_shortExact.{u} m) (n + 1) n).mono_g_iff]
-  exact h.eq_of_src _ _
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) m) :=
+  -- the reduction modulo `m` onto a zero group is onto
+  (X.surjective_singularHomologyReductionMod_succ_iff m n).1 fun _ ↦
+    ⟨0, (ModuleCat.isZero_iff_subsingleton.1 h).elim _ _⟩
 
-/-- **Integral homology is torsion-free below a degree of vanishing prime field homology.** If
+/-- **Integral homology is torsion-free one degree below vanishing prime field homology.** If
 `Hₙ₊₁(X; 𝔽_p) = 0` for every prime `p`, with `𝔽_p` taken as the integer module `ℤ/p`, then
 `Hₙ(X; ℤ)` is torsion-free. -/
 theorem isTorsionFree_singularHomology_of_forall_isZero_zmod (X : TopCat.{u}) (n : ℕ)
@@ -137,8 +174,8 @@ theorem isTorsionFree_singularHomology_of_forall_isZero_zmod (X : TopCat.{u}) (n
     exact X.injective_lsmul_singularHomology_of_isZero_zmod p n (h p hp)
       (by simpa only [LinearMap.lsmul_apply, Nat.cast_smul_eq_nsmul] using hxy)
   -- the integer module structure of homology is that of the underlying abelian group
-  exact ⟨fun r hr x y hxy ↦ zsmul_right_injective (isRegular_iff_ne_zero.1 hr)
-    ((int_smul_eq_zsmul _ r x).symm.trans (hxy.trans (int_smul_eq_zsmul _ r y)))⟩
+  convert Module.isTorsionFree_int_iff_hasUniqueDiv.2 this
+  exact Subsingleton.elim _ _
 
 /-- **Finitely generated integral homology vanishes with prime field homology.** If `Hₙ(X; ℤ)`
 is finitely generated and `Hₙ(X; 𝔽_p) = 0` for every prime `p`, with `𝔽_p` taken as the integer
@@ -152,19 +189,7 @@ theorem isZero_singularHomology_of_forall_isZero_zmod (X : TopCat.{u}) (n : ℕ)
       (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X) := by
   -- Nakayama's lemma over `ℤ`: a finitely generated abelian group on which every prime acts
   -- surjectively is zero
-  have key {M : Type u} [AddCommGroup M] [Module.Finite ℤ M]
-      (hs : ∀ p : ℕ, p.Prime → Function.Surjective fun x : M ↦ p • x) : Subsingleton M := by
-    refine subsingleton_of_forall_eq 0 fun a ↦ (Submodule.eq_bot_iff _).1
-      (Submodule.eq_bot_of_forall_prime_le_smul Module.Finite.fg_top fun p hp x _ ↦ ?_) a
-      Submodule.mem_top
-    obtain ⟨y, rfl⟩ := hs p hp x
-    beta_reduce
-    rw [← natCast_zsmul]
-    exact Submodule.smul_mem_smul (Ideal.mem_span_singleton_self _) Submodule.mem_top
-  -- the finiteness hypothesis is stated for the integer module structure of the underlying
-  -- abelian group, which is the module structure of homology
-  have := @key _ _ (by convert ‹Module.Finite ℤ (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X)›; exact Subsingleton.elim _ _) fun p hp ↦ by
+  have := TauCeti.subsingleton_of_forall_prime_surjective fun p hp ↦ by
     have : NeZero p := ⟨hp.ne_zero⟩
     exact fun x ↦ (X.surjective_lsmul_singularHomology_of_isZero_zmod p n (h p hp) x).imp
       fun y hy ↦ by simpa only [LinearMap.lsmul_apply, Nat.cast_smul_eq_nsmul] using hy

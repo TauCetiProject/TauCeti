@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.RootPlane
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 import TauCeti.Geometry.Manifold.Morse.FundamentalGroup
 
 /-!
@@ -44,14 +46,17 @@ Hence, for every coadjoint orbit `O` of a compact Lie group and every division r
 * the sum of the Betti numbers of `O` is the number of critical points of any Morse height
   (`Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard`), for
   instance the number of points of `O` lying over `t` for a regular `X ∈ t`;
+* so is the Euler characteristic of `O`, since no index is odd
+  (`Module.Dual.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard`);
 * if `G` is connected, `O` is simply connected
   (`Module.Dual.simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation`), since no
   height has a critical point of index one.
 
 For instance, the flag manifolds `G/T` of compact connected Lie groups, the complex projective
-spaces and the Grassmannians are coadjoint orbits. The identification of the points of `O` over
-`t` with a Weyl group orbit `W ν`, and the freeness of the integral homology, which needs the
-even-cell structure itself, are not proved here.
+spaces and the Grassmannians are coadjoint orbits. The points of `O` over `t` are counted by the
+Weyl group in `TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl`, and the integral homology of `O`
+is shown to be free and concentrated in even degrees in
+`TauCeti.Geometry.Symplectic.Coadjoint.Height.Integral`.
 
 ## Main results
 
@@ -64,6 +69,8 @@ even-cell structure itself, are not proved here.
   numbers vanish.
 * `Module.Dual.sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard`: the total
   Betti number is the number of critical points of a Morse height.
+* `Module.Dual.eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard`: so is the Euler
+  characteristic.
 * `Module.Dual.simplyConnectedSpace_quotient_stabilizer_coadjointRepresentation`: coadjoint orbits
   of compact connected Lie groups are simply connected.
 
@@ -213,6 +220,20 @@ theorem sum_bettiNumber_quotient_stabilizer_coadjointRepresentation_eq_ncard
         𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
         (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X)).ncard :=
   (ν.isPerfectMorse_orbitMap_coadjointRepresentation_apply k hX).sum_bettiNumber_eq_ncard
+
+/-- **The Euler characteristic of a coadjoint orbit counts critical points.** For a Morse height
+`f_X` on a coadjoint orbit `O` of a compact Lie group, `χ(O)` is the number of critical points of
+`f_X`: all its Morse indices are even, so no critical point is counted negatively. -/
+theorem eulerChar_quotient_stabilizer_coadjointRepresentation_eq_ncard
+    [FiniteCWType (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν)]
+    (hX : IsMorse 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+      fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X) :
+    eulerChar (G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) =
+      (criticalPoints
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X)).ncard :=
+  hX.eulerChar_eq_ncard_criticalPoints_of_even fun _ ↦
+    ν.even_manifoldMorseIndex_orbitMap_coadjointRepresentation_apply
 
 /-- **Coadjoint orbits of compact connected Lie groups are simply connected.** For a compact
 connected Lie group `G` and `ν ∈ 𝔤*`, the coadjoint orbit `G ⧸ G_ν` is simply connected. -/
