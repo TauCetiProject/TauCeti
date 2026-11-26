@@ -27,6 +27,11 @@ This file supplies the local density, its transition rule, and its derivative
 `dρ = ρ trace P` for a metric-compatible connection, where `P` is the matrix of the
 connection form in the chart frame; it does not assemble a measure on the manifold.
 
+When the model space is `EuclideanSpace ℝ (Fin m)`, `TauCeti.stdChartVolumeDensity` gives the
+standard-basis density in the frame of `EuclideanSpace.basisFun`, used for coordinate integrals
+against Lebesgue measure, together with `TauCeti.stdChartVolumeDensity_eq_sqrt_det_gram` and
+`TauCeti.contMDiffOn_stdChartVolumeDensity`.
+
 The convention follows J. M. Lee, *Introduction to Riemannian Manifolds*, 2nd ed.,
 Springer GTM 176 (2018), Propositions 2.41 and 2.44.
 -/
