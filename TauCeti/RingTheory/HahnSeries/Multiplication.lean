@@ -25,7 +25,9 @@ The formulas are `HahnSeries.leadingCoeff_pow` and `HahnSeries.orderTop_pow`, bo
 simplification lemmas, companions of Mathlib's `HahnSeries.order_pow`. Mathlib's
 `HahnSeries.order_pow`, `HahnSeries.leadingCoeff_mul` and `HahnSeries.orderTop_mul` assume no zero
 divisors; for powers it suffices that the coefficients are reduced, and, for `orderTop`, that
-they form a nontrivial semiring.
+they form a nontrivial semiring. Over a commutative semiring without zero divisors, the leading
+coefficient of a finite product is the product of the leading coefficients
+(`HahnSeries.leadingCoeff_prod`).
 
 This file also records that coefficientwise scalar multiplication associates and commutes with
 multiplication of Hahn series (`TauCeti.hahnSeries_isScalarTower` and
@@ -42,9 +44,11 @@ needs `TauCeti.hahnSeries_smulCommClass` for the coefficientwise action of `R`, 
 Finally, `HahnModule.of_symm_smul'` reads the coefficientwise action of `R` on `HahnModule Γ R V`
 through `HahnModule.of`, for the action instance underlying the `R`-module structure.
 `HahnModule.ofLinearEquiv` bundles this coefficient-preserving comparison as an `R`-linear
-equivalence. The lemmas `HahnModule.coeff_smul_single_zero` and
+equivalence, and `HahnModule.of_single_smul` moves a coefficient scalar out of a module-valued
+monomial. The lemmas `HahnModule.coeff_smul_single_zero` and
 `HahnModule.single_smul_single_zero` describe the convolution action of a scalar series on a
-constant module-valued series, coefficientwise and on monomials, and
+constant module-valued series, coefficientwise and on monomials, `HahnModule.single_smul_single`
+extends the latter to all module-valued monomials, and
 `HahnModule.single_neg_smul_single_smul` records that the monomials `t ^ a` and `t ^ (-a)` act
 inversely.
 
@@ -122,6 +126,17 @@ theorem orderTop_pow [Nontrivial R] (x : HahnSeries Γ R) (n : ℕ) :
     rw [pow_succ, orderTop_mul_of_ne_zero (by rwa [leadingCoeff_pow, ← pow_succ]), ih,
       succ_nsmul]
 
+/-- Over a commutative semiring without zero divisors, the leading coefficient of a finite
+product is the product of the leading coefficients. -/
+@[simp]
+theorem leadingCoeff_prod {R ι : Type*} [CommSemiring R] [NoZeroDivisors R] (s : Finset ι)
+    (f : ι → HahnSeries Γ R) :
+    (∏ i ∈ s, f i).leadingCoeff = ∏ i ∈ s, (f i).leadingCoeff := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => rw [Finset.prod_insert hi, Finset.prod_insert hi, leadingCoeff_mul, ih]
+
 end HahnSeries
 
 namespace HahnModule
@@ -150,6 +165,14 @@ theorem ofLinearEquiv_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [Add
 @[simp]
 theorem ofLinearEquiv_symm_apply {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
     [Module R V] (f : HahnModule Γ R V) : (ofLinearEquiv R).symm f = (of R).symm f := (rfl)
+
+/-- A coefficient scalar can be moved out of a vector-valued monomial. -/
+theorem of_single_smul {Γ R V : Type*} [PartialOrder Γ] [Semiring R] [AddCommMonoid V]
+    [Module R V] (g : Γ) (r : R) (v : V) :
+    of R (HahnSeries.single g (r • v)) = r • of R (HahnSeries.single g v) := by
+  apply HahnModule.ext
+  funext h
+  by_cases hh : h = g <;> simp [hh]
 
 open HahnSeries
 
@@ -189,6 +212,13 @@ theorem single_smul_single_zero [Zero R] [AddCommMonoid V] [SMulWithZero R V]
   apply HahnModule.ext
   funext h
   by_cases hh : h = g <;> simp [hh]
+
+/-- A scalar monomial times a vector-valued monomial is a vector-valued monomial. -/
+theorem single_smul_single [Semiring R] [AddCommMonoid V] [Module R V] (g a : Γ) (r : R)
+    (v : V) : single g r • of R (single a v) = of R (single (g + a) (r • v)) := by
+  have hv : of R (single a v) = single a (1 : R) • of R (single 0 v) := by simp
+  rw [hv, smul_smul]
+  simp
 
 end HahnModule
 

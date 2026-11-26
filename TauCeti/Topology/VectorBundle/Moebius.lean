@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
+public import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
+
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The Möbius line bundle over the circle
@@ -31,7 +34,8 @@ disagree on the lower half-circle, so the Möbius line bundle is not orientable
 
 ## Main results
 
-* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space.
+* `TauCeti.continuous_norm_moebiusCore`: the fibre norm is continuous on the total space, so the
+  Möbius line bundle is a `TauCeti.ContinuousFiberNorm` bundle.
 * `TauCeti.isEmpty_vectorBundleOrientation_moebiusCore`: the Möbius line bundle is not orientable.
 
 ## References
@@ -147,6 +151,16 @@ instance (z : Circle) : NormedAddCommGroup (moebiusCore.Fiber z) :=
 instance (z : Circle) : NormedSpace ℝ (moebiusCore.Fiber z) :=
   inferInstanceAs (NormedSpace ℝ ℝ)
 
+/-- The fibres of the Möbius line bundle carry the inner product of `ℝ`. -/
+instance (z : Circle) : InnerProductSpace ℝ (moebiusCore.Fiber z) :=
+  inferInstanceAs (InnerProductSpace ℝ ℝ)
+
+/-- The norm of a vector in a fibre of the Möbius line bundle is its absolute value as a real
+number. -/
+@[simp]
+theorem norm_moebiusCore_fiber {z : Circle} (u : moebiusCore.Fiber z) : ‖u‖ = (|u| : ℝ) :=
+  rfl
+
 /-- The transition functions of the Möbius line bundle preserve the norm of `ℝ`. -/
 theorem norm_moebiusCore_coordChange (i j : Bool) (z : Circle) (v : ℝ) :
     ‖moebiusCore.coordChange i j z v‖ = ‖v‖ := by
@@ -171,6 +185,9 @@ theorem continuous_norm_moebiusCore :
   simp only [Function.comp_apply, e, VectorBundleCore.localTriv_apply]
   exact norm_moebiusCore_coordChange _ _ _ _
 
+instance : ContinuousFiberNorm ℝ moebiusCore.Fiber :=
+  ⟨continuous_norm_moebiusCore⟩
+
 /-- The two chart domains of the Möbius line bundle are connected: each is the circle minus a
 point. -/
 theorem isPreconnected_moebiusBaseSet (i : Bool) : IsPreconnected (moebiusBaseSet i) := by
@@ -182,17 +199,6 @@ theorem isPreconnected_moebiusBaseSet (i : Bool) : IsPreconnected (moebiusBaseSe
       using 1
     ext z
     simp [Circle.ext_iff, Circle.coe_exp, Complex.exp_pi_mul_I]
-
-/-- The coordinate change of the Möbius line bundle from the chart `true` to the chart `false`, at
-a point of their overlap, has determinant the transition function. -/
-private theorem det_coordChangeL_moebiusCore {z : Circle} (h₁ : z ∈ moebiusBaseSet true)
-    (h₀ : z ∈ moebiusBaseSet false) :
-    LinearMap.det (((moebiusCore.localTriv true).coordChangeL ℝ
-      (moebiusCore.localTriv false) z).toLinearEquiv : ℝ →ₗ[ℝ] ℝ) = moebiusSign z := by
-  rw [LinearMap.det_ring]
-  simp only [ContinuousLinearEquiv.coe_toLinearEquiv, LinearEquiv.coe_coe]
-  rw [VectorBundleCore.localTriv_coordChange_eq _ _ _ ⟨h₁, h₀⟩]
-  simp
 
 /-- **The Möbius line bundle is not orientable.** -/
 theorem isEmpty_vectorBundleOrientation_moebiusCore :
@@ -213,9 +219,9 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
     (moebiusCore.localTriv true) (moebiusCore.localTriv false) (isPreconnected_moebiusBaseSet true)
     (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
     (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
-  · rw [det_coordChangeL_moebiusCore (hmem hp.ne' true) (hmem hp.ne' false), moebiusSign_of_pos hp]
-    exact one_pos
-  · rw [det_coordChangeL_moebiusCore (hmem hq.ne true) (hmem hq.ne false), moebiusSign_of_neg hq]
-    norm_num
+  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hp.ne' true) (hmem hp.ne' false)]
+    simp [moebiusSign_of_pos hp]
+  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hq.ne true) (hmem hq.ne false)]
+    simp [moebiusSign_of_neg hq]
 
 end TauCeti

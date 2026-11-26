@@ -42,6 +42,8 @@ cocycle `f` goes to the cocycle `g ↦ b * f g * (g • b)⁻¹`, which takes va
 
 Together these identify the quotient of `H¹(G, A')` by the action of `A''ᴳ` with the neutral fibre
 of `H¹(G, A) → H¹(G, A'')` (`TauCeti.NonabelianH1.IsGroupExtension.orbitRelQuotientEquiv`).
+The other fibres of that map are described by twisting in
+`TauCeti/RepresentationTheory/Homological/ContCohomology/Nonabelian/Fiber.lean`.
 
 ## Main definitions
 

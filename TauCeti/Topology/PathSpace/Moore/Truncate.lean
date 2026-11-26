@@ -116,6 +116,12 @@ theorem _root_.Continuous.moorePath_retrace {f : Y → MoorePath X} {g : Y → �
   have h := hf.moorePath_truncate hg
   exact h.moorePath_trans h.moorePath_symm _
 
+/-- At a turning time `s` before the end of `γ`, the path `γ.truncate s` followed by its reversal
+is at `γ s`. -/
+theorem truncate_trans_symm_apply_self (γ : MoorePath X) {s : ℝ≥0} (hs : s ≤ γ.length) :
+    ((γ.truncate s).trans (γ.truncate s).symm (by simp)) s = γ s := by
+  rw [trans_apply_of_le _ _ _ (by simp [hs]), truncate_apply, min_self]
+
 /-- Truncating a concatenation before the end of its first piece truncates the first piece. -/
 theorem truncate_trans_of_le (γ δ : MoorePath X) (h : γ.target = δ.source) {s : ℝ≥0}
     (hs : s ≤ γ.length) : (γ.trans δ h).truncate s = γ.truncate s := by

@@ -633,8 +633,8 @@ private lemma chainFiltrationMap_app_comp_singularChainFiltrationIso_hom (b : �
           (monotone_chainFiltration ((singularChainComplexFunctor A).obj R) hXz) b).hom ≫
         Subobject.ofLE _ _ (CochainComplex.filtrationEInt_coe _ b).le ≫
           (chainFiltrationIso ((singularChainComplexFunctor A).obj R) Xz b).hom =
-        (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι _ Xz)
-          (chainFiltration_def _ Xz) b).hom :=
+        (CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (chainFiltrationι _ Xz b)
+          (chainFiltration_def _ Xz b)).hom :=
     (cancel_mono (chainFiltrationι _ Xz b)).1 (by simp)
   simpa only [reassoc_of% (e hX), e hX', NatTrans.id_app, Category.comp_id] using
     chainFiltrationMap_app_comp_filtrationFunctorObjIsoOfEqMk_hom (𝟙 _) hX hX' g hg b

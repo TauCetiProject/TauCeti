@@ -191,7 +191,7 @@ theorem eq_spinCCircle [FiniteDimensional ℝ M] (hQn : Q.Nondegenerate)
       (spinCGroup.toSpecialOrthogonal Q hQ).comp (spinCCircle Q hQ u w huw h))
     (hdet : (spinCGroup.det Q hQ).comp φ = MonoidHom.id Circle) :
     φ = spinCCircle Q hQ u w huw h := by
-  refine spinCGroup.circle_hom_ext Q hQ hQn (MonoidHom.ext fun z ↦ ?_)
+  refine spinCGroup.hom_ext_of_isSquare Q hQ hQn Circle.isSquare (MonoidHom.ext fun z ↦ ?_)
   simp only [MonoidHom.comp_apply, MonoidHom.prod_apply, det_spinCCircle]
   exact Prod.ext (DFunLike.congr_fun hrot z) (DFunLike.congr_fun hdet z)
 

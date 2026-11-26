@@ -57,7 +57,7 @@ Limits of loops in that window are therefore close to each other.
 
 The levels are only continuous limits here; that they are themselves Floer trajectories is not
 used. As in `TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`, the uniform bound on the
-derivatives excludes bubbling; it is assumed, not proved.
+derivatives, which excludes bubbling, is a hypothesis.
 
 ## References
 

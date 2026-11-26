@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Contraction
-public import TauCeti.Geometry.Hodge.Dual
+public import TauCeti.Geometry.Hodge.Dual.Basic
 public import TauCeti.Geometry.Hodge.Morphism
 public import TauCeti.Geometry.Hodge.TensorProduct.Basic
 

@@ -46,6 +46,8 @@ slice.
   has differentiable slices uniformly on that compact set for all nearby parameters.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
+* `TauCeti.contMDiff_uncurry_const_mul_comp_const_mul`: `(t, x) ↦ ε * H (ε * t) x` is `C^n`
+  when `H` is.
 
 -/
 
@@ -231,6 +233,17 @@ theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
   contDiff_fst.contMDiff.prodMk
     ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
       (contDiff_snd.comp contDiff_snd).contMDiff)
+
+/-- Reflecting and rescaling a time-dependent function by a real constant preserves smoothness:
+if `(t, x) ↦ H t x` is `C^n` on `ℝ × M`, then so is `(t, x) ↦ ε * H (ε * t) x`. With `ε = ±1`,
+this is the Hamiltonian of a cylindrical end read in its positive end coordinate. -/
+theorem contMDiff_uncurry_const_mul_comp_const_mul {E H₀ : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H₀] {I : ModelWithCorners ℝ E H₀} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace H₀ X] {Ham : ℝ → X → ℝ} (ε : ℝ)
+    (hHam : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry Ham)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry fun t x ↦ ε * Ham (ε * t) x) :=
+  (contDiff_const.mul contDiff_id).contMDiff.comp (hHam.comp
+    (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
 
 end RealCoords
 

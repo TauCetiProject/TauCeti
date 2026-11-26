@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.RelativeBound
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Relative.Bound
 public import TauCeti.Analysis.Normed.Operator.Surjective
 
 /-!

@@ -39,8 +39,14 @@ blocks `j` and `J` and lower block `-2 J ν`, each read in the trivializations o
 finite-dimensional models it is the general graph structure along `ν`
 (`TauCeti.InhomogeneousTerm.val_graphStructure`). This is the regularity under which compactness
 for unperturbed pseudoholomorphic curves in `P × M` applies to graphs of solutions of the
-inhomogeneous equation. A weak manifold graph equation requires its separate Sobolev derivative
-and chart assembly. Standard complex model coordinates agree with the existing arbitrary-one-form
+inhomogeneous equation.
+
+At a point, the homogeneous equation for the graph structure on the pairs `(a, c)` and `(j a, d)`
+is the inhomogeneous equation `c + J d = 2 ν a`
+(`TauCeti.InhomogeneousTerm.add_graphStructure_eq_zero_iff`). The weak manifold graph equation
+built on it is `TauCeti.isWeakPseudoholomorphicOn_graph_iff`, in
+`TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Graph`. Standard complex model coordinates
+agree with the existing arbitrary-one-form
 `Floer.graphStructure` by its general skew-product comparison.
 
 ## References
@@ -405,6 +411,22 @@ theorem almostComplexStructureAt_graphStructure (ν : InhomogeneousTerm j J) (q 
     ν.graphStructure.almostComplexStructureAt q = ν.graphStructureAt q := by
   ext v
   rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply, graphStructure_apply]
+
+/-- **The graph equation at a point.** At `q = (x, y)`, a pair `(a, c)` and the image under the
+graph structure of `(j a, d)` add up to zero exactly when `c + J d = 2 ν a`. Read on the derivative
+`(id, du)` of a graph, with `a = ∂ₛ`, `c = du ∂ₛ` and `d = du ∂ₜ`, the left side is the homogeneous
+equation for the graph structure and the right side the inhomogeneous equation
+`du + J du j = 2 ν` evaluated on `∂ₛ`. The first components cancel since `j² = -1`, and the
+forcing term enters with the factor `2` since `ν` is antilinear. -/
+theorem add_graphStructure_eq_zero_iff (ν : InhomogeneousTerm j J) (q : P × M)
+    (a : TangentSpace IP q.1) (c d : TangentSpace I q.2) :
+    (Manifold.tangentSpaceProdEquiv q).symm (a, c) +
+        ν.graphStructure q ((Manifold.tangentSpaceProdEquiv q).symm (j q.1 a, d)) = 0 ↔
+      c + J.tangentEndomorphism q d = (2 : ℝ) • ν.val.tangentHom q a := by
+  rw [graphStructure_apply, graphStructureAt_apply, ContinuousLinearEquiv.apply_symm_apply,
+    ← map_add, map_eq_zero_iff _ (Manifold.tangentSpaceProdEquiv q).symm.injective]
+  -- The first components cancel since `j² = -1`; in the second, `J (ν (j a)) = ν a`.
+  simp [ν.tangentHom_apply_j, j.apply_apply, add_sub_assoc', sub_eq_zero]
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EP] in
 /-- For finite-dimensional models, the `Cⁿ` graph structure of a forcing term is the general

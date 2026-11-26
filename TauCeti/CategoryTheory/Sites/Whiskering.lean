@@ -19,7 +19,9 @@ sheaf of `R`-modules sectionwise is additive, so it acts on complexes of sheaves
 
 On a site with a terminal object, applying any functor `F` to global sections agrees with taking
 global sections of the sheaf `sheafCompose J F` (`CategoryTheory.Sheaf.ΓCompIsoSheafComposeCompΓ`),
-since both are the sections over the terminal object.
+since both are the sections over the terminal object
+(`CategoryTheory.Sheaf.ΓCompIsoSheafComposeCompΓ_hom_app`,
+`CategoryTheory.Sheaf.ΓCompIsoSheafComposeCompΓ_hom_app_comp_ΓNatIsoSheafSections_hom_app`).
 
 Applying a functor to types sectionwise turns a sheaf into a sheaf of types
 (`CategoryTheory.Sheaf.isSheaf_obj_comp`).
@@ -65,5 +67,31 @@ noncomputable def ΓCompIsoSheafComposeCompΓ : Γ J A ⋙ F ≅ sheafCompose J 
     -- the sections over `T` of the sectionwise composite with `F` are `F` of the sections
     NatIso.ofComponents (fun _ ↦ Iso.refl _) (fun _ ↦ by simp) ≪≫
     Functor.isoWhiskerLeft (sheafCompose J F) (ΓNatIsoSheafSections J B hT).symm
+
+/-- The comparison `ΓCompIsoSheafComposeCompΓ` is `F` applied to the identification of global
+sections with sections over the terminal object `T`, followed by the inverse identification for
+the sheaf `sheafCompose J F`. -/
+lemma ΓCompIsoSheafComposeCompΓ_hom_app (G : Sheaf J A) :
+    (ΓCompIsoSheafComposeCompΓ J F hT).hom.app G =
+      F.map ((ΓNatIsoSheafSections J A hT).hom.app G) ≫
+        (ΓNatIsoSheafSections J B hT).inv.app ((sheafCompose J F).obj G) := by
+  dsimp only [ΓCompIsoSheafComposeCompΓ, Iso.trans_hom, NatTrans.comp_app]
+  -- the middle comparison has identity components; its source and target functors agree with
+  -- those of its neighbours only after unfolding, so its composite is split with `erw`
+  erw [NatTrans.comp_app]
+  simp only [NatIso.ofComponents_hom_app, Iso.refl_hom, Functor.isoWhiskerRight_hom,
+    Functor.whiskerRight_app]
+  exact congrArg (F.map ((ΓNatIsoSheafSections J A hT).hom.app G) ≫ ·) (Category.id_comp _)
+
+/-- Followed by the identification of the global sections of `sheafCompose J F` with its sections
+over the terminal object `T`, the comparison `ΓCompIsoSheafComposeCompΓ` is `F` applied to the
+identification of global sections with sections over `T`. -/
+@[reassoc, elementwise]
+lemma ΓCompIsoSheafComposeCompΓ_hom_app_comp_ΓNatIsoSheafSections_hom_app (G : Sheaf J A) :
+    (ΓCompIsoSheafComposeCompΓ J F hT).hom.app G ≫
+        (ΓNatIsoSheafSections J B hT).hom.app ((sheafCompose J F).obj G) =
+      F.map ((ΓNatIsoSheafSections J A hT).hom.app G) := by
+  rw [ΓCompIsoSheafComposeCompΓ_hom_app, Category.assoc, Iso.inv_hom_id_app]
+  exact Category.comp_id _
 
 end CategoryTheory.Sheaf

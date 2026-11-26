@@ -8,32 +8,39 @@ module
 public import Mathlib.Analysis.Calculus.DSlope
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Topology.Algebra.InfiniteSum.Defs
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Analysis.Complex.TaylorSeries
+import Mathlib.Analysis.Normed.Group.FunctionSeries
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
-# Iterated derivatives of holomorphic functions of one complex variable
+# Iterated derivatives of holomorphic functions and series of one complex variable
 
 This file records that every iterated derivative of a complex differentiable function
 `g : ℂ → E` is again complex differentiable (`Differentiable.iteratedDeriv`), the iterated form of
-Mathlib's `Differentiable.deriv`. If the `(e + 1)`-th derivative of an entire function `h`
-vanishes, so does the `e`-th derivative of `dslope h ζ`
-(`Differentiable.iteratedDeriv_dslope_eq_zero`): dividing a polynomial by a linear factor lowers its
-degree. It also computes the norms of the real iterated derivatives
-of the powers `z ^ m` (`TauCeti.Complex.norm_iteratedFDeriv_pow`).
+Mathlib's `Differentiable.deriv`. For `f : ℂ → ℂ` holomorphic on an open set, the iterated
+derivatives of the real function `x ↦ Re f(x)` on the real line are the real parts of the complex
+ones (`DifferentiableOn.iteratedDeriv_re_comp_ofReal`, and
+`Differentiable.iteratedDeriv_re_comp_ofReal` for entire `f`). If the `(e + 1)`-th derivative
+of an entire function `h` vanishes, so does the `e`-th derivative of `dslope h ζ`
+(`Differentiable.iteratedDeriv_dslope_eq_zero`): dividing a polynomial by a linear factor lowers
+its degree. It also computes the norms of the real iterated derivatives of the powers `z ^ m`
+(`TauCeti.Complex.norm_iteratedFDeriv_pow`).
 
 On an open set `U`, the iterated derivatives over any field below `ℂ`, such as `ℝ`, of a map
 holomorphic on `U` are the restrictions of scalars of its complex iterated derivatives
 (`DifferentiableOn.iteratedFDeriv_eq_restrictScalars`). Weierstrass's theorem upgrades locally
 uniform convergence of holomorphic maps on `U` to locally uniform convergence of all iterated
 derivatives (`TendstoLocallyUniformlyOn.iteratedDeriv`), and hence of all real iterated derivatives
-(`TendstoLocallyUniformlyOn.iteratedFDeriv`).
+(`TendstoLocallyUniformlyOn.iteratedFDeriv`). It also records the resulting Weierstrass M-test
+formulas for differentiating holomorphic series (`Complex.hasDerivAt_tsum_of_summable_norm`,
+`Complex.hasSum_iteratedDeriv_of_summable_norm`).
 
 For a family `f t` of maps holomorphic on `U`, depending on a real variable `t` with derivative
 `f' t` in `t`, Weierstrass's theorem applied to the difference quotients
@@ -55,6 +62,33 @@ differentiable. This is the iterated form of `Differentiable.deriv`. -/
 theorem Differentiable.iteratedDeriv {g : ℂ → E} (hg : Differentiable ℂ g) (k : ℕ) :
     Differentiable ℂ (iteratedDeriv k g) :=
   (hg.contDiff (n := ⊤)).differentiable_iteratedDeriv k (by simp)
+
+/-- **Iterated derivatives on the real line.** For `f : ℂ → ℂ` holomorphic on an open set `U`
+and a real `x` with `(x : ℂ) ∈ U`, the `k`-th derivative at `x` of the real function
+`y ↦ Re f(y)` is the real part of the complex `k`-th derivative of `f` at `x`. -/
+theorem DifferentiableOn.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} {U : Set ℂ}
+    (hf : DifferentiableOn ℂ f U) (hU : IsOpen U) (k : ℕ) {x : ℝ} (hx : (x : ℂ) ∈ U) :
+    _root_.iteratedDeriv k (fun y : ℝ => (f y).re) x = (_root_.iteratedDeriv k f x).re := by
+  have hV : IsOpen ((↑) ⁻¹' U : Set ℝ) := hU.preimage Complex.continuous_ofReal
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    have heq : _root_.iteratedDeriv k (fun y : ℝ => (f y).re) =ᶠ[nhds x]
+        fun y : ℝ => (_root_.iteratedDeriv k f y).re :=
+      Filter.eventually_of_mem (hV.mem_nhds hx) fun y hy => ih hy
+    have hd : HasDerivAt (_root_.iteratedDeriv k f) (_root_.iteratedDeriv (k + 1) f x) x := by
+      rw [iteratedDeriv_succ, iteratedDeriv_eq_iterate]
+      exact (((hf.analyticOnNhd hU).iterated_deriv k) x hx).differentiableAt.hasDerivAt
+    rw [iteratedDeriv_succ, heq.deriv_eq, hd.real_of_complex.deriv]
+
+/-- **Iterated derivatives on the real line.** For an entire function `f : ℂ → ℂ`, the `k`-th
+derivative of the real function `x ↦ Re f(x)` is the real part of the complex `k`-th derivative
+of `f` at `x`. -/
+theorem Differentiable.iteratedDeriv_re_comp_ofReal {f : ℂ → ℂ} (hf : Differentiable ℂ f)
+    (k : ℕ) :
+    _root_.iteratedDeriv k (fun x : ℝ => (f x).re) =
+      fun x : ℝ => (_root_.iteratedDeriv k f x).re :=
+  funext fun _ => hf.differentiableOn.iteratedDeriv_re_comp_ofReal isOpen_univ k trivial
 
 /-- **Dividing out a root lowers the degree.** If the `(e + 1)`-th derivative of an entire
 function `h : ℂ → E` vanishes, that is, if `h` is a polynomial of degree at most `e`, then the
@@ -125,6 +159,33 @@ theorem TendstoLocallyUniformlyOn.iteratedFDeriv (𝕜 : Type*) [NontriviallyNor
     (hF.mono fun n hn z hz => .of_eq ?_)).congr_right fun z hz => ?_
   · exact (hn.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
   · exact (hf'.iteratedFDeriv_eq_restrictScalars 𝕜 hU k hz).symm
+
+namespace Complex
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then their sum has derivative `∑' i, deriv (F i) z` at every `z ∈ U`. -/
+theorem hasDerivAt_tsum_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ} {u : ι → ℝ}
+    (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) {z : ℂ} (hz : z ∈ U) :
+    HasDerivAt (fun w => ∑' i, F i w) (∑' i, deriv (F i) z) z := by
+  have hd := ((Complex.differentiableOn_tsum_of_summable_norm hu hF hU hF_le).differentiableAt
+    (hU.mem_nhds hz)).hasDerivAt
+  rwa [← (Complex.hasSum_deriv_of_summable_norm hu hF hU hF_le hz).tsum_eq] at hd
+
+/-- If holomorphic functions `F i` on an open set `U ⊆ ℂ` satisfy a uniform summable norm bound
+`‖F i w‖ ≤ u i`, then for every `k : ℕ` and `z ∈ U`, the `k`-th iterated derivatives
+`iteratedDeriv k (F i) z` sum to `iteratedDeriv k (fun w => ∑' i, F i w) z`. -/
+theorem hasSum_iteratedDeriv_of_summable_norm {ι : Type*} {F : ι → ℂ → E} {U : Set ℂ}
+    {u : ι → ℝ} (hu : Summable u) (hF : ∀ i, DifferentiableOn ℂ (F i) U) (hU : IsOpen U)
+    (hF_le : ∀ i, ∀ w ∈ U, ‖F i w‖ ≤ u i) (k : ℕ) {z : ℂ} (hz : z ∈ U) :
+    HasSum (fun i => iteratedDeriv k (F i) z) (iteratedDeriv k (fun w => ∑' i, F i w) z) := by
+  rw [HasSum]
+  have hc := (tendstoUniformlyOn_tsum hu hF_le).tendstoLocallyUniformlyOn
+  refine ((hc.iteratedDeriv (Filter.Eventually.of_forall fun s =>
+    DifferentiableOn.fun_sum fun i _ => hF i) hU k).tendsto_at hz).congr fun s => ?_
+  exact iteratedDeriv_fun_sum fun i _ => ((hF i).analyticOnNhd hU z hz).contDiffAt
+
+end Complex
 
 namespace TauCeti
 
