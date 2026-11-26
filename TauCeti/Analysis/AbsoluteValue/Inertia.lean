@@ -171,6 +171,9 @@ def inertia (w : AbsoluteValue L S) : Subgroup G where
       smul_inv_smul, ← AbsoluteValue.map_neg, neg_sub]
     exact ha.2 hw x hx
 
+/-- Membership in the inertia group: `σ` fixes `w` and, if `w` is nonarchimedean, acts trivially
+modulo `{x | w x < 1}` on `{x | w x ≤ 1}`. -/
+@[simp]
 theorem mem_inertia_iff {σ : G} :
     σ ∈ w.inertia G ↔
       σ • w = w ∧ (IsNonarchimedean w → ∀ x, w x ≤ 1 → w (σ • x - x) < 1) :=
