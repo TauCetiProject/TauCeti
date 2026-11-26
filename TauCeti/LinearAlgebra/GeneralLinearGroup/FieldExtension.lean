@@ -76,20 +76,27 @@ theorem mulGalois_mul_lmul (c : Eˣ) (τ : E ≃ₐ[F] E) (x : E) :
   ring
 
 /-- The inverse of `v ↦ c τ(v)` is `w ↦ τ⁻¹(c⁻¹) τ⁻¹(w)`. -/
+@[simp]
 theorem mulGalois_inv (c : Eˣ) (τ : E ≃ₐ[F] E) :
     (mulGalois c τ)⁻¹ = mulGalois (Units.map (τ.symm : E →* E) c⁻¹) τ.symm := by
   refine inv_eq_of_mul_eq_one_right (Units.ext (LinearMap.ext fun v ↦ ?_))
   simp
 
 /-- `v ↦ c τ(v)` multiplies as in `Eˣ ⋊ Gal(E/F)`: `(c, τ) (c', τ') = (c τ(c'), τ τ')`. -/
+@[simp]
 theorem mulGalois_mul (c c' : Eˣ) (τ τ' : E ≃ₐ[F] E) :
     mulGalois c τ * mulGalois c' τ' = mulGalois (c * Units.map (τ : E →* E) c') (τ * τ') :=
   Units.ext (LinearMap.ext fun v ↦ by simp [mul_assoc])
 
-/-- `v ↦ 1 · id(v)` is the identity. -/
+/-- `v ↦ c id(v)` is multiplication by `c`. -/
 @[simp]
-theorem mulGalois_one_one : mulGalois (1 : Eˣ) (1 : E ≃ₐ[F] E) = 1 :=
-  Units.ext (LinearMap.ext fun v ↦ by simp)
+theorem mulGalois_one_right (c : Eˣ) :
+    mulGalois c (1 : E ≃ₐ[F] E) = Units.map (Algebra.lmul F E : E →* Module.End F E) c :=
+  Units.ext (LinearMap.ext fun v ↦ by simp [Algebra.coe_lmul_eq_mul])
+
+/-- `v ↦ 1 · id(v)` is the identity. -/
+theorem mulGalois_one_one : mulGalois (1 : Eˣ) (1 : E ≃ₐ[F] E) = 1 := by
+  simp
 
 /-- Conjugation by `v ↦ c τ(v)` maps the units of `E` acting by multiplication into themselves. -/
 theorem mulGalois_conj_mem_lmulUnitsRange (c : Eˣ) (τ : E ≃ₐ[F] E)
@@ -166,7 +173,7 @@ theorem mem_normalizer_lmulUnitsRange_iff {φ : LinearMap.GeneralLinearGroup F E
     refine ⟨mulGalois_conj_mem_lmulUnitsRange c τ, fun hu ↦ ?_⟩
     have h := mulGalois_conj_mem_lmulUnitsRange (Units.map (τ.symm : E →* E) c⁻¹) τ.symm hu
     rw [← mulGalois_inv, inv_inv] at h
-    simpa [mul_assoc] using h
+    simpa only [mul_assoc, inv_mul_cancel, mul_one, inv_mul_cancel_left] using h
 
 /-- The factorization `v ↦ c τ(v)` is unique. -/
 theorem mulGalois_injective :
@@ -177,6 +184,14 @@ theorem mulGalois_injective :
   have hc : c = c' := Units.ext (by simpa using h' 1)
   subst hc
   exact Prod.ext rfl (AlgEquiv.ext fun v ↦ mul_left_cancel₀ c.ne_zero (h' v))
+
+/-- `v ↦ c τ(v)` is a multiplication by a unit of `E` exactly when `τ` is the identity. -/
+theorem mulGalois_mem_lmulUnitsRange_iff {c : Eˣ} {τ : E ≃ₐ[F] E} :
+    mulGalois c τ ∈ lmulUnitsRange F E ↔ τ = 1 := by
+  refine ⟨fun h ↦ ?_, by rintro rfl; simp⟩
+  obtain ⟨x, hx⟩ := mem_lmulUnitsRange_iff.1 h
+  rw [← mulGalois_one_right] at hx
+  exact (Prod.ext_iff.1 (mulGalois_injective (a₁ := (x, 1)) (a₂ := (c, τ)) hx)).2.symm
 
 /-- **The normalizer of `Eˣ` in `GL_F(E)` is in bijection with `Eˣ × Gal(E/F)`**, by
 `(c, τ) ↦ (v ↦ c τ(v))`. -/

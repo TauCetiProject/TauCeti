@@ -106,6 +106,13 @@ theorem toLin'_normalizerEquiv_apply (p : Eˣ × (E ≃ₐ[F] E)) :
       mulGalois p.1 p.2 := by
   simp [normalizerEquiv]
 
+/-- `TauCeti.GL2NonSplitTorus.normalizerEquiv` sends `(c, τ)` into the non-split torus exactly when
+`τ` is the identity. -/
+theorem normalizerEquiv_mem_iff (p : Eˣ × (E ≃ₐ[F] E)) :
+    (normalizerEquiv p : GL (Fin 2) F) ∈ GL2NonSplitTorus F E ↔ p.2 = 1 := by
+  rw [← mulGalois_mem_lmulUnitsRange_iff (c := p.1), ← toLin'_normalizerEquiv_apply, ← map_toLin',
+    Subgroup.mem_map_equiv, MulEquiv.symm_apply_apply]
+
 /-- **The order of the normalizer of the non-split torus**: over a field with `q` elements it has
 `2(q² - 1)` elements. -/
 theorem natCard_normalizer [Finite F] :
