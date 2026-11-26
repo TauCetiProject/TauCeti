@@ -32,8 +32,8 @@ restriction
 (`TauCeti.IsFramedTube.exists_isFundamentalClass_forall_singularHomologyπ_singularCap_eq`).
 Informally, when `L` is the tensor unit and capping with `[M]` is bijective, as it is for the
 fundamental class of a closed oriented manifold with integral coefficients
-(`TauCeti.HomologicalOrientation.bijective_singularCap_fundamentalClass`, stated for that class and
-its own cap product convention), this determines the shriek map as
+(`TauCeti.HomologicalOrientation.bijective_singularCapAddHom_fundamentalClass`, stated for that
+class and its own cap product convention), this determines the shriek map as
 `i_! = (-1)^(r j) D_S ∘ f^* ∘ D_M⁻¹`, with `D` the cap product with the fundamental class. That
 composite is not formalized here.
 

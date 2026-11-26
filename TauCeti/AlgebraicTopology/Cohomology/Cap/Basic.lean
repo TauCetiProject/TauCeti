@@ -42,7 +42,9 @@ Section 3.3.
   `TopCat.singularCap_homologyπ` computing it on classes of cycles and cocycles and
   `TopCat.singularCap_naturality` its naturality.
 * `TopCat.singularCapAddHom`: capping with a fixed class `z ∈ Hₙ(X; T)`, as an additive map
-  `Hᵖ(X; R, M) →+ H_q(X; P)`, with `TopCat.singularCapAddHom_naturality` its naturality.
+  `Hᵖ(X; R, M) →+ H_q(X; P)`, with `TopCat.singularCapAddHom_naturality` its naturality and
+  `TopCat.singularCapAddHom_add`, `TopCat.singularCapAddHom_smul` and
+  `TopCat.singularCapAddHom_zsmul` its additivity in the class.
 * `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
   `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
 * `TopCat.singularCap_coefficient_naturality`: compatible changes of every coefficient object
@@ -245,6 +247,32 @@ theorem singularCapAddHom_apply (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n)
     (α : X.singularCohomology R k M p) :
     X.singularCapAddHom k u μ h z α = (X.singularCap k u μ p q n h α).hom z :=
   (rfl)
+
+/-- Capping with a sum of homology classes is the sum of the caps:
+`(z + z') ⌢ α = z ⌢ α + z' ⌢ α`. -/
+@[simp]
+theorem singularCapAddHom_add (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n)
+    (z z' : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X) :
+    X.singularCapAddHom k u μ h (z + z') =
+      X.singularCapAddHom k u μ h z + X.singularCapAddHom k u μ h z' := by
+  ext α
+  simp [singularCapAddHom_apply]
+
+/-- Capping with a scalar multiple of a homology class: `(r • z) ⌢ α = r • (z ⌢ α)`. -/
+@[simp]
+theorem singularCapAddHom_smul (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n) (r : R₀)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X) :
+    X.singularCapAddHom k u μ h (r • z) = r • X.singularCapAddHom k u μ h z := by
+  ext α
+  simp [singularCapAddHom_apply]
+
+/-- Capping with an integer multiple of a homology class: `(d • z) ⌢ α = d • (z ⌢ α)`. -/
+@[simp]
+theorem singularCapAddHom_zsmul (X : TopCat.{w}) {p q n : ℕ} (h : p + q = n) (d : ℤ)
+    (z : ((singularHomologyFunctor (ModuleCat.{w} R₀) n).obj T).obj X) :
+    X.singularCapAddHom k u μ h (d • z) = d • X.singularCapAddHom k u μ h z := by
+  ext α
+  simp [singularCapAddHom_apply]
 
 /-- **Naturality of capping with a homology class**, `f_*(z ⌢ f^*α) = f_*z ⌢ α`, the projection
 formula `TopCat.singularCap_naturality` evaluated at `z`. -/

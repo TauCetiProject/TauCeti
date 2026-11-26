@@ -169,8 +169,8 @@ theorem map_shriek (f : X ⟶ Y) (hY : p + q = n)
     (((singularHomologyFunctor (ModuleCat.{w} R₀) q).obj P).map f).hom
         (shriek k u μ f hY hY zX zY hzY y) = d • y := by
   obtain ⟨α, rfl⟩ := hzY.2 y
-  rw [shriek_singularCapAddHom, singularCapAddHom_naturality, hd]
-  simp [singularCapAddHom_apply]
+  rw [shriek_singularCapAddHom, singularCapAddHom_naturality, hd, singularCapAddHom_zsmul,
+    AddMonoidHom.smul_apply]
 
 /-- If `f_* z_X = d • z_Y`, the kernel of the shriek map consists of classes killed by `d`. -/
 theorem zsmul_eq_zero_of_shriek_eq_zero (f : X ⟶ Y) (hY : p + q = n)
