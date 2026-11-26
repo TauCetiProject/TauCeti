@@ -108,9 +108,8 @@ private lemma finite_compl_regularLocus_inter [IsNormalScheme M.total] [IsRegula
     have := ((PrimeSpectrum.comap _ p).mem_asIdeal_iff_eq_closedPoint
       ((mem_maximalIdeal π).mpr hπ.not_isUnit) hπ.ne_zero).mpr hcomap
     exact (PrimeSpectrum.mem_zeroLocus _ _).mpr (Set.singleton_subset_iff.mpr this)
-  · rw [← hpx]
-    change p ∈ hU.fromSpec ⁻¹' _
-    rwa [hU.fromSpec.preimage_regularLocus, Scheme.regularLocus_Spec]
+  · rwa [← hpx, ← Set.mem_preimage (f := hU.fromSpec) (a := p), hU.fromSpec.preimage_regularLocus,
+      Scheme.regularLocus_Spec]
 
 variable (M)
 

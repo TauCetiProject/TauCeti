@@ -21,7 +21,6 @@ import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite
 import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 import TauCeti.RingTheory.IntegralClosure.SeparatingCoordinate
-import TauCeti.RingTheory.LocalRing.ResidueField.Fiber
 import TauCeti.RingTheory.Smooth.MinimalPrime
 
 /-!
