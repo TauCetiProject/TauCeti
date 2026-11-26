@@ -211,13 +211,8 @@ theorem length_map_mkQ_eq_add_length_quotient {S X : Submodule A M} (P : Submodu
     (S.comap X.subtype) (P.comap X.subtype), length_map_mkQ, length_map_mkQ S P, hsup]
   congr 1
   refine (Submodule.Quotient.equiv _ _ (Submodule.comapSubtypeEquivOfLe h) ?_).length_eq
-  ext ⟨x, hx⟩
-  simp only [Submodule.comapSubtypeEquivOfLe, Submodule.mem_map, Submodule.mem_comap]
-  constructor
-  · rintro ⟨⟨⟨a, haX⟩, haS⟩, ha, he⟩
-    obtain rfl : a = x := congrArg Subtype.val he
-    exact ha
-  · exact fun hP ↦ ⟨⟨⟨x, h hx⟩, hx⟩, hP, rfl⟩
+  ext x
+  simp [Submodule.mem_map_equiv, Submodule.comapSubtypeEquivOfLe_symm_apply]
 
 /-- **Subadditivity of colength.** For any submodules `X, S, P`, in `ℕ∞`,
 `length ((X + P) ⧸ P) ≤ length ((S + P) ⧸ P) + length (X ⧸ (X ⊓ S))`. This is
