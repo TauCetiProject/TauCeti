@@ -154,17 +154,20 @@ noncomputable def Splitting.ofBijective (K : Subgroup E)
   toMonoidHom := K.subtype.comp (MulEquiv.ofBijective _ hK).symm.toMonoidHom
   rightInverse_rightHom g := (MulEquiv.ofBijective _ hK).apply_symm_apply g
 
+@[simp]
 theorem Splitting.ofBijective_mem (K : Subgroup E)
     (hK : Function.Bijective (S.rightHom.comp K.subtype)) (g : G) :
     Splitting.ofBijective K hK g ∈ K :=
   Subtype.property _
 
 /-- An element of `K` is the value of `Splitting.ofBijective K hK` at its image in `G`. -/
+@[simp]
 theorem Splitting.ofBijective_rightHom {K : Subgroup E}
     (hK : Function.Bijective (S.rightHom.comp K.subtype)) {e : E} (he : e ∈ K) :
     Splitting.ofBijective K hK (S.rightHom e) = e :=
   congrArg Subtype.val (hK.1 (a₁ := ⟨_, Splitting.ofBijective_mem K hK _⟩) (a₂ := ⟨e, he⟩)
-    ((Splitting.ofBijective K hK).rightHom_splitting _))
+    (by simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype] using
+      (Splitting.ofBijective K hK).rightHom_splitting _))
 
 @[simp]
 theorem Splitting.range_ofBijective (K : Subgroup E)

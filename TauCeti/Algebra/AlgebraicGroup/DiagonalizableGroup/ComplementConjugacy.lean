@@ -39,9 +39,10 @@ by its points (`TauCeti.HopfIdeal.eq_conjugate_of_forall_mem_iff`).
 
 No hypothesis on the base ring is needed beyond commutativity, and the Hopf ideal `I` need not
 be assumed normal: conjugation by `T(A)` preserves `N(A)` by the linearity hypothesis, and this is
-all the proof uses. In characteristic zero, an action of an affine group on a vector group by
-group automorphisms acts on points by linear automorphisms
-(`TauCeti.AdditiveGroup.linearAutOfNaturality`), which supplies the linearity hypothesis. Over an
+all the proof uses. Over a commutative `ℚ`-algebra `R`, an action of an affine group on a vector
+group `V(M)` by group automorphisms acts on the points `M →ₗ[R] A` by `A`-linear automorphisms
+(`TauCeti.AdditiveGroup.linearAutOfNaturality`). That result provides no comodule `V` and no
+identifications `ν`; it is the starting point for constructing them. Over an
 algebraically closed field of arbitrary characteristic, a diagonalizable subgroup such as a torus
 meets a smooth unipotent subgroup trivially
 (`TauCeti.FiniteTypeCommHopfAlgCat.sup_eq_augmentation_of_groupLikeSpanned_of_smoothUnipotent`),
@@ -217,10 +218,12 @@ private theorem exists_mem_complement_right_eq (A : Type u) [CommRing A] [Algebr
 include hT' himage in
 private theorem bijective_rightHom_comp_subtype (A : Type u) [CommRing A] [Algebra R A] :
     Function.Bijective (rightHom.comp (complement J' hlin A).subtype) :=
-  ⟨fun k k' h ↦ Subtype.ext (eq_of_mem_complement hlin hT' A k.property k'.property h),
+  ⟨fun k k' h ↦ Subtype.ext (eq_of_mem_complement hlin hT' A k.property k'.property
+      (by simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype, rightHom_eq_right] using h)),
     fun t ↦ by
       obtain ⟨k, hk, rfl⟩ := exists_mem_complement_right_eq hlin himage A t
-      exact ⟨⟨k, hk⟩, rfl⟩⟩
+      exact ⟨⟨k, hk⟩, by simp only [MonoidHom.comp_apply, Subgroup.coe_subtype,
+        rightHom_eq_right]⟩⟩
 
 /-- The splitting of the points semidirect product whose image is the complement: it sends `t`
 to the unique element of the complement with component `t` in `D(A)`. -/
