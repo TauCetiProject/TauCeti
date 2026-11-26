@@ -137,7 +137,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.exists_monotone_isCriticalBand_of_finite_image_criticalPoints`: the same cut indexed by
   `ℕ`, at regular values.
 * `TauCeti.criticalCount` and `TauCeti.totalCriticalCount`: the extended counts of critical
-  points, with `TauCeti.criticalCount_eq_zero_iff`,
+  points, with `TauCeti.criticalCount_eq_zero_iff`, `TauCeti.criticalCount_eq_zero_of_odd`,
+  `TauCeti.forall_manifoldMorseIndex_ne_add_one_of_even`,
   `TauCeti.natCard_sep_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.natCard_criticalPoints_manifoldMorseIndex_eq_toNat_criticalCount`,
   `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
@@ -1064,6 +1065,20 @@ theorem criticalCount_def (j : ℕ) :
 theorem criticalCount_eq_zero_iff (j : ℕ) :
     criticalCount I f j = 0 ↔ ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≠ j := by
   simp [criticalCount_def, encard_eq_zero, eq_empty_iff_forall_notMem]
+
+/-- If every critical point has even index, then no critical point has odd index `j`. -/
+theorem criticalCount_eq_zero_of_odd
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {j : ℕ} (hj : Odd j) :
+    criticalCount I f j = 0 :=
+  (criticalCount_eq_zero_iff j).2 fun x hx hxj ↦ Nat.not_even_iff_odd.2 hj (hxj ▸ heven x hx)
+
+/-- If every critical point has even index, then no two critical points have indices differing by
+one. -/
+theorem forall_manifoldMorseIndex_ne_add_one_of_even
+    (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
+    ∀ x ∈ criticalPoints I f, ∀ y ∈ criticalPoints I f,
+      manifoldMorseIndex I f x ≠ manifoldMorseIndex I f y + 1 := fun x hx y hy h ↦
+  Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
 
 /-- The number of critical points of a given index is at most the number of critical points. -/
 theorem criticalCount_le_totalCriticalCount (j : ℕ) :

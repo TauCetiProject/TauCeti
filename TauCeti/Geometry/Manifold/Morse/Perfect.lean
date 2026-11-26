@@ -204,8 +204,7 @@ coefficients, by the lacunary principle. -/
 theorem IsMorse.isPerfectMorse_of_even (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
     IsPerfectMorse I k f :=
-  hf.isPerfectMorse_of_forall_ne_add_one fun x hx y hy h ↦
-    Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
+  hf.isPerfectMorse_of_forall_ne_add_one (forall_manifoldMorseIndex_ne_add_one_of_even heven)
 
 /-- **Odd Betti numbers vanish for a Morse function with only even indices.** On a compact
 manifold carrying a Morse function all of whose critical points have even index, the odd Betti
@@ -213,8 +212,8 @@ numbers vanish for every division ring of coefficients. -/
 theorem IsMorse.bettiNumber_eq_zero_of_odd (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {j : ℕ} (hj : Odd j) :
     bettiNumber k M j = 0 :=
-  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2 fun x hx hxj ↦
-    Nat.not_even_iff_odd.2 hj (hxj ▸ heven x hx)
+  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2
+    ((criticalCount_eq_zero_iff j).1 (criticalCount_eq_zero_of_odd heven hj))
 
 /-- **A Morse function is perfect exactly when its Morse polynomial vanishes.** If `Q` is the
 polynomial of the Morse polynomial identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` of a Morse function
