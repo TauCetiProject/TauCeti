@@ -49,27 +49,21 @@ to the braiding.
 This packages the transposition `curry ((β_ _ _).hom ≫ uncurry _)` used inline earlier in the
 proof of `SSet.Edge.isEquivalence_iff_forall_isEquivalence_map_evalAt`. -/
 noncomputable def ihomSwapEquiv (A B X : C) [Closed A] [Closed B] :
-    (B ⟶ (ihom A).obj X) ≃ (A ⟶ (ihom B).obj X) where
-  toFun g := curry ((β_ B A).hom ≫ uncurry g)
-  invFun g := curry ((β_ B A).inv ≫ uncurry g)
-  left_inv g := by
-    dsimp only
-    rw [uncurry_curry, Iso.inv_hom_id_assoc, curry_uncurry]
-  right_inv g := by
-    dsimp only
-    rw [uncurry_curry, Iso.hom_inv_id_assoc, curry_uncurry]
+    (B ⟶ (ihom A).obj X) ≃ (A ⟶ (ihom B).obj X) :=
+  ((ihom.adjunction A).homEquiv B X).symm.trans <|
+    ((β_ B A).symm.homCongr (Iso.refl X)).trans ((ihom.adjunction B).homEquiv A X)
 
 variable {A A' B B' X : C}
 
 /-- The exchange of exponent and source curries the braided uncurried map. -/
 lemma ihomSwapEquiv_apply [Closed A] [Closed B] (g : B ⟶ (ihom A).obj X) :
-    ihomSwapEquiv A B X g = curry ((β_ B A).hom ≫ uncurry g) :=
-  (rfl)
+    ihomSwapEquiv A B X g = curry ((β_ B A).hom ≫ uncurry g) := by
+  simp [ihomSwapEquiv, curry, uncurry]
 
 /-- The inverse exchange curries the uncurried map composed with the inverse braiding. -/
 lemma ihomSwapEquiv_symm_apply [Closed A] [Closed B] (g : A ⟶ (ihom B).obj X) :
-    (ihomSwapEquiv A B X).symm g = curry ((β_ B A).inv ≫ uncurry g) :=
-  (rfl)
+    (ihomSwapEquiv A B X).symm g = curry ((β_ B A).inv ≫ uncurry g) := by
+  simp [ihomSwapEquiv, curry, uncurry]
 
 /-- Exchanging exponent and source turns precomposition with `pre f` into precomposition with
 `f`. -/

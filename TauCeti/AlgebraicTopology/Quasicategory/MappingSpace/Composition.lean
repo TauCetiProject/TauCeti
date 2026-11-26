@@ -57,7 +57,7 @@ parametrized statement about `X` (`SSet.triangleSpace.exists_triangle_of_horn₃
 ## References
 
 * J. Lurie, *Higher Topos Theory*, Corollary 2.3.2.5 (restriction to the spine of `Δ[2]` is a
-  trivial fibration exactly for quasicategories).
+  trivial fibration when `X` is a quasicategory; only this implication is formalized here).
 * J. Lurie, *Kerodon*, §4.6.9 (composition of morphisms).
 
 The construction follows the existing postcomposition of right mapping spaces in
@@ -437,6 +437,13 @@ noncomputable def compStruct (v : (X.triangleSpace x y z : SSet.{u}) _⦋0⦌) :
     (by rw [mappingSpace.obj₀Equiv_apply_edge, edge₀₁_app_coe, key, stdSimplex.yonedaEquiv_δ_comp])
     (by rw [mappingSpace.obj₀Equiv_apply_edge, edge₁₂_app_coe, key, stdSimplex.yonedaEquiv_δ_comp])
     (by rw [mappingSpace.obj₀Equiv_apply_edge, edge₀₂_app_coe, key, stdSimplex.yonedaEquiv_δ_comp])
+
+/-- The `2`-simplex of `triangleSpace.compStruct v` is the triangle `v` itself, seen as a
+`2`-simplex of `X`. -/
+@[simp]
+lemma compStruct_simplex (v : (X.triangleSpace x y z : SSet.{u}) _⦋0⦌) :
+    (compStruct v).simplex = yonedaEquiv (ihomObj₀Equiv _ X v.val) :=
+  (rfl)
 
 end triangleSpace
 
