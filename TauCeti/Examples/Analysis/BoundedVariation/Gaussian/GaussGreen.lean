@@ -10,7 +10,6 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.Translation
 public import TauCeti.Probability.Distributions.Gaussian.Cdf
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
-import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 
 /-!
 # Checks: the weighted Gauss–Green formula for the Gaussian weight
@@ -88,16 +87,9 @@ Gauss–Green formula on `U = E` for the constant field `w`, whose Gaussian dive
 `−⟨x, w⟩`. -/
 theorem integral_inner_mul_exp_neg_gaussianWeight (hn : 2 ≤ finrank ℝ E) (w : E) :
     ∫ x, ⟪x, w⟫ * Real.exp (-gaussianWeight E x) = 0 := by
-  have hint : Integrable fun x : E => ⟪x, w⟫ * Real.exp (-gaussianWeight E x) := by
-    have h := IsGaussian.integrable_dual (stdGaussian E) (innerSL ℝ w)
-    rw [← withDensity_exp_neg_gaussianWeight, integrable_withDensity_ofReal_iff
-      continuous_exp_neg_gaussianWeight.aemeasurable
-      (ae_of_all _ fun _ => (Real.exp_pos _).le)] at h
-    refine h.congr (ae_of_all _ fun x => ?_)
-    simp [real_inner_comm, mul_comm]
   have hWX : Integrable fun x : E =>
       fderiv ℝ (gaussianWeight E) x w * Real.exp (-gaussianWeight E x) := by
-    simpa [fderiv_gaussianWeight] using hint
+    simpa [fderiv_gaussianWeight] using integrable_inner_mul_exp_neg_gaussianWeight w
   have hP : weightedPerimeter (gaussianWeight E) ⊤ (univ : Set E) ≠ ∞ := by
     rw [← gaussianPerimeter_def, gaussianPerimeter_univ]
     exact ENNReal.zero_ne_top
@@ -105,6 +97,8 @@ theorem integral_inner_mul_exp_neg_gaussianWeight (hn : 2 ≤ finrank ℝ E) (w 
     (W := gaussianWeight E) (X := fun _ => w) contDiff_gaussianWeight hn
     integrable_exp_neg_gaussianWeight nullMeasurableSet_univ hP contDiff_const (C := ‖w‖)
     (C' := 0) (fun _ => le_rfl) (fun x => by simp) hWX
+  -- the whole space has empty reduced boundary, so the boundary integral vanishes
+  rw [reducedBoundary_univ, Measure.restrict_empty, integral_zero_measure] at key
   simpa [fderiv_gaussianWeight, integral_neg] using key
 
 /-- The same vanishing, read as the vanishing mean of the standard Gaussian measure. -/
