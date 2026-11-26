@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Ba
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
+import TauCeti.Geometry.Manifold.VectorBundle.Section.ComplexModule
 
 /-!
 # Classical pseudodifferential operators on a manifold
@@ -759,58 +760,6 @@ theorem complexifyLinearMap_mem_classicalPseudodifferentialOperators
       ClassicalSymbol.quantizeSchwartzValue_ofDifferentialOperator_eq_complexChartCompression he φ
         ψ ⟨D, hD⟩⟩⟩
 
-section RealImaginaryParts
-
-variable {m : ℕ}
-  {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-    C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-
-omit [T2Space M] in
-/-- Reading a complex differential operator `Q` on real-valued functions and composing with a
-real-linear map `σ` that intertwines multiplication by a real function `b` on complex and on real
-functions gives a real differential operator of the same order: the inclusion of real functions
-and `σ` intertwine the commutators with `b`. -/
-private theorem comp_restrictScalars_comp_ofReal_mem_differentialOperators
-    {σ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯}
-    (hσ : ∀ (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) y, σ (ContMDiffMap.ofReal b * y) = b * σ y)
-    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      m) :
-    σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈ differentialOperators ℝ
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
-  comp_comp_mem_differentialOperators
-    (fun b ↦ ⟨ContMDiffMap.ofReal b, fun x ↦ map_mul ContMDiffMap.ofReal b x, hσ b⟩)
-    (restrictScalars_mem_differentialOperators hQ)
-
-omit [T2Space M] in
-/-- **The real part of a complex differential operator.** If `Q` is a complex differential
-operator of order at most `m` on the complex-valued smooth functions, for commutators with
-complex-valued smooth functions, then `u ↦ Re (Q u)`, on real-valued functions `u`, is a real
-differential operator of order at most `m`. -/
-theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators
-    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      m) :
-    ContMDiffMap.re ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
-      differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
-        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.re_ofReal_mul hQ
-
-omit [T2Space M] in
-/-- **The imaginary part of a complex differential operator.** If `Q` is a complex differential
-operator of order at most `m` on the complex-valued smooth functions, for commutators with
-complex-valued smooth functions, then `u ↦ Im (Q u)`, on real-valued functions `u`, is a real
-differential operator of order at most `m`. -/
-theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators
-    (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      m) :
-    ContMDiffMap.im ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
-      differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
-        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ m :=
-  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.im_ofReal_mul hQ
-
 /-- **Complex differential operators are classical pseudodifferential operators.** A
 complex-linear operator `Q` on the complex-valued smooth functions on `M` which is a differential
 operator of order at most `m` in Grothendieck's sense, for commutators with multiplication by
@@ -818,7 +767,9 @@ complex-valued smooth functions, is a classical pseudodifferential operator of o
 extends `TauCeti.complexifyLinearMap_mem_classicalPseudodifferentialOperators` from
 complexifications of real differential operators to all complex ones. -/
 theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M]
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℕ}
+    {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
       m) :
@@ -830,7 +781,5 @@ theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
       (re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ))
     (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators
       (im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ)))
-
-end RealImaginaryParts
 
 end TauCeti

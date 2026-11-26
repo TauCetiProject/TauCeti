@@ -43,7 +43,11 @@ the fibres are the restrictions of the complex ones, such an operator is also a 
 operator of the same order, for commutators with real-valued functions
 (`TauCeti.restrictScalars_mem_differentialOperators_real`), and its iterated commutators with a
 real function are those of the complex operator with the function's complex inclusion
-(`TauCeti.smulCommutator_pow_restrictScalars_ofReal`).
+(`TauCeti.smulCommutator_pow_restrictScalars_ofReal`). Likewise, the real and imaginary parts
+`u ↦ Re (Q u)` and `u ↦ Im (Q u)` of a complex differential operator `Q` on the complex-valued
+functions are real differential operators of the same order on the real-valued functions
+(`TauCeti.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
+`TauCeti.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
 
 ## References
 
@@ -269,5 +273,51 @@ theorem smulCommutator_pow_restrictScalars_ofReal [∀ x, IsScalarTower ℝ ℂ 
       Module.End ℝ (Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯)) = smulCommutator ℝ f :=
     LinearMap.ext fun D ↦ LinearMap.ext fun s ↦ by simp
   rw [← h, smulCommutator_pow_restrictScalars]
+
+section RealImaginaryParts
+
+variable {m : ℕ} {Q : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- Reading a complex differential operator `Q` on real-valued functions and composing with a
+real-linear map `σ` that intertwines multiplication by a real function `b` on complex and on real
+functions gives a real differential operator of the same order: the inclusion of real functions
+and `σ` intertwine the commutators with `b`. -/
+private theorem comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    {σ : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+    (hσ : ∀ (b : C^∞⟮I, M; ℝ⟯) y, σ (ContMDiffMap.ofReal b * y) = b * σ y)
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_comp_mem_differentialOperators
+    (fun b ↦ ⟨ContMDiffMap.ofReal b, fun x ↦ map_mul ContMDiffMap.ofReal b x, hσ b⟩)
+    (restrictScalars_mem_differentialOperators hQ)
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- **The real part of a complex differential operator.** If `Q` is a complex differential
+operator of order at most `m` on the complex-valued smooth functions, for commutators with
+complex-valued smooth functions, then `u ↦ Re (Q u)`, on real-valued functions `u`, is a real
+differential operator of order at most `m`. -/
+theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    ContMDiffMap.re ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.re_ofReal_mul hQ
+
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] in
+/-- **The imaginary part of a complex differential operator.** If `Q` is a complex differential
+operator of order at most `m` on the complex-valued smooth functions, for commutators with
+complex-valued smooth functions, then `u ↦ Im (Q u)`, on real-valued functions `u`, is a real
+differential operator of order at most `m`. -/
+theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators
+    (hQ : Q ∈ differentialOperators ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
+      C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
+    ContMDiffMap.im ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap ∈
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m :=
+  comp_restrictScalars_comp_ofReal_mem_differentialOperators ContMDiffMap.im_ofReal_mul hQ
+
+end RealImaginaryParts
 
 end TauCeti
