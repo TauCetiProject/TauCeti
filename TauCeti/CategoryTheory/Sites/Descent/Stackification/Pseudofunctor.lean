@@ -347,8 +347,8 @@ omit [HasPullbacks C] in
 identifications. -/
 lemma trans_iso {U V W : C} {q : V ⟶ U} {r : W ⟶ V} {A : Obj.{w} J F U} {B : Obj.{w} J F V}
     {E : Obj.{w} J F W} (P : PullbackData r B E) (Q : PullbackData q A B) (rq : W ⟶ U)
-    (hrq : r ≫ q = rq) ⦃T : C⦄ ⦃j : E.ι⦄ (b : T ⟶ E.X j) (c : T ⟶ A.X (Q.α (P.α j)))
-    (h : b ≫ (P.trans Q rq hrq).β j = c) :
+    (hrq : r ≫ q = rq) ⦃T : C⦄ ⦃j : E.ι⦄ (b : T ⟶ E.X j)
+    (c : T ⟶ A.X ((P.trans Q rq hrq).α j)) (h : b ≫ (P.trans Q rq hrq).β j = c) :
     (P.trans Q rq hrq).iso b c h =
       P.iso b (b ≫ P.β j) rfl ≪≫ Q.iso (b ≫ P.β j) c (by rw [← h, Category.assoc]; rfl) :=
   (rfl)

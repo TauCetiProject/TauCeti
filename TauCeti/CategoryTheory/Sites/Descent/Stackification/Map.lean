@@ -344,9 +344,15 @@ lemma transport_map_trans (φ : F ⟶ G) {W : C} {r : W ⟶ V} {E : Obj.{w} J G 
     (Q : PullbackData q A' B') (ψ : mapObj φ A ⟶ mapObj φ A') :
     transport P ((R.trans Q _ rfl).map φ) ψ = transport P ((R.map φ).trans (Q.map φ) _ rfl) ψ :=
   hom_ext fun T k k' e e' w ↦ by
-    rw [app_transport _ _ _ _ _ _ (e ≫ P.β k) (e' ≫ R.β k' ≫ Q.β (R.α k')) rfl rfl,
-      app_transport _ _ _ _ _ _ (e ≫ P.β k) (e' ≫ R.β k' ≫ Q.β (R.α k')) rfl rfl]
-    simp only [transportApp_def, map, trans, Iso.trans_inv, mapPullbackHom_comp]
+    rw [app_transport _ _ _ _ _ _ (e ≫ P.β k) (e' ≫ (R.trans Q _ rfl).β k') rfl rfl,
+      transportApp_def, app_transport_trans (r ≫ q) rfl P (R.map φ) (Q.map φ) ψ e e' w _ rfl _
+        rfl (e' ≫ R.β k' ≫ Q.β (R.α k')) (Category.assoc _ _ _)]
+    simp only [map]
+    rw [trans_iso, Iso.trans_inv, ← mapPullbackHom_comp]
+    -- The local sections `e' ≫ (R.trans Q _ rfl).β k'` and `e' ≫ R.β k' ≫ Q.β (R.α k')` agree
+    -- by `trans_β`, but they live in types that are equal only after unfolding the index map of
+    -- `R.trans Q`, so the last step is definitional.
+    rfl
 
 /-- The components of `mapFunctor₂ J Γ` are compatible with transport along mapped pullback
 data. -/
