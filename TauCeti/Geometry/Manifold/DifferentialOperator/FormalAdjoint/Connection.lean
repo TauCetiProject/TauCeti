@@ -180,14 +180,15 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField_withDensity_exp
       -cov τ x (X x) - (divergence I (fun y ↦ X y) x + mvfderiv I φ x (X x)) • τ x) :
     (cov.alongVectorField X).IsFormalAdjoint Q
       ((riemannianVolume I M).withDensity fun x ↦ ENNReal.ofReal (Real.exp (φ x))) := by
-  let ρ : C^∞⟮I, M; ℝ⟯ := ⟨Real.exp ∘ φ, ContDiff.comp_contMDiff Real.contDiff_exp φ.contMDiff⟩
+  let ρ : C^∞⟮I, M; ℝ⟯ :=
+    ⟨fun y ↦ Real.exp (φ y), (Real.contDiff_exp.comp_contMDiff φ.contMDiff :)⟩
+  have hρ : ⇑ρ = fun y ↦ Real.exp (φ y) := ContMDiffMap.coeFn_mk _ _
   let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, X.contMDiff_divergence⟩
   have hd : ⇑d = divergence I fun y ↦ X y := ContMDiffMap.coeFn_mk _ _
   -- The chain rule `X (e^φ) = e^φ X φ`.
   have hXρ (x : M) : mvfderiv I ρ x (X x) = ρ x * mvfderiv I φ x (X x) := by
     have hφ : MDifferentiableAt I 𝓘(ℝ) φ x := φ.contMDiff.mdifferentiableAt (by simp)
-    rw [show (ρ : M → ℝ) = fun y ↦ Real.exp (φ y) from ContMDiffMap.coeFn_mk _ _,
-      mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
+    rw [hρ, mvfderiv_exp hφ, _root_.smul_apply, smul_eq_mul]
   -- Change the density of the unweighted formal adjoint `-∇_X - div X`.
   refine (hcov.isFormalAdjoint_alongVectorField X
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by

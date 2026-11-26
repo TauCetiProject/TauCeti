@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvatu
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Polarization
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Norm
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
+import TauCeti.Geometry.Manifold.MFDeriv.Exp
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
@@ -103,9 +104,8 @@ theorem mvfderiv_weighted_scalar_of_surface_soliton (hn : Module.finrank ℝ E =
     mvfderiv I (fun y ↦ ∇.scalarCurvature y * Real.exp (-f y)) x v = 0 := by
   have hdexp : mvfderiv I (fun y ↦ Real.exp (-f y)) x =
       -(Real.exp (-f x)) • mvfderiv I f x := by
-    simpa only [Function.comp_def, Real.deriv_exp, mvfderiv_fun_neg, smul_neg, neg_smul]
-      using (TauCeti.mvfderiv_scalar_comp (I := I) (g := fun y ↦ -f y) (φ := Real.exp)
-        (hf.neg.mdifferentiableAt (by simp)) Real.differentiable_exp.differentiableAt)
+    rw [TauCeti.mvfderiv_exp (g := fun y ↦ -f y) (hf.neg.mdifferentiableAt (by simp)),
+      mvfderiv_fun_neg, smul_neg, neg_smul]
   have hRdiff : MDiffAt ∇.scalarCurvature x :=
     ∇.contMDiff_scalarCurvature.mdifferentiableAt (by simp)
   have hexdiff : MDiffAt (fun y ↦ Real.exp (-f y)) x :=
