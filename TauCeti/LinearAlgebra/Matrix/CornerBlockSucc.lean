@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.LinearAlgebra.Matrix.Defs
 
 /-!
@@ -31,6 +32,8 @@ embedding `U(1) × U(m) → U(m + 1)`.
 * `Matrix.cornerBlockSucc_mul_cornerBlockSucc`, `Matrix.cornerBlockSucc_one`,
   `Matrix.star_cornerBlockSucc`: `diag(c, B)` is multiplicative and unital, and commutes with the
   star operation, blockwise.
+* `Matrix.cornerBlockSucc_diagonal`, `Matrix.det_cornerBlockSucc`: `diag(c, diag(d))` is diagonal,
+  and over a commutative ring `diag(c, B)` has determinant `c * det B`.
 -/
 
 public section
@@ -108,5 +111,20 @@ theorem star_cornerBlockSucc [AddMonoid α] [StarAddMonoid α] (c : α)
     star (cornerBlockSucc c B) = cornerBlockSucc (star c) (star B) := by
   refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
     simp [star_eq_conjTranspose, conjTranspose_apply]
+
+/-- The block-diagonal matrix `diag(c, diag(d))` is the diagonal matrix with entries
+`c, d₀, d₁, …`. -/
+theorem cornerBlockSucc_diagonal [Zero α] (c : α) (d : Fin m → α) :
+    cornerBlockSucc c (diagonal d) = diagonal (Fin.cons c d) := by
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_) <;>
+    simp [diagonal_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm]
+
+/-- Over a commutative ring, the block-diagonal matrix `diag(c, B)` has determinant `c * det B`. -/
+@[simp]
+theorem det_cornerBlockSucc [CommRing α] (c : α) (B : Matrix (Fin m) (Fin m) α) :
+    (cornerBlockSucc c B).det = c * B.det := by
+  rw [det_succ_row_zero, Fin.sum_univ_succ]
+  simp
+  rfl
 
 end Matrix

@@ -20,9 +20,11 @@ colength of `N` in `M` divides `z`*, written `M ⊸_z N` in the comments, when e
 divides `z`: `∑ k, m i k • Φ k ∈ N` for every `i`. It needs neither bases nor an inclusion between
 `M` and `N`, and makes sense over any commutative ring. It stands for a bound on the colength of
 `M ⊓ N` in `M`: over a discrete valuation ring and for finitely generated `M`, applying it to a
-generating family bounds the length of `M ⧸ (M ⊓ N)` by that of `O ⧸ (z)`. That comparison is not
-formalized here; Tau Ceti's lemmas on module length, such as
-`TauCeti.length_quotient_comap_subtype_map_list_prod_le`, give the analogous bounds for lengths.
+generating family bounds the length of `M ⧸ (M ⊓ N)` by that of `O ⧸ (z)`
+(`Submodule.ColengthDvd.length_quotient_le` in `TauCeti.RingTheory.Length.ColengthDvd`). Tau Ceti's
+lemmas on module length, such as `TauCeti.length_quotient_comap_subtype_map_list_prod_le`, give the
+analogous bounds for lengths. The bounds over a valuation domain that come from the Smith normal
+form are in `TauCeti.RingTheory.Valuation.ColengthDvd`.
 
 An endomorphism `y` of `V` is *onto `M` modulo `p ^ n` up to colength `c`* (`p ∈ O`, `c ∈ ℝ`) when
 `y(M) ⊆ M` and `M ⊸_{p ^ l} (y(M) + p ^ n • M)` for some natural number `l ≤ c`.

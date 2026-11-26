@@ -5,17 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Diagonal
-public import Mathlib.RingTheory.DiscreteValuationRing.Basic
-import Mathlib.Data.Fin.Tuple.Sort
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import Mathlib.RingTheory.Valuation.ValuationRing
+import Mathlib.LinearAlgebra.Matrix.Block
+import Mathlib.LinearAlgebra.Matrix.Reindex
+import TauCeti.LinearAlgebra.Matrix.CornerBlockSucc
 
 /-!
 # Existence of Smith normal forms
 
-Over a discrete valuation ring, sorting the diagonal supplied by
-`Matrix.exists_mul_mul_eq_diagonal` by valuation makes it a divisibility chain
-`s₀ ∣ s₁ ∣ ⋯`, a Smith normal form of the matrix. Singular matrices are included:
-zero entries have infinite valuation and appear at the end of the chain.
+Over a valuation domain, for instance a discrete valuation ring or the non-noetherian valuation
+ring of a valued field such as `ℂ` with the absolute value pulled back from `PadicAlgCl ℓ`, every
+square matrix has a Smith normal form: unimodular row and column operations bring it to a diagonal
+matrix whose entries form a divisibility chain `s₀ ∣ s₁ ∣ ⋯`. Singular matrices are included:
+zero entries appear at the end of the chain.
+
+The proof is elimination. Of finitely many elements of a valuation ring one divides all the others,
+since divisibility is total. Move such an entry of the matrix to the corner, clear its row and
+column, and treat the block that is left, all of whose entries are multiples of the corner entry.
 
 The refinement over `ℤ` with transformations of determinant `1` and a positive diagonal is in
 `TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int`, and the characterisation of the invariant
@@ -23,34 +30,131 @@ factors by minors is in `TauCeti.LinearAlgebra.Matrix.InvariantFactor`.
 
 ## Main results
 
-* `Matrix.exists_smith_normal_form_of_isDiscreteValuationRing`: over a discrete valuation ring,
-  the diagonal can be chosen to be a divisibility chain.
+* `Matrix.exists_smith_normal_form_of_valuationRing`: over a valuation domain, a square matrix is
+  equivalent to a diagonal matrix whose entries form a divisibility chain.
+* `Matrix.exists_mul_mul_eq_diagonal_of_valuationRing`: the same for matrices indexed by any finite
+  type, without the divisibility chain.
 -/
 
 public section
 
 namespace Matrix
 
-variable {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+variable {R : Type*} [CommRing R]
 
-/-- **Smith normal form over a discrete valuation ring.** Every square matrix over a discrete
-valuation ring has a Smith normal form: there are `L`, `Q` of unit determinant and a divisibility
-chain `s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. Zero diagonal entries are allowed. -/
-theorem exists_smith_normal_form_of_isDiscreteValuationRing [IsDiscreteValuationRing R]
-    (A : Matrix (Fin n) (Fin n) R) :
-    ∃ (L Q : Matrix (Fin n) (Fin n) R) (s : Fin n → R), IsUnit L.det ∧ IsUnit Q.det ∧
-      (∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) ∧ L * A * Q = diagonal s := by
-  obtain ⟨L, Q, s, hL, hQ, h⟩ := exists_mul_mul_eq_diagonal A
-  -- reorder the diagonal by increasing valuation
-  set σ := Tuple.sort (IsDiscreteValuationRing.addVal R ∘ s)
-  refine ⟨L.submatrix σ id, Q.submatrix id σ, s ∘ σ, ?_, ?_, fun i j hij ↦ ?_, ?_⟩
-  · rw [det_permute]
-    exact (σ.sign.isUnit.map (Int.castRingHom R)).mul hL
+/-- Of the entries of a nonempty matrix over a valuation ring, one divides all the others. -/
+private theorem exists_dvd_apply [IsDomain R] [ValuationRing R] {m n : Type*} [Finite m] [Finite n]
+    [Nonempty m] [Nonempty n] (A : Matrix m n R) : ∃ i j, ∀ k l, A i j ∣ A k l := by
+  classical
+  obtain ⟨⟨i, j⟩, h⟩ := Finite.exists_max fun p : m × n ↦ Ideal.span {A p.1 p.2}
+  exact ⟨i, j, fun k l ↦ Ideal.span_singleton_le_span_singleton.1 (h (k, l))⟩
+
+/-- Permuting the rows and the columns of `A` does not change the existence of a Smith normal form:
+if `L * A.submatrix σ τ * Q = D`, then `L' * A * Q' = D` with the permuted matrices `L'` and `Q'`,
+whose determinants are those of `L` and `Q` up to sign. -/
+private theorem exists_mul_mul_submatrix_eq {n : Type*} [Fintype n] [DecidableEq n]
+    {A L Q D : Matrix n n R} (σ τ : Equiv.Perm n) (hL : IsUnit L.det) (hQ : IsUnit Q.det)
+    (h : L * A.submatrix σ τ * Q = D) :
+    ∃ L' Q' : Matrix n n R, IsUnit L'.det ∧ IsUnit Q'.det ∧ L' * A * Q' = D := by
+  refine ⟨L.submatrix id σ.symm, Q.submatrix τ.symm id, ?_, ?_, ?_⟩
   · rw [det_permute']
-    exact (σ.sign.isUnit.map (Int.castRingHom R)).mul hQ
-  · exact IsDiscreteValuationRing.addVal_le_iff_dvd.mp
-      (Tuple.monotone_sort (IsDiscreteValuationRing.addVal R ∘ s) hij)
-  · rw [← submatrix_id_id A, ← submatrix_mul L A σ id id Function.bijective_id,
-      ← submatrix_mul (L * A) Q σ id σ Function.bijective_id, h, submatrix_diagonal_equiv]
+    exact ((Equiv.Perm.sign σ.symm).isUnit.map (Int.castRingHom R)).mul hL
+  · rw [det_permute]
+    exact ((Equiv.Perm.sign τ.symm).isUnit.map (Int.castRingHom R)).mul hQ
+  · rw [← h]
+    calc _ = (L.submatrix id σ.symm).submatrix id σ * A.submatrix σ τ *
+          (Q.submatrix τ.symm id).submatrix τ id := by
+          rw [submatrix_mul_equiv, submatrix_mul_equiv]
+          simp
+      _ = _ := by simp
+
+/-- One elimination step. If every entry of `A` is the multiple `A 0 0 * w k l` of the corner
+entry, then unimodular row and column operations bring `A` to the block diagonal matrix
+`diag(A 0 0, A 0 0 • B)`, where `B k l = w (k + 1) (l + 1) - w (k + 1) 0 * w 0 (l + 1)`. -/
+private theorem exists_mul_mul_eq_cornerBlockSucc {n : ℕ}
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) R}
+    (w : Fin (n + 1) → Fin (n + 1) → R) (hw : ∀ k l, A k l = A 0 0 * w k l) :
+    ∃ L Q : Matrix (Fin (n + 1)) (Fin (n + 1)) R, L.det = 1 ∧ Q.det = 1 ∧
+      L * A * Q = cornerBlockSucc (A 0 0)
+        (A 0 0 • of fun k l ↦ w k.succ l.succ - w k.succ 0 * w 0 l.succ) := by
+  -- subtract `w k 0` times row `0` from row `k`, and `w 0 l` times column `0` from column `l`
+  let L : Matrix (Fin (n + 1)) (Fin (n + 1)) R :=
+    1 - of fun k m ↦ if m = 0 ∧ k ≠ 0 then w k 0 else 0
+  let Q : Matrix (Fin (n + 1)) (Fin (n + 1)) R :=
+    1 - of fun m l ↦ if m = 0 ∧ l ≠ 0 then w 0 l else 0
+  have hL : L.det = 1 := by
+    rw [det_of_isLowerTriangular L fun i j (hij : i < j) ↦ ?_]
+    · simp [L]
+    · simp [L, one_apply_ne hij.ne, Fin.ne_zero_of_lt hij]
+  have hQ : Q.det = 1 := by
+    rw [det_of_isUpperTriangular (M := Q) fun i j (hij : j < i) ↦ ?_]
+    · simp [Q]
+    · simp [Q, one_apply_ne hij.ne', Fin.ne_zero_of_lt hij]
+  refine ⟨L, Q, hL, hQ, ?_⟩
+  refine ext_fin_succ ?_ (fun j ↦ ?_) (fun i ↦ ?_) (fun i j ↦ ?_)
+  · simp [L, Q, Matrix.sub_mul, Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_succ]
+  · simp [L, Q, Matrix.sub_mul, Matrix.sub_apply, Matrix.mul_apply, Matrix.one_apply,
+      hw 0 j.succ, mul_sub]
+  · simp [L, Q, Matrix.sub_mul, Matrix.sub_apply, Matrix.mul_apply, Matrix.one_apply,
+      Fin.succ_ne_zero, hw i.succ 0, mul_comm]
+  · simp [L, Q, Matrix.sub_mul, Matrix.sub_apply, Matrix.mul_apply, Fin.sum_univ_succ,
+      Matrix.one_apply, Fin.succ_ne_zero, (Fin.succ_ne_zero _).symm, hw i.succ 0, hw 0 j.succ,
+      hw i.succ j.succ]
+    ring
+
+/-- **Smith normal form over a valuation domain.** Every square matrix over a valuation domain,
+for instance a discrete valuation ring, has a Smith normal form: there are `L`, `Q` of unit
+determinant and a divisibility chain `s₀ ∣ s₁ ∣ ⋯` with `L * A * Q = diagonal s`. Zero diagonal
+entries are allowed. -/
+theorem exists_smith_normal_form_of_valuationRing [IsDomain R] [ValuationRing R] :
+    ∀ {n : ℕ} (A : Matrix (Fin n) (Fin n) R),
+      ∃ (L Q : Matrix (Fin n) (Fin n) R) (s : Fin n → R), IsUnit L.det ∧ IsUnit Q.det ∧
+        (∀ ⦃i j : Fin n⦄, i ≤ j → s i ∣ s j) ∧ L * A * Q = diagonal s
+  | 0, _ => ⟨1, 1, 0, by simp, by simp, fun i ↦ i.elim0, Subsingleton.elim _ _⟩
+  | n + 1, A => by
+    -- move an entry dividing all the others to the corner
+    obtain ⟨i, j, hij⟩ := exists_dvd_apply A
+    set A' := A.submatrix (Equiv.swap 0 i) (Equiv.swap 0 j) with hA'
+    have hdvd (k l : Fin (n + 1)) : A' 0 0 ∣ A' k l := by simpa [hA'] using hij _ _
+    choose w hw using hdvd
+    obtain ⟨L₁, Q₁, hL₁, hQ₁, h₁⟩ := exists_mul_mul_eq_cornerBlockSucc w hw
+    -- a Smith normal form of the remaining block, scaled by the corner entry
+    obtain ⟨L', Q', s', hL', hQ', hs', h'⟩ := exists_smith_normal_form_of_valuationRing
+      (of fun k l : Fin n ↦ w k.succ l.succ - w k.succ 0 * w 0 l.succ)
+    refine exists_mul_mul_submatrix_eq (Equiv.swap 0 i) (Equiv.swap 0 j)
+      (L := cornerBlockSucc 1 L' * L₁) (Q := Q₁ * cornerBlockSucc 1 Q')
+      (D := diagonal (Fin.cons (A' 0 0) (A' 0 0 • s'))) ?_ ?_ ?_ |>.imp fun L ⟨Q, h⟩ ↦
+      ⟨Q, Fin.cons (A' 0 0) (A' 0 0 • s'), h.1, h.2.1, fun a b hab ↦ ?_, h.2.2⟩
+    · rw [det_mul, hL₁, mul_one, det_cornerBlockSucc, one_mul]
+      exact hL'
+    · rw [det_mul, hQ₁, one_mul, det_cornerBlockSucc, one_mul]
+      exact hQ'
+    · calc cornerBlockSucc 1 L' * L₁ * A' * (Q₁ * cornerBlockSucc 1 Q')
+          = cornerBlockSucc 1 L' * (L₁ * A' * Q₁) * cornerBlockSucc 1 Q' := by
+            simp only [Matrix.mul_assoc]
+        _ = _ := by
+            rw [h₁, cornerBlockSucc_mul_cornerBlockSucc, cornerBlockSucc_mul_cornerBlockSucc,
+              Matrix.mul_smul, Matrix.smul_mul, h', ← cornerBlockSucc_diagonal]
+            simp
+    · induction a using Fin.cases with
+      | zero => induction b using Fin.cases <;> simp
+      | succ a =>
+        induction b using Fin.cases with
+        | zero => exact absurd hab (by simp [Fin.succ_ne_zero])
+        | succ b => simpa using mul_dvd_mul_left _ (hs' (Fin.succ_le_succ_iff.1 hab))
+
+/-- Over a valuation domain, every square matrix indexed by a finite type is equivalent to a
+diagonal matrix by transformations of unit determinant. Zero diagonal entries are allowed. -/
+theorem exists_mul_mul_eq_diagonal_of_valuationRing [IsDomain R] [ValuationRing R] {ι : Type*}
+    [Fintype ι] [DecidableEq ι] (A : Matrix ι ι R) :
+    ∃ (L Q : Matrix ι ι R) (d : ι → R), IsUnit L.det ∧ IsUnit Q.det ∧
+      L * A * Q = diagonal d := by
+  let e := Fintype.equivFin ι
+  obtain ⟨L, Q, s, hL, hQ, -, h⟩ := exists_smith_normal_form_of_valuationRing (reindex e e A)
+  refine ⟨L.submatrix e e, Q.submatrix e e, s ∘ e, by simpa using hL, by simpa using hQ, ?_⟩
+  have := congrArg (submatrix · e e) h
+  simp only [reindex_apply, submatrix_diagonal_equiv] at this
+  rw [← this, ← submatrix_mul_equiv _ _ _ e, ← submatrix_mul_equiv _ _ _ e]
+  simp
 
 end Matrix
