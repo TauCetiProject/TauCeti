@@ -70,6 +70,13 @@ variable {F : Type*} [Field F] (v : Valuation F ℤᵐ⁰) (t : Fˣ) (ht : v.ord
 
 /-! ### Degree one -/
 
+/-- A unit of order zero has reduced unit part `1` exactly when it is a principal unit. -/
+private theorem unitPartResidue_eq_one_iff_of_ord_eq_zero {f : Fˣ} (hord : v.ord (f : F) = 0) :
+    v.unitPartResidue t ht f = 1 ↔ f ∈ v.valuationSubring.principalUnitGroup := by
+  rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
+    ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
+  exact Iff.rfl
+
 /-- Serre's map vanishes on `{f}` exactly when `f` is a principal unit: the kernel of
 `f ↦ ({ū}, ord_v f)` is `U¹ = 1 + 𝔪_v`. -/
 theorem serreMap_ofUnit_eq_zero_iff {f : Fˣ} :
@@ -78,19 +85,11 @@ theorem serreMap_ofUnit_eq_zero_iff {f : Fˣ} :
       v.unitPartResidue t ht f = 1 ∧ v.ord (f : F) = 0 := by
     simp [SerreAlgebra.ext_iff]
   rw [hd]
-  constructor
-  · rintro ⟨hres, hord⟩
-    have hf := (v.mem_unitGroup_iff_ord_eq_zero f).2 hord
-    rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
-      ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap] at hres
-    exact hres
-  · intro hf
-    have hu := v.valuationSubring.principal_units_le_units hf
-    have hord := (v.mem_unitGroup_iff_ord_eq_zero f).1 hu
-    refine ⟨?_, hord⟩
-    rw [v.unitPartResidue_of_ord_eq_zero t ht hord, ← MonoidHom.mem_ker,
-      ValuationSubring.ker_unitGroupToResidueFieldUnits, Subgroup.mem_comap]
-    exact hf
+  refine ⟨fun ⟨hres, hord⟩ ↦ (v.unitPartResidue_eq_one_iff_of_ord_eq_zero t ht hord).1 hres,
+    fun hf ↦ ?_⟩
+  have hord :=
+    (v.mem_unitGroup_iff_ord_eq_zero f).1 (v.valuationSubring.principal_units_le_units hf)
+  exact ⟨(v.unitPartResidue_eq_one_iff_of_ord_eq_zero t ht hord).2 hf, hord⟩
 
 /-! ### A left inverse of Serre's map modulo the principal units -/
 
@@ -233,15 +232,24 @@ private noncomputable def serreInverse :
   SerreAlgebra.lift v.residueHom (v.quotMk (ofUnit t)) (v.quotMk_ofUnit_mul_residueHom t)
     (v.quotMk_ofUnit_mul_self t)
 
+/-- `ψ` sends `{ū} ∈ K_*ᴹ(k)` to the class of `{u}`. -/
+private theorem serreInverse_C (y : MilnorK (IsLocalRing.ResidueField v.valuationSubring)) :
+    v.serreInverse t (SerreAlgebra.C y) = v.residueHom y :=
+  SerreAlgebra.lift_C ..
+
+/-- `ψ` sends `Π` to the class of `{t}`. -/
+private theorem serreInverse_X : v.serreInverse t SerreAlgebra.X = v.quotMk (ofUnit t) :=
+  SerreAlgebra.lift_X ..
+
 /-- Serre's map is injective modulo the principal units: `ψ ∘ d_t` is the quotient map. -/
 private theorem serreInverse_serreMap (x : MilnorK F) :
     v.serreInverse t (v.serreMap t ht x) = v.quotMk x := by
   have h : (v.serreInverse t).comp (v.serreMap t ht) = v.quotMk := by
     refine MilnorK.ringHom_ext fun f ↦ ?_
-    rw [RingHom.comp_apply, serreMap_ofUnit, map_add, map_zsmul, serreInverse,
-      SerreAlgebra.lift_C, SerreAlgebra.lift_X, unitPartResidue_apply, residueHom_ofUnit_residue,
-      ← map_zsmul, ← map_add, ← ofUnit_zpow, ← ofUnit_mul, mul_comm,
-      ← v.eq_zpow_mul_unitPart t ht f]
+    -- Both sides are computed on the decomposition `f = t ^ ord f * u_f`.
+    conv_rhs => rw [v.eq_zpow_mul_unitPart t ht f, ofUnit_mul, ofUnit_zpow, map_add, map_zsmul]
+    rw [RingHom.comp_apply, serreMap_ofUnit, map_add, map_zsmul, serreInverse_C, serreInverse_X,
+      unitPartResidue_apply, residueHom_ofUnit_residue, add_comm]
   exact DFunLike.congr_fun h x
 
 /-- Every element of `K_nᴹ(k)` is sent by `{ū} ↦ {u}` to the class of an element of `K_nᴹ(F)`. -/
@@ -369,8 +377,7 @@ theorem milnorSpecialization_eq_zero_iff_of_mem_degree {n : ℕ} {x : MilnorK F}
     have hJ : x - w * ofUnit t ∈ v.principalIdeal := by
       rw [← quotMk_eq_zero_iff, _root_.map_sub, ← v.serreInverse_serreMap t ht,
         ← C_milnorSpecialization_add_C_milnorResidue_mul_X, h, _root_.map_zero, zero_add,
-        _root_.map_mul, serreInverse, SerreAlgebra.lift_C, SerreAlgebra.lift_X, ← hw',
-        _root_.map_mul, sub_self]
+        _root_.map_mul, serreInverse_C, serreInverse_X, ← hw', _root_.map_mul, sub_self]
     have hx' : x = (x - w * ofUnit t) + ofUnit t * involute w := by
       rw [ofUnit_mul_involute, sub_add_cancel]
     rw [hx']
