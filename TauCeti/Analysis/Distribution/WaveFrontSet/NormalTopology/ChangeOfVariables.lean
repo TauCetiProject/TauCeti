@@ -117,12 +117,12 @@ private theorem isClosed_nearCone (P : E →L[ℝ] E) (V : Set E) (ε : ℝ) :
   isClosed_le ((continuous_infDist_pt V).comp P.continuous) (continuous_const.mul continuous_norm)
 
 omit [FiniteDimensional ℝ E] in
-private theorem smul_mem_nearCone (P : E →L[ℝ] E) {V : Set E} (hV0 : (0 : E) ∈ V)
+private theorem smul_mem_nearCone (P : E →L[ℝ] E) {V : Set E}
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (t : ℝ) (ht : 0 < t)
     (η : E) (hη : η ∈ nearCone P V ε) : t • η ∈ nearCone P V ε := by
   simp only [nearCone, mem_ofPred_eq, map_smul, norm_smul, Real.norm_of_nonneg ht.le] at hη ⊢
   calc infDist (t • P η) V ≤ t * infDist (P η) V :=
-        (infDist_smul_of_smul_mem ⟨0, hV0⟩ hVcone ht _).le
+        (infDist_smul_of_smul_mem hVcone ht _).le
     _ ≤ t * (ε * ‖η‖) := by gcongr
     _ = ε * (t * ‖η‖) := by ring
 
@@ -178,7 +178,7 @@ private theorem exists_forall_notMem_of_infDist_le {Ω : Opens E} {Γ : Set (E �
   have h2 : infDist (P (t • η)) V < κ := by
     rw [map_smul]
     calc infDist (t • P η) V ≤ t * infDist (P η) V :=
-          (infDist_smul_of_smul_mem ⟨0, hV0⟩ hVcone ht _).le
+          (infDist_smul_of_smul_mem hVcone ht _).le
       _ ≤ t * (min (r / 2) κ / 2 * ‖η‖) := by gcongr; exact hη
       _ = min (r / 2) κ / 2 := by rw [mul_left_comm, inv_mul_cancel₀ hηpos.ne', mul_one]
       _ < κ := by linarith [min_le_right (r / 2) κ]
@@ -555,7 +555,7 @@ continuous seminorm `p` of `𝓓'_Γ(Ω)`: the terms of the lattice series with 
 through the seminorm `‖T‖_{χ,A,N+q}`, and the others sum to the pairing of `T` with a test
 function lying, after weighting, in a fixed compact set. -/
 private theorem exists_seminorm_localFourier_le_of_cutoff
-    {V : Set E} (hV : IsClosed V) (hV0 : (0 : E) ∈ V)
+    {V : Set E} (hV : IsClosed V)
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V)
     {ψ : 𝓓(U, ℂ)} {g : E → E} (hg : ContDiff ℝ ∞ g) (hge : ∀ x ∈ tsupport ψ, g x = e x)
     {P : E →L[ℝ] E} {ε M₁ : ℝ} (hε : 0 < ε) (hM₁ : 1 ≤ M₁)
@@ -572,7 +572,7 @@ private theorem exists_seminorm_localFourier_le_of_cutoff
   -- The seminorm data `(χ, A, M)` of the source.
   let i (M : ℕ) : WaveFrontSeminormIndex Ω Γ :=
     { cutoff := ofSupportedIn hKΩ χ, cone := A, order := M,
-      isClosed_cone := isClosed_nearCone P V ε, smul_mem_cone := smul_mem_nearCone P hV0 hVcone,
+      isClosed_cone := isClosed_nearCone P V ε, smul_mem_cone := smul_mem_nearCone P hVcone,
       disjoint := hKΓ.mono_left (prod_mono χ.tsupport_subset subset_rfl) }
   -- The decay of the coefficients, and the compact set of weighted series off `A`.
   obtain ⟨C₁, hC₁0, hC₁⟩ := exists_one_add_norm_pow_mul_norm_coeff_le_mul ψ.contDiff
@@ -646,7 +646,7 @@ private theorem exists_mem_nhds_forall_exists_seminorm_le
     ((hg.continuous_fderiv (by simp)).continuousAt.eventually
       (Metric.ball_mem_nhds _ (half_pos hε))).mono fun x hx ↦ by simpa [dist_eq_norm] using hx
   refine ⟨_, inter_mem (inter_mem hge ((e.continuousAt hx₀s).preimage_mem_nhds hK₁)) hDg,
-    fun ψ hψ ↦ exists_seminorm_localFourier_le_of_cutoff hV hV0 hVcone hg
+    fun ψ hψ ↦ exists_seminorm_localFourier_le_of_cutoff hV hVcone hg
       (fun x hx ↦ (hψ hx).1.1) hε (M₁ := ‖fderiv ℝ e x₀‖ + ε / 2 + 1)
       (by linarith [norm_nonneg (fderiv ℝ e x₀)]) (fun x hx ↦ ?_) (fun x hx ↦ ?_)
       (hKsub.trans inter_subset_right) (fun x hx ↦ hχ _ (hψ hx).1.2) L hL hKΓ N⟩

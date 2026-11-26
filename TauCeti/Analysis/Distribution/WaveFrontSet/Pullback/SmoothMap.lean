@@ -157,7 +157,7 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
       (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ (addSndPullback hf T).waveFrontSet := by
   intro x hx η' _ hmem
   rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
-  obtain ⟨-, η, hη, hadj⟩ := hmem
+  obtain ⟨-, η, hη, hadj⟩ := mem_pullbackCone.1 hmem
   dsimp only at hη hadj
   rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
     ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hadj

@@ -115,10 +115,10 @@ private theorem isClosed_bigCone (V : Set E) (ε : ℝ) : IsClosed (bigCone D V 
   isClosed_le ((continuous_infDist_pt V).comp (by fun_prop)) (continuous_const.mul continuous_norm)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-private theorem smul_mem_bigCone {V : Set E} (hV0 : (0 : E) ∈ V)
+private theorem smul_mem_bigCone {V : Set E}
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (t : ℝ) (ht : 0 < t)
     (ζ : WithLp 2 (E × D)) (hζ : ζ ∈ bigCone D V ε) : t • ζ ∈ bigCone D V ε := by
-  have hle := (infDist_smul_of_smul_mem ⟨0, hV0⟩ hVcone ht ζ.fst).le
+  have hle := (infDist_smul_of_smul_mem hVcone ht ζ.fst).le
   simp only [bigCone, mem_ofPred_eq, WithLp.smul_fst, norm_smul, Real.norm_of_nonneg ht.le] at hζ ⊢
   nlinarith
 
@@ -259,14 +259,14 @@ private theorem exists_cutoff_disjoint_bigCone
   exact ⟨ε, hε, δ, hδ, χ, hχ1, disjoint_left.2 fun ⟨p, ζ⟩ ⟨hp, hζ⟩ ↦ hGΓ p (hχG hp) ζ hζ⟩
 
 /-- The data `(χ, A, N)` of a seminorm of `𝓓'_Γ(W)`, for the cone `A` of `bigCone`. -/
-private def bigConeIndex {χ : 𝓓(W, ℂ)} {V : Set E} (hV0 : (0 : E) ∈ V)
+private def bigConeIndex {χ : 𝓓(W, ℂ)} {V : Set E}
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ}
     (hχ : Disjoint (tsupport χ ×ˢ bigCone D V ε) Γ) (N : ℕ) : WaveFrontSeminormIndex W Γ where
   cutoff := χ
   cone := bigCone D V ε
   order := N
   isClosed_cone := isClosed_bigCone V ε
-  smul_mem_cone := smul_mem_bigCone hV0 hVcone
+  smul_mem_cone := smul_mem_bigCone hVcone
   disjoint := hχ
 
 /-! ### Splitting the lattice series of the pullback -/
@@ -620,7 +620,7 @@ private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
   have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
     ((hS L hε χ).image (continuous_ofSupportedIn χ.tsupport_subset))
-  set i := bigConeIndex hV0 hVcone hχΓ (N + q)
+  set i := bigConeIndex hVcone hχΓ (N + q)
   set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max B 0 *
     ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
   have hK₀ : 0 ≤ K₀ := by positivity
@@ -629,7 +629,7 @@ private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
   set T := u.toDistribution
   -- The decay of `T` on the cone `A`, from the seminorms `‖T‖_{χ,A,M}`.
   have hdecay (M : ℕ) : ∃ C, ∀ ζ ∈ bigCone D V ε, (1 + ‖ζ‖) ^ M * ‖T.localFourier χ ζ‖ ≤ C :=
-    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hV0 hVcone hχΓ M) u hζ⟩
+    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hVcone hχΓ M) u hζ⟩
   -- The series off `A` converges.
   have hbad := summable_badCoeff_smul_modulate L hε χ
     (exists_one_add_norm_pow_mul_norm_fourier_le (φ x).contDiff (φ x).hasCompactSupport) (hξV x)
