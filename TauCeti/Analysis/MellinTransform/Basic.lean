@@ -31,6 +31,7 @@ with their unextended forms this way.
 ## Main results
 
 * `TauCeti.hasMellin_congr`: functions agreeing on `(0, ∞)` have the same Mellin transform.
+* `TauCeti.hasMellin_sqrt_smul_iff`: square-root normalization shifts the Mellin exponent by `1/2`.
 * `TauCeti.mellinConvergent_indicator_Ioi_iff`: convergence of the Mellin transform of an
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
@@ -98,6 +99,17 @@ theorem hasMellin_congr {f g : ℝ → E} (h : EqOn f g (Ioi 0)) {s : ℂ} {m : 
   simp only [HasMellin, MellinConvergent, mellin,
     MeasureTheory.integrableOn_congr_fun h' measurableSet_Ioi,
     MeasureTheory.setIntegral_congr_fun measurableSet_Ioi h']
+
+/-- Multiplying a kernel by the square root of its argument shifts the Mellin exponent by
+`1/2`, preserving both the value and absolute convergence. -/
+theorem hasMellin_sqrt_smul_iff {f : ℝ → E} {s : ℂ} {m : E} :
+    HasMellin (fun t ↦ (Real.sqrt t : ℂ) • f t) (s - 1 / 2) m ↔ HasMellin f s m := by
+  have h : EqOn (fun t ↦ (Real.sqrt t : ℂ) • f t)
+      (fun t : ℝ ↦ (t : ℂ) ^ (1 / 2 : ℂ) • f t) (Ioi 0) := by
+    intro t (ht : 0 < t)
+    simp only [Real.sqrt_eq_rpow, ofReal_cpow ht.le, ofReal_div, ofReal_one, ofReal_ofNat]
+  rw [hasMellin_congr h]
+  simp only [HasMellin, MellinConvergent.cpow_smul, mellin_cpow_smul, sub_add_cancel]
 
 /-- For a measurable `s ⊆ (0, ∞)`, the Mellin transform of `s.indicator f` converges exactly when
 the Mellin integrand of `f` is integrable on `s`. -/

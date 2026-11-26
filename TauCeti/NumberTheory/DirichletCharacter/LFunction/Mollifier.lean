@@ -13,8 +13,9 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical.Basic
 /-!
 # A truncated Gaussian mollifier for Dirichlet L-functions
 
-The Mellin integral of the theta series with coefficients `μ(n) χ(n)`, truncated below `r`,
-approximates `Γℝ(s+j)/(2 L(s,χ))` on `Re s = 2`. Multiplying by the gamma-weighted L-function
+The Mellin integral of the theta series with coefficients `μ(n) χ(n)` equals
+`Γℝ(s+j)/(2 L(s,χ))` on `Re s > 1`. On `Re s = 2`, the integral truncated below `r`
+approximates that value. Multiplying by the gamma-weighted L-function
 shows that the error is `O(r)`, uniformly in the character, its modulus and the imaginary part.
 This provides the right boundary estimate in the three-lines argument that detects zeros from
 theta integrals. The estimate corresponds to `New.norm_mul_mollifier_sub_le` in
@@ -42,6 +43,19 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     χ.gaussianMollifier j r s =
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
+
+/-- With no lower cutoff, the Gaussian mollifier is the half-gamma factor divided by the
+character's L-function on `Re s > 1`. -/
+theorem gaussianMollifier_zero {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
+    (j : ℕ) {s : ℂ} (hs : 1 < s.re) :
+    χ.gaussianMollifier j 0 s = Gammaℝ (s + j) / 2 / χ.LFunction s := by
+  have hsum := χ.LSeriesSummable_mul (ArithmeticFunction.LSeriesSummable_moebius_iff.mpr hs)
+  have hpos : 0 < s.re + j := by positivity
+  have hinv := eq_inv_of_mul_eq_one_right (LSeries.mul_mu_eq_one χ hs)
+  rw [LFunction_eq_LSeries χ hs, div_eq_mul_inv (Gammaℝ (s + j) / 2), ← hinv,
+    mul_comm (Gammaℝ (s + j) / 2), gaussianMollifier_def]
+  simpa only [mellin, smul_eq_mul, Pi.mul_def] using
+    (hasMellin_gaussianDirichletTheta j hsum hpos).2
 
 /-- On `Re s = 2`, the completed product of a Dirichlet L-function and its Gaussian
 mollifier differs from the square of the half-gamma factor by at most `C r`. The constant
