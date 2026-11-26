@@ -65,8 +65,8 @@ this statement is
 
 **The smooth bubble and its quantum of area** (in the namespace `TauCeti.SmoothTwoForm`,
 `IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eval₂`). When the frozen
-structure `J(z₀, ·)` is a smooth almost complex structure `J₀` tamed by `ω`, the `C¹` bubble is
-smooth, since `C¹` pseudoholomorphic planes are
+structure `J(z₀, ·)` is a smooth almost complex structure `J₀` (tamed by `ω`, as every `J(z, ·)`
+is), the `C¹` bubble is smooth, since `C¹` pseudoholomorphic planes are
 (`TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`), and energy quantization
 (`TauCeti.SmoothTwoForm.Tames.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne`) bounds its area
 below by an energy `κ > 0` depending only on `ω`, `J₀` and `K`. So every bubbling point absorbs at
@@ -653,11 +653,11 @@ theorem IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt
 /-- **The bubble is smooth and carries a quantum of area.** In the setting of
 `IsNondegenerate.exists_rescale_tendstoLocallyUniformly_fderiv_extChartAt_comp`, let `M` be
 Hausdorff and let the structure `J(z₀, ·)` frozen at the bubbling point be a smooth almost complex
-structure `J₀` tamed by `ω`. There is an energy `κ > 0`, depending only on `ω`, `J₀` and `K`, with
-the following property. If the energy densities of smooth solutions `uₙ` of the Floer equation on
-`U`, with values in `K`, tend to `∞` at points `zₙ → z₀`, then there are a subsequence `φ`, centres
-`cₙ → z₀`, scales `εₙ > 0` with `εₙ → 0`, and a smooth `J₀`-holomorphic plane `v : ℝ × ℝ → K`
-such that
+structure `J₀`, which is then tamed by `ω`. There is an energy `κ > 0`, depending only on `ω`,
+`J₀` and `K`, with the following property. If the energy densities of smooth solutions `uₙ` of the
+Floer equation on `U`, with values in `K`, tend to `∞` at points `zₙ → z₀`, then there are a
+subsequence `φ`, centres `cₙ → z₀`, scales `εₙ > 0` with `εₙ → 0`, and a smooth `J₀`-holomorphic
+plane `v : ℝ × ℝ → K` such that
 
 * the rescaled maps `w ↦ u_{φ n}(cₙ + εₙ w)` converge to `v` locally uniformly through `e`;
 * the symplectic area `∫ ω(∂ₛv, ∂ₜv)` of `v` is at least `κ` and, for every `δ > 0`, at most the
@@ -681,8 +681,7 @@ theorem IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eva
       c * ‖mvfderiv I e x v‖ ^ 2 ≤ hω.symplecticFormAt x v (J y x v))
     (hBs : ∀ y ∈ U, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Ks y) x)‖ ≤ B)
     (hBt : ∀ y ∈ U, ∀ x ∈ K, ‖mvfderiv I e x (ω.hamiltonianVectorField (Kt y) x)‖ ≤ B)
-    {J₀ : SmoothAlmostComplexStructure I M} (hJ₀ : ∀ x v, J z₀ x v = J₀ x v)
-    (hJ₀t : ω.Tames J₀) :
+    {J₀ : SmoothAlmostComplexStructure I M} (hJ₀ : ∀ x v, J z₀ x v = J₀ x v) :
     ∃ κ > 0, ∀ ⦃u : ℕ → ℝ × ℝ → M⦄ ⦃z : ℕ → ℝ × ℝ⦄,
       (∀ n, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I (⊤ : ℕ∞) (u n) U) → (∀ n, MapsTo (u n) U K) →
       (∀ n, ContinuousOn (ω.floerEnergyDensity Ks Kt (u n)) U) →
@@ -704,6 +703,8 @@ theorem IsNondegenerate.exists_pos_forall_exists_rescale_ofReal_le_lintegral_eva
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)) ≤
           liminf (fun n ↦ ∫⁻ y in ball z₀ δ,
             ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u (φ n)) y)) atTop := by
+  have hJ₀t : ω.Tames J₀ := hω.tames_iff.2 fun x v hv ↦ by
+    simpa [hJ₀] using hJt z₀ hz₀ x v hv
   obtain ⟨κ, hκ, hquant⟩ := hJ₀t.exists_pos_forall_ofReal_le_lintegral_eval₂_of_ne hK
   refine ⟨κ, hκ, fun u z hu huK hρ hsol hz hblow ↦ ?_⟩
   obtain ⟨φ, c', ε, v, hφ, hε, hc', hε0, hv1, hvK, hconv, -, hhol, hv0, -, harea⟩ :=
