@@ -25,8 +25,8 @@ the Conley–Zehnder index of the capped orbit `⟨x, const⟩` is the Conley–
 
 This fixes the normalization of the grading `μ` of capped Hamiltonian Floer theory on a closed
 symplectic manifold `(M, σ)` of dimension `2 n`. Let `F` be a Morse function on `M`. For small
-`ε > 0` every one-periodic orbit of the autonomous Hamiltonian `ε F` is the constant orbit at a
-critical point `p` of `F`, it is nondegenerate, and the capped orbit `⟨p, const⟩` has the grading
+`ε > 0` every contractible one-periodic orbit of the autonomous Hamiltonian `ε F` is the constant
+orbit at a critical point `p` of `F`, and the capped orbit `⟨p, const⟩` has the grading
 
 `μ(p, const) = ind_p(F) - n`
 
