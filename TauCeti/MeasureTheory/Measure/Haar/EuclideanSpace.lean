@@ -36,9 +36,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 * `TauCeti.measurePreserving_euclideanPlaneEquivProd`: the coordinates of the Euclidean plane
   identify its volume with the product of Lebesgue measures on `ℝ × ℝ`.
-* `TauCeti.euclideanPlaneCLEquivProd`: the same coordinates as a continuous linear equivalence
-  onto `ℝ × ℝ`, with `EuclideanSpace.toLp_one_zero` and `EuclideanSpace.toLp_zero_one`
-  identifying the coordinate vectors `(1, 0)` and `(0, 1)` with the standard basis.
+* `TauCeti.coe_euclideanPlaneCLEquivProd`: these coordinates are the underlying map of the
+  continuous linear coordinates `TauCeti.euclideanPlaneCLEquivProd`.
 -/
 
 public section
@@ -139,26 +138,6 @@ theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL �
   ext z i
   refine Fin.cases ?_ (fun j => ?_) i <;> simp
 
-section Plane
-
-variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- The first basis vector `(1, 0)` of the Euclidean plane, written in coordinates. -/
-@[simp]
-theorem toLp_one_zero :
-    (toLp 2 ![(1 : 𝕜), 0] : EuclideanSpace 𝕜 (Fin 2)) = EuclideanSpace.single 0 1 := by
-  ext i
-  fin_cases i <;> simp
-
-/-- The second basis vector `(0, 1)` of the Euclidean plane, written in coordinates. -/
-@[simp]
-theorem toLp_zero_one :
-    (toLp 2 ![(0 : 𝕜), 1] : EuclideanSpace 𝕜 (Fin 2)) = EuclideanSpace.single 1 1 := by
-  ext i
-  fin_cases i <;> simp
-
-end Plane
-
 end EuclideanSpace
 
 namespace TauCeti
@@ -212,22 +191,6 @@ theorem euclideanPlaneEquivProd_symm_apply (z : ℝ × ℝ) :
 theorem measurePreserving_euclideanPlaneEquivProd :
     MeasurePreserving euclideanPlaneEquivProd :=
   (volume_preserving_finTwoArrow ℝ).comp (volume_preserving_symm_measurableEquiv_toLp (Fin 2))
-
-/-- The coordinates `(y₀, y₁)` of a point of the Euclidean plane, as a continuous linear
-equivalence onto `ℝ × ℝ`. Its underlying map is `TauCeti.euclideanPlaneEquivProd`
-(`TauCeti.coe_euclideanPlaneCLEquivProd`). -/
-noncomputable def euclideanPlaneCLEquivProd : EuclideanSpace ℝ (Fin 2) ≃L[ℝ] ℝ × ℝ :=
-  (EuclideanSpace.equiv (Fin 2) ℝ).trans (ContinuousLinearEquiv.finTwoArrow ℝ ℝ)
-
-@[simp]
-theorem euclideanPlaneCLEquivProd_apply (y : EuclideanSpace ℝ (Fin 2)) :
-    euclideanPlaneCLEquivProd y = (y 0, y 1) :=
-  (rfl)
-
-@[simp]
-theorem euclideanPlaneCLEquivProd_symm_apply (z : ℝ × ℝ) :
-    euclideanPlaneCLEquivProd.symm z = WithLp.toLp 2 ![z.1, z.2] :=
-  (rfl)
 
 /-- The continuous linear coordinates of the Euclidean plane are its measurable coordinates
 `TauCeti.euclideanPlaneEquivProd`. -/

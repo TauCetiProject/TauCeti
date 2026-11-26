@@ -10,9 +10,9 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 /-!
 # Weak mixed eigenfunctions of `-Δ`
 
-For an open set `Ω ⊆ ℝⁿ` and a Dirichlet part `Γ`, the weak mixed eigenvalue problem for `-Δ`
-asks for a nonzero `u ∈ H¹_Γ(Ω)`, the space `TauCeti.W1pVanishingOn` of Sobolev functions vanishing
-on `Γ`, with
+For an open set `Ω` of a finite-dimensional real inner product space and a Dirichlet part `Γ`,
+the weak mixed eigenvalue problem for `-Δ` asks for a nonzero `u ∈ H¹_Γ(Ω)`, the space
+`TauCeti.W1pVanishingOn` of Sobolev functions vanishing on `Γ`, with
 
 `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_Γ(Ω)`.
 
@@ -42,8 +42,9 @@ open scoped InnerProductSpace
 
 attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
 
-variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-  {Omega : Opens (EuclideanSpace ℝ ι)} {Γ : Set (EuclideanSpace ℝ ι)}
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
+  {Omega : Opens E} {Γ : Set E}
 
 /-- **Weak mixed eigenfunctions of distinct eigenvalues are orthogonal.** Two solutions in
 `H¹_Γ(Ω)` of the weak eigenvalue identity `∫ ∇u · ∇v = κ ∫ u v`, for every `v ∈ H¹_Γ(Ω)`, with
@@ -68,7 +69,7 @@ be nonzero solutions of `∫ ∇(w k) · ∇v = κₖ ∫ (w k) v` for every `v 
 nonzero solution `u ∈ H¹_Γ(Ω)` exactly when `κ` is one of the `κₖ`: an eigenfunction for any other
 `κ` is orthogonal to the whole family, hence zero. -/
 theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete {α : Type*} {kappas : α → ℝ}
-    (F : α → EuclideanSpace ℝ ι → ℝ) (w : α → W1pVanishingOn mu Omega 2 Γ)
+    (F : α → E → ℝ) (w : α → W1pVanishingOn mu Omega 2 Γ)
     (hwv : ∀ k, W1p.value (w k : W1p mu Omega 2) =ᵐ[mu.restrict Omega] F k)
     (hw0 : ∀ k, W1p.value (w k : W1p mu Omega 2) ≠ 0)
     (hw : ∀ k, ∀ v : W1pVanishingOn mu Omega 2 Γ,
