@@ -165,22 +165,22 @@ theorem compAdjoint_apply_of_not_dense {T : E →ₗ.[𝕜] F} (hd : ¬Dense (T.
   (compAdjoint_apply T y).trans <|
     (congrArg T (Subtype.ext (adjoint_apply_of_not_dense hd _))).trans T.map_zero
 
-/-- The form identity for `T T†` needs only density of the domain of `T`. -/
-theorem inner_compAdjoint {T : E →ₗ.[𝕜] F} (hd : Dense (T.domain : Set E))
+/-- The form identity for `T T†`. No density or closedness assumption is required: when `T.domain`
+is not dense, both `T†` and `T.compAdjoint` take the value `0`. -/
+theorem inner_compAdjoint {T : E →ₗ.[𝕜] F}
     (x : T.compAdjoint.domain) {y : F} (hy : y ∈ T†.domain) :
     ⟪T.compAdjoint x, y⟫ =
       ⟪T† ⟨x, compAdjoint_domain_le T x.property⟩, T† ⟨y, hy⟩⟫ := by
-  rw [compAdjoint_apply]
-  exact (adjoint_isFormalAdjoint hd).symm _ ⟨y, hy⟩
+  by_cases hd : Dense (T.domain : Set E)
+  · rw [compAdjoint_apply]
+    exact (adjoint_isFormalAdjoint hd).symm _ ⟨y, hy⟩
+  · simp only [compAdjoint_apply_of_not_dense hd, adjoint_apply_of_not_dense hd, inner_zero_left]
 
-/-- The quadratic form of `T T†` is nonnegative. No density assumption is required: when `T.domain`
-is not dense, `T†` takes the value `0`. -/
+/-- The quadratic form of `T T†` is nonnegative. -/
 theorem re_inner_compAdjoint_nonneg (T : E →ₗ.[𝕜] F) (x : T.compAdjoint.domain) :
     0 ≤ RCLike.re ⟪T.compAdjoint x, (x : F)⟫ := by
-  by_cases hd : Dense (T.domain : Set E)
-  · rw [inner_compAdjoint hd x (T.compAdjoint_domain_le x.property)]
-    exact inner_self_nonneg
-  · rw [compAdjoint_apply_of_not_dense hd, inner_zero_left, _root_.map_zero]
+  rw [inner_compAdjoint x (T.compAdjoint_domain_le x.property)]
+  exact inner_self_nonneg
 
 variable [CompleteSpace F]
 
