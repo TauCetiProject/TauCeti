@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
-import Mathlib.Analysis.Calculus.Deriv.Abs
-import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
-import TauCeti.Analysis.Calculus.FDeriv.Pi.Basic
+import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Examples.Analysis.Matrix.SpectralGradient
 
 /-!
@@ -57,11 +55,6 @@ namespace TauCeti.Examples.AdmissiblePair
 
 variable {ι : Type*} [Fintype ι]
 
-/-- A nonzero vector has a positive sum of squares. -/
-private theorem sum_sq_pos {μ : ι → ℝ} (hμ : μ ≠ 0) : 0 < ∑ i, μ i ^ 2 :=
-  (sum_nonneg fun _ _ ↦ sq_nonneg _).lt_of_ne fun h ↦
-    hμ (funext fun i ↦ (sum_sq_eq_zero_iff (s := univ) (f := μ)).1 h.symm i (mem_univ i))
-
 section DecidableEq
 
 variable [DecidableEq ι]
@@ -95,7 +88,7 @@ theorem sumSubMulSqrt_def (ε : ℝ) (μ : ι → ℝ) :
 /-- The partial derivatives `∂_j (σ_1 − ε|μ|) = 1 − ε μ_j / |μ|` away from `0`. -/
 theorem fderiv_sumSubMulSqrt_apply_single (ε : ℝ) {μ : ι → ℝ} (hμ : μ ≠ 0) (j : ι) :
     fderiv ℝ (sumSubMulSqrt ε) μ (Pi.single j 1) = 1 - ε * (μ j / √(∑ i, μ i ^ 2)) := by
-  have hpos := sum_sq_pos hμ
+  have hpos : 0 < ∑ i, μ i ^ 2 := by simpa using TauCeti.sum_norm_sq_pos hμ
   have hi : ∀ i, HasFDerivAt (fun ν : ι → ℝ ↦ ν i)
       (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i) μ := fun i ↦ hasFDerivAt_apply i μ
   have hsq : HasFDerivAt (fun ν : ι → ℝ ↦ ∑ i, ν i ^ 2) _ μ :=
@@ -113,7 +106,9 @@ theorem isAdmissiblePair_sumSubMulSqrt [Nonempty ι] {ε : ℝ} (hε : |ε| < 1)
   isAdmissibleCone := isAdmissibleCone_setOf_sum_pos
   contDiffOn := by
     intro μ hμ
-    have hne : ∑ i, μ i ^ 2 ≠ 0 := (sum_sq_pos (by rintro rfl; simp at hμ)).ne'
+    have hpos : 0 < ∑ i, μ i ^ 2 := by
+      simpa using TauCeti.sum_norm_sq_pos (v := μ) (by rintro rfl; simp at hμ)
+    have hne : ∑ i, μ i ^ 2 ≠ 0 := hpos.ne'
     refine ContDiffAt.contDiffWithinAt ?_
     unfold sumSubMulSqrt
     exact (by fun_prop : ContDiff ℝ 1 fun ν : ι → ℝ ↦ ∑ i, ν i).contDiffAt.sub
@@ -131,7 +126,7 @@ theorem isAdmissiblePair_sumSubMulSqrt [Nonempty ι] {ε : ℝ} (hε : |ε| < 1)
       rintro rfl
       simp at hμ
     rw [fderiv_sumSubMulSqrt_apply_single ε hμ0]
-    have hs : 0 < √(∑ i, μ i ^ 2) := Real.sqrt_pos.2 (sum_sq_pos hμ0)
+    have hs : 0 < √(∑ i, μ i ^ 2) := Real.sqrt_pos.2 (by simpa using TauCeti.sum_norm_sq_pos hμ0)
     have hj : |μ j| ≤ √(∑ i, μ i ^ 2) :=
       Real.abs_le_sqrt (single_le_sum (fun i _ ↦ sq_nonneg (μ i)) (mem_univ j))
     have hq : |μ j / √(∑ i, μ i ^ 2)| ≤ 1 := by
