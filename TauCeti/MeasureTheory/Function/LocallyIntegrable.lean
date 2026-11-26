@@ -148,6 +148,8 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
   integrable on it.
 * `ContinuousOn.memLp_restrict_of_subset_isCompact`: a function continuous on a compact set is in
   every `Lᵖ` on its measurable subsets.
+* `Continuous.memLp_restrict_Ioc`: a continuous function is in every `Lᵖ` on a bounded interval
+  `(a, b]`.
 * `Continuous.integrable_of_support_subset_isCompact`: a continuous function supported in a
   compact set is integrable, without a separation assumption on the domain.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
@@ -710,6 +712,13 @@ theorem ContinuousOn.memLp_restrict_of_subset_isCompact {f : X → E} {K s : Set
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hf
   exact MemLp.of_bound (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C
     ((ae_restrict_iff' hs).2 (ae_of_all _ fun x hx => hC x (hsK hx)))
+
+/-- A continuous function lies in every `Lᵖ` on a bounded interval `(a, b]`, for a measure that
+is finite on compact sets. -/
+theorem Continuous.memLp_restrict_Ioc [LinearOrder X] [OrderClosedTopology X] [CompactIccSpace X]
+    {f : X → E} (hf : Continuous f) {a b : X} (p : ENNReal) : MemLp f p (μ.restrict (Ioc a b)) :=
+  hf.continuousOn.memLp_restrict_of_subset_isCompact isCompact_Icc measurableSet_Ioc
+    Ioc_subset_Icc_self p
 
 end ContinuousOn
 
