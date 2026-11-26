@@ -329,6 +329,14 @@ noncomputable def dualCotangentMap (φ : A →ₐc[R] A') :
       Module.Dual R (Bialgebra.CotangentSpace R A) :=
   (Bialgebra.cotangentSpaceMap φ).dualMap
 
+/-- The differential of `φ` evaluates a functional on the cotangent class of `φ a`. -/
+@[simp]
+lemma dualCotangentMap_apply_cotangentMap (φ : A →ₐc[R] A')
+    (y : Module.Dual R (Bialgebra.CotangentSpace R A')) (a : A) :
+    dualCotangentMap φ y (Bialgebra.cotangentMap R A a) =
+      y (Bialgebra.cotangentMap R A' (φ a)) := by
+  rw [dualCotangentMap, LinearMap.dualMap_apply, Bialgebra.cotangentSpaceMap_cotangentMap]
+
 /-- Under cotangent duality, precomposition with the cotangent map of `φ` is precomposition of
 derivations along `φ`. -/
 lemma cotangentLinearEquiv_comp_cotangentSpaceMap [Ring B] [Algebra R B] (φ : A →ₐc[R] A')

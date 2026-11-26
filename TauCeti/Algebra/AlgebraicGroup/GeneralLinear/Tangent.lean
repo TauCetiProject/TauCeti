@@ -606,6 +606,23 @@ theorem derivationComp_tangentCoefficientLieEquiv
   rw [tangentBaseChangeLieEquiv_symm_derivationComp, LieEquiv.symm_apply_apply,
     LieEquiv.symm_apply_apply]
 
+/-- **The cotangent-dual comparison is geometric base change**: across the canonical coordinate
+base-change isomorphism, `cotangentDualBaseChangeEquiv` is the comparison of Lie algebras
+`Derivation.cotangentDualBaseChangeEquiv` of the coordinate Hopf algebra. -/
+theorem dualCotangentMap_coordinateHopfAlgebraBaseChangeIso_inv_cotangentDualBaseChangeEquiv
+    (z : K ⊗[R] Module.Dual R (Bialgebra.CotangentSpace R (coordinateHopfAlgebra R n))) :
+    Derivation.dualCotangentMap (coordinateHopfAlgebraBaseChangeIso R K n).inv.hom
+        (Derivation.cotangentDualBaseChangeEquiv R K (coordinateHopfAlgebra R n) z) =
+      cotangentDualBaseChangeEquiv R K n z := by
+  apply (Derivation.cotangentLinearEquiv (R := K) (A := coordinateHopfAlgebra K n)
+    (B := K)).injective
+  rw [Derivation.cotangentLinearEquiv_dualCotangentMap,
+    Derivation.cotangentLinearEquiv_cotangentDualBaseChangeEquiv,
+    cotangentLinearEquiv_cotangentDualBaseChangeEquiv, ← derivationComp_tangentCoefficientLieEquiv,
+    ← LinearMap.comp_apply, ← derivationComp_comp, ← _root_.CommHopfAlgCat.hom_comp,
+    CategoryTheory.Iso.inv_hom_id, CommHopfAlgCat.hom_id_eq_bialgHom_id, derivationComp_id,
+    LinearMap.id_apply]
+
 /-- The differential of a transported matrix-valued morphism is computed by restricting its
 source tangent vector to the original coordinate algebra. This transports matrix differential
 calculations through arbitrary scalar extension, without a flatness assumption. -/
