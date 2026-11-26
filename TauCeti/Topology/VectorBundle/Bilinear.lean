@@ -144,8 +144,11 @@ variable {B : Type*} [TopologicalSpace B]
   {P : Type*} [TopologicalSpace P] {p₀ : P} {K : Set B}
   {b b₀ : P → ∀ x : K, V x →L[ℝ] V x →L[ℝ] ℝ}
 
-/-- A uniform one-sided bound needs positivity only of the dominating field. -/
-private theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le (hK : IsCompact K)
+/-- In a finite-rank real vector bundle, if `b` is positive at `p₀` over the compact set `K`,
+then a single positive multiple of `b₀` is bounded above by `b` on `K` for all parameters near
+`p₀`. Both families need only be continuous at points over `p₀` in the product with `K`;
+`b₀` need not be positive. -/
+theorem IsCompact.exists_pos_eventually_mul_bilinear_apply_self_le (hK : IsCompact K)
     (hb : ∀ x : K, ContinuousAt (fun q : P × K ↦
       TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) (E := fun y ↦ V y →L[ℝ] V y →L[ℝ] ℝ)
         (q.2 : B) (b q.1 q.2)) (p₀, x))
