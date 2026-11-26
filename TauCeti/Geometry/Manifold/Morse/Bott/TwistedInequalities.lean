@@ -8,7 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Bott.Count
 public import TauCeti.Geometry.Manifold.Morse.Bott.Inequalities
 public import TauCeti.Topology.VectorBundle.Orientation.BettiNumber
-public import TauCeti.Topology.VectorBundle.Thom.TwistedHomology
+public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.TwistedHomology
+import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Geometry.Manifold.Topology
 
 /-!
@@ -40,19 +41,12 @@ its untwisted homology would contribute `t + t²`. Over a field of characteristi
 (`TauCeti.IsMorseBottFamily.twistedBettiNumber_eq_bettiNumber_of_two_eq_zero`), and the
 inequalities are those of `TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`.
 
-The proof is that of the mod `2` inequalities. The homology of a band with one critical value `c`
-is the direct sum of the homologies of the Thom pairs of the negative normal bundles of the pieces
-on the level `c`
-(`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`), so its
-dimension is the sum of their contributions
-(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair`, here
-`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`).
-Over a field, the Thom pair of a bundle of rank `r` has the twisted homology of its base shifted by
-`r`. A field either has characteristic two or has `2` invertible. In the first case the twist
-disappears and the mod `2` Thom isomorphism applies
-(`TauCeti.finrank_singularHomology_thomPair_of_two_eq_zero`); in the second the twisted Thom
-isomorphism does
-(`VectorBundleOrientationCover.finrank_singularHomology_thomPair_eq_finrank_twistedHomology`).
+Over any field, the homology of a band with one critical value `c` is the direct sum, over the
+pieces on the level `c`, of their homologies twisted by the orientation local systems of their
+negative normal bundles and shifted by their indices
+(`TauCeti.IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology`), so
+its dimension is the sum of their twisted Betti numbers
+(`TauCeti.IsMorseBottFamily.finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber`).
 The inequalities of the filtration of `M` by sublevels at a cut of the values of `f`
 (`TauCeti.IsMorseBottFamily.exists_cut_sum_finrank_sublevelPair_eq_sum`) then give the result.
 
@@ -75,8 +69,11 @@ The hypothesis `hV` gives the negative normal spaces local frames of size `r j`,
 vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse index of `f` along
 `S j` (in the namespace `TauCeti.SmoothEmbedding`,
 `IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`).
-The model fibres of these bundles lie in `Type`, so the manifolds and the coefficient field here
-live in `Type`.
+The manifolds, the pieces, the model space `E` of `M` and the coefficient field lie in one
+universe. The band computation reads `ν⁻ j` through frames relabelled by `ULift (Fin (r j))`, whose
+model fibre lies in that universe, and the relabelling changes neither the orientation local system
+nor its homology
+(`TauCeti.VectorBundleOrientationCover.finrank_twistedHomology_signLocalSystem_uLift`).
 
 ## Main results
 
@@ -123,13 +120,15 @@ open TauCeti.VectorBundleOrientationCover TauCeti.LocalCoefficientSystem
 open Polynomial (monomial)
 open scoped ContDiff Manifold Polynomial
 
+universe u
+
 namespace TauCeti.IsMorseBottFamily
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [SecondCountableTopology M] [CompactSpace M]
-  {ι : Type*} [Fintype ι] {E' H' P : ι → Type*} {S : ι → Type}
+  {ι : Type*} [Fintype ι] {E' H' P : ι → Type*} {S : ι → Type u}
   [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
   [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
   [∀ j, (J j).Boundaryless] [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)]
@@ -149,7 +148,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-  (K : Type) [Field K]
+  (K : Type u) [Field K]
 
 include hV
 
@@ -247,24 +246,42 @@ theorem finrank_singularHomology_sublevelPair_eq_sum_twistedBettiNumber {a b c :
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦
-      (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s) :=
-    fun j ↦ subbundleTopology (P j)
+  set V : ∀ j, S j → Type u := fun j s ↦
+    (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
+  -- Relabel the frames by `ULift (Fin (r j))`, so that the model fibre lies in the universe of the
+  -- pieces, as the twisted identification across the level needs.
+  have hV' (j : ι) := (hV j).of_equiv (Equiv.ulift.{u}.symm : Fin (r j) ≃ ULift (Fin (r j)))
+  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) := fun j ↦
+    subbundleTopology (P j)
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
-  let _ (j : ι) := (hV j).fiberBundle
-  have (j : ι) := (hV j).vectorBundle
-  -- Each Thom pair has the twisted homology of its piece shifted by the index.
-  refine h.finrank_singularHomology_sublevelPair_eq_sum_of_finrank_thomPair hn K hdim g hV
-    (h.twistedBettiNumber hn hdim g hV K) (fun j p ↦ ?_) hac hcb hcrit n
-  rcases eq_or_ne (2 : K) 0 with h2 | h2
-  · -- In characteristic two the twist disappears, and the mod `2` Thom isomorphism applies.
-    rw [h.twistedBettiNumber_eq_bettiNumber_of_two_eq_zero hn hdim g hV K h2]
-    exact finrank_singularHomology_thomPair_of_two_eq_zero _ _ h2 _ _ (by rw [finrank_fin_fun])
-  · -- Otherwise `2` is invertible, and the twisted Thom isomorphism applies.
-    let _ : Invertible (2 : K) := invertibleOfNonzero h2
-    rw [twistedBettiNumber_def]
-    exact finrank_singularHomology_thomPair_eq_finrank_twistedHomology _ _ _ K
-      (by rw [finrank_fin_fun])
+  let _ : ∀ j, TopologicalSpace (TotalSpace (ULift (Fin (r j)) → ℝ) (V j)) := fun j ↦
+    subbundleTopology (P j)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric)
+  let _ (j : ι) : FiberBundle (Fin (r j) → ℝ) (V j) := (hV j).fiberBundle
+  have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) (V j) := (hV j).vectorBundle
+  let _ (j : ι) : FiberBundle (ULift (Fin (r j)) → ℝ) (V j) := (hV' j).fiberBundle
+  have (j : ι) : VectorBundle ℝ (ULift (Fin (r j)) → ℝ) (V j) := (hV' j).vectorBundle
+  have hcard (j : ι) : Fintype.card (ULift (Fin (r j))) = r j := by simp
+  -- The band has the homology of the direct sum, over the pieces on the level `c` of index at most
+  -- `n`, of their twisted homologies shifted by the index; it is finite-dimensional.
+  obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_twistedHomology hn hac hcb
+    (isClosed_Icc.preimage h.contMDiff.continuous).isCompact hcrit hdim g hV' K n
+  let W (j : {j // (∀ s, f (i j s) = c) ∧ Fintype.card (ULift (Fin (r j))) ≤ n}) : ModuleCat K :=
+    twistedHomology (signLocalSystem (ULift (Fin (r j)) → ℝ) (V j) K
+      ((Fintype.card_fin _).trans (finrank_fintype_fun_eq_card ℝ).symm))
+      (n - Fintype.card (ULift (Fin (r j))))
+  have := finite_singularHomology_sublevelPair_of_criticalValue (ModuleCat.of K K) h.contMDiff
+    h.contMDiff.continuous.isProperMap hac hcb hcrit n
+  rw [ModuleCat.finrank_eq_sum_of_iso_sigma (W := W) e]
+  rw [Finset.sum_subtype _
+    (p := fun j ↦ (∀ s, f (i j s) = c) ∧ Fintype.card (ULift (Fin (r j))) ≤ n) fun j ↦ by simp]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  -- Relabelling the frames changes neither the orientation local system nor its homology.
+  rw [finrank_twistedHomology_signLocalSystem_uLift
+    ((subbundleTotalSpaceModelHomeomorph (P j) (ULift (Fin (r j)) → ℝ) (Fin (r j) → ℝ)
+      ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn
+        (g j).toRiemannianMetric)).continuous.congr
+      fun v ↦ subbundleTotalSpaceModelHomeomorph_apply _ _ _ _ v), hcard, twistedBettiNumber_def]
 
 open scoped Classical in
 /-- **A cut of the values of a Morse–Bott function, with twisted coefficients.** Under the
