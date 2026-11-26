@@ -178,7 +178,7 @@ variable {𝕂 : Type*} (𝔸 : Type*) [RCLike 𝕂] [NormedDivisionRing 𝔸] [
 all parameters. -/
 theorem one_le_radius_ordinaryHypergeometricSeries (a b c : 𝕂) :
     1 ≤ (ordinaryHypergeometricSeries 𝔸 a b c).radius := by
-  by_cases h : ∀ k : ℕ, (k : 𝕂) ≠ -a ∧ (k : ℕ) ≠ -b ∧ (k : ℕ) ≠ -c
+  by_cases h : ∀ k : ℕ, (k : 𝕂) ≠ -a ∧ (k : 𝕂) ≠ -b ∧ (k : 𝕂) ≠ -c
   · exact (ordinaryHypergeometricSeries_radius_eq_one 𝔸 a b c h).ge
   · push Not at h
     obtain ⟨k, hk⟩ := h
@@ -466,8 +466,8 @@ theorem hasDerivAt_rpow_mul_one_sub_rpow_deriv_ordinaryHypergeometric (a b c : �
     (hc : ∀ k : ℕ, (k : ℝ) ≠ -c) {x : ℝ} (hx : |x| < 1) (hx0 : x ≠ 0 ∨ 1 ≤ c) :
     HasDerivAt (fun y ↦ y ^ c * (1 - y) ^ (a + b - c + 1) * deriv (₂F₁ a b c) y)
       (a * b * x ^ (c - 1) * (1 - x) ^ (a + b - c) * ₂F₁ a b c x) x := by
-  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := mem_eball_zero_iff.mpr <| by
-    rwa [← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
+  have hx_e : x ∈ Metric.eball (0 : ℝ) 1 := by
+    rwa [← ENNReal.ofReal_one, Metric.eball_ofReal, mem_ball_zero_iff, Real.norm_eq_abs]
   have hf := hasFPowerSeriesOnBall_ordinaryHypergeometric ℝ a b c
   have hd2 := (hf.deriv_ofScalars.analyticAt_of_mem hx_e).differentiableAt.hasDerivAt
   have h1x : 0 < 1 - x := sub_pos.mpr (abs_lt.mp hx).2

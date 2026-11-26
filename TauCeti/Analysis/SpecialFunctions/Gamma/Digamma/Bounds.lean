@@ -49,9 +49,13 @@ theorem norm_digamma_sub_digamma_le_of_one_le_re {s w : ℂ}
   have hsum := hp2.mul_left ‖s - w‖
   have hbd (n : ℕ) : ‖(s - w) / ((w + n) * (s + n))‖ ≤ ‖s - w‖ * (1 / ((n : ℝ) + 1) ^ 2) := by
     have hsn : (n : ℝ) + 1 ≤ ‖s + n‖ := by
-      have := Complex.re_le_norm (s + n); simp at this; linarith
+      have := Complex.re_le_norm (s + n)
+      simp only [add_re, natCast_re] at this
+      linarith
     have hwn : (n : ℝ) + 1 ≤ ‖w + n‖ := by
-      have := Complex.re_le_norm (w + n); simp at this; linarith
+      have := Complex.re_le_norm (w + n)
+      simp only [add_re, natCast_re] at this
+      linarith
     rw [norm_div, norm_mul, mul_one_div]
     exact div_le_div_of_nonneg_left (norm_nonneg _) (by positivity)
       (by nlinarith [n.cast_nonneg (α := ℝ)])
@@ -76,8 +80,8 @@ theorem norm_digamma_add_one_sub_digamma_add_le {z b : ℂ} {R : ℝ}
   have hR : 0 ≤ R := (norm_nonneg b).trans hb
   have hbre : -R ≤ b.re := (neg_le_neg hb).trans (abs_le.mp (abs_re_le_norm b)).1
   have hdig := norm_digamma_add_sub_digamma_add_le (z := z) (a := 1) (b := b)
-    (by simp; linarith) (by simp; linarith)
-  have h1b : ‖(1 : ℂ) - b‖ ≤ 1 + R := (norm_sub_le 1 b).trans (by norm_num; linarith)
+    (by simp only [add_re, one_re]; linarith) (by simp only [add_re]; linarith)
+  have h1b : ‖(1 : ℂ) - b‖ ≤ 1 + R := (norm_sub_le 1 b).trans (by rw [norm_one]; linarith)
   exact hdig.trans (mul_le_mul_of_nonneg_right h1b (by positivity))
 
 end Complex

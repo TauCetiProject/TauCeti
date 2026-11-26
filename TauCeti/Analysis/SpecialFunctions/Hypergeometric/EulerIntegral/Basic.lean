@@ -575,7 +575,7 @@ theorem ordinaryHypergeometric_eq_integral {a b c z : ℝ}
     push_cast
     rw [Complex.ofReal_cpow ht.1, Complex.ofReal_cpow (sub_nonneg.mpr ht.2),
       Complex.ofReal_cpow (by nlinarith [(abs_lt.mp hz).1, (abs_lt.mp hz).2, ht.1, ht.2])]
-    push_cast; rfl
+    push_cast; ring
   push_cast [← Complex.Gamma_ofReal]
   rw [hint, div_eq_mul_inv, mul_assoc, ← Complex.eulerIntegral_def, heul,
     mul_inv_cancel_left₀ (Complex.Gamma_ne_zero_of_re_pos (by simpa using hb.trans hbc))]

@@ -274,9 +274,10 @@ theorem norm_zeroBalancedTail_le {a x : ℂ} (hre : 0 ≤ a.re) (ha : ‖a‖ �
       norm_ordinaryHypergeometricCoefficient_one_le_one ha ha (k + 1)
     have h1 := Complex.norm_digamma_sub_digamma_le_of_one_le_re
       (s := ((k + 1 : ℕ) : ℂ) + 1) (w := ((k + 1 : ℕ) : ℂ) + a)
-      (by simp; linarith [k.cast_nonneg (α := ℝ)]) (by simp; linarith)
+      (by simp only [add_re, natCast_re, Nat.cast_add, Nat.cast_one, one_re]; linarith)
+      (by simp only [add_re, natCast_re, Nat.cast_add, Nat.cast_one, one_re]; linarith)
     rw [add_sub_add_left_eq_sub] at h1
-    have h1a : ‖(1 : ℂ) - a‖ ≤ 2 := (norm_sub_le 1 a).trans (by norm_num; linarith)
+    have h1a : ‖(1 : ℂ) - a‖ ≤ 2 := (norm_sub_le 1 a).trans (by rw [norm_one]; linarith)
     have hdig : ‖Complex.digamma (((k + 1 : ℕ) : ℂ) + 1) -
         Complex.digamma (((k + 1 : ℕ) : ℂ) + a)‖ ≤ 7 / 2 := by
       nlinarith [Real.pi_pos, Real.pi_lt_d2, pow_lt_pow_left₀ Real.pi_lt_d2 Real.pi_pos.le
@@ -351,9 +352,9 @@ theorem analyticOnNhd_zeroBalancedTail_left {x : ℂ} (hx : ‖x‖ < 1) :
       (differentiableAt_const _).sub <| (Complex.analyticAt_digamma hbp).differentiableAt.comp b
         (differentiableAt_id.const_add _))).differentiableWithinAt
 
-private theorem ne_neg_succ_of_neg_one_lt_re {b : ℂ} (hb : -1 < b.re) (m : ℕ) :
-    b ≠ -((m + 1 : ℕ) : ℂ) := fun hm ↦
-  Complex.ne_neg_natCast_of_re_pos (b := b + 1) (by simp; linarith) m (by rw [hm]; push_cast; ring)
+private theorem norm_ofReal_sub_half (a : ℝ) : ‖(a : ℂ) - 1 / 2‖ = |a - 1 / 2| := by
+  rw [show (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ) by push_cast; ring,
+    Complex.norm_real, Real.norm_eq_abs]
 
 /-- Cauchy derivative estimate for `b ↦ zeroBalancedTail b x` on `closedBall (1 / 2 : ℂ) (3 / 8)`
 and `‖x‖ < 1`. -/
@@ -361,6 +362,8 @@ theorem norm_deriv_zeroBalancedTail_le {a x : ℂ}
     (ha : a ∈ closedBall (1 / 2 : ℂ) (3 / 8)) (hx : ‖x‖ < 1) :
     ‖deriv (fun b : ℂ ↦ zeroBalancedTail b x) a‖ ≤
       64 / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) := by
+  have hre_half : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
+  have hnorm_half : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
   have hmem {b : ℂ} (hb : b ∈ closedBall a (1 / 8)) : 0 ≤ b.re ∧ ‖b‖ ≤ 1 := by
     have hb12 : ‖b - (1 / 2 : ℂ)‖ ≤ 1 / 2 :=
       ((norm_add_le (b - a) (a - (1 / 2 : ℂ))).trans_eq' (by ring_nf)).trans
@@ -368,11 +371,12 @@ theorem norm_deriv_zeroBalancedTail_le {a x : ℂ}
     have hbre := (abs_le.mp (abs_re_le_norm (b - (1 / 2 : ℂ)))).1
     have hbn : ‖b‖ ≤ ‖(1 / 2 : ℂ)‖ + ‖b - (1 / 2 : ℂ)‖ :=
       (norm_add_le (1 / 2 : ℂ) (b - (1 / 2 : ℂ))).trans_eq' (by ring_nf)
-    simp only [sub_re] at hbre; norm_num at hbre hbn
+    rw [sub_re, hre_half] at hbre
+    rw [hnorm_half] at hbn
     exact ⟨by linarith, by linarith⟩
   have hdiff : DifferentiableOn ℂ (fun b : ℂ ↦ zeroBalancedTail b x) (closedBall a (1 / 8)) :=
     ((analyticOnNhd_zeroBalancedTail_left hx).mono fun b hb ↦
-      ne_neg_succ_of_neg_one_lt_re (by linarith [(hmem hb).1])).differentiableOn
+      Complex.ne_neg_succ_of_neg_one_lt_re (by linarith [(hmem hb).1])).differentiableOn
   exact (norm_deriv_le_of_forall_mem_sphere_norm_le (by norm_num : (0 : ℝ) < 1 / 8)
     (hdiff.mono closure_ball_subset_closedBall).diffContOnCl
     (C := 8 / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖)) fun _ hb ↦
@@ -386,11 +390,11 @@ theorem norm_deriv_ofReal_zeroBalancedTail_le {a : ℝ}
       64 / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) := by
   have hd : DifferentiableAt ℂ (fun b : ℂ ↦ zeroBalancedTail b x) a :=
     (analyticOnNhd_zeroBalancedTail_left hx a
-      (ne_neg_succ_of_neg_one_lt_re (by simp; linarith))).differentiableAt
+      (Complex.ne_neg_succ_of_neg_one_lt_re
+        (by simp only [Complex.ofReal_re]; linarith))).differentiableAt
   rw [hd.hasDerivAt.comp_ofReal.deriv]
   refine norm_deriv_zeroBalancedTail_le (mem_closedBall_iff_norm.mpr ?_) hx
-  rw [(by push_cast; rfl : (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ)),
-    Complex.norm_real, Real.norm_eq_abs, abs_le]
+  rw [norm_ofReal_sub_half, abs_le]
   exact ⟨by linarith, by linarith⟩
 
 /-- Mean-value Lipschitz bound on `a ↦ zeroBalancedTail a x` across `[1 / 8, 7 / 8]` for
@@ -402,9 +406,10 @@ theorem norm_zeroBalancedTail_sub_le {a₁ a₂ : ℝ}
       64 / (1 - ‖x‖) * |a₁ - a₂| * ‖x‖ * (1 + ‖Complex.log x‖) :=
   ((convex_Icc (1 / 8 : ℝ) (7 / 8)).norm_image_sub_le_of_norm_deriv_le
     (f := fun b : ℝ ↦ zeroBalancedTail b x) (fun b hb ↦
-      (analyticOnNhd_zeroBalancedTail_left hx b
-        (ne_neg_succ_of_neg_one_lt_re
-          (by simp; linarith [hb.1]))).differentiableAt.hasDerivAt.comp_ofReal.differentiableAt)
+      ((analyticOnNhd_zeroBalancedTail_left hx b
+        (Complex.ne_neg_succ_of_neg_one_lt_re
+          (by simp only [Complex.ofReal_re]; linarith [hb.1]))).differentiableAt.hasDerivAt
+        |>.comp_ofReal.differentiableAt))
     (fun _ (hb : _ ∈ Icc (1 / 8 : ℝ) (7 / 8)) ↦
       norm_deriv_ofReal_zeroBalancedTail_le hb.1 hb.2 hx) ha₂ ha₁).trans_eq
     (by rw [Real.norm_eq_abs]; ring)
@@ -414,8 +419,7 @@ private theorem closedBall_real_mem_bounds {a : ℝ} (ha : a ∈ Icc (1 / 4 : �
     b ∈ closedBall (1 / 2 : ℂ) (5 / 16) ∧ 3 / 16 ≤ b.re ∧ ‖b‖ ≤ 1 := by
   have hba : ‖b - a‖ ≤ 1 / 16 := mem_closedBall_iff_norm.mp hb
   have ha12 : ‖(a : ℂ) - 1 / 2‖ ≤ 1 / 4 := by
-    rw [(by push_cast; rfl : (a : ℂ) - 1 / 2 = ((a - 1 / 2 : ℝ) : ℂ)),
-      Complex.norm_real, Real.norm_eq_abs, abs_le]
+    rw [norm_ofReal_sub_half, abs_le]
     exact ⟨by linarith [ha.1], by linarith [ha.2]⟩
   have hbre := (abs_le.mp (abs_re_le_norm (b - a))).1
   simp only [sub_re, ofReal_re] at hbre
@@ -435,13 +439,15 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
         C / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) ∧
       ‖deriv (fun b : ℝ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2 * zeroBalancedTail b x) a‖ ≤
         C / (1 - ‖x‖) * ‖x‖ * (1 + ‖Complex.log x‖) := by
+  have hre_half : (1 / 2 : ℂ).re = 1 / 2 := by norm_num
   have hgamma : AnalyticOnNhd ℂ (fun b : ℂ ↦ Complex.Gamma (2 * b) / Complex.Gamma b ^ 2)
       (closedBall (1 / 2 : ℂ) (5 / 16)) :=
     analyticOnNhd_Gamma_two_mul_div_Gamma_sq.mono fun b hb ↦ by
       have hba := mem_closedBall_iff_norm.mp hb
       have hsub := (abs_le.mp (abs_re_le_norm (b - (1 / 2 : ℂ)))).1
-      simp at hsub
-      exact ne_neg_natCast_of_re_pos (by simp; linarith)
+      rw [sub_re, hre_half] at hsub
+      exact ne_neg_natCast_of_re_pos
+        (by simp only [mul_re, re_ofNat, im_ofNat, zero_mul, sub_zero]; linarith)
   obtain ⟨M, hM⟩ := (isCompact_closedBall (1 / 2 : ℂ) (5 / 16)).exists_bound_of_continuousOn
     hgamma.continuousOn
   let M' := max M 1
@@ -459,7 +465,7 @@ theorem exists_norm_mul_zeroBalancedTail_and_deriv_le :
       (closedBall (a : ℂ) (1 / 16)) :=
     ((hgamma.mono fun _ hb ↦ (closedBall_real_mem_bounds ha hb).1).differentiableOn).mul
       (((analyticOnNhd_zeroBalancedTail_left hx).mono fun b hb ↦
-        ne_neg_succ_of_neg_one_lt_re
+        Complex.ne_neg_succ_of_neg_one_lt_re
           (by linarith [(closedBall_real_mem_bounds ha hb).2.1])).differentiableOn)
   refine ⟨(hbound a (mem_closedBall_self (by norm_num))).trans
     (by have : 0 < 1 - ‖x‖ := sub_pos.mpr hx; gcongr; linarith), ?_⟩
@@ -487,8 +493,7 @@ theorem analyticOnNhd_zeroBalancedSeries_left {x : ℂ} (hx : ‖x‖ < 1) :
     AnalyticOnNhd ℂ (fun a : ℂ ↦ zeroBalancedSeries a x)
       {a : ℂ | ∀ n : ℕ, 2 * a ≠ -(n : ℂ)} := by
   intro a ha
-  have ha' : ∀ m : ℕ, a ≠ -(m : ℂ) := fun m hm ↦
-    ha (2 * m) (by push_cast; linear_combination 2 * hm)
+  have ha' := ne_neg_natCast_of_two_mul_ne ha
   refine ((analyticAt_Gamma_two_mul_div_Gamma_sq ha).mul
     (((analyticAt_const (v := -Complex.log x - 2 * Real.eulerMascheroniConstant)).sub
       ((analyticAt_const (v := (2 : ℂ))).mul (Complex.analyticAt_digamma ha'))).add

@@ -23,6 +23,7 @@ Shifting by `1` shows that `{b : ℂ | ∀ m : ℕ, b ≠ -((m + 1 : ℕ) : ℂ)
 * `Complex.isConnected_ne_neg_natCast`: `{s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)}` is connected.
 * `Complex.isPreconnected_ne_neg_natCast`: `{s : ℂ | ∀ n : ℕ, s ≠ -(n : ℂ)}` is preconnected.
 * `Complex.isOpen_ne_neg_succ`: `{b : ℂ | ∀ m : ℕ, b ≠ -((m + 1 : ℕ) : ℂ)}` is open.
+* `Complex.ne_neg_succ_of_neg_one_lt_re`: a complex number with `-1 < b.re` avoids `-ℕ_{≥1}`.
 -/
 
 public section
@@ -61,5 +62,13 @@ theorem isOpen_ne_neg_succ : IsOpen {b : ℂ | ∀ m : ℕ, b ≠ -((m + 1 : ℕ
   ext b
   exact forall_congr' fun m ↦ not_congr
     ⟨fun h ↦ by rw [h]; push_cast; ring, fun h ↦ by push_cast; linear_combination h⟩
+
+/-- A complex number with `-1 < b.re` is not a negative integer `-1, -2, …`. -/
+theorem ne_neg_succ_of_neg_one_lt_re {b : ℂ} (hb : -1 < b.re) (m : ℕ) :
+    b ≠ -((m + 1 : ℕ) : ℂ) := by
+  intro hm
+  have hre := congrArg re hm
+  simp only [neg_re, Nat.cast_add, Nat.cast_one, add_re, natCast_re, one_re] at hre
+  linarith [m.cast_nonneg (α := ℝ)]
 
 end Complex

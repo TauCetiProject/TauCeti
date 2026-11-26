@@ -321,7 +321,7 @@ private theorem tendsto_log_add_natCast_sub_log (s : ℂ) :
     have hn : (N : ℂ) + 2 ≠ 0 := by
       intro hn
       have h := congrArg Complex.re hn
-      norm_num at h
+      simp only [add_re, natCast_re, re_ofNat, zero_re] at h
       linarith [Nat.cast_nonneg (α := ℝ) N]
     field_simp
     ring
@@ -366,7 +366,8 @@ private theorem gaussTerm_ofReal_re (x : ℝ) (n : ℕ) :
     (1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n)).re = 1 / ((n : ℝ) + 1) - 1 / (x + n) := by
   have h : 1 / ((n : ℂ) + 1) - 1 / ((x : ℂ) + n) =
       ((1 / ((n : ℝ) + 1) - 1 / (x + n) : ℝ) : ℂ) := by
-    push_cast; rfl
+    simp only [Complex.ofReal_sub, Complex.ofReal_div, Complex.ofReal_one, Complex.ofReal_add,
+      Complex.ofReal_natCast]
   rw [h, Complex.ofReal_re]
 
 /-- The paired summands in Gauss' real digamma series are summable at every real `x`. -/
