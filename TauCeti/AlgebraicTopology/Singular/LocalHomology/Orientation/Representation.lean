@@ -223,13 +223,9 @@ functor `SingleObj G ⥤ ModuleCat R`. -/
 @[expose]
 def dualOrientationLine (ρ : Representation ℝ G E) :
     SingleObj G ⥤ ModuleCat.{max u w} R :=
-  SingleObj.functor (X := ModuleCat.of R (Dual R (R ⊗[ℤ] orientationModule E)))
-    { toFun g := .of <| ModuleCat.ofHom (((orientation ρ).baseChange R).dual g)
-      map_one' := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_one, End.one_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_id, Module.End.one_eq_id]
-      map_mul' g h := End.ext <| ModuleCat.hom_ext <| by
-        rw [map_mul, End.mul_asHom, ModuleCat.hom_ofHom, ModuleCat.hom_comp, ModuleCat.hom_ofHom,
-          ModuleCat.hom_ofHom, Module.End.mul_eq_comp] }
+  SingleObj.functor <|
+    (ModuleCat.endRingEquiv (.of R (Dual R (R ⊗[ℤ] orientationModule E)))).symm.toMonoidHom.comp
+      ((orientation ρ).baseChange R).dual
 
 variable (R) in
 /-- The dual orientation line is the dual of the scalar extension of `o_E`. -/
