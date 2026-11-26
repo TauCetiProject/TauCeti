@@ -349,23 +349,20 @@ theorem coordinates_symm_coefficientComparison_sub_mem_coboundaries :
     ((coordinates hF r).symm fun i => coefficientComparison q hq (E i)) -
         ((coordinates hF r).symm fun i => coefficientComparison q hq (E' i)) ∈
       (kernelMap hδ (mapKernelOfMatrix_mem hF r r _)).coboundaries
-        (gradeBy R F fun p => n - μ p) 0 := by
-  simpa only [LinearMap.id_apply] using
-    LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap
-      (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _)) _
-      (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
-      (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
-        hone_mul)
-      (kernelProduct hnQ' (kernelOfMatrix_mem hF r r r _))
-      (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q' hnQ' hQ')
-      (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q' hnQ' hL')
-      _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E' hE' hED')
-      (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q' hnQ' E'
-        hmul_one')
-      LinearMap.id (fun ha => ha) (fun _ => rfl)
-      (fun ha hb => kernelProduct_sub_kernelProduct_mem_coboundaries q hq r hF hμ n D hδ Q Q' hnQ
-        hnQ' hpath ha hb)
-      (by rw [LinearMap.cohomologyMap_id]; exact Function.surjective_id)
+        (gradeBy R F fun p => n - μ p) 0 :=
+  LinearMap.sub_mem_coboundaries_of_mul_sub_mul_mem_coboundaries
+    (kernelProduct hnQ (kernelOfMatrix_mem hF r r r _)) _
+    (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E hE hED)
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_right r q hq hF r hF hμ D hδ Q hnQ E
+      hone_mul)
+    (kernelProduct hnQ' (kernelOfMatrix_mem hF r r r _))
+    (kernelProduct_coefficientComparison_mem_cochain_gradeBy q hq r hF hμ n Q' hnQ' hQ')
+    (kernelMap_kernelProduct_coefficientComparison_self_eq_add q hq r hF hμ n D hδ Q' hnQ' hL')
+    _ (coordinates_symm_coefficientComparison_mem_cocycles_zero q hq r hF hμ n D hδ E' hE' hED')
+    (kernelProduct_coordinates_symm_sub_mem_coboundaries_left r q hq hF r hF hμ D hδ Q' hnQ' E'
+      hmul_one')
+    (fun ha hb => kernelProduct_sub_kernelProduct_mem_coboundaries q hq r hF hμ n D hδ Q Q' hnQ
+      hnQ' hpath ha hb)
 
 variable
   (hassoc : ∃ K : ι → ι → ι → ι → NovikovSeries R G ωG,

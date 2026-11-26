@@ -39,9 +39,10 @@ degree by the induced map `LinearMap.cohomologyMap`. If the induced map is bijec
 degree, it is an isomorphism of `R`-algebras (`LinearMap.cohomologyAlgEquiv`), and then the
 condition on the units is not needed: it is automatic once the induced map is onto in degree zero
 (`LinearMap.sub_mem_coboundaries_of_surjective_cohomologyMap`), since a multiplicative map onto
-the cohomology of a unital product sends the unit to the unit. In particular, two such products
-on the same module which agree up to coboundaries on cocycles give the same graded ring structure,
-whatever their units (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`); the graded ring
+the cohomology of a unital product sends the unit to the unit. In particular, the units of two
+such products on the same module which agree up to coboundaries on cocycles differ by a coboundary
+(`LinearMap.sub_mem_coboundaries_of_mul_sub_mul_mem_coboundaries`), and the two products give the
+same graded ring structure (`LinearMap.cohomologyGRing_eq_of_sub_mem_coboundaries`); the graded ring
 structure depends only on the product on cohomology and the unit class
 (`LinearMap.cohomologyGRing_congr`), since it is built by `TauCeti.DirectSum.gRingOfMul` from
 these alone.
@@ -455,6 +456,17 @@ variable (μ : M →ₗ[R] M →ₗ[R] M)
   (hsub : ∀ {i j : ℤ} {a b : M}, a ∈ D.cocycles G i → b ∈ D.cocycles G j →
     μ a b - ν a b ∈ D.coboundaries G (i + j))
 
+include he hμone_mul hνdeg hνL he' hνmul_one hsub in
+/-- **Products agreeing up to coboundaries have cohomologous units.** Let `μ` and `ν` be products
+on the same module such that `μ a b - ν a b` is a coboundary for all cocycles `a` and `b`. If `e`
+is a left unit of `μ` and `e'` a right unit of `ν` up to coboundaries, then `e - e'` is a
+coboundary: `[e] = [e] [e'] = [e']`. -/
+theorem sub_mem_coboundaries_of_mul_sub_mul_mem_coboundaries : e - e' ∈ D.coboundaries G 0 := by
+  -- The identity is multiplicative and onto, so it sends the unit `e` to the unit `e'`.
+  simpa only [LinearMap.id_apply] using sub_mem_coboundaries_of_surjective_cohomologyMap μ e he
+    hμone_mul ν hνdeg hνL e' he' hνmul_one LinearMap.id (fun ha => ha) (fun _ => rfl)
+    (fun ha hb => hsub ha hb) (by rw [cohomologyMap_id]; exact Function.surjective_id)
+
 /-- **The cohomology ring is determined by its product and unit.** If the products `μ` and `ν`
 induce the same product on cohomology, and the units `e` and `e'` have the same class, then the
 graded ring structures `LinearMap.cohomologyGRing` of `μ` and `ν` are equal. -/
@@ -481,13 +493,10 @@ theorem cohomologyGRing_eq_of_sub_mem_coboundaries :
       rw [cohomologyMul_eq_cohomologyProduct, cohomologyMul_eq_cohomologyProduct]
       exact cohomologyProduct_eq_of_sub_mem_coboundaries _ _ fun ha hb => by
         simpa only [add_zero] using hsub ha hb
-  -- The identity is multiplicative and onto, so it sends the unit `e` to the unit `e'`.
   have hone :
       (Submodule.Quotient.mk ⟨e, he⟩ : D.cohomology G 0) = Submodule.Quotient.mk ⟨e', he'⟩ :=
-    cohomology_mk_eq_mk_iff.2 <| by
-      simpa only [LinearMap.id_apply] using sub_mem_coboundaries_of_surjective_cohomologyMap μ e he
-        hμone_mul ν hνdeg hνL e' he' hνmul_one LinearMap.id (fun ha => ha) (fun _ => rfl)
-        (fun ha hb => hsub ha hb) (by rw [cohomologyMap_id]; exact Function.surjective_id)
+    cohomology_mk_eq_mk_iff.2 <| sub_mem_coboundaries_of_mul_sub_mul_mem_coboundaries μ e he
+      hμone_mul ν hνdeg hνL e' he' hνmul_one hsub
   exact cohomologyGRing_congr μ hμdeg hμL e he hμone_mul hμmul_one hμassoc ν hνdeg hνL e' he'
     hνone_mul hνmul_one hνassoc hmul hone
 
