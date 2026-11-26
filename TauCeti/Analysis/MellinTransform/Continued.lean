@@ -89,7 +89,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 /-- The function `t ↦ ∑_{k<n} t^{w_k} c_k` is locally integrable on `(0, ∞)`. -/
-private theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
+theorem locallyIntegrableOn_sum_cpow_smul (w : ℕ → ℂ) (c : ℕ → E) (n : ℕ) :
     LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Finset.range n, (t : ℂ) ^ w k • c k) (Ioi 0) :=
   ContinuousOn.locallyIntegrableOn (continuousOn_finsetSum _ fun _ _ _ ht ↦
     ((continuousAt_ofReal_cpow_const _ _ (Or.inr (ne_of_gt ht))).smul
