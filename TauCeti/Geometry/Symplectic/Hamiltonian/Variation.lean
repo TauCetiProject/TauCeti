@@ -85,6 +85,16 @@ theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H
     ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
 
+/-- Along a `C^n` path `x`, the linearized Hamiltonian vector fields `S_t = dX_{H_t}(x(t))` of a
+jointly `C^(n + 2)` Hamiltonian are `C^n` in `t`. -/
+theorem contDiff_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {n : WithTop ℕ∞}
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ (n + 2) (Function.uncurry H)) {x : ℝ → V}
+    (hx : ContDiff ℝ n x) :
+    ContDiff ℝ n fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+  ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := n + 1)
+      (by rwa [add_assoc, one_add_one_eq_two])) hx le_rfl
+
 /-- An orbit `x' = X_{H_t}(x)` of a jointly `C^(n + 1)` time-dependent Hamiltonian `H` is
 `C^(n + 1)`: its right-hand side `X_{H_t}(x)` is jointly `C^n`. -/
 theorem contDiff_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {n : ℕ∞}

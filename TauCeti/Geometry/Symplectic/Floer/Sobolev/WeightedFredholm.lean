@@ -15,7 +15,7 @@ import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
 # The weighted linearized Floer operator is Fredholm for every compatible structure
@@ -34,7 +34,7 @@ For the complex structure `i` this is
 
 For the unweighted operator, deforming the structures from `i` to `J` keeps the operator Fredholm
 (`TauCeti.SymplecticForm.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible`). With a
-weight this argument does not apply: the spectrum of the asymptotic operator `-J±_t (∂t - S±_t)`
+weight this argument does not apply: the spectrum of the asymptotic operator `J±_t (∂t - S±_t)`
 moves with `J±`, so an eigenvalue may cross `δ±` along the deformation, where the semi-Fredholm
 estimate fails. Instead the operator is read in unitary frames.
 
@@ -85,78 +85,6 @@ open StripSobolev (stripMeasure frameJetCoeff)
 
 section Helpers
 
-/-- A continuous function on the cylinder, of period one in `t`, which far out on each end does not
-depend on `s`, is bounded. -/
-private theorem exists_forall_norm_le_of_eventually_eq {E : Type*} [NormedAddCommGroup E]
-    {f : ℝ × ℝ → E} (hf : Continuous f) (hper : ∀ s t, f (s, t + 1) = f (s, t)) {gm gp : ℝ → E}
-    (hm : ∀ᶠ s in atBot, ∀ t, f (s, t) = gm t) (hp : ∀ᶠ s in atTop, ∀ t, f (s, t) = gp t) :
-    ∃ C, ∀ z, ‖f z‖ ≤ C := by
-  have hlim {l : Filter ℝ} {g : ℝ → E} (h : ∀ᶠ s in l, ∀ t, f (s, t) = g t) :
-      TendstoUniformlyOn (fun s t ↦ f (s, t)) g l (Icc 0 1) :=
-    (tendstoUniformlyOn_const g l _).congr (h.mono fun s hs t _ ↦ (hs t).symm)
-  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hf.continuousOn
-    (hlim hm) (hlim hp)
-  refine ⟨C, fun ⟨s, t⟩ ↦ ?_⟩
-  -- Reduce `t` modulo `1` to `[0, 1)`.
-  have h := (show Periodic (fun t ↦ f (s, t)) 1 from hper s).sub_zsmul_eq
-    (x := t) (toIcoDiv zero_lt_one 0 t)
-  rw [self_sub_toIcoDiv_zsmul] at h
-  rw [← h]
-  have ht := toIcoMod_mem_Ico zero_lt_one 0 t
-  rw [zero_add] at ht
-  exact hC s _ (Ico_subset_Icc_self ht)
-
-/-- If `f (s, t) = g t` for `s ≤ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
-`s < a`. -/
-private theorem eventuallyEq_comp_snd_of_lt {E : Type*} {f : ℝ × ℝ → E} {g : ℝ → E} {a : ℝ}
-    (h : ∀ s ≤ a, ∀ t, f (s, t) = g t) {z : ℝ × ℝ} (hz : z.1 < a) :
-    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
-  Filter.eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds
-    (show z ∈ {w : ℝ × ℝ | w.1 < a} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
-
-/-- If `f (s, t) = g t` for `s ≥ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
-`s > a`. -/
-private theorem eventuallyEq_comp_snd_of_gt {E : Type*} {f : ℝ × ℝ → E} {g : ℝ → E} {a : ℝ}
-    (h : ∀ s, a ≤ s → ∀ t, f (s, t) = g t) {z : ℝ × ℝ} (hz : a < z.1) :
-    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
-  Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds
-    (show z ∈ {w : ℝ × ℝ | a < w.1} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
-
-/-- A `C²` family `Φ` of invertible maps on the cylinder, of period one in `t`, which for `s ≤ -R`
-and for `s ≥ R` does not depend on `s`, is bounded together with its derivative and its inverses. -/
-private theorem exists_forall_norm_le_of_eq_comp_snd {V W : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [CompleteSpace V] [NormedAddCommGroup W] [NormedSpace ℝ W]
-    {Φ : ℝ × ℝ → V →L[ℝ] W} (hΦ : ContDiff ℝ 2 Φ) (hΦi : ∀ z, (Φ z).IsInvertible)
-    (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t)) {R : ℝ} (hm : ∀ s ≤ -R, ∀ t, Φ (s, t) = Φ (-R, t))
-    (hp : ∀ s, R ≤ s → ∀ t, Φ (s, t) = Φ (R, t)) :
-    ∃ B B' D : ℝ, (∀ z, ‖Φ z‖ ≤ B) ∧ (∀ z, ‖fderiv ℝ Φ z‖ ≤ B') ∧
-      ∀ z, ‖(Φ z).inverse‖ ≤ D := by
-  have hevm := eventually_atBot.2 ⟨-R, fun s hs t ↦ hm s hs t⟩
-  have hevp := eventually_atTop.2 ⟨R, fun s hs t ↦ hp s hs t⟩
-  obtain ⟨B, hB⟩ := exists_forall_norm_le_of_eventually_eq hΦ.continuous hΦp hevm hevp
-  obtain ⟨D, hD⟩ := exists_forall_norm_le_of_eventually_eq (hΦ.clm_inverse hΦi).continuous
-    (gm := fun t ↦ (Φ (-R, t)).inverse) (gp := fun t ↦ (Φ (R, t)).inverse)
-    (fun s t ↦ by simp only [hΦp]) (hevm.mono fun s hs t ↦ by simp only [hs t])
-    (hevp.mono fun s hs t ↦ by simp only [hs t])
-  -- Far out, `dΦ` is the derivative of a function of `t` alone; it has period one in `t`.
-  have hd (b : ℝ) (z : ℝ × ℝ) (hz : Φ =ᶠ[𝓝 z] fun w ↦ Φ (b, w.2)) :
-      fderiv ℝ Φ z = fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (b, w.2)) (0, z.2) := by
-    rw [hz.fderiv_eq, ← Function.comp_def (fun t ↦ Φ (b, t)) Prod.snd, fderiv_comp_snd,
-      fderiv_comp_snd]
-  have hshift : (fun z : ℝ × ℝ ↦ Φ (z + (0, 1))) = Φ := funext fun ⟨s, t⟩ ↦ by
-    simpa using hΦp s t
-  obtain ⟨B', hB'⟩ := exists_forall_norm_le_of_eventually_eq (hΦ.continuous_fderiv (by norm_num))
-    (gm := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (-R, w.2)) (0, t))
-    (gp := fun t ↦ fderiv ℝ (fun w : ℝ × ℝ ↦ Φ (R, w.2)) (0, t))
-    (fun s t ↦ by
-      calc fderiv ℝ Φ (s, t + 1) = fderiv ℝ Φ ((s, t) + (0, 1)) := by simp
-        _ = fderiv ℝ Φ (s, t) := by rw [← fderiv_comp_add_right, hshift])
-    (eventually_atBot.2 ⟨-R - 1, fun s hs t ↦
-      hd (-R) (s, t) (eventuallyEq_comp_snd_of_lt hm (by simp only; linarith))⟩)
-    (eventually_atTop.2 ⟨R + 1, fun s hs t ↦
-      hd R (s, t) (eventuallyEq_comp_snd_of_gt hp (by simp only; linarith))⟩)
-  exact ⟨B, B', D, hB, hB', hD⟩
-
 /-- A map of the cylinder which, for `s` eventually along `l`, agrees near `(s, t)` with the
 stationary cylinder over an orbit `x` of `H`, converges uniformly to `x` along `l`, with slice
 defect `∂t u - X_{H_t}(u)` tending uniformly to zero. -/
@@ -174,22 +102,6 @@ private theorem tendstoUniformlyOn_and_sliceDefect_of_eventuallyEq {V : Type*}
   rw [Pi.zero_apply, eq_comm, sliceDefect_def, (hs t).fderiv_eq, (hs t).eq_of_nhds,
     ← Function.comp_def x Prod.snd, fderiv_comp_snd]
   simp [(hx t).hasFDerivAt.fderiv]
-
-/-- Two `C²` loops `x₋`, `x₊` of period one are the ends of a `C²` map of the cylinder of period
-one in `t`, equal to `x₋` for `s ≤ -a` and to `x₊` for `s ≥ a`. -/
-private theorem exists_contDiff_eq_comp_snd {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {xm xp : ℝ → E} (hxm : ContDiff ℝ 2 xm) (hxp : ContDiff ℝ 2 xp) (hxmp : Periodic xm 1)
-    (hxpp : Periodic xp 1) {a : ℝ} (ha : 0 < a) :
-    ∃ u : ℝ × ℝ → E, ContDiff ℝ 2 u ∧ (∀ s t, u (s, t + 1) = u (s, t)) ∧
-      (∀ s ≤ -a, ∀ t, u (s, t) = xm t) ∧ ∀ s, a ≤ s → ∀ t, u (s, t) = xp t := by
-  refine ⟨fun z ↦ xm z.2 + Real.smoothTransition ((z.1 + a) / (2 * a)) • (xp z.2 - xm z.2),
-    (hxm.comp contDiff_snd).add ((Real.smoothTransition.contDiff.comp
-      ((contDiff_fst.add contDiff_const).div_const _)).smul ((hxp.sub hxm).comp contDiff_snd)),
-    fun s t ↦ by simp only [hxmp t, hxpp t], fun s hs t ↦ ?_, fun s hs t ↦ ?_⟩ <;> dsimp only
-  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
-      (by linarith)), zero_smul, add_zero]
-  · rw [Real.smoothTransition.one_of_one_le ((one_le_div (by linarith)).2 (by linarith)),
-      one_smul, add_sub_cancel]
 
 end Helpers
 
@@ -220,13 +132,9 @@ private theorem exists_loop_isInvertible_stationarySobolevOperator (ω : Symplec
         fun t : ℝ ↦ T t).IsInvertible := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   -- `S_t = dX_{H_t}(x(t))` is a `C¹` one-periodic loop of infinitesimally symplectic maps.
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
-    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
-  have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
-    funext hS
-  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
-    rw [← hSv]
-    simp only [AddCircle.coe_add_period]
+  have hS₁ := ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH
+    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx)
+  have hSp := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   -- `J_t = Φ_t i Φ_t⁻¹` is a `C¹` one-periodic loop of `ω`-compatible structures.
   have hJec (t : ℝ) : ω.Compatible (Je t) :=
     ω.compatible_of_isInvertible_of_forall_eq_im_inner (hΦi t) (hΦω t) (hΦJ t)
@@ -254,7 +162,7 @@ private theorem exists_loop_isInvertible_stationarySobolevOperator (ω : Symplec
       LinearMap.smul_apply, LinearMap.coe_toContinuousLinearMap', smul_eq_mul]
     linear_combination h₁ - δ * h₂
   obtain ⟨T, hT, hT₁, hTω, hTdet⟩ := ω.exists_loop_eq_trivializedCoeff hΦ hΦp hΦi hΦω
-    ((hSv ▸ hS₁).sub (hJe.const_smul δ)) (hSp.sub (hJep'.smul δ)) hSω hdet
+    (hS₁.sub (hJe.const_smul δ)) (hSp.sub (hJep'.smul δ)) hSω hdet
   exact ⟨T, hT, ⟨Floer.stationarySobolevEquiv hT₁ hTω hTdet, Floer.coe_stationarySobolevEquiv ..⟩⟩
 
 end EndModel
@@ -299,7 +207,9 @@ private theorem floerLinearizationCoeff_sub_smul_eq_of_eventuallyEq (ω : Symple
     simpa [floerJetCoeff_apply, Floer.stationaryJetCoeff_apply] using h
   refine ContinuousLinearMap.ext fun v ↦ ?_
   rw [hcoeff, sub_apply, hstat, hc]
-  simp
+  simp only [smul_apply, id_apply, comp_sub, comp_smulₛₗ, RingHom.id_apply, neg_sub, sub_apply,
+    ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
+    AlmostComplexStructure.apply_apply, smul_neg]
   abel
 
 end Point
@@ -348,16 +258,6 @@ end FramePoint
 section Core
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
-
-/-- The coefficient field of `D_u - c(s)` is that of `∂s + J(z, u z) ∂t + (A(z) - c(s))`. -/
-private theorem floerJetCoeff_sub_smul_fst_eq_firstOrderJetCoeff (ω : SymplecticForm F)
-    (J : ℝ × ℝ → F → F →L[ℝ] F) (Ks Kt : ℝ × ℝ → F → ℝ) (u : ℝ × ℝ → F) (r : ℝ) (z : ℝ × ℝ) :
-    ω.floerJetCoeff J Ks Kt u z - r • fst ℝ F (F × F) = firstOrderJetCoeff (J z (u z))
-      (ω.floerLinearizationCoeff J Ks Kt u z - r • ContinuousLinearMap.id ℝ F) := by
-  refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp only [sub_apply, smul_apply, floerJetCoeff_apply, coe_fst', firstOrderJetCoeff_apply,
-    coe_id', id_eq]
-  abel
 
 /-- **Unitary frames in a complex inner product space.** When `ω = Im ⟪·, ·⟫`, every
 `ω`-compatible structure `J` has a frame `G J`, invertible, symplectic from `Im ⟪·, ·⟫` to `ω` and

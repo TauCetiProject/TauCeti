@@ -504,8 +504,7 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
         (ω.floerWeightedSobolevOperator (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks
           Kt u c).index := by
   have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  have hR := le_abs_self R
-  have hR' : -|R| ≤ -R := by linarith
+  obtain ⟨hR, hR'⟩ : R ≤ |R| ∧ -|R| ≤ -R := ⟨le_abs_self R, neg_le_neg (le_abs_self R)⟩
   -- The data of the ends are the data of the cylinder at `s = ∓|R|`.
   obtain ⟨hJm, hHm, hJxm⟩ := endData_of_eq ω (-|R|)
     (fun t ↦ hcyl.almostComplex_eq_of_le_neg (_, t) hR')
@@ -552,12 +551,11 @@ private theorem isFredholm_and_index_eq_of_cylindrical (ω : SymplecticForm V)
     exact tendsto_eLpNorm_floerJetCoeff_add_smul_sub ω hcyl hJ hKs hKt hu hu' (B := max C C')
       (fun s t ht ↦ ⟨(hC s t ht).1.trans (le_max_left _ _), (hC' s t ht).1.trans (le_max_right _ _),
         (hC s t ht).2.trans (le_max_left _ _), (hC' s t ht).2.trans (le_max_right _ _)⟩) μ
-  have h₀ : u + (0 : ℝ) • (u' - u) = u := by simp
-  have h₁ : u + (1 : ℝ) • (u' - u) = u' := by simp
   have key := isFredholm_and_index_eq_of_hasSemiFredholmEstimate isPreconnected_univ
     (fun μ _ ↦ hM μ) hcont (fun μ _ ↦ hest μ) (mem_univ 0) (mem_univ 1)
-    (by simpa only [M, h₀, ← floerWeightedSobolevOperator_def] using h)
-  simpa only [M, h₀, h₁, ← floerWeightedSobolevOperator_def] using key
+    (by simpa only [M, zero_smul, add_zero, ← floerWeightedSobolevOperator_def] using h)
+  simpa only [M, zero_smul, add_zero, one_smul, add_sub_cancel, ← floerWeightedSobolevOperator_def]
+    using key
 
 /-- The Fredholm property and the index pass from `D_u` to `D_{u'}`: the weight slope `0` in
 `isFredholm_and_index_eq_of_cylindrical`, at which the return maps of nondegenerate orbits are

@@ -1032,6 +1032,13 @@ theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
   by_contra hne
   exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
 
+/-- Along a `p`-periodic path `x`, the linearized Hamiltonian vector fields
+`S_t = dX_{H_t}(x(t))` of a `p`-periodic time-dependent Hamiltonian `H` are `p`-periodic in `t`. -/
+theorem periodic_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H : ℝ → V → ℝ}
+    {p : ℝ} (hHp : Periodic H p) {x : ℝ → V} (hxp : Periodic x p) :
+    Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) p :=
+  fun t ↦ by simp only [hHp t, hxp t]
+
 /-- **The linearized Hamiltonian vector field along a periodic loop is a loop.** Along a
 one-periodic `C¹` loop `x`, for instance a one-periodic orbit, and for a one-periodic, jointly `C³`
 time-dependent Hamiltonian `H`, the linearized Hamiltonian vector field `S_t = dX_{H_t}(x(t))`
@@ -1042,12 +1049,8 @@ theorem exists_loop_eq_fderiv_hamiltonianVectorField (ω : SymplecticForm V) {H 
     ∃ S : C(AddCircle (1 : ℝ), V →L[ℝ] V),
       (∀ t : ℝ, S t = fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
         ContDiff ℝ 1 fun t : ℝ ↦ S t := by
-  set f : ℝ → V →L[ℝ] V := fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)
-  have hf : ContDiff ℝ 1 f :=
-    ContDiff.fderiv (f := fun t ↦ ω.hamiltonianVectorField (H t))
-      (ω.contDiff_hamiltonianVectorField_uncurry (n := 2) (hH.of_le (by norm_num))) hx
-      (by norm_num)
-  have hper : Periodic f 1 := fun t ↦ by simp only [f, hHp t, hxp t]
+  have hf := ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH hx
+  have hper := ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp
   refine ⟨⟨hper.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hf.continuous⟩,
     fun t ↦ hper.lift_coe t, ?_⟩
   simpa only [ContinuousMap.coe_mk, hper.lift_coe] using hf

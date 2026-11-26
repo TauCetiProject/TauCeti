@@ -130,14 +130,10 @@ private theorem exists_loop_eq_trivializedCoeff_of_isNondegenerateFixedPt
       LinearMap.det ((1 - dysonSeriesLeft (fun t : ℝ ↦ S t) 1 : F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0 := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
-    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
-  have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
-    funext hS
-  have hSvp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
-    rw [← hSv]
-    simp only [AddCircle.coe_add_period]
-  exact ω.exists_loop_eq_trivializedCoeff hΦ hΦp hΦi hΦω (hSv ▸ hS₁) hSvp
+  exact ω.exists_loop_eq_trivializedCoeff hΦ hΦp hΦi hΦω
+    (ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH
+      (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx))
+    (ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp)
     (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
       (hH₂.comp (contDiff_prodMk_right t)).contDiffAt)
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH₂ hx hnd)
