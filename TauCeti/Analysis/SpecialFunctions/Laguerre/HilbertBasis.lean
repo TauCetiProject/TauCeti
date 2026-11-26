@@ -9,8 +9,10 @@ public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import Mathlib.MeasureTheory.Function.L2Space
 public import TauCeti.Analysis.SpecialFunctions.Laguerre.Measure
 public import TauCeti.RingTheory.Polynomial.Laguerre.Basic
+import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
 import TauCeti.Analysis.InnerProductSpace.PolynomialCompleteness
 import TauCeti.Analysis.SpecialFunctions.Laguerre.Orthogonality
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Hilbert bases from the Laguerre polynomials
@@ -19,10 +21,13 @@ For `α > -1` the Laguerre polynomials normalized by `√(Γ(n + α + 1) / n!)` 
 of `L²(laguerreMeasure α)`. Multiplying these polynomials by `x ^ (α / 2) * exp (-x / 2)` gives
 the Laguerre functions, a Hilbert basis for Lebesgue measure on `(0, ∞)`.
 
-Completeness follows from the exact degrees and a finite exponential moment by
-`TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot`. The weighted and unweighted bases use
-`TauCeti.hilbertBasisOfWeightedMeasure` and `TauCeti.hilbertBasisOfOrthogonalSystem`, respectively.
-The Laguerre weight and squared norms are those of DLMF Table 18.3.1.
+Over any `RCLike` scalar field, `Polynomial.exists_hilbertBasis_laguerreMeasure` and
+`Polynomial.exists_hilbertBasis_laguerreFunction` identify the basis vectors by these formulas
+almost everywhere for the Laguerre measure and for Lebesgue measure on `(0, ∞)`, respectively.
+
+The weighted basis specializes `TauCeti.hilbertBasisOfWeightedMeasure` and
+`TauCeti.orthogonal_span_range_bareNormalizedLp_eq_bot`. The Lebesgue basis is its image under
+`TauCeti.weightL2Isometry`. The Laguerre weight and squared norms are those of DLMF Table 18.3.1.
 -/
 
 public section
@@ -33,39 +38,30 @@ namespace Polynomial
 
 variable {α : ℝ} {𝕜 : Type*} [RCLike 𝕜]
 
-private theorem laguerre_normSq_pos (hα : -1 < α) (n : ℕ) :
-    0 < Gamma (n + α + 1) / n.factorial :=
-  div_pos (Gamma_pos_of_pos (by linarith [Nat.cast_nonneg (α := ℝ) n])) (by positivity)
-
-private theorem laguerreWeight_exp_moment (hα : -1 < α) :
-    ∃ a : ℝ, 0 < a ∧ Integrable (fun x : ℝ => exp (a * |x|))
-      ((volume.restrict (Ioi 0)).withDensity fun x => ENNReal.ofReal (x ^ α * exp (-x))) := by
-  rw [← laguerreMeasure_def]
-  exact ⟨1 / 2, by norm_num, integrable_exp_mul_abs_laguerreMeasure hα (by norm_num)⟩
-
-private theorem integral_laguerre_mul_laguerre_mul_weight (hα : -1 < α) (m n : ℕ) :
-    (∫ x in Ioi 0, (laguerre α m).eval x * (laguerre α n).eval x * (x ^ α * exp (-x))) =
-      if m = n then Gamma (n + α + 1) / n.factorial else 0 := by
-  simpa only [integral_laguerreMeasure, smul_eq_mul, mul_comm (_ ^ α * exp _)] using
-    integral_laguerre_mul_laguerre_laguerreMeasure hα m n
-
 /-- For `-1 < α`, the Laguerre polynomials divided by `√(Γ(n + α + 1) / n!)` form a Hilbert
 basis of `L²` for the Laguerre measure. -/
 theorem exists_hilbertBasis_laguerreMeasure (hα : -1 < α) :
     ∃ b : HilbertBasis ℕ 𝕜 (Lp 𝕜 2 (laguerreMeasure α)), ∀ n,
       ⇑(b n) =ᵐ[laguerreMeasure α] fun x =>
         algebraMap ℝ 𝕜 ((laguerre α n).eval x / sqrt (Gamma (n + α + 1) / n.factorial)) := by
-  rw [laguerreMeasure_def]
+  have hexp : ∃ a : ℝ, 0 < a ∧ Integrable (fun x : ℝ => exp (a * |x|)) (laguerreMeasure α) :=
+    ⟨1 / 2, by norm_num, integrable_exp_mul_abs_laguerreMeasure hα (by norm_num)⟩
+  rw [laguerreMeasure_def] at hexp ⊢
   let w (x : ℝ) := x ^ α * exp (-x)
   let c (n : ℕ) := Gamma (n + α + 1) / n.factorial
   let f (n : ℕ) (x : ℝ) := (laguerre α n).eval x
   have hw := (ae_pos_laguerreWeight α).mono fun _ hx => hx.le
   have hm := aemeasurable_laguerreWeight α
-  have hmem := memLp_two_bareNormalized (𝕜 := 𝕜) (laguerreWeight_exp_moment hα) (laguerre α) c
+  have hc (n : ℕ) : 0 < c n :=
+    div_pos (Gamma_pos_of_pos (by linarith [Nat.cast_nonneg (α := ℝ) n])) (by positivity)
+  have horth (m n : ℕ) :
+      (∫ x in Ioi 0, f m x * f n x * w x) = if m = n then c n else 0 := by
+    simpa only [f, w, c, integral_laguerreMeasure, smul_eq_mul, mul_comm (_ ^ α * exp _)] using
+      integral_laguerre_mul_laguerre_laguerreMeasure hα m n
+  have hmem := memLp_two_bareNormalized (𝕜 := 𝕜) hexp (laguerre α) c
   have hcomplete := orthogonal_span_range_bareNormalizedLp_eq_bot (𝕜 := 𝕜) (laguerre α) w c
-    (degree_laguerre α) (laguerre_normSq_pos hα) (laguerreWeight_exp_moment hα) hmem
-  refine ⟨hilbertBasisOfWeightedMeasure f w c hw hm (laguerre_normSq_pos hα)
-    (integral_laguerre_mul_laguerre_mul_weight hα) hmem hcomplete, fun n => ?_⟩
+    (degree_laguerre α) hc hexp hmem
+  refine ⟨hilbertBasisOfWeightedMeasure f w c hw hm hc horth hmem hcomplete, fun n => ?_⟩
   rw [coe_hilbertBasisOfWeightedMeasure]
   exact coeFn_bareNormalizedLp f w c hmem n
 
@@ -77,22 +73,20 @@ theorem exists_hilbertBasis_laguerreFunction (hα : -1 < α) :
       ⇑(b n) =ᵐ[volume.restrict (Ioi (0 : ℝ))] fun x =>
         algebraMap ℝ 𝕜 ((laguerre α n).eval x * x ^ (α / 2) * exp (-x / 2) /
           sqrt (Gamma (n + α + 1) / n.factorial)) := by
-  let w (x : ℝ) := x ^ α * exp (-x)
-  let c (n : ℕ) := Gamma (n + α + 1) / n.factorial
-  let f (n : ℕ) (x : ℝ) := (laguerre α n).eval x
+  have hBasis := exists_hilbertBasis_laguerreMeasure (𝕜 := 𝕜) hα
+  rw [laguerreMeasure_def] at hBasis
+  obtain ⟨b, hb⟩ := hBasis
   have hw := ae_pos_laguerreWeight α
   have hm := aemeasurable_laguerreWeight α
-  have hmem := memLp_two_bareNormalized (𝕜 := 𝕜) (laguerreWeight_exp_moment hα) (laguerre α) c
-  have hcomplete := orthogonal_span_range_bareNormalizedLp_eq_bot (𝕜 := 𝕜) (laguerre α) w c
-    (degree_laguerre α) (laguerre_normSq_pos hα) (laguerreWeight_exp_moment hα) hmem
-  refine ⟨hilbertBasisOfOrthogonalSystem f w c hw hm (laguerre_normSq_pos hα)
-    (integral_laguerre_mul_laguerre_mul_weight hα) hmem hcomplete, fun n => ?_⟩
-  refine (coeFn_hilbertBasisOfOrthogonalSystem f w c hw hm (laguerre_normSq_pos hα)
-    (integral_laguerre_mul_laguerre_mul_weight hα) hmem hcomplete n).trans ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with x (hx : 0 < x)
+  refine ⟨b.mapₗᵢ (weightL2Isometry 𝕜 _ _ hw hm), fun n => ?_⟩
+  rw [HilbertBasis.mapₗᵢ_apply]
+  have hac := absolutelyContinuous_withDensity_ofReal hm hw
+  filter_upwards [coeFn_weightL2Isometry 𝕜 _ _ hw hm (b n), (hb n).filter_mono hac.ae_le,
+    ae_restrict_mem measurableSet_Ioi] with x hImage hVector (hx : 0 < x)
   have hs : sqrt (x ^ α) = x ^ (α / 2) := by
     rw [sqrt_eq_rpow, ← rpow_mul hx.le, one_div, div_eq_mul_inv]
-  dsimp only [f, w, c]
-  rw [sqrt_mul (rpow_nonneg hx.le α), hs, ← exp_half, mul_assoc]
+  rw [hImage, hVector, Algebra.smul_def, ← map_mul, sqrt_mul (rpow_nonneg hx.le α), hs, ← exp_half]
+  congr 1
+  ring
 
 end Polynomial
