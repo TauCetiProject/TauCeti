@@ -27,7 +27,7 @@ converging in norm, `τ(xᵢ) → τ(x)` (`TauCeti.IsTrace.tendsto_comp_of_monot
 Remarque 2, p. 225): the positive cone is closed, so `xᵢ ≤ x` and `τ(xᵢ) ≤ τ(x)` by monotonicity,
 while lower semicontinuity at `x` gives the reverse inequality for the supremum. The map
 `x ↦ τ(x⋆x)` is lower semicontinuous on all of `B`
-(`TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`), as the composition of `τ` with the
+(`TauCeti.lowerSemicontinuous_star_mul_self`), as the composition of `τ` with the
 norm-continuous map `x ↦ x⋆x` into `B₊`.
 
 ## Main definitions
@@ -39,7 +39,7 @@ norm-continuous map `x ↦ x⋆x` into `B₊`.
 
 * `TauCeti.IsTrace.iSup_eq_of_monotone`, `TauCeti.IsTrace.tendsto_comp_of_monotone`: continuity
   along increasing nets of positive elements of a lower semicontinuous trace.
-* `TauCeti.IsTrace.lowerSemicontinuous_star_mul_self`: `x ↦ τ(x⋆x)` is lower semicontinuous.
+* `TauCeti.lowerSemicontinuous_star_mul_self`: `x ↦ τ(x⋆x)` is lower semicontinuous.
 * `TauCeti.IsTrace.isSemifinite_of_lt_top`, `TauCeti.isDenselyDefined_of_lt_top`: traces finite
   on `B₊` are semifinite and densely defined.
 
@@ -84,6 +84,13 @@ omit [StarOrderedRing B] in
 theorem isDenselyDefined_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) : IsDenselyDefined τ :=
   fun x hx ↦ subset_closure (mem_finitePart.2 ⟨hx, hfin x hx⟩)
 
+/-- If `τ` is lower semicontinuous on `B₊`, then `x ↦ τ(x⋆x)` is lower semicontinuous on `B`. -/
+theorem lowerSemicontinuous_star_mul_self (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x}) :
+    LowerSemicontinuous fun x : B ↦ τ (star x * x) := by
+  rw [← lowerSemicontinuousOn_univ_iff]
+  exact hlsc.comp (continuous_star.mul continuous_id).continuousOn
+    fun x _ ↦ star_mul_self_nonneg x
+
 namespace IsTrace
 
 /-- A trace finite on `B₊` is semifinite. -/
@@ -113,13 +120,6 @@ theorem tendsto_comp_of_monotone (hτ : IsTrace τ) (hlsc : LowerSemicontinuousO
     Tendsto (fun i ↦ τ (f i)) atTop (𝓝 (τ x)) := by
   rw [← hτ.iSup_eq_of_monotone hlsc hf hf₀ hx]
   exact tendsto_atTop_iSup fun i j hij ↦ hτ.mono (hf₀ i) (hf hij)
-
-/-- For a lower semicontinuous trace, `x ↦ τ(x⋆x)` is lower semicontinuous on `B`. -/
-theorem lowerSemicontinuous_star_mul_self (hlsc : LowerSemicontinuousOn τ {x | 0 ≤ x}) :
-    LowerSemicontinuous fun x : B ↦ τ (star x * x) := by
-  rw [← lowerSemicontinuousOn_univ_iff]
-  exact hlsc.comp (continuous_star.mul continuous_id).continuousOn
-    fun x _ ↦ star_mul_self_nonneg x
 
 end IsTrace
 
