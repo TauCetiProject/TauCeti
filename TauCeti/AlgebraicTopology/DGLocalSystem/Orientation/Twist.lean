@@ -43,6 +43,8 @@ the rank-one local system on `𝓛Q` transgressing the second Stiefel–Whitney 
 
 * `TauCeti.VectorBundleOrientation.freeLoopOrientationTwist_eq_one`: an oriented bundle has
   trivial orientation twist.
+* `TauCeti.VectorBundleOrientationCover.mapRingHom_freeLoopOrientationTwist`: it is compatible
+  with change of coefficients.
 
 ## References
 
@@ -88,6 +90,15 @@ theorem freeLoopOrientationTwist_def (hι : Fintype.card ι = finrank ℝ F)
     freeLoopOrientationTwist F E R hι γ₀ =
       (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignTwist R (finite_fiber hι) γ₀ :=
   (rfl)
+
+/-- **The orientation twist is defined over `ℤ`**: change of coefficients along `φ : R →+* S`
+sends the orientation twist with coefficients in `R` to the one with coefficients in `S`. -/
+@[simp]
+theorem mapRingHom_freeLoopOrientationTwist {S : Type*} [CommRing S] (φ : R →+* S)
+    (hι : Fintype.card ι = finrank ℝ F) (γ₀ : MooreFreeLoopSpace B) :
+    RankOneLocalSystem.mapRingHom φ (freeLoopOrientationTwist F E R hι γ₀) =
+      freeLoopOrientationTwist F E S hι γ₀ :=
+  (isCoveringMap_proj hι).mapRingHom_freeLoopSignTwist (finite_fiber hι) φ γ₀
 
 end TauCeti.VectorBundleOrientationCover
 

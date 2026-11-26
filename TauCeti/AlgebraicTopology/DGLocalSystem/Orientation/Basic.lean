@@ -46,6 +46,8 @@ rank-one local system of a `ℤˣ`-valued character
   with `2 ≠ 0`, `o_M` is trivial exactly when the orientation character is.
 * `TauCeti.RankOneLocalSystem.orientation_eq_one_iff`: over a ring with `2 ≠ 0`, `o_M` is trivial
   exactly when the connected manifold `M` is orientable.
+* `TauCeti.RankOneLocalSystem.mapRingHom_orientation`: it is compatible with change of
+  coefficients.
 
 ## References
 
@@ -125,6 +127,14 @@ orientation character is trivial. -/
 theorem orientation_eq_one_iff_orientationCharacter_eq_one (h : (2 : R) ≠ 0)
     (hd : finrank ℝ E = d) (x : M) : orientation R hd x = 1 ↔ orientationCharacter hd x = 1 :=
   (ofMonodromy_unitsMap_comp_eq_one_iff _).trans (or_iff_left h)
+
+/-- **The orientation local system is defined over `ℤ`**: change of coefficients along
+`φ : R →+* S` sends the orientation local system with coefficients in `R` to the one with
+coefficients in `S`. -/
+@[simp]
+theorem mapRingHom_orientation {S : Type*} [CommRing S] (φ : R →+* S) (hd : finrank ℝ E = d)
+    (x : M) : mapRingHom φ (orientation R hd x) = orientation S hd x :=
+  mapRingHom_ofMonodromy_unitsMap_comp φ _
 
 end RankOneLocalSystem
 

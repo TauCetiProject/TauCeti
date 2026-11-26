@@ -76,6 +76,15 @@ systems commutes with tensoring, `f^*(𝓕 ⊗ L) ≅ f^* 𝓕 ⊗ f^* L`
 the orientation local system of a manifold, pulled back along the evaluation of free loops, are
 combined.
 
+Along a ring homomorphism `φ : R →+* S`, rank-one local systems change coefficients by letting a
+loop act by the image under `φ` of its unit (`TauCeti.RankOneLocalSystem.mapRingHom`), a group
+homomorphism, functorial in `φ`, which commutes with pullback and composes the monodromy with `φ`.
+On chains the twist commutes with it: the change of coefficients of `Φ^L` is `Φ` of the changed
+system (`TauCeti.RankOneLocalSystem.character_mapRingHom` with
+`TauCeti.NormalizedCubicalChain.mapRingHom_twist`). A system whose monodromy takes only the values
+`±1` is defined over `ℤ`: its changes of coefficients are the same sign character read in the new
+ring (`TauCeti.RankOneLocalSystem.mapRingHom_ofMonodromy_unitsMap_comp`).
+
 ## Main definitions
 
 * `TauCeti.RankOneLocalSystem B b R`: rank-one local systems on `(B, b)`.
@@ -86,6 +95,7 @@ combined.
 * `TauCeti.RankOneLocalSystem.monodromyEquiv`: rank-one local systems are the characters of
   `π₁(B, b)`, with inverse `TauCeti.RankOneLocalSystem.ofMonodromy`.
 * `TauCeti.RankOneLocalSystem.pullback f hf`: the pullback along a based map.
+* `TauCeti.RankOneLocalSystem.mapRingHom φ`: the change of coefficients along a ring homomorphism.
 * `TauCeti.RankOneLocalSystem.tensorOneIso`, `TauCeti.RankOneLocalSystem.tensorMulIso`:
   `𝓕 ⊗ 1 ≅ 𝓕` and `𝓕 ⊗ (L L') ≅ (𝓕 ⊗ L) ⊗ L'`.
 * `TauCeti.RankOneLocalSystem.tensorEquivalence L`: the autoequivalence `𝓕 ↦ 𝓕 ⊗ L`.
@@ -604,6 +614,93 @@ theorem tensorPullbackIso_inv_app (f : C(B, B')) (hf : f b = b') (L : RankOneLoc
   simp [tensorPullbackIso, ← Iso.app_hom, ← Iso.app_inv, DGRightModuleCat.restrictScalarsComp_app]
 
 end Pullback
+
+/-! ### Change of coefficients -/
+
+section MapRingHom
+
+variable {S T : Type*} [CommRing S] [CommRing T]
+
+/-- **Change of coefficients** of rank-one local systems along a ring homomorphism `φ : R →+* S`,
+as a group homomorphism: a loop acts on `S` by the image under `φ` of the unit by which it acts on
+`R`. On the underlying free module of rank one, this is the extension of scalars `R ⊗_R S = S`. -/
+def mapRingHom (φ : R →+* S) : RankOneLocalSystem B b R →* RankOneLocalSystem B b S where
+  toFun L :=
+    { ρ := (Units.map φ.toMonoidHom).comp L.ρ
+      eq_of_joined := fun _ _ h ↦ by
+        rw [MonoidHom.comp_apply, MonoidHom.comp_apply, L.eq_of_joined h] }
+  map_one' := RankOneLocalSystem.ext (MonoidHom.comp_one _)
+  map_mul' L L' := RankOneLocalSystem.ext (MonoidHom.comp_mul _ L.ρ L'.ρ)
+
+/-- After change of coefficients along `φ`, a loop acts by the image under `φ` of its unit. -/
+@[simp]
+theorem mapRingHom_ρ_apply (φ : R →+* S) (γ : MooreLoopSpace B b) :
+    (mapRingHom φ L).ρ γ = Units.map φ.toMonoidHom (L.ρ γ) :=
+  (rfl)
+
+/-- The character of a rank-one local system after change of coefficients along `φ` is the
+character composed with `φ`. So the twist `Φ^L` of chains commutes with change of coefficients
+(`TauCeti.NormalizedCubicalChain.mapRingHom_twist`). -/
+theorem character_mapRingHom (φ : R →+* S) :
+    (mapRingHom φ L).character = φ.toMonoidHom.comp L.character :=
+  MonoidHom.ext fun γ ↦ by
+    rw [character_apply, mapRingHom_ρ_apply, MonoidHom.comp_apply, character_apply, Units.coe_map]
+
+/-- Change of coefficients along the identity is the identity. -/
+@[simp]
+theorem mapRingHom_id : mapRingHom (RingHom.id R) = MonoidHom.id (RankOneLocalSystem B b R) :=
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ Units.ext <| by
+    simp
+
+/-- Change of coefficients along a composite is the composite of the changes of coefficients. -/
+theorem mapRingHom_comp (ψ : S →+* T) (φ : R →+* S) :
+    mapRingHom (ψ.comp φ) =
+      (mapRingHom ψ).comp (mapRingHom φ : RankOneLocalSystem B b R →* _) :=
+  MonoidHom.ext fun L ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦ Units.ext <| by
+    simp
+
+/-- The monodromy after change of coefficients along `φ` is the monodromy composed with the map
+of units induced by `φ`. -/
+@[simp]
+theorem monodromy_mapRingHom (φ : R →+* S) :
+    (mapRingHom φ L).monodromy = (Units.map φ.toMonoidHom).comp L.monodromy :=
+  MooreLoopSpace.fundamentalGroup_hom_ext fun γ ↦ by
+    rw [monodromy_fundamentalGroupHom, mapRingHom_ρ_apply, MonoidHom.comp_apply,
+      monodromy_fundamentalGroupHom, map_inv]
+
+/-- Change of coefficients of the rank-one local system with monodromy `χ` has monodromy `χ`
+composed with the map of units induced by `φ`. -/
+theorem mapRingHom_ofMonodromy (φ : R →+* S) (χ : FundamentalGroup B b →* Rˣ) :
+    mapRingHom φ (ofMonodromy χ) = ofMonodromy ((Units.map φ.toMonoidHom).comp χ) :=
+  monodromy_injective <| by rw [monodromy_mapRingHom, monodromy_ofMonodromy, monodromy_ofMonodromy]
+
+/-- **Sign systems are defined over `ℤ`**: the rank-one local system whose monodromy is a
+`ℤˣ`-valued character `χ`, read in `Rˣ`, changes coefficients along every `φ : R →+* S` to the one
+whose monodromy is `χ` read in `Sˣ`. In particular it is the change of coefficients along
+`ℤ →+* R` of the one over `ℤ`. -/
+theorem mapRingHom_ofMonodromy_unitsMap_comp (φ : R →+* S) (χ : FundamentalGroup B b →* ℤˣ) :
+    mapRingHom φ (ofMonodromy ((Units.map (Int.castRingHom R).toMonoidHom).comp χ)) =
+      ofMonodromy ((Units.map (Int.castRingHom S).toMonoidHom).comp χ) := by
+  have h : φ.toMonoidHom.comp (Int.castRingHom R).toMonoidHom = (Int.castRingHom S).toMonoidHom :=
+    MonoidHom.ext fun n ↦ by simp
+  rw [mapRingHom_ofMonodromy, ← MonoidHom.comp_assoc, ← Units.map_comp, h]
+
+/-- **Change of coefficients commutes with pullback** along a based map. -/
+@[simp]
+theorem mapRingHom_pullback {B' : Type*} [TopologicalSpace B'] {b' : B'} (φ : R →+* S)
+    (f : C(B, B')) (hf : f b = b') (L : RankOneLocalSystem B' b' R) :
+    mapRingHom φ (pullback f hf L) = pullback f hf (mapRingHom φ L) :=
+  (rfl)
+
+/-- Change of coefficients along an injective ring homomorphism is injective: a rank-one local
+system over `R` is determined by its extension of scalars. -/
+theorem mapRingHom_injective {φ : R →+* S} (hφ : Function.Injective φ) :
+    Function.Injective (mapRingHom φ : RankOneLocalSystem B b R → RankOneLocalSystem B b S) :=
+  fun L L' h ↦ RankOneLocalSystem.ext <| MonoidHom.ext fun γ ↦
+    Units.map_injective (f := φ.toMonoidHom) hφ <| by
+      rw [← mapRingHom_ρ_apply, ← mapRingHom_ρ_apply, h]
+
+end MapRingHom
 
 end RankOneLocalSystem
 

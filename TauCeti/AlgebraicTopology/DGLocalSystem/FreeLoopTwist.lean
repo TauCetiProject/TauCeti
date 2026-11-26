@@ -57,6 +57,8 @@ rotation of every loop (`TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_rotationLoo
 * `TauCeti.RankOneLocalSystem.pullback_constMap_freeLoopTwist`: along the constant loops it is `o`.
 * `TauCeti.RankOneLocalSystem.freeLoopTwist_ρ_rotationLoop`: it is trivial along the rotation of
   every loop.
+* `TauCeti.RankOneLocalSystem.mapRingHom_freeLoopTwist`: it is compatible with change of
+  coefficients.
 
 ## References
 
@@ -165,6 +167,14 @@ theorem freeLoopTwist_eq_one_of_two_eq_zero (h2 : (2 : R) = 0) (γ : MooreFreeLo
     freeLoopTwist R χ γ = 1 := by
   rw [freeLoopTwist_def, (ofMonodromy_unitsMap_comp_eq_one_iff _).2 (.inr h2), inv_one, one_zpow,
     map_one, one_mul]
+
+/-- **The twist is defined over `ℤ`**: change of coefficients along `φ : R →+* S` sends the twist
+with coefficients in `R` to the twist with coefficients in `S`. -/
+@[simp]
+theorem mapRingHom_freeLoopTwist {S : Type*} [CommRing S] (φ : R →+* S)
+    (γ : MooreFreeLoopSpace X) : mapRingHom φ (freeLoopTwist R χ γ) = freeLoopTwist S χ γ := by
+  rw [freeLoopTwist_def, freeLoopTwist_def, map_mul, mapRingHom_pullback, mapRingHom_pullback,
+    map_inv, map_zpow, mapRingHom_ofMonodromy_unitsMap_comp]
 
 /-! ### Constant loops -/
 

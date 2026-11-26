@@ -66,6 +66,7 @@ singular torus class `TauCeti.freeLoopTorusClassHom` is.
   loops.
 * `TauCeti.RankOneLocalSystem.torusSign_ρ_rotationLoop`: it is trivial along the rotation of every
   loop.
+* `TauCeti.RankOneLocalSystem.mapRingHom_torusSign`: it is compatible with change of coefficients.
 
 ## References
 
@@ -176,6 +177,13 @@ theorem torusSign_eq_one_iff (γ : MooreFreeLoopSpace Q) :
 theorem torusSign_eq_one_of_two_eq_zero (h2 : (2 : R) = 0) (γ : MooreFreeLoopSpace Q) :
     torusSign R c γ = 1 :=
   (torusSign_eq_one_iff c γ).2 (.inr h2)
+
+/-- **The torus sign is defined over `ℤ`**: change of coefficients along `φ : R →+* S` sends the
+torus sign with coefficients in `R` to the one with coefficients in `S`. -/
+@[simp]
+theorem mapRingHom_torusSign {S : Type*} [CommRing S] (φ : R →+* S) (γ : MooreFreeLoopSpace Q) :
+    mapRingHom φ (torusSign R c γ) = torusSign S c γ :=
+  mapRingHom_ofMonodromy_unitsMap_comp φ _
 
 /-- **At a constant loop the torus sign sees exactly the spherical classes**: the torus sign at the
 constant loop at `x` is trivial exactly when `c` vanishes on the Hurewicz classes of `π₂(Q, x)`, or
