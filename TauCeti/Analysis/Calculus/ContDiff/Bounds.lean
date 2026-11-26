@@ -85,6 +85,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
 * `ContDiff.norm_iteratedFDeriv_pow_le_two_pow`: the resulting bound for a power `f ^ j`.
+* `ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow`: the resulting bound for `f ^ 2 - f`.
 * `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
   most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
@@ -430,6 +431,20 @@ theorem ContDiff.norm_iteratedFDeriv_pow_le_two_pow {A : Type*} [NormedRing A]
     have hfj : ContDiff 𝕜 N (f ^ j) := hf.pow j
     rw [pow_succ, pow_succ]
     exact (hfj.norm_iteratedFDeriv_mul_le_two_pow hf ih hfC p hp).trans_eq (by ring)
+
+/-- **Leibniz bound for `f ^ 2 - f` at a point.** If the derivatives of order at most `N` of `f`
+at `x` are bounded by `C`, those of `y ↦ f y ^ 2 - f y` at `x` of order at most `N` are bounded by
+`2 ^ N * (C * C) + C`. -/
+theorem ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {N : ℕ} {f : E → A} (hf : ContDiff 𝕜 N f) {x : E} {C : ℝ}
+    (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C) :
+    ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p (fun y ↦ f y ^ 2 - f y) x‖ ≤ 2 ^ N * (C * C) + C := by
+  intro p hp
+  have hp' : (p : WithTop ℕ∞) ≤ N := by exact_mod_cast hp
+  simp_rw [sq]
+  rw [fun_iteratedFDeriv_sub_apply ((hf.mul hf).of_le hp').contDiffAt (hf.of_le hp').contDiffAt]
+  exact (norm_sub_le _ _).trans
+    (add_le_add (hf.norm_iteratedFDeriv_mul_le_two_pow hf hfC hfC p hp) (hfC p hp))
 
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/
