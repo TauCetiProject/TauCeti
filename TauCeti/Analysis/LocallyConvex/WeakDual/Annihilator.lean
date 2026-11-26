@@ -9,6 +9,8 @@ public import Mathlib.Analysis.LocallyConvex.WeakDual
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
+public import Mathlib.Topology.Algebra.Module.ClosedSubmodule
+public import TauCeti.Analysis.Normed.Module.Annihilator
 import Mathlib.Analysis.LocallyConvex.Separation
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 
@@ -22,6 +24,20 @@ weak-star closure. These statements use `Submodule.orthogonalBilin` for the cano
 `topDualPairing`; `StrongDual.toWeakDual` explicitly transports the continuous dual to the
 weak-star topology. No completeness, separation, or local convexity of the original space is
 needed.
+
+For a seminormed space `E`, combining this with the norm double-annihilator theorem shows that
+annihilators and preannihilators are mutually inverse, inclusion-reversing bijections between the
+norm-closed subspaces of `E` and the weak-star closed subspaces of its dual
+(`ClosedSubmodule.annihilatorOrderIso`).
+
+## Main results
+
+* `Submodule.isClosed_map_orthogonalBilin_topDualPairing_flip`: annihilators are weak-star
+  closed.
+* `Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure`: the annihilator of
+  the preannihilator of a subspace of the dual is its weak-star closure.
+* `ClosedSubmodule.annihilatorOrderIso`: closed subspaces of `E` and weak-star closed subspaces of
+  its dual correspond, reversing inclusion.
 
 The double-annihilator theorem is the standard duality result discussed in Megginson,
 *An Introduction to Banach Space Theory*, §2.6. Its formal proof uses the weak representation
@@ -100,3 +116,71 @@ theorem map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure
       (G.orthogonalBilin (topDualPairing 𝕜 E)).isClosed_map_orthogonalBilin_topDualPairing_flip
 
 end Submodule
+
+/-! ### Closed subspaces and weak-star closed subspaces of the dual -/
+
+namespace ClosedSubmodule
+
+open OrderDual
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+variable (𝕜 E) in
+/-- **Annihilator duality.** Taking annihilators is an inclusion-reversing bijection between the
+norm-closed subspaces of `E` and the weak-star closed subspaces of its dual; the inverse takes
+preannihilators. This packages the two double-annihilator theorems
+`Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure` and
+`Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure`. -/
+@[expose]
+noncomputable def annihilatorOrderIso :
+    ClosedSubmodule 𝕜 E ≃o (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ :=
+  have left_inv (S : ClosedSubmodule 𝕜 E) :
+      ((((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+        StrongDual.toWeakDual.toLinearMap).comap StrongDual.toWeakDual.toLinearMap).orthogonalBilin
+          (topDualPairing 𝕜 E) = S := by
+    rw [Submodule.comap_map_eq_of_injective StrongDual.toWeakDual.injective,
+      Submodule.orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure,
+      S.isClosed.submodule_topologicalClosure_eq]
+  have right_inv (G : ClosedSubmodule 𝕜 (WeakDual 𝕜 E)) :
+      Submodule.map StrongDual.toWeakDual.toLinearMap
+        ((((G : Submodule 𝕜 (WeakDual 𝕜 E)).comap
+          StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E)).orthogonalBilin
+            (topDualPairing 𝕜 E).flip) = G := by
+    rw [Submodule.map_orthogonalBilin_flip_orthogonalBilin_eq_topologicalClosure,
+      Submodule.map_comap_eq_of_surjective StrongDual.toWeakDual.surjective,
+      G.isClosed.submodule_topologicalClosure_eq]
+  { toFun S := toDual ⟨((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+        StrongDual.toWeakDual.toLinearMap,
+        Submodule.isClosed_map_orthogonalBilin_topDualPairing_flip _⟩
+    invFun G := ⟨((ofDual G).toSubmodule.comap
+        StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E),
+        Submodule.isClosed_orthogonalBilin_topDualPairing _⟩
+    left_inv S := toSubmodule_injective (left_inv S)
+    right_inv G := congrArg toDual (toSubmodule_injective (right_inv (ofDual G)))
+    map_rel_iff' := by
+      intro S T
+      change ((T : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+          StrongDual.toWeakDual.toLinearMap ≤
+        ((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+          StrongDual.toWeakDual.toLinearMap ↔ (S : Submodule 𝕜 E) ≤ T
+      refine ⟨fun h ↦ ?_, fun h ↦ Submodule.map_mono (Submodule.orthogonalBilin_le h)⟩
+      rw [← left_inv S, ← left_inv T]
+      exact Submodule.orthogonalBilin_le (Submodule.comap_mono h) }
+
+/-- The annihilator of a closed subspace, as a subspace of the weak dual. -/
+@[simp]
+theorem coe_annihilatorOrderIso_apply (S : ClosedSubmodule 𝕜 E) :
+    (ofDual (annihilatorOrderIso 𝕜 E S)).toSubmodule =
+      ((S : Submodule 𝕜 E).orthogonalBilin (topDualPairing 𝕜 E).flip).map
+        StrongDual.toWeakDual.toLinearMap :=
+  rfl
+
+/-- The preannihilator of a weak-star closed subspace of the dual. -/
+@[simp]
+theorem coe_annihilatorOrderIso_symm_apply (G : (ClosedSubmodule 𝕜 (WeakDual 𝕜 E))ᵒᵈ) :
+    ((annihilatorOrderIso 𝕜 E).symm G : Submodule 𝕜 E) =
+      ((ofDual G).toSubmodule.comap
+        StrongDual.toWeakDual.toLinearMap).orthogonalBilin (topDualPairing 𝕜 E) :=
+  rfl
+
+end ClosedSubmodule
