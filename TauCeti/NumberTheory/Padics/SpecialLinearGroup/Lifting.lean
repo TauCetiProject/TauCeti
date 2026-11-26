@@ -8,8 +8,6 @@ module
 public import Mathlib.NumberTheory.Padics.RingHoms
 public import Mathlib.Topology.Algebra.Group.Matrix
 
-import Mathlib.Analysis.SpecificLimits.Basic
-import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -78,21 +76,17 @@ open scoped MatrixGroups commutatorElement
 
 variable {ℓ : ℕ} [hℓ : Fact ℓ.Prime]
 
-/-! ### Reduction of matrices modulo `ℓ` -/
+/-! ### Auxiliary facts -/
 
-/-- If `1 + ℓ ^ (k + 1) X` has determinant `1`, the reduction of `X` modulo `ℓ` has trace zero. -/
-private theorem trace_mapMatrix_eq_zero {k : ℕ} {X : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]}
-    (hX : (1 + ℓ ^ (k + 1) • X).det = 1) : (toZMod.mapMatrix X).trace = 0 := by
-  set c : ℤ_[ℓ] := (ℓ : ℤ_[ℓ]) ^ (k + 1) with hc
-  have hc0 : c ≠ 0 := pow_ne_zero _ (Nat.cast_ne_zero.2 hℓ.out.ne_zero)
-  rw [← Nat.cast_smul_eq_nsmul ℤ_[ℓ], Nat.cast_pow, ← hc, det_fin_two] at hX
-  simp only [Matrix.add_apply, one_apply_eq, Matrix.smul_apply, smul_eq_mul, ne_eq, zero_ne_one,
-    not_false_eq_true, one_apply_ne, zero_add, one_ne_zero] at hX
-  have htr : X 0 0 + X 1 1 = -(c * (X 0 0 * X 1 1 - X 0 1 * X 1 0)) :=
-    mul_left_cancel₀ hc0 (by linear_combination hX)
-  have hred : toZMod c = 0 := by simp [hc, pow_succ]
-  rw [trace_fin_two, RingHom.mapMatrix_apply, map_apply, map_apply, ← map_add, htr]
-  simp [hred]
+/-- For `ℓ ≥ 5`, `2` is nonzero in `𝔽_ℓ`. -/
+private theorem two_ne_zero_of_five_le (hℓ5 : 5 ≤ ℓ) : (2 : ZMod ℓ) ≠ 0 := by
+  exact_mod_cast ZMod.natCast_ne_zero_of_mem_Ico (k := 2) (Finset.mem_Ico.2 ⟨by norm_num, by omega⟩)
+
+/-- The product of an element of `SL₂(ℤ_ℓ)` and its inverse, as matrices, is `1`. -/
+private theorem coe_mul_coe_inv (h : SL(2, ℤ_[ℓ])) :
+    (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) * ((h⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) =
+      1 := by
+  rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
 
 /-! ### The layers of a subgroup of `SL₂(ℤ_ℓ)` -/
 
@@ -106,9 +100,8 @@ private def layerAddSubmonoid (H : Subgroup SL(2, ℤ_[ℓ])) (k : ℕ) :
   add_mem' := by
     rintro _ _ ⟨X₁, rfl, h₁, hh₁, e₁⟩ ⟨X₂, rfl, h₂, hh₂, e₂⟩
     refine ⟨X₁ + X₂ + ℓ ^ (k + 1) • (X₁ * X₂), ?_, h₁ * h₂, H.mul_mem hh₁ hh₂, ?_⟩
-    · have h0 := map_toZMod_nsmul_eq_zero (dvd_pow_self ℓ k.succ_ne_zero) (X₁ * X₂)
-      rw [← RingHom.mapMatrix_apply] at h0
-      rw [map_add, h0, add_zero, map_add]
+    · exact (map_toZMod_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero) _ _).trans
+        (map_add toZMod.mapMatrix X₁ X₂)
     · rw [SpecialLinearGroup.coe_mul, e₁, e₂]
       simp only [mul_add, add_mul, mul_one, one_mul, smul_mul_assoc, mul_smul_comm, smul_add,
         smul_smul]
@@ -128,7 +121,8 @@ private theorem layer_le_ker_trace (H : Subgroup SL(2, ℤ_[ℓ])) (k : ℕ) :
     layer H k ≤ LinearMap.ker (traceLinearMap (Fin 2) (ZMod ℓ) (ZMod ℓ)) := by
   rintro _ ⟨X, rfl, h, -, e⟩
   rw [LinearMap.mem_ker, traceLinearMap_apply]
-  exact trace_mapMatrix_eq_zero (e ▸ h.prop)
+  exact trace_map_toZMod_eq_zero_of_det_one_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero)
+    (pow_ne_zero _ hℓ.out.ne_zero) (e ▸ h.prop)
 
 /-- If `H` surjects onto `SL₂(𝔽_ℓ)`, its layers are stable under conjugation by `SL₂(𝔽_ℓ)`. -/
 private theorem conj_mem_layer {H : Subgroup SL(2, ℤ_[ℓ])}
@@ -141,11 +135,8 @@ private theorem conj_mem_layer {H : Subgroup SL(2, ℤ_[ℓ])}
   refine ⟨h₀ * X * ((h₀⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]), ?_,
     h₀ * h * h₀⁻¹, H.mul_mem (H.mul_mem hh₀ hh) (H.inv_mem hh₀), ?_⟩
   · simp [← map_inv]
-  · have hinv : (h₀ : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) *
-        ((h₀⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 := by
-      rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
-    rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, e, mul_add, mul_one, add_mul,
-      hinv, mul_smul_comm, smul_mul_assoc]
+  · rw [SpecialLinearGroup.coe_mul, SpecialLinearGroup.coe_mul, e, mul_add, mul_one, add_mul,
+      coe_mul_coe_inv, mul_smul_comm, smul_mul_assoc]
 
 /-- The `ℓ`-th power map sends each layer into the next one. -/
 private theorem layer_le_layer_succ (hℓ5 : 5 ≤ ℓ) (H : Subgroup SL(2, ℤ_[ℓ])) (k : ℕ) :
@@ -155,12 +146,9 @@ private theorem layer_le_layer_succ (hℓ5 : 5 ≤ ℓ) (H : Subgroup SL(2, ℤ_
     rw [smul_pow, smul_smul]
     ring_nf
   obtain ⟨W, hW⟩ := exists_one_add_pow_prime_eq_of_sq_eq_nsmul hℓ.out (by omega) hA
-  refine ⟨X + ℓ • W, ?_, h ^ ℓ, H.pow_mem hh ℓ, ?_⟩
-  · have h0 := map_toZMod_nsmul_eq_zero dvd_rfl W
-    rw [← RingHom.mapMatrix_apply] at h0
-    rw [map_add, h0, add_zero]
-  · rw [SpecialLinearGroup.coe_pow, e, hW]
-    module
+  refine ⟨X + ℓ • W, map_toZMod_add_nsmul dvd_rfl X W, h ^ ℓ, H.pow_mem hh ℓ, ?_⟩
+  rw [SpecialLinearGroup.coe_pow, e, hW]
+  module
 
 /-- If `H` surjects onto `SL₂(𝔽_ℓ)` and `ℓ ≥ 5`, the first layer of `H` is nonzero: the `ℓ`-th
 power of a lift in `H` of `[[1, 1], [0, 1]]` is `1 + ℓ A` with `A` reducing to
@@ -183,13 +171,12 @@ private theorem layer_zero_ne_bot (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[�
     fin_cases i <;> fin_cases j <;> simp [sq]
   obtain ⟨W, hW⟩ := exists_one_add_pow_prime_eq_of_sq_eq_nsmul (c := 1) hℓ.out (by omega)
     (by rwa [one_mul])
-  refine (Submodule.ne_bot_iff _).2 ⟨_, ⟨A + ℓ • W, rfl, x ^ ℓ, H.pow_mem hx ℓ, ?_⟩, ?_⟩
+  refine (Submodule.ne_bot_iff _).2 ⟨toZMod.mapMatrix A,
+    ⟨A + ℓ • W, map_toZMod_add_nsmul dvd_rfl A W, x ^ ℓ, H.pow_mem hx ℓ, ?_⟩, ?_⟩
   · rw [SpecialLinearGroup.coe_pow, show (x : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = 1 + A by
       rw [hA, add_sub_cancel], hW]
     module
-  · have h0 := map_toZMod_nsmul_eq_zero dvd_rfl W
-    rw [← RingHom.mapMatrix_apply] at h0
-    rw [map_add, h0, add_zero, hredA]
+  · rw [hredA]
     intro h
     simpa using congrFun (congrFun h 0) 1
 
@@ -197,10 +184,7 @@ private theorem layer_zero_ne_bot (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[�
 private theorem layer_eq_ker_trace (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[ℓ])}
     (hmap : H.map (SpecialLinearGroup.map (toZMod (p := ℓ))) = ⊤) (k : ℕ) :
     layer H k = LinearMap.ker (traceLinearMap (Fin 2) (ZMod ℓ) (ZMod ℓ)) := by
-  have h2 : (2 : ZMod ℓ) ≠ 0 := by
-    exact_mod_cast ZMod.natCast_ne_zero_of_mem_Ico (k := 2)
-      (Finset.mem_Ico.2 ⟨by norm_num, by omega⟩)
-  have h0 := eq_ker_traceLinearMap_of_conj_mem h2 (layer_le_ker_trace H 0)
+  have h0 := eq_ker_traceLinearMap_of_conj_mem (two_ne_zero_of_five_le hℓ5) (layer_le_ker_trace H 0)
     (layer_zero_ne_bot hℓ5 hmap) (conj_mem_layer hmap 0)
   refine le_antisymm (layer_le_ker_trace H k) ?_
   rw [← h0]
@@ -227,8 +211,7 @@ private theorem exists_mem_eq_add_pow_smul (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(
   | succ k ih =>
     obtain ⟨h, hh, Z, hZ⟩ := ih
     set hinv : Matrix (Fin 2) (Fin 2) ℤ_[ℓ] := ((h⁻¹ : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])
-    have hhinv : (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) * hinv = 1 := by
-      rw [← SpecialLinearGroup.coe_mul, mul_inv_cancel, SpecialLinearGroup.coe_one]
+    have hhinv : (h : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) * hinv = 1 := coe_mul_coe_inv h
     -- The error term `h⁻¹ g = 1 + ℓ ^ (k + 1) h⁻¹ Z` has trace zero modulo `ℓ`.
     have hdet : (1 + ℓ ^ (k + 1) • (hinv * Z)).det = 1 := by
       have : (1 : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) + ℓ ^ (k + 1) • (hinv * Z) =
@@ -239,7 +222,8 @@ private theorem exists_mem_eq_add_pow_smul (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(
       exact (h⁻¹ * g).prop
     have hmem : toZMod.mapMatrix (hinv * Z) ∈ layer H k := by
       rw [layer_eq_ker_trace hℓ5 hmap, LinearMap.mem_ker, traceLinearMap_apply]
-      exact trace_mapMatrix_eq_zero hdet
+      exact trace_map_toZMod_eq_zero_of_det_one_add_nsmul (dvd_pow_self ℓ k.succ_ne_zero)
+        (pow_ne_zero _ hℓ.out.ne_zero) hdet
     obtain ⟨X, hX, h', hh', e'⟩ := hmem
     obtain ⟨W, hW⟩ := exists_eq_nsmul_of_map_toZMod_eq_zero (X := hinv * Z - X)
       (by rw [← RingHom.mapMatrix_apply, map_sub, hX, sub_self])
@@ -253,26 +237,6 @@ private theorem exists_mem_eq_add_pow_smul (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(
       _ = ((h * h' : SL(2, ℤ_[ℓ])) : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) + ℓ ^ (k + 1 + 1) • (h * W) := by
         rw [SpecialLinearGroup.coe_mul, e']
 
-/-- Elements `h k` congruent to `g` modulo `ℓ ^ (k + 1)` converge to `g`. -/
-private theorem tendsto_of_eq_add_pow_smul {g : SL(2, ℤ_[ℓ])} {h : ℕ → SL(2, ℤ_[ℓ])}
-    {Z : ℕ → Matrix (Fin 2) (Fin 2) ℤ_[ℓ]}
-    (hZ : ∀ k, (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ]) = h k + ℓ ^ (k + 1) • Z k) :
-    Tendsto h atTop (𝓝 g) := by
-  have hℓ0 : (0 : ℝ) < ℓ := by exact_mod_cast hℓ.out.pos
-  have hlim : Tendsto (fun k : ℕ ↦ ((ℓ : ℝ)⁻¹) ^ (k + 1)) atTop (𝓝 0) :=
-    (tendsto_pow_atTop_nhds_zero_of_lt_one (inv_nonneg.2 hℓ0.le)
-      (inv_lt_one_of_one_lt₀ (by exact_mod_cast hℓ.out.one_lt))).comp (tendsto_add_atTop_nat 1)
-  have hmat : Tendsto (fun k ↦ (h k : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])) atTop
-      (𝓝 (g : Matrix (Fin 2) (Fin 2) ℤ_[ℓ])) := by
-    refine tendsto_pi_nhds.2 fun i ↦ tendsto_pi_nhds.2 fun j ↦ ?_
-    refine tendsto_iff_norm_sub_tendsto_zero.2
-      (squeeze_zero (fun _ ↦ norm_nonneg _) (fun k ↦ ?_) hlim)
-    have hk := congrFun (congrFun (hZ k) i) j
-    rw [Matrix.add_apply, Matrix.smul_apply, nsmul_eq_mul, Nat.cast_pow] at hk
-    rw [hk, sub_add_cancel_left, norm_neg, norm_mul, norm_pow, norm_p]
-    exact mul_le_of_le_one_right (by positivity) (norm_le_one _)
-  exact SpecialLinearGroup.isClosedEmbedding_val.isInducing.tendsto_nhds_iff.2 hmat
-
 /-- **Serre's lifting lemma.** For a prime `ℓ ≥ 5`, a closed subgroup of `SL₂(ℤ_ℓ)` whose
 reduction modulo `ℓ` is all of `SL₂(𝔽_ℓ)` is all of `SL₂(ℤ_ℓ)`. -/
 theorem eq_top_of_isClosed_of_map_toZMod_eq_top (hℓ5 : 5 ≤ ℓ) {H : Subgroup SL(2, ℤ_[ℓ])}
@@ -281,7 +245,9 @@ theorem eq_top_of_isClosed_of_map_toZMod_eq_top (hℓ5 : 5 ≤ ℓ) {H : Subgrou
   refine eq_top_iff.2 fun g _ ↦ ?_
   choose h hh Z hZ using fun k ↦ exists_mem_eq_add_pow_smul hℓ5 hmap k g
   rw [← SetLike.mem_coe, ← hH.closure_eq]
-  exact mem_closure_of_tendsto (tendsto_of_eq_add_pow_smul hZ) (Eventually.of_forall hh)
+  exact mem_closure_of_tendsto
+    (SpecialLinearGroup.isClosedEmbedding_val.isInducing.tendsto_nhds_iff.2
+      (tendsto_of_eq_add_pow_nsmul hZ)) (Eventually.of_forall hh)
 
 /-! ### The `GL₂` form -/
 
@@ -304,9 +270,7 @@ theorem eq_comap_map_det_of_isClosed (hℓ5 : 5 ≤ ℓ) {H : Subgroup (GL (Fin 
   have hK : IsClosed (K : Set SL(2, ℤ_[ℓ])) :=
     (Subgroup.isClosed_topologicalClosure ⁅H, H⁆).preimage SpecialLinearGroup.continuous_toGL
   have hKmap : K.map (SpecialLinearGroup.map toZMod) = ⊤ := by
-    have h2 : (2 : ZMod ℓ) ≠ 0 := by
-      exact_mod_cast ZMod.natCast_ne_zero_of_mem_Ico (k := 2)
-        (Finset.mem_Ico.2 ⟨by norm_num, by omega⟩)
+    have h2 := two_ne_zero_of_five_le hℓ5
     have h3 : (3 : ZMod ℓ) ≠ 0 := by
       exact_mod_cast ZMod.natCast_ne_zero_of_mem_Ico (k := 3)
         (Finset.mem_Ico.2 ⟨by norm_num, by omega⟩)

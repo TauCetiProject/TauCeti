@@ -25,9 +25,9 @@ Conjugating `E` by `[[0, 1], [-1, 0]]` and by `[[1, 0], [1, 1]]` then produces
 `F = [[0, 0], [1, 0]]` and `H = [[1, 0], [0, -1]]`, which together with `E` span `𝔰𝔩₂(F)`.
 
 Over `𝔽_ℓ` this irreducibility drives Serre's lifting lemma for closed subgroups of `SL₂(ℤ_ℓ)`:
-the successive layers `Γ(ℓᵏ) / Γ(ℓᵏ⁺¹)` of a closed subgroup are conjugation-stable subspaces of
-`𝔰𝔩₂(𝔽_ℓ)`. In characteristic `2` the statement fails, since the scalar matrices are then
-trace-zero and conjugation-invariant.
+the successive layers `Γ(ℓᵏ) / Γ(ℓᵏ⁺¹)` of a subgroup of `SL₂(ℤ_ℓ)` that surjects onto
+`SL₂(𝔽_ℓ)` are subspaces of `𝔰𝔩₂(𝔽_ℓ)` stable under `SL₂(𝔽_ℓ)`-conjugation. In characteristic
+`2` the statement fails, since the scalar matrices are then trace-zero and conjugation-invariant.
 
 ## Main results
 
@@ -94,13 +94,16 @@ private theorem upper_mem_of_conj_mem (h2 : (2 : F) ≠ 0)
       fin_cases i <;> fin_cases j <;> simp [hb0]
     · convert V.smul_mem (-(2 * a))⁻¹ (hD 1) using 1
       ext i j
-      fin_cases i <;> fin_cases j <;> simp
-      field_simp
+      fin_cases i <;> fin_cases j <;> simp [mul_assoc, ha0, h2]
   · convert V.smul_mem (-(2 * c))⁻¹ (V.add_mem (hD 1) (hD (-1))) using 1
     ext i j
-    fin_cases i <;> fin_cases j <;> simp
-    field_simp
-    ring
+    fin_cases i <;> fin_cases j
+    · simp
+    · simp
+      field_simp
+      ring
+    · simp
+    · simp
 
 /-- **The adjoint representation of `SL₂` is irreducible** away from characteristic `2`: over a
 field `F` with `2 ≠ 0`, a nonzero subspace `V` of trace-zero `2 × 2` matrices that is stable under
@@ -128,10 +131,10 @@ theorem eq_ker_traceLinearMap_of_conj_mem (h2 : (2 : F) ≠ 0)
   -- `E`, `F` and `H` span the trace-zero matrices.
   refine le_antisymm hV fun Y hY ↦ ?_
   simp only [LinearMap.mem_ker, traceLinearMap_apply, trace_fin_two] at hY
+  have hY' : Y 1 1 = -Y 0 0 := by linear_combination hY
   convert V.add_mem (V.add_mem (V.smul_mem (Y 0 0) hH) (V.smul_mem (Y 0 1) hE))
     (V.smul_mem (Y 1 0) hF) using 1
   ext i j
-  fin_cases i <;> fin_cases j <;> simp
-  linear_combination hY
+  fin_cases i <;> fin_cases j <;> simp [hY']
 
 end TauCeti
