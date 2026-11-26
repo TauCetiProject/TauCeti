@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Order.Group.Unbundled.Int
 public import Mathlib.Algebra.Ring.Parity
 public import Mathlib.Data.Fintype.BigOperators
 public import Mathlib.Data.Int.Order.Units
+import TauCeti.Algebra.Ring.Int.Units
 
 /-!
 # Block rule combinatorics for discrete series theta lifts
@@ -20,13 +21,15 @@ entries. Doubling all entries turns half-integers into integers of fixed parity.
 
 ## Main definitions and results
 
-* `DiscreteSeries.doubledBlock`, `DiscreteSeries.centeredBlock`, `DiscreteSeries.shiftedEntry`:
-  doubled symmetric/centered blocks and shifted parameter entries.
-* `DiscreteSeries.IsBlockRule`, `DiscreteSeries.IsMatching`, and
-  `DiscreteSeries.isBlockRule_iff_isMatching`: equivalence between block insertion and signed
-  matching on arbitrary finite index types.
-* `DiscreteSeries.IsBlockRule.symm`, `.neg`, `.neg_signs`, `.shift`, `.shiftedEntry_ne_zero`, and
-  `DiscreteSeries.isBlockRule_iff_of_offsets`: symmetries, nonvanishing, and recentered form.
+* `TauCeti.DiscreteSeries.doubledBlock`, `TauCeti.DiscreteSeries.centeredBlock`,
+  `TauCeti.DiscreteSeries.shiftedEntry`: doubled symmetric/centered blocks and shifted parameter
+  entries.
+* `TauCeti.DiscreteSeries.IsBlockRule`, `TauCeti.DiscreteSeries.IsMatching`, and
+  `TauCeti.DiscreteSeries.isBlockRule_iff_isMatching`: equivalence between block insertion and
+  signed matching on arbitrary finite index types.
+* `TauCeti.DiscreteSeries.IsBlockRule.symm`, `.neg`, `.neg_signs`, `.shift`,
+  `.shiftedEntry_ne_zero`, and `TauCeti.DiscreteSeries.isBlockRule_iff_of_offsets`: symmetries,
+  nonvanishing, and recentered form.
 
 ## References
 
@@ -41,7 +44,7 @@ entries. Doubling all entries turns half-integers into integers of fixed parity.
 
 public section
 
-namespace DiscreteSeries
+namespace TauCeti.DiscreteSeries
 
 section
 
@@ -50,21 +53,21 @@ open Fintype Finset
 /-- The symmetric block `[d] = ((d - 1)/2, (d - 3)/2, ..., (1 - d)/2)` with its entries doubled. -/
 def doubledBlock (d : ℕ) : Finset ℤ := (range d).image fun b : ℕ ↦ (d : ℤ) - 1 - 2 * b
 
-/-- Definitional unfolding of `DiscreteSeries.doubledBlock`. -/
+/-- Definitional unfolding of `TauCeti.DiscreteSeries.doubledBlock`. -/
 theorem doubledBlock_def (d : ℕ) :
     doubledBlock d = (range d).image fun b : ℕ ↦ (d : ℤ) - 1 - 2 * b := by rfl
 
 /-- The block `e + [d]` of length `d` and center `e`, with its entries doubled. -/
 def centeredBlock (e : ℤ) (d : ℕ) : Finset ℤ := (doubledBlock d).image fun x : ℤ ↦ 2 * e + x
 
-/-- Definitional unfolding of `DiscreteSeries.centeredBlock`. -/
+/-- Definitional unfolding of `TauCeti.DiscreteSeries.centeredBlock`. -/
 theorem centeredBlock_def (e : ℤ) (d : ℕ) :
     centeredBlock e d = (doubledBlock d).image fun x : ℤ ↦ 2 * e + x := by rfl
 
-/-- Twice the entries of a parameter `l = 2λ`, shifted by `-2γ + m`. -/
+/-- The entries of the doubled parameter `l = 2λ`, shifted by `-2γ + m`. -/
 def shiftedEntry {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i : ι) : ℤ := l i - 2 * γ + m
 
-/-- Definitional unfolding of `DiscreteSeries.shiftedEntry`. -/
+/-- Definitional unfolding of `TauCeti.DiscreteSeries.shiftedEntry`. -/
 theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i : ι) :
     shiftedEntry γ m l i = l i - 2 * γ + m := by rfl
 
@@ -72,7 +75,8 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 @[simp] theorem doubledBlock_zero : doubledBlock 0 = ∅ := by simp [doubledBlock_def]
 
 /-- An integer lies in `doubledBlock d` iff `|x| < d` and `x + d - 1` is even. -/
-theorem mem_doubledBlock {d : ℕ} {x : ℤ} : x ∈ doubledBlock d ↔ |x| < d ∧ Even (x + d - 1) := by
+@[simp] theorem mem_doubledBlock {d : ℕ} {x : ℤ} :
+    x ∈ doubledBlock d ↔ |x| < d ∧ Even (x + d - 1) := by
   simp only [doubledBlock_def, Finset.mem_image, Finset.mem_range, abs_lt, Int.even_iff]
   refine ⟨fun ⟨_, _, _⟩ ↦ by omega, fun _ ↦ ⟨(((d : ℤ) - 1 - x) / 2).toNat, by omega, by omega⟩⟩
 
@@ -87,30 +91,38 @@ theorem mem_doubledBlock {d : ℕ} {x : ℤ} : x ∈ doubledBlock d ↔ |x| < d 
   refine ⟨fun ⟨x, ⟨h1, k, hk⟩, hy⟩ ↦ ⟨by rw [← hy, abs_neg]; exact h1, d - 1 - k, by omega⟩,
     fun ⟨h1, k, hk⟩ ↦ ⟨-y, ⟨by simpa using h1, d - 1 - k, by omega⟩, neg_neg y⟩⟩
 
-/-- `(u * v) * y > d` holds iff `|y| > d` and `u * v` agrees with the sign of `y`. -/
-theorem lt_sign_mul_iff {d : ℕ} {u v : ℤˣ} {y : ℤ} :
-    (d : ℤ) < (u * v : ℤˣ) * y ↔
-      (d : ℤ) < |y| ∧ (0 < y → v = u) ∧ (y < 0 → v = -u) := by
-  have heq : (u * v = 1 ↔ v = u) ∧ (u * v = -1 ↔ v = -u) := by
-    rcases Int.units_eq_one_or u with rfl | rfl <;> rcases Int.units_eq_one_or v with rfl | rfl <;>
-      decide
-  rcases Int.units_eq_one_or (u * v) with h | h
-  · rw [h, ← heq.1, ← heq.2, h]
-    exact ⟨fun h1 ↦ ⟨lt_abs.2 (.inl (by simpa using h1)), fun _ ↦ rfl,
-      fun hy ↦ by simp at h1; omega⟩, fun ⟨h1, _, h2⟩ ↦ (lt_abs.1 h1).elim (by simpa using ·)
-      fun hneg ↦ absurd (h2 (by omega)) (by decide)⟩
-  · rw [h, ← heq.1, ← heq.2, h]
-    exact ⟨fun h1 ↦ ⟨lt_abs.2 (.inr (by simpa using h1)), fun hy ↦ by simp at h1; omega,
-      fun _ ↦ rfl⟩, fun ⟨h1, h2, _⟩ ↦ (lt_abs.1 h1).elim
-      (fun hpos ↦ absurd (h2 (by omega)) (by decide)) (by simpa using ·)⟩
+/-- The empty centered block is `∅`. -/
+@[simp] theorem centeredBlock_zero (e : ℤ) : centeredBlock e 0 = ∅ := by
+  simp [centeredBlock_def]
+
+/-- An integer `x` lies in `centeredBlock e d` iff `x - 2 * e ∈ doubledBlock d`. -/
+@[simp] theorem mem_centeredBlock {e : ℤ} {d : ℕ} {x : ℤ} :
+    x ∈ centeredBlock e d ↔ x - 2 * e ∈ doubledBlock d := by
+  simp only [centeredBlock_def, Finset.mem_image]
+  exact ⟨fun ⟨y, hy, hxy⟩ ↦ by rwa [← hxy, add_sub_cancel_left],
+    fun hx ↦ ⟨x - 2 * e, hx, add_sub_cancel _ _⟩⟩
+
+/-- `centeredBlock e d` has cardinality `d`. -/
+@[simp] theorem card_centeredBlock (e : ℤ) (d : ℕ) : (centeredBlock e d).card = d := by
+  rw [centeredBlock_def, card_image_of_injective _ (add_right_injective (2 * e)),
+    card_doubledBlock]
+
+/-- Negating `centeredBlock e d` gives `centeredBlock (-e) d`. -/
+@[simp] theorem image_neg_centeredBlock (e : ℤ) (d : ℕ) :
+    (centeredBlock e d).image Neg.neg = centeredBlock (-e) d := by
+  calc (centeredBlock e d).image Neg.neg
+    _ = ((doubledBlock d).image Neg.neg).image fun x ↦ 2 * (-e) + x := by
+        simp only [centeredBlock_def, image_image, Function.comp_def]
+        congr 1; ext x; omega
+    _ = centeredBlock (-e) d := by rw [image_neg_doubledBlock, centeredBlock_def]
 
 /-- Negating `l` and replacing `γ` by `m - γ` negates `shiftedEntry`. -/
-theorem shiftedEntry_neg {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) :
+@[simp] theorem shiftedEntry_neg {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) :
     shiftedEntry ((m : ℤ) - γ) m (-l) = Neg.neg ∘ shiftedEntry γ m l :=
   funext fun i ↦ by simp [shiftedEntry_def]; omega
 
 /-- Shifting `γ` by `v` and `l` by `2 * v` leaves `shiftedEntry` unchanged. -/
-theorem shiftedEntry_add {ι : Type*} (γ v : ℤ) (m : ℕ) (l : ι → ℤ) :
+@[simp] theorem shiftedEntry_add {ι : Type*} (γ v : ℤ) (m : ℕ) (l : ι → ℤ) :
     shiftedEntry (γ + v) m (fun i ↦ l i + 2 * v) = shiftedEntry γ m l :=
   funext fun i ↦ by simp [shiftedEntry_def]; omega
 
@@ -124,24 +136,27 @@ theorem even_shiftedEntry_add_sub_one {ι : Type*} [Fintype ι] {γ : ℤ} {m d 
     (hparity : ∀ i, Even (l i + card ι - 1)) (hd : card ι = m + d) (i : ι) :
     Even (shiftedEntry γ m l i + d - 1) := by grind [shiftedEntry_def, hparity i]
 
-/-- From the block rule to signed matching for injective integer vectors `a : C → ℤ` and
-`b : R → ℤ` with `card R = card C + d`. -/
+/-- From the block rule to signed matching for integer vectors `a : C → ℤ` and `b : R → ℤ` with
+`b` injective and `card R = card C + d`. -/
 theorem exists_matched_of_entries_eq {C R : Type*} [Fintype C] [Fintype R] {s : C → ℤˣ}
     {t : R → ℤˣ} {a : C → ℤ} {b : R → ℤ} {d : ℕ} (hcard : card R = card C + d)
-    (ha : a.Injective) (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
+    (hb : b.Injective) (hparity : ∀ r : R, Even (b r + d - 1))
     (hentries : univ.image b = univ.image a ∪ doubledBlock d)
     (hpos : ∀ (c : C) (r : R), a c = b r → 0 < a c → s c = t r)
     (hneg : ∀ (c : C) (r : R), a c = b r → a c < 0 → s c = -t r) :
     (∀ r : R, (∃ c : C, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r) ∨ |b r| < d) ∧
       ∀ c : C, ∃ r : R, b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
   have hdisjoint : Disjoint (univ.image a) (doubledBlock d) := by
-    rw [← card_union_eq_card_add_card, ← hentries]; simp [card_image_of_injective, ha, hb, hcard]
+    rw [← card_union_eq_card_add_card]
+    refine (card_union_le _ _).antisymm ?_
+    rw [← hentries, card_image_of_injective _ hb, card_univ, hcard, card_doubledBlock]
+    exact Nat.add_le_add_right card_image_le d
   have hmatched (c : C) (r : R) (heq : a c = b r) :
       b r = a c ∧ (d : ℤ) < (t r * s c : ℤˣ) * b r := by
     have hnot : b r ∉ doubledBlock d :=
       heq ▸ Finset.disjoint_left.1 hdisjoint (Finset.mem_image_of_mem a (mem_univ c))
     have houtside : (d : ℤ) < |b r| := by grind [mem_doubledBlock, hparity r, lt_abs, abs_lt]
-    exact ⟨heq.symm, lt_sign_mul_iff.2 ⟨houtside, fun h ↦ hpos c r heq (h.trans_eq heq.symm),
+    exact ⟨heq.symm, Int.lt_sign_mul_iff.2 ⟨houtside, fun h ↦ hpos c r heq (h.trans_eq heq.symm),
       fun h ↦ hneg c r heq (heq.trans_lt h)⟩⟩
   refine ⟨fun r ↦ ?_, fun c ↦ ?_⟩
   · have hr := hentries.subset (Finset.mem_image_of_mem b (mem_univ r))
@@ -170,7 +185,7 @@ theorem entries_eq_of_exists_matched {C R : Type*} [Fintype C] [Fintype R] {s : 
   have hsign (c : C) (r : R) (heq : a c = b r) :
       (0 < b r → s c = t r) ∧ (b r < 0 → s c = -t r) := by
     obtain ⟨r', hr', hlt⟩ := hcols c; obtain rfl : r' = r := hb (hr'.trans heq)
-    exact (lt_sign_mul_iff.1 hlt).2
+    exact (Int.lt_sign_mul_iff.1 hlt).2
   exact ⟨Finset.eq_of_subset_of_card_le hsub hcount,
     fun c r heq h ↦ (hsign c r heq).1 (h.trans_eq heq),
     fun c r heq h ↦ (hsign c r heq).2 (heq.symm.trans_lt h)⟩
@@ -257,7 +272,7 @@ theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι₂) :
   have hdiff : (card ι₂ : ℤ) - card ι₁ = d := by omega
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
-      (shiftedEntry_injective h.injective_left) (shiftedEntry_injective h.injective_right)
+      (shiftedEntry_injective h.injective_right)
       (even_shiftedEntry_add_sub_one h.parity_right hd)
       (by simpa [hd] using h.entries_of_le hle) h.sign_of_pos h.sign_of_neg
     exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right,
@@ -345,4 +360,4 @@ theorem isBlockRule_iff_of_offsets {e p p' : ℤ} (hle : card ι₁ ≤ card ι�
 
 end
 
-end DiscreteSeries
+end TauCeti.DiscreteSeries
