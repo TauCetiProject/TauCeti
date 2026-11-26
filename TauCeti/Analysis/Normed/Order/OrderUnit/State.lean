@@ -286,8 +286,9 @@ theorem continuous_statePullback {e : E} {f : F} (T : E →L[ℝ] F) (hT : Monot
 @[simp]
 theorem statePullback_id {e : E} (φ : stateSpace e) :
     statePullback (ContinuousLinearMap.id ℝ E) monotone_id rfl φ = φ :=
-  Subtype.ext (DFunLike.ext _ _ fun a => by
-    simpa using statePullback_apply (ContinuousLinearMap.id ℝ E) monotone_id rfl φ a)
+  Subtype.ext <| DFunLike.ext _ _ fun a =>
+    (statePullback_apply (ContinuousLinearMap.id ℝ E) monotone_id rfl φ a).trans
+      (congrArg φ.1 (ContinuousLinearMap.id_apply a))
 
 /-- Pulling back along a composition `S.comp T` reverses the order of composition: it applies the
 pullback along `S` first, then the pullback along `T`. -/
@@ -296,9 +297,13 @@ theorem statePullback_comp {e : E} {f : F} {g : G}
     (T : E →L[ℝ] F) (hT : Monotone T) (hTu : T e = f) (φ : stateSpace g) :
     statePullback (S.comp T) (hS.comp hT) (by simp [hTu, hSu]) φ =
       statePullback T hT hTu (statePullback S hS hSu φ) :=
-  Subtype.ext (DFunLike.ext _ _ fun a => by
-    simpa [statePullback_apply] using
-      statePullback_apply (S.comp T) (hS.comp hT) (by simp [hTu, hSu]) φ a)
+  Subtype.ext <| DFunLike.ext _ _ fun a =>
+    calc (statePullback (S.comp T) (hS.comp hT) (by simp [hTu, hSu]) φ).1 a
+        = φ.1 ((S.comp T) a) := statePullback_apply (S.comp T) (hS.comp hT) _ φ a
+      _ = φ.1 (S (T a)) := congrArg φ.1 (ContinuousLinearMap.comp_apply S T a)
+      _ = (statePullback S hS hSu φ).1 (T a) := (statePullback_apply S hS hSu φ (T a)).symm
+      _ = (statePullback T hT hTu (statePullback S hS hSu φ)).1 a :=
+        (statePullback_apply T hT hTu (statePullback S hS hSu φ) a).symm
 
 end Pullback
 
@@ -386,17 +391,11 @@ theorem surjective_statePullback_subtype {E : Type*} [SeminormedAddCommGroup E] 
 theorem stateSpace_nonempty {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
     [Preorder E] [IsOrderedAddMonoid E] {e : E} (he : IsOrderUnitNorm e) :
     (OrderUnit.stateSpace e).Nonempty := by
-  let i : ℝ →ₗᵢ[ℝ] E :=
-    { toFun := fun r => r • e
-      map_add' := fun r s => add_smul r s e
-      map_smul' := fun r s => mul_smul r s e
-      norm_map' := fun r => by
-        simp only [LinearMap.coe_mk, AddHom.coe_mk]
-        rw [he.norm_smul_self, Real.norm_eq_abs] }
+  let i := LinearIsometry.toSpanSingleton ℝ E he.norm_e
   let idState : WeakDual ℝ ℝ := WeakDual.toStrongDual.symm (ContinuousLinearMap.id ℝ ℝ)
   have hid : idState ∈ OrderUnit.stateSpace (1 : ℝ) := ⟨monotone_id, rfl⟩
   obtain ⟨φ, hφ, -⟩ :=
-    IsOrderUnitNorm.real_one.exists_state_extension_linearIsometry he i (one_smul ℝ e) hid
+    IsOrderUnitNorm.real_one.exists_state_extension_linearIsometry he i (by simp [i]) hid
   exact ⟨φ, hφ⟩
 
 end IsOrderUnitNorm
@@ -500,9 +499,9 @@ theorem le_iff_forall_state_le {a b : E} :
   have hfe : 0 ≤ f e := by simpa only [map_zero] using hf he.nonneg
   rcases hfe.eq_or_lt with h0 | hpos
   · have hf_norm : ‖f‖ = 0 := (he.opNorm_functional_eq_apply hf).trans h0.symm
-    have hf0 : ∀ x : E, f x = 0 := fun x =>
-      norm_eq_zero.mp (le_antisymm (by simpa [hf_norm] using f.le_opNorm x) (norm_nonneg _))
-    rw [hf0 a, hf0 b]
+    obtain rfl : f = 0 := ContinuousLinearMap.ext fun x => by
+      simpa [hf_norm] using f.le_opNorm x
+    simp
   · let φ : WeakDual ℝ E := WeakDual.toStrongDual.symm ((f e)⁻¹ • f)
     have hφ_apply (x : E) : φ x = (f e)⁻¹ * f x := by
       rw [← WeakDual.toStrongDual_apply]
