@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 import Mathlib.Algebra.Module.LinearMap.End
+import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
@@ -38,10 +39,6 @@ variable (k : Type u) [CommRing k] [Small.{v} k] (S : Type*) [Semiring S]
 def extScalarAction (A : ModuleCat.{v} k) (n : ℕ) :
     S →+* Module.End k (Ext.{v} A (ModuleCat.of k M) n) :=
   have := SMulCommClass.symm k S M
-  haveI : (linearExtFunctorObj.{v} k A n).Additive :=
-    { map_add := fun {X Y} f g ↦ by
-        ext e
-        simp [linearExtFunctorObj, Ext.mk₀_add] }
   (ModuleCat.endRingEquiv _).toRingHom.comp
     (((linearExtFunctorObj.{v} k A n).mapEndRingHom (ModuleCat.of k M)).comp
       ((ModuleCat.endRingEquiv (ModuleCat.of k M)).symm.toRingHom.comp

@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
+import TauCeti.Algebra.Homology.Embedding.Restriction.Surjective
 
 /-!
 # Regrading a chain complex as a cochain complex
@@ -380,6 +381,10 @@ variable {C : Type*} [Category* C] [HasZeroMorphisms C] (K : CochainComplex C �
 
 section Homology
 
+private lemma surjective_embeddingDownIntUpInt_f :
+    Function.Surjective embeddingDownIntUpInt.f :=
+  fun j ↦ ⟨-j, by simp⟩
+
 variable (i j : ℤ) (h : i + j = 0)
   [K.HasHomology j] [(K.restriction embeddingDownIntUpInt).HasHomology i]
 
@@ -387,8 +392,8 @@ variable (i j : ℤ) (h : i + j = 0)
 complex `K` in degree `j = -i`. -/
 noncomputable def restrictionDownIntUpIntCyclesIso :
     (K.restriction embeddingDownIntUpInt).cycles i ≅ K.cycles j :=
-  K.restrictionCyclesIso embeddingDownIntUpInt i (i - 1) ((down ℤ).next_eq' (by simp))
-    (j' := j) (k' := j + 1) (by simp; omega) (by simp; omega) ((up ℤ).next_eq' (by simp))
+  K.restrictionCyclesIsoOfSurjective embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f
+    i j (by simp; omega)
 
 /-- `CochainComplex.restrictionDownIntUpIntCyclesIso` is compatible with the inclusions of the
 cycles. -/
@@ -398,7 +403,7 @@ lemma restrictionDownIntUpIntCyclesIso_hom_iCycles :
       (K.restriction embeddingDownIntUpInt).iCycles i ≫
         (K.restrictionXIso embeddingDownIntUpInt
           (show embeddingDownIntUpInt.f i = j by simp; omega)).hom :=
-  K.restrictionCyclesIso_hom_iCycles ..
+  K.restrictionCyclesIsoOfSurjective_hom_iCycles ..
 
 /-- The inverse of `CochainComplex.restrictionDownIntUpIntCyclesIso` is compatible with the
 inclusions of the cycles. -/
@@ -408,16 +413,14 @@ lemma restrictionDownIntUpIntCyclesIso_inv_iCycles :
         (K.restriction embeddingDownIntUpInt).iCycles i =
       K.iCycles j ≫ (K.restrictionXIso embeddingDownIntUpInt
           (show embeddingDownIntUpInt.f i = j by simp; omega)).inv :=
-  K.restrictionCyclesIso_inv_iCycles ..
+  K.restrictionCyclesIsoOfSurjective_inv_iCycles ..
 
 /-- The homology of the chain complex `K⁻` with `K⁻ᵢ = K⁻ⁱ` in degree `i` is that of the cochain
 complex `K` in degree `j = -i`. -/
 noncomputable def restrictionDownIntUpIntHomologyIso :
     (K.restriction embeddingDownIntUpInt).homology i ≅ K.homology j :=
-  K.restrictionHomologyIso embeddingDownIntUpInt (i + 1) i (i - 1)
-    ((down ℤ).prev_eq' (by simp)) ((down ℤ).next_eq' (by simp))
-    (i' := j - 1) (k' := j + 1) (by simp; omega) (by simp; omega) (by simp; omega)
-    ((up ℤ).prev_eq' (by simp)) ((up ℤ).next_eq' (by simp))
+  K.restrictionHomologyIsoOfSurjective embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f
+    i j (by simp; omega)
 
 /-- Under `CochainComplex.restrictionDownIntUpIntHomologyIso`, the homology class of a cycle of
 `K⁻` is the homology class of the corresponding cycle of `K`. -/
@@ -426,7 +429,7 @@ lemma homologyπ_restrictionDownIntUpIntHomologyIso_hom :
     (K.restriction embeddingDownIntUpInt).homologyπ i ≫
         (K.restrictionDownIntUpIntHomologyIso i j h).hom =
       (K.restrictionDownIntUpIntCyclesIso i j h).hom ≫ K.homologyπ j :=
-  K.homologyπ_restrictionHomologyIso_hom ..
+  K.homologyπ_restrictionHomologyIsoOfSurjective_hom ..
 
 /-- The inverse of `CochainComplex.restrictionDownIntUpIntHomologyIso` sends the homology class of
 a cycle of `K` to the homology class of the corresponding cycle of `K⁻`. -/
@@ -435,34 +438,31 @@ lemma homologyπ_restrictionDownIntUpIntHomologyIso_inv :
     K.homologyπ j ≫ (K.restrictionDownIntUpIntHomologyIso i j h).inv =
       (K.restrictionDownIntUpIntCyclesIso i j h).inv ≫
         (K.restriction embeddingDownIntUpInt).homologyπ i :=
-  K.homologyπ_restrictionHomologyIso_inv ..
+  K.homologyπ_restrictionHomologyIsoOfSurjective_inv ..
 
 include h in
 /-- If the cycles of `K` split off in degree `j = -i`, then those of `K⁻` split off in degree
 `i`. -/
 lemma isSplitMono_restrictionDownIntUpInt_iCycles [IsSplitMono (K.iCycles j)] :
     IsSplitMono ((K.restriction embeddingDownIntUpInt).iCycles i) :=
-  IsSplitMono.mk'
-    { retraction := (K.restrictionXIso embeddingDownIntUpInt
-        (show embeddingDownIntUpInt.f i = j by simp; omega)).hom ≫
-          retraction (K.iCycles j) ≫ (K.restrictionDownIntUpIntCyclesIso i j h).inv
-      id := by
-        rw [← restrictionDownIntUpIntCyclesIso_hom_iCycles_assoc K i j h, IsSplitMono.id_assoc,
-          Iso.hom_inv_id] }
+  (K.isSplitMono_iCycles_restriction_iff_of_surjective embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f i j (by simp; omega)).2 inferInstance
 
 include h in
 /-- If the cycles of `K` are projective in degree `j = -i`, then so are those of `K⁻` in degree
 `i`. -/
 lemma projective_restrictionDownIntUpInt_cycles [Projective (K.cycles j)] :
     Projective ((K.restriction embeddingDownIntUpInt).cycles i) :=
-  Projective.of_iso (K.restrictionDownIntUpIntCyclesIso i j h).symm inferInstance
+  (K.projective_cycles_restriction_iff_of_surjective embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f i j (by simp; omega)).2 inferInstance
 
 include h in
 /-- If the homology of `K` is projective in degree `j = -i`, then so is that of `K⁻` in degree
 `i`. -/
 lemma projective_restrictionDownIntUpInt_homology [Projective (K.homology j)] :
     Projective ((K.restriction embeddingDownIntUpInt).homology i) :=
-  Projective.of_iso (K.restrictionDownIntUpIntHomologyIso i j h).symm inferInstance
+  (K.projective_homology_restriction_iff_of_surjective embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f i j (by simp; omega)).2 inferInstance
 
 end Homology
 
@@ -479,21 +479,18 @@ variable {K L : CochainComplex C ℤ} (φ : K ⟶ L) (i j : ℤ) (h : i + j = 0)
 lemma cyclesMap_restrictionMap_restrictionDownIntUpIntCyclesIso_hom :
     cyclesMap (restrictionMap φ embeddingDownIntUpInt) i ≫
         (L.restrictionDownIntUpIntCyclesIso i j h).hom =
-      (K.restrictionDownIntUpIntCyclesIso i j h).hom ≫ cyclesMap φ j := by
-  obtain rfl : j = -i := by omega
-  rw [← cancel_mono (L.iCycles (-i))]
-  simp [restrictionXIso]
+      (K.restrictionDownIntUpIntCyclesIso i j h).hom ≫ cyclesMap φ j :=
+  cyclesMap_restrictionMap_restrictionCyclesIsoOfSurjective_hom embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f φ i j (by simp; omega)
 
 /-- `CochainComplex.restrictionDownIntUpIntHomologyIso` is natural in the cochain complex. -/
 @[reassoc (attr := simp)]
 lemma homologyMap_restrictionMap_restrictionDownIntUpIntHomologyIso_hom :
     homologyMap (restrictionMap φ embeddingDownIntUpInt) i ≫
         (L.restrictionDownIntUpIntHomologyIso i j h).hom =
-      (K.restrictionDownIntUpIntHomologyIso i j h).hom ≫ homologyMap φ j := by
-  rw [← cancel_epi ((K.restriction embeddingDownIntUpInt).homologyπ i),
-    homologyπ_naturality_assoc, homologyπ_restrictionDownIntUpIntHomologyIso_hom,
-    homologyπ_restrictionDownIntUpIntHomologyIso_hom_assoc, homologyπ_naturality,
-    cyclesMap_restrictionMap_restrictionDownIntUpIntCyclesIso_hom_assoc]
+      (K.restrictionDownIntUpIntHomologyIso i j h).hom ≫ homologyMap φ j :=
+  homologyMap_restrictionMap_restrictionHomologyIsoOfSurjective_hom embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f φ i j (by simp; omega)
 
 /-- The inverse of `CochainComplex.restrictionDownIntUpIntHomologyIso` is natural in the cochain
 complex. -/
@@ -501,10 +498,9 @@ complex. -/
 lemma homologyMap_restrictionDownIntUpIntHomologyIso_inv :
     homologyMap φ j ≫ (L.restrictionDownIntUpIntHomologyIso i j h).inv =
       (K.restrictionDownIntUpIntHomologyIso i j h).inv ≫
-        homologyMap (restrictionMap φ embeddingDownIntUpInt) i := by
-  rw [← cancel_epi (K.restrictionDownIntUpIntHomologyIso i j h).hom, Iso.hom_inv_id_assoc,
-    ← homologyMap_restrictionMap_restrictionDownIntUpIntHomologyIso_hom_assoc,
-    Iso.hom_inv_id, Category.comp_id]
+        homologyMap (restrictionMap φ embeddingDownIntUpInt) i :=
+  homologyMap_restrictionHomologyIsoOfSurjective_inv embeddingDownIntUpInt
+    surjective_embeddingDownIntUpInt_f φ i j (by simp; omega)
 
 end Naturality
 
