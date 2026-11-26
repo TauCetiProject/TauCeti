@@ -29,20 +29,20 @@ namespace List
 
 variable {r : ℕ}
 
-/-- The interval and sign condition for an inclined edge between ordered positions.
-The weight of such an edge is supplied separately by the corresponding Cartan entry. -/
+/-- The ordered endpoints, interval and sign condition for an inclined edge. The weight of such
+an edge is supplied separately by the corresponding Cartan entry. -/
 def IsBfzInclinedPair (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) : Prop :=
-  ∃ j : Fin (r + w.length), l < j ∧
+  k < l ∧ ∃ j : Fin (r + w.length), l < j ∧
     ((bfzSuccessor w k = j ∧ (j : WithTop (Fin (r + w.length))) < bfzSuccessor w l ∧
         (bfzLetter w l).2 = (bfzLetter w j).2) ∨
       (bfzSuccessor w l = j ∧ (j : WithTop (Fin (r + w.length))) < bfzSuccessor w k ∧
         (bfzLetter w l).2 ≠ (bfzLetter w j).2))
 
-/-- An inclined pair has a genuine first successor strictly after the later position, with
-equal signs when the left successor comes first and opposite signs when the right one does. -/
+/-- An inclined pair is strictly ordered and has a genuine first successor after the later
+position, with equal signs when the left successor comes first and opposite signs otherwise. -/
 theorem isBfzInclinedPair_iff (w : List (Fin r × Bool)) (k l : Fin (r + w.length)) :
     IsBfzInclinedPair w k l ↔
-      ∃ j : Fin (r + w.length), l < j ∧
+      k < l ∧ ∃ j : Fin (r + w.length), l < j ∧
         ((bfzSuccessor w k = j ∧ (j : WithTop (Fin (r + w.length))) < bfzSuccessor w l ∧
             (bfzLetter w l).2 = (bfzLetter w j).2) ∨
           (bfzSuccessor w l = j ∧ (j : WithTop (Fin (r + w.length))) < bfzSuccessor w k ∧
@@ -99,6 +99,7 @@ theorem bfzExchangeMatrix_apply_self (w : List (Fin r × Bool)) (A : Matrix (Fin
 
 /-- The row at the predecessor of a mutable column gives a horizontal entry of magnitude one,
 with sign given by the letter of the column. -/
+@[simp]
 theorem bfzExchangeMatrix_apply_of_bfzSuccessor_eq (w : List (Fin r × Bool))
     (A : Matrix (Fin r) (Fin r) ℤ) (k : Fin (r + w.length))
     (l : {l : Fin (r + w.length) // IsBfzExchangeable w l}) (h : bfzSuccessor w k = l.val) :
@@ -108,6 +109,7 @@ theorem bfzExchangeMatrix_apply_of_bfzSuccessor_eq (w : List (Fin r × Bool))
 
 /-- A row whose successor precedes the mutable column has zero in that column. Together with
 the horizontal entries, this gives the triangular pattern of the predecessor minor. -/
+@[simp]
 theorem bfzExchangeMatrix_apply_of_bfzSuccessor_lt (w : List (Fin r × Bool))
     (A : Matrix (Fin r) (Fin r) ℤ) (k : Fin (r + w.length))
     (l : {l : Fin (r + w.length) // IsBfzExchangeable w l}) (h : bfzSuccessor w k < l.val) :
@@ -117,7 +119,7 @@ theorem bfzExchangeMatrix_apply_of_bfzSuccessor_lt (w : List (Fin r × Bool))
     (WithTop.coe_lt_coe.mp hjl)
   have hInclined : ¬ IsBfzInclinedPair w k l := by
     intro hi
-    obtain ⟨p, hp, hLeft | hRight⟩ := (isBfzInclinedPair_iff w k l).mp hi
+    obtain ⟨_, p, hp, hLeft | hRight⟩ := (isBfzInclinedPair_iff w k l).mp hi
     · exact (not_lt_of_ge (WithTop.coe_le_coe.mpr hp.le)) (hLeft.1 ▸ h)
     · exact (not_lt_of_ge (WithTop.coe_le_coe.mpr hp.le)) (hRight.2.1.trans h)
   rw [bfzExchangeMatrix_apply_of_lt w A k l hkl, ite_eq_right h.ne,
