@@ -30,9 +30,10 @@ systems of fundamental classes require
   (`IsAdaptedPseudoGradient.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary`), so
   `∂L(x, y)` is the union of the faces
   (`TauCeti.IsAdaptedPseudoGradient.morseBrokenTrajectorySpaceBoundary_eq_iUnion`).
-* Concatenation at `z` is an embedding
-  (`TauCeti.IsAdaptedPseudoGradient.isEmbedding_morseBrokenTrajectorySpaceComp`): restricting a
-  record to the levels above and below `f z` recovers its two factors.
+* Concatenation at any point `z` whose value is not a level is an embedding
+  (`TauCeti.IsAdaptedPseudoGradient.isEmbedding_morseBrokenTrajectorySpaceConcat`): restricting a
+  record to the levels above and below `f z` recovers its two factors. In particular, so are the
+  composition maps (`TauCeti.IsAdaptedPseudoGradient.isEmbedding_morseBrokenTrajectorySpaceComp`).
 * The *interior* of the face at `z`, made of the concatenations of two unbroken trajectories, meets
   no face of another critical point
   (`TauCeti.IsAdaptedPseudoGradient.disjoint_range_morseBrokenTrajectorySpaceComp_image`): on a
@@ -69,7 +70,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary`: the first break of a broken
   trajectory.
 * `morseBrokenTrajectorySpaceBoundary_eq_iUnion`: the boundary is the union of the faces.
-* `isEmbedding_morseBrokenTrajectorySpaceComp`: concatenation is an embedding.
+* `isEmbedding_morseBrokenTrajectorySpaceConcat`, `isEmbedding_morseBrokenTrajectorySpaceComp`:
+  concatenation is an embedding.
 * `disjoint_range_morseBrokenTrajectorySpaceComp_image`,
   `image_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interior of a face.
 * `IsMorseSmale.isCompact_morseBrokenTrajectorySpace`: the trajectory spaces are compact.
@@ -106,30 +108,6 @@ variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ}
   (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
 
 /-! ### The first break of a broken trajectory -/
-
-/-- The part of a record of a broken trajectory through `xs 0, xs 1, …, xs (k + 2)` on the levels
-below `f (xs 1)` records the broken trajectory through `xs 1, …, xs (k + 2)`. -/
-private theorem mem_morseBrokenTrajectoryRecords_tail {x y : M} {k : ℕ}
-    {xs : Fin (k + 3) → M} {zs : Fin (k + 2) → M} {w : c ⁻¹' Ioo (f y) (f x) → M}
-    (hxk : xs (Fin.last (k + 2)) = y) (hxc : ∀ j, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (xs j) = 0)
-    (hxne : ∀ j : Fin (k + 2), xs j.castSucc ≠ xs j.succ)
-    (hzs : ∀ j : Fin (k + 2),
-      zs j ∈ hX.flow.unstableSet (xs j.castSucc) ∩ hX.flow.stableSet (xs j.succ))
-    (hrec : ∀ i, f (w i) = c i ∧ ∃ j t, hX.flow t (zs j) = w i) (hzx : f (xs 1) < f x) :
-    (fun i : c ⁻¹' Ioo (f y) (f (xs 1)) ↦ w ⟨i, i.property.1, i.property.2.trans hzx⟩) ∈
-      hX.morseBrokenTrajectoryRecords (xs 1) y ((c ⁻¹' Ioo (f y) (f (xs 1))).domRestrict c) := by
-  refine hX.mem_morseBrokenTrajectoryRecords.2 ⟨k + 1, fun j ↦ xs j.succ, fun j ↦ zs j.succ,
-    rfl, by simpa using hxk, fun j ↦ hxc _, fun j ↦ by simpa using hxne j.succ,
-    fun j ↦ by simpa using hzs j.succ, fun i ↦ ⟨(hrec _).1, ?_⟩⟩
-  obtain ⟨hwc, j, t, ht⟩ := hrec ⟨i, i.property.1, i.property.2.trans hzx⟩
-  induction j using Fin.cases with
-  | zero =>
-    -- The first component lies above the level of `xs 1`.
-    have h := hX.mem_Icc_of_mem_unstableSet_inter_stableSet
-      (hX.flow.isInvariant_unstableSet_inter_stableSet _ _ t (hzs 0))
-    rw [ht, hwc] at h
-    exact absurd h.1 (not_le.2 (by simpa using i.property.2))
-  | succ j => exact ⟨j, t, ht⟩
 
 include hc in
 /-- **A broken trajectory breaks first at a critical point.** A point of the boundary of the
@@ -173,7 +151,11 @@ theorem exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary
     rw [Fin.succ_zero_eq_one, Fin.castSucc_zero, hx0]
     exact i.property
   -- The part below the level of `z` records the broken trajectory through `xs 1, …, xs (k + 2)`.
-  have hb := hX.mem_morseBrokenTrajectoryRecords_tail hxk hxc hxne hzs hrec hzx
+  have hb :
+      (fun i : c ⁻¹' Ioo (f y) (f z) ↦ w.val ⟨i, i.property.1, i.property.2.trans hzx⟩) ∈
+      hX.morseBrokenTrajectoryRecords z y ((c ⁻¹' Ioo (f y) (f z)).domRestrict c) :=
+    hX.mem_morseBrokenTrajectoryRecords_tail hxk hxc hxne hzs (fun i ↦ hrec _)
+      fun i ↦ i.property.2
   refine ⟨z, ⟨_, mem_morseBrokenTrajectorySpace.2 ⟨hxz,
     hX.morseTrajectoryRecords_subset_morseBrokenTrajectoryRecords
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 x.property) (hxc 1) hxz _ ha⟩⟩,
@@ -187,11 +169,11 @@ theorem exists_morseBrokenTrajectorySpaceComp_eq_of_mem_boundary
 
 /-! ### Concatenation is an embedding -/
 
-/-- **Concatenation at a critical point is an embedding.** A concatenation of broken trajectories
-at `z` is the first one above the level of `z` and the second one below it, so restricting a
-record to the levels above and below `f z` recovers the two factors. -/
-theorem isEmbedding_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(ℝ, E) f) :
-    IsEmbedding (hX.morseBrokenTrajectorySpaceComp hc x z y) := by
+/-- **Concatenation at `z` is an embedding.** A concatenation of broken trajectories at `z` is the
+first one above the level of `z` and the second one below it, so restricting a record to the levels
+above and below `f z` recovers the two factors. -/
+theorem isEmbedding_morseBrokenTrajectorySpaceConcat {x z y : M} (hz : ∀ i, c i ≠ f z) :
+    IsEmbedding (hX.morseBrokenTrajectorySpaceConcat (x := x) (y := y) hz) := by
   rcases isEmpty_or_nonempty
     (hX.morseBrokenTrajectorySpace c x z × hX.morseBrokenTrajectorySpace c z y) with h | ⟨a, b⟩
   · exact .of_subsingleton _
@@ -204,18 +186,25 @@ theorem isEmbedding_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(
       fun i ↦ w ⟨i, i.property.1, i.property.2.trans hzx⟩)
   have hG : Continuous G :=
     (continuous_pi fun _ ↦ continuous_apply _).prodMk (continuous_pi fun _ ↦ continuous_apply _)
-  have hGcomp : (G ∘ Subtype.val) ∘ hX.morseBrokenTrajectorySpaceComp hc x z y =
+  have hGcomp : (G ∘ Subtype.val) ∘ hX.morseBrokenTrajectorySpaceConcat hz =
       Prod.map Subtype.val Subtype.val := by
     funext p
     refine Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)
-    · simp only [Function.comp_apply, coe_morseBrokenTrajectorySpaceComp_apply, G]
-      exact concatLevelRecords_of_lt (fun j ↦ hc j z) p.1.val p.2.val
+    · simp only [Function.comp_apply, coe_morseBrokenTrajectorySpaceConcat_apply, G]
+      exact concatLevelRecords_of_lt hz p.1.val p.2.val
         (i := ⟨i, hyz.trans i.property.1, i.property.2⟩) i.property.1
-    · simp only [Function.comp_apply, coe_morseBrokenTrajectorySpaceComp_apply, G]
-      exact concatLevelRecords_of_gt (fun j ↦ hc j z) p.1.val p.2.val
+    · simp only [Function.comp_apply, coe_morseBrokenTrajectorySpaceConcat_apply, G]
+      exact concatLevelRecords_of_gt hz p.1.val p.2.val
         (i := ⟨i, i.property.1, i.property.2.trans hzx⟩) i.property.2
   exact .of_comp (map_continuous _) (hG.comp continuous_subtypeVal)
     (hGcomp ▸ IsEmbedding.subtypeVal.prodMap IsEmbedding.subtypeVal)
+
+/-- **Concatenation at a critical point is an embedding.** -/
+theorem isEmbedding_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(ℝ, E) f) :
+    IsEmbedding (hX.morseBrokenTrajectorySpaceComp hc x z y) := by
+  convert hX.isEmbedding_morseBrokenTrajectorySpaceConcat fun i ↦ hc i z using 1
+  funext w
+  exact Subtype.ext (by simp)
 
 /-! ### The faces of the boundary -/
 
@@ -296,21 +285,13 @@ theorem disjoint_range_morseBrokenTrajectorySpaceComp_image
   by_cases hzi : f z < c i
   · rw [concatLevelRecords_of_lt (fun j ↦ hc j z) u₁.val u₂.val
       (i := ⟨i, hyz'.trans hi, hix⟩) hzi] at hw_i
-    obtain ⟨y₁, hy₁, hrec₁⟩ := hX.mem_morseTrajectoryRecords.1 hu₁
-    obtain ⟨-, t, ht⟩ := hrec₁ ⟨i, hzi, hix⟩
-    have : a.val ⟨i, hi, hix⟩ ∈ hX.flow.stableSet z := by
-      rw [← hw_i, ← ht, Flow.apply_mem_stableSet_iff]
-      exact hy₁.2
-    exact disjoint_left.1 (Flow.disjoint_stableSet (Subtype.coe_injective.ne hz)) ha_i this
+    exact disjoint_left.1 (Flow.disjoint_stableSet (Subtype.coe_injective.ne hz)) ha_i
+      (hw_i ▸ hX.apply_mem_stableSet_of_mem_morseTrajectoryRecords hu₁ ⟨i, hzi, hix⟩)
   · have hiz : c i < f z := lt_of_le_of_ne (not_lt.1 hzi) (hc i z)
     rw [concatLevelRecords_of_gt (fun j ↦ hc j z) u₁.val u₂.val
       (i := ⟨i, hyz'.trans hi, hix⟩) hiz] at hw_i
-    obtain ⟨y₂, hy₂, hrec₂⟩ := hX.mem_morseTrajectoryRecords.1 hu₂
-    obtain ⟨-, t, ht⟩ := hrec₂ ⟨i, hyz'.trans hi, hiz⟩
-    have : a.val ⟨i, hi, hix⟩ ∈ hX.flow.stableSet y := by
-      rw [← hw_i, ← ht, Flow.apply_mem_stableSet_iff]
-      exact hy₂.2
-    exact disjoint_left.1 (Flow.disjoint_stableSet hz'y) ha_i this
+    exact disjoint_left.1 (Flow.disjoint_stableSet hz'y) ha_i
+      (hw_i ▸ hX.apply_mem_stableSet_of_mem_morseTrajectoryRecords hu₂ ⟨i, hyz'.trans hi, hiz⟩)
 
 include hc hdense in
 /-- **The interior of a face.** The concatenations at `z` of unbroken trajectories, the
