@@ -178,6 +178,12 @@ private theorem stripFactor_smul_div_smul {θ : ℝ} {z : ℂ} (hz : z ∈ verti
   rw [smul_smul, stripFactor, div_mul_div_comm, mul_comm (z - θ), div_self
     (mul_ne_zero (add_one_ne_zero_of_mem hz) (sub_ne_zero.2 hzθ)), one_smul]
 
+/-- Away from a zero `θ` of `F`, `(z + 1) • dslope F θ z = ((z + 1) / (z - θ)) • F z`. -/
+private theorem add_one_smul_dslope_of_ne {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {θ : ℝ} {F : ℂ → E} (hFθ : F θ = 0) {z : ℂ} (hz : z ≠ θ) :
+    (z + 1) • dslope F θ z = ((z + 1) / (z - θ)) • F z := by
+  rw [dslope_of_ne _ hz, slope_def_module, hFθ, sub_zero, smul_smul, div_eq_mul_inv]
+
 /-- `(z + 1) • dslope F θ z` is bounded on the closed strip if it is continuous there and `F` is
 bounded and vanishes at `θ ∈ (0, 1)`: near `θ` by compactness, and away from `θ` because it equals
 `((z + 1) / (z - θ)) • F z`. -/
@@ -202,8 +208,7 @@ private theorem isBounded_add_one_smul_dslope {E : Type*} [NormedAddCommGroup E]
   · have hzθ : z ≠ θ := fun h => by simp [h] at hzm; linarith
     refine le_max_of_le_right ?_
     simp only
-    rw [dslope_of_ne _ hzθ, slope_def_module, hFθ, sub_zero, smul_smul, ← div_eq_mul_inv,
-      norm_smul]
+    rw [add_one_smul_dslope_of_ne hFθ hzθ, norm_smul]
     exact mul_le_mul (norm_div_sub_le (Ioo_subset_Icc_self hθ) hm hzm.le) (hM z) (norm_nonneg _)
       (by positivity)
 
@@ -225,9 +230,8 @@ private theorem exists_stripTraces_eq_stripFactor_smul [CompleteSpace X₀] [Com
   have hFθ : F θ = 0 := by simpa [F] using hf
   -- `H = (z + 1) • dslope F θ` is admissible, with traces `((z + 1) / (z - θ)) • f`.
   set H : ℂ → C.SumSpace := fun z => (z + 1) • dslope F θ z
-  have hH : ∀ z : ℂ, z ≠ θ → H z = ((z + 1) / (z - θ)) • F z := fun z hz => by
-    simp only [H]
-    rw [dslope_of_ne _ hz, slope_def_module, hFθ, sub_zero, smul_smul, div_eq_mul_inv]
+  have hH : ∀ z : ℂ, z ≠ θ → H z = ((z + 1) / (z - θ)) • F z := fun z hz =>
+    add_one_smul_dslope_of_ne hFθ hz
   set h₀ := lineCoeffMap X₀ hθI (by simpa using h₀θ) (f : C₀(ℝ, X₀) × C₀(ℝ, X₁)).1
   set h₁ := lineCoeffMap X₁ hθI h₁θ (f : C₀(ℝ, X₀) × C₀(ℝ, X₁)).2
   have hne₀ : ∀ t : ℝ, (t * I : ℂ) ≠ θ := fun t h => h₀θ (by simpa using congrArg re h)

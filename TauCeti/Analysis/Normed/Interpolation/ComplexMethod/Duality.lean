@@ -150,6 +150,53 @@ private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_one_add_mul_I_le
   exact ((q.2 _).le_opNorm (C.interSnd y)).trans (mul_le_mul_of_nonneg_right
     ((BoundedContinuousFunction.norm_coe_le_norm _ _).trans (norm_snd_le q)) (norm_nonneg _))
 
+/-- For `h ≠ 0`, the vertical difference quotient `z ↦ (h i)⁻¹ ⟨G (z + h i) - G z, Φ z⟩` of
+`G` paired with `Φ` is holomorphic on the open strip and continuous on its closure. -/
+private theorem diffContOnCl_inv_mul_sumSpaceEmbed_sub_apply
+    (hG : (C.dual hC).IsUpperStripFunction G q) {Φ : ℂ → C.inter}
+    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1)) (h : ℝ) :
+    DiffContOnCl ℂ
+      (fun z => ((h : ℂ) * I)⁻¹ * (C.dual hC).sumSpaceEmbed (G (z + h * I) - G z) (Φ z))
+      (verticalStrip 0 1) := by
+  have hmaps : MapsTo (fun z : ℂ => z + h * I) (verticalStrip 0 1) (verticalStrip 0 1) :=
+    fun z hz => by simpa using hz
+  have hshift : DiffContOnCl ℂ (fun z => G (z + h * I)) (verticalStrip 0 1) :=
+    hG.diffContOnCl.comp (differentiable_id.add_const _).diffContOnCl hmaps
+  have hP : DiffContOnCl ℂ (fun z => (C.dual hC).sumSpaceEmbed (G (z + h * I) - G z))
+      (verticalStrip 0 1) :=
+    (C.dual hC).sumSpaceEmbed.differentiable.comp_diffContOnCl (hshift.sub hG.diffContOnCl)
+  exact ⟨(hP.differentiableOn.clm_apply hΦ.differentiableOn).const_mul _,
+    (hP.continuousOn.clm_apply hΦ.continuousOn).const_mul _⟩
+
+/-- **The three-lines step.** For fixed `h ≠ 0`, the vertical difference quotient
+`(h i)⁻¹ ⟨G (θ + h i) - G θ, Φ θ⟩` is at most `‖q‖ M` when the boundary values of `Φ` are
+bounded by `M`. -/
+private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_le_of_boundary
+    (hG : (C.dual hC).IsUpperStripFunction G q) {θ : ℝ} (hθ : θ ∈ Ioo 0 1) {Φ : ℂ → C.inter}
+    (hΦ : DiffContOnCl ℂ Φ (verticalStrip 0 1)) (hΦb : IsBounded (Φ '' verticalClosedStrip 0 1))
+    {M : ℝ} (h₀ : ∀ t : ℝ, ‖C.interFst (Φ (t * I))‖ ≤ M)
+    (h₁ : ∀ t : ℝ, ‖C.interSnd (Φ (1 + t * I))‖ ≤ M) {h : ℝ} (hh : h ≠ 0) :
+    ‖((h : ℂ) * I)⁻¹ * (C.dual hC).sumSpaceEmbed (G (θ + h * I) - G θ) (Φ θ)‖ ≤ ‖q‖ * M := by
+  set φ := fun z => ((h : ℂ) * I)⁻¹ * (C.dual hC).sumSpaceEmbed (G (z + h * I) - G z) (Φ z)
+  have hqM : 0 ≤ ‖q‖ * M := mul_nonneg (norm_nonneg q) ((norm_nonneg _).trans (h₀ 0))
+  obtain ⟨K, hK⟩ := isBounded_iff_forall_norm_le.1 hΦb
+  have hB : BddAbove ((norm ∘ φ) '' verticalClosedStrip 0 1) := ⟨‖q‖ * K, by
+    rintro _ ⟨z, hz, rfl⟩
+    exact (norm_inv_mul_sumSpaceEmbed_sub_apply_le hG hh hz (Φ z)).trans
+      (mul_le_mul_of_nonneg_left (hK _ (mem_image_of_mem _ hz)) (norm_nonneg q))⟩
+  have ha : ∀ z ∈ re ⁻¹' {0}, ‖φ z‖ ≤ ‖q‖ * M := fun z hz => by
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = t * I := ⟨z.im, Complex.ext (by simpa using hz) (by simp)⟩
+    exact (norm_inv_mul_sumSpaceEmbed_sub_apply_mul_I_le hG hh t _).trans
+      (mul_le_mul_of_nonneg_left (h₀ t) (norm_nonneg q))
+  have hb : ∀ z ∈ re ⁻¹' {1}, ‖φ z‖ ≤ ‖q‖ * M := fun z hz => by
+    obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I := ⟨z.im, Complex.ext (by simpa using hz) (by simp)⟩
+    exact (norm_inv_mul_sumSpaceEmbed_sub_apply_one_add_mul_I_le hG hh t _).trans
+      (mul_le_mul_of_nonneg_left (h₁ t) (norm_nonneg q))
+  change ‖φ θ‖ ≤ ‖q‖ * M
+  simpa [← Real.rpow_add' hqM] using norm_le_interp_of_mem_verticalClosedStrip₀₁' φ
+    (z := (θ : ℂ)) (by simpa using Ioo_subset_Icc_self hθ)
+    (diffContOnCl_inv_mul_sumSpaceEmbed_sub_apply hG hΦ h) hB ha hb
+
 /-- **The pairing estimate.** Let `(X₀, X₁)` be a regular couple and `0 < θ < 1`. Let `G` be an
 upper strip function of the dual couple `(X₀*, X₁*)` with boundary difference quotients `q`, and
 let `Φ` be a function with values in `X₀ ∩ X₁`, holomorphic on the open strip and continuous and
@@ -162,42 +209,6 @@ theorem norm_sumSpaceEmbed_deriv_apply_le (hG : (C.dual hC).IsUpperStripFunction
     (h₁ : ∀ t : ℝ, ‖C.interSnd (Φ (1 + t * I))‖ ≤ M) :
     ‖(C.dual hC).sumSpaceEmbed (deriv G θ) (Φ θ)‖ ≤ ‖q‖ * M := by
   set P := (C.dual hC).sumSpaceEmbed
-  have hqM : 0 ≤ ‖q‖ * M := mul_nonneg (norm_nonneg q) ((norm_nonneg _).trans (h₀ 0))
-  have hcl : closure (verticalStrip 0 1) = re ⁻¹' Icc 0 1 := closure_verticalStrip zero_lt_one
-  have hGc : ContinuousOn G (re ⁻¹' Icc 0 1) := hcl ▸ hG.diffContOnCl.continuousOn
-  -- `φ h z = ⟨(h i)⁻¹ (G (z + h i) - G z), Φ z⟩`, a bounded holomorphic function on the strip.
-  set φ : ℝ → ℂ → ℂ := fun h z => ((h : ℂ) * I)⁻¹ * (P (G (z + h * I)) (Φ z) - P (G z) (Φ z))
-  have hbound : ∀ h : ℝ, h ≠ 0 → ‖φ h θ‖ ≤ ‖q‖ * M := by
-    intro h hh
-    have hmaps (s : Set ℝ) : MapsTo (fun z : ℂ => z + h * I) (re ⁻¹' s) (re ⁻¹' s) :=
-      fun z hz => by simpa using hz
-    have hd : DiffContOnCl ℂ (φ h) (verticalStrip 0 1) :=
-      ⟨(((P.differentiable.comp_differentiableOn (hG.diffContOnCl.differentiableOn.comp
-          (differentiableOn_id.add_const _) (hmaps _))).clm_apply hΦ.differentiableOn).fun_sub
-          ((P.differentiable.comp_differentiableOn hG.diffContOnCl.differentiableOn).clm_apply
-            hΦ.differentiableOn)).const_mul _,
-        hcl ▸ ((((P.continuous.comp_continuousOn (hGc.comp (continuousOn_id.add continuousOn_const)
-          (hmaps _))).clm_apply (hcl ▸ hΦ.continuousOn)).fun_sub
-          ((P.continuous.comp_continuousOn hGc).clm_apply (hcl ▸ hΦ.continuousOn))).const_mul _)⟩
-    have hφ : ∀ z, φ h z = ((h : ℂ) * I)⁻¹ * P (G (z + h * I) - G z) (Φ z) := fun z => by
-      rw [map_sub, sub_apply]
-    obtain ⟨K, hK⟩ := isBounded_iff_forall_norm_le.1 hΦb
-    have hB : BddAbove ((norm ∘ φ h) '' verticalClosedStrip 0 1) := ⟨‖q‖ * K, by
-      rintro _ ⟨z, hz, rfl⟩
-      exact (hφ z ▸ norm_inv_mul_sumSpaceEmbed_sub_apply_le hG hh hz (Φ z)).trans
-        (mul_le_mul_of_nonneg_left (hK _ (mem_image_of_mem _ hz)) (norm_nonneg q))⟩
-    have ha : ∀ z ∈ re ⁻¹' {0}, ‖φ h z‖ ≤ ‖q‖ * M := fun z hz => by
-      obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = t * I := ⟨z.im, Complex.ext (by simpa using hz) (by simp)⟩
-      exact (hφ _ ▸ norm_inv_mul_sumSpaceEmbed_sub_apply_mul_I_le hG hh t _).trans
-        (mul_le_mul_of_nonneg_left (h₀ t) (norm_nonneg q))
-    have hb : ∀ z ∈ re ⁻¹' {1}, ‖φ h z‖ ≤ ‖q‖ * M := fun z hz => by
-      obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I :=
-        ⟨z.im, Complex.ext (by simpa using hz) (by simp)⟩
-      exact (hφ _ ▸ norm_inv_mul_sumSpaceEmbed_sub_apply_one_add_mul_I_le hG hh t _).trans
-        (mul_le_mul_of_nonneg_left (h₁ t) (norm_nonneg q))
-    have := norm_le_interp_of_mem_verticalClosedStrip₀₁' (φ h) (z := (θ : ℂ))
-      (by simpa using Ioo_subset_Icc_self hθ) hd hB ha hb
-    simpa [← Real.rpow_add' hqM] using this
   -- Letting `h → 0`, the difference quotients at `θ` tend to the derivative.
   have hmap : Tendsto (fun h : ℝ => (h : ℂ) * I) (𝓝[≠] 0) (𝓝[≠] 0) :=
     tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
@@ -206,9 +217,12 @@ theorem norm_sumSpaceEmbed_deriv_apply_le (hG : (C.dual hC).IsUpperStripFunction
       (eventually_nhdsWithin_of_forall fun h hh => mul_ne_zero (ofReal_ne_zero.2 hh) I_ne_zero)
   have hderiv : HasDerivAt (fun w => P (G w) (Φ θ)) (P (deriv G θ) (Φ θ)) θ :=
     hasDerivAt_sumSpaceEmbed_apply hG (Φ θ) (by simpa using hθ)
-  have hlim : Tendsto (fun h : ℝ => φ h θ) (𝓝[≠] 0) (𝓝 (P (deriv G θ) (Φ θ))) :=
-    hderiv.tendsto_slope_zero.comp hmap
-  exact le_of_tendsto hlim.norm (eventually_nhdsWithin_of_forall hbound)
+  have hlim : Tendsto (fun h : ℝ => ((h : ℂ) * I)⁻¹ * P (G (θ + h * I) - G θ) (Φ θ)) (𝓝[≠] 0)
+      (𝓝 (P (deriv G θ) (Φ θ))) := by
+    simpa only [map_sub, sub_apply, smul_eq_mul, Function.comp_def] using
+      hderiv.tendsto_slope_zero.comp hmap
+  exact le_of_tendsto hlim.norm (eventually_nhdsWithin_of_forall fun h hh =>
+    norm_inv_mul_sumSpaceEmbed_sub_apply_le_of_boundary hG hθ hΦ hΦb h₀ h₁ hh)
 
 end IsUpperStripFunction
 
@@ -247,13 +261,6 @@ theorem norm_sumSpaceEmbed_toSum_apply_le (u : (C.dual hC).UpperComplexMethodSpa
         nhdsWithin_le_nhds
   exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall fun ε hε => key ε hε)
 
-/-- Continuous functionals on `[X₀, X₁]_θ` agreeing on `X₀ ∩ X₁` are equal. -/
-private theorem strongDual_ext_ofInter {f g : StrongDual ℂ (C.ComplexMethodSpace θ)}
-    (h : ∀ x : C.inter, f (ComplexMethodSpace.ofInter θ x) = g (ComplexMethodSpace.ofInter θ x)) :
-    f = g :=
-  DFunLike.coe_injective <| (ComplexMethodSpace.denseRange_ofInter θ).equalizer f.continuous
-    g.continuous (funext h)
-
 variable (hC θ) in
 /-- The extension of `x ↦ ⟨u, x⟩` from `X₀ ∩ X₁` to `[X₀, X₁]_θ`. -/
 private def pairingExtension (u : (C.dual hC).UpperComplexMethodSpace θ) :
@@ -278,9 +285,9 @@ def toStrongDual :
     (C.dual hC).UpperComplexMethodSpace θ →L[ℂ] StrongDual ℂ (C.ComplexMethodSpace θ) :=
   LinearMap.mkContinuous
     { toFun := pairingExtension hC θ
-      map_add' u v := strongDual_ext_ofInter fun x => by
+      map_add' u v := ComplexMethodSpace.ext_ofInter fun x => by
         simp only [add_apply, pairingExtension_apply_ofInter, map_add]
-      map_smul' c u := strongDual_ext_ofInter fun x => by
+      map_smul' c u := ComplexMethodSpace.ext_ofInter fun x => by
         simp only [smul_apply, pairingExtension_apply_ofInter, map_smul, RingHom.id_apply] }
     1 fun u => by
       rw [one_mul]
@@ -301,7 +308,7 @@ theorem eq_toStrongDual_iff {u : (C.dual hC).UpperComplexMethodSpace θ}
     f = toStrongDual hC θ u ↔
       ∀ x : C.inter, f (ComplexMethodSpace.ofInter θ x) = (C.dual hC).sumSpaceEmbed (toSum u) x :=
   ⟨fun h x => h ▸ toStrongDual_apply_ofInter u x, fun h =>
-    strongDual_ext_ofInter fun x => by rw [h, toStrongDual_apply_ofInter]⟩
+    ComplexMethodSpace.ext_ofInter fun x => by rw [h, toStrongDual_apply_ofInter]⟩
 
 /-- `toStrongDual` does not increase norms. -/
 theorem norm_toStrongDual_le (u : (C.dual hC).UpperComplexMethodSpace θ) :
