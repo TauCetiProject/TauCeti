@@ -21,6 +21,7 @@ and inverse `x ↦ x - ⟪ν, x⟫ s`.
 
 * `TauCeti.transvectionL`: the transvection `x ↦ x + ⟪ν, x⟫ s` as a continuous linear map.
 * `TauCeti.coe_transvectionL`: its underlying linear map is `LinearMap.transvection`.
+* `TauCeti.transvectionL_neg_left`: negating `ν` is negating `s`.
 * `TauCeti.transvectionL_apply_of_inner_eq_zero` and `TauCeti.inner_transvectionL`: it fixes `ν⊥`
   pointwise and, for `⟪μ, s⟫ = 0`, preserves `⟪μ, ·⟫`.
 * `TauCeti.transvectionL_transvectionL_neg`, `TauCeti.transvectionL_comp_transvectionL_neg`,
@@ -63,6 +64,12 @@ theorem coe_transvectionL (ν s : E) :
   LinearMap.ext fun x => by
     rw [ContinuousLinearMap.coe_coe, transvectionL_apply, LinearMap.transvection.apply,
       innerₛₗ_apply_apply]
+
+/-- Negating the covector of a transvection is negating its direction: both are
+`x ↦ x - ⟪ν, x⟫ s`. -/
+theorem transvectionL_neg_left (ν s : E) : transvectionL (-ν) s = transvectionL ν (-s) :=
+  ContinuousLinearMap.ext fun x => by
+    rw [transvectionL_apply, transvectionL_apply, inner_neg_left, neg_smul, smul_neg]
 
 /-- The transvection `x ↦ x + ⟪ν, x⟫ s` fixes every `x` with `⟪ν, x⟫ = 0`. -/
 theorem transvectionL_apply_of_inner_eq_zero (s : E) {ν x : E} (hx : ⟪ν, x⟫_ℝ = 0) :

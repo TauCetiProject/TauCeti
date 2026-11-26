@@ -372,19 +372,6 @@ private theorem exists_comp_boundaryShear (hs : ⟪ν, conormalShearVector A ν�
         (W1p.gradient_restrictL_ae hBr u)] with y h1 h2
     rw [h1, h2]
 
-/-- The pulled-back matrix `B` in sheared coordinates satisfies `B(K η, K ξ) = A(η, ξ)` for the
-transposed shear `K x = x + ⟪s, x⟫ ν`. -/
-private theorem matrixBilinearForm_pullbackPrincipal_transvectionL
-    (hs : ⟪ν, conormalShearVector A ν⟫_ℝ = 0) (η ξ : EuclideanSpace ℝ ι) :
-    matrixBilinearForm (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z)
-        (transvectionL (conormalShearVector A ν) ν η)
-        (transvectionL (conormalShearVector A ν) ν ξ) =
-      matrixBilinearForm A η ξ := by
-  have hfd := fderiv_boundaryShear hs (c₀ := c₀) z
-  have h := matrixBilinearForm_pullbackPrincipal (Φ := boundaryShear A ν c₀ hs) (fun _ => A)
-    (x := z) (by rw [hfd, det_transvectionL, hs, add_zero]; exact one_ne_zero) η ξ
-  rwa [hfd, adjoint_transvectionL, det_transvectionL, hs, add_zero, abs_one, one_mul] at h
-
 /-- The energy integrand of the reflected constant coefficient `B` is that of `B` itself. -/
 private theorem energyIntegrand_reflectPrincipal_pullbackPrincipal
     (hν : ν ≠ 0) (hq : matrixBilinearForm A ν ν ≠ 0)
@@ -427,7 +414,9 @@ private theorem toQuadraticForm'_pullbackPrincipal_boundaryShear_bounds {lam Lam
   have hQ : (pullbackPrincipal (boundaryShear A ν c₀ hs) (fun _ => A) z).toQuadraticForm' ξ =
       A.toQuadraticForm' ζ := by
     rw [toQuadraticForm'_apply, toQuadraticForm'_apply, ← matrixBilinearForm_apply,
-      ← matrixBilinearForm_apply, ← hξ, matrixBilinearForm_pullbackPrincipal_transvectionL hs]
+      ← matrixBilinearForm_apply, matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL
+        (fun _ => A) hs (fderiv_boundaryShear hs z), ContinuousLinearMap.bilinearComp_apply,
+        transvectionL_neg_left]
   have h1 : ‖ξ‖ ≤ κ * ‖ζ‖ := by
     conv_lhs => rw [← hξ]
     exact ((transvectionL s ν).le_opNorm ζ).trans (mul_le_mul_of_nonneg_right hK (norm_nonneg _))

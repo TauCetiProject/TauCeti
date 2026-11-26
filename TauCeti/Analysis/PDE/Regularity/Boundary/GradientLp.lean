@@ -515,17 +515,6 @@ private theorem pullbackDrift_shear_memLp {H : Opens E} {ν e w : E} {c₀ : ℝ
   rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, coe_nnNorm]
   exact ((transvectionL e w).le_opNorm _).trans (by gcongr)
 
-/-- The bilinear form of the coefficient transformed by `Φ x = x - ⟪e, x⟫ w` is the original one
-read through the adjoint `S ξ = ξ + ⟪w, ξ⟫ e` of the inverse shear. -/
-private theorem matrixBilinearForm_pullbackPrincipal_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
-    (b : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) (x : E) :
-    matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) b x) =
-      (matrixBilinearForm (b (transvectionL e (-w) x))).bilinearComp (transvectionL w e)
-        (transvectionL w e) := by
-  rw [matrixBilinearForm_pullbackPrincipal_eq_bilinearComp b (T := transvectionL e w)
-      (by rw [ContinuousLinearMap.fderiv, transvectionL_comp_transvectionL_neg hew]),
-    abs_det_fderiv_transvectionL (inner_neg_right_eq_zero hew), one_smul, adjoint_transvectionL]
-
 /-- The matrix `A` transformed by the shear `Φ x = x - ⟪e, x⟫ w`, with `‖Φ‖, ‖Φ⁻¹‖ ≤ κ`, is
 uniformly elliptic with constants `λ / κ²` and `κⁿ⁺³ Λ`. -/
 private theorem uniformlyEllipticOn_pullbackPrincipal_shear {e w : E} (hew : ⟪e, w⟫_ℝ = 0)
@@ -556,8 +545,11 @@ private theorem norm_matrixBilinearForm_pullbackPrincipal_shear_sub_le {e w : E}
         matrixBilinearForm (pullbackPrincipal (transvectionL e (-w)) (fun _ => A) y)‖ ≤
       δ * ‖transvectionL e w‖ * ‖transvectionL e w‖ := by
   have hδ : 0 ≤ δ := (norm_nonneg (matrixBilinearForm (a x) - matrixBilinearForm A)).trans (ha x)
-  rw [matrixBilinearForm_pullbackPrincipal_shear hew,
-    matrixBilinearForm_pullbackPrincipal_shear hew]
+  have hew' := inner_neg_right_eq_zero hew
+  rw [matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL a hew'
+      ((transvectionL e (-w)).fderiv (x := x)),
+    matrixBilinearForm_pullbackPrincipal_of_fderiv_eq_transvectionL (fun _ => A) hew'
+      ((transvectionL e (-w)).fderiv (x := y)), neg_neg]
   refine ContinuousLinearMap.opNorm_le_bound₂ _ (by positivity) fun η ξ => ?_
   have h := (matrixBilinearForm (a (transvectionL e (-w) x)) - matrixBilinearForm A).le_opNorm₂
     (transvectionL w e η) (transvectionL w e ξ)
