@@ -28,8 +28,8 @@ of a parametrix of an elliptic operator rests.
 and the operators of order `-∞` form a two-sided ideal
 (`TauCeti.comp_mem_smoothingPseudodifferentialOperators_of_left`,
 `TauCeti.comp_mem_smoothingPseudodifferentialOperators_of_right`). Consequently each of them is a
-two-sided parametrix (`TauCeti.comp_sub_id_mem_smoothingPseudodifferentialOperators_of_left`,
-`TauCeti.comp_sub_id_mem_smoothingPseudodifferentialOperators_of_right`), and a parametrix is unique
+two-sided parametrix (`TauCeti.comp_left_sub_id_mem_smoothingPseudodifferentialOperators`,
+`TauCeti.right_comp_sub_id_mem_smoothingPseudodifferentialOperators`), and a parametrix is unique
 modulo order `-∞`. So a parametrix may be built one side at a time.
 
 **The inverse principal symbol is quantized.** If `P` is elliptic at every point of a compact set
@@ -48,8 +48,8 @@ operators of order `-1`, and a Neumann series in these remainders corrects `Q₀
 
 * `TauCeti.sub_mem_smoothingPseudodifferentialOperators_of_comp_sub_id`: a left and a right
   parametrix of the same operator differ by an operator of order `-∞`.
-* `TauCeti.comp_sub_id_mem_smoothingPseudodifferentialOperators_of_left`,
-  `TauCeti.comp_sub_id_mem_smoothingPseudodifferentialOperators_of_right`: if an operator has both
+* `TauCeti.comp_left_sub_id_mem_smoothingPseudodifferentialOperators`,
+  `TauCeti.right_comp_sub_id_mem_smoothingPseudodifferentialOperators`: if an operator has both
   a left parametrix and a right parametrix, each of them is a two-sided parametrix.
 * `IsCompact.exists_classicalPrincipalSymbol_eq_inv`: an operator of order `m` elliptic
   over a compact set `K` has an operator of order `-m` elliptic over `K` with the inverse principal
@@ -105,7 +105,7 @@ theorem sub_mem_smoothingPseudodifferentialOperators_of_comp_sub_id :
 
 /-- **A right parametrix is a left parametrix.** If `P` is a classical pseudodifferential operator
 with a left parametrix `L` and a right parametrix `R`, then `R ∘ P - 1` has order `-∞`. -/
-theorem comp_sub_id_mem_smoothingPseudodifferentialOperators_of_right
+theorem right_comp_sub_id_mem_smoothingPseudodifferentialOperators
     (hP : P ∈ classicalPseudodifferentialOperators m) :
     R ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
   have h : R ∘ₗ P - LinearMap.id = (L ∘ₗ P - LinearMap.id) - (L - R) ∘ₗ P := by
@@ -117,7 +117,7 @@ theorem comp_sub_id_mem_smoothingPseudodifferentialOperators_of_right
 
 /-- **A left parametrix is a right parametrix.** If `P` is a classical pseudodifferential operator
 with a left parametrix `L` and a right parametrix `R`, then `P ∘ L - 1` has order `-∞`. -/
-theorem comp_sub_id_mem_smoothingPseudodifferentialOperators_of_left
+theorem comp_left_sub_id_mem_smoothingPseudodifferentialOperators
     (hP : P ∈ classicalPseudodifferentialOperators m) :
     P ∘ₗ L - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
   have h : P ∘ₗ L - LinearMap.id = (P ∘ₗ R - LinearMap.id) + P ∘ₗ (L - R) := by
