@@ -100,6 +100,10 @@ theorem evaluation_dual_tmul [Module.Finite R M] [Module.Projective R M]
       @ExactPairing.evaluation _ _ _ _ _ (exactPairingOfIsIsoDualTensorIhom (Y := M))).hom
       (f ⊗ₜ m) = f m
   rw [he, ModuleCat.ihom_ev_app]
+  -- The remaining steps hold by definition: `homLinearEquiv.toModuleIso.inv` turns `f` into the
+  -- morphism `ofHom f`, the braiding sends `ofHom f ⊗ m` to `m ⊗ ofHom f`, and the internal-Hom
+  -- evaluation sends that to `(ofHom f).hom m = f m`. `simp` stops at the whiskering, whose apply
+  -- lemma does not fire through the `ModuleCat.of` carrier of the dual.
   rfl
 
 /-- The coevaluation of the algebraic dual is a finite dual basis: under the identification of

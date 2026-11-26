@@ -126,7 +126,8 @@ private theorem smulOneTmul_apply {N : ModuleCat.{u} S} (x : N) (r : S) :
       ((𝟙_ (FrobeniusModuleCat σ)).linearization.inv.hom _) = _
     erw [linearization_inv_frobenius]
     rw [ModuleCat.extendScalarsHomEquivSemilinearMap_apply]
-    rfl
+    -- `(extendScalars σ).map g` sends `1 ⊗ a` to `1 ⊗ g a`, here with `g a = a • x`.
+    exact ModuleCat.ExtendScalars.map_tmul σ (ModuleCat.ofHom (LinearMap.toSpanSingleton S N x)) 1 a
   have h := hσ 1
   rw [map_one, one_smul] at h
   conv_lhs => rw [← mul_one r, ← smul_eq_mul, map_smul, h]
@@ -196,11 +197,17 @@ instance isIso_linearization_dualFrobenius :
 @[simp] theorem frobenius_dual : M.dual.frobenius = M.dualFrobenius :=
   frobenius_ofFrobenius _ _
 
-/-- The Frobenius of `M ⊗ M^∨` is `F ⊗ F^∨`. -/
-private theorem tensor_dual_frobenius (x : M.carrier ⊗[S] Module.Dual S M.carrier) :
-    (M ⊗ M.dual).frobenius x = TensorProduct.map M.frobenius M.dualFrobenius x := by
-  rw [tensor_frobenius, frobenius_dual]
-  rfl
+/-- The Frobenius of `M ⊗ M^∨` is `F ⊗ F^∨`, and that of `M^∨ ⊗ M` is `F^∨ ⊗ F`. -/
+private theorem tensor_dual_frobenius :
+    (∀ x : M.carrier ⊗[S] Module.Dual S M.carrier,
+      (M ⊗ M.dual).frobenius x = TensorProduct.map M.frobenius M.dualFrobenius x) ∧
+    ∀ x : Module.Dual S M.carrier ⊗[S] M.carrier,
+      (M.dual ⊗ M).frobenius x = TensorProduct.map M.dualFrobenius M.frobenius x := by
+  -- After the rewrites both sides are the same `TensorProduct.map`, but on the left it is typed on
+  -- the carrier of the tensor product of linearized Frobenius modules, and on the right on the
+  -- tensor product of `M` with `Module.Dual S M`. These types agree by unfolding the monoidal
+  -- structure and `dual_carrier`, which `rfl` does.
+  refine ⟨fun x ↦ ?_, fun x ↦ ?_⟩ <;> rw [tensor_frobenius, frobenius_dual] <;> rfl
 
 /-- The canonical element `∑ eᵢ ⊗ eᵢ^∨` of `M ⊗ M^∨` is fixed by the Frobenius `F ⊗ F^∨`. -/
 private theorem map_frobenius_coevaluation_one :
@@ -221,11 +228,7 @@ private theorem evaluation_frobenius (x : Module.Dual S M.carrier ⊗[S] M.carri
     (ε_ M.carrier (ModuleCat.of S (Module.Dual S M.carrier))).hom ((M.dual ⊗ M).frobenius x) =
       (𝟙_ (FrobeniusModuleCat σ)).frobenius
         ((ε_ M.carrier (ModuleCat.of S (Module.Dual S M.carrier))).hom x) := by
-  have h : (M.dual ⊗ M).frobenius x = TensorProduct.map M.dualFrobenius M.frobenius x := by
-    rw [tensor_frobenius, frobenius_dual]
-    rfl
-  rw [h, tensorUnit_frobenius_apply]
-  clear h
+  rw [M.tensor_dual_frobenius.2, tensorUnit_frobenius_apply]
   induction x using TensorProduct.inductionOn with
   | tmul f m =>
     rw [map_tmul, ModuleCat.evaluation_dual_tmul, ModuleCat.evaluation_dual_tmul,
@@ -240,7 +243,7 @@ private theorem coevaluation_frobenius (r : S) :
   set η' := (η_ M.carrier (ModuleCat.of S (Module.Dual S M.carrier))).hom
   have hη (a : S) : η' a = a • η' 1 := by
     rw [← map_smul, smul_eq_mul, mul_one]
-  rw [tensorUnit_frobenius_apply, tensor_dual_frobenius, hη, hη r, map_smulₛₗ,
+  rw [tensorUnit_frobenius_apply, M.tensor_dual_frobenius.1, hη, hη r, map_smulₛₗ,
     map_frobenius_coevaluation_one]
 
 /-- A finite projective linearized Frobenius module and its dual form an exact pairing, with the
