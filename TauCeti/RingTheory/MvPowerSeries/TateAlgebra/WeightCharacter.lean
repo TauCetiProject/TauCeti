@@ -66,11 +66,12 @@ The algebraic weight `u ↦ ∏ᵢ σᵢ(u) ^ mᵢ`, with expansion `∏ᵢ (1 +
 ## Main results
 
 * `TauCeti.MvPowerSeries.AnalyticWeight.restrictedAnalyticSubst_expansion_add_add_mul`: the
-  expansion is multiplicative for the group law `x ⊕ x'` at every pair of arguments in a Tate
-  algebra, including arguments with nonzero constant terms.
+  expansion is multiplicative for the group law `x ⊕ x'` at every pair of arguments of Gauss norm
+  at most `rᵢ ≤ 1` in any Tate algebra, including arguments with nonzero constant terms.
 * `TauCeti.MvPowerSeries.AnalyticWeight.factor_mul`: the cocycle law of the analytic factor.
-* `TauCeti.MvPowerSeries.AnalyticWeight.norm_automorphyFactor_factor_le`: the bound
-  `‖j(γ)‖ ≤ ‖n(d)‖ ‖N‖`, so each slash operator has norm at most `‖n(d)‖ ‖N‖`.
+* `TauCeti.MvPowerSeries.AnalyticWeight.norm_factor_le`: the bound `‖j(γ)‖ ≤ ‖n(d)‖ ‖N‖`.
+* `TauCeti.MvPowerSeries.AnalyticWeight.norm_automorphyFactor_slash_apply_le`: each slash operator
+  has norm at most `‖n(d)‖ ‖N‖`.
 * `TauCeti.MvPowerSeries.AnalyticWeight.automorphyFactor_algebraic`: the algebraic weights give the
   polynomial automorphy factors.
 
@@ -134,6 +135,10 @@ theorem coe_sigma0LowerRightUnit (γ : sigma0Submonoid I hI) :
     (sigma0LowerRightUnit γ : O) = (γ : Matrix (Fin 2) (Fin 2) O) 1 1 :=
   IsUnit.unit_spec _
 
+@[simp]
+theorem sigma0LowerRightUnit_one : sigma0LowerRightUnit (1 : sigma0Submonoid I hI) = 1 :=
+  Units.ext (by simp)
+
 variable {R : Type*} [NormedCommRing R] [NormOneClass R] [IsUltrametricDist R] [CompleteSpace R]
 
 /-- A ring homomorphism into the closed unit ball of `R` mapping `I` into the open unit ball maps
@@ -169,6 +174,15 @@ theorem coe_sigma0ToMoebius_apply (σ : Fin k → O →+* R) (hσ : ∀ i x, ‖
     (sigma0ToMoebius σ hσ hσI γ i : Matrix (Fin 2) (Fin 2) R) =
       (σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O) :=
   (rfl)
+
+/-- If each `σᵢ` maps `I` into the closed ball of radius `rᵢ < 1`, then each `σᵢ(γ)` for
+`γ ∈ Σ₀(I)` acts on the closed unit disc by a Möbius transformation. -/
+theorem mapMatrix_mem_moebiusSubmonoid {r : Fin k → ℝ} (σ : Fin k → O →+* R)
+    (hσ : ∀ i x, ‖σ i x‖ ≤ 1) (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) (hr : ∀ i, r i < 1)
+    (γ : sigma0Submonoid I hI) (i : Fin k) :
+    (σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O) ∈ moebiusSubmonoid R :=
+  map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i)
+    (fun y hy ↦ (hσI i y hy).trans_lt (hr i)) γ.property
 
 end Sigma0
 
@@ -239,15 +253,6 @@ omit [CompleteSpace R] in
 private theorem norm_rightX (i : Fin k) : ‖rightX (R := R) (r := r) i‖ ≤ r i :=
   ((norm_X _).trans (Fin.append_right r r i)).le
 
-/-- The group law `a ⊕ b = a + b + a b` keeps the closed ball of radius `ρ ≤ 1` about `0`, since
-`a ⊕ b = (1 + a) (1 + b) - 1`. -/
-private theorem norm_add_add_mul_le {S : Type*} [SeminormedRing S] [IsUltrametricDist S]
-    {a b : S} {ρ : ℝ} (hρ : ρ ≤ 1) (ha : ‖a‖ ≤ ρ) (hb : ‖b‖ ≤ ρ) : ‖a + b + a * b‖ ≤ ρ := by
-  have h := norm_mul_sub_one_le hρ (a := 1 + a) (b := 1 + b) (by simpa using ha)
-    (by simpa using hb)
-  convert h using 2
-  noncomm_ring
-
 /-- **The expansion is multiplicative for the group law at every pair of arguments.** For series
 `aᵢ, bᵢ` of Gauss norm at most `rᵢ ≤ 1` in any Tate algebra, `N(a ⊕ b) = N(a) N(b)`, where
 `(a ⊕ b)ᵢ = aᵢ + bᵢ + aᵢ bᵢ`. The arguments may have nonzero constant terms. -/
@@ -258,7 +263,7 @@ theorem restrictedAnalyticSubst_expansion_add_add_mul (hr : ∀ i, r i ≤ 1) {�
       restrictedAnalyticSubst a ha κ.expansion * restrictedAnalyticSubst b hb κ.expansion := by
   -- the formal law, read in the Tate algebra `R{(x, x')/(r, r)}`
   have hlaw : restrictedAnalyticSubst (fun i ↦ leftX i + rightX i + leftX i * rightX i)
-      (fun i ↦ norm_add_add_mul_le (S := IsRestricted.subring (R := R) (Fin.append r r)) (hr i)
+      (fun i ↦ norm_add_add_mul_le (R := IsRestricted.subring (R := R) (Fin.append r r)) (hr i)
         (norm_leftX i) (norm_rightX i)) κ.expansion =
       restrictedAnalyticSubst leftX norm_leftX κ.expansion *
         restrictedAnalyticSubst rightX norm_rightX κ.expansion := by
@@ -344,6 +349,17 @@ theorem norm_factorArg_le (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) (γ 
   rw [factorArg, norm_smul_X, mul_one]
   exact hσI i _ (I.mul_mem_right _ (lowerLeft_mem_of_mem_sigma0Submonoid γ.property))
 
+omit [CompleteSpace R] [NormOneClass R] [∀ i, Fact (0 < r i)] in
+/-- For an upper triangular `γ`, with `c = 0`, the argument of the factor vanishes. -/
+theorem factorArg_eq_zero_of_lowerLeft_eq_zero {γ : sigma0Submonoid I hI}
+    (hc : (γ : Matrix (Fin 2) (Fin 2) O) 1 0 = 0) : factorArg σ γ = 0 :=
+  funext fun i ↦ by simp [factorArg, hc]
+
+omit [CompleteSpace R] [NormOneClass R] [∀ i, Fact (0 < r i)] in
+@[simp]
+theorem factorArg_one : factorArg σ (1 : sigma0Submonoid I hI) = 0 :=
+  factorArg_eq_zero_of_lowerLeft_eq_zero (by simp)
+
 /-- The **analytic factor** `j(γ) = n(d) · N(σ₁(c/d) z₁, …, σ_k(c/d) z_k)` of `γ ∈ Σ₀(I)`, the
 expansion of `n(c z + d) = n(d) n(1 + c z / d)` in the unit Tate algebra `R⟨z₁, …, z_k⟩`. -/
 noncomputable def factor (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) (γ : sigma0Submonoid I hI) :
@@ -362,13 +378,10 @@ omit [NormOneClass R] in
 @[simp]
 theorem factor_one (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i) :
     κ.factor hσI (1 : sigma0Submonoid I hI) = 1 := by
-  have h1 : sigma0LowerRightUnit (1 : sigma0Submonoid I hI) = 1 := Units.ext (by simp)
-  have h0 : factorArg σ (1 : sigma0Submonoid I hI) = 0 := funext fun i ↦ by
-    simp [factorArg]
-  rw [factor_def, h1, map_one, one_smul]
-  calc _ = restrictedAnalyticSubst 0 (h0 ▸ norm_factorArg_le hσI 1) κ.expansion :=
-        restrictedAnalyticSubst_congr h0 _
-    _ = 1 := by rw [restrictedAnalyticSubst_zero_apply, constantCoeff_expansion, map_one]
+  have h0 := factorArg_one (σ := σ) (hI := hI)
+  rw [factor_def, sigma0LowerRightUnit_one, map_one, one_smul,
+    restrictedAnalyticSubst_congr (hg' := h0 ▸ norm_factorArg_le hσI 1) h0,
+    restrictedAnalyticSubst_zero_apply, constantCoeff_expansion, map_one]
 
 omit [NormOneClass R] in
 /-- For an upper triangular `γ`, with `c = 0`, the analytic factor is the constant `n(d)`. For
@@ -376,7 +389,7 @@ instance a scalar matrix `u I` has factor `n(u)`. -/
 theorem factor_eq_algebraMap_of_lowerLeft_eq_zero (hσI : ∀ i, ∀ y ∈ I, ‖σ i y‖ ≤ r i)
     {γ : sigma0Submonoid I hI} (hc : (γ : Matrix (Fin 2) (Fin 2) O) 1 0 = 0) :
     κ.factor hσI γ = algebraMap R _ (κ.char (sigma0LowerRightUnit γ)) := by
-  have h0 : factorArg σ γ = 0 := funext fun i ↦ by simp [factorArg, hc]
+  have h0 := factorArg_eq_zero_of_lowerLeft_eq_zero (σ := σ) hc
   rw [factor_def, restrictedAnalyticSubst_congr (hg' := h0 ▸ norm_factorArg_le hσI γ) h0,
     restrictedAnalyticSubst_zero_apply, constantCoeff_expansion, map_one, Algebra.smul_def,
     mul_one]
@@ -472,12 +485,9 @@ Möbius substitution of `δ`. -/
 theorem factor_mul (γ δ : sigma0Submonoid I hI) :
     κ.factor hσI (γ * δ) =
       restrictedAnalyticSubst (fun i ↦ moebius i ((σ i).mapMatrix (δ : Matrix (Fin 2) (Fin 2) O)))
-        (fun i ↦ norm_moebius_le (map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i)
-          (fun y hy ↦ (hσI i y hy).trans_lt (hr i)) δ.property)) (κ.factor hσI γ) *
-        κ.factor hσI δ := by
-  have hδ (j : Fin k) : (σ j).mapMatrix (δ : Matrix (Fin 2) (Fin 2) O) ∈ moebiusSubmonoid R :=
-    map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ j) (hσ j)
-      (fun y hy ↦ (hσI j y hy).trans_lt (hr j)) δ.property
+        (fun i ↦ norm_moebius_le (mapMatrix_mem_moebiusSubmonoid σ hσ hσI hr δ i))
+        (κ.factor hσI γ) * κ.factor hσI δ := by
+  have hδ := mapMatrix_mem_moebiusSubmonoid σ hσ hσI hr δ
   -- the arguments `y_A = σ(c/d) w_δ`, `y_B`, `y_C` and `y₀` of the expansion, in the closed
   -- polydisc of radii `r`
   set yA := fun i ↦ σ i ((γ : Matrix (Fin 2) (Fin 2) O) 1 0 * ↑(sigma0LowerRightUnit γ)⁻¹) •
@@ -518,17 +528,13 @@ factor `j(γ) = n(d) · N(σ(c/d) z)`. Its slash operators `f ↦ j(γ) · f(w_�
 (`TauCeti.MvPowerSeries.RestrictedAutomorphyFactor.slash`) form a right action of `Σ₀(I)`. -/
 noncomputable def automorphyFactor : RestrictedAutomorphyFactor (sigma0Submonoid I hI) R k where
   subst γ i := moebius i ((σ i).mapMatrix (γ : Matrix (Fin 2) (Fin 2) O))
-  norm_subst_le γ i := norm_moebius_le (map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i)
-    (hσ i) (fun y hy ↦ (hσI i y hy).trans_lt (hr i)) γ.property)
+  norm_subst_le γ i := norm_moebius_le (mapMatrix_mem_moebiusSubmonoid σ hσ hσI hr γ i)
   factor := κ.factor hσI
   subst_one i := by simp
   subst_mul γ δ i := by
     rw [Submonoid.coe_mul, map_mul]
-    exact (restrictedAnalyticSubst_moebius
-      (map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ i) (hσ i)
-        (fun y hy ↦ (hσI i y hy).trans_lt (hr i)) γ.property)
-      fun j ↦ map_mem_moebiusSubmonoid_of_mem_sigma0Submonoid (σ j) (hσ j)
-        (fun y hy ↦ (hσI j y hy).trans_lt (hr j)) δ.property).symm
+    exact (restrictedAnalyticSubst_moebius (mapMatrix_mem_moebiusSubmonoid σ hσ hσI hr γ i)
+      (mapMatrix_mem_moebiusSubmonoid σ hσ hσI hr δ)).symm
   factor_one := κ.factor_one hσI
   factor_mul γ δ := κ.factor_mul hσ hσI hr γ δ
 
@@ -602,7 +608,7 @@ variable [NormOneClass R] [∀ i, Fact (0 < r i)] {I : Ideal O} {hI : I ≤ Ring
 
 /-- **The algebraic weights give the polynomial automorphy factors**: the analytic factor of
 `u ↦ ∏ᵢ σᵢ(u) ^ mᵢ` is `∏ᵢ (σᵢ(c) zᵢ + σᵢ(d)) ^ mᵢ`, so its automorphy factor is the weight-`m`
-Möbius automorphy factor pulled back along `Σ₀(I) → ∏ᵢ GL₂`. -/
+Möbius automorphy factor pulled back along `sigma0ToMoebius : Σ₀(I) → ∏ᵢ moebiusSubmonoid R`. -/
 theorem automorphyFactor_algebraic (m : Fin k → ℕ) :
     (algebraic σ r m).automorphyFactor (hI := hI) hσ hσI hr =
       (moebiusAutomorphyFactor R m).comp
