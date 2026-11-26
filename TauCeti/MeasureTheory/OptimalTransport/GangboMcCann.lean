@@ -284,7 +284,10 @@ theorem exists_isCConcave_and_isKantorovichOptimalTransportMap_of_strictConvexOn
 /-- **Gangbo–McCann's theorem for strictly convex costs** (Gangbo–McCann, Theorem 1.2). Let `μ` be
 a finite measure and `ν` a measure on a finite-dimensional real inner product space `E`, with `μ`
 absolutely continuous with respect to an additive Haar measure `ρ`, and let `h : E → [0, ∞)` be
-strictly convex, superlinear, and satisfy the cone condition (H2). If the optimal transport cost of
+strictly convex, superlinear, and satisfy the cone condition `h_cone`: for some height `r > 0`,
+aperture `θ ∈ (0, π)` and radius `R`, every `p` with `R < ‖p‖` is the vertex of a truncated cone
+on which `h ≤ h p`. This is one instance of Gangbo–McCann's condition (H2), which asks it for
+every `r` and `θ` (with `R` depending on them). If the optimal transport cost of
 `c (x, y) = h (x - y)` from `μ` to `ν` is finite (so `μ` and `ν` have the same finite mass), then
 there exists a transport map `T : E → E` that:
 
