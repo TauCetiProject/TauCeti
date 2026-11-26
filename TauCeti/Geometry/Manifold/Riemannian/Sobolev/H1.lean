@@ -392,6 +392,13 @@ theorem inner_toLp_ofSmooth_right (w : SobolevH1 I M) (φ : C^∞⟮I, M; ℝ⟯
   rw [toLp_ofSmooth, L2.inner_toLp_continuousMap]
   simp only [ContinuousMap.coe_ofClass, conj_trivial, mul_comm (φ _)]
 
+/-- The integral of the value of `w ∈ H¹(M)` is its `L²` inner product with the constant
+function `1`. -/
+theorem integral_toLp_eq_inner_toLp_ofSmooth_one (w : SobolevH1 I M) :
+    ∫ x, toLp w x ∂riemannianVolume I M = ⟪toLp w, toLp (ofSmooth (1 : C^∞⟮I, M; ℝ⟯))⟫_ℝ := by
+  rw [inner_toLp_ofSmooth_right]
+  simp
+
 /-- The integral of the square of the value of `w ∈ H¹(M)` is its squared `L²` norm. -/
 theorem integral_toLp_sq_eq_norm_sq (w : SobolevH1 I M) :
     ∫ x, toLp w x ^ 2 ∂riemannianVolume I M = ‖toLp w‖ ^ 2 := by

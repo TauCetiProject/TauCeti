@@ -215,6 +215,41 @@ theorem multiplicationOperator_linftyIndicator_add_compl (hs : MeasurableSet s) 
     multiplicationOperator_linftyIndicator_ae hs.compl f] with x hx h₁ h₂
   rw [hx, Pi.add_apply, h₁, h₂, Set.indicator_self_add_compl_apply]
 
+open Filter Topology in
+/-- **Cut-offs to shrinking sets.** Cutting an `Lᵖ` class, `p < ∞`, off to the sets of a decreasing
+family with empty intersection gives classes whose norms tend to zero: the `p`-th powers of the
+norms are the measures of the sets for the finite measure `‖f‖ᵖ μ`. -/
+theorem tendsto_norm_multiplicationOperator_linftyIndicator {ι : Type*} [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] (hp : p ≠ ∞) {s : ι → Set α}
+    (hs : ∀ i, MeasurableSet (s i)) (hanti : Antitone s) (hempty : ⋂ i, s i = ∅)
+    (f : Lp E p μ) :
+    Tendsto (fun i ↦ ‖multiplicationOperator (TauCeti.linftyIndicator μ (s i) (hs i)) f‖) atTop
+      (𝓝 0) := by
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
+  · rw [atTop.filter_eq_bot_of_isEmpty]
+    exact tendsto_bot
+  have hp0 : p ≠ 0 := (lt_of_lt_of_le zero_lt_one (Fact.out : 1 ≤ p)).ne'
+  have hpos : 0 < 1 / p.toReal := one_div_pos.2 (ENNReal.toReal_pos hp0 hp)
+  -- The `p`-th powers of the norms are the measures of the sets for `‖f‖ᵖ μ`.
+  set ν := μ.withDensity fun x ↦ ‖f x‖ₑ ^ p.toReal
+  have hν (i : ι) : ‖multiplicationOperator (TauCeti.linftyIndicator μ (s i) (hs i)) f‖ =
+      (ν (s i) ^ (1 / p.toReal)).toReal := by
+    rw [Lp.norm_def, eLpNorm_congr_ae (multiplicationOperator_linftyIndicator_ae (hs i) f),
+      eLpNorm_indicator_eq_eLpNorm_restrict (hs i).nullMeasurableSet,
+      eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp (Lp.aestronglyMeasurable f).restrict,
+      withDensity_apply _ (hs i)]
+  have hfin : ν (s i₀) ≠ ∞ := by
+    refine ne_top_of_le_ne_top ?_ (measure_mono (Set.subset_univ _))
+    rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
+    exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hp (Lp.eLpNorm_lt_top f)).ne
+  have h := tendsto_measure_iInter_atTop (μ := ν) (fun i ↦ (hs i).nullMeasurableSet) hanti
+    ⟨i₀, hfin⟩
+  rw [hempty, measure_empty] at h
+  have h' := ((ENNReal.continuous_rpow_const (y := 1 / p.toReal)).tendsto 0).comp h
+  rw [ENNReal.zero_rpow_of_pos hpos] at h'
+  simp only [hν]
+  simpa [Function.comp_def] using (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp h'
+
 end Indicator
 
 section ContinuousOn
