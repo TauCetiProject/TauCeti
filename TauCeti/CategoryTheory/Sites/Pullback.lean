@@ -22,7 +22,9 @@ This file develops basic properties of Mathlib's `CategoryTheory.Functor.sheafPu
 * **Colimits and additivity**: `isLeftAdjoint_sheafPullback` and `sheafPullback_additive`.
 * **Functoriality**: mate transport yields `sheafPullbackId`, `sheafPullbackComp`,
   `sheafPullbackIso`, `sheafPullbackId'`, `sheafPullbackComp'`, and the coherence laws
-  `sheafPullback_id_comp`, `sheafPullback_comp_id`, and `sheafPullback_assoc`;
+  `sheafPullback_id_comp`, `sheafPullback_comp_id`, and `sheafPullback_assoc`, with
+  `sheafPullbackComp'_assoc` and `sheafPullbackComp'_eq_isoWhiskerLeft_sheafPullbackId'` for
+  arbitrary composites;
   `sheafAdjunctionContinuous_comp_unit_app` writes the unit of the adjunction for a composite
   through `sheafPullbackComp`.
 * **Adjoint continuous functors**: an adjunction `adj : F ⊣ G` between continuous functors yields
@@ -307,6 +309,60 @@ lemma conjugateEquiv_sheafPullbackComp'_inv :
   simp [sheafPullbackComp']
 
 end Comp'
+
+/-- Associativity coherence for `sheafPullbackComp'` along arbitrary composites: if the two
+isomorphisms `u ⋙ v ⋙ w ≅ uvw` built from `e₁₂, e₁₃` and from `e₂₃, e₀` agree, so do the two
+isomorphisms `u^* ⋙ v^* ⋙ w^* ≅ uvw^*` built from the corresponding `sheafPullbackComp'`. -/
+lemma sheafPullbackComp'_assoc {E' : Type*} [Category* E']
+    {u : C ⥤ D} {v : D ⥤ E} {w : E ⥤ E'} {uv : C ⥤ E} {vw : D ⥤ E'} {uvw : C ⥤ E'}
+    (e₁₂ : u ⋙ v ≅ uv) (e₂₃ : v ⋙ w ≅ vw) (e₁₃ : uv ⋙ w ≅ uvw) (e₀ : u ⋙ vw ≅ uvw)
+    (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    (L : GrothendieckTopology E) (M : GrothendieckTopology E')
+    [u.IsContinuous J K] [v.IsContinuous K L] [w.IsContinuous L M]
+    [uv.IsContinuous J L] [vw.IsContinuous K M] [uvw.IsContinuous J M]
+    [(u.sheafPushforwardContinuous A J K).IsRightAdjoint]
+    [(v.sheafPushforwardContinuous A K L).IsRightAdjoint]
+    [(w.sheafPushforwardContinuous A L M).IsRightAdjoint]
+    [(uv.sheafPushforwardContinuous A J L).IsRightAdjoint]
+    [(vw.sheafPushforwardContinuous A K M).IsRightAdjoint]
+    [(uvw.sheafPushforwardContinuous A J M).IsRightAdjoint]
+    (h : ∀ X : C,
+      e₁₃.inv.app X ≫ w.map (e₁₂.inv.app X) = e₀.inv.app X ≫ e₂₃.inv.app (u.obj X)) :
+    isoWhiskerLeft (u.sheafPullback A J K) (sheafPullbackComp' e₂₃ A K L M) ≪≫
+        sheafPullbackComp' e₀ A J K M =
+      (associator _ _ _).symm ≪≫
+        isoWhiskerRight (sheafPullbackComp' e₁₂ A J K L) (w.sheafPullback A L M) ≪≫
+          sheafPullbackComp' e₁₃ A J L M :=
+  Adjunction.leftAdjointCompIso_assoc _ _ _ _ _ _ _ _ _ _ (by
+    ext F X
+    simp only [comp_obj, Iso.trans_hom, isoWhiskerLeft_hom, NatTrans.comp_app, whiskerLeft_app,
+      ObjectProperty.FullSubcategory.comp_hom, sheafPushforwardContinuousComp'_hom_app_hom_app,
+      sheafPushforwardContinuous_obj_obj_map, Quiver.Hom.unop_op, Iso.symm_hom,
+      isoWhiskerRight_hom, associator_inv_app, whiskerRight_app, Category.id_comp,
+      sheafPushforwardContinuous_map_hom_app]
+    have h' := congrArg (fun f ↦ F.obj.map f.op) (h X.unop)
+    simp only [op_comp, Functor.map_comp] at h'
+    exact h')
+
+/-- Right-unit coherence for `sheafPullbackComp'`: if `e : u ⋙ v ≅ u` is induced by an
+isomorphism `e' : v ≅ 𝟭 D`, then `sheafPullbackComp' e` is induced by `sheafPullbackId' e'`. -/
+lemma sheafPullbackComp'_eq_isoWhiskerLeft_sheafPullbackId' {u : C ⥤ D} {v : D ⥤ D}
+    (e : u ⋙ v ≅ u) (e' : v ≅ 𝟭 D) (A : Type*) [Category* A]
+    (J : GrothendieckTopology C) (K : GrothendieckTopology D)
+    [u.IsContinuous J K] [v.IsContinuous K K]
+    [(u.sheafPushforwardContinuous A J K).IsRightAdjoint]
+    [(v.sheafPushforwardContinuous A K K).IsRightAdjoint]
+    (h : ∀ X : C, e.inv.app X ≫ e'.hom.app (u.obj X) = 𝟙 _) :
+    sheafPullbackComp' e A J K K =
+      isoWhiskerLeft (u.sheafPullback A J K) (sheafPullbackId' e' A K) ≪≫ rightUnitor _ :=
+  Adjunction.leftAdjointCompIso_comp_id _ _ _ _ (by
+    ext F X
+    simp only [comp_obj, sheafPushforwardContinuousComp'_hom_app_hom_app, Iso.trans_hom,
+      isoWhiskerRight_hom, NatTrans.comp_app, id_obj, whiskerRight_app, leftUnitor_hom_app,
+      Category.comp_id, sheafPushforwardContinuous_map_hom_app,
+      sheafPushforwardContinuousId'_hom_app_hom_app]
+    rw [(Iso.comp_hom_eq_id (e'.app _)).mp (h X.unop), Iso.app_inv])
 
 end Functoriality
 
