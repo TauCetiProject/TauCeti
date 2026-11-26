@@ -44,6 +44,8 @@ n x)` are all `1` for `φ = 0`.
   monotone in time.
 * `TauCeti.topologicalPressure_id` — for the identity of a nonempty finite space,
   `P(id, φ) = max_x φ x`.
+* `TauCeti.topologicalPressure_eq_iSup_basis` — the supremum may be taken over any basis of the
+  uniformity.
 
 The net-based definitions and their antitonicity lemmas are modelled on `netMaxcard` and
 `netEntropyEntourage` in Mathlib's `Mathlib/Dynamics/TopologicalEntropy/NetEntropy.lean`
@@ -133,6 +135,18 @@ uniformity is. -/
 theorem topologicalPressure_le_iff [UniformSpace X] {a : EReal} :
     topologicalPressure T φ ≤ a ↔ ∀ U ∈ 𝓤 X, netPressureEntourage T φ U ≤ a :=
   iSup₂_le_iff
+
+/-- The topological pressure is the supremum of the pressure at the entourages of any basis of
+the uniformity. The statement and proof follow Mathlib's `Dynamics.coverEntropy_eq_iSup_basis`
+and its net-entropy variant `Dynamics.coverEntropy_eq_iSup_basis_netEntropyEntourage`. -/
+theorem topologicalPressure_eq_iSup_basis [UniformSpace X] {ι : Sort*} {p : ι → Prop}
+    {s : ι → SetRel X X} (h : (𝓤 X).HasBasis p s) (T : X → X) (φ : X → ℝ) :
+    topologicalPressure T φ = ⨆ (i : ι) (_ : p i), netPressureEntourage T φ (s i) := by
+  refine (topologicalPressure_le_iff.2 fun U hU ↦ ?_).antisymm
+    (iSup₂_le fun i hi ↦ netPressureEntourage_le_topologicalPressure (h.mem_of_mem hi))
+  obtain ⟨i, hi, hsU⟩ := h.mem_iff.1 hU
+  exact (netPressureEntourage_antitone T φ hsU).trans
+    (le_iSup₂ (f := fun (i : ι) (_ : p i) ↦ netPressureEntourage T φ (s i)) i hi)
 
 /-- For the zero potential the pressure sum is the maximal cardinality `netMaxcard T univ U n` of a
 `(U, n)`-dynamical net. -/
