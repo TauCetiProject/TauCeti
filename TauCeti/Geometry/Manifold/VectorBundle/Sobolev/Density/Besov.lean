@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Besov
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Schwartz
 import TauCeti.Analysis.Normed.Operator.Banach
-import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density.BesselPotential
 
 /-!
 # Reconstruction and density in the Besov spaces of a square chart partition
@@ -37,8 +36,8 @@ functions. For `p, q < ∞` the Schwartz functions are dense in `B^s_{p,q}(E, �
 functionals are dense in the Besov space of `A`
 (`TauCeti.SquareChartPartition.denseRange_besovReconstruction_toBesovSpaceCLM`), and every
 inclusion `B^s_{p,q} ⊆ B^{s'}_{p,q'}` with `p, q' < ∞` has dense range
-(`TauCeti.SquareChartPartition.denseRange_besovInclusion`). Neither statement holds for `q = ∞` or
-`p = ∞`, where the closure of the Schwartz functions is a little Besov space.
+(`TauCeti.SquareChartPartition.denseRange_besovInclusion`). These statements need not hold for
+`q = ∞` or `p = ∞`, where the closure of the Schwartz functions is a little Besov space.
 
 ## The argument
 
