@@ -110,7 +110,7 @@ theorem nilradical_baseChange :
   -- The nilradical of `E ⊗[K] L` is Galois-stable, hence extended from an ideal `N` of `L`, which
   -- is nilpotent because nilpotency descends along the field extension.
   obtain ⟨N, hN, -⟩ := (LieSubmodule.existsUnique_baseChange_eq_iff_forall_map_mem
-    (nilradical E (E ⊗[K] L))).mpr fun σ _ hx ↦ map_mem_nilradical σ hx
+    (nilradical E (E ⊗[K] L))).mpr fun σ _ hx ↦ σ.tensorProduct_map_mem_lieNilradical hx
   have : LieRing.IsNilpotent N := by
     rw [← LieIdeal.isNilpotent_baseChange_iff E, hN]
     infer_instance
