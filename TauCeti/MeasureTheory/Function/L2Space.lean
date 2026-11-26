@@ -53,6 +53,9 @@ product space is the sum of their second moments
 `TauCeti.integral_sq_sum_of_pairwise_integral_mul_eq_zero`. A weak equation
 `∫ ⟪y, p⟫ = ∫ ⟪g, η⟫` whose left side differs pointwise from `⟪y, p₀⟫` by `⟪w, η⟫` becomes
 `∫ ⟪y, p₀⟫ = ∫ ⟪g - w, η⟫` (`TauCeti.integral_inner_eq_integral_inner_sub_of_inner_eq_add`).
+If `‖b‖ ≤ w`, then `|⟪b, g⟫ f| ≤ w ‖g‖ |f|` (`TauCeti.norm_inner_mul_le_of_norm_le`), and
+integrating, `-∫ ⟪b, g⟫ f ≤ ∫ w ‖g‖ |f|` (`TauCeti.neg_integral_inner_mul_le`); this bounds the
+drift term of the weak form of an elliptic operator.
 The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
 `integral_inner` with the integrand in the left slot, the pairing `∫ ⟪f, g⟫` is conjugate
 symmetric (`integral_inner_conj_symm`), and the integral of the Hilbert space
@@ -433,6 +436,27 @@ theorem integral_inner_eq_integral_inner_sub_of_inner_eq_add
   simp_rw [hp]
   rw [integral_add hp₀ hw]
   ring
+
+/-- **Bounding a weighted inner product pointwise.** If `‖b‖ ≤ w`, then
+`|⟪b, g⟫ f| ≤ w ‖g‖ |f|`. -/
+theorem norm_inner_mul_le_of_norm_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {b : E} {w : ℝ} (hb : ‖b‖ ≤ w) (g : E) (f : ℝ) :
+    ‖⟪b, g⟫_ℝ * f‖ ≤ w * (‖g‖ * ‖f‖) := by
+  rw [norm_mul, ← mul_assoc]
+  exact mul_le_mul_of_nonneg_right ((norm_inner_le_norm _ _).trans
+    (mul_le_mul_of_nonneg_right hb (norm_nonneg _))) (norm_nonneg _)
+
+/-- **Bounding an integrated inner product.** If `‖b‖ ≤ w` almost everywhere, then minus the
+pairing `∫ ⟪b, g⟫ f` of vector fields `b` and `g` weighted by a function `f` is at most
+`∫ w ‖g‖ |f|`. In a weak formulation, `b` is a drift and this bounds the drift term. -/
+theorem neg_integral_inner_mul_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {b g : α → E} {f w : α → ℝ}
+    (hint : Integrable (fun x ↦ w x * (‖g x‖ * ‖f x‖)) μ) (hb : ∀ᵐ x ∂μ, ‖b x‖ ≤ w x) :
+    -∫ x, ⟪b x, g x⟫_ℝ * f x ∂μ ≤ ∫ x, w x * (‖g x‖ * ‖f x‖) ∂μ := by
+  refine (neg_le_abs _).trans ?_
+  rw [← Real.norm_eq_abs]
+  exact norm_integral_le_of_norm_le hint
+    (hb.mono fun x hx ↦ norm_inner_mul_le_of_norm_le hx (g x) (f x))
 
 end TauCeti
 
