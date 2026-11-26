@@ -30,9 +30,8 @@ vector bundles on the Fargues–Fontaine curve respects.
 
 * `TauCeti.FiniteIsocrystal.dualFrobenius`: the Frobenius `ℓ ↦ σ ∘ ℓ ∘ Φ⁻¹` of the dual.
 * `TauCeti.FiniteIsocrystal.dual`: the dual finite isocrystal.
-* `TauCeti.FiniteIsocrystal.evaluation` and `TauCeti.FiniteIsocrystal.coevaluation`: the
-  evaluation and coevaluation morphisms.
-* The `ExactPairing D (dual D)` instance and the `RigidCategory` instance on finite isocrystals.
+* The `ExactPairing D (dual D)` instance, whose evaluation and coevaluation are Mathlib's
+  `contractLeft` and `coevaluation`, and the `RigidCategory` instance on finite isocrystals.
 
 ## Main results
 
@@ -49,7 +48,7 @@ vector bundles on the Fargues–Fontaine curve respects.
 
 ## Implementation notes
 
-The evaluation, coevaluation, `ExactPairing` and rigid structure follow Mathlib's
+The `ExactPairing` and rigid structure follow Mathlib's
 `Mathlib/Algebra/Category/FGModuleCat/Basic.lean` (`FGModuleCat.exactPairing`): they reuse
 Mathlib's `coevaluation` and `contractLeft`, and the triangle identities are
 `contractLeft_assoc_coevaluation` and `contractLeft_assoc_coevaluation'`.
@@ -136,8 +135,8 @@ theorem sum_dualFrobenius_coord_smul_frobenius {ι : Type*} [Fintype ι]
 /-- The Frobenius `Φ ⊗ Φ^∨` of `D ⊗ D^∨` fixes the canonical element `∑ eᵢ ⊗ eᵢ^∨`, the image of
 `1` under the coevaluation. -/
 theorem map_frobenius_dualFrobenius_coevaluation_one :
-    TensorProduct.map D.frobenius D.dualFrobenius (_root_.coevaluation L D 1) =
-      _root_.coevaluation L D 1 := by
+    TensorProduct.map D.frobenius D.dualFrobenius (coevaluation L D 1) =
+      coevaluation L D 1 := by
   let b := Module.Basis.ofVectorSpace L D
   rw [coevaluation_apply_one]
   -- Expand each `Φ^∨ (bᵢ^∨)` in the dual basis and regroup by the dual basis vectors.
@@ -161,43 +160,29 @@ section Pairing
 
 variable (D : FiniteIsocrystal.{u} σ)
 
-/-- The evaluation morphism `D^∨ ⊗ D ⟶ 𝟙`, `ℓ ⊗ x ↦ ℓ x`. -/
-noncomputable def evaluation : D.dual ⊗ D ⟶ 𝟙_ (FiniteIsocrystal.{u} σ) :=
-  ofHom (contractLeft L D) fun t => by
+/-- The dual `D^∨` is a right dual of `D`: the evaluation `D^∨ ⊗ D ⟶ 𝟙`, `ℓ ⊗ x ↦ ℓ x`, and the
+coevaluation `𝟙 ⟶ D ⊗ D^∨`, `1 ↦ ∑ eᵢ ⊗ eᵢ^∨`, satisfy the triangle identities. -/
+noncomputable instance exactPairing : ExactPairing D D.dual where
+  coevaluation' := ofHom (coevaluation L D) fun c => by
+    have hc (a : L) : coevaluation L D a = a • coevaluation L D 1 := by
+      rw [← map_smul, smul_eq_mul, mul_one]
+    rw [tensorObj_frobenius, hc, hc c, map_smulₛₗ, map_frobenius_dualFrobenius_coevaluation_one]
+    simp
+  evaluation' := ofHom (contractLeft L D) fun t => by
     induction t using TensorProduct.inductionOn with
     | tmul ℓ x =>
       rw [tensorObj_frobenius, tensorUnit_frobenius_apply, map_tmul, contractLeft_apply,
         contractLeft_apply, dualFrobenius_apply_frobenius]
     | add t t' ht ht' => simp_all
-
-@[simp]
-theorem hom_evaluation : (evaluation D).hom = contractLeft L D := (rfl)
-
-/-- The coevaluation morphism `𝟙 ⟶ D ⊗ D^∨`, `1 ↦ ∑ eᵢ ⊗ eᵢ^∨`. -/
-noncomputable def coevaluation : 𝟙_ (FiniteIsocrystal.{u} σ) ⟶ D ⊗ D.dual :=
-  ofHom (_root_.coevaluation L D) fun c => by
-    have hc (a : L) : _root_.coevaluation L D a = a • _root_.coevaluation L D 1 := by
-      rw [← map_smul, smul_eq_mul, mul_one]
-    rw [tensorObj_frobenius, hc, hc c, map_smulₛₗ, map_frobenius_dualFrobenius_coevaluation_one]
-    simp
-
-@[simp]
-theorem hom_coevaluation : (coevaluation D).hom = _root_.coevaluation L D := (rfl)
-
-/-- The dual `D^∨` is a right dual of `D`: the evaluation and coevaluation satisfy the triangle
-identities. -/
-noncomputable instance exactPairing : ExactPairing D D.dual where
-  coevaluation' := coevaluation D
-  evaluation' := evaluation D
   coevaluation_evaluation' := by
     ext1
-    simp only [hom_comp, hom_whiskerLeft, hom_whiskerRight, hom_inv_associator, hom_evaluation,
-      hom_coevaluation, hom_hom_rightUnitor, hom_inv_leftUnitor, LinearMap.comp_assoc]
+    simp only [hom_comp, hom_whiskerLeft, hom_whiskerRight, hom_inv_associator,
+      hom_hom_rightUnitor, hom_inv_leftUnitor, LinearMap.comp_assoc]
     exact contractLeft_assoc_coevaluation L D
   evaluation_coevaluation' := by
     ext1
-    simp only [hom_comp, hom_whiskerLeft, hom_whiskerRight, hom_hom_associator, hom_evaluation,
-      hom_coevaluation, hom_hom_leftUnitor, hom_inv_rightUnitor, LinearMap.comp_assoc]
+    simp only [hom_comp, hom_whiskerLeft, hom_whiskerRight, hom_hom_associator,
+      hom_hom_leftUnitor, hom_inv_rightUnitor, LinearMap.comp_assoc]
     exact contractLeft_assoc_coevaluation' L D
 
 /-- The underlying linear map of the evaluation `ε_ D D^∨` is `ℓ ⊗ x ↦ ℓ x`. -/
@@ -206,7 +191,7 @@ theorem hom_exactPairing_evaluation : (ε_ D D.dual).hom = contractLeft L D := (
 
 /-- The underlying linear map of the coevaluation `η_ D D^∨` is `1 ↦ ∑ eᵢ ⊗ eᵢ^∨`. -/
 @[simp]
-theorem hom_exactPairing_coevaluation : (η_ D D.dual).hom = _root_.coevaluation L D := (rfl)
+theorem hom_exactPairing_coevaluation : (η_ D D.dual).hom = coevaluation L D := (rfl)
 
 noncomputable instance : HasRightDual D := ⟨D.dual⟩
 
