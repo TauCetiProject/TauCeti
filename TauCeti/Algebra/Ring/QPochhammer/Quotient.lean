@@ -117,8 +117,16 @@ theorem qPochhammerRatio_of_neg {j : ℤ} (hj : j < 0) (h : j ∈ A.qPochhammerR
         Ring.inverse ((B.map fun b ↦ qPochhammer b q.val n).prod) := by
   simp only [ratio_eq_mul_inverse, ratioNumerator_natCast]
 
+/-- At a numeral index the regular quotient is the ratio of the two finite products. -/
+@[simp low] theorem qPochhammerRatio_ofNat (n : ℕ)
+    (h : (ofNat(n) : ℤ) ∈ A.qPochhammerRatioDomain B q) :
+    A.qPochhammerRatio B q ofNat(n) h =
+      (A.map fun a ↦ qPochhammer a q.val ofNat(n)).prod *
+        Ring.inverse ((B.map fun b ↦ qPochhammer b q.val ofNat(n)).prod) :=
+  qPochhammerRatio_natCast n h
+
 /-- At `-n` the parameters in `B` move into the numerator. Their factors may vanish. -/
-@[simp] theorem qPochhammerRatio_neg_natCast (n : ℕ) (h : -(n : ℤ) ∈ A.qPochhammerRatioDomain B q) :
+theorem qPochhammerRatio_neg_natCast (n : ℕ) (h : -(n : ℤ) ∈ A.qPochhammerRatioDomain B q) :
     A.qPochhammerRatio B q (-n) h =
       (B.map fun b ↦ qPochhammer (b * (q ^ (-(n : ℤ))).val) q.val n).prod *
         Ring.inverse ((A.map fun a ↦ qPochhammer (a * (q ^ (-(n : ℤ))).val) q.val n).prod) := by
@@ -127,7 +135,7 @@ theorem qPochhammerRatio_of_neg {j : ℤ} (hj : j < 0) (h : j ∈ A.qPochhammerR
 /-- The constant coefficient of the regular quotient is one. -/
 @[simp] theorem qPochhammerRatio_zero (h : 0 ∈ A.qPochhammerRatioDomain B q) :
     A.qPochhammerRatio B q 0 h = 1 := by
-  simpa using qPochhammerRatio_natCast 0 h
+  simp
 
 private theorem ratio_mul_denominator {j : ℤ} (h : j ∈ A.qPochhammerRatioDomain B q) :
     A.qPochhammerRatio B q j h * ratioNumerator B A q j = ratioNumerator A B q j := by
