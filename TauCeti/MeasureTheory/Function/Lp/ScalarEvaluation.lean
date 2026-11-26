@@ -162,17 +162,22 @@ theorem scalarEvalLp_zero (h0 : ∀ y, MemLp (fun s ↦ ι y ((0 : S → X) s)) 
 /-- Changing the tests along a bounded linear map `κ : Z → Y` precomposes the scalar-evaluation
 operator with `κ`. For `κ` the inclusion of a closed subspace this is restriction of the tests. -/
 theorem scalarEvalLp_comp (κ : Z →L[𝕜] Y) :
-    scalarEvalLp f (ι.comp κ) (fun z ↦ hf (κ z)) = (scalarEvalLp f ι hf).comp κ :=
-  ContinuousLinearMap.ext fun _ ↦ (rfl)
+    scalarEvalLp f (ι.comp κ) (fun z ↦ by simpa using hf (κ z)) =
+      (scalarEvalLp f ι hf).comp κ :=
+  ContinuousLinearMap.ext fun z ↦ by
+    rw [ContinuousLinearMap.comp_apply, scalarEvalLp_apply, scalarEvalLp_apply]
+    exact MemLp.toLp_congr _ _ (.of_forall fun s ↦ by simp)
 
 /-- Functoriality in the target: the scalar tests `ι' v` of `A ∘ f`, for a bounded linear map
 `A : X → W`, are the scalar tests of `f` by the adjoint images `ι' v ∘ A`. -/
-theorem scalarEvalLp_clm_comp {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+theorem scalarEvalLp_comp_precomp {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
     [CompleteSpace V] (A : X →L[𝕜] W) (ι' : V →L[𝕜] StrongDual 𝕜 W)
     (hAf : ∀ v, MemLp (fun s ↦ ι' v ((A ∘ f) s)) p μ) :
     scalarEvalLp (A ∘ f) ι' hAf =
-      scalarEvalLp f ((ContinuousLinearMap.precomp 𝕜 A).comp ι') hAf :=
-  ContinuousLinearMap.ext fun _ ↦ (rfl)
+      scalarEvalLp f ((ContinuousLinearMap.precomp 𝕜 A).comp ι') (fun v ↦ by simpa using hAf v) :=
+  ContinuousLinearMap.ext fun v ↦ by
+    rw [scalarEvalLp_apply, scalarEvalLp_apply]
+    exact MemLp.toLp_congr _ _ (.of_forall fun s ↦ by simp)
 
 /-- For `f ∈ Lᵖ(μ; X)`, the scalar-evaluation operator has norm at most `‖ι‖ ‖f‖_p`. -/
 theorem norm_scalarEvalLp_le (hf : MemLp f p μ) :
@@ -222,14 +227,12 @@ theorem eLpNorm_top_eq_iSup_of_norming {f : S → X} (hf : AEStronglyMeasurable 
   -- At a good point, every value below `‖f s‖` is exceeded by some countable test.
   refine le_of_forall_lt fun c hc ↦ ?_
   lift c to ℝ≥0 using hc.ne_top
-  obtain ⟨x', hx'T₀, hx'⟩ := hT₀ ⟨f s, hsE⟩ c (by
-    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe] at hc
-    exact_mod_cast hc)
+  obtain ⟨x', hx'T₀, hx'⟩ := hT₀ ⟨f s, hsE⟩ c <| by
+    simpa [eNorm_eq_nnNorm, ← NNReal.coe_lt_coe] using hc
   have hx' : (c : ℝ≥0∞) < ‖D ⟨x', hx'T₀⟩ (f s)‖ₑ := by
     have h : D ⟨x', hx'T₀⟩ (f s) = x' ⟨f s, hsE⟩ :=
       DFunLike.congr_fun (hDE ⟨x', hx'T₀⟩) ⟨f s, hsE⟩
-    rw [eNorm_eq_nnNorm, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nnNorm, h]
-    exact hx'
+    simpa [h, eNorm_eq_nnNorm, ← NNReal.coe_lt_coe] using hx'
   exact hx'.trans_le ((hs _).trans (hDM _))
 
 variable [CompleteSpace 𝕜] {Y : Type*} [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [CompleteSpace Y]
