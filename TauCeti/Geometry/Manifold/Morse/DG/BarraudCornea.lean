@@ -82,6 +82,8 @@ push-forwards of its chains along the restriction of `morseLoopEvaluation`.
   twisting cocycle of a twisting chain system on the compactified spaces of trajectories.
 * `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_m`: the entries of the Barraud–Cornea
   cocycle of a twisting chain system on the trajectory spaces.
+* `TauCeti.IsAdaptedPseudoGradient.barraudCorneaCocycle_eq_twistingCocycle`: the Barraud–Cornea
+  cocycle is the twisting cocycle of the evaluations of the trajectory spaces into Moore loops.
 
 ## References
 
@@ -238,6 +240,17 @@ theorem barraudCorneaCocycle_m
   (S.mooreTwistingCocycle_m _ _ hθ _ x y).trans <|
     congrArg (cubicalChainSumMap R · (S.chain x y)) <| ContinuousMap.ext fun _ ↦
       MooreLoopSpace.ext <| by simp
+
+/-- The Barraud–Cornea cocycle of `S` is the twisting cocycle of `S` for the evaluations of the
+trajectory spaces into Moore loops, the restrictions of `morseLoopEvaluation`. -/
+theorem barraudCorneaCocycle_eq_twistingCocycle
+    (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
+    hX.barraudCorneaCocycle hf hdense hθ hc S =
+      S.twistingCocycle (fun x y ↦ (hX.morseLoopEvaluation hf hdense hθ x y).comp
+          (ContinuousMap.inclusion (morseBrokenTrajectorySpace_subset _ _)))
+        (hX.morseLoopEvaluation_comp_inclusion_morseBrokenTrajectorySpaceComp hf hdense hθ hc) :=
+  TwistingCocycle.ext fun x y ↦ by
+    rw [barraudCorneaCocycle_m, TwistingChainSystem.twistingCocycle_m]
 
 end IsAdaptedPseudoGradient
 
