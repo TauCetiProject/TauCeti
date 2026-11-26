@@ -95,9 +95,8 @@ theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt_of_dist_le {k j : �
     (hconv : Convex ℝ s) (hj : j < k) (hα : α ≤ 1) (hr : ∀ x ∈ s, ∀ y ∈ s, dist x y ≤ r)
     (hnext : ∀ x ∈ s, ‖iteratedFDeriv ℝ (j + 1) f x‖ ≤ L) :
     HolderOnWith (L * r ^ (1 - (α : ℝ))) α (iteratedFDeriv ℝ j f) s := by
-  have hlip := hf.lipschitzOnWith_iteratedFDeriv hs hconv hj hnext
-  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  simpa [NNReal.coe_rpow] using hlip.dist_le_mul_rpow_mul_rpow_of_dist_le hα hx hy (hr x hx y hy)
+  simpa using (hf.lipschitzOnWith_iteratedFDeriv hs hconv hj hnext).holderOnWith.of_le
+    (fun x hx y hy ↦ edist_le_coe.2 (hr x hx y hy)) hα
 
 /-- On a convex open set, every derivative field through order `k` of a `C^k` map with
 derivatives bounded by `M` and `k`-th derivative `α`-Hölder with constant `H` is `α`-Hölder with
