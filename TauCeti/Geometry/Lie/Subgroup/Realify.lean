@@ -162,24 +162,37 @@ def unitarySubgroupDiffeomorphSymplecticInfOrthogonal :
   ContinuousMulEquiv.toDiffeomorph _ _ (unitarySubgroupEquivSymplecticInfOrthogonal :
     unitarySubgroup (GL n ℂ) ≃ₜ* ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ)))
 
-/-- The diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is realification. -/
+/-- The diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is the realification isomorphism
+`Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`. -/
 @[simp]
+theorem coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal :
+    ⇑(unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I) =
+      unitarySubgroupEquivSymplecticInfOrthogonal :=
+  ContinuousMulEquiv.coe_toDiffeomorph _
+
+/-- The inverse of the diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is the inverse of the
+realification isomorphism `Matrix.unitarySubgroupEquivSymplecticInfOrthogonal`. -/
+@[simp]
+theorem coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_symm :
+    ⇑(unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I).symm =
+      unitarySubgroupEquivSymplecticInfOrthogonal.symm :=
+  (congrArg DFunLike.coe (ContinuousMulEquiv.toDiffeomorph_symm _)).trans
+    (ContinuousMulEquiv.coe_toDiffeomorph _)
+
+/-- The diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is realification. -/
 theorem coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_apply
     (U : unitarySubgroup (GL n ℂ)) :
     (unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I U : GL (n ⊕ n) ℝ) =
       GeneralLinearGroup.realify n ℂ U := by
-  have h : ⇑(unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I) =
-      unitarySubgroupEquivSymplecticInfOrthogonal :=
-    ContinuousMulEquiv.coe_toDiffeomorph _
-  rw [h, unitarySubgroupEquivSymplecticInfOrthogonal_apply]
+  rw [coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal,
+    unitarySubgroupEquivSymplecticInfOrthogonal_apply]
 
 /-- The inverse of the diffeomorphism `U(n) ≃ Sp(2n, ℝ) ∩ O(2n)` is inverse to realification. -/
-@[simp]
 theorem realify_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_symm_apply
     (M : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup (GL (n ⊕ n) ℝ))) :
     GeneralLinearGroup.realify n ℂ
       ((unitarySubgroupDiffeomorphSymplecticInfOrthogonal n I).symm M : GL n ℂ) = M := by
-  rw [← coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_apply (I := I),
-    Diffeomorph.apply_symm_apply]
+  rw [coe_unitarySubgroupDiffeomorphSymplecticInfOrthogonal_symm,
+    realify_unitarySubgroupEquivSymplecticInfOrthogonal_symm_apply]
 
 end Matrix
