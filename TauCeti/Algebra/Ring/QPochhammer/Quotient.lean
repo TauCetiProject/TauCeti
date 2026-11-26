@@ -141,6 +141,23 @@ private theorem ratio_mul_denominator {j : ℤ} (h : j ∈ A.qPochhammerRatioDom
     A.qPochhammerRatio B q j h * ratioNumerator B A q j = ratioNumerator A B q j := by
   rw [ratio_eq_mul_inverse, Ring.inverse_mul_cancel_right _ _ h]
 
+/-- At a nonnegative index, multiplying the regular quotient by the product for `B` gives the
+product for `A`. -/
+theorem qPochhammerRatio_mul_prod_of_nonneg {j : ℤ} (hj : 0 ≤ j)
+    (h : j ∈ A.qPochhammerRatioDomain B q) :
+    A.qPochhammerRatio B q j h * (B.map fun b ↦ qPochhammer b q.val j.toNat).prod =
+      (A.map fun a ↦ qPochhammer a q.val j.toNat).prod := by
+  simpa only [ratioNumerator, ite_eq_left hj] using ratio_mul_denominator h
+
+/-- At a negative index, multiplying the regular quotient by the shifted product for `A` gives the
+shifted product for `B`. -/
+theorem qPochhammerRatio_mul_prod_of_neg {j : ℤ} (hj : j < 0)
+    (h : j ∈ A.qPochhammerRatioDomain B q) :
+    A.qPochhammerRatio B q j h *
+        (A.map fun a ↦ qPochhammer (a * (q ^ j).val) q.val (-j).toNat).prod =
+      (B.map fun b ↦ qPochhammer (b * (q ^ j).val) q.val (-j).toNat).prod := by
+  simpa only [ratioNumerator, ite_eq_right hj.not_ge] using ratio_mul_denominator h
+
 private theorem ratioNumerator_add_one_of_nonneg {j : ℤ} (hj : 0 ≤ j) (A B : List R) (q : Rˣ) :
     ratioNumerator A B q (j + 1) =
       ratioNumerator A B q j * (A.map fun a ↦ 1 - a * (q ^ j).val).prod := by
