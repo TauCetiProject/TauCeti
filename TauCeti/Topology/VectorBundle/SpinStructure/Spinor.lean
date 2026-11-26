@@ -484,6 +484,18 @@ theorem vectorFrame_smul (s : SpinCStructure F E 4) {x : X} (p : s.P x) (g : Spi
   rw [h, LinearIsometryEquiv.symm_apply_apply, WithLp.ofLp_toLp, MonoidHom.comp_apply,
     Subgroup.coe_subtype]
 
+omit [Fact (finrank ℝ V = 4)] in
+/-- **Changing the frame rotates the vector frame**: `κ_p = π(g) κ_{p • g}`, where `π(g)` is the
+rotation of `V` by `g`, read through `b`. -/
+theorem vectorFrame_eq_toSpecialOrthogonal_vectorFrame_smul (s : SpinCStructure F E 4) {x : X}
+    (p : s.P x) (g : SpinC) (v : E x) :
+    s.vectorFrame b p v =
+      (spinCGroup.toSpecialOrthogonal Q (b.ne_zero_of_neg_norm_sq hQ)
+        (b.realSpinCGroupHom hQ hpos (b.ne_zero_of_neg_norm_sq hQ) g) : V ≃ₗ[ℝ] V)
+        (s.vectorFrame b (op g • p) v) := by
+  rw [vectorFrame_apply (hQ := hQ) s b (op g • p),
+    OrthonormalBasis.toSpecialOrthogonal_realSpinCGroupHom_apply, vectorFrame_smul]
+
 /-- **Clifford multiplication** `c(v) : W^ε_x → W^{ε'}_x` on the half-spinor bundles of a `Spinᶜ`
 structure of rank four, for `v ∈ E x` and `ε' = -ε`: in a frame `p` it is model Clifford
 multiplication by `κ_p v` (`TauCeti.SpinCStructure.cliffordMul_mk`), which does not depend on `p`.
