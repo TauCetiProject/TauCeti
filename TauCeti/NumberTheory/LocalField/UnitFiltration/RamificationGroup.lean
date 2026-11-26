@@ -495,11 +495,7 @@ theorem natCard_ramificationGroup_one (p : ℕ) [CharP 𝓀[L] p]
     Nat.card (ramificationGroup G 𝒪[L] 1) =
       p ^ (Nat.card (ramificationGroup G 𝒪[L] 0)).factorization p := by
   let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
-  rw [← Sylow.card_eq_multiplicity
-    (IsLocalRing.ramificationGroupOneSylow G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p),
-    IsLocalRing.ramificationGroupOneSylow_coe]
-  exact Nat.card_congr (Subgroup.subgroupOfEquivOfLe
-    (ramificationGroup_antitone G 𝒪[L] (by omega : (0 : ℤ) ≤ 1))).toEquiv.symm
+  exact IsLocalRing.natCard_ramificationGroup_one G 𝒪[L] (FixedPoints.subalgebra ℤ 𝒪[L] G) p
 
 variable (G) in
 /-- **Wild inertia is trivial exactly in the tame case.** For the residue characteristic `p`, the
@@ -510,11 +506,10 @@ is, if and only if the inertia group `G_0` is finite of order prime to `p`: when
 theorem ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero (p : ℕ)
     [CharP 𝓀[L] p] [FaithfulSMul G 𝒪[L]] :
     ramificationGroup G 𝒪[L] 1 = ⊥ ↔ ¬ p ∣ Nat.card (ramificationGroup G 𝒪[L] 0) := by
-  have hp : p.Prime := CharP.char_is_prime 𝓀[L] p
+  let _ : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[L] p⟩
   by_cases hfin : Finite (ramificationGroup G 𝒪[L] 0)
-  · rw [← Subgroup.card_eq_one, natCard_ramificationGroup_one G p, pow_eq_one_iff_right hp.ne_one,
-      Nat.factorization_eq_zero_iff]
-    simp only [hp, not_true_eq_false, false_or, Nat.card_pos.ne', or_false]
+  · exact IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_natCard G 𝒪[L]
+      (FixedPoints.subalgebra ℤ 𝒪[L] G) p
   · -- if `G_0` is infinite, `G_1 ≠ ⊥`, since `G_0 / G_1` embeds in the finite group `𝓀[L]ˣ`
     have hinf := not_finite_iff_infinite.mp hfin
     rw [Nat.card_eq_zero_of_infinite]

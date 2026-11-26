@@ -31,6 +31,10 @@ which a natural number generates a positive power of the maximal ideal has chara
 
 ## Main results
 
+* `Irreducible.pow_mul_mem_maximalIdeal_pow_add_iff`: multiplying by `ϖ ^ k` shifts membership in
+  powers of the maximal ideal by `k`.
+* `Irreducible.mul_mem_maximalIdeal_pow_succ_iff`: multiplying by a uniformizer `ϖ` shifts
+  membership in powers of the maximal ideal by `1`.
 * `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ`: if
   `c * ϖ ^ n ∈ 𝔪 ^ (n + 1)` for a uniformizer `ϖ`, then `c ∈ 𝔪`.
 * `TauCeti.IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal`: `x ∈ 𝔪 ^ n` is
@@ -79,14 +83,29 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
 
+/-- Multiplying by a power `ϖ ^ k` of a uniformizer shifts membership in powers of the maximal
+ideal by `k`. -/
+theorem _root_.Irreducible.pow_mul_mem_maximalIdeal_pow_add_iff {ϖ : S} (hϖ : Irreducible ϖ)
+    {k i : ℕ} {c : S} :
+    ϖ ^ k * c ∈ maximalIdeal S ^ (k + i) ↔ c ∈ maximalIdeal S ^ i := by
+  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.span_singleton_pow,
+    Ideal.mem_span_singleton, Ideal.mem_span_singleton, pow_add,
+    mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
+
+/-- Multiplying by a uniformizer `ϖ` shifts membership in powers of the maximal ideal by `1`. -/
+theorem _root_.Irreducible.mul_mem_maximalIdeal_pow_succ_iff {ϖ : S} (hϖ : Irreducible ϖ)
+    {i : ℕ} {c : S} :
+    ϖ * c ∈ maximalIdeal S ^ (i + 1) ↔ c ∈ maximalIdeal S ^ i := by
+  simpa only [pow_one, add_comm 1 i] using
+    hϖ.pow_mul_mem_maximalIdeal_pow_add_iff (k := 1) (i := i) (c := c)
+
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
 theorem mem_maximalIdeal_of_mul_pow_mem_maximalIdeal_pow_succ {ϖ c : S} {n : ℕ}
     (hϖ : Irreducible ϖ) (h : c * ϖ ^ n ∈ maximalIdeal S ^ (n + 1)) :
     c ∈ maximalIdeal S := by
-  rw [hϖ.maximalIdeal_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton, pow_succ',
-    mul_dvd_mul_iff_right (pow_ne_zero n hϖ.ne_zero)] at h
-  rwa [hϖ.maximalIdeal_eq, Ideal.mem_span_singleton]
+  rw [mul_comm, hϖ.pow_mul_mem_maximalIdeal_pow_add_iff, pow_one] at h
+  exact h
 
 /-- Membership in a power of the maximal ideal of a discrete valuation ring, read on the additive
 valuation. -/
@@ -144,8 +163,7 @@ theorem relIndex_maximalIdeal_pow_add (k e : ℕ) :
   have hcomap : (maximalIdeal S ^ (k + e)).toAddSubgroup.comap μ =
       (maximalIdeal S ^ e).toAddSubgroup := by
     ext x
-    simp [μ, hpow, Ideal.mem_span_singleton, pow_add,
-      mul_dvd_mul_iff_left (pow_ne_zero k hϖ.ne_zero)]
+    exact hϖ.pow_mul_mem_maximalIdeal_pow_add_iff
   rw [← hrange, ← AddSubgroup.index_comap, hcomap, ← natCard_quotient_maximalIdeal_pow,
     ← Submodule.cardQuot_apply, Submodule.cardQuot]
 
