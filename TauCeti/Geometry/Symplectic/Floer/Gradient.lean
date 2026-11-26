@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral.Basic
-import TauCeti.Analysis.ODE.PeriodicOrbitLimit
 import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
 # The Floer equation as a gradient flow, and its reflection

@@ -248,40 +248,6 @@ section Reflection
 
 open LinearIsometryEquiv (negFst)
 
-/-- The derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the derivative of `u` at
-`(-z.1, z.2)` precomposed with the reflection. -/
-theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
-    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z =
-      (fderiv ℝ u (-z.1, z.2)).comp
-        ((negFst ℝ ℝ ℝ).toContinuousLinearEquiv : ℝ × ℝ →L[ℝ] ℝ × ℝ) := by
-  have h : (fun w ↦ u (-w.1, w.2)) = u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv := by
-    funext w
-    simp
-  rw [h, ContinuousLinearEquiv.comp_right_fderiv]
-  simp
-
-/-- The `s`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is minus the `s`-derivative
-of `u` at `(-z.1, z.2)`. -/
-@[simp]
-theorem fderiv_comp_neg_fst_apply_one_zero {z : ℝ × ℝ} :
-    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (1, 0) = -fderiv ℝ u (-z.1, z.2) (1, 0) := by
-  rw [fderiv_comp_neg_fst, ← map_neg]
-  simp
-
-/-- The `t`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the `t`-derivative of
-`u` at `(-z.1, z.2)`. -/
-@[simp]
-theorem fderiv_comp_neg_fst_apply_zero_one {z : ℝ × ℝ} :
-    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (0, 1) = fderiv ℝ u (-z.1, z.2) (0, 1) := by
-  simp [fderiv_comp_neg_fst]
-
-/-- The reflection `(s, t) ↦ (-s, t)` of the plane preserves Lebesgue measure. -/
-theorem _root_.LinearIsometryEquiv.measurePreserving_negFst :
-    MeasurePreserving (negFst ℝ ℝ ℝ) := by
-  rw [LinearIsometryEquiv.coe_negFst, Measure.volume_eq_prod]
-  exact (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-    (MeasurePreserving.id (volume : Measure ℝ))
-
 /-- A map `C^n` on the half-cylinder `(-∞, a) × T` reflects to a map `C^n` on
 `(-a, ∞) × T`. -/
 theorem contDiffOn_comp_neg_fst {n : WithTop ℕ∞} {T : Set ℝ} (hu : ContDiffOn ℝ n u (Iio a ×ˢ T)) :
