@@ -38,6 +38,7 @@ endpoint values.
   their inverse forms `TauCeti.PDE.value_intervalDomainEquivL_symm_ae` and
   `TauCeti.PDE.gradient_intervalDomainEquivL_symm_ae`,
   `TauCeti.PDE.setIntegral_value_intervalDomainEquivL`,
+  `TauCeti.PDE.intervalDomainEquivL_mem_w1p0Submodule_iff`,
   `TauCeti.PDE.intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff`,
   `TauCeti.PDE.energyFormH1_one_zero_zero_eq_setIntegral_intervalDomainEquivL` and
   `TauCeti.PDE.inner_value_eq_setIntegral_intervalDomainEquivL`.
@@ -286,6 +287,14 @@ theorem intervalDomainEquivL_mem_w1pVanishingOnSubmodule_iff
   rw [h, intervalDomainEquivL_apply]
   exact W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff
     lineEquiv.toAffineIsometryEquiv coe_Ioo_eq_preimage_intervalDomain
+
+/-- **Zero boundary values under the transfer to the real interval.** The transfer of `u` lies in
+`W^{1,p}_0(a, b)` exactly when `u` lies in `W^{1,p}_0` of the interval domain. -/
+theorem intervalDomainEquivL_mem_w1p0Submodule_iff {u : W1p volume (intervalDomain a b) p} :
+    intervalDomainEquivL a b p u ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p ↔
+      u ∈ w1p0Submodule volume (intervalDomain a b) p := by
+  rw [intervalDomainEquivL_apply]
+  exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff _ _
 
 /-- The transfer of `u` to the real interval vanishes at `c` exactly when `u` vanishes at the
 point `TauCeti.PDE.lineEquiv c` of the Euclidean line. -/
