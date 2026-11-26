@@ -94,19 +94,10 @@ theorem classSumCenter_coe (C : ConjClasses G) :
     (classSumCenter (k := k) C : MonoidAlgebra k G) = classSum k C :=
   (rfl)
 
-/-- The conjugacy class of a central element `g` is `{g}`, so its class sum is `g`. -/
-theorem classSumCenter_mk_of_mem_center {g : G} (hg : g ∈ Subgroup.center G) :
-    (classSumCenter (k := k) (ConjClasses.mk g) : MonoidAlgebra k G) = MonoidAlgebra.of k G g := by
-  ext x
-  simp only [classSumCenter_coe, classSum_coeff, ConjClasses.mk_eq_mk_iff_isConj,
-    MonoidAlgebra.of_apply, MonoidAlgebra.coeff_single, Finsupp.single_apply]
-  exact if_congr ⟨fun h => (h.eq_of_right_mem_center hg).symm, fun h => h ▸ IsConj.refl x⟩
-    rfl rfl
-
 /-- The class sum of the conjugacy class of `1`, as an element of the center, is `1`. -/
 @[simp]
 theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 :=
-  Subtype.ext <| (classSumCenter_mk_of_mem_center (one_mem _)).trans (map_one _)
+  Subtype.ext <| (classSum_mk_of_mem_center k (one_mem _)).trans (map_one _)
 
 /-- Convert a function on conjugacy classes to the corresponding linear combination of class
 sums. -/
@@ -202,7 +193,7 @@ namespace TauCeti
 
 variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
 
-/-- In a commutative group every element is central (`classSumCenter_mk_of_mem_center`), so the
+/-- In a commutative group every element is central (`classSum_mk_of_mem_center`), so the
 class sum of `g`, as an element of the center, is `g`.
 
 Its simp priority is low so that `classSumCenter_mk_one` still rewrites the class of `1`
@@ -211,7 +202,7 @@ to `1`, rather than to `toCenter (of k G 1)`, which simp leaves as `single 1 1`.
 theorem classSumCenter_mk_of_commGroup (g : G) :
     classSumCenter (k := k) (ConjClasses.mk g) =
       MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) :=
-  Subtype.ext <| (classSumCenter_mk_of_mem_center
+  Subtype.ext <| (classSum_mk_of_mem_center k
     (Subgroup.mem_center_iff.mpr fun h => mul_comm h g)).trans (MonoidAlgebra.coe_toCenter _).symm
 
 end TauCeti
