@@ -48,8 +48,8 @@ integrable on `[0, T/2]`, then `f` is not integrable from `t` to `t + n T` for a
 `n ≠ 0`, and both sides of these identities are `0`.
 
 The file also records the lattice `θℤ ⊂ ℝ`: for `θ > 0` the interval `[t, t + θ)` is a fundamental
-domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[0, 1)` gives Weil's formula
-`∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ`.
+domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[t, t + θ)` gives Weil's formula
+`∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θℤ ⊂ ℝ`.
 
 ## Main declarations
 
@@ -72,8 +72,8 @@ domain for `θℤ`, so `θℤ` has covolume `θ`, and unfolding over `[0, 1)` gi
   the right translation action of `θℤ` on `ℝ`, the `Ico` companion of Mathlib's
   `isAddFundamentalDomain_Ioc'`.
 * `TauCeti.addCovolume_op_zmultiples`: the covolume of `θℤ` in `ℝ` is `θ`.
-* `TauCeti.lintegral_eq_setLIntegral_Ico_tsum_add_intCast`: Weil's formula
-  `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for `ℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
+* `TauCeti.lintegral_eq_setLIntegral_Ico_tsum_add_zsmul`: Weil's formula
+  `∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θℤ ⊂ ℝ` and measurable `f : ℝ → [0, ∞]`.
 * `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
   is nonnegative over a period and has integral zero over a period vanishes inside that period.
 * `Function.Periodic.intervalIntegral_neg_div_two_eq`: the integral of a `T`-periodic function
@@ -340,17 +340,17 @@ theorem addCovolume_op_zmultiples {θ : ℝ} (hθ : 0 < θ) :
     Real.volume_Ico]
   simp
 
-/-- **Weil's formula for `ℤ ⊂ ℝ`**: `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for measurable
-`f : ℝ → [0, ∞]`. -/
-theorem lintegral_eq_setLIntegral_Ico_tsum_add_intCast {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
-    ∫⁻ x, f x = ∫⁻ x in Ico (0 : ℝ) 1, ∑' n : ℤ, f (x + n) := by
-  have hD := isAddFundamentalDomain_Ico_op_zmultiples one_pos 0 (volume : Measure ℝ)
-  rw [zero_add] at hD
-  rw [hD.lintegral_eq_tsum'', ← lintegral_tsum (f := fun g x => f (g +ᵥ x)) fun g =>
-    (hf.comp (measurable_const_vadd _)).aemeasurable]
+/-- **Weil's formula for `θℤ ⊂ ℝ`**: `∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` for `θ > 0` and
+measurable `f : ℝ → [0, ∞]`. -/
+theorem lintegral_eq_setLIntegral_Ico_tsum_add_zsmul {θ : ℝ} (hθ : 0 < θ) (t : ℝ)
+    {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ x, f x = ∫⁻ x in Ico t (t + θ), ∑' n : ℤ, f (x + n • θ) := by
+  have : Fact (0 < θ) := ⟨hθ⟩
+  rw [(isAddFundamentalDomain_Ico_op_zmultiples hθ t volume).lintegral_eq_tsum'',
+    ← lintegral_tsum (f := fun g x => f (g +ᵥ x)) fun g =>
+      (hf.comp (measurable_const_vadd _)).aemeasurable]
   refine setLIntegral_congr_fun measurableSet_Ico fun x _ => ?_
-  rw [← QuotientAddGroup.automorphize_mk, AddCircle.automorphize_coe (T := 1)]
-  simp
+  rw [← QuotientAddGroup.automorphize_mk, AddCircle.automorphize_coe]
 
 end TauCeti
 

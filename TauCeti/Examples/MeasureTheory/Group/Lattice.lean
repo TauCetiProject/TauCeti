@@ -18,12 +18,13 @@ Worked examples for lattices in locally compact groups and the unfolding formula
 
 * *`θℤ ⊂ ℝ`.* For `θ > 0`, `[t, t + θ)` is a fundamental domain for the right translation action
   of `θℤ` on `ℝ` (`isAddFundamentalDomain_Ico_op_zmultiples`), so the covolume of `θℤ` for
-  Lebesgue measure is `θ` (`addCovolume_op_zmultiples`). Weil's formula reads
-  `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` (`lintegral_eq_setLIntegral_Ico_tsum_add_intCast`). These
+  Lebesgue measure is `θ` (`addCovolume_op_zmultiples`), and Weil's formula reads
+  `∫_ℝ f = ∫_t^(t + θ) ∑_n f(x + n θ) dx` (`lintegral_eq_setLIntegral_Ico_tsum_add_zsmul`). These
   live in `TauCeti/MeasureTheory/Integral/IntervalIntegral/Periodic.lean`. Here, the covolume of
-  `ℤ` is `1` (`addCovolume_op_zmultiples_one`), and multiplying Lebesgue
-  measure by `c` multiplies the covolume by `c` (`addCovolume_op_zmultiples_smul_measure`, from
-  `MeasureTheory.addCovolume_smul_measure`).
+  `ℤ` is `1` (`addCovolume_op_zmultiples_one`), Weil's formula for `ℤ ⊂ ℝ` reads
+  `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` (`lintegral_eq_setLIntegral_Ico_tsum_add_intCast`), and
+  multiplying Lebesgue measure by `c` multiplies the covolume by `c`
+  (`addCovolume_op_zmultiples_smul_measure`, from `MeasureTheory.addCovolume_smul_measure`).
 * *The side of the coset sum.* In `S₃`, with `Γ = {1, (0 1)}` (`coe_Γ`) and `f` the indicator of
   `(0 2)` (`indicatorSwap`), the right-translated sum `∑_(γ ∈ Γ) f(g γ)` is `1` at both
   elements `(0 2)` and `(0 2)(0 1)` of the left coset `(0 2) Γ`
@@ -51,6 +52,12 @@ open scoped ENNReal
 theorem addCovolume_op_zmultiples_one :
     addCovolume (AddSubgroup.op <| .zmultiples (1 : ℝ)) ℝ volume = 1 := by
   simp
+
+/-- **Weil's formula for `ℤ ⊂ ℝ`**: `∫_ℝ f = ∫_0^1 ∑_n f(x + n) dx` for measurable
+`f : ℝ → [0, ∞]`. -/
+theorem lintegral_eq_setLIntegral_Ico_tsum_add_intCast {f : ℝ → ℝ≥0∞} (hf : Measurable f) :
+    ∫⁻ x, f x = ∫⁻ x in Ico (0 : ℝ) 1, ∑' n : ℤ, f (x + n) := by
+  simpa using lintegral_eq_setLIntegral_Ico_tsum_add_zsmul one_pos 0 hf
 
 /-- **Haar rescaling.** For Haar measure `c • volume` on `ℝ`, the covolume of `θℤ` is `c θ`. -/
 theorem addCovolume_op_zmultiples_smul_measure {θ : ℝ} (hθ : 0 < θ) (c : ℝ≥0∞) :
