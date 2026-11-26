@@ -134,7 +134,7 @@ variable [DecidableEq ι]
 omit [DecidableEq ι] in
 /-- Above a level `l ≥ 0`, the drift term of the weak form tested against `v = (u - l)⁺` only sees
 `v`: `∫ ⟪b, ∇u⟫ v = ∫ ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
-private theorem integral_inner_gradient_mul_value_posPartAbove {l : ℝ} (hl : 0 ≤ l)
+theorem integral_inner_gradient_mul_value_posPartAbove {l : ℝ} (hl : 0 ≤ l)
     (u : W1p mu Omega 2) :
     ∫ x in Omega, ⟪b x, W1p.gradient u x⟫_ℝ *
         W1p.value (W1p.posPartAbove (by norm_num) hl u) x ∂mu =
