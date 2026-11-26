@@ -168,13 +168,15 @@ theorem apply_fderiv_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVector
   simpa using hc
 
 omit [FiniteDimensional ℝ V] in
-/-- **Preserving `ω` on tangent vectors is stable under composition.** If the derivatives of two
-differentiable maps `g` and `ψ` preserve `ω` at every point, so does the derivative of `g ∘ ψ`. -/
-theorem apply_fderiv_comp {g ψ : V → V} (hg : Differentiable ℝ g)
-    (hψ : Differentiable ℝ ψ) (hgω : ∀ x u v, ω (fderiv ℝ g x u) (fderiv ℝ g x v) = ω u v)
-    (hψω : ∀ x u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) (x u v : V) :
+/-- **Preserving `ω` on tangent vectors is stable under composition.** If `ψ` is differentiable
+at `x` and `g` at `ψ x`, and their derivatives at these points preserve `ω`, so does the
+derivative of `g ∘ ψ` at `x`. -/
+theorem apply_fderiv_comp {g ψ : V → V} {x : V} (hg : DifferentiableAt ℝ g (ψ x))
+    (hψ : DifferentiableAt ℝ ψ x)
+    (hgω : ∀ u v, ω (fderiv ℝ g (ψ x) u) (fderiv ℝ g (ψ x) v) = ω u v)
+    (hψω : ∀ u v, ω (fderiv ℝ ψ x u) (fderiv ℝ ψ x v) = ω u v) (u v : V) :
     ω (fderiv ℝ (g ∘ ψ) x u) (fderiv ℝ (g ∘ ψ) x v) = ω u v := by
-  rw [fderiv_comp x (hg _) (hψ x)]
+  rw [fderiv_comp x hg hψ]
   simp [hgω, hψω]
 
 omit [FiniteDimensional ℝ V] in
@@ -188,7 +190,7 @@ theorem apply_fderiv_iterate {g : V → V} (hg : Differentiable ℝ g)
   | zero => simp [fderiv_id]
   | succ m ih =>
     rw [Function.iterate_succ]
-    exact ω.apply_fderiv_comp (hg.iterate m) hg ih hgω x u v
+    exact ω.apply_fderiv_comp ((hg.iterate m) _) (hg x) (ih _) (hgω x) u v
 
 /-- The Hamiltonian flow does not depend on the chosen Lipschitz constant of the Hamiltonian
 vector field. -/

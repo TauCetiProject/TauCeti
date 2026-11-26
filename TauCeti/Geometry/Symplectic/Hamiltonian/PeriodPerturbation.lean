@@ -129,9 +129,9 @@ private theorem IsPerturbation.comp {U : Set V} {ψ₁ ψ₂ : V → V} (h₁ : 
     (h₂ : IsPerturbation ω U ψ₂) : IsPerturbation ω U (ψ₁ ∘ ψ₂) := by
   obtain ⟨hs₁, hω₁, S₁, hS₁, hS₁U, hid₁⟩ := h₁
   obtain ⟨hs₂, hω₂, S₂, hS₂, hS₂U, hid₂⟩ := h₂
-  refine ⟨hs₁.comp hs₂, ω.apply_fderiv_comp (hs₁.differentiable (by simp))
-    (hs₂.differentiable (by simp)) hω₁ hω₂, S₁ ∪ S₂, hS₁.union hS₂, union_subset hS₁U hS₂U,
-    fun w hw ↦ ?_⟩
+  refine ⟨hs₁.comp hs₂, fun x ↦ ω.apply_fderiv_comp (hs₁.differentiable (by simp) _)
+    (hs₂.differentiable (by simp) x) (hω₁ _) (hω₂ x), S₁ ∪ S₂, hS₁.union hS₂,
+    union_subset hS₁U hS₂U, fun w hw ↦ ?_⟩
   rw [mem_union, not_or] at hw
   simp [hid₂ w hw.2, hid₁ w hw.1]
 
@@ -207,8 +207,8 @@ private theorem exists_isPerturbation_of_finset {φ : V → V} (hφ : ContDiff �
     have hclose := hcomp ψ₂
       (fun w hw ↦ (hid w fun hw' ↦ hw (ball_subset_closedBall hw')).eq_of_nhds)
       (fun x _ ↦ hψ₂.1.differentiable (by simp) x) (fun x _ ↦ hdisp x) (fun x _ ↦ hderiv x)
-    obtain ⟨h₂₀, h₂₁⟩ := norm_comp_comp_sub_le (c := τ) h₁₀ h₁₁ (fun y ↦ (hclose y).1)
-      (fun y ↦ (hclose y).2) (by linarith [min_le_right δ₁ (τ / 2)])
+    obtain ⟨h₂₀, h₂₁⟩ := norm_sub_and_norm_fderiv_sub_le_of_add_le (c := τ) h₁₀ h₁₁
+      (fun y ↦ (hclose y).1) (fun y ↦ (hclose y).2) (by linarith [min_le_right δ₁ (τ / 2)])
     refine ⟨ψ₁ ∘ ψ₂, hψ₁.comp ω hψ₂, h₂₀, h₂₁, fun x hx hfix ↦ ?_⟩
     rw [← Function.comp_assoc] at hfix ⊢
     have hd : Differentiable ℝ (g₁ ∘ ψ₂) :=
@@ -525,11 +525,13 @@ private theorem exists_step {g : ℂ → ℂ} (hg : ContDiff ℝ 1 g)
   have hψ₁d : Differentiable ℝ ψ₁ := hψ₁s.differentiable (by simp)
   have hg₁ : ContDiff ℝ 1 (g ∘ ψ₁) := hg.comp (hψ₁s.of_le (by simp))
   obtain ⟨ψ₂, hψ₂, h₂₀, h₂₁, hP₂⟩ := exists_twist hg₁
-    (stdComplexSymplecticForm.apply_fderiv_comp (hg.differentiable one_ne_zero) hψ₁d hgω hψ₁ω)
+    (fun x ↦ stdComplexSymplecticForm.apply_fderiv_comp (hg.differentiable one_ne_zero _)
+      (hψ₁d x) (hgω _) (hψ₁ω x))
     hK hU hKU hnN (hδP _ (hg₁.differentiable one_ne_zero) (fun y ↦ (h₁₀ y).trans (min_le_left _ _))
       fun y ↦ (h₁₁ y).trans (min_le_left _ _)) hQ (half_pos hε)
-  obtain ⟨h₀, h₁⟩ := norm_comp_comp_sub_le (fun y ↦ (h₁₀ y).trans (min_le_right _ _))
-    (fun y ↦ (h₁₁ y).trans (min_le_right _ _)) h₂₀ h₂₁ (add_halves ε).le
+  obtain ⟨h₀, h₁⟩ := norm_sub_and_norm_fderiv_sub_le_of_add_le
+    (fun y ↦ (h₁₀ y).trans (min_le_right _ _)) (fun y ↦ (h₁₁ y).trans (min_le_right _ _)) h₂₀ h₂₁
+    (add_halves ε).le
   exact ⟨ψ₁ ∘ ψ₂, hψ₁.comp _ hψ₂, h₀, h₁, hP₂⟩
 
 /-- The induction over the periods on the plane: for every `n ≤ N` an arbitrarily `C¹`-small
@@ -550,9 +552,9 @@ private theorem exists_nondegenerateUpTo {φ : ℂ → ℂ} (hφ : ContDiff ℝ 
     obtain ⟨ψ₀, hψ₀, h₀₀, h₀₁, hP₀⟩ := ih (by omega) (half_pos hε)
     have hψ₀d : Differentiable ℝ ψ₀ := hψ₀.1.differentiable (by simp)
     obtain ⟨ψ, hψ, h₀, h₁, hP⟩ := exists_step (hφ.comp (hψ₀.1.of_le (by simp)))
-      (stdComplexSymplecticForm.apply_fderiv_comp (hφ.differentiable one_ne_zero) hψ₀d hφω
-        hψ₀.2.1) hK hU hKU hn hP₀ (half_pos hε)
-    obtain ⟨h₂₀, h₂₁⟩ := norm_comp_comp_sub_le h₀₀ h₀₁ h₀ h₁ (add_halves ε).le
+      (fun x ↦ stdComplexSymplecticForm.apply_fderiv_comp (hφ.differentiable one_ne_zero _)
+        (hψ₀d x) (hφω _) (hψ₀.2.1 x)) hK hU hKU hn hP₀ (half_pos hε)
+    obtain ⟨h₂₀, h₂₁⟩ := norm_sub_and_norm_fderiv_sub_le_of_add_le h₀₀ h₀₁ h₀ h₁ (add_halves ε).le
     exact ⟨ψ₀ ∘ ψ, hψ₀.comp _ hψ, h₂₀, h₂₁, hP⟩
 
 /-- **Making all periodic points up to a period cutoff nondegenerate.** Let `φ` be a `C¹` map of
