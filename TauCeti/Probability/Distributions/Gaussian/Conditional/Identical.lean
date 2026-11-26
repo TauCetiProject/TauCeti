@@ -13,10 +13,11 @@ import TauCeti.Probability.Distributions.Gaussian.Conditional.RankOne
 /-!
 # Conditioning on identical Gaussian observations
 
-For a Gaussian vector with common mean and positive common covariance, the pseudoinverse
-conditional kernel is Dirac at the average of the displayed observations, even off the diagonal.
-The joint law of copies of a scalar Gaussian has these parameters by
-`TauCeti.Probability.gaussianReal_map_toLp_const`.
+For a Gaussian vector with positive constant covariance and a nonempty observed block,
+`EuclideanSpace.gaussianCondKernel_matrixOf_const` gives a point mass at the retained means
+shifted by the average observed deviation, at every ambient input. For a common mean, this
+reduces to the average observation. Copies of a scalar Gaussian have common mean and constant
+covariance by `TauCeti.Probability.gaussianReal_map_toLp_const`.
 
 In particular, for `(Z, Z, Z)` with `Z` standard Gaussian, the covariance of the last two
 coordinates is the singular all-ones matrix. An observation `(z, z)` determines the retained
@@ -32,6 +33,33 @@ public section
 noncomputable section
 
 open Matrix MeasureTheory ProbabilityTheory
+
+namespace EuclideanSpace
+
+variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
+
+/-- With positive constant covariance and a nonempty observed block, the conditional Gaussian
+kernel is Dirac at the retained means shifted by the average observed deviation. This holds at
+every ambient observation, including outside the affine support. -/
+theorem gaussianCondKernel_matrixOf_const [Nonempty κ] (m : EuclideanSpace ℝ (ι ⊕ κ))
+    {c : ℝ} (hc : 0 < c) (x : EuclideanSpace ℝ κ) :
+    m.gaussianCondKernel (Matrix.of fun _ _ ↦ c) x =
+      Measure.dirac (WithLp.toLp 2 fun i ↦ m (Sum.inl i) +
+        (∑ j, (x j - m (Sum.inr j))) / Fintype.card κ) := by
+  have hcov : (Matrix.of fun _ _ ↦ c : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
+      vecMulVec (fun _ ↦ √c) (fun _ ↦ √c) := by
+    rw [vecMulVec_const_const, Real.mul_self_sqrt hc.le]
+  have hload : ∃ j : κ, (fun _ : ι ⊕ κ ↦ √c) (Sum.inr j) ≠ 0 :=
+    ⟨Classical.arbitrary κ, (Real.sqrt_pos.2 hc).ne'⟩
+  rw [hcov, m.gaussianCondKernel_vecMulVec_self hload]
+  congr 1
+  ext i
+  rw [gaussianCondMean_vecMulVec_self_apply]
+  simp only [← Finset.mul_sum, Finset.sum_const, Finset.card_univ, nsmul_eq_mul,
+    Real.sq_sqrt hc.le, ← mul_assoc, Real.mul_self_sqrt hc.le]
+  rw [mul_comm (Fintype.card κ : ℝ) c, mul_div_mul_left _ _ hc.ne']
+
+end EuclideanSpace
 
 namespace TauCeti.Probability
 
@@ -49,20 +77,12 @@ theorem gaussianCondKernel_toLp_const_matrixOf_const [Nonempty κ] (μ : ℝ) {c
     gaussianCondKernel (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))
         (Matrix.of fun _ _ ↦ c) x =
       Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ (∑ j, x j) / Fintype.card κ)) := by
-  have hcov : (Matrix.of fun _ _ ↦ c : Matrix (ι ⊕ κ) (ι ⊕ κ) ℝ) =
-      vecMulVec (fun _ ↦ √c) (fun _ ↦ √c) := by
-    rw [vecMulVec_const_const, Real.mul_self_sqrt hc.le]
-  have hload : ∃ j : κ, (fun _ : ι ⊕ κ ↦ √c) (Sum.inr j) ≠ 0 :=
-    ⟨Classical.arbitrary κ, (Real.sqrt_pos.2 hc).ne'⟩
-  rw [hcov, gaussianCondKernel_vecMulVec_self _ hload]
+  rw [gaussianCondKernel_matrixOf_const _ hc]
   congr 1
   ext i
-  rw [gaussianCondMean_vecMulVec_self_apply]
-  simp only [Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Real.sq_sqrt hc.le,
-    ← Finset.mul_sum, Finset.sum_sub_distrib]
-  rw [← mul_assoc, Real.mul_self_sqrt hc.le]
+  simp only [Finset.sum_sub_distrib, Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   have hn : (Fintype.card κ : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
-  field_simp [hc.ne']
+  field_simp [hn]
   ring
 
 /-- At a constant observation, the constant-parameter conditional Gaussian kernel is the
