@@ -27,15 +27,14 @@ quadratic Gauss sums; see also Washington, *Introduction to Cyclotomic Fields*, 
 
 public section
 
-open IntermediateField Polynomial
-
-namespace TauCeti.Multiquadratic
+open IntermediateField Polynomial TauCeti.Multiquadratic
 
 /-- For a fundamental discriminant `D ≠ 1`, the `n`-th cyclotomic polynomial is irreducible over
 `ℚ(√D)` if and only if `|D|` does not divide `n`. -/
-theorem irreducible_cyclotomic_adjoin_sqrt_iff_not_dvd {L : Type*} [Field L] [CharZero L]
-    {n : ℕ} {D : ℤ} (hD : Int.IsFundamentalDiscr D) (hD₁ : D ≠ 1) {x : L}
-    (hx : x ^ 2 = (D : L)) : Irreducible (cyclotomic n ℚ⟮x⟯) ↔ ¬ D.natAbs ∣ n := by
+theorem Int.IsFundamentalDiscr.irreducible_cyclotomic_adjoin_sqrt_iff_not_dvd
+    {L : Type*} [Field L] [CharZero L] {n : ℕ} {D : ℤ} (hD : Int.IsFundamentalDiscr D)
+    (hD₁ : D ≠ 1) {x : L} (hx : x ^ 2 = (D : L)) :
+    Irreducible (cyclotomic n ℚ⟮x⟯) ↔ ¬ D.natAbs ∣ n := by
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
   let : NeZero n := ⟨hn.ne'⟩
@@ -54,8 +53,9 @@ theorem irreducible_cyclotomic_adjoin_sqrt_iff_not_dvd {L : Type*} [Field L] [Ch
     (hD.not_isSquare_rat hD₁), mem_adjoin_simple_iff_natAbs_dvd hn hζ hD hx']
 
 /-- For a prime `p ≡ 3 mod 4`, `Φₙ` is irreducible over `ℚ(√−p)` exactly when `p ∤ n`. -/
-theorem irreducible_cyclotomic_adjoin_sqrt_neg_prime_iff {L : Type*} [Field L] [CharZero L]
-    {n p : ℕ} (hp : p.Prime) (hp₄ : p % 4 = 3) {x : L} (hx : x ^ 2 = -(p : L)) :
+theorem Nat.Prime.irreducible_cyclotomic_adjoin_sqrt_neg_prime_iff
+    {L : Type*} [Field L] [CharZero L] {n p : ℕ} (hp : p.Prime) (hp₄ : p % 4 = 3)
+    {x : L} (hx : x ^ 2 = -(p : L)) :
     Irreducible (cyclotomic n ℚ⟮x⟯) ↔ ¬ p ∣ n := by
   have hD : Int.IsFundamentalDiscr (-(p : ℤ)) := by
     rw [← oddPrimeDiscriminant_of_mod_four_eq_three hp₄]
@@ -65,6 +65,4 @@ theorem irreducible_cyclotomic_adjoin_sqrt_neg_prime_iff {L : Type*} [Field L] [
   have hx' : x ^ 2 = Int.cast (R := L) (-(p : ℤ)) := by
     simpa only [Int.cast_neg, Int.cast_natCast] using hx
   simpa only [Int.natAbs_neg, Int.natAbs_natCast] using
-    irreducible_cyclotomic_adjoin_sqrt_iff_not_dvd hD hD₁ hx'
-
-end TauCeti.Multiquadratic
+    hD.irreducible_cyclotomic_adjoin_sqrt_iff_not_dvd hD₁ hx'
