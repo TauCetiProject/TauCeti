@@ -218,7 +218,7 @@ private lemma exists_mem_Ioo_forall_isTransverseCutAt {u : ℂ → M}
       (LinearMap.injective_iff_surjective.2 (hC _ hzC z hz rfl))
   set Z := u ⁻¹' (chartAt H x₀).source ∩ {z | dist (φ (u z)) (φ x₀) ≤ r₀ ∧ f z ∈ (C : Set ℂ)}
   have hZ : Z.Countable := countable_of_forall_injective_fderiv C.countable_toSet
-    fun z hz ↦ ⟨hfd z hz.1, (hinv z hz.1 hz.2.2).injective, hz.2.2⟩
+    fun z hz ↦ ⟨(hinv z hz.1 hz.2.2).injective, hz.2.2⟩
   obtain ⟨r, hr, hrZ⟩ : ∃ r ∈ Ioo (r₀ / 2) r₀, ∀ z ∈ Z, dist (φ (u z)) (φ x₀) ≠ r := by
     by_contra! h
     have hcount : (Ioo (r₀ / 2) r₀).Countable :=

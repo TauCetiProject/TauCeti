@@ -17,8 +17,9 @@ import Mathlib.Topology.DiscreteSubset
 # Fréchet derivatives on countably many levels
 
 An injective Fréchet derivative isolates a point of a level set of a map from a finite-dimensional
-real normed space. The points at which such a map takes a value in a countable set and has
-injective derivative are therefore countable. This is the Fréchet counterpart of
+normed space over a complete nontrivially normed field. When that space is second countable, the
+points at which such a map takes a value in a countable set and has injective derivative are
+therefore countable. This is the Fréchet counterpart of
 `TauCeti.countable_setOf_mem_and_deriv_ne_zero` in
 `TauCeti.Analysis.Calculus.Deriv.CountableLevels`.
 
@@ -34,28 +35,37 @@ open Function Set
 
 namespace TauCeti
 
-variable {E F : Type*}
-  [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → F}
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [SecondCountableTopology E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F}
 
 /-- **Points of injective derivative over countably many values are countable.** Let `f` be a map
-from a finite-dimensional real normed space. The points at which `f` takes a value in a countable
-set `C` and has injective Fréchet derivative form a countable set, since near each of them `f`
-takes the same value nowhere else; `TauCeti.countable_setOf_mem_and_deriv_ne_zero` is the case of
-a map on a field. In equal dimensions an injective derivative is surjective, so together with
-`TauCeti.dense_setOf_forall_surjective_fderiv` this yields countable sets of regular values with
-countable preimages. -/
+from a second countable finite-dimensional normed space over a complete nontrivially normed field.
+The points at which `f` takes a value in a countable set `C` and has injective Fréchet derivative
+form a countable set, since near each of them `f` takes the same value nowhere else. No
+differentiability is assumed: where `f` is not differentiable its derivative is zero, which is
+injective only on the trivial space. `TauCeti.countable_setOf_mem_and_deriv_ne_zero` is the
+one-variable counterpart, phrased with `deriv`. In equal dimensions an injective derivative is
+surjective, so together with `TauCeti.dense_setOf_forall_surjective_fderiv` this yields countable
+sets of regular values with countable preimages. -/
 theorem countable_of_forall_injective_fderiv {C : Set F} {Z : Set E} (hC : C.Countable)
-    (hZ : ∀ z ∈ Z, DifferentiableAt ℝ f z ∧ Injective (fderiv ℝ f z) ∧ f z ∈ C) :
+    (hZ : ∀ z ∈ Z, Injective (fderiv 𝕜 f z) ∧ f z ∈ C) :
     Z.Countable := by
+  rcases subsingleton_or_nontrivial E with _ | _
+  · exact Set.subsingleton_of_subsingleton.countable
   have hsub : Z ⊆ ⋃ c ∈ C, Z ∩ f ⁻¹' {c} := fun z hz ↦
-    mem_iUnion₂.2 ⟨f z, (hZ z hz).2.2, hz, rfl⟩
+    mem_iUnion₂.2 ⟨f z, (hZ z hz).2, hz, rfl⟩
   refine (hC.biUnion fun c _ ↦ ?_).mono hsub
   refine (HereditarilyLindelofSpace.isLindelof _).countable_of_isDiscrete
     (isDiscrete_iff_nhdsNE.2 fun z hz ↦ Filter.inf_principal_eq_bot.2 ?_)
-  obtain ⟨hd, hinj, -⟩ := hZ z hz.1
+  obtain ⟨hinj, -⟩ := hZ z hz.1
+  have hd : DifferentiableAt 𝕜 f z := by
+    by_contra h
+    rw [fderiv_zero_of_not_differentiableAt h] at hinj
+    obtain ⟨x, hx⟩ := exists_ne (0 : E)
+    exact hx (hinj (by simp))
   obtain ⟨K, -, hK⟩ :=
-    (fderiv ℝ f z : E →ₗ[ℝ] F).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hinj)
+    (fderiv 𝕜 f z : E →ₗ[𝕜] F).exists_antilipschitzWith (LinearMap.ker_eq_bot.2 hinj)
   filter_upwards [hd.hasFDerivAt.eventually_ne ⟨K, hK⟩] with w hw hwZ
   exact hw (hwZ.2.trans hz.2.symm)
 
