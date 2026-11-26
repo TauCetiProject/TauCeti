@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.CrossRatio
 public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
+import TauCeti.Analysis.Complex.Conformal.Strip.Basic
 
 /-!
 # Conformal maps of the strip onto a Jordan domain with two marked boundary points
@@ -241,9 +242,6 @@ theorem exists_eqOn_add_of_continuousOn_strip {Ω : Set ℂ} (hΩb : IsBounded �
   obtain ⟨_, ⟨z₁, hz₁, rfl⟩, z₂, hz₂, hz₁₂⟩ := hmeet
   have hsub : {z : ℂ | z.im ∈ Ioo 0 1} ⊆ {z : ℂ | z.im ∈ Icc 0 1} := fun z hz =>
     Ioo_subset_Icc_self hz
-  have hclosure : {z : ℂ | z.im ∈ Icc 0 1} ⊆ closure {z : ℂ | z.im ∈ Ioo 0 1} := by
-    simp only [← mem_preimage, ofPred_mem_eq]
-    rw [closure_preimage_im, closure_Ioo zero_ne_one]
   have hmem {z : ℂ} (hz : z.im = 0) : z ∈ {z : ℂ | z.im ∈ Icc 0 1} := by simp [hz]
   have hlim {f : ℂ → ℂ} (hf : ContinuousOn f {z | z.im ∈ Icc 0 1}) {z : ℂ} (hz : z.im = 0) :
       Tendsto f (𝓝[{z | z.im ∈ Ioo 0 1}] (z.re : ℂ)) (𝓝 (f z)) := by
@@ -252,10 +250,8 @@ theorem exists_eqOn_add_of_continuousOn_strip {Ω : Set ℂ} (hΩb : IsBounded �
     exact ((hf z (hmem hz)).mono hsub).tendsto
   have hEq := eqOn_add_of_tendsto_of_bijOn_strip hΩb hΩJ hu hv huΩ hvΩ hux hvx huy hvy
     (hlim huc hz₁) (hz₁₂ ▸ hlim hvc hz₂)
-  refine ⟨z₂.re - z₁.re, ?_⟩
+  refine ⟨z₂.re - z₁.re, eqOn_add_closedStrip_of_eqOn_strip huc hvc ?_⟩
   push_cast
-  refine hEq.of_subset_closure huc ?_ hsub hclosure
-  refine hvc.comp (continuous_id.add continuous_const).continuousOn fun z hz => ?_
-  simpa using hz
+  exact hEq
 
 end TauCeti

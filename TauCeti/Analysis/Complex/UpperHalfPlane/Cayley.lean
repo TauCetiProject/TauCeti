@@ -229,7 +229,7 @@ theorem sub_ofReal_div_one_sub_ofReal_mul_sub_I_div_add_I {z : ℂ} (hz : 0 < z.
   have hr : (1 + r : ℂ) ≠ 0 := by exact_mod_cast (by linarith : (1 + r : ℝ) ≠ 0)
   have hden : z + I - r * (z - I) ≠ 0 := fun h => by
     have := congrArg im h
-    simp at this
+    simp only [sub_im, add_im, mul_im, ofReal_re, ofReal_im, I_im, zero_im] at this
     nlinarith
   have hnum : (z - I) / (z + I) - r = (z - I - r * (z + I)) / (z + I) := by
     field_simp
