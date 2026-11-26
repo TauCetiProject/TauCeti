@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic
 public import TauCeti.AlgebraicTopology.UniversalCover.RealProjective.Basic
 public import TauCeti.Topology.Covering.LoopSpace
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
+import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 
 /-!
 # The contractible loops of real projective space
@@ -69,18 +70,12 @@ namespace RealProjectiveSpace
 
 variable {n : ℕ} (hn : 2 ≤ n) (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)
 
-include hn in
-/-- The loop space of `Sⁿ` is path connected for `n ≥ 2`. -/
-private theorem pathConnectedSpace_loopSpace : PathConnectedSpace (Ω (sphere
-    (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :=
-  pathConnectedSpace_loopSpace_sphere finrank_euclideanSpace_fin hn x
-
 /-- **The contractible loops of `ℝPⁿ` are the loops of `Sⁿ`**: for `n ≥ 2`, the loop map of the
 projection `Sⁿ → ℝPⁿ` is a homeomorphism from the loop space of `Sⁿ` at `x` onto the path component
 of the constant loop in the loop space of `ℝPⁿ` at the image of `x`. -/
 def loopSpaceSphereHomeomorph :
     Ω (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x ≃ₜ pathComponent (Path.refl (mk n x)) :=
-  have := pathConnectedSpace_loopSpace hn x
+  have := pathConnectedSpace_loopSpace_sphere finrank_euclideanSpace_fin hn x
   (isCoveringMap_mk n).loopSpaceHomeomorph x
 
 @[simp]
@@ -88,7 +83,7 @@ theorem coe_loopSpaceSphereHomeomorph_apply
     (γ : Ω (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :
     (loopSpaceSphereHomeomorph hn x γ : Ω (RealProjectiveSpace n) (mk n x)) =
       γ.map (continuous_mk n) :=
-  have := pathConnectedSpace_loopSpace hn x
+  have := pathConnectedSpace_loopSpace_sphere finrank_euclideanSpace_fin hn x
   (isCoveringMap_mk n).coe_loopSpaceHomeomorph_apply x γ
 
 /-- The inverse of `loopSpaceSphereHomeomorph` lifts a contractible loop of `ℝPⁿ` to `Sⁿ`: the
@@ -96,7 +91,7 @@ lift lies over it. -/
 @[simp]
 theorem map_loopSpaceSphereHomeomorph_symm_apply (δ : pathComponent (Path.refl (mk n x))) :
     ((loopSpaceSphereHomeomorph hn x).symm δ).map (continuous_mk n) = δ :=
-  have := pathConnectedSpace_loopSpace hn x
+  have := pathConnectedSpace_loopSpace_sphere finrank_euclideanSpace_fin hn x
   (isCoveringMap_mk n).map_loopSpaceHomeomorph_symm_apply x δ
 
 /-- **The contractible Moore loops of `ℝPⁿ` are the Moore loops of `Sⁿ`**: for `n ≥ 2`, the Moore
@@ -105,7 +100,7 @@ onto the path component of the unit in the Moore loop space of `ℝPⁿ` at the 
 def mooreLoopSpaceSphereHomeomorph :
     MooreLoopSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x ≃ₜ
       pathComponent (1 : MooreLoopSpace (RealProjectiveSpace n) (mk n x)) :=
-  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
+  have := simplyConnectedSpace_sphere_euclideanSpace hn
   IsCoveringMap.mooreLoopSpaceHomeomorph (p := ⟨mk n, continuous_mk n⟩) (isCoveringMap_mk n) x
 
 @[simp]
@@ -113,7 +108,7 @@ theorem coe_mooreLoopSpaceSphereHomeomorph_apply
     (γ : MooreLoopSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :
     (mooreLoopSpaceSphereHomeomorph hn x γ : MooreLoopSpace (RealProjectiveSpace n) (mk n x)) =
       MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl γ :=
-  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
+  have := simplyConnectedSpace_sphere_euclideanSpace hn
   IsCoveringMap.coe_mooreLoopSpaceHomeomorph_apply (p := ⟨mk n, continuous_mk n⟩)
     (isCoveringMap_mk n) x γ
 
@@ -124,7 +119,7 @@ theorem map_mooreLoopSpaceSphereHomeomorph_symm_apply
     (δ : pathComponent (1 : MooreLoopSpace (RealProjectiveSpace n) (mk n x))) :
     MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ (rfl : _ = mk n x)
       ((mooreLoopSpaceSphereHomeomorph hn x).symm δ) = δ :=
-  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
+  have := simplyConnectedSpace_sphere_euclideanSpace hn
   IsCoveringMap.map_mooreLoopSpaceHomeomorph_symm_apply (p := ⟨mk n, continuous_mk n⟩)
     (isCoveringMap_mk n) x δ
 
