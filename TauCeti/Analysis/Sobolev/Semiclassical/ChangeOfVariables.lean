@@ -71,9 +71,12 @@ with `K = TauCeti.uniformlyLocalCompBound k L L' c A` depending only on `k`, `L`
 `A` (`TauCeti.uniformlyLocalSemiclassicalSobolevNorm_comp_le`), for functions with values in any
 real normed space. For `2k > n` and real-valued functions the uniformly local norms of all nonzero
 compactly supported cutoffs are equivalent, so the same cutoff can be used on both sides:
-`‖f ∘ Φ‖_{k,h,η} ≤ C ‖f‖_{k,h,η}` and `‖f‖_{k,h,η} ≤ C' ‖f ∘ Φ‖_{k,h,η}` with constants independent
-of `h` and of the chart (`TauCeti.exists_uniformlyLocalSemiclassicalSobolevNorm_comp_le`,
-`TauCeti.exists_uniformlyLocalSemiclassicalSobolevNorm_le_mul_comp`).
+`‖f ∘ Φ‖_{k,h,η} ≤ C ‖f‖_{k,h,η}`, where `C` depends only on `η`, `k`, `L`, `L'` and `c`
+(`TauCeti.exists_uniformlyLocalSemiclassicalSobolevNorm_comp_le`). If instead the inverse chart
+satisfies `c' ≤ |det DΨ|` for some `c' > 0`, then `‖f‖_{k,h,η} ≤ C' ‖f ∘ Φ‖_{k,h,η}`, where `C'`
+depends only on `η`, `k`, `L`, `L'` and `c'`
+(`TauCeti.exists_uniformlyLocalSemiclassicalSobolevNorm_le_mul_comp`). Neither constant depends on
+`h` or on the particular charts `Φ` and `Ψ`.
 
 The proof differentiates `f ∘ Φ` by Faà di Bruno's formula. Weighted by the scale, the
 `i`-th derivative obeys

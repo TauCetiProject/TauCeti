@@ -17,15 +17,16 @@ the corresponding derivative of the cutoff error. No regularity of `χ` is assum
 Including order zero, the same hypotheses give a uniform bound `B + ‖c‖` after subtracting
 an arbitrary constant `c`.
 
-Conversely, measured in units of a scale `h > 0`, the derivatives of a function placed at scale
-`h` about a centre `x` are those of the function itself:
-`h ^ i * ‖Dⁱ (χ (h⁻¹ • (· - x))) y‖ = ‖Dⁱ χ (h⁻¹ • (y - x))‖`
-(`TauCeti.pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub`).
-
-This estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
+The `B / R` estimate is shared by the Sobolev and Schwartz-space cutoff approximations. It is
 extracted from the derivative scaling argument in
 `TauCeti/Analysis/Distribution/SchwartzSpace/Cutoff.lean`, using
 `ContinuousLinearEquiv.norm_iteratedFDeriv_comp_right_le`.
+
+Measured in units of a scale `h > 0`, the derivatives of a function placed at scale `h` about a
+centre `x` are those of the function itself:
+`h ^ i * ‖Dⁱ (χ (h⁻¹ • (· - x))) y‖ = ‖Dⁱ χ (h⁻¹ • (y - x))‖`
+(`TauCeti.pow_mul_norm_iteratedFDeriv_comp_inv_smul_sub`). This identity is used for changes of
+chart in the semiclassical Sobolev norms.
 -/
 
 public section
