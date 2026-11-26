@@ -25,9 +25,9 @@ The signed residue calculation is the one used in `New.isPolar_primeRemainder` i
 
 public section
 
-open Finset TauCeti TauCeti.Contour
+namespace TauCeti
 
-namespace DirichletCharacter
+open Finset Contour
 
 variable {ι : Type*} {M N : ℕ} [NeZero M] [NeZero N]
   {t : Finset ι} {χ : ι → DirichletCharacter ℂ M} {ψ : ι → DirichletCharacter ℂ N}
@@ -98,4 +98,4 @@ theorem residue_sum_sub_rieszRemainderMellin_re_nonneg_iff {β : ℝ} (hβ : 0 <
     rw [le_div_iff₀ (mul_pos hβ (sub_pos.mpr (lt_of_not_ge hβ₁))), zero_mul, sub_nonneg]
     exact Nat.cast_le
 
-end DirichletCharacter
+end TauCeti
