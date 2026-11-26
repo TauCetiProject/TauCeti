@@ -59,8 +59,11 @@ groupoid law in the group of strict coordinates. In the tensor model, the compos
 * `TauCeti.LazardRing.tensorLift_conjugation_id_comp_coproduct`,
   `TauCeti.LazardRing.tensorLift_id_conjugation_comp_coproduct`: the antipode equations
   `μ (c ⊗ id) Δ = η_R ε` and `μ (id ⊗ c) Δ = η_L ε`.
+* `TauCeti.LazardRing.map_rightUnit_eq_map_C_iff_le`: an ideal `I` of `L` is invariant,
+  `η_R(I) Γ = η_L(I) Γ`, as soon as `η_R(I) Γ ≤ η_L(I) Γ`.
 * `TauCeti.LazardRing.map_rightUnit_heightIdeal`: the height ideals `I_n` of the Lazard ring
   (`FormalGroup.heightIdeal`) are invariant ideals: `η_R(I_n) Γ = η_L(I_n) Γ`.
+* `TauCeti.LazardRing.map_rightUnit_iSup_heightIdeal`: so is their union `I_∞`.
 * `TauCeti.LazardRing.rightUnit_sub_C_mem_map_heightIdeal`: `η_R(v_n) ≡ η_L(v_n)` modulo `I_n Γ`,
   where `v_n` is the coefficient of `X^(pⁿ)` in the `p`-series of the universal formal group law.
 
@@ -376,6 +379,15 @@ theorem tensorLift_id_conjugation_comp_coproduct :
 
 /-! ### Invariant ideals -/
 
+/-- **Invariance is a single inclusion.** The extensions of an ideal of the Lazard ring along the
+two units of `(L, L[b₁, b₂, …])` agree as soon as the extension along the right unit is contained
+in the extension along the left unit, since the conjugation exchanges the two units. -/
+theorem map_rightUnit_eq_map_C_iff_le {I : Ideal LazardRing} :
+    I.map rightUnit = I.map MvPolynomial.C ↔ I.map rightUnit ≤ I.map MvPolynomial.C := by
+  refine ⟨le_of_eq, fun h ↦ le_antisymm h ?_⟩
+  simpa only [Ideal.map_map, conjugation_comp_rightUnit, conjugation_comp_C] using
+    Ideal.map_mono (f := conjugation) h
+
 /-- **The height ideals of the Lazard ring are invariant.** Their extensions to the ring
 `L[b₁, b₂, …]` of strict coordinate changes along the left unit `η_L = C` and the right unit
 `η_R` agree. -/
@@ -384,6 +396,13 @@ theorem map_rightUnit_heightIdeal (p n : ℕ) :
       (formalGroup.heightIdeal p n).map MvPolynomial.C := by
   rw [FormalGroup.map_heightIdeal, FormalGroup.map_heightIdeal, map_rightUnit,
     FormalGroup.heightIdeal_smul]
+
+/-- The union `I_∞ = ⨆ n, I_n` of the height ideals of the Lazard ring is invariant: its extensions
+to `L[b₁, b₂, …]` along the two units agree. -/
+theorem map_rightUnit_iSup_heightIdeal (p : ℕ) :
+    (⨆ n, formalGroup.heightIdeal p n).map rightUnit =
+      (⨆ n, formalGroup.heightIdeal p n).map MvPolynomial.C := by
+  simp only [Ideal.map_iSup, map_rightUnit_heightIdeal]
 
 /-- **The right unit fixes `v_n` modulo `I_n`.** Let `v_n ∈ L` be the coefficient of `X^(pⁿ)` in
 the `p`-series of the universal formal group law. Then `η_R(v_n) ≡ η_L(v_n)` modulo the extension of
