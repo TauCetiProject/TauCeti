@@ -30,7 +30,9 @@ the type of the point as the type of this family
   `k_e + k_h + 2 k_f = n - r`
   (`TauCeti.SymplecticForm.HasWilliamsonTypeAt.two_mul_add_add_add_finrank_range_eq_finrank`);
 * the type does not depend on the choice of coordinates on the target: it is unchanged when `F`
-  is composed with a continuous linear equivalence `A`
+  is composed with a `C²` map `g` whose differential at `F x` has a continuous linear left inverse
+  (`TauCeti.SymplecticForm.hasWilliamsonTypeAt_comp_iff`), and in particular with a continuous
+  linear equivalence `A`
   (`TauCeti.SymplecticForm.hasWilliamsonTypeAt_continuousLinearEquiv_comp_iff`), for instance the
   matrix `A ∈ GL(n, ℝ)` that makes the first `r` components of `A ∘ F` independent at `x` and the
   others critical;
@@ -187,58 +189,64 @@ private theorem hasWilliamsonTypeAt_iff_of_ker_eq {T : E →L[ℝ] G} (hT : fder
   subst hT hU
   exact ⟨fun ⟨h, ht⟩ ↦ ⟨h, h.polar_hessianQuadraticForm_eq_zero, ht⟩, fun ⟨h, _, ht⟩ ↦ ⟨h, ht⟩⟩
 
+/-- **Invariance of the Williamson type under reparametrization of the values.** Composing `F` with
+a `C²` map `g` whose differential `Dg` at `F x` has a continuous linear left inverse does not change
+the Williamson type of a point: the kernel of the differential, and hence the transversal space, is
+the same, and the transversal Hessians of `g ∘ F` are those of `F`, reindexed along
+`ℓ' ↦ ℓ' ∘ Dg`. -/
+theorem hasWilliamsonTypeAt_comp_iff {G' : Type*} [NormedAddCommGroup G'] [NormedSpace ℝ G']
+    {g : G → G'} (hg : ContDiffAt ℝ 2 g (F x)) (hD : (fderiv ℝ g (F x)).HasLeftInverse)
+    (hF : ContDiffAt ℝ 2 F x) :
+    ω.HasWilliamsonTypeAt (g ∘ F) x kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F x kₑ kₕ k_f := by
+  set T := fderiv ℝ F x
+  set D := fderiv ℝ g (F x)
+  have hgF : fderiv ℝ (g ∘ F) x = D.comp T :=
+    fderiv_comp x (hg.differentiableAt two_ne_zero) (hF.differentiableAt two_ne_zero)
+  have hker : (D.comp T).ker = T.ker :=
+    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 hD.injective)
+  -- On `ker dF_x` the Hessian of `ℓ' ∘ g ∘ F` is the Hessian of `(ℓ' ∘ Dg) ∘ F`.
+  have hH (ℓ' : G' →L[ℝ] ℝ) {u : E} (hu : u ∈ T.ker) :
+      hessianQuadraticForm (ℓ' ∘ g ∘ F) x u = hessianQuadraticForm (ℓ'.comp D ∘ F) x u :=
+    ℓ'.hessianQuadraticForm_comp_comp_apply_of_fderiv_apply_eq_zero hg hF hu
+  have hpolar (ℓ' : G' →L[ℝ] ℝ) {w u : E} (hw : w ∈ T.ker) (hu : u ∈ T.ker) :
+      QuadraticMap.polar (hessianQuadraticForm (ℓ' ∘ g ∘ F) x) w u =
+        QuadraticMap.polar (hessianQuadraticForm (ℓ'.comp D ∘ F) x) w u := by
+    simp only [QuadraticMap.polar, hH ℓ' (add_mem hw hu), hH ℓ' hw, hH ℓ' hu]
+  -- Every functional `ℓ` on `G` is `(ℓ ∘ P) ∘ Dg` for a continuous linear left inverse `P` of
+  -- `Dg`, so `ℓ' ↦ ℓ' ∘ Dg` maps the critical functionals of `g ∘ F` onto those of `F`.
+  have hfac (ℓ : G →L[ℝ] ℝ) : (ℓ.comp hD.leftInverse).comp D = ℓ :=
+    ContinuousLinearMap.ext fun v ↦ by simp [hD.leftInverse_leftInverse v]
+  let f : {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp (D.comp T) = 0} → {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} :=
+    fun ℓ' ↦ ⟨ℓ'.val.comp D, by rw [ContinuousLinearMap.comp_assoc]; exact ℓ'.property⟩
+  have hf : Function.Surjective f := fun ℓ ↦
+    ⟨⟨ℓ.val.comp hD.leftInverse, by rw [← ContinuousLinearMap.comp_assoc, hfac, ℓ.property]⟩,
+      Subtype.ext (hfac ℓ.val)⟩
+  rw [hasWilliamsonTypeAt_iff_of_ker_eq hgF hker, hasWilliamsonTypeAt_iff_of_ker_eq rfl rfl]
+  refine and_congr (isNondegeneratePoint_comp_iff hg hD hF) ((Equiv.ofIff
+    ⟨fun hQ₁ ℓ hℓ w hw u hu ↦ ?_, fun hQ₂ ℓ' hℓ' w hw u hu ↦ ?_⟩).exists_congr fun _ ↦ ?_)
+  · rw [← hfac ℓ, ← hpolar _ hw.1 hu]
+    exact hQ₁ _ (by rwa [← ContinuousLinearMap.comp_assoc, hfac]) w hw u hu
+  · rw [hpolar ℓ' hw.1 hu]
+    exact hQ₂ _ (f ⟨ℓ', hℓ'⟩).property w hw u hu
+  -- The transversal Hessians of `g ∘ F` are those of `F`, reindexed along `f`.
+  · refine hasWilliamsonType_iff_of_span_eq (congrArg _ ?_)
+    rw [← hf.range_comp]
+    exact congrArg Set.range
+      (funext fun ℓ' ↦ reducedQuadraticForm_congr _ _ _ _ fun _ hu ↦ hH ℓ'.val hu)
+
 /-- **Invariance of the Williamson type under linear changes of the values.** Composing `F` with a
-continuous linear equivalence `A : G ≃ G'` does not change the Williamson type of a point: the
-kernel of the differential, and hence the transversal space, is the same, and the critical
-functions of `A ∘ F` are the critical functions `ℓ ∘ F` of `F`, written as `(ℓ ∘ A⁻¹) ∘ (A ∘ F)`. -/
+continuous linear equivalence `A : G ≃ G'` does not change the Williamson type of a point. Unlike
+`hasWilliamsonTypeAt_comp_iff`, no regularity of `F` is assumed: `F` is `C²` at `x` exactly when
+`A ∘ F` is. -/
 theorem hasWilliamsonTypeAt_continuousLinearEquiv_comp_iff {G' : Type*} [NormedAddCommGroup G']
     [NormedSpace ℝ G'] (A : G ≃L[ℝ] G') :
     ω.HasWilliamsonTypeAt (A ∘ F) x kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F x kₑ kₕ k_f := by
   by_cases hF : ContDiffAt ℝ 2 F x
-  swap
-  · refine iff_of_false (fun h ↦ hF ?_) fun h ↦ hF h.isNondegeneratePoint.contDiffAt
-    have := ((A.symm : G' →L[ℝ] G).contDiff.contDiffAt (x := A (F x))).comp x
-      h.isNondegeneratePoint.contDiffAt
-    simpa [Function.comp_def] using this
-  have hnd : ω.IsNondegeneratePoint (A ∘ F) x ↔ ω.IsNondegeneratePoint F x :=
-    isNondegeneratePoint_comp_iff (A : G →L[ℝ] G').contDiff.contDiffAt
+  · exact hasWilliamsonTypeAt_comp_iff (A : G →L[ℝ] G').contDiff.contDiffAt
       ⟨(A.symm : G' →L[ℝ] G), fun v ↦ by simp [A.fderiv]⟩ hF
-  set T := fderiv ℝ F x
-  have hAF : fderiv ℝ (A ∘ F) x = (A : G →L[ℝ] G').comp T := by
-    rw [fderiv_comp x A.differentiableAt (hF.differentiableAt two_ne_zero), A.fderiv]
-  have hker : ((A : G →L[ℝ] G').comp T).ker = T.ker :=
-    LinearMap.ker_comp_of_ker_eq_bot _ (LinearMap.ker_eq_bot.2 A.injective)
-  -- The critical functionals of `A ∘ F` are the `ℓ ∘ A⁻¹` for the critical functionals `ℓ` of `F`.
-  let r : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0} ≃
-      {ℓ' : G' →L[ℝ] ℝ // ℓ'.comp ((A : G →L[ℝ] G').comp T) = 0} :=
-    { toFun := fun ℓ ↦ ⟨ℓ.val.comp (A.symm : G' →L[ℝ] G), by
-        rw [ContinuousLinearMap.comp_assoc, ← ContinuousLinearMap.comp_assoc _ _ T]
-        simpa using ℓ.property⟩
-      invFun := fun ℓ' ↦ ⟨ℓ'.val.comp (A : G →L[ℝ] G'), by
-        rw [ContinuousLinearMap.comp_assoc]
-        exact ℓ'.property⟩
-      left_inv := fun ℓ ↦ Subtype.ext (by ext; simp)
-      right_inv := fun ℓ' ↦ Subtype.ext (by ext; simp) }
-  have hH (ℓ : {ℓ : G →L[ℝ] ℝ // ℓ.comp T = 0}) :
-      hessianQuadraticForm ((r ℓ).val ∘ A ∘ F) x = hessianQuadraticForm (ℓ.val ∘ F) x := by
-    congr 1
-    ext
-    simp [r]
-  rw [hasWilliamsonTypeAt_iff_of_ker_eq hAF hker, hasWilliamsonTypeAt_iff_of_ker_eq rfl rfl]
-  refine and_congr hnd ⟨fun ⟨hQ', ht⟩ ↦ ⟨fun ℓ hℓ ↦ ?_, ?_⟩, fun ⟨hQ, ht⟩ ↦ ⟨fun ℓ' hℓ' ↦ ?_, ?_⟩⟩
-  · rw [← hH ⟨ℓ, hℓ⟩]
-    exact hQ' _ (r ⟨ℓ, hℓ⟩).property
-  · refine (hasWilliamsonType_iff_of_span_eq (congrArg _ ?_)).1 ht
-    rw [← r.surjective.range_comp]
-    exact congrArg Set.range (funext fun ℓ ↦
-      reducedQuadraticForm_congr _ _ _ _ fun u _ ↦ by simp only [hH])
-  · have h' := hH (r.symm ⟨ℓ', hℓ'⟩)
-    rw [r.apply_symm_apply] at h'
-    rw [h']
-    exact hQ _ (r.symm ⟨ℓ', hℓ'⟩).property
-  · refine (hasWilliamsonType_iff_of_span_eq (congrArg _ ?_)).2 ht
-    rw [← r.surjective.range_comp]
-    exact congrArg Set.range (funext fun ℓ ↦
-      reducedQuadraticForm_congr _ _ _ _ fun u _ ↦ by simp only [hH])
+  refine iff_of_false (fun h ↦ hF ?_) fun h ↦ hF h.isNondegeneratePoint.contDiffAt
+  have := ((A.symm : G' →L[ℝ] G).contDiff.contDiffAt (x := A (F x))).comp x
+    h.isNondegeneratePoint.contDiffAt
+  simpa [Function.comp_def] using this
 
 end TauCeti.SymplecticForm

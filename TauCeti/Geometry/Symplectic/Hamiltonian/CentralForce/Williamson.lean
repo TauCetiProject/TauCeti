@@ -61,7 +61,6 @@ theorem hasWilliamsonTypeAt_centralForceEnergyMomentum_one_zero_zero (hm : 0 < m
   obtain ⟨e, ν, he, hν, hH⟩ :=
     exists_isDarbouxBasis_hessianQuadraticForm_centralForceHamiltonian_sub_eq_smul_elliptic b hm
       hU hq h0 hU' hmin
-  set Ω := angularMomentum (b 0) (b 1) x / (m * ‖x.1‖ ^ 2)
   set P := SymplecticForm.elliptic e 0
   -- Each transversal Hessian is the multiple `ℓ(1, 0) ν` of the elliptic block `P`.
   have hfam (ℓ : {ℓ : (Fin 2 → ℝ) →L[ℝ] ℝ // ℓ.comp T = 0}) (hQ) :
@@ -73,28 +72,24 @@ theorem hasWilliamsonTypeAt_centralForceEnergyMomentum_one_zero_zero (hm : 0 < m
     | H u =>
       rw [SymplecticForm.reducedQuadraticForm_mk,
         comp_centralForceEnergyMomentum_eq_smul_of_comp_fderiv_eq_zero b hUd hq h0 hU' ℓ.property,
-        hessianQuadraticForm_smul, smul_apply, smul_apply, hH u, smul_eq_mul, smul_eq_mul,
-        mul_assoc]
-  -- The functional `(a, c) ↦ a - Ω c` is critical, with coefficient `1` on `H - Ω L`.
-  let ℓ₀ : (Fin 2 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj 0 - Ω • ContinuousLinearMap.proj 1
-  have hℓ₀ : ℓ₀.comp T = 0 := ContinuousLinearMap.ext fun v ↦ by
-    rw [ContinuousLinearMap.comp_apply, fderiv_centralForceEnergyMomentum_apply_eq_smul b hUd hq h0
-      hU']
-    simp [ℓ₀, Ω, mul_comm]
+        hessianQuadraticForm_smul, smul_apply, hH u]
+      simp [mul_assoc]
+  -- The critical functional `ℓ₀` with `ℓ₀ ∘ F = H - Ω L` has transversal Hessian `ν • P`.
+  obtain ⟨ℓ₀, hℓ₀, hcomp⟩ := exists_comp_fderiv_eq_zero_and_comp_eq b hUd hq h0 hU'
   refine SymplecticForm.hasWilliamsonTypeAt_iff.2
     ⟨hnd, (SymplecticForm.hasWilliamsonType_iff_of_span_eq ?_).2 he.hasWilliamsonType_elliptic⟩
-  rw [Set.range_unique (f := SymplecticForm.elliptic e), show (default : Fin 1) = 0 from rfl]
+  rw [Set.range_unique (f := SymplecticForm.elliptic e), Fin.default_eq_zero]
   refine le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_)
   · rintro _ ⟨ℓ, rfl⟩
     dsimp only
     rw [hfam]
     exact Submodule.smul_mem _ _ (Submodule.subset_span rfl)
   · rintro _ rfl
-    have h := Submodule.subset_span (R := ℝ) (Set.mem_range_self (f := fun ℓ :
-      {ℓ : (Fin 2 → ℝ) →L[ℝ] ℝ // ℓ.comp T = 0} ↦ stdSymplecticForm.reducedQuadraticForm T.ker
-        (hessianQuadraticForm (ℓ.val ∘ centralForceEnergyMomentum b m U) x)
-        (hnd.polar_hessianQuadraticForm_eq_zero ℓ.val ℓ.property)) ⟨ℓ₀, hℓ₀⟩)
-    rw [hfam, show ℓ₀ (Pi.single 0 1) = 1 by simp [ℓ₀], one_mul] at h
-    simpa [hν.ne'] using Submodule.smul_mem _ ν⁻¹ h
+    refine (Submodule.smul_mem_iff _ hν.ne').1 (Submodule.subset_span ⟨⟨ℓ₀, hℓ₀⟩, ?_⟩)
+    ext y
+    induction y using Submodule.Quotient.induction_on with
+    | H u =>
+      simp only [SymplecticForm.reducedQuadraticForm_mk, hcomp, smul_apply, smul_eq_mul]
+      exact hH u
 
 end TauCeti

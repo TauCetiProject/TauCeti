@@ -117,7 +117,7 @@ theorem IsDarbouxBasis.hasWilliamsonType_elliptic {n : ℕ} {b : Basis (Fin n ×
     have hmem : Fin.castAdd (0 * 2) k ∈ Finset.univ.map (Fin.castAddEmb (0 * 2)) :=
       Finset.mem_map_of_mem _ (Finset.mem_univ k)
     rw [williamsonBlocks_inl, ellipticHyperbolic_of_mem hmem]
-    rfl
+    simp
   ext R
   refine ⟨?_, fun ⟨k, hR⟩ ↦ ⟨.inl k, hR ▸ hk k⟩⟩
   rintro ⟨k | ⟨j, -⟩, rfl⟩

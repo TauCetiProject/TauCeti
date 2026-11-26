@@ -655,9 +655,10 @@ theorem comp_centralForceEnergyMomentum_eq_smul_of_comp_fderiv_eq_zero {U' : ℝ
   simp only [Pi.smul_apply, smul_eq_mul]
   ring
 
-/-- The functional `(a, c) ↦ a - Ω c` kills the image of the differential at a point of a
-circular orbit, and composed with `F` it is `H - Ω L`. -/
-private theorem exists_comp_fderiv_eq_zero_and_comp_eq {U' : ℝ}
+/-- At a point of a circular orbit there is a critical functional `ℓ₀`, the functional
+`(a, c) ↦ a - Ω c` with `Ω = L / (m ‖q‖²)`: it kills the image of the differential, and composed
+with `F` it is `H - Ω L`. -/
+theorem exists_comp_fderiv_eq_zero_and_comp_eq {U' : ℝ}
     (hU : HasDerivAt U U' ‖x.1‖) (hq : x.1 ≠ 0) (h0 : ⟪x.1, x.2⟫_ℝ = 0)
     (hU' : U' = angularMomentum (b 0) (b 1) x ^ 2 / (m * ‖x.1‖ ^ 3)) :
     ∃ ℓ₀ : (Fin 2 → ℝ) →L[ℝ] ℝ, ℓ₀.comp (fderiv ℝ (centralForceEnergyMomentum b m U) x) = 0 ∧
