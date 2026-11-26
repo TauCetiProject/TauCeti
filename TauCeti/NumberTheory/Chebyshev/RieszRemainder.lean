@@ -119,7 +119,8 @@ theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ �
   · refine (norm_rieszSum_sub_rieszSum_le c hzy).trans ?_
     rw [mul_comm]
     exact mul_le_mul_of_nonneg_left hsum (sub_nonneg.2 hzy)
-  · rw [norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.2 hzy)]
+  · simp only [← Complex.ofReal_sub, norm_mul, Complex.norm_real,
+      Real.norm_of_nonneg (sub_nonneg.2 hzy), le_refl]
 
 /-- **Size bound for the Riesz remainder.** Let `‖c(n)‖ ≤ Λ(n)` for all `n` and
 `D ∈ ℂ`. For `y ≥ 1`, `‖TauCeti.rieszSum c y + y D‖ ≤ y (log y + log 4 + 4 + ‖D‖)`. -/
@@ -146,9 +147,9 @@ private theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le {a w w' :
     hww').trans (mul_le_mul_of_nonneg_right (sum_Icc_norm_le_three_mul
       (fun n ↦ (Complex.norm_real _).trans_le (Real.norm_of_nonneg vonMangoldt_nonneg).le)
       (by positivity)) (sub_nonneg.2 hww'))
-  rw [← ofReal_sum_Ioc_floor_mul_div_sub_one, ← ofReal_sum_Ioc_floor_mul_div_sub_one,
-    ← Complex.ofReal_mul, ← Complex.ofReal_mul, ← Complex.ofReal_sub, Complex.norm_real,
-    Real.norm_eq_abs] at hY
+  rw [← ofReal_sum_Ioc_floor_mul_div_sub_one, ← ofReal_sum_Ioc_floor_mul_div_sub_one] at hY
+  norm_cast at hY
+  rw [Real.norm_eq_abs] at hY
   have hL : a * Real.log (a / w) - a * Real.log (a / w') = a * (Real.log w' - Real.log w) := by
     rcases ha.eq_or_lt with rfl | ha'
     · simp
@@ -156,7 +157,8 @@ private theorem abs_mul_sum_Ioc_floor_div_sub_mul_log_add_sub_le_of_le {a w w' :
       ring
   have hlog : Real.log w' - Real.log w ≤ (w' - w) / w := by
     have h := Real.log_le_sub_one_of_pos (div_pos hw' hw)
-    rwa [Real.log_div hw'.ne' hw.ne', ← div_self hw.ne', div_sub_div_same] at h
+    have hq : w' / w - 1 = (w' - w) / w := by field_simp
+    rwa [Real.log_div hw'.ne' hw.ne', hq] at h
   have h1 : a * (Real.log w' - Real.log w) ≤ a / w * (w' - w) := by
     rw [div_mul_eq_mul_div, mul_div_assoc]
     exact mul_le_mul_of_nonneg_left hlog ha

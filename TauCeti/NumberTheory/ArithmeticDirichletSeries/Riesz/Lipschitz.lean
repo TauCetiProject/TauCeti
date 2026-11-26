@@ -90,7 +90,7 @@ theorem norm_mul_rieszSum_div_sub_mul_rieszSum_div_le (c : ℕ → ℂ) {a w w' 
   rw [mul_rieszSum_div_eq_sum_max c hw le_rfl, mul_rieszSum_div_eq_sum_max c hw hww',
     ← sum_sub_distrib, sum_mul]
   refine (norm_sum_le _ _).trans (sum_le_sum fun n _ ↦ ?_)
-  rw [← mul_sub, norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+  simp only [← mul_sub, norm_mul, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
   gcongr
   calc _ ≤ |(a / n - w) - (a / n - w')| := abs_max_sub_max_le_abs _ _ _
     _ = w' - w := by rw [sub_sub_sub_cancel_left, abs_of_nonneg (sub_nonneg.2 hww')]
