@@ -43,12 +43,12 @@ target is different.
 
 ## Main definitions
 
-* `TauCeti.AdditiveFunctor.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an additive functor
-  `G` out of an `R`-linear category.
-* `TauCeti.AdditiveFunctor.sourceToCatCenter R : R →+* CatCenter (D ⥤+ A)`: this action as a
-  ring homomorphism into the center.
-* `TauCeti.AdditiveFunctor.sourceLinear R : Linear R (D ⥤+ A)`: the `R`-linear structure induced
-  by an `R`-linear source, for a ring `R`.
+* `CategoryTheory.AdditiveFunctor.smulEnd R r G : G ⟶ G`: the action of `r ∈ R` on an additive
+  functor `G` out of an `R`-linear category.
+* `CategoryTheory.AdditiveFunctor.sourceToCatCenter R : R →+* CatCenter (D ⥤+ A)`: this action as
+  a ring homomorphism into the center.
+* `CategoryTheory.AdditiveFunctor.sourceLinear R : Linear R (D ⥤+ A)`: the `R`-linear structure
+  induced by an `R`-linear source, for a ring `R`.
 
 ## Main results
 
@@ -62,9 +62,11 @@ target is different.
   `TauCeti.additiveFunctor_isClosedUnderColimitsOfShape`: additive functors are closed under the
   limits and colimits of the target, together with instances for zero, kernels, cokernels and
   all existing finite products.
-* `TauCeti.AdditiveFunctor.sourceLinear_smul_int`, `TauCeti.AdditiveFunctor.smulEnd_int`,
-  `TauCeti.AdditiveFunctor.smulEnd_nat`: at `ℤ` and `ℕ` the source action is the canonical
-  multiple.
+* `CategoryTheory.AdditiveFunctor.sourceLinear_smul_eq_comp_smulEnd`: in `sourceLinear R`, the
+  scalar `r` acts on `φ : F ⟶ G` as `φ ≫ smulEnd R r G`.
+* `CategoryTheory.AdditiveFunctor.sourceLinear_smul_int`,
+  `CategoryTheory.AdditiveFunctor.smulEnd_int`, `CategoryTheory.AdditiveFunctor.smulEnd_nat`: at
+  `ℤ` and `ℕ` the source action is the canonical multiple.
 
 ## References
 
@@ -190,7 +192,9 @@ instance : (additiveFunctor D A).IsClosedUnderFiniteProducts where
 
 end Closure
 
-namespace AdditiveFunctor
+end TauCeti
+
+namespace CategoryTheory.AdditiveFunctor
 
 variable {D : Type*} [Category* D] [Preadditive D] {A : Type*} [Category* A] [Preadditive A]
 
@@ -287,14 +291,18 @@ section
 
 attribute [local instance] sourceLinear
 
+/-- In `sourceLinear R`, the scalar `r` acts on `φ : F ⟶ G` by composing with the action
+`smulEnd R r G` on the target. -/
+theorem sourceLinear_smul_eq_comp_smulEnd (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) :
+    r • φ = φ ≫ smulEnd R r G := by
+  rw [← sourceToCatCenter_app]
+  exact Linear.smulOfRingMorphism_smul_eq' (sourceToCatCenter R) r φ
+
 /-- In `sourceLinear R`, the components of `r • φ` are `φ_X ≫ G(r • 𝟙 X)`. -/
 @[simp]
-theorem smul_hom_app (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) (X : D) :
+theorem sourceLinear_smul_hom_app (r : R) {F G : D ⥤+ A} (φ : F ⟶ G) (X : D) :
     (r • φ).hom.app X = φ.hom.app X ≫ G.obj.map (r • 𝟙 X) := by
-  have h : r • φ = φ ≫ (sourceToCatCenter R r).app G := by
-    unfold sourceLinear
-    exact Linear.smulOfRingMorphism_smul_eq' (sourceToCatCenter R) r φ
-  simp [h]
+  simp [sourceLinear_smul_eq_comp_smulEnd]
 
 end
 
@@ -327,6 +335,4 @@ theorem sourceLinear_smul_int [Linear ℤ D] (n : ℤ) {F G : D ⥤+ A} (φ : F 
     ((sourceLinear ℤ).homModule F G).smul n φ = n • φ :=
   int_smul_eq_zsmul ((sourceLinear ℤ).homModule F G) n φ
 
-end AdditiveFunctor
-
-end TauCeti
+end CategoryTheory.AdditiveFunctor

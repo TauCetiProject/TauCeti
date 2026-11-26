@@ -25,10 +25,10 @@ colimit that `AddCommGrpCat.{w}` has.
 The representable functors `Hom(-, X)` form the Yoneda embedding `ModCat.yoneda : C ⥤ ModCat C`,
 and they are projective by the Yoneda lemma. When `D` is linear over a ring `R`, so is the
 category `D ⥤+ A` of additive functors into any preadditive `A`
-(`TauCeti.AdditiveFunctor.sourceLinear`); in particular `ModCat D` is `R`-linear ([Mitchell, §11]).
-This structure is a scoped instance, not a global instance, since at `R = ℤ` it agrees with the
-canonical action of the abelian groups `F ⟶ G` only propositionally. Finally, finitely presented
-functors are additive, so `mod C` is a full subcategory of `ModCat C`.
+(`CategoryTheory.AdditiveFunctor.sourceLinear`); in particular `ModCat D` is `R`-linear
+([Mitchell, §11]). This structure is a scoped instance, not a global instance, since at `R = ℤ` it
+agrees with the canonical action of the abelian groups `F ⟶ G` only propositionally. Finally,
+finitely presented functors are additive, so `mod C` is a full subcategory of `ModCat C`.
 
 ## Main definitions
 
