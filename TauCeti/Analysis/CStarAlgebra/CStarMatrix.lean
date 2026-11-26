@@ -269,6 +269,16 @@ lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
 lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
     ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
+/-- Reading the entrywise nonunital star-algebra homomorphism as an ordinary matrix applies
+its underlying star-ring homomorphism to each entry. -/
+@[simp↓]
+lemma ofMatrix_symm_mapₙₐ {B : Type*} [Fintype n] [Semiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [Star A]
+    [NonUnitalNonAssocSemiring B] [Module R B] [Star B]
+    (f : A →⋆ₙₐ[R] B) (M : CStarMatrix n n A) :
+    ofMatrix.symm (mapₙₐ f M) = (ofMatrix.symm M).map (NonUnitalStarRingHom.ofClass f) :=
+  (rfl)
+
 /-- Rectangular matrix multiplication is associative. -/
 lemma mul_assoc_rectangular {m k l : Type*} [Fintype n] [Fintype k] [NonUnitalSemiring A]
     (M : CStarMatrix m n A) (N : CStarMatrix n k A) (P : CStarMatrix k l A) :
