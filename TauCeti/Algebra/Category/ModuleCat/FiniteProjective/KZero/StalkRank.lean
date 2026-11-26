@@ -12,6 +12,7 @@ public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Basic
 public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
+import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 /-!
 # The locally constant rank on projective `K₀` and its section
@@ -147,32 +148,20 @@ and rank zero elsewhere. -/
 @[simp]
 theorem rank_of_clopenProjective (U : Clopens (PrimeSpectrum R)) :
     rank R (SplitK0.of.{u} (clopenProjective R U)) = LocallyConstant.charFn ℤ U.isClopen := by
-  set e : R := (isIdempotentElemEquivClopens.symm U).val
-  have := Module.Projective.quotient_span_singleton_of_isIdempotentElem
-    (isIdempotentElemEquivClopens.symm U).prop.one_sub
+  set e := isIdempotentElemEquivClopens.symm U
   ext p
-  -- `R ⧸ (1 - e)` is a finite flat `R`-algebra with surjective structure map, so its rank is at
-  -- most one, and positive exactly on the image of its spectrum, which is `V(1 - e) = U`.
-  have hle : Module.rankAtStalk (R ⧸ Ideal.span {1 - e}) p ≤ 1 :=
-    Module.rankAtStalk_le_one_iff_surjective.mpr Ideal.Quotient.mk_surjective p
-  have hpos : 0 < Module.rankAtStalk (R ⧸ Ideal.span {1 - e}) p ↔ p ∈ U := by
-    rw [PrimeSpectrum.rankAtStalk_pos_iff_mem_range_comap, Ideal.Quotient.algebraMap_eq,
-      range_comap_of_surjective _ _ Ideal.Quotient.mk_surjective, Ideal.mk_ker, zeroLocus_span,
-      ← basicOpen_eq_zeroLocus_of_isIdempotentElem _ (isIdempotentElemEquivClopens.symm U).prop,
-      basicOpen_isIdempotentElemEquivClopens_symm]
-    simp
   -- The underlying module of `P_U` is `R ⧸ (1 - e)`.
   have hobj : Module.rankAtStalk (clopenProjective R U).obj p =
-      Module.rankAtStalk (R ⧸ Ideal.span {1 - e}) p :=
+      Module.rankAtStalk (R ⧸ Ideal.span {1 - e.val}) p :=
     congr_fun (Module.rankAtStalk_eq_of_equiv (eqToIso (clopenProjective_obj R U)).toLinearEquiv) p
-  rw [rank_of, hobj, LocallyConstant.coe_charFn]
-  by_cases hp : p ∈ U
-  · rw [Set.indicator_of_mem hp, Pi.one_apply]
-    have := hpos.mpr hp
-    omega
-  · rw [Set.indicator_of_notMem hp]
-    have := mt hpos.mp hp
-    omega
+  -- `R ⧸ (1 - e)` has rank one exactly on the basic open set of `e`, which is `U`.
+  have hU : e.val ∈ p.asIdeal ↔ p ∉ U := by
+    rw [iff_not_comm, ← mem_basicOpen, basicOpen_isIdempotentElemEquivClopens_symm]
+    rfl
+  rw [rank_of, hobj, Module.rankAtStalk_quotient_span_one_sub e.prop, LocallyConstant.coe_charFn]
+  split_ifs with h
+  · simp [hU.mp h]
+  · simp [not_not.mp (hU.not.mp h)]
 
 /-- The projective module of the whole spectrum is `R`: `[P_⊤] = 1`. -/
 @[simp]
@@ -197,15 +186,7 @@ theorem of_clopenProjective_inf (U V : Clopens (PrimeSpectrum R)) :
   have hspan : Ideal.span {1 - e.val} ⊔ Ideal.span {1 - f.val} =
       Ideal.span {1 - (isIdempotentElemEquivClopens.symm (U ⊓ V)).val} := by
     rw [isIdempotentElemEquivClopens_symm_inf]
-    refine le_antisymm (sup_le ?_ ?_) (Ideal.span_singleton_le_iff_mem _ |>.mpr ?_)
-    · exact Ideal.span_singleton_le_span_singleton.mpr
-        ⟨1 - e.val, by linear_combination (-f.val) * e.prop.eq⟩
-    · exact Ideal.span_singleton_le_span_singleton.mpr
-        ⟨1 - f.val, by linear_combination (-e.val) * f.prop.eq⟩
-    · have h : 1 - e.val * f.val = (1 - e.val) + e.val * (1 - f.val) := by ring
-      rw [h]
-      exact add_mem (Ideal.mem_sup_left (Ideal.mem_span_singleton_self _))
-        (Ideal.mem_sup_right (Ideal.mul_mem_left _ _ (Ideal.mem_span_singleton_self _)))
+    exact f.prop.span_one_sub_sup_span_one_sub (.all _ _)
   rw [SplitK0.of_mul_of]
   -- The isomorphism is built on underlying modules: `P_U` is `R ⧸ (1 - e)` by
   -- `clopenProjective_obj`, and the tensor product is that of modules by `tensorObj_obj`.
