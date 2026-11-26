@@ -81,6 +81,7 @@ theorem step_ofSubmodules (i : I) :
   exact Subobject.mk_eq_mk_of_comm _ (ModuleCat.ofHom (F i).subtype) (Iso.refl _) (by simp)
 
 /-- `ModuleCat.subobjectModule` sends the step `F_i` of `ofSubmodules F hF` to `F i`. -/
+@[simp]
 theorem subobjectModule_step_ofSubmodules (i : I) :
     ModuleCat.subobjectModule (ModuleCat.of R M) ((ofSubmodules F hF).step i) = F i := by
   rw [step_ofSubmodules, OrderIso.apply_symm_apply]

@@ -69,6 +69,15 @@ theorem not_isExhaustive_const_bot :
 def adicStep (ℓ : ℤ) (p : ℤ) : Submodule ℤ ℤ :=
   Ideal.span {ℓ ^ p.toNat}
 
+/-- An integer lies in the step `F^p` of the `ℓ`-adic filtration exactly when `ℓ^p` divides it
+(with `ℓ^0 = 1` for `p ≤ 0`). -/
+theorem mem_adicStep_iff {ℓ p x : ℤ} : x ∈ adicStep ℓ p ↔ ℓ ^ p.toNat ∣ x :=
+  Ideal.mem_span_singleton
+
+/-- The steps `F^p` of the `ℓ`-adic filtration with `p ≤ 0` are all of `ℤ`. -/
+theorem adicStep_of_nonpos (ℓ : ℤ) {p : ℤ} (hp : p ≤ 0) : adicStep ℓ p = ⊤ := by
+  rw [adicStep, Int.toNat_of_nonpos hp, pow_zero, Ideal.span_singleton_one]
+
 /-- The `ℓ`-adic steps decrease. -/
 theorem antitone_adicStep (ℓ : ℤ) : Antitone (adicStep ℓ) := fun p q hpq ↦ by
   rw [adicStep, adicStep, Ideal.span_singleton_le_span_singleton]
@@ -81,8 +90,7 @@ noncomputable abbrev adicFiltration (ℓ : ℤ) : FilteredObject (ModuleCat.{0} 
 /-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
 theorem isExhaustive_adicFiltration (ℓ : ℤ) : (adicFiltration ℓ).IsExhaustive :=
   isExhaustive_of_step_eq_top _ (i := op (0 : ℤ)) (by
-    rw [step_ofSubmodules]
-    simp [adicStep, Ideal.span_singleton_one])
+    rw [step_ofSubmodules, unop_op, adicStep_of_nonpos ℓ le_rfl, map_top])
 
 /-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: an integer divisible by every
 power of `ℓ` is `0`. -/
@@ -92,7 +100,7 @@ theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : ℓ.natAbs ≠ 1) :
   by_contra h0
   refine FiniteMultiplicity.not_iff_forall.2 (fun k ↦ ?_) (Int.finiteMultiplicity_iff.2 ⟨hℓ, h0⟩)
   have := hn (op (k : ℤ))
-  rwa [unop_op, adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at this
+  rwa [unop_op, mem_adicStep_iff, Int.toNat_natCast] at this
 
 /-- The partial sums `sₖ = ∑_{i < k} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)`. -/
 private def adicPartialSum (ℓ : ℤ) (k : ℕ) : ℤ :=
@@ -135,7 +143,7 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
             refine (comp_cokernel_π_stepι_ofSubmodules_eq_iff (fun p : ℤᵒᵖ ↦ adicStep ℓ p.unop) _ q
               (g _) (g _)).2 fun a ↦ ?_
             have h : s q.unop.toNat - s p.unop.toNat ∈ adicStep ℓ q.unop := by
-              rw [adicStep, Ideal.mem_span_singleton, ← dvd_neg, neg_sub]
+              rw [mem_adicStep_iff, ← dvd_neg, neg_sub]
               exact pow_dvd_adicPartialSum_sub ℓ (Int.toNat_le_toNat (leOfHom f.unop))
             simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, ← smul_sub]
             exact Submodule.smul_mem _ a h } }
@@ -153,7 +161,7 @@ theorem not_isComplete_adicFiltration {ℓ : ℤ} (hℓ : 2 ≤ ℓ) :
     have h' := (comp_cokernel_π_stepι_ofSubmodules_eq_iff (fun p : ℤᵒᵖ ↦ adicStep ℓ p.unop) _
       (op (k : ℤ)) φ (g k)).1 hfac 1
     simp only [g, ModuleCat.hom_ofHom, LinearMap.toSpanSingleton_apply, one_smul] at h'
-    rw [adicStep, Int.toNat_natCast, Ideal.mem_span_singleton] at h'
+    rw [mem_adicStep_iff, Int.toNat_natCast] at h'
     have : (1 + ℓ) * n - 1 = (1 + ℓ) * (n - s k) - (-ℓ) ^ k := by
       have := one_add_mul_adicPartialSum ℓ k
       linear_combination this
