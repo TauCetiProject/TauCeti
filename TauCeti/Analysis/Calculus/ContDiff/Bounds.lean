@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -45,6 +46,8 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
   most `n` of a `C^n` map are bounded by one constant.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen`: the same for the derivatives of a
   map that is `C^n` on an open set, with a nonnegative constant.
+* `ContDiff.exists_norm_iteratedDeriv_le_of_isCompact`: the same for the iterated derivatives of
+  order at most `n` of a `C^n` function of one variable on a compact set.
 * `IsCompact.exists_norm_fderiv_le`: the derivative of a map that is `C^1` at every point of a
   compact set is bounded on that set.
 * `ContDiffOn.exists_nonneg_bound_iteratedFDeriv_uncurry_of_isOpen`: for a family `f p` that is
@@ -85,6 +88,7 @@ how symbol estimates are proved near the zero frequency, where no decay is neede
 * `ContDiff.norm_iteratedFDeriv_mul_le_two_pow`: the same for a product `f * g` in a normed
   algebra, with one bound for all orders at most `N`.
 * `ContDiff.norm_iteratedFDeriv_pow_le_two_pow`: the resulting bound for a power `f ^ j`.
+* `ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow`: the resulting bound for `f ^ 2 - f`.
 * `ContDiffAt.norm_iteratedFDeriv_smul_const_le`: the order-`k` derivative of `y ↦ f y • v` is at
   most that of `f` times `‖v‖`.
 * `ContDiff.norm_iteratedFDeriv_comp_const_smul_le`: rescaling the variable by `c` with
@@ -150,6 +154,17 @@ theorem ContDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen {u : E → F} {s
   refine ⟨max A 0, le_max_right _ _, fun i hi z hz ↦ ?_⟩
   rw [← iteratedFDerivWithin_of_isOpen i hs (hKs hz)]
   exact (hA i hi z hz).trans (le_max_left _ _)
+
+/-- On a compact set `K`, the iterated derivatives of order at most `n` of a `C^n` function of one
+variable are bounded by a single constant. -/
+theorem ContDiff.exists_norm_iteratedDeriv_le_of_isCompact {f : 𝕜 → F} {K : Set 𝕜} {n : ℕ}
+    (hf : ContDiff 𝕜 n f) (hK : IsCompact K) :
+    ∃ M : ℝ≥0, ∀ i ≤ n, ∀ x ∈ K, ‖iteratedDeriv i f x‖ ≤ M := by
+  obtain ⟨A, -, hA⟩ :=
+    hf.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen isOpen_univ hK (subset_univ K)
+  refine ⟨A.toNNReal, fun i hi x hx ↦ ?_⟩
+  rw [← norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+  exact (hA i hi x hx).trans (Real.le_coe_toNNReal A)
 
 /-- The derivatives of order at most `n` of a compactly supported `C^n` map are bounded by a
 single constant. Mathlib's `HasCompactSupport.exists_bound_iteratedFDeriv` assumes the map
@@ -435,6 +450,20 @@ theorem ContDiff.norm_iteratedFDeriv_pow_le_two_pow {A : Type*} [NormedRing A]
     have hfj : ContDiff 𝕜 N (f ^ j) := hf.pow j
     rw [pow_succ, pow_succ]
     exact (hfj.norm_iteratedFDeriv_mul_le_two_pow hf ih hfC p hp).trans_eq (by ring)
+
+/-- **Leibniz bound for `f ^ 2 - f` at a point.** If the derivatives of order at most `N` of `f`
+at `x` are bounded by `C`, those of `y ↦ f y ^ 2 - f y` at `x` of order at most `N` are bounded by
+`2 ^ N * (C * C) + C`. -/
+theorem ContDiff.norm_iteratedFDeriv_sq_sub_self_le_two_pow {A : Type*} [NormedRing A]
+    [NormedAlgebra 𝕜 A] {N : ℕ} {f : E → A} (hf : ContDiff 𝕜 N f) {x : E} {C : ℝ}
+    (hfC : ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p f x‖ ≤ C) :
+    ∀ p ≤ N, ‖iteratedFDeriv 𝕜 p (fun y ↦ f y ^ 2 - f y) x‖ ≤ 2 ^ N * (C * C) + C := by
+  intro p hp
+  have hp' : (p : WithTop ℕ∞) ≤ N := by exact_mod_cast hp
+  simp_rw [sq]
+  rw [fun_iteratedFDeriv_sub_apply ((hf.mul hf).of_le hp').contDiffAt (hf.of_le hp').contDiffAt]
+  exact (norm_sub_le _ _).trans
+    (add_le_add (hf.norm_iteratedFDeriv_mul_le_two_pow hf hfC hfC p hp) (hfC p hp))
 
 /-- Rescaling the variable by `c` with `1 ≤ ‖c‖` multiplies uniform bounds for the derivatives
 of order at most `N` by at most `‖c‖ ^ N`. -/

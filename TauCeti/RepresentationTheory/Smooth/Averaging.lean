@@ -10,8 +10,8 @@ public import TauCeti.RepresentationTheory.RelativeNorm
 public import TauCeti.RepresentationTheory.Smooth.Basic
 public import TauCeti.Topology.Algebra.Group.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.UnitProOrder
+public import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.Module.NatInt
-import TauCeti.RepresentationTheory.Invariants
 
 /-!
 # The averaging projector onto the invariants of a compact group
@@ -46,6 +46,8 @@ Bernstein's notes onto `V^U`.
   `e_K (σ k v) = e_K v` and `σ k (e_K v) = e_K v`.
 * `Representation.ker_smoothAverage`: the kernel of `e_K` is the span of the vectors `σ k x - x`.
 * `Representation.IntertwiningMap.map_smoothAverage`: `e_K` commutes with intertwining maps.
+* `Representation.IntertwiningMap.invariantsMap_surjective`: a surjective intertwining map out of
+  a smooth representation is surjective on `K`-invariants, so `K`-invariants are exact.
 * `Representation.smoothAverage_smoothAverage_subgroup`,
   `Representation.smoothAverage_subgroup_smoothAverage`,
   `Representation.smoothAverage_comp_smoothAverage_subgroup`,
@@ -215,6 +217,21 @@ theorem IntertwiningMap.map_smoothAverage {ρ : Representation A K W} [IsSmooth 
     ρ.smoothAverage_apply_eq_relNorm hK hH (f.stabilizer_le v), map_smul, relNorm_apply,
     relNorm_apply, map_sum]
   simp only [f.isIntertwining]
+
+variable {σ} in
+include hK in
+/-- **Invariants of invertible pro-order are exact on the right**: a surjective intertwining map
+out of a smooth representation maps `V^K` onto `W^K`, since it commutes with the averaging
+projector `e_K`. -/
+theorem IntertwiningMap.invariantsMap_surjective {ρ : Representation A K W}
+    (f : σ.IntertwiningMap ρ) (hf : Function.Surjective f) :
+    Function.Surjective f.invariantsMap := by
+  have := IsSmooth.of_surjective f hf
+  rintro ⟨w, hw⟩
+  obtain ⟨v, rfl⟩ := hf w
+  refine ⟨⟨σ.smoothAverage hK v, σ.smoothAverage_apply_mem_invariants hK v⟩, Subtype.ext ?_⟩
+  rw [coe_invariantsMap_apply, Subtype.coe_mk, Subtype.coe_mk, map_smoothAverage σ hK,
+    ρ.smoothAverage_apply_of_mem_invariants hK hw]
 
 /-- **Nested averages.** For a compact subgroup `H` of invertible pro-order, averaging over `H` and
 then over `K` is averaging over `K`. -/

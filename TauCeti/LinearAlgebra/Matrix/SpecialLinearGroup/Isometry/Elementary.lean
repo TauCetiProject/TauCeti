@@ -25,9 +25,15 @@ The result concerns the transvection-generated subgroup itself, not just the ful
 group. It is a step towards generation and the use of the transvection subgroups in Iwasawa's
 criterion; it does not assert that the elementary group is the full special isometry group.
 
-Two nonorthogonal isotropic vectors in `u^⊥` are joined up to a scalar by a transvection fixing
-`u`. Orthogonal vectors off `K ∙ u` are joined through a third isotropic vector in `u^⊥` by two
-such transvections. Specializing `u = 0` gives transitivity on isotropic projective points.
+Two nonorthogonal isotropic vectors in `U^⊥` are joined up to a scalar by a transvection fixing `U`
+(`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero`), two
+isotropic vectors in `U^⊥` paired nontrivially with an intermediate isotropic vector in `U^⊥` are
+joined by the product of two such elements — namely
+`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero`
+— and orthogonal vectors in `u^⊥` off `K ∙ u` are joined by constructing such an intermediate
+vector (`Matrix.exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero`), giving
+transitivity up to scalar (`Matrix.exists_mem_elementaryUnitaryGroup_mulVec_eq_smul`) and on
+isotropic points (`Matrix.isPretransitive_elementaryUnitaryGroup`).
 The transvection step follows the symplectic argument of
 `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transitivity`, in particular
 `TauCeti.GLSymplecticFin.coe_symplecticTransvection_sub_mulVec`.
@@ -77,6 +83,28 @@ instance normal_elementaryUnitaryGroup : (Q.elementaryUnitaryGroup σ).Normal :=
     exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup _ hconj
   exact hle hx
 
+/-- Any unitary transvection along an isotropic vector (zero or nonzero) that belongs to
+`Q.specialIsometryGroup σ` lies in `Q.elementaryUnitaryGroup σ`. -/
+theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection {g : SpecialLinearGroup n K}
+    (hg : g ∈ Q.specialIsometryGroup σ) {v : n → K} (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K}
+    (hga : (g : Matrix n n K) = Q.unitaryTransvection σ v a) :
+    (⟨g, hg⟩ : Q.specialIsometryGroup σ) ∈ Q.elementaryUnitaryGroup σ := by
+  by_cases hv0 : v = 0
+  · rw [specialIsometryGroup_ext (g₁ := ⟨g, hg⟩) (g₂ := 1) (by simp [hv0, hga])]; exact one_mem _
+  · have hp := (mk_mem_isotropicPoints_iff hv0).mpr hv
+    exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup ⟨_, hp⟩
+      ((mem_unitaryTransvectionSubgroup_mk_iff hv0 hp).mpr ⟨a, hga⟩)
+
+/-- An admissible unitary transvection along an isotropic vector `v` gives an element of
+`Q.elementaryUnitaryGroup σ` with matrix `Q.unitaryTransvection σ v a`. -/
+theorem exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) {v : n → K}
+    (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) {a : K} (ha : a + ε * σ a = 0) :
+    ∃ t ∈ Q.elementaryUnitaryGroup σ,
+      ((t : SpecialLinearGroup n K) : Matrix n n K) = Q.unitaryTransvection σ v a := by
+  obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hv ha
+  exact ⟨⟨g, hg⟩, mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection hg hv hga, hga⟩
+
 /-- **A unitary transvection joins two isotropic vectors.** If `σ` is an involution, `Q` is
 `ε`-Hermitian, and `x` and `y` are isotropic with `h(y, x) ≠ 0` and `h(x, y) + h(y, x) = 0`, then
 the unitary transvection along `y - x` with parameter `h(y, x)⁻¹` lies in the elementary unitary
@@ -90,9 +118,6 @@ theorem exists_elementaryUnitaryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) =
         Q.unitaryTransvection σ (y - x) ((σ ∘ y) ⬝ᵥ (Q *ᵥ x))⁻¹ ∧
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = y := by
-  have hw0 : y - x ≠ 0 := by
-    intro h
-    exact hyx (by simpa only [sub_eq_zero.mp h] using hx)
   set b := (σ ∘ y) ⬝ᵥ (Q *ᵥ x) with hb
   have hw : (σ ∘ (y - x)) ⬝ᵥ (Q *ᵥ (y - x)) = 0 := by
     simp only [map_comp_sub, sub_dotProduct, mulVec_sub, dotProduct_sub, hx, hy]
@@ -106,28 +131,23 @@ theorem exists_elementaryUnitaryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_
   have ha : b⁻¹ + ε * σ b⁻¹ = 0 := by
     simp only [map_inv₀, hσb, inv_neg, mul_neg]
     linear_combination -b⁻¹ * mul_inv_cancel₀ hε0
-  obtain ⟨g, hg, hga⟩ := exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection hσ hQ hw ha
-  have hp := (mk_mem_isotropicPoints_iff hw0).mpr hw
-  have hmem : (⟨g, hg⟩ : Q.specialIsometryGroup σ) ∈ Q.elementaryUnitaryGroup σ :=
-    unitaryTransvectionSubgroup_le_elementaryUnitaryGroup ⟨_, hp⟩
-      ((mem_unitaryTransvectionSubgroup_mk_iff hw0 hp).mpr ⟨_, hga⟩)
-  refine ⟨⟨⟨g, hg⟩, hmem⟩, hga, ?_⟩
-  simp [hga, unitaryTransvection_mulVec, hx, ← hb, inv_mul_cancel₀ hyx]
+  obtain ⟨t, ht, hta⟩ := exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection hσ hQ hw ha
+  refine ⟨⟨t, ht⟩, hta, ?_⟩
+  simp [hta, unitaryTransvection_mulVec, hx, ← hb, inv_mul_cancel₀ hyx]
 
-/-- **Connecting two non-orthogonal isotropic vectors in `u^⊥`.** Let `σ` be an involution and let
-`Q` be an `ε`-Hermitian matrix. If `x` and `y` are isotropic vectors orthogonal to `u` with
-`h(y, x) ≠ 0`, and some nonzero `d` satisfies `d + ε σ(d) = 0`, then an elementary unitary
-element fixes `u` and sends `x` to a nonzero multiple of `y`. -/
-private theorem
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
+/-- **Connecting two non-orthogonal isotropic vectors while fixing an orthogonal set.** Let `σ` be
+an involution and let `Q` be an `ε`-Hermitian matrix. If some nonzero `d` satisfies
+`d + ε * σ d = 0` and `x, y` are isotropic vectors with `h(y, x) ≠ 0` that are orthogonal to every
+vector in `U`, then some element of `Q.elementaryUnitaryGroup σ` fixes every vector in `U` and
+sends `x` to a nonzero scalar multiple of `y`. -/
+theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
     (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
-    (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {u x y : n → K}
+    (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {U : Set (n → K)} {x y : n → K}
     (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
-    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (huy : (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hxU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (hyU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0)
     (hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) ≠ 0) :
-    ∃ g : Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
-      (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ u = u ∧
-      (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y := by
+    ∃ t ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (∀ u ∈ U, (t : Matrix n n K) *ᵥ u = u) ∧ (t : Matrix n n K) *ᵥ x = c • y := by
   obtain ⟨d, hd, hdε⟩ := hadm
   set b := (σ ∘ y) ⬝ᵥ (Q *ᵥ x) with hb
   have hσb : σ b ≠ 0 := (map_ne_zero σ).mpr hyx
@@ -151,12 +171,34 @@ private theorem
   obtain ⟨g, hga, hgx⟩ :=
     exists_elementaryUnitaryGroup_coe_eq_unitaryTransvection_sub_and_mulVec_eq
       hσ hQ hx hcy (hcyx ▸ (map_ne_zero σ).mpr hd) hxcy
-  have hxu : (σ ∘ x) ⬝ᵥ (Q *ᵥ u) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp hux
-  have hyu : (σ ∘ y) ⬝ᵥ (Q *ᵥ u) = 0 :=
-    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp huy
-  refine ⟨g, c, hc, ?_, hgx⟩
-  simp [hga, unitaryTransvection_mulVec, hxu, hyu]
+  refine ⟨g, g.property, c, hc, fun u hu ↦ ?_, hgx⟩
+  simp [hga, unitaryTransvection_mulVec, (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hxU u hu),
+    (comp_dotProduct_mulVec_eq_zero_comm hσ hQ).mp (hyU u hu)]
+
+/-- **Connecting two isotropic vectors via an intermediate isotropic vector while fixing an
+orthogonal set.** Let `σ` be an involution and let `Q` be an `ε`-Hermitian matrix. If some nonzero
+`d` satisfies `d + ε * σ d = 0` and `x, z, y` are isotropic vectors orthogonal to every vector in
+`U` with `h(z, x) ≠ 0` and `h(y, z) ≠ 0`, then some element of `Q.elementaryUnitaryGroup σ` fixes
+every vector in `U` and sends `x` to a nonzero scalar multiple of `y`. -/
+theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero
+    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q)
+    (hadm : ∃ d ≠ 0, d + ε * σ d = 0) {U : Set (n → K)} {x z y : n → K}
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hz : (σ ∘ z) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hxU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ x) = 0) (hzU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hyU : ∀ u ∈ U, (σ ∘ u) ⬝ᵥ (Q *ᵥ y) = 0)
+    (hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0) (hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0) :
+    ∃ t ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (∀ u ∈ U, (t : Matrix n n K) *ᵥ u = u) ∧ (t : Matrix n n K) *ᵥ x = c • y := by
+  obtain ⟨t₁, ht₁, c₁, hc₁, ht₁U, ht₁x⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+      hσ hQ hadm hx hz hxU hzU hzx
+  obtain ⟨t₂, ht₂, c₂, hc₂, ht₂U, ht₂z⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero
+      hσ hQ hadm hz hy hzU hyU hyz
+  exact ⟨t₂ * t₁, mul_mem ht₂ ht₁, c₁ * c₂, mul_ne_zero hc₁ hc₂,
+    fun u hu ↦ by rw [coe_mul_specialIsometryGroup_mulVec, ht₁U u hu, ht₂U u hu],
+    by rw [coe_mul_specialIsometryGroup_mulVec, ht₁x, mulVec_smul, ht₂z, smul_smul]⟩
 
 /-- **Connecting two isotropic vectors in `u^⊥` off `K ∙ u`.** Let `σ` be an involution, let `Q` be
 an invertible `ε`-Hermitian matrix, and suppose that the trace `t ↦ t + ε σ(t)` is onto the
@@ -172,10 +214,15 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
     ∃ g : Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ u = u ∧
       (((g : Q.specialIsometryGroup σ) : SpecialLinearGroup n K) : Matrix n n K) *ᵥ x = c • y := by
+  suffices ∃ t ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K),
+      (∀ w ∈ ({u} : Set (n → K)), (t : Matrix n n K) *ᵥ w = w) ∧
+      (t : Matrix n n K) *ᵥ x = c • y by
+    obtain ⟨t, ht, c, hc, htU, htx⟩ := this
+    exact ⟨⟨t, ht⟩, c, hc, htU u (Set.mem_singleton u), htx⟩
   by_cases hyx : (σ ∘ y) ⬝ᵥ (Q *ᵥ x) = 0
   swap
-  · exact exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
-      hσ hQ hadm hx hy hux huy hyx
+  · exact exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero hσ hQ hadm
+      hx hy (Set.forall_mem_singleton.mpr hux) (Set.forall_mem_singleton.mpr huy) hyx
   -- Choose `v` orthogonal to `u` and paired nontrivially with both `x` and `y`, then correct
   -- `v` to an isotropic vector `z = v + a • x`.
   obtain ⟨v, hvu, hvx, hvy⟩ :=
@@ -187,22 +234,30 @@ theorem exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_ze
   have huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0 := by
     rw [comp_dotProduct_mulVec_eq_zero_comm hσ hQ]
     simp [z, hvu, hxu]
-  have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by
-    simpa [z, hx] using hvx
+  have hzx : (σ ∘ z) ⬝ᵥ (Q *ᵥ x) ≠ 0 := by simpa [z, hx] using hvx
   have hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) ≠ 0 := by
     rw [comp_dotProduct_mulVec_ne_zero_comm hσ hQ]
     simpa [z, hxy] using hvy
-  obtain ⟨g₁, c₁, hc₁, hg₁u, hg₁x⟩ :=
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
-      hσ hQ hadm hx hz hux huz hzx
-  obtain ⟨g₂, c₂, hc₂, hg₂u, hg₂z⟩ :=
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero_of_ne_zero
-      hσ hQ hadm hz hy huz huy hyz
-  refine ⟨g₂ * g₁, c₁ * c₂, mul_ne_zero hc₁ hc₂, ?_, ?_⟩
-  · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
-    rw [← mulVec_mulVec, hg₁u, hg₂u]
-  · simp only [Subgroup.coe_mul, SpecialLinearGroup.coe_mul]
-    rw [← mulVec_mulVec, hg₁x, mulVec_smul, hg₂z, smul_smul]
+  exact
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_ne_zero_of_ne_zero
+      hσ hQ hadm hx hz hy (Set.forall_mem_singleton.mpr hux) (Set.forall_mem_singleton.mpr huz)
+      (Set.forall_mem_singleton.mpr huy) hzx hyz
+
+/-- **The elementary unitary group is transitive up to scalar on nonzero isotropic vectors.** Let
+`σ` be an involution, let `Q` be an invertible `ε`-Hermitian matrix, and suppose that the trace
+`t ↦ t + ε σ(t)` is onto the elements `s` with `σ(s) = ε s` and has a nonzero kernel element. For
+any nonzero isotropic vectors `x` and `y`, some element of `Q.elementaryUnitaryGroup σ` sends `x`
+to a nonzero scalar multiple of `y`. -/
+theorem exists_mem_elementaryUnitaryGroup_mulVec_eq_smul (hσ : Function.Involutive σ)
+    (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
+    (htr : ∀ s, σ s = ε * s → ∃ t, t + ε * σ t = s) (hadm : ∃ d ≠ 0, d + ε * σ d = 0)
+    {x y : n → K} (hx₀ : x ≠ 0) (hy₀ : y ≠ 0)
+    (hx : (σ ∘ x) ⬝ᵥ (Q *ᵥ x) = 0) (hy : (σ ∘ y) ⬝ᵥ (Q *ᵥ y) = 0) :
+    ∃ g ∈ Q.elementaryUnitaryGroup σ, ∃ c ≠ (0 : K), (g : Matrix n n K) *ᵥ x = c • y := by
+  obtain ⟨g, c, hc, -, hgx⟩ :=
+    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
+      hσ hQ hdet htr hadm (u := 0) hx hy (by simp [hx₀]) (by simp [hy₀]) (by simp) (by simp)
+  exact ⟨g, g.property, c, hc, hgx⟩
 
 /-- The elementary unitary group acts transitively on isotropic projective points of a
 nondegenerate ε-Hermitian form when the trace map is onto the ε-fixed scalars and has
@@ -215,10 +270,9 @@ theorem isPretransitive_elementaryUnitaryGroup (hσ : Function.Involutive σ)
   induction p using Projectivization.ind with | h x hx0 => ?_
   induction q using Projectivization.ind with | h y hy0 => ?_
   rw [mk_mem_isotropicPoints_iff] at hp hq
-  obtain ⟨g, c, -, -, hgx⟩ :=
-    exists_elementaryUnitaryGroup_mulVec_eq_self_and_mulVec_eq_smul_of_eq_zero
-      hσ hQ hdet htr hadm (u := 0) hp hq (by simp [hx0]) (by simp [hy0]) (by simp) (by simp)
-  refine ⟨g, Subtype.ext ?_⟩
+  obtain ⟨g, hg, c, -, hgx⟩ :=
+    exists_mem_elementaryUnitaryGroup_mulVec_eq_smul hσ hQ hdet htr hadm hx0 hy0 hp hq
+  refine ⟨⟨g, hg⟩, Subtype.ext ?_⟩
   exact TauCeti.Projectivization.smul_mk_eq_mk_of_smul_eq_smul hx0 hy0 (c := c)
     (by rwa [Subgroup.smul_def, Subgroup.smul_def, SpecialLinearGroup.smul_def, smul_eq_mulVec])
 

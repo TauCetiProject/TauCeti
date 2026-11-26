@@ -36,6 +36,8 @@ differences of the remaining columns.
 
 * `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
   the determinant.
+* `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
+  agree in every other row.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
@@ -57,6 +59,12 @@ differences of the remaining columns.
   determinant one.
 * `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
   radical has unit determinant.
+
+## Provenance
+
+`Matrix.det_eq_add_of_row_eq_add` is adapted from the Lean project grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_eq_add_of_row_eq_add`.
 -/
 
 public section
@@ -143,6 +151,17 @@ theorem det_updateRow_updateRow_swap {ι R : Type*} [Fintype ι] [DecidableEq ι
           Equiv.swap_apply_of_ne_of_ne hrj hrk]
   rw [← he, Matrix.det_permute]
   simp [M, Equiv.Perm.sign_swap h]
+
+/-- The determinant of a square matrix whose row `i` is the sum of the rows `i` of two matrices
+that agree with it in every other row is the sum of their determinants. -/
+theorem det_eq_add_of_row_eq_add {m R : Type*} [Fintype m] [DecidableEq m] [CommRing R]
+    {A B C : Matrix m m R} (i : m)
+    (h_row : A i = B i + C i) (hB : ∀ j ≠ i, B j = A j) (hC : ∀ j ≠ i, C j = A j) :
+    A.det = B.det + C.det := by
+  have h_update (X : Matrix m m R) (hX : ∀ j ≠ i, X j = A j) : A.updateRow i (X i) = X := by
+    ext j k
+    by_cases hj : j = i <;> simp [updateRow_apply, hj, hX]
+  conv_lhs => rw [← updateRow_eq_self A i, h_row, det_updateRow_add, h_update B hB, h_update C hC]
 
 /-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
 columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`

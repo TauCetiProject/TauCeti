@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.Shrink
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.Convenient.GeneratedBy
 public import TauCeti.Topology.Convenient.HomSpace
+public import TauCeti.Topology.Instances.Shrink
 
 /-!
 # Compact Hausdorff generators, products, and mapping spaces
@@ -117,8 +118,6 @@ theorem exists_compHaus_range_eq {Y : Type v} [TopologicalSpace Y]
     ∃ (S : CompHaus.{u}) (p : C(S, Y)), range p = K := by
   have : CompactSpace ↑K := isCompact_iff_compactSpace.1 hK
   let e : ↑K ≃ₜ Shrink.{u} ↑K := Shrink.homeomorph ↑K
-  have : CompactSpace (Shrink.{u} ↑K) := e.compactSpace
-  have : T2Space (Shrink.{u} ↑K) := e.symm.isEmbedding.t2Space
   refine ⟨CompHaus.of (Shrink.{u} ↑K),
     ⟨Subtype.val ∘ e.symm, continuous_subtypeVal.comp e.symm.continuous⟩, ?_⟩
   simp only [ContinuousMap.coe_mk, range_comp, EquivLike.range_eq_univ, image_univ,
