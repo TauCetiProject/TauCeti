@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.LocalSymbol.Principal
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Elliptic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Elliptic classical symbols on an open set
@@ -27,6 +28,8 @@ elliptic on `ℝⁿ`.
   classical symbol on `ℝⁿ` to `U` is elliptic exactly when its principal symbol is invertible over
   `U` (`TauCeti.ClassicalSymbol.isElliptic_restrict_iff`), and over `U = ℝⁿ` it is the
   ellipticity of `TauCeti.ClassicalSymbol`.
+* `TauCeti.HomogeneousSymbol.eventually_forall_isInvertible_coefficient`: invertibility of a
+  homogeneous symbol on `ℝⁿ` at every nonzero frequency is an open condition on the position.
 * `TauCeti.LocalClassicalSymbol.isElliptic_add_iff`: ellipticity does not see terms of order
   `m - 1`.
 * `TauCeti.LocalHomogeneousSymbol.inverse`: for an elliptic `a` of degree `m` on `U` with a
@@ -49,6 +52,10 @@ elliptic on `ℝⁿ`.
   near `x`. A cut-off extension of `a` is elliptic only where the cutoff is `1`, so this is the
   form in which the elliptic regularity of an operator read in a chart is proved
   (`TauCeti.LocalClassicalSymbol.IsElliptic.isLocallySobolevAt_of_quantizeDistribution`).
+* `TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isElliptic_restrict`,
+  `TauCeti.ClassicalSymbol.exists_comp_eq_id_of_isElliptic_restrict`: if the restriction of a
+  classical symbol on `ℝⁿ` to `U` is elliptic, the symbol is elliptic at large frequencies over
+  each compact `K ⊆ U` and has an inverse symbol of order `-m` there near `K`.
 
 ## References
 
@@ -215,6 +222,31 @@ theorem isElliptic_restrict_iff
 theorem IsElliptic.restrict {a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m}
     (ha : a.IsElliptic) : (restrict U a).IsElliptic :=
   isElliptic_restrict_iff.2 fun x _ ξ hξ => isElliptic_iff.1 ha x ξ hξ
+
+/-- **Invertibility is an open condition in the position.** If a homogeneous symbol on `ℝⁿ` is
+invertible at a position `x` at every nonzero frequency, then so it is at every position near `x`:
+by homogeneity it suffices to look at the compact unit sphere of frequencies. -/
+theorem eventually_forall_isInvertible_coefficient [CompleteSpace V]
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) {x : CoordinateSpace n}
+    (ha : ∀ ξ, ξ ≠ 0 → (a.coefficient (x, ξ)).IsInvertible) :
+    ∀ᶠ y in 𝓝 x, ∀ ξ, ξ ≠ 0 → (a.coefficient (y, ξ)).IsInvertible := by
+  -- `a` is invertible at `(y, ξ)` for `y` near `x` and `‖ξ‖ = 1`.
+  have hS : ∀ᶠ y in 𝓝 x, ∀ ξ ∈ Metric.sphere (0 : CoordinateSpace n) 1,
+      (a.coefficient (y, ξ)).IsInvertible := by
+    refine (isCompact_sphere _ _).eventually_forall_of_forall_eventually fun ξ hξ ↦ ?_
+    have hξ0 : ξ ≠ 0 := Metric.ne_of_mem_sphere hξ one_ne_zero
+    have hcont : ContinuousAt a.coefficient (x, ξ) :=
+      a.continuousOn_coefficient.continuousAt
+        ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hξ0)
+    exact hcont.eventually (ha ξ hξ0).eventually_nhds
+  -- By homogeneity it is invertible at every nonzero frequency.
+  filter_upwards [hS] with y hy ξ hξ
+  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
+  have hscal : a.coefficient (y, ξ) = ((‖ξ‖ ^ m : ℝ) : ℂ) • a.coefficient (y, ‖ξ‖⁻¹ • ξ) := by
+    rw [Complex.coe_smul, ← a.homogeneous y _ _ hn, smul_inv_smul₀ hn.ne']
+  rw [hscal, ContinuousLinearMap.isInvertible_smul_iff
+    (Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos hn m).ne')]
+  exact hy _ (by simp [norm_smul, hn.ne'])
 
 /-- The inverse commutes with the restriction of homogeneous symbols on `ℝⁿ` to an open set. -/
 theorem restrict_inverse [CompleteSpace V]
@@ -387,6 +419,30 @@ theorem isElliptic_restrictTopEquiv_iff {a : ClassicalSymbol n V W m} :
     (restrictTopEquiv a).IsElliptic ↔ a.IsElliptic := by
   rw [← restrict_top, isElliptic_restrict_iff, isElliptic_iff]
   simp
+
+/-- **Ellipticity on compact sets of positions.** If the restriction of a classical symbol `a` on
+`ℝⁿ` to `U` is elliptic, then `a` is elliptic on every compact set `K ⊆ U` of positions at the
+frequencies of norm at least some radius `R`, in the sense of `TauCeti.Symbol.IsEllipticOn`. -/
+theorem exists_isEllipticOn_of_isElliptic_restrict [CompleteSpace V] {a : ClassicalSymbol n V W m}
+    (ha : (restrict U a).IsElliptic) {K : Set (CoordinateSpace n)} (hKU : K ⊆ U)
+    (hK : IsCompact K) : ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} :=
+  ha.exists_isEllipticOn hKU hK fun _ hx _ ↦ by
+    rw [toLocalSymbol_restrict, Symbol.coefficient_restrict_of_mem _ (hKU hx)]
+
+/-- **Local inverse symbols.** If the restriction of a classical symbol `a` on `ℝⁿ` to `U` is
+elliptic and `K ⊆ U` is compact, then a symbol of order `-m` on `ℝⁿ` inverts `a` on both sides at
+all large frequencies and all positions near `K`. -/
+theorem exists_comp_eq_id_of_isElliptic_restrict [CompleteSpace V] {a : ClassicalSymbol n V W m}
+    (ha : (restrict U a).IsElliptic) {K : Set (CoordinateSpace n)} (hKU : K ⊆ U)
+    (hK : IsCompact K) :
+    ∃ (b : Symbol n W V (-m)) (R : ℝ), ∀ᶠ y in 𝓝ˢ K, ∀ ξ, R ≤ ‖ξ‖ →
+      b.coefficient (y, ξ) ∘L a.toSymbol.coefficient (y, ξ) = .id ℂ V ∧
+        a.toSymbol.coefficient (y, ξ) ∘L b.coefficient (y, ξ) = .id ℂ W := by
+  -- `a` is elliptic on a compact neighbourhood `L ⊆ U` of `K`.
+  obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between hK U.isOpen hKU
+  obtain ⟨R, hR⟩ := exists_isEllipticOn_of_isElliptic_restrict ha hLU hL
+  exact (Symbol.exists_mem_nhdsSet_isEllipticOn_iff hK).1
+    ⟨L, subset_interior_iff_mem_nhdsSet.1 hKL, R, hR⟩
 
 end ClassicalSymbol
 

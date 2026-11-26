@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Principa
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # Elliptic pseudodifferential operators between vector bundles in charts
@@ -239,7 +238,7 @@ theorem isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt
       ∀ y ∈ U, IsSectionClassicalEllipticAt m P (e.symm y) := by
   rw [ClassicalSymbol.isElliptic_restrict_iff]
   refine forall₂_congr fun y hy ↦ ?_
-  have hU : y ∈ e.target := φ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul (hφψ y hy)))
+  have hU := OpenPartialHomeomorph.mem_target_of_mul_ne_zero (hφψ y hy)
   have hy' := e.right_inv hU
   rw [isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha (e.map_target hU)
     (hy'.symm ▸ hφψ y hy), hy']
@@ -247,30 +246,6 @@ theorem isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt
 end Chart
 
 /-! ### Openness -/
-
-/-- In positive dimension, an operator elliptic at a point whose model fibres are not both trivial
-is a classical pseudodifferential operator of order `m`: otherwise its principal symbol vanishes,
-and the zero map between the fibres is not bijective. -/
-private theorem mem_or_subsingleton_of_isSectionClassicalEllipticAt
-    [Nontrivial (CoordinateSpace n)] {x : M} (hPx : IsSectionClassicalEllipticAt m P x) :
-    P ∈ sectionClassicalPseudodifferentialOperators m ∨ (Subsingleton V ∧ Subsingleton W) := by
-  refine or_iff_not_imp_left.2 fun hP ↦ ?_
-  obtain ⟨η, hη⟩ := exists_ne (0 : CoordinateSpace n)
-  have hη' : (innerSL ℝ η : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) ≠ 0 := fun h ↦
-    hη (by simpa using DFunLike.congr_fun h η)
-  obtain ⟨ξ, hξ⟩ : ∃ ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ, ξ ≠ 0 := ⟨_, hη'⟩
-  have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
-  rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
-  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
-  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
-  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := h0.2 u
-    obtain ⟨v', rfl⟩ := h0.2 v
-    simp⟩
-  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
-    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
 
 /-- **Ellipticity is an open condition.** An operator between bundles elliptic at `x` is elliptic
 at every point near `x`. -/
@@ -281,8 +256,8 @@ theorem IsSectionClassicalEllipticAt.eventually {x : M}
   -- order `m`.
   rcases subsingleton_or_nontrivial (CoordinateSpace n) with hn | hn
   · exact .of_forall isSectionClassicalEllipticAt_of_subsingleton
-  refine (mem_or_subsingleton_of_isSectionClassicalEllipticAt hPx).elim (fun hP ↦ ?_)
-    fun ⟨_, _⟩ ↦ .of_forall isSectionClassicalEllipticAt_of_subsingleton_fibre
+  refine hPx.mem_or_subsingleton.elim (fun hP ↦ ?_)
+    fun ⟨_, _⟩ ↦ .of_forall isSectionClassicalEllipticAt_of_subsingleton_fiber
   -- A chart `e` of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨e, he, hx, hE, hF⟩ : ∃ e : OpenPartialHomeomorph M (CoordinateSpace n),
       e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M ∧ x ∈ e.source ∧
@@ -300,30 +275,8 @@ theorem IsSectionClassicalEllipticAt.eventually {x : M}
   obtain ⟨a, ha⟩ := exists_quantizeSchwartzValue_eq_apply_chartCutoffSection he _ hE hP _ hF χ χ
   have hinv := (isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha hx
     (by simp [hχ.self_of_nhds])).1 hPx
-  -- The principal symbol of `a` is invertible at `(z, η)` for `z` near `e x` and `‖η‖ = 1`.
-  have hS : ∀ᶠ z in 𝓝 (e x), ∀ η ∈ Metric.sphere (0 : CoordinateSpace n) 1,
-      (a.principal.coefficient (z, η)).IsInvertible := by
-    refine (isCompact_sphere _ _).eventually_forall_of_forall_eventually fun η hη ↦ ?_
-    have hη0 : η ≠ 0 := Metric.ne_of_mem_sphere hη one_ne_zero
-    have hcont : ContinuousAt a.principal.coefficient (e x, η) :=
-      a.principal.continuousOn_coefficient.continuousAt
-        ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hη0)
-    exact hcont.eventually
-      (ContinuousLinearMap.isOpen_setOfPred_isInvertible.mem_nhds (hinv η hη0))
-  -- By homogeneity it is invertible at every nonzero frequency.
-  have hall : ∀ᶠ z in 𝓝 (e x), χ z = 1 ∧ ∀ η : CoordinateSpace n, η ≠ 0 →
-      (a.principal.coefficient (z, η)).IsInvertible := by
-    filter_upwards [hχ, hS] with z hz1 hz
-    refine ⟨hz1, fun η hη ↦ ?_⟩
-    have hn : 0 < ‖η‖ := norm_pos_iff.2 hη
-    have hu : ‖η‖⁻¹ • η ∈ Metric.sphere (0 : CoordinateSpace n) 1 := by
-      simp [norm_smul, hn.ne']
-    have hscal : a.principal.coefficient (z, η) =
-        ((‖η‖ ^ m : ℝ) : ℂ) • a.principal.coefficient (z, ‖η‖⁻¹ • η) := by
-      rw [Complex.coe_smul, ← a.principal.homogeneous z _ _ hn, smul_inv_smul₀ hn.ne']
-    rw [hscal, ContinuousLinearMap.isInvertible_smul_iff
-      (Complex.ofReal_ne_zero.2 (Real.rpow_pos_of_pos hn m).ne')]
-    exact hz _ hu
+  -- The principal symbol of `a` is invertible near `e x` at every nonzero frequency.
+  have hall := hχ.and (a.principal.eventually_forall_isInvertible_coefficient hinv)
   filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually hall] with y hy hy'
   exact (isSectionClassicalEllipticAt_iff_forall_isInvertible hP hF ha hy (by simp [hy'.1])).2
     hy'.2
@@ -345,18 +298,24 @@ variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
   {t' : Trivialization W (π W F)} [MemTrivializationAtlas t']
   {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {a : ClassicalSymbol n V W m}
 
-/-- The points where the cutoffs `φ ψ` do not vanish and over which `P` is elliptic form an open
-set. -/
-private theorem isOpen_setOf_ellipticChart (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
-    IsOpen {y | φ y * ψ y ≠ 0 ∧ IsSectionClassicalEllipticAt m P (e.symm y)} :=
-  isOpen_iff_mem_nhds.2 fun y ⟨hyφψ, hyP⟩ ↦ by
-    filter_upwards [
-      ((φ.contDiff.continuous.mul ψ.contDiff.continuous).continuousAt (x := y)).eventually_ne
-        hyφψ,
-      (e.continuousAt_symm (φ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hyφψ)))
-        ).eventually hyP.eventually]
-      with z hzφψ hzP
-    exact ⟨hzφψ, hzP⟩
+/-- The chart symbol of `P` is elliptic on an open set containing a set `K` at whose points `φ ψ`
+does not vanish and over which `P` is elliptic. -/
+private theorem exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m) (hF : e.source ⊆ t'.baseSet)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, V)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        φ y • t'.continuousLinearMapAt ℂ (e.symm y)
+          (P (t.chartCutoffSection he hE ψ u) (e.symm y)))
+    {K : Set (CoordinateSpace n)} (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0)
+    (hKP : ∀ y ∈ K, IsSectionClassicalEllipticAt m P (e.symm y)) :
+    ∃ U : TopologicalSpace.Opens (CoordinateSpace n), K ⊆ U ∧
+      (ClassicalSymbol.restrict U a).IsElliptic := by
+  set U : TopologicalSpace.Opens (CoordinateSpace n) :=
+    ⟨{y | φ y * ψ y ≠ 0 ∧ IsSectionClassicalEllipticAt m P (e.symm y)},
+      e.isOpen_setOf_mul_ne_zero_and_symm_mem φ ψ (isOpen_setOf_isSectionClassicalEllipticAt m P)⟩
+  exact ⟨U, fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩,
+    (isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt (U := U) hP hF ha
+      fun _ hy ↦ hy.1).2 fun _ hy ↦ hy.2⟩
 
 /-- **Ellipticity of a chart symbol over a compact set.** Let `a` be the symbol of the chart
 compression of `P` by `φ`, `ψ` in a chart `e` and frames `t`, `t'`, and `K` a compact set at whose
@@ -372,16 +331,9 @@ theorem exists_isEllipticOn_of_forall_isSectionClassicalEllipticAt
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (hKφψ : ∀ y ∈ K, φ y * ψ y ≠ 0) (hKP : ∀ y ∈ K, IsSectionClassicalEllipticAt m P (e.symm y)) :
     ∃ R, a.toSymbol.IsEllipticOn {p | p.1 ∈ K ∧ R ≤ ‖p.2‖} := by
-  -- The open set `U` where `φ ψ ≠ 0` and `P` is elliptic contains `K`.
-  set U : TopologicalSpace.Opens (CoordinateSpace n) :=
-    ⟨{y | φ y * ψ y ≠ 0 ∧ IsSectionClassicalEllipticAt m P (e.symm y)},
-      isOpen_setOf_ellipticChart φ ψ⟩
-  have hKU : K ⊆ U := fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩
-  have hUa : (ClassicalSymbol.restrict U a).IsElliptic :=
-    (isElliptic_restrict_iff_forall_isSectionClassicalEllipticAt (U := U) hP hF ha
-      fun _ hy ↦ hy.1).2 fun _ hy ↦ hy.2
-  exact hUa.exists_isEllipticOn hKU hK fun y hy ξ ↦ by
-    rw [ClassicalSymbol.toLocalSymbol_restrict, Symbol.coefficient_restrict_of_mem _ (hKU hy)]
+  obtain ⟨U, hKU, hUa⟩ :=
+    exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt hP hF ha hKφψ hKP
+  exact ClassicalSymbol.exists_isEllipticOn_of_isElliptic_restrict hUa hKU hK
 
 /-- **Local inverse symbols of an elliptic operator between bundles.** Let `a` be the symbol of
 the chart compression of `P` by `φ`, `ψ` in a chart `e` and frames `t`, `t'`, and `K` a compact set
@@ -399,13 +351,9 @@ theorem exists_comp_eq_id_of_forall_isSectionClassicalEllipticAt
     ∃ (b : Symbol n W V (-m)) (R : ℝ), ∀ᶠ y in 𝓝ˢ K, ∀ ξ, R ≤ ‖ξ‖ →
       b.coefficient (y, ξ) ∘L a.toSymbol.coefficient (y, ξ) = .id ℂ V ∧
         a.toSymbol.coefficient (y, ξ) ∘L b.coefficient (y, ξ) = .id ℂ W := by
-  -- The same conditions hold on a compact neighbourhood `L` of `K`.
-  obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between hK (isOpen_setOf_ellipticChart φ ψ)
-    fun y hy ↦ ⟨hKφψ y hy, hKP y hy⟩
-  obtain ⟨R, hR⟩ := exists_isEllipticOn_of_forall_isSectionClassicalEllipticAt hP hF ha hL
-    (fun y hy ↦ (hLU hy).1) fun y hy ↦ (hLU hy).2
-  exact (Symbol.exists_mem_nhdsSet_isEllipticOn_iff hK).1
-    ⟨L, subset_interior_iff_mem_nhdsSet.1 hKL, R, hR⟩
+  obtain ⟨U, hKU, hUa⟩ :=
+    exists_isElliptic_restrict_of_forall_isSectionClassicalEllipticAt hP hF ha hKφψ hKP
+  exact ClassicalSymbol.exists_comp_eq_id_of_isElliptic_restrict hUa hKU hK
 
 end Chart
 
