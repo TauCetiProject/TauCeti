@@ -100,6 +100,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
   `TauCeti.MulAction.orbitRelQuotientCongr` induced by an equivariant equivalence preserves the
   stabiliser orders.
+* `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv`: so does its instance
+  `TauCeti.MulAction.orbitRelQuotientSMulEquiv`, translation between the orbits of conjugate
+  subgroups.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientSumEquiv_symm`: the splitting
   `TauCeti.MulAction.orbitRelQuotientSumEquiv` of the orbit space of an action on `α ⊕ β`
   preserves the stabiliser orders.
@@ -351,6 +354,26 @@ theorem cardStabilizerOnOrbit_le_card [Finite G] (q : MulAction.orbitRel.Quotien
     cardStabilizerOnOrbit q ≤ Nat.card G :=
   Nat.le_of_dvd Nat.card_pos (cardStabilizerOnOrbit_dvd_card q)
 
+/-- **Stabilisers are finite in a subgroup of finite index exactly when they are finite in the
+larger group.** For `V ≤ U` of finite index, the stabiliser of `x` in `V` is the intersection of
+its stabiliser in `U` with `V`, which has finite index in it. Finiteness is stated as
+`Nat.card ≠ 0`. -/
+theorem natCard_stabilizer_ne_zero_iff_of_le {V U : Subgroup G} (hle : V ≤ U)
+    [V.IsFiniteRelIndex U] (x : α) :
+    Nat.card (MulAction.stabilizer V x) ≠ 0 ↔ Nat.card (MulAction.stabilizer U x) ≠ 0 := by
+  set H : Subgroup U := V.subgroupOf U
+  -- `H ⊓ stabilizer U x` is the stabiliser of `x` in `V`, read inside `U`
+  have he : (H ⊓ MulAction.stabilizer U x : Subgroup U) ≃ MulAction.stabilizer V x :=
+    { toFun u := ⟨⟨u.val.val, Subgroup.mem_subgroupOf.mp (Subgroup.mem_inf.mp u.property).1⟩,
+        (Subgroup.mem_inf.mp u.property).2⟩
+      invFun v := ⟨⟨v.val.val, hle v.val.property⟩, Subgroup.mem_inf.mpr
+        ⟨Subgroup.mem_subgroupOf.mpr v.val.property, v.property⟩⟩
+      left_inv _ := rfl
+      right_inv _ := rfl }
+  have := Subgroup.isFiniteRelIndex_of_finiteIndex (H := H) (K := MulAction.stabilizer U x)
+  rw [← Subgroup.relIndex_mul_card (H := H) (K := MulAction.stabilizer U x), Nat.card_congr he]
+  exact ⟨mul_ne_zero Subgroup.relIndex_ne_zero, right_ne_zero_of_mul⟩
+
 section Congr
 
 variable {H β : Type*} [Group H] [MulAction H β]
@@ -377,6 +400,16 @@ theorem cardStabilizerOnOrbit_orbitRelQuotientCongr (φ : G ≃* H) (e : α ≃ 
     cardStabilizerOnOrbit_mk] using card_stabilizer_congr φ a (he · a) fun _ h ↦ e.injective h
 
 end Congr
+
+open scoped Pointwise in
+/-- `MulAction.orbitRelQuotientSMulEquiv g hHK` preserves the stabiliser orders of the orbits. -/
+@[simp]
+theorem cardStabilizerOnOrbit_orbitRelQuotientSMulEquiv (g : G) {H K : Subgroup G}
+    (hHK : ConjAct.toConjAct g • H = K) (q : MulAction.orbitRel.Quotient H α) :
+    cardStabilizerOnOrbit (MulAction.orbitRelQuotientSMulEquiv g hHK q) =
+      cardStabilizerOnOrbit q := by
+  rw [MulAction.orbitRelQuotientSMulEquiv_eq_orbitRelQuotientCongr]
+  exact cardStabilizerOnOrbit_orbitRelQuotientCongr _ _ _ q
 
 section Sum
 

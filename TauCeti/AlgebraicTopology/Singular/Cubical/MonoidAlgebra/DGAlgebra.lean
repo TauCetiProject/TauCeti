@@ -33,6 +33,9 @@ are also those of the DG right modules of chains of a space with a right action 
 
 * `TauCeti.cubicalChainPoint_mem`, `TauCeti.cubicalChainDifferential_cubicalChainPoint`: the point
   chain `[g]` is a cycle of degree `0`.
+* `TauCeti.cubicalChainPoint_sub_one_mem`,
+  `TauCeti.cubicalChainDifferential_cubicalChainPoint_sub_one`: for a topological monoid, `[g] - 1`
+  is a cycle of degree `0`.
 * `TauCeti.cubicalChainSumMap_id`, `TauCeti.cubicalChainSumMap_comp`,
   `TauCeti.cubicalChainDifferential_cubicalChainSumMap`: the push-forward is a functorial chain map.
 * `TauCeti.cubicalChainSumMap_injective`: the push-forward along an injective map is injective.
@@ -170,6 +173,12 @@ instance : SetLike.GradedMonoid (cubicalChainGrading G R) where
 instance :
     GradedAlgebra (R := R) (A := normalizedCubicalChainAlgebra G R) (cubicalChainGrading G R) :=
   { }
+
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit lies in degree `0`. -/
+theorem cubicalChainPoint_sub_one_mem (g : G) :
+    cubicalChainPoint G R g - 1 ∈ cubicalChainGrading G R 0 :=
+  sub_mem (cubicalChainPoint_mem g) (SetLike.one_mem_graded (cubicalChainGrading G R))
 
 end Grading
 
@@ -445,6 +454,12 @@ theorem cubicalChain_isDGAlgebra :
     | add b b' hb hb' =>
       rw [mul_add, map_add, hb, hb', map_add, mul_add, mul_add, smul_add]
       abel
+
+variable {G R} in
+/-- The difference `[g] - 1` of a point chain and the unit is a cycle. -/
+theorem cubicalChainDifferential_cubicalChainPoint_sub_one (g : G) :
+    cubicalChainDifferential G R (cubicalChainPoint G R g - 1) = 0 := by
+  simp [(cubicalChain_isDGAlgebra G R).map_one_eq_zero]
 
 end Differential
 

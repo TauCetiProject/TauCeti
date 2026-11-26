@@ -162,6 +162,13 @@ theorem restrictedLift_algebraMap (a : A) :
 theorem restrictedLift_X (i : Fin k) : restrictedLift hA hB φ hb ⟨X i, isRestricted_X _ i⟩ = b i :=
   MvPowerSeries.restrictedLift_X _ hb i
 
+/-- On polynomials, `restrictedLift` is evaluation at `b` with coefficients mapped by `φ`. -/
+@[simp]
+theorem restrictedLift_polynomialToRestricted (p : MvPolynomial (Fin k) A) :
+    restrictedLift hA hB φ hb (polynomialToRestricted (fun _ : Fin k ↦ 1) p) =
+      MvPolynomial.eval₂ φ b p :=
+  MvPowerSeries.restrictedLift_polynomialToRestricted _ hb p
+
 include hA hB hb in
 /-- **The universal property of restricted series over an affinoid algebra.** Let `A` and `B` be
 affinoid algebras with complete ultrametric algebra norms. A `K`-algebra map `φ : A → B` and

@@ -98,14 +98,15 @@ bilinear form on the normal space: it pairs two normal classes as their symplect
 under `σ`. -/
 def symplecticNormalFlat (f : SmoothEmbedding I J n M N)
     (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) :
-    f.NormalSpace x hn →L[ℝ] f.NormalSpace x hn →L[ℝ] ℝ :=
+    f.isImmersion.NormalSpace x hn →L[ℝ] f.isImmersion.NormalSpace x hn →L[ℝ] ℝ :=
   (ContinuousLinearMap.precomp ℝ (f.symplecticNormalRepresentative h x hn)).comp
     ((σ.flat (f x)).comp (f.symplecticNormalRepresentative h x hn))
 
 /-- The continuous normal symplectic form evaluates as the normal symplectic form. -/
 @[simp]
 theorem symplecticNormalFlat_apply (f : SmoothEmbedding I J n M N)
-    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0) (v w : f.NormalSpace x hn) :
+    (h : hσ.HasSymplecticTangentImages I f) (x : M) (hn : n ≠ 0)
+        (v w : f.isImmersion.NormalSpace x hn) :
     f.symplecticNormalFlat h x hn v w = f.symplecticNormalForm h x hn v w := by
   simp [symplecticNormalFlat]
 
@@ -130,7 +131,7 @@ theorem contMDiff_symplecticNormalFlat (f : SmoothEmbedding I J n M N)
     letI := f.normalSpaceVectorBundle hn hdim
     ContMDiff I (I.prod 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ)) m
       (fun x ↦ TotalSpace.mk' (P →L[ℝ] P →L[ℝ] ℝ)
-        (E := fun x ↦ f.NormalSpace x hn →L[ℝ] f.NormalSpace x hn →L[ℝ] ℝ) x
+        (E := fun x ↦ f.isImmersion.NormalSpace x hn →L[ℝ] f.isImmersion.NormalSpace x hn →L[ℝ] ℝ) x
         (f.symplecticNormalFlat h x hn)) := by
   have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
   have : IsManifold J 1 N := .of_le (n := ∞) (by simp)
@@ -141,7 +142,7 @@ theorem contMDiff_symplecticNormalFlat (f : SmoothEmbedding I J n M N)
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle hn hm hdim
   intro x
-  let e := trivializationAt P (fun x ↦ f.NormalSpace x hn) x
+  let e := trivializationAt P (fun x ↦ f.isImmersion.NormalSpace x hn) x
   let b := Module.Basis.ofVectorSpace ℝ P
   -- The symplectic representatives of the frame sections are `C^m` tangent fields along `f`.
   have hrep (i) : ContMDiffOn I J.tangent m
@@ -187,7 +188,7 @@ theorem symplecticNormalRepresentative_normalMap (hn : n ≠ 0) (hn' : n' ≠ 0)
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hv : MDifferentiableAt J J' v (f x))
     (hvσ : ∀ a b, SmoothBundleForm.eval₂ τ (v (f x)) (mfderiv J J' v (f x) a)
       (mfderiv J J' v (f x) b) = SmoothBundleForm.eval₂ σ (f x) a b)
-    (hsurj : Surjective (mfderiv I I' u x)) (ν : f.NormalSpace x hn) :
+    (hsurj : Surjective (mfderiv I I' u x)) (ν : f.isImmersion.NormalSpace x hn) :
     g.symplecticNormalRepresentative hg (u x) hn' (f.normalMap g hn hn' h ν) =
       tangentSpaceCast J' (v (f x)) (g (u x))
         (mfderiv J J' v (f x) (f.symplecticNormalRepresentative hf x hn ν)) := by
@@ -214,7 +215,7 @@ theorem symplecticNormalForm_normalMap (hn : n ≠ 0) (hn' : n' ≠ 0)
     (h : v ∘ f =ᶠ[𝓝 x] g ∘ u) (hv : MDifferentiableAt J J' v (f x))
     (hvσ : ∀ a b, SmoothBundleForm.eval₂ τ (v (f x)) (mfderiv J J' v (f x) a)
       (mfderiv J J' v (f x) b) = SmoothBundleForm.eval₂ σ (f x) a b)
-    (hsurj : Surjective (mfderiv I I' u x)) (ν μ : f.NormalSpace x hn) :
+    (hsurj : Surjective (mfderiv I I' u x)) (ν μ : f.isImmersion.NormalSpace x hn) :
     g.symplecticNormalForm hg (u x) hn' (f.normalMap g hn hn' h ν) (f.normalMap g hn hn' h μ) =
       f.symplecticNormalForm hf x hn ν μ := by
   have hfx : v (f x) = g (u x) := h.eq_of_nhds

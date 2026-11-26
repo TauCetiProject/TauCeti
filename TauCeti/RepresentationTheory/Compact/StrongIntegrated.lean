@@ -32,6 +32,8 @@ with the action, and it is natural with respect to continuous intertwiners.
   continuous representation the strong integrated operator is `integratedOperator`.
 * `ContRepresentation.strongIntegratedOperator_comp`: a class function acts by an intertwiner.
 * `ContRepresentation.comp_strongIntegratedOperator`: naturality in continuous intertwiners.
+* `ContRepresentation.apply_strongIntegratedOperator`: translating the output left-translates the
+  acting function.
 
 ## References
 
@@ -181,6 +183,20 @@ theorem strongIntegratedOperator_comp {f : C(G, k)} (hf : ∀ g h : G, f (h * g 
         rw [← integral_mul_left_eq_self (fun g ↦ (π h : V →L[k] V) (f g • π g v)) h⁻¹]
         congr 1 with g
         rw [map_smul, ← mul_apply_eq_comp, ← map_mul, mul_inv_cancel_left]
+
+/-- **Translating the output translates the function.** `π h (π(f) v) = π(f(h⁻¹ ·)) v`: applying
+`π h` after the strong integrated operator left-translates the acting function. -/
+theorem apply_strongIntegratedOperator (f : C(G, k)) (h : G) (v : V) :
+    π h (strongIntegratedOperator π hπ f v) =
+      strongIntegratedOperator π hπ (f.comp (ContinuousMap.mulLeft h⁻¹)) v := by
+  have hint : Integrable (fun g ↦ f g • π g v) (haarProb G) :=
+    integrable_continuousMap G (weightedOrbit π hπ f v)
+  rw [strongIntegratedOperator_apply, strongIntegratedOperator_apply,
+    ← (π h : V →L[k] V).integral_comp_comm hint,
+    ← integral_mul_left_eq_self (fun g ↦ (f.comp (ContinuousMap.mulLeft h⁻¹)) g • π g v) h]
+  congr 1 with g
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mulLeft, inv_mul_cancel_left, map_smul,
+    map_mul, mul_apply_eq_comp]
 
 /-- **Naturality.** A continuous intertwiner between strongly continuous Banach representations
 commutes with the strong integrated operators of the same function. -/

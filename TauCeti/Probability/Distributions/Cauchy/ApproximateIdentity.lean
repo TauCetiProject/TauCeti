@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Probability.Distributions.Cauchy
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+import Mathlib.MeasureTheory.Integral.PeakFunction
 import TauCeti.Analysis.Normed.Module.ModulusOfContinuity
 import TauCeti.Probability.Distributions.Cauchy.Basic
 import TauCeti.Probability.Distributions.Cauchy.Continuity
@@ -29,7 +30,13 @@ at most its modulus of continuity, and the rest is controlled by integrating a b
 weight vanishing at the origin against `P_γ`; the pointwise split is
 `TauCeti.norm_smul_sub_le_add_mul_min_dist_div`.
 
+The pointwise form for integrable functions uses Mathlib's
+`tendsto_integral_comp_smul_smul_of_integrable'` with the unit-scale Cauchy density.
+
 ## Main declarations
+
+* `TauCeti.Probability.tendsto_integral_cauchyPDFReal_smul`: convergence at each point of continuity
+  of an integrable function.
 
 * `TauCeti.Probability.tendstoUniformly_integral_mul_cauchyPDFReal_smul`: uniform convergence of
   the weighted Poisson integrals of a bounded uniformly continuous function.
@@ -43,11 +50,44 @@ weight vanishing at the origin against `P_γ`; the pointwise split is
 public section
 
 open Filter MeasureTheory ProbabilityTheory Topology
-open scoped NNReal
+open scoped NNReal Real
 
 namespace TauCeti.Probability
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The Cauchy averages of an integrable function converge to its value at a point of continuity
+as the scale tends to zero from above. -/
+theorem tendsto_integral_cauchyPDFReal_smul [CompleteSpace E] {g : ℝ → E}
+    (hg : Integrable g) {x : ℝ} (hx : ContinuousAt g x) :
+    Tendsto (fun η : ℝ ↦ ∫ t, cauchyPDFReal x η.toNNReal t • g t)
+      (𝓝[>] 0) (𝓝 (g x)) := by
+  have hdecay : Tendsto (fun t : ℝ ↦ ‖t‖ ^ Module.finrank ℝ ℝ * cauchyPDFReal 0 1 t)
+      (Bornology.cobounded ℝ) (𝓝 0) := by
+    have ht : Tendsto (fun t : ℝ ↦ π⁻¹ * ‖t‖⁻¹) (Bornology.cobounded ℝ) (𝓝 0) := by
+      simpa only [Function.comp_apply, mul_zero] using
+        (tendsto_inv_atTop_zero.comp (tendsto_norm_cobounded_atTop (E := ℝ))).const_mul π⁻¹
+    refine squeeze_zero' (.of_forall fun t ↦ mul_nonneg (by positivity)
+      (cauchyPDF_pos 0 (one_ne_zero : (1 : ℝ≥0) ≠ 0) t).le) ?_ ht
+    filter_upwards [tendsto_norm_cobounded_atTop.eventually_gt_atTop (0 : ℝ)] with t ht
+    simp only [Module.finrank_self, pow_one, cauchyPDFReal_def, NNReal.coe_one, sub_zero, mul_one]
+    rw [mul_left_comm, ← div_eq_mul_inv, Real.norm_eq_abs, ← sq_abs t]
+    apply mul_le_mul_of_nonneg_left _ (by positivity)
+    have ht' : 0 < |t| := ht
+    rw [← one_div, div_le_div_iff₀ (by positivity) ht']
+    simp [pow_two]
+  have hpeak := tendsto_integral_comp_smul_smul_of_integrable' (μ := volume)
+    (cauchyPDF_pos 0 (one_ne_zero : (1 : ℝ≥0) ≠ 0) · |>.le)
+    (integral_cauchyPDFReal_eq_one 0 (one_ne_zero : (1 : ℝ≥0) ≠ 0)) hdecay hg hx
+  refine (hpeak.comp tendsto_inv_nhdsGT_zero).congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with η hη
+  have hpos : 0 < η := hη
+  refine integral_congr_ae (.of_forall fun t ↦ ?_)
+  apply congrArg (fun a : ℝ ↦ a • g t)
+  simp only [Module.finrank_self, pow_one, cauchyPDFReal_def', NNReal.coe_inv, NNReal.coe_one,
+    inv_one, sub_zero, div_one, mul_one, smul_eq_mul, Real.coe_toNNReal _ hpos.le]
+  rw [← neg_sub t x, mul_neg, neg_sq, ← div_eq_inv_mul]
+  ring
 
 /-- Integrating a bounded continuous function against the Cauchy density of scale `γ` tends to
 its value at the origin as `γ → 0⁺`: the weak convergence of Cauchy laws to `δ₀`, read through

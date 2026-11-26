@@ -14,6 +14,7 @@ public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Measure.Haar.Unique
 import TauCeti.MeasureTheory.Measure.InterBall
 import Mathlib.MeasureTheory.Measure.Prod
@@ -22,6 +23,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.MeasureTheory.Measure.Real
 import Mathlib.RingTheory.Norm.Transitivity
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.RingTheory.Norm.RCLike
 
 /-!
@@ -47,6 +49,9 @@ measure of the image of the closed unit ball under a linear endomorphism `f` wit
 closed ball of radius `‖f‖` bounds `|det f|` by `‖f‖` raised to the dimension; restricting scalars
 to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` field, and applying this bound
 to a left inverse `g` of `f` bounds `‖det f‖` below by `(‖g‖ ^ n)⁻¹`.
+
+A function bounded by `K s ^ μ` on the closed ball of radius `s r` about the origin and vanishing
+off it has `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)`, since that ball has measure `(s r)ⁿ |B(0, 1)|`.
 
 For a continuous linear equivalence `L` and a scale `t`, the rescaled coordinate
 `t⁻¹ • L (y - x)` turns integrals of functions of it into integrals over the target scaled by
@@ -76,6 +81,8 @@ gives a set of measure one.
   set in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero`: the same agreement at nonzero
   radius, including trivial spaces.
+* `MeasureTheory.Measure.addHaar_compl_eq_top_of_isBounded`: the complement of a bounded set has
+  infinite measure in a nontrivial space.
 * `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball`,
   `MeasureTheory.Measure.restrict_closedBall_eq_restrict_ball_of_ne_zero`: restricting to a closed
   ball or to the open ball of the same radius gives the same measure.
@@ -132,6 +139,9 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `ContinuousLinearEquiv.quasiMeasurePreserving_restrict`: a continuous linear automorphism mapping
+  `s` into `t` is quasi measure preserving between the restrictions of an additive Haar measure to
+  `s` and to `t`.
 * `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
   isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
   measure.
@@ -145,6 +155,12 @@ gives a set of measure one.
 * `DifferentiableAt.inv_pow_le_norm_det_fderiv_of_comp_eventuallyEq_id`,
   `DifferentiableAt.inv_pow_le_abs_det_fderiv_of_comp_eventuallyEq_id`: the corresponding Jacobian
   lower bound for maps satisfying `g ∘ f =ᶠ[𝓝 x] id`.
+* `MeasureTheory.Measure.finiteDimensional_of_isCompact_measure_ne_zero`: a compact set of
+  nonzero measure for a left-invariant measure finite on compact sets forces a normed space over a
+  complete nontrivially normed field to be finite-dimensional.
+* `TauCeti.integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall`: a function bounded by
+  `K s ^ μ` on the closed ball of radius `s r` about the origin and vanishing off it has
+  `∫ ‖f‖ ≤ K rⁿ |B(0, 1)| s ^ (μ + n)` in dimension `n`.
 * `TauCeti.integral_comp_rescale_eq`: integrals of functions of the rescaled coordinate are the
   target integrals scaled by `tⁿ / ρ`.
 * `TauCeti.addHaar_inv_measureReal_rpow_smul_eq_one`: rescaling a set `s` of positive finite
@@ -427,6 +443,17 @@ theorem addHaar_closedBall_ae_eq_ball_of_ne_zero
     ext y
     simp [mem_closedBall, mem_ball, Subsingleton.elim y x, le_iff_lt_or_eq, Ne.symm hr]
   · exact mu.addHaar_closedBall_ae_eq_ball x r
+
+/-- In a nontrivial finite-dimensional space, the complement of a bounded set has infinite
+measure. -/
+theorem addHaar_compl_eq_top_of_isBounded
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    (mu : Measure E) [mu.IsAddHaarMeasure] {s : Set E} (hs : Bornology.IsBounded s) :
+    mu sᶜ = ⊤ := by
+  have h := measure_univ_le_add_compl (μ := mu) s
+  rw [measure_univ_of_isAddLeftInvariant mu, top_le_iff, ENNReal.add_eq_top] at h
+  exact h.resolve_left hs.measure_lt_top.ne
 
 /-- In a nontrivial finite-dimensional space, restricting an additive Haar measure to a closed
 ball or to the open ball of the same radius gives the same measure. -/
@@ -850,6 +877,21 @@ theorem measurePreserving_of_abs_det_eq_one
 
 end ContinuousAffineMap
 
+namespace ContinuousLinearEquiv
+
+/-- A continuous linear automorphism `e` of a finite-dimensional real normed space that maps `s`
+into `t` is quasi measure preserving between the restrictions of an additive Haar measure to `s`
+and to `t`. In particular almost-everywhere statements on `t` pull back along `e` to `e ⁻¹' t`. -/
+theorem quasiMeasurePreserving_restrict
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (e : E ≃L[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure]
+    {s t : Set E} (hst : Set.MapsTo e s t) :
+    QuasiMeasurePreserving e (μ.restrict s) (μ.restrict t) :=
+  (Measure.ContinuousLinearMap.quasiMeasurePreserving μ (e : E →L[ℝ] E)
+    (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero).restrict hst
+
+end ContinuousLinearEquiv
+
 namespace LinearIsometryEquiv
 
 /-- Every linear isometry self-equivalence of a finite-dimensional real normed space preserves
@@ -927,9 +969,36 @@ theorem addHaar_eq_zero_of_prod_mk_preimage_image_eq_zero (μH : Measure H) [IsA
 
 end Fubini
 
+/-- In a normed vector space over a complete nontrivially normed field `𝕜`, a compact set of
+nonzero measure for a left-invariant measure finite on compact sets forces the space to be
+finite-dimensional over `𝕜`. -/
+theorem finiteDimensional_of_isCompact_measure_ne_zero
+    {E : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
+    [MeasurableAdd E] (μ : Measure E) [μ.IsAddLeftInvariant] [IsFiniteMeasureOnCompacts μ]
+    (𝕜 : Type*) [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedSpace 𝕜 E]
+    {K : Set E} (hK : IsCompact K) (hμ : μ K ≠ 0) :
+    FiniteDimensional 𝕜 E :=
+  have := hK.locallyCompactSpace_of_measure_ne_zero_of_addGroup hμ
+  .of_locallyCompactSpace 𝕜
+
 end MeasureTheory.Measure
 
 namespace TauCeti
+
+/-- **Integrals at scale `s`.** A function on a finite-dimensional real space with an additive
+Haar measure, bounded by `K s ^ μ` on the closed ball of radius `s r` about the origin and
+vanishing off it, has `∫ ‖f‖ ≤ K rᵈ |B(0, 1)| s ^ (μ + d)` with `d` the dimension: the ball has
+measure `(s r)ᵈ |B(0, 1)|`. -/
+theorem integral_norm_le_mul_rpow_add_of_eq_zero_off_closedBall {X E : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X] [MeasurableSpace X]
+    [BorelSpace X] {mu : Measure X} [mu.IsAddHaarMeasure] [SeminormedAddCommGroup E] {f : X → E}
+    {s r K μ : ℝ} (hs : 0 < s) (hr : 0 ≤ r) (hfK : ∀ ξ ∈ closedBall 0 (s * r), ‖f ξ‖ ≤ K * s ^ μ)
+    (hf0 : ∀ ξ ∉ closedBall 0 (s * r), f ξ = 0) :
+    ∫ ξ, ‖f ξ‖ ∂mu ≤ K * r ^ finrank ℝ X * mu.real (ball 0 1) * s ^ (μ + finrank ℝ X) := by
+  refine (integral_norm_le_of_forall_compl_eq_zero measure_closedBall_lt_top hfK hf0).trans_eq ?_
+  rw [Measure.addHaar_real_closedBall _ _ (by positivity), Real.rpow_add hs, Real.rpow_natCast,
+    mul_pow]
+  ring
 
 section Rescale
 

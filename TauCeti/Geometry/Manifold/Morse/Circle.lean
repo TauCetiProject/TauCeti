@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import TauCeti.Algebra.AddCircle
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -47,6 +48,8 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
 * `TauCeti.circleCosTwoMaxCrit`, `TauCeti.circleCosTwoMinCrit`: the same points as elements of
   the set of critical points, the basis elements of the Morse complex;
   `TauCeti.circleCosTwoMaxCrit_ne_circleCosTwoMinCrit`: a maximum is never a minimum among them.
+* `TauCeti.mvfderiv_circleCosTwo_coe`: its differential at the class of `t` is multiplication
+  by `-2 δ sin (2 (t - r))`.
 * `TauCeti.isMorse_circleCosTwo`: for `δ ≠ 0` it is a Morse function.
 * `TauCeti.mem_criticalPoints_circleCosTwo_iff_exists`: for `δ ≠ 0` its critical points are the
   two maxima and the two minima.
@@ -283,6 +286,15 @@ theorem contMDiff_circleCosTwo (δ r : ℝ) : ContMDiff 𝓘(ℝ) 𝓘(ℝ) ∞ 
   contMDiffAt_iff_contDiffAt_comp_extChartAt_symm.2 <|
     ContDiffAt.congr_of_eventuallyEq (by fun_prop)
       (circleCosTwo_comp_extChartAt_symm_eventuallyEq δ r x)
+
+/-- **The differential of `θ ↦ δ cos (2 (θ - r))`.** At the class of `t`, the tangent line of the
+circle being read as `ℝ` through the local real lifts, it is multiplication by
+`-2 δ sin (2 (t - r))`. -/
+theorem mvfderiv_circleCosTwo_coe (δ r t : ℝ) :
+    mvfderiv 𝓘(ℝ) (circleCosTwo δ r) (t : AddCircle (2 * π)) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (-(2 * δ) * Real.sin (2 * (t - r))) :=
+  AddCircle.mvfderiv_eq_smulRight_of_hasDerivAt <| by
+    simpa only [Function.comp_def, circleCosTwo_coe] using hasDerivAt_cos_two δ r t
 
 /-- At a point `x` of the circle with lift `y`, the angle `2 (y - r)` has the sine and cosine of the
 class of `2 (θ - r)`; these do not depend on the lift. -/

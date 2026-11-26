@@ -17,8 +17,10 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 Completely positive maps between C⋆-algebras are closed under addition, `ℝ≥0`-scaling, identity,
 composition, algebra conjugation `CompletelyPositiveMap.conj` (`a ↦ star b * a * b`), and operator
 compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint : T ↦ V† ∘L T ∘L V`). Every positive
-linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`,
-`PositiveLinearMap.toCompletelyPositiveMapCLM`).
+linear functional is completely positive (`PositiveLinearMap.toCompletelyPositiveMap`), and so is
+`a ↦ ω a • 1` into any unital C⋆-algebra (`PositiveLinearMap.toCompletelyPositiveMapOfId`).
+Every completely positive map is a nonnegative multiple of a completely positive contraction
+(`CompletelyPositiveMap.exists_norm_apply_le_and_eq_smul`).
 Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
 makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
 Radon–Nikodym theorem.
@@ -133,6 +135,19 @@ noncomputable instance instModuleNNReal : Module ℝ≥0 (A₁ →CP A₂) :=
     { toFun := toLinearMap, map_zero' := toLinearMap_zero, map_add' := toLinearMap_add }
     toLinearMap_smul
 
+/-- Every completely positive map is a nonnegative multiple `K • ψ'` of a completely positive
+contraction `ψ'`, since positive maps between C⋆-algebras are bounded. -/
+theorem exists_norm_apply_le_and_eq_smul (ψ : A₁ →CP A₂) :
+    ∃ (K : ℝ≥0) (ψ' : A₁ →CP A₂), (∀ a, ‖ψ' a‖ ≤ ‖a‖) ∧ ψ = K • ψ' := by
+  obtain ⟨K, hK⟩ := PositiveLinearMap.exists_norm_apply_le (.ofClass ψ)
+  have hK₁ : (0 : ℝ) < (K + 1 : ℝ≥0) := by positivity
+  refine ⟨K + 1, (K + 1)⁻¹ • ψ, fun a ↦ ?_, ?_⟩
+  · rw [smul_apply, NNReal.smul_def, norm_smul_of_nonneg (by positivity), NNReal.coe_inv,
+      inv_mul_le_iff₀ hK₁]
+    calc ‖ψ a‖ ≤ K * ‖a‖ := hK a
+      _ ≤ ((K + 1 : ℝ≥0) : ℝ) * ‖a‖ := by gcongr; simp
+  · rw [smul_smul, mul_inv_cancel₀ (by positivity), one_smul]
+
 variable (A₁) in
 /-- The identity completely positive map on a C⋆-algebra. -/
 protected def id : A₁ →CP A₁ :=
@@ -152,6 +167,16 @@ def comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) : A₁ →CP A₃ :=
 
 @[simp] theorem toLinearMap_comp (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
     (ψ.comp φ).toLinearMap = ψ.toLinearMap.comp φ.toLinearMap := (rfl)
+
+/-- Composition is compatible with `ℝ≥0`-scaling on the left factor. -/
+@[simp] theorem smul_comp (c : ℝ≥0) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
+    (c • ψ).comp φ = c • ψ.comp φ :=
+  ext fun _ ↦ rfl
+
+/-- Composition is compatible with `ℝ≥0`-scaling on the right factor. -/
+@[simp] theorem comp_smul (c : ℝ≥0) (ψ : A₂ →CP A₃) (φ : A₁ →CP A₂) :
+    ψ.comp (c • φ) = c • ψ.comp φ :=
+  ext fun a ↦ LinearMapClass.map_smul_of_tower ψ c (φ a)
 
 /-- The *completely positive order* on `A₁ →CP A₂`: `ψ ≤ φ` means `φ = ψ + θ` for some
 `θ : A₁ →CP A₂`. -/
@@ -278,16 +303,30 @@ noncomputable def toCompletelyPositiveMap (ω : A →ₚ[ℂ] ℂ) : A →CP ℂ
 @[simp] theorem toCompletelyPositiveMap_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
     ω.toCompletelyPositiveMap a = ω a := (rfl)
 
-/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` viewed as `A →CP (ℂ →L[ℂ] ℂ)` via `a ↦ ω a • 1`. -/
-noncomputable def toCompletelyPositiveMapCLM (ω : A →ₚ[ℂ] ℂ) : A →CP (ℂ →L[ℂ] ℂ) :=
+variable (B : Type*) [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B] in
+/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` viewed as a completely positive map
+`a ↦ ω a • 1` into a unital C⋆-algebra `B`, i.e. `ω` followed by `StarAlgHom.ofId ℂ B`. -/
+noncomputable def toCompletelyPositiveMapOfId (ω : A →ₚ[ℂ] ℂ) : A →CP B :=
   CompletelyPositiveMap.comp
-    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (StarAlgHom.ofId ℂ (ℂ →L[ℂ] ℂ)))
+    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (StarAlgHom.ofId ℂ B))
     ω.toCompletelyPositiveMap
 
-@[simp] theorem toCompletelyPositiveMapCLM_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapCLM a = ω a • (1 : ℂ →L[ℂ] ℂ) := by
-  rw [toCompletelyPositiveMapCLM, CompletelyPositiveMap.comp_apply,
+section OfId
+
+variable {B : Type*} [CStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- `ω.toCompletelyPositiveMapOfId B a` is `ω a` times the identity of `B`. -/
+@[simp] theorem toCompletelyPositiveMapOfId_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    ω.toCompletelyPositiveMapOfId B a = ω a • (1 : B) := by
+  rw [toCompletelyPositiveMapOfId, CompletelyPositiveMap.comp_apply,
     CompletelyPositiveMapClass.coe_toCompletelyPositiveLinearMap, toCompletelyPositiveMap_apply,
     StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one]
+
+/-- The norm of `ω.toCompletelyPositiveMapOfId B a` is `‖ω a‖`. -/
+theorem norm_toCompletelyPositiveMapOfId_apply [NormOneClass B] (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    ‖ω.toCompletelyPositiveMapOfId B a‖ = ‖ω a‖ := by
+  rw [toCompletelyPositiveMapOfId_apply, norm_smul, norm_one, mul_one]
+
+end OfId
 
 end PositiveLinearMap

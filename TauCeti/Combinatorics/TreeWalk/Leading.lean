@@ -135,7 +135,8 @@ theorem card_edge_fiber_cyclicPath [NeZero m] (w : Fin (2 * m) → α)
       s(cyclicPath w j.castSucc, cyclicPath w j.succ) =
         s(cyclicPath w i.castSucc, cyclicPath w i.succ)} = 2 := by
   simpa only [cyclicPath_castSucc, cyclicPath_succ] using
-    (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).2 i
+    (ne_and_card_edge_fiber_eq_two_of_no_singleton_nonloop_edge_of_card_image_eq w
+      (fun i _ ↦ h i) hv).2 i
 
 /-- Every closed tree walk is already in first-visit canonical form. -/
 @[simp]
@@ -331,7 +332,8 @@ theorem prodMk_finRotate_injective_of_no_singleton_edge_of_card_image_eq {w : Fi
   by_contra hne
   have he : s(w s, w (finRotate (2 * m) s)) = s(w t, w (finRotate (2 * m) t)) := by rw [h1, h2]
   have hopp := (eq_and_eq_of_no_singleton_edge_of_card_image_eq_of_ne_of_sym2_eq h hv hne he).1
-  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_edge_of_card_image_eq w h hv).1 s
+  exact (ne_and_card_edge_fiber_eq_two_of_no_singleton_nonloop_edge_of_card_image_eq w
+    (fun i _ ↦ h i) hv).1 s
     (hopp.trans h2.symm)
 
 end TauCeti.TreeWalk

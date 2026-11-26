@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import TauCeti.Algebra.MvPolynomial.HasseDeriv.Basic
+public import TauCeti.RingTheory.MvPolynomial.RestrictSupport
 
 /-!
 # Polynomials of bounded partial degrees and the vanishing conditions of the index
@@ -39,6 +40,8 @@ that is what makes their heights computable (`MvPolynomial.mulHeight_hasseDerivR
   `MvPolynomial.degreeOf_ofBox_le`, `MvPolynomial.ofBox_coeff`, `MvPolynomial.ofBox_injective`
   and `MvPolynomial.range_ofBox`: `ofBox d` is injective with image the polynomials whose
   partial degrees are bounded by `d`, that is `restrictSupport R {ν | ∀ j, ν j ≤ d j}`.
+* `MvPolynomial.finrank_restrictSupport_box`: the polynomials of the box form a module of rank
+  `∏ j, (d j + 1)`.
 * `MvPolynomial.aeval_hasseDeriv_ofBox` and `MvPolynomial.aeval_hasseDeriv_eq_sum`: the value at
   `α` of a Hasse derivative of a polynomial of the box is the row `hasseDerivRow d α μ` applied to
   its coefficient vector. The point may lie in any algebra over the coefficients, which is how a
@@ -101,6 +104,22 @@ theorem exists_boxMonomial_eq_of_mem_support {R : Type*} [CommSemiring R]
   exists_boxMonomial_eq fun j ↦ (monomial_le_degreeOf j hν).trans (hP j)
 
 end Monomials
+
+section Finrank
+
+variable {σ : Type*} [Fintype σ] (R : Type*) [CommSemiring R] [StrongRankCondition R]
+
+/-- The polynomials of partial degree at most `d j` in each `X j` form a module of rank
+`∏ j, (d j + 1)`, the number of points of the box. -/
+theorem finrank_restrictSupport_box (d : σ → ℕ) :
+    Module.finrank R (restrictSupport R {ν : σ →₀ ℕ | ∀ j, ν j ≤ d j}) = ∏ j, (d j + 1) := by
+  classical
+  rw [finrank_restrictSupport, ← range_boxMonomial,
+    ← Nat.card_congr (Equiv.ofInjective _ boxMonomial_injective), Nat.card_eq_fintype_card,
+    Fintype.card_pi]
+  simp
+
+end Finrank
 
 /-! ### Coefficient vectors on the box -/
 

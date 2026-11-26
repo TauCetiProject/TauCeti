@@ -65,6 +65,11 @@ those smooth maps into a little Hölder space sends all of `h^{k,α}` there.
   the Hölder norm as in the case `k = 0`. For `α < 1` smooth maps with
   bounded derivatives have Lipschitz `k`-th derivative, so `h^{k,α}` is exactly their closure,
   and the Banach space `h^{k,α}` is their completion in the `C^{k,α}` norm.
+* `TauCeti.CkHolderSpace.exists_mem_smoothBoundedDerivatives_tsupport_subset_norm_sub_lt` and
+  `CkHolderSpace.exists_mem_smoothBoundedDerivatives_hasCompactSupport_tsupport_subset_norm_sub_lt`:
+  the approximants can be supported within any distance `r > 0` of the support, so a compactly
+  supported element of `h^{k,α}` inside an open set `U` is a limit of compactly supported smooth
+  maps inside `U`.
 * `TauCeti.CkHolderSpace.mapsTo_littleHolder`: on a finite-dimensional real normed space, a
   bounded operator of spaces of bounded `C^{k,α}` maps sending the smooth maps with bounded
   derivatives into `h^{k',α'}` sends all of `h^{k,α}` into `h^{k',α'}`.
@@ -136,6 +141,25 @@ theorem _root_.LipschitzWith.comp_memLittleHolder [PseudoMetricSpace Y] {Z : Typ
     _ ≤ K * (ε / (K + 1) * dist x y ^ (α : ℝ)) := by gcongr; exact h x y hxy
     _ = K / (K + 1) * (ε * dist x y ^ (α : ℝ)) := by ring
     _ ≤ ε * dist x y ^ (α : ℝ) := mul_le_of_le_one_left (by positivity) hK
+
+/-- Precomposition with a Lipschitz map preserves little Hölder continuity. -/
+theorem MemLittleHolder.comp_lipschitzWith [PseudoMetricSpace Y] {W : Type*}
+    [PseudoMetricSpace W] {K α : ℝ≥0} {f : X → Y} (hf : MemLittleHolder α f) {e : W → X}
+    (he : LipschitzWith K e) : MemLittleHolder α (f ∘ e) := by
+  intro ε hε
+  obtain ⟨δ, hδ, h⟩ := hf (ε / (K + 1) ^ (α : ℝ)) (by positivity)
+  refine ⟨δ / (K + 1), by positivity, fun x y hxy ↦ ?_⟩
+  -- `e` moves points by at most `(K + 1)` times their distance.
+  have hexy : dist (e x) (e y) ≤ (K + 1) * dist x y :=
+    (he.dist_le_mul x y).trans (by gcongr; linarith)
+  have hδ' : dist (e x) (e y) < δ :=
+    hexy.trans_lt (by rwa [lt_div_iff₀' (by positivity)] at hxy)
+  calc dist (f (e x)) (f (e y)) ≤ ε / (K + 1) ^ (α : ℝ) * dist (e x) (e y) ^ (α : ℝ) :=
+        h _ _ hδ'
+    _ ≤ ε / (K + 1) ^ (α : ℝ) * ((K + 1) * dist x y) ^ (α : ℝ) := by gcongr
+    _ = ε * dist x y ^ (α : ℝ) := by
+      rw [Real.mul_rpow (by positivity) dist_nonneg]
+      field_simp
 
 /-- Constant functions are little Hölder. -/
 theorem memLittleHolder_const [PseudoMetricSpace Y] {α : ℝ≥0} (c : Y) :
@@ -297,7 +321,7 @@ theorem exists_contDiff_lipschitzWith_norm_sub_lt (f : HolderSpace α E Y)
     have hcoe : (g₁ : E → Y) = g₀ := by ext x; simp [g₁]
     rw [hcoe]
     refine ⟨‖f‖₊, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
-      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t ↦ ?_⟩
+      ρ.dist_normed_convolution_le_of_dist_sub_le f.continuous fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using f.holderWith_nnnorm.dist_le (x - t) (y - t)
   let g : HolderSpace α E Y := ofBoundedContinuousFunction g₁ hg₁
   have hg : (g : E → Y) = g₀ := funext fun x ↦ by simp [g, g₁]
@@ -444,7 +468,8 @@ omit [CompleteSpace F] in
 order `k` are those of `f` minus their convolutions with the bump. -/
 private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [BorelSpace E]
     {μ : Measure E} [μ.IsAddHaarMeasure] (f : CkHolderSpace k α E F) (ρ : ContDiffBump (0 : E)) :
-    ∃ g ∈ smoothBoundedDerivatives k α E F, ∀ i ≤ k, _root_.iteratedFDeriv ℝ i ⇑(f - g) =
+    ∃ g ∈ smoothBoundedDerivatives k α E F, ⇑g = ρ.normed μ ⋆[lsmul ℝ ℝ, μ] ⇑f ∧
+      ∀ i ≤ k, _root_.iteratedFDeriv ℝ i ⇑(f - g) =
         _root_.iteratedFDeriv ℝ i f - ρ.normed μ ⋆[lsmul ℝ ℝ, μ] _root_.iteratedFDeriv ℝ i f := by
   set g₀ : E → F := ρ.normed μ ⋆[lsmul ℝ ℝ, μ] f
   have hD (i : ℕ) (hi : i ≤ k) : _root_.iteratedFDeriv ℝ i g₀ =
@@ -461,42 +486,53 @@ private theorem exists_contDiff_iteratedFDeriv_sub_eq [MeasurableSpace E] [Borel
     rw [hD k le_rfl]
     refine ⟨C, holderOnWith_univ.1 <| HolderOnWith.of_dist_le fun x _ y _ ↦
       ρ.dist_normed_convolution_le_of_dist_sub_le
-        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t ↦ ?_⟩
+        (f.contDiff.continuous_iteratedFDeriv le_rfl) fun t _ ↦ ?_⟩
     simpa only [dist_sub_right] using hC.dist_le (x - t) (y - t)
   let g : CkHolderSpace k α E F :=
     ofContDiff g₀ (hg₀.of_le (by exact_mod_cast le_top)) (fun i _ ↦ hg₀b i) hg₀h
   have hg : ⇑g = g₀ := coe_ofContDiff _ _ _ _
-  refine ⟨g, mem_smoothBoundedDerivatives_iff.2 ⟨hg ▸ hg₀, hg ▸ hg₀b⟩, fun i hi ↦ ?_⟩
+  refine ⟨g, mem_smoothBoundedDerivatives_iff.2 ⟨hg ▸ hg₀, hg ▸ hg₀b⟩, hg, fun i hi ↦ ?_⟩
   have hfi : ContDiff ℝ i f := f.contDiff.of_le (by exact_mod_cast hi)
   have hgi : ContDiff ℝ i g₀ := hg₀.of_le (by exact_mod_cast le_top)
   rw [coe_sub, hg, iteratedFDeriv_sub hfi hgi, hD i hi]
 
-/-- **Mollification approximates elements of `h^{k,α}`.** An element of the little Hölder space
-`h^{k,α}` on a finite-dimensional space is approximated in the `C^{k,α}` norm by smooth maps all
-of whose derivatives are bounded: its convolutions with normalized bumps at small enough scales. -/
-theorem exists_mem_smoothBoundedDerivatives_norm_sub_lt (f : CkHolderSpace k α E F)
-    (hf : f ∈ littleHolder k α E F) {ε : ℝ} (hε : 0 < ε) :
-    ∃ g ∈ smoothBoundedDerivatives k α E F, ‖f - g‖ < ε := by
+/-- **Mollification approximates elements of `h^{k,α}` with support control.** An element `f` of
+the little Hölder space `h^{k,α}` on a finite-dimensional space is approximated in the `C^{k,α}`
+norm by smooth maps `g` all of whose derivatives are bounded, supported within any prescribed
+distance `r > 0` of the support of `f`: its convolutions with normalized bumps at small enough
+scales. In particular a compactly supported `f` is approximated by smooth maps supported in
+any given neighbourhood of its support. -/
+theorem exists_mem_smoothBoundedDerivatives_tsupport_subset_norm_sub_lt
+    (f : CkHolderSpace k α E F) (hf : f ∈ littleHolder k α E F) {ε : ℝ} (hε : 0 < ε) {r : ℝ}
+    (hr : 0 < r) :
+    ∃ g ∈ smoothBoundedDerivatives k α E F,
+      tsupport g ⊆ Metric.cthickening r (tsupport f) ∧ ‖f - g‖ < ε := by
   borelize E
   -- Each derivative of `f - ρ ⋆ f` will be at most `η`, and the Hölder constant of the top one
   -- at most `2 η`, so that `‖f - ρ ⋆ f‖ ≤ (k + 3) η < ε`.
   set η : ℝ := ε / (4 * (k + 1)) with hη_def
   have hη : 0 < η := by positivity
   obtain ⟨δ₀, hδ₀, hδ₀f⟩ := (mem_littleHolder_iff.1 hf) η hη
-  -- Mollify at a scale `δ` below `δ₀`, below `1`, and with `‖f‖ δ ≤ η`.
-  set δ := min δ₀ (min 1 (η / (‖f‖ + 1)))
-  have hδ : 0 < δ := lt_min hδ₀ (lt_min one_pos (by positivity))
+  -- Mollify at a scale `δ` below `δ₀`, below `1`, with `‖f‖ δ ≤ η`, and below `r`.
+  set δ := min (min δ₀ (min 1 (η / (‖f‖ + 1)))) r
+  have hδ : 0 < δ := lt_min (lt_min hδ₀ (lt_min one_pos (by positivity))) hr
+  obtain ⟨hδδ₀, hδ1, hδη, hδr⟩ : δ ≤ δ₀ ∧ δ ≤ 1 ∧ δ ≤ η / (‖f‖ + 1) ∧ δ ≤ r := by simp [δ]
   have hfδ : ‖f‖ * δ ≤ η := by
-    have h : δ ≤ η / (‖f‖ + 1) := (min_le_right _ _).trans (min_le_right _ _)
-    rw [le_div_iff₀ (by positivity)] at h
+    rw [le_div_iff₀ (by positivity)] at hδη
     nlinarith [norm_nonneg f]
   let ρ : ContDiffBump (0 : E) := ⟨δ / 2, δ, half_pos hδ, half_lt_self hδ⟩
-  obtain ⟨g, hg, hsub⟩ := exists_contDiff_iteratedFDeriv_sub_eq (μ := Measure.addHaar) f ρ
-  refine ⟨g, hg, ?_⟩
+  obtain ⟨g, hg, hgf, hsub⟩ :=
+    exists_contDiff_iteratedFDeriv_sub_eq (μ := Measure.addHaar) f ρ
+  refine ⟨g, hg, ?_, ?_⟩
+  · rw [hgf]
+    refine (ρ.tsupport_normed_convolution_subset (μ := Measure.addHaar)).trans ?_
+    rintro _ ⟨y, hy, x, hx, rfl⟩
+    exact mem_cthickening_of_dist_le _ x _ _ hx
+      (by simpa [dist_eq_norm] using (mem_closedBall_zero_iff.1 hy).trans hδr)
   -- Below the scale `δ`, the top derivative of `f` has Hölder quotients at most `η`.
   have hloc : ∀ x y, dist x y < ρ.rOut → dist (_root_.iteratedFDeriv ℝ k f x)
       (_root_.iteratedFDeriv ℝ k f y) ≤ η * dist x y ^ (α : ℝ) :=
-    fun x y hxy ↦ hδ₀f x y (hxy.trans_le (min_le_left _ _))
+    fun x y hxy ↦ hδ₀f x y (hxy.trans_le hδδ₀)
   have hk : Continuous (_root_.iteratedFDeriv ℝ k f) := f.contDiff.continuous_iteratedFDeriv le_rfl
   have hbound (i : ℕ) (hi : i ≤ k) (x : E) : ‖_root_.iteratedFDeriv ℝ i ⇑(f - g) x‖ ≤ η := by
     rw [hsub i hi, Pi.sub_apply, ← dist_eq_norm, dist_comm]
@@ -508,8 +544,7 @@ theorem exists_mem_smoothBoundedDerivatives_norm_sub_lt (f : CkHolderSpace k α 
         (hlip.continuous.aestronglyMeasurable) fun y hy ↦ ?_).trans hfδ
       exact (hlip.dist_le_mul y x).trans (by rw [coe_nnNorm]; gcongr; exact (mem_ball.1 hy).le)
     · refine (ρ.dist_normed_convolution_le_mul_rpow hk hloc hη.le x).trans ?_
-      exact mul_le_of_le_one_right hη.le
-        (Real.rpow_le_one hδ.le ((min_le_right _ _).trans (min_le_left _ _)) α.coe_nonneg)
+      exact mul_le_of_le_one_right hη.le (Real.rpow_le_one hδ.le hδ1 α.coe_nonneg)
   have hhol : HolderWith (2 * η).toNNReal α (_root_.iteratedFDeriv ℝ k ⇑(f - g)) := by
     rw [hsub k le_rfl]
     exact ρ.holderWith_sub_normed_convolution hk hloc hη.le
@@ -522,6 +557,32 @@ theorem exists_mem_smoothBoundedDerivatives_norm_sub_lt (f : CkHolderSpace k α 
     _ < ε := by
         rw [div_lt_iff₀ (by positivity)]
         nlinarith [(k.cast_nonneg : (0 : ℝ) ≤ k)]
+
+/-- **Mollification approximates elements of `h^{k,α}`.** An element of the little Hölder space
+`h^{k,α}` on a finite-dimensional space is approximated in the `C^{k,α}` norm by smooth maps all
+of whose derivatives are bounded: its convolutions with normalized bumps at small enough scales. -/
+theorem exists_mem_smoothBoundedDerivatives_norm_sub_lt (f : CkHolderSpace k α E F)
+    (hf : f ∈ littleHolder k α E F) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g ∈ smoothBoundedDerivatives k α E F, ‖f - g‖ < ε :=
+  have ⟨g, hg, _, hfg⟩ :=
+    exists_mem_smoothBoundedDerivatives_tsupport_subset_norm_sub_lt f hf hε one_pos
+  ⟨g, hg, hfg⟩
+
+/-- **Compactly supported elements of `h^{k,α}` are limits of compactly supported smooth maps.**
+On a finite-dimensional space, an element `f` of the little Hölder space `h^{k,α}` whose support
+is compact and lies in an open set `U` is approximated in the `C^{k,α}` norm by smooth maps with
+bounded derivatives whose supports are compact and lie in `U`. This is the Euclidean step in
+approximating sections of a vector bundle chart by chart after a cutoff. -/
+theorem exists_mem_smoothBoundedDerivatives_hasCompactSupport_tsupport_subset_norm_sub_lt
+    (f : CkHolderSpace k α E F) (hf : f ∈ littleHolder k α E F) (hfc : HasCompactSupport f)
+    {U : Set E} (hU : IsOpen U) (hfU : tsupport f ⊆ U) {ε : ℝ} (hε : 0 < ε) :
+    ∃ g ∈ smoothBoundedDerivatives k α E F,
+      HasCompactSupport g ∧ tsupport g ⊆ U ∧ ‖f - g‖ < ε := by
+  obtain ⟨r, hr, hrU⟩ := IsCompact.exists_cthickening_subset_open hfc hU hfU
+  obtain ⟨g, hg, hgr, hfg⟩ :=
+    exists_mem_smoothBoundedDerivatives_tsupport_subset_norm_sub_lt f hf hε hr
+  exact ⟨g, hg, (IsCompact.cthickening hfc).of_isClosed_subset (isClosed_tsupport _) hgr,
+    hgr.trans hrU, hfg⟩
 
 /-- **Smooth maps are dense in the little Hölder space.** On a finite-dimensional real normed
 space `E`, every element of the little Hölder space `h^{k,α}(E, F)` is a limit, in the `C^{k,α}`

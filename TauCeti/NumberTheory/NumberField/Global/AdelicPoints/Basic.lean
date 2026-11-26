@@ -59,6 +59,8 @@ its infinite coordinate is the identity point, not zero.
   `TauCeti.AdelicPoints.InfinitePoints`, `TauCeti.AdelicPoints.LocalPoints`.
 * `TauCeti.AdelicPoints.diagonal`, `TauCeti.AdelicPoints.finiteDiagonal`,
   `TauCeti.AdelicPoints.infiniteDiagonal`: the rational diagonals.
+* `TauCeti.AdelicPoints.diagonal_injective`: for a number field the rational diagonal into the
+  adelic points is injective.
 * `TauCeti.AdelicPoints.finiteProjection`, `TauCeti.AdelicPoints.infiniteProjection`: the finite
   and infinite components.
 * `TauCeti.AdelicPoints.localProjection`, `TauCeti.AdelicPoints.infinitePlaceProjection`: the
@@ -132,7 +134,15 @@ noncomputable def finiteDiagonal : WithConv (H →ₐ[K] K) →* FiniteAdelicPoi
 noncomputable def infiniteDiagonal : WithConv (H →ₐ[K] K) →* InfinitePoints K H :=
   AlgHom.mapValue (Algebra.ofId K _)
 
+/-- The rational diagonal is change of coefficients along the diagonal embedding `K → 𝔸_K`. -/
+theorem diagonal_def : diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) := (rfl)
+
 variable {R K H}
+
+/-- The rational diagonal is post-composition with the structure map `K → 𝔸_K`. -/
+theorem diagonal_eq_mapValue :
+    diagonal R K H = AlgHom.mapValue (Algebra.ofId K (AdeleRing R K)) :=
+  (rfl)
 
 @[simp]
 theorem diagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
@@ -148,6 +158,11 @@ theorem finiteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
 theorem infiniteDiagonal_apply_apply (g : WithConv (H →ₐ[K] K)) (h : H) :
     infiniteDiagonal K H g h = algebraMap K (InfiniteAdeleRing K) (g h) := by
   simp [infiniteDiagonal]
+
+/-- For a number field `K`, the rational diagonal `G(K) → G(𝔸_K)` is injective, since `K` embeds
+in `𝔸_K`. -/
+theorem diagonal_injective [NumberField K] : Function.Injective (diagonal R K H) :=
+  AlgHom.mapValue_injective (AdeleRing.algebraMap_injective R K)
 
 /-! ### Finite and infinite components -/
 

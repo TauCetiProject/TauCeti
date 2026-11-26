@@ -36,8 +36,12 @@ indexed by.
   family of open sets exactly when their underlying sets cover it.
 * `TopologicalSpace.Opens.isEmpty_of_iSup_eq_top` : an empty family of open sets covers only the
   empty space.
+* `TopologicalSpace.Opens.eq_bot_of_not_nonempty` : an open set with no points is the empty open
+  set.
 * `TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top` : every member of a
   pairwise-disjoint open cover is clopen.
+* `TopologicalSpace.Opens.isCompl_comap_iff` : the preimages of two open sets under a continuous
+  map are complementary exactly when the range lies in their union and misses their intersection.
 * `TopologicalSpace.Opens.instLocallyCompactSpace` : an open subset of a locally compact space is
   locally compact.
 * `TopologicalSpace.Opens.sigmaCompactSpace_top` : the open subset `⊤` of a σ-compact space is
@@ -120,6 +124,10 @@ theorem isEmpty_of_iSup_eq_top {ι : Sort*} [IsEmpty ι] {U : ι → Opens X}
     (hcover : ⨆ i, U i = ⊤) : IsEmpty X :=
   ⟨fun x ↦ isEmptyElim (Opens.mem_iSup.1 (hcover ▸ Opens.mem_top x)).choose⟩
 
+/-- An open set with no points is the empty open set. -/
+theorem eq_bot_of_not_nonempty {U : Opens X} (h : ¬ Nonempty U) : U = ⊥ :=
+  (not_nonempty_iff_eq_bot U).mp fun hne ↦ h (Set.nonempty_coe_sort.mpr hne)
+
 /-- Every member of a pairwise-disjoint open cover is clopen, without a finiteness assumption
 on the indexing type. -/
 theorem _root_.TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_eq_top
@@ -139,6 +147,16 @@ theorem _root_.TauCeti.TopologicalSpace.Opens.isClopen_of_pairwiseDisjoint_iSup_
     intro x hxj hxV
     obtain ⟨i, hi⟩ := mem_iSup.mp hxV
     exact (hdisj i.property).le_bot ⟨hi, hxj⟩
+
+/-- The preimages of two open sets under a continuous map are complementary exactly when the
+range of the map lies in their union and misses their intersection. -/
+theorem isCompl_comap_iff {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)} (U V : Opens Y) :
+    IsCompl (comap f U) (comap f V) ↔
+      Set.range f ⊆ (U : Set Y) ∪ V ∧ Disjoint (Set.range f) ((U : Set Y) ∩ V) := by
+  rw [isCompl_iff, disjoint_iff, codisjoint_iff, ← coe_eq_empty, ← coe_eq_univ]
+  simp only [coe_inf, coe_sup, coe_comap, ← Set.preimage_inter, ← Set.preimage_union,
+    Set.preimage_eq_empty_iff, Set.preimage_eq_univ_iff]
+  exact and_comm.trans (and_congr_right' disjoint_comm)
 
 /-- An open subset of a locally compact space is locally compact. -/
 instance instLocallyCompactSpace [LocallyCompactSpace X] (U : Opens X) : LocallyCompactSpace U :=

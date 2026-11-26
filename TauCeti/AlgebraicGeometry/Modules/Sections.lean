@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Free
 public import Mathlib.CategoryTheory.Linear.FunctorCategory
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.Scheme.Opens
+import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 import TauCeti.Topology.Sheaves.Presheaf
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
 
@@ -46,7 +47,10 @@ and so are the morphisms `𝒪_X ⟶ M` out of the structure sheaf (`Scheme.Modu
 The morphism out of a free module defined by a family of global sections sends the generators to
 these sections (`Scheme.Modules.app_freeHomEquiv_symm_freeSection`).
 Over an open `V`, the image of a morphism `φ : F ⟶ M` is closed under taking spans
-(`Scheme.Modules.Hom.exists_app_eq_of_mem_span`).
+(`Scheme.Modules.Hom.exists_app_eq_of_mem_span`). On an irreducible scheme, a morphism which is
+injective on sections near the generic point, out of a module whose restriction maps to opens
+containing the generic point are injective, is a monomorphism
+(`Scheme.Modules.Hom.mono_of_injective_app_of_genericPoint_mem`).
 -/
 
 public section
@@ -421,6 +425,35 @@ lemma sections_ext_of_isAffineOpen {M : X.Modules} {V : X.Opens} {s t : Γ(M, V)
         X.isBasis_affineOpens.exists_subset_of_mem_open hx V.is_open'
       exact TopologicalSpace.Opens.mem_iSup.2 ⟨⟨⟨U, hU⟩, hUV⟩, hxU⟩)
     s t fun U ↦ h _ U.val.property U.property
+
+/-- A morphism of `𝒪_X`-modules on an irreducible scheme which is injective on sections over every
+open contained in a neighbourhood `U` of the generic point is a monomorphism, provided the
+restriction maps of its source to opens containing the generic point are injective, as they are
+for a vector bundle on an integral scheme. -/
+theorem Hom.mono_of_injective_app_of_genericPoint_mem [IrreducibleSpace X] {M N : X.Modules}
+    (φ : M ⟶ N) {U : X.Opens} (hU : genericPoint X ∈ U)
+    (hφ : ∀ W ≤ U, Function.Injective (φ.app W))
+    (hM : ∀ (W W' : X.Opens) (i : W' ⟶ W), genericPoint X ∈ W' →
+      Function.Injective (M.presheaf.map i.op)) :
+    Mono φ := by
+  refine (SheafOfModules.forget _).mono_of_mono_map
+    (_root_.PresheafOfModules.mono_of_injective fun W ↦ ?_)
+  induction W with | op W => ?_
+  -- The component of the underlying morphism of presheaves of modules at `op W` is `φ.app W` by
+  -- definition (`Scheme.Modules.Hom.app`).
+  change Function.Injective (φ.app W)
+  rw [injective_iff_map_eq_zero]
+  intro a ha
+  by_cases hη : genericPoint X ∈ W
+  · -- Restrict to `W ⊓ U`, where `φ` is injective.
+    let i : W ⊓ U ⟶ W := homOfLE inf_le_left
+    have hnat : φ.app (W ⊓ U) (M.presheaf.map i.op a) = N.presheaf.map i.op (φ.app W a) :=
+      φ.mapPresheaf.naturality_apply i.op a
+    rw [ha, map_zero] at hnat
+    exact hM W (W ⊓ U) i ⟨hη, hU⟩ ((hφ _ inf_le_right (hnat.trans (map_zero _).symm)).trans
+      (map_zero _).symm)
+  · have : IsEmpty W := ⟨fun x ↦ hη ((genericPoint_specializes x.val).mem_open W.isOpen x.property)⟩
+    exact section_ext_of_isEmpty a 0
 
 end AffineExt
 

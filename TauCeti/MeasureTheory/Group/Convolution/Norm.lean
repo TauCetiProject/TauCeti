@@ -20,11 +20,13 @@ left-invariant measure `μ` finite on compact sets, then
 `∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ`.
 
 Neither local compactness, separability, nor σ-finiteness of `μ` is assumed: integrability and the
-iterated-integral identity come from `TauCeti.integrable_integral_norm_mul_inv_mul` and
-`TauCeti.integral_integral_norm_mul_inv_mul`.
+iterated-integral identities come from `TauCeti.integral_integral_bilinear_inv_mul`,
+`TauCeti.integrable_integral_norm_mul_inv_mul`, and `TauCeti.integral_integral_norm_mul_inv_mul`.
 
 ## Main statements
 
+* `TauCeti.integral_integral_mul_inv_mul`: for continuous compactly supported scalar functions,
+  `∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ u) * ∫ v`.
 * `TauCeti.integral_norm_le_mul_of_norm_le_integral`: pointwise domination of `‖F s‖` by the scalar
   convolution `∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` implies `∫ ‖F‖ ≤ (∫ ‖f‖) * ∫ ‖g‖`.
 -/
@@ -35,6 +37,17 @@ open MeasureTheory Function
 open scoped CompactlySupported
 
 namespace TauCeti
+
+/-- For continuous compactly supported `u v : G → 𝕜` and a left-invariant measure `μ` finite on
+compacts, `∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ s, u s ∂μ) * ∫ s, v s ∂μ`. -/
+theorem integral_integral_mul_inv_mul {G 𝕜 : Type*} [Group G] [TopologicalSpace G]
+    [IsTopologicalGroup G] [MeasurableSpace G] [OpensMeasurableSpace G] [MeasurableMul G]
+    [RCLike 𝕜] (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
+    {u v : G → 𝕜} (hu : Continuous u) (hv : Continuous v) (hu' : HasCompactSupport u)
+    (hv' : HasCompactSupport v) :
+    ∫ s, ∫ r, u r * v (r⁻¹ * s) ∂μ ∂μ = (∫ s, u s ∂μ) * ∫ s, v s ∂μ := by
+  simpa only [ContinuousLinearMap.mul_apply'] using
+    integral_integral_bilinear_inv_mul μ μ (ContinuousLinearMap.mul 𝕜 𝕜) hu hu' hv hv'
 
 /-- If `F : C_c(G, E₃)` is bounded in norm pointwise by the scalar convolution
 `s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` of `f : C_c(G, E₁)` and `g : C_c(G, E₂)` against a
