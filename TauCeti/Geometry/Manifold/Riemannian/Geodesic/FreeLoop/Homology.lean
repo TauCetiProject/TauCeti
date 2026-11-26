@@ -175,45 +175,28 @@ theorem exists_basepoint_coherent_cyclicDistanceCutSample (hpos : 0 < δ 0 0)
         (γ : MooreFreeLoopSpace M).toMoorePath.sample (n + k + 1)) ∧
       (∀ p, (G p).basepoint = (p.2 : MooreFreeLoopSpace M).basepoint) ∧
       ∀ p, (H p : Fin (n + k + 1) → M) 0 = (p.2 : cyclicDistanceCut (X := M) (δ n)).val 0 := by
-  have hr0 : 0 < r := hpos.trans (hlt 0 0)
-  obtain ⟨N, hN⟩ :=
-    MooreFreeLoopSpace.exists_subset_arcsWithin_mapsTo_sample_cyclicDistanceCut hL hr0 hpos
-  obtain ⟨hLA, hmaps⟩ := hN (n + (N + 1)) (by omega)
-  have hεδ (i : Fin (n + (N + 1) + 1)) : δ 0 0 ≤ δ (n + (N + 1)) i :=
-    cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i
+  -- At the stage `n + N + 1` every cut-off is at least `δ 0 0`: sample `L` there, and straighten
+  -- the loops of `L` to the broken geodesics through their samples.
+  obtain ⟨N, hN⟩ := exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr hL hpos
+  obtain ⟨e, G, he, hG⟩ := hN (n + (N + 1)) (by omega) (δ (n + (N + 1)))
+    (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ (by omega) 0 i) (hlt _)
   have hδδ' := cutoff_sub_le_of_forall_le_succ hδ n (N + 1)
   have hm := sum_cutoff_le_mul_cutoff hpos.le hδ (show n < n + (N + 1) by omega)
-  -- The loops of `L` have arcs of radius less than `r`, and their samples lie in the distance cut.
-  let ι : C(L, MooreFreeLoopSpace.arcsWithin {p : M × M | dist p.1 p.2 < r} (n + (N + 1) + 1)) :=
-    ⟨fun γ ↦ ⟨γ, hLA γ.property⟩, continuous_subtypeVal.subtype_mk _⟩
-  let e : C(L, cyclicDistanceCut (X := M) (δ (n + (N + 1)))) :=
-    ⟨fun γ ↦ ⟨_, hmaps _ hεδ γ.property⟩, ((MooreFreeLoopSpace.continuous_sample _).comp
-      continuous_subtypeVal).subtype_mk _⟩
-  -- On `L`, `geoⁿ⁺ᵏ ∘ e` is the closed broken geodesic through the sampled vertices.
-  have hG : (cyclicDistanceCutBrokenGeodesic hr (hlt (n + (N + 1)))).comp e =
-      (sampleBrokenGeodesicLoop hr (n + (N + 1))).comp ι :=
-    ContinuousMap.ext fun γ ↦ by
-      simp only [ContinuousMap.comp_apply, cyclicDistanceCutBrokenGeodesic_apply, e, ι,
-        ContinuousMap.coe_mk, sampleBrokenGeodesicLoop_apply hr (n + (N + 1)) ⟨γ, hLA γ.property⟩
-          (MooreFreeLoopSpace.dist_sample_sub_one_lt_of_mem_arcsWithin (hLA γ.property))]
   -- On `K`, `e ∘ geoⁿ` samples the broken geodesics, and the map of the sequence repeats the first
   -- vertex.
   have hH : e.comp ⟨hKL.restrict, (map_continuous _).restrict hKL⟩ =
       (cyclicDistanceCutSampleBrokenGeodesic hr (hlt n) (n + (N + 1)) hm).comp
         (ContinuousMap.subtypeVal K) :=
-    ContinuousMap.ext fun _ ↦
-      Subtype.ext (coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr (hlt n) _ hm _).symm
+    ContinuousMap.ext fun _ ↦ Subtype.ext <|
+      (he _).trans (coe_cyclicDistanceCutSampleBrokenGeodesic_apply hr (hlt n) _ hm _).symm
   have hF : (cyclicDistanceCutRepeatFirstIterate (X := M) (N + 1) hδδ').comp
       (ContinuousMap.subtypeVal K) = ((cyclicDistanceCutFunctor M hpos.le hδ).map
         (homOfLE (Nat.le_add_right n (N + 1)))).hom.comp (ContinuousMap.subtypeVal K) := by
     rw [cyclicDistanceCutFunctor_map_homOfLE M hpos.le hδ n (N + 1) hδδ']
-  refine ⟨N + 1, e,
-    (((sampleBrokenGeodesicLoopHomotopy hr (n + (N + 1))).compContinuousMap ι).symm).cast hG.symm
-      (ContinuousMap.ext fun _ ↦ rfl),
+  refine ⟨N + 1, e, G,
     (((cyclicDistanceCutSampleBrokenGeodesicHomotopy hr (hlt n) hδδ' hm).compContinuousMap
-      (ContinuousMap.subtypeVal K)).symm).cast hH.symm hF, fun γ ↦ rfl, fun p ↦ ?_, fun p ↦ ?_⟩
-  · simp [ι]
-  · simp
+      (ContinuousMap.subtypeVal K)).symm).cast hH.symm hF, he, hG, fun p ↦ ?_⟩
+  simp
 
 /-- **Compact families of free loops are broken geodesics up to homotopy.** Let the cut-offs
 `δ n i < r` grow from each stage to the next and start positive. Every compact family `K` of free
@@ -226,9 +209,9 @@ theorem exists_cyclicDistanceCutCocone_ι_app_comp_homotopic (hpos : 0 < δ 0 0)
       (((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app n).hom.comp e).Homotopic
         (ContinuousMap.subtypeVal K) := by
   obtain ⟨N, hN⟩ := exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr hK hpos
-  obtain ⟨e, -, he⟩ := hN (N + 1) (by omega) (δ (N + 1))
+  obtain ⟨e, G, -⟩ := hN (N + 1) (by omega) (δ (N + 1))
     (fun i ↦ cutoff_le_of_forall_le_succ_of_lt hδ N.succ_pos 0 i) (hlt (N + 1))
-  exact ⟨N + 1, e, by rwa [cyclicDistanceCutCocone_ι_app_hom]⟩
+  exact ⟨N + 1, e, by rw [cyclicDistanceCutCocone_ι_app_hom]; exact ⟨G⟩⟩
 
 /-- **Compact families of free loops containing broken geodesics map to a later stage of the
 cocone of broken geodesics.** Let the cut-offs `δ n i < r` grow from each stage to the next and
