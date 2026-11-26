@@ -45,13 +45,14 @@ The main results are:
   `Δ y^s = s (1 - s) y^s`;
 * the invariance of `Δ` under every isometry `τ ↦ g • τ` of `ℍ`, `Δ (f ∘ g) = (Δ f) ∘ g` for
   `g ∈ GL(2, ℝ)`, including the orientation-reversing reflection `τ ↦ -conj τ`;
-* for an integral weight `k` and the same `g`, the commutation of `Δ_k` with the weight-`k`
-  slash action `f ↦ f ∣[k] g`.
+* for an integral weight `k` and `g` with `det g > 0`, the commutation of `Δ_k` with the
+  weight-`k` slash action `f ↦ f ∣[k] g`.
 
-The commutation follows from the conformal covariance of the planar Laplacian under the
-holomorphic map `τ ↦ g • τ`, whose derivative is `det g / (cτ + d)²`, together with
+For `det g > 0` the commutation follows from the conformal covariance of the planar Laplacian
+under the holomorphic map `τ ↦ g • τ`, whose derivative is `det g / (cτ + d)²`, together with
 `Im (g • τ) = det g · Im τ / |cτ + d|²` and the product rule for the holomorphic automorphy
-factor `(cτ + d)^(-k)`.
+factor `(cτ + d)^(-k)`. The invariance of `Δ` for `det g < 0` reduces to that case through the
+reflection `J • τ = -conj τ`, which commutes with `Δ`.
 
 ## Main declarations
 

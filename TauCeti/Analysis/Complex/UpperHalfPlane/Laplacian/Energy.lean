@@ -9,15 +9,17 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Laplacian.Basic
+import TauCeti.Analysis.Calculus.ContDiff.Indicator
 import TauCeti.Analysis.Complex.UpperHalfPlane.Measure
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Integral
 
 /-!
 # The energy of the hyperbolic Laplacian
 
-For functions `f, g : ℍ → ℂ`, with `f` of class `C²` and `g` of class `C¹` with compact support in
-`ℍ`, the pairing of the hyperbolic Laplacian `Δ f = -y² (∂ₓ² + ∂ᵧ²) f` with `g` against the
-invariant measure `dμ = dx dy / y²` is the Euclidean Dirichlet pairing of their gradients:
+For functions `f, g : ℍ → ℂ`, with `g` of class `C¹` with compact support in `ℍ` and `f` of class
+`C²` near the support of `g`, the pairing of the hyperbolic Laplacian `Δ f = -y² (∂ₓ² + ∂ᵧ²) f`
+with `g` against the invariant measure `dμ = dx dy / y²` is the Euclidean Dirichlet pairing of
+their gradients:
 
 `∫_ℍ (Δ f) · conj g dμ = ∫_ℍ (∂ₓ f · conj (∂ₓ g) + ∂ᵧ f · conj (∂ᵧ g)) dx dy`.
 
@@ -55,47 +57,42 @@ namespace TauCeti.UpperHalfPlane
 variable {f g : ℍ → ℂ}
 
 /-- A function on `ℍ` with compact support that is `C¹` in the coordinates of `ℂ` extends by zero
-to a compactly supported `C¹` function on `ℂ`, whose support lies in `ℍ`. -/
+to a compactly supported `C¹` function on `ℂ`, whose support lies in the image of that of `g`. -/
 private theorem exists_contDiff_hasCompactSupport_eventuallyEq
     (hg : ContDiffOn ℝ 1 (g ∘ ofComplex) upperHalfPlaneSet) (hgc : HasCompactSupport g) :
-    ∃ G : ℂ → ℂ, ContDiff ℝ 1 G ∧ HasCompactSupport G ∧ tsupport G ⊆ upperHalfPlaneSet ∧
+    ∃ G : ℂ → ℂ, ContDiff ℝ 1 G ∧ HasCompactSupport G ∧ tsupport G ⊆ (↑) '' tsupport g ∧
       ∀ w ∈ upperHalfPlaneSet, G =ᶠ[𝓝 w] g ∘ ofComplex := by
   set K : Set ℂ := (↑) '' tsupport g
   have hK : IsCompact K := hgc.isCompact.image continuous_coe
   have hKU : K ⊆ upperHalfPlaneSet := by
     rintro _ ⟨z, -, rfl⟩
     exact z.im_pos
-  set G : ℂ → ℂ := upperHalfPlaneSet.indicator (g ∘ ofComplex) with hG
-  have hG0 (w : ℂ) (hw : w ∉ K) : G w = 0 := by
-    by_cases hwU : w ∈ upperHalfPlaneSet
-    · rw [hG, indicator_of_mem hwU, Function.comp_apply]
-      refine image_eq_zero_of_notMem_tsupport fun h ↦ hw ⟨_, h, ?_⟩
-      rw [ofComplex_apply_of_im_pos hwU, coe_mk]
-    · exact indicator_of_notMem hwU _
-  have hGg (w : ℂ) (hw : w ∈ upperHalfPlaneSet) : G =ᶠ[𝓝 w] g ∘ ofComplex := by
-    filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds hw] with x hx using indicator_of_mem hx _
-  have hGK : tsupport G ⊆ K := closure_minimal (Function.support_subset_iff'.2 hG0) hK.isClosed
-  refine ⟨G, contDiff_iff_contDiffAt.2 fun w ↦ ?_, HasCompactSupport.intro hK hG0,
-    hGK.trans hKU, hGg⟩
-  by_cases hw : w ∈ upperHalfPlaneSet
-  · exact (hg.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds hw)).congr_of_eventuallyEq (hGg w hw)
-  · refine contDiffAt_const (c := (0 : ℂ)).congr_of_eventuallyEq ?_
-    filter_upwards [hK.isClosed.isOpen_compl.mem_nhds fun h ↦ hw (hKU h)] with x hx
-    exact hG0 x hx
+  have hgK : upperHalfPlaneSet ∩ Function.support (g ∘ ofComplex) ⊆ K := fun w ⟨hw, hgw⟩ ↦
+    ⟨_, subset_tsupport _ hgw, by rw [ofComplex_apply_of_im_pos hw, coe_mk]⟩
+  have hGK : tsupport (upperHalfPlaneSet.indicator (g ∘ ofComplex)) ⊆ K :=
+    closure_minimal (support_indicator.trans_subset hgK) hK.isClosed
+  refine ⟨_, hg.contDiff_indicator_of_isCompact isOpen_upperHalfPlaneSet hK hKU hgK,
+    hK.of_isClosed_subset isClosed_closure hGK, hGK, fun w hw ↦ ?_⟩
+  filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds hw] with x hx using indicator_of_mem hx _
 
-/-- **The energy identity for the hyperbolic Laplacian.** For `f : ℍ → ℂ` of class `C²` and
-`g : ℍ → ℂ` of class `C¹` with compact support in `ℍ`,
+/-- **The energy identity for the hyperbolic Laplacian.** For `g : ℍ → ℂ` of class `C¹` with
+compact support in `ℍ` and `f : ℍ → ℂ` of class `C²` near the support of `g`,
 `∫_ℍ (Δ f) · conj g dμ = ∫_ℍ (∂ₓ f · conj (∂ₓ g) + ∂ᵧ f · conj (∂ᵧ g)) dx dy`, where
 `dμ = dx dy / y²` is the invariant measure and the derivatives are those of `f ∘ ofComplex` and
-`g ∘ ofComplex` in the directions `1` and `I`. Nothing is assumed about `f` beyond smoothness. -/
+`g ∘ ofComplex` in the directions `1` and `I`. Nothing is assumed about `f` beyond smoothness
+near the support of `g`. -/
 theorem integral_hyperbolicLaplacian_mul_conj
-    (hf : ContDiffOn ℝ 2 (f ∘ ofComplex) upperHalfPlaneSet)
+    (hf : ∀ z ∈ tsupport g, ContDiffAt ℝ 2 (f ∘ ofComplex) z)
     (hg : ContDiffOn ℝ 1 (g ∘ ofComplex) upperHalfPlaneSet) (hgc : HasCompactSupport g) :
     ∫ z, hyperbolicLaplacian f z * conj (g z) =
       ∫ w in upperHalfPlaneSet,
         (fderiv ℝ (f ∘ ofComplex) w 1 * conj (fderiv ℝ (g ∘ ofComplex) w 1) +
           fderiv ℝ (f ∘ ofComplex) w I * conj (fderiv ℝ (g ∘ ofComplex) w I)) := by
-  obtain ⟨G, hG, hGc, hGU, hGg⟩ := exists_contDiff_hasCompactSupport_eventuallyEq hg hgc
+  obtain ⟨G, hG, hGc, hGK, hGg⟩ := exists_contDiff_hasCompactSupport_eventuallyEq hg hgc
+  have hGU : tsupport G ⊆ upperHalfPlaneSet := by
+    rintro _ hw
+    obtain ⟨z, -, rfl⟩ := hGK hw
+    exact z.im_pos
   -- Green's first identity on `ℂ` for the pairing `(a, b) ↦ a * conj b`, against `G`.
   set B : ℂ →L[ℝ] ℂ →L[ℝ] ℂ :=
     (ContinuousLinearMap.mul ℝ ℂ).bilinearComp (ContinuousLinearMap.id ℝ ℂ)
@@ -103,7 +100,7 @@ theorem integral_hyperbolicLaplacian_mul_conj
   have hB (a b : ℂ) : B a b = a * conj b := by simp [B]
   have hgreen := integral_bilinear_laplacian_eq_neg_integral_sum_fderiv (μ := volume)
     orthonormalBasisOneI B (u := f ∘ ofComplex)
-    (fun w hw ↦ hf.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds (hGU hw))) hG hGc
+    (fun w hw ↦ by obtain ⟨z, hz, rfl⟩ := hGK hw; exact hf z hz) hG hGc
   have hU : MeasurableSet upperHalfPlaneSet := isOpen_upperHalfPlaneSet.measurableSet
   have hG0 (w : ℂ) (hw : w ∉ upperHalfPlaneSet) : w ∉ tsupport G := fun h ↦ hw (hGU h)
   have hfG (w : ℂ) (hw : w ∈ upperHalfPlaneSet) :
@@ -139,7 +136,10 @@ theorem integral_hyperbolicLaplacian_mul_conj_self
     ∫ z, hyperbolicLaplacian f z * conj (f z) =
       ((∫ w in upperHalfPlaneSet,
         (‖fderiv ℝ (f ∘ ofComplex) w 1‖ ^ 2 + ‖fderiv ℝ (f ∘ ofComplex) w I‖ ^ 2) : ℝ) : ℂ) := by
-  rw [integral_hyperbolicLaplacian_mul_conj hf (hf.of_le one_le_two) hfc, ← integral_complex_ofReal]
+  have hf' (z : ℍ) (_ : z ∈ tsupport f) : ContDiffAt ℝ 2 (f ∘ ofComplex) z :=
+    hf.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
+  rw [integral_hyperbolicLaplacian_mul_conj hf' (hf.of_le one_le_two) hfc,
+    ← integral_complex_ofReal]
   push_cast
   simp only [mul_conj']
 
@@ -153,8 +153,12 @@ theorem integral_hyperbolicLaplacian_mul_conj_eq_integral_mul_conj
       conj (∫ z, hyperbolicLaplacian g z * conj (f z)) := by
     rw [← integral_conj]
     simp [mul_comm]
-  rw [h, integral_hyperbolicLaplacian_mul_conj hf (hg.of_le one_le_two) hgc,
-    integral_hyperbolicLaplacian_mul_conj hg (hf.of_le one_le_two) hfc, ← integral_conj]
+  have hf' (z : ℍ) (_ : z ∈ tsupport g) : ContDiffAt ℝ 2 (f ∘ ofComplex) z :=
+    hf.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
+  have hg' (z : ℍ) (_ : z ∈ tsupport f) : ContDiffAt ℝ 2 (g ∘ ofComplex) z :=
+    hg.contDiffAt (isOpen_upperHalfPlaneSet.mem_nhds z.im_pos)
+  rw [h, integral_hyperbolicLaplacian_mul_conj hf' (hg.of_le one_le_two) hgc,
+    integral_hyperbolicLaplacian_mul_conj hg' (hf.of_le one_le_two) hfc, ← integral_conj]
   refine integral_congr_ae (ae_of_all _ fun w ↦ ?_)
   simp only [map_add, map_mul, conj_conj]
   ring
