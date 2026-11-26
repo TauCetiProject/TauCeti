@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContDiff.Bounds
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
 public import TauCeti.Analysis.Calculus.Hadamard.Basic
-public import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 
 /-!
 # Parameter families of approximate solutions of every finite order
@@ -32,7 +32,7 @@ order of the profile costs one derivative. A residual written as `h^(N+1)` times
 is the natural output for uniform estimates. On a compact set `K` of parameters and for
 `|h| ≤ h₀`, the residual and its derivatives in `p` through order `k` are bounded by
 `C |h|^(N+1)`, with `C` depending only on `K`, `h₀` and the order of the derivative
-(`TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` for a given residual
+(`ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` for a given residual
 identity, `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow`,
 `TauCeti.exists_forall_norm_le_mul_pow`). An estimate `F (p, h, X (p, h)) = O(h^(N+1))` at each `p`
 separately would give neither the uniformity in `p` nor the bounds on derivatives in `p`.
@@ -57,9 +57,6 @@ equations, which depend smoothly on the divisor.
 
 * `TauCeti.exists_contDiff_forall_eq_pow_smul`: profiles of every finite order with `C^k`
   coefficients whose residual is `h^(N+1)` times a jointly `C^k` function.
-* `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul`: a function
-  `h^n • Q (p, h)` with `Q` of class `C^k` has derivatives in `p` through order `k` bounded by
-  `C |h|^n`, uniformly on compact sets of parameters.
 * `TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow`: the residual and its derivatives in the
   parameter are `O(|h|^(N+1))` uniformly on compact sets of parameters.
 * `TauCeti.exists_forall_norm_le_mul_pow`: the residual is `O(|h|^(N+1))` uniformly on compact
@@ -183,38 +180,13 @@ theorem exists_contDiff_forall_eq_pow_smul {k : ℕ∞} {N : ℕ} {F : P × ℝ 
         sum_congr rfl fun i hi ↦ by rw [Function.update_of_ne (mem_range.1 hi).ne]]
       exact hFQ' p h
 
-omit [CompleteSpace G] in
-/-- **Uniform estimates from a residual identity.** If `f (p, h) = h^n • Q (p, h)` for a `C^k`
-function `Q`, then on every compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in
-`p` through order `k` of `f (·, h)` are at most `C |h|^n`, with `C` depending only on the order,
-`K` and `h₀`. Applied to the residual identity of `TauCeti.exists_contDiff_forall_eq_pow_smul`, this
-bounds the residual along the same profile. -/
-theorem exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul {k : ℕ∞} {n : ℕ}
-    {f Q : P × ℝ → G} (hQ : ContDiff ℝ k Q) (hfQ : ∀ p h, f (p, h) = h ^ n • Q (p, h))
-    {j : ℕ} (hj : (j : ℕ∞) ≤ k) {K : Set P} (hK : IsCompact K) (h₀ : ℝ) :
-    ∃ C, ∀ p ∈ K, ∀ h : ℝ, |h| ≤ h₀ →
-      ‖iteratedFDeriv ℝ j (fun q ↦ f (q, h)) p‖ ≤ C * |h| ^ n := by
-  have hj' : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
-  -- The full `j`-th derivative of the quotient is bounded on the compact set `K × [-h₀, h₀]`.
-  obtain ⟨C, hC⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn
-    (hQ.continuous_iteratedFDeriv hj').continuousOn (f := fun q ↦ iteratedFDeriv ℝ j Q q)
-      (s := K ×ˢ Set.Icc (-h₀) h₀)
-  refine ⟨C, fun p hp h hh ↦ ?_⟩
-  have hQh : ContDiffAt ℝ j (fun q ↦ Q (q, h)) p :=
-    ((hQ.of_le hj').comp (by fun_prop : ContDiff ℝ j fun q : P ↦ (q, h))).contDiffAt
-  simp_rw [hfQ, iteratedFDeriv_const_smul_apply' hQh, norm_smul, norm_pow, Real.norm_eq_abs]
-  rw [mul_comm]
-  gcongr
-  exact (((hQ.of_le hj').contDiffAt).norm_iteratedFDeriv_prod_left_le j le_rfl).trans
-    (hC (p, h) ⟨hp, abs_le.1 hh⟩)
-
 /-- **Uniform estimates for `C^k` families of approximate solutions.** Under the hypotheses of
 `TauCeti.exists_contDiff_forall_eq_pow_smul`, there are `C^k` coefficients `yᵢ` such that, on every
 compact set `K` of parameters and for `|h| ≤ h₀`, the derivatives in `p` through order `k` of the
 residual along the profile `x₀ p + ∑_{i < N} h^(i+1) • yᵢ p` are at most `C |h|^(N+1)`, with `C`
 depending only on the order, `K` and `h₀`. To have these bounds together with the residual
 identity for the same coefficients, apply
-`TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` to the output of
+`ContDiff.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul` to the output of
 `TauCeti.exists_contDiff_forall_eq_pow_smul`. -/
 theorem exists_forall_norm_iteratedFDeriv_le_mul_pow {k : ℕ∞} {N : ℕ} {F : P × ℝ × E → G}
     {x₀ : P → E} {R : P → G →L[ℝ] E} (hF : ContDiff ℝ (k + N + 1 : ℕ∞) F)
@@ -226,8 +198,8 @@ theorem exists_forall_norm_iteratedFDeriv_le_mul_pow {k : ℕ∞} {N : ℕ} {F :
         ‖iteratedFDeriv ℝ j (fun q ↦ F (q, h, x₀ q + ∑ i ∈ range N, h ^ (i + 1) • y i q)) p‖ ≤
           C * |h| ^ (N + 1) := by
   obtain ⟨y, hy, Q, hQ, hFQ⟩ := exists_contDiff_forall_eq_pow_smul hF hx₀ hR h₀ hR'
-  exact ⟨y, hy, fun j hj K hK h₀ ↦ exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul
-    (f := fun q ↦ F (q.1, q.2, x₀ q.1 + ∑ i ∈ range N, q.2 ^ (i + 1) • y i q.1)) hQ hFQ hj hK h₀⟩
+  exact ⟨y, hy, fun j hj K hK h₀ ↦ hQ.exists_forall_norm_iteratedFDeriv_le_mul_pow_of_eq_pow_smul
+    (f := fun q ↦ F (q.1, q.2, x₀ q.1 + ∑ i ∈ range N, q.2 ^ (i + 1) • y i q.1)) hFQ hj hK h₀⟩
 
 /-- **Uniform residual of a continuous family of approximate solutions.** Let `F (p, 0, x₀ p) = 0`
 for every `p`, and let `R p` be a right inverse of the partial derivative of `x ↦ F (p, 0, x)` at
