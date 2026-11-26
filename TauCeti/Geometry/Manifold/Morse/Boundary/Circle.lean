@@ -632,6 +632,16 @@ private theorem augmentationSign_mul_self_circleCosTwo (hδ : 0 < δ) (i : Fin 2
   rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one
     (manifoldMorseIndex_circleCosTwoMinCrit hδ r i) with h | h <;> simp [h]
 
+private theorem circleCosTwoMaxEquiv_apply (hδ : 0 < δ) (j : Fin 2) :
+    circleCosTwoMaxEquiv hδ r j =
+      ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩ :=
+  (rfl)
+
+private theorem circleCosTwoMinEquiv_apply (hδ : 0 < δ) (i : Fin 2) :
+    circleCosTwoMinEquiv hδ r i =
+      ⟨circleCosTwoMinCrit δ r i, manifoldMorseIndex_circleCosTwoMinCrit hδ r i⟩ :=
+  (rfl)
+
 /-- The graded integral differential of the circle on a chain of index `1`, at the minimum `q_i`,
 in terms of the fundamental signs of the maxima and the augmentation signs of the minima. -/
 private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv (hδ : 0 < δ)
@@ -646,19 +656,8 @@ private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv (hδ : 0 <
   conv_lhs => rw [eq_single_add_single_circleCosTwoMaxEquiv hδ c]
   rw [map_add, Finsupp.add_apply, signedMorseBoundaryAt_single_apply,
     signedMorseBoundaryAt_single_apply, Fin.sum_univ_two]
-  exact congrArg₂ (· + ·)
-    (congrArg (_ * ·) (congrArg _ (signedMorseBoundaryCoeff_circleCosTwo hδ hX 𝔬 i 0)))
-    (congrArg (_ * ·) (congrArg _ (signedMorseBoundaryCoeff_circleCosTwo hδ hX 𝔬 i 1)))
-
-private theorem circleCosTwoMaxEquiv_apply (hδ : 0 < δ) (j : Fin 2) :
-    circleCosTwoMaxEquiv hδ r j =
-      ⟨circleCosTwoMaxCrit δ r j, manifoldMorseIndex_circleCosTwoMaxCrit hδ r j⟩ :=
-  (rfl)
-
-private theorem circleCosTwoMinEquiv_apply (hδ : 0 < δ) (i : Fin 2) :
-    circleCosTwoMinEquiv hδ r i =
-      ⟨circleCosTwoMinCrit δ r i, manifoldMorseIndex_circleCosTwoMinCrit hδ r i⟩ :=
-  (rfl)
+  simp only [circleCosTwoMaxEquiv_apply, circleCosTwoMinEquiv_apply,
+    signedMorseBoundaryCoeff_circleCosTwo hδ hX 𝔬]
 
 /-- A chain of index `0` vanishes when it vanishes at both minima. -/
 private theorem eq_zero_of_forall_circleCosTwoMinEquiv (hδ : 0 < δ)
@@ -716,8 +715,16 @@ private theorem signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sub_mul
           (circleCosTwoMaxCrit δ r i) : R)) *
         (𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R) := by
   rw [signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv, Fin.sum_univ_two]
-  fin_cases i <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceAdd, Fin.reduceEq, ↓reduceIte] <;>
-    push_cast <;> noncomm_ring
+  match i with
+  | 0 =>
+    rw [ite_eq_left rfl, ite_eq_right zero_ne_one, zero_add]
+    push_cast
+    noncomm_ring
+  | 1 =>
+    rw [ite_eq_right one_ne_zero, ite_eq_left rfl]
+    simp only [Fin.reduceAdd]
+    push_cast
+    noncomm_ring
 
 /-- **`H₁` of the circle is `R`.** For `δ > 0`, every adapted pseudo-gradient, every choice of
 orientations and every ring `R` of coefficients, the integral Morse homology of
@@ -794,7 +801,10 @@ theorem mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff (hδ : 0 < δ)
       (b (circleCosTwoMaxEquiv hδ r (i + 1)) * ε (i + 1) -
         b (circleCosTwoMaxEquiv hδ r i) * ε i) * η i :=
     signedMorseBoundaryAt_zero_apply_circleCosTwoMinEquiv_eq_sub_mul hδ b i
-  -- The augmentation, in terms of the signs `η i`.
+  -- The augmentation, in terms of the signs `η i`. `set` cannot fold the casts
+  -- `(𝔬.augmentationSign (circleCosTwoMinCrit δ r i) : R)` into `η i` here, since they are
+  -- beta-instances of the lambda defining `η` rather than syntactic occurrences of it, so we fold
+  -- them by `change`, which holds by unfolding the local definition `η`.
   change _ ↔ c (circleCosTwoMinEquiv hδ r 0) * η 0 + c (circleCosTwoMinEquiv hδ r 1) * η 1 = 0
   constructor
   · -- The augmentation of a boundary vanishes.
@@ -840,7 +850,7 @@ theorem nonempty_linearEquiv_homology_zero_signedMorseComplex_circleCosTwo (hδ 
   have hexact : Function.Exact (hX.signedMorseBoundaryAt 𝔬 hf R 0) ψ := fun c ↦ by
     rw [← LinearMap.coe_range, SetLike.mem_coe,
       mem_range_signedMorseBoundaryAt_zero_circleCosTwo_iff hδ]
-    rfl
+    simp [ψ, η, circleCosTwoMinEquiv_apply]
   -- In degree `0` the homology is the cokernel of `∂`.
   have hd : (K.d (0 + 1) 0).hom = hX.signedMorseBoundaryAt 𝔬 hf R 0 :=
     LinearMap.ext (signedMorseComplex_d_apply hsq 0)
