@@ -65,6 +65,15 @@ theorem coe_galEquivPlacesOver_apply (w : InfinitePlace L) (hw : w.IsUnramified 
     (σ : Gal(L/K)) :
     (w.galEquivPlacesOver hw σ : InfinitePlace L) = σ⁻¹ • w := (rfl)
 
+/-- In the fiber of `w`, the place `σ⁻¹ • w` is labeled by `σ`. -/
+@[simp]
+theorem galEquivPlacesOver_symm_inv_smul (w : InfinitePlace L) (hw : w.IsUnramified K)
+    (σ : Gal(L/K)) (hσ : σ⁻¹ • w ∈ placesOver L (w.comap (algebraMap K L))) :
+    (w.galEquivPlacesOver hw).symm ⟨σ⁻¹ • w, hσ⟩ = σ := by
+  apply (w.galEquivPlacesOver hw).injective
+  rw [Equiv.apply_symm_apply]
+  exact Subtype.ext (w.coe_galEquivPlacesOver_apply hw σ).symm
+
 /-- If the base has a unique infinite place, all infinite places of `L` are parametrized by the
 Galois group, based at any unramified infinite place `w` of `L`. -/
 noncomputable def galEquivOfSubsingleton [Subsingleton (InfinitePlace K)]
@@ -78,16 +87,29 @@ noncomputable def galEquivOfSubsingleton [Subsingleton (InfinitePlace K)]
 theorem galEquivOfSubsingleton_apply [Subsingleton (InfinitePlace K)]
     (w : InfinitePlace L) (hw : w.IsUnramified K) (σ : Gal(L/K)) :
     w.galEquivOfSubsingleton hw σ = σ⁻¹ • w := by
-  rw [galEquivOfSubsingleton, Equiv.trans_apply]
-  exact w.coe_galEquivPlacesOver_apply hw σ
+  rw [galEquivOfSubsingleton, Equiv.trans_apply, Equiv.subtypeUnivEquiv_apply,
+    coe_galEquivPlacesOver_apply]
+
+/-- The place obtained by inverse Galois action is labeled by the acting automorphism. -/
+@[simp]
+theorem galEquivOfSubsingleton_symm_inv_smul [Subsingleton (InfinitePlace K)]
+    (w : InfinitePlace L) (hw : w.IsUnramified K) (σ : Gal(L/K)) :
+    (w.galEquivOfSubsingleton hw).symm (σ⁻¹ • w) = σ := by
+  rw [← galEquivOfSubsingleton_apply w hw, Equiv.symm_apply_apply]
+
+/-- The basepoint has Galois label `1`. -/
+@[simp]
+theorem galEquivOfSubsingleton_symm_self [Subsingleton (InfinitePlace K)]
+    (w : InfinitePlace L) (hw : w.IsUnramified K) :
+    (w.galEquivOfSubsingleton hw).symm w = 1 := by
+  simpa only [inv_one, one_smul] using w.galEquivOfSubsingleton_symm_inv_smul hw 1
 
 /-- For a parametrization based at the place of `φ`, the place indexed by `σ` is the place of
 `φ ∘ σ`. -/
 theorem galEquivOfSubsingleton_mk_apply [Subsingleton (InfinitePlace K)]
     (φ : L →+* ℂ) (hφ : (mk φ).IsUnramified K) (σ : Gal(L/K)) :
     (mk φ).galEquivOfSubsingleton hφ σ = mk (φ.comp σ) := by
-  rw [galEquivOfSubsingleton_apply, smul_mk]
-  rfl
+  rw [galEquivOfSubsingleton_apply, smul_mk, AlgEquiv.aut_inv, AlgEquiv.symm_symm]
 
 /-- The representative obtained by precomposing `φ` with the automorphism indexing `w`
 induces `w`. -/
