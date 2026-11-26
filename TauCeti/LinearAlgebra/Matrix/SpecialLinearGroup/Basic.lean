@@ -106,8 +106,9 @@ proof is independent of the source's.
   `Subgroup.zpowers (-1)`, when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.not_exists_isComplement'_center`: over any commutative ring `R` with
   `(2 : R) ≠ 0`, the centre of `SL₂(R)` admits no complement in `SL₂(R)`.
-* `Matrix.SpecialLinearGroup.finite_center` and
-  `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
+* `Matrix.SpecialLinearGroup.finite_center`: the centre of `SL(n, R)` is finite when `R` has no
+  zero divisors.
+* `Matrix.SpecialLinearGroup.card_center_le_two`: the centre of `SL₂` has order at most two.
 * `Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem`: a subgroup of `SL₂` contains the centre
   exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
@@ -389,18 +390,18 @@ theorem center_eq_zpowers_neg_one [NoZeroDivisors R] :
   · exact one_mem _
   · exact Subgroup.mem_zpowers _
 
-/-- The centre of `SL₂` is finite: by `mem_center_iff_eq_one_or_eq_neg_one` it is the set `{±I}`,
-which has at most two elements — exactly two unless `1 = -1` in `R`, where it is a singleton. -/
-theorem finite_center [NoZeroDivisors R] :
-    Finite (Subgroup.center (SpecialLinearGroup (Fin 2) R)) := by
-  have hf : Finite ({1, -1} : Set (SpecialLinearGroup (Fin 2) R)) := Set.toFinite _
-  -- the type ascription on `e` is load-bearing: without it instance search is asked for
-  -- `Finite { x // x = 1 ∨ x = -1 }` and fails, since that subtype is definitionally
-  -- `↥({1, -1} : Set _)` but resolution does not see through the membership unfolding
-  have e : (Subgroup.center (SpecialLinearGroup (Fin 2) R)) ≃
-      ({1, -1} : Set (SpecialLinearGroup (Fin 2) R)) :=
-    Equiv.subtypeEquivRight fun _ ↦ mem_center_iff_eq_one_or_eq_neg_one
-  exact Finite.of_equiv _ e.symm
+/-- **The centre of `SL(n, R)` is finite** over a commutative ring without zero divisors: it
+consists of the scalar matrices `ζ • I` with `ζ` a root of unity of order dividing the size `n`
+(`Matrix.SpecialLinearGroup.center_equiv_rootsOfUnity`), and a polynomial equation `ζ ^ n = 1` has
+finitely many roots in a domain. Over the zero ring the group itself is trivial. For `SL₂` the
+centre is `{±I}` (`Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`). -/
+instance finite_center {n : Type*} [Fintype n] [DecidableEq n] [NoZeroDivisors R] :
+    Finite (Subgroup.center (SpecialLinearGroup n R)) := by
+  cases subsingleton_or_nontrivial R
+  · infer_instance
+  · have := NoZeroDivisors.to_isDomain R
+    have : NeZero (max (Fintype.card n) 1) := ⟨by positivity⟩
+    exact Finite.of_equiv _ center_equiv_rootsOfUnity.symm.toEquiv
 
 /-- **The centre of `SL₂` has at most two elements.** Stated as a bound rather than an equality
 because `1 = -1` when `R` has characteristic `2`, where the centre is trivial.
@@ -474,7 +475,6 @@ private theorem card_center_subgroupOf_pos_and_le_two [NoZeroDivisors R]
     (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
     0 < Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ∧
       Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ≤ 2 := by
-  have : Finite (Subgroup.center (SpecialLinearGroup (Fin 2) R)) := finite_center
   -- `subgroupOf` is `comap` along `Γ.subtype`, so the order divides the centre's outright; the
   -- ascription states the divisibility in `subgroupOf` form rather than `comap` form
   have hdvd : Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) ∣

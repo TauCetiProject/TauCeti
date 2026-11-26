@@ -37,6 +37,10 @@ and keeps the others.
   `Finsupp.signReversal_signReversal`, `Finsupp.signReversal_symm`,
   `Finsupp.signReversal_trans_self`, `Finsupp.signReversal_empty`,
   `Finsupp.support_signReversal`: the same for `signReversal`.
+* `Finsupp.signReversal_congr`, `Finsupp.signReversal_eq_refl`: the sign reversal depends only on
+  the points of the set, and is the identity on a set without points.
+* `Finsupp.signReversal_trans_signReversal`: sign reversals compose by symmetric difference of
+  their sets.
 -/
 
 public section
@@ -170,12 +174,33 @@ theorem signReversal_trans_self :
 theorem support_signReversal (c : α →₀ A) : (signReversal R S c).support = c.support :=
   support_signEquiv c
 
+/-- The sign reversal depends only on the points of the set: sign reversals on sets with the same
+points agree, whatever their decidability instances. -/
+theorem signReversal_congr {T : Set α} [DecidablePred (· ∈ T)] (h : ∀ p, p ∈ S ↔ p ∈ T) :
+    signReversal (A := A) R S = signReversal R T :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp [h]
+
+/-- The sign reversal on a set without points is the identity. -/
+theorem signReversal_eq_refl (h : ∀ p, p ∉ S) :
+    signReversal R S = LinearEquiv.refl R (α →₀ A) :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp [h]
+
+/-- **Sign reversals compose by symmetric difference**: the sign reversal on `S` followed by that
+on `T` is the sign reversal on a set `U` whose points are those lying in exactly one of `S` and
+`T`. -/
+theorem signReversal_trans_signReversal {T U : Set α} [DecidablePred (· ∈ T)]
+    [DecidablePred (· ∈ U)] (h : ∀ p, p ∈ U ↔ Xor (p ∈ S) (p ∈ T)) :
+    (signReversal (A := A) R S).trans (signReversal R T) = signReversal R U :=
+  LinearEquiv.ext fun c ↦ ext fun q ↦ by
+    rw [LinearEquiv.trans_apply, signReversal_apply, signReversal_apply, signReversal_apply]
+    by_cases hS : q ∈ S <;> by_cases hT : q ∈ T <;> simp [hS, hT, h]
+
 variable (R) in
 /-- The sign reversal on the empty set is the identity. -/
 @[simp]
 theorem signReversal_empty [DecidablePred (· ∈ (∅ : Set α))] :
     signReversal R (∅ : Set α) = LinearEquiv.refl R (α →₀ A) :=
-  LinearEquiv.ext fun c ↦ ext fun q ↦ by simp
+  signReversal_eq_refl Set.notMem_empty
 
 end SignReversal
 

@@ -46,8 +46,14 @@ smooth when `C` is constant along the fibres of a collar projection near the bou
 * `TauCeti.SchottkyDouble.contMDiff_doubleAlongSwap`: the lifted involution is real `C^n` on the
   total space of the doubled bundle, with no regularity hypothesis on `C`.
 
-Not treated here: that every smooth bundle pair is isomorphic to one constant along a collar
-projection, and independence of that choice up to isomorphism.
+If `M` is Hausdorff (`T2Space`) and second countable (`SecondCountableTopology`) with compact
+boundary, every bundle pair `(C, F)` with real `C^n` transitions is isomorphic, by an isomorphism
+with real `C^n` chart operators in both directions which commutes with conjugation over the
+boundary, to a bundle pair with real `C^n` transitions and smooth doubled transitions, real `C^n`
+on the Schottky double
+(`TauCeti.SchottkyDouble.exists_iso_contMDiffOn_coordChange_doubledBundleCore`, in
+`TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.CollarForm`). Not treated
+here: independence of the doubled bundle of the choices up to isomorphism.
 
 ## References
 
