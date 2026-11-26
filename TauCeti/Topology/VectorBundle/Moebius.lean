@@ -99,6 +99,13 @@ theorem im_ne_zero_of_mem_moebiusBaseSet {i j : Bool} (hij : i ≠ j) {z : Circl
     (hi : z ∈ moebiusBaseSet i) (hj : z ∈ moebiusBaseSet j) : (z : ℂ).im ≠ 0 := fun h ↦ by
   rcases (Circle.im_coe_eq_zero_iff z).1 h with rfl | rfl <;> cases i <;> cases j <;> simp_all
 
+/-- A point off the real axis lies in both chart domains of the Möbius line bundle. -/
+theorem mem_moebiusBaseSet_of_im_ne_zero {z : Circle} (hz : (z : ℂ).im ≠ 0) (i : Bool) :
+    z ∈ moebiusBaseSet i := by
+  rw [mem_moebiusBaseSet]
+  intro h
+  cases i <;> simp_all
+
 /-- The Möbius line bundle over the circle, glued from the trivial lines over the circle minus `1`
 (chart `false`) and minus `-1` (chart `true`) by the transition `TauCeti.moebiusSign`: the
 identity on the upper half-circle and `-1` on the lower one. -/
@@ -209,19 +216,20 @@ theorem isEmpty_vectorBundleOrientation_moebiusCore :
   let q : Circle := Circle.exp (-(π / 2))
   have hp : 0 < (p : ℂ).im := by simp [p, Circle.coe_exp]
   have hq : (q : ℂ).im < 0 := by simp [q, Circle.coe_exp]
-  have hmem {z : Circle} (hz : (z : ℂ).im ≠ 0) (i : Bool) : z ∈ moebiusBaseSet i := by
-    intro h
-    cases i <;> simp_all
   have : MemTrivializationAtlas (moebiusCore.localTriv false) := ⟨⟨false, rfl⟩⟩
   have : MemTrivializationAtlas (moebiusCore.localTriv true) := ⟨⟨true, rfl⟩⟩
   -- The coordinate change from the chart `true` to the chart `false` is `1` at `p` and `-1` at `q`.
   refine VectorBundleOrientation.isEmpty_of_det_coordChangeL_pos_of_neg hι
     (moebiusCore.localTriv true) (moebiusCore.localTriv false) (isPreconnected_moebiusBaseSet true)
-    (isPreconnected_moebiusBaseSet false) le_rfl le_rfl (hmem hp.ne' true) (hmem hp.ne' false)
-    (hmem hq.ne true) (hmem hq.ne false) ?_ ?_
-  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hp.ne' true) (hmem hp.ne' false)]
+    (isPreconnected_moebiusBaseSet false) le_rfl le_rfl
+    (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true) (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false)
+    (mem_moebiusBaseSet_of_im_ne_zero hq.ne true) (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)
+    ?_ ?_
+  · rw [moebiusCore.det_coordChangeL_localTriv (mem_moebiusBaseSet_of_im_ne_zero hp.ne' true)
+      (mem_moebiusBaseSet_of_im_ne_zero hp.ne' false)]
     simp [moebiusSign_of_pos hp]
-  · rw [moebiusCore.det_coordChangeL_localTriv (hmem hq.ne true) (hmem hq.ne false)]
+  · rw [moebiusCore.det_coordChangeL_localTriv (mem_moebiusBaseSet_of_im_ne_zero hq.ne true)
+      (mem_moebiusBaseSet_of_im_ne_zero hq.ne false)]
     simp [moebiusSign_of_neg hq]
 
 end TauCeti
