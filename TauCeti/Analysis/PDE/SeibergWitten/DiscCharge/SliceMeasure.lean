@@ -104,6 +104,14 @@ theorem sliceDensity_def (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] �
     sliceDensity χ b α σ w =
       (cutoffCurrent χ b α (σ w)).compContinuousLinearMap (fderiv ℝ σ w) ![1, I] := (rfl)
 
+/-- The slice density vanishes wherever the disc meets a zero of the cutoff current: it is
+supported in the preimage of the support of `Θ`. -/
+theorem support_sliceDensity_subset (χ : ℝ → ℝ) (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
+    (σ : ℂ → E) :
+    Function.support (sliceDensity χ b α σ) ⊆ σ ⁻¹' Function.support (cutoffCurrent χ b α) := by
+  intro w hw hΘ
+  simp [Function.mem_support, sliceDensity_def, hΘ] at hw
+
 /-- The slice density of a `C²` pair on a `C²` disc is continuous, for a `C¹` cutoff vanishing
 near `0`. -/
 theorem continuous_sliceDensity (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b)
