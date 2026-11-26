@@ -30,8 +30,9 @@ is therefore the internal direct sum of its residue pieces, as a module over the
 ring, and the supported product is additive in residues. When `c₁` vanishes on spheres the
 grading itself is constant on orbits (`TauCeti.Floer.vadd_eq_of_chern_eq_zero`), which gives the
 completed integer grading of that case. Residues still determine parity, since every degree of
-`Γ` is even (`TauCeti.Floer.PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`); thus Koszul
-signs `(-1)^(ab)` are defined on residue pieces.
+`Γ` is even (`TauCeti.Floer.PeriodGroup.negOnePow_eq_negOnePow_of_quotientMk_eq`,
+`TauCeti.Floer.negOnePowCast_cochain_eq_ref`); thus Koszul and readout signs `(-1)^(n - μ)` are
+defined on orbits and residue pieces.
 
 In the opposite case, when every spherical class of vanishing first Chern number has vanishing
 area (for instance for a spherically monotone target), `2 c₁` is injective on `Γ`, so each orbit
@@ -145,6 +146,14 @@ theorem even_cochain_vadd_sub (n : ℤ) (i : ι) (γ : PeriodGroup ω c) (D : P 
   rw [hμ, show n - (PeriodGroup.degree ω c γ + μ ⟨i, D⟩) - (n - μ ⟨i, D⟩) =
     -PeriodGroup.degree ω c γ by ring]
   exact (PeriodGroup.even_degree ω c γ).neg
+
+/-- **Orbit invariance of the cochain sign.** Recapping shifts `μ` by `2 c₁(γ)`, so
+`(-1)^(n - μ(i, D))` equals `(-1)^(n - μ(i, r i))` at any reference cap `r i`. -/
+theorem negOnePowCast_cochain_eq_ref {R : Type*} [Ring R] (r : ∀ i, P i) (n : ℤ) (i : ι)
+    (D : P i) :
+    negOnePowCast R (n - μ ⟨i, D⟩) = negOnePowCast R (n - μ ⟨i, r i⟩) :=
+  negOnePowCast_eq_of_even_sub
+    (by simpa only [vsub_vadd] using even_cochain_vadd_sub hμ n i (D -ᵥ r i) (r i))
 
 /-- If the first Chern number vanishes on spherical classes, recapping does not change the
 grading of a generator. Hence the integer grading is constant on each orbit, and the completed

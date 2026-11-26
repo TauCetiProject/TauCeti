@@ -45,9 +45,7 @@ modules directly from boundary identities of count functionals.
 
 ## Main definitions
 
-* `TauCeti.NovikovModule.functionalSew`, `TauCeti.NovikovModule.evalFunctional`,
-  `TauCeti.NovikovModule.combinationReadout`: coevaluation sewing, right evaluation, and no-input
-  combination readout.
+* `TauCeti.NovikovModule.functionalSew`: coevaluation sewing of count functionals.
 * `TauCeti.NovikovModule.functionalSewCapLeft`, `TauCeti.NovikovModule.functionalSewCapRight`,
   `TauCeti.NovikovModule.functionalSewProdLeft`, `TauCeti.NovikovModule.functionalSewProdRight`,
   `TauCeti.NovikovModule.functionalSewPair`: Koszul-braided cap, product, and input-pair sewings.
@@ -87,13 +85,6 @@ private theorem negOnePowCast_mul_finsum {R α : Type*} [CommRing R] (k : ℤ) (
     negOnePowCast R k * ∑ᶠ x, f x = ∑ᶠ x, negOnePowCast R k * f x :=
   (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (R := R) k)).mul_finsum f
 
-private theorem eq_negOnePowCast_mul_kernelReadout {R α β : Type*} [CommRing R] {d₀ : β → ℤ}
-    {f g : α → β → R} {x : α} {q : β} {k : ℤ}
-    (h : kernelReadout d₀ f x q = negOnePowCast R k * g x q) :
-    f x q = negOnePowCast R k * kernelReadout d₀ g x q := by
-  rw [← kernelReadout_kernelReadout d₀ f, kernelReadout_apply, h, kernelReadout_apply]
-  ring
-
 section Sewing
 
 variable {R S S₁ S₀ : Type*} [CommRing R]
@@ -112,14 +103,6 @@ theorem functionalSew_eq_kernelComp_kernelReadout (d₁ : S₁ → ℤ) (φ : S 
     (ψ : S₁ → S₀ → R) :
     functionalSew d₁ φ ψ = kernelComp (kernelReadout d₁ φ) ψ := by
   funext x q; simp only [functionalSew_apply, kernelComp_apply, kernelReadout_apply]
-
-/-- Operator readout at the output commutes with precomposition by any input kernel. -/
-@[simp]
-theorem kernelComp_kernelReadout_right (d₀ : S₀ → ℤ) (t : S → S₁ → R) (s : S₁ → S₀ → R) :
-    kernelComp t (kernelReadout d₀ s) = kernelReadout d₀ (kernelComp t s) := by
-  funext x q
-  rw [kernelComp_apply, kernelReadout_apply, kernelComp_apply, negOnePowCast_mul_finsum]
-  exact finsum_congr fun p => by rw [kernelReadout_apply]; ring
 
 @[simp]
 theorem functionalSew_zero_left (d₁ : S₁ → ℤ) (ψ : S₁ → S₀ → R) :
@@ -154,24 +137,6 @@ theorem kernelReadout_functionalSew (d₁ : S₁ → ℤ) (d₀ : S₀ → ℤ) 
       kernelComp (kernelReadout d₁ φ) (kernelReadout d₀ ψ) := by
   rw [functionalSew_eq_kernelComp_kernelReadout, ← kernelComp_kernelReadout_right]
 
-section EvalFunctional
-
-/-- **The right-evaluation functional** `γ_min : C ⊗ C^∨ → R`, taking value `(-1)^(d p)` on the
-diagonal `p = q` and `0` elsewhere, with identity operator readout and two-sided snake laws. -/
-def evalFunctional [DecidableEq S] (d : S → ℤ) (p q : S) : R :=
-  if p = q then negOnePowCast R (d p) else 0
-
-/-- A value of the right-evaluation functional. -/
-theorem evalFunctional_apply [DecidableEq S] (d : S → ℤ) (p q : S) :
-    evalFunctional d p q = if p = q then negOnePowCast R (d p) else 0 := (rfl)
-
-/-- The operator readout of the right-evaluation functional is the identity kernel. -/
-@[simp]
-theorem kernelReadout_evalFunctional [DecidableEq S] (d : S → ℤ) :
-    kernelReadout d (evalFunctional (R := R) d) = fun p q => if p = q then 1 else 0 := by
-  funext p q
-  obtain rfl | hpq := eq_or_ne p q <;> simp [kernelReadout_apply, evalFunctional_apply, *]
-
 /-- **Left snake identity:** sewing `evalFunctional` on the left of `ψ` returns `ψ`. -/
 @[simp]
 theorem functionalSew_evalFunctional_left [DecidableEq S₁] (d₁ : S₁ → ℤ) (ψ : S₁ → S₀ → R) :
@@ -188,82 +153,6 @@ theorem functionalSew_evalFunctional_right [DecidableEq S₀] (d₀ : S₀ → �
   rw [functionalSew_apply, finsum_eq_single _ q fun r hr => by simp [evalFunctional_apply, hr]]
   simp only [evalFunctional_apply, ↓reduceIte]
   linear_combination φ x q * negOnePowCast_mul_self (R := R) (d₀ q)
-
-/-- **Differential compatibility:** `evalFunctional` is closed under `functionalBoundary`. -/
-@[simp]
-theorem functionalBoundary_evalFunctional [DecidableEq S] (d : S → ℤ) (δ : S → S → R) :
-    functionalBoundary d d δ δ (evalFunctional d) = 0 := by
-  funext p q
-  rw [functionalBoundary_apply, kernelComp_apply, kernelComp_apply,
-    finsum_eq_single _ q fun r hr => by simp [evalFunctional_apply, hr],
-    finsum_eq_single _ p fun r hr => by simp [evalFunctional_apply, hr.symm]]
-  simp only [evalFunctional_apply, ↓reduceIte, negOnePowCast_add, Pi.zero_apply]
-  linear_combination (-(negOnePowCast R (d q) * δ p q)) * negOnePowCast_mul_self (R := R) (d p)
-
-end EvalFunctional
-
-/-- **Associativity of kernel composition** at `(x, q)` under finite joint intermediate support. -/
-theorem kernelComp_assoc {S₂ : Type*} {m : S → S₁ → R} {m' : S₁ → S₂ → R}
-    {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
-    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
-    kernelComp (kernelComp m m') m'' x q = kernelComp m (kernelComp m' m'') x q := by
-  have h₁₂₃ : HasFiniteSupport (uncurry fun p₁ p₂ => m x p₁ * m' p₁ p₂ * m'' p₂ q) :=
-    hf.subset fun r hr => ⟨left_ne_zero_of_mul (left_ne_zero_of_mul hr),
-      right_ne_zero_of_mul (left_ne_zero_of_mul hr), right_ne_zero_of_mul hr⟩
-  calc kernelComp (kernelComp m m') m'' x q
-      = ∑ᶠ p₂, ∑ᶠ p₁, m x p₁ * m' p₁ p₂ * m'' p₂ q := by
-        rw [kernelComp_apply]
-        refine finsum_congr fun p₂ => ?_
-        by_cases hp₂ : m'' p₂ q = 0
-        · simp [hp₂]
-        · rw [kernelComp_apply, finsum_mul' _ _
-            ((hf.preimage (fun a _ b _ h => congrArg Prod.fst h : Set.InjOn (·, p₂) _)).subset
-              fun p₁ hp₁ => ⟨left_ne_zero_of_mul hp₁, right_ne_zero_of_mul hp₁, hp₂⟩)]
-    _ = ∑ᶠ p₁, ∑ᶠ p₂, m x p₁ * m' p₁ p₂ * m'' p₂ q := (finsum_comm h₁₂₃).symm
-    _ = kernelComp m (kernelComp m' m'') x q := by
-        rw [kernelComp_apply]
-        refine finsum_congr fun p₁ => ?_
-        by_cases hp₁ : m x p₁ = 0
-        · simp [hp₁]
-        · rw [kernelComp_apply, mul_finsum' _ _
-            ((hf.preimage (Prod.mk_right_injective p₁).injOn).subset
-              fun p₂ hp₂ => ⟨hp₁, left_ne_zero_of_mul hp₂, right_ne_zero_of_mul hp₂⟩)]
-          exact finsum_congr fun p₂ => mul_assoc _ _ _
-
-private theorem finite_support_kernelComp_left {S₂ : Type*} {m : S → S₁ → R}
-    {m' : S₁ → S₂ → R} {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
-    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
-    (support fun p₂ => kernelComp m m' x p₂ * m'' p₂ q).Finite :=
-  (hf.image Prod.snd).subset fun p₂ hp₂ => by
-    obtain ⟨p₁, hp₁⟩ := not_forall.mp (mt finsum_eq_zero_of_forall_eq_zero
-      (kernelComp_apply m m' x p₂ ▸ left_ne_zero_of_mul hp₂))
-    exact ⟨(p₁, p₂), ⟨left_ne_zero_of_mul hp₁, right_ne_zero_of_mul hp₁,
-      right_ne_zero_of_mul hp₂⟩, rfl⟩
-
-private theorem finite_support_kernelComp_right {S₂ : Type*} {m : S → S₁ → R}
-    {m' : S₁ → S₂ → R} {m'' : S₂ → S₀ → R} {x : S} {q : S₀}
-    (hf : {r : S₁ × S₂ | m x r.1 ≠ 0 ∧ m' r.1 r.2 ≠ 0 ∧ m'' r.2 q ≠ 0}.Finite) :
-    (support fun p₁ => m x p₁ * kernelComp m' m'' p₁ q).Finite :=
-  (hf.image Prod.fst).subset fun p₁ hp₁ => by
-    obtain ⟨p₂, hp₂⟩ := not_forall.mp (mt finsum_eq_zero_of_forall_eq_zero
-      (kernelComp_apply m' m'' p₁ q ▸ right_ne_zero_of_mul hp₁))
-    exact ⟨(p₁, p₂), ⟨left_ne_zero_of_mul hp₁, left_ne_zero_of_mul hp₂,
-      right_ne_zero_of_mul hp₂⟩, rfl⟩
-
-private theorem kernelReadout_functionalBoundary_of_deg {d : S → ℤ} {d₁ : S₁ → ℤ}
-    {δ : S → S → R} {δ₁ : S₁ → S₁ → R} {φ : S → S₁ → R} {j : ℤ}
-    (ht_deg : ∀ y p, kernelReadout d₁ φ y p ≠ 0 → d₁ p = d y + j) (x : S) (p : S₁) :
-    kernelReadout d₁ (functionalBoundary d d₁ δ δ₁ φ) x p =
-      kernelComp δ (kernelReadout d₁ φ) x p -
-        negOnePowCast R j * kernelComp (kernelReadout d₁ φ) δ₁ x p := by
-  have hb := functionalBoundary_kernelReadout (δ := δ) (δ₀ := δ₁) ht_deg x p
-  rw [kernelReadout_kernelReadout d₁ φ] at hb
-  rw [kernelReadout_apply, hb, kernelReadout_apply, negOnePowCast_add, negOnePowCast_one]
-  linear_combination
-    (-(negOnePowCast R j * kernelComp (kernelReadout d₁ φ) δ₁ x p) +
-        negOnePowCast R j * negOnePowCast R j * kernelComp δ (kernelReadout d₁ φ) x p) *
-      negOnePowCast_mul_self (R := R) (d₁ p) +
-    kernelComp δ (kernelReadout d₁ φ) x p * negOnePowCast_mul_self (R := R) j
 
 /-- **The Leibniz rule for coevaluation sewing.** When `φ` has operator degree `j` and only
 finitely many broken configurations occur at the input, sewn neck, and output of `(x, q)`, the
@@ -295,7 +184,7 @@ theorem functionalBoundary_functionalSew {d : S → ℤ} {d₁ : S₁ → ℤ} {
       kernelComp_apply, negOnePowCast_mul_finsum, ← finsum_sub_distrib
         (finite_support_kernelComp_left h_in') ((finite_support_kernelComp_left h_neck').subset
           fun p => mt fun h => by dsimp only at h ⊢; rw [h, mul_zero])]
-    exact finsum_congr fun p => by rw [kernelReadout_functionalBoundary_of_deg ht_deg x p]; ring
+    exact finsum_congr fun p => by rw [kernelReadout_functionalBoundary_of_deg hφ x p]; ring
   have hs₂ : negOnePowCast R j * functionalSew d₁ φ (functionalBoundary d₁ d₀ δ₁ δ₀ ψ) x q =
       negOnePowCast R j * kernelComp t (kernelComp δ₁ ψ) x q -
         negOnePowCast R (d x + d₀ q) * kernelComp t (kernelComp ψ δ₀) x q := by
@@ -322,70 +211,6 @@ end Sewing
 section Combination
 
 variable {R S₁ S₂ S₀ : Type*} [CommRing R]
-
-/-- **Combination readout of a no-input cap functional.** Multiplying `ε : S₀ → R` at `q` by
-`(-1)^(d₀ q)` identifies cap functionals on `C₀^∨` with combinations in `C₀`. -/
-def combinationReadout (d₀ : S₀ → ℤ) (ε : S₀ → R) (q : S₀) : R :=
-  negOnePowCast R (d₀ q) * ε q
-
-/-- A coefficient of the combination readout of a cap functional. -/
-theorem combinationReadout_apply (d₀ : S₀ → ℤ) (ε : S₀ → R) (q : S₀) :
-    combinationReadout d₀ ε q = negOnePowCast R (d₀ q) * ε q := (rfl)
-
-/-- Combination readout is an involution. -/
-@[simp]
-theorem combinationReadout_combinationReadout (d₀ : S₀ → ℤ) (ε : S₀ → R) :
-    combinationReadout d₀ (combinationReadout d₀ ε) = ε := by
-  funext q; simp [combinationReadout_apply, ← mul_assoc]
-
-@[simp]
-theorem combinationReadout_zero (d₀ : S₀ → ℤ) :
-    combinationReadout (R := R) d₀ 0 = 0 := by funext q; simp [combinationReadout_apply]
-
-@[simp]
-theorem combinationReadout_add (d₀ : S₀ → ℤ) (ε ε' : S₀ → R) :
-    combinationReadout d₀ (ε + ε') = combinationReadout d₀ ε + combinationReadout d₀ ε' := by
-  funext q; simp [combinationReadout_apply, mul_add]
-
-@[simp]
-theorem combinationReadout_neg (d₀ : S₀ → ℤ) (ε : S₀ → R) :
-    combinationReadout d₀ (-ε) = -combinationReadout d₀ ε := by
-  funext q; simp [combinationReadout_apply]
-
-@[simp]
-theorem combinationReadout_sub (d₀ : S₀ → ℤ) (ε ε' : S₀ → R) :
-    combinationReadout d₀ (ε - ε') = combinationReadout d₀ ε - combinationReadout d₀ ε' := by
-  funext q; simp [combinationReadout_apply, mul_sub]
-
-@[simp]
-theorem combinationReadout_smul (d₀ : S₀ → ℤ) (c : R) (ε : S₀ → R) :
-    combinationReadout d₀ (c • ε) = c • combinationReadout d₀ ε := by
-  funext q; simp only [combinationReadout_apply, Pi.smul_apply, smul_eq_mul]; ring
-
-@[simp]
-theorem combinationReadout_inj {d₀ : S₀ → ℤ} {ε ε' : S₀ → R} :
-    combinationReadout d₀ ε = combinationReadout d₀ ε' ↔ ε = ε' :=
-  ⟨fun h => by simpa using congrArg (combinationReadout d₀) h, fun h => h ▸ rfl⟩
-
-/-- **Closed cap functionals give cocycles** for combinations of constant degree parity `j`. -/
-theorem functionalBoundary_combinationReadout_eq_zero_iff {d₀ : S₀ → ℤ} {δ₀ : S₀ → S₀ → R}
-    {e : S₀ → R} {j : ℤ} (he : ∀ p, e p ≠ 0 → Even (d₀ p - j)) (q : S₀) :
-    functionalBoundary (fun _ : Unit => 0) d₀ 0 δ₀ (fun _ => combinationReadout d₀ e) () q = 0 ↔
-      ∑ᶠ p, e p * δ₀ p q = 0 := by
-  have hcomp : kernelComp (fun _ : Unit => combinationReadout d₀ e) δ₀ () q =
-      negOnePowCast R j * ∑ᶠ p, e p * δ₀ p q := by
-    rw [kernelComp_apply, negOnePowCast_mul_finsum]
-    refine finsum_congr fun p => ?_
-    by_cases hp : e p = 0
-    · simp [combinationReadout_apply, hp]
-    · have hd : d₀ p = (d₀ p - j) + j := by ring
-      rw [combinationReadout_apply, hd, negOnePowCast_add, negOnePowCast_even (he p hp), one_mul,
-        mul_assoc]
-  rw [functionalBoundary_apply, kernelComp_apply]
-  simp only [Pi.zero_apply, zero_mul, finsum_zero, zero_add, zero_sub, hcomp, neg_eq_zero]
-  refine ⟨fun h => ?_, fun h => by rw [h, mul_zero, mul_zero]⟩
-  simpa only [← mul_assoc, negOnePowCast_mul_self, one_mul, mul_zero] using
-    congrArg (fun x => negOnePowCast R j * (negOnePowCast R (d₀ q) * x)) h
 
 /-- **Left cap sewing into a product functional**, contracting adjacent factors `C₁^∨ ⊗ C₁`. -/
 def functionalSewCapLeft (d₁ : S₁ → ℤ) (ε : S₁ → R) (φ : S₁ × S₂ → S₀ → R) (p₂ : S₂) (p₀ : S₀) :
@@ -622,34 +447,6 @@ theorem functionalSewProdRight_kernelReadout_of_even {d₁ : S₁ → ℤ} {d₂
   funext q p₀
   simpa using functionalSewProdRight_kernelReadout_of_even_sub (j := 0)
     (fun p₂ p₃ u hu => by convert (hm p₂ p₃ u hu).neg using 1; ring) m' q p₀
-
-/-- **Composing the Koszul differential of `(C₁ ⊗ C₂) ⊗ C₃` with a kernel** expands to the three
-signed single-input breaking sums when each slice has finite support. -/
-theorem kernelComp_tripleTensorDifferential [DecidableEq S₁] [DecidableEq S₂] [DecidableEq S₃]
-    {d₁ : S₁ → ℤ} {d₂ : S₂ → ℤ} {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R} {δ₃ : S₃ → S₃ → R}
-    (k : (S₁ × S₂) × S₃ → S₀ → R) (p₁ : S₁) (p₂ : S₂) (p₃ : S₃) (p₀ : S₀)
-    (h₁ : (support fun q₁ => δ₁ p₁ q₁ * k ((q₁, p₂), p₃) p₀).Finite)
-    (h₂ : (support fun q₂ => δ₂ p₂ q₂ * k ((p₁, q₂), p₃) p₀).Finite)
-    (h₃ : (support fun q₃ => δ₃ p₃ q₃ * k ((p₁, p₂), q₃) p₀).Finite) :
-    kernelComp (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2)
-        (tensorDifferential d₁ δ₁ δ₂) δ₃) k ((p₁, p₂), p₃) p₀ =
-      kernelComp δ₁ (fun q₁ => k ((q₁, p₂), p₃)) p₁ p₀ +
-        negOnePowCast R (d₁ p₁) * kernelComp δ₂ (fun q₂ => k ((p₁, q₂), p₃)) p₂ p₀ +
-        negOnePowCast R (d₁ p₁ + d₂ p₂) * kernelComp δ₃ (fun q₃ => k ((p₁, p₂), q₃)) p₃ p₀ := by
-  have h₁₂ : (support fun q₁₂ : S₁ × S₂ =>
-      tensorDifferential d₁ δ₁ δ₂ (p₁, p₂) q₁₂ * k (q₁₂, p₃) p₀).Finite := by
-    refine ((h₁.image fun q₁ => (q₁, p₂)).union (h₂.image fun q₂ => (p₁, q₂))).subset
-      fun ⟨q₁, q₂⟩ hq => ?_
-    rw [mem_support, tensorDifferential_apply, add_mul] at hq
-    by_cases he : δ₁ p₁ q₁ * (if p₂ = q₂ then 1 else 0) * k ((q₁, q₂), p₃) p₀ = 0
-    · rw [he, zero_add] at hq
-      obtain rfl : p₁ = q₁ := by by_contra hne; simp [hne] at hq
-      exact Set.mem_union_right _ ⟨q₂, by simpa [mul_assoc] using hq, rfl⟩
-    · obtain rfl : p₂ = q₂ := by by_contra hne; simp [hne] at he
-      exact Set.mem_union_left _ ⟨q₁, by simpa using he, rfl⟩
-  rw [kernelComp_tensorDifferential k (p₁, p₂) p₃ p₀ h₁₂ h₃,
-    kernelComp_tensorDifferential (fun q₁₂ => k (q₁₂, p₃)) p₁ p₂ p₀ h₁ h₂,
-    negOnePowCast_eq_intCast, negOnePowCast_eq_intCast]
 
 /-- **The associativity kernel homotopy** from a four-punctured-sphere count-functional boundary. -/
 theorem sub_eq_kernelComp_add_kernelComp_of_functionalBoundary_assoc

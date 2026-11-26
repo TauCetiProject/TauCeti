@@ -60,8 +60,9 @@ continuity, are in `TauCeti.RingTheory.NovikovModule.Tensor.Topology`.
   product is determined by its values on tensor products of point masses.
 * `TauCeti.NovikovModule.kernelMap_kernelTensor_tensor`: kernel maps act factorwise on tensor
   products.
-* `TauCeti.NovikovModule.kernelComp_tensorDifferential`: composing the tensor differential with a
-  kernel out of the tensor product gives the Koszul sum of the two composites.
+* `TauCeti.NovikovModule.kernelComp_tensorDifferential`,
+  `TauCeti.NovikovModule.kernelComp_tripleTensorDifferential`: composing the double or triple
+  tensor differential with a kernel expands to the Koszul sum of single-factor composites.
 * `TauCeti.NovikovModule.tensor_mem_gradeBy`,
   `TauCeti.NovikovModule.degree_eq_of_tensorDifferential_ne_zero`: the tensor product adds degrees,
   and the tensor differential raises the total degree by one.
@@ -353,6 +354,34 @@ theorem kernelComp_tensorDifferential (m : S₁ × S₂ → S₀ → R) (p₁ : 
   refine finsum_congr fun q => ?_
   simp only [tensorDifferential_apply, f₁, f₂]
   ring
+
+/-- **Composing the Koszul differential of `(C₁ ⊗ C₂) ⊗ C₃` with a kernel** expands to the three
+signed single-input breaking sums when each slice has finite support. -/
+theorem kernelComp_tripleTensorDifferential {S₃ : Type*} [DecidableEq S₃]
+    {d₂ : S₂ → ℤ} {δ₃ : S₃ → S₃ → R}
+    (k : (S₁ × S₂) × S₃ → S₀ → R) (p₁ : S₁) (p₂ : S₂) (p₃ : S₃) (p₀ : S₀)
+    (h₁ : (support fun q₁ => δ₁ p₁ q₁ * k ((q₁, p₂), p₃) p₀).Finite)
+    (h₂ : (support fun q₂ => δ₂ p₂ q₂ * k ((p₁, q₂), p₃) p₀).Finite)
+    (h₃ : (support fun q₃ => δ₃ p₃ q₃ * k ((p₁, p₂), q₃) p₀).Finite) :
+    kernelComp (tensorDifferential (fun q : S₁ × S₂ => d₁ q.1 + d₂ q.2)
+        (tensorDifferential d₁ δ₁ δ₂) δ₃) k ((p₁, p₂), p₃) p₀ =
+      kernelComp δ₁ (fun q₁ => k ((q₁, p₂), p₃)) p₁ p₀ +
+        negOnePowCast R (d₁ p₁) * kernelComp δ₂ (fun q₂ => k ((p₁, q₂), p₃)) p₂ p₀ +
+        negOnePowCast R (d₁ p₁ + d₂ p₂) * kernelComp δ₃ (fun q₃ => k ((p₁, p₂), q₃)) p₃ p₀ := by
+  have h₁₂ : (support fun q₁₂ : S₁ × S₂ =>
+      tensorDifferential d₁ δ₁ δ₂ (p₁, p₂) q₁₂ * k (q₁₂, p₃) p₀).Finite := by
+    refine ((h₁.image fun q₁ => (q₁, p₂)).union (h₂.image fun q₂ => (p₁, q₂))).subset
+      fun ⟨q₁, q₂⟩ hq => ?_
+    rw [mem_support, tensorDifferential_apply, add_mul] at hq
+    by_cases he : δ₁ p₁ q₁ * (if p₂ = q₂ then 1 else 0) * k ((q₁, q₂), p₃) p₀ = 0
+    · rw [he, zero_add] at hq
+      obtain rfl : p₁ = q₁ := by by_contra hne; simp [hne] at hq
+      exact Set.mem_union_right _ ⟨q₂, by simpa [mul_assoc] using hq, rfl⟩
+    · obtain rfl : p₂ = q₂ := by by_contra hne; simp [hne] at he
+      exact Set.mem_union_left _ ⟨q₁, by simpa using he, rfl⟩
+  rw [kernelComp_tensorDifferential k (p₁, p₂) p₃ p₀ h₁₂ h₃,
+    kernelComp_tensorDifferential (fun q₁₂ => k (q₁₂, p₃)) p₁ p₂ p₀ h₁ h₂,
+    negOnePowCast_eq_intCast, negOnePowCast_eq_intCast]
 
 omit [DecidableEq S₁] in
 /-- The potential bound of the identity kernel on the second factor. -/
