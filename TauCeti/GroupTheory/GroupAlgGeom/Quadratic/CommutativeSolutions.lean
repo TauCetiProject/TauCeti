@@ -280,8 +280,7 @@ private theorem commute_of_mem_atomVals (hG : IsCommTransitive G)
       simp [R, List.map_ofFn, Function.comp_def]
     -- The squares dropped by the filter are trivial.
     have hf : (R.filter fun b ↦ !p b).map (· ^ 2) = (R.map (· ^ 2)).filter (· != 1) := by
-      rw [List.filter_map]
-      rfl
+      simp [List.filter_map, Function.comp_def, hp, bne]
     rw [← eq_inv_of_mul_eq_one_left (mem_V_sqConjWord_iff.1 hv), atomVals, this, List.prod_append,
       List.prod_append, hf, List.prod_filter_bne_one]
   have hw : w ∈ V (.id G) {sqConjWord x z c d} := by
@@ -692,6 +691,13 @@ private theorem toWord_orientableCoeff_zero_eq_sqConjWord {m : ℕ} {x y : Fin 0
     (orientableCoeff 0 m hm x y z inj c hc d hd).toWord = sqConjWord Fin.elim0 z c d := by
   simp [toWord_def, sqConjWord]
 
+/-- In genus `0` the injectivity hypothesis of `orientableCoeff` gives the injectivity of the
+variables `Sum.elim Fin.elim0 z` of `sqConjWord Fin.elim0 z c d`. -/
+private theorem injective_elim0_of_orientableCoeff_zero {m : ℕ} {x y : Fin 0 → X}
+    {z : Fin m → X} (inj : (Sum.elim (Sum.elim x y) z).Injective) :
+    (Sum.elim (Fin.elim0 : Fin 0 → X) z).Injective :=
+  Sum.elim_injective.2 ⟨isEmptyElim, inj.comp Sum.inr_injective, isEmptyElim⟩
+
 private theorem isCommutative_orientableCoeff_zero_iff {m : ℕ} {x y : Fin 0 → X}
     {z : Fin m → X} {c : Fin m → G} {d : G} {hm : 0 < 0 + m}
     {inj : (Sum.elim (Sum.elim x y) z).Injective} {hc : ∀ j, c j ≠ 1} {hd : d ≠ 1}
@@ -726,7 +732,7 @@ theorem commutativeSystemCentralizer_eq_of_forall_isCommutative_orientableCoeff_
   rw [toWord_orientableCoeff_zero_eq_sqConjWord] at ha hall
   exact centralizer_eq_of_mem_V hG hd ha isEmptyElim
     (conj_mem_centralizer_of_mem_V hG
-      (Sum.elim_injective.2 ⟨isEmptyElim, inj.comp Sum.inr_injective, isEmptyElim⟩) hc
+      (injective_elim0_of_orientableCoeff_zero inj) hc
       (fun v hv ↦ isCommutative_orientableCoeff_zero_iff.1 (hall v hv)) ha)
 
 /-- Let `x₁² ⋯ xₙ² c₁^{z₁} ⋯ c_m^{z_m} d = 1` be a standard equation (`n > 0`, distinct variables,
@@ -761,7 +767,7 @@ theorem V_toWord_orientableCoeff_zero_of_forall_isCommutative (hG : IsCSA G) {m 
   rw [toWord_orientableCoeff_zero_eq_sqConjWord] at ha hall ⊢
   have hb {v : X → G} (hv : v ∈ V (.id G) {sqConjWord Fin.elim0 z c d}) :=
     conj_mem_centralizer_of_mem_V hG.isCommTransitive
-      (Sum.elim_injective.2 ⟨isEmptyElim, inj.comp Sum.inr_injective, isEmptyElim⟩) hc
+      (injective_elim0_of_orientableCoeff_zero inj) hc
       (fun v hv ↦ isCommutative_orientableCoeff_zero_iff.1 (hall v hv)) hv
   refine Set.ext fun v ↦ ⟨fun hv ↦ mem_V_commutativeSystem_of_prod_eq hG hc hd ha isEmptyElim
     (hb ha) isEmptyElim (hb hv) (by simp),
@@ -805,7 +811,7 @@ theorem Rad_toWord_orientableCoeff_zero_of_forall_isCommutative (hG : IsFullyRes
   rw [Rad_def, V_toWord_orientableCoeff_zero_of_forall_isCommutative hG.isCSA hm inj hc hd ha hall,
     ← Rad_def]
   exact Rad_commutativeSystem_eq_normalClosure hG hna
-    (Sum.elim_injective.2 ⟨isEmptyElim, inj.comp Sum.inr_injective, isEmptyElim⟩) hd
+    (injective_elim0_of_orientableCoeff_zero inj) hd
     (commutativeSystemCentralizer_eq_of_forall_isCommutative_orientableCoeff_zero
       hG.isCommTransitive hm inj hc hd ha hall)
 

@@ -316,8 +316,9 @@ theorem CentralizerExt.isDiscriminatedBy_inl_comp_of {G : Type*} [Group G]
     {X : Type*} :
     IsDiscriminatedBy (Monoid.Coprod.inl.comp of : G →* GX (CentralizerExt u n) X) (.id G) := by
   have hK := isFullyResiduallyFree_centralizerExt hG hu (n := n)
-  have hKna : ¬IsMulCommutative (CentralizerExt u n) := fun h ↦ hna ⟨⟨fun g g' ↦
-    of_injective (by rw [map_mul, map_mul]; exact h.is_comm.comm _ _)⟩⟩
+  have hKna : ¬IsMulCommutative (CentralizerExt u n) := fun h ↦ hna <|
+    isMulCommutative_iff.2 fun g g' ↦
+      of_injective (by rw [map_mul, map_mul]; exact isMulCommutative_iff.1 h _ _)
   exact ((GX.isDiscriminatedBy hK.isBP hK.isCSA hKna).comp of).trans
     (isDiscriminatedBy hG.isBP hG.isCSA hu)
 
