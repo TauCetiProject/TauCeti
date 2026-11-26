@@ -18,7 +18,7 @@ import TauCeti.Topology.MetricSpace.Holder
 Let `0 < α < 1`, let `Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary
 (`Set.HasC2HolderBoundary Ω α`), and let
 
-`L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`
+`𝓛 u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`
 
 have coefficients `α`-Hölder and bounded on `Ω`, with `a` uniformly elliptic on `closure Ω`. The
 global estimates of `TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.BoundedDomain` are stated for
@@ -26,25 +26,27 @@ global estimates of `TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.BoundedDom
 a function `φ` that is `C²` near `closure Ω` with `|φ| ≤ P` and `D²φ` `α`-Hölder with constant `Q`
 on `closure Ω`. This is Gilbarg–Trudinger's Theorem 6.6 in full:
 
-`[D²u]_{α; closure Ω} + sup ‖Du‖ + sup ‖D²u‖ ≤ C ([L u]_{α; Ω} + sup |u| + P + Q)`
+`[D²u]_{α; closure Ω} + sup ‖Du‖ + sup ‖D²u‖ ≤ C ([𝓛 u]_{α; Ω} + sup |u| + P + Q)`
 
 (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_eqOn_frontier`), with
 `C` depending only on `Ω`, `α` and the bounds on the coefficients. With `c ≤ 0` the maximum
 principle removes `sup |u|`, and the `C^{2,α}(closure Ω)` norm of `u` is bounded by the
-`C^{0,α}(Ω)` norm of `L u` and the norm `P + Q` of the boundary values
+`C^{0,α}(Ω)` norm of `𝓛 u` and the norm `P + Q` of the boundary values
 (`exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_eqOn_frontier_of_nonpos`). This is
 the a priori estimate of the method of continuity for the Dirichlet problem with `C^{2,α}`
 boundary values (Gilbarg–Trudinger, proof of Theorem 6.8).
 
 The estimates come from the zero-boundary ones applied to `w = u - φ`, which vanishes on `∂Ω` and
-solves `L w = L u - L φ`. What this needs is that `L` is bounded from `C^{2,α}(closure Ω)` to
-`C^{0,α}(Ω)` (`TauCeti.PDE.exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul`): the
+solves `𝓛 w = 𝓛 u - 𝓛 φ` (`TauCeti.PDE.sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub`). What this
+needs is that `𝓛` is bounded from `C^{2,α}(closure Ω)` to `C^{0,α}(Ω)`
+(`TauCeti.PDE.exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul`): the
 interpolation inequalities on `closure Ω` at a fixed scale
 (`TauCeti.exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_mul_add_of_isBounded`) bound
 `‖Dφ‖` and `‖D²φ‖` by a multiple of `P + Q`; on the Lipschitz domain `Ω` bounded functions with
-bounded derivatives are `α`-Hölder (`Set.IsLipschitzDomain.exists_holderOnWith_of_norm_fderiv_le`);
+bounded derivatives are `α`-Hölder
+(`TauCeti.PDE.exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le`);
 and products of bounded Hölder functions are Hölder
-(`TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul`). So `L φ` is `α`-Hölder on
+(`TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul`). So `𝓛 φ` is `α`-Hölder on
 `Ω` and bounded there (`TauCeti.PDE.abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le`), both with
 constant a multiple of `P + Q`.
 
@@ -52,13 +54,15 @@ constant a multiple of `P + Q`.
 
 * `TauCeti.PDE.holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul` and
   `TauCeti.PDE.abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le`: the Hölder constant and the
-  pointwise bound of `L φ` on a set, from those of the coefficients and of `φ`, `Dφ`, `D²φ`.
-* `TauCeti.PDE.exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul`: `‖Dφ‖`, `‖D²φ‖`, the
-  Hölder constant of `L φ` and `sup |L φ|` are bounded by a multiple of `P + Q`.
+  pointwise bound of `𝓛 φ` on a set, from those of the coefficients and of `φ`, `Dφ`, `D²φ`.
+* `TauCeti.PDE.exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul`:
+  `‖Dφ‖`, `‖D²φ‖`, the Hölder constant of `𝓛 φ` and `sup |𝓛 φ|` are bounded by a multiple of
+  `P + Q`.
+* `TauCeti.PDE.sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub`: `𝓛 (u - φ) = 𝓛 u - 𝓛 φ`.
 * `TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_eqOn_frontier`: the
-  global Schauder estimate for `u = φ` on `∂Ω`, in terms of `[L u]_α`, `sup |u|`, `P` and `Q`.
+  global Schauder estimate for `u = φ` on `∂Ω`, in terms of `[𝓛 u]_α`, `sup |u|`, `P` and `Q`.
 * `exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_eqOn_frontier_of_nonpos`, in the
-  `TauCeti.PDE` namespace: for `c ≤ 0`, the bound of `u` in `C^{2,α}(closure Ω)` by `L u` in
+  `TauCeti.PDE` namespace: for `c ≤ 0`, the bound of `u` in `C^{2,α}(closure Ω)` by `𝓛 u` in
   `C^{0,α}(Ω)` and the boundary values.
 
 ## References
@@ -79,7 +83,7 @@ variable {n : ℕ}
 
 local notation "E" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- **The pointwise bound for `L φ`.** If at a point `z` the entries of `a` are bounded by `M`,
+/-- **The pointwise bound for `𝓛 φ`.** If at a point `z` the entries of `a` are bounded by `M`,
 `‖b z‖` and `|c z|` by `B`, and `|φ z|`, `‖Dφ z‖` and `‖D²φ z‖` by `N`, then
 `|∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ| ≤ N ((n + 1)² M + 2 B)` at `z`. -/
 theorem abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le
@@ -105,7 +109,10 @@ theorem abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le
           simpa [iteratedFDeriv_two_apply, Real.norm_eq_abs] using
             (iteratedFDeriv ℝ 2 φ z).norm_apply_orthonormalBasis_le (EuclideanSpace.basisFun _ ℝ)
               i j
-      _ = (n + 1) ^ 2 * M * N := by simp; ring
+      _ = (n + 1) ^ 2 * M * N := by
+        simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        push_cast
+        ring
   have hb1 : |fderiv ℝ φ z (b z)| ≤ N * B := by
     rw [← Real.norm_eq_abs]
     exact ((fderiv ℝ φ z).le_opNorm _).trans (mul_le_mul h1 hb (norm_nonneg _) hN0)
@@ -117,10 +124,10 @@ theorem abs_sum_smul_fderiv_fderiv_add_fderiv_add_mul_le
     _ ≤ _ := by linarith [abs_add_le (∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ φ) z
         (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) (fderiv ℝ φ z (b z))]
 
-/-- **The Hölder bound for `L φ` on a set.** If on a set `s` the entries of `a` are `α`-Hölder
+/-- **The Hölder bound for `𝓛 φ` on a set.** If on a set `s` the entries of `a` are `α`-Hölder
 with constant `L` and bounded by `M`, `b` and `c` are `α`-Hölder with constant `B` and bounded by
 `B`, `φ` and `Dφ` are `α`-Hölder with constant `H`, `D²φ` is `α`-Hölder with constant `Q`, and
-`|φ|`, `‖Dφ‖` and `‖D²φ‖` are bounded by `N`, then `L φ = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ` is
+`|φ|`, `‖Dφ‖` and `‖D²φ‖` are bounded by `N`, then `𝓛 φ = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ` is
 `α`-Hölder on `s` with constant `(n + 1)² (M Q + N L) + 2 B (N + H)`. -/
 theorem holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul {α L M B H Q N : ℝ≥0} {s : Set E}
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c φ : E → ℝ}
@@ -140,40 +147,19 @@ theorem holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul {α L M B H Q N :
     fun z _ => by simp only [Pi.add_apply, add_assoc]).mono_const (le_of_eq ?_)
   ring
 
-/-- On a bounded domain with `C^{2,α}` boundary, a function that is `C²` near `closure Ω` with
-`|φ|`, `‖Dφ‖` and `‖D²φ‖` bounded by `N` there has `φ` and `Dφ` `α`-Hölder on `Ω` with constant
-`C (N + N)`, since `Ω` is a Lipschitz domain. -/
-private theorem exists_holderOnWith_and_holderOnWith_fderiv {α : ℝ≥0} (hα1 : α < 1) {Ω : Set E}
-    (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasC2HolderBoundary α) :
-    ∃ C : ℝ≥0, ∀ {U : Set E} {φ : E → ℝ} {N : ℝ≥0}, IsOpen U → closure Ω ⊆ U →
-      ContDiffOn ℝ 2 φ U → (∀ z ∈ closure Ω, |φ z| ≤ N) →
-      (∀ z ∈ closure Ω, ‖fderiv ℝ φ z‖ ≤ N) → (∀ z ∈ closure Ω, ‖iteratedFDeriv ℝ 2 φ z‖ ≤ N) →
-      HolderOnWith (C * (N + N)) α φ Ω ∧ HolderOnWith (C * (N + N)) α (fderiv ℝ φ) Ω := by
-  obtain ⟨C, hC⟩ := (hbdry.hasLipschitzGraphBoundary.isLipschitzDomain
-    finrank_euclideanSpace_fin).exists_holderOnWith_of_norm_fderiv_le hΩ hα1.le
-  refine ⟨C, fun {U φ N} hU hΩU hφ h0 h1 h2 => ?_⟩
-  have hcd : ∀ z ∈ Ω, ContDiffAt ℝ 2 φ z := fun z hz =>
-    hφ.contDiffAt (hU.mem_nhds (hΩU (subset_closure hz)))
-  constructor
-  · exact hC (fun z hz => (hcd z hz).differentiableAt (by norm_num))
-      (fun z hz => by rw [Real.norm_eq_abs]; exact h0 z (subset_closure hz))
-      fun z hz => h1 z (subset_closure hz)
-  · refine hC (fun z hz => ((hcd z hz).fderiv_right (m := 1) (by norm_num)).differentiableAt
-      (by norm_num)) (fun z hz => h1 z (subset_closure hz)) fun z hz => ?_
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-    exact h2 z (subset_closure hz)
-
-/-- **The operator is bounded from `C^{2,α}` to `C^{0,α}`.** Let `0 < α < 1` and let
-`Ω ⊆ ℝ^{n+1}` be a bounded set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`). Let `L`, `M`
+/-- **The operator is bounded from `C^{2,α}` to `C^{0,α}`.** Let `α ≤ 1` and let `Ω ⊆ ℝ^{n+1}` be
+a bounded set with Lipschitz graph boundary (`Set.HasLipschitzGraphBoundary`), for instance a
+bounded set with `C^{2,α}` boundary (`Set.HasC2HolderBoundary`). Let `L`, `M`
 and `B` be given. Then there is a constant `C` with the following property. Let `a` have entries
 `α`-Hölder with constant `L` and bounded by `M` on `closure Ω`, and let `b` and `c` be `α`-Hölder
 with constant `B` and bounded by `B` on `Ω`. Let `φ` be `C²` on an open set containing
 `closure Ω`, with `|φ| ≤ P` on `closure Ω` and `D²φ` `α`-Hölder with constant `Q` there. Then
 `‖Dφ‖` and `‖D²φ‖` are bounded by `C (P + Q)` on `closure Ω`, and
-`L φ = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ` is `α`-Hölder on `Ω` with constant `C (P + Q)` and bounded
+`𝓛 φ = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼφ + b · ∇φ + c φ` is `α`-Hölder on `Ω` with constant `C (P + Q)` and bounded
 there by `C (P + Q)`. No ellipticity is needed. -/
-theorem exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul {α : ℝ≥0} (hα1 : α < 1)
-    {Ω : Set E} (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasC2HolderBoundary α) (L M B : ℝ≥0) :
+theorem exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul {α : ℝ≥0}
+    (hα1 : α ≤ 1) {Ω : Set E} (hΩ : Bornology.IsBounded Ω) (hbdry : Ω.HasLipschitzGraphBoundary)
+    (L M B : ℝ≥0) :
     ∃ C : ℝ≥0, ∀ {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ},
       (∀ i j, HolderOnWith L α (fun z => a z i j) (closure Ω)) →
       (∀ z ∈ closure Ω, ∀ i j, |a z i j| ≤ M) →
@@ -191,8 +177,8 @@ theorem exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul {α : ℝ≥0} (h�
           (EuclideanSpace.single j 1) + fderiv ℝ φ z (b z) + c z * φ z| ≤ C * (P + Q) := by
   -- `‖Dφ‖, ‖D²φ‖ ≤ A (P + Q)` by interpolation on `closure Ω`.
   obtain ⟨A, hA⟩ := exists_norm_fderiv_le_and_norm_iteratedFDeriv_two_le_mul_add_of_isBounded
-    (F := ℝ) (Set.hasLipschitzGraphBoundary_iff.1 hbdry.hasLipschitzGraphBoundary) hΩ α
-  obtain ⟨C₃, hC₃⟩ := exists_holderOnWith_and_holderOnWith_fderiv hα1 hΩ hbdry
+    (F := ℝ) (Set.hasLipschitzGraphBoundary_iff.1 hbdry) hΩ α
+  obtain ⟨C₃, hC₃⟩ := exists_holderOnWith_and_holderOnWith_fderiv_of_norm_le hα1 hΩ hbdry
   set m : ℝ≥0 := (n + 1 : ℝ≥0) ^ 2
   set D : ℝ≥0 := (1 + A) * (2 * B + 2 * B * (2 * C₃) + m * L) + m * M
   set G : ℝ≥0 := (1 + A) * (m * M + 2 * B)
@@ -235,9 +221,11 @@ theorem exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul {α : ℝ≥0} (h�
     gcongr
     exact_mod_cast (le_add_self : G ≤ A + D + G)
 
-/-- Subtracting the boundary values: for `u` and `φ` that are `C²` near a point `z`, the operator
-`L` applied to `u - φ` at `z` is `L u - L φ`. -/
-private theorem sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub
+/-- **Linearity of the operator under subtraction.** For `u` and `φ` that are `C²` near a point `z`,
+the operator `𝓛 u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u` applied to `u - φ` at `z` is `𝓛 u - 𝓛 φ`. This
+reduces the Dirichlet problem with boundary values `φ` to the one for `w = u - φ`, which vanishes on
+the boundary. -/
+theorem sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub
     {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {c : E → ℝ} {u φ : E → ℝ} {z : E}
     (hu : ContDiffAt ℝ 2 u z) (hφ : ContDiffAt ℝ 2 φ z) :
     ∑ i, ∑ j, a z i j • fderiv ℝ (fderiv ℝ (u - φ)) z (EuclideanSpace.single i 1)
@@ -289,10 +277,10 @@ private theorem holderOnWith_iteratedFDeriv_two_and_norm_le_of_sub {α X' Q : �
 `Λ`, `L`, `M` and `B` be given. Then there is a constant `C` with the following property. Let `a`
 have ellipticity bounds `λ, Λ` at every point of `closure Ω`, and entries `α`-Hölder with constant
 `L` and bounded by `M` on `closure Ω`; let the drift `b` and the potential `c` be `α`-Hölder with
-constant `B` and bounded by `B` on `Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`. Let `u` and `φ` be
+constant `B` and bounded by `B` on `Ω`. Put `𝓛 u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`. Let `u` and `φ` be
 `C²` on an open set containing `closure Ω`, with `u = φ` on the frontier of `Ω`, `|u| ≤ N` and
 `|φ| ≤ P` on `closure Ω`, `D²φ` `α`-Hölder with constant `Q` on `closure Ω`, and `D²u` `α`-Hölder
-there (with any constant). If `L u` is `α`-Hölder on `Ω` with constant `K`, then `D²u` is
+there (with any constant). If `𝓛 u` is `α`-Hölder on `Ω` with constant `K`, then `D²u` is
 `α`-Hölder on `closure Ω` with constant `C (K + N + P + Q)`, and `‖Du‖` and `‖D²u‖` are bounded by
 `C (K + N + P + Q)` on `closure Ω`.
 
@@ -323,13 +311,14 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_eqOn_front
   obtain ⟨C₀, hC₀⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_closure_and_norm_le_of_add_fderiv_add_mul hα hα1 hΩ
       hbdry Lam L M B hlam
-  obtain ⟨C₁, hC₁⟩ := exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul hα1 hΩ hbdry L M B
+  obtain ⟨C₁, hC₁⟩ := exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul
+    hα1.le hΩ hbdry.hasLipschitzGraphBoundary L M B
   refine ⟨C₀ * (1 + C₁) + C₁ + 1, fun {a b c} hEll hEll' hL hM hHb hb hHc hc {U u φ N P Q K V}
     hU hΩU hu hφ hbd hN hP hQ hV hK => ?_⟩
   obtain ⟨hφ1, hφ2, hLφ, -⟩ := hC₁ hL hM hHb hb hHc hc hU hΩU hφ hP hQ
   have hcd (f : E → ℝ) (hf : ContDiffOn ℝ 2 f U) (z : E) (hz : z ∈ closure Ω) :
       ContDiffAt ℝ 2 f z := hf.contDiffAt (hU.mem_nhds (hΩU hz))
-  -- The zero-boundary estimate for `w = u - φ`, with `L w = L u - L φ`.
+  -- The zero-boundary estimate for `w = u - φ`, with `𝓛 w = 𝓛 u - 𝓛 φ`.
   obtain ⟨hw2, hw1, hw2'⟩ := hC₀ (u := u - φ) (N := N + P) (K := K + C₁ * (P + Q))
     hEll hEll' hL hM hHb hb hHc hc hU hΩU (hu.sub hφ) (fun z hz => sub_eq_zero.2 (hbd z hz))
     (fun z hz => (abs_sub _ _).trans (by push_cast; exact add_le_add (hN z hz) (hP z hz)))
@@ -359,17 +348,17 @@ potential.** Let `0 < α < 1` and let `Ω ⊆ ℝ^{n+1}` be a bounded set with `
 `C` with the following property. Let `a` have ellipticity bounds `λ, Λ` at every point of
 `closure Ω`, and entries `α`-Hölder with constant `L` and bounded by `M` on `closure Ω`; let the
 drift `b` and the potential `c` be `α`-Hölder with constant `B` and bounded by `B` on `Ω`, and let
-`c ≤ 0` on `Ω`. Put `L u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`. Let `u` and `φ` be `C²` on an open set
+`c ≤ 0` on `Ω`. Put `𝓛 u = ∑ᵢⱼ aᵢⱼ ∂ᵢⱼu + b · ∇u + c u`. Let `u` and `φ` be `C²` on an open set
 containing `closure Ω`, with `u = φ` on the frontier of `Ω`, `|φ| ≤ P` on `closure Ω`, `D²φ`
 `α`-Hölder with constant `Q` on `closure Ω`, and `D²u` `α`-Hölder there (with any constant). If
-`L u` is `α`-Hölder on `Ω` with constant `K` and bounded there by `F`, then on `closure Ω`
+`𝓛 u` is `α`-Hölder on `Ω` with constant `K` and bounded there by `F`, then on `closure Ω`
 
 * `|u| ≤ C (F + P + Q)`,
 * `D²u` is `α`-Hölder with constant `C (K + F + P + Q)`,
 * `‖Du‖` and `‖D²u‖` are bounded by `C (K + F + P + Q)`.
 
 So the `C^{2,α}(closure Ω)` norm of `u` is bounded by `C` times the sum of the `C^{0,α}(Ω)` norm of
-`L u` and the `C^{2,α}(closure Ω)` norm of the boundary values, with `C` depending only on `Ω`, `α`,
+`𝓛 u` and the `C^{2,α}(closure Ω)` norm of the boundary values, with `C` depending only on `Ω`, `α`,
 `λ`, `Λ`, `L`, `M` and `B`. This is the a priori estimate of the method of continuity for the
 Dirichlet problem with boundary values `φ` (Gilbarg–Trudinger, Theorem 6.6 with `sup |u|` bounded
 by Theorem 3.7, as in the proof of Theorem 6.8). -/
@@ -399,7 +388,8 @@ theorem exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_eqOn_fronti
   obtain ⟨C₀, hC₀⟩ :=
     exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_add_fderiv_add_mul_of_nonpos hα
       hα1 hΩ hbdry Lam L M B hlam
-  obtain ⟨C₁, hC₁⟩ := exists_norm_le_and_holderOnWith_of_add_fderiv_add_mul hα1 hΩ hbdry L M B
+  obtain ⟨C₁, hC₁⟩ := exists_norm_le_and_holderOnWith_sum_smul_fderiv_fderiv_add_fderiv_add_mul
+    hα1.le hΩ hbdry.hasLipschitzGraphBoundary L M B
   refine ⟨C₀ * (1 + 2 * C₁) + C₁ + 1, fun {a b c} hEll hEll' hL hM hHb hb hHc hc hc0
     {U u φ P Q K F V} hU hΩU hu hφ hbd hP hQ hV hK hF => ?_⟩
   obtain ⟨hφ1, hφ2, hLφ, hLφF⟩ := hC₁ hL hM hHb hb hHc hc hU hΩU hφ hP hQ
@@ -407,7 +397,7 @@ theorem exists_abs_le_and_holderOnWith_iteratedFDeriv_two_closure_of_eqOn_fronti
       ContDiffAt ℝ 2 f z := hf.contDiffAt (hU.mem_nhds (hΩU hz))
   have hLw (z : E) (hz : z ∈ Ω) := sum_smul_fderiv_fderiv_add_fderiv_add_mul_sub (a := a) (b := b)
     (c := c) (hcd u hu z (subset_closure hz)) (hcd φ hφ z (subset_closure hz))
-  -- The zero-boundary estimate for `w = u - φ`, with `L w = L u - L φ`.
+  -- The zero-boundary estimate for `w = u - φ`, with `𝓛 w = 𝓛 u - 𝓛 φ`.
   obtain ⟨hw0, hw2, hw1, hw2'⟩ := hC₀ (u := u - φ) (K := K + C₁ * (P + Q))
     (F := F + C₁ * (P + Q)) hEll hEll' hL hM hHb hb hHc hc hc0 hU hΩU (hu.sub hφ)
     (fun z hz => sub_eq_zero.2 (hbd z hz))
