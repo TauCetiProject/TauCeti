@@ -34,6 +34,8 @@ smooth representation `V` gives the morphism `A[G] ⟶ V`, `x ↦ x • v`.
 * `TauCeti.SmoothRep A G`: the full subcategory of `Rep A G` on the smooth representations.
 * `TauCeti.SmoothRep.ι`: the fully faithful inclusion `SmoothRep A G ⥤ Rep A G`.
 * `TauCeti.SmoothRep.of ρ`: a smooth representation `ρ`, bundled as an object of `SmoothRep A G`.
+* `TauCeti.SmoothRep.mkIso e he`: the isomorphism of smooth representations given by an
+  intertwining linear equivalence `e`.
 * `TauCeti.SmoothRep.smoothPart`: the functor `Rep A G ⥤ SmoothRep A G` sending `V` to `V^∞`.
 * `TauCeti.SmoothRep.smoothPartAdjunction`: the adjunction `ι ⊣ smoothPart`, whose counit is the
   inclusion of the smooth vectors.
@@ -96,6 +98,24 @@ abbrev ι : SmoothRep.{w} A G ⥤ Rep.{w} A G :=
 abbrev of {V : Type w} [AddCommGroup V] [Module A V] (ρ : Representation A G V) [IsSmooth ρ] :
     SmoothRep.{w} A G :=
   ⟨Rep.of ρ, ‹_›⟩
+
+/-- The isomorphism of smooth representations given by a linear equivalence of the underlying
+modules that intertwines the actions. -/
+def mkIso {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) : V ≅ W :=
+  ObjectProperty.isoMk _ (Rep.mkIso { toLinearEquiv := e, isIntertwining' := he })
+
+@[simp]
+theorem mkIso_hom_hom_hom_apply {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) (v : V.obj.V) :
+    (mkIso e he).hom.hom.hom v = e v :=
+  rfl
+
+@[simp]
+theorem mkIso_inv_hom_hom_apply {V W : SmoothRep.{w} A G} (e : V.obj.V ≃ₗ[A] W.obj.V)
+    (he : ∀ g, e ∘ₗ V.obj.ρ g = W.obj.ρ g ∘ₗ e) (w : W.obj.V) :
+    (mkIso e he).inv.hom.hom w = e.symm w :=
+  rfl
 
 /-- For a discrete group every representation is smooth, so the inclusion `SmoothRep A G ⥤ Rep A G`
 is an equivalence of categories. -/

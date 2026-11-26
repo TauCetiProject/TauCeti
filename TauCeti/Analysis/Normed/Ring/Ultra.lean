@@ -81,6 +81,7 @@ forward differences of a monomial are divisible by `k!`, their norms carry the f
 * `TauCeti.norm_mul_sub_one_lt`, `TauCeti.norm_prod_sub_one_lt` and
   `TauCeti.norm_tprod_sub_one_lt`: finite and infinite products of elements strictly within `ε ≤ 1`
   of `1` remain strictly within `ε` of `1`.
+* `TauCeti.norm_inv_sub_one_eq`: inversion preserves distance less than one from `1`.
 * `TauCeti.norm_pow_sub_one_le_norm_sub_one`: a power of an element `x` of norm at most one is
   no farther from `1` than `x`.
 * `TauCeti.norm_prod_sub_prod_le`: a uniform perturbation bound for finite products.
@@ -441,6 +442,17 @@ theorem norm_mul_sub_one_lt {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
         (max_le_max (IsUltrametricDist.norm_add_le_max _ _) le_rfl)
     _ < ε := max_lt (max_lt ((norm_mul_le _ _).trans_lt
       ((mul_le_of_le_one_right (norm_nonneg _) (hb.le.trans hε)).trans_lt ha)) ha) hb
+
+/-- In an ultrametric normed division ring, an element `x` within distance less than one of `1`
+has an inverse at the same distance from `1`: `‖x⁻¹ - 1‖ = ‖x - 1‖`. Unlike the Neumann estimate
+`TauCeti.norm_inverse_one_sub_sub_one`, this needs no convergent geometric series, so it applies
+over incomplete fields such as an algebraic closure of `ℚ_[p]`. -/
+theorem norm_inv_sub_one_eq {K : Type*} [NormedDivisionRing K] [IsUltrametricDist K] {x : K}
+    (hx : ‖x - 1‖ < 1) : ‖x⁻¹ - 1‖ = ‖x - 1‖ := by
+  have hx₁ : ‖x‖ = 1 := norm_eq_one_of_norm_one_sub_lt_one ((norm_sub_rev _ _).trans_lt hx)
+  have hx₀ : x ≠ 0 := norm_ne_zero_iff.1 (hx₁.symm ▸ one_ne_zero)
+  calc ‖x⁻¹ - 1‖ = ‖x⁻¹ * (1 - x)‖ := by rw [mul_sub, mul_one, inv_mul_cancel₀ hx₀]
+    _ = ‖x - 1‖ := by simp [hx₁, norm_sub_rev]
 
 /-- In an ultrametric seminormed ring, a power of an element `x` of norm at most
 one is no farther from `1` than `x` is: `‖x ^ n - 1‖ ≤ ‖x - 1‖`. -/

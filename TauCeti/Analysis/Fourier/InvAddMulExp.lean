@@ -44,6 +44,8 @@ roles of `b` and `c` and of `n` and `1 - n`.
   `TauCeti.integral_exp_div_add_of_norm_lt_of_pos`,
   `TauCeti.integral_exp_div_add_of_lt_norm_of_nonpos`,
   `TauCeti.integral_exp_div_add_of_lt_norm_of_pos`: the four cases above.
+* `TauCeti.integral_inv_add_mul_exp_neg`: `∫₀^{2π} 1 / (b + c e^{−iθ}) dθ = 2π / b` for
+  `‖c‖ < ‖b‖`, by the substitution `θ ↦ 2π − θ` in the case `n = 0`.
 -/
 
 public section
@@ -163,5 +165,20 @@ theorem integral_exp_div_add_of_lt_norm_of_pos {b c : ℂ} (hbc : ‖b‖ < ‖c
       2 * π * (-b) ^ (n - 1) * c ^ (-n) := by
   rw [integral_exp_div_add_swap, integral_exp_div_add_of_norm_lt_of_nonpos hbc (by omega)]
   congr 2 <;> ring_nf
+
+
+/-- For `‖c‖ < ‖b‖`, `∫₀^{2π} 1 / (b + c e^{−iθ}) dθ = 2π / b`. -/
+theorem integral_inv_add_mul_exp_neg {b c : ℂ} (hcb : ‖c‖ < ‖b‖) :
+    ∫ θ in (0 : ℝ)..2 * π, (b + c * exp (-(θ * I)))⁻¹ = 2 * π / b := by
+  have h := integral_exp_div_add_of_norm_lt_of_nonpos hcb (n := 0) le_rfl
+  simp only [Int.cast_zero, zero_mul, exp_zero, one_div, neg_zero, mul_one, zero_sub, zpow_zero,
+    zpow_neg_one] at h
+  have h2 := intervalIntegral.integral_comp_sub_left
+    (fun θ : ℝ => (b + c * exp (-(θ * I)))⁻¹) (2 * π) (a := 0) (b := 2 * π)
+  simp only [sub_self, sub_zero] at h2
+  rw [← h2, div_eq_mul_inv, ← h]
+  refine intervalIntegral.integral_congr fun θ _ => ?_
+  rw [show -(((2 * π - θ : ℝ) : ℂ) * I) = θ * I + (-1 : ℤ) * (2 * π * I) by push_cast; ring,
+    exp_add, exp_int_mul_two_pi_mul_I, mul_one]
 
 end TauCeti

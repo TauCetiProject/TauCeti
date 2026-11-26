@@ -29,9 +29,10 @@ is the bounded Hölder space `C^{k,α}` (`TauCeti.BesovSpace.ckHolderSpaceEquiv`
 
 The notion does not depend on the bump function (`Distribution.IsLocallyMemBesovAt.of_bump`), and
 it can be tested with a single cutoff equal to one near `x`
-(`Distribution.isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered`), since smooth multipliers
-preserve the Besov spaces (`TemperedDistribution.MemBesov.smulLeftCLM`). If `T` is `B^s_{p,q}` near
-every point of the support of a test function `ψ`, then `ψ T ∈ B^s_{p,q}`
+(`Distribution.isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered`), or merely not vanishing
+at `x` (`Distribution.isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered`), since
+smooth multipliers preserve the Besov spaces (`TemperedDistribution.MemBesov.smulLeftCLM`). If
+`T` is `B^s_{p,q}` near every point of the support of a test function `ψ`, then `ψ T ∈ B^s_{p,q}`
 (`Distribution.memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt`). The notion is local: it
 is unchanged by restricting `T` to a smaller open set containing `x`
 (`Distribution.isLocallyMemBesovAt_restrictCLM_iff`), and a tempered distribution in `B^s_{p,q}`
@@ -202,6 +203,39 @@ theorem isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered [Fact (1 ≤ q)] 
     rw [← smulLeftCLM_cutoffTempered T fun y hy ↦ (hψ hy).1]
     exact hT.smulLeftCLM_testFunction ψ
 
+/-- **Testing with one nonvanishing cutoff.** A distribution is `B^s_{p,q}` near `x` exactly when
+`χ T` lies in `B^s_{p,q}` for some test function `χ` with `χ x ≠ 0`. -/
+theorem isLocallyMemBesovAt_iff_exists_ne_zero_memBesov_cutoffTempered [Fact (1 ≤ q)] :
+    T.IsLocallyMemBesovAt φ s p q x ↔
+      ∃ χ : 𝓓(Ω, ℂ), χ x ≠ 0 ∧ (T.cutoffTempered χ).MemBesov φ s p q := by
+  refine ⟨fun h ↦ ?_, fun ⟨χ, hχx, hT⟩ ↦ ?_⟩
+  · obtain ⟨χ, hχ, hT⟩ := isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.1 h
+    exact ⟨χ, by simp [hχ.self_of_nhds], hT⟩
+  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ hχx)
+  -- Near `x`, every test function is a smooth multiple of `χ`.
+  obtain ⟨U, hU, hUg⟩ := TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul hχx
+  -- A cutoff `ρ` equal to one near `x` and supported in `U ∩ Ω`, so `ρ = χ g` for a smooth `g`.
+  obtain ⟨ρ, hρ1, hρU⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    isCompact_singleton isOpen_interior
+    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 (inter_mem hU (Ω.isOpen.mem_nhds hxΩ))))
+    (interior_subset.trans inter_subset_right)
+  rw [nhdsSet_singleton] at hρ1
+  obtain ⟨g, hg, hρg⟩ := hUg ρ (hρU.trans (interior_subset.trans inter_subset_left))
+  -- A second cutoff `ρ'` equal to one on `tsupport ρ` makes the multiplier `ρ' g` a test function.
+  obtain ⟨ρ', hρ'1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    ρ.hasCompactSupport Ω.isOpen ρ.tsupport_subset subset_rfl
+  let h : 𝓓(Ω, ℂ) := ⟨fun y ↦ ρ' y * g y, ρ'.contDiff.mul hg, ρ'.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans ρ'.tsupport_subset⟩
+  have hhχ (y : E) : h y * χ y = ρ y := by
+    by_cases hy : ρ y = 0
+    · simp [h, hy, mul_assoc, mul_comm (g y), ← hρg y]
+    · simp [h, (hρ'1.self_of_nhdsSet y (subset_tsupport _ hy)), mul_comm (g y), ← hρg y]
+  have hρT : (T.cutoffTempered ρ).MemBesov φ s p q := by
+    rw [← smulLeftCLM_cutoffTempered_of_mul_eq T
+      (h.hasCompactSupport.hasTemperateGrowth h.contDiff) hhχ]
+    exact hT.smulLeftCLM_testFunction h
+  exact isLocallyMemBesovAt_iff_exists_memBesov_cutoffTempered.2 ⟨ρ, hρ1, hρT⟩
+
 /-- A tempered distribution in `B^s_{p,q}` is `B^s_{p,q}` near every point, as a distribution on
 `Ω`. -/
 theorem _root_.TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution [Fact (1 ≤ q)]
@@ -215,17 +249,9 @@ theorem _root_.TemperedDistribution.MemBesov.isLocallyMemBesovAt_toDistribution 
 a test function `χ`, then `χ T ∈ B^s_{p,q}`. -/
 theorem memBesov_cutoffTempered_of_forall_isLocallyMemBesovAt {χ : 𝓓(Ω, ℂ)}
     (h : ∀ x ∈ tsupport χ, T.IsLocallyMemBesovAt φ s p q x) :
-    (T.cutoffTempered χ).MemBesov φ s p q := by
-  -- Each point of `tsupport χ` has a neighbourhood on which every cutoff gives a `B^s_{p,q}`
-  -- product.
-  choose U hU _ hUs using fun x : tsupport χ ↦ h x x.property
-  -- Split `χ` into finitely many test functions supported in these neighbourhoods.
-  obtain ⟨t, ψ, hψU, hψχ, -⟩ := χ.exists_sum_subordinate (fun x ↦ interior (U x))
-    (fun _ ↦ isOpen_interior) fun x hx ↦
-      mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hU ⟨x, hx⟩)⟩
-  rw [← hψχ, cutoffTempered_sum_cutoff]
-  exact Finset.sum_induction _ (fun u : 𝓢'(E, ℂ) ↦ u.MemBesov φ s p q)
-    (fun _ _ ↦ MemBesov.add) MemBesov.zero fun i _ ↦ hUs i _ ((hψU i).trans interior_subset)
+    (T.cutoffTempered χ).MemBesov φ s p q :=
+  cutoffTempered_induction (fun u : 𝓢'(E, ℂ) ↦ u.MemBesov φ s p q) MemBesov.zero
+    (fun _ _ ↦ MemBesov.add) fun x hx ↦ (h x hx).imp fun _ hU ↦ ⟨hU.1, hU.2.2⟩
 
 variable (φ) in
 /-- **Finite order on the Besov scale.** Let `1 < p ≤ ∞` and `q ≠ 0`. Every cut-off distribution
