@@ -184,16 +184,26 @@ variable (ι K) in
 open OrderDual in
 /-- Over a field, Euclidean duality is an inclusion-reversing involution of the lattice of
 codes. -/
-@[expose, simps! apply symm_apply]
 def euclideanDualOrderIso : Submodule K (ι → K) ≃o (Submodule K (ι → K))ᵒᵈ where
   toFun C := toDual (euclideanDual C)
   invFun C := euclideanDual (ofDual C)
-  left_inv := euclideanDual_euclideanDual
-  right_inv C := congrArg toDual (euclideanDual_euclideanDual (ofDual C))
-  map_rel_iff' := by
-    intro C D
-    change euclideanDual D ≤ euclideanDual C ↔ C ≤ D
+  left_inv C := by simp only [ofDual_toDual, euclideanDual_euclideanDual]
+  right_inv C := by simp only [euclideanDual_euclideanDual, toDual_ofDual]
+  map_rel_iff' {C D} := by
+    simp only [Equiv.coe_fn_mk, toDual_le_toDual]
     rw [le_euclideanDual_comm, euclideanDual_euclideanDual]
+
+/-- The order isomorphism sends a code to its Euclidean dual. -/
+@[simp]
+theorem euclideanDualOrderIso_apply (C : Submodule K (ι → K)) :
+    euclideanDualOrderIso ι K C = OrderDual.toDual (euclideanDual C) := by
+  rfl
+
+/-- The inverse of the order isomorphism is again Euclidean duality. -/
+@[simp]
+theorem euclideanDualOrderIso_symm_apply (C : (Submodule K (ι → K))ᵒᵈ) :
+    (euclideanDualOrderIso ι K).symm C = euclideanDual (OrderDual.ofDual C) := by
+  rfl
 
 /-- Dual inclusion is equivalent to inclusion in the opposite direction. -/
 theorem euclideanDual_le_euclideanDual_iff {C D : Submodule K (ι → K)} :

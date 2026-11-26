@@ -168,21 +168,31 @@ variable (ι) in
 open OrderDual in
 /-- Over a field, Galois duality with `σ` is an inclusion-reversing bijection of codes, with
 inverse Galois duality with `σ.symm`. -/
-@[expose, simps! apply symm_apply]
 noncomputable def galoisDualOrderIso (σ : K ≃+* K) :
     Submodule K (ι → K) ≃o (Submodule K (ι → K))ᵒᵈ where
   toFun C := toDual (galoisDual σ C)
   invFun C := galoisDual σ.symm (ofDual C)
-  left_inv := galoisDual_symm_galoisDual σ
+  left_inv C := by simp only [ofDual_toDual, galoisDual_symm_galoisDual]
   right_inv C := by
     have h := galoisDual_symm_galoisDual σ.symm (ofDual C)
     rw [symm_symm] at h
-    exact congrArg toDual h
-  map_rel_iff' := by
-    intro C D
-    change galoisDual σ D ≤ galoisDual σ C ↔ C ≤ D
+    simp only [h, toDual_ofDual]
+  map_rel_iff' {C D} := by
+    simp only [Equiv.coe_fn_mk, toDual_le_toDual]
     conv_rhs => rw [← galoisDual_symm_galoisDual σ D]
     exact (galoisDual_gc ι σ).le_iff_le
+
+/-- The order isomorphism sends a code to its Galois dual. -/
+@[simp]
+theorem galoisDualOrderIso_apply (σ : K ≃+* K) (C : Submodule K (ι → K)) :
+    galoisDualOrderIso ι σ C = OrderDual.toDual (galoisDual σ C) := by
+  rfl
+
+/-- The inverse of the order isomorphism is Galois duality with `σ.symm`. -/
+@[simp]
+theorem galoisDualOrderIso_symm_apply (σ : K ≃+* K) (C : (Submodule K (ι → K))ᵒᵈ) :
+    (galoisDualOrderIso ι σ).symm C = galoisDual σ.symm (OrderDual.ofDual C) := by
+  rfl
 
 /-- Two codes with the same Galois dual over a field are equal. -/
 theorem galoisDual_injective (σ : K ≃+* K) :
