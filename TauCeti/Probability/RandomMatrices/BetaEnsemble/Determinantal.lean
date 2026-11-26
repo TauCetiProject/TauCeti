@@ -106,6 +106,7 @@ theorem hermiteEnsembleFunction_eq (n k : ℕ) (x : ℝ) :
   ring
 
 /-- The dilated Hermite functions are continuous. -/
+@[fun_prop]
 theorem continuous_hermiteEnsembleFunction (n k : ℕ) :
     Continuous (hermiteEnsembleFunction n k) :=
   continuous_dilatedHermiteFunction _ k
