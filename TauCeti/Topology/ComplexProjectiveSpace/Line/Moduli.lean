@@ -30,7 +30,10 @@ for the line `{[v] | w ⬝ᵥ v = 0}` of the bilinear dot product (`Projectiviza
 * **The dual point of a line.** The line of `f` lies in the plane spanned by `f₀` and `f₁`, which
   is the plane `{v | (f₀ × f₁) ⬝ᵥ v = 0}`: the dual point of `f` is `[f₀ × f₁]`
   (`TauCeti.ComplexProjectiveSpace.dualPoint`), Mathlib's cross product `[f₀] × [f₁]` of
-  projective points (`TauCeti.ComplexProjectiveSpace.dualPoint_eq_cross`).
+  projective points (`TauCeti.ComplexProjectiveSpace.dualPoint_eq_cross`): the only point of the
+  dual plane orthogonal to both `[f₀]` and `[f₁]`
+  (`TauCeti.ComplexProjectiveSpace.orthogonal_dualPoint`,
+  `TauCeti.ComplexProjectiveSpace.dualPoint_eq_of_orthogonal`).
   A point `[v]` of `CP²` lies on `σ_f` exactly when `v ⬝ᵥ (f₀ × f₁) = 0`
   (`TauCeti.ComplexProjectiveSpace.mem_range_lineSphereFamily_iff`): a vector orthogonal to
   `f₀ × f₁` is a combination `a f₀ + b f₁`, and if it has norm one then so does `(a, b)`, since
@@ -119,7 +122,9 @@ theorem dualPoint_eq_cross [DecidableEq ℂ] (f : finiteOrthonormalFrame ℂ 2 3
       (Projectivization.mk ℂ (f.val 1) (f.val_ne_zero 1)) :=
   (cross_mk_of_ne _ _ (mk_val_zero_ne_mk_val_one f)).symm
 
-private theorem orthogonal_dualPoint (f : finiteOrthonormalFrame ℂ 2 3) (i : Fin 2) :
+/-- The points `[f₀]` and `[f₁]` of the projective plane are orthogonal to the dual point of `f`:
+both lie on the line it stands for. -/
+theorem orthogonal_dualPoint (f : finiteOrthonormalFrame ℂ 2 3) (i : Fin 2) :
     (Projectivization.mk ℂ (f.val i) (f.val_ne_zero i)).orthogonal (dualPoint f) := by
   classical
   rw [dualPoint_eq_cross]
@@ -129,7 +134,7 @@ private theorem orthogonal_dualPoint (f : finiteOrthonormalFrame ℂ 2 3) (i : F
 
 /-- The dual point of `f` is the only point of the dual plane orthogonal to both `[f₀]` and
 `[f₁]`: these are distinct points, and two distinct points lie on at most one line. -/
-private theorem dualPoint_eq_of_orthogonal {f : finiteOrthonormalFrame ℂ 2 3}
+theorem dualPoint_eq_of_orthogonal {f : finiteOrthonormalFrame ℂ 2 3}
     {w : ℙ ℂ (Fin 3 → ℂ)}
     (h₀ : (Projectivization.mk ℂ (f.val 0) (f.val_ne_zero 0)).orthogonal w)
     (h₁ : (Projectivization.mk ℂ (f.val 1) (f.val_ne_zero 1)).orthogonal w) :
