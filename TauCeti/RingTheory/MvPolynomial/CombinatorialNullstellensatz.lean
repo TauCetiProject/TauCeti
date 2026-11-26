@@ -9,9 +9,11 @@ public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.RingTheory.Nullstellensatz
 import Mathlib.Data.Finset.Finsupp
+import Mathlib.Data.Finsupp.PWO
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.Tactic.Linarith
-import TauCeti.Data.Finsupp.PWO
+import TauCeti.Data.Finsupp.WeightOrder
+import TauCeti.Order.WellQuasiOrder
 import TauCeti.RingTheory.MvPolynomial.LocalOrder
 import TauCeti.RingTheory.MvPolynomial.Submodule
 import TauCeti.RingTheory.MvPolynomial.TaylorJet
@@ -49,17 +51,6 @@ namespace TauCeti
 
 variable {K ι S : Type*} [Field K]
 
-/-- A real-valued weight with nonnegative coordinates is monotone on `ι →₀ ℕ`. -/
-private lemma weight_mono_of_nonneg {w : ι → ℝ} (hw : ∀ u : ι, 0 ≤ w u) :
-    Monotone (weight w : (ι →₀ ℕ) → ℝ) := fun α β h_exp ↦ by
-  classical
-  rw [weight_apply, weight_apply,
-    Finsupp.sum_of_support_subset α (Finsupp.support_mono h_exp) _ (by simp), Finsupp.sum]
-  simp only [nsmul_eq_mul]
-  gcongr with u
-  · exact hw u
-  · exact h_exp u
-
 /-- Basis element `X ^ α * ∏ u, (X u ^ κ u - g u) ^ (γ u)` used in the weighted division argument
 for the Combinatorial Nullstellensatz with multiplicity. -/
 private noncomputable def weightedBasis (κ : ι → ℕ) (g : ι → MvPolynomial ι K)
@@ -81,14 +72,16 @@ private lemma weightedBasis_mem_of_weight_le [Finite ι] {κ : ι → ℕ}
   have := Fintype.ofFinite ι
   set cost : (ι →₀ ℕ) →+ ℝ := weight (fun u : ι ↦ (κ u : ℝ))⁻¹ with h_cost
   have h_mono : Monotone cost :=
-    weight_mono_of_nonneg fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)
-  induction α using (wellFounded_lt_of_monotone h_mono).induction generalizing γ with
+    Finsupp.weight_mono_of_nonneg fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)
+  induction α using h_mono.wellFounded_lt_comp.induction generalizing γ with
   | _ α ih => ?_
   by_cases! hα : ∀ u : ι, α u < κ u
   · exact hN α γ hα h_le
   obtain ⟨u, hu : κ u ≤ α u⟩ := hα
   obtain ⟨β, rfl⟩ : ∃ β : ι →₀ ℕ, α = single u (κ u) + β := exists_add_of_le (single_le_iff.2 hu)
-  have cost_eq : cost (single u (κ u) + β) = 1 + cost β := by simp [h_cost, weight, hκ, ne_of_gt]
+  have cost_eq : cost (single u (κ u) + β) = 1 + cost β := by
+    rw [map_add, h_cost, weight_single, nsmul_eq_mul, Pi.inv_apply,
+      mul_inv_cancel₀ (Nat.cast_ne_zero.2 (hκ u).ne')]
   have h_split : weightedBasis κ g (single u (κ u) + β) γ =
       weightedBasis κ g β (single u 1 + γ) + g u * weightedBasis κ g β γ := by
     simp only [weightedBasis, monomial_single_add, map_mul, pow_one, aeval_X]
@@ -148,9 +141,9 @@ theorem exists_le_weight_of_mem_vanishingIdeal_pow [Fintype ι] [Fintype S] (κ 
   have hf_span : f ∈ span K (Set.range v) := mem_submodule_of_forall_monomial_mem fun α hα ↦ by
     suffices weightedBasis κ g α 0 ∈ span K (Set.range v) by simpa [weightedBasis]
     refine weightedBasis_mem_of_weight_le hκ hg_cost (fun β γ hβ h_le ↦ ?_) α 0 le_rfl
-    have h_nonneg : 0 ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β := by
-      simpa using weight_mono_of_nonneg (w := (fun u : ι ↦ (κ u : ℝ))⁻¹)
-        (fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)) (zero_le (a := β))
+    have h_nonneg : 0 ≤ weight (fun u : ι ↦ (κ u : ℝ))⁻¹ β :=
+      Finsupp.weight_nonneg (w := (fun u : ι ↦ (κ u : ℝ))⁻¹)
+        (fun u ↦ inv_nonneg.2 (Nat.cast_nonneg _)) β
     simp only [map_zero, Nat.cast_zero, zero_add] at h_le
     exact b_span β γ hβ ((Nat.cast_lt (α := ℝ)).1 (by linarith [h_low α hα]))
   exact hf_ne ((range_ker_disjoint h_indep).le_bot ⟨hf_span, mem_ker hf⟩)

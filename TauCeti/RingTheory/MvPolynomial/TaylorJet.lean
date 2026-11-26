@@ -22,6 +22,12 @@ This file provides two results on powers of point vanishing ideals and Taylor ex
 * `MvPolynomial.exists_forall_coeff_taylor_eq`: Chinese remainder theorem for polynomial jets —
   at finitely many distinct points `z t : ι → K` over a field `K`, the Taylor coefficients
   `(taylor (z t) p).coeff γ` on any finite exponent set `Γ` can be prescribed arbitrarily.
+
+## References
+
+* L. Alpöge and L. Sernau, grh-lean (<https://github.com/lsernau/grh-lean>, Apache 2.0,
+  Copyright 2026 Anthropic, PBC), `src/Lib/General/Algebra/MultivariatePolynomials.lean`
+  (`New.exists_le_weight_of_mem_vanishingIdeal_pow`).
 -/
 
 public section
