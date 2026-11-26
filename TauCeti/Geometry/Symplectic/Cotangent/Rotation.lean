@@ -359,6 +359,7 @@ theorem inner_angularMomentum
     simp only [euclideanCrossProduct_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
     rw [dotProduct_comm, dotProduct_comm _ (ofLp p), triple_product_permutation,
       triple_product_permutation]
+  rw [angularMomentum_def]
   exact key _ _
 
 /-- **The moment map of the cotangent-lifted rotations of `ℝ³` is the angular momentum.** For the
@@ -380,8 +381,7 @@ theorem momentMap_unitary_apply_eq_inner_angularMomentum
     (orthogonalLieAlgebraEquiv (EuclideanSpace ℝ (Fin 3)) ξ)
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, ← hu, LinearEquiv.symm_apply_apply,
     LieHom.coe_toLinearMap, LieSubalgebra.coe_incl, cotangentMomentMap_apply]
-  exact congrArg z.snd
-    ((coe_euclideanSoThreeEquiv_apply u z.proj).trans (euclideanCrossProduct_apply u z.proj).symm)
+  exact congrArg z.snd (LinearMap.congr_fun (coe_euclideanSoThreeEquiv u) z.proj)
 
 end CotangentBundle
 
