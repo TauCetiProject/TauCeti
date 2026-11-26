@@ -8,8 +8,8 @@ module
 public import TauCeti.Topology.Algebra.Module.Alternating.HermitianForm
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow.Trace
 public import Mathlib.LinearAlgebra.Dimension.Finrank
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.Complex.Orientation
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -28,9 +28,9 @@ instance a Hermitian metric at a point of a complex manifold. For every real two
 
 The vectors `bᵢ, i bᵢ` form a real basis of `E`: since `ω` is invariant under `i`, `H_ω` is
 sesquilinear, so the `H_ω`-orthonormal family `b` is complex linearly independent
-(`LinearMap.linearIndependent_of_isOrthoᵢ`), and `1, i` is a real basis of `ℂ`
-(`linearIndependent_smul`). On this basis `ω` is in standard symplectic form, `ω(bᵢ, bⱼ) = 0`,
-`ω(bᵢ, i bⱼ) = δᵢⱼ` and `ω(i bᵢ, i bⱼ) = 0`, so both sides take the value
+(`LinearMap.linearIndependent_of_isOrthoᵢ`), hence a complex basis, and its underlying real basis
+is `(bᵢ, i bᵢ)` (`Module.Basis.complexToReal`). On this basis `ω` is in standard symplectic
+form, `ω(bᵢ, bⱼ) = 0`, `ω(bᵢ, i bⱼ) = δᵢⱼ` and `ω(i bᵢ, i bⱼ) = 0`, so both sides take the value
 `(m + 1)! · ∑ᵢ α(bᵢ, i bᵢ)` there
 (`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv` and
 `ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`), and two forms of top degree that
@@ -71,28 +71,23 @@ theorem nsmul_pairedWedge_wedgePow_eq_sum_smul {m : ℕ} (hm : finrank ℂ E = m
       (∑ i, α ![b i, I • b i]) • ω.wedgePow (m + 1) := by
   rw [← Nat.cast_smul_eq_nsmul ℝ]
   -- The real frame `(bᵢ, i bᵢ)`, ordered as `b₀, i b₀, b₁, i b₁, …`, is a basis: `b` is
-  -- orthonormal for the sesquilinear form `H_ω`, hence complex linearly independent.
+  -- orthonormal for the sesquilinear form `H_ω`, hence a complex basis, whose underlying real
+  -- basis is `(bᵢ, i bᵢ)`.
   let f : Fin (m + 1) × Fin 2 → E := fun p ↦ ![b p.1, I • b p.1] p.2
-  let e : Fin (2 * (m + 1)) ≃ Fin (m + 1) × Fin 2 :=
-    (finCongr (Nat.mul_comm 2 (m + 1))).trans finProdFinEquiv.symm
   have hC : LinearIndependent ℂ b :=
     LinearMap.linearIndependent_of_isOrthoᵢ (B := ω.hermitianSesqForm hω)
       (fun i j hij ↦ by simp [Function.onFun, hb, hij]) (fun i ↦ by simp [hb])
-  have hf : f = (fun p : Fin 2 × Fin (m + 1) ↦ basisOneI p.1 • b p.2) ∘ Equiv.prodComm _ _ := by
-    ext ⟨i, r⟩
-    fin_cases r <;> simp [f]
-  have hli : LinearIndependent ℝ (f ∘ e) := by
-    rw [hf]
-    exact ((linearIndependent_smul basisOneI.linearIndependent hC).comp _
-      (Equiv.prodComm _ _).injective).comp e e.injective
-  have hcard : Fintype.card (Fin (2 * (m + 1))) = finrank ℝ E := by
-    rw [Fintype.card_fin, finrank_real_of_complex, hm]
-  let B : Basis (Fin (2 * (m + 1))) ℝ E := basisOfLinearIndependentOfCardEqFinrank hli hcard
+  let B : Basis (Fin (2 * (m + 1))) ℝ E :=
+    (basisOfLinearIndependentOfCardEqFinrank hC (by simp [hm])).complexToReal.reindex
+      (TauCeti.complexRealIndexEquiv (m + 1))
   -- `B` in the form of the evaluation lemmas below.
   have hB : (B : Fin (2 * (m + 1)) → E) =
       fun r ↦ f (finProdFinEquiv.symm (Fin.cast (Nat.mul_comm 2 (m + 1)) r)) := by
     ext r
-    simp [B, e, finCongr_apply]
+    obtain ⟨⟨i, k⟩, rfl⟩ := (TauCeti.complexRealIndexEquiv (m + 1)).surjective r
+    rw [show Fin.cast _ (TauCeti.complexRealIndexEquiv (m + 1) (i, k)) = finProdFinEquiv (i, k)
+      from Fin.ext (by simp [Nat.add_comm])]
+    fin_cases k <;> simp [B, f]
   -- On the frame, `ω` is in standard symplectic form.
   have h₀₀ (i j : Fin (m + 1)) : ω ![f (i, 0), f (j, 0)] = 0 := by
     have := congrArg Complex.im (hb i j)
