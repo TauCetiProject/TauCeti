@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.ACL.Basic
 
 /-!
-# Operations on `ACL` maps
+# Operations on `ACL` and `ACL^p` maps
 
 Let `Ω ⊆ ℝⁿ` and let `F`, `F'` be normed groups. The class of maps `u : ℝⁿ → F` that are `ACL` on
 `Ω` (`TauCeti.IsACLOn`) is stable under the pointwise operations, since the line function of a
@@ -26,6 +26,17 @@ absolute continuity on an interval is stable under them:
 
 Constant maps, in particular the zero map, are `ACL` on every set (`TauCeti.isACLOn_const`,
 `TauCeti.isACLOn_zero`).
+
+For `F`, `F'` real normed spaces, the operations that commute with the formal derivative pointwise
+(`TauCeti.formalDeriv_const`, `TauCeti.formalDeriv_zero`, `TauCeti.formalDeriv_const_smul`,
+`TauCeti.formalDeriv_neg`, `ContinuousLinearEquiv.comp_formalDeriv`) also preserve the class
+`ACL^p` (`TauCeti.IsACLpOn`): constant maps, in particular the zero map
+(`TauCeti.isACLpOn_const`, `TauCeti.isACLpOn_zero`), multiplication by a real constant
+(`TauCeti.IsACLpOn.const_smul`), negation (`TauCeti.IsACLpOn.neg`) and composition with a
+continuous linear equivalence (`ContinuousLinearEquiv.comp_isACLpOn`). For sums and compositions
+with continuous linear maps that are not equivalences, the closure of `ACL^p` needs the
+almost-everywhere existence of the partial derivatives of an `ACL` map into a finite-dimensional
+space.
 -/
 
 public section
@@ -126,5 +137,47 @@ theorem _root_.ContinuousLinearMap.comp_isACLOn {𝕜 𝕜' : Type*} [Nontrivial
     [NormedSpace 𝕜' F'] (L : F →SL[σ] F') (hu : IsACLOn u Ω) :
     IsACLOn (L ∘ u) Ω :=
   L.lipschitzWith.comp_isACLOn hu
+
+/-! ### `ACL^p` maps -/
+
+section ACLp
+
+variable [NormedSpace ℝ F] [NormedSpace ℝ F'] {p : ENNReal}
+
+/-- Constant maps are `ACL^p` on every set, for every exponent. -/
+theorem isACLpOn_const (c : F) : IsACLpOn (fun _ : EuclideanSpace ℝ (Fin n) ↦ c) p Ω where
+  isACLOn := isACLOn_const c
+  memLp_formalDeriv _ _ _ := by
+    rw [formalDeriv_const]
+    exact MemLp.zero (ε := EuclideanSpace ℝ (Fin n) →L[ℝ] F)
+
+/-- The zero map is `ACL^p` on every set, for every exponent. -/
+theorem isACLpOn_zero : IsACLpOn (0 : EuclideanSpace ℝ (Fin n) → F) p Ω :=
+  isACLpOn_const 0
+
+/-- A real multiple of an `ACL^p` map is `ACL^p`. -/
+theorem IsACLpOn.const_smul (hu : IsACLpOn u p Ω) (c : ℝ) : IsACLpOn (c • u) p Ω where
+  isACLOn := hu.isACLOn.const_smul c
+  memLp_formalDeriv K hKΩ hK := by
+    rw [formalDeriv_const_smul]
+    exact (hu.memLp_formalDeriv K hKΩ hK).const_smul c
+
+/-- The negative of an `ACL^p` map is `ACL^p`. -/
+theorem IsACLpOn.neg (hu : IsACLpOn u p Ω) : IsACLpOn (-u) p Ω where
+  isACLOn := hu.isACLOn.neg
+  memLp_formalDeriv K hKΩ hK := by
+    rw [formalDeriv_neg]
+    exact (hu.memLp_formalDeriv K hKΩ hK).neg
+
+/-- The composition of an `ACL^p` map with a continuous linear equivalence is `ACL^p`. -/
+theorem _root_.ContinuousLinearEquiv.comp_isACLpOn (L : F ≃L[ℝ] F') (hu : IsACLpOn u p Ω) :
+    IsACLpOn (L ∘ u) p Ω where
+  isACLOn := (L : F →L[ℝ] F').comp_isACLOn hu.isACLOn
+  memLp_formalDeriv K hKΩ hK := by
+    simpa [L.comp_formalDeriv, Function.comp_def] using
+      (ContinuousLinearMap.compL ℝ (EuclideanSpace ℝ (Fin n)) F F' L).comp_memLp'
+        (hu.memLp_formalDeriv K hKΩ hK)
+
+end ACLp
 
 end TauCeti
