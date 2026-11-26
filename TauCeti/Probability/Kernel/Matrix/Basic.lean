@@ -127,20 +127,6 @@ theorem toMatrix_mem_rowStochastic [Fintype α] [DecidableEq α]
   simp only [ENNReal.ofNNReal_finsetSum, coe_toMatrix_apply, ENNReal.coe_one]
   simp
 
-variable (α) in
-/-- Markov kernels form a submonoid of the monoid `Kernel α α`, whose multiplication is
-composition. -/
-def markovSubmonoid : Submonoid (Kernel α α) where
-  carrier := {κ | IsMarkovKernel κ}
-  mul_mem' {κ η} (_ : IsMarkovKernel κ) (_ : IsMarkovKernel η) :=
-    inferInstanceAs (IsMarkovKernel (κ ∘ₖ η))
-  one_mem' := inferInstanceAs (IsMarkovKernel Kernel.id)
-
-/-- Membership in `markovSubmonoid` is being a Markov kernel. -/
-@[simp]
-theorem mem_markovSubmonoid {κ : Kernel α α} : κ ∈ markovSubmonoid α ↔ IsMarkovKernel κ :=
-  Iff.rfl
-
 end ProbabilityTheory.Kernel
 
 namespace Matrix.rowStochastic
@@ -194,15 +180,13 @@ theorem toKernel_toMatrix (κ : Kernel α α) [IsMarkovKernel κ] :
 composition is reversed: matrix multiplication is kernel composition in transition order, as in
 `Matrix.rowStochastic.toKernel_mul`. -/
 def rowStochasticEquiv : Matrix.rowStochastic ℝ≥0 α ≃* (markovSubmonoid α)ᵐᵒᵖ where
-  toFun M := .op ⟨Matrix.rowStochastic.toKernel M, inferInstanceAs (IsMarkovKernel _)⟩
-  invFun κ := by
-    let _ : IsMarkovKernel κ.unop.val := κ.unop.property
-    exact ⟨κ.unop.val.toMatrix, κ.unop.val.toMatrix_mem_rowStochastic⟩
+  toFun M := .op ⟨Matrix.rowStochastic.toKernel M, mem_markovSubmonoid.mpr inferInstance⟩
+  invFun κ := ⟨κ.unop.val.toMatrix, κ.unop.val.toMatrix_mem_rowStochastic⟩
   left_inv M := Subtype.ext (Matrix.rowStochastic.toMatrix_toKernel M)
-  right_inv κ := by
-    let _ : IsMarkovKernel κ.unop.val := κ.unop.property
-    exact MulOpposite.unop_injective (Subtype.ext (toKernel_toMatrix κ.unop.val))
-  map_mul' M N := MulOpposite.unop_injective (Subtype.ext (Matrix.rowStochastic.toKernel_mul M N))
+  right_inv κ := MulOpposite.unop_injective (Subtype.ext (toKernel_toMatrix κ.unop.val))
+  map_mul' M N := MulOpposite.unop_injective <| Subtype.ext <| by
+    simp only [MulOpposite.unop_mul, MulOpposite.unop_op, Submonoid.coe_mul, mul_def,
+      Matrix.rowStochastic.toKernel_mul]
 
 /-- The matrix-to-kernel equivalence is the canonical kernel construction. -/
 @[simp]
@@ -223,15 +207,19 @@ variable {α : Type*} [Fintype α] [DecidableEq α]
 
 /-- The identity stochastic matrix gives the identity kernel. -/
 @[simp]
-theorem toKernel_one : toKernel (1 : rowStochastic ℝ≥0 α) = Kernel.id :=
-  congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
+theorem toKernel_one : toKernel (1 : rowStochastic ℝ≥0 α) = Kernel.id := by
+  have h := congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
     (map_one (Kernel.rowStochasticEquiv (α := α)))
+  simpa only [Kernel.rowStochasticEquiv_apply, MulOpposite.unop_one, Submonoid.coe_one,
+    Kernel.one_def] using h
 
 /-- Powers of a stochastic matrix agree with powers of its Markov kernel. -/
 @[simp]
 theorem toKernel_pow (M : rowStochastic ℝ≥0 α) (n : ℕ) :
-    toKernel (M ^ n) = (toKernel M) ^ n :=
-  congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
+    toKernel (M ^ n) = (toKernel M) ^ n := by
+  have h := congrArg (fun κ : (Kernel.markovSubmonoid α)ᵐᵒᵖ => κ.unop.val)
     (map_pow Kernel.rowStochasticEquiv M n)
+  simpa only [Kernel.rowStochasticEquiv_apply, MulOpposite.unop_pow, SubmonoidClass.coe_pow]
+    using h
 
 end Matrix.rowStochastic
