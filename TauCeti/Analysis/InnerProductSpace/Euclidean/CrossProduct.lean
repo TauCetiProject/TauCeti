@@ -11,7 +11,6 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.CrossProduct
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
 public import TauCeti.Algebra.Lie.SkewAdjoint
-public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Gram.Basic
 
 /-!
@@ -24,8 +23,8 @@ orientation of `ℝ³`, such as the area form of the unit sphere, through Mathli
 
 The cross product also describes the infinitesimal rotations of `ℝ³`. The endomorphism
 `v ↦ u ⨯₃ v` (`TauCeti.euclideanCrossProduct u`) is skew-adjoint,
-`⟪u ⨯₃ v, w⟫ = -⟪v, u ⨯₃ w⟫` (`TauCeti.inner_euclideanCrossProduct_apply_left`), and every
-skew-adjoint endomorphism of `ℝ³` is of this form for a unique axis `u`, read off its coordinates.
+`⟪u ⨯₃ v, w⟫ = -⟪v, u ⨯₃ w⟫`, and every skew-adjoint endomorphism of `ℝ³` is of this form for a
+unique axis `u`, read off its coordinates.
 This is the **hat map**, a linear isomorphism `TauCeti.euclideanSoThreeEquiv` from `ℝ³` onto the
 orthogonal Lie algebra `so(3) = skewAdjointLieSubalgebra (innerₗ ℝ³)`. It carries the cross
 product to the commutator, `⁅û, v̂⁆ = (u ⨯₃ v)^` (`TauCeti.lie_euclideanSoThreeEquiv`). The matrix
@@ -79,19 +78,6 @@ noncomputable def euclideanCrossProduct :
 theorem euclideanCrossProduct_apply (u v : EuclideanSpace ℝ (Fin 3)) :
     euclideanCrossProduct u v = toLp 2 (ofLp u ⨯₃ ofLp v) :=
   (rfl)
-
-/-- The infinitesimal rotations are skew-adjoint: `⟪u ⨯₃ v, w⟫ = -⟪v, u ⨯₃ w⟫`. -/
-theorem inner_euclideanCrossProduct_apply_left (u v w : EuclideanSpace ℝ (Fin 3)) :
-    ⟪euclideanCrossProduct u v, w⟫_ℝ = -⟪v, euclideanCrossProduct u w⟫_ℝ := by
-  simp only [euclideanCrossProduct_apply, EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
-  rw [dotProduct_comm _ (ofLp v), ← cross_anticomm (ofLp w), dotProduct_neg, neg_neg]
-  exact (triple_product_permutation _ _ _).symm
-
-/-- The infinitesimal rotation about `u` lies in the orthogonal Lie algebra `so(3)` of the
-skew-adjoint endomorphisms of Euclidean three-space. -/
-theorem euclideanCrossProduct_mem_skewAdjointLieSubalgebra (u : EuclideanSpace ℝ (Fin 3)) :
-    euclideanCrossProduct u ∈ skewAdjointLieSubalgebra (innerₗ (EuclideanSpace ℝ (Fin 3))) :=
-  mem_skewAdjointLieSubalgebra_innerₗ_iff.2 (inner_euclideanCrossProduct_apply_left u)
 
 /-- The **hat map** of Euclidean three-space: the linear isomorphism from `ℝ³` onto the orthogonal
 Lie algebra `so(3)` of skew-adjoint endomorphisms sending the axis `u` to the infinitesimal
