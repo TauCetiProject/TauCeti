@@ -33,6 +33,9 @@ parallel notion of Hölder continuity.
   with the canonical seminorm, and with the Hölder-space norm.
 * `TauCeti.HolderSpace.holderOnWith_of_apply_eq`: a function agreeing on `s` with an element of
   the Hölder space of `s` is Hölder on `s` with constant its Hölder-space norm.
+* `TauCeti.HolderSpace.exists_holderOnWith_closure`: for a positive exponent and a complete
+  codomain, an element of the Hölder space of `s` extends to a function Hölder on the closure of
+  `s`, with constant its Hölder-space norm.
 * `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set, which is
   closed (`TauCeti.isClosed_supportedHolderSubmodule`) and hence complete for a complete codomain.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
@@ -443,6 +446,18 @@ theorem holderOnWith_of_apply_eq {s : Set X} {g : X → Y} (f : HolderSpace α s
   have he : s.domRestrict g = ⇑f := funext fun x ↦ (hf x).symm
   rw [he]
   exact f.holderWith_nnnorm
+
+/-- An element `f` of the Hölder space of a set `s`, with a positive exponent and complete values,
+extends to a function on `X` which is `α`-Hölder on the closure of `s` with constant the
+Hölder-space norm of `f`. -/
+theorem exists_holderOnWith_closure [CompleteSpace Y] (hα : 0 < α) {s : Set X}
+    (f : HolderSpace α s Y) :
+    ∃ g : X → Y, (∀ x : s, g x = f x) ∧ HolderOnWith ‖f‖₊ α g (closure s) := by
+  set g₀ : X → Y := Function.extend Subtype.val f 0
+  have hg₀ (x : s) : g₀ x = f x := Subtype.val_injective.extend_apply _ _ x
+  obtain ⟨g, hgg₀, hg⟩ :=
+    (f.holderOnWith_of_apply_eq fun x ↦ (hg₀ x).symm).exists_eqOn_holderOnWith_closure hα
+  exact ⟨g, fun x ↦ (hgg₀ x.property).trans (hg₀ x), hg⟩
 
 /-- A constant function as an element of the bounded Hölder space. -/
 def const (c : Y) : HolderSpace α X Y :=
