@@ -74,6 +74,10 @@ and for the third when `X` and `Z` are.
   `AlgebraicGeometry.Scheme.RationalMap.isProper_compositeCorrespondenceToGraphYZ`: the three
   morphisms to the graphs are proper, the first two for `Y`, `Z` proper over `S` and the third for
   `X`, `Z` proper over `S`.
+* `AlgebraicGeometry.Scheme.RationalMap.isModification_compositeCorrespondenceToGraphXY`,
+  `AlgebraicGeometry.Scheme.RationalMap.isModification_compositeCorrespondenceToGraphXZ`:
+  `(q_X, q_Y)` and `(q_X, q_Z)` are modifications, so proper and birational, for `Y`, `Z` proper
+  over `S` and the relevant open inclusions quasi-compact.
 
 ## References
 
@@ -453,6 +457,33 @@ instance isProper_compositeCorrespondenceToGraphYZ [IsProper sX] [IsProper sZ] :
     rw [compositeCorrespondenceToGraphYZ_graphFst]
     infer_instance
   exact IsProper.of_comp _ (graphFst g)
+
+/-- **`(q_X, q_Y)` is birational.** For `Y` and `Z` proper over `S` and the inclusions of `U` and
+of the domain of definition of `f` quasi-compact (for instance for `X` Noetherian),
+`(q_X, q_Y) : W_{f,g} → Γ_f` is a modification: its composite with the modification
+`π_1 : Γ_f → X` is the modification `q_X`, an isomorphism over `U`. -/
+theorem isModification_compositeCorrespondenceToGraphXY [IsProper sY] [IsProper sZ]
+    [QuasiCompact (compositeDomain f g).ι] [QuasiCompact f.domain.ι] :
+    IsModification (compositeCorrespondenceToGraphXY sX sY sZ f g) := by
+  have := isModification_graphFst f sX sY
+  have : IsModification (compositeCorrespondenceToGraphXY sX sY sZ f g ≫ graphFst f) := by
+    rw [compositeCorrespondenceToGraphXY_graphFst]
+    exact isModification_graphClosureFst (dense_compositeDomain f g)
+  exact IsModification.of_comp _ (graphFst f)
+
+/-- **`(q_X, q_Z)` is birational.** For `Y` and `Z` proper over `S` and the inclusions of `U` and
+of the domain of definition of `g ∘ f` quasi-compact (for instance for `X` Noetherian),
+`(q_X, q_Z) : W_{f,g} → Γ_{g ∘ f}` is a modification: its composite with the modification
+`π_1 : Γ_{g ∘ f} → X` is the modification `q_X`, an isomorphism over `U`. -/
+theorem isModification_compositeCorrespondenceToGraphXZ [IsProper sY] [IsProper sZ]
+    [QuasiCompact (compositeDomain f g).ι] [QuasiCompact (f.comp g).domain.ι] :
+    IsModification (compositeCorrespondenceToGraphXZ sX sY sZ f g) := by
+  have := isModification_graphFst (f.comp g) sX sZ
+  have : IsModification
+      (compositeCorrespondenceToGraphXZ sX sY sZ f g ≫ graphFst (f.comp g)) := by
+    rw [compositeCorrespondenceToGraphXZ_graphFst]
+    exact isModification_graphClosureFst (dense_compositeDomain f g)
+  exact IsModification.of_comp _ (graphFst (f.comp g))
 
 end Over
 
