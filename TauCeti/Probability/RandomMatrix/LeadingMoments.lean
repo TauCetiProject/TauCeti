@@ -122,19 +122,19 @@ theorem norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le {m n : ℕ} (
         have hnm : (n : ℝ) ^ m ≠ 0 := (pow_pos hn_pos m).ne'
         field_simp [hnm, hn_pos.ne']
 
-/-- **Quantitative expected even-moment bound for Wigner matrices.** For independent centered
-entries in the `n × n` corner whose `2m`th absolute moments are uniformly bounded by `B` and whose
-strictly upper entries have common second absolute moment `s ≥ 0`, the normalized expected `2m`th
-trace of the `n × n` Wigner matrix (`n ≠ 0`) lies within
+/-- **Quantitative expected even-moment bound for Wigner matrices.** For independent entries in
+the `n × n` corner whose `2m`th absolute moments are uniformly bounded by `B` and whose strictly
+upper entries are centered with common second absolute moment `s ≥ 0`, the normalized expected
+`2m`th trace of the `n × n` Wigner matrix (`n ≠ 0`) lies within
 `((m ^ (2 * m) * B + s ^ m * catalan m * (m + 1).choose 2) / n)` of `s ^ m * catalan m`. All
-`m : ℕ` (including `m = 0`) are covered, and identical distribution is not required. -/
+`m : ℕ` (including `m = 0`) are covered, and neither diagonal centering nor identical distribution
+is required. -/
 theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} (hn : n ≠ 0)
     {B s : ℝ} (hs : 0 ≤ s)
     (hindep : iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n} ⊕ {i : ℕ // i < n} ↦
         Sum.elim (fun ij ↦ ξ ij.val) (fun i ω ↦ (η i.val ω : ℂ)) r) P)
     (hξzero : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ξ ij ω ∂P = 0)
-    (hηzero : ∀ i < n, ∫ ω, η i ω ∂P = 0)
     (hξp : ∀ ij : StrictUpper, ij.val.2 < n → MemLp (ξ ij) (2 * m : ℕ) P)
     (hηp : ∀ i < n, MemLp (η i) (2 * m : ℕ) P)
     (hξ : ∀ ij : StrictUpper, ij.val.2 < n → ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
@@ -156,7 +156,7 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} 
     have hrem : ‖(n : ℂ)⁻¹ * ((∫ ω, (wignerMatrix ξ η n ω ^ (2 * m)).trace ∂P) - L)‖ ≤
         (m : ℝ) ^ (2 * m) * B / n :=
       norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
-        hm hindep hξzero hηzero hξp hηp hξ hη
+        hm hindep hξzero hξp hηp hξ hη
     have hlead : ‖(n : ℂ)⁻¹ * L - (s : ℂ) ^ m * catalan m‖ ≤
         s ^ m * catalan m * (m + 1).choose 2 / n :=
       norm_inv_mul_sum_integral_prod_wignerMatrix_leading_sub_le hm hn hs
@@ -178,13 +178,13 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le {m n : ℕ} 
       _ = ((m : ℝ) ^ (2 * m) * B + s ^ m * catalan m * (m + 1).choose 2) / n :=
           (add_div _ _ _).symm
 
-/-- **Expected even Wigner trace moments converge to Catalan numbers.** Under independent centered
-entries with uniformly bounded `2m`th absolute moments and common off-diagonal second absolute
-moment `s`, `n⁻¹ E[tr(Hₙ ^ (2 * m))]` tends to `s ^ m * catalan m` as `n → ∞` (for every `m : ℕ`).
--/
+/-- **Expected even Wigner trace moments converge to Catalan numbers.** Under independent entries
+with centered off-diagonal coordinates, uniformly bounded `2m`th absolute moments, and common
+off-diagonal second absolute moment `s`, `n⁻¹ E[tr(Hₙ ^ (2 * m))]` tends to `s ^ m * catalan m` as
+`n → ∞` (for every `m : ℕ`). -/
 theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix {m : ℕ} {B s : ℝ}
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
-    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0) (hηzero : ∀ i, ∫ ω, η i ω ∂P = 0)
+    (hξzero : ∀ ij, ∫ ω, ξ ij ω ∂P = 0)
     (hξp : ∀ ij, MemLp (ξ ij) (2 * m : ℕ) P) (hηp : ∀ i, MemLp (η i) (2 * m : ℕ) P)
     (hξ : ∀ ij, ∫ ω, ‖ξ ij ω‖ ^ (2 * m) ∂P ≤ B)
     (hη : ∀ i, ∫ ω, ‖η i ω‖ ^ (2 * m) ∂P ≤ B)
@@ -202,7 +202,7 @@ theorem tendsto_inv_mul_integral_trace_pow_two_mul_wignerMatrix {m : ℕ} {B s :
   filter_upwards [eventually_ne_atTop 0] with n hn
   exact norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_le hn hs
     (iIndepFun_sumElim_ofReal_subtype_lt hindep)
-    (fun ij _ ↦ hξzero ij) (fun i _ ↦ hηzero i)
+    (fun ij _ ↦ hξzero ij)
     (fun ij _ ↦ hξp ij) (fun i _ ↦ hηp i)
     (fun ij _ ↦ hξ ij) (fun i _ ↦ hη i) (fun ij _ ↦ hξsq ij)
 

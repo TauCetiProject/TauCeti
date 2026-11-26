@@ -18,10 +18,15 @@ import Mathlib.Tactic.LinearCombination
 This file determines the kernel of Mathlib's Fontaine map `θ : W(A♭) → A`
 (`WittVector.fontaineTheta`, where `A♭ = PreTilt A p`) in two settings:
 
-1. **Characteristic `p`:** when `A` is a reduced ring of characteristic `p`, `p = 0` in `A`,
-   `A ⧸ p = A`, `A♭` is the perfection of `A`, and `θ` sends a Witt vector to the zeroth coordinate
-   of its zeroth Witt component. Since `A` is reduced, an element of `A♭` vanishes when its zeroth
-   coordinate does, so `ker θ = (p)`.
+1. **Characteristic `p`:** when `A` has characteristic `p`, `p = 0` in `A`, `A ⧸ p = A`, `A♭` is
+   the perfection of `A`, and `θ` sends a Witt vector to the zeroth coordinate of its zeroth Witt
+   component. So `ker θ = (p)` as soon as the zeroth coordinate `A♭ → A` is injective, for instance
+   when `A` is reduced. Conversely, if `ker θ = (ξ)` is principal, the zeroth coordinate is
+   injective (Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, proof of Lemma 3.10 and
+   Example 3.15): its kernel `J` is `(ξ₀)`, since `θ` kills `[j]` for `j ∈ J`; the first two Witt
+   coordinates of `p = ξ a` give `ξ₀ a₀ = 0` and `ξ₀ ^ p a₁ + ξ₁ a₀ ^ p = 1`, so `ξ₀ = ξ₀ e` for
+   the idempotent `e = ξ₀ ^ p a₁ ∈ J`; and an idempotent of `A♭` has all coordinates equal, so
+   `e = 0` and `J = (ξ₀) = 0`.
 2. **Regular `π`-adic setting** (Scholze, *Étale cohomology of diamonds*, Lemma 3.14;
    Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, Lemma 3.10): let `A` be
    `π`-adically complete for a nonzerodivisor `π` with `π ^ p ∣ p` and bijective relative Frobenius
@@ -39,8 +44,15 @@ characterises the generators of `ker θ` as its distinguished elements
 
 ## Main results
 
-* `WittVector.fontaineTheta_eq_zero_iff`, `WittVector.ker_fontaineTheta_eq_span_p`: in a reduced
-  ring of characteristic `p`, `θ x = 0 ↔ x.coeff 0 = 0` and `ker θ = (p)`.
+* `WittVector.fontaineTheta_eq_zero_iff_of_preTilt_coeff_zero_injective`,
+  `WittVector.ker_fontaineTheta_eq_span_p_of_preTilt_coeff_zero_injective`: in characteristic `p`,
+  if the zeroth tilt coordinate is injective, `θ x = 0 ↔ x.coeff 0 = 0` and `ker θ = (p)`;
+  `WittVector.fontaineTheta_eq_zero_iff`, `WittVector.ker_fontaineTheta_eq_span_p` are the case of
+  a reduced ring.
+* `PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta`,
+  `WittVector.ker_fontaineTheta_eq_span_p_of_isPrincipal`,
+  `WittVector.isPrincipal_ker_fontaineTheta_iff_preTilt_coeff_zero_injective`: in characteristic
+  `p`, a principal `ker θ` makes the zeroth tilt coordinate injective, hence is `(p)`.
 * `WittVector.surjective_fontaineTheta_of_frobeniusModPow_surjective`: `θ` is surjective when `A`
   is `π`-adically complete with `π ^ p ∣ p` and surjective Frobenius `A ⧸ (π) → A ⧸ (π ^ p)`.
 * `WittVector.exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul`: when `ϖ.untilt ∈ A⁰` has
@@ -51,11 +63,12 @@ characterises the generators of `ker θ` as its distinguished elements
   relative Frobenius.
 * `WittVector.coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta`: the zeroth Witt coordinate of an
   element of `ker θ` lies in the Jacobson radical of `A♭`.
+* `WittVector.natCast_dvd_fontaineTheta_sub_untilt`: `θ x ≡ (x₀)♯` modulo `p`.
 
 ## References
 
-* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Definition 3.5 and
-  Lemma 3.10.
+* B. Bhatt, M. Morrow, P. Scholze, *Integral `p`-adic Hodge theory*, Definition 3.5, Lemma 3.10
+  and Example 3.15.
 * P. Scholze, *Étale cohomology of diamonds*, Lemma 3.14.
 -/
 
@@ -68,28 +81,110 @@ namespace WittVector
 
 section CharP
 
-variable {A : Type*} [CommRing A] {p : ℕ} [Fact p.Prime] [CharP A p] [IsReduced A]
+variable {A : Type*} [CommRing A] {p : ℕ} [hp : Fact p.Prime] [CharP A p]
   [Fact ¬IsUnit (p : A)] [IsAdicComplete (span {(p : A)}) A]
+
+/-- In characteristic `p`, Fontaine's map `θ : W(A♭) → A` vanishes at `x` exactly when the zeroth
+coordinate in `A ⧸ p` of the zeroth Witt component of `x` does. -/
+theorem fontaineTheta_eq_zero_iff_preTilt_coeff_coeff_zero_eq_zero
+    (x : WittVector p (PreTilt A p)) :
+    fontaineTheta A p x = 0 ↔ PreTilt.coeff 0 (x.coeff 0) = 0 := by
+  -- `p = 0` in `A`, so reduction modulo `p` is injective
+  rw [← mk_fontaineTheta, _root_.map_eq_zero_iff _ ModP.mk_bijective.1]
+
+/-- **Fontaine's map in characteristic `p`.** For a ring `A` of characteristic `p` whose zeroth
+tilt coordinate `A♭ → A ⧸ p` is injective, `θ : W(A♭) → A` vanishes exactly on the Witt vectors
+with vanishing zeroth component. -/
+theorem fontaineTheta_eq_zero_iff_of_preTilt_coeff_zero_injective
+    (hinj : Function.Injective (PreTilt.coeff (O := A) (p := p) 0))
+    (x : WittVector p (PreTilt A p)) : fontaineTheta A p x = 0 ↔ x.coeff 0 = 0 := by
+  rw [fontaineTheta_eq_zero_iff_preTilt_coeff_coeff_zero_eq_zero, _root_.map_eq_zero_iff _ hinj]
+
+/-- **The kernel of Fontaine's map in characteristic `p` is `(p)`** when the zeroth tilt
+coordinate `A♭ → A ⧸ p` is injective. -/
+theorem ker_fontaineTheta_eq_span_p_of_preTilt_coeff_zero_injective
+    (hinj : Function.Injective (PreTilt.coeff (O := A) (p := p) 0)) :
+    RingHom.ker (fontaineTheta A p) = span {(p : WittVector p (PreTilt A p))} := by
+  ext x
+  rw [RingHom.mem_ker, fontaineTheta_eq_zero_iff_of_preTilt_coeff_zero_injective hinj,
+    mem_span_p_iff_coeff_zero_eq_zero]
 
 /-- **Fontaine's map in characteristic `p`.** For a reduced ring `A` of characteristic `p`,
 `θ : W(A♭) → A` vanishes exactly on the Witt vectors with vanishing zeroth component. -/
-theorem fontaineTheta_eq_zero_iff (x : WittVector p (PreTilt A p)) :
-    fontaineTheta A p x = 0 ↔ x.coeff 0 = 0 := by
-  -- `p = 0` in `A`, so reduction modulo `p` is injective and `A ⧸ p ≅ A` is reduced
-  have hp : span {(p : A)} = ⊥ := by simp
-  have : IsReduced (ModP A p) :=
-    isReduced_of_injective ((quotEquivOfEq hp).trans (RingEquiv.quotientBot A))
-      (RingEquiv.injective _)
-  -- `A ⧸ p` is reduced, so `x.coeff 0 ∈ A♭` vanishes with its zeroth coordinate
-  rw [← PreTilt.coeff_eq_zero_iff 0, ← mk_fontaineTheta, Quotient.eq_zero_iff_mem, hp, mem_bot]
+theorem fontaineTheta_eq_zero_iff [IsReduced A] (x : WittVector p (PreTilt A p)) :
+    fontaineTheta A p x = 0 ↔ x.coeff 0 = 0 :=
+  fontaineTheta_eq_zero_iff_of_preTilt_coeff_zero_injective (PreTilt.coeff_injective 0) x
 
 /-- **The kernel of Fontaine's map in characteristic `p` is `(p)`.** For a reduced ring `A` of
 characteristic `p`, the kernel of `θ : W(A♭) → A` is generated by `p`; in particular it is
 principal, as the definition of integral perfectoid rings requires. -/
-theorem ker_fontaineTheta_eq_span_p :
-    RingHom.ker (fontaineTheta A p) = span {(p : WittVector p (PreTilt A p))} := by
-  ext x
-  rw [RingHom.mem_ker, fontaineTheta_eq_zero_iff, mem_span_p_iff_coeff_zero_eq_zero]
+theorem ker_fontaineTheta_eq_span_p [IsReduced A] :
+    RingHom.ker (fontaineTheta A p) = span {(p : WittVector p (PreTilt A p))} :=
+  ker_fontaineTheta_eq_span_p_of_preTilt_coeff_zero_injective (PreTilt.coeff_injective 0)
+
+/-- **A principal Fontaine kernel in characteristic `p` makes the tilt embed modulo `p`**
+(Bhatt–Morrow–Scholze, *Integral `p`-adic Hodge theory*, proof of Lemma 3.10 and Example 3.15).
+If `A` has characteristic `p` and the kernel of `θ : W(A♭) → A` is principal, then the zeroth
+coordinate `A♭ → A ⧸ p` of the tilt is injective. Neither reducedness of `A` nor surjectivity of
+Frobenius is assumed. -/
+theorem _root_.PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta
+    (h : (RingHom.ker (fontaineTheta A p)).IsPrincipal) :
+    Function.Injective (PreTilt.coeff (O := A) (p := p) 0) := by
+  obtain ⟨ξ, hξ⟩ := h
+  rw [submodule_span_eq] at hξ
+  have hpker : (p : WittVector p (PreTilt A p)) ∈ RingHom.ker (fontaineTheta A p) := by simp
+  obtain ⟨a, ha⟩ := mem_span_singleton.mp (hξ ▸ hpker)
+  have hξk : ξ ∈ RingHom.ker (fontaineTheta A p) := hξ ▸ mem_span_singleton_self ξ
+  have hξ₀ : PreTilt.coeff 0 (ξ.coeff 0) = 0 :=
+    (fontaineTheta_eq_zero_iff_preTilt_coeff_coeff_zero_eq_zero ξ).mp hξk
+  -- the kernel `J` of the zeroth coordinate lies in `(ξ₀)`, since `[j] ∈ ker θ = (ξ)` for `j ∈ J`
+  have hJ (j : PreTilt A p) (hj : PreTilt.coeff 0 j = 0) : ξ.coeff 0 ∣ j := by
+    have hj' : teichmuller p j ∈ span {ξ} := hξ ▸
+      (fontaineTheta_eq_zero_iff_preTilt_coeff_coeff_zero_eq_zero _).mpr
+        (by rwa [teichmuller_coeff_zero])
+    obtain ⟨b, hb⟩ := mem_span_singleton.mp hj'
+    exact ⟨b.coeff 0, by rw [← mul_coeff_zero, ← hb, teichmuller_coeff_zero]⟩
+  -- the Witt coordinates zero and one of `p = ξ a`
+  have h0 : ξ.coeff 0 * a.coeff 0 = 0 := by rw [← mul_coeff_zero, ← ha, coeff_p_zero]
+  have h1 : ξ.coeff 0 ^ p * a.coeff 1 + a.coeff 0 ^ p * ξ.coeff 1 = 1 := by
+    rw [← mul_coeff_one_charP, ← ha, coeff_p_one]
+  -- `e = ξ₀ ^ p a₁` satisfies `ξ₀ e = ξ₀`, so `e` is an idempotent in `J`; hence `e = 0`, `ξ₀ = 0`
+  set e := ξ.coeff 0 ^ p * a.coeff 1 with he_def
+  have hξe : ξ.coeff 0 * e = ξ.coeff 0 := by
+    obtain ⟨c, hc⟩ := dvd_pow_self (a.coeff 0) hp.out.ne_zero
+    linear_combination ξ.coeff 0 * h1 - ξ.coeff 0 * ξ.coeff 1 * hc - ξ.coeff 1 * c * h0
+  have hpow (n : ℕ) : ξ.coeff 0 ^ (n + 1) * e = ξ.coeff 0 ^ (n + 1) := by
+    induction n with
+    | zero => rw [zero_add, pow_one, hξe]
+    | succ n ih => rw [pow_succ', mul_assoc, ih, ← pow_succ']
+  have hpow' := hpow (p - 1)
+  rw [Nat.sub_add_cancel hp.out.one_le] at hpow'
+  have he : IsIdempotentElem e := isIdempotentElem_iff.mpr <| by
+    linear_combination a.coeff 1 * hpow' + (e - 1) * he_def
+  have he₀ : PreTilt.coeff 0 e = 0 := by simp [he_def, hξ₀, hp.out.ne_zero]
+  have he0 : e = 0 := PreTilt.ext fun n ↦ by
+    rw [map_zero, PreTilt.coeff_eq_coeff_zero_of_isIdempotentElem he, he₀]
+  rw [he0, mul_zero] at hξe
+  refine (injective_iff_map_eq_zero _).mpr fun j hj ↦ ?_
+  obtain ⟨c, rfl⟩ := hJ j hj
+  rw [← hξe, zero_mul]
+
+/-- **Principal Fontaine kernels in characteristic `p` are `(p)`** (Bhatt–Morrow–Scholze,
+*Integral `p`-adic Hodge theory*, proof of Lemma 3.10 and Example 3.15). If `A` has
+characteristic `p` and the kernel of `θ : W(A♭) → A` is principal, then it is generated by `p`. -/
+theorem ker_fontaineTheta_eq_span_p_of_isPrincipal
+    (h : (RingHom.ker (fontaineTheta A p)).IsPrincipal) :
+    RingHom.ker (fontaineTheta A p) = span {(p : WittVector p (PreTilt A p))} :=
+  ker_fontaineTheta_eq_span_p_of_preTilt_coeff_zero_injective
+    (PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta h)
+
+/-- In characteristic `p`, the kernel of Fontaine's map `θ : W(A♭) → A` is principal exactly when
+the zeroth tilt coordinate `A♭ → A ⧸ p` is injective. -/
+theorem isPrincipal_ker_fontaineTheta_iff_preTilt_coeff_zero_injective :
+    (RingHom.ker (fontaineTheta A p)).IsPrincipal ↔
+      Function.Injective (PreTilt.coeff (O := A) (p := p) 0) :=
+  ⟨PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta,
+    fun h ↦ ⟨⟨p, ker_fontaineTheta_eq_span_p_of_preTilt_coeff_zero_injective h⟩⟩⟩
 
 end CharP
 
@@ -108,6 +203,12 @@ theorem coeff_zero_mem_jacobson_of_mem_ker_fontaineTheta {ξ : WittVector p (Pre
   have : IsAdicComplete (span {ξ.coeff 0}) (PreTilt A p) :=
     Perfection.isAdicComplete_span_singleton_of_coeff_zero_eq_zero h
   exact IsAdicComplete.le_jacobson _ (mem_span_singleton_self _)
+
+/-- **Fontaine's map modulo `p`.** For every `x : W(A♭)`, `θ x` agrees modulo `p` with the sharp
+`(x₀)♯` of its zeroth Witt coordinate: both reduce to the zeroth coordinate of `x₀` in `A ⧸ p`. -/
+theorem natCast_dvd_fontaineTheta_sub_untilt (x : WittVector p (PreTilt A p)) :
+    (p : A) ∣ fontaineTheta A p x - (x.coeff 0).untilt := by
+  rw [← mem_span_singleton, ← Ideal.Quotient.eq, mk_fontaineTheta, PreTilt.mk_untilt_eq_coeff_zero]
 
 end Kernel
 
@@ -227,7 +328,6 @@ theorem exists_ker_fontaineTheta_eq_span_p_add_teichmuller_mul {ϖ : A♭}
       (add_mem (subset_span (by simp)) (mul_mem_right _ _ (subset_span (by simp))))
   have hξ_reg : (p : WittVector p A♭) + teichmuller p ϖ * α ∈ (WittVector p A♭)⁰ :=
     hξ.mem_nonZeroDivisors (Ideal.le_radical (mem_span_singleton.mpr hξ₀_dvd))
-      (PreTilt.mem_nonZeroDivisors_of_untilt hreg)
   refine ⟨α, hξ, hξ_reg, le_antisymm (ker_fontaineTheta_le_span hreg hbij.1 hξ hξ₀_dvd hker) ?_⟩
   exact span_le.mpr (Set.singleton_subset_iff.mpr hker)
 

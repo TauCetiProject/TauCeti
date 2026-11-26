@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.Orthogonal.TypeD.Killing
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SerrePresentation
-import TauCeti.Algebra.Lie.Presentation.Serre.Injective
+import TauCeti.Algebra.Lie.Orthogonal.TypeD.Serre.Equiv
 
 /-!
 # The pinned type-D algebra in orthogonal coordinates
@@ -21,10 +21,9 @@ In particular, a representation of the native orthogonal algebra can be pulled b
 map to a representation of the pinned algebra. This is the Lie-algebra input for realizing
 Chevalley data on the existing spin modules; it does not identify any group schemes.
 
-The construction uses `DynkinType.serreLiftEquiv` for the pinned algebra and
-`LieAlgebra.Basis.serreLift_injective` for the native matrix basis `TypeDStd.lieBasis`.
-Nondegeneracy of the latter's Killing form is supplied by `TypeDStd.isKilling_typeD`, and its
-simple-root generation supplies surjectivity. Thus no dimension comparison is assumed.
+The construction uses `DynkinType.serreLiftEquiv` for the pinned algebra and Serre's theorem
+`TypeDStd.serreRepresentation_injective` for the native matrix realization, together with its
+simple-root generation for surjectivity. Thus no dimension comparison is assumed.
 
 ## References
 
@@ -59,18 +58,17 @@ private theorem pinnedSerreSystem :
 
 private theorem matrixSerreLift_injective :
     Function.Injective (TauCeti.serreLift (pinnedSerreSystem n hn)) := by
-  let _ := isKilling_typeD (K := ℚ) n hn
   -- Transport the presentation matrix, not the Lie algebra or its numbered generators.
-  have key : ∀ {CM : Matrix (Fin n) (Fin n) ℤ}, (lieBasis (K := ℚ) n hn).Aᵀ = CM →
+  have key : ∀ {CM : Matrix (Fin n) (Fin n) ℤ}, CartanMatrix.D n = CM →
       ∀ h : IsSerreSystem ℚ CM (cartanGenerator (K := ℚ) n hn)
         (fun i => rootGenerator n hn (.inl i)) (fun i => rootGenerator n hn (.inr i)),
         Function.Injective (TauCeti.serreLift h) := by
-    rintro _ rfl _
-    have hh := funext (lieBasis_h (K := ℚ) n hn)
-    have he := funext (lieBasis_e (K := ℚ) n hn)
-    have hf := funext (lieBasis_f (K := ℚ) n hn)
-    simpa only [hh, he, hf] using (lieBasis (K := ℚ) n hn).serreLift_injective
-  exact key (by simp only [lieBasis_A_eq, DynkinType.cartanMatrix_D, DynkinType.rank_D]) _
+    rintro _ rfl h
+    rw [← TauCeti.eq_serreLift (g := serreRepresentation (K := ℚ) n hn) (fun i => by simp)
+      fun i => by simp]
+    exact serreRepresentation_injective n hn
+  exact key (by simp only [DynkinType.cartanMatrix_D, DynkinType.rank_D,
+    (CartanMatrix.D_isSymm n).eq]) _
 
 private def matrixSerreEquiv :
     (DynkinType.D n).SerreLieAlgebra ≃ₗ⁅ℚ⁆ LieAlgebra.Orthogonal.typeD (Fin n) ℚ :=

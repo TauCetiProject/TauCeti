@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PowerSeries.Inverse
 
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.CharP.Lemmas
+import TauCeti.RingTheory.Ideal.Operations
 import TauCeti.RingTheory.Polynomial.Distinguished
 import TauCeti.RingTheory.PowerSeries.AdicComplete
 import TauCeti.RingTheory.PowerSeries.CyclotomicSeries
@@ -86,18 +87,13 @@ theorem torsionBy_quotient_span_C_pow_one_add_X_pow_sub_one_eq_bot [IsDomain O]
   exact IsUnit.of_mul_eq_one _ hcoeff.symm
 
 /-- For an ideal `I` of `O` containing `p`, the series `ω_n = (1 + X) ^ pⁿ - 1` lies in the
-`(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`:
-`ω_0 = X`, and `ω_{n+1} = ω_n · ∑_{i < p} (1 + X) ^ (i pⁿ)`, whose second factor has constant
-coefficient `p`. -/
+`(n + 1)`-st power of the ideal `I.comap constantCoeff` of series with constant coefficient in `I`.
+This is `Ideal.pow_pow_sub_pow_pow_mem_pow_succ` for `a = 1 + X` and `b = 1`, which agree modulo
+that ideal. -/
 theorem one_add_X_pow_sub_one_mem_comap_constantCoeff_pow {I : Ideal O} (hI : (p : O) ∈ I)
     (n : ℕ) : (1 + X : O⟦X⟧) ^ p ^ n - 1 ∈ I.comap constantCoeff ^ (n + 1) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [pow_succ p n, pow_mul, ← geom_sum_mul, pow_succ' (I.comap constantCoeff)]
-    refine Ideal.mul_mem_mul ?_ ih
-    rw [Ideal.mem_comap]
-    simpa using hI
+  simpa using Ideal.pow_pow_sub_pow_pow_mem_pow_succ (I := I.comap constantCoeff) (b := 1)
+    (by simpa [Ideal.mem_comap] using hI) (by simp [Ideal.mem_comap]) n
 
 /-- The series `ω_n = (1 + X) ^ pⁿ - 1` lies in the `(n + 1)`-st power of the maximal ideal of
 `O⟦X⟧` when `p` is not a unit of the local ring `O`, since that maximal ideal consists of the

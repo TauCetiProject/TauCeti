@@ -71,6 +71,8 @@ weights.
   splitting `∀ i, M i` into the factors indexed by `p` and by `¬p`.
 * `LinearEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a linear equivalence, gluing families on
   disjoint finite sets `s` and `t` into a family on `s ∪ t`.
+* `LinearEquiv.conj_lsmul_eq_piMap`: conjugating by an `A`-linear equivalence onto a product
+  turns the action of `a : A` into the coordinatewise action of `a` on the factors.
 * `LinearMap.compLeft_single`: applying a linear map coordinatewise to the one-point family
   `Pi.single i x` gives the one-point family `Pi.single i (f x)`.
 * `LinearMap.toMatrix_piMap`: in product bases, `LinearMap.piMap f` is block diagonal, including
@@ -412,6 +414,18 @@ public theorem coe_piFinsetUnion_symm (h : Disjoint s t) :
   (rfl)
 
 end FinsetUnion
+
+/-- **An equivalence onto a product diagonalizes the action of scalars.** Conjugating by an
+`A`-linear equivalence `e : M ≃ₗ[A] ∀ i, N i`, viewed over `R`, turns the action of `a : A` on `M`
+into the coordinatewise action `LinearMap.piMap` of `a` on the factors. -/
+public theorem conj_lsmul_eq_piMap {R A M : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [Module A M] [IsScalarTower R A M] {ι : Type*} {N : ι → Type*}
+    [∀ i, AddCommMonoid (N i)] [∀ i, Module R (N i)] [∀ i, Module A (N i)]
+    [∀ i, IsScalarTower R A (N i)] (e : M ≃ₗ[A] ∀ i, N i) (a : A) :
+    (e.restrictScalars R).conj (Algebra.lsmul R R M a) =
+      LinearMap.piMap fun i => Algebra.lsmul R R (N i) a := by
+  refine LinearMap.ext fun y => funext fun x => ?_
+  simp [LinearEquiv.conj_apply]
 
 end LinearEquiv
 

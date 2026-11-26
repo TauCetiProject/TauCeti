@@ -37,9 +37,13 @@ constant coefficient `p` for `n ≥ 1`. In characteristic `p` it is the monomial
 It is distinguished at every ideal containing `p`, so that Weierstrass division by `ξ_n` is
 available in `O⟦T⟧`. When `p` is a prime element of a domain `R` (for instance `R = ℤ_p`) every
 `ξ_n` is irreducible: `ξ_0 = X`, and for `n ≥ 1` the polynomial `ξ_n` is Eisenstein at `(p)`.
+The file also records the coefficient below the leading one of `Φ_{p ^ (m + 1)}` itself, which is
+`1` for `m = 0` and `0` otherwise; it gives the trace of a root of unity of `p`-power order.
 
 ## Main results
 
+* `Polynomial.nextCoeff_cyclotomic_prime_pow`: the coefficient below the leading one of
+  `Φ_{p ^ (m + 1)}` is `1` for `m = 0` and `0` otherwise.
 * `Polynomial.prod_range_cyclotomic_prime_pow_comp_X_add_one`: `ω_n = ∏_{m ≤ n} ξ_m`.
 * `Polynomial.cyclotomic_prime_pow_comp_X_add_one_eq_X_pow`: in characteristic `p`,
   `ξ_n = X ^ φ(p ^ n)`.
@@ -202,6 +206,31 @@ theorem eq_of_dvd_cyclotomic_prime_pow_comp_X_add_one [IsDomain R] (hp0 : (p : R
     exact prod_dvd_prod_of_subset _ _ _ hsub
   exact hF (TauCeti.Polynomial.squarefree_one_add_X_pow_sub_one (m := p ^ n)
     (by simpa using pow_ne_zero n hp0) F ((mul_dvd_mul hi hj).trans hprod))
+
+/-- The coefficient below the leading one of the cyclotomic polynomial of order `p ^ (m + 1)`
+is `1` for `m = 0` and `0` otherwise. -/
+theorem nextCoeff_cyclotomic_prime_pow (m : ℕ) :
+    (cyclotomic (p ^ (m + 1)) R).nextCoeff = if m = 0 then 1 else 0 := by
+  -- Over the zero ring both sides are `0`.
+  nontriviality R
+  have hp2 := hp.out.two_le
+  have hpos : 0 < p ^ m := pow_pos hp.out.pos m
+  have hdeg : (cyclotomic (p ^ (m + 1)) R).natDegree = p ^ m * (p - 1) := by
+    rw [natDegree_cyclotomic, Nat.totient_prime_pow_succ hp.out]
+  have hdeg0 : p ^ m * (p - 1) ≠ 0 := Nat.mul_ne_zero hpos.ne' (by omega)
+  rw [nextCoeff, hdeg, ite_eq_right hdeg0, cyclotomic_prime_pow_eq_geom_sum hp.out, finsetSum_coeff]
+  simp_rw [← pow_mul, coeff_X_pow]
+  split_ifs with hm
+  · subst hm
+    simp only [pow_zero, one_mul]
+    rw [sum_eq_single (p - 2) (fun b _ hb ↦ ite_eq_right fun h ↦ absurd (by omega) hb)
+      (fun h ↦ absurd (mem_range.mpr (by omega)) h), ite_eq_left (by omega)]
+  · refine sum_eq_zero fun i _ ↦ ite_eq_right fun h ↦ ?_
+    -- `p ^ m` divides `p ^ m * i` and `p ^ m * (p - 1)`, hence `1`, but `p ^ m ≥ p ≥ 2`.
+    have hpm : 2 ≤ p ^ m := le_trans hp2 (Nat.le_self_pow hm p)
+    have h' : p ^ m * (p - 1) = p ^ m * i + 1 := by omega
+    have h1 : p ^ m ∣ 1 := (Nat.dvd_add_right (dvd_mul_right _ _)).mp (h' ▸ dvd_mul_right _ _)
+    exact absurd (Nat.dvd_one.mp h1) (by omega)
 
 end Polynomial
 
