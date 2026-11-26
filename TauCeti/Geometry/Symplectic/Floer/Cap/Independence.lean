@@ -89,6 +89,17 @@ variable {ι₁ ι₂ ι₀ : Type*} {P₁ : ι₁ → Type*} {P₂ : ι₂ → 
   (Q Q' K : ι₁ → ι₂ → ι₀ → NovikovSeries R G ωG) (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG)
   (D₂ : ι₂ → ι₂ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) (n : ℤ)
 
+/-- For identity continuation matrices, the left side `∑ₖ Qᵢⱼₖ Φ₀ₖₗ - ∑ₛ ∑ₜ Φ₁ᵢₛ Φ₂ⱼₜ Q'ₛₜₗ` of
+the continuation identity is `Qᵢⱼₗ - Q'ᵢⱼₗ`. -/
+private theorem sum_mul_one_sub_sum_sum_one_mul_one_mul [DecidableEq ι₁] [DecidableEq ι₂]
+    [DecidableEq ι₀] (i : ι₁) (j : ι₂) (l : ι₀) :
+    ∑ k, Q i j k * (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) k l -
+        ∑ s, ∑ t, (1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i s *
+          (1 : Matrix ι₂ ι₂ (NovikovSeries R G ωG)) j t * Q' s t l =
+      Q i j l - Q' i j l := by
+  simp only [Matrix.one_apply, mul_ite, ite_mul, mul_one, one_mul, mul_zero, zero_mul,
+    Finset.sum_ite_eq, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+
 include hμ₁
 
 /-- **The homotopy of products along a path of auxiliary data.** Let `Q` and `Q'` be the
@@ -128,7 +139,8 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_eq_add
   have h := novikovMapOfMatrix_novikovProductOfMatrix_coefficientComparison_sub_eq_add r₁ r₂ r₀ q
     hq r₁ r₂ r₀ hF₁ hF₂ hF₀ hF₁ hF₂ hF₀ hμ₁ Q Q' (1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG))
     (1 : Matrix ι₂ ι₂ (NovikovSeries R G ωG)) (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₁ D₂ D₀
-    n (fun i j l => by simpa [Matrix.one_apply] using hpath i j l) ha b
+    n (fun i j l => (sum_mul_one_sub_sum_sum_one_mul_one_mul Q Q' i j l).trans (hpath i j l))
+    ha b
   simpa only [novikovMapOfMatrix_coefficientComparison_one_apply] using h
 
 /-- **Products along a path of auxiliary data agree on cocycles.** Under the identity of
@@ -174,7 +186,8 @@ theorem novikovProductOfMatrix_coefficientComparison_sub_mem_coboundaries
     r₁ r₂ r₀ q hq r₁ r₂ r₀ hF₁ hF₂ hF₀ hF₁ hF₂ hF₀ hμ₁ Q Q'
     (1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) (1 : Matrix ι₂ ι₂ (NovikovSeries R G ωG))
     (1 : Matrix ι₀ ι₀ (NovikovSeries R G ωG)) K D₁ D₂ D₀ n hμ₂ hμ₀ hK
-    (fun i j l => by simpa [Matrix.one_apply] using hpath i j l) hδ₁ hδ₂ hδ₀ ha hb
+    (fun i j l => (sum_mul_one_sub_sum_sum_one_mul_one_mul Q Q' i j l).trans (hpath i j l))
+    hδ₁ hδ₂ hδ₀ ha hb
   simpa only [novikovMapOfMatrix_coefficientComparison_one_apply] using h
 
 section Cohomology
