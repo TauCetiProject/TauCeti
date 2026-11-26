@@ -8,8 +8,8 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.BoundedCoefficients
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Prime.IdealZetaSum
 public import TauCeti.NumberTheory.NumberField.ResidueDegree
-import Mathlib.Analysis.Complex.CoveringMap
-import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.TendstoOfTendstoExp
+import TauCeti.Analysis.SpecialFunctions.Log.NegLogOneSub
 import TauCeti.Analysis.SpecialFunctions.Log.OneDivSub
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.DirichletDensity.Negligible
@@ -50,11 +50,15 @@ higher degree, and these are at most `5 [K : ℚ]` uniformly in `s`
 * `TauCeti.hasPrimeDensity_of_tendsto`: the density from the order of the Euler product at `1`.
 * `TauCeti.HasPrimeDensity.add`, `TauCeti.HasPrimeDensity.const_mul`,
   `TauCeti.HasPrimeDensity.sum`: densities are linear.
-* `TauCeti.HasPrimeDensity.re_le_re`: densities are monotone in real parts.
+* `TauCeti.HasPrimeDensity.re_le_re`: densities are monotone in real parts, and
+  `TauCeti.HasPrimeDensity.unique`: a function has at most one density.
+* `TauCeti.HasPrimeDensity.congr_cofinite`: changing a function at finitely many primes of degree
+  one does not change its density.
 * `TauCeti.hasPrimeDensity_const`: the constant `c` has density `c`.
 * `TauCeti.infinite_setOf_prime_absNorm`: infinitely many primes have prime norm.
-* `TauCeti.hasPrimeDensity_mul_ncard_primesOver`: for a finite extension `L/K`, the number of
-  primes of `L` of relative degree one above `𝔭`, times `c`, has density `c`.
+* `TauCeti.hasPrimeDensity_mul_ncard_setOf_under_eq_and_absNorm_eq`: for a finite extension
+  `L/K`, the number of primes of `L` of relative degree one above `𝔭`, times `c`, has density
+  `c`.
 * `TauCeti.HasPrimeDensity.hasDirichletDensity`: comparison with Mathlib's Dirichlet density.
 
 ## Provenance
@@ -273,6 +277,50 @@ theorem HasPrimeDensity.re_le_re (ha : HasPrimeDensity a l) (hb : HasPrimeDensit
   simp only [sub_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero] at hre
   linarith
 
+/-- **Densities are unique.** Compare the real parts of the densities of `a` and of `I a` with
+`TauCeti.HasPrimeDensity.re_le_re`. -/
+theorem HasPrimeDensity.unique (ha : HasPrimeDensity a l) (ha' : HasPrimeDensity a l') :
+    l = l' := by
+  have hre {f : HeightOneSpectrum (𝓞 K) → ℂ} {l₁ l₂ : ℂ} (h₁ : HasPrimeDensity f l₁)
+      (h₂ : HasPrimeDensity f l₂) : l₁.re ≤ l₂.re :=
+    h₁.re_le_re h₂ (.of_forall fun _ _ ↦ le_rfl)
+  have him {l₁ l₂ : ℂ} (h₁ : HasPrimeDensity a l₁) (h₂ : HasPrimeDensity a l₂) :
+      l₂.im ≤ l₁.im := by
+    simpa using hre (h₁.const_mul I) (h₂.const_mul I)
+  exact Complex.ext (le_antisymm (hre ha ha') (hre ha' ha)) (le_antisymm (him ha' ha) (him ha ha'))
+
+/-- A function vanishing at all but finitely many primes of degree one has prime density `0`: its
+series over the primes of degree one is a finite sum, bounded for real `s ≥ 0`. -/
+theorem hasPrimeDensity_zero_of_eventually_eq_zero
+    (h : ∀ᶠ 𝔭 : HeightOneSpectrum (𝓞 K) in cofinite, (Ideal.absNorm 𝔭.asIdeal).Prime → a 𝔭 = 0) :
+    HasPrimeDensity a 0 := by
+  classical
+  set E := (eventually_cofinite.mp h).toFinset
+  have hzero (s : ℂ) (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭E : 𝔭 ∉ E) :
+      (higherDegreePrimes K)ᶜ.indicator a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s = 0 := by
+    by_cases h𝔭 : 𝔭 ∈ higherDegreePrimes K
+    · rw [Set.indicator_of_notMem (Set.notMem_compl_iff.mpr h𝔭), zero_div]
+    have := not_not.mp (mt (eventually_cofinite.mp h).mem_toFinset.mpr h𝔭E)
+    have hp := not_not.mp (mt mem_higherDegreePrimes_iff_not_prime_absNorm.mpr h𝔭)
+    rw [Set.indicator_of_mem (Set.mem_compl h𝔭), this hp, zero_div]
+  refine ⟨.of_forall fun s ↦ summable_of_ne_finset_zero (s := E) (hzero _), ?_⟩
+  refine IsBigO.of_bound (∑ 𝔭 ∈ E, ‖a 𝔭‖) ?_
+  filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
+  rw [zero_mul, sub_zero, norm_one, mul_one, degreeOnePrimeSum_def, tsum_eq_sum (hzero _)]
+  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun 𝔭 _ ↦ ?_)
+  rw [norm_div_absNorm_cpow, ofReal_re]
+  exact (mul_le_of_le_one_right (norm_nonneg _) (Real.rpow_le_one_of_one_le_of_nonpos
+    (one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)) (by linarith))).trans
+    (norm_indicator_le_norm_self a 𝔭)
+
+/-- **Changing a function at finitely many primes of degree one keeps its density.** -/
+theorem HasPrimeDensity.congr_cofinite (ha : HasPrimeDensity a l)
+    (h : ∀ᶠ 𝔭 : HeightOneSpectrum (𝓞 K) in cofinite,
+      (Ideal.absNorm 𝔭.asIdeal).Prime → a 𝔭 = b 𝔭) :
+    HasPrimeDensity b l := by
+  simpa using ha.add (hasPrimeDensity_zero_of_eventually_eq_zero (a := b - a)
+    (h.mono fun 𝔭 h𝔭 hp ↦ by rw [Pi.sub_apply, h𝔭 hp, sub_self]))
+
 /-! ### Constants, primes of degree one, and comparison with Dirichlet density -/
 
 /-- For a set `S` of primes, the series of the indicator of `S` over the primes of degree one is
@@ -297,12 +345,6 @@ private theorem isBigO_primeIdealZetaSum_of_subset {T : Set (HeightOneSpectrum (
   exact (NumberField.Set.primeIdealZetaSum_mono_set_of_one_lt hT hs).trans
     (primeIdealZetaSum_higherDegreePrimes_le hs.le)
 
-/-- A real function `O(1)` stays `O(1)` after the cast to `ℂ`. -/
-private theorem isBigO_ofReal_iff {f : ℝ → ℝ} :
-    (fun s ↦ (f s : ℂ)) =O[𝓝[>] 1] (fun _ ↦ (1 : ℝ)) ↔ f =O[𝓝[>] 1] (fun _ ↦ (1 : ℝ)) := by
-  rw [← isBigO_norm_left, ← isBigO_norm_left (f' := f)]
-  simp only [norm_real]
-
 /-- **Constants have prime density equal to their value.** This is the asymptotic
 `∑_𝔭 N(𝔭) ^ (-s) = log (1 / (s - 1)) + O(1)` of the library
 (`TauCeti.primeIdealZetaSum_univ_sub_log_one_div_sub_one_isBigO`), with the primes of higher
@@ -312,7 +354,7 @@ theorem hasPrimeDensity_const (c : ℂ) :
   suffices h1 : HasPrimeDensity (1 : HeightOneSpectrum (𝓞 K) → ℂ) 1 by
     simpa using h1.const_mul c
   refine ⟨eventually_summable_indicator_div_absNorm_cpow (C := 1) (fun _ ↦ by simp), ?_⟩
-  refine ((isBigO_ofReal_iff.mpr (primeIdealZetaSum_univ_sub_log_one_div_sub_one_isBigO
+  refine ((isBigO_ofReal_left.mpr (primeIdealZetaSum_univ_sub_log_one_div_sub_one_isBigO
     (K := K))).sub (isBigO_primeIdealZetaSum_of_subset
       (T := Set.univ ∩ higherDegreePrimes K) Set.inter_subset_right)).congr' ?_ .rfl
   filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
@@ -330,7 +372,7 @@ theorem HasPrimeDensity.hasDirichletDensity {S : Set (HeightOneSpectrum (𝓞 K)
   rw [NumberField.Set.hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one]
   have hO : (fun s : ℝ ↦ S.primeIdealZetaSum s - δ * Real.log (1 / (s - 1))) =O[𝓝[>] 1]
       fun _ ↦ (1 : ℝ) := by
-    refine isBigO_ofReal_iff.mp ((h.2.add (isBigO_primeIdealZetaSum_of_subset
+    refine isBigO_ofReal_left.mp ((h.2.add (isBigO_primeIdealZetaSum_of_subset
       (T := S ∩ higherDegreePrimes K) Set.inter_subset_right)).congr' ?_ .rfl)
     filter_upwards [self_mem_nhdsWithin] with s (hs : 1 < s)
     rw [degreeOnePrimeSum_indicator_one_eq S hs]
@@ -369,32 +411,20 @@ private theorem norm_neg_log_sub_indicator_le (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1
       (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) + 3 / 2 *
         (higherDegreePrimes K).indicator
           (fun 𝔭 ↦ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ))) 𝔭 := by
-  set z := a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s
-  have hN1 : (1 : ℝ) ≤ Ideal.absNorm 𝔭.asIdeal :=
-    one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)
-  have hz : ‖-z‖ ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ)) := by
-    rw [norm_neg]
-    exact (norm_div_absNorm_cpow_le_rpow_neg (ha 𝔭)).trans
-      (Real.rpow_le_rpow_of_exponent_le hN1 (neg_le_neg hs))
-  have hhalf : ‖-z‖ ≤ 1 / 2 := by rw [norm_neg]; exact norm_div_absNorm_cpow_le_half (ha 𝔭) hs
-  have h2 : (0 : ℝ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) := by positivity
   by_cases h𝔭 : 𝔭 ∈ higherDegreePrimes K
   · rw [Set.indicator_of_notMem (Set.notMem_compl_iff.mpr h𝔭), Set.indicator_of_mem h𝔭,
-      zero_div, sub_zero, norm_neg, sub_eq_add_neg]
-    have := (norm_log_one_add_half_le_self hhalf).trans
-      (mul_le_mul_of_nonneg_left hz (by norm_num : (0 : ℝ) ≤ 3 / 2))
+      zero_div, sub_zero]
+    have := norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) hs hs
+    have h2 : (0 : ℝ) ≤ (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) := by positivity
     linarith
-  · have hw : -log (1 - z) - z = -(log (1 + -z) - -z) := by rw [← sub_eq_add_neg]; ring
-    rw [Set.indicator_of_mem (Set.mem_compl h𝔭), Set.indicator_of_notMem h𝔭, mul_zero, add_zero,
-      hw, norm_neg]
-    -- `‖log (1 + w) - w‖ ≤ ‖w‖ ^ 2 (1 - ‖w‖)⁻¹ / 2 ≤ ‖w‖ ^ 2` for `‖w‖ ≤ 1/2`
-    refine (norm_log_one_add_sub_self_le (hhalf.trans_lt (by norm_num))).trans ?_
-    have hw0 := norm_nonneg (-z)
-    have hinv : (1 - ‖-z‖)⁻¹ ≤ 2 := by
-      rw [inv_le_comm₀ (by linarith) two_pos]
-      linarith
-    calc ‖-z‖ ^ 2 * (1 - ‖-z‖)⁻¹ / 2 ≤ ‖-z‖ ^ 2 := by nlinarith [sq_nonneg ‖-z‖]
-      _ ≤ ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ))) ^ 2 := pow_le_pow_left₀ hw0 hz 2
+  · have hz : ‖a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ ≤
+        (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ)) :=
+      (norm_div_absNorm_cpow_le_rpow_neg (ha 𝔭)).trans (Real.rpow_le_rpow_of_exponent_le
+        (one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)) (neg_le_neg hs))
+    rw [Set.indicator_of_mem (Set.mem_compl h𝔭), Set.indicator_of_notMem h𝔭, mul_zero, add_zero]
+    refine (Complex.norm_neg_log_one_sub_sub_le (norm_div_absNorm_cpow_le_half (ha 𝔭) hs)).trans ?_
+    calc ‖a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ ^ 2
+        ≤ ((Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(1 : ℝ))) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
       _ = (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) := by
         rw [← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
         norm_num
@@ -435,8 +465,7 @@ private theorem continuousOn_tsum_neg_log (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
     (bound := fun 𝔭 ↦ 3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-σ))
     ((summable_absNorm_rpow_primes_of_one_lt hσ).mul_left _) (fun 𝔭 ↦ ?_) ?_
   · have hN : (Ideal.absNorm 𝔭.asIdeal : ℂ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr (Nat.pos_iff_ne_zero.mp (Nat.cast_pos.mp
-        (two_pos.trans_le (two_le_absNorm_asIdeal_real 𝔭))))
+      Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).ne_bot
     have hpow : Continuous fun t : ℝ ↦ (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ) :=
       continuous_ofReal.const_cpow (Or.inl hN)
     have hcont : ContinuousAt (fun t : ℝ ↦ 1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ))
@@ -446,39 +475,8 @@ private theorem continuousOn_tsum_neg_log (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
     exact (hcont.clog (one_sub_div_absNorm_cpow_mem_slitPlane (ha 𝔭)
       (by rw [ofReal_re]; exact (show 1 < s₀ from hs₀).le))).neg
   · filter_upwards [Ici_mem_nhds hσs] with t (ht : σ ≤ t) 𝔭
-    have hN1 : (1 : ℝ) ≤ Ideal.absNorm 𝔭.asIdeal :=
-      one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)
-    rw [norm_neg, sub_eq_add_neg]
-    refine (norm_log_one_add_half_le_self ?_).trans (mul_le_mul_of_nonneg_left ?_ (by norm_num))
-    · rw [norm_neg]
-      exact norm_div_absNorm_cpow_le_half (ha 𝔭) (by rw [ofReal_re]; linarith)
-    · rw [norm_neg]
-      exact (norm_div_absNorm_cpow_le_rpow_neg (ha 𝔭)).trans
-        (Real.rpow_le_rpow_of_exponent_le hN1 (by rw [ofReal_re]; linarith))
-
-/-- A continuous function on `(1, ∞)` whose exponential tends to a nonzero limit at `1` from the
-right tends to a limit there: near `1` it differs from the principal logarithm of its exponential
-by a continuous function with values in `log c + 2πiℤ`, which is constant. -/
-private theorem exists_tendsto_of_tendsto_exp {g : ℝ → ℂ} (hg : ContinuousOn g (Set.Ioi 1))
-    {c : ℂ} (hc : c ≠ 0) (h : Tendsto (fun s ↦ exp (g s)) (𝓝[>] 1) (𝓝 c)) :
-    ∃ C, Tendsto g (𝓝[>] 1) (𝓝 C) := by
-  have h' : Tendsto (fun s ↦ exp (g s) / c) (𝓝[>] 1) (𝓝 1) := by
-    simpa [div_self hc] using h.div_const c
-  obtain ⟨s₁, hs₁, hslit⟩ := mem_nhdsGT_iff_exists_Ioc_subset.mp
-    (h' (isOpen_slitPlane.mem_nhds one_mem_slitPlane))
-  have hmono : Set.Ioc 1 s₁ ⊆ Set.Ioi 1 := Set.Ioc_subset_Ioi_self
-  -- `g - log (exp g / c)` is continuous on `(1, s₁]` and its exponential is `c`
-  have hcont : ContinuousOn (fun s ↦ g s - log (exp (g s) / c)) (Set.Ioc 1 s₁) :=
-    (hg.mono hmono).sub (((hg.mono hmono).cexp.div_const c).clog hslit)
-  have hexp (t : ℝ) (ht : t ∈ Set.Ioc 1 s₁) : exp (g t - log (exp (g t) / c)) = c := by
-    rw [exp_sub, exp_log (slitPlane_ne_zero (hslit ht)), div_div_cancel₀ (exp_ne_zero _)]
-  have hconst (t : ℝ) (ht : t ∈ Set.Ioc 1 s₁) :
-      g t - log (exp (g t) / c) = g s₁ - log (exp (g s₁) / c) :=
-    isCoveringMap_exp.constOn_of_comp isPreconnected_Ioc hcont
-      (fun u hu v hv ↦ Subtype.ext ((hexp u hu).trans (hexp v hv).symm)) ht ⟨hs₁, le_rfl⟩
-  refine ⟨g s₁ - log (exp (g s₁) / c) + log 1, ((h'.clog one_mem_slitPlane).const_add _).congr' ?_⟩
-  filter_upwards [Ioc_mem_nhdsGT hs₁] with t ht
-  rw [← hconst t ht, sub_add_cancel]
+    exact norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) (by rw [ofReal_re]; linarith)
+      (by rwa [ofReal_re])
 
 /-- **The prime density from the Euler product.** Let `‖a‖ ≤ 1`. If `P(a, s) (s - 1) ^ (-l)` tends
 to a nonzero limit as real `s → 1⁺`, for some real `l`, then `a` has prime density `-l`. For example
@@ -503,7 +501,7 @@ theorem hasPrimeDensity_of_tendsto (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) {l : ℝ}
     simp only [G, F]
     push_cast
     ring_nf
-  obtain ⟨C, hC⟩ := exists_tendsto_of_tendsto_exp hGcont hc (h.congr' hexp)
+  obtain ⟨C, hC⟩ := Complex.exists_tendsto_of_tendsto_exp hGcont hc (h.congr' hexp)
   refine ⟨eventually_summable_indicator_div_absNorm_cpow ha, ?_⟩
   have hE : (fun s : ℝ ↦ F s - degreeOnePrimeSum a s) =O[𝓝[>] 1] fun _ ↦ (1 : ℝ) := by
     refine IsBigO.of_bound (5 * Module.finrank ℚ K) ?_
@@ -520,19 +518,6 @@ theorem hasPrimeDensity_of_tendsto (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) {l : ℝ}
 section Extension
 
 variable (L : Type*) [Field L] [NumberField L] [Algebra K L]
-
-/-- A prime `𝔓` of `L` above a prime `𝔭` of `K` has prime norm exactly when `𝔭` has prime norm and
-`N(𝔓) = N(𝔭)`, since `N(𝔓)` is a positive power of `N(𝔭)`. -/
-private theorem notMem_higherDegreePrimes_iff_of_under_eq {𝔭 : HeightOneSpectrum (𝓞 K)}
-    {𝔓 : HeightOneSpectrum (𝓞 L)} (h : 𝔓.under (𝓞 K) = 𝔭) :
-    𝔓 ∉ higherDegreePrimes L ↔
-      𝔭 ∉ higherDegreePrimes K ∧ Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm 𝔭.asIdeal := by
-  have : 𝔓.asIdeal.LiesOver 𝔭.asIdeal := ⟨by rw [← h]; rfl⟩
-  have hpow := Ideal.absNorm_pow_inertiaDeg 𝔭.asIdeal 𝔓.asIdeal
-  simp only [mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
-  refine ⟨fun hP ↦ ?_, fun ⟨hp, heq⟩ ↦ heq ▸ hp⟩
-  obtain ⟨heq, -⟩ := hP.pow_eq_iff.mp hpow
-  exact ⟨heq ▸ hP, heq.symm⟩
 
 /-- The terms of the series over the primes of degree one of `L` above a prime `𝔭` of `K` add up
 to the term at `𝔭` of the series of the count of the primes of relative degree one. -/
@@ -554,7 +539,7 @@ private theorem tsum_fiber_under_eq (c : ℂ) (𝔭 : HeightOneSpectrum (𝓞 K)
           (Ideal.absNorm (𝔓 : HeightOneSpectrum (𝓞 L)).asIdeal : ℂ) ^ s =
         if 𝔭 ∉ higherDegreePrimes K then A.indicator (fun _ ↦ x) 𝔓 else 0 := by
     obtain ⟨𝔓, h𝔓 : 𝔓.under (𝓞 K) = 𝔭⟩ := 𝔓
-    have hiff := notMem_higherDegreePrimes_iff_of_under_eq L h𝔓
+    have hiff := notMem_higherDegreePrimes_iff_of_under_eq h𝔓
     by_cases hP : 𝔓 ∈ higherDegreePrimes L
     · rw [Set.indicator_of_notMem (Set.notMem_compl_iff.mpr hP), zero_div]
       split_ifs with hp
@@ -577,7 +562,7 @@ fields and `c ∈ ℂ`, the function sending a prime `𝔭` of `K` to `c` times 
 of `L` above `𝔭` with `N(𝔓) = N(𝔭)` (those of relative degree one) has prime density `c`. Its
 series over the primes of degree one of `K` is, term by term, the series of the constant `c` over
 the primes of degree one of `L`, grouped by the prime below. -/
-theorem hasPrimeDensity_mul_ncard_primesOver (c : ℂ) :
+theorem hasPrimeDensity_mul_ncard_setOf_under_eq_and_absNorm_eq (c : ℂ) :
     HasPrimeDensity (fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦ c *
       ({𝔓 : HeightOneSpectrum (𝓞 L) | 𝔓.under (𝓞 K) = 𝔭 ∧
         Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm 𝔭.asIdeal}.ncard : ℂ)) c := by

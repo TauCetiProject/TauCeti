@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
+import Mathlib.NumberTheory.EulerProduct.ExpLog
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Counting
@@ -93,9 +94,8 @@ theorem primeEulerProduct_def (a : HeightOneSpectrum (𝓞 K) → ℂ) (s : ℂ)
 /-- The modulus of `x N(𝔭) ^ (-s)` is `‖x‖ N(𝔭) ^ (-Re s)`. -/
 theorem norm_div_absNorm_cpow (x : ℂ) (𝔭 : HeightOneSpectrum (𝓞 K)) (s : ℂ) :
     ‖x / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s‖ = ‖x‖ * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-s.re) := by
-  have hN : 0 < Ideal.absNorm 𝔭.asIdeal :=
-    Nat.cast_pos.mp (two_pos.trans_le (two_le_absNorm_asIdeal_real 𝔭))
-  rw [norm_div, norm_natCast_cpow_of_pos hN, Real.rpow_neg (Nat.cast_nonneg _), div_eq_mul_inv]
+  rw [norm_div, norm_natCast_cpow_of_pos (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).pos,
+    Real.rpow_neg (Nat.cast_nonneg _), div_eq_mul_inv]
 
 /-- A local ratio `a(𝔭) N(𝔭) ^ (-s)` with `‖a 𝔭‖ ≤ 1` has modulus at most `N(𝔭) ^ (-Re s)`. -/
 theorem norm_div_absNorm_cpow_le_rpow_neg {𝔭 : HeightOneSpectrum (𝓞 K)} (ha : ‖a 𝔭‖ ≤ 1) :
@@ -127,10 +127,22 @@ theorem one_sub_div_absNorm_cpow_mem_slitPlane {𝔭 : HeightOneSpectrum (𝓞 K
 /-- For `Re s > 1` and `‖a‖ ≤ 1` the logarithms of the Euler factors are summable. -/
 theorem summable_neg_log_one_sub_div_absNorm_cpow (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) (hs : 1 < s.re) :
     Summable fun 𝔭 : HeightOneSpectrum (𝓞 K) ↦
-      -log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) := by
-  have h := summable_log_one_add_of_summable
-    (summable_norm_iff.mp (summable_norm_div_absNorm_cpow ha hs)).neg
-  simpa only [← sub_eq_add_neg] using h.neg
+      -log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s) :=
+  (summable_norm_div_absNorm_cpow ha hs).of_norm.clog_one_sub.neg
+
+/-- For `Re s ≥ 1`, `σ ≤ Re s` and `‖a 𝔭‖ ≤ 1` the logarithm of the Euler factor at `𝔭` has modulus
+at most `3/2 N(𝔭) ^ (-σ)`, since `‖log (1 + z)‖ ≤ 3/2 ‖z‖` for `‖z‖ ≤ 1/2`. -/
+theorem norm_neg_log_one_sub_div_absNorm_cpow_le {𝔭 : HeightOneSpectrum (𝓞 K)} (ha : ‖a 𝔭‖ ≤ 1)
+    (hs : 1 ≤ s.re) {σ : ℝ} (hσ : σ ≤ s.re) :
+    ‖-log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s)‖ ≤
+      3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-σ) := by
+  rw [norm_neg, sub_eq_add_neg]
+  refine (norm_log_one_add_half_le_self
+    (by rw [norm_neg]; exact norm_div_absNorm_cpow_le_half ha hs)).trans ?_
+  rw [norm_neg]
+  refine mul_le_mul_of_nonneg_left ((norm_div_absNorm_cpow_le_rpow_neg ha).trans ?_) (by norm_num)
+  exact Real.rpow_le_rpow_of_exponent_le
+    (one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)) (neg_le_neg hσ)
 
 /-- **Convergence of the Euler product in exponential form.** For `Re s > 1` and `‖a‖ ≤ 1` the
 product of the factors `(1 - a(𝔭) N(𝔭) ^ (-s))⁻¹` converges unconditionally to the exponential of
@@ -174,18 +186,8 @@ theorem abs_log_norm_primeEulerProduct_le (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) (h
   have hs1 : 1 < s.re := one_lt_two.trans_le hs
   have hsum2 := summable_absNorm_rpow_primes_of_one_lt (K := K) one_lt_two
   -- each logarithm is bounded by `3/2 N(𝔭) ^ (-2)`
-  have hterm (𝔭 : HeightOneSpectrum (𝓞 K)) :
-      ‖-log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s)‖ ≤
-        3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-(2 : ℝ)) := by
-    rw [norm_neg, sub_eq_add_neg]
-    refine (norm_log_one_add_half_le_self
-      (by rw [norm_neg]; exact norm_div_absNorm_cpow_le_half (ha 𝔭) hs1.le)).trans ?_
-    rw [norm_neg]
-    refine mul_le_mul_of_nonneg_left ((norm_div_absNorm_cpow_le_rpow_neg (ha 𝔭)).trans ?_)
-      (by norm_num)
-    exact Real.rpow_le_rpow_of_exponent_le
-      (one_le_two.trans (two_le_absNorm_asIdeal_real 𝔭)) (neg_le_neg hs)
-  have hbound := tsum_of_norm_bounded (hsum2.mul_left (3 / 2)).hasSum hterm
+  have hbound := tsum_of_norm_bounded (hsum2.mul_left (3 / 2)).hasSum
+    fun 𝔭 ↦ norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) hs1.le hs
   rw [tsum_mul_left] at hbound
   rw [primeEulerProduct_eq_exp ha hs1, norm_exp, Real.log_exp]
   calc |(∑' 𝔭 : HeightOneSpectrum (𝓞 K),

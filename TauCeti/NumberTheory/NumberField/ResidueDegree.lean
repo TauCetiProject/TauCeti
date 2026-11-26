@@ -42,6 +42,8 @@ objects that description involves and records their elementary theory.
   intermediate number field forces residue degree above one over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one`: a prime of
   residue degree one over an intermediate number field has the norm of the prime below it.
+* `TauCeti.notMem_higherDegreePrimes_iff_of_under_eq`: a prime above a prime `𝔭` of an
+  intermediate number field has prime norm exactly when `𝔭` does and their norms agree.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
 * `IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank`: at most `[E : K]`
@@ -161,6 +163,21 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_in
     (h : 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) :
     Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (𝔓.under (𝓞 K)).asIdeal := by
   rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h, pow_one]
+
+/-- A height-one prime `𝔓` of `𝓞 E` above a prime `𝔭` of a number field `K` below `E` has prime
+absolute norm exactly when `𝔭` has prime absolute norm and `N(𝔓) = N(𝔭)`, since `N(𝔓)` is a
+positive power of `N(𝔭)`. -/
+theorem notMem_higherDegreePrimes_iff_of_under_eq {E : Type*} [Field E] [NumberField E]
+    [Algebra K E] {𝔭 : HeightOneSpectrum (𝓞 K)} {𝔓 : HeightOneSpectrum (𝓞 E)}
+    (h : 𝔓.under (𝓞 K) = 𝔭) :
+    𝔓 ∉ higherDegreePrimes E ↔
+      𝔭 ∉ higherDegreePrimes K ∧ Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm 𝔭.asIdeal := by
+  subst h
+  have hpow := Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal
+  simp only [mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
+  refine ⟨fun hP ↦ ?_, fun ⟨hp, heq⟩ ↦ heq ▸ hp⟩
+  obtain ⟨heq, -⟩ := hP.pow_eq_iff.mp hpow
+  exact ⟨heq ▸ hP, heq.symm⟩
 
 /-! ### Fibring the primes over the rational primes below them -/
 
