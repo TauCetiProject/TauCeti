@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Matrix.Composition
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stable
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.AlgebraicK1
 
 import TauCeti.Data.Matrix.Composition
 import TauCeti.Logic.Equiv.Fin.Basic
@@ -34,7 +34,11 @@ because flattening is bijective at each finite size and every stage is dominated
 
   `K₁(Mₙ(R)) ≃* K₁(R)` for `n ≥ 1`,
 
-`TauCeti.AlgebraicK1.matrixEquiv`, natural in ring homomorphisms `R →+* S`. For `ι` empty,
+`TauCeti.AlgebraicK1.matrixEquiv`, natural in ring homomorphisms `R →+* S`. It sends the class
+of an invertible block matrix indexed by any finite type to the class of its flattening. In
+particular, an invertible matrix `u` over `R` is a unit of `Mι(R)`, a `1 × 1` matrix, and the class
+of this unit goes to `[u]`. So a unit `a` of `R` corresponds to the matrix-ring unit
+`diag(a, 1, …, 1)`, while the scalar unit `a • 1` goes to `n [a]`. For `ι` empty,
 `Mι(R)` is the zero ring and the statement fails, as `K₁(ℤ) = {±1}` is not trivial. The
 isomorphism of `GL_∞` also gives the Morita invariance of the Steinberg group and of `K₂`
 (`TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Steinberg.Morita`).
@@ -59,6 +63,13 @@ isomorphism of `GL_∞` also gives the Morita invariance of the Steinberg group 
   inverse on images of invertible matrices.
 * `TauCeti.AlgebraicK1.matrixEquiv_mk`, `TauCeti.AlgebraicK1.matrixEquiv_symm_mk`: the Morita
   isomorphism and its inverse on classes of invertible matrices.
+* `TauCeti.compGL_reindexGL`, `TauCeti.AlgebraicK1.matrixEquiv_mkOfFintype`,
+  `TauCeti.AlgebraicK1.matrixEquiv_symm_mkOfFintype`: flattening commutes with relabelling the
+  blocks, and the Morita isomorphism and its inverse on classes of block matrices indexed by an
+  arbitrary finite type.
+* `TauCeti.AlgebraicK1.matrixEquiv_ofUnits`, `TauCeti.AlgebraicK1.matrixEquiv_symm_ofUnits`: the
+  Morita isomorphism on classes of units of the matrix ring, and its inverse on classes of units
+  of `R`.
 * `TauCeti.StableGeneralLinearGroup.map_matrixEquiv`, `TauCeti.AlgebraicK1.map_matrixEquiv`:
   naturality in ring homomorphisms.
 
@@ -103,6 +114,16 @@ theorem coe_compGL (u : GL m (Matrix ι ι R)) :
 theorem coe_compGL_symm (u : GL (m × ι) R) :
     ((compGL m ι R).symm u : Matrix m m (Matrix ι ι R)) = (comp m m ι ι R).symm u :=
   (rfl)
+
+/-- Flattening commutes with relabelling the blocks: relabelling the block indices of `u` along
+`e : m ≃ m'` and flattening gives the flattening of `u`, relabelled along `e` on the block
+coordinate. -/
+theorem compGL_reindexGL {m' : Type*} [Fintype m'] [DecidableEq m'] (e : m ≃ m')
+    (u : GL m (Matrix ι ι R)) :
+    compGL m' ι R (e.reindexGL _ u) =
+      (e.prodCongr (Equiv.refl ι)).reindexGL R (compGL m ι R u) := by
+  ext ⟨i, a⟩ ⟨j, b⟩
+  simp
 
 variable (ι R) in
 /-- **Block flattening at a finite stage**: an invertible `k × k` matrix with entries in the
@@ -346,6 +367,48 @@ class of the `k × k` block matrix with the same entries. -/
 theorem matrixEquiv_symm_mk (k : ℕ) (u : GL (Fin (k * Fintype.card ι)) R) :
     (matrixEquiv R ι).symm (mk R (k * Fintype.card ι) u) = mk _ k ((flattenGL ι R k).symm u) := by
   rw [MulEquiv.symm_apply_eq, matrixEquiv_mk, MulEquiv.apply_symm_apply]
+
+/-- The Morita isomorphism sends the class of an invertible block matrix indexed by an arbitrary
+finite type `m` to the class of its flattening, indexed by `m × ι`. -/
+@[simp]
+theorem matrixEquiv_mkOfFintype {m : Type*} [Fintype m] [DecidableEq m]
+    (u : GL m (Matrix ι ι R)) :
+    matrixEquiv R ι (mkOfFintype _ m u) = mkOfFintype R (m × ι) (compGL m ι R u) := by
+  rw [mkOfFintype_eq_mk_reindexGL (Fintype.equivFin m), matrixEquiv_mk, flattenGL,
+    MulEquiv.trans_apply, mk_reindexGL_eq_mkOfFintype, compGL_reindexGL, mkOfFintype_reindexGL]
+
+/-- The inverse Morita isomorphism sends the class of an invertible matrix indexed by `m × ι`,
+for an arbitrary finite type `m`, to the class of the `m × m` block matrix with the same entries. -/
+@[simp]
+theorem matrixEquiv_symm_mkOfFintype {m : Type*} [Fintype m] [DecidableEq m]
+    (u : GL (m × ι) R) :
+    (matrixEquiv R ι).symm (mkOfFintype R (m × ι) u) = mkOfFintype _ m ((compGL m ι R).symm u) := by
+  rw [MulEquiv.symm_apply_eq, matrixEquiv_mkOfFintype, MulEquiv.apply_symm_apply]
+
+/-- **The size-one normalization of the Morita isomorphism**: an invertible matrix `u` over `R`
+indexed by `ι` is a unit of the matrix ring `Matrix ι ι R`, and the Morita isomorphism sends the
+class of this unit, as a `1 × 1` matrix over `Matrix ι ι R`, to the class of `u` over `R`.
+
+For instance, for a unit `a` of `R`, the unit `diag(a, 1, …, 1)` of `Matrix ι ι R` goes to `[a]`,
+while the scalar unit `a • 1` goes to `[a]ⁿ`, `n` the number of elements of `ι`, by
+`TauCeti.AlgebraicK1.mkOfFintype_diagGL` and `TauCeti.AlgebraicK1.mkOfFintype_scalar`. -/
+@[simp]
+theorem matrixEquiv_ofUnits (u : GL ι R) : matrixEquiv R ι (ofUnits _ u) = mkOfFintype R ι u := by
+  have hscalar : ofUnits _ u = mkOfFintype _ Unit (GeneralLinearGroup.scalar Unit u) := by simp
+  -- flattening a `1 × 1` block matrix only relabels `Unit × ι` as `ι`
+  have hflat : compGL Unit ι R (GeneralLinearGroup.scalar Unit u) =
+      (Equiv.punitProd ι).symm.reindexGL R u := by
+    ext ⟨⟨⟩, a⟩ ⟨⟨⟩, b⟩
+    simp
+  rw [hscalar, matrixEquiv_mkOfFintype, hflat, mkOfFintype_reindexGL]
+
+/-- **The inverse size-one normalization**: the inverse Morita isomorphism sends the class of a
+unit `a` of `R` to the class of the unit `diag(1, …, a, …, 1)` of the matrix ring `Matrix ι ι R`,
+with `a` in any one diagonal position `i`. -/
+theorem matrixEquiv_symm_ofUnits (i : ι) (a : Rˣ) :
+    (matrixEquiv R ι).symm (ofUnits R a) = ofUnits _ (diagGL (Pi.mulSingle i a)) := by
+  rw [MulEquiv.symm_apply_eq, matrixEquiv_ofUnits, mkOfFintype_diagGL]
+  simp [Pi.mulSingle_apply, apply_ite]
 
 /-- The Morita isomorphism is natural in ring homomorphisms `f : R →+* S`: it intertwines
 `K₁(f)` with `K₁` of `f` applied to the entries of `ι × ι` matrices. -/
