@@ -17,7 +17,10 @@ forward along a (semi)linear map turns a spanning family into one spanning the r
 and along an injective map it leaves an independent family independent.
 
 The finite-set form is what a decomposition of a module into a `Finset` of submodules needs, as in
-`TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map.
+`TauCeti/RingTheory/KrullSchmidt/Existence.lean`, when it is transported along a linear map. An
+injective semilinear endomorphism mapping a finite submodule `N` into itself is surjective on `N`,
+so `N.map f = N`; this applies both to regular scalar actions on finite submodules and to
+regular-determinant matrix maps on finite product submodules `I^ι`.
 
 The file also describes two maps between submodule lattices: the inverse of the interval
 isomorphism `Submodule.mapIic` is the inverse image along the inclusion, and an injective map
@@ -39,6 +42,8 @@ of `A`, every `A`-linear map sends the scalar product `I • ⊤` into `I • �
 * `Submodule.map_eq_span_of_span_eq_top`: the image of a submodule spanned by a family of its
   vectors (for instance a basis, via `Module.Basis.span_eq`) is spanned by the images of those
   vectors.
+* `Submodule.map_eq_self_of_finite`: an injective semilinear endomorphism stabilizing a finite
+  submodule `N` maps `N` onto itself.
 * `Submodule.mapIic_symm_apply`: the inverse of `Submodule.mapIic` takes inverse images along the
   inclusion.
 * `Submodule.map_equiv_eq_iff`: a semilinear equivalence carries `p` onto `q` exactly when it
@@ -68,6 +73,16 @@ theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
 /-- The image of the line spanned by `x` is the line spanned by `f x`. -/
 theorem map_span_singleton (f : M →ₛₗ[σ₁₂] M₂) (x : M) : (R ∙ x).map f = R₂ ∙ f x := by
   rw [map_span, Set.image_singleton]
+
+/-- An injective semilinear endomorphism mapping a finite submodule `N` into itself maps `N` onto
+itself. -/
+theorem map_eq_self_of_finite {σ : R →+* R} [RingHomSurjective σ] (N : Submodule R M) [Finite N]
+    {f : M →ₛₗ[σ] M} (hf : Function.Injective f) (hN : N.map f ≤ N) : N.map f = N := by
+  refine hN.antisymm fun y hy ↦ ?_
+  have hinj : Function.Injective (fun x : N ↦ (⟨f x.val, hN (mem_map_of_mem x.property)⟩ : N)) :=
+    fun x₁ x₂ h ↦ Subtype.ext (hf (congrArg Subtype.val h))
+  obtain ⟨x, hx⟩ := Finite.surjective_of_injective hinj ⟨y, hy⟩
+  exact ⟨x.val, x.property, congrArg Subtype.val hx⟩
 
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
