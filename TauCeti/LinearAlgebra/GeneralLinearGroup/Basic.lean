@@ -18,6 +18,8 @@ Supplements to `Mathlib.LinearAlgebra.GeneralLinearGroup.Basic`.
   `ofLinearEquiv f` is `f`.
 * `LinearMap.GeneralLinearGroup.ofLinearEquiv_one`: `ofLinearEquiv` sends the identity equivalence
   to the identity.
+* `Module.End.units_inv_apply_apply`, `Module.End.units_apply_inv_apply`: a unit of `Module.End R M`
+  and its inverse undo each other on vectors.
 -/
 
 public section
@@ -39,3 +41,21 @@ theorem ofLinearEquiv_one : ofLinearEquiv (1 : M ≃ₗ[R] M) = (1 : GeneralLine
   Units.ext (LinearMap.ext fun _ ↦ rfl)
 
 end LinearMap.GeneralLinearGroup
+
+namespace Module.End
+
+variable {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+
+/-- The inverse of a unit `a` of `Module.End R M` undoes `a`. -/
+@[simp]
+theorem units_inv_apply_apply (a : (Module.End R M)ˣ) (m : M) :
+    (↑a⁻¹ : Module.End R M) ((a : Module.End R M) m) = m := by
+  rw [← _root_.mul_apply_eq_comp, Units.inv_mul, _root_.one_apply_eq_self]
+
+/-- A unit `a` of `Module.End R M` undoes its inverse. -/
+@[simp]
+theorem units_apply_inv_apply (a : (Module.End R M)ˣ) (m : M) :
+    (a : Module.End R M) ((↑a⁻¹ : Module.End R M) m) = m := by
+  rw [← _root_.mul_apply_eq_comp, Units.mul_inv, _root_.one_apply_eq_self]
+
+end Module.End

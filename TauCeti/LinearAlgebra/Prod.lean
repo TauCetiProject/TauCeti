@@ -108,6 +108,18 @@ quadratic forms with the subgroup preserving both summands.
   and fixes the third basis vector.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   modules, read over the base of a scalar tower, is the product map of the two multiplications.
+* `Module.End.blockTriangular a b x`: the block upper triangular endomorphism
+  `(v, w) ↦ (a v + x w, b w)` of `V × W`.
+* `LinearMap.shear s`: the linear automorphism `(v, w) ↦ (v + s w, w)` of `V × W`, and
+  `LinearMap.shear_blockTriangular`: the shear by `s` conjugates the block map with upper right
+  block `a ∘ s - s ∘ b + y` to the one with upper right block `y`.
+
+## References
+
+* `Module.End.blockTriangular` is adapted from `New.blockTriangularEnd` of
+  `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean
+  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC), with the
+  invariant block first.
 -/
 
 public section
@@ -1048,3 +1060,62 @@ theorem lsmul_restrictScalars_prodMap (c : S) :
 end LinearMap
 
 end TauCeti
+
+/-! ### Block upper triangular endomorphisms and shears -/
+
+namespace Module.End
+
+section BlockTriangular
+
+variable {R V W : Type*} [Semiring R] [AddCommMonoid V] [Module R V] [AddCommMonoid W]
+  [Module R W]
+
+/-- The block upper triangular endomorphism `(v, w) ↦ (a v + x w, b w)` of `V × W`, with diagonal
+blocks `a` and `b` and upper right block `x`. -/
+def blockTriangular (a : Module.End R V) (b : Module.End R W) (x : W →ₗ[R] V) :
+    Module.End R (V × W) :=
+  (a.coprod x).prod (b ∘ₗ LinearMap.snd R V W)
+
+/-- The block map sends `(v, w)` to `(a v + x w, b w)`. -/
+@[simp]
+theorem blockTriangular_apply (a : Module.End R V) (b : Module.End R W) (x : W →ₗ[R] V)
+    (p : V × W) : a.blockTriangular b x p = (a p.1 + x p.2, b p.2) := by
+  simp [blockTriangular]
+
+end BlockTriangular
+
+end Module.End
+
+namespace LinearMap
+
+section Shear
+
+variable {R V W : Type*} [Semiring R] [AddCommGroup V] [Module R V] [AddCommMonoid W]
+  [Module R W]
+
+/-- The shear `(v, w) ↦ (v + s w, w)` of `V × W`, with inverse the shear by `-s`. It is Mathlib's
+`LinearEquiv.skewProd` of the identities and `s`, with the factors swapped. -/
+def shear (s : W →ₗ[R] V) : (V × W) ≃ₗ[R] (V × W) :=
+  LinearEquiv.prodComm R V W ≪≫ₗ (LinearEquiv.refl R W).skewProd (LinearEquiv.refl R V) s ≪≫ₗ
+    LinearEquiv.prodComm R W V
+
+/-- The shear by `s` sends `(v, w)` to `(v + s w, w)`. -/
+@[simp]
+theorem shear_apply (s : W →ₗ[R] V) (p : V × W) : s.shear p = (p.1 + s p.2, p.2) :=
+  (rfl)
+
+/-- The inverse of the shear by `s` sends `(v, w)` to `(v - s w, w)`. -/
+@[simp]
+theorem shear_symm_apply (s : W →ₗ[R] V) (p : V × W) : s.shear.symm p = (p.1 - s p.2, p.2) :=
+  (rfl)
+
+/-- The shear by `s` intertwines the block map with upper right block `a ∘ s - s ∘ b + y` with the
+block map with upper right block `y`. -/
+theorem shear_blockTriangular (a : Module.End R V) (b : Module.End R W) (s y : W →ₗ[R] V)
+    (p : V × W) :
+    s.shear (a.blockTriangular b (a ∘ₗ s - s ∘ₗ b + y) p) = a.blockTriangular b y (s.shear p) := by
+  ext <;> simp; abel
+
+end Shear
+
+end LinearMap
