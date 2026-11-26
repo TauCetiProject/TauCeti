@@ -9,7 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.HalfSpace
 public import TauCeti.Probability.Distributions.Gaussian.OrthogonalSplitting
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-import TauCeti.Examples.Analysis.BoundedVariation.GaussianHalfSpace
+import TauCeti.Examples.Analysis.BoundedVariation.Gaussian.HalfSpace
 import TauCeti.Examples.Probability.Distributions.Gaussian.Tails
 
 /-!
