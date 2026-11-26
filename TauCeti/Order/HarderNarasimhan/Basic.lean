@@ -47,6 +47,10 @@ truncation of automorphic forms and stacks of shtukas.
 * `TauCeti.RankDegree.IsHNSeries`: a series with semistable steps of strictly decreasing slopes.
 * `TauCeti.RankDegree.DegreeMaxAttained`: the degree attains its maximum on each rank level of
   each interval.
+* `TauCeti.RankDegree.DegreeMaxAttained.maxDestabilizing`: the maximal destabilizing element of an
+  interval, when the degree attains its maximum on each rank level.
+* `TauCeti.RankDegree.DegreeMaxAttained.hnSeries`: the Harder–Narasimhan series of an interval,
+  when the degree attains its maximum on each rank level.
 * `TauCeti.RankDegree.ofLinearOrder`: a strictly monotone rank and an arbitrary degree on a linear
   order.
 
@@ -57,6 +61,8 @@ truncation of automorphic forms and stacks of shtukas.
 * `TauCeti.RankDegree.IsHNSeries.eq`: a Harder–Narasimhan series is determined by its endpoints.
 * `TauCeti.RankDegree.DegreeMaxAttained.existsUnique_isHNSeries`: existence and uniqueness of the
   Harder–Narasimhan series of an interval.
+* `TauCeti.RankDegree.IsHNSeries.eq_hnSeries`: every Harder–Narasimhan series is the one chosen by
+  `TauCeti.RankDegree.DegreeMaxAttained.hnSeries`.
 * `TauCeti.RankDegree.IsHNSeries.length_eq_one_iff`: the series is trivial exactly when the
   interval is semistable.
 
@@ -318,8 +324,8 @@ theorem exists_slope_max (h : D.DegreeMaxAttained) (hab : a < b) :
       have key : ∀ e, a < e → e ≤ b → D.rank e ≤ k + 1 →
           D.slope a e ≤ max (D.slope a c) (D.slope a c') := by
         intro e hae heb hk
-        rcases (Nat.lt_succ_iff_lt_or_eq.1 (Nat.lt_succ_of_le hk)) with hk | hk
-        · exact le_max_of_le_left (hc e hae heb (Nat.lt_succ_iff.1 hk))
+        rcases hk.lt_or_eq with hk | hk
+        · exact le_max_of_le_left (hc e hae heb (by omega))
         · refine le_max_of_le_right (D.slope_le_slope_of_rank_eq hae (by omega) ?_)
           exact hc' e hae heb (by omega)
       rcases le_total (D.slope a c) (D.slope a c') with hle | hle
@@ -347,7 +353,22 @@ theorem exists_isMaxDestabilizing (h : D.DegreeMaxAttained) (hab : a < b) :
     (D.rank_le_rank (sup_le hcb heb)) ⟨c ⊔ e, hac.trans_le hce, sup_le hcb heb, hsup.trans hμ, rfl⟩
   exact le_sup_right.trans (D.eq_of_le_of_rank_le hce hrk).ge
 
+/-- The maximal destabilizing element of an interval `[a, b]` with `a < b`, when the degree
+attains its maximum on each rank level. -/
+noncomputable def maxDestabilizing (h : D.DegreeMaxAttained) (hab : a < b) : L :=
+  (h.exists_isMaxDestabilizing hab).choose
+
+theorem isMaxDestabilizing_maxDestabilizing (h : D.DegreeMaxAttained) (hab : a < b) :
+    D.IsMaxDestabilizing a b (h.maxDestabilizing hab) :=
+  (h.exists_isMaxDestabilizing hab).choose_spec
+
 end DegreeMaxAttained
+
+/-- A maximal destabilizing element is the chosen one. -/
+theorem IsMaxDestabilizing.eq_maxDestabilizing {D : RankDegree L 𝕜}
+    (hc : D.IsMaxDestabilizing a b c) (h : D.DegreeMaxAttained) :
+    c = h.maxDestabilizing (hc.left_lt.trans_le hc.le_right) :=
+  hc.unique (h.isMaxDestabilizing_maxDestabilizing _)
 
 /-! ### Harder–Narasimhan series -/
 
@@ -431,11 +452,9 @@ theorem isMaxDestabilizing (hp : D.IsHNSeries p) (i : Fin p.length) :
 element of the whole interval. -/
 theorem isMaxDestabilizing_head (hp : D.IsHNSeries p) (h : p.length ≠ 0) :
     D.IsMaxDestabilizing p.head p.last (p 1) := by
-  have := hp.isMaxDestabilizing ⟨0, Nat.pos_of_ne_zero h⟩
-  have h1 : (⟨0, Nat.pos_of_ne_zero h⟩ : Fin p.length).succ = 1 := by
-    ext
-    simp [Nat.mod_eq_of_lt (Nat.succ_lt_succ (Nat.pos_of_ne_zero h))]
-  rwa [h1] at this
+  have : NeZero p.length := ⟨h⟩
+  have := hp.isMaxDestabilizing 0
+  rwa [Fin.succ_zero_eq_one'] at this
 
 /-- The terms of two Harder–Narasimhan series with the same endpoints agree at every index both
 series reach. -/
@@ -466,7 +485,7 @@ theorem eq (hp : D.IsHNSeries p) (hq : D.IsHNSeries q) (hhead : p.head = q.head)
     intro p q hpq hlast hlt
     have h1 := hpq p.length (by omega) (by omega)
     have h2 : q ⟨p.length, by omega⟩ < q.last :=
-      q.strictMono (show (⟨p.length, _⟩ : Fin (q.length + 1)) < Fin.last _ from hlt)
+      q.strictMono (Fin.lt_def.2 hlt)
     exact h2.ne (h1.symm.trans hlast)
   have hlen_eq : p.length = q.length := le_antisymm
     (not_lt.1 (hlen (fun k h h' ↦ (hpq k h' h).symm) hlast.symm)) (not_lt.1 (hlen hpq hlast))
@@ -484,20 +503,19 @@ theorem length_eq_one_iff (hp : D.IsHNSeries p) (h : p.head < p.last) :
       simp [h0]
     exact h.ne (congrArg p h0')
   have hmd := hp.isMaxDestabilizing_head hne
+  have : NeZero p.length := ⟨hne⟩
+  -- The index `1` is the successor of `0`, so its value is `1`.
+  have hval : ((1 : Fin (p.length + 1)) : ℕ) = 1 := by
+    rw [← Fin.succ_zero_eq_one', Fin.val_succ, Fin.val_zero]
   constructor
   · intro h1
-    have h1' : p 1 = p.last := by
-      simp only [RelSeries.last]
-      congr 1
-      ext
-      simp [h1]
+    have h1' : p 1 = p.last := congrArg p (Fin.ext (by rw [hval, Fin.val_last, h1]))
     exact h1' ▸ hmd.semistable
   · intro hs
     have hlast := hmd.unique ((D.semistable_iff_isMaxDestabilizing h).1 hs)
-    have hinj := p.strictMono.injective hlast
-    have := congrArg Fin.val hinj
-    simp [Nat.mod_eq_of_lt (Nat.succ_lt_succ (Nat.pos_of_ne_zero hne))] at this
-    omega
+    have := congrArg Fin.val (p.strictMono.injective hlast)
+    rw [hval, Fin.val_last] at this
+    exact this.symm
 
 end IsHNSeries
 
@@ -569,7 +587,30 @@ theorem existsUnique_isHNSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) :
   exact ⟨p, ⟨hpa, hpb, hp⟩, fun q ⟨hqa, hqb, hq⟩ ↦ hq.eq hp (hqa.trans hpa.symm)
     (hqb.trans hpb.symm)⟩
 
+/-- The Harder–Narasimhan series of an interval `[a, b]` with `a ≤ b`, when the degree attains
+its maximum on each rank level. -/
+noncomputable def hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) : LTSeries L :=
+  (h.exists_isHNSeries hab).choose
+
+@[simp]
+theorem head_hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) : (h.hnSeries hab).head = a :=
+  (h.exists_isHNSeries hab).choose_spec.1
+
+@[simp]
+theorem last_hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) : (h.hnSeries hab).last = b :=
+  (h.exists_isHNSeries hab).choose_spec.2.1
+
+theorem isHNSeries_hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) :
+    D.IsHNSeries (h.hnSeries hab) :=
+  (h.exists_isHNSeries hab).choose_spec.2.2
+
 end DegreeMaxAttained
+
+/-- A Harder–Narasimhan series is the Harder–Narasimhan series of the interval between its
+endpoints. -/
+theorem IsHNSeries.eq_hnSeries {D : RankDegree L 𝕜} {p : LTSeries L} (hp : D.IsHNSeries p)
+    (h : D.DegreeMaxAttained) : p = h.hnSeries p.head_le_last :=
+  hp.eq (h.isHNSeries_hnSeries _) (h.head_hnSeries _).symm (h.last_hnSeries _).symm
 
 section LinearOrder
 

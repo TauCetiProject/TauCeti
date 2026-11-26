@@ -105,11 +105,11 @@ theorem slope_shift (hab : a ≤ b) :
 /-- Shifting by a constant `c` lowers the slope of every nontrivial interval by `c`. -/
 theorem slope_shift_const {c : 𝕜} (hab : a < b) :
     (D.shift (fun _ ↦ c) antitone_const).slope a b = D.slope a b - c := by
-  rw [slope_shift hab.le, sum_const, Nat.card_Ico, nsmul_eq_mul,
-    Nat.cast_sub (D.rank_le_rank hab.le), mul_div_cancel_left₀ _
-      (D.cast_rank_sub_cast_rank_pos hab).ne']
+  rw [slope_shift hab.le]
+  simp [Nat.cast_sub (D.rank_le_rank hab.le), (D.cast_rank_sub_cast_rank_pos hab).ne']
 
 /-- Shifting by a constant does not change semistability. -/
+@[simp]
 theorem semistable_shift_const_iff {c : 𝕜} :
     (D.shift (fun _ ↦ c) antitone_const).Semistable a b ↔ D.Semistable a b := by
   simp only [semistable_iff]
@@ -117,6 +117,7 @@ theorem semistable_shift_const_iff {c : 𝕜} :
   rw [slope_shift_const hae, slope_shift_const (hae.trans_le heb), sub_le_sub_iff_right]
 
 /-- Shifting by a constant does not change Harder–Narasimhan series. -/
+@[simp]
 theorem isHNSeries_shift_const_iff {c : 𝕜} {p : LTSeries L} :
     (D.shift (fun _ ↦ c) antitone_const).IsHNSeries p ↔ D.IsHNSeries p := by
   have hslope (i : Fin p.length) :
