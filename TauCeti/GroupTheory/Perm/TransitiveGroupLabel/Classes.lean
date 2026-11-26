@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Basic
 import TauCeti.Algebra.Group.Subgroup.Conjugates
 import TauCeti.GroupTheory.Perm.TransitiveGroupLabel.Classification
@@ -53,10 +52,10 @@ class, that of the trivial group, which acts transitively on the empty set, but 
   not depend on the equivalence.
 * `TauCeti.TransitiveSubgroupClass.mk_eq_reference_iff`: a transitive subgroup lies in the class
   of the reference subgroup of `j` exactly when it carries the label `j`.
-* `TauCeti.TransitiveSubgroupClass.bijective_reference_iff`: the reference classes enumerate the
+* `TauCeti.TransitiveSubgroupClass.reference_bijective_iff`: the reference classes enumerate the
   classes exactly when every transitive subgroup carries exactly one label, which in degrees one
   to five is `TauCeti.existsUnique_transitiveGroupLabel`
-  (`TauCeti.TransitiveSubgroupClass.bijective_reference`).
+  (`TauCeti.TransitiveSubgroupClass.reference_bijective`).
 * `TauCeti.natCard_transitiveSubgroupClass_fin`: in degrees one to five the number of classes is
   the number `1, 1, 2, 5, 5` of labels; `TauCeti.natCard_transitiveSubgroupClass_fin_zero`: in
   degree zero there is one class.
@@ -138,7 +137,7 @@ theorem mk_eq_mk_iff {G H : Subgroup (Perm α)} {hG : IsPretransitive G α}
     mk G hG = mk H hH ↔ ∃ τ : Perm α, G.map (MulAut.conj τ).toMonoidHom = H := by
   rw [← orbit_injective.eq_iff, orbit_mk, orbit_mk, eq_comm, Quotient.eq'', orbitRel_apply,
     mem_orbit_conjAct_iff]
-  rfl
+  simp only [MulEquiv.toMonoidHom_eq_coe]
 
 /-- The class of a conjugate of a transitive subgroup is the class of the subgroup. -/
 @[simp]
@@ -147,7 +146,7 @@ theorem mk_map_conj (τ : Perm α) (G : Subgroup (Perm α))
     mk (G.map (MulAut.conj τ : Perm α →* Perm α)) hG =
       mk G ((isPretransitive_map_conj_iff τ G).mp hG) := by
   rw [eq_comm, mk_eq_mk_iff]
-  exact ⟨τ, rfl⟩
+  exact ⟨τ, by rw [MulEquiv.toMonoidHom_eq_coe]⟩
 
 instance [Finite α] : Finite (TransitiveSubgroupClass α) :=
   have : Finite (Subgroup (Perm α)) := Finite.of_injective _ SetLike.coe_injective
@@ -162,45 +161,31 @@ private def equivSubtype : TransitiveSubgroupClass α ≃
   toFun c := ⟨c.orbit, c.exists_isPretransitive⟩
   invFun c := ofOrbit c.val c.property
 
-/-- Transporting a subgroup along `e.symm` and then along `e` gives it back. -/
-private theorem map_permCongrHom_map_symm (e : α ≃ β) (H : Subgroup (Perm β)) :
-    (H.map e.symm.permCongrHom.toMonoidHom).map e.permCongrHom.toMonoidHom = H :=
-  (Subgroup.map_symm_eq_iff_map_eq (e := e.permCongrHom) _).mp rfl
-
-/-- Transport of subgroups along `e` maps the orbits of conjugation on `α` onto those on `β`. -/
-private def orbitCongr (e : α ≃ β) :
-    orbitRel.Quotient (ConjAct (Perm α)) (Subgroup (Perm α)) ≃
-      orbitRel.Quotient (ConjAct (Perm β)) (Subgroup (Perm β)) :=
-  MulAction.orbitRelQuotientCongr
-    (ConjAct.ofConjAct.trans (e.permCongrHom.trans ConjAct.toConjAct))
-    e.permCongrHom.mapSubgroup.toEquiv fun g H ↦
-      Subgroup.map_map_conj H e.permCongrHom.toMonoidHom (ConjAct.ofConjAct g)
-
-private theorem orbitCongr_mk'' (e : α ≃ β) (G : Subgroup (Perm α)) :
-    orbitCongr e (Quotient.mk'' G) = Quotient.mk'' (G.map e.permCongrHom.toMonoidHom) :=
-  MulAction.orbitRelQuotientCongr_mk _ _ _ G
-
 /-- **Transport of classes along an equivalence.** An equivalence `e : α ≃ β` identifies the
 conjugacy classes of transitive subgroups of `Equiv.Perm α` and of `Equiv.Perm β`, sending the
 class of `G` to the class of its transport along `e`. By
 `TauCeti.TransitiveSubgroupClass.congr_eq_congr` the identification does not depend on `e`. -/
 def congr (e : α ≃ β) : TransitiveSubgroupClass α ≃ TransitiveSubgroupClass β :=
-  equivSubtype.trans <| ((orbitCongr e).subtypeEquiv fun c ↦ by
+  equivSubtype.trans <| (e.permCongrHom.orbitRelQuotientSubgroupEquiv.subtypeEquiv fun c ↦ by
     constructor
     · rintro ⟨G, rfl, hG⟩
-      exact ⟨G.map e.permCongrHom.toMonoidHom, (orbitCongr_mk'' e G).symm,
+      refine ⟨G.map e.permCongrHom.toMonoidHom, ?_,
         (isPretransitive_map_permCongrHom_iff e G).mpr hG⟩
+      rw [MulEquiv.orbitRelQuotientSubgroupEquiv_mk, MulEquiv.toMonoidHom_eq_coe]
     · rintro ⟨H, hHc, hH⟩
-      refine ⟨H.map e.symm.permCongrHom.toMonoidHom, (orbitCongr e).injective ?_,
+      refine ⟨H.map e.symm.permCongrHom.toMonoidHom, ?_,
         (isPretransitive_map_permCongrHom_iff e.symm H).mpr hH⟩
-      rw [orbitCongr_mk'', map_permCongrHom_map_symm, hHc]).trans equivSubtype.symm
+      rw [← e.permCongrHom.orbitRelQuotientSubgroupEquiv.symm_apply_apply c, ← hHc,
+        MulEquiv.orbitRelQuotientSubgroupEquiv_symm_mk, Equiv.permCongrHom_symm,
+        MulEquiv.toMonoidHom_eq_coe]).trans equivSubtype.symm
 
 /-- The transport of the class of `G` along `e` is the class of the transport of `G`. -/
 @[simp]
 theorem congr_mk (e : α ≃ β) (G : Subgroup (Perm α)) (hG : IsPretransitive G α) :
     congr e (mk G hG) =
       mk (G.map e.permCongrHom.toMonoidHom) ((isPretransitive_map_permCongrHom_iff e G).mpr hG) :=
-  TransitiveSubgroupClass.ext (orbitCongr_mk'' e G)
+  TransitiveSubgroupClass.ext <| (MulEquiv.orbitRelQuotientSubgroupEquiv_mk _ G).trans <| by
+    rw [orbit_mk, MulEquiv.toMonoidHom_eq_coe]
 
 /-- The inverse of the transport along `e` is the transport along `e.symm`. -/
 @[simp]
@@ -210,7 +195,8 @@ theorem congr_symm (e : α ≃ β) : (congr e).symm = congr e.symm := by
   | h G hG =>
     ext1
     rw [Equiv.apply_symm_apply, congr_mk, congr_mk, orbit_mk, orbit_mk,
-      map_permCongrHom_map_symm]
+      ← Equiv.permCongrHom_symm, ← MulEquiv.coe_mapSubgroup, ← MulEquiv.coe_mapSubgroup,
+      ← MulEquiv.symm_mapSubgroup, OrderIso.apply_symm_apply]
 
 /-- **The transport of classes does not depend on the equivalence.** Two equivalences
 `e e' : α ≃ β` differ by the permutation `e.symm.trans e'` of `β`, and conjugation by a
@@ -239,7 +225,7 @@ theorem mk_eq_reference_iff {n : ℕ} {j : TransitiveGroupIndex n} {G : Subgroup
 /-- **Enumeration of the classes by labels.** The reference classes enumerate the conjugacy
 classes of transitive subgroups of `Equiv.Perm (Fin n)` without repetition exactly when every
 transitive subgroup carries exactly one label. -/
-theorem bijective_reference_iff {n : ℕ} :
+theorem reference_bijective_iff {n : ℕ} :
     Function.Bijective (reference n) ↔
       ∀ G : Subgroup (Perm (Fin n)), IsPretransitive G (Fin n) →
         ∃! j, TransitiveGroupLabel j G := by
@@ -258,12 +244,11 @@ theorem bijective_reference_iff {n : ℕ} :
         obtain ⟨j, hj, -⟩ := h G hG
         exact ⟨j, (mk_eq_reference_iff.mpr hj).symm⟩
 
-
 /-- In degrees one to five the reference classes enumerate the conjugacy classes of transitive
 subgroups without repetition. -/
-theorem bijective_reference {n : ℕ} (h1 : 1 ≤ n) (h5 : n ≤ 5) :
+theorem reference_bijective {n : ℕ} (h1 : 1 ≤ n) (h5 : n ≤ 5) :
     Function.Bijective (reference n) :=
-  bijective_reference_iff.mpr fun G _ ↦ existsUnique_transitiveGroupLabel h1 h5 G
+  reference_bijective_iff.mpr fun G _ ↦ existsUnique_transitiveGroupLabel h1 h5 G
 
 end TransitiveSubgroupClass
 
@@ -273,7 +258,7 @@ open TransitiveSubgroupClass
 on `n` points has `1, 1, 2, 5, 5` conjugacy classes of transitive subgroups, one for each label. -/
 theorem natCard_transitiveSubgroupClass_fin {n : ℕ} (h1 : 1 ≤ n) (h5 : n ≤ 5) :
     Nat.card (TransitiveSubgroupClass (Fin n)) = numTransitiveGroups n := by
-  rw [← Nat.card_eq_of_bijective _ (bijective_reference h1 h5), Nat.card_eq_fintype_card,
+  rw [← Nat.card_eq_of_bijective _ (reference_bijective h1 h5), Nat.card_eq_fintype_card,
     Fintype.card_fin]
 
 /-- In degree zero there is one conjugacy class of transitive subgroups, that of the trivial
