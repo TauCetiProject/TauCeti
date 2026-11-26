@@ -103,6 +103,17 @@ instance isClosedImmersion_blowupImageι : IsClosedImmersion (I.blowupImageι p 
   dsimp only [blowupImageι]
   infer_instance
 
+/-- The canonical lift to the blowup of the schematic image factors any lift of `v`
+through the strict-transform embedding. -/
+@[reassoc]
+theorem blowupLift_toImage_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
+    (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
+    (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by
+      rw [← comap_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, hv]
+      exact isEffectiveCartier_top V) ≫ I.blowupImageι p v = g := by
+  refine I.pullback_blowupToBase_hom_ext p (by simp [hg]) ?_
+  simp [hv]
+
 variable [QuasiCompact v]
 
 /-- Schematic closure commutes with a blowup away from `v`: inside the base-changed
@@ -117,36 +128,26 @@ theorem ker_eq_ker_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
   have : IsSchemeTheoreticallyDominant l :=
     (I.comap (v.imageι ≫ p)).isSchemeTheoreticallyDominant_blowupLift_of_comap_eq_top
       v.toImage hvi
-  have hlg : l ≫ I.blowupImageι p v = g := by
-    apply pullback.hom_ext
-    · simp [l, hg]
-    · have hl : (l ≫ I.blowupMap (v.imageι ≫ p)) ≫ I.blowupToBase = v ≫ p := by
-        simp [l]
-      have hg' : (g ≫ pullback.snd p I.blowupToBase) ≫ I.blowupToBase = v ≫ p := by
-        rw [Category.assoc, ← pullback.condition, ← Category.assoc, hg]
-      rw [Category.assoc, blowupImageι_snd]
-      exact (I.eq_blowupLift (hv ▸ isEffectiveCartier_top V) hl).trans
-        (I.eq_blowupLift (hv ▸ isEffectiveCartier_top V) hg').symm
+  have hlg : l ≫ I.blowupImageι p v = g :=
+    I.blowupLift_toImage_blowupImageι p v hv g hg
   rw [← hlg, Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant]
 
 /-- The schematic image of a lift through a blowup avoiding `v` is canonically
 isomorphic to the blowup of the schematic image along the inverse image of the centre. -/
 def imageBlowupIso (hv : I.comap (v ≫ p) = ⊤)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
-    g.image ≅ (I.comap (v.imageι ≫ p)).blowup := by
-  let hker : (I.blowupImageι p v).ker = g.imageι.ker := by
+    g.image ≅ (I.comap (v.imageι ≫ p)).blowup :=
+  have hker : (I.blowupImageι p v).ker = g.imageι.ker := by
     rw [Scheme.IdealSheafData.ker_subschemeι, I.ker_eq_ker_blowupImageι p v hv g hg]
-  let l := IsClosedImmersion.lift (I.blowupImageι p v) g.imageι hker.le
-  have : IsIso l := IsClosedImmersion.isIso_lift _ _ hker
-  exact asIso l
+  haveI := IsClosedImmersion.isIso_lift _ _ hker
+  asIso (IsClosedImmersion.lift (I.blowupImageι p v) g.imageι hker.le)
 
 /-- The comparison respects the closed embeddings into the base-changed blowup. -/
 @[reassoc (attr := simp)]
 theorem imageBlowupIso_hom_blowupImageι (hv : I.comap (v ≫ p) = ⊤)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
     (I.imageBlowupIso p v hv g hg).hom ≫ I.blowupImageι p v = g.imageι := by
-  dsimp only [imageBlowupIso, asIso]
-  exact IsClosedImmersion.lift_fac _ _ _
+  simp only [imageBlowupIso, asIso_hom, IsClosedImmersion.lift_fac]
 
 /-- The inverse comparison also respects the closed embeddings. -/
 @[reassoc (attr := simp)]
@@ -155,15 +156,17 @@ theorem imageBlowupIso_inv_imageι (hv : I.comap (v ≫ p) = ⊤)
     (I.imageBlowupIso p v hv g hg).inv ≫ g.imageι = I.blowupImageι p v := by
   rw [Iso.inv_comp_eq, imageBlowupIso_hom_blowupImageι]
 
-/-- The comparison identifies the maps from `V` to the original schematic image. -/
+/-- The comparison carries the map from `V` to its schematic image to the canonical
+lift into the blowup of the original schematic image. -/
 @[reassoc (attr := simp)]
-theorem toImage_imageBlowupIso_hom_blowupToBase (hv : I.comap (v ≫ p) = ⊤)
+theorem toImage_imageBlowupIso_hom (hv : I.comap (v ≫ p) = ⊤)
     (g : V ⟶ pullback p I.blowupToBase) (hg : g ≫ pullback.fst p I.blowupToBase = v) :
-    g.toImage ≫ (I.imageBlowupIso p v hv g hg).hom ≫
-      (I.comap (v.imageι ≫ p)).blowupToBase = v.toImage := by
-  apply (cancel_mono v.imageι).mp
-  simp only [Category.assoc, ← blowupImageι_fst,
-    imageBlowupIso_hom_blowupImageι_assoc, Scheme.Hom.toImage_imageι_assoc,
-    hg, Scheme.Hom.toImage_imageι]
+    g.toImage ≫ (I.imageBlowupIso p v hv g hg).hom =
+      (I.comap (v.imageι ≫ p)).blowupLift v.toImage (by
+        rw [← comap_comp, ← Category.assoc, Scheme.Hom.toImage_imageι, hv]
+        exact isEffectiveCartier_top V) := by
+  apply (cancel_mono (I.blowupImageι p v)).mp
+  rw [Category.assoc, imageBlowupIso_hom_blowupImageι, Scheme.Hom.toImage_imageι,
+    blowupLift_toImage_blowupImageι I p v hv g hg]
 
 end AlgebraicGeometry.Scheme.IdealSheafData
