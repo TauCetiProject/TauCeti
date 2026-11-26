@@ -91,22 +91,45 @@ def IsLocallyOrientable (𝒜 : ImplicitAtlas Γ E ρ T act X d) : Prop :=
         (SignType.sign (LinearMap.det (Representation.externalPi (fun α : I ↦ ρ α) g)) : ℤ) •
           𝟙 _
 
+/-- The defining property of `TauCeti.ImplicitAtlas.IsLocallyOrientable`, for use in other files. -/
+theorem isLocallyOrientable_iff {𝒜 : ImplicitAtlas Γ E ρ T act X d} :
+    𝒜.IsLocallyOrientable ↔
+      ∀ (I : Finset A) (x : T I), x ∈ 𝒜.regLocus I → x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ I →
+        ∀ (g : (α : I) → Γ α) (hg : act I g x = x) (n : ℕ),
+          (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) →
+          localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (act I g : C(T I, T I))
+              (act_preimage_singleton_subset hg) n =
+            (SignType.sign (LinearMap.det (Representation.externalPi (fun α : I ↦ ρ α) g)) :
+              ℤ) • 𝟙 _ :=
+  Iff.rfl
+
+/-- In a locally orientable atlas, an element `g` of `Γ_I` fixing a regular zero `x` acts on the
+local orientation line `Hₙ(X_I, X_I ∖ {x}; ℤ)`, `n = d + dim E_I`, by the sign of the determinant
+of its action on `E_I`. -/
+theorem IsLocallyOrientable.localHomologyMap_eq {𝒜 : ImplicitAtlas Γ E ρ T act X d}
+    (h : 𝒜.IsLocallyOrientable) {I : Finset A} {x : T I} (hx : x ∈ 𝒜.regLocus I)
+    (hx₀ : x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ I) {g : (α : I) → Γ α} (hg : act I g x = x)
+    {n : ℕ} (hn : (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ)) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{w} ℤ)) (act I g : C(T I, T I))
+        (act_preimage_singleton_subset hg) n =
+      (SignType.sign (LinearMap.det (Representation.externalPi (fun α : I ↦ ρ α) g)) : ℤ) •
+        𝟙 _ :=
+  h I x hx hx₀ g hg n hn
+
 /-- An atlas whose stabilizers at regular zeros are trivial is locally orientable: the identity
 acts trivially on every orientation line. -/
 theorem isLocallyOrientable_of_forall_eq_one {𝒜 : ImplicitAtlas Γ E ρ T act X d}
     (h : ∀ (I : Finset A) (x : T I), x ∈ 𝒜.regLocus I →
       x ∈ kuranishiZeroSet 𝒜.kuranishi ∅ I → ∀ g : (α : I) → Γ α, act I g x = x → g = 1) :
     𝒜.IsLocallyOrientable := by
-  intro I x hx hx₀ g hg n _
+  refine isLocallyOrientable_iff.2 fun I x hx hx₀ g hg n _ ↦ ?_
   obtain rfl := h I x hx hx₀ g hg
   have hid : (act I 1 : C(T I, T I)) = ContinuousMap.id (T I) := by
     ext
     simp
   rw [map_one (Representation.externalPi fun α : I ↦ ρ α), map_one LinearMap.det, sign_one,
     SignType.coe_one, one_smul]
-  refine (localHomologyMap_congr _ hid _ n).trans ?_
-  rw [localHomologyMap_id]
-  exact localHomologyRestriction_refl _ {x} n
+  exact localHomologyMap_eq_id _ hid _ n
 
 /-- An atlas with trivial isotropy groups is locally orientable. -/
 theorem isLocallyOrientable_of_subsingleton [∀ α, Subsingleton (Γ α)]
@@ -175,13 +198,11 @@ theorem localHomologyMap_pointAct_unitsIntAction (hσ : ∀ u, unitsIntAction u 
         localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (f : C(ℝ, ℝ)) hf k ≫
           localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) ψc hψ k := by
         rw [localHomologyMap_comp, localHomologyMap_comp]
-        rfl
+        exact localHomologyMap_congr _ (ContinuousMap.comp_assoc _ _ _).symm _ k
     _ = ((u : ℤ) : ℤ) • 𝟙 _ := by
         rw [hmid, Preadditive.zsmul_comp, Category.id_comp, Preadditive.comp_zsmul,
           localHomologyMap_comp]
-        refine congrArg (((u : ℤ) : ℤ) • ·) ((localHomologyMap_congr _ hid _ k).trans ?_)
-        rw [localHomologyMap_id]
-        exact localHomologyRestriction_refl _ {x} k
+        rw [localHomologyMap_eq_id _ hid _ k]
 
 /-- At a point of `X_α = ℝ`, the integral local orientation line `H₁(ℝ, ℝ ∖ {x}; ℤ) ≅ ℤ` is not
 `2`-torsion, so `-1` does not act on it as the identity. -/
@@ -206,11 +227,12 @@ theorem not_isLocallyOrientable_reflectionAtlas {m : ℕ} (hm : Even m) (hm₀ :
     ¬ (reflectionAtlas hm hm₀).IsLocallyOrientable := by
   intro h
   let x : PointThickening ℝ 0 {()} := ⟨0, fun _ ↦ rfl⟩
-  have := h {()} x (by simp [regLocus_reflectionAtlas])
-    (mem_kuranishiZeroSet.2 fun _ _ ↦ by simp [x, hm₀]) (fun _ ↦ -1)
-    (Subtype.ext (by simp [x, pointComponent_of_mem])) 1 (by simp)
+  have := h.localHomologyMap_eq (I := {()}) (x := x) (by simp [regLocus_reflectionAtlas])
+    (mem_kuranishiZeroSet.2 fun _ _ ↦ by simp [x, hm₀]) (g := fun _ ↦ -1)
+    (Subtype.ext (by simp [x, pointComponent_of_mem])) (n := 1) (by simp)
   rw [localHomologyMap_pointAct_unitsIntAction _ _ rfl, Representation.det_externalPi] at this
-  have htriv (u : ℤˣ) : Representation.trivial ℝ ℤˣ ℝ u = 1 := LinearMap.ext fun _ ↦ rfl
+  have htriv (u : ℤˣ) : Representation.trivial ℝ ℤˣ ℝ u = 1 :=
+    LinearMap.ext (Representation.trivial_apply ℝ u)
   simp only [htriv, map_one, Finset.prod_const_one, sign_one, SignType.coe_one, one_smul] at this
   exact neg_one_zsmul_id_ne_id x this
 
@@ -219,7 +241,7 @@ reflection `x ↦ -x` acts by `-1` both on the local orientation line and on the
 `E_α = ℝ`, so it acts trivially on their tensor product. -/
 theorem isLocallyOrientable_oddReflectionAtlas {m : ℕ} (hm : Odd m) :
     (oddReflectionAtlas hm).IsLocallyOrientable := by
-  intro I x hx hx₀ g hg n _
+  refine isLocallyOrientable_iff.2 fun I x hx hx₀ g hg n _ ↦ ?_
   rw [regLocus_oddReflectionAtlas] at hx
   rw [kuranishi_oddReflectionAtlas] at hx₀
   obtain ⟨⟨⟩, hI⟩ : I.Nonempty := hx

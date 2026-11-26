@@ -867,6 +867,35 @@ theorem regLocus_oddReflectionAtlas (hm : Odd m) (I : Finset Unit) :
     (oddReflectionAtlas hm).regLocus I = {_x | I.Nonempty} :=
   (rfl)
 
+/-- The regular locus of `X_∅` in `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty. -/
+@[simp]
+theorem regLocus_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).regLocus ∅ = ∅ :=
+  letI := realChartedSpace
+  regLocus_pointAtlas_empty ..
+
+/-- The footprint maps of `TauCeti.ImplicitAtlas.oddReflectionAtlas` keep the real coordinate. -/
+@[simp]
+theorem coe_footprintMap_oddReflectionAtlas (hm : Odd m) {I J : Finset Unit} (h : I ⊆ J)
+    (x : kuranishiZeroSet (E := fun _ : Unit ↦ ℝ) (oddReflectionAtlas hm).kuranishi I J) :
+    ((oddReflectionAtlas hm).footprintMap h x : ℝ) = ((x : PointThickening ℝ 0 J) : ℝ) :=
+  (rfl)
+
+/-- The footprint `V_∅` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is empty, since the regular
+locus of `X_∅` is. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_empty (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint ∅ = ∅ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_empty ..
+
+/-- The footprint `V_α` of `TauCeti.ImplicitAtlas.oddReflectionAtlas` is the whole point. -/
+@[simp]
+theorem footprint_oddReflectionAtlas_singleton (hm : Odd m) :
+    (oddReflectionAtlas hm).footprint {()} = univ :=
+  letI := realChartedSpace
+  footprint_pointAtlas_singleton ..
+
 /-! #### The atlas `s = 0` on a point -/
 
 section Zero
