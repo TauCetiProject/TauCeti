@@ -14,7 +14,9 @@ While `(selfAdjoint.submodule R A).subtypeL` embeds the submodule carrier
 `↥(selfAdjoint.submodule R A)` into a topological star module `A`, calculus and operator APIs
 stated directly on `selfAdjoint A` need a `ContinuousLinearMap` with syntactic domain
 `selfAdjoint A` so that coercions and `simp` lemmas match at `implicit` transparency. This file
-provides `selfAdjoint.subtypeL : selfAdjoint A →L[R] A`.
+provides `selfAdjoint.subtypeL : selfAdjoint A →L[R] A`. Smoothness and Fréchet derivative lemmas
+for `Subtype.val : selfAdjoint A → A` live in `TauCeti.Analysis.Calculus.ContDiff.Star` and
+`TauCeti.Analysis.Calculus.FDeriv.Star`.
 -/
 
 public section

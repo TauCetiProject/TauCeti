@@ -21,11 +21,14 @@ rather than restricting scalars, so that no algebra diamond arises.
 
 ## Main definitions
 
+* `Matrix.l2OpTopologicalSpace`: the topology induced by `Matrix.instL2OpMetricSpace`.
 * `Matrix.l2OpNormedAlgebraReal`: `Matrix n n 𝕜` with the `ℓ²` operator norm, as a normed
   `ℝ`-algebra.
 
 ## Main results
 
+* `Matrix.l2OpTopologicalSpace_eq` and `Matrix.l2OpModuleReal_eq`: the `ℓ²` operator-norm topology
+  and `ℝ`-module structure agree with the default entrywise ones on matrices.
 * `Matrix.norm_apply_le_l2_opNorm`: an entrywise bound, including rectangular matrices.
 * `Matrix.l2_opNorm_one_le`: an identity bound that also applies to empty matrices.
 * `Matrix.norm_trace_le_card_mul_l2_opNorm` and `Matrix.norm_normalized_trace_le_l2_opNorm`:
@@ -50,6 +53,25 @@ rather than restricting scalars, so that no algebra diamond arises.
 public section
 
 namespace Matrix
+
+/-- The topology induced by `Matrix.instL2OpMetricSpace` on finite matrices. -/
+protected noncomputable abbrev l2OpTopologicalSpace (m n 𝕜 : Type*) [RCLike 𝕜] [Fintype m]
+    [Fintype n] [DecidableEq n] : TopologicalSpace (Matrix m n 𝕜) :=
+  Matrix.instL2OpMetricSpace.toUniformSpace.toTopologicalSpace
+
+/-- The topology of the `ℓ²` operator norm agrees with the entrywise product topology on matrices,
+since `(Matrix.toEuclideanLin).trans LinearMap.toContinuousLinearMap` is both an `ℓ²` isometry and
+an entrywise homeomorphism. -/
+theorem l2OpTopologicalSpace_eq (m n 𝕜 : Type*) [RCLike 𝕜] [Fintype m] [Fintype n]
+    [DecidableEq n] :
+    Matrix.l2OpTopologicalSpace m n 𝕜 = (inferInstance : TopologicalSpace (Matrix m n 𝕜)) := by
+  let φ := (Matrix.toEuclideanLin (𝕜 := 𝕜) (m := m) (n := n)).trans LinearMap.toContinuousLinearMap
+  have h1 : Matrix.l2OpTopologicalSpace m n 𝕜 = TopologicalSpace.induced φ inferInstance := by
+    open scoped Matrix.Norms.L2Operator in
+    exact (Isometry.of_dist_eq (f := φ) fun A B ↦ by
+      rw [dist_eq_norm, dist_eq_norm, ← map_sub, Matrix.l2_opNorm_def])
+      |>.isUniformInducing.isInducing.eq_induced
+  exact h1.trans φ.toContinuousLinearEquiv.toHomeomorph.isInducing.eq_induced.symm
 
 variable {n 𝕜 : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
@@ -250,6 +272,12 @@ protected noncomputable abbrev l2OpNormedAlgebraReal : NormedAlgebra ℝ (Matrix
   norm_smul_le r A := by
     rw [RCLike.real_smul_eq_coe_smul (K := 𝕜) r A]
     exact (norm_smul_le _ _).trans_eq (by rw [RCLike.norm_ofReal, Real.norm_eq_abs])
+
+/-- The `ℝ`-module structure underlying `Matrix.l2OpNormedAlgebraReal` agrees with
+`Matrix.module`. -/
+theorem l2OpModuleReal_eq (n 𝕜 : Type*) [RCLike 𝕜] [Fintype n] [DecidableEq n] :
+    (Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)).toNormedSpace.toModule = Matrix.module :=
+  Module.ext' _ _ fun _ _ ↦ rfl
 
 /-- Removing the diagonal of a square matrix increases its `ℓ²` operator norm by at most a factor
 of `2`. -/

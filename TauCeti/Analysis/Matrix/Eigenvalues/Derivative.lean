@@ -25,6 +25,9 @@ import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.ContDiff.Star
+import TauCeti.Analysis.Calculus.FDeriv.Congr
+import TauCeti.Analysis.Calculus.FDeriv.Star
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.Taylor.Integral
 import TauCeti.Analysis.Matrix.Eigenvalues.Continuous
@@ -80,8 +83,29 @@ namespace Matrix
 
 section ImplicitBranch
 
+/-! ### Implicit-function eigenvector branch
+
+Around a Hermitian matrix `A` whose `k`-th sorted eigenvalue `λₖ(A)` is simple, choose the unit
+eigenvector `u₀ = hA.eigenvectorBasis₀ k` and rank-one projector `P₀ = hA.eigenprojector₀ k`. We
+construct a real-analytic local eigenvector branch `B ↦ u₀ + localEigPerturb hA hk B` in three
+steps:
+
+1. `eigNormMap` encodes the normalized eigen-equation
+   `(1 - P₀) (B (u₀ + w) - ⟨u₀, B (u₀ + w)⟩ w) + ⟨u₀, w⟩ u₀ = 0`, whose vanishing forces both the
+   normalization `⟨u₀, w⟩ = 0` and the eigenvalue equation
+   `B (u₀ + w) = ⟨u₀, B (u₀ + w)⟩ (u₀ + w)` (`eigNormMap_eq_zero_imp`).
+2. At `(A, 0)`, the `w`-partial Fréchet derivative of `eigNormMap` is left multiplication by
+   `A - λₖ(A) • 1 + P₀` (`fderiv_eigNormMap_inr`), inverted when `λₖ(A)` is simple by
+   `reducedResolventPlusProj`. Applying `ContDiffAt.implicitFunction` produces the analytic branch
+   `localEigPerturb` and its strict derivative (`hasStrictFDerivAt_localEigPerturb`).
+3. Continuity of the Rayleigh quotient and of `eigenvalues₀` keeps the branch's eigenvalue distinct
+   from `λⱼ(X)` for every `j ≠ k` near `A` (`eventually_localEigRayleigh_ne`), identifying the
+   associated rank-one projector with `Pₖ(X)` (`eventuallyEq_eigenprojector₀_rankOne`). -/
+
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
+/-- Normalized eigenvector residual `(B, w) ↦ (1 - P₀)(B(u₀ + w) - ⟨u₀, B(u₀ + w)⟩ w) + ⟨u₀, w⟩ u₀`
+around `u₀ = hA.eigenvectorBasis₀ k` and `P₀ = hA.eigenprojector₀ k`. -/
 private def eigNormMap {A : Matrix n n 𝕜} (hA : A.IsHermitian) (k : Fin (Fintype.card n))
     (p : Matrix n n 𝕜 × (n → 𝕜)) : n → 𝕜 :=
   let u₀ : n → 𝕜 := ⇑(hA.eigenvectorBasis₀ k)
@@ -107,9 +131,11 @@ private theorem eigNormMap_eq_zero_imp {A : Matrix n n 𝕜} (hA : A.IsHermitian
   refine ⟨hw, sub_eq_zero.mp ?_⟩
   set α : 𝕜 := star u₀ ⬝ᵥ (B *ᵥ (u₀ + w))
   have hsub : (1 - P₀) *ᵥ u₀ = 0 := by simp [sub_mulVec, P₀, u₀]
+  have h0' : (1 - P₀) *ᵥ (B *ᵥ (u₀ + w) - α • w) = 0 := by
+    simpa [eigNormMap, u₀, P₀, α, hw] using h0
+  have hsplit : B *ᵥ (u₀ + w) - α • (u₀ + w) = (B *ᵥ (u₀ + w) - α • w) - α • u₀ := by module
   have hproj : (1 - P₀) *ᵥ (B *ᵥ (u₀ + w) - α • (u₀ + w)) = 0 := by
-    simpa [eigNormMap, u₀, P₀, α, hw, smul_add, add_comm (α • u₀), ← sub_sub, mulVec_sub,
-      mulVec_smul, hsub] using h0
+    rw [hsplit, mulVec_sub, h0', mulVec_smul, hsub, smul_zero, sub_zero]
   have hsc : star u₀ ⬝ᵥ (B *ᵥ (u₀ + w) - α • (u₀ + w)) = 0 := by simp [α, u₀, hw]
   calc B *ᵥ (u₀ + w) - α • (u₀ + w)
       = (1 - P₀) *ᵥ (B *ᵥ (u₀ + w) - α • (u₀ + w)) +
@@ -210,12 +236,11 @@ private theorem fderiv_eigNormMap_self {A : Matrix n n 𝕜} (hA : A.IsHermitian
     ext p i; simp [eigNormMap, u₀, L2]
   rw [heq]
   refine (hpart1.add L2.hasFDerivAt).fderiv.trans <| ContinuousLinearMap.ext fun ⟨H, y⟩ ↦ ?_
-  simp only [u₀, L2, eigFst, eigSnd, add_apply, ContinuousLinearMap.comp_apply, sub_apply,
-    smul_apply, ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply,
-    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', mulVecBilinCLM_apply,
-    mulVecCLM_apply, TauCeti.dotProductCLM_apply]
-  exact eigNormMap_linear_simplify hA k H y
+  simpa [u₀, L2, mulVec_add, mulVec_sub, mulVec_smul, add_mulVec] using
+    eigNormMap_linear_simplify hA k H y
 
+/-- Sum of `Pₖ` and the reduced resolvent `∑_{j ≠ k} (λⱼ - λₖ)⁻¹ Pⱼ`, which inverts
+`A - λₖ • 1 + Pₖ` when `λₖ` is simple. -/
 private def reducedResolventPlusProj {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     (k : Fin (Fintype.card n)) : Matrix n n 𝕜 :=
   hA.eigenprojector₀ k + ∑ j ∈ Finset.univ.erase k,
@@ -245,6 +270,20 @@ private theorem reducedResolventPlusProj_mul {A : Matrix n n 𝕜} (hA : A.IsHer
   simpa [reducedResolventPlusProj, conjTranspose_sum, conjTranspose_smul, hA.eq,
     RCLike.star_def] using congrArg conjTranspose (mul_reducedResolventPlusProj hA hk)
 
+private theorem reducedResolventPlusProj_mul_one_sub_eigenprojector₀ {A : Matrix n n 𝕜}
+    (hA : A.IsHermitian) (k : Fin (Fintype.card n)) :
+    reducedResolventPlusProj hA k * (1 - hA.eigenprojector₀ k) =
+      ∑ j ∈ Finset.univ.erase k,
+        (((hA.eigenvalues₀ j - hA.eigenvalues₀ k)⁻¹ : ℝ) : 𝕜) • hA.eigenprojector₀ j := by
+  have hzero : (∑ j ∈ Finset.univ.erase k,
+      (((hA.eigenvalues₀ j - hA.eigenvalues₀ k)⁻¹ : ℝ) : 𝕜) • hA.eigenprojector₀ j) *
+      hA.eigenprojector₀ k = 0 := by
+    rw [Matrix.sum_mul]
+    exact Finset.sum_eq_zero fun j hj ↦ by
+      simp [hA.eigenprojector₀_mul_of_ne (Finset.mem_erase.mp hj).left]
+  rw [reducedResolventPlusProj, mul_sub, mul_one, add_mul, hzero]
+  simp
+
 private theorem fderiv_eigNormMap_inr {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     (k : Fin (Fintype.card n)) :
     fderiv 𝕜 (eigNormMap hA k) (A, 0) ∘L eigInr n 𝕜 =
@@ -268,6 +307,8 @@ private theorem isInvertible_fderiv_eigNormMap_inr {A : Matrix n n 𝕜} (hA : A
     (fderiv 𝕜 (eigNormMap hA k) (A, 0) ∘L eigInr n 𝕜).IsInvertible :=
   .of_inverse (fderiv_inr_comp_reducedResolvent hA hk) (reducedResolvent_comp_fderiv_inr hA hk)
 
+/-- Analytic local eigenvector perturbation `B ↦ w(B)` solving `eigNormMap hA k (B, w(B)) = 0` near
+`A` via the implicit function theorem. -/
 private def localEigPerturb {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     {k : Fin (Fintype.card n)} (hk : ∀ j ≠ k, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ k) :
     Matrix n n 𝕜 → (n → 𝕜) :=
@@ -289,42 +330,44 @@ private theorem eventually_eigNormMap_localEigPerturb {A : Matrix n n 𝕜} (hA 
     ((contDiff_eigNormMap hA k (m := ω)).contDiffAt (x := (A, 0)))
     (by decide) (isInvertible_fderiv_eigNormMap_inr hA hk)
 
+/-- Candidate strict `𝕜`-Fréchet derivative `H ↦ ∑_{j ≠ k} (λₖ - λⱼ)⁻¹ Pⱼ (H uₖ)` of
+`localEigPerturb` at `A`. -/
+private def localEigPerturbFDeriv {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (k : Fin (Fintype.card n)) : Matrix n n 𝕜 →L[𝕜] (n → 𝕜) :=
+  ∑ j ∈ Finset.univ.erase k, (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) •
+    ((hA.eigenprojector₀ j).mulVecCLM).comp
+      ((mulVecBilinCLM n n 𝕜).flip ⇑(hA.eigenvectorBasis₀ k))
+
+private theorem localEigPerturbFDeriv_apply {A : Matrix n n 𝕜} (hA : A.IsHermitian)
+    (k : Fin (Fintype.card n)) (H : Matrix n n 𝕜) :
+    localEigPerturbFDeriv hA k H =
+      ∑ j ∈ Finset.univ.erase k, (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) •
+        (hA.eigenprojector₀ j *ᵥ (H *ᵥ ⇑(hA.eigenvectorBasis₀ k))) := by
+  simp [localEigPerturbFDeriv, mulVec_mulVec]
+
 private theorem hasStrictFDerivAt_localEigPerturb {A : Matrix n n 𝕜} (hA : A.IsHermitian)
     {k : Fin (Fintype.card n)} (hk : ∀ j ≠ k, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ k) :
-    HasStrictFDerivAt (localEigPerturb hA hk)
-      (∑ j ∈ Finset.univ.erase k, (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) •
-        ((hA.eigenprojector₀ j).mulVecCLM).comp
-          ((mulVecBilinCLM n n 𝕜).flip ⇑(hA.eigenvectorBasis₀ k))) A := by
+    HasStrictFDerivAt (localEigPerturb hA hk) (localEigPerturbFDeriv hA k) A := by
   have hraw := ContDiffAt.hasStrictFDerivAt_implicitFunction
     ((contDiff_eigNormMap hA k (m := ω)).contDiffAt (x := (A, 0)))
     (by decide) (isInvertible_fderiv_eigNormMap_inr hA hk)
   have hinv_eq := ContinuousLinearMap.inverse_eq
     (fderiv_inr_comp_reducedResolvent hA hk) (reducedResolvent_comp_fderiv_inr hA hk)
-  refine hraw.congr_fderiv ?_
-  ext H i; rw [hinv_eq]
-  simp only [neg_apply, ContinuousLinearMap.comp_apply, sum_apply, smul_apply,
-    fderiv_eigNormMap_self hA k, add_apply, ContinuousLinearMap.inl_apply, eigFst, eigSnd,
-    ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', ContinuousLinearMap.flip_apply,
-    mulVecBilinCLM_apply, mulVecCLM_apply, mulVec_zero, add_zero]
-  have hRproj : reducedResolventPlusProj hA k * (1 - hA.eigenprojector₀ k) =
-      ∑ j ∈ Finset.univ.erase k,
-        (((hA.eigenvalues₀ j - hA.eigenvalues₀ k)⁻¹ : ℝ) : 𝕜) • hA.eigenprojector₀ j := by
-    have hzero : (∑ j ∈ Finset.univ.erase k,
-        (((hA.eigenvalues₀ j - hA.eigenvalues₀ k)⁻¹ : ℝ) : 𝕜) • hA.eigenprojector₀ j) *
-        hA.eigenprojector₀ k = 0 := by
-      rw [Matrix.sum_mul]
-      exact Finset.sum_eq_zero fun j hj ↦ by
-        simp [hA.eigenprojector₀_mul_of_ne (Finset.mem_erase.mp hj).left]
-    rw [reducedResolventPlusProj, mul_sub, mul_one, add_mul, hzero]; simp
-  have hvec : -(reducedResolventPlusProj hA k *ᵥ
-      ((1 - hA.eigenprojector₀ k) *ᵥ (H *ᵥ ⇑(hA.eigenvectorBasis₀ k)))) =
-      ∑ j ∈ Finset.univ.erase k, (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) •
-        (hA.eigenprojector₀ j *ᵥ (H *ᵥ ⇑(hA.eigenvectorBasis₀ k))) := by
-    rw [mulVec_mulVec, hRproj, sum_mulVec, ← Finset.sum_neg_distrib]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [smul_mulVec, ← neg_smul]; congr 1; push_cast; rw [← inv_neg, neg_sub]
-  simpa [Finset.sum_apply] using congrFun hvec i
+  dsimp only [eigInr] at hinv_eq
+  have hvec (H : Matrix n n 𝕜) :
+      -(reducedResolventPlusProj hA k *ᵥ
+          ((1 - hA.eigenprojector₀ k) *ᵥ (H *ᵥ ⇑(hA.eigenvectorBasis₀ k)))) =
+        localEigPerturbFDeriv hA k H := by
+    rw [localEigPerturbFDeriv_apply]
+    simp [mulVec_mulVec, ← Matrix.mul_assoc, reducedResolventPlusProj_mul_one_sub_eigenprojector₀,
+      Matrix.sum_mul, sum_mulVec, smul_mulVec, ← Finset.sum_neg_distrib, ← neg_smul, ← inv_neg,
+      neg_sub]
+  refine hraw.congr_fderiv (ContinuousLinearMap.ext fun H ↦ ?_)
+  rw [hinv_eq]
+  simpa [fderiv_eigNormMap_self hA k, ← mulVec_mulVec] using hvec H
 
+/-- Near `A`, the Rayleigh quotient of the implicit eigenvector branch stays distinct from every
+other sorted eigenvalue `λⱼ(X)` (`j ≠ k`). -/
 private theorem eventually_localEigRayleigh_ne {A : selfAdjoint (Matrix n n 𝕜)}
     {k : Fin (Fintype.card n)}
     (hk : ∀ j ≠ k, A.property.isHermitian.eigenvalues₀ j ≠ A.property.isHermitian.eigenvalues₀ k) :
@@ -361,6 +404,8 @@ private theorem eventually_localEigRayleigh_ne {A : selfAdjoint (Matrix n n 𝕜
     exact ((hα_cont.sub hj_cont).eventually_ne hne).mono fun X hX _ ↦
       sub_ne_zero.mp (by simpa only [Pi.sub_apply, α, u₀] using hX)
 
+/-- Near `A`, the `k`-th sorted spectral projector agrees with the rank-one projector onto the
+implicit eigenvector branch `u₀ + localEigPerturb hA hk X.val`. -/
 private theorem eventuallyEq_eigenprojector₀_rankOne {A : selfAdjoint (Matrix n n 𝕜)}
     {k : Fin (Fintype.card n)}
     (hk : ∀ j ≠ k, A.property.isHermitian.eigenvalues₀ j ≠ A.property.isHermitian.eigenvalues₀ k) :
@@ -391,11 +436,6 @@ section SmoothAndVariation
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
 
-private theorem contDiffAt_subtypeVal_selfAdjoint {A : selfAdjoint (Matrix n n 𝕜)} {m : ℕ∞ω} :
-    ContDiffAt ℝ m (Subtype.val : selfAdjoint (Matrix n n 𝕜) → Matrix n n 𝕜) A := by
-  rw [← selfAdjoint.coe_subtypeL ℝ (Matrix n n 𝕜)]
-  exact ((selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)).contDiff (n := m)).contDiffAt
-
 /-- **Analyticity and smoothness of simple spectral projectors** over `ℝ` for every `m : ℕ∞ω`. -/
 theorem contDiffAt_eigenprojector₀ {A : selfAdjoint (Matrix n n 𝕜)} {k : Fin (Fintype.card n)}
     (hk : ∀ j ≠ k, A.property.isHermitian.eigenvalues₀ j ≠ A.property.isHermitian.eigenvalues₀ k)
@@ -410,7 +450,8 @@ theorem contDiffAt_eigenprojector₀ {A : selfAdjoint (Matrix n n 𝕜)} {k : Fi
       ⇑(A.property.isHermitian.eigenvectorBasis₀ k) +
         localEigPerturb A.property.isHermitian hk X.val) A :=
     contDiffAt_const.add (((contDiffAt_localEigPerturb A.property.isHermitian hk).restrict_scalars
-      ℝ).comp A contDiffAt_subtypeVal_selfAdjoint)
+      ℝ).comp A (selfAdjoint.contDiff_subtype_val ℝ).contDiffAt)
+  -- Both `contDiffAt_rankOneHermitianProjector` and this file use `Matrix.l2OpNormedAlgebraReal`.
   exact (((TauCeti.contDiffAt_rankOneHermitianProjector hu_ne).comp A hv_smooth)
     |>.congr_of_eventuallyEq (eventuallyEq_eigenprojector₀_rankOne hk)).of_le le_top
 
@@ -423,11 +464,13 @@ theorem contDiffAt_eigenvalues₀_selfAdjoint {A : selfAdjoint (Matrix n n 𝕜)
     ContDiffAt ℝ m
       (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.property.isHermitian.eigenvalues₀ k) A := by
   have hfn : (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.property.isHermitian.eigenvalues₀ k) =
-      fun X ↦ RCLike.reCLM (traceCLM n ℝ 𝕜 (X.property.isHermitian.eigenprojector₀ k * X.val)) := by
-    ext X; simp
+      fun X ↦ RCLike.reCLM (traceCLM n ℝ 𝕜 (X.property.isHermitian.eigenprojector₀ k * X.val)) :=
+    funext fun X ↦ by
+      rw [RCLike.reCLM_apply, traceCLM_apply,
+        X.property.isHermitian.re_trace_eigenprojector₀_mul_eq_eigenvalues₀]
   rw [hfn]
   exact ((RCLike.reCLM.comp (traceCLM n ℝ 𝕜)).contDiff (n := m)).contDiffAt.comp A
-    ((contDiffAt_eigenprojector₀ hk).mul contDiffAt_subtypeVal_selfAdjoint)
+    ((contDiffAt_eigenprojector₀ hk).mul (selfAdjoint.contDiff_subtype_val ℝ).contDiffAt)
 
 /-- On the open simple-spectrum locus, each spectral projector is `C^m` over `ℝ`. -/
 theorem contDiffOn_eigenprojector₀_setOf_strictAnti_eigenvalues₀ (k : Fin (Fintype.card n))
@@ -446,17 +489,20 @@ theorem contDiffOn_eigenvalues₀_setOf_strictAnti_eigenvalues₀ (k : Fin (Fint
 
 private theorem rankOneProjector_deriv_sum_eq {A B : Matrix n n 𝕜}
     (hA : A.IsHermitian) (hB : B.IsHermitian) (k : Fin (Fintype.card n)) :
-    let u₀ : n → 𝕜 := ⇑(hA.eigenvectorBasis₀ k)
-    let dy : n → 𝕜 := ∑ j ∈ Finset.univ.erase k,
-      (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) • (hA.eigenprojector₀ j *ᵥ (B *ᵥ u₀))
-    vecMulVec dy (star u₀) + vecMulVec u₀ (star dy) -
-        (2 * RCLike.re (star u₀ ⬝ᵥ dy)) • vecMulVec u₀ (star u₀) =
+    vecMulVec (localEigPerturbFDeriv hA k B) (star ⇑(hA.eigenvectorBasis₀ k)) +
+        vecMulVec ⇑(hA.eigenvectorBasis₀ k) (star (localEigPerturbFDeriv hA k B)) -
+        (2 * RCLike.re (star ⇑(hA.eigenvectorBasis₀ k) ⬝ᵥ localEigPerturbFDeriv hA k B)) •
+          vecMulVec ⇑(hA.eigenvectorBasis₀ k) (star ⇑(hA.eigenvectorBasis₀ k)) =
       ∑ j ∈ Finset.univ.erase k, (hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ •
         (hA.eigenprojector₀ k * B * hA.eigenprojector₀ j +
           hA.eigenprojector₀ j * B * hA.eigenprojector₀ k) := by
-  intro u₀ dy
+  set u₀ : n → 𝕜 := ⇑(hA.eigenvectorBasis₀ k)
+  set dy : n → 𝕜 := localEigPerturbFDeriv hA k B
+  have hdy : dy = ∑ j ∈ Finset.univ.erase k,
+      (((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ : ℝ) : 𝕜) •
+        (hA.eigenprojector₀ j *ᵥ (B *ᵥ u₀)) := localEigPerturbFDeriv_apply hA k B
   have horth : star u₀ ⬝ᵥ dy = 0 := by
-    simp only [dy, dotProduct_sum]
+    rw [hdy, dotProduct_sum]
     exact Finset.sum_eq_zero fun j hj ↦ by
       simp [u₀, hA.eigenprojector₀_mulVec,
         hA.dotProduct_star_eigenvectorBasis₀_of_ne (Finset.mem_erase.mp hj).left.symm]
@@ -466,7 +512,7 @@ private theorem rankOneProjector_deriv_sum_eq {A B : Matrix n n 𝕜}
         (vecMulVec (hA.eigenprojector₀ j *ᵥ (B *ᵥ u₀)) (star u₀) +
           vecMulVec u₀ (star (hA.eigenprojector₀ j *ᵥ (B *ᵥ u₀)))) := by
     ext a b
-    simp [dy, vecMulVec_apply, Finset.sum_mul, Finset.mul_sum, Finset.sum_add_distrib,
+    simp [hdy, vecMulVec_apply, Finset.sum_mul, Finset.mul_sum, Finset.sum_add_distrib,
       RCLike.real_smul_eq_coe_smul (K := 𝕜), mul_assoc, mul_left_comm]
   rw [hlhs]
   refine Finset.sum_congr rfl fun j _ ↦ congrArg _ ?_
@@ -494,12 +540,8 @@ theorem hasStrictFDerivAt_eigenprojector₀ {A : selfAdjoint (Matrix n n 𝕜)}
               (A.property.isHermitian.eigenprojector₀ j)
               (A.property.isHermitian.eigenprojector₀ k)).comp
             (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)))) A := by
-  have hsub : HasStrictFDerivAt (Subtype.val : selfAdjoint (Matrix n n 𝕜) → Matrix n n 𝕜)
-      (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)) A := by
-    rw [← selfAdjoint.coe_subtypeL ℝ (Matrix n n 𝕜)]
-    exact (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)).hasStrictFDerivAt
   have hw_deriv := ((hasStrictFDerivAt_localEigPerturb A.property.isHermitian hk).restrictScalars
-    ℝ).comp A hsub
+    ℝ).comp A (selfAdjoint.hasStrictFDerivAt_subtype_val ℝ)
   have hv_deriv := ((hasStrictFDerivAt_const ⇑(A.property.isHermitian.eigenvectorBasis₀ k) A).add
     hw_deriv).congr_fderiv (zero_add _)
   set u : n → 𝕜 := ⇑(A.property.isHermitian.eigenvectorBasis₀ k) +
@@ -508,18 +550,29 @@ theorem hasStrictFDerivAt_eigenprojector₀ {A : selfAdjoint (Matrix n n 𝕜)}
     dsimp only [u]; rw [localEigPerturb_self A.property.isHermitian hk, add_zero,
       A.property.isHermitian.dotProduct_star_eigenvectorBasis₀_self]
   have hu_ne : u ≠ 0 := fun h0 ↦ by simp [h0] at hu_unit
-  refine ((TauCeti.hasStrictFDerivAt_rankOneHermitianProjector hu_ne).comp A hv_deriv
-    |>.congr_of_eventuallyEq (eventuallyEq_eigenprojector₀_rankOne hk).symm).congr_fderiv ?_
-  ext B : 1
-  simp only [TauCeti.rankOneHermitianProjectorFDeriv_apply,
-    TauCeti.rankOneHermitianProjector_eq_real_smul, u,
-    localEigPerturb_self A.property.isHermitian hk, add_zero,
-    A.property.isHermitian.dotProduct_star_eigenvectorBasis₀_self, RCLike.one_re, inv_one, one_smul,
-    ContinuousLinearMap.comp_apply, add_apply, smul_apply, sum_apply,
-    ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.flip_apply,
-    selfAdjoint.subtypeL_apply, mulVecBilinCLM_apply, mulVecCLM_apply,
-    ContinuousLinearMap.mulLeftRight_apply]
-  exact rankOneProjector_deriv_sum_eq A.property.isHermitian B.property.isHermitian k
+  -- Move the composed strict derivative from `instTopologicalSpaceMatrix` into the file's local
+  -- `Matrix.l2OpNormedAlgebraReal` topology and `ℝ`-module structure.
+  have hcomp_l2 : HasStrictFDerivAt
+      (fun X : selfAdjoint (Matrix n n 𝕜) ↦ TauCeti.rankOneHermitianProjector
+        (⇑(A.property.isHermitian.eigenvectorBasis₀ k) +
+          localEigPerturb A.property.isHermitian hk X.val))
+      (∑ j ∈ Finset.univ.erase k,
+        (A.property.isHermitian.eigenvalues₀ k - A.property.isHermitian.eigenvalues₀ j)⁻¹ •
+          ((ContinuousLinearMap.mulLeftRight ℝ (Matrix n n 𝕜)
+              (A.property.isHermitian.eigenprojector₀ k)
+              (A.property.isHermitian.eigenprojector₀ j) +
+            ContinuousLinearMap.mulLeftRight ℝ (Matrix n n 𝕜)
+              (A.property.isHermitian.eigenprojector₀ j)
+              (A.property.isHermitian.eigenprojector₀ k)).comp
+            (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)))) A := by
+    refine (TauCeti.hasStrictFDerivAt_congr_codomain
+      (Matrix.l2OpTopologicalSpace_eq n n 𝕜).symm (Matrix.l2OpModuleReal_eq n 𝕜).symm
+      fun B ↦ ?_).mp
+      ((TauCeti.hasStrictFDerivAt_rankOneHermitianProjector hu_ne).comp A hv_deriv)
+    simpa [u, localEigPerturb_self A.property.isHermitian hk,
+      TauCeti.rankOneHermitianProjector_eq_real_smul, smul_add] using
+      rankOneProjector_deriv_sum_eq A.property.isHermitian B.property.isHermitian k
+  exact hcomp_l2.congr_of_eventuallyEq (eventuallyEq_eigenprojector₀_rankOne hk).symm
 
 /-- Applied Fréchet derivative of `X ↦ X.property.isHermitian.eigenprojector₀ k` at simple `λₖ`. -/
 theorem fderiv_eigenprojector₀_apply {A : selfAdjoint (Matrix n n 𝕜)} {k : Fin (Fintype.card n)}
@@ -553,26 +606,25 @@ theorem hasStrictFDerivAt_eigenvalues₀_selfAdjoint {A : selfAdjoint (Matrix n 
           (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜))))) A := by
   have hfn : (fun X : selfAdjoint (Matrix n n 𝕜) ↦ X.property.isHermitian.eigenvalues₀ k) =
       (RCLike.reCLM.comp (traceCLM n ℝ 𝕜)) ∘ fun X : selfAdjoint (Matrix n n 𝕜) ↦
-        X.property.isHermitian.eigenprojector₀ k * selfAdjoint.subtypeL ℝ (Matrix n n 𝕜) X := by
-    ext X; simp
+        X.property.isHermitian.eigenprojector₀ k * X.val :=
+    funext fun X ↦ by
+      rw [Function.comp_apply, ContinuousLinearMap.comp_apply, RCLike.reCLM_apply, traceCLM_apply,
+        X.property.isHermitian.re_trace_eigenprojector₀_mul_eq_eigenvalues₀]
   rw [hfn]
   refine ((RCLike.reCLM.comp (traceCLM n ℝ 𝕜)).hasStrictFDerivAt.comp A
     ((hasStrictFDerivAt_eigenprojector₀ hk).fun_mul'
-      (selfAdjoint.subtypeL ℝ (Matrix n n 𝕜)).hasStrictFDerivAt)).congr_fderiv ?_
+      (selfAdjoint.hasStrictFDerivAt_subtype_val ℝ))).congr_fderiv ?_
   ext B; set hA := A.property.isHermitian
-  have hdPA : ((∑ j ∈ Finset.univ.erase k, (hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ •
-      (hA.eigenprojector₀ k * B.val * hA.eigenprojector₀ j +
-        hA.eigenprojector₀ j * B.val * hA.eigenprojector₀ k)) * A.val).trace = 0 := by
-    rw [Matrix.sum_mul, trace_sum]
-    refine Finset.sum_eq_zero fun j hj ↦ ?_
+  suffices ∑ j ∈ Finset.univ.erase k,
+      ((hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ *
+          RCLike.re (hA.eigenprojector₀ k * B.val * hA.eigenprojector₀ j * A.val).trace +
+        (hA.eigenvalues₀ k - hA.eigenvalues₀ j)⁻¹ *
+          RCLike.re (hA.eigenprojector₀ j * B.val * hA.eigenprojector₀ k * A.val).trace) = 0 by
+    simpa [Matrix.sum_mul, add_mul, RCLike.smul_re] using this
+  exact Finset.sum_eq_zero fun j hj ↦ by
     have hjk : j ≠ k := (Finset.mem_erase.mp hj).left
-    simp [add_mul, trace_eigenprojector₀_sandwich_mul_self_of_ne hA hjk.symm,
+    simp [trace_eigenprojector₀_sandwich_mul_self_of_ne hA hjk.symm,
       trace_eigenprojector₀_sandwich_mul_self_of_ne hA hjk]
-  simp only [ContinuousLinearMap.comp_apply, add_apply, sum_apply, smul_apply,
-    ContinuousLinearMap.mulLeftRight_apply, ContinuousLinearMap.mul_apply',
-    selfAdjoint.subtypeL_apply, traceCLM_apply, RCLike.reCLM_apply,
-    smul_eq_mul, MulOpposite.smul_eq_mul_unop, MulOpposite.unop_op]
-  rw [trace_add, hdPA, add_zero]
 
 /-- Applied Fréchet derivative of `X ↦ X.property.isHermitian.eigenvalues₀ k` at simple `λₖ`. -/
 theorem fderiv_eigenvalues₀_selfAdjoint_apply {A : selfAdjoint (Matrix n n 𝕜)}
@@ -620,12 +672,17 @@ theorem hasStrictFDerivAt_fderiv_eigenvalues₀ {A : selfAdjoint (Matrix n n �
         hA.conjTranspose_eigenprojector₀]
       rw [trace_mul_comm, Matrix.mul_assoc]
     rw [hconj, RCLike.star_def, RCLike.conj_re]
-  simp only [hlin, ContinuousLinearMap.comp_apply, smul_apply, sum_apply, add_apply,
-    selfAdjoint.subtypeL_apply, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
-    ContinuousLinearMap.mulLeftRight_apply, map_sum, RCLike.reCLM_apply, traceCLM_apply,
-    smul_eq_mul, Finset.mul_sum]
+  suffices ∑ x ∈ Finset.univ.erase k,
+        (RCLike.re ((hA.eigenvalues₀ k - hA.eigenvalues₀ x)⁻¹ •
+            (hA.eigenprojector₀ k * B.val * hA.eigenprojector₀ x * C.val).trace) +
+          RCLike.re ((hA.eigenvalues₀ k - hA.eigenvalues₀ x)⁻¹ •
+            (hA.eigenprojector₀ x * B.val * hA.eigenprojector₀ k * C.val).trace)) =
+      ∑ i ∈ Finset.univ.erase k, 2 * ((hA.eigenvalues₀ k - hA.eigenvalues₀ i)⁻¹ *
+        RCLike.re (hA.eigenprojector₀ k * B.val * hA.eigenprojector₀ i * C.val).trace) by
+    simpa [hlin, Finset.mul_sum] using this
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp [add_mul, RCLike.smul_re, hsymm_tr]; ring
+  rw [RCLike.smul_re, RCLike.smul_re, hsymm_tr]
+  ring
 
 /-- Applied second Fréchet derivative of `X ↦ X.property.isHermitian.eigenvalues₀ k`. -/
 theorem fderiv_fderiv_eigenvalues₀_apply {A : selfAdjoint (Matrix n n 𝕜)}

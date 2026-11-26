@@ -291,6 +291,12 @@ theorem trace_eigenprojector₀_mul_eq_eigenvalues₀ (hA : A.IsHermitian)
     (hA.eigenprojector₀ k * A).trace = (hA.eigenvalues₀ k : 𝕜) := by
   rw [hA.eigenprojector₀_mul, trace_smul, hA.trace_eigenprojector₀, smul_eq_mul, mul_one]
 
+/-- The real part of the trace of `hA.eigenprojector₀ k * A` recovers `hA.eigenvalues₀ k`. -/
+theorem re_trace_eigenprojector₀_mul_eq_eigenvalues₀ (hA : A.IsHermitian)
+    (k : Fin (Fintype.card n)) :
+    RCLike.re (hA.eigenprojector₀ k * A).trace = hA.eigenvalues₀ k := by
+  rw [hA.trace_eigenprojector₀_mul_eq_eigenvalues₀, RCLike.ofReal_re]
+
 /-! ### Canonical projector at a simple eigenvalue -/
 
 /-- Any vector `v` satisfying `A *ᵥ v = μ • v` is orthogonal to every sorted eigenvector

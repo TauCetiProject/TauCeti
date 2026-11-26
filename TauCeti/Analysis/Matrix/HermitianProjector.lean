@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
+import TauCeti.Analysis.Calculus.FDeriv.Congr
 import TauCeti.Analysis.Matrix.DotProduct
 
 /-!
@@ -84,25 +85,36 @@ theorem rankOneHermitianProjectorFDeriv_apply (v y : n → 𝕜) :
           (2 * RCLike.re (star v ⬝ᵥ y)) • rankOneHermitianProjector v) :=
   (rfl)
 
+/-- The real Hermitian inner product `(u, w) ↦ re (star u ⬝ᵥ w)` as a continuous `ℝ`-bilinear
+map. -/
 private def reInnerBilin (𝕜 n : Type*) [RCLike 𝕜] [Fintype n] :
     (n → 𝕜) →L[ℝ] (n → 𝕜) →L[ℝ] ℝ :=
   (((dotProductBilin ℝ ℝ).comp (starLinearEquiv ℝ).toLinearMap).compr₂
     RCLike.reLm).toContinuousBilinearMap
 
+@[simp]
+private theorem reInnerBilin_apply (u w : n → 𝕜) :
+    reInnerBilin 𝕜 n u w = RCLike.re (star u ⬝ᵥ w) := rfl
+
+/-- The outer product `(u, w) ↦ vecMulVec u (star w)` as a continuous `ℝ`-bilinear map. -/
 private def vecMulVecStarBilin (𝕜 n : Type*) [RCLike 𝕜] [Fintype n] :
     (n → 𝕜) →L[ℝ] (n → 𝕜) →L[ℝ] Matrix n n 𝕜 :=
   ((vecMulVecBilin ℝ ℝ).compl₂ (starLinearEquiv ℝ).toLinearMap).toContinuousBilinearMap
+
+@[simp]
+private theorem vecMulVecStarBilin_apply (u w : n → 𝕜) :
+    vecMulVecStarBilin 𝕜 n u w = vecMulVec u (star w) := rfl
 
 private theorem rankOneHermitianProjector_eq_inv_smul_bilin :
     (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜) =
       fun u ↦ (reInnerBilin 𝕜 n u u)⁻¹ • vecMulVecStarBilin 𝕜 n u u := by
   ext u i j
-  simp [reInnerBilin, vecMulVecStarBilin, rankOneHermitianProjector_eq_real_smul]
+  simp [rankOneHermitianProjector_eq_real_smul]
 
 private theorem reInnerBilin_self_ne_zero {v : n → 𝕜} (hv : v ≠ 0) :
     reInnerBilin 𝕜 n v v ≠ 0 :=
   fun h0 ↦ dotProduct_star_self_eq_zero.not.mpr hv
-    (by rw [Matrix.star_dotProduct_self_eq_ofReal_re v]; simpa [reInnerBilin] using h0)
+    (by rw [Matrix.star_dotProduct_self_eq_ofReal_re v]; simpa using h0)
 
 section L2Operator
 
@@ -118,46 +130,40 @@ theorem contDiffAt_rankOneHermitianProjector [DecidableEq n] {v : n → 𝕜} (h
     (reInnerBilin_self_ne_zero hv)).smul
     ((vecMulVecStarBilin 𝕜 n).contDiff_apply_self (n := m)).contDiffAt
 
--- Elaborated under the local `Matrix.l2OpNormedAlgebraReal` instance (choosing `DecidableEq n`
--- via `classical`) so bilinear-map and scalar-product calculus lemmas apply; the wrapper
--- `hasStrictFDerivAt_rankOneHermitianProjector` below re-exports the result for
--- `instTopologicalSpaceMatrix`, whose topology and additive-group uniformity agree definitionally
--- with those of `Matrix.l2OpNormedAddCommGroup` by Mathlib's `replaceTopology`/`replaceUniformity`
--- construction.
-private theorem hasStrictFDerivAt_rankOneHermitianProjector_aux {v : n → 𝕜} (hv : v ≠ 0) :
-    HasStrictFDerivAt (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜)
-      (rankOneHermitianProjectorFDeriv v) v := by
-  classical
-  rw [rankOneHermitianProjector_eq_inv_smul_bilin]
-  have hinv := HasStrictDerivAt.comp_hasStrictFDerivAt (f := fun z ↦ reInnerBilin 𝕜 n z z) v
-    (hasStrictDerivAt_inv (reInnerBilin_self_ne_zero hv))
-    ((reInnerBilin 𝕜 n).hasStrictFDerivAt_apply_self v)
-  refine (hinv.smul ((vecMulVecStarBilin 𝕜 n).hasStrictFDerivAt_apply_self v)).congr_fderiv ?_
-  ext y i j
-  have hre : RCLike.re (star y ⬝ᵥ v) = RCLike.re (star v ⬝ᵥ y) := by
-    rw [star_dotProduct, RCLike.star_def, RCLike.conj_re]
-  simp only [rankOneHermitianProjectorFDeriv_apply, rankOneHermitianProjector_eq_real_smul,
-    reInnerBilin, vecMulVecStarBilin, Function.comp_apply, add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.flip_apply,
-    LinearMap.toContinuousBilinearMap_apply, LinearMap.comp_apply, LinearMap.compr₂_apply,
-    LinearMap.compl₂_apply, LinearEquiv.coe_coe, starLinearEquiv_apply, RCLike.reLm_coe,
-    dotProductBilin_apply_apply, vecMulVecBilin_apply_apply, Matrix.add_apply, Matrix.sub_apply,
-    Matrix.smul_apply, vecMulVec_apply, smul_eq_mul, RCLike.real_smul_eq_coe_mul (K := 𝕜),
-    hre, sq, mul_inv]
-  push_cast
-  ring
-
 end L2Operator
 
--- Moves `hasStrictFDerivAt_rankOneHermitianProjector_aux` from the local L2-operator normed
--- instance to the default `instTopologicalSpaceMatrix` (dropping `DecidableEq n`), using the
--- designed `replaceTopology`/`replaceUniformity` definitional equality of `l2OpNormedAddCommGroup`.
 /-- Strict Fréchet derivative of `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero
 vector `v : n → 𝕜`. -/
 theorem hasStrictFDerivAt_rankOneHermitianProjector {v : n → 𝕜} (hv : v ≠ 0) :
     HasStrictFDerivAt (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜)
-      (rankOneHermitianProjectorFDeriv v) v :=
-  hasStrictFDerivAt_rankOneHermitianProjector_aux hv
+      (rankOneHermitianProjectorFDeriv v) v := by
+  classical
+  have hd_l2 := by
+    open scoped Matrix.Norms.L2Operator in
+    letI := Matrix.l2OpNormedAlgebraReal (n := n) (𝕜 := 𝕜)
+    let B : (n → 𝕜) →L[ℝ] (n → 𝕜) →L[ℝ] Matrix n n 𝕜 :=
+      ((vecMulVecBilin ℝ ℝ).compl₂ (starLinearEquiv ℝ).toLinearMap).toContinuousBilinearMap
+    have hinv := HasStrictDerivAt.comp_hasStrictFDerivAt (f := fun z ↦ reInnerBilin 𝕜 n z z) v
+      (hasStrictDerivAt_inv (reInnerBilin_self_ne_zero hv))
+      ((reInnerBilin 𝕜 n).hasStrictFDerivAt_apply_self v)
+    have hB : ((Inv.inv ∘ fun z ↦ reInnerBilin 𝕜 n z z) • fun z ↦ B z z) =
+        (rankOneHermitianProjector : (n → 𝕜) → Matrix n n 𝕜) :=
+      rankOneHermitianProjector_eq_inv_smul_bilin.symm
+    exact hB ▸ hinv.smul (B.hasStrictFDerivAt_apply_self v)
+  refine (hasStrictFDerivAt_congr_codomain
+    (Matrix.l2OpTopologicalSpace_eq n n 𝕜) (Matrix.l2OpModuleReal_eq n 𝕜) fun y ↦ ?_).mp hd_l2
+  have hre : RCLike.re (star y ⬝ᵥ v) = RCLike.re (star v ⬝ᵥ y) := by
+    rw [star_dotProduct, RCLike.star_def, RCLike.conj_re]
+  suffices (RCLike.re (star v ⬝ᵥ v))⁻¹ • vecMulVec y (star v) +
+        (RCLike.re (star v ⬝ᵥ v))⁻¹ • vecMulVec v (star y) +
+        (-((RCLike.re (star v ⬝ᵥ v) ^ 2)⁻¹ * RCLike.re (star v ⬝ᵥ y)) +
+          -((RCLike.re (star v ⬝ᵥ v) ^ 2)⁻¹ * RCLike.re (star v ⬝ᵥ y))) •
+          vecMulVec v (star v) =
+      (RCLike.re (star v ⬝ᵥ v))⁻¹ • (vecMulVec y (star v) + vecMulVec v (star y) -
+        (2 * RCLike.re (star v ⬝ᵥ y)) •
+          ((RCLike.re (star v ⬝ᵥ v))⁻¹ • vecMulVec v (star v))) by
+    simpa [rankOneHermitianProjector_eq_real_smul, hre] using this
+  rw [sq, mul_inv]; module
 
 /-- Applied Fréchet derivative of `TauCeti.rankOneHermitianProjector` over `ℝ` at any nonzero
 vector `v : n → 𝕜` in direction `y`. -/
