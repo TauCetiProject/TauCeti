@@ -122,7 +122,7 @@ theorem tangentHomEquivL_mem_zeroOneSobolevSections {w : SobolevSection A.tangen
   have h01 := (mem_zeroOneSobolevSections_iff_isZeroOneForm hθ).1 hw
   refine mem_zeroOneSobolevSections_of_comp μ p k (fun x ↦ (Φ x : V x →L[ℂ] W x))
     (θ := θ) (fun i ↦ ?_) fun (i : Fin A.n) ↦ ?_
-  · rw [← ContinuousLinearEquiv.coe_coe, SobolevSection.coe_tangentHomEquivL]
+  · rw [SobolevSection.tangentHomEquivL_apply]
     simpa [ContinuousLinearEquiv.toContinuousLinearMap_restrictScalars'] using
       SobolevSection.chartValueL_tangentHomMapL_ae_coord (h := h) (hΦ := hΦ) hθ i
   · have := (ae_image_tangentHom_iff A μ i).1 (h01 i)
@@ -219,8 +219,8 @@ theorem zeroOneTransportEquivL_comp_sobolevL (hp : p ≠ ⊤) :
     (zeroOneTransportEquivL μ p 0 hΦ A h :
         zeroOneSobolevSections A μ p 0 →L[ℝ] zeroOneSobolevSections (A.ofBaseSet h) μ p 0).comp
       (hD.sobolevL A hDs μ p) =
-    ((hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)).sobolevL
-      (A.ofBaseSet h) (contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by simp)) hDs)
+    ((hD.transport_of_contMDiff hΦ).sobolevL
+      (A.ofBaseSet h) (hDs.sectionTransport_of_contMDiff hΦ)
         μ p).comp
       (SobolevSection.bundleEquivL A h μ p 1 hΦ :
         SobolevSection A μ p 1 →L[ℝ] SobolevSection (A.ofBaseSet h) μ p 1) := by
@@ -241,13 +241,13 @@ theorem zeroOneTransportEquivL_comp_sobolevL (hp : p ≠ ⊤) :
     (s := fun x ↦ ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x).comp (D s x))
     (fun (i : Fin A.n) ↦ ?_) fun (i : Fin A.n) ↦ ?_)
   · rw [ContinuousLinearEquiv.coe_coe, coe_zeroOneTransportEquivL_apply,
-      ← ContinuousLinearEquiv.coe_coe, SobolevSection.coe_tangentHomEquivL]
+      SobolevSection.tangentHomEquivL_apply]
     refine SobolevSection.chartValueL_tangentHomMapL_ae_coord (fun (i : Fin A.n) ↦ ?_) i
     rw [image_tangentHom]
     exact chartValueL_sobolevL_ofContMDiffSection_ae A hD hDs μ p s i
   · have key := chartValueL_sobolevL_ofContMDiffSection_ae (A.ofBaseSet h)
-      (hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp))
-      (contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by simp)) hDs) μ p
+      (hD.transport_of_contMDiff hΦ)
+      (hDs.sectionTransport_of_contMDiff hΦ) μ p
       ⟨fun x ↦ ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x) (s x),
         ContMDiff.clm_bundle_apply (hΦ.of_le (by exact_mod_cast le_top)) s.contMDiff⟩ i
     have hμ : μ.restrict ((A.ofBaseSet h).image i : Set ℂ) =
@@ -263,8 +263,8 @@ omit [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] in
 the realization `W^{1,p} → L^p` of the transport of `D` along a smooth bundle isomorphism is
 Fredholm, `1 < p < ∞`. -/
 theorem isFredholm_sobolevL_sectionTransport (hp : 1 < p) (hp_top : p ≠ ⊤) :
-    ((hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)).sobolevL
-      (A.ofBaseSet h) (contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by simp)) hDs)
+    ((hD.transport_of_contMDiff hΦ).sobolevL
+      (A.ofBaseSet h) (hDs.sectionTransport_of_contMDiff hΦ)
         volume p).IsFredholm :=
   isFredholm_sobolevL (A.ofBaseSet h) _ _ hp hp_top
 
@@ -273,11 +273,11 @@ step 1). On a closed surface, the realizations `W^{1,p} → L^p` of a smooth rea
 operator `D` on `V` and of its transport `σ ↦ Φ ∘ D (Φ⁻¹ σ)` along a smooth bundle isomorphism
 `Φ : V ≃ W` have the same index, for every finite `p ≥ 1` (they are Fredholm for `p > 1`). -/
 theorem index_sobolevL_sectionTransport (hp_top : p ≠ ⊤) :
-    ((hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)).sobolevL
-      (A.ofBaseSet h) (contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by simp)) hDs)
+    ((hD.transport_of_contMDiff hΦ).sobolevL
+      (A.ofBaseSet h) (hDs.sectionTransport_of_contMDiff hΦ)
         μ p).index = (hD.sobolevL A hDs μ p).index := by
-  have hS : (hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)).sobolevL
-      (A.ofBaseSet h) (contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by simp)) hDs)
+  have hS : (hD.transport_of_contMDiff hΦ).sobolevL
+      (A.ofBaseSet h) (hDs.sectionTransport_of_contMDiff hΦ)
         μ p =
         ((zeroOneTransportEquivL μ p 0 hΦ A h : zeroOneSobolevSections A μ p 0 →L[ℝ]
           zeroOneSobolevSections (A.ofBaseSet h) μ p 0).comp

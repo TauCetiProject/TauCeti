@@ -37,7 +37,8 @@ a set to `C^n` sections of `Hom(TM, V)` there.
 * `TauCeti.contMDiffCovariantDerivativeOn_sectionTransport`: the transport of a smooth operator
   along a smooth bundle isomorphism (`TauCeti.sectionTransport`) is smooth, and
   `ContMDiff.mdifferentiableAt_clm_bundle_symm_apply` gives the differentiability hypothesis of
-  `TauCeti.IsRealCauchyRiemannOperator.transport`.
+  `TauCeti.IsRealCauchyRiemannOperator.transport`
+  (`TauCeti.IsRealCauchyRiemannOperator.transport_of_contMDiff`).
 
 ## References
 
@@ -171,6 +172,29 @@ theorem contMDiffCovariantDerivativeOn_sectionTransport {k : WithTop ℕ∞}
     simp only [sectionTransport_apply]
     exact fun x _ ↦ (((hΦ x).of_le le_self_add).clm_bundle_comp
       ((hDτ x (Set.mem_univ x)).contMDiffAt Filter.univ_mem)).contMDiffWithinAt
+
+omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The transport of a `Cᵏ` operator along a smooth bundle isomorphism is `Cᵏ`, for every
+`k : ℕ∞`; the case of `contMDiffCovariantDerivativeOn_sectionTransport` for smooth `Φ`. -/
+theorem _root_.ContMDiffCovariantDerivativeOn.sectionTransport_of_contMDiff {k : ℕ∞}
+    (hDs : ContMDiffCovariantDerivativeOn F k D Set.univ)
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞ fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) :
+    ContMDiffCovariantDerivativeOn G k (sectionTransport Φ D) Set.univ :=
+  contMDiffCovariantDerivativeOn_sectionTransport (hΦ.of_le (by exact_mod_cast le_top)) hDs
+
+omit [FiniteDimensional ℝ E] [T2Space M] [∀ x, ContinuousSMul ℂ (V x)] in
+/-- The transport of a real Cauchy–Riemann operator along a smooth bundle isomorphism is a real
+Cauchy–Riemann operator: `IsRealCauchyRiemannOperator.transport`, with the differentiability of
+`Φ⁻¹` on sections supplied by `ContMDiff.mdifferentiableAt_clm_bundle_symm_apply`. -/
+theorem IsRealCauchyRiemannOperator.transport_of_contMDiff
+    (hD : IsRealCauchyRiemannOperator F j D)
+    (hΦ : ContMDiff I (I.prod 𝓘(ℝ, F →L[ℝ] G)) ∞ fun x ↦
+      TotalSpace.mk' (F →L[ℝ] G) (E := fun x ↦ V x →L[ℝ] W x) x
+        ((Φ x).restrictScalars' ℝ : V x →L[ℝ] W x)) :
+    IsRealCauchyRiemannOperator G j (sectionTransport Φ D) :=
+  hD.transport fun _ _ ↦ hΦ.mdifferentiableAt_clm_bundle_symm_apply (by simp)
 
 end Transport
 
