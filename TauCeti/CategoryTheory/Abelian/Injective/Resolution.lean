@@ -21,10 +21,7 @@ complex is `F` applied to the complex of `I`. This is the dual of Mathlib's
 Consequently, choosing injective resolutions commutes with `F` up to homotopy: the functor
 `injectiveResolutions C ⋙ F.mapHomotopyCategory _` is naturally isomorphic to
 `F ⋙ injectiveResolutions D` (`CategoryTheory.Functor.injectiveResolutionsCompIso`). This is what
-makes right derived functors commute with such functors. Without the hypothesis on injective
-objects, an exact functor `G` still sends `I` to a resolution of `G.obj Z`
-(`CategoryTheory.InjectiveResolution.exact₀_map` and
-`CategoryTheory.InjectiveResolution.exactAt_succ_map`), whose terms need not be injective.
+makes right derived functors commute with such functors.
 
 A morphism `f : Z ⟶ Y` lifts to a morphism of complexes from any resolution `ι : Z[0] ⟶ K` of `Z`
 to an injective resolution `I` of `Y` (`CategoryTheory.InjectiveResolution.descOfQuasiIso`), and
@@ -115,6 +112,29 @@ lemma injectiveResolutionsCompIso_hom_app (X : C) :
     (F.injectiveResolutionsCompIso).hom.app X =
       (F.mapInjectiveResolution (injectiveResolution X)).iso.inv :=
   (rfl)
+
+/-- The injective-resolution comparison agrees with transport to any chosen resolution. -/
+theorem injectiveResolutionsCompIso_hom_app_comp_iso_hom {X : C} (I : InjectiveResolution X) :
+    F.injectiveResolutionsCompIso.hom.app X ≫ (F.mapInjectiveResolution I).iso.hom =
+      (F.mapHomotopyCategory (ComplexShape.up ℕ)).map I.iso.hom := by
+  rw [Functor.injectiveResolutionsCompIso_hom_app]
+  erw [← cancel_epi (F.mapInjectiveResolution (injectiveResolution X)).iso.hom,
+    Iso.hom_inv_id_assoc]
+  have t := InjectiveResolution.iso_hom_naturality (𝟙 (F.obj X))
+    (F.mapInjectiveResolution (injectiveResolution X)) (F.mapInjectiveResolution I)
+    ((F.mapHomologicalComplex _).map
+      (InjectiveResolution.homotopyEquiv (injectiveResolution X) I).hom) (by
+        rw [Functor.mapInjectiveResolution_ι_f_zero,
+          Functor.mapInjectiveResolution_ι_f_zero, Functor.mapHomologicalComplex_map_f]
+        exact (F.map_comp _ _).symm.trans
+          ((congrArg F.map (InjectiveResolution.desc_commutes_zero (𝟙 X) I
+            (injectiveResolution X))).trans ((F.map_comp _ _).trans (by
+            exact congrArg (· ≫ F.map (I.ι.f 0)) (F.map_id X)))))
+  -- The quotient lift evaluates the chosen resolution map on its homotopy class.
+  dsimp only [InjectiveResolution.iso, Functor.mapHomotopyCategory]
+  erw [Quotient.lift_map_functor_map]
+  erw [CategoryTheory.Functor.map_id, Category.id_comp] at t
+  exact t
 
 end CategoryTheory.Functor
 
@@ -307,33 +327,6 @@ def homotopyOfQuasiIso (g h : K ⟶ I.cocomplex) (hgh : ι ≫ g = ι ≫ h) : H
     (homotopyZeroOfQuasiIso ι (g - h) (by rw [Preadditive.comp_sub, hgh, sub_self]))
 
 end Homotopy
-
-section Map
-
-variable {D : Type u'} [Category.{v'} D] [Abelian D] {Z : C} (I : InjectiveResolution Z)
-  (G : C ⥤ D) [G.PreservesZeroMorphisms] [G.PreservesHomology]
-
-omit [G.PreservesHomology] in
-/-- Applying a functor `G` preserving zero morphisms to an injective resolution
-`Z ⟶ I⁰ ⟶ I¹` gives a complex. -/
-lemma map_ι_f_zero_comp_d :
-    G.map (I.ι.f 0) ≫ ((G.mapHomologicalComplex _).obj I.cocomplex).d 0 1 = 0 := by
-  rw [Functor.mapHomologicalComplex_obj_d, ← G.map_comp, I.ι_f_zero_comp_complex_d, G.map_zero]
-
-/-- An exact functor `G` keeps `0 ⟶ G(Z) ⟶ G(I⁰) ⟶ G(I¹)` exact, for an injective resolution
-`I` of `Z`: the image of `I` under `G` is a resolution of `G(Z)`, whose terms need no longer be
-injective. -/
-lemma exact₀_map : (ShortComplex.mk _ _ (I.map_ι_f_zero_comp_d G)).Exact :=
-  I.exact₀.map G
-
-/-- An exact functor `G` keeps the complex of an injective resolution exact in positive
-degrees. -/
-lemma exactAt_succ_map (n : ℕ) :
-    ((G.mapHomologicalComplex _).obj I.cocomplex).ExactAt (n + 1) :=
-  (HomologicalComplex.exactAt_iff' _ n (n + 1) (n + 2) (by simp) (by simp)).2
-    ((I.exact_succ n).map G)
-
-end Map
 
 end CategoryTheory.InjectiveResolution
 

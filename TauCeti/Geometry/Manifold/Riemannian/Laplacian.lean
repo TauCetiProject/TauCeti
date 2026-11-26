@@ -780,8 +780,32 @@ theorem laplaceBeltrami_add {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     laplaceBeltrami I (f + g) x = laplaceBeltrami I f x + laplaceBeltrami I g x :=
   laplaceBeltrami_add_of_contMDiffAt I (hf x) (hg x)
 
-/- The product rule below is the manifold counterpart of
-`ContDiffAt.laplacian_fun_mul` for the flat Laplacian. -/
+/-- The Laplacian product rule uses only local `C²` regularity of both factors. -/
+theorem laplaceBeltrami_mul_of_contMDiffAt {f g : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x)
+    (hg : ContMDiffAt I 𝓘(ℝ) 2 g x) :
+    laplaceBeltrami I (f * g) x = f x * laplaceBeltrami I g x +
+      2 * inner ℝ (mgradient I f x) (mgradient I g x) + g x * laplaceBeltrami I f x := by
+  have hGf := mdifferentiableAt_mgradient hf
+  have hGg := mdifferentiableAt_mgradient hg
+  have hF := hf.mdifferentiableAt (by norm_num)
+  have hG := hg.mdifferentiableAt (by norm_num)
+  have hscaledg := hF.smul_section hGg
+  have hscaledf := hG.smul_section hGf
+  have hprod := mdifferentiableAt_mgradient (hf.mul hg)
+  have heq : mgradient I (f * g) =ᶠ[nhds x]
+      f • mgradient I g + g • mgradient I f := by
+    filter_upwards [hf.eventually_mdifferentiableAt (by norm_num),
+      hg.eventually_mdifferentiableAt (by norm_num)] with y hyf hyg
+    exact mgradient_mul_apply hyf hyg
+  rw [laplaceBeltrami_def, divergence_congr_of_eventuallyEq I hprod heq,
+    divergence_add I _ _ x hscaledg hscaledf]
+  rw [divergence_smul_function I f (mgradient I g) x hF hGg,
+    divergence_smul_function I g (mgradient I f) x hG hGf,
+    ← laplaceBeltrami_def, ← laplaceBeltrami_def,
+    ← inner_mgradient, ← inner_mgradient, real_inner_comm (mgradient I g x)]
+  ring
+
 /-- **Leibniz rule for the Laplace--Beltrami operator.** For twice continuously differentiable
 functions, the Laplacian of a product is the sum of the two scalar terms and twice the inner
 product of their gradients. -/
@@ -790,34 +814,8 @@ theorem laplaceBeltrami_mul {f g : M → ℝ} (hf : ContMDiff I 𝓘(ℝ) 2 f)
     laplaceBeltrami I (f * g) x =
       f x * laplaceBeltrami I g x +
         2 * inner ℝ (mgradient I f x) (mgradient I g x) +
-          g x * laplaceBeltrami I f x := by
-  have hgradf : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, mgradient I f y⟩ : TangentBundle I M)) x :=
-    mdifferentiable_mgradient (I := I) hf x
-  have hgradg : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, mgradient I g y⟩ : TangentBundle I M)) x :=
-    mdifferentiable_mgradient (I := I) hg x
-  have hscaledg : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, f y • mgradient I g y⟩ : TangentBundle I M)) x := by
-    exact (hf.mdifferentiableAt (by simp)).smul_section hgradg
-  have hscaledf : MDifferentiableAt I I.tangent
-      (fun y ↦ (⟨y, g y • mgradient I f y⟩ : TangentBundle I M)) x := by
-    exact (hg.mdifferentiableAt (by simp)).smul_section hgradf
-  -- Normalize pointwise scalar multiplication so the divergence APIs match their section forms.
-  rw [laplaceBeltrami, mgradient_mul (hf.mdifferentiable (by simp)) (hg.mdifferentiable (by simp)),
-    show (fun y ↦ f y • mgradient I g y + g y • mgradient I f y) =
-      (fun y ↦ f y • mgradient I g y) + (fun y ↦ g y • mgradient I f y) by rfl,
-    divergence_add I _ _ x hscaledg hscaledf]
-  rw [show (fun y ↦ f y • mgradient I g y) = f • mgradient I g by rfl,
-    show (fun y ↦ g y • mgradient I f y) = g • mgradient I f by rfl,
-    divergence_smul_function I f (mgradient I g) x
-      (hf.mdifferentiableAt (by simp)) hgradg,
-    divergence_smul_function I g (mgradient I f) x
-      (hg.mdifferentiableAt (by simp)) hgradf]
-  simp only [laplaceBeltrami_def]
-  rw [← inner_mgradient (I := I) (f := f) (x := x),
-    ← inner_mgradient (I := I) (f := g) (x := x), real_inner_comm]
-  ring
+          g x * laplaceBeltrami I f x :=
+  laplaceBeltrami_mul_of_contMDiffAt I (hf x) (hg x)
 
 /-- The Laplace–Beltrami operator commutes with real scalar multiplication at a point where the
 gradient is differentiable. -/

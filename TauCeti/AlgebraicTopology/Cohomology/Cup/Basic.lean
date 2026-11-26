@@ -286,6 +286,24 @@ lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [CommR
   TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality f u)
     p q n h α β
 
+/-- The cup product does not depend on how the `k`-linear structure of `C` is presented: along an
+equality `L₁ = L₂` of `k`-linear structures, the identifications `eqToHom` of the cohomology
+modules carry the cup product for `L₁` to the cup product for `L₂`. -/
+lemma singularCup_eqToHom (X : TopCat.{w}) (k : Type*) [CommRing k] (L₁ L₂ : Linear k C)
+    (h : L₁ = L₂) [m₁ : @MonoidalLinear k _ C _ _ L₁ _ _] [m₂ : @MonoidalLinear k _ C _ _ L₂ _ _]
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ) (hn : p + q = n)
+    (α : @TopCat.singularCohomology _ _ _ _ R k _ L₁ M X p)
+    (β : @TopCat.singularCohomology _ _ _ _ S k _ L₁ N X q) :
+    eqToHom (congrArg (fun L : Linear k C ↦ @TopCat.singularCohomology _ _ _ _ T k _ L P X n) h)
+        (@TopCat.singularCup _ _ _ _ _ _ R S T M N P X k _ L₁ m₁ u μ p q n hn α β) =
+      @TopCat.singularCup _ _ _ _ _ _ R S T M N P X k _ L₂ m₂ u μ p q n hn
+        (eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M X p) h) α)
+        (eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ S k _ L N X q) h) β) := by
+  subst h
+  simp
+
 /-- **The cup product changes coefficients along its coefficient morphism**: the cup product along
 `u : T ⟶ R ⊗ S` is the cup product along the identity of `R ⊗ S`, followed by the map
 `Hⁿ(X; R ⊗ S, P) ⟶ Hⁿ(X; T, P)` that precomposes cochains with the chain map induced by `u`. -/

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Fintype.Perm
 public import Mathlib.LinearAlgebra.PiTensorProduct.Finite
+public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 
 /-!
@@ -15,7 +16,8 @@ public import Mathlib.LinearAlgebra.TensorPower.Symmetric
 This file equips Mathlib's symmetric tensor power with the linear map induced by a linear map of
 the underlying modules, and the linear equivalence induced by a linear equivalence. It proves the
 expected action on pure tensors, identity law, and composition law. It also records that a
-symmetric power indexed by a finite type is finitely generated when its underlying module is.
+symmetric power indexed by a finite type is finitely generated when its underlying module is, and
+that it is spanned by the pure symmetric tensors of elements of any spanning family.
 
 It then builds the map back, `SymmetricPower.toTensorPower : Sym[R] ι M →ₗ[R] ⨂[R] (_ : ι), M`,
 for a finite index type. The **symmetrization** `∑_σ σ` of the tensor power is constant on the
@@ -42,6 +44,8 @@ inside the tensor power. That is the statement a Young symmetrizer of a one-row 
 * `SymmetricPower.ext`: linear maps out of a symmetric power are determined by pure tensors.
 * `LinearMap.apply_mem_of_forall_symmetricPower_tprod`: a linear map out of a symmetric power
   lands in a submodule once every pure tensor does.
+* `SymmetricPower.span_tprod_comp_eq_top_of_span_eq_top`: the pure symmetric tensors of elements
+  of a spanning family span the symmetric power.
 * `SymmetricPower.toTensorPower_tprod`: the symmetrization of a pure symmetric tensor is the sum
   of the pure tensors over all orderings of its factors.
 * `SymmetricPower.mk_comp_toTensorPower`: composing the symmetrization with the quotient map is
@@ -171,6 +175,14 @@ theorem congr_tprod (e : M ≃ₗ[R] N) (m : ι → M) :
 is finitely generated. -/
 noncomputable instance finite [Finite ι] [Module.Finite R M] : Module.Finite R (Sym[R] ι M) :=
   Module.Finite.of_surjective (mk R ι M) (LinearMap.range_eq_top.mp (range_mk R ι M))
+
+/-- The pure symmetric tensors of elements of a spanning family span the symmetric power. -/
+theorem span_tprod_comp_eq_top_of_span_eq_top [Finite ι] {κ : Type*} {s : κ → M}
+    (hs : Submodule.span R (Set.range s) = ⊤) :
+    Submodule.span R (Set.range fun r : ι → κ ↦ ⨂ₛ[R] i, s (r i)) = ⊤ := by
+  simp only [tprod, LinearMap.compMultilinearMap_apply]
+  rw [Set.range_comp' (mk R ι M), Submodule.span_image,
+    PiTensorProduct.submodule_span_eq_top fun _ ↦ hs, Submodule.map_top, range_mk]
 
 /-! ### The symmetrization back into the tensor power -/
 

@@ -33,6 +33,8 @@ exponential characteristic of `R`.
   only if `x ∈ I ^ n`.
 * `AdicCompletion.exists_sub_algebraMap_mem_map_pow`: every element of `R̂` is congruent
   modulo `I ^ n R̂` to the image of an element of `R`.
+* `AdicCompletion.of_smul`: the canonical map `N → N̂` from an `R̂`-module to its `I`-adic
+  completion is `R̂`-linear.
 * `AdicCompletion.ringHom_ext`: two ring homomorphisms out of `R̂` into a ring that is Hausdorff
   for an ideal `J`, which carry `I R̂` into `J` and agree on the image of `R`, are equal.
 * `AdicCompletion.quotientMap_algebraMap_bijective`: the map `R ⧸ I ^ n → R̂ ⧸ (I R̂) ^ n` induced
@@ -101,6 +103,27 @@ theorem exists_sub_algebraMap_mem_map_pow (fg : I.FG) (n : ℕ) (x : AdicComplet
   refine ⟨y, ?_⟩
   rw [← ker_evalₐ_eq_map_pow fg, RingHom.mem_ker, map_sub, ← hy]
   exact sub_eq_zero.mpr (evalₐ_of I n y).symm
+
+/-- For a finitely generated ideal `I` and a module `N` over the completion `R̂` (with compatible
+`R`-module structure), the canonical map `N → N̂` into the `I`-adic completion of `N` is
+`R̂`-linear, and not only `R`-linear. -/
+theorem of_smul (fg : I.FG) {N : Type*} [AddCommGroup N] [Module (AdicCompletion I R) N]
+    [Module R N] [IsScalarTower R (AdicCompletion I R) N] (x : AdicCompletion I R) (m : N) :
+    of I N (x • m) = x • of I N m := by
+  ext n
+  -- `x` is the image of some `y ∈ R` up to an element `d` of `I ^ n R̂`
+  obtain ⟨y, hy⟩ := exists_sub_algebraMap_mem_map_pow fg n x
+  obtain ⟨d, hd, rfl⟩ : ∃ d ∈ (I ^ n).map (algebraMap R (AdicCompletion I R)),
+      x = d + algebraMap R _ y := ⟨_, hy, (sub_add_cancel _ _).symm⟩
+  -- so `d • m` vanishes in `N ⧸ I ^ n N`, and `d` acts by zero on the `n`-th level of `N̂`
+  have hm : d • m ∈ (I ^ n • ⊤ : Submodule R N) := by
+    have h : d • m ∈ ((I ^ n).map (algebraMap R (AdicCompletion I R)) • ⊤ :
+        Submodule (AdicCompletion I R) N) := Submodule.smul_mem_smul hd Submodule.mem_top
+    rwa [← Submodule.restrictScalars_mem R, Ideal.smul_restrictScalars,
+      Submodule.restrictScalars_top] at h
+  have hx : evalₐ I n d = 0 := by rwa [← RingHom.mem_ker, ker_evalₐ_eq_map_pow fg]
+  simpa [add_smul, smul_eval, hx, (Submodule.Quotient.mk_eq_zero _).mpr hm] using
+    val_smul_eq_evalₐ_smul I n d (Submodule.Quotient.mk m)
 
 /-- **Ring homomorphisms out of the adic completion are determined on `R`.** For a finitely
 generated ideal `I`, two ring homomorphisms `R̂ → T` into a ring that is Hausdorff for an ideal `J`,

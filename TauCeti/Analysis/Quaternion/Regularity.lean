@@ -21,7 +21,7 @@ import TauCeti.Analysis.Quaternion.Analytic
 import TauCeti.Analysis.Quaternion.Cauchy.CutoffField
 import TauCeti.Analysis.Quaternion.Cauchy.Representation
 import TauCeti.Analysis.Quaternion.Reflection
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Real analyticity, smoothness, and uniqueness of Fueter regular functions

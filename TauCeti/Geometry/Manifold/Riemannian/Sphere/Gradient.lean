@@ -42,6 +42,7 @@ tangent bundle.
   is `∇ F p - ⟪∇ F p, p⟫ p`.
 * `TauCeti.norm_mgradient_comp_coe_sphere_sq`: its squared round norm is
   `‖∇ F p‖² - ⟪∇ F p, p⟫²`.
+* `TauCeti.contMDiff_inner_coe_sphere`: the height function `p ↦ ⟪a, p⟫` is smooth on `Sⁿ`.
 * `TauCeti.mvfderiv_inner_coe_sphere`, `TauCeti.mvfderiv_coe_mgradient_inner_coe_sphere`,
   `TauCeti.norm_mgradient_inner_coe_sphere_sq`: the height-function specialisations `p ↦ ⟪a, p⟫`.
 * `TauCeti.forall_mvfderiv_inner_coe_sphere_eq_zero_iff`: in positive dimension, the differential
@@ -113,6 +114,11 @@ theorem norm_mgradient_comp_coe_sphere_sq [CompleteSpace E] {F : E → ℝ} {p :
   rw [norm_tangentSpace_sphere, mvfderiv_coe_mgradient_comp_coe_sphere hF, norm_sub_sq_real,
     norm_smul, norm_eq_of_mem_sphere p, real_inner_smul_right, Real.norm_eq_abs, mul_one, sq_abs]
   ring
+
+/-- The height function `p ↦ ⟪a, p⟫` on the unit sphere is analytic, hence smooth. -/
+theorem contMDiff_inner_coe_sphere (a : E) :
+    ContMDiff (𝓡 n) 𝓘(ℝ) ω fun p : sphere (0 : E) 1 ↦ inner ℝ a (p : E) :=
+  (innerSL ℝ a).contDiff.contMDiff.comp contMDiff_coe_sphere
 
 /-- The differential of the height function `p ↦ ⟪a, p⟫` on the unit sphere sends a tangent vector
 `v` to `⟪a, v⟫`, with `v` read in `E` through the differential of the inclusion. -/

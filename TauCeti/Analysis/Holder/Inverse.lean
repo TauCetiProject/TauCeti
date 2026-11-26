@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Holder.Leibniz
 import TauCeti.Analysis.Holder.FaaDiBruno
 import TauCeti.Analysis.Holder.IsBigO
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -58,18 +59,15 @@ theorem HolderOnWith.clm_inverse_of_norm_le
     (hb : ∀ x ∈ s, ‖(H x).inverse‖ ≤ M) :
     HolderOnWith (M * C * M) α (fun x ↦ (H x).inverse) s := by
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  rw [dist_eq_norm, (hinv x hx).inverse_sub_inverse (hinv y hy)]
+  rw [dist_eq_norm]
   have hd : ‖H y - H x‖ ≤ (C : ℝ) * dist x y ^ (α : ℝ) := by
     simpa only [← dist_eq_norm, dist_comm y x] using hH.dist_le hy hx
-  have hp := mul_le_mul hd (hb y hy) (norm_nonneg _) (by positivity :
-    0 ≤ (C : ℝ) * dist x y ^ (α : ℝ))
   calc
-    ‖(H x).inverse ∘L (H y - H x) ∘L (H y).inverse‖
-        ≤ ‖(H x).inverse‖ * (‖H y - H x‖ * ‖(H y).inverse‖) :=
-          (ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ (M : ℝ) * ((C : ℝ) * dist x y ^ (α : ℝ) * M) :=
-      mul_le_mul (hb x hx) hp (mul_nonneg (norm_nonneg _) (norm_nonneg _)) M.coe_nonneg
+    ‖(H x).inverse - (H y).inverse‖ ≤ ‖(H x).inverse‖ * ‖H y - H x‖ * ‖(H y).inverse‖ :=
+      (hinv x hx).norm_inverse_sub_inverse_le (hinv y hy)
+    _ ≤ (M : ℝ) * ((C : ℝ) * dist x y ^ (α : ℝ)) * M := by
+      gcongr
+      exacts [hb x hx, hb y hy]
     _ = (M * C * M : ℝ≥0) * dist x y ^ (α : ℝ) := by push_cast; ring
 
 section OperatorFamily

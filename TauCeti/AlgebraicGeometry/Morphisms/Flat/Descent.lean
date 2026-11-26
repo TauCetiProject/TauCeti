@@ -63,6 +63,7 @@ instance Flat.descendsAlong_surjective_inf_flat :
 
 /-- **Flat morphisms satisfy fpqc descent.** Flatness descends along surjective, flat,
 quasi-compact morphisms. -/
+@[stacks 02L2 "descent along a surjective, flat and quasi-compact morphism"]
 instance Flat.descendsAlong_surjective_inf_flat_inf_quasicompact :
     MorphismProperty.DescendsAlong @Flat.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
   .of_le inf_le_left

@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.GroupTheory.OrderOfElement
-public import TauCeti.Algebra.MonoidAlgebra.Augmentation
+public import TauCeti.Algebra.MonoidAlgebra.Augmentation.Basic
 
 import Mathlib.Data.ZMod.QuotientGroup
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Subgroup

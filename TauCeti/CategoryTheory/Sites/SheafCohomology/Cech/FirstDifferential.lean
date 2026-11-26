@@ -34,11 +34,14 @@ of `I`.
   differential of the cohomology presheaf of `I`
   (`TauCeti.CategoryTheory.presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD`); the
   same holds after transport along an isomorphism of `Hᵏ(I)` with a presheaf `P`
-  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso`), which
-  for an injective resolution of `F` is the cohomology presheaf of `F`.
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso`), under
+  the identification of the first page with the Čech cochains of `P`
+  (`TauCeti.CategoryTheory.presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso`). For an
+  injective resolution of `F`, `P` is the cohomology presheaf of `F`.
 
-The objects of the second page are not identified here with the Čech cohomology groups of `U`
-with coefficients in `Hᵏ(F)`, the cohomology of the Čech complexes `Č(U, Hᵏ(F))`.
+The objects of the second page are identified with the Čech cohomology groups of `U` with
+coefficients in `Hᵏ(F)`, the cohomology of the Čech complexes `Č(U, Hᵏ(F))`, in
+`TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.SecondPage`.
 
 ## References
 
@@ -88,10 +91,11 @@ theorem presheafCechDoubleComplexSpectralSequence_page_two_d (I : CochainComplex
   exact ((reassoc_of% h) _).trans ((_ ≫= hds).trans (Category.assoc _ _ _).symm)
 
 /-- **The first differential on Čech cochains of a presheaf isomorphic to the cohomology.** With
-exact products, under the identifications of the first page of the spectral sequence of the Čech
-double complex with the Čech cochains of a presheaf `P` isomorphic to the cohomology presheaf
-`Hᵏ(I)`, the differential from `(-k - 2(p + 1), p + 1)` to `(-k - 2p, p)` is `(-1)^k` times the
-opposite of the Čech differential of `P`. -/
+exact products, under the identifications
+`presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso` of the first page of the spectral
+sequence of the Čech double complex with the Čech cochains of a presheaf `P` isomorphic to the
+cohomology presheaf `Hᵏ(I)`, the differential from `(-k - 2(p + 1), p + 1)` to `(-k - 2p, p)` is
+`(-1)^k` times the opposite of the Čech differential of `P`. -/
 theorem presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso
     (I : CochainComplex (Cᵒᵖ ⥤ A) ℕ) (p : ℕ)
     [HasExactLimitsOfShape (Discrete (Fin (p + 1) → ι)) A]
@@ -99,13 +103,11 @@ theorem presheafCechDoubleComplexSpectralSequence_page_two_d_comp_iso
     (e : I.homology k ≅ P) :
     ((presheafCechDoubleComplexSpectralSequence U I).page 2).d
         (-(k : ℤ) - 2 * ((p + 1 : ℕ) : ℤ), (p + 1 : ℕ)) (-(k : ℤ) - 2 * p, p) ≫
-      (presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I p k).hom ≫
-        ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) p).map e.inv ≫
-          (presheafCechColumnHomologyIso U I p k).inv).op =
-    ((presheafCechDoubleComplexSpectralSequenceFirstPageXIso U I (p + 1) k).hom ≫
-        ((cechComplexFunctor U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) (p + 1)).map
-          e.inv ≫ (presheafCechColumnHomologyIso U I (p + 1) k).inv).op) ≫
+      (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I p k e).hom =
+    (presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso U I (p + 1) k e).hom ≫
       (((-1 : ℤ) ^ k) • (((cechComplexFunctor U).obj P).d p (p + 1)).op) := by
+  rw [presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso_hom,
+    presheafCechDoubleComplexSpectralSequenceFirstPageXIsoOfIso_hom]
   have h := presheafCechDoubleComplexSpectralSequence_page_two_d U I p k
   rw [Iso.inv_comp_eq] at h
   have hcol := presheafCechColumnHomologyIso_inv_comp_homologyMap_cechColumnD U I p k

@@ -56,19 +56,6 @@ local notation "πᶜ" => MonoidHom.comp
   (Subgroup.subtype (QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0)))
   (spinCGroup.toSpecialOrthogonal (realCliffordForm n 0) hQ)
 
-/-- The rotations of `Spinᶜ(n)` preserve the Euclidean norm: the norm hypothesis of
-`TauCeti.OrthonormalFrameLift.extend` for `πᶜ`. -/
-private theorem norm_toLp_rotation_apply (g : spinCGroup (realCliffordForm n 0) hQ)
-    (v : Fin n → ℝ) : ‖WithLp.toLp 2 (πᶜ g v)‖ = ‖WithLp.toLp 2 v‖ :=
-  TauCeti.CliffordAlgebra.norm_toLp_specialOrthogonalGroup_realCliffordForm_apply n _ v
-
-/-- Rotating a fixed vector is continuous in the element of `Spinᶜ(n)`: the continuity hypothesis
-of `TauCeti.OrthonormalFrameLift.extend` for `πᶜ`. -/
-private theorem continuous_rotation_apply (v : Fin n → ℝ) :
-    Continuous fun g : spinCGroup (realCliffordForm n 0) hQ ↦ πᶜ g v :=
-  (TauCeti.CliffordAlgebra.continuous_specialOrthogonalGroup_realCliffordForm_apply n v).comp
-    (spinCGroup.continuous_toSpecialOrthogonal_pi _ _)
-
 /-! ### Functoriality in the structure -/
 
 namespace OrthonormalFrameLift
@@ -84,7 +71,7 @@ noncomputable def Equiv.precompIsometry
   (φ.precomp (realCliffordIsometryEquivEuclidean f) ((πᶜ).comp (precompIsometryHom f))
       (toSpecialOrthogonal_realCliffordIsometryEquivEuclidean_apply f)).extend (ρ' := πᶜ)
     (precompIsometryHom f) (continuous_precompIsometryHom f) rfl
-    norm_toLp_rotation_apply continuous_rotation_apply
+    spinCGroup.norm_toLp_toSpecialOrthogonal_apply spinCGroup.continuous_toSpecialOrthogonal_apply
 
 @[simp]
 theorem Equiv.precompIsometry_toEquiv_mk
@@ -171,9 +158,10 @@ noncomputable def precompIsometryPrecompIsometryEquiv
       -- Both sides are frames of points `[p, k]` of extensions: the frame of `p` composed with
       -- the rotation of `k`.
       refine (toFrame_extend_mk (s.precompIsometryLift (g.trans f))
-        (precompIsometryHom (g.trans f)) _ rfl _ continuous_rotation_apply x p _ v).trans ?_
+        (precompIsometryHom (g.trans f)) _ rfl _ spinCGroup.continuous_toSpecialOrthogonal_apply x p
+        _ v).trans ?_
       refine Eq.trans ?_ (toFrame_extend_mk (s.precompIsometryLift f)
-        (precompIsometryHom f) _ rfl _ continuous_rotation_apply x p h
+        (precompIsometryHom f) _ rfl _ spinCGroup.continuous_toSpecialOrthogonal_apply x p h
           ((realCliffordIsometryEquivEuclidean g) (WithLp.toLp 2 v)).ofLp).symm
       -- Unfolding the precompositions (`toFrame_precomp`), both sides are frames of `p`, at
       -- `(f ∘ g) π(σ_g h) v` and `f π(h) g v`, which agree.
