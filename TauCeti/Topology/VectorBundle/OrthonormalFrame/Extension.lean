@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.FiberBundle.Principal.Extension
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Basic
+public import TauCeti.Topology.VectorBundle.Pullback
 
 /-!
 # Extending a lift of the orthonormal frame bundle along a structure group homomorphism
@@ -32,7 +33,8 @@ The extension has the universal property of the extension of structure group
 continuous `σ`-equivariant map from `P` that preserves frames is equivalent to `s.extend …`. As
 consequences, equivalences of lifts extend to equivalences of the extensions
 (`TauCeti.OrthonormalFrameLift.Equiv.extend`), and extending along `σ` and then along `τ` is
-extending along `τ ∘ σ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
+extending along `τ ∘ σ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`), and extension commutes
+with pullback along a continuous map (`TauCeti.OrthonormalFrameLift.extendPullbackEquiv`).
 
 ## Main definitions
 
@@ -40,12 +42,16 @@ extending along `τ ∘ σ` (`TauCeti.OrthonormalFrameLift.extendCompEquiv`).
   homomorphism.
 * `TauCeti.OrthonormalFrameLift.extendEquivOfEquivariant`: the equivalence of the extension with
   any lift receiving an equivariant frame-preserving map.
+* `TauCeti.OrthonormalFrameLift.extendPullbackEquiv`: the extension of the pullback of a lift is
+  equivalent to the pullback of its extension.
 
 ## Main results
 
 * `TauCeti.OrthonormalFrameLift.toFrame_extend_inl`: the frame of `[p, 1]` is the frame of `p`.
 * `TauCeti.OrthonormalFrameLift.toFrame_extend_mk`: the frame of `[p, h]` is the frame of `p`
   composed with `ρ' h`.
+* `TauCeti.OrthonormalFrameLift.toFrame_pullback_extend_inl`: the frame of `[p, 1]` in the
+  pullback of the extension is the frame of `p` in the pullback of the lift.
 
 ## References
 
@@ -354,6 +360,67 @@ theorem extendCompEquiv_toEquiv_inl (x : X) (p : s.P x) :
   Extend.compEquiv_symm_inl σ hσ τ hτ p
 
 end Comp
+
+/-! ### Pullback
+
+The extension of the pullback of a lift along `g : Y → X` needs `g *ᵖ E` to be a vector bundle
+whose fibres carry the topology of their norms, so this section uses
+`Bundle.Pullback.normedFiberBundle` and `Bundle.Pullback.normedVectorBundle` as local instances.
+-/
+
+section Pullback
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [FiberBundle F E] [VectorBundle ℝ F E]
+  (s : OrthonormalFrameLift F E n G ρ) (σ : G →* H)
+  (hσ : Continuous σ) (hσρ : ρ'.comp σ = ρ)
+  (hρ'n : ∀ h v, ‖WithLp.toLp 2 (ρ' h v)‖ = ‖WithLp.toLp 2 v‖)
+  (hρ'c : ∀ v, Continuous fun h ↦ ρ' h v)
+  {Y : Type*} [TopologicalSpace Y] {K : Type*} [FunLike K Y X] [ContinuousMapClass K Y X]
+
+attribute [local instance] Pullback.normedFiberBundle Pullback.normedVectorBundle
+
+variable [ContinuousMul H] in
+/-- **The frame of `[p, 1]`** in the pullback of the extension of a lift `s` is the frame of `p`
+in the pullback of `s`. -/
+@[simp]
+theorem toFrame_pullback_extend_inl (g : K) (y : Y) (p : s.P (g y)) :
+    ((s.extend σ hσ hσρ hρ'n hρ'c).pullback g).toFrame ⟨y, Extend.inl σ hσ p⟩ =
+      (s.pullback g).toFrame ⟨y, p⟩ := by
+  obtain ⟨φ, hφ⟩ := s.exists_toFrame_eq_mk ⟨g y, p⟩
+  rw [(s.extend σ hσ hσρ hρ'n hρ'c).toFrame_pullback_mk g y _
+      ((s.toFrame_extend_inl σ hσ hσρ hρ'n hρ'c (g y) p).trans hφ),
+    s.toFrame_pullback_mk g y p hφ]
+
+variable [IsTopologicalGroup H]
+
+/-- **Extension commutes with pullback**: for a continuous map `g : Y → X`, the extension along
+`σ` of the pullback of `s` is equivalent to the pullback of the extension of `s`. Over `y`, both
+principal bundles are `P_{g y} ×_σ H`, and the equivalence is `[p, h] ↦ [p, h]`. -/
+noncomputable def extendPullbackEquiv (g : K) :
+    ((s.pullback g).extend σ hσ hσρ hρ'n hρ'c).Equiv
+      ((s.extend σ hσ hσρ hρ'n hρ'c).pullback g) :=
+  (s.pullback g).extendEquivOfEquivariant σ hσ hσρ hρ'n hρ'c _
+    (fun _ (p : s.P _) ↦ Extend.inl σ hσ p) (fun _ (p : s.P _) h ↦ Extend.inl_smul σ hσ p h)
+    (Pullback.continuous_fiberwise (Extend.continuous_inl s.P σ hσ) (g : Y → X))
+    (s.toFrame_pullback_extend_inl σ hσ hσρ hρ'n hρ'c g)
+
+/-- The equivalence of the extension of the pullback with the pullback of the extension sends
+`[p, h]` to `[p, h]`. -/
+theorem extendPullbackEquiv_toEquiv_mk (g : K) (y : Y) (p : s.P (g y)) (h : H) :
+    (s.extendPullbackEquiv σ hσ hσρ hρ'n hρ'c g).toEquiv y
+        (Extend.mk (P := (g : Y → X) *ᵖ s.P) σ hσ p h) =
+      Extend.mk (P := s.P) σ hσ p h :=
+  (extendEquivOfEquivariant_toEquiv_mk ..).trans (Extend.smul_inl _ _ p h)
+
+/-- The equivalence of the extension of the pullback with the pullback of the extension sends
+`[p, 1]` to `[p, 1]`. -/
+theorem extendPullbackEquiv_toEquiv_inl (g : K) (y : Y) (p : s.P (g y)) :
+    (s.extendPullbackEquiv σ hσ hσρ hρ'n hρ'c g).toEquiv y
+        (Extend.inl (P := (g : Y → X) *ᵖ s.P) σ hσ p) =
+      Extend.inl (P := s.P) σ hσ p :=
+  extendEquivOfEquivariant_toEquiv_inl ..
+
+end Pullback
 
 end OrthonormalFrameLift
 
