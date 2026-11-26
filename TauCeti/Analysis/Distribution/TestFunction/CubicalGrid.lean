@@ -575,11 +575,9 @@ theorem isCompact_dsupport_of_mem_cubicalGridChains {ε : ℝ}
     exact isCompact_dsupport_coordBoxCurrent _ _ _ Ω
   | zero => simp [dsupport_zero]
   | add S T _ _ hS hT =>
-    exact (hS.union hT).of_isClosed_subset isClosed_dsupport
-      (dsupport_add_subset (S : 𝓓(Ω, EuclideanSpace ℝ (Fin n) [⋀^Fin k]→L[ℝ] ℝ) → ℝ) T)
-  | neg T _ hT =>
-    have h : dsupport (⇑(-T)) = dsupport T := dsupport_neg _
-    rwa [h]
+    rw [FunLike.coe_add]
+    exact (hS.union hT).of_isClosed_subset isClosed_dsupport (dsupport_add_subset _ _)
+  | neg T _ hT => rwa [FunLike.coe_neg, dsupport_neg]
 
 /-- **The mass of a grid chain**: `M(∑_c a_c • Q_c) ≤ (∑_c |a_c|) εᵏ`. -/
 theorem mass_finsuppSum_gridCubeCurrent_le (ε : ℝ) (Ω : Opens (EuclideanSpace ℝ (Fin n)))
