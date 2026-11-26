@@ -1349,6 +1349,23 @@ theorem IsElliptic.exists_isEllipticAbove {a : ClassicalSymbol n V W m} (ha : a.
     rw [hxy ξ]
     exact hRC y hy ξ hξ
 
+/-- **The principal symbol along an elliptic ray.** If `ξ ≠ 0` and, for all large `t`, `a(x, t ξ)`
+is invertible with `‖a(x, t ξ)⁻¹‖ ≤ C ⟨t ξ⟩^(-m)`, then `a_m(x, ξ)` is invertible. -/
+theorem isInvertible_coefficient_principal_of_eventually {a : ClassicalSymbol n V W m}
+    {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0) {C : ℝ}
+    (h : ∀ᶠ t : ℝ in atTop, (a.toSymbol.coefficient (x, t • ξ)).IsInvertible ∧
+      ‖(a.toSymbol.coefficient (x, t • ξ)).inverse‖ ≤ C * (1 + ‖t • ξ‖ ^ 2) ^ (-m / 2)) :
+    (a.principal.coefficient (x, ξ)).IsInvertible := by
+  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le (isCompact_singleton (x := x))
+  obtain ⟨t, ⟨hB, hM⟩, ht, hT⟩ := (h.and ((eventually_gt_atTop 0).and
+    (eventually_ge_atTop (max 2 (2 * C * C₁) / ‖ξ‖)))).exists
+  rw [div_le_iff₀ (norm_pos_iff.2 hξ), ← Real.norm_of_nonneg ht.le, ← norm_smul] at hT
+  have hd := hC₁ x rfl (t • ξ) ((le_max_left _ _).trans hT)
+  rw [← norm_neg, neg_sub, a.principal.homogeneous x ξ _ ht] at hd
+  exact (ContinuousLinearMap.isInvertible_smul_iff_of_isScalarTower (by positivity)).1
+    (isInvertible_and_norm_inverse_le_of_norm_sub_le hB (by positivity) (le_max_right _ _) hT
+      hM hd).1
+
 /-- **Ellipticity from invertibility at large frequencies.** If at every position `x` the full
 symbol `a(x, ξ)` is invertible at all frequencies of norm at least some `R`, with
 `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)`, then the classical symbol is elliptic. -/
@@ -1356,27 +1373,10 @@ theorem isElliptic_of_forall_exists_norm_inverse_le {a : ClassicalSymbol n V W m
     (h : ∀ x, ∃ R C : ℝ, ∀ ξ, R ≤ ‖ξ‖ → (a.toSymbol.coefficient (x, ξ)).IsInvertible ∧
       ‖(a.toSymbol.coefficient (x, ξ)).inverse‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-m / 2)) :
     a.IsElliptic := by
-  -- At `ξ ≠ 0` and large `t`, the principal symbol `a_m(x, t ξ) = t^m a_m(x, ξ)` differs from the
-  -- full symbol `a(x, t ξ)` by `O(t^(m - 1))`, small against the bound `O(t^m)` on its inverse.
-  refine isElliptic_iff.2 fun x ξ hξ ↦ ?_
-  obtain ⟨R, C, hRC⟩ := h x
-  obtain ⟨C₁, hC₁⟩ := a.exists_norm_toSymbol_sub_principal_le (isCompact_singleton (x := x))
-  -- Rescale `ξ` to the frequency `t • ξ` of norm `T`, beyond `R`, `2` and `2 C C₁`.
-  set T := max (max R 2) (2 * C * C₁)
-  have hT2 : 2 ≤ T := (le_max_right _ _).trans (le_max_left _ _)
-  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  have ht : 0 < T / ‖ξ‖ := div_pos (by linarith) hn
-  have htξ : ‖(T / ‖ξ‖) • ξ‖ = T := by
-    rw [norm_smul, Real.norm_of_nonneg ht.le, div_mul_cancel₀ _ hn.ne']
-  obtain ⟨hB, hM⟩ := hRC ((T / ‖ξ‖) • ξ) (htξ.symm ▸ (le_max_left _ _).trans (le_max_left _ _))
-  have hd := hC₁ x rfl ((T / ‖ξ‖) • ξ) (htξ.symm ▸ hT2)
-  rw [← norm_neg, neg_sub] at hd
-  -- The principal symbol at `t • ξ` is close to the invertible full symbol, hence invertible.
-  have hA := (isInvertible_and_norm_inverse_le_of_norm_sub_le hB (by linarith) (le_max_right _ _)
-    htξ.ge hM hd).1
-  rw [a.principal.homogeneous x ξ _ ht, ← Complex.coe_smul,
-    ContinuousLinearMap.isInvertible_smul_iff (by simp [(Real.rpow_pos_of_pos ht m).ne'])] at hA
-  exact hA
+  refine isElliptic_iff.2 fun x ξ hξ ↦ (h x).elim fun R ⟨C, hRC⟩ ↦
+    isInvertible_coefficient_principal_of_eventually hξ (C := C) ?_
+  filter_upwards [eventually_gt_atTop 0, eventually_ge_atTop (R / ‖ξ‖)] with t ht htR
+  exact hRC _ (by rwa [norm_smul, Real.norm_of_nonneg ht.le, ← div_le_iff₀ (norm_pos_iff.2 hξ)])
 
 /-- **Ellipticity as invertibility at large frequencies.** A classical symbol of order `m` is
 elliptic exactly when, on every compact set of positions, its full symbol `a(x, ξ)` is invertible

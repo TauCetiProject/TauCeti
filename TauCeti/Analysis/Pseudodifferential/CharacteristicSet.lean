@@ -35,8 +35,7 @@ high-frequency limit `t^(-m) a(y, t ζ) → a_m(x, ξ)` as `t → ∞` and `(y, 
 the limit is uniform near `(x₀, ξ₀)`, which makes `a` elliptic on the cone over a neighbourhood of
 `ξ₀` at large frequencies
 (`TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal`). Conversely,
-if `a` is elliptic along the ray of `ξ`, the rescaled values `t^(-m) a(x, t ξ)` have uniformly
-bounded inverses and converge to `a_m(x, ξ)`, which is therefore invertible
+if `a` is elliptic along the ray of `ξ`, then `a_m(x, ξ)` is invertible
 (`TauCeti.ClassicalSymbol.isInvertible_coefficient_principal_of_eventually`). In particular a
 classical symbol has empty characteristic set exactly when it is elliptic
 (`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_eq_empty_iff`).
@@ -407,53 +406,6 @@ namespace ClassicalSymbol
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] {a : ClassicalSymbol n V W m}
 
-/-- **The principal symbol where the full symbol is elliptic.** Let `ξ ≠ 0`. If the full symbol of
-a classical symbol of order `m` is invertible at `(x, t ξ)` for all large `t`, with
-`‖a(x, t ξ)⁻¹‖ ≤ C ⟨t ξ⟩^(-m)`, then its principal symbol `a_m(x, ξ)` is invertible. -/
-theorem isInvertible_coefficient_principal_of_eventually {x ξ : CoordinateSpace n} (hξ : ξ ≠ 0)
-    {C : ℝ}
-    (h : ∀ᶠ t : ℝ in atTop, (a.toSymbol.coefficient (x, t • ξ)).IsInvertible ∧
-      ‖(a.toSymbol.coefficient (x, t • ξ)).inverse‖ ≤ C * (1 + ‖t • ξ‖ ^ 2) ^ (-m / 2)) :
-    (a.principal.coefficient (x, ξ)).IsInvertible := by
-  -- `B t = t^(-m) a(x, t ξ)` tends to `a_m(x, ξ)` and has inverses bounded by
-  -- `L = C 2^(|m| / 2) ‖ξ‖^(-m)`, so it is invertible for large `t` and close to `a_m(x, ξ)`.
-  have hlim : Tendsto (fun t : ℝ ↦ t ^ (-m) • a.toSymbol.coefficient (x, t • ξ)) atTop
-      (𝓝 (a.principal.coefficient (x, ξ))) :=
-    (a.tendsto_rpow_neg_smul_coefficient_smul hξ).comp
-      ((tendsto_id : Tendsto (id : ℝ → ℝ) atTop atTop).prodMk tendsto_const_nhds)
-  have hn : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  set L := |C| * 2 ^ (|-m| / 2) * ‖ξ‖ ^ (-m) + 1
-  have hL : 0 < L := by positivity
-  obtain ⟨t, ⟨hinv, hle⟩, ht, ht1, hclose⟩ := (h.and ((eventually_gt_atTop (0 : ℝ)).and
-    ((eventually_ge_atTop ‖ξ‖⁻¹).and (hlim.eventually (ball_mem_nhds _ (inv_pos.2 hL)))))).exists
-  have htξ : ‖t • ξ‖ = t * ‖ξ‖ := by rw [norm_smul, Real.norm_of_nonneg ht.le]
-  have htξ1 : 1 ≤ ‖t • ξ‖ := by
-    rw [htξ, ← inv_mul_cancel₀ hn.ne']
-    gcongr
-  -- The bound on the inverse of `B t = t^(-m) a(x, t ξ)`.
-  have hw := Real.one_add_sq_rpow_le_two_rpow_mul_abs_rpow (t := ‖t • ξ‖) (by
-    rwa [abs_norm]) (-m)
-  rw [abs_norm] at hw
-  have htm : 0 < t ^ (-m) := Real.rpow_pos_of_pos ht _
-  have hB : ((t ^ (-m) : ℝ) • a.toSymbol.coefficient (x, t • ξ)).IsInvertible := by
-    rwa [← Complex.coe_smul, ContinuousLinearMap.isInvertible_smul_iff
-      (Complex.ofReal_ne_zero.2 htm.ne')]
-  have hBinv : ‖((t ^ (-m) : ℝ) • a.toSymbol.coefficient (x, t • ξ)).inverse‖ ≤ L := by
-    rw [← Complex.coe_smul, ContinuousLinearMap.inverse_smul, norm_smul, norm_inv,
-      Complex.norm_real, Real.norm_of_nonneg htm.le, ← Real.rpow_neg ht.le, neg_neg]
-    calc t ^ m * ‖(a.toSymbol.coefficient (x, t • ξ)).inverse‖
-        ≤ t ^ m * (|C| * (2 ^ (|-m| / 2) * ‖t • ξ‖ ^ (-m))) := by
-          gcongr
-          exact hle.trans (mul_le_mul (le_abs_self C) hw (by positivity) (abs_nonneg C))
-      _ = |C| * 2 ^ (|-m| / 2) * ‖ξ‖ ^ (-m) := by
-          rw [htξ, Real.mul_rpow ht.le hn.le, Real.rpow_neg ht.le]
-          field_simp
-      _ ≤ L := le_add_of_nonneg_right zero_le_one
-  rw [dist_comm, dist_eq_norm] at hclose
-  exact hB.of_mul_norm_sub_lt hBinv (by
-    calc L * ‖a.principal.coefficient (x, ξ) - _‖ < L * L⁻¹ := by gcongr
-      _ = 1 := mul_inv_cancel₀ hL.ne')
-
 /-- Near a covector `(x₀, ξ₀)`, `ξ₀ ≠ 0`, at which the principal symbol is invertible, the full
 symbol `a(y, t ζ)` is invertible for all large `t`, uniformly for `(y, ζ)` near `(x₀, ξ₀)`, with
 `‖a(y, t ζ)⁻¹‖ ≤ C t^(-m)`: the rescaled symbol `t^(-m) a(y, t ζ)` tends to `a_m(x₀, ξ₀)`. -/
@@ -480,16 +432,14 @@ private theorem exists_isInvertible_coefficient_smul {x₀ ξ₀ : CoordinateSpa
   refine ⟨U, hU, V, hV, max T₀ 1, 2 * M, by positivity, fun t ht y hy ζ hζ ↦ ?_⟩
   have ht0 : 0 < t := one_pos.trans_le ((le_max_right _ _).trans ht)
   have htm : 0 < t ^ (-m) := Real.rpow_pos_of_pos ht0 _
-  have hc : ((t ^ (-m) : ℝ) : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 htm.ne'
   have hkey := hTN (hT₀ t ((le_max_left _ _).trans ht)) (hUV (mk_mem_prod hy hζ))
   dsimp only at hkey
-  rw [← Complex.coe_smul] at hkey
   have hlt := hkey.trans_lt (by norm_num : (1 / 2 : ℝ) < 1)
   have hinv := h.of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one) hlt
   have hnorm := (h.norm_inverse_le_of_mul_norm_sub_lt (le_add_of_nonneg_right zero_le_one)
     hlt).trans (div_le_div_of_nonneg_left hM.le (by norm_num : (0 : ℝ) < 1 / 2) (by linarith))
-  rw [ContinuousLinearMap.isInvertible_smul_iff hc] at hinv
-  rw [ContinuousLinearMap.inverse_smul, norm_smul, norm_inv, Complex.norm_real,
+  rw [ContinuousLinearMap.isInvertible_smul_iff_of_isScalarTower htm.ne'] at hinv
+  rw [ContinuousLinearMap.inverse_smul_of_isScalarTower, norm_smul, norm_inv,
     Real.norm_of_nonneg htm.le] at hnorm
   refine ⟨hinv, ?_⟩
   calc ‖(a.toSymbol.coefficient (y, t • ζ)).inverse‖
@@ -561,10 +511,10 @@ theorem exists_isEllipticOn_of_isInvertible_coefficient_principal {x₀ ξ₀ : 
         _ < s⁻¹ * (3 * r) := mul_lt_mul_of_pos_left hsη.2 (inv_pos.2 hs)
         _ = 3 * r * s⁻¹ := mul_comm _ _
     exact (lt_of_mul_lt_mul_left h₁ (by positivity)).le
-  obtain ⟨hinv, hle⟩ := hTC s⁻¹ ht y hy (s • η) (interior_subset hsV)
-  rw [smul_smul, inv_mul_cancel₀ hs.ne', one_smul, Real.rpow_neg (inv_nonneg.2 hs.le),
-    Real.inv_rpow hs.le, inv_inv] at hle
-  rw [smul_smul, inv_mul_cancel₀ hs.ne', one_smul] at hinv
+  have hTCη := hTC s⁻¹ ht y hy (s • η) (interior_subset hsV)
+  rw [inv_smul_smul₀ hs.ne' η] at hTCη
+  obtain ⟨hinv, hle⟩ := hTCη
+  rw [Real.rpow_neg (inv_nonneg.2 hs.le), Real.inv_rpow hs.le, inv_inv] at hle
   refine ⟨hinv, hle.trans ?_⟩
   have hC : 0 ≤ C := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hle)
     (Real.rpow_pos_of_pos hs m)
