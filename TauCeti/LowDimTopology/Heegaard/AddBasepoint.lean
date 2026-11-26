@@ -745,6 +745,20 @@ theorem coe_addBasepointPeriodicDomainsEquiv_apply (c : H.periodicDomains × ℤ
       Sum.elim (c.1 : Region → ℤ) ![c.2, (c.1 : Region → ℤ) r₀ - c.2, 0] :=
   (rfl)
 
+/-- When `r₀` contains a basepoint, the periodic domain attached to `(Q, 0)` is `Q` extended by
+zero over the new regions: `Q` vanishes on `r₀`. -/
+theorem coe_addBasepointPeriodicDomainsEquiv_mk_zero (hr₀ : r₀ ∈ Set.range H.basepoint)
+    (Q : H.periodicDomains) :
+    (H.addBasepointPeriodicDomainsEquiv r₀ (Q, 0) : Region ⊕ Fin 3 → ℤ) =
+      Sum.elim (Q : Region → ℤ) 0 := by
+  obtain ⟨z₀, rfl⟩ := hr₀
+  have hQ : (Q : Region → ℤ) (H.basepoint z₀) = 0 :=
+    (mem_periodicDomains_iff.mp Q.property).1 z₀
+  funext s
+  rcases s with s | k
+  · simp
+  · fin_cases k <;> simp [hQ]
+
 /-- The old periodic domain attached to a periodic domain of the diagram with an added basepoint
 is its restriction to the old regions. -/
 @[simp]
