@@ -9,15 +9,16 @@ public import TauCeti.NumberTheory.LegendreSymbol.JacobiSymbol.Char
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import Mathlib.Data.Nat.Factorization.Induction
 import Mathlib.Data.Nat.Squarefree
-import Mathlib.NumberTheory.LegendreSymbol.QuadraticChar.Basic
+import TauCeti.NumberTheory.DirichletCharacter.Quadratic
 
 /-!
 # Conductors of Jacobi characters at odd level
 
 Square factors of the denominator affect the vanishing at nonunits, but not the character
-on units. The conductor at odd level is the squarefree factor left after removing a square.
-This determines when Pólya–Vinogradov applies to a sum of Jacobi symbols. In particular,
-the nonprincipality test used in `New.dirichletCharacter_jacobiSym_ne_one` of
+on units. If `(-1 : R) ≠ 1` in the coefficient ring `R`, the conductor at odd level is the
+squarefree factor left after removing a square. This determines when Pólya–Vinogradov applies to
+a sum of Jacobi symbols. In particular, the nonprincipality test used in
+`New.dirichletCharacter_jacobiSym_ne_one` of
 [lsernau/grh-lean](https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh)
 follows here from the exact conductor.
 -/
@@ -27,17 +28,6 @@ public section
 namespace TauCeti
 
 open DirichletCharacter
-
-/-- Multiplying the denominator by a square induces the Jacobi character to the new level. -/
-theorem jacobiChar_sq_mul (R : Type*) [CommRing R] (a b : ℕ) [NeZero a] [NeZero b] :
-    jacobiChar R (a ^ 2 * b) = (jacobiChar R b).changeLevel (dvd_mul_left b (a ^ 2)) := by
-  refine MulChar.ext fun u ↦ ?_
-  have hc : ((u : ZMod (a ^ 2 * b)).val : ℤ).gcd a = 1 := by
-    rw [Int.gcd_natCast_natCast]
-    exact (ZMod.val_coe_unit_coprime u).coprime_dvd_right
-      ((dvd_pow_self a two_ne_zero).trans (dvd_mul_right (a ^ 2) b))
-  rw [jacobiChar_apply, changeLevel_jacobiChar_apply_units, jacobiSym.mul_right,
-    jacobiSym.pow_right, jacobiSym.sq_one hc, one_mul]
 
 /-- At an odd squarefree level the Jacobi character is primitive, provided `-1 ≠ 1`
 in its coefficient ring. -/
@@ -58,12 +48,10 @@ theorem isPrimitive_jacobiChar_of_odd_squarefree {R : Type*} [CommRing R]
     intro _
     let : Fact p.Prime := ⟨hp⟩
     have hp₂ : p ≠ 2 := hn.ne_two_of_dvd_nat dvd_rfl
-    obtain ⟨u, hu⟩ := quadraticChar_exists_neg_one' (F := ZMod p)
-      (by rwa [ZMod.ringChar_zmod_n])
+    let : Nontrivial R := nontrivial_of_ne _ _ hR
     apply (isPrimitive_def _).mp (isPrimitive_of_ne_one_of_prime hp ?_)
     rw [jacobiChar_eq_ringHomComp_quadraticChar]
-    refine MulChar.ne_one_iff.mpr ⟨u, ?_⟩
-    simpa [MulChar.ringHomComp_apply, hu] using hR
+    exact quadraticChar_ringHomComp_ne_one (mt neg_one_eq_one_iff.mpr hR) hp₂
   | mul m n ihm ihn =>
     intro _
     obtain ⟨hcop, hsm, hsn⟩ := Nat.squarefree_mul_iff.mp hs
@@ -84,7 +72,8 @@ theorem conductor_jacobiChar_sq_mul {R : Type*} [CommRing R] (hR : (-1 : R) ≠ 
   rw [jacobiChar_sq_mul, conductor_changeLevel]
   exact (isPrimitive_def _).mp (isPrimitive_jacobiChar_of_odd_squarefree hR hb hs)
 
-/-- At an odd level the Jacobi character is principal precisely when the level is a square. -/
+/-- If `(-1 : R) ≠ 1` in the coefficient ring, the Jacobi character at an odd level is
+principal precisely when the level is a square. -/
 theorem jacobiChar_eq_one_iff_isSquare {R : Type*} [CommRing R] (hR : (-1 : R) ≠ 1)
     {n : ℕ} [NeZero n] (hn : Odd n) : jacobiChar R n = 1 ↔ IsSquare n := by
   constructor
@@ -95,13 +84,10 @@ theorem jacobiChar_eq_one_iff_isSquare {R : Type*} [CommRing R] (hR : (-1 : R) �
     have hbodd := (Nat.odd_mul.mp hn).2
     rw [eq_one_iff_conductor_eq_one, conductor_jacobiChar_sq_mul hR a hbodd hb] at h
     exact ⟨a, by simp [h, pow_two]⟩
-  · rintro ⟨a, rfl⟩
-    let : NeZero a := ⟨fun h ↦ NeZero.ne (a * a) (by simp [h])⟩
-    refine MulChar.ext fun u ↦ ?_
-    have hc : ((u : ZMod (a * a)).val : ℤ).gcd a = 1 := by
-      rw [Int.gcd_natCast_natCast]
-      exact (ZMod.val_coe_unit_coprime u).coprime_dvd_right (dvd_mul_right a a)
-    rw [jacobiChar_apply, jacobiSym.mul_right, ← sq, jacobiSym.sq_one hc,
-      Int.cast_one, MulChar.one_apply_coe]
+  · rintro ⟨a, ha⟩
+    replace ha : n = a ^ 2 * 1 := by simpa only [pow_two, mul_one] using ha
+    subst n
+    let : NeZero a := ⟨fun h ↦ NeZero.ne (a ^ 2 * 1) (by simp [h])⟩
+    rw [jacobiChar_sq_mul R a 1, level_one (jacobiChar R 1), changeLevel_one]
 
 end TauCeti
