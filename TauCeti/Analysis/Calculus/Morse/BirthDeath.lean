@@ -292,19 +292,20 @@ theorem tendsto_zero_of_eventually_fderiv_birthDeathPotential_eq_zero {α : Type
   exact (abs_eq_sqrt_of_fderiv_birthDeathPotential_eq_zero ha).symm
 
 /-- **Continuous branches of critical points.** Let `T` be a preconnected set of indices, `σ` a
-family of nonzero parameters continuous on `T`, and `ψ a` a critical point of the birth–death
-potential with parameter `σ a`, continuous on `T`. Then `ψ` follows a single one of the two
+family of nonzero parameters on `T`, and `ψ a` a critical point of the birth–death potential with
+parameter `σ a`, continuous on `T`. Then `ψ` follows a single one of the two
 branches of critical points on all of `T`: either `ψ = √σ`, the branch of local minima, or
 `ψ = -√σ`, the branch of local maxima. Without `σ ≠ 0` this fails: for `σ a = a²` on `ℝ`, the
 critical points `ψ a = a` switch branches at `a = 0`. -/
 theorem eqOn_sqrt_or_eqOn_neg_sqrt_of_forall_fderiv_birthDeathPotential_eq_zero {α : Type*}
     [TopologicalSpace α] {T : Set α} {σ ψ : α → ℝ} (hT : IsPreconnected T)
-    (hσ : ContinuousOn σ T) (hψ : ContinuousOn ψ T) (hσ₀ : ∀ a ∈ T, σ a ≠ 0)
+    (hψ : ContinuousOn ψ T) (hσ₀ : ∀ a ∈ T, σ a ≠ 0)
     (h : ∀ a ∈ T, fderiv ℝ (birthDeathPotential (σ a)) (ψ a) = 0) :
     EqOn ψ (fun a ↦ √(σ a)) T ∨ EqOn ψ (fun a ↦ -√(σ a)) T := by
   have hsq (a : α) (ha : a ∈ T) : ψ a ^ 2 = σ a := fderiv_birthDeathPotential_eq_zero_iff.1 (h a ha)
   have hpos (a : α) (ha : a ∈ T) : 0 < σ a :=
     lt_of_le_of_ne (hsq a ha ▸ sq_nonneg _) (hσ₀ a ha).symm
+  have hσ : ContinuousOn σ T := (hψ.pow 2).congr fun a ha ↦ (hsq a ha).symm
   refine (hT.eq_or_eq_neg_of_sq_eq hψ (Real.continuous_sqrt.comp_continuousOn hσ)
     (fun a ha ↦ ?_) fun {a} ha ↦ (Real.sqrt_pos.2 (hpos a ha)).ne').imp_right
     fun h' a ha ↦ h' ha

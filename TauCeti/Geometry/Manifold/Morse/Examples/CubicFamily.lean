@@ -25,8 +25,7 @@ critical points are created: its derivative is `3 x² - t`, so
   Morse index `1` at `-√(t / 3)` and a local minimum of Morse index `0` at `√(t / 3)`
   (`TauCeti.manifoldMorseIndex_pow_three_sub_mul_neg_sqrt`,
   `TauCeti.manifoldMorseIndex_pow_three_sub_mul_sqrt`,
-  `TauCeti.criticalCount_pow_three_sub_mul_one_of_pos`,
-  `TauCeti.criticalCount_pow_three_sub_mul_zero_of_pos`).
+  `TauCeti.criticalCount_pow_three_sub_mul_of_pos`).
 
 So `f_t` is a Morse function exactly when `t ≠ 0`. Near every parameter `t₀ ≠ 0`, each critical
 point of `f_{t₀}` continues to a branch of nondegenerate critical points of the nearby `f_t`
@@ -156,35 +155,31 @@ theorem manifoldMorseIndex_pow_three_sub_mul_sqrt (ht : 0 < t) :
   rw [manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_pos (by rw [iteratedDeriv_two_pow_three_sub_mul]; linarith)
 
-/-- For `t > 0`, the function `x³ - t x` has exactly one critical point of Morse index `0`, the
-local minimum `√(t / 3)`. -/
-theorem criticalCount_pow_three_sub_mul_zero_of_pos (ht : 0 < t) :
-    criticalCount 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) 0 = 1 := by
-  rw [criticalCount_def, criticalPoints_pow_three_sub_mul_of_pos ht, ← encard_singleton √(t / 3)]
-  congr 1
+/-- For `t > 0`, the critical points of index `j` of `x³ - t x` are the local maximum `-√(t / 3)`
+if `j = 1` and the local minimum `√(t / 3)` if `j = 0`. -/
+theorem sep_criticalPoints_pow_three_sub_mul_manifoldMorseIndex_eq_of_pos (ht : 0 < t) (j : ℕ) :
+    {x ∈ criticalPoints 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) |
+        manifoldMorseIndex 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) x = j} =
+      (if j = 1 then {-√(t / 3)} else ∅) ∪ (if j = 0 then {√(t / 3)} else ∅) := by
+  have h₁ := manifoldMorseIndex_pow_three_sub_mul_neg_sqrt ht
+  have h₀ := manifoldMorseIndex_pow_three_sub_mul_sqrt ht
   ext x
-  simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
+  rw [criticalPoints_pow_three_sub_mul_of_pos ht, mem_sep_iff, mem_insert_iff, mem_singleton_iff,
+    mem_union]
   constructor
-  · rintro ⟨rfl | rfl, hx⟩
-    · exact absurd ((manifoldMorseIndex_pow_three_sub_mul_neg_sqrt ht).symm.trans hx) one_ne_zero
-    · rfl
-  · rintro rfl
-    exact ⟨.inr rfl, manifoldMorseIndex_pow_three_sub_mul_sqrt ht⟩
+  · rintro ⟨rfl | rfl, rfl⟩
+    · rw [h₁]; simp
+    · rw [h₀]; simp
+  · rintro (h | h) <;> split_ifs at h with hj <;> simp_all
 
-/-- For `t > 0`, the function `x³ - t x` has exactly one critical point of Morse index `1`, the
-local maximum `-√(t / 3)`. -/
-theorem criticalCount_pow_three_sub_mul_one_of_pos (ht : 0 < t) :
-    criticalCount 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) 1 = 1 := by
-  rw [criticalCount_def, criticalPoints_pow_three_sub_mul_of_pos ht, ← encard_singleton (-√(t / 3))]
-  congr 1
-  ext x
-  simp only [mem_ofPred_eq, mem_insert_iff, mem_singleton_iff]
-  constructor
-  · rintro ⟨rfl | rfl, hx⟩
-    · rfl
-    · exact absurd ((manifoldMorseIndex_pow_three_sub_mul_sqrt ht).symm.trans hx) zero_ne_one
-  · rintro rfl
-    exact ⟨.inl rfl, manifoldMorseIndex_pow_three_sub_mul_neg_sqrt ht⟩
+/-- For `t > 0`, the function `x³ - t x` has one critical point of Morse index `1`, the local
+maximum `-√(t / 3)`, and one of index `0`, the local minimum `√(t / 3)`. -/
+theorem criticalCount_pow_three_sub_mul_of_pos (ht : 0 < t) (j : ℕ) :
+    criticalCount 𝓘(ℝ, ℝ) (fun y : ℝ ↦ y ^ 3 - t * y) j =
+      (if j = 1 then 1 else 0) + if j = 0 then 1 else 0 := by
+  rw [criticalCount_def, sep_criticalPoints_pow_three_sub_mul_manifoldMorseIndex_eq_of_pos ht,
+    encard_union_eq (by split_ifs <;> simp_all)]
+  split_ifs <;> simp
 
 /-! ### Branches of critical points do not cross `t = 0` -/
 
@@ -232,7 +227,7 @@ theorem eqOn_sqrt_or_eqOn_neg_sqrt_of_mem_criticalPoints_pow_three_sub_mul {T : 
     rw [isPreconnected_iff_ordConnected] at hT ⊢
     exact hT.inter ordConnected_Ioi
   exact (eqOn_sqrt_or_eqOn_neg_sqrt_of_forall_fderiv_birthDeathPotential_eq_zero hT'
-    (continuous_id.div_const 3).continuousOn (hψ.mono inter_subset_left)
+    (hψ.mono inter_subset_left)
     (fun _ ht ↦ (div_pos ht.2 three_pos).ne') fun t ht ↦ h' t ht.1).imp
     (hext (by simp)) (hext (by simp))
 
