@@ -65,8 +65,8 @@ type it is empty.
 * `TauCeti.mk_mem_classicalCharacteristicSet_pushforwardOperator_iff`: invariance under
   diffeomorphisms.
 * `TauCeti.mk_mem_classicalCharacteristicSet_complexifyLinearMap_iff`,
-  `TauCeti.IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap`: differential operators
-  and operators of Laplace type.
+  `TauCeti.IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap_eq_empty`: differential
+  operators and operators of Laplace type.
 
 ## References
 
@@ -242,7 +242,7 @@ theorem mk_mem_classicalCharacteristicSet_complexifyLinearMap_iff {m : ℕ}
 
 /-- **Operators of Laplace type have no characteristic covectors.** The complexification of an
 operator of Laplace type, such as `-Δ`, has empty characteristic set in order `2`. -/
-theorem IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap
+theorem IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap_eq_empty
     [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, CoordinateSpace n) x)]
     {D : differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ 2} {c : ℝ}
