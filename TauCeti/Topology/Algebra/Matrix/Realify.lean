@@ -35,6 +35,7 @@ intersection of either of these groups with the realified `GL(n, ℂ)`.
 * `Matrix.isClosedEmbedding_realify`: realification of matrices is a closed embedding.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify`: realification of invertible matrices is a
   closed embedding.
+* `Matrix.GeneralLinearGroup.isClosed_range_realify`: its image is a closed subgroup.
 * `Matrix.GeneralLinearGroup.realifyEquivRange`: realification is an isomorphism of topological
   groups from `GL n 𝕜` onto its image in `GL (n ⊕ n) ℝ`.
 * `Matrix.GeneralLinearGroup.isClosedEmbedding_realify_comp_toUnits`: realification of unitary
@@ -79,6 +80,12 @@ theorem isClosedEmbedding_realify : IsClosedEmbedding (realify n 𝕜) := by
   refine IsClosedEmbedding.units_map ?_
   convert Matrix.isClosedEmbedding_realify (m := n) (n := n) (𝕜 := 𝕜)
   exact funext realifyAlgHom_apply
+
+variable (n 𝕜) in
+/-- The realified `GL n 𝕜` is a closed subgroup of `GL (n ⊕ n) ℝ`. -/
+theorem isClosed_range_realify : IsClosed ((realify n 𝕜).range : Set (GL (n ⊕ n) ℝ)) := by
+  rw [MonoidHom.coe_range]
+  exact (isClosedEmbedding_realify n 𝕜).isClosed_range
 
 variable (n 𝕜) in
 /-- **`GL(n, 𝕜)` is isomorphic to its realification**: realification is an isomorphism of
