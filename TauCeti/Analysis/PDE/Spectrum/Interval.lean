@@ -188,6 +188,11 @@ theorem isBounded_intervalDomain :
   rw [coe_intervalDomain_eq_preimage]
   exact lineEquiv.symm.antilipschitzWith.isBounded_preimage (Metric.isBounded_Ioo a b)
 
+/-- The interval domain `(a, b)` has finite volume. -/
+instance instIsFiniteMeasureRestrictIntervalDomain :
+    IsFiniteMeasure (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) :=
+  isFiniteMeasure_restrict.2 isBounded_intervalDomain.measure_lt_top.ne
+
 private theorem frontier_intervalDomain_subset (hab : a < b) :
     frontier (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) ⊆ lineEquiv.symm ⁻¹' {a, b} := by
   rw [coe_intervalDomain_eq_preimage]
