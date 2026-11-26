@@ -105,24 +105,6 @@ private theorem compl_range_subtypeVal_compl_morseBrokenTrajectorySpaceBoundary
       hX.morseBrokenTrajectorySpaceBoundary c x y := by
   rw [Subtype.range_coe, compl_compl]
 
-omit h hf in
-/-- The face of `z` restricted to pairs of unbroken trajectories, as the image of the product of
-the interiors. -/
-private theorem range_morseBrokenTrajectorySpaceComp_compl_prod_compl
-    (x z y : criticalPoints 𝓘(ℝ, E) f) :
-    (range fun r : ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×
-        ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ ↦
-      hX.morseBrokenTrajectorySpaceComp hc x z y (r.1, r.2)) =
-    hX.morseBrokenTrajectorySpaceComp hc x z y ''
-      ((hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×ˢ
-        (hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ) := by
-  ext w
-  constructor
-  · rintro ⟨r, rfl⟩
-    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
-  · rintro ⟨p, ⟨h₁, h₂⟩, rfl⟩
-    exact ⟨(⟨p.1, h₁⟩, ⟨p.2, h₂⟩), rfl⟩
-
 /-- In index difference at most two, the faces of pairs of unbroken trajectories cover the
 boundary. -/
 private theorem dense_setOf_mem_range_morseBrokenTrajectorySpaceComp
@@ -287,7 +269,7 @@ private theorem exists_isRepresenting_compl_range [Fintype (criticalPoints 𝓘(
       exact Subtype.ext (ContinuousMap.coe_codRestrict_apply _ _ _ _))
     (fun x y _ ↦ h.dense_setOf_mem_range_morseBrokenTrajectorySpaceComp hf hc (hind x y))
     (fun x z z' y _ _ hz ↦ by
-      rw [range_morseBrokenTrajectorySpaceComp_compl_prod_compl hc]
+      rw [hX.range_morseBrokenTrajectorySpaceComp_compl_prod_compl hc]
       exact hX.disjoint_range_morseBrokenTrajectorySpaceComp_image hc hdense hz)
     (fun x z y _ _ p hp ⟨r, hr⟩ ↦ by
       -- A point of the boundary of the product is not a pair of unbroken trajectories.

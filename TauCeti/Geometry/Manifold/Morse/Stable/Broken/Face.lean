@@ -86,6 +86,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   first break of a broken trajectory.
 * `isEmbedding_morseBrokenTrajectorySpaceConcat`, `isEmbedding_morseBrokenTrajectorySpaceComp`:
   concatenation is an embedding.
+* `range_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the concatenations of pairs of
+  unbroken trajectories.
 * `image_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interior of a face.
 * `IsMorseSmale.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace`: the index drops.
 * `IsMorseSmale.isClosed_range_morseBrokenTrajectorySpaceComp`: the faces are closed.
@@ -219,6 +221,23 @@ theorem isEmbedding_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(
   funext w
   exact Subtype.ext (by simp)
 
+/-- The concatenations at `z` of pairs of unbroken trajectories, as the image of the product of the
+interiors. -/
+theorem range_morseBrokenTrajectorySpaceComp_compl_prod_compl
+    (x z y : criticalPoints 𝓘(ℝ, E) f) :
+    (range fun r : ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×
+        ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ ↦
+      hX.morseBrokenTrajectorySpaceComp hc x z y (r.1, r.2)) =
+    hX.morseBrokenTrajectorySpaceComp hc x z y ''
+      ((hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×ˢ
+        (hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ) := by
+  ext w
+  constructor
+  · rintro ⟨r, rfl⟩
+    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
+  · rintro ⟨p, ⟨h₁, h₂⟩, rfl⟩
+    exact ⟨(⟨p.1, h₁⟩, ⟨p.2, h₂⟩), rfl⟩
+
 /-! ### The faces of the boundary -/
 
 section Faces
@@ -319,12 +338,9 @@ theorem isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl [Countab
   have hw := congrArg (w.val ∈ ·)
     (hX.image_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hdense x z y)
   simp only [mem_sdiff, w.property, true_and, eq_iff_iff] at hw
-  rw [mem_preimage, mem_compl_iff, ← hw]
-  constructor
-  · rintro ⟨r, rfl⟩
-    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
-  · rintro ⟨p, hp, he⟩
-    exact ⟨(⟨p.1, hp.1⟩, ⟨p.2, hp.2⟩), Subtype.ext he⟩
+  rw [mem_preimage, mem_compl_iff, ← hw,
+    ← hX.range_morseBrokenTrajectorySpaceComp_compl_prod_compl hc]
+  exact ⟨fun ⟨r, hr⟩ ↦ ⟨r, congrArg Subtype.val hr⟩, fun ⟨r, hr⟩ ↦ ⟨r, Subtype.ext hr⟩⟩
 
 include h hf hc in
 /-- **In index difference at most one, no trajectory breaks.** A broken trajectory from `x` to `y`
