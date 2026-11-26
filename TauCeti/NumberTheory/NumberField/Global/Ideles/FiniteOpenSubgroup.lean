@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FiniteClassGroup
 import Mathlib.NumberTheory.NumberField.ClassNumber
+import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 import TauCeti.Topology.Algebra.Group.OpenSubgroup.FiniteIndex
 
@@ -24,11 +25,11 @@ The proof climbs from `H` to `𝔸_{K,f}ˣ` in three steps of finite index. The 
 (`NumberField.finiteIndex_totallyPositiveUnits`, the sign group at the real places). The second,
 `H · Kˣ ≤ H · Kˣ · 𝒪̂ˣ`, has index at most that of the open subgroup `H ∩ 𝒪̂ˣ` of the compact
 group `𝒪̂ˣ` of everywhere-integral units. The last is above `Kˣ · 𝒪̂ˣ`, whose quotient is the
-finite class group (`IsDedekindDomain.FiniteAdeleRing.finiteIndex_integralUnits_sup_range`).
+finite class group
+(`IsDedekindDomain.FiniteAdeleRing.finiteIndex_integralUnits_sup_range_unitEmbedding`).
 
-Together with the facts already in the library this gives the statements of roadmap
-ShortGRH/IdelicReciprocityCountsAndCyclotomicClassGroups §1.5 (c) about finite ideles: the group
-`U^S` of finite ideles that are local units outside `S` is open
+Together with the facts already in the library this gives the standard facts about open subgroups
+of the finite ideles: the group `U^S` of finite ideles that are local units outside `S` is open
 (`TauCeti.isOpen_sIntegralUnits`) and compact for `S = ∅` (`TauCeti.isCompact_integralUnits`),
 and a character with open kernel is trivial on `𝒪_vˣ` for almost every `v`
 (`IsDedekindDomain.FiniteAdeleRing.eventually_unitsOfAdicCompletion_mem_of_isOpen`).
@@ -77,7 +78,7 @@ theorem finiteIndex_of_isOpen_of_totallyPositiveUnits_le
       (Subgroup.isOpen_mono le_sup_left hH) (TauCeti.isCompact_integralUnits (𝓞 K) K)
   -- `H ⊔ P ⊔ U` contains `U ⊔ P`, the kernel of the map to the finite class group.
   have h₃ : (H ⊔ P ⊔ U).FiniteIndex :=
-    have := finiteIndex_integralUnits_sup_range (𝓞 K) K
+    have := finiteIndex_integralUnits_sup_range_unitEmbedding (𝓞 K) K
     Subgroup.finiteIndex_of_le (sup_le le_sup_right (le_sup_right.trans le_sup_left))
   rw [Subgroup.finiteIndex_iff, ← Subgroup.relIndex_mul_index (le_sup_left : H ≤ H ⊔ P),
     ← Subgroup.relIndex_mul_index (le_sup_left : H ⊔ P ≤ H ⊔ P ⊔ U)]
