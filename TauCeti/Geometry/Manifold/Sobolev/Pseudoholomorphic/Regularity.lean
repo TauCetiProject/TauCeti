@@ -42,6 +42,9 @@ preferred charts suffices for both conclusions
   smooth when `J` and `ν` are smooth.
 * `TauCeti.IsPseudoholomorphicOn.contMDiffOn`, `TauCeti.IsPseudoholomorphic.contMDiff`: a `C¹`
   pseudoholomorphic map for a smooth almost complex structure is smooth.
+* `TauCeti.contMDiffOn_of_mfderiv_stdComplexLineImag_eq`,
+  `TauCeti.contMDiff_of_mfderiv_stdComplexLineImag_eq`: the same for a map of the plane `ℝ × ℝ`
+  solving `∂ₜu = J(u) ∂ₛu`, the form in which bubbles of Floer solutions arise.
 
 ## Implementation notes
 
@@ -179,5 +182,42 @@ theorem IsPseudoholomorphic.contMDiff {J₀ : SmoothAlmostComplexStructure I M}
     (h : IsPseudoholomorphic (SmoothAlmostComplexStructure.ofComplexManifold ℂ X) J₀ u)
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) : ContMDiff 𝓘(ℝ, ℂ) I ∞ u :=
   contMDiffOn_univ.1 ((isPseudoholomorphicOn_univ.2 h).contMDiffOn isOpen_univ hu.contMDiffOn)
+
+/-- **`C¹` pseudoholomorphic maps of the plane are smooth.** Let `J₀` be a smooth almost complex
+structure on `M`. A map `u : ℝ × ℝ → M` of class `C¹` on an open set `U` which solves the
+Cauchy–Riemann equation `∂ₜu = J₀(u) ∂ₛu` on `U` is smooth on `U`. This is
+`TauCeti.IsPseudoholomorphicOn.contMDiffOn` for the Riemann surface `ℂ`, read in the real
+coordinates `Complex.equivRealProdCLM`. -/
+theorem contMDiffOn_of_mfderiv_stdComplexLineImag_eq {J₀ : SmoothAlmostComplexStructure I M}
+    {u : ℝ × ℝ → M} {U : Set (ℝ × ℝ)} (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hCR : ∀ z ∈ U, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
+      J₀ (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) :
+    ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I ∞ u U := by
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := Complex.equivRealProdCLM
+  have he : MapsTo e (e ⁻¹' U) U := fun _ hz ↦ hz
+  -- Read `u` on the Riemann surface `ℂ`, where it is pseudoholomorphic.
+  have hhol : IsPseudoholomorphicOn (SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ) J₀
+      (u ∘ e) (e ⁻¹' U) := by
+    refine isPseudoholomorphicOn_iff.2 fun z hz ↦ ?_
+    have hdiff : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (e z) :=
+      ((hu _ hz).contMDiffAt (hU.mem_nhds hz)).mdifferentiableAt one_ne_zero
+    have hez := isPseudoholomorphic_iff.1 isPseudoholomorphic_equivRealProdCLM z
+    exact (((isPseudoholomorphicAt_stdComplexLine_iff J₀ u (e z)).2
+      ⟨_, hdiff.hasMFDerivAt, hCR _ hz⟩).comp hez).isPseudoholomorphicWithinAt
+  have hsmooth := hhol.contMDiffOn (hU.preimage e.continuous)
+    (hu.comp e.contDiff.contMDiff.contMDiffOn he)
+  exact (hsmooth.comp e.symm.contDiff.contMDiff.contMDiffOn fun y hy ↦ by simpa using hy).congr
+    fun y _ ↦ by simp
+
+/-- **`C¹` pseudoholomorphic planes are smooth.** Let `J₀` be a smooth almost complex structure
+on `M`. A `C¹` map `u : ℝ × ℝ → M` solving the Cauchy–Riemann equation `∂ₜu = J₀(u) ∂ₛu` is
+smooth. -/
+theorem contMDiff_of_mfderiv_stdComplexLineImag_eq {J₀ : SmoothAlmostComplexStructure I M}
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hCR : ∀ z, mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
+      J₀ (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u :=
+  contMDiffOn_univ.1 <|
+    contMDiffOn_of_mfderiv_stdComplexLineImag_eq isOpen_univ hu.contMDiffOn fun z _ ↦ hCR z
 
 end TauCeti
