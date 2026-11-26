@@ -58,16 +58,15 @@ indices, subtract the norms of their constant weights. Every index pays its weig
 `D`; only the selected indices pay the fibre-count discrepancy. The factors `c` allow phases
 such as character values at a translating element. -/
 theorem card_mul_le_sum_re_weighted_characters_of_fiber_counts
-    {α Q ι : Type*} [Group Q] [Fintype Q] [DecidableEq Q]
+    {α Q ι : Type*} [Group Q] [Fintype Q] [DecidableEq Q] [DecidableEq ι]
     (S : Finset α) (p : α → Q) (ν : Q → ℝ) (I K : Finset ι) (hKI : K ⊆ I)
     (χ : ι → Q →* ℂ) (c z : ι → ℂ) (f : ι → α → ℂ) (D : ι → ℝ) (η : ℝ)
     (hν : ∀ q, |((S.filter fun a ↦ p a = q).card : ℝ) - ν q * S.card| ≤ η * S.card)
     (hc : ∀ i ∈ I, ‖c i‖ ≤ 1) (hf : ∀ i ∈ I, ∀ a ∈ S, ‖f i a - z i‖ ≤ D i) :
     (S.card : ℝ) * ((∑ i ∈ K, (c i * (∑ q, (ν q : ℂ) * χ i q) * z i).re) -
-      (open scoped Classical in ∑ i ∈ I \ K, ‖z i‖) - (∑ i ∈ I, D i) -
+      (∑ i ∈ I \ K, ‖z i‖) - (∑ i ∈ I, D i) -
       (Fintype.card Q : ℝ) * η * (∑ i ∈ K, ‖z i‖)) ≤
       ∑ i ∈ I, (c i * ∑ a ∈ S, χ i (p a) * f i a).re := by
-  classical
   let W (i : ι) := ∑ a ∈ S, χ i (p a) * f i a
   let C (i : ι) := c i * (∑ q, (ν q : ℂ) * χ i q) * z i
   let e : ℝ := Fintype.card Q * η
