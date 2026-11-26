@@ -44,11 +44,6 @@ equivalence is left whiskering.
 
 public section
 
--- Components of monoidal natural transformations between bundled functors
--- `LaxMonoidalFunctor.of F` are typed through the objects of `LaxMonoidalFunctor.of F`, which
--- agree with those of `F` only after unfolding. Several proofs below therefore end with `rfl`
--- after `simp` or `rw` has computed both sides.
-
 universe v₁ v₂ v₃ u₁ u₂ u₃
 
 namespace CategoryTheory.LaxMonoidalFunctor
@@ -83,11 +78,14 @@ def whiskerRightAut (F : C ⥤ D) [F.LaxMonoidal] (G : D ⥤ E) [G.LaxMonoidal] 
   map_one' := by
     ext X
     simp [map_one]
-    rfl
+    -- Normalize the bundling constructors across the `of` wrapper.
+    dsimp only [isoMk, homMk, of]
+    simp only [Iso.refl_hom, NatTrans.id_app]
   map_mul' u v := by
     ext X
     simp [map_mul]
-    rfl
+    dsimp only [isoMk, homMk, of]
+    simp only [Iso.trans_hom, NatTrans.comp_app]
 
 /-- The components of a right whiskered monoidal natural automorphism. -/
 @[simp]
@@ -95,7 +93,9 @@ theorem whiskerRightAut_apply_asIso_hom_hom_app (F : C ⥤ D) [F.LaxMonoidal] (G
     [G.LaxMonoidal] (u : Aut (LaxMonoidalFunctor.of F)) (X : C) :
     (whiskerRightAut F G u).asIso.hom.hom.app X = G.map (u.asIso.hom.hom.app X) := by
   rw [← forgetAut_apply_asIso_hom F u]
-  rfl
+  simp only [whiskerRightAut, MonoidHom.coe_mk, OneHom.coe_mk]
+  dsimp only [isoMk, homMk, of]
+  simp only [Functor.isoWhiskerRight_hom, Functor.whiskerRight_app]
 
 /-- Whiskering monoidal natural automorphisms of `G` on the left with a lax monoidal functor
 `F`. This is `Functor.mapAut` for `F.precomposeLaxMonoidal`, typed through

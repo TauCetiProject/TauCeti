@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
-public import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsComp
+public import TauCeti.Algebra.Category.ModuleCat.ExtendScalars.Comp
 public import TauCeti.CategoryTheory.Monoidal.Functor
 public import TauCeti.CategoryTheory.Monoidal.NaturalTransformation
 
@@ -27,7 +27,7 @@ The same holds for the variant `ModuleCat.extendScalarsComp'` along a ring morph
 propositionally equal to a composite, and hence for the comparison isomorphisms
 `CategoryTheory.Functor.scalarExtensionCompIso` and
 `CategoryTheory.Functor.scalarExtensionIsoOfIso` of scalar extensions of lax monoidal
-module-valued functors (`TauCeti.Algebra.Category.ModuleCat.ExtendScalarsComp`).
+module-valued functors (`TauCeti.Algebra.Category.ModuleCat.ExtendScalars.Comp`).
 -/
 
 public section

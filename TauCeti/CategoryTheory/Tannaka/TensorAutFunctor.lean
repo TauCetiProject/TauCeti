@@ -19,7 +19,7 @@ Tannakian category followed by the inclusion `forget₂ (FGModuleCat K) (ModuleC
 below uses finiteness. For a commutative `K`-algebra `R`, the scalar extension
 `CategoryTheory.Functor.scalarExtension ω R` is `ω` followed by Mathlib's monoidal extension of
 scalars `R ⊗[K] -` (`ModuleCat.extendScalars`); see
-`TauCeti.Algebra.Category.ModuleCat.ExtendScalarsComp`. This file assembles the monoidal natural
+`TauCeti.Algebra.Category.ModuleCat.ExtendScalars.Comp`. This file assembles the monoidal natural
 automorphisms of these scalar extensions into a group-valued functor
 
 ```text
@@ -98,9 +98,8 @@ theorem forgetAut_tensorAutMapValue_app (f : R →ₐ[K] S)
     MulEquiv.coe_toMonoidHom, Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.symm_hom,
     LaxMonoidalFunctor.comp_hom, NatTrans.comp_app]
   rw [LaxMonoidalFunctor.whiskerRightAut_apply_asIso_hom_hom_app]
-  -- The components are typed through `LaxMonoidalFunctor.of`; both sides now agree up to
-  -- unfolding it.
-  rfl
+  -- Normalize the bundling constructors across `LaxMonoidalFunctor.of`.
+  dsimp only [LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk, LaxMonoidalFunctor.of]
 
 /-- Base change along the identity is the identity. -/
 @[simp]
@@ -180,7 +179,9 @@ theorem forgetAut_tensorAutEquivOfIso_app (R : Type u) [CommRing R] [Algebra K R
     Iso.trans_hom, Iso.symm_hom, LaxMonoidalFunctor.comp_hom, NatTrans.comp_app,
     LaxMonoidalFunctor.whiskerLeftAutEquiv_apply]
   rw [LaxMonoidalFunctor.whiskerLeftAut_apply_asIso_hom_hom_app]
-  rfl
+  -- Normalize the bundling constructors before applying the scalar-extension component API.
+  dsimp only [LaxMonoidalFunctor.isoMk, LaxMonoidalFunctor.homMk, LaxMonoidalFunctor.of]
+  simp only [scalarExtensionIsoOfIso_inv_app, scalarExtensionIsoOfIso_hom_app]
 
 /-- Transport along a monoidal equivalence commutes with base change of the value algebra. -/
 theorem tensorAutEquivOfIso_tensorAutMapValue (f : R →ₐ[K] S)

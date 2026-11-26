@@ -142,6 +142,8 @@ theorem extendScalarsComp'_conj_id (M : ModuleCat.{u} K)
     simp only [NatTrans.comp_app, Functor.whiskerLeft_app, Functor.rightUnitor_hom_app,
       NatTrans.id_app] at this
     rw [← Iso.app_hom, Iso.hom_comp_eq_id] at this
+    -- The target of the identity functor is definitionally the source, so `erw` unfolds
+    -- `(𝟭 _).obj` when matching the right identity morphism.
     erw [Category.comp_id] at this
     exact this.symm
   rw [h, ι.hom.naturality, Functor.id_map, ← h, Iso.hom_inv_id_app_assoc]
@@ -183,11 +185,11 @@ theorem extendScalarsComp'_conj_comp (f : R →ₐ[K] S) (g : S →ₐ[K] T)
       (g.comp f : R →+* T) (algebraMap K T) g.comp_algebraMap.symm (AlgHom.comp_toRingHom g f)
       (g.comp f).comp_algebraMap.symm) M
   rw [← cancel_mono (σg.hom.app M ≫ (ModuleCat.extendScalars (g : S →+* T)).map (σf.hom.app M))]
-  conv_rhs => rw [Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc, ← Functor.map_comp,
-    Category.assoc, Category.assoc, Iso.inv_hom_id_app]
-  simp only [Functor.comp_obj, Category.comp_id]
-  rw [hA, Category.assoc, Category.assoc, Iso.inv_hom_id_app_assoc, τ.hom.naturality,
-    ← reassoc_of% hA, Functor.comp_map, Functor.map_comp]
+  have hA_assoc := reassoc_of% hA
+  simp only [Functor.map_comp, Category.assoc, Iso.inv_hom_id_app_assoc]
+  simp only [hA, Iso.inv_hom_id_app_assoc, ← Functor.map_comp, Iso.inv_hom_id_app]
+  simp only [Functor.comp_obj, Category.comp_id, Functor.map_comp, hA_assoc]
+  exact congrArg (σgf.hom.app M ≫ ·) (τ.hom.naturality φ)
 
 /-- Conjugation by the composition isomorphism of extension of scalars is natural in the
 module. -/
