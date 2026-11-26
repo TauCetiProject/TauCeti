@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Varifold.Euclidean
-public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation
+public import TauCeti.Geometry.MeasureTheory.Varifold.FirstVariation.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
@@ -207,6 +207,17 @@ theorem integral_lineVarifold {F : Type*} [NormedAddCommGroup F] [NormedSpace �
     ∫ z, f z ∂lineVarifold a u P = ∫ t : ℝ, f (lineVarifoldParam a u P t) := by
   rw [lineVarifold_def] at hf ⊢
   exact integral_map (continuous_lineVarifoldParam a u P).aemeasurable hf
+
+/-- Scaling the direction of a line varifold by `c ≠ 0` reparametrizes the line by `t ↦ c t`,
+which scales the varifold by `|c|⁻¹`. -/
+theorem lineVarifold_smul_direction (a u : E) (P : grassmannian ℝ E k) {c : ℝ} (hc : c ≠ 0) :
+    lineVarifold a (c • u) P = ENNReal.ofReal |c⁻¹| • lineVarifold a u P := by
+  have hparam : lineVarifoldParam a (c • u) P = lineVarifoldParam a u P ∘ (c * ·) := by
+    ext t <;> simp [smul_smul, mul_comm]
+  rw [lineVarifold_def, lineVarifold_def, hparam,
+    ← Measure.map_map (continuous_lineVarifoldParam a u P).measurable (measurable_const_mul c),
+    Real.map_volume_mul_left hc,
+    Measure.map_smul (hf := (continuous_lineVarifoldParam a u P).measurable.aemeasurable)]
 
 /-- The line varifold is finite on compact sets. -/
 theorem isFiniteMeasureOnCompacts_lineVarifold {a u : E} (hu : u ≠ 0) (P : grassmannian ℝ E k) :

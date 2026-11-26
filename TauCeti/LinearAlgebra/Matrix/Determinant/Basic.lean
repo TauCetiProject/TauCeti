@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.Algebra.Ring.Idempotent.Basic
 
 /-!
 # Basic determinant formulas
@@ -45,6 +47,8 @@ differences of the remaining columns.
   is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
 * `Matrix.exists_isUnit_det_row_eq`: any row with a unit entry extends to a matrix with unit
   determinant.
+* `Matrix.isUnit_det_mul_add_one_sub`: for an idempotent `P` commuting with an invertible `g`,
+  the matrix `P * g + 1 - P` has invertible determinant.
 * `Matrix.isUnit_det_map_intCast`: an integer matrix with nonzero determinant has unit
   determinant over every field of characteristic zero.
 * `RingHom.det_map_ne_zero_of_isUnit_det`: the image of a matrix with unit determinant under a ring
@@ -188,6 +192,14 @@ theorem exists_isUnit_det_row_eq {ι R : Type*} [Fintype ι] [DecidableEq ι] [C
   refine ⟨M.submatrix (Equiv.swap i₀ j₀) id, ?_, by ext m; simp [M]⟩
   rw [det_permute, hMdet]
   exact ((Int.castRingHom R).isUnit_map (Units.isUnit _)).mul hj₀
+
+/-- For an idempotent matrix `P` commuting with an invertible matrix `g`, the matrix
+`P * g + 1 - P`, which acts as `g` on the range of `P` and as the identity on that of `1 - P`, has
+invertible determinant. -/
+theorem isUnit_det_mul_add_one_sub {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    {P g : Matrix n n R} (hP : IsIdempotentElem P) (hg : IsUnit g) (hPg : Commute P g) :
+    IsUnit (P * g + 1 - P).det :=
+  (isUnit_iff_isUnit_det _).1 (hP.isUnit_mul_add_one_sub hg hPg)
 
 /-- A matrix congruent to `1` modulo an element of the Jacobson radical is invertible. -/
 theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R] {r : R}

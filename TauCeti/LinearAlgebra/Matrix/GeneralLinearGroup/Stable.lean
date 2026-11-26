@@ -82,6 +82,9 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
   `TauCeti.StableGeneralLinearGroup.map_map`: functoriality of the stable general linear group.
 * `TauCeti.StableGeneralLinearGroup.map_injective`: an injective ring homomorphism induces an
   injective homomorphism of stable general linear groups.
+* `TauCeti.StableGeneralLinearGroup.exists_map_eq_one_of_map_ringOf_eq_one`: an element of
+  `GL_∞` of a stage of a directed system of rings that becomes trivial in `GL_∞` of the direct
+  limit is already trivial at a later stage.
 * `TauCeti.StableGeneralLinearGroup.map_elementarySubgroup_le`,
   `TauCeti.StableGeneralLinearGroup.map_elementarySubgroup_eq_of_surjective`: the induced
   homomorphism carries `E_∞(A)` into `E_∞(B)`, and onto it when the ring homomorphism is
@@ -175,6 +178,16 @@ theorem stabilizeGL_eq_reindexGL_fromBlocksGL (m k : ℕ) (u : GL (Fin m) A) :
   obtain ⟨j, rfl⟩ := finSumFinEquiv.surjective j
   rcases i with i | i <;> rcases j with j | j <;>
     simp [coe_stabilizeGL_apply, Matrix.one_apply, Fin.ext_iff] <;> omega
+
+/-- Stabilizing the reindexing of `u` along an enumeration `e` of a finite index type to size
+`m + k` is the reindexing of `u ⊕ 1` along the enumeration of `ι ⊕ Fin k` built from `e`. -/
+theorem stabilizeGL_reindexGL {ι : Type*} [Fintype ι] [DecidableEq ι] {m : ℕ} (e : ι ≃ Fin m)
+    (k : ℕ) (u : GL ι A) :
+    stabilizeGL A (Nat.le_add_right m k) (e.reindexGL A u) =
+      ((e.sumCongr (Equiv.refl (Fin k))).trans finSumFinEquiv).reindexGL A
+        (fromBlocksGL (u, 1)) := by
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL, ← Equiv.reindexGL_trans_reindexGL,
+    MulEquiv.trans_apply, Equiv.reindexGL_sumCongr_fromBlocksGL, map_one]
 
 /-- Stabilization is extension by the identity along the inclusion `Fin m ↪ Fin n` of the first
 `m` indices. -/
@@ -742,6 +755,39 @@ theorem map_injective {f : A →+* B} (hf : Function.Injective f) : Function.Inj
   rw [map_of, (of_injective n).eq_iff' (map_one _),
     (Units.map_injective (Matrix.map_injective hf)).eq_iff' (map_one _)] at hx
   rw [hx, map_one]
+
+/-- An element of `GL_∞(Gᵢ)` that becomes trivial in `GL_∞` of the direct limit of a directed
+system of rings `Gᵢ` is already trivial in `GL_∞(Gⱼ)` for some `j ≥ i`. -/
+theorem exists_map_eq_one_of_map_ringOf_eq_one {ι : Type*} [Preorder ι] [IsDirectedOrder ι]
+    [Nonempty ι] {G : ι → Type*} [∀ i, Ring (G i)] {f : ∀ i j, i ≤ j → G i →+* G j}
+    [DirectedSystem G (f · · ·)] {i : ι} {x : StableGeneralLinearGroup (G i)}
+    (hx : map (DirectLimit.Ring.of G f i) x = 1) :
+    ∃ j, ∃ hij : i ≤ j, map (f i j hij) x = 1 := by
+  classical
+  obtain ⟨n, u, rfl⟩ := exists_of x
+  rw [map_of, (of_injective n).eq_iff' (map_one _), Units.ext_iff] at hx
+  have hmat : (u : Matrix (Fin n) (Fin n) (G i)).map (DirectLimit.Ring.of G f i) =
+      (1 : Matrix (Fin n) (Fin n) (G i)).map (DirectLimit.Ring.of G f i) := by
+    simpa [Matrix.map_one _ (map_zero _) (map_one _)] using hx
+  have hentry (p : Fin n × Fin n) : ∃ k, ∃ hik : i ≤ k,
+      f i k hik ((u : Matrix (Fin n) (Fin n) (G i)) p.1 p.2) =
+        f i k hik ((1 : Matrix (Fin n) (Fin n) (G i)) p.1 p.2) := by
+    have hp := congrFun₂ hmat p.1 p.2
+    simp only [Matrix.map_apply, DirectLimit.Ring.of_apply] at hp
+    obtain ⟨k, hik, _, hk⟩ := Quotient.exact hp
+    exact ⟨k, hik, hk⟩
+  choose k hik hk using hentry
+  obtain ⟨j₀, hj₀⟩ := Finset.exists_le (Finset.univ.image k)
+  obtain ⟨j, hij, hj₀j⟩ := exists_ge_ge i j₀
+  refine ⟨j, hij, ?_⟩
+  rw [map_of, ← map_one (of (G j) n)]
+  congr 1
+  refine Units.ext (Matrix.ext fun p q ↦ ?_)
+  have hkj : k (p, q) ≤ j := (hj₀ _ (Finset.mem_image_of_mem _ (Finset.mem_univ _))).trans hj₀j
+  simp only [RingHom.toMonoidHom_eq_coe, Units.coe_map, MonoidHom.coe_ofClass,
+    RingHom.mapMatrix_apply, map_apply, Units.val_one]
+  rw [← DirectedSystem.map_map' f (hik (p, q)) hkj, hk (p, q), DirectedSystem.map_map']
+  by_cases hpq : p = q <;> simp [Matrix.one_apply, hpq]
 
 /-- An element of `GL_∞(A × B)` is determined by its images in `GL_∞(A)` and `GL_∞(B)`: the
 homomorphisms induced by the two projections are jointly injective. -/
