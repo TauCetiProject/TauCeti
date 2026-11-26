@@ -49,6 +49,8 @@ coordinates of the parameter and the point
 * `TauCeti.IsSmoothForm.contDiffOn_inChartAt_mpullback_prodMk`: the coordinate expressions of the
   slices of a `C^m` form on `N × M` are jointly `C^m` in the chart coordinates of the parameter and
   the point, on the product chart target.
+* `TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`: reparametrizing a family along
+  `g × id` replaces the slice at `u` by the slice at `g u`.
 * `TauCeti.SmoothForm.lineMapFamily`, `TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`: the
   family `t ↦ α₀ + c(t) (α₁ - α₀)` interpolating two forms, as a form on `ℝ × M`.
 -/
@@ -248,6 +250,20 @@ theorem SmoothForm.mpullback_prodMk_mpullback_snd [IsManifold J 1 N] (τ : Smoot
   (mpullback_mpullback (Prod.mk t) Prod.snd (I' := J.prod I)
     (contMDiff_const.prodMk contMDiff_id) contMDiff_snd τ).trans
       (LinearMap.congr_fun mpullback_id τ)
+
+/-- **Reparametrizing a family.** The slices of the pullback of a form `β` on `N' × M` along
+`g × id` are slices of `β`: `ι_u^* (g × id)^* β = ι_(g u)^* β`, since
+`Prod.map g id ∘ Prod.mk u = Prod.mk (g u)`. -/
+theorem SmoothForm.mpullback_prodMk_mpullback_prodMap_id {EN' HN' N' : Type*}
+    [NormedAddCommGroup EN'] [NormedSpace ℝ EN'] [TopologicalSpace HN'] [TopologicalSpace N']
+    [ChartedSpace HN' N'] {J' : ModelWithCorners ℝ EN' HN'} [IsManifold J 1 N] [IsManifold J' 1 N']
+    (β : SmoothForm (J'.prod I) (N' × M) F k) {g : N → N'} (hg : ContMDiff J J' ∞ g) (u : N) :
+    mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
+        (mpullback (Prod.map g id) (hg.prodMap contMDiff_id) β :
+          SmoothForm (J.prod I) (N × M) F k) =
+      mpullback (Prod.mk (g u)) (contMDiff_const.prodMk contMDiff_id) β :=
+  mpullback_mpullback (Prod.mk u) (Prod.map g id) (I' := J.prod I)
+    (contMDiff_const.prodMk contMDiff_id) (hg.prodMap contMDiff_id) β
 
 /-- The slices of `TauCeti.SmoothForm.lineMapFamily α₀ α₁ hc` are the forms
 `α₀ + c(t) (α₁ - α₀)`. -/

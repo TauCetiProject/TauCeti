@@ -63,7 +63,9 @@ For the square sum, the reverse Littlewood–Paley inequality
 bounds `‖T(b) f‖_r` by the `L^r` norm of `(∑ⱼ |Pⱼ T(b) f|²)^{1/2} = (∑ⱼ |T(b) Pⱼ f|²)^{1/2}`. Since
 `r ≥ 2` and `q ≥ 2`, Minkowski's inequality for square sums
 (`MeasureTheory.eLpNorm_tsum_sq_rpow_le`), first in `L^r` and then in `L^q`, moves the square sum
-outside both norms.
+outside both norms. This square-function bound,
+`‖u‖_{L^q_b L^r_x} ≤ A (∑ⱼ ‖Pⱼ u‖²_{L^q_b L^r_x})^{1/2}` for any measurable `u : β → L²`, is
+`ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow`.
 
 ## References
 
@@ -238,6 +240,55 @@ theorem exists_eLpNorm_eLpNorm_le_tsum_of_littlewoodPaley_le_of_one_le {q r : �
   push_cast
   ring
 
+/-- **The square-function bound for mixed norms.** On a nontrivial space, for exponents
+`2 ≤ q ≤ ∞` and `2 ≤ r < ∞` there is `A` with the following property. Let `Pⱼ` be the `L²`
+Fourier multiplier with the homogeneous Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol. Then
+every almost everywhere strongly measurable `u : β → L²(V, F)` satisfies
+
+`‖u‖_{L^q_b L^r_x} ≤ A (∑ⱼ ‖Pⱼ u‖²_{L^q_b L^r_x})^{1/2}`.
+
+At each `b`, the reverse Littlewood–Paley inequality
+(`TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow`)
+and Minkowski's inequality in `L^{r/2}` bound `‖u(b)‖_r` by the square sum of the `‖Pⱼ u(b)‖_r`;
+Minkowski's inequality in `L^{q/2}` (`MeasureTheory.eLpNorm_tsum_sq_rpow_le`) then moves the
+square sum outside the norm in `b`. The constant `A` depends only on `φ`, `r` and `F`. Each symbol
+enters as any element of `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow
+    {q r : ℝ≥0∞} (hq : 2 ≤ q) (hr : 2 ≤ r) (hr_top : r ≠ ∞) :
+    ∃ A : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure V),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ u : β → Lp F 2 (volume : Measure V), AEStronglyMeasurable u ρ →
+        eLpNorm (fun b ↦ eLpNorm (u b) r volume) q ρ ≤
+          A * (∑' j : ℤ, eLpNorm (fun b ↦
+            eLpNorm (Lp.fourierMultiplierCLM F (m j) (u b)) r volume) q ρ ^ 2) ^ (2⁻¹ : ℝ) := by
+  obtain ⟨A, hA⟩ :=
+    TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow
+      (F := F) φ (ENNReal.one_lt_two.trans_le hr) hr_top
+  refine ⟨A, fun m hm u hu ↦ ?_⟩
+  set a : ℤ → β → ℝ≥0∞ := fun j b ↦ eLpNorm (Lp.fourierMultiplierCLM F (m j) (u b)) r volume
+  have ha (j : ℤ) : AEMeasurable (a j) ρ :=
+    ((Lp.fourierMultiplierCLM F (m j)).continuous.comp_aestronglyMeasurable
+      hu).aemeasurable_eLpNorm_Lp .rfl r
+  -- At each `b`, the Littlewood–Paley inequality in `L^r` and Minkowski's inequality in
+  -- `L^{r/2}` bound `‖u(b)‖_r` by the square sum of the `‖Pⱼ u(b)‖_r`.
+  have hpt (b : β) : eLpNorm (u b) r volume ≤ A * (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ) := by
+    refine (hA m hm (u b)).trans ?_
+    gcongr
+    refine (eLpNorm_tsum_sq_rpow_le (fun j ↦ (Lp.aestronglyMeasurable _).eNorm) hr).trans_eq ?_
+    simp_rw [eLpNorm_eNorm _ (Lp.aestronglyMeasurable _), a]
+  have hsq : AEMeasurable (fun b ↦ (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) ρ :=
+    (AEMeasurable.tsum fun j ↦ (ha j).pow_const 2).pow_const _
+  -- Minkowski's inequality in `L^{q/2}`.
+  calc eLpNorm (fun b ↦ eLpNorm (u b) r volume) q ρ
+      ≤ eLpNorm (fun b ↦ (A : ℝ≥0∞) * (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) q ρ :=
+        eLpNorm_mono_eNorm (hu.aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun b ↦ by
+          simpa only [eNorm_eq_self] using hpt b
+    _ = A * eLpNorm (fun b ↦ (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) q ρ :=
+        eLpNorm_const_mul_ennreal hsq.aestronglyMeasurable
+    _ ≤ _ := by
+        gcongr
+        exact eLpNorm_tsum_sq_rpow_le ha hq
+
 /-- **Littlewood–Paley summation of mixed-norm estimates in square-sum form.** On a nontrivial
 space, for every `σ ∈ ℝ` and exponents `2 ≤ q ≤ ∞` and `2 ≤ r < ∞` there is `K` with the following
 property. Let `Pⱼ` be the `L²` Fourier multiplier with the homogeneous Littlewood–Paley cutoff `ψⱼ`
@@ -270,43 +321,23 @@ theorem exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow (σ : ℝ) {q r : ℝ≥0∞}
             K * C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
               ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ) ^ 2) ^ (2⁻¹ : ℝ) := by
   obtain ⟨A, hA⟩ :=
-    TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow
-      (F := F) φ (ENNReal.one_lt_two.trans_le hr) hr_top
+    φ.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow
+      (F := F) (ρ := ρ) hq hr hr_top
   obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
   set K₀ : ℝ≥0 := ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal
   refine ⟨A * K₀, fun m hm T hT hcomm C hC f ↦ ?_⟩
-  set a : ℤ → β → ℝ≥0∞ := fun j b ↦ eLpNorm (T b (Lp.fourierMultiplierCLM F (m j) f)) r volume
-  have ha (j : ℤ) : AEMeasurable (a j) ρ := (hT _).aemeasurable_eLpNorm_Lp .rfl r
-  -- At each `b`, the Littlewood–Paley inequality in `L^r` and Minkowski's inequality in
-  -- `L^{r/2}` bound `‖T(b) f‖_r` by the square sum of the `‖T(b) Pⱼ f‖_r`.
-  have hpt (b : β) : eLpNorm (T b f) r volume ≤ A * (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ) := by
-    refine (hA m hm (T b f)).trans ?_
-    gcongr
-    simp_rw [← hcomm]
-    refine (eLpNorm_tsum_sq_rpow_le (fun j ↦ (Lp.aestronglyMeasurable _).eNorm) hr).trans_eq ?_
-    simp_rw [eLpNorm_eNorm _ (Lp.aestronglyMeasurable _), a]
-  have hsq : AEMeasurable (fun b ↦ (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) ρ :=
-    (AEMeasurable.tsum fun j ↦ (ha j).pow_const 2).pow_const _
-  -- Minkowski's inequality in `L^{q/2}` and the estimate for each block.
+  -- The square-function bound, then the estimate for each block.
   calc eLpNorm (fun b ↦ eLpNorm (T b f) r volume) q ρ
-      ≤ eLpNorm (fun b ↦ (A : ℝ≥0∞) * (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) q ρ :=
-        eLpNorm_mono_eNorm ((hT f).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable fun b ↦ by
-          simpa only [eNorm_eq_self] using hpt b
-    _ = A * eLpNorm (fun b ↦ (∑' j, a j b ^ 2) ^ (2⁻¹ : ℝ)) q ρ :=
-        eLpNorm_const_mul_ennreal hsq.aestronglyMeasurable
-    _ ≤ A * (∑' j, eLpNorm (a j) q ρ ^ 2) ^ (2⁻¹ : ℝ) := by
-        gcongr
-        exact eLpNorm_tsum_sq_rpow_le ha hq
+      ≤ A * (∑' j, eLpNorm (fun b ↦
+          eLpNorm (T b (Lp.fourierMultiplierCLM F (m j) f)) r volume) q ρ ^ 2) ^ (2⁻¹ : ℝ) := by
+        simpa only [hcomm] using hA m hm (fun b ↦ T b f) (hT f)
     _ ≤ A * (∑' j, (K₀ * C * (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
           ‖Lp.fourierMultiplierCLM F (m j) f‖ₑ)) ^ 2) ^ (2⁻¹ : ℝ) := by
         gcongr with j
         exact φ.eLpNorm_eLpNorm_apply_fourierMultiplierCLM_le (one_le_two.trans hq)
           (one_le_two.trans hr) hL hm hT hC j f
     _ = _ := by
-        have hsqrt (x : ℝ≥0∞) : (x ^ 2) ^ (2⁻¹ : ℝ) = x := by
-          exact_mod_cast ENNReal.pow_rpow_inv_natCast two_ne_zero x
-        simp_rw [mul_pow (_ * _ : ℝ≥0∞), ENNReal.tsum_mul_left]
-        rw [ENNReal.mul_rpow_of_nonneg _ _ (by norm_num), hsqrt, ENNReal.coe_mul]
+        rw [ENNReal.tsum_mul_sq_rpow_inv_two, ENNReal.coe_mul]
         ring
 
 /-- `ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum_sq_rpow` for a single family `T(b)` commuting
