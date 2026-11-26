@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.Algebra.Group.Basic
-public import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
 # Contact times for continuous additive actions
@@ -17,10 +16,6 @@ For a continuous additive group action on a topological space, contact times of 
 sets are compact if the time domain and a set containing all contact positions are compact.
 The time type need only be topological. With a linear order and closed upper rays, a nonempty
 compact contact-time set has a greatest element by `IsCompact.exists_isGreatest`.
-
-In a proper pseudometric space, a bounded contact sweep replaces the compact sweep bound;
-compactness of the time domain, continuity of the translation, and closedness of both sets
-are still required.
 
 ## References
 
@@ -65,17 +60,3 @@ theorem isCompact_contactTimes (hD : IsCompact D) (ha : ContinuousOn a D)
   exact hP.image (continuous_subtypeVal.comp continuous_snd)
 
 end IsCompact
-
-/-- For a continuous additive action on a proper pseudometric space, boundedness of the
-contact sweep replaces the compact sweep bound in greatest-contact attainment. The time domain
-is still compact, both sets are closed, and time is linearly ordered with closed upper rays. -/
-theorem IsCompact.exists_isGreatest_contactTime_of_isBounded {G X τ : Type*}
-    [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G] [PseudoMetricSpace X]
-    [ProperSpace X] [AddAction G X] [ContinuousVAdd G X] [TopologicalSpace τ]
-    [LinearOrder τ] [ClosedIciTopology τ] {D : Set τ} {a : τ → G} {S C : Set X}
-    (hD : IsCompact D) (ha : ContinuousOn a D) (hS : IsClosed S) (hC : IsClosed C)
-    (hbdd : Bornology.IsBounded (⋃ t ∈ D, (a t +ᵥ S) ∩ C))
-    (hne : ∃ t ∈ D, ((a t +ᵥ S) ∩ C).Nonempty) :
-    ∃ t₀, IsGreatest {t ∈ D | ((a t +ᵥ S) ∩ C).Nonempty} t₀ :=
-  (hD.isCompact_contactTimes ha hS hC hbdd.isCompact_closure
-    (fun t ht _ hx ↦ subset_closure (mem_iUnion₂.2 ⟨t, ht, hx⟩))).exists_isGreatest hne
