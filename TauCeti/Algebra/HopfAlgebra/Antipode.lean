@@ -79,6 +79,18 @@ namespace TauCeti
 
 namespace HopfAlgebra
 
+/-- The square of the antipode is inner if it is conjugation by a unit. -/
+def AntipodeSquareIsInner (k H : Type*) [CommSemiring k] [Semiring H]
+    [HopfAlgebraStruct k H] : Prop :=
+  ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹
+
+/-- The unit witnessing that the square of the antipode is inner. -/
+theorem antipodeSquareIsInner_iff (k H : Type*) [CommSemiring k] [Semiring H]
+    [HopfAlgebraStruct k H] :
+    AntipodeSquareIsInner k H ↔
+      ∃ u : Hˣ, ∀ x : H, antipode k (antipode k x) = (u : H) * x * ↑u⁻¹ :=
+  Iff.rfl
+
 universe u v w
 
 variable {R : Type u} {C : Type v}
