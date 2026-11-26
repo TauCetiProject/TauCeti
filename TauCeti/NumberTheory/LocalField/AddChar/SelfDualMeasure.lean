@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.CharacterAnnihilator
-public import TauCeti.NumberTheory.LocalField.AddChar.Conductor
+public import TauCeti.NumberTheory.LocalField.AddChar.DualLattice
 public import TauCeti.NumberTheory.LocalField.HaarCharacter
 public import TauCeti.Topology.LocallyConstant.CompactSupport
 import TauCeti.NumberTheory.LocalField.Topology
-import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # The self-dual Haar measure of an additive character of a nonarchimedean local field
@@ -19,7 +18,8 @@ Let `K` be a nonarchimedean local field, with ring of integers `O`, maximal idea
 field of cardinality `q`, and write `P ^ m = {x | valuation K x ≤ uniformizer K ^ m}` for `m : ℤ`.
 Let `ψ` be a nontrivial continuous additive character of `K`, with conductor exponent
 `ν = ν(ψ)` (`AddChar.conductorExponent`): `ψ` is trivial on `P ^ (-ν)` and not on `P ^ (-ν - 1)`.
-Under the pairing `(x, y) ↦ ψ (x * y)` the annihilator of `P ^ m` is `P ^ (-ν - m)`.
+Under the pairing `(x, y) ↦ ψ (x * y)` the annihilator of `P ^ m` is `P ^ (-ν - m)`
+(`AddChar.characterAnnihilator_leAddSubgroup`).
 
 Every additive Haar measure `μ` on `K` gives `P ^ m` the mass `q ^ (-m) μ(O)`, so
 `μ(P ^ m) μ(P ^ (-ν - m)) = q ^ ν μ(O) ^ 2` does not depend on `m`. The **self-dual measure**
@@ -48,8 +48,6 @@ zeta integrals of `f` and of `𝓕 f`. Nothing here uses the characteristic of `
 
 ## Main results
 
-* `AddChar.characterAnnihilator_leAddSubgroup`: the annihilator of `P ^ m` under `ψ (x * y)` is
-  `P ^ (-ν(ψ) - m)`.
 * `AddChar.selfDualMeasure_integer`,
   `AddChar.selfDualMeasure_setOf_valuation_le_uniformizer_zpow`: the self-dual measure gives `O`
   mass `q ^ (-ν / 2)` and `P ^ m` mass `q ^ (-m - ν / 2)`.
@@ -79,33 +77,6 @@ namespace AddChar
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-section Annihilator
-
-variable {M : Type*} [CommMonoid M] {ψ : AddChar K M}
-
-/-- **Duality of fractional ideals.** For a nontrivial additive character `ψ` of `K` which is
-trivial on a neighbourhood of `0`, the annihilator of `P ^ m` under the pairing `ψ (x * y)` is
-`P ^ (-ν(ψ) - m)`. -/
-theorem characterAnnihilator_leAddSubgroup (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1)
-    (m : ℤ) :
-    ((valuation K).leAddSubgroup (uniformizer K ^ m)).characterAnnihilator ψ
-        (LinearMap.mul K K) =
-      (valuation K).leAddSubgroup (uniformizer K ^ (-ψ.conductorExponent - m)) := by
-  ext y
-  simpa [AddSubgroup.mem_characterAnnihilator] using forall_mul_eq_one_iff_valuation_le h0 h1 m y
-
-end Annihilator
-
-/-- A locally constant compactly supported function on `K` is periodic under some fractional
-ideal `P ^ m`. -/
-private theorem exists_forall_periodic {A : Type*} [Zero A] {f : K → A}
-    (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
-    ∃ m : ℤ, ∀ u ∈ (valuation K).leAddSubgroup (uniformizer K ^ m), Periodic f u := by
-  obtain ⟨m, -, hm⟩ := (hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_iff.1
-    ((isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
-      (zero_mem (addRightTranslationStabilizer f)))
-  exact ⟨m, fun u hu ↦ mem_addRightTranslationStabilizer.1 (hm hu)⟩
 
 section Measure
 
@@ -183,9 +154,8 @@ theorem addHaar_eq_selfDualMeasure_iff (μ : Measure K) [μ.IsAddHaarMeasure] (m
   rw [hexp, ← sq] at h
   have hc2 : μ 𝒪[K] ^ (2 : ℝ) =
       (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-(ψ.conductorExponent : ℝ)) := by
-    rw [ENNReal.rpow_two, ENNReal.rpow_neg, ← one_mul (μ 𝒪[K] ^ 2),
-      ← ENNReal.inv_mul_cancel (ENNReal.rpow_pos (pos_iff_ne_zero.2 hq0) hqt).ne'
-        (ENNReal.rpow_ne_top_of_nonneg' (pos_iff_ne_zero.2 hq0) hqt), mul_assoc, h, mul_one]
+    rw [ENNReal.rpow_two, ENNReal.rpow_neg]
+    exact ENNReal.eq_inv_of_mul_eq_one_left (by rwa [mul_comm])
   have hc : μ 𝒪[K] = (Nat.card 𝓀[K] : ℝ≥0∞) ^ (-(ψ.conductorExponent : ℝ) / 2) := by
     refine ENNReal.rpow_left_injective (x := 2) two_ne_zero ?_
     simp only [hc2, ← ENNReal.rpow_mul]
@@ -207,9 +177,9 @@ theorem isLocallyConstant_fourierIntegral (hψ : Continuous ψ) (μ : Measure K)
   obtain ⟨n, hn⟩ := hfc.isCompact.exists_subset_setOf_valuation_le_uniformizer_zpow
   exact VectorFourier.isLocallyConstant_fourierIntegral ψ μ (LinearMap.mul K K)
     (U := (valuation K).leAddSubgroup (uniformizer K ^ n))
-    (IsNonarchimedeanLocalField.isCompact_closedBall K _)
+    (by rw [Valuation.coe_leAddSubgroup]; exact IsNonarchimedeanLocalField.isCompact_closedBall K _)
     (by simp only [LinearMap.mul_apply']; exact hψ.comp continuous_mul)
-    ((subset_tsupport f).trans hn)
+    ((subset_tsupport f).trans ((valuation K).coe_leAddSubgroup _ ▸ hn))
 
 variable [BorelSpace K]
 
@@ -219,9 +189,10 @@ support. -/
 theorem hasCompactSupport_fourierIntegral (hψ : Continuous ψ) (h1 : ψ ≠ 1) (μ : Measure K)
     [μ.IsAddRightInvariant] {f : K → E} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
     HasCompactSupport (Fourier.fourierIntegral ψ μ f) := by
-  obtain ⟨m, hm⟩ := exists_forall_periodic hf hfc
+  obtain ⟨m, hm⟩ := hf.exists_forall_periodic_leAddSubgroup_uniformizer_zpow hfc
   refine VectorFourier.hasCompactSupport_fourierIntegral ψ μ (LinearMap.mul K K) hm ?_
-  rw [characterAnnihilator_leAddSubgroup (setOf_eq_one_mem_nhds_zero hψ) h1]
+  rw [characterAnnihilator_leAddSubgroup (setOf_eq_one_mem_nhds_zero hψ) h1,
+    Valuation.coe_leAddSubgroup]
   exact IsNonarchimedeanLocalField.isCompact_closedBall K _
 
 variable [CompleteSpace E]
@@ -234,18 +205,17 @@ theorem fourierIntegral_fourierIntegral_selfDualMeasure (hψ : Continuous ψ) (h
     Fourier.fourierIntegral ψ ψ.selfDualMeasure
         (Fourier.fourierIntegral ψ ψ.selfDualMeasure f) x = f (-x) := by
   have h0 := setOf_eq_one_mem_nhds_zero hψ
-  obtain ⟨m, hm⟩ := exists_forall_periodic hf hfc
+  obtain ⟨m, hm⟩ := hf.exists_forall_periodic_leAddSubgroup_uniformizer_zpow hfc
   have hdual := characterAnnihilator_leAddSubgroup h0 h1
-  have hcoe (n : ℤ) : ((valuation K).leAddSubgroup (uniformizer K ^ n) : Set K) =
-      {x | valuation K x ≤ uniformizer K ^ n} :=
-    Set.ext fun _ ↦ Valuation.mem_leAddSubgroup_iff
   have hmeas (n : ℤ) : MeasurableSet ((valuation K).leAddSubgroup (uniformizer K ^ n) : Set K) :=
-    hcoe n ▸ (IsNonarchimedeanLocalField.isCompact_closedBall K _).isClosed.measurableSet
+    (valuation K).coe_leAddSubgroup _ ▸
+      (IsNonarchimedeanLocalField.isCompact_closedBall K _).isClosed.measurableSet
   have h := VectorFourier.fourierIntegral_fourierIntegral_of_periodic ψ ψ.selfDualMeasure
     (LinearMap.mul K K) ψ.selfDualMeasure hψ (by simpa using continuous_mul) (hmeas m)
     (by rw [hdual]; exact hmeas _) (by rw [LinearMap.flip_mul, hdual, hdual, sub_sub_cancel])
     (by
-      rw [hdual, measureReal_def, measureReal_def, ← ENNReal.toReal_mul, hcoe, hcoe,
+      rw [hdual, measureReal_def, measureReal_def, ← ENNReal.toReal_mul,
+        Valuation.coe_leAddSubgroup, Valuation.coe_leAddSubgroup,
         selfDualMeasure_mul_selfDualMeasure, ENNReal.toReal_one])
     (hf.continuous.integrable_of_hasCompactSupport hfc) hm x
   -- `Fourier.fourierIntegral` is by definition the transform for the multiplication pairing.

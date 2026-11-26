@@ -44,6 +44,8 @@ the multiplication pairing on `K`, the dot product on `Kⁿ` and the trace form 
 * `Submodule.isFullLattice_characterAnnihilator`: the annihilator of a lattice is a lattice.
 * `Submodule.characterAnnihilator_characterAnnihilator_flip`: the annihilator of `L^∨` for the
   transposed pairing is `L`.
+* `AddChar.characterAnnihilator_leAddSubgroup`: for the multiplication pairing on `K`, the
+  annihilator of the fractional ideal `P ^ m` is `P ^ (-ν - m)`.
 
 ## References
 
@@ -162,3 +164,21 @@ theorem characterAnnihilator_characterAnnihilator_flip (h0 : {x | ψ x = 1} ∈ 
   exact (c⁻¹ • B).dualSubmodule_dualSubmodule_flip (nondegenerate_inv_smul hc hB) L
 
 end Submodule
+
+namespace AddChar
+
+variable {K M : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
+  [IsNonarchimedeanLocalField K] [CommMonoid M] {ψ : AddChar K M}
+
+/-- **Duality of fractional ideals.** For a nontrivial additive character `ψ` of `K` which is
+trivial on a neighbourhood of `0`, the annihilator of `P ^ m` under the pairing `ψ (x * y)` is
+`P ^ (-ν(ψ) - m)`. -/
+theorem characterAnnihilator_leAddSubgroup (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : K)) (h1 : ψ ≠ 1)
+    (m : ℤ) :
+    ((valuation K).leAddSubgroup (uniformizer K ^ m)).characterAnnihilator ψ
+        (LinearMap.mul K K) =
+      (valuation K).leAddSubgroup (uniformizer K ^ (-ψ.conductorExponent - m)) := by
+  ext y
+  simpa [AddSubgroup.mem_characterAnnihilator] using forall_mul_eq_one_iff_valuation_le h0 h1 m y
+
+end AddChar

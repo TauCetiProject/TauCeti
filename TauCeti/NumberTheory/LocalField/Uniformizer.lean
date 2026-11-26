@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
+public import TauCeti.RingTheory.Valuation.Basic
+import TauCeti.Topology.Algebra.Group.LocallyConstant
 
 /-!
 # Uniformizers of a nonarchimedean local field
@@ -32,7 +35,9 @@ group. In a nonarchimedean local field the valuation of a unit `x` is therefore
 `{x | valuation K x ≤ uniformizer K ^ m}`, the fractional ideals `𝓂[K] ^ m` for `m : ℤ`, form a
 neighbourhood basis of `0` (`TauCeti.hasBasis_nhds_zero_valuation_le_uniformizer_zpow`). Every
 compact subset of `K` lies in one of them
-(`IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow`).
+(`IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow`), and a locally constant compactly
+supported function on `K` is periodic under one of them
+(`IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow`).
 -/
 
 public section
@@ -184,15 +189,27 @@ cover `K`. -/
 theorem _root_.IsCompact.exists_subset_setOf_valuation_le_uniformizer_zpow {s : Set K}
     (hs : IsCompact s) : ∃ n : ℤ, s ⊆ {x | valuation K x ≤ uniformizer K ^ n} := by
   let U : ℤ → Set K := fun n ↦ (valuation K).leAddSubgroup (uniformizer K ^ n)
-  have hU : Antitone U := fun i j hij x (hx : valuation K x ≤ _) ↦
-    hx.trans (zpow_le_zpow_right_of_le_one₀ uniformizer_pos uniformizer_lt_one.le hij)
+  have hU : Antitone U := fun i j hij ↦ SetLike.coe_subset_coe.2 <|
+    (valuation K).leAddSubgroup_monotone <|
+      zpow_le_zpow_right_of_le_one₀ uniformizer_pos uniformizer_lt_one.le hij
   have hcover : s ⊆ ⋃ n, U n := fun x _ ↦ by
     rcases eq_or_ne x 0 with rfl | hx
     · exact mem_iUnion.2 ⟨0, zero_mem ((valuation K).leAddSubgroup _)⟩
     · exact mem_iUnion.2 ⟨_, (valuation_le_uniformizer_zpow_iff (Units.mk0 x hx) _).2 le_rfl⟩
-  exact hs.elim_directed_cover U (fun n ↦ AddSubgroup.isOpen_of_mem_nhds _
-    ((hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_of_mem trivial)) hcover
-    hU.directed_le
+  simpa only [U, Valuation.coe_leAddSubgroup] using
+    hs.elim_directed_cover U (fun n ↦ AddSubgroup.isOpen_of_mem_nhds _
+      ((hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_of_mem trivial)) hcover
+      hU.directed_le
+
+/-- A locally constant compactly supported function on `K` is periodic under some fractional
+ideal `𝓂[K] ^ m`: its open subgroup of periods contains one of these neighbourhoods of `0`. -/
+theorem _root_.IsLocallyConstant.exists_forall_periodic_leAddSubgroup_uniformizer_zpow
+    {A : Type*} [Zero A] {f : K → A} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
+    ∃ m : ℤ, ∀ u ∈ (valuation K).leAddSubgroup (uniformizer K ^ m), Function.Periodic f u := by
+  obtain ⟨m, -, hm⟩ := (hasBasis_nhds_zero_valuation_le_uniformizer_zpow K).mem_iff.1
+    ((isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
+      (zero_mem (addRightTranslationStabilizer f)))
+  exact ⟨m, fun u hu ↦ mem_addRightTranslationStabilizer.1 (hm hu)⟩
 
 end LocalField
 
