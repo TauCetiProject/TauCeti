@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.HomotopyCategory.ShortExact
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Basic
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The connecting map of the mapping cocone of an epimorphism
@@ -53,6 +54,8 @@ the mapping cone of the monomorphism `S.f` with `X₃`.
   of `S` to the connecting map of the cocone.
 * `CochainComplex.mappingCocone.homologySequenceδ_triangle`: the same statement for the homology
   sequence of the triangle in the homotopy category.
+* `CochainComplex.mappingCocone.moduleCat_homologyMap_lift_δ_homologyπ`: for complexes of modules,
+  the same statement on the class of a cycle.
 
 ## References
 
@@ -178,5 +181,44 @@ lemma homologySequenceδ_triangle (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁) :
   rfl
 
 end Abelian
+
+section ModuleCat
+
+universe v u
+
+variable {R : Type u} [Ring R] {S : ShortComplex (CochainComplex (ModuleCat.{v} R) ℤ)}
+  (hS : S.ShortExact)
+include hS
+
+/-- For a short exact sequence `S` of cochain complexes of modules, the lift
+`S.X₁ ⟶ mappingCocone S.g` of `S.f` carries the image under the connecting map of the class of a
+cycle `z` of `S.X₃` to the class of `inr S.g z`. This is
+`CochainComplex.mappingCocone.liftCycles_homologyπ_δ_homologyMap_lift` on elements. -/
+lemma moduleCat_homologyMap_lift_δ_homologyπ (n₀ n₁ : ℤ) (h : n₀ + 1 = n₁)
+    (z : S.X₃.cycles n₀) :
+    homologyMap (lift S.g S.f 0 (by simp)) n₁ (hS.δ n₀ n₁ h (S.X₃.homologyπ n₀ z)) =
+      (mappingCocone S.g).homologyπ n₁ ((mappingCocone S.g).moduleCatCyclesMk
+        ((inr S.g).val.v n₀ n₁ h (S.X₃.iCycles n₀ z)) (n₁ + 1) (by simp) (by
+          rw [← ModuleCat.comp_apply, inr_v_d S.g n₀ n₁ (n₁ + 1) h rfl]
+          simp [S.X₃.moduleCat_d_iCycles_apply])) := by
+  -- Apply the morphism form to the inclusion `x` of the kernel of the differential, at `z`.
+  let x : ModuleCat.of R (LinearMap.ker (S.X₃.d n₀ n₁).hom) ⟶ S.X₃.X n₀ :=
+    ModuleCat.ofHom (LinearMap.ker (S.X₃.d n₀ n₁).hom).subtype
+  have hx : x ≫ S.X₃.d n₀ n₁ = 0 := by
+    ext w
+    exact w.property
+  have key := ConcreteCategory.congr_hom
+    (liftCycles_homologyπ_δ_homologyMap_lift hS n₀ n₁ h x hx)
+    ⟨S.X₃.iCycles n₀ z, LinearMap.mem_ker.mpr (S.X₃.moduleCat_d_iCycles_apply n₀ n₁ z)⟩
+  simp only [ConcreteCategory.comp_apply] at key
+  -- The cycles lifted from `x` and from `x ≫ inr` at `z` are `z` and the cycle `inr z`.
+  rw [(S.X₃.moduleCat_iCycles_injective n₀ (by
+      rw [← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]; simp [x]) :
+        S.X₃.liftCycles x n₁ _ hx _ = z)] at key
+  refine key.trans (congrArg _ ((mappingCocone S.g).moduleCat_iCycles_injective n₁ ?_))
+  rw [iCycles_moduleCatCyclesMk, ← ModuleCat.comp_apply, HomologicalComplex.liftCycles_i]
+  simp [x]
+
+end ModuleCat
 
 end CochainComplex.mappingCocone
