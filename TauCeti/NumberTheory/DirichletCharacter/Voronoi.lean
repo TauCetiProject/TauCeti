@@ -9,7 +9,7 @@ public import Mathlib.NumberTheory.Primorial
 public import TauCeti.NumberTheory.DirichletCharacter.GeneralizedBernoulli
 import TauCeti.Data.Int.DivMod
 import TauCeti.NumberTheory.Bernoulli.Voronoi
-import TauCeti.NumberTheory.MulChar.SumUnits
+import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
 # Voronoi's congruence for generalized Bernoulli numbers

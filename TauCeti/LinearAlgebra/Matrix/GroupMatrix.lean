@@ -16,8 +16,9 @@ For a finite commutative group `G` and a function `g : G → R`, the *group matr
 
 ## Main results
 
-* `TauCeti.of_div_mulVec`: the characters of `G` are eigenvectors of the group matrix.
-* `TauCeti.sum_mul_dvd_det_of_div`: each eigenvalue divides the group determinant.
+* `TauCeti.Matrix.of_div_mulVec_monoidHom`: the characters of `G` are eigenvectors of the group
+  matrix.
+* `TauCeti.Matrix.sum_mul_dvd_det_of_div`: each eigenvalue divides the group determinant.
 
 ## References
 
@@ -36,14 +37,14 @@ public section
 
 open Finset Matrix
 
-namespace TauCeti
+namespace TauCeti.Matrix
 
 variable {G R : Type*} [CommGroup G] [Fintype G] [CommRing R]
 
 /-- **Characters are eigenvectors of group matrices.** For a finite commutative group `G`, a
 function `g : G → R` and a homomorphism `χ : G →* R`, the matrix `(g(t / s))_{s,t}` maps `χ` to
 `(∑ᵤ χ(u) g(u)) χ`. -/
-theorem of_div_mulVec (g : G → R) (χ : G →* R) :
+theorem of_div_mulVec_monoidHom (g : G → R) (χ : G →* R) :
     (of fun s t : G ↦ g (t / s)) *ᵥ (fun t ↦ χ t) = (∑ u, χ u * g u) • fun t ↦ χ t := by
   ext s
   simp only [mulVec, dotProduct, of_apply, Pi.smul_apply, smul_eq_mul, sum_mul]
@@ -57,9 +58,10 @@ theorem of_div_mulVec (g : G → R) (χ : G →* R) :
 determinant of `(g(t / s))_{s,t}`. -/
 theorem sum_mul_dvd_det_of_div [DecidableEq G] (g : G → R) (χ : G →* R) :
     ∑ u, χ u * g u ∣ (of fun s t : G ↦ g (t / s)).det := by
-  have h := congrArg (fun v ↦ (adjugate (of fun s t : G ↦ g (t / s)) *ᵥ v) 1) (of_div_mulVec g χ)
+  have h := congrArg (fun v ↦ (adjugate (of fun s t : G ↦ g (t / s)) *ᵥ v) 1)
+    (of_div_mulVec_monoidHom g χ)
   simp only [mulVec_mulVec, adjugate_mul, smul_mulVec, one_mulVec, mulVec_smul, Pi.smul_apply,
     smul_eq_mul, map_one, mul_one] at h
   exact ⟨_, h⟩
 
-end TauCeti
+end TauCeti.Matrix

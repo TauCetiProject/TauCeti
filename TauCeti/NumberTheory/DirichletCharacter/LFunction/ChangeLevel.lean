@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
-import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # Uniform bounds for deleted Euler factors
@@ -25,9 +24,7 @@ The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves z
 meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
 pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
 The factors are also nonzero on `Re(s) < 0`:
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`. A character
-and its primitive character have the same gamma factor
-(`DirichletCharacter.gammaFactor_primitiveCharacter`).
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -77,15 +74,6 @@ theorem prod_one_sub_mul_prime_cpow_ne_zero {M N : ℕ} (χ : DirichletCharacter
       (Real.rpow_lt_one_of_one_lt_of_neg (by norm_num) (neg_neg_of_pos hs))
     rw [h1, norm_one] at hlt
     exact (lt_self_iff_false 1).mp hlt
-
-/-- A character and its primitive character have the same gamma factor. -/
-@[simp] theorem gammaFactor_primitiveCharacter {N : ℕ} (χ : DirichletCharacter ℂ N) (s : ℂ) :
-    χ.primitiveCharacter.gammaFactor s = χ.gammaFactor s := by
-  have h : χ.primitiveCharacter.Even ↔ χ.Even := by
-    rw [DirichletCharacter.Even, DirichletCharacter.Even, primitiveCharacter_apply_neg_one]
-  classical
-  rw [gammaFactor, gammaFactor]
-  exact if_congr h rfl rfl
 
 /-- On a fixed closed right half-plane, the deleted Euler product and its reciprocal cost at
 most an arbitrarily small power of the ambient level. The same constant works for every

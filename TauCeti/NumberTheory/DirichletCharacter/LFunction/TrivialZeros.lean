@@ -15,6 +15,8 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.RingTheory.Localization.FractionRing
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.MulChar.GaloisOrbit
 
 /-!
@@ -171,9 +173,6 @@ theorem generalizedBernoulli_eq_zero_iff {N : ℕ} [NeZero N] {R : Type*} [CommR
     [Algebra ℚ R] {χ : DirichletCharacter R N} {k : ℕ} (hk : 2 ≤ k) :
     χ.generalizedBernoulli k = 0 ↔ χ (-1) = -(-1) ^ k := by
   refine ⟨fun h ↦ ?_, generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg (.inl (by omega))⟩
-  by_contra hne
-  refine generalizedBernoulli_ne_zero hk ?_ h
-  rcases χ.even_or_odd with hχ | hχ <;> rcases neg_one_pow_eq_or R k with hk' | hk' <;>
-    simp_all [DirichletCharacter.Even, DirichletCharacter.Odd]
+  exact (χ.apply_neg_one_eq_neg_one_pow_or k).resolve_left (generalizedBernoulli_ne_zero hk · h)
 
 end DirichletCharacter

@@ -68,7 +68,8 @@ theorem natCast_mul_sub_div {T b x : ℕ} (hx : x ≤ T) (h : ¬ T ∣ b * x) :
   push_cast [Nat.cast_sub hx]
   rw [show (b : ℤ) * (T - x) = -(b * x) + b * T by ring, Int.add_mul_ediv_right _ _ hT,
     Int.neg_ediv]
-  simp [show ¬ (T : ℤ) ∣ b * x by exact_mod_cast h, Int.sign_natCast_of_ne_zero hT0]
+  simp only [show ¬ (T : ℤ) ∣ b * x by exact_mod_cast h, ↓reduceIte,
+    Int.sign_natCast_of_ne_zero hT0]
   ring
 
 end TauCeti
