@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Combinatorics.Graph.Serre.Between
 public import TauCeti.GroupTheory.GTree.Collapse
 
 /-!
@@ -15,7 +16,8 @@ Let `T` and `T'` be `G`-trees. Equivariant maps between them are given on vertic
 * A *collapse map* is a surjective equivariant map under which the preimage of every convex set
   of vertices is convex: the preimage of every subtree is a subtree. The identity is a collapse
   map, collapse maps compose, and the map from a tree to its collapse along an invariant set of
-  edges is a collapse map (`TauCeti.GTree.isCollapseMap_collapseHom`).
+  edges is a collapse map (`TauCeti.GTree.isCollapseMap_collapseHom`). A collapse map preserves
+  betweenness (`TauCeti.GTree.IsCollapseMap.isBetween`).
 * `T` *refines* `T'` when there is a collapse map from `T` to `T'`. Refinement is reflexive and
   transitive, a tree refines each of its collapses, and a refinement of a tree dominates it.
 * A *geodesic morphism* is an equivariant map which identifies the two ends of no dart. Extended
@@ -46,7 +48,7 @@ Let `T` and `T'` be `G`-trees. Equivariant maps between them are given on vertic
 ## References
 
 * V. Guirardel and G. Levitt, *JSJ decompositions of groups*, Astérisque 395 (2017), §1.4.1
-  (morphisms, collapse maps, refinements).
+  (morphisms, collapse maps, refinements; collapse maps preserve alignment).
 -/
 
 public section
@@ -82,6 +84,21 @@ theorem IsCollapseMap.surjective {f : T.V →[G] T'.V} (hf : IsCollapseMap f) :
 theorem IsCollapseMap.isConvex_preimage {f : T.V →[G] T'.V} (hf : IsCollapseMap f) {S : Set T'.V}
     (hS : T'.IsConvex S) : T.IsConvex (f ⁻¹' S) :=
   hf.2 S hS
+
+/-- A collapse map preserves betweenness: a vertex between `a` and `b` is sent to a vertex
+between the images of `a` and `b`. -/
+theorem IsCollapseMap.isBetween {f : T.V →[G] T'.V} (hf : IsCollapseMap f) {a x b : T.V}
+    (h : T.IsBetween a x b) : T'.IsBetween (f a) (f x) (f b) := by
+  -- The vertices between `f a` and `f b` form a convex set. Its preimage is convex and contains
+  -- `a` and `b`, so it contains the reduced path from `a` to `b`, whose vertices are those
+  -- between `a` and `b`.
+  obtain ⟨q⟩ := h.nonempty_path
+  have hq := Path.isReduced_reduce T.toSerreGraph q
+  refine (hf.isConvex_preimage (T'.isAcyclic.isConvex_setOf_isBetween _ _)).convexHull_subset
+    (Set.pair_subset (isBetween_left (T'.nonempty_path _ _))
+      (isBetween_right (T'.nonempty_path _ _))) ?_
+  rw [T.isAcyclic.convexHull_pair hq]
+  exact (T.isAcyclic.isBetween_iff_mem_vertices hq).mp h
 
 variable (T) in
 /-- The identity of a `G`-tree is a collapse map. -/

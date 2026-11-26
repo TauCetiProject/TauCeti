@@ -5,25 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Serre.Between
 public import TauCeti.GroupTheory.GTree.Refinement
 
 /-!
 # Lifting equivariant maps along collapse maps of trees
 
-A collapse map `p : T' → T` of `G`-trees preserves betweenness: it sends the vertices of the
-geodesic between two vertices into the geodesic between their images. Let `X` be a `G`-set whose
-point stabilizers are elliptic in `T'`. Every equivariant map `X → T` then lifts along `p` to an
-equivariant map `X → T'`: the preimage of a vertex fixed by a point stabilizer is an invariant
+Let `p : T' → T` be a collapse map of `G`-trees and `X` a `G`-set whose point stabilizers are
+elliptic in `T'`. Every equivariant map `X → T` then lifts along `p` to an equivariant map
+`X → T'`: the preimage of a vertex fixed by a point stabilizer is an invariant
 subtree, in which the stabilizer, being elliptic, fixes a vertex. Applied along a sequence of
 refinements `T 0 ← T 1 ← ⋯` this gives compatible equivariant maps to all the trees, the
 *resolutions* of the sequence.
 
 ## Main results
 
-* `TauCeti.GTree.IsCollapseMap.isBetween`: collapse maps preserve betweenness.
-* `TauCeti.GTree.IsEllipticSubgroup.exists_fixed_mem_of_isConvex`: an elliptic subgroup fixes a
-  vertex of every nonempty convex set it preserves.
 * `TauCeti.GTree.exists_lift_of_isCollapseMap`: lifting an equivariant map along a collapse map.
 * `TauCeti.GTree.exists_seq_lift_of_isCollapseMap`: lifting an equivariant map along a sequence of
   collapse maps.
@@ -47,45 +42,7 @@ open SerreGraph _root_.MulAction
 namespace GTree
 
 variable {G : Type w} [Group G] {T : GTree.{u, v} G} {T' : GTree.{u', v'} G}
-
-/-- A collapse map preserves betweenness: a vertex between `a` and `b` is sent to a vertex
-between the images of `a` and `b`. -/
-theorem IsCollapseMap.isBetween {p : T'.V →[G] T.V} (hp : IsCollapseMap p) {a x b : T'.V}
-    (h : T'.IsBetween a x b) : T.IsBetween (p a) (p x) (p b) := by
-  -- The vertices between `p a` and `p b` form a convex set. Its preimage is convex and contains
-  -- `a` and `b`, so it contains the reduced path from `a` to `b`, whose vertices are those
-  -- between `a` and `b`.
-  obtain ⟨q⟩ := h.nonempty_path
-  have hq := Path.isReduced_reduce T'.toSerreGraph q
-  refine (hp.isConvex_preimage (T.isAcyclic.isConvex_setOf_isBetween _ _)).convexHull_subset
-    (Set.pair_subset (isBetween_left (T.nonempty_path _ _)) (isBetween_right (T.nonempty_path _ _)))
-    ?_
-  rw [T'.isAcyclic.convexHull_pair hq]
-  exact (T'.isAcyclic.isBetween_iff_mem_vertices hq).mp h
-
-/-- An elliptic subgroup fixes a vertex of every nonempty convex set of vertices which it
-preserves: the vertex of the set nearest to a fixed vertex. -/
-theorem IsEllipticSubgroup.exists_fixed_mem_of_isConvex {H : Subgroup G}
-    (hH : T.IsEllipticSubgroup H) {C : Set T.V} (hC : T.IsConvex C) (hne : C.Nonempty)
-    (hinv : ∀ h ∈ H, ∀ x ∈ C, h • x ∈ C) : ∃ x ∈ C, ∀ h ∈ H, h • x = x := by
-  -- Let `a` be a vertex of `C` nearest to a vertex `v` fixed by `H`, and `h ∈ H`. The reduced path
-  -- from `v` to `a` meets `C` only at its end, so it continues to `h • a` without backtracking;
-  -- since `h • a` is as near to `v` as `a`, the continuation is trivial.
-  obtain ⟨v, hv⟩ := isEllipticSubgroup_iff_forall.mp hH
-  obtain ⟨a, ha, hmin⟩ := exists_forall_dist_le hne v
-  refine ⟨a, ha, fun h hh => ?_⟩
-  obtain ⟨q, hq, -⟩ := T.isTree.existsUnique_isReduced v a
-  obtain ⟨r, hr, -⟩ := T.isTree.existsUnique_isReduced a (h • a)
-  have hqr := T.isAcyclic.dist_eq_length (hC.isReduced_comp ha (hinv h hh a ha) hq
-    (fun e he => T.isAcyclic.src_notMem_of_forall_dist_le hmin hq (List.mem_of_mem_getLast? he))
-    hr)
-  have hdist := T.dist_smul h v a
-  rw [hv h hh] at hdist
-  rw [Quiver.Path.length_comp, ← T.isAcyclic.dist_eq_length hq,
-    ← T.isAcyclic.dist_eq_length hr] at hqr
-  exact ((dist_eq_zero_iff (T.nonempty_path _ _)).mp (by lia)).symm
-
-variable {X : Type w'} [MulAction G X]
+  {X : Type w'} [MulAction G X]
 
 /-- **Lifting along a collapse map.** Let `p : T' → T` be a collapse map of `G`-trees and `X` a
 `G`-set all of whose point stabilizers are elliptic in `T'`. Every equivariant map from `X` to the
@@ -101,12 +58,6 @@ theorem exists_lift_of_isCollapseMap {p : T'.V →[G] T.V} (hp : IsCollapseMap p
       fun g hg y (hy : p y = f x) => by simpa [hy] using congrArg f (mem_stabilizer_iff.mp hg)
     exact ⟨y, fun g hg => mem_stabilizer_iff.mpr (hfix g hg), hy⟩
   exact ⟨f', DFunLike.congr_fun hf'⟩
-
-/-- A `G`-set whose point stabilizers are elliptic in `T` has an equivariant map to the vertices
-of `T`. -/
-theorem nonempty_mulActionHom_of_isEllipticSubgroup_stabilizer
-    (hX : ∀ x : X, T.IsEllipticSubgroup (stabilizer G x)) : Nonempty (X →[G] T.V) :=
-  MulAction.nonempty_mulActionHom_iff.mpr fun x => isEllipticSubgroup_iff.mp (hX x)
 
 /-- **Lifting along a sequence of collapse maps.** Let `p k : T (k + 1) → T k` be collapse maps
 of `G`-trees and `X` a `G`-set whose point stabilizers are elliptic in every `T (k + 1)`. Every
