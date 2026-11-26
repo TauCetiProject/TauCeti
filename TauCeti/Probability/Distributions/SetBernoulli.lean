@@ -33,18 +33,25 @@ namespace ProbabilityTheory
 
 variable {ι : Type*} {u : Set ι} {F : Finset ι}
 
+/-- The elements of a finite set `F ⊆ u` all have membership `b` in the random set of
+`setBer(u, p)` with probability `Ber(True, False, p) {b} ^ #F`: the event is the cylinder over
+`F` of the product measure, and each of its factors is the same Bernoulli mass. -/
+private theorem setBernoulli_setOf_forall_mem_iff (p : I) (hF : (F : Set ι) ⊆ u) (b : Prop) :
+    setBer(u, p) {s | ∀ i ∈ F, (i ∈ s ↔ b)} = Ber(True, False, p) {b} ^ #F := by
+  have : (fun P : ι → Prop ↦ {i | P i}) ⁻¹' {s | ∀ i ∈ F, (i ∈ s ↔ b)} =
+      Set.pi F fun _ ↦ {b} := by
+    ext P
+    simp
+  rw [setBernoulli_apply', this, ← Finset.prod_const]
+  refine (infinitePi_pi _ fun _ _ ↦ MeasurableSet.singleton _).trans <|
+    Finset.prod_congr rfl fun i hi ↦ ?_
+  rw [eq_true (hF hi)]
+
 /-- Every element of a finite set `F ⊆ u` belongs to the random set of `setBer(u, p)` with
 probability `p ^ #F`. -/
 theorem setBernoulli_setOf_subset (p : I) (hF : (F : Set ι) ⊆ u) :
     setBer(u, p) {s | (F : Set ι) ⊆ s} = (toNNReal p : ℝ≥0∞) ^ #F := by
-  have : (fun P : ι → Prop ↦ {i | P i}) ⁻¹' {s | (F : Set ι) ⊆ s} =
-      Set.pi F fun _ ↦ {True} := by
-    ext P
-    simp [Set.subset_def]
-  rw [setBernoulli_apply', this, ← Finset.prod_const]
-  refine (infinitePi_pi _ fun _ _ ↦ MeasurableSet.singleton _).trans <|
-    Finset.prod_congr rfl fun i hi ↦ ?_
-  exact bernoulliMeasure_apply_of_mem_of_notMem p (.singleton _) (by simpa using hF hi) (by simp)
+  simpa [Set.subset_def] using setBernoulli_setOf_forall_mem_iff p hF True
 
 /-- Every element of a finite set `F ⊆ u` belongs to the random set of `setBer(u, p)` with
 probability `p ^ #F`. -/
@@ -56,14 +63,7 @@ theorem setBernoulli_real_setOf_subset (p : I) (hF : (F : Set ι) ⊆ u) :
 probability `(1 - p) ^ #F`. -/
 theorem setBernoulli_setOf_disjoint (p : I) (hF : (F : Set ι) ⊆ u) :
     setBer(u, p) {s | Disjoint (F : Set ι) s} = (toNNReal (σ p) : ℝ≥0∞) ^ #F := by
-  have : (fun P : ι → Prop ↦ {i | P i}) ⁻¹' {s | Disjoint (F : Set ι) s} =
-      Set.pi F fun _ ↦ {False} := by
-    ext P
-    simp [Set.disjoint_left]
-  rw [setBernoulli_apply', this, ← Finset.prod_const]
-  refine (infinitePi_pi _ fun _ _ ↦ MeasurableSet.singleton _).trans <|
-    Finset.prod_congr rfl fun i hi ↦ ?_
-  exact bernoulliMeasure_apply_of_notMem_of_mem p (.singleton _) (by simpa using hF hi) (by simp)
+  simpa [Set.disjoint_left] using setBernoulli_setOf_forall_mem_iff p hF False
 
 /-- No element of a finite set `F ⊆ u` belongs to the random set of `setBer(u, p)` with
 probability `(1 - p) ^ #F`. -/

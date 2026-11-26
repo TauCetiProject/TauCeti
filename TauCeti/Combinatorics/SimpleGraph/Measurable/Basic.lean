@@ -72,9 +72,13 @@ instance instMeasurableSingletonClass [Countable V] :
 
 /-- On a countable vertex type, the subgraphs of a fixed graph form a measurable set: a graph lies
 below `H` when none of the countably many non-edges of `H` is one of its edges. -/
-theorem measurableSet_Iic [Countable V] (H : SimpleGraph V) : MeasurableSet (Set.Iic H) :=
-  measurableSet_setOfPred.2 <| Measurable.forall fun x => .forall fun y =>
-    (measurable_iff_adj.1 measurable_id x y).imp measurable_const
+theorem measurableSet_Iic [Countable V] (H : SimpleGraph V) : MeasurableSet (Set.Iic H) := by
+  have : Set.Iic H = {G | ∀ v w, G.Adj v w → H.Adj v w} := by
+    ext G
+    rw [Set.mem_Iic, le_iff_adj, Set.mem_ofPred_eq]
+  rw [this]
+  exact measurableSet_setOfPred.2 <| Measurable.forall fun v => .forall fun w =>
+    (measurable_iff_adj.1 measurable_id v w).imp measurable_const
 
 variable {W : Type*}
 

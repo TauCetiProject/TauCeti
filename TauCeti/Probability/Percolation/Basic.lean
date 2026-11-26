@@ -66,6 +66,10 @@ when each edge of `latticeGraph d` is open with probability `p`, independently o
 noncomputable def bondPercolation (d : ℕ) (p : I) : Measure (SimpleGraph (Fin d → ℤ)) :=
   setBer((latticeGraph d).edgeSet, p).map fromEdgeSet
 
+theorem bondPercolation_def (d : ℕ) (p : I) :
+    bondPercolation d p = setBer((latticeGraph d).edgeSet, p).map fromEdgeSet :=
+  (rfl)
+
 instance (d : ℕ) (p : I) : IsProbabilityMeasure (bondPercolation d p) :=
   inferInstanceAs (IsProbabilityMeasure (setBer((latticeGraph d).edgeSet, p).map fromEdgeSet))
 
@@ -90,22 +94,31 @@ theorem bondPercolation_ae_le (p : I) : ∀ᵐ G ∂bondPercolation d p, G ≤ l
   filter_upwards [setBernoulli_ae_subset] with s hs
   exact (fromEdgeSet_mono hs).trans_eq (fromEdgeSet_edgeSet _)
 
+/-- An event read off the open edges, which does not change when an edge set is replaced by the
+edge set of the graph it spans, has the probability of the same event for the Bernoulli random set
+of lattice edges. -/
+private theorem bondPercolation_setOf_edgeSet (p : I) {P : Set (Sym2 (Fin d → ℤ)) → Prop}
+    (hS : MeasurableSet {s | P s}) (hP : ∀ s, P (fromEdgeSet s).edgeSet ↔ P s) :
+    bondPercolation d p {G | P G.edgeSet} = setBer((latticeGraph d).edgeSet, p) {s | P s} := by
+  have hS' := measurable_edgeSet hS
+  rw [Set.preimage_ofPred_eq] at hS'
+  rw [bondPercolation_apply p hS']
+  congr 1
+  ext s
+  exact hP s
+
 /-- Finitely many distinct lattice edges are all open with probability `p ^ k`, where `k` is
 their number. -/
 theorem bondPercolation_setOf_subset_edgeSet (p : I) {F : Finset (Sym2 (Fin d → ℤ))}
     (hF : (F : Set (Sym2 (Fin d → ℤ))) ⊆ (latticeGraph d).edgeSet) :
     bondPercolation d p {G | (F : Set (Sym2 (Fin d → ℤ))) ⊆ G.edgeSet} =
       (toNNReal p : ℝ≥0∞) ^ #F := by
-  have hS : MeasurableSet
-      {G : SimpleGraph (Fin d → ℤ) | (F : Set (Sym2 (Fin d → ℤ))) ⊆ G.edgeSet} :=
-    measurable_edgeSet <| measurableSet_setOfPred.2 <|
-      Measurable.forall fun _ => .imp measurable_const (measurable_set_mem _)
+  rw [bondPercolation_setOf_edgeSet p ?_ fun s => ?_, setBernoulli_setOf_subset p hF]
+  · simp only [Set.subset_def]
+    exact measurableSet_setOfPred.2 <| Measurable.forall fun e =>
+      .imp measurable_const (measurable_set_mem e)
   -- `fromEdgeSet F` has edge set `F`, as lattice edges are not loops.
-  have hpre : fromEdgeSet ⁻¹' {G | (F : Set (Sym2 (Fin d → ℤ))) ⊆ G.edgeSet} = {s | ↑F ⊆ s} := by
-    ext s
-    rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← edgeSet_fromEdgeSet_of_subset hF,
-      edgeSet_subset_edgeSet, le_fromEdgeSet_iff]
-  rw [bondPercolation_apply p hS, hpre, setBernoulli_setOf_subset p hF]
+  · rw [← edgeSet_fromEdgeSet_of_subset hF, edgeSet_subset_edgeSet, le_fromEdgeSet_iff]
 
 /-- Finitely many distinct lattice edges are all open with probability `p ^ k`, where `k` is
 their number. -/
@@ -121,18 +134,12 @@ theorem bondPercolation_setOf_disjoint_edgeSet (p : I) {F : Finset (Sym2 (Fin d 
     (hF : (F : Set (Sym2 (Fin d → ℤ))) ⊆ (latticeGraph d).edgeSet) :
     bondPercolation d p {G | Disjoint (F : Set (Sym2 (Fin d → ℤ))) G.edgeSet} =
       (toNNReal (σ p) : ℝ≥0∞) ^ #F := by
-  have hS : MeasurableSet
-      {G : SimpleGraph (Fin d → ℤ) | Disjoint (F : Set (Sym2 (Fin d → ℤ))) G.edgeSet} := by
-    simp only [Set.disjoint_left]
+  rw [bondPercolation_setOf_edgeSet p ?_ fun s => ?_, setBernoulli_setOf_disjoint p hF]
+  · simp only [Set.disjoint_left]
     exact measurableSet_setOfPred.2 <| Measurable.forall fun e =>
-      .imp measurable_const ((measurable_set_mem e).comp measurable_edgeSet).not
+      .imp measurable_const (measurable_set_mem e).not
   -- `fromEdgeSet F` has edge set `F`, as lattice edges are not loops.
-  have hpre : fromEdgeSet ⁻¹' {G | Disjoint (F : Set (Sym2 (Fin d → ℤ))) G.edgeSet} =
-      {s | Disjoint (↑F) s} := by
-    ext s
-    rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq,
-      ← edgeSet_fromEdgeSet_of_subset hF, disjoint_edgeSet, disjoint_fromEdgeSet]
-  rw [bondPercolation_apply p hS, hpre, setBernoulli_setOf_disjoint p hF]
+  · rw [← edgeSet_fromEdgeSet_of_subset hF, disjoint_edgeSet, disjoint_fromEdgeSet]
 
 /-- Finitely many distinct lattice edges are all closed with probability `(1 - p) ^ k`, where `k`
 is their number. -/
@@ -143,10 +150,16 @@ theorem bondPercolation_real_setOf_disjoint_edgeSet (p : I) {F : Finset (Sym2 (F
   simp [measureReal_def, bondPercolation_setOf_disjoint_edgeSet p hF]
 
 /-- An edge of the lattice is open with probability `p`. -/
+theorem bondPercolation_setOf_adj (p : I) {x y : Fin d → ℤ}
+    (h : (latticeGraph d).Adj x y) :
+    bondPercolation d p {G | G.Adj x y} = toNNReal p := by
+  simpa using bondPercolation_setOf_subset_edgeSet p (F := {s(x, y)}) (by simpa using h)
+
+/-- An edge of the lattice is open with probability `p`. -/
 theorem bondPercolation_real_setOf_adj (p : I) {x y : Fin d → ℤ}
     (h : (latticeGraph d).Adj x y) :
     (bondPercolation d p).real {G | G.Adj x y} = p := by
-  simpa using bondPercolation_real_setOf_subset_edgeSet p (F := {s(x, y)}) (by simpa using h)
+  simp [measureReal_def, bondPercolation_setOf_adj p h]
 
 /-- A pair of points that is not an edge of the lattice is almost never an open edge. -/
 theorem bondPercolation_setOf_adj_of_not_adj (p : I) {x y : Fin d → ℤ}
@@ -156,10 +169,21 @@ theorem bondPercolation_setOf_adj_of_not_adj (p : I) {x y : Fin d → ℤ}
   intro G hG hle
   exact h (hle hG)
 
+/-- A pair of points that is not an edge of the lattice is almost never an open edge. -/
+theorem bondPercolation_real_setOf_adj_of_not_adj (p : I) {x y : Fin d → ℤ}
+    (h : ¬(latticeGraph d).Adj x y) :
+    (bondPercolation d p).real {G | G.Adj x y} = 0 := by
+  simp [measureReal_def, bondPercolation_setOf_adj_of_not_adj p h]
+
 /-- The percolation probability `θ(p)`: the probability that the open cluster of the origin is
 infinite. -/
 noncomputable def percolationProb (d : ℕ) (p : I) : ℝ :=
   (bondPercolation d p).real {G | (G.connectedComponentMk 0).supp.Infinite}
+
+theorem percolationProb_def (d : ℕ) (p : I) :
+    percolationProb d p =
+      (bondPercolation d p).real {G | (G.connectedComponentMk 0).supp.Infinite} :=
+  (rfl)
 
 theorem percolationProb_nonneg (d : ℕ) (p : I) : 0 ≤ percolationProb d p :=
   measureReal_nonneg
@@ -196,6 +220,10 @@ theorem percolationProb_zero_left (p : I) : percolationProb 0 p = 0 := by
 `θ(p) = 0`. -/
 noncomputable def criticalProb (d : ℕ) : ℝ :=
   sSup (Subtype.val '' {p : I | percolationProb d p = 0})
+
+theorem criticalProb_def (d : ℕ) :
+    criticalProb d = sSup (Subtype.val '' {p : I | percolationProb d p = 0}) :=
+  (rfl)
 
 /-- Every parameter with `θ(p) = 0` is at most `p_c(d)`. -/
 theorem le_criticalProb {p : I} (hp : percolationProb d p = 0) : (p : ℝ) ≤ criticalProb d :=

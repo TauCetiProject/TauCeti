@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.Combinatorics.SimpleGraph.Finite
-public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Order.Ring.Abs
+public import TauCeti.Algebra.BigOperators.Pi
 
 /-!
 # The hypercubic lattice `ℤ^d`
@@ -64,25 +63,6 @@ theorem latticeGraph_adj {x y : Fin d → ℤ} :
 instance (d : ℕ) : DecidableRel (latticeGraph d).Adj := fun _ _ =>
   decidable_of_iff' _ latticeGraph_adj
 
-/-- An integer vector has `ℓ¹` norm `1` exactly when it is a unit vector or the negative of one. -/
-theorem sum_abs_eq_one_iff {ι : Type*} [Fintype ι] [DecidableEq ι] {z : ι → ℤ} :
-    ∑ i, |z i| = 1 ↔ ∃ i, z = Pi.single i 1 ∨ z = -Pi.single i 1 := by
-  constructor
-  · intro h
-    obtain ⟨i, -, hi⟩ := exists_ne_zero_of_sum_ne_zero (h.trans_ne one_ne_zero)
-    have hsplit := add_sum_erase univ (fun j => |z j|) (mem_univ i)
-    have hrest : 0 ≤ ∑ j ∈ univ.erase i, |z j| := sum_nonneg fun j _ => abs_nonneg _
-    have hzi : |z i| = 1 := by
-      have := abs_pos.2 (abs_ne_zero.1 hi)
-      omega
-    have hzero : ∀ j ≠ i, z j = 0 := fun j hj => abs_eq_zero.1 <|
-      (sum_eq_zero_iff_of_nonneg fun j _ => abs_nonneg (z j)).1 (by omega) j
-        (mem_erase.2 ⟨hj, mem_univ j⟩)
-    refine ⟨i, eq_or_eq_neg_of_abs_eq hzi |>.imp (fun h => ?_) fun h => ?_⟩ <;>
-      ext j <;> obtain rfl | hj := eq_or_ne j i <;> simp [*]
-  · rintro ⟨i, rfl | rfl⟩ <;>
-      simp [Pi.single_apply, apply_ite, abs_one]
-
 /-- The neighbours of `x` in `ℤ^d` are the points `x + eᵢ` and `x - eᵢ`. -/
 theorem latticeGraph_adj_iff_exists {x y : Fin d → ℤ} :
     (latticeGraph d).Adj x y ↔ ∃ i, y = x + Pi.single i 1 ∨ y = x - Pi.single i 1 := by
@@ -97,6 +77,8 @@ theorem latticeGraph_zero : latticeGraph 0 = ⊥ := by
 
 private theorem injective_sumElim_add_sub_single (x : Fin d → ℤ) :
     Function.Injective (Sum.elim (fun i => x + Pi.single i 1) fun i => x - Pi.single i 1) := by
+  -- Compare coordinate `i`. Two points `x ± eᵢ`, `x ± eⱼ` with the same sign agree there only if
+  -- `i = j`, and points of opposite signs never agree there: `x i + 1 ≠ x i - [j = i]`.
   rintro (i | i) (j | j) h <;>
     · have := congrFun h i
       simp only [Sum.elim_inl, Sum.elim_inr, Pi.add_apply, Pi.sub_apply, Pi.single_apply] at this
