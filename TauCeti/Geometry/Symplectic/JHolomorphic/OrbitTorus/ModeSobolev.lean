@@ -72,11 +72,8 @@ The twist along `γ` by the sign `-1` needs no separate operator on the torus of
 antiperiodic in `t` of period `T` is `exp (J₀ π t / T)` times a periodic one, and the
 corresponding loop operator is that of the loop `TauCeti.CircleSobolev.antiperiodicGaugeLoop T S`,
 which is infinitesimally symplectic with `S`, so the results here apply to it (for maps periodic
-in `s`, see `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev`). Together
-with the twist along the circle factor it is also treated in
-`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic`, on the double cover of
-`γ`, by restricting the operator of this file. Finite covers of the torus are treated in
-`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover` and
+in `s`, see `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.OrbitTwistSobolev`). Finite
+covers of the torus are treated in `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Cover` and
 `TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover`, the latter using the rotation
 `TauCeti.rotateMode` of this file.
 
@@ -362,9 +359,8 @@ private theorem inclusionTorusModeSobolev_apply {ω : ℕ → ℝ} {V : Submodul
 /-- **The orbit-torus operator on an invariant subspace.** The restriction of
 `TauCeti.torusModeOperator T ω S` to a subspace `V ≤ TauCeti.torusModeSobolev F ω` of the ambient
 space of pairs of mode sequences, with values in a subspace `W` of the `L²` mode sequences, given
-that the operator maps `V` into `W`. The twisted and the skew-cover operators
-(`TauCeti.doublyAntiperiodicTorusOperator`, `TauCeti.skewTorusModeOperator`) are such
-restrictions. -/
+that the operator maps `V` into `W`. The skew-cover operators (`TauCeti.skewTorusModeOperator`)
+are such restrictions. -/
 def restrictTorusModeOperator {ω : ℕ → ℝ} {V : Submodule ℂ 𝕏[F]}
     (hV : V ≤ torusModeSobolev F ω) (W : Submodule ℂ 𝕐[F]) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ x : V, torusModeOperator T ω S (Submodule.inclusion hV x) ∈ W) : V →L[ℝ] W :=
@@ -683,7 +679,9 @@ theorem isInvertible_torusModeOperator_antiperiodic {ℓ : ℝ} (hℓ : ℓ ≠ 
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (torusModeOperator T (antiperiodicModeFrequency ℓ) S).IsInvertible :=
   isInvertible_torusModeOperator T (div_pos Real.pi_pos (abs_pos.2 hℓ))
-    (fun k ↦ div_le_abs_mul_div hℓ (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])) S hS
+    (fun k ↦ by
+      rw [antiperiodicModeFrequency_apply]
+      exact div_le_abs_mul_div hℓ (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])) S hS
 
 /-- **The orbit-torus operator on the nonconstant modes of maps periodic in `s`.** For `ℓ ≠ 0` and
 every infinitesimally symplectic loop `S`, the operator `∂s + A` on the maps periodic of period
@@ -696,7 +694,9 @@ theorem isInvertible_torusModeOperator_periodic {ℓ : ℝ} (hℓ : ℓ ≠ 0)
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) :
     (torusModeOperator T (periodicModeFrequency ℓ) S).IsInvertible :=
   isInvertible_torusModeOperator T (div_pos Real.pi_pos (abs_pos.2 hℓ))
-    (fun k ↦ div_le_abs_mul_div hℓ (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])) S hS
+    (fun k ↦ by
+      rw [periodicModeFrequency_apply]
+      exact div_le_abs_mul_div hℓ (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])) S hS
 
 end Inner
 

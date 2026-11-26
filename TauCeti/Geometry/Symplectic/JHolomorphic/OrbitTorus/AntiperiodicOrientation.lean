@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Complex
-public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.DoublyAntiperiodic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover
 
 /-!
@@ -39,15 +38,6 @@ for these operators. For the zero loop the reference operator is `∂s + J₀ �
 linear (`TauCeti.torusModeOperator_zero_apply_smul`), and for every infinitesimally symplectic
 loop `S` the straight path `τ ↦ τ • S` is such a path.
 
-The sign is also positive for the character twisted along both factors, the operator
-`TauCeti.doublyAntiperiodicTorusOperator` on maps antiperiodic in `s` and along `γ`
-(`TauCeti.detLineOrientationTransport_rayOfNeZero_doublyAntiperiodicTorusOperator`). Its loops
-are invariant under the rotation by half their period, and so is every loop of the straight path
-`τ ↦ τ • S`. Along such a path every operator is invertible
-(`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`) and the operators depend continuously on
-`τ` (`TauCeti.continuousOn_doublyAntiperiodicTorusOperator`), so the general statement applies
-again. Thus both characters nontrivial along the circle factor contribute a positive sign.
-
 **Skew covers.** The same holds on every finite cover of the orbit torus, the skew covers
 included. A cover has a lattice spanned by `(ℓ, 0)` and `(σ, T)`, and a map on it twisted by a sign
 character that is `-1` on `(ℓ, 0)` is antiperiodic of antiperiod `ℓ` in `s`, with the frequencies
@@ -61,7 +51,11 @@ frequencies and the loops read with period `q T` this is the statement on the sk
 `TauCeti.detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator_antiperiodic_coverPullback`;
 the sign `-1` on `(σ, T)` is absorbed by passing to the loops
 `TauCeti.CircleSobolev.antiperiodicGaugeLoop T (M τ)`, as in
-`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover`.
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover`. The character twisted along both
+factors of the orbit torus itself is the case `q = 2`, `σ = ℓ`: then `cos (ωₖ ℓ) = -1` and
+`sin (ωₖ ℓ) = 0`, so the invariant maps are those whose modes are antiperiodic of antiperiod `T`
+in `t` on the double cover of `γ` (`TauCeti.mem_skewTorusModeSobolev_iff`). Thus both characters
+nontrivial along the circle factor contribute a positive sign.
 
 ## Main results
 
@@ -70,8 +64,6 @@ the sign `-1` on `(σ, T)` is absorbed by passing to the loops
   of invertibility.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero_torusModeOperator_antiperiodic`: the case of
   maps antiperiodic in `s`, the character twisted along the circle factor and untwisted along `γ`.
-* `TauCeti.detLineOrientationTransport_rayOfNeZero_doublyAntiperiodicTorusOperator`: the
-  character twisted along both factors.
 * `TauCeti.detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator`: the same transport on
   maps invariant under a translation.
 * `detLineOrientationTransport_rayOfNeZero_skewTorusModeOperator_antiperiodic_coverPullback`: the
@@ -159,37 +151,6 @@ theorem detLineOrientationTransport_rayOfNeZero_torusModeOperator_antiperiodic {
     abs_of_nonneg (by positivity : (0 : ℝ) ≤ (2 * k + 1) * π)]
   gcongr
   nlinarith [Real.pi_pos, (Nat.cast_nonneg k : (0 : ℝ) ≤ k)]
-
-/-- **The orbit-torus operator twisted along both factors has positive determinant sign.** Let `M`
-be a path of infinitesimally symplectic loops invariant under the rotation by `T / 2`, continuous
-between `a` and `b` in the uniform norm, such that the operator `∂s + J₀ (∂t - M a)` on maps
-antiperiodic of antiperiod `ℓ` in `s` and of antiperiod `T / 2` in `t` is complex linear, the real
-map underlying `f`, as for the zero loop
-(`TauCeti.exists_restrictScalars_eq_doublyAntiperiodicTorusOperator_zero`). Transporting the
-complex orientation of `∂s + J₀ (∂t - M a)`, that of any complex positive element `z` of its
-determinant line, along the operators `∂s + J₀ (∂t - M τ)` on these maps gives the orientation of
-the determinant line of `∂s + J₀ (∂t - M b)` given by its invertibility
-(`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`). -/
-theorem detLineOrientationTransport_rayOfNeZero_doublyAntiperiodicTorusOperator {ℓ : ℝ}
-    (hℓ : ℓ ≠ 0) {M : ℝ → C(AddCircle T, F →L[ℝ] F)} {a b : ℝ} (hM : ContinuousOn M (uIcc a b))
-    (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
-    (hM' : ∀ τ t, M τ (t + (T / 2 : ℝ)) = M τ t)
-    {f : doublyAntiperiodicSobolev F ℓ →ₗ[ℂ] doublyAntiperiodicL2 F}
-    (hf : f.restrictScalars ℝ = doublyAntiperiodicTorusOperator T ℓ (M a) (hM' a))
-    {z : (f.restrictScalars ℝ).detLine} (hz : f.IsComplexPositiveDetLine z) :
-    detLineOrientationTransport (T := fun τ ↦ doublyAntiperiodicTorusOperator T ℓ (M τ) (hM' τ))
-        a b (continuousOn_doublyAntiperiodicTorusOperator T ℓ hM hM')
-        (fun τ hτ ↦
-          (isInvertible_doublyAntiperiodicTorusOperator T hℓ (M τ) (hMs τ hτ) (hM' τ)).isFredholm)
-        (rayOfNeZero ℝ (LinearMap.detLineCongrOfEq hf z) (hz.detLineCongrOfEq_ne_zero hf
-          (isInvertible_doublyAntiperiodicTorusOperator T hℓ (M a) (hMs a left_mem_uIcc)
-            (hM' a)).surjective)) =
-      rayOfNeZero ℝ ((LinearMap.detLineEquivOfBijective
-        (isInvertible_doublyAntiperiodicTorusOperator T hℓ (M b) (hMs b right_mem_uIcc)
-          (hM' b)).bijective).symm 1)
-        ((LinearEquiv.map_ne_zero_iff _).2 one_ne_zero) :=
-  detLineOrientationTransport_rayOfNeZero_detLineCongrOfEq_of_isComplexPositiveDetLine _
-    (fun τ hτ ↦ isInvertible_doublyAntiperiodicTorusOperator T hℓ (M τ) (hMs τ hτ) (hM' τ)) hf hz
 
 /-! ### The operators twisted along the circle factor on the skew covers -/
 
