@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor
+public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Basic
 
 /-!
 # Band-preserving transformations on isomorphisms and automorphisms
