@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Gray
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
-import TauCeti.Analysis.Calculus.BumpFunction.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype.Cutoff
 
 /-!
 # Gray stability on closed manifolds, as a diffeotopy
@@ -37,10 +37,10 @@ isotopy `TauCeti.SmoothForm.grayDiffeomorph` from time `0`
 Only the times `t ∈ [0, 1]` are assumed to give contact forms. Since `M` is compact, the slices are
 then contact forms for all times of an open neighbourhood `U` of `[0, 1]`
 (`TauCeti.SmoothForm.isOpen_setOf_isContactForm_mpullback_prodMk`). A smooth map `ρ : ℝ → U` which
-is the identity on `[0, 1]` (`TauCeti.exists_contDiff_eqOn_Icc_forall_mem`) reparametrizes the
-family to `α_(ρ t)`, all of whose slices are contact forms and which agrees with `α_t` for
-`t ∈ [0, 1]` (`TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`). Gray's diffeotopy
-of the reparametrized family is the diffeotopy of the theorem.
+is the identity near `[0, 1]` (`TopologicalSpace.Opens.exists_contMDiff_eventuallyEq_id`)
+reparametrizes the family to `α_(ρ t)`, all of whose slices are contact forms and which agrees
+with `α_t` for `t ∈ [0, 1]` (`TauCeti.SmoothForm.mpullback_prodMk_mpullback_prodMap_id`). Gray's
+diffeotopy of the reparametrized family is the diffeotopy of the theorem.
 
 ## Main definitions
 
@@ -144,20 +144,24 @@ theorem exists_diffeotopy_mpullback_eq_pos_smul
           g t x • (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).val x := by
   -- The slices are contact forms at the times of an open neighbourhood of `[0, 1]`; reparametrize
   -- time by a smooth map `ρ` into that neighbourhood which is the identity on `[0, 1]`.
-  obtain ⟨ρ, hρ, hρid, hρU⟩ := exists_contDiff_eqOn_Icc_forall_mem zero_le_one
-    (isOpen_setOf_isContactForm_mpullback_prodMk α) hc
-  let β := mpullback (Prod.map ρ id) (hρ.contMDiff.prodMap contMDiff_id) α
+  let U : TopologicalSpace.Opens ℝ := ⟨_, isOpen_setOf_isContactForm_mpullback_prodMk α⟩
+  obtain ⟨g, hg, hgid⟩ :=
+    U.exists_contMDiff_eventuallyEq_id (convex_Icc 0 1) isCompact_Icc
+      (nonempty_Icc.2 zero_le_one) hc
+  set ρ : ℝ → ℝ := fun t ↦ (g t : ℝ)
+  have hρ : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) ∞ ρ := contMDiff_subtypeVal.comp hg
+  let β := mpullback (Prod.map ρ id) (hρ.prodMap contMDiff_id) α
   have hβ (t : ℝ) : mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) β =
       mpullback (Prod.mk (ρ t)) (contMDiff_const.prodMk contMDiff_id) α :=
-    mpullback_prodMk_mpullback_prodMap_id α hρ.contMDiff t
+    mpullback_prodMk_mpullback_prodMap_id α hρ t
   have hβc (t : ℝ) :
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) β).IsContactForm :=
-    hβ t ▸ hρU t
+    hβ t ▸ (g t).property
   -- On `[0, 1]` the reparametrized family is the original one.
   have hβα {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
       mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) β =
         mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α := by
-    rw [hβ t, show ρ t = t from hρid ht]
+    rw [hβ t, show ρ t = t from (hgid t ht).self_of_nhds]
   refine ⟨grayDiffeotopy hβc, fun t x ↦ Real.exp
       (∫ u in (0 : ℝ)..t, β.grayRate (u, grayDiffeomorph hβc 0 u x)),
     fun t x ↦ Real.exp_pos _, fun t x ↦ ?_⟩
