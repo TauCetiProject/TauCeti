@@ -28,13 +28,11 @@ public section
 open Complex MeasureTheory Set
 open scoped FourierTransform
 
-namespace TauCeti
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
 /-- Two functions with absolutely convergent Mellin transforms on a common vertical line agree
 almost everywhere on `(0, ∞)` if their transforms agree on that line. -/
-theorem ae_eq_of_mellin_eq_on_verticalLine {f g : ℝ → E} {c : ℝ}
+theorem MellinConvergent.ae_eq_of_mellin_eq_on_verticalLine {f g : ℝ → E} {c : ℝ}
     (hf : MellinConvergent f c) (hg : MellinConvergent g c)
     (h : EqOn (mellin f) (mellin g) {s : ℂ | s.re = c}) :
     f =ᵐ[volume.restrict (Ioi 0)] g := by
@@ -44,7 +42,7 @@ theorem ae_eq_of_mellin_eq_on_verticalLine {f g : ℝ → E} {c : ℝ}
     rfl
   have hi {k : ℝ → E} (hk : MellinConvergent k c) : Integrable (damp k) := by
     simpa only [damp, hweight, Complex.coe_smul] using
-      (mellinConvergent_iff_integrable_exp_smul k c).mp hk
+      (TauCeti.mellinConvergent_iff_integrable_exp_smul k c).mp hk
   have hF : 𝓕 (damp f) = 𝓕 (damp g) := by
     ext t
     have hs := h (x := (c : ℂ) + (↑(2 * Real.pi * t) : ℂ) * I) (by simp)
@@ -59,8 +57,10 @@ theorem ae_eq_of_mellin_eq_on_verticalLine {f g : ℝ → E} {c : ℝ}
   have hae : ∀ᵐ u : ℝ ∂volume, f (Real.exp u) = g (Real.exp u) := by
     have hn := (Measure.measurePreserving_neg (volume : Measure ℝ)).quasiMeasurePreserving.ae hneg
     simpa only [neg_neg] using hn
-  rw [← ae_multHaar_eq_ae_volume_Ioi, ← map_volume_exp]
+  rw [← TauCeti.ae_multHaar_eq_ae_volume_Ioi, ← TauCeti.map_volume_exp]
   exact he.ae_map_iff.mpr hae
+
+namespace TauCeti
 
 /-- A continuous kernel on `[a, ∞)` is determined there by its upper-tail Mellin integral
 `∫ x in Ioi a, x ^ (-s - 1) • f x` on any vertical line of absolute convergence. -/
@@ -75,7 +75,7 @@ theorem eqOn_Ici_of_mellin_integral_Ioi_eq_on_verticalLine {f g : ℝ → E} {a 
     (mellinConvergent_indicator_Ioi_iff ha).mpr (by simpa only [ofReal_neg] using hfi)
   have hgi' : MellinConvergent ((Ioi a).indicator g) ((-c : ℝ) : ℂ) :=
     (mellinConvergent_indicator_Ioi_iff ha).mpr (by simpa only [ofReal_neg] using hgi)
-  have hae := ae_eq_of_mellin_eq_on_verticalLine hfi' hgi' (fun s hs ↦ by
+  have hae := hfi'.ae_eq_of_mellin_eq_on_verticalLine hgi' (fun s hs ↦ by
     rw [mellin_indicator_Ioi _ ha, mellin_indicator_Ioi _ ha]
     simpa only [neg_neg] using h (-s) (by simpa using congrArg Neg.neg hs))
   have htail : f =ᵐ[volume.restrict (Ioi a)] g := by

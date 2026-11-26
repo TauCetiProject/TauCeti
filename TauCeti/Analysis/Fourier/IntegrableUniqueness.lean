@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.FourierTransform
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+import TauCeti.Analysis.Fourier.Continuous
 
 /-!
 # Uniqueness of the Fourier integral on integrable functions
@@ -48,12 +49,7 @@ theorem ae_eq_zero_of_fourier_eq_zero (hf : Integrable f) (hF : 𝓕 f = 0) :
 /-- Integrable functions with the same Fourier transform agree almost everywhere. -/
 theorem ae_eq_of_fourier_eq {g : V → E} (hf : Integrable f) (hg : Integrable g)
     (hF : 𝓕 f = 𝓕 g) : f =ᵐ[volume] g := by
-  have hsub : 𝓕 (f - g) = 0 := by
-    ext x
-    simp only [Real.fourier_eq, Pi.sub_apply, smul_sub, Pi.zero_apply]
-    rw [integral_sub ((Real.fourierIntegral_convergent_iff _).mpr hf)
-      ((Real.fourierIntegral_convergent_iff _).mpr hg), ← Real.fourier_eq, ← Real.fourier_eq, hF,
-      sub_self]
+  have hsub : 𝓕 (f - g) = 0 := by rw [hf.fourier_sub hg, hF, sub_self]
   filter_upwards [(hf.sub hg).ae_eq_zero_of_fourier_eq_zero hsub] with x hx
   exact sub_eq_zero.mp hx
 
