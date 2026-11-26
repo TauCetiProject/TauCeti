@@ -77,7 +77,8 @@ with `γ₁ ^ p₁` and last with `γ_j ^ p_j` (`twistPoint_concat`).
   orientable form (`basicSeqData_orientable`, `basicSeqData_orientableCoeff_of_eq_zero`,
   `basicSeqData_orientableCoeff_of_ne_zero`); their substitutions fix the equation
   (`twistHom_toWord_of_mem_basicSeqData`) and map its radical into itself
-  (`mapsTo_twistHom_Rad_of_mem_basicSeqData`).
+  (`mapsTo_twistHom_Rad_of_mem_basicSeqData`, also for `J` rounds:
+  `mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData`).
 
 ## Main results
 
@@ -877,6 +878,17 @@ theorem mapsTo_twistHom_Rad_of_mem_basicSeqData {H : Type*} [Group H] (ι : G �
     (.ofMulEquiv d.toMulAut fun g => (d.toMulAut_apply _).trans (twistHom_inl d.A d.e g))
     {S.toWord} (Rad_monotone ι (fun s hs => by
       simp [Set.mem_singleton_iff.1 hs, twistHom_toWord_of_mem_basicSeqData hS hd]) hu)
+
+/-- The substitution of each twist datum of `J` rounds of the basic sequence of a standard
+orientable quadratic equation `S = 1` maps the radical of `S` into itself: the hypothesis of
+`twistTowerGHom` (in `Lift/Twist/Discrimination.lean`) for the basic tower. -/
+theorem mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData {H : Type*} [Group H] (ι : G →* H)
+    {S : Standard G X} (hS : S.IsOrientable) {J : ℕ} {d : TwistData G X}
+    (hd : d ∈ (List.replicate J (basicSeqData S hS)).flatten) :
+    Set.MapsTo (twistHom d.A d.e) (Rad ι {S.toWord}) (Rad ι {S.toWord}) := by
+  obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
+  obtain rfl := List.eq_of_mem_replicate hl
+  exact mapsTo_twistHom_Rad_of_mem_basicSeqData ι hS hdl
 
 end StandardData
 

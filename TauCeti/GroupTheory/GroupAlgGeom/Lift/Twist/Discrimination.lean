@@ -52,7 +52,8 @@ coordinate group `G_{R(S)}`, which maps to the tower (`twistTowerGHom`), and the
 exponents `p` composed with this map is evaluation at `φ_{L,p} v`
 (`towerRetraction_twistTowerGHom`). This holds for the basic tower of `J` rounds of the basic
 sequence over a solution `β` of a standard orientable quadratic equation
-(`TauCeti.GroupAlgGeom.Lift.basicTower`, `mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData`,
+(`TauCeti.GroupAlgGeom.Lift.basicTower`,
+`TauCeti.GroupAlgGeom.Lift.mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData`,
 `eval_basicTower_eq_one_of_mem_Rad`), whose twists fix the equation, and there the retraction
 composed with the map is evaluation at the point `φ_{j,p} β`
 (`TauCeti.GroupAlgGeom.Lift.twistPoint`, `towerRetraction_twistTowerGHom_replicate_basicSeqData`);
@@ -247,17 +248,6 @@ theorem towerRetraction_twistTowerGHom {P : TowerStage.{u, v, w} G X}
       CoordGroup.evalGHom _ (wordMap_phi_mem_V hS hv p) q := by
   obtain ⟨w, rfl⟩ := QuotientGroup.mk_surjective q
   rw [twistTowerGHom_mk, eval_towerRetraction l P hp, CoordGroup.evalGHom_mk, eval_wordMap_phi]
-
-/-- The substitution of each twist datum of `J` rounds of the basic sequence of a standard
-orientable quadratic equation `S = 1` maps the radical of `S` into itself: the hypothesis of
-`twistTowerGHom` for the basic tower. -/
-theorem mapsTo_twistHom_Rad_of_mem_replicate_basicSeqData {H : Type*} [Group H] (ι : G →* H)
-    {S : Quadratic.Standard G X} (hS : S.IsOrientable) {J : ℕ} {d : TwistData G X}
-    (hd : d ∈ (List.replicate J (basicSeqData S hS)).flatten) :
-    Set.MapsTo (twistHom d.A d.e) (Rad ι {S.toWord}) (Rad ι {S.toWord}) := by
-  obtain ⟨_, hl, hdl⟩ := List.mem_flatten.1 hd
-  obtain rfl := List.eq_of_mem_replicate hl
-  exact mapsTo_twistHom_Rad_of_mem_basicSeqData ι hS hdl
 
 /-- The point of a nondegenerate basic tower of `J` rounds over a solution `β` of a standard
 orientable quadratic equation `S = 1` over a CSA group with the big powers property is a point of
