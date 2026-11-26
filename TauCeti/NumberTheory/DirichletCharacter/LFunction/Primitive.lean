@@ -10,9 +10,9 @@ public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.Data.Nat.GCD
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
-import TauCeti.NumberTheory.DirichletCharacter.Product
 
 /-!
 # Continued Dirichlet `L`-functions of primitive characters
