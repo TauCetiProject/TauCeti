@@ -55,6 +55,8 @@ For Dedekind `B` itself, at a nonzero prime, the localization is Mathlib's
 * `ValuationSubring.IsCenteredAt.eq_valuationSubringAtPrime`: a valuation subring centred at `P`
   is `B_P`.
 * `ValuationSubring.IsCenteredAt.smul`: the centre of `g • A` is `g • P`.
+* `Ideal.smul_valuationSubringAtPrime` and `ValuationSubring.coe_equivPrimeSpectrum_symm_smul`:
+  `g • B_P = B_{g • P}`, so the correspondence with primes is equivariant.
 * `ValuationSubring.IsCenteredAt.stabilizer_eq`: the stabilizers of `A` and of `P` agree.
 * `ValuationSubring.IsCenteredAt.forall_smul_sub_pow_mem_iff`: `g` raises elements to the `q`-th
   power modulo `P` exactly when it does so modulo the nonunits of `A`.
@@ -195,23 +197,22 @@ theorem isCenteredAt_valuationSubringAtPrime : (P.valuationSubringAtPrime L).IsC
   algebraMap_mem b := mem_valuationSubringAtPrime_iff.mpr
     ⟨b, 1, P.primeCompl.one_mem, by rw [map_one, inv_one, mul_one]⟩
   algebraMap_mem_nonunits_iff b := by
-    have hinj := IsFractionRing.injective B L
     rw [ValuationSubring.mem_nonunits_iff_or, mem_valuationSubringAtPrime_iff]
     refine ⟨?_, fun hb ↦ ?_⟩
     · rintro (h0 | hinv)
-      · exact (hinj (h0.trans (map_zero _).symm)).symm ▸ P.zero_mem
+      · exact IsFractionRing.to_map_eq_zero_iff.mp h0 ▸ P.zero_mem
       · by_contra hb
         exact hinv ⟨1, b, hb, by rw [map_one, one_mul]⟩
     · by_cases h0 : algebraMap B L b = 0
       · exact Or.inl h0
       refine Or.inr fun ⟨a, s, hs, hbs⟩ ↦ hs ?_
       -- `b⁻¹ = a / s` gives `s = a * b`, which lies in `P`
-      have hs0 : algebraMap B L s ≠ 0 := fun h ↦ hs (hinj (h.trans (map_zero _).symm) ▸ P.zero_mem)
+      have hs0 : algebraMap B L s ≠ 0 := algebraMap_ne_zero_of_notMem hs
       have : algebraMap B L s = algebraMap B L (a * b) := by
         rw [map_mul]
         field_simp at hbs
         linear_combination hbs
-      exact hinj this ▸ P.mul_mem_left a hb
+      exact IsFractionRing.injective B L this ▸ P.mul_mem_left a hb
 
 end Ideal
 
@@ -234,7 +235,7 @@ theorem exists_eq_mul_inv (h : A.IsCenteredAt P) [P.IsPrime]
   refine ⟨s, a, fun ha ↦ hs ?_, ?_⟩
   · -- `s = x * a` is a nonunit of `A`, as `x ∈ A` and `a` is a nonunit of `A`
     rw [← h.valuation_algebraMap_lt_one_iff] at ha ⊢
-    have hs0 : algebraMap B L s ≠ 0 := fun h0 ↦ by simp [h0, hx0] at hxa
+    have hs0 : algebraMap B L s ≠ 0 := Ideal.algebraMap_ne_zero_of_notMem hs
     have hsx : algebraMap B L s = x * algebraMap B L a := by
       field_simp at hxa
       linear_combination hxa
@@ -363,10 +364,8 @@ theorem forall_smul_sub_pow_mem_iff (h : A.IsCenteredAt P) [P.IsPrime]
   have key : g • (algebraMap B L a * (algebraMap B L s)⁻¹) - (algebraMap B L a *
       (algebraMap B L s)⁻¹) ^ q = algebraMap B L (g • a * s ^ q - a ^ q * g • s) *
         (algebraMap B L (g • s * s ^ q))⁻¹ := by
-    have hne (t : B) (ht : t ∉ P) : algebraMap B L t ≠ 0 := fun h0 ↦
-      ht ((h.valuation_algebraMap_lt_one_iff t).mp (by rw [h0, map_zero]; exact zero_lt_one))
-    have := hne s hs
-    have := hne _ hgs
+    have : algebraMap B L s ≠ 0 := Ideal.algebraMap_ne_zero_of_notMem hs
+    have : algebraMap B L (g • s) ≠ 0 := Ideal.algebraMap_ne_zero_of_notMem hgs
     rw [smul_mul', smul_inv'', ← algebraMap.smul', ← algebraMap.smul']
     simp only [map_mul, map_sub, map_pow, mul_pow, inv_pow]
     field_simp
@@ -376,6 +375,35 @@ theorem forall_smul_sub_pow_mem_iff (h : A.IsCenteredAt P) [P.IsPrime]
   exact P.sub_mem (P.mul_mem_right _ (hg a)) (P.mul_mem_left _ (hg s))
 
 end IsCenteredAt
+
+section Action
+
+variable {G : Type*} [Group G] [MulSemiringAction G B] [MulSemiringAction G L]
+  [SMulDistribClass G B L] [IsFractionRing B L]
+
+/-- **Equivariance of the localization at a prime**: the image under `g` of `B_P`, realized inside
+`L`, is `B_{g • P}`, when both localizations are valuation rings. -/
+@[simp]
+theorem _root_.Ideal.smul_valuationSubringAtPrime (g : G) (P : Ideal B) [P.IsPrime]
+    [PreValuationRing (Localization.AtPrime P)] [PreValuationRing (Localization.AtPrime (g • P))] :
+    g • P.valuationSubringAtPrime L = (g • P).valuationSubringAtPrime L :=
+  (Ideal.isCenteredAt_valuationSubringAtPrime.smul g).eq Ideal.isCenteredAt_valuationSubringAtPrime
+
+/-- **Equivariance of `ValuationSubring.equivPrimeSpectrum`**: the valuation subring corresponding
+to `g • P` is the image under `g` of the one corresponding to `P`. -/
+theorem coe_equivPrimeSpectrum_symm_smul
+    (hB : ∀ (P : Ideal B) [P.IsPrime], PreValuationRing (Localization.AtPrime P)) (g : G)
+    (P : PrimeSpectrum B) :
+    ((equivPrimeSpectrum (L := L) hB).symm (g • P) : ValuationSubring L) =
+      g • ((equivPrimeSpectrum (L := L) hB).symm P : ValuationSubring L) := by
+  have := hB P.asIdeal
+  have := hB (g • P.asIdeal)
+  rw [coe_equivPrimeSpectrum_symm_apply, coe_equivPrimeSpectrum_symm_apply]
+  -- `(g • P).asIdeal` is `g • P.asIdeal` by definition (`PrimeSpectrum.asIdeal_smul` is `rfl`);
+  -- `rw` cannot use it, as the prime instance in `valuationSubringAtPrime` depends on the ideal
+  exact (Ideal.smul_valuationSubringAtPrime g P.asIdeal).symm
+
+end Action
 
 /-! ### Galois groups -/
 

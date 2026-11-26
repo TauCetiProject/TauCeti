@@ -21,6 +21,8 @@ hypothesis `S ≤ A⁰` holds for any ring with a fraction field.
 
 * `Ideal.primeCompl_le_nonZeroDivisors_of_isFractionRing`: the complement of a prime ideal of a
   ring with a fraction field consists of non-zero-divisors.
+* `Ideal.algebraMap_ne_zero_of_notMem`: an element outside an ideal has nonzero image in the
+  fraction field.
 * `Localization.subalgebra.mem_ofField_iff`: membership in `A[S⁻¹] ⊆ K` as a quotient `a / s`.
 * `Localization.subalgebra.isDedekindDomain_ofField`: `A[S⁻¹] ⊆ K` is a Dedekind domain when `A`
   is.
@@ -53,8 +55,14 @@ namespace Ideal
 
 open scoped nonZeroDivisors
 
-variable {A : Type*} (K : Type*) [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
-  (P : Ideal A) [P.IsPrime]
+variable {A : Type*} {K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
+
+/-- An element outside an ideal has nonzero image in the fraction field, as `0` lies in the
+ideal. -/
+theorem algebraMap_ne_zero_of_notMem {P : Ideal A} {s : A} (hs : s ∉ P) : algebraMap A K s ≠ 0 :=
+  fun h ↦ hs (IsFractionRing.to_map_eq_zero_iff.mp h ▸ P.zero_mem)
+
+variable (K) (P : Ideal A) [P.IsPrime]
 
 include K in
 /-- The complement of a prime ideal of a ring with a fraction field consists of

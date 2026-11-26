@@ -49,7 +49,8 @@ with `𝓞 L` in place of `O`, by `TauCeti/RingTheory/Valuation/LocalizationAtCe
 * `TauCeti.GaloisRep.algebraMap_mem_valuationSubring`: every valuation subring of `F^alg` contains
   `O`.
 * `TauCeti.GaloisRep.valuationSubringEquivPrimeSpectrum`: valuation subrings of `F^alg` are the
-  primes of `O`, through their centres.
+  primes of `O`, through their centres, `G_F`-equivariantly
+  (`TauCeti.GaloisRep.valuationSubringEquivPrimeSpectrum_smul`).
 * `TauCeti.GaloisRep.decompositionGroup_eq_decompositionSubgroup`: `D_Q` is the decomposition
   subgroup of `A_Q`.
 * `TauCeti.GaloisRep.inertiaGroup_eq_map_inertiaSubgroup`: `I_Q` is the image of the inertia
@@ -138,6 +139,25 @@ theorem valuationSubringEquivPrimeSpectrum_symm_apply
     (valuationSubringEquivPrimeSpectrum F).symm Q =
       Q.asIdeal.valuationSubringAtPrime (AlgebraicClosure F) :=
   ValuationSubring.coe_equivPrimeSpectrum_symm_apply _ _
+
+/-- **The correspondence is `G_F`-equivariant**: the valuation subring of `F^alg` corresponding to
+`σ • Q` is the image under `σ` of the one corresponding to `Q`. -/
+theorem valuationSubringEquivPrimeSpectrum_symm_smul
+    (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F)
+    (Q : PrimeSpectrum (integralClosure (𝓞 F) (AlgebraicClosure F))) :
+    (valuationSubringEquivPrimeSpectrum F).symm (σ • Q) =
+      σ • (valuationSubringEquivPrimeSpectrum F).symm Q :=
+  ValuationSubring.coe_equivPrimeSpectrum_symm_smul _ σ Q
+
+/-- **The correspondence is `G_F`-equivariant**: the prime of `O` corresponding to `σ • A` is
+`σ` applied to the prime corresponding to `A`. -/
+@[simp]
+theorem valuationSubringEquivPrimeSpectrum_smul
+    (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F)
+    (A : ValuationSubring (AlgebraicClosure F)) :
+    valuationSubringEquivPrimeSpectrum F (σ • A) = σ • valuationSubringEquivPrimeSpectrum F A := by
+  rw [← Equiv.eq_symm_apply, valuationSubringEquivPrimeSpectrum_symm_smul,
+    Equiv.symm_apply_apply]
 
 variable {F} (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F))) [Q.IsPrime]
 
