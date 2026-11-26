@@ -12,17 +12,11 @@ public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Connected.PathConnected
 public import Mathlib.Topology.Instances.Matrix
-public import Mathlib.Topology.Connected.LocallyPathConnected
 public import TauCeti.Topology.Algebra.Matrix.Realify
-import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Analysis.Normed.Ring.Units
-import Mathlib.Topology.Algebra.Module.LocallyConvex
-import Mathlib.Topology.UniformSpace.Matrix
-import TauCeti.Analysis.Normed.Ring.Units
 import TauCeti.Analysis.Matrix.Polar
 import TauCeti.Analysis.Matrix.PosDef
 import TauCeti.Analysis.Matrix.UnitaryGroup.Connected
-import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Path connectedness of the complex general linear group
@@ -42,10 +36,6 @@ identity by a path of automorphisms continuous in the operator norm
 (`ContinuousLinearEquiv.exists_continuous_path_refl`), and such paths can be chosen continuously
 along a continuous family of automorphisms
 (`ContinuousLinearEquiv.exists_continuous_path_refl_family`).
-
-For a real Banach algebra `A`, the group `GL n A` is locally path connected
-(`Matrix.GeneralLinearGroup.instLocallyPathConnectedSpace`), being an open subset of the real
-Banach algebra of matrices. So its path components are its connected components.
 
 ## References
 
@@ -102,24 +92,6 @@ instance instPathConnectedSpaceUnitsContinuousLinearMap (F : Type*) [NormedAddCo
     (e.toLinearMap.continuous_of_finiteDimensional.units_map _)
 
 end TauCeti
-
-namespace Matrix.GeneralLinearGroup
-
-variable {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] [CompleteSpace A] {n : Type*} [Fintype n]
-  [DecidableEq n]
-
-open scoped Matrix.Norms.Operator in
-/-- The group of invertible matrices over a real Banach algebra is locally path connected: under
-the `L^∞` operator norm, which induces the product topology, the matrices form a real Banach
-algebra, whose units are locally path connected (`Units.instLocallyPathConnectedSpace`). -/
-instance instLocallyPathConnectedSpace : LocallyPathConnectedSpace (GL n A) := by
-  -- The operator norm induces the product uniformity, which is complete.
-  have : @CompleteSpace (Matrix n n A) PseudoMetricSpace.toUniformSpace :=
-    inferInstanceAs (CompleteSpace (n → n → A))
-  exact @Units.instLocallyPathConnectedSpace _ _ PseudoMetricSpace.toUniformSpace.toTopologicalSpace
-    _ _
-
-end Matrix.GeneralLinearGroup
 
 namespace ContinuousLinearEquiv
 
