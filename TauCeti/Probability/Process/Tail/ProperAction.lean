@@ -126,6 +126,16 @@ theorem exists_forall_smul_notMem_of_proper [Infinite Γ]
   let ⟨g, hg⟩ := (hproper F Λ).infinite_compl.nonempty
   ⟨g, fun i hi hgi => hg ⟨i, hi, hgi⟩⟩
 
+/-- **An infinite group moves every finite subset of itself off every finite subset** by left
+multiplication. -/
+theorem exists_forall_smul_notMem_self [Infinite Γ] (F Λ : Finset Γ) :
+    ∃ g : Γ, ∀ i ∈ F, g • i ∉ Λ := by
+  classical
+  obtain ⟨g, hg⟩ := Infinite.exists_notMem_finset ((F ×ˢ Λ).image fun p => p.2 * p.1⁻¹)
+  refine ⟨g, fun i hi hgi => hg (Finset.mem_image.2 ⟨(i, g • i), Finset.mem_product.2 ⟨hi, hgi⟩,
+    ?_⟩)⟩
+  simp [smul_eq_mul]
+
 /-- **Invariant events of a proper action are almost surely tail events.** Let an infinite group
 `Γ` act properly on a countable index set `ι`: for finite `F, F' ⊆ ι`, only finitely many `g` move
 a point of `F` into `F'`. Let `μ` be a finite measure on `ι → S` invariant under

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Pi.Basic
+public import Mathlib.Algebra.Group.Pi.Hom
 public import Mathlib.Algebra.Group.Subgroup.Defs
 public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Functor.Pseudofunctor
@@ -30,6 +31,12 @@ commutative because each categorical centre is. Restriction along `f : V ⟶ U` 
 section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, the identity for
 `f = 𝟙` and compatible with composition.
 
+Evaluating a section at `a : V ⟶ U` and an object `x` over `V` gives a group homomorphism
+`ev_(a, x) : ZF(U) →* Aut x`. Conjugation by an isomorphism `x ≅ y` carries `ev_(a, x)` to
+`ev_(a, y)`, and the pullback functor `F(g)` carries it to `ev_(g ≫ a, F(g) x)`. Sections are
+determined by their evaluations. Evaluation is natural in `x`, so the automorphisms in the image
+are central: they commute with every endomorphism of `x`.
+
 ## Main definitions
 
 * `CategoryTheory.Pseudofunctor.IntrinsicBandSections F U`: the group `ZF(U)`.
@@ -37,6 +44,8 @@ section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, 
   compatible components.
 * `CategoryTheory.Pseudofunctor.IntrinsicBandSections.restrict`: restriction `ZF(U) →* ZF(V)`
   along `f : V ⟶ U`.
+* `CategoryTheory.Pseudofunctor.IntrinsicBandSections.evaluation`: evaluation
+  `ZF(U) →* Aut x` at `a : V ⟶ U` and `x` over `V`.
 
 ## Main results
 
@@ -49,6 +58,13 @@ section by composition with `f`; it is a group homomorphism `ZF(U) →* ZF(V)`, 
   trivial.
 * `IntrinsicBandSections.restrict_id` and `IntrinsicBandSections.restrict_comp`: restriction along
   the identity is the identity, and restriction is compatible with composition.
+* `IntrinsicBandSections.autMulEquivOfIso_evaluation`: conjugation by `x ≅ y` carries evaluation
+  at `x` to evaluation at `y`.
+* `IntrinsicBandSections.mapAut_evaluation`: `F(g)` carries evaluation at `(a, x)` to evaluation
+  at `(g ≫ a, F(g) x)`.
+* `IntrinsicBandSections.ext_evaluation`: sections with the same evaluations are equal.
+* `IntrinsicBandSections.evaluation_naturality`: morphisms `x ⟶ y` intertwine the evaluations.
+* `IntrinsicBandSections.evaluation_comm`: evaluations commute with every endomorphism of `x`.
 
 ## References
 
@@ -194,6 +210,85 @@ theorem subsingleton_of_subsingleton_end
     (h : ∀ (V : C) (x : F.obj (.mk (op V))), Subsingleton (x ⟶ x)) :
     Subsingleton (IntrinsicBandSections F U) :=
   ⟨fun _ _ ↦ ext fun V _ x ↦ (h V x).elim _ _⟩
+
+/-! ### Evaluation -/
+
+/-- **Evaluation** of the central sections at `a : V ⟶ U` and an object `x` over `V`: the
+automorphism `z(V, a)_x` of `x`, as a group homomorphism `ZF(U) →* Aut x`. It is Mathlib's
+`Aut.unitsEndEquivAut` at the identity functor of the fibre, followed by the component at `x`. -/
+def evaluation {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V))) : IntrinsicBandSections F U →* Aut x :=
+  (NatTrans.unitsEndEval (𝟭 (F.obj (.mk (op V)))) x).comp
+    ((Pi.evalMonoidHom (fun _ : V ⟶ U ↦ (CatCenter (F.obj (.mk (op V))))ˣ) a).comp
+      ((Pi.evalMonoidHom (fun V : C ↦ ∀ _ : V ⟶ U, (CatCenter (F.obj (.mk (op V))))ˣ) V).comp
+        (IntrinsicBandSections F U).subtype))
+
+/-- The evaluated automorphism is the component of the section. -/
+@[simp]
+theorem evaluation_asIso_hom {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V)))
+    (s : IntrinsicBandSections F U) :
+    (evaluation a x s).asIso.hom = (s.val V a).val.app x := by
+  simp only [evaluation, MonoidHom.comp_apply, Subgroup.coe_subtype, Pi.evalMonoidHom_apply]
+  exact NatTrans.unitsEndEval_asIso_hom x _
+
+/-- The inverse of the evaluated automorphism is the component of the inverse section. -/
+@[simp]
+theorem evaluation_asIso_inv {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V)))
+    (s : IntrinsicBandSections F U) :
+    (evaluation a x s).asIso.inv = (s⁻¹.val V a).val.app x := by
+  simp only [evaluation, MonoidHom.comp_apply, Subgroup.coe_subtype, Pi.evalMonoidHom_apply]
+  exact NatTrans.unitsEndEval_asIso_inv x _
+
+/-- **Sections are determined by their evaluations.** -/
+theorem ext_evaluation {s t : IntrinsicBandSections F U}
+    (h : ∀ (V : C) (a : V ⟶ U) (x : F.obj (.mk (op V))), evaluation a x s = evaluation a x t) :
+    s = t :=
+  ext fun V a x ↦ by simpa using congrArg (fun g : Aut x ↦ g.asIso.hom) (h V a x)
+
+/-- **Naturality of evaluation.** Every morphism `h : x ⟶ y` over `V` intertwines the
+evaluations at `x` and at `y`. -/
+@[reassoc]
+theorem evaluation_naturality {V : C} (a : V ⟶ U) {x y : F.obj (.mk (op V))} (h : x ⟶ y)
+    (s : IntrinsicBandSections F U) :
+    h ≫ (evaluation a y s).asIso.hom = (evaluation a x s).asIso.hom ≫ h := by
+  simpa using CatCenter.naturality (s.val V a).val h
+
+/-- **Evaluations are central.** The evaluated automorphism commutes with every endomorphism of
+`x`. -/
+@[reassoc]
+theorem evaluation_comm {V : C} (a : V ⟶ U) (x : F.obj (.mk (op V)))
+    (s : IntrinsicBandSections F U) (h : x ⟶ x) :
+    h ≫ (evaluation a x s).asIso.hom = (evaluation a x s).asIso.hom ≫ h :=
+  evaluation_naturality a h s
+
+/-- **Transport along an isomorphism.** Conjugation by `e : x ≅ y` carries the evaluation at `x`
+to the evaluation at `y`. -/
+@[simp]
+theorem autMulEquivOfIso_evaluation {V : C} (a : V ⟶ U) {x y : F.obj (.mk (op V))} (e : x ≅ y)
+    (s : IntrinsicBandSections F U) :
+    Aut.autMulEquivOfIso e (evaluation a x s) = evaluation a y s := by
+  ext
+  -- Conjugation by `e` is `e.inv ≫ _ ≫ e.hom`, and naturality along `e.hom` moves `e.hom` past
+  -- the evaluation at `x`, where it cancels against `e.inv`.
+  rw [Aut.autMulEquivOfIso_apply_asIso, Iso.trans_hom, Iso.trans_hom, Iso.symm_hom,
+    ← evaluation_naturality, Iso.inv_hom_id_assoc]
+
+/-- **Compatibility with pullback.** The pullback functor `F(g)` carries the evaluation at
+`(a, x)` to the evaluation at `(g ≫ a, F(g) x)`. -/
+@[simp]
+theorem mapAut_evaluation {V W : C} (a : V ⟶ U) (g : W ⟶ V) (x : F.obj (.mk (op V)))
+    (s : IntrinsicBandSections F U) :
+    (F.map g.op.toLoc).toFunctor.mapAut x (evaluation a x s) =
+      evaluation (g ≫ a) ((F.map g.op.toLoc).toFunctor.obj x) s := by
+  ext
+  simpa using map_app s a g x
+
+/-- Evaluating a restricted section is evaluating at the composite arrow. -/
+@[simp]
+theorem evaluation_restrict {V W : C} (f : V ⟶ U) (b : W ⟶ V) (x : F.obj (.mk (op W)))
+    (s : IntrinsicBandSections F U) :
+    evaluation b x (restrict f s) = evaluation (b ≫ f) x s := by
+  ext
+  simp
 
 end IntrinsicBandSections
 

@@ -66,7 +66,7 @@ theorem MeromorphicNFOn.exists_analytic_discs_or_rightmost_real_pole
     obtain ⟨z, hz, hpole⟩ := hθ
     exact ⟨z, ⟨hz, hpole⟩, hz⟩
   rcases TauCeti.exists_ball_inter_eq_singleton_or_exists_real_ball_inter_eq_singleton hZ
-      (fun z hz ↦ hσ z hz.1 hz.2) hρ with
+      (fun z hz ↦ (hσ z hz.1 hz.2).le) hρ with
     ⟨γ, ρ, hρZ, r, hd, hdr, hr, hball, hempty⟩ | ⟨β, hβZ, hβ, hmax, r, hd, hr, hball⟩
   · have hshift : ((σ : ℂ) + γ * I).re = σ := by simp
     refine Or.inl ⟨γ, ρ, r, hd, hdr, hr, hρZ.2, ?_, ?_⟩

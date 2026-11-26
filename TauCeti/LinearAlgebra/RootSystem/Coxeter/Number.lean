@@ -7,10 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
-public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
-public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
-public import TauCeti.LinearAlgebra.RootSystem.Positive
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Coefficient
+public import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Exponents
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
@@ -19,17 +17,18 @@ import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 This file packages the Coxeter number `TauCeti.DynkinType.coxeterNumber` and the exponent list
 `TauCeti.DynkinType.exponents` across all crystallographic `DynkinType`s, proves the combinatorial
-identities relating `numRoots`, `rank`, `coxeterNumber`, and `exponents`, transfers the root count
-to any reduced crystallographic root pairing with a base of valid Cartan type (with no spanning
-hypothesis), and combines the Cartan–Killing classification with the classical and exceptional
-Coxeter calculations into uniform theorems for irreducible reduced crystallographic finite root
-systems:
+identities relating `numRoots`, `rank`, `coxeterNumber`, and `exponents`, and combines
+`TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots` and the Cartan–Killing classification
+with the classical and exceptional Coxeter calculations into uniform theorems for irreducible
+reduced crystallographic finite root systems:
 
 * **Order of any Coxeter element**:
   `orderOf (wordProd P b l) = (classifiedDynkinType b).coxeterNumber`, independent of both the base
   `b` and the ordering `l` of its simple reflections.
-* **Root-count formula `|Φ| = r * h`**: `Nat.card ι = b.support.card * orderOf (wordProd P b l)`,
-  and `2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l)`.
+* **Root-count and exponent-sum formulas**: `Nat.card ι = b.support.card * orderOf (wordProd P b l)`
+  (`orderOf (wordProd P b l) = Nat.card ι / b.support.card`),
+  `2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l)`, and
+  `(classifiedDynkinType b).exponents.sum = (posRoots P b).ncard`.
 * **Eigenvalues with multiplicity**: over `ℂ`, the root multiset of
   `(P.weylGroupRootRep (wordProd P b l)).charpoly` consists of `exp (2πi e / h)` as `e` runs over
   `(classifiedDynkinType b).exponents`.
@@ -46,16 +45,21 @@ systems:
 ## Main results
 
 * `TauCeti.DynkinType.numRoots_eq_rank_mul_coxeterNumber`,
-  `TauCeti.DynkinType.two_mul_sum_exponents_eq_numRoots`, and
-  `TauCeti.DynkinType.perm_map_sub_exponents`: `|Φ| = r * h`, `2 * ∑ mᵢ = |Φ|`, and the duality
-  permutation `mᵢ ↦ h - mᵢ`.
-* `TauCeti.HasCartanType.natCard_eq_numRoots` and
-  `TauCeti.HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd`: `|Φ| = t.numRoots = r * h`
-  for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
+  `TauCeti.DynkinType.coxeterNumber_eq_numRoots_div_rank`,
+  `TauCeti.DynkinType.two_mul_sum_exponents_eq_numRoots`,
+  `TauCeti.DynkinType.perm_map_sub_exponents`, and
+  `TauCeti.DynkinType.coxeterNumber_sub_one_mem_exponents`: `|Φ| = r * h`, `h = |Φ| / r`,
+  `2 * ∑ mᵢ = |Φ|`, the duality permutation `mᵢ ↦ h - mᵢ`, and `h - 1 ∈ exponents`.
+* `TauCeti.HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd`,
+  `TauCeti.HasCartanType.orderOf_wordProd_eq_natCard_div_card_support`, and
+  `TauCeti.HasCartanType.sum_exponents_eq_ncard_posRoots`: `|Φ| = r * h`, `h = |Φ| / r`, and
+  `∑ mᵢ = |Φ⁺|` for any reduced crystallographic root pairing with a base of valid Cartan type `t`.
 * `TauCeti.DynkinType.mem_exponents_of_coprime`: every natural number `a < h` coprime to `h` is an
   exponent of a valid `DynkinType`.
 * `RootPairing.Base.orderOf_wordProd_eq_orderOf_wordProd`,
-  `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`, and
+  `RootPairing.Base.natCard_eq_card_support_mul_orderOf_wordProd`,
+  `RootPairing.Base.orderOf_wordProd_eq_natCard_div_card_support`,
+  `RootPairing.Base.sum_exponents_eq_ncard_posRoots`, and
   `RootPairing.Base.roots_charpoly_weylGroupRootRep_wordProd`: unconditional theorems for any
   irreducible reduced crystallographic finite root system.
 
@@ -124,6 +128,11 @@ theorem numRoots_eq_rank_mul_coxeterNumber (t : DynkinType) :
   | B n | C n | D n => simp; ring
   | E6 | E7 | E8 | F4 | G2 => decide
 
+/-- For a valid Dynkin type, `coxeterNumber = numRoots / rank` (`h = |Φ| / r`). -/
+theorem coxeterNumber_eq_numRoots_div_rank {t : DynkinType} (ht : t.Valid) :
+    t.coxeterNumber = t.numRoots / t.rank := by
+  rw [numRoots_eq_rank_mul_coxeterNumber, Nat.mul_div_right _ (rank_pos ht)]
+
 /-- The **exponents** `m₁, …, mᵣ` of a `DynkinType`, with multiplicity (so `n - 1` appears twice in
 even type `Dₙ`). -/
 def exponents : DynkinType → List ℕ
@@ -181,6 +190,16 @@ theorem pos_of_mem_exponents {t : DynkinType} (ht : t.Valid) {e : ℕ} (he : e �
     have hn := valid_D.mp ht
     simp only [exponents_D, Coxeter.mem_dExponents] at he
     rcases he with ⟨⟨k, rfl⟩, -⟩ | ⟨-, rfl⟩ <;> omega
+  | E6 | E7 | E8 | F4 | G2 => revert e; decide
+
+/-- Every exponent of any Dynkin type is bounded above by its Coxeter number. -/
+theorem le_coxeterNumber_of_mem_exponents {t : DynkinType} {e : ℕ} (he : e ∈ t.exponents) :
+    e ≤ t.coxeterNumber := by
+  cases t with
+  | A n | B n | C n => simp at he ⊢; omega
+  | D n =>
+    simp only [exponents_D, coxeterNumber_D, Coxeter.mem_dExponents] at he ⊢
+    rcases he with ⟨⟨k, rfl⟩, _⟩ | ⟨_, rfl⟩ <;> omega
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
 /-- Every exponent of a valid Dynkin type is strictly less than the Coxeter number. -/
@@ -257,6 +276,12 @@ theorem perm_map_sub_exponents (t : DynkinType) :
       exact (perm_map_two_mul_sub m).append_right [m]
   | E6 | E7 | E8 | F4 | G2 => decide
 
+/-- **`h - 1` is an exponent of every valid Dynkin type.** -/
+theorem coxeterNumber_sub_one_mem_exponents {t : DynkinType} (ht : t.Valid) :
+    t.coxeterNumber - 1 ∈ t.exponents :=
+  (t.perm_map_sub_exponents).mem_iff.mp
+    (List.mem_map_of_mem (f := (t.coxeterNumber - ·)) (t.one_mem_exponents ht))
+
 end DynkinType
 
 /-! ### Uniform theorems for a base of valid Cartan type -/
@@ -265,49 +290,6 @@ section HasCartanType
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] {P : RootPairing ι R M N}
-
-/-- **A reduced crystallographic finite root pairing over a characteristic-zero domain whose base
-has valid Cartan type `t` has `t.numRoots` roots** (with no `[P.IsRootSystem]` spanning
-hypothesis). -/
-theorem HasCartanType.natCard_eq_numRoots [Finite ι] [CharZero R] [IsDomain R]
-    [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
-    (ht : t.Valid) : Nat.card ι = t.numRoots := by
-  classical
-  obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  have himg : (fun c : b.support → ℤ => c ∘ e.symm) '' range b.rootCoefficients =
-      range (t.simpleRootCoefficients ht) := by
-    rw [← b.iUnion_orbit_single_eq_range_rootCoefficients,
-      ← t.iUnion_orbit_single_eq_range_simpleRootCoefficients ht]
-    refine subset_antisymm ?_ ?_
-    · rintro _ ⟨c, hc, rfl⟩
-      obtain ⟨k, hk⟩ := mem_iUnion.mp hc
-      refine mem_iUnion.mpr ⟨e k, ?_⟩
-      have horb := Matrix.comp_equiv_mem_orbit b.cartanMatrix b.cartanMatrix_apply_same
-        t.cartanMatrix_apply_same e.symm
-        (fun i j => by rw [he, Equiv.apply_symm_apply, Equiv.apply_symm_apply]) hk
-      have hs : (Pi.single k 1 : b.support → ℤ) ∘ e.symm = Pi.single (e k) 1 := by
-        ext i; simp [Pi.single_apply, Equiv.symm_apply_eq]
-      rwa [hs] at horb
-    · rintro d hd
-      obtain ⟨i, hi⟩ := mem_iUnion.mp hd
-      refine ⟨d ∘ e, mem_iUnion.mpr ⟨e.symm i, ?_⟩, by ext j; simp⟩
-      have horb := Matrix.comp_equiv_mem_orbit t.cartanMatrix t.cartanMatrix_apply_same
-        b.cartanMatrix_apply_same e he hi
-      have hs : (Pi.single i 1 : Fin t.rank → ℤ) ∘ e = Pi.single (e.symm i) 1 := by
-        ext k; simp [Pi.single_apply, Equiv.eq_symm_apply]
-      rwa [hs] at horb
-  have hinj : Injective (fun c : b.support → ℤ => c ∘ e.symm) := fun c₁ c₂ hc =>
-    funext fun k => by simpa using congrFun hc (e k)
-  rw [← Set.ncard_univ ι, ← Set.ncard_image_of_injective univ b.rootCoefficients_injective,
-    image_univ, ← Set.ncard_image_of_injective _ hinj, himg, ← image_univ,
-    Set.ncard_image_of_injective _ (t.simpleRootCoefficients_injective ht), Set.ncard_univ,
-    Nat.card_fin]
-
-/-- Twice the number of positive roots of a base of valid Cartan type `t` equals `t.numRoots`. -/
-theorem HasCartanType.two_mul_ncard_posRoots_eq_numRoots [Finite ι] [CharZero R] [IsDomain R]
-    [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
-    (ht : t.Valid) : 2 * (posRoots P b).ncard = t.numRoots :=
-  (two_mul_ncard_posRoots P b).trans (h.natCard_eq_numRoots ht)
 
 /-- **Every Coxeter element of a base of valid Cartan type `t` has order `t.coxeterNumber`.** -/
 theorem HasCartanType.orderOf_wordProd [Finite ι] [CharZero R] [IsDomain R] [P.IsCrystallographic]
@@ -339,6 +321,15 @@ theorem HasCartanType.natCard_eq_card_support_mul_orderOf_wordProd [Finite ι] [
   rw [h.natCard_eq_numRoots ht, t.numRoots_eq_rank_mul_coxeterNumber, h.card_support,
     h.orderOf_wordProd ht hnd hall]
 
+/-- **The order of any Coxeter element of a base of valid Cartan type `t` equals `|Φ| / r`.** -/
+theorem HasCartanType.orderOf_wordProd_eq_natCard_div_card_support [Finite ι] [CharZero R]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
+    (h : HasCartanType P b t) (ht : t.Valid) {l : List b.support} (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
+  have hpos : 0 < b.support.card := h.card_support ▸ DynkinType.rank_pos ht
+  rw [h.natCard_eq_card_support_mul_orderOf_wordProd ht hnd hall, Nat.mul_div_right _ hpos]
+
 /-- **Positive-root count `2 * |Φ⁺| = r * h`** for a base of valid Cartan type `t`. -/
 theorem HasCartanType.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd [Finite ι]
     [CharZero R] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType}
@@ -346,6 +337,15 @@ theorem HasCartanType.two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordPro
     (hall : ∀ i, i ∈ l) :
     2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) :=
   (two_mul_ncard_posRoots P b).trans (h.natCard_eq_card_support_mul_orderOf_wordProd ht hnd hall)
+
+/-- **The exponents of a base of valid Cartan type `t` sum to its number of positive roots**:
+`∑ mᵢ = |Φ⁺|`. -/
+theorem HasCartanType.sum_exponents_eq_ncard_posRoots [Finite ι] [CharZero R] [IsDomain R]
+    [P.IsCrystallographic] [P.IsReduced] {b : P.Base} {t : DynkinType} (h : HasCartanType P b t)
+    (ht : t.Valid) : t.exponents.sum = (posRoots P b).ncard := by
+  have := t.two_mul_sum_exponents_eq_numRoots
+  have := h.two_mul_ncard_posRoots_eq_numRoots ht
+  omega
 
 /-- **Uniform complex eigenvalue multiset on the simple roots** for any base of valid Cartan type
 `t`: `exp (2πi e / h)` as `e` runs over `t.exponents`, retaining multiplicity. -/
@@ -467,6 +467,14 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd (b : P.Base) {l : List b.su
   (hasCartanType_classifiedDynkinType b).natCard_eq_card_support_mul_orderOf_wordProd
     (valid_classifiedDynkinType b) hnd hall
 
+/-- **The order of any Coxeter element of an irreducible reduced crystallographic finite root system
+equals `|Φ| / r`.** -/
+theorem orderOf_wordProd_eq_natCard_div_card_support (b : P.Base) {l : List b.support}
+    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card :=
+  (hasCartanType_classifiedDynkinType b).orderOf_wordProd_eq_natCard_div_card_support
+    (valid_classifiedDynkinType b) hnd hall
+
 /-- **The positive-root count `2 * |Φ⁺| = r * h`** for an irreducible reduced crystallographic
 finite root system. -/
 theorem two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd (b : P.Base)
@@ -474,6 +482,13 @@ theorem two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd (b : P.Base)
     2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l) :=
   (hasCartanType_classifiedDynkinType b).two_mul_ncard_posRoots_eq_card_support_mul_orderOf_wordProd
     (valid_classifiedDynkinType b) hnd hall
+
+/-- **The exponents of an irreducible reduced crystallographic finite root system sum to its number
+of positive roots**: `∑ mᵢ = |Φ⁺|`. -/
+theorem sum_exponents_eq_ncard_posRoots (b : P.Base) :
+    (classifiedDynkinType b).exponents.sum = (posRoots P b).ncard :=
+  (hasCartanType_classifiedDynkinType b).sum_exponents_eq_ncard_posRoots
+    (valid_classifiedDynkinType b)
 
 end Irreducible
 
