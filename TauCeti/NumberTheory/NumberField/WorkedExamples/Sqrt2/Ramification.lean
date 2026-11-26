@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.RamifiedPrimes
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Sqrt2.Basic
-import TauCeti.NumberTheory.NumberField.Quadratic.Different
+import TauCeti.NumberTheory.NumberField.Quadratic.Different.Basic
 import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 import TauCeti.NumberTheory.NumberField.Quadratic.RingOfIntegers
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
