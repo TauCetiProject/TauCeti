@@ -101,7 +101,11 @@ private theorem hermiteBiehler_diracCoeff (z : ℂ) (s : ℝ) (x : Fin 2 → ℂ
     (diracCoeff q z s *ᵥ x) 0 - I * (diracCoeff q z s *ᵥ x) 1 =
       -I * z * (x 0 - I * x 1) + q s * (x 0 + I * x 1) := by
   have hq := Complex.re_add_im (q s)
-  simp [diracCoeff_def, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  have h0 : (diracCoeff q z s *ᵥ x) 0 = (q s).re * x 0 + (-z - (q s).im) * x 1 := by
+    simp [diracCoeff_def, Matrix.mulVec, dotProduct, Fin.sum_univ_two]
+  have h1 : (diracCoeff q z s *ᵥ x) 1 = (z - (q s).im) * x 0 - (q s).re * x 1 := by
+    simp [diracCoeff_def, Matrix.mulVec, dotProduct, Fin.sum_univ_two, sub_eq_add_neg]
+  rw [h0, h1]
   linear_combination (-(z + (q s).im) * x 1) * I_sq + (x 0 + I * x 1) * hq
 
 /-- The integral equation of `x ↦ x₀ - i x₁` along a column of the fundamental matrix. -/
@@ -150,8 +154,9 @@ theorem diracHermiteBiehler_zero_potential (t : ℝ) (z : ℂ) :
 /-- **The free case.** For the zero potential, `E~(t, z) = -i e^{-itz}`. -/
 theorem diracHermiteBiehlerDirichlet_zero_potential (t : ℝ) (z : ℂ) :
     diracHermiteBiehlerDirichlet 0 t z = -I * exp (-I * (t * z)) := by
-  rw [show -I * (t * z) = -(t * z) * I by ring, ← cos_sub_sin_I]
-  simp [diracHermiteBiehlerDirichlet_def, diracFundamentalMatrix_zero_potential]
+  have h : diracHermiteBiehlerDirichlet 0 t z = -sin (t * z) - I * cos (t * z) := by
+    simp [diracHermiteBiehlerDirichlet_def, diracFundamentalMatrix_zero_potential]
+  rw [h, show -I * (t * z) = -(t * z) * I by ring, ← cos_sub_sin_I]
   linear_combination (-sin (t * z)) * I_sq
 
 end TauCeti
