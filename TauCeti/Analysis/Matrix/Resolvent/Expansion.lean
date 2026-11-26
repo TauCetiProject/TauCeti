@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
 public import TauCeti.Analysis.Matrix.Trace.Rank
 
-import TauCeti.Topology.Instances.Matrix
-
 /-!
 # Quadratic expansion of Hermitian resolvents
 
@@ -75,16 +73,3 @@ theorem IsHermitian.norm_trace_inv_add_sub_smul_one_sub_quadratic_le
     _ = _ := by dsimp only [b]; ring
 
 end Matrix
-
-/-- The trace of the resolvent of a continuous Hermitian matrix family is continuous at a
-fixed nonreal spectral parameter. -/
-theorem Continuous.matrix_trace_inv_sub_smul_one {X n 𝕜 : Type*} [TopologicalSpace X]
-    [Fintype n] [DecidableEq n] [RCLike 𝕜] {A : X → Matrix n n 𝕜}
-    (hc : Continuous A) (hA : ∀ x, (A x).IsHermitian)
-    {z : 𝕜} (hz : RCLike.im z ≠ 0) :
-    Continuous (fun x ↦ (A x - z • 1)⁻¹.trace) := by
-  apply Continuous.matrix_trace
-  refine continuous_iff_continuousAt.2 fun x ↦ ?_
-  exact (hc.sub continuous_const).continuousAt.matrix_inv
-    (isUnit_iff_ne_zero.mp ((Matrix.isUnit_iff_isUnit_det _).mp
-      ((hA x).isUnit_sub_smul_one_of_im_ne_zero hz)))
