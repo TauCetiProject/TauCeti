@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Legendre.Equation
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.GoodPrimes
 import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.PotentialGoodReduction
 import TauCeti.NumberTheory.Padics.PadicIntegers
+import TauCeti.NumberTheory.Padics.PadicValRat
 
 /-!
 # Good reduction and Legendre parameters
@@ -16,8 +17,7 @@ import TauCeti.NumberTheory.Padics.PadicIntegers
 At an odd prime of good reduction of an elliptic curve in scaled Legendre form, both the
 parameter and its complement are p-adic units. Indeed, when either factor fails to be a
 unit, the Legendre `j`-invariant has a pole. Conversely, unit parameters give an integral
-unscaled Legendre equation with unit discriminant. Its reduction remains in Legendre form by
-`map_legendre`.
+unscaled Legendre equation with unit discriminant and hence good reduction.
 
 ## References
 
@@ -35,9 +35,7 @@ open WeierstrassCurve
 variable (p : Nat.Primes) {l : ℚ}
 
 /-- Write `s = vₚ(l (1 - l))`. If `s ≠ 0` at an odd prime, the valuation of the Legendre
-`j`-invariant is `s` when `s < 0` and `-2 * s` when `s > 0`. In the first case the valuations
-of `l` and `1 - l` are equal and negative. In the second case one is positive and the other
-is zero. -/
+`j`-invariant is `s` when `s < 0` and `-2 * s` when `s > 0`. -/
 theorem padicValRat_legendre_j_of_nonunit [(legendre l).IsElliptic] (hp : (p : ℕ) ≠ 2)
     (hs : padicValRat p (l * (1 - l)) ≠ 0) :
     padicValRat p (legendre l).j =
@@ -47,12 +45,10 @@ theorem padicValRat_legendre_j_of_nonunit [(legendre l).IsElliptic] (hp : (p : �
   have ht' : 1 - t ≠ 0 := by
     dsimp [t]
     nlinarith [sq_nonneg (l - 1 / 2)]
-  have htwo : padicValRat p 2 = 0 := by
-    rw [show (2 : ℚ) = ((2 : ℕ) : ℚ) by norm_num, padicValRat.of_nat]
-    exact_mod_cast multiplicity_eq_zero_of_not_dvd
-      (fun h ↦ hp ((Nat.dvd_prime_two_le Nat.prime_two p.prop.two_le).mp h))
   have h256 : padicValRat p 256 = 0 := by
-    rw [show (256 : ℚ) = 2 ^ 8 by norm_num, padicValRat.pow, htwo, mul_zero]
+    have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+    have hcast : (256 : ℚ) = ((2 ^ 8 : ℕ) : ℚ) := by norm_num
+    rw [hcast, padicValRat.of_nat, multiplicity_prime_prime_pow 8 hp, Nat.cast_zero]
   have hj : (legendre l).j = 256 * (1 - t) ^ 3 / t ^ 2 := by
     rw [legendre_j]
     congr 1 <;> dsimp [t] <;> ring
@@ -69,7 +65,7 @@ theorem padicValRat_legendre_j_of_nonunit [(legendre l).IsElliptic] (hp : (p : �
 
 /-- If the Legendre `j`-invariant is integral at an odd prime, both parameter factors have
 valuation zero. -/
-theorem padicValRat_legendre_eq_zero_of_j_nonneg [(legendre l).IsElliptic]
+theorem legendre_units_of_padicValRat_j_nonneg [(legendre l).IsElliptic]
     (hp : (p : ℕ) ≠ 2) (hj : 0 ≤ padicValRat p (legendre l).j) :
     padicValRat p l = 0 ∧ padicValRat p (1 - l) = 0 := by
   have ht : padicValRat p (l * (1 - l)) = 0 := by
@@ -79,11 +75,12 @@ theorem padicValRat_legendre_eq_zero_of_j_nonneg [(legendre l).IsElliptic]
   obtain ⟨h₀, h₁⟩ := (isElliptic_legendre_iff_ne_zero l two_ne_zero).mp ‹_›
   have h₁' : 1 - l ≠ 0 := sub_ne_zero.mpr h₁.symm
   rw [padicValRat.mul h₀ h₁'] at ht
-  by_cases he : padicValRat p l = padicValRat p (1 - l)
+  have hadd : l + (1 - l) = 1 := by ring
+  rcases lt_trichotomy (padicValRat p l) 0 with hneg | hzero | hpos
+  · have := padicValRat.eq_of_add_eq_one_of_neg hadd hneg
+    omega
   · omega
-  · have hadd : l + (1 - l) = 1 := by ring
-    have hmin := padicValRat.add_eq_min (p := (p : ℕ)) (by rw [hadd]; exact one_ne_zero) h₀ h₁' he
-    rw [hadd, padicValRat.one] at hmin
+  · have := padicValRat.eq_zero_of_add_eq_one_of_pos hadd hpos
     omega
 
 /-- With both parameter factors units at an odd prime, the Legendre equation lifts to an
@@ -91,18 +88,15 @@ elliptic Weierstrass equation over the p-adic integers. -/
 theorem exists_isElliptic_legendre_padicInt (hp : (p : ℕ) ≠ 2) (h₀ : l ≠ 0) (h₁ : l ≠ 1)
     (hl : padicValRat p l = 0) (hsub : padicValRat p (1 - l) = 0) :
     ∃ lp : ℤ_[p], (lp : ℚ_[p]) = (l : ℚ_[p]) ∧ (legendre lp).IsElliptic := by
-  have norm_eq_one (q : ℚ) (hq : q ≠ 0) (hv : padicValRat p q = 0) :
-      ‖(q : ℚ_[p])‖ = 1 := by
-    rw [Padic.norm_eq_zpow_neg_valuation (by exact_mod_cast hq), Padic.valuation_ratCast, hv]
-    simp
-  have hn := norm_eq_one l h₀ hl
+  have hn := Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero h₀ hl
   let lp : ℤ_[p] := ⟨(l : ℚ_[p]), hn.le⟩
   have hcoe : (lp : ℚ_[p]) = (l : ℚ_[p]) := rfl
   have hu : IsUnit lp := PadicInt.isUnit_iff.mpr hn
   have husub : IsUnit (1 - lp) := by
     apply PadicInt.isUnit_iff.mpr
     simpa only [← PadicInt.norm_coe, PadicInt.coe_sub, PadicInt.coe_one, hcoe, Rat.cast_sub,
-      Rat.cast_one] using norm_eq_one (1 - l) (sub_ne_zero.mpr h₁.symm) hsub
+      Rat.cast_one] using Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero
+        (sub_ne_zero.mpr h₁.symm) hsub
   exact ⟨lp, hcoe, (isElliptic_legendre_iff lp).mpr
     ((PadicInt.isUnit_two hp).mul hu |>.mul (by simpa only [neg_sub] using husub.neg))⟩
 
@@ -119,23 +113,19 @@ theorem legendre_units_of_good_reduction (E : WeierstrassCurve ℚ) {p : Nat.Pri
     (hC : C • E = scaledLegendre d l) (hgood : E.HasGoodReductionAt p) :
     padicValRat p l = 0 ∧ padicValRat p (1 - l) = 0 := by
   rw [hasGoodReductionAt_iff] at hgood
-  obtain ⟨D, hD⟩ := (E.baseChange ℚ_[p]).exists_smul_eq_minimal ℤ_[p]
-  have hmin := hgood.isElliptic ℤ_[p]
+  have hpot : (E.baseChange ℚ_[p]).HasPotentialGoodReduction ℤ_[p] :=
+    .intro ℤ_[p] ℚ_[p] ℤ_[p] (by ext; simp) (by rwa [baseChange, Algebra.algebraMap_self, map_id])
+  have hlocal := hpot.isElliptic ℤ_[p]
   have : E.IsElliptic := ⟨isUnit_iff_ne_zero.mpr fun hΔ ↦
-    hmin.isUnit.ne_zero (by
-      rw [← hD, variableChange_Δ, baseChange, map_Δ, hΔ, map_zero, mul_zero])⟩
+    hlocal.isUnit.ne_zero (by rw [baseChange, map_Δ, hΔ, map_zero])⟩
   have : (scaledLegendre d l).IsElliptic := hC ▸ inferInstanceAs (C • E).IsElliptic
   have := isElliptic_legendre_of_scaledLegendre d l ‹(scaledLegendre d l).IsElliptic›
   have hjC : (scaledLegendre d l).j = E.j := by
     simpa only [hC] using E.variableChange_j C
-  have hjD : ((E.baseChange ℚ_[p]).minimal ℤ_[p]).j = (E.j : ℚ_[p]) := by
-    calc
-      _ = (E.baseChange ℚ_[p]).j := by
-        simpa only [hD] using (E.baseChange ℚ_[p]).variableChange_j D
-      _ = _ := by simp only [baseChange, map_j, eq_ratCast]
-  obtain ⟨z, hz⟩ := hgood.isInteger_j ℤ_[p]
-  rw [hjD, ← hjC, scaledLegendre_j_eq_legendre_j, PadicInt.algebraMap_apply] at hz
-  apply padicValRat_legendre_eq_zero_of_j_nonneg p hp
+  obtain ⟨z, hz⟩ := hpot.isInteger_j ℤ_[p]
+  simp only [baseChange, map_j, eq_ratCast, PadicInt.algebraMap_apply] at hz
+  rw [← hjC, scaledLegendre_j_eq_legendre_j] at hz
+  apply legendre_units_of_padicValRat_j_nonneg p hp
   rw [← Padic.valuation_ratCast, ← hz]
   exact PadicInt.valuation_coe_nonneg
 
@@ -146,8 +136,7 @@ namespace TauCeti
 open WeierstrassCurve
 
 /-- At an odd prime the unscaled Legendre curve has good reduction exactly when the parameter
-and its complement both have valuation zero. The integral Legendre equation itself is minimal
-in this case. -/
+and its complement both have valuation zero. -/
 theorem hasGoodReductionAt_legendre_iff {p : Nat.Primes} {l : ℚ}
     (hp : (p : ℕ) ≠ 2) (h₀ : l ≠ 0) (h₁ : l ≠ 1) :
     (legendre l).HasGoodReductionAt p ↔ padicValRat p l = 0 ∧ padicValRat p (1 - l) = 0 := by

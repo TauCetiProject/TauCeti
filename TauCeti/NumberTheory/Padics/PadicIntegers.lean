@@ -99,6 +99,8 @@ The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
 * `Padic.norm_natCast_eq_zpow`: the `p`-adic norm of a positive integer `m` is `p ^ (-v_p(m))`.
 * `Padic.norm_ratCast_le_zpow_neg_iff`: a rational number `q` satisfies `‖q‖ ≤ p ^ (-N)` exactly
   when `q = 0` or `N ≤ v_p(q)`.
+* `Padic.norm_ratCast_eq_one_of_padicValRat_eq_zero`: a nonzero rational number with valuation
+  zero has `p`-adic norm one.
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
@@ -494,6 +496,12 @@ theorem norm_ratCast_le_zpow_neg_iff {q : ℚ} {N : ℤ} :
   rw [Padic.norm_eq_zpow_neg_valuation (Rat.cast_ne_zero.mpr hq), Padic.valuation_ratCast,
     zpow_le_zpow_iff_right₀ (Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt), neg_le_neg_iff]
   simp [hq]
+
+/-- A nonzero rational number with valuation zero has norm one in `ℚ_[p]`. -/
+theorem norm_ratCast_eq_one_of_padicValRat_eq_zero {q : ℚ} (hq : q ≠ 0)
+    (hv : padicValRat p q = 0) : ‖(q : ℚ_[p])‖ = 1 := by
+  rw [norm_eq_zpow_neg_valuation (Rat.cast_ne_zero.mpr hq), valuation_ratCast, hv, neg_zero,
+    zpow_zero]
 
 /-- The `p`-adic norm of a natural number `m` is at least `p ^ (-k)` exactly when `p ^ (k + 1)`
 does not divide `m`. -/
