@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
-public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 import Mathlib.Tactic.Module
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Annihilator.Basic
-import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Deriv
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Local
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Morrey
 
 /-!
 # Regularity of the kernel and cokernel of smooth real Cauchy–Riemann operators
@@ -44,13 +42,6 @@ planar theory.
   `1 < p, p' ≤ ∞` the kernels at `p` and `p'` are linearly equivalent through the smooth sections
   they consist of (`TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEquiv`), and have the same
   dimension.
-* **Kernel, through the continuous representative.** For `2 < p ≤ ∞`, the continuous
-  representative of a kernel element (Morrey's embedding,
-  `TauCeti.SobolevSection.HasContinuousRepresentatives.of_two_lt_mul`) solves in every chart the
-  weak Cauchy–Riemann equation with smooth coefficients
-  (`TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero`),
-  so its chart readings are smooth by interior bootstrapping
-  (`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`).
 * **The adjoint equation, in a chart.** A locally `L^q` covector field `ηᵢ : ℂ → (F →L[ℝ] ℝ)`,
   `q > 1`, that annihilates the value on `1` of `∂bar φ + Zᵢ φ` for every test function `φ` on the
   image of chart `i` agrees almost everywhere with a smooth field
@@ -64,11 +55,8 @@ planar theory.
 
 ## Main results
 
-* `TauCeti.IsRealCauchyRiemannOperator.isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero`:
-  in chart `i`, the continuous representative of a kernel element solves
-  `∂ₛu + i ∂ₜu = -2 Zᵢ(u)(1)` weakly.
-* `TauCeti.IsRealCauchyRiemannOperator.contDiffOn_coord_toSection_of_sobolevL_eq_zero`: it is
-  smooth on every chart image.
+* `TauCeti.IsRealCauchyRiemannOperator.exists_contDiffOn_ae_eq_chartValueL_of_sobolevL_eq_zero`:
+  the chart data of a kernel element agree almost everywhere with smooth functions.
 * `TauCeti.IsRealCauchyRiemannOperator.exists_contMDiff_of_sobolevL_eq_zero`: a kernel element of
   the `W^{1,p} → Lᵖ` realization, `p > 1`, is the Sobolev section of a smooth section in the
   kernel of `D`.
@@ -130,57 +118,6 @@ private theorem chartValueL_zero_ae (i : Fin A.n) :
     (Lp.coeFn_zero (ℂ →L[ℝ] F) p (volume.restrict (A.tangentHom.sectionChartData.image i : Set ℂ)))
 
 /-! ### The kernel -/
-
-include hD hDs in
-/-- **A kernel element solves the planar Cauchy–Riemann equation in every chart.** For
-`2 < p ≤ ∞`, let `w ∈ W^{1,p}(Σ, V)` with `D w = 0`. In chart `i`, the reading `u` of the continuous
-representative of `w` is a weak solution of `∂ₛu + i ∂ₜu = -2 Zᵢ(u)(1)` on the chart image, where
-`Zᵢ` is the zeroth-order term of `D` in chart `i`. -/
-theorem isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
-    {w : SobolevSection A volume p 1}
-    (hw : hD.sobolevL A hDs volume p w = 0) (i : Fin A.n) :
-    IsWeakCauchyRiemannOn p (A.image i) (fun _ _ ↦ ContinuousLinearMap.lsmul ℝ ℂ Complex.I)
-      (fun z x ↦ -(2 : ℝ) • A.chartZeroOrder D i z x 1)
-      (A.coord i (SobolevSection.toSection w)) := by
-  have hrep : SobolevSection.HasContinuousRepresentatives A volume p 1 :=
-    .of_two_lt_mul (by simpa using hp)
-  have hae := SobolevSection.chartValueL_ae_eq_coord_toSection hrep w
-  refine isWeakCauchyRiemannOn_iff_forall_hasWeakFDerivOn.2 ⟨A.continuousOn_coord
-    (SobolevSection.continuous_toSection hrep w) i, SobolevSection.memWkpLoc_coord w hae i,
-    fun Du hDu ↦ ?_⟩
-  rw [(A.image i).isOpen.interior_eq]
-  rw [show Opens.interior (A.image i : Set ℂ) = A.image i from
-    Opens.ext (A.image i).isOpen.interior_eq] at hDu
-  -- A weak derivative of the reading is one of the chart data, which give the chart formula.
-  have hchart := chartValueL_sobolevL_ae A hD hDs volume p w (hDu.congr_ae (hae i).symm)
-  rw [hw] at hchart
-  filter_upwards [hchart, chartValueL_zero_ae A (p := p) i, hae i] with y h₁ h₂ h₃
-  rw [h₂, h₃] at h₁
-  have h1 := congrArg (fun L : ℂ →L[ℝ] F ↦ L 1) h₁
-  simp only [Pi.zero_apply, zero_apply, add_apply, complexAntilinearPartL_apply_one] at h1
-  linear_combination (norm := module) (-2 : ℝ) • h1
-
-include hD hDs in
-/-- **Kernel elements are smooth in every chart.** For `2 < p ≤ ∞` and `w ∈ W^{1,p}(Σ, V)` with
-`D w = 0`, the reading of the continuous representative of `w` in chart `i` is smooth on the chart
-image. -/
-theorem contDiffOn_coord_toSection_of_sobolevL_eq_zero (hp : 2 < p)
-    {w : SobolevSection A volume p 1} (hw : hD.sobolevL A hDs volume p w = 0) (i : Fin A.n) :
-    ContDiffOn ℝ ∞ (A.coord i (SobolevSection.toSection w)) (A.image i) := by
-  -- The zeroth-order term is smooth on an open set containing the chart image.
-  set U := (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet
-  have hZ : ContDiffOn ℝ ∞ (A.chartZeroOrder D i) U := A.contDiffOn_chartZeroOrder_of_univ hD hDs i
-  have hη : ContDiffOn ℝ (⊤ : ℕ∞) (fun x : ℂ × F ↦ -(2 : ℝ) • A.chartZeroOrder D i x.1 x.2 1)
-      (U ×ˢ univ) :=
-    (((hZ.comp contDiffOn_fst fun x (hx : x ∈ U ×ˢ (univ : Set F)) ↦ hx.1).clm_apply
-      contDiffOn_snd).clm_apply (contDiffOn_const (c := (1 : ℂ)))).const_smul (-(2 : ℝ))
-  exact contDiffOn_of_isWeakCauchyRiemannOn hp (ℓ := ⊤) (J := fun _ _ ↦ lsmul ℝ ℂ Complex.I)
-    (η := fun z x ↦ -(2 : ℝ) • A.chartZeroOrder D i z x 1)
-    (((A.chart i).isOpen_inter_preimage_symm (A.triv i).open_baseSet).prod isOpen_univ)
-    contDiffOn_const hη
-    (fun z hz ↦ ⟨A.image_subset_target_inter_preimage_baseSet i hz, mem_univ _⟩)
-    (.of_forall fun _ ↦ lsmul_I_mul_lsmul_I)
-    (isWeakCauchyRiemannOn_coord_toSection_of_sobolevL_eq_zero A hD hDs hp hw i)
 
 include hD hDs in
 /-- **Smooth kernel elements.** A `C¹` section `s` with `D s = 0` has its Sobolev section in the
@@ -275,7 +212,8 @@ include hD hDs in
 /-- **The kernel is the space of `C¹` solutions.** For `1 < p ≤ ∞`, the Sobolev section of a `C¹`
 section `s` is in the kernel of the realization `W^{1,p}(Σ, V) → Lᵖ(Σ, Λ^{0,1} ⊗ V)` exactly when
 `D s = 0`. The condition does not involve `p`. -/
-theorem ofContMDiffSection_mem_ker_sobolevL_iff (hp : 1 < p) (s : Cₛ^1⟮𝓘(ℝ, ℂ); F, V⟯) :
+theorem ofContMDiffSection_mem_ker_sobolevL_iff (hp : 1 < p)
+    (s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯) :
     SobolevSection.ofContMDiffSection A volume p 1 s ∈ (hD.sobolevL A hDs volume p).ker ↔
       ∀ x, D s x = 0 := by
   refine ⟨fun h ↦ ?_, sobolevL_ofContMDiffSection_eq_zero A hD hDs⟩
@@ -304,6 +242,14 @@ private def kerSobolevLEquivComap (hp : 1 < p) :
   (Submodule.equivMapOfInjective _ (SobolevSection.ofContMDiffSection_injective A volume p 1)
     _).trans (LinearEquiv.ofEq _ _ (map_comap_ker_sobolevL A hD hDs hp))
 
+/-- `kerSobolevLEquivComap` sends a `C¹` section to its Sobolev section. -/
+@[simp]
+private theorem coe_kerSobolevLEquivComap_apply (hp : 1 < p)
+    (t : (hD.sobolevL A hDs volume p).ker.comap (SobolevSection.ofContMDiffSection A volume p 1)) :
+    (kerSobolevLEquivComap A hD hDs hp t : SobolevSection A volume p 1) =
+      SobolevSection.ofContMDiffSection A volume p 1 t := by
+  simp [kerSobolevLEquivComap, Submodule.coe_equivMapOfInjective_apply, LinearEquiv.coe_ofEq_apply]
+
 variable {p' : ℝ≥0∞} [Fact (1 ≤ p')]
 
 /-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (iii), for
@@ -325,18 +271,15 @@ def kerSobolevLEquiv (hp : 1 < p) (hp' : 1 < p') :
 of `D s = 0` at one exponent to its Sobolev section at the other. -/
 @[simp]
 theorem kerSobolevLEquiv_apply_ofContMDiffSection (hp : 1 < p) (hp' : 1 < p')
-    {s : Cₛ^1⟮𝓘(ℝ, ℂ); F, V⟯}
+    {s : Cₛ^((1 : ℕ) : WithTop ℕ∞)⟮𝓘(ℝ, ℂ); F, V⟯}
     (hs : SobolevSection.ofContMDiffSection A volume p 1 s ∈
       (hD.sobolevL A hDs volume p).ker) :
     (kerSobolevLEquiv A hD hDs hp hp' ⟨_, hs⟩ : SobolevSection A volume p' 1) =
       SobolevSection.ofContMDiffSection A volume p' 1 s := by
   have h : (kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩ = ⟨s, hs⟩ :=
-    (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2 rfl
-  -- `kerSobolevLEquiv` is by definition the composite of these three equivalences.
-  change (kerSobolevLEquivComap A hD hDs hp' (LinearEquiv.ofEq _ _ _
-    ((kerSobolevLEquivComap A hD hDs hp).symm ⟨_, hs⟩)) : SobolevSection A volume p' 1) = _
-  rw [h]
-  rfl
+    (kerSobolevLEquivComap A hD hDs hp).symm_apply_eq.2
+      (Subtype.ext (coe_kerSobolevLEquivComap_apply A hD hDs hp ⟨s, hs⟩).symm)
+  simp [kerSobolevLEquiv, h]
 
 /-- **The dimension of the kernel does not depend on the exponent.** -/
 theorem finrank_ker_sobolevL_eq (hp : 1 < p) (hp' : 1 < p') :
