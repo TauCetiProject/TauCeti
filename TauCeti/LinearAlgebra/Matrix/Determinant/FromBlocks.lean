@@ -32,15 +32,15 @@ principal minors of order `n`.
 
 * `Matrix.det_fromBlocks_zero₁₁_zero₂₂`: the determinant of an antidiagonal block matrix
   `[[0, B], [C, 0]]` with square blocks of size `n` is `(-1)ⁿ det B det C`.
-* `Matrix.det_fromBlocks_single_single`: the determinant of a block matrix whose off-diagonal
+* `Matrix.det_fromBlocks_single₁₂_single₂₁`: the determinant of a block matrix whose off-diagonal
   blocks each have a single entry on the diagonal.
-* `Matrix.det_fromBlocks_single_last`: the determinant of a block matrix whose diagonal blocks
+* `Matrix.det_fromBlocks_single₁₁_single₂₂`: the determinant of a block matrix whose diagonal blocks
   each have a single entry at the last corner, in terms of the determinants and the leading
   principal minors of the off-diagonal blocks.
 
 ## Provenance
 
-`Matrix.det_fromBlocks_single_single` is adapted from the Lean project grh-lean
+`Matrix.det_fromBlocks_single₁₂_single₂₁` is adapted from the Lean project grh-lean
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
 `src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_fromBlocks_single`.
 -/
@@ -74,7 +74,7 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 /-- **Determinant of a block matrix with single off-diagonal entries.** For square matrices `Z`,
 `W` and scalars `c`, `c'`, the block matrix whose off-diagonal blocks have the single entries `c`
 and `c'` at `(i, i)` has determinant `det Z * det W - c * c' * adj(Z)ᵢᵢ * adj(W)ᵢᵢ`. -/
-theorem det_fromBlocks_single_single (Z W : Matrix m m R) (i : m) (c c' : R) :
+theorem det_fromBlocks_single₁₂_single₂₁ (Z W : Matrix m m R) (i : m) (c c' : R) :
     (fromBlocks Z (single i i c) (single i i c') W).det =
       Z.det * W.det - c * c' * (Z.adjugate i i * W.adjugate i i) := by
   set C : Matrix m m R := single i i c
@@ -115,17 +115,17 @@ by `Fin (n + 1)` and scalars `a`, `b`, the block matrix `[[S_a, Z], [W, S_b]]`, 
 blocks have the single entries `a` and `b` at the last corner, has determinant
 `(-1) ^ (n + 1) * (det Z * det W - a * b * D(Z) * D(W))`, where `D` is the leading principal
 minor of order `n`. -/
-theorem det_fromBlocks_single_last (Z W : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (a b : R) :
+theorem det_fromBlocks_single₁₁_single₂₂ (Z W : Matrix (Fin (n + 1)) (Fin (n + 1)) R) (a b : R) :
     (fromBlocks (single (last n) (last n) a) Z W (single (last n) (last n) b)).det =
       (-1) ^ (n + 1) * (Z.det * W.det - a * b *
         ((Z.submatrix castSucc castSucc).det * (W.submatrix castSucc castSucc).det)) := by
   -- Exchanging the two block columns gives a matrix of the shape of
-  -- `det_fromBlocks_single_single`.
+  -- `det_fromBlocks_single₁₂_single₂₁`.
   have h : fromBlocks (single (last n) (last n) a) Z W (single (last n) (last n) b) =
       fromBlocks Z (single (last n) (last n) a) (single (last n) (last n) b) W *
         fromBlocks 0 1 1 0 := by
     simp [fromBlocks_multiply]
-  rw [h, det_mul, det_fromBlocks_zero₁₁_zero₂₂, det_fromBlocks_single_single,
+  rw [h, det_mul, det_fromBlocks_zero₁₁_zero₂₂, det_fromBlocks_single₁₂_single₂₁,
     adjugate_last_last_eq_det_submatrix_castSucc, adjugate_last_last_eq_det_submatrix_castSucc]
   simp only [Fintype.card_fin, det_one, mul_one]
   ring

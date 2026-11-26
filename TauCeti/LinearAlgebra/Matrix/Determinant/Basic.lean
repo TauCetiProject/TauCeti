@@ -51,6 +51,12 @@ differences of the remaining columns.
   homomorphism to a nontrivial commutative ring has nonzero determinant.
 * `Matrix.isUnit_det_one_add_smul`: a matrix congruent to `1` modulo an element of the Jacobson
   radical has unit determinant.
+
+## Provenance
+
+`Matrix.det_eq_add_of_row_eq_add` is adapted from the Lean project grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC), file
+`src/New/Spanning/Bessel/Basic.lean`, declaration `New.det_eq_add_of_row_eq_add`.
 -/
 
 public section

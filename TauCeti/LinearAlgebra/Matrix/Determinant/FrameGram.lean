@@ -36,7 +36,7 @@ and `S'` each have one nonzero entry. Exchanging the two block columns gives
 `[[Z, S], [S', Zᴴ]]`, and expanding its determinant along the two rows that meet the entries of
 `S` and `S'` gives `det Z det W - c c' adj(Z)ₙₙ adj(W)ₙₙ` for a block matrix with diagonal blocks
 `Z`, `W` and off-diagonal blocks with the single entries `c`, `c'`
-(`Matrix.det_fromBlocks_single_single` and `Matrix.det_fromBlocks_single_last`, in
+(`Matrix.det_fromBlocks_single₁₂_single₂₁` and `Matrix.det_fromBlocks_single₁₁_single₂₂`, in
 `Determinant/FromBlocks.lean`). The corner entries of the adjugates are the leading principal
 minors of order `n`.
 
@@ -107,7 +107,7 @@ theorem det_conjTranspose_fromCols_mul_mul_fromCols_of_frame (hA : A.IsHermitian
         (single (last n) (last n) (-T')) := by
     rw [conjTranspose_fromCols_eq_fromRows_conjTranspose, fromRows_mul, fromRows_mul_fromCols, hF,
       hF', h_adj]
-  rw [h_gram, det_fromBlocks_single_last, det_conjTranspose, ← conjTranspose_submatrix,
+  rw [h_gram, det_fromBlocks_single₁₁_single₂₂, det_conjTranspose, ← conjTranspose_submatrix,
     det_conjTranspose, neg_mul_neg]
 
 /-- **The Gram determinant of a frame and the image of a frame.** For an isometry `x` of the
