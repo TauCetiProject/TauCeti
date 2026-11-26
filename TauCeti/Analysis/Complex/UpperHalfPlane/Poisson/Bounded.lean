@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Function
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.PositiveHarmonic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.VagueLimit
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
-import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
+import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
 import TauCeti.MeasureTheory.Measure.Vague
 
 /-!
@@ -21,9 +21,9 @@ and `u(z) = ∫ P(z, x) w(x) dx` on `ℂ₊`
 (`TauCeti.exists_eq_integral_upperHalfPlanePoissonKernel_mul_of_abs_le`). Applied to the real and
 imaginary parts, a bounded holomorphic function `F` on `ℂ₊` is the Poisson integral `P[w]` of a
 bounded measurable `w : ℝ → ℂ` (`TauCeti.exists_eq_upperHalfPlanePoissonIntegralFun_of_norm_le`).
-This is the representation `F = P[F*]` of bounded holomorphic functions on the half-plane, with the
-boundary function given as a density; its identification with the nontangential limit of `F` is
-Fatou's theorem.
+Thus every bounded holomorphic `F` is the Poisson integral of some bounded measurable boundary
+density; identifying this density with the nontangential limit `F*`, which would give
+`F = P[F*]`, needs Fatou's theorem and is not proved here.
 
 The proof goes through the representation of nonnegative harmonic functions,
 `TauCeti.exists_eq_mul_im_add_upperHalfPlanePoissonIntegral`. The function `v = u + S` is harmonic
@@ -37,13 +37,13 @@ and takes values in `[0, 2S]`, so `v = c Im z + P[ν]` with `c ≥ 0` and `ν` P
   are at most `2S`, so `ν(K) ≤ 2S |V|` for every compact `K` and open `V ⊇ K`
   (`IsCompact.measure_le_of_tendsto_integral`), hence `ν(K) ≤ 2S |K|` by outer regularity, and
   `ν(A) ≤ 2S |A|` for every Borel `A` by inner regularity of `ν`.
-* Hence `ν = h dx` with `0 ≤ h ≤ 2S` (the Radon–Nikodym derivative of `ν`), and
+* Hence `ν = h dx` with `0 ≤ h ≤ 2S` (the Radon–Nikodym derivative of `ν`,
+  `MeasureTheory.Measure.exists_eq_withDensity_of_le_smul`), and
   `u = P[h] - S = P[h - S]` since the Poisson kernel has integral `1`.
 
 ## References
 
-* J. B. Garnett, *Bounded analytic functions*, Graduate Texts in Mathematics 236, Springer, 2007,
-  Chapter II, §§1–4.
+* J. B. Garnett, *Bounded Analytic Functions*, revised 1st ed., Springer (2007), Chapter I, §3.
 -/
 
 public section
@@ -67,6 +67,16 @@ private theorem mul_I_mem_upperHalfPlaneSet {y : ℝ} (hy : 0 < y) :
 private theorem add_mul_I_mem_upperHalfPlaneSet (x : ℝ) {y : ℝ} (hy : 0 < y) :
     (x : ℂ) + y * I ∈ upperHalfPlaneSet := by
   simpa using hy
+
+/-- Integration against `g dx`, for a measurable `g ≥ 0`, is integration of `f g`. -/
+private theorem integral_withDensity_ofReal_eq_integral_mul {f g : ℝ → ℝ} (hg : Measurable g)
+    (hg0 : ∀ x, 0 ≤ g x) :
+    ∫ x, f x ∂volume.withDensity (fun x ↦ ENNReal.ofReal (g x)) = ∫ x, f x * g x := by
+  rw [integral_withDensity_eq_integral_toReal_smul hg.ennreal_ofReal
+    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
+  refine integral_congr_ae (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [ENNReal.toReal_ofReal (hg0 x), smul_eq_mul, mul_comm]
 
 /-- If `v = c Im + P[ν]` is bounded on `ℂ₊`, the linear coefficient `c` vanishes. -/
 private theorem coeff_eq_zero_of_le
@@ -98,13 +108,8 @@ private theorem measure_le_of_isCompact (hu : HarmonicOnNhd v upperHalfPlaneSet)
     refine (tendsto_integral_mul_of_eq_mul_im_add_upperHalfPlanePoissonIntegral hν hrep
       f.continuous f.hasCompactSupport).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with y (hy : 0 < y)
-    rw [integral_withDensity_eq_integral_toReal_smul (hcont hy).measurable.ennreal_ofReal
-      (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-    refine integral_congr_ae (.of_forall fun x ↦ ?_)
-    dsimp only
-    rw [ENNReal.toReal_ofReal (hv _ (add_mul_I_mem_upperHalfPlaneSet x hy)).1, smul_eq_mul,
-      mul_comm]
-    rfl
+    exact (integral_withDensity_ofReal_eq_integral_mul (hcont hy).measurable
+      fun x ↦ (hv _ (add_mul_I_mem_upperHalfPlaneSet x hy)).1).symm
   have hbound {V : Set ℝ} (hV : IsOpen V) :
       ∀ᶠ y in 𝓝[>] (0 : ℝ), σ y V ≤ ENNReal.ofReal M * volume V := by
     filter_upwards [self_mem_nhdsWithin] with y (hy : 0 < y)
@@ -127,28 +132,6 @@ private theorem measure_le_of_isCompact (hu : HarmonicOnNhd v upperHalfPlaneSet)
       calc ENNReal.ofReal M * (ε / (ENNReal.ofReal M + 1))
           ≤ (ENNReal.ofReal M + 1) * (ε / (ENNReal.ofReal M + 1)) := by gcongr; simp
         _ = ε := ENNReal.mul_div_cancel (by simp) (by simp)
-
-/-- A measure with `ν ≤ M · dx` is `h dx` for a measurable density `0 ≤ h ≤ M`. -/
-private theorem exists_eq_withDensity_of_le_smul [IsFiniteMeasureOnCompacts ν] {M : ℝ} (hM : 0 ≤ M)
-    (hle : ν ≤ ENNReal.ofReal M • volume) :
-    ∃ h : ℝ → ℝ, Measurable h ∧ (∀ x, 0 ≤ h x) ∧ (∀ x, h x ≤ M) ∧
-      ν = volume.withDensity fun x ↦ ENNReal.ofReal (h x) := by
-  have hac : ν ≪ volume := Measure.absolutelyContinuous_of_le_smul hle
-  -- The density `dν/dx` is at most `M` almost everywhere.
-  have hdens : ν.rnDeriv volume ≤ᵐ[volume] fun _ ↦ ENNReal.ofReal M := by
-    refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite (Measure.measurable_rnDeriv _ _)
-      fun A _ _ ↦ ?_
-    rw [Measure.setLIntegral_rnDeriv hac, setLIntegral_const, mul_comm]
-    simpa [mul_comm] using hle A
-  refine ⟨fun x ↦ min (ν.rnDeriv volume x).toReal M,
-    (Measure.measurable_rnDeriv _ _).ennreal_toReal.min measurable_const,
-    fun x ↦ le_min ENNReal.toReal_nonneg hM, fun x ↦ min_le_right _ _, ?_⟩
-  conv_lhs => rw [← Measure.withDensity_rnDeriv_eq ν volume hac]
-  refine withDensity_congr_ae ?_
-  filter_upwards [hdens] with x hx
-  have hfin : ν.rnDeriv volume x ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hx
-  have : (ν.rnDeriv volume x).toReal ≤ M := ENNReal.toReal_le_of_le_ofReal hM hx
-  rw [min_eq_left this, ENNReal.ofReal_toReal hfin]
 
 /-- **Bounded harmonic functions are Poisson integrals.** If `u` is harmonic on the upper
 half-plane with `|u| ≤ S` there, then `u(z) = ∫ P(z, x) w(x) dx` on `ℂ₊` for a measurable
@@ -174,7 +157,7 @@ theorem exists_eq_integral_upperHalfPlanePoissonKernel_mul_of_abs_le {u : ℂ �
     refine iSup₂_le fun K hKA ↦ iSup_le fun hK ↦ ?_
     exact (measure_le_of_isCompact hvh hν hrep hv hK).trans (by gcongr)
   have hS0 : 0 ≤ S := (abs_nonneg _).trans (hS I (by simp))
-  obtain ⟨h, hmeas, hh0, hh1, hνh⟩ := exists_eq_withDensity_of_le_smul (by linarith) hle
+  obtain ⟨h, hmeas, hh0, hh1, hνh⟩ := Measure.exists_eq_withDensity_of_le_smul (by linarith) hle
   refine ⟨fun x ↦ h x - S, hmeas.sub measurable_const, fun x ↦ ?_, fun z hz ↦ ?_⟩
   · have h0 := hh0 x
     have h1 := hh1 x
@@ -188,11 +171,8 @@ theorem exists_eq_integral_upperHalfPlanePoissonKernel_mul_of_abs_le {u : ℂ �
       rw [Real.norm_eq_abs, abs_of_nonneg (hh0 x)]
       exact hh1 x
     have hPν : upperHalfPlanePoissonIntegral ν z = ∫ x, upperHalfPlanePoissonKernel z x * h x := by
-      rw [upperHalfPlanePoissonIntegral_def, hνh, integral_withDensity_eq_integral_toReal_smul
-        hmeas.ennreal_ofReal (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-      refine integral_congr_ae (.of_forall fun x ↦ ?_)
-      dsimp only
-      rw [ENNReal.toReal_ofReal (hh0 x), smul_eq_mul, mul_comm]
+      rw [upperHalfPlanePoissonIntegral_def, hνh,
+        integral_withDensity_ofReal_eq_integral_mul hmeas hh0]
     have hu' : u z = v z - S := by simp [v]
     rw [hu', hrep z hz, zero_mul, zero_add, hPν]
     simp_rw [mul_sub]
