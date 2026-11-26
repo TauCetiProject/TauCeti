@@ -54,6 +54,10 @@ theorem supplies the basis, so the product decomposition holds for every profini
 * `TauCeti.profiniteSolidIsoLocallyConstantIntDual`: the isomorphism
   `R[S]^solid ≅ locallyConstantIntDual R S`, characterized by
   `TauCeti.profiniteSolidIsoLocallyConstantIntDual_hom_app_apply`.
+* `TauCeti.locallyConstantIntDualMap`,
+  `TauCeti.profiniteSolidIsoLocallyConstantIntDual_hom_naturality`: the pushforward of measures
+  along a map of profinite sets, which corresponds to `(profiniteSolid R).map` under
+  `profiniteSolidIsoLocallyConstantIntDual`.
 * `TauCeti.isLimitLocallyConstantIntDualFan`, `TauCeti.locallyConstantIntDualIsoPi`: a `ℤ`-basis of
   `C(S, ℤ)` indexed by `I` exhibits `locallyConstantIntDual R S` as the product of `I` copies of
   the discrete condensed module `R`.
@@ -469,6 +473,67 @@ theorem locallyConstantIntDualEval_hom_app_apply (f : LocallyConstant S ℤ) (T 
     (locallyConstantIntDualEval (R := R) f).hom.app T h = h f :=
   (rfl)
 
+variable (R) in
+/-- The pushforward of measures along a map `f : S ⟶ S'` of profinite sets, as a morphism
+`locallyConstantIntDual R S ⟶ locallyConstantIntDual R S'`: a measure `μ` on `S` is sent to the
+measure `φ ↦ μ (φ ∘ f)` on `S'`. It corresponds to `(profiniteSolid R).map f` under
+`profiniteSolidIsoLocallyConstantIntDual`
+(`profiniteSolidIsoLocallyConstantIntDual_hom_naturality`). -/
+noncomputable def locallyConstantIntDualMap {S' : Profinite.{u}} (f : S ⟶ S') :
+    locallyConstantIntDual R S ⟶ locallyConstantIntDual R S' :=
+  ObjectProperty.homMk
+    { app T := ModuleCat.ofHom
+        { toFun μ := (μ : LocallyConstant S ℤ →+ LocallyConstant T.unop R).comp
+            (LocallyConstant.comapAddMonoidHom f.hom.hom)
+          map_add' _ _ := rfl
+          map_smul' _ _ := rfl }
+      naturality _ _ _ := rfl }
+
+@[simp]
+theorem locallyConstantIntDualMap_hom_app_apply {S' : Profinite.{u}} (f : S ⟶ S')
+    (T : CompHaus.{u}ᵒᵖ) (μ : LocallyConstant S ℤ →+ LocallyConstant T.unop R) :
+    (locallyConstantIntDualMap R f).hom.app T μ =
+      μ.comp (LocallyConstant.comapAddMonoidHom f.hom.hom) :=
+  (rfl)
+
+variable (R S) in
+@[simp]
+theorem locallyConstantIntDualMap_id : locallyConstantIntDualMap R (𝟙 S) = 𝟙 _ := by
+  ext T μ : 4
+  exact AddMonoidHom.ext fun φ ↦ rfl
+
+@[simp]
+theorem locallyConstantIntDualMap_comp {S' S'' : Profinite.{u}} (f : S ⟶ S') (f' : S' ⟶ S'') :
+    locallyConstantIntDualMap R (f ≫ f') =
+      locallyConstantIntDualMap R f ≫ locallyConstantIntDualMap R f' := by
+  ext T μ : 4
+  exact AddMonoidHom.ext fun φ ↦ rfl
+
+variable (R) in
+/-- `profiniteSolidIsoLocallyConstantIntDual` is natural in the profinite set: it intertwines
+`(profiniteSolid R).map f` with the pushforward of measures `locallyConstantIntDualMap R f`. -/
+@[reassoc]
+theorem profiniteSolidIsoLocallyConstantIntDual_hom_naturality {S' : Profinite.{u}}
+    (f : S ⟶ S') :
+    (profiniteSolid R).map f ≫ (profiniteSolidIsoLocallyConstantIntDual R S').hom =
+      (profiniteSolidIsoLocallyConstantIntDual R S).hom ≫ locallyConstantIntDualMap R f := by
+  ext T x : 4
+  refine AddMonoidHom.ext fun φ ↦ ?_
+  -- Every `φ : C(S', ℤ)` is pulled back from a finite set along some `j : S' ⟶ F`, and then
+  -- both sides are computed by `profiniteSolidIsoLocallyConstantIntDual_hom_app_apply`, at `j` and
+  -- at the composite `S ⟶ S' ⟶ F`.
+  obtain ⟨j, ψ, rfl⟩ := S'.exists_structuredArrow_comap_eq φ
+  have h₁ := profiniteSolidIsoLocallyConstantIntDual_hom_app_apply R S' T.unop
+    (((profiniteSolid R).map f).hom.app T x) j ψ
+  have h₂ := profiniteSolidIsoLocallyConstantIntDual_hom_app_apply R S T.unop x
+    (StructuredArrow.mk (f ≫ j.hom)) ψ
+  have h₃ : (profiniteSolidToFin R S (StructuredArrow.mk (f ≫ j.hom))).hom.app T x =
+      (profiniteSolidToFin R S' j).hom.app T (((profiniteSolid R).map f).hom.app T x) := by
+    simp [profiniteSolidToFin]
+  -- The components at `T` of composites of sheaf morphisms are by definition the composites of
+  -- the components, so the two sides are the left-hand sides of `h₁` and `h₂`.
+  exact h₁.trans ((congrArg (fun y ↦ locallyConstantFinsuppEquiv R _ _ y ψ) h₃).symm.trans h₂.symm)
+
 /-- The fan exhibiting `locallyConstantIntDual R S` as a product of copies of the discrete condensed
 module `R`, given a `ℤ`-basis `b` of `C(S, ℤ)`: its legs evaluate measures on the basis
 vectors. -/
@@ -476,6 +541,11 @@ noncomputable def locallyConstantIntDualFan {I : Type u}
     (b : Module.Basis I ℤ (LocallyConstant S ℤ)) :
     Fan fun _ : I ↦ (CondensedMod.LocallyConstant.functor R).obj (ModuleCat.of R R) :=
   Fan.mk (locallyConstantIntDual R S) fun i ↦ locallyConstantIntDualEval (b i)
+
+@[simp]
+theorem locallyConstantIntDualFan_pt {I : Type u} (b : Module.Basis I ℤ (LocallyConstant S ℤ)) :
+    (locallyConstantIntDualFan (R := R) b).pt = locallyConstantIntDual R S :=
+  (rfl)
 
 /-- A `ℤ`-basis of `C(S, ℤ)` indexed by `I` exhibits `locallyConstantIntDual R S` as the product of
 `I` copies of the discrete condensed module `R`. -/
