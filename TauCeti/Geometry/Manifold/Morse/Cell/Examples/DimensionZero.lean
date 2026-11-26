@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.HandlePushout
 import Mathlib.CategoryTheory.Limits.Constructions.BinaryProducts
 import Mathlib.Topology.Category.TopCat.Limits.Products
 import TauCeti.AlgebraicTopology.Disk
+import TauCeti.Geometry.Manifold.ModelWithCorners.Boundaryless
 
 /-!
 # Handle attachment in dimension zero
@@ -63,7 +64,6 @@ theorem exists_homeomorph_sublevel_sum_of_subsingleton (f : M → ℝ) {c δ : �
       {x | f x ≤ c - ε} ⊕ ↥(criticalPoints I f ∩ f ⁻¹' {c})) := by
   have : Subsingleton H := I.injective.subsingleton
   have : DiscreteTopology M := ChartedSpace.discreteTopology H M
-  have : I.Boundaryless := ⟨eq_univ_of_forall fun x ↦ ⟨I.symm x, Subsingleton.elim _ _⟩⟩
   have : IsManifold I ∞ M := isManifold_of_contDiffOn I ∞ M fun _ _ _ _ ↦ contDiffOn_of_subsingleton
   obtain ⟨ε, hε, hεδ, α, χ, j, hpush, -⟩ :=
     (isMorse_of_subsingleton (I := I) (f := f)).exists_isPushout_sublevel_handles hδ hcompact

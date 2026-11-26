@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Model
 public import TauCeti.Geometry.Manifold.ChartedSpace
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.ModelWithCorners.Boundaryless
 public import TauCeti.Geometry.Manifold.RegularValue.Level
 
 /-!
@@ -50,10 +51,10 @@ example (hc : IsRegularValue I 𝓘(ℝ) f c) : IsEmpty {x : M // f x = c} :=
 
 /- In dimension zero the level atlas of a regular value is modelled on `Fin 0 → ℝ`: the dimension
 `dim E - 1` of the levels is the truncated subtraction `0 - 1 = 0`. The smoothness hypothesis on
-the level is vacuous, since the level is empty, and a model on the zero space has no boundary. -/
+the level is vacuous, since the level is empty, and a model on the zero space has no boundary
+(`ModelWithCorners.boundaryless_of_subsingleton`). -/
 noncomputable example (hc : IsRegularValue I 𝓘(ℝ) f c) :
     ChartedSpace (Fin 0 → ℝ) {x : M // f x = c} :=
-  have : I.Boundaryless := ⟨eq_univ_of_forall fun x ↦ ⟨I.symm x, Subsingleton.elim _ _⟩⟩
   regularLevelChartedSpace
     (fun x hx ↦ (isRegularValue_iff_notMem_range_of_subsingleton.1 hc ⟨x, hx⟩).elim) hc
     (by simp [finrank_zero_of_subsingleton])
