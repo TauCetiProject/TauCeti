@@ -128,7 +128,8 @@ theorem GammaProjective_index_two : (GammaProjective 2).index = 6 := by
 theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
   have h := two_mul_GammaProjective_index (N := 6) (by norm_num)
   have hc : Nat.card SL(2, ZMod 6) = 144 := by
-    rw [show (6 : ℕ) = 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+    have h6 : (6 : ℕ) = 2 * 3 := rfl
+    rw [h6, Matrix.natCard_SL_zmod_mul (by norm_num),
       natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
     norm_num
   omega
@@ -137,7 +138,8 @@ theorem GammaProjective_index_six : (GammaProjective 6).index = 72 := by
 theorem GammaProjective_index_eight : (GammaProjective 8).index = 192 := by
   have h := two_mul_GammaProjective_index (N := 8) (by norm_num)
   have hc : Nat.card SL(2, ZMod 8) = 384 := by
-    rw [show (8 : ℕ) = 2 ^ 3 by norm_num, Matrix.natCard_SL_zmod_pow three_ne_zero,
+    have h8 : (8 : ℕ) = 2 ^ 3 := rfl
+    rw [h8, Matrix.natCard_SL_zmod_pow three_ne_zero,
       natCard_SL_fin_two_zmod, Fintype.card_fin]
     norm_num
   omega
@@ -147,7 +149,8 @@ theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
   have h := two_mul_GammaProjective_index (N := 10) (by norm_num)
   have : Fact (Nat.Prime 5) := ⟨Nat.prime_five⟩
   have hc : Nat.card SL(2, ZMod 10) = 720 := by
-    rw [show (10 : ℕ) = 2 * 5 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+    have h10 : (10 : ℕ) = 2 * 5 := rfl
+    rw [h10, Matrix.natCard_SL_zmod_mul (by norm_num),
       natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod]
     norm_num
   omega
@@ -156,7 +159,8 @@ theorem GammaProjective_index_ten : (GammaProjective 10).index = 360 := by
 theorem GammaProjective_index_twelve : (GammaProjective 12).index = 576 := by
   have h := two_mul_GammaProjective_index (N := 12) (by norm_num)
   have hc : Nat.card SL(2, ZMod 12) = 1152 := by
-    rw [show (12 : ℕ) = 2 ^ 2 * 3 by norm_num, Matrix.natCard_SL_zmod_mul (by norm_num),
+    have h12 : (12 : ℕ) = 2 ^ 2 * 3 := rfl
+    rw [h12, Matrix.natCard_SL_zmod_mul (by norm_num),
       Matrix.natCard_SL_zmod_pow two_ne_zero, natCard_SL_fin_two_zmod, natCard_SL_fin_two_zmod,
       Fintype.card_fin]
     norm_num

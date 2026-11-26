@@ -108,7 +108,8 @@ theorem psl_zmod_five_dvd_index_and_not_hasSubnormalSection_eleven
   refine ⟨?_, fun hsec ↦ ?_⟩
   · have h5 := Matrix.ProjectiveSpecialLinearGroup.two_mul_card_fin_two_zmod_prime
       Nat.prime_five (by decide)
-    rw [gammaProjective_index_eleven, show Nat.card PSL(2, ZMod 5) = 60 by omega]
+    have hcard5 : Nat.card PSL(2, ZMod 5) = 60 := by omega
+    rw [gammaProjective_index_eleven, hcard5]
     decide
   · have := dvd_of_hasSubnormalSection_psl_zmod_of_Gamma_le_liftSL (N := 11) (ℓ := 5)
       (by decide) Nat.prime_five le_rfl h hsec

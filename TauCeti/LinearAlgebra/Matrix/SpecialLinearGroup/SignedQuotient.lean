@@ -87,9 +87,7 @@ private theorem map_zpowers_neg_one_le {n R S : Type*} [Fintype n] [DecidableEq 
       (Subgroup.zpowers (-1 : _root_.Matrix.SpecialLinearGroup n S)).comap
         (_root_.Matrix.SpecialLinearGroup.map f) :=
   Subgroup.map_le_iff_le_comap.mp <| by
-    rw [MonoidHom.map_zpowers, Subgroup.zpowers_le]
-    rw [show _root_.Matrix.SpecialLinearGroup.map f (-1) = -1 by
-      ext i j; by_cases hij : i = j <;> simp [hij]]
+    rw [MonoidHom.map_zpowers, Subgroup.zpowers_le, _root_.Matrix.SpecialLinearGroup.map_neg_one]
     exact Subgroup.mem_zpowers (-1)
 
 /-- Extension of scalars on signed quotients `SL(n, R) ⧸ {±I} →* SL(n, S) ⧸ {±I}`. -/

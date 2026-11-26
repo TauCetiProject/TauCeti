@@ -15,9 +15,9 @@ import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.ZMod
 # Non-isomorphism between alternating groups and `PSL₂(𝔽_ℓ)`
 
 No alternating group `A_α` of degree `≥ 6` is isomorphic to `PSL₂(𝔽_ℓ)` for any prime `ℓ`
-(`Matrix.ProjectiveSpecialLinearGroup.isEmpty_alternatingGroup_mulEquiv`): if `ℓ` divided
-`|A_n| = n!/2`, primality would give `ℓ ≤ n`, forcing `|PSL₂(𝔽_ℓ)| = ℓ(ℓ² - 1)/2 < n³/2 ≤ n!/2`
-for `n ≥ 6`.
+(`Matrix.ProjectiveSpecialLinearGroup.isEmpty_alternatingGroup_mulEquiv`):
+`|PSL₂(𝔽₂)| = 6 < 360 ≤ n!/2`, and for odd primes `ℓ`, if `ℓ` divided `|A_n| = n!/2`,
+primality would give `ℓ ≤ n`, forcing `|PSL₂(𝔽_ℓ)| = ℓ(ℓ² - 1)/2 < n³/2 ≤ n!/2` for `n ≥ 6`.
 
 ## References
 
@@ -31,9 +31,9 @@ open scoped MatrixGroups
 
 namespace Matrix.ProjectiveSpecialLinearGroup
 
-/-- **No alternating group of degree `≥ 6` is isomorphic to any `PSL₂(𝔽_ℓ)`.** If `ℓ` divided
-`|A_n| = n!/2`, primality would give `ℓ ≤ n`, forcing `|PSL₂(𝔽_ℓ)| = ℓ(ℓ² - 1)/2 < n³/2 ≤ n!/2`
-for `n ≥ 6`. -/
+/-- **No alternating group of degree `≥ 6` is isomorphic to any `PSL₂(𝔽_ℓ)`.** For `ℓ = 2`,
+`|PSL₂(𝔽₂)| = 6 < 360 ≤ n!/2`; for odd primes `ℓ`, if `ℓ` divided `|A_n| = n!/2`, primality would
+give `ℓ ≤ n`, forcing `|PSL₂(𝔽_ℓ)| = ℓ(ℓ² - 1)/2 < n³/2 ≤ n!/2` for `n ≥ 6`. -/
 theorem isEmpty_alternatingGroup_mulEquiv {α : Type*} [Fintype α] [DecidableEq α]
     (hα : 6 ≤ Nat.card α) {ℓ : ℕ} (hℓ : ℓ.Prime) :
     IsEmpty (alternatingGroup α ≃* PSL(2, ZMod ℓ)) := ⟨fun e ↦ by
