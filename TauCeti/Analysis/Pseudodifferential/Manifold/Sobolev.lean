@@ -8,10 +8,9 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartQuantization
 public import TauCeti.Analysis.Pseudodifferential.Sobolev
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 import TauCeti.Analysis.Sobolev.BesselPotential.Subsingleton
 import TauCeti.Geometry.Manifold.IsManifold.MaximalAtlas
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!
 # Sobolev estimates for classical pseudodifferential operators on a manifold
@@ -52,18 +51,13 @@ read on `M`, is bounded in `H^{s - m}` by the reading `ψ · (g ∘ e'⁻¹)` of
   `‖Op(aₖ) Wₖ‖_{H^{s - m}} ≤ C ‖Wₖ‖_{H^s}` (`TauCeti.Symbol.quantizeSobolev`).
 * The reading `Wₖ` in `Eₖ` is `θₖ · (w ∘ κₖ)` for the reading `w = ψ · (g ∘ e'⁻¹)` in `e'`, the
   transition map `κₖ = e' ∘ Eₖ⁻¹` and a cutoff `θₖ` with compact support in the source of `κₖ`
-  (`OpenPartialHomeomorph.overlapCutoff`). Such localized changes of variables are bounded on
-  `H^s` (`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`).
+  (`OpenPartialHomeomorph.overlapCutoff`). Such changes of chart are bounded on `H^s`
+  (`TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`).
 
 The estimate for a partition `ψᵢ` then follows by writing `u = ∑ᵢ Ψᵢ u`.
 
 ## Main results
 
-* `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
-  function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
-  by a cutoff equal to `1` on the support of `τ`.
-* `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing
-  the chart of a reading costs a constant in the `H^s` norm.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`: the
   estimate between two charts.
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
@@ -87,36 +81,6 @@ noncomputable section
 
 open Filter Set TauCeti
 open scoped ContDiff Manifold Distributions SchwartzMap Topology BesselPotentialSpace
-
-namespace OpenPartialHomeomorph
-
-variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
-  [T2Space M] {e : OpenPartialHomeomorph M (CoordinateSpace n)}
-  (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-
-/-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
-cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
-chart as the Schwartz function `τ · (g ∘ e⁻¹)` and pulling it back to `M` through a cutoff `χ`
-equal to `1` on the support of `τ`. -/
-theorem mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback
-    {τ χ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hχ : ∀ y ∈ tsupport τ, χ y = 1)
-    (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he τ 1)) g =
-      e.complexCutoffPullback he χ (ContMDiffMap.ofContDiff (e.cutoffPushforwardSchwartz he τ g)
-        ((e.cutoffPushforwardSchwartz he τ g).smooth ⊤)) := by
-  ext p
-  by_cases hp : p ∈ e.source
-  · rw [complexCutoffPullback_apply_of_mem he _ _ hp, ContMDiffMap.coe_ofContDiff,
-      cutoffPushforwardSchwartz_apply, e.left_inv hp]
-    simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
-      ContMDiffMap.ofReal_apply, cutoffPullback_one_apply_of_mem he _ hp]
-    by_cases hτ : τ (e p) = 0
-    · simp [hτ]
-    · rw [hχ _ (subset_tsupport _ hτ), one_smul, Complex.real_smul]
-  · simp [complexCutoffPullback_apply_of_notMem he _ _ hp,
-      cutoffPullback_apply_of_notMem he _ _ hp]
-
-end OpenPartialHomeomorph
 
 namespace TauCeti
 
@@ -161,42 +125,6 @@ private theorem exists_norm_cutoffPushforwardSchwartz_apply_complexCutoffPullbac
     SchwartzMap.ext (hread w)] at h
   rw [← h]
   exact (a.toSymbol.quantizeSobolev ha' s).le_opNorm _
-
-/-- **Changing the chart of a reading.** Let `ψ` be a cutoff in a chart `e'`, with `Ψ` the smooth
-function `ψ ∘ e'` on `M`, extended by `0`, and `τ` a cutoff in a chart `e`. For every real `s`
-there is a constant `C` such that for every smooth `g` on `M`, the reading `τ · ((Ψ g) ∘ e⁻¹)` of
-`Ψ g` in `e` satisfies
-
-`‖τ · ((Ψ g) ∘ e⁻¹)‖_{H^s} ≤ C ‖ψ · (g ∘ e'⁻¹)‖_{H^s}`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (he' : e' ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (τ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (ψ : 𝓓(⟨e'.target, e'.open_target⟩, ℝ)) (s : ℝ) :
-    ∃ C, ∀ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
-      ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e.cutoffPushforwardSchwartz he τ
-          (LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e'.cutoffPullback he' ψ 1)) g))‖ ≤
-        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 (e'.cutoffPushforwardSchwartz he' ψ g)‖ := by
-  -- The reading in `e` is `θ · (w ∘ κ)` for the reading `w` in `e'`, the transition map
-  -- `κ = e' ∘ e⁻¹` and `θ = τ · (ψ₁ ∘ κ)`, with `ψ₁ = 1` on the support of `ψ`.
-  obtain ⟨ψ₁, hψ₁, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e'.target, e'.open_target⟩) (n := ⊤) ψ.hasCompactSupport.isCompact ψ.tsupport_subset
-  obtain ⟨hθ, hθc, hθs⟩ := overlapCutoff_spec he' he τ ψ₁
-  obtain ⟨C, hC⟩ := BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp
-    (F := ℂ) (contDiffOn_symm_trans_of_mem_maximalAtlas he he')
-    (fun _ hz ↦ (contDiffAt_symm_trans_symm_of_mem_maximalAtlas he he' hz).contDiffWithinAt)
-    hθ hθc hθs s
-  refine ⟨C, fun g ↦ hC _ _ fun y ↦ ?_⟩
-  rw [cutoffPushforwardSchwartz_apply, cutoffPushforwardSchwartz_apply, coe_trans,
-    Function.comp_apply]
-  by_cases hy : e.symm y ∈ e'.source
-  · rw [overlapCutoff_apply_of_mem he' he τ ψ₁ hy, e'.left_inv hy]
-    simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
-      ContMDiffMap.ofReal_apply, cutoffPullback_one_apply_of_mem he' _ hy]
-    by_cases hψ : ψ (e' (e.symm y)) = 0
-    · simp [hψ]
-    · rw [hψ₁.self_of_nhdsSet _ (subset_tsupport _ hψ), mul_one, ← Complex.real_smul]
-  · rw [overlapCutoff_apply he' he, cutoffPullback_apply_of_notMem he' _ _ hy]
-    simp [cutoffPullback_apply_of_notMem he' _ _ hy]
 
 /-- **The estimate between two charts in dimension zero.** There `Ψ g` is the pullback of its
 reading `w = ψ · (g ∘ e'⁻¹)`, through a cutoff equal to `1` on the support of `ψ`, so the reading
