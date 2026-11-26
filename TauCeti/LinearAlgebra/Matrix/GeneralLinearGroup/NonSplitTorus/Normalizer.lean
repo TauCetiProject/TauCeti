@@ -108,6 +108,7 @@ theorem toLin'_normalizerEquiv_apply (p : Eˣ × (E ≃ₐ[F] E)) :
 
 /-- `TauCeti.GL2NonSplitTorus.normalizerEquiv` sends `(c, τ)` into the non-split torus exactly when
 `τ` is the identity. -/
+@[simp]
 theorem normalizerEquiv_mem_iff (p : Eˣ × (E ≃ₐ[F] E)) :
     (normalizerEquiv p : GL (Fin 2) F) ∈ GL2NonSplitTorus F E ↔ p.2 = 1 := by
   rw [← mulGalois_mem_lmulUnitsRange_iff (c := p.1), ← toLin'_normalizerEquiv_apply, ← map_toLin',

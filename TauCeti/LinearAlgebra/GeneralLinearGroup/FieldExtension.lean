@@ -185,13 +185,22 @@ theorem mulGalois_injective :
   subst hc
   exact Prod.ext rfl (AlgEquiv.ext fun v ↦ mul_left_cancel₀ c.ne_zero (h' v))
 
+/-- `v ↦ c τ(v)` determines `c` and `τ`. -/
+@[simp]
+theorem mulGalois_inj {c c' : Eˣ} {τ τ' : E ≃ₐ[F] E} :
+    mulGalois c τ = mulGalois c' τ' ↔ c = c' ∧ τ = τ' := by
+  refine ⟨fun h ↦ Prod.ext_iff.1 (mulGalois_injective (a₁ := (c, τ)) (a₂ := (c', τ')) h), ?_⟩
+  rintro ⟨rfl, rfl⟩
+  rfl
+
 /-- `v ↦ c τ(v)` is a multiplication by a unit of `E` exactly when `τ` is the identity. -/
+@[simp]
 theorem mulGalois_mem_lmulUnitsRange_iff {c : Eˣ} {τ : E ≃ₐ[F] E} :
     mulGalois c τ ∈ lmulUnitsRange F E ↔ τ = 1 := by
   refine ⟨fun h ↦ ?_, by rintro rfl; simp⟩
   obtain ⟨x, hx⟩ := mem_lmulUnitsRange_iff.1 h
   rw [← mulGalois_one_right] at hx
-  exact (Prod.ext_iff.1 (mulGalois_injective (a₁ := (x, 1)) (a₂ := (c, τ)) hx)).2.symm
+  exact (mulGalois_inj.1 hx).2.symm
 
 /-- **The normalizer of `Eˣ` in `GL_F(E)` is in bijection with `Eˣ × Gal(E/F)`**, by
 `(c, τ) ↦ (v ↦ c τ(v))`. -/
