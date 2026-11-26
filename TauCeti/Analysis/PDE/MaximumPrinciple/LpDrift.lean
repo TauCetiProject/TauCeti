@@ -240,26 +240,16 @@ private theorem UniformlyEllipticOn.ofReal_le_mul_eLpNorm_indicator_of_not_ae_va
     (W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq (ae_of_all _ fun x ↦ by positivity)
       (integrable_const_add_norm_mul_norm_mul_norm (sigma + beta) hd hpq (Lp.memLp g)
         (Lp.memLp f) hfq) hΓ (W1p.ae_mem_of_gradient_posPartAbove_ne_zero (by norm_num) hl u))
-  have hholder : ∫⁻ x in Γ, ‖sigma + beta + ‖d x‖‖ₑ * (‖g x‖ₑ * ‖f x‖ₑ) ∂μ ≤
-      eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ *
-        (eLpNorm g 2 μ * eLpNorm f q μ) := by
-    have : p.HolderTriple q 2 := ⟨hpq⟩
-    refine (lintegral_enorm_mul_enorm_mul_enorm_le (p := p) (q := q) (r := 2) (s := 2)
-      (w := fun x ↦ sigma + beta + ‖d x‖)
-      (aestronglyMeasurable_const.add hd.aestronglyMeasurable.norm).restrict
-      (Lp.aestronglyMeasurable g).restrict (Lp.aestronglyMeasurable f).restrict).trans ?_
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict hΓ.nullMeasurableSet]
-    gcongr <;> exact Measure.restrict_le_self
-  set B := eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ
-  have hcore : ENNReal.ofReal lam * ‖g‖ₑ ^ 2 ≤ S * B * ‖g‖ₑ ^ 2 := by
+  have : p.HolderTriple q 2 := ⟨hpq⟩
+  have hcore : ENNReal.ofReal lam * ‖g‖ₑ ^ 2 ≤
+      S * eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ * ‖g‖ₑ ^ 2 := by
     calc ENNReal.ofReal lam * ‖g‖ₑ ^ 2 = ENNReal.ofReal (lam * ‖g‖ ^ 2) := by
           rw [ENNReal.ofReal_mul h.pos.le, ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
-      _ ≤ B * (eLpNorm g 2 μ * eLpNorm f q μ) := hlin.trans hholder
-      _ ≤ B * (‖g‖ₑ * (S * ‖g‖ₑ)) := by
-          rw [← Lp.eNorm_def]
-          gcongr
-          exact hsob v hmem
-      _ = S * B * ‖g‖ₑ ^ 2 := by ring
+      _ ≤ S * eLpNorm (fun x ↦ sigma + beta + ‖d x‖) p (μ.restrict Γ) * ‖g‖ₑ ^ 2 :=
+          hlin.trans (W1p.lintegral_enorm_mul_enorm_gradient_mul_enorm_value_le (t := 2)
+            (aestronglyMeasurable_const.add hd.aestronglyMeasurable.norm) (hsob v hmem) Γ)
+      _ = S * eLpNorm (Γ.indicator fun x ↦ sigma + beta + ‖d x‖) p μ * ‖g‖ₑ ^ 2 := by
+          rw [eLpNorm_indicator_eq_eLpNorm_restrict hΓ.nullMeasurableSet]
   -- `∇v ≠ 0`: otherwise the Sobolev inequality forces `v = 0`, that is `u ≤ l`.
   have hq0 : q ≠ 0 := by
     rintro rfl

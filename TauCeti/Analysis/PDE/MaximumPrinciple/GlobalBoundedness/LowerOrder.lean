@@ -179,18 +179,11 @@ private theorem half_mul_norm_gradient_posPartAbove_sq_le_of_drift
       ENNReal.ofReal (lam / 2 * ‖G‖ ^ 2) := by
     rw [W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq
       (ae_of_all _ fun x ↦ norm_nonneg _) hint hA hgA]
-    calc ∫⁻ x in A, ‖‖b x‖‖ₑ * (‖G x‖ₑ * ‖f x‖ₑ) ∂ν
-        ≤ eLpNorm (fun x ↦ ‖b x‖) p (ν.restrict A) *
-            (eLpNorm G 2 (ν.restrict A) * eLpNorm f s (ν.restrict A)) :=
-          lintegral_enorm_mul_enorm_mul_enorm_le (r := 2) (s := 2)
-            hb.aestronglyMeasurable.norm.restrict (Lp.aestronglyMeasurable G).restrict
-            (Lp.aestronglyMeasurable f).restrict
-      _ ≤ eLpNorm b p (ν.restrict A) * (‖G‖ₑ * (S * ‖G‖ₑ)) := by
-          rw [eLpNorm_norm _ hb.aestronglyMeasurable.restrict]
-          gcongr
-          · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans_eq (Lp.eNorm_def G).symm
-          · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans (hS w hw0)
-      _ = S * eLpNorm b p (ν.restrict A) * ‖G‖ₑ ^ 2 := by ring
+    simp only [eNorm_norm]
+    calc ∫⁻ x in A, ‖b x‖ₑ * (‖G x‖ₑ * ‖f x‖ₑ) ∂ν
+        ≤ S * eLpNorm b p (ν.restrict A) * ‖G‖ₑ ^ 2 :=
+          W1p.lintegral_enorm_mul_enorm_gradient_mul_enorm_value_le (t := 2)
+            hb.aestronglyMeasurable (hS w hw0) A
       _ ≤ ENNReal.ofReal (lam / 2) * ‖G‖ₑ ^ 2 := by gcongr
       _ = ENNReal.ofReal (lam / 2 * ‖G‖ ^ 2) := by
           rw [ENNReal.ofReal_mul (half_pos h.pos).le, ENNReal.ofReal_pow (norm_nonneg _),
@@ -1191,7 +1184,7 @@ theorem exists_ae_value_le_add_of_drift [Nonempty ι] {q : ℝ≥0} (hq : 2 < (q
   set ν := mu.restrict Omega
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
   set n : ℕ := Fintype.card ι
-  set m := mu.real (Omega : Set (EuclideanSpace ℝ ι))
+  set m := mu.real (Omega : Set (EuclideanSpace ℝ ι)) with hm
   have hn0 : (0 : ℝ) < n := by exact_mod_cast Fintype.card_pos
   have hb_ae : ∀ᵐ x ∂ν, ‖b x‖ ≤ max beta 0 :=
     (ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx =>
@@ -1204,8 +1197,7 @@ theorem exists_ae_value_le_add_of_drift [Nonempty ι] {q : ℝ≥0} (hq : 2 < (q
     rw [Measure.restrict_apply_univ, ENNReal.coe_toReal] at this
     refine (ENNReal.toReal_mono (by finiteness) this).trans_eq ?_
     rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (le_max_right _ _),
-      mul_comm]
-    rfl
+      mul_comm, hm, measureReal_def]
   have hsmall' : (eLpNorm b q ν).toReal * m ^ ((n : ℝ)⁻¹ - (q : ℝ)⁻¹) ≤ max B 0 * lam := by
     have hlam := h.pos
     rcases le_total beta 0 with hβ | hβ

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.ChainRule
 
 import Mathlib.Algebra.Order.Group.PosPart
 import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
@@ -251,6 +252,29 @@ theorem W1p.ofReal_integral_mul_norm_gradient_mul_norm_value_eq {v : W1p mu Omeg
       ofReal_norm, ofReal_norm, Real.eNorm_of_nonneg hwx]
   · have hg0 : W1p.gradient v x = 0 := by_contra fun hne ↦ hxΓ (hx hne)
     rw [indicator_of_notMem hxΓ, hg0, norm_zero, zero_mul, mul_zero, ENNReal.ofReal_zero]
+
+omit [FiniteDimensional ℝ E] in
+/-- The weighted integral `∫_A |d| |∇v| |v|` over any set `A ⊆ Ω` is at most
+`S ‖d‖_{Lʳ(A)} ‖∇v‖ₚ²` when `1/r + 1/s + 1/p = 1` and `v` satisfies a Sobolev inequality
+`‖v‖_s ≤ S ‖∇v‖ₚ`: Hölder's inequality in three factors on `A`, then the Sobolev inequality. -/
+theorem W1p.lintegral_enorm_mul_enorm_gradient_mul_enorm_value_le {F : Type*}
+    [NormedAddCommGroup F] {r s t : ℝ≥0∞} [r.HolderTriple s t] [p.HolderTriple t 1] {d : E → F}
+    (hd : AEStronglyMeasurable d (mu.restrict Omega)) {v : W1p mu Omega p} {S : ℝ≥0}
+    (hS : eLpNorm (W1p.value v) s (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ) (A : Set E) :
+    ∫⁻ x in A, ‖d x‖ₑ * (‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ) ∂mu.restrict Omega ≤
+      S * eLpNorm d r ((mu.restrict Omega).restrict A) * ‖W1p.gradient v‖ₑ ^ 2 := by
+  calc ∫⁻ x in A, ‖d x‖ₑ * (‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ) ∂mu.restrict Omega
+      ≤ eLpNorm d r ((mu.restrict Omega).restrict A) *
+          (eLpNorm (W1p.gradient v) p ((mu.restrict Omega).restrict A) *
+            eLpNorm (W1p.value v) s ((mu.restrict Omega).restrict A)) :=
+        lintegral_enorm_mul_enorm_mul_enorm_le (r := p) (s := t) hd.restrict
+          (Lp.aestronglyMeasurable _).restrict (Lp.aestronglyMeasurable _).restrict
+    _ ≤ eLpNorm d r ((mu.restrict Omega).restrict A) *
+          (‖W1p.gradient v‖ₑ * (S * ‖W1p.gradient v‖ₑ)) := by
+        gcongr
+        · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans_eq (Lp.eNorm_def _).symm
+        · exact (eLpNorm_mono_measure _ Measure.restrict_le_self).trans hS
+    _ = S * eLpNorm d r ((mu.restrict Omega).restrict A) * ‖W1p.gradient v‖ₑ ^ 2 := by ring
 
 /-- Above a level `l ≥ 0`, a first-order term tested against `v = (u - l)⁺` only sees `v`:
 `∫_Ω ⟪b, ∇u⟫ v = ∫_Ω ⟪b, ∇v⟫ v`, since `∇u = ∇v` where `v ≠ 0`. -/
