@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Deriv
@@ -58,7 +57,8 @@ Laplacian.
 
 * **Weyl's lemma.** For a test function `φ` on `e⁻¹(Ω)`, the test function `ψ = φ ∘ e⁻¹` on `Ω`
   has `Δφ ∘ e⁻¹ = ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼψ`, and integrating by parts twice
-  (`TauCeti.Wkp.integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient`) gives
+  (`TauCeti.Wkp.integral_sum_smul_fderiv_fderiv_smul_value_eq_sum_mul_inner_iteratedGradient`)
+  gives
   `∫ Δφ (u ∘ e) d(μ.map e⁻¹) = ∫ ψ ∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu dμ = 0`; the Haar measure `μ.map e⁻¹`, which `e`
   carries to `μ`, avoids the Jacobian of `e`. So `u ∘ e` is weakly harmonic, hence harmonic up to
   a null set (`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq`).
@@ -93,59 +93,6 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι ℝ}
   {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {p : ENNReal} [Fact (1 ≤ p)] {lam Lam : ℝ}
-
-/-- The distributional action of the constant-coefficient operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ` on
-`u ∈ W^{2,p}(Ω)` is its strong form: `∫ (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼψ) u = ∫ ψ ∑ᵢⱼ Aᵢⱼ ⟪D²u eᵢ, eⱼ⟫` for every
-test function `ψ` on `Ω`. -/
-private theorem integral_sum_smul_fderiv_fderiv_smul_value_eq (u : Wkp mu Omega p 2)
-    (ψ : 𝓓(Omega, ℝ)) :
-    ∫ x, (∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ)) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) • Wkp.value 2 u x ∂mu =
-      ∫ x, (ψ : EuclideanSpace ℝ ι → ℝ) x • ∑ i, ∑ j, A i j *
-        ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
-          EuclideanSpace.single j 1⟫_ℝ ∂mu := by
-  set e : ι → EuclideanSpace ℝ ι := fun i => EuclideanSpace.single i 1
-  -- The second derivatives of `ψ` are test functions, so their products with `u` are integrable.
-  set ψ₂ : ι → ι → 𝓓(Omega, ℝ) := fun i j =>
-    TestFunction.lineDerivCLM ℝ (e i) (TestFunction.lineDerivCLM ℝ (e j) ψ)
-  have hψ₂ : ∀ i j x, ψ₂ i j x = fderiv ℝ (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ)) x (e i) (e j) :=
-    fun i j x => TestFunction.lineDerivCLM_lineDerivCLM_apply ψ (e i) (e j) x
-  have hval : LocallyIntegrableOn (Wkp.value 2 u : EuclideanSpace ℝ ι → ℝ) Omega mu :=
-    Wkp.locallyIntegrableOn_value 2 u
-  have hH : ∀ i j, LocallyIntegrableOn
-      (fun x => ⟪Wkp.iteratedGradient 1 u x (e i), e j⟫_ℝ) Omega mu := fun i j => by
-    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm (e j)] using
-      (((Wkp.hasWeakFDerivOn_iteratedGradient 0 u).clm_comp (innerSL ℝ (e j))).hasWeakLineDerivOn
-        (e i)).locallyIntegrableOn_deriv
-  -- Exchange the finite sums with the integrals on both sides.
-  have hsum : ∀ (F : ι → ι → EuclideanSpace ℝ ι → ℝ), (∀ i j, Integrable (F i j) mu) →
-      ∫ x, ∑ i, ∑ j, A i j * F i j x ∂mu = ∑ i, ∑ j, A i j * ∫ x, F i j x ∂mu := fun F hF =>
-    (integral_finsetSum (f := fun i x => ∑ j, A i j * F i j x) Finset.univ fun i _ =>
-      integrable_finsetSum _ fun j _ => (hF i j).const_mul (A i j)).trans
-      (Finset.sum_congr rfl fun i _ =>
-        (integral_finsetSum (f := fun j x => A i j * F i j x) Finset.univ fun j _ =>
-          (hF i j).const_mul (A i j)).trans
-          (Finset.sum_congr rfl fun j _ => integral_const_mul _ _))
-  calc ∫ x, (∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ (ψ : EuclideanSpace ℝ ι → ℝ)) x (e i) (e j)) •
-          Wkp.value 2 u x ∂mu
-      = ∫ x, ∑ i, ∑ j, A i j * (ψ₂ i j x * Wkp.value 2 u x) ∂mu := by
-        refine integral_congr_ae (ae_of_all _ fun x => ?_)
-        simp only [hψ₂, smul_eq_mul, Finset.sum_mul, mul_assoc]
-    _ = ∑ i, ∑ j, A i j * ∫ x, ψ₂ i j x * Wkp.value 2 u x ∂mu :=
-        hsum _ fun i j => (ψ₂ i j).integrable_smul hval
-    _ = ∑ i, ∑ j, A i j * ∫ x, (ψ : EuclideanSpace ℝ ι → ℝ) x *
-          ⟪Wkp.iteratedGradient 1 u x (e i), e j⟫_ℝ ∂mu := by
-        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-        simp only [hψ₂]
-        exact congrArg (A i j * ·)
-          (Wkp.integral_fderiv_fderiv_smul_value_eq_inner_iteratedGradient u ψ (e i) (e j))
-    _ = _ := by
-        refine (hsum (fun i j x => (ψ : EuclideanSpace ℝ ι → ℝ) x *
-            ⟪Wkp.iteratedGradient 1 u x (e i), e j⟫_ℝ)
-          fun i j => ψ.integrable_smul (hH i j)).symm.trans
-          (integral_congr_ae (ae_of_all _ fun x => ?_))
-        simp only [smul_eq_mul, Finset.mul_sum, e]
-        exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
 
 /-- The weak half of Weyl's lemma for `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ`: if the linear automorphism `e` turns the
 operator into the Laplacian, then for a strong solution `u ∈ W^{2,p}(Ω)` of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0`
@@ -188,7 +135,8 @@ private theorem weaklyHarmonicOn_value_comp {e : EuclideanSpace ℝ ι ≃L[ℝ]
           ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
             EuclideanSpace.single j 1⟫_ℝ ∂mu := by
         simp_rw [hΔ]
-        exact integral_sum_smul_fderiv_fderiv_smul_value_eq u ψ
+        exact Wkp.integral_sum_smul_fderiv_fderiv_smul_value_eq_sum_mul_inner_iteratedGradient A
+          (fun i => EuclideanSpace.single i 1) u ψ
     _ = 0 := by
         rw [← setIntegral_smul_eq_integral_smul]
         exact (integral_congr_ae (g := fun _ => (0 : ℝ))
