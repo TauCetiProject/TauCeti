@@ -52,6 +52,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `LinearMap.length_eq_length_ker_add_length_range`: rank-nullity for length.
+* `LinearMap.length_quotient_range_eq_length_ker`: an endomorphism of a module of finite length
+  has a cokernel and a kernel of the same length.
 * `TauCeti.length_le_add_of_exact`: the middle term of an exact sequence `N ⟶ M ⟶ P` is no longer
   than `N` and `P` together.
 * `TauCeti.length_add_length_add_length_eq_of_exact`: along an exact sequence
@@ -83,7 +85,8 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.isFiniteLength_quotient_of_nonZeroDivisor_mem`: over a noetherian ring `A` of dimension
   at most one, `A ⧸ I` has finite length when `I` contains a non-zero-divisor.
 * `TauCeti.isFiniteLength_of_nonZeroDivisor_mem_annihilator`: over a noetherian ring of dimension
-  at most one, a finitely generated module killed by a non-zero-divisor has finite length.
+  at most one, a finitely generated module killed by a non-zero-divisor has finite length; in
+  particular a finitely generated torsion module does (`Module.IsTorsion.isFiniteLength`).
 * `LinearMap.ker_mkQ_comp_codRestrict` and `LinearMap.length_quotient_sup_comap_ker`: for a
   linear map `e`, the kernel of the induced map `M → eM ⧸ a·eM`, and the length of the quotient
   of `M` by it.
@@ -135,6 +138,15 @@ theorem length_eq_length_ker_add_length_range (f : M →ₗ[A] N) :
     Module.length A M = Module.length A (ker f) + Module.length A (range f) :=
   Module.length_eq_add_of_exact _ _ (ker f).injective_subtype f.surjective_rangeRestrict
     (exact_iff.mpr (by rw [ker_rangeRestrict, Submodule.range_subtype]))
+
+/-- An endomorphism of a module of finite length has a cokernel and a kernel of the same length. -/
+theorem length_quotient_range_eq_length_ker (f : M →ₗ[A] M) (hM : Module.length A M ≠ ⊤) :
+    Module.length A (M ⧸ range f) = Module.length A (ker f) := by
+  have h := Module.length_eq_add_of_exact _ _ (range f).injective_subtype
+    (range f).mkQ_surjective (exact_subtype_mkQ (range f))
+  rw [f.length_eq_length_ker_add_length_range, add_comm] at h
+  refine (WithTop.add_left_cancel ?_ h).symm
+  exact ne_top_of_le_ne_top hM (Module.length_le_of_injective _ (range f).injective_subtype)
 
 end LinearMap
 
@@ -409,6 +421,14 @@ theorem isFiniteLength_of_nonZeroDivisor_mem_annihilator [IsNoetherianRing A]
     isArtinian_of_surjective_algebraMap (R := A ⧸ Module.annihilator A M)
       Ideal.Quotient.mk_surjective
   exact isFiniteLength_iff_isNoetherian_isArtinian.mpr ⟨inferInstance, this⟩
+
+/-- In a Noetherian ring of Krull dimension at most one, a finitely generated torsion module has
+finite length. -/
+theorem _root_.Module.IsTorsion.isFiniteLength [IsNoetherianRing A] [Ring.KrullDimLE 1 A]
+    [Module.Finite A M] (hM : Module.IsTorsion A M) : IsFiniteLength A M := by
+  obtain ⟨x, hxM, hx⟩ := Submodule.annihilator_top_inter_nonZeroDivisors hM
+  rw [SetLike.mem_coe, Submodule.annihilator_top] at hxM
+  exact isFiniteLength_of_nonZeroDivisor_mem_annihilator hxM hx
 
 end CommRing
 
