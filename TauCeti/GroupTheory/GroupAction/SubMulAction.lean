@@ -12,7 +12,12 @@ public import Mathlib.LinearAlgebra.Span.Basic
 public import Mathlib.Algebra.Module.Torsion.Free
 
 /-!
-# Faithful actions on invariant subsets
+# Invariant subsets: intersections, complements and faithful actions
+
+Mathlib equips `SubMulAction R M` with a complete lattice structure and, for a group action, with
+complements. This file records that the intersection and complement are computed on the
+underlying sets (`SubMulAction.coe_inf`, `SubMulAction.coe_compl`), so that `p ⊓ qᶜ` is the set
+difference `p \ q` (`SubMulAction.coe_inf_compl`).
 
 Restricting a faithful action to an invariant subset need not stay faithful. This file records
 two cases in which it does.
@@ -33,6 +38,36 @@ the units of a division ring acting on the nonzero vectors of any module.
 public section
 
 namespace SubMulAction
+
+section Lattice
+
+variable {R M : Type*}
+
+@[to_additive (attr := simp, norm_cast)]
+theorem coe_inf [SMul R M] (p q : SubMulAction R M) :
+    ((p ⊓ q : SubMulAction R M) : Set M) = (p : Set M) ∩ q :=
+  rfl
+
+@[to_additive (attr := simp)]
+theorem mem_inf [SMul R M] {p q : SubMulAction R M} {x : M} : x ∈ p ⊓ q ↔ x ∈ p ∧ x ∈ q :=
+  Iff.rfl
+
+@[to_additive (attr := simp, norm_cast)]
+theorem coe_compl [Group R] [MulAction R M] (p : SubMulAction R M) :
+    ((pᶜ : SubMulAction R M) : Set M) = (p : Set M)ᶜ :=
+  rfl
+
+@[to_additive (attr := simp)]
+theorem mem_compl [Group R] [MulAction R M] {p : SubMulAction R M} {x : M} : x ∈ pᶜ ↔ x ∉ p :=
+  Iff.rfl
+
+/-- The invariant subset `p ⊓ qᶜ` is the set difference `p \ q`. -/
+@[to_additive /-- The invariant subset `p ⊓ qᶜ` is the set difference `p \ q`. -/]
+theorem coe_inf_compl [Group R] [MulAction R M] (p q : SubMulAction R M) :
+    ((p ⊓ qᶜ : SubMulAction R M) : Set M) = (p : Set M) \ q :=
+  rfl
+
+end Lattice
 
 /-- The stabilizer of a point in a faithful group action acts faithfully on the complement of
 that point. -/

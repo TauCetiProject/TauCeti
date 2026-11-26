@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Three
 public import TauCeti.NumberTheory.Cyclotomic.Completion
+public import TauCeti.NumberTheory.Padics.AdicCompletion
 
 /-!
 # Checks for the completions of `ℚ(ζ₃)` at the places over `7`
@@ -18,12 +19,16 @@ Since `7 ≡ 1 mod 3`, the polynomial `X² + X + 1` has the two roots `2` and `4
 * at every place `v` over `7` the reduction of `complexRoot 3` is `2` or `4`, and the residue
   field of `F_v` has `7` elements;
 * there are two distinct places over `7`, at which `complexRoot 3` reduces to `2` and to `4`
-  respectively, so a statement at one chosen place does not cover the other.
+  respectively, so a statement at one chosen place does not cover the other;
+* at every place `v` over `7` the local degree `[F_v : ℚ₇]` is `1`, the completion map from `ℚ₇`
+  to `F_v` is bijective, and `F_v ≅ ℚ₇` as topological `ℚ`-algebras.
 -/
 
 public section
 
 open IsDedekindDomain NumberField IsLocalRing HeightOneSpectrum TauCeti.Cyclotomic Polynomial
+open Rat.HeightOneSpectrum (primesEquiv liesOver_asIdeal_primesEquiv_symm_iff)
+open scoped AdicCompletionExtension
 
 namespace TauCeti.Examples.CyclotomicCompletionSeven
 
@@ -142,5 +147,25 @@ example : ∃ v w : HeightOneSpectrum (𝓞 F), v ≠ w ∧
     push_cast
     ring
   exact (placeSeven 4 h4).isPrime.ne_top ((Ideal.eq_top_iff_one _).2 h1)
+
+/-- At each place over `7` the local degree `[F_v : ℚ₇]` is `1`, since `7 ≡ 1 mod 3`. -/
+example (v : HeightOneSpectrum (𝓞 F))
+    [v.asIdeal.LiesOver ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).asIdeal] :
+    Module.finrank (((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).adicCompletion ℚ)
+      (v.adicCompletion F) = 1 :=
+  finrank_adicCompletion_eq_one v 7 (by decide)
+
+/-- At each place over `7` the completion map from `ℚ₇` to `F_v` is bijective. -/
+example (v : HeightOneSpectrum (𝓞 F))
+    [v.asIdeal.LiesOver ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩).asIdeal] :
+    Function.Bijective (adicCompletionExtension ℚ F
+      ((primesEquiv (R := ℤ)).symm ⟨7, Nat.prime_seven⟩) v) :=
+  adicCompletionExtension_bijective v 7 (by decide)
+
+/-- At each place over `7` the completion `F_v` is `ℚ₇`. -/
+example (v : HeightOneSpectrum (𝓞 F)) (hv : ((7 : ℕ) : 𝓞 F) ∈ v.asIdeal) :
+    Nonempty (v.adicCompletion F ≃A[ℚ] ℚ_[7]) :=
+  have := (liesOver_asIdeal_primesEquiv_symm_iff (R := ℤ) v.isPrime.ne_top ⟨7, Fact.out⟩).2 hv
+  ⟨adicCompletionEquivPadic v 7 (finrank_adicCompletion_eq_one v 7 (by decide))⟩
 
 end TauCeti.Examples.CyclotomicCompletionSeven

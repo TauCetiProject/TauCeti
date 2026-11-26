@@ -50,6 +50,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace Diffeomorph
 
+/-- The inverse of the inverse of a diffeomorphism is the diffeomorphism itself. -/
+@[simp]
+theorem symm_symm (h : M ≃ₘ^n⟮I, J⟯ N) : h.symm.symm = h :=
+  Diffeomorph.ext fun _ ↦ rfl
+
 /-- The partial equivalence underlying a diffeomorphism viewed as a partial diffeomorphism
 is its everywhere-defined equivalence. -/
 @[simp]
@@ -103,9 +108,8 @@ theorem mfderiv_apply_mfderiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
 theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (x : M) (v : TangentSpace I x) :
     mfderiv J I h.symm (h x) (mfderiv I J h x v) = v := by
-  have hss : h.symm.symm = h := Diffeomorph.ext (fun _ => rfl)
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
-  rw [hss, h.symm_apply_apply] at hh
+  rw [h.symm_symm, h.symm_apply_apply] at hh
   exact hh
 
 /-- The differential of a diffeomorphism at a point with a nontrivial tangent space is nonzero. -/
@@ -142,9 +146,8 @@ diffeomorphism returns the original tangent vector. -/
 theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle J N) :
     tangentMap I J h (tangentMap J I h.symm z) = z := by
-  have hss : h.symm.symm = h := Diffeomorph.ext fun _ ↦ rfl
   have hh := tangentMap_symm_apply h.symm hn z
-  rw [hss] at hh
+  rw [h.symm_symm] at hh
   exact hh
 
 /-- The tangent map of the inverse acts on a fibre by the inverse differential. This holds

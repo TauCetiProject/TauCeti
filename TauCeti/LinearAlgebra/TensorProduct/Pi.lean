@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.TensorProduct.Pi
 
 import Mathlib.Algebra.FiveLemma
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
+import Mathlib.RingTheory.TensorProduct.Pi
 import TauCeti.Algebra.Exact.Pi
 
 /-!
@@ -52,6 +53,10 @@ equivalence and is compatible with identities, composition and inverses.
   `algebraMap R A ∘ v` to `algebraMap R A ∘ e v`.
 * `LinearEquiv.extendScalarsPi_refl`, `LinearEquiv.extendScalarsPi_trans`,
   `LinearEquiv.extendScalarsPi_symm`: functoriality of the scalar extension.
+* `TensorProduct.piScalarRight_tmul_eq_smul`: for a commutative `R`-algebra `A`, the
+  identification `A ⊗[R] (ι → R) ≃ (ι → A)` sends `a ⊗ v` to `a • (algebraMap R A ∘ v)`.
+* `TensorProduct.piScalarRight_symm_algebraMap_comp`: conversely, `algebraMap R N ∘ v`
+  corresponds to the pure tensor `1 ⊗ v`.
 
 ## References
 
@@ -92,6 +97,27 @@ theorem piRightHom_comp_rTensor (f : N →ₗ[R] N') :
   TensorProduct.ext' fun _ _ ↦ rfl
 
 end CommSemiring
+
+section PiScalarRight
+
+variable {A : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] [Fintype ι] [DecidableEq ι]
+
+/-- Read on `ι → A`, the pure tensor `a ⊗ v` is `a` times the vector `v` with coordinates mapped
+into `A`. -/
+theorem piScalarRight_tmul_eq_smul (a : A) (v : ι → R) :
+    piScalarRight R A A ι (a ⊗ₜ v) = a • (algebraMap R A ∘ v) := by
+  ext i
+  simp [_root_.Algebra.smul_def, mul_comm]
+
+/-- A vector with coordinates mapped from `R` corresponds to the pure tensor `1 ⊗ v`. This is
+Mathlib's `TensorProduct.piScalarRight_symm_algebraMap` with the vector written as a composite,
+the form in which it can be rewritten with. -/
+theorem piScalarRight_symm_algebraMap_comp {S N : Type*} [CommSemiring S] [Algebra R S]
+    [Semiring N] [Algebra R N] [Module S N] [IsScalarTower R S N] (v : ι → R) :
+    (piScalarRight R S N ι).symm (algebraMap R N ∘ v) = 1 ⊗ₜ v :=
+  piScalarRight_symm_algebraMap R S ι v
+
+end PiScalarRight
 
 section CommRing
 

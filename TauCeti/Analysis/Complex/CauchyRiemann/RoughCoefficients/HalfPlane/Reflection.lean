@@ -11,8 +11,10 @@ import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Interior
 import TauCeti.Analysis.Complex.Wirtinger.RealBoundary.Reflection
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
+import TauCeti.Analysis.Sobolev.Local.Reflection.Odd
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
+import TauCeti.Analysis.Sobolev.Local.Reflection
 
 /-!
 # Order-zero reflection for rough Cauchy–Riemann equations with a totally real boundary condition
@@ -54,10 +56,11 @@ Combined with the interior regularity theorem `TauCeti.IsWeakCRSolution.memWkpLo
 gives `W^{1,r}` regularity up to the boundary (`TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one`),
 once the reflected coefficients are Sobolev coefficients on `Ω`. For the constant structure
 `J = i` on `V = ℂ` this holds outright (`TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one_of_I`). For
-a variable `J ∈ W^{1,p}` up to the boundary, the reflected coefficient is the even reflection of
-the part of `J` anticommuting with `R` plus the odd reflection of the part commuting with `R`;
-the boundary condition `J(s) = i` says that the second part vanishes on `ℝ`, which is what makes
-its odd reflection Sobolev. That gluing step is not part of this file.
+a continuous `J` with weak derivative up to the boundary it holds when `J(s)` anticommutes with
+`R` on `ℝ`, the boundary condition `J(s) = i` for `R = conj`
+(`TauCeti.isSobolevCRCoefficients_crReflection`): then `J` agrees on the axis with its image
+`-R J R⁻¹` under the reflection, so its reflection is weakly differentiable across the axis
+(`TauCeti.HasWeakFDerivOn.twistedReflection`).
 
 ## Main results
 
@@ -66,10 +69,18 @@ its odd reflection Sobolev. That gluing step is not part of this file.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one`: if the reflected coefficients are Sobolev
   coefficients with `J² = -1` and `p > 2`, and `η ∈ Lʳ_loc` up to the boundary with
   `1 < r ≤ p`, then `ξ ∈ W^{1,r}_loc(Ω ∩ {0 ≤ t})`.
+* `TauCeti.isSobolevCRCoefficients_crReflection`: the reflected coefficients are Sobolev
+  coefficients when `J` is continuous with weak derivative `DJ` up to the axis and anticommutes
+  with `R` on the axis, and `DJ`, `S` are locally `Lᵖ` up to the axis.
+* `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one_of_hasWeakFDerivOn`: `W^{1,r}` regularity up to the
+  axis under these hypotheses on the half-plane coefficients.
 * `TauCeti.IsWeakCRSolutionHalf.memWkpLoc_one_of_I`: the case `V = ℂ`, `J = i`, `S = 0`, real
   boundary values.
 * `TauCeti.MemLpLoc.twistedReflection`, `TauCeti.MemLpLoc.of_twistedReflection`: local `Lᵖ`
   bounds pass to and from twisted reflections.
+* `TauCeti.eLpNorm_twistedReflection_le`: on a conjugation-invariant set, the twisted reflection
+  by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the axis, for `1 ≤ p`;
+  the measurability is `MeasureTheory.AEStronglyMeasurable.twistedReflection`.
 
 ## References
 
@@ -195,6 +206,12 @@ theorem crReflectionDeriv_zero : crReflectionDeriv R (0 : ℂ → ℂ →L[ℝ] 
 theorem crReflectionZeroth_zero : crReflectionZeroth R (0 : ℂ → W →L[ℝ] W) = 0 :=
   twistedReflection_zero_right _
 
+/-- The reflection of a sum of zeroth-order coefficients is the sum of their reflections. -/
+theorem crReflectionZeroth_add (R : W ≃L[ℝ] W) (S M : ℂ → W →L[ℝ] W) :
+    crReflectionZeroth R (S + M) = crReflectionZeroth R S + crReflectionZeroth R M := by
+  simp only [crReflectionZeroth_def]
+  exact twistedReflection_add _ S M
+
 end Coefficients
 
 /-! ### Local `Lᵖ` bounds on the doubled domain -/
@@ -222,6 +239,31 @@ theorem MemLpLoc.of_twistedReflection {U : Set ℂ} {L : F →L[ℝ] F}
   (hf.mono_set inter_subset_left).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict L f))
 
+/-- **The `Lᵖ` bound for twisted reflections.** On a conjugation-invariant set `U`, the twisted
+reflection by a map `L` with `‖L v‖ ≤ ‖v‖` at most doubles the `Lᵖ` norm up to the real axis, for
+`1 ≤ p`. -/
+theorem eLpNorm_twistedReflection_le {U : Set ℂ} (hU : MapsTo (starRingEnd ℂ) U U)
+    {L : F →L[ℝ] F} (hL : ∀ v, ‖L v‖ ≤ ‖v‖) (hp : 1 ≤ p) (f : ℂ → F) :
+    eLpNorm (TauCeti.twistedReflection L f) p (volume.restrict U) ≤
+      2 * eLpNorm f p (volume.restrict (U ∩ {z | 0 ≤ z.im})) := by
+  -- The order-one reflection weight is `1` and its node is `-1`, so the bound is `1 + 1`.
+  have hb : higherReflectionBound 1 p = 2 := by
+    norm_num [higherReflectionBound_eq, higherReflectionCoeff_one, higherReflectionNode_eq]
+  by_cases hf : AEStronglyMeasurable f (volume.restrict (U ∩ {z | 0 ≤ z.im}))
+  swap
+  · simp [eLpNorm_of_not_aestronglyMeasurable hf]
+  have h := eLpNorm_planarReflection_le hp
+    (imDilation_higherReflectionNode_fin_one_mem fun z hz _ => hU hz)
+    (higherReflectionCoeff 1) f
+  rw [planarReflectionBound_higherReflectionCoeff, hb] at h
+  -- Off the null axis the twisted reflection is pointwise dominated by the order-one reflection.
+  refine (eLpNorm_mono_ae (hf.twistedReflection (fun z hz => hU hz) L) ?_).trans h
+  filter_upwards [ae_restrict_of_ae Complex.ae_im_ne_zero] with z hz
+  rcases lt_or_gt_of_ne hz with hz | hz
+  · simpa [hz, imDilation_higherReflectionNode_fin_one, higherReflectionCoeff_one] using
+      hL (f (conj z))
+  · simp [hz, hz.le]
+
 variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {R : W ≃L[ℝ] W}
   {J S : ℂ → W →L[ℝ] W} {DJ : ℂ → ℂ →L[ℝ] W →L[ℝ] W} {U : Set ℂ}
 
@@ -245,6 +287,40 @@ theorem memLpLoc_crReflectionZeroth_iff (hU : MapsTo (starRingEnd ℂ) U U) :
   exact ⟨MemLpLoc.of_twistedReflection, fun h => h.twistedReflection hU _⟩
 
 end Integrability
+
+/-! ### Sobolev coefficients on the doubled domain -/
+
+section SobolevCoefficients
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {Ω : Opens ℂ} {p : ℝ≥0∞}
+  {R : V ≃L[ℝ] V} {J S : ℂ → V →L[ℝ] V} {DJ : ℂ → ℂ →L[ℝ] V →L[ℝ] V}
+
+/-- **The reflected coefficients are Sobolev coefficients.** Let `Ω` be invariant under
+conjugation and `1 ≤ p`. Let `J` be continuous on `Ω ∩ {0 ≤ t}` with weak derivative `DJ` on the
+open upper part, and suppose `J(s)` anticommutes with `R` for `s ∈ Ω ∩ ℝ` (for `R = conj` on `ℂⁿ`,
+this holds for `J(s) = i`). If `DJ` and `S` are locally `Lᵖ` up to the real axis, then the
+reflected coefficients are Sobolev coefficients on all of `Ω`.
+
+The boundary condition says that `J` agrees on the axis with its image `-R J R⁻¹` under the
+reflection, which is what makes the reflected `J` weakly differentiable across the axis
+(`TauCeti.HasWeakFDerivOn.twistedReflection`). -/
+theorem isSobolevCRCoefficients_crReflection (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hp : 1 ≤ p)
+    (hJW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hDJ : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ)
+    (hS : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S) :
+    IsSobolevCRCoefficients p Ω (crReflectionCoeff R J) (crReflectionDeriv R DJ)
+      (crReflectionZeroth R S) := by
+  have h := hJW.twistedReflection (fun z hz _ => hΩ hz)
+    (-(R.conjContinuousAlgEquiv.toContinuousLinearEquiv : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V)) hJc
+    (fun x hx => by ext v; simp [hJR x hx]) (hDJ.mono_exponent hp)
+  refine ⟨?_, (memLpLoc_crReflectionCoeff_iff hΩ).2 hJc.memLpLoc,
+    (memLpLoc_crReflectionDeriv_iff hΩ).2 hDJ, (memLpLoc_crReflectionZeroth_iff hΩ).2 hS⟩
+  rw [crReflectionCoeff_def, crReflectionDeriv_def]
+  rwa [map_neg, ContinuousLinearMap.neg_comp] at h
+
+end SobolevCoefficients
 
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   {Ω : Opens ℂ} {Λ : Submodule ℝ V} {p q r : ℝ≥0∞} {R : V ≃ₗᵢ[ℝ] V}
@@ -406,6 +482,29 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one [FiniteDimensional ℝ V]
     (hη.twistedReflection hΩ _)).mono hsub).congr_ae
     (ae_restrict_of_ae_restrict_of_subset inter_subset_right (twistedReflection_ae_eq_restrict _ ξ))
 
+/-- **`W^{1,r}` regularity up to the real axis for Sobolev coefficients** (McDuff–Salamon,
+Lemma B.4.6). Let `Ω` be invariant under conjugation, `R` an isometric involution of the
+finite-dimensional space `V` whose fixed vectors lie in `Λ`, and `p > 2`. Let `J` be continuous on
+`Ω ∩ {0 ≤ t}`, with `J² = -1` almost everywhere there, with weak derivative `DJ` on the open upper
+part, and anticommuting with `R` on `Ω ∩ ℝ`, and let `DJ`, `S` be locally `Lᵖ` up to the axis. If
+`ξ ∈ L^q_loc` is a weak solution up to the real axis with `1/p + 1/q < 1`, and `η ∈ Lʳ_loc` up to
+the axis with `1 < r ≤ p` finite, then `ξ ∈ W^{1,r}_loc(Ω ∩ {0 ≤ t})`. -/
+theorem IsWeakCRSolutionHalf.memWkpLoc_one_of_hasWeakFDerivOn [FiniteDimensional ℝ V]
+    (h : IsWeakCRSolutionHalf q Ω Λ J DJ S ξ η) (hΩ : MapsTo (starRingEnd ℂ) Ω Ω)
+    (hΛ : ∀ v, R v = v → v ∈ Λ)
+    (hJW : HasWeakFDerivOn volume (Opens.interior ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) J DJ)
+    (hJc : ContinuousOn J ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}))
+    (hJR : ∀ x : ℝ, (x : ℂ) ∈ Ω → ∀ v, R (J x v) = -J x (R v))
+    (hDJ : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) DJ)
+    (hS : MemLpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) S)
+    (hp : 2 < p) (hJ2 : ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}), J z * J z = -1)
+    (hpq : p⁻¹ + q⁻¹ < 1) (hr : 1 < r) (hr_top : r ≠ ⊤) (hrp : r ≤ p)
+    (hη : MemLpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η) :
+    MemWkpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 ξ :=
+  h.memWkpLoc_one hR hΩ hΛ
+    (isSobolevCRCoefficients_crReflection hΩ (one_le_two.trans hp.le) hJW hJc hJR hDJ hS)
+    hp hJ2 hpq hr hr_top hrp hη
+
 end Reflection
 
 /-! ### The constant structure `J = i` with real boundary values -/
@@ -433,22 +532,6 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one_of_I {ξ η : ℂ → ℂ}
     (hΩ : MapsTo (starRingEnd ℂ) Ω Ω) (hq : 1 < q) (hr : 1 < r) (hr_top : r ≠ ⊤)
     (hη : MemLpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) η) :
     MemWkpLoc r ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 ξ := by
-  -- The coefficients are bounded, so the exponent `p = ∞` applies.
-  have hc : IsSobolevCRCoefficients ⊤ Ω
-      (crReflectionCoeff conjLIE.toContinuousLinearEquiv fun _ => I • ContinuousLinearMap.id ℝ ℂ)
-      (crReflectionDeriv conjLIE.toContinuousLinearEquiv 0)
-      (crReflectionZeroth conjLIE.toContinuousLinearEquiv 0) := by
-    rw [crReflectionDeriv_zero, crReflectionZeroth_zero]
-    have h0 : IsSobolevCRCoefficients ⊤ Ω (fun _ => I • ContinuousLinearMap.id ℝ ℂ) 0 0 := by
-      simpa [fderiv_const] using IsSobolevCRCoefficients.of_contDiffOn
-        (J := fun _ => I • ContinuousLinearMap.id ℝ ℂ) (S := 0) contDiffOn_const
-        continuousOn_const ⊤
-    have hae : crReflectionCoeff conjLIE.toContinuousLinearEquiv
-        (fun _ => I • ContinuousLinearMap.id ℝ ℂ) =ᵐ[volume.restrict Ω]
-          fun _ => I • ContinuousLinearMap.id ℝ ℂ :=
-      ae_restrict_of_ae crReflectionCoeff_conjLIE_const_I_smul_id_ae_eq
-    exact ⟨h0.hasWeakFDerivOn.congr_ae hae.symm, h0.memLpLoc_coeff.congr_ae hae.symm,
-      h0.memLpLoc_deriv, h0.memLpLoc_zeroth⟩
   have hR : Function.Involutive conjLIE := fun v => by simp
   have hΛ (v : ℂ) (hv : conjLIE v = v) : v ∈ Submodule.span ℝ {(1 : ℂ)} :=
     Submodule.mem_span_singleton.2 ⟨v.re, by
@@ -459,6 +542,9 @@ theorem IsWeakCRSolutionHalf.memWkpLoc_one_of_I {ξ η : ℂ → ℂ}
     ext v
     simp [← mul_assoc]
   have hpq : (⊤ : ℝ≥0∞)⁻¹ + q⁻¹ < 1 := by simpa [ENNReal.inv_lt_one] using hq
-  exact h.memWkpLoc_one hR hΩ hΛ hc (by simp) hJ2 hpq hr hr_top le_top hη
+  -- The coefficients are constant, so the exponent `p = ∞` applies.
+  exact h.memWkpLoc_one_of_hasWeakFDerivOn hR hΩ hΛ
+    (hasWeakFDerivOn_iff.2 fun v => by simpa using hasWeakLineDerivOn_const _) continuousOn_const
+    (fun x _ v => by simp) memLpLoc_zero memLpLoc_zero (by simp) hJ2 hpq hr hr_top le_top hη
 
 end TauCeti

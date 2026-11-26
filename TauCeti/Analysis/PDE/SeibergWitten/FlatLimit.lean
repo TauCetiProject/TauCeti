@@ -724,7 +724,7 @@ theorem sum_extDeriv_apply_eq_of_add_hodgeStar_eq_smul {ι : Type*} [Fintype ι]
     linarith
   -- `∑ᵢ fᵢ ∧ J fᵢ = 2 ω`.
   have hsum := congrArg (⟪F, ·⟫)
-    (AlmostComplexStructure.sum_ιMulti_apply_eq_two_smul_kahlerForm hJ f)
+    (J.sum_ιMulti_apply_eq_two_smul_kahlerForm f)
   simp only [inner_sum, hFv, Finset.sum_neg_distrib, real_inner_smul_right] at hsum
   rw [real_inner_comm, hω] at hsum
   linarith
