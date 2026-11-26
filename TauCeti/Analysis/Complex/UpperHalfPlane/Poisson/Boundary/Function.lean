@@ -89,9 +89,9 @@ theorem upperHalfPlaneBoundaryFun_eq_of_continuousOn {F : ℂ → ℂ}
 
 /-- The boundary function of a constant is that constant. -/
 @[simp]
-theorem upperHalfPlaneBoundaryFun_const (c : ℂ) :
-    upperHalfPlaneBoundaryFun (fun _ ↦ c) = fun _ ↦ c :=
-  funext fun x ↦ upperHalfPlaneBoundaryFun_eq_of_continuousOn continuousOn_const x
+theorem upperHalfPlaneBoundaryFun_const (c : ℂ) (x : ℝ) :
+    upperHalfPlaneBoundaryFun (fun _ ↦ c) x = c :=
+  upperHalfPlaneBoundaryFun_eq_of_continuousOn continuousOn_const x
 
 /-- If `F = G` on the upper half-plane, then `F* = G*`. -/
 theorem upperHalfPlaneBoundaryFun_congr {F G : ℂ → ℂ} (h : EqOn F G upperHalfPlaneSet) :
