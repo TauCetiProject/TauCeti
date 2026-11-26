@@ -14,7 +14,6 @@ import TauCeti.AlgebraicGeometry.Cohomology.HigherDirectImage.Restrict
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
 import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Restriction
 
 /-!
 # Coherence of higher direct images along projective morphisms
