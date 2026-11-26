@@ -225,6 +225,14 @@ def ofSmooth {X : Scheme.{u}} (f : X ⟶ S) [IsProper f] [SmoothOfRelativeDimens
     have := SmoothOfRelativeDimension.smooth 1 f
     simp [Scheme.Hom.smoothLocus_eq_top]
 
+/-- The total space of `ofSmooth f s hs hdisj` is smooth of relative dimension `1` over the base. -/
+instance smoothOfRelativeDimension_ofSmooth_over {X : Scheme.{u}} (f : X ⟶ S) [IsProper f]
+    [SmoothOfRelativeDimension 1 f] [GeometricallyConnected f] (s : Fin n → (S ⟶ X))
+    (hs : ∀ i, s i ≫ f = 𝟙 S)
+    (hdisj : Pairwise fun i j ↦ Disjoint (Set.range (s i)) (Set.range (s j))) :
+    SmoothOfRelativeDimension 1 ((ofSmooth f s hs hdisj).total ↘ S) := by
+  rwa [over_eq_toBase, ofSmooth_toBase]
+
 /-- The point of a pointed prestable curve over a field at its `i`th marking, as a point of the
 smooth locus. -/
 def markingPoint {K : Type u} [Field K] (P : PointedPrestableFamily (Spec (.of K)) n) (i : Fin n) :

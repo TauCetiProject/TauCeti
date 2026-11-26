@@ -249,6 +249,9 @@ theorem isPullback_singularLocusBlowupMap [Module.Flat R R'] :
   have : Flat (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
     rw [Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff]; infer_instance
   have : Flat g := MorphismProperty.of_isPullback H.flip ‹_›
+  -- Generalize `X'.singularLocus R'` to `J` so `rfl` can replace it with
+  -- `(X.singularLocus R).comap g`, which cannot be rewritten directly under the dependent
+  -- `blowupLift`.
   suffices ∀ (J : X'.IdealSheafData) (_ : J = (X.singularLocus R).comap g)
       (hcart : ((X.singularLocus R).comap (J.blowupToBase ≫ g)).IsEffectiveCartier),
       IsPullback J.blowupToBase ((X.singularLocus R).blowupLift (J.blowupToBase ≫ g) hcart)

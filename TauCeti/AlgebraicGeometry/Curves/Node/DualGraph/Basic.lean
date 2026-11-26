@@ -113,9 +113,18 @@ def branchPointEquiv (x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)) :
     ((X.natCard_preimage_blowupToBase_eq_two x).trans_ne two_ne_zero)
   (Finite.equivFinOfCardEq (X.natCard_preimage_blowupToBase_eq_two x)).symm
 
+/-- Each branch point `X.branchPointEquiv x i` lies over the node `x`. -/
 theorem blowupToBase_branchPointEquiv (x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ))
     (i : Fin 2) : (X.singularLocus K).blowupToBase (X.branchPointEquiv x i) = x.val :=
   (X.branchPointEquiv x i).property
+
+/-- Every point of the blowup lying over a node `x` is one of its two branch points
+`X.branchPointEquiv x i`. -/
+theorem exists_branchPointEquiv_eq {x : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ)}
+    {b : (X.singularLocus K).blowup} (hb : (X.singularLocus K).blowupToBase b = x.val) :
+    ∃ i : Fin 2, (X.branchPointEquiv x i : (X.singularLocus K).blowup) = b :=
+  let ⟨i, hi⟩ := (X.branchPointEquiv x).surjective ⟨b, hb⟩
+  ⟨i, congr(($hi).val)⟩
 
 /-! ### Finiteness and connectedness -/
 
@@ -157,16 +166,12 @@ private theorem eq_or_adj_of_blowupToBase_eq {b b' : (X.singularLocus K).blowup}
     exact .inl (by rw [X.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus h hx])
   · -- over a node the two points are the two branch points
     let e : ↥(((X ↘ Spec (.of K)).smoothLocus : Set X)ᶜ) := ⟨ν b, hx⟩
-    obtain ⟨i, hi⟩ := (X.branchPointEquiv e).surjective ⟨b, rfl⟩
-    obtain ⟨j, hj⟩ := (X.branchPointEquiv e).surjective ⟨b', h.symm⟩
-    have hi' : (X.branchPointEquiv e i : (X.singularLocus K).blowup) = b := congr(($hi).val)
-    have hj' : (X.branchPointEquiv e j : (X.singularLocus K).blowup) = b' := congr(($hj).val)
-    rw [← hi', ← hj']
+    obtain ⟨i, hi⟩ := X.exists_branchPointEquiv_eq (x := e) rfl
+    obtain ⟨j, hj⟩ := X.exists_branchPointEquiv_eq (x := e) h.symm
+    rw [← hi, ← hj]
     by_cases hij : i = j
     · exact .inl (by rw [hij])
-    · right
-      refine ⟨e, ?_⟩
-      fin_cases i <;> fin_cases j <;> simp_all
+    · exact .inr ⟨e, by fin_cases i <;> fin_cases j <;> simp_all⟩
 
 /-- The dual graph of a prestable curve over a separably closed field is connected. -/
 private theorem reflTransGen_adj (v w : irreducibleComponents (X.singularLocus K).blowup) :
@@ -291,6 +296,15 @@ theorem dualGraphVertexEquiv_endpoint_eq_iff (e : (X.dualGraph p).Edge) (i : Fin
         (v : Set (X.singularLocus K).blowup) :=
   irreducibleComponentOf_eq_iff
 
+/-- Every point of the blowup whose image lies outside the smooth locus is a branch point over a
+dual-graph edge. -/
+theorem exists_branchPointEquiv_eq_of_notMem_smoothLocus {b : (X.singularLocus K).blowup}
+    (hb : (X.singularLocus K).blowupToBase b ∉ (X ↘ Spec (.of K)).smoothLocus) :
+    ∃ (e : (X.dualGraph p).Edge) (i : Fin 2),
+      (X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i : (X.singularLocus K).blowup) = b :=
+  ⟨(X.dualGraphEdgeEquiv p).symm ⟨(X.singularLocus K).blowupToBase b, hb⟩,
+    X.exists_branchPointEquiv_eq (by simp)⟩
+
 /-- A marking is attached to the component of the blowup carrying the point over it. -/
 theorem mem_dualGraph_marking (i : ι) {b : (X.singularLocus K).blowup}
     (hb : (X.singularLocus K).blowupToBase b = p i) :
@@ -356,10 +370,9 @@ theorem mem_ends_dualGraph_iff (v : (X.dualGraph p).Vertex) (e : (X.dualGraph p)
   · refine ⟨X.branchPointEquiv (X.dualGraphEdgeEquiv p e) i, ?_,
       X.blowupToBase_branchPointEquiv (X.dualGraphEdgeEquiv p e) i⟩
     exact (X.dualGraphVertexEquiv_endpoint_eq_iff p e i _).mp (congrArg _ hi)
-  · obtain ⟨i, hi⟩ := (X.branchPointEquiv (X.dualGraphEdgeEquiv p e)).surjective ⟨b, hb⟩
-    refine ⟨i, (X.dualGraphVertexEquiv p).injective ?_⟩
-    rw [X.dualGraphVertexEquiv_endpoint_eq_iff, congr(($hi).val)]
-    exact hbv
+  · obtain ⟨i, rfl⟩ := X.exists_branchPointEquiv_eq hb
+    exact ⟨i, (X.dualGraphVertexEquiv p).injective
+      ((X.dualGraphVertexEquiv_endpoint_eq_iff p e i _).mpr hbv)⟩
 
 /-- `v` is an endpoint of `e` iff the node `e` lies on the corresponding component of `X`. -/
 theorem mem_ends_dualGraph_iff_mem_blowupComponentEquiv
@@ -378,9 +391,8 @@ theorem ends_dualGraph_eq_self_iff (v : (X.dualGraph p).Vertex) (e : (X.dualGrap
   rw [DualGraph.ends_def, Sym2.eq_iff, or_self,
     ← Fin.forall_fin_two (p := fun i ↦ (X.dualGraph p).endpoint e i = v)]
   refine ⟨fun h b hb ↦ ?_, fun h i ↦ (X.dualGraphVertexEquiv p).injective ?_⟩
-  · obtain ⟨i, hi⟩ := (X.branchPointEquiv (X.dualGraphEdgeEquiv p e)).surjective ⟨b, hb⟩
-    have hiv := (X.dualGraphVertexEquiv_endpoint_eq_iff p e i _).mp (congrArg _ (h i))
-    rwa [congr(($hi).val)] at hiv
+  · obtain ⟨i, rfl⟩ := X.exists_branchPointEquiv_eq hb
+    exact (X.dualGraphVertexEquiv_endpoint_eq_iff p e i _).mp (congrArg _ (h i))
   · rw [X.dualGraphVertexEquiv_endpoint_eq_iff]
     exact h (X.blowupToBase_branchPointEquiv (X.dualGraphEdgeEquiv p e) i)
 
@@ -415,12 +427,9 @@ theorem valence_dualGraph (v : (X.dualGraph p).Vertex) :
         (X.dualGraphEdgeEquiv p e).property
     · rintro ⟨hbv, hbSing⟩
       rw [X.support_singularLocus_eq_compl_smoothLocus] at hbSing
-      let e := (X.dualGraphEdgeEquiv p).symm ⟨(X.singularLocus K).blowupToBase b, hbSing⟩
-      have he : (X.dualGraphEdgeEquiv p e : X) = (X.singularLocus K).blowupToBase b := by simp [e]
-      obtain ⟨i, hi⟩ := (X.branchPointEquiv (X.dualGraphEdgeEquiv p e)).surjective ⟨b, he.symm⟩
-      refine ⟨(e, i), (X.dualGraphVertexEquiv p).injective ?_, congr(($hi).val)⟩
-      rw [X.dualGraphVertexEquiv_endpoint_eq_iff, congr(($hi).val)]
-      exact hbv
+      obtain ⟨e, i, rfl⟩ := X.exists_branchPointEquiv_eq_of_notMem_smoothLocus p hbSing
+      exact ⟨(e, i), (X.dualGraphVertexEquiv p).injective
+        ((X.dualGraphVertexEquiv_endpoint_eq_iff p e i _).mpr hbv), rfl⟩
   rw [G.valence_def, ← himg, Set.ncard_image_of_injective _ hφ_inj, Set.ncard_coe_finset]
 
 /-! ### Smooth curves -/
@@ -607,17 +616,14 @@ theorem injOn_blowupToBase_iff_forall_ends_ne_self (v : (X.dualGraph p).Vertex) 
       (b₀.property.trans b₁.property.symm)))
   · by_cases hU : ν y₁ ∈ (X ↘ Spec (.of K)).smoothLocus
     · exact X.eq_of_blowupToBase_singularLocus_eq_of_mem_smoothLocus heq hU
-    · by_contra hne
-      let e := (X.dualGraphEdgeEquiv p).symm ⟨ν y₁, hU⟩
-      have he : (X.dualGraphEdgeEquiv p e : X) = ν y₁ := by simp [e]
-      have hcard : (ν ⁻¹' {(X.dualGraphEdgeEquiv p e : X)}).ncard = 2 := by
-        rw [← Nat.card_coe_set_eq, he]
-        exact X.natCard_preimage_blowupToBase_eq_two ⟨ν y₁, hU⟩
-      have hpair : ({y₁, y₂} : Set _) = ν ⁻¹' {(X.dualGraphEdgeEquiv p e : X)} :=
-        Set.eq_of_subset_of_ncard_le (pair_subset_iff.mpr ⟨he.symm, heq.symm.trans he.symm⟩)
-          (by rw [hcard, Set.ncard_pair hne])
-          (Set.finite_of_ncard_ne_zero (by rw [hcard]; decide))
-      exact hnoloop e (hpair ▸ pair_subset_iff.mpr ⟨hy₁, hy₂⟩)
+    · obtain ⟨e, i₁, rfl⟩ := X.exists_branchPointEquiv_eq_of_notMem_smoothLocus p hU
+      obtain ⟨i₂, rfl⟩ := X.exists_branchPointEquiv_eq
+        (heq.symm.trans (X.blowupToBase_branchPointEquiv (X.dualGraphEdgeEquiv p e) i₁))
+      by_contra hne
+      have hi : i₁ ≠ i₂ := fun h ↦ hne (by rw [h])
+      refine hnoloop e fun b hb ↦ ?_
+      obtain ⟨i, rfl⟩ := X.exists_branchPointEquiv_eq hb
+      fin_cases i <;> fin_cases i₁ <;> fin_cases i₂ <;> simp_all
 
 /-- For `v` without self-nodes, `valence v` equals the number of intersection points of `ν '' v`
 with the union of the remaining irreducible components of `X`. -/

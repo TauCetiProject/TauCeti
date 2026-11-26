@@ -238,7 +238,6 @@ theorem ncard_specialPoints_eq_valence_add_numMarkings (v : P.dualGraph.Vertex) 
       P.dualGraph.valence v + P.dualGraph.numMarkings v := by
   let hnodal := PrestableFamily.atWorstNodalOfRelativeDimensionOne (f := P.total ↘ Spec (.of K))
   have := P.total.isFinite_blowupToBase_singularLocus hnodal
-  have := P.total.isFinite_singularLocus_subschemeι_comp hnodal
   let Bl := (P.total.singularLocus K).blowup; let ν := (P.total.singularLocus K).blowupToBase
   let v' := P.total.dualGraphVertexEquiv P.markingPoint v
   let A : Set Bl := (v' : Set Bl) ∩ ν ⁻¹' ((P.total.singularLocus K).support : Set P.total)
@@ -247,11 +246,9 @@ theorem ncard_specialPoints_eq_valence_add_numMarkings (v : P.dualGraph.Vertex) 
     have hSing := hyA.2
     rw [mem_preimage, P.total.support_singularLocus_eq_compl_smoothLocus, mem_compl_iff] at hSing
     obtain ⟨i, hi⟩ := mem_iUnion.mp hyB.2; exact hSing (P.range_marking_subset_smoothLocus i hi)
-  have : Finite (P.total.singularLocus K).subscheme := Set.finite_univ_iff.mp
-    (((P.total.singularLocus K).subschemeι ≫ (P.total ↘ Spec (.of K))).finite_preimage
-      Set.finite_univ)
-  have hA_fin : A.Finite := (ν.finite_preimage
-    (Scheme.IdealSheafData.range_subschemeι _ ▸ Set.finite_range _)).subset inter_subset_right
+  have hA_fin : A.Finite := (ν.finite_preimage (by
+    rw [P.total.support_singularLocus_eq_compl_smoothLocus]
+    exact P.total.finite_compl_smoothLocus hnodal)).subset inter_subset_right
   have hB_fin : B.Finite := (ν.finite_preimage (finite_iUnion fun i ↦ by
     rw [P.range_marking_eq_singleton i]; exact finite_singleton _)).subset inter_subset_right
   rw [preimage_union, inter_union_distrib_left, Set.ncard_union_eq hdisj hA_fin hB_fin,
@@ -373,14 +370,9 @@ theorem logCanonicalDegree_ofSmooth {X : Scheme.{u}} (f : X ⟶ Spec (.of K)) [I
     (s : Fin n → (Spec (.of K) ⟶ X)) (hs : ∀ i, s i ≫ f = 𝟙 (Spec (.of K)))
     (hdisj : Pairwise fun i j ↦ Disjoint (Set.range (s i)) (Set.range (s j)))
     (v : (ofSmooth f s hs hdisj).dualGraph.Vertex) :
-    let P := ofSmooth f s hs hdisj
-    haveI : SmoothOfRelativeDimension 1 (P.total ↘ Spec (.of K)) :=
-      inferInstanceAs (SmoothOfRelativeDimension 1 f)
-    P.dualGraph.logCanonicalDegree v = 2 * (P.total.genus K : ℤ) - 2 + n := by
-  dsimp only
+    (ofSmooth f s hs hdisj).dualGraph.logCanonicalDegree v =
+      2 * ((ofSmooth f s hs hdisj).total.genus K : ℤ) - 2 + n := by
   let P := ofSmooth f s hs hdisj
-  have : SmoothOfRelativeDimension 1 (P.total ↘ Spec (.of K)) :=
-    inferInstanceAs (SmoothOfRelativeDimension 1 f)
   rw [P.dualGraph.logCanonicalDegree_eq_of_forall_eq fun w ↦
       (P.total.subsingleton_vertex_dualGraph_of_smooth P.markingPoint).elim w v,
     Fintype.card_fin, P.total.arithmeticGenus_dualGraph_of_smooth P.markingPoint]
