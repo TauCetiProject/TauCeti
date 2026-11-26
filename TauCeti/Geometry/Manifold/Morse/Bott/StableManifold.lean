@@ -102,13 +102,6 @@ private theorem isOpen_halfCube (φ : MorseBottChart E f x) (r : ℝ) :
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
   (hX : IsBottAdaptedPseudoGradient f X) {S : Set M} {c : ℝ}
 
-/-- The time-`t` map of the flow, as a smooth diffeomorphism. -/
-private noncomputable def flowDiffeomorph (t : ℝ) : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
-  globalFlowDiffeomorph hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
-
-private theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.flow t y := by
-  rw [flowDiffeomorph, globalFlowDiffeomorph_apply, hX.flow_apply, globalFlow_apply]
-
 /-- **The stable set of a piece of the critical set, in a Morse–Bott chart.** Let `S` be a set of
 points on the level `c` of `f` containing every critical point near each of its points, and let `X`
 be the linear field `z ↦ (-wᵢ zᵢ)ᵢ` in a Morse–Bott chart `φ` centred at a point `x` of `S`. On a
@@ -267,10 +260,7 @@ theorem exists_contMDiffOn_tendsto_flow_atTop (hc : ∀ p ∈ S, f p = c)
     exact hrT _ (((φ.norm_ite_weight_eq_zero_le _).trans_lt hz.2).trans (half_lt_self hr))
   refine ⟨hX.flow T ⁻¹' D, (isOpen_halfCube φ r).preimage (hX.flow.continuous_toFun T), hT,
     fun z ↦ φ.toChart.symm (ψ (φ.toChart (hX.flow T z))), ?_, fun z ⟨hzD, hzS⟩ ↦ ?_⟩
-  · have hflow : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (hX.flow T) := by
-      rw [← funext (hX.flowDiffeomorph_apply T)]
-      exact (hX.flowDiffeomorph T).contMDiff
-    exact hπ.comp hflow.contMDiffOn fun z hz ↦ hz
+  · exact hπ.comp (hX.contMDiff_flow_apply T).contMDiffOn fun z hz ↦ hz
   -- From time `T` on, the orbit of `z` converges along the linear flow to the projection.
   have hzS' : hX.flow T z ∈ ⋃ p ∈ S, hX.flow.stableSet p := by
     simpa only [mem_iUnion₂, Flow.apply_mem_stableSet_iff] using hzS

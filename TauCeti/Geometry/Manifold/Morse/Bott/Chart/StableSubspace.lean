@@ -147,9 +147,8 @@ theorem manifoldMorseIndex_eq_ncard_weight_neg :
   simp only [OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, comp_apply, id_eq,
     φ.apply_self, hq]
   rw [morseIndex_comp hdiff φ.coordL.contDiff.contDiffAt hcrit₀
-    (by rw [φ.coordL.fderiv]; exact ContinuousLinearMap.isInvertible_equiv), morseIndex_def,
-    hessianQuadraticForm_const_add, ← morseIndex_def, morseIndex_diagonalQuadratic,
-    ← Set.ncard_coe_finset, Finset.coe_filter]
+    (by rw [φ.coordL.fderiv]; exact ContinuousLinearMap.isInvertible_equiv), morseIndex_const_add,
+    morseIndex_diagonalQuadratic, ← Set.ncard_coe_finset, Finset.coe_filter]
   simp
 
 /-- The stable subspace of a Morse–Bott chart has dimension `n - λ`, where `λ` is the Morse index

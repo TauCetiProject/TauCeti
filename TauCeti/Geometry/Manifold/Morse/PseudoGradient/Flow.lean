@@ -136,25 +136,26 @@ theorem contMDiff_flow_uncurry :
 
 /-- For a fixed time `t`, the time-`t` map of the flow is smooth. -/
 theorem contMDiff_flow_apply (t : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (hX.flow t) :=
-  contMDiff_globalFlow_apply hX.isCompleteVectorField (n := ⊤) le_top
-    hX.contMDiff t
+  hX.isBottAdaptedPseudoGradient_flow ▸ hX.isBottAdaptedPseudoGradient.contMDiff_flow_apply t
 
 /-- The time-`t` map of the flow of an adapted pseudo-gradient, as a diffeomorphism. Its inverse
 is the time-`(-t)` map. -/
 noncomputable def flowDiffeomorph (t : ℝ) :
     M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
-  globalFlowDiffeomorph hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
+  hX.isBottAdaptedPseudoGradient.flowDiffeomorph t
 
 /-- The diffeomorphism `flowDiffeomorph t` is the time-`t` map of the flow. -/
 @[simp]
 theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.flow t y := by
-  rw [flowDiffeomorph, globalFlowDiffeomorph_apply, hX.flow_apply, globalFlow_apply]
+  rw [flowDiffeomorph, IsBottAdaptedPseudoGradient.flowDiffeomorph_apply,
+    isBottAdaptedPseudoGradient_flow]
 
 /-- The inverse of `flowDiffeomorph t` is the time-`(-t)` map of the flow. -/
 @[simp]
 theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
     (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
-  rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
+  rw [flowDiffeomorph, IsBottAdaptedPseudoGradient.flowDiffeomorph_symm_apply,
+    isBottAdaptedPseudoGradient_flow]
 
 /-- **The flow preserves the pseudo-gradient.** The derivative of the time-`t` map of the flow
 carries `X y` to `X` at the image of `y`. -/

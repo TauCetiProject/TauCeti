@@ -126,6 +126,25 @@ theorem flow_apply (t : ℝ) (y : M) : hX.flow t y = maximalIntegralCurve X y t 
 theorem isMIntegralCurve_flow (y : M) : IsMIntegralCurve (fun t ↦ hX.flow t y) X :=
   isMIntegralCurve_globalFlow _ hX.isCompleteVectorField y
 
+/-- For a fixed time `t`, the time-`t` map of the flow is smooth. -/
+theorem contMDiff_flow_apply (t : ℝ) : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ (hX.flow t) :=
+  contMDiff_globalFlow_apply hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
+
+/-- The time-`t` map of the flow, as a diffeomorphism. Its inverse is the time-`(-t)` map. -/
+noncomputable def flowDiffeomorph (t : ℝ) : M ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ M :=
+  globalFlowDiffeomorph hX.isCompleteVectorField (n := ⊤) le_top hX.contMDiff t
+
+/-- The diffeomorphism `flowDiffeomorph t` is the time-`t` map of the flow. -/
+@[simp]
+theorem flowDiffeomorph_apply (t : ℝ) (y : M) : hX.flowDiffeomorph t y = hX.flow t y := by
+  rw [flowDiffeomorph, globalFlowDiffeomorph_apply, hX.flow_apply, globalFlow_apply]
+
+/-- The inverse of `flowDiffeomorph t` is the time-`(-t)` map of the flow. -/
+@[simp]
+theorem flowDiffeomorph_symm_apply (t : ℝ) (y : M) :
+    (hX.flowDiffeomorph t).symm y = hX.flow (-t) y := by
+  rw [flowDiffeomorph, globalFlowDiffeomorph_symm_apply, hX.flow_apply, globalFlow_apply]
+
 /-- `f` is antitone along every orbit of the flow. -/
 theorem antitone_flow (y : M) : Antitone fun t ↦ f (hX.flow t y) :=
   hX.antitone_comp (hX.isMIntegralCurve_flow y)
