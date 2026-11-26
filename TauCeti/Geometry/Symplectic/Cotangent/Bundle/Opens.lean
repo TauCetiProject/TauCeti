@@ -65,7 +65,7 @@ public section
 noncomputable section
 
 open Bundle TopologicalSpace
-open scoped Manifold ContDiff
+open scoped Manifold ContDiff Topology
 
 namespace TauCeti.CotangentBundle
 
@@ -459,5 +459,53 @@ theorem exists_partialDiffeomorph_openInclusion_eq {U : Opens M} {V : Opens N} [
   exact mpullback_subtype_val_apply _ a
 
 end Transport
+
+section Primitive
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I 2 M] [IsManifold J 2 N]
+
+/-- **Exact primitives through the cotangent inclusions.** Let `U ⊆ M` and `V ⊆ N` be open, and let
+`Φ : T*U → T*V` and `Ψ : T*M → T*N` satisfy `Ψ ∘ ι = ι ∘ Φ` near `a ∈ T*U`, for the cotangent
+inclusions `ι`. If `f` is an exact primitive of `Φ` at `a`, that is `λ_U - Φ^* λ_V = df` there,
+and `g` is a function on `T*M`, differentiable at `ι a`, with `g ∘ ι = f` near `a`, then `g` is
+an exact primitive of `Ψ` at `ι a`: `λ_M - Ψ^* λ_N = dg` there. -/
+theorem liouvilleForm_sub_mpullback_apply_openInclusion {U : Opens M} {V : Opens N}
+    {Φ : CotangentBundle I U → CotangentBundle J V}
+    {Ψ : CotangentBundle I M → CotangentBundle J N} {f : CotangentBundle I U → ℝ}
+    {g : CotangentBundle I M → ℝ} {a : CotangentBundle I U}
+    (hΦ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ a)
+    (hΨ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ
+      (openInclusion U a))
+    (hΨΦ : Ψ ∘ openInclusion U =ᶠ[𝓝 a] openInclusion V ∘ Φ)
+    (hg : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) g (openInclusion U a))
+    (hgf : g ∘ openInclusion U =ᶠ[𝓝 a] f)
+    (hf : (liouvilleForm I U).val a -
+        mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Φ (liouvilleForm J V).val a =
+      mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) f) a) :
+    (liouvilleForm I M).val (openInclusion U a) -
+        mpullback (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (J.prod 𝓘(ℝ, E' →L[ℝ] ℝ)) Ψ (liouvilleForm J N).val
+          (openInclusion U a) =
+      mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) g) (openInclusion U a) := by
+  have hι := (contMDiff_openInclusion (I := I) U).mdifferentiableAt (x := a) (by simp)
+  have hι' := (contMDiff_openInclusion (I := J) V).mdifferentiableAt (x := Φ a) (by simp)
+  -- Compare both sides after pulling back along `ι`, whose differential is surjective.
+  rw [← Pi.sub_apply,
+    ← mpullback_apply_eq_mpullback_apply_iff (surjective_mfderiv_openInclusion U a), mpullback_sub,
+    Pi.sub_apply, mpullback_mextDeriv_ofFunction_apply hι hg]
+  -- On the right, `g ∘ ι` has the differential of `f`, which is `λ_U - Φ^* λ_V`.
+  rw [mextDeriv_ofFunction, hgf.mvfderiv_eq, ← mextDeriv_ofFunction, ← hf]
+  -- On the left, `Ψ ∘ ι = ι ∘ Φ` near `a`.
+  rw [← mpullback_comp_at hι hΨ, hΨΦ.mpullback_eq, mpullback_comp_at hΦ hι']
+  -- The cotangent inclusions pull the Liouville forms back to the Liouville forms.
+  have hU := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.val a)
+    (mpullback_openInclusion_liouvilleForm (I := I) U)
+  have hV := congrArg (fun α : SmoothForm _ _ ℝ 1 ↦ α.val (Φ a))
+    (mpullback_openInclusion_liouvilleForm (I := J) V)
+  simp only [SmoothForm.coe_mpullback] at hU hV
+  rw [hU, mpullback_apply_congr hV]
+
+end Primitive
 
 end TauCeti.CotangentBundle
