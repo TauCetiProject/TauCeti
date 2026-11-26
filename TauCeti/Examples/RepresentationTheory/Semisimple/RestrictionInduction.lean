@@ -11,12 +11,16 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 public import TauCeti.RepresentationTheory.Augmentation.Semisimple
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Semisimple.NonSemisimple
+public import TauCeti.RepresentationTheory.Induction.Transitivity
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 /-!
 # Checks for semisimplicity under restriction
 
 * For `H = G`, restriction to `H` changes nothing, so it preserves and reflects semisimplicity.
+* For `H = G`, induction from `H` returns the original representation: inducing the restriction
+  of `ρ` to `⊤` gives a representation equivalent to `ρ`, which is semisimple exactly when `ρ`
+  is.
 * In characteristic `p`, the regular representation of the cyclic group of order `p` restricts
   semisimply to the trivial subgroup but is not semisimple: ascent along a subgroup needs the
   index to be invertible.
@@ -27,6 +31,8 @@ public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 -/
 
 public section
+
+universe u
 
 open Representation
 
@@ -39,6 +45,29 @@ example {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
       IsSemisimpleRepresentation ρ :=
   MonoidHom.isSemisimpleRepresentation_comp_surjective_iff _
     (fun g ↦ ⟨⟨g, Subgroup.mem_top g⟩, rfl⟩) ρ
+
+section Top
+
+variable {k G V : Type u} [Field k] [Group G] [AddCommGroup V] [Module k V]
+
+/-- For `H = G`, induction from `H` returns the original representation: induction along the
+isomorphism `Subgroup.topEquiv` is restriction along its inverse
+(`TauCeti.Rep.indFunctorMulEquivIso`). -/
+noncomputable def indTopEquiv (ρ : Representation k G V) :
+    (ind (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype)).Equiv ρ :=
+  equivOfIso ((Rep.indFunctorMulEquivIso (k := k) (Subgroup.topEquiv (G := G))).app
+    (Rep.of (ρ.comp (⊤ : Subgroup G).subtype)))
+
+/-- For `H = G`, induction from `H` preserves and reflects semisimplicity. -/
+example (ρ : Representation k G V) :
+    IsSemisimpleRepresentation (ind (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype)) ↔
+      IsSemisimpleRepresentation ρ :=
+  ⟨fun _ ↦ (indTopEquiv ρ).toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+      (indTopEquiv ρ).toLinearEquiv.surjective,
+    fun _ ↦ (indTopEquiv ρ).symm.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+      (indTopEquiv ρ).symm.toLinearEquiv.surjective⟩
+
+end Top
 
 section Cyclic
 
