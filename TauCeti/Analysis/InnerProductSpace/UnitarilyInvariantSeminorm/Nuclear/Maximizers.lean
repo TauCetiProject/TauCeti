@@ -66,15 +66,6 @@ theorem re_trace_adjoint_comp_eq_nuclear_iff {D A : E →ₗ[𝕜] F} (hD : opNo
   · intro h
     rw [h hi, inner_self_eq_norm_sq, hu, one_pow, mul_one]
 
-/-- The real trace of the modulus is the nuclear seminorm. This computes the value of the
-trace pairing at the polar factor. -/
-@[simp]
-theorem _root_.LinearMap.re_trace_operatorAbs (A : E →ₗ[𝕜] F) :
-    RCLike.re (trace 𝕜 E A.operatorAbs) = nuclear 𝕜 E F A := by
-  rw [← A.adjoint_polarFactor_comp]
-  exact (re_trace_adjoint_comp_eq_nuclear_iff A.opNorm_polarFactor_le_one).mpr
-    A.polarFactor_comp_operatorAbs
-
 /-- The nuclear seminorm is the maximum real trace pairing over the operator-norm unit ball.
 The canonical polar factor attains it. -/
 theorem _root_.LinearMap.isGreatest_re_trace_adjoint_comp (A : E →ₗ[𝕜] F) :

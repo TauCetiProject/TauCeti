@@ -81,6 +81,18 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 
 /-! ### Trace duality between the operator norm and the nuclear seminorm -/
 
+/-- The real trace of the modulus is the nuclear seminorm. This computes the value of the
+trace pairing at the polar factor. -/
+@[simp]
+theorem _root_.LinearMap.re_trace_operatorAbs (A : E →ₗ[𝕜] F) :
+    RCLike.re (LinearMap.trace 𝕜 E A.operatorAbs) = nuclear 𝕜 E F A := by
+  rw [LinearMap.trace_eq_sum_inner _ A.rightSingularBasis, map_sum, nuclear_apply,
+    ← A.sum_fin_singularValues (fun s ↦ s) rfl]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [A.operatorAbs_rightSingularBasis, inner_smul_right,
+    orthonormal_iff_ite.mp A.rightSingularBasis.orthonormal i i]
+  simp
+
 /-- **Trace duality**: `‖tr (A† B)‖ ≤ ‖A‖ ‖B‖₁`. -/
 theorem norm_trace_adjoint_comp_le_opNorm_mul_nuclear (A B : E →ₗ[𝕜] F) :
     ‖LinearMap.trace 𝕜 E (LinearMap.adjoint A ∘ₗ B)‖ ≤ opNorm 𝕜 E F A * nuclear 𝕜 E F B := by
@@ -120,12 +132,9 @@ theorem exists_opNorm_le_one_trace_adjoint_comp_eq_nuclear (B : E →ₗ[𝕜] F
       LinearMap.trace 𝕜 E (LinearMap.adjoint U ∘ₗ B) = (nuclear 𝕜 E F B : 𝕜) := by
   refine ⟨B.polarFactor, B.opNorm_polarFactor_le_one, B.range_polarFactor.le,
     B.range_adjoint_polarFactor.le, ?_⟩
-  rw [B.adjoint_polarFactor_comp, LinearMap.trace_eq_sum_inner _ B.rightSingularBasis,
-    nuclear_apply, ← B.sum_fin_singularValues (fun s ↦ s) rfl, RCLike.ofReal_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [LinearMap.operatorAbs_rightSingularBasis, inner_smul_right,
-    orthonormal_iff_ite.mp B.rightSingularBasis.orthonormal i i]
-  simp
+  have hreal : conj (LinearMap.trace 𝕜 E B.operatorAbs) = LinearMap.trace 𝕜 E B.operatorAbs := by
+    rw [← LinearMap.trace_adjoint, B.isSymmetric_operatorAbs.adjoint_eq]
+  rw [B.adjoint_polarFactor_comp, ← (RCLike.conj_eq_iff_re.mp hreal), B.re_trace_operatorAbs]
 
 /-- **Variational characterization of the nuclear seminorm**:
 `‖B‖₁ = ⨆_{‖U‖ ≤ 1} ‖tr (U† B)‖`. -/
