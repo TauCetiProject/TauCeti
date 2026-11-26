@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import TauCeti.ModelTheory.RelationalConfiguration.Structure
+public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 public import Mathlib.ModelTheory.Graph
 public import Mathlib.MeasureTheory.Constructions.SimpleGraph
 public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
@@ -25,7 +26,9 @@ simple graphs: this file identifies `SimpleGraph V` with them as a measurable eq
 shows that pulling a graph back along a vertex map corresponds to restricting its configuration.
 Forgetting the simple-graph conditions, a configuration is just its array of truth values on the
 adjacency atoms (`TauCeti.RelationalConfiguration.adjArrayEquiv`), and the array of a simple graph
-is its adjacency array.
+is its adjacency array. Because `SimpleGraph.toRelationalConfiguration` is a measurable map whose
+decoded structure is `G.structure`, every infinitary formula or sentence of `L_{ω₁ω}` defines a
+measurable event on `SimpleGraph V` for any countable vertex type `V`.
 
 ## Main definitions
 
@@ -42,6 +45,9 @@ is its adjacency array.
 * `SimpleGraph.measurableEmbedding_toRelationalConfiguration` — on a countable vertex type, the
   encoding is a measurable embedding onto the simple-graph configurations
   (`SimpleGraph.range_toRelationalConfiguration`);
+* `SimpleGraph.measurableSet_setOf_realize` and
+  `SimpleGraph.measurableSet_setOf_realize_sentenceInf` — on a countable vertex type, infinitary
+  formulas and sentences with countable branching define measurable events on `SimpleGraph V`;
 * `SimpleGraph.map_comap_toRelationalConfiguration` — a law on configurations concentrated on
   simple graphs is the encoding of its pullback to simple graphs;
 * `SimpleGraph.toRelationalConfiguration_comap` — encoding a pulled-back graph is restricting its
@@ -385,5 +391,39 @@ theorem relationalConfigurationEquiv_symm_restrict (f : V → W)
       (relationalConfigurationEquiv.symm c).comap f := by
   ext u v
   simp
+
+/-! ### Measurable graph events -/
+
+/-- The graphs whose coded configuration lies in `modelsOf φ` are those satisfying `φ`. -/
+@[simp]
+theorem preimage_toRelationalConfiguration_modelsOf {ι : Type*}
+    (φ : Language.graph.SentenceInf ι) :
+    (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) ⁻¹'
+        modelsOf φ =
+      {G : SimpleGraph V | @Language.SentenceInf.Realize Language.graph ι φ V G.structure} := by
+  ext G
+  rw [Set.mem_preimage, mem_modelsOf, Set.mem_ofPred_eq, toStructure_toRelationalConfiguration]
+
+/-- **Measurability of infinitary graph formulas.** On a countable vertex type (finite and empty
+types included), the simple graphs realizing an infinitary formula with countable branching at
+fixed valuations of its free and bound variables form a measurable set. -/
+theorem measurableSet_setOf_realize {ι α : Type*} {n : ℕ} [Countable ι] [Countable V]
+    (φ : Language.graph.BoundedFormulaInf ι α n) (v : α → V) (xs : Fin n → V) :
+    MeasurableSet {G : SimpleGraph V |
+      @Language.BoundedFormulaInf.Realize Language.graph ι α V G.structure n φ v xs} := by
+  convert (RelationalConfiguration.measurableSet_setOf_realize (V := V) φ v xs).preimage
+    measurable_toRelationalConfiguration using 1
+  ext G
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, Set.mem_ofPred_eq, toStructure_toRelationalConfiguration]
+
+/-- **Measurability of infinitary graph sentences.** On a countable vertex type (finite and empty
+types included), satisfaction of an infinitary sentence with countable branching (in particular of
+any `L_{ω₁ω}` sentence) is a measurable event on `SimpleGraph V`. -/
+theorem measurableSet_setOf_realize_sentenceInf {ι : Type*} [Countable ι] [Countable V]
+    (φ : Language.graph.SentenceInf ι) :
+    MeasurableSet {G : SimpleGraph V |
+      @Language.SentenceInf.Realize Language.graph ι φ V G.structure} := by
+  rw [← preimage_toRelationalConfiguration_modelsOf]
+  exact (measurableSet_modelsOf (V := V) φ).preimage measurable_toRelationalConfiguration
 
 end SimpleGraph
