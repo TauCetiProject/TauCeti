@@ -8,7 +8,7 @@ module
 public import TauCeti.GroupTheory.GTree.Basic
 public import Mathlib.GroupTheory.CoprodI
 import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Tree
-import TauCeti.GroupTheory.GraphOfGroups.FreeProduct
+import TauCeti.GroupTheory.GraphOfGroups.FreeProduct.Basic
 import TauCeti.GroupTheory.GraphOfGroups.SpanningTree
 import TauCeti.GroupTheory.GTree.Restrict
 

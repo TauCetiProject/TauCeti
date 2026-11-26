@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GraphOfGroups.BassSerreTree
-public import TauCeti.GroupTheory.GraphOfGroups.FreeProduct
+public import TauCeti.GroupTheory.GraphOfGroups.BassSerre.Tree
+public import TauCeti.GroupTheory.GraphOfGroups.FreeProduct.Basic
 public import TauCeti.GroupTheory.GTree.Restrict
 
 /-!
@@ -18,22 +18,25 @@ the identification of `P` with the fundamental group. This is the tree of the fr
 acts on it with trivial dart stabilizers, the vertex `vertex i` has the factor `Mᵢ` as its
 stabilizer, the vertices `vertex i` lie in distinct orbits, and every vertex is a translate of one
 of them or has trivial stabilizer. So the nontrivial vertex stabilizers are conjugates of the
-factors. For a Grushko decomposition `G₁ ∗ ⋯ ∗ G_p ∗ F_q` this is the Bass–Serre tree of the
-graph of groups of Guirardel and Levitt's Figure 1; for `X` empty it is a tree of the free product
-`∗ᵢ Mᵢ` with trivial edge stabilizers, the setting of Kurosh's subgroup theorem.
+factors, and the quotient graph is the star of a rose, with the orbit of `vertex i` at `tip i`.
+For a Grushko decomposition `G₁ ∗ ⋯ ∗ G_p ∗ F_q` this is the Bass–Serre tree of the graph of
+groups of Guirardel and Levitt's Figure 1; for `X` empty it is a tree of the free product
+`∗ᵢ Mᵢ` with trivial edge stabilizers, the setting of Kurosh's subgroup theorem (for `∗ᵢ Mᵢ`
+itself, `exists_gTree_coprodI` states the existence of such a tree).
 
 ## Main definitions
 
 * `TauCeti.GraphOfGroups.freeProductTree`: the tree of the free product.
 * `TauCeti.GraphOfGroups.freeProductTree.vertex`: the vertex whose stabilizer is the factor `Mᵢ`.
+* `TauCeti.GraphOfGroups.freeProductTree.quotientIso`: the quotient graph is the star of a rose.
 
 ## Main results
 
 * `TauCeti.GraphOfGroups.stabilizer_freeProductTree_dart`: dart stabilizers are trivial.
 * `TauCeti.GraphOfGroups.stabilizer_freeProductTree_vertex`: the stabilizer of `vertex i` is the
   factor `Mᵢ`.
-* `TauCeti.GraphOfGroups.stabilizer_freeProductTree_eq_bot_or`: every vertex has trivial
-  stabilizer or is a translate of some `vertex i`.
+* `TauCeti.GraphOfGroups.stabilizer_freeProductTree_eq_bot_or_exists_smul_vertex_eq`: every
+  vertex has trivial stabilizer or is a translate of some `vertex i`.
 * `TauCeti.GraphOfGroups.freeProductTree.eq_of_smul_vertex_eq`: the vertices `vertex i` lie in
   distinct orbits.
 
@@ -72,8 +75,8 @@ private noncomputable def spokePath (i : ι) :
 
 /-- The tree of the free product `(∗ᵢ Mᵢ) ∗ F(X)`: the Bass–Serre tree of its graph of groups,
 based at the center, restricted (`GTree.comap`) along the identification of the free product with
-the fundamental group. It is not minimal in general: for a single factor and `X` empty it is a
-star whose center is fixed by the whole group. -/
+the fundamental group. It is not minimal in general: for a single factor `M i` and `X` empty the
+whole group fixes the vertex `freeProductTree.vertex M X i`, the vertex over the unique tip. -/
 noncomputable def freeProductTree :
     GTree.{max u v w, max u v w} (Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) :=
   (bassSerreTree (freeProduct M X) (starRose.center ι X)).comap (toπ₁ M X)
@@ -89,59 +92,46 @@ private theorem toπ₁_bijective : Function.Bijective (toπ₁ M X) :=
   (π₁Equiv (freeProduct M X) (starRose.center ι X) (starRoseTree ι X)).symm.bijective.comp
     (freeProductHom_bijective M X)
 
--- `toπ₁` sends `m ∈ M i` to the class of the loop `[c, tip i]_T m [tip i, c]_T`.
-private theorem toπ₁_inl_of {i : ι} (m : M i) :
-    toπ₁ M X (Monoid.Coprod.inl (Monoid.CoprodI.of m)) = π₁.vertexHom (spokePath M X i) m :=
-  (congrArg (π₁Equiv (freeProduct M X) (starRose.center ι X) (starRoseTree ι X)).symm
-    (freeProductHom_inl_of M X m)).trans (π₁Equiv_symm_of (freeProduct M X)
-      (starRose.center ι X) (starRoseTree ι X) (starRose.tip X i) m)
-
--- A subgroup of the fundamental group which is the image of a trivial group pulls back to `⊥`.
-private theorem comap_toπ₁_range_eq_bot {A : Type*} [Group A] [Subsingleton A]
-    (f : A →* π₁ (freeProduct M X) (starRose.center ι X)) : f.range.comap (toπ₁ M X) = ⊥ := by
-  rw [MonoidHom.range_eq_bot_iff.2 (Subsingleton.elim f 1), MonoidHom.comap_bot,
+/-- The free product `(∗ᵢ Mᵢ) ∗ F(X)` acts on its tree with trivial dart stabilizers. -/
+@[simp] theorem stabilizer_freeProductTree_dart (e : (freeProductTree M X).E) :
+    stabilizer (Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) e = ⊥ := by
+  -- The edge groups are trivial, so is the stabilizer of the dart in the fundamental group.
+  refine (GTree.stabilizer_comap_dart _ _ e).trans ?_
+  rw [stabilizer_bassSerreTree_dart_eq_bot, MonoidHom.comap_bot,
     (toπ₁ M X).ker_eq_bot toπ₁_bijective.1]
 
-/-- The free product `(∗ᵢ Mᵢ) ∗ F(X)` acts on its tree with trivial dart stabilizers. -/
-theorem stabilizer_freeProductTree_dart (e : (freeProductTree M X).E) :
-    stabilizer (Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) e = ⊥ := by
-  refine (GTree.stabilizer_comap_dart _ _ e).trans ?_
-  obtain ⟨b, b', p, e, rfl⟩ := bassSerreDart_surjective e
-  -- The edge groups are trivial, so is the stabilizer of the dart in the fundamental group.
-  rw [stabilizer_bassSerreDart, MonoidHom.map_range]
-  exact comap_toπ₁_range_eq_bot _
-
 /-- The stabilizer of the vertex `vertex i` of the tree of a free product is the factor `M i`. -/
-theorem stabilizer_freeProductTree_vertex (i : ι) :
+@[simp] theorem stabilizer_freeProductTree_vertex (i : ι) :
     stabilizer (Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) (freeProductTree.vertex M X i) =
       (Monoid.Coprod.inl.comp (Monoid.CoprodI.of (i := i)) :
         M i →* Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)).range := by
+  -- `toπ₁` sends `m ∈ M i` to the class of the loop `[c, tip i]_T m [tip i, c]_T`.
+  have h : (π₁.vertexHom (spokePath M X i)).range =
+      (Monoid.Coprod.inl.comp (Monoid.CoprodI.of (i := i))).range.map (toπ₁ M X) := by
+    rw [← MonoidHom.range_comp]
+    exact congrArg MonoidHom.range (MonoidHom.ext fun m ↦
+      ((congrArg _ (freeProductHom_inl_of M X m)).trans (π₁Equiv_symm_of ..)).symm)
   refine (GTree.stabilizer_comap_vertex _ _ _).trans ?_
-  rw [freeProductTree.vertex, stabilizer_bassSerreVertex]
-  -- `toπ₁` is injective and sends `M i` onto the stabilizer `[c, tip i]_T A_{tip i} [tip i, c]_T`.
-  ext x
-  refine ⟨fun ⟨m, hm⟩ ↦ ⟨m, toπ₁_bijective.1 ((toπ₁_inl_of (X := X) (i := i) m).trans hm)⟩, ?_⟩
-  rintro ⟨m, rfl⟩
-  exact ⟨m, (toπ₁_inl_of (X := X) m).symm⟩
+  rw [freeProductTree.vertex, stabilizer_bassSerreVertex, h,
+    Subgroup.comap_map_eq_self_of_injective toπ₁_bijective.1]
 
 /-- A vertex of the tree of a free product has trivial stabilizer or is a translate of one of
 the vertices `vertex i`, whose stabilizers are the factors. -/
-theorem stabilizer_freeProductTree_eq_bot_or (a : (freeProductTree M X).V) :
+theorem stabilizer_freeProductTree_eq_bot_or_exists_smul_vertex_eq
+    (a : (freeProductTree M X).V) :
     stabilizer (Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) a = ⊥ ∨
       ∃ (g : Monoid.Coprod (Monoid.CoprodI M) (FreeGroup X)) (i : ι),
         g • freeProductTree.vertex M X i = a := by
   obtain ⟨b, p, rfl⟩ := bassSerreVertex_surjective a
   rcases starRose.eq_center_or_eq_tip b with rfl | ⟨i, rfl⟩
   · -- The vertex group at the center is trivial, so is the stabilizer of a vertex over it.
-    have : Subsingleton ((freeProduct M X).vertexGroup (starRose.center ι X)) :=
-      inferInstanceAs (Subsingleton PUnit)
     refine .inl ((GTree.stabilizer_comap_vertex _ _ _).trans ?_)
-    rw [stabilizer_bassSerreVertex]
-    exact comap_toπ₁_range_eq_bot _
+    rw [stabilizer_bassSerreVertex_eq_bot, MonoidHom.comap_bot,
+      (toπ₁ M X).ker_eq_bot toπ₁_bijective.1]
   · -- A vertex over `tip i` is a translate of `vertex i`.
     obtain ⟨g, hg⟩ := exists_smul_bassSerreVertex_eq (spokePath M X i) p
     obtain ⟨g, rfl⟩ := toπ₁_bijective.2 g
-    exact .inr ⟨g, i, hg⟩
+    exact .inr ⟨g, i, (GTree.comap_smul_vertex _ _ g _).trans hg⟩
 
 /-- The vertices `vertex i` and `vertex j` of the tree of a free product lie in distinct orbits
 when `i ≠ j`. -/
@@ -152,5 +142,24 @@ theorem freeProductTree.eq_of_smul_vertex_eq {g : Monoid.Coprod (Monoid.CoprodI 
     ((GTree.comap_smul_vertex _ _ g _).symm.trans h)
   rw [bassSerreProjection_mapV_smul] at this
   simpa [freeProductTree.vertex] using this
+
+variable (M X) in
+/-- The quotient graph of the tree of a free product is the star of a rose: the orbit of a vertex
+or dart goes to the vertex or dart of the star of a rose that it lies over. -/
+noncomputable def freeProductTree.quotientIso :
+    (freeProductTree M X).quotient.Iso (starRose ι X) :=
+  ((bassSerreTree _ _).comapQuotientIso (toπ₁ M X) toπ₁_bijective.2).trans
+    (bassSerreQuotientIso _ _ ((starRose ι X).connected_iff.1 (starRose_connected ι X)).2)
+
+/-- The orbit of `vertex i` is the vertex `tip i` of the star of a rose. -/
+@[simp] theorem freeProductTree.quotientIso_vertex (i : ι) :
+    (freeProductTree.quotientIso M X).equivV
+      ((freeProductTree M X).quotientMap.mapV (freeProductTree.vertex M X i)) =
+        starRose.tip X i := by
+  refine (congrArg (bassSerreQuotientIso (freeProduct M X) (starRose.center ι X) _).equivV
+    (GTree.comapQuotientIso_equivV_quotientMap _ (toπ₁ M X) toπ₁_bijective.2
+      (bassSerreVertex (spokePath M X i)))).trans ?_
+  rw [← SerreGraph.Iso.toHom_mapV, bassSerreQuotientIso_toHom,
+    bassSerreQuotientHom_mapV_quotientMap, bassSerreProjection_mapV_bassSerreVertex]
 
 end TauCeti.GraphOfGroups

@@ -19,13 +19,16 @@ the setting of induced splittings.
 
 Stabilizers for the restriction along `f : H →* G` are preimages under `f`, an element of `H`
 is elliptic exactly when its image is, and its translation length is that of its image. Restricting
-a minimal tree along a surjective homomorphism, for instance precomposing the action with an
-automorphism of `G`, gives a minimal tree; restricting to a subgroup need not. Stabilizers and
-distances in an invariant subtree are those of the tree.
+along a surjective homomorphism, for instance precomposing the action with an automorphism of `G`,
+keeps the quotient graph and keeps a minimal tree minimal; restricting a minimal tree to a subgroup
+need not give a minimal tree. Stabilizers and distances in an invariant subtree are those of the
+tree.
 
 ## Main declarations
 
 * `TauCeti.GTree.comap`: the restriction of a `G`-tree along a homomorphism `H →* G`.
+* `TauCeti.GTree.comapQuotientIso`: along a surjective homomorphism, the restriction has the same
+  quotient graph.
 * `TauCeti.GTree.subtree`: the restriction of a `G`-tree to a nonempty convex invariant set of
   vertices.
 
@@ -112,6 +115,49 @@ theorem IsMinimal.comap (hT : T.IsMinimal) {f : H →* G} (hf : Function.Surject
   isMinimal_iff.mpr fun S hne hS hinv => isMinimal_iff.mp hT S hne hS fun g v hv => by
     obtain ⟨h, rfl⟩ := hf g
     exact hinv h v hv
+
+/-- Restricting a tree along a surjective homomorphism does not change its quotient graph: the
+orbits of `H` are those of `G`. -/
+noncomputable def comapQuotientIso (f : H →* G) (hf : Function.Surjective f) :
+    (T.comap f).quotient.Iso T.quotient :=
+  (SerreGraph.quotientLift (T.comap f).smul_ne_rev T.quotientMap
+      fun h ↦ SerreGraph.quotientMap_comp_toHom (f h)).toIso
+    ⟨fun y₁ y₂ hy ↦ by
+      obtain ⟨y₁, rfl⟩ := (T.comap f).quotientMap_mapV_surjective y₁
+      obtain ⟨y₂, rfl⟩ := (T.comap f).quotientMap_mapV_surjective y₂
+      obtain ⟨g, hg⟩ := quotientMap_mapV_eq_iff.1
+        ((SerreGraph.quotientLift_mapV_quotientMap (Γ := T.toSerreGraph) (a := y₁) ..).symm.trans
+          (hy.trans (SerreGraph.quotientLift_mapV_quotientMap (a := y₂) ..)))
+      obtain ⟨h, rfl⟩ := hf g
+      exact quotientMap_mapV_eq_iff.2 ⟨h, hg⟩,
+     fun y ↦ by
+      obtain ⟨y, rfl⟩ := T.quotientMap_mapV_surjective y
+      exact ⟨(T.comap f).quotientMap.mapV y, SerreGraph.quotientLift_mapV_quotientMap ..⟩⟩
+    ⟨fun y₁ y₂ hy ↦ by
+      obtain ⟨y₁, rfl⟩ := (T.comap f).quotientMap_mapE_surjective y₁
+      obtain ⟨y₂, rfl⟩ := (T.comap f).quotientMap_mapE_surjective y₂
+      obtain ⟨g, hg⟩ := quotientMap_mapE_eq_iff.1
+        ((SerreGraph.quotientLift_mapE_quotientMap (Γ := T.toSerreGraph) (e := y₁) ..).symm.trans
+          (hy.trans (SerreGraph.quotientLift_mapE_quotientMap (e := y₂) ..)))
+      obtain ⟨h, rfl⟩ := hf g
+      exact quotientMap_mapE_eq_iff.2 ⟨h, hg⟩,
+     fun y ↦ by
+      obtain ⟨y, rfl⟩ := T.quotientMap_mapE_surjective y
+      exact ⟨(T.comap f).quotientMap.mapE y, SerreGraph.quotientLift_mapE_quotientMap ..⟩⟩
+
+/-- `comapQuotientIso` sends the orbit of a vertex under `H` to its orbit under `G`. -/
+@[simp] theorem comapQuotientIso_equivV_quotientMap (f : H →* G) (hf : Function.Surjective f)
+    (v : T.V) :
+    (T.comapQuotientIso f hf).equivV ((T.comap f).quotientMap.mapV v) = T.quotientMap.mapV v :=
+  (SerreGraph.Hom.toIso_equivV_apply ..).trans
+    (SerreGraph.quotientLift_mapV_quotientMap (Γ := T.toSerreGraph) ..)
+
+/-- `comapQuotientIso` sends the orbit of a dart under `H` to its orbit under `G`. -/
+@[simp] theorem comapQuotientIso_equivE_quotientMap (f : H →* G) (hf : Function.Surjective f)
+    (e : T.E) :
+    (T.comapQuotientIso f hf).equivE ((T.comap f).quotientMap.mapE e) = T.quotientMap.mapE e :=
+  (SerreGraph.Hom.toIso_equivE_apply ..).trans
+    (SerreGraph.quotientLift_mapE_quotientMap (Γ := T.toSerreGraph) ..)
 
 variable (C : Set T.V)
 
