@@ -120,7 +120,17 @@ theorem rationalHurewicz_naturality {X Y : Type} [TopologicalSpace X] [Topologic
     (q ⊗ₜ hurewiczIntHom X x (n + 1) a)
   simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply] at h
   simp only [LinearMap.comp_apply, LinearMap.baseChange_tmul, rationalHurewicz_tmul, ← h]
-  exact congrArg _ (congrArg _ (hurewiczIntHom_map f hf a.toMul))
+  -- `hurewiczIntHom_map` states the integral naturality through the map of
+  -- `singularHomologyFunctor`, which is by definition the homology map of `singularChains ℤ`
+  -- (`singularHomologyFunctor_obj_obj`); `e` restates it in the latter form.
+  have e : hurewiczIntHom Y y (n + 1) (Additive.ofMul (map f hf a.toMul)) =
+      (HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) (n + 2)).hom
+        (hurewiczIntHom X x (n + 1) a) := by
+    rw [hurewiczIntHom_map, ofMul_toMul]
+    rfl
+  rw [AddMonoidHom.coe_toIntLinearMap, MonoidHom.toAdditive_apply_apply, mapHom_apply, e]
+  exact congrArg (singularHomologyTensorIso ℤ ℚ (TopCat.of Y) (n + 2)).hom.hom
+    (LinearMap.baseChange_tmul _ _ _).symm
 
 end HomotopyGroup
 
