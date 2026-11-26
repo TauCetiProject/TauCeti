@@ -65,8 +65,8 @@ the image point.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 * `TauCeti.exists_boundaryTangentCorr`, `TauCeti.exists_boundaryTangentCorr_symm`: under a
   diffeomorphism, every tangent vector of either boundary has a corresponding one, and
-  `TauCeti.exists_linearEquiv_boundaryTangentCorr`: the correspondence is a linear isomorphism
-  `T_q∂M ≃ T_{Φ q}∂M'`.
+  `TauCeti.boundaryTangentMap`: the correspondence is a linear isomorphism `T_q∂M ≃ T_{Φ q}∂M'`
+  (`TauCeti.boundaryTangentCorr_iff_eq_boundaryTangentMap`).
 * `TauCeti.mfderiv_mem_boundaryTangentSpace_iff`,
   `TauCeti.eventually_mpullback_mem_boundaryTangentSpace`: a diffeomorphism sends `v` into
   `T_{Φ q}∂M'` exactly when `v ∈ T_q∂M`, so pullbacks of fields tangent to `∂M'` are tangent to
@@ -490,38 +490,55 @@ theorem exists_boundaryTangentCorr_symm {k : WithTop ℕ∞} (hk : k ≠ 0)
   obtain ⟨u, rfl⟩ := hv
   exact ⟨u, hu.symm⟩
 
-/-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, the
-correspondence of tangent vectors of the boundaries is a linear isomorphism
-`T_q∂M ≃ T_{Φ q}∂M'`. -/
-theorem exists_linearEquiv_boundaryTangentCorr {k : WithTop ℕ∞} (hk : k ≠ 0)
-    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M) :
-    ∃ L : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ]
-        TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-          (⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ :
-            (𝓡∂ (n + 1)).boundary M'),
-      ∀ u, BoundaryTangentCorr Φ q
-        ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ u (L u) := by
-  set q' : (𝓡∂ (n + 1)).boundary M' :=
-    ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩
-  -- `dΦ ∘ dι` lands in `T_{Φ q}∂M'`; read it back through `dι'`.
-  let A : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →ₗ[ℝ]
+/-- The **boundary tangent map** of a diffeomorphism `Φ` of manifolds with boundary, of class
+`C^k` with `k ≠ 0`, from `q ∈ ∂M` to `q' = Φ q ∈ ∂M'`: the linear isomorphism `T_q∂M ≃ T_{q'}∂M'`
+sending `u` to the unique `u'` with `dι' u' = dΦ (dι u)`
+(`TauCeti.boundaryTangentCorr_iff_eq_boundaryTangentMap`). -/
+def boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
+    (q' : (𝓡∂ (n + 1)).boundary M') (h : Φ q = q') :
+    TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ]
       TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q' :=
-    (boundaryTangentEquiv q').symm.toLinearMap ∘ₗ
+  -- `dΦ ∘ dι` lands in `T_{q'}∂M'`; read it back through `dι'`. Both tangent spaces are
+  -- `EuclideanSpace ℝ (Fin n)`, so their dimensions agree by `rfl`.
+  LinearMap.linearEquivOfInjective
+    ((boundaryTangentEquiv q').symm.toLinearMap ∘ₗ
       ((mfderiv (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) Φ q).toLinearMap ∘ₗ
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q).toLinearMap).codRestrict
-        (boundaryTangentSpace q') fun u ↦
-          (mfderiv_mem_boundaryTangentSpace_iff hk Φ q).2
-            (mfderiv_subtypeVal_mem_boundaryTangentSpace q u)
-  have hA (u) : BoundaryTangentCorr Φ q q' u (A u) := by
-    simp only [BoundaryTangentCorr, A, LinearMap.coe_comp, LinearEquiv.coe_coe,
-      Function.comp_apply, ← coe_boundaryTangentEquiv_apply, LinearEquiv.apply_symm_apply,
-      LinearMap.codRestrict_apply, ContinuousLinearMap.coe_coe]
-  have hinj : Injective A := fun u v huv ↦ by
-    rw [← sub_eq_zero, ← (hA (u - v)).eq_zero_iff (Φ.isInvertible_mfderiv hk).injective,
-      map_sub, huv, sub_self]
-  -- Both tangent spaces are `EuclideanSpace ℝ (Fin n)`, so their dimensions agree by `rfl`.
-  exact ⟨A.linearEquivOfInjective hinj rfl, hA⟩
+        (boundaryTangentSpace q') fun u ↦ by
+          rw [show q' = ⟨Φ q, Φ.image_boundary hk ▸ mem_image_of_mem Φ q.property⟩ from
+            Subtype.ext h.symm]
+          exact (mfderiv_mem_boundaryTangentSpace_iff hk Φ q).2
+            (mfderiv_subtypeVal_mem_boundaryTangentSpace q u))
+    ((boundaryTangentEquiv q').symm.injective.comp fun _ _ huv ↦
+      injective_mfderiv_subtypeVal_boundary q
+        ((Φ.isInvertible_mfderiv hk).injective (congrArg Subtype.val huv)))
+    rfl
+
+/-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, every
+`u ∈ T_q∂M` corresponds to its image under the boundary tangent map. -/
+theorem boundaryTangentCorr_boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') (q : (𝓡∂ (n + 1)).boundary M)
+    (q' : (𝓡∂ (n + 1)).boundary M') (h : Φ q = q')
+    (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    BoundaryTangentCorr Φ q q' u (boundaryTangentMap hk Φ q q' h u) := by
+  rw [BoundaryTangentCorr, ← coe_boundaryTangentEquiv_apply]
+  exact congrArg Subtype.val ((boundaryTangentEquiv q').apply_symm_apply _)
+
+/-- Under a diffeomorphism `Φ` of manifolds with boundary, of class `C^k` with `k ≠ 0`, the vector
+of `T_{q'}∂M'`, `q' = Φ q`, corresponding to `u ∈ T_q∂M` is exactly its image under the boundary
+tangent map. -/
+theorem boundaryTangentCorr_iff_eq_boundaryTangentMap {k : WithTop ℕ∞} (hk : k ≠ 0)
+    (Φ : M ≃ₘ^k⟮𝓡∂ (n + 1), 𝓡∂ (n + 1)⟯ M') {q : (𝓡∂ (n + 1)).boundary M}
+    {q' : (𝓡∂ (n + 1)).boundary M'} (h : Φ q = q')
+    {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q}
+    {u' : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q'} :
+    BoundaryTangentCorr Φ q q' u u' ↔ u' = boundaryTangentMap hk Φ q q' h u := by
+  refine ⟨fun hu ↦ injective_mfderiv_subtypeVal_boundary q' ?_, fun hu ↦ ?_⟩
+  · exact hu.trans (boundaryTangentCorr_boundaryTangentMap hk Φ q q' h u).symm
+  · rw [hu]
+    exact boundaryTangentCorr_boundaryTangentMap hk Φ q q' h u
 
 end Naturality
 

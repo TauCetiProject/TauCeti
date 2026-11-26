@@ -13,8 +13,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
 
 An isometry `Φ : M → M'` of Riemannian manifolds with boundary maps `∂M` onto `∂M'` and carries
 `T_q∂M` onto `T_{Φ q}∂M'`: tangent vectors `u ∈ T_q∂M` and `u' ∈ T_{Φ q}∂M'` correspond
-(`TauCeti.BoundaryTangentCorr`) when `dι' u' = dΦ (dι u)`. This file shows that `Φ` preserves the
-whole extrinsic geometry of the boundary built on the second fundamental form:
+(`TauCeti.BoundaryTangentCorr`) when `dι' u' = dΦ (dι u)`, that is, when `u'` is the image of `u`
+under the boundary tangent map `TauCeti.boundaryTangentMap`
+(`TauCeti.RiemannianIsometry.boundaryTangentCorr_boundaryTangentMap`). This file shows that `Φ`
+preserves the whole extrinsic geometry of the boundary built on the second fundamental form:
 
 * the induced metric, `h'(u', w') = h(u, w)` for corresponding vectors
   (`TauCeti.RiemannianIsometry.boundaryInducedForm_map`);
@@ -72,6 +74,18 @@ theorem boundaryInducedForm_map {u w : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ
       boundaryInducedForm q u w := by
   rw [boundaryInducedForm_apply, boundaryInducedForm_apply, hu, hw, Φ.inner_mfderiv]
 
+omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)]
+  [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M' ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- An isometry `Φ` carries `u ∈ T_q∂M` to the corresponding vector of `T_{Φ q}∂M'` given by the
+boundary tangent map of its underlying diffeomorphism. -/
+theorem boundaryTangentCorr_boundaryTangentMap (u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q) :
+    BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u
+      (boundaryTangentMap (by simp) Φ.toDiffeomorph q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ rfl
+        u) :=
+  TauCeti.boundaryTangentCorr_boundaryTangentMap _ Φ.toDiffeomorph q _ rfl u
+
 /-- **Naturality of the Weingarten map of the boundary.** If `u ∈ T_q∂M` corresponds under an
 isometry `Φ` to `u' ∈ T_{Φ q}∂M'`, then `S_q u` corresponds to `S'_{Φ q} u'`:
 `dι' (S'_{Φ q} u') = dΦ (dι (S_q u))`. -/
@@ -81,11 +95,8 @@ theorem boundaryWeingarten_map {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (F
     (hu : BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u u') :
     BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩
       (boundaryWeingarten q u) (boundaryWeingarten _ u') := by
-  obtain ⟨L, hL⟩ : ∃ L : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ]
-      TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-        (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M'),
-      ∀ u, BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u (L u) :=
-    exists_linearEquiv_boundaryTangentCorr (by simp) Φ.toDiffeomorph q
+  have hL := Φ.boundaryTangentCorr_boundaryTangentMap q
+  generalize boundaryTangentMap _ Φ.toDiffeomorph q _ _ = L at hL
   -- `S'_{Φ q} u' = L (S_q u)`: test against every `w' ∈ T_{Φ q}∂M'` with the induced metric.
   have h : boundaryWeingarten _ u' = L (boundaryWeingarten q u) := by
     rw [← sub_eq_zero]
@@ -104,11 +115,8 @@ theorem boundaryWeingarten_map {u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (F
 theorem boundaryPrincipalCurvatures_map :
     boundaryPrincipalCurvatures (⟨Φ q, Φ.apply_mem_boundary q.property⟩ :
       (𝓡∂ (n + 1)).boundary M') = boundaryPrincipalCurvatures q := by
-  obtain ⟨L, hL⟩ : ∃ L : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q ≃ₗ[ℝ]
-      TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
-        (⟨Φ q, Φ.apply_mem_boundary q.property⟩ : (𝓡∂ (n + 1)).boundary M'),
-      ∀ u, BoundaryTangentCorr Φ q ⟨Φ q, Φ.apply_mem_boundary q.property⟩ u (L u) :=
-    exists_linearEquiv_boundaryTangentCorr (by simp) Φ.toDiffeomorph q
+  have hL := Φ.boundaryTangentCorr_boundaryTangentMap q
+  generalize boundaryTangentMap _ Φ.toDiffeomorph q _ _ = L at hL
   -- The images of the principal directions are eigenvectors of `S'` with the same eigenvalues.
   refine boundaryPrincipalCurvatures_eq_of_eigenbasis _ ((boundaryPrincipalBasis q).map L)
     (boundaryPrincipalCurvatures_antitone q) fun i ↦ ?_
