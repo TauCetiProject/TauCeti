@@ -627,6 +627,18 @@ private theorem energyFormH1_neg_two_self_eq (u : W1p volume (intervalDomain 0 �
     real_inner_self_eq_norm_sq]
   ring
 
+/-- On `(0, π)`, an element of `H¹₀(0, π)` with value `sin x` has Dirichlet energy
+`∫ |u'|² = π/2`. -/
+private theorem norm_gradient_sq_of_value_ae_eq_sin {u : W1p0 volume (intervalDomain 0 π) 2}
+    (hu : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
+      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
+        fun x ↦ Real.sin (x 0)) :
+    ‖W1p.gradient (u : W1p volume (intervalDomain 0 π) 2)‖ ^ 2 = π / 2 := by
+  have h := energyFormH1_self_eq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+    (by simpa only [sin_one_mul_pi_div] using hu)
+  rwa [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, sq_one_mul_pi_div,
+    one_mul, sub_zero] at h
+
 /-- **The form of `-u'' - 2u` is negative on `sin x`.** On `(0, π)`, an element of `H¹₀(0, π)` with
 value `sin x` has `∫ |u'|² - 2 ∫ u² = π/2 - π = -π/2`. -/
 theorem energyFormH1_neg_two_self_eq_of_value_ae_eq_sin
@@ -636,15 +648,9 @@ theorem energyFormH1_neg_two_self_eq_of_value_ae_eq_sin
         fun x ↦ Real.sin (x 0)) :
     energyFormH1 (fun _ ↦ 1) 0 (fun _ ↦ -2) (u : W1p volume (intervalDomain 0 π) 2)
       (u : W1p volume (intervalDomain 0 π) 2) = -(π / 2) := by
-  have hu' : W1p.value (u : W1p volume (intervalDomain 0 π) 2)
-      =ᵐ[volume.restrict (intervalDomain 0 π : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x ↦ Real.sin (((1 : ℕ) : ℝ) * π * (x 0 - 0) / (π - 0)) := by
-    simpa only [sin_one_mul_pi_div] using hu
-  have hgrad := energyFormH1_self_eq_of_value_ae_eq_sin Real.pi_pos one_pos hu'
-  rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, sq_one_mul_pi_div,
-    one_mul] at hgrad
-  rw [energyFormH1_neg_two_self_eq, hgrad,
-    norm_value_sq_of_value_ae_eq_sin Real.pi_pos one_pos hu', sub_zero]
+  rw [energyFormH1_neg_two_self_eq, norm_gradient_sq_of_value_ae_eq_sin hu,
+    norm_value_sq_of_value_ae_eq_sin Real.pi_pos (k := 1) one_pos
+      (by simpa only [sin_one_mul_pi_div] using hu), sub_zero]
   ring
 
 /-- **The least Gårding shift of `-u'' - 2u` on `(0, π)`.** With the constant `C₀ = 1/2` of
@@ -680,11 +686,8 @@ theorem isLeast_half_mul_norm_sq_le_energyFormH1_add_intervalDomain_zero_pi :
     have h := hβ s
     rw [energyFormH1_neg_two_self_eq_of_value_ae_eq_sin hs',
       W1p.norm_sq_eq_norm_value_sq_add_norm_gradient_sq,
-      norm_value_sq_of_value_ae_eq_sin Real.pi_pos one_pos hs, sub_zero] at h
-    have hgrad := energyFormH1_self_eq_of_value_ae_eq_sin Real.pi_pos one_pos hs
-    rw [energyFormH1_one_zero_zero_eq_inner, real_inner_self_eq_norm_sq, sq_one_mul_pi_div,
-      one_mul, sub_zero] at hgrad
-    rw [hgrad] at h
+      norm_value_sq_of_value_ae_eq_sin Real.pi_pos one_pos hs, sub_zero,
+      norm_gradient_sq_of_value_ae_eq_sin hs'] at h
     nlinarith [Real.pi_pos]
 
 end PDE

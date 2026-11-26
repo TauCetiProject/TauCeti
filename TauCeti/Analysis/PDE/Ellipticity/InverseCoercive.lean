@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import Mathlib.MeasureTheory.Measure.Restrict
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Inverse-coercive ellipticity
 
@@ -273,14 +275,10 @@ private theorem dotProduct_mulVec_one_add_smul_skew (k : ℝ) (η ξ : Euclidean
   simp [dotProduct, mulVec, Fin.sum_univ_two, Matrix.one_apply]
   ring
 
-private theorem norm_sq_euclideanSpace_fin_two (ξ : EuclideanSpace ℝ (Fin 2)) :
-    ‖ξ‖ ^ 2 = ξ 0 ^ 2 + ξ 1 ^ 2 := by
-  simp [EuclideanSpace.norm_sq_eq, Fin.sum_univ_two]
-
 /-- The coefficient `1 + k J` has the quadratic form `ξ ↦ ‖ξ‖²`. -/
 theorem dotProduct_mulVec_one_add_smul_skew_self (k : ℝ) (ξ : EuclideanSpace ℝ (Fin 2)) :
     ξ ⬝ᵥ ((1 + k • !![(0 : ℝ), -1; 1, 0]) *ᵥ ξ) = ‖ξ‖ ^ 2 := by
-  rw [dotProduct_mulVec_one_add_smul_skew, norm_sq_euclideanSpace_fin_two]
+  rw [dotProduct_mulVec_one_add_smul_skew, EuclideanSpace.norm_sq_fin_two]
   ring
 
 /-- The coefficient `1 + k J` satisfies the mixed bound `|η · (1 + k J) ξ| ≤ √(1 + k²) ‖η‖ ‖ξ‖`. -/
@@ -288,8 +286,8 @@ theorem abs_dotProduct_mulVec_one_add_smul_skew_le (k : ℝ) (η ξ : EuclideanS
     |η ⬝ᵥ ((1 + k • !![(0 : ℝ), -1; 1, 0]) *ᵥ ξ)| ≤ √(1 + k ^ 2) * ‖η‖ * ‖ξ‖ := by
   rw [dotProduct_mulVec_one_add_smul_skew, mul_assoc, ← Real.sqrt_sq (norm_nonneg η),
     ← Real.sqrt_sq (norm_nonneg ξ), ← Real.sqrt_mul (sq_nonneg _),
-    ← Real.sqrt_mul (by positivity), norm_sq_euclideanSpace_fin_two,
-    norm_sq_euclideanSpace_fin_two]
+    ← Real.sqrt_mul (by positivity), EuclideanSpace.norm_sq_fin_two,
+    EuclideanSpace.norm_sq_fin_two]
   refine Real.abs_le_sqrt ?_
   nlinarith [sq_nonneg (k * (η 0 * ξ 0 + η 1 * ξ 1) - (η 1 * ξ 0 - η 0 * ξ 1)),
     sq_nonneg (η 0 * ξ 1 - η 1 * ξ 0), sq_nonneg (η 0 * ξ 0 + η 1 * ξ 1)]
@@ -321,7 +319,7 @@ theorem isLeast_uniformlyEllipticOn_one_add_smul_skew (hs : s.Nonempty) (k : ℝ
   obtain ⟨x, hx⟩ := hs
   have h := hM.upper_bound hx (WithLp.toLp 2 ![1, k]) (EuclideanSpace.single 0 1)
   have hη : ‖(WithLp.toLp 2 ![1, k] : EuclideanSpace ℝ (Fin 2))‖ = √(1 + k ^ 2) := by
-    rw [← Real.sqrt_sq (norm_nonneg _), norm_sq_euclideanSpace_fin_two]
+    rw [← Real.sqrt_sq (norm_nonneg _), EuclideanSpace.norm_sq_fin_two]
     simp
   have hsq : √(1 + k ^ 2) * √(1 + k ^ 2) = 1 + k ^ 2 := Real.mul_self_sqrt (by positivity)
   rw [dotProduct_mulVec_one_add_smul_skew, hη] at h
