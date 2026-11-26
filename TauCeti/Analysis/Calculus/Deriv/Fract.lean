@@ -24,6 +24,7 @@ in Euler–Maclaurin type estimates.
   `t ↦ fract t ^ 2 - fract t` and `t ↦ fract t - fract t ^ 2` are continuous.
 * `Int.hasDerivWithinAt_fract_sq_sub_fract`: the right derivative of `fract t ^ 2 - fract t` at `t`
   is `2 fract t - 1`.
+* `Int.hasDerivAt_fract`: at every non-integer real `t`, `fract` has derivative `1`.
 * `Int.abs_fract_sq_sub_fract_le`: `|fract t ^ 2 - fract t| ≤ 1 / 4`.
 * `Int.fract_sub_fract_sq_nonneg`, `Int.fract_sub_fract_sq_le`: `0 ≤ fract t - fract t ^ 2 ≤ 1 / 4`.
 -/
@@ -31,6 +32,7 @@ in Euler–Maclaurin type estimates.
 public section
 
 open Set Filter
+open scoped Topology
 
 namespace Int
 
@@ -58,6 +60,15 @@ theorem hasDerivWithinAt_fract_sq_sub_fract (t : ℝ) :
     rw [floor_eq_iff]
     exact ⟨(floor_le t).trans hu.1.le, hu.2⟩
   rw [← self_sub_floor, hfl]
+
+/-- At every non-integer `t : ℝ`, `Int.fract` has derivative `1`. -/
+theorem hasDerivAt_fract {t : ℝ} (ht : t ∉ Set.range ((↑) : ℤ → ℝ)) :
+    HasDerivAt fract 1 t := by
+  have ht' : (⌊t⌋ : ℝ) < t := lt_of_le_of_ne (floor_le t) fun h ↦ ht ⟨⌊t⌋, h⟩
+  have heq : fract =ᶠ[𝓝 t] fun u : ℝ ↦ u - ⌊t⌋ := by
+    filter_upwards [Ioo_mem_nhds ht' (lt_floor_add_one t)] with u hu
+    exact fract_eq_iff.mpr ⟨by linarith [hu.1], by linarith [hu.2], ⌊t⌋, by ring⟩
+  exact ((hasDerivAt_id' t).sub_const _).congr_of_eventuallyEq heq
 
 /-- `|fract t ^ 2 - fract t| ≤ 1 / 4`, since `fract t ∈ [0, 1)`. -/
 theorem abs_fract_sq_sub_fract_le (t : ℝ) : |fract t ^ 2 - fract t| ≤ 1 / 4 := by
