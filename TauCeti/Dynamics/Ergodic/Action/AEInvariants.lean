@@ -10,12 +10,12 @@ public import Mathlib.GroupTheory.GroupAction.IterateAct
 public import Mathlib.MeasureTheory.MeasurableSpace.Invariants
 
 /-!
-# The invariant σ-algebra of a measure-preserving action
+# The invariant σ-algebra of an action on a measure space
 
 For an action of `M` on a measurable space `X` with a measure `μ`, the *invariant σ-algebra*
 `TauCeti.aeSMulInvariants M μ` consists of the measurable sets `s` that are invariant up to null
 sets under every parameter: `(m • ·) ⁻¹' s =ᵐ[μ] s` for all `m : M`. The additive version is
-`TauCeti.aeVAddInvariants M μ`. No finiteness of `μ` is assumed.
+`TauCeti.aeVAddInvariants M μ`. Neither invariance nor finiteness of `μ` is assumed.
 
 ## Main definitions
 
@@ -104,14 +104,14 @@ theorem comap_aeSMulInvariants_le {π : X → Y} (hπm : Measurable π)
 /-- For a single map `T`, a set measurable for Mathlib's σ-algebra of strictly invariant sets
 `MeasurableSpace.invariants T` is in the invariant σ-algebra of the `ℕ`-action of the iterates of
 `T`. -/
+@[to_additive /-- For a single map `T`, a set measurable for Mathlib's σ-algebra of strictly
+invariant sets `MeasurableSpace.invariants T` is in the invariant σ-algebra of the additive
+`ℕ`-action of the iterates of `T`. -/]
 theorem invariants_le_aeSMulInvariants_iterateMulAct (T : X → X) :
     MeasurableSpace.invariants T ≤ aeSMulInvariants (IterateMulAct T) μ := by
   intro s hs
   rw [MeasurableSpace.measurableSet_invariants] at hs
-  refine measurableSet_aeSMulInvariants_of_preimage_eq hs.1 fun n ↦ ?_
-  change T^[n.val] ⁻¹' s = s
-  induction n.val with
-  | zero => rfl
-  | succ k ih => rw [Function.iterate_succ', Set.preimage_comp, hs.2, ih]
+  refine measurableSet_aeSMulInvariants_of_preimage_eq hs.1 fun ⟨n⟩ ↦ ?_
+  simpa only [IterateMulAct.mk_smul] using (Function.IsFixedPt.preimage_iterate hs.2 n).eq
 
 end TauCeti
