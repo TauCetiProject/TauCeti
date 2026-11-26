@@ -87,8 +87,8 @@ theorem comap_toFun (φ : R' →ₐ[A] R) (S : Type*) [CommSemiring S] [Algebra 
   rw [toLaw_comap, PolynomialLaw.toFun_comp_apply, LinearMap.toPolynomialLaw_toFun,
     LinearMap.baseChange_eq_lTensor, AlgHom.lTensor_toLinearMap_apply]
 
-/-- After scalar extension to `S`, the law of `D.comap φ` is the law of `D` composed with `φ`
-extended to `S`. -/
+/-- The `toFun'` form of `comap_toFun`, for `S` in the universe of `A`: the law of `D.comap φ`
+at `S` is the law of `D` at `S` composed with `φ` extended to `S`. -/
 @[simp]
 theorem comap_toFun' (φ : R' →ₐ[A] R) (S : Type u) [CommSemiring S] [Algebra A S]
     (x : S ⊗[A] R') :
