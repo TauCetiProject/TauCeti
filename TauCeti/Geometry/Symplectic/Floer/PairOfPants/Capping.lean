@@ -93,6 +93,9 @@ negative planes and the output by a positive plane.
   the Floer equation of the negative plane, for a vector space target.
 * `SymplecticForm.integral_floerEnergyDensity_image_plumbingMap_single_inf`: the energy over the
   image of a region of the inserted plane is the plane energy over the region.
+* `SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap_single_inf` and
+  `SmoothTwoForm.integral_floerEnergyDensity_image_plumbingMap_single_inf`: the same two
+  statements for a manifold target.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf_family`: for `L > 4` the capped datum
   is of class `C^n` on the cylinder obtained by capping, jointly with the neck length;
   `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_inf` is the statement at a fixed length.
@@ -974,6 +977,111 @@ theorem abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdi
     (ω.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le hH hHs hB u))
 
 end IsNondegenerate
+
+/-! ### The capped datum read through the plumbing chart, for a manifold target -/
+
+section PlumbingChart
+
+open _root_.Complex (equivRealProdCLM)
+open TauCeti.Complex (equivRealProdCLM_symm_realChart realChart_injective)
+
+omit [IsManifold I ⊤ M] in
+/-- At the image under `ψ_L` of a point of the inserted plane outside the circle `s_∞ = -L/2`, the
+capped datum is differentiable in the target point, for a manifold target. -/
+private theorem mdifferentiableAt_plumbedPerturbation_single_inf_realChart (hq : q ≠ inf)
+    (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    {w : ℝ × ℝ}
+    (hwL : inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2) (v : ℂ) (x : M) :
+    MDifferentiableAt I 𝓘(ℝ) (fun y ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+      (equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) y v) x :=
+  (((contMDiffAt_plumbedPerturbation_single_inf (n := 1) hq hHb hHbs hL (by
+      rw [equivRealProdCLM_symm_realChart]
+      exact plumbingMap_eq_endCenter_or_of_endSign_mul_re_endCoord_le hq (by linarith) hwL)
+    x).comp x (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply
+      contMDiffAt_const).mdifferentiableAt one_ne_zero
+
+/-- **The inserted plane solves its Floer equation**, for a manifold target. Let `u` solve the
+Floer equation `(du - X_K)^{0,1} = 0` of the capping datum `K` of the finite end `q` with neck
+length `L > 4` at the image `ψ_L(w)` of a point `w` of the inserted plane outside the circle
+`s_∞ = -L/2` of its end, where `ψ_L` is the plumbing chart of the end `q`. Then `u ∘ ψ_L` solves
+the Floer equation of the negative plane datum of `Hb q` at `w`, for the same almost complex
+structure, because the plumbing map is holomorphic. This includes the pole `0` of the plane and
+the point `1`, which the capping fills in. The vector-space case is
+`SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_plumbingMap_single_inf`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap_single_inf
+    (ω : SmoothTwoForm I M) (hq : q ≠ inf) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    {w : ℝ × ℝ} (hwL : inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2)
+    {u : ℝ × ℝ → M} (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w))
+    {J : AlmostComplexStructure (TangentSpace I (u (realChart (q.plumbingMap L) w)))}
+    (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedMFDeriv
+      (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+        (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+        (equivRealProdCLM.symm z) x Complex.I)
+      u (realChart (q.plumbingMap L) w)).toLinearMap) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J (ω.perturbedMFDeriv
+      (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x Complex.I)
+      (u ∘ realChart (q.plumbingMap L)) w).toLinearMap := by
+  have htgt (v : ℂ) := mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
+    hwL v (u (realChart (q.plumbingMap L) w))
+  have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
+    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu (htgt 1)
+    (htgt Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) h
+  -- The pulled-back datum is the negative plane datum.
+  rwa [ω.perturbedMFDeriv_congr_perturbation
+    (Ks' := fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x 1)
+    (Kt' := fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x Complex.I) _
+    (funext fun x ↦ by
+      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf hq hL hwL,
+        equivRealProdCLM_symm_stdComplexLineReal])
+    (funext fun x ↦ by
+      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf hq hL hwL,
+        equivRealProdCLM_symm_stdComplexLineImag])] at h'
+
+/-- **The energy along the plumbing chart of the capping family**, for a manifold target. On a
+measurable set `B` of the inserted plane outside the circle `s_∞ = -L/2` of its end, which may
+contain the pole `0` and the point `1`, the energy of a map `u` over `ψ_L(B)` for the capping
+datum of the finite end `q` with neck length `L > 4` is the energy of `u ∘ ψ_L` over `B` for the
+negative plane datum of `Hb q`, where `ψ_L` is the plumbing chart of the end `q`, as soon as `u` is
+differentiable on `ψ_L(B)`. The vector-space case is
+`SymplecticForm.integral_floerEnergyDensity_image_plumbingMap_single_inf`. -/
+theorem integral_floerEnergyDensity_image_plumbingMap_single_inf (ω : SmoothTwoForm I M)
+    (hq : q ≠ inf) (hHb : ∀ r, Periodic (Hb r) 1)
+    (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (Hb r))) (hL : 4 < L)
+    {B : Set (ℝ × ℝ)} (hBm : MeasurableSet B)
+    (hB : ∀ w ∈ B, inf.endSign * (inf.endCoord (equivRealProdCLM.symm w)).re ≤ L / 2)
+    {u : ℝ × ℝ → M}
+    (hu : ∀ w ∈ B, MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w)) :
+    ∫ z in realChart (q.plumbingMap L) '' B, ω.floerEnergyDensity
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+          (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ plumbedPerturbation (Pi.single inf (Hb q)) Hb q L
+          (equivRealProdCLM.symm z) x Complex.I) u z =
+      ∫ w in B, ω.floerEnergyDensity
+        (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ negativePlanePerturbation (Hb q) (equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ realChart (q.plumbingMap L)) w := by
+  rw [ω.integral_floerEnergyDensity_image hBm
+    (realChart_injective (q.plumbingMap_injective _)).injOn
+    (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
+    (fun w _ ↦ det_fderiv_realChart_plumbingMap_nonneg q _ w) hu
+    (fun w hw ↦ mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
+      (hB w hw) 1 _)
+    fun w hw ↦ mdifferentiableAt_plumbedPerturbation_single_inf_realChart hq hHb hHbs hL
+      (hB w hw) Complex.I _]
+  -- The pulled-back datum is the negative plane datum.
+  exact setIntegral_congr_fun hBm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
+    (funext fun x ↦ by
+      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf hq hL (hB w hw),
+        equivRealProdCLM_symm_stdComplexLineReal])
+    (funext fun x ↦ by
+      rw [perturbationPullback_realChart_plumbedPerturbation_single_inf hq hL (hB w hw),
+        equivRealProdCLM_symm_stdComplexLineImag])
+
+end PlumbingChart
 
 end TauCeti.SmoothTwoForm
 
