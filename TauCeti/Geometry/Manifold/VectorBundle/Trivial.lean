@@ -15,10 +15,8 @@ import Mathlib.Topology.Algebra.Module.FiniteDimension
 # Smooth maps into trivial bundles
 
 The trivial bundle `Bundle.Trivial B F` has the single global trivialization
-`Bundle.Trivial.trivialization B F`, the only member of its atlas
-(`Bundle.Trivial.memTrivializationAtlas_trivialization`), so a map into its total space is smooth
-(or differentiable at a point) exactly when its base map and its fibre map into `F` are; in
-particular its constant
+`Bundle.Trivial.trivialization B F`, so a map into its total space is smooth (or differentiable at
+a point) exactly when its base map and its fibre map into `F` are; in particular its constant
 sections are smooth, the underlying `F`-valued function of a smooth section is smooth
 (`ContMDiffSection.contMDiff_coe_trivial`), and a section is differentiable at a point exactly when
 its fibre map is (`Bundle.Trivial.mdifferentiableAt_section_iff`). `Bundle.Trivial.homeomorphProd`
@@ -41,11 +39,6 @@ public section
 
 open Bundle Set
 open scoped Manifold ContDiff
-
-/-- The global trivialization of a trivial bundle belongs to its trivialization atlas. -/
-instance Bundle.Trivial.memTrivializationAtlas_trivialization (B F : Type*) [TopologicalSpace B]
-    [TopologicalSpace F] : MemTrivializationAtlas (Bundle.Trivial.trivialization B F) :=
-  ⟨mem_singleton _⟩
 
 section
 
