@@ -125,20 +125,6 @@ theorem sheetCoordinates_inv {x : FundamentalGroupoid X} (e : projTopHom x₀ �
     (sheetCoordinates k L e).inv = L.map (sheetHom e) :=
   (rfl)
 
-/-- The underlying linear map of the monodromy of a morphism of local systems is its component
-at the basepoint. -/
-private theorem forget₂_map_monodromyFunctor_map {L L' : LocalCoefficientSystem.{u, u, u} k X}
-    (η : L ⟶ L') :
-    (forget₂ (Rep k (FundamentalGroup X x₀)) (ModuleCat k)).map
-      ((LocalCoefficientSystem.monodromyFunctor k X x₀).map η) = η.app (.mk x₀) := by
-  ext a
-  rw [Rep.forget₂_moduleCat_map, ModuleCat.hom_ofHom,
-    Representation.IntertwiningMap.toLinearMap_apply,
-    LocalCoefficientSystem.monodromyFunctor_map_hom]
-  -- `rw` cannot use `monodromyMap_apply` here: the coercion is typed by the fibres of
-  -- `monodromyFunctor`, which are those of `L` only up to `monodromyFunctor_obj_V`.
-  exact LocalCoefficientSystem.monodromyMap_apply η x₀ a
-
 end Coordinates
 
 variable [LocallyPathConnectedSpace X] [PathConnectedSpace X] [SemilocallySimplyConnectedSpace X]
@@ -269,7 +255,8 @@ theorem associatedLocalSystemMonodromyIso_hom_naturality
   rw [NatTrans.comp_app, NatTrans.comp_app, associatedLocalSystemMonodromyIso_hom_app k _ e,
     associatedLocalSystemMonodromyIso_hom_app k _ e, ← Category.assoc,
     IsQuotientCoveringMap.associatedLocalSystemFiberIso_hom_naturality, Category.assoc,
-    Category.assoc, sheetCoordinates_inv, sheetCoordinates_inv, forget₂_map_monodromyFunctor_map]
+    Category.assoc, sheetCoordinates_inv, sheetCoordinates_inv,
+    LocalCoefficientSystem.forget₂_map_monodromyFunctor_map]
   -- `η.naturality` closes the goal up to `monodromyFunctor_obj_V`, the source of `η.app x₀` here.
   exact congrArg (_ ≫ ·) (η.naturality (sheetHom e)).symm
 
@@ -309,7 +296,12 @@ def monodromyAssociatedLocalSystemIso (A : Rep.{u} k (FundamentalGroup X x₀)) 
     ((isQuotientCoveringMap_projTopHom x₀).associatedLocalSystemFiberIso k A
       (basepointLift x₀)).toLinearEquiv fun g ↦ by
         ext a
-        exact congr(($(map_comp_associatedLocalSystemFiberIso_basepointLift_hom k A g)).hom a))
+        have h := congr(($(map_comp_associatedLocalSystemFiberIso_basepointLift_hom k A g)).hom a)
+        rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+          ModuleCat.hom_ofHom] at h
+        rw [LinearMap.comp_apply, LinearMap.comp_apply,
+          LocalCoefficientSystem.monodromyRepresentation_apply, LinearEquiv.coe_coe,
+          Iso.toLinearEquiv_apply, Iso.toLinearEquiv_apply, h])
 
 /-- The identification of the monodromy of `L_A` with `A` reads the fibre over `x₀` in the
 coordinates of the constant-path sheet. -/
@@ -345,7 +337,8 @@ theorem monodromyAssociatedLocalSystemIso_hom_naturality
     ext a
     exact monodromyAssociatedLocalSystemIso_hom_apply k B a
   apply (forget₂ (Rep k (FundamentalGroup X x₀)) (ModuleCat k)).map_injective
-  rw [Functor.map_comp, Functor.map_comp, hB, hB, forget₂_map_monodromyFunctor_map]
+  rw [Functor.map_comp, Functor.map_comp, hB, hB,
+    LocalCoefficientSystem.forget₂_map_monodromyFunctor_map]
   exact (isQuotientCoveringMap_projTopHom x₀).associatedLocalSystemFiberIso_hom_naturality k f
     (basepointLift x₀)
 
