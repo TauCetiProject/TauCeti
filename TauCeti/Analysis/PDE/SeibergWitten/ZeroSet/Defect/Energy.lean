@@ -170,9 +170,17 @@ variable [MeasurableSpace E]
 parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). Only
 the norm of `α` enters, so `α` may take values in any normed group; for instance it may be the
 canonical-line component `φ = α u₀` itself. -/
-@[expose] noncomputable def defectMeasure {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+noncomputable def defectMeasure {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
     (α : E → G) (β : E → F) : Measure E :=
   μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure is the measure with density `(r / 4) |1 - |α|² - |β|²|` against `μ`. -/
+theorem defectMeasure_def {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) :
+    defectMeasure μ r α β =
+      μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) :=
+  (rfl)
 
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
 /-- The defect measure of a set `B` is the defect energy

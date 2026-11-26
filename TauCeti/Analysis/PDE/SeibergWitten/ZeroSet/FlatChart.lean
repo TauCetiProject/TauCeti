@@ -197,6 +197,7 @@ theorem measure_closedBall_le_mul_deriv_add_of_add_hodgeStar_eq
     linarith
   have hδ : ContinuousOn (fun x ↦ r / 4 * |1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2|) (ball c R) :=
     continuousOn_const.mul ((continuousOn_const.sub (hφc.norm.pow 2)).sub (hβc.norm.pow 2)).abs
+  rw [defectMeasure_def]
   exact measure_closedBall_le_mul_deriv_add (μ := μ) h₀ h₂₃ hF hdF hδ
     (fun x _ ↦ by positivity) hω
     (fun x hx ↦ hB x (sphere_subset_closedBall.trans (closedBall_subset_ball hσ.2) hx)) hσ
