@@ -65,8 +65,9 @@ forward along multiplicative evaluation maps, this is a parametrized cocycle bet
 continuation cocycles of `T₀` and `T₁`
 (`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`), so the
 continuation maps of twisted complexes that the two systems induce are chain homotopic
-(`TauCeti.ParametrizedCocycle.homotopy`): the continuation morphism of a homotopy of Morse
-functions does not depend on the representing chain system of its continuation trajectories.
+(`TauCeti.ParametrizedCocycle.homotopy`): for a homotopy of Morse functions whose continuation
+trajectory spaces satisfy these hypotheses, the continuation morphism does not depend on the
+representing chain system of its continuation trajectories.
 
 ## Main definitions
 
@@ -266,6 +267,17 @@ end Homotopy
 
 /-! ### Existence of homotopies between representing chain systems -/
 
+/-- A continuous map with values in a subset `s`, corestricted to `s`. -/
+private def continuousMapCodRestrict {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+    (f : C(X, Y)) (s : Set Y) (hs : ∀ p, f p ∈ s) : C(X, s) :=
+  ⟨s.codRestrict f hs, f.continuous.codRestrict hs⟩
+
+/-- Composing a corestricted continuous map with the inclusion of the subset recovers the map. -/
+private theorem subtypeVal_comp_continuousMapCodRestrict {X Y : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] (f : C(X, Y)) (s : Set Y) (hs : ∀ p, f p ∈ s) :
+    (ContinuousMap.subtypeVal s).comp (continuousMapCodRestrict f s hs) = f :=
+  ContinuousMap.ext fun _ ↦ rfl
+
 section Existence
 
 variable {P : Type*} [Fintype P] {ind : P → ℤ} {M : P → P → TopCat.{u}}
@@ -287,9 +299,9 @@ private theorem exists_continuationChainSum_eq_cubicalChainSumMap
       cubicalChainSumMap k (ContinuousMap.subtypeVal (A x y)) b =
         continuationChainSum ind ind ι ι k S.chain S'.chain h x y := by
   -- The composition maps, corestricted to the subspaces `A x y`.
-  let ιA : ∀ z, C(M x z × M z y, A x y) := fun z ↦
-    ⟨fun p ↦ ⟨ι x z y p, hA x z y p⟩, (ι x z y).continuous.subtype_mk _⟩
-  have hιA (z : P) : (ContinuousMap.subtypeVal (A x y)).comp (ιA z) = ι x z y := rfl
+  let ιA (z : P) := continuousMapCodRestrict (ι x z y) (A x y) (hA x z y)
+  have hιA (z : P) : (ContinuousMap.subtypeVal (A x y)).comp (ιA z) = ι x z y :=
+    subtypeVal_comp_continuousMapCodRestrict _ _ _
   refine ⟨∑ z, cubicalChainSumPairing k (ιA z) (S.chain x z) (h z y) +
     ∑ z, (ind x - ind z - 1).negOnePow • cubicalChainSumPairing k (ιA z) (h x z) (S'.chain z y),
     add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_), ?_⟩
@@ -379,12 +391,12 @@ private theorem exists_parametrizedChainSum_eq_sub_add (hB : ∀ x z y p, κ x z
         T₁.chain x y - T₀.chain x y +
           cubicalChainSumMap k (ContinuousMap.subtypeVal (B x y)) b := by
   -- The composition maps, corestricted to the subspaces `B x y`.
-  let κB : ∀ z, C(M x z × N z y, B x y) := fun z ↦
-    ⟨fun p ↦ ⟨κ x z y p, hB x z y p⟩, (κ x z y).continuous.subtype_mk _⟩
-  let κB' : ∀ z, C(N x z × M' z y, B x y) := fun z ↦
-    ⟨fun p ↦ ⟨κ' x z y p, hB' x z y p⟩, (κ' x z y).continuous.subtype_mk _⟩
-  have hκB (z : P) : (ContinuousMap.subtypeVal (B x y)).comp (κB z) = κ x z y := rfl
-  have hκB' (z : Q) : (ContinuousMap.subtypeVal (B x y)).comp (κB' z) = κ' x z y := rfl
+  let κB (z : P) := continuousMapCodRestrict (κ x z y) (B x y) (hB x z y)
+  let κB' (z : Q) := continuousMapCodRestrict (κ' x z y) (B x y) (hB' x z y)
+  have hκB (z : P) : (ContinuousMap.subtypeVal (B x y)).comp (κB z) = κ x z y :=
+    subtypeVal_comp_continuousMapCodRestrict _ _ _
+  have hκB' (z : Q) : (ContinuousMap.subtypeVal (B x y)).comp (κB' z) = κ' x z y :=
+    subtypeVal_comp_continuousMapCodRestrict _ _ _
   refine ⟨∑ z, (ind x - ind z).negOnePow • cubicalChainSumPairing k (κB z) (S.chain x z) (h z y) +
     ∑ z, (ind x - indQ z).negOnePow • cubicalChainSumPairing k (κB' z) (h x z) (S'.chain z y),
     add_mem (Submodule.sum_mem _ fun z _ ↦ ?_) (Submodule.sum_mem _ fun z _ ↦ ?_), ?_⟩
@@ -411,8 +423,9 @@ which has no homology in that degree, so the injectivity holds. The push-forward
 parametrized chain system then relate the continuation cocycles of `T₀` and `T₁` by a
 parametrized cocycle
 (`TauCeti.ContinuationChainSystem.IsRepresenting.nonempty_parametrizedCocycle`), so the
-continuation maps of the two systems are chain homotopic: the continuation morphism of a homotopy
-does not depend on the representing chain system. -/
+continuation maps of the two systems are chain homotopic: for continuation trajectory spaces
+satisfying these hypotheses, the induced continuation map does not depend on the choice of
+representing continuation chain system. -/
 theorem IsRepresenting.nonempty_parametrizedChainSystem (hT₀ : T₀.IsRepresenting B ν)
     (hT₁ : T₁.IsRepresenting B ν)
     (hκ : ∀ x w z y (a : M x w) (b : M w z) (c : N z y),
@@ -483,7 +496,8 @@ theorem IsRepresenting.nonempty_parametrizedCocycle (hT₀ : T₀.IsRepresenting
     Nonempty (ParametrizedCocycle (T₀.continuationCocycle r hq hq' hrκ hrκ')
       (T₁.continuationCocycle r hq hq' hrκ hrκ')) :=
   (hT₀.nonempty_parametrizedChainSystem hT₁ hκ hκκ' hκ' hB hB' hinj).map fun η ↦
-    η.parametrizedCocycle r hq hq' hrκ hrκ' hrκ hrκ' (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) hrκ hrκ'
+    η.parametrizedCocycle r hq hq' hrκ hrκ' hrκ hrκ' (fun _ _ ↦ ContinuousMap.comp_id _)
+      (fun _ _ ↦ ContinuousMap.comp_id _) hrκ hrκ'
 
 end Evaluation
 
