@@ -10,6 +10,7 @@ public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 import Mathlib.Analysis.InnerProductSpace.Projection.Minimal
 import TauCeti.Analysis.InnerProductSpace.Projection.Minimal
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # The metric projection onto a set
@@ -36,7 +37,6 @@ online gradient descent.
 
 ## Main results
 
-* `Metric.infDist_eq_iInf_norm_sub`: `Metric.infDist x s` as an infimum of norms.
 * `TauCeti.metricProj_mem_of_exists`, `TauCeti.norm_sub_metricProj_of_exists`: when a nearest
   point exists, `metricProj s x` is one.
 * `TauCeti.metricProj_eq_self_of_mem`: points of `s` project to themselves.
@@ -65,16 +65,6 @@ public section
 
 open Metric
 open scoped RealInnerProductSpace
-
-namespace Metric
-
-variable {E : Type*} [SeminormedAddCommGroup E] {s : Set E} {x : E}
-
-/-- `Metric.infDist x s` as an infimum of norms: the norm form of `Metric.infDist_eq_iInf`. -/
-theorem infDist_eq_iInf_norm_sub : infDist x s = ⨅ y : s, ‖x - y‖ := by
-  simp [infDist_eq_iInf, dist_eq_norm]
-
-end Metric
 
 namespace TauCeti
 

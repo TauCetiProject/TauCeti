@@ -19,6 +19,8 @@ For a nonempty set in a pseudometric space, the extended distance `Metric.infEDi
 (`Metric.infEDist_eq_ofReal_iff`). For any two sets `S` and `T` in a pseudometric space, the real
 infimum `sInf ((fun z ↦ infDist z T) '' S)` agrees with `(⨅ z ∈ S, ⨅ ζ ∈ T, edist z ζ).toReal`
 (`Metric.sInf_image_infDist_eq_toReal_biInf`), including when `S` or `T` is empty.
+In a seminormed group, `Metric.infDist x s` is the infimum of the norms `‖x - y‖` over `y ∈ s`
+(`Metric.infDist_eq_iInf_norm_sub`).
 
 Hausdorff convergence to zero passes along chains of sets: if `A i` approaches `B i` and `B i`
 approaches `Z` in the Hausdorff extended distance, then `A i` approaches `Z`
@@ -70,6 +72,11 @@ theorem sInf_image_infDist_eq_toReal_biInf {X : Type*} [PseudoMetricSpace X] (S 
   · simp [hS.image_const]
   · simp_rw [sInf_image', infDist, iInf_subtype',
       ← ENNReal.toReal_iInf (fun _ : S ↦ infEDist_ne_top hT), infEDist, iInf_subtype']
+
+/-- `Metric.infDist x s` as an infimum of norms: the norm form of `Metric.infDist_eq_iInf`. -/
+theorem infDist_eq_iInf_norm_sub {E : Type*} [SeminormedAddCommGroup E] {s : Set E} {x : E} :
+    infDist x s = ⨅ y : s, ‖x - y‖ := by
+  simp [infDist_eq_iInf, dist_eq_norm]
 
 variable {X ι : Type*} [PseudoEMetricSpace X] {l : Filter ι}
 
