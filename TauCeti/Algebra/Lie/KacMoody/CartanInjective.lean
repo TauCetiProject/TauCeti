@@ -606,6 +606,11 @@ private theorem quotientCartan_mk_one (x : H) :
   rw [quotientCartan_apply, quotientAction_mk, MonoidAlgebra.one_def,
     cartanAction_single, rootSum_one, LinearMap.zero_apply, sub_zero, map_smul]
 
+private theorem quotientRaising_mk_one (k : I) :
+    quotientRaising R μ hdiag hneg hzero k (LieSubmodule.Quotient.mk' _ 1) = 0 := by
+  rw [quotientRaising, quotientAction_mk, MonoidAlgebra.one_def, raising_single_one,
+    raisingWord_one, map_zero]
+
 end TensorAlgebra
 
 /-- **Cartan injectivity.** For a generalized Cartan matrix `A`, that is `Aᵢᵢ = 2`, `Aᵢⱼ ≤ 0`
@@ -655,8 +660,7 @@ theorem exists_highestWeightVector (μ : Module.Dual K H) :
   · rw [LieRingModule.compLieHom_apply, lift_cartanElement, Module.End.lie_apply,
       quotientCartan_mk_one]
   · rw [LieRingModule.compLieHom_apply, lift_positiveGenerator, Module.End.lie_apply,
-      quotientRaising, quotientAction_mk, MonoidAlgebra.one_def, raising_single_one,
-      raisingWord_one, map_zero]
+      quotientRaising_mk_one]
 
 /-- For a generalized Cartan matrix, the raising generator `eᵢ` is nonzero in the Kac–Moody
 algebra. -/

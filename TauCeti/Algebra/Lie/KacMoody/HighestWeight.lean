@@ -33,7 +33,7 @@ the `eᵢ` and the `fᵢ` generate `𝔤`, it is a submodule.
 So when `v` generates `M`, every weight space is spanned by the vectors of the words whose roots
 sum to `λ - μ` (`TauCeti.KacMoody.weightSpace_eq_span_negativeWord`). Consequently every weight
 `μ` of `M` satisfies `μ ≤ λ` in the dominance order, and over a field of characteristic zero the
-weight space `M_λ` is the line through `v` and every weight space is finite-dimensional, since
+weight space `M_λ` is spanned by `v` and every weight space is finite-dimensional, since
 only finitely many words have roots summing to a given element. These are the properties that put
 the highest-weight modules of `𝔤`, the Verma modules and their quotients, into category `O`. No
 symmetrizability and no finiteness of the index set is assumed.
@@ -57,8 +57,8 @@ symmetrizability and no finiteness of the index set is assumed.
 * `TauCeti.KacMoody.rootLE_of_weightSpace_ne_bot`,
   `TauCeti.KacMoody.weightSpace_self_eq_span_singleton` and
   `TauCeti.KacMoody.finiteDimensional_weightSpace`: the weights of such a module lie below the
-  highest weight, and in characteristic zero the highest weight space is a line and every weight
-  space is finite-dimensional.
+  highest weight, and in characteristic zero the highest weight space is spanned by the
+  highest-weight vector and every weight space is finite-dimensional.
 
 ## References
 
@@ -108,8 +108,8 @@ variable (R) in
 /-- The weight spaces of the adjoint module are the root spaces. -/
 theorem weightSpace_eq_rootSpace (α : Module.Dual K H) :
     weightSpace R (PresentedLieAlgebra R) α = rootSpace R α := by
-  rw [weightSpace_def, rootSpace_def]
-  rfl
+  ext x
+  rw [mem_weightSpace_iff, mem_rootSpace_iff]
 
 /-- A root vector of root `α` maps the weight space of `μ` into that of `α + μ`. -/
 theorem lie_mem_weightSpace_of_mem_rootSpace {α μ : Module.Dual K H} {x : PresentedLieAlgebra R}
@@ -160,7 +160,8 @@ theorem iSup_weightSpace_eq_top {lam : Module.Dual K H} {v : M} (hv : v ∈ weig
   have hle : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} ≤ S :=
     LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr (Submodule.mem_iSup_of_mem lam hv))
   rw [hgen, top_le_iff] at hle
-  exact congrArg LieSubmodule.toSubmodule hle
+  simpa only [LieSubmodule.top_toSubmodule, LieSubmodule.toSubmodule_mk] using
+    congrArg LieSubmodule.toSubmodule hle
 
 /-! ## Lowering words -/
 
@@ -203,31 +204,34 @@ section HighestWeight
 
 variable {lam : Module.Dual K H} {v : M}
 
+/-- An element of `𝔤` that maps every lowering word applied to `v` into the span of these words
+maps the whole span into itself. -/
+private theorem lie_mem_span_negativeWord {x : PresentedLieAlgebra R}
+    (hx : ∀ w, ⁅x, negativeWord R v w⁆ ∈ Submodule.span K (Set.range (negativeWord R v))) {m : M}
+    (hm : m ∈ Submodule.span K (Set.range (negativeWord R v))) :
+    ⁅x, m⁆ ∈ Submodule.span K (Set.range (negativeWord R v)) := by
+  have hle : Submodule.span K (Set.range (negativeWord R v)) ≤
+      (Submodule.span K (Set.range (negativeWord R v))).comap
+        (toEnd K (PresentedLieAlgebra R) M x) :=
+    Submodule.span_le.mpr <| Set.range_subset_iff.mpr fun w => by
+      rw [SetLike.mem_coe, Submodule.mem_comap, toEnd_apply_apply]
+      exact hx w
+  simpa only [Submodule.mem_comap, toEnd_apply_apply] using hle hm
+
 /-- The span of the lowering words applied to `v` is stable under every lowering generator. -/
 private theorem lie_negativeGenerator_mem_span {m : M}
     (hm : m ∈ Submodule.span K (Set.range (negativeWord R v))) (j : I) :
-    ⁅negativeGenerator R j, m⁆ ∈ Submodule.span K (Set.range (negativeWord R v)) := by
-  induction hm using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨w, rfl⟩ := h
-    exact Submodule.subset_span ⟨j :: w, rfl⟩
-  | zero => rw [lie_zero]; exact zero_mem _
-  | add _ _ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
-  | smul c _ _ h => rw [lie_smul]; exact Submodule.smul_mem _ c h
+    ⁅negativeGenerator R j, m⁆ ∈ Submodule.span K (Set.range (negativeWord R v)) :=
+  lie_mem_span_negativeWord (fun w => Submodule.subset_span ⟨j :: w, rfl⟩) hm
 
 /-- If `v` is a weight vector, the span of the lowering words applied to `v` is stable under every
 Cartan element. -/
 private theorem lie_cartanElement_mem_span (hv : v ∈ weightSpace R M lam) {m : M}
     (hm : m ∈ Submodule.span K (Set.range (negativeWord R v))) (x : H) :
     ⁅cartanElement R x, m⁆ ∈ Submodule.span K (Set.range (negativeWord R v)) := by
-  induction hm using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨w, rfl⟩ := h
-    rw [mem_weightSpace_iff.mp (negativeWord_mem_weightSpace hv w) x]
-    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨w, rfl⟩)
-  | zero => rw [lie_zero]; exact zero_mem _
-  | add _ _ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
-  | smul c _ _ h => rw [lie_smul]; exact Submodule.smul_mem _ c h
+  refine lie_mem_span_negativeWord (fun w => ?_) hm
+  rw [mem_weightSpace_iff.mp (negativeWord_mem_weightSpace hv w) x]
+  exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨w, rfl⟩)
 
 /-- If `v` has weight `lam` and is killed by every raising generator, then `eᵢ` maps each lowering
 word applied to `v` into the span of these words, by the relation `eᵢ fⱼ = fⱼ eᵢ + δᵢⱼ hᵢ`. -/
@@ -269,13 +273,7 @@ theorem span_range_negativeWord_eq_lieSpan (hv : v ∈ weightSpace R M lam)
       intro m hm
       rcases hy with (⟨x, rfl⟩ | ⟨i, rfl⟩) | ⟨j, rfl⟩
       · exact lie_cartanElement_mem_span hv hm x
-      · induction hm using Submodule.span_induction with
-        | mem _ h =>
-          obtain ⟨w, rfl⟩ := h
-          exact lie_positiveGenerator_negativeWord_mem_span hv hpos i w
-        | zero => rw [lie_zero]; exact zero_mem _
-        | add _ _ _ _ h₁ h₂ => rw [lie_add]; exact add_mem h₁ h₂
-        | smul c _ _ h => rw [lie_smul]; exact Submodule.smul_mem _ c h
+      · exact lie_mem_span_negativeWord (lie_positiveGenerator_negativeWord_mem_span hv hpos i) hm
       · exact lie_negativeGenerator_mem_span hm j
     | zero => intro m _; rw [zero_lie]; exact zero_mem _
     | add y z _ _ hy hz => intro m hm; rw [add_lie]; exact add_mem (hy m hm) (hz m hm)
@@ -288,7 +286,8 @@ theorem span_range_negativeWord_eq_lieSpan (hv : v ∈ weightSpace R M lam)
     { S with lie_mem := fun {x m} hm => hstable x m hm }
   have hle : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} ≤ S' :=
     LieSubmodule.lieSpan_le.mpr (Set.singleton_subset_iff.mpr (Submodule.subset_span ⟨[], rfl⟩))
-  exact hle
+  simpa only [LieSubmodule.toSubmodule_mk] using
+    (LieSubmodule.toSubmodule_le_toSubmodule _ _).mpr hle
 
 variable (hv : v ∈ weightSpace R M lam) (hpos : ∀ i, ⁅positiveGenerator R i, v⁆ = 0)
   (hgen : LieSubmodule.lieSpan K (PresentedLieAlgebra R) {v} = ⊤)
@@ -338,8 +337,9 @@ theorem rootLE_of_weightSpace_ne_bot {μ : Module.Dual K H} (h : weightSpace R M
     obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
     exact R.root_mem_posRootCone i
 
-/-- **The highest weight space is a line.** Over a field of characteristic zero, the weight space of
-the highest weight `lam` of a module generated by a highest-weight vector `v` is spanned by `v`. -/
+/-- **The highest weight space is spanned by the highest-weight vector.** Over a field of
+characteristic zero, the weight space of the highest weight `lam` of a module generated by a
+highest-weight vector `v` is spanned by `v`; it is a line exactly when `v ≠ 0`. -/
 theorem weightSpace_self_eq_span_singleton [CharZero K] : weightSpace R M lam = K ∙ v := by
   rw [weightSpace_eq_span_negativeWord hv hpos hgen, sub_self]
   have hS : {w : List I | (w.map R.root).sum = 0} = {[]} := by
