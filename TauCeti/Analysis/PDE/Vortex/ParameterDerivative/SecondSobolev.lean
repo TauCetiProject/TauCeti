@@ -148,9 +148,12 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalRightInverse
     hbv hβv hβvb hbw hβw hβwb hb₂ hβ₂ hβ₂b f g hg
   obtain ⟨hT, hsurj, hd, hTd, -⟩ :=
     isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  obtain ⟨hMv, hbv2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbv hβvb
-  obtain ⟨hMw, hbw2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbw hβwb
-  obtain ⟨hM₂, hb₂2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hb₂ hβ₂b
+  obtain ⟨hMv, hbv2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbv fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβvb i 0 (Nat.zero_le k) z
+  obtain ⟨hMw, hbw2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbw fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβwb i 0 (Nat.zero_le k) z
+  obtain ⟨hM₂, hb₂2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hb₂ fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβ₂b i 0 (Nat.zero_le k) z
   -- The coordinates of `exp(c ρ) Q f`, `exp(c ρ) Q'_v f` and `exp(c ρ) Q'_w f` in `H^(k+1)`.
   obtain ⟨u₀, hu₀, hu₀n⟩ := hK₀b x D hx hxb hsol hframe hD hD₀ (a p₀) hax f g hg
   obtain ⟨uv, huv, huvn⟩ :=
@@ -238,9 +241,12 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjectio
     hbv hβv hβvb hbw hβw hβwb hb₂ hβ₂ hβ₂b e he
   obtain ⟨hT, hsurj, hd, hTd, -⟩ :=
     isFredholm_and_contDiffAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  obtain ⟨hMv, hbv2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbv hβvb
-  obtain ⟨hMw, hbw2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbw hβwb
-  obtain ⟨hM₂, hb₂2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hb₂ hβ₂b
+  obtain ⟨hMv, hbv2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbv fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβvb i 0 (Nat.zero_le k) z
+  obtain ⟨hMw, hbw2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hbw fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβwb i 0 (Nat.zero_le k) z
+  obtain ⟨hM₂, hb₂2⟩ := nonneg_and_norm_le_two_mul_of_ae_eq hb₂ fun i z ↦ by
+    simpa only [norm_iteratedFDeriv_zero] using hβ₂b i 0 (Nat.zero_le k) z
   set N := (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
     volume).toReal
   -- The coordinates of `exp(c ρ) π e`, `exp(c ρ) π'_v e` and `exp(c ρ) π'_w e` in `H^(k+1)`.
