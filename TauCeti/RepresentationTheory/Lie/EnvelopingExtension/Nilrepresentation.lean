@@ -52,8 +52,9 @@ equivalence `L ≃ S ⋊ H`: they compose the extensions above with the recognit
 * `TauCeti.exists_semiDirectSum_rep_of_isNilpotent`: on a nilpotent split extension, a
   representation by nilpotent operators extends to one by nilpotent operators.
 * `LieIdeal.exists_rep_of_isCompl_of_forall_mem`, `LieIdeal.exists_rep_of_isCompl_of_isSolvable`
-  and `LieIdeal.exists_rep_of_isCompl_of_isNilpotent`: the internal forms, extending a
-  representation of a complemented ideal `S` of `L` to a representation of `L`.
+  and `LieIdeal.exists_rep_of_isCompl_of_isNilpotent`: the internal forms, building from a
+  representation `σ` of a complemented ideal `S` of `L` a representation of `L` on a possibly
+  different module, keeping the same control of the kernel and of nilpotence on `S`.
 
 ## References
 
@@ -190,9 +191,10 @@ private theorem ker_comp_semiDirectSumEquiv_symm_le {S : LieIdeal K L} {H : LieS
 
 /-- **Extension across a complemented ideal, internal form.** Let `S` be a finite-dimensional ideal
 of `L` and `H` a complementary Lie subalgebra whose brackets with `S` lie in a Lie ideal `N` of `S`
-acting nilpotently under a finite-dimensional representation `σ` of `S`. Then `σ` extends to a
-finite-dimensional representation `ρ` of `L` that detects every direction of `S` detected by `σ`,
-and under which an element of `S` acts nilpotently exactly when it does under `σ`. -/
+acting nilpotently under a finite-dimensional representation `σ` of `S`. Then there is a
+finite-dimensional representation `ρ` of `L`, on a possibly different module, that detects every
+direction of `S` detected by `σ`, and under which an element of `S` acts nilpotently exactly when
+it does under `σ`. -/
 theorem _root_.LieIdeal.exists_rep_of_isCompl_of_forall_mem (S : LieIdeal K L)
     [FiniteDimensional K S] {H : LieSubalgebra K L} (hc : IsCompl S.toSubmodule H.toSubmodule)
     (N : LieIdeal K S) (σ : S →ₗ⁅K⁆ Module.End K V) (hσ : ∀ s ∈ N, IsNilpotent (σ s))
@@ -210,8 +212,9 @@ theorem _root_.LieIdeal.exists_rep_of_isCompl_of_forall_mem (S : LieIdeal K L)
 /-- **Extension of nilrepresentations across a complemented solvable ideal, internal form.** In
 characteristic zero, let `S` be a solvable ideal of a finite-dimensional Lie algebra `L` containing
 the nilradical of `L`, complemented by a Lie subalgebra `H`. A finite-dimensional representation
-of `S` on which the nilradical of `S` acts nilpotently extends to a finite-dimensional
-nilrepresentation `ρ` of `L` that detects every direction of `S` detected by `σ`.
+`σ` of `S` on which the nilradical of `S` acts nilpotently yields a finite-dimensional
+nilrepresentation `ρ` of `L`, on a possibly different module, that detects every direction of `S`
+detected by `σ`.
 
 The hypothesis `nilradical K L ≤ S` says that the nilradicals of `L` and `S` coincide as subsets of
 `L`, the nilradical of `S` being the part of the nilradical of `L` inside `S`
@@ -233,9 +236,9 @@ theorem _root_.LieIdeal.exists_rep_of_isCompl_of_isSolvable [CharZero K] [Finite
 
 /-- **Extension of nilpotent representations across a complemented ideal of a nilpotent Lie
 algebra, internal form.** Over any field, let `S` be a finite-dimensional ideal of a nilpotent Lie
-algebra `L`, complemented by a Lie subalgebra `H`. A finite-dimensional representation of `S` by
-nilpotent endomorphisms extends to a finite-dimensional representation of `L` by nilpotent
-endomorphisms that detects every direction of `S` detected by `σ`. -/
+algebra `L`, complemented by a Lie subalgebra `H`. A finite-dimensional representation `σ` of `S`
+by nilpotent endomorphisms yields a finite-dimensional representation of `L`, on a possibly
+different module, by nilpotent endomorphisms that detects every direction of `S` detected by `σ`. -/
 theorem _root_.LieIdeal.exists_rep_of_isCompl_of_isNilpotent [LieRing.IsNilpotent L]
     (S : LieIdeal K L) [FiniteDimensional K S] {H : LieSubalgebra K L}
     (hc : IsCompl S.toSubmodule H.toSubmodule) (σ : S →ₗ⁅K⁆ Module.End K V)
