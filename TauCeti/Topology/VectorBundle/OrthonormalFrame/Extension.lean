@@ -360,8 +360,7 @@ theorem extendCompEquiv_symm_toEquiv_mk_mk (x : X) (p : s.P x) (h : H) (k : K) :
         (Extend.mk τ hτ (Extend.mk σ hσ p h) k) =
       Extend.mk (τ.comp σ) (hτ.comp hσ) p (τ h * k) := by
   rw [Equiv.symm_toEquiv]
-  exact (_root_.Equiv.symm_apply_eq _).2 ((s.extendCompEquiv_toEquiv_mk σ hσ hσρ hρ'n hρ'c τ hτ
-    hτρ hρ''n hρ''c x p (τ h * k)).trans (Extend.mk_mk σ hσ τ hτ p h k).symm).symm
+  exact Extend.compEquiv_mk σ hσ τ hτ p h k
 
 end Comp
 
