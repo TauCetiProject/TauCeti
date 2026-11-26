@@ -91,16 +91,47 @@ variable {F}
 
 /-- A unit of `F(t)` lies in `degreeLEUnits F d` exactly when it is a polynomial of degree at most
 `d`. -/
+@[simp]
 theorem mem_degreeLEUnits {d : ℕ} {u : (RatFunc F)ˣ} :
     u ∈ degreeLEUnits F d ↔ ∃ p : F[X], p.natDegree ≤ d ∧ algebraMap F[X] (RatFunc F) p = u :=
   Iff.rfl
 
 /-- A unit of `F(t)` lies in `monicIrreducibleUnits F d` exactly when it is a monic irreducible
 polynomial of degree `d`. -/
+@[simp]
 theorem mem_monicIrreducibleUnits {d : ℕ} {u : (RatFunc F)ˣ} :
     u ∈ monicIrreducibleUnits F d ↔ ∃ π : F[X], π.Monic ∧ Irreducible π ∧ π.natDegree = d ∧
       algebraMap F[X] (RatFunc F) π = u :=
   Iff.rfl
+
+/-- The unit of `F(t)` given by a nonzero polynomial of degree at most `d` lies in
+`degreeLEUnits F d`. -/
+theorem mk0_algebraMap_mem_degreeLEUnits {p : F[X]} (hp : p ≠ 0) {d : ℕ}
+    (hd : p.natDegree ≤ d) :
+    Units.mk0 (algebraMap F[X] (RatFunc F) p) (RatFunc.algebraMap_ne_zero hp) ∈
+      degreeLEUnits F d :=
+  ⟨p, hd, rfl⟩
+
+/-- The unit of `F(t)` given by a monic irreducible polynomial of degree `d` lies in
+`monicIrreducibleUnits F d`. -/
+theorem mk0_algebraMap_mem_monicIrreducibleUnits {π : F[X]} (hm : π.Monic)
+    (hi : Irreducible π) {d : ℕ} (hd : π.natDegree = d) :
+    Units.mk0 (algebraMap F[X] (RatFunc F) π) (RatFunc.algebraMap_ne_zero hm.ne_zero) ∈
+      monicIrreducibleUnits F d :=
+  ⟨π, hm, hi, hd, rfl⟩
+
+/-- The sets `degreeLEUnits F d` increase with `d`. -/
+theorem degreeLEUnits_mono : Monotone (degreeLEUnits F) :=
+  fun _ _ hde _ ⟨p, hp, hpu⟩ ↦ ⟨p, hp.trans hde, hpu⟩
+
+/-- The unit `-1` of `F(t)` is a constant polynomial, so it lies in every `degreeLEUnits F d`. -/
+theorem neg_one_mem_degreeLEUnits (d : ℕ) : (-1 : (RatFunc F)ˣ) ∈ degreeLEUnits F d :=
+  ⟨-1, by simp, by simp⟩
+
+/-- A monic irreducible polynomial of degree `d` has degree at most `d`. -/
+theorem monicIrreducibleUnits_subset_degreeLEUnits (d : ℕ) :
+    monicIrreducibleUnits F d ⊆ degreeLEUnits F d :=
+  fun _ ⟨π, _, _, hπ, hπu⟩ ↦ ⟨π, hπ.le, hπu⟩
 
 /-- `L_d` is the span of the symbols of length `n` with all entries in `degreeLEUnits F d`. -/
 theorem polynomialFiltration_eq_span (n d : ℕ) :
@@ -145,18 +176,11 @@ private def polyUnit (p : F[X]) (hp : p ≠ 0) : (RatFunc F)ˣ :=
 
 private theorem polyUnit_mem_degreeLEUnits {p : F[X]} (hp : p ≠ 0) {d : ℕ}
     (hd : p.natDegree ≤ d) : polyUnit p hp ∈ degreeLEUnits F d :=
-  ⟨p, hd, rfl⟩
+  mk0_algebraMap_mem_degreeLEUnits hp hd
 
 private theorem ofUnit_mem_span_degreeLEUnits {d : ℕ} {u : (RatFunc F)ˣ}
     (hu : u ∈ degreeLEUnits F d) : ofUnit u ∈ Submodule.span ℤ (ofUnit '' degreeLEUnits F d) :=
   Submodule.subset_span ⟨u, hu, rfl⟩
-
-private theorem degreeLEUnits_mono {d e : ℕ} (hde : d ≤ e) :
-    degreeLEUnits F d ⊆ degreeLEUnits F e :=
-  fun _ ⟨p, hp, hpu⟩ ↦ ⟨p, hp.trans hde, hpu⟩
-
-private theorem neg_one_mem_degreeLEUnits (d : ℕ) : (-1 : (RatFunc F)ˣ) ∈ degreeLEUnits F d :=
-  ⟨-1, by simp, by simp⟩
 
 /-- The polynomial behind a unit of `F(t)` is nonzero. -/
 private theorem ne_zero_of_algebraMap_eq {p : F[X]} {u : (RatFunc F)ˣ}
@@ -174,7 +198,7 @@ private theorem span_degreeLEUnits_succ (d : ℕ) :
         Submodule.span ℤ (ofUnit '' monicIrreducibleUnits F (d + 1)) := by
   refine le_antisymm (Submodule.span_le.2 ?_) (sup_le
     (Submodule.span_mono (Set.image_mono (degreeLEUnits_mono d.le_succ)))
-    (Submodule.span_mono (Set.image_mono fun _ ⟨π, _, _, hπ, hπu⟩ ↦ ⟨π, hπ.le, hπu⟩)))
+    (Submodule.span_mono (Set.image_mono (monicIrreducibleUnits_subset_degreeLEUnits _))))
   rintro _ ⟨u, ⟨p, hp, hpu⟩, rfl⟩
   have hp0 := ne_zero_of_algebraMap_eq hpu
   rcases Nat.lt_or_eq_of_le hp with hp | hp
