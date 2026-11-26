@@ -28,8 +28,8 @@ This file describes the local stable sets. Near `x`, the orbit of a point `y` wh
 negative weight vanish converges to the point `p(y)` of the critical set whose coordinates of
 weight `0` are those of `y` and whose other coordinates vanish
 (`TauCeti.IsBottAdaptedPseudoGradient.tendsto_flow_of_forall_coord_eq_zero`). If instead some
-coordinate of negative weight of `y` is nonzero, the orbit reaches a level below `f x` before it
-leaves the chart (`TauCeti.IsBottAdaptedPseudoGradient.exists_flow_lt_of_coord_ne_zero`). Since
+coordinate of negative weight of `y` is nonzero, the orbit reaches a level below `f x`
+(`TauCeti.IsBottAdaptedPseudoGradient.exists_flow_lt_of_coord_ne_zero`). Since
 `f` decreases along orbits and takes the value `f x` at every critical point near `x`, such an orbit
 cannot converge to any of them. Hence, on a small coordinate cube, `y` lies in the stable set
 `W^s(p)` of a critical point `p` exactly when the coordinates of negative weight of `y` vanish and
@@ -64,7 +64,9 @@ critical point `p` is the centre of the chart.
   slice converge to their projection onto the critical set.
 * `TauCeti.IsBottAdaptedPseudoGradient.apply_flow_lt_of_le_exp_mul`,
   `TauCeti.IsBottAdaptedPseudoGradient.exists_flow_lt_of_coord_ne_zero`: the energy barrier for the
-  other points near the critical set.
+  other points near the critical set, and
+  `TauCeti.IsBottAdaptedPseudoGradient.forall_coord_eq_zero_of_forall_le_apply_flow`: so an orbit
+  that never goes below `f x` starts on the stable slice.
 * `TauCeti.IsBottAdaptedPseudoGradient.exists_forall_mem_stableSet_iff`: on a small coordinate cube,
   the stable set of a critical point `p` is the slice of the points with vanishing coordinates of
   negative weight and the coordinates of weight `0` of `p`.
@@ -93,107 +95,12 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M]
   {f : M → ℝ} {x : M} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x}
 
-namespace MorseBottChart
-
-variable (φ : MorseBottChart E f x)
-
-/-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
-theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}
-    (hz : ‖z‖ < r / 2) {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = 1) {t : ℝ}
-    (ht : -Real.log 2 < t) : ‖φ.linearFlow t z i‖ < r := by
-  have hexp : Real.exp (-t) < 2 := by
-    rw [← Real.exp_log two_pos]
-    exact Real.exp_lt_exp.2 (by linarith)
-  rw [φ.linearFlow_of_weight_eq_one hi, norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
-  calc Real.exp (-t) * ‖z i‖ ≤ 2 * ‖z‖ := by
-        gcongr
-        · exact norm_le_pi_norm z i
-    _ < r := by linarith
-
-/-- **The linear orbit stays in the `r`-cube.** If `‖z‖ < r / 2`, then at a time `t > -log 2` at
-which every coordinate of negative weight still has size less than `r`, the linear flow of `z` lies
-in the open `r`-cube. -/
-theorem norm_linearFlow_lt {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ} (hz : ‖z‖ < r / 2) {t : ℝ}
-    (ht : -Real.log 2 < t) (hneg : ∀ i, φ.weight i < 0 → Real.exp t * |z i| < r) :
-    ‖φ.linearFlow t z‖ < r := by
-  refine (pi_norm_lt_iff (by linarith [norm_nonneg z])).2 fun i ↦ ?_
-  rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
-  · rw [φ.linearFlow_of_weight_eq_neg_one hi, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_pos (Real.exp_pos _)]
-    exact hneg i (by rw [hi]; norm_num)
-  · rw [φ.linearFlow_of_weight_eq_zero hi]
-    exact (norm_le_pi_norm z i).trans_lt (by linarith [norm_nonneg z])
-  · exact φ.norm_linearFlow_lt_of_weight_eq_one hz hi ht
-
-/-- **The quadratic normal form at the exit time.** If every coordinate of `z` has size at most
-`ε` and, at a time `T ≥ 0`, the linear flow has grown a coordinate `j` of negative weight to size
-`c`, then `Σᵢ wᵢ (e^{-wᵢ T} zᵢ)² ≤ n ε² - c²`, where `n` is the dimension. -/
-theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ} {ε c T : ℝ}
-    (hz : ∀ i, |z i| ≤ ε) {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = -1) (hT : 0 ≤ T)
-    (hc : Real.exp T * |z j| = c) :
-    ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤ Module.finrank ℝ E * ε ^ 2 - c ^ 2 := by
-  -- Every coordinate contributes at most `ε²`, except `j`, which contributes `-c²`.
-  have hsum : ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤
-      ∑ i, (ε ^ 2 + if i = j then -c ^ 2 - ε ^ 2 else 0) := by
-    refine Finset.sum_le_sum fun i _ ↦ ?_
-    split_ifs with hij
-    · subst hij
-      have hci : φ.linearFlow T z i ^ 2 = c ^ 2 := by
-        rw [φ.linearFlow_of_weight_eq_neg_one hj, ← hc, ← sq_abs, abs_mul,
-          abs_of_pos (Real.exp_pos T)]
-      rw [hj, hci]
-      linarith
-    · rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
-      · rw [hi]
-        nlinarith [sq_nonneg (φ.linearFlow T z i), sq_nonneg ε]
-      · rw [hi, zero_mul, add_zero]
-        exact sq_nonneg ε
-      · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
-        have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
-          rw [← Real.exp_natCast_mul, Real.exp_le_one_iff]; push_cast; linarith
-        have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
-          rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hz i) 2
-        nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]
-  simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
-  linarith [sq_nonneg ε]
-
-/-- **The linear flow on the stable slice converges.** If the coordinates of negative weight of `z`
-vanish, the linear flow of `z` converges, as `t → ∞`, to the projection of `z` onto the coordinates
-of weight `0`: those coordinates do not move, and the coordinates of positive weight decay like
-`e^{-t}`. -/
-theorem tendsto_linearFlow_atTop {z : Fin (Module.finrank ℝ E) → ℝ}
-    (hu : ∀ i, φ.weight i < 0 → z i = 0) :
-    Tendsto (fun t ↦ φ.linearFlow t z) atTop (𝓝 fun i ↦ if φ.weight i = 0 then z i else 0) := by
-  refine tendsto_pi_nhds.2 fun i ↦ ?_
-  rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
-  · have hzi : z i = 0 := hu i (by rw [hi]; norm_num)
-    simp only [φ.linearFlow_of_weight_eq_neg_one hi, hzi, mul_zero, ite_self]
-    exact tendsto_const_nhds
-  · simp only [φ.linearFlow_of_weight_eq_zero hi, hi, ↓reduceIte]
-    exact tendsto_const_nhds
-  · simp only [φ.linearFlow_of_weight_eq_one hi, hi, one_ne_zero, ↓reduceIte]
-    simpa using Real.tendsto_exp_neg_atTop_nhds_zero.mul_const (z i)
-
-/-- The projection of `z` onto the coordinates of weight `0` has norm at most `‖z‖`. -/
-theorem norm_ite_weight_eq_zero_le (z : Fin (Module.finrank ℝ E) → ℝ) :
-    ‖fun i ↦ if φ.weight i = 0 then z i else 0‖ ≤ ‖z‖ := by
-  refine (pi_norm_le_iff_of_nonneg (norm_nonneg z)).2 fun i ↦ ?_
-  split_ifs
-  · exact norm_le_pi_norm z i
-  · simp
-
-/-- **The critical points of a Morse–Bott chart are the points of its coordinate plane of weight
-`0`.** The point with coordinates `w`, when these coordinates of nonzero weight vanish, is a
-critical point of `f`. -/
-theorem mfderiv_toChart_symm_coord_symm_eq_zero {w : Fin (Module.finrank ℝ E) → ℝ}
-    (hw : φ.coord.symm w ∈ φ.toChart.target) (h0 : ∀ i, φ.weight i ≠ 0 → w i = 0) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (φ.toChart.symm (φ.coord.symm w)) = 0 :=
-  (φ.mfderiv_eq_zero_iff (φ.toChart.map_target hw)).2 fun i hi ↦ by
-    rw [φ.toChart.right_inv hw, LinearEquiv.apply_symm_apply]
-    exact h0 i hi
-
-end MorseBottChart
+/-- The cube of size `r / (4 (n + 1))` lies in the cube of size `r / 2`. -/
+private theorem lt_half_of_lt_div {a r : ℝ} (hr : 0 < r) {n : ℕ} (h : a < r / (4 * (n + 1))) :
+    a < r / 2 :=
+  h.trans_le <| by
+    gcongr
+    linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
 
 namespace IsBottAdaptedPseudoGradient
 
@@ -446,6 +353,20 @@ theorem exists_flow_lt_of_coord_ne_zero (φ : MorseBottChart E f x)
         gcongr
         linarith [Real.add_one_le_exp (r / |φ.coord (φ.toChart y) j|)]
 
+/-- **An orbit above the critical level starts on the stable slice.** Let `X` be the linear field
+`z ↦ (-wᵢ zᵢ)ᵢ` in the Morse–Bott chart `φ`, and let the coordinates of `y` be small. If the orbit
+of `y` never goes below the level `f x`, then the coordinates of negative weight of `y` vanish. -/
+theorem forall_coord_eq_zero_of_forall_le_apply_flow (φ : MorseBottChart E f x)
+    (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
+      fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
+    {r : ℝ} (hrT : ∀ z, ‖z‖ < r → φ.coord.symm z ∈ φ.toChart.target)
+    {y : M} (hy : y ∈ φ.toChart.source)
+    (hyr : ‖φ.coord (φ.toChart y)‖ < r / (4 * (Module.finrank ℝ E + 1)))
+    (hle : ∀ T, f x ≤ f (hX.flow T y)) :
+    ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0 := fun _ hi ↦ by_contra fun hz ↦
+  let ⟨T, _, hT⟩ := hX.exists_flow_lt_of_coord_ne_zero φ hφ hrT hy hyr hi hz
+  hT.not_ge (hle T)
+
 /-- **The local stable sets in a Morse–Bott chart.** Let `X` be the linear field `z ↦ (-wᵢ zᵢ)ᵢ`
 in the Morse–Bott chart `φ`. On a small coordinate cube around `x`, a point `y` lies in the stable
 set `W^s(p)` of a critical point `p` of the cube exactly when the coordinates of negative weight of
@@ -459,9 +380,7 @@ theorem exists_forall_mem_stableSet_iff (φ : MorseBottChart E f x)
           ∀ i, φ.weight i = 0 → φ.coord (φ.toChart y) i = φ.coord (φ.toChart p) i) := by
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   refine ⟨r / (4 * (Module.finrank ℝ E + 1)), by positivity, fun y hy hyε p hp hcrit ↦ ?_⟩
-  have hyr : ‖φ.coord (φ.toChart y)‖ < r / 2 := hyε.trans_le <| by
-    gcongr
-    linarith [(Nat.cast_nonneg _ : (0 : ℝ) ≤ Module.finrank ℝ E)]
+  have hyr : ‖φ.coord (φ.toChart y)‖ < r / 2 := lt_half_of_lt_div hr hyε
   -- The coordinates of nonzero weight of the critical point `p` vanish, so `p` is the projection of
   -- `y` onto the critical set as soon as their coordinates of weight `0` agree.
   have hp0 := (φ.mfderiv_eq_zero_iff hp).1 hcrit
@@ -476,15 +395,10 @@ theorem exists_forall_mem_stableSet_iff (φ : MorseBottChart E f x)
   · intro hs
     -- An orbit converging to `p` never goes below the level `f p = f x`, so it does not cross the
     -- energy barrier: the coordinates of negative weight vanish.
-    have hu : ∀ i, φ.weight i < 0 → φ.coord (φ.toChart y) i = 0 := by
-      by_contra hne
-      push Not at hne
-      obtain ⟨j, hj, hjz⟩ := hne
-      obtain ⟨T, -, hT⟩ := hX.exists_flow_lt_of_coord_ne_zero φ hφ hrT hy hyε hj hjz
-      have hle := Flow.le_of_mem_stableSet_of_antitone (Flow.isInvariant_stableSet _ _ T hs)
+    have hu := hX.forall_coord_eq_zero_of_forall_le_apply_flow φ hφ hrT hy hyε fun T ↦ by
+      rw [← φ.apply_eq_of_mfderiv_eq_zero hp hcrit]
+      exact Flow.le_of_mem_stableSet_of_antitone (Flow.isInvariant_stableSet _ _ T hs)
         (hX.mdifferentiable p).continuousAt (hX.antitone_flow _)
-      rw [φ.apply_eq_of_mfderiv_eq_zero hp hcrit] at hle
-      exact hT.not_ge hle
     -- The orbit then converges to the projection of `y`, which is therefore `p`.
     have hlim := tendsto_nhds_unique (hX.tendsto_flow_of_forall_coord_eq_zero φ hφ hrT hy hyr hu)
       (Flow.mem_stableSet.1 hs)
@@ -526,19 +440,10 @@ theorem exists_tendsto_atTop (y : M) :
   obtain ⟨t₀, ht₀, ht₀r⟩ := (hp.frequently (φ.eventually_mem_source_norm_coord_lt
     (ρ := r / (4 * (Module.finrank ℝ E + 1))) (by positivity))).exists
   -- It never goes below the level `c = f p`, so its coordinates of negative weight vanish there.
-  have hu : ∀ i, φ.weight i < 0 → φ.coord (φ.toChart (γ t₀)) i = 0 := by
-    by_contra hne
-    push Not at hne
-    obtain ⟨j, hj, hjz⟩ := hne
-    obtain ⟨T, -, hT⟩ := hX.exists_flow_lt_of_coord_ne_zero φ hφ hrT ht₀ ht₀r hj hjz
-    have hcT : c ≤ f (hX.flow T (γ t₀)) := by
-      rw [← Flow.map_add]
-      exact ciInf_le hbdd _
-    rw [← hval p hp] at hcT
-    exact hT.not_ge hcT
-  have hyr : ‖φ.coord (φ.toChart (γ t₀))‖ < r / 2 := ht₀r.trans_le <| by
-    gcongr
-    linarith [(Nat.cast_nonneg _ : (0 : ℝ) ≤ Module.finrank ℝ E)]
+  have hu := hX.forall_coord_eq_zero_of_forall_le_apply_flow φ hφ hrT ht₀ ht₀r fun T ↦ by
+    rw [hval p hp, ← Flow.map_add]
+    exact ciInf_le hbdd _
+  have hyr : ‖φ.coord (φ.toChart (γ t₀))‖ < r / 2 := lt_half_of_lt_div hr ht₀r
   have hw := (φ.norm_ite_weight_eq_zero_le _).trans_lt (hyr.trans (half_lt_self hr))
   -- From time `t₀` on, the orbit converges along the linear flow to a critical point.
   refine ⟨_, φ.mfderiv_toChart_symm_coord_symm_eq_zero (hrT _ hw) fun i hi ↦ by simp [hi],

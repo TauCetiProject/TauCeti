@@ -174,6 +174,85 @@ theorem linearFlow_of_weight_eq_neg_one {i : Fin (Module.finrank ℝ E)} (hi : �
     (t : ℝ) (z : Fin (Module.finrank ℝ E) → ℝ) : φ.linearFlow t z i = Real.exp t * z i := by
   rw [linearFlow_apply, hi, neg_one_mul, neg_neg]
 
+/-- For times `t > -log 2`, a coordinate of positive weight grows at most by a factor `2`. -/
+theorem norm_linearFlow_lt_of_weight_eq_one {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ}
+    (hz : ‖z‖ < r / 2) {i : Fin (Module.finrank ℝ E)} (hi : φ.weight i = 1) {t : ℝ}
+    (ht : -Real.log 2 < t) : ‖φ.linearFlow t z i‖ < r := by
+  have hexp : Real.exp (-t) < 2 := by
+    rw [← Real.exp_log two_pos]
+    exact Real.exp_lt_exp.2 (by linarith)
+  rw [φ.linearFlow_of_weight_eq_one hi, norm_mul, Real.norm_of_nonneg (Real.exp_pos _).le]
+  calc Real.exp (-t) * ‖z i‖ ≤ 2 * ‖z‖ := by
+        gcongr
+        · exact norm_le_pi_norm z i
+    _ < r := by linarith
+
+/-- **The linear orbit stays in the `r`-cube.** If `‖z‖ < r / 2`, then at a time `t > -log 2` at
+which every coordinate of negative weight still has size less than `r`, the linear flow of `z` lies
+in the open `r`-cube. -/
+theorem norm_linearFlow_lt {r : ℝ} {z : Fin (Module.finrank ℝ E) → ℝ} (hz : ‖z‖ < r / 2) {t : ℝ}
+    (ht : -Real.log 2 < t) (hneg : ∀ i, φ.weight i < 0 → Real.exp t * |z i| < r) :
+    ‖φ.linearFlow t z‖ < r := by
+  refine (pi_norm_lt_iff (by linarith [norm_nonneg z])).2 fun i ↦ ?_
+  rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
+  · rw [φ.linearFlow_of_weight_eq_neg_one hi, norm_mul, Real.norm_eq_abs, Real.norm_eq_abs,
+      abs_of_pos (Real.exp_pos _)]
+    exact hneg i (by rw [hi]; norm_num)
+  · rw [φ.linearFlow_of_weight_eq_zero hi]
+    exact (norm_le_pi_norm z i).trans_lt (by linarith [norm_nonneg z])
+  · exact φ.norm_linearFlow_lt_of_weight_eq_one hz hi ht
+
+/-- **The quadratic normal form at the exit time.** If every coordinate of `z` has size at most
+`ε` and, at a time `T ≥ 0`, the linear flow has grown a coordinate `j` of negative weight to size
+`c`, then `Σᵢ wᵢ (e^{-wᵢ T} zᵢ)² ≤ n ε² - c²`, where `n` is the dimension. -/
+theorem sum_weight_mul_linearFlow_sq_le {z : Fin (Module.finrank ℝ E) → ℝ} {ε c T : ℝ}
+    (hz : ∀ i, |z i| ≤ ε) {j : Fin (Module.finrank ℝ E)} (hj : φ.weight j = -1) (hT : 0 ≤ T)
+    (hc : Real.exp T * |z j| = c) :
+    ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤ Module.finrank ℝ E * ε ^ 2 - c ^ 2 := by
+  -- Every coordinate contributes at most `ε²`, except `j`, which contributes `-c²`.
+  have hsum : ∑ i, φ.weight i * φ.linearFlow T z i ^ 2 ≤
+      ∑ i, (ε ^ 2 + if i = j then -c ^ 2 - ε ^ 2 else 0) := by
+    refine Finset.sum_le_sum fun i _ ↦ ?_
+    split_ifs with hij
+    · subst hij
+      have hci : φ.linearFlow T z i ^ 2 = c ^ 2 := by
+        rw [φ.linearFlow_of_weight_eq_neg_one hj, ← hc, ← sq_abs, abs_mul,
+          abs_of_pos (Real.exp_pos T)]
+      rw [hj, hci]
+      linarith
+    · rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
+      · rw [hi]
+        nlinarith [sq_nonneg (φ.linearFlow T z i), sq_nonneg ε]
+      · rw [hi, zero_mul, add_zero]
+        exact sq_nonneg ε
+      · rw [hi, one_mul, φ.linearFlow_of_weight_eq_one hi, mul_pow, add_zero]
+        have hexp1 : Real.exp (-T) ^ 2 ≤ 1 := by
+          rw [← Real.exp_natCast_mul, Real.exp_le_one_iff]; push_cast; linarith
+        have hzi2 : z i ^ 2 ≤ ε ^ 2 := by
+          rw [← sq_abs]; exact pow_le_pow_left₀ (abs_nonneg _) (hz i) 2
+        nlinarith [sq_nonneg (z i), sq_nonneg (Real.exp (-T))]
+  simp only [Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, nsmul_eq_mul] at hsum
+  linarith [sq_nonneg ε]
+
+open Filter Topology in
+/-- **The linear flow on the stable slice converges.** If the coordinates of negative weight of `z`
+vanish, the linear flow of `z` converges, as `t → ∞`, to the projection of `z` onto the coordinates
+of weight `0`: those coordinates do not move, and the coordinates of positive weight decay like
+`e^{-t}`. -/
+theorem tendsto_linearFlow_atTop {z : Fin (Module.finrank ℝ E) → ℝ}
+    (hu : ∀ i, φ.weight i < 0 → z i = 0) :
+    Tendsto (fun t ↦ φ.linearFlow t z) atTop (𝓝 fun i ↦ if φ.weight i = 0 then z i else 0) := by
+  refine tendsto_pi_nhds.2 fun i ↦ ?_
+  rcases φ.weight_eq_neg_one_or_eq_zero_or_eq_one i with hi | hi | hi
+  · have hzi : z i = 0 := hu i (by rw [hi]; norm_num)
+    simp only [φ.linearFlow_of_weight_eq_neg_one hi, hzi, mul_zero, ite_self]
+    exact tendsto_const_nhds
+  · simp only [φ.linearFlow_of_weight_eq_zero hi, hi, ↓reduceIte]
+    exact tendsto_const_nhds
+  · simp only [φ.linearFlow_of_weight_eq_one hi, hi, one_ne_zero, ↓reduceIte]
+    simpa using Real.tendsto_exp_neg_atTop_nhds_zero.mul_const (z i)
+
 /-- **The linear flow fixes the critical points of the normal form**, the points whose coordinates
 of nonzero weight vanish. -/
 theorem linearFlow_eq_self {z : Fin (Module.finrank ℝ E) → ℝ} (hz : ∀ i, φ.weight i ≠ 0 → z i = 0)

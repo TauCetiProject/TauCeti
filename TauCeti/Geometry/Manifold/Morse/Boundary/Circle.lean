@@ -280,7 +280,7 @@ theorem coe_mem_stableSet_circleCosTwoMin (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) :
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈ hX.flow.stableSet (circleCosTwoMin r j) := by
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet (isMorse_circleCosTwo hδ.ne' r)
+  obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
   -- Along the forward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≤ 0`.
   have hle (t : ℝ) (ht : 0 ≤ t) :
@@ -323,7 +323,7 @@ theorem coe_mem_unstableSet_circleCosTwoMax (hδ : 0 < δ)
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈
       hX.flow.unstableSet (circleCosTwoMax r j) := by
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet (isMorse_circleCosTwo hδ.ne' r)
+  obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
   -- Along the backward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≥ 0`.
   have hge (t : ℝ) (ht : t ≤ 0) :

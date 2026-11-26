@@ -344,8 +344,7 @@ theorem mem_unstableSet_iff_sphereHeight_mul_sphereHeight_pos
   refine ⟨fun hym ↦ (isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ hX
     (hcrit m h1 h2) ⟨hym, hy⟩ hyv).2, fun hpos ↦ ?_⟩
   -- The trajectory through `y` leaves a maximum `m'` on the side of `y`, which is `m`.
-  have hf := isMorse_sphereHeight_sq_add_smul_sphereHeight_of_lt (n := n) huv ht₀ ht₂
-  obtain ⟨m', hm', hym'⟩ := hX.exists_mem_unstableSet hf y
+  obtain ⟨m', hm', hym'⟩ := hX.exists_mem_unstableSet y
   obtain ⟨⟨h1', h2'⟩, hpos'⟩ := isMax_and_pos_of_mem_unstableSet_inter_stableSet huv ht₀ hX
     (mem_criticalPoints_iff_mfderiv_eq_zero.2 hm') ⟨hym', hy⟩ hyv
   have hsame : sphereHeight u m' = sphereHeight u m := by

@@ -21,7 +21,7 @@ flow (`TauCeti.IsAdaptedPseudoGradient.isBottAdaptedPseudoGradient_flow`). The s
 file are therefore the special case of those of `TauCeti.Geometry.Manifold.Morse.Bott.Flow` in
 which the only critical point near `x` is `x` itself. One inclusion is read off the linear flow. The
 other is the energy barrier: an orbit starting in the cube off the coordinate subspace reaches a
-level below `f x` before leaving the chart, and `f` decreases along orbits, so the orbit cannot
+level below `f x`, and `f` decreases along orbits, so the orbit cannot
 converge to `x`.
 
 ## Main declarations
@@ -74,7 +74,7 @@ theorem neg_linearFlow (h : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f 
 theorem ite_weight_eq_zero (z : Fin (Module.finrank ℝ E) → ℝ) :
     (fun i ↦ if φ.weight i = 0 then z i else 0) = 0 := by
   funext i
-  rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
+  simp [φ.weight_ne_zero i]
 
 end MorseChart
 
@@ -184,11 +184,9 @@ theorem exists_forall_mem_stableSet_iff (hX : IsAdaptedPseudoGradient f X)
     hX.isBottAdaptedPseudoGradient.exists_forall_mem_stableSet_iff φ.toMorseBottChart hφ
   refine ⟨ε, hε, fun y hy hyε ↦ ?_⟩
   -- There is no coordinate of weight `0`, so the condition on those coordinates is empty.
-  have hw (i : Fin (Module.finrank ℝ E)) : φ.weight i ≠ 0 := by
-    rcases φ.weight_eq_neg_one_or_eq_one i with hi | hi <;> simp [hi]
   rw [← hX.isBottAdaptedPseudoGradient_flow,
     hs y hy hyε x φ.mem_source φ.toMorseBottChart.mfderiv_self]
-  exact and_iff_left fun i hi ↦ absurd hi (hw i)
+  exact and_iff_left fun i hi ↦ absurd hi (φ.weight_ne_zero i)
 
 /-- **The linear contraction on the local stable set.** Let `X` be the linear field
 `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ`. On a small coordinate cube, a point `y` of `W^s(x)` stays
