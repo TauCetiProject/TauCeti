@@ -84,7 +84,8 @@ private theorem integral_summatoryMellinTerm (a : ℕ → ℂ) {s : ℂ} (hs : 0
     Measure.restrict_restrict_of_subset (Ici_subset_Ici.mpr hn1), integral_Ici_eq_integral_Ioi,
     integral_const_mul, integral_Ioi_cpow_of_lt (by simp; linarith) (zero_lt_one.trans_le hn1),
     _root_.LSeries.term_def, ite_eq_right hn, ofReal_natCast]
-  rw [show -(s + 1) + 1 = -s by ring, neg_div_neg_eq, cpow_neg]
+  have hexp : -(s + 1) + 1 = -s := by ring
+  rw [hexp, neg_div_neg_eq, cpow_neg]
   simp only [div_eq_mul_inv, mul_assoc]
 
 private theorem integral_norm_summatoryMellinTerm (a : ℕ → ℂ) {s : ℂ} (hs : 0 < s.re)
@@ -104,8 +105,8 @@ private theorem integral_norm_summatoryMellinTerm (a : ℕ → ℂ) {s : ℂ} (h
     Measure.restrict_restrict_of_subset (Ici_subset_Ici.mpr hn1), integral_Ici_eq_integral_Ioi,
     integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) (zero_lt_one.trans_le hn1),
     _root_.LSeries.norm_term_eq, ite_eq_right hn]
-  rw [show -(s.re + 1) + 1 = -s.re by ring, neg_div_neg_eq,
-    Real.rpow_neg (zero_le_one.trans hn1)]
+  have hexp : -(s.re + 1) + 1 = -s.re := by ring
+  rw [hexp, neg_div_neg_eq, Real.rpow_neg (zero_le_one.trans hn1)]
   simp only [div_eq_mul_inv, mul_assoc]
 
 private theorem lintegral_eNorm_summatory_le (a : ℕ → ℂ) {s : ℂ} (hs : 0 < s.re) :
