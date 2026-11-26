@@ -24,8 +24,9 @@ the complex determinant of the unitary matrix in the frame `e`
 (`TauCeti.OrthonormalFrameBundle.canonicalDeterminantLineEquiv`, with the action computed in
 `TauCeti.toComplex_smul_unitarySpinCLiftContinuousMonoidHom`), and the first Chern class of `𝔰`
 is that of this line bundle
-(`TauCeti.OrthonormalFrameBundle.firstChernClass_canonicalSpinCStructure`). The further
-identification of `P ×_{det_ℂ} ℂ` with the anticanonical line `Λ²_ℂ (E, J)` is not made here.
+(`TauCeti.OrthonormalFrameBundle.firstChernClass_canonicalSpinCStructure`). The line
+`P ×_{det_ℂ} ℂ` is identified with the anticanonical line `Λ²_ℂ (E, J)` in
+`TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.Anticanonical`.
 
 ## Main definitions
 

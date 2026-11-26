@@ -535,6 +535,14 @@ theorem taylor_of_tprod (𝒜 : AInfinityAlgebra R A) (n : {n : ℕ // 0 < n}) (
   rw [𝒜.taylor_isSuspension.taylor_eq (AInfinity.isSuspension_suspensionTaylor _ _),
     AInfinity.suspensionTaylor_of_tprod]
 
+/-- In positive arity, `𝒜.m n x` evaluates `𝒜.taylor` on the pure tensor word whose `i`-th
+letter is twisted by `koszulTwist ((n : ℤ) - 1 - i)`. -/
+theorem m_apply_eq_taylor_of_tprod_koszulTwist (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n)
+    (x : Fin n → A) :
+    𝒜.m n x = 𝒜.taylor (ReducedTensorWords.of R A ⟨n, hn⟩
+      (PiTensorProduct.tprod R fun i ↦ 𝒜.grading.koszulTwist ((n : ℤ) - 1 - i) (x i))) := by
+  rw [𝒜.m_eq_desuspension, AInfinity.desuspension_apply _ _ hn]
+
 /-- The suspended Taylor map sends the word of the first `n` letters of a natural-indexed family of
 homogeneous letters to the piece of their total suspended degree plus one. -/
 theorem taylor_of_tprod_mem (𝒜 : AInfinityAlgebra R A) {n : ℕ} (hn : 0 < n) (a : ℕ → A)

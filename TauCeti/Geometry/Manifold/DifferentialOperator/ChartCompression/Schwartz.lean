@@ -35,10 +35,8 @@ combined on the chart overlap by the cutoff `φ' · (φ ∘ e ∘ e'⁻¹)`
 * `OpenPartialHomeomorph.mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback`: multiplying a
   function by a cutoff `τ` read on `M` is pushing it forward to the chart by `τ` and pulling it back
   by a cutoff equal to `1` on the support of `τ`.
-* `OpenPartialHomeomorph.smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one`: a reading
-  `ψ · (u ∘ e⁻¹)` is fixed by multiplication with a function equal to `1` on the support of `ψ`.
-* `TauCeti.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function whose readings
-  through cutoffs adding up to `1` on `M` all vanish is zero.
+* `OpenPartialHomeomorph.eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero`: a function is
+  determined by its readings through cutoffs whose readings on `M` add up to `1`.
 -/
 
 public section
@@ -81,21 +79,6 @@ theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
   e.complexCutoffPushforward_apply he ψ u y
 
-omit [T2Space M] in
-/-- **A reading is fixed by a multiplier equal to `1` on the cutoff.** Multiplying the reading
-`ψ · (u ∘ e⁻¹)` by a function `g` of temperate growth equal to `1` on the support of `ψ` leaves it
-unchanged. -/
-theorem smulLeftCLM_cutoffPushforwardSchwartz_of_eqOn_one (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
-    {g : CoordinateSpace n → ℂ} (hg : g.HasTemperateGrowth) (hg₁ : EqOn g 1 (tsupport ψ))
-    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    SchwartzMap.smulLeftCLM ℂ g (cutoffPushforwardSchwartz he ψ u) =
-      cutoffPushforwardSchwartz he ψ u := by
-  ext y
-  rw [SchwartzMap.smulLeftCLM_apply_apply hg, cutoffPushforwardSchwartz_apply]
-  by_cases hy : ψ y = 0
-  · simp [hy]
-  · rw [hg₁ (subset_tsupport _ hy), Pi.one_apply, one_smul]
-
 /-- **Multiplying by a cutoff read through a chart.** Multiplying a function `g` on `M` by a
 cutoff `τ` in the chart `e`, read on `M` as `τ ∘ e` extended by `0`, is pushing `g` forward to the
 chart as the Schwartz function `τ · (g ∘ e⁻¹)` and pulling it back to `M` through a cutoff `χ`
@@ -117,6 +100,27 @@ theorem mulLeft_ofReal_cutoffPullback_one_eq_complexCutoffPullback
     · rw [hχ _ (subset_tsupport _ hτ), one_smul, Complex.real_smul]
   · simp [complexCutoffPullback_apply_of_notMem he _ _ hp,
       cutoffPullback_apply_of_notMem he _ _ hp]
+
+omit he in
+/-- **A function is determined by its readings.** If the readings `ψᵢ ∘ eᵢ` on `M` of finitely
+many cutoffs `ψᵢ` in charts `eᵢ` add up to `1`, a smooth function `u` on `M` all of whose readings
+`ψᵢ · (u ∘ eᵢ⁻¹)` vanish is zero, since `u = ∑ᵢ (ψᵢ ∘ eᵢ) u`. -/
+theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintype ι]
+    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
+  ext x
+  have hx : u x = ∑ i, ((e i).cutoffPullback (he i) (ψ i) 1 x : ℂ) * u x := by
+    rw [← Finset.sum_mul, ← Complex.ofReal_sum, hψ x, Complex.ofReal_one, one_mul]
+  rw [hx, Finset.sum_eq_zero fun i _ ↦ ?_]
+  · rw [ContMDiffMap.coe_zero, Pi.zero_apply]
+  by_cases hxi : x ∈ (e i).source
+  · simpa [cutoffPullback_one_apply_of_mem (he i) _ hxi, (e i).left_inv hxi, Complex.real_smul]
+      using DFunLike.congr_fun (hu i) (e i x)
+  · rw [cutoffPullback_apply_of_notMem (he i) _ _ hxi, Complex.ofReal_zero, zero_mul]
 
 section Overlap
 
@@ -180,33 +184,3 @@ theorem overlapCutoff_spec (φ' : 𝓓(⟨e'.target, e'.open_target⟩, ℝ))
 end Overlap
 
 end OpenPartialHomeomorph
-
-namespace TauCeti
-
-open OpenPartialHomeomorph
-
-variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
-  [T2Space M]
-
-/-- **A function is determined by its readings.** Let `ψᵢ` be finitely many cutoffs in charts
-`eᵢ` whose readings `ψᵢ ∘ eᵢ` on `M`, extended by `0`, add up to `1`. A smooth function `u` on `M`
-all of whose readings `ψᵢ · (u ∘ eᵢ⁻¹)` vanish is zero. -/
-theorem eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero {ι : Type*} [Fintype ι]
-    {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (ψ : ∀ i, 𝓓(⟨(e i).target, (e i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
-    {u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hu : ∀ i, (e i).cutoffPushforwardSchwartz (he i) (ψ i) u = 0) : u = 0 := by
-  ext x
-  -- `u x = ∑ᵢ ψᵢ(eᵢ x) u x`, and each term is the reading of `u` in `eᵢ` at `eᵢ x`.
-  calc u x = (∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x) • u x := by simp [hψ x]
-    _ = 0 := by
-      simp only [Finset.sum_smul]
-      refine Finset.sum_eq_zero fun i _ ↦ ?_
-      by_cases hx : x ∈ (e i).source
-      · simpa [(e i).left_inv hx, cutoffPullback_one_apply_of_mem (he i) (ψ i) hx] using
-          congr($(hu i) (e i x))
-      · simp [cutoffPullback_apply_of_notMem (he i) _ _ hx]
-
-end TauCeti

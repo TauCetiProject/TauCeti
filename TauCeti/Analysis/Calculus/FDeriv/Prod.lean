@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
 public import Mathlib.Analysis.Normed.Operator.Bilinear
+public import TauCeti.Analysis.Normed.Operator.LinearIsometryEquiv.Prod
 
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -42,6 +43,11 @@ A function differentiable everywhere whose partial derivative in the first varia
 everywhere is constant along every horizontal line. For a function differentiable at every point
 of a union `ℝ × T` of horizontal lines, the partial derivative vanishes on `ℝ × T` exactly when
 the function is constant along each of these lines.
+
+The derivative of the reflected map `(s, t) ↦ u(-s, t)` is the derivative of `u` at the
+reflected point precomposed with the reflection `LinearIsometryEquiv.negFst`
+(`TauCeti.fderiv_comp_neg_fst`); in particular the reflection negates the partial derivative in
+`s` and keeps the one in `t`.
 
 The product `η (t) * u (t, x)` of a function of time and a function of time and space has the
 expected derivative, with a norm bound in terms of bounds on the factors and their derivatives
@@ -76,6 +82,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivative of the function read on the second component, with no differentiability assumption.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.norm_fderiv_comp_snd_le`: the derivative of a function of the second variable alone
+  has norm at most that of the derivative of the function.
 * `TauCeti.fderiv_comp_fst`, `TauCeti.norm_fderiv_comp_fst_le`: the derivative of a function of
   the first variable alone, and the bound of its norm by that of the derivative of the function.
 * `TauCeti.fderiv_const_prodMk`: a map with a constant first coordinate has the derivative of its
@@ -88,6 +96,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   variables has derivative `(s, t) ↦ s • a - t • b`.
 * `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
   on a product is the sum of the derivatives of its two slices.
+* `TauCeti.fderiv_uncurry_apply`: the derivative of `(s, y) ↦ f s y` for a family with a scalar
+  parameter, in terms of `deriv` in the parameter and the derivative of `f s`.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
@@ -124,6 +134,9 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   is the restriction of the ambient derivative to the first factor.
 * `DifferentiableAt.hasFDerivAt_fst_prodMk_of_slices`: the derivative of a graph map from its
   horizontal derivative and its vertical identity derivative.
+* `TauCeti.fderiv_comp_neg_fst`, `TauCeti.fderiv_comp_neg_fst_apply_one_zero`,
+  `TauCeti.fderiv_comp_neg_fst_apply_zero_one`: the derivative of the reflected map
+  `(s, t) ↦ u(-s, t)` and its two partial derivatives.
 -/
 
 public section
@@ -192,6 +205,16 @@ theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F →
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.inl_apply,
     ContinuousLinearMap.inr_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
+/-- The derivative of `(s, y) ↦ f s y`, for a family `f` with a scalar parameter, sends `(τ, ξ)`
+to `τ • ∂ₛ f + D(f s) ξ`: the parameter slice contributes through its derivative `deriv`. -/
+theorem fderiv_uncurry_apply {f : 𝕜 → F → G} {p : 𝕜 × F}
+    (hf : DifferentiableAt 𝕜 (Function.uncurry f) p) (w : 𝕜 × F) :
+    fderiv 𝕜 (Function.uncurry f) p w =
+      w.1 • deriv (fun r ↦ f r p.2) p.1 + fderiv 𝕜 (f p.1) p.2 w.2 := by
+  obtain ⟨s, y⟩ := p
+  rw [fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right hf]
+  simp only [Function.uncurry_apply_pair, fderiv_eq_smul_deriv]
+
 /-- A function of the second variable alone is differentiable at `z` exactly when the function is
 differentiable at `z.2`. -/
 theorem differentiableAt_comp_snd_iff {f : F → G} {z : E × F} :
@@ -213,6 +236,14 @@ differentiability is needed: otherwise the derivative is zero. -/
 theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
     fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
   simp [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+
+/-- The derivative of a function of the second variable alone has norm at most that of the
+derivative of the function: `‖fderiv 𝕜 (fun w ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖`. -/
+theorem norm_fderiv_comp_snd_le (f : F → G) (z : E × F) :
+    ‖fderiv 𝕜 (fun w : E × F ↦ f w.2) z‖ ≤ ‖fderiv 𝕜 f z.2‖ := by
+  rw [← Function.comp_def f Prod.snd, fderiv_comp_snd]
+  exact (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) (ContinuousLinearMap.norm_snd_le 𝕜 E F))
 
 /-- A function of the first variable alone has derivative `Df ∘ fst`. No differentiability is
 needed: otherwise both sides are zero. -/
@@ -699,6 +730,41 @@ theorem norm_fderiv_lineMap_comp_inl_le {E F : Type*} [NormedAddCommGroup E] [No
     (mem_closedBall_zero_iff.2 hfL) (mem_closedBall_zero_iff.2 hgL) ht
 
 end LineMap
+
+section Reflection
+
+open LinearIsometryEquiv (negFst)
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] {u : ℝ × ℝ → W}
+
+/-- The derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the derivative of `u` at
+`(-z.1, z.2)` precomposed with the reflection. -/
+theorem fderiv_comp_neg_fst {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z =
+      (fderiv ℝ u (-z.1, z.2)).comp
+        ((negFst ℝ ℝ ℝ).toContinuousLinearEquiv : ℝ × ℝ →L[ℝ] ℝ × ℝ) := by
+  have h : (fun w ↦ u (-w.1, w.2)) = u ∘ (negFst ℝ ℝ ℝ).toContinuousLinearEquiv := by
+    funext w
+    simp
+  rw [h, ContinuousLinearEquiv.comp_right_fderiv]
+  simp
+
+/-- The `s`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is minus the `s`-derivative
+of `u` at `(-z.1, z.2)`. -/
+@[simp]
+theorem fderiv_comp_neg_fst_apply_one_zero {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (1, 0) = -fderiv ℝ u (-z.1, z.2) (1, 0) := by
+  rw [fderiv_comp_neg_fst, ← map_neg]
+  simp
+
+/-- The `t`-derivative of the reflected map `(s, t) ↦ u(-s, t)` at `z` is the `t`-derivative of
+`u` at `(-z.1, z.2)`. -/
+@[simp]
+theorem fderiv_comp_neg_fst_apply_zero_one {z : ℝ × ℝ} :
+    fderiv ℝ (fun w ↦ u (-w.1, w.2)) z (0, 1) = fderiv ℝ u (-z.1, z.2) (0, 1) := by
+  simp [fderiv_comp_neg_fst]
+
+end Reflection
 
 end TauCeti
 

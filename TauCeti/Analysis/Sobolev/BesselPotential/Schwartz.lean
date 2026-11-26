@@ -449,6 +449,14 @@ theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
     ((toLpₗᵢ E F 0 p).symm f).toDistr = (f : 𝓢'(E, F)) := by
   rw [toLpₗᵢ_symm_apply, neg_zero, besselPotential_zero, ContinuousLinearMap.id_apply]
 
+/-- Transporting `u ∈ H^{s,p}(E, F)` to `H^{r,p}(E, F)` via `Lᵖ` applies the Bessel potential
+`J^{s - r}` to its underlying tempered distribution. -/
+theorem toDistr_toLpₗᵢ_symm_toLpₗᵢ {s r : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (u : H^{s, p}(E, F)) :
+    ((toLpₗᵢ E F r p).symm (toLpₗᵢ E F s p u)).toDistr =
+      TemperedDistribution.besselPotential E F (s - r) u.toDistr := by
+  simp [toLpₗᵢ_symm_apply, ← u.bessel_toDistr_eq_toLp,
+    TemperedDistribution.besselPotential_besselPotential_apply, ← sub_eq_add_neg]
+
 section Fourier
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F] {s : ℝ}

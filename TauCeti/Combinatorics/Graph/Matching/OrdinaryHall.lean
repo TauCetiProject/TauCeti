@@ -67,13 +67,11 @@ and a set `S ⊆ L` attaining `|M| + |S| = |L| + |N(S)|`. -/
 theorem exists_isMatching_card_add_card_eq (hLR : G.IsBipartition L R) :
     ∃ (M : Finset E(G)) (S : Finset V(G)), G.IsMatching (M : Set E(G)) ∧ S ⊆ L ∧
       M.card + S.card = L.card + (G.neighborsIn S R).card := by
-  classical
   let _ := Fintype.ofFinite E(G)
   obtain ⟨x, S, hx, hS, hxS⟩ :=
     hLR.exists_isCapacitatedMatching_sum_add_sum_eq (fun _ ↦ 1)
-  refine ⟨Finset.univ.filter (fun e ↦ x e ≠ 0), S,
-    hx.supportFinset_isMatching hLR.loopless, hS, ?_⟩
-  simpa [hx.sum_eq_card_support] using hxS
+  obtain ⟨M, hM, hMcard⟩ := hx.exists_isMatching_card_eq_sum hLR.loopless
+  exact ⟨M, S, hM, hS, by simpa [hMcard] using hxS⟩
 
 /-- The numerical Kőnig–Ore deficiency formula. The greatest size of an ordinary matching is
 `|L| - max_{S ⊆ L} (|S| - |N(S)|)`. -/
@@ -88,8 +86,7 @@ theorem isGreatest_card_isMatching (hLR : G.IsBipartition L R) :
     ext n
     constructor
     · rintro ⟨x, hx, rfl⟩
-      exact ⟨Finset.univ.filter (fun e ↦ x e ≠ 0),
-        hx.supportFinset_isMatching hLR.loopless, hx.sum_eq_card_support.symm⟩
+      exact hx.exists_isMatching_card_eq_sum hLR.loopless
     · rintro ⟨M, hM, rfl⟩
       refine ⟨(M : Set E(G)).indicator (fun _ ↦ 1),
         hM.isCapacitatedMatching_indicator, ?_⟩

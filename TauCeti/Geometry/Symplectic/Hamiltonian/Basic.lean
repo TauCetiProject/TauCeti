@@ -48,8 +48,10 @@ For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gr
 the bilinear form `g = ω(·, J ·)`
 (`TauCeti.SymplecticForm.Invariant.associatedBilinForm_hamiltonianVectorField`). When `g` is the
 inner product of `V`, this says `J X_H = ∇H`
-(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`), and the Hamiltonian vector
-field of `(c / 2) ‖y‖²` is the linear field `-c J`
+(`TauCeti.SymplecticForm.apply_hamiltonianVectorField_eq_gradient`). For the opposite bilinear
+form `ω(·, -J ·)`, the gradient of `H` is `-J X_H`, with no invariance needed
+(`TauCeti.SymplecticForm.associatedBilinForm_neg_apply_neg_hamiltonianVectorField`). The
+Hamiltonian vector field of `(c / 2) ‖y‖²` is the linear field `-c J`
 (`TauCeti.SymplecticForm.hamiltonianVectorField_div_two_mul_norm_sq`), whose derivative has norm
 at most `c ≥ 0`
 (`TauCeti.SymplecticForm.norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le`).
@@ -621,6 +623,16 @@ theorem apply_hamiltonianVectorField_eq_gradient {ω : SymplecticForm E}
   ext_inner_right ℝ fun w ↦ by
     rw [inner_gradient_left, ← hg, ← associatedBilinForm_apply]
     exact (ω.invariant_of_apply_apply_eq_inner hg).associatedBilinForm_hamiltonianVectorField H x w
+
+/-- **The gradient of a Hamiltonian.** For the bilinear form `g(v, w) = ω(v, -J w)`, the
+Hamiltonian vector field `X_H` of `ι_{X_H} ω = dH` gives the gradient `-J X_H` of `H`:
+`g(v, -J X_H(x)) = dH_x(v)`. -/
+theorem associatedBilinForm_neg_apply_neg_hamiltonianVectorField (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (H : V → ℝ) (x v : V) :
+    ω.associatedBilinForm (-J) v (-J (ω.hamiltonianVectorField H x)) = fderiv ℝ H x v := by
+  simp only [associatedBilinForm_apply, AlmostComplexStructure.neg_apply, map_neg, neg_neg,
+    AlmostComplexStructure.apply_apply]
+  rw [ω.neg_eq, apply_hamiltonianVectorField]
 
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, the Hamiltonian `Q(y) = (c / 2) ‖y‖²`
 has the linear Hamiltonian vector field `X_Q(y) = -c J y`. -/

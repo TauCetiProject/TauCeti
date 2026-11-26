@@ -50,6 +50,8 @@ matrix identity.
   homomorphism exactly when its image under that homomorphism is zero.
 * `Matrix.mem_ideal_smul_top_iff`: a square matrix lies in `I • M_n(R)` exactly when its entries
   lie in the ideal `I`.
+* `Matrix.exists_map_eq_and_apply_eq_zero`: along a surjection, a matrix lifts to one vanishing
+  at the same prescribed entries.
 * `RingHom.natCard_ker_mapMatrix`: so the kernel of `f` applied entrywise to `n × n` matrices
   has `|ker f| ^ (n * n)` elements.
 * `Matrix.map_mk_eq_map_mk_iff`: two matrices agree modulo `r` exactly when they differ by `r`
@@ -137,6 +139,22 @@ theorem mem_ideal_smul_top_iff {R : Type*} [CommSemiring R] [Finite n] (I : Idea
   refine sum_mem fun i _ ↦ sum_mem fun j _ ↦ ?_
   rw [show single i j (x i j) = x i j • single i j 1 by simp [smul_single]]
   exact Submodule.smul_mem_smul (hx i j) Submodule.mem_top
+
+/-- **Lifting a matrix along a surjection with prescribed zero entries.** If `f` is surjective,
+a matrix over `S` whose entries vanish at the positions satisfying `p` is the image of a matrix
+over `R` whose entries vanish at the same positions. -/
+theorem exists_map_eq_and_apply_eq_zero {R : Type*} [Zero R] [Zero S] {F : Type*}
+    [FunLike F R S] [ZeroHomClass F R S] {f : F} (hf : Function.Surjective f) (Y : Matrix m n S)
+    (p : m → n → Prop) (hY : ∀ i j, p i j → Y i j = 0) :
+    ∃ X : Matrix m n R, X.map f = Y ∧ ∀ i j, p i j → X i j = 0 := by
+  classical
+  choose x hx using fun i j ↦ hf (Y i j)
+  refine ⟨of fun i j ↦ if p i j then 0 else x i j, ?_, fun i j h ↦ by simp [h]⟩
+  ext i j
+  simp only [map_apply, of_apply]
+  split_ifs with h
+  · rw [map_zero, hY i j h]
+  · exact hx i j
 
 /-- **The kernel of an entrywise ring homomorphism** consists of the matrices with entries in
 `ker f`, so it has `|ker f| ^ (n * n)` elements. -/

@@ -36,7 +36,7 @@ Floer data rests, for the free Hamiltonian directions of an inhomogeneous core.
 
 The proof is the standard one (McDuff–Salamon, Proposition 3.2.1). The statements and the closing
 argument follow the Morse analogue
-`TauCeti.range_trajectoryOperator_sup_span_metricVariations_eq_top` in
+`TauCeti.range_trajectoryOperator_sup_metricVariations_eq_top_of_isClosed_of_coFG` in
 `TauCeti.Analysis.Calculus.Morse.MorseSmale.MetricVariation`.
 
 * **Closed range.** The range of `D_u` is closed and of finite codimension, so every subspace
@@ -182,7 +182,7 @@ private theorem integral_inner_floerLinearization_eq_zero
     (hξS : tsupport ξ ⊆ univ ×ˢ Ioo (0 : ℝ) 1) :
     ∫ z, ⟪h z, ω.floerLinearization J Ks Kt u ξ z⟫_ℝ = 0 := by
   set ξp : testSection V := ⟨_, comp_fract_mem_testSection hξ hξc hξS⟩
-  have h0 := hh ⟨jetLp (testSection V) ξp, jetLp_mem_jetClosure ξp⟩
+  have h0 := hh ⟨jetLp 2 (testSection V) ξp, jetLp_mem_jetClosure ξp⟩
   rw [MeasureTheory.L2.inner_def] at h0
   have hΩ : ∀ᵐ z ∂stripMeasure, z ∈ univ ×ˢ Ioo (0 : ℝ) 1 := by
     rw [stripMeasure_eq_restrict_univ_prod_Ioo]
