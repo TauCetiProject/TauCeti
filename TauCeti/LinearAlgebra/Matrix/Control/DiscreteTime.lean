@@ -79,7 +79,7 @@ theorem discreteState_eq (k : ℕ) :
       add_assoc, Nat.add_comm 1]
 
 /-- The state started at `0` is the input response `∑_{j < k} A ^ j B u(k - 1 - j)`. -/
-theorem discreteState_zero_left (k : ℕ) :
+theorem discreteState_zero_initial (k : ℕ) :
     discreteState A B 0 u k = ∑ j ∈ range k, (A ^ j * B) *ᵥ u (k - 1 - j) := by
   rw [discreteState_eq, mulVec_zero, zero_add]
 
@@ -87,7 +87,7 @@ theorem discreteState_zero_left (k : ℕ) :
 the same input. -/
 theorem discreteState_eq_pow_mulVec_add (k : ℕ) :
     discreteState A B x₀ u k = A ^ k *ᵥ x₀ + discreteState A B 0 u k := by
-  rw [discreteState_eq, discreteState_zero_left]
+  rw [discreteState_eq, discreteState_zero_initial]
 
 /-- The states reached from `0` in exactly `k` steps are the span of the columns of `A ^ j * B`
 for `j < k`. -/
@@ -99,24 +99,24 @@ theorem setOf_discreteState_zero (k : ℕ) :
   simp only [Set.mem_ofPred_eq, SetLike.mem_coe]
   constructor
   · rintro ⟨u, rfl⟩
-    rw [discreteState_zero_left]
+    rw [discreteState_zero_initial]
     exact Submodule.sum_mem _ fun j hj =>
       Submodule.mem_iSup_of_mem ⟨j, mem_range.1 hj⟩ ⟨u (k - 1 - j), rfl⟩
   · intro hx
     refine Submodule.iSup_induction (fun j : Fin k => LinearMap.range (A ^ (j : ℕ) * B).mulVecLin)
       (motive := fun x => ∃ u : ℕ → m → R, discreteState A B 0 u k = x) hx ?_
-      ⟨0, by simp [discreteState_zero_left]⟩ ?_
+      ⟨0, by simp [discreteState_zero_initial]⟩ ?_
     · -- the input `v` applied at the single time `k - 1 - j` produces the column `A ^ j B v`
       rintro j _ ⟨v, rfl⟩
       refine ⟨Pi.single (k - 1 - j) v, ?_⟩
-      rw [discreteState_zero_left, sum_eq_single (j : ℕ)]
+      rw [discreteState_zero_initial, sum_eq_single (j : ℕ)]
       · simp
       · intro i hi hij
         rw [Pi.single_eq_of_ne (by have := mem_range.1 hi; omega), mulVec_zero]
       · exact fun h => absurd (mem_range.2 j.isLt) h
     · rintro _ _ ⟨u, rfl⟩ ⟨u', rfl⟩
       refine ⟨u + u', ?_⟩
-      simp only [discreteState_zero_left, Pi.add_apply, mulVec_add, sum_add_distrib]
+      simp only [discreteState_zero_initial, Pi.add_apply, mulVec_add, sum_add_distrib]
 
 end CommSemiring
 
