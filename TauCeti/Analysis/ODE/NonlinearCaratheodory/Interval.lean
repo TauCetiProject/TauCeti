@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable
 public import TauCeti.Analysis.ODE.NonlinearCaratheodory.Basic
-public import TauCeti.Topology.Order.Interval
+public import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The nonlinear Carathéodory theorem on an interval

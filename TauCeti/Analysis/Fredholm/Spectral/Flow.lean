@@ -11,7 +11,7 @@ import TauCeti.Analysis.Fredholm.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Algebra.Indicator
 import TauCeti.Topology.LocallyConstant.Preconnected
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The spectral flow of a path of self-adjoint Fredholm operators
