@@ -39,10 +39,12 @@ Fix a compact set `K ⊆ U` and a closed cone `V` of frequencies with no point o
 a direction of `V`; for a seminorm `‖ι^* T‖_{ψ,V,N}` of the target, `K` is the support of `ψ`, and
 for the topology of `𝓓'(U)`, `V = {0}`. Since `Γ` is a closed cone, no point of `Γ` lies over a
 neighbourhood of `K × {0}` in a direction of the closed cone
-`A = {ζ | dist (ζ.fst, V) ≤ ε ‖ζ‖}` for small `ε > 0`, so a cutoff `χ` equal to one on
-`K × closedBall 0 δ` and supported in that neighbourhood has no point of `Γ` over its support in a
-direction of `A` (`exists_cutoff_forall_notMem`). The localized Fourier transform of `ι^* T` with
-a cutoff `ψ` supported in `K` is the lattice series
+`A = {ζ | dist (ζ.fst, V) ≤ ε ‖ζ‖}` for small `ε > 0`
+(`TauCeti.WaveFrontSpace.exists_forall_mem_thickening_forall_notMem`, for the projection
+`ζ ↦ ζ.fst`), so a cutoff `χ` equal to one on `K × closedBall 0 δ` and supported in that
+neighbourhood has no point of `Γ` over its support in a direction of `A`
+(`exists_cutoff_forall_notMem`). The localized Fourier transform of `ι^* T` with a cutoff `ψ`
+supported in `K` is the lattice series
 
 `ι^* T (ψ e_ξ) = ∑ m, (covolume L)⁻¹ 𝓕 ψ (ξ + m.fst) T (χ e_(-m))`
 
@@ -87,97 +89,6 @@ variable {E D : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 /-! ### A cutoff adapted to `Γ` -/
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-/-- A nonzero covector `ζ` of the cone `A = {ζ | dist (ζ.fst, V) ≤ ε ‖ζ‖}`, rescaled to the unit
-sphere, is within `4 ε` of a unit covector whose first component lies in `V`, for `ε ≤ 1 / 4`. -/
-private theorem exists_mem_sphere_dist_lt {V : Set E} (hV0 : (0 : E) ∈ V)
-    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (hε : 0 < ε) (hε4 : ε ≤ 1 / 4)
-    {ζ : WithLp 2 (E × D)} (hζ0 : ζ ≠ 0) (hζ : infDist ζ.fst V ≤ ε * ‖ζ‖) :
-    ∃ ζ'' ∈ sphere (0 : WithLp 2 (E × D)) 1, ζ''.fst ∈ V ∧ dist (‖ζ‖⁻¹ • ζ) ζ'' < 4 * ε := by
-  set r := ‖ζ‖
-  have hr : 0 < r := norm_pos_iff.2 hζ0
-  -- A point `v ∈ V` with `‖ζ.fst - v‖ < 2 ε ‖ζ‖`.
-  obtain ⟨v, hvV, hv⟩ : ∃ v ∈ V, dist ζ.fst v < 2 * ε * r :=
-    (infDist_lt_iff ⟨0, hV0⟩).1 (lt_of_le_of_lt hζ (by nlinarith))
-  -- The unit covector `ζ̂ = r⁻¹ ζ` is within `2 ε` of `ζ' = (r⁻¹ v, ζ̂.snd)`, which is within
-  -- `2 ε` of the unit covector `ζ'' = ‖ζ'‖⁻¹ ζ'` whose first component lies in `V`.
-  set ζh : WithLp 2 (E × D) := r⁻¹ • ζ
-  have hζh : ‖ζh‖ = 1 := by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hr.ne']
-  set ζ' : WithLp 2 (E × D) := toLp 2 (r⁻¹ • v, ζh.snd)
-  have h1 : ‖ζ' - ζh‖ < 2 * ε := by
-    have hfst : (ζ' - ζh).fst = r⁻¹ • (v - ζ.fst) := by simp [ζ', ζh, smul_sub]
-    rw [WithLp.prod_norm_eq_norm_fst_of_snd_eq_zero (by simp [ζ']), hfst, norm_smul, norm_inv,
-      norm_norm, ← dist_eq_norm, dist_comm, inv_mul_lt_iff₀ hr]
-    linarith
-  set s := ‖ζ'‖
-  have hs : |s - 1| < 2 * ε := by
-    rw [← hζh]
-    exact (abs_norm_sub_norm_le ζ' ζh).trans_lt h1
-  have hs0 : 0 < s := by
-    have := (abs_lt.1 hs).1
-    linarith
-  have h2 : ‖s⁻¹ • ζ' - ζ'‖ < 2 * ε := by
-    have : s⁻¹ • ζ' - ζ' = (s⁻¹ - 1) • ζ' := by simp [sub_smul]
-    have hs1 : |s⁻¹ - 1| * s = |1 - s| := by
-      rw [← abs_of_pos hs0, ← abs_mul, abs_of_pos hs0]
-      congr 1
-      field_simp
-    rwa [this, norm_smul, Real.norm_eq_abs, hs1, abs_sub_comm]
-  refine ⟨s⁻¹ • ζ', ?_, hVcone _ (inv_pos.2 hs0) _ (hVcone _ (inv_pos.2 hr) v hvV), ?_⟩
-  · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hs0.ne']
-  · rw [dist_eq_norm]
-    calc ‖ζh - s⁻¹ • ζ'‖ ≤ ‖s⁻¹ • ζ' - ζ'‖ + ‖ζ' - ζh‖ := by
-          rw [norm_sub_rev ζh]
-          exact norm_sub_le_norm_sub_add_norm_sub _ _ _
-      _ < 2 * ε + 2 * ε := add_lt_add h2 h1
-      _ = 4 * ε := by ring
-
-/-- Since `Γ` is a closed cone, no point of `Γ` lies over a neighbourhood `G` of `K × {0}` in a
-direction of the cone `A = {ζ | dist (ζ.fst, V) ≤ ε ‖ζ‖}` for small `ε`, when none lies over
-`K × {0}` in the directions with first component in `V`. -/
-private theorem exists_isOpen_forall_notMem
-    (hΓ : IsOpen (((W : Set (WithLp 2 (E × D))) ×ˢ {0}ᶜ) \ Γ))
-    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
-    {K : Set E} (hK : IsCompact K) (hKW : ∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ W)
-    {V : Set E} (hV : IsClosed V) (hV0 : (0 : E) ∈ V)
-    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V)
-    (hKV : Disjoint (K ×ˢ V) (pullbackInlCone Γ)) :
-    ∃ ε > 0, ∃ G : Set (WithLp 2 (E × D)), IsOpen G ∧ (∀ x ∈ K, toLp 2 (x, (0 : D)) ∈ G) ∧
-      ∀ p ∈ G, ∀ ζ : WithLp 2 (E × D), infDist ζ.fst V ≤ ε * ‖ζ‖ → (p, ζ) ∉ Γ := by
-  set ι : E → WithLp 2 (E × D) := fun x ↦ toLp 2 (x, (0 : D))
-  have hι : Continuous ι :=
-    (prod_continuous_toLp 2 E D).comp (continuous_id.prodMk continuous_const)
-  -- The compact set of unit covectors over `K × {0}` with first component in `V`.
-  set C₀ : Set (WithLp 2 (E × D) × WithLp 2 (E × D)) :=
-    (ι '' K) ×ˢ (sphere 0 1 ∩ WithLp.fst ⁻¹' V)
-  have hC₀ : IsCompact C₀ :=
-    (hK.image hι).prod ((isCompact_sphere 0 1).inter_right (hV.preimage (by fun_prop)))
-  have hC₀sub : C₀ ⊆ ((W : Set (WithLp 2 (E × D))) ×ˢ {0}ᶜ) \ Γ := by
-    rintro ⟨_, ζ⟩ ⟨⟨x, hx, rfl⟩, hζ, hζV⟩
-    refine ⟨⟨hKW x hx, ?_⟩, fun hΓζ ↦ disjoint_left.1 hKV (mk_mem_prod hx hζV)
-      (mem_pullbackInlCone.2 ⟨ζ.snd, ?_⟩)⟩
-    · exact ne_zero_of_mem_unit_sphere (⟨ζ, hζ⟩ : sphere (0 : WithLp 2 (E × D)) 1)
-    · have hζeq : toLp 2 (ζ.fst, ζ.snd) = ζ := by
-        rw [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
-      simpa [ι, hζeq] using hΓζ
-  obtain ⟨δ, hδ, hδsub⟩ := hC₀.exists_thickening_subset_open hΓ hC₀sub
-  set ε := min (δ / 8) (1 / 4)
-  have hε : 0 < ε := by positivity
-  have hεδ : ε ≤ δ / 8 := min_le_left _ _
-  have hε4 : ε ≤ 1 / 4 := min_le_right _ _
-  refine ⟨ε, hε, thickening (δ / 2) (ι '' K), isOpen_thickening,
-    fun x hx ↦ self_subset_thickening (half_pos hδ) _ ⟨x, hx, rfl⟩, fun p hp ζ hζ hpΓ ↦ ?_⟩
-  rcases eq_or_ne ζ 0 with rfl | hζ0
-  · exact hΓ0 _ hpΓ rfl
-  obtain ⟨ζ'', hζ''1, hζ''V, hζ''⟩ := exists_mem_sphere_dist_lt hV0 hVcone hε hε4 hζ0 hζ
-  obtain ⟨_, ⟨x, hx, rfl⟩, hpx⟩ := mem_thickening_iff.1 hp
-  -- `(p, ‖ζ‖⁻¹ ζ)` is within `δ` of the point `(ι x, ζ'')` of `C₀`.
-  have hmem : (p, ‖ζ‖⁻¹ • ζ) ∈ thickening δ C₀ := by
-    refine mem_thickening_iff.2 ⟨(ι x, ζ''), ⟨⟨x, hx, rfl⟩, hζ''1, hζ''V⟩, ?_⟩
-    rw [Prod.dist_eq, max_lt_iff]
-    exact ⟨hpx.trans (half_lt_self hδ), hζ''.trans (by linarith)⟩
-  exact (hδsub hmem).2 (hcone _ hpΓ ‖ζ‖⁻¹ (inv_pos.2 (norm_pos_iff.2 hζ0)))
-
 /-- A cutoff `χ` equal to one on `K × closedBall 0 δ`, such that no point of `Γ` lies over its
 support in a direction of the cone `A = {ζ | dist (ζ.fst, V) ≤ ε ‖ζ‖}`. -/
 private theorem exists_cutoff_forall_notMem
@@ -189,11 +100,22 @@ private theorem exists_cutoff_forall_notMem
     (hKV : Disjoint (K ×ˢ V) (pullbackInlCone Γ)) :
     ∃ ε > 0, ∃ δ > 0, ∃ χ : 𝓓(W, ℂ), (∀ x ∈ K, ∀ y : D, ‖y‖ ≤ δ → χ (toLp 2 (x, y)) = 1) ∧
       ∀ p ∈ tsupport χ, ∀ ζ : WithLp 2 (E × D), infDist ζ.fst V ≤ ε * ‖ζ‖ → (p, ζ) ∉ Γ := by
-  obtain ⟨ε, hε, G, hG, hKG, hGΓ⟩ := exists_isOpen_forall_notMem hΓ hcone hΓ0 hK
-    (fun x hx ↦ hU (hKU hx)) hV hV0 hVcone hKV
-  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ :=
-    exists_cutoff_eq_one_prod_closedBall hK hG fun x hx ↦ ⟨hKG x hx, hU (hKU hx)⟩
-  exact ⟨ε, hε, δ, hδ, χ, hχ1, fun p hp ζ hζ ↦ hGΓ p (hχG hp) ζ hζ⟩
+  set ι : E → WithLp 2 (E × D) := fun x ↦ toLp 2 (x, (0 : D))
+  have hι : Continuous ι :=
+    (prod_continuous_toLp 2 E D).comp (continuous_id.prodMk continuous_const)
+  -- No covector of `Γ` over `K × {0}` has its first component in `V`.
+  have hιKV : ∀ y ∈ ι '' K, ∀ ζ, (y, ζ) ∈ Γ → fstL 2 ℝ E D ζ ∉ V := by
+    rintro _ ⟨x, hx, rfl⟩ ζ hζ hζV
+    refine disjoint_left.1 hKV (mk_mem_prod hx hζV) (mem_pullbackInlCone.2 ⟨ζ.snd, ?_⟩)
+    have hζeq : toLp 2 (ζ.fst, ζ.snd) = ζ := by
+      rw [← ofLp_fst, ← ofLp_snd, Prod.mk.eta, toLp_ofLp]
+    simpa [ι, hζeq] using hζ
+  obtain ⟨ε, hε, hεΓ⟩ := exists_forall_mem_thickening_forall_notMem (fstL 2 ℝ E D) hΓ hcone hΓ0
+    (hK.image hι) (image_subset_iff.2 fun x hx ↦ hU (hKU hx)) hV hV0 hVcone hιKV
+  obtain ⟨δ, hδ, χ, hχ1, hχG⟩ := exists_cutoff_eq_one_prod_closedBall hK
+    (isOpen_thickening (δ := ε) (E := ι '' K))
+    fun x hx ↦ ⟨self_subset_thickening hε _ ⟨x, hx, rfl⟩, hU (hKU hx)⟩
+  exact ⟨ε, hε, δ, hδ, χ, hχ1, fun p hp ζ hζ ↦ hεΓ p (hχG hp) ζ hζ⟩
 
 section Measurable
 
@@ -293,11 +215,9 @@ private theorem exists_seminorm_pullbackInl_apply_le
   set Qc : Set 𝓓(U, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM '' Q
   have hQc : IsCompact Qc := hQ.image (postcompCLM _).continuous
   obtain ⟨K, hKU, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
-  have hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ ({0} : Set E), t • ξ ∈ ({0} : Set E) := by
-    rintro t - ξ rfl
-    simp
   obtain ⟨ε, hε, δ, hδ, χ, hχ1, hχΓ⟩ := exists_cutoff_forall_notMem hU hΓ hcone hΓ0 K.isCompact
-    hKU isClosed_singleton (mem_singleton 0) hVcone (disjoint_prod_zero_pullbackInlCone hΓ0 hN hKU)
+    hKU isClosed_singleton (mem_singleton 0) forall_smul_mem_singleton_zero
+    (disjoint_prod_zero_pullbackInlCone hΓ0 hN hKU)
   obtain ⟨L, _, _, hL⟩ :=
     ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
   obtain ⟨p, hp, hpQ⟩ := exists_continuous_seminorm_norm_tsum_le (fstL 2 ℝ E D) hε

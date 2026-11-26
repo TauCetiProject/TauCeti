@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
 public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Algebra.Module.ZLattice.Summable
-import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Distribution.TestFunction.DominatedSeries
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
@@ -30,7 +29,8 @@ linear map with transpose `B` turns its localized Fourier transforms into lattic
 for a cutoff `φ` on an open set `U` of `E` and a frequency `ξ ∈ E`. This happens for the
 restriction to `E × {0}`, where `B` is the projection `(ξ, η) ↦ ξ`
 (`Distribution.localFourier_pullbackInl_eq_tsum`), and for the pullback along a surjective linear
-map `A`, where `B = Aᵀ` (`Distribution.localFourier_compCLMOfSubmersion_linear_eq_tsum`). This
+map, where `B` is its transpose (`Distribution.localFourier_compCLMOfSubmersion_linear_eq_tsum`).
+This
 file proves the estimates on these series which make both pullbacks continuous for the normal
 topologies of Hörmander's spaces `𝓓'_Γ`.
 
@@ -63,6 +63,11 @@ test functions depend continuously on `φ`.
   weighted lattice series for a fixed cutoff `φ` and `ξ ∈ V`.
 * `TauCeti.WaveFrontSpace.exists_continuous_seminorm_norm_tsum_le`: the lattice series at
   `ξ = 0` for cutoffs `φ` in a compact set.
+* `TauCeti.WaveFrontSpace.exists_forall_mem_thickening_forall_notMem`: if `B η ∉ V` for the
+  covectors `(y, η) ∈ Γ` over a compact set `K`, no point of `Γ` lies over a neighbourhood of `K` in
+  a direction of the cone `A`.
+* `TauCeti.WaveFrontSpace.exists_cutoff_eqOn_one_forall_notMem`: a cutoff `χ` equal to one on `K`
+  with no point of `Γ` over its support in a direction of `A`.
 
 ## References
 
@@ -104,14 +109,22 @@ private theorem isClosed_bigCone (B : F →L[ℝ] E) (V : Set E) (ε : ℝ) :
   isClosed_le ((continuous_infDist_pt V).comp B.continuous) (continuous_const.mul continuous_norm)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
+/-- For `t > 0`, scaling `η` by `t` scales the distance from `B η` to a cone `V` by `t`, at most. -/
+private theorem infDist_apply_smul_le (B : F →L[ℝ] E) {V : Set E} (hV0 : (0 : E) ∈ V)
+    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {t : ℝ} (ht : 0 < t) (η : F) :
+    infDist (B (t • η)) V ≤ t * infDist (B η) V := by
+  have hsub : t • V ⊆ V := by rintro _ ⟨ξ, hξ, rfl⟩; exact hVcone t ht ξ hξ
+  have hle := infDist_le_infDist_of_subset hsub ⟨t • (0 : E), 0, hV0, rfl⟩ (x := t • B η)
+  rwa [infDist_smul₀, Real.norm_of_nonneg ht.le, ← map_smul] at hle
+
+omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 private theorem smul_mem_bigCone (B : F →L[ℝ] E) {V : Set E} (hV0 : (0 : E) ∈ V)
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (t : ℝ) (ht : 0 < t)
     (η : F) (hη : η ∈ bigCone B V ε) : t • η ∈ bigCone B V ε := by
-  have hsub : t • V ⊆ V := by rintro _ ⟨ξ, hξ, rfl⟩; exact hVcone t ht ξ hξ
-  have hle := infDist_le_infDist_of_subset hsub ⟨t • (0 : E), 0, hV0, rfl⟩ (x := t • B η)
-  rw [infDist_smul₀, Real.norm_of_nonneg ht.le] at hle
-  simp only [bigCone, mem_ofPred_eq, map_smul, norm_smul, Real.norm_of_nonneg ht.le] at hη ⊢
-  nlinarith
+  simp only [bigCone, mem_ofPred_eq, norm_smul, Real.norm_of_nonneg ht.le] at hη ⊢
+  calc infDist (B (t • η)) V ≤ t * infDist (B η) V := infDist_apply_smul_le B hV0 hVcone ht η
+    _ ≤ t * (ε * ‖η‖) := by gcongr
+    _ = ε * (t * ‖η‖) := by ring
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
 /-- Off the cone `A`, the image under `B` of a covector stays away from `V`:
@@ -147,15 +160,6 @@ private theorem disjoint_bigCone {B : F →L[ℝ] E} {χ : 𝓓(W, ℂ)} {V : Se
     (hχ : ∀ p ∈ tsupport χ, ∀ η, infDist (B η) V ≤ ε * ‖η‖ → (p, η) ∉ Γ) :
     Disjoint (tsupport χ ×ˢ bigCone B V ε) Γ :=
   disjoint_left.2 fun ⟨p, η⟩ ⟨hp, hη⟩ ↦ hχ p hp η hη
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ F] in
-/-- For `t > 0`, scaling `η` by `t` scales the distance from `B η` to a cone `V` by `t`, at most. -/
-private theorem infDist_apply_smul_le (B : F →L[ℝ] E) {V : Set E} (hV0 : (0 : E) ∈ V)
-    (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {t : ℝ} (ht : 0 < t) (η : F) :
-    infDist (B (t • η)) V ≤ t * infDist (B η) V := by
-  have hsub : t • V ⊆ V := by rintro _ ⟨ξ, hξ, rfl⟩; exact hVcone t ht ξ hξ
-  have hle := infDist_le_infDist_of_subset hsub ⟨t • (0 : E), 0, hV0, rfl⟩ (x := t • B η)
-  rwa [infDist_smul₀, Real.norm_of_nonneg ht.le, ← map_smul] at hle
 
 omit [FiniteDimensional ℝ E] in
 /-- The covectors `(y, η)` over the `1 / (n + 1)`-neighbourhood of `K` with `‖η‖ = 1` and `B η`
@@ -195,6 +199,40 @@ private theorem exists_cthickening_prod_subset (B : F →L[ℝ] E) {O : Set (F �
     (hO.mem_nhdsSet.2 hsub)
 
 omit [FiniteDimensional ℝ E] in
+/-- **No point of `Γ` near `K` in the directions close to `V`.** Let `Γ` be a cone of nonzero
+covectors over `W`, closed in `W × (F \ {0})`, let `K ⊆ W` be compact and `V` a closed cone of `E`
+containing `0`, and suppose that `B η ∉ V` for every covector `(y, η) ∈ Γ` over `K`. Then for some
+`ε > 0`, no point of `Γ` lies over the `ε`-neighbourhood of `K` in a direction `η` with
+`dist (B η, V) ≤ ε ‖η‖`. -/
+theorem exists_forall_mem_thickening_forall_notMem (B : F →L[ℝ] E)
+    (hΓ : IsOpen (((W : Set F) ×ˢ {0}ᶜ) \ Γ))
+    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
+    {K : Set F} (hK : IsCompact K) (hKW : K ⊆ W) {V : Set E} (hV : IsClosed V)
+    (hV0 : (0 : E) ∈ V) (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V)
+    (hKV : ∀ y ∈ K, ∀ η, (y, η) ∈ Γ → B η ∉ V) :
+    ∃ ε > 0, ∀ p ∈ thickening ε K, ∀ η, infDist (B η) V ≤ ε * ‖η‖ → (p, η) ∉ Γ := by
+  -- Some `S n` lies in the open set `O` of nonzero covectors over `W` outside `Γ`.
+  obtain ⟨n, hn⟩ := exists_cthickening_prod_subset B hΓ hK hV hV0 fun y hy η hη hηV ↦
+    ⟨⟨hKW hy, fun (h0 : η = 0) ↦ by
+      rw [h0, norm_zero] at hη
+      exact zero_ne_one hη⟩, fun hΓη ↦ hKV y hy η hΓη hηV⟩
+  set ε := 1 / (n + 1 : ℝ)
+  refine ⟨ε, by positivity, fun p hp η hη hpη ↦ ?_⟩
+  rcases eq_or_ne η 0 with rfl | hη0
+  · exact hΓ0 _ hpη rfl
+  -- The unit covector `‖η‖⁻¹ η` lies in `S n`, hence outside `Γ`, and `Γ` is a cone.
+  have hpos : 0 < ‖η‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hη0)
+  have hS : (p, ‖η‖⁻¹ • η) ∈ cthickening ε K ×ˢ
+      (sphere (0 : F) 1 ∩ {η | infDist (B η) V ≤ ε}) := by
+    refine ⟨thickening_subset_cthickening _ _ hp, ?_, ?_⟩
+    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀
+        (norm_ne_zero_iff.2 hη0)]
+    · refine (infDist_apply_smul_le B hV0 hVcone hpos η).trans ?_
+      calc ‖η‖⁻¹ * infDist (B η) V ≤ ‖η‖⁻¹ * (ε * ‖η‖) := by gcongr
+        _ = ε := by field_simp
+  exact (hn hS).2 (hcone _ hpη _ hpos)
+
+omit [FiniteDimensional ℝ E] in
 /-- **A cutoff adapted to `Γ`.** Let `Γ` be a cone of nonzero covectors over `W`, closed in
 `W × (F \ {0})`, let `K ⊆ W` be compact and `V` a closed cone of `E` containing `0`, and suppose
 that `B η ∉ V` for every covector `(y, η) ∈ Γ` over `K`. Then for some `ε > 0` there is a cutoff `χ`
@@ -209,30 +247,12 @@ theorem exists_cutoff_eqOn_one_forall_notMem (B : F →L[ℝ] E)
     (hKV : ∀ y ∈ K, ∀ η, (y, η) ∈ Γ → B η ∉ V) :
     ∃ ε > 0, ∃ χ : 𝓓(W, ℂ), EqOn χ 1 K ∧
       ∀ p ∈ tsupport χ, ∀ η, infDist (B η) V ≤ ε * ‖η‖ → (p, η) ∉ Γ := by
-  -- Some `S n` lies in the open set `O` of nonzero covectors over `W` outside `Γ`.
-  obtain ⟨n, hn⟩ := exists_cthickening_prod_subset B hΓ hK hV hV0 fun y hy η hη hηV ↦
-    ⟨⟨hKW hy, fun (h0 : η = 0) ↦ by
-      rw [h0, norm_zero] at hη
-      exact zero_ne_one hη⟩, fun hΓη ↦ hKV y hy η hΓη hηV⟩
-  set ε := 1 / (n + 1 : ℝ)
-  have hε : 0 < ε := by positivity
+  obtain ⟨ε, hε, hεΓ⟩ := exists_forall_mem_thickening_forall_notMem B hΓ hcone hΓ0 hK hKW hV hV0
+    hVcone hKV
   obtain ⟨χ, hχ1, hχ⟩ := exists_complex_cutoff_tsupport_subset (Ω := W) (n := ⊤) hK
     (isOpen_thickening.inter W.isOpen) (fun y hy ↦ ⟨self_subset_thickening hε K hy, hKW hy⟩)
     inter_subset_right
-  refine ⟨ε, hε, χ, fun y hy ↦ hχ1.self_of_nhdsSet y hy, fun p hp η hη hpη ↦ ?_⟩
-  rcases eq_or_ne η 0 with rfl | hη0
-  · exact hΓ0 _ hpη rfl
-  -- The unit covector `‖η‖⁻¹ η` lies in `S n`, hence outside `Γ`, and `Γ` is a cone.
-  have hpos : 0 < ‖η‖⁻¹ := inv_pos.2 (norm_pos_iff.2 hη0)
-  have hS : (p, ‖η‖⁻¹ • η) ∈ cthickening ε K ×ˢ
-      (sphere (0 : F) 1 ∩ {η | infDist (B η) V ≤ ε}) := by
-    refine ⟨thickening_subset_cthickening _ _ (hχ hp).1, ?_, ?_⟩
-    · rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀
-        (norm_ne_zero_iff.2 hη0)]
-    · refine (infDist_apply_smul_le B hV0 hVcone hpos η).trans ?_
-      calc ‖η‖⁻¹ * infDist (B η) V ≤ ‖η‖⁻¹ * (ε * ‖η‖) := by gcongr
-        _ = ε := by field_simp
-  exact (hn hS).2 (hcone _ hpη _ hpos)
+  exact ⟨ε, hε, χ, fun y hy ↦ hχ1.self_of_nhdsSet y hy, fun p hp ↦ hεΓ p (hχ hp).1⟩
 
 /-! ### Splitting the lattice series -/
 
@@ -750,12 +770,10 @@ theorem exists_continuous_seminorm_norm_tsum_le (B : F →L[ℝ] E) {χ : 𝓓(W
     ∃ p : Seminorm ℂ (WaveFrontSpace W Γ), Continuous p ∧ ∀ u : WaveFrontSpace W Γ, ∀ ψ ∈ Q,
       ‖∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
         (𝓕 (ψ : E → ℂ) (B m) * u.toDistribution.localFourier χ (-m))‖ ≤ p u := by
-  have hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ ({0} : Set E), t • ξ ∈ ({0} : Set E) := by
-    rintro t - ξ rfl
-    simp
   obtain ⟨C, hC⟩ := exists_forall_one_add_norm_pow_mul_norm_fourier_le hQ 0
   -- The family of cutoffs is `Q`, all at the point `ξ = 0`, with weight order `0`.
-  obtain ⟨p, hp, hpQ⟩ := exists_seminorm_tsum_le_of_isCompact B (mem_singleton 0) hVcone hε
+  obtain ⟨p, hp, hpQ⟩ := exists_seminorm_tsum_le_of_isCompact B (mem_singleton 0)
+    forall_smul_mem_singleton_zero hε
     (disjoint_bigCone fun p hp η hη ↦ hχ p hp η (by simpa using hη)) L (X := Q)
     (φ := fun ψ : Q ↦ (ψ : 𝓓(U, ℂ)))
     (ξ := fun _ ↦ 0) (fun _ ↦ mem_singleton 0) (N := 0) (fun ψ ↦ hC ψ ψ.property) (by

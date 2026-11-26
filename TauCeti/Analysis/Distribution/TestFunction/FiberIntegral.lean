@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TensorProduct
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Calculus.ImplicitFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.Integral
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 
@@ -424,11 +425,11 @@ theorem exists_integral_mul_eq_integral_mul_comp (φ : 𝓓(Ω, ℂ)) :
   set φi : 𝓓(Ω, ℝ) := postcompCLM (𝕜 := ℝ) Complex.imCLM φ
   set ψr : 𝓓(Ω', ℝ) := fiberIntegralCLM μ ν f hf hfΩ hsurj φr
   set ψi : 𝓓(Ω', ℝ) := fiberIntegralCLM μ ν f hf hfΩ hsurj φi
-  have hφr (x : E) : φr x = (φ x).re := rfl
-  have hφi (x : E) : φi x = (φ x).im := rfl
+  have hφr (x : E) : φr x = (φ x).re := by simp [φr]
+  have hφi (x : E) : φi x = (φ x).im := by simp [φi]
   set ψ : 𝓓(Ω', ℂ) := postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψr +
     Complex.I • postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψi
-  have hψ (y : E') : ψ y = (ψr y : ℂ) + Complex.I * (ψi y : ℂ) := rfl
+  have hψ (y : E') : ψ y = (ψr y : ℂ) + Complex.I * (ψi y : ℂ) := by simp [ψ]
   refine ⟨ψ, ?_, fun h hh ↦ ?_⟩
   · -- Off `f '' supp φ`, both fibre integrals vanish.
     have hsub (g : 𝓓(Ω, ℝ)) (hg : ∀ x, φ x = 0 → g x = 0) :
@@ -453,8 +454,12 @@ theorem exists_integral_mul_eq_integral_mul_comp (φ : 𝓓(Ω, ℂ)) :
       simpa only [Complex.real_smul] using integral_fiberIntegralCLM_smul μ ν hf hfΩ hsurj g hh
     have hφ (x : E) : φ x * h (f x) =
         (φr x : ℂ) * h (f x) + Complex.I * ((φi x : ℂ) * h (f x)) := by
-      rw [hφr, hφi]
-      conv_lhs => rw [← Complex.re_add_im (φ x)]
+      have hx : (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φr +
+          Complex.I • postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φi) x = φ x :=
+        congrArg (· x) (postcompCLM_re_add_I_smul_im φ)
+      simp only [add_apply, smul_apply, postcompCLM_apply, Function.comp_apply,
+        Complex.ofRealCLM_apply, smul_eq_mul] at hx
+      rw [← hx]
       ring
     have hψh (y : E') : ψ y * h y = (ψr y : ℂ) * h y + Complex.I * ((ψi y : ℂ) * h y) := by
       rw [hψ]

@@ -109,7 +109,8 @@ transported along the transpose of an injective linear map, such as the inclusio
 * `TauCeti.forall_smul_mem_neg`, `TauCeti.forall_smul_mem_compl`, `TauCeti.forall_smul_mem_add`,
   `TauCeti.forall_smul_mem_insert_zero`: the negative and the complement of a set closed under
   multiplication by positive reals, the sum of two such sets, and such a set with `0` adjoined, are
-  closed under multiplication by positive reals.
+  closed under multiplication by positive reals; so is `{0}`
+  (`TauCeti.forall_smul_mem_singleton_zero`).
 
 ## References
 
@@ -848,6 +849,12 @@ theorem forall_smul_mem_insert_zero [Module ℝ E] {Γ : Set E}
   rintro t ht ξ (rfl | hξ)
   · simp
   · exact Set.mem_insert_of_mem _ (hc t ht ξ hξ)
+
+/-- The set `{0}` is closed under multiplication by positive reals. -/
+theorem forall_smul_mem_singleton_zero [Module ℝ E] :
+    ∀ t : ℝ, 0 < t → ∀ ξ ∈ ({0} : Set E), t • ξ ∈ ({0} : Set E) := by
+  rintro t - ξ rfl
+  simp
 
 end TauCeti
 

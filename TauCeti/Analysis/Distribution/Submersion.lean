@@ -31,9 +31,10 @@ the pullback of `T` along `f` on `U`. Its complex-linear extension to complex te
 `f^* T` with `φ` as `T` with the fibre integral of `φ`. Along a linear map `A`, the pullback has
 vanishing derivatives along `ker A`.
 
-Typical submersions are the projections of a product, coordinate charts followed by projections,
-and the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
-constant along parallel hyperplanes.
+Typical submersions are the surjective linear maps
+(`ContinuousLinearMap.surjective_fderiv_of_surjective`), such as the projections of a product and
+the maps `(x, y) ↦ x - y`, along which a distribution in one variable becomes a distribution
+constant along parallel hyperplanes, and coordinate charts followed by projections.
 
 ## Main declarations
 
@@ -54,6 +55,7 @@ constant along parallel hyperplanes.
   function `φ` is that of `T` with the fibre integral of `φ`.
 * `Distribution.lineDerivOp_compCLMOfSubmersion_eq_zero`: the pullback along a linear map `A` has
   vanishing derivatives along `ker A`.
+* `ContinuousLinearMap.surjective_fderiv_of_surjective`: a surjective linear map is a submersion.
 
 ## References
 
@@ -66,6 +68,14 @@ noncomputable section
 
 open Set TopologicalSpace TestFunction MeasureTheory LineDeriv
 open scoped Distributions ContDiff
+
+/-- **A surjective linear map is a submersion**: its derivative, the map itself, is surjective at
+every point. -/
+theorem ContinuousLinearMap.surjective_fderiv_of_surjective {𝕜 E E' : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] {A : E →L[𝕜] E'} (hA : Function.Surjective A) (x : E) :
+    Function.Surjective (fderiv 𝕜 A x) := by
+  rwa [A.fderiv]
 
 namespace Distribution
 
