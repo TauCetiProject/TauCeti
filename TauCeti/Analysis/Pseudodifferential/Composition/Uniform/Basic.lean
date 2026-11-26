@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Expansion
+public import TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp
 public import TauCeti.Analysis.Pseudodifferential.SchwartzMapping
 import TauCeti.Analysis.Calculus.BumpFunction.LatticePartition
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
@@ -24,13 +25,14 @@ Let `p` and `a` be symbols of orders `m'` and `m` on `ℝⁿ` whose estimates
 (`TauCeti.Symbol.IsUniform`). Their quantizations act on Schwartz space
 (`TauCeti.Symbol.quantizeUniformCLM`), and this file shows that `Op(p) ∘ Op(a)` is again the
 quantization of a symbol of order `m' + m` with estimates uniform in the position
-(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`). The composition symbol `p # a` of
-`TauCeti.Symbol.sharp` is only defined when `a` has compact spatial support, since it is built
-from the Fourier transforms of the position slices of `a`; a uniform symbol such as `a = 1` has
-no such Fourier transforms. With this theorem the uniform symbols form an algebra under
-composition; for instance `J^t ∘ Op(a)` is the quantization of a uniform symbol for every Bessel
-multiplier `J^t`, which gives the Sobolev mapping of uniform symbols at every order
-(`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`).
+(`TauCeti.Symbol.IsUniform.exists_quantizeUniformCLM_comp`, realized explicitly by
+`TauCeti.Symbol.uniformSharp` in `TauCeti.Analysis.Pseudodifferential.Composition.Uniform.Sharp`).
+The composition symbol `p # a` of `TauCeti.Symbol.sharp` is only defined when `a` has compact
+spatial support, since it is built from the Fourier transforms of the position slices of `a`; a
+uniform symbol such as `a = 1` has no such Fourier transforms. With this theorem the uniform symbols
+form an algebra under composition; for instance `J^t ∘ Op(a)` is the quantization of a uniform
+symbol for every Bessel multiplier `J^t`, which gives the Sobolev mapping of uniform symbols at
+every order (`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`).
 
 ## The construction
 
@@ -67,8 +69,9 @@ side `∑ⱼ Op(p # aⱼ) u (x) = Op(c) u (x)` by dominated convergence in the f
   quantization of a uniform symbol of order `m' + m`. The symbol is unique
   (`TauCeti.Symbol.quantizeSchwartzValue_injective`); when `a` has compact spatial support it is
   `p # a` (`TauCeti.Symbol.coefficient_eq_sharp_of_forall_quantizeSchwartzValue_eq`).
-* `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq`: **the asymptotic
-  expansion of the composition**. The symbol `c` of `Op(p) ∘ Op(a)` satisfies
+* `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq` and
+  `TauCeti.Symbol.IsUniform.isUniformAsymptoticSum_uniformSharp`: **the asymptotic expansion of
+  the composition**. The symbol `c = p.uniformSharp a ha` of `Op(p) ∘ Op(a)` satisfies
   `c ∼ ∑ₖ sharpTerm p a k` with remainders `c - ∑_{k < N} sharpTerm p a k` of order `m' + m - N`
   whose estimates are uniform in the position.
 
@@ -603,6 +606,15 @@ theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_comp_eq {p : Symbol n W U 
   simp only [coefficient_inclusion, Pi.sub_apply, Finset.sum_apply]
   exact ((hbsum q).sub (hasSum_sum fun k _ ↦
     hasSum_coefficient_sharpTerm_latticePiece p a k q)).unique hq
+
+/-- **Asymptotic expansion of `uniformSharp`.** For uniform symbols `p` and `a`, their explicit
+composition `p.uniformSharp a ha` has the uniform asymptotic expansion `∑ₖ p.sharpTerm a k`. -/
+theorem IsUniform.isUniformAsymptoticSum_uniformSharp {p : Symbol n W U m'} (hp : p.IsUniform)
+    {a : Symbol n V W m} (ha : a.IsUniform) :
+    IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k)
+      (Symbol.inclusion (by simp) (p.uniformSharp a ha)) (p.sharpTerm a) :=
+  hp.isUniformAsymptoticSum_sharpTerm_of_comp_eq ha (hp.uniformSharp ha)
+    (quantizeUniformCLM_uniformSharp hp ha).symm
 
 end Composition
 
