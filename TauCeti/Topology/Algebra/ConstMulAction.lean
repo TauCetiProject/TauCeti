@@ -28,7 +28,9 @@ cannot otherwise reach, and continuity of maps equal to fixed-element scalar act
 A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
 of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
-point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
+point stabilisers. A continuous action of a compact monoid has compact orbits. If every orbit of
+a group action is open, then every orbit is also closed, and if a set meets only finitely many
+orbits, all closed, then every orbit is open and closed in that set.
 Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action, and the `ℕ`-action `IterateMulAct f` of a continuous map is by
@@ -59,10 +61,13 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   properly discontinuous subgroup `H` acts properly discontinuously.
 * `TauCeti.isOpen_setOf_forall_smul_mem`: under a continuous action of a compact space, the
   points whose whole orbit lies in an open set form an open set.
+* `TauCeti.isCompact_orbit`: every orbit of a continuous action of a compact monoid is compact.
 * `TauCeti.isClosed_stabilizer`: the stabilizer of a point with continuous orbit map in a `T₁`
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
   then every orbit is closed.
+* `TauCeti.isClopen_preimage_val_orbit_of_finite`: if a set meets finitely many orbits, all
+  closed, then every orbit is open and closed in the set.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
@@ -129,6 +134,13 @@ theorem isOpen_setOf_forall_smul_mem {G X : Type*} [SMul G X] [TopologicalSpace 
   isOpen_forall_prodMk_mem (ι := id) continuous_id
     (hs.preimage (continuous_snd.smul continuous_fst))
 
+/-- Every orbit of a jointly continuous action of a compact monoid is compact: it is the image of
+the compact monoid under the orbit map. -/
+theorem isCompact_orbit {G X : Type*} [Monoid G] [MulAction G X] [TopologicalSpace G]
+    [CompactSpace G] [TopologicalSpace X] [ContinuousSMul G X] (x : X) :
+    IsCompact (MulAction.orbit G x) :=
+  isCompact_range (continuous_id.smul continuous_const)
+
 /-- If every orbit of a group action is open, then every orbit is also closed: its complement is
 the union of the other orbits. -/
 theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction G X]
@@ -138,6 +150,36 @@ theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction
   refine Filter.mem_of_superset ((h z).mem_nhds (MulAction.mem_orbit_self z)) fun w hw hwx ↦ hz ?_
   rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
   exact MulAction.mem_orbit_self z
+
+/-- If a set `s` meets only finitely many orbits of a group action, and the orbits of its points
+are closed, then every orbit is open and closed in `s`: inside `s`, its complement is the union
+of the finitely many other orbits meeting `s`, and it is empty or the orbit of a point of `s`. -/
+theorem isClopen_preimage_val_orbit_of_finite {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] {s : Set X} (hfin : (MulAction.orbit G '' s).Finite)
+    (hclosed : ∀ y ∈ s, IsClosed (MulAction.orbit G y)) (x : X) :
+    IsClopen ((↑) ⁻¹' MulAction.orbit G x : Set s) := by
+  refine ⟨?_, ?_⟩
+  · -- The orbit of `x` misses `s`, or it is the orbit of a point of `s`.
+    by_cases h : ∃ y : s, (y : X) ∈ MulAction.orbit G x
+    · obtain ⟨y, hy⟩ := h
+      rw [← MulAction.orbit_eq_iff.2 hy]
+      exact (hclosed y y.property).preimage continuous_subtypeVal
+    · convert isClosed_empty
+      exact Set.eq_empty_of_forall_notMem fun y hy ↦ h ⟨y, hy⟩
+  have hD : IsClosed (⋃ O ∈ MulAction.orbit G '' s \ {MulAction.orbit G x}, O) :=
+    hfin.sdiff.isClosed_biUnion fun _ hO ↦ by
+      obtain ⟨q, hq, rfl⟩ := hO.1
+      exact hclosed q hq
+  convert hD.isOpen_compl.preimage continuous_subtypeVal using 1
+  ext ⟨y, hy⟩
+  refine ⟨fun hyx hyD ↦ ?_, fun hyD ↦ by_contra fun hyx ↦ hyD ?_⟩
+  · -- A point of the orbit of `x` lies in no other orbit.
+    obtain ⟨_, ⟨⟨q, -, rfl⟩, hne⟩, hyq⟩ := Set.mem_iUnion₂.mp hyD
+    exact hne (by rw [Set.mem_singleton_iff, ← MulAction.orbit_eq_iff.mpr hyq,
+      MulAction.orbit_eq_iff.mpr hyx])
+  · -- Otherwise the orbit of `y` would be another orbit containing `y`.
+    exact Set.mem_biUnion ⟨Set.mem_image_of_mem _ hy, fun h' ↦
+      hyx (Set.mem_singleton_iff.mp h' ▸ MulAction.mem_orbit_self y)⟩ (MulAction.mem_orbit_self y)
 
 /-- Scaling by a nonzero element of a group with zero commutes with taking the frontier, as
 Mathlib's `interior_smul₀` and `closure_smul₀'` do for interior and closure. -/

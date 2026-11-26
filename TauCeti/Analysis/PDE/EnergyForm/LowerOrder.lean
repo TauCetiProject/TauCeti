@@ -28,9 +28,12 @@ between the two sides of a weak equation.
   coefficients the energy form is that of the operator without drift plus the pairing
   `∫_Ω ⟪b, ∇u⟫ v`.
 * `TauCeti.PDE.lowerOrderL`: the lower-order part `u ↦ ⟪b, ∇u⟫ + c u` as a bounded operator
-  `H¹(Ω) → L²(Ω)`, and `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested
-  against `H¹₀(Ω)`, the energy form is that of its principal part plus the `L²` pairing of
-  `TauCeti.PDE.lowerOrderL` with the value.
+  `H¹(Ω) → L²(Ω)`, with norm at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖` for the jet map `J`
+  (`TauCeti.PDE.norm_lowerOrderL_le_eLpNorm`), hence at most `(|β| + |γ|) ‖J‖` for bounds
+  `‖b‖ ≤ β`, `|c| ≤ γ` (`TauCeti.PDE.norm_lowerOrderL_le`), and
+  `TauCeti.PDE.energyFormH1_eq_principal_add_inner_lowerOrderL`: tested against `H¹₀(Ω)`, the
+  energy form is that of its principal part plus the `L²` pairing of `TauCeti.PDE.lowerOrderL`
+  with the value.
 * `TauCeti.PDE.energyFormH1_principal_eq_setIntegral_sub` and
   `TauCeti.PDE.exists_forcing_energyFormH1_principal_eq`: a weak equation with bounded
   lower-order coefficients gives a weak equation for its principal part with the `L²` forcing
@@ -332,12 +335,46 @@ def lowerOrderL (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.res
             · exact le_max_right _ _
             · exact le_max_left _ _
 
+/-- The operator norm of the lower-order operator is at most `(‖b‖_∞ + ‖c‖_∞) ‖J‖`, where
+`J = TauCeti.PDE.jetLpL` sends an `H¹` function to its value-gradient jet in `L²`: this is the
+bound `TauCeti.PDE.lowerOrderL` is built with. -/
+theorem norm_lowerOrderL_le_eLpNorm (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) :
+    ‖lowerOrderL hb hc‖ ≤
+      ((eLpNorm b ⊤ (mu.restrict Omega)).toReal + (eLpNorm c ⊤ (mu.restrict Omega)).toReal) *
+        ‖(jetLpL : W1p mu Omega 2 →L[ℝ] Lp (ℝ × EuclideanSpace ℝ ι) 2 (mu.restrict Omega))‖ :=
+  LinearMap.mkContinuous_norm_le _ (by positivity) _
+
 /-- The lower-order operator is almost everywhere `⟪b, ∇u⟫ + c u`. -/
 theorem lowerOrderL_apply_ae (hb : MemLp b ⊤ (mu.restrict Omega))
     (hc : MemLp c ⊤ (mu.restrict Omega)) (u : W1p mu Omega 2) :
     lowerOrderL hb hc u =ᵐ[mu.restrict Omega]
       fun x => ⟪b x, W1p.gradient u x⟫_ℝ + c x * W1p.value u x :=
   (memLp_lowerOrder hb hc u).coeFn_toLp
+
+/-- The operator norm of the lower-order operator is at most `(|β| + |γ|) ‖J‖` when `‖b‖ ≤ β` and
+`|c| ≤ γ` almost everywhere on `Ω`, where `J = TauCeti.PDE.jetLpL` sends an `H¹` function to its
+value-gradient jet in `L²`. -/
+theorem norm_lowerOrderL_le (hb : MemLp b ⊤ (mu.restrict Omega))
+    (hc : MemLp c ⊤ (mu.restrict Omega)) {beta gamma : ℝ}
+    (hb_bound : ∀ᵐ x ∂mu.restrict Omega, ‖b x‖ ≤ beta)
+    (hc_bound : ∀ᵐ x ∂mu.restrict Omega, ‖c x‖ ≤ gamma) :
+    ‖lowerOrderL hb hc‖ ≤ (|beta| + |gamma|) *
+      ‖(jetLpL : W1p mu Omega 2 →L[ℝ] Lp (ℝ × EuclideanSpace ℝ ι) 2 (mu.restrict Omega))‖ := by
+  -- An almost everywhere bound `|f| ≤ r` bounds the essential supremum of `f`; it is applied to
+  -- the pointwise norms of `b` and `c`, which have the same `L^∞` norms.
+  have hsup {f : EuclideanSpace ℝ ι → ℝ} {r : ℝ} (hf : AEStronglyMeasurable f (mu.restrict Omega))
+      (hr : ∀ᵐ x ∂mu.restrict Omega, ‖f x‖ ≤ r) :
+      (eLpNorm f ⊤ (mu.restrict Omega)).toReal ≤ |r| := by
+    rw [eLpNorm_exponent_top hf]
+    exact ENNReal.toReal_le_of_le_ofReal (abs_nonneg _)
+      (eLpNormEssSup_le_of_ae_bound (hr.mono fun x hx => hx.trans (le_abs_self _)))
+  have hb' := hsup hb.aestronglyMeasurable.norm (by simpa using hb_bound)
+  have hc' := hsup hc.aestronglyMeasurable.norm (by simpa using hc_bound)
+  rw [eLpNorm_norm b hb.aestronglyMeasurable] at hb'
+  rw [eLpNorm_norm c hc.aestronglyMeasurable] at hc'
+  exact (norm_lowerOrderL_le_eLpNorm hb hc).trans
+    (mul_le_mul_of_nonneg_right (add_le_add hb' hc') (ContinuousLinearMap.opNorm_nonneg _))
 
 /-- Paired with the value of a function in `H¹₀(Ω)`, the lower-order operator gives the
 lower-order terms of the energy form. -/

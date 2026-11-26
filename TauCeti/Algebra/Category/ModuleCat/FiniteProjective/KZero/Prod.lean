@@ -148,11 +148,9 @@ theorem prodEquiv_of_finiteProjectiveModulesRegular :
     prodEquiv R S (SplitK0.of.{max u v} (finiteProjectiveModulesRegular (R × S)ᵐᵒᵖ)) =
       (SplitK0.of.{u} (finiteProjectiveModulesRegular Rᵐᵒᵖ),
         SplitK0.of.{v} (finiteProjectiveModulesRegular Sᵐᵒᵖ)) := by
-  have h₁ := IdempotentMonoid.kZeroEquiv_of_mk_one (R := R × S) 1
-  have hR := IdempotentMonoid.kZeroEquiv_of_mk_one (R := R) 1
-  have hS := IdempotentMonoid.kZeroEquiv_of_mk_one (R := S) 1
-  rw [one_smul, IdempotentMonoid.kZeroEquiv_of] at h₁ hR hS
-  rw [← h₁, ← hR, ← hS, prodEquiv_toKZero, IdempotentMonoid.map_mk, IdempotentMonoid.map_mk]
+  rw [← IdempotentMonoid.toKZero_mk_one, ← IdempotentMonoid.toKZero_mk_one,
+    ← IdempotentMonoid.toKZero_mk_one, prodEquiv_toKZero, IdempotentMonoid.map_mk,
+    IdempotentMonoid.map_mk]
   congr <;> exact Matrix.map_one _ rfl rfl
 
 end Prod
