@@ -285,31 +285,30 @@ theorem mulStrong_mem_unitary (F : X → H →L[𝕜] H) (hF : ∀ v, Continuous
   let T := mulStrong (p := 2) μ ENNReal.ofNat_ne_top F hF hB
   let S := mulStrong (p := 2) μ ENNReal.ofNat_ne_top
     (fun x ↦ ContinuousLinearMap.adjoint (F x)) hF' hB'
-  have hS (f : Lp H 2 μ) : S f =ᵐ[μ] fun x ↦ star (F x) (f x) := by
-    simpa only [ContinuousLinearMap.star_eq_adjoint] using
-      coeFn_mulStrong μ ENNReal.ofNat_ne_top _ hF' hB' f
-  have hT (f : Lp H 2 μ) : T f =ᵐ[μ] fun x ↦ F x (f x) :=
-    coeFn_mulStrong μ ENNReal.ofNat_ne_top _ _ _ f
+  have hSF (x) : (ContinuousLinearMap.adjoint (F x)).comp (F x) = 1 := by
+    simpa only [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def] using
+      Unitary.star_mul_self_of_mem (hU x)
+  have hFS (x) : (F x).comp (ContinuousLinearMap.adjoint (F x)) = 1 := by
+    simpa only [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def] using
+      Unitary.mul_star_self_of_mem (hU x)
   have hadj : S = star T := by
     rw [ContinuousLinearMap.star_eq_adjoint]
     exact (adjoint_mulStrong μ F hF hB hF').symm
   refine Unitary.mem_iff.2 ⟨?_, ?_⟩
   · rw [← hadj]
-    ext1 f
-    refine Lp.ext ?_
-    filter_upwards [hS (T f), hT f] with x hx hy
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      one_apply_eq_self, hx, hy, ← ContinuousLinearMap.comp_apply,
-      ← ContinuousLinearMap.mul_def, Unitary.star_mul_self_of_mem (hU x),
-      one_apply_eq_self]
+    rw [ContinuousLinearMap.mul_def, ← mulStrong_comp (p := 2) μ ENNReal.ofNat_ne_top
+      (fun x ↦ ContinuousLinearMap.adjoint (F x)) F hF' hF
+      (fun v ↦ by simp only [hSF]; exact continuous_const) hB' hB
+      ⟨‖(1 : H →L[𝕜] H)‖, fun x ↦ by rw [hSF]⟩]
+    simp only [show (fun x ↦ (ContinuousLinearMap.adjoint (F x)).comp (F x)) = 1
+      from funext hSF, mulStrong_one]
   · rw [← hadj]
-    ext1 f
-    refine Lp.ext ?_
-    filter_upwards [hT (S f), hS f] with x hx hy
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_apply,
-      one_apply_eq_self, hx, hy, ← ContinuousLinearMap.comp_apply,
-      ← ContinuousLinearMap.mul_def, Unitary.mul_star_self_of_mem (hU x),
-      one_apply_eq_self]
+    rw [ContinuousLinearMap.mul_def, ← mulStrong_comp (p := 2) μ ENNReal.ofNat_ne_top F
+      (fun x ↦ ContinuousLinearMap.adjoint (F x)) hF hF'
+      (fun v ↦ by simp only [hFS]; exact continuous_const) hB hB'
+      ⟨‖(1 : H →L[𝕜] H)‖, fun x ↦ by rw [hFS]⟩]
+    simp only [show (fun x ↦ (F x).comp (ContinuousLinearMap.adjoint (F x))) = 1
+      from funext hFS, mulStrong_one]
 
 end Unitary
 
@@ -321,13 +320,6 @@ variable {X 𝕜 E E' : Type*} [TopologicalSpace X] [MeasurableSpace X] [R1Space
   [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {μ : Measure X} [μ.InnerRegularCompactLTTop]
-
-/-- Pointwise application of a bounded continuous operator-valued function to an `Lᵖ` function,
-`x ↦ F x (f x)`, is again in `Lᵖ` for `0 < p < ∞`. -/
-theorem memLp_apply (F : X →ᵇ (E →L[𝕜] E')) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞)
-    (f : Lp E p μ) : MemLp (fun x ↦ F x (f x)) p μ :=
-  Lp.memLp_mulStrong μ F (fun v ↦ F.continuous.clm_apply (continuous_const (y := v)))
-    F.norm_coe_le_norm hp₀ hp f
 
 section Lp
 

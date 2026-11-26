@@ -208,11 +208,6 @@ theorem regular_pi : (regular α ω ρ hρ μ).pi =
     (CovariantRepresentation.regular α ρ μ).coefficient :=
   (rfl)
 
-/-- Almost-everywhere coefficient formula for the twisted regular pair. -/
-theorem coeFn_regular_pi (a : A) (ξ : Lp H 2 μ) :
-    (regular α ω ρ hρ μ).pi a ξ =ᵐ[μ] fun r => ρ (α r⁻¹ a) (ξ r) :=
-  CovariantRepresentation.coeFn_regular_coefficient α ρ μ a ξ
-
 /-- Almost-everywhere projective translation formula for the twisted regular pair. -/
 theorem coeFn_regular_unitaryMap (s : G) (ξ : Lp H 2 μ) :
     ((regular α ω ρ hρ μ).unitaryMap s : Lp H 2 μ →L[ℂ] Lp H 2 μ) ξ =ᵐ[μ]
