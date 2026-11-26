@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.FDeriv.AddSnd
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Basic
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Submersion
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
 
@@ -26,7 +27,7 @@ over the fibres of `f` (`Distribution.pullback_eq_compCLMOfSubmersion`).
 The wave front set of the pullback lies in the pullback of the wave front set of `T`
 (`Distribution.waveFrontSet_pullback_subset`):
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.covectorPullback`).
 
 So `k^* (f^* T)` is defined whenever the wave front set of `T` meets neither the normal set of `f`
 nor that of `f ∘ k` (`Distribution.adjoint_fderiv_apply_ne_zero_of_comp`).
@@ -156,7 +157,7 @@ theorem notMem_waveFrontSet_addSndPullback (hf : ContDiffOn ℝ ∞ f Ω) {T : �
       (toLp 2 (x, (0 : E')), toLp 2 ((0 : E), η)) ∉ (addSndPullback hf T).waveFrontSet := by
   intro x hx η' _ hmem
   rw [addSndPullback_eq_compCLMOfSubmersion, waveFrontSet_compCLMOfSubmersion] at hmem
-  obtain ⟨-, η, hη, hadj⟩ := hmem
+  obtain ⟨-, η, hη, hadj⟩ := mem_covectorPullback.1 hmem
   dsimp only at hη hadj
   rw [adjoint_fderiv_addSnd_apply (p := toLp 2 (x, 0))
     ((hf.differentiableOn (by simp) x hx).differentiableAt (Ω.isOpen.mem_nhds hx))] at hadj
@@ -313,7 +314,7 @@ theorem isMicrolocallySmoothAt_pullback (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : M
 wave front set of `f^* T` are of the form `(x, Df(x)ᵀ η)` with `x ∈ Ω` and `(f x, η)` in the wave
 front set of `T`:
 
-`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}`.
+`WF(f^* T) ⊆ {(x, Df(x)ᵀ η) | (f x, η) ∈ WF(T)}` (`TauCeti.covectorPullback`).
 
 Covectors with `Df(x)ᵀ η = 0` do not occur, by the hypothesis on `WF(T)`. For a submersion this
 is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
@@ -321,11 +322,10 @@ is an equality (`Distribution.pullback_eq_compCLMOfSubmersion`,
 theorem waveFrontSet_pullback_subset (hf : ContDiffOn ℝ ∞ f Ω) (hfΩ : MapsTo f Ω Ω')
     {T : 𝓓'(Ω', ℂ)}
     (h : ∀ x ∈ Ω, ∀ η, (f x, η) ∈ T.waveFrontSet → (fderiv ℝ f x).adjoint η ≠ 0) :
-    (T.pullback f hf hfΩ h).waveFrontSet ⊆
-      {p | p.1 ∈ Ω ∧ ∃ η, (f p.1, η) ∈ T.waveFrontSet ∧ (fderiv ℝ f p.1).adjoint η = p.2} := by
+    (T.pullback f hf hfΩ h).waveFrontSet ⊆ covectorPullback f Ω T.waveFrontSet := by
   rintro ⟨x, ξ⟩ hxξ
   obtain ⟨hx, hξ, hns⟩ := mem_waveFrontSet_iff.1 hxξ
-  refine ⟨hx, ?_⟩
+  refine mem_covectorPullback.2 ⟨hx, ?_⟩
   by_contra hmem
   refine hns (isMicrolocallySmoothAt_pullback hf hfΩ h hx hξ fun η hη ↦ ?_)
   by_contra hns'
@@ -347,7 +347,7 @@ theorem adjoint_fderiv_apply_ne_zero_of_comp {E₀ : Type*} [NormedAddCommGroup 
     ∀ x ∈ Ω₀, ∀ ζ, (k x, ζ) ∈ (T.pullback f hf hfΩ h).waveFrontSet →
       (fderiv ℝ k x).adjoint ζ ≠ 0 := by
   intro x hx ζ hζ
-  obtain ⟨-, η, hη, hηζ⟩ := waveFrontSet_pullback_subset hf hfΩ h hζ
+  obtain ⟨-, η, hη, hηζ⟩ := mem_covectorPullback.1 (waveFrontSet_pullback_subset hf hfΩ h hζ)
   dsimp only at hη hηζ
   subst hηζ
   have hkx : DifferentiableAt ℝ k x := (hk x hx).differentiableAt (Ω₀.isOpen.mem_nhds hx)

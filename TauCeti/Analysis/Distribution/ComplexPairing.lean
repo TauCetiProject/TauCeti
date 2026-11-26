@@ -45,6 +45,8 @@ continuous linear maps of the values act functorially.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
+* `Distribution.mul_norm_complexPairing_tsum_smul`: a nonnegative weight of the value of a
+  distribution on a series of test functions in `𝓓_K` moves into the coefficients of the series.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
   back.
 * `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
@@ -275,5 +277,20 @@ theorem mapCLM_restrictScalars_smul (A : F →L[ℂ] F') (c : ℂ) (T : 𝓓'^{n
   simp
 
 end ComplexValues
+
+section Series
+
+/-- The weight `w ≥ 0` of the pairing of a distribution with a series in `𝓓_K` moves into the
+coefficients of the series. -/
+theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ}
+    (hw : 0 ≤ w) (hc : Summable fun m ↦ c m • v m) :
+    w * ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, c m • v m))‖ =
+      ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, ((w : ℂ) * c m) • v m))‖ := by
+  simp_rw [mul_smul]
+  rw [hc.tsum_const_smul, ← TestFunction.coe_ofSupportedInCLM (𝕜 := ℂ) hKΩ, map_smul, map_smul,
+    smul_eq_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
+
+end Series
 
 end Distribution
