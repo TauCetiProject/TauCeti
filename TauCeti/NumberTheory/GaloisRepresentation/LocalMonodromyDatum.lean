@@ -191,14 +191,6 @@ theorem natCast_q_ne_zero {E : Type*} [Semiring E] [Nontrivial E] [Algebra ℚ_[
   exact (map_ne_zero _).2 D.q_ne_zero
 
 variable (D) in
-/-- Conjugation by an element `Φ` of `H` is a continuous endomorphism of inertia. -/
-theorem continuous_conjNormal (Φ : H) :
-    Continuous fun σ : D.inertia ↦ MulAut.conjNormal Φ σ :=
-  continuous_induced_rng.2 <| by
-    simp only [Function.comp_def, MulAut.conjNormal_apply]
-    fun_prop
-
-variable (D) in
 /-- The tame character takes a nonzero value, in additive form. -/
 theorem exists_toAdd_tame_ne_zero : ∃ σ, (D.tame σ).toAdd ≠ 0 := by
   obtain ⟨σ, hσ⟩ := DFunLike.ne_iff.1 D.tame_ne_one

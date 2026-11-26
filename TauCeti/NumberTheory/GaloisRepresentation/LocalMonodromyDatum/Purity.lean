@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.End.MonodromyFiltration
 public import TauCeti.NumberTheory.GaloisRepresentation.LocalMonodromyDatum
 public import TauCeti.NumberTheory.WeilNumber.GradedPure
 public import TauCeti.RingTheory.Nilpotent.Log
+public import TauCeti.Topology.Algebra.Group.ContinuousAut.Basic
 
 /-!
 # Weight–monodromy purity relative to a local monodromy datum
@@ -127,9 +128,11 @@ theorem IsMonodromyOperator.conj_frobenius (h : D.IsMonodromyOperator ρ N) {Φ 
   -- Take `σ` with `t(σ) ≠ 0` in `U` and with `Φ σ Φ⁻¹ ∈ U`. Then `log ρ(Φ σ Φ⁻¹)` is both
   -- `ρ(Φ) (t(σ) N) ρ(Φ)⁻¹` and `t(Φ σ Φ⁻¹) N = q⁻¹ t(σ) N`.
   obtain ⟨U, hU, hρ⟩ := h.exists_isOpen_log
+  have hc : Continuous (MulAut.conjNormal Φ : MulAut D.inertia) := by
+    rw [← ContinuousAut.toMulAut_conjNormal, ContinuousAut.coe_toMulAut]
+    exact map_continuous _
   obtain ⟨σ, hσ, ha⟩ := D.exists_algebraMap_tame_ne_zero_of_isOpen (E := E)
-    (U ⊓ U.comap (MulAut.conjNormal Φ : MulAut D.inertia).toMonoidHom)
-    (hU.inter (hU.preimage (D.continuous_conjNormal Φ)))
+    (U ⊓ U.comap (MulAut.conjNormal Φ : MulAut D.inertia).toMonoidHom) (hU.inter (hU.preimage hc))
   -- The left side: `ρ(Φ σ Φ⁻¹)` is the conjugate of `ρ(σ)` by the unit `ρ(Φ)`.
   have hconj : IsNilpotent.log (ρ (MulAut.conjNormal Φ σ)) =
       algebraMap ℚ_[ℓ] E (D.tame σ).toAdd • (ρ Φ * N * ρ Φ⁻¹) := by
@@ -189,6 +192,7 @@ theorem isMonodromyOperator_zero_iff :
   · rw [hρ σ hσ, smul_zero, IsNilpotent.exp_zero]
 
 /-- Every endomorphism of the zero space is a monodromy operator. -/
+@[simp]
 theorem isMonodromyOperator_of_subsingleton [Subsingleton V] : D.IsMonodromyOperator ρ N :=
   ⟨⟨1, Subsingleton.elim _ _⟩, ⊤, isOpen_univ, fun _ _ ↦ Subsingleton.elim _ _⟩
 
@@ -237,6 +241,7 @@ theorem isWeightMonodromyPure_smul_iff (c : ℚ_[ℓ]ˣ) :
       exact h Φ (by rwa [smul_frobenius] at hΦ)
 
 /-- The zero representation is pure of every weight. -/
+@[simp]
 theorem isWeightMonodromyPure_of_subsingleton [Subsingleton V] : D.IsWeightMonodromyPure ρ w :=
   ⟨0, isMonodromyOperator_of_subsingleton, fun _ _ ↦ isGradedPure_of_subsingleton⟩
 
