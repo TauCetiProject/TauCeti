@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Gibbs.Dimer.Specification
+import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 
 /-!
 # Gibbs measures of the dimer specification satisfy the cylinder identities
@@ -48,13 +49,6 @@ namespace SimpleGraph
 
 variable {V : Type*} {G : SimpleGraph V}
 
-/-- The cylinder of the configurations agreeing with `ω` on a finite set `E` is measurable. -/
-theorem measurableSet_setOf_forall_mem_eq (E : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
-    MeasurableSet {ζ : G.edgeSet → Bool | ∀ e ∈ E, ζ e = ω e} := by
-  simp only [ofPred_forall]
-  exact Finset.measurableSet_biInter _ fun e _ =>
-    (measurableSet_singleton (ω e)).preimage (measurable_pi_apply e)
-
 /-- **The Boltzmann mass of a cylinder.** Let `E` contain every edge sharing a vertex with an edge
 of `F`. For dimer configurations `ω` and `η`, `γ^w_F(· | η)` gives the cylinder `[ω]_E` the mass
 `w(ω ∩ F) / Z^w_F(η)` if `η` agrees with `ω` on `E ∖ F`, and `0` otherwise. -/
@@ -64,7 +58,8 @@ theorem dimerBoltzmann_setOf_forall_mem_eq (w : G.edgeSet → ℝ) {F E : Finset
     G.dimerBoltzmann w F η {ζ | ∀ e ∈ E, ζ e = ω e} =
       {ζ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → ζ e = ω e}.indicator
         (fun _ => ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F η)) η := by
-  have hmeas := measurableSet_setOf_forall_mem_eq E ω
+  have hmeas : MeasurableSet {ζ : G.edgeSet → Bool | ∀ e ∈ E, ζ e = ω e} :=
+    SymbolicDynamics.FullShift.measurableSet_cylinder E ω
   rw [dimerBoltzmann_apply w F η hmeas]
   by_cases hηω : ∀ e ∈ E, e ∉ F → η e = ω e
   · rw [indicator_of_mem (by exact hηω)]
@@ -119,7 +114,8 @@ theorem isDimerGibbs_map_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
         ∫⁻ η, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ζ e}.indicator
           (fun _ => ENNReal.ofReal (G.dimerWeight w F ζ /
             G.dimerPartitionFunction w F η.val)) η.val ∂ν := by
-    have hmeas := measurableSet_setOf_forall_mem_eq E ζ
+    have hmeas : MeasurableSet {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ζ e} :=
+      SymbolicDynamics.FullShift.measurableSet_cylinder E ζ
     rw [Measure.map_apply hval hmeas, ← hν.lintegral_kernel F (hval hmeas)]
     refine lintegral_congr fun η => ?_
     rw [dimerSpecification_kernel, dimerKernel_apply, image_preimage_eq_inter_range,
