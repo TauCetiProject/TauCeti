@@ -15,7 +15,8 @@ import TauCeti.Data.Fin.VecNotation
 
 Let `V` be an oriented real inner product space of dimension four. A skew-adjoint endomorphism,
 an infinitesimal rotation, annihilates the volume form when it acts on one argument at a time
-(`Orientation.sum_volumeForm_update_eq_zero`, in `TauCeti.Analysis.InnerProductSpace.Orientation`).
+(`Orientation.alternatingDerivation_volumeForm_eq_zero`, in
+`TauCeti.Analysis.InnerProductSpace.Orientation`).
 This file draws the consequences for the Hodge star of two-forms.
 
 The Hodge dual of a two-form `F` with values in a vector space is given in an orthonormal basis
@@ -99,8 +100,9 @@ private theorem volumeForm_add_volumeForm_eq_neg {A : V →ₗ[ℝ] V}
     (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫) (u w c d : V) :
     o.volumeForm ![A u, w, c, d] + o.volumeForm ![u, A w, c, d] =
       -(o.volumeForm ![u, w, A c, d] + o.volumeForm ![u, w, c, A d]) := by
-  have h := o.sum_volumeForm_update_eq_zero hA ![u, w, c, d]
-  simp only [Fin.sum_univ_four, Matrix.cons_val, Matrix.update_vec4_zero, Matrix.update_vec4_one,
+  have h := congr($(o.alternatingDerivation_volumeForm_eq_zero hA) ![u, w, c, d])
+  simp only [LinearMap.alternatingDerivation_apply, zero_apply,
+    Fin.sum_univ_four, Matrix.cons_val, Matrix.update_vec4_zero, Matrix.update_vec4_one,
     Matrix.update_vec4_two, Matrix.update_vec4_three] at h
   linarith
 

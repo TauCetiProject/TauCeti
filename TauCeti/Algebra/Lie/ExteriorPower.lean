@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Lie.OfAssociative
 public import Mathlib.LinearAlgebra.ExteriorPower.WedgePairing
 public import Mathlib.LinearAlgebra.Trace
+public import TauCeti.LinearAlgebra.Alternating.Derivation
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.OfEnd
 import TauCeti.LinearAlgebra.Alternating.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
@@ -40,8 +41,9 @@ module it is degree zero and the trace is zero.
 * `exteriorPower.lieMap_wedge`: the Leibniz rule `f (x ∧ y) = f x ∧ y + x ∧ f y`.
 * `exteriorPower.lieMap_finrank_apply`: in degree `Module.finrank K V` (the top exterior power
   when `V` is finite), `f` acts by `trace f`.
-* `AlternatingMap.sum_update_eq_trace_smul`: consequently, an alternating map `f` of degree
-  `Module.finrank K V` satisfies `∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`.
+* `LinearMap.alternatingDerivation_eq_trace_smul`: consequently, `A` acts as a derivation on
+  alternating maps of degree `Module.finrank K V` by its trace,
+  `∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`.
 * `exteriorPower.wedgePairing_lieMap_add_wedgePairing_lieMap`: similarly, for a pairing of
   complementary exterior powers, `⟨f x, y⟩ + ⟨x, f y⟩ = trace f * ⟨x, y⟩`.
 -/
@@ -138,16 +140,17 @@ theorem lieMap_finrank_apply [Module.Free K V]
   simpa using LinearMap.congr_fun this x
 
 /-- **An endomorphism acts on alternating maps of degree `Module.finrank K V` by its trace**:
-applying `A` to one argument at a time and summing gives
-`∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`. -/
-theorem _root_.AlternatingMap.sum_update_eq_trace_smul [Module.Free K V] {N : Type*}
-    [AddCommGroup N] [Module K N] (f : V [⋀^Fin (Module.finrank K V)]→ₗ[K] N)
-    (A : Module.End K V) (v : Fin (Module.finrank K V) → V) :
-    ∑ i, f (Function.update v i (A (v i))) = LinearMap.trace K V A • f v := by
+the derivation `A.alternatingDerivation`, applying `A` to one argument at a time and summing, is
+multiplication by `trace A`, that is, `∑ᵢ f(v₁, …, A vᵢ, …, vₙ) = trace A • f(v₁, …, vₙ)`. -/
+theorem _root_.LinearMap.alternatingDerivation_eq_trace_smul [Module.Free K V] {N : Type*}
+    [AddCommGroup N] [Module K N] (A : Module.End K V)
+    (f : V [⋀^Fin (Module.finrank K V)]→ₗ[K] N) :
+    A.alternatingDerivation f = LinearMap.trace K V A • f := by
+  ext v
   -- Factor `f` through the exterior power, where `A` acts by its trace.
   have h := congrArg (alternatingMapLinearEquiv f) (lieMap_finrank_apply A (ιMulti K _ v))
-  simpa only [lieMap_apply_ιMulti, map_sum, map_smul, alternatingMapLinearEquiv_apply_ιMulti]
-    using h
+  simpa only [LinearMap.alternatingDerivation_apply, _root_.smul_apply,
+    lieMap_apply_ιMulti, map_sum, map_smul, alternatingMapLinearEquiv_apply_ιMulti] using h
 
 /-- **Endomorphisms are infinitesimally conformal for wedge pairings**: for every trivialization
 `vol` of the exterior power in degree `Module.finrank K V` (the top exterior power when `V` is
