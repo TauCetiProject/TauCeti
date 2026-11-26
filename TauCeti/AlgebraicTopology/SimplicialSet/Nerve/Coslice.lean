@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Preorder
 public import TauCeti.CategoryTheory.ComposableArrows.Under
 
 /-!
@@ -26,6 +27,14 @@ under x, retaining the structure arrows and all simplicial operators.
 
 This is the ordinary-category model of the coslices used in comma-category criteria
 for finality of maps of simplicial sets.
+
+For the nerve of a preorder `P` the coslice under an arbitrary diagram `p : K ⟶ nerve P` is
+described as well: a map `K ⋆ X ⟶ nerve P` extending `p` sends the vertices of `X` to upper bounds
+of the vertices of `p`, monotonically along the edges of `X`, so the coslice under `p` is the nerve
+of the set of these upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`), a cocone
+corresponding to its cone point. Hence colimit cocones in the nerve of a preorder are least upper
+bounds (`SSet.coslice.isColimit_iff_isLUB`). Maps from a join to the nerve of a preorder are
+determined by their restrictions to the two factors (`CategoryTheory.nerve.join_hom_ext`).
 
 ## References
 
@@ -258,5 +267,160 @@ lemma cosliceIso_inv_comp_nerveMap_forget :
     (cosliceIso x).inv ≫ nerveMap (Under.forget x) =
       coslice.π (const (nerveEquiv.symm x) : Δ[0] ⟶ nerve C) := by
   rw [Iso.inv_comp_eq, cosliceIso_hom_comp_π]
+
+end CategoryTheory.nerve
+
+namespace CategoryTheory.nerve
+
+/-! ### Coslices of the nerve of a preorder
+
+For a diagram `p : K ⟶ nerve P` in the nerve of a preorder, a map `K ⋆ X ⟶ nerve P` extending `p`
+is a map on the vertices of `X` with values in the upper bounds of the vertices of `p`, monotone
+along the edges of `X`. Thus the coslice under `p` is the nerve of the set of these upper bounds. -/
+
+section Preorder
+
+variable {K : SSet.{u}} {P : Type u} [Preorder P]
+
+/-- Maps from a join to the nerve of a preorder are determined by their restrictions to the two
+factors, since every vertex of the join is a vertex of one of the factors. -/
+lemma join_hom_ext {L : SSet.{u}} {f f' : join K L ⟶ nerve P}
+    (hl : join.inl K L ≫ f = join.inl K L ≫ f') (hr : join.inr K L ≫ f = join.inr K L ≫ f') :
+    f = f' := by
+  refine hom_ext_of_preorder fun v ↦ ?_
+  by_cases hv : v ∈ (joinFiber (join.univ K L).p 0).obj _
+  · rw [← join.inl_app_univ_left_app v hv]
+    exact congrArg (fun g ↦ nerveEquiv (g.app _ ((join.univ K L).left.app _ ⟨v, hv⟩))) hl
+  · have hv' := mem_joinFiber_one_of_notMem_zero _ hv
+    rw [← join.inr_app_univ_right_app v hv']
+    exact congrArg (fun g ↦ nerveEquiv (g.app _ ((join.univ K L).right.app _ ⟨v, hv'⟩))) hr
+
+variable (p : K ⟶ nerve P)
+
+/-- The cone point of a cocone under a diagram `p` in the nerve of a preorder is an upper bound of
+the vertices of `p`. -/
+lemma nerveEquiv_π_app_mem_upperBounds (c : (coslice p) _⦋0⦌) :
+    nerveEquiv ((coslice.π p).app _ c) ∈
+      upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)) := by
+  rintro _ ⟨k, rfl⟩
+  -- The edge of the join from `k` to `c` is sent to the inequality between their images.
+  have hπ := coslice.comp_π (𝟙 (coslice p))
+  rw [Category.id_comp] at hπ
+  have hk := congrArg (fun g ↦ nerveEquiv (g.app _ k)) (coslice.homEquiv (𝟙 (coslice p))).property
+  have hc := congrArg (fun g ↦ nerveEquiv (g.app _ c)) hπ
+  rw [comp_app, ConcreteCategory.comp_apply] at hk hc
+  exact hk.symm.trans_le ((le_of_edge _ (join.edgeMk k c)).trans_eq hc.symm)
+
+/-- The map from the coslice under `p` to the nerve of the upper bounds of the vertices of `p`,
+sending a cocone to its cone point. -/
+private noncomputable def cosliceToUpperBounds :
+    coslice p ⟶ nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k))) :=
+  homOfVertex (fun c ↦ ⟨_, nerveEquiv_π_app_mem_upperBounds p c⟩)
+    fun _ _ e ↦ le_of_edge (coslice.π p) e
+
+open Classical in
+/-- The vertex map of the cocone under `p` with base the nerve of the upper bounds of the vertices
+of `p`: it is `p` on the vertices of `K` and the inclusion on the upper bounds. -/
+private noncomputable def joinVertex
+    (v : (join K (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))))
+      _⦋0⦌) : P :=
+  if hv : v ∈ (joinFiber (join.univ _ _).p 0).obj _ then
+    nerveEquiv (p.app _ ((join.univ _ _).left.app _ ⟨v, hv⟩))
+  else (nerveEquiv ((join.univ _ _).right.app _ ⟨v, mem_joinFiber_one_of_notMem_zero _ hv⟩)).val
+
+private lemma joinVertex_of_mem
+    {v : (join K (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))))
+      _⦋0⦌} (hv : v ∈ (joinFiber (join.univ _ _).p 0).obj _) :
+    joinVertex p v = nerveEquiv (p.app _ ((join.univ _ _).left.app _ ⟨v, hv⟩)) := by
+  simp only [joinVertex, hv, ↓reduceDIte]
+
+private lemma joinVertex_of_mem_one
+    {v : (join K (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))))
+      _⦋0⦌} (hv : v ∈ (joinFiber (join.univ _ _).p 1).obj _) :
+    joinVertex p v = (nerveEquiv ((join.univ _ _).right.app _ ⟨v, hv⟩)).val := by
+  simp only [joinVertex, notMem_joinFiber_zero_of_mem_one _ hv, ↓reduceDIte]
+
+/-- The vertex map `joinVertex p` is monotone along the edges of the join. -/
+private lemma joinVertex_le
+    {v w : (join K (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))))
+      _⦋0⦌} (e : SSet.Edge v w) : joinVertex p v ≤ joinVertex p w := by
+  by_cases hw : w ∈ (joinFiber (join.univ _ _).p 0).obj _
+  · -- The edge lies in `K`, where it is sent to an edge of `nerve P` by `p`.
+    have he := join.edge_mem_joinFiber_zero e hw
+    have hv : v ∈ (joinFiber (join.univ _ _).p 0).obj _ := by
+      rw [← e.src_eq]
+      exact (joinFiber (join.univ _ _).p 0).map (SimplexCategory.δ 1).op he
+    rw [joinVertex_of_mem p hw, joinVertex_of_mem p hv]
+    exact le_of_edge p ((e.toSubcomplex _ he).map (join.univ _ _).left)
+  · have hw' := mem_joinFiber_one_of_notMem_zero _ hw
+    rw [joinVertex_of_mem_one p hw']
+    by_cases hv : v ∈ (joinFiber (join.univ _ _).p 0).obj _
+    · -- An edge from `K` to the upper bounds: the target bounds the vertices of `p`.
+      rw [joinVertex_of_mem p hv]
+      exact (nerveEquiv ((join.univ _ _).right.app _ ⟨w, hw'⟩)).property ⟨_, rfl⟩
+    · -- The edge lies in the nerve of the upper bounds.
+      have hv' := mem_joinFiber_one_of_notMem_zero _ hv
+      rw [joinVertex_of_mem_one p hv']
+      exact le_of_edge (𝟙 _)
+        ((e.toSubcomplex _ (join.edge_mem_joinFiber_one e hv')).map (join.univ _ _).right)
+
+/-- The map from the nerve of the upper bounds of the vertices of `p` to the coslice under `p`,
+sending an upper bound to the cocone with this cone point. -/
+private noncomputable def upperBoundsToCoslice :
+    nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k))) ⟶ coslice p :=
+  coslice.homEquiv.symm ⟨homOfVertex (joinVertex p) fun _ _ e ↦ joinVertex_le p e,
+    hom_ext_of_preorder fun k ↦ by
+      rw [comp_app, ConcreteCategory.comp_apply, nerveEquiv_homOfVertex_app,
+        joinVertex_of_mem p (join.range_inl_le_joinFiber _ _ _ ⟨k, rfl⟩),
+        join.univ_left_app_inl_app]⟩
+
+/-- The cone point of the cocone given by an upper bound is this upper bound. -/
+private lemma nerveEquiv_π_app_upperBoundsToCoslice_app
+    (b : (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))) _⦋0⦌) :
+    nerveEquiv ((coslice.π p).app _ ((upperBoundsToCoslice p).app _ b)) = (nerveEquiv b).val := by
+  have h := congrArg (fun g ↦ nerveEquiv (g.app _ b)) (coslice.comp_π (upperBoundsToCoslice p))
+  dsimp only at h
+  rw [comp_app, ConcreteCategory.comp_apply] at h
+  rw [h, upperBoundsToCoslice, Equiv.apply_symm_apply, comp_app, ConcreteCategory.comp_apply,
+    nerveEquiv_homOfVertex_app,
+    joinVertex_of_mem_one p (join.range_inr_le_joinFiber _ _ _ ⟨b, rfl⟩),
+    join.univ_right_app_inr_app]
+
+/-- **The coslice of the nerve of a preorder**: for a diagram `p : K ⟶ nerve P`, the coslice under
+`p` is the nerve of the set of upper bounds of the vertices of `p`. A cocone corresponds to its
+cone point (`CategoryTheory.nerve.nerveEquiv_upperBoundsCosliceIso_inv_app_coe`). -/
+noncomputable def upperBoundsCosliceIso :
+    nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k))) ≅ coslice p where
+  hom := upperBoundsToCoslice p
+  inv := cosliceToUpperBounds p
+  hom_inv_id := hom_ext_of_preorder fun b ↦ Subtype.ext <|
+    (congrArg Subtype.val (nerveEquiv_homOfVertex_app _ _ _)).trans
+      (nerveEquiv_π_app_upperBoundsToCoslice_app p b)
+  inv_hom_id := coslice.hom_ext <| join_hom_ext
+    (by rw [(coslice.homEquiv _).property, (coslice.homEquiv _).property])
+    (by
+      rw [coslice.homEquiv_comp_coe, join.inr_map_assoc, ← coslice.comp_π, ← coslice.comp_π,
+        Category.id_comp]
+      refine hom_ext_of_preorder fun c ↦ ?_
+      simp only [comp_app, ConcreteCategory.comp_apply]
+      rw [nerveEquiv_π_app_upperBoundsToCoslice_app, cosliceToUpperBounds,
+        nerveEquiv_homOfVertex_app])
+
+/-- The cone point of the cocone under `p` corresponding to an upper bound is this upper bound. -/
+-- Not `@[simp]`: `SSet.coslice.π_app` rewrites its left side first.
+lemma nerveEquiv_π_app_upperBoundsCosliceIso_hom_app
+    (b : (nerve (upperBounds (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (p.app _ k)))) _⦋0⦌) :
+    nerveEquiv ((coslice.π p).app _ ((upperBoundsCosliceIso p).hom.app _ b)) =
+      (nerveEquiv b).val :=
+  nerveEquiv_π_app_upperBoundsToCoslice_app p b
+
+/-- The upper bound corresponding to a cocone under `p` is its cone point. -/
+@[simp]
+lemma nerveEquiv_upperBoundsCosliceIso_inv_app_coe (c : (coslice p) _⦋0⦌) :
+    (nerveEquiv ((upperBoundsCosliceIso p).inv.app _ c)).val =
+      nerveEquiv ((coslice.π p).app _ c) := by
+  simp [upperBoundsCosliceIso, cosliceToUpperBounds]
+
+end Preorder
 
 end CategoryTheory.nerve

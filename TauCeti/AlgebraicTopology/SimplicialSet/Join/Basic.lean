@@ -52,8 +52,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   their restrictions to the two factors.
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
-* `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
-  `0`.
+* `SSet.join.edge_mem_joinFiber_zero`, `SSet.join.edge_mem_joinFiber_one`: an edge of `K ⋆ L`
+  ending over the vertex `0` lies over `0`, and one starting over the vertex `1` lies over `1`.
 * `SSet.join.exists_eq_comp_inr_or_exists_eq_comp_map`: every simplex of `K ⋆ L` comes from `L`
   or is the image of a simplex of `Δ[m] ⋆ L` under `g ⋆ L` for a simplex `g : Δ[m] ⟶ K`.
 * `SSet.Subcomplex.mem_unionJoin_iff`: a simplex of `K ⋆ L` lies in `(A ⋆ L) ∪ (K ⋆ B)` exactly
@@ -134,6 +134,18 @@ lemma joinFiber_ι_comp (p : X ⟶ Δ[1]) (e : Fin 2) :
   induction n using Opposite.rec with | op n
   induction n using SimplexCategory.rec with | _ n
   exact stdSimplex.ext _ _ ((mem_joinFiber_iff p e x).1 hx)
+
+/-- A vertex of `X` that does not lie over the vertex `0` of `Δ[1]` lies over the vertex `1`. -/
+lemma mem_joinFiber_one_of_notMem_zero (p : X ⟶ Δ[1]) {x : X _⦋0⦌}
+    (hx : x ∉ (joinFiber p 0).obj _) : x ∈ (joinFiber p 1).obj _ := by
+  rw [mem_joinFiber_iff] at hx ⊢
+  exact fun j ↦ Fin.eq_one_of_ne_zero _ fun h ↦ hx fun j' ↦ Subsingleton.elim (α := Fin 1) j j' ▸ h
+
+/-- A vertex of `X` that lies over the vertex `1` of `Δ[1]` does not lie over the vertex `0`. -/
+lemma notMem_joinFiber_zero_of_mem_one (p : X ⟶ Δ[1]) {x : X _⦋0⦌}
+    (hx : x ∈ (joinFiber p 1).obj _) : x ∉ (joinFiber p 0).obj _ := by
+  rw [mem_joinFiber_iff] at hx ⊢
+  exact fun h ↦ one_ne_zero ((hx 0).symm.trans (h 0))
 
 /-- The vertex `j` of `Δ[m]` lies over the vertex `e` of `Δ[1]` along `q` exactly when `q` sends
 `j` to `e`. -/
@@ -912,6 +924,22 @@ lemma edge_mem_joinFiber_zero {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v
     rw [hnat, stdSimplex.δ_apply]
     rfl
   exact fun j ↦ le_antisymm (h1 ▸ stdSimplex.monotone_apply _ (Fin.le_last j)) (Fin.zero_le _)
+
+/-- An edge of the join `K ⋆ L` whose source lies over the vertex `1` lies over `1`, since the
+projection to `Δ[1]` is monotone along the edge. -/
+lemma edge_mem_joinFiber_one {v w : (join K L) _⦋0⦌} (e : (join K L).Edge v w)
+    (hv : v ∈ (joinFiber (univ K L).p 1).obj _) :
+    e.edge ∈ (joinFiber (univ K L).p 1).obj _ := by
+  rw [univ_p, mem_joinFiber_iff] at hv ⊢
+  have h0 : (π K L).app (op ⦋1⦌) e.edge 0 = 1 := by
+    -- The source of the edge is its face opposite to the vertex `1`.
+    refine Eq.trans ?_ ((congrArg (fun t ↦ (π K L).app (op ⦋0⦌) t 0) e.src_eq).trans (hv 0))
+    have hnat := ConcreteCategory.congr_hom
+      (SimplicialObject.δ_naturality (π K L) (1 : Fin 2)) e.edge
+    rw [ConcreteCategory.comp_apply, ConcreteCategory.comp_apply] at hnat
+    rw [hnat, stdSimplex.δ_apply]
+    rfl
+  exact fun j ↦ le_antisymm (Fin.le_last _) (h0 ▸ stdSimplex.monotone_apply _ (Fin.zero_le j))
 
 /-- The map from a standard simplex given by the join data of a simplex `s` of the join is the map
 `yonedaEquiv.symm s` corresponding to `s`. -/

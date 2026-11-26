@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.Core
 public import TauCeti.AlgebraicTopology.Quasicategory.InitialVertex
-public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Coslice
 
 /-!
 # Limits and colimits in simplicial sets
@@ -29,7 +29,12 @@ the coslice are `C` itself, so that its limits are the terminal vertices of `C`
 (`SSet.slice.isLimit_iff_isTerminalVertex_π`) and its colimits the initial vertices
 (`SSet.coslice.isColimit_iff_isInitialVertex_π`). In the nerve of a category these are the
 terminal and the initial objects (`SSet.slice.isLimit_iff_nonempty_isTerminal`,
-`SSet.coslice.isColimit_iff_nonempty_isInitial`). In a terminal simplicial set, such as `Δ[0]`,
+`SSet.coslice.isColimit_iff_nonempty_isInitial`). In the nerve of a preorder, a cocone under any
+diagram is a colimit cocone exactly when its cone point is a least upper bound of the vertices of
+the diagram (`SSet.coslice.isColimit_iff_isLUB`), through the identification of the coslice with
+the nerve of the upper bounds (`CategoryTheory.nerve.upperBoundsCosliceIso`). Limit and colimit
+cones are invariant under isomorphisms of diagrams (`SSet.slice.isLimit_map_iff_of_isIso`,
+`SSet.coslice.isColimit_map_iff_of_isIso`). In a terminal simplicial set, such as `Δ[0]`,
 every cone is a limit cone and every cocone a colimit cocone (`SSet.slice.isLimit_of_isTerminal`,
 `SSet.coslice.isColimit_of_isTerminal`).
 
@@ -43,7 +48,7 @@ public section
 
 universe v u u'
 
-open CategoryTheory Limits Simplicial
+open CategoryTheory Limits Opposite Simplicial
 
 namespace SSet
 
@@ -95,6 +100,13 @@ lemma isLimit_iff_nonempty_isTerminal {D : Type u'} [Category.{v} D] {L : SSet.{
   generalize (π q).app _ c = v
   obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective v
   rw [nerve.isTerminalVertex_iff, Equiv.apply_symm_apply]
+
+/-- Limit cones are invariant under isomorphisms of diagrams: pushing cones forward along
+isomorphisms `i` and `g` preserves and reflects limit cones. -/
+lemma isLimit_map_iff_of_isIso {L D : SSet.{u}} {q : L ⟶ D} (i : L ⟶ K) [IsIso i] (g : C ⟶ D)
+    [IsIso g] (h : i ≫ p ≫ g = q) (c : (slice p) _⦋0⦌) :
+    IsLimit q ((map i g h).app _ c) ↔ IsLimit p c :=
+  isTerminalVertex_iff_of_iso (asIso (map i g h)) c
 
 variable (p) in
 /-- In a terminal simplicial set, such as `Δ[0]`, every cone is a limit cone. -/
@@ -160,6 +172,38 @@ lemma isColimit_iff_nonempty_isInitial {D : Type u'} [Category.{v} D] {L : SSet.
   generalize (π q).app _ c = v
   obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective v
   rw [nerve.isInitialVertex_iff, Equiv.apply_symm_apply]
+
+/-- Colimit cocones are invariant under isomorphisms of the target: pushing cocones forward along
+an isomorphism `g` preserves and reflects colimit cocones. -/
+lemma isColimit_map_iff_of_isIso {D : SSet.{u}} {q : K ⟶ D} (g : C ⟶ D) [IsIso g]
+    (h : 𝟙 K ≫ p ≫ g = q) (c : (coslice p) _⦋0⦌) :
+    IsColimit q ((map (𝟙 K) g h).app _ c) ↔ IsColimit p c :=
+  isInitialVertex_iff_of_iso (asIso (map (𝟙 K) g h)) c
+
+/-- In the nerve of a preorder `P`, a cocone under a diagram `q` is a colimit cocone exactly when
+its cone point is a least upper bound of the vertices of `q`. -/
+lemma isColimit_iff_isLUB {P : Type u} [Preorder P] (q : K ⟶ nerve P) (c : (coslice q) _⦋0⦌) :
+    IsColimit q c ↔ IsLUB (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (q.app _ k))
+      (nerveEquiv ((π q).app _ c)) := by
+  -- Pass to the nerve of the upper bounds of the vertices of `q`, where the cocone is its cone
+  -- point, and an initial vertex is an initial object, that is a least element.
+  rw [isColimit_iff, ← isInitialVertex_iff_of_iso (nerve.upperBoundsCosliceIso q).symm,
+    Iso.symm_hom, ← nerveEquiv.symm_apply_apply ((nerve.upperBoundsCosliceIso q).inv.app _ c),
+    nerve.isInitialVertex_iff, ← nerve.nerveEquiv_upperBoundsCosliceIso_inv_app_coe]
+  generalize nerveEquiv ((nerve.upperBoundsCosliceIso q).inv.app _ c) = b
+  exact ⟨fun ⟨hb⟩ ↦ ⟨b.property, fun x hx ↦ (hb.to ⟨x, hx⟩).le⟩, fun hb ↦
+    ⟨IsInitial.ofUniqueHom (fun y ↦ homOfLE (hb.2 y.property)) fun _ _ ↦ Subsingleton.elim _ _⟩⟩
+
+/-- A diagram `q` in the nerve of a preorder has a colimit cocone exactly when its vertices have a
+least upper bound. -/
+lemma exists_isColimit_iff_exists_isLUB {P : Type u} [Preorder P] (q : K ⟶ nerve P) :
+    (∃ c, IsColimit q c) ↔ ∃ b, IsLUB (Set.range fun k : K _⦋0⦌ ↦ nerveEquiv (q.app _ k)) b := by
+  refine ⟨fun ⟨c, hc⟩ ↦ ⟨_, (isColimit_iff_isLUB q c).1 hc⟩, fun ⟨b, hb⟩ ↦
+    ⟨(nerve.upperBoundsCosliceIso q).hom.app (op ⦋0⦌) (nerveEquiv.symm ⟨b, hb.1⟩), ?_⟩⟩
+  -- The cocone given by the upper bound `b` has cone point `b`.
+  have h := nerve.nerveEquiv_π_app_upperBoundsCosliceIso_hom_app q (nerveEquiv.symm ⟨b, hb.1⟩)
+  rw [Equiv.apply_symm_apply] at h
+  exact (isColimit_iff_isLUB q _).2 (h.symm ▸ hb)
 
 variable (p) in
 /-- In a terminal simplicial set, such as `Δ[0]`, every cocone is a colimit cocone. -/
