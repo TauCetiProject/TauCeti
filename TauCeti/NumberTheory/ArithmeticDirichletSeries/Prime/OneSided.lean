@@ -16,15 +16,17 @@ import TauCeti.NumberTheory.LSeries.RiemannZeta.Basic
 /-!
 # One-sided Chebyshev bounds and zeros of Dedekind zeta
 
-Landau's theorem applied to `ψ_K(x) - x` converts a lower bound of order `x ^ θ` into
-zero-freeness to the right of `θ`. An upper bound instead allows a rightmost real zero:
-the Laplace transform of the error has residue `-m / ρ` at a zero `ρ` of multiplicity `m`.
-For the rational field the real exception is impossible, so either one-sided bound at
-all exponents greater than `1 / 2` implies the Riemann hypothesis.
+A lower bound of order `x ^ θ` for `ψ_K(x) - x` implies zero-freeness to the right of `θ`.
+An upper bound instead allows a rightmost real zero: the Laplace transform of the error has
+residue `-m / ρ` at a zero `ρ` of multiplicity `m`. For the rational field the real exception
+is impossible, so either one-sided bound at all exponents greater than `1 / 2` implies the
+Riemann hypothesis.
 
-This is the classical oscillation argument for `ψ(x) - x`: a one-sided bound makes the Laplace
-transform of the error a transform of a function of constant sign, and Landau's theorem places its
-first singularity on the real axis.
+In the classical oscillation argument, set `g(u) = ψ_K(exp u) - exp u`. Landau's theorem applies
+to the eventually nonnegative comparison function `C * exp (θ * u) + g(u)` for the lower bound
+and `C * exp (θ * u) - g(u)` for the upper bound. Their Laplace transforms are `C / (s - θ)`
+plus or minus the transform of `g`, respectively. The added term is analytic in `Re s > θ`,
+so Landau's conclusion about the rightmost pole applies there to the error transform as well.
 
 ## References
 
