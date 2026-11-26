@@ -59,6 +59,8 @@ subset of the target manifold.
   to `U` with the direct restriction to `U`.
 * `Diffeomorph.subtype`: a diffeomorphism restricts to a diffeomorphism between open subsets that
   it maps onto each other.
+* `Diffeomorph.opensImage`: an open subset of an open subset is diffeomorphic to its image as an
+  open subset of the ambient manifold.
 * `TauCeti.isLocalDiffeomorph_subtype_val`: the inclusion of an open subset is a `C^n` local
   diffeomorphism.
 * `TauCeti.bijective_mfderiv_subtype_val`, `TauCeti.bijective_mfderiv_inclusion`: the inclusions
@@ -376,6 +378,47 @@ theorem subtype_symm_apply_coe (g : M ≃ₘ^n⟮I, J⟯ N) (h_iff : ∀ x, x �
   (rfl)
 
 end Subtype
+
+section OpensImage
+
+open TopologicalSpace
+
+variable {U : Opens M}
+
+/-- An open subset `S` of an open subset `U : Opens M` is canonically `C^n` diffeomorphic to its
+image in `M`, bundled as an open subset of `M`. -/
+def opensImage (S : Opens U) :
+    S ≃ₘ^n⟮I, I⟯
+      (⟨Subtype.val '' (S : Set U), U.isOpen.isOpenMap_subtypeVal _ S.isOpen⟩ : Opens M) :=
+  let V : Opens M := ⟨Subtype.val '' (S : Set U), U.isOpen.isOpenMap_subtypeVal _ S.isOpen⟩
+  have hVU : V ≤ U := Subtype.coe_image_subset (U : Set M) (S : Set U)
+  have memS (x : V) : Opens.inclusion hVU x ∈ S := by
+    obtain ⟨z, hz, hzx⟩ := x.property
+    exact (Subtype.ext hzx : z = Opens.inclusion hVU x) ▸ hz
+  { toFun := fun z ↦ ⟨z.val.val, ⟨z.val, z.property, rfl⟩⟩
+    invFun := fun x ↦ ⟨Opens.inclusion hVU x, memS x⟩
+    left_inv := fun _ ↦ rfl
+    right_inv := fun _ ↦ rfl
+    contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff V _).1
+      (ContMDiff.comp (g := (Subtype.val : U → M)) (f := (Subtype.val : S → U))
+        contMDiff_subtypeVal contMDiff_subtypeVal)
+    contMDiff_invFun := (TauCeti.ContMDiff.subtypeVal_comp_iff S _).1 (contMDiff_inclusion hVU) }
+
+/-- The diffeomorphism `Diffeomorph.opensImage` evaluates to the ambient point in `M`. -/
+@[simp]
+theorem opensImage_apply_coe (S : Opens U) (z : S) :
+    (opensImage (I := I) (n := n) S z : M) = z.val.val :=
+  (rfl)
+
+/-- The inverse of `Diffeomorph.opensImage` evaluates in `U` as the open inclusion into `U`. -/
+@[simp]
+theorem opensImage_symm_apply_coe (S : Opens U)
+    (x : (⟨Subtype.val '' (S : Set U), U.isOpen.isOpenMap_subtypeVal _ S.isOpen⟩ : Opens M)) :
+    ((opensImage (I := I) (n := n) S).symm x : U) =
+      Opens.inclusion (Subtype.coe_image_subset (U : Set M) (S : Set U)) x :=
+  (rfl)
+
+end OpensImage
 
 end Diffeomorph
 

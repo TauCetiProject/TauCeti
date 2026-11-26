@@ -68,6 +68,11 @@ dimension count but no isotropic/Lagrangian vocabulary, which this file supplies
   `IsCoisotropic.isLagrangian_of_finrank` are the converses for an isotropic or coisotropic subspace
   of half the dimension. Isotropic subspaces have at most and coisotropic subspaces at least half
   the dimension (`IsIsotropic.two_mul_finrank_le`, `IsCoisotropic.finrank_le_two_mul_finrank`).
+* `TauCeti.SymplecticForm.IsCoisotropic.isIsotropic_orthogonal`: the symplectic complement of a
+  coisotropic subspace is isotropic, and `IsIsotropic.apply_add` reduces `ω(u₁ + n₁, u₂ + n₂)` on
+  sums from two isotropic subspaces to `ω(u₁, n₂) - ω(u₂, n₁)`.
+* `TauCeti.SymplecticForm.IsCoisotropic.finite` and `IsLagrangian.finite`: a symplectic vector
+  space containing a finite-dimensional coisotropic or Lagrangian subspace is finite-dimensional.
 * `TauCeti.SymplecticForm.isLagrangian_bot_iff` and `isLagrangian_top_iff`: the zero subspace, or
   the whole space, is Lagrangian exactly when the ambient space is zero.
 * `TauCeti.SymplecticForm.isLagrangian_prod_top_bot` and `isLagrangian_prod_bot_top`: the two
@@ -362,6 +367,46 @@ theorem map_ker_eq_orthogonal_range (ω : SymplecticForm V)
     inf_eq_right.2 (isCoisotropic_iff_le.1 hC)]
 
 end Pullback
+
+/-- The symplectic complement of a coisotropic subspace is isotropic. -/
+theorem IsCoisotropic.isIsotropic_orthogonal (h : ω.IsCoisotropic L) :
+    ω.IsIsotropic (ω.orthogonal L) :=
+  isIsotropic_iff_le.2 (ω.orthogonal_le (isCoisotropic_iff_le.1 h))
+
+/-- Evaluating a symplectic form on sums of vectors from two isotropic subspaces leaves only the
+skew-symmetric cross-pairing `ω(u₁, n₂) - ω(u₂, n₁)`. -/
+theorem IsIsotropic.apply_add (hL : ω.IsIsotropic L) (hL' : ω.IsIsotropic L')
+    {u₁ u₂ n₁ n₂ : V} (hu₁ : u₁ ∈ L) (hu₂ : u₂ ∈ L) (hn₁ : n₁ ∈ L') (hn₂ : n₂ ∈ L') :
+    ω (u₁ + n₁) (u₂ + n₂) = ω u₁ n₂ - ω u₂ n₁ := by
+  have hu : ω u₁ u₂ = 0 := isIsotropic_iff.1 hL u₁ hu₁ u₂ hu₂
+  have hn : ω n₁ n₂ = 0 := isIsotropic_iff.1 hL' n₁ hn₁ n₂ hn₂
+  have hswap : -ω n₁ u₂ = ω u₂ n₁ := ω.neg_eq n₁ u₂
+  have hexp : ω (u₁ + n₁) (u₂ + n₂) = ω u₁ u₂ + ω n₁ u₂ + (ω u₁ n₂ + ω n₁ n₂) := by
+    simp only [map_add, LinearMap.add_apply]
+  linarith
+
+/-- A symplectic vector space containing a finite-dimensional coisotropic subspace `L` is itself
+finite-dimensional: `L^ω ≤ L` is finite-dimensional and `V ⧸ L^ω` embeds into `L →ₗ[ℝ] ℝ`. -/
+theorem IsCoisotropic.finite (h : ω.IsCoisotropic L) [Module.Finite ℝ L] : Module.Finite ℝ V := by
+  let φ : V →ₗ[ℝ] (L →ₗ[ℝ] ℝ) :=
+    { toFun v := ω.toBilinForm.flip v ∘ₗ L.subtype
+      map_add' u v := by ext w; simp
+      map_smul' c v := by ext w; simp }
+  have hker : LinearMap.ker φ = ω.orthogonal L := by
+    ext v
+    simp [φ, LinearMap.ext_iff, mem_orthogonal_iff]
+  have : Module.Finite ℝ (V ⧸ LinearMap.ker φ) :=
+    Module.Finite.equiv φ.quotKerEquivRange.symm
+  rw [hker] at this
+  have : Module.Finite ℝ (ω.orthogonal L) :=
+    Module.Finite.of_injective (Submodule.inclusion (isCoisotropic_iff_le.1 h))
+      (Submodule.inclusion_injective _)
+  exact Module.Finite.of_submodule_quotient (ω.orthogonal L)
+
+/-- A symplectic vector space containing a finite-dimensional Lagrangian subspace is itself
+finite-dimensional. -/
+theorem IsLagrangian.finite (h : ω.IsLagrangian L) [Module.Finite ℝ L] : Module.Finite ℝ V :=
+  h.isCoisotropic.finite
 
 section FiniteDimensional
 

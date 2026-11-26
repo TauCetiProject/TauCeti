@@ -42,8 +42,11 @@ symplectic-form API in `TauCeti.Geometry.Symplectic.Lagrangian.Basic`.
   `isCoisotropic_map_transport_iff`, `isLagrangian_map_transport_iff`,
   `isSymplectic_map_transport_iff`, and the one-way `IsIsotropic.map_transport`,
   `IsCoisotropic.map_transport`, `IsLagrangian.map_transport`, `IsSymplectic.map_transport`: the
-  transport API, with `IsSymplectomorphism.isIsotropic_map_iff` and
-  `IsSymplectomorphism.isLagrangian_map_iff` for a given linear symplectomorphism.
+  transport API, with `IsSymplectomorphism.isIsotropic_map_iff`,
+  `IsSymplectomorphism.isCoisotropic_map_iff`, `IsSymplectomorphism.isLagrangian_map_iff`, and
+  `IsSymplectomorphism.isSymplectic_map_iff` for a given linear symplectomorphism, and
+  `Invariant.isSymplectomorphism`, `Invariant.map_orthogonal`, and `Invariant.is*_map_iff` for an
+  `ω`-invariant almost complex structure.
 * `TauCeti.SymplecticForm.isIsotropic_graph_iff`, `isIsotropic_linearEquiv_graph_iff`,
   `IsSymplectomorphism.isLagrangian_graph`, `isLagrangian_graph_iff`, `isLagrangian_diagonal`,
   and `isSymplectic_graph_iff`: the graph API.
@@ -239,12 +242,26 @@ lemma IsSymplectomorphism.isIsotropic_map_iff {ω' : SymplecticForm W}
     ω'.IsIsotropic (L.map e.toLinearMap) ↔ ω.IsIsotropic L := by
   rw [← isSymplectomorphism_iff_transport_eq.1 he, isIsotropic_map_transport_iff]
 
+/-- A linear symplectomorphism carries a subspace to a coisotropic subspace exactly when the
+subspace is coisotropic. -/
+lemma IsSymplectomorphism.isCoisotropic_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsCoisotropic (L.map e.toLinearMap) ↔ ω.IsCoisotropic L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isCoisotropic_map_transport_iff]
+
 /-- A linear symplectomorphism carries a subspace to a Lagrangian subspace exactly when the subspace
 is Lagrangian. -/
 lemma IsSymplectomorphism.isLagrangian_map_iff {ω' : SymplecticForm W}
     (he : IsSymplectomorphism ω ω' e) :
     ω'.IsLagrangian (L.map e.toLinearMap) ↔ ω.IsLagrangian L := by
   rw [← isSymplectomorphism_iff_transport_eq.1 he, isLagrangian_map_transport_iff]
+
+/-- A linear symplectomorphism carries a subspace to a symplectic subspace exactly when the
+subspace is symplectic. -/
+lemma IsSymplectomorphism.isSymplectic_map_iff {ω' : SymplecticForm W}
+    (he : IsSymplectomorphism ω ω' e) :
+    ω'.IsSymplectic (L.map e.toLinearMap) ↔ ω.IsSymplectic L := by
+  rw [← isSymplectomorphism_iff_transport_eq.1 he, isSymplectic_map_transport_iff]
 
 namespace IsIsotropic
 
@@ -287,6 +304,43 @@ lemma map_transport (h : ω.IsSymplectic L) :
 end IsSymplectic
 
 end Transport
+
+section Invariant
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V]
+  {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+
+/-- An `ω`-invariant almost complex structure is a linear symplectomorphism of `(V, ω)`. -/
+theorem Invariant.isSymplectomorphism (hJ : ω.Invariant J) :
+    ω.IsSymplectomorphism ω J.linearEquiv :=
+  isSymplectomorphism_iff.2 ((ω.invariant_iff J).1 hJ)
+
+/-- An `ω`-invariant almost complex structure commutes with symplectic orthogonal complements. -/
+theorem Invariant.map_orthogonal (hJ : ω.Invariant J) (W : Submodule ℝ V) :
+    (ω.orthogonal W).map J.toLinearMap = ω.orthogonal (W.map J.toLinearMap) :=
+  hJ.isSymplectomorphism.map_orthogonal W
+
+/-- An `ω`-invariant almost complex structure preserves and reflects isotropic subspaces. -/
+theorem Invariant.isIsotropic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
+    ω.IsIsotropic (W.map J.toLinearMap) ↔ ω.IsIsotropic W :=
+  hJ.isSymplectomorphism.isIsotropic_map_iff
+
+/-- An `ω`-invariant almost complex structure preserves and reflects coisotropic subspaces. -/
+theorem Invariant.isCoisotropic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
+    ω.IsCoisotropic (W.map J.toLinearMap) ↔ ω.IsCoisotropic W :=
+  hJ.isSymplectomorphism.isCoisotropic_map_iff
+
+/-- An `ω`-invariant almost complex structure preserves and reflects Lagrangian subspaces. -/
+theorem Invariant.isLagrangian_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
+    ω.IsLagrangian (W.map J.toLinearMap) ↔ ω.IsLagrangian W :=
+  hJ.isSymplectomorphism.isLagrangian_map_iff
+
+/-- An `ω`-invariant almost complex structure preserves and reflects symplectic subspaces. -/
+theorem Invariant.isSymplectic_map_iff (hJ : ω.Invariant J) {W : Submodule ℝ V} :
+    ω.IsSymplectic (W.map J.toLinearMap) ↔ ω.IsSymplectic W :=
+  hJ.isSymplectomorphism.isSymplectic_map_iff
+
+end Invariant
 
 section Graph
 

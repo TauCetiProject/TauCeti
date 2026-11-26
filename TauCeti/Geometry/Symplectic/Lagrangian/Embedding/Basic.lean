@@ -24,7 +24,9 @@ to an open subset of the source and nonzero rescaling of the form preserve Lagra
 and a map into an open submanifold is a Lagrangian embedding for the restricted form exactly when
 its composition with the inclusion is one. In finite dimension an embedding is Lagrangian if its
 tangent images are isotropic and its source has half the ambient dimension. For a nonempty source
-this condition is also necessary. No global dimension condition is imposed on an empty embedding.
+this condition is also necessary. No global dimension condition is imposed on an empty embedding;
+when a nonempty compact source embeds as a Lagrangian in a Hausdorff ambient manifold, both model
+spaces are automatically finite-dimensional (`IsLagrangianEmbedding.finiteDimensional`).
 
 ## References
 
@@ -73,6 +75,16 @@ theorem isLagrangianEmbedding_iff_of_isSmoothEmbedding
 theorem IsLagrangianEmbedding.isLagrangianImmersion [FiniteDimensional ℝ E] [Nonempty N]
     (h : hσ.IsLagrangianEmbedding J f) : hσ.IsLagrangianImmersion J f :=
   isLagrangianImmersion_iff.mpr ⟨h.isImmersion, h.isLagrangianMap⟩
+
+/-- A nonempty compact manifold admitting a Lagrangian embedding into a Hausdorff manifold with a
+nondegenerate two-form has finite-dimensional model space, as does the ambient manifold. -/
+theorem IsLagrangianEmbedding.finiteDimensional [T2Space M] [CompactSpace N] [Nonempty N]
+    (h : hσ.IsLagrangianEmbedding J f) :
+    FiniteDimensional ℝ F ∧ FiniteDimensional ℝ E := by
+  have : T2Space N := h.isEmbedding.t2Space
+  have : FiniteDimensional ℝ F := .of_locallyCompact_manifold N J
+  obtain ⟨x₀⟩ := ‹Nonempty N›
+  exact ⟨inferInstance, (isLagrangianMap_iff_forall.1 h.isLagrangianMap x₀).finite⟩
 
 /-- An isotropic smooth embedding of half the ambient dimension is Lagrangian. -/
 theorem IsIsotropicMap.isLagrangianEmbedding_of_finrank [FiniteDimensional ℝ E]

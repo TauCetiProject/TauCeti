@@ -12,9 +12,11 @@ public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
+import TauCeti.Geometry.Manifold.DifferentialForm.Opens.Diffeomorph
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 import TauCeti.Geometry.Manifold.Diffeomorph.Extend
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
+import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 import TauCeti.Geometry.Symplectic.Manifold.Opens
@@ -88,6 +90,9 @@ diffeomorphism of `W`, which extends by the identity to `M`.
   differential along it.
 * `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_eq_along`: the same theorem as a
   diffeomorphism between open neighbourhoods of the submanifold.
+* `TauCeti.SmoothTwoForm.exists_diffeomorph_opens_of_mpullback_symm_eq_along`: transport of open
+  neighbourhoods across an initial open-subset diffeomorphism `Ψ : W₀ ≃ₘ W` whose inverse pulls
+  `τ|_{W₀}` back to `σ|_W` along `f(Q)`.
 
 ## References
 
@@ -618,5 +623,76 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
     (funext (Φ.subtype_apply_coe hU₀₁)), SmoothForm.coe_mpullback_subtype_val_apply,
     SmoothForm.coe_mpullback_subtype_val_apply]
   exact hUΦ z.property
+
+open TopologicalSpace in
+/-- **Relative Moser transport across an open-neighbourhood diffeomorphism.** Let `σ` be a closed
+two-form on `M` and `τ` a closed two-form on `N`, let `f : Q → M` be a compact embedded submanifold
+along which `σ` is nondegenerate, and let `Ψ : W₀ ≃ₘ W` be a diffeomorphism between open subsets of
+`N` and `M` sending `z q ∈ W₀` to `f q ∈ W` such that `(Ψ.symm)^* (τ|_{W₀})` agrees with `σ|_W` on
+the full ambient tangent space at every `f q`. Then there exist open neighbourhoods `U` of `f(Q)` in
+`M` and `V` of `z(Q)` in `N` and a diffeomorphism `φ : U ≃ₘ V` sending `f q` to `z q` and pulling
+`τ|_V` back to `σ|_U`. -/
+theorem exists_diffeomorph_opens_of_mpullback_symm_eq_along
+    {E₂ H₂ N E' H' Q : Type*}
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂]
+    {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace N] [ChartedSpace H₂ N] [IsManifold I₂ ∞ N]
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+    [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [J.Boundaryless]
+    [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q] [CompactSpace Q]
+    (f : SmoothEmbedding J I ∞ Q M)
+    {σ : SmoothTwoForm I M} (hσ : σ.IsClosed)
+    {τ : SmoothTwoForm I₂ N} (hτ : τ.IsClosed)
+    (hnd : ∀ q, (σ.bilinFormAt (f q)).Nondegenerate) {z : Q → N}
+    {W₀ : Opens N} {W : Opens M} [SecondCountableTopology W] (Ψ : W₀ ≃ₘ⟮I₂, I⟯ W)
+    (hΨzero : ∀ q, ∃ hq : z q ∈ W₀, (Ψ ⟨z q, hq⟩ : M) = f q)
+    (hΨform : ∀ (q : Q) (hx : f q ∈ W),
+      (SmoothForm.mpullback Ψ.symm Ψ.symm.contMDiff
+        (SmoothForm.mpullback (Subtype.val : W₀ → N) contMDiff_subtypeVal τ)).val ⟨f q, hx⟩ =
+      (SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal σ).val ⟨f q, hx⟩) :
+    ∃ (U : Opens M) (V : Opens N) (φ : U ≃ₘ⟮I, I₂⟯ V),
+      (∀ q, ∃ h : f q ∈ U, (φ ⟨f q, h⟩ : N) = z q) ∧
+      SmoothForm.mpullback φ φ.contMDiff
+          (SmoothForm.mpullback (Subtype.val : V → N) contMDiff_subtypeVal τ) =
+        SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ := by
+  have hiW_mem (q : Q) : f q ∈ W :=
+    let ⟨hq, hval⟩ := hΨzero q; hval ▸ (Ψ ⟨z q, hq⟩).property
+  let fW : SmoothEmbedding J I ∞ Q W := f.codRestrict W hiW_mem
+  have hfW_apply (q : Q) : fW q = ⟨f q, hiW_mem q⟩ :=
+    Subtype.ext (f.val_codRestrict_apply W hiW_mem q)
+  have hσ₀_closed := hσ.mpullback (Subtype.val : W → M) contMDiff_subtypeVal
+  have hσ₁_closed := (hτ.mpullback (Subtype.val : W₀ → N) contMDiff_subtypeVal).mpullback
+    Ψ.symm Ψ.symm.contMDiff
+  obtain ⟨U₀, U₁, φW, hφW, hφW_form⟩ := exists_diffeomorph_opens_of_eq_along fW hσ₀_closed
+    hσ₁_closed
+    (fun q ↦ (nondegenerate_bilinFormAt_mpullback_subtype_val_iff (fW q)).2
+      (f.val_codRestrict_apply W hiW_mem q ▸ hnd q))
+    fun q ↦ by
+      rw [hfW_apply]
+      exact hΨform q (hiW_mem q)
+  let T : Opens W₀ := ⟨Ψ ⁻¹' (U₁ : Set W), U₁.isOpen.preimage Ψ.continuous⟩
+  have hU₁T (w : W) : w ∈ U₁ ↔ Ψ.symm w ∈ T := by simp [T]
+  let U : Opens M := ⟨Subtype.val '' (U₀ : Set W), W.isOpen.isOpenMap_subtypeVal _ U₀.isOpen⟩
+  let V : Opens N := ⟨Subtype.val '' (T : Set W₀), W₀.isOpen.isOpenMap_subtypeVal _ T.isOpen⟩
+  let φ : U ≃ₘ⟮I, I₂⟯ V :=
+    ((Diffeomorph.opensImage (I := I) U₀).symm.trans (φW.trans (Ψ.symm.subtype hU₁T))).trans
+      (Diffeomorph.opensImage (I := I₂) T)
+  refine ⟨U, V, φ, fun q ↦ ?_, ?_⟩
+  · obtain ⟨hqU₀, hφWq, -⟩ := hφW q
+    obtain ⟨hqW₀, hΨq⟩ := hΨzero q
+    have hfi : (fW q : M) = f q := f.val_codRestrict_apply W hiW_mem q
+    have hiU : f q ∈ U := ⟨fW q, hqU₀, hfi⟩
+    have hinc : (Diffeomorph.opensImage (I := I) (n := ∞) U₀).symm ⟨f q, hiU⟩ = ⟨fW q, hqU₀⟩ :=
+      Subtype.ext ((Diffeomorph.opensImage_symm_apply_coe (I := I) (n := ∞) U₀ ⟨f q, hiU⟩).trans
+        (Subtype.ext hfi.symm))
+    have hΨ_eq : Ψ.symm (fW q) = ⟨z q, hqW₀⟩ :=
+      Ψ.symm_apply_eq.2 (Subtype.ext (hfi.trans hΨq.symm))
+    have hφW_mem : fW q ∈ U₁ := hφWq ▸ (φW ⟨fW q, hqU₀⟩).property
+    have hφW_eq : φW ⟨fW q, hqU₀⟩ = ⟨fW q, hφW_mem⟩ := Subtype.ext hφWq
+    refine ⟨hiU, ?_⟩
+    simp only [φ, V, Diffeomorph.coe_trans, Function.comp_apply, Diffeomorph.opensImage_apply_coe,
+      Diffeomorph.subtype_apply_coe, hinc, hφW_eq, hΨ_eq]
+  · rw [SmoothForm.mpullback_trans, SmoothForm.mpullback_opensImage,
+      SmoothForm.mpullback_trans, SmoothForm.mpullback_trans, SmoothForm.mpullback_subtype,
+      hφW_form, SmoothForm.mpullback_opensImage_symm]
 
 end TauCeti.SmoothTwoForm
