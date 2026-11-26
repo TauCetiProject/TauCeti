@@ -46,7 +46,9 @@ Banach space `G`, under the same estimate, has a unique kernel `T ∈ 𝓓'(Ω �
 `T (φ ⊗ ψ) = B φ ψ` (`LinearMap.existsUnique_schwartzKernel_prodSMulCLM`). It is the real part of
 the kernel of the complex-bilinear extension of `B` with values in the complexification of `G`
 (`LinearMap.complexifyTestFunction`). If `B` is continuous in each variable it satisfies the
-estimate (`LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous`).
+estimate, and the kernel exists more generally on open sets of finite-dimensional real normed
+spaces, read in linear coordinates
+(`LinearMap.existsUnique_schwartzKernel_prodSMulCLM_of_continuous`).
 
 ## Operators and their kernels
 
@@ -543,16 +545,63 @@ theorem existsUnique_schwartzKernel_distribution_of_continuous
   existsUnique_schwartzKernel_distribution B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
 
 /-- **The Schwartz kernel theorem for separately continuous bilinear maps, for real test
-functions.** A real bilinear map on the real test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`,
-with values in a real Banach space `G`, which is continuous in each variable is given by a unique
-`G`-valued distribution `T` on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`. -/
-theorem existsUnique_schwartzKernel_prodSMulCLM_of_continuous {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [CompleteSpace G] (B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G)
+functions.** A real bilinear map on the real test functions on open sets `Ω` and `O` of
+finite-dimensional real normed spaces `E` and `D`, with values in a real Banach space `G`, which is
+continuous in each variable is given by a unique `G`-valued distribution `T` on `V = Ω × O` with
+`T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`. -/
+theorem existsUnique_schwartzKernel_prodSMulCLM_of_continuous {E D G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup D] [NormedSpace ℝ D] [FiniteDimensional ℝ D]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {Ω : Opens E} {O : Opens D}
+    (B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G)
     (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
-    {V : Opens ((a → ℝ) × (b → ℝ))}
-    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
-    ∃! T : 𝓓'(V, G), ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), T (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ :=
-  existsUnique_schwartzKernel_prodSMulCLM B (exists_bound_ofSupportedIn_of_continuous B h₁ h₂) hV
+    {V : Opens (E × D)} (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
+    ∃! T : 𝓓'(V, G), ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)),
+      T (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ := by
+  -- Linear coordinates `e₁ : E ≃ ℝ^a` and `e₂ : D ≃ ℝ^b`, and the open sets they give.
+  obtain ⟨a, ⟨e₁⟩⟩ : ∃ a, Nonempty (E ≃L[ℝ] (Fin a → ℝ)) :=
+    ⟨_, ⟨(Module.finBasis ℝ E).equivFun.toContinuousLinearEquiv⟩⟩
+  obtain ⟨b, ⟨e₂⟩⟩ : ∃ b, Nonempty (D ≃L[ℝ] (Fin b → ℝ)) :=
+    ⟨_, ⟨(Module.finBasis ℝ D).equivFun.toContinuousLinearEquiv⟩⟩
+  let Ω' : Opens (Fin a → ℝ) := ⟨e₁.symm ⁻¹' Ω, Ω.isOpen.preimage e₁.symm.continuous⟩
+  let O' : Opens (Fin b → ℝ) := ⟨e₂.symm ⁻¹' O, O.isOpen.preimage e₂.symm.continuous⟩
+  let V' : Opens ((Fin a → ℝ) × (Fin b → ℝ)) :=
+    ⟨(Ω' : Set _) ×ˢ (O' : Set _), Ω'.isOpen.prod O'.isOpen⟩
+  have hV' : (V' : Set ((Fin a → ℝ) × (Fin b → ℝ))) =
+      (Ω' : Set (Fin a → ℝ)) ×ˢ (O' : Set (Fin b → ℝ)) := rfl
+  have hΩ' : MapsTo e₁.symm Ω' Ω := fun _ hy ↦ hy
+  have hO' : MapsTo e₂.symm O' O := fun _ hy ↦ hy
+  have hΩ : MapsTo e₁ Ω Ω' := fun x hx ↦ by simpa [Ω'] using hx
+  have hO : MapsTo e₂ O O' := fun x hx ↦ by simpa [O'] using hx
+  have hVV' : MapsTo (e₁.prodCongr e₂) V V' := by
+    rw [hV]
+    exact fun p hp ↦ ⟨hΩ hp.1, hO hp.2⟩
+  -- The bilinear map in coordinates, `(φ', ψ') ↦ B (φ' ∘ e₁) (ψ' ∘ e₂)`, and its kernel.
+  let B' := B.compl₁₂ (e₁.symm.transportTestFunction hΩ').toLinearMap
+    (e₂.symm.transportTestFunction hO').toLinearMap
+  have h₁' (ψ : 𝓓(O', ℝ)) : Continuous fun φ ↦ B' φ ψ :=
+    (h₁ _).comp (e₁.symm.transportTestFunction hΩ').continuous
+  have h₂' (φ : 𝓓(Ω', ℝ)) : Continuous (B' φ) :=
+    (h₂ _).comp (e₂.symm.transportTestFunction hO').continuous
+  obtain ⟨T', hT', -⟩ := existsUnique_schwartzKernel_prodSMulCLM B'
+    (exists_bound_ofSupportedIn_of_continuous B' h₁' h₂') hV'
+  have hT (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)) : Distribution.transportCLM (e₁.prodCongr e₂) hVV' T'
+      (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ := by
+    have h : (e₁.prodCongr e₂).transportTestFunction hVV' (prodSMulCLM ψ hV.symm.subset φ) =
+        prodSMulCLM (e₂.transportTestFunction hO ψ) hV'.symm.subset
+          (e₁.transportTestFunction hΩ φ) := by
+      ext p
+      simp [prodSMulCLM_apply]
+    have hφ : e₁.symm.transportTestFunction hΩ' (e₁.transportTestFunction hΩ φ) = φ := by
+      ext
+      simp
+    have hψ : e₂.symm.transportTestFunction hO' (e₂.transportTestFunction hO ψ) = ψ := by
+      ext
+      simp
+    rw [Distribution.transportCLM_apply, h, hT']
+    simp only [B', compl₁₂_apply, ContinuousLinearMap.coe_coe, hφ, hψ]
+  -- Uniqueness is the density of tensor products.
+  exact ⟨_, hT, fun T hT₁ ↦ ext_prodSMulCLM hV fun ψ φ ↦ by rw [hT₁, hT]⟩
 
 end Continuous
 
