@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 import TauCeti.Analysis.Pseudodifferential.MicrolocalCutoff
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 
 /-!
@@ -74,6 +75,10 @@ enlarge wave front sets, and `Op(e) v` lies in every `H^s`, so its wave front se
 ## Main results
 
 * `TauCeti.Symbol.characteristicSet`: the characteristic set of a symbol.
+* `TauCeti.ClassicalSymbol.mem_characteristicSet_iff`: for a classical symbol, the characteristic
+  set consists of the nonzero covectors at which the principal symbol is not invertible, and it is
+  empty exactly when the symbol is elliptic
+  (`TauCeti.ClassicalSymbol.characteristicSet_eq_empty_iff`).
 * `TauCeti.Symbol.exists_toDistr_quantizeSobolev_eq_sub`: the microlocal parametrix identity
   `Op(c) v = Op(q) (Op(a) v) - Op(e) v` on `H^t`, with `e` smoothing.
 * `TauCeti.Symbol.waveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
@@ -378,5 +383,31 @@ theorem waveFrontSet_toDistribution_eq_iInter_characteristicSet (t : ℝ)
 end TestOperators
 
 end Symbol
+
+/-! ### Classical symbols -/
+
+namespace ClassicalSymbol
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+/-- **The characteristic set of a classical symbol** consists of the points `(x, ξ)` with `ξ ≠ 0`
+at which its principal symbol `a_m(x, ξ)` is not invertible. -/
+@[simp]
+theorem mem_characteristicSet_iff {a : ClassicalSymbol n V W m} {x ξ : CoordinateSpace n} :
+    (x, ξ) ∈ a.toSymbol.characteristicSet ↔
+      ξ ≠ 0 ∧ ¬ (a.principal.coefficient (x, ξ)).IsInvertible := by
+  rw [Symbol.mem_characteristicSet_iff]
+  exact and_congr_right fun hξ ↦ not_congr ⟨fun ⟨_, hU, _, _, hξΓ, hcone, _, ha⟩ ↦
+    isInvertible_principal_of_isEllipticOn hξ (mem_of_mem_nhds hU)
+      (fun t ht ↦ hcone t ht _ hξΓ) ha,
+    exists_isEllipticOn_of_isInvertible_principal hξ⟩
+
+/-- A classical symbol has empty characteristic set exactly when it is elliptic. -/
+theorem characteristicSet_eq_empty_iff {a : ClassicalSymbol n V W m} :
+    a.toSymbol.characteristicSet = ∅ ↔ a.IsElliptic := by
+  simp [Set.eq_empty_iff_forall_notMem, mem_characteristicSet_iff, isElliptic_iff]
+
+end ClassicalSymbol
 
 end TauCeti
