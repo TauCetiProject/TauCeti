@@ -151,6 +151,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_one_of_forall_pow_le_mul_rpow`: `r ≤ 1` when `r ^ n ≤ C * (1 + n) ^ s` for all `n`.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `Real.eq_zero_of_forall_rpow_le`: `e = 0` when `c ^ e ≤ K` for all `c > 0`.
+* `Real.eq_zero_of_forall_zpow_rpow_le`: `e = 0` when `(b ^ k) ^ e ≤ K` for all `k ∈ ℤ` and some
+  `b > 1`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
@@ -424,6 +426,27 @@ theorem eq_zero_of_forall_rpow_le {e K : ℝ} (h : ∀ c : ℝ, 0 < c → c ^ e 
   have := h ((K + 1) ^ e⁻¹) (rpow_pos_of_pos hK _)
   rw [← rpow_mul hK.le, inv_mul_cancel₀ he, rpow_one] at this
   linarith
+
+/-- If `(b ^ k) ^ e` is bounded over all integers `k` for some `b > 1`, then `e = 0`:
+`(b ^ k) ^ e = (b ^ e) ^ k` is unbounded as `k → ∞` when `e > 0` and as `k → -∞` when `e < 0`.
+This pins an exponent by a scaling argument that only has the dilations by the powers of `b`, such
+as the dyadic dilations. -/
+theorem eq_zero_of_forall_zpow_rpow_le {b e K : ℝ} (hb : 1 < b) (h : ∀ k : ℤ, (b ^ k) ^ e ≤ K) :
+    e = 0 := by
+  have hb0 : 0 ≤ b := zero_le_one.trans hb.le
+  have hk : ∀ k : ℤ, (b ^ k) ^ e = (b ^ e) ^ k := fun k ↦ by
+    rw [← rpow_intCast, ← rpow_intCast, ← rpow_mul hb0, ← rpow_mul hb0, mul_comm]
+  by_contra he
+  rcases lt_or_gt_of_ne he with he | he
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_inv_iff₀.2
+      ⟨rpow_pos_of_pos (zero_lt_one.trans hb) e, rpow_lt_one_of_one_lt_of_neg hb he⟩)
+    have := h (-n)
+    rw [hk, zpow_neg, zpow_natCast, ← inv_pow] at this
+    linarith
+  · obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt K (one_lt_rpow hb he)
+    have := h n
+    rw [hk, zpow_natCast] at this
+    linarith
 
 /-- If `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. -/
 theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) (hc : 0 ≤ c) :
