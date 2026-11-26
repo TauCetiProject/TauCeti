@@ -51,7 +51,7 @@ coordinates of the parameter and the point
   the point, on the product chart target.
 * `TauCeti.SmoothForm.lineMapFamily`, `TauCeti.SmoothForm.mpullback_prodMk_lineMapFamily`: the
   family `t ↦ α₀ + c(t) (α₁ - α₀)` interpolating two forms, as a form on `ℝ × M`.
-* `TauCeti.mpullback_prodMk_mpullback_prodMap_id`: the slices of the pullback of a family along
+* `TauCeti.mpullback_prodMk_mpullback_prodMap`: the slices of the pullback of a family along
   `id × g` are the pullbacks along `g` of the slices.
 -/
 
@@ -273,7 +273,7 @@ theorem SmoothForm.mpullback_prodMk_lineMapFamily (α₀ α₁ : SmoothForm I M 
 omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
 /-- The slices of the pullback of a family of forms along `id × g` are the pullbacks along `g` of
 the slices: `ι_p^* (id × g)^* η = g^* ι_p^* η`, for a differentiable map `g`. -/
-theorem mpullback_prodMk_mpullback_prodMap_id {g : M → M'} (hg : MDifferentiable I I' g)
+theorem mpullback_prodMk_mpullback_prodMap {g : M → M'} (hg : MDifferentiable I I' g)
     (η : RoughForm (J.prod I') (N × M') F k) (p : N) :
     mpullback I (J.prod I) (Prod.mk p) (mpullback (J.prod I) (J.prod I') (Prod.map id g) η) =
       mpullback I I' g (mpullback I' (J.prod I') (Prod.mk p) η) := by

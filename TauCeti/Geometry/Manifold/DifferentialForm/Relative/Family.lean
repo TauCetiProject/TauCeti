@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Relative.FirstJet
-public import TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 
 /-!
 # The relative Poincaré lemma for smooth families of forms
@@ -39,17 +37,18 @@ families on a tube** (`Diffeomorph.exists_isSmoothForm_family_mextDeriv_eq_sub_m
 `Diffeomorph.exists_isSmoothForm_family_relative_primitive`): a family `η` with closed slices has
 a jointly `C^r` family `β` with `d β_p = η_p - ρ^* η_p`, vanishing along `P × i` for the
 zero-section inclusion `i = Φ ∘ 0`, and `d β_p = η_p` as soon as every slice restricts to zero
-along `i`. Through the tubular neighbourhood theorem this is the **relative Poincaré lemma for
-families near an embedded submanifold**
-(`TauCeti.SmoothEmbedding.exists_isSmoothForm_family_relative_primitive`). The neighbourhood is
-chosen before the family, and serves all families of all degrees at once.
+along `i`. Through the tubular neighbourhood theorem this gives the relative Poincaré lemma for
+families near an embedded submanifold,
+`TauCeti.SmoothEmbedding.exists_isSmoothForm_family_relative_primitive` in
+`TauCeti.Geometry.Manifold.TubularNeighborhood.RelativePoincare`.
 
-At each parameter the slice of `β` is the primitive of the slice `η_p` given by the relative
-Poincaré lemma for a single form (`Diffeomorph.exists_isSmoothForm_relative_primitive`), which
-is how the family version refines it: the primitives are selected jointly `C^r` in the parameter.
-This is the input to Moser's argument relative to a submanifold for a smooth family of symplectic
-forms that agree along the submanifold, where the parameter is the time and the forms `η_p` are
-the velocities of the family.
+When every slice restricts to zero along `i`, the slice `β_p` at each parameter `p` is a
+relative primitive of `η_p` in the sense of the relative Poincaré lemma for a single form
+(`Diffeomorph.exists_isSmoothForm_relative_primitive`): `d β_p = η_p` and `β_p` vanishes along
+`i`, but without that lemma's first-jet vanishing conclusion. What the family version adds is a
+choice of these primitives that is jointly `C^r` in the parameter. This is the input to Moser's
+argument relative to a submanifold for a smooth family of symplectic forms that agree along the
+submanifold, where the parameter is the time and the forms `η_p` are the velocities of the family.
 
 ## Main results
 
@@ -58,8 +57,6 @@ the velocities of the family.
 * `Diffeomorph.exists_isSmoothForm_family_mextDeriv_eq_sub_mpullback`,
   `Diffeomorph.exists_isSmoothForm_family_relative_primitive`: the relative Poincaré lemma for
   families on a tube.
-* `TauCeti.SmoothEmbedding.exists_isSmoothForm_family_relative_primitive`: the relative Poincaré
-  lemma for families near an embedded submanifold.
 
 ## References
 
@@ -212,93 +209,8 @@ theorem _root_.Diffeomorph.exists_isSmoothForm_family_relative_primitive
   obtain ⟨β, hβ, hdβ, hβ₀⟩ :=
     Φ.exists_isSmoothForm_family_mextDeriv_eq_sub_mpullback hr hn hη hclosed
   refine ⟨β, hβ, fun p ↦ ?_, hβ₀⟩
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
-  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
-    hn0
-  rw [hdβ, ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
-    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
+  rw [hdβ, Φ.mpullback_retraction_eq_zero (lt_of_lt_of_le (by simp) hn).ne' (hi p), sub_zero]
 
 end Tube
-
-/-! ### Near an embedded submanifold -/
-
-namespace SmoothEmbedding
-
-variable {V G N : Type*} [FiniteDimensional ℝ E]
-  [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [TopologicalSpace G]
-  {J : ModelWithCorners ℝ V G} [I.Boundaryless] [J.Boundaryless] [IsManifold I ∞ M]
-  [TopologicalSpace N] [ChartedSpace G N] [IsManifold J ∞ N] [T2Space N]
-  [SecondCountableTopology N] [IsManifold IP ∞ P]
-
-/-- **The relative Poincaré lemma for families near an embedded submanifold.** Every open
-neighbourhood `O` of the image of a smooth embedding `f : M → N` contains an open neighbourhood
-`W` of that image with the following property. Let `η` be a `C^r` form of positive degree on
-`P × N`, with `1 ≤ r`, whose slices `η_p = ι_p^* η` are closed and satisfy `f^* η_p = 0`. Then
-its restriction to `P × W` has a `C^r` form `β` on `P × W` whose slices are primitives of the
-slices of that restriction, `d β_p = η_p|_W`, and which vanishes as a full ambient tensor of
-`P × W` at every point `(p, f x)`. The neighbourhood `W` does not depend on the family. -/
-theorem exists_isSmoothForm_family_relative_primitive (f : SmoothEmbedding I J ∞ M N) {O : Set N}
-    (hO : IsOpen O) (hfO : range f ⊆ O) :
-    ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧ ∃ hfW : range f ⊆ W,
-      ∀ {k : ℕ} {r : ℕ∞}, 1 ≤ r → ∀ {η : RoughForm (IP.prod J) (P × N) F (k + 1)},
-        IsSmoothForm (IP.prod J) r η →
-        (∀ p, mextDeriv (mpullback J (IP.prod J) (Prod.mk p) η) = 0) →
-        (∀ p, mpullback I J f (mpullback J (IP.prod J) (Prod.mk p) η) = 0) →
-        ∃ β : RoughForm (IP.prod J) (P × W) F k, IsSmoothForm (IP.prod J) r β ∧
-          (∀ p, mextDeriv (mpullback J (IP.prod J) (Prod.mk p) β) =
-            mpullback J J (Subtype.val : W → N) (mpullback J (IP.prod J) (Prod.mk p) η)) ∧
-          ∀ p x, β (p, ⟨f x, hfW (mem_range_self x)⟩) = 0 := by
-  let Q := EuclideanSpace ℝ (Fin (Module.finrank ℝ V - Module.finrank ℝ E))
-  have hdim : Module.finrank ℝ Q = Module.finrank ℝ V - Module.finrank ℝ E := by simp [Q]
-  have hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-  obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := Q) hdim hO hfO
-  let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
-  have : IsManifold I ((∞ : ℕ∞ω) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-  have : IsManifold J ((∞ : ℕ∞ω) + 1) N := IsManifold.of_le (n := ∞) (by simp)
-  have := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
-  have hfW : range f ⊆ W := by
-    rintro _ ⟨x, rfl⟩
-    rw [← hΦ x]
-    exact (Φ _).property
-  refine ⟨W, hWO, hfW, fun {k r} hr {η} hη hclosed hi ↦ ?_⟩
-  have hv : MDifferentiable J J (Subtype.val : W → N) :=
-    (contMDiff_subtypeVal (n := 1)).mdifferentiable one_ne_zero
-  -- Restrict the family to `P × W`; its slices are the restrictions of the slices of `η`.
-  have hval : ContMDiff (IP.prod J) (IP.prod J) ∞
-      (Prod.map (_root_.id : P → P) (Subtype.val : W → N)) :=
-    contMDiff_id.prodMap contMDiff_subtypeVal
-  have hηW : IsSmoothForm (IP.prod J) r
-      (mpullback (IP.prod J) (IP.prod J) (Prod.map (_root_.id : P → P) (Subtype.val : W → N)) η) :=
-    hη.mpullback (hval.of_le (by exact_mod_cast (le_top : r + 1 ≤ ⊤)))
-  have hsliceW (p : P) := mpullback_prodMk_mpullback_prodMap_id hv η p
-  have hclosedW (p : P) : mextDeriv (mpullback J (IP.prod J) (Prod.mk p)
-      (mpullback (IP.prod J) (IP.prod J) (Prod.map (_root_.id : P → P) (Subtype.val : W → N))
-        η)) = 0 := by
-    rw [hsliceW]
-    exact ((hη.mpullback (contMDiff_const.prodMk contMDiff_id)).of_le
-      (by exact_mod_cast hr)).mextDeriv_mpullback_eq_zero (hclosed p) contMDiff_subtypeVal
-  have hcomp : (Subtype.val : W → N) ∘ (Φ ∘ zeroSection Q fun x ↦ f.isImmersion.NormalSpace x hn) =
-      f :=
-    funext hΦ
-  have hiW (p : P) : mpullback I J (Φ ∘ zeroSection Q fun x ↦ f.isImmersion.NormalSpace x hn)
-      (mpullback J (IP.prod J) (Prod.mk p)
-        (mpullback (IP.prod J) (IP.prod J) (Prod.map (_root_.id : P → P) (Subtype.val : W → N))
-          η)) = 0 := by
-    rw [hsliceW, ← mpullback_comp
-      ((Φ.contMDiff.comp (contMDiff_zeroSection ℝ _)).mdifferentiable (by simp)) hv, hcomp]
-    exact hi p
-  obtain ⟨β, hβ, hdβ, hβ₀⟩ := Φ.exists_isSmoothForm_family_relative_primitive hr
-    (by exact_mod_cast (le_top : r + 1 ≤ ⊤)) hηW hclosedW hiW
-  -- The point `f x` of `W` is the image under `Φ` of the zero vector over `x`.
-  have hx (x : M) : (⟨f x, hfW (mem_range_self x)⟩ : W) = Φ (zeroSection Q _ x) :=
-    Subtype.ext (hΦ x).symm
-  refine ⟨β, hβ, fun p ↦ ?_, fun p x ↦ ?_⟩
-  · rw [hdβ p, hsliceW]
-  · rw [hx]
-    exact hβ₀ p x
-
-end SmoothEmbedding
 
 end TauCeti
