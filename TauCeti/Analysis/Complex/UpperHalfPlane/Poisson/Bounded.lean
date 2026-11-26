@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Function
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.PositiveHarmonic
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.VagueLimit
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
 import TauCeti.MeasureTheory.Measure.Decomposition.RNDeriv
 import TauCeti.MeasureTheory.Measure.Vague
 
@@ -68,16 +69,6 @@ private theorem add_mul_I_mem_upperHalfPlaneSet (x : ℝ) {y : ℝ} (hy : 0 < y)
     (x : ℂ) + y * I ∈ upperHalfPlaneSet := by
   simpa using hy
 
-/-- Integration against `g dx`, for a measurable `g ≥ 0`, is integration of `f g`. -/
-private theorem integral_withDensity_ofReal_eq_integral_mul {f g : ℝ → ℝ} (hg : Measurable g)
-    (hg0 : ∀ x, 0 ≤ g x) :
-    ∫ x, f x ∂volume.withDensity (fun x ↦ ENNReal.ofReal (g x)) = ∫ x, f x * g x := by
-  rw [integral_withDensity_eq_integral_toReal_smul hg.ennreal_ofReal
-    (.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [ENNReal.toReal_ofReal (hg0 x), smul_eq_mul, mul_comm]
-
 /-- If `v = c Im + P[ν]` is bounded on `ℂ₊`, the linear coefficient `c` vanishes. -/
 private theorem coeff_eq_zero_of_le
     (hrep : ∀ z ∈ upperHalfPlaneSet, v z = c * z.im + upperHalfPlanePoissonIntegral ν z)
@@ -108,8 +99,10 @@ private theorem measure_le_of_isCompact (hu : HarmonicOnNhd v upperHalfPlaneSet)
     refine (tendsto_integral_mul_of_eq_mul_im_add_upperHalfPlanePoissonIntegral hν hrep
       f.continuous f.hasCompactSupport).congr' ?_
     filter_upwards [self_mem_nhdsWithin] with y (hy : 0 < y)
-    exact (integral_withDensity_ofReal_eq_integral_mul (hcont hy).measurable
-      fun x ↦ (hv _ (add_mul_I_mem_upperHalfPlaneSet x hy)).1).symm
+    rw [TauCeti.MeasureTheory.integral_withDensity_ofReal (hcont hy).aemeasurable
+      (.of_forall fun x ↦ (hv _ (add_mul_I_mem_upperHalfPlaneSet x hy)).1)]
+    simp_rw [smul_eq_mul]
+    exact integral_congr_ae (.of_forall fun x ↦ mul_comm _ _)
   have hbound {V : Set ℝ} (hV : IsOpen V) :
       ∀ᶠ y in 𝓝[>] (0 : ℝ), σ y V ≤ ENNReal.ofReal M * volume V := by
     filter_upwards [self_mem_nhdsWithin] with y (hy : 0 < y)
@@ -171,8 +164,10 @@ theorem exists_eq_integral_upperHalfPlanePoissonKernel_mul_of_abs_le {u : ℂ �
       rw [Real.norm_eq_abs, abs_of_nonneg (hh0 x)]
       exact hh1 x
     have hPν : upperHalfPlanePoissonIntegral ν z = ∫ x, upperHalfPlanePoissonKernel z x * h x := by
-      rw [upperHalfPlanePoissonIntegral_def, hνh,
-        integral_withDensity_ofReal_eq_integral_mul hmeas hh0]
+      rw [upperHalfPlanePoissonIntegral_def, hνh, TauCeti.MeasureTheory.integral_withDensity_ofReal
+        hmeas.aemeasurable (.of_forall hh0)]
+      simp_rw [smul_eq_mul]
+      exact integral_congr_ae (.of_forall fun x ↦ mul_comm _ _)
     have hu' : u z = v z - S := by simp [v]
     rw [hu', hrep z hz, zero_mul, zero_add, hPν]
     simp_rw [mul_sub]
