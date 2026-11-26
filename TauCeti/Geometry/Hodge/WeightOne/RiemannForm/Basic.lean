@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Hodge.WeightOne.Lattice
+public import TauCeti.Geometry.Hodge.WeightOne.Lattice.Basic
 public import TauCeti.Geometry.Hodge.WeightOne.Polarization
 import Mathlib.RingTheory.Flat.TorsionFree
 
