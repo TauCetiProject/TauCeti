@@ -59,7 +59,7 @@ a generalized Cartan matrix.
   vector of weight `λ` killed by every `eᵢ` is a quotient of `M(λ)`.
 * `TauCeti.KacMoody.vermaGenerator_ne_zero` and `TauCeti.KacMoody.vermaIdeal_ne_top`: for a
   generalized Cartan matrix, `v_λ ≠ 0` and the left ideal is proper.
-* `TauCeti.KacMoody.span_range_negativeWord_vermaGenerator`,
+* `TauCeti.KacMoody.span_range_negativeWord_vermaGenerator_eq_top`,
   `TauCeti.KacMoody.weightSpace_vermaModule_self` and
   `TauCeti.KacMoody.finrank_weightSpace_vermaModule_self`: the lowering words span `M(λ)`, and in
   characteristic zero its weight space of `λ` is spanned by `v_λ`, and is one-dimensional for a
@@ -208,7 +208,7 @@ end GeneralizedCartanMatrix
 /-! ## Weights -/
 
 /-- The lowering words `f_(j₁) ⋯ f_(jₛ) · v_lam` span the Verma module. -/
-theorem span_range_negativeWord_vermaGenerator :
+theorem span_range_negativeWord_vermaGenerator_eq_top :
     Submodule.span K (Set.range (negativeWord R (vermaGenerator R lam))) = ⊤ :=
   span_range_negativeWord_eq_top (vermaGenerator_mem_weightSpace R lam)
     (lie_positiveGenerator_vermaGenerator R lam) (lieSpan_cyclicGenerator_eq_top _)
