@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
+import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
 # Pulled-back tangent bundles along a map followed by a diffeomorphism
@@ -76,9 +77,7 @@ noncomputable def pullbackTangentDiffeomorph (Φ : M ≃ₘ^k⟮I, J⟯ M') (hk 
     have ht := (Φ.contMDiff.contMDiff_tangentMap hk).comp
       (Pullback.contMDiff_lift (F := E) (E := TangentSpace I) g hg)
     refine ht.congr fun p ↦ ?_
-    refine TotalSpace.ext (h p.proj) (heq_of_eq ?_)
-    exact congrArg (fun L : TangentSpace I (g p.proj) →L[𝕜] TangentSpace J (Φ (g p.proj)) ↦ L p.snd)
-      (Φ.mfderivToContinuousLinearEquiv_coe _)
+    exact TotalSpace.ext (h p.proj) (heq_of_eq (Φ.mfderivToContinuousLinearEquiv_apply _ _ _))
 
 @[simp]
 theorem pullbackTangentDiffeomorph_apply (Φ : M ≃ₘ^k⟮I, J⟯ M') (hk : n + 1 ≤ k)
@@ -87,8 +86,7 @@ theorem pullbackTangentDiffeomorph_apply (Φ : M ≃ₘ^k⟮I, J⟯ M') (hk : n 
     pullbackTangentDiffeomorph Φ hk g hg ℓ h p = ⟨p.proj, mfderiv I J Φ (g p.proj) p.snd⟩ := by
   refine (TauCeti.bundleDiffeomorph_apply _ _ p).trans ?_
   exact congrArg (fun v ↦ (⟨p.proj, v⟩ : TotalSpace E' ((ℓ : B → M') *ᵖ (TangentSpace J))))
-    (congrArg (fun L : TangentSpace I (g p.proj) →L[𝕜] TangentSpace J (Φ (g p.proj)) ↦ L p.snd)
-      (Φ.mfderivToContinuousLinearEquiv_coe _))
+    (Φ.mfderivToContinuousLinearEquiv_apply _ _ _)
 
 /-- The inverse of `g* TM ≃ ℓ* TM'` is the inverse of the differential of `Φ` on each fibre. -/
 @[simp]

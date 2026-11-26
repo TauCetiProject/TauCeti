@@ -54,7 +54,7 @@ the first two coordinates (`LinearMap.exists_linearEquiv_comp_eq_of_injective`).
 of that transformation identifies `ℓ* Tℙᵐ⁺¹` with `ℓ'* Tℙᵐ⁺¹`
 (`Diffeomorph.pullbackTangentDiffeomorph`), so `ℓ'* Tℙᵐ⁺¹` is `𝒪(2) ⊕ 𝒪(1)ᵐ` as well
 (`Projectivization.lineTangentDiffeomorph`,
-`Projectivization.exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace`).
+`Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`).
 
 Combined with the vanishing `H¹(ℂP¹, 𝒪(k)) = 0` for `k ≥ -1`, the splitting
 `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` gives `H¹(ℂP¹, ℓ'* TℂPⁿ) = 0` along every line `ℓ'`: the linearized
@@ -73,9 +73,9 @@ Cauchy–Riemann operator along `ℓ'` is onto, so every line is regular as a ho
 * `Projectivization.lineTangentDiffeomorph`: the analytic diffeomorphism of total spaces
   `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` over `ℙ¹` along the image `ℓ'` of the coordinate line under a
   projective linear transformation.
-* `Projectivization.exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace`: along
-  every line `ℓ'` of `ℙᵐ⁺¹`, the bundles `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic analytic
-  vector bundles.
+* `Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`:
+  along every line `ℓ'` of `ℙᵐ⁺¹`, the bundles `ℓ'* Tℙᵐ⁺¹` and `𝒪(2) ⊕ 𝒪(1)ᵐ` are isomorphic
+  analytic vector bundles.
 
 ## References
 
@@ -486,8 +486,8 @@ theorem lineTangentDiffeomorph_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fi
   rw [Diffeomorph.pullbackTangentDiffeomorph_symm_apply (mapDiffeomorph A ω) le_top
     coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ' q, coordLineTangentDiffeomorph_apply]
   -- Both sides apply `(dΦ)⁻¹` and then `coordLineTangentEquiv` at the point `coordLine m q.proj`,
-  -- which is the bundled coordinate line at `q.proj` (`coe_coordLineContMDiffMap`).
-  rfl
+  -- which is the bundled coordinate line at `q.proj`.
+  rw [coe_coordLineContMDiffMap]
 
 /-- The isomorphism `ℓ'* Tℙᵐ⁺¹ ≃ 𝒪(2) ⊕ 𝒪(1)ᵐ` lies over the identity of `ℙ¹`. -/
 theorem proj_lineTangentDiffeomorph (A : (Fin (m + 2) → 𝕜) ≃ₗ[𝕜] Fin (m + 2) → 𝕜)
@@ -517,8 +517,8 @@ theorem lineTangentDiffeomorph_symm_apply (A : (Fin (m + 2) → 𝕜) ≃ₗ[�
     Diffeomorph.coe_trans, Function.comp_apply, coordLineTangentDiffeomorph_symm_apply]
   rw [Diffeomorph.pullbackTangentDiffeomorph_apply (mapDiffeomorph A ω) le_top
     coordLineContMDiffMap (contMDiff_coordLine m n) ℓ' hℓ']
-  -- The bundled coordinate line is `coordLine m` (`coe_coordLineContMDiffMap`).
-  rfl
+  -- The bundled coordinate line is `coordLine m`.
+  rw [coe_coordLineContMDiffMap]
 
 /-- **The tangent bundle of `ℙᵐ⁺¹` along every line is `𝒪(2) ⊕ 𝒪(1)ᵐ`.** Let `ℓ'` be an analytic
 map `ℙ¹ → ℙᵐ⁺¹` sending `[v]` to `[f v]` for an injective linear map `f : 𝕜² → 𝕜ᵐ⁺²`, a line of
@@ -529,7 +529,7 @@ holomorphic splitting `ℓ'* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹` along eve
 of the coordinate line under a projective linear transformation
 (`LinearMap.exists_linearEquiv_comp_eq_of_injective`), and the isomorphism is
 `Projectivization.lineTangentDiffeomorph` for it. -/
-theorem exists_continuousLinearEquiv_contMDiff_totalSpace_pullback_tangentSpace
+theorem exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist
     (f : (Fin 2 → 𝕜) →ₗ[𝕜] Fin (m + 2) → 𝕜) (hf : Function.Injective f)
     (ℓ' : C^ω⟮𝓘(𝕜, Fin 1 → 𝕜), ℙ 𝕜 (Fin 2 → 𝕜); 𝓘(𝕜, Fin (m + 1) → 𝕜),
       ℙ 𝕜 (Fin (m + 2) → 𝕜)⟯)
