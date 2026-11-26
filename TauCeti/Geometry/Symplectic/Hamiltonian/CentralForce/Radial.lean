@@ -171,6 +171,15 @@ theorem continuousAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ
   rw [hUℓ]
   exact (continuousAt_const.div (continuousAt_id.pow 2) (pow_ne_zero 2 hr)).add hU
 
+/-- Away from `r = 0`, the effective potential is `Cⁿ` wherever `U` is. -/
+theorem contDiffAt_effectivePotential {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ} {n : WithTop ℕ∞}
+    (hU : ContDiffAt ℝ n U r) (hr : r ≠ 0) :
+    ContDiffAt ℝ n (effectivePotential m ℓ U) r := by
+  have hUℓ : effectivePotential m ℓ U = fun r ↦ ℓ ^ 2 / (2 * m) * (r ^ 2)⁻¹ + U r :=
+    funext fun r ↦ by rw [effectivePotential_apply, ← div_eq_mul_inv, div_div]
+  rw [hUℓ]
+  exact (contDiffAt_const.mul ((contDiffAt_id.pow 2).inv (pow_ne_zero 2 hr))).add hU
+
 /-- Away from `r = 0`, `r` is a critical point of the effective potential exactly when
 `U'(r) = ℓ² / (m r³)`. -/
 theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {U' r : ℝ}
@@ -178,6 +187,14 @@ theorem hasDerivAt_effectivePotential_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {
     HasDerivAt (effectivePotential m ℓ U) 0 r ↔ U' = ℓ ^ 2 / (m * r ^ 3) := by
   have h := hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU hr
   exact ⟨fun h' ↦ sub_eq_zero.1 (h.unique h'), fun h' ↦ by rwa [h', sub_self] at h⟩
+
+/-- Away from `r = 0`, at a point where `U` is differentiable, `r` is a critical point of the
+effective potential exactly when the force balances the centrifugal term,
+`U'(r) = ℓ² / (m r³)`. -/
+theorem deriv_effectivePotential_eq_zero_iff {m ℓ : ℝ} {U : ℝ → ℝ} {r : ℝ}
+    (hU : DifferentiableAt ℝ U r) (hr : r ≠ 0) :
+    deriv (effectivePotential m ℓ U) r = 0 ↔ deriv U r = ℓ ^ 2 / (m * r ^ 3) := by
+  rw [(hasDerivAt_effectivePotential (m := m) (ℓ := ℓ) hU.hasDerivAt hr).deriv, sub_eq_zero]
 
 /-- On the closed half-line `r ≥ 0`, the reduced Hamiltonian, the one-dimensional central-force
 Hamiltonian of the effective potential, is `H_ℓ(r, p_r) = p_r² / (2m) + ℓ² / (2 m r²) + U(r)`. -/

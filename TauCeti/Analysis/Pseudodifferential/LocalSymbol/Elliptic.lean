@@ -313,14 +313,14 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le [CompleteSpace V]
   obtain ⟨C₀, hC₀⟩ := (HomogeneousSymbol.cutoffSymbol default (LocalHomogeneousSymbol.extend ψ
     hψ hψU (a.principal.inverse ha))).exists_norm_coefficient_le K hK
   obtain ⟨R, C, h⟩ := (extend ψ hψ hψU a).exists_isInvertible_and_norm_inverse_le_of_principal hK
-    (C₀ := C₀) fun x hx ξ h2 ↦ by
+    (Γ := Set.univ) (C₀ := C₀) fun x hx ξ _ h2 ↦ by
       have hM := hC₀ x hx ξ
       rw [HomogeneousSymbol.coefficient_cutoffSymbol_of_two_le_norm _ _ h2] at hM
       simp only [principal_extend, LocalHomogeneousSymbol.coefficient_extend, hψK x hx,
         one_smul] at hM ⊢
       exact ⟨isElliptic_iff.1 ha x (hKU hx) ξ (norm_pos_iff.1 (by linarith)), hM⟩
   refine ⟨R, C, fun x hx ξ hξ ↦ ?_⟩
-  simpa [LocalSymbol.coefficient_extend, hψK x hx] using h x hx ξ hξ
+  simpa [LocalSymbol.coefficient_extend, hψK x hx] using h x hx ξ (Set.mem_univ ξ) hξ
 
 /-- **Ellipticity on compact sets of positions.** If a symbol `p` on `ℝⁿ` agrees with an elliptic
 classical symbol `a` on `U` at the positions of a compact set `K ⊆ U`, for instance a cut-off

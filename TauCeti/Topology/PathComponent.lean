@@ -36,6 +36,7 @@ gives local path connectedness of the subspace.
   points of its component (`TauCeti.PathComponentBasepoints.joined_point_mk`).
 * `Continuous.pathComponent_subset_preimage`: the preimage of a union of path components under a
   continuous map is a union of path components.
+* `IsClopen.pathComponent_subset`: a clopen set is a union of path components.
 * `Path.subtypeHomeomorphOfPathComponentSubset`: paths in a subspace containing the path component
   of their source are the paths in the ambient space. In particular the loop space of a path
   component, at any of its points, is the loop space of the ambient space at that point.
@@ -185,6 +186,12 @@ theorem Continuous.pathComponent_subset_preimage {X Y : Type*} [TopologicalSpace
     (ht : ∀ y ∈ t, pathComponent y ⊆ t) {x : X} (hx : x ∈ f ⁻¹' t) :
     pathComponent x ⊆ f ⁻¹' t :=
   fun _ hz ↦ ht _ hx (hf.mapsTo_pathComponent x hz)
+
+/-- **A clopen set is a union of path components.** A clopen set contains the connected component,
+hence the path component, of each of its points. -/
+theorem IsClopen.pathComponent_subset {Y : Type*} [TopologicalSpace Y] {S : Set Y}
+    (hS : IsClopen S) : ∀ y ∈ S, pathComponent y ⊆ S := fun _ hy ↦
+  (pathComponent_subset_component _).trans (hS.connectedComponent_subset hy)
 
 namespace Path
 
