@@ -9,18 +9,21 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.RepresentationTheory.FDRep.Basic
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.RepresentationTheory.Tensor.External
+import TauCeti.RingTheory.TensorProduct.Finite
 
 /-!
 # A representation of `C₂ × C₂` that is not an external tensor product
 
-A Check for the factorization of simple modules over a tensor product of algebras
-(`finiteCornerFactorization`, AutomorphicFormsOnReductiveGroups §3.4): simplicity cannot be
-dropped. Write `C₂ = ℤˣ`, with trivial representation `1` and sign representation `sgn` on `ℂ`.
-The representation `τ = 1 ⊠ 1 ⊕ sgn ⊠ sgn` of `C₂ × C₂` on `ℂ²`, a sum of two lines, is not
+Irreducibility cannot be dropped from
+`Representation.exists_isIrreducible_nonempty_equiv_externalTensor` (and simplicity cannot be
+dropped from `FDRep.externalTensor_classification`), which write every irreducible representation
+of a product `G × H` over an algebraically closed field as an external tensor product.
+
+Write `C₂ = ℤˣ`, with trivial representation `1` and sign representation `sgn` on `ℂ`. The
+representation `τ = 1 ⊠ 1 ⊕ sgn ⊠ sgn` of `C₂ × C₂` on `ℂ²`, a sum of two lines, is not
 equivalent to an external tensor product `ρ ⊠ σ` of representations of the two factors, of any
-dimensions. Its
-character matrix `(χ_τ(g, h))_{g, h ∈ C₂}` is `2` times the identity, of rank two, whereas the
-character `χ_ρ(g) χ_σ(h)` of an external tensor product has rank at most one:
+dimensions. Its character matrix `(χ_τ(g, h))_{g, h ∈ C₂}` is `2` times the identity, of rank two,
+whereas the character `χ_ρ(g) χ_σ(h)` of an external tensor product has rank at most one:
 `χ(1, 1) χ(-1, -1) = 4` but `χ(-1, 1) χ(1, -1) = 0`.
 -/
 
@@ -54,19 +57,6 @@ theorem char_τ_mul_ne :
   simp only [char_τ, Units.val_one, Units.val_neg, Int.cast_one, Int.cast_neg]
   norm_num
 
-/-- A tensor product `V ⊗ W` of a module with a nonzero module is finite-dimensional only if the
-first factor is. -/
-private theorem finiteDimensional_left_of_tensorProduct {V W : Type*} [AddCommGroup V]
-    [Module ℂ V] [AddCommGroup W] [Module ℂ W] [Nontrivial W]
-    [FiniteDimensional ℂ (V ⊗[ℂ] W)] : FiniteDimensional ℂ V := by
-  obtain ⟨w, hw⟩ := exists_ne (0 : W)
-  obtain ⟨f, hf⟩ : ∃ f : Module.Dual ℂ W, f w ≠ 0 := by
-    by_contra! h
-    exact hw ((Module.forall_dual_apply_eq_zero_iff ℂ w).1 h)
-  refine Module.Finite.of_surjective
-    ((TensorProduct.rid ℂ V).toLinearMap ∘ₗ LinearMap.lTensor V f) fun v ↦ ⟨(f w)⁻¹ • v ⊗ₜ w, ?_⟩
-  simp [smul_smul, inv_mul_cancel₀ hf]
-
 /-- **`τ` is not an external tensor product**: for no representations `ρ` and `σ` of `C₂` is
 `τ ≃ ρ ⊠ σ`, because the character of `ρ ⊠ σ` is `χ_ρ(g) χ_σ(h)`, whose matrix has rank at most
 one. -/
@@ -86,11 +76,9 @@ theorem not_nonempty_equiv_externalTensor {V W : Type*} [AddCommGroup V] [Module
     by_contra h
     rw [not_nontrivial_iff_subsingleton] at h
     exact not_subsingleton (V ⊗[ℂ] W) inferInstance
-  have : FiniteDimensional ℂ V := finiteDimensional_left_of_tensorProduct (W := W)
+  have : FiniteDimensional ℂ V := Module.Finite.of_tensorProduct_left (N := W) inferInstance
   have : FiniteDimensional ℂ W :=
-    have : FiniteDimensional ℂ (W ⊗[ℂ] V) :=
-      (TensorProduct.comm ℂ V W).finiteDimensional
-    finiteDimensional_left_of_tensorProduct (W := V)
+    Module.Finite.of_tensorProduct_left (N := V) (TensorProduct.comm ℂ V W).finiteDimensional
   apply char_τ_mul_ne
   simp only [char_iso e, char_externalTensor]
   ring
