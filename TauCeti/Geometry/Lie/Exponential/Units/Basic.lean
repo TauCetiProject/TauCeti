@@ -33,6 +33,8 @@ the abstract construction recovers `expUnit`; see
 * `TauCeti.continuous_expUnit`: the units-valued exponential is continuous.
 * `TauCeti.expUnit_add_of_commute`: the exponential addition law as an equality of units.
 * `TauCeti.expUnit_zero`, `TauCeti.expUnit_neg`: the identity and inverse laws.
+* `TauCeti.val_list_prod_map_expUnit`: a product of exponential units has value the product of
+  the exponentials.
 * `TauCeti.expUnit_add_smul`: the one-parameter subgroup law as an equality of units.
 * `TauCeti.coe_expUnitHom_real`, `TauCeti.coe_expUnitHom_complex`: on `ℝ` and `ℂ`, the
   one-parameter subgroup is `t ↦ exp (t * x)` for the scalar exponential.
@@ -83,6 +85,13 @@ theorem expUnit_neg (x : R) : expUnit (-x) = (expUnit x)⁻¹ := by
   apply Units.ext
   rw [← Ring.inverse_unit]
   simpa only [expUnit_coe] using (Ring.inverse_exp x).symm
+
+/-- The value of a product of exponential units is the product of the exponentials. -/
+@[simp]
+theorem val_list_prod_map_expUnit (l : List R) :
+    ((l.map expUnit).prod : R) = (l.map exp).prod := by
+  rw [← Units.coeHom_apply, map_list_prod, List.map_map]
+  simp [Function.comp_def]
 
 end Rat
 
