@@ -52,14 +52,19 @@ def normal (a : ℝ) (p : P) : E₃ :=
   simp [normal, EuclideanSpace.basisFun_apply]
 
 /-- The normal has squared length `a²+v²`. -/
--- Prioritize the helicoid formula over `inner_self_eq_norm_sq_to_K`.
-@[simp high] theorem inner_normal_self (a : ℝ) (p : P) :
-    inner ℝ (normal a p) (normal a p) = a ^ 2 + p.2 ^ 2 := by
+@[simp] theorem norm_normal_sq (a : ℝ) (p : P) :
+    ‖normal a p‖ ^ 2 = a ^ 2 + p.2 ^ 2 := by
+  rw [← real_inner_self_eq_norm_sq]
   simp only [normal, inner_sub_left, inner_sub_right, inner_add_left, inner_add_right,
     real_inner_smul_left, real_inner_smul_right, EuclideanSpace.basisFun_apply,
     EuclideanSpace.inner_single_left]
   norm_num
   linear_combination a ^ 2 * Real.sin_sq_add_cos_sq p.1
+
+/-- The helicoid normal vanishes exactly at the zero-pitch axis. -/
+@[simp] theorem normal_eq_zero_iff (a : ℝ) (p : P) :
+    normal a p = 0 ↔ a = 0 ∧ p.2 = 0 := by
+  rw [← norm_eq_zero, ← sq_eq_zero_iff, norm_normal_sq, sq_add_sq_eq_zero]
 
 /-- The explicit normal is orthogonal to every helicoid tangent vector. -/
 @[simp] theorem inner_normal_fderiv (a : ℝ) (p w : P) :
@@ -126,11 +131,7 @@ theorem fderiv_fderiv_parametrization (a : ℝ) (p w z : P) :
 theorem orthogonal_range_fderiv_eq_span_normal {a : ℝ} (p : P) (hreg : a ≠ 0 ∨ p.2 ≠ 0) :
     (fderiv ℝ (parametrization a) p).rangeᗮ = Submodule.span ℝ {normal a p} := by
   have hn : normal a p ≠ 0 := by
-    intro h
-    have hi := inner_normal_self a p
-    rw [h, inner_zero_left] at hi
-    obtain ⟨ha, hp⟩ := sq_add_sq_eq_zero.mp hi.symm
-    exact hreg.elim (· ha) (· hp)
+    simpa only [ne_eq, normal_eq_zero_iff, not_and_or] using hreg
   have hdim : Module.finrank ℝ (fderiv ℝ (parametrization a) p).rangeᗮ = 1 := by
     simpa [Module.finrank_prod] using LinearMap.finrank_orthogonal_range_of_injective
       ((injective_fderiv_parametrization_iff a p).2 hreg)
@@ -144,8 +145,8 @@ theorem secondFundamentalForm_parametrization {a : ℝ} (p w z : P) (hreg : a �
     (parametrization a) p w z
   rw [orthogonal_range_fderiv_eq_span_normal p hreg] at hm
   have hp := Submodule.starProjection_eq_self_iff.mpr hm
-  rw [Submodule.starProjection_singleton, ← real_inner_self_eq_norm_sq,
-    inner_normal_self, inner_normal_secondFundamentalForm] at hp
+  rw [Submodule.starProjection_singleton, norm_normal_sq,
+    inner_normal_secondFundamentalForm] at hp
   exact hp.symm
 
 end TauCeti.Helicoid
