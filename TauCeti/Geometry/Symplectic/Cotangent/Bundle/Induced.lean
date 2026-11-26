@@ -320,15 +320,19 @@ theorem isMomentMap_inducedForm (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) �
     intro ξ p
     have hcomp : Ψ ∘ (fun k : G ↦ (k • p.1, p.2)) = fun k ↦ k • Ψ p := by
       funext k
+      simp only [Ψ, Function.comp_apply, Prod.map_apply', id_eq, smul_eq_mul]
       exact leftTrivialization_mul k p.1 (f p.2)
     rw [InfinitesimalAction.fundamental_prod_zero_apply, InfinitesimalAction.fundamental_apply,
       fundamentalVectorField_apply, ← hcomp]
     exact (mfderiv_comp_apply_of_eq (f := fun k : G ↦ (k • p.1, p.2)) (1 : G)
-      ((hΨ p).mdifferentiableAt (by simp)) (mdifferentiableAt_mul_right.prodMk
-        mdifferentiableAt_const) (by simp) ξ).symm
+      ((hΨ p).mdifferentiableAt (by simp))
+      (by simpa only [smul_eq_mul] using mdifferentiableAt_mul_right.prodMk mdifferentiableAt_const)
+      (by simp) ξ).symm
   -- The cotangent moment map along `Ψ` is the coadjoint orbit map of `f`.
   have hμ : momentMap I G ∘ Ψ = fun p ↦ Lie.coadjointRepresentation ℝ I G p.1 (f p.2 : E →ₗ[ℝ] ℝ) :=
-    funext fun p ↦ momentMap_leftTrivialization (p.1, f p.2)
+    funext fun p ↦ by
+      simp only [Ψ, Function.comp_apply, Prod.map_apply', id_eq]
+      exact momentMap_leftTrivialization (p.1, f p.2)
   have h := (isEquivariantMomentMap_momentMap (IG := I) (G := G) (I := I)
     (M := G)).toIsMomentMap.mpullback hΨ hΨa
   rw [← SmoothForm.mpullback_mpullback (Prod.map id f) (leftTrivialization I G)
