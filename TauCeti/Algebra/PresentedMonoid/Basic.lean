@@ -48,14 +48,8 @@ theorem liftOn_mk {β : Sort*} (w : FreeMonoid α) (f : FreeMonoid α → β)
 @[elab_as_elim]
 theorem induction_on_of {motive : PresentedMonoid rels → Prop} (x : PresentedMonoid rels)
     (of : ∀ a, motive (PresentedMonoid.of rels a)) (one : motive 1)
-    (mul : ∀ x y, motive x → motive y → motive (x * y)) : motive x := by
-  have hx : x ∈ Submonoid.closure (Set.range (PresentedMonoid.of rels)) := by
-    simp [closure_range_of]
-  induction hx using Submonoid.closure_induction with
-  | mem _ ha =>
-    obtain ⟨a, rfl⟩ := ha
-    exact of a
-  | one => exact one
-  | mul _ _ _ _ hx hy => exact mul _ _ hx hy
+    (mul : ∀ x y, motive x → motive y → motive (x * y)) : motive x :=
+  Submonoid.dense_induction (motive := motive) _ (closure_range_of rels)
+    (by rintro _ ⟨a, rfl⟩; exact of a) one mul x
 
 end PresentedMonoid
