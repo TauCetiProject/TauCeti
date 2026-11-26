@@ -27,7 +27,9 @@ and the sum of the eigenspaces of `-J dX_H(p)` at negative eigenvalues has dimen
 `dim V - ind_p(H)` (`TauCeti.SymplecticForm.finrank_pointSpectralSubspace_add_morseIndex`).
 
 For the squared norm, `X_H` is the linear field `y ↦ -2 J y`
-(`TauCeti.SymplecticForm.hamiltonianVectorField_norm_sq`), whose derivative `-2 J` is constant.
+(`TauCeti.SymplecticForm.hamiltonianVectorField_norm_sq`), whose derivative `-2 J` is constant;
+for its multiple `a ‖y‖²`, `X_H` is `y ↦ -2 a J y`
+(`TauCeti.SymplecticForm.hamiltonianVectorField_mul_norm_sq`).
 
 This identifies the zeroth-order term `J dX_H(γ)` of the linearized Floer operator along a
 time-independent cylinder `(s, t) ↦ γ(s)` with the Hessian term of the linearized gradient equation
@@ -111,5 +113,14 @@ theorem hamiltonianVectorField_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) :
   simp only [_root_.smul_apply, innerSL_apply_apply, nsmul_eq_mul]
   push_cast
   ring
+
+/-- **The Hamiltonian vector field of a quadratic Hamiltonian.** If the inner product of `V` is
+the metric `ω(·, J ·)`, the Hamiltonian vector field of `y ↦ a ‖y‖²` is the linear field
+`y ↦ -2 a J y`. -/
+theorem hamiltonianVectorField_mul_norm_sq (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) (a : ℝ) :
+    ω.hamiltonianVectorField (fun y ↦ a * ‖y‖ ^ 2) = fun y ↦ (-2 * a) • J y := by
+  funext y
+  rw [hamiltonianVectorField_const_mul, hamiltonianVectorField_norm_sq hg]
+  simp [smul_smul, mul_comm]
 
 end TauCeti.SymplecticForm
