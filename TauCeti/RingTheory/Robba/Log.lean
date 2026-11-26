@@ -82,6 +82,12 @@ noncomputable def log : RobbaRing K :=
   ofOnOpenDisc K
     ⟨PowerSeries.log K, PowerSeries.OnOpenDisc.mem_subring.2 PowerSeries.onOpenDisc_log⟩
 
+/-- `log (1 + t)` is the image of the power series `PowerSeries.log K` on the open unit disc. -/
+theorem log_def : log K =
+    ofOnOpenDisc K
+      ⟨PowerSeries.log K, PowerSeries.OnOpenDisc.mem_subring.2 PowerSeries.onOpenDisc_log⟩ :=
+  (rfl)
+
 /-- The coefficient of `tⁿ` in `log (1 + t)` is `(-1)ⁿ⁺¹ / n`; for `n = 0` both sides are `0`. -/
 @[simp]
 theorem coe_log_natCast (n : ℕ) : (log K : ℤ → K) n = (-1) ^ (n + 1) / n := by
@@ -89,13 +95,13 @@ theorem coe_log_natCast (n : ℕ) : (log K : ℤ → K) n = (-1) ^ (n + 1) / n :
   exact PowerSeries.coeff_log_eq_neg_one_pow_div n
 
 /-- `log (1 + t)` has no terms of nonpositive degree. -/
+@[simp]
 theorem coe_log_of_nonpos {n : ℤ} (hn : n ≤ 0) : (log K : ℤ → K) n = 0 := by
   rcases hn.lt_or_eq with hn | rfl
   · exact coe_ofOnOpenDisc_of_neg K _ hn
   · simpa using coe_log_natCast K 0
 
 /-- The constant term of `log (1 + t)` is `0`. -/
-@[simp]
 theorem coe_log_zero : (log K : ℤ → K) 0 = 0 :=
   coe_log_of_nonpos K le_rfl
 
@@ -175,7 +181,7 @@ theorem tendsto_laurentGaussNorm_one_add_pow_sub_log {ρ : ℝ} (hρ₀ : 0 ≤ 
         Pi.single_eq_of_ne hn.ne] using hCp
     · have h0 : (((1 + monomial 1 1) ^ p ^ m : RobbaRing K) : ℤ → K) 0 = 1 := by
         simpa using coe_one_add_monomial_pow_natCast K (p ^ m) 0
-      simp [h0, coe_log_zero, hCp]
+      simp [h0, hCp]
 
 end RobbaRing
 

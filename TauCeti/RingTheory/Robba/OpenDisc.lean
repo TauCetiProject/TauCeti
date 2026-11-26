@@ -35,6 +35,8 @@ converges on an annulus `r < |t| < 1` converges on the whole disc `|t| < 1`.
 
 * `TauCeti.laurentConvergesAt_coeff_coe_iff_isRestricted`: a power series converges on the circle
   of radius `ρ` as a Laurent series exactly when it is restricted at `ρ`.
+* `TauCeti.laurentGaussNorm_coeff_coe`, `TauCeti.RobbaRing.laurentGaussNorm_ofOnOpenDisc`: the
+  Gauss norm of a power series as a Laurent series is its Gauss norm as a power series.
 * `TauCeti.RobbaRing.ofOnOpenDisc_injective`, `TauCeti.RobbaRing.ofOnOpenDisc_mem_annulus`: the
   inclusion is injective and lands in every annular subalgebra.
 * `TauCeti.RobbaRing.mem_range_ofOnOpenDisc`: its image is the set of elements with no terms of
@@ -68,6 +70,38 @@ theorem laurentConvergesAt_coeff_coe_iff_isRestricted {R : Type*} [NormedRing R]
   · filter_upwards [eventually_ge_atTop 0] with n hn
     obtain ⟨k, rfl⟩ := Int.eq_ofNat_of_zero_le hn
     simp
+
+/-- **The Gauss norm of a power series as a Laurent series**: at every radius `ρ`, the Gauss norm
+`sup_n ‖aₙ‖ ρⁿ` of the coefficient family of `f` as a formal Laurent series, which vanishes in
+negative degrees, is the Gauss norm `PowerSeries.gaussNorm` of `f`. -/
+theorem laurentGaussNorm_coeff_coe {R : Type*} [NormedRing R] (ρ : ℝ) (f : R⟦X⟧) :
+    laurentGaussNorm ρ (f : R⸨X⸩).coeff = f.gaussNorm norm ρ := by
+  have hnat (k : ℕ) : ‖(f : R⸨X⸩).coeff k‖ * ρ ^ (k : ℤ) = ‖PowerSeries.coeff k f‖ * ρ ^ k := by
+    simp
+  have hneg {n : ℤ} (hn : n < 0) : ‖(f : R⸨X⸩).coeff n‖ * ρ ^ n = 0 := by
+    simp [PowerSeries.coeff_coe, hn]
+  rw [laurentGaussNorm_def, PowerSeries.gaussNorm_eq]
+  have h0 : 0 ≤ ⨆ k : ℕ, ‖PowerSeries.coeff k f‖ * ρ ^ k := by
+    simpa [PowerSeries.gaussNorm_eq] using
+      PowerSeries.gaussNorm_nonneg norm ρ f fun _ ↦ norm_nonneg _
+  by_cases hf : f.HasGaussNorm norm ρ
+  · have hf' : BddAbove (Set.range fun n : ℤ ↦ ‖(f : R⸨X⸩).coeff n‖ * ρ ^ n) := by
+      obtain ⟨B, hB⟩ := hf
+      refine ⟨max B 0, Set.forall_mem_range.2 fun n ↦ ?_⟩
+      rcases lt_or_ge n 0 with hn | hn
+      · exact (hneg hn).le.trans (le_max_right _ _)
+      · lift n to ℕ using hn
+        exact (hnat n).trans_le (hB ⟨n, rfl⟩) |>.trans (le_max_left _ _)
+    refine le_antisymm (ciSup_le fun n ↦ ?_) (ciSup_le fun k ↦ (hnat k).ge.trans (le_ciSup hf' k))
+    rcases lt_or_ge n 0 with hn | hn
+    · exact (hneg hn).trans_le h0
+    · lift n to ℕ using hn
+      exact (hnat n).trans_le (le_ciSup hf n)
+  · have hf' : ¬BddAbove (Set.range fun n : ℤ ↦ ‖(f : R⸨X⸩).coeff n‖ * ρ ^ n) := by
+      refine fun h ↦ hf (h.mono ?_)
+      rintro _ ⟨k, rfl⟩
+      exact ⟨k, hnat k⟩
+    rw [Real.iSup_of_not_bddAbove hf, Real.iSup_of_not_bddAbove hf']
 
 namespace RobbaRing
 
@@ -132,6 +166,7 @@ theorem coe_ofOnOpenDisc_natCast (f : PowerSeries.OnOpenDisc.subring R 1) (n : �
   simp [coe_ofOnOpenDisc]
 
 /-- The image of a power series has no terms of negative degree. -/
+@[simp]
 theorem coe_ofOnOpenDisc_of_neg (f : PowerSeries.OnOpenDisc.subring R 1) {n : ℤ} (hn : n < 0) :
     (ofOnOpenDisc R f : ℤ → R) n = 0 := by
   simp [coe_ofOnOpenDisc, PowerSeries.coeff_coe, hn]
@@ -156,15 +191,23 @@ private theorem one_add_monomial_pow (N : ℕ) : (1 + monomial 1 1 : RobbaRing R
 
 /-- **The binomial theorem in the Robba ring**: the coefficient of `tⁿ` in `(1 + t) ^ N` is
 `C(N, n)`. -/
+@[simp]
 theorem coe_one_add_monomial_pow_natCast (N n : ℕ) :
     (((1 + monomial 1 1 : RobbaRing R) ^ N : RobbaRing R) : ℤ → R) n = N.choose n := by
   rw [one_add_monomial_pow, coe_ofOnOpenDisc_natCast, PowerSeries.OnOpenDisc.coe_polynomialHom,
     Polynomial.coeff_coe, Polynomial.coeff_one_add_X_pow]
 
 /-- `(1 + t) ^ N` has no terms of negative degree. -/
+@[simp]
 theorem coe_one_add_monomial_pow_of_neg (N : ℕ) {n : ℤ} (hn : n < 0) :
     (((1 + monomial 1 1 : RobbaRing R) ^ N : RobbaRing R) : ℤ → R) n = 0 := by
   rw [one_add_monomial_pow, coe_ofOnOpenDisc_of_neg R _ hn]
+
+/-- **The inclusion preserves Gauss norms**: at every radius `ρ`, the Gauss norm of the image of a
+power series `f` is the Gauss norm `PowerSeries.gaussNorm` of `f`. -/
+theorem laurentGaussNorm_ofOnOpenDisc (ρ : ℝ) (f : PowerSeries.OnOpenDisc.subring R 1) :
+    laurentGaussNorm ρ (ofOnOpenDisc R f : ℤ → R) = (f : R⟦X⟧).gaussNorm norm ρ :=
+  laurentGaussNorm_coeff_coe ρ _
 
 /-- Distinct power series have distinct images in the Robba ring. -/
 theorem ofOnOpenDisc_injective : Function.Injective (ofOnOpenDisc R) := fun f g h ↦
