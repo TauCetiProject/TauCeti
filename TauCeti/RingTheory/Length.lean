@@ -54,6 +54,10 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `TauCeti.length_quotient_eq_length_map_add_length_quotient_sup`: additivity along a filtration.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
+* `TauCeti.length_quotient_comap_subtype_mono`: `N ⧸ (N ⊓ P)` grows with `N`.
+* `TauCeti.length_quotient_comap_subtype_top`: `⊤ ⧸ P` has the length of `M ⧸ P`.
+* `TauCeti.length_range_le_length_quotient`: the range of `f` is no longer than `M ⧸ K` when
+  `K ≤ ker f`.
 * `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, `M ⧸ P` is filtered
   by `N ⧸ P` and `M ⧸ N`.
 * `TauCeti.length_quotient_comap_subtype_range_map`: an injective `φ` gives `φ(M) ⧸ φ(N) ≃ M ⧸ N`.
@@ -144,6 +148,25 @@ theorem length_map_mkQ (N P : Submodule A M) :
     rw [LinearMap.range_comp, Submodule.range_subtype]
   rw [← hran, ← hker]
   exact ((LinearMap.quotKerEquivRange (P.mkQ ∘ₗ N.subtype)).length_eq).symm
+
+/-- Shrinking `N` cannot increase the length of `N ⧸ (N ⊓ P)`. -/
+theorem length_quotient_comap_subtype_mono {W N : Submodule A M} (h : W ≤ N) (P : Submodule A M) :
+    Module.length A (↥W ⧸ P.comap W.subtype) ≤ Module.length A (↥N ⧸ P.comap N.subtype) := by
+  rw [← length_map_mkQ, ← length_map_mkQ]
+  exact Module.length_le_of_injective _ (Submodule.inclusion_injective (Submodule.map_mono h))
+
+/-- For `P` as a submodule of `⊤`, the quotient `⊤ ⧸ P` has the length of `M ⧸ P`. -/
+theorem length_quotient_comap_subtype_top (P : Submodule A M) :
+    Module.length A (↥(⊤ : Submodule A M) ⧸ P.comap (⊤ : Submodule A M).subtype) =
+      Module.length A (M ⧸ P) := by
+  rw [← length_map_mkQ, Submodule.map_top, Submodule.range_mkQ]
+  exact Submodule.topEquiv.length_eq
+
+/-- The range of a linear map whose kernel contains `K` is no longer than `M ⧸ K`. -/
+theorem length_range_le_length_quotient {M' : Type*} [AddCommGroup M'] [Module A M']
+    (f : M →ₗ[A] M') {K : Submodule A M} (h : K ≤ LinearMap.ker f) :
+    Module.length A (LinearMap.range f) ≤ Module.length A (M ⧸ K) :=
+  f.quotKerEquivRange.length_eq.symm.trans_le (length_quotient_anti h)
 
 /-- For submodules `P ≤ N`, the quotient `M ⧸ P` is filtered by `N ⧸ P` and `M ⧸ N`. -/
 theorem length_quotient_eq_length_quotient_comap_subtype_add {P N : Submodule A M} (h : P ≤ N) :

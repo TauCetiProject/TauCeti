@@ -9,8 +9,8 @@ public import TauCeti.Analysis.CStarAlgebra.State.Space
 public import Mathlib.Algebra.Order.Star.Unitization
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import Mathlib.Analysis.CStarAlgebra.Hom
-import TauCeti.Analysis.CStarAlgebra.State.Unitization
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 
@@ -69,6 +69,11 @@ therefore unique when the range of `f` absorbs `f(b) a f(b)`
 injective `f` to one of the same norm (`PositiveContinuousLinearMap.exists_apply_map_eq`): a state
 extends by `TauCeti.surjOn_pullbackFunctional_stateSpace`, and a nonzero `τ` is reduced to the
 state `τ / ‖τ‖`.
+
+For the ideal `A` of `Unitization ℂ A` this extension is the unitization extension `τ⁺¹`
+(`PositiveContinuousLinearMap.eq_unitization_of_apply_inr_eq`), and
+`τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate unit `e` of `A`
+(`PositiveContinuousLinearMap.tendsto_unitization_apply_inr_mul_mul_inr`).
 
 ## References
 
@@ -420,5 +425,31 @@ theorem exists_apply_map_eq (f : F) (hf : Function.Injective f) (τ : B →P[ℂ
   rw [smul_apply, h, smul_apply, smul_smul, mul_inv_cancel₀ hc0.ne', one_smul]
 
 end Hom
+
+section Unitization
+
+/-- **The unitization extension is the extension from `A ⊆ A⁺¹`.** A positive functional of norm
+at most `‖τ‖` on `Unitization ℂ A` that restricts to `τ` on `A` is the unitization extension
+`τ⁺¹`. -/
+theorem eq_unitization_of_apply_inr_eq {τ : A →P[ℂ] ℂ} {γ : Unitization ℂ A →P[ℂ] ℂ}
+    (hγ : ‖(γ : Unitization ℂ A →L[ℂ] ℂ)‖ ≤ ‖(τ : A →L[ℂ] ℂ)‖) (h : ∀ a : A, γ a = τ a) :
+    γ = τ.unitization :=
+  eq_of_apply_map_eq (Unitization.inrNonUnitalStarAlgHom ℂ A)
+    (fun b x ↦ ⟨x.fst • b * b + b * x.snd * b, by ext <;> simp [add_mul, smul_mul_assoc]⟩) hγ
+    (norm_unitization τ).le (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, h])
+    (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, unitization_apply_inr])
+
+/-- **The extension formula for the unitization.** For a positive functional `τ` of `A`,
+`τ⁺¹(x) = lim_e τ⁺¹(e x e)` along every increasing approximate unit `e` of `A`; here `e x e` lies
+in `A`, where `τ⁺¹` is `τ`. -/
+theorem tendsto_unitization_apply_inr_mul_mul_inr (τ : A →P[ℂ] ℂ) {l : Filter A}
+    (hl : l.IsIncreasingApproximateUnit) (x : Unitization ℂ A) :
+    Tendsto (fun e : A ↦ τ.unitization ((e : Unitization ℂ A) * x * e)) l
+      (𝓝 (τ.unitization x)) := by
+  simpa only [Unitization.inrNonUnitalStarAlgHom_apply] using
+    tendsto_apply_map_mul_mul_map (Unitization.inrNonUnitalStarAlgHom ℂ A) (norm_unitization τ).le
+      (fun a ↦ by rw [Unitization.inrNonUnitalStarAlgHom_apply, unitization_apply_inr]) hl x
+
+end Unitization
 
 end PositiveContinuousLinearMap
