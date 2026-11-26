@@ -398,6 +398,8 @@ lemma abutmentFiltrationι_comp_chainFiltrationAbutmentIso_hom_comp_chainFiltrat
           (monotone_chainFiltration F hX))).EInftyIsoCokernel q (-n)).inv := by
   rw [chainFiltrationAbutmentIso_eq, chainFiltrationToTopColumnEInfty, Iso.trans_hom,
     Category.assoc, Iso.hom_inv_id_assoc]
+  -- `chainFiltrationAbutmentIso` indexes the abutment by `ComplexShape.embeddingDownNat.f n`,
+  -- which is `-n` only up to unfolding, so the generic lemma applies up to that unfolding.
   exact abutmentFiltrationι_comp_filtrationAbutmentIso_hom_comp_filtrationToTopColumnEInfty _ _ _ _
 
 instance (n : ℕ) : Epi (chainFiltrationToTopColumnEInfty F hX hq n) := by
