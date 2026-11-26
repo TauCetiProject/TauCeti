@@ -82,7 +82,8 @@ private lemma exists_positive_complement
     simpa [hz] using (congrArg (fun a ↦ HomologicalComplex.Hom.f a i) hjq).symm
   refine ⟨kernel p, e, (isStrictlyGE_iff _ _).2 (fun i hi ↦ ?_), fun i ↦ ?_, ?_, by simp [e], hde⟩
   · have hj₀ : j.f i = 0 := by
-      rcases eq_or_lt_of_le (show i ≤ 0 by omega) with rfl | hlt
+      have hi₀ : i ≤ 0 := by omega
+      rcases eq_or_lt_of_le hi₀ with rfl | hlt
       · have hz := congrArg (fun a : kernel p ⟶ C ↦ a.f 0) (kernel.condition p)
         rw [comp_f, zero_f_apply, hp₀', Category.comp_id] at hz
         exact hz
@@ -123,16 +124,14 @@ theorem exists_homotopyEquiv_biprod_single_of_residueField
     intro i hi
     rw [ComplexShape.up_Rel] at hi
     exact (C.isZero_of_isStrictlyGE 0 i (by omega)).eq_of_src _ _)
+  have hρ₀ : ρ.f 0 = ModuleCat.ofHom r ≫ (singleObjXSelf (.up ℤ) 0 M).inv := by
+    simp only [ρ, mkHomToSingle_f]
   have hρ : u ≫ ρ = 𝟙 _ := by
     apply from_single_hom_ext
     have h : f ≫ ModuleCat.ofHom r = 𝟙 M := ModuleCat.hom_ext hr
-    rw [comp_f, id_f]
-    dsimp only [ρ]
-    rw [mkHomToSingle_f]
-    apply (cancel_mono (singleObjXSelf (.up ℤ) 0 M).hom).mp
-    simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id, Category.id_comp]
-    apply (cancel_epi (singleObjXSelf (.up ℤ) 0 M).inv).mp
-    simpa [f] using h
+    simpa [comp_f, id_f, hρ₀, f, Category.assoc] using
+      congrArg (fun a ↦ (singleObjXSelf (.up ℤ) 0 M).hom ≫ a ≫
+        (singleObjXSelf (.up ℤ) 0 M).inv) h
   -- The boundary of the cochain supported in bidegree `(1, 0)` contracts the first image.
   let h : Cochain C C (-1) := Cochain.single (ModuleCat.ofHom s) (-1)
   let n := Cocycle.homOf (Cocycle.mk (δ (-1) 0 h) 1 rfl (δ_δ _ _ _ _))
@@ -141,11 +140,13 @@ theorem exists_homotopyEquiv_biprod_single_of_residueField
       (Cochain.single (ModuleCat.ofHom s ≫ C.d 0 1) 0 +
         Cochain.single (C.d 0 1 ≫ ModuleCat.ofHom s) 0).v i i (add_zero i) := by
     simp [n, h, Cochain.δ_single (K := C) (L := C) (p := 1) (q := 0) _ (-1) 0 rfl 0 1 rfl rfl]
+  have hn₀ : n.f 0 = C.d 0 1 ≫ ModuleCat.ofHom s := by
+    simpa [Cochain.single_v_eq_zero _ _ _ _ _ (by decide : (0 : ℤ) ≠ 1)] using hn' 0
   let p := ρ ≫ u + n
   have hp₀ : p.f 0 = 𝟙 _ := by
     have hh : ModuleCat.ofHom r ≫ f + C.d 0 1 ≫ ModuleCat.ofHom s = 𝟙 _ :=
       ModuleCat.hom_ext hsplit
-    simpa [p, ρ, hn', f, Cochain.single_v_eq_zero _ _ _ _ _ (by decide : (0 : ℤ) ≠ 1)] using hh
+    simpa only [p, add_f_apply, comp_f, hρ₀, hn₀, f, Category.assoc] using hh
   have hp₁ : p.f 1 = ModuleCat.ofHom s ≫ C.d 0 1 := by
     have hz : ρ.f 1 = 0 := (isZero_single_obj_X (.up ℤ) 0 M 1 (by decide)).eq_of_tgt _ _
     simp [p, hz, hn', Cochain.single_v_eq_zero _ _ _ _ _ (by decide : (1 : ℤ) ≠ 0)]
@@ -160,9 +161,10 @@ theorem exists_homotopyEquiv_biprod_single_of_residueField
       simp [hp₀]
     by_cases hi₁ : i = 1
     · subst i
-      have hcomm := p.comm 0 1
-      rw [hp₀, Category.id_comp] at hcomm
-      rw [comp_f, hp₁, Category.assoc, ← hp₁, ← hcomm, hp₁]
+      -- Since the degree-zero component is the identity, the differential is fixed by `p`.
+      have hd : C.d 0 1 ≫ p.f 1 = C.d 0 1 := by simpa [hp₀] using (p.comm 0 1).symm
+      simpa only [comp_f, hp₁, Category.assoc] using
+        congrArg (fun a ↦ ModuleCat.ofHom s ≫ a) hd
     simp [hp' _ hi₀ hi₁]
   exact exists_positive_complement C hρ hn hp₀ hpp
 
@@ -194,10 +196,8 @@ theorem isIso_homologyMap_zero_of_residueField
     rw [Category.assoc, ← Category.assoc e.hom e.inv, hret]
     simp
   have htotal : r ≫ u + t ≫ j = e.inv ≫ e.hom := by
-    rw [← hinl]
-    simp only [r, t, j, Category.assoc, ← Preadditive.comp_add]
-    rw [← Category.assoc biprod.fst biprod.inl, ← Category.assoc biprod.snd biprod.inr,
-      ← Preadditive.add_comp, biprod.total, Category.id_comp]
+    simp only [r, t, j, ← hinl, Category.assoc, ← Preadditive.comp_add]
+    simp only [← Category.assoc, ← Preadditive.add_comp, biprod.total, Category.id_comp]
   have hz : IsZero (H.obj Q) := CochainComplex.isZero_of_isGE (G.obj Q) 1 0
   have hzero : H.map (t ≫ j) = 0 := by
     rw [H.map_comp, hz.eq_of_tgt (H.map t) 0, zero_comp]

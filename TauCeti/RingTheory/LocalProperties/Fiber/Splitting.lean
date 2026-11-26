@@ -87,7 +87,8 @@ theorem exists_leftInverse_and_comp_add_comp_eq_id_of_residueField
   let e := LinearEquiv.ofBijective (r.prod q)
     (hex.bijective_prod_of_comp_eq_id (Submodule.mkQ_surjective _) hr)
   let i := e.symm.toLinearMap ∘ₗ inr R M (N ⧸ range f)
-  have he (x : N) : e x = (r x, q x) := rfl
+  have he (x : N) : e x = (r x, q x) := by
+    simp [e]
   have hei (x : N ⧸ range f) : e (i x) = (0, x) := e.apply_symm_apply (0, x)
   have hi : q ∘ₗ i = .id := by
     exact LinearMap.ext fun x ↦ congrArg Prod.snd (hei x)
@@ -111,7 +112,7 @@ theorem exists_leftInverse_and_comp_add_comp_eq_id_of_residueField
   rw [hsg]
   refine LinearMap.ext fun x ↦ e.injective ?_
   -- Evaluate the two summands in the product coordinates of the splitting.
-  change e (f (r x) + i (q x)) = e x
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
   rw [map_add, he (f (r x)), hei, he x]
   simpa using And.intro (LinearMap.congr_fun hr (r x)) (LinearMap.congr_fun hq (r x))
 
