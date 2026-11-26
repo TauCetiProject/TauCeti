@@ -240,9 +240,8 @@ theorem singlePole_of_neg_le_meromorphicOrderAt [CompactSpace X] [T2Space X]
   have horder : meromorphicOrderAt (fun y ↦ affineChart (F y)) p =
       ((-(degree F : ℤ) : ℤ) : WithTop ℤ) := by
     rw [hdeg, F.meromorphicOrderAt_affineChart_comp_of_eq_infty hp]
-  have hbound := WeilDivisor.degree_le_of_le hdiv
-  simp only [degree_divisorPullback_ofPoint, map_nsmul, WeilDivisor.degree_ofPoint,
-    nsmul_eq_mul, mul_one] at hbound
+  have hbound := F.degree_le_degree_of_neg_le_meromorphicOrderAt hD hF
+  simp only [map_nsmul, WeilDivisor.degree_ofPoint, nsmul_eq_mul, mul_one] at hbound
   exact ⟨by exact_mod_cast hbound, hfib, horder⟩
 
 end TauCeti.RiemannSurface.FiniteHolomorphicMap
