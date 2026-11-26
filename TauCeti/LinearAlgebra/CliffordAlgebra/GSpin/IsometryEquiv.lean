@@ -28,7 +28,7 @@ twisted conjugation preserves the vectors needs the isometry to be onto.
   preserves the vector normalizer.
 * `QuadraticMap.IsometryEquiv.cliffordGroupEquiv`,
   `QuadraticMap.IsometryEquiv.specialCliffordGroupEquiv`: `GPin(Q₁) ≃* GPin(Q₂)` and
-  `GSpin(Q₁) ≃* GSpin(Q₂)`.
+  `GSpin(Q₁) ≃* GSpin(Q₂)`, with the functor laws `_refl`, `_trans` and `_symm`.
 * `QuadraticMap.IsometryEquiv.coe_cliffordGroupNorm_cliffordGroupEquiv`,
   `QuadraticMap.IsometryEquiv.coe_specialCliffordGroupNorm_specialCliffordGroupEquiv`: the norms
   are natural.
@@ -68,26 +68,8 @@ private theorem involute_mul_ι_mul_mem_range (e : Q₁.IsometryEquiv Q₂) {a b
     involute (equivOfIsometry e a) * ι Q₂ m * equivOfIsometry e b ∈ LinearMap.range (ι Q₂) := by
   obtain ⟨w, hw⟩ := h (e.symm m)
   refine ⟨e w, ?_⟩
-  have hm : ι Q₂ m = equivOfIsometry e (ι Q₁ (e.symm m)) := by
-    rw [equivOfIsometry_apply, map_apply_ι]
-    exact congrArg (ι Q₂) (e.apply_symm_apply m).symm
-  rw [hm, equivOfIsometry_apply, equivOfIsometry_apply, equivOfIsometry_apply, ← map_involute,
-    ← map_mul, ← map_mul, ← hw, map_apply_ι]
-  rfl
-
-/-- The Clifford algebra isomorphism of an isometry equivalence, on units. -/
-private theorem coe_units_map (e : Q₁.IsometryEquiv Q₂) (x : (CliffordAlgebra Q₁)ˣ) :
-    ((Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x :
-        (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) = equivOfIsometry e (x : CliffordAlgebra Q₁) :=
-  (rfl)
-
-/-- The Clifford algebra isomorphism of an isometry equivalence, on inverses of units. -/
-private theorem coe_units_map_inv (e : Q₁.IsometryEquiv Q₂) (x : (CliffordAlgebra Q₁)ˣ) :
-    (((Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x)⁻¹ :
-        (CliffordAlgebra Q₂)ˣ) : CliffordAlgebra Q₂) =
-      equivOfIsometry e ((x⁻¹ : (CliffordAlgebra Q₁)ˣ) : CliffordAlgebra Q₁) := by
-  rw [← map_inv]
-  rfl
+  rw [← equivOfIsometry_ι, hw, map_mul, map_mul, equivOfIsometry_ι, e.apply_symm_apply,
+    equivOfIsometry_apply e (involute a), map_involute, ← equivOfIsometry_apply]
 
 /-- **An isometry equivalence preserves the vector normalizer**: the induced map on Clifford
 units sends `vectorNormalizer Q₁` into `vectorNormalizer Q₂`. -/
@@ -96,7 +78,7 @@ theorem units_map_mem_vectorNormalizer (e : Q₁.IsometryEquiv Q₂) {x : (Cliff
     Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x ∈
       vectorNormalizer Q₂ := by
   rw [mem_vectorNormalizer_iff] at hx ⊢
-  rw [coe_units_map, coe_units_map_inv]
+  rw [Units.coe_map, Units.coe_map_inv, MonoidHom.coe_ofClass]
   exact ⟨involute_mul_ι_mul_mem_range e hx.1, involute_mul_ι_mul_mem_range e hx.2⟩
 
 /-- An isometry equivalence maps the Clifford group into the Clifford group. -/
@@ -106,7 +88,7 @@ theorem units_map_mem_cliffordGroup (e : Q₁.IsometryEquiv Q₂) {x : (Clifford
       cliffordGroup Q₂ := by
   rw [mem_cliffordGroup_iff] at hx ⊢
   refine ⟨units_map_mem_vectorNormalizer e hx.1, ?_⟩
-  rw [coe_units_map, equivOfIsometry_apply]
+  rw [Units.coe_map, MonoidHom.coe_ofClass, equivOfIsometry_apply]
   exact hx.2.map e.toIsometry
 
 /-- An isometry equivalence maps the general spin group into the general spin group. -/
@@ -116,15 +98,8 @@ theorem units_map_mem_specialCliffordGroup (e : Q₁.IsometryEquiv Q₂) {x : (C
       specialCliffordGroup Q₂ := by
   rw [mem_specialCliffordGroup_iff] at hx ⊢
   refine ⟨units_map_mem_vectorNormalizer e hx.1, ?_⟩
-  rw [coe_units_map, equivOfIsometry_apply]
+  rw [Units.coe_map, MonoidHom.coe_ofClass, equivOfIsometry_apply]
   exact map_mem_even e.toIsometry hx.2
-
-/-- Mapping a unit along `e` and back along `e.symm` gives it back. -/
-private theorem units_map_symm_units_map (e : Q₁.IsometryEquiv Q₂) (x : (CliffordAlgebra Q₁)ˣ) :
-    Units.map (equivOfIsometry e.symm : CliffordAlgebra Q₂ →* CliffordAlgebra Q₁)
-      (Units.map (equivOfIsometry e : CliffordAlgebra Q₁ →* CliffordAlgebra Q₂) x) = x :=
-  Units.ext <| by
-    rw [coe_units_map, coe_units_map, ← equivOfIsometry_symm, AlgEquiv.symm_apply_apply]
 
 /-- **The Clifford group is functorial along isometry equivalences**: `GPin(Q₁) ≃* GPin(Q₂)`,
 the restriction of `CliffordAlgebra.equivOfIsometry`. -/
@@ -132,8 +107,8 @@ noncomputable def cliffordGroupEquiv (e : Q₁.IsometryEquiv Q₂) :
     cliffordGroup Q₁ ≃* cliffordGroup Q₂ where
   toFun x := ⟨_, units_map_mem_cliffordGroup e x.property⟩
   invFun x := ⟨_, units_map_mem_cliffordGroup e.symm x.property⟩
-  left_inv x := Subtype.ext (units_map_symm_units_map e x)
-  right_inv x := Subtype.ext (units_map_symm_units_map e.symm x)
+  left_inv x := Subtype.ext (units_map_equivOfIsometry_symm_units_map e x)
+  right_inv x := Subtype.ext (units_map_equivOfIsometry_symm_units_map e.symm x)
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
 
 /-- The equivalence of Clifford groups is the Clifford algebra isomorphism. -/
@@ -149,14 +124,31 @@ theorem cliffordGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
     e.cliffordGroupEquiv.symm = e.symm.cliffordGroupEquiv :=
   (rfl)
 
+/-- The identity isometry induces the identity equivalence of Clifford groups. -/
+@[simp]
+theorem cliffordGroupEquiv_refl (Q₁ : QuadraticForm R M₁) :
+    (IsometryEquiv.refl Q₁).cliffordGroupEquiv = MulEquiv.refl (cliffordGroup Q₁) :=
+  MulEquiv.ext fun x ↦ Subtype.ext <| Units.ext <| by
+    rw [coe_cliffordGroupEquiv_apply, equivOfIsometry_refl, AlgEquiv.coe_refl, id_eq,
+      MulEquiv.refl_apply]
+
+/-- The equivalences of Clifford groups respect composition of isometry equivalences. -/
+@[simp]
+theorem cliffordGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (e₁₂.trans e₂₃).cliffordGroupEquiv = e₁₂.cliffordGroupEquiv.trans e₂₃.cliffordGroupEquiv :=
+  MulEquiv.ext fun x ↦ Subtype.ext <| Units.ext <| by
+    rw [coe_cliffordGroupEquiv_apply, MulEquiv.trans_apply, coe_cliffordGroupEquiv_apply,
+      coe_cliffordGroupEquiv_apply, ← equivOfIsometry_trans, AlgEquiv.trans_apply]
+
 /-- **The general spin group is functorial along isometry equivalences**:
 `GSpin(Q₁) ≃* GSpin(Q₂)`, the restriction of `CliffordAlgebra.equivOfIsometry`. -/
 noncomputable def specialCliffordGroupEquiv (e : Q₁.IsometryEquiv Q₂) :
     specialCliffordGroup Q₁ ≃* specialCliffordGroup Q₂ where
   toFun x := ⟨_, units_map_mem_specialCliffordGroup e x.property⟩
   invFun x := ⟨_, units_map_mem_specialCliffordGroup e.symm x.property⟩
-  left_inv x := Subtype.ext (units_map_symm_units_map e x)
-  right_inv x := Subtype.ext (units_map_symm_units_map e.symm x)
+  left_inv x := Subtype.ext (units_map_equivOfIsometry_symm_units_map e x)
+  right_inv x := Subtype.ext (units_map_equivOfIsometry_symm_units_map e.symm x)
   map_mul' _ _ := Subtype.ext (map_mul _ _ _)
 
 /-- The equivalence of general spin groups is the Clifford algebra isomorphism. -/
@@ -172,6 +164,26 @@ theorem coe_specialCliffordGroupEquiv_apply (e : Q₁.IsometryEquiv Q₂)
 theorem specialCliffordGroupEquiv_symm (e : Q₁.IsometryEquiv Q₂) :
     e.specialCliffordGroupEquiv.symm = e.symm.specialCliffordGroupEquiv :=
   (rfl)
+
+/-- The identity isometry induces the identity equivalence of general spin groups. -/
+@[simp]
+theorem specialCliffordGroupEquiv_refl (Q₁ : QuadraticForm R M₁) :
+    (IsometryEquiv.refl Q₁).specialCliffordGroupEquiv =
+      MulEquiv.refl (specialCliffordGroup Q₁) :=
+  MulEquiv.ext fun x ↦ Subtype.ext <| Units.ext <| by
+    rw [coe_specialCliffordGroupEquiv_apply, equivOfIsometry_refl, AlgEquiv.coe_refl, id_eq,
+      MulEquiv.refl_apply]
+
+/-- The equivalences of general spin groups respect composition of isometry equivalences. -/
+@[simp]
+theorem specialCliffordGroupEquiv_trans {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e₁₂ : Q₁.IsometryEquiv Q₂) (e₂₃ : Q₂.IsometryEquiv Q₃) :
+    (e₁₂.trans e₂₃).specialCliffordGroupEquiv =
+      e₁₂.specialCliffordGroupEquiv.trans e₂₃.specialCliffordGroupEquiv :=
+  MulEquiv.ext fun x ↦ Subtype.ext <| Units.ext <| by
+    rw [coe_specialCliffordGroupEquiv_apply, MulEquiv.trans_apply,
+      coe_specialCliffordGroupEquiv_apply, coe_specialCliffordGroupEquiv_apply,
+      ← equivOfIsometry_trans, AlgEquiv.trans_apply]
 
 /-- **The Clifford norm is natural**: `N(e g) = e(N(g))`. -/
 theorem coe_cliffordGroupNorm_cliffordGroupEquiv (e : Q₁.IsometryEquiv Q₂)
@@ -201,7 +213,8 @@ theorem units_map_mem_normOnePinGroup (e : Q₁.IsometryEquiv Q₂) {x : (Cliffo
       normOnePinGroup Q₂ := by
   rw [mem_normOnePinGroup_iff] at hx ⊢
   refine ⟨units_map_mem_cliffordGroup e hx.1, ?_⟩
-  rw [coe_units_map, equivOfIsometry_apply, ← CliffordAlgebra.map_star, ← map_mul, hx.2, map_one]
+  rw [Units.coe_map, MonoidHom.coe_ofClass, equivOfIsometry_apply, ← CliffordAlgebra.map_star,
+    ← map_mul, hx.2, map_one]
 
 /-- An isometry equivalence maps `Spin` into `Spin`. -/
 theorem units_map_mem_normOneSpinGroup (e : Q₁.IsometryEquiv Q₂) {x : (CliffordAlgebra Q₁)ˣ}
@@ -210,8 +223,8 @@ theorem units_map_mem_normOneSpinGroup (e : Q₁.IsometryEquiv Q₂) {x : (Cliff
       normOneSpinGroup Q₂ := by
   rw [mem_normOneSpinGroup_iff] at hx ⊢
   refine ⟨units_map_mem_specialCliffordGroup e hx.1, ?_⟩
-  rw [coe_units_map, equivOfIsometry_apply, ← CliffordAlgebra.map_reverse, ← map_mul, hx.2,
-    map_one]
+  rw [Units.coe_map, MonoidHom.coe_ofClass, equivOfIsometry_apply, ← CliffordAlgebra.map_reverse,
+    ← map_mul, hx.2, map_one]
 
 /-- **`Pin` corresponds under an isometry equivalence.** -/
 theorem units_map_mem_normOnePinGroup_iff (e : Q₁.IsometryEquiv Q₂)
@@ -220,7 +233,7 @@ theorem units_map_mem_normOnePinGroup_iff (e : Q₁.IsometryEquiv Q₂)
       normOnePinGroup Q₂ ↔ x ∈ normOnePinGroup Q₁ := by
   refine ⟨fun h => ?_, units_map_mem_normOnePinGroup e⟩
   have := units_map_mem_normOnePinGroup e.symm h
-  rwa [units_map_symm_units_map] at this
+  rwa [units_map_equivOfIsometry_symm_units_map] at this
 
 /-- **`Spin` corresponds under an isometry equivalence.** -/
 theorem units_map_mem_normOneSpinGroup_iff (e : Q₁.IsometryEquiv Q₂)
@@ -229,7 +242,7 @@ theorem units_map_mem_normOneSpinGroup_iff (e : Q₁.IsometryEquiv Q₂)
       normOneSpinGroup Q₂ ↔ x ∈ normOneSpinGroup Q₁ := by
   refine ⟨fun h => ?_, units_map_mem_normOneSpinGroup e⟩
   have := units_map_mem_normOneSpinGroup e.symm h
-  rwa [units_map_symm_units_map] at this
+  rwa [units_map_equivOfIsometry_symm_units_map] at this
 
 /-- **The vector action is transported by conjugation**: `ρ(e g) = e ∘ ρ(g) ∘ e⁻¹`, whenever `ι`
 and the scalars embed in both Clifford algebras. -/
@@ -243,20 +256,10 @@ theorem cliffordGroupToOrthogonal_cliffordGroupEquiv_apply (e : Q₁.IsometryEqu
       e ((cliffordGroupToOrthogonal Q₁ hι₁ hinj₁ x : M₁ ≃ₗ[R] M₁) (e.symm m)) := by
   apply hι₂
   have hm : ι Q₂ m = equivOfIsometry e (ι Q₁ (e.symm m)) := by
-    rw [equivOfIsometry_apply, map_apply_ι]
-    exact congrArg (ι Q₂) (e.apply_symm_apply m).symm
-  have hv (v : M₁) : ι Q₂ (e v) = equivOfIsometry e (ι Q₁ v) := by
-    rw [equivOfIsometry_apply, map_apply_ι]
-    rfl
-  rw [ι_cliffordGroupToOrthogonal_apply, hv, ι_cliffordGroupToOrthogonal_apply, hm,
-    coe_cliffordGroupEquiv_apply]
-  have hinv : ((((e.cliffordGroupEquiv x : (CliffordAlgebra Q₂)ˣ))⁻¹ : (CliffordAlgebra Q₂)ˣ) :
-      CliffordAlgebra Q₂) =
-      equivOfIsometry e (((x : (CliffordAlgebra Q₁)ˣ)⁻¹ : (CliffordAlgebra Q₁)ˣ) :
-        CliffordAlgebra Q₁) :=
-    coe_units_map_inv e x
-  rw [hinv, map_mul, map_mul, equivOfIsometry_apply e (involute _),
-    CliffordAlgebra.map_involute]
-  rfl
+    rw [equivOfIsometry_ι, e.apply_symm_apply]
+  rw [ι_cliffordGroupToOrthogonal_apply, ← equivOfIsometry_ι, ι_cliffordGroupToOrthogonal_apply,
+    hm, ← Subgroup.coe_inv, ← map_inv, coe_cliffordGroupEquiv_apply,
+    coe_cliffordGroupEquiv_apply, Subgroup.coe_inv, map_mul, map_mul,
+    equivOfIsometry_apply e (involute _), CliffordAlgebra.map_involute, ← equivOfIsometry_apply]
 
 end QuadraticMap.IsometryEquiv
