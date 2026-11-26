@@ -19,11 +19,11 @@ Hence the convexity predicates of the boundary at `q` read off the sign of the H
 tangent space of the boundary:
 
 * `∂M` is strictly convex at `q` iff `Hess ρ(dι u, dι u) < 0` for every nonzero `u ∈ T_q∂M`
-  (`TauCeti.IsBoundaryDefiningFunctionOn.isStrictlyConvexAt_iff_hessian_neg`);
+  (`TauCeti.IsBoundaryDefiningFunctionOn.isStrictlyConvexAt_iff_forall_hessian_neg`);
 * `∂M` is convex at `q` iff `Hess ρ(dι u, dι u) ≤ 0` for every `u ∈ T_q∂M`
-  (`TauCeti.IsBoundaryDefiningFunctionOn.isConvexAt_iff_hessian_nonpos`);
+  (`TauCeti.IsBoundaryDefiningFunctionOn.isConvexAt_iff_forall_hessian_nonpos`);
 * `∂M` is strictly concave at `q` iff `Hess ρ(dι u, dι u) > 0` for every nonzero `u ∈ T_q∂M`
-  (`TauCeti.IsBoundaryDefiningFunctionOn.isStrictlyConcaveAt_iff_hessian_pos`).
+  (`TauCeti.IsBoundaryDefiningFunctionOn.isStrictlyConcaveAt_iff_forall_hessian_pos`).
 
 In particular each sign condition holds for one boundary defining function at `q` iff it holds for
 every one (`TauCeti.IsBoundaryDefiningFunctionOn.forall_hessian_neg_iff` and its companions).
@@ -53,28 +53,10 @@ namespace IsBoundaryDefiningFunctionOn
 
 variable {ρ ρ' : M → ℝ} {U U' : Set M} {q : (𝓡∂ (n + 1)).boundary M}
 
-/-- The second fundamental form on the diagonal through a boundary defining function, with the
-positivity of `|dρ_q|`. -/
-private theorem exists_pos_boundarySecondFundamentalForm_eq
-    (hρ : IsBoundaryDefiningFunctionOn n ρ U) (hqU : (q : M) ∈ U) :
-    ∃ c : ℝ, 0 < c ∧ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q,
-      boundarySecondFundamentalForm q u u =
-        -Manifold.hessian (𝓡∂ (n + 1)) ρ q
-          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-            (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
-          (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
-            (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) / c :=
-  ⟨‖mvfderiv (𝓡∂ (n + 1)) ρ q‖,
-    by
-      have hne : ‖mvfderiv (𝓡∂ (n + 1)) ρ q‖ ≠ 0 := by
-        simpa using hρ.mvfderiv_ne_zero (q : M) hqU q.property
-      exact (ContinuousLinearMap.opNorm_nonneg _).lt_of_ne' hne,
-    fun u ↦ hρ.boundarySecondFundamentalForm_apply hqU u u⟩
-
 /-- **Hessian characterisation of strict convexity.** For a boundary defining function `ρ` on an
 open set containing `q ∈ ∂M`, the boundary is strictly convex at `q` iff `Hess ρ(dι u, dι u) < 0`
 for every nonzero `u ∈ T_q∂M`. -/
-theorem isStrictlyConvexAt_iff_hessian_neg (hρ : IsBoundaryDefiningFunctionOn n ρ U)
+theorem isStrictlyConvexAt_iff_forall_hessian_neg (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     (hqU : (q : M) ∈ U) :
     IsStrictlyConvexAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
       Manifold.hessian (𝓡∂ (n + 1)) ρ q
@@ -82,13 +64,13 @@ theorem isStrictlyConvexAt_iff_hessian_neg (hρ : IsBoundaryDefiningFunctionOn n
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) < 0 := by
-  obtain ⟨c, hc, h⟩ := hρ.exists_pos_boundarySecondFundamentalForm_eq hqU
-  simp only [isStrictlyConvexAt_iff, h, lt_div_iff₀ hc, zero_mul, neg_pos]
+  simp only [isStrictlyConvexAt_iff, hρ.boundarySecondFundamentalForm_apply hqU,
+    lt_div_iff₀ (hρ.norm_mvfderiv_pos hqU q.property), zero_mul, neg_pos]
 
 /-- **Hessian characterisation of convexity.** For a boundary defining function `ρ` on an open set
 containing `q ∈ ∂M`, the boundary is convex at `q` iff `Hess ρ(dι u, dι u) ≤ 0` for every
 `u ∈ T_q∂M`. -/
-theorem isConvexAt_iff_hessian_nonpos (hρ : IsBoundaryDefiningFunctionOn n ρ U)
+theorem isConvexAt_iff_forall_hessian_nonpos (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     (hqU : (q : M) ∈ U) :
     IsConvexAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q,
       Manifold.hessian (𝓡∂ (n + 1)) ρ q
@@ -96,13 +78,13 @@ theorem isConvexAt_iff_hessian_nonpos (hρ : IsBoundaryDefiningFunctionOn n ρ U
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) ≤ 0 := by
-  obtain ⟨c, hc, h⟩ := hρ.exists_pos_boundarySecondFundamentalForm_eq hqU
-  simp only [isConvexAt_iff, h, le_div_iff₀ hc, zero_mul, neg_nonneg]
+  simp only [isConvexAt_iff, hρ.boundarySecondFundamentalForm_apply hqU,
+    le_div_iff₀ (hρ.norm_mvfderiv_pos hqU q.property), zero_mul, neg_nonneg]
 
 /-- **Hessian characterisation of strict concavity.** For a boundary defining function `ρ` on an
 open set containing `q ∈ ∂M`, the boundary is strictly concave at `q` iff
 `Hess ρ(dι u, dι u) > 0` for every nonzero `u ∈ T_q∂M`. -/
-theorem isStrictlyConcaveAt_iff_hessian_pos (hρ : IsBoundaryDefiningFunctionOn n ρ U)
+theorem isStrictlyConcaveAt_iff_forall_hessian_pos (hρ : IsBoundaryDefiningFunctionOn n ρ U)
     (hqU : (q : M) ∈ U) :
     IsStrictlyConcaveAt q ↔ ∀ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q, u ≠ 0 →
       0 < Manifold.hessian (𝓡∂ (n + 1)) ρ q
@@ -110,8 +92,8 @@ theorem isStrictlyConcaveAt_iff_hessian_pos (hρ : IsBoundaryDefiningFunctionOn 
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) := by
-  obtain ⟨c, hc, h⟩ := hρ.exists_pos_boundarySecondFundamentalForm_eq hqU
-  simp only [isStrictlyConcaveAt_iff, h, div_lt_iff₀ hc, zero_mul, neg_lt_zero]
+  simp only [isStrictlyConcaveAt_iff, hρ.boundarySecondFundamentalForm_apply hqU,
+    div_lt_iff₀ (hρ.norm_mvfderiv_pos hqU q.property), zero_mul, neg_lt_zero]
 
 /-- The sign condition `Hess ρ < 0` on the nonzero tangent vectors of the boundary at `q` holds for
 one boundary defining function iff it holds for every other one. -/
@@ -129,7 +111,8 @@ theorem forall_hessian_neg_iff (hρ : IsBoundaryDefiningFunctionOn n ρ U) (hqU 
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) < 0 := by
-  rw [← hρ.isStrictlyConvexAt_iff_hessian_neg hqU, hρ'.isStrictlyConvexAt_iff_hessian_neg hqU']
+  rw [← hρ.isStrictlyConvexAt_iff_forall_hessian_neg hqU,
+    hρ'.isStrictlyConvexAt_iff_forall_hessian_neg hqU']
 
 /-- The sign condition `Hess ρ ≤ 0` on the tangent space of the boundary at `q` holds for one
 boundary defining function iff it holds for every other one. -/
@@ -147,7 +130,8 @@ theorem forall_hessian_nonpos_iff (hρ : IsBoundaryDefiningFunctionOn n ρ U) (h
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) ≤ 0 := by
-  rw [← hρ.isConvexAt_iff_hessian_nonpos hqU, hρ'.isConvexAt_iff_hessian_nonpos hqU']
+  rw [← hρ.isConvexAt_iff_forall_hessian_nonpos hqU,
+    hρ'.isConvexAt_iff_forall_hessian_nonpos hqU']
 
 /-- The sign condition `Hess ρ > 0` on the nonzero tangent vectors of the boundary at `q` holds for
 one boundary defining function iff it holds for every other one. -/
@@ -165,8 +149,8 @@ theorem forall_hessian_pos_iff (hρ : IsBoundaryDefiningFunctionOn n ρ U) (hqU 
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u)
         (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
           (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q u) := by
-  rw [← hρ.isStrictlyConcaveAt_iff_hessian_pos hqU,
-    hρ'.isStrictlyConcaveAt_iff_hessian_pos hqU']
+  rw [← hρ.isStrictlyConcaveAt_iff_forall_hessian_pos hqU,
+    hρ'.isStrictlyConcaveAt_iff_forall_hessian_pos hqU']
 
 end IsBoundaryDefiningFunctionOn
 
