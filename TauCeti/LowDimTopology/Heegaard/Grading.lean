@@ -54,7 +54,9 @@ exactly when every domain `E` from a generator to itself has `μ(E) - 2 ∑ᵢ n
 (`TauCeti.HeegaardRegionSystem.exists_isMaslovGradingMod_iff`), and with the normalization of a
 singly pointed diagram exactly when `Λ` contains the periodic Maslov indices of all generators
 (`exists_isMaslovGradingMod_iff_forall_periodicMaslovIndices_le`). On the generators joined by
-domains to a generator `x₀` it exists modulo the periodic Maslov indices at `x₀`
+domains to a generator `x₀` it exists modulo the periodic Maslov indices at `x₀` when every domain
+from `x₀` to itself satisfies the normalization of the relative grading, as in a singly pointed
+diagram (`maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton`)
 (`TauCeti.HeegaardRegionSystem.exists_coe_sub_eq_of_maslovIndex_sub_two_mul_sum_mem` with
 `Λ` these indices), the multiples of some `d ≥ 0`: this is the relative `ℤ / d(s)` grading of
 Ozsváth and Szabó for a non-torsion spin^c structure `s` (the identification of `d` with the
@@ -221,8 +223,9 @@ classes of the values `gr(x)` in `ℚ ⧸ Λ` matter (`IsMaslovGradingMod.of_coe
 is a Maslov grading (`TauCeti.HeegaardRegionSystem.isMaslovGradingMod_bot_iff`). For `Λ` the
 periodic Maslov indices, the multiples of the combinatorial divisibility `d`
 (`exists_nonneg_periodicMaslovIndices_eq_zmultiples`), it is the relative `ℤ / d` grading of
-Ozsváth and Szabó in a non-torsion spin^c sector, which exists on every class of generators joined
-by domains
+Ozsváth and Szabó in a non-torsion spin^c sector, which exists on a class of generators joined by
+domains when every domain from a generator of the class to itself satisfies the normalization of
+the relative grading, as in a singly pointed diagram
 (`TauCeti.HeegaardRegionSystem.exists_coe_sub_eq_of_maslovIndex_sub_two_mul_sum_mem`). -/
 structure IsMaslovGradingMod (Λ : AddSubgroup ℚ) (χ : Region → ℤ) (gr : H.Generator → ℚ) :
     Prop where
