@@ -18,8 +18,8 @@ import TauCeti.Probability.Independence.Basic
 
 For a measurable label `b`, the conditional partition entropy
 `H(a | b)` is the average over the atoms `B_j = b ⁻¹' {j}` of the entropy of `a` under the
-conditional probability `μ[|B_j]`, weighted by `μ B_j`. This formula gives the refinement and
-independence properties of conditional entropy.
+conditional probability `μ[|B_j]`, weighted by `μ B_j`. This formula gives the refinement,
+subadditivity and independence properties of conditional entropy.
 
 ## Main results
 
@@ -35,10 +35,6 @@ independence properties of conditional entropy.
 * `TauCeti.conditionalPartitionEntropy_pair_left_le_add`,
   `TauCeti.conditionalPartitionEntropy_pair_pair_le_add`: conditional subadditivity,
   `H(a ∨ a' | b) ≤ H(a | b) + H(a' | b)` and `H(a ∨ a' | b ∨ b') ≤ H(a | b) + H(a' | b')`.
-* `TauCeti.conditionalPartitionEntropy_comp_of_measurePreserving`: pulling both labels back along
-  a measure-preserving map does not change the conditional entropy.
-* `TauCeti.tendsto_conditionalPartitionEntropy_min`: for a label `a : X → ℕ` of finite entropy,
-  `H(a | min a N) → 0` as `N → ∞`.
 
 Together with `TauCeti.conditionalPartitionEntropy_le` these give `H(ξ | η) ≤ H(ξ)` with equality
 for independent labels, and monotonicity of `H(ξ | η)` in both arguments.
@@ -50,7 +46,7 @@ for independent labels, and monotonicity of `H(ξ | η)` in both arguments.
 
 public section
 
-open MeasureTheory ProbabilityTheory Real Filter Topology
+open MeasureTheory ProbabilityTheory Real
 open scoped ENNReal
 
 namespace TauCeti
@@ -212,75 +208,5 @@ theorem conditionalPartitionEntropy_pair_pair_le_add {ι' : Type*} [IsFiniteMeas
   · exact conditionalPartitionEntropy_le_comp a' (hb.prodMk hb') Prod.snd
 
 end Measurable
-
-/-- Pulling two measurable labels back along a measure-preserving map does not change the
-conditional entropy of one given the other. -/
-theorem conditionalPartitionEntropy_comp_of_measurePreserving {Y : Type*} [MeasurableSpace Y]
-    {ν : Measure Y} [MeasurableSpace ι] [MeasurableSingletonClass ι] [MeasurableSpace κ]
-    [MeasurableSingletonClass κ] {T : X → Y} (hT : MeasurePreserving T μ ν) {a : Y → ι}
-    {b : Y → κ} (ha : Measurable a) (hb : Measurable b) :
-    conditionalPartitionEntropy μ (a ∘ T) (b ∘ T) = conditionalPartitionEntropy ν a b := by
-  simp only [conditionalPartitionEntropy_def, Set.preimage_comp, ← Set.preimage_inter,
-    hT.measureReal_preimage
-      ((ha (measurableSet_singleton _)).inter (hb (measurableSet_singleton _))).nullMeasurableSet,
-    hT.measureReal_preimage (hb (measurableSet_singleton _)).nullMeasurableSet]
-
-/-- The conditional entropy of a label given a coarsening `f ∘ a` of itself: each atom
-`a ⁻¹' {i}` lies in the atom `a ⁻¹' (f ⁻¹' {f i})` of the coarsening, and contributes
-`p_i log (q_i / p_i)`, with `p_i`, `q_i` the masses of the two atoms. -/
-theorem conditionalPartitionEntropy_comp_self (μ : Measure X) (a : X → ι) (f : ι → κ) :
-    conditionalPartitionEntropy μ a (f ∘ a) = ∑' i, ENNReal.ofReal (μ.real (a ⁻¹' {i}) *
-      log (μ.real (a ⁻¹' (f ⁻¹' {f i})) / μ.real (a ⁻¹' {i}))) := by
-  rw [conditionalPartitionEntropy_def, tsum_prod']
-  refine tsum_congr fun i ↦ ?_
-  rw [tsum_eq_single (f i) fun j hj ↦ ?_]
-  · have hcell : a ⁻¹' {i} ∩ (f ∘ a) ⁻¹' {f i} = a ⁻¹' {i} :=
-      Set.inter_eq_left.mpr fun x hx ↦ by simp_all
-    rw [hcell, Set.preimage_comp]
-  · have hcell : a ⁻¹' {i} ∩ (f ∘ a) ⁻¹' {j} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun x ⟨h1, h2⟩ ↦ hj (by
-        simp only [Set.mem_preimage, Set.mem_singleton_iff, Function.comp_apply] at h1 h2
-        rw [← h2, h1])
-    simp [hcell]
-
-/-- **Truncation.** Under a probability measure (or the zero measure), a label `a : X → ℕ` of
-finite entropy is approximated by its finite truncations `min a N`: the conditional entropy
-`H(a | min a N)` tends to zero as `N → ∞`. No measurability is needed. -/
-theorem tendsto_conditionalPartitionEntropy_min [IsZeroOrProbabilityMeasure μ] {a : X → ℕ}
-    (hfin : countablePartitionEntropy μ a ≠ ∞) :
-    Tendsto (fun N : ℕ ↦ conditionalPartitionEntropy μ a fun x ↦ min (a x) N) atTop (𝓝 0) := by
-  set g : ℕ → ℝ≥0∞ := fun i ↦ ENNReal.ofReal (negMulLog (μ.real (a ⁻¹' {i})))
-  have hbound (N : ℕ) :
-      conditionalPartitionEntropy μ a (fun x ↦ min (a x) N) ≤ ∑' k, g (k + N) := by
-    set t : ℕ → ℝ≥0∞ := fun i ↦ ENNReal.ofReal (μ.real (a ⁻¹' {i}) *
-      log (μ.real (a ⁻¹' ((fun j ↦ min j N) ⁻¹' {min i N})) / μ.real (a ⁻¹' {i})))
-    have hlow : ∀ i ∈ Finset.range N, t i = 0 := fun i hi ↦ by
-      have hiN := Finset.mem_range.mp hi
-      have hfib : (fun j ↦ min j N) ⁻¹' {min i N} = {i} := by
-        ext j
-        simp only [Set.mem_preimage, Set.mem_singleton_iff, min_eq_left hiN.le]
-        omega
-      simp [t, hfib]
-    have hhigh (i : ℕ) : t i ≤ g i := by
-      refine ENNReal.ofReal_le_ofReal ?_
-      set p := μ.real (a ⁻¹' {i})
-      set r := μ.real (a ⁻¹' ((fun j ↦ min j N) ⁻¹' {min i N}))
-      have hpr : p ≤ r := measureReal_mono (Set.preimage_mono (by simp))
-      rcases (measureReal_nonneg : 0 ≤ p).eq_or_lt with hp | hp
-      · rw [show p = 0 from hp.symm]
-        simp
-      rw [log_div (hp.trans_le hpr).ne' hp.ne', negMulLog, mul_sub]
-      have : p * log r ≤ 0 :=
-        mul_nonpos_of_nonneg_of_nonpos hp.le (log_nonpos (hp.le.trans hpr) measureReal_le_one)
-      linarith
-    calc conditionalPartitionEntropy μ a (fun x ↦ min (a x) N) = ∑' i, t i :=
-          conditionalPartitionEntropy_comp_self μ a fun j ↦ min j N
-      _ = ∑' k, t (k + N) := by
-          rw [← CompleteLattice.summable.sum_add_tsum_nat_add' (k := N), Finset.sum_eq_zero hlow,
-            zero_add]
-      _ ≤ ∑' k, g (k + N) := tsum_le_tsum fun k ↦ hhigh _
-  rw [countablePartitionEntropy_def] at hfin
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (ENNReal.tendsto_sum_nat_add g hfin) (fun _ ↦ zero_le) hbound
 
 end TauCeti

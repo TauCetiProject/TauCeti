@@ -142,15 +142,15 @@ theorem abs_toReal_partitionEntropyRate_sub_le [IsZeroOrProbabilityMeasure μ] [
 
 /-- **The finite-partition formula.** For a measure-preserving map of a probability space (or the
 zero measure), the Kolmogorov–Sinai entropy is the supremum of the entropy rates of the
-measurable finite labels `a : X → Fin n`, the value `∞` included. A label `a : X → ℕ` of finite
-entropy is approximated by its truncations `min a N`: `h(T, a) ≤ h(T, min a N) + H(a | min a N)`,
-and the conditional entropy tends to zero. -/
+measurable finite labels `a : X → Fin n`, the value `∞` included. -/
 theorem measureEntropy_eq_iSup_fin [IsZeroOrProbabilityMeasure μ]
     (hT : MeasurePreserving T μ μ) :
     measureEntropy μ T =
       ⨆ (n : ℕ) (a : X → Fin n) (_ : Measurable a), partitionEntropyRate μ T a := by
   refine le_antisymm (measureEntropy_le_iff.mpr fun a ha hfin ↦ ?_)
     (iSup₂_le fun n a ↦ iSup_le fun ha ↦ partitionEntropyRate_le_measureEntropy_of_finite T ha)
+  -- Truncate `a : X → ℕ` to `min a N`: `h(T, a) ≤ h(T, min a N) + H(a | min a N)`, and the
+  -- conditional entropy tends to zero.
   set S := ⨆ (n : ℕ) (a : X → Fin n) (_ : Measurable a), partitionEntropyRate μ T a
   have hq (N : ℕ) : partitionEntropyRate μ T a ≤
       S + conditionalPartitionEntropy μ a fun x ↦ min (a x) N := by
