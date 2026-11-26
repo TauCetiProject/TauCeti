@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.ModelTheory.Semantics
-import TauCeti.ModelTheory.Syntax
+public import TauCeti.ModelTheory.Syntax
 
 /-!
 # Realization of first-order terms and closed bounded formulas
@@ -19,9 +19,8 @@ direct congruence lemma of this form.
 `FirstOrder.Language.Sentence.realize_alls` and `FirstOrder.Language.Sentence.realize_exs`
 characterize satisfaction of the universal and existential closures of a bounded formula with no
 free variables as realization at every tuple or some tuple of bound variables, and
-`FirstOrder.Language.BoundedFormula.evalAtConstants` and
-`FirstOrder.Language.BoundedFormula.realize_evalAtConstants` evaluate those bound positions at the
-adjoined constants of `L[[Fin n]]`.
+`FirstOrder.Language.BoundedFormula.realize_evalAtConstants` characterizes satisfaction of
+`BoundedFormula.evalAtConstants` at the adjoined constants of `L[[Fin n]]`.
 
 `FirstOrder.Language.Sentence.realize_ex_bdEqual_self_iff` says that a sentence `∃ x, t = t`,
 such as `∃ x, x = x`, holds exactly in the nonempty structures.
@@ -74,54 +73,6 @@ theorem Sentence.realize_ex_bdEqual_self_iff {L : Language} {M : Type*} [L.Struc
 namespace BoundedFormula
 
 variable {L : Language} {n : ℕ}
-
-/-- Convert a bounded formula with no free variables into a sentence of `L[[Fin n]]` evaluating
-its bound positions at the adjoined constants. -/
-def evalAtConstants (φ : L.BoundedFormula Empty n) : L[[Fin n]].Sentence :=
-  Formula.equivSentence (φ.toFormula.relabel (Sum.elim Empty.elim id))
-
-/-- Unfolding lemma for `BoundedFormula.evalAtConstants`. -/
-theorem evalAtConstants_def (φ : L.BoundedFormula Empty n) :
-    φ.evalAtConstants = Formula.equivSentence (φ.toFormula.relabel (Sum.elim Empty.elim id)) :=
-  (rfl)
-
-@[simp]
-theorem evalAtConstants_falsum : (falsum : L.BoundedFormula Empty n).evalAtConstants = falsum := by
-  simp only [evalAtConstants_def, toFormula, Formula.relabel_falsum, Formula.equivSentence_falsum]
-
-@[simp]
-theorem evalAtConstants_bot : (⊥ : L.BoundedFormula Empty n).evalAtConstants = ⊥ :=
-  evalAtConstants_falsum
-
-@[simp]
-theorem evalAtConstants_imp (φ ψ : L.BoundedFormula Empty n) :
-    (φ.imp ψ).evalAtConstants = φ.evalAtConstants.imp ψ.evalAtConstants := by
-  simp only [evalAtConstants_def, toFormula, Formula.relabel_imp, Formula.equivSentence_imp]
-
-@[simp]
-theorem evalAtConstants_not (φ : L.BoundedFormula Empty n) :
-    φ.not.evalAtConstants = φ.evalAtConstants.not := by
-  rw [BoundedFormula.not, evalAtConstants_imp, evalAtConstants_bot, Formula.not, BoundedFormula.not]
-
-@[simp]
-theorem evalAtConstants_top : (⊤ : L.BoundedFormula Empty n).evalAtConstants = ⊤ :=
-  evalAtConstants_not ⊥
-
-@[simp]
-theorem evalAtConstants_inf (φ ψ : L.BoundedFormula Empty n) :
-    (φ ⊓ ψ).evalAtConstants = φ.evalAtConstants ⊓ ψ.evalAtConstants := by
-  simp only [Min.min, evalAtConstants_not, evalAtConstants_imp]
-
-@[simp]
-theorem evalAtConstants_sup (φ ψ : L.BoundedFormula Empty n) :
-    (φ ⊔ ψ).evalAtConstants = φ.evalAtConstants ⊔ ψ.evalAtConstants := by
-  simp only [Max.max, evalAtConstants_not, evalAtConstants_imp]
-
-@[simp]
-theorem evalAtConstants_iff (φ ψ : L.BoundedFormula Empty n) :
-    (φ.iff ψ).evalAtConstants = φ.evalAtConstants.iff ψ.evalAtConstants := by
-  rw [BoundedFormula.iff, evalAtConstants_inf, evalAtConstants_imp, evalAtConstants_imp,
-    Formula.iff, BoundedFormula.iff]
 
 /-- A closed bounded formula evaluated at the adjoined constants of `L[[Fin n]]` holds in an
 expansion iff the formula holds at the interpretations of those constants. -/

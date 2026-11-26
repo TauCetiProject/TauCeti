@@ -386,23 +386,11 @@ theorem exists_isolating_namedType (k : ℕ) :
   Theory.exists_isolating_of_realized_in_every_countable_model.{0, 0, 0}
     distinctTheory_isSatisfiable fun M _ _ _ _ => exists_realize_namedType M k
 
--- Infinitary counterpart in the first-order image fragment: a partial type realized in every
--- countable nonempty model of a satisfiable theory is isolated in that fragment.
+-- Infinitary counterpart in the first-order image fragment via `Theoryω.isolatesIn_firstOrder_iff`.
 example (k : ℕ) :
     Theoryω.IsolatesIn (Fragment.firstOrder ConstLang)
       (BoundedFormula.toOmega '' distinctTheory)
-      (BoundedFormula.toOmega '' namedType k) := by
-  refine Theoryω.isolatesIn_of_realized_in_every_countable_model.{0, 0, 0}
-    (T := BoundedFormula.toOmega '' distinctTheory)
-    (p := BoundedFormula.toOmega '' namedType k)
-    Fragment.firstOrder_countable Fragment.formationClosed_firstOrder
-    (fun _ ⟨φ, _, hφ⟩ => hφ ▸ Fragment.toOmega_mem_firstOrder φ)
-    (Theoryω.isSatisfiable_image_toOmega_iff.2 distinctTheory_isSatisfiable)
-    (fun _ ⟨ψ, _, hψ⟩ => hψ ▸ Fragment.toOmega_mem_firstOrder ψ) ?_
-  intro M instS _ _ _ ho
-  let := instS
-  obtain ⟨a, ha⟩ := exists_realize_namedType M k
-  obtain ⟨_, ⟨ψ, hψ, rfl⟩, hψa⟩ := omitsType_iff.1 ho a
-  exact hψa ((BoundedFormula.realize_toInf ψ Empty.elim a).2 (ha ψ hψ))
+      (BoundedFormula.toOmega '' namedType k) :=
+  Theoryω.isolatesIn_firstOrder_iff.2 (exists_isolating_namedType k)
 
 end TauCeti.DistinctConstantsOmitting
