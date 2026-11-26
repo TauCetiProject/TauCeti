@@ -39,49 +39,37 @@ local instance factIsOpenTop (ι : Type) :
     Fact (∀ _ : ι, IsOpen ((⊤ : AddSubgroup (ZMod 2)) : Set (ZMod 2))) :=
   ⟨fun _ ↦ isOpen_univ⟩
 
-/-- Over a finite index set the normalization hypothesis holds vacuously. -/
-theorem eventually_count_top (ι : Type) [Finite ι] :
-    ∀ᶠ _ : ι in cofinite, (count : Measure (ZMod 2)) (⊤ : AddSubgroup (ZMod 2)) = 1 := by
-  simp [Filter.cofinite_eq_bot]
-
-/-- A constant function on `C₂` has counting integral twice its value. -/
-theorem integral_count_const (c : ℝ) : ∫ _ : ZMod 2, c ∂count = 2 * c := by
-  rw [integral_const, smul_eq_mul, measureReal_def, count_univ]
-  simp
+/-- Over a finite index set, `integral_restrictedAddHaar_finprod` applies to copies of `C₂` with
+counting measure and reference subgroup `C₂`. -/
+private theorem integral_finprod_count (ι : Type) [Finite ι] (f : ι → ZMod 2 → ℝ)
+    (h : ∀ᶠ _ : ι in cofinite, (count : Measure (ZMod 2)) (⊤ : AddSubgroup (ZMod 2)) = 1) :
+    ∫ x, ∏ᶠ i, f i (x i)
+      ∂restrictedAddHaar (fun _ : ι ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count) h =
+      ∏ᶠ i, ∫ y, f i y ∂count :=
+  integral_restrictedAddHaar_finprod _ _ h (by simp [Filter.cofinite_eq_bot])
 
 /-- With no factors, the empty product `1` has integral `1` over the one-point group. -/
 theorem integral_finprod_empty :
     ∫ x, ∏ᶠ i, (fun (_ : Empty) (_ : ZMod 2) ↦ (2 : ℝ)) i (x i)
       ∂restrictedAddHaar (fun _ : Empty ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count)
-        (eventually_count_top Empty) = 1 := by
-  have h := integral_restrictedAddHaar_finprod (𝕜 := ℝ)
-    (fun _ : Empty ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count) (eventually_count_top Empty)
-    (f := fun (_ : Empty) (_ : ZMod 2) ↦ (2 : ℝ)) (by simp [Filter.cofinite_eq_bot])
-  exact h.trans (finprod_of_isEmpty _)
+        (by simp [Filter.cofinite_eq_bot]) = 1 :=
+  (integral_finprod_count Empty (fun _ _ ↦ 2) _).trans (finprod_of_isEmpty _)
 
 /-- On one copy of `C₂` with counting measure, the constant function `2` has integral `4`. -/
 theorem integral_finprod_unit :
     ∫ x, ∏ᶠ i, (fun (_ : Unit) (_ : ZMod 2) ↦ (2 : ℝ)) i (x i)
       ∂restrictedAddHaar (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count)
-        (eventually_count_top Unit) = 4 := by
-  have h := integral_restrictedAddHaar_finprod (𝕜 := ℝ)
-    (fun _ : Unit ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count) (eventually_count_top Unit)
-    (f := fun (_ : Unit) (_ : ZMod 2) ↦ (2 : ℝ)) (by simp [Filter.cofinite_eq_bot])
-  refine h.trans ?_
-  rw [finprod_unique, integral_count_const]
-  norm_num
+        (by simp [Filter.cofinite_eq_bot]) = 4 := by
+  refine (integral_finprod_count Unit (fun _ _ ↦ 2) _).trans ?_
+  norm_num [finprod_unique]
 
 /-- On two copies of `C₂` with counting measure, the constants `2` and `3` have product integral
 `4 · 6 = 24`. -/
 theorem integral_finprod_two :
     ∫ x, ∏ᶠ i, (fun (i : Fin 2) (_ : ZMod 2) ↦ ![(2 : ℝ), 3] i) i (x i)
       ∂restrictedAddHaar (fun _ : Fin 2 ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count)
-        (eventually_count_top (Fin 2)) = 24 := by
-  have h := integral_restrictedAddHaar_finprod (𝕜 := ℝ)
-    (fun _ : Fin 2 ↦ (⊤ : AddSubgroup (ZMod 2))) (fun _ ↦ count) (eventually_count_top (Fin 2))
-    (f := fun (i : Fin 2) (_ : ZMod 2) ↦ ![(2 : ℝ), 3] i) (by simp [Filter.cofinite_eq_bot])
-  refine h.trans ?_
-  rw [finprod_eq_prod_of_fintype, Fin.prod_univ_two, integral_count_const, integral_count_const]
-  norm_num
+        (by simp [Filter.cofinite_eq_bot]) = 24 := by
+  refine (integral_finprod_count (Fin 2) (fun i _ ↦ ![2, 3] i) _).trans ?_
+  norm_num [finprod_eq_prod_of_fintype, Fin.prod_univ_two]
 
 end TauCeti.RestrictedProductIntegralChecks
