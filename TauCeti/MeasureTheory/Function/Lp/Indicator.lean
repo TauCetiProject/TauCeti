@@ -59,6 +59,8 @@ constant indicator classes it intersects the supporting sets.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
+* `ContinuousLinearMap.compLp_indicatorConstLp`: postcomposition with a continuous linear map
+  sends the indicator class of `c` to that of its image.
 * `ContinuousLinearMap.eq_zero_of_apply_indicatorConstLp_singleton`: a continuous linear map out of
   counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on singleton-supported vectors is zero.
 * `LinearMap.ext_linftyIndicator`: a continuous linear map out of real `L∞` is determined by its
@@ -386,6 +388,20 @@ namespace ContinuousLinearMap
 
 open MeasureTheory
 open scoped ENNReal
+
+/-- Postcomposition with a continuous (semi)linear map commutes with `indicatorConstLp`. -/
+@[simp]
+theorem compLp_indicatorConstLp {α 𝕜 𝕜' E F : Type*} [MeasurableSpace α] {μ : Measure α}
+    {p : ℝ≥0∞} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜' F] {σ : 𝕜 →+* 𝕜'}
+    [RingHomIsometric σ] (L : E →SL[σ] F) {s : Set α} (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
+    (c : E) : L.compLp (indicatorConstLp p hs hμs c) = indicatorConstLp p hs hμs (L c) := by
+  refine Lp.ext ?_
+  filter_upwards [L.coeFn_compLp (indicatorConstLp p hs hμs c),
+    (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs c) =ᵐ[μ] _),
+    (indicatorConstLp_coeFn : ⇑(indicatorConstLp p hs hμs (L c)) =ᵐ[μ] _)] with x hx₁ hx₂ hx₃
+  rw [hx₁, hx₂, hx₃]
+  exact (congrFun (Set.indicator_comp_of_zero (f := fun _ ↦ c) (map_zero L)) x).symm
 
 /-- A continuous linear map out of counting-measure `Lᵖ`, `p ≠ ∞`, that vanishes on all
 singleton-supported vectors is zero. No countability of the index space is needed. -/
