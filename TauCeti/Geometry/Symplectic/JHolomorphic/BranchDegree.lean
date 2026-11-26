@@ -10,6 +10,7 @@ public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.RiemannSurface
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Topology.Covering.Proper
+import TauCeti.Geometry.Manifold.ChartedSpace
 import TauCeti.Geometry.Manifold.Connected
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 
@@ -67,9 +68,26 @@ A proper local homeomorphism with Hausdorff domain is a covering map
 (`IsLocalHomeomorph.isCoveringMap_of_isProperMap`), and a proper covering map has finite fibres
 (`IsCoveringMap.isProperMap_iff_finite_fiber`).
 
+The quotient `S / Γ` of McDuff–Salamon's construction is taken by the closure `Γ` of `Γ₀` in
+`S × S` (`TauCeti.coincidentBranchClosure`), which also relates the points of the finite set `B`.
+When `S` is compact, connected and Hausdorff and `u` is nonconstant, `Γ` is an equivalence relation
+on `S` (`TauCeti.equivalence_coincidentBranchClosure`) with finite classes, `B` is a union of
+classes, and off `B` the relation `Γ` is `Γ₀`. Reflexivity holds since `B` is finite, so every
+point is a limit of points of `S \ B`. Transitivity at a point `b ∈ B` rests on the fact that `Γ`
+propagates to nearby points: if `a` is related to `b`, then every point near `b` outside `B` has a
+coincident branch near `a`
+(`TauCeti.eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure`).
+Indeed, choose a closed neighbourhood `T` of `a` meeting the fibre `u⁻¹(u b)` only at `a`, and a
+connected punctured neighbourhood `P` of `b` avoiding `B` whose fibres stay in `interior T ∪ Tᶜ`.
+The points of `P` with a coincident branch in `interior T` form an open subset of `P`, by
+continuation of factorizations, and a closed one, since points unrelated to the compact set `T`
+stay unrelated to it. This subset is not empty, as `(a, b)` is a limit of pairs of `Γ₀`, so it is
+all of `P`.
+
 ## Main definitions
 
 * `TauCeti.coincidentBranches`: the coincident-branch relation `Γ₀ ⊆ (S \ B) × (S \ B)`.
+* `TauCeti.coincidentBranchClosure`: its closure `Γ` in `S × S`.
 
 ## Main results
 
@@ -89,6 +107,13 @@ A proper local homeomorphism with Hausdorff domain is a covering map
   the first projection of `Γ₀` is a covering map with finite fibres.
 * `TauCeti.exists_pos_forall_ncard_preimage_fst_coincidentBranches`: when `S` is connected and `u`
   nonconstant, all its fibres have the same number `d ≥ 1` of points.
+* `TauCeti.mem_coincidentBranchClosure_iff_of_notMem`: off `B` the closure `Γ` is `Γ₀`.
+* `TauCeti.mem_criticalValuePreimage_iff_of_mem_coincidentBranchClosure`: `B` is invariant under
+  `Γ`.
+* `TauCeti.eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure`: `Γ` propagates to
+  the points near `b` outside `B`.
+* `TauCeti.equivalence_coincidentBranchClosure`: `Γ` is an equivalence relation on `S`.
+* `TauCeti.finite_setOf_mem_coincidentBranchClosure`: the classes of `Γ` are finite.
 
 ## References
 
@@ -459,5 +484,253 @@ theorem exists_pos_forall_ncard_preimage_fst_coincidentBranches [CompactSpace S]
       ((fun p : coincidentBranches I u ↦ p.val.1) ⁻¹' {z}).ncard = d := by
   obtain ⟨d, hd, h⟩ := exists_pos_forall_ncard_setOf_germFactorsThrough_eq hu hJu hne
   exact ⟨d, hd, fun z ↦ (ncard_preimage_fst_coincidentBranches z).trans (h z z.prop)⟩
+
+/-! ### The closure of the coincident-branch relation -/
+
+variable (I) in
+/-- **The closure `Γ` of the coincident-branch relation** of a map `u : S → N` from a Riemann
+surface: the closure in `S × S` of the pairs `(z, ζ)` with `z` outside the preimage
+`B = u⁻¹(u(Crit u))` of the critical values such that the branch of `u` at `z` factors
+holomorphically through the branch of `u` at `ζ`. These pairs are the coincident-branch relation
+`Γ₀` (`TauCeti.coincidentBranches`) seen in `S × S`
+(`TauCeti.coincidentBranchClosure_eq_closure_image`). For a nonconstant `C²` pseudoholomorphic
+map from a compact connected Hausdorff Riemann surface, `Γ` is an equivalence relation on `S`
+(`TauCeti.equivalence_coincidentBranchClosure`) with finite classes, which agrees with `Γ₀` off
+`B`. -/
+def coincidentBranchClosure (u : S → N) : Set (S × S) :=
+  closure {p | p.1 ∉ criticalValuePreimage I u ∧ GermFactorsThrough u p.1 u p.2}
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- Unfold `TauCeti.coincidentBranchClosure`. -/
+theorem coincidentBranchClosure_def :
+    coincidentBranchClosure I u =
+      closure {p | p.1 ∉ criticalValuePreimage I u ∧ GermFactorsThrough u p.1 u p.2} :=
+  (rfl)
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- The closure `Γ` of the coincident-branch relation is the closure in `S × S` of the
+coincident-branch relation `Γ₀ ⊆ (S \ B) × (S \ B)`. -/
+theorem coincidentBranchClosure_eq_closure_image :
+    coincidentBranchClosure I u = closure ((fun p : ↥(criticalValuePreimage I u)ᶜ ×
+      ↥(criticalValuePreimage I u)ᶜ ↦ ((p.1 : S), (p.2 : S))) '' coincidentBranches I u) := by
+  refine congrArg closure (Subset.antisymm (fun p hp ↦ ?_) ?_)
+  · exact ⟨(⟨p.1, hp.1⟩, ⟨p.2, hp.2.notMem_criticalValuePreimage hp.1⟩), hp.2, rfl⟩
+  · rintro _ ⟨q, hq, rfl⟩
+    exact ⟨q.1.prop, hq⟩
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- The closure `Γ` of the coincident-branch relation is closed. -/
+theorem isClosed_coincidentBranchClosure : IsClosed (coincidentBranchClosure I u) :=
+  isClosed_closure
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- Coincident branches at a point outside `B = u⁻¹(u(Crit u))` are related by the closure `Γ`
+of the coincident-branch relation. -/
+theorem mem_coincidentBranchClosure_of_germFactorsThrough {z ζ : S}
+    (hz : z ∉ criticalValuePreimage I u) (h : GermFactorsThrough u z u ζ) :
+    (z, ζ) ∈ coincidentBranchClosure I u :=
+  subset_closure ⟨hz, h⟩
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- Points related by the closure `Γ` of the coincident-branch relation of a continuous map into a
+Hausdorff space have the same image. -/
+theorem apply_eq_of_mem_coincidentBranchClosure [T2Space N] (hu : Continuous u) {p : S × S}
+    (hp : p ∈ coincidentBranchClosure I u) : u p.1 = u p.2 :=
+  closure_minimal (s := {q : S × S | q.1 ∉ criticalValuePreimage I u ∧
+    GermFactorsThrough u q.1 u q.2})
+    (t := {q : S × S | u q.1 = u q.2}) (fun _ hq ↦ GermFactorsThrough.apply_eq hq.2)
+    (isClosed_eq (hu.comp continuous_fst) (hu.comp continuous_snd)) hp
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- **The preimage of the critical values is invariant under `Γ`.** A point related by the
+closure `Γ` of the coincident-branch relation to a point of `B = u⁻¹(u(Crit u))` lies in `B`. -/
+theorem mem_criticalValuePreimage_iff_of_mem_coincidentBranchClosure [T2Space N]
+    (hu : Continuous u) {p : S × S} (hp : p ∈ coincidentBranchClosure I u) :
+    p.1 ∈ criticalValuePreimage I u ↔ p.2 ∈ criticalValuePreimage I u :=
+  mem_criticalValuePreimage_iff_of_apply_eq (apply_eq_of_mem_coincidentBranchClosure hu hp)
+
+/-- **Off the critical values, `Γ` is the coincident-branch relation.** For a `C²`
+pseudoholomorphic map into a Hausdorff almost complex manifold and a point `z` outside
+`B = u⁻¹(u(Crit u))`, the pair `(z, ζ)` lies in the closure `Γ` of the coincident-branch relation
+exactly when the branch of `u` at `z` factors holomorphically through the branch of `u` at `ζ`. -/
+theorem mem_coincidentBranchClosure_iff_of_notMem [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) {z ζ : S}
+    (hz : z ∉ criticalValuePreimage I u) :
+    (z, ζ) ∈ coincidentBranchClosure I u ↔ GermFactorsThrough u z u ζ := by
+  refine ⟨fun h ↦ ?_, mem_coincidentBranchClosure_of_germFactorsThrough hz⟩
+  -- `ζ` has the value of `z`, so it is immersed, and the relation is closed at immersed points.
+  have hζ : ζ ∉ criticalValuePreimage I u :=
+    (mem_criticalValuePreimage_iff_of_mem_coincidentBranchClosure hu.continuous h).not.1 hz
+  exact germFactorsThrough_of_mem_closure hu hJu (hu.of_le one_le_two) hJu
+    (map_mem_closure (f := Prod.swap) continuous_swap h fun _ hq ↦ hq.2)
+    (mfderiv_ne_zero_of_notMem_criticalValuePreimage hζ)
+
+/-- **`Γ` is reflexive.** For a nonconstant `C¹` pseudoholomorphic map from a compact connected
+Riemann surface, every point `z` is related to itself by the closure `Γ` of the coincident-branch
+relation, being a limit of points outside the finite set `B = u⁻¹(u(Crit u))`. -/
+theorem mem_coincidentBranchClosure_self [CompactSpace S] [PreconnectedSpace S]
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (z : S) : (z, z) ∈ coincidentBranchClosure I u := by
+  have := ChartedSpace.t1Space ℂ S
+  have : PerfectSpace S := ChartedSpace.perfectSpace (H := ℂ)
+  -- Every neighbourhood of `z` is infinite, so it meets the complement of the finite set `B`.
+  have hz : z ∈ closure (criticalValuePreimage I u)ᶜ := mem_closure_iff_nhds.2 fun W hW ↦
+    ((infinite_of_mem_nhds z hW).sdiff (finite_criticalValuePreimage hu hJu hne)).nonempty
+  exact map_mem_closure (f := fun y ↦ (y, y)) (continuous_id.prodMk continuous_id) hz
+    fun y hy ↦ ⟨hy, .refl u y⟩
+
+/-- **`Γ` is symmetric.** For a `C²` pseudoholomorphic map, the closure `Γ` of the
+coincident-branch relation is invariant under `(z, ζ) ↦ (ζ, z)`. -/
+theorem swap_mem_coincidentBranchClosure (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) {p : S × S}
+    (hp : p ∈ coincidentBranchClosure I u) : p.swap ∈ coincidentBranchClosure I u :=
+  map_mem_closure (f := Prod.swap) continuous_swap hp fun _ hq ↦
+    ⟨hq.2.notMem_criticalValuePreimage hq.1, hq.2.symm (hu.of_le one_le_two) hJu hu hJu
+      (mfderiv_ne_zero_of_notMem_criticalValuePreimage hq.1)⟩
+
+/-- For a nonconstant pseudoholomorphic map from a compact connected Riemann surface, every point
+`a` has arbitrarily small closed neighbourhoods `T` such that, for any point `b`, every point with
+the value `u z` lies in `interior T` or outside `T` for all `z` near `b`. -/
+private theorem exists_isClosed_mem_nhds_eventually_preimage_subset [CompactSpace S]
+    [PreconnectedSpace S] [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂)
+    {a b : S} {W : Set S} (hW : W ∈ 𝓝 a) :
+    ∃ T ∈ 𝓝 a, IsClosed T ∧ T ⊆ W ∧ ∀ᶠ z in 𝓝 b, u ⁻¹' {u z} ⊆ interior T ∪ Tᶜ := by
+  have := ChartedSpace.t1Space ℂ S
+  -- A closed neighbourhood `T ⊆ W` of `a` meeting the finite fibre `u⁻¹(u b)` only at `a`.
+  have hF := finite_preimage_singleton_of_isPseudoholomorphic hu hJu hne (u b)
+  obtain ⟨T, hT, hTc, hTsub⟩ := exists_mem_nhds_isClosed_subset (inter_mem hW
+    ((hF.sdiff (t := {a})).isClosed.compl_mem_nhds fun h ↦ h.2 rfl))
+  have hFT : u ⁻¹' {u b} ⊆ interior T ∪ Tᶜ := fun y hy ↦ by
+    rcases eq_or_ne y a with rfl | hya
+    · exact Or.inl (mem_interior_iff_mem_nhds.2 hT)
+    · exact Or.inr fun hyT ↦ (hTsub hyT).2 ⟨hy, hya⟩
+  -- Near `u b` the fibres of `u` stay in `interior T ∪ Tᶜ`, since `u` is a closed map.
+  have hK : IsClosed (u '' (interior T ∪ Tᶜ)ᶜ) := hu.continuous.isClosedMap _
+    (isOpen_interior.union hTc.isOpen_compl).isClosed_compl
+  refine ⟨T, hT, hTc, fun y hy ↦ (hTsub hy).1, ?_⟩
+  filter_upwards [hu.continuous.continuousAt.preimage_mem_nhds
+    (hK.isOpen_compl.mem_nhds fun ⟨y, hy, hyb⟩ ↦ hy (hFT hyb))] with z hz y hy
+  by_contra h
+  exact hz ⟨y, h, hy⟩
+
+/-- Let `T` be a closed subset of a compact Riemann surface and `z` a point outside
+`B = u⁻¹(u(Crit u))` whose fibre lies in `interior T ∪ Tᶜ`. If the branch of `u` at `z` factors
+through its branch at no point of `interior T`, the same holds at every point near `z`. -/
+private theorem eventually_not_exists_germFactorsThrough_of_preimage_subset [CompactSpace S]
+    [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) {T : Set S} (hTc : IsClosed T) {z : S}
+    (hzB : z ∉ criticalValuePreimage I u) (hzT : u ⁻¹' {u z} ⊆ interior T ∪ Tᶜ)
+    (hz : ¬∃ ζ ∈ interior T, GermFactorsThrough u z u ζ) :
+    ∀ᶠ y in 𝓝 z, ¬∃ ζ ∈ interior T, GermFactorsThrough u y u ζ := by
+  -- The branch at `z` factors through no branch at a point of `T`: such a point has the value of
+  -- `z`, so it lies in `interior T`.
+  have hzT' : ∀ y ∈ T, ¬GermFactorsThrough u z u y := fun y hyT hzy ↦
+    hz ⟨y, (hzT hzy.apply_eq.symm).resolve_right (not_not.2 hyT), hzy⟩
+  filter_upwards [eventually_forall_not_germFactorsThrough_of_isCompact hu hJu (hu.of_le one_le_two)
+    hJu hTc.isCompact hzT' fun y _ hy ↦ mfderiv_ne_zero_of_notMem_criticalValuePreimage
+      ((mem_criticalValuePreimage_iff_of_apply_eq hy).not.2 hzB)] with y hy ⟨ζ, hζ, hyζ⟩
+  exact hy ζ (interior_subset hζ) hyζ
+
+/-- **The relation `Γ` propagates to nearby points.** Let `u` be a nonconstant `C²`
+pseudoholomorphic map from a compact connected Hausdorff Riemann surface into a Hausdorff almost
+complex manifold, and let `a` and `b` be related by the closure `Γ` of the coincident-branch
+relation. For every neighbourhood `W` of `a`, the branch of `u` at every point `z` near `b` outside
+`B = u⁻¹(u(Crit u))` factors holomorphically through its branch at some point of `W`. -/
+theorem eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure [CompactSpace S]
+    [PreconnectedSpace S] [T2Space S] [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂)
+    {a b : S} (hab : (a, b) ∈ coincidentBranchClosure I u) {W : Set S} (hW : W ∈ 𝓝 a) :
+    ∀ᶠ z in 𝓝 b, z ∉ criticalValuePreimage I u → ∃ ζ ∈ W, GermFactorsThrough u z u ζ := by
+  have := ChartedSpace.t1Space ℂ S
+  set B := criticalValuePreimage I u
+  have hu₁ : ContMDiff 𝓘(ℝ, ℂ) I 1 u := hu.of_le one_le_two
+  have hval : u a = u b := apply_eq_of_mem_coincidentBranchClosure hu.continuous hab
+  by_cases hb : b ∉ B
+  · -- Off `B`, a factorization of the branch at `b` through the branch at `a` continues nearby.
+    have ha : a ∉ B := (mem_criticalValuePreimage_iff_of_apply_eq hval).not.2 hb
+    have hba : GermFactorsThrough u b u a :=
+      ((mem_coincidentBranchClosure_iff_of_notMem hu hJu ha).1 hab).symm hu₁ hJu hu hJu
+        (mfderiv_ne_zero_of_notMem_criticalValuePreimage ha)
+    filter_upwards [hba.eventually_exists_germFactorsThrough hW] with z hz _ using hz
+  rw [not_not] at hb
+  -- A closed neighbourhood `T ⊆ W` of `a`, and a connected punctured neighbourhood `V \ {b}` of
+  -- `b` avoiding `B` whose fibres lie in `interior T ∪ Tᶜ`.
+  obtain ⟨T, hT, hTc, hTW, hTfib⟩ :=
+    exists_isClosed_mem_nhds_eventually_preimage_subset (b := b) hu₁ hJu hne hW
+  obtain ⟨V, hV, hVU, hVc⟩ := exists_mem_nhds_subset_isConnected_sdiff_singleton (E := ℂ)
+    (by rw [Complex.rank_real_complex]; exact Nat.one_lt_ofNat) b (inter_mem hTfib
+      (((finite_criticalValuePreimage hu₁ hJu hne).sdiff (t := {b})).isClosed.compl_mem_nhds
+        fun h ↦ h.2 rfl))
+  have hP : ∀ z ∈ V, z ∉ B → z ∈ V \ {b} := fun z hzV hzB ↦ ⟨hzV, fun h ↦ hzB (h ▸ hb)⟩
+  -- The points with a coincident branch in `interior T` form an open set `R`, by continuation of
+  -- factorizations, whose complement is open near the points of `V \ {b}`, since points unrelated
+  -- to the compact set `T` stay unrelated to it.
+  set R := {z | ∃ ζ ∈ interior T, GermFactorsThrough u z u ζ}
+  have hRo : ∀ z ∈ R, R ∈ 𝓝 z := fun _ ⟨_, hζ, hzζ⟩ ↦
+    hzζ.eventually_exists_germFactorsThrough (isOpen_interior.mem_nhds hζ)
+  have hRc : ∀ z ∈ V \ {b}, z ∉ R → Rᶜ ∈ 𝓝 z := fun z hz hzR ↦
+    eventually_not_exists_germFactorsThrough_of_preimage_subset hu hJu hTc
+      (fun h ↦ (hVU hz.1).2 ⟨h, hz.2⟩) (hVU hz.1).1 hzR
+  -- `R` meets `V \ {b}`, as `a` and `b` are limits of related points, so it contains `V \ {b}`.
+  obtain ⟨⟨α, β⟩, ⟨hα, hβ⟩, hαB, hαβ⟩ := mem_closure_iff_nhds.1 hab _ (prod_mem_nhds
+    (isOpen_interior.mem_nhds (mem_interior_iff_mem_nhds.2 hT)) (interior_mem_nhds.2 hV))
+  have hβR : β ∈ R := ⟨α, hα, hαβ.symm hu₁ hJu hu hJu
+    (mfderiv_ne_zero_of_notMem_criticalValuePreimage hαB)⟩
+  have hPR : V \ {b} ⊆ interior R :=
+    hVc.isPreconnected.subset_left_of_subset_union isOpen_interior isOpen_interior
+      (disjoint_compl_right.mono interior_subset interior_subset)
+      (fun z hz ↦ (em (z ∈ R)).imp (fun h ↦ mem_interior_iff_mem_nhds.2 (hRo z h))
+        fun h ↦ mem_interior_iff_mem_nhds.2 (hRc z hz h))
+      ⟨β, hP β (interior_subset hβ) (hαβ.notMem_criticalValuePreimage hαB),
+        mem_interior_iff_mem_nhds.2 (hRo β hβR)⟩
+  filter_upwards [hV] with z hzV hzB
+  obtain ⟨ζ, hζ, hzζ⟩ := interior_subset (hPR (hP z hzV hzB))
+  exact ⟨ζ, hTW (interior_subset hζ), hzζ⟩
+
+/-- **`Γ` is transitive.** For a nonconstant `C²` pseudoholomorphic map `u` from a compact connected
+Hausdorff Riemann surface into a Hausdorff almost complex manifold, the closure `Γ` of the
+coincident-branch relation is transitive. -/
+theorem mem_coincidentBranchClosure_trans [CompactSpace S] [PreconnectedSpace S] [T2Space S]
+    [T2Space N]
+    (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
+    (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) {a b c : S} (hab : (a, b) ∈ coincidentBranchClosure I u)
+    (hbc : (b, c) ∈ coincidentBranchClosure I u) : (a, c) ∈ coincidentBranchClosure I u := by
+  refine mem_closure_iff_nhds.2 fun t ht ↦ ?_
+  obtain ⟨Wa, hWa, Wc, hWc, hWt⟩ := mem_nhds_prod_iff.1 ht
+  -- A point `β` near `b` related to a point `γ` near `c` is related to a point `α` near `a`.
+  obtain ⟨⟨β, γ⟩, ⟨hβ, hγ⟩, hβB, hβγ⟩ := mem_closure_iff_nhds.1 hbc _ (prod_mem_nhds
+    (eventually_exists_germFactorsThrough_of_mem_coincidentBranchClosure hu hJu hne hab hWa) hWc)
+  obtain ⟨α, hα, hβα⟩ := hβ hβB
+  exact ⟨(α, γ), hWt ⟨hα, hγ⟩, hβα.notMem_criticalValuePreimage hβB,
+    (hβα.symm (hu.of_le one_le_two) hJu hu hJu
+      (mfderiv_ne_zero_of_notMem_criticalValuePreimage hβB)).trans hβγ⟩
+
+/-- **The closure of the coincident-branch relation is an equivalence relation.** For a
+nonconstant `C²` pseudoholomorphic map `u` from a compact connected Hausdorff Riemann surface into
+a Hausdorff almost complex manifold, the closure `Γ` in `S × S` of the coincident-branch relation
+is an equivalence relation on `S`. Its classes are finite
+(`TauCeti.finite_setOf_mem_coincidentBranchClosure`), the preimage `B = u⁻¹(u(Crit u))` of the
+critical values is a union of classes
+(`TauCeti.mem_criticalValuePreimage_iff_of_mem_coincidentBranchClosure`), and off `B` it is the
+coincident-branch relation (`TauCeti.mem_coincidentBranchClosure_iff_of_notMem`). -/
+theorem equivalence_coincidentBranchClosure [CompactSpace S] [PreconnectedSpace S] [T2Space S]
+    [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) :
+    Equivalence fun z ζ : S ↦ (z, ζ) ∈ coincidentBranchClosure I u :=
+  ⟨mem_coincidentBranchClosure_self (hu.of_le one_le_two) hJu hne,
+    fun h ↦ swap_mem_coincidentBranchClosure hu hJu h,
+    mem_coincidentBranchClosure_trans hu hJu hne⟩
+
+/-- **The classes of `Γ` are finite.** For a nonconstant `C¹` pseudoholomorphic map from a compact
+connected Riemann surface into a Hausdorff almost complex manifold, each point is related to
+finitely many points by the closure `Γ` of the coincident-branch relation, since related points
+have the same image. -/
+theorem finite_setOf_mem_coincidentBranchClosure [CompactSpace S] [PreconnectedSpace S]
+    [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (z : S) :
+    {ζ | (z, ζ) ∈ coincidentBranchClosure I u}.Finite :=
+  (finite_preimage_singleton_of_isPseudoholomorphic hu hJu hne (u z)).subset fun _ hζ ↦
+    (apply_eq_of_mem_coincidentBranchClosure hu.continuous hζ).symm
 
 end TauCeti
