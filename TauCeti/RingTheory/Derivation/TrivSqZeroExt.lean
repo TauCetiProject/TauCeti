@@ -36,11 +36,75 @@ which keeps `B` an arbitrary semiring, where the ideal-general route through
 
 ## Main declarations
 
-* `derivationToTrivSqZeroExtEquivLift`: `R`-derivations `A → M` are equivalent to lifts
+* `Derivation.liftTrivSqZeroExt`: extend an `R`-derivation `A → M` along a compatible `R`-algebra
+  map `A →ₐ[R] B` into `TrivSqZeroExt B M`.
+* `TauCeti.derivationToTrivSqZeroExtEquivLift`: `R`-derivations `A → M` are equivalent to lifts
   `A →ₐ[R] TrivSqZeroExt B M` of the structure point along `TrivSqZeroExt.fstHom`.
 -/
 
 public section
+
+namespace Derivation
+
+open TrivSqZeroExt
+
+/-- Extend an `R`-derivation `d : Derivation R A M` along a compatible `R`-algebra map
+`ι : A →ₐ[R] B` into the trivial square-zero extension `TrivSqZeroExt B M`. This generalizes the
+forward construction of `TauCeti.derivationToTrivSqZeroExtEquivLift` from an algebra tower to an
+explicit structure map `ι` with compatible left and opposite scalar actions. -/
+def liftTrivSqZeroExt {R A B M : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+    [AddCommMonoid M] [Algebra R A] [Algebra R B]
+    [Module A M] [Module B M] [Module Bᵐᵒᵖ M] [SMulCommClass B Bᵐᵒᵖ M]
+    [Module R M] [IsScalarTower R B M] [IsScalarTower R Bᵐᵒᵖ M]
+    (d : Derivation R A M) (ι : A →ₐ[R] B)
+    (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
+    (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) :
+    A →ₐ[R] TrivSqZeroExt B M where
+  toFun a := inl (ι a) + inr (d a)
+  map_one' := by simp
+  map_mul' a b := by ext <;> simp [hsmul, hop]
+  map_zero' := by simp
+  map_add' a b := by ext <;> simp
+  commutes' r := by simp [algebraMap_eq_inl']
+
+/-- Value of `Derivation.liftTrivSqZeroExt` on an element `a : A`. -/
+lemma liftTrivSqZeroExt_apply {R A B M : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+    [AddCommMonoid M] [Algebra R A] [Algebra R B]
+    [Module A M] [Module B M] [Module Bᵐᵒᵖ M] [SMulCommClass B Bᵐᵒᵖ M]
+    [Module R M] [IsScalarTower R B M] [IsScalarTower R Bᵐᵒᵖ M]
+    (d : Derivation R A M) (ι : A →ₐ[R] B)
+    (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
+    (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) (a : A) :
+    d.liftTrivSqZeroExt ι hsmul hop a = inl (ι a) + inr (d a) := by
+  rfl
+
+/-- First component of `Derivation.liftTrivSqZeroExt` agrees with the structure map `ι`. -/
+@[simp]
+lemma liftTrivSqZeroExt_fst {R A B M : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+    [AddCommMonoid M] [Algebra R A] [Algebra R B]
+    [Module A M] [Module B M] [Module Bᵐᵒᵖ M] [SMulCommClass B Bᵐᵒᵖ M]
+    [Module R M] [IsScalarTower R B M] [IsScalarTower R Bᵐᵒᵖ M]
+    (d : Derivation R A M) (ι : A →ₐ[R] B)
+    (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
+    (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) (a : A) :
+    fst (d.liftTrivSqZeroExt ι hsmul hop a) = ι a := by
+  rw [liftTrivSqZeroExt_apply]
+  simp
+
+/-- Second component of `Derivation.liftTrivSqZeroExt` agrees with the derivation `d`. -/
+@[simp]
+lemma liftTrivSqZeroExt_snd {R A B M : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+    [AddCommMonoid M] [Algebra R A] [Algebra R B]
+    [Module A M] [Module B M] [Module Bᵐᵒᵖ M] [SMulCommClass B Bᵐᵒᵖ M]
+    [Module R M] [IsScalarTower R B M] [IsScalarTower R Bᵐᵒᵖ M]
+    (d : Derivation R A M) (ι : A →ₐ[R] B)
+    (hsmul : ∀ (a : A) (m : M), ι a • m = a • m)
+    (hop : ∀ (a : A) (m : M), MulOpposite.op (ι a) • m = a • m) (a : A) :
+    snd (d.liftTrivSqZeroExt ι hsmul hop a) = d a := by
+  rw [liftTrivSqZeroExt_apply]
+  simp
+
+end Derivation
 
 namespace TauCeti
 
@@ -64,14 +128,9 @@ variable {A B} in
 /-- A derivation extends the structure point of the tower to a point of the trivial
 square-zero extension: the value at `a` has first component `algebraMap A B a` and second
 component `d a`. -/
-private def liftOfDerivation (d : Derivation R A M) : A →ₐ[R] TrivSqZeroExt B M where
-  toFun a := inl (algebraMap A B a) + inr (d a)
-  map_one' := by simp
-  map_mul' a b := by ext <;> simp [← MulOpposite.algebraMap_apply]
-  map_zero' := by simp
-  map_add' a b := by ext <;> simp
-  commutes' r := by
-    simp [algebraMap_eq_inl', IsScalarTower.algebraMap_apply R A B]
+private def liftOfDerivation (d : Derivation R A M) : A →ₐ[R] TrivSqZeroExt B M :=
+  d.liftTrivSqZeroExt (IsScalarTower.toAlgHom R A B)
+    (fun a m ↦ by simp [algebraMap_smul]) (fun a m ↦ by simp [← MulOpposite.algebraMap_apply])
 
 /-- Lifting the structure point of an algebra to a trivial square-zero extension is the same
 as giving a derivation: the equivalence between `R`-derivations `A → M` and points
