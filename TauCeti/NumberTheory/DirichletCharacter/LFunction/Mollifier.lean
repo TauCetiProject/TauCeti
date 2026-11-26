@@ -31,7 +31,7 @@ open Complex Complex.HadamardThreeLines Filter Set
 open TauCeti.Complex.HadamardThreeLines (closure_verticalStrip)
 open scoped Topology
 
-namespace DirichletCharacter
+namespace TauCeti.DirichletCharacter
 
 /-- The discrepancy of the mollified completion is continuous on the closed strip,
 holomorphic in its interior, and bounded. -/
@@ -51,7 +51,8 @@ private theorem mollified_discrepancy_on_strip {N : ℕ} [NeZero N]
     have h := (χ.analyticAt_gammaFactor_of_re_pos
       ((by norm_num : (0 : ℝ) < 1 / 2).trans_le hz.1)).differentiableAt
     exact ((h.div_const 2).pow 2).differentiableWithinAt
-  refine ⟨(((differentiable_completedLFunction hχ).div_const 2).diffContOnCl.smul hM).sub hΓd, ?_⟩
+  have hLd := _root_.DirichletCharacter.differentiable_completedLFunction hχ
+  refine ⟨((hLd.div_const 2).diffContOnCl.smul hM).sub hΓd, ?_⟩
   obtain ⟨L, hL, hLb⟩ := exists_norm_completedLFunction_le_of_re_mem_Icc hχ (b := 2)
     (by norm_num : (0 : ℝ) < 1 / 2)
   obtain ⟨B, hB⟩ := hMb
@@ -153,4 +154,4 @@ theorem eventually_LFunction_ne_zero_of_mollifier_bounds (D H : ℝ) {δ : ℝ} 
   have hupper := hC hχ hT hδ.le hM hMb hleftL hleftM hright hs hzero
   exact (hlower.trans hupper).not_gt hsmall
 
-end DirichletCharacter
+end TauCeti.DirichletCharacter

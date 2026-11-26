@@ -18,7 +18,9 @@ of linear growth in the norm of the argument.
 
 public section
 
-namespace Complex
+open Complex
+
+namespace TauCeti.Complex
 
 /-- `Γ_ℝ(z)` is bounded by a strip-dependent constant times `(1 + ‖z‖)⁻¹` on a closed
 vertical strip strictly to the right of zero. -/
@@ -47,4 +49,4 @@ theorem exists_norm_Gammaℝ_mul_one_add_norm_le_of_re_mem_Icc {a b : ℝ} (ha :
     _ = ‖Gammaℝ z‖ * ‖z‖ * (1 + ‖z‖⁻¹) := by field_simp; ring
     _ ≤ _ := mul_le_mul hB (add_le_add_right hzA _) (by positivity) (by positivity)
 
-end Complex
+end TauCeti.Complex

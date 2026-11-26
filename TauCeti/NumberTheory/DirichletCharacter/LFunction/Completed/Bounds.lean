@@ -22,14 +22,15 @@ public section
 
 open Complex Set
 
-namespace DirichletCharacter
+namespace TauCeti.DirichletCharacter
 
 /-- The gamma factor of a Dirichlet character absorbs linear growth on a closed strip to the
 right of zero, with a constant independent of the modulus and parity. -/
 theorem exists_norm_gammaFactor_mul_one_add_norm_le {a b : ℝ} (ha : 0 < a) :
     ∃ C > 0, ∀ {N : ℕ} (χ : DirichletCharacter ℂ N) {z : ℂ}, z.re ∈ Icc a b →
       ‖χ.gammaFactor z‖ * (1 + ‖z‖) ≤ C := by
-  obtain ⟨C, hC, hΓ⟩ := exists_norm_Gammaℝ_mul_one_add_norm_le_of_re_mem_Icc (b := b + 1) ha
+  obtain ⟨C, hC, hΓ⟩ :=
+    TauCeti.Complex.exists_norm_Gammaℝ_mul_one_add_norm_le_of_re_mem_Icc (b := b + 1) ha
   refine ⟨2 * C, by positivity, fun {_} χ {z} hz ↦ ?_⟩
   rcases χ.even_or_odd with he | ho
   · rw [he.gammaFactor_def]
@@ -46,15 +47,6 @@ theorem exists_norm_gammaFactor_mul_one_add_norm_le {a b : ℝ} (ha : 0 < a) :
         linarith [norm_nonneg (z + 1)]
       _ = 2 * (‖Gammaℝ (z + 1)‖ * (1 + ‖z + 1‖)) := by ring
       _ ≤ _ := by gcongr; exact hΓ _ hshift
-
-/-- The completed L-function is the gamma factor times the L-function on the open right
-half-plane, with the same totalized values as Mathlib at `1`. -/
-theorem completedLFunction_eq_gammaFactor_mul_LFunction {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) {z : ℂ} (hz : 0 < z.re) :
-    χ.completedLFunction z = χ.gammaFactor z * χ.LFunction z := by
-  have hz0 : z ≠ 0 := by rintro rfl; simp at hz
-  rw [χ.LFunction_eq_completed_div_gammaFactor z (.inl hz0)]
-  exact (mul_div_cancel₀ _ (χ.gammaFactor_ne_zero_of_re_pos hz)).symm
 
 /-- The completed L-function of a nonprincipal character is bounded on every closed vertical
 strip strictly to the right of zero. -/
@@ -98,4 +90,4 @@ theorem exists_pos_le_norm_gammaFactor_on_isCompact {K : Set ℂ} (hK : IsCompac
   · rw [ho.gammaFactor_def]
     exact hmin (mem_insert_of_mem _ (Or.inr (mem_image_of_mem _ hz)))
 
-end DirichletCharacter
+end TauCeti.DirichletCharacter
