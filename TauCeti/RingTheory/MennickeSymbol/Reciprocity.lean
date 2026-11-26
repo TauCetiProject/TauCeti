@@ -63,58 +63,37 @@ section UnitsHom
 
 variable {a : A} (ha : a - 1 ∈ I)
 
-/-- The pair `(a, b (1 - a))` attached to an element `b` coprime to `a`. -/
-private def pairMulOneSub {b : A} (hb : IsCoprime a b) : MennickePair I where
-  fst := a
-  snd := b * (1 - a)
-  fst_sub_one_mem := ha
-  snd_mem := I.mul_mem_left b (sub_mem_comm_iff.mp ha)
-  isCoprime := hb.mul_right ⟨1, 1, by ring⟩
-
 /-- `[b (1 - a) / a] = [b q / a]` whenever `q ∈ I` and `q ∣ a - 1`. -/
-private theorem of_pairMulOneSub_eq {b : A} (hb : IsCoprime a b) {q : A} (hq : q ∈ I)
+private theorem of_mulOneSub_eq {b : A} (hb : IsCoprime a b) {q : A} (hq : q ∈ I)
     (hqa : q ∣ a - 1) {p : MennickePair I} (hp₁ : p.fst = a) (hp₂ : p.snd = b * q) :
-    of (pairMulOneSub ha hb) = of p := by
-  -- `[b q / a] = [b q (1 - a) / a] = [b (1 - a) / a] [q / a]`, and `[q / a]` is trivial because
-  -- `a ≡ 1` modulo `q`.
-  have hs := isMennickeSymbol_of (I := I)
-  obtain ⟨k, hk⟩ := hqa
-  let r : MennickePair I := ⟨a, q, ha, hq, ⟨1, -k, by linear_combination hk⟩⟩
-  have hr : of r = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨k, hk⟩
-  calc of (pairMulOneSub ha hb) = of (pairMulOneSub ha hb) * of r := by rw [hr, mul_one]
-    _ = of p := (hs.map_mulSnd (pairMulOneSub ha hb) r rfl).symm.trans
-      (hs.map_eq_of_snd_eq_mul_one_sub (by simp [pairMulOneSub, hp₁])
-        (by simp [pairMulOneSub, r, hp₁, hp₂]; ring))
+    of (.mulOneSub ha hb) = of p :=
+  -- `[b (1 - a) / a] = [b q (1 - a) / a] = [b q / a]`, since `a ≡ 1` modulo `q`.
+  (isMennickeSymbol_of.map_eq_of_snd_eq_mul_of_dvd (p := .mulOneSub ha hb)
+    (q := .mulOneSub p.fst_sub_one_mem p.isCoprime) hq (by simpa using hqa) (by simp [hp₁])
+    (by simp [hp₁, hp₂]; ring)).symm.trans
+    (isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub (by simp) (by simp))
 
 /-- `[b (1 - a) / a]` only depends on the residue of `b` modulo `a`. -/
-private theorem of_pairMulOneSub_congr {b b' : A} (hb : IsCoprime a b) (hb' : IsCoprime a b')
-    (h : b' - b ∈ span {a}) : of (pairMulOneSub ha hb') = of (pairMulOneSub ha hb) := by
+private theorem of_mulOneSub_congr {b b' : A} (hb : IsCoprime a b) (hb' : IsCoprime a b')
+    (h : b' - b ∈ span {a}) : of (.mulOneSub ha hb') = of (.mulOneSub ha hb) := by
   obtain ⟨k, hk⟩ := mem_span_singleton'.mp h
-  refine isMennickeSymbol_of.map_eq_of_snd_eq rfl
+  refine isMennickeSymbol_of.map_eq_of_snd_eq (by simp)
     (I.mul_mem_left k (sub_mem_comm_iff.mp ha)) ?_
-  simp only [pairMulOneSub]
+  simp only [MennickePair.mulOneSub_snd, MennickePair.mulOneSub_fst]
   linear_combination (1 - a) * hk.symm
 
 /-- `[b b' (1 - a) / a] = [b (1 - a) / a] [b' (1 - a) / a]`. -/
-private theorem of_pairMulOneSub_mul {b b' : A} (hb : IsCoprime a b) (hb' : IsCoprime a b') :
-    of (pairMulOneSub ha (hb.mul_right hb')) =
-      of (pairMulOneSub ha hb) * of (pairMulOneSub ha hb') :=
+private theorem of_mulOneSub_mul {b b' : A} (hb : IsCoprime a b) (hb' : IsCoprime a b') :
+    of (.mulOneSub ha (hb.mul_right hb')) = of (.mulOneSub ha hb) * of (.mulOneSub ha hb') :=
   -- The product `b (1 - a) b' (1 - a)` is `b b' (1 - a)` times `1 - a`.
   (isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub
-    (q := (pairMulOneSub ha hb).mulSnd (pairMulOneSub ha hb') rfl)
-    (p := pairMulOneSub ha (hb.mul_right hb')) (by simp [pairMulOneSub])
-    (by simp [pairMulOneSub]; ring)).symm.trans
-    (isMennickeSymbol_of.map_mulSnd (pairMulOneSub ha hb) (pairMulOneSub ha hb') rfl)
+    (q := (MennickePair.mulOneSub ha hb).mulSnd (.mulOneSub ha hb') (by simp))
+    (p := .mulOneSub ha (hb.mul_right hb')) (by simp) (by simp; ring)).symm.trans
+    (isMennickeSymbol_of.map_mulSnd (.mulOneSub ha hb) (.mulOneSub ha hb') _)
 
-/-- A representative in `A` of a residue class modulo `a`. -/
-private noncomputable def rep (x : A ⧸ span {a}) : A :=
-  Function.surjInv Quotient.mk_surjective x
-
-private theorem mk_rep (x : A ⧸ span {a}) : Quotient.mk (span {a}) (rep x) = x :=
-  Function.surjInv_eq Quotient.mk_surjective x
-
-private theorem isCoprime_rep (u : (A ⧸ span {a})ˣ) : IsCoprime a (rep (u : A ⧸ span {a})) :=
-  Quotient.isUnit_mk_span_singleton_iff.mp (by rw [mk_rep]; exact u.isUnit)
+private theorem isCoprime_out (u : (A ⧸ span {a})ˣ) :
+    IsCoprime a (Quotient.out (u : A ⧸ span {a})) :=
+  Quotient.isUnit_mk_span_singleton_iff.mp (by rw [Quotient.mk_out]; exact u.isUnit)
 
 /-- The **Mennicke symbol on residues** with denominator `a ≡ 1` modulo `I`: the homomorphism
 `(A ⧸ aA)ˣ →* C_I` sending the residue of `b` to `[b (1 - a) / a]`. By
@@ -122,18 +101,22 @@ private theorem isCoprime_rep (u : (A ⧸ span {a})ˣ) : IsCoprime a (rep (u : A
 `a ≡ 1` modulo `q`, and by `Ideal.MennickeGroup.unitsHom_apply_eq_of` it sends the residue of
 `b ∈ I` to `[b/a]`. -/
 noncomputable def unitsHom : (A ⧸ span {a})ˣ →* MennickeGroup I where
-  toFun u := of (pairMulOneSub ha (isCoprime_rep u))
-  map_one' := (of_pairMulOneSub_congr ha isCoprime_one_right (isCoprime_rep 1)
-      (Quotient.eq.mp (by rw [mk_rep, Units.val_one, map_one]))).trans
-    (isMennickeSymbol_of.map_eq_one_of_dvd_fst_sub isUnit_one ⟨-1, by simp [pairMulOneSub]⟩)
-  map_mul' u v := (of_pairMulOneSub_congr ha ((isCoprime_rep u).mul_right (isCoprime_rep v))
-      (isCoprime_rep (u * v))
-      (Quotient.eq.mp (by rw [mk_rep, map_mul, mk_rep, mk_rep, Units.val_mul]))).trans
-    (of_pairMulOneSub_mul ha _ _)
+  toFun u := of (.mulOneSub ha (isCoprime_out u))
+  map_one' := (of_mulOneSub_congr ha isCoprime_one_right (isCoprime_out 1)
+      (Quotient.eq.mp (by rw [Quotient.mk_out, Units.val_one, map_one]))).trans
+    (isMennickeSymbol_of.map_eq_one_of_dvd_fst_sub isUnit_one ⟨-1, by simp⟩)
+  map_mul' u v := (of_mulOneSub_congr ha ((isCoprime_out u).mul_right (isCoprime_out v))
+      (isCoprime_out (u * v))
+      (Quotient.eq.mp (by rw [Quotient.mk_out, map_mul, Quotient.mk_out, Quotient.mk_out,
+        Units.val_mul]))).trans
+    (of_mulOneSub_mul ha _ _)
 
-private theorem unitsHom_apply_def (u : (A ⧸ span {a})ˣ) :
-    unitsHom ha u = of (pairMulOneSub ha (isCoprime_rep u)) :=
-  (rfl)
+/-- `unitsHom` sends the residue of `b` to `[b (1 - a) / a]`. -/
+private theorem unitsHom_apply_eq_of_mulOneSub {u : (A ⧸ span {a})ˣ} {b : A}
+    (hu : (u : A ⧸ span {a}) = Quotient.mk (span {a}) b) :
+    ∃ hb : IsCoprime a b, unitsHom ha u = of (.mulOneSub ha hb) :=
+  have hb : IsCoprime a b := Quotient.isUnit_mk_span_singleton_iff.mp (hu ▸ u.isUnit)
+  ⟨hb, of_mulOneSub_congr ha hb (isCoprime_out u) (by rw [← Quotient.eq, Quotient.mk_out, hu])⟩
 
 /-- **The value of `unitsHom` with an arbitrary auxiliary element.** If `q ∈ I` and `a ≡ 1` modulo
 `q`, then `unitsHom` sends the residue of `b` to `[b q / a]`; in particular this symbol does not
@@ -141,26 +124,22 @@ depend on `q`, nor on the representative `b`. -/
 theorem unitsHom_apply {u : (A ⧸ span {a})ˣ} {b : A}
     (hu : (u : A ⧸ span {a}) = Quotient.mk (span {a}) b) {q : A} (hq : q ∈ I) (hqa : q ∣ a - 1)
     {p : MennickePair I} (hp₁ : p.fst = a) (hp₂ : p.snd = b * q) : unitsHom ha u = of p := by
-  have hb : IsCoprime a b := Quotient.isUnit_mk_span_singleton_iff.mp (hu ▸ u.isUnit)
-  rw [unitsHom_apply_def,
-    of_pairMulOneSub_congr ha hb (isCoprime_rep u) (by rw [← Quotient.eq, mk_rep, hu]),
-    of_pairMulOneSub_eq ha hb hq hqa hp₁ hp₂]
+  obtain ⟨hb, h⟩ := unitsHom_apply_eq_of_mulOneSub ha hu
+  rw [h, of_mulOneSub_eq ha hb hq hqa hp₁ hp₂]
 
 /-- `unitsHom` sends the residue of the second entry of a pair `(a, b)` to `[b/a]`. -/
 theorem unitsHom_apply_eq_of {u : (A ⧸ span {a})ˣ} {p : MennickePair I} (hp : p.fst = a)
     (hu : (u : A ⧸ span {a}) = Quotient.mk (span {a}) p.snd) : unitsHom ha u = of p := by
-  rw [unitsHom_apply ha hu (q := 1 - a) (sub_mem_comm_iff.mp ha) ⟨-1, by ring⟩
-    (p := ⟨a, p.snd * (1 - a), ha, I.mul_mem_right _ p.snd_mem,
-      (by rw [← hp]; exact p.isCoprime.mul_right ⟨1, 1, by ring⟩)⟩) rfl rfl]
-  exact isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub hp.symm (by dsimp only; rw [hp])
+  obtain ⟨hb, h⟩ := unitsHom_apply_eq_of_mulOneSub ha hu
+  rw [h]
+  exact isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub (by simp [hp]) (by simp [hp])
 
 /-- `unitsHom` kills the global units: it is trivial on the residue of a unit of `A`. -/
 theorem unitsHom_apply_eq_one_of_isUnit {u : (A ⧸ span {a})ˣ} {v : A} (hv : IsUnit v)
     (hu : (u : A ⧸ span {a}) = Quotient.mk (span {a}) v) : unitsHom ha u = 1 := by
-  have hb : IsCoprime a v := Quotient.isUnit_mk_span_singleton_iff.mp (hu ▸ u.isUnit)
-  rw [unitsHom_apply_def,
-    of_pairMulOneSub_congr ha hb (isCoprime_rep u) (by rw [← Quotient.eq, mk_rep, hu])]
-  exact isMennickeSymbol_of.map_eq_one_of_dvd_snd_sub hv ⟨-v, by simp [pairMulOneSub]; ring⟩
+  obtain ⟨hb, h⟩ := unitsHom_apply_eq_of_mulOneSub ha hu
+  rw [h]
+  exact isMennickeSymbol_of.map_eq_one_of_dvd_snd_sub hv ⟨-v, by simp; ring⟩
 
 /-- Every generator `[b/a]` with denominator `a` lies in the image of `unitsHom`. -/
 theorem of_mem_range_unitsHom {p : MennickePair I} (hp : p.fst = a) :
@@ -201,8 +180,6 @@ theorem reciprocity (hs : IsMennickeSymbol s) {p p' : MennickePair I} {q : A}
   -- With `d = p.fst`, `a = p'.fst` and `e = a - d`, both symbols reduce to `[e/a]`:
   -- `[a q / d] = [q (a - d) / d] = [q/d] [e/d] = [e/a]` and
   -- `[d q / a] = [q (d - a) / a] = [q/a] [-e/a] = [e/a]`.
-  obtain ⟨k, hk⟩ := hq
-  obtain ⟨k', hk'⟩ := hq'
   have hqI : q ∈ I := by
     rw [show q = p.snd - (p'.fst - 1) * q by rw [hp]; ring]
     exact I.sub_mem p.snd_mem (I.mul_mem_right _ p'.fst_sub_one_mem)
@@ -213,9 +190,6 @@ theorem reciprocity (hs : IsMennickeSymbol s) {p p' : MennickePair I} {q : A}
   have heI : p'.fst - p.fst ∈ I := by
     rw [show p'.fst - p.fst = (p'.fst - 1) - (p.fst - 1) by ring]
     exact I.sub_mem p'.fst_sub_one_mem p.fst_sub_one_mem
-  let rdq : MennickePair I := ⟨p.fst, q, p.fst_sub_one_mem, hqI, ⟨1, -k, by linear_combination hk⟩⟩
-  let raq : MennickePair I :=
-    ⟨p'.fst, q, p'.fst_sub_one_mem, hqI, ⟨1, -k', by linear_combination hk'⟩⟩
   let rde : MennickePair I := ⟨p.fst, p'.fst - p.fst, p.fst_sub_one_mem, heI,
     ⟨u + v, v, by linear_combination huv⟩⟩
   let rae : MennickePair I := ⟨p'.fst, p'.fst - p.fst, p'.fst_sub_one_mem, heI,
@@ -224,15 +198,12 @@ theorem reciprocity (hs : IsMennickeSymbol s) {p p' : MennickePair I} {q : A}
     sub_mem_comm_iff.mp heI, ⟨u + v, u, by linear_combination huv⟩⟩
   have h₁ : s p = s rae := by
     rw [← hs.map_shiftSnd p (-q) (I.neg_mem hqI),
-      hs.map_eq_mul_of_snd_eq_mul (p₁ := rdq) (p₂ := rde) (q := p.shiftSnd (-q) (I.neg_mem hqI))
-        (by simp [rdq]) (by simp [rde]) (by simp [rdq, rde, hp]; ring),
-      hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨k, hk⟩, one_mul]
+      hs.map_eq_of_snd_eq_mul_of_dvd (p := rde) hqI hq (by simp [rde]) (by simp [rde, hp]; ring)]
     exact (hs.map_eq_of_fst_eq (p := rde) (q := rae) 1 (by simp [rde, rae]) rfl).symm
   have h₂ : s p' = s rae := by
     rw [← hs.map_shiftSnd p' (-q) (I.neg_mem hqI),
-      hs.map_eq_mul_of_snd_eq_mul (p₁ := raq) (p₂ := rane) (q := p'.shiftSnd (-q) (I.neg_mem hqI))
-        (by simp [raq]) (by simp [rane]) (by simp [raq, rane, hp']; ring),
-      hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨k', hk'⟩, one_mul]
+      hs.map_eq_of_snd_eq_mul_of_dvd (p := rane) hqI hq' (by simp [rane])
+        (by simp [rane, hp']; ring)]
     exact hs.map_eq_of_snd_eq_neg (p := rae) (q := rane) rfl (by simp [rane, rae])
   rw [h₁, h₂]
 
@@ -259,12 +230,9 @@ private theorem map_eq_mul_of_fst_eq_mul_of_snd_eq_mul (hs : IsMennickeSymbol s)
   obtain ⟨D₁, hD₁, hD₁', hsD₁⟩ := hD p₁ h₁ hp₁
   obtain ⟨D₂, hD₂, hD₂', hsD₂⟩ := hD p₂ h₂ hp₂
   obtain ⟨Dq, hDq, hDq', hsDq⟩ := hD q hqy hq
-  let Dy : MennickePair I := ⟨d, y, hdI, hy, hdy⟩
-  have hDy : s Dy = 1 := hs.map_eq_one_of_dvd_fst_sub isUnit_one ⟨k, hk⟩
-  have h := hs.map_eq_mul_of_snd_eq_mul (p₁ := D₁) (p₂ := D₂) (q := Dq.mulSnd Dy hDq)
-    (by simp [hD₁, hDq]) (by simp [hD₂, hDq]) (by simp [Dy, hD₁', hD₂', hDq', hfst]; ring)
-  rw [hs.map_mulSnd, hDy, mul_one, hsD₁, hsD₂, hsDq] at h
-  exact h
+  rw [← hsD₁, ← hsD₂, ← hsDq, ← hs.map_mulSnd D₁ D₂ (hD₁.trans hD₂.symm)]
+  exact (hs.map_eq_of_snd_eq_mul_of_dvd hy (hDq ▸ ⟨k, hk⟩) (by simp [hD₁, hDq])
+    (by simp [hD₁', hD₂', hDq', hfst]; ring)).symm
 
 /-- **Lam's identity when both denominators are `≡ 1` modulo a common `y ∈ I`:**
 `[b/(a₁ a₂)] = [b/a₁] [b/a₂]`. Over a Dedekind domain the hypothesis can always be arranged,

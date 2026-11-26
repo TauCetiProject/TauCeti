@@ -66,13 +66,9 @@ theorem ofLE_surjective {J : Ideal A} (h : J ≤ I) (hJ : J ≠ ⊥) : Function.
     simp only [p₁, MennickePair.shiftFst_fst, MennickePair.shiftSnd_snd,
       MennickePair.shiftSnd_fst]
     linear_combination -hjz
-  have hJ₁ : 1 - p₁.fst ∈ J := sub_mem_comm_iff.mp (hp₁ ▸ hj)
-  refine ⟨of ⟨p₁.fst, p₁.snd * (1 - p₁.fst), hp₁ ▸ hj, J.mul_mem_left _ hJ₁,
-    p₁.isCoprime.mul_right ⟨1, 1, by ring⟩⟩, ?_⟩
+  refine ⟨of (.mulOneSub (hp₁ ▸ hj) p₁.isCoprime), ?_⟩
   rw [ofLE_of]
-  refine (isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub (p := p₁) ?_ ?_).trans ?_
-  · rfl
-  · rfl
+  refine (isMennickeSymbol_of.map_eq_of_snd_eq_mul_one_sub (p := p₁) (by simp) (by simp)).trans ?_
   simp only [p₁, isMennickeSymbol_of.map_shiftFst, isMennickeSymbol_of.map_shiftSnd]
 
 /-- One step of the Mennicke–Newman lemma: a symbol `[b/c]` can be rewritten with a nonzero
