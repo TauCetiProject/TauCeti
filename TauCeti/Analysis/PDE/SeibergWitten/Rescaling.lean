@@ -42,7 +42,9 @@ So any limit of blown-up solutions, in this sense, solves the flat limiting equa
 (`sum_sum_covariantDeriv_smul_eq_zero_and_add_hodgeStar_eq_of_tendsto_rescale`).
 This is how the plane vortex equations, which are the base-independent solutions of the flat
 limiting equations on the canonical line, arise from Seiberg–Witten solutions at large `r`. The
-compactness that produces convergent subsequences of blown-up solutions is not treated here.
+compactness that produces convergent subsequences of blown-up solutions, modulo gauge and given
+uniform bounds on the blown-up fields, is in
+`TauCeti.Analysis.PDE.SeibergWitten.Rescaling.Compactness`.
 
 ## Main results
 

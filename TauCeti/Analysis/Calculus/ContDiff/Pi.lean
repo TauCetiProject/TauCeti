@@ -21,6 +21,9 @@ transition maps of product charts of finitely many manifolds are `C^n`.
 * `ContDiff.piSingle_apply`, `ContDiff.uncurry_piSingle_apply`: the family which is a `C^n` map
   `f` at one index and zero at the others is `C^n` at every index, and so is its uncurried form
   when `f` is a two-variable map with `C^n` uncurried form.
+* `iteratedFDeriv_pi_apply`, `norm_iteratedFDeriv_pi_le`: the iterated derivatives of a map into a
+  finite product are computed componentwise, and are bounded by a common bound on those of the
+  components.
 
 Replacing one coordinate by a function of the whole argument also preserves smoothness
 (`ContDiff.update_self`). This extends the coordinate-replacement argument in
@@ -76,3 +79,30 @@ theorem ContDiff.uncurry_piSingle_apply {𝕜 : Type*} [NontriviallyNormedField 
     ContDiff 𝕜 n (Function.uncurry ((Pi.single i f : κ → E → E' → F) j)) := by
   rw [Pi.apply_single (fun _ ↦ Function.uncurry) (fun _ ↦ rfl) i f j]
   exact hf.piSingle_apply i j
+
+section IteratedFDeriv
+
+variable {𝕜 G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {ι : Type*} [Fintype ι] {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)]
+  [∀ i, NormedSpace 𝕜 (F i)] {f : ∀ i, G → F i} {x : G} {n : ℕ}
+
+/-- The iterated derivative of a map into a finite product is computed componentwise: the `i`-th
+component of `Dⁿ (y ↦ (f j y)ⱼ)` is `Dⁿ (f i)`. -/
+theorem iteratedFDeriv_pi_apply (hf : ∀ i, ContDiffAt 𝕜 n (f i) x) (m : Fin n → G) (i : ι) :
+    iteratedFDeriv 𝕜 n (fun y j ↦ f j y) x m i = iteratedFDeriv 𝕜 n (f i) x m := by
+  have h := (ContinuousLinearMap.proj (R := 𝕜) (φ := F) i).iteratedFDeriv_comp_left
+    (contDiffAt_pi.2 hf) le_rfl
+  exact (congrArg (· m) h).symm
+
+/-- A common bound on the iterated derivatives of the components of a map into a finite product
+bounds the iterated derivative of the map, for the supremum norm. -/
+theorem norm_iteratedFDeriv_pi_le {C : ℝ} (hC : 0 ≤ C) (hf : ∀ i, ContDiffAt 𝕜 n (f i) x)
+    (h : ∀ i, ‖iteratedFDeriv 𝕜 n (f i) x‖ ≤ C) :
+    ‖iteratedFDeriv 𝕜 n (fun y j ↦ f j y) x‖ ≤ C := by
+  refine ContinuousMultilinearMap.opNorm_le_bound hC fun m ↦
+    (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_
+  rw [iteratedFDeriv_pi_apply hf]
+  exact ((iteratedFDeriv 𝕜 n (f i) x).le_opNorm m).trans
+    (mul_le_mul_of_nonneg_right (h i) (by positivity))
+
+end IteratedFDeriv
