@@ -72,8 +72,8 @@ setting of the linearized operators of Floer theory along Floer cylinders.
   (`TauCeti.CylinderSobolev.isCompactOperator_restrictValue_comp_subtypeL`). The proof cuts a test
   section off near `[-T, T] × [0, 1]`, bounds the result and its derivative in `L²(ℝ²)` by the
   `W^{1,2}` norm on the strip through periodicity in `t`
-  (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`), and applies the Fréchet–Kolmogorov criterion
-  for `C¹` functions `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`.
+  (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`), and applies the Fréchet–Kolmogorov
+  criterion for `C¹` functions `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`.
 * A first-order operator `D ξ = M (ξ, ∂s ξ, ∂t ξ)` with an essentially bounded coefficient field
   `M` acts on `L²` jets by `TauCeti.jetOperator 2 stripMeasure M`; the steps of Peetre's argument
   shared with the strip with boundary conditions are in
@@ -396,7 +396,8 @@ private theorem cutoff_estimates (T : ℝ) : ∃ (χ : ℝ × ℝ → ℝ) (A : 
     exact (mul_le_of_le_one_left (norm_nonneg _) (hχ1 z)).trans (norm_le_norm_jet ξ z)
   · calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) 2 volume
         ≤ ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) 2 (volume.restrict P) :=
-          eLpNorm_fderiv_smul_le (hχ.of_le (by norm_num)) hχ1 hC hP hχP (hξ2.of_le (by norm_num))
+          eLpNorm_fderiv_smul_le_of_tsupport_subset (hχ.of_le (by norm_num)) hχ1 hC hP hχP
+            (hξ2.of_le (by norm_num)) (norm_le_norm_jet ξ) (norm_fderiv_le_two_mul_norm_jet ξ) 2
       _ ≤ ENNReal.ofReal (C + 2) * (2 * eLpNorm (jet ξ) 2 stripMeasure) := by gcongr
       _ = ENNReal.ofReal (2 * (C + 2)) * eLpNorm (jet ξ) 2 stripMeasure := by
           rw [ENNReal.ofReal_mul (by norm_num), ENNReal.ofReal_ofNat]
