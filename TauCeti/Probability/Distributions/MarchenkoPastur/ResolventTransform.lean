@@ -343,8 +343,8 @@ theorem two_mul_mul_resolventTransform_marchenkoPastur_add_pos (hx : (1 + √(y 
   obtain ⟨x', hx', h0⟩ := isPreconnected_Ioi.intermediate_value hx hfar hcont
     ⟨hneg, (two_mul_mul_resolventTransform_add_pos_of_far le_rfl).le⟩
   have hsq := two_mul_mul_resolventTransform_add_sq (notMem_support_marchenkoPastur_of_lt hx')
-  rw [show 2 * y * x' * resolventTransform (marchenkoPastur y) x' + (x' + y - 1) = 0 from h0]
-    at hsq
+  simp only [φ] at h0
+  rw [h0] at hsq
   linarith [discr_pos (y := y) hx']
 
 /-- Above the upper edge of `MP_y`, its real resolvent transform `m` is the root of
