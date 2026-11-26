@@ -103,8 +103,8 @@ theorem integrableOn_rieszZeroSide_mul_cpow_and_setIntegral_eq_rieszRemainderMel
       rieszZeroSeries F y * (y : ℂ) ^ (-s - 1) +
         rieszGammaCorrection a 2 y * (y : ℂ) ^ (-s - 1) +
           (y : ℂ) ^ (-s - 1) * (c + m + m * (Real.log y : ℂ)) := by
-    rw [χ.rieszZeroSide_def hχ, add_mul, add_mul (rieszZeroSeries _ _), mul_add m, mul_one,
-      ← add_assoc c, mul_comm (c + m + m * (Real.log y : ℂ))]
+    rw [χ.rieszZeroSide_def hχ]
+    ring
   simp only [hsplit]
   refine ⟨(hZ.add hG).add hE, ?_⟩
   rw [integral_add (f := fun y : ℝ ↦ rieszZeroSeries F y * (y : ℂ) ^ (-s - 1) +

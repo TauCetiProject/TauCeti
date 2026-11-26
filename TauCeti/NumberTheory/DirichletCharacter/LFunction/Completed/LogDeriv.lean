@@ -93,8 +93,9 @@ theorem logDeriv_gammaFactor_eq_logDeriv_Gammaℝ_add_sub_div {s : ℂ} (hs : χ
     logDeriv χ.gammaFactor s = logDeriv Gammaℝ (s + χ.gammaPoleOffset) -
       ((χ.gammaPoleOffset : ℂ) - 1) / s := by
   rcases χ.even_or_odd with he | ho
-  · norm_num [χ.gammaPoleOffset_of_even he, he.logDeriv_gammaFactor, one_div]
-    exact (sub_eq_of_eq_add (logDeriv_Gammaℝ_add_two (he.gammaFactor_def s ▸ hs))).symm
+  · rw [χ.gammaPoleOffset_of_even he, he.logDeriv_gammaFactor, ofReal_ofNat,
+      logDeriv_Gammaℝ_add_two (he.gammaFactor_def s ▸ hs)]
+    ring
   · simp [χ.gammaPoleOffset_of_odd ho, ho.logDeriv_gammaFactor]
 
 /-- On every compact subset of the positive half-plane, the logarithmic derivatives of the
