@@ -323,9 +323,10 @@ theorem restrictedRootSpace_zero_inf_cartanP (h𝔞 : θ.IsMaximalAbelianInP �
     (mem_sup_right (mem_span_singleton_self x))
 
 /-- The centralizer `𝔤_0` of a maximal abelian subspace `𝔞` of `𝔭` is the sum of `𝔞` and
-`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. The sum is direct, as `𝔞 ⊆ 𝔭` and `𝔨` and
-`𝔭` are complementary (`LieEquiv.isCompl_fixedSubalgebra_cartanP`); see
-`LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`. -/
+`𝔪 = 𝔤_0 ∩ 𝔨`, for an involution when `2` is a unit. This states only the sum; that it is
+direct, as `𝔞 ⊆ 𝔭` and `𝔨` and `𝔭` are complementary
+(`LieEquiv.isCompl_fixedSubalgebra_cartanP`), is not stated as a lemma. For `𝔤_0 = 𝔞` exactly
+when `𝔪 = 0`, see `LieEquiv.IsMaximalAbelianInP.restrictedRootSpace_zero_eq_iff`. -/
 theorem restrictedRootSpace_zero_eq_sup (h2 : IsUnit (2 : R)) (hθ : Function.Involutive θ)
     (h𝔞 : θ.IsMaximalAbelianInP 𝔞) :
     𝔞.restrictedRootSpace 0 =
