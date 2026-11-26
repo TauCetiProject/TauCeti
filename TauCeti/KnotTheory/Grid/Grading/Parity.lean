@@ -41,6 +41,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
   number of components.
 * `TauCeti.OddComponentGridDiagram.relabelRows`, `TauCeti.OddComponentGridDiagram.relabelColumns`:
   relabeling keeps the number of link components odd.
+* `TauCeti.OddComponentGridDiagram.swapMarkings`: exchanging the `O`- and `X`-markings keeps the
+  number of link components odd.
 * `TauCeti.OddComponentGridDiagram.alexanderℤ`: the integer Alexander grading.
 * `TauCeti.OddComponentGridDiagram.bidegree`: the (`O`-Maslov, Alexander) degree of a grid state.
 * `TauCeti.OddComponentGridDiagram.alexanderSupport`: the Alexander degrees occupied by grid
@@ -62,6 +64,8 @@ the two marking permutations, hence the sign of the component permutation `𝕏�
 * `TauCeti.GridDiagram.alexander_exists_int_iff`: the direct integrality characterization.
 * `TauCeti.GridDiagram.alexander_exists_int_of_isKnot`: the Alexander grading of a knot grid is
   an integer.
+* `TauCeti.OddComponentGridDiagram.bidegree_swapMarkings`: exchanging the markings moves the
+  bidegree `(m, a)` of a grid state to `(m - 2a - (n - 1), -a - (n - 1))`.
 
 ## References
 
@@ -386,6 +390,20 @@ theorem val_transpose : G.transpose.val = G.val.transpose :=
 theorem transpose_transpose : G.transpose.transpose = G :=
   Subtype.ext G.val.transpose_transpose
 
+/-- The `O`/`X` marking swap of a diagram with an odd number of components. -/
+abbrev swapMarkings : OddComponentGridDiagram n :=
+  ⟨G.val.swapMarkings, by rw [GridDiagram.componentCount_swapMarkings]; exact G.property⟩
+
+/-- The underlying diagram of the marking swap is the marking-swapped underlying diagram. -/
+@[simp]
+theorem val_swapMarkings : G.swapMarkings.val = G.val.swapMarkings :=
+  (rfl)
+
+/-- The marking swap is an involution on diagrams with an odd number of components. -/
+@[simp]
+theorem swapMarkings_swapMarkings : G.swapMarkings.swapMarkings = G :=
+  Subtype.ext G.val.swapMarkings_swapMarkings
+
 /-- The integer Alexander grading of a grid state. -/
 def alexanderℤ (x : GridState n) : ℤ :=
   G.val.alexanderTwoℤ x / 2
@@ -433,6 +451,30 @@ theorem bidegree_transpose (x : GridState n) :
   refine Prod.ext ?_ ?_
   · rw [bidegree_fst, bidegree_fst, val_transpose, GridDiagram.maslovOℤ_transpose]
   · rw [bidegree_snd, bidegree_snd, alexanderℤ_transpose]
+
+/-- The marking swap negates the integer Alexander grading, up to the normalization shift:
+`A_swap(x) = -A(x) - (n - 1)`. -/
+@[simp]
+theorem alexanderℤ_swapMarkings (x : GridState n) :
+    G.swapMarkings.alexanderℤ x = -G.alexanderℤ x - ((n : ℤ) - 1) := by
+  have h := G.swapMarkings.two_mul_alexanderℤ x
+  rw [val_swapMarkings, GridDiagram.alexanderTwoℤ_swapMarkings, ← G.two_mul_alexanderℤ x] at h
+  omega
+
+/-- The marking swap sends the `(O-Maslov, Alexander)` bidegree `(m, a)` of a grid state to
+`(m - 2a - (n - 1), -a - (n - 1))`: its `O`-Maslov grading is the `X`-Maslov grading of the
+original diagram. -/
+theorem bidegree_swapMarkings (x : GridState n) :
+    G.swapMarkings.bidegree x =
+      ((G.bidegree x).1 - 2 * (G.bidegree x).2 - ((n : ℤ) - 1),
+        -(G.bidegree x).2 - ((n : ℤ) - 1)) := by
+  refine Prod.ext ?_ ?_
+  · have h := G.two_mul_alexanderℤ x
+    rw [GridDiagram.alexanderTwoℤ_def] at h
+    rw [bidegree_fst, bidegree_fst, bidegree_snd, val_swapMarkings,
+      GridDiagram.maslovOℤ_swapMarkings]
+    omega
+  · rw [bidegree_snd, bidegree_snd, alexanderℤ_swapMarkings]
 
 /-- The finite set of bidegrees occupied by grid states. -/
 noncomputable def bidegreeSupport : Finset (ℤ × ℤ) :=
@@ -492,6 +534,13 @@ theorem transpose_toOddComponentGridDiagram :
     hG.toOddComponentGridDiagram.transpose =
       (G.isKnot_transpose.mpr hG).toOddComponentGridDiagram :=
   Subtype.ext (by rw [OddComponentGridDiagram.val_transpose, val_toOddComponentGridDiagram])
+
+/-- Swapping the markings of the odd-component diagram of a knot grid gives that of
+`G.swapMarkings`. -/
+theorem swapMarkings_toOddComponentGridDiagram :
+    hG.toOddComponentGridDiagram.swapMarkings =
+      (G.isKnot_swapMarkings.mpr hG).toOddComponentGridDiagram :=
+  Subtype.ext (by rw [OddComponentGridDiagram.val_swapMarkings, val_toOddComponentGridDiagram])
 
 end GridDiagram.IsKnot
 

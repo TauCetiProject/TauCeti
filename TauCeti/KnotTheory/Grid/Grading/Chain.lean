@@ -218,6 +218,36 @@ theorem bigradedChainInclusion_bigradedChainProjection_single (R : Type*) [Semir
     by_cases hx : G.bidegree x = g <;> simp [hx]
   · by_cases hx : G.bidegree x = g <;> simp [hx, hxy]
 
+/-- A linear map of grid chain modules that moves the bidegree of every state generator along an
+injective map `φ` of bidegrees commutes with taking homogeneous parts: it sends the part of
+bidegree `g` of a chain to the part of bidegree `φ g` of the image. -/
+theorem map_bigradedChainInclusion_bigradedChainProjection_of_injective {m : ℕ}
+    (G' : OddComponentGridDiagram m) {R : Type*} [Semiring R]
+    (f : GridChain R n →ₗ[R] GridChain R m) {φ : ℤ × ℤ → ℤ × ℤ} (hφ : Function.Injective φ)
+    (hf : ∀ (x : GridState n) (y : GridState m), G'.bidegree y ≠ φ (G.bidegree x) →
+      f (Finsupp.single x 1) y = 0)
+    (g : ℤ × ℤ) (c : GridChain R n) :
+    f (G.bigradedChainInclusion R g (G.bigradedChainProjection R g c)) =
+      G'.bigradedChainInclusion R (φ g) (G'.bigradedChainProjection R (φ g) (f c)) := by
+  have hsingle (x : GridState n) (a : R) (y : GridState m)
+      (hy : G'.bidegree y ≠ φ (G.bidegree x)) : f (Finsupp.single x a) y = 0 := by
+    have ha : Finsupp.single x a = a • Finsupp.single x 1 := by
+      rw [Finsupp.smul_single, smul_eq_mul, mul_one]
+    rw [ha, map_smul, Finsupp.smul_apply, hf x y hy, smul_zero]
+  have key : f ∘ₗ (G.bigradedChainInclusion R g ∘ₗ G.bigradedChainProjection R g) =
+      (G'.bigradedChainInclusion R (φ g) ∘ₗ G'.bigradedChainProjection R (φ g)) ∘ₗ f := by
+    refine Finsupp.lhom_ext fun x a => ?_
+    ext y
+    simp only [LinearMap.comp_apply, bigradedChainInclusion_bigradedChainProjection_single,
+      bigradedChainInclusion_apply, bigradedChainProjection_apply]
+    by_cases hx : G.bidegree x = g <;> by_cases hy : G'.bidegree y = φ g
+    · simp [hx, hy]
+    · simpa [hx, hy] using hsingle x a y (hx ▸ hy)
+    · have hne : G'.bidegree y ≠ φ (G.bidegree x) := fun h => hx (hφ (hy.symm.trans h).symm)
+      simpa [hx, hy] using (hsingle x a y hne).symm
+    · simp [hx, hy]
+  exact LinearMap.congr_fun key c
+
 /-- A linear map of grid chain modules that shifts the bidegree of every state generator by `r`
 commutes with taking homogeneous parts: it sends the part of bidegree `g` of a chain to the part
 of bidegree `g + r` of the image. -/
@@ -228,26 +258,9 @@ theorem map_bigradedChainInclusion_bigradedChainProjection {m : ℕ}
       f (Finsupp.single x 1) y = 0)
     (g : ℤ × ℤ) (c : GridChain R n) :
     f (G.bigradedChainInclusion R g (G.bigradedChainProjection R g c)) =
-      G'.bigradedChainInclusion R (g + r) (G'.bigradedChainProjection R (g + r) (f c)) := by
-  have hsingle (x : GridState n) (a : R) (y : GridState m)
-      (hy : G'.bidegree y ≠ G.bidegree x + r) : f (Finsupp.single x a) y = 0 := by
-    have ha : Finsupp.single x a = a • Finsupp.single x 1 := by
-      rw [Finsupp.smul_single, smul_eq_mul, mul_one]
-    rw [ha, map_smul, Finsupp.smul_apply, hf x y hy, smul_zero]
-  have key : f ∘ₗ (G.bigradedChainInclusion R g ∘ₗ G.bigradedChainProjection R g) =
-      (G'.bigradedChainInclusion R (g + r) ∘ₗ G'.bigradedChainProjection R (g + r)) ∘ₗ f := by
-    refine Finsupp.lhom_ext fun x a => ?_
-    ext y
-    simp only [LinearMap.comp_apply, bigradedChainInclusion_bigradedChainProjection_single,
-      bigradedChainInclusion_apply, bigradedChainProjection_apply]
-    by_cases hx : G.bidegree x = g <;> by_cases hy : G'.bidegree y = g + r
-    · simp [hx, hy]
-    · simpa [hx, hy] using hsingle x a y (hx ▸ hy)
-    · have hne : G'.bidegree y ≠ G.bidegree x + r := fun h =>
-        hx (add_right_cancel (hy.symm.trans h).symm)
-      simpa [hx, hy] using (hsingle x a y hne).symm
-    · simp [hx, hy]
-  exact LinearMap.congr_fun key c
+      G'.bigradedChainInclusion R (g + r) (G'.bigradedChainProjection R (g + r) (f c)) :=
+  G.map_bigradedChainInclusion_bigradedChainProjection_of_injective G' f (add_left_injective r)
+    hf g c
 
 end OddComponentGridDiagram
 

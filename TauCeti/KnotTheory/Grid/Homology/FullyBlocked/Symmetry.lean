@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Bigraded.Conjugation
 public import TauCeti.KnotTheory.Grid.Differential.HalfTurn
 public import TauCeti.KnotTheory.Grid.Differential.Symmetry
 public import TauCeti.KnotTheory.Grid.Grading.CyclicPermutation
@@ -20,8 +21,16 @@ the columns, the diagonal reflection and the half-turn each relabel grid states,
 fully blocked differentials and preserve the `(O-Maslov, Alexander)` bidegree of every state. So
 they preserve the Poincaré series `P(G)` of the fully blocked grid homology `GH~(G)`.
 
+Exchanging the `O`- and `X`-markings leaves the fully blocked differential unchanged but does not
+preserve bidegrees: it moves a state of bidegree `(m, a)` to bidegree `(m - 2a - (n - 1),
+-a - (n - 1))`. So it acts on `P(G)` by the conjugation symmetry `TauCeti.Bigraded.conjugate`,
+followed by a shift.
+
 ## Main results
 
+* `OddComponentGridDiagram.coeff_bigradedFullyBlockedHomologyPoincareSeries_of_intertwining`: a
+  relabeling of grid states that intertwines the fully blocked differentials and moves bidegrees
+  along an injective map `φ` identifies the coefficients of `P(G)` at `g` and of `P(G')` at `φ g`.
 * `OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_eq_of_intertwining`: a
   relabeling of grid states that intertwines the fully blocked differentials and preserves
   bidegrees identifies the Poincaré series of `GH~`.
@@ -30,11 +39,13 @@ they preserve the Poincaré series `P(G)` of the fully blocked grid homology `GH
   `OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_transpose`,
   `OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_rotate`: the cyclic
   permutations, the diagonal reflection and the half-turn preserve the Poincaré series of `GH~`.
+* `OddComponentGridDiagram.bigradedFullyBlockedHomologyPoincareSeries_swapMarkings`: the
+  marking swap conjugates the Poincaré series of `GH~` and shifts it by `(1 - n, 1 - n)`.
 
 ## References
 
 * P. Ozsváth, A. Stipsicz, Z. Szabó, *Grid Homology for Knots and Links*, AMS Mathematical Surveys
-  and Monographs 208, 2015, Chapters 3 and 4.
+  and Monographs 208, 2015, Chapters 3 and 4, and Section 7.1 for the marking swap.
 -/
 
 public section
@@ -50,16 +61,18 @@ local notation "P" => bigradedFullyBlockedHomologyPoincareSeries
 
 
 /-- A linear equivalence of grid chains that intertwines the fully blocked differentials and moves
-each grid state to a grid state of the same bidegree identifies the Poincaré series of fully
-blocked homology. -/
-theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_intertwining
+each grid state to a grid state whose bidegree is the image of the original bidegree under an
+injective map `φ` identifies the coefficient of the Poincaré series of `GH~` in bidegree `g` with
+the coefficient of the target series in bidegree `φ g`. -/
+theorem coeff_bigradedFullyBlockedHomologyPoincareSeries_of_intertwining
     (G G' : OddComponentGridDiagram n) (e : GridChain F n ≃ₗ[F] GridChain F n)
     (he : ∀ c, G'.val.fullyBlockedDifferential (e c) = e (G.val.fullyBlockedDifferential c))
     (σ : GridState n → GridState n) (heσ : ∀ x, e (Finsupp.single x 1) = Finsupp.single (σ x) 1)
-    (hσ : ∀ x, G'.bidegree (σ x) = G.bidegree x) :
-    P G = P G' := by
-  refine G.bigradedFullyBlockedHomologyPoincareSeries_eq_of_linearEquiv
-    (G.val.fullyBlockedHomologyEquivOfIntertwining G'.val e he) fun g y => ?_
+    {φ : ℤ × ℤ → ℤ × ℤ} (hφ : Function.Injective φ)
+    (hσ : ∀ x, G'.bidegree (σ x) = φ (G.bidegree x)) (g : ℤ × ℤ) :
+    (P G').coeff (φ g) = (P G).coeff g := by
+  refine G.coeff_bigradedFullyBlockedHomologyPoincareSeries_of_linearEquiv
+    (G.val.fullyBlockedHomologyEquivOfIntertwining G'.val e he) φ (fun g y => ?_) g
   induction y using Submodule.Quotient.induction_on with
   | H z =>
     rw [bigradedFullyBlockedHomologyProjection_mk, fullyBlockedHomologyEquivOfIntertwining_apply_mk,
@@ -67,13 +80,25 @@ theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_intertwining
     congr 1
     ext1
     simp only [fullyBlockedCyclesEquivOfIntertwining_apply]
-    have h := G.map_bigradedChainInclusion_bigradedChainProjection G' e.toLinearMap 0
+    exact G.map_bigradedChainInclusion_bigradedChainProjection_of_injective G' e.toLinearMap hφ
       (fun x y hy => by
         rw [LinearEquiv.coe_coe, heσ, Finsupp.single_apply, ite_eq_right_iff]
         rintro rfl
-        exact absurd (by rw [add_zero, hσ]) hy)
+        exact absurd (hσ x) hy)
       g z
-    rwa [add_zero] at h
+
+/-- A linear equivalence of grid chains that intertwines the fully blocked differentials and moves
+each grid state to a grid state of the same bidegree identifies the Poincaré series of fully
+blocked homology. -/
+theorem bigradedFullyBlockedHomologyPoincareSeries_eq_of_intertwining
+    (G G' : OddComponentGridDiagram n) (e : GridChain F n ≃ₗ[F] GridChain F n)
+    (he : ∀ c, G'.val.fullyBlockedDifferential (e c) = e (G.val.fullyBlockedDifferential c))
+    (σ : GridState n → GridState n) (heσ : ∀ x, e (Finsupp.single x 1) = Finsupp.single (σ x) 1)
+    (hσ : ∀ x, G'.bidegree (σ x) = G.bidegree x) :
+    P G = P G' :=
+  AddMonoidAlgebra.coeff_injective (Finsupp.ext fun g =>
+    (coeff_bigradedFullyBlockedHomologyPoincareSeries_of_intertwining G G' e he σ heσ
+      Function.injective_id hσ g).symm)
 
 variable (G : OddComponentGridDiagram n)
 
@@ -113,5 +138,27 @@ theorem bigradedFullyBlockedHomologyPoincareSeries_rotate : P G.rotate = P G :=
   (bigradedFullyBlockedHomologyPoincareSeries_eq_of_intertwining G _
     (GridChain.halfTurnEquiv F) G.val.fullyBlockedDifferential_rotate_halfTurnEquiv _
     (fun x => GridChain.halfTurnEquiv_single F x 1) G.bidegree_rotate_halfTurn).symm
+
+/-- **Conjugation symmetry of `GH~` under the marking swap.** Exchanging the `O`- and
+`X`-markings of a grid of size `n` leaves the fully blocked complex unchanged, and moves a grid
+state of bidegree `(m, a)` to bidegree `(m - 2a - (n - 1), -a - (n - 1))`. So the Poincaré series
+of `GH~` of the swapped diagram is the conjugate series `(m, a) ↦ (m - 2a, -a)`, shifted by
+`(1 - n, 1 - n)`. -/
+theorem bigradedFullyBlockedHomologyPoincareSeries_swapMarkings :
+    P G.swapMarkings =
+      AddMonoidAlgebra.single (1 - (n : ℤ), 1 - (n : ℤ)) 1 * Bigraded.conjugate (P G) := by
+  set c : ℤ × ℤ := (1 - (n : ℤ), 1 - (n : ℤ))
+  have key := coeff_bigradedFullyBlockedHomologyPoincareSeries_of_intertwining G G.swapMarkings
+    (LinearEquiv.refl F _) (fun d => by rw [val_swapMarkings,
+      GridDiagram.fullyBlockedDifferential_swapMarkings]; rfl) id (fun _ => rfl)
+    ((add_left_injective c).comp Bigraded.conjugationEquiv.injective) (fun x => by
+      rw [id, bidegree_swapMarkings]
+      ext <;> simp [c] <;> ring)
+  refine AddMonoidAlgebra.coeff_injective (Finsupp.ext fun h => ?_)
+  have hh := key (Bigraded.conjugationEquiv (h - c))
+  simp only [Function.comp_apply, Bigraded.conjugationEquiv_conjugationEquiv,
+    sub_add_cancel] at hh
+  rw [hh, AddMonoidAlgebra.coeff_single_mul_apply, one_mul, Bigraded.coeff_conjugate,
+    neg_add_eq_sub]
 
 end TauCeti.OddComponentGridDiagram
