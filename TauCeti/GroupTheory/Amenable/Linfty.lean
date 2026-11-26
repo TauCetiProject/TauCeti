@@ -191,36 +191,36 @@ def lpTopEquiv : Mean G ≃ {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M 1 = 1} where
         (toLpTopLinearIsometryEquiv μ ℝ)).symm.toLinearEquiv.toLinearMap
       monotone' := fun _ _ h => OrderHomClass.mono m (by simpa using h) },
     (congrArg m (by simp)).trans m.map_one⟩
-  invFun M := ofLpTop M.1 M.2
+  invFun M := ofLpTop M.val M.property
   left_inv m := ext fun f => (ofLpTop_apply _ _ f).trans
     (congrArg m (by simpa using (UCB.discreteAlgEquiv G).symm_apply_apply f))
   right_inv M := Subtype.ext (PositiveLinearMap.ext fun φ =>
-    (ofLpTop_apply M.1 M.2 _).trans (congrArg M.1 (by simp)))
+    (ofLpTop_apply M.val M.property _).trans (congrArg M.val (by simp)))
 
 /-- The functional corresponding to a mean `m` evaluates `m` on the bounded function
 representing a class in `L∞`. -/
 theorem lpTopEquiv_apply (m : Mean G) (φ : Lp ℝ ∞ μ) :
-    (lpTopEquiv μ m).1 φ =
+    (lpTopEquiv μ m).val φ =
       m ((UCB.discreteAlgEquiv G).symm ((toLpTopLinearIsometryEquiv μ ℝ).symm φ)) :=
   congrArg m (by simp)
 
 /-- The functional corresponding to a mean `m` takes the value `m f` at the class of `f`. -/
 @[simp]
 theorem lpTopEquiv_apply_toLpTop (m : Mean G) (f : G →ᵇ ℝ) :
-    (lpTopEquiv μ m).1 (toLpTop μ ℝ f) = m ((UCB.discreteAlgEquiv G).symm f) := by
+    (lpTopEquiv μ m).val (toLpTop μ ℝ f) = m ((UCB.discreteAlgEquiv G).symm f) := by
   rw [lpTopEquiv_apply, toLpTopLinearIsometryEquiv_symm_toLpTop]
 
 /-- The mean corresponding to a normalized positive functional on `L∞` is its restriction. -/
 @[simp]
 theorem lpTopEquiv_symm_apply (M : {M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ // M 1 = 1}) :
-    (lpTopEquiv μ).symm M = ofLpTop M.1 M.2 :=
+    (lpTopEquiv μ).symm M = ofLpTop M.val M.property :=
   (rfl)
 
 /-- The correspondence between means on a discrete group and normalized positive functionals on
 `L∞(G, μ)` preserves and reflects left invariance. -/
 theorem isLeftInvariant_iff_lpTopEquiv [μ.IsMulLeftInvariant] {m : Mean G} :
     m.IsLeftInvariant ↔
-      ∀ g φ, (lpTopEquiv μ m).1 (Lp.leftTranslation μ ∞ ℝ g φ) = (lpTopEquiv μ m).1 φ := by
+      ∀ g φ, (lpTopEquiv μ m).val (Lp.leftTranslation μ ∞ ℝ g φ) = (lpTopEquiv μ m).val φ := by
   refine ⟨fun hm g φ => ?_, fun h => ?_⟩
   · obtain ⟨f, rfl⟩ := toLpTop_surjective μ (𝕜 := ℝ) φ
     rw [Lp.leftTranslation_toLpTop, lpTopEquiv_apply_toLpTop, lpTopEquiv_apply_toLpTop,
@@ -239,7 +239,7 @@ theorem amenable_iff_exists_lpTop_invariant [μ.IsMulLeftInvariant] :
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
   refine ⟨fun h => ?_, fun ⟨M, hM, h⟩ => Amenable.of_lpTop M hM h⟩
   obtain ⟨m, hm⟩ := (amenable_iff G).1 h
-  exact ⟨(Mean.lpTopEquiv μ m).1, (Mean.lpTopEquiv μ m).2,
+  exact ⟨(Mean.lpTopEquiv μ m).val, (Mean.lpTopEquiv μ m).property,
     Mean.isLeftInvariant_iff_lpTopEquiv.1 hm⟩
 
 end Discrete

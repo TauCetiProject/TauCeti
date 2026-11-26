@@ -70,8 +70,8 @@ theorem exists_diffeomorph_normalBundle_subset
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
     ∃ W : TopologicalSpace.Opens N, (W : Set N) ⊆ O ∧
-      ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
-        ∀ x, (Φ (zeroSection P (fun x ↦ f.NormalSpace x hn) x) : N) = f x := by
+      ∃ Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W,
+        ∀ x, (Φ (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) : N) = f x := by
   have : LocallyCompactSpace G := J.locallyCompactSpace
   have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
   obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := J) (n := ⊤) (F := V)
@@ -99,16 +99,16 @@ theorem exists_contMDiffOn_retraction [Nonempty M] (f : SmoothEmbedding I J ∞ 
   -- A tubular neighbourhood `Φ` of `f`; the retraction is its base projection.
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   let r : N → M := fun y ↦ if h : y ∈ W then (Φ.symm ⟨y, h⟩).proj else Classical.arbitrary M
-  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.2]
+  have hrW (w : W) : r w = (Φ.symm w).proj := by simp [r, w.property]
   have hfW (x : M) : f x ∈ W := by
     rw [← hΦ x]
-    exact (Φ _).2
+    exact (Φ _).property
   refine ⟨W, W.isOpen, range_subset_iff.2 hfW, hWO, r, fun y hy ↦ ?_, fun x ↦ ?_⟩
   · have hsmooth : ContMDiff J I ∞ fun w : W ↦ r w := by
       simp only [hrW]
-      exact (contMDiff_proj (fun x ↦ f.NormalSpace x hn)).comp Φ.symm.contMDiff
+      exact (contMDiff_proj (fun x ↦ f.isImmersion.NormalSpace x hn)).comp Φ.symm.contMDiff
     exact (contMDiffAt_subtype_iff (x := ⟨y, hy⟩).1 (hsmooth _)).contMDiffWithinAt
-  · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.NormalSpace x hn) x :=
+  · have h : Φ.symm ⟨f x, hfW x⟩ = zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x :=
       Φ.symm_apply_eq.2 (Subtype.ext (hΦ x).symm)
     rw [hrW ⟨f x, hfW x⟩, h, zeroSection_proj]
 
@@ -120,7 +120,7 @@ theorem exists_isTubularNeighborhood_subset
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
     {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
-    ∃ Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) → N,
+    ∃ Φ : TotalSpace P (fun x ↦ f.isImmersion.NormalSpace x hn) → N,
       IsTubularNeighborhood f univ (univ.domRestrict Φ) ∧ range Φ ⊆ O := by
   intro hn
   let := f.normalSpaceFiberBundle hn hdim
@@ -128,13 +128,13 @@ theorem exists_isTubularNeighborhood_subset
   obtain ⟨W, hWO, Φ, hΦ⟩ := f.exists_diffeomorph_normalBundle_subset (P := P) hdim hO hfO
   refine ⟨fun v ↦ Φ v, ⟨isOpen_univ, fun _ ↦ mem_univ _, fun x ↦ ?_, ?_, f.isEmbedding,
     fun x ↦ hΦ x, ?_⟩, ?_⟩
-  · simpa using starConvex_univ (𝕜 := ℝ) (0 : f.NormalSpace x hn)
+  · simpa using starConvex_univ (𝕜 := ℝ) (0 : f.isImmersion.NormalSpace x hn)
   · exact W.isOpen.isOpenEmbedding_subtypeVal.comp
       (Φ.toHomeomorph.isOpenEmbedding.comp isOpen_univ.isOpenEmbedding_subtypeVal)
-  · exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
-      (continuous_subtype_val.comp continuous_snd)
+  · exact (continuous_subtypeVal.comp continuous_fst).smul_totalSpace
+      (continuous_subtypeVal.comp continuous_snd)
   · rintro _ ⟨v, rfl⟩
-    exact hWO (Φ v).2
+    exact hWO (Φ v).property
 
 /-- **The image of a smooth embedding is a strong deformation retract of a tubular
 neighbourhood.** Every open neighbourhood `O` of the image of a smooth embedding `f : M → N`

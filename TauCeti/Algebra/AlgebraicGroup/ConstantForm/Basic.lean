@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.AlgebraicGroup.ConstantForm.PointsSubgroup
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.HopfIdealPoints.Basic
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Scheme
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
@@ -67,10 +68,15 @@ a relation between `C` and `Cᵀ`.
 
 ## Main declarations
 
+* `TauCeti.ConstantForm.formRelation`: the form relation `X C Xᵀ - C` of a matrix `X` over any
+  `R`-algebra, with `span_formRelation_le_ker_iff` saying when an algebra morphism kills it,
+  and `mul_mul_transpose_mul_inv_eq_one`: if `x C xᵀ = C` and `C` has unit determinant, then
+  `C xᵀ C⁻¹` is a right inverse of `x`.
 * `TauCeti.ConstantForm.relationMatrix`: the matrix of defining relations `X C Xᵀ - C`.
 * `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff`: a coordinate morphism kills the
   defining ideal exactly when its generic matrix `X` satisfies `X C Xᵀ = C`.
-* `TauCeti.ConstantForm.definingHopfIdeal`: the Hopf ideal its entries generate.
+* `TauCeti.ConstantForm.definingHopfIdeal`: the Hopf ideal its entries generate, finitely
+  generated as an ideal by `definingHopfIdeal_toIdeal_fg`.
 * `TauCeti.ConstantForm.coordinateHopfAlgebra` and `TauCeti.ConstantForm.coordinateMap`: the
   quotient coordinate Hopf algebra and the quotient morphism onto it.
 * `TauCeti.ConstantForm.groupScheme` and `TauCeti.ConstantForm.inclusion`: the subgroup scheme
@@ -79,6 +85,8 @@ a relation between `C` and `Cᵀ`.
   `inclusion_def` exposing the quotient-spectrum presentations.
 * `TauCeti.ConstantForm.mem_definingPointsSubgroup_iff`: an ambient point is cut out exactly
   when its matrix `M` satisfies `M C Mᵀ = C`.
+* `TauCeti.ConstantForm.hopfIdealPointsSubgroup_definingHopfIdeal`: the matrix subgroup cut out
+  by the defining Hopf ideal is `TauCeti.ConstantForm.pointsSubgroup` of `C` read in `A`.
 * `TauCeti.ConstantForm.mul_mul_transpose_of_mem_hopfIdealPointsSubgroup`: every matrix point of
   a subgroup cut out by a Hopf ideal containing the form relations satisfies `M C Mᵀ = C`.
 
@@ -110,14 +118,61 @@ variable (R : Type u) [CommRing R] (n : ℕ)
 
 variable (C : Matrix (Fin n) (Fin n) R)
 
+section FormRelation
+
+variable {R n} {A : Type*} [Ring A] [Algebra R A]
+
+/-- **The form relation** `X C Xᵀ - C` of a square matrix `X` over an `R`-algebra, with the
+constant matrix `C` read through the structure map. Its entries vanish exactly when `X`
+preserves `C`. -/
+noncomputable def formRelation (X : Matrix (Fin n) (Fin n) A) : Matrix (Fin n) (Fin n) A :=
+  X * C.map (algebraMap R A) * Xᵀ - C.map (algebraMap R A)
+
+/-- The form relation of `X` is `X C Xᵀ - C`. -/
+theorem formRelation_def (X : Matrix (Fin n) (Fin n) A) :
+    formRelation C X = X * C.map (algebraMap R A) * Xᵀ - C.map (algebraMap R A) := by
+  rw [formRelation]
+
+/-- Mapping a form relation through an algebra morphism gives the form relation of the image:
+the matrix maps entrywise, and the constant form maps to the constant form. -/
+@[simp] theorem formRelation_map {T : Type*} [Ring T] [Algebra R T]
+    (X : Matrix (Fin n) (Fin n) A) (phi : A →ₐ[R] T) :
+    (formRelation C X).map phi = formRelation C (X.map phi) := by
+  have hC : (C.map (algebraMap R A)).map phi = C.map (algebraMap R T) := by
+    rw [Matrix.map_map]
+    exact congrArg _ (funext fun r => phi.commutes r)
+  rw [formRelation, formRelation, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC,
+    Matrix.transpose_map]
+  exact fun a b => map_sub phi a b
+
+/-- An algebra morphism kills the entries of the form relation of `X` exactly when the image of
+`X` preserves `C`. -/
+theorem span_formRelation_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
+    (X : Matrix (Fin n) (Fin n) A) (phi : A →ₐ[R] T) :
+    Ideal.span (Set.range fun ij : Fin n × Fin n => formRelation C X ij.1 ij.2) ≤
+        RingHom.ker (phi : A →+* T) ↔
+      X.map phi * C.map (algebraMap R T) * (X.map phi)ᵀ = C.map (algebraMap R T) := by
+  rw [Ideal.span_le, ← sub_eq_zero, ← formRelation_def, ← formRelation_map]
+  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h ⟨(i, j), rfl⟩, ?_⟩
+  rintro h _ ⟨ij, rfl⟩
+  exact congrFun (congrFun h ij.1) ij.2
+
+variable {C} in
+/-- If `x C xᵀ = C` for a matrix `C` with unit determinant, then `C xᵀ C⁻¹` is a right inverse
+of `x`. -/
+theorem mul_mul_transpose_mul_inv_eq_one (hC : IsUnit C.det) {x : Matrix (Fin n) (Fin n) A}
+    (hx : x * C.map (algebraMap R A) * xᵀ = C.map (algebraMap R A)) :
+    x * (C.map (algebraMap R A) * xᵀ * C⁻¹.map (algebraMap R A)) = 1 := by
+  rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hx, ← Matrix.map_mul,
+    Matrix.mul_nonsing_inv C hC, Matrix.map_one _ (map_zero _) (map_one _)]
+
+end FormRelation
+
 /-- **The matrix of defining relations** of the subgroup scheme preserving `C`:
 `X C Xᵀ - C` over the coordinate Hopf algebra of `GL n`. -/
 noncomputable def relationMatrix :
     Matrix (Fin n) (Fin n) (GeneralLinear.coordinateHopfAlgebra R n) :=
-  GeneralLinear.genericMatrix R n *
-      C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
-      (GeneralLinear.genericMatrix R n)ᵀ -
-    C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))
+  formRelation C (GeneralLinear.genericMatrix R n)
 
 /-- The relation matrix is the constant form transported by the generic matrix, minus the
 form: `X C Xᵀ - C`. -/
@@ -127,7 +182,7 @@ theorem relationMatrix_def :
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           (GeneralLinear.genericMatrix R n)ᵀ -
         C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) := by
-  rw [relationMatrix]
+  rw [relationMatrix, formRelation_def]
 
 /-- The set of defining relations: the entries of the relation matrix. -/
 noncomputable def relationSet : Set (GeneralLinear.coordinateHopfAlgebra R n) :=
@@ -151,12 +206,7 @@ the generic matrix maps entrywise, and the constant form maps to the constant fo
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
           ((GeneralLinear.genericMatrix R n).map phi)ᵀ -
         C.map (algebraMap R T) := by
-  have hC : (C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n))).map phi =
-      C.map (algebraMap R T) := by
-    rw [Matrix.map_map]
-    exact congrArg _ (funext fun r => phi.commutes r)
-  rw [relationMatrix, Matrix.map_sub, Matrix.map_mul, Matrix.map_mul, hC, Matrix.transpose_map]
-  exact fun a b => map_sub phi a b
+  rw [relationMatrix, formRelation_map, formRelation_def]
 
 /-! ### The three Hopf-ideal closure conditions -/
 
@@ -225,7 +275,7 @@ private theorem relationMatrix_map_antipode :
           C.map (algebraMap R (GeneralLinear.coordinateHopfAlgebra R n)) *
           ((GeneralLinear.genericMatrix R n)⁻¹)ᵀ := by
     have h := GeneralLinear.isUnit_det_genericMatrix R n
-    rw [relationMatrix, Matrix.mul_sub, Matrix.sub_mul]
+    rw [relationMatrix_def, Matrix.mul_sub, Matrix.sub_mul]
     simp only [Matrix.mul_assoc, ← Matrix.transpose_mul, Matrix.nonsing_inv_mul _ h,
       Matrix.transpose_one, Matrix.mul_one, Matrix.nonsing_inv_mul_cancel_left _ _ h]
   rw [relationMatrix_map R n C, GeneralLinear.map_antipode_genericMatrix, hkey, neg_sub]
@@ -263,6 +313,12 @@ theorem definingHopfIdeal_toIdeal :
     (definingHopfIdeal R n C).toIdeal = Ideal.span (relationSet R n C) := by
   rw [definingHopfIdeal, HopfIdeal.ofSpan_toIdeal]
 
+/-- The defining Hopf ideal is finitely generated: it is spanned by the finitely many entries of
+the relation matrix. -/
+theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R n C).toIdeal.FG := by
+  rw [definingHopfIdeal_toIdeal]
+  exact Submodule.fg_span (Set.finite_range _)
+
 /-- **A coordinate morphism kills the defining ideal exactly when its generic matrix `X`
 satisfies `X C Xᵀ = C`.** This is the criterion by which a subgroup of `GL n` given by generating
 morphisms is shown to lie in the subgroup scheme preserving `C`: it suffices to evaluate the form
@@ -273,10 +329,8 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [Ring T] [Algebra R T]
     (definingHopfIdeal R n C).toIdeal ≤ RingHom.ker (phi : _ →+* T) ↔
       (GeneralLinear.genericMatrix R n).map phi * C.map (algebraMap R T) *
           ((GeneralLinear.genericMatrix R n).map phi)ᵀ = C.map (algebraMap R T) := by
-  rw [definingHopfIdeal_toIdeal, Ideal.span_le, ← sub_eq_zero, ← relationMatrix_map]
-  refine ⟨fun h ↦ Matrix.ext fun i j ↦ h (relationMatrix_mem_relationSet R n C i j), ?_⟩
-  rintro h _ ⟨ij, rfl⟩
-  exact congrFun (congrFun h ij.1) ij.2
+  rw [definingHopfIdeal_toIdeal, relationSet, relationMatrix]
+  exact span_formRelation_le_ker_iff C _ phi
 
 /-- The coordinate Hopf algebra of the subgroup scheme of `GL n` preserving `C`. -/
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
@@ -317,6 +371,19 @@ theorem coordinateMap_relationMatrix (i j : Fin n) :
   exact (CommHopfAlgCat.mkQuotient_eq_zero_iff _ _ _).mpr
     (HopfIdeal.mem_toIdeal.mp (definingHopfIdeal_toIdeal R n C ▸
       Ideal.subset_span (relationMatrix_mem_relationSet R n C i j)))
+
+/-- The generic matrix of the subgroup scheme, the image of the generic matrix of `GLₙ`,
+preserves `C`. -/
+theorem map_genericMatrix_coordinateMap_mul_mul_transpose :
+    (GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom *
+        C.map (algebraMap R (coordinateHopfAlgebra R n C)) *
+        ((GeneralLinear.genericMatrix R n).map (coordinateMap R n C).hom)ᵀ =
+      C.map (algebraMap R (coordinateHopfAlgebra R n C)) := by
+  have h := relationMatrix_map R n C (coordinateMap R n C).hom.toAlgHom
+  rw [BialgHom.coe_toAlgHom] at h
+  rw [← sub_eq_zero, ← h]
+  ext i j
+  exact coordinateMap_relationMatrix R n C i j
 
 /-! ### The group scheme and its closed immersion -/
 
@@ -380,7 +447,6 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n C).obj = coordinateHopfAlgebra R n C := by
   rw [finiteTypeCoordinateHopfAlgebra]
 
-
 /-! ### Algebra-valued points -/
 
 section Points
@@ -426,6 +492,18 @@ theorem mem_definingPointsSubgroup_iff
     GeneralLinear.map_genericMatrix_eq_coe_pointToGeneralLinear n g.ofConv
   rw [← hg]
   exact definingHopfIdeal_toIdeal_le_ker_iff R n C g.ofConv
+
+variable (A) in
+/-- **The matrix points of the constant-form group scheme**: the subgroup of `GLₙ(A)` cut out by
+the defining Hopf ideal is the group `ConstantForm.pointsSubgroup` of matrices preserving `C`
+read in `A`. -/
+theorem hopfIdealPointsSubgroup_definingHopfIdeal :
+    GeneralLinear.hopfIdealPointsSubgroup n (definingHopfIdeal R n C) A =
+      pointsSubgroup (C.map (algebraMap R A)) := by
+  ext g
+  have h := mem_definingPointsSubgroup_iff R n C ((GeneralLinear.pointsMulEquiv (R := R) n).symm g)
+  rw [MulEquiv.apply_symm_apply, CommHopfAlgCat.mem_quotientPointsSubgroup_iff] at h
+  rw [GeneralLinear.mem_hopfIdealPointsSubgroup_iff, h, mem_pointsSubgroup_iff]
 
 variable {R n C} in
 /-- **Every matrix point of a subgroup cut out by a Hopf ideal containing the form relations

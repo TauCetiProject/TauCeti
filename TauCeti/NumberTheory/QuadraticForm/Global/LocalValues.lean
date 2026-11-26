@@ -45,6 +45,7 @@ variable {K : Type u} [Field K]
 variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 variable {W : Type w} [AddCommGroup W] [Module K W] [Nontrivial W]
 
+omit [FiniteDimensional K V] in
 /-- If `U ⊥ R` is not anisotropic at a finite place where `R` is anisotropic, with `U` regular
 and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
 of `R`. -/
@@ -58,6 +59,7 @@ theorem exists_atFinitePlace_ne_zero_eq_neg
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atFinitePlaceProd U R v⟩]
   exact h
 
+omit [FiniteDimensional K V] in
 /-- If `U ⊥ R` is not anisotropic at a real place where `R` is anisotropic, with `U` regular
 and `R` on a nonzero space, then some nonzero local value of `U` is the negative of a local value
 of `R`. -/
@@ -67,7 +69,7 @@ theorem exists_atRealPlace_ne_zero_eq_neg
     (h : ¬(atRealPlace (U.prod R) w).Anisotropic) (hU : U.Nondegenerate)
     (hR : (R.atRealPlace w).Anisotropic) :
     ∃ x y, U.atRealPlace w x ≠ 0 ∧ U.atRealPlace w x = -R.atRealPlace w y := by
-  let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  let : Algebra K ℝ := (embedding_of_isReal w.property).toAlgebra
   refine hR.exists_ne_zero_eq_neg_of_not_anisotropic_prod
     (Nondegenerate.atRealPlace hU w).radical_eq_bot ?_
   rw [← QuadraticMap.Equivalent.anisotropic_iff ⟨atRealPlaceProd U R w⟩]

@@ -62,7 +62,7 @@ variable {F K : Type*} [Field F] [Fintype F] [Field K] [Algebra F K] [DecidableE
 -- `tautologicalPoint_eq_map_genericPoint` rewrites the tautological point.
 theorem reductionOfDegreeEqOne_tautologicalPoint_baseChangeFrobenius
     (P : (W⁄K).toAffine.Point) :
-    reductionOfDegreeEqOne (W⁄K).toAffine ((W⁄K).toAffine.pointEquivDegreeOnePlace P).2
+    reductionOfDegreeEqOne (W⁄K).toAffine ((W⁄K).toAffine.pointEquivDegreeOnePlace P).property
         (baseChangeFrobenius K W).pullback.tautologicalPoint =
       Point.equivBaseChangeSelf _ (Point.map (FiniteField.frobeniusAlgHom F K) P) := by
   have hq : Nat.card F ≠ 0 := Nat.card_pos.ne'

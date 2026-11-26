@@ -38,12 +38,15 @@ universe u v u' v' u'' v'' w t
 
 namespace TauCeti.GTopology.ContinuousMap
 
+section General
+
 variable {X : Type u} {B : Type v} [SemilatticeInf B] [OrderTop B]
   {ι : B ↪o Set X} {G : GTopology ι}
-  {Y : Type u'} {B' : Type v'} [SemilatticeInf B'] [OrderTop B']
+
+section Pushforward
+
+variable {Y : Type u'} {B' : Type v'} [SemilatticeInf B'] [OrderTop B']
   {ι' : B' ↪o Set Y} {G' : GTopology ι'}
-  {Z : Type u''} {B'' : Type v''} [SemilatticeInf B''] [OrderTop B'']
-  {ι'' : B'' ↪o Set Z} {G'' : GTopology ι''}
   {A : Type w} [Category.{t} A]
   [HasColimitsOfSize.{v, v} A] [HasColimitsOfSize.{v', v'} A]
 
@@ -77,7 +80,12 @@ theorem stalkPushforward_naturality (f : G.ContinuousMap G') {P Q : Bᵒᵖ ⥤ 
   ext V h
   simp
 
-omit [HasColimitsOfSize.{v', v'} A] in
+end Pushforward
+
+section PushforwardId
+
+variable {A : Type w} [Category.{t} A] [HasColimitsOfSize.{v, v} A]
+
 /-- The stalk map for the identity continuous map is the identity, after the canonical
 identification of its source. -/
 @[simp]
@@ -88,9 +96,20 @@ theorem stalkPushforward_id (P : Bᵒᵖ ⥤ A) (x : X) :
     (V := (ContinuousMap.id G).comapFunctor.obj U) (by simp)]
   simp
 
+end PushforwardId
+
+section PushforwardComp
+
+variable {Y : Type u'} {B' : Type v'} [SemilatticeInf B'] [OrderTop B']
+  {ι' : B' ↪o Set Y} {G' : GTopology ι'}
+  {Z : Type u''} {B'' : Type v''} [SemilatticeInf B''] [OrderTop B'']
+  {ι'' : B'' ↪o Set Z} {G'' : GTopology ι''}
+  {A : Type w} [Category.{t} A]
+  [HasColimitsOfSize.{v, v} A] [HasColimitsOfSize.{v', v'} A] [HasColimitsOfSize.{v'', v''} A]
+
 /-- Direct-image stalk maps compose in the same order as restriction of germs. -/
 @[reassoc]
-theorem stalkPushforward_comp [HasColimitsOfSize.{v'', v''} A]
+theorem stalkPushforward_comp
     (g : G'.ContinuousMap G'') (f : G.ContinuousMap G') (P : Bᵒᵖ ⥤ A) (x : X) :
     (g.comp f).stalkPushforward P x =
       eqToHom (by simp; rfl) ≫
@@ -102,6 +121,15 @@ theorem stalkPushforward_comp [HasColimitsOfSize.{v'', v''} A]
   simpa using G.toPresheafFiber_congr rfl rfl
     (U := (g.comp f).comapFunctor.obj V) (V := f.comapFunctor.obj (g.comapFunctor.obj V))
     (by simp) (G.pointElement x (by simpa using h.down.down))
+
+end PushforwardComp
+
+section StalkMap
+
+variable {Y : Type u'} {B' : Type v'} [SemilatticeInf B'] [OrderTop B']
+  {ι' : B' ↪o Set Y} {G' : GTopology ι'}
+  {A : Type w} [Category.{t} A]
+  [HasColimitsOfSize.{v, v} A] [HasColimitsOfSize.{v', v'} A]
 
 /-- The stalk map of a morphism of presheaves over a continuous map. For ring-valued
 presheaves this is the ring homomorphism on which locality is imposed. -/
@@ -120,7 +148,12 @@ theorem toPresheafFiber_stalkMap (f : G.ContinuousMap G') {P : Bᵒᵖ ⥤ A}
         (G.pointElement x (by simpa using h.down.down)) P := by
   simp [stalkMap]
 
-omit [HasColimitsOfSize.{v', v'} A] in
+end StalkMap
+
+section StalkMapId
+
+variable {A : Type w} [Category.{t} A] [HasColimitsOfSize.{v, v} A]
+
 /-- Over the identity map, the stalk map is the ordinary fiber functor applied to the
 presheaf morphism. -/
 @[simp]
@@ -129,10 +162,21 @@ theorem stalkMap_id {P Q : Bᵒᵖ ⥤ A} (α : Q ⟶ (ContinuousMap.id G).comap
       (G.point ((ContinuousMap.id G) x)).presheafFiber.map α ≫ eqToHom (by simp; rfl) := by
   simp [stalkMap]
 
+end StalkMapId
+
+section StalkMapComp
+
+variable {Y : Type u'} {B' : Type v'} [SemilatticeInf B'] [OrderTop B']
+  {ι' : B' ↪o Set Y} {G' : GTopology ι'}
+  {Z : Type u''} {B'' : Type v''} [SemilatticeInf B''] [OrderTop B'']
+  {ι'' : B'' ↪o Set Z} {G'' : GTopology ι''}
+  {A : Type w} [Category.{t} A]
+  [HasColimitsOfSize.{v, v} A] [HasColimitsOfSize.{v', v'} A] [HasColimitsOfSize.{v'', v''} A]
+
 /-- Stalk maps of composable morphisms of presheaves over continuous maps compose.
 The associator and equality map identify the two presentations of the direct image. -/
 @[reassoc]
-theorem stalkMap_comp [HasColimitsOfSize.{v'', v''} A]
+theorem stalkMap_comp
     (g : G'.ContinuousMap G'') (f : G.ContinuousMap G')
     {P : Bᵒᵖ ⥤ A} {Q : B'ᵒᵖ ⥤ A} {R : B''ᵒᵖ ⥤ A}
     (β : R ⟶ g.comapFunctor.op ⋙ Q) (α : Q ⟶ f.comapFunctor.op ⋙ P) (x : X) :
@@ -148,6 +192,10 @@ theorem stalkMap_comp [HasColimitsOfSize.{v'', v''} A]
     (by simp) (G.pointElement x (by simpa using h.down.down))
   simpa [stalkMap] using congrArg
     (fun k ↦ (β.app (op V) ≫ α.app (op (g.comapFunctor.obj V))) ≫ k) hc.symm
+
+end StalkMapComp
+
+end General
 
 section Topological
 

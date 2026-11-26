@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Topology
 public import Mathlib.Topology.Homotopy.Basic
 public import Mathlib.Topology.Order.Lattice
 public import TauCeti.Geometry.Convex.ConvexSpace.Defs
+public import TauCeti.Geometry.Convex.ConvexSpace.Topology
 
 /-!
 # Deforming a simplex onto a horn
@@ -31,7 +32,7 @@ simplex by composition; `hornRetraction_apply_coe` proves that this extension re
 For the simplex on `Fin (n + 2)`, whose facets are the images of the face maps
 `StdSimplex.map j.succAbove`, continuous maps on the facets of a horn which agree wherever two
 facets meet glue to a continuous map on the horn, and hence extend to the whole simplex
-(`exists_continuousMap_comp_map_succAbove`).
+(`exists_continuousMap_comp_faceInclusion`).
 
 The simplex and its topology are Mathlib's `Convexity.StdSimplex`; the deformation is bundled
 as a `ContinuousMap.HomotopyRel`. No finiteness assumption on an ambient complex is involved.
@@ -113,9 +114,9 @@ def hornDeformation (a : ι) (t : I) (x : StdSimplex ℝ ι) : StdSimplex ℝ ι
   let m := (t : ℝ) * hornDepth a x
   let w : ι → ℝ := fun i => if i = a then
     x.weights i + (Fintype.card ι - 1 : ℝ) * m else x.weights i - m
-  have hm : 0 ≤ m := mul_nonneg t.2.1 (hornDepth_nonneg a x)
+  have hm : 0 ≤ m := mul_nonneg t.property.1 (hornDepth_nonneg a x)
   have hmi {i : ι} (hi : i ≠ a) : m ≤ x.weights i :=
-    (mul_le_of_le_one_left (hornDepth_nonneg a x) t.2.2).trans (hornDepth_le a x hi)
+    (mul_le_of_le_one_left (hornDepth_nonneg a x) t.property.2).trans (hornDepth_le a x hi)
   have hcard : 0 ≤ (Fintype.card ι - 1 : ℝ) := by
     have hc : (1 : ℝ) ≤ Fintype.card ι := by
       exact_mod_cast (Fintype.card_pos_iff.mpr (inferInstance : Nonempty ι))
@@ -193,10 +194,10 @@ theorem continuous_hornDeformation (a : ι) :
   simp only [Function.comp_apply, hornDeformation_weights]
   split_ifs
   · exact ((continuous_weights_apply ℝ i).comp continuous_snd).add
-      (continuous_const.mul (continuous_subtype_val.comp continuous_fst |>.mul
+      (continuous_const.mul (continuous_subtypeVal.comp continuous_fst |>.mul
         ((continuous_hornDepth a).comp continuous_snd)))
   · exact ((continuous_weights_apply ℝ i).comp continuous_snd).sub
-      (continuous_subtype_val.comp continuous_fst |>.mul
+      (continuous_subtypeVal.comp continuous_fst |>.mul
         ((continuous_hornDepth a).comp continuous_snd))
 
 /-- The continuous retraction of a simplex onto its horn. -/
@@ -212,7 +213,7 @@ theorem coe_hornRetraction (a : ι) (x : StdSimplex ℝ ι) :
 /-- The horn retraction fixes the horn pointwise. -/
 @[simp]
 theorem hornRetraction_apply_coe (a : ι) (x : horn a) : hornRetraction a x = x :=
-  Subtype.ext (hornDeformation_of_mem x.2 1)
+  Subtype.ext (hornDeformation_of_mem x.property 1)
 
 /-- A strong deformation retraction of the standard simplex onto its horn. -/
 def hornDeformationRetraction (a : ι) :
@@ -235,18 +236,18 @@ variable {X : Type*} [TopologicalSpace X] {n : ℕ}
 
 /-- Continuous maps on the facets of the horn opposite `a` which agree wherever two facets meet
 extend to a continuous map on the whole simplex: there is a continuous map on the simplex whose
-composite with each face map `StdSimplex.map j.succAbove`, `j ≠ a`, is the given map on that
-facet. -/
-theorem exists_continuousMap_comp_map_succAbove (a : Fin (n + 2))
+composite with each facet inclusion `StdSimplex.faceInclusion j`, `j ≠ a`, is the given map on
+that facet. -/
+theorem exists_continuousMap_comp_faceInclusion (a : Fin (n + 2))
     (g : ∀ j : Fin (n + 2), j ≠ a → C(StdSimplex ℝ (Fin (n + 1)), X))
     (hg : ∀ j hj k hk (y z : StdSimplex ℝ (Fin (n + 1))),
       y.map j.succAbove = z.map k.succAbove → g j hj y = g k hk z) :
     ∃ F : C(StdSimplex ℝ (Fin (n + 2)), X),
-      ∀ j hj, F.comp ⟨map j.succAbove, continuous_map ℝ _⟩ = g j hj := by
+      ∀ j hj, F.comp (faceInclusion j) = g j hj := by
   -- The facets of the horn, as a disjoint union, map onto the horn by the face maps.
   let p : C(Σ j : {j : Fin (n + 2) // j ≠ a}, StdSimplex ℝ (Fin (n + 1)), horn a) :=
-    ⟨fun s => ⟨s.2.map s.1.1.succAbove, s.1.1, s.1.2, weights_map_succAbove_self _ _⟩,
-      continuous_sigma fun j => (continuous_map ℝ j.1.succAbove).subtype_mk _⟩
+    ⟨fun s => ⟨s.2.map s.1.val.succAbove, s.1.val, s.1.property, weights_map_succAbove_self _ _⟩,
+      continuous_sigma fun j => (continuous_map ℝ j.val.succAbove).subtype_mk _⟩
   have hsurj : Function.Surjective p := by
     rintro ⟨x, i, hi, hx⟩
     obtain ⟨y, rfl⟩ := (mem_range_map_succAbove_iff i x).2 hx
@@ -256,14 +257,14 @@ theorem exists_continuousMap_comp_map_succAbove (a : Fin (n + 2))
     (isEmbedding_toFun_comp_weights ℝ (Fin (n + 2))).t2Space
   have hq : Topology.IsQuotientMap p := p.continuous.isClosedMap.isQuotientMap p.continuous hsurj
   let G : C(Σ j : {j : Fin (n + 2) // j ≠ a}, StdSimplex ℝ (Fin (n + 1)), X) :=
-    ⟨fun s => g s.1.1 s.1.2 s.2, continuous_sigma fun j => (g j.1 j.2).continuous⟩
+    ⟨fun s => g s.1.val s.1.property s.2, continuous_sigma fun j => (g j.val j.property).continuous⟩
   have hG : Function.FactorsThrough G p := fun s t hst =>
     hg _ _ _ _ _ _ (congrArg Subtype.val hst)
   refine ⟨(hq.lift G hG).comp (hornRetraction a), fun j hj => ?_⟩
   ext y
   have hy : hornRetraction a (y.map j.succAbove) = p ⟨⟨j, hj⟩, y⟩ :=
     hornRetraction_apply_coe a (p ⟨⟨j, hj⟩, y⟩)
-  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, hy]
+  simp only [ContinuousMap.comp_apply, faceInclusion_apply, hy]
   exact DFunLike.congr_fun (hq.lift_comp G hG) ⟨⟨j, hj⟩, y⟩
 
 end Facets

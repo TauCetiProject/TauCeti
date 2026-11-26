@@ -30,10 +30,13 @@ its Lie algebra by a lattice.
 ## Main results
 
 * `TauCeti.lieExp_add`: the exponential of a commutative Lie group is a homomorphism.
+* `GroupLieAlgebra.mulInvariantExp_add`: so is its tangent-space exponential.
 * `TauCeti.lieExpAddMonoidHom`: that homomorphism, bundled.
 * `TauCeti.range_lieExp`: the exponential image is the identity component.
 * `TauCeti.lieExp_surjective_of_preconnectedSpace`: the exponential of a preconnected
   commutative Lie group is surjective.
+* `TauCeti.lieExpLattice`: the kernel `Λ` of the exponential, as a `ℤ`-submodule of the Lie
+  algebra.
 * `TauCeti.discreteTopology_ker_lieExpAddMonoidHom`: the kernel of the exponential is discrete.
 * `TauCeti.isOpenMap_lieExpAddMonoidHom` and `TauCeti.isOpenMap_lieExp`: the exponential of a
   commutative Lie group is an open map.
@@ -41,10 +44,12 @@ its Lie algebra by a lattice.
   a preconnected commutative Lie group is surjective.
 * `TauCeti.lieExpQuotientKerContinuousAddEquiv`: a preconnected commutative Lie group is the
   quotient of its Lie algebra by the kernel of the exponential, as topological groups.
+* `TauCeti.lieExpLift`: a continuous homomorphism out of the Lie algebra of a preconnected
+  commutative Lie group that vanishes on the kernel of the exponential descends to the group.
 * `TauCeti.compactSpace_quotient_ker_lieExpAddMonoidHom`: for a compact commutative Lie group
   the quotient of the Lie algebra by the kernel of the exponential is compact.
-* `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_ker_lieExpAddMonoidHom` and
-  `TauCeti.finrank_ker_lieExpAddMonoidHom`: for a compact commutative Lie group the kernel of the
+* `TauCeti.span_ker_lieExpAddMonoidHom_eq_top`, `TauCeti.isZLattice_lieExpLattice` and
+  `TauCeti.finrank_lieExpLattice`: for a compact commutative Lie group the kernel of the
   exponential is a lattice of full rank in the Lie algebra.
 
 ## References
@@ -81,6 +86,17 @@ theorem lieExp_add (X Y : LeftInvariantDerivation I G) :
     lieExp (X + Y) = lieExp X * lieExp Y :=
   lieExp_add_of_commute (I := I) (G := G) fun _ => mul_comm' _ _
 
+/-- **The tangent-space exponential of a commutative Lie group is a homomorphism** from the
+additive group of the tangent space at the identity. -/
+@[simp]
+theorem _root_.GroupLieAlgebra.mulInvariantExp_add (v w : GroupLieAlgebra I G) :
+    mulInvariantExp (v + w) = mulInvariantExp v * mulInvariantExp w := by
+  let e := leftInvariantDerivationEquivGroupLieAlgebra (I := I) (G := G)
+    BoundarylessManifold.isInteriorPoint
+  have h (u : GroupLieAlgebra I G) : mulInvariantExp u = lieExp (e.symm u) := by
+    rw [lieExp_eq_mulInvariantExp, LinearEquiv.apply_symm_apply]
+  rw [h, h, h, map_add, lieExp_add]
+
 /-- The exponential of a commutative Lie group, as a homomorphism from the additive group of the
 Lie algebra to the group written additively. -/
 def lieExpAddMonoidHom : LeftInvariantDerivation I G →+ Additive G where
@@ -106,6 +122,16 @@ theorem mem_ker_lieExpAddMonoidHom {X : LeftInvariantDerivation I G} :
   -- `lieExpAddMonoidHom_apply` and `ofMul_eq_zero`, so the simpNF linter rejects the attribute.
   rw [AddMonoidHom.mem_ker, lieExpAddMonoidHom_apply, ofMul_eq_zero]
 
+/-- The exponential lattice `Λ = ker exp` of a commutative Lie group, as a `ℤ`-submodule of the
+Lie algebra. -/
+abbrev lieExpLattice : Submodule ℤ (LeftInvariantDerivation I G) :=
+  (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule
+
+/-- Membership in the exponential lattice. -/
+theorem mem_lieExpLattice {X : LeftInvariantDerivation I G} :
+    X ∈ lieExpLattice (I := I) (G := G) ↔ lieExp X = 1 :=
+  mem_ker_lieExpAddMonoidHom
+
 /-- **The kernel of the exponential of a commutative Lie group is a discrete subgroup** of the
 Lie algebra. -/
 instance discreteTopology_ker_lieExpAddMonoidHom :
@@ -121,7 +147,7 @@ instance discreteTopology_ker_lieExpAddMonoidHom :
     simp only [mem_singleton_iff, mem_preimage, Subtype.ext_iff, ZeroMemClass.coe_zero]
     exact ⟨fun h => by rw [h]; exact h0, fun h => by rw [← hU X h, hX, lieLog_one]⟩
   rw [hsingleton]
-  exact hUopen.preimage continuous_subtype_val
+  exact hUopen.preimage continuous_subtypeVal
 
 /-- The exponential homomorphism is continuous. -/
 @[fun_prop]
@@ -222,6 +248,44 @@ theorem lieExpQuotientKerContinuousAddEquiv_symm_apply (X : LeftInvariantDerivat
       (Additive.ofMul (lieExp (I := I) X)) = QuotientAddGroup.mk X := by
   rw [← lieExpQuotientKerContinuousAddEquiv_apply, ContinuousAddEquiv.symm_apply_apply]
 
+/-- The continuous homomorphism `G → K` out of a preconnected commutative Lie group induced by a
+continuous homomorphism `ψ : 𝔤 →+ Additive K` vanishing on the kernel of the exponential: `ψ`
+descends to `𝔤 / ker(exp)`, which is identified with `G`. It sends `exp X` to `ψ X`
+(`TauCeti.lieExpLift_lieExp`). -/
+def lieExpLift {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) : G →ₜ* K where
+  toFun g := Additive.toMul (QuotientAddGroup.lift _ ψ hψ
+    ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g)))
+  map_one' := by
+    rw [ofMul_one, map_zero, map_zero, toMul_zero]
+  map_mul' a b := by
+    rw [ofMul_mul, map_add, map_add, toMul_add]
+  continuous_toFun := by
+    -- The lift is continuous since its composite with the quotient map is `ψ`.
+    have hlift : Continuous (QuotientAddGroup.lift _ ψ hψ) :=
+      (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hψc
+    exact continuous_toMul.comp (hlift.comp
+      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm.continuous.comp
+        continuous_ofMul))
+
+/-- Unfolding lemma for `lieExpLift`: it lifts `ψ` through the identification of `G` with
+`𝔤 / ker(exp)`. -/
+theorem lieExpLift_apply {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) (g : G) :
+    lieExpLift ψ hψc hψ g = Additive.toMul (QuotientAddGroup.lift _ ψ hψ
+      ((lieExpQuotientKerContinuousAddEquiv (I := I) (G := G)).symm (Additive.ofMul g))) :=
+  (rfl)
+
+/-- The homomorphism `lieExpLift ψ hψc hψ` sends `exp X` to `ψ X`. -/
+@[simp]
+theorem lieExpLift_lieExp {K : Type*} [Monoid K] [TopologicalSpace K]
+    (ψ : LeftInvariantDerivation I G →+ Additive K) (hψc : Continuous ψ)
+    (hψ : (lieExpAddMonoidHom (I := I) (G := G)).ker ≤ ψ.ker) (X : LeftInvariantDerivation I G) :
+    lieExpLift ψ hψc hψ (lieExp X) = Additive.toMul (ψ X) := by
+  simp [lieExpLift_apply]
+
 end Preconnected
 
 section Compact
@@ -231,16 +295,9 @@ variable [CompactSpace G]
 /-- **The Lie algebra modulo the kernel of the exponential is compact** when the group is: it is
 the identity component, which is closed. -/
 instance compactSpace_quotient_ker_lieExpAddMonoidHom :
-    CompactSpace (LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) := by
-  -- The quotient is the range of the exponential homomorphism, as the exponential is strict.
-  have hcompact : IsCompact (Set.range (lieExpAddMonoidHom (I := I) (G := G))) := by
-    rw [coe_lieExpAddMonoidHom, Set.range_comp, range_lieExp, Equiv.image_eq_preimage_symm,
-      Additive.ofMul_symm_eq]
-    exact (isClosed_connectedComponent.preimage continuous_toMul).isCompact
-  rw [← AddMonoidHom.coe_range, isCompact_iff_compactSpace] at hcompact
-  exact (ContinuousAddEquiv.quotientKerEquivRange
-    ((isOpenMap_lieExpAddMonoidHom (I := I) (G := G)).isStrictMap
-      continuous_lieExpAddMonoidHom)).symm.toHomeomorph.compactSpace
+    CompactSpace (LeftInvariantDerivation I G ⧸ (lieExpAddMonoidHom (I := I) (G := G)).ker) :=
+  AddMonoidHom.compactSpace_quotient_ker_of_isOpenMap _ continuous_lieExpAddMonoidHom
+    isOpenMap_lieExpAddMonoidHom
 
 /-- **The kernel of the exponential of a compact commutative Lie group spans the Lie
 algebra.** -/
@@ -249,18 +306,17 @@ theorem span_ker_lieExpAddMonoidHom_eq_top :
       ((lieExpAddMonoidHom (I := I) (G := G)).ker : Set (LeftInvariantDerivation I G)) = ⊤ :=
   AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
-/-- **The kernel of the exponential of a compact commutative Lie group is a lattice**
-in the Lie algebra. -/
-instance isZLattice_ker_lieExpAddMonoidHom :
-    IsZLattice ℝ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule where
+/-- **The exponential lattice of a compact commutative Lie group is a lattice** in the Lie
+algebra. -/
+instance isZLattice_lieExpLattice : IsZLattice ℝ (lieExpLattice (I := I) (G := G)) where
   span_top := by
     rw [AddSubgroup.coe_toIntSubmodule]
     exact span_ker_lieExpAddMonoidHom_eq_top (I := I) (G := G)
 
 omit [IsTopologicalGroup G] in
-/-- The rank of the kernel of the exponential is the dimension of the group. -/
-theorem finrank_ker_lieExpAddMonoidHom :
-    Module.finrank ℤ (lieExpAddMonoidHom (I := I) (G := G)).ker.toIntSubmodule =
+/-- The rank of the exponential lattice is the dimension of the group. -/
+theorem finrank_lieExpLattice :
+    Module.finrank ℤ (lieExpLattice (I := I) (G := G)) =
       Module.finrank ℝ (LeftInvariantDerivation I G) := by
   have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   exact ZLattice.rank ℝ _

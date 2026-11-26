@@ -27,11 +27,13 @@ of scalars is measurable even at zero.
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
+* `TauCeti.instMeasurableAddMatrix` — entrywise addition of matrices is measurable.
 * `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
   `MeasurableMul₂` instance it supplies for square matrices.
 * `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
+* `Measurable.matrix_det` — the determinant of a measurable family of matrices is measurable.
 * `TauCeti.measurable_matrix_inv` — matrix inversion is measurable, and the `MeasurableInv`
   instance it supplies.
 -/
@@ -72,6 +74,11 @@ theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
   (rfl)
+
+/-- Entrywise addition of matrices is measurable when addition of the entries is. -/
+instance instMeasurableAddMatrix {m n α : Type*} [MeasurableSpace α] [Add α] [MeasurableAdd α] :
+    MeasurableAdd (Matrix m n α) :=
+  inferInstanceAs (MeasurableAdd (m → n → α))
 
 /-- Matrix multiplication is measurable: each entry of a product is a finite sum of products of
 entries. -/
@@ -114,6 +121,15 @@ theorem measurable_matrix_blockSucc {n : ℕ} {R : Type*} [Semiring R] [Measurab
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   induction i using Fin.lastCases <;> induction j using Fin.lastCases <;>
     simp [Matrix.measurable_apply]
+
+/-- The determinant of a measurable family of square matrices is measurable, since the determinant
+is a polynomial in the entries. -/
+@[fun_prop]
+theorem _root_.Measurable.matrix_det {m R α : Type*} [Fintype m] [DecidableEq m] [CommRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [MeasurableSpace R] [BorelSpace R]
+    [SecondCountableTopology R] [MeasurableSpace α] {A : α → Matrix m m R} (hA : Measurable A) :
+    Measurable fun x ↦ (A x).det :=
+  (Continuous.matrix_det continuous_id).measurable.comp hA
 
 variable {m : Type*} [Fintype m] [DecidableEq m] {𝕜 : Type*} [Field 𝕜] [TopologicalSpace 𝕜]
   [IsTopologicalRing 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜] [SecondCountableTopology 𝕜]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.GrothendieckGroup.Presentation
-public import Mathlib.CategoryTheory.Limits.Shapes.BinaryBiproducts
+public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Elementary
 
 /-!
 # The monoid of isomorphism classes under the binary biproduct
@@ -83,26 +83,8 @@ lemma objectCode_zero : objectCode (0 : C) = (0 : ObjectCode C) := (rfl)
 
 /-- The isomorphism classes of an essentially small category with zero morphisms, a zero object
 and binary biproducts form an additive commutative monoid under the binary biproduct. -/
-noncomputable instance : AddCommMonoid (ObjectCode C) where
-  nsmul := nsmulRec
-  add_assoc a b c := by
-    obtain ⟨A, rfl⟩ := objectCode_surjective a
-    obtain ⟨B, rfl⟩ := objectCode_surjective b
-    obtain ⟨D, rfl⟩ := objectCode_surjective c
-    rw [← objectCode_biprod, ← objectCode_biprod, ← objectCode_biprod, ← objectCode_biprod]
-    exact objectCode_congr (biprod.associator A B D)
-  add_comm a b := by
-    obtain ⟨A, rfl⟩ := objectCode_surjective a
-    obtain ⟨B, rfl⟩ := objectCode_surjective b
-    rw [← objectCode_biprod, ← objectCode_biprod]
-    exact objectCode_congr (biprod.braiding A B)
-  add_zero a := by
-    obtain ⟨A, rfl⟩ := objectCode_surjective a
-    rw [← objectCode_zero, ← objectCode_biprod]
-    exact objectCode_congr (isoBiprodZero (isZero_zero C)).symm
-  zero_add a := by
-    obtain ⟨A, rfl⟩ := objectCode_surjective a
-    rw [← objectCode_zero, ← objectCode_biprod]
-    exact objectCode_congr (isoZeroBiprod (isZero_zero C)).symm
+noncomputable instance : AddCommMonoid (ObjectCode C) :=
+  addCommMonoidOfBiprod objectCode objectCode_surjective (fun _ _ => objectCode_congr)
+    objectCode_biprod objectCode_zero
 
 end TauCeti

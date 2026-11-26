@@ -8,11 +8,14 @@ module
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.RingTheory.Valuation.Center
 public import TauCeti.RingTheory.Valuation.Discrete.Order
+public import TauCeti.RingTheory.Valuation.Surjective
 -- Proof-only: the ramification comparison of adic valuations.
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 -- Proof-only: the normalization of a valuation, which is how a merely bounded one is brought into
 -- the normalized form the centre construction compares against.
 import TauCeti.RingTheory.Valuation.Discrete.Normalize
+-- Proof-only: membership in Mathlib's `Localization.subalgebra.ofField` as a quotient.
+import TauCeti.RingTheory.Localization.AsSubring
 
 /-!
 # Adic valuations on the fraction field of a Dedekind domain
@@ -45,6 +48,10 @@ by the class-group interface and the multiplicative value can be read off from o
 * `IsDedekindDomain.HeightOneSpectrum.neg_log_valuation_eq_one_iff`: order of vanishing `1` at `v`
   is the value `WithZero.exp (-1)`, which relates the multiplicative value group of the adic
   valuation to the additive order of vanishing used by the class-group interface.
+* `IsDedekindDomain.HeightOneSpectrum.mem_valuationSubringAtPrime_iff`: the localization of `R`
+  at `v`, as a valuation subring of `K`, consists of the fractions `a / s` with `s ∉ v`.
+* `IsDedekindDomain.HeightOneSpectrum.valuationSubringAtPrime_injective`: a place is determined
+  by its localization, as a valuation subring of `K`.
 * `IsDedekindDomain.HeightOneSpectrum.algebraMap_mem_maximalIdeal_valuationSubring_iff`: an
   element of `R` lies in `v` exactly when its image in the valuation ring of `K` at `v` lies in
   the maximal ideal.
@@ -131,7 +138,7 @@ theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : Heig
   obtain ⟨n, d, hnd | hnd⟩ := 𝔭.exists_primeCompl_mul_eq_or_mul_eq x
   · -- `x = n / d` with `d` outside `𝔭`: both valuations of `x` are those of `n`, hence `≤ 1`.
     have hd : 𝔭.valuation K (algebraMap R K (d : R)) = 1 :=
-      𝔭.valuation_eq_one_iff_notMem.mpr d.2
+      𝔭.valuation_eq_one_iff_notMem.mpr d.property
     have h₁ : 𝔭.valuation K x = 𝔭.valuation K (algebraMap R K n) := by
       rw [← hnd, map_mul, hd, mul_one]
     have h₂ : w x = w (algebraMap R K n) := by
@@ -151,7 +158,7 @@ theorem eq_valuation_of_forall_mem_asIdeal_iff [IsDedekindDomain R] {𝔭 : Heig
           _ < 1 := lt_of_le_of_ne hvn hne
       exact absurd hx hlt.ne
     have hd : 𝔭.valuation K (algebraMap R K (d : R)) = 1 :=
-      𝔭.valuation_eq_one_iff_notMem.mpr d.2
+      𝔭.valuation_eq_one_iff_notMem.mpr d.property
     rw [key _ (𝔭.valuation_le_one n) hd, key _ (hR n) ((hone (d : R)).mp hd), hone n]
 
 /-- **The adic valuation of the centre of `w` on `R` is `w` itself**: a normalized valuation of the
@@ -245,6 +252,22 @@ theorem neg_log_valuation_eq_one_iff (v : HeightOneSpectrum R) (x : K) :
       _ = WithZero.exp (-1) := by rw [hlog]
   · intro h
     rw [h, WithZero.log_exp, neg_neg]
+
+/-- The elements of the localization of `R` at `v`, as a valuation subring of `K`, are the
+fractions `a / s` with `s ∉ v.asIdeal`. -/
+theorem mem_valuationSubringAtPrime_iff {v : HeightOneSpectrum R} {x : K} :
+    x ∈ valuationSubringAtPrime K v ↔
+      ∃ a, ∃ s ∈ v.asIdeal.primeCompl, x = algebraMap R K a * (algebraMap R K s)⁻¹ := by
+  rw [← ValuationSubring.mem_toSubring, valuationSubringAtPrime_toSubring,
+    Subalgebra.mem_toSubring, Localization.subalgebra.mem_ofField_iff]
+
+variable (K) in
+/-- A place of `R` is determined by its localization, as a valuation subring of `K`. -/
+theorem valuationSubringAtPrime_injective :
+    Function.Injective (valuationSubringAtPrime (R := R) K) := fun v w h ↦ by
+  rw [valuationSubringAtPrime_eq_valuationSubring,
+    valuationSubringAtPrime_eq_valuationSubring] at h
+  exact valuationSubring_valuation_injective K h
 
 /-- An element of `R` lies in the prime `v` exactly when its image in the valuation ring of `K` at
 `v` lies in the maximal ideal. The algebra structure of `R` on the valuation ring is taken as a

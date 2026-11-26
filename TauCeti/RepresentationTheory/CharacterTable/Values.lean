@@ -48,6 +48,8 @@ representation of a group, from the eigenvalues alone, with no invariant inner p
   algebraically closed field.
 * `Representation.isIntegral_char`: **character values are algebraic integers**, over an
   arbitrary field. The bundled `FDRep` form is Mathlib's `FDRep.isIntegral_character`.
+* `Representation.isIntegral_character_of_finite_range`: a representation with finite image has
+  character values integral over every ring below the field.
 * `Representation.char_mem_of_forall_pow_eq_one_mem`: whenever `(ρ g).charpoly` splits,
   a character value at `g` with `g ^ n = 1` lies in every subring containing the `n`-th roots of
   unity.
@@ -131,15 +133,28 @@ theorem isSemisimple_of_pow_eq_one (ρ : Representation k G V) {g : G} {n : ℕ}
     (hg : g ^ n = 1) : End.IsSemisimple (ρ g) :=
   Module.End.isSemisimple_of_pow_eq_one hn (by rw [← map_pow, hg, map_one])
 
+omit [FiniteDimensional k V] in
 /-- **Character values are algebraic integers**: over any field, the value of a character at an
-element of finite order is integral over `ℤ`. Once the characteristic polynomial of `ρ g` splits
-this is the statement that a sum of roots of unity is an algebraic integer, and the general case
-follows from that one by base change to an algebraic closure
-(`Module.End.isIntegral_trace_of_pow_eq_one`). -/
+element of finite order is integral over `ℤ` (`Module.End.isIntegral_trace_of_pow_eq_one`). For
+finite-dimensional `V` it is a sum of roots of unity in an algebraic closure. If `V` is not
+finite-dimensional, `ρ.character` is identically `0`, since `LinearMap.trace` is `0` by convention,
+and the statement holds trivially. -/
 theorem isIntegral_char (ρ : Representation k G V) {g : G} {n : ℕ}
     (hn : n ≠ 0) (hg : g ^ n = 1) : IsIntegral ℤ (ρ.character g) := by
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   exact Module.End.isIntegral_trace_of_pow_eq_one hn hf
+
+omit [FiniteDimensional k V] in
+/-- **With finite image, every character value is integral** over every ring `R` below `k`. -/
+theorem isIntegral_character_of_finite_range {R : Type*} [CommRing R] [Algebra R k]
+    (ρ : Representation k G V) (h : (Set.range ρ).Finite) (g : G) :
+    IsIntegral R (ρ.character g) := by
+  -- Two distinct powers of `ρ g` agree, by pigeonhole in the finite image.
+  have : Finite (Set.range ρ) := h.to_subtype
+  obtain ⟨a, b, hab, he⟩ := Finite.exists_ne_map_eq_of_infinite
+    fun n : ℕ => (⟨ρ (g ^ n), g ^ n, rfl⟩ : Set.range ρ)
+  exact Module.End.isIntegral_trace_of_pow_eq_pow hab
+    (by simpa [map_pow] using congrArg Subtype.val he)
 
 /-- **Character values lie in every subring containing the relevant roots of unity.** If the
 characteristic polynomial of `ρ g` splits, `g ^ n = 1`, and the subring `A` of `k` contains every
@@ -156,11 +171,13 @@ end Field
 
 section Rat
 
-variable {G : Type v} {V : Type w} [Monoid G] [AddCommGroup V] [Module ℚ V] [FiniteDimensional ℚ V]
+variable {G : Type v} {V : Type w} [Monoid G] [AddCommGroup V] [Module ℚ V]
 
 /-- **A rational character value is an integer.** The character of a representation over `ℚ` takes
 at an element of finite order a value that is integral over `ℤ`, and `ℤ` is integrally closed in
-its fraction field `ℚ`, so that value is the cast of an integer. -/
+its fraction field `ℚ`, so that value is the cast of an integer. If `V` is not finite-dimensional,
+`ρ.character` is identically `0`, since `LinearMap.trace` is `0` by convention, and `m = 0` works.
+-/
 theorem exists_char_eq_intCast (ρ : Representation ℚ G V) {g : G} {n : ℕ} (hn : n ≠ 0)
     (hg : g ^ n = 1) : ∃ m : ℤ, ρ.character g = (m : ℚ) := by
   obtain ⟨m, hm⟩ := IsIntegrallyClosed.isIntegral_iff.1 (isIntegral_char ρ hn hg)
@@ -231,9 +248,6 @@ finite-dimensional, `LinearMap.trace` is `0`, so both sides are `0` and the iden
 trivially; it is only meaningful in finite dimension. -/
 theorem conj_char_eq_char_inv (ρ : Representation ℂ G V) {g : G} {n : ℕ} (hn : n ≠ 0)
     (hg : g ^ n = 1) : (starRingEnd ℂ) (ρ.character g) = ρ.character g⁻¹ := by
-  by_cases hV : FiniteDimensional ℂ V
-  swap
-  · simp [ρ.character_eq_zero_of_not_finite hV]
   have hf : ρ g ^ n = 1 := by rw [← map_pow, hg, map_one]
   have hinv : g⁻¹ = g ^ (n - 1) :=
     inv_eq_of_mul_eq_one_right (by rw [mul_pow_sub_one hn, hg])
@@ -312,7 +326,7 @@ noncomputable def intClassFunction (V : FDRep ℚ G) : TauCeti.ClassFunction ℤ
 omit [Finite G] in
 @[simp]
 theorem intClassFunction_apply (V : FDRep ℚ G) (g : G) :
-    (FDRep.intClassFunction V).1 g = FDRep.intCharacter V g := (rfl)
+    (FDRep.intClassFunction V).val g = FDRep.intCharacter V g := (rfl)
 
 omit [Finite G] in
 /-- Conjugate elements have the same integer character. -/

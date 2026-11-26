@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 public import TauCeti.LinearAlgebra.Matrix.IsometryMatrices.Basic
 public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Basic
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Lifting special orthogonal matrices
@@ -18,7 +19,8 @@ preserving a symmetric Gram matrix with unit determinant,
 `Matrix.exists_map_eq_of_mem_isometryMatrices_map`, gives an orthogonal lift.
 
 The lift's determinant squares to one and is congruent to one modulo the ideal. Invertibility of
-`2` then forces its determinant to equal one, so the lift is special orthogonal.
+`2` then forces its determinant to equal one (`Ideal.eq_one_of_sq_eq_one_of_sub_one_mem`), so the
+lift is special orthogonal.
 
 ## Main declarations
 
@@ -51,9 +53,9 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : R)]
     Function.Surjective
       (map (n := n) (Ideal.Quotient.mk I)) := by
   intro g
-  have hg : g.1 ∈ isometryMatrices ((1 : Matrix n n R).map (Ideal.Quotient.mk I)) := by
+  have hg : g.val ∈ isometryMatrices ((1 : Matrix n n R).map (Ideal.Quotient.mk I)) := by
     rw [mem_isometryMatrices, Matrix.map_one _ (map_zero _) (map_one _), Matrix.mul_one]
-    exact (Matrix.mem_orthogonalGroup_iff' n (R ⧸ I)).mp g.2.1
+    exact (Matrix.mem_orthogonalGroup_iff' n (R ⧸ I)).mp g.property.1
   obtain ⟨N, hN, hN_map⟩ := exists_map_eq_of_mem_isometryMatrices_map
     Ideal.Quotient.mk_surjective (by rw [Ideal.mk_ker, hI]) (isUnit_of_invertible 2)
     transpose_one (by rw [det_one]; exact isUnit_one) hg
@@ -62,23 +64,12 @@ theorem map_quotient_mk_surjective_of_sq_eq_bot [Invertible (2 : R)]
     exact mul_eq_one_comm.mp hN
   have hdet_map : Ideal.Quotient.mk I N.det = 1 := by
     rw [RingHom.map_det, RingHom.mapMatrix_apply, hN_map]
-    exact g.2.2
-  have hdet_sub_mem : N.det - 1 ∈ I := by
-    rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hdet_map, map_one, sub_self]
-  have hdet_sub_sq : (N.det - 1) ^ 2 = 0 := by
-    rw [← Ideal.mem_bot, ← hI]
-    simpa only [pow_two] using Ideal.mul_mem_mul hdet_sub_mem hdet_sub_mem
-  have hdet_sq : N.det ^ 2 = 1 := by
-    have hdet := congrArg Matrix.det hN_orthogonal
-    simpa only [Matrix.det_mul, Matrix.det_transpose, Matrix.det_one, pow_two] using hdet
-  have htwo : (2 : R) * (N.det - 1) = 0 := by
-    calc
-      (2 : R) * (N.det - 1) = N.det ^ 2 - 1 - (N.det - 1) ^ 2 := by ring
-      _ = 0 := by rw [hdet_sq, hdet_sub_sq]; ring
+    exact g.property.2
   have hdet : N.det = 1 := by
-    apply sub_eq_zero.mp
-    apply (isUnit_of_invertible (2 : R)).mul_left_cancel
-    simpa only [mul_zero] using htwo
+    refine Ideal.eq_one_of_sq_eq_one_of_sub_one_mem hI (isUnit_of_invertible 2) ?_ ?_
+    · rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, hdet_map, map_one, sub_self]
+    · have hdet := congrArg Matrix.det hN_orthogonal
+      simpa only [Matrix.det_mul, Matrix.det_transpose, Matrix.det_one, pow_two] using hdet
   exact ⟨⟨N, (Matrix.mem_specialOrthogonalGroup_iff).mpr
     ⟨(Matrix.mem_orthogonalGroup_iff n R).mpr hN_orthogonal, hdet⟩⟩,
     Subtype.ext <| by rw [coe_map]; exact hN_map⟩

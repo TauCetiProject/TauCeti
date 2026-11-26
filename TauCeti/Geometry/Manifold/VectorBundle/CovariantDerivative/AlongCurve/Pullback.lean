@@ -118,7 +118,7 @@ chart. -/
 theorem sectionCoord_curveVelocityWithin_eventuallyEq {x : M} {s : Set 𝕜} {t : 𝕜}
     (hγ : MDifferentiableOn 𝓘(𝕜, 𝕜) I γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    sectionCoord (F := E) γ (curveVelocityWithin I γ s) x =ᶠ[𝓝[s] t]
+    sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x =ᶠ[𝓝[s] t]
       derivWithin (extChartAt I x ∘ γ) s := by
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ (trivializationAt E (TangentSpace I) x).baseSet :=
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin
@@ -141,7 +141,7 @@ theorem contDiffWithinAt_sectionCoord_curveVelocityWithin {n : ℕ∞ω} [IsMani
     {x : M} {s : Set 𝕜}
     {t : 𝕜} (hs : UniqueDiffOn 𝕜 s) (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I (n + 1) γ s)
     (ht : t ∈ s) (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
-    ContDiffWithinAt 𝕜 n (sectionCoord (F := E) γ (curveVelocityWithin I γ s) x) s t := by
+    ContDiffWithinAt 𝕜 n (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x) s t := by
   have hchart : ContDiffWithinAt 𝕜 (n + 1) (extChartAt I x ∘ γ) s t :=
     ((contMDiffWithinAt_iff_target_of_mem_source
       (by simpa only [TangentBundle.trivializationAt_baseSet] using hx)).mp (hγ t ht)).2
@@ -161,7 +161,7 @@ theorem differentiableWithinAt_sectionCoord_curveVelocityWithin [IsManifold I 2 
     (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 2 γ s) (ht : t ∈ s)
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet) :
     DifferentiableWithinAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) x) s t := by
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x) s t := by
   let _ : IsManifold I ((1 : ℕ∞ω) + 1) M := IsManifold.of_le (n := 2) (by norm_num)
   have hγ' : ContMDiffOn 𝓘(𝕜, 𝕜) I ((1 : ℕ∞ω) + 1) γ s := by
     simpa only [show (1 : ℕ∞ω) + 1 = 2 by norm_num] using hγ
@@ -175,14 +175,14 @@ curve is differentiable at every parameter in the set. -/
 theorem differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
     {s : Set 𝕜} {t : 𝕜} (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I 2 γ s)
     (hs : IsOpen s) (ht : t ∈ s) :
-    DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ t)) t := by
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t)) t := by
   have hwithin : DifferentiableAt 𝕜
-      (sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t)) t :=
+      (sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ t)) t :=
     (differentiableWithinAt_sectionCoord_curveVelocityWithin γ hs.uniqueDiffOn hγ ht
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ t)))
       |>.differentiableAt (hs.mem_nhds ht)
-  have heq : sectionCoord (F := E) γ (curveVelocityWithin I γ s) (γ t) =ᶠ[𝓝 t]
-      sectionCoord (F := E) γ (curveVelocity I γ) (γ t) := by
+  have heq : sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) (γ t) =ᶠ[𝓝 t]
+      sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t) := by
     filter_upwards [hs.mem_nhds ht] with r hr
     rw [sectionCoord_apply, sectionCoord_apply,
       curveVelocityWithin_of_mem_nhds (hs.mem_nhds hr)]
@@ -193,7 +193,7 @@ omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 /-- The coordinate velocity of a curve that is `C²` at a parameter is differentiable there. -/
 theorem _root_.ContMDiffAt.differentiableAt_sectionCoord_curveVelocity [IsManifold I 2 M]
     {γ : 𝕜 → M} {t : 𝕜} (hγ : ContMDiffAt 𝓘(𝕜, 𝕜) I 2 γ t) :
-    DifferentiableAt 𝕜 (sectionCoord (F := E) γ (curveVelocity I γ) (γ t)) t := by
+    DifferentiableAt 𝕜 (sectionCoord 𝕜 (F := E) γ (curveVelocity I γ) (γ t)) t := by
   obtain ⟨u, hu, hγu⟩ := (contMDiffAt_iff_contMDiffOn_nhds (by simp)).mp hγ
   exact TauCeti.Manifold.differentiableAt_sectionCoord_curveVelocity γ
     (hγu.mono interior_subset)
@@ -215,7 +215,7 @@ theorem derivWithin_sectionCoord_pullback
     (hy : γ t ∈ (trivializationAt F V x).baseSet) (hu : UniqueDiffWithinAt 𝕜 s t)
     (hγ : HasMFDerivAt[s] γ t (ContinuousLinearMap.smulRight (1 : 𝕜 →L[𝕜] 𝕜) w))
     (hY : MDiffAt (T% Y) (γ t)) :
-    derivWithin (sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x) s t =
+    derivWithin (sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x) s t =
       (trivializationAt F V x).continuousLinearMapAt 𝕜 (γ t)
         (frameCovariantDerivative I b (trivializationAt F V x) Y (γ t) w) := by
   have : FiniteDimensional 𝕜 F := Module.Finite.of_basis b
@@ -239,10 +239,10 @@ theorem derivWithin_sectionCoord_pullback
     hfun ▸ HasDerivWithinAt.sum fun i (_ : i ∈ Finset.univ) ↦ (hcoeff i).smul_const (b i)
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     hγ.1.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hy)
-  have hEq : sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x =ᶠ[𝓝[s] t]
+  have hEq : sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x =ᶠ[𝓝[s] t]
       fun r ↦ ∑ i, σ i (γ r) • b i :=
     hbase.mono fun r hr ↦ by rw [sectionCoord_apply, hread _ hr]
-  have hpoint : sectionCoord (F := F) γ (fun r ↦ Y (γ r)) x t =
+  have hpoint : sectionCoord 𝕜 (F := F) γ (fun r ↦ Y (γ r)) x t =
       (fun r ↦ ∑ i, σ i (γ r) • b i) t := by
     rw [sectionCoord_apply, hread _ hy]
   rw [(hsum.congr_of_eventuallyEq hEq hpoint).derivWithin hu, frameCovariantDerivative_apply,
@@ -347,7 +347,7 @@ theorem alongCurveInChartWithin_curveVelocityWithin {x : M} {s : Set 𝕜} {t : 
             (s := (trivializationAt E (TangentSpace I) x).baseSet)) (γ t)
           (derivWithin (extChartAt I x ∘ γ) s t) (derivWithin (extChartAt I x ∘ γ) s t) := by
   have hEq := sectionCoord_curveVelocityWithin_eventuallyEq γ hγ ht hx
-  have hpoint : sectionCoord (F := E) γ (curveVelocityWithin I γ s) x t =
+  have hpoint : sectionCoord 𝕜 (F := E) γ (curveVelocityWithin I γ s) x t =
       derivWithin (extChartAt I x ∘ γ) s t := hEq.self_of_nhdsWithin ht
   rw [alongCurveInChartWithin_apply, hEq.derivWithin_eq hpoint, hpoint]
 

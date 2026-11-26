@@ -24,6 +24,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
 
 ## Main results
 
+* `IsPrimitiveRoot.finrank_eq_natDegree_minpoly`: `[L : K]` is the degree of the minimal
+  polynomial of any primitive `n`-th root of unity of `L`.
 * `IsCyclotomicExtension.finrank_le_totient`: `[L : K] ≤ φ n`.
 * `IsCyclotomicExtension.irreducible_cyclotomic_of_totient_le_finrank`: if `φ n ≤ [L : K]` then
   `Φ_n` is irreducible over `K`.
@@ -31,6 +33,8 @@ irreducible over `K`. That converse and Mathlib's forward direction give the equ
   `K` if and only if `[L : K] = φ n`.
 * `irreducible_cyclotomic_of_coprime_finrank`: irreducibility is preserved by a base change
   whose `finrank` is coprime to `φ n`.
+* `Polynomial.irreducible_cyclotomic_prime_pow_of_prime`: every `p`-power cyclotomic polynomial
+  is irreducible over the fraction field of an integrally closed domain in which `p` is prime.
 * `irreducible_cyclotomic_prime_pow_ratPadic`: every `p`-power cyclotomic polynomial is
   irreducible over `ℚ_p`.
 
@@ -47,16 +51,20 @@ public section
 
 open Polynomial
 
+/-- **The degree of a cyclotomic extension is that of a primitive root.** For an `n`-th cyclotomic
+extension `L / K` and any primitive `n`-th root of unity `ζ ∈ L`, `[L : K]` is the degree of the
+minimal polynomial of `ζ` over `K`: `L = K(ζ)` has the power basis `1, ζ, …`.
+
+Source: Mathlib, proof of `IsCyclotomicExtension.finrank`. -/
+theorem IsPrimitiveRoot.finrank_eq_natDegree_minpoly {n : ℕ} [NeZero n] {K L : Type*} [Field K]
+    [CommRing L] [IsDomain L] [Algebra K L] [IsCyclotomicExtension {n} K L] {ζ : L}
+    (hζ : IsPrimitiveRoot ζ n) : Module.finrank K L = (minpoly K ζ).natDegree := by
+  rw [(hζ.powerBasis K).finrank, IsPrimitiveRoot.powerBasis_dim]
+
 namespace IsCyclotomicExtension
 
 variable {n : ℕ} [NeZero n] (K : Type*) [Field K] (L : Type*) [CommRing L] [IsDomain L]
   [Algebra K L] [IsCyclotomicExtension {n} K L]
-
-private theorem finrank_eq_natDegree_minpoly_zeta :
-    Module.finrank K L = (minpoly K (zeta n K L)).natDegree := by
-  -- `L = K(ζ)` has the power basis `1, ζ, …` of length `deg (minpoly K ζ)`.
-  -- Source: Mathlib, proof of `IsCyclotomicExtension.finrank`.
-  rw [((zeta_spec n K L).powerBasis K).finrank, IsPrimitiveRoot.powerBasis_dim]
 
 private theorem minpoly_zeta_dvd_cyclotomic : minpoly K (zeta n K L) ∣ cyclotomic n K :=
   -- A primitive `n`-th root of unity is a root of `Φ_n`.
@@ -77,7 +85,7 @@ Sharifi, *Algebraic Number Theory*, proof of Lemma 3.1.13 ("`[ℚ(µ_{p^r}) : �
 theorem finrank_le_totient : Module.finrank K L ≤ n.totient :=
   calc
     Module.finrank K L = (minpoly K (zeta n K L)).natDegree :=
-      finrank_eq_natDegree_minpoly_zeta K L
+      (zeta_spec n K L).finrank_eq_natDegree_minpoly
     _ ≤ (cyclotomic n K).natDegree :=
       natDegree_le_of_dvd (minpoly_zeta_dvd_cyclotomic K L) (cyclotomic_ne_zero n K)
     _ = n.totient := natDegree_cyclotomic n K
@@ -93,7 +101,7 @@ theorem irreducible_cyclotomic_of_totient_le_finrank (h : n.totient ≤ Module.f
     Irreducible (cyclotomic n K) := by
   have hint : IsIntegral K (zeta n K L) := (integral {n} K L).isIntegral _
   have hdeg : (cyclotomic n K).natDegree ≤ (minpoly K (zeta n K L)).natDegree := by
-    rwa [natDegree_cyclotomic, ← finrank_eq_natDegree_minpoly_zeta K L]
+    rwa [natDegree_cyclotomic, ← (zeta_spec n K L).finrank_eq_natDegree_minpoly]
   rw [eq_of_monic_of_dvd_of_natDegree_le (minpoly.monic hint) (cyclotomic.monic n K)
     (minpoly_zeta_dvd_cyclotomic K L) hdeg]
   exact minpoly.irreducible hint
@@ -109,19 +117,33 @@ theorem irreducible_cyclotomic_iff_finrank_eq_totient :
 
 end IsCyclotomicExtension
 
+/-- **Prime-power cyclotomic polynomials are irreducible over the fraction field of a ring in
+which `p` is prime.** Let `R` be an integrally closed domain with fraction field `K`, in which the
+rational prime `p` is a prime element (for instance `ℤ`, `ℤ_p`, or the integers of a finite
+unramified extension of `ℚ_p`). Then `Φ_{p ^ n}` is irreducible over `K`.
+
+Source: Serre, *Local Fields*, Chapter IV, §4; `Φ_{p ^ n}(X + 1)` is Eisenstein at `(p)` over `R`
+(`Polynomial.irreducible_cyclotomic_prime_pow_comp_X_add_one`), and Gauss's lemma
+(`Polynomial.Monic.irreducible_iff_irreducible_map_fraction_map`) passes to `K`. -/
+theorem Polynomial.irreducible_cyclotomic_prime_pow_of_prime {p : ℕ} [Fact p.Prime] {R : Type*}
+    (K : Type*) [CommRing R] [IsIntegrallyClosed R] [Field K] [Algebra R K] [IsFractionRing R K]
+    (hpR : Prime (p : R)) (n : ℕ) : Irreducible (cyclotomic (p ^ n) K) := by
+  have := (IsFractionRing.isDomain_iff_isField (R := R) (K := K)).2 (Field.toIsField K)
+  -- `Φ_{p^n}(X + 1)` is irreducible over `R`, hence over its fraction field `K`; shift back.
+  have h := (monic_cyclotomic_comp_X_add_one (R := R) _)
+    |>.irreducible_iff_irreducible_map_fraction_map (K := K) |>.mp
+      (irreducible_cyclotomic_prime_pow_comp_X_add_one p hpR n)
+  rw [map_comp, map_cyclotomic] at h
+  simpa [Polynomial.algEquivAevalXAddC, ← comp_eq_aeval, comp_assoc] using
+    h.map (Polynomial.algEquivAevalXAddC (-(1 : K)))
+
 namespace TauCeti
 
 /-- The `p^n`-th cyclotomic polynomial is irreducible over `ℚ_p`. In particular, the local
 cyclotomic extension generated by a primitive `p^n`-th root has degree `φ(p^n)`. -/
 theorem irreducible_cyclotomic_prime_pow_ratPadic (p : ℕ) [Fact p.Prime] (n : ℕ) :
-    Irreducible (cyclotomic (p ^ n) ℚ_[p]) := by
-  -- `Φ_{p^n}(X + 1)` is irreducible over `ℤ_p`, hence over its fraction field `ℚ_p`; shift back.
-  have h := (monic_cyclotomic_comp_X_add_one (R := ℤ_[p]) _).isPrimitive
-    |>.irreducible_iff_irreducible_map_fraction_map (K := ℚ_[p]) |>.mp
-      (irreducible_cyclotomic_prime_pow_comp_X_add_one p PadicInt.prime_p n)
-  rw [map_comp, map_cyclotomic] at h
-  simpa [Polynomial.algEquivAevalXAddC, ← comp_eq_aeval, comp_assoc] using
-    h.map (Polynomial.algEquivAevalXAddC (-(1 : ℚ_[p])))
+    Irreducible (cyclotomic (p ^ n) ℚ_[p]) :=
+  irreducible_cyclotomic_prime_pow_of_prime ℚ_[p] PadicInt.prime_p n
 
 section BaseChange
 
