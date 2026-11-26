@@ -328,8 +328,9 @@ theorem hasCompactSpatialSupport_balakrishnanIntegral (b : ParameterSymbol n Λ 
     {K : Set (CoordinateSpace n)} (hK : IsCompact K)
     (hb : ∀ x ∉ K, ∀ ξ z, b.coefficient ((x, ξ), z) = 0) :
     (b.balakrishnanIntegral hΛ hσ hm).HasCompactSpatialSupport :=
-  Symbol.hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ by
-    simp [coefficient_balakrishnanIntegral, hb x hx]⟩
+  ((b.hasCompactSpatialSupport_contourIntegral continuous_neg_abs (neg_abs_mem hΛ)
+    (aestronglyMeasurable_indicator_rpow σ) exists_one_add_abs_le_neg_abs
+    (exists_norm_indicator_rpow_le σ) (by linarith) (by linarith) hK hb).smul _).inclusion _
 
 end Schwartz
 

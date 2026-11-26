@@ -314,16 +314,13 @@ theorem quantizeSobolev_contourIntegral :
   refine BesselPotentialSpace.ext ?_
   ext φ
   -- Pairing with `φ` after evaluating at `u` is a continuous linear functional of the operator.
-  set L := PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) W φ ∘L
-    BesselPotentialSpace.toDistrCLM (CoordinateSpace n) W (s - m') 2 ∘L
+  set L := (PointwiseConvergenceCLM.evalCLM (RingHom.id ℂ) W φ ∘L
+    BesselPotentialSpace.toDistrCLM (CoordinateSpace n) W (s - m') 2) ∘L
       ContinuousLinearMap.apply ℂ _ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)
   have hL (T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s - m'}(CoordinateSpace n, W)) :
       L T = (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ := by
-    simp only [L, ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-      BesselPotentialSpace.toDistrCLM_apply, PointwiseConvergenceCLM.evalCLM_apply]
-    -- `evalCLM_apply` evaluates through the coercion of `E →L[ℂ] F`, while `𝓢'(E, F)` is the
-    -- type synonym `E →Lₚₜ[ℂ] F` with its own coercion; the two agree by definition.
-    rfl
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
+      BesselPotentialSpace.evalCLM_comp_toDistrCLM_apply]
   rw [← hL, ← hL, ← L.integral_comp_comm hint]
   simp only [map_smul]
   simp only [hL, Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,

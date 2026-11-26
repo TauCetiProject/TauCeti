@@ -392,17 +392,16 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
     (p₀ : CoordinateSpace n × CoordinateSpace n) (k : ℕ) :
     ∃ G : ℝ → ℝ, Integrable G ∧ ∀ t, ∀ p ∈ Metric.ball p₀ 1,
       ‖iteratedFDeriv ℝ k (fun q ↦ g t • a.coefficient (q, γ t)) p‖ ≤ G t := by
-  obtain ⟨c, hc⟩ := hγc
-  obtain ⟨C, hC⟩ := hgσ
   have hm0 : m ≤ 0 := by linarith
+  obtain ⟨G, hG, hGb⟩ := exists_integrable_norm_mul_one_add_sqrt_rpow_le hγc hgσ hσ hm0
+    (by linarith)
   -- One constant for the mixed derivatives along all words of length `k`, on a compact ball.
   have hK := isCompact_closedBall p₀.1 1
   choose D hD0 hD using fun w : Fin k → Fin n ⊕ Fin n ↦ a.exists_norm_mixedDeriv_coefficient_le
     hK ((List.ofFn w).filterMap Sum.getLeft?) ((List.ofFn w).filterMap Sum.getRight?)
   set M := ∑ w, D w
   have hM : 0 ≤ M := Finset.sum_nonneg fun w _ ↦ hD0 w
-  refine ⟨fun t ↦ C * M * (1 + Real.sqrt c) ^ (-m) * lineWeight σ m 1 t,
-    (integrable_lineWeight hσ hm0 (by linarith) le_rfl).const_mul _, fun t p hp ↦ ?_⟩
+  refine ⟨fun t ↦ M * G t, hG.const_mul _, fun t p hp ↦ ?_⟩
   have hpK : p.1 ∈ Metric.closedBall p₀.1 1 := by
     rw [Metric.mem_closedBall]
     exact (le_max_left _ _).trans (Metric.mem_ball.1 hp).le
@@ -415,23 +414,13 @@ private theorem exists_bound_iteratedFDeriv_smul_coefficient
     rw [Finset.sum_mul]
     refine Finset.sum_le_sum fun w _ ↦ (hD w p.1 hpK p.2 (γ t) (hγΛ t)).trans ?_
     exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hw (by simp)) (hD0 w)
-  -- The parameter weight is controlled along the path, uniformly in the frequency.
-  have hweight : parameterWeight p.2 (γ t) ^ m ≤ (1 + Real.sqrt c) ^ (-m) *
-      (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ m := by
-    refine (parameterWeight_rpow_le hc hm0 p.2 t).trans (mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow_of_nonpos (by positivity) ?_ hm0) (by positivity))
-    gcongr
-    simp
-  have hgt : ‖g t‖ ≤ C * (|t| ^ σ + (1 + |t|) ^ σ) := hC t
   rw [iteratedFDeriv_smul_coefficient, norm_smul]
   calc ‖g t‖ * ‖iteratedFDeriv ℝ k (fun q ↦ a.coefficient (q, γ t)) p‖
-      ≤ (C * (|t| ^ σ + (1 + |t|) ^ σ)) * (M * ((1 + Real.sqrt c) ^ (-m) *
-          (Real.sqrt 1 + Real.sqrt (1 + |t|)) ^ m)) :=
-        mul_le_mul hgt (hsum.trans (mul_le_mul_of_nonneg_left hweight hM)) (norm_nonneg _)
-          ((norm_nonneg _).trans hgt)
-    _ = C * M * (1 + Real.sqrt c) ^ (-m) * lineWeight σ m 1 t := by
-        rw [lineWeight]
-        ring
+      ≤ ‖g t‖ * (M * (1 + Real.sqrt ‖γ t‖) ^ m) :=
+        mul_le_mul_of_nonneg_left (hsum.trans (mul_le_mul_of_nonneg_left
+          (parameterWeight_rpow_le_one_add_sqrt_rpow p.2 (γ t) hm0) hM)) (norm_nonneg _)
+    _ = M * (‖g t‖ * (1 + Real.sqrt ‖γ t‖) ^ m) := by ring
+    _ ≤ M * G t := mul_le_mul_of_nonneg_left (hGb t) hM
 
 /-- On the unit ball around each point, the integrals of the derivatives of the integrand form a
 Taylor series of `(x, ξ) ↦ ∫ g(t) a(x, ξ, γ(t)) dt`: differentiation under the integral sign. -/
