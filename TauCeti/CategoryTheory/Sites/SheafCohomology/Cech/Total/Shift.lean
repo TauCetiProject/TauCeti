@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomotopyCategory.ShiftSequence
-public import Mathlib.Algebra.Homology.TotalComplexShift
-public import TauCeti.Algebra.Homology.Functor.Extend
+public import TauCeti.Algebra.Homology.HomotopyCategory.ShiftSequence
+public import TauCeti.Algebra.Homology.TotalComplex.ExtendShift
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Coefficients
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Total.Colimit
 
@@ -19,9 +18,11 @@ coefficients, `P[y] = P ⋙ shiftFunctor _ y` with the native convention `P[y]^q
 differential `(-1)^y d`, shifts the total Čech complex of every family `U`: there is an
 isomorphism `Tot Č(U, P[y]) ≅ (Tot Č(U, P))[y]` (`TauCeti.CategoryTheory.cechTotalComplexShiftIso`),
 natural in `P` and compatible with the maps induced by morphisms of families. The Čech complex of
-`P[y]` is the termwise shift of the Čech complex of `P`, so it is Mathlib's
-`HomologicalComplex₂.totalShift₂Iso` for the Čech bicomplex of `P`: on the summand in Čech
-degree `p` it is the multiplication by `(-1)^(p y)` (`HomologicalComplex₂.ι_totalShift₂Iso_hom_f`).
+`P[y]` is the termwise shift of the Čech complex of `P`, so it is
+`HomologicalComplex₂.totalExtendShift₂Iso`, built from Mathlib's
+`HomologicalComplex₂.totalShift₂Iso`, for the Čech bicomplex of `P`: on the summand in Čech
+degree `p` it is the multiplication by `(-1)^(p y)`
+(`TauCeti.CategoryTheory.ι_cechTotalComplexShiftIso_hom_f`).
 These signs are needed because the internal differential of `P[y]` carries the sign `(-1)^y` while
 its Čech differential does not.
 
@@ -29,8 +30,9 @@ Passing to cohomology and to the colimit over a system of families, Čech hyperc
 with shifts: `Hⁿ(P[y]) ≅ Hⁿ'(P)` for `y + n = n'`, naturally in `P`
 (`TauCeti.CategoryTheory.cechHypercohomologyShiftIso`). This applies in particular to the Čech
 hypercohomology `TauCeti.Topology.cechHypercohomology` of a presheaf of complexes on a topological
-space, the colimit over point-neighborhood covers. For instance, the hypercohomology of a presheaf
-placed in degree `-k` is that of the same presheaf placed in degree `0`, moved up by `k` degrees.
+space, the colimit over point-neighborhood covers. For instance, the degree `n` hypercohomology of
+a presheaf placed in degree `-k` is the degree `n + k` hypercohomology of the same presheaf placed
+in degree `0`.
 
 ## Main definitions
 
@@ -39,6 +41,8 @@ placed in degree `-k` is that of the same presheaf placed in degree `0`, moved u
 
 ## Main results
 
+* `TauCeti.CategoryTheory.ι_cechTotalComplexShiftIso_hom_f`: on the summand in Čech degree `p`,
+  `cechTotalComplexShiftIso` is the identification of the terms up to the sign `(-1)^(p y)`.
 * `TauCeti.CategoryTheory.cechTotalComplexShiftIso_hom_naturality`: naturality in the presheaf.
 * `TauCeti.CategoryTheory.cechTotalComplexMap_comp_cechTotalComplexShiftIso_hom`: compatibility
   with the maps induced by morphisms of families.
@@ -68,50 +72,6 @@ namespace TauCeti.CategoryTheory
 variable {A : Type u'} [Category.{v'} A] [Preadditive A] [HasZeroObject A]
   [HasCoproducts.{0} A]
 
-section Bicomplex
-
-variable {y : ℤ} {K K' L L' : CochainComplex (CochainComplex A ℤ) ℕ}
-
-/-- The isomorphism `Tot(K'.extend) ≅ (Tot K.extend)[y]` induced by an identification of `K'` with
-the termwise shift of the bicomplex `K`. -/
-private def totalShiftIsoOfIso
-    (eK : ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).obj K ≅ K') :
-    total (K'.extend ComplexShape.embeddingUpNat) (ComplexShape.up ℤ) ≅
-      (total (K.extend ComplexShape.embeddingUpNat) (ComplexShape.up ℤ))⟦y⟧ :=
-  total.mapIso ((ComplexShape.embeddingUpNat.extendFunctor _).mapIso eK.symm ≪≫
-      ((shiftFunctor _ y).mapHomologicalComplexExtendObjIso _ K).symm) _ ≪≫
-    totalShift₂Iso _ y
-
-/-- `totalShiftIsoOfIso` is natural in maps of bicomplexes compatible with the
-identifications. -/
-private lemma totalShiftIsoOfIso_hom_naturality
-    (eK : ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).obj K ≅ K')
-    (eL : ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).obj L ≅ L')
-    (g : K ⟶ L) (g' : K' ⟶ L')
-    (hg : g' ≫ eL.inv =
-      eK.inv ≫ ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map g) :
-    total.map (HomologicalComplex.extendMap g' ComplexShape.embeddingUpNat) _ ≫
-        (totalShiftIsoOfIso eL).hom =
-      (totalShiftIsoOfIso eK).hom ≫
-        (total.map (HomologicalComplex.extendMap g ComplexShape.embeddingUpNat) _)⟦y⟧' := by
-  have h₂ : HomologicalComplex.extendMap
-        (((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map g)
-          ComplexShape.embeddingUpNat ≫
-        ((shiftFunctor _ y).mapHomologicalComplexExtendObjIso _ L).inv =
-      ((shiftFunctor _ y).mapHomologicalComplexExtendObjIso _ K).inv ≫
-        ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map
-          (HomologicalComplex.extendMap g ComplexShape.embeddingUpNat) := by
-    rw [Iso.comp_inv_eq, Category.assoc,
-      Functor.mapHomologicalComplexExtendObjIso_hom_naturality, Iso.inv_hom_id_assoc]
-  simp only [totalShiftIsoOfIso, Iso.trans_hom, total.mapIso_hom, Functor.mapIso_hom,
-    Iso.symm_hom, ComplexShape.Embedding.extendFunctor_map, ← total.map_comp_assoc,
-    ← HomologicalComplex.extendMap_comp_assoc, hg]
-  rw [HomologicalComplex.extendMap_comp, Category.assoc, h₂, ← Category.assoc, total.map_comp,
-    Category.assoc, totalShift₂Iso_hom_naturality, total.map_comp]
-  simp only [Category.assoc]
-
-end Bicomplex
-
 variable {C : Type u} [Category.{v} C] [HasFiniteProducts C] [HasProducts.{w} A]
 
 section Total
@@ -121,28 +81,48 @@ variable {ι κ : Type w} (U : ι → C) {V : κ → C} (y : ℤ)
 /-- **Total Čech complexes commute with shifting the coefficients.** For a presheaf `P` of
 cochain complexes, the total Čech complex of the shifted presheaf `P[y]` is the shift of the total
 Čech complex of `P`, naturally in `P` (`cechTotalComplexShiftIso_hom_naturality`). The shift is
-moved out of the Čech complex (`cechComplexFunctorMapIso`) and through the extension to `ℤ`
-(`CategoryTheory.Functor.mapHomologicalComplexExtendObjIso`); on the resulting bicomplex this is
-Mathlib's `HomologicalComplex₂.totalShift₂Iso` (`cechTotalComplexShiftIso_hom`), which multiplies
-the summand in Čech degree `p` by `(-1)^(p y)` (`HomologicalComplex₂.ι_totalShift₂Iso_hom_f`). -/
+moved out of the Čech complex (`cechComplexFunctorMapIso`); on the resulting bicomplex this is
+`HomologicalComplex₂.totalExtendShift₂Iso` (`cechTotalComplexShiftIso_hom`), which multiplies
+the summand in Čech degree `p` by `(-1)^(p y)` (`ι_cechTotalComplexShiftIso_hom_f`). -/
 def cechTotalComplexShiftIso (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     (cechTotalComplexFunctor U).obj (P ⋙ shiftFunctor (CochainComplex A ℤ) y) ≅
       ((cechTotalComplexFunctor U).obj P)⟦y⟧ :=
-  totalShiftIsoOfIso ((cechComplexFunctorMapIso U (shiftFunctor _ y)).app P)
+  total.mapIso ((ComplexShape.embeddingUpNat.extendFunctor _).mapIso
+      ((cechComplexFunctorMapIso U (shiftFunctor _ y)).app P).symm) _ ≪≫
+    totalExtendShift₂Iso _ ((cechComplexFunctor U).obj P) y
 
 /-- `cechTotalComplexShiftIso` is the total map of the inverse of `cechComplexFunctorMapIso`,
-extended to `ℤ` and followed by the inverse of
-`CategoryTheory.Functor.mapHomologicalComplexExtendObjIso`, composed with
-`HomologicalComplex₂.totalShift₂Iso`. -/
+extended to `ℤ`, followed by `HomologicalComplex₂.totalExtendShift₂Iso`. -/
 lemma cechTotalComplexShiftIso_hom (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     (cechTotalComplexShiftIso U y P).hom =
       total.map (HomologicalComplex.extendMap
           ((cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app P)
-            ComplexShape.embeddingUpNat ≫
-          ((shiftFunctor _ y).mapHomologicalComplexExtendObjIso _ _).inv) _ ≫
-        (totalShift₂Iso (((cechComplexFunctor U).obj P).extend
-          ComplexShape.embeddingUpNat) y).hom :=
+            ComplexShape.embeddingUpNat) _ ≫
+        (totalExtendShift₂Iso _ ((cechComplexFunctor U).obj P) y).hom :=
   (rfl)
+
+/-- On the summand in degrees `(p, q)`, `cechTotalComplexShiftIso` is the identification of the
+terms of the Čech complexes of `P[y]` and `P`, multiplied by the sign `(-1)^(p y)`, followed by
+the inclusion of the summand in degrees `(p, q')` of the total Čech complex of `P`, where
+`q' = q + y`. -/
+@[reassoc]
+lemma ι_cechTotalComplexShiftIso_hom_f (P : Cᵒᵖ ⥤ CochainComplex A ℤ) (p q n : ℤ)
+    (hpq : p + q = n) (q' : ℤ) (hq' : q' = q + y) (n' : ℤ) (hn' : n' = n + y) :
+    ιTotal _ (ComplexShape.up ℤ) p q n hpq ≫ (cechTotalComplexShiftIso U y P).hom.f n =
+      (p * y).negOnePow •
+        (((HomologicalComplex.extendMap
+            ((cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app P)
+              ComplexShape.embeddingUpNat).f p).f q ≫
+          (((shiftFunctor _ y).mapHomologicalComplexExtendObjIso _
+            ((cechComplexFunctor U).obj P)).inv.f p).f q ≫
+          (shiftFunctor₂XXIso _ p q y q' hq').hom ≫
+          ιTotal _ (ComplexShape.up ℤ) p q' n' (by dsimp; lia) ≫
+          (CochainComplex.shiftFunctorObjXIso _ y n n' hn').inv) := by
+  rw [cechTotalComplexShiftIso_hom, HomologicalComplex.comp_f, ιTotal_map_assoc]
+  -- the source summand is the one of `(cechComplexFunctor U ⋙ _).obj P`, which is only
+  -- definitionally the one of the shifted Čech bicomplex, so the summand lemma is applied as a term
+  exact (_ ≫= ι_totalExtendShift₂Iso_hom_f _ _ y p q n hpq q' hq' n' hn').trans
+    (Linear.comp_units_smul _ _ _)
 
 /-- `cechTotalComplexShiftIso` is natural in the presheaf of complexes. -/
 @[reassoc]
@@ -150,9 +130,16 @@ lemma cechTotalComplexShiftIso_hom_naturality {P Q : Cᵒᵖ ⥤ CochainComplex 
     (cechTotalComplexFunctor U).map (Functor.whiskerRight α (shiftFunctor _ y)) ≫
         (cechTotalComplexShiftIso U y Q).hom =
       (cechTotalComplexShiftIso U y P).hom ≫ ((cechTotalComplexFunctor U).map α)⟦y⟧' := by
-  rw [cechTotalComplexFunctor_map, cechTotalComplexFunctor_map]
-  exact totalShiftIsoOfIso_hom_naturality _ _ _ _
-    ((cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.naturality α)
+  have h : (cechComplexFunctor U).map (Functor.whiskerRight α (shiftFunctor _ y)) ≫
+        (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app Q =
+      (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app P ≫
+        ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map
+          ((cechComplexFunctor U).map α) :=
+    (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.naturality α
+  rw [cechTotalComplexFunctor_map, cechTotalComplexFunctor_map, cechTotalComplexShiftIso_hom,
+    cechTotalComplexShiftIso_hom, ← total.map_comp_assoc, ← HomologicalComplex.extendMap_comp, h,
+    HomologicalComplex.extendMap_comp, total.map_comp_assoc, totalExtendShift₂Iso_hom_naturality,
+    Category.assoc]
 
 variable {U} in
 /-- **`cechTotalComplexShiftIso` commutes with refinement maps.** For a morphism of families `φ`
@@ -164,10 +151,17 @@ theorem cechTotalComplexMap_comp_cechTotalComplexShiftIso_hom (P : Cᵒᵖ ⥤ C
     cechTotalComplexMap (P ⋙ shiftFunctor (CochainComplex A ℤ) y) φ ≫
         (cechTotalComplexShiftIso U y P).hom =
       (cechTotalComplexShiftIso V y P).hom ≫ (cechTotalComplexMap P φ)⟦y⟧' := by
-  rw [cechTotalComplexMap_def, cechTotalComplexMap_def]
-  refine totalShiftIsoOfIso_hom_naturality _ _ _ _ ?_
-  rw [Iso.comp_inv_eq, Category.assoc, Iso.app_hom,
-    cechComplexFunctorMapIso_hom_app_comp_cechComplexMap, ← Iso.app_hom, Iso.inv_hom_id_assoc]
+  have h : cechComplexMap (P ⋙ shiftFunctor (CochainComplex A ℤ) y) φ ≫
+        (cechComplexFunctorMapIso U (shiftFunctor _ y)).inv.app P =
+      (cechComplexFunctorMapIso V (shiftFunctor _ y)).inv.app P ≫
+        ((shiftFunctor (CochainComplex A ℤ) y).mapHomologicalComplex _).map
+          (cechComplexMap P φ) := by
+    rw [← Iso.app_inv, ← Iso.app_inv, Iso.comp_inv_eq, Category.assoc, Iso.app_hom,
+      cechComplexFunctorMapIso_hom_app_comp_cechComplexMap, ← Iso.app_hom, Iso.inv_hom_id_assoc]
+  rw [cechTotalComplexMap_def, cechTotalComplexMap_def, cechTotalComplexShiftIso_hom,
+    cechTotalComplexShiftIso_hom, ← total.map_comp_assoc, ← HomologicalComplex.extendMap_comp, h,
+    HomologicalComplex.extendMap_comp, total.map_comp_assoc, totalExtendShift₂Iso_hom_naturality,
+    Category.assoc]
 
 variable {U} in
 /-- The inverse of `cechTotalComplexShiftIso` commutes with the maps induced by morphisms of
@@ -198,47 +192,21 @@ followed by the identification of the cohomology of a shifted complex
 (`cechHypercohomologyShiftIso_hom_naturality`). -/
 def cechHypercohomologyShiftIso (P : Cᵒᵖ ⥤ CochainComplex A ℤ) :
     (cechHypercohomology A E hE n).obj (P ⋙ shiftFunctor (CochainComplex A ℤ) y) ≅
-      (cechHypercohomology A E hE n').obj P where
-  hom := cechHypercohomologyDesc E hE n
-    (fun j ↦ HomologicalComplex.homologyMap (cechTotalComplexShiftIso (E j).obj y P).hom n ≫
-      ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso y n n' h).hom.app
-        ((cechTotalComplexFunctor (E j).obj).obj P) ≫
-      (cechHypercohomologyι E hE n' j).app P)
-    fun i j hij φ ↦ by
-      rw [← HomologicalComplex.homologyMap_comp_assoc,
-        cechTotalComplexMap_comp_cechTotalComplexShiftIso_hom,
-        HomologicalComplex.homologyMap_comp_assoc,
-        ← homologyMap_cechTotalComplexMap_comp_cechHypercohomologyι_app E hE n' hij φ P]
-      congr 1
-      -- `homologyMap (g⟦y⟧') n` is the image of `g` under the shifted homology functor
-      exact ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso
-        y n n' h).hom.naturality_assoc (cechTotalComplexMap P φ) _
-  inv := cechHypercohomologyDesc E hE n'
-    (fun j ↦
-      ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso y n n' h).inv.app
-          ((cechTotalComplexFunctor (E j).obj).obj P) ≫
-        HomologicalComplex.homologyMap (cechTotalComplexShiftIso (E j).obj y P).inv n ≫
-        (cechHypercohomologyι E hE n j).app (P ⋙ shiftFunctor (CochainComplex A ℤ) y))
-    fun i j hij φ ↦ by
-      rw [← homologyMap_cechTotalComplexMap_comp_cechHypercohomologyι_app E hE n hij φ,
-        ← HomologicalComplex.homologyMap_comp_assoc,
-        ← shiftFunctor_map_cechTotalComplexMap_comp_cechTotalComplexShiftIso_inv,
-        HomologicalComplex.homologyMap_comp_assoc]
-      -- `homologyMap (g⟦y⟧') n` is the image of `g` under the shifted homology functor
-      exact ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso
-        y n n' h).inv.naturality_assoc (cechTotalComplexMap P φ) _
-  hom_inv_id := by
-    ext j
-    rw [cechHypercohomologyι_app_cechHypercohomologyDesc_assoc, Category.assoc, Category.assoc,
-      cechHypercohomologyι_app_cechHypercohomologyDesc, Iso.hom_inv_id_app_assoc,
-      ← HomologicalComplex.homologyMap_comp_assoc, Iso.hom_inv_id,
-      HomologicalComplex.homologyMap_id, Category.id_comp, Category.comp_id]
-  inv_hom_id := by
-    ext j
-    rw [cechHypercohomologyι_app_cechHypercohomologyDesc_assoc, Category.assoc, Category.assoc,
-      cechHypercohomologyι_app_cechHypercohomologyDesc, ← HomologicalComplex.homologyMap_comp_assoc,
-      Iso.inv_hom_id, HomologicalComplex.homologyMap_id, Category.id_comp,
-      Iso.inv_hom_id_app_assoc, Category.comp_id]
+      (cechHypercohomology A E hE n').obj P :=
+  HasColimit.isoOfNatIso (NatIso.ofComponents
+    (fun j ↦ (HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) n).mapIso
+        (cechTotalComplexShiftIso (E j).obj y P) ≪≫
+      ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso y n n' h).app
+        ((cechTotalComplexFunctor (E j).obj).obj P))
+    fun {i j} f ↦ by
+      rw [Functor.flip_obj_map, Functor.flip_obj_map,
+        cechHypercohomologyDiagram_map A E hE n f (hE (leOfHom f)).some,
+        cechHypercohomologyDiagram_map A E hE n' f (hE (leOfHom f)).some]
+      simp only [cechTotalComplexHomologyMap_app, Iso.trans_hom, Functor.mapIso_hom, Iso.app_hom,
+        HomologicalComplex.homologyFunctor_map, ← HomologicalComplex.homologyMap_comp_assoc,
+        cechTotalComplexMap_comp_cechTotalComplexShiftIso_hom]
+      rw [HomologicalComplex.homologyMap_comp_assoc,
+        CochainComplex.homologyMap_shift_comp_homologyFunctor_shiftIso_hom_app, Category.assoc])
 
 /-- On the structure map of a family `E j`, `cechHypercohomologyShiftIso` is the map induced by
 `cechTotalComplexShiftIso` on cohomology, followed by the identification of the cohomology of a
@@ -251,8 +219,9 @@ lemma cechHypercohomologyι_app_cechHypercohomologyShiftIso_hom (P : Cᵒᵖ ⥤
       HomologicalComplex.homologyMap (cechTotalComplexShiftIso (E j).obj y P).hom n ≫
         ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso y n n' h).hom.app
           ((cechTotalComplexFunctor (E j).obj).obj P) ≫
-        (cechHypercohomologyι E hE n' j).app P :=
-  cechHypercohomologyι_app_cechHypercohomologyDesc _ _ _ _ _ _
+        (cechHypercohomologyι E hE n' j).app P := by
+  rw [cechHypercohomologyι_app, cechHypercohomologyι_app]
+  exact (HasColimit.ι_isoOfNatIso_hom _ j).trans (Category.assoc _ _ _)
 
 /-- On the structure map of a family `E j`, the inverse of `cechHypercohomologyShiftIso` is the
 identification of the cohomology of a shifted complex, followed by the map induced by the inverse
@@ -264,8 +233,9 @@ lemma cechHypercohomologyι_app_cechHypercohomologyShiftIso_inv (P : Cᵒᵖ ⥤
       ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso y n n' h).inv.app
           ((cechTotalComplexFunctor (E j).obj).obj P) ≫
         HomologicalComplex.homologyMap (cechTotalComplexShiftIso (E j).obj y P).inv n ≫
-        (cechHypercohomologyι E hE n j).app (P ⋙ shiftFunctor (CochainComplex A ℤ) y) :=
-  cechHypercohomologyι_app_cechHypercohomologyDesc _ _ _ _ _ _
+        (cechHypercohomologyι E hE n j).app (P ⋙ shiftFunctor (CochainComplex A ℤ) y) := by
+  rw [cechHypercohomologyι_app, cechHypercohomologyι_app]
+  exact (HasColimit.ι_isoOfNatIso_inv _ j).trans (Category.assoc _ _ _)
 
 /-- `cechHypercohomologyShiftIso` is natural in the presheaf of complexes. -/
 @[reassoc]
@@ -279,11 +249,8 @@ lemma cechHypercohomologyShiftIso_hom_naturality {P Q : Cᵒᵖ ⥤ CochainCompl
     cechHypercohomologyι_app_cechHypercohomologyShiftIso_hom,
     cechHypercohomologyι_app_cechHypercohomologyShiftIso_hom_assoc,
     cechHypercohomologyι_naturality, ← HomologicalComplex.homologyMap_comp_assoc,
-    cechTotalComplexShiftIso_hom_naturality, HomologicalComplex.homologyMap_comp_assoc]
-  congr 1
-  -- `homologyMap (g⟦y⟧') n` is the image of `g` under the shifted homology functor
-  exact ((HomologicalComplex.homologyFunctor A (ComplexShape.up ℤ) 0).shiftIso
-    y n n' h).hom.naturality_assoc ((cechTotalComplexFunctor (E j).obj).map α) _
+    cechTotalComplexShiftIso_hom_naturality, HomologicalComplex.homologyMap_comp_assoc,
+    CochainComplex.homologyMap_shift_comp_homologyFunctor_shiftIso_hom_app_assoc]
 
 end Hypercohomology
 
