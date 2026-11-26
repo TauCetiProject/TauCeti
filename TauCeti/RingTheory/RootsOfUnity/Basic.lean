@@ -20,8 +20,9 @@ import TauCeti.GroupTheory.OrderOfElement.Cauchy
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
 and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
-`n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
-homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
+`n`-th roots of unity divides `n`, and a finite group of `N` units is the group of `N`-th roots
+of unity. It transfers `HasEnoughRootsOfUnity` along an injective homomorphism into a domain,
+and with it the nonemptiness of `primitiveRoots n R`. For a prime
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
 integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
@@ -60,6 +61,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
+* `Subgroup.eq_rootsOfUnity_natCard`: in a domain, a finite group of `N` units is the group of
+  `N`-th roots of unity.
 * `TauCeti.exponent_pi_rootsOfUnity_cast_ne_zero`: in a domain, the exponent of a finite product
   of groups `μ_{n i}` is nonzero as soon as each `n i` is.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
@@ -189,6 +192,15 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   have : NeZero n := ⟨hn⟩
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
+
+/-- **A finite group of units of a domain consists of roots of unity.** A finite subgroup `H` of
+`Rˣ` with `N` elements is the group of `N`-th roots of unity: it lies in it by Lagrange, and there
+are at most `N` of those. -/
+theorem _root_.Subgroup.eq_rootsOfUnity_natCard [IsDomain R] (H : Subgroup Rˣ) [Finite H] :
+    H = rootsOfUnity (Nat.card H) R :=
+  Subgroup.eq_of_le_of_card_ge (fun x hx ↦ (mem_rootsOfUnity _ _).2 <| by
+    have h := congrArg ((↑) : H → Rˣ) (pow_card_eq_one' (G := H) (x := ⟨x, hx⟩))
+    rwa [SubgroupClass.coe_pow, OneMemClass.coe_one] at h) (card_rootsOfUnity R _)
 
 /-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
 theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommMonoid K] [Fintype ι]
