@@ -10,6 +10,7 @@ import TauCeti.Analysis.Normed.Ring.InfiniteProd
 import TauCeti.Analysis.SpecialFunctions.Exp.NegPiMulSqrt
 import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Evaluation
+import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
 
 /-!
 # An explicit bound for the modular invariant
@@ -112,20 +113,13 @@ private theorem norm_tprod_one_sub_eta_q_sub_one_le {τ : ℍ} (hq : ‖𝕢 1 (
   rw [div_le_iff₀ (by linarith)]
   nlinarith [norm_nonneg (𝕢 1 (τ : ℂ))]
 
-/-- The discriminant as `q` times the twenty-fourth power of the eta product. -/
-private theorem discriminant_eq_qParam_mul_tprod_pow (τ : ℍ) :
-    discriminant τ = 𝕢 1 (τ : ℂ) * (∏' n, (1 - eta_q n τ)) ^ 24 := by
-  rw [discriminant_eq_q_prod]
-  congr 1
-  exact (multipliableLocallyUniformlyOn_eta.multipliable τ.coe_im_pos).tprod_pow _
-
 /-- `j - q⁻¹ = (E₄³ - Q²⁴) / (q Q²⁴)` for the eta product `Q = ∏ₙ (1 - qⁿ⁺¹)`. -/
 private theorem j_sub_inv_qParam_eq (τ : ℍ) :
     j τ - (𝕢 1 (τ : ℂ))⁻¹ = (E₄ τ ^ 3 - (∏' n, (1 - eta_q n τ)) ^ 24) /
       (𝕢 1 (τ : ℂ) * (∏' n, (1 - eta_q n τ)) ^ 24) := by
   have hQ0 : ∏' n, (1 - eta_q n τ) ≠ 0 := eta_tprod_ne_zero τ.coe_im_pos
   have hq0 : 𝕢 1 (τ : ℂ) ≠ 0 := Function.Periodic.qParam_ne_zero _
-  rw [j_apply, discriminant_eq_qParam_mul_tprod_pow]
+  rw [j_apply, TauCeti.ModularForm.discriminant_eq_qParam_mul_tprod_pow]
   field_simp
 
 /-- The bound `‖j τ - q⁻¹‖ ≤ 2114567 / 1000` whenever `|q| ≤ 1/230`. -/
