@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Homology.HomologicalComplex.DifferentialTransport
 public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 public import TauCeti.CategoryTheory.Sites.Over.Basic
-public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.FirstDifferential
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.SecondPage
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Over
 
 /-!
@@ -23,8 +23,8 @@ sequence of `TauCeti.CategoryTheory.cechToCohomologySpectralSequence` for this c
 therefore the Čech-to-cohomology spectral sequence of the covering `f` of `V`
 (`TauCeti.CategoryTheory.cechToCohomologyOverSpectralSequence`).
 
-This file states it in terms of the cohomology of `F` on `C`, when restriction to `J.over V` and
-its left adjoint are exact, through the comparison
+Restriction to `J.over V` and its left adjoint are exact. This file states the spectral sequence
+in terms of the cohomology of `F` on `C`, through the comparison
 `CategoryTheory.GrothendieckTopology.cohomologyPresheafFunctorOverIso` of the cohomology presheaf of
 the restricted sheaf with the restriction of the cohomology presheaf `W ↦ Hᵏ(W, F)`:
 
@@ -34,7 +34,8 @@ the restricted sheaf with the restriction of the cohomology presheaf `W ↦ Hᵏ
   (`TauCeti.CategoryTheory.cechToCohomologyOverFirstPageXIso`);
 * the differential of the first page is, up to the sign `(-1)^k`, the Čech differential of that
   presheaf (`TauCeti.CategoryTheory.cechToCohomologyOverSpectralSequence_page_two_d`), so that the
-  objects of the second page are the Čech cohomology groups `Hᵖ(U, Hᵏ(F))`;
+  objects of the second page are the Čech cohomology groups `Hᵖ(U, Hᵏ(F))`
+  (`TauCeti.CategoryTheory.cechToCohomologyOverSecondPageXIso`);
 * its abutment in degree `-n` is the opposite of `Hⁿ(V, F)`
   (`TauCeti.CategoryTheory.cechToCohomologyOverAbutmentIso`).
 
@@ -64,9 +65,7 @@ namespace TauCeti.CategoryTheory
 
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C} {V : C}
   [HasFiniteProducts (Over V)] [HasSheafify J AddCommGrpCat.{v}]
-  [HasSheafify (J.over V) AddCommGrpCat.{v}] [(J.overPullback AddCommGrpCat.{v} V).IsRightAdjoint]
-  [PreservesFiniteColimits (J.overPullback AddCommGrpCat.{v} V)]
-  [PreservesFiniteLimits ((Over.forget V).sheafPullback AddCommGrpCat.{v} (J.over V) J)]
+  [HasSheafify (J.over V) AddCommGrpCat.{v}]
   {ι : Type v} {u : ι → C} (f : ∀ i, u i ⟶ V) {F : Sheaf J AddCommGrpCat.{v}}
   (R : InjectiveResolution F)
 
@@ -124,6 +123,29 @@ lemma cechToCohomologyOverFirstPageXIso_hom (p k : ℕ) :
         ((J.overPullback AddCommGrpCat.{v} V).mapInjectiveResolution R) p k).hom ≫
         (((cechComplexFunctor (fun i ↦ Over.mk (f i))).map
           ((J.cohomologyPresheafFunctorOverIso V k).hom.app F)).f p).op :=
+  (rfl)
+
+/-- **The second page of the Čech-to-cohomology spectral sequence of a covering.** Its object at
+`(-k - 2p, p)` (the first page being numbered `2`) is the opposite of the Čech cohomology group
+`Hᵖ(Č(U, Hᵏ(F)))`, computed from the restriction to `Over V` of the ambient cohomology presheaf. -/
+def cechToCohomologyOverSecondPageXIso (p k : ℕ) :
+    ((cechToCohomologyOverSpectralSequence f R).page 3).X (-(k : ℤ) - 2 * p, p) ≅
+      op (((cechComplexFunctor (fun i ↦ Over.mk (f i))).obj
+        ((Over.forget V).op ⋙ F.cohomologyPresheaf k)).homology p) :=
+  cechToCohomologySecondPageXIso (fun i ↦ Over.mk (f i)) _ p k ≪≫
+    ((cechComplexFunctor (fun i ↦ Over.mk (f i)) ⋙
+      HomologicalComplex.homologyFunctor _ (ComplexShape.up ℕ) p).mapIso
+        ((J.cohomologyPresheafFunctorOverIso V k).app F)).op
+
+/-- The second-page comparison is the slice comparison followed by the homology comparison
+induced by restriction of the ambient cohomology presheaf. -/
+lemma cechToCohomologyOverSecondPageXIso_hom (p k : ℕ) :
+    (cechToCohomologyOverSecondPageXIso f R p k).hom =
+      (cechToCohomologySecondPageXIso (fun i ↦ Over.mk (f i))
+        ((J.overPullback AddCommGrpCat.{v} V).mapInjectiveResolution R) p k).hom ≫
+        (HomologicalComplex.homologyMap
+          ((cechComplexFunctor (fun i ↦ Over.mk (f i))).map
+            ((J.cohomologyPresheafFunctorOverIso V k).hom.app F)) p).op :=
   (rfl)
 
 /-- **The first differential of the Čech-to-cohomology spectral sequence of a covering.** Under

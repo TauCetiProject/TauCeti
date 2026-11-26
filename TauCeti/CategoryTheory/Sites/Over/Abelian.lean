@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Abelian
+public import Mathlib.Algebra.Category.Grp.AB
+public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
-public import Mathlib.CategoryTheory.Sites.Over
-public import TauCeti.CategoryTheory.Sites.Pullback
+public import Mathlib.CategoryTheory.Sites.Abelian
+public import TauCeti.CategoryTheory.Sites.Abelian.LocallySurjective
+public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.CategoryTheory.Sites.Over.Extension
 
 /-!
 # Restriction of abelian sheaves to a localized site
 
-Restriction to `J.over U` is additive and preserves injective objects when its left adjoint,
-extension to the ambient site, preserves finite limits.
+Restriction to `J.over U` is additive, exact, and preserves injective objects. Its left adjoint
+is the sheafification of the coproduct extension and is exact as well.
 -/
 
 public section
@@ -25,16 +28,24 @@ universe u v
 
 namespace CategoryTheory.GrothendieckTopology
 
-/-- Restriction of abelian sheaves to the localized site `J.over U` is additive. -/
-instance {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C) :
-    (J.overPullback AddCommGrpCat.{v} U).Additive where
-  map_add := rfl
+/-- Restriction of abelian sheaves to a localized site preserves finite colimits: it preserves
+finite limits and epimorphisms, since epimorphisms are locally surjective. -/
+instance preservesFiniteColimits_overPullback {C : Type u} [Category.{v} C]
+    (J : GrothendieckTopology C) (U : C)
+    [HasSheafify J AddCommGrpCat.{v}] [HasSheafify (J.over U) AddCommGrpCat.{v}] :
+    PreservesFiniteColimits (J.overPullback AddCommGrpCat.{v} U) := by
+  have : (J.overPullback AddCommGrpCat.{v} U).PreservesEpimorphisms :=
+    ⟨fun φ _ ↦ by
+      have := Sheaf.isLocallySurjective_of_epi_addCommGrp φ
+      infer_instance⟩
+  have := Functor.preservesHomology_of_preservesEpis_and_kernels
+    (J.overPullback AddCommGrpCat.{v} U)
+  exact Functor.preservesFiniteColimits_of_preservesHomology _
 
-/-- Restriction of abelian sheaves to the localized site `J.over U` preserves injective objects
-when its left adjoint, extension to the ambient site, preserves finite limits. -/
+/-- Restriction of abelian sheaves to a localized site preserves injective objects because its
+left adjoint, extension to the ambient site, is exact. -/
 instance preservesInjectiveObjects_overPullback {C : Type u} [Category.{v} C]
-    (J : GrothendieckTopology C) (U : C) [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
-    [PreservesFiniteLimits ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J)] :
+    (J : GrothendieckTopology C) (U : C) [HasSheafify J AddCommGrpCat.{v}] :
     (J.overPullback AddCommGrpCat.{v} U).PreservesInjectiveObjects :=
   Functor.preservesInjectiveObjects_of_adjunction_of_preservesMonomorphisms
     ((Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{v} (J.over U) J)

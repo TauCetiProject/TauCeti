@@ -16,7 +16,7 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Terminal
 # Cohomology on a localized site
 
 Cohomology at an object agrees with cohomology of the restricted sheaf on the localized site
-when restriction and its left adjoint are exact. On a preorder site, this left adjoint is
+because restriction and its left adjoint are exact. On a preorder site, this left adjoint is
 extension by zero to the ambient site. For the site of open subsets of a space, the comparison
 identifies cohomology on an open subset with cohomology of the restricted sheaf. More generally,
 for every `V : Over U`, cohomology at `V.left` agrees with the cohomology of the restricted sheaf
@@ -57,7 +57,6 @@ noncomputable section
 
 variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify (J.over U) AddCommGrpCat.{v}]
-  [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
 
 /-- Extension to the ambient site sends the free abelian sheaf on `V : Over U` to the free
 abelian sheaf on `V.left`: the inverse of the comparison
@@ -80,7 +79,7 @@ lemma sheafPullbackFreeYonedaIso_hom_naturality {V W : Over U} (g : V ⟶ W) :
 end
 
 local instance {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
-    [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint] :
+    [HasSheafify J AddCommGrpCat.{v}] :
     ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J).IsLeftAdjoint :=
   ((Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{v} (J.over U) J).isLeftAdjoint
 
@@ -90,12 +89,9 @@ variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C) (U : C)
   [HasSheafify J AddCommGrpCat.{v}] [HasSheafify (J.over U) AddCommGrpCat.{v}]
   [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
   [HasExt.{w} (Sheaf (J.over U) AddCommGrpCat.{v})]
-  [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
-  [PreservesFiniteColimits (J.overPullback AddCommGrpCat.{v} U)]
-  [PreservesFiniteLimits ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J)]
 
-/-- Under an exact restriction adjunction, cohomology at `V.left` agrees with the cohomology at
-`V : Over U` of the restricted sheaf on the localized site, naturally in the coefficient sheaf. -/
+/-- Cohomology at `V.left` agrees with the cohomology at `V : Over U` of the restricted sheaf on
+the localized site, naturally in the coefficient sheaf. -/
 private def cohomologyPresheafEvaluationIsoOver (n : ℕ) (V : Over U) :
     _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n ⋙
       (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj (op V.left) ≅
@@ -113,8 +109,8 @@ private def cohomologyPresheafEvaluationIsoOver (n : ℕ) (V : Over U) :
         let adj := (Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{v} (J.over U) J
         exact adj.extEquiv_naturality_right₀ x f)
 
-/-- **Cohomology on a localized site is the restriction of cohomology.** Under an exact
-restriction adjunction, the cohomology presheaf `V ↦ Hⁿ(V, F|_U)` of the restriction of `F` to the
+/-- **Cohomology on a localized site is the restriction of cohomology.** The cohomology presheaf
+`V ↦ Hⁿ(V, F|_U)` of the restriction of `F` to the
 localized site `J.over U` is the restriction to `Over U` of the cohomology presheaf
 `W ↦ Hⁿ(W, F)` of `F`, naturally in the abelian sheaf `F`
 (`CategoryTheory.GrothendieckTopology.cohomologyPresheafFunctorOverIso_hom_app_app_apply`). -/
@@ -155,8 +151,8 @@ lemma cohomologyPresheafFunctorOverIso_hom_app_app_apply (n : ℕ) (F : Sheaf J 
           (F.H'AddEquivExt n V.left x) (zero_add n)) :=
   (rfl)
 
-/-- Under an exact restriction adjunction, cohomology at `U` agrees with the cohomology of the
-restricted sheaf, naturally in the coefficient sheaf. -/
+/-- Cohomology at `U` agrees with the cohomology of the restricted sheaf, naturally in the
+coefficient sheaf. -/
 def cohomologyPresheafEvaluationIsoFunctorOverH (n : ℕ) :
     _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor J n ⋙
       (evaluation Cᵒᵖ AddCommGrpCat.{w}).obj (op U) ≅
@@ -235,14 +231,10 @@ universe u v w
 variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
   [HasSheafify J AddCommGrpCat.{v}] [HasExt.{w} (Sheaf J AddCommGrpCat.{v})]
 
-/-- Under an exact restriction adjunction, cohomology at an object is the cohomology of the
-restricted sheaf on the localized site. -/
+/-- Cohomology at an object is the cohomology of the restricted sheaf on the localized site. -/
 noncomputable def cohomologyPresheafObjIsoOverH (F : Sheaf J AddCommGrpCat.{v}) (n : ℕ) (U : C)
     [HasSheafify (J.over U) AddCommGrpCat.{v}]
-    [HasExt.{w} (Sheaf (J.over U) AddCommGrpCat.{v})]
-    [(J.overPullback AddCommGrpCat.{v} U).IsRightAdjoint]
-    [PreservesFiniteColimits (J.overPullback AddCommGrpCat.{v} U)]
-    [PreservesFiniteLimits ((Over.forget U).sheafPullback AddCommGrpCat.{v} (J.over U) J)] :
+    [HasExt.{w} (Sheaf (J.over U) AddCommGrpCat.{v})] :
     H' F n U ≅ AddCommGrpCat.of (H (F.over U) n) :=
   (J.cohomologyPresheafEvaluationIsoFunctorOverH U n).app F
 
