@@ -388,6 +388,27 @@ theorem hom_ext {f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectio
   intro s
   exact ext (h U s)
 
+/-- Morphisms of sheaves of holomorphic sections add pointwise. -/
+theorem add_hom_app_apply (f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) : (f + g).hom.app U s x = f.hom.app U s x + g.hom.app U s x := (rfl)
+
+/-- The zero morphism of sheaves of holomorphic sections takes every section to `0`. -/
+theorem zero_hom_app_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U) (x : ↥(unop U)) :
+    (0 : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂).hom.app U s x = 0 :=
+  (rfl)
+
+/-- Finite sums of morphisms of sheaves of holomorphic sections are computed pointwise. -/
+theorem sum_hom_app_apply {ι : Type*} (t : Finset ι)
+    (f : ι → (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂))
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) : (∑ i ∈ t, f i).hom.app U s x = ∑ i ∈ t, (f i).hom.app U s x := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => exact zero_hom_app_apply s x
+  | insert a t ha ih => rw [Finset.sum_insert ha, Finset.sum_insert ha, add_hom_app_apply, ih]
+
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/
 def homOfLinearMap (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
