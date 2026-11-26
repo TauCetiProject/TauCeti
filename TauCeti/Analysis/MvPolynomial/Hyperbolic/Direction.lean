@@ -123,27 +123,35 @@ private theorem isOpen_setOf_forall_im_nonneg_ne_zero {m : ℕ} {f g : ℝ → �
     · rw [mem_closedBall_zero_iff, norm_inv]
       exact inv_le_one_of_one_le₀ (not_le.1 hz1).le
 
+/-- **No zeros in the upper half-plane persist (Hurwitz).** For a continuous family `f w` of
+nonzero polynomial functions, if `f w` has no zero in the open upper half-plane for every `w ∈ s`,
+then neither has `f y` for `y` in the closure of `s`. -/
+private theorem ne_zero_of_im_pos_of_mem_closure {α : Type*} [TopologicalSpace α]
+    {f : α → ℂ → ℂ} (hf : Continuous (Function.uncurry f))
+    (hpoly : ∀ w, ∃ q : Polynomial ℂ, q ≠ 0 ∧ f w = fun z ↦ q.eval z) {s : Set α} {y : α}
+    (hy : y ∈ closure s) (hs : ∀ w ∈ s, ∀ z : ℂ, 0 < z.im → f w z ≠ 0) {z : ℂ}
+    (hz : 0 < z.im) : f y z ≠ 0 := by
+  have := mem_closure_iff_nhdsWithin_neBot.1 hy
+  exact TauCeti.hurwitz_forall_ne (isOpen_lt continuous_const continuous_im)
+    (convex_halfSpace_im_gt 0).isPreconnected
+    (Eventually.of_forall fun w ↦
+      (differentiable_and_not_forall_eq_zero (hpoly w)).1.differentiableOn)
+    (hf.tendstoLocallyUniformly_of_tendsto
+      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
+    ((eventually_mem_nhdsWithin (s := s) (a := y)).mono hs).frequently
+    (differentiable_and_not_forall_eq_zero (hpoly y)).2 z hz
+
 /-- For a continuous family `f l` of nonzero polynomial functions, none with a zero on the real
 axis, the set of parameters `l` for which `f l` has no zero in the closed upper half-plane is
 closed, by Hurwitz's theorem. -/
 private theorem isClosed_setOf_forall_im_nonneg_ne_zero {f : ℝ → ℂ → ℂ}
     (hf : Continuous (Function.uncurry f)) (hreal : ∀ l {z : ℂ}, z.im = 0 → f l z ≠ 0)
     (hpoly : ∀ l, ∃ q : Polynomial ℂ, q ≠ 0 ∧ f l = fun z ↦ q.eval z) :
-    IsClosed {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0} := by
-  set S := {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0}
-  refine closure_subset_iff_isClosed.1 fun l hl z hz ↦ ?_
-  rcases hz.eq_or_lt with hz0 | hzpos
-  · exact hreal l hz0.symm
-  have := mem_closure_iff_nhdsWithin_neBot.1 hl
-  have hΩ : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const continuous_im
-  exact TauCeti.hurwitz_forall_ne hΩ (convex_halfSpace_im_gt 0).isPreconnected
-    (Eventually.of_forall fun l ↦
-      (differentiable_and_not_forall_eq_zero (hpoly l)).1.differentiableOn)
-    (hf.tendstoLocallyUniformly_of_tendsto
-      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
-    ((eventually_mem_nhdsWithin (s := S) (a := l)).mono fun l' (hl' : l' ∈ S) z hz ↦
-      hl' z (le_of_lt hz)).frequently
-    (differentiable_and_not_forall_eq_zero (hpoly l)).2 z hzpos
+    IsClosed {l | ∀ z : ℂ, 0 ≤ z.im → f l z ≠ 0} :=
+  closure_subset_iff_isClosed.1 fun l hl z hz ↦ by
+    rcases hz.eq_or_lt with hz0 | hzpos
+    · exact hreal l hz0.symm
+    · exact ne_zero_of_im_pos_of_mem_closure hf hpoly hl (fun _ hl' z hz ↦ hl' z hz.le) hzpos
 
 /-- **Zeros persist (Hurwitz).** For a continuous family `G w` of polynomial functions, none of
 them zero, a zero `z₀` of `G y` with `y` in the closure of `s` is approached by zeros: every
@@ -263,16 +271,8 @@ private theorem eval_map_ofReal_add_smul_ne_zero_of_im_pos (x : σ → ℝ) {z :
     refine eval_map_add_I_smul_add_smul_ne_zero hp hb _ ?_
     rw [div_ofReal_im]
     exact (div_pos hz hα).le
-  have hΩ : IsOpen {z : ℂ | 0 < z.im} := isOpen_lt continuous_const continuous_im
-  have h := TauCeti.hurwitz_forall_ne hΩ (convex_halfSpace_im_gt 0).isPreconnected (F := F)
-    (g := F 0) (l := 𝓝[>] (0 : ℝ))
-    (Eventually.of_forall fun α ↦ (differentiable_and_not_forall_eq_zero
-      (exists_eval_map_add_smul_eq hp hb _)).1.differentiableOn)
-    (hF.tendstoLocallyUniformly_of_tendsto
-      (tendsto_id'.2 nhdsWithin_le_nhds)).tendstoLocallyUniformlyOn
-    (v := 0)
-    ((eventually_mem_nhdsWithin (s := Ioi 0) (a := 0)).mono fun α hα ↦ hpos α hα).frequently
-    (differentiable_and_not_forall_eq_zero (exists_eval_map_add_smul_eq hp hb _)).2 z hz
+  have h := ne_zero_of_im_pos_of_mem_closure hF (fun _ ↦ exists_eval_map_add_smul_eq hp hb _)
+    (s := Ioi 0) (y := 0) (by simp) hpos hz
   simpa [F] using h
 
 /-- **Hyperbolicity in every direction of the Gårding cone.** If `p` is hyperbolic of degree `m`
