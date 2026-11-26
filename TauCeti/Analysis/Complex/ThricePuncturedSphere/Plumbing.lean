@@ -564,6 +564,16 @@ theorem isOpen_plumbedSphere (q : Puncture) (L : ℝ) :
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
+/-- The plumbed four-punctured spheres `ℂ ∖ {0, 1, ψ(1)}` with neck lengths `L` form an open set
+jointly in `L` and the point. -/
+theorem isOpen_plumbedSphere_prod (q : Puncture) :
+    IsOpen {p : ℝ × ℂ | (p.2 ≠ 0 ∧ p.2 ≠ 1) ∧ p.2 ≠ q.plumbingMap p.1 1} := by
+  simp only [Set.ofPred_and]
+  refine ((isOpen_ne_fun continuous_snd continuous_const).inter
+    (isOpen_ne_fun continuous_snd continuous_const)).inter (isOpen_ne_fun continuous_snd ?_)
+  simp only [plumbingMap_apply, mul_one]
+  exact continuous_const.add ((q.contDiff_plumbingFactor (n := 0)).continuous.comp continuous_fst)
+
 /-- The plumbing map preserves orientation in real coordinates. -/
 theorem det_fderiv_realChart_plumbingMap_nonneg (q : Puncture) (L : ℝ) (w : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (realChart (q.plumbingMap L)) w).det := by

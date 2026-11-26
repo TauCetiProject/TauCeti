@@ -164,73 +164,52 @@ theorem associativityPerturbation_of_two_le (hL : 0 ≤ L) (hτ : 2 ≤ τ)
     smoothTransition.one_of_one_le (by linarith), one_smul, update_eq_self, ← hab,
     update_eq_self]
 
-/-- The Hamiltonians of the inserted pair of pants of `(x₁ x₂) x₃`. -/
-private def leftInserted (H : Fin 3 → ℝ → M → ℝ) (G : ℝ → M → ℝ) : Puncture → ℝ → M → ℝ
-  | zero => H 0
-  | one => H 1
-  | inf => G
-
-/-- The Hamiltonians of the receiving pair of pants of `(x₁ x₂) x₃`. -/
-private def leftReceiving (H : Fin 3 → ℝ → M → ℝ) (Hout G : ℝ → M → ℝ) : Puncture → ℝ → M → ℝ
-  | zero => G
-  | one => H 2
-  | inf => Hout
-
-/-- The Hamiltonians of the inserted pair of pants of `x₁ (x₂ x₃)`. -/
-private def rightInserted (H : Fin 3 → ℝ → M → ℝ) (G' : ℝ → M → ℝ) : Puncture → ℝ → M → ℝ
-  | zero => H 1
-  | one => H 2
-  | inf => G'
-
-/-- The Hamiltonians of the receiving pair of pants of `x₁ (x₂ x₃)`. -/
-private def rightReceiving (H : Fin 3 → ℝ → M → ℝ) (Hout G' : ℝ → M → ℝ) :
-    Puncture → ℝ → M → ℝ
-  | zero => H 0
-  | one => G'
-  | inf => Hout
-
 /-- The inputs of `(x₁ x₂) x₃` are the inputs of its two pairs of pants other than the neck. -/
 private theorem vecCons_leftInserted_leftReceiving (H : Fin 3 → ℝ → M → ℝ) (Hout G : ℝ → M → ℝ) :
-    ![leftInserted H G zero, leftInserted H G one, leftReceiving H Hout G one] = H := by
+    ![associativityLeftInserted H G zero, associativityLeftInserted H G one,
+      associativityLeftReceiving H Hout G one] = H := by
   funext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The inputs of `x₁ (x₂ x₃)` are the inputs of its two pairs of pants other than the neck. -/
 private theorem vecCons_rightReceiving_rightInserted (H : Fin 3 → ℝ → M → ℝ)
     (Hout G' : ℝ → M → ℝ) :
-    ![rightReceiving H Hout G' zero, rightInserted H G' zero, rightInserted H G' one] = H := by
+    ![associativityRightReceiving H Hout G' zero, associativityRightInserted H G' zero,
+      associativityRightInserted H G' one] = H := by
   funext i
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 /-- The inputs of `x₁ (x₂ x₃)`, listed from the input `x₂` as in the plumbed sphere, are the
 inputs relabelled by `finRotate 3`. -/
 private theorem vecCons_rightInserted_rightReceiving (H : Fin 3 → ℝ → M → ℝ)
     (Hout G' : ℝ → M → ℝ) :
-    ![rightInserted H G' zero, rightInserted H G' one, rightReceiving H Hout G' zero] =
-      H ∘ finRotate 3 := by
+    ![associativityRightInserted H G' zero, associativityRightInserted H G' one,
+      associativityRightReceiving H Hout G' zero] = H ∘ finRotate 3 := by
   funext i
-  fin_cases i <;> simp [rightInserted, rightReceiving]
+  fin_cases i <;> simp
 
 /-- For `τ ≤ 0` the family is the plumbed datum of `(x₁ x₂) x₃` with a scaled neck, with the
 pairs of pants read off from the input Hamiltonians. -/
 private theorem associativityPerturbation_eq_left (hL : 0 ≤ L) (hτ : τ ≤ 0) :
     associativityPerturbation H Hout G G' L τ =
-      plumbedPerturbation (update (leftInserted H G) inf (smoothTransition (-τ) • G))
-        (update (leftReceiving H Hout G) zero (smoothTransition (-τ) • G)) zero L := by
-  have key := associativityPerturbation_of_nonpos hL hτ (leftInserted H G)
-    (leftReceiving H Hout G) G G'
-  rw [vecCons_leftInserted_leftReceiving] at key
+      plumbedPerturbation (update (associativityLeftInserted H G) inf (smoothTransition (-τ) • G))
+        (update (associativityLeftReceiving H Hout G) zero (smoothTransition (-τ) • G)) zero L := by
+  have key := associativityPerturbation_of_nonpos hL hτ (associativityLeftInserted H G)
+    (associativityLeftReceiving H Hout G) G G'
+  rw [vecCons_leftInserted_leftReceiving, associativityLeftReceiving_inf] at key
   exact key
 
 /-- For `τ ≥ 1` the family is the plumbed datum of `x₁ (x₂ x₃)` with a scaled neck, with the
 pairs of pants read off from the input Hamiltonians. -/
 private theorem associativityPerturbation_eq_right (hL : 0 ≤ L) (hτ : 1 ≤ τ) :
     associativityPerturbation H Hout G G' L τ =
-      plumbedPerturbation (update (rightInserted H G') inf (smoothTransition (τ - 1) • G'))
-        (update (rightReceiving H Hout G') one (smoothTransition (τ - 1) • G')) one L := by
-  have key := associativityPerturbation_of_one_le hL hτ (rightInserted H G')
-    (rightReceiving H Hout G') G G'
-  rw [vecCons_rightReceiving_rightInserted] at key
+      plumbedPerturbation
+        (update (associativityRightInserted H G') inf (smoothTransition (τ - 1) • G'))
+        (update (associativityRightReceiving H Hout G') one (smoothTransition (τ - 1) • G'))
+        one L := by
+  have key := associativityPerturbation_of_one_le hL hτ (associativityRightInserted H G')
+    (associativityRightReceiving H Hout G') G G'
+  rw [vecCons_rightReceiving_rightInserted, associativityRightReceiving_inf] at key
   exact key
 
 /-- For `L ≥ 0` the plumbing factor `e^{-2πL} / 4` lies in `(0, 1 / 3]`. -/
@@ -260,8 +239,8 @@ theorem associativityPerturbation_cylindricalEndLift_of_pos (hL : 2 < L) (τ : �
       associativityScale_eq_plumbingFactor_of_nonpos hτ.le]
     have hvec := vecCons_leftInserted_leftReceiving H Hout G
     have h := plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := zero) (r := one)
-      (Ha := leftInserted H G) (Hb := leftReceiving H Hout G) (G := G) (by decide) (by decide)
-      (by decide) hL (smoothTransition (-τ)) i (by rwa [hvec]) hz x v
+      (Ha := associativityLeftInserted H G) (Hb := associativityLeftReceiving H Hout G) (G := G)
+      (by decide) (by decide) (by decide) hL (smoothTransition (-τ)) i (by rwa [hvec]) hz x v
     rwa [hvec] at h
   rcases le_or_gt τ 1 with hτ₁ | hτ
   · -- Along the path, this is the input end `i` of the sphere with moving input ends.
@@ -280,8 +259,9 @@ theorem associativityPerturbation_cylindricalEndLift_of_pos (hL : 2 < L) (τ : �
     rw [comp_apply] at hc ha hvec
     rw [associativityPerturbation_eq_right (by linarith) hτ.le, hc, ha]
     have h := plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (q := one) (r := zero)
-      (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (G := G') (by decide)
-      (by decide) (by decide) hL (smoothTransition (τ - 1)) j (by rwa [hvec]) hz x v
+      (Ha := associativityRightInserted H G') (Hb := associativityRightReceiving H Hout G')
+      (G := G') (by decide) (by decide) (by decide) hL (smoothTransition (τ - 1)) j
+      (by rwa [hvec]) hz x v
     rwa [hvec] at h
 
 /-- **The family on the output end.** For `L > 2` and every `τ`, on the part `s ≤ -1` of the
@@ -295,16 +275,18 @@ theorem associativityPerturbation_cylindricalEndLift_inf_of_le (hL : 2 < L) (τ 
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
   rcases lt_or_ge τ 0 with hτ | hτ₀
   · rw [associativityPerturbation_eq_left (by linarith) hτ.le]
-    exact plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
-      (Hb := leftReceiving H Hout G) (by decide) hL hHout (smoothTransition (-τ)) hz x v
+    simpa using plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
+      (Hb := associativityLeftReceiving H Hout G) (q := zero) (by decide) hL (by simpa using hHout)
+      (smoothTransition (-τ)) hz x v
   rcases le_or_gt τ 1 with hτ₁ | hτ
   · obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
     rw [associativityPerturbation_of_mem_Icc ⟨hτ₀, hτ₁⟩]
     exact puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
       (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hHout hz x v
   · rw [associativityPerturbation_eq_right (by linarith) hτ.le]
-    exact plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
-      (Hb := rightReceiving H Hout G') (by decide) hL hHout (smoothTransition (τ - 1)) hz x v
+    simpa using plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
+      (Hb := associativityRightReceiving H Hout G') (q := one) (by decide) hL
+      (by simpa using hHout) (smoothTransition (τ - 1)) hz x v
 
 /-! ### Smoothness -/
 
@@ -450,16 +432,17 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
         2 * (ENNReal.ofReal BG + ENNReal.ofReal BG') := by
   rw [associativityPerturbation_eq_left (by linarith) hτ.le]
   refine (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
-    (q := zero) (Ha := leftInserted H G) (Hb := leftReceiving H Hout G) (by decide)
-    (fun p hp => by cases p; exacts [hH 0, hH 1, absurd rfl hp])
-    (fun p hp => by cases p; exacts [absurd rfl hp, hH 2, hHout]) hG
-    (fun p hp => by cases p; exacts [hHs 0, hHs 1, absurd rfl hp])
-    (fun p hp => by cases p; exacts [absurd rfl hp, hHs 2, hHouts]) hGs hL
+    (q := zero) (Ha := associativityLeftInserted H G) (Hb := associativityLeftReceiving H Hout G)
+    (by decide)
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hG
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hGs hL
     (smoothTransition (-τ))
     (Ba := fun p => match p with | zero => B 0 | one => B 1 | inf => 0)
     (Bb := fun p => match p with | zero => 0 | one => B 2 | inf => Bout)
-    (fun p hp => by cases p; exacts [hB 0, hB 1, absurd rfl hp])
-    (fun p hp => by cases p; exacts [absurd rfl hp, hB 2, hBout]) hBG u).trans ?_
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hBG u).trans ?_
   simp only [Puncture.sum_univ, Fin.sum_univ_three, update_apply, reduceCtorEq, ite_false,
     ite_true]
   exact (le_of_eq (by ring)).trans (add_ofReal_abs_smoothTransition_mul_le _
@@ -483,16 +466,17 @@ private theorem lintegral_enorm_hamiltonianCurvature_associativityPerturbation_l
         2 * (ENNReal.ofReal BG + ENNReal.ofReal BG') := by
   rw [associativityPerturbation_eq_right (by linarith) hτ.le]
   refine (ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
-    (q := one) (Ha := rightInserted H G') (Hb := rightReceiving H Hout G') (by decide)
-    (fun p hp => by cases p; exacts [hH 1, hH 2, absurd rfl hp])
-    (fun p hp => by cases p; exacts [hH 0, absurd rfl hp, hHout]) hG'
-    (fun p hp => by cases p; exacts [hHs 1, hHs 2, absurd rfl hp])
-    (fun p hp => by cases p; exacts [hHs 0, absurd rfl hp, hHouts]) hG's hL
+    (q := one) (Ha := associativityRightInserted H G')
+    (Hb := associativityRightReceiving H Hout G') (by decide)
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hG'
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hG's hL
     (smoothTransition (τ - 1))
     (Ba := fun p => match p with | zero => B 1 | one => B 2 | inf => 0)
     (Bb := fun p => match p with | zero => B 0 | one => 0 | inf => Bout)
-    (fun p hp => by cases p; exacts [hB 1, hB 2, absurd rfl hp])
-    (fun p hp => by cases p; exacts [hB 0, absurd rfl hp, hBout]) hBG' u).trans ?_
+    (fun p hp => by cases p <;> simp_all)
+    (fun p hp => by cases p <;> simp_all) hBG' u).trans ?_
   simp only [Puncture.sum_univ, Fin.sum_univ_three, update_apply, reduceCtorEq, ite_false,
     ite_true]
   exact (le_of_eq (by ring)).trans (add_ofReal_abs_smoothTransition_mul_le _
