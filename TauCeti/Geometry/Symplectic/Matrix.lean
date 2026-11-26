@@ -68,6 +68,7 @@ theorem stdSumSymplecticForm_toBilinForm :
   (rfl)
 
 /-- The standard symplectic form is `ω(u, w) = u ⬝ᵥ J w`. -/
+@[simp]
 theorem stdSumSymplecticForm_apply (u w : Fin n ⊕ Fin n → ℝ) :
     stdSumSymplecticForm n u w = u ⬝ᵥ J (Fin n) ℝ *ᵥ w :=
   stdSymplecticBilinForm_apply ℝ n u w
@@ -77,7 +78,7 @@ theorem stdSumSymplecticForm_apply (u w : Fin n ⊕ Fin n → ℝ) :
 theorem stdSumSymplecticForm_apply_eq_sum (u w : Fin n ⊕ Fin n → ℝ) :
     stdSumSymplecticForm n u w =
       ∑ i, (u (Sum.inr i) * w (Sum.inl i) - u (Sum.inl i) * w (Sum.inr i)) := by
-  simp [stdSumSymplecticForm_apply, J, fromBlocks_mulVec, neg_mulVec, dotProduct,
+  simp [J, fromBlocks_mulVec, neg_mulVec, dotProduct,
     Fintype.sum_sum_type, Finset.sum_add_distrib, sub_eq_neg_add]
 
 /-- **The linear symplectomorphisms of `u ⬝ᵥ J w` are the symplectic matrices.** A matrix `A`
@@ -87,18 +88,16 @@ for the endomorphism `toLin' A`. -/
 theorem stdSumSymplecticForm_mulVec_mulVec_iff (A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ) :
     (∀ u w, stdSumSymplecticForm n (A *ᵥ u) (A *ᵥ w) = stdSumSymplecticForm n u w) ↔
       A ∈ symplecticGroup (Fin n) ℝ := by
-  simpa [BilinForm.isIsometry_iff, stdSumSymplecticForm_apply] using
+  simpa [BilinForm.isIsometry_iff] using
     (toMatrix'_mem_symplecticGroup_iff ℝ n (f := toLin' A)).symm
 
 /-- Symplectic matrices preserve the standard symplectic form: `ω(A u, A w) = ω(u, w)`. -/
-@[simp]
 theorem stdSumSymplecticForm_mulVec_mulVec {A : Matrix (Fin n ⊕ Fin n) (Fin n ⊕ Fin n) ℝ}
     (hA : A ∈ symplecticGroup (Fin n) ℝ) (u w : Fin n ⊕ Fin n → ℝ) :
     stdSumSymplecticForm n (A *ᵥ u) (A *ᵥ w) = stdSumSymplecticForm n u w :=
   LinearMap.congr_fun₂ (stdSymplecticBilinForm_comp_stdSymplecticRep ℝ n ⟨A, hA⟩) u w
 
 /-- The symplectic group acts by linear symplectomorphisms of `u ⬝ᵥ J w`. -/
-@[simp]
 theorem stdSumSymplecticForm_smul_smul (g : symplecticGroup (Fin n) ℝ)
     (u w : Fin n ⊕ Fin n → ℝ) :
     stdSumSymplecticForm n (g • u) (g • w) = stdSumSymplecticForm n u w :=
