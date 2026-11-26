@@ -87,6 +87,7 @@ omit [Algebra K F] [Algebra k F] [IsScalarTower k K F] in
 /-- For an algebraic extension `K / k`, `gonality k K(t) = [K : k]`. When `K / k` is finite this is
 the genuine gonality of `K(t)` over `k`; for instance `ℂ(t)` has gonality two over `ℝ`. When
 `K / k` is infinite both sides are the junk value `0`. -/
+@[simp]
 theorem gonality_ratFunc_of_isAlgebraic [Algebra.IsAlgebraic k K] :
     gonality k (RatFunc K) = Module.finrank k K := by
   rw [gonality_eq_finrank_mul_gonality (K := K), gonality_ratFunc, mul_one]

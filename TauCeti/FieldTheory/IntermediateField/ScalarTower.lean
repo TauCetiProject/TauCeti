@@ -118,6 +118,7 @@ theorem restrictScalars_self {K L : Type*} [Field K] [Field L] [Algebra K L]
 
 /-- Restricting the scalars of an intermediate field `E` of `L / L'` to `K` does not change the
 degree of `L` over it: `[L : E.restrictScalars K] = [L : E]`. -/
+@[simp]
 theorem finrank_restrictScalars_eq {K L' L : Type*} [Field K] [Field L'] [Field L]
     [Algebra K L'] [Algebra K L] [Algebra L' L] [IsScalarTower K L' L]
     (E : IntermediateField L' L) :

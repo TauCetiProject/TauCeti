@@ -110,6 +110,7 @@ theorem exists_finrank_adjoin_eq_gonality (hF : IsFunctionField k F) :
 
 /-- An algebraic extension has no transcendental element, so its gonality is the junk value `0`
 of an infimum over the empty set. -/
+@[simp]
 theorem gonality_eq_zero_of_isAlgebraic [Algebra.IsAlgebraic k F] : gonality k F = 0 :=
   Nat.sInf_eq_zero.mpr <| .inr <| Set.eq_empty_of_forall_notMem
     fun _ ⟨x, hx, _⟩ ↦ hx (Algebra.IsAlgebraic.isAlgebraic x)
