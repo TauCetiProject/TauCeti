@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Cylinder
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
-public import TauCeti.AlgebraicTopology.SimplicialSet.Horn
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeaklyContractible
 

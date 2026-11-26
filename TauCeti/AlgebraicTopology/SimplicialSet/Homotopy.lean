@@ -434,6 +434,12 @@ noncomputable def op (H : SSet.Homotopy f g) :
       ((congrArg (· ≫ SSet.opFunctor.map H.h) (he 1)).trans
         ((SSet.opFunctor.map_comp _ _).symm.trans (congrArg _ H.h₀)))
 
+/-- The opposite homotopy is obtained by reversing the interval in the opposite cylinder. -/
+@[simp]
+lemma op_h (H : SSet.Homotopy f g) :
+    H.op.h = X.op ◁ (SSet.stdSimplex.opIso ⦋1⦌).inv ≫ SSet.opFunctor.map H.h :=
+  (rfl)
+
 end SSet.Homotopy
 
 namespace SSet
