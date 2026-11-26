@@ -57,6 +57,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 * `Circle.coe_mul_conj_self` and `Circle.conj_coe_mul_self`: `z * conj z = 1` and `conj z * z = 1`
   on the circle, `Circle.add_mul_coe_eq_coe_mul_conj_mul_add`: `p + t u = u (conj u · p + t)`, and
   `Circle.im_conj_mul_ne_zero_iff`: the line `t ↦ p + t u` avoids `0` iff `conj u · p` is not real.
+* `Circle.im_conj_mul_add_smul` and `Circle.im_conj_mul_smul_I_mul`: `Im (conj e · z)` is constant
+  along the direction `e`, and equals `r` at the point `r i e`.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -306,6 +308,16 @@ theorem im_conj_mul_ne_zero_iff (u : Circle) (p : ℂ) :
   · intro h him
     apply h (-(conj (u : ℂ) * p).re)
     apply Complex.ext <;> simp [him]
+
+/-- Moving along the direction `e` does not change `Im (conj e · z)`. -/
+theorem im_conj_mul_add_smul (e : Circle) (z : ℂ) (t : ℝ) :
+    (conj (e : ℂ) * (z + t • (e : ℂ))).im = (conj (e : ℂ) * z).im := by
+  simp [Complex.real_smul, mul_add, mul_left_comm, conj_coe_mul_self]
+
+/-- The point `r i e` satisfies `Im (conj e · r i e) = r`. -/
+theorem im_conj_mul_smul_I_mul (e : Circle) (r : ℝ) :
+    (conj (e : ℂ) * (r • (Complex.I * e))).im = r := by
+  simp [Complex.real_smul, mul_left_comm, conj_coe_mul_self]
 
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
