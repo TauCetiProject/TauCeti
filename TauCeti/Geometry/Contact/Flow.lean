@@ -37,7 +37,9 @@ the local Reeb flow, the flow of the constant Hamiltonian `1`, preserves `α`
 (`IsContactForm.mpullback_flowOf_reebVectorField_apply`). None of this needs completeness.
 
 When `X` is complete, which holds for instance on a compact manifold
-(`TauCeti.isCompleteVectorField_of_compactSpace`), its maximal flow is the global flow `ψ`, and the
+(`TauCeti.isCompleteVectorField_of_compactSpace`) or when `f` has compact support
+(`IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport`), since
+`X` vanishes off the support of `f`, its maximal flow is the global flow `ψ`, and the
 time-`t` maps are diffeomorphisms. They are then cooriented contactomorphisms of `α`
 (`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), and strict
 contactomorphisms for every `t` exactly when `R_α f = 0`
@@ -233,6 +235,21 @@ theorem IsContactForm.isStrictContactomorphism_globalFlowDiffeomorph_reebVectorF
     exact hα.isContactHamiltonianVectorField_contactHamiltonianVectorField 1
   exact (hX.isStrictContactomorphism_globalFlowDiffeomorph_iff hα contMDiff_const hc).2
     (fun x ↦ by simp [Pi.one_def, mvfderiv_const]) t
+
+/-- **Compactly supported contact Hamiltonians have complete flows.** For a contact form `α` and a
+compactly supported `C²` function `f`, the contact Hamiltonian vector field `X_f` vanishes off the
+support of `f`, so it is complete. Its flow then consists of cooriented contactomorphisms
+(`IsContactHamiltonianVectorField.preservesCoorientation_globalFlowDiffeomorph`), with no
+compactness of `M`. -/
+theorem IsContactForm.isCompleteVectorField_contactHamiltonianVectorField_of_hasCompactSupport
+    (hα : α.IsContactForm) (hf : ContMDiff I 𝓘(ℝ) 2 f) (hfc : HasCompactSupport f) :
+    IsCompleteVectorField (α.contactHamiltonianVectorField f) := by
+  refine isCompleteVectorField_of_isCompact_of_eq_zero_off
+    (hα.contMDiff_contactHamiltonianVectorField (n := 1) (by simp) (hf.of_le (by norm_num)))
+    hfc.isCompact fun x hx ↦ ?_
+  have h0 : f =ᶠ[𝓝 x] 0 := notMem_tsupport_iff_eventuallyEq.1 hx
+  refine (hα.contactHamiltonianVectorField_eq_zero_iff).2 ⟨h0.eq_of_nhds, fun v _ ↦ ?_⟩
+  rw [h0.mvfderiv_eq, mvfderiv_zero, zero_apply]
 
 end HamiltonianFlow
 
