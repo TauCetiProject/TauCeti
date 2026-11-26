@@ -213,6 +213,7 @@ theorem zeroCharge_congr {f : C(Y, ℂ)} {σ σ' : C(𝔻, Y)} {W : Set 𝔻} (h
 
 /-- The zero charge of `σ` for `f` is the zero charge of the disc `f ∘ σ` in `ℂ` for the
 identity of `ℂ`. -/
+@[simp]
 theorem id_zeroCharge_comp (f : C(Y, ℂ)) (σ : C(𝔻, Y)) :
     (ContinuousMap.id ℂ).zeroCharge (f.comp σ) = f.zeroCharge σ := by
   rw [zeroCharge, zeroCharge, ContinuousMap.id_comp]
