@@ -84,6 +84,8 @@ this form the transversality condition for continuations is the transversality o
   continuation coefficients count the points of `W^u(p) ∩ φ_{a, b}⁻¹ (W^s(q))` modulo two.
 * `TauCeti.continuationTransition`: the transition map `φ_{a, b}` of a smooth field on `M × ℝ`,
   as a smooth diffeomorphism of `M`.
+* `TauCeti.IsContinuationField.eventually_continuationTransition_apply_eq_flow`: moving the
+  endpoints `a` and `b` further out composes the transition map with the flows of `X₀` and `X₁`.
 
 ## References
 
@@ -460,5 +462,53 @@ theorem continuationTransition_symm_apply (a b : ℝ) (x : M) :
   timeDependentFlowDiffeomorph_symm_apply _ _ _ a b x
 
 end TransitionDiffeomorph
+
+/-! ### Moving the endpoints of the slab -/
+
+namespace IsContinuationField
+
+variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
+  {f₀ f₁ : M → ℝ} {X₀ X₁ : (x : M) → TangentSpace 𝓘(ℝ, E) x}
+  (hV : IsContinuationField X₀ X₁ C V) (hX₀ : IsAdaptedPseudoGradient f₀ X₀)
+  (hX₁ : IsAdaptedPseudoGradient f₁ X₁) (hC : 0 < C)
+  (hVs : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent ∞
+    fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)))
+include hV hX₀ hX₁ hC
+
+/-- **Moving the endpoints of the slab composes with the end flows.** Let `V` be a smooth
+continuation field from `X₀` to `X₁` at rate `C > 0`. For all sufficiently negative `a₀` and
+sufficiently positive `b₀`, and all `a ≤ a₀` and `b ≥ b₀`, the transition diffeomorphism from `a`
+to `b` is the one from `a₀` to `b₀`, preceded by the time-`(a₀ - a)` map of the flow of `X₀` and
+followed by the time-`(b - b₀)` map of the flow of `X₁`: before `a₀` and after `b₀` the space
+component of `V` along the base trajectory is `X₀` and `X₁`. -/
+theorem eventually_continuationTransition_apply_eq_flow :
+    ∀ᶠ a₀ in atBot, ∀ᶠ b₀ in atTop, ∀ a ≤ a₀, ∀ b, b₀ ≤ b → ∀ x,
+      continuationTransition C hVs a b x =
+        hX₁.flow (b - b₀) (continuationTransition C hVs a₀ b₀ (hX₀.flow (a₀ - a) x)) := by
+  have hVs₁ : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ)) (𝓘(ℝ, E).prod 𝓘(ℝ)).tangent 1
+      fun z ↦ (⟨z, V z⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ)) (M × ℝ)) := hVs.of_le (by simp)
+  have hY := contMDiff_continuationSpaceField (C := C) hVs₁
+  have hcomp := isCompleteVectorField_timeDependentSuspensionField_of_compactSpace hY
+  obtain ⟨A, hA⟩ := eventually_atBot.1 (hV.eventually_atBot_continuationSpaceField_eq hC)
+  obtain ⟨B, hB⟩ := eventually_atTop.1 (hV.eventually_atTop_continuationSpaceField_eq hC)
+  filter_upwards [eventually_lt_atBot A] with a₀ ha₀
+  filter_upwards [eventually_gt_atTop B] with b₀ hb₀ a ha b hb x
+  -- Before `A` the time-dependent flow is the flow of `X₀`, and after `B` that of `X₁`.
+  have h₀ : timeDependentFlowOf (continuationSpaceField C V) a a₀ x = hX₀.flow (a₀ - a) x := by
+    have h := hX₀.eqOn_timeDependentFlowOf_flow_of_lt hY (τ := a) (x := x)
+      (fun u hu ↦ hA u hu.le) ha₀ (show a ∈ Iic a₀ from ha)
+    simp only [timeDependentFlowOf_self] at h
+    -- The flows at times `a₀ - a` and `a - a₀` cancel.
+    conv_rhs => rw [h, ← Flow.map_add]
+    simp
+  have h₁ (w : M) : timeDependentFlowOf (continuationSpaceField C V) b₀ b w =
+      hX₁.flow (b - b₀) w := by
+    have h := hX₁.eqOn_timeDependentFlowOf_flow_of_gt hY (τ := b₀) (x := w)
+      (fun u hu ↦ hB u hu.le) hb₀ (show b ∈ Ici b₀ from hb)
+    simpa only [timeDependentFlowOf_self] using h
+  rw [coe_continuationTransition, coe_continuationTransition, ← h₀, ← h₁,
+    timeDependentFlowOf_trans hcomp hY, timeDependentFlowOf_trans hcomp hY]
+
+end IsContinuationField
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.DG.Bimodule.Hom.Basic
 public import TauCeti.Algebra.Homology.DG.Module.Right.Hom.Complex
+public import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
 
 /-!
 # The Hom complex of differential graded bimodules
@@ -116,17 +117,28 @@ theorem map_smul_left {p r : ℤ}
 omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
   [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
   [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
+/-- A degree-`p` cochain intertwines the left action with the action twisted by the Koszul
+automorphism `a ↦ (-1)^(p*r) a` on elements `a` of degree `r`, for every, possibly inhomogeneous,
+algebra element. -/
+theorem map_smul_left_eq_koszulTwistAlgEquiv_smul {p : ℤ}
+    (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) p) (a : A) (x : M) :
+    f.val.val (a • x) = InternalGrading.koszulTwistAlgEquiv 𝒜 p a • f.val.val x := by
+  classical
+  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul, map_sum]
+  conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, map_sum, Finset.sum_smul]
+  refine Finset.sum_congr rfl fun r _ ↦ ?_
+  rw [map_smul_left f (SetLike.coe_mem _),
+    InternalGrading.koszulTwistAlgEquiv_apply_of_mem 𝒜 p (SetLike.coe_mem _), smul_assoc]
+
+omit [IsScalarTower R A M] [SMulCommClass A Bᵐᵒᵖ M] [SMulCommClass A Bᵐᵒᵖ N]
+  [DirectSum.Decomposition ℳ] [DirectSum.Decomposition 𝒩]
+  [SetLike.GradedSMul 𝒜 ℳ] [SetLike.GradedSMul 𝒜 𝒩] in
 /-- In degree zero the signed law extends to the whole algebra, not only homogeneous elements. -/
 @[simp]
 theorem map_smul_left_zero
     (f : dgBimoduleCochains (B := B) (𝒜 := 𝒜) (ℳ := ℳ) (𝒩 := 𝒩) 0) (a : A) (x : M) :
     f.val.val (a • x) = a • f.val.val x := by
-  classical
-  conv_lhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul, map_sum]
-  conv_rhs => rw [← DirectSum.sum_support_decompose 𝒜 a, Finset.sum_smul]
-  refine Finset.sum_congr rfl fun r _ ↦ ?_
-  simpa only [zero_mul, Int.negOnePow_zero, one_smul] using
-    map_smul_left f (SetLike.coe_mem (decompose 𝒜 a r)) x
+  simp [map_smul_left_eq_koszulTwistAlgEquiv_smul]
 
 variable {hM : IsDGBimodule hA hB ℳ dM} {hN : IsDGBimodule hA hB 𝒩 dN}
 

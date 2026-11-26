@@ -45,6 +45,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 ## Main results
 
+* `rootsOfUnity.pow_eq_one`: an element of `rootsOfUnity k M` has `k`-th power `1` in that
+  subgroup.
 * `TauCeti.compHom_subtype_rootsOfUnity_bijective`: postcomposition with
   `(rootsOfUnity n M).subtype` is bijective on homomorphisms out of a monoid whose elements satisfy
   `g ^ n = 1`.
@@ -96,6 +98,13 @@ public section
 noncomputable section
 
 namespace TauCeti
+
+/-- A `k`-th root of unity, as an element of the subgroup `rootsOfUnity k M`, has `k`-th power
+`1`. -/
+@[simp]
+theorem _root_.rootsOfUnity.pow_eq_one {M : Type*} [CommMonoid M] {k : ℕ}
+    (ζ : rootsOfUnity k M) : ζ ^ k = 1 :=
+  Subtype.ext ζ.property
 
 /-- An injective monoid homomorphism is injective on roots of unity. -/
 theorem restrictRootsOfUnity_injective {R S F : Type*} [CommMonoid R] [CommMonoid S]

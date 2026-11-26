@@ -74,6 +74,11 @@ terms are the integrals of the `bⱼ` at large frequencies
 (`TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`). Where `b₀` inverts `A + t` along the
 axis, its principal symbol is `A ^ (-σ)`
 (`TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral_eq_rpow`).
+Applied to the formal right inverse of an expansion `a ∼ ∑ⱼ aⱼ` of orders `m - j` whose terms are
+quasi-homogeneous at large frequencies, the cut-off terms of Seeley's resolvent parametrix, this
+shows that Seeley's symbol of the negative power is classical of order `-m - 2 σ + 2`, with
+principal symbol `σ(A) ^ (-σ)`
+(`TauCeti.ParameterSymbol.exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms`).
 
 ## Main declarations
 
@@ -100,6 +105,9 @@ axis, its principal symbol is `A ^ (-σ)`
   (`TauCeti.ParameterSymbol.coefficient_term_classicalBalakrishnanIntegral`) and principal symbol
   (`TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral`,
   `TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral_eq_rpow`).
+* `TauCeti.ParameterSymbol.exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms`:
+  the Balakrishnan integral of an asymptotic sum of the formal right inverse of an expansion that
+  is quasi-homogeneous at large frequencies is classical, with principal symbol `A ^ (-σ)`.
 
 ## References
 
@@ -528,6 +536,41 @@ theorem exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add (hσ
   rw [hsum, balakrishnanIntegral_add, balakrishnanIntegral_inclusion, Symbol.coefficient_add,
     Pi.add_apply, coefficient_balakrishnanIntegral_inverse hΛ hσ hσ0 hm ha hA hpA,
     Symbol.coefficient_inclusion]
+
+/-- **Seeley's symbol of a negative power is classical.** Let `a ∼ ∑ⱼ aⱼ` be an expansion into
+parameter-dependent symbols `aⱼ` of orders `m - j`, each quasi-homogeneous of degree `m - j` above
+the radius `R`, whose leading term is elliptic with parameter: for an elliptic differential
+operator `P` of order `m = 2`, the symbol of `P - λ` split into its homogeneous parts, the
+leading part modified near `(ξ, λ) = (0, 0)` so that it is invertible there. The terms of its
+formal right inverse (`TauCeti.ParameterSymbol.expansionRightInverseTerms`) are then the terms
+of Seeley's resolvent parametrix, quasi-homogeneous at large frequencies
+(`TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_expansionRightInverseTerms`). They have an
+asymptotic sum `b` of order `-m`, and for `0 < σ < 1` with `-m - 2 σ + 2 < 0` the Balakrishnan
+integral of `b` is a classical symbol `c` of order `-m - 2 σ + 2`
+(`TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`). At every nonzero frequency `ξ` with
+`R < ‖ξ‖` where the leading term is `a₀((x, ξ), -t) = A + t` along the negative real axis, for a
+strictly positive operator `A`, the principal symbol of `c` is `A ^ (-σ)`. -/
+theorem exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms (hσ0 : 0 < σ)
+    (hm : -m - 2 * σ + 2 < 0) (a : (j : ℕ) → ParameterSymbol n Λ V V (m - j))
+    (ha : (a 0).IsElliptic) {R : ℝ} (hhom : ∀ j, (a j).IsQuasiHomogeneousAbove (m - j) R) :
+    ∃ (b : ParameterSymbol n Λ V V (-m)) (c : ClassicalSymbol n V V (-m - 2 * σ + 2)),
+      IsAsymptoticSum (m := fun j : ℕ ↦ -m - j) (inclusion (by simp) b)
+        (expansionRightInverseTerms a ha) ∧
+      c.toSymbol = b.balakrishnanIntegral hΛ hσ hm ∧
+      ∀ x ξ, R < ‖ξ‖ → ξ ≠ 0 → ∀ A : V →L[ℂ] V, IsStrictlyPositive A →
+        (∀ t : ℝ, 0 < t → (a 0).coefficient ((x, ξ), -(t : ℂ)) = A + t • 1) →
+          c.principal.coefficient (x, ξ) = A ^ (-σ) := by
+  have hbs : ∀ j, ∃ R', (expansionRightInverseTerms a ha j).IsQuasiHomogeneousAbove (-m - j) R' :=
+    fun j ↦ ⟨R + 1, isQuasiHomogeneousAbove_expansionRightInverseTerms a ha hhom (by linarith) j⟩
+  obtain ⟨b, hb⟩ := exists_asymptoticSum_sub_natCast (expansionRightInverseTerms a ha)
+  refine ⟨b, classicalBalakrishnanIntegral hΛ hσ hm b _ hbs hb, hb,
+    toSymbol_classicalBalakrishnanIntegral .., fun x ξ hξ hξ0 A hA hpA ↦ ?_⟩
+  refine coefficient_principal_classicalBalakrishnanIntegral_eq_rpow hΛ hσ hσ0 hm b _ hbs hb
+    (isQuasiHomogeneousAbove_expansionRightInverseTerms a ha hhom hξ 0) le_rfl hξ0 hA
+    fun t ht ↦ ?_
+  have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
+  rw [coefficient_expansionRightInverseTerms_zero, ← coefficient_inverse _ ha, ← hpA t ht]
+  exact coefficient_inverse_comp_coefficient ha x ξ hmem
 
 end Power
 
