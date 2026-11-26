@@ -22,7 +22,9 @@ the product of the sphere and its loop space, `𝓛S³ ≃ₜ S³ × ΩS³`
 ## Main declarations
 
 * `TauCeti.circleMapThreeSphereHomeomorphProd`: `C(S¹, S³) ≃ₜ S³ × ΩS³`, whose first coordinate is
-  the value at `1 ∈ S¹` (`_apply_fst`).
+  the value at `1 ∈ S¹` (`_apply_fst`), whose loop coordinate and inverse are given by quaternion
+  products through `TauCeti.threeSphereHomeomorphUnitQuaternion` (`_apply_snd_apply`,
+  `_symm_apply_unitToCircle`).
 
 ## References
 
@@ -58,5 +60,35 @@ theorem circleMapThreeSphereHomeomorphProd_apply_fst (f : C(Circle, sphere (0 : 
   letI := threeSphereGroup hE
   letI := isTopologicalGroup_threeSphere hE
   circleMapGroupHomeomorphLoopSpace_symm_fst f
+
+/-- The loop coordinate of a free loop `f` in `S³` is the loop `t ↦ f(1)⁻¹ f(t)`, computed in the
+unit quaternions. -/
+@[simp]
+theorem circleMapThreeSphereHomeomorphProd_apply_snd_apply (f : C(Circle, sphere (0 : E) 1))
+    (t : unitInterval) :
+    (circleMapThreeSphereHomeomorphProd hE f).2 t =
+      (threeSphereHomeomorphUnitQuaternion hE).symm
+        ((threeSphereHomeomorphUnitQuaternion hE (f 1))⁻¹ *
+          threeSphereHomeomorphUnitQuaternion hE (f (unitToCircle t))) :=
+  letI := threeSphereGroup hE
+  letI := isTopologicalGroup_threeSphere hE
+  (threeSphereHomeomorphUnitQuaternion hE).eq_symm_apply.2 <|
+    (congrArg _ (circleMapGroupHomeomorphLoopSpace_symm_snd_apply f t)).trans <| by
+      rw [threeSphereHomeomorphUnitQuaternion_mul, threeSphereHomeomorphUnitQuaternion_inv]
+
+/-- The free loop in `S³` with sphere coordinate `g` and loop coordinate `γ` sends the image
+`unitToCircle t` of a time `t` to the point corresponding to the quaternion product `g γ(t)`. -/
+@[simp]
+theorem circleMapThreeSphereHomeomorphProd_symm_apply_unitToCircle (g : sphere (0 : E) 1)
+    (γ : Path (threeSphereOne hE) (threeSphereOne hE)) (t : unitInterval) :
+    (circleMapThreeSphereHomeomorphProd hE).symm (g, γ) (unitToCircle t) =
+      (threeSphereHomeomorphUnitQuaternion hE).symm
+        (threeSphereHomeomorphUnitQuaternion hE g *
+          threeSphereHomeomorphUnitQuaternion hE (γ t)) :=
+  letI := threeSphereGroup hE
+  letI := isTopologicalGroup_threeSphere hE
+  (threeSphereHomeomorphUnitQuaternion hE).eq_symm_apply.2 <|
+    (congrArg _ (circleMapGroupHomeomorphLoopSpace_apply_unitToCircle g γ t)).trans
+      (threeSphereHomeomorphUnitQuaternion_mul hE g (γ t))
 
 end TauCeti
