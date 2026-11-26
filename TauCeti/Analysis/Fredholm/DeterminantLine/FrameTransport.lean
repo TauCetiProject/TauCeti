@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Bundle
-public import TauCeti.Topology.VectorBundle.FrameTransport
+public import TauCeti.Topology.VectorBundle.Frame.Transport
 import TauCeti.Topology.UnitInterval.Contractible
 
 /-!

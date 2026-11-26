@@ -81,9 +81,9 @@ namespace TauCeti
 
 section Transport
 
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {X B : Type*}
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {E : B → Type*} [∀ b, AddCommGroup (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
+variable {𝕜 : Type*} [Semiring 𝕜] {X B : Type*}
+  {F : Type*} [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
+  {E : B → Type*} [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
   {f : X → B}
 
 /-- The **linear transport along a frame**: for linear isomorphisms `φ x : F ≃ E (f x)` from the
@@ -151,15 +151,11 @@ theorem det_mul_det_pos_of_continuous_frame [PreconnectedSpace X]
   have hd : Continuous d :=
     ContinuousLinearMap.continuous_det.comp (continuous_trans_symm_of_continuous_frame hψ hφ)
   have hne (x : X) : d x ≠ 0 := (((ψ x).trans (φ x).symm).toLinearEquiv.isUnit_det').ne_zero
-  -- A continuous nowhere-vanishing function on a preconnected space has constant sign.
-  refine lt_of_le_of_ne (not_lt.1 fun hlt ↦ ?_) (mul_ne_zero (hne s) (hne t)).symm
-  have h0 : (0 : ℝ) ∈ Icc (d s) (d t) ∪ Icc (d t) (d s) := by
-    rcases mul_neg_iff.1 hlt with ⟨hs, ht⟩ | ⟨hs, ht⟩
-    · exact Or.inr ⟨ht.le, hs.le⟩
-    · exact Or.inl ⟨hs.le, ht.le⟩
-  obtain ⟨x, hx⟩ := h0.elim (fun h ↦ intermediate_value_univ s t hd h)
-    (fun h ↦ intermediate_value_univ t s hd h)
-  exact hne x hx
+  have h := isPreconnected_univ.sign_eq_of_continuousOn hd.continuousOn (fun x _ ↦ hne x)
+    (mem_univ s) (mem_univ t)
+  rcases (hne s).lt_or_gt with hs | hs
+  · exact mul_pos_of_neg_of_neg hs (sign_eq_neg_one_iff.1 (h ▸ sign_neg hs))
+  · exact mul_pos hs (sign_eq_one_iff.1 (h ▸ sign_pos hs))
 
 /-- **Change of frame in a line bundle.** In a vector bundle of rank one, the linear transports of
 two continuous frames along a map from a preconnected space differ by a positive scalar. So the
@@ -177,7 +173,8 @@ theorem exists_pos_forall_frameTransport_eq_smul [PreconnectedSpace X] (hF : fin
     have hdc : d x = c := by
       -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
       change LinearMap.det ((A x : F →L[ℝ] F) : F →ₗ[ℝ] F) = c
-      rw [hc, LinearMap.det_smul, LinearMap.det_id, hF, pow_one, mul_one]
+      rw [hc]
+      simp [hF]
     rw [hdc]
     exact LinearMap.congr_fun hc v
   have hψφ (x : X) (v : F) : ψ x v = d x • φ x v := by
@@ -186,14 +183,11 @@ theorem exists_pos_forall_frameTransport_eq_smul [PreconnectedSpace X] (hF : fin
   have hpos := det_mul_det_pos_of_continuous_frame hφ hψ s t
   have hds : d s ≠ 0 := left_ne_zero_of_mul hpos.ne'
   refine ⟨d t / d s, ?_, fun v ↦ ?_⟩
-  · rcases pos_and_pos_or_neg_and_neg_of_mul_pos hpos with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
-    · exact div_pos h₂ h₁
-    · exact div_pos_of_neg_of_neg h₂ h₁
+  · exact div_pos_iff.2 ((mul_pos_iff.1 hpos).imp And.symm And.symm)
   · have hsymm : (ψ s).symm v = (d s)⁻¹ • (φ s).symm v := by
-      rw [ContinuousLinearEquiv.symm_apply_eq, hψφ, map_smul,
-        ContinuousLinearEquiv.apply_symm_apply, smul_smul, mul_inv_cancel₀ hds, one_smul]
-    rw [frameTransport_apply, frameTransport_apply, hsymm, hψφ, map_smul, smul_smul,
-      div_eq_mul_inv]
+      rw [ContinuousLinearEquiv.symm_apply_eq]
+      simp [hψφ, smul_smul, hds]
+    simp [hsymm, hψφ, smul_smul, div_eq_mul_inv]
 
 /-- **Frame transport induces orientation transport.** Let `φ` be a continuous frame along a path
 `γ` of the base. Orientation transport along `γ`, the monodromy of the orientation double cover,
