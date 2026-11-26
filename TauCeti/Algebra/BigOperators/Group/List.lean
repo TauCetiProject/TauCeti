@@ -33,6 +33,11 @@ replicated list to a `Finset.range` product (`List.prod_get_replicate`), and dec
 of replicated blocks along `List.range n` by block offsets
 (`List.prod_get_flatMap_replicate_range`).
 
+In a commutative group, the quotients of consecutive entries of a list `a :: l` closed up by an
+end point `b` telescope: their product is `b / a` (`List.prod_zipWith_div_append_singleton_cons`).
+Additively, the differences of consecutive entries sum to `b - a`
+(`List.sum_zipWith_sub_append_singleton_cons`).
+
 The ordered product `b₀ ⋯ bₙ₋₁` of a tuple (`List.prod (List.ofFn b)`) is the product of the
 ordered products of its first `k` and its last `n - k` entries, and is unchanged when two adjacent
 entries are multiplied together first (`Fin.contractNth`), by associativity.
@@ -49,6 +54,9 @@ entries are multiplied together first (`Fin.contractNth`), by associativity.
 * `List.prod_get_append`, `List.prod_get_replicate`, `List.prod_get_flatMap_replicate_range` (and
   their additive counterparts): position-indexed products over appended, replicated, and
   block-replicated lists.
+* `List.prod_zipWith_div_append_singleton_cons`, `List.sum_zipWith_sub_append_singleton_cons`:
+  the quotients (differences) of consecutive entries of `a :: l`, closed up by `b`, have product
+  `b / a` (sum `b - a`).
 * `List.prod_ofFn_mul_prod_ofFn`: the ordered product of a tuple splits after its first `k`
   entries.
 * `List.prod_ofFn_contractNth`: contracting two adjacent entries of a tuple by multiplication does
@@ -184,6 +192,23 @@ theorem prod_get_flatMap_replicate_range (n : ℕ) (d : ℕ → ℕ) (val : ℕ 
       using prod_get_replicate (d m) (val m) fun x r ↦ f x (xs.length + r)
 
 end Indexed
+
+section Telescope
+
+variable {G : Type*} [CommGroup G]
+
+/-- The quotients of consecutive entries of the list `a :: l` closed up by an end point `b`
+telescope: their product is `b / a`. -/
+@[to_additive /-- The differences of consecutive entries of the list `a :: l` closed up by an end
+point `b` telescope: they sum to `b - a`. -/]
+theorem prod_zipWith_div_append_singleton_cons (a b : G) (l : List G) :
+    (zipWith (· / ·) (l ++ [b]) (a :: l)).prod = b / a := by
+  induction l generalizing a with
+  | nil => simp
+  | cons c l ih =>
+    rw [cons_append, zipWith_cons_cons, prod_cons, ih c, mul_comm, div_mul_div_cancel]
+
+end Telescope
 
 section OfFn
 
