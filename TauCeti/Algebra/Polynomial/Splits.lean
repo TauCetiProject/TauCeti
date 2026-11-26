@@ -38,8 +38,6 @@ and scalar extension.
 * `Polynomial.Splits.exists_eq_C_mul_map_of_dvd_map`: descent up to a unit constant of divisors
   of mapped split polynomials whose mapped leading coefficient is a unit.
 * `Units.exists_pow_eq_of_splits`: a unit `a` is an `m`-th power of a unit when `Xᵐ - a` splits.
-* `Units.surjective_pow_of_splits`: every unit is an `m`-th power of a unit when every `Xᵐ - a`
-  splits.
 -/
 
 public section
@@ -151,9 +149,3 @@ theorem Units.exists_pow_eq_of_splits {R : Type*} [CommRing R] {m : ℕ} (hm : m
   rw [eval_sub, eval_pow, eval_X, eval_C, sub_eq_zero] at hc
   obtain ⟨v, rfl⟩ := (isUnit_pow_iff hm).1 (hc ▸ a.isUnit)
   exact ⟨v, Units.ext (by simpa using hc)⟩
-
-/-- **Units are `m`-th powers when every `Xᵐ - a` splits.** If `m ≠ 0` and `Xᵐ - a` splits for
-every unit `a` of a commutative ring, then `v ↦ vᵐ` is surjective on the units. -/
-theorem Units.surjective_pow_of_splits {R : Type*} [CommRing R] {m : ℕ} (hm : m ≠ 0)
-    (h : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) : Function.Surjective fun v : Rˣ ↦ v ^ m :=
-  fun a ↦ exists_pow_eq_of_splits hm (h a)

@@ -108,14 +108,6 @@ private theorem ofMul_append {m n : ℕ} (g : Fin m → Rˣ) (f : Fin n → Rˣ)
   funext k
   refine Fin.addCases (fun k ↦ ?_) (fun k ↦ ?_) k <;> simp
 
-/-- The condition `a + b = 1` on two neighbouring entries transports along equalities of the
-entries. It reads the entries of a concatenation off with `Fin.append_left` and
-`Fin.append_right`. -/
-private theorem coe_add_coe_eq_one {a b c d : Rˣ} (hac : a = c) (hbd : b = d)
-    (h : (c : R) + d = 1) : (a : R) + b = 1 := by
-  rw [hac, hbd]
-  exact h
-
 /-- The multiplication `⨂^i ⊗ ⨂^j → ⨂^(i + j)` of tensor powers, as a bilinear map. -/
 private abbrev gMulBilin (i j : ℕ) :
     ⨂[ℤ]^i (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^j (Additive Rˣ) →ₗ[ℤ] ⨂[ℤ]^(i + j) (Additive Rˣ) :=
@@ -141,8 +133,14 @@ theorem gMul_mem_steinbergRelations_left {i j : ℕ} (a : ⨂[ℤ]^i (Additive R
   rintro _ ⟨_, ⟨g, rfl⟩, _, ⟨f, l, hl, h, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
   rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
-  exact tprod_mem_steinbergRelations _ (i + l) (by omega) <| coe_add_coe_eq_one
-    (Fin.append_right g f ⟨l, Nat.lt_of_succ_lt hl⟩) (Fin.append_right g f ⟨l + 1, hl⟩) h
+  refine tprod_mem_steinbergRelations _ (i + l) (by omega) ?_
+  -- The entries `i + l` and `i + l + 1` of the concatenation are the entries `l` and `l + 1`
+  -- of its right block `f`.
+  have e₀ : (⟨i + l, by omega⟩ : Fin (i + j)) = Fin.natAdd i ⟨l, Nat.lt_of_succ_lt hl⟩ := by
+    ext; simp
+  have e₁ : (⟨i + l + 1, by omega⟩ : Fin (i + j)) = Fin.natAdd i ⟨l + 1, hl⟩ := by
+    ext; simp [Nat.add_assoc]
+  rwa [e₀, e₁, Fin.append_right, Fin.append_right]
 
 /-- Right multiplication by a tensor of degree `j` maps `R_i` into `R_{i + j}`. -/
 theorem gMul_mem_steinbergRelations_right {i j : ℕ} {x : ⨂[ℤ]^i (Additive Rˣ)}
@@ -156,8 +154,13 @@ theorem gMul_mem_steinbergRelations_right {i j : ℕ} {x : ⨂[ℤ]^i (Additive 
   rintro _ ⟨_, ⟨f, l, hl, h, rfl⟩, _, ⟨g, rfl⟩, rfl⟩
   simp only [SetLike.mem_coe, gMulBilin_apply]
   rw [ofMul_toMul_comp g, TensorPower.tprod_mul_tprod, ofMul_append]
-  exact tprod_mem_steinbergRelations _ l (by omega) <| coe_add_coe_eq_one
-    (Fin.append_left f g ⟨l, Nat.lt_of_succ_lt hl⟩) (Fin.append_left f g ⟨l + 1, hl⟩) h
+  refine tprod_mem_steinbergRelations _ l (by omega) ?_
+  -- The entries `l` and `l + 1` of the concatenation are those of its left block `f`.
+  have e₀ : (⟨l, by omega⟩ : Fin (i + j)) = Fin.castAdd j ⟨l, Nat.lt_of_succ_lt hl⟩ := by
+    ext; simp
+  have e₁ : (⟨l + 1, by omega⟩ : Fin (i + j)) = Fin.castAdd j ⟨l + 1, hl⟩ := by
+    ext; simp
+  rwa [e₀, e₁, Fin.append_left, Fin.append_left]
 
 /-- There are no Steinberg relations in degrees zero and one. -/
 theorem steinbergRelations_eq_bot {n : ℕ} (hn : n < 2) : steinbergRelations R n = ⊥ := by
@@ -283,12 +286,16 @@ theorem mk_eq_zero_iff {t : TensorAlgebra ℤ (Additive Rˣ)} :
     have hle : ringConGen (milnorRel R) ≤ (relIdeal (R := R)).ringCon :=
       RingCon.ringConGen_le.2 fun x y hxy ↦ by
         obtain ⟨a, b, h, rfl, rfl⟩ := (milnorRel_iff R).1 hxy
-        rw [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal, map_mul, toDirectSum_ι, toDirectSum_ι,
+        simp only [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal, map_mul, toDirectSum_ι,
           of_mul_of, ← mem_relSum]
         refine of_mem_relSum ?_
         rw [TensorPower.tprod_mul_tprod]
-        exact tprod_mem_steinbergRelations (fun k ↦ Fin.append (fun _ ↦ a) (fun _ ↦ b) k) 0
-          (by norm_num) (coe_add_coe_eq_one (Fin.append_left _ _ 0) (Fin.append_right _ _ 0) h)
+        refine tprod_mem_steinbergRelations (fun k ↦ Fin.append (fun _ ↦ a) (fun _ ↦ b) k) 0
+          (by norm_num) ?_
+        -- The entries `0` and `1` of the concatenation of `a` and `b` are `a` and `b`.
+        have e₀ : (⟨0, by norm_num⟩ : Fin (1 + 1)) = Fin.castAdd 1 0 := by ext; simp
+        have e₁ : (⟨0 + 1, by norm_num⟩ : Fin (1 + 1)) = Fin.natAdd 1 0 := by ext; simp
+        rwa [e₀, e₁, Fin.append_left, Fin.append_right]
     have := hle (mk_eq_mk_iff.1 (ht.trans (map_zero mk).symm))
     rwa [TwoSidedIdeal.rel_iff, sub_zero, mem_relIdeal] at this
   · intro ht
@@ -393,12 +400,10 @@ theorem isInternal_degree : IsInternal (degree R) := by
   -- `IsInternal` is the bijectivity of `coeAddMonoidHom`, the additive map underlying
   -- `coeLinearMap`.
   suffices Function.Bijective (coeLinearMap (degree R)) from this
-  refine ⟨fun y y' h ↦ ?_, fun x ↦ ?_⟩
+  refine ⟨(injective_iff_map_eq_zero _).2 fun y hy ↦ ?_, fun x ↦ ?_⟩
   · obtain ⟨t, rfl⟩ := toDegrees_surjective (R := R) y
-    obtain ⟨t', rfl⟩ := toDegrees_surjective (R := R) y'
-    rw [coeLinearMap_toDegrees, coeLinearMap_toDegrees, ← sub_eq_zero, ← map_sub,
-      ← toDegrees_eq_zero_iff, map_sub, sub_eq_zero] at h
-    exact h
+    rw [coeLinearMap_toDegrees] at hy
+    exact toDegrees_eq_zero_iff.2 hy
   · obtain ⟨t, rfl⟩ := mk_surjective x
     exact ⟨toDegrees t, coeLinearMap_toDegrees t⟩
 

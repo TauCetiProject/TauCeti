@@ -129,7 +129,7 @@ theorem steinbergRelations_le_smul {m : ℕ} (hm : m ≠ 0)
   -- Place both sides of `hsum` into the entries `i` and `i + 1` of the pure tensor of `f`.
   have key := congrArg (TensorProduct.lift
     ((PiTensorProduct.tprod ℤ).toLinearMap₂ (fun k ↦ Additive.ofMul (f k)) hij)) hsum
-  rw [TensorProduct.lift.tmul, MultilinearMap.toLinearMap₂_apply, update_eq_self, update_eq_self,
+  simp only [TensorProduct.lift.tmul, MultilinearMap.toLinearMap₂_apply, update_eq_self,
     map_nsmul, map_multiset_sum, Multiset.map_map] at key
   rw [key, ← natCast_zsmul]
   refine Submodule.smul_mem_pointwise_smul _ _ _ (multiset_sum_mem _ ?_)
@@ -151,7 +151,7 @@ theorem bijective_nsmul_degree {m : ℕ} (hm : m ≠ 0)
     (hsplit : ∀ a : Rˣ, (X ^ m - C (a : R)).Splits) {n : ℕ} (hn : 2 ≤ n) :
     Function.Bijective fun x : degree R n ↦ m • x := by
   have hU : Function.Surjective fun u : Additive Rˣ ↦ (m : ℤ) • u := fun u ↦ by
-    obtain ⟨v, hv : v ^ m = u.toMul⟩ := Units.surjective_pow_of_splits hm hsplit u.toMul
+    obtain ⟨v, hv : v ^ m = u.toMul⟩ := Units.exists_pow_eq_of_splits hm (hsplit u.toMul)
     exact ⟨Additive.ofMul v, by dsimp only; rw [natCast_zsmul, ← ofMul_pow, hv, ofMul_toMul]⟩
   -- Multiplication by `m` is bijective on `T_n` and `R_n` is `m`-divisible, so it is bijective on
   -- the quotient `T_n / R_n`.
