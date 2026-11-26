@@ -118,22 +118,15 @@ section Algebraic
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V)
 
-omit [FiniteDimensional ℝ V] in
-/-- Two endomorphisms agree once `ω` pairs their values identically with every vector. -/
-private theorem ext_of_apply_left {A B : Module.End ℝ V} (h : ∀ v w, ω (A v) w = ω (B v) w) :
-    A = B :=
-  LinearMap.ext fun v ↦ LinearMap.ker_eq_bot.1
-    (LinearMap.separatingLeft_iff_ker_eq_bot.1 ω.separatingLeft) (LinearMap.ext (h v))
-
 /-- The **Hamiltonian endomorphism** `A_Q` of a quadratic form `Q`, the unique endomorphism with
 `ω (A_Q v) w = polar Q v w`. Viewing `Q` as a Hamiltonian, `A_Q` is its Hamiltonian vector
 field, under the convention `ι_{X_H} ω = dH`. -/
 def hamiltonianEnd : QuadraticForm ℝ V →ₗ[ℝ] Module.End ℝ V where
   toFun Q := LinearMap.BilinForm.symmCompOfNondegenerate (QuadraticMap.polarBilin Q) ω.toBilinForm
     ω.nondegenerate
-  map_add' Q R := ω.ext_of_apply_left fun v w ↦ by
+  map_add' Q R := LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ by
     simp [QuadraticMap.polar_add]
-  map_smul' c Q := ω.ext_of_apply_left fun v w ↦ by
+  map_smul' c Q := LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ by
     simp [QuadraticMap.polar_smul]
 
 /-- The characterizing identity `ω (A_Q v) w = polar Q v w` of the Hamiltonian endomorphism. -/
@@ -147,7 +140,8 @@ theorem apply_hamiltonianEnd (Q : QuadraticForm ℝ V) (v w : V) :
 `ω (A v) w = polar Q v w`. -/
 theorem eq_hamiltonianEnd_iff {Q : QuadraticForm ℝ V} {A : Module.End ℝ V} :
     A = ω.hamiltonianEnd Q ↔ ∀ v w, ω (A v) w = QuadraticMap.polar Q v w := by
-  refine ⟨fun h v w ↦ h ▸ ω.apply_hamiltonianEnd Q v w, fun h ↦ ω.ext_of_apply_left fun v w ↦ ?_⟩
+  refine ⟨fun h v w ↦ h ▸ ω.apply_hamiltonianEnd Q v w,
+    fun h ↦ LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ ?_⟩
   rw [h, apply_hamiltonianEnd]
 
 /-- The Hamiltonian endomorphism of `Q` sends `u` to `z` as soon as `ω z` and `polar Q u` agree
