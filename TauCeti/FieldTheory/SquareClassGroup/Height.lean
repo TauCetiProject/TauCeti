@@ -11,6 +11,7 @@ public import TauCeti.FieldTheory.SquareClassGroup.Basic
 public import TauCeti.RingTheory.DedekindDomain.SelmerGroup
 
 import Mathlib.NumberTheory.NumberField.Completion.FinitePlace
+import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
 import TauCeti.RingTheory.DedekindDomain.SInteger.SelmerGroup.NumberField
 
 /-!
@@ -31,10 +32,11 @@ is not the norm of a representative, nor the discriminant of `K(√u)`.
 Since the odd support of a product is the symmetric difference of the odd supports, the classes of
 height one, those with every valuation even, are exactly the Selmer group `K(∅, 2)` of Mathlib's
 `IsDedekindDomain.selmerGroup`, and two classes have the same odd support exactly when their
-quotient lies in `K(∅, 2)`. A class of height at most `X` has its odd support among the finitely
-many primes of norm at most `X`, so when `K(∅, 2)` is finite only finitely many classes have height
-at most `X`: the height has the **Northcott property**. Over the ring of integers of a number
-field `K(∅, 2)` is finite, by the class number theorem and Dirichlet's unit theorem.
+quotient lies in `K(∅, 2)`. When the residue rings of `R` are finite, a class of height at most `X`
+has its odd support among the finitely many primes of norm at most `X`, so if moreover `K(∅, 2)` is
+finite, only finitely many classes have height at most `X`: the height has the **Northcott
+property**. Over the ring of integers of a number field the residue rings are finite and `K(∅, 2)`
+is finite, by the class number theorem and Dirichlet's unit theorem.
 
 ## Main definitions
 
@@ -53,7 +55,8 @@ field `K(∅, 2)` is finite, by the class number theorem and Dirichlet's unit th
 * `TauCeti.SquareClassGroup.height_eq_one_iff`: a class has height one iff its odd support is
   empty, and `TauCeti.SquareClassGroup.height_squareClass_eq_one_iff_mk_mem_selmerGroup` reads this
   as membership in `K(∅, 2)`.
-* `TauCeti.SquareClassGroup.northcott_height`: if `K(∅, 2)` is finite, the height is Northcott.
+* `TauCeti.SquareClassGroup.northcott_height`: if `R` has finite quotients and `K(∅, 2)` is
+  finite, the height is Northcott.
 * `TauCeti.SquareClassGroup.instNorthcottHeightRingOfIntegers`: the height on the square classes
   of a number field is Northcott.
 
@@ -173,9 +176,10 @@ variable (R)
 /-- The **odd support** of a square class `t ∈ Kˣ ⧸ (Kˣ)²`: the height-one primes of `R` at which
 a representative of `t` has odd valuation. -/
 def oddSupport (t : SquareClassGroup K) : Set (HeightOneSpectrum R) :=
-  Quotient.lift (fun u : Additive Kˣ ↦ TauCeti.oddSupport R u.toMul)
-    (fun a b hab ↦ oddSupport_eq_of_squareClass_eq <| by
-      simpa only [squareClass_def, ofMul_toMul] using Quotient.sound hab) t
+  Quotient.liftOn' t (fun u : Additive Kˣ ↦ TauCeti.oddSupport R u.toMul)
+    fun a b hab ↦ oddSupport_eq_of_squareClass_eq <| by
+      rw [squareClass_def, squareClass_def, ofMul_toMul, ofMul_toMul]
+      exact QuotientAddGroup.eq.mpr (QuotientAddGroup.leftRel_apply.mp hab)
 
 variable {R}
 
@@ -183,8 +187,7 @@ variable {R}
 @[simp]
 theorem oddSupport_squareClass (u : Kˣ) :
     (squareClass u).oddSupport R = TauCeti.oddSupport R u := by
-  rw [squareClass_def]
-  rfl
+  rw [squareClass_def, oddSupport, QuotientAddGroup.mk, Quotient.liftOn'_mk'', toMul_ofMul]
 
 /-- The odd support of a square class is finite. -/
 theorem oddSupport_finite (t : SquareClassGroup K) : (t.oddSupport R).Finite := by
@@ -206,7 +209,9 @@ theorem oddSupport_add (s t : SquareClassGroup K) :
 variable (R)
 
 /-- The **height** of a square class `t ∈ Kˣ ⧸ (Kˣ)²`: the product of the absolute norms of the
-primes of its odd support, `H(t) = ∏_{v : ord_v t odd} N v`. -/
+primes of its odd support, `H(t) = ∏_{v : ord_v t odd} N v`. It is positive when the residue rings
+of `R` are finite (`height_pos`); otherwise a prime with infinite residue ring has absolute norm
+`0`, and so do the classes with that prime in their odd support. -/
 noncomputable def height (t : SquareClassGroup K) : ℕ :=
   ∏ᶠ v ∈ t.oddSupport R, Ideal.absNorm v.asIdeal
 
@@ -243,28 +248,15 @@ theorem height_add_mul_sq (s t : SquareClassGroup K) :
     symmDiff_sup_inf _ _
   rw [hunion]
 
-/-- Units with the same class in `Kˣ ⧸ (Kˣ)²` have the same square class. -/
-private theorem squareClass_eq_of_mk_eq {u w : Kˣ}
-    (h : (QuotientGroup.mk u : Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range) = QuotientGroup.mk w) :
-    squareClass u = squareClass w := by
-  obtain ⟨y, hy⟩ := QuotientGroup.eq.mp h
-  rw [powMonoidHom_apply, eq_comm, inv_mul_eq_iff_eq_mul] at hy
-  rw [hy, mul_comm, squareClass_sq_mul]
-
 /-- If `K(∅, 2)` is finite, only finitely many square classes have empty odd support. -/
 private theorem finite_setOf_oddSupport_eq_empty
     [Finite (selmerGroup (R := R) (K := K) (S := ∅) (n := 2))] :
     {t : SquareClassGroup K | t.oddSupport R = ∅}.Finite := by
-  let f : SquareClassGroup K → Kˣ ⧸ (powMonoidHom 2 : Kˣ →* Kˣ).range :=
-    fun t ↦ QuotientGroup.mk (Additive.toMul (Quotient.out t))
-  refine Set.Finite.of_finite_image (f := f) ?_ fun s _ t _ hst ↦ ?_
-  · refine (selmerGroup (R := R) (K := K) (S := ∅) (n := 2) : Set _).toFinite.subset ?_
-    rintro _ ⟨t, ht, rfl⟩
-    rw [Set.mem_ofPred_eq, ← squareClass_toMul_out t, oddSupport_squareClass,
-      oddSupport_eq_empty_iff_mk_mem_selmerGroup] at ht
-    exact ht
-  · rw [← squareClass_toMul_out s, ← squareClass_toMul_out t]
-    exact squareClass_eq_of_mk_eq hst
+  refine ((selmerGroup (R := R) (K := K) (S := ∅) (n := 2) : Set _).toFinite.image
+    fun x ↦ (quotientRangePowMonoidHomEquiv x).toAdd).subset fun t ht ↦ ?_
+  rw [← squareClass_toMul_out t] at ht ⊢
+  rw [Set.mem_ofPred_eq, oddSupport_squareClass, oddSupport_eq_empty_iff_mk_mem_selmerGroup] at ht
+  exact ⟨_, ht, by simp only [quotientRangePowMonoidHomEquiv_mk, toAdd_ofAdd]⟩
 
 variable [Ring.HasFiniteQuotients R]
 
@@ -295,12 +287,13 @@ theorem height_squareClass_eq_one_iff_mk_mem_selmerGroup (u : Kˣ) :
         selmerGroup (R := R) (K := K) (S := ∅) (n := 2) := by
   rw [height_eq_one_iff, oddSupport_squareClass, oddSupport_eq_empty_iff_mk_mem_selmerGroup]
 
-/-- **The height of a square class is Northcott** whenever the Selmer group `K(∅, 2)` is finite:
-only finitely many square classes have height at most any given bound. The odd support of such
-a class lies among the finitely many primes of bounded norm, and the classes with a given odd
-support form a coset of `K(∅, 2)`. -/
+/-- **The height of a square class is Northcott**: if `R` has finite residue rings and the
+Selmer group `K(∅, 2)` is finite, only finitely many square classes have height at most any given
+bound. -/
 theorem northcott_height [Finite (selmerGroup (R := R) (K := K) (S := ∅) (n := 2))] :
     Northcott (height R : SquareClassGroup K → ℕ) := by
+  -- The odd support of a class of bounded height lies among the finitely many primes of bounded
+  -- norm, and the classes with a given odd support form a coset of `K(∅, 2)`.
   refine ⟨fun X ↦ ?_⟩
   -- The odd supports of the classes of height at most `X` are sets of primes of norm at most `X`.
   have himage : ((oddSupport R : SquareClassGroup K → _) '' {t | height R t ≤ X}).Finite := by
