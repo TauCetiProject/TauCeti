@@ -92,17 +92,17 @@ private noncomputable def coordMulRightA : MulAut freeItem.coordGroup :=
   MulAut.congr coordEquiv.symm mulRightA
 
 /-- The solution `h = b`. -/
-def solB : freeItem.Solution :=
+private def solB : freeItem.Solution :=
   ofNumBasesEqZero (Ω := freeItem) rfl rfl ![[(1, true)]]
     (by unfold FreeGroup.IsReduced; decide) (by decide)
 
 /-- The solution `h = ba`. -/
-def solBA : freeItem.Solution :=
+private def solBA : freeItem.Solution :=
   ofNumBasesEqZero (Ω := freeItem) rfl rfl ![[(1, true), (0, true)]]
     (by unfold FreeGroup.IsReduced; decide) (by decide)
 
 /-- The solution `h = baa`. -/
-def solBAA : freeItem.Solution :=
+private def solBAA : freeItem.Solution :=
   ofNumBasesEqZero (Ω := freeItem) rfl rfl ![[(1, true), (0, true), (0, true)]]
     (by unfold FreeGroup.IsReduced; decide) (by decide)
 

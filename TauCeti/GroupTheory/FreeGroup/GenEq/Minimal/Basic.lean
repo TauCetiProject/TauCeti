@@ -145,6 +145,18 @@ variable {M}
 theorem not_autLT_self (U : Ω.Solution) : ¬ AutLT M U U :=
   fun ⟨_, _, _, hk⟩ ↦ lt_irrefl _ hk
 
+/-- `<_M` grows with `M`: a solution smaller than another for `M` is smaller for every larger
+group. -/
+theorem AutLT.mono {M' : Subgroup (MulAut Ω.coordGroup)} (hM : M ≤ M') {U₁ U₂ : Ω.Solution}
+    (h : AutLT M U₁ U₂) : AutLT M' U₁ U₂ := by
+  obtain ⟨⟨σ, hσ, h⟩, hle, hlt⟩ := h
+  exact ⟨⟨σ, hM hσ, h⟩, hle, hlt⟩
+
+/-- `M`-minimality passes to subgroups of `M`. -/
+theorem IsAutMinimal.mono {M' : Subgroup (MulAut Ω.coordGroup)} (hM : M' ≤ M) {U : Ω.Solution}
+    (h : IsAutMinimal M U) : IsAutMinimal M' U :=
+  fun U' h' ↦ h U' (h'.mono hM)
+
 /-- Every solution is minimal with respect to the trivial group of automorphisms: a solution below
 `U` for it has the homomorphism of `U`, hence is `U`. -/
 @[simp]
