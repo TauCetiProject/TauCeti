@@ -113,6 +113,7 @@ theorem brunWeights_mod_two (P : ℕ) (y β : ℝ) (parity d : ℕ) :
   simp only [brunWeights_def, h]
 
 /-- For `P ≠ 0`, `brunWeights P y β parity 1 = 1` because `1` has empty prime-factor set. -/
+@[simp]
 theorem brunWeights_one {P : ℕ} (hP : P ≠ 0) (y β : ℝ) (parity : ℕ) :
     brunWeights P y β parity 1 = 1 := by
   classical

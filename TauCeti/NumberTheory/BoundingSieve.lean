@@ -73,6 +73,7 @@ theorem remainderMass_mono (s : BoundingSieve) {D₁ D₂ : ℝ} (h : D₁ ≤ D
   exact ⟨hd.1, hd.2.trans_le h⟩
 
 /-- Every positive divisor satisfies `1 ≤ d`, so `s.remainderMass D = 0` when `D ≤ 1`. -/
+@[simp]
 theorem remainderMass_eq_zero_of_le_one (s : BoundingSieve) {D : ℝ} (hD : D ≤ 1) :
     s.remainderMass D = 0 := by
   rw [remainderMass, sum_eq_zero]
