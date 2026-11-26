@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Complex.FiniteCWType
 /-!
 # Euler characteristic and genus of analytic Belyi pairs
 
-Invariance, degree-one/sphere evaluations, and `isoSetoid` descent for `eulerChar` and `genus`.
+Invariance, degree-one evaluations, and `isoSetoid` descent for `eulerChar` and `genus`.
 -/
 
 public noncomputable section
@@ -46,20 +46,6 @@ theorem eulerChar_X_eq_two_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : de
 /-- **An analytic Belyi pair of degree one has genus `0`.** -/
 theorem genus_X_eq_zero_of_degree_eq_one {P : AnalyticBelyiPair.{u}} (hP : degree P.β = 1) :
     genus P.X = 0 := genus_eq_of_eulerChar_eq (eulerChar_X_eq_two_of_degree_eq_one hP)
-
-/-- The power Belyi pair `z ↦ z ^ n` on the Riemann sphere has Euler characteristic `2`. -/
-@[simp] theorem eulerChar_X_pow {n : ℕ} (hn : n ≠ 0) : eulerChar (pow hn).X = 2 := by
-  rw [pow, eulerChar_onePoint, Complex.finrank_real_complex]; norm_num
-
-/-- The power Belyi pair `z ↦ z ^ n` on the Riemann sphere has genus `0`. -/
-@[simp] theorem genus_X_pow {n : ℕ} (hn : n ≠ 0) : genus (pow hn).X = 0 := genus_onePoint_complex
-
-/-- The Chebyshev Belyi pair `z ↦ 4z(1 - z)` on the Riemann sphere has Euler characteristic `2`. -/
-@[simp] theorem eulerChar_X_chebyshev : eulerChar chebyshev.X = 2 := by
-  rw [chebyshev, eulerChar_onePoint, Complex.finrank_real_complex]; norm_num
-
-/-- The Chebyshev Belyi pair `z ↦ 4z(1 - z)` on the Riemann sphere has genus `0`. -/
-@[simp] theorem genus_X_chebyshev : genus chebyshev.X = 0 := genus_onePoint_complex
 
 /-- The Euler characteristic of an isomorphism class of degree-`n` analytic Belyi pairs. -/
 def isoClassEulerChar (n : ℕ) : Quotient (isoSetoid.{u} n) → ℤ :=

@@ -1452,9 +1452,6 @@ theorem degree_β_eq_one_iff_nonempty_iso {P : AnalyticBelyiPair.{0}} :
 instance : IsEmpty {P : AnalyticBelyiPair.{u} // degree P.β = 0} :=
   ⟨fun P ↦ (RiemannSurface.degree_pos (f := P.val.β)).ne' P.property⟩
 
-/-- There are no isomorphism classes of analytic Belyi pairs of degree zero. -/
-instance : IsEmpty (Quotient (isoSetoid.{u} 0)) := ⟨Quotient.ind isEmptyElim⟩
-
 /-- There is at most one isomorphism class of analytic Belyi pairs of degree one. -/
 instance : Subsingleton (Quotient (isoSetoid.{u} 1)) :=
   ⟨Quotient.ind₂ fun P Q ↦ Quotient.sound (isoSetoid_r.2 ⟨isoOfDegreeEqOne P.property Q.property⟩)⟩
