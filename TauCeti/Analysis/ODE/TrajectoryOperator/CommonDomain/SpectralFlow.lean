@@ -10,28 +10,26 @@ public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.IndexLocaliza
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Prod
 public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Prod
 import TauCeti.Analysis.Normed.Group.Basic
+import TauCeti.Analysis.Normed.Operator.Spectrum
+import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Identity
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The index of the trajectory operator over a common domain and the spectral flow
 
 Let `ι : D →L[ℝ] H` be a compact operator from a Banach space into a Hilbert space, and let `A` be
-a continuous path of `ι`-symmetric operators `D → H` with invertible limits at `±∞`. Over the
-common domain `D`, the operator `D_A u = (ι ∘ u)' + A u` from `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to
-`L²(ℝ, H)` (`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator`) is Fredholm
-(`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`), and the index formula of
-Robbin and Salamon identifies its index with the spectral flow `TauCeti.domainSpectralFlow ι A a b`
-of `A` over any interval `[a, b]` outside which `A` is invertible. In the convention of the
-operator `d/ds - A`, whose coefficient is `-A`, this is the formula `ind (∂ₛ - A) = -SF(A)` for
-the linearized Floer operator. This file proves the formula for the paths whose crossings stay in a
-finite-dimensional block.
+a continuous path of `ι`-symmetric operators `D → H` with invertible limits at `±∞`, which differs
+from its limit at `∞` on every bounded interval by operators bounded through `ι`. Over the common
+domain `D`, the operator `D_A u = (ι ∘ u)' + A u` from `L²(ℝ, D) ∩ W^{1,2}(ℝ, H)` to `L²(ℝ, H)`
+(`TauCeti.WeakDerivStep.familyDomainTrajectoryOperator`) is then Fredholm
+(`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`). The index formula of Robbin
+and Salamon identifies its index with the spectral flow `TauCeti.domainSpectralFlow ι A a b` of `A`
+over any interval `[a, b]` outside which `A` is invertible. In the convention of the operator
+`d/ds - A`, whose coefficient is `-A`, this is the formula `ind (∂ₛ - A) = -SF(A)` for the
+linearized Floer operator. This file does not prove the general formula. It proves, for the paths
+whose crossings stay in a finite-dimensional block, that the index is the spectral flow over
+`[a, b]` for every `a` far enough to the left and every `b` far enough to the right.
 
-* **The identity embedding.** Over the common domain `F` embedded in itself by the identity,
-  `D_A` is the trajectory operator `u ↦ u' + A u` on `W^{1,p}(Ω, F)`
-  (`TauCeti.WeakDerivStep.trajectoryOperator`) read on another realization of the same graph
-  space, so the two have the same index
-  (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_one`) and are Fredholm together
-  (`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator_one_iff`).
 * **Finite-dimensional paths.** For a continuous path of symmetric operators on a
   finite-dimensional real inner product space `E` with invertible limits, the index of `D_A` over
   the common domain `E` is the spectral flow `TauCeti.domainSpectralFlow 1 A a b` for all `a` far
@@ -40,11 +38,14 @@ finite-dimensional block.
   `TauCeti.WeakDerivStep`).
   This combines the index formula for bounded paths in finite dimensions,
   `TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`, with the comparison
-  `TauCeti.domainSpectralFlow_one` of the two spectral flows.
+  `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_one` of the two indices and the
+  comparison `TauCeti.domainSpectralFlow_one` of the two spectral flows.
 * **Splitting off an invertible block.** Let `A₁` be such a finite-dimensional path, and let `A₂`
   be a continuous path of `ι`-symmetric operators `D → H` which is invertible at every time, with
-  invertible limits. Over the common domain `E ⊕ D` embedded by `1 ⊕ ι`, the index of
-  `D_{A₁ ⊕ A₂}` is the spectral flow of `A₁ ⊕ A₂`
+  invertible limits, and which differs from its limit at `∞` on every bounded interval by operators
+  bounded through `ι`. Over the common domain `E ⊕ D` embedded by `1 ⊕ ι`, the index of
+  `D_{A₁ ⊕ A₂}` is the spectral flow of `A₁ ⊕ A₂` from `a` to `b` for all `a` far enough to the
+  left and `b` far enough to the right
   (`eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainSpectralFlow`
   in the namespace `TauCeti.WeakDerivStep`).
   Both the index and the spectral flow are additive under direct sums
@@ -71,76 +72,6 @@ open Filter MeasureTheory Set TopologicalSpace
 open scoped ENNReal InnerProductSpace Topology
 
 local notation "μ₀" => (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))
-
-/-! ### The identity embedding -/
-
-section Identity
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-  {mu : Measure ℝ} [IsFiniteMeasureOnCompacts mu] {Omega : Opens ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- On the graph space of the identity of `Lᵖ(Ω, F)`, the formula defining
-`familyDomainTrajectoryOperator` is the trajectory operator `u ↦ u' + A u`. -/
-private theorem apply_compLpL_comp_weakFDerivL_add_operatorMultiplication_comp_prevL
-    (AL : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
-    ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p (mu.restrict Omega)).comp
-        (weakFDerivL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) +
-      (Lp.operatorMultiplication p AL).comp
-        (prevL (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega)))) =
-      trajectoryOperator (p := p) AL := by
-  refine ContinuousLinearMap.ext fun u ↦ Lp.ext ?_
-  filter_upwards [trajectoryOperator_apply_ae AL u,
-    Lp.coeFn_add ((ContinuousLinearMap.apply ℝ F (1 : ℝ)).compLpL p (mu.restrict Omega)
-      (weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u))
-      (Lp.operatorMultiplication p AL
-        (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)),
-    (ContinuousLinearMap.apply ℝ F (1 : ℝ)).coeFn_compLpL (p := p) (μ := mu.restrict Omega)
-      (weakFDeriv (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u),
-    Lp.operatorMultiplication_ae AL
-      (prev (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))) u)] with s h₁ h₂ h₃ h₄
-  rw [add_apply, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    weakFDerivL_apply, prevL_apply, h₂, Pi.add_apply, h₃, h₄, h₁,
-    ContinuousLinearMap.apply_apply]
-
-/-- The graph space of the embedding `1 ∘ ·` of `Lᵖ(Ω, F)` is the graph space of the identity of
-`Lᵖ(Ω, F)`, and along this identification the operator `u ↦ (1 ∘ u)' + A u` is the trajectory
-operator `u ↦ u' + A u`. The two graph spaces are equal as sets but have different types, since
-`(1 : F →L[ℝ] F).compLpL p μ` is only propositionally the identity. -/
-private theorem exists_familyDomainTrajectoryOperator_one_eq_comp
-    (AL : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
-    ∃ e : WeakDerivStep mu Omega p ((1 : F →L[ℝ] F).compLpL p (mu.restrict Omega)) ≃L[ℝ]
-        WeakDerivStep mu Omega p (ContinuousLinearMap.id ℝ (Lp F p (mu.restrict Omega))),
-      familyDomainTrajectoryOperator (p := p) (1 : F →L[ℝ] F) AL =
-        (trajectoryOperator AL).comp (e : _ →L[ℝ] _) := by
-  rw [familyDomainTrajectoryOperator_def]
-  -- Replace the embedding `(1 : F →L[ℝ] F).compLpL p μ` by the identity of `Lᵖ(Ω, F)`, in the
-  -- types of the graph spaces as well.
-  generalize hb : (1 : F →L[ℝ] F).compLpL p (mu.restrict Omega) = base
-  rw [ContinuousLinearMap.one_def, ContinuousLinearMap.id_compLpL] at hb
-  subst hb
-  exact ⟨.refl ℝ _, by
-    rw [apply_compLpL_comp_weakFDerivL_add_operatorMultiplication_comp_prevL,
-      ContinuousLinearEquiv.coe_refl, ContinuousLinearMap.comp_id]⟩
-
-/-- **The common-domain operator with the identity embedding is the trajectory operator.** Over
-the common domain `F` embedded in itself by the identity, `u ↦ (1 ∘ u)' + A u` has the index of the
-trajectory operator `u ↦ u' + A u` on `W^{1,p}(Ω, F)`. -/
-theorem index_familyDomainTrajectoryOperator_one (AL : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
-    (familyDomainTrajectoryOperator (p := p) (1 : F →L[ℝ] F) AL).index =
-      (trajectoryOperator (p := p) AL).index := by
-  obtain ⟨e, he⟩ := exists_familyDomainTrajectoryOperator_one_eq_comp (p := p) AL
-  rw [he, ContinuousLinearMap.index_comp_equiv]
-
-/-- Over the common domain `F` embedded in itself by the identity, `u ↦ (1 ∘ u)' + A u` is
-Fredholm exactly when the trajectory operator `u ↦ u' + A u` on `W^{1,p}(Ω, F)` is. -/
-theorem isFredholm_familyDomainTrajectoryOperator_one_iff
-    (AL : Lp (F →L[ℝ] F) ∞ (mu.restrict Omega)) :
-    (familyDomainTrajectoryOperator (p := p) (1 : F →L[ℝ] F) AL).IsFredholm ↔
-      (trajectoryOperator (p := p) AL).IsFredholm := by
-  obtain ⟨e, he⟩ := exists_familyDomainTrajectoryOperator_one_eq_comp (p := p) AL
-  rw [he, ContinuousLinearMap.isFredholm_comp_equiv]
-
-end Identity
 
 /-! ### Finite-dimensional paths -/
 
@@ -234,13 +165,10 @@ theorem eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainS
       fun _ ↦ ⟨C₁ + ‖B₁top‖, .of_forall fun s _ x ↦ ((A₁ s - B₁top).le_opNorm x).trans
         (mul_le_mul_of_nonneg_right ((norm_sub_le _ _).trans (add_le_add_left (hC₁ s) _))
           (norm_nonneg x))⟩
-  have h₀₁ (t : ℝ) : ∃ c₀ : ℝ, (c₀ • (1 : E →L[ℝ] E) - A₁ t).IsInvertible := by
-    refine ⟨‖A₁ t‖ + 1, ContinuousLinearMap.isInvertible_iff_isUnit.2 ?_⟩
-    have hnot : ‖A₁ t‖ + 1 ∉ spectrum ℝ (A₁ t) := fun hmem ↦ by
-      have := spectrum.norm_le_norm_of_mem hmem
-      rw [Real.norm_eq_abs, abs_of_pos (by positivity)] at this
-      linarith
-    rwa [spectrum.notMem_iff, Algebra.algebraMap_eq_smul_one] at hnot
+  have h₀₁ (t : ℝ) : ∃ c₀ : ℝ, (c₀ • (1 : E →L[ℝ] E) - A₁ t).IsInvertible :=
+    ⟨‖A₁ t‖ + 1, ContinuousLinearMap.isInvertible_smul_one_sub_of_norm_lt <| by
+      rw [Real.norm_of_nonneg (by positivity)]
+      linarith⟩
   -- The invertible block is Fredholm and contributes neither index nor spectral flow.
   have hF₂ := isFredholm_familyDomainTrajectoryOperator hι
     (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot₂
