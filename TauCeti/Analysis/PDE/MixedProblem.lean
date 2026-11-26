@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.InverseCoercive
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.BoundaryPart
 import TauCeti.Analysis.InnerProductSpace.Variational.Lifting
 import TauCeti.MeasureTheory.Function.L2Space.Pairing
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # The mixed boundary value problem in the coercive case
@@ -85,8 +86,12 @@ the boundary integral vanishes.
   everywhere bounds on the mass coefficient, from which the pointwise versions follow.
 * `existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomainWith`
   and `isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith`, in the namespace
-  `TauCeti.PDE.IsUniformlyEllipticAE`: the mixed problem on a bounded connected Lipschitz domain,
-  with a Dirichlet part of positive surface measure.
+  `TauCeti.PDE.IsUniformlyEllipticAE`: the mixed problem on an isometric copy of a bounded
+  connected Lipschitz domain, with a Dirichlet part of positive surface measure.
+* `existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomain` and
+  `isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomain`, in the namespace
+  `TauCeti.PDE.IsUniformlyEllipticAE`: the same on a bounded connected Lipschitz domain of
+  `EuclideanSpace ℝ ι`, with no isometric copy chosen.
 * `TauCeti.PDE.mixedForcingL`: the functional `v ↦ ∫_Ω f v + ∫_{∂Ω \ Γ} h · T v` of interior
   and conormal data, with `TauCeti.PDE.mixedForcingL_apply` and `TauCeti.PDE.norm_mixedForcingL_le`.
 * `existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_setIntegral_add_setIntegral`
@@ -114,7 +119,7 @@ namespace TauCeti
 
 namespace PDE
 
-open MeasureTheory Module Set TopologicalSpace
+open _root_.MeasureTheory Module Set TopologicalSpace
 open scoped ENNReal NNReal InnerProductSpace
 
 section Domain
@@ -431,6 +436,70 @@ end IsUniformlyEllipticAE
 
 end Lipschitz
 
+/-! ### Connected Lipschitz domains of a Euclidean space -/
+
+section IntrinsicLipschitz
+
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Omega : Opens (EuclideanSpace ℝ ι)}
+  {Γ : Set (EuclideanSpace ℝ ι)} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+  {c : EuclideanSpace ℝ ι → ℝ} {lam Lam : ℝ}
+
+namespace IsUniformlyEllipticAE
+
+/-- **Coercivity of the mixed problem on a connected Lipschitz domain.** Let `Ω` be a bounded
+connected Lipschitz domain of `EuclideanSpace ℝ ι`, and let `Γ` meet the frontier of `Ω` in a set
+of positive `μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1]`-measure. For a measurable inverse-coercive
+principal coefficient `a` with lower constant `λ`, a drift vanishing almost everywhere, and an
+essentially bounded mass coefficient `c ≥ 0`, the energy form is coercive on `H¹_Γ(Ω)`, with
+constant `λ / (1 + P²)` for a Poincaré–Friedrichs constant `P` of `(Ω, Γ)`. -/
+theorem isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomain
+    (hA : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hc : MemLp c ⊤ (volume.restrict Omega)) (hb0 : b =ᵐ[volume.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (volume.restrict Omega))
+    (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΓ : (μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0) :
+    IsCoercive (energyFormH1LVanishingOn hcoeff Γ) := by
+  obtain ⟨P, -, hP⟩ :=
+    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_isLipschitzDomain
+      (p := 2) ENNReal.ofNat_ne_top hΩ hb hconn hΓ
+  exact hA.isCoercive_energyFormH1LVanishingOn_of_poincare ha hc hb0 hc_nonneg hP hcoeff
+
+/-- **The mixed problem on a connected Lipschitz domain.** Let `Ω` be a bounded connected
+Lipschitz domain of `EuclideanSpace ℝ ι`, and let `Γ` meet the frontier of `Ω` in a set of positive
+`μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1]`-measure. For a measurable inverse-coercive principal
+coefficient `a`, a drift vanishing almost everywhere and an essentially bounded mass coefficient
+`c ≥ 0`, every Dirichlet datum `g ∈ H¹(Ω)` and every forcing `ℓ ∈ (H¹_Γ(Ω))*`, there is exactly
+one `u ∈ H¹(Ω)` with `u - g ∈ H¹_Γ(Ω)` and
+
+`∫_Ω ⟨a ∇u, ∇v⟩ + c u v = ℓ v` for every `v ∈ H¹_Γ(Ω)`. -/
+theorem existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomain
+    (hA : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (volume.restrict Omega))
+    (hc : MemLp c ⊤ (volume.restrict Omega)) (hb0 : b =ᵐ[volume.restrict Omega] 0)
+    (hc_nonneg : ∀ᵐ x ∂volume.restrict Omega, 0 ≤ c x)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (volume.restrict Omega))
+    (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain E)
+    (hb : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΓ : (μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0)
+    (g : W1p volume Omega 2) (ℓ : StrongDual ℝ (W1pVanishingOn volume Omega 2 Γ)) :
+    ∃! u : W1p volume Omega 2, u - g ∈ w1pVanishingOnSubmodule volume Omega 2 Γ ∧
+      ∀ v : W1pVanishingOn volume Omega 2 Γ, energyFormH1 a b c u v = ℓ v :=
+  existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq hcoeff
+    (hA.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomain ha hc hb0 hc_nonneg hcoeff hΩ hb
+      hconn hΓ) g ℓ
+
+end IsUniformlyEllipticAE
+
+end IntrinsicLipschitz
+
 /-! ### Interior and conormal data -/
 
 section ConormalDatum
@@ -443,22 +512,6 @@ variable {ι : Type*} [Fintype ι] [Nonempty ι] {mu : Measure (EuclideanSpace �
 
 attribute [local instance] instSeminormedAddCommGroupW1p instNormedSpaceW1p
   W1pVanishingOn.instNormedAddCommGroup W1pVanishingOn.instInnerProductSpace
-
-/-- The restriction `L²(ν|t) → L²(ν|s)` for `s ⊆ t`, which restricts the trace from the frontier
-of `Ω` to its part `∂Ω \ Γ` carrying the conormal datum. -/
-private def restrictL2OfSubset {X : Type*} [MeasurableSpace X] (ν : Measure X) {s t : Set X}
-    (hst : s ⊆ t) : Lp ℝ 2 (ν.restrict t) →L[ℝ] Lp ℝ 2 (ν.restrict s) :=
-  Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top
-    ((Measure.restrict_mono_set ν hst).trans_eq (one_smul _ _).symm)
-
-private theorem coeFn_restrictL2OfSubset {X : Type*} [MeasurableSpace X] (ν : Measure X)
-    {s t : Set X} (hst : s ⊆ t) (g : Lp ℝ 2 (ν.restrict t)) :
-    restrictL2OfSubset ν hst g =ᵐ[ν.restrict s] g :=
-  Lp.coeFn_LpToLpOfMeasureLeSMul _ _ g
-
-private theorem norm_restrictL2OfSubset_le {X : Type*} [MeasurableSpace X] (ν : Measure X)
-    {s t : Set X} (hst : s ⊆ t) : ‖restrictL2OfSubset ν hst‖ ≤ 1 :=
-  (Lp.norm_LpToLpOfMeasureLeSMul_le _ _).trans (by simp)
 
 /-- **The forcing of the mixed problem with interior and conormal data.** On a bounded Lipschitz
 domain `Ω ⊆ EuclideanSpace ℝ ι`, with `σ = μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1]` the
@@ -476,7 +529,7 @@ def mixedForcingL (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipschitzDomain
       (frontier (Omega : Set (EuclideanSpace ℝ ι)) \ Γ))) :
     StrongDual ℝ (W1pVanishingOn mu Omega 2 Γ) :=
   Lp.pairingL f (W1p.valueL.comp (W1pVanishingOn mu Omega 2 Γ).subtypeL) +
-    Lp.pairingL h ((restrictL2OfSubset _ sdiff_subset).comp
+    Lp.pairingL h ((Lp.restrictOfSubsetL sdiff_subset).comp
       ((W1p.frontierTraceOfIsLipschitzDomain (mu := mu) (p := 2) ENNReal.ofNat_ne_top hΩ hb).comp
         (W1pVanishingOn mu Omega 2 Γ).subtypeL))
 
@@ -496,7 +549,7 @@ theorem mixedForcingL_apply (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLipsc
   simp only [mixedForcingL, add_apply, Lp.pairingL_apply, ContinuousLinearMap.comp_apply,
     W1p.valueL_apply, Submodule.subtypeL_apply]
   refine congrArg _ (integral_congr_ae ?_)
-  filter_upwards [coeFn_restrictL2OfSubset _ sdiff_subset
+  filter_upwards [Lp.coeFn_restrictOfSubsetL sdiff_subset
     (W1p.frontierTraceOfIsLipschitzDomain (mu := mu) (p := 2) ENNReal.ofNat_ne_top hΩ hb
       (v : W1p mu Omega 2))] with y hy
   rw [hy]
@@ -517,10 +570,10 @@ theorem norm_mixedForcingL_le (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).IsLip
   have hV : ‖(W1p.valueL : W1p mu Omega 2 →L[ℝ] _).comp S‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v => by
       simpa [S] using W1p.norm_value_le (v : W1p mu Omega 2)
-  have hR : ‖(restrictL2OfSubset _ (sdiff_subset (t := Γ))).comp (T.comp S)‖ ≤ ‖T‖ :=
+  have hR : ‖(Lp.restrictOfSubsetL (sdiff_subset (t := Γ))).comp (T.comp S)‖ ≤ ‖T‖ :=
     calc _ ≤ 1 * (‖T‖ * 1) := (ContinuousLinearMap.opNorm_comp_le _ _).trans <| by
           gcongr
-          · exact norm_restrictL2OfSubset_le _ _
+          · exact Lp.norm_restrictOfSubsetL_le _
           · exact (T.opNorm_comp_le S).trans (by gcongr)
       _ = ‖T‖ := by ring
   calc ‖mixedForcingL hΩ hb f h‖ ≤ ‖f‖ * 1 + ‖h‖ * ‖T‖ :=
@@ -615,13 +668,9 @@ theorem
           ∫ y in frontier (Omega : Set (EuclideanSpace ℝ ι)) \ Γ, h y *
             W1p.frontierTraceOfIsLipschitzDomain (mu := volume) (p := 2) ENNReal.ofNat_ne_top hΩ hb
               (v : W1p volume Omega 2) y ∂μHE[finrank ℝ (EuclideanSpace ℝ ι) - 1] := by
-  obtain ⟨P, -, hP⟩ :=
-    W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_isLipschitzDomain
-      (p := 2) ENNReal.ofNat_ne_top hΩ hb hconn hΓ
   simpa only [mixedForcingL_apply] using
-    existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq hcoeff
-      (hA.isCoercive_energyFormH1LVanishingOn_of_poincare ha hc hb0 hc_nonneg hP hcoeff) g
-      (mixedForcingL hΩ hb f h)
+    hA.existsUnique_sub_mem_w1pVanishingOnSubmodule_forall_energyFormH1_eq_of_isLipschitzDomain
+      ha hc hb0 hc_nonneg hcoeff hΩ hb hconn hΓ g (mixedForcingL hΩ hb f h)
 
 end IsUniformlyEllipticAE
 

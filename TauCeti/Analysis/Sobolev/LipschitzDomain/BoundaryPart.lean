@@ -258,16 +258,12 @@ theorem
   have _ : FiniteDimensional ℝ E' := e.finiteDimensional_snd
   let _ : MeasurableSpace E' := borel E'
   have _ : BorelSpace E' := ⟨rfl⟩
-  have hdim : finrank ℝ E' = finrank ℝ F - 1 := by
-    rw [e.toLinearEquiv.finrank_eq, (WithLp.linearEquiv 2 ℝ (ℝ × E')).finrank_eq,
-      Module.finrank_prod, Module.finrank_self]
-    omega
   -- `g` carries `U` onto a bounded Lipschitz domain of the model space.
   let W : Opens (WithLp 2 (ℝ × E')) :=
     ⟨g '' (U : Set F), ((isLipschitzDomainWith_iff _ _).1 hL).1⟩
   have hWU : (W : Set (WithLp 2 (ℝ × E'))) = g.symm ⁻¹' U :=
     g.toHomeomorph.image_eq_preimage_symm _
-  rw [← hdim] at hΓ
+  rw [← e.finrank_snd] at hΓ
   exact
     W1p.exists_norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_affineIsometryEquiv
       hp hL (g.lipschitzWith.isBounded_image hb) g hWU hconn hΓ
