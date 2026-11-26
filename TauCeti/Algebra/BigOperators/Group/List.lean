@@ -61,6 +61,8 @@ entries are multiplied together first (`Fin.contractNth`), by associativity.
   entries.
 * `List.prod_ofFn_contractNth`: contracting two adjacent entries of a tuple by multiplication does
   not change its ordered product.
+* `List.sum_comp_prod_ofFn`: summing `f (g₀ ⋯ gₘ)` over all tuples in a finite group gives
+  `|G| ^ m` times the sum of `f` over the group.
 -/
 
 public section
@@ -230,6 +232,19 @@ theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
     (ofFn (Fin.contractNth l.castSucc (· * ·) b)).prod = (ofFn b).prod := by
   rw [← Fin.partialProd_last_eq_prod_ofFn, ← Fin.partialProd_last_eq_prod_ofFn,
     Fin.partialProd_contractNth_castSucc]
+
+/-- **The ordered product of a tuple takes every value equally often** in a finite group: the sum
+of `f (g₀ ⋯ gₘ)` over all tuples `g : Fin (m + 1) → G` is `|G| ^ m` times the sum of `f`, as
+`g₁, …, gₘ` can be chosen freely and then `g₀` is determined by the product. -/
+theorem sum_comp_prod_ofFn {G A : Type*} [Group G] [Fintype G] [AddCommMonoid A] {m : ℕ}
+    (f : G → A) :
+    ∑ g : Fin (m + 1) → G, f (ofFn g).prod = Fintype.card G ^ m • ∑ g, f g := by
+  classical
+  let e : G × (Fin m → G) ≃ (Fin (m + 1) → G) :=
+    (Equiv.prodCongrLeft fun g ↦ Equiv.mulRight (ofFn g).prod⁻¹).trans
+      (Fin.consEquiv fun _ ↦ G)
+  rw [← e.sum_comp]
+  simp [e, Fintype.sum_prod_type_right]
 
 end OfFn
 
