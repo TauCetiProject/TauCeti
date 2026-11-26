@@ -70,7 +70,9 @@ is the single-neck model of the same deformation.
   (`TauCeti.Floer.cappedComparisonPerturbation_zero`). It is constant, equal to the datum with
   `a = 1` and `L = 0`, for `2/3 ≤ R ≤ 3/2`
   (`TauCeti.Floer.cappedComparisonPerturbation_of_mem_Icc`), and for `R ≥ 2` it has necks of
-  length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`).
+  length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`), so it is the
+  pair-of-pants perturbation on the truncation `S_T` once `T ≤ R + 1`
+  (`TauCeti.Floer.cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation`).
 * For a manifold target with a smooth two-form, and `|H_q| ≤ B_q`, the integrated curvature of
   the datum along any map is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le`). Along the
@@ -529,7 +531,7 @@ theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic 
   exact (h.contDiff.differentiable one_ne_zero).clm_apply (differentiable_const v)
 
 /-- The capped perturbation is differentiable in the target point. -/
-private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (w v : ℂ) :
     MDifferentiable I 𝓘(ℝ) fun y ↦ cappedPerturbation a L H w y v := by
   have h : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun y ↦ cappedPerturbation a L H w y :=
@@ -613,6 +615,17 @@ theorem cappedComparisonPerturbation_of_two_le (H : Puncture → ℝ → M → �
     cappedComparisonPerturbation H R = cappedPerturbation 1 (R - 1) H := by
   rw [cappedComparisonPerturbation_def, comparisonCutoff_of_ge (by linarith),
     comparisonNeckLength_of_ge hR]
+
+/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the datum is the pair-of-pants
+perturbation. -/
+theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation
+    (H : Puncture → ℝ → M → ℝ) {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
+    (hw : w ∈ truncation T) :
+    cappedComparisonPerturbation H R w = pairOfPantsPerturbation H w :=
+  funext fun x ↦ by
+    rw [cappedComparisonPerturbation_of_two_le H hR,
+      cappedPerturbation_eq_smul_pairOfPantsPerturbation
+        (fun q ↦ ((mem_truncation.1 hw).2.2 q).trans (by linarith)), one_smul]
 
 section Smooth
 
