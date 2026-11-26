@@ -67,7 +67,7 @@ pairs of representations `π` of `A` and `ρ` of `B` on Hilbert spaces in the un
 integrated form of the commuting spatial pair
 (`TauCeti.CommutingRepresentationPair.tensorHom_spatial`). -/
 def minTensorNorm (x : A ⊗[ℂ] B) : ℝ :=
-  supTensorNorm (toCommutingRepresentationPair (A := A) (B := B)) x
+  supTensorNorm (RepresentationPair.spatial (A := A) (B := B)) x
 
 /-- Unfolding `TauCeti.minTensorNorm`. -/
 theorem minTensorNorm_def (x : A ⊗[ℂ] B) :
@@ -82,7 +82,7 @@ theorem norm_spatialTensorHom_le_minTensorNorm {E : Type u} {F : Type v} [Normed
     [CompleteSpace F] (π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)) (ρ : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)) (x : A ⊗[ℂ] B) :
     ‖π.spatialTensorHom ρ x‖ ≤ minTensorNorm A B x := by
   rw [← CommutingRepresentationPair.tensorHom_spatial]
-  exact norm_tensorHom_le_supTensorNorm toCommutingRepresentationPair ⟨E, F, π, ρ⟩ x
+  exact norm_tensorHom_le_supTensorNorm RepresentationPair.spatial ⟨E, F, π, ρ⟩ x
 
 /-- To bound the minimal norm it suffices to bound every pair of representations. -/
 theorem minTensorNorm_le_of_forall {x : A ⊗[ℂ] B} {c : ℝ}

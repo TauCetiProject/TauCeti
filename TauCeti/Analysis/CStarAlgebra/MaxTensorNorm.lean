@@ -49,7 +49,7 @@ the supremum over any family of commuting pairs (`TauCeti.supTensorNorm_le_maxTe
   `TauCeti.CommutingRepresentationPair.tensorHom` and the spatial pair
   `TauCeti.CommutingRepresentationPair.spatial`.
 * `TauCeti.RepresentationPair A B`: pairs of representations, with the spatial commuting pair
-  `TauCeti.RepresentationPair.toCommutingRepresentationPair`.
+  `TauCeti.RepresentationPair.spatial`.
 * `TauCeti.supTensorNorm f`: the supremum of the norms of a family of commuting pairs.
 * `TauCeti.maxTensorNorm A B`: the maximal C*-norm on `A ⊗[ℂ] B`.
 
@@ -227,8 +227,7 @@ variable {A B}
 
 /-- The commuting spatial pair `a ↦ π a ⊗ 1`, `b ↦ 1 ⊗ ρ b` on `E ⊗₂ F` of a pair of
 representations. -/
-abbrev toCommutingRepresentationPair (p : RepresentationPair A B) :
-    CommutingRepresentationPair A B :=
+abbrev spatial (p : RepresentationPair A B) : CommutingRepresentationPair A B :=
   CommutingRepresentationPair.spatial p.left p.right
 
 variable (A B) in
@@ -257,7 +256,7 @@ theorem exists_tensorHom_injective_and_norm_tensorHom_tmul :
       ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
   obtain ⟨p, h⟩ :=
     RepresentationPair.exists_spatialTensorHom_injective_and_norm_spatialTensorHom_tmul A B
-  refine ⟨p.toCommutingRepresentationPair, ?_⟩
+  refine ⟨p.spatial, ?_⟩
   rwa [CommutingRepresentationPair.tensorHom_spatial p.left p.right]
 
 /-- There is a commuting pair whose integrated form is injective. -/
