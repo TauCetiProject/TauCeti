@@ -195,10 +195,8 @@ theorem hasWilliamsonTypeAt_continuousLinearEquiv_comp_iff {G' : Type*} [NormedA
     ω.HasWilliamsonTypeAt (A ∘ F) x kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F x kₑ kₕ k_f := by
   by_cases hF : ContDiffAt ℝ 2 F x
   · exact hasWilliamsonTypeAt_comp_iff (A : G →L[ℝ] G').contDiff.contDiffAt
-      ⟨(A.symm : G' →L[ℝ] G), fun v ↦ by simp [A.fderiv]⟩ hF
-  refine iff_of_false (fun h ↦ hF ?_) fun h ↦ hF h.isNondegeneratePoint.contDiffAt
-  have := ((A.symm : G' →L[ℝ] G).contDiff.contDiffAt (x := A (F x))).comp x
-    h.isNondegeneratePoint.contDiffAt
-  simpa [Function.comp_def] using this
+      (A.hasLeftInverse.congr A.fderiv) hF
+  exact iff_of_false (fun h ↦ hF (A.comp_contDiffAt_iff.1 h.isNondegeneratePoint.contDiffAt))
+    fun h ↦ hF h.isNondegeneratePoint.contDiffAt
 
 end TauCeti.SymplecticForm
