@@ -31,7 +31,8 @@ multiplicity.
   (`TauCeti.apply_self_le_mul_norm_sq_of_mem_span`).
 * **Bessel's inequality for `B`**: for every `v` and `N`,
   `∑_{j < N} κⱼ ⟪eⱼ, J v⟫² ≤ B v v`. This is `0 ≤ B w w` for `w = v - ∑_{j < N} ⟪eⱼ, J v⟫ uⱼ`,
-  expanded with symmetry and the eigenvalue equations. If `J v` is orthogonal to
+  expanded with symmetry and the eigenvalue equations
+  (`TauCeti.sum_mul_inner_sq_le_apply_self`). If `J v` is orthogonal to
   `e₀, …, e_{k-1}`, the left side is at least `κₖ ∑_{j < N} ⟪eⱼ, J v⟫²`, which tends to
   `κₖ ‖J v‖²` by Parseval's identity (`TauCeti.mul_norm_sq_le_apply_self_of_forall_inner_eq_zero`).
 * A subspace `W` with `dim J W ≥ k + 1` contains some `v` with `J v ≠ 0` orthogonal to
@@ -40,6 +41,8 @@ multiplicity.
 
 ## Main declarations
 
+* `TauCeti.sum_mul_inner_sq_le_apply_self`: Bessel's inequality for `B`, for any orthonormal
+  family of eigenfunction images.
 * `TauCeti.apply_self_le_mul_norm_sq_of_mem_span`: the upper bound on the first `k + 1`
   eigenfunctions.
 * `TauCeti.mul_norm_sq_le_apply_self_of_forall_inner_eq_zero`: the lower bound off the first `k`
@@ -65,8 +68,35 @@ open scoped InnerProductSpace Topology
 namespace TauCeti
 
 variable {V H : Type*} [AddCommGroup V] [Module ℝ V] [NormedAddCommGroup H]
-  [InnerProductSpace ℝ H] {B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ} {J : V →ₗ[ℝ] H} {kappa : ℕ → ℝ}
-  {u : ℕ → V}
+  [InnerProductSpace ℝ H] {B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ} {J : V →ₗ[ℝ] H}
+
+/-- **Bessel's inequality for `B`.** Let `B` be symmetric with `B v v ≥ 0`, and let `u i` have
+orthonormal images `e i = J (u i)` and satisfy `B (u i) v = κᵢ ⟪J (u i), J v⟫` for every `v`. Then
+every finite sum of `κᵢ ⟪e i, J v⟫²` is at most `B v v`: this is `0 ≤ B w w` for `w` the difference
+of `v` and its partial expansion `∑ ⟪e i, J v⟫ u i`. -/
+theorem sum_mul_inner_sq_le_apply_self {ι : Type*} {kappa : ι → ℝ} {u : ι → V} {e : ι → H}
+    (hsymm : ∀ v w : V, B v w = B w v) (hnonneg : ∀ v : V, 0 ≤ B v v) (he : Orthonormal ℝ e)
+    (hJu : ∀ i, J (u i) = e i) (heq : ∀ i v, B (u i) v = kappa i * ⟪J (u i), J v⟫_ℝ) (v : V)
+    (t : Finset ι) : ∑ i ∈ t, kappa i * ⟪e i, J v⟫_ℝ ^ 2 ≤ B v v := by
+  have hBu (i : ι) (w : V) : B (u i) w = kappa i * ⟪e i, J w⟫_ℝ := by rw [heq, hJu]
+  set s := ∑ i ∈ t, ⟪e i, J v⟫_ℝ • u i
+  have hs (w : V) : B s w = ∑ i ∈ t, ⟪e i, J v⟫_ℝ * (kappa i * ⟪e i, J w⟫_ℝ) := by
+    simp only [s, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hBu]
+  have hJs : J s = ∑ i ∈ t, ⟪e i, J v⟫_ℝ • e i := by
+    simp only [s, map_sum, map_smul, hJu]
+  have hsv : B s v = ∑ i ∈ t, kappa i * ⟪e i, J v⟫_ℝ ^ 2 :=
+    (hs v).trans (Finset.sum_congr rfl fun i _ ↦ by ring)
+  have hss : B s s = ∑ i ∈ t, kappa i * ⟪e i, J v⟫_ℝ ^ 2 := by
+    rw [hs]
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [hJs, he.inner_right_sum _ hi]
+    ring
+  have h := hnonneg (v - s)
+  simp only [map_sub, LinearMap.sub_apply] at h
+  rw [hsymm v s] at h
+  linarith
+
+variable {kappa : ℕ → ℝ} {u : ℕ → V}
 
 /-- **The upper half of the min–max principle.** Let `u₀, u₁, …` have orthonormal images
 `J uⱼ` and satisfy `B uⱼ v = κⱼ ⟪J uⱼ, J v⟫` for every `v`, with `κ` nondecreasing. Then every `v`
@@ -111,26 +141,8 @@ theorem mul_norm_sq_le_apply_self_of_forall_inner_eq_zero (hsymm : ∀ v w : V, 
     (hJu : ∀ j, J (u j) = e j) (heq : ∀ (j : ℕ) (v : V), B (u j) v = kappa j * ⟪J (u j), J v⟫_ℝ)
     {k : ℕ} {v : V} (hv : ∀ j < k, ⟪e j, J v⟫_ℝ = 0) :
     kappa k * ‖J v‖ ^ 2 ≤ B v v := by
-  have hBu (j : ℕ) (w : V) : B (u j) w = kappa j * ⟪e j, J w⟫_ℝ := by rw [heq, hJu]
-  -- Bessel's inequality `∑_{j < N} κⱼ ⟪eⱼ, J v⟫² ≤ B v v`, from `0 ≤ B (v - s) (v - s)`.
-  have hbessel (N : ℕ) : ∑ j ∈ Finset.range N, kappa j * ⟪e j, J v⟫_ℝ ^ 2 ≤ B v v := by
-    set s := ∑ j ∈ Finset.range N, ⟪e j, J v⟫_ℝ • u j
-    have hs (w : V) : B s w = ∑ j ∈ Finset.range N, ⟪e j, J v⟫_ℝ * (kappa j * ⟪e j, J w⟫_ℝ) := by
-      simp only [s, map_sum, map_smul, LinearMap.sum_apply,
-        LinearMap.smul_apply, smul_eq_mul, hBu]
-    have hJs : J s = ∑ j ∈ Finset.range N, ⟪e j, J v⟫_ℝ • e j := by
-      simp only [s, map_sum, map_smul, hJu]
-    have hsv : B s v = ∑ j ∈ Finset.range N, kappa j * ⟪e j, J v⟫_ℝ ^ 2 :=
-      (hs v).trans (Finset.sum_congr rfl fun j _ ↦ by ring)
-    have hss : B s s = ∑ j ∈ Finset.range N, kappa j * ⟪e j, J v⟫_ℝ ^ 2 := by
-      rw [hs]
-      refine Finset.sum_congr rfl fun j hj ↦ ?_
-      rw [hJs, e.orthonormal.inner_right_sum _ hj]
-      ring
-    have h := hnonneg (v - s)
-    simp only [map_sub, LinearMap.sub_apply] at h
-    rw [hsymm v s] at h
-    linarith
+  have hbessel (N : ℕ) : ∑ j ∈ Finset.range N, kappa j * ⟪e j, J v⟫_ℝ ^ 2 ≤ B v v :=
+    sum_mul_inner_sq_le_apply_self hsymm hnonneg e.orthonormal hJu heq v (Finset.range N)
   have hpartial (N : ℕ) : kappa k * ∑ j ∈ Finset.range N, ⟪e j, J v⟫_ℝ ^ 2 ≤ B v v := by
     refine le_trans ?_ (hbessel N)
     rw [Finset.mul_sum]

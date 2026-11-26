@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Diagonal
+import TauCeti.Analysis.InnerProductSpace.Variational.MinMax
 import TauCeti.Analysis.InnerProductSpace.Variational.Spectrum
 
 /-!
@@ -106,29 +107,14 @@ private theorem pos_of_hilbertBasis (hB : IsCoercive B) (hJu : ∀ i, J (u i) = 
   rw [hu, map_zero] at h
   exact b.orthonormal.ne_zero i h.symm
 
-/-- Bessel's inequality for the partial sums: the energy `B w w` bounds every finite sum of
-`κ i ⟪b i, J w⟫²`, since the energy of `w` minus its partial expansion is nonnegative. -/
-private theorem sum_mul_inner_sq_le (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
-    (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V)
-    (t : Finset ι) : ∑ i ∈ t, κ i * ⟪b i, J w⟫_ℝ ^ 2 ≤ B w w := by
-  set c : ι → ℝ := fun i ↦ ⟪b i, J w⟫_ℝ
-  have hnn : 0 ≤ B (w - ∑ i ∈ t, c i • u i) (w - ∑ i ∈ t, c i • u i) := by
-    obtain ⟨C, hC, hle⟩ := hB
-    exact (mul_nonneg (mul_nonneg hC.le (norm_nonneg _)) (norm_nonneg _)).trans (hle _)
-  have hcross : B (∑ i ∈ t, c i • u i) w = ∑ i ∈ t, κ i * c i ^ 2 := by
-    rw [apply_sum_smul hJu heq]
-    exact Finset.sum_congr rfl fun i _ ↦ by ring
-  simp only [map_sub, sub_apply] at hnn
-  rw [hsymm w (∑ i ∈ t, c i • u i), hcross, apply_sum_smul_sum_smul hJu heq] at hnn
-  linarith
-
 /-- **Bessel's inequality in the energy.** For `w : V`, the coordinates of `J w` satisfy
 `∑ κ i ⟪b i, J w⟫² < ∞`; the sum is at most `B w w` (`IsCoercive.tsum_mul_inner_sq_le`). -/
 theorem summable_mul_inner_sq (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v)
     (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V) :
     Summable fun i ↦ κ i * ⟪b i, J w⟫_ℝ ^ 2 :=
   summable_of_sum_le (fun i ↦ mul_nonneg (pos_of_hilbertBasis hB hJu heq i).le (sq_nonneg _))
-    (sum_mul_inner_sq_le hB hsymm hJu heq w)
+    (TauCeti.sum_mul_inner_sq_le_apply_self (B := B.toLinearMap₁₂) hsymm hB.apply_self_nonneg
+      b.orthonormal hJu heq w)
 
 /-- **Bessel's inequality in the energy**, the bound: for `w : V`,
 `∑ κ i ⟪b i, J w⟫² ≤ B w w`. -/
@@ -136,7 +122,8 @@ theorem tsum_mul_inner_sq_le (hB : IsCoercive B) (hsymm : ∀ v w, B v w = B w v
     (hJu : ∀ i, J (u i) = b i) (heq : ∀ i v, B (u i) v = κ i * ⟪J (u i), J v⟫_ℝ) (w : V) :
     ∑' i, κ i * ⟪b i, J w⟫_ℝ ^ 2 ≤ B w w :=
   (summable_mul_inner_sq hB hsymm hJu heq w).tsum_le_of_sum_le
-    (sum_mul_inner_sq_le hB hsymm hJu heq w)
+    (TauCeti.sum_mul_inner_sq_le_apply_self (B := B.toLinearMap₁₂) hsymm hB.apply_self_nonneg
+      b.orthonormal hJu heq w)
 
 variable [CompleteSpace V]
 
