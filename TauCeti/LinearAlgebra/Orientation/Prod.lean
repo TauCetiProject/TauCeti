@@ -237,9 +237,9 @@ theorem reindex_prod_of_left_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
       congr 1
       refine Basis.eq_of_apply_eq fun k ↦ Fin.addCases (fun i ↦ i.elim0) (fun j ↦ ?_) k
       have hj : (Fin.cast hnk.symm (Fin.natAdd 0 j) : Fin n) = j := Fin.ext (by simp)
-      rw [Basis.reindex_apply, Basis.reindex_apply, Basis.map_apply, Basis.reindex_apply,
-        finCongr_symm, finCongr_apply, finCongr_symm, finCongr_apply, hj, Fin.cast_eq_self,
-        finSumFinEquiv_symm_apply_natAdd, he]
+      simp only [Basis.reindex_apply, Basis.map_apply, finCongr_symm, finCongr_apply,
+        Fin.cast_eq_self, finSumFinEquiv_symm_apply_natAdd]
+      rw [hj, he]
       exact Prod.ext (Basis.prod_apply_inr_fst _ _ _) (Basis.prod_apply_inr_snd _ _ _)
     intro p'
     rcases c.orientation_eq_or_eq_neg p' with rfl | rfl
@@ -249,56 +249,7 @@ theorem reindex_prod_of_left_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
   rcases b.orientation_eq_or_eq_neg o with rfl | rfl
   · rw [key, signBasis_orientation, map_one, one_smul]
   · rw [prod_neg_left, Orientation.reindex_neg, key, signBasis_neg, signBasis_orientation,
-      show Units.map (Int.castRingHom R).toMonoidHom (-1) = -1 from Units.ext (by simp),
-      Module.Ray.neg_units_smul, one_smul]
-
-/-- **A zero-dimensional second factor.** If a linear equivalence `e : E ≃ E × F` acts as
-`v ↦ (v, 0)`, so that the second factor `F` is zero, the product orientation of `o` and `p`,
-reindexed by the dimension `k` of `E`, is the orientation `o` of `E`, reindexed likewise and
-carried into `E × F` by `e`, scaled by the sign of `p` relative to the empty basis of `F`. -/
-theorem reindex_prod_of_right_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
-    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n)
-    (hk : m + n = k) (hmk : m = k) (e : E ≃ₗ[R] E × F) (he : ∀ v, e v = (v, 0)) :
-    reindex R (E × F) (finCongr hk) (prod o p hm hn) =
-      Units.map (Int.castRingHom R).toMonoidHom (signBasis p (Module.finBasisOfFinrankEq R F hn)) •
-        Orientation.map (Fin k) e (reindex R E (finCongr hmk) o) := by
-  -- The second factor is zero, since `(0, x) = e v = (v, 0)` for `v = e⁻¹ (0, x)`.
-  have : Subsingleton F := ⟨fun x y ↦ by
-    have hx := congrArg Prod.snd ((he _).symm.trans (e.apply_symm_apply (0, x)))
-    have hy := congrArg Prod.snd ((he _).symm.trans (e.apply_symm_apply (0, y)))
-    exact hx.symm.trans hy⟩
-  obtain rfl : n = 0 := hn.symm.trans Module.finrank_zero_of_subsingleton
-  subst hk
-  let b := Module.finBasisOfFinrankEq R E hm
-  let c := Module.finBasisOfFinrankEq R F hn
-  -- For the orientation of the empty basis `c`, the product basis of `b` and `c` is `b` carried
-  -- into `E × F` by `e`; the case of `-b.orientation` follows by negating both sides.
-  have key : ∀ o' : Orientation R E (Fin m),
-      reindex R (E × F) (finCongr rfl) (prod o' c.orientation hm hn) =
-        Orientation.map (Fin (m + 0)) e (reindex R E (finCongr hmk) o') := by
-    have hbase : reindex R (E × F) (finCongr rfl) (prod b.orientation c.orientation hm hn) =
-        Orientation.map (Fin (m + 0)) e (reindex R E (finCongr hmk) b.orientation) := by
-      rw [prod_basis_orientation, ← Basis.orientation_reindex, ← Basis.orientation_reindex,
-        ← Basis.orientation_map]
-      congr 1
-      refine Basis.eq_of_apply_eq fun k ↦ Fin.addCases (fun i ↦ ?_) (fun j ↦ j.elim0) k
-      have hi : (Fin.cast hmk.symm (Fin.castAdd 0 i) : Fin m) = i := Fin.ext (by simp)
-      -- `Fin.castAdd 0 i` is `i` itself, read in `Fin (m + 0)`.
-      have hs : (finSumFinEquiv.symm i : Fin m ⊕ Fin 0) = Sum.inl i :=
-        finSumFinEquiv_symm_apply_castAdd i
-      simp only [Basis.reindex_apply, Basis.map_apply, finCongr_symm, finCongr_apply]
-      rw [hi, hs, he]
-      exact Prod.ext (Basis.prod_apply_inl_fst _ _ _) (Basis.prod_apply_inl_snd _ _ _)
-    intro o'
-    rcases b.orientation_eq_or_eq_neg o' with rfl | rfl
-    · exact hbase
-    · rw [prod_neg_left, Orientation.reindex_neg, hbase, Orientation.reindex_neg,
-        Orientation.map_neg]
-  rcases c.orientation_eq_or_eq_neg p with rfl | rfl
-  · rw [key, signBasis_orientation, map_one, one_smul]
-  · rw [prod_neg_right, Orientation.reindex_neg, key, signBasis_neg, signBasis_orientation,
-      show Units.map (Int.castRingHom R).toMonoidHom (-1) = -1 from Units.ext (by simp),
-      Module.Ray.neg_units_smul, one_smul]
+      intCast_units_smul_eq_ite, ite_eq_right (by decide)]
 
 /-- The relative sign in a product basis is the product of the two relative factor signs. -/
 theorem signBasis_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
@@ -350,6 +301,26 @@ theorem map_prodComm_prod_of_even (o : Orientation R E (Fin m)) (p : Orientation
     Orientation.map (Fin (m + n)) (LinearEquiv.prodComm R E F) (prod o p hm hn) =
       Orientation.reindex R (F × E) (finCongr (add_comm n m)) (prod p o hn hm) := by
   rw [map_prodComm_prod, h.neg_one_pow, one_smul]
+
+/-- **A zero-dimensional second factor.** If a linear equivalence `e : E ≃ E × F` acts as
+`v ↦ (v, 0)`, so that the second factor `F` is zero, the product orientation of `o` and `p`,
+reindexed by the dimension `k` of `E`, is the orientation `o` of `E`, reindexed likewise and
+carried into `E × F` by `e`, scaled by the sign of `p` relative to the empty basis of `F`. -/
+theorem reindex_prod_of_right_eq_zero {k : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n)
+    (hk : m + n = k) (hmk : m = k) (e : E ≃ₗ[R] E × F) (he : ∀ v, e v = (v, 0)) :
+    reindex R (E × F) (finCongr hk) (prod o p hm hn) =
+      Units.map (Int.castRingHom R).toMonoidHom (signBasis p (Module.finBasisOfFinrankEq R F hn)) •
+        Orientation.map (Fin k) e (reindex R E (finCongr hmk) o) := by
+  obtain rfl : n = 0 := by omega
+  -- Followed by the exchange of the factors, `e` acts as `v ↦ (0, v)`; exchange them back.
+  have h := congrArg (Orientation.map (Fin k) (LinearEquiv.prodComm R F E))
+    (reindex_prod_of_left_eq_zero p o hn hm ((add_comm 0 m).trans hk) hmk
+      (e.trans (LinearEquiv.prodComm R E F)) fun v ↦ by simp [he])
+  have hee : (e.trans (LinearEquiv.prodComm R E F)).trans (LinearEquiv.prodComm R F E) = e :=
+    LinearEquiv.ext fun v ↦ by simp
+  rwa [map_reindex, map_prodComm_prod_of_even p o hn hm (by simp),
+    reindex_finCongr_reindex_finCongr, map_units_smul, ← map_trans, hee] at h
 
 variable {E' F' : Type*} [AddCommGroup E'] [Module R E'] [AddCommGroup F'] [Module R F']
   [Module.Free R E'] [Module.Finite R E']

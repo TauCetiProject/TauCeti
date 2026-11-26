@@ -26,8 +26,9 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   index types.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
-* `lid_rTensor_apply`, `rid_lTensor_apply`: the coefficients of `(g ⊗ 1) t` and `(1 ⊗ g) t` for a
-  linear form `g`, read in `β →₀ R` and in `α →₀ R`.
+* `finsuppTensorFinsupp'_lid_rTensor_apply`, `finsuppTensorFinsupp'_rid_lTensor_apply`: the
+  coefficients of `(g ⊗ 1) t` and `(1 ⊗ g) t` for a linear form `g`, read in `β →₀ R` and in
+  `α →₀ R`.
 * `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
   sign reversals.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
@@ -125,8 +126,8 @@ theorem finsuppTensorFinsupp'_lTensor_apply [Fintype β] (ψ : (β →₀ R) →
 /-- **The coefficients of `(g ⊗ 1) t` for a linear form `g`.** Under the identification of
 `R ⊗ (β →₀ R)` with `β →₀ R`, the coefficient of `b` in the image of `t` under `g ⊗ 1` is the sum
 over `a` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `a`. -/
-theorem lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R) (t : (α →₀ R) ⊗[R] (β →₀ R))
-    (b : β) :
+theorem finsuppTensorFinsupp'_lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) :
     TensorProduct.lid R (β →₀ R) (g.rTensor (β →₀ R) t) b =
       ∑ a, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single a 1) := by
   induction t with
@@ -143,8 +144,8 @@ theorem lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R) (t : (α 
 /-- **The coefficients of `(1 ⊗ g) t` for a linear form `g`.** Under the identification of
 `(α →₀ R) ⊗ R` with `α →₀ R`, the coefficient of `a` in the image of `t` under `1 ⊗ g` is the sum
 over `b` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `b`. -/
-theorem rid_lTensor_apply [Fintype β] (g : (β →₀ R) →ₗ[R] R) (t : (α →₀ R) ⊗[R] (β →₀ R))
-    (a : α) :
+theorem finsuppTensorFinsupp'_rid_lTensor_apply [Fintype β] (g : (β →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) :
     TensorProduct.rid R (α →₀ R) (g.lTensor (α →₀ R) t) a =
       ∑ b, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single b 1) := by
   induction t with

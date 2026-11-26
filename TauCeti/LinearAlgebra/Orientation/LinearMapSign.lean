@@ -152,11 +152,11 @@ dimension of the target. -/
 theorem linearMapSign_units_smul_right (hι : Fintype.card ι = finrank R W) (u : ℤˣ) :
     linearMapSign o (Units.map (Int.castRingHom R).toMonoidHom u • o') L =
       u * linearMapSign o o' L := by
+  rw [intCast_units_smul_eq_ite]
   rcases Int.units_eq_one_or u with rfl | rfl
-  · rw [map_one, one_smul, Units.val_one, one_mul]
-  · rw [show Units.map (Int.castRingHom R).toMonoidHom (-1) = -1 from Units.ext (by simp),
-      Module.Ray.neg_units_smul, one_smul, linearMapSign_neg_right hι, Units.val_neg,
-      Units.val_one, neg_one_mul]
+  · rw [ite_eq_left rfl, Units.val_one, one_mul]
+  · rw [ite_eq_right (by decide), linearMapSign_neg_right hι, Units.val_neg, Units.val_one,
+      neg_one_mul]
 
 omit [Fintype ι] in
 /-- **A positive multiple has the same sign**: a positive homothety of the target preserves every

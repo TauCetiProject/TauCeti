@@ -38,8 +38,9 @@ second leaf of index `0` (`TauCeti.IsAdaptedPseudoGradient.morseYSign_of_morseIn
 manifolds of distinct critical points are disjoint. So if no point of the intersection
 `W^u_{X₀}(p) ∩ W^s_{X₂}(r)`, for `ind p = ind r`, flows to a critical point of `f₁` of positive
 index, that intersection is the disjoint union of the Y-slices `W^u_{X₀}(p) ∩ W^s_{X₁}(m) ∩
-W^s_{X₂}(r)` over the critical points `m` of `f₁` of index `0`. For Morse–Smale data this is what
-the dimension count `ind p - ind c - ind r < 0` gives at a critical point `c` of positive index.
+W^s_{X₂}(r)` over the critical points `m` of `f₁` of index `0`. If the triple `(X₀, X₁, X₂)` is
+transverse, the dimension count `ind p - ind c - ind r < 0` makes the Y-slices at a critical point
+`c` of positive index empty; this is not derived here.
 Counting with signs,
 
 `∑ₘ ε(m) Δ(p)_{m, r} = #_± (W^u_{X₀}(p) ∩ W^s_{X₂}(r))`
@@ -125,6 +126,7 @@ theorem morseYSign_of_morseIndex_eq_zero_left (hq : manifoldMorseIndex 𝓘(ℝ,
   let e : ({i // φr.weight i < 0} → ℝ) ≃ₗ[ℝ]
       ({i // φq.weight i < 0} → ℝ) × ({i // φr.weight i < 0} → ℝ) :=
     LinearEquiv.uniqueProd.symm
+  have he : ∀ w, e w = (0, w) := fun _ ↦ Prod.ext (Subsingleton.elim _ _) (by simp [e])
   have h := Orientation.linearMapSign_map_map (o := o₀)
     (o' := Orientation.reindex ℝ _ (finCongr hpr.symm) o₂)
     (L := (hX₀.pairComparison hX₂ φp φr y).toLinearMap)
@@ -132,8 +134,7 @@ theorem morseYSign_of_morseIndex_eq_zero_left (hq : manifoldMorseIndex 𝓘(ℝ,
     fun v ↦ Prod.ext (Subsingleton.elim _ _) (by simp [e])
   rw [Orientation.map_refl, Equiv.refl_apply] at h
   rw [morseYSign_def, Orientation.reindex_prod_of_left_eq_zero o₁ o₂
-      φq.finrank_negativeWeight_fun φr.finrank_negativeWeight_fun hpqr.symm hpr.symm e
-      fun _ ↦ Prod.ext (Subsingleton.elim _ _) (by simp [e]),
+      φq.finrank_negativeWeight_fun φr.finrank_negativeWeight_fun hpqr.symm hpr.symm e he,
     Orientation.linearMapSign_units_smul_right (by
       rw [Fintype.card_fin, Module.finrank_prod, φq.finrank_negativeWeight_fun,
         φr.finrank_negativeWeight_fun, hpqr]), h, pairSign_def]
@@ -155,6 +156,7 @@ theorem morseYSign_of_morseIndex_eq_zero_right (hr : manifoldMorseIndex 𝓘(ℝ
   let e : ({i // φq.weight i < 0} → ℝ) ≃ₗ[ℝ]
       ({i // φq.weight i < 0} → ℝ) × ({i // φr.weight i < 0} → ℝ) :=
     LinearEquiv.prodUnique.symm
+  have he : ∀ v, e v = (v, 0) := fun _ ↦ Prod.ext (by simp [e]) (Subsingleton.elim _ _)
   have h := Orientation.linearMapSign_map_map (o := o₀)
     (o' := Orientation.reindex ℝ _ (finCongr hpq.symm) o₁)
     (L := (hX₀.pairComparison hX₁ φp φq y).toLinearMap)
@@ -162,8 +164,7 @@ theorem morseYSign_of_morseIndex_eq_zero_right (hr : manifoldMorseIndex 𝓘(ℝ
     fun v ↦ Prod.ext (by simp [e]) (Subsingleton.elim _ _)
   rw [Orientation.map_refl, Equiv.refl_apply] at h
   rw [morseYSign_def, Orientation.reindex_prod_of_right_eq_zero o₁ o₂
-      φq.finrank_negativeWeight_fun φr.finrank_negativeWeight_fun hpqr.symm hpq.symm e
-      fun _ ↦ Prod.ext (by simp [e]) (Subsingleton.elim _ _),
+      φq.finrank_negativeWeight_fun φr.finrank_negativeWeight_fun hpqr.symm hpq.symm e he,
     Orientation.linearMapSign_units_smul_right (by
       rw [Fintype.card_fin, Module.finrank_prod, φq.finrank_negativeWeight_fun,
         φr.finrank_negativeWeight_fun, hpqr]), h, pairSign_def]
@@ -245,8 +246,8 @@ theorem finsum_augmentationSign_mul_signedMorseDiagonalCoeff (hf₁ : IsMorse �
     -- sign for the pair `(X₀, X₂)`, and the two augmentation signs cancel.
     rw [signedMorseDiagonalCoeff_eq_signedMorseYCount hpmr, signedMorseYCount_def,
       finsum_mem_congr rfl fun y _ ↦ morseYSign_of_morseIndex_eq_zero_left hm y,
-      ← mul_finsum_mem, 𝔬₁.augmentationSign_of_morseIndex_eq_zero hm, ← mul_assoc,
-      ← Units.val_mul, Int.units_mul_self, Units.val_one, one_mul, hslice]
+      ← mul_finsum_mem, 𝔬₁.augmentationSign_of_morseIndex_eq_zero hm, hslice]
+    simp [← mul_assoc]
   · rw [signedPairCoeff_eq_zero_of_morseIndex_ne hpr]
     refine finsum_mem_eq_zero_of_forall_eq_zero fun m (hm : _ = 0) ↦ ?_
     rw [signedMorseDiagonalCoeff_eq_zero_of_manifoldMorseIndex_ne (by omega), mul_zero]
@@ -289,8 +290,8 @@ theorem finsum_augmentationSign_mul_signedMorseDiagonalCoeff_right (hf₂ : IsMo
     -- sign for the pair `(X₀, X₁)`, and the two augmentation signs cancel.
     rw [signedMorseDiagonalCoeff_eq_signedMorseYCount hpqm, signedMorseYCount_def,
       finsum_mem_congr rfl fun y _ ↦ morseYSign_of_morseIndex_eq_zero_right hm y,
-      ← mul_finsum_mem, 𝔬₂.augmentationSign_of_morseIndex_eq_zero hm, ← mul_assoc,
-      ← Units.val_mul, Int.units_mul_self, Units.val_one, one_mul, hslice]
+      ← mul_finsum_mem, 𝔬₂.augmentationSign_of_morseIndex_eq_zero hm, hslice]
+    simp [← mul_assoc]
   · rw [signedPairCoeff_eq_zero_of_morseIndex_ne hpq]
     refine finsum_mem_eq_zero_of_forall_eq_zero fun m (hm : _ = 0) ↦ ?_
     rw [signedMorseDiagonalCoeff_eq_zero_of_manifoldMorseIndex_ne (by omega), mul_zero]
@@ -318,7 +319,8 @@ theorem lid_comp_rTensor_signedMorseAugmentation_comp_signedMorseDiagonalMap
   have := hf₁.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₁)
   refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun r ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, lid_rTensor_apply,
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    finsuppTensorFinsupp'_lid_rTensor_apply,
     signedPairMap_single_apply,
     ← finsum_augmentationSign_mul_signedMorseDiagonalCoeff (𝔬₁ := 𝔬₁) hf₁ p r (hfin p r)
       (hempty p r),
@@ -349,7 +351,8 @@ theorem rid_comp_lTensor_signedMorseAugmentation_comp_signedMorseDiagonalMap
   have := hf₂.finite_criticalPoints.to_subtype
   have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₂)
   refine Finsupp.lhom_ext fun p a ↦ Finsupp.ext fun q ↦ ?_
-  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe, rid_lTensor_apply,
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    finsuppTensorFinsupp'_rid_lTensor_apply,
     signedPairMap_single_apply,
     ← finsum_augmentationSign_mul_signedMorseDiagonalCoeff_right (𝔬₂ := 𝔬₂) hf₂ p q
       (hfin p q) (hempty p q),
