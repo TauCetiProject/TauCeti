@@ -32,8 +32,9 @@ sesquilinear, so the `H_ω`-orthonormal family `b` is complex linearly independe
 (`linearIndependent_smul`). On this basis `ω` is in standard symplectic form, `ω(bᵢ, bⱼ) = 0`,
 `ω(bᵢ, i bⱼ) = δᵢⱼ` and `ω(i bᵢ, i bⱼ) = 0`, so both sides take the value
 `(m + 1)! · ∑ᵢ α(bᵢ, i bᵢ)` there
-(`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv`), and two forms of top
-degree that agree on a basis are equal.
+(`ContinuousAlternatingMap.pairedWedge_wedgePow_apply_finProdFinEquiv` and
+`ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`), and two forms of top degree that
+agree on a basis are equal.
 
 This is the statement of `TauCeti.AlmostComplexStructure.nsmul_wedge_wedgePow_ofComplexModule`
 without an inner product on `E`: the reference form `ω` is arbitrary, as on a Hermitian manifold,
@@ -103,15 +104,13 @@ theorem nsmul_pairedWedge_wedgePow_eq_sum_smul {m : ℕ} (hm : finrank ℂ E = m
       (ω.wedgePow m) α B = m.factorial * ∑ i, α ![b i, I • b i] := by
     rw [hB]
     exact pairedWedge_wedgePow_apply_finProdFinEquiv ω α f h₀₀ h₀₁ h₁₁
-  have e₂ : ω.wedgePow (m + 1) B = m.factorial * (m + 1) := by
-    rw [wedgePow_succ, hB]
-    refine (pairedWedge_wedgePow_apply_finProdFinEquiv ω ω f h₀₀ h₀₁ h₁₁).trans ?_
-    have h1 (i : Fin (m + 1)) : ω ![b i, I • b i] = 1 := by simpa [f] using h₀₁ i i
-    simp [f, h1]
+  have e₂ : ω.wedgePow (m + 1) B = (m + 1).factorial := by
+    rw [hB]
+    exact wedgePow_apply_finProdFinEquiv ω f h₀₀ h₀₁
   ext v
   rw [ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
     apply_eq_det_mul _ B v, apply_eq_det_mul (ω.wedgePow (m + 1)) B v, e₁, e₂, smul_eq_mul,
-    smul_eq_mul]
+    smul_eq_mul, Nat.factorial_succ]
   push_cast
   ring
 
