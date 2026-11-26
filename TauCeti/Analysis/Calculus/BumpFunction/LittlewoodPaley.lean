@@ -70,7 +70,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   (`ContDiffBump.hasSum_sq_littlewoodPaley`), positive
   (`ContDiffBump.sumSqLittlewoodPaley_pos`) and smooth
   (`ContDiffBump.contDiffAt_sumSqLittlewoodPaley`) away from the origin, and invariant under the
-  dilations by powers of `2` (`ContDiffBump.sumSqLittlewoodPaley_two_zpow_inv_smul`).
+  dilations by powers of `2` (`ContDiffBump.sumSqLittlewoodPaley_two_zpow_inv_smul`), which shift
+  the cutoffs (`ContDiffBump.littlewoodPaley_two_zpow_inv_smul`).
 * `ContDiffBump.exists_littlewoodPaley_pos`: on a nontrivial space each cutoff `ψⱼ` takes a
   positive value.
 * `ContDiffBump.hasTemperateGrowth_littlewoodPaley`: each cutoff is a Fourier multiplier.
@@ -451,14 +452,16 @@ theorem contDiffAt_sumSqLittlewoodPaley {n : ℕ∞} {ξ₀ : E} (hξ₀ : ξ₀
   exact (ContDiff.contDiffAt (ContDiff.sum fun j _ ↦ (φ.contDiff_littlewoodPaley j).pow 2)
     ).congr_of_eventuallyEq (hs.mono fun ξ hξ ↦ φ.sumSqLittlewoodPaley_eq_sum hξ)
 
+/-- Dilating by `2^l` shifts the cutoffs by `l`: `ψⱼ (2^{-l} ξ) = ψ_{j+l} ξ`. -/
+theorem littlewoodPaley_two_zpow_inv_smul (j l : ℤ) (ξ : E) :
+    φ.littlewoodPaley j (((2 : ℝ) ^ l)⁻¹ • ξ) = φ.littlewoodPaley (j + l) ξ := by
+  rw [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply, smul_smul, ← mul_inv,
+    ← zpow_add₀ two_ne_zero, ← φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
+
 /-- `Ψ` is invariant under the dilations by powers of `2`. -/
 theorem sumSqLittlewoodPaley_two_zpow_inv_smul (l : ℤ) (ξ : E) :
     φ.sumSqLittlewoodPaley (((2 : ℝ) ^ l)⁻¹ • ξ) = φ.sumSqLittlewoodPaley ξ := by
-  have h (j : ℤ) :
-      φ.littlewoodPaley j (((2 : ℝ) ^ l)⁻¹ • ξ) = φ.littlewoodPaley (j + l) ξ := by
-    rw [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply, smul_smul, ← mul_inv,
-      ← zpow_add₀ two_ne_zero, ← φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply]
-  simp only [sumSqLittlewoodPaley, h]
+  simp only [sumSqLittlewoodPaley, φ.littlewoodPaley_two_zpow_inv_smul]
   exact (Equiv.addRight l).tsum_eq fun j ↦ φ.littlewoodPaley j ξ ^ 2
 
 /-! ### The inhomogeneous partition -/

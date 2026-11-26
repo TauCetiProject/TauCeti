@@ -165,7 +165,7 @@ on the whole time line for every `k ∈ ℤ`, then `s` is the scaling-critical r
 homogeneous estimate `‖W₊(t) f‖_{L^q_t L^r_x} ≤ C N f` constrains `s` when `N` is homogeneous of
 degree `-s` under the dyadic dilations, `N (D_{2^k} f) = 2^{-ks} N f`, and `N f₀ = B`: the left side
 scales like `2^{k(n/r - n/2 + 1/q)}` and is positive, since `W₊(t)` is unitary, so the two powers
-must agree. This is the case `k = 1` of
+must agree. This is the case of a phase homogeneous of degree `1` in
 `TauCeti.eq_of_eLpNorm_eLpNorm_phasePropagator_dilateLp_le`. -/
 theorem eq_of_eLpNorm_eLpNorm_halfWavePropagator_dilateLp_le {q r : ℝ≥0∞} (hq : q ≠ 0)
     (hr : r ≠ 0) {s : ℝ} {f₀ : Lp F 2 (volume : Measure E)} (hf₀ : f₀ ≠ 0) {B : ℝ≥0∞}

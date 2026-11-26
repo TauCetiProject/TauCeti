@@ -59,9 +59,7 @@ theorem fourierMultiplierCLM_littlewoodPaley_dilateLp_two_zpow
     refine Lp.ext ?_
     filter_upwards [Measure.coeFn_dilateLp_top_of_ae_eq (𝕜 := ℝ) (zpow_pos two_pos k) (hm j),
       hm (j + k)] with ξ h₁ h₂
-    rw [h₁, h₂, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j,
-      φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply (j + k), smul_smul, ← mul_inv,
-      ← zpow_add₀ two_ne_zero]
+    rw [h₁, h₂, φ.littlewoodPaley_two_zpow_inv_smul]
   rw [Lp.fourierMultiplierCLM_dilateLp, hsym]
 
 /-- Each weighted block `2^{js} ‖Pⱼ (D_{2^k} f)‖₂` is `2^{-ks}` times the weighted block
