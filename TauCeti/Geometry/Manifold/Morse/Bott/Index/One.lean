@@ -84,7 +84,7 @@ variable {E S : Type u} {H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace S] [ChartedSpace H' S] [IsManifold J 1 S] {f : M → ℝ} {n : ℕ∞ω}
   {i : SmoothEmbedding J I n S M} (hn : n ≠ 0) [I.Boundaryless] [IsManifold I 2 M]
   (h : i.IsCriticalSubmanifold f) {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-  [FiniteDimensional ℝ P] (g : RiemannianMetric fun s ↦ i.NormalSpace s hn) {ε : ℝ}
+  [FiniteDimensional ℝ P] (g : RiemannianMetric fun s ↦ i.isImmersion.NormalSpace s hn) {ε : ℝ}
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
 
 /-- **The homology of the negative disc bundle of a negative normal line bundle.** Let `i` be a
@@ -141,7 +141,7 @@ variable {E M S : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   (hdim : finrank ℝ P = finrank ℝ E - finrank ℝ E')
   (g : letI := i.normalSpaceFiberBundle hn hdim
     letI := i.normalSpaceVectorBundle hn hdim
-    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn)
+    ContMDiffRiemannianMetric J ∞ P fun s ↦ i.isImmersion.NormalSpace s hn)
 
 include h hfs hc hac hcb hcompact hcrit in
 /-- **Across a Morse–Bott level of index one, the relative homology is the homology of the

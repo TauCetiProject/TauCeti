@@ -51,6 +51,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   the same elements number `|C_G(g)| * #(H ∩ [g])`.
 * `Subgroup.natCard_fixedBy_mul_natCard`: the fixed-coset identity
   `#(G ⧸ H)^g · |H| = |C_G(g)| · #(H ∩ [g])`.
+* `QuotientGroup.smul_eq_mk_mul`: for `N` normal, `G` acts on `G ⧸ N` by left multiplication
+  through `G → G ⧸ N`.
 * `TauCeti.smul_quotient_eq_self_of_mem`: an element of a normal subgroup fixes every coset.
 * `TauCeti.quotientBot_equivariant`: `QuotientGroup.quotientBot` intertwines left translation on
   `G ⧸ ⊥` with left translation in `G`.
@@ -70,6 +72,9 @@ For a finite group, a sum can also be split over the left or right cosets of a s
 * `QuotientGroup.mk_inv_eq_self_of_sq_mem`: the class of `s` is its own inverse when `s ^ 2`
   lies in the normal subgroup.
 * `QuotientAddGroup.congr_mk`: the additive form of Mathlib's `QuotientGroup.congr_mk`.
+* `QuotientGroup.image_mk_eq_univ_iff`: a set `K` meets every left coset of `Γ` exactly when
+  `K * Γ = G`.
+* `QuotientAddGroup.image_mk_eq_univ_iff`: the additive form, `K + Γ = G`.
 -/
 
 public section
@@ -84,6 +89,12 @@ attribute [simp] Subgroup.quotientEquivOfEq_mk
 namespace TauCeti
 
 variable {G : Type*} [Group G]
+
+/-- For `N` normal, the action of `G` on `G ⧸ N` is left multiplication through `G → G ⧸ N`. -/
+theorem _root_.QuotientGroup.smul_eq_mk_mul {N : Subgroup G} [N.Normal] (g : G) (q : G ⧸ N) :
+    g • q = (g : G ⧸ N) * q := by
+  induction q using QuotientGroup.induction_on
+  rw [MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.mk_mul]
 
 /-- An element of a normal subgroup `N` fixes every coset of `N`. -/
 @[simp]
@@ -344,3 +355,20 @@ theorem _root_.QuotientAddGroup.congr_mk {G H : Type*} [AddGroup G] [AddGroup H]
 attribute [to_additive existing] QuotientGroup.congr_mk
 
 end TauCeti
+
+namespace QuotientGroup
+
+open Set
+
+variable {G : Type*} [Group G] {Γ : Subgroup G}
+
+/-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
+@[to_additive /-- A set `K` meets every coset of `Γ` exactly when `K + Γ = G`. -/]
+theorem image_mk_eq_univ_iff {K : Set G} :
+    ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
+  rw [← preimage_image_mk_eq_mul]
+  refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := mk_surjective x
+  exact (h ▸ mem_univ g : g ∈ _)
+
+end QuotientGroup

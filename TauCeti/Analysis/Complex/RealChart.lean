@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
@@ -19,11 +20,13 @@ import TauCeti.Analysis.Normed.Operator.Prod
 # Maps of the complex plane in real coordinates
 
 A map `f : ℂ → ℂ` of the plane, read in the real coordinates `ℝ × ℝ ≃ ℂ` given by
-`Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`. When `f` has complex derivative
+`Complex.equivRealProdCLM`, is `TauCeti.Complex.realChart f`, which sends `(s, t)` to the real
+coordinates of `f (s + i t)` (`TauCeti.Complex.realChart_mk`). When `f` has complex derivative
 `f'`, the real derivative of its real chart is multiplication by `f'`
 (`TauCeti.Complex.hasFDerivAt_realChart`, `TauCeti.Complex.fderiv_realChart_apply`), whose real
 determinant is `|f'|²`, so the Jacobian determinant of the real chart is nonnegative
-(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`). By the
+(`TauCeti.Complex.det_fderiv_realChart`, `TauCeti.Complex.det_fderiv_realChart_nonneg`), and the
+real derivative is nonzero when `f'` is (`TauCeti.Complex.fderiv_realChart_ne_zero`). By the
 chain rule, the partial derivatives of `ξ ∘ realChart f` are those of `ξ` composed with the
 conformal matrix of `f'` (`TauCeti.Complex.fderiv_comp_realChart_apply_one_zero`,
 `TauCeti.Complex.fderiv_comp_realChart_apply_zero_one`), so the Jacobian times a weighted density
@@ -34,6 +37,11 @@ The real chart of an injective map is injective (`TauCeti.Complex.realChart_inje
 the real chart of a map injective on a set, on the corresponding set
 (`TauCeti.Complex.injOn_realChart`). The real chart maps the real coordinates of a set onto those
 of its image (`TauCeti.Complex.image_realChart_preimage`).
+Adding or subtracting a real number `c` is adding or subtracting `(c, 0)` in real coordinates
+(`TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero`,
+`TauCeti.Complex.equivRealProdCLM_symm_sub_prodMk_zero`). In real coordinates, every part
+`‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a` as large as desired
+(`TauCeti.exists_le_exp_lt_norm_subset`).
 -/
 
 public section
@@ -47,6 +55,11 @@ noncomputable def realChart (f : ℂ → ℂ) : ℝ × ℝ → ℝ × ℝ :=
 theorem realChart_apply (f : ℂ → ℂ) (z : ℝ × ℝ) :
     realChart f z = Complex.equivRealProdCLM (f (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- In real coordinates, `f` sends `(s, t)` to the real coordinates of `f (s + i t)`. -/
+theorem realChart_mk (f : ℂ → ℂ) (s t : ℝ) :
+    realChart f (s, t) = Complex.equivRealProdCLM (f (s + t * Complex.I)) := by
+  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply]
 
 /-- In complex coordinates, the real chart of `f` is `f`. -/
 @[simp]
@@ -92,6 +105,16 @@ theorem det_fderiv_realChart_nonneg {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ
     0 ≤ (fderiv ℝ (realChart f) w).det := by
   rw [det_fderiv_realChart hf]
   exact Complex.normSq_nonneg f'
+
+/-- In real coordinates, a map with nonzero complex derivative has nonzero derivative. -/
+theorem fderiv_realChart_ne_zero {f : ℂ → ℂ} {f' : ℂ} {w : ℝ × ℝ}
+    (hf : HasDerivAt f f' (Complex.equivRealProdCLM.symm w)) (hf' : f' ≠ 0) :
+    fderiv ℝ (realChart f) w ≠ 0 := by
+  intro h
+  have h₁ := congrArg (fun L ↦ L (Complex.equivRealProdCLM 1)) h
+  simp only [fderiv_realChart_apply hf, ContinuousLinearEquiv.symm_apply_apply, mul_one,
+    zero_apply, map_eq_zero_iff _ Complex.equivRealProdCLM.injective] at h₁
+  exact hf' h₁
 
 /-- **The chain rule along a real chart, along `(1, 0)`.** If `f` has complex derivative
 `f' = a + i b`, the derivative of `ξ ∘ realChart f` along `(1, 0)` is `a ∂₁ξ + b ∂₂ξ`, the partial
@@ -157,6 +180,16 @@ theorem realChart_injective {f : ℂ → ℂ} (hf : Function.Injective f) :
     Function.Injective (realChart f) :=
   Complex.equivRealProdCLM.injective.comp (hf.comp Complex.equivRealProdCLM.symm.injective)
 
+/-- In real coordinates, subtracting `(c, 0)` is subtracting the real number `c`. -/
+theorem equivRealProdCLM_symm_sub_prodMk_zero (z : ℝ × ℝ) (c : ℝ) :
+    Complex.equivRealProdCLM.symm (z - (c, 0)) = Complex.equivRealProdCLM.symm z - c := by
+  apply Complex.ext <;> simp
+
+/-- In real coordinates, adding `(c, 0)` is adding the real number `c`. -/
+theorem equivRealProdCLM_symm_add_prodMk_zero (z : ℝ × ℝ) (c : ℝ) :
+    Complex.equivRealProdCLM.symm (z + (c, 0)) = Complex.equivRealProdCLM.symm z + c := by
+  apply Complex.ext <;> simp
+
 /-- The real chart of a map injective on the image of `s` in `ℂ` is injective on `s`. -/
 theorem injOn_realChart {f : ℂ → ℂ} {s : Set (ℝ × ℝ)}
     (hf : Set.InjOn f (Complex.equivRealProdCLM.symm '' s)) : Set.InjOn (realChart f) s :=
@@ -174,3 +207,17 @@ theorem image_realChart_preimage (f : ℂ → ℂ) (s : Set ℂ) :
     Complex.equivRealProdCLM.image_eq_preimage_symm]
 
 end TauCeti.Complex
+
+namespace TauCeti
+
+/-- In the real coordinates of `ℂ`, every part `‖w‖ > r` of the plane contains a part
+`‖w‖ > exp (2πa)` with `a ≥ T₀`. -/
+theorem exists_le_exp_lt_norm_subset (T₀ r : ℝ) :
+    ∃ a : ℝ, T₀ ≤ a ∧
+      {z : ℝ × ℝ | Real.exp (2 * Real.pi * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+        {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
+  have h := Real.tendsto_exp_atTop.comp (Filter.tendsto_id.const_mul_atTop Real.two_pi_pos)
+  obtain ⟨a, ha, hr⟩ := ((Filter.eventually_ge_atTop T₀).and (h.eventually_ge_atTop r)).exists
+  exact ⟨a, ha, fun _ hz ↦ hr.trans_lt hz⟩
+
+end TauCeti

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Defs
 public import Mathlib.Algebra.Ring.Commute
 public import Mathlib.Algebra.Ring.Idempotent
+import Mathlib.Tactic.NoncommRing
 
 /-!
 # Spectral idempotents of an element with a commuting partial inverse
@@ -34,9 +36,14 @@ invertible modulo each of them (`C * wᵢ = wᵢ * C = 1 - Eᵢ`), are equal
 * `Commute.mul_mul_mul_pow_of_pow_succ_mul_eq`,
   `Commute.mul_mul_pow_mul_of_pow_succ_mul_eq`: `C * (b * (C * b) ^ h) = (C * b) ^ h` and
   `b * (C * b) ^ h * C = (C * b) ^ h`.
+* `IsIdempotentElem.isUnit_add_mul_one_sub`: `E + C * (1 - E)` is a unit when
+  `C * w = w * C = 1 - E`.
+* `IsIdempotentElem.isUnit_one_add_sub_one_smul`: `1 + (x - 1) • E` is a unit when `IsUnit x`.
 * `IsIdempotentElem.one_sub_eq_pow_mul_pow`: if `C ^ h * E = 0` and `C * w = w * C = 1 - E` for an
   idempotent `E`, then `1 - E = C ^ h * w ^ h`.
 * `IsIdempotentElem.eq_of_pow_mul_eq_zero`: uniqueness of the splitting.
+* `RingHom.map_mul_eq_one_sub_and_mul_eq_zero`, `RingHom.exists_mul_eq_one_sub_map`: transport of
+  a complementary inverse along a ring homomorphism.
 
 ## References
 
@@ -126,6 +133,21 @@ theorem isUnit_add_mul_one_sub (he : IsIdempotentElem E)
   · simp [mul_add, add_mul, he.eq, hEw, hcompE, hcompw]
   · simp [mul_add, add_mul, he.eq, hwE, hEcomp, hwcomp]
 
+/-- Scaling an idempotent block `E` by a unit `x` preserves invertibility:
+`1 + (x - 1) • E` is a unit with inverse `1 + (Ring.inverse x - 1) • E`. -/
+theorem isUnit_one_add_sub_one_smul {R : Type*} [Ring R] [Module R A]
+    [IsScalarTower R A A] [SMulCommClass R A A] (he : IsIdempotentElem E)
+    {x : R} (hx : IsUnit x) : IsUnit (1 + (x - 1) • E) := by
+  have hmul (a b : R) (hba : b * a = 1) : (1 + (a - 1) • E) * (1 + (b - 1) • E) = 1 := by
+    have hcoeff : a - 1 + (b - 1 + (b - 1) * (a - 1)) = 0 := by
+      calc a - 1 + (b - 1 + (b - 1) * (a - 1)) = b * a - 1 := by noncomm_ring
+        _ = 0 := sub_eq_zero.mpr hba
+    simp only [add_mul, mul_add, one_mul, mul_one, mul_smul_comm, smul_mul_assoc, smul_add,
+      smul_smul, he.eq, add_assoc]
+    simp only [← add_smul, hcoeff, zero_smul, add_zero]
+  exact isUnit_iff_exists.mpr ⟨1 + (Ring.inverse x - 1) • E,
+    hmul _ _ (Ring.inverse_mul_cancel _ hx), hmul _ _ (Ring.mul_inverse_cancel _ hx)⟩
+
 /-- Let `E` be an idempotent with `C ^ h * E = 0`, and let `w` invert `C` modulo `E`:
 `C * w = w * C = 1 - E`. Then `1 - E = C ^ h * w ^ h`. -/
 theorem one_sub_eq_pow_mul_pow (he : IsIdempotentElem E) (hz : C ^ h * E = 0)
@@ -161,3 +183,28 @@ theorem eq_of_pow_mul_eq_zero {E₁ E₂ w₁ w₂ : A} (he₁ : IsIdempotentEle
   rw [h₂, ← h₁]
 
 end IsIdempotentElem
+
+namespace RingHom
+
+/-- Transporting complementary-inverse equations along a ring homomorphism `Φ`. -/
+theorem map_mul_eq_one_sub_and_mul_eq_zero {A B : Type*} [Ring A] [Ring B] (Φ : A →+* B)
+    {C E w : A} {C' : B} (hC : Φ C = C')
+    (hw₁ : C * w = 1 - E) (hw₂ : w * C = 1 - E) (hw₃ : E * w = 0) (hw₄ : w * E = 0) :
+    C' * Φ w = 1 - Φ E ∧ Φ w * C' = 1 - Φ E ∧ Φ E * Φ w = 0 ∧ Φ w * Φ E = 0 :=
+  ⟨by rw [← hC, ← map_mul, hw₁, map_sub, map_one],
+   by rw [← hC, ← map_mul, hw₂, map_sub, map_one],
+   by rw [← map_mul, hw₃, map_zero],
+   by rw [← map_mul, hw₄, map_zero]⟩
+
+/-- Transporting an existential complementary inverse with a side predicate along a ring
+homomorphism `Φ`. -/
+theorem exists_mul_eq_one_sub_map {A B : Type*} [Ring A] [Ring B] (Φ : A →+* B)
+    {C E : A} {C' : B} (hC : Φ C = C') {P : A → Prop} {Q : B → Prop}
+    (hw : ∃ w : A, C * w = 1 - E ∧ w * C = 1 - E ∧ E * w = 0 ∧ w * E = 0 ∧ P w)
+    (hPQ : ∀ {v : A}, P v → Q (Φ v)) :
+    ∃ w' : B, C' * w' = 1 - Φ E ∧ w' * C' = 1 - Φ E ∧ Φ E * w' = 0 ∧ w' * Φ E = 0 ∧ Q w' := by
+  obtain ⟨w, hw₁, hw₂, hw₃, hw₄, hwP⟩ := hw
+  have h := Φ.map_mul_eq_one_sub_and_mul_eq_zero hC hw₁ hw₂ hw₃ hw₄
+  exact ⟨Φ w, h.1, h.2.1, h.2.2.1, h.2.2.2, hPQ hwP⟩
+
+end RingHom

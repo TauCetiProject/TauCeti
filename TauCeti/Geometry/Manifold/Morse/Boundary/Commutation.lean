@@ -43,7 +43,9 @@ trajectories at the two ends are evenly many in total
 (`TauCeti.morseBoundary_comp_morseContinuationMap_eq_iff`). The geometric half, that the broken
 continuation trajectories are the ends of the compactified one-dimensional spaces of continuation
 trajectories between critical points whose indices differ by one, needs the compactification and
-gluing of those spaces in the slab, and is not proved here.
+gluing of those spaces in the slab, and is not proved here; for a transverse continuation, the
+parity is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.ChainMap` through the
+broken configurations of a transported Morse–Smale pair.
 
 The continuation map preserves the Morse index, so it restricts to the graded chains
 (`TauCeti.morseContinuationMapAt`, `TauCeti.mapDomain_morseContinuationMapAt`); when it commutes

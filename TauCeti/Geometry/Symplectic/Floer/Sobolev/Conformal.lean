@@ -95,6 +95,15 @@ theorem floerConformalJetCoeff_apply (ω : SymplecticForm V) (ρ : ℝ × ℝ �
       v.2.1 + J z (u z) v.2.2 + (√(ρ z))⁻¹ • ω.floerLinearizationCoeff J Ks Kt u z v.1 :=
   firstOrderJetCoeff_apply _ _ v
 
+/-- The coefficient field on conformal jets at `z` depends on the Floer data `J`, `Ks`, `Kt` only
+through their values at `z`, as functions of the target point. -/
+theorem floerConformalJetCoeff_congr_data (ω : SymplecticForm V) (ρ : ℝ × ℝ → ℝ)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    {z : ℝ × ℝ} (hJ : J z = J' z) (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerConformalJetCoeff ρ J Ks Kt u z = ω.floerConformalJetCoeff ρ J' Ks' Kt' u z := by
+  rw [floerConformalJetCoeff_def, floerConformalJetCoeff_def,
+    ω.floerLinearizationCoeff_congr_data u hJ hKs hKt, hJ]
+
 /-- At a point where the weight is positive, the coefficient field applied to the jet
 `(√ρ ξ, ∂s ξ, ∂t ξ)` of a section `ξ` is the linearized Floer operator `D_u ξ`. -/
 @[simp]
@@ -171,6 +180,35 @@ theorem continuousOn_floerConformalJetCoeff (ω : SymplecticForm V) {U : Set (�
     ((hρ.continuousOn.continuousAt (hρ.isOpen.mem_nhds hz)).sqrt).inv₀
       (Real.sqrt_pos.2 (hρ.pos z hz)).ne'
   exact (continuousAt_firstOrderJetCoeff hJu (hρz.smul hA)).continuousWithinAt
+
+/-- **The coefficient field on conformal jets is bounded when the data are constant near
+infinity.** Let `ρ` be a conformal weight on the whole plane, and let the Floer data `J`, `K_s`,
+`K_t` be a fixed `J₀` and the zero perturbation on `‖w‖ ≥ T`, with `J` `C¹` and `K_s`, `K_t` `C²`
+along a `C¹` map `u`. Then the coefficient field of the linearized Floer operator on the conformal
+jets of `ρ` is essentially bounded on the plane: on `‖w‖ ≥ T` it is that of `∂s + J₀ ∂t`. -/
+theorem memLp_floerConformalJetCoeff_of_eq_base (ω : SymplecticForm V) {ρ : ℝ × ℝ → ℝ}
+    (hρ : IsWeight univ ρ) {J : ℝ × ℝ → V → V →L[ℝ] V} {J₀ : V →L[ℝ] V}
+    {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {T : ℝ}
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
+    (hJ : ∀ z, ContDiffAt ℝ 1 (uncurry J) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiff ℝ 1 u) :
+    MemLp (ω.floerConformalJetCoeff ρ J Ks Kt u) ∞ (volume.restrict univ) := by
+  have hcont := ω.continuousOn_floerConformalJetCoeff hρ (fun z _ ↦ hJ z) (fun z _ ↦ hKs z)
+    (fun z _ ↦ hKt z) hu.contDiffOn
+  -- On the compact square `‖w‖ ≤ T` the field is continuous, hence bounded.
+  obtain ⟨B, hB⟩ := (isCompact_closedBall (0 : ℝ × ℝ) T).exists_bound_of_continuousOn
+    (hcont.mono (subset_univ _))
+  refine memLp_top_of_bound (hcont.aestronglyMeasurable MeasurableSet.univ) (max B (1 + ‖J₀‖))
+    (Filter.Eventually.of_forall fun z ↦ ?_)
+  rcases le_or_gt ‖z‖ T with hz | hz
+  · exact (hB z (mem_closedBall_zero_iff.2 hz)).trans (le_max_left _ _)
+  -- Beyond the square the field is that of the Cauchy–Riemann operator of `J₀`.
+  refine le_max_of_le_right ((ω.norm_floerConformalJetCoeff_le _ _ _ _ _ z).trans_eq ?_)
+  rw [ω.floerLinearizationCoeff_eq_zero_of_eq_base u (hJ₀ z hz.le) (hKs₀ z hz.le)
+    (hKt₀ z hz.le), norm_zero, mul_zero, add_zero, hJ₀ z hz.le]
 
 variable (U : Set (ℝ × ℝ)) (ρ : ℝ × ℝ → ℝ)
 

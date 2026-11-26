@@ -31,6 +31,8 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
   ringed spaces with an isomorphism does not change its image.
 * `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
   immersion through an open immersion gives an open immersion.
+* `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.stalkRingEquiv`: an open immersion of
+  locally ringed spaces identifies the local rings of its source with those of its target.
 -/
 
 public section
@@ -95,5 +97,17 @@ instance IsOpenImmersion.isOpenImmersion_lift {X Y Z : LocallyRingedSpace.{u}}
   have := IsOpenImmersion.pullback_snd_isIso_of_range_subset f g H
   dsimp only [IsOpenImmersion.lift]
   infer_instance
+
+/-- An open immersion `f : X ⟶ Y` of locally ringed spaces identifies the local ring of `Y` at
+`f x` with the local ring of `X` at `x`. -/
+noncomputable def IsOpenImmersion.stalkRingEquiv {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] (x : X) : Y.presheaf.stalk (f.base x) ≃+* X.presheaf.stalk x :=
+  (asIso (f.stalkMap x)).commRingCatIsoToRingEquiv
+
+/-- The stalk ring equivalence of an open immersion is the stalk map of `f`. -/
+@[simp]
+theorem IsOpenImmersion.stalkRingEquiv_apply {X Y : LocallyRingedSpace.{u}} (f : X ⟶ Y)
+    [IsOpenImmersion f] (x : X) (a : Y.presheaf.stalk (f.base x)) :
+    IsOpenImmersion.stalkRingEquiv f x a = (f.stalkMap x).hom a := (rfl)
 
 end AlgebraicGeometry.LocallyRingedSpace

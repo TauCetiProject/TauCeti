@@ -25,12 +25,15 @@ trace `W1p.intervalTraceL`.
 The construction uses the weak fundamental theorem of calculus in
 `TauCeti.Analysis.Sobolev.WeakDeriv.Interval`, not smooth density, so it also applies at
 `p = ∞`. Bounds on the weak gradient give mean-value bounds on the representative, and
-integration by parts is stated for two Sobolev representatives.
+integration by parts is stated for two Sobolev representatives. By Hölder's inequality the
+representative is Hölder continuous of exponent `1 - 1/p`,
+`|u(t) - u(s)| ≤ |t - s|^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}` (`W1p.abs_intervalRepresentativeL_sub_le`),
+which is the Lipschitz bound at `p = ∞`.
 
 ## References
 
 * H. Brezis, *Functional Analysis, Sobolev Spaces and Partial Differential Equations*,
-  Theorems 8.2 and 8.3.
+  Theorems 8.2 and 8.3, and the proof of Theorem 8.8 (the Hölder estimate).
 * G. Leoni, *A First Course in Sobolev Spaces*, Theorem 7.13.
 -/
 
@@ -180,12 +183,10 @@ theorem intervalRepresentativeL_injective (hab : a < b) :
 theorem intervalRepresentativeL_const (hab : a < b) (c : ℝ) :
     intervalRepresentativeL (p := p) hab (const c) = ContinuousMap.const (Icc a b) c := by
   apply (intervalRepresentativeL_eq_iff hab _ _).2
-  rw [value_const]
-  have h := Lp.coeFn_const p
-    (volume.restrict ((⟨Ioo a b, isOpen_Ioo⟩ : Opens ℝ) : Set ℝ)) c
+  have h := value_const_ae (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p) c
   simp only [Opens.coe_mk] at h ⊢
   filter_upwards [h] with t ht
-  simpa only [ContinuousMap.const_apply, Function.const_apply] using ht
+  simpa only [ContinuousMap.const_apply] using ht
 
 /-- An explicit bound for the supremum norm of the interval representative. At `p = ∞`,
 `1 / p.toReal` is interpreted as zero. -/
@@ -276,6 +277,32 @@ theorem intervalRepresentativeL_sub_le_mul_of_gradient_le (hab : a < b)
       exact (ae_restrict_iff' measurableSet_Ioo).2 hσ)
   rwa [intervalIntegral.integral_const, smul_eq_mul,
     integral_gradient_eq_intervalRepresentativeL_sub hab u s t] at h
+
+/-- **Hölder continuity of exponent `1 - 1/p`.** The continuous representative of
+`u ∈ W^{1,p}(a, b)` satisfies `|u(t) - u(s)| ≤ |t - s|^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}` for
+`s, t ∈ [a, b]`. At `p = ∞`, `1 / p.toReal` is zero and this is the Lipschitz bound. -/
+theorem abs_intervalRepresentativeL_sub_le (hab : a < b) (u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p)
+    (s t : Icc a b) :
+    |intervalRepresentativeL hab u t - intervalRepresentativeL hab u s| ≤
+      |(t : ℝ) - s| ^ (1 - 1 / p.toReal) * ‖gradient u‖ := by
+  wlog hst : (s : ℝ) ≤ t generalizing s t
+  · rw [abs_sub_comm, abs_sub_comm (t : ℝ)]
+    exact this t s (le_of_not_ge hst)
+  rw [abs_of_nonneg (sub_nonneg.2 hst)]
+  have hsub : volume.restrict (Ioo (s : ℝ) t) ≤ volume.restrict (Ioo a b) :=
+    Measure.restrict_mono (Ioo_subset_Ioo s.property.1 t.property.2) le_rfl
+  have hg : MemLp (gradient u) p (volume.restrict (Ioo (s : ℝ) t)) :=
+    (Lp.memLp (gradient u)).mono_measure hsub
+  rw [← setIntegral_Ioo_gradient_eq_intervalRepresentativeL_sub hab u hst, ← Real.norm_eq_abs]
+  refine (norm_integral_le_integral_norm _).trans
+    ((hg.integral_norm_le_mul_eLpNorm Fact.out).trans ?_)
+  have hm : (volume.restrict (Ioo (s : ℝ) t) univ ^ (1 - 1 / p.toReal)).toReal =
+      ((t : ℝ) - s) ^ (1 - 1 / p.toReal) := by
+    simp [← ENNReal.toReal_rpow, hst]
+  rw [hm, Lp.norm_def]
+  gcongr
+  · exact Lp.eLpNorm_ne_top _
+  · exact Ioo_subset_Ioo s.property.1 t.property.2
 
 /-- In the open interval the classical derivative of the representative agrees almost
 everywhere with the recorded weak gradient. -/

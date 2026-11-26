@@ -9,7 +9,11 @@ public import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Affine
+import Mathlib.Analysis.Calculus.FDeriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Linear
+import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -23,13 +27,16 @@ map is a real immersion at a point exactly when it is a complex one. For a holom
 of one variable, the real derivative is multiplication by the complex derivative, so the two have
 the same norm. An affine automorphism of a finite-dimensional space over `𝕜'` has, over `𝕜`, the
 invertible derivative given by its linear part; for instance, the automorphism `z ↦ a z + b` of
-`ℂ` with `a ≠ 0` has an invertible real derivative.
+`ℂ` with `a ≠ 0` has an invertible real derivative. Conversely, a continuous `𝕜`-linear map that
+commutes with `𝕜'`-scalars preserves differentiability over `𝕜'`.
 
 ## Main results
 
 * `DifferentiableAt.fderiv_restrictScalars_smul`: the derivative over `𝕜` is `𝕜'`-linear.
 * `DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv`: on the line `𝕜'`, it is
   multiplication by the derivative.
+* `TauCeti.deriv_slice_right_eq_fderiv_apply_zero_one`: the derivative over `𝕜'` of a
+  second-variable slice is the derivative over `𝕜` applied to `(0, 1)`.
 * `DifferentiableAt.norm_fderiv_restrictScalars_eq_norm_deriv`: on the line `𝕜'`, its norm is
   the norm of the derivative.
 * `DifferentiableAt.range_fderiv_restrictScalars`: the range of the derivative does not depend
@@ -39,6 +46,11 @@ invertible derivative given by its linear part; for instance, the automorphism `
   its scalar restriction to `𝕜` is, assuming only `LinearMap.CompatibleSMul`.
 * `AffineEquiv.hasFDerivAt_restrictScalars`: the derivative over `𝕜` of an affine automorphism over
   `𝕜'` is its linear part.
+* `ContinuousLinearMap.comp_differentiableOn_of_map_smul`: a continuous `𝕜`-linear map that
+  commutes with `𝕜'`-scalars sends maps differentiable over `𝕜'` to maps differentiable over `𝕜'`.
+* `ContinuousLinearMap.differentiableAt_comp_of_map_smul`: composing with a `𝕜`-linear map that
+  commutes with the scalars of `𝕜'` preserves differentiability over `𝕜'`.
+* `ContinuousLinearMap.deriv_comp_of_map_smul`: such a map commutes with derivatives over `𝕜'`.
 -/
 
 public section
@@ -62,6 +74,21 @@ theorem _root_.DifferentiableAt.fderiv_restrictScalars_smul (hi : Differentiable
 theorem _root_.DifferentiableAt.fderiv_restrictScalars_eq_smul_deriv {f : 𝕜' → E} {x : 𝕜'}
     (hf : DifferentiableAt 𝕜' f x) (v : 𝕜') : fderiv 𝕜 f x v = v • deriv f x := by
   rw [hf.fderiv_restrictScalars 𝕜, ContinuousLinearMap.coe_restrictScalars', fderiv_eq_smul_deriv]
+
+variable {𝕜} in
+/-- The derivative over `𝕜'` of the second-variable slice `w ↦ f (a, w)` of a map `f` on
+`X × 𝕜'` is the derivative of `f` over `𝕜` applied to `(0, 1)`. For a map `H : X × ℂ → G`
+holomorphic in its second variable, the complex derivative `deriv (fun w ↦ H (x, w)) z` is
+`fderiv ℝ H (x, z) (0, 1)`. -/
+theorem deriv_slice_right_eq_fderiv_apply_zero_one {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {f : X × 𝕜' → E} {a : X} {z : 𝕜'} (hf : DifferentiableAt 𝕜 f (a, z))
+    (hz : DifferentiableAt 𝕜' (fun w ↦ f (a, w)) z) :
+    deriv (fun w ↦ f (a, w)) z = fderiv 𝕜 f (a, z) (0, 1) := by
+  have h : HasFDerivAt (fun w ↦ f (a, w))
+      ((fderiv 𝕜 f (a, z)).comp (ContinuousLinearMap.inr 𝕜 X 𝕜')) z :=
+    hf.hasFDerivAt.comp z (hasFDerivAt_prodMk_right a z)
+  rw [← one_smul 𝕜' (deriv _ z), ← hz.fderiv_restrictScalars_eq_smul_deriv 𝕜, h.fderiv]
+  simp
 
 /-- The derivative over `𝕜` of a map on `𝕜'` which is differentiable over `𝕜'` has the norm of
 its derivative. For a holomorphic `f : ℂ → E`, `‖fderiv ℝ f z‖ = ‖deriv f z‖`. -/
@@ -99,6 +126,32 @@ theorem _root_.AffineEquiv.hasFDerivAt_restrictScalars [CompleteSpace 𝕜'] [Fi
     at h
   exact h.congr_fderiv (by ext; simp [ContinuousAffineEquiv.toContinuousAffineMap_toAffineMap])
 
+/-- A continuous `𝕜`-linear map that commutes with the scalars of a larger field `𝕜'` is
+`𝕜'`-linear, so composing with it preserves differentiability over `𝕜'`. For instance, a
+real-linear map between complex normed spaces commuting with complex scalars preserves
+holomorphy. -/
+theorem _root_.ContinuousLinearMap.differentiableAt_comp_of_map_smul {𝕜 𝕜' V X Y : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup V]
+    [NormedSpace 𝕜' V] [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedSpace 𝕜' X]
+    [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedSpace 𝕜' Y] (T : X →L[𝕜] Y)
+    (hT : ∀ (c : 𝕜') (v : X), T (c • v) = c • T v) {f : V → X} {x : V}
+    (hf : DifferentiableAt 𝕜' f x) : DifferentiableAt 𝕜' (fun y ↦ T (f y)) x :=
+  (({ toFun := T, map_add' := T.map_add, map_smul' := hT, cont := T.continuous } :
+    X →L[𝕜'] Y).differentiableAt).comp x hf
+
+/-- A continuous `𝕜`-linear map that commutes with the scalars of a larger field `𝕜'` commutes
+with derivatives over `𝕜'`. For instance, a real-linear map between complex normed spaces
+commuting with complex scalars commutes with complex derivatives. -/
+theorem _root_.ContinuousLinearMap.deriv_comp_of_map_smul {𝕜 𝕜' X Y : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] [NormedSpace 𝕜' X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
+    [NormedSpace 𝕜' Y] (T : X →L[𝕜] Y) (hT : ∀ (c : 𝕜') (v : X), T (c • v) = c • T v)
+    {f : 𝕜' → X} {x : 𝕜'} (hf : DifferentiableAt 𝕜' f x) :
+    deriv (fun y ↦ T (f y)) x = T (deriv f x) :=
+  (HasFDerivAt.comp_hasDerivAt x
+    ({ toFun := T, map_add' := T.map_add, map_smul' := hT, cont := T.continuous } :
+      X →L[𝕜'] Y).hasFDerivAt hf.hasDerivAt).deriv
+
 end TauCeti
 
 namespace TauCeti
@@ -117,3 +170,16 @@ theorem hasFDerivAtFilter_restrictScalars_iff {f : E → F} {f' : E →L[𝕜'] 
   simp only [hasFDerivAtFilter_iff_isLittleO, ContinuousLinearMap.coe_restrictScalars']
 
 end TauCeti
+
+/-- A continuous `𝕜`-linear map `L` between spaces over a larger field `𝕜'` that commutes with
+`𝕜'`-scalars is `𝕜'`-linear, so it sends maps differentiable over `𝕜'` on a set to maps
+differentiable over `𝕜'` there. For instance, a real-linear map between complex spaces that
+commutes with complex scalars sends holomorphic maps to holomorphic maps. -/
+theorem ContinuousLinearMap.comp_differentiableOn_of_map_smul {𝕜 𝕜' V E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜'] [NormedAddCommGroup V]
+    [NormedSpace 𝕜' V] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedSpace 𝕜' E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedSpace 𝕜' F] (L : E →L[𝕜] F)
+    (hL : ∀ (c : 𝕜') (y : E), L (c • y) = c • L y) {f : V → E} {s : Set V}
+    (hf : DifferentiableOn 𝕜' f s) : DifferentiableOn 𝕜' (L ∘ f) s :=
+  ContinuousLinearMap.comp_differentiableOn
+    { toFun := L, map_add' := L.map_add, map_smul' := hL, cont := L.continuous } hf

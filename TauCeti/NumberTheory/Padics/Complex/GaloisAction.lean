@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.Galois.IsometricAction
-public import TauCeti.NumberTheory.Padics.AlgebraicClosure
+public import TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic
 public import TauCeti.Topology.Algebra.UniformMulAction
 
 /-!
@@ -16,9 +16,9 @@ Let `K` be a field between `ℚ_p` and its algebraic closure `PadicAlgCl p`, for
 extension of `ℚ_p` inside `PadicAlgCl p`, and let `G_K = Gal(PadicAlgCl p / K)` carry its Krull
 topology. Every element of `G_K` fixes `ℚ_p`, so it preserves the spectral norm of
 `PadicAlgCl p` (`AlgEquiv.norm_apply`): `G_K` acts on `PadicAlgCl p` by isometries
-(`PadicAlgCl.instIsIsometricSMul`, in `TauCeti.NumberTheory.Padics.AlgebraicClosure`). This file
-records the consequences for the completion `ℂ_p = PadicComplex p`, on which `σ ∈ G_K` acts by
-the extension `UniformSpace.Completion.map σ` of `σ` by continuity
+(`PadicAlgCl.instIsIsometricSMul`, in `TauCeti.NumberTheory.Padics.AlgebraicClosure.Basic`).
+This file records the consequences for the completion `ℂ_p = PadicComplex p`, on which
+`σ ∈ G_K` acts by the extension `UniformSpace.Completion.map σ` of `σ` by continuity
 (`UniformSpace.Completion.algEquiv_smul_def`).
 
 All of the following structure is then inferred from instances.

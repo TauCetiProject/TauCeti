@@ -338,6 +338,10 @@ theorem weightChar_add (μ ν : κ → ℤ) :
     weightChar R (μ + ν) = weightChar R μ * weightChar R ν :=
   MonoidHom.ext fun s ↦ torusCharacter_add s μ ν
 
+/-- Negating a weight inverts its character. -/
+theorem weightChar_neg (μ : κ → ℤ) : weightChar R (-μ) = (weightChar R μ)⁻¹ :=
+  MonoidHom.ext fun s ↦ torusCharacter_neg s μ
+
 /-- The character of `Pi.single c 1` is the `c`-th coordinate: this is the weight carried by the
 `c`-th basis vector of a weight basis. -/
 @[simp]

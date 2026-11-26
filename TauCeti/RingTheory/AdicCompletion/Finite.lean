@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.Noetherian
 public import TauCeti.RingTheory.AdicCompletion.Pi
+import Mathlib.RingTheory.Finiteness.Projective
 import TauCeti.RingTheory.AdicCompletion.Pow
 import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.Monogenic
@@ -38,8 +40,12 @@ their restrictions to the module.
   every submodule (`Submodule.isHausdorff`) and to every free module (`IsHausdorff.of_free`).
 * `IsPrecomplete.of_surjective`: adic precompleteness passes along a surjective linear map.
 * `IsPrecomplete.of_finite`: a finite module over an adically precomplete ring is precomplete.
+* `Module.Finite.of_finite_quotient_smul_top`: Nakayama's lemma for complete rings, an adically
+  separated module over an adically precomplete ring is finite once its reduction is.
 * `IsAdicComplete.of_finite`: a finite module over an adically complete Noetherian ring is
   complete.
+* `IsAdicComplete.of_finite_projective`: a finite projective module over an adically complete
+  ring is complete, without a Noetherian hypothesis.
 * `IsPrecomplete.of_finite_of_isLocalRing`: a finite local algebra over a precomplete local ring
   is precomplete at its own maximal ideal, without a Noetherian hypothesis.
 * `IsAdicComplete.of_finite_of_isLocalRing`: a finite local algebra over a complete Noetherian
@@ -92,11 +98,31 @@ theorem IsPrecomplete.of_finite [IsPrecomplete I R] [Module.Finite R M] : IsPrec
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
   exact IsPrecomplete.of_surjective I f hf
 
+/-- **Nakayama's lemma for adically complete rings**: an `I`-adically separated module over an
+`I`-adically precomplete ring is finite as soon as its reduction modulo `I` is. Lifting finitely
+many generators of `M ⧸ I • M` gives a map from a finite free module which is surjective modulo
+`I`, hence surjective (`surjective_of_mkQ_comp_surjective`). No Noetherian hypothesis is needed. -/
+theorem Module.Finite.of_finite_quotient_smul_top [IsPrecomplete I R] [IsHausdorff I M]
+    [Module.Finite R (M ⧸ (I • ⊤ : Submodule R M))] : Module.Finite R M := by
+  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R (M ⧸ (I • ⊤ : Submodule R M))
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property (I • ⊤ : Submodule R M).mkQ f
+    (Submodule.mkQ_surjective _)
+  have : IsPrecomplete I (Fin n → R) := .of_finite I _
+  exact .of_surjective g (surjective_of_mkQ_comp_surjective (I := I) (hg ▸ hf))
+
 /-- A finite module over an `I`-adically complete Noetherian ring is `I`-adically complete. -/
 theorem IsAdicComplete.of_finite [IsNoetherianRing R] [IsAdicComplete I R] [Module.Finite R M] :
     IsAdicComplete I M where
   toIsHausdorff := IsHausdorff.of_le_jacobson I M (IsAdicComplete.le_jacobson I)
   toIsPrecomplete := IsPrecomplete.of_finite I M
+
+/-- A finite projective module over an adically complete ring is complete, without a
+Noetherian hypothesis. -/
+theorem IsAdicComplete.of_finite_projective [IsAdicComplete I R] [Module.Finite R M]
+    [Module.Projective R M] : IsAdicComplete I M := by
+  obtain ⟨n, _, g, _, hg, _⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
+  exact { toIsHausdorff := IsHausdorff.of_injective I g hg
+          toIsPrecomplete := IsPrecomplete.of_finite I M }
 
 /-- A finite local algebra over a precomplete local ring is precomplete for its own maximal
 ideal, without a Noetherian hypothesis. The two maximal-ideal-adic filtrations are cofinal. -/

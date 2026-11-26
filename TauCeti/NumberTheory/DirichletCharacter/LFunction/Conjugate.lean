@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LSeries.Conjugate
-public import Mathlib.NumberTheory.LSeries.DirichletContinuation
+public import TauCeti.Analysis.Meromorphic.ZeroFree
+import TauCeti.Analysis.Meromorphic.Conj
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -20,8 +22,10 @@ not the totalized Dirichlet series outside its convergence half-plane.
 
 For quadratic characters this gives reflection of zeros across the real axis and reality at
 real arguments away from the possible principal-character pole at `1`, including the interval
-to its left used in real-zero estimates. We also give the reflection identity for derivatives
-and their real-axis specialization.
+to its left used in real-zero estimates. We also give the reflection identity for derivatives and
+their real-axis specialization.
+The order form `meromorphicOrderAt_LFunction_inv_conj` holds at every point, the pole included,
+and `zeroFreeRightOf_LFunction_inv_iff` transfers zero-free half-planes between `χ` and `χ⁻¹`.
 
 The continuation is Mathlib's `DirichletCharacter.LFunction`; coefficientwise reflection uses
 `TauCeti.LSeries.LSeries_star`.
@@ -78,6 +82,13 @@ theorem LFunction_inv_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
     exact congrFun (hleft.ext_on (dense_compl_singleton 1) hright
       (fun z hz ↦ LFunction_inv_conj_of_ne_one χ hz)) s
 
+/-- The conjugation identity solved for the inverse character: away from the possible pole `1`,
+`χ⁻¹.LFunction s` is `conj (χ.LFunction (conj s))`. -/
+private theorem LFunction_inv_eq_conj_LFunction_conj {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
+    χ⁻¹.LFunction s = conj (χ.LFunction (conj s)) := by
+  simpa only [conj_conj] using χ.LFunction_inv_conj (s := conj s)
+    (hs.imp_left (map_ne_one_iff _ (starRingEnd ℂ).injective).mpr)
+
 /-- Reflection interchanges the zeros of the continued L-functions of inverse characters. -/
 @[simp]
 theorem LFunction_inv_conj_eq_zero_iff (s : ℂ) :
@@ -94,26 +105,42 @@ theorem deriv_LFunction_inv_conj (s : ℂ) :
     deriv χ⁻¹.LFunction (conj s) = conj (deriv χ.LFunction s) := by
   by_cases hs : s = 1 ∧ χ = 1
   · obtain ⟨rfl, rfl⟩ := hs
-    have hnd : ¬ DifferentiableAt ℂ (LFunctionTrivChar N) 1 := by
-      intro hd
-      have h0 : Filter.Tendsto (fun z ↦ (z - 1) * LFunctionTrivChar N z) (𝓝[≠] 1) (𝓝 0) := by
-        have h := (((continuous_id.sub (continuous_const (y := (1 : ℂ)))).tendsto (1 : ℂ)).mul
-          hd.continuousAt.tendsto).mono_left (nhdsWithin_le_nhds (s := {1}ᶜ))
-        simpa using h
-      have h1 := tendsto_nhds_unique h0 (LFunctionTrivChar_residue_one (N := N))
-      exact LFunctionTrivChar₁_apply_one_ne_zero N (by simpa using h1.symm)
-    simp [deriv_zero_of_not_differentiableAt hnd]
+    simp [deriv_zero_of_not_differentiableAt TauCeti.not_differentiableAt_LFunctionTrivChar_one]
   have hs := not_and_or.mp hs
   have hloc : χ⁻¹.LFunction =ᶠ[𝓝 (conj s)] conj ∘ χ.LFunction ∘ conj := by
     rcases hs with hs | hχ
     · have hs' : conj s ≠ 1 := fun h ↦ hs (by simpa using congrArg conj h)
       filter_upwards [isOpen_compl_singleton.mem_nhds hs'] with z hz
-      have hz' : conj z ≠ 1 := fun h ↦ hz (by simpa using congrArg conj h)
-      simpa using LFunction_inv_conj χ (s := conj z) (.inl hz')
+      simpa only [Function.comp_apply] using χ.LFunction_inv_eq_conj_LFunction_conj (.inl hz)
     · filter_upwards [] with z
-      simpa using LFunction_inv_conj χ (s := conj z) (.inr hχ)
+      simpa only [Function.comp_apply] using χ.LFunction_inv_eq_conj_LFunction_conj (.inr hχ)
   rw [hloc.deriv_eq, deriv_conj_conj]
   simp
+
+/-- On a punctured neighbourhood of every point, `χ⁻¹.LFunction` is
+`conj ∘ χ.LFunction ∘ conj`. -/
+private theorem LFunction_inv_eventuallyEq_nhdsNE (s : ℂ) :
+    χ⁻¹.LFunction =ᶠ[𝓝[≠] s] conj ∘ χ.LFunction ∘ conj := by
+  filter_upwards [(eventually_cofinite_ne 1).filter_mono (nhdsNE_le_cofinite _)] with z hz
+  simpa only [Function.comp_apply] using χ.LFunction_inv_eq_conj_LFunction_conj (.inl hz)
+
+/-- The order of `χ⁻¹.LFunction` at `conj s` is the order of `χ.LFunction` at `s`, for every `s`,
+including the pole `1` of the principal character. This is the order form of
+`DirichletCharacter.LFunction_inv_conj`. -/
+@[simp]
+theorem meromorphicOrderAt_LFunction_inv_conj (s : ℂ) :
+    meromorphicOrderAt χ⁻¹.LFunction (conj s) = meromorphicOrderAt χ.LFunction s := by
+  rw [meromorphicOrderAt_congr (χ.LFunction_inv_eventuallyEq_nhdsNE (conj s)),
+    TauCeti.meromorphicOrderAt_conj_conj, conj_conj]
+
+/-- For every real `σ`, `χ⁻¹.LFunction` is zero-free right of `σ` exactly when `χ.LFunction` is:
+the two functions are conjugate off the possible pole `1`, and `TauCeti.ZeroFreeRightOf` depends
+only on punctured germs and is invariant under `f ↦ conj ∘ f ∘ conj`. -/
+@[simp]
+theorem zeroFreeRightOf_LFunction_inv_iff {σ : ℝ} :
+    TauCeti.ZeroFreeRightOf σ χ⁻¹.LFunction ↔ TauCeti.ZeroFreeRightOf σ χ.LFunction :=
+  (TauCeti.zeroFreeRightOf_congr fun s _ ↦ χ.LFunction_inv_eventuallyEq_nhdsNE s).trans
+    TauCeti.zeroFreeRightOf_conj_conj_iff
 
 variable {χ}
 

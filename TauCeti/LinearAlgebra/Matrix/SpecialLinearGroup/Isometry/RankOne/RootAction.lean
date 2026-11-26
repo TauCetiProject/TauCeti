@@ -126,11 +126,12 @@ theorem upperRootHom_smul_point (a : HeisenbergGroup.unitarySubgroup σ)
   fin_cases i <;> simp <;> ring
 
 /-- The orbit of `[0 : 0 : 1]` records the two free root parameters. -/
-theorem upperRootHom_smul_zero (a : HeisenbergGroup.unitarySubgroup σ) :
-    upperRootHom K σ a • point K σ ⟨(0, 0), by simp⟩ =
+@[simp]
+theorem upperRootHom_smul_origin (a : HeisenbergGroup.unitarySubgroup σ) :
+    upperRootHom K σ a • origin K σ =
       point K σ ⟨((a : HeisenbergGroup K).z, σ (a : HeisenbergGroup K).x), by
         simpa using HeisenbergGroup.unitarySubgroup.z_add_map_z a⟩ := by
-  rw [upperRootHom_smul_point]
+  rw [origin_eq_point, upperRootHom_smul_point]
   congr 1; simp
 
 /-- Away from infinity no nonidentity upper root element fixes a point. -/
@@ -158,22 +159,22 @@ include hσ
 
 /-- Every affine isotropic point is the image of `[0 : 0 : 1]` under a unique upper
 root element. -/
-theorem existsUnique_upperRootHom_smul_zero (p :
+theorem existsUnique_upperRootHom_smul_origin (p :
     (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ)
     (hp : p ≠ infinity K σ) :
     ∃! a : HeisenbergGroup.unitarySubgroup σ,
-      upperRootHom K σ a • point K σ ⟨(0, 0), by simp⟩ = p := by
+      upperRootHom K σ a • origin K σ = p := by
   obtain ⟨c, rfl⟩ := exists_point hp
   let a := HeisenbergGroup.unitaryMk σ hσ (σ c.val.2) c.val.1 (by
     simpa [hσ _] using c.property)
-  have ha : upperRootHom K σ a • point K σ ⟨(0, 0), by simp⟩ = point K σ c := by
-    rw [upperRootHom_smul_zero]
+  have ha : upperRootHom K σ a • origin K σ = point K σ c := by
+    rw [upperRootHom_smul_origin]
     apply point_inj.mpr
     apply Subtype.ext
     simp [a, hσ _]
   refine ⟨a, ha, ?_⟩
   intro b hb
-  rw [upperRootHom_smul_zero, point_inj] at hb
+  rw [upperRootHom_smul_origin, point_inj] at hb
   have hz := congrArg (fun c ↦ c.val.1) hb
   have hx := congrArg (fun c ↦ c.val.2) hb
   apply HeisenbergGroup.unitarySubgroup.ext
@@ -185,8 +186,8 @@ theorem existsUnique_upperRootHom_smul_eq (p q :
     (typeAGraphConjugator 2 K : Matrix (Fin 3) (Fin 3) K).isotropicPoints σ)
     (hp : p ≠ infinity K σ) (hq : q ≠ infinity K σ) :
     ∃! a : HeisenbergGroup.unitarySubgroup σ, upperRootHom K σ a • p = q := by
-  obtain ⟨b, hb, _⟩ := existsUnique_upperRootHom_smul_zero hσ p hp
-  obtain ⟨c, hc, hc_unique⟩ := existsUnique_upperRootHom_smul_zero hσ q hq
+  obtain ⟨b, hb, _⟩ := existsUnique_upperRootHom_smul_origin hσ p hp
+  obtain ⟨c, hc, hc_unique⟩ := existsUnique_upperRootHom_smul_origin hσ q hq
   refine ⟨c * b⁻¹, ?_, ?_⟩
   · simpa only [map_mul, map_inv, mul_smul, ← hb, inv_smul_smul] using hc
   · intro a ha

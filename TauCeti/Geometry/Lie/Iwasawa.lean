@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Lie.Subgroup.UpperUnitriangular
 public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.Instances.GeneralLinearGroup
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 

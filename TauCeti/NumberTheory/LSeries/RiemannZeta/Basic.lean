@@ -7,13 +7,15 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Complex
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
+public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.LSeries.SumCoeff
-import Mathlib.NumberTheory.Harmonic.ZetaAsymp
+import Mathlib.Analysis.PSeriesComplex
 import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.NumberTheory.LSeries.Linearity
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.Analysis.PSeries
 import TauCeti.NumberTheory.LSeries.Convergence
+import TauCeti.NumberTheory.LSeries.Positivity
 import TauCeti.NumberTheory.LSeries.SumCoeff
 
 /-!
@@ -47,13 +49,19 @@ Siegel's theorem on real zeros.
 * `TauCeti.hasSum_nat_add_one_rpow_neg_riemannZeta_re`: `∑ (n + 1) ^ (-s) = Re ζ(s)` for `s > 1`;
 * `TauCeti.hasSum_nat_rpow_neg_riemannZeta_re`: the same series indexed from `n = 0` with the
   vanishing term `0 ^ (-s)`;
+* `TauCeti.hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re`: the same series over the
+  positive integers, with the pole at `s = 1` split off as `(s - 1)⁻¹ + Re ζ₀(s)`;
 * `TauCeti.norm_riemannZeta_le`, `TauCeti.norm_riemannZeta_le_two`, and
   `TauCeti.riemannZeta_re_le_two`: `‖ζ(s)‖ ≤ Re ζ(Re s)` for `Re s > 1`, and `‖ζ(s)‖ ≤ 2` and
   `Re ζ(s) ≤ 2` for `Re s ≥ 2`;
+* `TauCeti.one_lt_riemannZeta_re` and `TauCeti.strictAntiOn_riemannZeta_re`: `1 < Re ζ(σ)` for
+  real `σ > 1`, and `σ ↦ Re ζ(σ)` is strictly decreasing on `(1, ∞)`.
 * `TauCeti.tendsto_sub_one_mul_riemannZeta_nhdsGT`: `(x - 1) ζ(x) → 1` as real `x → 1⁺`.
 * `TauCeti.measurable_riemannZeta`: the Riemann zeta function is measurable.
 * `TauCeti.LSeries_neg_one_pow_add_one_eq_mul_riemannZeta`: the alternating series
   `∑ (-1) ^ (n + 1) n⁻ˢ` is `(1 - 2 ^ (1 - s)) ζ(s)` for `Re s > 1`.
+* `TauCeti.hasSum_two_mul_add_one_cpow_neg_riemannZeta`: the odd terms `∑ (2 k + 1) ^ (-s)` of the
+  zeta series sum to `(1 - 2 ^ (-s)) ζ(s)` for `Re s > 1`.
 * `TauCeti.one_sub_two_cpow_mul_riemannZeta_eq_mul_integral`: the partial-summation integral of
   the alternating series represents `(1 - 2 ^ (1 - s)) ζ(s)` on `Re s > 0`, `s ≠ 1`.
 * `TauCeti.riemannZeta_lt_zero`: `ζ(σ)` is a negative real number for real `0 < σ < 1`.
@@ -102,6 +110,15 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
   simpa [Real.zero_rpow (by linarith : -s ≠ 0)] using
     hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
 
+/-- For real `s > 1`, the real series `∑_{m ≥ 1} m ^ (-s)` over the positive integers sums to
+`(s - 1)⁻¹ + Re ζ₀(s)`, the pole of `riemannZeta` at `1` split off with `riemannZeta₀`. -/
+theorem hasSum_pnat_rpow_neg_inv_sub_one_add_riemannZeta₀_re {s : ℝ} (hs : 1 < s) :
+    HasSum (fun m : ℕ+ ↦ (m : ℝ) ^ (-s)) ((s - 1)⁻¹ + (riemannZeta₀ s).re) := by
+  have h := hasSum_nat_add_one_rpow_neg_riemannZeta_re hs
+  rw [riemannZeta_eq_inv_sub_add (by exact_mod_cast hs.ne'), add_re, ← ofReal_one, ← ofReal_sub,
+    ← ofReal_inv, ofReal_re] at h
+  exact Equiv.pnatEquivNat.symm.hasSum_iff.mp (by simpa [Function.comp_def] using h)
+
 /-- On `Re s > 1`, `‖ζ(s)‖` is bounded by `Re ζ(Re s)`. -/
 theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
     ‖riemannZeta s‖ ≤ (riemannZeta s.re).re := by
@@ -114,6 +131,26 @@ theorem norm_riemannZeta_le {s : ℂ} (hs : 1 < s.re) :
       ← Real.rpow_neg (by positivity)]
   rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs, ← hsum.tsum_eq, ← hnorm]
   exact norm_tsum_le_tsum_norm (hnorm ▸ hsum.summable)
+
+/-- For real `σ > 1`, `1 < Re ζ(σ)`: the term `n = 1` of `∑ n ^ (-σ)` is `1` and the term `n = 2`
+is positive. -/
+theorem one_lt_riemannZeta_re {σ : ℝ} (hσ : 1 < σ) : 1 < (riemannZeta σ).re := by
+  have h := sum_le_hasSum ({0, 1} : Finset ℕ) (fun n _ ↦ by positivity)
+    (hasSum_nat_add_one_rpow_neg_riemannZeta_re hσ)
+  rw [Finset.sum_pair zero_ne_one] at h
+  have h2 : (0 : ℝ) < ((1 : ℕ) + 1 : ℝ) ^ (-σ) := by positivity
+  simp only [Nat.cast_zero, zero_add, Real.one_rpow] at h
+  linarith
+
+/-- `σ ↦ Re ζ(σ)` is strictly decreasing on `(1, ∞)`. -/
+theorem strictAntiOn_riemannZeta_re :
+    StrictAntiOn (fun σ : ℝ ↦ (riemannZeta σ).re) (Set.Ioi 1) := by
+  intro x (hx : 1 < x) y (hy : 1 < y) hxy
+  have h := LSeries.strictAntiOn_re_of_exists_pos (a := 1) (fun _ _ ↦ by simp)
+    ⟨2, le_rfl, by simp⟩ (LSeriesSummable_one_iff.mpr (by simpa using hx))
+    (LSeriesSummable_one_iff.mpr (by simpa using hy)) hxy
+  simpa only [LSeries_one_eq_riemannZeta (by simpa using hx : 1 < (x : ℂ).re),
+    LSeries_one_eq_riemannZeta (by simpa using hy : 1 < (y : ℂ).re)] using h
 
 /-- On `Re s ≥ 2`, `‖ζ(s)‖ ≤ 2`. -/
 theorem norm_riemannZeta_le_two {s : ℂ} (hs : 2 ≤ s.re) : ‖riemannZeta s‖ ≤ 2 := by
@@ -164,6 +201,32 @@ theorem LSeries_neg_one_pow_add_one_eq_mul_riemannZeta {s : ℂ} (hs : 1 < s.re)
     rw [sub_eq_add_neg, cpow_add _ _ two_ne_zero, cpow_one]
   rw [hχ, hL, hχζ, h2]
   ring
+
+/-- **The odd terms of the zeta series.** On `Re s > 1`, `∑ (2 k + 1) ^ (-s) = (1 - 2 ^ (-s)) ζ(s)`:
+the even terms `(2 (k + 1)) ^ (-s)` of `ζ(s) = ∑ (m + 1) ^ (-s)` contribute `2 ^ (-s) ζ(s)`. -/
+theorem hasSum_two_mul_add_one_cpow_neg_riemannZeta {s : ℂ} (hs : 1 < s.re) :
+    HasSum (fun k : ℕ ↦ (2 * (k : ℂ) + 1) ^ (-s)) ((1 - 2 ^ (-s)) * riemannZeta s) := by
+  -- `ζ(s) = ∑ (m + 1) ^ (-s)`, split into the terms with `m` even and `m` odd.
+  have hζ : HasSum (fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s)) (riemannZeta s) := by
+    have hsum : Summable fun m : ℕ ↦ ((m : ℂ) + 1) ^ (-s) := by
+      simpa [cpow_neg] using
+        (summable_nat_add_iff 1).mpr (Complex.summable_one_div_nat_cpow.mpr hs)
+    rw [zeta_eq_tsum_one_div_nat_add_one_cpow hs]
+    simpa [cpow_neg] using hsum.hasSum
+  have hodd : HasSum (fun k : ℕ ↦ (((2 * k + 1 : ℕ) : ℂ) + 1) ^ (-s))
+      ((2 : ℂ) ^ (-s) * riemannZeta s) := by
+    refine (hζ.mul_left _).congr_fun fun k ↦ ?_
+    have : (((2 * k + 1 : ℕ) : ℂ) + 1) = ((2 : ℝ) : ℂ) * ((k + 1 : ℝ) : ℂ) := by
+      push_cast; ring
+    rw [this, ofReal_mul_cpow (by norm_num)]
+    norm_num
+  have heven : HasSum (fun k : ℕ ↦ (((2 * k : ℕ) : ℂ) + 1) ^ (-s))
+      (∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s)) :=
+    (hζ.summable.comp_injective (mul_right_injective₀ two_ne_zero)).hasSum
+  have hE : ∑' k : ℕ, (((2 * k : ℕ) : ℂ) + 1) ^ (-s) = (1 - 2 ^ (-s)) * riemannZeta s := by
+    linear_combination (heven.even_add_odd hodd).unique hζ
+  rw [← hE]
+  simpa using heven
 
 /-- **Continuation of the alternating zeta series.** On `Re s > 0`, `s ≠ 1`, the function
 `(1 - 2 ^ (1 - s)) ζ(s)` is the partial-summation integral `s ∫_1^∞ A(t) t^(-s-1) dt` of the

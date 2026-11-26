@@ -13,8 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.Inequalities
 public import TauCeti.Geometry.Manifold.Morse.Polynomial
 public import TauCeti.Geometry.Manifold.Morse.Projectivization
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
-public import TauCeti.Geometry.Manifold.Morse.Torus
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+public import TauCeti.Geometry.Manifold.Morse.Torus.Basic
 
 /-!
 # Perfect Morse functions
@@ -205,8 +204,7 @@ coefficients, by the lacunary principle. -/
 theorem IsMorse.isPerfectMorse_of_even (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) :
     IsPerfectMorse I k f :=
-  hf.isPerfectMorse_of_forall_ne_add_one fun x hx y hy h ↦
-    Nat.even_add_one.1 (h ▸ heven x hx) (heven y hy)
+  hf.isPerfectMorse_of_forall_ne_add_one (forall_manifoldMorseIndex_ne_add_one_of_even heven)
 
 /-- **Odd Betti numbers vanish for a Morse function with only even indices.** On a compact
 manifold carrying a Morse function all of whose critical points have even index, the odd Betti
@@ -214,8 +212,8 @@ numbers vanish for every division ring of coefficients. -/
 theorem IsMorse.bettiNumber_eq_zero_of_odd (hf : IsMorse I f)
     (heven : ∀ x ∈ criticalPoints I f, Even (manifoldMorseIndex I f x)) {j : ℕ} (hj : Odd j) :
     bettiNumber k M j = 0 :=
-  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2 fun x hx hxj ↦
-    Nat.not_even_iff_odd.2 hj (hxj ▸ heven x hx)
+  ((hf.isPerfectMorse_of_even heven).bettiNumber_eq_zero_iff j).2
+    ((criticalCount_eq_zero_iff j).1 (criticalCount_eq_zero_of_odd heven hj))
 
 /-- **A Morse function is perfect exactly when its Morse polynomial vanishes.** If `Q` is the
 polynomial of the Morse polynomial identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` of a Morse function
@@ -302,13 +300,9 @@ function on `ℂℙⁿ` is a perfect Morse function for every division ring of c
 critical points all have even index. -/
 theorem isPerfectMorse_projectiveMomentFunction_complex (hw : Function.Injective w) (k : Type)
     [DivisionRing k] :
-    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) := by
-  refine (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one ?_
-  rw [criticalPoints_projectiveMomentFunction hw]
-  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-  rw [manifoldMorseIndex_projectiveMomentFunction, manifoldMorseIndex_projectiveMomentFunction,
-    Complex.finrank_real_complex]
-  omega
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℂ) k (projectiveMomentFunction ℂ w) :=
+  (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one
+    (manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one hw)
 
 /-- **The moment function on `ℝPⁿ` is perfect in characteristic two.** For pairwise distinct
 weights, the moment function on `ℝPⁿ` has one critical point of each index `0, …, n`, and it is a

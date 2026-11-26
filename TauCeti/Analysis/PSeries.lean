@@ -28,9 +28,9 @@ inequalities and none of them wants `π` in the goal.
 Nothing here is specific to any application, and the file contains no number theory. The `m = 0`
 term is `0`, by the junk value of `0 ^ (-t)`.
 
-The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`, and the summability over `ℤ` of
-the shifted weights `(1 + |n|) ^ r` for `r < -1`, the form in which the `p`-series enters
-weighted sequence spaces.
+The file also records the value `π ^ 2 / 3` of `∑_{n ∈ ℤ} n⁻²`. The summability over `ℤ` of the
+shifted weights `(1 + |n|) ^ r` for `r < -1` is in `TauCeti.Analysis.PSeries.Shifted`, which
+needs none of the zeta values used here.
 
 A weighted family of radii with finite sublevel sets also has summable reciprocal powers
 when its weighted counts grow at a smaller exponent. The proof partitions the radii into
@@ -40,7 +40,6 @@ dyadic annuli and compares their contributions with a geometric series.
 
 * `TauCeti.tsum_nat_rpow_neg_le_two` — `∑' m : ℕ, m ^ (-t) ≤ 2` for `2 ≤ t`.
 * `TauCeti.hasSum_int_inv_sq` — `∑_{n ∈ ℤ} n⁻² = π ^ 2 / 3`.
-* `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
 * `TauCeti.summable_norm_inv_natCast_add_one_zpow` — `∑ k : ℕ, ‖((k + 1) ^ n)⁻¹‖` converges in
@@ -83,16 +82,6 @@ theorem hasSum_int_inv_sq : HasSum (fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) (Real.
   convert HasSum.of_nat_of_neg (f := fun n : ℤ ↦ ((n : ℝ) ^ 2)⁻¹) h h' using 1
   simp only [Int.cast_zero, zero_pow two_ne_zero, inv_zero, sub_zero]
   ring
-
-/-- The weights `(1 + |n|) ^ r` are summable over `ℤ` for `r < -1`. -/
-theorem summable_one_add_abs_int_rpow {r : ℝ} (hr : r < -1) :
-    Summable fun n : ℤ ↦ (1 + |(n : ℝ)|) ^ r := by
-  refine Summable.of_norm_bounded_eventually (Real.summable_abs_int_rpow (b := -r) (by linarith))
-    ?_
-  filter_upwards [Filter.eventually_cofinite_ne 0] with n hn
-  rw [neg_neg, Real.norm_of_nonneg (by positivity)]
-  exact Real.rpow_le_rpow_of_nonpos (abs_pos.2 (Int.cast_ne_zero.2 hn))
-    (le_add_of_nonneg_left zero_le_one) (by linarith)
 
 open Filter Topology
 

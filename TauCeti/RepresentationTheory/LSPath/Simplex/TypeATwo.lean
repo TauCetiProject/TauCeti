@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Perm.FinThree.ChainComplex
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA.MinimalCosetRep
 public import TauCeti.RepresentationTheory.LSPath.Simplex.BruhatComplex
+import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 
 /-!
 # The `A₂` Bruhat-chain realization and its four maximal tetrahedra

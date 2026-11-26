@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Calculus.Morse.FlowExistence
 public import TauCeti.Dynamics.Flow.Stable
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Dynamics.Flow.Variational
 
 /-!
