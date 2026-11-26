@@ -70,9 +70,7 @@ example (ℓ : ℕ) [Fact ℓ.Prime] {a : ℤ_[ℓ]} (ha : a ≠ 0) :
     refine mul_right_cancel₀ ha ?_
     linear_combination h01
   rw [Matrix.det_fin_two, h10, h11, mul_zero, sub_zero, mul_assoc] at hdet
-  refine PadicInt.not_isUnit_iff.2 ?_ (isUnit_of_mul_isUnit_left hdet)
-  rw [PadicInt.norm_p]
-  exact inv_lt_one_of_one_lt₀ (by exact_mod_cast (Fact.out : ℓ.Prime).one_lt)
+  exact PadicInt.p_nonunit (isUnit_of_mul_isUnit_left hdet)
 
 -- Over `ℚ_ℓ` the two matrices are conjugate, by `diag(ℓ, 1)`.
 example (ℓ : ℕ) [Fact ℓ.Prime] (a : ℚ_[ℓ]) :
