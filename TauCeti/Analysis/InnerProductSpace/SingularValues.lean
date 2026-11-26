@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 
 /-!
 # Singular values, the two Gram spectra, and the singular system
@@ -355,7 +356,8 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   have hm : finrank 𝕜 E = m := by
     rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   rw [A.sq_singularValues_fin hm k,
-    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e.toBasis hμ
+      (by simpa using he)]
 
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
