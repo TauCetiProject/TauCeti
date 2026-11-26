@@ -203,6 +203,34 @@ end Set.powersetCard
 
 open Set.powersetCard
 
+namespace Finset
+
+/-- A product over the increasing triples `a < b < c` whose three-element set `{a, b, c}` lies in
+`S` equals the product over `S` whenever every member of `S` has cardinality `3`. -/
+@[to_additive /-- A sum over the increasing triples `a < b < c` whose three-element set `{a, b, c}`
+lies in `S` equals the sum over `S` whenever every member of `S` has cardinality `3`. -/]
+theorem prod_filter_lt_lt_mem {I M : Type*} [Fintype I] [LinearOrder I] [CommMonoid M]
+    (S : Finset (Finset I)) (hS : ∀ s ∈ S, #s = 3) (f : Finset I → M) :
+    (∏ p ∈ univ.filter (fun p : I × I × I =>
+        p.1 < p.2.1 ∧ p.2.1 < p.2.2 ∧ ({p.1, p.2.1, p.2.2} : Finset I) ∈ S),
+        f {p.1, p.2.1, p.2.2}) =
+      ∏ s ∈ S, f s := by
+  refine prod_bij (fun p _ => ({p.1, p.2.1, p.2.2} : Finset I))
+    (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_ (fun _ _ => rfl)
+  · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
+    obtain ⟨huv₁, hvw₁, _⟩ := (mem_filter.mp hp₁).2
+    obtain ⟨huv₂, hvw₂, _⟩ := (mem_filter.mp hp₂).2
+    exact congrArg Subtype.val
+      (ofLtTriple.injective
+        (a₁ := ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩) (a₂ := ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩)
+        (Subtype.ext <| (val_ofLtTriple ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩).trans
+          (htri.trans (val_ofLtTriple ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩).symm)))
+  · intro s hs
+    obtain ⟨u, v, w, huv, hvw, hval⟩ := exists_lt_lt_val_eq ⟨s, hS s hs⟩
+    exact ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, huv, hvw, hval ▸ hs⟩, hval.symm⟩
+
+end Finset
+
 namespace TauCeti
 
 variable {p N : ℕ}

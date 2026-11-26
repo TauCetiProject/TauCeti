@@ -49,12 +49,12 @@ On the complete two-complex `complete V`:
 Combining this bridge with Kozlov's cut-minimal staircase graphs `SimpleGraph.staircase` and the
 star lower bound proves Kozlov's theorem (`TauCeti.h1_complete_movedNorm_fin_two`): whenever
 `3 ≤ Fintype.card V` and `Fintype.card V` is not a power of two,
-`h1 (complete V) (Equiv.Perm.movedNorm (Fin 2)) = Fintype.card V / 3` (and in normalized form
-`Fintype.card V / (Fintype.card V - 2)`). Because the parity retraction applies in every nontrivial
-symmetric group, the same witness simultaneously establishes Beasley's non-power-of-two evaluation
-`h1 (complete V) (Equiv.Perm.movedNorm α) = Fintype.card V / 3` for every finite nontrivial `α`,
-and hence `h1Sym (complete V) = Fintype.card V / 3` whenever `Fintype.card V ≥ 3` is not a power of
-two.
+`h1 (complete V) (Equiv.Perm.movedNorm (Fin 2)) = Fintype.card V / 3`. Because the parity
+retraction applies in every nontrivial symmetric group, the same witness simultaneously establishes
+Beasley's non-power-of-two evaluation
+`h1 (complete V) (Equiv.Perm.movedNorm α) = Fintype.card V / 3` (and in normalized form
+`Fintype.card V / (Fintype.card V - 2)`) for every finite nontrivial `α`, and hence
+`h1Sym (complete V) = Fintype.card V / 3` whenever `Fintype.card V ≥ 3` is not a power of two.
 
 ## References
 
@@ -252,36 +252,11 @@ theorem defect_ofSimpleGraph_complete [Fintype V] [LinearOrder V] (ℓ : GroupNo
     (Γ : SimpleGraph V) [DecidableRel Γ.Adj] {g : G} (hg : g * g = 1) :
     (ofSimpleGraph (complete V) Γ hg).defect ℓ = ℓ g * (#Γ.oddTriangleFinset : ℝ) := by
   rw [defect_complete]
-  have hsum :
-      (∑ p ∈ univ.filter (fun p : V × V × V => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
-          ℓ ((ofSimpleGraph (complete V) Γ hg).holonomy p.1 p.2.1 p.2.2)) =
-        ∑ _ ∈ univ.filter (fun p : V × V × V =>
-            (p.1 < p.2.1 ∧ p.2.1 < p.2.2) ∧
-              ({p.1, p.2.1, p.2.2} : Finset V) ∈ Γ.oddTriangleFinset),
-          ℓ g := by
-    conv_rhs => rw [← filter_filter, sum_filter]
-    refine sum_congr rfl fun _ _ => ?_
-    rw [holonomy_ofSimpleGraph_complete]
-    split_ifs <;> simp
-  have hcard :
-      #{p : V × V × V | (p.1 < p.2.1 ∧ p.2.1 < p.2.2) ∧
-          ({p.1, p.2.1, p.2.2} : Finset V) ∈ Γ.oddTriangleFinset} =
-        #Γ.oddTriangleFinset := by
-    refine card_bij (fun p _ => ({p.1, p.2.1, p.2.2} : Finset V))
-      (fun p hp => (mem_filter.mp hp).2.2) ?_ ?_
-    · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
-      obtain ⟨⟨huv₁, hvw₁⟩, _⟩ := (mem_filter.mp hp₁).2
-      obtain ⟨⟨huv₂, hvw₂⟩, _⟩ := (mem_filter.mp hp₂).2
-      exact congrArg Subtype.val
-        (Set.powersetCard.ofLtTriple.injective
-          (a₁ := ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩) (a₂ := ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩)
-          (Subtype.ext <| (Set.powersetCard.val_ofLtTriple ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩).trans
-            (htri.trans (Set.powersetCard.val_ofLtTriple ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩).symm)))
-    · intro s hs
-      obtain ⟨u, v, w, huv, hvw, hval⟩ :=
-        Set.powersetCard.exists_lt_lt_val_eq ⟨s, (SimpleGraph.mem_oddTriangleFinset.mp hs).1⟩
-      exact ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, ⟨huv, hvw⟩, hval ▸ hs⟩, hval.symm⟩
-  rw [hsum, sum_const, hcard, nsmul_eq_mul, mul_comm]
+  simp only [holonomy_ofSimpleGraph_complete, apply_ite ℓ, map_one_eq_zero, ← sum_filter,
+    filter_filter, and_assoc]
+  rw [Γ.oddTriangleFinset.sum_filter_lt_lt_mem
+    (fun _ hs => (SimpleGraph.mem_oddTriangleFinset.mp hs).1) (fun _ => ℓ g),
+    sum_const, nsmul_eq_mul, mul_comm]
 
 /-- Acting on `ofSimpleGraph (complete V) Γ hg` by the `{1, g}`-valued gauge supported on `S`
 replaces `Γ` by its symmetric difference with the complete-graph cut `(S, Sᶜ)`. -/
@@ -666,15 +641,6 @@ theorem h1_complete_movedNorm_fin_two (hV : 3 ≤ Fintype.card V)
     (hpow : ¬ ∃ a : ℕ, Fintype.card V = 2 ^ a) :
     h1 (complete V) (Equiv.Perm.movedNorm (Fin 2)) = (Fintype.card V : ℝ) / 3 :=
   h1_complete_movedNorm_of_not_exists_two_pow hV hpow
-
-/-- **Kozlov's theorem** (normalized convention): when `3 ≤ Fintype.card V` and `Fintype.card V` is
-not a power of two, `h1Norm (complete V) (Equiv.Perm.movedNorm (Fin 2))` equals
-`Fintype.card V / (Fintype.card V - 2)` (Kozlov, arXiv:1610.07136v2, Theorem 3.1). -/
-theorem h1Norm_complete_movedNorm_fin_two (hV : 3 ≤ Fintype.card V)
-    (hpow : ¬ ∃ a : ℕ, Fintype.card V = 2 ^ a) :
-    h1Norm (complete V) (Equiv.Perm.movedNorm (Fin 2)) =
-      (Fintype.card V : ℝ) / (Fintype.card V - 2) :=
-  h1Norm_complete_movedNorm_of_not_exists_two_pow hV hpow
 
 /-- When `3 ≤ Fintype.card V` and `Fintype.card V` is not a power of two, the same-degree
 permutation Cheeger constant `h1Sym (complete V)` equals `Fintype.card V / 3`. -/

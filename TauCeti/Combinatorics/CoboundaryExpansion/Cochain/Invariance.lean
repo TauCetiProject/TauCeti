@@ -297,20 +297,9 @@ theorem defect_eq_sum_triangles [Fintype V] [LinearOrder V] {ℓ : GroupNorm G}
     (hℓ : ℓ.toGroupSeminorm.IsConjInvariant) (α : Cochain X G) :
     α.defect ℓ = ∑ t ∈ X.triangles, α.triangleDefect ℓ t := by
   rw [defect_def]
-  refine sum_bij (fun p _ => ({p.1, p.2.1, p.2.2} : Finset V))
-    (fun p hp => (mem_filter.mp hp).2.2.2) ?_ ?_
-    (fun p hp => (α.triangleDefect_triple hℓ (mem_filter.mp hp).2.2.2).symm)
-  · rintro ⟨u₁, v₁, w₁⟩ hp₁ ⟨u₂, v₂, w₂⟩ hp₂ htri
-    obtain ⟨huv₁, hvw₁, _⟩ := (mem_filter.mp hp₁).2
-    obtain ⟨huv₂, hvw₂, _⟩ := (mem_filter.mp hp₂).2
-    exact congrArg Subtype.val
-      (Set.powersetCard.ofLtTriple.injective
-        (a₁ := ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩) (a₂ := ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩)
-        (Subtype.ext <| (Set.powersetCard.val_ofLtTriple ⟨(u₁, v₁, w₁), huv₁, hvw₁⟩).trans
-          (htri.trans (Set.powersetCard.val_ofLtTriple ⟨(u₂, v₂, w₂), huv₂, hvw₂⟩).symm)))
-  · intro t ht
-    obtain ⟨u, v, w, huv, hvw, hset⟩ := X.exists_increasing_of_mem_triangles ht
-    exact ⟨(u, v, w), mem_filter.mpr ⟨mem_univ _, huv, hvw, hset ▸ ht⟩, hset⟩
+  refine (sum_congr rfl fun p hp =>
+    (α.triangleDefect_triple hℓ (mem_filter.mp hp).2.2.2).symm).trans ?_
+  exact X.triangles.sum_filter_lt_lt_mem X.triangle_card (α.triangleDefect ℓ)
 
 /-! ### Independence of the vertex linear order -/
 
