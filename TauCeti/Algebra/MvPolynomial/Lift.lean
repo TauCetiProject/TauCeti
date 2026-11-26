@@ -26,6 +26,8 @@ functions `σ → S`, the points of affine space. So a homomorphism lifts along 
   to compatible pairs `(f, g)` of `f : B →+* R` and `g : A[X_σ] →+* R` with `f ∘ η = g ∘ C`.
 * `MvPolynomial.ringHom_ext_comp_map`: a ring homomorphism out of `B[X_σ]` is determined by its
   restrictions along `C : B →+* B[X_σ]` and `MvPolynomial.map η : A[X_σ] →+* B[X_σ]`.
+* `MvPolynomial.homEquiv_apply`, `MvPolynomial.homEquiv_symm_apply`: explicit formulas for
+  `MvPolynomial.homEquiv` and its inverse.
 * `MvPolynomial.prodHomEquiv`: pairs of families `(σ → R) × (τ → R)` correspond to ring
   homomorphisms `ℤ[X_σ][X_τ] →+* R`.
 * `MvPolynomial.iteratedRingHomEquivAlgHom`: ring homomorphisms `ℤ[X_σ][X_τ] →+* R` into an
@@ -150,15 +152,25 @@ section Iterated
 
 variable {σ τ R : Type*} [CommRing R]
 
+/-- `MvPolynomial.homEquiv` evaluates a ring homomorphism on the variables `X`. -/
+@[simp] theorem homEquiv_apply (f : MvPolynomial σ ℤ →+* R) : homEquiv f = f ∘ X := (rfl)
+
+/-- `MvPolynomial.homEquiv.symm` evaluates integer polynomials via `eval₂Hom`. -/
+theorem homEquiv_symm_apply (v : σ → R) :
+    homEquiv.symm v = eval₂Hom (Int.castRingHom R) v := (rfl)
+
+/-- `MvPolynomial.homEquiv.symm v` sends each variable `X i` to `v i`. -/
+@[simp] theorem homEquiv_symm_apply_X (v : σ → R) (i : σ) :
+    homEquiv.symm v (X i) = v i := eval₂Hom_X' _ v i
+
 /-- **Maps out of an iterated integral polynomial ring**: pairs of families `(σ → R) × (τ → R)`
 correspond to ring homomorphisms out of `MvPolynomial τ (MvPolynomial σ ℤ)`. -/
 noncomputable def prodHomEquiv :
     (σ → R) × (τ → R) ≃ (MvPolynomial τ (MvPolynomial σ ℤ) →+* R) where
   toFun vt := eval₂Hom (homEquiv.symm vt.1) vt.2
   invFun f := (f.comp C ∘ X, f ∘ X)
-  left_inv _ := Prod.ext (funext fun _ ↦ by simp [homEquiv]) (funext fun _ ↦ by simp)
-  right_inv f := ringHom_ext'
-    ((RingHom.ext (eval₂Hom_C _ _)).trans (homEquiv.left_inv (f.comp C))) fun _ ↦ by simp
+  left_inv _ := Prod.ext (funext fun _ ↦ by simp) (funext fun _ ↦ by simp)
+  right_inv f := ringHom_ext' (ringHom_ext' (RingHom.ext_int _ _) fun _ ↦ by simp) fun _ ↦ by simp
 
 /-- The first component of `prodHomEquiv.symm f` evaluates `f ∘ C` on the inner variables. -/
 @[simp] theorem prodHomEquiv_symm_apply_fst (f : MvPolynomial τ (MvPolynomial σ ℤ) →+* R) :
@@ -178,7 +190,7 @@ theorem prodHomEquiv_C (vt : (σ → R) × (τ → R)) (a : MvPolynomial σ ℤ)
 
 /-- `prodHomEquiv vt` sends an inner variable `C (X i)` to `vt.1 i`. -/
 @[simp] theorem prodHomEquiv_C_X (vt : (σ → R) × (τ → R)) (i : σ) :
-    prodHomEquiv vt (C (X i)) = vt.1 i := by simp [prodHomEquiv, homEquiv]
+    prodHomEquiv vt (C (X i)) = vt.1 i := by simp [prodHomEquiv_C]
 
 /-- `prodHomEquiv vt` sends an outer variable `X j` to `vt.2 j`. -/
 @[simp] theorem prodHomEquiv_X (vt : (σ → R) × (τ → R)) (j : τ) :
@@ -193,8 +205,8 @@ noncomputable def iteratedRingHomEquivAlgHom :
     (MvPolynomial τ (MvPolynomial σ ℤ) →+* R) ≃ (MvPolynomial τ (MvPolynomial σ A) →ₐ[A] R) where
   toFun f := aevalTower (aeval (f.comp C ∘ X)) (f ∘ X)
   invFun g := g.toRingHom.comp (map (map (Int.castRingHom A)))
-  left_inv f := ringHom_ext' (homEquiv.injective <| funext fun _ ↦ by
-      simp [homEquiv, aevalTower]) fun _ ↦ by simp
+  left_inv f := ringHom_ext' (ringHom_ext' (RingHom.ext_int _ _) fun _ ↦ by simp [aevalTower])
+    fun _ ↦ by simp
   right_inv g := algHom_ext' (algHom_ext fun _ ↦ by simp [algebraMap_eq]) fun _ ↦ by simp
 
 /-- `iteratedRingHomEquivAlgHom A f` preserves the images of inner variables `C (X i)`. -/
