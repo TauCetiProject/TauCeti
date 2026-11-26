@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 
 /-!
 # The compensated mean in a signed Dirichlet Riesz transform

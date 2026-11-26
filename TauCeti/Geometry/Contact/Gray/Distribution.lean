@@ -105,10 +105,10 @@ theorem mpullback_inclusion (hα : IsLocalContactFormFamily ξ U α t₀) (h : V
         (contMDiff_id.prodMap (contMDiff_inclusion h)) α) t₀ := by
   filter_upwards [hα] with t ⟨hc, hk⟩
   refine ⟨?_, fun y ↦ ?_⟩
-  · rw [mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h)]
+  · rw [SmoothForm.mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h)]
     exact hc.mpullback _ _ (bijective_mfderiv_inclusion h)
-  · rw [mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h), kerDistribution_mpullback,
-      hk]
+  · rw [SmoothForm.mpullback_prodMk_mpullback_prodMap _ (contMDiff_inclusion h),
+      kerDistribution_mpullback, hk]
     ext v
     simp only [Submodule.mem_comap, ContinuousLinearMap.coe_coe]
     rw [mfderiv_subtype_val_inclusion_apply]
