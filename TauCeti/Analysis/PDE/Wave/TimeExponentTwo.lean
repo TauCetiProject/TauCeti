@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Wave.Endpoint
 public import TauCeti.Analysis.PDE.Wave.Energy
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
+import TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz
 import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
@@ -58,7 +59,10 @@ the pairs with `q > 2` of `TauCeti.Analysis.PDE.Wave.HomogeneousStrichartz` and
 `TauCeti.Analysis.PDE.Wave.SobolevStrichartz`, which also treat `q = ∞`, this gives the
 homogeneous estimates of Tao's Theorem 2.6 at every wave-admissible pair with finite `r` in
 dimension `n ≥ 4`. At `r = ∞` only the forms with `\dot B^γ_{2,1}` and `\dot B^{γ - 1}_{2,1}` data
-are proved, not the `\dot H^γ × \dot H^{γ - 1}` form of Tao's theorem.
+are proved, not the `\dot H^γ × \dot H^{γ - 1}` form of Tao's theorem. For the free solution with
+`\dot B^γ_{2,1} × \dot B^{γ - 1}_{2,1}` data, the estimates with `q > 2` and with `q = 2` are joined
+into one for every `2 ≤ q < ∞`, with `q = 2` only in dimension `n ≥ 4`
+(`ContDiffBump.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le`).
 
 At the pairs `(2, r)` with `r > r₀` the abstract endpoint theorem does not apply directly. Instead
 the estimates come from the endpoint ones by **Bernstein's inequality**: some dyadic multiplier
@@ -524,6 +528,35 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_o
   exact ⟨C₁ + C₂, fun m hm f g ↦
     eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_of_one_le one_le_two
       (one_le_two.trans (two_le_of_le_endpoint hn hr0 hr)) (h₁ m hm f) (h₂ m hm g)⟩
+
+/-- **The Strichartz estimate for the free wave equation with data in
+`\dot B^γ_{2,1} × \dot B^{γ - 1}_{2,1}`, for `2 ≤ q`.** Let `E` be nontrivial of dimension `n`,
+let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞`, where
+`q = 2` only in dimension `n ≥ 4`, and let `γ = n / 2 - n / r - 1 / q`. There is `C` such that for
+all `f, g ∈ L²(E)`, the solution `u(t) = cos(tD) f + D⁻¹ sin(tD) g` of `∂ₜ²u = Δu` with `u(0) = f`
+and `∂ₜu(0) = g` satisfies
+
+`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{jγ} ‖Pⱼ f‖₂ + ∑ⱼ 2^{j(γ - 1)} ‖Pⱼ g‖₂)`. -/
+theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le
+    [Nontrivial E] {q : ℝ≥0} (hq : 2 ≤ q)
+    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2) (hq2 : q = 2 → 3 < Module.finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ f g : Lp ℂ 2 (volume : Measure E),
+        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f + waveSinPropagator ℂ t g) r volume) q
+            volume ≤
+          C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ +
+            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
+              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
+                ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
+  rcases hq.lt_or_eq with hq | rfl
+  · exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
+  · simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, div_self (two_ne_zero' ℝ)] at hqr ⊢
+    exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint
+      (hq2 rfl) hqr
 
 /-- **The Strichartz estimate at the pairs `(2, r)` for strong solutions of the free wave
 equation.** Under the hypotheses of
