@@ -189,40 +189,12 @@ theorem norm_comp_dagger_le_polarization (f g : X ⟶ Y) :
       (4 : ℝ)⁻¹ * (‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
         ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2) := by
   let := normedAddCommGroup X X
-  rw [comp_dagger_polarization g f, norm_smul]
-  have h4 : ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ := by norm_num
-  have hplus : g + f = f + g := add_comm g f
-  have hminus : g - f = -(f - g) := (neg_sub f g).symm
-  have hIplus : g + Complex.I • f = Complex.I • (f - Complex.I • g) := by
-    rw [smul_sub, smul_smul, Complex.I_mul_I, neg_one_smul, sub_neg_eq_add, add_comm]
-  have hIminus : g - Complex.I • f = (-Complex.I) • (f + Complex.I • g) := by
-    rw [smul_add, neg_smul, neg_smul, smul_smul, Complex.I_mul_I, neg_one_smul, neg_neg,
-      add_comm, sub_eq_add_neg]
-  rw [h4]
+  rw [← norm_dagger (f ≫ dagger g), dagger_comp, dagger_dagger,
+    comp_dagger_polarization f g, norm_smul, show ‖(4 : ℂ)⁻¹‖ = (4 : ℝ)⁻¹ by norm_num]
   gcongr
-  calc
-    ‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f) -
-        Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f)) +
-        Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖
-      ≤ ‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f) -
-          Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f))‖ +
-          ‖Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖ := norm_add_le _ _
-    _ ≤ (‖(g + f) ≫ dagger (g + f) - (g - f) ≫ dagger (g - f)‖ +
-          ‖Complex.I • ((g + Complex.I • f) ≫ dagger (g + Complex.I • f))‖) +
-          ‖Complex.I • ((g - Complex.I • f) ≫ dagger (g - Complex.I • f))‖ := by
-        gcongr
-        exact _root_.norm_sub_le _ _
-    _ ≤ (‖(g + f) ≫ dagger (g + f)‖ + ‖(g - f) ≫ dagger (g - f)‖ +
-          ‖(g + Complex.I • f) ≫ dagger (g + Complex.I • f)‖) +
-          ‖(g - Complex.I • f) ≫ dagger (g - Complex.I • f)‖ := by
-        simp only [norm_smul, Complex.norm_I, one_mul]
-        gcongr
-        exact _root_.norm_sub_le _ _
-    _ = ‖f + g‖ ^ 2 + ‖f - g‖ ^ 2 +
-          ‖f + Complex.I • g‖ ^ 2 + ‖f - Complex.I • g‖ ^ 2 := by
-        simp only [norm_self_comp_dagger, hplus, hminus, hIplus, hIminus, CStarCategory.norm_neg,
-          _root_.norm_neg, norm_smul, Complex.norm_I, one_mul]
-        ring
+  conv_lhs => rw [sub_eq_add_neg, sub_eq_add_neg]
+  refine norm_add₄_le.trans_eq ?_
+  simp only [_root_.norm_neg, norm_smul, Complex.norm_I, one_mul, norm_self_comp_dagger]
 
 /-! ### Identity, unitary, projection, and zero-object norm formulas -/
 

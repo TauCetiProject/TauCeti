@@ -87,19 +87,10 @@ theorem dagger_comp_comp_mono (g : X ⟶ Y) {a b : End X} (hab : a ≤ b) :
 `(‖g‖ ^ 2) • End.of (f ≫ dagger f)`. -/
 theorem comp_dagger_self_comp_le (f : X ⟶ Y) (g : Y ⟶ Z) :
     End.of ((f ≫ g) ≫ dagger (f ≫ g)) ≤ (‖g‖ ^ 2) • End.of (f ≫ dagger f) := by
-  have hle : End.of (g ≫ dagger g) ≤ algebraMap ℝ (End Y) (‖g‖ ^ 2) := by
-    simpa only [End.norm_of, CStarCategory.norm_self_comp_dagger] using
-      (self_comp_dagger_nonneg g).isSelfAdjoint.le_algebraMap_norm_self
-  have hcong := comp_comp_dagger_mono f hle
-  have hlhs : End.of (f ≫ (End.of (g ≫ dagger g)).asHom ≫ dagger f) =
-      End.of ((f ≫ g) ≫ dagger (f ≫ g)) := by
-    ext
-    simp [Category.assoc]
-  have hrhs : End.of (f ≫ (algebraMap ℝ (End Y) (‖g‖ ^ 2)).asHom ≫ dagger f) =
-      (‖g‖ ^ 2) • End.of (f ≫ dagger f) := by
-    ext
-    simp [Algebra.algebraMap_eq_smul_one]
-  rwa [hlhs, hrhs] at hcong
+  simpa only [Category.assoc, dagger_comp, End.norm_of,
+    CStarCategory.norm_self_comp_dagger] using
+    End.comp_comp_dagger_le_norm_smul f (End.of (g ≫ dagger g))
+      (End.self_comp_dagger_nonneg g).isSelfAdjoint
 
 /-- Dual operator-order bound: `End.of (dagger (f ≫ g) ≫ (f ≫ g))` is bounded in `End Z` by
 `(‖f‖ ^ 2) • End.of (dagger g ≫ g)`. -/
