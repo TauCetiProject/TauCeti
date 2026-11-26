@@ -16,7 +16,7 @@ import Mathlib.Data.List.Chain
 A weakly increasing list stays weakly increasing after appending an entry exactly when its last
 entry, if any, is at most the new one.
 
-For a linear order, inserting two distinct entries into a list in either order gives the same list
+For a linear order, inserting two entries into a list in either order gives the same list
 (`List.orderedInsert_comm`), and two lists which are permutations of each other have the same
 insertion sort (`List.Perm.insertionSort_eq`).
 
@@ -44,10 +44,12 @@ section LinearOrder
 
 variable {β : Type*} [LinearOrder β]
 
-/-- Inserting two distinct entries into a list in either order gives the same list. -/
-theorem orderedInsert_comm {a b : β} (hab : a ≠ b) (s : List β) :
+/-- Inserting two entries into a list in either order gives the same list. -/
+theorem orderedInsert_comm (a b : β) (s : List β) :
     (s.orderedInsert (· ≤ ·) b).orderedInsert (· ≤ ·) a =
       (s.orderedInsert (· ≤ ·) a).orderedInsert (· ≤ ·) b := by
+  rcases eq_or_ne a b with rfl | hab
+  · rfl
   induction s with
   | nil => rcases lt_or_gt_of_ne hab with h | h <;> simp [h.le, not_le.2 h]
   | cons c s ih =>

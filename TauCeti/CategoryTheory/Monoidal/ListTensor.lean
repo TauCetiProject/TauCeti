@@ -69,7 +69,6 @@ lemma listTensor_cons (X : ι → C) (a : ι) (l : List ι) :
   rfl
 
 /-- The tensor product over a list of a family of morphisms `f i : X i ⟶ Y i`. -/
-@[expose]
 def listTensorMap {X Y : ι → C} (f : ∀ i, X i ⟶ Y i) :
     (l : List ι) → (listTensor X l ⟶ listTensor Y l)
   | [] => 𝟙 _
@@ -77,12 +76,12 @@ def listTensorMap {X Y : ι → C} (f : ∀ i, X i ⟶ Y i) :
 
 @[simp]
 lemma listTensorMap_nil {X Y : ι → C} (f : ∀ i, X i ⟶ Y i) : listTensorMap f [] = 𝟙 (𝟙_ C) :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma listTensorMap_cons {X Y : ι → C} (f : ∀ i, X i ⟶ Y i) (a : ι) (l : List ι) :
     listTensorMap f (a :: l) = f a ⊗ₘ listTensorMap f l :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma listTensorMap_id (X : ι → C) (l : List ι) :
@@ -202,7 +201,10 @@ lemma listTensorFlatMapIso_hom_naturality {X Y : ι → C} (f : ∀ i, X i ⟶ Y
     listTensorMap f (M.flatMap L) ≫ (listTensorFlatMapIso Y L M).hom =
       (listTensorFlatMapIso X L M).hom ≫ listTensorMap (fun j ↦ listTensorMap f (L j)) M := by
   induction M with
-  | nil => simp; rfl
+  | nil =>
+    simp only [listTensorFlatMapIso_nil, Iso.refl_hom, Category.comp_id, Category.id_comp]
+    -- `List.flatMap L []` is `[]` by definition.
+    exact listTensorMap_nil f
   | cons j M ih =>
     -- `List.flatMap_cons` is not a definitional lemma, so `dsimp` cannot use it to rewrite the
     -- lists in the types of the morphisms; unfolding `List.flatMap` and folding it back can.
@@ -259,7 +261,11 @@ lemma listTensorFlatMapIso_hom_flatMap (X : ι → C) (L : κ → List ι) (M : 
         (listTensorFlatMapIso X (fun k ↦ (M k).flatMap L) N).hom ≫
         listTensorMap (fun k ↦ (listTensorFlatMapIso X L (M k)).hom) N := by
   induction N with
-  | nil => simp; rfl
+  | nil =>
+    simp only [listTensorFlatMapIso_nil, Iso.refl_hom, listTensorMap_nil, eqToHom_refl,
+      Category.comp_id, Category.id_comp]
+    -- `List.flatMap M []` is `[]` by definition.
+    exact congrArg Iso.hom (listTensorFlatMapIso_nil X L)
   | cons k N ih =>
     dsimp only [List.flatMap_def, List.map, List.flatten_cons]
     dsimp only [← List.flatMap_def]

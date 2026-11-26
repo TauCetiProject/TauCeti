@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 public import Mathlib.Data.List.Perm.Basic
 public import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 public import TauCeti.CategoryTheory.Monoidal.ListTensor
@@ -19,11 +18,11 @@ Let `X : ι → C` be a family of objects of a symmetric monoidal category. For 
 `listTensor X l ≅ listTensor X l'` between the ordered tensor products over the two lists. It is
 the symmetric coherence theorem for these tensor products: the isomorphism depends only on the
 two lists, it is functorial in the permutation (`listTensorPermIso_self`, `listTensorPermIso_trans`,
-`listTensorPermIso_symm`), and on lists without repetition it is the composite of the braidings of
-neighbouring factors along any decomposition of the permutation into transpositions of neighbours
-(`listTensorPermIso_cons`, `listTensorPermIso_swap`). Any assignment of maps to permutations with
-these properties agrees with it on lists without repetition (`eq_listTensorPermIso_hom`); this is
-the statement that two structural maps built from braidings agree when their permutations agree.
+`listTensorPermIso_symm`), it acts on the tail of a list by whiskering (`listTensorPermIso_cons`),
+and on two distinct neighbouring factors it is their braiding (`listTensorPermIso_swap`). Any
+assignment of maps to permutations with these properties agrees with it
+(`eq_listTensorPermIso_hom`); this is the statement that two structural maps built from braidings
+agree when their permutations agree.
 
 The isomorphism is constructed by sorting: for a linear order on `ι`, the tensor product over `l`
 is identified with the tensor product over the sorted list `l.insertionSort (· ≤ ·)` by inserting
@@ -42,9 +41,12 @@ each group of a `flatMap` (`listTensorPermIso_flatMap_right_hom`,
 category of operators of a symmetric monoidal category, whose maps over a map of finite pointed
 sets are maps out of the ordered tensor products over its fibers.
 
-The hypotheses that the lists have no repetition cannot be dropped: two equal neighbouring labels
-`a :: a :: l` are a permutation of the list onto itself, whose reordering is the identity, while
-the braiding `β_ (X a) (X a)` of their factors need not be.
+The distinctness hypotheses of `listTensorPermIso_swap` and of the lemmas identifying reorderings
+with braidings of factors or blocks (`listTensorPermIso_perm_middle_hom`,
+`listTensorPermIso_perm_append_comm_assoc_hom`, `listTensorPermIso_flatMap_right_hom`) cannot be
+dropped: two equal neighbouring labels `a :: a :: l` are a permutation of the list onto itself,
+whose reordering is the identity, while the braiding `β_ (X a) (X a)` of their factors need not
+be.
 
 ## References
 
@@ -92,14 +94,13 @@ lemma listTensorMap_listTensorSwapIso_hom {Y : ι → C} (f : ∀ i, X i ⟶ Y i
     (l : List ι) :
     listTensorMap f (a :: b :: l) ≫ (listTensorSwapIso Y a b l).hom =
       (listTensorSwapIso X a b l).hom ≫ listTensorMap f (b :: a :: l) := by
-  simp only [listTensorSwapIso_hom, listTensorMap_cons, Category.assoc]
-  rw [associator_inv_naturality_assoc, ← tensorHom_id, tensorHom_comp_tensorHom_assoc,
-    BraidedCategory.braiding_naturality, Category.comp_id, ← Category.id_comp (listTensorMap f l),
-    ← tensorHom_comp_tensorHom_assoc, associator_naturality, Category.id_comp, tensorHom_id]
+  simp only [listTensorSwapIso_hom, listTensorMap_cons, Category.assoc,
+    associator_inv_naturality_assoc, ← associator_naturality, tensorHom_comp_tensorHom_assoc,
+    ← tensorHom_id, BraidedCategory.braiding_naturality, Category.comp_id, Category.id_comp]
 
 /-- The Yang–Baxter equation for the exchanges of the first three factors. -/
 @[reassoc]
-lemma listTensorSwapIso_hom_yangBaxter (a b c : ι) (l : List ι) :
+lemma listTensorSwapIso_hom_yang_baxter (a b c : ι) (l : List ι) :
     (listTensorSwapIso X a b (c :: l)).hom ≫ X b ◁ (listTensorSwapIso X a c l).hom ≫
         (listTensorSwapIso X b c (a :: l)).hom =
       X a ◁ (listTensorSwapIso X b c l).hom ≫ (listTensorSwapIso X a c (b :: l)).hom ≫
@@ -176,23 +177,20 @@ private lemma insertIso_insertIso {a b : ι} (hab : a ≠ b) (s : List ι) :
     (listTensorSwapIso X a b s).hom ≫ X b ◁ (insertIso X a s).hom ≫
         (insertIso X b (s.orderedInsert (· ≤ ·) a)).hom =
       X a ◁ (insertIso X b s).hom ≫ (insertIso X a (s.orderedInsert (· ≤ ·) b)).hom ≫
-        eqToHom (congrArg (listTensor X) (List.orderedInsert_comm hab s)) := by
+        eqToHom (congrArg (listTensor X) (List.orderedInsert_comm a b s)) := by
   induction s with
   | nil =>
     rw [insertIso_hom_of_eq X b (List.orderedInsert_nil _ a),
       insertIso_hom_of_eq X a (List.orderedInsert_nil _ b)]
-    rcases lt_or_gt_of_ne hab with h | h
-    · simp [insertIso_nil_hom, insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, h.le,
-        not_le.2 h]
-    · simp [insertIso_nil_hom, insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, h.le,
+    rcases lt_or_gt_of_ne hab with h | h <;>
+      simp [insertIso_nil_hom, insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, h.le,
         not_le.2 h]
   | cons c s ih =>
     by_cases ha : a ≤ c <;> by_cases hb : b ≤ c
     · rw [insertIso_hom_of_eq X b (List.orderedInsert_cons_of_le _ _ ha),
         insertIso_hom_of_eq X a (List.orderedInsert_cons_of_le _ _ hb)]
-      rcases lt_or_gt_of_ne hab with h | h
-      · simp [insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, ha, hb, h.le, not_le.2 h]
-      · simp [insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, ha, hb, h.le, not_le.2 h]
+      rcases lt_or_gt_of_ne hab with h | h <;>
+        simp [insertIso_cons_hom_of_le, insertIso_cons_hom_of_not_le, ha, hb, h.le, not_le.2 h]
     · rw [insertIso_hom_of_eq X b (List.orderedInsert_cons_of_le _ _ ha),
         insertIso_hom_of_eq X a (List.orderedInsert_of_not_le _ _ hb)]
       have hba : ¬ b ≤ a := fun h ↦ hb (h.trans ha)
@@ -210,7 +208,7 @@ private lemma insertIso_insertIso {a b : ι} (hab : a ≠ b) (s : List ι) :
         Category.id_comp, whiskerLeft_eqToHom]
       rw [listTensorSwapIso_hom_naturality_assoc X b c (insertIso X a s).hom,
         listTensorSwapIso_hom_naturality_assoc X a c (insertIso X b s).hom,
-        listTensorSwapIso_hom_yangBaxter_assoc, reassoc_of% ih']
+        listTensorSwapIso_hom_yang_baxter_assoc, reassoc_of% ih']
       simp
 
 private lemma sortIso_cons_hom (a : ι) (l : List ι) :
@@ -241,8 +239,8 @@ variable [LinearOrder ι]
 
 /-- **Symmetric coherence for ordered tensor products.** The canonical isomorphism between the
 ordered tensor products over two lists which are permutations of each other: both are sorted,
-for the linear order of `ι`, by braiding factors past each other. On lists without repetition it
-does not depend on the order (`TauCeti.eq_listTensorPermIso_hom`). -/
+for the linear order of `ι`, by braiding factors past each other. It does not depend on the order
+(`TauCeti.eq_listTensorPermIso_hom`). -/
 def listTensorPermIso {l l' : List ι} (h : l.Perm l') : listTensor X l ≅ listTensor X l' :=
   sortIso X l ≪≫ eqToIso (congrArg (listTensor X) h.insertionSort_eq) ≪≫
     (sortIso X l').symm
@@ -341,13 +339,11 @@ lemma listTensorPermIso_append_left_hom (l₁ : List ι) {l₂ l₂' : List ι} 
     simp only [whiskerLeftIso_hom, listTensorAppendIso_cons, Iso.trans_hom, Iso.symm_hom]
     rw [← MonoidalCategory.whiskerLeft_comp_assoc, ih, MonoidalCategory.whiskerLeft_comp_assoc,
       associator_inv_naturality_right]
-    simp only [Category.assoc]
-    rfl
+    simp only [Category.assoc, listTensor_cons]
 
-/-- Reordering the first part of a concatenation, when it has no repetition. -/
+/-- Reordering the first part of a concatenation. -/
 @[reassoc]
-lemma listTensorPermIso_append_right_hom {l₁ l₁' : List ι} (h : l₁.Perm l₁') (l₂ : List ι)
-    (hl₁ : l₁.Nodup) :
+lemma listTensorPermIso_append_right_hom {l₁ l₁' : List ι} (h : l₁.Perm l₁') (l₂ : List ι) :
     (listTensorPermIso X (h.append_right l₂)).hom ≫ (listTensorAppendIso X l₁' l₂).hom =
       (listTensorAppendIso X l₁ l₂).hom ≫ (listTensorPermIso X h).hom ▷ _ := by
   induction h with
@@ -356,11 +352,13 @@ lemma listTensorPermIso_append_right_hom {l₁ l₁' : List ι} (h : l₁.Perm l
     dsimp only [List.cons_append]
     rw [listTensorPermIso_cons X a (h.append_right l₂), listTensorPermIso_cons X a h]
     simp only [whiskerLeftIso_hom, listTensorAppendIso_cons, Iso.trans_hom, Iso.symm_hom]
-    rw [← MonoidalCategory.whiskerLeft_comp_assoc, ih (List.nodup_cons.1 hl₁).2,
+    rw [← MonoidalCategory.whiskerLeft_comp_assoc, ih,
       MonoidalCategory.whiskerLeft_comp_assoc, associator_inv_naturality_middle]
     simp only [Category.assoc]
   | swap x y l =>
-    have hxy : y ≠ x := fun h ↦ (List.nodup_cons.1 hl₁).1 (h ▸ List.mem_cons_self)
+    by_cases hxy : y = x
+    · subst hxy
+      simp
     dsimp only [List.cons_append]
     rw [listTensorPermIso_swap X hxy, listTensorPermIso_swap X hxy]
     simp only [listTensorAppendIso_cons, Iso.trans_hom, whiskerLeftIso_hom, Iso.symm_hom,
@@ -370,19 +368,19 @@ lemma listTensorPermIso_append_right_hom {l₁ l₁' : List ι} (h : l₁.Perm l
     monoidal
   | trans h₁ h₂ ih₁ ih₂ =>
     rw [← listTensorPermIso_hom_listTensorPermIso_hom X (h₁.append_right l₂)
-      (h₂.append_right l₂), Category.assoc, ih₂ (h₁.nodup_iff.1 hl₁), reassoc_of% (ih₁ hl₁),
+      (h₂.append_right l₂), Category.assoc, ih₂, reassoc_of% ih₁,
       ← comp_whiskerRight, listTensorPermIso_hom_listTensorPermIso_hom]
 
-/-- Reordering both parts of a concatenation, when the first has no repetition. -/
+/-- Reordering both parts of a concatenation. -/
 @[reassoc]
 lemma listTensorPermIso_append_hom {l₁ l₁' l₂ l₂' : List ι} (h₁ : l₁.Perm l₁')
-    (h₂ : l₂.Perm l₂') (hl₁ : l₁.Nodup) :
+    (h₂ : l₂.Perm l₂') :
     (listTensorPermIso X (h₁.append h₂)).hom ≫ (listTensorAppendIso X l₁' l₂').hom =
       (listTensorAppendIso X l₁ l₂).hom ≫
         ((listTensorPermIso X h₁).hom ⊗ₘ (listTensorPermIso X h₂).hom) := by
   rw [← listTensorPermIso_hom_listTensorPermIso_hom X (h₁.append_right l₂) (h₂.append_left l₁'),
     Category.assoc, listTensorPermIso_append_left_hom,
-    listTensorPermIso_append_right_hom_assoc X h₁ l₂ hl₁, tensorHom_def]
+    listTensorPermIso_append_right_hom_assoc X h₁ l₂, tensorHom_def]
 
 /-- Moving a factor past a block of factors distinct from it is the braiding with that block. -/
 @[reassoc]
@@ -458,11 +456,11 @@ lemma listTensorPermIso_perm_append_comm_assoc_hom {l₁ l₂ : List ι} (h : l�
     rw [BraidedCategory.braiding_tensor_left_hom]
     monoidal
 
-/-- Reordering the groups of a grouped ordered tensor product, when no factor is repeated. -/
+/-- Reordering the groups of a grouped ordered tensor product, when the groups with distinct
+labels share no factor. -/
 @[reassoc]
 lemma listTensorPermIso_flatMap_right_hom [LinearOrder κ] (L : κ → List ι) {M M' : List κ}
-    (h : M.Perm M')
-    (hn : (M.flatMap L).Nodup) :
+    (h : M.Perm M') (hL : ∀ j ∈ M, ∀ k ∈ M, j ≠ k → (L j).Disjoint (L k)) :
     (listTensorPermIso X (h.flatMap_right L)).hom ≫ (listTensorFlatMapIso X L M').hom =
       (listTensorFlatMapIso X L M).hom ≫
         (listTensorPermIso (fun j ↦ listTensor X (L j)) h).hom := by
@@ -471,22 +469,23 @@ lemma listTensorPermIso_flatMap_right_hom [LinearOrder κ] (L : κ → List ι) 
   | cons j h ih =>
     -- `List.flatMap_cons` is not a definitional lemma, so `dsimp` cannot use it to rewrite the
     -- lists in the types of the morphisms; unfolding `List.flatMap` and folding it back can.
-    dsimp only [List.flatMap_def, List.map, List.flatten_cons] at hn ⊢
-    dsimp only [← List.flatMap_def] at hn ⊢
+    dsimp only [List.flatMap_def, List.map, List.flatten_cons]
+    dsimp only [← List.flatMap_def]
     rw [listTensorPermIso_cons (fun j ↦ listTensor X (L j)) j h, listTensorFlatMapIso_cons,
       listTensorFlatMapIso_cons]
     simp only [Iso.trans_hom, whiskerLeftIso_hom, Category.assoc]
     rw [listTensorPermIso_append_left_hom_assoc X (L j) (h.flatMap_right L),
-      ← MonoidalCategory.whiskerLeft_comp, ih (List.nodup_append.1 hn).2.1,
+      ← MonoidalCategory.whiskerLeft_comp,
+      ih fun a ha b hb ↦ hL a (List.mem_cons_of_mem _ ha) b (List.mem_cons_of_mem _ hb),
       MonoidalCategory.whiskerLeft_comp]
   | swap x y M =>
     by_cases hxy : x = y
     · subst hxy
       simp
-    · dsimp only [List.flatMap_def, List.map, List.flatten_cons] at hn ⊢
-      dsimp only [← List.flatMap_def] at hn ⊢
-      have hdisj : (L y).Disjoint (L x) := fun a hy hx ↦
-        (List.nodup_append.1 hn).2.2 a hy a (List.mem_append_left _ hx) rfl
+    · have hdisj : (L y).Disjoint (L x) :=
+        hL y List.mem_cons_self x (List.mem_cons_of_mem _ List.mem_cons_self) (Ne.symm hxy)
+      dsimp only [List.flatMap_def, List.map, List.flatten_cons]
+      dsimp only [← List.flatMap_def]
       rw [listTensorPermIso_swap _ (Ne.symm hxy), listTensorFlatMapIso_cons,
         listTensorFlatMapIso_cons, listTensorFlatMapIso_cons, listTensorFlatMapIso_cons]
       dsimp only [List.flatMap_def, List.map, List.flatten_cons]
@@ -497,14 +496,14 @@ lemma listTensorPermIso_flatMap_right_hom [LinearOrder κ] (L : κ → List ι) 
         whiskerLeft_whiskerLeft_comp_associator_inv_braiding_associator_hom]
   | trans h₁ h₂ ih₁ ih₂ =>
     rw [← listTensorPermIso_hom_listTensorPermIso_hom X (h₁.flatMap_right L)
-      (h₂.flatMap_right L), Category.assoc, ih₂ ((h₁.flatMap_right L).nodup_iff.1 hn),
-      reassoc_of% (ih₁ hn), listTensorPermIso_hom_listTensorPermIso_hom]
+      (h₂.flatMap_right L), Category.assoc,
+      ih₂ fun a ha b hb ↦ hL a (h₁.mem_iff.2 ha) b (h₁.mem_iff.2 hb), reassoc_of% (ih₁ hL),
+      listTensorPermIso_hom_listTensorPermIso_hom]
 
-/-- Reordering the factors inside each group of a grouped ordered tensor product, when no factor
-is repeated. -/
+/-- Reordering the factors inside each group of a grouped ordered tensor product. -/
 @[reassoc]
 lemma listTensorPermIso_flatMap_left_hom {A B : κ → List ι} (h : ∀ j, (A j).Perm (B j))
-    (M : List κ) (hn : (M.flatMap A).Nodup) :
+    (M : List κ) :
     (listTensorPermIso X (List.Perm.flatMap_left M fun j _ ↦ h j)).hom ≫
         (listTensorFlatMapIso X B M).hom =
       (listTensorFlatMapIso X A M).hom ≫
@@ -512,21 +511,20 @@ lemma listTensorPermIso_flatMap_left_hom {A B : κ → List ι} (h : ∀ j, (A j
   induction M with
   | nil => simp
   | cons j M ih =>
-    dsimp only [List.flatMap_def, List.map, List.flatten_cons] at hn ⊢
-    dsimp only [← List.flatMap_def] at hn ⊢
+    dsimp only [List.flatMap_def, List.map, List.flatten_cons]
+    dsimp only [← List.flatMap_def]
     rw [listTensorFlatMapIso_cons, listTensorFlatMapIso_cons]
     simp only [Iso.trans_hom, whiskerLeftIso_hom, listTensorMap_cons]
-    rw [listTensorPermIso_append_hom_assoc X (h j) (List.Perm.flatMap_left M fun j _ ↦ h j)
-      (List.nodup_append.1 hn).1, tensorHom_def_assoc, ← MonoidalCategory.whiskerLeft_comp,
-      ih (List.nodup_append.1 hn).2.1, MonoidalCategory.whiskerLeft_comp,
-      ← whisker_exchange_assoc, ← whisker_exchange]
+    rw [listTensorPermIso_append_hom_assoc X (h j) (List.Perm.flatMap_left M fun j _ ↦ h j),
+      tensorHom_def_assoc, ← MonoidalCategory.whiskerLeft_comp, ih,
+      MonoidalCategory.whiskerLeft_comp, ← whisker_exchange_assoc, ← whisker_exchange]
     simp [tensorHom_def']
 
 /-- **Uniqueness of the reorderings.** An assignment of maps to the permutations of lists that is
 the identity on the empty list, acts on the tail of a list by whiskering, is the braiding on two
 distinct neighbouring factors, and is compatible with composition of permutations, agrees with
-`listTensorPermIso` on lists without repetition. In particular the reorderings of lists without
-repetition do not depend on the linear order of `ι` used to construct them. -/
+`listTensorPermIso`. In particular the reorderings do not depend on the linear order of `ι` used to
+construct them. -/
 theorem eq_listTensorPermIso_hom
     (F : ∀ {l l' : List ι}, l.Perm l' → (listTensor X l ⟶ listTensor X l'))
     (nil : F List.Perm.nil = 𝟙 _)
@@ -535,18 +533,25 @@ theorem eq_listTensorPermIso_hom
       F (List.Perm.swap b a l) = (listTensorSwapIso X a b l).hom)
     (trans : ∀ {l₁ l₂ l₃ : List ι} (h₁ : l₁.Perm l₂) (h₂ : l₂.Perm l₃),
       F (h₁.trans h₂) = F h₁ ≫ F h₂)
-    {l l' : List ι} (h : l.Perm l') (hl : l.Nodup) : F h = (listTensorPermIso X h).hom := by
+    {l l' : List ι} (h : l.Perm l') : F h = (listTensorPermIso X h).hom := by
+  -- `F` depends only on the two lists, so it is the identity on permutations of a list onto
+  -- itself; this covers the exchange of two equal neighbouring factors.
+  have refl (m : List ι) : F (List.Perm.refl m) = 𝟙 _ := by
+    induction m with
+    | nil => exact nil
+    | cons a m ih =>
+      rw [cons a (List.Perm.refl m), ih]
+      exact MonoidalCategory.whiskerLeft_id (X a) (listTensor X m)
   induction h with
   | nil => simp [nil]
-  | cons a h ih =>
-    rw [cons a h, ih (List.nodup_cons.1 hl).2, listTensorPermIso_cons X a h, whiskerLeftIso_hom]
+  | cons a h ih => rw [cons a h, ih, listTensorPermIso_cons X a h, whiskerLeftIso_hom]
   | swap x y l =>
-    have hxy : y ≠ x := by
-      rintro rfl
-      exact (List.nodup_cons.1 hl).1 List.mem_cons_self
-    rw [swap l hxy, listTensorPermIso_swap X hxy]
+    by_cases hxy : y = x
+    · subst hxy
+      rw [refl, listTensorPermIso_self, Iso.refl_hom]
+    · rw [swap l hxy, listTensorPermIso_swap X hxy]
   | trans h₁ h₂ ih₁ ih₂ =>
-    rw [trans h₁ h₂, ih₁ hl, ih₂ (h₁.nodup_iff.1 hl), listTensorPermIso_hom_listTensorPermIso_hom]
+    rw [trans h₁ h₂, ih₁, ih₂, listTensorPermIso_hom_listTensorPermIso_hom]
 
 end Symmetric
 
