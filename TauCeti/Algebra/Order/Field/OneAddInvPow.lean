@@ -11,7 +11,6 @@ import Mathlib.Algebra.Order.Ring.Pow
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
@@ -33,8 +32,8 @@ namespace TauCeti
 
 variable {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
 
-/-- The sequence `(1 + 1/n)ⁿ` is nondecreasing. At `n = 0` it takes the value `1`, because
-`(0 : α)⁻¹ = 0`. -/
+/-- The sequence `(1 + 1/n)ⁿ` is nondecreasing. At `n = 0` it takes the value `1`, since the
+exponent is `0`. -/
 theorem monotone_one_add_inv_pow : Monotone fun n : ℕ ↦ (1 + (n : α)⁻¹) ^ n := by
   refine monotone_nat_of_le_succ fun n ↦ ?_
   rcases Nat.eq_zero_or_pos n with rfl | hn

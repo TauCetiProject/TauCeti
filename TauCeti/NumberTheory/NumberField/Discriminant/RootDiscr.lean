@@ -74,7 +74,7 @@ theorem minkowskiDiscrBound_pos (n : ℕ) : 0 < minkowskiDiscrBound n := by
     positivity
 
 /-- The recursion `B_{n+1} = (π/4) (1 + 1/n)^{2n} B_n` for the Minkowski discriminant bound. At
-`n = 0` it reads `B₁ = π/4`, because `(0 : ℝ)⁻¹ = 0`. -/
+`n = 0` it reads `B₁ = π/4`, since the factor `(1 + 0⁻¹)⁰` is `1` and `B₀ = 1`. -/
 theorem minkowskiDiscrBound_succ (n : ℕ) :
     minkowskiDiscrBound (n + 1) = π / 4 * (1 + (n : ℝ)⁻¹) ^ (2 * n) * minkowskiDiscrBound n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
