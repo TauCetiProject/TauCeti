@@ -255,9 +255,8 @@ theorem conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul {g b : V → 
   rw [R.sum_map_mul_esymm_erase_map_mul (fun a ↦ map_mul (starRingEnd ℂ) (g x) a),
     conjWirtingerDeriv_fun_mul (f := fun y ↦ g y ^ j) (hg.pow j) hb,
     conjWirtingerDeriv_fun_pow hg]
-  have hpow : g x ^ j = g x ^ (j - 1) * g x := by rw [← pow_succ, Nat.sub_add_cancel hj]
   simp only [smul_add, smul_sub, smul_smul]
-  rw [hpow]
+  rw [← pow_sub_one_mul hj.ne' (g x)]
   field_simp
   module
 
@@ -285,9 +284,8 @@ theorem conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul {b : V 
   · simp only [zero_pow hj.ne', zero_mul, zero_smul]
     module
   have hc' : conj c ≠ 0 := (map_ne_zero _).2 hc
-  have hpow : c ^ j = c ^ (j - 1) * c := by rw [← pow_succ, Nat.sub_add_cancel hj]
   simp only [smul_add, smul_smul]
-  rw [hpow]
+  rw [← pow_sub_one_mul hj.ne' c]
   field_simp
 
 end TauCeti
