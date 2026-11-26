@@ -17,7 +17,10 @@ vanishes on elements (`HomologicalComplex.addCommGrpCat_d_comp_d_apply`). This i
 `AddCommGrpCat` counterpart of `HomologicalComplex.d_comp_d_apply` for complexes of modules.
 
 The cycles and homology of such a complex are described on elements as well: the inclusion of the
-cycles is injective, the class map onto the homology is surjective, and a cycle has zero class
+cycles is injective, an element killed by the differential is a cycle
+(`HomologicalComplex.addCommGrpCat_exists_iCycles_eq`), the class map onto the homology is
+surjective and commutes with homology maps
+(`HomologicalComplex.addCommGrpCat_homologyMap_homologyπ_apply`), and a cycle has zero class
 exactly when it is a boundary (`HomologicalComplex.addCommGrpCat_homologyπ_eq_zero_iff`). These
 are the `AddCommGrpCat` counterparts of the corresponding lemmas for complexes of modules in
 `TauCeti.Algebra.Homology.ModuleCat.Basic`.
@@ -45,6 +48,14 @@ is injective. -/
 lemma addCommGrpCat_iCycles_injective : Function.Injective (K.iCycles n).hom :=
   (AddCommGrpCat.mono_iff_injective _).1 inferInstance
 
+variable {n} in
+/-- In a complex of abelian groups, an element of degree `n` killed by the differential to degree
+`c.next n` is the underlying element of a cycle. -/
+lemma addCommGrpCat_exists_iCycles_eq {m : ι} (hm : c.next n = m) (x : K.X n)
+    (hx : (K.d n m).hom x = 0) : ∃ z : K.cycles n, (K.iCycles n).hom z = x :=
+  (ShortComplex.ab_exact_iff _).1 ((ShortComplex.mk _ _ (K.iCycles_d n m)).exact_of_f_is_kernel
+    (K.cyclesIsKernel n m hm)) x hx
+
 /-- The class map from the degree-`n` cycles of a complex of abelian groups onto its degree-`n`
 homology is surjective. -/
 lemma addCommGrpCat_homologyπ_surjective : Function.Surjective (K.homologyπ n).hom :=
@@ -71,6 +82,15 @@ lemma addCommGrpCat_iCycles_cyclesMap_apply {L : HomologicalComplex AddCommGrpCa
     (z : K.cycles n) :
     (L.iCycles n).hom ((cyclesMap φ n).hom z) = (φ.f n).hom ((K.iCycles n).hom z) := by
   rw [← AddCommGrpCat.comp_apply, cyclesMap_i, AddCommGrpCat.comp_apply]
+
+/-- Homology maps commute with the class map from cycles, on elements of complexes of abelian
+groups. -/
+@[simp]
+lemma addCommGrpCat_homologyMap_homologyπ_apply {L : HomologicalComplex AddCommGrpCat c}
+    (φ : K ⟶ L) (z : K.cycles n) :
+    (homologyMap φ n).hom ((K.homologyπ n).hom z) =
+      (L.homologyπ n).hom ((cyclesMap φ n).hom z) := by
+  rw [← AddCommGrpCat.comp_apply, homologyπ_naturality, AddCommGrpCat.comp_apply]
 
 variable {n} in
 /-- A degree-`n` cycle of a complex of abelian groups has zero homology class exactly when it is a

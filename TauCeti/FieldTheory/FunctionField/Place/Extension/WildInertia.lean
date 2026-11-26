@@ -7,6 +7,7 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.RamificationGroup
 public import Mathlib.GroupTheory.PGroup
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # Positive ramification groups are p-groups
@@ -36,19 +37,15 @@ variable (F)
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Every positive ramification group of a finite inertia group is a `p`-group in residue
-characteristic `p`. This includes the wild inertia group `G₁`. -/
+characteristic `p`. This includes the wild inertia group `G₁`. It is the case of the valuation ring
+`𝒪_P` of `TauCeti.IsLocalRing.isPGroup_ramificationGroup_of_eq_bot`. -/
 theorem isPGroup_ramificationGroup_succ (P : Place k F') (p i : ℕ)
     [CharP P.ResidueField p] [Finite (ramificationGroup F P 0)] :
     IsPGroup p (ramificationGroup F P (i + 1)) := by
-  have _ : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F)
-      P.integers ((i + 1 : ℕ) : ℤ)) := by
-    rw [← ramificationGroup_def]
-    exact Finite.of_injective
-      (Subgroup.inclusion (ramificationGroup_antitone F P (Nat.zero_le (i + 1))))
-      (Subgroup.inclusion_injective _)
-  rw [ramificationGroup_def]
-  exact IsLocalRing.isPGroup_ramificationGroup (P.integers.decompositionSubgroup F) P.integers p
-    (by omega)
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot F P
+  have hN' := hN N le_rfl
+  rw [ramificationGroup_def] at hN' ⊢
+  exact IsLocalRing.isPGroup_ramificationGroup_of_eq_bot p (by omega) hN'
 
 omit [Algebra k F] [IsScalarTower k F F'] in
 /-- If the residue characteristic does not divide the order of inertia, every positive

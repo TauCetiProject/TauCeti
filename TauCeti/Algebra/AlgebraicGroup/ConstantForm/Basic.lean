@@ -75,7 +75,8 @@ a relation between `C` and `Cᵀ`.
 * `TauCeti.ConstantForm.relationMatrix`: the matrix of defining relations `X C Xᵀ - C`.
 * `TauCeti.ConstantForm.definingHopfIdeal_toIdeal_le_ker_iff`: a coordinate morphism kills the
   defining ideal exactly when its generic matrix `X` satisfies `X C Xᵀ = C`.
-* `TauCeti.ConstantForm.definingHopfIdeal`: the Hopf ideal its entries generate.
+* `TauCeti.ConstantForm.definingHopfIdeal`: the Hopf ideal its entries generate, finitely
+  generated as an ideal by `definingHopfIdeal_toIdeal_fg`.
 * `TauCeti.ConstantForm.coordinateHopfAlgebra` and `TauCeti.ConstantForm.coordinateMap`: the
   quotient coordinate Hopf algebra and the quotient morphism onto it.
 * `TauCeti.ConstantForm.groupScheme` and `TauCeti.ConstantForm.inclusion`: the subgroup scheme
@@ -311,6 +312,12 @@ noncomputable def definingHopfIdeal :
 theorem definingHopfIdeal_toIdeal :
     (definingHopfIdeal R n C).toIdeal = Ideal.span (relationSet R n C) := by
   rw [definingHopfIdeal, HopfIdeal.ofSpan_toIdeal]
+
+/-- The defining Hopf ideal is finitely generated: it is spanned by the finitely many entries of
+the relation matrix. -/
+theorem definingHopfIdeal_toIdeal_fg : (definingHopfIdeal R n C).toIdeal.FG := by
+  rw [definingHopfIdeal_toIdeal]
+  exact Submodule.fg_span (Set.finite_range _)
 
 /-- **A coordinate morphism kills the defining ideal exactly when its generic matrix `X`
 satisfies `X C Xᵀ = C`.** This is the criterion by which a subgroup of `GL n` given by generating

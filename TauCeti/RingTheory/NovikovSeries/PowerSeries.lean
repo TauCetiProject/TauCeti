@@ -48,6 +48,10 @@ orbit, where products over all orbits converge in the period topology.
   monomial `r Xⁿ` goes to `r e^(n • γ)`.
 * `TauCeti.NovikovSeries.coeff_ofPowerSeries_nsmul`,
   `TauCeti.NovikovSeries.coeff_ofPowerSeries_of_forall_nsmul_ne`: the coefficients of the image.
+* `TauCeti.NovikovSeries.ofPowerSeries_injective`: the series map is injective.
+* `TauCeti.NovikovSeries.mem_nonnegSubring_nat`, `TauCeti.NovikovSeries.mem_posIdeal_nat_iff`:
+  every Novikov series on `ℕ` is nonnegative, and it lies in the positive ideal exactly when its
+  constant coefficient vanishes.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_periodFiltration`: a series divisible by `Xⁿ` goes to
   the period neighbourhood `U_(N γ * n)`.
 * `TauCeti.NovikovSeries.ofPowerSeries_mem_nonnegSubring`: the image lies in the nonnegative
@@ -194,6 +198,12 @@ theorem coeff_ofPowerSeries_of_forall_nsmul_ne {h : H} (hh : ∀ n : ℕ, n • 
   rw [ofPowerSeries_apply]
   exact coeff_map_eq_zero_of_notMem_range _ _ _ _ fun ⟨n, hn⟩ => hh n hn
 
+/-- The series map is injective: the image of a power series has its `n`-th coefficient at
+`n • γ`. -/
+theorem ofPowerSeries_injective : Function.Injective (ofPowerSeries γ hγ : R⟦X⟧ →+* _) :=
+  fun f g h ↦ PowerSeries.ext fun n ↦ by
+    simpa using congrArg (fun a : NovikovSeries R H N ↦ a.coeff (n • γ)) h
+
 /-- **Naturality of the substitution.** Pushing the image of a power series at `e^γ` forward along
 a coefficient map `ρ` and an exponent homomorphism `φ` rescaling periods gives the image of the
 power series with coefficients mapped by `ρ` at `e^(φ γ)`. -/
@@ -229,6 +239,20 @@ theorem toPowerSeries_symm_mem_periodFiltration_iff {f : R⟦X⟧} {n : ℕ} :
     (toPowerSeries.symm f : NovikovSeries R ℕ (Nat.castAddMonoidHom ℝ)) ∈
         periodFiltration R (Nat.castAddMonoidHom ℝ) n ↔ X ^ n ∣ f := by
   simp [mem_periodFiltration, PowerSeries.X_pow_dvd_iff]
+
+/-- Every Novikov series on `ℕ` lies in the nonnegative subring. -/
+theorem mem_nonnegSubring_nat (a : NovikovSeries R ℕ (Nat.castAddMonoidHom ℝ)) :
+    a ∈ nonnegSubring R (Nat.castAddMonoidHom ℝ) :=
+  mem_nonnegSubring.2 fun h hh ↦ absurd hh (by simp)
+
+/-- A Novikov series on `ℕ` lies in the positive ideal exactly when its constant coefficient
+vanishes. -/
+theorem mem_posIdeal_nat_iff {a : nonnegSubring R (Nat.castAddMonoidHom ℝ)} :
+    a ∈ posIdeal R (Nat.castAddMonoidHom ℝ) ↔
+      (a : NovikovSeries R ℕ (Nat.castAddMonoidHom ℝ)).coeff 0 = 0 :=
+  mem_posIdeal.trans ⟨fun ha ↦ ha 0 (by simp), fun ha h hh ↦ by
+    obtain rfl : h = 0 := by simpa using hh
+    exact ha⟩
 
 variable {H : Type*} [AddMonoid H] {N : H →+ ℝ} {γ : H} (hγ : 0 < N γ)
 

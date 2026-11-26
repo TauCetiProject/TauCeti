@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Analysis.Complex.ReImTopology
 public import Mathlib.Analysis.Convex.PathConnected
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.PairShift
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Characterization
 public import TauCeti.Analysis.Normed.Operator.Resolvent.Unbounded
+public import TauCeti.Analysis.RCLike.Convex
 
 /-!
 # The resolvent set of a symmetric operator
@@ -31,7 +31,8 @@ not closed, its resolvent set is empty.
 For a closed densely defined symmetric `S` and nonreal `z`, the scalar `z` is a resolvent point
 exactly when `conj z` is not an eigenvalue of the adjoint `S†`: the range of `z • I - S` is
 closed, and its orthogonal complement is the eigenspace `ker (S† - conj z)`, the deficiency
-space at `z`. This is the link between the four alternatives and the deficiency indices of `S`.
+subspace `N_{conj z}(S)` (`LinearPMap.deficiencySubspace`). This is the link between the four
+alternatives and the deficiency indices of `S`.
 
 ## Main results
 
@@ -48,8 +49,13 @@ In the namespace `LinearPMap.IsFormalAdjoint`:
 * `mem_resolventSet_iff_forall_adjoint_apply_eq_smul`: for a closed densely defined symmetric
   operator, a nonreal `z` is a resolvent point exactly when `S†` has no eigenvector for
   `conj z`.
+* `conj_mem_resolventSet_of_deficiencySubspace_eq_bot`: for a closed symmetric operator and
+  nonreal `z`, vanishing of the deficiency subspace `N_z(S)` makes `conj z` a resolvent point.
 * `isSelfAdjoint_of_mem_resolventSet`: one resolvent point in each open half-plane makes a
-  symmetric operator on a complex Hilbert space self-adjoint.
+  symmetric operator self-adjoint.
+* `isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot`: a closed symmetric
+  operator is self-adjoint exactly when its deficiency subspaces at one point of each open
+  half-plane vanish.
 * `resolventSet_alternatives`, `spectrum_alternatives`: the four possible resolvent sets and
   spectra of a symmetric operator on a complex Hilbert space.
 * `isSelfAdjoint_iff_spectrum_subset`: a symmetric operator on a complex Hilbert space is
@@ -136,8 +142,7 @@ half-plane. -/
 theorem mem_resolventSet_iff_of_im_pos (hS : S.IsFormalAdjoint S) {z w : 𝕜}
     (hz : 0 < RCLike.im z) (hw : 0 < RCLike.im w) :
     z ∈ S.resolventSet ↔ w ∈ S.resolventSet := by
-  have hs : IsPreconnected {u : 𝕜 | 0 < RCLike.im u} :=
-    (convex_halfSpace_gt RCLike.imLm.isLinear 0).isPreconnected
+  have hs := (RCLike.convex_halfSpace_im_gt (K := 𝕜) 0).isPreconnected
   have him : ∀ u ∈ {u : 𝕜 | 0 < RCLike.im u}, RCLike.im u ≠ 0 := fun _ h ↦ ne_of_gt h
   exact ⟨fun h ↦ hS.subset_resolventSet_of_mem hs him hz h hw,
     fun h ↦ hS.subset_resolventSet_of_mem hs him hw h hz⟩
@@ -147,8 +152,7 @@ half-plane. -/
 theorem mem_resolventSet_iff_of_im_neg (hS : S.IsFormalAdjoint S) {z w : 𝕜}
     (hz : RCLike.im z < 0) (hw : RCLike.im w < 0) :
     z ∈ S.resolventSet ↔ w ∈ S.resolventSet := by
-  have hs : IsPreconnected {u : 𝕜 | RCLike.im u < 0} :=
-    (convex_halfSpace_lt RCLike.imLm.isLinear 0).isPreconnected
+  have hs := (RCLike.convex_halfSpace_im_lt (K := 𝕜) 0).isPreconnected
   have him : ∀ u ∈ {u : 𝕜 | RCLike.im u < 0}, RCLike.im u ≠ 0 := fun _ h ↦ ne_of_lt h
   exact ⟨fun h ↦ hS.subset_resolventSet_of_mem hs him hz h hw,
     fun h ↦ hS.subset_resolventSet_of_mem hs him hw h hz⟩
@@ -167,6 +171,46 @@ theorem mem_resolventSet_iff_forall_adjoint_apply_eq_smul (hS : S.IsFormalAdjoin
       (denseRange_smul_sub_iff hdense).mpr hker, _, abs_pos.mpr hz,
       hS.abs_im_mul_norm_le_norm_smul_sub z⟩⟩
 
+/-- **Vanishing deficiency subspaces give resolvent points.** For a closed symmetric operator `S`
+and a nonreal scalar `z`, if the deficiency subspace `N_z(S)` vanishes then `conj z` is a
+resolvent point of `S`. -/
+theorem conj_mem_resolventSet_of_deficiencySubspace_eq_bot (hS : S.IsFormalAdjoint S)
+    (hcl : S.IsClosed) {z : 𝕜} (hz : RCLike.im z ≠ 0) (h : S.deficiencySubspace z = ⊥) :
+    starRingEnd 𝕜 z ∈ S.resolventSet :=
+  hcl.mem_resolventSet_iff_bijective.2
+    ⟨hS.smul_sub_injective (by rwa [RCLike.conj_im, neg_ne_zero]),
+      (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hz).1 h⟩
+
+/-- **One resolvent point in each half-plane makes a symmetric operator self-adjoint.** A
+symmetric operator on a Hilbert space with a resolvent point in the open upper half-plane and one
+in the open lower half-plane is self-adjoint. -/
+theorem isSelfAdjoint_of_mem_resolventSet (hS : S.IsFormalAdjoint S) {z w : 𝕜}
+    (hz : 0 < RCLike.im z) (hzρ : z ∈ S.resolventSet) (hw : RCLike.im w < 0)
+    (hwρ : w ∈ S.resolventSet) : IsSelfAdjoint S := by
+  -- `conj w` lies in the upper half-plane with `z`, so it is a resolvent point too.
+  have hw' : starRingEnd 𝕜 w ∈ S.resolventSet :=
+    (hS.mem_resolventSet_iff_of_im_pos hz (by simpa using hw)).1 hzρ
+  refine isSelfAdjoint_def.2 (hS.adjoint_eq_of_smul_sub_surjective (smul_sub_bijective hw').2 ?_)
+  simpa only [RCLike.conj_conj] using (smul_sub_bijective hwρ).2
+
+/-- **Von Neumann's criterion via deficiency subspaces.** A closed symmetric operator `S` is
+self-adjoint exactly when both its deficiency subspaces `N_z(S)` and `N_w(S)` vanish, for any `z`
+in the open upper half-plane and `w` in the open lower half-plane; over `ℂ`, for `z = i` and
+`w = -i` these are the classical deficiency spaces `N₊` and `N₋`. -/
+theorem isSelfAdjoint_iff_deficiencySubspace_eq_bot_and_deficiencySubspace_eq_bot
+    (hS : S.IsFormalAdjoint S) (hcl : S.IsClosed) {z w : 𝕜} (hz : 0 < RCLike.im z)
+    (hw : RCLike.im w < 0) :
+    IsSelfAdjoint S ↔ S.deficiencySubspace z = ⊥ ∧ S.deficiencySubspace w = ⊥ := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz₀, hw₀⟩ ↦ ?_⟩
+  · exact (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hz.ne').2
+      (h.smul_sub_surjective (by simpa using hz.ne'))
+  · exact (hS.deficiencySubspace_eq_bot_iff_smul_sub_surjective hcl hw.ne).2
+      (h.smul_sub_surjective (by simpa using hw.ne))
+  -- `conj w` is a resolvent point in the upper half-plane and `conj z` one in the lower.
+  exact hS.isSelfAdjoint_of_mem_resolventSet (by simpa using hw)
+    (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hw.ne hw₀) (by simpa using hz)
+    (hS.conj_mem_resolventSet_of_deficiencySubspace_eq_bot hcl hz.ne' hz₀)
+
 end RCLike
 
 section Complex
@@ -175,22 +219,6 @@ open Complex
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
   {S : H →ₗ.[ℂ] H}
-
-/-- **One resolvent point in each half-plane makes a symmetric operator self-adjoint.** A
-symmetric operator on a complex Hilbert space with a resolvent point in the open upper half-plane
-and one in the open lower half-plane is self-adjoint. -/
-theorem isSelfAdjoint_of_mem_resolventSet (hS : S.IsFormalAdjoint S) {z w : ℂ}
-    (hz : 0 < z.im) (hzρ : z ∈ S.resolventSet) (hw : w.im < 0) (hwρ : w ∈ S.resolventSet) :
-    IsSelfAdjoint S := by
-  have hI : I ∈ S.resolventSet := (hS.mem_resolventSet_iff_of_im_pos hz (by simp)).mp hzρ
-  have hnegI : -I ∈ S.resolventSet := (hS.mem_resolventSet_iff_of_im_neg hw (by simp)).mp hwρ
-  refine isSelfAdjoint_of_surjective_addSub S hS (fun φ ↦ ?_) fun φ ↦ ?_
-  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective hnegI).surjective (-φ)
-    beta_reduce at hψ
-    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_smul, neg_sub, sub_neg_eq_add, add_comm]⟩
-  · obtain ⟨ψ, hψ⟩ := (smul_sub_bijective hI).surjective (-φ)
-    beta_reduce at hψ
-    exact ⟨ψ, by rw [← neg_neg φ, ← hψ, neg_sub]⟩
 
 /-- **The four possible resolvent sets of a symmetric operator.** The resolvent set of a
 symmetric operator on a complex Hilbert space is empty, exactly the open lower half-plane,

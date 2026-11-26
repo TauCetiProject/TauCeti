@@ -62,7 +62,7 @@ noncomputable section
 
 open scoped ContDiff Manifold
 
-universe u v w
+universe u v w u' v' w'
 
 namespace TauCeti.Lie
 
@@ -72,7 +72,10 @@ subgroup.
 The source `X` carries its own topology and smooth structure.  The homomorphism `toHom` is
 injective, has range exactly `K`, and is an immersion.  Thus the topology of `X` is not required
 to agree with the subspace topology on `K`; this is the distinction between immersed and embedded
-Lie subgroups. -/
+Lie subgroups.
+
+The universes of the source `X` and of its model spaces `E'` and `H'` are independent of those of
+the ambient group and its model. -/
 structure ImmersedLieSubgroupData
     {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {H : Type v} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
@@ -80,13 +83,13 @@ structure ImmersedLieSubgroupData
     [LieGroup I ∞ G]
     (K : Subgroup G) where
   /-- The connected Lie group which parametrizes the immersed subgroup. -/
-  X : Type w
+  X : Type w'
   /-- The group structure on the source. -/
   [group : Group X]
   /-- The intrinsic topology on the source. -/
   [topologicalSpace : TopologicalSpace X]
   /-- The model vector space of the source. -/
-  E' : Type u
+  E' : Type u'
   /-- The additive topological structure on the source model space. -/
   [normedAddCommGroup : NormedAddCommGroup E']
   /-- The real normed-space structure on the source model space. -/
@@ -94,7 +97,7 @@ structure ImmersedLieSubgroupData
   /-- The source model space is finite-dimensional. -/
   [finiteDimensional : FiniteDimensional ℝ E']
   /-- The model chart target of the source. -/
-  H' : Type v
+  H' : Type v'
   /-- The topology on the source model chart target. -/
   [modelTopology : TopologicalSpace H']
   /-- The model with corners for the source. -/
@@ -284,19 +287,20 @@ theorem mulEquivOfEq_mulEquivOfEq (d : ImmersedLieSubgroupData I K)
 end ImmersedLieSubgroupData
 
 /-- A subgroup is an immersed Lie subgroup when it is the image of an injective smooth immersion
-from a connected Lie group carrying its own manifold topology. -/
+from a connected Lie group carrying its own manifold topology. The source group and its model
+spaces are taken in the universes of `G`, `E` and `H`. -/
 def IsImmersedLieSubgroup (K : Subgroup G) : Prop :=
-  Nonempty (ImmersedLieSubgroupData I K)
+  Nonempty (ImmersedLieSubgroupData.{u, v, w, u, v, w} I K)
 
 /-- Characterization of `TauCeti.Lie.IsImmersedLieSubgroup` by the data it forgets. -/
 @[simp]
 theorem isImmersedLieSubgroup_iff {K : Subgroup G} :
-    IsImmersedLieSubgroup (I := I) K ↔ Nonempty (ImmersedLieSubgroupData I K) :=
+    IsImmersedLieSubgroup (I := I) K ↔ Nonempty (ImmersedLieSubgroupData.{u, v, w, u, v, w} I K) :=
   Iff.rfl
 
 /-- Immersed-Lie-subgroup data exhibits its specified subgroup as an immersed Lie subgroup. -/
 theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
-    (d : ImmersedLieSubgroupData I K) : IsImmersedLieSubgroup (I := I) K :=
+    (d : ImmersedLieSubgroupData.{u, v, w, u, v, w} I K) : IsImmersedLieSubgroup (I := I) K :=
   ⟨d⟩
 
 /-- A totally disconnected immersed Lie subgroup is trivial. -/

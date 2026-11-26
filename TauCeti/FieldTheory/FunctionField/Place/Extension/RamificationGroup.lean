@@ -7,8 +7,10 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
+public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
-public import TauCeti.RingTheory.LocalRing.RamificationGroup
+public import TauCeti.RingTheory.LocalRing.RamificationGroup.Basic
+import TauCeti.RingTheory.LocalRing.RamificationGroup.Graded
 
 /-!
 # The higher ramification groups of a place
@@ -305,30 +307,27 @@ theorem commutator_ramificationGroup_le (i : ℕ) :
 
 /-- **In characteristic `p` the successive quotients of the ramification filtration are killed by
 `p`** (Stichtenoth, Proposition 3.8.5): the `p`-th power of an element of `G_{i+1}(P)` lies in
-`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. -/
+`G_{i+2}(P)`, so `G_{i+1}(P) / G_{i+2}(P)` is elementary abelian. This is the case of the
+valuation ring `𝒪_P` of `TauCeti.IsLocalRing.pow_mem_ramificationGroup_of_charP`. -/
 theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP P.ResidueField p] (i : ℕ)
     {g : P.integers.decompositionSubgroup F} (hg : g ∈ ramificationGroup F P (i + 1)) :
     g ^ p ∈ ramificationGroup F P (i + 2) := by
-  let g' : IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers
-      ((i : ℤ) + 1) := ⟨g, (Nat.cast_succ (R := ℤ) i).symm ▸ hg⟩
-  have hpow : (QuotientGroup.mk g' :
-      IsLocalRing.RamificationGroupGraded (P.integers.decompositionSubgroup F) P.integers
-        ((i : ℤ) + 1)) ^ p = 1 :=
-    IsLocalRing.ramificationGroupGraded_natCast_succ_pow_char_eq_one p i _
-  rw [← QuotientGroup.mk_pow, QuotientGroup.eq_one_iff, Subgroup.mem_subgroupOf] at hpow
-  exact_mod_cast hpow
+  rw [ramificationGroup_def] at hg ⊢
+  simpa [add_assoc, one_add_one_eq_two] using
+    IsLocalRing.pow_mem_ramificationGroup_of_charP p (by omega) hg
 
 /-- **In characteristic zero a finite first ramification group is trivial** (Stichtenoth,
-Proposition 3.8.5): each successive quotient embeds in a
-torsion-free additive group, so the filtration is constant from `1` on and meets in `1`. -/
+Proposition 3.8.5): each successive quotient is a torsion-free group, so the filtration is
+constant from `1` on and meets in `1`. This is the case of the valuation ring `𝒪_P` of
+`TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero`. -/
 theorem ramificationGroup_one_eq_bot [Finite (ramificationGroup F P 1)]
     [CharZero P.ResidueField] :
     ramificationGroup F P 1 = ⊥ := by
-  have : Finite (IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers 1) :=
-    ‹_›
-  simpa only [ramificationGroup_def, Nat.cast_one] using
-    IsLocalRing.ramificationGroup_one_eq_bot_of_charZero
-      (P.integers.decompositionSubgroup F) P.integers
+  have hfin := ‹Finite (ramificationGroup F P 1)›
+  rw [ramificationGroup_def] at hfin ⊢
+  refine IsLocalRing.ramificationGroup_eq_bot_of_charZero (by norm_num) (eq_bot_iff.mpr ?_)
+  rw [← iInf_ramificationGroup_eq_bot F P]
+  exact le_iInf fun n ↦ iInf_le _ (n : ℤ)
 
 end Structure
 

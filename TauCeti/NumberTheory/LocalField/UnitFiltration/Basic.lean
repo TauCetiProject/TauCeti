@@ -539,8 +539,9 @@ instance : T2Space Kˣ := IsTopologicalGroup.t2Space_iff_one_closed.mpr <| by
   rw [← Subgroup.coe_bot, ← iInf_unitFiltration, Subgroup.coe_iInf]
   exact isClosed_iInter fun i ↦ (unitFiltration K i).isClosed_of_isOpen (isOpen_unitFiltration i)
 
-/-- The image in `K` of the depth-zero step of the unit filtration. -/
-private theorem image_unitFiltration_zero :
+/-- The image in `K` of the depth-zero step of the unit filtration is the set of elements of
+valuation one. -/
+theorem image_unitFiltration_zero :
     Units.val '' (unitFiltration K 0 : Set Kˣ) = {y : K | valuation K y = 1} := by
   ext y
   constructor
