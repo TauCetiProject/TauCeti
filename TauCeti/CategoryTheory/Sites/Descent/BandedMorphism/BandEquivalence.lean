@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Aut.Conjugation
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 public import TauCeti.CategoryTheory.Sites.Descent.Banding
 
 /-!
@@ -23,22 +24,23 @@ invariant under natural isomorphism of fibre functors
 functors isomorphic to those of a band-preserving one is band-preserving
 (`GerbeBandEquivalence.of_fibreNatIso`), and band preservation is invariant under invertible
 modifications (`GerbeBandEquivalence.of_modificationIso`,
-`GerbeBandEquivalence.modificationIso_iff`). The inverse of a fibre equivalence that carries the
+`GerbeBandEquivalence.modificationIso_iff`, evaluating at the components
+`StrongTrans.isoApp`). The inverse of a fibre equivalence that carries the
 band carries it back (`GerbeBandEquivalence.inverse_map_band`), the unit and counit of the
 equivalence conjugate band automorphisms to band automorphisms
 (`GerbeBandEquivalence.unit_band`, `GerbeBandEquivalence.counit_band`), and a strong
 transformation `σ : G ⟶ F` whose components are isomorphic to the inverses of the components of a
 band-preserving `η` with equivalence components is band-preserving
-(`GerbeBandEquivalence.inverse_preserving`). This is the band part of Olsson, Lemma 31.3: a
-morphism of `A`-gerbes that is an equivalence has a band-preserving inverse.
+(`GerbeBandEquivalence.inverse_preserving`). Olsson, Lemma 31.3 shows that a band-preserving
+morphism of `A`-gerbes is an equivalence; the statements here, which need no gerbe hypotheses,
+give the band preservation of its inverse.
 
 ## Main declarations
 
 In the namespace `CategoryTheory.Pseudofunctor.GerbeBandEquivalence`:
 
 * `MapsBand`: a fibre functor carries the band; `bandPreserving_iff`.
-* `fibreNatIso_map_band`, `of_fibreNatIso`, `componentNatIso`, `of_modificationIso`,
-  `modificationIso_iff`.
+* `fibreNatIso_map_band`, `of_fibreNatIso`, `of_modificationIso`, `modificationIso_iff`.
 * `inverse_map_band`, `unit_band`, `counit_band`, `inverse_preserving`.
 
 ## References
@@ -97,30 +99,10 @@ theorem of_fibreNatIso {η θ : F ⟶ G} [hη : BandPreserving bF bG η]
   (bandPreserving_iff θ).2 fun U ↦
     fibreNatIso_map_band (e U) ((bandPreserving_iff η).1 hη U)
 
-/-- The natural isomorphism of component functors over `U` given by an invertible modification
-`e : η ≅ θ`. -/
-def componentNatIso {η θ : F ⟶ G} (e : η ≅ θ) (U : C) :
-    (η.app (.mk (op U))).toFunctor ≅ (θ.app (.mk (op U))).toFunctor :=
-  Cat.Hom.toNatIso
-    { hom := e.hom.as.app (.mk (op U))
-      inv := e.inv.as.app (.mk (op U))
-      hom_inv_id := congrArg (fun m : η ⟶ η ↦ m.as.app (.mk (op U))) e.hom_inv_id
-      inv_hom_id := congrArg (fun m : θ ⟶ θ ↦ m.as.app (.mk (op U))) e.inv_hom_id }
-
-@[simp]
-theorem componentNatIso_hom_app {η θ : F ⟶ G} (e : η ≅ θ) (U : C) (x : F.obj (.mk (op U))) :
-    (componentNatIso e U).hom.app x = (e.hom.as.app (.mk (op U))).toNatTrans.app x :=
-  (rfl)
-
-@[simp]
-theorem componentNatIso_inv_app {η θ : F ⟶ G} (e : η ≅ θ) (U : C) (x : F.obj (.mk (op U))) :
-    (componentNatIso e U).inv.app x = (e.inv.as.app (.mk (op U))).toNatTrans.app x :=
-  (rfl)
-
 /-- **Band preservation is invariant under invertible modifications.** -/
 theorem of_modificationIso {η θ : F ⟶ G} [BandPreserving bF bG η] (e : η ≅ θ) :
     BandPreserving bF bG θ :=
-  of_fibreNatIso (componentNatIso e)
+  of_fibreNatIso fun U ↦ Cat.Hom.toNatIso (StrongTrans.isoApp e (.mk (op U)))
 
 /-- For an invertible modification `e : η ≅ θ`, `η` is band-preserving exactly when `θ` is. -/
 theorem modificationIso_iff {η θ : F ⟶ G} (e : η ≅ θ) :
