@@ -194,6 +194,15 @@ theorem dvd_iff_eq_primePowerBase {v : HeightOneSpectrum (𝓞 K)} {A : IdealPri
   · rw [hv, ← primePowerBase_pow_primePowerExponent A]
     exact dvd_pow_self _ (primePowerExponent_pos A).ne'
 
+/-- A prime-power ideal is prime to a set of height-one primes `S` iff its prime base lies outside
+`S`. -/
+@[simp]
+theorem isPrimeTo_idealPrimePower_iff {A : IdealPrimePower K}
+    {S : Set (HeightOneSpectrum (𝓞 K))} :
+    Ideal.IsPrimeTo (A : Ideal (𝓞 K)) S ↔ primePowerBase A ∉ S := by
+  rw [← primePowerBase_pow_primePowerExponent A,
+    Ideal.isPrimeTo_pow_iff (primePowerExponent_pos A).ne', Ideal.isPrimeTo_asIdeal_iff]
+
 /-- The absolute norm of a prime-power ideal is the corresponding power of the norm of its
 prime base. -/
 theorem absNorm_eq_absNorm_primePowerBase_pow (A : IdealPrimePower K) :

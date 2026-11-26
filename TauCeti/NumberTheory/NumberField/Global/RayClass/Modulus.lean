@@ -79,6 +79,8 @@ away from a finite set of primes.
   with unit finite part and every real place is total positivity.
 * `TauCeti.GlobalNumberFields.unitsCongruenceSubgroup_narrowModulus`: the units congruent to one
   modulo the narrow modulus are the totally positive integer units.
+* `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_asIdeal_iff`: a height-one prime ideal is prime
+  to the modulus exactly when its spectrum point lies outside the support.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_of_dvd_span_singleton`: a divisor of a principal
   ideal whose generator is a unit at the finite part is prime to the modulus.
 * `TauCeti.GlobalNumberFields.Modulus.isCoprimeTo_span_singleton_iff`: an integer generates an
@@ -574,6 +576,12 @@ def Modulus.IsCoprimeTo (𝔪 : Modulus K) (I : Ideal (𝓞 K)) : Prop :=
 
 theorem Modulus.isCoprimeTo_iff {𝔪 : Modulus K} {I : Ideal (𝓞 K)} :
     𝔪.IsCoprimeTo I ↔ I ≠ ⊥ ∧ ∀ v ∈ 𝔪.support, ¬ v.asIdeal ∣ I := Ideal.isPrimeTo_iff
+
+/-- A height-one prime ideal is prime to a modulus exactly when its spectrum point is not in the
+support. -/
+theorem Modulus.isCoprimeTo_asIdeal_iff {𝔪 : Modulus K} {v : HeightOneSpectrum (𝓞 K)} :
+    𝔪.IsCoprimeTo v.asIdeal ↔ v ∉ 𝔪.support :=
+  Ideal.isPrimeTo_asIdeal_iff
 
 /-- **A divisor of a principal ideal with a generator prime to the modulus is prime to the
 modulus.** -/

@@ -211,6 +211,13 @@ theorem vonMangoldtTransform_apply_prime_pow (f : IdealArithmeticFunction K)
       f (P ^ n) * Real.log (Ideal.absNorm (P : Ideal (𝓞 K))) := by
   rw [vonMangoldtTransform_apply, vonMangoldt_apply_prime_pow hP hn]
 
+/-- A von Mangoldt transform vanishes away from prime-power ideals. -/
+@[simp]
+theorem vonMangoldtTransform_eq_zero_of_not_isPrimePow (f : IdealArithmeticFunction K)
+    {A : (Ideal (𝓞 K))⁰} (hA : ¬ IsPrimePow (A : Ideal (𝓞 K))) :
+    f.vonMangoldtTransform A = 0 := by
+  rw [vonMangoldtTransform_apply, vonMangoldt_eq_zero_of_not_isPrimePow hA, mul_zero]
+
 /-- The support of a von Mangoldt transform is the intersection of the support of the original
 function with the prime-power ideals. -/
 @[simp]

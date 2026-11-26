@@ -69,6 +69,9 @@ and a class with positive sign is determined by its residue.
   `(n)·∞` to `(d)` is reduction modulo `d` followed by the quotient by `±1`.
 * `TauCeti.GlobalNumberFields.ratFiniteModulusEquivZMod_idealClass`: the ray class modulo `(n)` of
   a nonzero integral ideal prime to `n` is its absolute norm modulo `n`, up to sign.
+* `TauCeti.GlobalNumberFields.subsingleton_rayClassGroup_ratModulus_of_le_two` and
+  `TauCeti.GlobalNumberFields.instSubsingletonRayClassGroupOneRat`: the ray class group of `ℚ` is
+  trivial modulo `(n)·∞` for `n ≤ 2` and at the trivial modulus.
 * `TauCeti.GlobalNumberFields.two_mul_card_rayClassGroup_ratFiniteModulus`: for `n > 2`, the ray
   class group modulo `(n)` has order `φ(n) / 2`.
 
@@ -112,8 +115,7 @@ variable {n hn} in
 theorem asIdeal_mem_integralIdealsPrimeTo_ratModulus_iff {v : HeightOneSpectrum (𝓞 ℚ)} :
     v.asIdeal ∈ integralIdealsPrimeTo (ratModulus n hn) ↔ (n : 𝓞 ℚ) ∉ v.asIdeal :=
   Modulus.mem_integralIdealsPrimeTo.trans <|
-    (Modulus.isCoprimeTo_iff.trans Ideal.isPrimeTo_iff.symm).trans <|
-      Ideal.isPrimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
+    Modulus.isCoprimeTo_asIdeal_iff.trans mem_ratModulus_support_iff.not
 
 variable {n hn} in
 /-- A nonzero ideal of `𝓞 ℚ` is coprime to `ratModulus n hn` exactly when its absolute norm is
@@ -239,6 +241,18 @@ theorem coe_ratModulusEquivZMod_idealClass (I : integralIdealsPrimeTo (ratModulu
   have h : (ratModulusEquivZMod n hn).symm u = idealClass (ratModulus n hn) I := by
     rw [ratModulusEquivZMod_symm_apply, ← zmodUnitsToRayClass_apply, hcl]
   rw [← hu, ← h, MulEquiv.apply_symm_apply]
+
+/-- For `n ≤ 2`, the ray class group of `ℚ` modulo `(n)·∞` is a subsingleton. -/
+theorem subsingleton_rayClassGroup_ratModulus_of_le_two {n : ℕ} {hn : n ≠ 0} (h2 : n ≤ 2) :
+    Subsingleton (RayClassGroup (ratModulus n hn)) := by
+  have : n = 1 ∨ n = 2 := by omega
+  rcases this with rfl | rfl <;> exact (ratModulusEquivZMod _ hn).toEquiv.subsingleton
+
+/-- The ray class group of `ℚ` at the trivial modulus is trivial. -/
+instance instSubsingletonRayClassGroupOneRat :
+    Subsingleton (RayClassGroup (Modulus.one ℚ)) :=
+  have := subsingleton_rayClassGroup_ratModulus_of_le_two (hn := one_ne_zero) (by decide)
+  (classMap_surjective (Modulus.one_dvd (ratModulus 1 one_ne_zero))).subsingleton
 
 /-! ### Divisibility of the moduli `(n)·∞` and compatibility of the identification -/
 

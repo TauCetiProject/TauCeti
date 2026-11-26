@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.VonMangoldt
+public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.HigherPrimePowers
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
@@ -59,8 +59,10 @@ system does not get that hypothesis for free; what it has to supply is the domin
 * `TauCeti.normCoeff_vonMangoldt` identifies the coefficient system of the full prime carrier with
   the norm regrouping `TauCeti.normCoeff` of the ideal von Mangoldt function.
 * `TauCeti.primeVonMangoldtCoeff_rat_natGenerator_pow` evaluates the coefficient system of any set
-  of primes of `𝓞 ℚ` at a prime power, and `TauCeti.primeVonMangoldtCoeff_rat_le` bounds it by
-  Mathlib's von Mangoldt function `Λ`.
+  of primes of `𝓞 ℚ` at a prime power, `TauCeti.primeVonMangoldtCoeff_rat_univ` identifies the full
+  rational coefficient system with Mathlib's von Mangoldt function `Λ`,
+  `TauCeti.primeVonMangoldtCoeff_rat_le` bounds every subset's coefficient system by `Λ`, and
+  `TauCeti.primePsi_rat_univ` identifies `primePsi ℚ Set.univ` with `Chebyshev.psi`.
 
 ## Use
 
@@ -78,9 +80,10 @@ boundary package and the resulting prime-number-theorem transfer are in
 The rational-prime case of `ψ`, `ϑ` and their difference is Mathlib's
 `Mathlib/NumberTheory/Chebyshev.lean`, whose `Chebyshev.theta_le_psi` and
 `Chebyshev.abs_psi_sub_theta_le_sqrt_mul_log` are the analogues of
-`TauCeti.primeTheta_le_primePsi` and `TauCeti.standardPrimePowerRemoval`; nothing is transported
-from there, since the estimate consumed here is proved over prime ideals in
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/HigherPrimePowers.lean`.
+`TauCeti.primeTheta_le_primePsi` and `TauCeti.standardPrimePowerRemoval`; no estimate is transported
+from there, since the bound consumed here is proved over prime ideals in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/HigherPrimePowers.lean`, and `Chebyshev.psi` is
+imported solely for the exact identification `TauCeti.primePsi_rat_univ`.
 -/
 
 public section
@@ -563,18 +566,39 @@ theorem primeVonMangoldtCoeff_rat_natGenerator_pow (S : Set (HeightOneSpectrum (
   · exact primeVonMangoldtWeight_of_pow_of_notMem h rfl
 
 open ArithmeticFunction in
-/-- Over `ℚ`, the von Mangoldt coefficients of any set of primes are bounded by `Λ`. -/
-theorem primeVonMangoldtCoeff_rat_le (S : Set (HeightOneSpectrum (𝓞 ℚ))) (n : ℕ) :
-    primeVonMangoldtCoeff ℚ S n ≤ Λ n := by
+/-- Over `ℚ`, `primeVonMangoldtCoeff ℚ Set.univ` agrees with `ArithmeticFunction.vonMangoldt` at
+every natural number. -/
+@[simp]
+theorem primeVonMangoldtCoeff_rat_univ (n : ℕ) :
+    primeVonMangoldtCoeff ℚ Set.univ n = Λ n := by
   by_cases hn : IsPrimePow n
   · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
     obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
-    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow S v hk, hv, vonMangoldt_apply_pow hk.ne',
+    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow Set.univ v hk,
+      ite_eq_left (Set.mem_univ v), hv, vonMangoldt_apply_pow hk.ne',
       vonMangoldt_apply_prime hp]
-    split_ifs
-    exacts [le_rfl, Real.log_nonneg (mod_cast hp.one_le)]
-  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow S hn]
-    exact vonMangoldt_nonneg
+  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow _ hn,
+      vonMangoldt_eq_zero_iff.mpr hn]
+
+open ArithmeticFunction in
+/-- Over `ℚ`, the von Mangoldt coefficients of any set of primes are bounded by `Λ`. -/
+theorem primeVonMangoldtCoeff_rat_le (S : Set (HeightOneSpectrum (𝓞 ℚ))) (n : ℕ) :
+    primeVonMangoldtCoeff ℚ S n ≤ Λ n :=
+  (primeVonMangoldtCoeff_mono_set (Set.subset_univ S) n).trans_eq
+    (primeVonMangoldtCoeff_rat_univ n)
+
+/-- Over `ℚ`, `primePsi ℚ Set.univ` is Mathlib's `Chebyshev.psi`. -/
+@[simp]
+theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by
+  rw [primePsi_eq_sum_range, Chebyshev.psi]
+  simp_rw [primeVonMangoldtCoeff_rat_univ]
+  refine (Finset.sum_subset (fun n hn ↦ Finset.mem_range.mpr (by
+    have := Finset.mem_Ioc.mp hn; omega)) fun n hn hnot ↦ ?_).symm
+  have hn0 : n = 0 := by
+    have := Finset.mem_range.mp hn
+    rw [Finset.mem_Ioc] at hnot
+    omega
+  rw [hn0, ArithmeticFunction.map_zero]
 
 end TauCeti

@@ -121,10 +121,8 @@ group is then trivial. -/
 @[simp] theorem rayClassConductor_bot_ratModulus_of_le_two (h2 : n ≤ 2) :
     rayClassConductor (⊥ : Subgroup (RayClassGroup (ratModulus n hn))) = Modulus.one ℚ := by
   refine Modulus.eq_one_of_dvd_one ((rayClassConductor_dvd_iff (Modulus.one_dvd _) ⊥).mpr ?_)
-  have : Subsingleton (RayClassGroup (ratModulus n hn)) := by
-    rw [← Finite.card_le_one_iff_subsingleton, card_rayClassGroup_ratModulus,
-      Nat.totient_eq_one_iff.mpr (by omega)]
-  exact fun c _ ↦ (Subgroup.mem_bot).mpr (Subsingleton.elim c 1)
+  have := subsingleton_rayClassGroup_ratModulus_of_le_two (hn := hn) h2
+  exact fun c _ ↦ Subgroup.mem_bot.mpr (Subsingleton.elim c 1)
 
 -- For `n > 2` the conductor of the trivial subgroup is `(d)·∞` for the least divisor `d` of `n`
 -- with `φ d = φ n`.

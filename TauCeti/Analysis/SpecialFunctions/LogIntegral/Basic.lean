@@ -9,8 +9,11 @@ public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
-import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import Mathlib.Analysis.SpecialFunctions.NonIntegrable
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Asymptotics.Lemmas
+import TauCeti.Analysis.SpecialFunctions.Log.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The logarithmic integral
@@ -33,8 +36,13 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
 ## Main declarations
 
 * `TauCeti.Real.logIntegral` — the offset logarithmic integral.
+* `TauCeti.Real.logIntegral_of_le_one` — `Li x = 0` at and below the singularity `x = 1`.
 * `TauCeti.Real.hasDerivAt_logIntegral` — its derivative `(log x)⁻¹` for `x > 1`.
 * `TauCeti.Real.le_logIntegral` — the elementary lower bound `(x - 2) / log x ≤ Li x`.
+* `TauCeti.Real.integral_rpow_sub_one_div_log` — the power substitution
+  `∫ t in a..b, t ^ (β - 1) / log t = Li (b ^ β) - Li (a ^ β)` for `β > 0`.
+* `TauCeti.Real.rpow_div_mul_log_add_integral_eq_logIntegral_rpow` — the Abel-summation identity
+  turning `x ^ β / β` into `Li (x ^ β) - Li (2 ^ β)` up to the base-point boundary term.
 * `TauCeti.Real.integral_inv_log_pow_eq_sub_add` — integration by parts for every reciprocal
   logarithm power, with either orientation of the interval.
 * `TauCeti.Real.logIntegral_eq_div_log_sub_add` — the antiderivative identity above.
@@ -44,6 +52,10 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
   relative to `δ Li x` gives `f x / (x / log x) → δ`.
 * `TauCeti.Real.isLittleO_integral_div_mul_log_sq` — for `f` interval integrable above `2` and of
   at most linear growth, `∫ t in 2..x, f t / (t * log t ^ 2)` is `o (x / log x)`.
+* `TauCeti.Real.isLittleO_integral_div_mul_log_sq_of_isBigO_exp_neg_mul_sqrt_log` — for
+  `f = O(x exp (-c √log x))`, the same weighted remainder integral is `o(x exp (-c √log x))` with
+  no loss in `c`, and `TauCeti.Real.isLittleO_logIntegral_rpow_mul_exp_neg_mul_sqrt_log` absorbs
+  `Li (x ^ β)` for `β < 1`.
 * `TauCeti.Real.integral_inv_log_sq_eq_logIntegral_sub_div_log_sub` — `∫ t in a..b, (log t ^ 2)⁻¹`
   is the increment of `x ↦ Li x - x / log x` from `a` to `b`.
 * `TauCeti.Real.integral_div_mul_log_sq_eq_sub_add` — subtracting `δ t` from the integrand of
@@ -65,11 +77,13 @@ while `Li` itself is the case `n = 1`.
 ## Use in prime counting
 
 These are the analytic inputs to the transfer `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`,
-`TauCeti.primeCount_asymptotic_of_primeTheta` in
-`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`. The weighted-remainder estimate
-`TauCeti.Real.isLittleO_integral_div_mul_log_sq` is what absorbs the integral produced by Abel
-summation there. The explicit bounds feed the transfer of explicit bounds for `θ` to explicit
-bounds for `π - Li` in `TauCeti/NumberTheory/Chebyshev/ThetaTransfer.lean`.
+`TauCeti.primeCount_asymptotic_of_primeTheta`, and to its effective companion with power secondary
+terms and `O(x exp (-c √log x))` remainder in
+`TauCeti/NumberTheory/ArithmeticDirichletSeries/Transfer.lean`. The weighted-remainder estimates
+`TauCeti.Real.isLittleO_integral_div_mul_log_sq` and
+`TauCeti.Real.isLittleO_integral_div_mul_log_sq_of_isBigO_exp_neg_mul_sqrt_log` absorb the
+integral produced by Abel summation there. The explicit bounds feed the transfer of explicit bounds
+for `θ` to explicit bounds for `π - Li` in `TauCeti/NumberTheory/Chebyshev/ThetaTransfer.lean`.
 
 ## References
 
@@ -524,5 +538,296 @@ theorem abs_integral_div_mul_log_sq_le_sum {f : ℝ → ℝ} {s c : ℕ → ℝ}
   refine (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun i hi ↦ ?_)
   rw [Finset.mem_range] at hi
   exact abs_integral_div_mul_log_sq_le_mul (hs₁ i hi.le) (hs i hi) (hf i hi) (h i hi)
+
+/-! ### Behavior below `1`, power substitution, and the de la Vallée Poussin scale -/
+
+/-- At and below the nonintegrable singularity `x = 1`, the offset logarithmic integral vanishes
+by the Bochner convention `MeasureTheory.integral_undef`. -/
+theorem logIntegral_of_le_one {x : ℝ} (hx : x ≤ 1) : logIntegral x = 0 := by
+  rw [logIntegral_def]
+  refine intervalIntegral.integral_undef ?_
+  have hlog : Real.log =O[𝓝[≠] 1] (· - 1) := by
+    simpa only [Real.log_one, sub_zero] using
+      (Real.hasDerivAt_log one_ne_zero).isBigO_sub.mono nhdsWithin_le_nhds
+  refine not_intervalIntegrable_of_sub_inv_isBigO_punctured (c := 1) (hlog.inv_rev ?_)
+    (by linarith) (by rw [uIcc_of_ge (by linarith)]; exact ⟨hx, one_lt_two.le⟩)
+  filter_upwards [nhdsWithin_le_nhds (Ioi_mem_nhds zero_lt_one), self_mem_nhdsWithin]
+    with t ht hne h0
+  exact absurd h0 (Real.log_ne_zero_of_pos_of_ne_one ht hne)
+
+/-- Chain-rule derivative of `x ↦ Li (x ^ β)` on `(1, ∞)` for `β > 0`. -/
+theorem hasDerivAt_logIntegral_rpow {β x : ℝ} (hβ : 0 < β) (hx : 1 < x) :
+    HasDerivAt (fun t : ℝ ↦ logIntegral (t ^ β)) (x ^ (β - 1) / Real.log x) x := by
+  have hx0 : 0 < x := zero_lt_one.trans hx
+  have hxβ : 1 < x ^ β := Real.one_lt_rpow hx hβ
+  have hd : HasDerivAt (fun t : ℝ ↦ logIntegral (t ^ β))
+      ((Real.log (x ^ β))⁻¹ * (β * x ^ (β - 1))) x :=
+    HasDerivAt.comp x (hasDerivAt_logIntegral hxβ)
+      (Real.hasDerivAt_rpow_const (p := β) (Or.inl hx0.ne'))
+  refine hd.congr_deriv ?_
+  rw [Real.log_rpow hx0]
+  have hβ0 : β ≠ 0 := hβ.ne'
+  have hlog : Real.log x ≠ 0 := (Real.log_pos hx).ne'
+  field_simp
+
+/-- The integrand `t ^ p / log t` is continuous on `(1, ∞)`. -/
+theorem continuousOn_rpow_div_log (p : ℝ) :
+    ContinuousOn (fun t : ℝ ↦ t ^ p / Real.log t) (Ioi 1) := fun t ht ↦
+  ContinuousAt.continuousWithinAt <|
+    (Real.continuousAt_rpow_const t p (Or.inl (zero_lt_one.trans ht).ne')).div
+      (Real.continuousAt_log (zero_lt_one.trans ht).ne') (Real.log_pos ht).ne'
+
+/-- The integrand `t ^ p / log t` is interval integrable on any interval to the right of `1`. -/
+theorem intervalIntegrable_rpow_div_log (p : ℝ) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
+    IntervalIntegrable (fun t : ℝ ↦ t ^ p / Real.log t) volume a b :=
+  ((continuousOn_rpow_div_log p).mono (ordConnected_Ioi.uIcc_subset ha hb)).intervalIntegrable
+
+/-- **Power substitution in the logarithmic integral.** For `β > 0` and `a, b > 1`,
+`∫ t in a..b, t ^ (β - 1) / log t = Li (b ^ β) - Li (a ^ β)` via `u = t ^ β`. -/
+theorem integral_rpow_sub_one_div_log {β a b : ℝ} (hβ : 0 < β) (ha : 1 < a) (hb : 1 < b) :
+    (∫ t in a..b, t ^ (β - 1) / Real.log t) = logIntegral (b ^ β) - logIntegral (a ^ β) :=
+  intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun _ ht ↦ hasDerivAt_logIntegral_rpow hβ (ordConnected_Ioi.uIcc_subset ha hb ht))
+    (intervalIntegrable_rpow_div_log (β - 1) ha hb)
+
+/-- **Abel-summation identity for a power secondary term.** Integrating the derivative of
+`t ↦ t ^ β / (β log t)` on `[2, x]` matches the boundary and integral terms that Abel summation
+produces from `t ^ β / β` with `Li (x ^ β) - Li (2 ^ β)` up to the base-point constant. -/
+theorem rpow_div_mul_log_add_integral_eq_logIntegral_rpow {β x : ℝ} (hβ : 0 < β) (hx : 1 < x) :
+    x ^ β / (β * Real.log x) + (∫ t in (2 : ℝ)..x, (t ^ β / β) / (t * Real.log t ^ 2)) =
+      logIntegral (x ^ β) - logIntegral (2 ^ β) + 2 ^ β / (β * Real.log 2) := by
+  have hd : ∀ t ∈ uIcc (2 : ℝ) x, HasDerivAt (fun u : ℝ ↦ u ^ β / (β * Real.log u))
+      (t ^ (β - 1) / Real.log t - (t ^ β / β) / (t * Real.log t ^ 2)) t := fun t ht ↦ by
+    have ht1 : 1 < t := ordConnected_Ioi.uIcc_subset one_lt_two hx ht
+    have ht0 : 0 < t := zero_lt_one.trans ht1
+    have hq := (Real.hasDerivAt_rpow_const (p := β) (Or.inl ht0.ne')).div
+      ((Real.hasDerivAt_log ht0.ne').const_mul β) (mul_ne_zero hβ.ne' (Real.log_pos ht1).ne')
+    exact hq.congr_deriv (by field_simp)
+  have hi1 := intervalIntegrable_rpow_div_log (β - 1) one_lt_two hx
+  have hi2 : IntervalIntegrable (fun t : ℝ ↦ (t ^ β / β) / (t * Real.log t ^ 2)) volume 2 x :=
+    intervalIntegrable_div_mul_log_sq one_lt_two hx <| ContinuousOn.intervalIntegrable fun t ht ↦
+      have ht0 : t ≠ 0 := (zero_lt_one.trans (ordConnected_Ioi.uIcc_subset one_lt_two hx ht)).ne'
+      ContinuousAt.continuousWithinAt <| (Real.continuousAt_rpow_const t β (Or.inl ht0)).div_const β
+  have hFTC := intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hi1.sub hi2)
+  rw [intervalIntegral.integral_sub hi1 hi2, integral_rpow_sub_one_div_log hβ one_lt_two hx] at hFTC
+  linarith
+
+/-- For `β < 1`, `Li (x ^ β)` is absorbed into `o(x * exp (-c * √log x))` for every real `c`. -/
+theorem isLittleO_logIntegral_rpow_mul_exp_neg_mul_sqrt_log {β : ℝ} (hβ : β < 1) (c : ℝ) :
+    (fun x : ℝ ↦ logIntegral (x ^ β)) =o[atTop] fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x)) := by
+  rcases le_or_gt β 0 with hβ0 | hβ0
+  · refine (isLittleO_zero _ _).congr' ?_ EventuallyEq.rfl
+    filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+    exact (logIntegral_of_le_one (Real.rpow_le_one_of_one_le_of_nonpos hx hβ0)).symm
+  · have hcomp : (fun x : ℝ ↦ logIntegral (x ^ β)) =O[atTop] fun x : ℝ ↦ x ^ β / Real.log (x ^ β) :=
+      logIntegral_isEquivalent_div_log.isBigO.comp_tendsto (tendsto_rpow_atTop hβ0)
+    have hdom : (fun x : ℝ ↦ x ^ β / Real.log (x ^ β)) =O[atTop] fun x : ℝ ↦ x ^ β := by
+      refine IsBigO.of_bound 1 ?_
+      filter_upwards [(tendsto_rpow_atTop hβ0).eventually_ge_atTop (Real.exp 1),
+        eventually_gt_atTop (0 : ℝ)] with x hx hx0
+      have hlog1 : 1 ≤ Real.log (x ^ β) := by
+        simpa [Real.log_exp] using Real.log_le_log (Real.exp_pos 1) hx
+      rw [one_mul, Real.norm_of_nonneg (div_nonneg (Real.rpow_nonneg hx0.le β) (by linarith)),
+        Real.norm_of_nonneg (Real.rpow_nonneg hx0.le β)]
+      exact div_le_self (Real.rpow_nonneg hx0.le β) hlog1
+    exact (hcomp.trans hdom).trans_isLittleO (Real.isLittleO_rpow_mul_exp_neg_mul_sqrt_log hβ c)
+
+/-- Middle-segment bound on `[B, y]` with `y = x * exp (-(2 |c| + 1) * √log x)`. -/
+private theorem abs_integral_div_mul_log_sq_mid_le {f : ℝ → ℝ} {c M B x : ℝ}
+    (hB2 : 2 ≤ B) (hM : 0 ≤ M) (hx0 : 0 < x)
+    (hyB : B ≤ x * Real.exp (-(2 * |c| + 1) * √(Real.log x)))
+    (hint1 : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume B
+      (x * Real.exp (-(2 * |c| + 1) * √(Real.log x))))
+    (hbound : ∀ t, B ≤ t → |f t| ≤ M * (t * Real.exp (-c * √(Real.log t)))) :
+    |∫ t in B..(x * Real.exp (-(2 * |c| + 1) * √(Real.log x))), f t / (t * Real.log t ^ 2)| ≤
+      (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x))) * (x * Real.exp (-c * √(Real.log x))) := by
+  set y := x * Real.exp (-(2 * |c| + 1) * √(Real.log x))
+  have hyx : y ≤ x := mul_le_of_le_one_right hx0.le <|
+    Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith [abs_nonneg c])
+      (Real.sqrt_nonneg _))
+  calc |∫ t in B..y, f t / (t * Real.log t ^ 2)|
+      ≤ ∫ t in B..y, M * Real.exp (|c| * √(Real.log x)) / Real.log 2 ^ 2 := by
+        refine (intervalIntegral.abs_integral_le_integral_abs hyB).trans
+          (intervalIntegral.integral_mono_on hyB hint1.abs intervalIntegrable_const fun t ht ↦ ?_)
+        have ht2 : 2 ≤ t := hB2.trans ht.1
+        have hst : √(Real.log t) ≤ √(Real.log x) :=
+          Real.sqrt_le_sqrt (Real.log_le_log (by linarith) (ht.2.trans hyx))
+        have hexp : Real.exp (-c * √(Real.log t)) ≤ Real.exp (|c| * √(Real.log x)) :=
+          Real.exp_le_exp.mpr
+            (by nlinarith [neg_le_abs c, Real.sqrt_nonneg (Real.log t), abs_nonneg c])
+        rw [abs_div, abs_of_pos (mul_pos (by linarith) (pow_pos (Real.log_pos (by linarith)) 2))]
+        calc |f t| / (t * Real.log t ^ 2)
+            ≤ M * (t * Real.exp (-c * √(Real.log t))) / (t * Real.log t ^ 2) := by
+              gcongr; exact hbound t ht.1
+          _ = M * Real.exp (-c * √(Real.log t)) / Real.log t ^ 2 := by
+              rw [mul_left_comm, mul_div_mul_left _ _ (by linarith)]
+          _ ≤ M * Real.exp (|c| * √(Real.log x)) / Real.log 2 ^ 2 := by gcongr
+    _ ≤ y * (M * Real.exp (|c| * √(Real.log x)) / Real.log 2 ^ 2) := by
+        simp only [intervalIntegral.integral_const, smul_eq_mul]
+        exact mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+    _ ≤ (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x))) * (x * Real.exp (-c * √(Real.log x))) := by
+        have hexp : Real.exp (-(2 * |c| + 1) * √(Real.log x) + |c| * √(Real.log x)) ≤
+            Real.exp (-√(Real.log x) + -c * √(Real.log x)) :=
+          Real.exp_le_exp.mpr (by nlinarith [le_abs_self c, Real.sqrt_nonneg (Real.log x)])
+        calc y * (M * Real.exp (|c| * √(Real.log x)) / Real.log 2 ^ 2)
+            = x * (M / Real.log 2 ^ 2) *
+                Real.exp (-(2 * |c| + 1) * √(Real.log x) + |c| * √(Real.log x)) := by
+              simp only [y, Real.exp_add]; ring
+          _ ≤ x * (M / Real.log 2 ^ 2) * Real.exp (-√(Real.log x) + -c * √(Real.log x)) := by
+              gcongr
+          _ = (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x))) *
+                (x * Real.exp (-c * √(Real.log x))) := by
+              rw [Real.exp_add]; ring
+
+/-- Upper-segment bound on `[y, x]` with `y = x * exp (-(2 |c| + 1) * √log x)`. -/
+private theorem abs_integral_div_mul_log_sq_upper_le {f : ℝ → ℝ} {c M B x : ℝ}
+    (hB2 : 2 ≤ B) (hM : 0 ≤ M) (hx0 : 0 < x)
+    (hyB : B ≤ x * Real.exp (-(2 * |c| + 1) * √(Real.log x)))
+    (hlogA : 2 * (2 * |c| + 1) ≤ √(Real.log x))
+    (hint2 : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume
+      (x * Real.exp (-(2 * |c| + 1) * √(Real.log x))) x)
+    (hbound : ∀ t, B ≤ t → |f t| ≤ M * (t * Real.exp (-c * √(Real.log t)))) :
+    |∫ t in (x * Real.exp (-(2 * |c| + 1) * √(Real.log x)))..x, f t / (t * Real.log t ^ 2)| ≤
+      (4 * M * Real.exp (|c| * (2 * |c| + 1)) / Real.log x ^ 2) *
+        (x * Real.exp (-c * √(Real.log x))) := by
+  set A := 2 * |c| + 1
+  set y := x * Real.exp (-A * √(Real.log x))
+  have hA0 : 0 ≤ A := by positivity
+  have hy2 : 2 ≤ y := hB2.trans hyB
+  have hyx : y ≤ x := mul_le_of_le_one_right hx0.le <|
+    Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) (Real.sqrt_nonneg _))
+  have hlogx : 0 < Real.log x := Real.log_pos (by linarith)
+  have hlogy : Real.log y = Real.log x - A * √(Real.log x) := by
+    rw [Real.log_mul hx0.ne' (Real.exp_pos _).ne', Real.log_exp]; ring
+  calc |∫ t in y..x, f t / (t * Real.log t ^ 2)|
+      ≤ ∫ t in y..x, M * Real.exp (|c| * A - c * √(Real.log x)) / (Real.log x / 2) ^ 2 := by
+        refine (intervalIntegral.abs_integral_le_integral_abs hyx).trans
+          (intervalIntegral.integral_mono_on hyx hint2.abs intervalIntegrable_const fun t ht ↦ ?_)
+        have ht2 : 2 ≤ t := hy2.trans ht.1
+        have hlogyt : Real.log y ≤ Real.log t := Real.log_le_log (by linarith) ht.1
+        have hlogt_half : Real.log x / 2 ≤ Real.log t := by
+          nlinarith [hlogyt, hlogy, Real.sq_sqrt hlogx.le, Real.sqrt_nonneg (Real.log x)]
+        have hsqrt_lb : √(Real.log x) - A ≤ √(Real.log t) :=
+          Real.le_sqrt_of_sq_le
+            (by nlinarith [hlogyt, hlogy, Real.sq_sqrt hlogx.le, hA0, hlogA])
+        have hsqrt_ub : √(Real.log t) ≤ √(Real.log x) :=
+          Real.sqrt_le_sqrt (Real.log_le_log (by linarith) ht.2)
+        have hexp : Real.exp (-c * √(Real.log t)) ≤ Real.exp (|c| * A - c * √(Real.log x)) := by
+          refine Real.exp_le_exp.mpr ?_
+          have h1 : (-c) * (√(Real.log t) - √(Real.log x)) ≤
+              |-c| * |√(Real.log t) - √(Real.log x)| := by
+            rw [← abs_mul]; exact le_abs_self _
+          have h2 : |-c| * |√(Real.log t) - √(Real.log x)| ≤ |c| * A := by
+            rw [abs_neg]
+            exact mul_le_mul_of_nonneg_left (abs_le.mpr ⟨by linarith, by linarith⟩) (abs_nonneg c)
+          linarith
+        rw [abs_div, abs_of_pos (mul_pos (by linarith) (pow_pos (Real.log_pos (by linarith)) 2))]
+        calc |f t| / (t * Real.log t ^ 2)
+            ≤ M * (t * Real.exp (-c * √(Real.log t))) / (t * Real.log t ^ 2) := by
+              gcongr; exact hbound t (hyB.trans ht.1)
+          _ = M * Real.exp (-c * √(Real.log t)) / Real.log t ^ 2 := by
+              rw [mul_left_comm, mul_div_mul_left _ _ (by linarith)]
+          _ ≤ M * Real.exp (|c| * A - c * √(Real.log x)) / (Real.log x / 2) ^ 2 := by gcongr
+    _ ≤ x * (M * Real.exp (|c| * A - c * √(Real.log x)) / (Real.log x / 2) ^ 2) := by
+        simp only [intervalIntegral.integral_const, smul_eq_mul]
+        exact mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+    _ = (4 * M * Real.exp (|c| * A) / Real.log x ^ 2) * (x * Real.exp (-c * √(Real.log x))) := by
+        rw [sub_eq_add_neg, Real.exp_add]
+        field_simp; ring
+
+/-- Combined bound on `[B, x]` by splitting at `y = x * exp (-A * √log x)`. -/
+private theorem abs_integral_div_mul_log_sq_tail_le {f : ℝ → ℝ} {c B M x : ℝ}
+    (hB2 : 2 ≤ B) (hM0 : 0 ≤ M) (hxB : B ≤ x)
+    (hyB : B ≤ x * Real.exp (-(2 * |c| + 1) * √(Real.log x)))
+    (hlogA : 2 * (2 * |c| + 1) ≤ √(Real.log x))
+    (hintBx : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume B x)
+    (hbound : ∀ t, B ≤ t → |f t| ≤ M * (t * Real.exp (-c * √(Real.log t)))) :
+    |∫ t in B..x, f t / (t * Real.log t ^ 2)| ≤
+      (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x)) +
+        4 * M * Real.exp (|c| * (2 * |c| + 1)) / Real.log x ^ 2) *
+        (x * Real.exp (-c * √(Real.log x))) := by
+  have hx0 : 0 < x := by linarith
+  set y := x * Real.exp (-(2 * |c| + 1) * √(Real.log x))
+  have hyx : y ≤ x := mul_le_of_le_one_right hx0.le <|
+    Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith [abs_nonneg c])
+      (Real.sqrt_nonneg _))
+  have hint1 : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume B y :=
+    hintBx.mono_set (by rw [uIcc_of_le hyB, uIcc_of_le hxB]; exact Icc_subset_Icc_right hyx)
+  have hint2 : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume y x :=
+    hintBx.mono_set (by rw [uIcc_of_le hyx, uIcc_of_le hxB]; exact Icc_subset_Icc_left hyB)
+  rw [← intervalIntegral.integral_add_adjacent_intervals hint1 hint2]
+  linarith [abs_add_le (∫ t in B..y, f t / (t * Real.log t ^ 2))
+    (∫ t in y..x, f t / (t * Real.log t ^ 2)),
+    abs_integral_div_mul_log_sq_mid_le hB2 hM0 hx0 hyB hint1 hbound,
+    abs_integral_div_mul_log_sq_upper_le hB2 hM0 hx0 hyB hlogA hint2 hbound]
+
+/-- Auxiliary case of `isLittleO_integral_div_mul_log_sq_of_isBigO_exp_neg_mul_sqrt_log` when the
+weighted integrand is interval integrable on `[2, x]` for every `x ≥ 2`. -/
+private theorem isLittleO_integral_div_mul_log_sq_of_intervalIntegrable {f : ℝ → ℝ} {c : ℝ}
+    (hint_all : ∀ x, 2 ≤ x → IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume 2 x)
+    (hf : f =O[atTop] fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x))) :
+    (fun x : ℝ ↦ ∫ t in (2 : ℝ)..x, f t / (t * Real.log t ^ 2)) =o[atTop]
+      fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x)) := by
+  obtain ⟨M, hM⟩ := hf.bound
+  obtain ⟨B, hB⟩ := eventually_atTop.mp (hM.and (eventually_ge_atTop (2 : ℝ)))
+  have hB2 : 2 ≤ B := (hB B le_rfl).2
+  have hbound : ∀ t, B ≤ t → |f t| ≤ M * (t * Real.exp (-c * √(Real.log t))) := fun t ht ↦ by
+    have ht0 : 0 ≤ t := by linarith
+    simpa only [Real.norm_eq_abs, abs_mul, abs_of_nonneg ht0, abs_of_pos (Real.exp_pos _)] using
+      (hB t ht).1
+  have hM0 : 0 ≤ M := nonneg_of_mul_nonneg_left
+    ((abs_nonneg _).trans (hbound B le_rfl)) (mul_pos (by linarith) (Real.exp_pos _))
+  set A := 2 * |c| + 1
+  set C₀ := |∫ t in (2 : ℝ)..B, f t / (t * Real.log t ^ 2)|
+  have hsqrt : Tendsto (fun x : ℝ ↦ √(Real.log x)) atTop atTop :=
+    Real.tendsto_sqrt_atTop.comp Real.tendsto_log_atTop
+  have hcoef : Tendsto (fun x : ℝ ↦ C₀ / (x * Real.exp (-c * √(Real.log x))) +
+      (M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x)) +
+        4 * M * Real.exp (|c| * A) / Real.log x ^ 2)) atTop (𝓝 0) := by
+    have h1 := tendsto_const_nhds (x := C₀).div_atTop
+      (Real.tendsto_mul_exp_neg_mul_sqrt_log_atTop c)
+    have h2 : Tendsto (fun x : ℝ ↦ M / Real.log 2 ^ 2 * Real.exp (-√(Real.log x))) atTop (𝓝 0) := by
+      simpa using (Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp hsqrt)).const_mul
+        (M / Real.log 2 ^ 2)
+    have h3 := tendsto_const_nhds (x := 4 * M * Real.exp (|c| * A)).div_atTop
+      ((tendsto_pow_atTop (by norm_num : 2 ≠ 0)).comp Real.tendsto_log_atTop)
+    simpa using h1.add (h2.add h3)
+  refine (isLittleO_iff_tendsto' ?_).mpr (squeeze_zero_norm' ?_ hcoef)
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx h0
+    exact absurd h0 (mul_pos (by linarith) (Real.exp_pos _)).ne'
+  · filter_upwards [(Real.tendsto_mul_exp_neg_mul_sqrt_log_atTop A).eventually_ge_atTop B,
+      hsqrt.eventually_ge_atTop (2 * A), eventually_ge_atTop B] with x hyB hlogA hxB
+    have hscale : 0 < x * Real.exp (-c * √(Real.log x)) := mul_pos (by linarith) (Real.exp_pos _)
+    have hintBx : IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume B x :=
+      (hint_all x (hB2.trans hxB)).mono_set
+        (by rw [uIcc_of_le hxB, uIcc_of_le (hB2.trans hxB)]; exact Icc_subset_Icc_left hB2)
+    have htail := abs_integral_div_mul_log_sq_tail_le hB2 hM0 hxB
+      (by simpa [A, neg_mul] using hyB) hlogA hintBx hbound
+    rw [Real.norm_eq_abs, abs_div, abs_of_pos hscale,
+      ← intervalIntegral.integral_add_adjacent_intervals (hint_all B hB2) hintBx]
+    have htri := abs_add_le (∫ t in (2 : ℝ)..B, f t / (t * Real.log t ^ 2))
+      (∫ t in B..x, f t / (t * Real.log t ^ 2))
+    rw [div_le_iff₀ hscale, right_distrib, div_mul_cancel₀ _ hscale.ne']
+    linarith [htri, htail]
+
+/-- **Weighted remainder integral on the de la Vallée Poussin scale.** If
+`f = O(x * exp (-c * √log x))` at infinity, then `∫ t in 2..x, f t / (t * log t ^ 2)` is
+`o(x * exp (-c * √log x))` with the same constant `c`. -/
+theorem isLittleO_integral_div_mul_log_sq_of_isBigO_exp_neg_mul_sqrt_log {f : ℝ → ℝ} {c : ℝ}
+    (hf : f =O[atTop] fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x))) :
+    (fun x : ℝ ↦ ∫ t in (2 : ℝ)..x, f t / (t * Real.log t ^ 2)) =o[atTop]
+      fun x : ℝ ↦ x * Real.exp (-c * √(Real.log x)) := by
+  by_cases hint_all :
+      ∀ x, 2 ≤ x → IntervalIntegrable (fun t ↦ f t / (t * Real.log t ^ 2)) volume 2 x
+  · exact isLittleO_integral_div_mul_log_sq_of_intervalIntegrable hint_all hf
+  · obtain ⟨x₀, hnot⟩ := Classical.not_forall.mp hint_all
+    rw [not_imp] at hnot
+    obtain ⟨hx₀2, hnot⟩ := hnot
+    refine (isLittleO_zero _ _).congr' ?_ EventuallyEq.rfl
+    filter_upwards [eventually_ge_atTop x₀] with x hx
+    symm
+    refine intervalIntegral.integral_undef fun h ↦ hnot (h.mono_set ?_)
+    rw [uIcc_of_le hx₀2, uIcc_of_le (hx₀2.trans hx)]
+    exact Icc_subset_Icc_right hx
 
 end TauCeti.Real

@@ -82,6 +82,13 @@ proof of the Gelfond–Schneider theorem.
 
 For all reals `a` and `b`, `(1 + a / x) ^ (b * x)` converges to `Real.exp (a * b)` as the real
 number `x` tends to infinity (`Real.tendsto_one_add_div_rpow_mul_exp`).
+
+## De la Vallée Poussin scale
+
+For every real `c`, the scale `x * exp (-c * √(log x))` tends to `+∞` as `x → ∞`, and every
+sublinear real power `x ^ β` with `β < 1` is `o(x * exp (-c * √(log x)))`. These comparisons
+absorb sublinear error terms on the de la Vallée Poussin scale in effective prime-number-theorem
+estimates.
 -/
 
 public section
@@ -454,5 +461,41 @@ theorem tendsto_one_add_div_rpow_mul_exp (a b : ℝ) :
   refine h1.congr' ?_
   filter_upwards [hpos] with x hbase
   rw [← rpow_mul hbase, mul_comm x b]
+
+/-- A sublinear power `x ^ β` with `β < 1` is `o(x * exp (-c * √log x))` for every real `c`. -/
+theorem isLittleO_rpow_mul_exp_neg_mul_sqrt_log {β : ℝ} (hβ : β < 1) (c : ℝ) :
+    (fun x : ℝ ↦ x ^ β) =o[atTop] fun x : ℝ ↦ x * exp (-c * √(log x)) := by
+  have hsqrt : Tendsto (fun x : ℝ ↦ √(log x)) atTop atTop :=
+    tendsto_sqrt_atTop.comp tendsto_log_atTop
+  have hquad : Tendsto (fun u : ℝ ↦ u * ((1 - β) * u - c)) atTop atTop :=
+    tendsto_id.atTop_mul_atTop₀ <| by
+      simpa only [sub_eq_add_neg, id_eq] using
+        tendsto_atTop_add_const_right atTop (-c) (tendsto_id.const_mul_atTop (sub_pos.mpr hβ))
+  have hlim : Tendsto (fun x : ℝ ↦ exp (-(√(log x) * ((1 - β) * √(log x) - c))))
+      atTop (𝓝 0) :=
+    tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp (hquad.comp hsqrt))
+  refine (isLittleO_iff_tendsto' ?_).mpr (hlim.congr' ?_)
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx h0
+    exact absurd h0 (mul_pos (by linarith) (exp_pos _)).ne'
+  · filter_upwards [eventually_ge_atTop (1 : ℝ)] with x hx
+    have hx0 : 0 < x := by linarith
+    have hlog : 0 ≤ log x := log_nonneg hx
+    rw [rpow_def_of_pos hx0]
+    conv_rhs => enter [2, 1]; rw [← exp_log hx0]
+    rw [← exp_add, ← exp_sub]
+    congr 1
+    nlinarith [sq_sqrt hlog]
+
+/-- The de la Vallée Poussin scale `x * exp (-c * √log x)` tends to infinity for every real `c`. -/
+theorem tendsto_mul_exp_neg_mul_sqrt_log_atTop (c : ℝ) :
+    Tendsto (fun x : ℝ ↦ x * exp (-c * √(log x))) atTop atTop := by
+  have hinv : Tendsto (fun x : ℝ ↦ (x * exp (-c * √(log x)))⁻¹) atTop (𝓝[>] 0) := by
+    rw [tendsto_nhdsWithin_iff]
+    refine ⟨?_, ?_⟩
+    · simpa only [rpow_zero, one_div] using
+        (isLittleO_rpow_mul_exp_neg_mul_sqrt_log zero_lt_one c).tendsto_div_nhds_zero
+    · filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
+      exact inv_pos.mpr (mul_pos hx (exp_pos _))
+  simpa only [Function.comp_def, inv_inv] using tendsto_inv_nhdsGT_zero.comp hinv
 
 end Real
