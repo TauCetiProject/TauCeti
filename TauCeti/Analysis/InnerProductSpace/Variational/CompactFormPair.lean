@@ -55,7 +55,13 @@ sequential direct method in the reflexive space `V`:
   `q + ω ‖j ·‖²`, which is weakly lower semicontinuous.
 
 Minimizers also minimize the Rayleigh quotient `q(u) / ‖j u‖²` over the `u ≠ 0` with `j u ∈ W`
-(`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_isMinOn`).
+(`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_isMinOn`,
+`TauCeti.CompactFormPair.isLeast_rayleigh_of_isMinOn`), and they satisfy the Euler–Lagrange
+equation `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`
+(`TauCeti.CompactFormPair.form_apply_eq_mul_inner_of_isMinOn`): along the line `u₀ + t v` the
+excess `q - q(u₀) ‖j ·‖²` is a nonnegative quadratic in `t` vanishing at `t = 0`, so its linear
+coefficient `2 re (a(u₀, v) - q(u₀) ⟪j u₀, j v⟫)` vanishes, and the direction `i v` gives the
+imaginary part.
 
 ## References
 
@@ -125,6 +131,15 @@ theorem energy_smul (t : 𝕜) (u : V) : P.energy (t • u) = ‖t‖ ^ 2 * P.en
 @[simp]
 theorem energy_neg (u : V) : P.energy (-u) = P.energy u := by
   simpa using P.energy_smul (-1) u
+
+/-- The energy along a real line through `u`: `q(u + t v) = q(u) + 2 t re a(u, v) + t² q(v)`. -/
+theorem energy_add_ofReal_smul (u v : V) (t : ℝ) :
+    P.energy (u + (t : 𝕜) • v) = P.energy u + 2 * t * re (P.form u v) + t ^ 2 * P.energy v := by
+  have h : re (P.form v u) = re (P.form u v) := by
+    rw [P.hermitian v u, RCLike.star_def, RCLike.conj_re]
+  simp only [energy_def, map_add, map_smulₛₗ, add_apply, smul_apply, smul_eq_mul,
+    RCLike.conj_ofReal, RingHom.id_apply, RCLike.re_ofReal_mul, h]
+  ring
 
 theorem continuous_energy : Continuous P.energy :=
   continuous_re.comp (P.form.continuous.clm_apply continuous_id)
@@ -348,6 +363,51 @@ theorem isMinOn_energy_unitConstraint_iff {u₀ : V} :
       ∀ u, P.inclusion u ∈ W → P.energy u₀ * ‖P.inclusion u‖ ^ 2 ≤ P.energy u := by
   refine ⟨fun hmin _ hu ↦ mul_norm_sq_le_energy_of_isMinOn hmin hu, fun h u hu ↦ ?_⟩
   simpa [hu.2] using h u hu.1
+
+/-- **The Rayleigh principle on a constrained sphere.** For a minimizer `u₀` of the energy on the
+constrained sphere `S_W`, `q(u₀)` is the least value of the Rayleigh quotient `q(u) / ‖j u‖²` over
+the `u` with `j u ∈ W` and `j u ≠ 0`. -/
+theorem isLeast_rayleigh_of_isMinOn {u₀ : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) :
+    IsLeast {r | ∃ u, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0 ∧
+      r = P.energy u / ‖P.inclusion u‖ ^ 2} (P.energy u₀) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  refine ⟨⟨u₀, hW₀, norm_ne_zero_iff.1 (by simp [h₁]), by simp [h₁]⟩, ?_⟩
+  rintro _ ⟨u, hu, hu0, rfl⟩
+  exact (le_div_iff₀ (by positivity)).2 (mul_norm_sq_le_energy_of_isMinOn hmin hu)
+
+/-- **The Euler–Lagrange equation of a constrained minimum.** A minimizer `u₀` of the energy on the
+constrained sphere `S_W` satisfies `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`. -/
+theorem form_apply_eq_mul_inner_of_isMinOn {u₀ v : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) (hv : P.inclusion v ∈ W) :
+    P.form u₀ v = (P.energy u₀ : 𝕜) * inner 𝕜 (P.inclusion u₀) (P.inclusion v) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  -- In every direction `w` with `j w ∈ W`, the excess `q - q(u₀) ‖j ·‖²` along `u₀ + t w` is a
+  -- nonnegative quadratic in `t` with no constant term, so its linear coefficient vanishes.
+  have hre (w : V) (hw : P.inclusion w ∈ W) :
+      re (P.form u₀ w) = P.energy u₀ * re (inner 𝕜 (P.inclusion u₀) (P.inclusion w)) := by
+    have key (t : ℝ) : 0 ≤ (P.energy w - P.energy u₀ * ‖P.inclusion w‖ ^ 2) * (t * t) +
+        2 * (re (P.form u₀ w) - P.energy u₀ * re (inner 𝕜 (P.inclusion u₀) (P.inclusion w))) * t
+          + 0 := by
+      have h := mul_norm_sq_le_energy_of_isMinOn hmin
+        (u := u₀ + (t : 𝕜) • w) (by simpa using W.add_mem hW₀ (W.smul_mem (t : 𝕜) hw))
+      rw [P.energy_add_ofReal_smul, map_add, map_smul, @norm_add_sq 𝕜, h₁, norm_smul,
+        inner_smul_right, RCLike.re_ofReal_mul, RCLike.norm_ofReal, mul_pow, sq_abs,
+        one_pow] at h
+      nlinarith
+    have hd := discrim_le_zero key
+    rw [discrim] at hd
+    nlinarith [sq_nonneg (re (P.form u₀ w) -
+      P.energy u₀ * re (inner 𝕜 (P.inclusion u₀) (P.inclusion w)))]
+  -- The direction `v` gives the real part, and the direction `i v` the imaginary part.
+  have h1 := hre v hv
+  have h2 := hre ((I : 𝕜) • v) (by simpa using W.smul_mem (I : 𝕜) hv)
+  rw [map_smul (P.form u₀) I v, map_smul P.inclusion I v, inner_smul_right, smul_eq_mul,
+    RCLike.I_mul_re, RCLike.I_mul_re] at h2
+  refine RCLike.ext ?_ ?_
+  · rw [h1, RCLike.re_ofReal_mul]
+  · rw [RCLike.im_ofReal_mul]
+    linarith
 
 end CompactFormPair
 
