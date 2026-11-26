@@ -9,6 +9,7 @@ public import Mathlib.Data.Nat.Basic
 public import Mathlib.Data.Set.Subsingleton
 public import Mathlib.Logic.Function.Basic
 public import Mathlib.Logic.Pairwise
+public import Mathlib.Order.Bounds.Image
 public import Mathlib.Order.Interval.Set.Basic
 public import Mathlib.Order.Monotone.Defs
 
@@ -34,6 +35,10 @@ inside one of these intervals lies in no other (`Monotone.mem_Icc_iff_eq_of_mem_
 A decreasing surjection of a closed interval `[a, b]` onto itself exchanges its endpoints
 (`Antitone.coe_apply_eq_left_of_surjective`, `Antitone.coe_apply_eq_right_of_surjective`).
 
+Restricting a monotone function to a cofinal subset does not change its least upper bounds
+(`Monotone.isLUB_image_iff_of_isCofinal`), and restricting an antitone function to a cofinal
+subset does not change its greatest lower bounds (`Antitone.isGLB_image_iff_of_isCofinal`).
+
 A function on a linearly ordered domain that decreases on `s ∩ (-∞, a]` and increases
 on `s ∩ [a, ∞)` attains its global minimum on `s` at `a` (`TauCeti.le_of_antitoneOn_monotoneOn`),
 strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAntiOn_strictMonoOn`).
@@ -52,6 +57,10 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
   of a monotone `ℤ`-indexed sequence lies in `[a q, a (q + 1)]` exactly when `q = k`.
 * `Antitone.coe_apply_eq_left_of_surjective`, `Antitone.coe_apply_eq_right_of_surjective`: an
   antitone surjection of `[a, b]` onto itself sends `b` to `a` and `a` to `b`.
+* `Monotone.isLUB_image_iff_of_isCofinal`: least upper bounds of a monotone function are unchanged
+  by restricting to a cofinal subset.
+* `Antitone.isGLB_image_iff_of_isCofinal`: greatest lower bounds of an antitone function are
+  unchanged by restricting to a cofinal subset.
 * `TauCeti.le_of_antitoneOn_monotoneOn`: if `f` is antitone on `s ∩ Iic a` and monotone on
   `s ∩ Ici a` with `a ∈ s`, then `f a ≤ f x` for all `x ∈ s`.
 * `TauCeti.lt_of_strictAntiOn_strictMonoOn`: if `f` is strictly antitone on `s ∩ Iic a` and
@@ -141,6 +150,30 @@ theorem Antitone.coe_apply_eq_right_of_surjective {α : Type*} [PartialOrder α]
   obtain ⟨z, hz⟩ := hs ⟨b, right_mem_Icc.2 (y.property.1.trans y.property.2)⟩
   have hzy : y ≤ z := Subtype.coe_le_coe.1 (by rw [hy]; exact z.property.1)
   exact le_antisymm (f y).property.2 (by simpa [hz] using Subtype.coe_le_coe.2 (hf hzy))
+
+/-- A monotone function has the same least upper bounds on a cofinal subset as on its full
+domain. -/
+theorem Monotone.isLUB_image_iff_of_isCofinal {ι α : Type*} [Preorder ι] [Preorder α]
+    {F : ι → α} (hF : Monotone F) {t : Set ι} (ht : IsCofinal t) {a : α} :
+    IsLUB (Set.range F) a ↔ IsLUB (F '' t) a := by
+  have hcofin : IsCofinalFor (Set.range F) (F '' t) := by
+    simpa only [Set.image_univ] using
+      IsCofinalFor.image_of_monotone (s := Set.univ) (fun x _ ↦ ht x) hF
+  exact isLUB_congr (Set.Subset.antisymm
+    (upperBounds_mono_set (Set.image_subset_range F t))
+    (upperBounds_mono_of_isCofinalFor hcofin))
+
+/-- An antitone function has the same greatest lower bounds on a cofinal subset as on its full
+domain. -/
+theorem Antitone.isGLB_image_iff_of_isCofinal {ι α : Type*} [Preorder ι] [Preorder α]
+    {F : ι → α} (hF : Antitone F) {t : Set ι} (ht : IsCofinal t) {a : α} :
+    IsGLB (Set.range F) a ↔ IsGLB (F '' t) a := by
+  have hcoinit : IsCoinitialFor (Set.range F) (F '' t) := by
+    simpa only [Set.image_univ] using
+      IsCofinalFor.image_of_antitone (s := Set.univ) (fun x _ ↦ ht x) hF
+  exact isGLB_congr (Set.Subset.antisymm
+    (lowerBounds_mono_set (Set.image_subset_range F t))
+    (lowerBounds_mono_of_isCoinitialFor hcoinit))
 
 namespace TauCeti
 

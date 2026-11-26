@@ -10,6 +10,7 @@ public import TauCeti.CategoryTheory.Abelian.Subobject
 public import TauCeti.CategoryTheory.Subobject.Basic
 public import TauCeti.CategoryTheory.Subobject.Pullback
 import Mathlib.CategoryTheory.Abelian.Refinements
+import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # Subquotient presentations
@@ -594,6 +595,7 @@ lemma trans_mapIso (Q : SubquotientPresentation X Y) (e : Y ≅ W) :
 
 /-- Transporting a presentation along two composable isomorphisms equals transporting along their
 composite. -/
+@[simp]
 lemma mapIso_mapIso (e₁ : X ≅ Y) (e₂ : Y ≅ W) :
     (P.mapIso e₁).mapIso e₂ = P.mapIso (e₁ ≪≫ e₂) :=
   ext rfl rfl (by
@@ -682,15 +684,6 @@ section Map
 
 variable {A' A'' X' X'' : C}
 
-omit [Abelian C] in
-private lemma ofLE_comp_factorThru {S₁ S₂ : Subobject A} {T₁ T₂ : Subobject A'}
-    (hS : S₁ ≤ S₂) (hT : T₁ ≤ T₂) (f : A ⟶ A')
-    (h₁ : T₁.Factors (S₁.arrow ≫ f)) (h₂ : T₂.Factors (S₂.arrow ≫ f)) :
-    ofLE S₁ S₂ hS ≫ T₂.factorThru (S₂.arrow ≫ f) h₂ =
-      T₁.factorThru (S₁.arrow ≫ f) h₁ ≫ ofLE T₁ T₂ hT := by
-  rw [← cancel_mono T₂.arrow]
-  simp
-
 /-- A morphism `f : A ⟶ A'` carrying `P.B` into `Q.B` and `P.Z` into `Q.Z` induces a canonical
 morphism `X ⟶ X'` between the presented subquotients. -/
 noncomputable def map (P : SubquotientPresentation A X) (Q : SubquotientPresentation A' X')
@@ -775,6 +768,7 @@ lemma map_mapIso (P : SubquotientPresentation A X) (Q : SubquotientPresentation 
 
 /-- The morphism induced by `f : A ⟶ A'` between identity presentations `refl A` and `refl A'`
 is `f` itself. -/
+@[simp]
 lemma map_refl (f : A ⟶ A')
     (hB : (refl A').B.Factors ((refl A).B.arrow ≫ f))
     (hZ : (refl A').Z.Factors ((refl A).Z.arrow ≫ f)) :

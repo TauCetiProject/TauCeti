@@ -10,6 +10,8 @@ public import Mathlib.CategoryTheory.Limits.Shapes.Countable
 public import TauCeti.Algebra.Homology.SpectralSequence.Stabilization
 public import TauCeti.CategoryTheory.Subobject.Limits
 import Mathlib.Order.Bounds.OrderIso
+import Mathlib.Order.Cofinal
+import TauCeti.Order.Monotone.Basic
 
 /-!
 # The limit page of a spectral sequence
@@ -153,26 +155,18 @@ lemma infBoundariesSubobject_le_infCyclesSubobject (pq : κ)
       E.boundariesSubobject_le_cyclesSubobject pq r r' hr hr'
 
 /-- The limit page object `E_∞(pq)` at position `pq`, defined as `Z_∞(pq) / B_∞(pq)`. -/
+@[expose]
 noncomputable def limitPage (pq : κ) [E.HasLimitPageAt pq] : C :=
   cokernel (Subobject.ofLE (E.infBoundariesSubobject pq) (E.infCyclesSubobject pq)
     (E.infBoundariesSubobject_le_infCyclesSubobject pq))
-
-/-- The canonical isomorphism identifying the cokernel of `B_∞(pq) ≤ Z_∞(pq)` with
-`E.limitPage pq`. -/
-noncomputable def limitPageIsoCokernel (pq : κ) [E.HasLimitPageAt pq] :
-    cokernel (Subobject.ofLE (E.infBoundariesSubobject pq) (E.infCyclesSubobject pq)
-      (E.infBoundariesSubobject_le_infCyclesSubobject pq)) ≅ E.limitPage pq :=
-  Iso.refl _
 
 /-- The canonical subquotient presentation of `E.limitPage pq` inside `(E.page r₀).X pq`, with
 bottom `B_∞(pq)` and top `Z_∞(pq)`. -/
 @[expose]
 noncomputable def limitPagePresentation (pq : κ) [E.HasLimitPageAt pq] :
-    TauCeti.SubquotientPresentation ((E.page r₀).X pq) (E.limitPage pq) where
-  B := E.infBoundariesSubobject pq
-  Z := E.infCyclesSubobject pq
-  le := E.infBoundariesSubobject_le_infCyclesSubobject pq
-  iso := E.limitPageIsoCokernel pq
+    TauCeti.SubquotientPresentation ((E.page r₀).X pq) (E.limitPage pq) :=
+  TauCeti.SubquotientPresentation.quotient (E.infBoundariesSubobject pq)
+    (E.infCyclesSubobject pq) (E.infBoundariesSubobject_le_infCyclesSubobject pq)
 
 @[simp]
 lemma limitPagePresentation_B (pq : κ) [E.HasLimitPageAt pq] :
@@ -182,76 +176,43 @@ lemma limitPagePresentation_B (pq : κ) [E.HasLimitPageAt pq] :
 lemma limitPagePresentation_Z (pq : κ) [E.HasLimitPageAt pq] :
     (E.limitPagePresentation pq).Z = E.infCyclesSubobject pq := rfl
 
-/-- The limit page projection presents `E.limitPage pq` as the cokernel of
-`Subobject.ofLE (E.infBoundariesSubobject pq) (E.infCyclesSubobject pq) _`. -/
-noncomputable def isColimitLimitPagePresentation (pq : κ) [E.HasLimitPageAt pq] :
-    IsColimit (CokernelCofork.ofπ (E.limitPagePresentation pq).π
-      (E.limitPagePresentation pq).ofLE_π) :=
-  (E.limitPagePresentation pq).isColimit
-
 end Defs
 
 section Stabilized
 
 variable (E : SpectralSequence C c r₀)
 
-private lemma isCofinalFor_tail {s : ℤ} (hs : r₀ ≤ s) :
-    IsCofinalFor (Set.univ : Set {r : ℤ // r₀ ≤ r}) (Set.Ici ⟨s, hs⟩) :=
-  fun r _ ↦ ⟨⟨max r.val s, r.property.trans (le_max_left _ _)⟩,
-    (le_max_right r.val s : s ≤ _), (le_max_left r.val s : r.val ≤ _)⟩
-
-private lemma isLUB_range_tail_iff {α : Type*} [Preorder α]
-    (F : {r : ℤ // r₀ ≤ r} → α) (hF : Monotone F) (s : ℤ) (hs : r₀ ≤ s) (B : α) :
-    IsLUB (Set.range F) B ↔
-      IsLUB (Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩) B := by
-  have himg : F '' Set.Ici ⟨s, hs⟩ =
-      Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩ := by
-    ext x
-    constructor
-    · rintro ⟨⟨a, _⟩, ha, rfl⟩
-      exact ⟨⟨a, ha⟩, rfl⟩
-    · rintro ⟨⟨a, ha⟩, rfl⟩
-      exact ⟨⟨a, hs.trans ha⟩, ha, rfl⟩
-  have hcofin : IsCofinalFor (Set.range F)
-      (Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩) := by
-    simpa only [Set.image_univ, himg] using (isCofinalFor_tail hs).image_of_monotone hF
-  have hsub :
-      (Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩) ⊆ Set.range F := by
-    rintro _ ⟨⟨r, hsr⟩, rfl⟩
-    exact ⟨⟨r, hs.trans hsr⟩, rfl⟩
-  exact isLUB_congr (Set.Subset.antisymm (upperBounds_mono_set hsub)
-    (upperBounds_mono_of_isCofinalFor hcofin))
-
-private lemma isGLB_range_tail_iff {α : Type*} [Preorder α]
-    (F : {r : ℤ // r₀ ≤ r} → α) (hF : Antitone F) (s : ℤ) (hs : r₀ ≤ s) (Z : α) :
-    IsGLB (Set.range F) Z ↔
-      IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩) Z := by
-  have hpre : ∀ {ι : Type} (G : ι → α),
-      OrderDual.ofDual ⁻¹' Set.range G = Set.range (OrderDual.toDual ∘ G) :=
-    fun G ↦ Set.ext fun x ↦ ⟨fun ⟨i, hi⟩ ↦ ⟨i, by simp [hi]⟩, fun ⟨i, hi⟩ ↦ ⟨i, by simp [← hi]⟩⟩
-  have he : IsLUB (OrderDual.ofDual ⁻¹' Set.range F) (OrderDual.toDual Z) ↔
-      IsLUB (OrderDual.ofDual ⁻¹'
-        Set.range fun r : {r : ℤ // s ≤ r} ↦ F ⟨r.val, hs.trans r.property⟩)
-        (OrderDual.toDual Z) := by
-    rw [hpre, hpre]
-    exact isLUB_range_tail_iff (OrderDual.toDual ∘ F) hF.dual_right s hs (OrderDual.toDual Z)
-  exact he
-
 private lemma isGLB_cyclesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     (Z : Subobject ((E.page r₀).X pq)) :
     IsGLB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) Z ↔
       IsGLB (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.cyclesSubobject pq r.val (hs.trans r.property)) Z :=
-  isGLB_range_tail_iff (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property)
-    (fun a _ hab ↦ E.cyclesSubobject_anti pq a.property hab) s hs Z
+        E.cyclesSubobject pq r.val (hs.trans r.property)) Z := by
+  have himg : (fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property) ''
+      Set.Ici ⟨s, hs⟩ =
+      Set.range fun r : {r : ℤ // s ≤ r} ↦
+        E.cyclesSubobject pq r.val (hs.trans r.property) := by
+    ext x
+    exact ⟨fun ⟨⟨a, _⟩, ha, h⟩ ↦ ⟨⟨a, ha⟩, h⟩, fun ⟨⟨a, ha⟩, h⟩ ↦ ⟨⟨a, hs.trans ha⟩, ha, h⟩⟩
+  rw [← himg]
+  exact Antitone.isGLB_image_iff_of_isCofinal
+    (F := fun r : {r : ℤ // r₀ ≤ r} ↦ E.cyclesSubobject pq r.val r.property)
+    (fun a _ hab ↦ E.cyclesSubobject_anti pq a.property hab) (IsCofinal.Ici ⟨s, hs⟩)
 
 private lemma isLUB_boundariesSubobject_tail_iff (s : ℤ) (hs : r₀ ≤ s) (pq : κ)
     (B : Subobject ((E.page r₀).X pq)) :
     IsLUB (Set.range fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) B ↔
       IsLUB (Set.range fun r : {r : ℤ // s ≤ r} ↦
-        E.boundariesSubobject pq r.val (hs.trans r.property)) B :=
-  isLUB_range_tail_iff (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property)
-    (fun a _ hab ↦ E.boundariesSubobject_mono pq a.property hab) s hs B
+        E.boundariesSubobject pq r.val (hs.trans r.property)) B := by
+  have himg : (fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property) ''
+      Set.Ici ⟨s, hs⟩ =
+      Set.range fun r : {r : ℤ // s ≤ r} ↦
+        E.boundariesSubobject pq r.val (hs.trans r.property) := by
+    ext x
+    exact ⟨fun ⟨⟨a, _⟩, ha, h⟩ ↦ ⟨⟨a, ha⟩, h⟩, fun ⟨⟨a, ha⟩, h⟩ ↦ ⟨⟨a, hs.trans ha⟩, ha, h⟩⟩
+  rw [← himg]
+  exact Monotone.isLUB_image_iff_of_isCofinal
+    (F := fun r : {r : ℤ // r₀ ≤ r} ↦ E.boundariesSubobject pq r.val r.property)
+    (fun a _ hab ↦ E.boundariesSubobject_mono pq a.property hab) (IsCofinal.Ici ⟨s, hs⟩)
 
 /-- If the cycle tower at `pq` is constant from page `s` onward, then `Z_s(pq)` is its greatest
 lower bound. -/

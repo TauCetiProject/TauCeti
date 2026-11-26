@@ -26,6 +26,8 @@ unique because its representing arrow is a monomorphism.
   transported along an isomorphism of ambient objects.
 * `CategoryTheory.Subobject.factors_iff_existsUnique`: factoring through a subobject is equivalent
   to the existence of a unique lift.
+* `CategoryTheory.Subobject.ofLE_comp_factorThru`: naturality of factorizations with respect to
+  subobject inclusions `Subobject.ofLE`.
 -/
 
 public section
@@ -70,5 +72,15 @@ theorem factors_iff_existsUnique (P : Subobject Y) (f : X ⟶ Y) :
   ⟨fun hf ↦ ⟨P.factorThru f hf, P.factorThru_arrow f hf, fun g hg ↦
       (cancel_mono P.arrow).mp (by rw [hg, P.factorThru_arrow])⟩,
     fun ⟨g, hg, _⟩ ↦ hg ▸ factors_comp_arrow g⟩
+
+/-- Naturality of `Subobject.factorThru` with respect to subobject inclusions `Subobject.ofLE`. -/
+@[reassoc]
+theorem ofLE_comp_factorThru {S₁ S₂ : Subobject X} {T₁ T₂ : Subobject Y}
+    (hS : S₁ ≤ S₂) (hT : T₁ ≤ T₂) (f : X ⟶ Y)
+    (h₁ : T₁.Factors (S₁.arrow ≫ f)) (h₂ : T₂.Factors (S₂.arrow ≫ f)) :
+    ofLE S₁ S₂ hS ≫ T₂.factorThru (S₂.arrow ≫ f) h₂ =
+      T₁.factorThru (S₁.arrow ≫ f) h₁ ≫ ofLE T₁ T₂ hT := by
+  rw [← cancel_mono T₂.arrow]
+  simp
 
 end CategoryTheory.Subobject
