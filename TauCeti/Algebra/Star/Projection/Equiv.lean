@@ -12,12 +12,14 @@ public import Mathlib.Algebra.Star.StarProjection
 # Star algebra equivalences on star projections
 
 A star algebra equivalence restricts to an equivalence of the subtypes of star projections.
-If the equivalence maps zero to zero, its restriction preserves and reflects zero products.
+Its restriction preserves and reflects zero products over nonunital nonassociative semirings.
 -/
 
 public section
 
 namespace StarAlgEquiv
+
+section
 
 variable {R A B : Type*} [Add A] [Mul A] [Star A] [SMul R A]
   [Add B] [Mul B] [Star B] [SMul R B]
@@ -46,12 +48,15 @@ theorem starProjectionCongr_symm_apply (φ : A ≃⋆ₐ[R] B) (q : {q : B // Is
   apply φ.eq_symm_apply.mpr
   rw [← starProjectionCongr_apply, Equiv.apply_symm_apply]
 
-/-- A zero-preserving star algebra equivalence preserves and reflects zero products of
-projections. -/
-theorem starProjectionCongr_mul_eq_zero_iff [Zero A] [Zero B]
-    (φ : A ≃⋆ₐ[R] B) (hzero : φ 0 = 0) (p q : {x : A // IsStarProjection x}) :
+end
+
+/-- A star algebra equivalence of nonunital nonassociative semirings preserves and reflects zero
+products of projections. -/
+theorem starProjectionCongr_mul_eq_zero_iff {R A B : Type*}
+    [NonUnitalNonAssocSemiring A] [Star A] [SMul R A]
+    [NonUnitalNonAssocSemiring B] [Star B] [SMul R B]
+    (φ : A ≃⋆ₐ[R] B) (p q : {x : A // IsStarProjection x}) :
     (φ.starProjectionCongr p).val * (φ.starProjectionCongr q).val = 0 ↔ p.val * q.val = 0 := by
-  rw [starProjectionCongr_apply, starProjectionCongr_apply,
-    ← map_mul, ← hzero, (EquivLike.injective φ).eq_iff]
+  simp only [starProjectionCongr_apply, ← map_mul, map_eq_zero_iff φ φ.injective]
 
 end StarAlgEquiv
