@@ -28,7 +28,7 @@ noncomputable section
 
 namespace TauCeti.PathAlgebra
 
-open CategoryTheory CategoryTheory.Limits LaurentPolynomial
+open CategoryTheory LaurentPolynomial
 
 universe u v w
 
@@ -51,43 +51,15 @@ theorem laurentK0_gradedArrowSum_eq_sum (j : Q) [Finite ((i : Q) × (j ⟶ i))] 
     Finite.of_injective (fun f : j ⟶ i => (⟨i, f⟩ : (i : Q) × (j ⟶ i)))
       fun _ _ h => eq_of_heq (Sigma.mk.inj h).2
   let _ (i : Q) : Fintype (j ⟶ i) := Fintype.ofFinite (j ⟶ i)
-  let e : Fin (Fintype.card ((i : Q) × (j ⟶ i))) ≃ ((i : Q) × (j ⟶ i)) :=
-    (Fintype.equivFin _).symm
-  let P := gradedFiniteProjectiveModules (integerGrade k Q)
-  let G : ((i : Q) × (j ⟶ i)) → GradedModuleCat.{max u v w} (integerGrade k Q) :=
-    fun a => (gradedVertexProjective k Q a.1).shiftObj 1
-  let F : Fin (Fintype.card ((i : Q) × (j ⟶ i))) → P.FullSubcategory := fun m =>
-    ⟨G (e m), gradedFiniteProjectiveModules_shiftObj
-      (gradedFiniteProjectiveModules_gradedVertexProjective k Q (e m).1) 1⟩
-  have _ : HasFiniteBiproducts P.FullSubcategory := hasFiniteBiproducts_of_hasBinaryBiproducts
-  have _ : HasBiproduct (fun m => G (e m)) := HasBiproduct.of_hasCoproduct _
-  have _ : HasBiproduct G := HasBiproduct.of_hasCoproduct _
-  let e₁ : P.ι.obj (⨁ F) ≅ ⨁ (fun m => G (e m)) := P.ι.mapBiproduct F
-  let e₂ : ⨁ (fun m => G (e m)) ≅ ⨁ G := biproduct.whiskerEquiv e (fun _ => Iso.refl _)
-  let e₃ : ⨁ G ≅ GradedModuleCat.directSumObj G :=
-    (biproduct.isColimit G).coconePointUniqueUpToIso (GradedModuleCat.coproductCofanIsColimit G)
-  let iso : (⨁ F) ≅
-      (⟨gradedArrowSum k Q j, gradedFiniteProjectiveModules_gradedArrowSum k Q j⟩ :
-        P.FullSubcategory) :=
-    ObjectProperty.isoMk P (e₁ ≪≫ e₂ ≪≫ e₃)
-  rw [← LaurentK0.of_congr.{max u v w} _ iso,
-    ← LaurentK0.ofExactK0_exactK0_of.{max u v w},
-    ← ExactK0.fromSplit_of.{max u v w},
-    SplitK0.of_biproduct, map_sum, map_sum]
-  have hterm : ∀ m,
-      LaurentK0.ofExactK0.{max u v w}
-          (gradedFiniteProjectiveModulesExactStructure (integerGrade k Q))
-          (ExactK0.fromSplit.{max u v w} _ (SplitK0.of.{max u v w} (F m))) =
-        (T 1 : LaurentPolynomial ℤ) • gradedVertexProjectiveClass k Q (e m).1 := fun m => by
-    rw [ExactK0.fromSplit_of.{max u v w}, LaurentK0.ofExactK0_exactK0_of.{max u v w},
-      gradedVertexProjectiveClass_eq]
-    exact laurentK0_projective_of_shiftObj
-      ⟨gradedVertexProjective k Q (e m).1,
-        gradedFiniteProjectiveModules_gradedVertexProjective k Q (e m).1⟩ 1
-  simp_rw [hterm]
-  rw [e.sum_comp fun a : (i : Q) × (j ⟶ i) =>
-    (T 1 : LaurentPolynomial ℤ) • gradedVertexProjectiveClass k Q a.1,
-    Fintype.sum_sigma]
+  rw [laurentK0_projective_of_directSumObj
+    (M := fun a : (i : Q) × (j ⟶ i) => (gradedVertexProjective k Q a.1).shiftObj 1)
+    (fun a => gradedFiniteProjectiveModules_shiftObj
+      (gradedFiniteProjectiveModules_gradedVertexProjective k Q a.1) 1)]
+  simp_rw [laurentK0_projective_of_shiftObj
+      ⟨gradedVertexProjective k Q _,
+        gradedFiniteProjectiveModules_gradedVertexProjective k Q _⟩ 1,
+    ← gradedVertexProjectiveClass_eq]
+  rw [Fintype.sum_sigma]
   refine Finset.sum_congr rfl fun i _ => ?_
   dsimp only
   rw [Finset.sum_const, Finset.card_univ, ← Nat.card_eq_fintype_card, ← Nat.cast_smul_eq_nsmul

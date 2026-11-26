@@ -386,7 +386,7 @@ theorem gradedFiniteProjectiveModules_gradedArrowSum (i : Q) [Finite ((j : Q) ×
 
 /-- **The length-one graded projective resolution of a graded vertex simple `Sᵢ`**:
 `⋯ ⟶ 0 ⟶ ⨁_{a : i ⟶ j} (kQ eⱼ){1} ⟶ kQ eᵢ ⟶ Sᵢ ⟶ 0`. -/
-@[expose] def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
+def gradedVertexSimpleProjectiveResolution (i : Q) [Finite ((j : Q) × (i ⟶ j))] :
     GradedProjectiveResolution.{w, max u v w, max u v w, max u v w}
       (integerGrade k Q) (gradedVertexSimple k Q i).grading :=
   let zeroTerm : GradedModuleCat.{max u v w} (integerGrade k Q) :=
@@ -438,7 +438,7 @@ theorem gradedVertexSimpleProjectiveResolution_termObj_zero (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (gradedVertexSimpleProjectiveResolution k Q i).termObj 0 =
       gradedVertexProjective k Q i :=
-  rfl
+  (rfl)
 
 /-- The degree-one term of the first-arrow resolution of `Sᵢ` is `⨁_{a : i ⟶ j} (kQ eⱼ){1}`. -/
 @[simp]
@@ -446,7 +446,7 @@ theorem gradedVertexSimpleProjectiveResolution_termObj_one (i : Q)
     [Finite ((j : Q) × (i ⟶ j))] :
     (gradedVertexSimpleProjectiveResolution k Q i).termObj 1 =
       gradedArrowSum k Q i :=
-  rfl
+  (rfl)
 
 /-- Every term of the first-arrow resolution of `Sᵢ` in homological degree `n ≥ 2` is a zero
 object. -/
