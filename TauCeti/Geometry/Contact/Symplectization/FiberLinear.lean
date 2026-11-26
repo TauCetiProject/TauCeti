@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Contact.Symplectization.Hamiltonian
 public import TauCeti.Geometry.Contact.VectorField.ContactLine
 import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # Fibre-linear functions on the symplectization
@@ -56,17 +55,11 @@ contact form `β` the bracket of sections of `L` is the Jacobi bracket,
 `β([X_V, X_W]) = {β(V), β(W)}_β` at `x`
 (`TauCeti.IsContactDistribution.apply_mlieBracket_contactVectorField`), and `eᵗ β_x = z`.
 
-## Main definitions
-
-* `TauCeti.CotangentBundle.annihilatorPairing`: the fibre-linear function `z ↦ z(V)` on the
-  annihilator bundle of a distribution.
-
 ## Main results
 
-* `TauCeti.CotangentBundle.annihilatorPairing_eq_annihilatorPairing_iff`: `F_V = F_W` exactly when
-  `V - W` lies in the distribution.
-* `TauCeti.IsContactDistribution.exists_contMDiff_annihilatorPairing_eq_iff`: the smooth
-  fibre-linear functions on `ξ⁰ ∖ 0` are exactly the functions `F_V` of smooth vector fields.
+* `TauCeti.IsContactDistribution.exists_contMDiff_annihilatorPairing_eq_iff`: on a σ-compact
+  contact manifold, the smooth fibre-linear functions on `ξ⁰ ∖ 0` are exactly the functions `F_V`
+  of smooth vector fields.
 * `TauCeti.IsContactDistribution.poissonBracket_annihilatorPairing`: `{F_V, F_W} = F_([X_V, X_W])`
   at every nonzero covector of `ξ⁰`.
 * `TauCeti.IsContactDistribution.poissonBracket_annihilatorPairing_comp_subtypeVal`: the same
@@ -90,75 +83,6 @@ open scoped Manifold ContDiff
 namespace TauCeti
 
 namespace CotangentBundle
-
-/-! ### Fibre-linear functions on the annihilator bundle -/
-
-section Pairing
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {D : Π x : M, Submodule 𝕜 (TangentSpace I x)} {P : Type*}
-
-/-- The **fibre-linear function of a vector field** `V` on the annihilator bundle of a distribution
-`D`: a covector `z` annihilating `D` over `x` is sent to `z(V x)`. It is linear on each fibre and
-depends only on `V` modulo `D`
-(`TauCeti.CotangentBundle.annihilatorPairing_eq_annihilatorPairing_iff`). -/
-def annihilatorPairing (V : Π x : M, TangentSpace I x)
-    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) : 𝕜 :=
-  (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) (V z.proj)
-
-/-- The fibre-linear function of `V` evaluates the covector on `V` at its base point. -/
-@[simp]
-theorem annihilatorPairing_apply (V : Π x : M, TangentSpace I x)
-    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
-    annihilatorPairing V z = (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) (V z.proj) :=
-  (rfl)
-
-/-- The fibre-linear function of `V` is the value on `V` of the covector in `T*M`. -/
-theorem annihilatorPairing_eq_snd_annihilatorInclusion (V : Π x : M, TangentSpace I x)
-    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
-    annihilatorPairing V z =
-      (annihilatorInclusion I D P z).snd (V (annihilatorInclusion I D P z).proj) := by
-  rw [annihilatorInclusion_apply]
-  rfl
-
-/-- **Fibre-linearity.** The function of `V` is linear on each fibre of the annihilator bundle. -/
-theorem annihilatorPairing_mk_smul (V : Π x : M, TangentSpace I x) (x : M) (c : 𝕜)
-    (q : annihilatorSpace I D x) :
-    annihilatorPairing V (TotalSpace.mk' P x (c • q)) =
-      c * annihilatorPairing V (TotalSpace.mk' P x q) := by
-  simp
-
-/-- The function of a sum of vector fields is the sum of their functions. -/
-theorem annihilatorPairing_add (V W : Π x : M, TangentSpace I x) :
-    annihilatorPairing (P := P) (D := D) (V + W) =
-      annihilatorPairing V + annihilatorPairing W := by
-  ext z
-  simp
-
-/-- The function of a constant multiple of a vector field is the multiple of its function. -/
-theorem annihilatorPairing_smul (c : 𝕜) (V : Π x : M, TangentSpace I x) :
-    annihilatorPairing (P := P) (D := D) (c • V) = c • annihilatorPairing V := by
-  ext z
-  simp
-
-/-- **Fibre-linear functions are the sections of `TM ⧸ D`.** On a finite-dimensional manifold, two
-vector fields have the same function on the annihilator bundle of `D` exactly when their
-difference is tangent to `D`. -/
-theorem annihilatorPairing_eq_annihilatorPairing_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
-    {V W : Π x : M, TangentSpace I x} :
-    annihilatorPairing (P := P) (D := D) V = annihilatorPairing W ↔ ∀ x, V x - W x ∈ D x := by
-  refine ⟨fun h x ↦ mem_iff_forall_mem_annihilatorSpace.2 fun q hq ↦ ?_, fun h ↦ ?_⟩
-  · have hx := congrFun h (TotalSpace.mk' P x ⟨q, hq⟩)
-    simp only [annihilatorPairing_apply] at hx
-    rw [map_sub, hx, sub_self]
-  · ext z
-    rw [annihilatorPairing_apply, annihilatorPairing_apply, ← sub_eq_zero, ← map_sub]
-    exact mem_annihilatorSpace_iff.1 z.snd.property _ (h z.proj)
-
-end Pairing
 
 section Symplectization
 
@@ -185,36 +109,6 @@ theorem annihilatorPairing_comp_eventuallyEq {V : Π x : M, TangentSpace I x}
         rw [SmoothForm.proj_symplectizationToCotangent]
 
 end Symplectization
-
-section Smooth
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {D : Π x : M, Submodule 𝕜 (TangentSpace I x)} {n : ℕ∞ω} {k r : ℕ}
-  [IsManifold I 1 M] [IsManifold I (n + 1) M]
-
-/-- **Smoothness of fibre-linear functions.** For a `C^n` distribution `D` of rank `k` on a
-manifold of dimension `k + r`, the function of a `C^n` vector field `V` on the annihilator bundle
-of `D` is `C^n`. -/
-theorem contMDiff_annihilatorPairing (hD : IsContMDiffDistribution I n k D)
-    (hk : k + r = Module.finrank 𝕜 E) {V : Π x : M, TangentSpace I x}
-    (hV : ContMDiff I I.tangent n (T% V)) :
-    letI := hD.annihilatorFiberBundle hk
-    ContMDiff (I.prod 𝓘(𝕜, Fin r → 𝕜)) 𝓘(𝕜) n
-      (annihilatorPairing (P := Fin r → 𝕜) (D := D) V) :=
-  letI := hD.annihilatorFiberBundle hk
-  by
-  have hj := hD.contMDiff_annihilatorInclusion hk
-  -- The inclusion into `T*M` is the covector field `z ↦ z` along the bundle projection.
-  rw [show annihilatorInclusion I D (Fin r → 𝕜) = fun z ↦ ⟨z.proj, z.snd⟩ from
-    funext (annihilatorInclusion_apply I D _)] at hj
-  exact fun z ↦ ContMDiffAt.clm_bundle_apply_scalar (V := TangentSpace I)
-    (b := fun w : TotalSpace (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) ↦ w.proj)
-    (hj z) ((hV.comp (Bundle.contMDiff_proj fun x ↦ annihilatorSpace I D x)) z)
-
-end Smooth
 
 end CotangentBundle
 
@@ -270,12 +164,7 @@ private theorem exists_local_annihilatorPairing_eq
     simp [ℓ, hy]
   have hℓne (y : M) (hy : y ∈ W) : (ℓ y).snd ≠ 0 := by
     rw [hℓ y hy]
-    intro h
-    -- `α_y` vanishes on every vector, so `α y = 0`, contradicting the contact condition.
-    refine (hα y hy).2.ne_zero (ContinuousAlternatingMap.ext fun v ↦ ?_)
-    have hv := DFunLike.congr_fun (congrArg Subtype.val h) (v 0)
-    rwa [SmoothForm.degreeOneEquiv_apply_apply_vec,
-      show ![v 0] = v from funext fun i ↦ by rw [Subsingleton.elim i 0]; rfl] at hv
+    exact fun h ↦ SmoothForm.degreeOneEquiv_ne_zero (hα y hy).2.ne_zero (congrArg Subtype.val h)
   have hℓs (y : M) (hy : y ∈ W) : ContMDiffAt I (I.prod 𝓘(ℝ, Fin 1 → ℝ)) ∞ ℓ y := by
     rw [(hξ.isContMDiffDistribution.isSmoothEmbedding_annihilatorInclusion (n := ∞)
       hξ.finrank_sub_one_add_one).contMDiffAt_iff_comp]
@@ -296,10 +185,9 @@ private theorem exists_local_annihilatorPairing_eq
   have hc0 : c ≠ 0 := by
     rintro rfl
     exact hq (by rw [hq', zero_smul])
-  rw [hq', hhom y c _ hc0 (fun h ↦ hℓne y hy (by rw [hℓ y hy]; exact h)), ← hℓ y hy,
-    Submodule.coe_smul, smul_apply, map_smul,
-    SmoothForm.degreeOneEquiv_apply_apply_vec, SmoothForm.apply_reebVectorField_of_isContactFormAt
-      (hα y hy).2, smul_eq_mul, smul_eq_mul, mul_one, mul_comm]
+  rw [hq', hhom y c _ hc0 (fun h ↦ hℓne y hy (by rw [hℓ y hy]; exact h)), ← hℓ y hy]
+  simp [SmoothForm.degreeOneEquiv_apply_apply_vec,
+    SmoothForm.apply_reebVectorField_of_isContactFormAt (hα y hy).2, mul_comm]
 
 /-- **The smooth fibre-linear functions on the symplectization.** On a σ-compact contact manifold
 `(M, ξ)`, a function `F` on `ξ⁰` agrees at every nonzero covector with the fibre-linear function
@@ -340,7 +228,8 @@ theorem exists_contMDiff_annihilatorPairing_eq_iff [SigmaCompactSpace M]
       one_mul]
   obtain ⟨s, hs⟩ := exists_contMDiffSection_forall_mem_convex_of_local I (TangentSpace I) t ht
     (exists_local_annihilatorPairing_eq hξ hF hhom)
-  exact ⟨s, s.contMDiff, fun z hz ↦ (hs z.proj z.snd hz).symm⟩
+  exact ⟨s, s.contMDiff, fun z hz ↦
+    (hs z.proj z.snd hz).symm.trans (annihilatorPairing_apply _ _).symm⟩
 
 /-! ### The Poisson bracket of fibre-linear functions -/
 
@@ -372,8 +261,6 @@ private theorem hamiltonianVectorField_annihilatorPairing_of_lift
   haveI := hξ.isContMDiffDistribution.annihilatorContMDiffVectorBundle hξ.finrank_sub_one_add_one
   fun hκ ↦ by
   have hκd := hκ.mdifferentiableAt (n := ∞) (by simp)
-  set D := mfderiv (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, Fin 1 → ℝ)) κ (t, z.proj)
-  have hD := hξ.eval₂_mextDerivₗ_annihilatorLiouvilleForm_mfderiv hev hκd
   have hσinv : (SmoothTwoForm.flat (mextDerivₗ (𝓘(ℝ).prod I) 1 β.symplectization)
       (t, z.proj)).IsInvertible := SmoothTwoForm.isInvertible_flat_iff.2
     ((SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff β (t, z.proj)).2 hβ)
@@ -381,24 +268,16 @@ private theorem hamiltonianVectorField_annihilatorPairing_of_lift
       hξ.annihilatorLiouvilleForm) (κ (t, z.proj))).IsInvertible := by
     rw [SmoothTwoForm.isInvertible_flat_iff, hκp]
     exact hξ.nondegenerate_bilinFormAt_mextDerivₗ_annihilatorLiouvilleForm hz
-  -- `D = dκ` carries `d(eˢ β)` to `dθ`, so it is injective, hence bijective by dimension.
-  have hinj : Injective D := (injective_iff_map_eq_zero D).2 fun u hu ↦
-    (injective_iff_map_eq_zero _).1 hσinv.injective u <| ContinuousLinearMap.ext fun u' ↦ by
-      rw [SmoothTwoForm.flat_apply, ← hD, hu, SmoothBundleForm.eval₂_zero_left, zero_apply]
-  have hfin : Module.finrank ℝ (ℝ × E) = Module.finrank ℝ (E × (Fin 1 → ℝ)) := by
-    simp only [Module.finrank_prod, Module.finrank_self, Module.finrank_fin_fun, add_comm]
-  have hDsurj : Surjective D :=
-    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin (f := D.toLinearMap)).1 hinj
   have hF : MDifferentiableAt (I.prod 𝓘(ℝ, Fin 1 → ℝ)) 𝓘(ℝ) (annihilatorPairing U)
       (κ (t, z.proj)) :=
     (contMDiff_annihilatorPairing hξ.isContMDiffDistribution hξ.finrank_sub_one_add_one hU
       _).mdifferentiableAt (by simp)
-  -- Test the Hamiltonian equation of `F_U` at `z` on the vectors `D u`.
-  rw [SmoothTwoForm.hamiltonianVectorField_eq_iff_of_isInvertible_flat hωinv]
-  intro w
-  obtain ⟨u, rfl⟩ := hDsurj w
-  rw [hD, SmoothTwoForm.eval₂_hamiltonianVectorField_of_isInvertible hσinv,
-    ← (annihilatorPairing_comp_eventuallyEq hev).mvfderiv_eq, mvfderiv_comp_apply _ hF hκd]
+  -- `dκ` is bijective, carries `d(eˢ β)` to `dθ`, and `F_U ∘ κ = eˢ β(U)` near `(t, x)`.
+  exact (SmoothTwoForm.map_hamiltonianVectorField_of_eval₂_of_isInvertible hσinv hωinv
+    ((hξ.bijective_mfderiv_of_eventuallyEq hev hβ hκd).2 _)
+    (hξ.eval₂_mextDerivₗ_annihilatorLiouvilleForm_mfderiv hev hκd) fun u ↦ by
+      rw [← (annihilatorPairing_comp_eventuallyEq hev).mvfderiv_eq,
+        mvfderiv_comp_apply _ hF hκd]).symm
 
 /-- **The Poisson bracket of fibre-linear functions on the symplectization.** For smooth vector
 fields `V` and `W` on a contact manifold `(M, ξ)`, the Poisson bracket for `dθ` of the
