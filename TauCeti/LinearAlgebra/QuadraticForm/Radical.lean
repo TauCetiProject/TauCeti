@@ -185,6 +185,7 @@ theorem radical_prod [Invertible (2 : R)] (Q : QuadraticMap R M P) (Q' : Quadrat
 
 /-- An orthogonal product is nondegenerate exactly when both factors are, when two is
 invertible. -/
+@[simp]
 theorem nondegenerate_prod_iff [Invertible (2 : R)] {Q : QuadraticMap R M P}
     {Q' : QuadraticMap R M' P} :
     (Q.prod Q').Nondegenerate ↔ Q.Nondegenerate ∧ Q'.Nondegenerate := by
