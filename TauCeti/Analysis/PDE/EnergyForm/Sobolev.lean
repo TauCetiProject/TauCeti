@@ -574,6 +574,35 @@ theorem energyFormH1_ofTestFunctionₗ_eq_sum {A : Matrix ι ι ℝ} (w : W1p mu
     _ = _ := Finset.sum_congr rfl fun j _ =>
         setIntegral_lineDeriv_smul_eq_integral_lineDeriv_smul ψ (WithLp.toLp 2 (Aᵀ j))
 
+open scoped Gradient in
+/-- An equation tested against `H¹₀(Ω)`, `B(u, φ) = ∫_Ω f φ - ∫_Ω ⟨F, ∇φ⟩`, holds in particular
+for test functions, where it reads `B(u, φ) = ∫_Ω ⟨-F, ∇φ⟩ + ∫_Ω f φ`. This converts the
+`f + div F` convention of weak solutions tested against `H¹₀(Ω)` to the `f - div G` convention,
+with `G = -F`, of equations tested against test functions. -/
+theorem energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c f : EuclideanSpace ℝ ι → ℝ}
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {u : W1p mu Omega 2}
+    (hu : ∀ φ : W1p0 mu Omega 2, energyFormH1 a b c u (φ : W1p mu Omega 2) =
+      ∫ x in Omega, f x * W1p.value (φ : W1p mu Omega 2) x ∂mu -
+        ∫ x in Omega, ⟪F x, W1p.gradient (φ : W1p mu Omega 2) x⟫_ℝ ∂mu) (φ : 𝓓(Omega, ℝ)) :
+    energyFormH1 a b c u (W1p.ofTestFunctionₗ mu Omega 2 φ) =
+      (∫ x in Omega, ⟪(-F) x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu) +
+        ∫ x in Omega, f x * φ x ∂mu := by
+  refine (hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans ?_
+  have h₁ : ∫ x in Omega, f x * W1p.value (W1p.ofTestFunctionₗ mu Omega 2 φ) x ∂mu =
+      ∫ x in Omega, f x * φ x ∂mu :=
+    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
+      simp only [hx])
+  have h₂ : ∫ x in Omega, ⟪F x, W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x⟫_ℝ ∂mu =
+      ∫ x in Omega, ⟪F x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x⟫_ℝ ∂mu := by
+    rw [W1p.gradient_ofTestFunctionₗ]
+    exact integral_congr_ae ((gradientTestFunctionLp_apply_ae 2 φ).mono fun x hx => by
+      simp only [hx])
+  dsimp only
+  rw [h₁, h₂]
+  simp only [Pi.neg_apply, inner_neg_left, integral_neg]
+  ring
+
 /-- The Sobolev energy form vanishes at zero in its left argument. -/
 @[simp]
 theorem energyFormH1_zero_left (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ)

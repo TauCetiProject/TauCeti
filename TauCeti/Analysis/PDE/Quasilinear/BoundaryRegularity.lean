@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundaryDat
 import TauCeti.Analysis.Holder.Superposition
 import TauCeti.Analysis.PDE.Quasilinear.GlobalHolder
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ContDiff
-import TauCeti.Analysis.Sobolev.TestFunctionLp.Basic
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Topology.MetricSpace.Bounded
 import TauCeti.Topology.MetricSpace.Holder
@@ -164,32 +163,6 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWi
     (fun y hy => (hMg _ (mem_image_of_mem _ hy)).trans (Real.le_coe_toNNReal _)) hu'
   exact ⟨h, _, hae, hK⟩
 
-/-- An equation tested against `H¹₀(Ω)`, `B(u, φ) = ∫_Ω f φ - ∫_Ω ⟨F, ∇φ⟩`, holds in particular for
-test functions, where it reads `B(u, φ) = ∫_Ω ⟨-F, ∇φ⟩ + ∫_Ω f φ`. -/
-private theorem forall_testFunction_of_forall_w1p0 {a : EuclideanSpace ℝ (Fin (n + 1)) →
-    Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {F : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
-    (hu : ∀ φ : W1p0 volume Ω 2, energyFormH1 a 0 0 u (φ : W1p volume Ω 2) =
-      ∫ x in Ω, f x * W1p.value (φ : W1p volume Ω 2) x ∂volume -
-        ∫ x in Ω, ⟪F x, W1p.gradient (φ : W1p volume Ω 2) x⟫_ℝ ∂volume) (φ : 𝓓(Ω, ℝ)) :
-    energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      (∫ x in Ω, ⟪(-F) x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Ω, f x * φ x := by
-  refine (hu ⟨_, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩).trans ?_
-  have h₁ : ∫ x in Ω, f x * W1p.value (W1p.ofTestFunctionₗ volume Ω 2 φ) x =
-      ∫ x in Ω, f x * φ x :=
-    integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono fun x hx => by
-      simp only [hx])
-  have h₂ : ∫ x in Ω, ⟪F x, W1p.gradient (W1p.ofTestFunctionₗ volume Ω 2 φ) x⟫_ℝ =
-      ∫ x in Ω, ⟪F x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ := by
-    rw [W1p.gradient_ofTestFunctionₗ]
-    exact integral_congr_ae ((gradientTestFunctionLp_apply_ae 2 φ).mono fun x hx => by
-      simp only [hx])
-  dsimp only
-  rw [h₁, h₂]
-  simp only [Pi.neg_apply, inner_neg_left, integral_neg]
-  ring
-
 /-- **Gradient regularity up to the boundary for quasilinear equations.** Let `Ω ⊆ ℝⁿ⁺¹` be a
 bounded open set with `C^{1,α}` boundary: for every frontier point `x` there are rigid coordinates
 `e` with `e x = 0` and a `C¹` function `ψ` with `ψ 0 = 0` and `α`-Hölder derivative such that,
@@ -280,7 +253,7 @@ theorem exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear {α : ℝ≥0
     (hf.mono_exponent hrq.le) (hFtop.mono_exponent le_top) hug hu hgG hGL hG0
   exact exists_gradient_ae_eq_and_holderOnWith_closure_quasilinear_of_holderOnWith hβ hβ1 hβα
     hβα₀ hq hβq hΩ hchart hA hAx hAs hF.neg hf hug hDg hDgK hv hvK
-    (forall_testFunction_of_forall_w1p0 hu)
+    (energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 hu)
 
 end PDE
 
