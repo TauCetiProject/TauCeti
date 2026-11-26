@@ -19,9 +19,10 @@ import TauCeti.Topology.Sheaves.Cech.Functoriality
 This file proves that the first Čech cohomology of the sheaf of holomorphic sections of the line
 bundle `𝒪(k)` (`Projectivization.twistCore k`) on the complex projective line
 `ℂℙ¹ = ℙ ℂ (Fin 2 → ℂ)` vanishes for `k ≥ -1`
-(`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore`). This is the vanishing
-`H¹(ℂℙ¹, 𝒪(k)) = 0` that makes a holomorphic sphere `u` with `u* TX ≅ 𝒪(a₁) ⊕ ⋯ ⊕ 𝒪(aₘ)`, all
-`aᵢ ≥ -1`, a regular sphere: for a line in `ℂPⁿ`, `u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`.
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`). This is
+the vanishing `H¹(ℂℙ¹, 𝒪(k)) = 0` that makes a holomorphic sphere `u` with
+`u* TX ≅ 𝒪(a₁) ⊕ ⋯ ⊕ 𝒪(aₘ)`, all `aᵢ ≥ -1`, a regular sphere: for a line in `ℂPⁿ`,
+`u* TℂPⁿ ≅ 𝒪(2) ⊕ 𝒪(1)ⁿ⁻¹`.
 
 The proof compares `𝒪(k)` with the divisor sheaf `𝒪(k [∞])` of the Riemann sphere `OnePoint ℂ`,
 whose cohomology is known from Riemann–Roch on `ℙ¹`
@@ -49,7 +50,7 @@ Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
 * `Projectivization.twistCoreDivisorHom`: the morphism from `𝒪(k [∞])` to the pushforward of the
   sheaf of holomorphic sections of `𝒪(k)`; `Projectivization.isIso_twistCoreDivisorHom`: it is
   an isomorphism.
-* `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore`:
+* `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`:
   `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.
 
 ## References
@@ -272,15 +273,12 @@ private theorem mem_affineOpen_indexAt (x : ℙ ℂ (Fin 2 → ℂ)) :
   have h := (twistCore (𝕜 := ℂ) (n := 1) k).mem_baseSet_at x
   rwa [twistCore_baseSet] at h
 
-private theorem extend_add {U : Opens (OnePoint ℂ)} (f₁ f₂ : U → ℂ) :
-    Subtype.val.extend (f₁ + f₂) 0 = Subtype.val.extend f₁ 0 + Subtype.val.extend f₂ 0 := by
-  funext z
-  by_cases hz : z ∈ U
-  · simp only [Pi.add_apply]
-    rw [show z = ((⟨z, hz⟩ : U) : OnePoint ℂ) from rfl, Subtype.val_injective.extend_apply,
-      Subtype.val_injective.extend_apply, Subtype.val_injective.extend_apply, Pi.add_apply]
-  · have hr : ¬∃ a : U, (a : OnePoint ℂ) = z := fun ⟨a, ha⟩ ↦ hz (ha ▸ a.property)
-    simp [Function.extend_apply' _ _ _ hr]
+/-- The only point of `ℂℙ¹` outside `U₁` corresponds to `∞` on the Riemann sphere. -/
+private theorem symm_eq_infty_of_notMem_affineOpen_one {x : ℙ ℂ (Fin 2 → ℂ)}
+    (hx : x ∉ affineOpen 1) : (equivProjectivization ℂ).symm x = (∞ : OnePoint ℂ) := by
+  by_contra h
+  exact hx (Equiv.apply_symm_apply (equivProjectivization ℂ) x ▸
+    (equivProjectivization_mem_affineOpen_one_iff _).2 h)
 
 private theorem extend_apply_of_mem {U : Opens (OnePoint ℂ)} (f : U → ℂ) {y : OnePoint ℂ}
     (hy : y ∈ U) : Subtype.val.extend f 0 y = f ⟨y, hy⟩ :=
@@ -293,7 +291,17 @@ private theorem extend_apply_of_mem {U : Opens (OnePoint ℂ)} (f : U → ℂ) {
 def projectiveLineToSphere : TopCat.of (ℙ ℂ (Fin 2 → ℂ)) ⟶ TopCat.of (OnePoint ℂ) :=
   TopCat.ofHom ⟨(equivProjectivization ℂ).symm, contMDiff_equivProjectivization_symm.continuous⟩
 
-private theorem mem_map_projectiveLineToSphere {U : Opens (OnePoint ℂ)} {x : ℙ ℂ (Fin 2 → ℂ)} :
+/-- The identification of `ℂℙ¹` with the Riemann sphere is the inverse of
+`OnePoint.equivProjectivization`. -/
+@[simp]
+theorem projectiveLineToSphere_apply (x : ℙ ℂ (Fin 2 → ℂ)) :
+    projectiveLineToSphere x = (equivProjectivization ℂ).symm x :=
+  (rfl)
+
+/-- A point of `ℂℙ¹` lies in the inverse image of an open set `U` of the Riemann sphere exactly
+when the corresponding point of the sphere lies in `U`. -/
+@[simp]
+theorem mem_map_projectiveLineToSphere {U : Opens (OnePoint ℂ)} {x : ℙ ℂ (Fin 2 → ℂ)} :
     x ∈ (Opens.map projectiveLineToSphere).obj U ↔ (equivProjectivization ℂ).symm x ∈ U :=
   Iff.rfl
 
@@ -389,16 +397,13 @@ private theorem sectionFun_add {U : Opens (OnePoint ℂ)}
     (g₁ g₂ : divisorSections (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) U)
     (x : ℙ ℂ (Fin 2 → ℂ)) (hxU : (equivProjectivization ℂ).symm x ∈ U) :
     sectionFun k (g₁ + g₂) x = sectionFun k g₁ x + sectionFun k g₂ x := by
-  rw [sectionFun, sectionFun, sectionFun, Submodule.coe_add, extend_add]
+  have he := Function.extend_add (Subtype.val : U → OnePoint ℂ) g₁.val g₂.val 0 0
+  rw [add_zero] at he
+  rw [sectionFun, sectionFun, sectionFun, Submodule.coe_add, he]
   split_ifs with hx1
   · rw [Pi.add_apply, mul_add]
-  · have hyi : (equivProjectivization ℂ).symm x = (∞ : OnePoint ℂ) := by
-      by_contra h
-      have h' := (equivProjectivization_mem_affineOpen_one_iff _).2 h
-      rw [Equiv.apply_symm_apply] at h'
-      exact hx1 h'
-    have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
-      rw [hyi]
+  · have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
+      rw [symm_eq_infty_of_notMem_affineOpen_one hx1]
       exact infty_ne_coe _
     exact lowerCoord_add k (isDivisorSectionAt_extend g₁.property ⟨_, hxU⟩)
       (isDivisorSectionAt_extend g₂.property ⟨_, hxU⟩) hy0
@@ -413,13 +418,8 @@ private theorem sectionFun_smul {U : Opens (OnePoint ℂ)} (c : ℂ)
   split_ifs with hx1
   · rw [Pi.smul_apply, smul_eq_mul]
     ring
-  · have hyi : (equivProjectivization ℂ).symm x = (∞ : OnePoint ℂ) := by
-      by_contra h
-      have h' := (equivProjectivization_mem_affineOpen_one_iff _).2 h
-      rw [Equiv.apply_symm_apply] at h'
-      exact hx1 h'
-    have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
-      rw [hyi]
+  · have hy0 : (equivProjectivization ℂ).symm x ≠ ((0 : ℂ) : OnePoint ℂ) := by
+      rw [symm_eq_infty_of_notMem_affineOpen_one hx1]
       exact infty_ne_coe _
     exact lowerCoord_smul k (isDivisorSectionAt_extend g.property ⟨_, hxU⟩) hy0 c
 
@@ -434,12 +434,15 @@ private def compLinearMap (U : Opens (OnePoint ℂ)) :
     (fun x ↦ sectionFun k (divisorSheafSectionsEquiv _ U g) x) (sectionFun_contMDiff _)
   map_add' g₁ g₂ := holomorphicSectionSheaf.ext fun x ↦ by
     rw [holomorphicSectionSheaf.add_apply]
+    -- `erw`: `sectionFun` is `ℂ`-valued, while `ofContMDiff_apply` is stated for sections of the
+    -- fibers `(twistCore k).Fiber x`, which are `ℂ` only after unfolding `Fiber`
     erw [holomorphicSectionSheaf.ofContMDiff_apply, holomorphicSectionSheaf.ofContMDiff_apply,
       holomorphicSectionSheaf.ofContMDiff_apply]
     rw [_root_.map_add]
     exact sectionFun_add _ _ x x.property
   map_smul' c g := holomorphicSectionSheaf.ext fun x ↦ by
     rw [holomorphicSectionSheaf.smul_apply]
+    -- `erw`: as in `map_add'`, the fibers of `twistCore k` are `ℂ` only after unfolding
     erw [holomorphicSectionSheaf.ofContMDiff_apply, holomorphicSectionSheaf.ofContMDiff_apply]
     rw [_root_.map_smul]
     exact sectionFun_smul c _ x x.property
@@ -485,8 +488,25 @@ def twistCoreDivisorHom : (divisorSheaf (k • WeilDivisor.ofPoint (∞ : OnePoi
     intro x
     simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.coe_comp,
       Function.comp_apply]
-    erw [compLinearMap_apply, holomorphicSectionSheaf.map_apply, compLinearMap_apply]
+    rw [compLinearMap_apply, TopCat.Presheaf.pushforward_obj_map, holomorphicSectionSheaf.map_apply,
+      compLinearMap_apply]
     exact sectionFun_restrict i.unop.le _ _ (divisorSheafSectionsEquiv_map _ i.unop g) x x.property
+
+/-- On `U₁`, the section of `𝒪(k)` attached by `Projectivization.twistCoreDivisorHom` to a section
+`g` of `𝒪(k [∞])` is `g` read in the frame of the chart `1`: its value is `g` at the corresponding
+point of the Riemann sphere, multiplied by the transition from the chart `1` to the preferred
+chart. -/
+theorem twistCoreDivisorHom_app_apply_of_mem_affineOpen_one {U : Opens (OnePoint ℂ)}
+    (g : (divisorSheaf (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ))).obj.obj (op U))
+    {x : ℙ ℂ (Fin 2 → ℂ)} (hxU : x ∈ (Opens.map projectiveLineToSphere).obj U)
+    (hx : x ∈ affineOpen 1) :
+    holomorphicSectionSheaf.toFun 𝓘(ℂ, Fin 1 → ℂ) ℂ (twistCore (𝕜 := ℂ) (n := 1) k).Fiber
+        ((twistCoreDivisorHom k).app (op U) g) ⟨x, hxU⟩ =
+      twistTransition k 1 ((twistCore (𝕜 := ℂ) (n := 1) k).indexAt x) x *
+        (divisorSheafSectionsEquiv _ U g).val
+          ⟨(equivProjectivization ℂ).symm x, mem_map_projectiveLineToSphere.1 hxU⟩ := by
+  refine (compLinearMap_apply g ⟨x, hxU⟩).trans ?_
+  rw [sectionFun, ite_eq_left hx, extend_apply_of_mem]
 
 private theorem compLinearMap_injective (U : Opens (OnePoint ℂ)) :
     Function.Injective (compLinearMap k U) := by
@@ -660,9 +680,7 @@ private theorem compLinearMap_surjective (U : Opens (OnePoint ℂ)) :
       twistTransition_mul_twistTransition k _ _ hx1,
       twistTransition_self k (mem_affineOpen_indexAt k x), one_mul]
     exact htx x
-  · have hyi : (equivProjectivization ℂ).symm x = (∞ : OnePoint ℂ) := by
-      by_contra h
-      exact hx1 (hxy ▸ (equivProjectivization_mem_affineOpen_one_iff _).2 h)
+  · have hyi := symm_eq_infty_of_notMem_affineOpen_one hx1
     have hxi : equivProjectivization ℂ (∞ : OnePoint ℂ) = x := by
       rw [← hyi]
       exact hxy
@@ -687,7 +705,7 @@ instance isIso_twistCoreDivisorHom : IsIso (twistCoreDivisorHom k) := by
 variable (k) in
 /-- **`H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.** The first Čech cohomology of the sheaf of holomorphic
 sections of the line bundle `𝒪(k)` on the complex projective line vanishes for `k ≥ -1`. -/
-theorem isZero_holomorphicSectionCechCohomology_one_twistCore (hk : -1 ≤ k) :
+theorem isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (hk : -1 ≤ k) :
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) ℂ
       (twistCore (𝕜 := ℂ) (n := 1) k).Fiber 1) := by
   have hdeg : -1 ≤ WeilDivisor.degree (k • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) := by
