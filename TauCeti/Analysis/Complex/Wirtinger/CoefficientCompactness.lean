@@ -373,8 +373,7 @@ theorem exists_hasWeakConjWirtingerDerivOn_of_tendstoLocallyUniformlyOn_esymm {�
     (fun z _ ↦ hcard₀ z) (fun i hi ↦ ((hc i hi).congr fun n z hz ↦ hbR n i hi z hz).congr_right
       fun z _ ↦ hcR₀ z i hi) hR₀
   have hN₀ := continuousOn_sum_map_conj_mul_esymm_erase (k := j - 1) (fun z _ ↦ hcard₀ z) hR₀
-  have hev : LipschitzWith 1 fun L : ℂ →L⋆[ℂ] ℂ ↦ L 1 :=
-    LipschitzWith.of_dist_le_mul fun L L' ↦ by simpa [dist_eq_norm] using (L - L').le_opNorm 1
+  have hev := ContinuousLinearMap.lipschitzWith_apply (σ₁₂ := starRingEnd ℂ) (F := ℂ) (1 : ℂ)
   have hloc {E : Type} [UniformSpace E] {F : ι → ℂ → E} {f : ℂ → E} (K : Set ℂ) (hKU : K ⊆ U)
       (hK : IsCompact K) (h : TendstoLocallyUniformlyOn F f l U) : TendstoUniformlyOn F f l K :=
     (tendstoLocallyUniformlyOn_iff_forall_isCompact hU).1 h K hKU hK
