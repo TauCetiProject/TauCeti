@@ -40,6 +40,9 @@ circle.
   with the angular gap, so the distance to a fixed point of the circle is unimodal along it, and
   `TauCeti.ordConnected_inter_setOf_dist_circleMap_lt` — consequently a ball meets an arc of
   angular width at most `π` in a set of angles that is order connected.
+* `TauCeti.preimage_circleMap_ball_inter_Icc` — for `0 < r ≤ 2ρ`, the angles within half a turn
+  of `φ` that `circleMap c ρ` sends into the ball of radius `r` about its point at `φ` form the
+  open interval of half-width `2 arcsin (r / (2ρ))` about `φ`.
 * `TauCeti.exists_mem_Ioo_circleMap_eq_and_abs_sub_lt_of_mem_ball_circleMap_image_Ioo` — the
   inverse comparison on an arc that does not wrap: a point of the arc close enough to a fixed
   point of it is the image of a
@@ -308,6 +311,36 @@ theorem ordConnected_inter_setOf_dist_circleMap_lt (ζ : ℂ) (ρ : ℝ) {s : Se
       linarith [hz.2]
     · rw [abs_le]
       exact ⟨by linarith [(hsub hy.1).1], by linarith [(hsub hy.1).2]⟩
+
+/-- **The angles of a short arc.** For `0 < ρ` and `0 < r ≤ 2ρ`, the angles `θ` within half a turn
+of `φ` whose point of `circleMap c ρ` lies within distance `r` of the point at `φ` form the open
+interval `(φ - 2 arcsin (r / (2ρ)), φ + 2 arcsin (r / (2ρ)))`. By the chord formula
+`TauCeti.dist_circleMap_eq_two_mul_sin_abs`, the condition reads `sin (|θ - φ| / 2) < r / (2ρ)`. -/
+theorem preimage_circleMap_ball_inter_Icc (c : ℂ) {ρ r : ℝ} (hρ : 0 < ρ) (hr : 0 < r)
+    (hr2 : r ≤ 2 * ρ) (φ : ℝ) :
+    circleMap c ρ ⁻¹' ball (circleMap c ρ φ) r ∩ Icc (φ - π) (φ + π) =
+      Ioo (φ - 2 * Real.arcsin (r / (2 * ρ))) (φ + 2 * Real.arcsin (r / (2 * ρ))) := by
+  have hs : r / (2 * ρ) ∈ Icc (-1 : ℝ) 1 :=
+    ⟨by linarith [div_pos hr (by linarith : (0 : ℝ) < 2 * ρ)], (div_le_one (by linarith)).2 hr2⟩
+  have ha : Real.arcsin (r / (2 * ρ)) ≤ π / 2 := Real.arcsin_le_pi_div_two _
+  have key : ∀ θ, |θ - φ| ≤ π →
+      (dist (circleMap c ρ θ) (circleMap c ρ φ) < r ↔
+        |θ - φ| < 2 * Real.arcsin (r / (2 * ρ))) := fun θ hθ ↦ by
+    have hmem : |θ - φ| / 2 ∈ Icc (-(π / 2)) (π / 2) :=
+      ⟨by linarith [abs_nonneg (θ - φ), Real.pi_pos], by linarith⟩
+    rw [dist_circleMap_eq_two_mul_sin_abs c ρ (by linarith [Real.pi_pos]), abs_of_pos hρ,
+      ← lt_div_iff₀' (by linarith), ← Real.lt_arcsin_iff_sin_lt hmem hs]
+    constructor <;> intro h <;> linarith
+  ext θ
+  simp only [mem_inter_iff, mem_preimage, mem_ball, mem_Icc, mem_Ioo]
+  constructor
+  · rintro ⟨h, h1, h2⟩
+    have := abs_lt.1 ((key θ (abs_le.2 ⟨by linarith, by linarith⟩)).1 h)
+    constructor <;> linarith [this.1, this.2]
+  · rintro ⟨h1, h2⟩
+    have hlt : |θ - φ| < 2 * Real.arcsin (r / (2 * ρ)) := abs_lt.2 ⟨by linarith, by linarith⟩
+    have hθ : |θ - φ| ≤ π := by linarith
+    exact ⟨(key θ hθ).2 hlt, by linarith [(abs_le.1 hθ).1], by linarith [(abs_le.1 hθ).2]⟩
 
 /-- **The law of cosines for a point of a circle.** The point of `circleMap ζ ρ` at angle `θ` is at
 distance `ρ ^ 2 + dist ζ c ^ 2 - 2 * ρ * dist ζ c * cos (θ - arg (c - ζ))`, squared, from an
