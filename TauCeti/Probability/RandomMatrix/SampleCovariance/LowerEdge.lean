@@ -70,52 +70,6 @@ private theorem ae_degrees_and_norm_sub_centeredTruncation
       hsize ha] with ω hdeg hnorm
   exact ⟨hdeg, hnorm⟩
 
-private theorem ae_tendsto_spectralMeasure_centered_sampleCovariance_of_pos_variance
-    (hx : ∀ ij, HasLaw (x ij) ν P) (hindep : iIndepFun x P) (h2 : MemLp id 2 ν)
-    (hp : Tendsto (fun n ↦ (p n : ℝ) / n) atTop (𝓝 1))
-    (hv : 0 < ∫ z, ‖z - ∫ w, w ∂ν‖ ^ 2 ∂ν) :
-    let b := ∫ z, z ∂ν
-    let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
-    ∀ᵐ ω ∂P, Tendsto (fun n ↦ (sampleCovariance (Matrix.of
-      fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b)).spectralMeasure
-        (isHermitian_sampleCovariance _)) atTop
-      (𝓝 ((marchenkoPastur 1).toProbabilityMeasure.map (v * ·))) := by
-  have : IsProbabilityMeasure P := hindep.isProbabilityMeasure
-  have : IsProbabilityMeasure ν := (hx (0, 0)).isProbabilityMeasure_iff.1 ‹_›
-  let b := ∫ z, z ∂ν
-  let v := ∫ z, ‖z - b‖ ^ 2 ∂ν
-  have hv' : 0 < v := hv
-  let Z (z : ℂ) := (√v)⁻¹ • (z - b)
-  have hZ : Measurable Z := by fun_prop
-  have hmean : ∫ z, z ∂(ν.map Z) = 0 := by
-    have hid : Integrable (fun z : ℂ ↦ z) ν := h2.integrable one_le_two
-    rw [integral_map hZ.aemeasurable (by fun_prop)]
-    simp only [Z, integral_smul]
-    rw [integral_sub hid (integrable_const b)]
-    simp [b]
-  have hvar : ∫ z, ‖z‖ ^ 2 ∂(ν.map Z) = 1 := by
-    rw [integral_map hZ.aemeasurable (by fun_prop)]
-    simp only [Z, norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤ (√v)⁻¹),
-      mul_pow, integral_const_mul, inv_pow, Real.sq_sqrt hv'.le]
-    exact inv_mul_cancel₀ hv'.ne'
-  filter_upwards [marchenkoPastur_ae (fun ij ↦ (hasLaw_map hZ.aemeasurable).fun_comp (hx ij))
-    (hindep.comp (fun _ ↦ Z) (fun _ ↦ hZ)) hmean hvar (y := 1) one_pos (by simpa using hp)]
-    with ω hMP
-  let A (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω - b
-  let B (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ Z (x (i, j) ω)
-  have hA (n : ℕ) : A n = √v • B n := by
-    ext i j
-    simp only [A, B, Matrix.smul_apply, Matrix.of_apply, Z, smul_smul,
-      mul_inv_cancel₀ (Real.sqrt_pos.2 hv').ne', one_smul]
-  have hmap (n : ℕ) : ((sampleCovariance (B n)).spectralMeasure
-      (isHermitian_sampleCovariance _)).map (v * ·) =
-        (sampleCovariance (A n)).spectralMeasure (isHermitian_sampleCovariance _) := by
-    rw [map_spectralMeasure_mul]
-    apply spectralMeasure_eq_of_charpoly_eq
-    rw [hA n, sampleCovariance_real_smul, Real.sq_sqrt hv'.le]
-  exact ((ProbabilityMeasure.continuous_map (continuous_const.mul continuous_id)).tendsto _
-    |>.comp hMP).congr hmap
-
 /-- When the aspect ratio tends to one, the least eigenvalue of the sample covariance converges
 almost surely to zero for an i.i.d. array of finite second moment. -/
 theorem ae_tendsto_eigenvalues₀_card_sub_one_sampleCovariance_of_ratio_one
@@ -140,7 +94,7 @@ theorem ae_tendsto_eigenvalues₀_card_sub_one_sampleCovariance_of_ratio_one
       simpa only [ProbabilityMeasure.toMeasure_map, Measure.coe_toProbabilityMeasure, mul_zero]
         using h
     filter_upwards [ae_tendsto_spectralMeasure_centered_sampleCovariance_of_pos_variance
-      hx hindep h2 hp hv] with ω hω
+      hx hindep (y := 1) one_pos (by simpa using hp) hv] with ω hω
     let X (n : ℕ) := Matrix.of fun (i : Fin (p n)) (j : Fin n) ↦ x (i, j) ω
     have hMP := (tendsto_spectralMeasure_sampleCovariance_sub_const_iff X (fun _ _ ↦ b)
       (by simpa only [Fintype.card_fin] using hdim)).1 hω
@@ -262,7 +216,9 @@ theorem ae_tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_nonbacktracking
     (by simpa only [Fintype.card_fin] using hnorm')
     (fun ε hε ↦ by
       filter_upwards [hz, hdeg ε hε] with n hn hd'
-      simpa only [Fintype.card_fin, NNReal.coe_inv, ← hn, Z] using hd')
+      simp only [Fintype.card_fin] at hd'
+      rw [← hn] at hd'
+      simpa only [Fintype.card_fin, NNReal.coe_inv] using hd')
     (by simpa only [Fintype.card_fin] using hw)
   obtain ⟨hleast, hlim⟩ := tendsto_sInf_pos_eigenvalues₀_sampleCovariance_of_tendsto_marchenkoPastur
     hMP (eventually_lt_eigenvalues₀_sampleCovariance_of_conjTranspose

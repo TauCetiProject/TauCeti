@@ -36,8 +36,8 @@ root of the sample size. Both sides are zero for an empty sample. -/
 theorem sampleCovariance_eq_mul_conjTranspose_self_inv_sqrt_smul (X : Matrix m n 𝕜) :
     X.sampleCovariance =
       ((√(Fintype.card n : ℝ))⁻¹ • X) * ((√(Fintype.card n : ℝ))⁻¹ • X)ᴴ := by
-  rw [sampleCovariance_def, conjTranspose_smul, star_trivial, smul_mul, Matrix.mul_smul,
-    smul_smul, ← sq, inv_pow, Real.sq_sqrt (by positivity), one_div]
+  simp [sampleCovariance_def, conjTranspose_smul, smul_mul, Matrix.mul_smul, smul_smul,
+    ← sq, inv_pow, Real.sq_sqrt, one_div]
 
 variable [Fintype m] [DecidableEq m] [DecidableEq n]
 
@@ -50,10 +50,11 @@ theorem eigenvalues₀_sampleCovariance (X : Matrix m n 𝕜) (i : Fin (Fintype.
   rw [congrFun (IsHermitian.eigenvalues₀_congr
     (sampleCovariance_eq_mul_conjTranspose_self_inv_sqrt_smul X) (isHermitian_sampleCovariance X)
     (isHermitian_mul_conjTranspose_self _)) i,
-    eigenvalues₀_mul_conjTranspose_self_eq_sq_singularValues,
-    RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, LinearMap.singularValues_smul,
-    Finsupp.smul_apply, smul_eq_mul, RCLike.norm_ofReal, abs_of_nonneg (by positivity),
-    mul_pow, inv_pow, Real.sq_sqrt (by positivity), div_eq_mul_inv, mul_comm]
+    eigenvalues₀_mul_conjTranspose_self_eq_sq_singularValues]
+  simp only [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smul, LinearMap.singularValues_smul,
+    Finsupp.smul_apply, smul_eq_mul]
+  simp [abs_of_nonneg (Real.sqrt_nonneg (Fintype.card n : ℝ)),
+    mul_pow, inv_pow, Real.sq_sqrt, div_eq_inv_mul]
 
 /-- The square root of each ordered sample covariance eigenvalue is Lipschitz in the data
 matrix for the Euclidean operator norm, with constant the reciprocal square root of the
@@ -62,8 +63,7 @@ theorem abs_sqrt_eigenvalues₀_sampleCovariance_sub_le (X Y : Matrix m n 𝕜)
     (i : Fin (Fintype.card m)) :
     |√((isHermitian_sampleCovariance X).eigenvalues₀ i) -
       √((isHermitian_sampleCovariance Y).eigenvalues₀ i)| ≤ ‖X - Y‖ / √(Fintype.card n) := by
-  rw [eigenvalues₀_sampleCovariance, eigenvalues₀_sampleCovariance, Real.sqrt_div (by positivity),
-    Real.sqrt_div (by positivity), Real.sqrt_sq (LinearMap.singularValues_nonneg _ _),
+  simp only [eigenvalues₀_sampleCovariance, Real.sqrt_div (sq_nonneg _),
     Real.sqrt_sq (LinearMap.singularValues_nonneg _ _), ← sub_div, abs_div,
     abs_of_nonneg (Real.sqrt_nonneg _)]
   refine div_le_div_of_nonneg_right ?_ (Real.sqrt_nonneg _)
@@ -77,9 +77,10 @@ theorem eigenvalues₀_sampleCovariance_eq_div_mul_eigenvalues₀_sampleCovarian
     (isHermitian_sampleCovariance X).eigenvalues₀ i = ((Fintype.card m : ℝ) / Fintype.card n) *
       (isHermitian_sampleCovariance Xᴴ).eigenvalues₀ j := by
   have hm : (Fintype.card m : ℝ) ≠ 0 := by exact_mod_cast i.pos.ne'
+  have hn : (Fintype.card n : ℝ) ≠ 0 := by exact_mod_cast j.pos.ne'
   rw [eigenvalues₀_sampleCovariance, eigenvalues₀_sampleCovariance,
-    toEuclideanLin_conjTranspose_eq_adjoint, LinearMap.singularValues_adjoint, hij,
-    div_mul_div_comm, mul_comm (Fintype.card n : ℝ), ← div_div, mul_div_cancel_left₀ _ hm]
+    toEuclideanLin_conjTranspose_eq_adjoint, LinearMap.singularValues_adjoint, hij]
+  field_simp
 
 omit [DecidableEq n] in
 /-- Every ordered covariance eigenvalue at or beyond the number of samples is zero. -/
