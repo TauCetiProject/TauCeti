@@ -52,7 +52,6 @@ instance : (IsLightSolid (R := R)).IsClosedUnderCokernels where
     rw [isLightSolid_iff, ← lightSolidDifferenceNatTrans_app] at hX hY ⊢
     have := Functor.PreservesHomology.preservesCokernel (ihom (nullSeq R)) f
     have := Cofork.IsColimit.epi hc
-    have := internallyProjective_nullSeq R
     exact (lightSolidDifferenceNatTrans R).isIso_app_of_isColimit_cokernelCofork hc
 
 /-- Solid modules are closed under extensions. -/
