@@ -137,6 +137,14 @@ end ProbabilityTheory.Kernel
 
 namespace PMF
 
+/-- The measure of a PMF bind is the sum of the measures of the branches, weighted by the masses
+of the first PMF. -/
+theorem toMeasure_bind_eq_sum {α β : Type*} [MeasurableSpace β] (p : PMF α) (q : α → PMF β) :
+    (p.bind q).toMeasure = Measure.sum fun a ↦ p a • (q a).toMeasure := by
+  ext s hs
+  rw [PMF.toMeasure_bind_apply _ _ _ hs, Measure.sum_apply _ hs]
+  simp only [smul_apply, smul_eq_mul]
+
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
   [Countable α] [MeasurableSingletonClass α]
 
