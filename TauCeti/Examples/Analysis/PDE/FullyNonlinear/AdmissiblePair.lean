@@ -18,8 +18,9 @@ import TauCeti.Examples.Analysis.Matrix.SpectralGradient
 Three pairs `(f, Γ)` that test the definition of an admissible pair
 (`TauCeti.IsAdmissiblePair`).
 
-* The Monge–Ampère pair `((∏_i μ_i)^{1/n}, Γ_n)` has `∂_j f(μ) = n⁻¹ (∏_i μ_i)^{1/n} / μ_j`, so
-  the product of its partial derivatives is `n⁻ⁿ` identically, not only bounded below by it. For
+* The Monge–Ampère pair `((∏_i μ_i)^{1/n}, Γ_n)` has `∂_j f(μ) = n⁻¹ (∏_i μ_i)^{1/n} / μ_j`
+  (`TauCeti.fderiv_prod_rpow_apply_single`), so the product of its partial derivatives is `n⁻ⁿ`
+  identically, not only bounded below by it. For
   `n = 2` the partials at `(4, 1)` are `1/4` and `1`
   (`TauCeti.SpectralGradientExamples.fderiv_geomMean_four_one`), with product `1/4 = 2⁻²`.
 * `f(λ) = σ_1(λ) − ε|λ|` on `Γ_1`, with `|ε| < 1` and the Euclidean norm `|λ|`, is an admissible
@@ -66,21 +67,6 @@ section DecidableEq
 variable [DecidableEq ι]
 
 /-! ### The Monge–Ampère pair -/
-
-/-- The partial derivatives of the Monge–Ampère function `(∏_i μ_i)^{1/n}` on `Γ_n`:
-`∂_j f(μ) = n⁻¹ (∏_i μ_i)^{1/n} / μ_j`. -/
-theorem fderiv_prod_rpow_apply_single {μ : ι → ℝ} (hμ : ∀ i, 0 < μ i) (j : ι) :
-    fderiv ℝ (fun ν : ι → ℝ ↦ (∏ i, ν i) ^ (Fintype.card ι : ℝ)⁻¹) μ (Pi.single j 1) =
-      (Fintype.card ι : ℝ)⁻¹ * (∏ i, μ i) ^ (Fintype.card ι : ℝ)⁻¹ / μ j := by
-  have hP : 0 < ∏ i, μ i := prod_pos fun i _ ↦ hμ i
-  have hsplit : ∏ i, μ i = μ j * ∏ i ∈ univ.erase j, μ i :=
-    (mul_prod_erase univ μ (mem_univ j)).symm
-  rw [((hasFDerivAt_finsetProd (u := univ) (x := μ)).differentiableAt.hasFDerivAt.rpow_const
-    (Or.inl hP.ne')).fderiv, smul_apply, fderiv_prod_apply_single, smul_eq_mul,
-    Real.rpow_sub_one hP.ne']
-  have hj : μ j ≠ 0 := (hμ j).ne'
-  field_simp
-  rw [hsplit, mul_comm (μ j)]
 
 /-- The product of the partial derivatives of the Monge–Ampère function is `n⁻ⁿ` at every point
 of `Γ_n`, so `n⁻ⁿ` is its best structural constant. -/
