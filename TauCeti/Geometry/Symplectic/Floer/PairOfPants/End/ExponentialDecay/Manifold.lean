@@ -35,11 +35,13 @@ then the end converges to the stationary cylinder of such an orbit `y`:
 
 `‖φ(u(φ_q(±s, t))) - y(t)‖ + ‖d(φ ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{H'_q(t)}(y(t))‖ ≤ C exp (-κ s)`
 
-for all large `s` and all `t` (`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart`
+for all large `s` and all `t`, as soon as the end lies in an open set on which `u` solves the Floer
+equation
+(`exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical_of_isOpen`
 in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`). When all three ends are cylindrical and
 lie in such charts, one rate `κ` and one constant `C` serve for all of them
-(`exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart`, in the same
-namespace).
+(`exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical`, in
+the same namespace).
 These are the asymptotic conditions under which an end of a pair of pants in a manifold lies in the
 exponentially weighted spaces of the linearized operator, read in the chart, and can be pre-glued
 to a Floer cylinder.
@@ -119,7 +121,7 @@ for every `t`.
 
 Only the part of `U` along the end matters, so this applies to the ends of other punctured spheres
 built from `S`, such as plumbed four-punctured spheres. -/
-theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_isOpen
+theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical_of_isOpen
     (hω : ω.IsNondegenerate) (q : Puncture)
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -162,6 +164,11 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_is
   have hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t) := fun t ↦
     (hHs.comp (contMDiff_const.prodMk contMDiff_id)).mdifferentiable one_ne_zero
   -- In the positive end chart the structure is `J_q(±t)`, read in the chart as `J'_q(±t)`.
+  have hJz : ∀ z : ℝ × ℝ, a < z.1 →
+      J (positiveEndChart q z) = Jq (q.endSign * z.2) ((u ∘ positiveEndChart q) z) := by
+    rintro ⟨s, t⟩ hs
+    rw [comp_apply, positiveEndChart_mk]
+    exact hJ s _ hs
   set g : ℝ × V → ℝ × V := fun p ↦ (q.endSign * p.1, p.2)
   have hg : ContDiff ℝ 2 g := (contDiff_const.mul contDiff_fst).prodMk contDiff_snd
   obtain ⟨x, hxper, hx, κ, hκ, C, hdecay⟩ :=
@@ -182,7 +189,7 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_is
       (fun z hz ↦ isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical hKH hH
         hHd (haT.trans hz.1.le)
         ((hu.contMDiffAt (hU.mem_nhds (haU _ hz.1))).mdifferentiableAt (by norm_num))
-        (hfloer _ (haU _ hz.1)) fun t ↦ hJ z.1 t hz.1)
+        (hfloer _ (haU _ hz.1)) (hJz z hz.1))
       (ne_top_of_le_ne_top hE (setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_isOpen
         q hKH hH hHd hU (hu.mdifferentiableOn (by norm_num)) haT haU))
       -- The orbits of the end Hamiltonian of the positive end chart are isolated and nondegenerate.
@@ -220,7 +227,7 @@ constant `C` such that for all large `s`, every end `q` and every `t`,
 `‖ψ_q(u(φ_q(±s, t))) - y_q(t)‖ + ‖d(ψ_q ∘ u ∘ φ_q)(±s, t) - dt ⊗ X_{H'_q(t)}(y_q(t))‖`
 
 is at most `C exp (-κ s)`, where `ψ_q` is the symplectic chart and `φ_q` the end chart. -/
-theorem exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart
+theorem exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical
     (hω : ω.IsNondegenerate)
     (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
@@ -268,7 +275,7 @@ theorem exists_pos_forall_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChar
   -- Beyond `max a 0` every end lies in `S`; apply the estimate end by end.
   have haT' : T₀ ≤ max a 0 := haT.trans (le_max_left _ _)
   choose y hyper hy hdecay using fun q ↦
-    hω.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_isOpen q
+    hω.exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_endChart_of_cylindrical_of_isOpen q
       (hKH q) (hH q) (hHs q) isOpen_thricePuncturedSphereReal hu hfloer hE haT'
       (fun ζ hζ ↦ positiveEndChart_mem_thricePuncturedSphereReal
         ((le_max_right _ _).trans_lt hζ))

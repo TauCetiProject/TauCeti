@@ -25,7 +25,7 @@ a map `u : S → M` to `u ∘ φ'_q`:
   (`TauCeti.SmoothTwoForm.perturbedMFDeriv_perturbationPullback`), `u ∘ φ'_q` solves the Floer
   equation of a half-cylinder for `H'_q` when `u` solves `(du - X_K)^{0,1} = 0`
   (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart`), with the
-  structure `J_q(±t)` when the structure of `u` is cylindrical on the end
+  structure `J_q(±t)` at the points where the structure of `u` is cylindrical
   (`SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical`);
 * its energy over a part `s` of a band of angular width one beyond `max T₀ 0` is the energy of `u`
   over `φ'_q(s)`
@@ -173,9 +173,9 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart {q : Puncture}
 /-- **A cylindrical end of a Floer solution in a manifold is a Floer half-cylinder.** Let `K` be
 equal to `H_q(t) dt` beyond `T₀` on the end `q`, for differentiable `H_q`, and let `u` solve the
 Floer equation `(du - X_K)^{0,1} = 0` for the almost complex structure `J` at the image `φ'_q(ζ)` of
-a point `ζ` with `s ≥ T₀` of the positive end chart. Suppose that on the circle of `ζ` the structure
-is cylindrical, `J(φ_q(±s, t)) = J_q(t, u(φ_q(±s, t)))`. Then `u ∘ φ'_q` solves at `ζ` the Floer
-equation `∂_s v + J_q(±t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` of a half-cylinder, for the end
+a point `ζ = (s, t)` with `s ≥ T₀` of the positive end chart. Suppose that the structure is
+cylindrical at `φ'_q(ζ)`, `J(φ'_q(ζ)) = J_q(±t, u(φ'_q(ζ)))`. Then `u ∘ φ'_q` solves at `ζ` the
+Floer equation `∂_s v + J_q(±t, v) (∂_t v - X_{H'_q(t)}(v)) = 0` of a half-cylinder, for the end
 Hamiltonian `H'_q` and the structure `J_q(±t)` of the positive end. -/
 theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical {q : Puncture}
     (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
@@ -188,16 +188,13 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_of_cylindrical
       (ω.perturbedMFDeriv (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u
         (positiveEndChart q ζ)).toLinearMap)
-    (hJ : ∀ t, J (endChart q (q.endSign * ζ.1, t)) = Jq t (u (endChart q (q.endSign * ζ.1, t)))) :
+    (hJ : J (positiveEndChart q ζ) = Jq (q.endSign * ζ.2) ((u ∘ positiveEndChart q) ζ)) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ)
       (Jq (q.endSign * ζ.2) ((u ∘ positiveEndChart q) ζ))
       (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (u ∘ positiveEndChart q) ζ).toLinearMap := by
-  have hcl := isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart hKH hH hHd hζ hu hfloer
-  -- At `ζ = (s, t)` the end chart at `(±s, ±t)` is the positive end chart at `(s, t)`.
-  have hJζ := hJ (q.endSign * ζ.2)
-  rw [endChart_eq_positiveEndChart, endSign_mul_endSign_mul] at hJζ
-  rwa [hJζ] at hcl
+  rw [← hJ]
+  exact isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart hKH hH hHd hζ hu hfloer
 
 /-- **The energy of a part of an end of a Floer solution on an open set is the energy of its
 image.** Let `K` be equal to `H_q(t) dt` beyond `T₀` on the end `q`, for differentiable `H_q`, and
