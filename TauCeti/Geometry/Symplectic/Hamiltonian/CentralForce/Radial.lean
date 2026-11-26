@@ -226,15 +226,14 @@ theorem sq_sub_inner_sq_eq_zero_iff {x : V × V} (hq : x.1 ≠ 0) :
     ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 = 0 ↔
       x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 := by
   have hr : ‖x.1‖ ≠ 0 := norm_ne_zero_iff.2 hq
-  -- The tangential part `p - p_r (q / ‖q‖)` has squared length `ℓ² / ‖q‖²`.
+  -- The tangential part `p - p_r (q / ‖q‖)` has squared length `‖p‖² - p_r² = ℓ² / ‖q‖²`.
   have h : ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 =
       (‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2) / ‖x.1‖ ^ 2 := by
-    rw [@norm_sub_sq_real, norm_smul, norm_smul, norm_inv, norm_norm, Real.norm_eq_abs,
-      real_inner_smul_right, real_inner_smul_right, real_inner_comm, radialMomentum]
-    have hinv : ‖x.1‖ * ‖x.1‖⁻¹ = 1 := mul_inv_cancel₀ hr
+    rw [← sub_eq_iff_eq_add'.2 (norm_snd_sq_eq_radialMomentum_sq_add hq), norm_sub_sq_real]
+    simp [norm_smul, real_inner_smul_right, real_inner_comm, radialMomentum]
     field_simp
     rw [sq_abs]
-    linear_combination (⟪x.1, x.2⟫_ℝ ^ 2 * (‖x.1‖ * ‖x.1‖⁻¹ + 1)) * hinv
+    ring
   have h' : x.2 = radialMomentum x • ‖x.1‖⁻¹ • x.1 ↔
       ‖x.2 - radialMomentum x • ‖x.1‖⁻¹ • x.1‖ ^ 2 = 0 := by
     rw [pow_eq_zero_iff two_ne_zero, norm_eq_zero, sub_eq_zero]
