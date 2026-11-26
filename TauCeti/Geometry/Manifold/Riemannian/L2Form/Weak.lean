@@ -145,22 +145,15 @@ distributional, extension of the formal adjoint of `T`. -/
 theorem mem_graph_adjoint_toL2Operator_iff {u : L2Form I M k'} {v : L2Form I M k} :
     (u, v) ∈ (toL2Operator T)†.graph ↔ ∀ α : compactlySupportedForms I M k,
       ⟪v, toL2Form I M k α⟫_ℝ = ⟪u, toL2Form I M k' (T α)⟫_ℝ := by
-  have hd := dense_domain_toL2Operator T
-  rw [LinearPMap.mem_graph_iff]
+  rw [LinearPMap.adjoint_graph_eq_graph_adjoint (dense_domain_toL2Operator T),
+    Submodule.mem_adjoint_iff]
+  simp only [mem_graph_toL2Operator_iff, sub_eq_zero]
   constructor
-  · rintro ⟨w, rfl, rfl⟩ α
-    rw [← toL2Operator_apply T α (LinearMap.apply_mem_domain_domainOperator _ _ _ α)]
-    exact LinearPMap.adjoint_isFormalAdjoint hd w
-      ⟨_, LinearMap.apply_mem_domain_domainOperator _ _ _ α⟩
-  · intro h
-    have hpair : ∀ w : (toL2Operator T).domain,
-        ⟪v, (w : L2Form I M k)⟫_ℝ = ⟪u, toL2Operator T w⟫_ℝ := by
-      rintro ⟨_, hw⟩
-      obtain ⟨α, rfl⟩ := (LinearMap.mem_domain_domainOperator_iff _ _ _).1 hw
-      rw [toL2Operator_apply]
-      exact h α
-    exact ⟨⟨u, LinearPMap.mem_adjoint_domain_of_exists _ ⟨v, hpair⟩⟩, rfl,
-      LinearPMap.adjoint_apply_eq hd _ hpair⟩
+  · intro h α
+    simpa only [real_inner_comm] using (h _ _ ⟨α, rfl, rfl⟩).symm
+  · intro h a b hab
+    obtain ⟨α, rfl, rfl⟩ := hab
+    simpa only [real_inner_comm] using (h α).symm
 
 /-- The kernel of the adjoint of `toL2Operator T` is the orthogonal complement of the classes of
 `T α`. -/
