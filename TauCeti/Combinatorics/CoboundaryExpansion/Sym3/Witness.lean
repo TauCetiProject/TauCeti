@@ -310,16 +310,21 @@ private theorem search_step {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (D
 
 private theorem sum_edgeList {k : ℕ} (f : Fin k × Fin k → ℕ) :
     ((edgeList k).map f).sum = ∑ p ∈ univ.filter fun p : Fin k × Fin k => p.1 < p.2, f p := by
-  -- Keep the list enumeration used by the executable search. First sum over its rows,
-  -- then turn each filtered row into a finset using that `finRange` has no duplicates.
-  rw [edgeList, List.flatMap_def, List.map_flatten, List.sum_flatten, List.map_map,
-    ← List.ofFn_eq_map, List.map_ofFn, List.sum_ofFn, ← univ_product_univ,
-    sum_filter_product univ univ (· < ·) fun u v => f (u, v)]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  rw [Function.comp_apply, Function.comp_apply, List.map_map,
-    ← List.sum_toFinset _ ((List.nodup_finRange k).filter _), List.toFinset_filter,
-    List.toFinset_finRange]
-  simp
+  rw [← univ_product_univ, sum_filter_product univ univ (· < ·) fun u v => f (u, v)]
+  have row (u : Fin k) :
+      (((List.finRange k).filter fun v => decide (u < v)).map fun v => f (u, v)).sum =
+        ∑ v ∈ univ.filter (u < ·), f (u, v) := by
+    simpa [List.toFinset_filter] using
+      (List.sum_toFinset (fun v => f (u, v)) ((List.nodup_finRange k).filter
+        (fun v => decide (u < v)))).symm
+  calc
+    ((edgeList k).map f).sum =
+        ((List.finRange k).map fun u => ∑ v ∈ univ.filter (u < ·), f (u, v)).sum := by
+      simp [edgeList, List.flatMap_def, List.sum_flatten, List.map_map, Function.comp_def, row]
+    _ = _ := by
+      simpa using
+        (List.sum_toFinset (fun u : Fin k => ∑ v ∈ univ.filter (u < ·), f (u, v))
+          (List.nodup_finRange k)).symm
 
 private theorem pcost_ofFn {k : ℕ} (α : Fin k → Fin k → Perm (Fin 3)) (β : Fin k → Perm (Fin 3)) :
     pcost α (List.ofFn β) =
