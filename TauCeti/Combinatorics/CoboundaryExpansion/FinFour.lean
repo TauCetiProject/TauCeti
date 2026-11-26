@@ -219,33 +219,37 @@ private theorem Cochain.exists_three_mul_cost_le_two_mul_defect_alternatingGroup
     Subgroup.coe_subtype, movedNorm_apply, Matrix.cons_val, inv_one, one_mul, mul_one]
   exact_mod_cast h
 
+/-- The edge values of `rotWitness`: `finRotate 3` on `(1, 3)`, its inverse on `(2, 3)` and `1`
+elsewhere. -/
+private def rotWitnessFn (u v : Fin 4) : alternatingGroup (Fin 3) :=
+  if u = 1 ∧ v = 3 then rotThree else if u = 2 ∧ v = 3 then rotThree⁻¹ else 1
+
 /-- The `A₃`-valued cochain on `complete (Fin 4)` carrying `finRotate 3` on `(1, 3)`, its inverse on
 `(2, 3)` and `1` elsewhere. -/
 private noncomputable def rotWitness : Cochain (complete (Fin 4)) (alternatingGroup (Fin 3)) :=
-  Cochain.ofLt _ fun u v => if u = 1 ∧ v = 3 then rotThree else if u = 2 ∧ v = 3 then rotThree⁻¹
-    else 1
+  Cochain.ofLt _ rotWitnessFn
+
+private theorem rotWitness_apply {u v : Fin 4} (h : u < v) : rotWitness u v = rotWitnessFn u v :=
+  Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr h.ne) h
 
 private theorem defect_rotWitness :
     rotWitness.defect ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective) =
       9 := by
-  rw [Cochain.defect_complete_fin_four]
-  norm_num [rotWitness, Cochain.holonomy_def, movedNorm_apply]
-  exact_mod_cast (by decide : #(rotThree : Perm (Fin 3)).support +
-    #(rotThree : Perm (Fin 3)).support +
-    #((rotThree : Perm (Fin 3))⁻¹ * (rotThree : Perm (Fin 3))⁻¹).support = 9)
+  simp only [Cochain.defect_complete_fin_four, rotWitness, Cochain.holonomy_ofLt_complete,
+    Fin.reduceLT, GroupNorm.comp_apply, Subgroup.coe_subtype, movedNorm_apply]
+  -- the sum of the four support cardinalities is a closed natural number, evaluated by `norm_cast`
+  norm_cast
 
 private theorem six_le_cost_rotWitness (β : Fin 4 → alternatingGroup (Fin 3)) :
     6 ≤ rotWitness.cost ((movedNorm (Fin 3)).comp (alternatingGroup (Fin 3)).subtype_injective)
       β := by
-  have key : ∀ b₀ b₁ b₂ b₃ : alternatingGroup (Fin 3),
-      6 ≤ #((b₀ : Perm (Fin 3))⁻¹ * b₁).support + #((b₀ : Perm (Fin 3))⁻¹ * b₂).support +
-        #((b₀ : Perm (Fin 3))⁻¹ * b₃).support + #((b₁ : Perm (Fin 3))⁻¹ * b₂).support +
-        #((b₁ : Perm (Fin 3))⁻¹ * rotThree * b₃).support +
-        #((b₂ : Perm (Fin 3))⁻¹ * (rotThree : Perm (Fin 3))⁻¹ * b₃).support := by
-    decide +kernel
-  rw [Cochain.cost_complete_fin_four]
-  norm_num [rotWitness, movedNorm_apply]
-  exact_mod_cast key (β 0) (β 1) (β 2) (β 3)
+  simp only [Cochain.cost_complete_fin_four, rotWitness_apply, Fin.reduceLT, GroupNorm.comp_apply,
+    Subgroup.coe_subtype, movedNorm_apply]
+  -- the six support cardinalities only depend on the four gauge values; it is a finite check
+  norm_cast
+  generalize β 0 = b₀, β 1 = b₁, β 2 = b₂, β 3 = b₃
+  revert b₀ b₁ b₂ b₃
+  decide +kernel
 
 /-- With the restricted moved-point norm, the alternating group `A₃ ≤ Perm (Fin 3)` has coboundary
 constant `3 / 2` on `complete (Fin 4)`. It is attained by the cochain carrying a `3`-cycle `c` on
