@@ -64,7 +64,7 @@ theorem isBoundaryDefiningFunctionOn_scalarRegularSublevel (hf : ContMDiff I �
       mvfderiv_const, zero_sub, neg_eq_zero] at h0
     have h1 := mvfderiv_comp_apply (g := f) (f := Subtype.val) x (hf.mdifferentiableAt (by simp))
       (hj.mdifferentiableAt (by simp)) v
-    rw [Function.comp_def, h0] at h1
+    rw [Function.comp_def, h0, zero_apply] at h1
     exact one_ne_zero (α := ℝ) (hw.symm.trans h1.symm)
 
 end TauCeti
