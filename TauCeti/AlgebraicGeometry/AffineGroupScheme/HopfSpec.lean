@@ -32,7 +32,7 @@ same-universe restriction is inherited from Mathlib's current `hopfSpec` constru
 ## Main declarations
 
 * `TauCeti.hopfSpec_obj_X_left`: the underlying scheme of a Hopf spectrum.
-* `TauCeti.CommHopfAlgCat.hopfSpec_map_left`: the underlying scheme morphism of `hopfSpec.map f.op`.
+* `CommHopfAlgCat.Hom.hopfSpec_map_left`: the underlying scheme morphism of `hopfSpec.map f.op`.
 * `TauCeti.hopfSpec_obj_X_hom`: its structural morphism.
 * `TauCeti.hopfSpec_obj_eq_asOver`: its bundled identification with the group object on the
   ordinary spectrum.
@@ -107,6 +107,18 @@ theorem hom_ext_of_preimage_unop_eq {Q : _root_.CommHopfAlgCat.{u} R}
   rw [← (hopfSpec.fullyFaithful (R := CommRingCat.of R)).map_preimage φ,
     ← (hopfSpec.fullyFaithful (R := CommRingCat.of R)).map_preimage ψ, hop]
 
+namespace Hom
+
+/-- The scheme morphism underlying the contravariant `hopfSpec` image of `f` is `Spec.map` of its
+underlying ring homomorphism. -/
+lemma hopfSpec_map_left {S : CommRingCat.{u}}
+    {A B : _root_.CommHopfAlgCat.{u} S} (f : A ⟶ B) :
+    ((AlgebraicGeometry.hopfSpec S).map f.op).hom.hom.left =
+      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) :=
+  rfl
+
+end Hom
+
 end CommHopfAlgCat
 
 namespace TauCeti
@@ -117,18 +129,6 @@ lemma hopfSpec_obj_X_left (H : CommHopfAlgCat.{u} R) :
     ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
       (Opposite.op H)).X.left = Spec (CommRingCat.of H) :=
   rfl
-
-namespace CommHopfAlgCat
-
-/-- The scheme morphism underlying the contravariant `hopfSpec` image of `f` is `Spec.map` of its
-underlying ring homomorphism. -/
-lemma hopfSpec_map_left {S : CommRingCat.{u}}
-    {A B : _root_.CommHopfAlgCat.{u} S} (f : A ⟶ B) :
-    ((AlgebraicGeometry.hopfSpec S).map f.op).hom.hom.left =
-      Spec.map (CommRingCat.ofHom f.hom.toAlgHom.toRingHom) :=
-  rfl
-
-end CommHopfAlgCat
 
 /-- The structural morphism of a Hopf spectrum is induced by its algebra structure map. -/
 @[simp↓]

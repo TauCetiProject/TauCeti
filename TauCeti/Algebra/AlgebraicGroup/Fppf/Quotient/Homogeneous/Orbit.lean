@@ -133,14 +133,6 @@ variable {k : Type u} [Field k]
   [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
 local instance :
-    LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom :=
-  (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec k H).mp inferInstance
-
-local instance :
-    CompactSpace ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
-  inferInstanceAs (CompactSpace (Spec (CommRingCat.of H)))
-
-local instance :
     IsAffine ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
   isAffine_Spec _
 

@@ -168,10 +168,10 @@ theorem mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff
     refine ⟨Spec.mapMulEquiv q ≫ e.hom, ?_⟩
     have hq' : TauCeti.CommHopfAlgCat.quotientPointsHom H I A q = g := hq
     rw [← hq', Category.assoc, quotientSpecStabilizerHopfIdealOverIso_hom_incl]
-    exact (mapMulEquiv_quotientPointsHom H I A q).symm
+    exact (_root_.CommHopfAlgCat.mapMulEquiv_quotientPointsHom H I A q).symm
   · rintro ⟨s, hs⟩
     refine ⟨Spec.mapMulEquiv.symm (s ≫ e.inv), Spec.mapMulEquiv.injective ?_⟩
-    rw [mapMulEquiv_quotientPointsHom, MulEquiv.apply_symm_apply]
+    rw [_root_.CommHopfAlgCat.mapMulEquiv_quotientPointsHom, MulEquiv.apply_symm_apply]
     have h1 : e.inv ≫ (quotientSpecι H I).hom.hom =
         stabilizer.incl ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of R))) x :=
       (congrArg (e.inv ≫ ·) (quotientSpecStabilizerHopfIdealOverIso_hom_incl H x).symm).trans

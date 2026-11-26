@@ -230,14 +230,13 @@ section FullOrbit
 variable {k : Type u} [Field k]
   (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj G X]
   [LocallyOfFiniteType G.hom] [CompactSpace G.left]
-  [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
+  [LocallyOfFiniteType X.hom] [CompactSpace X.left]
+  (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
 /-- When a single orbit covers a reduced finite-type scheme `X`, the orbit immersion is an
 isomorphism of schemes. -/
 theorem isIso_orbitι_of_orbit_eq_univ [IsReduced X.left] (h : orbit G x = Set.univ) :
-    let _ := compactSpace_of_orbit_eq_univ G x h
     IsIso (orbitι G x) := by
-  let _ := compactSpace_of_orbit_eq_univ G x h
   have : IsClosedImmersion (orbitι G x) :=
     (isClosedImmersion_orbitι_iff G x).mpr (h ▸ isClosed_univ)
   have : Surjective (orbitι G x) := ⟨Set.range_eq_univ.mp ((range_orbitι G x).trans h)⟩

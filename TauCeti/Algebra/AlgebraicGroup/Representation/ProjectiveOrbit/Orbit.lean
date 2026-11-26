@@ -44,14 +44,6 @@ variable {k : Type u} [Field k] [IsAlgClosed k]
   [ModObj ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))) X]
   [LocallyOfFiniteType X.hom] (x : 𝟙_ (Over (Spec (.of k))) ⟶ X)
 
-local instance :
-    LocallyOfFiniteType ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).hom :=
-  (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec k H).mp inferInstance
-
-local instance :
-    CompactSpace ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
-  inferInstanceAs (CompactSpace (Spec (CommRingCat.of H)))
-
 local instance [_root_.IsReduced H] :
     IsReduced ((Spec (CommRingCat.of H)).asOver (Spec (CommRingCat.of k))).left :=
   (affine_isReduced_iff (CommRingCat.of H)).mpr inferInstance

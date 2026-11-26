@@ -38,7 +38,7 @@ in the same universe, which is reflected in all scheme-level declarations in thi
 * `TauCeti.CommHopfAlgCat.isAffine_quotientSpec`: its underlying scheme is affine.
 * `TauCeti.CommHopfAlgCat.quotientSpecι`: its group-object morphism to the group scheme
   represented by `H`.
-* `TauCeti.CommHopfAlgCat.mapMulEquiv_quotientPointsHom`: the spectrum map of a quotient point
+* `CommHopfAlgCat.mapMulEquiv_quotientPointsHom`: the spectrum map of a quotient point
   followed by `quotientSpecι` is the spectrum map of the ambient point.
 * `TauCeti.CommHopfAlgCat.isClosedImmersion_quotientSpecι`: the underlying scheme morphism of
   `quotientSpecι` is a closed immersion.
@@ -100,26 +100,6 @@ lemma quotientSpecι_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
     quotientSpecι H I =
       (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map (mkQuotient H I).op :=
   (rfl)
-
-/-- The spectrum morphism of a quotient point mapped into `H` is the spectrum morphism of that
-point followed by the closed subgroup immersion `quotientSpecι H I`. -/
-theorem mapMulEquiv_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R)
-    (I : HopfIdeal R H) (A : CommAlgCat.{u} R)
-    (q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A) :
-    Spec.mapMulEquiv (quotientPointsHom H I A q) =
-      Spec.mapMulEquiv q ≫ (quotientSpecι H I).hom.hom := by
-  have h := mapMulEquiv_mapDomain A (_root_.CommHopfAlgCat.mkQuotient H I).hom q
-  have hq : quotientPointsHom H I A q =
-      BialgHom.mapDomain (_root_.CommHopfAlgCat.mkQuotient H I).hom q :=
-    (_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
-      (_root_.CommHopfAlgCat.mkQuotient H I) A q).trans
-      (BialgHom.mapDomain_apply (_root_.CommHopfAlgCat.mkQuotient H I).hom q).symm
-  rw [hq]
-  refine h.trans (congrArg (Spec.mapMulEquiv q ≫ ·) (Over.OverMorphism.ext ?_))
-  rw [quotientSpecι_def, hopfSpec_map_left]
-  simp only [OverClass.asOverHom_left]
-  -- Reconcile the `CommRing` instance on `R` with the bundled `CommRingCat.of R` carrier.
-  rfl
 
 /-- A morphism into a quotient Hopf spectrum, followed by its inclusion, is represented by
 precomposing the coordinate morphism with the quotient map. -/
@@ -257,6 +237,26 @@ open AlgebraicGeometry TauCeti TauCeti.CommHopfAlgCat
 universe u
 
 variable {R : Type u} [CommRing R]
+
+/-- The spectrum morphism of a quotient point mapped into `H` is the spectrum morphism of that
+point followed by the closed subgroup immersion `quotientSpecι H I`. -/
+theorem mapMulEquiv_quotientPointsHom (H : _root_.CommHopfAlgCat.{u} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{u} R)
+    (q : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A) :
+    Spec.mapMulEquiv (quotientPointsHom H I A q) =
+      Spec.mapMulEquiv q ≫ (quotientSpecι H I).hom.hom := by
+  have h := mapMulEquiv_mapDomain A (_root_.CommHopfAlgCat.mkQuotient H I).hom q
+  have hq : quotientPointsHom H I A q =
+      BialgHom.mapDomain (_root_.CommHopfAlgCat.mkQuotient H I).hom q :=
+    (_root_.CommHopfAlgCat.Hom.mapPointsFunctor_app_apply
+      (_root_.CommHopfAlgCat.mkQuotient H I) A q).trans
+      (BialgHom.mapDomain_apply (_root_.CommHopfAlgCat.mkQuotient H I).hom q).symm
+  rw [hq]
+  refine h.trans (congrArg (Spec.mapMulEquiv q ≫ ·) (Over.OverMorphism.ext ?_))
+  rw [quotientSpecι_def, hopfSpec_map_left]
+  simp only [OverClass.asOverHom_left]
+  -- Reconcile the `CommRing` instance on `R` with the bundled `CommRingCat.of R` carrier.
+  rfl
 
 /-- If the commutative Hopf algebra `H` is of finite type, then the group scheme represented by
 `H ⧸ I` is locally of finite type over `Spec R`. No finite-generation hypothesis on `I` is

@@ -55,7 +55,7 @@ lemma isClosedImmersion_hopfSpec_map_iff {S : CommRingCat.{u}}
     {A B : _root_.CommHopfAlgCat.{u} S} (f : A ⟶ B) :
     IsClosedImmersion ((AlgebraicGeometry.hopfSpec S).map f.op).hom.hom.left ↔
       Function.Surjective f.hom := by
-  rw [hopfSpec_map_left]
+  rw [_root_.CommHopfAlgCat.Hom.hopfSpec_map_left]
   exact IsClosedImmersion.hasAffineProperty.SpecMap_iff_of_affineAnd
     RingHom.surjective_respectsIso _
 

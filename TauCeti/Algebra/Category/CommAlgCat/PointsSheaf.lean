@@ -59,9 +59,11 @@ theorem epi_whiskerLeft_of_isLocallySurjective (W : Over (Spec (CommRingCat.of R
       (prodComparisonIso (pointsSheafFunctor R) W Z).hom ≫
         (pointsSheaf W ◁ (pointsSheafFunctor R).map p) ≫
         (prodComparisonIso (pointsSheafFunctor R) W X).inv := by
-    rw [← Category.assoc, Iso.eq_comp_inv, prodComparisonIso_hom, prodComparisonIso_hom,
-      prodComparison_natural_whiskerLeft]
-    rfl
+    rw [← Category.assoc, Iso.eq_comp_inv, prodComparisonIso_hom, prodComparisonIso_hom]
+    -- `prodComparison_natural_whiskerLeft` uses `CartesianMonoidalCategory`'s monoidal structure
+    -- on `Sheaf`, which is definitionally equal to the `FullSubcategory` monoidal structure used
+    -- in `pointsSheaf W ◁ _`.
+    exact prodComparison_natural_whiskerLeft (pointsSheafFunctor R) p
   have : Epi ((pointsSheafFunctor R).map (W ◁ p)) := by rw [heq]; infer_instance
   exact (pointsSheafFunctor R).epi_of_epi_map this
 

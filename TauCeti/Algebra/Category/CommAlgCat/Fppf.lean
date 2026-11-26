@@ -358,6 +358,19 @@ theorem pointsSheafFunctor_map_hom_app {X Y : Over (Spec (CommRingCat.of R))} (f
     ((pointsSheafFunctor R).map f).hom.app A (ULift.up x) = ULift.up (x ≫ f) :=
   (rfl)
 
+/-- On morphisms, `pointsSheafFunctor` restricts the subcanonical `uliftYoneda` morphism along
+`(fppfSheafEquiv R (Type (u + 1))).inverse`. -/
+theorem pointsSheafFunctor_map {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
+    (pointsSheafFunctor R).map f =
+      eqToHom (fppfSheafEquiv_inverse_obj_uliftYoneda X).symm ≫
+        (fppfSheafEquiv R (Type (u + 1))).inverse.map
+          ((GrothendieckTopology.uliftYoneda.{u + 1}
+            (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) ≫
+        eqToHom (fppfSheafEquiv_inverse_obj_uliftYoneda Y) :=
+  Functor.congr_hom (fppfSheafEquiv_inverse R (Type (u + 1))).symm
+    ((GrothendieckTopology.uliftYoneda.{u + 1}
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f)
+
 variable (R)
 
 /-- **Schemes are determined by their fppf sheaves of affine points.** The functor of points
@@ -395,14 +408,18 @@ instance isLocallySurjective_pointsSheafFunctor_map
     (GrothendieckTopology.ofArrows_mem_iff_isLocallySurjective_cofanIsColimitDesc_uliftYoneda_map
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R))) (fun _ : PUnit.{1} ↦ f) hc).mp hcov
   have : Sheaf.IsLocallySurjective ((GrothendieckTopology.uliftYoneda.{u + 1}
-      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) := hloc
+      (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
+    (Sheaf.isLocallySurjective_sheafToPresheaf_map_iff _).1 hloc
   have hepi : Epi ((GrothendieckTopology.uliftYoneda.{u + 1}
       (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f) :=
     Sheaf.epi_of_isLocallySurjective _
+  have : Epi ((fppfSheafEquiv R (Type (u + 1))).inverse.map
+      ((GrothendieckTopology.uliftYoneda.{u + 1}
+        (Scheme.fppfTopology.over (Spec (CommRingCat.of R)))).map f)) :=
+    (fppfSheafEquiv R (Type (u + 1))).inverse.map_epi _
   have hepi' : Epi ((pointsSheafFunctor R).map f) := by
-    dsimp only [pointsSheafFunctor, Functor.comp_map]
-    rw [← fppfSheafEquiv_inverse]
-    exact (fppfSheafEquiv R (Type (u + 1))).inverse.map_epi _
+    rw [pointsSheafFunctor_map]
+    infer_instance
   exact (Sheaf.isLocallySurjective_iff_epi ((pointsSheafFunctor R).map f)).mpr hepi'
 
 variable {R} in
