@@ -76,6 +76,27 @@ attribute [instance] PrimePadicIso.fact_prime
 
 namespace PrimePadicIso
 
+/-- The prime-adic embedding precomposed with complex conjugation. -/
+noncomputable def conj (ι : PrimePadicIso) : PrimePadicIso where
+  prime := ι.prime
+  fact_prime := ι.fact_prime
+  iso := Complex.conjAe.toRingEquiv.trans ι.iso
+
+/-- Conjugation does not change the prime. -/
+@[simp] theorem conj_prime (ι : PrimePadicIso) : ι.conj.prime = ι.prime := (rfl)
+
+/-- Norms at the conjugate embedding are norms of conjugate scalars at the original one. -/
+@[simp] theorem norm_conj_iso (ι : PrimePadicIso) (z : ℂ) :
+    ‖ι.conj.iso z‖ = ‖ι.iso (star z)‖ := (rfl)
+
+/-- Precomposing with complex conjugation twice gives back the original embedding. -/
+@[simp] theorem conj_conj (ι : PrimePadicIso) : ι.conj.conj = ι := by
+  rcases ι with @⟨p, hp, e⟩
+  have he : Complex.conjAe.toRingEquiv.trans (Complex.conjAe.toRingEquiv.trans e) = e := by
+    ext z
+    exact congrArg e (star_star z)
+  exact congrArg (fun f ↦ @PrimePadicIso.mk p hp f) he
+
 /-- A family `y = (y_ι)` of complex numbers indexed by the pairs has *height at most `c`* if there
 are `H ≠ 0`, `α ∈ ℝ` and `h_ℓ ≥ 0` for the primes `ℓ` with `|σ(H)| ≤ e^α` for every
 automorphism `σ` of `ℂ`, `|ι(H y_ι)| ≤ ℓ(ι)^{h_{ℓ(ι)}}` for every pair `ι`, and
