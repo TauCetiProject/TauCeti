@@ -72,7 +72,7 @@ private lemma baseChange_cotangentMap_mul (x y : S ⊗[R] A) :
       simp only [Algebra.TensorProduct.tmul_mul_tmul, LinearMap.baseChange_tmul,
         cotangentMap_mul, TensorProduct.counit_tmul, CommSemiring.counit_apply, tmul_add,
         ← smul_tmul, smul_tmul', smul_eq_mul, Algebra.smul_def]
-      rw [mul_assoc _ s t, mul_assoc _ t s, mul_comm t s, add_comm]
+      ac_rfl
 
 /-- The inverse of the base change comparison: the base change of the universal displacement,
 restricted to the augmentation ideal of `S ⊗[R] A`, kills products and so descends to the
