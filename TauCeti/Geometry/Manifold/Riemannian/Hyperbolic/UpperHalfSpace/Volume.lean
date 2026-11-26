@@ -29,7 +29,7 @@ times the Euclidean one.
 * `TauCeti.UpperHalfSpace.riemannianVolume_eq_withDensity`: the Riemannian volume is the pullback
   of Lebesgue measure with density `t⁻ⁿ`.
 * `TauCeti.UpperHalfSpace.riemannianVolume_setOf_fst_mem_and_height_mem`: the product form
-  `vol {(x, t) | x ∈ A, t ∈ T} = vol A · ∫_T t⁻ⁿ dt`.
+  `vol {(x, t) | x ∈ A, t ∈ T} = vol A · ∫_{T ∩ (0, ∞)} t⁻ⁿ dt`.
 * `TauCeti.UpperHalfSpace.riemannianVolume_setOf_fst_mem_and_le_height`: a cusp region
   `{(x, t) | x ∈ A, c ≤ t}` has volume `vol A · c^{-(n - 1)} / (n - 1)` when `n ≥ 2`; for
   hyperbolic three-space and a horizontal region of area `a` above height `1`, this is `a / 2`.
@@ -79,6 +79,12 @@ private theorem chartVolumeDensity_eq (α x : UpperHalfSpace E) :
 
 variable [MeasurableSpace (UpperHalfSpace E)] [BorelSpace (UpperHalfSpace E)]
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- The inclusion of the upper half-space into `E × ℝ` is a measurable embedding. -/
+theorem measurableEmbedding_coe [MeasurableSpace P] [BorelSpace P] :
+    MeasurableEmbedding (coe : UpperHalfSpace E → P) :=
+  isOpenEmbedding_coe.measurableEmbedding
+
 /-- `map_coe_riemannianVolume` for a measurable structure on `E × ℝ` equal to the Borel one. The
 chart volumes are built on the Borel structure of the model space, while the volume of `E × ℝ`
 lives on the product structure of `WithLp`; taking the structure as a variable lets the two be
@@ -90,8 +96,7 @@ private theorem map_coe_riemannianVolume_of_eq_borel [m : MeasurableSpace P] [Bo
         fun p ↦ ENNReal.ofReal (p.snd ^ (Module.finrank ℝ E + 1))⁻¹ := by
   subst hm
   let : MeasurableSpace P := borel P
-  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) :=
-    isOpenEmbedding_coe.measurableEmbedding
+  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) := measurableEmbedding_coe
   have hpos : MeasurableSet {p : P | 0 < p.snd} :=
     (isOpen_lt continuous_const (WithLp.continuous_snd 2 E ℝ)).measurableSet
   -- Every chart of the upper half-space is defined everywhere; use the one at `(0, 1)`.
@@ -129,8 +134,7 @@ theorem riemannianVolume_eq_withDensity :
     riemannianVolume J (UpperHalfSpace E) =
       (volume.comap coe).withDensity
         fun x ↦ ENNReal.ofReal (height x ^ (Module.finrank ℝ E + 1))⁻¹ := by
-  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) :=
-    isOpenEmbedding_coe.measurableEmbedding
+  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) := measurableEmbedding_coe
   rw [← hemb.comap_map (riemannianVolume J _), map_coe_riemannianVolume]
   ext s hs
   have hs' : MeasurableSet (coe '' s : Set P) := hemb.measurableSet_image.2 hs
@@ -147,8 +151,7 @@ theorem riemannianVolume_setOf_fst_mem_and_height_mem {A : Set E} (hA : Measurab
     {T : Set ℝ} (hT : MeasurableSet T) :
     riemannianVolume J (UpperHalfSpace E) {x | (x : P).fst ∈ A ∧ height x ∈ T} =
       volume A * ∫⁻ t in T ∩ Ioi 0, ENNReal.ofReal (t ^ (Module.finrank ℝ E + 1))⁻¹ := by
-  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) :=
-    isOpenEmbedding_coe.measurableEmbedding
+  have hemb : MeasurableEmbedding (coe : UpperHalfSpace E → P) := measurableEmbedding_coe
   have hS : MeasurableSet (WithLp.ofLp ⁻¹' (A ×ˢ T) : Set P) :=
     (hA.prod hT).preimage (by fun_prop)
   have hT' : MeasurableSet (T ∩ Ioi 0) := hT.inter measurableSet_Ioi
