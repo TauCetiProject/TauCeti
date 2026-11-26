@@ -123,8 +123,8 @@ incomparable. -/
 noncomputable abbrev star : RelationalConfiguration Language.order ℕ :=
   ofRel fun x y : ℕ => x = 0 ∨ x = y
 
-/-- The star with `n` inserted between `0` and `1`: `0 < n < 1`, every other vertex a leaf above
-`0`. -/
+/-- The star with `n` inserted between `0` and `1`: for `2 ≤ n`, `0 < n < 1` and every other
+vertex is a leaf above `0`; for `n = 0` and `n = 1` this is the star. -/
 noncomputable abbrev starInsert (n : ℕ) : RelationalConfiguration Language.order ℕ :=
   ofRel fun x y : ℕ => x = y ∨ x = 0 ∨ x = n ∧ y = 1
 
