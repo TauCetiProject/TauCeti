@@ -11,7 +11,6 @@ import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Analysis.Complex.Conformal.Area
 import TauCeti.Analysis.Normed.Field.Inversion
-import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 
 /-!
 # Smooth removal of finite-energy punctures
