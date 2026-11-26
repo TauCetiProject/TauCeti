@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Exponent
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
 import TauCeti.Analysis.Fredholm.Regularity
 import TauCeti.Analysis.Normed.Module.Annihilator
+import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Density
 import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.ExtendByZero
 
@@ -367,23 +367,6 @@ theorem exists_ofExponentLEL_eq_of_sobolevL_eq (hp : 1 < p) (hp'_top : p' ≠ �
   refine ⟨ξ₀ + SobolevSection.ofContMDiffSection A volume p' 1 ⟨s, hs.of_le (by simp)⟩, ?_⟩
   rw [map_add, SobolevSection.ofExponentLEL_ofContMDiffSection, ← hξs, add_sub_cancel]
 
-/-- The commutative square relating the realizations at `p ≤ p'`, in the form of
-`ContinuousLinearMap.IsFredholm.index_eq_of_regularity`. -/
-private theorem sobolevL_ofExponentLEL_toLinearMap (hpp' : p ≤ p')
-    (w : SobolevSection A volume p' 1) :
-    hD.sobolevL A hDs volume p ((A.sectionChartData.ofExponentLEL volume 1 hpp').toLinearMap w) =
-      (zeroOneOfExponentLEL A volume 0 hpp').toLinearMap (hD.sobolevL A hDs volume p' w) :=
-  sobolevL_ofExponentLEL A hD hDs hpp' w
-
-include hD hDs in
-/-- The regularity property of the square, in the form of
-`ContinuousLinearMap.IsFredholm.index_eq_of_regularity`. -/
-private theorem regularity_toLinearMap (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p')
-    (ξ : SobolevSection A volume p 1) (y : zeroOneSobolevSections A volume p' 0)
-    (hξ : hD.sobolevL A hDs volume p ξ = (zeroOneOfExponentLEL A volume 0 hpp').toLinearMap y) :
-    ∃ ξ', (A.sectionChartData.ofExponentLEL volume 1 hpp').toLinearMap ξ' = ξ :=
-  exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp' hξ
-
 /-- **The cokernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i),
 regularity of kernel and cokernel, proved as Theorem C.2.3, for smooth operators on closed
 surfaces). For `1 < p ≤ p' < ∞`, lowering the exponent induces a linear
@@ -394,8 +377,9 @@ smooth real Cauchy–Riemann operator to the cokernel of its realization
 def cokerSobolevLEquiv (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p') :
     (zeroOneSobolevSections A volume p' 0 ⧸ (hD.sobolevL A hDs volume p').range) ≃ₗ[ℝ]
       zeroOneSobolevSections A volume p 0 ⧸ (hD.sobolevL A hDs volume p).range :=
-  LinearMap.cokerEquivOfRegularity (sobolevL_ofExponentLEL_toLinearMap A hD hDs hpp')
-    (zeroOneOfExponentLEL_injective hpp') (regularity_toLinearMap A hD hDs hp hp'_top hpp')
+  LinearMap.cokerEquivOfRegularity (sobolevL_ofExponentLEL A hD hDs hpp')
+    (zeroOneOfExponentLEL_injective hpp')
+    (fun _ _ ↦ exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp')
     ((isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).range_sup_range_eq_top
       (denseRange_zeroOneOfExponentLEL A volume 0 hpp'))
 
@@ -421,10 +405,10 @@ include hD hDs in
 private theorem index_sobolevL_eq_of_le (hp : 1 < p) (hp'_top : p' ≠ ⊤) (hpp' : p ≤ p') :
     (hD.sobolevL A hDs volume p').index = (hD.sobolevL A hDs volume p).index :=
   (isFredholm_sobolevL A hD hDs hp (ne_top_of_le_ne_top hp'_top hpp')).index_eq_of_regularity
-    (sobolevL_ofExponentLEL_toLinearMap A hD hDs hpp')
+    (sobolevL_ofExponentLEL A hD hDs hpp')
     (SectionChartData.ofExponentLEL_injective hpp') (zeroOneOfExponentLEL_injective hpp')
     (denseRange_zeroOneOfExponentLEL A volume 0 hpp')
-    (regularity_toLinearMap A hD hDs hp hp'_top hpp')
+    (fun _ _ ↦ exists_ofExponentLEL_eq_of_sobolevL_eq A hD hDs hp hp'_top hpp')
 
 include hD hDs in
 /-- **The index does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i),

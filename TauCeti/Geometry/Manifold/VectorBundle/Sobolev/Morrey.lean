@@ -240,8 +240,8 @@ theorem chartValueL_lowerOrderL_ae_eq (w : SobolevSection A μ p (k + 1)) (i) :
 theorem chartValueL_ofExponentLEL_ae_eq {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q)
     (w : SobolevSection A μ q k) (i) :
     A.sectionChartData.chartValueL μ p k i (A.sectionChartData.ofExponentLEL μ k hpq w)
-      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ q k i w := by
-  rw [SectionChartData.chartValueL_ofExponentLEL, Lp.coeFn_ofExponentLEL]
+      =ᵐ[μ.restrict (A.image i)] A.sectionChartData.chartValueL μ q k i w :=
+  .of_eq (SectionChartData.coeFn_chartValueL_ofExponentLEL hpq w i)
 
 /-- Two Sobolev sections, possibly of different orders and exponents, with the same chart data have
 the same continuous representative. -/
