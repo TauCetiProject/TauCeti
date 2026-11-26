@@ -203,6 +203,14 @@ private noncomputable abbrev tensorProductMap :
   Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom K M.pair X)
     (IsScalarTower.toAlgHom K k X)
 
+private theorem tensorProductMap_tmul (y : M.pair) (c : k) :
+    letI := baseAlgebra K X
+    M.tensorProductMap (y ⊗ₜ c) = M.embedding y * algebraMap k X c := by
+  let _ := baseAlgebra K X
+  let _ := M.pairAlgebra
+  obtain ⟨_, _⟩ := M.isScalarTowers
+  simp [RingHom.algebraMap_toAlgebra]
+
 /-- Induced `(M.pair ⊗[K] k)`-algebra structure on `X` via multiplication. -/
 private noncomputable abbrev tensorAlgebra : Algebra (M.pair ⊗[K] k) X :=
   letI := baseAlgebra K X
@@ -212,9 +220,8 @@ private theorem algebraMap_tensorAlgebra_tmul (y : M.pair) (c : k) :
     letI := M.tensorAlgebra
     algebraMap (M.pair ⊗[K] k) X (y ⊗ₜ c) = M.embedding y * algebraMap k X c := by
   let _ := baseAlgebra K X
-  let _ := M.pairAlgebra
-  obtain ⟨_, _⟩ := M.isScalarTowers
-  simp [RingHom.algebraMap_toAlgebra]
+  rw [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
+    M.tensorProductMap_tmul]
 
 private theorem isScalarTower_tensor :
     letI := Algebra.TensorProduct.rightAlgebra (R := K) (A := M.pair) (B := k)
@@ -223,8 +230,8 @@ private theorem isScalarTower_tensor :
   letI := Algebra.TensorProduct.rightAlgebra (R := K) (A := M.pair) (B := k)
   letI := M.tensorAlgebra
   .of_algebraMap_eq fun c ↦ by
-    change algebraMap k X c = algebraMap (M.pair ⊗[K] k) X (1 ⊗ₜ c)
-    rw [M.algebraMap_tensorAlgebra_tmul, map_one, one_mul]
+    rw [Algebra.TensorProduct.right_algebraMap_apply, M.algebraMap_tensorAlgebra_tmul, map_one,
+      one_mul]
 
 /-- Auxiliary `IsFractionRing (M.pair ⊗[K] k) X` along multiplication. -/
 private theorem isFractionRing_tensorProduct :
@@ -292,8 +299,9 @@ noncomputable def baseChangeEquiv [Algebra.IsAlgebraic K k] : M.pair ⊗[K] k �
 /-- The isomorphism from the base change of a model is multiplication. -/
 @[simp]
 theorem baseChangeEquiv_tmul [Algebra.IsAlgebraic K k] (y : M.pair) (c : k) :
-    M.baseChangeEquiv (y ⊗ₜ c) = M.embedding y * algebraMap k X c :=
-  (rfl)
+    M.baseChangeEquiv (y ⊗ₜ c) = M.embedding y * algebraMap k X c := by
+  let _ := baseAlgebra K X
+  rw [baseChangeEquiv, RingEquiv.ofBijective_apply, M.tensorProductMap_tmul]
 
 end BaseChange
 
@@ -330,10 +338,8 @@ theorem baseChangeAut_embedding (y : M.pair) :
 @[simp]
 theorem baseChangeAut_algebraMap (c : k) :
     M.baseChangeAut σ (algebraMap k X c) = algebraMap k X (σ c) := by
-  have hc : algebraMap k (FractionRing (k ⊗[K] M.pair)) c =
-      algebraMap (k ⊗[K] M.pair) (FractionRing (k ⊗[K] M.pair)) (c ⊗ₜ 1) :=
-    IsScalarTower.algebraMap_apply k (k ⊗[K] M.pair) (FractionRing (k ⊗[K] M.pair)) c
-  simp [baseChangeAut, hc]
+  simp [baseChangeAut,
+    IsScalarTower.algebraMap_apply k (k ⊗[K] M.pair) (FractionRing (k ⊗[K] M.pair))]
 
 /-- The automorphism induced by `σ` through a model applies `σ` to the coefficients of `k(t)`: it
 is a semilinear automorphism of the pair over `σ`. -/
