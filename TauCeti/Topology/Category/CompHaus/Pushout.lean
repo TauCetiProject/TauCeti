@@ -8,9 +8,10 @@ module
 public import Mathlib.RingTheory.LocalRing.Pullback
 public import Mathlib.Topology.Category.CompHaus.Basic
 public import Mathlib.Topology.ContinuousMap.Compact
-public import Mathlib.Topology.TietzeExtension
+public import TauCeti.Topology.ContinuousMap.Algebra
 public import TauCeti.Topology.ContinuousMap.Compact
 public import TauCeti.Topology.Instances.Shrink
+public import TauCeti.Topology.TietzeExtension
 
 /-!
 # Continuous functions on a pushout of compact Hausdorff spaces
@@ -49,7 +50,9 @@ correspond to modules over `C(X, A)` and `C(Y, A)` glued along `C(S, A)`.
   `CompHaus.norm_coe_continuousMapPushoutAlgEquiv_apply` restates this for the algebra isomorphism.
 * `CompHaus.surjective_comp_of_injective`: restriction along an injective map of compact Hausdorff
   spaces is surjective on continuous maps into a Tietze extension space;
-  `CompHaus.surjective_compRightAlgHom_of_injective` is its algebra form.
+  `CompHaus.surjective_compRightAlgHom_of_injective` is its algebra form. Both specialise the
+  closed-embedding statements `ContinuousMap.surjective_comp_of_isClosedEmbedding` and
+  `ContinuousMap.surjective_compRightAlgHom_of_isClosedEmbedding`.
 
 ## Implementation notes
 
@@ -187,41 +190,24 @@ theorem norm_continuousMap_pushout_eq_max {E : Type*} [SeminormedAddCommGroup E]
   · exact (ContinuousMap.norm_le _ (norm_nonneg _)).2 fun y ↦ f.norm_coe_le_norm _
 
 /-- Restriction along an injective map of compact Hausdorff spaces is surjective on continuous
-maps into a space with the Tietze extension property, such as `ℝ` or `ℂ`. -/
+maps into a space with the Tietze extension property, such as `ℝ` or `ℂ`: such a map is a closed
+embedding (`ContinuousMap.surjective_comp_of_isClosedEmbedding`). -/
 theorem surjective_comp_of_injective {T : Type*} [TopologicalSpace T] [TietzeExtension.{u} T]
     (hi : Function.Injective i) :
     Function.Surjective fun f : C(X, T) ↦ f.comp (ConcreteCategory.hom (C := CompHaus.{u}) i) :=
-  fun f ↦ f.exists_extension ((ConcreteCategory.hom i).continuous.isClosedEmbedding hi)
+  ContinuousMap.surjective_comp_of_isClosedEmbedding
+    ((ConcreteCategory.hom i).continuous.isClosedEmbedding hi)
 
 section Algebra
 
 variable (R A : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [TopologicalSpace A]
   [IsTopologicalSemiring A]
 
-/-- The restrictions of a function on the pushout to `X` and to `Y` agree on `S`. -/
-private theorem prod_comp_mem_pullback (f : C((pushout i j : CompHaus.{u}), A)) :
-    (f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inl i j)),
-      f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inr i j))) ∈
-      AlgHom.pullback
-        (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) i))
-        (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) j)) := by
-  rw [AlgHom.mem_equalizer]
-  ext s
-  simpa using congrArg f congr($(pushout.condition (f := i) (g := j)) s)
-
-variable {R A} in
-/-- A pair of functions in the fibre product agrees on `S`. -/
-private theorem apply_eq_of_mem_pullback {p : C(X, A) × C(Y, A)}
-    (hp : p ∈ AlgHom.pullback
-      (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) i))
-      (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) j))) (s : S) :
-    p.1 (i s) = p.2 (j s) :=
-  DFunLike.congr_fun ((AlgHom.mem_equalizer _ _ _).1 hp) s
-
 /-- **Functions on a pushout of compact Hausdorff spaces.** For a Hausdorff topological
 `R`-algebra `A`, restriction to the two legs identifies `C(pushout i j, A)` with the fibre product
 of `C(X, A)` and `C(Y, A)` over `C(S, A)`: the subalgebra of pairs `(f, g)` with `f ∘ i = g ∘ j`
-(`CompHaus.coe_continuousMapPushoutAlgEquiv_apply`). The inverse glues such a pair
+(`ContinuousMap.mem_pullback_compRightAlgHom_iff`). It sends a function to its two restrictions
+(`CompHaus.coe_continuousMapPushoutAlgEquiv_apply`), and the inverse glues such a pair
 (`CompHaus.continuousMapPushoutAlgEquiv_symm_apply_inl`,
 `CompHaus.continuousMapPushoutAlgEquiv_symm_apply_inr`). -/
 def continuousMapPushoutAlgEquiv [T2Space A] :
@@ -231,13 +217,15 @@ def continuousMapPushoutAlgEquiv [T2Space A] :
         (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) j)) where
   toFun f := ⟨(f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inl i j)),
     f.comp (ConcreteCategory.hom (C := CompHaus.{u}) (pushout.inr i j))),
-    prod_comp_mem_pullback i j R A f⟩
-  invFun p := continuousMapPushoutDesc i j p.val.1 p.val.2 (apply_eq_of_mem_pullback i j p.property)
+    ContinuousMap.mem_pullback_compRightAlgHom_iff.2 fun s ↦ by
+      simpa using congrArg f congr($(pushout.condition (f := i) (g := j)) s)⟩
+  invFun p := continuousMapPushoutDesc i j p.val.1 p.val.2
+    (ContinuousMap.mem_pullback_compRightAlgHom_iff.1 p.property)
   left_inv f := continuousMap_pushout_ext (by simp) (by simp)
   right_inv p := Subtype.ext (Prod.ext (by ext; simp) (by ext; simp))
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+  map_mul' f g := Subtype.ext (Prod.ext (f.mul_comp g _) (f.mul_comp g _))
+  map_add' f g := Subtype.ext (Prod.ext (f.add_comp g _) (f.add_comp g _))
+  commutes' r := Subtype.ext (Prod.ext (by ext; simp) (by ext; simp))
 
 /-- `CompHaus.continuousMapPushoutAlgEquiv` sends a function to its restrictions to `X` and `Y`. -/
 @[simp]
@@ -256,7 +244,8 @@ theorem continuousMapPushoutAlgEquiv_symm_apply_inl [T2Space A]
       (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) j))) (x : X) :
     (continuousMapPushoutAlgEquiv i j R A).symm p (pushout.inl i j x) =
       (p : C(X, A) × C(Y, A)).1 x :=
-  continuousMapPushoutDesc_inl i j _ _ (apply_eq_of_mem_pullback i j p.property) x
+  continuousMapPushoutDesc_inl i j _ _
+    (ContinuousMap.mem_pullback_compRightAlgHom_iff.1 p.property) x
 
 /-- The function glued from a pair in the fibre product restricts to its second member on `Y`. -/
 @[simp]
@@ -266,16 +255,18 @@ theorem continuousMapPushoutAlgEquiv_symm_apply_inr [T2Space A]
       (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) j))) (y : Y) :
     (continuousMapPushoutAlgEquiv i j R A).symm p (pushout.inr i j y) =
       (p : C(X, A) × C(Y, A)).2 y :=
-  continuousMapPushoutDesc_inr i j _ _ (apply_eq_of_mem_pullback i j p.property) y
+  continuousMapPushoutDesc_inr i j _ _
+    (ContinuousMap.mem_pullback_compRightAlgHom_iff.1 p.property) y
 
 /-- Restriction along an injective map of compact Hausdorff spaces is a surjective algebra map on
 functions with values in a space with the Tietze extension property, such as `ℝ` or `ℂ`
-(`CompHaus.surjective_comp_of_injective`). -/
+(`ContinuousMap.surjective_compRightAlgHom_of_isClosedEmbedding`). -/
 theorem surjective_compRightAlgHom_of_injective [TietzeExtension.{u} A]
     (hi : Function.Injective i) :
     Function.Surjective
       (ContinuousMap.compRightAlgHom R A (ConcreteCategory.hom (C := CompHaus.{u}) i)) :=
-  surjective_comp_of_injective i hi
+  ContinuousMap.surjective_compRightAlgHom_of_isClosedEmbedding R
+    ((ConcreteCategory.hom i).continuous.isClosedEmbedding hi)
 
 end Algebra
 

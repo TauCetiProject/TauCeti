@@ -20,6 +20,12 @@ This relative form of Urysohn's lemma is what proves normality of spaces built b
 a separating function on the old space is extended over the attached space while it separates the
 traces of two closed sets there.
 
+Restating the Tietze extension theorem itself, restriction along a closed embedding `e : C(X₁, X)`
+into a normal space is surjective on continuous maps into a Tietze extension space
+(`ContinuousMap.surjective_comp_of_isClosedEmbedding`), and, for a topological algebra with the
+Tietze extension property, the algebra map `ContinuousMap.compRightAlgHom R A e` is surjective
+(`ContinuousMap.surjective_compRightAlgHom_of_isClosedEmbedding`).
+
 ## References
 
 * J. R. Munkres, *Topology*, 2nd ed., Prentice Hall (2000), §35, Theorem 35.1.
@@ -71,5 +77,20 @@ theorem exists_extension_eqOn_const (he : Topology.IsClosedEmbedding e) (f : C(X
   · rw [Function.comp_apply, hgφ (.inl (.inl ⟨x, rfl⟩)), hφe ⟨x, rfl⟩, ← hg₀, Function.comp_apply]
   · rw [hgφ (.inl (.inr hx)), hφs hx]
   · rw [hgφ (.inr hx), hφt hx]
+
+/-- Restriction along a closed embedding into a normal space is surjective on continuous maps into
+a space with the Tietze extension property. -/
+theorem surjective_comp_of_isClosedEmbedding {e : C(X₁, X)} (he : Topology.IsClosedEmbedding e) :
+    Function.Surjective fun f : C(X, Y) ↦ f.comp e :=
+  fun f ↦ f.exists_extension he
+
+/-- Restriction along a closed embedding into a normal space is a surjective algebra map on
+functions with values in a topological algebra with the Tietze extension property, such as `ℝ`
+or `ℂ` (`ContinuousMap.surjective_comp_of_isClosedEmbedding`). -/
+theorem surjective_compRightAlgHom_of_isClosedEmbedding (R : Type*) {A : Type v} [CommSemiring R]
+    [Semiring A] [Algebra R A] [TopologicalSpace A] [IsTopologicalSemiring A]
+    [TietzeExtension.{u, v} A] {e : C(X₁, X)} (he : Topology.IsClosedEmbedding e) :
+    Function.Surjective (compRightAlgHom R A e) :=
+  surjective_comp_of_isClosedEmbedding he
 
 end ContinuousMap
