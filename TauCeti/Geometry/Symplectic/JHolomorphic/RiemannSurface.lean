@@ -39,7 +39,9 @@ domains in `ℂ` and targets in a normed space to such maps:
   `S` (`TauCeti.setOf_ne_mem_codiscrete_of_isPseudoholomorphic`);
 * **isolated critical points**: if such a map is not constant, its critical points, where its
   manifold derivative vanishes, form a discrete subset of `S`
-  (`TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`);
+  (`TauCeti.setOf_mfderiv_ne_zero_mem_codiscrete_of_isPseudoholomorphic`); at every other point
+  its derivative is injective, since it intertwines multiplication by `i` with `J`
+  (`TauCeti.IsPseudoholomorphicAt.injective_mfderiv_iff_ne_zero`);
 * **accumulating coincidences factor**: for a second pseudoholomorphic map `u₁ : S' → N` of class
   `C¹`, a target `N` that is Hausdorff and `u` of class `C²` and immersed at `a₀`, if the points
   `b ≠ b₀` at which `u₁` meets the image under `u` of a neighbourhood of `a₀` accumulate at `b₀`,
@@ -258,6 +260,28 @@ private theorem exists_ne_of_isPseudoholomorphic [PreconnectedSpace S]
   obtain ⟨x₁, x₂, h₁₂⟩ := hne
   exact h₁₂ ((eq_of_isPseudoholomorphic_of_eventually_eq hu hJu hux x₁).trans
     (eq_of_isPseudoholomorphic_of_eventually_eq hu hJu hux x₂).symm)
+
+/-! ### Immersed points -/
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] in
+/-- **A pseudoholomorphic curve is immersed wherever its differential does not vanish.** The
+manifold derivative at `x` of a map from a Riemann surface that is pseudoholomorphic at `x`
+intertwines multiplication by `i` with the complex structure `J (u x)`, so it is injective exactly
+when it is nonzero. -/
+theorem IsPseudoholomorphicAt.injective_mfderiv_iff_ne_zero {x : S}
+    (hu : IsPseudoholomorphicAt (ofComplexManifold ℂ S) J u x) :
+    Injective (mfderiv 𝓘(ℝ, ℂ) I u x) ↔ mfderiv 𝓘(ℝ, ℂ) I u x ≠ 0 := by
+  have hCR := hu.mfderiv_apply_commute (1 : ℂ)
+  rw [ofComplexManifold_apply, smul_eq_mul, mul_one] at hCR
+  -- The tangent spaces of `S` and `N` are the model spaces `ℂ` and `E`.
+  let f : ℂ →L[ℝ] E := mfderiv 𝓘(ℝ, ℂ) I u x
+  change f Complex.I = J (u x) (f 1) at hCR
+  change Injective f ↔ f ≠ 0
+  refine ⟨fun h h0 ↦ one_ne_zero (h (by simp [h0])), fun hne ↦ ?_⟩
+  refine (injective_iff_map_eq_zero f).2 fun z hz ↦ by_contra fun hz0 ↦ hne ?_
+  exact ContinuousLinearMap.coe_injective (LinearMap.eq_zero_of_apply_I_eq_of_apply_eq_zero
+    f.toLinearMap (A := (J.toEndomorphism (u x) : E →L[ℝ] E).toLinearMap) hCR
+    (fun v ↦ congr($(J.square_neg (u x)) v)) hz0 hz)
 
 /-! ### Discreteness of fibres and critical points -/
 
