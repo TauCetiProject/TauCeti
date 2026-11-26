@@ -191,6 +191,17 @@ theorem orientationLineComplex_d (n : ℕ) :
       ModuleCat.ofHom (hX.orientationLineBoundaryAt φ hf R n) := by
   simp [orientationLineComplex]
 
+/-- The differential of the Morse complex on orientation lines from degree `n + 1` to degree `n`,
+applied to a chain, is the differential on orientation lines of that chain. -/
+@[simp]
+theorem orientationLineComplex_d_apply (n : ℕ) (c : orientationLineChainsAt φ R (n + 1)) :
+    (hX.orientationLineComplex φ hf R hsq).d (n + 1) n c =
+      hX.orientationLineBoundaryAt φ hf R n c := by
+  rw [orientationLineComplex_d]
+  -- Neither `rw [ModuleCat.hom_ofHom]` nor `simp` fires here: the morphism is still typed between
+  -- the terms `(orientationLineComplex _).X _`, which are the chains only by definition.
+  exact ModuleCat.ofHom_apply _ c
+
 end IsAdaptedPseudoGradient
 
 /-! ### Choosing orientations -/
@@ -236,6 +247,15 @@ theorem orientationLineEquivAt_apply {n : ℕ} (c : orientationLineChainsAt 𝔬
     (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) :
     𝔬.orientationLineEquivAt hf R n c p = (c.val p.val).val (𝔬.orientation p.val) :=
   orientationLineEquiv_apply c.val p.val
+
+/-- The family of elements of the orientation lines, of degree `n`, taking the values of `c` at the
+chosen orientations. -/
+@[simp]
+theorem orientationLineEquivAt_symm_apply {n : ℕ}
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R)
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) :
+    (((𝔬.orientationLineEquivAt hf R n).symm c).val p.val).val (𝔬.orientation p.val) = c p := by
+  rw [← orientationLineEquivAt_apply (hf := hf), LinearEquiv.apply_symm_apply]
 
 /-- Including the chains of index `n` into all chains, after evaluation at chosen orientations in
 degree `n`, is evaluation at chosen orientations. -/
@@ -301,6 +321,15 @@ theorem orientationLineComplexIso_hom_f_apply (n : ℕ) (c : orientationLineChai
     (hX.orientationLineComplexIso 𝔬 R hsq hsq').hom.f n c = 𝔬.orientationLineEquivAt hf R n c :=
   (rfl)
 
+/-- The inverse of the isomorphism of the Morse complex on orientation lines with the integral Morse
+complex is the inverse of evaluation at the chosen orientations. -/
+@[simp]
+theorem orientationLineComplexIso_inv_f_apply (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
+    (hX.orientationLineComplexIso 𝔬 R hsq hsq').inv.f n c =
+      (𝔬.orientationLineEquivAt hf R n).symm c :=
+  (rfl)
+
 end IsAdaptedPseudoGradient
 
 /-! ### Changing the Morse charts -/
@@ -342,7 +371,41 @@ theorem coe_orientationLineChartEquivAt_apply {n : ℕ} (c : orientationLineChai
       (φ' p).unstableOrientationLine R) = orientationLineChartEquiv φ φ' R c :=
   (rfl)
 
+omit [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] in
+/-- The transport of the chains of degree `n` from a family of Morse charts to itself is the
+identity. -/
+@[simp]
+theorem orientationLineChartEquivAt_self {n : ℕ} :
+    orientationLineChartEquivAt φ φ R n = LinearEquiv.refl R _ :=
+  LinearEquiv.ext fun c ↦ Subtype.ext <| by
+    rw [coe_orientationLineChartEquivAt_apply, orientationLineChartEquiv_self,
+      LinearEquiv.refl_apply, LinearEquiv.refl_apply]
+
 variable [T2Space M] {hX : IsAdaptedPseudoGradient f X} {hf : IsMorse 𝓘(ℝ, E) f}
+
+variable (hX) in
+include hX in
+/-- **The transports of the chains of degree `n` compose**: if `X` is linear in the Morse charts
+`φ`, `φ'` and `φ''`, transporting from `φ` to `φ'` and then from `φ'` to `φ''` is transporting from
+`φ` to `φ''`. -/
+theorem orientationLineChartEquivAt_trans_orientationLineChartEquivAt (hf : IsMorse 𝓘(ℝ, E) f)
+    {φ'' : (p : criticalPoints 𝓘(ℝ, E) f) → MorseChart E f p}
+    (hφ : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ p).toChart.source,
+      (φ p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ p).toChart y (X y)) =
+        fun i ↦ -((φ p).weight i * (φ p).coord ((φ p).toChart y) i))
+    (hφ' : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ' p).toChart.source,
+      (φ' p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ' p).toChart y (X y)) =
+        fun i ↦ -((φ' p).weight i * (φ' p).coord ((φ' p).toChart y) i))
+    (hφ'' : ∀ p : criticalPoints 𝓘(ℝ, E) f, ∀ y ∈ (φ'' p).toChart.source,
+      (φ'' p).coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ'' p).toChart y (X y)) =
+        fun i ↦ -((φ'' p).weight i * (φ'' p).coord ((φ'' p).toChart y) i)) {n : ℕ} :
+    (orientationLineChartEquivAt φ φ' R n).trans (orientationLineChartEquivAt φ' φ'' R n) =
+      orientationLineChartEquivAt φ φ'' R n :=
+  LinearEquiv.ext fun c ↦ Subtype.ext <| by
+    rw [LinearEquiv.trans_apply, coe_orientationLineChartEquivAt_apply,
+      coe_orientationLineChartEquivAt_apply, coe_orientationLineChartEquivAt_apply,
+      ← LinearEquiv.trans_apply,
+      orientationLineChartEquiv_trans_orientationLineChartEquiv hX hf hφ hφ' hφ'']
 
 /-- **The differentials on orientation lines do not depend on the Morse charts.** If `X` is linear
 in the Morse charts `φ` and in the Morse charts `φ'`, the transport of the chains along the changes
@@ -406,10 +469,11 @@ theorem orientationLineComplexChartIso_self :
     hX.orientationLineComplexChartIso hf R hφ hφ hsq hsq = Iso.refl _ := by
   ext n : 2
   refine ModuleCat.hom_ext (LinearMap.ext fun (c : orientationLineChainsAt φ R n) ↦ ?_)
-  rw [orientationLineComplexChartIso_hom_f_apply]
-  refine Subtype.ext ?_
-  rw [coe_orientationLineChartEquivAt_apply, orientationLineChartEquiv_self]
-  rfl
+  rw [orientationLineComplexChartIso_hom_f_apply, orientationLineChartEquivAt_self,
+    LinearEquiv.refl_apply, Iso.refl_hom, HomologicalComplex.id_f, ModuleCat.hom_id]
+  -- `rw [LinearMap.id_apply]` does not fire: `c` is typed as a chain, while the identity is typed
+  -- on the term `(orientationLineComplex _).X n`, which is the module of chains only by definition.
+  exact (LinearMap.id_apply c).symm
 
 /-- **The isomorphisms of the Morse complexes on orientation lines compose**: changing the Morse
 charts from `φ` to `φ'` and then from `φ'` to `φ''` is the change from `φ` to `φ''`. -/
@@ -424,13 +488,16 @@ theorem orientationLineComplexChartIso_trans
       hX.orientationLineComplexChartIso hf R hφ hφ'' hsq hsq'' := by
   ext n : 2
   refine ModuleCat.hom_ext (LinearMap.ext fun (c : orientationLineChainsAt φ R n) ↦ ?_)
-  -- The components are the transports of the chains of degree `n`.
+  -- `Iso.trans_hom`, `HomologicalComplex.comp_f` and `ModuleCat.hom_comp` turn the left side into a
+  -- composite, but then neither `LinearMap.comp_apply` nor
+  -- `orientationLineComplexChartIso_hom_f_apply` rewrites its outer factor: that factor is applied
+  -- to an element of the term `(orientationLineComplex _).X n`, which is the module of chains only
+  -- by definition. So `change` states the goal on the chains, where the components are
+  -- `orientationLineChartEquivAt`.
   change orientationLineChartEquivAt φ' φ'' R n (orientationLineChartEquivAt φ φ' R n c) =
     orientationLineChartEquivAt φ φ'' R n c
-  refine Subtype.ext ?_
-  rw [coe_orientationLineChartEquivAt_apply, coe_orientationLineChartEquivAt_apply,
-    coe_orientationLineChartEquivAt_apply, ← LinearEquiv.trans_apply,
-    orientationLineChartEquiv_trans_orientationLineChartEquiv hX hf hφ hφ' hφ'']
+  rw [← LinearEquiv.trans_apply,
+    orientationLineChartEquivAt_trans_orientationLineChartEquivAt hX hf hφ hφ' hφ'']
 
 end IsAdaptedPseudoGradient
 
