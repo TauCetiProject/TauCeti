@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.ReducedForm
 
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Geometry.Manifold.GroupAction.Restrict
 import TauCeti.Topology.Algebra.ProperAction.Basic
 
 /-!
@@ -50,14 +50,14 @@ so it descends to a diffeomorphism
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductQuotientDiffeomorph`). Composed
 with the diffeomorphism `Φ : G ×_{G_c} μ⁻¹(c) ≃ W_O`, `[g, z] ↦ (g • z, g G_c)`, it gives
 `e ∘ π_W ∘ Φ = q_Y`, the projection `[g, z] ↦ [z]` of the balanced product. Finally, for a
-symplectic `σ` preserved by `G`, the pullback of the Marsden–Weinstein–Meyer reduced form along
-`e` is the unique symplectic form `η` on `W_O ⧸ G` with
+symplectic `σ` preserved by `G`, there is a unique symplectic form `η` on `W_O ⧸ G` with
 
 `π_W^* η = pr_M^* σ - pr_O^* ω_KKS`,
 
 for the two projections `pr_M` and `pr_O` of `W_O ⊆ M × O` and the Kirillov–Kostant–Souriau form
-`ω_KKS` on `O`. So `W_O ⧸ G` with this form is the orbit-reduced space of `μ⁻¹(O)`, and it is
-symplectomorphic to the point-reduced space `μ⁻¹(c) ⧸ G_c`.
+`ω_KKS` on `O`. So `W_O ⧸ G` with this form is the orbit-reduced space of `μ⁻¹(O)`. The proof
+obtains `η` by pulling back along `e` the form on `μ⁻¹(c) ⧸ G_c` characterized in
+`ReducedForm.lean`; this file does not state that `e` is a symplectomorphism.
 
 ## Main definitions
 
@@ -76,8 +76,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `orbitFiberProductQuotientDiffeomorph_mk`, `orbitFiberProductQuotientDiffeomorph_symm_mk`: the
   formulas `e [(x, g G_c)] = [g⁻¹ • x]` and `e⁻¹ [z] = [(z, G_c)]`.
 * `orbitFiberProductQuotientDiffeomorph_mk_orbitFiberProductDiffeomorph`: `e ∘ π_W ∘ Φ = q_Y`.
-* `existsUnique_isSymplectic_mpullback_quotientMk_orbitFiberProduct_eq_sub`: the reduced form on
-  `W_O ⧸ G`, and its identification with the reduced form on `μ⁻¹(c) ⧸ G_c` along `e`.
+* `existsUnique_isSymplectic_mpullback_quotientMk_orbitFiberProduct_eq_sub`: existence and
+  uniqueness of the reduced form on `W_O ⧸ G`.
 
 ## References
 
@@ -180,11 +180,8 @@ theorem isCancelSMul_orbitFiberProduct
       (⟨g⁻¹ • p.val.1, h.inv_smul_mem_levelSubMulAction b p hg⟩ : h.levelSubMulAction c) =
       ⟨g⁻¹ • p.val.1, h.inv_smul_mem_levelSubMulAction b p hg⟩ := by
     refine Subtype.ext ?_
-    rw [SubMulAction.val_smul, Subgroup.mk_smul, mul_smul, smul_inv_smul, mul_inv_rev, mul_smul,
-      inv_smul_eq_iff.2 hx.symm]
-  have hone := congrArg Subtype.val (IsCancelSMul.eq_one_of_smul hfix)
-  rw [OneMemClass.coe_one, inv_mul_eq_one] at hone
-  exact mul_right_cancel (hone.trans (one_mul g).symm)
+    simp [mul_smul, inv_smul_eq_iff.2 hx.symm]
+  simpa [mul_assoc, inv_mul_eq_one] using congrArg Subtype.val (IsCancelSMul.eq_one_of_smul hfix)
 
 omit [FiniteDimensional ℝ E'] in
 /-- **The action of `G` on the orbit fibre product is proper** when the action on `M` is. The
@@ -211,13 +208,12 @@ theorem contMDiffSMul_orbitFiberProduct :
           finrank ℝ (κ → ℝ)) → ℝ) ∞ G (OrbitFiberProduct μ c b) := by
   let _ := h.orbitFiberProductChartedSpace c hreg b
   let _ := h.orbitFiberProductMulAction c b
-  have hv := h.isSmoothEmbedding_coe_orbitFiberProduct hreg b
-  refine ⟨hv.contMDiff_iff_comp.2 ?_⟩
-  change ContMDiff _ _ _ fun q : G × OrbitFiberProduct μ c b ↦ (q.1 • q.2.val.1, q.1 • q.2.val.2)
-  have hp : ContMDiff _ _ ∞ fun q : G × OrbitFiberProduct μ c b ↦ q.2.val :=
-    hv.contMDiff.comp (contMDiff_snd (I := I))
-  exact (contMDiff_fst.smul (contMDiff_fst.comp hp)).prodMk
-    (contMDiff_fst.smul (contMDiff_snd.comp hp))
+  have := ContMDiffSMul.prod_of_smul_eq (I := I) (I' := I')
+    (IF' := 𝓘(ℝ, Subgroup.QuotientModelSpace I ((Lie.coadjointRepresentation ℝ I G).stabilizer c)))
+    (K := G) (M := M) (N := G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) (n := ∞)
+    contMDiff_id contMDiff_id fun _ _ ↦ rfl
+  exact (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiffSMul contMDiff_id
+    fun _ _ ↦ rfl
 
 end Action
 
@@ -370,6 +366,7 @@ theorem orbitFiberProductQuotientDiffeomorph_mk (x : M) (g : G)
 
 /-- **The inverse of `e`** sends the orbit `[z]` of a point `z` of the level to the orbit of
 `(z, G_c)`. -/
+@[simp]
 theorem orbitFiberProductQuotientDiffeomorph_symm_mk (z : h.levelSubMulAction c) :
     letI := h.orbitFiberProductMulAction c b
     letI := h.orbitFiberProductQuotientChartedSpace c hreg b
@@ -441,9 +438,10 @@ form `η` with
 `π_W^* η = pr_M^* σ - pr_O^* ω_KKS`
 
 on `W_O`, for the quotient map `π_W`, the two projections `pr_M (x, o) = x` and `pr_O (x, o) = o`,
-and the Kirillov–Kostant–Souriau form `ω_KKS` on `O = G ⧸ G_c`. It is `e^* ω_red`, the pullback
-along the diffeomorphism `e : W_O ⧸ G ≃ μ⁻¹(c) ⧸ G_c` of the Marsden–Weinstein–Meyer reduced form
-`ω_red`, so `e` is a symplectomorphism from the orbit-reduced space to the point-reduced space. -/
+and the Kirillov–Kostant–Souriau form `ω_KKS` on `O = G ⧸ G_c`. The proof constructs `η` as the
+pullback along the diffeomorphism `e : W_O ⧸ G ≃ μ⁻¹(c) ⧸ G_c`, for some embedded Lie subgroup
+structure on the closed subgroup `G_c`, of the form on `μ⁻¹(c) ⧸ G_c` characterized in
+`existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`. -/
 theorem existsUnique_isSymplectic_mpullback_quotientMk_orbitFiberProduct_eq_sub
     (hσ : σ.IsSymplectic)
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
