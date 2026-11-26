@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
 /-!
 # Weighted hyperbola sums of Dirichlet convolutions
@@ -16,7 +17,8 @@ over the hyperbola `mℓ ≤ N`. This file adds the weighted form, where each te
 `w(n)` with values in a module; the weight stays attached to the product `mℓ`, so it need not be
 multiplicative (for instance `w(n) = e(nα)`). The proof follows the plan of Mathlib's
 `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum`, through
-`Nat.divisorsAntidiagonal_eq_prod_filter_of_le`.
+`Nat.divisorsAntidiagonal_eq_prod_filter_of_le`. Specializing to `f = μ` and `g = ζ` gives
+hyperbola Möbius inversion (`ArithmeticFunction.sum_moebius_smul_sum_div`).
 
 The file also records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number `Ω n` of
 prime factors of `n` counted with multiplicity.
@@ -25,6 +27,8 @@ prime factors of `n` counted with multiplicity.
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
   `∑_{0<n≤N} (f * g)(n) • w(n) = ∑_{0<m≤N} f(m) • ∑_{0<ℓ≤N/m} g(ℓ) • w(mℓ)`.
+* `ArithmeticFunction.sum_moebius_smul_sum_div`:
+  `∑_{1≤d≤N} μ(d) • ∑_{1≤m≤N/d} g(dm) = if 1 ≤ N then g 1 else 0`.
 * `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, since each of the
   `Ω n` prime factors of `n`, counted with multiplicity, is at least `2`.
 -/
@@ -73,6 +77,32 @@ theorem sum_Ioc_mul_smul_eq_sum_sum (f g : ArithmeticFunction R) (w : ℕ → A)
           · exact fun h ↦ ⟨⟨h.1, h.2.trans' (Nat.le_mul_of_pos_left ℓ hm)⟩, h.2⟩
         rw [this]
         exact sum_congr rfl fun ℓ _ ↦ (smul_smul _ _ _).symm
+
+open scoped ArithmeticFunction.Moebius ArithmeticFunction.zeta in
+/-- Hyperbola Möbius inversion: for an additive commutative group `A`, `g : ℕ → A`, and `N : ℕ`,
+`∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m)` equals `g 1` when `1 ≤ N`, and `0`
+when `N = 0`. -/
+theorem sum_moebius_smul_sum_div {A : Type*} [AddCommGroup A] (N : ℕ) (g : ℕ → A) :
+    ∑ d ∈ Icc 1 N, μ d • ∑ m ∈ Icc 1 (N / d), g (d * m) =
+      if 1 ≤ N then g 1 else 0 := by
+  have h := sum_Ioc_mul_smul_eq_sum_sum (μ : ArithmeticFunction ℤ) (ζ : ArithmeticFunction ℤ) g N
+  rw [moebius_mul_coe_zeta] at h
+  simp_rw [← Icc_add_one_left_eq_Ioc, zero_add] at h
+  have hzeta : ∀ d ∈ Icc 1 N,
+      ∑ m ∈ Icc 1 (N / d), (ζ : ArithmeticFunction ℤ) m • g (d * m) =
+        ∑ m ∈ Icc 1 (N / d), g (d * m) := fun d _ ↦
+    Finset.sum_congr rfl fun m hm ↦ by
+      rw [natCoe_apply, zeta_apply_ne (Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1),
+        Nat.cast_one, one_zsmul]
+  rw [Finset.sum_congr rfl fun d hd ↦ congrArg (μ d • ·) (hzeta d hd)] at h
+  rw [← h]
+  by_cases hN : 1 ≤ N
+  · simp only [hN, ↓reduceIte]
+    rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_Icc.mpr ⟨le_rfl, hN⟩)
+      fun n _ hn ↦ by simp [ArithmeticFunction.one_apply_ne hn]]
+    simp
+  · obtain rfl : N = 0 := Nat.lt_one_iff.mp (not_le.mp hN)
+    simp
 
 open scoped ArithmeticFunction.Omega in
 /-- A nonzero natural number `n` is at least `2 ^ Ω n`, since each of its `Ω n` prime factors

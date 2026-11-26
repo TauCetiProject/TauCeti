@@ -11,11 +11,14 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Function.Floor
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.AbelSummation
 import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import TauCeti.Algebra.BigOperators.Intervals
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.NumberTheory.AbelSummation
 import TauCeti.Topology.Algebra.Order.Floor
 
@@ -42,7 +45,8 @@ This file records how the three are related. Abel summation against `1 / t` writ
 These are the identities through which explicit bounds for `M` are carried over to `m` and `ℓ`
 (Balazard's and Ramaré's conversion inequalities). Finally, Meissel's identity
 `∑_{n ≤ x} μ(n) ⌊x / n⌋ = 1` for `x ≥ 1`, the summed form of `μ * ζ = 1`, is the starting point of
-the elementary bounds for `M` and `m`.
+the elementary bounds for `M` and `m`, and the step-function integral exchange relates
+`∫_1^x M(x / t) w(t) dt` to `∑_{n ≤ x} μ(n) ∫_1^{x / n} w(t) dt`.
 
 The integral identities hold for every real `x`: below `1` both sides vanish, as every sum is
 empty and every integrand vanishes on `[x, 1)`.
@@ -59,11 +63,19 @@ empty and every integrand vanishes on `[x, 1)`.
 * `TauCeti.moebiusDivSum_eq_div_add_integral`: `m(x) = M(x) / x + ∫_1^x M(t) / t² dt`.
 * `TauCeti.moebiusLogSum_eq_integral`: `ℓ(x) = ∫_1^x m(t) / t dt`.
 * `TauCeti.moebiusLogSum_eq_integral_moebiusSum`: `ℓ` through `M`.
-* `TauCeti.intervalIntegrable_moebiusSum_mul`: `M(t) f(t)` is interval integrable between any two
-  reals for `f` locally integrable on `[1, ∞)`.
+* `TauCeti.intervalIntegrable_moebiusSum_mul`, `TauCeti.intervalIntegrable_abs_moebiusSum_mul`,
+  `TauCeti.intervalIntegrable_abs_moebiusSum`, `TauCeti.intervalIntegrable_abs_moebiusSum_div`,
+  `TauCeti.intervalIntegrable_moebiusSum_div_sq`: interval integrability of `M(t) f(t)`,
+  `|M(t)| f(t)`, `|M(t)|`, `|M(t)| / t`, and `M(t) / t²`.
 * `TauCeti.continuous_moebiusLogSum`, `TauCeti.hasDerivAt_moebiusLogSum`: `ℓ` is continuous, with
   derivative `m(x) / x` off the natural numbers.
 * `TauCeti.sum_moebius_mul_natFloor_div`: Meissel's identity `∑_{n ≤ x} μ(n) ⌊x / n⌋ = 1`.
+* `TauCeti.intervalIntegrable_moebiusSum_div_mul`, `TauCeti.integral_moebiusSum_div_mul`,
+  `TauCeti.integral_moebiusSum_div_mul_eq_sum`,
+  `TauCeti.integral_moebiusSum_div_mul_of_hasDerivAt_off_countable`: sum-integral exchange for
+  `M(x / t) w(t)`.
+* `TauCeti.integral_abs_moebiusSum_div_div_sq`: substitution `u = x / t` for
+  `∫_1^x |M(x / t)| / t² dt`.
 
 ## References
 
@@ -231,6 +243,55 @@ theorem intervalIntegrable_moebiusSum_mul {f : ℝ → ℝ}
   simpa only [moebiusSum, mul_comm] using
     intervalIntegrable_mul_sum_Icc (fun n ↦ (μ n : ℝ)) hf a b
 
+/-- `|M(t)|`, weighted by a function locally integrable on `[1, ∞)`, is interval integrable between
+any two reals. -/
+theorem intervalIntegrable_abs_moebiusSum_mul {f : ℝ → ℝ}
+    (hf : LocallyIntegrableOn f (Set.Ici 1))
+    (a b : ℝ) : IntervalIntegrable (fun t ↦ |moebiusSum t| * f t) volume a b := by
+  have key (c : ℝ) : IntervalIntegrable (fun t ↦ |moebiusSum t| * f t) volume 1 c := by
+    rcases le_or_gt 1 c with hc | hc
+    · refine (intervalIntegrable_iff_integrableOn_Icc_of_le hc).mpr ?_
+      have hf_int : IntegrableOn f (Set.Icc 1 c) :=
+        hf.integrableOn_compact_subset Set.Icc_subset_Ici_self isCompact_Icc
+      have hM_meas :
+          AEStronglyMeasurable (fun t ↦ |moebiusSum t|) (volume.restrict (Set.Icc 1 c)) :=
+        (continuous_abs.measurable.comp
+          ((measurable_from_nat (f := fun n ↦ ∑ k ∈ Icc 1 n, (μ k : ℝ))).comp
+            Nat.measurable_floor)).aestronglyMeasurable
+      have hM_bdd : ∀ᵐ t ∂volume.restrict (Set.Icc 1 c), ‖|moebiusSum t|‖ ≤ c := by
+        filter_upwards [ae_restrict_mem measurableSet_Icc] with t ht
+        rw [Real.norm_eq_abs, abs_abs]
+        exact (abs_moebiusSum_le (zero_le_one.trans ht.1)).trans ht.2
+      exact hf_int.bdd_mul hM_meas hM_bdd
+    · refine IntervalIntegrable.symm ((intervalIntegrable_iff_integrableOn_Ioc_of_le hc.le).mpr ?_)
+      exact (integrableOn_Ioc_iff_integrableOn_Ioo).mpr <|
+        integrableOn_zero.congr_fun (fun t ht ↦ by simp [moebiusSum_of_lt_one ht.2])
+          measurableSet_Ioo
+  exact (key a).symm.trans (key b)
+
+/-- `t ↦ |M(t)|` is interval integrable between any two reals. -/
+theorem intervalIntegrable_abs_moebiusSum (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ |moebiusSum t|) volume a b := by
+  simpa only [mul_one] using
+    intervalIntegrable_abs_moebiusSum_mul
+      ((continuousOn_const (c := (1 : ℝ))).locallyIntegrableOn measurableSet_Ici) a b
+
+/-- `t ↦ |M(t)| / t` is interval integrable between any two reals (it vanishes for `t < 1`). -/
+theorem intervalIntegrable_abs_moebiusSum_div (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ |moebiusSum t| / t) volume a b := by
+  have hc : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Set.Ici 1) :=
+    continuousOn_inv₀.mono fun t ht ↦ ne_of_gt (zero_lt_one.trans_le ht)
+  simpa only [div_eq_mul_inv] using
+    intervalIntegrable_abs_moebiusSum_mul (hc.locallyIntegrableOn measurableSet_Ici) a b
+
+/-- `t ↦ M(t) / t ^ 2` is interval integrable between any two reals (it vanishes for `t < 1`). -/
+theorem intervalIntegrable_moebiusSum_div_sq (a b : ℝ) :
+    IntervalIntegrable (fun t ↦ moebiusSum t / t ^ 2) volume a b := by
+  have hc : ContinuousOn (fun t : ℝ ↦ (t ^ 2)⁻¹) (Set.Ici 1) :=
+    (continuousOn_pow 2).inv₀ fun t ht ↦ pow_ne_zero 2 (zero_lt_one.trans_le ht).ne'
+  simpa only [div_eq_mul_inv] using
+    intervalIntegrable_moebiusSum_mul (hc.locallyIntegrableOn measurableSet_Ici) a b
+
 /-- Abel summation against `log (x / t) / t`:
 `ℓ(x) = ∫_1^x M(t) log (x / t) / t² dt + ∫_1^x M(t) / t² dt` for every real `x`. -/
 theorem moebiusLogSum_eq_integral_moebiusSum (x : ℝ) :
@@ -323,5 +384,137 @@ theorem sum_moebius_mul_natFloor_div (hx : 1 ≤ x) :
   simp only [Nat.floor_div_natCast, ← ArithmeticFunction.intCoe_apply, ← h]
   rw [sum_eq_single_of_mem 1 (mem_Icc.mpr ⟨le_rfl, Nat.one_le_floor_iff x |>.mpr hx⟩)
     fun n _ hn ↦ ArithmeticFunction.one_apply_ne hn, ArithmeticFunction.one_one]
+
+/-! ### Step-function integral exchange for `M(x / t)` -/
+
+/-- On `(1, x]`, `M(x / t) * w(t)` agrees with the finite sum of indicator-weighted copies
+`∑_{1 ≤ n ≤ x} μ(n) * (Iic (x / n)).indicator w t`. -/
+private theorem eqOn_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) (w : ℝ → ℝ) :
+    Set.EqOn (fun t ↦ moebiusSum (x / t) * w t)
+      (fun t ↦ ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t)
+      (Set.Ioc 1 x) := by
+  intro t ht
+  have ht0 : 0 < t := lt_of_lt_of_le zero_lt_one ht.1.le
+  have hx0 : 0 ≤ x := zero_le_one.trans hx
+  have hfloor : ⌊x / t⌋₊ ≤ ⌊x⌋₊ := Nat.floor_mono (div_le_self hx0 ht.1.le)
+  dsimp only
+  rw [moebiusSum_def, Finset.sum_mul]
+  symm
+  calc ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t
+      = ∑ n ∈ Icc 1 ⌊x⌋₊, if n ≤ ⌊x / t⌋₊ then (μ n : ℝ) * w t else 0 := by
+        refine Finset.sum_congr rfl fun n hn ↦ ?_
+        have hn0 : (0 : ℝ) < n := by exact_mod_cast (Finset.mem_Icc.mp hn).1
+        have hmem : t ∈ Set.Iic (x / n) ↔ n ≤ ⌊x / t⌋₊ := by
+          rw [Set.mem_Iic, le_div_iff₀ hn0, mul_comm t (n : ℝ), ← le_div_iff₀ ht0,
+            ← Nat.le_floor_iff (div_nonneg hx0 ht0.le)]
+        by_cases h : t ∈ Set.Iic (x / n)
+        · simp [h, hmem.mp h]
+        · simp [h, mt hmem.mpr h]
+    _ = ∑ n ∈ (Icc 1 ⌊x⌋₊).filter (· ≤ ⌊x / t⌋₊), (μ n : ℝ) * w t := by
+        rw [Finset.sum_filter]
+    _ = ∑ n ∈ Icc 1 ⌊x / t⌋₊, (μ n : ℝ) * w t := by
+        congr 1
+        ext n
+        simp only [Finset.mem_filter, Finset.mem_Icc]
+        exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, h.2.trans hfloor⟩, h.2⟩⟩
+
+/-- If `w` is interval integrable on `1..x`, then so is `t ↦ M(x / t) * w(t)`. -/
+theorem intervalIntegrable_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) {w : ℝ → ℝ}
+    (hw : IntervalIntegrable w volume 1 x) :
+    IntervalIntegrable (fun t ↦ moebiusSum (x / t) * w t) volume 1 x := by
+  have hwi : IntegrableOn w (Set.Ioc 1 x) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mp hw
+  have hterm (n : ℕ) (_ : n ∈ Icc 1 ⌊x⌋₊) :
+      IntegrableOn (fun t ↦ (μ n : ℝ) * (Set.Iic (x / n)).indicator w t) (Set.Ioc 1 x) :=
+    (hwi.indicator measurableSet_Iic).const_mul _
+  refine (intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mpr ?_
+  exact IntegrableOn.congr_fun (integrable_finsetSum (Icc 1 ⌊x⌋₊) hterm)
+    (eqOn_moebiusSum_div_mul hx w).symm measurableSet_Ioc
+
+/-- Integrating `M(x / t) * w(t)` over `[1, x]` swaps with the sum defining `M(x / t)`:
+`∫_1^x M(x / t) w(t) dt = ∑_{1 ≤ n ≤ x} μ(n) ∫_1^{x / n} w(t) dt`. -/
+theorem integral_moebiusSum_div_mul {x : ℝ} (hx : 1 ≤ x) {w : ℝ → ℝ}
+    (hw : IntervalIntegrable w volume 1 x) :
+    ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * w t =
+      ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * ∫ t in (1 : ℝ)..(x / n), w t := by
+  have hx0 : 0 < x := lt_of_lt_of_le zero_lt_one hx
+  have hwi : IntegrableOn w (Set.Ioc 1 x) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hx).mp hw
+  have hterm (n : ℕ) (_ : n ∈ Icc 1 ⌊x⌋₊) :
+      IntegrableOn (fun t ↦ (μ n : ℝ) * (Set.Iic (x / n)).indicator w t) (Set.Ioc 1 x) :=
+    (hwi.indicator measurableSet_Iic).const_mul _
+  rw [intervalIntegral.integral_of_le hx,
+    setIntegral_congr_fun measurableSet_Ioc (eqOn_moebiusSum_div_mul hx w)]
+  have hswap :
+      ∫ t in Set.Ioc 1 x,
+          ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t =
+        ∑ n ∈ Icc 1 ⌊x⌋₊,
+          ∫ t in Set.Ioc 1 x, (μ n : ℝ) * (Set.Iic (x / n)).indicator w t :=
+    integral_finsetSum (Icc 1 ⌊x⌋₊) hterm
+  rw [hswap]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
+  have hnx : (n : ℝ) ≤ x :=
+    le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0.le)
+  have h1xn : 1 ≤ x / n := (one_le_div (by exact_mod_cast hn1)).mpr hnx
+  have hxn_le : x / n ≤ x := div_le_self hx0.le (by exact_mod_cast hn1)
+  rw [integral_const_mul, setIntegral_indicator measurableSet_Iic, Set.Ioc_inter_Iic,
+    min_eq_right hxn_le, intervalIntegral.integral_of_le h1xn]
+
+/-- If `f` is interval integrable on `1..x` and has primitive `F` on `[1, x]` (`∫_1^y f = F y`),
+then `∫_1^x M(x / t) f(t) dt = ∑_{1 ≤ n ≤ x} μ(n) F(x / n)`. -/
+theorem integral_moebiusSum_div_mul_eq_sum {x : ℝ} (hx : 1 ≤ x) {f F : ℝ → ℝ}
+    (hf : IntervalIntegrable f volume 1 x) (hF : ∀ y ∈ Set.Icc 1 x, ∫ t in (1 : ℝ)..y, f t = F y) :
+    ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * f t = ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * F (x / n) := by
+  have hx0 : 0 ≤ x := zero_le_one.trans hx
+  rw [integral_moebiusSum_div_mul hx hf]
+  refine Finset.sum_congr rfl fun n hn ↦ ?_
+  have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
+  have hnx : (n : ℝ) ≤ x := le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0)
+  rw [hF (x / n) ⟨(one_le_div (by exact_mod_cast hn1)).mpr hnx,
+    div_le_self hx0 (by exact_mod_cast hn1)⟩]
+
+/-- FTC version of `integral_moebiusSum_div_mul_eq_sum`: if `F` is continuous on `[1, x]`,
+vanishes at `1`, and has derivative `f` away from a countable set `s`, with `f` interval
+integrable on `1..x`, then `∫_1^x M(x / t) f(t) dt = ∑_{1 ≤ n ≤ x} μ(n) F(x / n)`. -/
+theorem integral_moebiusSum_div_mul_of_hasDerivAt_off_countable {x : ℝ} (hx : 1 ≤ x)
+    {s : Set ℝ} (hs : s.Countable) {F f : ℝ → ℝ}
+    (hFc : ContinuousOn F (Set.Icc 1 x)) (hF1 : F 1 = 0)
+    (hFd : ∀ t ∈ Set.Ioo 1 x \ s, HasDerivAt F (f t) t)
+    (hf : IntervalIntegrable f volume 1 x) :
+    ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * f t = ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * F (x / n) := by
+  refine integral_moebiusSum_div_mul_eq_sum hx hf fun y hy ↦ ?_
+  have hsub : Set.uIcc 1 y ⊆ Set.Icc 1 x := by
+    rw [Set.uIcc_of_le hy.1]
+    exact Set.Icc_subset_Icc_right hy.2
+  have hftc := integral_eq_of_hasDerivAt_off_countable F f hs
+    (hFc.mono hsub)
+    (fun t ht ↦ hFd t ⟨⟨(min_eq_left hy.1 ▸ ht.1.1),
+      (max_eq_right hy.1 ▸ ht.1.2).trans_le hy.2⟩, ht.2⟩)
+    (hf.mono_set (Set.uIcc_subset_uIcc_left (by rw [Set.uIcc_of_le hx]; exact hy)))
+  simpa [hF1] using hftc
+
+/-- Substitution `u = x / t` converts `∫_1^x |M(x / t)| / t² dt` into
+`(1 / x) ∫_1^x |M(t)| dt`. -/
+theorem integral_abs_moebiusSum_div_div_sq {x : ℝ} (hx : 1 ≤ x) :
+    ∫ t in (1 : ℝ)..x, |moebiusSum (x / t)| / t ^ 2 =
+      (1 / x) * ∫ t in (1 : ℝ)..x, |moebiusSum t| := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  have h0 : (0 : ℝ) ∉ Set.uIcc 1 x := by
+    rw [Set.uIcc_of_le hx]
+    exact fun h ↦ by linarith [h.1]
+  have hsub := TauCeti.intervalIntegral.integral_div_sq_smul_comp_div (c := x) h0
+    (fun u ↦ |moebiusSum u|)
+  rw [div_self hx0.ne', div_one] at hsub
+  have hlhs :
+      ∫ t in (1 : ℝ)..x, (x / t ^ 2) • |moebiusSum (x / t)| =
+        x * ∫ t in (1 : ℝ)..x, |moebiusSum (x / t)| / t ^ 2 := by
+    rw [← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr fun t _ ↦ ?_
+    rw [smul_eq_mul]
+    ring
+  rw [hlhs] at hsub
+  rw [← hsub]
+  field_simp
 
 end TauCeti

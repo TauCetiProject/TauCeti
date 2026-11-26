@@ -13,23 +13,30 @@ import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Analysis.Calculus.Deriv.Fract
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
-# Balazard's kernel, Balazard's identity, and Balazard's conversion inequalities
+# Balazard's kernels, identities, and conversion inequalities
+
+At `k = 2`, MacLeod's function `φ₂(t) = t - 1 - ({t}² - {t}) / t` introduces the kernel
+`ε₀(t) = ({t}² - {t}) / t` (`TauCeti.balazardTwoKernel`), whose piecewise derivative off `ℤ` is
+`ε₀'(t) = ((2 {t} - 1) t + {t} - {t}²) / t²` (`TauCeti.balazardTwoKernelDeriv`). Integrating
+`ε₀'` in MacLeod's `k = 2` identity gives Balazard's `k = 2` formula
+`x m(x) - M(x) = 2 - 2 / x + ∫_1^x M(x / t) ε₀'(t) dt`.
 
 Combining MacLeod's functions `φ₃` and `φ₄` via
 `(4 / 3) φ₃(t) - (1 / 3) φ₄(t) = t - 1 - ε₁(t)` defines Balazard's kernel
 
 `ε₁(t) = 1 / 3 - 1 / (3 t) + (4 / 3) B₃({t}) / t² - (1 / 3) (B₄({t}) - B₄) / t³`
 
-(`TauCeti.balazardKernel`), which is continuous on `{t ≠ 0}` and differentiable off `ℤ` with
+(`TauCeti.balazardKernel`), which is continuous on `{0}ᶜ` and differentiable off `ℤ` with
 nonnegative derivative
 
-`ε₁'(t) = (((2 {t} - 1) t + {t} - {t}²) / t²)²`
+`ε₁'(t) = ε₀'(t)² = (((2 {t} - 1) t + {t} - {t}²) / t²)²`
 
-(`TauCeti.balazardKernelDeriv`) satisfying `0 ≤ ε₁'(t) ≤ 1 / t²` for `t > 0`. Integrating
-`ε₁'` in MacLeod's identity yields Balazard's identity for `m(x) = ∑_{n ≤ x} μ(n) / n`:
+(`TauCeti.balazardKernelDeriv`) satisfying `0 ≤ ε₁'(t) ≤ 1 / t²` for `t > 0`. Integrating `ε₁'`
+in MacLeod's identity yields Balazard's identity for `m(x) = ∑_{n ≤ x} μ(n) / n`:
 
 `m(x) = M(x) / x + 4 (1 - 1 / x)² / x - 4 (1 - 1 / x)³ / (3 x) +`
 `(1 / x) ∫_1^x M(x / t) ε₁'(t) dt`.
@@ -44,12 +51,15 @@ for every real `x ≥ 1`, along with its two-range and three-range forms when ex
 
 ## Main declarations
 
-* `TauCeti.balazardKernel`: Balazard's kernel `ε₁(t)`.
-* `TauCeti.balazardKernelDeriv`: the piecewise derivative `ε₁'(t)` of `balazardKernel`.
+* `TauCeti.balazardTwoKernel`, `TauCeti.balazardTwoKernelDeriv`: the `k = 2` remainder kernel
+  `ε₀(t)` and its piecewise derivative `ε₀'(t)`.
+* `TauCeti.mul_moebiusDivSum_sub_moebiusSum_eq`: Balazard's `k = 2` identity for `x m(x) - M(x)`.
+* `TauCeti.balazardKernel`, `TauCeti.balazardKernelDeriv`: Balazard's kernel `ε₁(t)` and its
+  piecewise derivative `ε₁'(t) = ε₀'(t)²`.
 * `TauCeti.continuousOn_balazardKernel`, `TauCeti.hasDerivAt_balazardKernel`,
   `TauCeti.balazardKernelDeriv_nonneg`, `TauCeti.balazardKernelDeriv_le`,
   `TauCeti.integral_balazardKernelDeriv`: regularity, bounds, and fundamental theorem for `ε₁`.
-* `TauCeti.four_thirds_macleodFun_three_sub`:
+* `TauCeti.four_div_three_mul_macleodFun_three_sub_one_div_three_mul_macleodFun_four`:
   `(4 / 3) φ₃(t) - (1 / 3) φ₄(t) = t - 1 - ε₁(t)` for `t ≠ 0`.
 * `TauCeti.moebiusDivSum_eq_balazard`: Balazard's identity for `m(x)`.
 * `TauCeti.abs_moebiusDivSum_le_balazard`: Balazard's conversion inequality.
@@ -60,7 +70,7 @@ for every real `x ≥ 1`, along with its two-range and three-range forms when ex
 ## References
 
 * M. Balazard, *Elementary remarks on Möbius' function*, Proc. Steklov Inst. Math. 276 (2012),
-  33–39, Proposition 6 and Proposition 7.
+  33–39, Proposition 6, Proposition 7, and equation (11).
 * O. Ramaré, *From explicit estimates for primes to explicit estimates for the Möbius function*,
   Acta Arith. 157 (2013), 365–379, Corollary 1.2.
 * O. Ramaré, *Explicit estimates on several summatory functions involving the Moebius function*,
@@ -73,6 +83,162 @@ open Finset MeasureTheory Filter
 open scoped Topology ArithmeticFunction.Moebius
 
 namespace TauCeti
+
+/-! ### Shared interval-integrability helper -/
+
+/-- A measurable function bounded in norm by a constant `C` is interval integrable between any two
+reals. -/
+private theorem intervalIntegrable_of_measurable_of_norm_le {f : ℝ → ℝ} {C : ℝ}
+    (hf : Measurable f) (hle : ∀ t, ‖f t‖ ≤ C) (a b : ℝ) :
+    IntervalIntegrable f volume a b := by
+  have hbase : IntervalIntegrable f volume (min a b) (max a b) :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le min_le_max).mpr
+      ((integrableOn_const (C := C) (hs := measure_Ioc_lt_top.ne)).mono'
+        hf.aestronglyMeasurable (ae_of_all _ hle))
+  rcases le_total a b with hab | hba
+  · simpa [min_eq_left hab, max_eq_right hab] using hbase
+  · simpa [min_eq_right hba, max_eq_left hba] using hbase.symm
+
+/-! ### The `k = 2` kernel `ε₀` and Balazard's `k = 2` identity -/
+
+/-- The `k = 2` remainder kernel `ε₀(t) = ({t}² - {t}) / t`. -/
+noncomputable def balazardTwoKernel (t : ℝ) : ℝ :=
+  (Int.fract t ^ 2 - Int.fract t) / t
+
+/-- The defining formula of `balazardTwoKernel`. -/
+theorem balazardTwoKernel_def (t : ℝ) :
+    balazardTwoKernel t = (Int.fract t ^ 2 - Int.fract t) / t := (rfl)
+
+/-- `ε₀(1) = 0`. -/
+@[simp]
+theorem balazardTwoKernel_one : balazardTwoKernel 1 = 0 := by
+  simp [balazardTwoKernel]
+
+/-- The piecewise derivative of `balazardTwoKernel` away from the integers:
+`ε₀'(t) = ((2 {t} - 1) t + {t} - {t}²) / t²`. -/
+noncomputable def balazardTwoKernelDeriv (t : ℝ) : ℝ :=
+  ((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2
+
+/-- The defining formula of `balazardTwoKernelDeriv`. -/
+theorem balazardTwoKernelDeriv_def (t : ℝ) :
+    balazardTwoKernelDeriv t =
+      ((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2 := (rfl)
+
+/-- For every `t > 0`, `|ε₀'(t)| ≤ 1 / t`. -/
+theorem abs_balazardTwoKernelDeriv_le {t : ℝ} (ht : 0 < t) :
+    |balazardTwoKernelDeriv t| ≤ 1 / t := by
+  rw [balazardTwoKernelDeriv_def, abs_div, abs_of_pos (sq_pos_of_pos ht)]
+  calc |((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2)| / t ^ 2
+      ≤ t / t ^ 2 :=
+        div_le_div_of_nonneg_right
+          (Int.abs_two_fract_sub_one_mul_add_fract_sub_fract_sq_le ht.le) (sq_nonneg t)
+    _ = 1 / t := by field_simp
+
+/-- `ε₀` is continuous on `{0}ᶜ`. -/
+theorem continuousOn_balazardTwoKernel : ContinuousOn balazardTwoKernel ({0}ᶜ : Set ℝ) := by
+  unfold balazardTwoKernel
+  exact Int.continuous_fract_sq_sub_fract.continuousOn.div continuousOn_id fun _ ht ↦ ht
+
+/-- At every non-integer `t : ℝ`, `balazardTwoKernel` has derivative `balazardTwoKernelDeriv t`. -/
+theorem hasDerivAt_balazardTwoKernel {t : ℝ} (ht : t ∉ Set.range ((↑) : ℤ → ℝ)) :
+    HasDerivAt balazardTwoKernel (balazardTwoKernelDeriv t) t := by
+  have ht0 : t ≠ 0 := fun h0 ↦ ht ⟨0, by simp [h0]⟩
+  have hfr := Int.hasDerivAt_fract ht
+  have hnum :
+      HasDerivAt (fun u : ℝ ↦ Int.fract u ^ 2 - Int.fract u) (2 * Int.fract t - 1) t := by
+    refine ((hfr.pow 2).sub hfr).congr_deriv ?_
+    ring
+  refine (hnum.div (hasDerivAt_id' t) ht0).congr_deriv ?_
+  rw [balazardTwoKernelDeriv_def]
+  field_simp
+  ring
+
+private theorem measurable_balazardTwoKernelDeriv : Measurable balazardTwoKernelDeriv := by
+  unfold balazardTwoKernelDeriv
+  have _hf : Measurable (Int.fract : ℝ → ℝ) := measurable_fract
+  fun_prop
+
+private theorem abs_balazardTwoKernelDeriv_le_two (t : ℝ) :
+    |balazardTwoKernelDeriv t| ≤ 2 := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · rcases le_or_gt (-1) t with ht1 | ht1
+    · have hfr : Int.fract t = t + 1 :=
+        Int.fract_eq_iff.mpr ⟨by linarith, by linarith, -1, by ring⟩
+      rw [balazardTwoKernelDeriv_def, hfr]
+      have heq : ((2 * (t + 1) - 1) * t + (t + 1) - (t + 1) ^ 2) / t ^ 2 = 1 := by
+        have ht0 : t ≠ 0 := ht.ne
+        field_simp
+        ring
+      rw [heq]
+      norm_num
+    · rw [balazardTwoKernelDeriv_def, abs_div, abs_of_pos (sq_pos_of_neg ht)]
+      have h0 := Int.fract_nonneg t
+      have h1 := Int.fract_lt_one t
+      refine (div_le_iff₀ (sq_pos_of_neg ht)).mpr ?_
+      rw [abs_le]
+      constructor <;> nlinarith
+  · simp [balazardTwoKernelDeriv_def]
+  · rcases lt_or_ge t 1 with ht1 | ht1
+    · rw [balazardTwoKernelDeriv_def, Int.fract_eq_self.mpr ⟨ht.le, ht1⟩]
+      have heq : ((2 * t - 1) * t + t - t ^ 2) / t ^ 2 = 1 := by
+        have ht0 : t ≠ 0 := ht.ne'
+        field_simp
+        ring
+      rw [heq]
+      norm_num
+    · exact (abs_balazardTwoKernelDeriv_le ht).trans
+        (((div_le_one ht).mpr ht1).trans (by norm_num))
+
+/-- `balazardTwoKernelDeriv` is interval integrable between any two reals. -/
+theorem intervalIntegrable_balazardTwoKernelDeriv (a b : ℝ) :
+    IntervalIntegrable balazardTwoKernelDeriv volume a b :=
+  intervalIntegrable_of_measurable_of_norm_le measurable_balazardTwoKernelDeriv
+    (fun t ↦ by simpa only [Real.norm_eq_abs] using abs_balazardTwoKernelDeriv_le_two t) a b
+
+/-- For every `y ≥ 1`, `∫_1^y ε₀'(t) dt = ε₀(y)`. -/
+theorem integral_balazardTwoKernelDeriv {y : ℝ} (hy : 1 ≤ y) :
+    ∫ t in (1 : ℝ)..y, balazardTwoKernelDeriv t = balazardTwoKernel y := by
+  have h := integral_eq_of_hasDerivAt_off_countable balazardTwoKernel
+    balazardTwoKernelDeriv (Set.countable_range ((↑) : ℤ → ℝ))
+    (continuousOn_balazardTwoKernel.mono (by
+      rw [Set.uIcc_of_le hy]
+      exact fun _ ht ↦ (zero_lt_one.trans_le ht.1).ne'))
+    (fun _ ht ↦ hasDerivAt_balazardTwoKernel ht.2)
+    (intervalIntegrable_balazardTwoKernelDeriv 1 y)
+  simpa [balazardTwoKernel_one] using h
+
+/-- **Balazard's `k = 2` identity** (Balazard 2012, equation (11)): for every real `x ≥ 1`,
+`x m(x) - M(x) = 2 - 2 / x + ∫_1^x M(x / t) (((2 {t} - 1) t + {t} - {t}²) / t²) dt`. -/
+theorem mul_moebiusDivSum_sub_moebiusSum_eq {x : ℝ} (hx : 1 ≤ x) :
+    x * moebiusDivSum x - moebiusSum x =
+      2 - 2 / x + ∫ t in (1 : ℝ)..x,
+        moebiusSum (x / t) *
+          (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  -- Evaluate `∫_1^x M(x / t) ε₀'(t) dt = ∑ μ(n) ε₀(x / n)` via the generic sum-integral swap.
+  have hε₀_sum :
+      ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardTwoKernelDeriv t =
+        ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * balazardTwoKernel (x / n) :=
+    integral_moebiusSum_div_mul_eq_sum hx
+      (intervalIntegrable_balazardTwoKernelDeriv 1 x)
+      (fun _ hy ↦ integral_balazardTwoKernelDeriv hy.1)
+  -- Expand MacLeod's `k = 2` identity using `φ₂(t) = t - 1 - ε₀(t)`.
+  have hmacleod2 := sum_moebius_mul_macleodFun 2 hx
+  have hdiff :
+      ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * macleodFun 2 (x / n) =
+        x * moebiusDivSum x - moebiusSum x -
+          ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * balazardTwoKernel (x / n) := by
+    rw [moebiusDivSum_def, moebiusSum_def, Finset.mul_sum, ← Finset.sum_sub_distrib,
+      ← Finset.sum_sub_distrib]
+    refine Finset.sum_congr rfl fun n hn ↦ ?_
+    have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
+    rw [macleodFun_two (div_ne_zero hx0.ne' (by positivity)), balazardTwoKernel_def]
+    ring
+  rw [hdiff, ← hε₀_sum] at hmacleod2
+  simp only [Nat.cast_ofNat, show (2 - 1 : ℕ) = 1 from rfl, pow_one] at hmacleod2
+  rw [show (2 : ℝ) * (1 - 1 / x) = 2 - 2 / x by ring] at hmacleod2
+  simp_rw [← balazardTwoKernelDeriv_def]
+  linarith
 
 /-! ### Balazard's kernel `ε₁` and its derivative `ε₁'` -/
 
@@ -89,14 +255,19 @@ theorem balazardKernel_def (t : ℝ) :
         1 / 3 * (bernoulliFun 4 (Int.fract t) - bernoulli 4) / t ^ 3 := (rfl)
 
 /-- The piecewise derivative of Balazard's kernel away from the integers:
-`ε₁'(t) = (((2 {t} - 1) t + {t} - {t}²) / t²)²`. -/
+`ε₁'(t) = ε₀'(t)² = (((2 {t} - 1) t + {t} - {t}²) / t²)²`. -/
 noncomputable def balazardKernelDeriv (t : ℝ) : ℝ :=
-  (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) ^ 2
+  balazardTwoKernelDeriv t ^ 2
+
+/-- `ε₁'(t) = ε₀'(t)²`. -/
+theorem balazardKernelDeriv_eq_sq (t : ℝ) :
+    balazardKernelDeriv t = balazardTwoKernelDeriv t ^ 2 := (rfl)
 
 /-- The defining formula of `balazardKernelDeriv`. -/
 theorem balazardKernelDeriv_def (t : ℝ) :
     balazardKernelDeriv t =
-      (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) ^ 2 := (rfl)
+      (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) ^ 2 := by
+  rw [balazardKernelDeriv, balazardTwoKernelDeriv_def]
 
 /-- `ε₁(1) = 0`. -/
 @[simp]
@@ -112,32 +283,18 @@ theorem balazardKernelDeriv_nonneg (t : ℝ) : 0 ≤ balazardKernelDeriv t :=
 /-- For every `t > 0`, `ε₁'(t) ≤ 1 / t²`. -/
 theorem balazardKernelDeriv_le {t : ℝ} (ht : 0 < t) :
     balazardKernelDeriv t ≤ 1 / t ^ 2 := by
-  have h0 := Int.fract_nonneg t
-  have h1 := Int.fract_lt_one t
-  have hbound : |(2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2| ≤ t := by
-    rw [abs_le]
-    constructor
-    · nlinarith
-    · rcases lt_or_ge t 1 with ht1 | ht1
-      · rw [Int.fract_eq_self.mpr ⟨ht.le, ht1⟩]
-        nlinarith
-      · nlinarith
-  have hsq :
-      (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) ^ 2 ≤
-        (t / t ^ 2) ^ 2 := by
-    rw [div_pow, div_pow]
-    refine div_le_div_of_nonneg_right ?_ (by positivity)
-    simpa only [sq_abs] using sq_le_sq' (abs_le.mp hbound).1 (abs_le.mp hbound).2
-  refine hsq.trans_eq ?_
-  field_simp
+  rw [balazardKernelDeriv_eq_sq]
+  have h := abs_le.mp (abs_balazardTwoKernelDeriv_le ht)
+  refine (sq_le_sq' h.1 h.2).trans_eq ?_
+  ring
 
-/-- `ε₁` is continuous on `(0, ∞)` (in fact on `{0}ᶜ`). -/
-theorem continuousOn_balazardKernel : ContinuousOn balazardKernel (Set.Ioi 0) := by
+/-- `ε₁` is continuous on `{0}ᶜ`. -/
+theorem continuousOn_balazardKernel : ContinuousOn balazardKernel ({0}ᶜ : Set ℝ) := by
   have h3 : Continuous fun t : ℝ ↦ bernoulliFun 3 (Int.fract t) :=
     continuous_bernoulliFun_fract (by decide)
   have h4 : Continuous fun t : ℝ ↦ bernoulliFun 4 (Int.fract t) :=
     continuous_bernoulliFun_fract (by decide)
-  have ht0 : ∀ t ∈ Set.Ioi (0 : ℝ), t ≠ 0 := fun _ ht ↦ ne_of_gt ht
+  have ht0 : ∀ t ∈ ({0}ᶜ : Set ℝ), t ≠ 0 := fun _ ht ↦ ht
   refine (((continuousOn_const.sub (continuousOn_const.div (continuousOn_const.mul continuousOn_id)
     fun t ht ↦ mul_ne_zero three_ne_zero (ht0 t ht))).add
     ((continuousOn_const.mul h3.continuousOn).div (continuousOn_pow 2)
@@ -149,101 +306,54 @@ theorem continuousOn_balazardKernel : ContinuousOn balazardKernel (Set.Ioi 0) :=
 theorem hasDerivAt_balazardKernel {t : ℝ} (ht : t ∉ Set.range ((↑) : ℤ → ℝ)) :
     HasDerivAt balazardKernel (balazardKernelDeriv t) t := by
   have ht0 : t ≠ 0 := fun h0 ↦ ht ⟨0, by simp [h0]⟩
-  have hfr := Int.hasDerivAt_fract ht
-  have hb3 : HasDerivAt (fun u : ℝ ↦ bernoulliFun 3 (Int.fract u))
-      (3 * Int.fract t ^ 2 - 3 * Int.fract t + 1 / 2) t := by
-    have hpoly :
-        HasDerivAt
-          (fun u : ℝ ↦ Int.fract u ^ 3 - 3 / 2 * Int.fract u ^ 2 + 1 / 2 * Int.fract u)
-          (3 * Int.fract t ^ 2 * 1 - 3 / 2 * (2 * Int.fract t * 1) + 1 / 2 * 1) t :=
-      (((hfr.pow 3).sub ((hfr.pow 2).const_mul _)).add (hfr.const_mul _)).congr_deriv (by ring)
-    refine (hpoly.congr_of_eventuallyEq
-      (Eventually.of_forall fun u ↦ bernoulliFun_three (Int.fract u))).congr_deriv ?_
-    ring
-  have hb4 : HasDerivAt (fun u : ℝ ↦ bernoulliFun 4 (Int.fract u) - bernoulli 4)
-      (4 * Int.fract t ^ 3 - 6 * Int.fract t ^ 2 + 2 * Int.fract t) t := by
-    have hpoly :
-        HasDerivAt
-          (fun u : ℝ ↦ Int.fract u ^ 4 - 2 * Int.fract u ^ 3 + Int.fract u ^ 2)
-          (4 * Int.fract t ^ 3 * 1 - 2 * (3 * Int.fract t ^ 2 * 1) + 2 * Int.fract t * 1) t :=
-      (((hfr.pow 4).sub ((hfr.pow 3).const_mul _)).add (hfr.pow 2)).congr_deriv (by ring)
-    refine (hpoly.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ ?_)).congr_deriv ?_
-    · simp only [bernoulliFun_four, bernoulli_four]
-      ring
-    · ring
+  have hb3 := hasDerivAt_bernoulliFun_fract 3 ht
+  have hb4 := (hasDerivAt_bernoulliFun_fract 4 ht).sub_const (bernoulli 4 : ℝ)
   have hinv1 : HasDerivAt (fun u : ℝ ↦ 1 / 3 - 1 / (3 * u)) (1 / (3 * t ^ 2)) t := by
     have hmul : HasDerivAt (fun u : ℝ ↦ 3 * u) 3 t :=
       ((hasDerivAt_id' t).const_mul 3).congr_deriv (by ring)
-    have hdiv := (hasDerivAt_const t (1 : ℝ)).div hmul (mul_ne_zero three_ne_zero ht0)
-    refine ((hasDerivAt_const t (1 / 3 : ℝ)).sub hdiv).congr_deriv ?_
+    refine ((hasDerivAt_const t (1 / 3 : ℝ)).sub
+      ((hasDerivAt_const t (1 : ℝ)).div hmul (mul_ne_zero three_ne_zero ht0))).congr_deriv ?_
     field_simp
     ring
-  have hterm2 :
-      HasDerivAt (fun u : ℝ ↦ 4 / 3 * bernoulliFun 3 (Int.fract u) / u ^ 2)
-        ((4 / 3 * (3 * Int.fract t ^ 2 - 3 * Int.fract t + 1 / 2) * t ^ 2 -
-          4 / 3 * bernoulliFun 3 (Int.fract t) * (2 * t)) / (t ^ 2) ^ 2) t := by
-    have hp2 : HasDerivAt (fun u : ℝ ↦ u ^ 2) (2 * t) t :=
-      (hasDerivAt_pow 2 t).congr_deriv (by ring)
-    refine ((hb3.const_mul (4 / 3 : ℝ)).div hp2 (pow_ne_zero 2 ht0)).congr_deriv ?_
-    ring
-  have hterm3 :
-      HasDerivAt (fun u : ℝ ↦ 1 / 3 * (bernoulliFun 4 (Int.fract u) - bernoulli 4) / u ^ 3)
-        ((1 / 3 * (4 * Int.fract t ^ 3 - 6 * Int.fract t ^ 2 + 2 * Int.fract t) * t ^ 3 -
-          1 / 3 * (bernoulliFun 4 (Int.fract t) - bernoulli 4) * (3 * t ^ 2)) / (t ^ 3) ^ 2)
-        t := by
-    have hp3 : HasDerivAt (fun u : ℝ ↦ u ^ 3) (3 * t ^ 2) t :=
-      (hasDerivAt_pow 3 t).congr_deriv (by ring)
-    refine ((hb4.const_mul (1 / 3 : ℝ)).div hp3 (pow_ne_zero 3 ht0)).congr_deriv ?_
-    ring
+  have hterm2 := (hb3.const_mul (4 / 3 : ℝ)).div (hasDerivAt_pow 2 t) (pow_ne_zero 2 ht0)
+  have hterm3 := (hb4.const_mul (1 / 3 : ℝ)).div (hasDerivAt_pow 3 t) (pow_ne_zero 3 ht0)
   refine ((hinv1.add hterm2).sub hterm3).congr_of_eventuallyEq
     (Eventually.of_forall fun u ↦ (balazardKernel_def u).symm) |>.congr_deriv ?_
-  rw [balazardKernelDeriv_def, bernoulliFun_three, bernoulliFun_four, bernoulli_four]
+  rw [balazardKernelDeriv_def]
+  simp only [Nat.cast_ofNat, show (2 - 1 : ℕ) = 1 from rfl, show (3 - 1 : ℕ) = 2 from rfl,
+    show (4 - 1 : ℕ) = 3 from rfl, pow_one, bernoulliFun_two, bernoulliFun_three,
+    bernoulliFun_four, bernoulli_four]
   field_simp
   ring
 
-/-- `balazardKernelDeriv` is interval integrable on `a..b` for positive reals `a, b`. -/
-theorem intervalIntegrable_balazardKernelDeriv {a b : ℝ} (ha : 0 < a) (hb : 0 < b) :
+/-- `balazardKernelDeriv` is interval integrable between any two reals. -/
+theorem intervalIntegrable_balazardKernelDeriv (a b : ℝ) :
     IntervalIntegrable balazardKernelDeriv volume a b := by
   have hmeas : Measurable balazardKernelDeriv := by
-    change Measurable fun t ↦
-      (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) ^ 2
-    have _hf : Measurable (Int.fract : ℝ → ℝ) := measurable_fract
-    fun_prop
-  have hm : 0 < min a b := lt_min ha hb
-  have hu :
-      ∀ t ∈ Set.Ioc (min a b) (max a b), ‖balazardKernelDeriv t‖ ≤ 1 / (min a b) ^ 2 := by
-    intro t ht
-    have ht0 : 0 < t := hm.trans ht.1
-    rw [Real.norm_eq_abs, abs_of_nonneg (balazardKernelDeriv_nonneg t)]
-    refine (balazardKernelDeriv_le ht0).trans ?_
-    exact div_le_div_of_nonneg_left zero_le_one (sq_pos_of_pos hm)
-      (pow_le_pow_left₀ hm.le ht.1.le 2)
-  have hbase : IntervalIntegrable balazardKernelDeriv volume (min a b) (max a b) := by
-    refine (intervalIntegrable_iff_integrableOn_Ioc_of_le min_le_max).mpr ?_
-    refine (integrableOn_const (C := 1 / (min a b) ^ 2) (hs := measure_Ioc_lt_top.ne)).mono'
-      hmeas.aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-    exact hu t ht
-  rcases le_total a b with hab | hba
-  · simpa [min_eq_left hab, max_eq_right hab] using hbase
-  · simpa [min_eq_right hba, max_eq_left hba] using hbase.symm
+    unfold balazardKernelDeriv
+    exact measurable_balazardTwoKernelDeriv.pow_const 2
+  refine intervalIntegrable_of_measurable_of_norm_le hmeas (C := 4) (fun t ↦ ?_) a b
+  rw [Real.norm_eq_abs, abs_of_nonneg (balazardKernelDeriv_nonneg t), balazardKernelDeriv_eq_sq]
+  have h := abs_le.mp (abs_balazardTwoKernelDeriv_le_two t)
+  exact (sq_le_sq' h.1 h.2).trans_eq (by norm_num)
 
 /-- For every `y ≥ 1`, `∫_1^y ε₁'(t) dt = ε₁(y)`. -/
 theorem integral_balazardKernelDeriv {y : ℝ} (hy : 1 ≤ y) :
     ∫ t in (1 : ℝ)..y, balazardKernelDeriv t = balazardKernel y := by
-  have h := integral_eq_of_hasDerivAt_off_countable balazardKernel balazardKernelDeriv
-    (Set.countable_range ((↑) : ℤ → ℝ))
+  have h := integral_eq_of_hasDerivAt_off_countable balazardKernel
+    balazardKernelDeriv (Set.countable_range ((↑) : ℤ → ℝ))
     (continuousOn_balazardKernel.mono (by
       rw [Set.uIcc_of_le hy]
-      exact fun _ ht ↦ lt_of_lt_of_le zero_lt_one ht.1))
+      exact fun _ ht ↦ (zero_lt_one.trans_le ht.1).ne'))
     (fun _ ht ↦ hasDerivAt_balazardKernel ht.2)
-    (intervalIntegrable_balazardKernelDeriv zero_lt_one (zero_lt_one.trans_le hy))
+    (intervalIntegrable_balazardKernelDeriv 1 y)
   simpa [balazardKernel_one] using h
 
 /-! ### Balazard's identity for `m(x)` -/
 
 /-- `(4 / 3) φ₃(t) - (1 / 3) φ₄(t) = t - 1 - ε₁(t)` for every nonzero `t : ℝ`. -/
-theorem four_thirds_macleodFun_three_sub {t : ℝ} (ht : t ≠ 0) :
+theorem four_div_three_mul_macleodFun_three_sub_one_div_three_mul_macleodFun_four {t : ℝ}
+    (ht : t ≠ 0) :
     (4 / 3 : ℝ) * macleodFun 3 t - (1 / 3 : ℝ) * macleodFun 4 t = t - 1 - balazardKernel t := by
   simp only [macleodFun_def, balazardKernel_def, bernoulliFun_three, bernoulliFun_four,
     bernoulli_four]
@@ -258,19 +368,13 @@ theorem moebiusDivSum_eq_balazard {x : ℝ} (hx : 1 ≤ x) :
       moebiusSum x / x + 4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x) +
         (1 / x) * ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t := by
   have hx0 : 0 < x := zero_lt_one.trans_le hx
-  have hm3 := sum_moebius_mul_macleodFun 3 hx
-  have hm4 := sum_moebius_mul_macleodFun 4 hx
-  have hswap := integral_moebiusSum_div_mul hx
-    (intervalIntegrable_balazardKernelDeriv zero_lt_one hx0)
+  -- Evaluate `∫_1^x M(x / t) ε₁'(t) dt = ∑ μ(n) ε₁(x / n)` via the generic sum-integral swap.
   have hε_sum :
       ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t =
-        ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * balazardKernel (x / n) := by
-    rw [hswap]
-    refine Finset.sum_congr rfl fun n hn ↦ ?_
-    have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-    have hnx : (n : ℝ) ≤ x :=
-      le_trans (by exact_mod_cast (Finset.mem_Icc.mp hn).2) (Nat.floor_le hx0.le)
-    rw [integral_balazardKernelDeriv ((one_le_div (by exact_mod_cast hn1)).mpr hnx)]
+        ∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * balazardKernel (x / n) :=
+    integral_moebiusSum_div_mul_eq_sum hx (intervalIntegrable_balazardKernelDeriv 1 x)
+      (fun _ hy ↦ integral_balazardKernelDeriv hy.1)
+  -- Form the linear combination `(4 / 3) φ₃ - (1 / 3) φ₄` inside MacLeod's identity.
   have hlin :
       (4 / 3 : ℝ) * (∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * macleodFun 3 (x / n)) -
           (1 / 3 : ℝ) * (∑ n ∈ Icc 1 ⌊x⌋₊, (μ n : ℝ) * macleodFun 4 (x / n)) =
@@ -287,16 +391,17 @@ theorem moebiusDivSum_eq_balazard {x : ℝ} (hx : 1 ≤ x) :
         = (μ n : ℝ) * ((4 / 3 : ℝ) * macleodFun 3 (x / n) -
             (1 / 3 : ℝ) * macleodFun 4 (x / n)) := by ring
       _ = (μ n : ℝ) * (x / n - 1 - balazardKernel (x / n)) := by
-            rw [four_thirds_macleodFun_three_sub hxn0]
+            rw [four_div_three_mul_macleodFun_three_sub_one_div_three_mul_macleodFun_four hxn0]
       _ = x * ((μ n : ℝ) / n) - (μ n : ℝ) - (μ n : ℝ) * balazardKernel (x / n) := by ring
-  rw [hm3, hm4] at hlin
-  rw [← hε_sum] at hlin
+  have hm3 := sum_moebius_mul_macleodFun 3 hx
+  have hm4 := sum_moebius_mul_macleodFun 4 hx
+  simp only [Nat.cast_ofNat, show (3 - 1 : ℕ) = 2 from rfl, show (4 - 1 : ℕ) = 3 from rfl]
+    at hm3 hm4
+  rw [hm3, hm4, ← hε_sum] at hlin
   have hmul :
       x * moebiusDivSum x =
         moebiusSum x + 4 * (1 - 1 / x) ^ 2 - 4 * (1 - 1 / x) ^ 3 / 3 +
           ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t := by
-    simp only [one_div] at hlin ⊢
-    norm_num at hlin
     linarith
   have hfinal := congrArg (fun y ↦ y / x) hmul
   rw [mul_div_cancel_left₀ _ hx0.ne'] at hfinal
@@ -305,12 +410,10 @@ theorem moebiusDivSum_eq_balazard {x : ℝ} (hx : 1 ≤ x) :
 
 /-! ### Balazard's conversion inequalities -/
 
-/-- **Balazard's inequality** (Ramaré 2015, Theorem 1.1; Balazard 2012, Proposition 7):
-for every real `x ≥ 1`,
-`|m(x)| ≤ |M(x)| / x + (∫_1^x |M(t)| dt) / x² + 8 / (3 x)`. -/
-theorem abs_moebiusDivSum_le_balazard (x : ℝ) (hx : 1 ≤ x) :
-    |moebiusDivSum x| ≤
-      |moebiusSum x| / x + (∫ t in (1 : ℝ)..x, |moebiusSum t|) / x ^ 2 + 8 / (3 * x) := by
+/-- Algebraic bound for the polynomial term in Balazard's identity: for `x ≥ 1`,
+`|4 (1 - 1 / x)² / x - 4 (1 - 1 / x)³ / (3 x)| ≤ 8 / (3 x)`. -/
+private theorem abs_balazard_poly_le {x : ℝ} (hx : 1 ≤ x) :
+    |4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x)| ≤ 8 / (3 * x) := by
   have hx0 : 0 < x := zero_lt_one.trans_le hx
   let u : ℝ := 1 - 1 / x
   have hu0 : 0 ≤ u := sub_nonneg.mpr (div_le_one_of_le₀ hx hx0.le)
@@ -318,8 +421,7 @@ theorem abs_moebiusDivSum_le_balazard (x : ℝ) (hx : 1 ≤ x) :
     dsimp [u]
     linarith [one_div_pos.mpr hx0]
   have hpoly_nonneg : 0 ≤ 4 * u ^ 2 - 4 * u ^ 3 / 3 := by
-    have hfac : 4 * u ^ 2 - 4 * u ^ 3 / 3 = (4 / 3) * u ^ 2 * (3 - u) := by ring
-    rw [hfac]
+    rw [show 4 * u ^ 2 - 4 * u ^ 3 / 3 = (4 / 3) * u ^ 2 * (3 - u) by ring]
     exact mul_nonneg (mul_nonneg (by positivity) (sq_nonneg u)) (by linarith)
   have hpoly_le : 4 * u ^ 2 - 4 * u ^ 3 / 3 ≤ 8 / 3 := by
     have hdiff : 8 / 3 - (4 * u ^ 2 - 4 * u ^ 3 / 3) =
@@ -329,47 +431,62 @@ theorem abs_moebiusDivSum_le_balazard (x : ℝ) (hx : 1 ≤ x) :
       exact mul_nonneg (mul_nonneg (by positivity) (by linarith))
         (add_nonneg zero_le_two (mul_nonneg hu0 (by linarith)))
     linarith
-  have hpoly_abs : |4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x)| ≤ 8 / (3 * x) := by
-    have hrewrite :
-        4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x) =
-          (4 * u ^ 2 - 4 * u ^ 3 / 3) / x := by
-      dsimp [u]
-      ring
-    rw [hrewrite, abs_div, abs_of_pos hx0, abs_of_nonneg hpoly_nonneg]
-    calc (4 * u ^ 2 - 4 * u ^ 3 / 3) / x ≤ (8 / 3) / x :=
-          div_le_div_of_nonneg_right hpoly_le hx0.le
-      _ = 8 / (3 * x) := by ring
-  have hc_inv : ContinuousOn (fun t : ℝ ↦ (t ^ 2)⁻¹) (Set.Ici 1) :=
-    (continuousOn_pow 2).inv₀ fun t ht ↦ ne_of_gt (pow_pos (zero_lt_one.trans_le ht) 2)
-  have hw_inv : IntervalIntegrable (fun t : ℝ ↦ (t ^ 2)⁻¹) volume 1 x :=
-    (hc_inv.mono (by rw [Set.uIcc_of_le hx]; exact Set.Icc_subset_Ici_self)).intervalIntegrable
+  have hrewrite :
+      4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x) =
+        (4 * u ^ 2 - 4 * u ^ 3 / 3) / x := by
+    dsimp [u]
+    ring
+  rw [hrewrite, abs_div, abs_of_pos hx0, abs_of_nonneg hpoly_nonneg]
+  exact (div_le_div_of_nonneg_right hpoly_le hx0.le).trans_eq (by ring)
+
+/-- Analytic bound for the remainder integral in Balazard's identity: for `x ≥ 1`,
+`|∫_1^x M(x / t) ε₁'(t) dt| ≤ (1 / x) ∫_1^x |M(t)| dt`. -/
+private theorem abs_integral_moebiusSum_div_mul_balazardKernelDeriv_le {x : ℝ} (hx : 1 ≤ x) :
+    |∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t| ≤
+      (1 / x) * ∫ t in (1 : ℝ)..x, |moebiusSum t| := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  have h0 : (0 : ℝ) ∉ Set.uIcc 1 x := by
+    rw [Set.uIcc_of_le hx]
+    exact fun h ↦ by linarith [h.1]
   have hint_lhs :
       IntervalIntegrable (fun t ↦ moebiusSum (x / t) * balazardKernelDeriv t) volume 1 x :=
-    intervalIntegrable_moebiusSum_div_mul hx
-      (intervalIntegrable_balazardKernelDeriv zero_lt_one hx0)
+    intervalIntegrable_moebiusSum_div_mul hx (intervalIntegrable_balazardKernelDeriv 1 x)
   have hint_rhs : IntervalIntegrable (fun t ↦ |moebiusSum (x / t)| / t ^ 2) volume 1 x := by
-    refine (intervalIntegrable_congr fun t _ ↦ ?_).mp
-      (intervalIntegrable_moebiusSum_div_mul hx hw_inv).abs
-    simp only [abs_mul, abs_inv, abs_of_nonneg (sq_nonneg t), div_eq_mul_inv]
-  have hint_abs :
-      |∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t| ≤
-        (1 / x) * ∫ t in (1 : ℝ)..x, |moebiusSum t| := by
-    calc |∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t|
-        ≤ ∫ t in (1 : ℝ)..x, |moebiusSum (x / t) * balazardKernelDeriv t| :=
-          intervalIntegral.abs_integral_le_integral_abs hx
-      _ ≤ ∫ t in (1 : ℝ)..x, |moebiusSum (x / t)| / t ^ 2 := by
-          refine intervalIntegral.integral_mono_on hx hint_lhs.abs hint_rhs fun t ht ↦ ?_
-          have ht0 : 0 < t := zero_lt_one.trans_le ht.1
-          rw [abs_mul, abs_of_nonneg (balazardKernelDeriv_nonneg t), div_eq_mul_inv]
-          exact mul_le_mul_of_nonneg_left
-            ((balazardKernelDeriv_le ht0).trans_eq (one_div _)) (abs_nonneg _)
-      _ = (1 / x) * ∫ t in (1 : ℝ)..x, |moebiusSum t| :=
-          integral_abs_moebiusSum_div_mul_inv_sq hx
+    have hsub := ((TauCeti.intervalIntegral.intervalIntegrable_div_sq_smul_comp_div_iff (c := x) h0
+      (fun u ↦ |moebiusSum u|)).mpr <| by
+        rw [div_self hx0.ne', div_one]
+        exact intervalIntegrable_abs_moebiusSum 1 x).const_mul x⁻¹
+    refine (intervalIntegrable_congr fun t _ ↦ ?_).mp hsub
+    rw [smul_eq_mul]
+    field_simp
+  calc |∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t|
+      ≤ ∫ t in (1 : ℝ)..x, |moebiusSum (x / t) * balazardKernelDeriv t| :=
+        intervalIntegral.abs_integral_le_integral_abs hx
+    _ ≤ ∫ t in (1 : ℝ)..x, |moebiusSum (x / t)| / t ^ 2 := by
+        refine intervalIntegral.integral_mono_on hx hint_lhs.abs hint_rhs fun t ht ↦ ?_
+        have ht0 : 0 < t := zero_lt_one.trans_le ht.1
+        rw [abs_mul, abs_of_nonneg (balazardKernelDeriv_nonneg t), div_eq_mul_inv]
+        exact mul_le_mul_of_nonneg_left
+          ((balazardKernelDeriv_le ht0).trans_eq (one_div _)) (abs_nonneg _)
+    _ = (1 / x) * ∫ t in (1 : ℝ)..x, |moebiusSum t| :=
+        integral_abs_moebiusSum_div_div_sq hx
+
+/-- **Balazard's inequality** (Ramaré 2015, Theorem 1.1; Balazard 2012, Proposition 7):
+for every real `x ≥ 1`,
+`|m(x)| ≤ |M(x)| / x + (∫_1^x |M(t)| dt) / x² + 8 / (3 x)`. -/
+theorem abs_moebiusDivSum_le_balazard (x : ℝ) (hx : 1 ≤ x) :
+    |moebiusDivSum x| ≤
+      |moebiusSum x| / x + (∫ t in (1 : ℝ)..x, |moebiusSum t|) / x ^ 2 + 8 / (3 * x) := by
+  have hx0 : 0 < x := zero_lt_one.trans_le hx
+  have hpoly := abs_balazard_poly_le hx
+  have hint := abs_integral_moebiusSum_div_mul_balazardKernelDeriv_le hx
+  -- Combine triangle inequalities on Balazard's identity with `hpoly` and `hint`.
   calc |moebiusDivSum x|
       = |(moebiusSum x / x + (4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x))) +
           (1 / x) * ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t| := by
           rw [moebiusDivSum_eq_balazard hx]
-          ring_nf
+          congr 1
+          ring
     _ ≤ |moebiusSum x / x + (4 * (1 - 1 / x) ^ 2 / x - 4 * (1 - 1 / x) ^ 3 / (3 * x))| +
           |(1 / x) * ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardKernelDeriv t| :=
           abs_add_le _ _
@@ -383,14 +500,6 @@ theorem abs_moebiusDivSum_le_balazard (x : ℝ) (hx : 1 ≤ x) :
           gcongr
     _ = |moebiusSum x| / x + (∫ t in (1 : ℝ)..x, |moebiusSum t|) / x ^ 2 + 8 / (3 * x) := by
           ring
-
-/-- Interval integrability of `t ↦ |M(t)|` on any `a..b`. -/
-private theorem intervalIntegrable_abs_moebiusSum (a b : ℝ) :
-    IntervalIntegrable (fun t ↦ |moebiusSum t|) volume a b := by
-  have hbase := (intervalIntegrable_moebiusSum_mul (f := fun _ ↦ 1)
-    (continuousOn_const.locallyIntegrableOn measurableSet_Ici) a b).abs
-  refine (intervalIntegrable_congr fun t _ ↦ ?_).mp hbase
-  rw [mul_one]
 
 /-- **Balazard's two-range conversion bound**: if `1 ≤ t₀ ≤ D`, `|M(t)| ≤ ε(t) t` on
 `[t₀, D]`, and `ε` is interval integrable on `t₀..D`, then

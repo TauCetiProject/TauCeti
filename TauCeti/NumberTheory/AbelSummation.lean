@@ -63,6 +63,9 @@ at `k = 2`, where `log k > 0`.
   `[0, ∞)`.
 * `TauCeti.intervalIntegrable_mul_sum_Icc`: weighted by a function locally integrable on
   `[1, ∞)`, the step function is interval integrable between any two reals.
+* `TauCeti.intervalIntegrable_natFloor_div`: `u ↦ ⌊u⌋₊ / u` is interval integrable between any
+  two reals.
+* `TauCeti.integral_natFloor_div`: `∫_1^y ⌊u⌋₊ / u du = ⌊y⌋₊ log y - ∑_{1 ≤ m ≤ y} log m`.
 * `TauCeti.summable_div_mul_one_add_log_cube`: if the partial sums `∑_{1 ≤ k ≤ t} u k` of a
   nonnegative sequence are `O(t log t)`, then `∑ u n / (n (1 + log n) ^ 3)` converges.
 * `TauCeti.sum_Icc_rpow_mul_eq`: the exact Abel-summation identity for the weight `t ^ τ`.
@@ -136,6 +139,59 @@ theorem intervalIntegrable_mul_sum_Icc {𝕜 : Type*} [RCLike 𝕜] (c : ℕ →
         integrableOn_zero.congr_fun (fun t ht ↦ by simp [Nat.floor_eq_zero.mpr ht.2])
           measurableSet_Ioo
   exact (key a).symm.trans (key b)
+
+/-- The function `u ↦ ⌊u⌋₊ / u` is interval integrable between any two reals (it vanishes for
+`u < 1`). -/
+theorem intervalIntegrable_natFloor_div (a b : ℝ) :
+    IntervalIntegrable (fun u : ℝ ↦ (⌊u⌋₊ : ℝ) / u) volume a b := by
+  have hc : ContinuousOn (fun t : ℝ ↦ t⁻¹) (Ici 1) :=
+    continuousOn_inv₀.mono fun t ht ↦ ne_of_gt (zero_lt_one.trans_le ht)
+  have hbase := intervalIntegrable_mul_sum_Icc (fun _ : ℕ ↦ (1 : ℝ))
+    (hc.locallyIntegrableOn measurableSet_Ici) a b
+  refine (intervalIntegrable_congr fun t _ ↦ ?_).mp hbase
+  simp only [Finset.sum_const, Nat.card_Icc, Nat.add_sub_cancel, nsmul_eq_mul, mul_one]
+  rw [div_eq_inv_mul]
+
+/-- Integral of `⌊u⌋₊ / u` via Abel summation: for every `y : ℝ`,
+`∫_1^y ⌊u⌋₊ / u du = ⌊y⌋₊ log y - ∑_{1 ≤ m ≤ y} log m`. -/
+theorem integral_natFloor_div (y : ℝ) :
+    ∫ u in (1 : ℝ)..y, (⌊u⌋₊ : ℝ) / u =
+      (⌊y⌋₊ : ℝ) * Real.log y - ∑ m ∈ Finset.Icc 1 ⌊y⌋₊, Real.log m := by
+  rcases le_or_gt 1 y with hy | hy
+  · let c : ℕ → ℝ := fun k ↦ if k = 0 then 0 else 1
+    have hc_sum (n : ℕ) : ∑ k ∈ Finset.Icc 0 n, c k = n := by
+      rw [Finset.sum_Icc_zero_eq_sum_Icc_one (f := c) (by simp [c])]
+      have : ∑ m ∈ Finset.Icc 1 n, c m = ∑ _m ∈ Finset.Icc 1 n, (1 : ℝ) :=
+        Finset.sum_congr rfl fun m hm ↦ by
+          simp [c, Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1]
+      rw [this]
+      simp
+    have habel := sum_mul_eq_sub_integral_mul₀ c rfl y
+      (fun t ht ↦ Real.differentiableAt_log (by linarith [ht.1]))
+      (by
+        rw [Real.deriv_log']
+        exact (continuousOn_inv₀.mono fun t ht ↦
+          ne_of_gt (by linarith [ht.1] : (0 : ℝ) < t)).integrableOn_Icc)
+    have hsum1 : ∑ k ∈ Finset.Icc 0 ⌊y⌋₊, Real.log k * c k =
+        ∑ m ∈ Finset.Icc 1 ⌊y⌋₊, Real.log m := by
+      rw [Finset.sum_Icc_zero_eq_sum_Icc_one (f := fun k ↦ Real.log k * c k) (by simp [c])]
+      refine Finset.sum_congr rfl fun m hm ↦ ?_
+      have hm0 : m ≠ 0 := Nat.pos_iff_ne_zero.mp (Finset.mem_Icc.mp hm).1
+      simp [c, hm0]
+    rw [hsum1, hc_sum ⌊y⌋₊, Real.deriv_log'] at habel
+    have hint :
+        ∫ u in (1 : ℝ)..y, (⌊u⌋₊ : ℝ) / u =
+          ∫ t in Ioc 1 y, t⁻¹ * ∑ k ∈ Finset.Icc 0 ⌊t⌋₊, c k := by
+      rw [intervalIntegral.integral_of_le hy]
+      refine setIntegral_congr_fun measurableSet_Ioc fun t _ ↦ ?_
+      rw [hc_sum ⌊t⌋₊]
+      ring
+    rw [hint]
+    linarith
+  · rw [intervalIntegral.integral_symm y 1, intervalIntegral.integral_of_le hy.le,
+      integral_Ioc_eq_integral_Ioo, setIntegral_eq_zero_of_forall_eq_zero fun u hu ↦ by
+        simp [Nat.floor_eq_zero.mpr hu.2]]
+    simp [Nat.floor_eq_zero.mpr hy]
 
 /-! ### The comparison weight -/
 

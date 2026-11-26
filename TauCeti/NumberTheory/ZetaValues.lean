@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.Real.Pi.Bounds
+import TauCeti.Analysis.Calculus.Deriv.Fract
 
 /-!
 # Bernoulli polynomials and Bernoulli functions
@@ -20,11 +21,13 @@ relates to the Bernoulli polynomial over `ℚ`, and how the even ones compare wi
 
 * `TauCeti.bernoulliFun_ratCast`: `bernoulliFun` at a rational point is the Bernoulli polynomial
   over `ℚ` evaluated there, mapped into `ℝ`.
-* `TauCeti.bernoulliFun_one_add`, `TauCeti.bernoulliFun_add_one`: the difference equation
+* `TauCeti.bernoulliFun_eval_one_add`, `TauCeti.bernoulliFun_eval_add_one`: the difference equation
   `B_k(x + 1) = B_k(x) + k x^(k-1)`.
 * `TauCeti.bernoulliFun_three`, `TauCeti.bernoulliFun_four`: explicit formulas for `B₃` and `B₄`.
 * `TauCeti.continuous_bernoulliFun_fract`: for `k ≠ 1`, the periodized Bernoulli function
   `x ↦ B_k({x})` is continuous on `ℝ`.
+* `TauCeti.hasDerivAt_bernoulliFun_fract`: at every non-integer `t : ℝ`, `u ↦ B_k({u})` has
+  derivative `k * B_{k - 1}({t})`.
 * `TauCeti.neg_one_pow_mul_bernoulli_sub_bernoulliFun_nonneg`: on `[0, 1]`,
   `B_{2k} - B_{2k}(x)` has the sign `(-1)^(k+1)` of `B_{2k}` (or vanishes). This makes the
   remainder of the Euler–Maclaurin formula of even order a one-signed integral, so that for
@@ -66,15 +69,15 @@ theorem bernoulliFun_ratCast (k : ℕ) (x : ℚ) :
   norm_cast
 
 /-- The difference equation for Bernoulli polynomials: `B_k(1 + x) = B_k(x) + k * x ^ (k - 1)`. -/
-theorem bernoulliFun_one_add (k : ℕ) (x : ℝ) :
+theorem bernoulliFun_eval_one_add (k : ℕ) (x : ℝ) :
     bernoulliFun k (1 + x) = bernoulliFun k x + k * x ^ (k - 1) := by
   simpa [bernoulliFun, Polynomial.aeval_comp]
     using congr($(Polynomial.bernoulli_comp_one_add_X k).aeval x)
 
 /-- The difference equation for Bernoulli polynomials: `B_k(x + 1) = B_k(x) + k * x ^ (k - 1)`. -/
-theorem bernoulliFun_add_one (k : ℕ) (x : ℝ) :
+theorem bernoulliFun_eval_add_one (k : ℕ) (x : ℝ) :
     bernoulliFun k (x + 1) = bernoulliFun k x + k * x ^ (k - 1) := by
-  rw [add_comm, bernoulliFun_one_add]
+  rw [add_comm, bernoulliFun_eval_one_add]
 
 /-- Explicit formula for `bernoulliFun 3`. -/
 @[simp]
@@ -99,6 +102,14 @@ theorem continuous_bernoulliFun_fract {k : ℕ} (hk : k ≠ 1) :
     Continuous fun x : ℝ ↦ bernoulliFun k (Int.fract x) :=
   ContinuousOn.comp_fract'' (continuous_bernoulliFun k).continuousOn
     (bernoulliFun_endpoints_eq_of_ne_one hk).symm
+
+/-- At every non-integer `t : ℝ`, `u ↦ B_k({u})` has derivative `k * B_{k - 1}({t})`. -/
+theorem hasDerivAt_bernoulliFun_fract (k : ℕ) {t : ℝ}
+    (ht : t ∉ Set.range ((↑) : ℤ → ℝ)) :
+    HasDerivAt (fun u : ℝ ↦ bernoulliFun k (Int.fract u))
+      (k * bernoulliFun (k - 1) (Int.fract t)) t :=
+  ((hasDerivAt_bernoulliFun k (Int.fract t)).comp t (Int.hasDerivAt_fract ht)).congr_deriv
+    (mul_one _)
 
 /-- On `[0, 1]` the even Bernoulli polynomial lies on one side of its value at `0`:
 `(-1)^(k+1) (B_{2k} - B_{2k}(x)) ≥ 0`, so `B_{2k} - B_{2k}(x)` has the sign of `B_{2k}`. -/
