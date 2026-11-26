@@ -7,9 +7,8 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
+import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.Fredholm
-import TauCeti.LinearAlgebra.Submodule.Quotient
-import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Hamiltonian variations on the core of the pair of pants and the universal operator
@@ -193,7 +192,6 @@ theorem exists_surjective_floerConformalSobolevOperator_coprod_pairOfPants (ω :
     hx hxp hnd hJe hJex hJx hJeq hK (fun z hz ↦ (hJ z hz).of_le one_le_two)
     (fun z hz ↦ (hKs z hz).of_le (by norm_num)) (fun z hz ↦ (hKt z hz).of_le (by norm_num))
     (fun z hz ↦ (hu z hz).of_le one_le_two) hc hF hux hδ
-  have := hD.finite_coker
   -- The range of `D_u` and the Hamiltonian variations span a dense subspace.
   have hdense : Dense (↑(D.range ⊔ Submodule.span ℝ
       (ω.hamiltonianVariationsOn thricePuncturedSphereReal u W)) :
@@ -204,11 +202,7 @@ theorem exists_surjective_floerConformalSobolevOperator_coprod_pairOfPants (ω :
       (fun q ↦ (continuous_iff_continuousAt.2 fun t ↦ (hx q t).continuousAt).continuousOn) hJe
       hJeq hK hJ hKs hKt hu hF hux hδ hO hOne hOS hW
   -- Finitely many variations already span a complement of the closed range of `D_u`.
-  obtain ⟨N, y, hyS, hsurj⟩ := LinearMap.exists_surjective_coprod_fintypeLinearCombination (by
-    simpa only [← sup_assoc, sup_idem] using Submodule.sup_eq_top_of_dense hD.isClosed_range hdense)
-  refine ⟨N, y, hyS, ?_⟩
-  rwa [← ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coprod,
-    LinearMap.coe_toContinuousLinearMap]
+  exact hD.exists_surjective_coprod_fintypeLinearCombination_of_dense hdense
 
 end Surjective
 
