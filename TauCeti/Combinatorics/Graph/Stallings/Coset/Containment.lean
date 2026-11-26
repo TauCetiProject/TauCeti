@@ -18,8 +18,8 @@ unique. Thus subgroup inclusion can be read directly from based folded cores, wi
 generation or a finite alphabet.
 
 The inclusion morphisms make the subgroup graph a functor from the poset of subgroups to based
-labelled graphs (`Subgroup.subgroupGraphFunctor`), and it is fully faithful
-(`Subgroup.subgroupGraphFunctorFullyFaithful`): subgroups embed in based labelled graphs as a
+labelled graphs (`TauCeti.subgroupGraphFunctor`), and it is fully faithful
+(`TauCeti.subgroupGraphFunctorFullyFaithful`): subgroups embed in based labelled graphs as a
 full subcategory. The inclusion morphisms need not be injective on vertices: inclusion of a
 proper finite-index subgroup into the whole free group maps its multi-vertex graph to the
 one-vertex rose.
@@ -28,8 +28,8 @@ one-vertex rose.
 
 * `Subgroup.nonempty_hom_subgroupGraph_iff`: containment of subgroups is the existence of a based
   labelled morphism of their subgroup graphs.
-* `Subgroup.subgroupGraphFunctor`: the subgroup graph, as a functor out of the poset of subgroups.
-* `Subgroup.subgroupGraphFunctorFullyFaithful`: **that functor is fully faithful.**
+* `TauCeti.subgroupGraphFunctor`: the subgroup graph, as a functor out of the poset of subgroups.
+* `TauCeti.subgroupGraphFunctorFullyFaithful`: **that functor is fully faithful.**
 
 ## References
 
@@ -64,6 +64,14 @@ instance : Subsingleton (H.subgroupGraph ⟶ K.subgroupGraph) where
   allEq := StallingsGraph.Hom.eq_of_isFolded_of_reachable K.subgroupGraph_isFolded
     ((H.subgroupGraph.graph.isCore_iff H.subgroupGraph.base).mp H.subgroupGraph_isCore).1
 
+end Subgroup
+
+namespace TauCeti
+
+open CategoryTheory
+
+variable {α : Type*} (H K : Subgroup (FreeGroup α))
+
 variable (α) in
 /-- **The subgroup graph as a functor**: a subgroup inclusion `H ≤ K` goes to the unique based
 labelled morphism `Γ(H) → Γ(K)`. -/
@@ -97,4 +105,4 @@ instance : (subgroupGraphFunctor α).Full :=
 instance : (subgroupGraphFunctor α).Faithful :=
   (subgroupGraphFunctorFullyFaithful α).faithful
 
-end Subgroup
+end TauCeti
