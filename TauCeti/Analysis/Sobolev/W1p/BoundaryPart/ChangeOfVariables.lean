@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
@@ -32,6 +33,20 @@ changes of variables, in particular rigid motions, the transport also holds at `
 (`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`), and for rigid motions it is an
 equivalence (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`).
 
+For finite `p`, smoothness of a proper measure-preserving `Φ` can be replaced by a local Lipschitz
+bound (`TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschitz`). The
+composite `φ ∘ Φ` of a generator is then only locally Lipschitz, with compact support missing
+`closure (Φ⁻¹(Γ))`, which suffices for membership in `W^{1,p}_{Φ⁻¹(Γ)}(U)`
+(`TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz`). For a homeomorphism whose inverse
+is locally Lipschitz too, this is an equivalence. Its main instance is the shear
+`(t, y) ↦ (t - γ y, y)` of `ℝ × F` by a Lipschitz `γ` (`TauCeti.graphFlattening`), which carries the
+region above the graph of `γ` onto a half-space and is not differentiable where `γ` is not: Sobolev
+functions vanishing on a part of a Lipschitz graph correspond to Sobolev functions vanishing on the
+matching part of the flat boundary. At `p = ∞` the transport fails for such shears: for
+`γ y = |y|` on `ℝ × ℝ` and `Γ = ∅`, composing a test function whose `t`-derivative does not vanish
+on the line `y = 0` with the shear creates a jump of the gradient across that line, which no
+`W^{1,∞}`-limit of smooth functions has.
+
 Dilating by `r ≠ 0` multiplies the `Lᵖ` norm of a function by `|r| ^ (n / p)` and that of its
 gradient by `|r| ^ (n / p - 1)`, where `n` is the dimension. Since dilation is a bijection from
 `W^{1,p}_Γ(V)` onto `W^{1,p}_{r • Γ}(r • V)`, a Poincaré–Friedrichs inequality
@@ -52,6 +67,11 @@ on `W^{1,p}_{r • Γ}(r • V)`: the Poincaré–Friedrichs constant scales lin
   changes of variables, for every exponent `1 ≤ p ≤ ∞`.
 * `TauCeti.W1p.compAffineIsometryEquivL_mem_w1pVanishingOnSubmodule_iff`: rigid motions for every
   exponent `1 ≤ p ≤ ∞`.
+* `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschitz`: for
+  `p < ∞`, locally Lipschitz proper measure-preserving changes of variables, with the equivalence
+  `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff` for homeomorphisms.
+* `TauCeti.W1p.compMeasurePreservingL_graphFlattening_mem_w1pVanishingOnSubmodule_iff`: for
+  `p < ∞`, invariance of `W^{1,p}_Γ` under the shears flattening Lipschitz graphs.
 * `TauCeti.W1p.forall_norm_value_le_abs_mul_mul_norm_gradient_iff`: the Poincaré–Friedrichs
   constant of the dilated pair `(r • V, r • Γ)` is `|r|` times that of `(V, Γ)`, for `p < ∞`.
 -/
@@ -197,7 +217,89 @@ theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule (hΦc : ContDiff 
     with x h1 h2 h3
   rw [h1, h2, h3, TestFunction.compOfIsProperMap_apply]
 
+/-- **Lipschitz measure-preserving changes of variables preserve vanishing on a boundary part.**
+Let `1 ≤ p < ∞`, let `Φ` be locally Lipschitz, proper and measure-preserving, and let
+`U = Φ⁻¹(V)`. Then precomposition with `Φ` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{Φ⁻¹(Γ)}(U)`. Unlike
+in `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule`, `Φ` need not be smooth, as
+for the shear flattening the region above a Lipschitz graph. -/
+theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschitz
+    (hp : p ≠ ⊤) (hΦlip : LocallyLipschitz Φ) (hΦp : IsProperMap Φ)
+    (hΦ : MeasurePreserving Φ mu nu) (hUV : (U : Set E) = Φ ⁻¹' V) (hΦl : LocallyLipschitzOn U Φ)
+    (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) {Γ : Set E'} {u : W1p nu V p}
+    (hu : u ∈ w1pVanishingOnSubmodule nu V p Γ) :
+    W1p.compMeasurePreservingL hΦ hUV hΦl hM u ∈ w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ) := by
+  refine w1pVanishingOnSubmodule_subset_of_isClosed
+    ((w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ)).isClosed.preimage
+      (W1p.compMeasurePreservingL hΦ hUV hΦl hM).continuous) (fun φ hφ => ?_) hu
+  -- The composite `φ ∘ Φ` of a generator is locally Lipschitz, and its support lies in the
+  -- compact set `Φ⁻¹(tsupport φ)`, which misses `Φ⁻¹(closure Γ) ⊇ closure (Φ⁻¹(Γ))`.
+  have hts : tsupport (⇑φ ∘ Φ) ⊆ Φ ⁻¹' tsupport φ :=
+    tsupport_comp_subset_preimage (φ : E' → ℝ) hΦp.continuous
+  refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz hp
+    ((φ.contDiff.of_le (by simp)).locallyLipschitz.comp hΦlip)
+    ((hΦp.isCompact_preimage φ.hasCompactSupport.isCompact).of_isClosed_subset isClosed_closure hts)
+    (((hφ.preimage Φ).mono_left hts).mono_right (hΦp.continuous.closure_preimage_subset Γ)) ?_
+  filter_upwards [W1p.value_compMeasurePreservingL_ae (p := p) hΦ hUV hΦl hM _,
+    (hUV ▸ hΦ.restrict_preimage V.isOpen.measurableSet :
+      MeasurePreserving Φ (mu.restrict U) (nu.restrict V)).quasiMeasurePreserving.ae
+      (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ)]
+    with x h1 h2
+  rw [h1, h2, Function.comp_apply]
+
+/-- **Invariance of `W^{1,p}_Γ` under Lipschitz measure-preserving homeomorphisms.** Let
+`1 ≤ p < ∞`, let `Φ` be a measure-preserving homeomorphism such that `Φ` and `Φ⁻¹` are locally
+Lipschitz, and let `U = Φ⁻¹(V)`. If the derivative of `Φ⁻¹` is bounded on `V`, then `u ∘ Φ` lies
+in `W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in `W^{1,p}_Γ(V)`. -/
+theorem W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff (hp : p ≠ ⊤) (Φ : E ≃ₜ E')
+    (hΦlip : LocallyLipschitz Φ) (hΨlip : LocallyLipschitz Φ.symm)
+    (hΦ : MeasurePreserving Φ mu nu) (hUV : (U : Set E) = Φ ⁻¹' V) (hΦl : LocallyLipschitzOn U Φ)
+    (hM : ∀ x ∈ (U : Set E), ‖fderiv ℝ Φ x‖ ≤ M) {M' : ℝ}
+    (hM' : ∀ y ∈ (V : Set E'), ‖fderiv ℝ Φ.symm y‖ ≤ M') {Γ : Set E'} {u : W1p nu V p} :
+    W1p.compMeasurePreservingL hΦ hUV hΦl hM u ∈ w1pVanishingOnSubmodule mu U p (Φ ⁻¹' Γ) ↔
+      u ∈ w1pVanishingOnSubmodule nu V p Γ := by
+  refine ⟨fun hu => ?_, W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschitz
+    hp hΦlip Φ.isProperMap hΦ hUV hΦl hM⟩
+  have hΨ : MeasurePreserving Φ.symm nu mu := by
+    rw [← Φ.toMeasurableEquiv_symm_coe]
+    exact MeasurePreserving.symm _ (by rwa [Φ.toMeasurableEquiv_coe])
+  have hVU : (V : Set E') = Φ.symm ⁻¹' U := by
+    rw [hUV, ← preimage_comp, Φ.self_comp_symm, preimage_id]
+  have h := W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_of_locallyLipschitz hp hΨlip
+    Φ.symm.isProperMap hΨ hVU hΨlip.locallyLipschitzOn hM' hu
+  rwa [W1p.compMeasurePreservingL_compMeasurePreservingL hΨ hVU _ hM' hΦ hUV hΦl hM
+    (fun y _ => Φ.apply_symm_apply y), ← preimage_comp, Φ.self_comp_symm, preimage_id] at h
+
 end MeasurePreserving
+
+/-! ### Lipschitz shears -/
+
+section GraphFlattening
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] {U V : Opens (WithLp 2 (ℝ × F))} {M : ℝ}
+
+open scoped NNReal in
+/-- **Invariance of `W^{1,p}_Γ` under Lipschitz shears.** Let `1 ≤ p < ∞`, let `γ` be Lipschitz,
+and let `U = Φ⁻¹(V)` for the shear `Φ(t, y) = (t - γ y, y)` of `ℝ × F`
+(`TauCeti.graphFlattening`), which flattens the region above the graph of `γ`. Then `u ∘ Φ` lies in
+`W^{1,p}_{Φ⁻¹(Γ)}(U)` exactly when `u` lies in `W^{1,p}_Γ(V)`. The regularity hypotheses of
+`TauCeti.W1p.compMeasurePreservingL` are arguments, since they appear in the statement; each holds
+for every such `Φ` (`TauCeti.lipschitzWith_graphFlattening`). -/
+theorem W1p.compMeasurePreservingL_graphFlattening_mem_w1pVanishingOnSubmodule_iff (hp : p ≠ ⊤)
+    {γ : F → ℝ} {K : ℝ≥0} (hγ : LipschitzWith K γ)
+    (hUV : (U : Set (WithLp 2 (ℝ × F))) = graphFlattening γ hγ.continuous ⁻¹' V)
+    (hΦl : LocallyLipschitzOn U (graphFlattening γ hγ.continuous))
+    (hM : ∀ x ∈ (U : Set (WithLp 2 (ℝ × F))), ‖fderiv ℝ (graphFlattening γ hγ.continuous) x‖ ≤ M)
+    {Γ : Set (WithLp 2 (ℝ × F))} {u : W1p volume V p} :
+    W1p.compMeasurePreservingL (measurePreserving_graphFlattening γ hγ.continuous) hUV hΦl hM u ∈
+        w1pVanishingOnSubmodule volume U p (graphFlattening γ hγ.continuous ⁻¹' Γ) ↔
+      u ∈ w1pVanishingOnSubmodule volume V p Γ :=
+  W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff hp _
+    (lipschitzWith_graphFlattening hγ).locallyLipschitz
+    (lipschitzWith_graphFlattening_symm hγ).locallyLipschitz _ hUV hΦl hM
+    (fun _ _ => norm_fderiv_le_of_lipschitz ℝ (lipschitzWith_graphFlattening_symm hγ))
+
+end GraphFlattening
 
 section AffineIsometry
 

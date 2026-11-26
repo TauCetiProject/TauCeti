@@ -401,3 +401,37 @@ theorem spec_sections_smul_apply (V : (Spec R).Opens) (c : k) (s : Γ(Spec R, V)
 end SectionsAlgebra
 
 end AlgebraicGeometry.Scheme
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+open Scheme.Modules
+
+/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
+of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
+restriction to `T`. -/
+lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
+    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
+    (r : Γ(B, V)) :
+    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
+    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
+      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
+    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
+      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
+
+/-- Through `f'⁻¹ V ⟶ V ≅ Spec Γ(Y', V)`, a function `a` on an affine open `V` acts on the open
+subscheme `f'⁻¹ V` as `f'^* a`. -/
+lemma baseRingToGlobalSections_preimage {X' Y' : Scheme.{u}} (f' : X' ⟶ Y') {V : Y'.Opens}
+    (hV : IsAffineOpen V) (a : Γ(Y', V)) :
+    letI : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+      ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+    baseRingToGlobalSections Γ(Y', V) (f' ⁻¹ᵁ V) a = (f' ⁻¹ᵁ V).topIso.inv (f'.app V a) := by
+  let : (f' ⁻¹ᵁ V).toScheme.Over (Spec (.of Γ(Y', V))) :=
+    ⟨f'.resLE V (f' ⁻¹ᵁ V) le_rfl ≫ hV.isoSpec.hom⟩
+  have h := f'.algebraMap_baseRingToStructurePresheaf_eq_appLE hV (f' ⁻¹ᵁ V) le_rfl ⊤ a
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_top,
+    CommRingCat.hom_ofHom, Scheme.Hom.appLE_eq_app, Scheme.Opens.ι_appLE] at h
+  exact h
+
+end AlgebraicGeometry.Scheme.Hom

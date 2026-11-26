@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Matrix.Cartan
+public import TauCeti.Analysis.Matrix.Cartan.Basic
 public import TauCeti.Analysis.Matrix.Polar.Deformation
 public import TauCeti.Geometry.Manifold.Instances.PositiveDefiniteMatrix
 
