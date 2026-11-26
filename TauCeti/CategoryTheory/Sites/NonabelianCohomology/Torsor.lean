@@ -138,6 +138,12 @@ lemma id_hom (P : Torsor G) : Hom.hom (𝟙 P) = 𝟙 P.sheaf := rfl
 @[simp]
 lemma comp_hom (f : P ⟶ Q) (g : Q ⟶ R) : (f ≫ g).hom = f.hom ≫ g.hom := rfl
 
+/-- The inverse of an isomorphism of torsors undoes its forward map on sections. -/
+@[simp]
+lemma _root_.CategoryTheory.Iso.torsor_hom_inv_id_apply (e : P ≅ Q) {U : Cᵒᵖ}
+    (p : P.sheaf.obj.obj U) : e.inv.hom.hom.app U (e.hom.hom.hom.app U p) = p :=
+  congrArg (fun f ↦ f.hom.hom.app U p) e.hom_inv_id
+
 /-- A morphism of torsors is injective on sections. -/
 lemma injective_app (f : P ⟶ Q) (U : Cᵒᵖ) : Function.Injective (f.hom.hom.app U) := by
   intro p p' h
@@ -356,16 +362,20 @@ end Torsor
 variable (G : Sheaf J GrpCat.{w})
 
 /-- The pointed set of isomorphism classes of `G`-torsors, the first cohomology of the sheaf of
-groups `G` (Stacks, Section 21.4 (03AG)). -/
-def NonabelianH1 : Type (max u v (w + 1)) :=
+groups `G` (Stacks, Section 21.4 (03AG)).
+
+The quotient is exposed so that algebraic structures on Mathlib's `Skeleton (Torsor G)`,
+such as the monoid induced by a monoidal structure on torsors, apply to this same type. -/
+@[expose] def NonabelianH1 : Type (max u v (w + 1)) :=
   _root_.Quotient (isIsomorphicSetoid (Torsor G))
 
 namespace NonabelianH1
 
 variable {G}
 
-/-- The class of a `G`-torsor. -/
-def mk (P : Torsor G) : NonabelianH1 G :=
+/-- The class of a `G`-torsor. The constructor is exposed so that Mathlib's skeleton API
+can compute with these classes. -/
+@[expose] def mk (P : Torsor G) : NonabelianH1 G :=
   _root_.Quotient.mk _ P
 
 /-- The base point of `NonabelianH1 G` is the class of the trivial torsor. -/

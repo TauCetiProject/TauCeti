@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Monoidal.Skeleton
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.ContractedProduct
 
 /-!
@@ -284,11 +285,11 @@ lemma trivialMulIso_hom_hom_hom_app_mulMk {U : Cᵒᵖ} (a : (trivial G).sheaf.o
 /-- The inverse of the isomorphism `G ∧ P ≅ P` sends `p` to `[1, p]`. -/
 @[simp]
 lemma trivialMulIso_inv_hom_hom_app {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
-    (trivialMulIso P).inv.hom.hom.app U p = mulMk (P := trivial G) (1 : G.obj.obj U) p :=
-  (congrArg ((trivialMulIso P).inv.hom.hom.app U)
-    ((trivialMulIso_hom_hom_hom_app_mulMk _ p).trans (one_smul (G.obj.obj U) p))).symm.trans
-    (congrArg (fun k ↦ k.hom.hom.app U (mulMk (P := trivial G) (1 : G.obj.obj U) p))
-      (trivialMulIso P).hom_inv_id)
+    (trivialMulIso P).inv.hom.hom.app U p = mulMk (P := trivial G) (1 : G.obj.obj U) p := by
+  have h := (trivialMulIso P).torsor_hom_inv_id_apply
+    (mulMk (P := trivial G) (1 : G.obj.obj U) p)
+  rw [trivialMulIso_hom_hom_hom_app_mulMk (1 : G.obj.obj U) p, one_smul] at h
+  exact h
 
 variable (P) in
 /-- The trivial torsor is a right unit for the contracted product: `P ∧ G ≅ P`,
@@ -309,11 +310,11 @@ lemma mulTrivialIso_hom_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
 /-- The inverse of the isomorphism `P ∧ G ≅ P` sends `p` to `[p, 1]`. -/
 @[simp]
 lemma mulTrivialIso_inv_hom_hom_app {U : Cᵒᵖ} (p : P.sheaf.obj.obj U) :
-    (mulTrivialIso P).inv.hom.hom.app U p = mulMk (Q := trivial G) p (1 : G.obj.obj U) :=
-  (congrArg ((mulTrivialIso P).inv.hom.hom.app U)
-    ((mulTrivialIso_hom_hom_hom_app_mulMk p _).trans (one_smul (G.obj.obj U) p))).symm.trans
-    (congrArg (fun k ↦ k.hom.hom.app U (mulMk (Q := trivial G) p (1 : G.obj.obj U)))
-      (mulTrivialIso P).hom_inv_id)
+    (mulTrivialIso P).inv.hom.hom.app U p = mulMk (Q := trivial G) p (1 : G.obj.obj U) := by
+  have h := (mulTrivialIso P).torsor_hom_inv_id_apply
+    (mulMk (Q := trivial G) p (1 : G.obj.obj U))
+  rw [mulTrivialIso_hom_hom_hom_app_mulMk p (1 : G.obj.obj U), one_smul] at h
+  exact h
 
 end Unit
 
@@ -348,7 +349,7 @@ lemma mulCommIso_inv_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
     (q : Q.sheaf.obj.obj U) :
     (mulCommIso P Q).inv.hom.hom.app U (mulMk q p) = mulMk p q := by
   rw [← mulCommIso_hom_hom_hom_app_mulMk p q]
-  exact congrArg (fun k ↦ k.hom.hom.app U (mulMk p q)) (mulCommIso P Q).hom_inv_id
+  exact (mulCommIso P Q).torsor_hom_inv_id_apply _
 
 end Comm
 
@@ -431,7 +432,7 @@ lemma mulAssocIso_inv_hom_hom_app_mulMk {U : Cᵒᵖ} (p : P.sheaf.obj.obj U)
     (q : Q.sheaf.obj.obj U) (r : R.sheaf.obj.obj U) :
     (mulAssocIso P Q R).inv.hom.hom.app U (mulMk p (mulMk q r)) = mulMk (mulMk p q) r := by
   rw [← mulAssocIso_hom_hom_hom_app_mulMk]
-  exact congrArg (fun k ↦ k.hom.hom.app U (mulMk (mulMk p q) r)) (mulAssocIso P Q R).hom_inv_id
+  exact (mulAssocIso P Q R).torsor_hom_inv_id_apply _
 
 end Assoc
 
@@ -625,37 +626,15 @@ namespace NonabelianH1
 variable [HasWeakSheafify J (Type w)] [J.WEqualsLocallyBijective (Type w)]
   {G : Sheaf J GrpCat.{w}} [∀ U, IsMulCommutative (G.obj.obj U)]
 
-/-- The product of two classes of torsors under a sheaf of commutative groups is the class of
-their contracted product. -/
-instance : Mul (NonabelianH1 G) where
-  mul x y := lift (fun P ↦ lift (fun Q ↦ mk (P.mul Q))
-      (fun _ _ g ↦ mk_eq_mk_of_hom (Torsor.mulMap (𝟙 P) g)) y)
-    (fun P P' f ↦ by
-      induction y using ind with | h Q => ?_
-      simpa only [lift_mk] using mk_eq_mk_of_hom (Torsor.mulMap f (𝟙 Q))) x
-
-@[simp]
-lemma mk_mul_mk (P Q : Torsor G) : mk P * mk Q = mk (P.mul Q) :=
-  (lift_mk _ _ P).trans (lift_mk _ _ Q)
-
 /-- The classes of torsors under a sheaf of commutative groups form a commutative monoid under
 the contracted product, with the class of the trivial torsor as unit. -/
-instance : CommMonoid (NonabelianH1 G) where
-  mul_assoc x y z := by
-    induction x using ind with | h P => ?_
-    induction y using ind with | h Q => ?_
-    induction z using ind with | h R => ?_
-    simpa only [mk_mul_mk] using mk_eq_mk_iff.2 ⟨Torsor.mulAssocIso P Q R⟩
-  one_mul x := by
-    induction x using ind with | h P => ?_
-    simpa only [one_def, mk_mul_mk] using mk_eq_mk_iff.2 ⟨Torsor.trivialMulIso P⟩
-  mul_one x := by
-    induction x using ind with | h P => ?_
-    simpa only [one_def, mk_mul_mk] using mk_eq_mk_iff.2 ⟨Torsor.mulTrivialIso P⟩
-  mul_comm x y := by
-    induction x using ind with | h P => ?_
-    induction y using ind with | h Q => ?_
-    simpa only [mk_mul_mk] using mk_eq_mk_iff.2 ⟨Torsor.mulCommIso P Q⟩
+instance : CommMonoid (NonabelianH1 G) :=
+  inferInstanceAs (CommMonoid (Skeleton (Torsor G)))
+
+@[simp]
+lemma mk_mul_mk (P Q : Torsor G) : mk P * mk Q = mk (P.mul Q) := by
+  -- The two class constructors use the same quotient and inherited multiplication.
+  convert! (Skeleton.toSkeleton_tensorObj P Q).symm using 1
 
 end NonabelianH1
 
