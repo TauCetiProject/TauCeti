@@ -116,6 +116,7 @@ def originCutoff : ParameterSymbol n Λ V V m :=
       rw [FrequencyCutoff.apply_eq_one_of_two_le_norm _ hp.le, sub_self, Complex.ofReal_zero,
         zero_smul]
 
+@[simp]
 theorem coefficient_originCutoff (x ξ : CoordinateSpace n) {z : ℂ} (hz : z ∈ Λ) :
     (originCutoff V : ParameterSymbol n Λ V V m).coefficient ((x, ξ), z) =
       (((1 - (default : FrequencyCutoff (CoordinateSpace n × ℂ)) (ξ, z) : ℝ) : ℂ) •
@@ -279,18 +280,6 @@ theorem coefficient_sub_spectralParameter_add_originCutoff_of_two_le_norm
     coefficient_spectralParameter x ξ hz, coefficient_originCutoff_of_two_le_norm x (.inl hξ),
     add_zero]
 
-/-- The symbol of a differential operator of order at most `2` is the sum of the symbols of its
-summands of orders `2`, `1` and `0`. -/
-private theorem differentialSymbol_eq_add_add {ι : Type*} {k : ι → ℕ} (s : Finset ι)
-    (v : ∀ i, Fin (k i) → CoordinateSpace n) (b : ι → CoordinateSpace n → V →L[ℂ] W)
-    (hk : ∀ i ∈ s, k i ≤ 2) (p : CoordinateSpace n × CoordinateSpace n) :
-    differentialSymbol s v b p = differentialSymbol {i ∈ s | k i = 2} v b p +
-      differentialSymbol {i ∈ s | k i = 1} v b p + differentialSymbol {i ∈ s | k i = 0} v b p := by
-  simp only [differentialSymbol_def, Finset.sum_filter, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun i hi => ?_
-  obtain h | h | h : k i = 0 ∨ k i = 1 ∨ k i = 2 := by have := hk i hi; omega
-  all_goals simp [h]
-
 /-- **The cut-off expansion of `P - z`.** For a differential operator `P` of order `2` with smooth
 coefficients, the symbol of `P - z` is `a₀ + a₁ + a₂ - ψ`, where `a₀` is the principal symbol
 minus `z` corrected by the cutoff `ψ` at the origin, and `a₁`, `a₂` are the symbols of the
@@ -317,7 +306,8 @@ theorem ofDifferentialSymbol_sub_spectralParameter_eq {ι : Type*} {k : ι → �
   ext_of_mem fun x ξ z hz => by
     simp only [coefficient_sub, coefficient_add, coefficient_inclusion, Pi.sub_apply,
       Pi.add_apply, coefficient_ofDifferentialSymbol _ _ _ _ _ _ x ξ hz,
-      differentialSymbol_eq_add_add s v b hk (x, ξ)]
+      differentialSymbol_eq_sum_range_filter 2 s v b hk (x, ξ), Finset.sum_range_succ,
+      Finset.sum_range_zero, zero_add]
     abel
 
 end ParameterSymbol

@@ -47,14 +47,19 @@ variable {Λ : TopologicalSpace.Opens ℂ} {V W : Type*} [NormedAddCommGroup V]
   [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
 /-- On the points whose frequency and spectral parameter have norm at most `R`, the weight is at
-most `1 + R + R ^ (1 / 2)`, so `1 ≤ (1 + R + R ^ (1 / 2)) ^ |m| * parameterWeight ξ z ^ m`. -/
+most `1 + R + R ^ (1 / 2)`. -/
+private theorem parameterWeight_le_of_norm_le {R : ℝ} {ξ : CoordinateSpace n} {z : ℂ}
+    (hξ : ‖ξ‖ ≤ R) (hz : ‖z‖ ≤ R) : parameterWeight ξ z ≤ 1 + R + Real.sqrt R := by
+  rw [parameterWeight_def]
+  gcongr
+
+/-- On the points whose frequency and spectral parameter have norm at most `R`,
+`1 ≤ (1 + R + R ^ (1 / 2)) ^ |m| * parameterWeight ξ z ^ m`. -/
 private theorem one_le_rpow_abs_mul_parameterWeight_rpow {R : ℝ} {ξ : CoordinateSpace n} {z : ℂ}
     (hξ : ‖ξ‖ ≤ R) (hz : ‖z‖ ≤ R) (m : ℝ) :
     1 ≤ (1 + R + Real.sqrt R) ^ |m| * parameterWeight ξ z ^ m := by
   have hw := one_le_parameterWeight ξ z
-  have hW : parameterWeight ξ z ≤ 1 + R + Real.sqrt R := by
-    rw [parameterWeight_def]
-    gcongr
+  have hW := parameterWeight_le_of_norm_le hξ hz
   have hW1 : 0 < 1 + R + Real.sqrt R := by linarith
   calc (1 : ℝ) = (1 + R + Real.sqrt R) ^ |m| * (1 + R + Real.sqrt R) ^ (-|m|) := by
         rw [← Real.rpow_add hW1, add_neg_cancel, Real.rpow_zero]
@@ -77,12 +82,12 @@ def ofBoundedSupport (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V 
   coefficient_of_notMem p hp := by simp [hp]
   exists_bound K hK k := by
     set R' := max R 0
-    set W := 1 + R' + Real.sqrt R'
+    set B := 1 + R' + Real.sqrt R'
     -- The `k`-th derivative of `f` is bounded on the compact set where it may be nonzero.
     obtain ⟨C₀, hC₀⟩ := ((hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R')).prod
       (isCompact_closedBall (0 : ℂ) R')).exists_bound_of_continuousOn
       (hf.continuous_iteratedFDeriv (m := k) (by exact_mod_cast le_top)).continuousOn
-    refine ⟨max C₀ 0 * (W ^ 2) ^ k * W ^ |m|, by positivity, fun x hx ξ z hz => ?_⟩
+    refine ⟨max C₀ 0 * (B ^ 2) ^ k * B ^ |m|, by positivity, fun x hx ξ z hz => ?_⟩
     have hcongr : (fun p : (CoordinateSpace n × CoordinateSpace n) × ℂ =>
         if p.2 ∈ Λ then f p else 0) =ᶠ[𝓝 ((x, ξ), z)] f := by
       filter_upwards [(Λ.isOpen.preimage continuous_snd).mem_nhds hz] with q hq
@@ -102,9 +107,7 @@ def ofBoundedSupport (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V 
       have hξ : ‖ξ‖ ≤ R' := hp.1.trans (le_max_left R 0)
       have hz' : ‖z‖ ≤ R' := hp.2.trans (le_max_left R 0)
       have hw := one_le_parameterWeight ξ z
-      have hwW : parameterWeight ξ z ≤ W := by
-        rw [parameterWeight_def]
-        exact add_le_add (add_le_add le_rfl hξ) (Real.sqrt_le_sqrt hz')
+      have hwB : parameterWeight ξ z ≤ B := parameterWeight_le_of_norm_le hξ hz'
       have hmem : ((x, ξ), z) ∈ (K ×ˢ Metric.closedBall (0 : CoordinateSpace n) R') ×ˢ
           Metric.closedBall (0 : ℂ) R' :=
         Set.mk_mem_prod (Set.mk_mem_prod hx (mem_closedBall_zero_iff.2 hξ))
@@ -114,8 +117,8 @@ def ofBoundedSupport (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → V 
       calc ‖parameterIteratedFDeriv k f ((x, ξ), z)‖
           ≤ ‖iteratedFDeriv ℝ k f ((x, ξ), z)‖ * (parameterWeight ξ z ^ 2) ^ k :=
             norm_parameterIteratedFDeriv_le k f x ξ z
-        _ ≤ max C₀ 0 * (W ^ 2) ^ k := by gcongr
-        _ ≤ max C₀ 0 * (W ^ 2) ^ k * (W ^ |m| * parameterWeight ξ z ^ m) :=
+        _ ≤ max C₀ 0 * (B ^ 2) ^ k := by gcongr
+        _ ≤ max C₀ 0 * (B ^ 2) ^ k * (B ^ |m| * parameterWeight ξ z ^ m) :=
             le_mul_of_one_le_right (by positivity)
               (one_le_rpow_abs_mul_parameterWeight_rpow hξ hz' m)
         _ = _ := by ring
