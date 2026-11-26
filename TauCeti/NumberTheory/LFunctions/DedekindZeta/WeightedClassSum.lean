@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
 import TauCeti.Analysis.Contour.Residue.Germ
-import TauCeti.Analysis.Contour.Residue.SimplePole
 
 /-!
 # Pole cancellation in weighted sums of completed partial zeta functions

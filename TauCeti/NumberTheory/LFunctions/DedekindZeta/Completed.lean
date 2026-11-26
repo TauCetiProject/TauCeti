@@ -374,7 +374,8 @@ theorem invDedekindZetaCompletionFactor_mul_eq_one {s : ℂ} (hs : 0 < s.re) :
 
 /-- The reciprocal of the completion factor vanishes at `s = 0`, where `Γ_ℝ` and `Γ_ℂ` have
 poles and `K` has at least one infinite place. -/
-private theorem invDedekindZetaCompletionFactor_zero : invDedekindZetaCompletionFactor K 0 = 0 := by
+@[simp]
+theorem invDedekindZetaCompletionFactor_zero : invDedekindZetaCompletionFactor K 0 = 0 := by
   have hR : (Gammaℝ 0)⁻¹ = 0 := by simp [Gammaℝ_def]
   have hC : (Gammaℂ 0)⁻¹ = 0 := by simp [Gammaℂ_def]
   rw [invDedekindZetaCompletionFactor, hR, hC]
