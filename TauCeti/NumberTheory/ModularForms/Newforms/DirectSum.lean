@@ -129,6 +129,11 @@ theorem linearIndependent_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
       (fun x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k ↦
         CuspForm.levelRaise x.1.val.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd x.1.property)
           x.2.toCuspForm) := by
+  let v : (Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k) →
+      CuspForm ((Gamma1 N).map (mapGL ℝ)) k := fun x ↦
+    CuspForm.levelRaise x.1.val.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd x.1.property) x.2.toCuspForm
+  let w : (Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k) → ((ZMod N)ˣ →* ℂˣ) :=
+    fun x ↦ x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property))
   have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep
     (W := cuspFormCharSpace (N := N) k)
     (fun χ ↦ linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
@@ -137,16 +142,11 @@ theorem linearIndependent_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
       have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd x.val.1.property x.val.2.χ
         x.val.2.mem_charSpace
       rwa [x.property] at hmem
-  let reindex :
-      (Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k) ≃
-      Σ χ : (ZMod N)ˣ →* ℂˣ,
-        {x : Σ p : {p : ℕ+ × ℕ+ // (p.2 : ℕ) * p.1 ∣ N}, Newform p.val.1 k //
-          x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property)) = χ} :=
-    { toFun := fun x ↦ ⟨x.2.χ.comp (ZMod.unitsMap (dvd_of_mul_left_dvd x.1.property)), ⟨x, rfl⟩⟩
-      invFun := fun y ↦ y.2.val
-      left_inv := fun _ ↦ rfl
-      right_inv := fun ⟨_, _, rfl⟩ ↦ rfl }
-  exact hli_sigma.comp reindex reindex.injective
+  let reindex := (Equiv.sigmaFiberEquiv w).symm
+  have h := hli_sigma.comp reindex reindex.injective
+  have hcomp : (fun jk : Σ χ, {x // w x = χ} ↦ v jk.2.val) ∘ reindex = v :=
+    funext fun x ↦ congrArg v (Equiv.sigmaFiberEquiv_symm_apply_snd_coe w x)
+  rwa [hcomp] at h
 
 private theorem top_le_span_range_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
     ⊤ ≤ Submodule.span ℂ (Set.range

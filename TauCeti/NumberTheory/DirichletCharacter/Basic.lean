@@ -355,7 +355,7 @@ theorem conductor_dvd_and_eq_changeLevel_primitiveCharacter_toUnitHom
 /-- The Dirichlet character attached to the trivial unit homomorphism `1` has conductor `1`. -/
 theorem conductor_ofUnitHom_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N] :
     conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)) = 1 := by
-  rw [MulChar.ofUnitHom_one, conductor_one]
+  simp [conductor_one]
 
 /-- Raising the primitive character of the trivial unit homomorphism `1` to any level `M` gives
 the trivial unit homomorphism `1`. -/
@@ -364,9 +364,11 @@ theorem changeLevel_primitiveCharacter_ofUnitHom_one_toUnitHom {R : Type*}
     (hdvd : conductor (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)) ∣ M) :
     (changeLevel hdvd (primitiveCharacter (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)))).toUnitHom =
       1 := by
-  have h1 : primitiveCharacter (MulChar.ofUnitHom (1 : (ZMod N)ˣ →* Rˣ)) = 1 := by
-    rw [MulChar.ofUnitHom_one, primitiveCharacter_one]
-  rw [h1, changeLevel_one, MulChar.toUnitHom_one]
+  revert hdvd
+  rw [MulChar.ofUnitHom_eq, MulChar.equivToUnitHom_symm_one]
+  intro hdvd
+  rw [primitiveCharacter_one, changeLevel_one]
+  simp
 
 /-- **Characters factoring through a divisor.** For `d ∣ N`, the Dirichlet characters at level
 `N` which factor through `d` are exactly the raises of the characters modulo `d`:
