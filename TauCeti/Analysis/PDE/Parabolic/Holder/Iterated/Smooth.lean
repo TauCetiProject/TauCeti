@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CauchyProblem
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.CompLeft
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.OfDeriv
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated.LowOrder
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Holder.Inclusion
 import TauCeti.Analysis.Holder.MeanValue
@@ -82,28 +82,6 @@ namespace ParabolicCkHolderSpace
 variable {α : ℝ≥0} {hab : a < b}
 
 /-! ### Derivative fields of maps with bounded derivatives -/
-
-/-- A continuous linear map `L` applied to the derivative of a `C^{n+1}` map with bounded
-derivatives through order `n + 1` gives a `C^n` map with bounded derivatives through order `n`.
-This covers the spatial derivative (`L` the restriction to `E × {0}`) and the time derivative
-(`L` the evaluation at `(0, 1)`). -/
-private theorem contDiff_comp_fderiv_and_bounded {V W : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [NormedAddCommGroup W] [NormedSpace ℝ W] {n : ℕ} {f : E × ℝ → V}
-    (hf : ContDiff ℝ (n + 1 : ℕ) f)
-    (hbdd : ∀ i ≤ n + 1, ∃ C, ∀ z, ‖iteratedFDeriv ℝ i f z‖ ≤ C)
-    (L : (E × ℝ →L[ℝ] V) →L[ℝ] W) :
-    ContDiff ℝ n (L ∘ fderiv ℝ f) ∧
-      ∀ i ≤ n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ i (L ∘ fderiv ℝ f) z‖ ≤ C := by
-  have hd : ContDiff ℝ n (fderiv ℝ f) := hf.fderiv_right (by push_cast; exact le_rfl)
-  refine ⟨L.contDiff.comp hd, fun i hi ↦ ?_⟩
-  obtain ⟨C, hC⟩ := hbdd (i + 1) (by omega)
-  refine ⟨‖L‖ * C, fun z ↦ ?_⟩
-  calc ‖iteratedFDeriv ℝ i (L ∘ fderiv ℝ f) z‖
-      ≤ ‖L‖ * ‖iteratedFDeriv ℝ i (fderiv ℝ f) z‖ :=
-        L.norm_iteratedFDeriv_comp_left hd.contDiffAt (by exact_mod_cast hi)
-    _ ≤ ‖L‖ * C := by
-        rw [norm_iteratedFDeriv_fderiv]
-        exact mul_le_mul_of_nonneg_left (hC z) (norm_nonneg L)
 
 /-- The restriction to a slab of a continuous map on `E × ℝ` bounded by `M`, as a bounded continuous
 map. -/
@@ -193,7 +171,7 @@ private theorem contDiffMotive_one (hα : α ≤ 1) : ContDiffMotive E F α hab 
   let R : (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E →L[ℝ] E [×m]→L[ℝ] F :=
     (ContinuousLinearMap.inl ℝ E ℝ).precomp _
   obtain ⟨hfx, hbfx⟩ :=
-    contDiff_comp_fderiv_and_bounded (n := 1) (W := E →L[ℝ] E [×m]→L[ℝ] F) hf hbdd R
+    contDiff_comp_fderiv_and_bounded (n := 1) (G := E →L[ℝ] E [×m]→L[ℝ] F) hf hbdd R
   obtain ⟨ux, hux⟩ :=
     exists_holderSpace_coe_eq_of_contDiff (a := a) (b := b) hα (by exact_mod_cast hfx) hbfx
   obtain ⟨M, hM⟩ := hbdd 0 (by omega)
@@ -222,13 +200,13 @@ private theorem contDiffMotive_add_two {k : ℕ} (hk : ContDiffMotive E F α hab
   let R : (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E →L[ℝ] E [×m]→L[ℝ] F :=
     (ContinuousLinearMap.inl ℝ E ℝ).precomp _
   obtain ⟨hfx, hbfx⟩ :=
-    contDiff_comp_fderiv_and_bounded (n := k + 2) (W := E [×(m + 1)]→L[ℝ] F) hf hbdd
+    contDiff_comp_fderiv_and_bounded (n := k + 2) (G := E [×(m + 1)]→L[ℝ] F) hf hbdd
     ((e.symm : (E →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E [×(m + 1)]→L[ℝ] F).comp R)
   obtain ⟨Gm, hGm⟩ := hk₁ (m + 1) _ hfx hbfx
   let G : ParabolicCkHolderSpace (k + 1) α E (E →L[ℝ] E [×m]→L[ℝ] F) hab :=
     compLeftL (e : _ →L[ℝ] _) Gm
   -- The time derivative.
-  obtain ⟨hft, hbft⟩ := contDiff_comp_fderiv_and_bounded (n := k + 2) (W := E [×m]→L[ℝ] F) hf hbdd
+  obtain ⟨hft, hbft⟩ := contDiff_comp_fderiv_and_bounded (n := k + 2) (G := E [×m]→L[ℝ] F) hf hbdd
     (ContinuousLinearMap.apply ℝ _ ((0, 1) : E × ℝ) :
       (E × ℝ →L[ℝ] E [×m]→L[ℝ] F) →L[ℝ] E [×m]→L[ℝ] F)
   obtain ⟨H, hH⟩ := hk m _ (hft.of_le (by norm_cast; omega))
@@ -293,7 +271,7 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {T : ℝ≥0} {hT : (0 : ℝ
   {ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
     lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ}
 
-/-- **Smooth data give smooth solutions of the parabolic Cauchy problem.** Let `0 < α < 1`, let
+/-- **Data with bounded derivatives give solutions of every finite order.** Let `0 < α < 1`, let
 `aⁱʲ`, `bⁱ`, `c` be coefficients in `C_b^{α,α/2}(ℝⁿ × [0, T])` with `a` uniformly elliptic, and
 let `u` be the solution in `C_b^{2+α,1+α/2}` of `∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u = f`,
 `u(·, 0) = g`. If the coefficients and the forcing are restrictions to the slab of `C^{k+1}` maps
