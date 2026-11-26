@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Dual
 import TauCeti.Data.Matrix.Mul
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Factoring matrices through a column range
@@ -22,7 +23,8 @@ import TauCeti.Data.Matrix.Mul
 A matrix `L'` factors as `L * G` whenever each of its columns belongs to the range of
 matrix-vector multiplication by `L`. The column index type of `L'` need not be finite. We also
 give a criterion, splitting off the top row, for the column range of a matrix to be a given
-submodule, and characterize when two nonsingular square matrices over a commutative domain span
+submodule, show that any multiple of `det A` multiplies vectors into the column range of a square
+matrix `A`, and characterize when two nonsingular square matrices over a commutative domain span
 the same column range.
 
 Over an arbitrary semiring `R` (not necessarily commutative), this file also collects the basic
@@ -75,6 +77,8 @@ vanishing on the range is a dot product with such a `z`.
   of `A` if and only if `z ⬝ᵥ v = 0` whenever `z ᵥ* A = 0`.
 * `Matrix.range_comp_mulVecLin_unit`, `Matrix.range_mulVecLin_mul_unit`: precomposing with or
   right-multiplying by `U ∈ GL n R` preserves the range / column range.
+* `Matrix.smul_mem_range_mulVecLin_of_det_dvd`: over a commutative ring, any scalar divisible by
+  `A.det` multiplies every vector into `LinearMap.range A.mulVecLin`.
 * `Matrix.range_mulVecLin_eq_iff`: over a commutative domain, two nonsingular square matrices have
   the same column range if and only if they lie in the same right `GL n R`-coset.
 -/
@@ -305,6 +309,15 @@ columns. -/
 theorem range_mulVecLin_mul_unit {m : Type*} (B : Matrix m n R) (U : GL n R) :
     LinearMap.range (B * (↑U : Matrix n n R)).mulVecLin = LinearMap.range B.mulVecLin := by
   rw [mulVecLin_mul, range_comp_mulVecLin_unit]
+
+/-- Over a commutative ring, any scalar `r` divisible by `A.det` multiplies every vector into the
+column range `LinearMap.range A.mulVecLin`. -/
+theorem smul_mem_range_mulVecLin_of_det_dvd {R : Type*} [CommRing R] {A : Matrix n n R} {r : R}
+    (hr : A.det ∣ r) (y : n → R) :
+    r • y ∈ LinearMap.range A.mulVecLin := by
+  obtain ⟨c, rfl⟩ := hr
+  rw [mul_comm, mul_smul, ← toLin'_apply', ← LinearMap.det_toLin']
+  exact (LinearMap.range A.toLin').smul_mem c (A.toLin'.det_smul_mem_range y)
 
 /-- Over a commutative domain, two nonsingular square matrices span the same column `R`-submodule if
 and only if they lie in the same right `GL n R`-coset. -/

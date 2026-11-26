@@ -305,12 +305,9 @@ modulo `p ^ k`). -/
 theorem ker_intVectorReduction_le_intSublattice {A : Matrix (Fin n) (Fin n) ℤ} {k : ℕ}
     (hA : A.det ∣ (p : ℤ) ^ k) :
     LinearMap.ker (intVectorReduction (Fin n) p k) ≤ intSublattice n A := by
-  obtain ⟨c, hc⟩ := hA
   intro x hx
   obtain ⟨y, rfl⟩ := (mem_ker_intVectorReduction_iff (Fin n) p k x).mp hx
-  refine ⟨(c • A.adjugate).mulVec y, ?_⟩
-  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
-    smul_smul, mul_comm c A.det, ← hc, Matrix.smul_mulVec, Matrix.one_mulVec]
+  exact Matrix.smul_mem_range_mulVecLin_of_det_dvd hA y
 
 /-- If `A.det ∣ p ^ k`, then `padicSublattice n p (A.map (Int.castRingHom ℤ_[p]))` contains
 `p ^ k • ℤ_p^n` (the kernel of `p`-adic reduction modulo `p ^ k`). -/
@@ -318,17 +315,12 @@ theorem ker_padicVectorReduction_le_padicSublattice_map {A : Matrix (Fin n) (Fin
     (hA : A.det ∣ (p : ℤ) ^ k) :
     LinearMap.ker (padicVectorReduction (Fin n) p k) ≤
       padicSublattice n p (A.map (Int.castRingHom ℤ_[p])) := by
-  obtain ⟨c, hc⟩ := hA
-  let B := A.map (Int.castRingHom ℤ_[p])
-  have hcB : (c : ℤ_[p]) * B.det = (p : ℤ_[p]) ^ k := by
-    dsimp only [B]
-    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det, ← eq_intCast (Int.castRingHom ℤ_[p]) c,
-      ← map_mul, mul_comm c A.det, ← hc, map_pow, map_natCast]
+  have hB : (A.map (Int.castRingHom ℤ_[p])).det ∣ (p : ℤ_[p]) ^ k := by
+    rw [← RingHom.mapMatrix_apply, ← RingHom.map_det]
+    simpa using (Int.castRingHom ℤ_[p]).map_dvd hA
   intro x hx
   obtain ⟨y, rfl⟩ := (mem_ker_padicVectorReduction_iff (Fin n) p k x).mp hx
-  refine ⟨((c : ℤ_[p]) • B.adjugate).mulVec y, ?_⟩
-  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
-    smul_smul, hcB, Matrix.smul_mulVec, Matrix.one_mulVec]
+  exact Matrix.smul_mem_range_mulVecLin_of_det_dvd hB y
 
 /-- Every nonsingular `B ∈ M_n(ℤ_p)` defines a `ℤ_p`-sublattice containing
 `p ^ v(det B) • ℤ_p^n`. -/
@@ -336,17 +328,10 @@ theorem ker_padicVectorReduction_le_padicSublattice {B : Matrix (Fin n) (Fin n) 
     (hB : B.det ≠ 0) :
     LinearMap.ker (padicVectorReduction (Fin n) p B.det.valuation) ≤
       padicSublattice n p B := by
-  let u := PadicInt.unitCoeff hB
-  let c : ℤ_[p] := ↑(u⁻¹)
   intro x hx
   obtain ⟨y, rfl⟩ :=
     (mem_ker_padicVectorReduction_iff (Fin n) p B.det.valuation x).mp hx
-  refine ⟨(c • B.adjugate).mulVec y, ?_⟩
-  have hu : c * B.det = (p : ℤ_[p]) ^ B.det.valuation := by
-    dsimp only [c]
-    conv_lhs => rw [PadicInt.unitCoeff_spec hB, ← mul_assoc, Units.inv_mul, one_mul]
-  rw [Matrix.mulVecLin_apply, Matrix.mulVec_mulVec, Matrix.mul_smul, Matrix.mul_adjugate,
-    smul_smul, hu, Matrix.smul_mulVec, Matrix.one_mulVec]
+  exact Matrix.smul_mem_range_mulVecLin_of_det_dvd (PadicInt.dvd_pow_valuation hB) y
 
 /-- **Sublattice completion** (Rhodes–Shemanske, *Bruhat–Tits buildings and Hecke operators*,
 §3.1 Proposition 3.2): under `TauCeti.pPowerSublatticeEquiv`, any `ℤ`-sublattice
