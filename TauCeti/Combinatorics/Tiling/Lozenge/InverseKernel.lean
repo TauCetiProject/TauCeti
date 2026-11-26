@@ -70,9 +70,7 @@ theorem IsLiquidWeights.ae_lozengeCharFun_ne_zero (hw : IsLiquidWeights w₁ w�
     obtain ⟨m, n, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ := (lozengeCharFun_eq_zero_iff hw).1 hp
     · exact ⟨(m, n, true), rfl⟩
     · exact ⟨(m, n, false), rfl⟩
-  have hnull := ((countable_range _).mono hsub).measure_zero ((volume : Measure ℝ).prod volume)
-  rw [← Measure.volume_eq_prod] at hnull
-  exact measure_eq_zero_iff_ae_notMem.1 hnull
+  exact ((countable_range _).mono hsub).ae_notMem ((volume : Measure ℝ).prod volume)
 
 /-- Off the zeros of `P_w`, the integrands of `G_w(d)`, `G_w(d + e₁)` and `G_w(d − e₂)` combine
 with the weights `w₃`, `w₂`, `w₁` into `e^{i(d₁θ + d₂φ)}`. -/
@@ -94,6 +92,25 @@ private theorem lozengeKernel_integrand_three_term (d : ℤ × ℤ) {p : ℝ × 
   rw [lozengeCharFun_def] at hp ⊢
   field_simp
 
+/-- Whenever `1 / P_w` is integrable on the torus, a combination `a G_w(d₀) + b G_w(d₁) + c G_w(d₂)`
+is `(4π²)⁻¹` times the integral of the same combination of the integrands. -/
+private theorem lozengeKernel_linear_combination
+    (hP : IntegrableOn (fun p : ℝ × ℝ => (lozengeCharFun w₁ w₂ w₃ p.1 p.2)⁻¹)
+      (Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi)))
+    (a b c : ℂ) (d₀ d₁ d₂ : ℤ × ℤ) :
+    a * lozengeKernel w₁ w₂ w₃ d₀ + b * lozengeKernel w₁ w₂ w₃ d₁ +
+        c * lozengeKernel w₁ w₂ w₃ d₂ =
+      ((4 * Real.pi ^ 2)⁻¹ : ℝ) • ∫ p in Ioc 0 (2 * Real.pi) ×ˢ Ioc 0 (2 * Real.pi),
+        (a * (exp ((d₀.1 * p.1 + d₀.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2) +
+          b * (exp ((d₁.1 * p.1 + d₁.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2) +
+          c * (exp ((d₂.1 * p.1 + d₂.2 * p.2 : ℝ) * I) / lozengeCharFun w₁ w₂ w₃ p.1 p.2)) := by
+  have hint := integrableOn_lozengeKernel_integrand_of_integrableOn hP
+  rw [integral_add (((hint d₀).const_mul a).fun_add ((hint d₁).const_mul b))
+      ((hint d₂).const_mul c), integral_add ((hint d₀).const_mul a) ((hint d₁).const_mul b),
+    integral_const_mul, integral_const_mul, integral_const_mul]
+  simp only [lozengeKernel_def, real_smul]
+  ring
+
 /-- **The three-term identity**, for any type weights for which `1 / P_w` is integrable on the
 torus and `P_w` is almost everywhere nonzero there: liquid weights, but also the frozen weights
 `(1, 1, 3)`, where `P_w` does not vanish. For `d ∈ ℤ²`,
@@ -106,18 +123,14 @@ theorem lozengeKernel_three_term_of_integrableOn
     (w₃ : ℂ) * lozengeKernel w₁ w₂ w₃ d + w₂ * lozengeKernel w₁ w₂ w₃ (d + (1, 0)) +
         w₁ * lozengeKernel w₁ w₂ w₃ (d - (0, 1)) =
       if d = 0 then 1 else 0 := by
-  have hint := integrableOn_lozengeKernel_integrand_of_integrableOn hP
-  simp only [lozengeKernel_def, real_smul]
-  rw [mul_left_comm (w₃ : ℂ), mul_left_comm (w₂ : ℂ), mul_left_comm (w₁ : ℂ), ← mul_add, ← mul_add,
-    ← integral_const_mul, ← integral_const_mul, ← integral_const_mul,
-    ← integral_add ((hint _).const_mul _) ((hint _).const_mul _),
-    ← integral_add (((hint _).const_mul _).fun_add ((hint _).const_mul _)) ((hint _).const_mul _),
+  rw [lozengeKernel_linear_combination hP,
     integral_congr_ae (hP₀.mono fun p hp => lozengeKernel_integrand_three_term d hp),
     setIntegral_exp_int_mul_add_int_mul_I]
   split_ifs
-  · push_cast
+  · rw [real_smul]
+    push_cast
     field_simp
-  · exact mul_zero _
+  · exact smul_zero _
 
 /-- **The three-term identity.** For liquid weights and `d ∈ ℤ²`,
 `w₃ G_w(d) + w₂ G_w(d + e₁) + w₁ G_w(d − e₂) = [d = 0]`. -/
@@ -138,9 +151,11 @@ theorem IsLiquidWeights.sum_edge_lozengeKernel (hw : IsLiquidWeights w₁ w₂ w
       if u = v then 1 else 0 := by
   have h := hw.lozengeKernel_three_term (u - v)
   simp only [sub_eq_zero] at h
-  rw [← h]
-  simp [Fin.sum_univ_three]
-  ring_nf
+  simp only [Fin.sum_univ_three, TriFace.edge_mk_true, TriEdge.blackFace_mk, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, zero_ne_one, one_ne_zero,
+    Fin.reduceEq, ↓reduceIte]
+  rw [sub_right_comm u (0, 1) v, add_sub_right_comm u (1, 0) v]
+  linear_combination h
 
 /-- **`G_w` is a left inverse of the Kasteleyn matrix.** For liquid weights, summing
 `G_w(v' − u) K(W(u), B(v''))` over the three white faces `W(u)` adjacent to `B(v'')`, across the
@@ -152,8 +167,10 @@ theorem IsLiquidWeights.sum_lozengeKernel_edge (hw : IsLiquidWeights w₁ w₂ w
       if v' = v'' then 1 else 0 := by
   have h := hw.lozengeKernel_three_term (v' - v'')
   simp only [sub_eq_zero] at h
-  rw [← h]
-  simp [Fin.sum_univ_three]
-  ring_nf
+  simp only [Fin.sum_univ_three, TriFace.edge_mk_false, TriEdge.whiteFace_mk, Fin.isValue,
+    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, zero_ne_one, one_ne_zero,
+    Fin.reduceEq, ↓reduceIte]
+  rw [sub_add_eq_sub_sub v' v'' (0, 1), sub_sub_eq_add_sub, add_sub_right_comm v' (1, 0) v'']
+  linear_combination h
 
 end TauCeti

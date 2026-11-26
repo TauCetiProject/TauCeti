@@ -415,9 +415,8 @@ theorem setIntegral_exp_int_mul_add_int_mul_I (d : ℤ × ℤ) :
     have h := hper.intervalIntegral_add_eq 0 (-Real.pi)
     rw [zero_add, show -Real.pi + 2 * Real.pi = Real.pi by ring,
       integral_cexp_intCast_mul_mul_I] at h
+    simp only [Complex.ofReal_mul, Complex.ofReal_intCast]
     rw [← intervalIntegral.integral_of_le (by positivity), ← h]
-    push_cast
-    rfl
   simp_rw [Complex.ofReal_add, add_mul, Complex.exp_add]
   rw [Measure.volume_eq_prod, setIntegral_prod_mul
     (fun x : ℝ => Complex.exp ((d.1 * x : ℝ) * Complex.I))
