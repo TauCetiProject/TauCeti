@@ -12,9 +12,9 @@ public import Mathlib.Data.Nat.Factorization.Basic
 # Square products and prime-free parts
 
 A pair of natural numbers has square product exactly when both are squares times a common factor.
-The `p`-free part of a natural number is square precisely when the number is square or becomes
-square after multiplication by `p`. In particular, a product with square odd part is either a
-square or twice a square.
+For a prime `p`, the `p`-free part of a natural number is square precisely when the number is
+square or becomes square after multiplication by `p`. In particular, a product with square odd
+part is either a square or twice a square.
 -/
 
 public section

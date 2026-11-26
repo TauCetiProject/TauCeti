@@ -11,13 +11,12 @@ public import Mathlib.Analysis.PSeries
 public import TauCeti.Data.Nat.Factorization.Square
 
 /-!
-# The square diagonal in quadratic-twist second moments
+# Power weights on pairs with square product
 
-Expanding a second moment of quadratic twists produces a double sum over coefficients indexed by
-`m` and `n`. The terms for which the odd part of `m * n` is a square cannot be bounded by
-cancellation in the Jacobi symbols. Instead the weight `(m * n) ^ (-σ)` is itself summable
-on these pairs for `σ > 1/2`, giving a nonnegative summable majorant for the square contribution.
-Pairs with a zero coordinate have weight zero in this range.
+For `s < -1/2`, the weight `(m * n) ^ s` is summable over pairs of natural numbers with square
+product, and over pairs for which the `p`-free part of the product is square. Pairs with a zero
+coordinate have weight zero in this range. For `p = 2`, the latter sum gives a nonnegative
+summable majorant for the square contribution to quadratic-twist second moments.
 
 The estimate corresponds to `New.exists_summable_ge_of_isSquare_ordCompl`, used in
 `New.sum_sq_thetaSeries_jacobiSym_le` in `Lib/Analytic/QuadraticTwist.lean` of
@@ -26,9 +25,9 @@ The estimate corresponds to `New.exists_summable_ge_of_isSquare_ordCompl`, used 
 
 public section
 
-namespace TauCeti
-
 open Set
+
+namespace TauCeti
 
 /-- The weight `(m * n) ^ s` restricted to pairs with square product is summable for
 `s < -1/2`. -/
@@ -60,6 +59,10 @@ theorem summable_rpow_isSquare_mul {s : ℝ} (hs : s < -1 / 2) :
   rw [heq, ← Real.rpow_natCast_mul (by positivity), Nat.cast_ofNat,
     Real.mul_rpow (by positivity) (by positivity), Real.mul_rpow (by positivity) (by positivity)]
 
+end TauCeti
+
+namespace Nat
+
 /-- The weight `(m * n) ^ s` restricted to pairs for which the `p`-free part of `m * n` is
 square is summable for `s < -1/2`. For `p = 2` this is the square diagonal of the
 Jacobi-symbol second moment; for nonprime `p`, `ordCompl[p]` is the identity. -/
@@ -68,7 +71,7 @@ theorem summable_rpow_isSquare_ordCompl (p : ℕ) {s : ℝ} (hs : s < -1 / 2) :
       (fun q ↦ ((q.1 : ℝ) * q.2) ^ s)) := by
   by_cases hp : p.Prime
   swap
-  · simpa only [Nat.ordCompl_of_not_prime _ _ hp] using summable_rpow_isSquare_mul hs
+  · simpa only [Nat.ordCompl_of_not_prime _ _ hp] using TauCeti.summable_rpow_isSquare_mul hs
   let F : ℕ × ℕ → ℝ := {q : ℕ × ℕ | IsSquare (q.1 * q.2)}.indicator
     (fun q ↦ ((q.1 : ℝ) * q.2) ^ s)
   let g (q : ℕ × ℕ) : ℕ × ℕ := (p * q.1, q.2)
@@ -76,7 +79,7 @@ theorem summable_rpow_isSquare_ordCompl (p : ℕ) {s : ℝ} (hs : s < -1 / 2) :
     intro x y h
     have hsnd : (g x).2 = (g y).2 := congrArg Prod.snd h
     exact Prod.ext (mul_left_cancel₀ hp.ne_zero (congrArg Prod.fst h)) hsnd
-  have hF : Summable F := summable_rpow_isSquare_mul hs
+  have hF : Summable F := TauCeti.summable_rpow_isSquare_mul hs
   have hG := hF.add ((hF.comp_injective hg).mul_left ((p : ℝ) ^ s)⁻¹)
   have hF₀ (q : ℕ × ℕ) : 0 ≤ F q := indicator_apply_nonneg (fun _ ↦ by positivity)
   have hG₀ (q : ℕ × ℕ) : 0 ≤ ((p : ℝ) ^ s)⁻¹ * F (g q) :=
@@ -100,4 +103,4 @@ theorem summable_rpow_isSquare_ordCompl (p : ℕ) {s : ℝ} (hs : s < -1 / 2) :
   · rw [indicator_of_notMem (s := {q : ℕ × ℕ | IsSquare (ordCompl[p] (q.1 * q.2))}) hq]
     exact add_nonneg (hF₀ q) (hG₀ q)
 
-end TauCeti
+end Nat
