@@ -645,6 +645,12 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
     (contMDiff_fst.prodMk ((hρL.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
       (contMDiff_snd.comp contMDiff_snd)))
 
+/-- The comparison datum `K_R` is differentiable in the target point, for every `R`. -/
+theorem mdifferentiable_cappedComparisonPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (R : ℝ) (w v : ℂ) :
+    MDifferentiable I 𝓘(ℝ) fun y ↦ cappedComparisonPerturbation H R w y v :=
+  mdifferentiable_cappedPerturbation_target hH hHs _ _ w v
+
 end Smooth
 
 section SmoothNormed

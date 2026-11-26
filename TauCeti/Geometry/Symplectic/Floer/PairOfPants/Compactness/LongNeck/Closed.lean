@@ -144,14 +144,11 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_endShift (ω : Smooth
         (u ∘ realChart (q.endShift (R - 1))) w).toLinearMap := by
   rw [equivRealProdCLM_symm_realChart, h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR,
     h₀.cappedAlmostComplex_endShift J hJ hJp 1 (by linarith) hw] at h
-  have hKd (v : ℂ) : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ cappedComparisonPerturbation H R
-      (equivRealProdCLM.symm (realChart (q.endShift (R - 1)) w)) y v)
-      (u (realChart (q.endShift (R - 1)) w)) := by
-    rw [cappedComparisonPerturbation_of_two_le H hR]
-    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v _
+  have hK := mdifferentiable_cappedComparisonPerturbation_target hH hHs R
   have h' := ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
-    ((q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w) hu (hKd 1)
-    (hKd Complex.I) (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_endShift _ _)) h
+    ((q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w) hu
+    ((hK _ 1).mdifferentiableAt) ((hK _ Complex.I).mdifferentiableAt)
+    (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_endShift _ _)) h
   rwa [ω.perturbedMFDeriv_congr_perturbation (u ∘ realChart (q.endShift (R - 1)))
     (Ks' := fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
     (Kt' := fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
@@ -181,14 +178,11 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation 1 0 H (equivRealProdCLM.symm z) x Complex.I)
         (u ∘ realChart (q.endShift (R - 1))) w := by
-  have hKd (z : ℝ × ℝ) (x : M) (v : ℂ) : MDifferentiableAt I 𝓘(ℝ)
-      (fun y ↦ cappedComparisonPerturbation H R (equivRealProdCLM.symm z) y v) x := by
-    rw [cappedComparisonPerturbation_of_two_le H hR]
-    exact mdifferentiable_cappedPerturbation_target hH hHs 1 (R - 1) _ v x
+  have hK := mdifferentiable_cappedComparisonPerturbation_target hH hHs R
   rw [ω.integral_floerEnergyDensity_image hΩm (realChart_injective (q.endShift_injective _)).injOn
     (fun w _ ↦ (q.contDiff_realChart_endShift (R - 1) (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_endShift _ _)) hu
-    (fun w _ ↦ hKd _ _ 1) (fun w _ ↦ hKd _ _ Complex.I)]
+    (fun w _ ↦ (hK _ 1).mdifferentiableAt) (fun w _ ↦ (hK _ Complex.I).mdifferentiableAt)]
   refine setIntegral_congr_fun hΩm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ ?_) (funext fun x ↦ ?_)
   · rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR (hΩ w hw),
