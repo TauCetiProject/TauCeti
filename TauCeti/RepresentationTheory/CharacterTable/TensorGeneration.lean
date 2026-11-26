@@ -14,7 +14,7 @@ public import TauCeti.RepresentationTheory.Simple.Basic
 public import TauCeti.RepresentationTheory.Tensor.Power
 import TauCeti.Algebra.Polynomial.Degree.Operations
 import TauCeti.CategoryTheory.Action.Restriction
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Faithful tensor generation

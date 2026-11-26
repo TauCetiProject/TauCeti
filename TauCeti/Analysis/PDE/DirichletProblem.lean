@@ -1152,6 +1152,16 @@ theorem min_mul_norm_sq_le_energyFormH1_one_zero_zero_add [DecidableEq ι] (omeg
   nlinarith [min_le_left 1 omega, min_le_right 1 omega, sq_nonneg ‖W1p.value v‖,
     sq_nonneg ‖W1p.gradient v‖]
 
+open scoped InnerProductSpace in
+/-- The energy form of `-Δ + c` (`a = 1`, no drift, constant mass `c`) is the Dirichlet form of
+`-Δ` plus `c` times the `L²` inner product of the values. -/
+theorem energyFormH1_one_zero_const [DecidableEq ι] (c : ℝ) (u v : W1p mu Omega 2) :
+    energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 (fun _ => c) u v =
+      energyFormH1 (fun _ => (1 : Matrix ι ι ℝ)) 0 0 u v + c * ⟪W1p.value u, W1p.value v⟫_ℝ := by
+  simpa only [Pi.zero_apply, neg_mul, sub_neg_eq_add, zero_add] using
+    energyFormH1_mass_sub_const (c := 0)
+      (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega) 1) (-c) u v
+
 /-- The weak formulation of the Laplacian model `-Δ` is the classical one: `u ∈ H¹₀(Ω)` solves
 `-Δu = f` weakly exactly when `∫_Ω ∇v · ∇u = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`. -/
 theorem isWeakSolutionDirichlet_one_zero_zero_iff [DecidableEq ι]
