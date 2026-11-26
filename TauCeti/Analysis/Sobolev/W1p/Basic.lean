@@ -17,6 +17,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # First-order weak Sobolev spaces
@@ -1093,6 +1094,11 @@ theorem W1p.integralL_const (c : ℝ) :
     W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
   rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
   exact integral_congr_ae (W1p.value_const_ae c)
+
+/-- The `L²(Ω)` pairing of the constant Sobolev function `c` with `f` is `c ∫_Ω f`. -/
+theorem W1p.inner_value_const (c : ℝ) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ⟪W1p.value (W1p.const c : W1p mu Omega 2), f⟫_ℝ = c * ∫ x in Omega, f x ∂mu := by
+  simp [mul_comm]
 
 end Const
 
