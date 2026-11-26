@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import Mathlib.Algebra.Homology.DerivedCategory.KInjective
 public import Mathlib.CategoryTheory.Triangulated.Adjunction
+public import TauCeti.Algebra.Homology.EssentiallySmall
 
 /-!
 # K-injective replacements in the derived category
@@ -28,6 +29,10 @@ triangulated functor `DerivedCategory.Qh`, it commutes with shifts and is triang
 morphisms into an object of the derived category are computed as homotopy classes of chain maps
 into its replacement, which is how unbounded right derived functors and derived `Hom` are
 constructed.
+
+Since K-injective replacement is faithful, local smallness of `C` implies local smallness of
+any choice of its derived category (`DerivedCategory.locallySmall_of_hasKInjectiveResolutions`).
+The smallness universe can be smaller than the morphism universe of that choice.
 
 The adjunction is built from Mathlib's `CochainComplex.IsKInjective.Qh_map_bijective`: maps in
 the homotopy category into a K-injective complex are the maps in the derived category. In terms of
@@ -273,3 +278,17 @@ instance : (kInjectiveReplacement C).IsTriangulated :=
   (kInjectiveReplacementAdjunction C).isTriangulated_rightAdjoint
 
 end TauCeti
+
+namespace DerivedCategory
+
+universe w'
+
+/-- An abelian category with K-injective resolutions has a locally small unbounded derived
+category whenever the original category is locally small. This applies to any choice of
+the localization, including a choice with morphism types in a larger universe. -/
+instance locallySmall_of_hasKInjectiveResolutions [LocallySmall.{w} C]
+    [TauCeti.HasKInjectiveResolutions C] [HasDerivedCategory.{w'} C] :
+    LocallySmall.{w} (DerivedCategory C) :=
+  locallySmall_of_faithful (TauCeti.kInjectiveReplacement C)
+
+end DerivedCategory
