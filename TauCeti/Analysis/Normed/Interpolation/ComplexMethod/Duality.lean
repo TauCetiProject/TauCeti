@@ -81,12 +81,6 @@ omit [ContinuousAdd V] [T1Space V]
 
 variable {C} {hC : C.IsRegular}
 
-/-- `(h i)⁻¹ ((t + h) - t) = i⁻¹` has norm one. -/
-private theorem norm_inv_mul_I_mul_sub {h : ℝ} (hh : h ≠ 0) (t : ℝ) :
-    ‖((h : ℂ) * I)⁻¹ * (((t + h : ℝ) : ℂ) - t)‖ = 1 := by
-  rw [norm_mul, norm_inv, norm_mul, norm_I, mul_one, ofReal_add, add_sub_cancel_left, norm_real,
-    inv_mul_cancel₀ (norm_ne_zero_iff.2 hh)]
-
 namespace IsUpperStripFunction
 
 variable {G : ℂ → (C.dual hC).SumSpace}
@@ -121,8 +115,8 @@ private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_le
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right hsub (norm_nonneg _))
           (norm_nonneg _)
     _ = ‖q‖ * ‖y‖ := by
-        rw [norm_inv, ← mul_assoc, mul_left_comm, inv_mul_cancel₀ (norm_ne_zero_iff.2
-          (mul_ne_zero (ofReal_ne_zero.2 hh) I_ne_zero)), mul_one]
+        simp
+        field_simp
 
 /-- On the line `re z = 0` the difference quotients of `G` lie in `X₀*`, so their pairing with
 `y` is at most `‖q‖ ‖y‖_{X₀}`. -/
@@ -131,11 +125,12 @@ private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_mul_I_le
     ‖((h : ℂ) * I)⁻¹ * (C.dual hC).sumSpaceEmbed (G (t * I + h * I) - G (t * I)) y‖ ≤
       ‖q‖ * ‖C.interFst y‖ := by
   have hzt : (t * I + h * I : ℂ) = ((t + h : ℝ) : ℂ) * I := by push_cast; ring
-  rw [hzt, hG.sub_mul_I (show t + h ≠ t by simpa using hh), map_smul, smul_apply, smul_eq_mul,
-    ← mul_assoc, norm_mul, norm_inv_mul_I_mul_sub hh t, one_mul, sumSpaceEmbed_fstToSum,
-    dual_embed₀]
-  exact ((q.1 _).le_opNorm (C.interFst y)).trans (mul_le_mul_of_nonneg_right
-    ((BoundedContinuousFunction.norm_coe_le_norm _ _).trans (norm_fst_le q)) (norm_nonneg _))
+  have hne : t + h ≠ t := by simpa using hh
+  calc _ = ‖q.1 ⟨(t + h, t), trivial, trivial, hne⟩ (C.interFst y)‖ := by
+        rw [hzt, hG.sub_mul_I hne]
+        simp [hh]
+    _ ≤ ‖q‖ * ‖C.interFst y‖ := ((q.1 _).le_opNorm _).trans (mul_le_mul_of_nonneg_right
+        ((BoundedContinuousFunction.norm_coe_le_norm _ _).trans (norm_fst_le q)) (norm_nonneg _))
 
 /-- On the line `re z = 1` the difference quotients of `G` lie in `X₁*`, so their pairing with
 `y` is at most `‖q‖ ‖y‖_{X₁}`. -/
@@ -144,11 +139,12 @@ private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_one_add_mul_I_le
     ‖((h : ℂ) * I)⁻¹ * (C.dual hC).sumSpaceEmbed (G (1 + t * I + h * I) - G (1 + t * I)) y‖ ≤
       ‖q‖ * ‖C.interSnd y‖ := by
   have hzt : (1 + t * I + h * I : ℂ) = 1 + ((t + h : ℝ) : ℂ) * I := by push_cast; ring
-  rw [hzt, hG.sub_one_add_mul_I (show t + h ≠ t by simpa using hh), map_smul, smul_apply,
-    smul_eq_mul, ← mul_assoc, norm_mul, norm_inv_mul_I_mul_sub hh t, one_mul,
-    sumSpaceEmbed_sndToSum, dual_embed₁]
-  exact ((q.2 _).le_opNorm (C.interSnd y)).trans (mul_le_mul_of_nonneg_right
-    ((BoundedContinuousFunction.norm_coe_le_norm _ _).trans (norm_snd_le q)) (norm_nonneg _))
+  have hne : t + h ≠ t := by simpa using hh
+  calc _ = ‖q.2 ⟨(t + h, t), trivial, trivial, hne⟩ (C.interSnd y)‖ := by
+        rw [hzt, hG.sub_one_add_mul_I hne]
+        simp [hh]
+    _ ≤ ‖q‖ * ‖C.interSnd y‖ := ((q.2 _).le_opNorm _).trans (mul_le_mul_of_nonneg_right
+        ((BoundedContinuousFunction.norm_coe_le_norm _ _).trans (norm_snd_le q)) (norm_nonneg _))
 
 /-- For `h ≠ 0`, the vertical difference quotient `z ↦ (h i)⁻¹ ⟨G (z + h i) - G z, Φ z⟩` of
 `G` paired with `Φ` is holomorphic on the open strip and continuous on its closure. -/
@@ -192,8 +188,7 @@ private theorem norm_inv_mul_sumSpaceEmbed_sub_apply_le_of_boundary
     obtain ⟨t, rfl⟩ : ∃ t : ℝ, z = 1 + t * I := ⟨z.im, Complex.ext (by simpa using hz) (by simp)⟩
     exact (norm_inv_mul_sumSpaceEmbed_sub_apply_one_add_mul_I_le hG hh t _).trans
       (mul_le_mul_of_nonneg_left (h₁ t) (norm_nonneg q))
-  change ‖φ θ‖ ≤ ‖q‖ * M
-  simpa [← Real.rpow_add' hqM] using norm_le_interp_of_mem_verticalClosedStrip₀₁' φ
+  simpa [φ, ← Real.rpow_add' hqM] using norm_le_interp_of_mem_verticalClosedStrip₀₁' φ
     (z := (θ : ℂ)) (by simpa using Ioo_subset_Icc_self hθ)
     (diffContOnCl_inv_mul_sumSpaceEmbed_sub_apply hG hΦ h) hB ha hb
 
