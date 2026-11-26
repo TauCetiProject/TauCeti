@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.AlgebraicSpace.QuotientSheaf.Represented
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Torsor
 public import TauCeti.AlgebraicGeometry.Sites.Fpqc
 public import TauCeti.CategoryTheory.Sites.QuotientSheaf.Generated
-public import TauCeti.RingTheory.Etale.Torsor.Basic
+import TauCeti.AlgebraicGeometry.Descent.Affine
 
 /-!
 # Quotient sheaves of pre-relations through the graphs of a torsor
@@ -26,7 +26,7 @@ for an fppf covering `q` the quotient sheaf `U/R` is `h_M`
 
 The main instance is a finite étale `G`-torsor `B` over `A` (`TauCeti.Algebra.IsFiniteEtaleTorsor`):
 `Spec B ×_{Spec A} Spec B` is the disjoint union of the graphs of the automorphisms
-`specComap B G g` (`TauCeti.AlgebraicGeometry.Spaces.isPullback_specComap_of_isFiniteEtaleTorsor`,
+`specComap B G g` (`TauCeti.AffineInvariantQuotient.isPullback_specComap_of_isFiniteEtaleTorsor`,
 from the torsor square `TauCeti.AffineInvariantQuotient.isPullback_of_free`). If every element of
 `G` is `1`, `σ` or `σ⁻¹`, for instance if `G` has order two, the pre-relation `(𝟙, σ)`, which is
 not reflexive, already has quotient sheaf `h_{Spec A}`
@@ -38,8 +38,6 @@ not reflexive, already has quotient sheaf `h_{Spec A}`
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.relSieve_mem_of_isPullback`: the sieve along
   which two points with the same image are equal or related is an fppf covering.
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.isoOfIsPullback`: the quotient sheaf is `h_M`.
-* `TauCeti.AlgebraicGeometry.Spaces.isPullback_specComap_of_isFiniteEtaleTorsor`: the kernel pair
-  of `Spec B ⟶ Spec A` for a finite étale torsor.
 * `TauCeti.AlgebraicGeometry.Spaces.quotientSheaf.torsorIso`: `Spec B/(𝟙, σ) ≅ h_{Spec A}`.
 -/
 
@@ -71,10 +69,9 @@ theorem quotientSheaf.relSieve_mem_of_isPullback {ι : Type v} [Small.{u} ι] {q
   refine Scheme.fppfTopology.superset_covering ?_
     (Scheme.fppfTopology.pullback_stable (hpb.lift a b hab) hcov)
   intro T' g hg
-  obtain ⟨i, c₀, hc₀⟩ := (Sieve.mem_ofArrows_iff _ _ _).1 hg
-  let c : T' ⟶ U := c₀
-  have hc : g ≫ hpb.lift a b hab = c ≫ Sigma.ι (fun _ : ι ↦ U) i := hc₀
-  clear_value c
+  obtain ⟨i, c, hc⟩ : ∃ (i : ι) (c : T' ⟶ U),
+      g ≫ hpb.lift a b hab = c ≫ Sigma.ι (fun _ : ι ↦ U) i :=
+    (Sieve.mem_ofArrows_iff _ _ _).1 hg
   have ha : g ≫ a = c := by
     rw [← hpb.lift_fst a b hab, ← Category.assoc, hc]
     simp
@@ -132,70 +129,21 @@ section Torsor
 
 open TauCeti.Algebra
 
-variable (A B : Type u) (G : Type v) [CommRing A] [CommRing B] [Algebra A B] [Group G]
+variable {A B : Type u} {G : Type v} [CommRing A] [CommRing B] [Algebra A B] [Group G]
   [MulSemiringAction G B] [SMulCommClass G A B] [Finite G]
-
-omit [Finite G] in
-/-- The automorphisms `specComap B G g` of `Spec B` lie over `Spec A`. -/
-@[reassoc (attr := simp)]
-theorem specComap_specAlgebraMap (g : G) :
-    specComap B G g ≫ Spec.algebraMap A B = Spec.algebraMap A B := by
-  rw [specComap_def, ← Spec.map_comp]
-  congr 2
-  ext a
-  simp [smul_algebraMap]
-
-/-- **The kernel pair of a finite étale torsor.** For a finite étale `G`-torsor `B` over `A`, the
-identity and the automorphisms `specComap B G g` on the component of `g` exhibit the disjoint union
-of copies of `Spec B` as the kernel pair of `Spec B ⟶ Spec A`. -/
-theorem isPullback_specComap_of_isFiniteEtaleTorsor [h : IsFiniteEtaleTorsor G A B] :
-    IsPullback (Sigma.desc fun _ : G ↦ 𝟙 (Spec (.of B))) (Sigma.desc fun g : G ↦ specComap B G g)
-      (Spec.algebraMap A B) (Spec.algebraMap A B) := by
-  obtain ⟨_, _, hG⟩ := isFiniteEtaleTorsor_iff.mp h
-  -- `A → Bᴳ` is an isomorphism.
-  let e : A ≃+* FixedPoints.subring B G := RingEquiv.ofBijective
-    ((algebraMap A B).codRestrict _ fun a g ↦ smul_algebraMap g a)
-    ⟨fun _ _ h ↦ FaithfulSMul.algebraMap_injective A B (congrArg Subtype.val h), fun b ↦ by
-      obtain ⟨a, ha⟩ := Algebra.IsInvariant.isInvariant (A := A) (b : B) b.property
-      exact ⟨a, Subtype.ext ha⟩⟩
-  refine (isPullback_of_free B G hG).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
-    (Scheme.Spec.mapIso e.toCommRingCatIso.op) (by simp) (by simp) ?_ ?_ <;>
-  · simp only [Iso.refl_hom, Category.id_comp, Functor.mapIso_hom, Iso.op_hom,
-      Scheme.Spec_map, projection_def, Spec.algebraMap, ← Spec.map_comp]
-    congr 2
-
-theorem flat_specAlgebraMap_of_isFiniteEtaleTorsor [h : IsFiniteEtaleTorsor G A B] :
-    Flat (Spec.algebraMap A B) := by
-  have := h.faithfullyFlat
-  exact HasRingHomProperty.Spec_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
-
-theorem surjective_specAlgebraMap_of_isFiniteEtaleTorsor [h : IsFiniteEtaleTorsor G A B] :
-    Surjective (Spec.algebraMap A B) := by
-  have := h.faithfullyFlat
-  exact ((flat_and_surjective_SpecMap_iff _).mpr
-    (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)).2
-
-theorem locallyOfFinitePresentation_specAlgebraMap_of_isFiniteEtaleTorsor
-    [h : IsFiniteEtaleTorsor G A B] :
-    LocallyOfFinitePresentation (Spec.algebraMap A B) := by
-  have := h.etale
-  exact locallyOfFinitePresentation_SpecMap_algebraMap A B
-
-variable {A B G}
 
 /-- **The quotient sheaf of a torsor by one generator.** Let `B` be a finite étale `G`-torsor over
 `A` and `σ ∈ G` such that every element of `G` is `1`, `σ` or `σ⁻¹`; for instance `G` of order
 two and `σ ≠ 1`. The quotient sheaf of the pre-relation `(𝟙, specComap B G σ)` on `Spec B`, which
 is not reflexive, is `h_{Spec A}`. -/
-noncomputable def quotientSheaf.torsorIso [IsFiniteEtaleTorsor G A B] (σ : G)
+noncomputable def quotientSheaf.torsorIso [h : IsFiniteEtaleTorsor G A B] (σ : G)
     (hσ : ∀ g : G, g = 1 ∨ g = σ ∨ g = σ⁻¹) :
     quotientSheaf (𝟙 (Spec (.of B))) (specComap B G σ) ≅
       Scheme.fppfTopology.uliftYoneda.{u + 1}.obj (Spec (.of A)) :=
-  have := flat_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := surjective_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := locallyOfFinitePresentation_specAlgebraMap_of_isFiniteEtaleTorsor A B G
+  have := h.faithfullyFlat
+  have := h.etale
   quotientSheaf.isoOfIsPullback (Spec.algebraMap A B) (by simp)
-    (isPullback_specComap_of_isFiniteEtaleTorsor A B G) fun g ↦ by
+    (isPullback_specComap_of_isFiniteEtaleTorsor B G A) fun g ↦ by
       rcases hσ g with rfl | rfl | rfl
       · exact Or.inl (specComap_one B G)
       · exact Or.inr (Or.inr ⟨𝟙 _, by simp, by simp⟩)
@@ -203,30 +151,28 @@ noncomputable def quotientSheaf.torsorIso [IsFiniteEtaleTorsor G A B] (σ : G)
 
 /-- The isomorphism `quotientSheaf.torsorIso` is the factorisation of `h (Spec B ⟶ Spec A)`
 through the quotient sheaf. -/
-theorem quotientSheaf.torsorIso_hom [IsFiniteEtaleTorsor G A B] (σ : G)
+theorem quotientSheaf.torsorIso_hom [h : IsFiniteEtaleTorsor G A B] (σ : G)
     (hσ : ∀ g : G, g = 1 ∨ g = σ ∨ g = σ⁻¹) :
     (quotientSheaf.torsorIso σ hσ).hom =
       TauCeti.CategoryTheory.quotientSheaf.desc
         (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Spec.algebraMap A B))
         (TauCeti.CategoryTheory.quotientSheaf.uliftYoneda_map_condition
           (by simp)) := by
-  have := flat_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := surjective_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := locallyOfFinitePresentation_specAlgebraMap_of_isFiniteEtaleTorsor A B G
+  have := h.faithfullyFlat
+  have := h.etale
   unfold quotientSheaf.torsorIso
   exact quotientSheaf.isoOfIsPullback_hom _ _ _ _
 
 /-- The projection onto the quotient sheaf of `(𝟙, σ)`, followed by `quotientSheaf.torsorIso`, is
 the map induced by `Spec B ⟶ Spec A`. -/
 @[reassoc (attr := simp)]
-theorem quotientSheaf.π_torsorIso_hom [IsFiniteEtaleTorsor G A B] (σ : G)
+theorem quotientSheaf.π_torsorIso_hom [h : IsFiniteEtaleTorsor G A B] (σ : G)
     (hσ : ∀ g : G, g = 1 ∨ g = σ ∨ g = σ⁻¹) :
     TauCeti.CategoryTheory.quotientSheaf.π Scheme.fppfTopology (𝟙 (Spec (.of B)))
         (specComap B G σ) ≫ (quotientSheaf.torsorIso σ hσ).hom =
       Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Spec.algebraMap A B) := by
-  have := flat_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := surjective_specAlgebraMap_of_isFiniteEtaleTorsor A B G
-  have := locallyOfFinitePresentation_specAlgebraMap_of_isFiniteEtaleTorsor A B G
+  have := h.faithfullyFlat
+  have := h.etale
   unfold quotientSheaf.torsorIso
   exact quotientSheaf.π_isoOfIsPullback_hom _ _ _ _
 

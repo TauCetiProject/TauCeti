@@ -46,6 +46,8 @@ effective descent for affine schemes.
   morphism `p : S' ⟶ S` over an arbitrary base and a descent datum on an affine morphism
   `X ⟶ S'`, the base change of the datum to any affine scheme over `S`, for instance an affine
   open of `S`, is effective. This is the local input for effectivity over a non-affine base.
+* `TauCeti.flat_specAlgebraMap`, `TauCeti.surjective_specAlgebraMap`: if `S` is flat, resp.
+  faithfully flat, over `R`, then `Spec S ⟶ Spec R` is flat, resp. surjective.
 * `TauCeti.effectiveEpi_pullback_fst_specAlgebraMap`: if `S` is faithfully flat
   over `R`, every base change of `Spec S ⟶ Spec R` is an effective epimorphism. Hence descent of
   morphisms applies to `Spec S ⟶ Spec R`, and in particular the **uniqueness** half of effective
@@ -565,18 +567,26 @@ end DescentDatum
 
 section FaithfullyFlat
 
+/-- If `S` is flat over `R`, then `Spec S ⟶ Spec R` is flat. -/
+instance flat_specAlgebraMap (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
+    [Module.Flat R S] : Flat (Spec.algebraMap R S) :=
+  HasRingHomProperty.Spec_iff.mpr (RingHom.flat_algebraMap_iff.mpr inferInstance)
+
 variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [Module.FaithfullyFlat R S]
+
+variable (R S) in
+/-- If `S` is faithfully flat over `R`, then `Spec S ⟶ Spec R` is surjective. -/
+instance surjective_specAlgebraMap : Surjective (Spec.algebraMap R S) :=
+  ((flat_and_surjective_SpecMap_iff _).mpr
+    (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)).2
 
 /-- If `S` is faithfully flat over `R`, then the base change `X ×_{Spec R} Spec S ⟶ X` of
 `Spec S ⟶ Spec R` along any `f : X ⟶ Spec R` is an effective epimorphism, being flat, surjective
 and quasi-compact. This is the hypothesis of descent of morphisms (`TauCeti.homDescentEquiv`,
 `TauCeti.DescentDatum.baseChangeHomEquiv`) along `Spec S ⟶ Spec R`. -/
 instance effectiveEpi_pullback_fst_specAlgebraMap {X : Scheme.{u}} (f : X ⟶ Spec (.of R)) :
-    EffectiveEpi (pullback.fst f (Spec.algebraMap R S)) := by
-  obtain ⟨_, _⟩ : Flat (Spec.algebraMap R S) ∧ Surjective (Spec.algebraMap R S) :=
-    (flat_and_surjective_SpecMap_iff _).mpr
-      (RingHom.faithfullyFlat_algebraMap_iff.mpr inferInstance)
-  infer_instance
+    EffectiveEpi (pullback.fst f (Spec.algebraMap R S)) :=
+  inferInstance
 
 end FaithfullyFlat
 

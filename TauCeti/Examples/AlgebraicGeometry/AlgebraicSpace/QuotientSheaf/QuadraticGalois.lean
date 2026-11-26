@@ -23,10 +23,9 @@ over `Spec K`; the presheaf quotient `T ↦ U(T)/R(T)` has no such section and i
 * `TauCeti.QuotientSheafQuadraticGaloisExample.quotientSheafIso`: `Spec L/(𝟙, σ) ≅ h_{Spec K}`.
 * `TauCeti.QuotientSheafQuadraticGaloisExample.exists_section`: the quotient sheaf has a section
   over `Spec K` lying over the identity.
-* `TauCeti.QuotientSheafQuadraticGaloisExample.not_exists_comp_eq_id`: `Spec L` has no `K`-point
-  over `Spec K`.
 * `TauCeti.QuotientSheafQuadraticGaloisExample.not_isSheaf`: the presheaf quotient of `(𝟙, σ)` is
-  not an fppf sheaf.
+  not an fppf sheaf, since `Spec L` has no `K`-point over `Spec K`
+  (`TauCeti.QuotientSheafFieldExtensionExample.not_exists_comp_eq_id`).
 -/
 
 public section
@@ -69,68 +68,19 @@ theorem exists_section (hL : Module.finrank K L = 2) {σ : Gal(L/K)} (hσ : σ �
   ⟨Scheme.fppfTopology.uliftYonedaEquiv (quotientSheafIso hL hσ).inv, by
     rw [← GrothendieckTopology.uliftYonedaEquiv_comp, Iso.inv_hom_id]⟩
 
-omit [IsGalois K L] in
-/-- `Spec L` has no `K`-point over `Spec K`. -/
-theorem not_exists_comp_eq_id (hL : Module.finrank K L = 2) :
-    ¬ ∃ a : Spec (.of K) ⟶ Spec (.of L), a ≫ Spec.algebraMap K L = 𝟙 _ :=
-  QuotientSheafFieldExtensionExample.not_exists_comp_eq_id
-    (by rw [← Module.finrank_eq_rank, hL]; norm_num)
-
-variable (σ : Gal(L/K))
-
-/-- The factorisation through the presheaf quotient of `(𝟙, σ)` of the map
-`h_{Spec L} ⟶ h_{Spec K}`. -/
-noncomputable abbrev presheafDesc :
-    quotientPresheaf (𝟙 (Spec (.of L))) (specComap L Gal(L/K) σ) ⋙ uliftFunctor.{u + 1} ⟶
-      (Scheme.fppfTopology.uliftYoneda.{u + 1}.obj (Spec (.of K))).obj :=
-  quotientPresheaf.uliftDesc.{u + 1}
-    (Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Spec.algebraMap K L)).hom
-    (congrArg (·.hom) (quotientSheaf.uliftYoneda_map_condition.{u + 1}
-      (J := Scheme.fppfTopology) (by simp :
-        specComap L Gal(L/K) σ ≫ Spec.algebraMap K L = 𝟙 _ ≫ Spec.algebraMap K L)))
-
-omit [IsGalois K L] in
-/-- The presheaf quotient of `(𝟙, σ)` has no section over `Spec K` lying over the identity of
-`Spec K`. -/
-theorem presheafDesc_app_ne (hL : Module.finrank K L = 2)
-    (z : (quotientPresheaf (𝟙 (Spec (.of L))) (specComap L Gal(L/K) σ) ⋙
-      uliftFunctor.{u + 1}).obj (op (Spec (.of K)))) :
-    ConcreteCategory.hom ((presheafDesc σ).app _) z ≠
-      Scheme.fppfTopology.uliftYonedaEquiv (𝟙 _) := by
-  obtain ⟨z⟩ := z
-  obtain ⟨a, rfl⟩ := quotientPresheaf.π_app_surjective _ _ _ z
-  intro h
-  refine not_exists_comp_eq_id hL ⟨a, ?_⟩
-  have e : ConcreteCategory.hom ((presheafDesc σ).app _)
-      (ULift.up ((quotientPresheaf.π _ _).app _ a)) = Scheme.fppfTopology.uliftYonedaEquiv
-        (Scheme.fppfTopology.uliftYoneda.{u + 1}.map a ≫
-          Scheme.fppfTopology.uliftYoneda.{u + 1}.map (Spec.algebraMap K L)) := by
-    rw [GrothendieckTopology.uliftYonedaEquiv_comp,
-      GrothendieckTopology.uliftYonedaEquiv_uliftYoneda_map]
-    exact quotientPresheaf.uliftDesc_app_apply _ _ _ a
-  rw [e, ← CategoryTheory.Functor.map_comp] at h
-  exact (GrothendieckTopology.fullyFaithfulUliftYoneda _).map_injective
-    ((Scheme.fppfTopology.uliftYonedaEquiv.injective h).trans
-      (CategoryTheory.Functor.map_id _ _).symm)
-
 /-- **The presheaf quotient is not a sheaf.** For `L / K` quadratic Galois with nontrivial
 automorphism `σ`, the presheaf quotient of the pre-relation `(𝟙, σ)` on `Spec L` is not an fppf
-sheaf: otherwise it would be its sheafification, the quotient sheaf, which is `h_{Spec K}` and has
-the identity of `Spec K` as a section. -/
+sheaf: otherwise it would be its sheafification, the quotient sheaf, which is `h_{Spec K}`, and
+`Spec L` would have a `K`-point over `Spec K`. -/
 theorem not_isSheaf (hL : Module.finrank K L = 2) {σ : Gal(L/K)} (hσ : σ ≠ 1) :
     ¬ Presheaf.IsSheaf Scheme.fppfTopology
       (quotientPresheaf (𝟙 (Spec (.of L))) (specComap L Gal(L/K) σ) ⋙
         uliftFunctor.{u + 1}) := by
   intro hP
-  have := isIso_toSheafify Scheme.fppfTopology hP
-  have hD : presheafDesc σ = toSheafify Scheme.fppfTopology _ ≫
-      (quotientSheafIso hL hσ).hom.hom := by
-    rw [quotientSheafIso, Spaces.quotientSheaf.torsorIso_hom, quotientSheaf.desc_def,
-      ObjectProperty.homMk_hom, toSheafify_sheafifyLift]
-  have : IsIso (presheafDesc σ) := by rw [hD]; infer_instance
-  obtain ⟨z, hz⟩ := ((isIso_iff_bijective _).1 (inferInstance :
-    IsIso ((presheafDesc σ).app (op (Spec (.of K)))))).2
-    (Scheme.fppfTopology.uliftYonedaEquiv (𝟙 _))
-  exact presheafDesc_app_ne σ hL z hz
+  have := (quotientSheafIso hL hσ).isIso_hom
+  rw [quotientSheafIso, Spaces.quotientSheaf.torsorIso_hom] at this
+  exact QuotientSheafFieldExtensionExample.not_exists_comp_eq_id (K := K)
+    (by rw [← Module.finrank_eq_rank, hL]; norm_num)
+    (quotientSheaf.exists_comp_eq_id_of_isSheaf.{u + 1} (by simp) hP)
 
 end TauCeti.QuotientSheafQuadraticGaloisExample
