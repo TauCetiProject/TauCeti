@@ -124,8 +124,7 @@ include hb in
 theorem map_augmentation_toMatrix_action (g : G) :
     (LinearMap.toMatrix b b (D.action g)).map A.augmentation = (ρbar g : Matrix n n k) := by
   ext i j
-  rw [Matrix.map_apply, LinearMap.toMatrix_apply, D.augmentation_repr b hb, D.reduction_action,
-    hb, mulVec_single_one, col_apply]
+  simp [LinearMap.toMatrix_apply, D.augmentation_repr b hb, D.reduction_action, hb]
 
 include hb in
 /-- In a basis lifting the standard basis of `kⁿ`, the matrix of the action of `g` is invertible:
@@ -133,7 +132,7 @@ its determinant reduces to the nonzero determinant of `ρbar g`. -/
 private theorem isUnit_toMatrix_action (g : G) : IsUnit (LinearMap.toMatrix b b (D.action g)) := by
   rw [isUnit_iff_isUnit_det, isUnit_iff_augmentation_ne_zero]
   have h := (A.augmentation : A.obj.left →+* k).map_det (LinearMap.toMatrix b b (D.action g))
-  rw [RingHom.coe_coe, RingHom.mapMatrix_apply, RingHom.coe_coe,
+  simp only [RingHom.coe_coe, RingHom.mapMatrix_apply,
     D.map_augmentation_toMatrix_action b hb g] at h
   rw [h]
   exact ((isUnit_iff_isUnit_det _).mp (ρbar g).isUnit).ne_zero
@@ -196,10 +195,11 @@ theorem toLift_map_equiv {D D' : ModuleDeformation ρbar A} (e : D.Equiv D')
     D'.toLift (b.map e.toLinearEquiv) (fun i ↦ by simpa using hb i) = D.toLift b hb := by
   ext g : 1
   refine Units.ext (Matrix.ext fun i j ↦ ?_)
-  rw [coe_toLift_apply, coe_toLift_apply, LinearMap.toMatrix_apply, LinearMap.toMatrix_apply,
-    Module.Basis.map_apply, Module.Basis.map_repr, LinearEquiv.trans_apply]
-  congr 2
-  exact e.toLinearEquiv.symm_apply_eq.mpr (e.map_action g (b j)).symm
+  -- `e` is equivariant, so `e⁻¹ (g • e (b j)) = g • b j`.
+  have h : e.toLinearEquiv.symm (D'.action g (e.toLinearEquiv (b j))) = D.action g (b j) :=
+    e.toLinearEquiv.symm_apply_eq.mpr (e.map_action g (b j)).symm
+  simp only [coe_toLift_apply, LinearMap.toMatrix_apply, Module.Basis.map_apply,
+    Module.Basis.map_repr, LinearEquiv.trans_apply, h]
 
 /-- The lift of the base change of a module deformation, in the base change of a basis, is the
 pushforward of the lift. -/
@@ -224,10 +224,9 @@ theorem exists_smul_toLift_eq :
   let := b'.invertibleToMatrix b
   -- The change-of-basis matrix reduces to the identity.
   have hmem : unitOfInvertible (b'.toMatrix b) ∈ A.strictKernel n :=
-    mem_strictKernel_iff.mpr (GeneralLinearGroup.ext fun i j ↦ by
-      rw [GeneralLinearGroup.map_apply, val_unitOfInvertible, Units.val_one, RingHom.coe_coe,
-        Module.Basis.toMatrix_apply, D.augmentation_repr b' hb', hb, Pi.single_apply,
-        Matrix.one_apply])
+    mem_strictKernel_iff_apply.mpr fun i j ↦ by
+      simp [Module.Basis.toMatrix_apply, D.augmentation_repr b' hb', hb, Pi.single_apply,
+        Matrix.one_apply]
   refine ⟨⟨_, hmem⟩, val_unitOfInvertible _, ?_⟩
   ext g : 1
   refine Units.ext ?_
@@ -249,17 +248,16 @@ theorem exists_toLift_eq_smul (a : A.strictKernel n) :
       LinearMap.toMatrix_toLin]
   have hb' (j : n) : D.reduction (b' j) = Pi.single j 1 := funext fun i ↦ by
     -- The matrix `M = a⁻¹` lies in the strict kernel, so it reduces to the identity.
-    have hMij : A.augmentation (M i j) = (1 : Matrix n n k) i j := by
-      have h := congrArg (fun x : GL n k ↦ x i j) (mem_strictKernel_iff.mp (a⁻¹).property)
-      rwa [GeneralLinearGroup.map_apply, Units.val_one] at h
-    rw [← D.augmentation_repr b hb, hrepr, hMij, Matrix.one_apply, Pi.single_apply]
+    rw [← D.augmentation_repr b hb, hrepr, mem_strictKernel_iff_apply.mp (a⁻¹).property,
+      Matrix.one_apply, Pi.single_apply]
   obtain ⟨a', ha', h⟩ := D.exists_smul_toLift_eq hb hb'
   refine ⟨b', hb', h.symm.trans (congrArg (· • D.toLift b hb) (Subtype.ext (Units.ext ?_)))⟩
   have hM' : b.toMatrix b' = M := Matrix.ext fun i j ↦ hrepr i j
+  -- Both `b'.toMatrix b` and `a` are inverse to `b.toMatrix b' = M = a⁻¹`.
   have hinv : M * ((a : GL n A.obj.left) : Matrix n n A.obj.left) = 1 := by
     simp [M]
-  rw [ha', ← Matrix.mul_one (b'.toMatrix b), ← hinv, ← Matrix.mul_assoc, ← hM',
-    b'.toMatrix_mul_toMatrix_flip b, Matrix.one_mul]
+  rw [ha', ← Matrix.inv_eq_right_inv hinv, ← hM', Matrix.inv_eq_left_inv
+    (b'.toMatrix_mul_toMatrix_flip b)]
 
 end ChangeOfBasis
 
@@ -537,10 +535,22 @@ noncomputable def liftFunctorIsoFramedModuleDeformationFunctor :
 
 /-- The components of `liftFunctorIsoFramedModuleDeformationFunctor` are the bijections
 `liftEquivFramedModuleDeformationClass`. -/
+@[simp]
 theorem liftFunctorIsoFramedModuleDeformationFunctor_hom_app_apply (A : ArtinLocalAlg Λ k)
     (ρ : Lift ρbar A) :
-    (liftFunctorIsoFramedModuleDeformationFunctor Λ ρbar).hom.app A (ULift.up ρ) =
+    ConcreteCategory.hom (X := ULift.{v + 1} ((liftFunctor Λ ρbar).obj A))
+        ((liftFunctorIsoFramedModuleDeformationFunctor Λ ρbar).hom.app A) (ULift.up ρ) =
       liftEquivFramedModuleDeformationClass ρbar A ρ :=
+  (rfl)
+
+/-- The inverse components of `liftFunctorIsoFramedModuleDeformationFunctor` are the inverses of
+the bijections `liftEquivFramedModuleDeformationClass`. -/
+@[simp]
+theorem liftFunctorIsoFramedModuleDeformationFunctor_inv_app_apply (A : ArtinLocalAlg Λ k)
+    (c : FramedModuleDeformationClass ρbar A) :
+    ConcreteCategory.hom (Y := ULift.{v + 1} ((liftFunctor Λ ρbar).obj A))
+        ((liftFunctorIsoFramedModuleDeformationFunctor Λ ρbar).inv.app A) c =
+      ULift.up ((liftEquivFramedModuleDeformationClass ρbar A).symm c) :=
   (rfl)
 
 /-- The natural isomorphism `Def_ρbar ≅ Def^mod_ρbar` between the deformation functor of strict
@@ -555,10 +565,22 @@ noncomputable def strictClassFunctorIsoModuleDeformationFunctor :
 
 /-- The components of `strictClassFunctorIsoModuleDeformationFunctor` are the bijections
 `strictClassEquivModuleDeformationClass`. -/
+@[simp]
 theorem strictClassFunctorIsoModuleDeformationFunctor_hom_app_apply (A : ArtinLocalAlg Λ k)
     (c : StrictClass ρbar A) :
-    (strictClassFunctorIsoModuleDeformationFunctor Λ ρbar).hom.app A (ULift.up c) =
+    ConcreteCategory.hom (X := ULift.{v + 1} ((strictClassFunctor Λ ρbar).obj A))
+        ((strictClassFunctorIsoModuleDeformationFunctor Λ ρbar).hom.app A) (ULift.up c) =
       strictClassEquivModuleDeformationClass ρbar A c :=
+  (rfl)
+
+/-- The inverse components of `strictClassFunctorIsoModuleDeformationFunctor` are the inverses of
+the bijections `strictClassEquivModuleDeformationClass`. -/
+@[simp]
+theorem strictClassFunctorIsoModuleDeformationFunctor_inv_app_apply (A : ArtinLocalAlg Λ k)
+    (c : ModuleDeformationClass ρbar A) :
+    ConcreteCategory.hom (Y := ULift.{v + 1} ((strictClassFunctor Λ ρbar).obj A))
+        ((strictClassFunctorIsoModuleDeformationFunctor Λ ρbar).inv.app A) c =
+      ULift.up ((strictClassEquivModuleDeformationClass ρbar A).symm c) :=
   (rfl)
 
 end TauCeti.Deformation
