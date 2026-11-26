@@ -310,7 +310,7 @@ theorem isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield :
       (maximalRealSubfield_le_maximalRealOrCMSubfield K)
 
 /-- If `K` is CM, then so is `E_K`, which is all of `K`. -/
-theorem isCMField_maximalRealOrCMSubfield_of_isCMField [IsCMField K] :
+instance isCMField_maximalRealOrCMSubfield_of_isCMField [IsCMField K] :
     IsCMField (maximalRealOrCMSubfield K) := by
   rw [isCMField_maximalRealOrCMSubfield_iff_ne_maximalRealSubfield,
     maximalRealOrCMSubfield_eq_top_of_isCMField]
