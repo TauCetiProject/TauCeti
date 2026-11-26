@@ -27,8 +27,9 @@ the coroot directions.
   `a_i` in `E_i` satisfies `α_i(H) B(a_i, a_i) = 0`. In particular the centre lies in `t`
   (`TauCeti.IsRootPlaneDecomposition.center_le`).
 * **The roots vanish exactly on the centre.** An element `H ∈ t` commuting with every plane is
-  central (`TauCeti.IsRootPlaneDecomposition.mem_center_of_forall_lie_eq_zero`). For nonzero
-  planes, `H ∈ t` is central exactly when `α_i(H) = 0` for every `i`
+  central (`TauCeti.IsRootPlaneDecomposition.mem_center_of_forall_lie_eq_zero`), and so is one
+  killed by every root (`TauCeti.IsRootPlaneDecomposition.mem_center_of_forall_apply_eq_zero`).
+  Conversely, for nonzero planes, `H ∈ t` is central exactly when `α_i(H) = 0` for every `i`
   (`TauCeti.IsRootPlaneDecomposition.mem_center_iff`). So the common
   kernel of the roots is `𝔷 ∩ t`
   (`TauCeti.IsRootPlaneDecomposition.dualCoannihilator_span_range`), and in finite dimensions the
@@ -130,12 +131,18 @@ theorem mem_center_of_forall_lie_eq_zero [Finite ι] (hD : IsRootPlaneDecomposit
   rw [← lie_skew, neg_eq_zero, lie_add, hD.lie_eq_zero H.property hH', zero_add, lie_sum]
   exact Finset.sum_eq_zero fun i _ ↦ h i (a i)
 
+/-- **An element of the torus killed by every root is central.** In a root-plane decomposition,
+an element `H ∈ t` with `α_i(H) = 0` for every root `α_i` is central. -/
+theorem mem_center_of_forall_apply_eq_zero [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
+    {H : t} (h : ∀ i, α i H = 0) : (H : L) ∈ center K L :=
+  hD.mem_center_of_forall_lie_eq_zero fun i v ↦
+    ((hD.isRootPlane i).lie_eq_zero_iff H v).mpr (Or.inl (h i))
+
 /-- **The roots vanish exactly on the centre.** In a root-plane decomposition with nonzero planes,
 an element `H ∈ t` is central exactly when every root vanishes at `H`. -/
 theorem mem_center_iff [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
     (hE : ∀ i, E i ≠ ⊥) (H : t) : (H : L) ∈ center K L ↔ ∀ i, α i H = 0 := by
-  refine ⟨fun h i ↦ ?_, fun h ↦ hD.mem_center_of_forall_lie_eq_zero fun i v ↦
-    ((hD.isRootPlane i).lie_eq_zero_iff H v).mpr (Or.inl (h i))⟩
+  refine ⟨fun h i ↦ ?_, hD.mem_center_of_forall_apply_eq_zero⟩
   rw [center, LieModule.mem_maxTrivSubmodule] at h
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hE i)
   have hHv : ⁅(H : L), v⁆ = 0 := by rw [← lie_skew, h v, neg_zero]
@@ -191,11 +198,10 @@ theorem span_range_domRestrict_eq_top [Finite ι] (hD : IsRootPlaneDecomposition
   rw [← Subspace.dualCoannihilator_dualAnnihilator_eq (W := Submodule.span K _),
     Submodule.dualAnnihilator_eq_top_iff, eq_bot_iff]
   intro H hH
-  -- Every root vanishes at `H`, so `H` commutes with every plane.
+  -- Every root vanishes at `H`, so `H` is central.
   have hα (i : ι) : α i H = 0 :=
     (Submodule.mem_dualCoannihilator H).mp hH _ (Submodule.subset_span ⟨i, rfl⟩)
-  have hc : ((H : t) : L) ∈ center K L := hD.mem_center_of_forall_lie_eq_zero fun i v ↦
-    ((hD.isRootPlane i).lie_eq_zero_iff H v).mpr (Or.inl (hα i))
+  have hc : ((H : t) : L) ∈ center K L := hD.mem_center_of_forall_apply_eq_zero hα
   have hd : ((H : t) : L) ∈ derivedSeries K L 1 :=
     LieSubmodule.mem_toSubmodule _ |>.mp (Submodule.mem_comap.mp H.property)
   exact (Submodule.mem_bot K).mpr <| Subtype.ext <| Subtype.ext <|
