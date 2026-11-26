@@ -31,6 +31,9 @@ compared over a localization of the base.
 
 ## Main results
 
+* `AlgebraicGeometry.Proj.mapIsoOverOfAlgEquiv`: a graded algebra equivalence induces a
+  contravariant isomorphism of projective spectra over the coefficient ring.
+
 * `AlgebraicGeometry.Proj.val_toSpecCoeff_appTop_apply`: the functions pulled back from the
   coefficient ring `R` along `Proj A ⟶ Spec R` are the constants `r / 1`.
 * `AlgebraicGeometry.Proj.val_appLE_apply`: the same for functions on an affine open `U` of a
@@ -117,6 +120,32 @@ theorem map_toSpecCoeff {B : Type u} [CommRing B] [Algebra R B] {ℬ : ℕ → S
   rw [toSpecCoeff, map_toSpecZero_assoc, ← Spec.map_comp, ← CommRingCat.ofHom_comp, toSpecCoeff]
   congr 3
   exact RingHom.ext hR
+
+/-- A grading-preserving algebra equivalence induces a contravariant isomorphism of projective
+spectra over the coefficient spectrum. -/
+@[expose, simps! hom_left inv_left]
+noncomputable def mapIsoOverOfAlgEquiv {B : Type u} [CommRing B] [Algebra R B]
+    (ℬ : ℕ → Submodule R B) [GradedAlgebra ℬ] (e : A ≃ₐ[R] B)
+    (he : ∀ n a, e a ∈ ℬ n ↔ a ∈ 𝒜 n) :
+    Over.mk (toSpecCoeff ℬ) ≅ Over.mk (toSpecCoeff 𝒜) := by
+  let f : 𝒜 →+*ᵍ ℬ :=
+    { __ := e.toRingHom
+      map_mem := fun {n a} ha ↦ (he n a).mpr ha }
+  let g : ℬ →+*ᵍ 𝒜 :=
+    { __ := e.symm.toRingHom
+      map_mem := fun {n b} hb ↦ (he n (e.symm b)).mp ((e.apply_symm_apply b).symm ▸ hb) }
+  have hf := HomogeneousIdeal.irrelevant_le_map_of_surjective f e.surjective
+  have hr (r : R) :
+      f.gradedZeroRingHom (algebraMap R (𝒜 0) r) = algebraMap R (ℬ 0) r := by
+    apply Subtype.ext
+    rw [GradedRingHom.gradedZeroRingHom_apply_coe, SetLike.GradeZero.coe_algebraMap,
+      SetLike.GradeZero.coe_algebraMap]
+    exact e.commutes r
+  have hw : (mapIso f g e.apply_symm_apply e.symm_apply_apply).hom ≫ toSpecCoeff 𝒜 =
+      toSpecCoeff ℬ :=
+    (congrArg (· ≫ toSpecCoeff 𝒜) (mapIso_hom f g e.apply_symm_apply e.symm_apply_apply)).trans
+      (map_toSpecCoeff 𝒜 f hf hr)
+  exact Over.isoMk (mapIso f g e.apply_symm_apply e.symm_apply_apply) hw
 
 variable (S : Type u) [CommRing S] [Algebra R S]
 

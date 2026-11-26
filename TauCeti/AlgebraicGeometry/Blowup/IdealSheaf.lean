@@ -22,11 +22,12 @@ Let `I ⊆ 𝒪_X` be an ideal sheaf on a scheme `X`. The *blowup* of `X` along 
 
 Over an affine open `U` of `X`, the graded ring of sections `⨁ n, Γ(Iⁿ, U)` of the Rees algebra is
 the Rees algebra `Γ(X, U)[I(U)t]` of the ideal `I(U) ⊆ Γ(X, U)`, with its grading by the power of
-`t` (`AlgebraicGeometry.Scheme.IdealSheafData.reesAlgebraSectionsEquiv`). Consequently the part of
-the blowup over `U` is the blowup `Proj Γ(X, U)[I(U)t]` of the affine scheme `U ≅ Spec Γ(X, U)`
-along `V(I(U))`, whose affine charts, universal property, behaviour away from the centre and base
-change are developed in the other files of this directory. When `I` is of finite type, the Rees
-algebras `Γ(X, U)[I(U)t]` are finitely generated, and the blowup is proper over `X`.
+`t` (`AlgebraicGeometry.Scheme.IdealSheafData.reesAlgebraSectionsEquiv`). The isomorphism of
+projective spectra over the coefficient ring uses `AlgebraicGeometry.Proj.mapIsoOverOfAlgEquiv`.
+Consequently the part of the blowup over `U` is the blowup `Proj Γ(X, U)[I(U)t]` of the affine
+scheme `U ≅ Spec Γ(X, U)` along `V(I(U))`. The other files in this directory develop its affine
+charts, universal property, behaviour away from the centre and base change. When `I` is of finite
+type, the Rees algebras `Γ(X, U)[I(U)t]` are finitely generated, and the blowup is proper over `X`.
 
 ## Main definitions
 
@@ -69,49 +70,12 @@ open TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
 
-/-! ### The graded isomorphism over an affine open -/
-
-section Affine
-
-variable {U : X.Opens} (hU : IsAffineOpen U)
-include hU
-
-/-- `reesAlgebraSectionsEquiv`, as a graded ring homomorphism. -/
-private def reesAlgebraSectionsGradedHom :
-    I.reesAlgebra.obj.gradedSectionsGrading U →+*ᵍ reesAlgebra.grade (I.ideal ⟨U, hU⟩) where
-  __ := (I.reesAlgebraSectionsEquiv hU).toRingHom
-  map_mem hx := (I.reesAlgebraSectionsEquiv_mem_grade_iff hU).mpr hx
-
-/-- The inverse of `reesAlgebraSectionsEquiv`, as a graded ring homomorphism. -/
-private def reesAlgebraSectionsGradedHomInv :
-    reesAlgebra.grade (I.ideal ⟨U, hU⟩) →+*ᵍ I.reesAlgebra.obj.gradedSectionsGrading U where
-  __ := (I.reesAlgebraSectionsEquiv hU).symm.toRingHom
-  map_mem {_ x} hx := (I.reesAlgebraSectionsEquiv_mem_grade_iff hU).mp <| by
-    convert hx using 1
-    exact (I.reesAlgebraSectionsEquiv hU).apply_symm_apply x
-
-/-- The graded form of `reesAlgebraSectionsEquiv` preserves the scalars in degree zero. -/
-private lemma reesAlgebraSectionsGradedHom_algebraMap (r : Γ(X, U)) :
-    (I.reesAlgebraSectionsGradedHom hU).gradedZeroRingHom
-        (algebraMap Γ(X, U) (I.reesAlgebra.obj.gradedSectionsGrading U 0) r) =
-      algebraMap Γ(X, U) (reesAlgebra.grade (I.ideal ⟨U, hU⟩) 0) r :=
-  Subtype.ext <| by
-    rw [GradedRingHom.gradedZeroRingHom_apply_coe, SetLike.GradeZero.coe_algebraMap,
-      SetLike.GradeZero.coe_algebraMap]
-    exact (I.reesAlgebraSectionsEquiv hU).commutes r
-
-/-- The isomorphism of projective spectra induced by `reesAlgebraSectionsEquiv` lies over
-`Spec Γ(X, U)`. -/
-private lemma map_reesAlgebraSectionsGradedHom_toSpecCoeff :
-    (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
-        (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
-        (I.reesAlgebraSectionsEquiv hU).symm_apply_apply).hom ≫
-      Proj.toSpecCoeff (I.reesAlgebra.obj.gradedSectionsGrading U) =
-    Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) :=
-  (congrArg (· ≫ _) (Proj.mapIso_hom _ _ _ _)).trans
-    (Proj.map_toSpecCoeff _ _ _ (I.reesAlgebraSectionsGradedHom_algebraMap hU))
-
-end Affine
+/-- The affine Rees algebra comparison as an isomorphism over the coefficient spectrum. -/
+private def reesProjIso {U : X.Opens} (hU : IsAffineOpen U) :
+    Over.mk (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩))) ≅
+      Over.mk (Proj.toSpecCoeff (I.reesAlgebra.obj.gradedSectionsGrading U)) :=
+  Proj.mapIsoOverOfAlgEquiv _ _ (I.reesAlgebraSectionsEquiv hU)
+    (fun _ _ ↦ I.reesAlgebraSectionsEquiv_mem_grade_iff hU)
 
 /-! ### The blowup -/
 
@@ -132,9 +96,7 @@ blowup `Proj Γ(X, U)[I(U)t]` of `Spec Γ(X, U)` along `V(I(U))` into the blowup
 `V(I)`. Its image is the preimage of `U` (`isPullback_blowupChart`). -/
 def blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
     Proj (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) ⟶ I.blowup :=
-  (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
-      (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
-      (I.reesAlgebraSectionsEquiv hU).symm_apply_apply).hom ≫
+  ((Over.forget _).mapIso (I.reesProjIso hU)).hom ≫
     I.reesAlgebra.obj.relativeProjCover.f (⟨U, hU⟩ : X.AffineZariskiSite)
 
 instance {U : X.Opens} (hU : IsAffineOpen U) : IsOpenImmersion (I.blowupChart hU) :=
@@ -154,14 +116,15 @@ theorem blowupChart_blowupToBase {U : X.Opens} (hU : IsAffineOpen U) :
   exact (Category.assoc _ _ _).trans
     ((congrArg (_ ≫ ·) (I.reesAlgebra.obj.relativeProjCover_f_relativeProjToBase ⟨U, hU⟩)).trans
       ((Category.assoc _ _ _).symm.trans
-        (congrArg (· ≫ hU.fromSpec) (I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU))))
+        (congrArg (· ≫ hU.fromSpec) (Over.w (I.reesProjIso hU).hom))))
 
 /-- The image of the affine chart of the blowup over `U` is the preimage of `U`. -/
 theorem opensRange_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
     (I.blowupChart hU).opensRange = I.blowupToBase ⁻¹ᵁ U :=
   -- as for the `IsOpenImmersion` instance above, the open immersion property of the chart of the
   -- relative `Proj` is supplied explicitly
-  (@Scheme.Hom.opensRange_comp_of_isIso _ _ _ _ _ (Iso.isIso_hom _)
+  (@Scheme.Hom.opensRange_comp_of_isIso _ _ _ _ _
+    (Iso.isIso_hom ((Over.forget _).mapIso (I.reesProjIso hU)))
     (I.reesAlgebra.obj.isOpenImmersion_relativeProjCover_f ⟨U, hU⟩)).trans
       (I.reesAlgebra.obj.relativeProjToBase_preimage ⟨U, hU⟩).symm
 
@@ -172,13 +135,11 @@ theorem isPullback_blowupChart {U : X.Opens} (hU : IsAffineOpen U) :
     IsPullback (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩)) ≫ hU.isoSpec.inv)
       (I.blowupChart hU) U.ι I.blowupToBase := by
   refine (I.reesAlgebra.obj.isPullback_relativeProjCover (⟨U, hU⟩ : X.AffineZariskiSite)).of_iso'
-    (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
-      (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
-      (I.reesAlgebraSectionsEquiv hU).symm_apply_apply) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ((Over.forget _).mapIso (I.reesProjIso hU)) (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ?_ (Category.comp_id _).symm (by simp) (by simp)
   rw [Iso.refl_hom, Category.comp_id]
   exact (Category.assoc _ _ _).symm.trans
-    (congrArg (· ≫ hU.isoSpec.inv) (I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU))
+    (congrArg (· ≫ hU.isoSpec.inv) (Over.w (I.reesProjIso hU).hom))
 
 /-- The affine chart of the blowup over `U` is the base change of the blowup along
 `Spec Γ(X, U) ⟶ X`: the form of `isPullback_blowupChart` over the spectrum of the sections. -/
@@ -186,12 +147,10 @@ theorem isPullback_blowupChart_fromSpec {U : X.Opens} (hU : IsAffineOpen U) :
     IsPullback (Proj.toSpecCoeff (reesAlgebra.grade (I.ideal ⟨U, hU⟩))) (I.blowupChart hU)
       hU.fromSpec I.blowupToBase := by
   refine (I.reesAlgebra.obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).of_iso'
-    (Proj.mapIso (I.reesAlgebraSectionsGradedHom hU) (I.reesAlgebraSectionsGradedHomInv hU)
-      (I.reesAlgebraSectionsEquiv hU).apply_symm_apply
-      (I.reesAlgebraSectionsEquiv hU).symm_apply_apply) (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    ((Over.forget _).mapIso (I.reesProjIso hU)) (Iso.refl _) (Iso.refl _) (Iso.refl _)
     ?_ (Category.comp_id _).symm (by simp) (by simp)
   rw [Iso.refl_hom, Category.comp_id]
-  exact I.map_reesAlgebraSectionsGradedHom_toSpecCoeff hU
+  exact Over.w (I.reesProjIso hU).hom
 
 /-- **The blowup along an ideal sheaf of finite type is proper.** If the ideal `I(U)` is finitely
 generated for every affine open `U` of `X`, then `Bl_I X ⟶ X` is proper. -/

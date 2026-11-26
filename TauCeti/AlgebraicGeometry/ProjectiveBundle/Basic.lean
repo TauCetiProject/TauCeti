@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Pullback.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.RelativeProj.TwistingSheaf.Pushforward
+public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 
 /-!
 # The projective bundle of a quasi-coherent module
@@ -41,10 +42,18 @@ invertible, and the tautological quotient is an epimorphism: on the chart `D₊(
 * `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.universalQuotient S E`: the
   tautological quotient `π^* E ⟶ 𝒪(1)`.
 
+* `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle.affineOpenIso F hU`: the affine
+  restriction as the projective spectrum of the symmetric algebra of the sections. It uses
+  `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraSectionsEquiv` and
+  `CategoryTheory.CommMon.isPullback_relativeProjCover_fromSpec`, composed using
+  Mathlib's `CategoryTheory.Limits.IsPullback.isoOverPullback`.
+
 ## Main results
 
 In the namespace `TauCeti.AlgebraicGeometry.ProjectiveBundles.projectiveBundle`:
 
+* `affineOpenIso_inv_left_snd`: the map from the affine model into the projective bundle is the
+  graded comparison followed by the relative `Proj` chart inclusion.
 * `universalQuotient_app_pullbackSections`: the tautological quotient sends the pullback of a
   section `e` of `E` over an affine open `U` to the section of `𝒪(1)` that is `e / 1` on the chart
   over `U`.
@@ -89,6 +98,47 @@ def projection : projectiveBundle S E ⟶ S :=
 theorem projection_def :
     projection S E = ((gradedSymmetricAlgebra S).obj ⟨E, inferInstance⟩).obj.relativeProjToBase :=
   (rfl)
+
+section Affine
+
+variable {S : Scheme.{u}} (F : QuasicoherentSheaf S)
+variable {U : S.Opens} (hU : IsAffineOpen U)
+
+/-- Over an affine open `U` of the base, the restriction of `P(E)` is isomorphic over
+`Spec Γ(S, U)` to the projective spectrum of the symmetric algebra of the sections of `E` on `U`. -/
+def affineOpenIso :
+    Over.mk (pullback.fst hU.fromSpec (projection S F.obj)) ≅
+      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U)
+        ((Scheme.Modules.sectionsFunctor U).obj F.obj)) := by
+  let A := ((gradedSymmetricAlgebra S).obj F).obj
+  let M := (Scheme.Modules.sectionsFunctor U).obj F.obj
+  let chartIso := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
+    (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
+  let grades := TauCeti.SymmetricAlgebra.homogeneousSubmodule Γ(S, U) M
+  let coeffIso : Over.mk (Proj.toSpecCoeff grades) ≅
+      Over.mk (TauCeti.SymmetricAlgebra.projToSpec Γ(S, U) M) :=
+    Over.isoMk (Iso.refl _) ((Category.id_comp _).trans
+      (Proj.toSpecCoeff_homogeneousSubmodule Γ(S, U) M).symm)
+  exact (A.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩).isoOverPullback.symm ≪≫
+    chartIso ≪≫ coeffIso
+
+/-- The inverse affine comparison followed by the projection to the projective bundle is the
+graded comparison on projective spectra followed by the relative `Proj` chart inclusion. -/
+@[reassoc (attr := simp)]
+theorem affineOpenIso_inv_left_snd :
+    (affineOpenIso F hU).inv.left ≫ pullback.snd hU.fromSpec (projection S F.obj) =
+      (Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
+        (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)).inv.left ≫
+        ((gradedSymmetricAlgebra S).obj F).obj.relativeProjCover.f ⟨U, hU⟩ := by
+  let h := ((gradedSymmetricAlgebra S).obj F).obj.isPullback_relativeProjCover_fromSpec ⟨U, hU⟩
+  let e := Proj.mapIsoOverOfAlgEquiv _ _ (gradedSymmetricAlgebraSectionsEquiv F hU)
+    (gradedSymmetricAlgebraSectionsEquiv_mem_grade_iff F hU)
+  calc
+    _ = ((𝟙 _ ≫ e.inv.left) ≫ h.isoOverPullback.hom.left) ≫ pullback.snd _ _ := rfl
+    _ = _ := by
+      rw [Category.id_comp, Category.assoc, h.isoOverPullback_hom_left_comp_snd]
+
+end Affine
 
 /-- The **twisting sheaf** `𝒪(m)` of the projective bundle `P(E)`, for `m ∈ ℤ`. It is invertible
 because `Sym E` is generated in degree one. It is exposed because the statements about
