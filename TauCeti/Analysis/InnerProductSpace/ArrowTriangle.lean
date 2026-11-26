@@ -43,11 +43,10 @@ Here "modulus" is an abstract unital multiplicative relation `M c f` between fun
 `c : I → 𝕜` and `f : I → ℝ`, read "`c` has modulus `f`"; in the application it means
 "`c` agrees with `f` up to norm powers at the places of a twist".
 
-This is §4.1 (b) and (c) of the roadmap `ShortGRH/DeterminantsOfThetaLiftChains`. There `F i n`
-is a space of automorphic forms on the unitary group of the hermitian space attached to the interval
-`[i + 1, i + n]`, the arrow `a` is the theta lift that adds the greatest element and `d` is the
-adjoint of the lift that adds the least element; the computation gives the Gram operator of a chain
-of theta lifts.
+In the application `F i n` is a space of automorphic forms on the unitary group of the hermitian
+space attached to the interval `[i + 1, i + n]`, the arrow `a` is the theta lift that adds the
+greatest element and `d` is the adjoint of the lift that adds the least element; the computation
+gives the Gram operator of a chain of theta lifts.
 
 ## Main declarations
 

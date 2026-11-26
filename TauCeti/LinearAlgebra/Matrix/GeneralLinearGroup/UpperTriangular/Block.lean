@@ -9,6 +9,8 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 -- `TauCeti.upperTriangularGroup` is the block triangular group of the identity ranking.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
+-- `TauCeti.unitDiagonalMatrixOfEntries` gives the unipotent radical.
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 -- Non-public: the counting argument passes through the quotient by the kernel.
 import Mathlib.GroupTheory.Coset.Card
 import Mathlib.GroupTheory.QuotientGroup.Basic
@@ -31,15 +33,16 @@ finiteness assumption on `R`.
 
 The case of one block indexed by `N` followed by `j` blocks indexed by `T`
 (`TauCeti.exists_natCard_blockTriangularGroup_sum_eq`) is the order
-`#GL N R · #GL T R ^ j · #R ^ e`, with `e` independent of `R`, of the level groups of the chain of
-theta lifts in the roadmap `ShortGRH/DeterminantsOfThetaLiftChains`, §4.1 (a).
+`#GL N R · #GL T R ^ j · #R ^ e`, with `e` independent of `R`, of the level groups of a chain of
+theta lifts.
 
 ## Main declarations
 
 * `Matrix.BlockTriangular.toSquareBlock_mul`: on a diagonal block, the product of block triangular
   matrices is the product of their blocks.
-* `Matrix.blockUnipotent N`: the block unipotent matrix with the entries `N` above the diagonal
-  blocks; `Matrix.det_blockUnipotent` says its determinant is `1`.
+* `TauCeti.blockTriangular_unitDiagonalMatrixOfEntries`,
+  `TauCeti.det_unitDiagonalMatrixOfEntries_eq_one`: the unit diagonal matrix with prescribed
+  entries above the diagonal blocks is block triangular, of determinant `1`.
 * `TauCeti.blockTriangularGroup R b`: the invertible matrices that are block upper triangular
   for `b`; `TauCeti.upperTriangularGroup_eq_blockTriangularGroup` identifies the upper triangular
   group as the case `b = id`.
@@ -116,28 +119,38 @@ theorem toSquareBlock_reindex_blockDiagonal'
   have h_i : (Equiv.sigmaFiberEquiv b).symm i = ⟨b i, ⟨i, rfl⟩⟩ := rfl
   simp [toSquareBlock_def, h_i, h_j]
 
-/-- The unipotent matrix with the entries `N p` at the positions `p = (i, j)` with `b i < b j`,
-identity diagonal blocks, and zeros below the diagonal blocks. -/
-def blockUnipotent [DecidableEq m] (N : {p : m × m // b p.1 < b p.2} → R) : Matrix m m R :=
-  of fun i j => if h : b i < b j then N ⟨(i, j), h⟩ else (1 : Matrix m m R) i j
+end Matrix
 
-/-- The block unipotent matrix is block upper triangular. -/
-theorem blockTriangular_blockUnipotent [DecidableEq m] (N : {p : m × m // b p.1 < b p.2} → R) :
-    (blockUnipotent N).BlockTriangular b := fun i j hij => by
-  simp [blockUnipotent, hij.not_gt, one_apply_ne (ne_of_apply_ne b hij.ne')]
+namespace TauCeti
 
-/-- The block unipotent matrix has determinant `1`: its diagonal blocks are identity matrices. -/
-theorem det_blockUnipotent [Fintype m] [DecidableEq m] (N : {p : m × m // b p.1 < b p.2} → R) :
-    (blockUnipotent N).det = 1 := by
-  rw [(blockTriangular_blockUnipotent N).det]
+variable {m α R : Type*} [LinearOrder α] [CommRing R] {b : m → α}
+
+/-- A unit diagonal matrix whose prescribed entries lie above the diagonal blocks of `b` is block
+upper triangular. -/
+theorem blockTriangular_unitDiagonalMatrixOfEntries {P : m × m → Prop}
+    (hP : ∀ p, P p → b p.1 < b p.2) (f : {p : m × m // P p} → R) :
+    (unitDiagonalMatrixOfEntries P f).BlockTriangular b := fun _ _ hij =>
+  unitDiagonalMatrixOfEntries_apply_of_notMem P f (ne_of_apply_ne b hij.ne')
+    fun h => (hP _ h).not_gt hij
+
+/-- A unit diagonal matrix whose prescribed entries lie above the diagonal blocks of `b` has
+determinant `1`: its diagonal blocks are identity matrices. -/
+theorem det_unitDiagonalMatrixOfEntries_eq_one [Fintype m] [DecidableEq m] {P : m × m → Prop}
+    (hP : ∀ p, P p → b p.1 < b p.2) (f : {p : m × m // P p} → R) :
+    (unitDiagonalMatrixOfEntries P f).det = 1 := by
+  rw [(blockTriangular_unitDiagonalMatrixOfEntries hP f).det]
   refine Finset.prod_eq_one fun a _ => ?_
-  have h_block : (blockUnipotent N).toSquareBlock b a = 1 := by
+  have h_block : (unitDiagonalMatrixOfEntries P f).toSquareBlock b a = 1 := by
     rw [← toSquareBlock_one b a]
     ext ⟨i, hi⟩ ⟨j, hj⟩
-    simp [blockUnipotent, toSquareBlock_def, hi, hj]
+    by_cases h_eq : i = j
+    · subst h_eq
+      simp [toSquareBlock_def]
+    · have h_not : ¬ P (i, j) := fun h => (hP _ h).ne (hi.trans hj.symm)
+      simp [toSquareBlock_def, h_eq, h_not]
   rw [h_block, det_one]
 
-end Matrix
+end TauCeti
 
 /-! ### The block triangular group -/
 
@@ -248,15 +261,18 @@ theorem mem_ker_diagBlocks_iff {g : blockTriangularGroup R b} :
     ext ⟨i, hi⟩ ⟨j, hj⟩
     exact hg i j (hi.trans hj.symm)
 
-/-- The unipotent matrix `blockUnipotent N` as an element of `GL m R`. -/
+/-- The unit diagonal matrix with the entries `N` above the diagonal blocks, as an element of
+`GL m R`. -/
 noncomputable def blockUnipotentGL (N : {p : m × m // b p.1 < b p.2} → R) : GL m R :=
-  ((isUnit_iff_isUnit_det _).mpr (by rw [det_blockUnipotent]; exact isUnit_one) :
-    IsUnit (blockUnipotent N)).unit
+  ((isUnit_iff_isUnit_det _).mpr
+      (by rw [det_unitDiagonalMatrixOfEntries_eq_one (fun _ h => h)]; exact isUnit_one) :
+    IsUnit (unitDiagonalMatrixOfEntries (fun p : m × m => b p.1 < b p.2) N)).unit
 
-/-- The matrix of `blockUnipotentGL N` is `blockUnipotent N`. -/
+/-- The matrix of `blockUnipotentGL N` is the unit diagonal matrix with the entries `N`. -/
 @[simp]
 theorem coe_blockUnipotentGL (N : {p : m × m // b p.1 < b p.2} → R) :
-    (blockUnipotentGL N : Matrix m m R) = blockUnipotent N := by
+    (blockUnipotentGL N : Matrix m m R) =
+      unitDiagonalMatrixOfEntries (fun p : m × m => b p.1 < b p.2) N := by
   simp [blockUnipotentGL]
 
 variable (R b) in
@@ -266,19 +282,31 @@ noncomputable def kerDiagBlocksEquiv :
     (diagBlocks R b).ker ≃ ({p : m × m // b p.1 < b p.2} → R) where
   toFun g p := (((g : blockTriangularGroup R b) : GL m R) : Matrix m m R) p.val.1 p.val.2
   invFun N :=
-    ⟨⟨blockUnipotentGL N, by simpa using blockTriangular_blockUnipotent N⟩,
-      mem_ker_diagBlocks_iff.mpr fun i j hij => by simp [blockUnipotent, hij]⟩
+    ⟨⟨blockUnipotentGL N, by
+        simpa using blockTriangular_unitDiagonalMatrixOfEntries (fun _ h => h) N⟩,
+      mem_ker_diagBlocks_iff.mpr fun i j hij => by
+        by_cases h_eq : i = j
+        · subst h_eq
+          simp
+        · rw [coe_blockUnipotentGL, unitDiagonalMatrixOfEntries_apply_of_notMem _ N h_eq
+            (by simp [hij]), one_apply_ne h_eq]⟩
   left_inv g := by
     refine Subtype.ext (Subtype.ext (Units.ext (Matrix.ext fun i j => ?_)))
-    simp only [coe_blockUnipotentGL, blockUnipotent, of_apply]
-    split_ifs with h
-    · rfl
-    rcases (not_lt.mp h).eq_or_lt with h | h
-    · exact (mem_ker_diagBlocks_iff.mp g.property i j h.symm).symm
-    · rw [g.val.property h, one_apply_ne (ne_of_apply_ne b h.ne')]
+    rw [coe_blockUnipotentGL]
+    by_cases h_eq : i = j
+    · subst h_eq
+      rw [unitDiagonalMatrixOfEntries_apply_self,
+        mem_ker_diagBlocks_iff.mp g.property i i rfl, one_apply_eq]
+    by_cases h_lt : b i < b j
+    · exact unitDiagonalMatrixOfEntries_apply_of_mem _ _ h_eq h_lt
+    rw [unitDiagonalMatrixOfEntries_apply_of_notMem _ _ h_eq h_lt]
+    rcases (not_lt.mp h_lt).eq_or_lt with h | h
+    · rw [mem_ker_diagBlocks_iff.mp g.property i j h.symm, one_apply_ne h_eq]
+    · rw [g.val.property h]
   right_inv N := by
     funext p
-    simp [blockUnipotent, p.property]
+    exact unitDiagonalMatrixOfEntries_apply_of_mem _ N (ne_of_apply_ne b p.property.ne)
+      p.property
 
 end BlockTriangularGroup
 
