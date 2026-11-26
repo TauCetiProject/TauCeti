@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Trace.Hyperplane
 public import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.Analysis.MeanInequalitiesPow
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.InnerProductSpace.ProdL2
 
@@ -117,13 +118,11 @@ theorem lpNorm_iteratedFDeriv_hyperplane_le {i : ℕ} {u : WithLp 2 (ℝ × E) �
   -- The derivatives of the restriction are those of `u` along the hyperplane.
   have hpt (y : E) : ‖iteratedFDeriv ℝ i (fun y : E ↦ u (WithLp.toLp 2 (a, y))) y‖ ≤
       ‖w (WithLp.toLp 2 (a, y))‖ := by
-    rw [hrestr, ι.iteratedFDeriv_comp_right hshift y (by norm_cast; omega),
-      iteratedFDeriv_comp_add_right]
     have hy : ι y + c = WithLp.toLp 2 (a, y) := by simp [ι, c, ← WithLp.toLp_add]
-    rw [hy]
-    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-    exact mul_le_of_le_one_right (norm_nonneg _)
-      (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun _ _ ↦ hι)
+    rw [hrestr]
+    refine (ι.norm_iteratedFDeriv_comp_right_le hshift y (by norm_cast; omega)).trans ?_
+    rw [iteratedFDeriv_comp_add_right, hy]
+    exact mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _) hι)
   have hwcont : Continuous fun y : E ↦ w (WithLp.toLp 2 (a, y)) :=
     hw.continuous.comp (by fun_prop)
   have hmem : MemLp (fun y : E ↦ ‖w (WithLp.toLp 2 (a, y))‖) 2 volume := by
