@@ -187,6 +187,17 @@ theorem fittingDegree_baseChange {W : Type*} [CommRing W] [Algebra V W] (w : Add
   refine w.fittingDegree_eq_of_fittingIdeal_eq_span hw ?_
   rw [fittingIdeal_baseChange, hx, Ideal.map_span, Set.image_singleton]
 
+/-- Over a Bézout ring, such as a valuation ring, the degree of a product of finitely presented
+modules is the sum of their degrees. -/
+theorem fittingDegree_prod (hv : ∀ x, 0 ≤ v x) [Module.FinitePresentation V M]
+    [Module.FinitePresentation V N] :
+    v.fittingDegree (M × N) = v.fittingDegree M + v.fittingDegree N := by
+  obtain ⟨a, ha, hda⟩ := v.exists_fittingIdeal_eq_span_and_fittingDegree_eq (M := M)
+  obtain ⟨b, hb, hdb⟩ := v.exists_fittingIdeal_eq_span_and_fittingDegree_eq (M := N)
+  rw [hda, hdb, ← v.map_mul]
+  refine v.fittingDegree_eq_of_fittingIdeal_eq_span hv ?_
+  rw [fittingIdeal_prod_zero, ha, hb, Ideal.span_singleton_mul_span_singleton]
+
 variable [IsDomain V] in
 /-- Over a Bézout domain, such as a valuation ring, with an additive valuation `v` which is infinite
 only at zero, a finitely presented module has finite degree exactly when it is torsion. -/
@@ -218,14 +229,6 @@ theorem fittingDegree_eq_add_of_exact (hv : ∀ x, 0 ≤ v x) [Module.FinitePres
   refine v.fittingDegree_eq_of_fittingIdeal_eq_span hv ?_
   rw [fittingIdeal_eq_mul_of_exact_of_finitePresentation hi hq hiq, ha, hc,
     Ideal.span_singleton_mul_span_singleton]
-
-/-- Over a valuation ring, the degree of a product of finitely presented modules is the sum of
-their degrees. -/
-theorem fittingDegree_prod (hv : ∀ x, 0 ≤ v x) [Module.FinitePresentation V M]
-    [Module.FinitePresentation V N] :
-    v.fittingDegree (M × N) = v.fittingDegree M + v.fittingDegree N :=
-  v.fittingDegree_eq_add_of_exact hv (LinearMap.inl_injective) (LinearMap.snd_surjective)
-    Function.Exact.inl_snd
 
 end ValuationRing
 
