@@ -47,7 +47,7 @@ The proof builds a finite Whitehead tower over a CW approximation of `Y`
 * `TauCeti.forall_isTorsion'_homotopyGroup_iff_singularHomology`,
   `TauCeti.forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology`: Serre's
   connectivity equivalence modulo `S`-torsion.
-* `HomotopyGroup.hurewiczRatLinearEquiv`, `HomotopyGroup.hurewiczRatLinearEquivOfSubsingleton`,
+* `HomotopyGroup.hurewiczRatLinearEquiv`,
   `HomotopyGroup.isAddTorsion_ker_hurewiczModuleCatHom`,
   `HomotopyGroup.isAddTorsion_quotient_range_hurewiczModuleCatHom`,
   `TauCeti.forall_isAddTorsion_homotopyGroup_iff_singularHomology`,
@@ -186,6 +186,7 @@ def hurewiczLocalizationLinearEquiv
 -- `AddCommGroup.toIntModule A`.
 
 /-- Action of `HomotopyGroup.hurewiczLocalizationLinearEquiv` on a pure tensor `a ⊗ₜ[ℤ] x`. -/
+@[simp]
 theorem hurewiczLocalizationLinearEquiv_tmul
     (hπ : ∀ m < n, Module.IsTorsion' (Additive (π_ (m + 2) Y y)) S)
     (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A]
@@ -386,44 +387,6 @@ theorem singularHomologyMap_hurewiczRatLinearEquiv
     (HomologicalComplex.homologyMap ((singularChains ℚ).map (TopCat.ofHom f)) (n + 2)).hom
         (hurewiczRatLinearEquiv hπX z) =
       hurewiczRatLinearEquiv hπY
-        ((HomotopyGroup.mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap.lTensor ℚ z) :=
-  singularHomologyMap_hurewiczLocalizationLinearEquiv _ _ ℚ f hf z
-
-/-- **The rational Hurewicz theorem** (rational homology hypothesis). If `Y` is simply connected
-and `H_{m + 2}(Y; ℚ) = 0` for all `m < n`, then
-`ℚ ⊗[ℤ] Additive (π_{n + 2}(Y, y)) ≃ₗ[ℚ] H_{n + 2}(Y; ℚ)`. -/
-def hurewiczRatLinearEquivOfSubsingleton
-    (hH : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of Y)).homology (m + 2))) :
-    ℚ ⊗[ℤ] Additive (HomotopyGroup (Fin (n + 2)) Y y) ≃ₗ[ℚ]
-      ((singularChains ℚ).obj (TopCat.of Y)).homology (n + 2) :=
-  hurewiczLocalizationLinearEquiv (S := nonZeroDivisors ℤ)
-    ((forall_isTorsion'_homotopyGroup_iff_subsingleton_singularHomology y (nonZeroDivisors ℤ) ℚ
-      n).2 hH) ℚ
-
-/-- Action of `HomotopyGroup.hurewiczRatLinearEquivOfSubsingleton` on a pure tensor
-`a ⊗ₜ[ℤ] x`. -/
-@[simp]
-theorem hurewiczRatLinearEquivOfSubsingleton_tmul
-    (hH : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of Y)).homology (m + 2)))
-    (a : ℚ) (x : Additive (HomotopyGroup (Fin (n + 2)) Y y)) :
-    hurewiczRatLinearEquivOfSubsingleton hH (a ⊗ₜ[ℤ] x) =
-      (singularHomologyTensorIso ℤ ℚ (TopCat.of Y) (n + 2)).hom.hom
-        (a ⊗ₜ[ℤ] ((hurewiczModuleCatHom Y y n).hom x)) :=
-  hurewiczLocalizationLinearEquiv_tmul _ ℚ a x
-
-/-- **Naturality of `HomotopyGroup.hurewiczRatLinearEquivOfSubsingleton`** with respect to based
-continuous maps. -/
-theorem singularHomologyMap_hurewiczRatLinearEquivOfSubsingleton
-    {X Y : Type} [TopologicalSpace X] [TopologicalSpace Y] [PathConnectedSpace X]
-    [PathConnectedSpace Y] {x : X} {y : Y} [Subsingleton (π_ 1 X x)] [Subsingleton (π_ 1 Y y)]
-    {n : ℕ}
-    (hHX : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of X)).homology (m + 2)))
-    (hHY : ∀ m < n, Subsingleton (((singularChains ℚ).obj (TopCat.of Y)).homology (m + 2)))
-    (f : C(X, Y)) (hf : f x = y)
-    (z : ℚ ⊗[ℤ] Additive (HomotopyGroup (Fin (n + 2)) X x)) :
-    (HomologicalComplex.homologyMap ((singularChains ℚ).map (TopCat.ofHom f)) (n + 2)).hom
-        (hurewiczRatLinearEquivOfSubsingleton hHX z) =
-      hurewiczRatLinearEquivOfSubsingleton hHY
         ((HomotopyGroup.mapHom (N := Fin (n + 2)) f hf).toAdditive.toIntLinearMap.lTensor ℚ z) :=
   singularHomologyMap_hurewiczLocalizationLinearEquiv _ _ ℚ f hf z
 
