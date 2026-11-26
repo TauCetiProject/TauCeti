@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Induced.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.MomentMap
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 import TauCeti.Geometry.Lie.Adjoint.Representation.Coadjoint.Basic
+import TauCeti.Geometry.Lie.FundamentalVectorField.Coadjoint
 import TauCeti.Geometry.Manifold.GroupAction.BalancedProduct
 import TauCeti.Geometry.Manifold.MFDeriv.ContinuousLinearMap
 
@@ -37,8 +38,9 @@ differential of the projection
 (`TauCeti.BalancedProduct.ker_mfderiv_quotientMk_rightTranslation`). The orbit direction of
 `ξ ∈ 𝔨` at `(g, n)` is `(-(ι ξ)^L(g), ξ_N(n))`, where `ξ^L` is the left-invariant vector field and
 `ξ_N` the fundamental vector field. The contraction of `-d⟨f, θ⟩` with it is `-d⟨f, ι ξ⟩`, because
-the derivative of the equivariance of `f` is `df (ξ_N) = -f ∘ ad_(ι ξ)`, and the contraction of
-`pr₂^* σ` is `+d⟨f, ι ξ⟩` by the moment map equation, so they cancel
+the derivative of the equivariance of `f` is `df (ξ_N) = -f ∘ ad_(ι ξ)`
+(`TauCeti.mvfderiv_apply_fundamentalVectorField`), and the contraction of `pr₂^* σ` is
+`+d⟨f, ι ξ⟩` by the moment map equation, so they cancel
 (`TauCeti.CotangentBundle.eval₂_inducedForm_eq_zero`).
 
 The descended form `TauCeti.CotangentBundle.balancedProductInducedForm` is the unique smooth
@@ -115,11 +117,11 @@ private theorem contMDiff_prodMap_toRightTranslation_symm :
 identity differential. -/
 private theorem mfderiv_prodMap_toRightTranslation_symm (x : K.RightTranslation × N)
     (v : TangentSpace (I.prod IN) x) :
-    mfderiv (I.prod IN) (I.prod IN) (Prod.map K.toRightTranslation.symm (id : N → N)) x v = v :=
-  -- `K.RightTranslation` is a type synonym of `G` with the same charts, and
-  -- `K.toRightTranslation.symm` is `Equiv.refl G`, so the map is the identity of `G × N` up to
-  -- definitional unfolding.
-  congrArg (· v) (mfderiv_id (I := I.prod IN) (M := G × N) (x := x))
+    mfderiv (I.prod IN) (I.prod IN) (Prod.map K.toRightTranslation.symm (id : N → N)) x v = v := by
+  rw [mfderiv_prodMap ((Subgroup.RightTranslation.contMDiff_toRightTranslation_symm ∞ x.1)
+    |>.mdifferentiableAt (by simp)) mdifferentiableAt_id]
+  exact Prod.ext (Subgroup.RightTranslation.mfderiv_toRightTranslation_symm _ _)
+    (congrArg (· v.2) (mfderiv_id (I := IN) (x := x.2)))
 
 variable [LieGroup I ∞ G] [IsManifold IN ∞ N] {σ : SmoothTwoForm IN N} {f : N → E →L[ℝ] ℝ}
 
@@ -134,48 +136,6 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ EN]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [ChartedSpace F K] [LieGroup 𝓘(ℝ, F) ∞ K] [ContMDiffSMul 𝓘(ℝ, F) I ∞ K G]
   [MulAction K N] [ContMDiffSMul 𝓘(ℝ, F) IN ∞ K N]
-
-omit [IsManifold IN ∞ N] [FiniteDimensional ℝ EN] [FiniteDimensional ℝ F]
-  [LieGroup 𝓘(ℝ, F) ∞ K] in
-/-- **The derivative of the equivariance of `f`.** If `f (k • n) = Ad*_k (f n)` for `k ∈ K`, then
-along the fundamental vector field of `ξ ∈ 𝔨`, `df_n (ξ_N n) ζ = f n ⁅ζ, ι ξ⁆`. -/
-private theorem mvfderiv_apply_fundamentalVectorField (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f)
-    (hfK : ∀ (k : K) (n : N), f (k • n) = f n ∘L Lie.adjointContinuousLinearMap (I := I) (k : G)⁻¹)
-    (ξ : GroupLieAlgebra 𝓘(ℝ, F) K) (n : N) (ζ : GroupLieAlgebra I G) :
-    mvfderiv IN f n (fundamentalVectorField IN ξ n) ζ =
-      f n (⁅ζ, K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I ξ⁆ : GroupLieAlgebra I G) := by
-  have hfn : MDifferentiableAt IN 𝓘(ℝ, E →L[ℝ] ℝ) f n := (hf n).mdifferentiableAt (by simp)
-  have horbit : MDifferentiableAt 𝓘(ℝ, F) IN (fun k : K ↦ k • n) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := 𝓘(ℝ, F)) (I' := IN) (n := ∞) n).mdifferentiableAt
-      (by simp)
-  have hι : MDifferentiableAt 𝓘(ℝ, F) I (K.subtype : K → G) 1 :=
-    (K.contMDiff_subtypeVal_of_contMDiffSMul (I' := 𝓘(ℝ, F)) (n := ∞)).mdifferentiableAt
-      (by simp)
-  have hAd : MDifferentiableAt I 𝓘(ℝ)
-      (fun g : G ↦ Lie.coadjointRepresentation ℝ I G g (f n : E →ₗ[ℝ] ℝ) ζ) 1 :=
-    (Lie.contMDiff_coadjointRepresentation_apply _ ζ).mdifferentiableAt (by simp)
-  -- The function `k ↦ f (k • n) ζ` is `(y ↦ f y ζ) ∘ (k ↦ k • n)`, and by equivariance it is also
-  -- `(g ↦ (Ad*_g (f n)) ζ) ∘ ι`; differentiate both at `1` in the direction `ξ`.
-  have hcomp : (fun y ↦ f y ζ) ∘ (fun k : K ↦ k • n) =
-      (fun g : G ↦ Lie.coadjointRepresentation ℝ I G g (f n : E →ₗ[ℝ] ℝ) ζ) ∘ K.subtype :=
-    funext fun k ↦ by
-      rw [comp_apply, comp_apply, hfK]
-      -- `(f n ∘ Ad_{k⁻¹}) ζ = f n (Ad_{k⁻¹} ζ)` holds by definition of the composition, which
-      -- `rw` cannot use since `Ad_{k⁻¹}` acts on `GroupLieAlgebra I G` and `f n` on `E`.
-      exact (Lie.coadjointRepresentation_apply (I := I) (k : G) (f n : E →ₗ[ℝ] ℝ) ζ).symm
-  have hfζ : MDifferentiableAt IN 𝓘(ℝ) (fun y ↦ f y ζ) n := hfn.clm_apply mdifferentiableAt_const
-  rw [MonoidHom.groupLieAlgebraMap_apply, fundamentalVectorField_apply]
-  -- The steps are chained with `trans`, as their two sides differ from the goal by the
-  -- identification of `GroupLieAlgebra I G` with the model space `E`.
-  calc mvfderiv IN f n (mfderiv 𝓘(ℝ, F) IN (fun k : K ↦ k • n) 1 ξ) ζ
-      = mvfderiv 𝓘(ℝ, F) ((fun y ↦ f y ζ) ∘ fun k : K ↦ k • n) 1 ξ :=
-        (mvfderiv_clm_apply_const hfn ζ _).symm.trans
-          (mvfderiv_comp_apply_of_eq (1 : K) hfζ horbit (one_smul K n) ξ).symm
-    _ = mvfderiv 𝓘(ℝ, F) ((fun g : G ↦
-          Lie.coadjointRepresentation ℝ I G g (f n : E →ₗ[ℝ] ℝ) ζ) ∘ K.subtype) 1 ξ := by
-        rw [hcomp]
-    _ = _ := (mvfderiv_comp_apply_of_eq (1 : K) hAd hι (map_one _) ξ).trans
-        (Lie.mvfderiv_coadjointRepresentation_apply_one _ ζ _)
 
 /-- **The orbit directions of `K` are null for the induced form.** The fundamental vector field of
 `ξ ∈ 𝔨` for the action `k • (g, n) = (g k⁻¹, k • n)` is `((-ι ξ)^L(g), ξ_N(n))`, and the induced
@@ -192,9 +152,12 @@ private theorem eval₂_inducedFormRT_fundamental (hf : ContMDiff IN 𝓘(ℝ, E
       0 := by
   set ι := K.subtype.groupLieAlgebraMap 𝓘(ℝ, F) I
   have hfn : MDifferentiableAt IN 𝓘(ℝ, E →L[ℝ] ℝ) f x.2 := (hf x.2).mdifferentiableAt (by simp)
+  have hι : MDifferentiableAt 𝓘(ℝ, F) I K.subtype 1 :=
+    (K.contMDiff_subtypeVal_of_contMDiffSMul (I' := 𝓘(ℝ, F)) (n := ∞)).mdifferentiableAt
+      (by simp)
   have hfv (ζ : GroupLieAlgebra I G) : mvfderiv IN f x.2 (fundamentalVectorField IN ξ x.2) ζ =
       f x.2 (⁅-ι ξ, ζ⁆ : GroupLieAlgebra I G) := by
-    rw [mvfderiv_apply_fundamentalVectorField hf hfK, neg_lie, ← lie_skew]
+    rw [mvfderiv_apply_fundamentalVectorField hfn K.subtype hι (hfK · x.2), neg_lie, ← lie_skew]
   have hσv (u : TangentSpace IN x.2) :
       σ.eval₂ x.2 (fundamentalVectorField IN ξ x.2) u = -mvfderiv IN f x.2 u (-ι ξ) := by
     rw [← InfinitesimalAction.fundamental_apply, hμ.eval₂_apply]
@@ -417,7 +380,7 @@ theorem balancedProductInducedMomentMap_mk (g : G) (n : N) :
 of `G`, the map `[g, n] ↦ Ad*_g (f n)` is a coadjoint-equivariant moment map of the induced form
 on `G ×_K N`. It descends from the moment map `(g, n) ↦ Ad*_g (f n)` of `-d⟨f, θ⟩ + pr₂^* σ`
 on `G × N` (`TauCeti.CotangentBundle.isMomentMap_inducedForm`). -/
-theorem isEquivariantMomentMap_balancedProductInducedForm [T2Space G] :
+theorem isEquivariantMomentMap_balancedProductInducedForm :
     letI := BalancedProduct.rightTranslationChartedSpace K N I IN F
     haveI := BalancedProduct.isManifold_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
       (F := F)
@@ -430,6 +393,7 @@ theorem isEquivariantMomentMap_balancedProductInducedForm [T2Space G] :
     (F := F)
   have := BalancedProduct.contMDiffSMul_rightTranslation (K := K) (Z := N) (I := I) (IZ := IN)
     (F := F)
+  have : T2Space G := I.t2Space_of_lieGroup ∞
   have hπ := BalancedProduct.isSubmersion_quotientMk_rightTranslation (K := K) (Z := N) (I := I)
     (IZ := IN) (F := F)
   refine ⟨(isMomentMap_inducedForm (G := G) (σ := σ) hf).of_comp_eq
@@ -460,7 +424,6 @@ theorem isEquivariantMomentMap_balancedProductInducedForm [T2Space G] :
     | h g' n =>
       rw [BalancedProduct.smul_mk_toRightTranslation, balancedProductInducedMomentMap_mk,
         balancedProductInducedMomentMap_mk, map_mul]
-      -- The product of `Module.End` acts by composition.
-      rfl
+      exact mul_apply_eq_comp _ _ _
 
 end TauCeti.CotangentBundle

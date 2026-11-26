@@ -77,6 +77,9 @@ compared with reduction at zero of the shifted moment map on the product with th
   manifold and the projection from `G × Z` is a smooth submersion.
 * `TauCeti.BalancedProduct.ker_mfderiv_quotientMk_rightTranslation`: the kernel of the
   differential of that projection is the orbit tangent space of `K`.
+* `Subgroup.RightTranslation.mfderiv_toRightTranslation`,
+  `Subgroup.RightTranslation.mfderiv_toRightTranslation_symm`: the identification of `G` with
+  `K.RightTranslation` has identity differential.
 * `Subgroup.RightTranslation.fundamentalVectorField_eq_mulInvariantVectorField_neg`: the
   fundamental vector field of `ξ ∈ 𝔨` for right translation `h • g = g h⁻¹` is the left-invariant
   vector field of `-ξ`.
@@ -137,6 +140,18 @@ theorem contMDiff_toRightTranslation_symm (n : ℕ∞ω) :
     ContMDiff I I n K.toRightTranslation.symm :=
   contMDiff_id
 
+/-- The identification `K.toRightTranslation` of `G` with its type synonym `K.RightTranslation`
+has identity differential, since both carry the charts of `G`. -/
+theorem mfderiv_toRightTranslation (x : G) (v : TangentSpace I x) :
+    mfderiv I I K.toRightTranslation x v = v :=
+  congrArg (· v) (mfderiv_id (I := I) (M := G) (x := x))
+
+/-- The identification `K.toRightTranslation.symm` of the type synonym `K.RightTranslation` with
+`G` has identity differential, since both carry the charts of `G`. -/
+theorem mfderiv_toRightTranslation_symm (x : K.RightTranslation) (v : TangentSpace I x) :
+    mfderiv I I K.toRightTranslation.symm x v = v :=
+  congrArg (· v) (mfderiv_id (I := I) (M := G) (x := x))
+
 variable {EK HK : Type*} [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK]
   {IK : ModelWithCorners 𝕜 EK HK} [ChartedSpace HK K] {n : ℕ∞ω}
 
@@ -177,7 +192,7 @@ theorem fundamentalVectorField_eq_mulInvariantVectorField_neg [LieGroup I 1 G]
   -- The derivative of the inclusion lives in the tangent space at `ι 1`, which is the Lie algebra
   -- `T_1 G` only after rewriting `ι 1 = 1`, so the negation rule is applied with `erw`.
   erw [GroupLieAlgebra.mfderiv_inv_one_apply] at h
-  -- `mulInvariantVectorField v g` is `d(g * ·)₁ v` by definition.
+  rw [GroupLieAlgebra.mulInvariantVectorField_apply]
   exact h
 
 end Subgroup.RightTranslation
