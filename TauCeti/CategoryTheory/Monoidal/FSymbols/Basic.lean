@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.InvariantBasisNumber
 public import TauCeti.CategoryTheory.Monoidal.FSymbols.Defs
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.Data.Matrix.Mul
 
 /-!
@@ -593,7 +594,7 @@ theorem F_injective : Function.Injective (FSymbols.F (R := R) (N := N)) :=
 /-- Two `FSymbols` with equal `Finv`-matrices are also equal. -/
 theorem ext_of_Finv {P Q : FSymbols R N} (h : P.Finv = Q.Finv) : P = Q := by
   ext a b c d x y
-  refine congr_fun₂ (Matrix.left_inv_eq_right_inv ?_ (Q.Finv_mul_F a b c d)) x y
+  refine congr_fun₂ (Matrix.right_inv_eq_left_inv (Q.Finv_mul_F a b c d) ?_).symm x y
   rw [← h, P.F_mul_Finv]
 
 theorem Finv_injective : Function.Injective (FSymbols.Finv (R := R) (N := N)) :=
@@ -731,7 +732,7 @@ theorem R_injective : Function.Injective (RSymbols.R (P := P)) :=
 /-- Two `RSymbols` for `P` with equal `Rinv`-matrices are also equal. -/
 theorem ext_of_Rinv {Q₁ Q₂ : RSymbols P} (h : Q₁.Rinv = Q₂.Rinv) : Q₁ = Q₂ := by
   ext a b c i j
-  refine congr_fun₂ (Matrix.left_inv_eq_right_inv ?_ (Q₂.Rinv_mul_R a b c)) i j
+  refine congr_fun₂ (Matrix.right_inv_eq_left_inv (Q₂.Rinv_mul_R a b c) ?_).symm i j
   rw [← h, Q₁.R_mul_Rinv]
 
 theorem Rinv_injective : Function.Injective (RSymbols.Rinv (P := P)) :=

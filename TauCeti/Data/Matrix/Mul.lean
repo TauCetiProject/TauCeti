@@ -40,9 +40,8 @@ its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` int
 `g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
 `(L.map f).prod` and `(L.map g).prod`.
 
-By associativity of rectangular matrix multiplication, a left inverse and a right inverse of the
-same matrix are equal, and reindexing the rows and columns of a two-sided invertible rectangular
-matrix to a common finite index type gives a unit in the square matrix ring.
+Reindexing the rows and columns of a two-sided invertible rectangular matrix to a common finite
+index type gives a unit in the square matrix ring.
 
 ## Main results
 
@@ -72,8 +71,6 @@ matrix to a common finite index type gives a unit in the square matrix ring.
 * `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
   `∑ p, E p a b * E p c d` of the family `E`.
 * `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
-* `Matrix.left_inv_eq_right_inv`: a left inverse and a right inverse of a rectangular matrix are
-  equal.
 * `Matrix.isUnit_submatrix_equiv_of_mul_eq_one`: reindexing a two-sided invertible rectangular
   matrix to a common finite index type yields a unit square matrix.
 -/
@@ -308,11 +305,6 @@ end Semiring
 section RectangularInverse
 
 variable {R m p : Type*} [Semiring R] [Fintype m] [Fintype p] [DecidableEq m] [DecidableEq p]
-
-/-- A left inverse and a right inverse of a rectangular matrix are equal. -/
-theorem left_inv_eq_right_inv {A : Matrix m p R} {B C : Matrix p m R}
-    (hBA : B * A = 1) (hAC : A * C = 1) : B = C := by
-  rw [← Matrix.mul_one B, ← hAC, ← Matrix.mul_assoc, hBA, Matrix.one_mul]
 
 /-- Reindexing the rows and columns of a two-sided invertible rectangular matrix to a common
 finite index type produces a unit in the square matrix ring. -/
