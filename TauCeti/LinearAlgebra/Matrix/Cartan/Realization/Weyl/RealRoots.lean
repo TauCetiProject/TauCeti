@@ -397,22 +397,30 @@ theorem realReflection_apply_self (hdiag : ∀ i, A i i = 2)
   rw [R.realReflection_apply hdiag hoff hzero hα α, R.apply_realCoroot_self, two_smul,
     sub_add_cancel_left]
 
+/-- Every real reflection is a Coxeter reflection in `R.weylCoxeterSystem`. -/
+theorem isReflection_realReflection [DecidableEq I] (hdiag : ∀ i, A i i = 2)
+    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
+    {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
+    (R.weylCoxeterSystem hdiag hoff hzero).IsReflection
+      (R.realReflection hdiag hoff hzero hα) := by
+  obtain ⟨w, i, rfl⟩ := hα
+  exact ⟨w, i, by rw [R.weylCoxeterSystem_simple, R.realReflection_eq_conj_weylSimple]⟩
+
 @[simp]
 theorem realReflection_mul_self (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
     R.realReflection hdiag hoff hzero hα * R.realReflection hdiag hoff hzero hα = 1 := by
-  obtain ⟨w, i, rfl⟩ := hα
-  rw [R.realReflection_eq_conj_weylSimple hdiag hoff hzero w i]
-  simp only [mul_assoc, inv_mul_cancel_left]
-  rw [← mul_assoc _ _ w⁻¹, R.weylSimple_mul_self, one_mul, mul_inv_cancel]
+  classical
+  exact (R.isReflection_realReflection hdiag hoff hzero hα).mul_self
 
 @[simp]
 theorem realReflection_inv (hdiag : ∀ i, A i i = 2)
     (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
     {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
-    (R.realReflection hdiag hoff hzero hα)⁻¹ = R.realReflection hdiag hoff hzero hα :=
-  inv_eq_of_mul_eq_one_left (R.realReflection_mul_self hdiag hoff hzero hα)
+    (R.realReflection hdiag hoff hzero hα)⁻¹ = R.realReflection hdiag hoff hzero hα := by
+  classical
+  exact (R.isReflection_realReflection hdiag hoff hzero hα).inv
 
 @[simp]
 theorem realReflection_root (hdiag : ∀ i, A i i = 2)
@@ -451,15 +459,6 @@ theorem realReflection_neg (hdiag : ∀ i, A i i = 2)
     R.realReflection_eq_of_apply_root hdiag hoff hzero hα
       (R.mul_weylSimple_apply_root (diag_map_intCast hdiag) w i)]
   simp [mul_assoc]
-
-/-- Every real reflection is a Coxeter reflection in `R.weylCoxeterSystem`. -/
-theorem isReflection_realReflection [DecidableEq I] (hdiag : ∀ i, A i i = 2)
-    (hoff : ∀ i j, i ≠ j → A i j ≤ 0) (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
-    {α : Dual K H} (hα : α ∈ R.realRoots (diag_map_intCast hdiag)) :
-    (R.weylCoxeterSystem hdiag hoff hzero).IsReflection
-      (R.realReflection hdiag hoff hzero hα) := by
-  obtain ⟨w, i, rfl⟩ := hα
-  exact ⟨w, i, by rw [R.weylCoxeterSystem_simple, R.realReflection_eq_conj_weylSimple]⟩
 
 end RealRootsCoxeter
 
