@@ -252,14 +252,15 @@ private theorem exists_comp_sub_id_mem_of_comp_sub_id_mem_neg_one
       mul_assoc, show Q * P = 1 - L by simp [L], geom_sum_mul_neg, sub_sub_cancel_left]
     exact neg_mem (hpow hL N)
 
-/-- **Inverting the principal symbol.** On a compact manifold, an elliptic classical
-pseudodifferential operator `P` of order `m` has an inverse modulo operators of order `-1`: an
-operator `Q` of order `-m` with principal symbol `σ_m(P)⁻¹`. -/
+/-- **Inverting the principal symbol.** On a compact manifold, an elliptic operator `P` of order
+`m` has an inverse modulo operators of order `-1`: an operator `Q` of order `-m` with principal
+symbol `σ_m(P)⁻¹`. -/
 private theorem IsClassicalElliptic.exists_comp_sub_id_mem_neg_one [CompactSpace M]
-    (hP : P ∈ classicalPseudodifferentialOperators m) (hPe : IsClassicalElliptic m P) :
+    (hPe : IsClassicalElliptic m P) :
     ∃ Q ∈ classicalPseudodifferentialOperators (-m),
       P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators (-1) ∧
       Q ∘ₗ P - LinearMap.id ∈ classicalPseudodifferentialOperators (-1) := by
+  have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
   have hPe' (x : M) (ξ) (hξ : ξ ≠ 0) : classicalPrincipalSymbol m P x ξ ≠ 0 :=
     isClassicalEllipticAt_iff.1 (isClassicalElliptic_iff.1 hPe x) ξ hξ
   obtain ⟨Q, hQ, -, hσQ⟩ := hPe.exists_classicalPrincipalSymbol_eq_inv
@@ -284,18 +285,19 @@ private theorem IsClassicalElliptic.exists_comp_sub_id_mem_neg_one [CompactSpace
   · have h := classicalPrincipalSymbol_comp hQ hP x ξ
     rwa [neg_add_cancel, hσQ, mul_comm] at h
 
-/-- **Parametrices of elliptic operators.** On a compact manifold `M`, let `P` be a classical
-pseudodifferential operator of order `m` that is elliptic: its principal symbol vanishes at no
-nonzero covector. For every `N : ℕ` there is a classical pseudodifferential operator `Q` of order
-`-m` that inverts `P` modulo operators of order `-N` on both sides: `P ∘ Q - 1` and `Q ∘ P - 1`
-are classical pseudodifferential operators of order `-N`. -/
+/-- **Parametrices of elliptic operators.** On a compact manifold `M`, let `P` be an elliptic
+operator of order `m`: its principal symbol of order `m` vanishes at no nonzero covector (so `P` is
+a classical pseudodifferential operator of order `m`,
+`TauCeti.IsClassicalElliptic.mem_of_isProperlySupported`). For every `N : ℕ` there is a classical
+pseudodifferential operator `Q` of order `-m` that inverts `P` modulo operators of order `-N` on
+both sides: `P ∘ Q - 1` and `Q ∘ P - 1` are classical pseudodifferential operators of order
+`-N`. -/
 theorem IsClassicalElliptic.exists_comp_sub_id_mem_classicalPseudodifferentialOperators
-    [CompactSpace M] (hP : P ∈ classicalPseudodifferentialOperators m)
-    (hPe : IsClassicalElliptic m P) (N : ℕ) :
+    [CompactSpace M] (hPe : IsClassicalElliptic m P) (N : ℕ) :
     ∃ Q ∈ classicalPseudodifferentialOperators (-m),
       P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators (-N) ∧
       Q ∘ₗ P - LinearMap.id ∈ classicalPseudodifferentialOperators (-N) := by
-  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_neg_one hP
+  obtain ⟨Q, hQ, hPQ, hQP⟩ := hPe.exists_comp_sub_id_mem_neg_one
   exact exists_comp_sub_id_mem_of_comp_sub_id_mem_neg_one hQ hPQ hQP N
 
 /-! ### The principal symbol of a parametrix -/
@@ -365,7 +367,7 @@ theorem IsClassicalElliptic.exists_comp_sub_id_mem_smoothingPseudodifferentialOp
       P ∘ₗ Q - LinearMap.id ∈ smoothingPseudodifferentialOperators ∧
       Q ∘ₗ P - LinearMap.id ∈ smoothingPseudodifferentialOperators := by
   have hP := hPe.mem_of_isProperlySupported (isProperlySupported_of_compactSpace P)
-  obtain ⟨Q₀, hQ₀, hPQ₀, hQ₀P⟩ := hPe.exists_comp_sub_id_mem_neg_one hP
+  obtain ⟨Q₀, hQ₀, hPQ₀, hQ₀P⟩ := hPe.exists_comp_sub_id_mem_neg_one
   -- `P Q₀ = 1 - R` and `Q₀ P = 1 - L` with `R`, `L` of order `-1`. The Neumann series inverts
   -- `1 - R` on the right by `S` and `1 - L` on the left by `S'`, modulo order `-∞`.
   obtain ⟨S, hS, hS₁, -⟩ := exists_one_sub_mul_sub_one_mem_smoothingPseudodifferentialOperators
