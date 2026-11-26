@@ -123,6 +123,13 @@ theorem Hom.stalkₗ_id (x : X) : (𝟙 M : M ⟶ M).stalkₗ x = LinearMap.id :
   obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
   simp
 
+/-- The stalk map of the zero morphism is zero. -/
+@[simp]
+theorem Hom.stalkₗ_zero (x : X) : (0 : M ⟶ N).stalkₗ x = 0 := by
+  ext m
+  obtain ⟨U, hxU, m, rfl⟩ := M.presheaf.exists_germ_eq m
+  simp
+
 /-- The stalk map of a composite is the composite of the stalk maps. -/
 @[simp]
 theorem Hom.stalkₗ_comp (φ : M ⟶ N) (ψ : N ⟶ P) (x : X) :

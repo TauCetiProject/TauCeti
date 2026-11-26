@@ -48,8 +48,10 @@ sequence in `ℓᵖ`, `1 ≤ p`, form a sequence in `ℓᵖ` of norm at most `(1
 shifts. Such sums arise when each dyadic piece interacts with all the pieces of higher index, with
 geometrically decaying weights.
 
-When `g : ι' → ι` is injective, composing with `g` preserves `ℓᵖ` membership without increasing the
-norm (`Memℓp.comp_injective`, `lp.norm_le_of_forall_eq_comp`). In particular, when `e : ι ≃ ι'` is
+When `g : ι' → ι` is injective, composing with `g` or extending by zero along `g` preserves `ℓᵖ`
+membership without increasing the norm (`Memℓp.comp_injective`, `Memℓp.extend_zero`,
+`Function.Injective.memℓp_extend_zero_iff`, `lp.norm_le_of_forall_eq_comp`). In particular, when
+`e : ι ≃ ι'` is
 a bijection between index types (possibly in different universes), composing with `e` preserves `ℓᵖ`
 membership (`Memℓp.comp_equiv`, `Equiv.memℓp_comp_iff`) and the `ℓᵖ` norm
 (`lp.norm_eq_of_forall_eq_comp_equiv`), and for `1 ≤ p` induces the linear isometric equivalence
@@ -91,6 +93,7 @@ theorem Memℓp.indicator_comp {f : ι → G} (hf : Memℓp f p) {g : ι' → ι
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp.ne']) hg t).trans_le
       ((hf.summable hp).sum_le_tsum _ fun k _ ↦ by positivity)
+
 
 /-- **Reindexing in `ℓᵖ` does not increase the norm.** If `g` is injective on `s` and `f'` reads
 `f` along `g` on `s` and vanishes off `s`, then `‖f'‖ ≤ ‖f‖`. -/
@@ -300,6 +303,32 @@ preserves membership in `ℓᵖ`. -/
 theorem Memℓp.comp_injective {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
     {f : β → H} (hf : Memℓp f q) {g : α → β} (hg : Function.Injective g) : Memℓp (f ∘ g) q := by
   simpa only [Set.indicator_univ] using hf.indicator_comp (s := Set.univ) hg.injOn
+
+/-- Extending a sequence in `ℓᵖ` by zero along an injective map (possibly between different
+universes) preserves membership in `ℓᵖ`. -/
+theorem Memℓp.extend_zero {α : Type*} {β : Type*} {H : Type*} [NormedAddCommGroup H] {q : ℝ≥0∞}
+    {f : α → H} (hf : Memℓp f q) {e : α → β} (he : Function.Injective e) :
+    Memℓp (Function.extend e f 0) q := by
+  classical
+  rcases isEmpty_or_nonempty α with hα | hα
+  · have h0 : Function.extend e f 0 = 0 := funext fun j ↦ Function.extend_apply' _ _ _ (by simp)
+    rw [h0]; exact zero_memℓp
+  · have hinv : (Set.range e).InjOn (Function.invFun e) := by
+      rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ h
+      rw [Function.leftInverse_invFun he, Function.leftInverse_invFun he] at h; rw [h]
+    have heq : Function.extend e f 0 = (Set.range e).indicator (f ∘ Function.invFun e) := by
+      ext j; by_cases h : j ∈ Set.range e
+      · obtain ⟨i, rfl⟩ := h; simp [he.extend_apply, Function.leftInverse_invFun he i]
+      · simp [h, Function.extend_apply' _ _ _ h]
+    rw [heq]; exact hf.indicator_comp hinv
+
+/-- Extending a sequence by zero along an injective map lies in `ℓᵖ` iff the original does. -/
+@[simp]
+theorem Function.Injective.memℓp_extend_zero_iff {α : Type*} {β : Type*} {H : Type*}
+    [NormedAddCommGroup H] {q : ℝ≥0∞} {f : α → H} {e : α → β} (he : Function.Injective e) :
+    Memℓp (Function.extend e f 0) q ↔ Memℓp f q :=
+  ⟨fun h ↦ by simpa [Function.comp_def, he.extend_apply] using h.comp_injective he,
+   fun h ↦ h.extend_zero he⟩
 
 /-- Composing a sequence in `ℓᵖ` with an equivalence of index types (possibly in different
 universes) preserves membership in `ℓᵖ`. -/

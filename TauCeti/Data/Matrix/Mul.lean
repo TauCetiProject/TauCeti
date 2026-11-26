@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.Data.Matrix.Mul
+import Mathlib.Data.Matrix.Basic
 
 /-!
 # Matrix products: positivity of powers, nonvanishing of factors and opposite rings
@@ -28,7 +30,15 @@ A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
 Transposing a product of rectangular matrices and passing to the opposite ring reverses the
-factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+factors, intertwines `mulVec` with `vecMul`, and commutes with entrywise ring homomorphisms;
+transposition with `MulOpposite.op` and with `MulOpposite.unop` are mutually inverse.
+
+Sandwiching a matrix over an `R`-algebra between two matrices with entries in `R` gives entries that
+are `R`-linear combinations of the entries of the middle factor. Over a commutative semiring, the
+sum `∑ p, E p * M * E p` over a finite family of square matrices depends on the family only through
+its entry covariance `∑ p, E p a b * E p c d`. If a rectangular matrix `U` intertwines `f a` and
+`g a` for every entry `a` of a list `L`, then `U` intertwines the ordered list products
+`(L.map f).prod` and `(L.map g).prod`.
 
 ## Main results
 
@@ -49,8 +59,15 @@ factors; transposition with `MulOpposite.op` and with `MulOpposite.unop` are mut
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
 * `Matrix.submatrix_vecMulVec`: a submatrix of an outer product is the outer product of the
   reindexed vectors.
-* `Matrix.transpose_mul_map_op`: transposing a product and passing to the opposite ring reverses
-  the factors, `(M * N)ᵀ.map op = Nᵀ.map op * Mᵀ.map op`, for rectangular `M` and `N`.
+* `Matrix.transpose_mul_map_op`, `Matrix.transpose_mul_map_unop`, `Matrix.op_comp_mulVec`,
+  `Matrix.transpose_map_op_map_ringHom_op`: transposing a product and passing to or from the
+  opposite ring reverses the factors, intertwines `mulVec` with `vecMul`, and commutes with
+  entrywise ring homomorphisms.
+* `Matrix.map_algebraMap_mul_mul_map_algebraMap_apply`: the entries of `F * u * G`, for `F` and
+  `G` with entries in `R` and `u` over an `R`-algebra, are `∑ q, ∑ p, (F i p * G q j) • u p q`.
+* `Matrix.sum_mul_mul_apply`: the entries of `∑ p, E p * M * E p` through the entry covariance
+  `∑ p, E p a b * E p c d` of the family `E`.
+* `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
 -/
 
 public section
@@ -215,6 +232,69 @@ theorem transpose_mul_map_op [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix
   ext i j
   simp [Matrix.mul_apply]
 
+/-- Transposing a product of matrices over the opposite ring and returning to the ring reverses the
+factors. -/
+theorem transpose_mul_map_unop [Mul α] [AddCommMonoid α] [Fintype n] (M : Matrix m n αᵐᵒᵖ)
+    (N : Matrix n p αᵐᵒᵖ) :
+    (M * N)ᵀ.map MulOpposite.unop = Nᵀ.map MulOpposite.unop * Mᵀ.map MulOpposite.unop := by
+  ext i j
+  simp [Matrix.mul_apply]
+
+/-- Applying `MulOpposite.op` to each coordinate intertwines matrix-vector multiplication by `M`
+with vector-matrix multiplication by `Mᵀ.map op`. -/
+theorem op_comp_mulVec [NonUnitalNonAssocSemiring α] [Fintype n]
+    (M : Matrix m n α) (v : n → α) :
+    MulOpposite.op ∘ (M *ᵥ v) = (MulOpposite.op ∘ v) ᵥ* Mᵀ.map MulOpposite.op := by
+  ext i
+  simp [mulVec, vecMul, dotProduct]
+
+/-- Applying `RingHom.op f` entrywise to `Mᵀ.map op` commutes with `(·)ᵀ.map op`. -/
+theorem transpose_map_op_map_ringHom_op {β : Type*} [NonAssocSemiring α] [NonAssocSemiring β]
+    (M : Matrix m n α) (f : α →+* β) :
+    (Mᵀ.map MulOpposite.op).map (RingHom.op f) = (M.map f)ᵀ.map MulOpposite.op :=
+  rfl
+
 end MulOpposite
+
+/-- The entries of a matrix over an `R`-algebra `A` sandwiched between two matrices over `R` are
+`R`-linear combinations of its entries. -/
+theorem map_algebraMap_mul_mul_map_algebraMap_apply {R A l m n o : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Fintype m] [Fintype n] (F : Matrix l m R) (u : Matrix m n A)
+    (G : Matrix n o R) (i : l) (j : o) :
+    (F.map (algebraMap R A) * u * G.map (algebraMap R A)) i j =
+      ∑ q, ∑ p, (F i p * G q j) • u p q := by
+  simp only [Matrix.mul_apply, map_apply, Finset.sum_mul, Algebra.smul_def, map_mul]
+  refine Finset.sum_congr rfl fun q _ ↦ Finset.sum_congr rfl fun p _ ↦ ?_
+  rw [mul_assoc, ← Algebra.commutes (G q j), ← mul_assoc]
+
+/-- The entries of `∑ p, E p * M * E p` through the entry covariance `∑ p, E p a b * E p c d` of
+the family `E`. -/
+theorem sum_mul_mul_apply {ι m R : Type*} [Fintype ι] [Fintype m] [CommSemiring R]
+    (E : ι → Matrix m m R) (M : Matrix m m R) (a d : m) :
+    (∑ p, E p * M * E p) a d = ∑ b, ∑ c, M b c * ∑ p, E p a b * E p c d := by
+  simp only [Matrix.sum_apply, Matrix.mul_apply, Finset.sum_mul, Finset.mul_sum]
+  -- Reorder the sums over `(p, c, b)` to `(b, c, p)`: cycle to `(b, p, c)`, then swap `p` and `c`.
+  rw [Finset.sum_comm_cycle]
+  exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm.trans <|
+    Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦
+      (mul_right_comm _ _ _).trans (mul_comm _ _)
+
+section Semiring
+
+variable {α m k R : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k] [Semiring R]
+
+/-- **List products preserve intertwiners.** If a rectangular matrix `U` intertwines `f a` and `g a`
+for every entry `a` of a list `L` (`f a * U = U * g a`), then `U` intertwines the ordered products
+`(L.map f).prod` and `(L.map g).prod`. -/
+theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
+    (f : α → Matrix m m R) (g : α → Matrix k k R) (h : ∀ a ∈ L, f a * U = U * g a) :
+    (L.map f).prod * U = U * (L.map g).prod := by
+  induction L with
+  | nil => simp
+  | cons a t ih =>
+    rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
+      ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
+
+end Semiring
 
 end Matrix

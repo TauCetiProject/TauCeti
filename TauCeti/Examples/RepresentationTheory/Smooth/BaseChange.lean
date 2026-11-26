@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Smooth.BaseChange
+public import TauCeti.RepresentationTheory.OfMulAction.BaseChange
 public import Mathlib.Data.ZMod.Basic
 
 /-!
 # Examples of change of coefficients
 
 Base change of a smooth representation is smooth; over a field, extension of scalars along a
-field extension commutes with the invariants of a finite group. For the sign representation of
-`ℤˣ ≅ ℤ/2` on `ℤ` and `B = ℤ/2`, the comparison map `B ⊗ V^U → (B ⊗ V)^U` is the map
-`0 → ℤ/2`, which is not surjective.
+field extension commutes with the invariants of a finite group. Flat change of coefficients
+commutes with the invariants of a compact subgroup `U` of a smooth representation. Arbitrary
+change of coefficients commutes with the invariants of `U` on the permutation representation
+`A[G/U']`, both sides being free on the finite `U`-orbits of `G/U'`; this needs neither `U` compact
+nor `U'` open. For the sign
+representation of `ℤˣ ≅ ℤ/2` on `ℤ` and `B = ℤ/2`, the comparison map `B ⊗ V^U → (B ⊗ V)^U` is
+the map `0 → ℤ/2`, which is not surjective.
 -/
 
 public section
@@ -34,6 +39,31 @@ example {K L G V : Type*} [Field K] [Field L] [Algebra K L] [Group G] [Finite G]
     [AddCommGroup V] [Module K V] (ρ : Representation K G V) :
     Function.Bijective (ρ.invariantsBaseChangeMap (A := L)) :=
   ρ.invariantsBaseChangeMap_bijective
+
+/-- For `B` flat over `A`, a compact subgroup `U` and a smooth representation `V`,
+`B ⊗ V^U → (B ⊗ V)^U` is bijective. -/
+example {A B G V : Type*} [CommRing A] [CommRing B] [Algebra A B] [Module.Flat A B] [Group G]
+    [TopologicalSpace G] [SeparatelyContinuousMul G] [AddCommGroup V] [Module A V]
+    (ρ : Representation A G V) [IsSmooth ρ] {U : Subgroup G} (hU : IsCompact (U : Set G)) :
+    Function.Bijective (invariantsBaseChangeMap (A := B) (ρ.comp U.subtype)) :=
+  invariantsBaseChangeMap_comp_subtype_bijective_of_isCompact hU
+
+/-- For subgroups `U` and `U'` (for instance `U` compact open and `U'` open) and any commutative
+`A`-algebra `B`, flat or not, `B ⊗ A[G/U']^U → (B ⊗ A[G/U'])^U` is bijective, both sides being free
+on the finite `U`-orbits of `G/U'`. -/
+example {A B G : Type*} [CommRing A] [CommRing B] [Algebra A B] [Group G] (U U' : Subgroup G) :
+    Function.Bijective
+      (invariantsBaseChangeMap (A := B) ((ofMulAction A G (G ⧸ U')).comp U.subtype)) := by
+  rw [ofMulAction_comp_subtype]
+  exact invariantsBaseChangeMap_ofMulAction_bijective
+
+/-- In particular reduction modulo `2`, which is not flat over `ℤ`, commutes with the invariants of
+`ℤ[G/U']` under a subgroup `U`. -/
+example {G : Type*} [Group G] (U U' : Subgroup G) :
+    Function.Bijective
+      (invariantsBaseChangeMap (A := ZMod 2) ((ofMulAction ℤ G (G ⧸ U')).comp U.subtype)) := by
+  rw [ofMulAction_comp_subtype]
+  exact invariantsBaseChangeMap_ofMulAction_bijective
 
 /-- The sign representation of `ℤˣ` on `ℤ`. -/
 noncomputable abbrev signRepresentation : Representation ℤ ℤˣ ℤ :=

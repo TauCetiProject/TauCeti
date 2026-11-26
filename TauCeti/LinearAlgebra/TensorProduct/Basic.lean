@@ -28,8 +28,9 @@ with a multiset sum in one factor.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
-* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator on
-  `N ⊗ N` composed with itself, for an involution anticommuting with `b`.
+* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator
+  `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` composed with itself, for an involution `τ`
+  anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
@@ -113,30 +114,30 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
 
-/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
+/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ d) ∘ (τ ⊗ 𝟙)` on `N ⊗ P` with itself:
 if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
-`(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (b ∘ b)`. -/
-theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = id)
-    (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
-    (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) ∘ₗ (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) =
-      (b ∘ₗ b).rTensor N + (b ∘ₗ b).lTensor N := by
+`(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (d ∘ d)`. -/
+theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (d : P →ₗ[R] P)
+    (hτ : τ ∘ₗ τ = id) (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
+    (b.rTensor P + d.lTensor N ∘ₗ τ.rTensor P) ∘ₗ (b.rTensor P + d.lTensor N ∘ₗ τ.rTensor P) =
+      (b ∘ₗ b).rTensor P + (d ∘ₗ d).lTensor N := by
   refine ext fun w ↦ ?_
-  have hcross : TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
+  have hcross : TensorProduct.map (b ∘ₗ τ) d w + TensorProduct.map (τ ∘ₗ b) d w = 0 := by
     rw [← LinearMap.add_apply, ← TensorProduct.map_add_left, hodd, TensorProduct.map_zero_left,
       LinearMap.zero_apply]
-  have hcommute (y : N ⊗[R] N) : τ.rTensor N (b.lTensor N y) = b.lTensor N (τ.rTensor N y) :=
-    (lTensor_rTensor_comm τ b y).symm
-  have hlast : b.lTensor N (τ.rTensor N (b.lTensor N (τ.rTensor N w))) = (b ∘ₗ b).lTensor N w := by
+  have hcommute (y : N ⊗[R] P) : τ.rTensor P (d.lTensor N y) = d.lTensor N (τ.rTensor P y) :=
+    (lTensor_rTensor_comm τ d y).symm
+  have hlast : d.lTensor N (τ.rTensor P (d.lTensor N (τ.rTensor P w))) = (d ∘ₗ d).lTensor N w := by
     rw [hcommute, ← lTensor_comp_apply, ← rTensor_comp_apply, hτ, rTensor_id_apply]
   have hcrossLeft :
-      b.rTensor N (b.lTensor N (τ.rTensor N w)) = TensorProduct.map (b ∘ₗ τ) b w := by
+      b.rTensor P (d.lTensor N (τ.rTensor P w)) = TensorProduct.map (b ∘ₗ τ) d w := by
     rw [← comp_apply, rTensor_comp_lTensor, map_rTensor]
   have hcrossRight :
-      b.lTensor N (τ.rTensor N (b.rTensor N w)) = TensorProduct.map (τ ∘ₗ b) b w := by
+      d.lTensor N (τ.rTensor P (b.rTensor P w)) = TensorProduct.map (τ ∘ₗ b) d w := by
     rw [← rTensor_comp_apply, ← comp_apply, lTensor_comp_rTensor]
   simp only [LinearMap.add_apply, comp_apply, map_add]
   rw [hcrossLeft, hcrossRight, hlast, ← rTensor_comp_apply]
-  rw [show ∀ A B X Y : N ⊗[R] N, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
+  rw [show ∀ A B X Y : N ⊗[R] P, A + Y + (X + B) = A + B + (X + Y) from fun A B X Y ↦ by abel,
     hcross, add_zero]
 
 end Naturality

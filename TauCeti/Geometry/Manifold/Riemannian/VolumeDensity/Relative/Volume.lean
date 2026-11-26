@@ -22,9 +22,11 @@ a noncompact manifold, where the total volumes may be infinite. The manifold `M`
 and corners, and no orientation is used.
 
 Its dependence on a family of metrics is in
-`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family`, and the case of the metrics
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Family`, the case of the metrics
 induced by a family of immersions in
-`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback`.
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback`, and the case of a variation
+with fixed compact support on a noncompact manifold in
+`TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.CompactSupport`.
 
 ## Main definitions
 
@@ -32,6 +34,8 @@ induced by a family of immersions in
 
 ## Main results
 
+* `Bundle.ContMDiffRiemannianMetric.contMDiffAt_relativeVolume_integrand`: the integrand
+  `J(g₀, g_t) - 1` of the relative volume of a family of metrics is jointly `C^k` in `(t, x)`.
 * `Bundle.ContMDiffRiemannianMetric.relativeVolume_eq_sub`: on a compact manifold the relative
   volume is the difference of the total volumes.
 * `Bundle.ContMDiffRiemannianMetric.relativeVolume_add_relativeVolume`: on a compact manifold,
@@ -79,6 +83,34 @@ theorem relativeVolume_self : relativeVolume g g = 0 := by
   simp [relativeVolume_def]
 
 end RelativeVolume
+
+section Integrand
+
+variable {g₀ : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)}
+  {g : ℝ → ContMDiffRiemannianMetric I n' E (fun x : M ↦ TangentSpace I x)} {t₀ : ℝ}
+
+/-- **Joint regularity of the relative-volume integrand.** The integrand
+`(t, x) ↦ J(g₀, g_t)(x) - 1` of the relative volume of a family of metrics `g_t` with respect to
+a fixed metric `g₀`, on the copy of `M` carrying `g₀`, is `C^k` at `(t₀, x)` when the inner
+products of `g₀` are `C^k` at `x` and those of `g_t` are `C^k` jointly in `(t, x)` at `(t₀, x)`. -/
+theorem contMDiffAt_relativeVolume_integrand {k : ℕ∞ω} [IsManifold I (k + 1) M]
+    {x : WithMetric g₀}
+    (hg₀ : ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
+      (fun x : M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) x (g₀.inner x))
+      x.ofWithMetric)
+    (hg : ContMDiffAt (𝓘(ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) k
+      (fun p : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) p.2
+        ((g p.1).inner p.2)) (t₀, x.ofWithMetric)) :
+    ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) k
+      (uncurry fun (t : ℝ) (y : WithMetric g₀) ↦
+        relativeVolumeDensity g₀ (g t) y.ofWithMetric - 1) (t₀, x) :=
+  ((contMDiffAt_uncurry_relativeVolumeDensity hg₀ hg).comp (t₀, x) (contMDiffAt_fst.prodMk
+      ((WithMetric.contMDiff_ofWithMetric (g := g₀)).contMDiffAt.comp _ contMDiffAt_snd))).sub
+    contMDiffAt_const
+
+end Integrand
 
 section CompactSpace
 

@@ -8,10 +8,13 @@ module
 public import TauCeti.RingTheory.LocalRing.RingHom
 public import TauCeti.RingTheory.StableRange
 public import Mathlib.RingTheory.HopkinsLevitzki
-public import Mathlib.RingTheory.OrderOfVanishing.Basic
+
+import TauCeti.RingTheory.Ideal.PrimeAvoidance
+import TauCeti.RingTheory.KrullDimension.Regular
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
 
 /-!
-# Bass stable range of semilocal rings and of one-dimensional domains
+# Bass stable range of commutative semilocal and noetherian rings
 
 This file bounds the Bass stable range `TauCeti.HasStableRangeLE` of two classes of commutative
 rings, the bounds used for elementary reduction of invertible matrices in algebraic `K₁`.
@@ -19,12 +22,17 @@ rings, the bounds used for elementary reduction of invertible matrices in algebr
 * A commutative **semilocal** ring, one with finitely many maximal ideals, has stable range at
   most `1`. If `a` and `b` are coprime, then `a` is a unit modulo `b`; units lift along the
   quotient map `R → R ⧸ (b)` of a semilocal ring, so some `a + b * c` is a unit.
-* **Bass's reduction step.** If every quotient `R ⧸ (x)` by a nonzero element has stable range at
-  most `s`, then `R` has stable range at most `s + 1`. One first moves a nonzero entry into the
-  leading coordinate of a unimodular row and then shortens the remaining coordinates modulo it.
-* A commutative noetherian domain of Krull dimension at most one, for instance a Dedekind domain
-  such as `ℤ` or a ring of `S`-integers, or a field, has stable range at most `2`: its quotients by
-  nonzero elements are artinian, hence semilocal.
+* **Bass's reduction step.** If every unimodular row `(a₀, …, aₛ₊₁)` has an element
+  `x ∈ a₀ + (a₁, …, aₛ₊₁)` with `R ⧸ (x)` of stable range at most `s`, then `R` has stable range
+  at most `s + 1`: the row `(a₁, …, aₛ₊₁)` is unimodular modulo `x`, and a shortening of it
+  modulo `x` lifts to a shortening of `(a₀, …, aₛ₊₁)`. Two choices of `x` are useful: any nonzero
+  element of the row, and, by prime avoidance for the coset `a₀ + (a₁, …, aₛ₊₁)`, an element
+  outside every minimal prime when there are finitely many of those.
+* **Bass's bound.** A commutative noetherian ring of Krull dimension at most `d` has stable range
+  at most `d + 1`. Dividing by an element outside every minimal prime lowers the Krull dimension,
+  so the reduction step gives the bound by induction on `d`, starting from the artinian, hence
+  semilocal, rings of dimension zero. For instance a Dedekind domain such as `ℤ`, or a ring of
+  `S`-integers, has stable range at most `2`.
 
 ## Main results
 
@@ -32,14 +40,19 @@ rings, the bounds used for elementary reduction of invertible matrices in algebr
   of the form `a + b * c`.
 * `TauCeti.hasStableRangeLE_one_of_finite_maximalSpectrum`: commutative semilocal rings have
   stable range at most `1`.
-* `TauCeti.hasStableRangeLE_succ_of_forall_ne_zero`: Bass's reduction step.
-* `TauCeti.hasStableRangeLE_two_of_krullDimLE_one`: noetherian domains of Krull dimension at most
-  one have stable range at most `2`.
+* `TauCeti.hasStableRangeLE_succ_of_forall_exists`: Bass's reduction step.
+* `TauCeti.hasStableRangeLE_succ_of_forall_ne_zero` and
+  `TauCeti.hasStableRangeLE_succ_of_forall_notMem_minimalPrimes`: the reduction step through
+  nonzero elements and through elements outside every minimal prime.
+* `TauCeti.hasStableRangeLE_of_ringKrullDim_le`: Bass's bound `sr(R) ≤ dim R + 1` for commutative
+  noetherian rings.
 
 ## References
 
 * H. Bass, *K-theory and stable algebra*, Publ. Math. IHÉS 22 (1964), §4 and §6.
-* H. Bass, *Algebraic K-Theory*, W. A. Benjamin (1968), Chapter V, §3.
+* H. Bass, *Algebraic K-Theory*, W. A. Benjamin (1968), Chapter V, §3, Theorem 3.5.
+* I. Kaplansky, *Commutative Rings*, revised edition, University of Chicago Press (1974),
+  Theorem 124.
 * C. A. Weibel, *The K-book: An Introduction to Algebraic K-Theory*, Graduate Studies in
   Mathematics 145 (2013), Chapter I, Exercise 1.5, and Chapter III, Lemma 1.4.
 -/
@@ -86,69 +99,126 @@ theorem hasStableRangeLE_one_of_finite_maximalSpectrum (R : Type*) [CommRing R]
 
 end Semilocal
 
-/-! ## Bass's reduction step and one-dimensional domains -/
+/-! ## Bass's reduction step and the Krull-dimension bound -/
 
 section Reduction
 
 variable {R : Type*} [CommRing R]
 
-/-- **Bass's reduction step.** If the quotient of a commutative ring `R` by every nonzero
-principal ideal has stable range at most `s`, then `R` has stable range at most `s + 1`. -/
-theorem hasStableRangeLE_succ_of_forall_ne_zero {s : ℕ}
-    (h : ∀ x : R, x ≠ 0 → HasStableRangeLE (R ⧸ Ideal.span {x}) s) :
+/-- **Bass's reduction step.** Suppose every unimodular row `(a₀, …, aₛ₊₁)` over a commutative
+ring `R` has an element `x ∈ a₀ + (a₁, …, aₛ₊₁)` whose quotient `R ⧸ (x)` has stable range at
+most `s`. Then `R` has stable range at most `s + 1`: the row `(a₁, …, aₛ₊₁)` is unimodular modulo
+`x`, its shortening modulo `x` lifts, and `x` itself restores unimodularity in `R`. -/
+theorem hasStableRangeLE_succ_of_forall_exists {s : ℕ}
+    (h : ∀ a : Fin (s + 2) → R, Module.IsUnimodular R a → ∃ x,
+      x - a 0 ∈ Ideal.span (Set.range fun i : Fin (s + 1) ↦ a i.succ) ∧
+        HasStableRangeLE (R ⧸ Ideal.span {x}) s) :
     HasStableRangeLE R (s + 1) := by
-  classical
   refine hasStableRangeLE_iff_exists_sum_eq_one.mpr fun a b hab ↦ ?_
-  -- If the last entry vanishes, the remaining row is already unimodular.
-  by_cases hL : a (Fin.last (s + 1)) = 0
-  · refine ⟨0, fun i ↦ b i.castSucc, ?_⟩
-    simpa [Fin.sum_univ_castSucc, hL] using hab
+  obtain ⟨x, hx, hxs⟩ := h a (TauCeti.Module.isUnimodular_pi_iff.mpr ⟨b, hab⟩)
+  -- Write `x = a₀ + ∑ tₖ aₖ₊₁`.
+  obtain ⟨t, ht⟩ := Submodule.mem_span_range_iff_exists_fun R |>.mp hx
+  simp only [smul_eq_mul] at ht
   set L := a (Fin.last (s + 1))
-  -- Otherwise make the leading entry `x = a₀ + aₛ₊₁ * c₀` nonzero, shorten `(a₁, …, aₛ₊₁)`
-  -- modulo `x`, and use `x` itself to restore unimodularity in `R`.
-  set c₀ : R := if a 0 = 0 then 1 else 0
-  set x : R := a 0 + L * c₀
-  have hx : x ≠ 0 := by
-    by_cases h0 : a 0 = 0 <;> simp [x, c₀, h0, hL]
   let π := Ideal.Quotient.mk (Ideal.span {x})
-  have hπx : π (a 0) + π L * π c₀ = 0 := by
-    simpa only [x, map_add, map_mul] using Ideal.Quotient.mk_singleton_self x
-  -- Modulo `x`, the row `(a₁, …, aₛ₊₁)` is unimodular: it is `π hab` minus `π b₀` times `π x`.
-  have hsum : ∑ k : Fin (s + 1), π (a k.succ) *
-      (π (b k.succ) - if k = Fin.last s then π (c₀ * b 0) else 0) = 1 := by
+  -- Modulo `x`, the row `(a₁, …, aₛ₊₁)` is unimodular, since `a₀ ≡ -∑ tₖ aₖ₊₁`.
+  have hsum : ∑ k : Fin (s + 1), π (a k.succ) * π (b k.succ - t k * b 0) = 1 := by
+    have hπx : π x = 0 := Ideal.Quotient.mk_singleton_self x
     have h1 := congrArg π hab
+    have h2 := congrArg π ht
     rw [map_sum, Fin.sum_univ_succ] at h1
-    simp only [map_mul, map_one] at h1
-    simp only [mul_sub, Finset.sum_sub_distrib, mul_ite, mul_zero, Finset.sum_ite_eq',
-      Finset.mem_univ, ite_true, Fin.succ_last, map_mul]
-    linear_combination h1 - π (b 0) * hπx
-  obtain ⟨c', d', hcd'⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp (h x hx) _ _ hsum
+    simp only [map_sum, map_mul, map_sub, map_one] at h1 h2 ⊢
+    simp only [mul_sub, Finset.sum_sub_distrib]
+    rw [hπx] at h2
+    have h3 : ∑ k : Fin (s + 1), π (a k.succ) * (π (t k) * π (b 0)) =
+        (∑ k : Fin (s + 1), π (t k) * π (a k.succ)) * π (b 0) := by
+      rw [Finset.sum_mul]
+      exact Finset.sum_congr rfl fun _ _ ↦ by ring
+    rw [h3, h2]
+    linear_combination h1
+  obtain ⟨c', d', hcd'⟩ := hasStableRangeLE_iff_exists_sum_eq_one.mp hxs _ _ hsum
   choose c hc using fun j ↦ Ideal.Quotient.mk_surjective (c' j)
   choose d hd using fun j ↦ Ideal.Quotient.mk_surjective (d' j)
-  -- Lift the shortened row and correct the defect, a multiple of `x`.
+  -- Lift the shortened row and correct the defect, a multiple `r * x` of `x`.
   have hmem : ∑ j : Fin s, (a j.castSucc.succ + L * c j) * d j - 1 ∈ Ideal.span {x} := by
     refine Ideal.Quotient.eq_zero_iff_mem.mp ?_
     simpa [π, hc, hd, sub_eq_zero] using hcd'
   obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp hmem
-  refine ⟨Fin.cons c₀ c, Fin.cons (-r) d, ?_⟩
+  -- With `c₀ = tₛ - ∑ tⱼ cⱼ`, the new leading entry is `x - ∑ tⱼ (aⱼ₊₁ + L cⱼ)`.
+  refine ⟨Fin.cons (t (Fin.last s) - ∑ j : Fin s, t j.castSucc * c j) c,
+    Fin.cons (-r) fun j ↦ d j - r * t j.castSucc, ?_⟩
+  rw [Fin.sum_univ_castSucc] at ht
   rw [Fin.sum_univ_succ]
-  simp only [Fin.cons_zero, Fin.cons_succ, Fin.castSucc_zero, ← Fin.succ_castSucc]
-  rw [← eq_sub_iff_add_eq.mp hr]
-  ring
+  simp only [Fin.cons_zero, Fin.cons_succ, Fin.castSucc_zero, ← Fin.succ_castSucc, mul_sub,
+    Finset.sum_sub_distrib, Fin.succ_last] at ht ⊢
+  have e1 : ∑ j : Fin s, (a j.castSucc.succ + L * c j) * (r * t j.castSucc) =
+      r * ∑ j : Fin s, t j.castSucc * a j.castSucc.succ +
+        r * L * ∑ j : Fin s, t j.castSucc * c j := by
+    rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  rw [e1]
+  linear_combination -r * ht - hr
 
-/-- **One-dimensional noetherian domains have stable range at most two.** A commutative noetherian
-domain of Krull dimension at most one, such as a Dedekind domain or a field, has Bass stable range
-at most `2`: its quotient by a nonzero element is artinian, hence semilocal, and so has stable range
-at most `1`. -/
-theorem hasStableRangeLE_two_of_krullDimLE_one (R : Type*) [CommRing R] [IsDomain R]
-    [IsNoetherianRing R] [Ring.KrullDimLE 1 R] : HasStableRangeLE R 2 := by
-  refine hasStableRangeLE_succ_of_forall_ne_zero fun x hx ↦ ?_
-  -- `R ⧸ (x)` has finite length as an `R`-module, so it is an artinian ring.
-  have : IsArtinianRing (R ⧸ Ideal.span {x}) :=
-    have := (isFiniteLength_iff_isNoetherian_isArtinian.mp
-      (isFiniteLength_quotient_span_singleton R (mem_nonZeroDivisors_of_ne_zero hx))).2
-    isArtinian_of_tower R this
-  exact hasStableRangeLE_one_of_finite_maximalSpectrum _
+/-- **Bass's reduction step for nonzero elements.** If the quotient of a commutative ring `R` by
+every nonzero principal ideal has stable range at most `s`, then `R` has stable range at most
+`s + 1`. -/
+theorem hasStableRangeLE_succ_of_forall_ne_zero {s : ℕ}
+    (h : ∀ x : R, x ≠ 0 → HasStableRangeLE (R ⧸ Ideal.span {x}) s) :
+    HasStableRangeLE R (s + 1) := by
+  cases subsingleton_or_nontrivial R
+  · exact HasStableRangeLE.of_subsingleton R _
+  refine hasStableRangeLE_succ_of_forall_exists fun a ha ↦ ?_
+  -- Some entry `aᵢ` of the unimodular row is nonzero; use `a₀` if it is, and `a₀ + aᵢ = aᵢ`
+  -- otherwise.
+  obtain ⟨i, hi⟩ : ∃ i, a i ≠ 0 := by
+    by_contra! h0
+    obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp ha
+    simp [h0] at hb
+  by_cases h0 : a 0 = 0
+  · obtain ⟨j, rfl⟩ := Fin.exists_succ_eq.mpr (show i ≠ 0 by rintro rfl; exact hi h0)
+    have hj : a j.succ ∈ Ideal.span (Set.range fun i : Fin (s + 1) ↦ a i.succ) :=
+      Ideal.subset_span ⟨j, rfl⟩
+    exact ⟨a j.succ, by simpa [h0] using hj, h _ hi⟩
+  · exact ⟨a 0, by simp, h _ h0⟩
+
+/-- **Bass's reduction step through minimal primes.** Let `R` be a commutative ring with finitely
+many minimal primes. If `R ⧸ (x)` has stable range at most `s` for every `x` outside all minimal
+primes of `R`, then `R` has stable range at most `s + 1`. Coset prime avoidance moves the leading
+entry of a unimodular row outside every minimal prime. -/
+theorem hasStableRangeLE_succ_of_forall_notMem_minimalPrimes {s : ℕ}
+    (hfin : (minimalPrimes R).Finite)
+    (h : ∀ x : R, (∀ p ∈ minimalPrimes R, x ∉ p) → HasStableRangeLE (R ⧸ Ideal.span {x}) s) :
+    HasStableRangeLE R (s + 1) := by
+  refine hasStableRangeLE_succ_of_forall_exists fun a ha ↦ ?_
+  -- No prime contains every entry of the unimodular row `a`.
+  have hp : ∀ p ∈ minimalPrimes R, a 0 ∈ p →
+      ¬Ideal.span (Set.range fun i : Fin (s + 1) ↦ a i.succ) ≤ p := by
+    intro p hp ha0 hle
+    obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp ha
+    refine hp.1.1.ne_top (p.eq_top_iff_one.mpr (hb ▸ p.sum_mem fun i _ ↦ p.mul_mem_right _ ?_))
+    cases i using Fin.cases with
+    | zero => exact ha0
+    | succ j => exact hle (Ideal.subset_span ⟨j, rfl⟩)
+  obtain ⟨y, hy, hay⟩ := Ideal.exists_mem_forall_add_notMem hfin (fun p hp ↦ hp.1.1) hp
+  exact ⟨a 0 + y, by simpa using hy, h _ hay⟩
+
+/-- **Bass's bound** (Bass, Theorem V.3.5). A commutative noetherian ring of Krull dimension at
+most `d` has stable range at most `d + 1`. For instance a Dedekind domain such as `ℤ`, or a ring
+of `S`-integers, has stable range at most `2`. -/
+theorem hasStableRangeLE_of_ringKrullDim_le (A : Type*) [CommRing A] [IsNoetherianRing A]
+    (d : ℕ) (h : ringKrullDim A ≤ d) : HasStableRangeLE A (d + 1) := by
+  induction d generalizing A with
+  | zero =>
+    -- A zero-dimensional noetherian ring is artinian, hence semilocal.
+    have : Ring.KrullDimLE 0 A := Ring.krullDimLE_iff.mpr (by simpa using h)
+    have := IsNoetherianRing.isArtinianRing_of_krullDimLE_zero (R := A)
+    exact hasStableRangeLE_one_of_finite_maximalSpectrum A
+  | succ d ih =>
+    refine hasStableRangeLE_succ_of_forall_notMem_minimalPrimes
+      (minimalPrimes.finite_of_isNoetherianRing A) fun x hx ↦ ih _ ?_
+    -- Dividing by `x` outside every minimal prime lowers the dimension.
+    have := (ringKrullDim_quotient_span_singleton_succ_le_of_notMem_minimalPrimes hx).trans h
+    rwa [Nat.cast_add_one, ENat.WithBot.add_le_add_one_right_iff] at this
 
 end Reduction
 

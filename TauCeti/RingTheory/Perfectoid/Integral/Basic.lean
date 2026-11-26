@@ -32,6 +32,11 @@ Jacobson radical; so `p` is a nonunit unless `A` is the zero ring. The kernel cl
 stated for every proof that `p` is a nonunit, which makes it vacuous for the zero ring, where the
 unique map to `A` has principal kernel anyway.
 
+In characteristic `p` the integral perfectoid rings are exactly the perfect rings. A principal
+Fontaine kernel already makes the zeroth tilt coordinate `A♭ → A ⧸ p = A` injective
+(`PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta`), and surjectivity of Frobenius
+makes it bijective, so `A` is reduced with surjective Frobenius.
+
 ## Main definitions
 
 * `TauCeti.Perfectoid.IsIntegralPerfectoid p A`: `A` is an integral perfectoid ring.
@@ -60,12 +65,15 @@ unique map to `A` has principal kernel anyway.
   `A ⧸ (π) → A ⧸ (π ^ p)`, then `A` is integral perfectoid (Bhatt–Morrow–Scholze, Lemma 3.10(ii)).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_perfectRing`: a perfect ring of characteristic `p`
   is integral perfectoid; the kernel of `θ` is `(p)` (`WittVector.ker_fontaineTheta_eq_span_p`).
+* `TauCeti.Perfectoid.IsIntegralPerfectoid.perfectRing`,
+  `TauCeti.Perfectoid.isIntegralPerfectoid_iff_perfectRing`: conversely, a ring of characteristic
+  `p` is integral perfectoid only if it is perfect (Bhatt–Morrow–Scholze, Example 3.15).
 * `TauCeti.Perfectoid.IsIntegralPerfectoid.of_subsingleton`: so is the zero ring.
 
 ## References
 
-* B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, §3.2, Definition 3.5 and
-  Lemmas 3.9–3.10.
+* B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, §3.2, Definition 3.5,
+  Lemmas 3.9–3.10 and Example 3.15.
 -/
 
 public section
@@ -170,6 +178,36 @@ instance of_perfectRing [CharP A p] [PerfectRing A p] : IsIntegralPerfectoid p A
     let : Fact (¬IsUnit (p : A)) := ⟨hp⟩
     have := isReduced_of_perfectRing A p
     exact ⟨⟨p, WittVector.ker_fontaineTheta_eq_span_p⟩⟩
+
+variable {p A} in
+/-- **Integral perfectoid rings of characteristic `p` are perfect** (Bhatt–Morrow–Scholze,
+*Integral `p`-adic Hodge theory*, Example 3.15). -/
+theorem perfectRing [CharP A p] [IsIntegralPerfectoid p A] : PerfectRing A p := by
+  -- The principal Fontaine kernel makes the zeroth tilt coordinate `A♭ → A ⧸ p = A` injective,
+  -- and surjectivity of Frobenius makes it surjective, so `A` is reduced like the perfect `A♭`.
+  have hp := (Fact.out : p.Prime)
+  have : Nontrivial A := CharP.nontrivial_of_char_ne_one hp.ne_one
+  have : Fact ¬IsUnit (p : A) := ⟨not_isUnit_natCast⟩
+  -- the zeroth tilt coordinate is bijective, and reduction modulo `p = 0` is injective
+  have hinj := PreTilt.coeff_zero_injective_of_isPrincipal_ker_fontaineTheta
+    (isPrincipal_ker_fontaineTheta (p := p) (A := A))
+  have hsurj := coeff_surjective (p := p) (A := A) 0
+  have := isReduced_of_perfectRing (PreTilt A p) p
+  let e := RingEquiv.ofBijective _ ⟨hinj, hsurj⟩
+  have : IsReduced A := isReduced_of_injective
+    ((e.symm : ModP A p →+* PreTilt A p).comp (Ideal.Quotient.mk _))
+    (e.symm.injective.comp ModP.mk_bijective.1)
+  refine PerfectRing.ofSurjective A p fun x ↦ ?_
+  obtain ⟨y, hy⟩ := exists_natCast_dvd_sub_pow (p := p) x
+  rw [CharP.cast_eq_zero, zero_dvd_iff, sub_eq_zero] at hy
+  exact ⟨y, by rw [frobenius_def, hy]⟩
+
+variable {p A} in
+/-- **The characteristic `p` dictionary.** A ring of characteristic `p` is integral perfectoid
+exactly when it is perfect. -/
+theorem _root_.TauCeti.Perfectoid.isIntegralPerfectoid_iff_perfectRing [CharP A p] :
+    IsIntegralPerfectoid p A ↔ PerfectRing A p :=
+  ⟨fun _ ↦ perfectRing, fun _ ↦ of_perfectRing p A⟩
 
 /-- The zero ring is integral perfectoid. -/
 theorem of_subsingleton [Subsingleton A] : IsIntegralPerfectoid p A where

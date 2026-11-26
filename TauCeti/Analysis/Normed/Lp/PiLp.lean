@@ -45,6 +45,13 @@ We also record `PiLp.univ_sum_single`, the coordinate isometry `PiLp.singleLI` (
 continuous coordinate inclusion `PiLp.singleCLM`), the power identity `PiLp.norm_rpow_eq_sum`,
 and coordinatewise submodule restriction `LinearIsometryEquiv.submodulePiLp`.
 
+For a family of operators `T i : E i →L[𝕜] F i`, the block-diagonal operator
+`PiLp.piMap p T : PiLp p E →L[𝕜] PiLp p F` acts coordinatewise; it is
+`ContinuousLinearMap.piMap T` transported along `PiLp.continuousLinearEquiv`. For `p = 2` and
+Hilbert spaces this is the orthogonal direct sum of the `T i` on a finite Hilbert sum. Its
+coordinates and its action on coordinate inclusions are computed blockwise
+(`PiLp.proj_comp_piMap`, `PiLp.piMap_comp_singleCLM`).
+
 ## Source
 
 The coordinate-norm estimate is adapted from
@@ -413,6 +420,71 @@ theorem sum_mul_piLpExtendByZero (f : ι ↪ ι') (x : PiLp p fun _ : ι ↦ �
     fun a ↦ by rw [piLpExtendByZero_apply_apply]).symm
 
 end LinearIsometry
+
+namespace PiLp
+
+variable {𝕜 ι : Type*} {E F G : ι → Type*} (p : ℝ≥0∞) [Semiring 𝕜]
+variable [∀ i, AddCommGroup (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module 𝕜 (E i)]
+variable [∀ i, AddCommGroup (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module 𝕜 (F i)]
+variable [∀ i, AddCommGroup (G i)] [∀ i, TopologicalSpace (G i)] [∀ i, Module 𝕜 (G i)]
+
+/-- The block-diagonal operator `x ↦ (T i (x i))ᵢ` between the `Lᵖ` products of two families of
+topological modules. For `p = 2` and Hilbert spaces this is the orthogonal direct sum of the
+operators `T i` on finite Hilbert sums. -/
+noncomputable def piMap (T : ∀ i, E i →L[𝕜] F i) : PiLp p E →L[𝕜] PiLp p F :=
+  (PiLp.continuousLinearEquiv p 𝕜 E).symm.arrowCongrEquiv (PiLp.continuousLinearEquiv p 𝕜 F).symm
+    (ContinuousLinearMap.piMap T)
+
+@[simp]
+theorem piMap_apply (T : ∀ i, E i →L[𝕜] F i) (x : PiLp p E) (i : ι) :
+    piMap p T x i = T i (x i) :=
+  (rfl)
+
+/-- Under the identification `PiLp.continuousLinearEquiv` of `Lᵖ` products with plain products,
+the block-diagonal operator `PiLp.piMap p T` is `ContinuousLinearMap.piMap T`. -/
+theorem continuousLinearEquiv_comp_piMap (T : ∀ i, E i →L[𝕜] F i) :
+    (PiLp.continuousLinearEquiv p 𝕜 F : PiLp p F →L[𝕜] ∀ i, F i) ∘L piMap p T =
+      ContinuousLinearMap.piMap T ∘L
+        (PiLp.continuousLinearEquiv p 𝕜 E : PiLp p E →L[𝕜] ∀ i, E i) :=
+  (rfl)
+
+/-- The block-diagonal operator with identity blocks is the identity. -/
+@[simp]
+theorem piMap_id : piMap p (fun i ↦ ContinuousLinearMap.id 𝕜 (E i)) = .id 𝕜 (PiLp p E) :=
+  (rfl)
+
+/-- Block-diagonal operators compose blockwise. -/
+@[simp]
+theorem piMap_comp (S : ∀ i, F i →L[𝕜] G i) (T : ∀ i, E i →L[𝕜] F i) :
+    piMap p (fun i ↦ S i ∘L T i) = piMap p S ∘L piMap p T :=
+  (rfl)
+
+/-- A block-diagonal operator maps the `i`-th coordinate inclusion through its `i`-th block. -/
+@[simp]
+theorem piMap_comp_singleCLM [DecidableEq ι] (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
+    piMap p T ∘L singleCLM p 𝕜 E i = singleCLM p 𝕜 F i ∘L T i := by
+  ext x j
+  by_cases h : j = i
+  · subst h
+    simp
+  · simp [h]
+
+end PiLp
+
+namespace PiLp
+
+variable {𝕜 ι : Type*} {E F : ι → Type*} (p : ℝ≥0∞) [Semiring 𝕜]
+variable [∀ i, NormedAddCommGroup (E i)] [∀ i, Module 𝕜 (E i)]
+variable [∀ i, NormedAddCommGroup (F i)] [∀ i, Module 𝕜 (F i)]
+
+/-- The `i`-th coordinate of a block-diagonal operator is its `i`-th block applied to the `i`-th
+coordinate. -/
+@[simp]
+theorem proj_comp_piMap (T : ∀ i, E i →L[𝕜] F i) (i : ι) :
+    proj p F i ∘L piMap p T = T i ∘L proj p E i :=
+  (rfl)
+
+end PiLp
 
 namespace LinearIsometryEquiv
 
