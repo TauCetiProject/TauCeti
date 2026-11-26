@@ -1,0 +1,143 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.FieldTheory.FunctionField.Place.Basic
+
+/-!
+# Places from additive order functions
+
+Order functions met in analysis are usually additive: the order of vanishing `ord_x f` of a
+meromorphic function at a point is an additive valuation `F → WithTop ℤ`, with `ord_x 0 = ⊤`.
+A place of `F / k` (`TauCeti.Place`) is stored multiplicatively, as a normalized valuation
+`F → ℤᵐ⁰`. This file converts the first into the second: a surjective additive valuation
+`v : F → WithTop ℤ` vanishing on the nonzero constants of `k` is the place whose valuation is
+`f ↦ exp (-v f)`, sending `⊤` to `0`.
+
+## Main definitions
+
+* `TauCeti.Place.ofAddValuation`: the place of `F / k` with additive order function `v`.
+
+## Main results
+
+* `TauCeti.Place.ord_ofAddValuation`: the order function of `ofAddValuation v` is `v`, read in
+  `ℤ` with the junk value `0` at `f = 0`.
+* `TauCeti.Place.ofAddValuation_inj`: two additive valuations give the same place exactly when
+  they are equal.
+-/
+
+public section
+
+open scoped WithZero
+
+namespace TauCeti
+
+namespace Place
+
+variable {k F : Type*} [Field k] [Field F] [Algebra k F]
+
+/-- The order-reversing translation `⊤ ↦ 0`, `n ↦ exp (-n)` from additive to multiplicative
+values. -/
+private noncomputable def expNeg (a : WithTop ℤ) : ℤᵐ⁰ :=
+  if a = ⊤ then 0 else WithZero.exp (-a.untopD 0)
+
+private theorem expNeg_top : expNeg ⊤ = 0 := by simp [expNeg]
+
+private theorem expNeg_coe (n : ℤ) : expNeg n = WithZero.exp (-n) := by
+  simp [expNeg]
+
+private theorem expNeg_add (a b : WithTop ℤ) : expNeg (a + b) = expNeg a * expNeg b := by
+  induction a using WithTop.recTopCoe <;> induction b using WithTop.recTopCoe <;>
+    simp [expNeg_top, expNeg_coe, ← WithTop.coe_add, ← WithZero.exp_add, add_comm]
+
+private theorem expNeg_antitone : Antitone expNeg := by
+  intro a b hab
+  induction b using WithTop.recTopCoe with
+  | top => simp [expNeg_top]
+  | coe n =>
+    induction a using WithTop.recTopCoe with
+    | top => simp at hab
+    | coe m => simpa [expNeg_coe] using WithTop.coe_le_coe.mp hab
+
+/-- The multiplicative valuation `f ↦ exp (-v f)` of an additive valuation `v : F → WithTop ℤ`. -/
+private noncomputable def expNegValuation (v : AddValuation F (WithTop ℤ)) : Valuation F ℤᵐ⁰ where
+  toFun f := expNeg (v f)
+  map_zero' := by rw [AddValuation.map_zero, expNeg_top]
+  map_one' := by rw [AddValuation.map_one, ← WithTop.coe_zero, expNeg_coe, neg_zero,
+    WithZero.exp_zero]
+  map_mul' f g := by rw [AddValuation.map_mul, expNeg_add]
+  map_add_le_max' f g := by
+    rw [← expNeg_antitone.map_min]
+    exact expNeg_antitone (AddValuation.map_add v f g)
+
+private theorem expNegValuation_apply (v : AddValuation F (WithTop ℤ)) (f : F) :
+    expNegValuation v f = expNeg (v f) := (rfl)
+
+/-- **The place of an additive order function.** A surjective additive valuation
+`v : F → WithTop ℤ` that vanishes on the nonzero constants is a place of `F / k`, whose
+valuation is `f ↦ exp (-v f)`. Its order function is `v` (`TauCeti.Place.ord_ofAddValuation`). -/
+noncomputable def ofAddValuation (v : AddValuation F (WithTop ℤ)) (hv : Function.Surjective v)
+    (hk : ∀ c : k, c ≠ 0 → v (algebraMap k F c) = 0) : Place k F where
+  valuation := expNegValuation v
+  valuation_surjective γ := by
+    induction γ using WithZero.expRecOn with
+    | zero => exact ⟨0, by rw [map_zero]⟩
+    | exp n =>
+      obtain ⟨f, hf⟩ := hv (-n : ℤ)
+      exact ⟨f, by rw [expNegValuation_apply, hf, expNeg_coe, neg_neg]⟩
+  isTrivialOn := ⟨fun c hc ↦ by
+    rw [expNegValuation_apply, hk c hc, ← WithTop.coe_zero, expNeg_coe, neg_zero,
+      WithZero.exp_zero]⟩
+
+variable {v : AddValuation F (WithTop ℤ)} {hv : Function.Surjective v}
+  {hk : ∀ c : k, c ≠ 0 → v (algebraMap k F c) = 0}
+
+private theorem valuation_ofAddValuation :
+    (ofAddValuation v hv hk).valuation = expNegValuation v := (rfl)
+
+/-- The valuation of `ofAddValuation v` at a function of finite order `n` is `exp (-n)`. -/
+theorem valuation_ofAddValuation_of_eq_coe {f : F} {n : ℤ} (hf : v f = n) :
+    (ofAddValuation v hv hk).valuation f = WithZero.exp (-n) := by
+  rw [valuation_ofAddValuation, expNegValuation_apply, hf, expNeg_coe]
+
+/-- **The order function of `ofAddValuation v` is `v`**, read in `ℤ`: the value `⊤`, taken only
+at `0`, becomes the junk value `ord_P 0 = 0`. -/
+@[simp]
+theorem ord_ofAddValuation (f : F) : (ofAddValuation v hv hk).ord f = (v f).untopD 0 := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp ((v.ne_top_iff).mpr hf)
+  rw [ord_def, valuation_ofAddValuation_of_eq_coe hn.symm, WithZero.log_exp, neg_neg, ← hn,
+    WithTop.untopD_coe]
+
+/-- For `f ≠ 0`, the order of `f` at `ofAddValuation v` is `v f`. -/
+theorem coe_ord_ofAddValuation {f : F} (hf : f ≠ 0) :
+    ((ofAddValuation v hv hk).ord f : WithTop ℤ) = v f := by
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp ((v.ne_top_iff).mpr hf)
+  rw [ord_ofAddValuation, ← hn, WithTop.untopD_coe]
+
+/-- A function is integral at `ofAddValuation v` exactly when its additive order is
+nonnegative. -/
+theorem mem_integers_ofAddValuation_iff {f : F} :
+    f ∈ (ofAddValuation v hv hk).integers ↔ 0 ≤ v f := by
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [mem_integers_iff_ord_nonneg, ← WithTop.coe_le_coe, coe_ord_ofAddValuation hf,
+    WithTop.coe_zero]
+
+/-- **Two additive valuations give the same place exactly when they are equal.** -/
+theorem ofAddValuation_inj {w : AddValuation F (WithTop ℤ)} {hw : Function.Surjective w}
+    {hk' : ∀ c : k, c ≠ 0 → w (algebraMap k F c) = 0} :
+    ofAddValuation v hv hk = ofAddValuation w hw hk' ↔ v = w := by
+  refine ⟨fun h ↦ AddValuation.ext fun f ↦ ?_, fun h ↦ by subst h; rfl⟩
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [← coe_ord_ofAddValuation (hv := hv) (hk := hk) hf,
+    ← coe_ord_ofAddValuation (hv := hw) (hk := hk') hf, h]
+
+end Place
+
+end TauCeti
