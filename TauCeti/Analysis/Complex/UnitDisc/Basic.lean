@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
 public import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 
 /-!
 # Basic API for the complex unit disc
@@ -20,7 +21,10 @@ This file collects small API lemmas for Mathlib's `Complex.UnitDisc` and
   (`Complex.UnitDisc.circle_smul_left_injective`), and hence the circle acts faithfully on the
   disc, which is nontrivial.
 * Compactness of the disc points of Euclidean norm at most `ρ < 1`
-  (`Complex.UnitDisc.isCompact_setOf_norm_le`).
+  (`Complex.UnitDisc.isCompact_setOf_norm_le`), and openness of those of norm less than `ρ`
+  (`Complex.UnitDisc.isOpen_setOf_norm_lt`). Conversely, every compact subset of the disc lies in
+  the disc points of norm less than some `ρ₀ < 1`, and then also below any `ρ` between `ρ₀` and `1`
+  (`Complex.UnitDisc.exists_forall_norm_lt_of_isCompact`).
 * The inclusion of the open unit disc into `ℂ` is an open embedding
   (`Complex.UnitDisc.isOpenEmbedding_coe`), so the open unit disc is Hausdorff; it is connected
   (`Complex.UnitDisc.instConnectedSpace`) and not compact
@@ -69,6 +73,20 @@ lemma isCompact_setOf_norm_le {ρ : ℝ} (hρ : ρ < 1) : IsCompact {z : 𝔻 | 
   convert isEmbedding_coe.isInducing.isCompact_preimage' (isCompact_closedBall (0 : ℂ) ρ) _
   · simp
   · exact fun w hw => ⟨mk w ((mem_closedBall_zero_iff.1 hw).trans_lt hρ), rfl⟩
+
+/-- The set of unit-disc points of Euclidean norm less than `ρ` is open. -/
+lemma isOpen_setOf_norm_lt (ρ : ℝ) : IsOpen {z : 𝔻 | ‖(z : ℂ)‖ < ρ} :=
+  isOpen_lt continuous_coe.norm continuous_const
+
+/-- A compact subset of `𝔻` lies in the open disc of some radius `0 ≤ ρ₀ < 1` about `0`. The
+statement also provides a radius `ρ` strictly between `ρ₀` and `1`, at which to cut off. -/
+theorem exists_forall_norm_lt_of_isCompact {K : Set 𝔻} (hK : IsCompact K) :
+    ∃ ρ₀ ρ, 0 ≤ ρ₀ ∧ ρ₀ < ρ ∧ ρ < 1 ∧ ∀ z ∈ K, ‖(z : ℂ)‖ < ρ₀ := by
+  obtain ⟨ρ₀, hρ₀, hKρ₀⟩ := exists_pos_lt_subset_ball zero_lt_one
+    (hK.image continuous_coe).isClosed
+    (image_subset_iff.2 fun z _ ↦ mem_ball_zero_iff.2 z.norm_lt_one)
+  obtain ⟨ρ, hρ₀ρ, hρ₁⟩ := exists_between hρ₀.2
+  exact ⟨ρ₀, ρ, hρ₀.1.le, hρ₀ρ, hρ₁, fun z hz ↦ mem_ball_zero_iff.1 (hKρ₀ ⟨z, hz, rfl⟩)⟩
 
 /-- The inclusion of the open unit disc into `ℂ` is an open embedding. -/
 theorem isOpenEmbedding_coe : Topology.IsOpenEmbedding ((↑) : 𝔻 → ℂ) :=
