@@ -86,12 +86,11 @@ theorem spatialTensorHom_mapNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] A') (
         ((NonUnitalStarSubalgebraClass.subtype B').comp ψ) x := by
   induction x using TensorProduct.inductionOn with
   | add x y hx hy =>
+    -- `map_add` on the bundled star homomorphism times out synthesizing `AddHomClass` for
+    -- `A ⊗[𝕜] B →⋆ₙₐ[𝕜] A' ⊗[𝕜] B'`, so unfold it to the linear map `TensorProduct.map`.
     rw [coe_mapNonUnitalStarAlgHom] at hx hy ⊢
     rw [map_add, map_add, map_add, hx, hy]
-  | tmul a b => rw [mapNonUnitalStarAlgHom_tmul, spatialTensorHom_tmul,
-      NonUnitalStarAlgHom.spatialTensorHom_tmul, NonUnitalStarAlgHom.comp_apply,
-      NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.subtype_apply,
-      NonUnitalStarSubalgebraClass.subtype_apply]
+  | tmul a b => simp
 
 /-! ### Extension to the spatial tensor products -/
 
@@ -331,8 +330,7 @@ theorem minTensorMap_comp {E'' F'' : Type*} [NormedAddCommGroup E''] [InnerProdu
     minTensorMap (φ'.comp φ) (ψ'.comp ψ) = (minTensorMap φ' ψ').comp (minTensorMap φ ψ) := by
   refine DFunLike.coe_injective <| minTensor_funext (continuous_minTensorMap _ _)
     ((continuous_minTensorMap _ _).comp (continuous_minTensorMap _ _)) fun x ↦ ?_
-  rw [NonUnitalStarAlgHom.comp_apply, minTensorMap_toMinTensor, minTensorMap_toMinTensor,
-    minTensorMap_toMinTensor, mapNonUnitalStarAlgHom_comp, NonUnitalStarAlgHom.comp_apply]
+  simp [mapNonUnitalStarAlgHom_comp]
 
 /-- For inclusions `A ≤ A₁` and `B ≤ B₁`, `minTensorMap` of the inclusions is the inclusion
 `A ⊗_min B ⊆ A₁ ⊗_min B₁` (`NonUnitalStarSubalgebra.minTensor_mono`). -/

@@ -164,9 +164,7 @@ theorem mapNonUnitalStarAlgHom_comp {C' D' : Type*} [NonUnitalSemiring C'] [Modu
   NonUnitalStarAlgHom.ext fun x ↦ by
     induction x using TensorProduct.inductionOn with
     | add x y hx hy => rw [map_add, map_add, hx, hy]
-    | tmul a b => rw [NonUnitalStarAlgHom.comp_apply, mapNonUnitalStarAlgHom_tmul,
-        mapNonUnitalStarAlgHom_tmul, mapNonUnitalStarAlgHom_tmul, NonUnitalStarAlgHom.comp_apply,
-        NonUnitalStarAlgHom.comp_apply]
+    | tmul a b => simp
 
 end Map
 
