@@ -31,9 +31,9 @@ number `n + 2` of the tangent bundle on the line sphere
   through the inverted chart, since `[1 : z : 0 : ⋯ : 0] = [z⁻¹ : 1 : 0 : ⋯ : 0]` for `z ≠ 0`
   (`TauCeti.ComplexProjectiveSpace.contMDiff_coordinateLine`).
 * **The pullback.** At a finite point `z`, the Fubini–Study form of `CPⁿ⁺¹` in the chart `X₀ ≠ 0`
-  is given by the Hermitian matrix `(δ_ij / r - w_i conj (w_j) / r²) / π`, `r = 1 + ∑ |w_l|²`
+  is given by the Hermitian form `(r ⟪a, b⟫ - ⟪a, w⟫ ⟪w, b⟫) / (π r²)`, `r = 1 + ∑ |w_l|²`
   (`TauCeti.ComplexProjectiveSpace.fubiniStudyHermitian_affineVector_insertZeroL`). Along the line
-  `w = (z, 0, …, 0)` only the entry `(0, 0)` is seen, and it is
+  `w = (z, 0, …, 0)` only tangent vectors `a = b = (1, 0, …, 0)` are seen, and the form gives
   `((1 + |z|²) - |z|²) / (π (1 + |z|²)²) = 1 / (π (1 + |z|²)²)`, the density of the Fubini–Study
   form of the Riemann sphere. Two smooth forms which agree on the dense set of finite points are
   equal (`TauCeti.SmoothBundleForm.eq_of_forall_mem_dense`), which gives
@@ -75,8 +75,9 @@ variable {n : ℕ}
 
 /-! ### Holomorphy of the coordinate line -/
 
-/-- The parametrization `z ↦ [1 : z : 0 : ⋯ : 0]` of the finite part of the coordinate line is
-holomorphic. -/
+/-- The map `z ↦ affineParam k (z, 0, …, 0)` into `CPⁿ⁺¹` is holomorphic. For `k = 0` it is the
+parametrization `z ↦ [1 : z : 0 : ⋯ : 0]` of the finite part of the coordinate line, and for
+`k = 1` it is `w ↦ [w : 1 : 0 : ⋯ : 0]`, the coordinate line read near `∞`. -/
 private theorem contMDiff_affineParam_single (k : Fin (n + 2)) :
     ContMDiff 𝓘(ℂ) 𝓘(ℂ, Fin (n + 1) → ℂ) ω
       fun z : ℂ ↦ affineParam k (Pi.single 0 z : Fin (n + 1) → ℂ) :=
@@ -102,7 +103,7 @@ theorem contMDiff_coordinateLine :
         have hz : z ≠ 0 := by rintro rfl; simp at hx
         simp [affineParam_zero_single_eq hz]
     exact ((contMDiff_affineParam_single 1 _).comp _
-      (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inr rfl))
+      (contMDiffAt_of_mem_maximalAtlas OnePoint.invChart_mem_maximalAtlas
         (by simp))).congr_of_eventuallyEq hev
   | coe z =>
     -- Near a finite point, the line read through the affine chart is `z ↦ [1 : z : 0 : ⋯ : 0]`.
@@ -113,7 +114,7 @@ theorem contMDiff_coordinateLine :
       | infty => simp at hx
       | coe z => simp
     exact ((contMDiff_affineParam_single 0 _).comp _
-      (contMDiffAt_of_mem_maximalAtlas (IsManifold.subset_maximalAtlas (Or.inl rfl))
+      (contMDiffAt_of_mem_maximalAtlas OnePoint.affineChart_mem_maximalAtlas
         (by simp))).congr_of_eventuallyEq hev
 
 /-- The coordinate line is a smooth map of the underlying real manifolds, of every order. -/
