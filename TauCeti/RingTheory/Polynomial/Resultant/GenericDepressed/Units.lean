@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous.HomogeneousUnits
-public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed
+public import TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic
 
 /-!
 # Homogeneous units away from the generic depressed discriminant
