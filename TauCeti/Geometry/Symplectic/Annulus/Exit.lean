@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.Deriv.Slope
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Normed.Operator.Prod
+import TauCeti.Data.ZMod.Induction
 
 /-!
 # The exit set of the block of the cyclic action
@@ -60,9 +61,10 @@ a face. Combining the two orders along a maximal cyclic run of momenta on one fa
   and move strictly into the block: the trajectory is in the interior of the block just after
   (`TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`), and outside it just
   before (`TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`).
-* Hence a point of the block leaves it immediately exactly when it lies in `L`
-  (`TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`): `L` is the exit
-  set of the block, in the sense of the index pairs of Conley's theory.
+* Hence, if no face carries all the momenta, a point of the block leaves it immediately exactly
+  when it lies in `L` (`TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`):
+  `L` is the immediate exit set of the block. The further properties of an index pair in Conley's
+  theory, such as every exit from the block passing through `L`, are not proved here.
 * A critical configuration, at which `Y_(k-1) = y_k` for every `k`, has no momentum on a face
   `c` unless all momenta are on it, provided `Y_k = c` forces `y_k = c`
   (`TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`). So a rest point of
@@ -82,8 +84,8 @@ with the negative gradient flow near the block.
 * `TauCeti.eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo`,
   `TauCeti.eventually_nhdsLT_stripGeneratingSource_snd_notMem_Icc`: trajectories through the rest
   of the boundary enter the interior of the block.
-* `TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`: `L` is exactly the
-  set of points of the block which leave it immediately.
+* `TauCeti.eventually_nhdsGT_exists_stripGeneratingSource_snd_notMem_Icc_iff`: if no face carries
+  all the momenta, `L` is exactly the set of points of the block which leave it immediately.
 * `TauCeti.stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq`: critical
   configurations have no momentum on a face unless all of them are.
 
@@ -284,12 +286,13 @@ private theorem eventually_nhdsGT_exists_mul_sub_neg [NeZero N] (hP : ∀ k ∈ 
   obtain ⟨j, ⟨hj, hj1⟩, hj2⟩ : ∃ j, (y j t₀ = c ∧ y (j + 1) t₀ = c) ∧
       ¬(y (j + 1) t₀ = c ∧ y (j + 1 + 1) t₀ = c) := by
     by_contra! hcon
-    have hall (n : ℕ) : y (k₀ + n) t₀ = c ∧ y (k₀ + n + 1) t₀ = c := by
-      induction n with
-      | zero => simpa using ⟨hk₀, (hend k₀ hk₀P hk₀).2⟩
-      | succ n ih => simpa [add_assoc] using hcon _ ih
     obtain ⟨i, hi⟩ := hfull
-    exact hi (by simpa using (hall (i - k₀).val).1)
+    have hall : y (k₀ + (i - k₀)) t₀ = c ∧ y (k₀ + (i - k₀) + 1) t₀ = c :=
+      ZMod.induction_on (P := fun n ↦ y (k₀ + n) t₀ = c ∧ y (k₀ + n + 1) t₀ = c) (i - k₀)
+        (by rw [add_zero]; exact ⟨hk₀, (hend k₀ hk₀P hk₀).2⟩)
+        fun n ih ↦ by rw [← add_assoc]; exact hcon _ ih
+    rw [add_sub_cancel] at hall
+    exact hi hall.1
   replace hj2 : y (j + 1 + 1) t₀ ≠ c := fun h' ↦ hj2 ⟨hj1, h'⟩
   -- The run ends with a positive factor `j + 1`, so `j` is a negative factor inside the run.
   have hj1P : j + 1 ∈ P := by
@@ -359,11 +362,8 @@ private theorem hasDerivAt_fderiv_apply {t : ℝ} {k : ZMod N} (ht : HasDerivAt 
     (hd : DifferentiableAt ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1))) (w : ℝ × ℝ) :
     HasDerivAt (fun s ↦ fderiv ℝ (S k) (γ s k, γ s (k + 1)) w)
       (fderiv ℝ (fderiv ℝ (S k)) (γ t k, γ t (k + 1)) (edgeVelocity S γ t k) w) t := by
-  have key {e : ℝ → ℝ × ℝ} {e' : ℝ × ℝ} (he : HasDerivAt e e' t)
-      (hd' : DifferentiableAt ℝ (fderiv ℝ (S k)) (e t)) :
-      HasDerivAt (fun s ↦ fderiv ℝ (S k) (e s) w) (fderiv ℝ (fderiv ℝ (S k)) (e t) e' w) t := by
-    simpa using (hd'.hasFDerivAt.comp_hasDerivAt t he).clm_apply (hasDerivAt_const t w)
-  exact key (hasDerivAt_edge ht k) hd
+  have h := hd.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_edge ht k)
+  simpa only [Function.comp_apply, map_zero, add_zero] using h.clm_apply (hasDerivAt_const t w)
 
 omit [NeZero N] in
 /-- Along a trajectory, the input momentum `y_k` moves with velocity
@@ -550,8 +550,8 @@ theorem eventually_nhdsGT_forall_stripGeneratingSource_snd_mem_Ioo
       k ∈ P) :
     ∀ᶠ t in 𝓝[>] t₀, ∀ k, (stripGeneratingSource (S k) (γ t k, γ t (k + 1))).2 ∈ Ioo (0 : ℝ) 1 := by
   refine eventually_all.2 fun k ↦ ?_
-  obtain ⟨Y', B, h⟩ := exists_faceData hS hγ hsrc htgt hiff hface (c := 0) (by simp)
-  have hcont := (h.hasDerivAt.self_of_nhds k).continuousAt
+  have hcont := (hasDerivAt_stripGeneratingSource_snd hγ.self_of_nhds
+    (((hS k).fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero)).continuousAt
   by_cases hk : (stripGeneratingSource (S k) (γ t₀ k, γ t₀ (k + 1))).2 ∈ ({0, 1} : Set ℝ)
   · -- a momentum on a face moves into the block, and stays within distance `1` of the face
     filter_upwards [eventually_nhdsGT_mul_stripGeneratingSource_snd_sub_pos hS hγ hsrc htgt hiff
@@ -637,17 +637,17 @@ theorem stripGeneratingSource_snd_ne_of_forall_stripGeneratingTarget_eq {q : ZMo
       (stripGeneratingSource (S k) (q k, q (k + 1))).2 = c)
     (hfull : ∃ k, (stripGeneratingSource (S k) (q k, q (k + 1))).2 ≠ c) (k : ZMod N) :
     (stripGeneratingSource (S k) (q k, q (k + 1))).2 ≠ c := by
-  intro hk
   obtain ⟨j, hj⟩ := hfull
   -- `y_i = c` forces `Y_(i-1) = c`, hence `y_(i-1) = c`: the face propagates backwards
   have hstep (i : ZMod N) (hi : (stripGeneratingSource (S i) (q i, q (i + 1))).2 = c) :
       (stripGeneratingSource (S (i - 1)) (q (i - 1), q (i - 1 + 1))).2 = c := by
     refine htgt (i - 1) ?_
     rw [sub_add_cancel, ← hi, hcrit i]
-  have key (n : ℕ) : (stripGeneratingSource (S (k - n)) (q (k - n), q (k - n + 1))).2 = c := by
-    induction n with
-    | zero => simpa using hk
-    | succ n ih => simpa [sub_sub] using hstep _ ih
-  exact hj (by simpa [ZMod.natCast_zmod_val] using key (k - j).val)
+  -- so a momentum off the face propagates forwards, from `y_j` to every `y_k`
+  have key := ZMod.induction_on
+    (P := fun n ↦ (stripGeneratingSource (S (j + n)) (q (j + n), q (j + n + 1))).2 ≠ c) (k - j)
+    (by rwa [add_zero])
+    fun n ih h ↦ ih (by simpa only [← add_assoc, add_sub_cancel_right] using hstep _ h)
+  simpa only [add_sub_cancel] using key
 
 end TauCeti
