@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Dynamics.SymbolicDynamics.Subshift
 public import TauCeti.Probability.Process.Tail.ProperAction
+import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Function.SuperlevelVersion
 import TauCeti.MeasureTheory.Group.Action
 
@@ -28,6 +29,13 @@ event of `X` is the trace of an event of `I → S`, almost invariant for the pus
 which is invariant because `μ` is. Neither closedness nor measurability of `X` in `I → S` is used.
 The function statement applies the event statement to the superlevel sets
 (`TauCeti.MeasureTheory.exists_measurable_ae_eq_of_forall_superlevel`).
+
+Without any group action: for any measure on `X`, a function `X → ℝ≥0∞` that agrees almost
+everywhere with an `𝓕_{Λᶜ}`-measurable function for each finite `Λ` separately agrees almost
+everywhere with one function measurable for all of them
+(`TauCeti.Subshift.exists_forall_measurable_exterior_ae_eq_of_forall_exists`). The exterior
+σ-algebras of an exhaustion of `I` decrease, and the versions combine through
+`TauCeti.MeasureTheory.aestronglyMeasurable_iInf_of_antitone`.
 -/
 
 public section
@@ -41,8 +49,29 @@ namespace TauCeti
 namespace Subshift
 
 variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [Countable I] [TopologicalSpace S]
-  [MeasurableSpace S] {X : Subshift Γ I S} {μ : Measure X} [IsFiniteMeasure μ]
-  [SMulInvariantMeasure Γ X μ]
+  [MeasurableSpace S] {X : Subshift Γ I S} {μ : Measure X}
+
+/-- **Versions measurable for every exterior σ-algebra.** On a subshift over a countable index set,
+if a function `f : X → ℝ≥0∞` agrees `μ`-almost everywhere with an `𝓕_{Λᶜ}`-measurable function for
+each finite `Λ`, then it agrees `μ`-almost everywhere with a single function measurable for the
+exterior σ-algebra of every finite set. -/
+theorem exists_forall_measurable_exterior_ae_eq_of_forall_exists {f : X → ℝ≥0∞}
+    (h : ∀ Λ : Finset I, ∃ g : X → ℝ≥0∞, Measurable[X.exterior Λ] g ∧ g =ᵐ[μ] f) :
+    ∃ g : X → ℝ≥0∞, (∀ Λ : Finset I, Measurable[X.exterior Λ] g) ∧ g =ᵐ[μ] f := by
+  classical
+  -- An exhaustion of `I` by finite sets `D n`, along which the exterior σ-algebras decrease.
+  obtain ⟨D, hDmono, hD⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop (Finset I)
+  have hanti : Antitone fun n => X.exterior (D n : Set I) := fun _ _ hmn =>
+    X.exterior_anti (Finset.coe_subset.2 (hDmono hmn))
+  have hf := aestronglyMeasurable_iInf_of_antitone (μ := μ) hanti f fun n => by
+    obtain ⟨g, hg, hgf⟩ := h (D n)
+    exact ⟨g, hg.stronglyMeasurable, hgf.symm⟩
+  refine ⟨hf.mk f, fun Λ => ?_, hf.ae_eq_mk.symm⟩
+  obtain ⟨n, hn⟩ := (Filter.tendsto_atTop.1 hD Λ).exists
+  exact hf.stronglyMeasurable_mk.measurable.mono
+    ((iInf_le _ n).trans (X.exterior_anti (Finset.coe_subset.2 hn))) le_rfl
+
+variable [IsFiniteMeasure μ] [SMulInvariantMeasure Γ X μ]
 
 /-- **Invariant events of a subshift are almost surely exterior events.** If every finite subset of
 the countable index set can be moved off every finite subset by the group, then for a finite
