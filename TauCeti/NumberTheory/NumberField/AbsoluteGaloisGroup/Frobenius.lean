@@ -175,8 +175,9 @@ attribute [local instance] Ideal.Quotient.field in
 /-- **The residue extension is Galois over a perfect residue field**: for a maximal ideal `Q` of
 `O` over `P` with `𝓞 F ⧸ P` perfect, for instance finite, `O ⧸ Q` is a Galois extension of
 `𝓞 F ⧸ P`. -/
-theorem isGalois_quotient [PerfectField F] [P.IsMaximal] [Q.IsMaximal] [PerfectField (𝓞 F ⧸ P)] :
+theorem isGalois_quotient [P.IsMaximal] [Q.IsMaximal] [PerfectField (𝓞 F ⧸ P)] :
     IsGalois (𝓞 F ⧸ P) (integralClosure (𝓞 F) (AlgebraicClosure F) ⧸ Q) :=
-  Ideal.Quotient.isGalois_of_profinite (Field.absoluteGaloisGroup F) P Q
+  have := isAlgClosure_quotient P Q
+  IsGalois.mk
 
 end TauCeti.GaloisRep
