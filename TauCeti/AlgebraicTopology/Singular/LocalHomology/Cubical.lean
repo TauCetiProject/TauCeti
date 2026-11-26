@@ -13,7 +13,7 @@ import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 # Generators of local cubical homology
 
 The local homology of a manifold is computed by singular chains, while relative cycles such as the
-fundamental chains of compactified trajectory spaces are cubical. This file reads two facts about
+fundamental chains of compactified trajectory spaces are cubical. This file reads three facts about
 generators of local singular homology through the comparison isomorphisms between relative cubical
 and relative singular homology
 (`TopPair.singularCubicalHomologyIso`).
@@ -23,6 +23,9 @@ and relative singular homology
 * `TauCeti.span_homologyMap_cubicalHomologyδ_eq_top`: the boundary of a relative class generating
   at the interior points generates the local cubical homology of a collared boundary, the cubical
   form of `TauCeti.isFundamentalClass_singularHomologyδ_of_forall_span_eq_top`.
+* `TauCeti.span_homologyMap_cubicalChainComplexMap_eq_top`: a class generating at an interior
+  point, carried along a map that is an open embedding on the interior and sends the boundary off
+  the image of that point, generates the local cubical homology there.
 * `TauCeti.eq_of_span_cubicalHomology_eq_top`: the local cubical homology of a manifold in top
   degree has a single generator when `1` is the only unit of the coefficients, the cubical form of
   `TauCeti.eq_of_span_localHomology_eq_top`.
@@ -88,6 +91,50 @@ theorem span_homologyMap_cubicalHomologyδ_eq_top {X : TopCat.{u}} [T2Space X] {
   refine (congrArg (k ∙ ·) ?_).trans ((isFundamentalClass_iff _).1 hδ a)
   exact h₁.trans ((congrArg _ h₂).trans
     (singularHomologyToLocalHomology_eq_singularHomologyπ _ a _).symm)
+
+/-- **A class generating at an interior point, carried along a map that is an open embedding
+there, generates.** Let `j : N → X` be an open embedding into a `T₁` space and let `μ` be a class
+of the relative cubical homology `Hₙ(X, X ∖ j(N); k)` whose image in the local homology
+`Hₙ(X, X ∖ {j r}; k)` generates it. Let `g : X → Y` be a map into a `T₁` space such that `g ∘ j`
+is an open embedding and `g` sends `X ∖ j(N)` off `g (j r)`. Then the image of `μ` under `g` in
+the local cubical homology `Hₙ(Y, Y ∖ {g (j r)}; k)` generates it. -/
+theorem span_homologyMap_cubicalChainComplexMap_eq_top {X : TopCat.{u}} [T1Space X] {N : Type u}
+    [TopologicalSpace N] {j : N → X} (hj : IsOpenEmbedding j) {Y : Type u} [TopologicalSpace Y]
+    [T1Space Y] {n : ℕ} (μ : ((TopPair.ofSubset (range j)ᶜ).cubicalChainComplex k).homology n)
+    (g : C(X, Y)) (hg : IsOpenEmbedding (g ∘ j)) (r : N)
+    (hμ : (k ∙ localHomologyRestriction (ModuleCat.of k k)
+      (singleton_subset_iff.2 (mem_range_self r)) n
+        ((TopPair.singularCubicalHomologyIso k (TopPair.ofSubset (range j)ᶜ) n).inv.hom μ)) = ⊤)
+    (h : MapsTo (TopCat.ofHom (X := X) g) (range j)ᶜ {g (j r)}ᶜ) :
+    (k ∙ (HomologicalComplex.homologyMap (cubicalChainComplexMap k (ofSubsetMap _ h)) n).hom μ) =
+      ⊤ := by
+  -- `g` sends every point other than `j r` off `g (j r)`: the points off the image of `j` by `h`,
+  -- the other points of the image by injectivity of `g ∘ j`.
+  have h' : g ⁻¹' {g (j r)} ⊆ {j r} := by
+    intro x hx
+    by_cases hxj : x ∈ range j
+    · obtain ⟨s, rfl⟩ := hxj
+      exact congrArg j (hg.injective hx)
+    · exact (h hxj hx).elim
+  -- The local homology of `X` at `j r` maps isomorphically to that of `Y` at `g (j r)`.
+  have hiso := isIso_localHomologyMap_singleton_of_isOpenEmbedding_comp (ModuleCat.of k k)
+    (j := ⟨j, hj.continuous⟩) hj g hg r h' n
+  rw [localHomologyMap_def] at hiso
+  have hx : MapsTo (𝟙 X) (range j)ᶜ ({j r}ᶜ : Set X) :=
+    compl_subset_compl.2 (singleton_subset_iff.2 (mem_range_self r))
+  -- The map of pairs induced by `g` factors through the local pair of `X` at `j r`.
+  have hfac : ofSubsetMap (TopCat.ofHom (X := X) g) h = ofSubsetMap (𝟙 X) hx ≫
+      ofSubsetMap (X := TopCat.of X) (Y := TopCat.of Y) (B := ({j r} : Set X)ᶜ)
+        (B' := ({g (j r)} : Set Y)ᶜ) (TopCat.ofHom g)
+        ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h')) :=
+    (ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ h (Category.id_comp _)).symm
+  refine (ModuleCat.span_singleton_apply_eq_top_iff (TopPair.singularCubicalHomologyIso k
+    (TopPair.ofSubset (X := TopCat.of Y) {g (j r)}ᶜ) n).inv).1 ?_
+  rw [← ModuleCat.comp_apply, TopPair.singularCubicalHomologyIso_inv_naturality, hfac,
+    TopPair.singularHomologyMap_comp, ModuleCat.comp_apply, ModuleCat.comp_apply,
+    ModuleCat.span_singleton_apply_eq_top_iff]
+  rw [localHomologyRestriction_def] at hμ
+  exact hμ
 
 /-- **The local cubical homology of a manifold has a single generator when `1` is the only unit
 of the coefficients.** On a manifold `Y` of dimension `m`, with coefficients in a ring `k` whose
