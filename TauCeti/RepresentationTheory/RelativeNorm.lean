@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.QuotientGroup.Basic
 import TauCeti.Algebra.Module.NatInt
 import TauCeti.RepresentationTheory.Coinvariants
 import TauCeti.GroupTheory.Coset.Basic
+import TauCeti.RepresentationTheory.Intertwining
 
 /-!
 # The relative norm and the relative transfer of a subgroup
@@ -46,6 +47,8 @@ subgroup in the two degrees where Tate cohomology is not ordinary group cohomolo
 
 * `Representation.relNorm_comp_norm`: `N_{G/H} ∘ N_H = N_G`.
 * `Representation.norm_comp_relTransfer`: `N_H ∘ N_{G/H}' = N_G`.
+* `Representation.IntertwiningMap.map_relNorm`, `Representation.IntertwiningMap.map_relNorm_comp`:
+  intertwining maps commute with the relative norm, also of restricted representations.
 * `Representation.relNorm_apply_eq_self`: the relative norm carries `H`-fixed vectors to `G`-fixed
   vectors, over any semiring.
 * `Representation.relNorm_apply_of_forall_apply_eq`: on `G`-fixed vectors the relative norm is
@@ -117,6 +120,23 @@ theorem relNorm_apply (x : V) : relNorm ρ H x = ∑ q : G ⧸ H, ρ q.out x := 
 chosen coset representatives. -/
 theorem relTransfer_apply (x : V) : relTransfer ρ H x = ∑ q : G ⧸ H, ρ q.out⁻¹ x := by
   simp [relTransfer]
+
+variable (H) in
+/-- An intertwining map commutes with the relative norm. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm {W : Type*} [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (x : V) :
+    f (relNorm ρ H x) = relNorm σ H (f x) := by
+  simp only [relNorm_apply, map_sum, f.isIntertwining]
+
+/-- An intertwining map of representations of `G` commutes with the relative norm of the
+restrictions along `φ : K →* G`. -/
+@[simp]
+theorem IntertwiningMap.map_relNorm_comp {K W : Type*} [Group K] [AddCommMonoid W] [Module R W]
+    {σ : Representation R G W} (f : IntertwiningMap ρ σ) (φ : K →* G) (L : Subgroup K)
+    [Fintype (K ⧸ L)] (x : V) :
+    f (relNorm (ρ.comp φ) L x) = relNorm (σ.comp φ) L (f x) := by
+  simpa only [IntertwiningMap.coe_res] using (f.res φ).map_relNorm L x
 
 end Defs
 
