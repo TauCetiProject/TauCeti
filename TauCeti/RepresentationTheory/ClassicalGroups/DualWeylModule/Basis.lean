@@ -45,17 +45,18 @@ span. Every subtraction keeps the coefficients in `R`, which is the saturation o
 
 ## Main results
 
-* `TauCeti.DualWeylModule.linearIndependent_bideterminant` and
-  `TauCeti.DualWeylModule.dualWeylModule_le_span_bideterminant`: the standard bideterminants are
-  linearly independent and span the dual Weyl module, over every commutative ring.
-* `TauCeti.DualWeylModule.span_range_bideterminant`: the bideterminants of all fillings span the
+* `TauCeti.DualWeylModule.linearIndependent_bideterminant_ssytFilling` and
+  `TauCeti.DualWeylModule.dualWeylModule_le_span_bideterminant_ssytFilling`: the standard
+  bideterminants are linearly independent and span the dual Weyl module, over every commutative
+  ring.
+* `TauCeti.DualWeylModule.span_range_bideterminant_eq`: the bideterminants of all fillings span the
   dual Weyl module.
 * `TauCeti.DualWeylModule.finrank_dualWeylModule`: its rank is the number of semistandard
   tableaux.
 * `TauCeti.DualWeylModule.span_map_dualWeylModule`: base change, `∇_S` is the `S`-span of the
   image of `∇_R`.
-* `TauCeti.DualWeylModule.mem_span_bideterminant_of_map`: saturation, for an injective change of
-  coefficients (for instance a domain in its field of fractions).
+* `TauCeti.DualWeylModule.mem_span_bideterminant_ssytFilling_of_map`: saturation, for an
+  injective change of coefficients (for instance a domain in its field of fractions).
 
 ## References
 
@@ -320,7 +321,8 @@ section Independence
 variable (R) in
 /-- **The standard bideterminants are linearly independent** over every commutative ring: the
 bideterminants of the semistandard tableaux of shape `μ` in the letters `0, …, N - 1`. -/
-theorem linearIndependent_bideterminant (N : ℕ) (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n) :
+theorem linearIndependent_bideterminant_ssytFilling (N : ℕ) (μ : YoungDiagram)
+    (hμ : μ.colLen 0 ≤ n) :
     LinearIndependent R fun T : BoundedSSYT N μ => bideterminant R μ hμ (ssytFilling T) := by
   induction N generalizing μ with
   | zero =>
@@ -356,7 +358,7 @@ section Spanning
 variable {μ : YoungDiagram}
 
 /-- The span of the standard bideterminants lies in the dual Weyl module. -/
-theorem span_bideterminant_le (hμ : μ.colLen 0 ≤ n) :
+theorem span_bideterminant_ssytFilling_le (hμ : μ.colLen 0 ≤ n) :
     Submodule.span R (Set.range fun T : BoundedSSYT N μ => bideterminant R μ hμ (ssytFilling T)) ≤
       dualWeylModule R N fun s : Fin n => μ.rowLen s :=
   Submodule.span_le.mpr <| Set.range_subset_iff.mpr fun T =>
@@ -441,7 +443,8 @@ private theorem exists_sub_degree_lt
 
 variable (R) in
 /-- **The standard bideterminants span the dual Weyl module** over every commutative ring. -/
-theorem dualWeylModule_le_span_bideterminant (N : ℕ) (μ : YoungDiagram) (hμ : μ.colLen 0 ≤ n) :
+theorem dualWeylModule_le_span_bideterminant_ssytFilling (N : ℕ) (μ : YoungDiagram)
+    (hμ : μ.colLen 0 ≤ n) :
     dualWeylModule R N (fun s : Fin n => μ.rowLen s) ≤
       Submodule.span R (Set.range fun T : BoundedSSYT N μ =>
         bideterminant R μ hμ (ssytFilling T)) := by
@@ -484,7 +487,7 @@ theorem dualWeylModule_le_span_bideterminant (N : ℕ) (μ : YoungDiagram) (hμ 
       rcases hfg with h0 | hlt
       · rw [h0]
         exact zero_mem _
-      · exact IH _ hlt (f - g) (sub_mem hf (span_bideterminant_le hμ hg)) rfl
+      · exact IH _ hlt (f - g) (sub_mem hf (span_bideterminant_ssytFilling_le hμ hg)) rfl
 
 end Spanning
 
@@ -495,28 +498,29 @@ section StandardBasis
 variable (R) (N : ℕ) {μ : YoungDiagram} (hμ : μ.colLen 0 ≤ n)
 
 /-- The standard bideterminants span the dual Weyl module. -/
-theorem span_bideterminant_eq :
+theorem span_bideterminant_ssytFilling_eq :
     Submodule.span R (Set.range fun T : BoundedSSYT N μ => bideterminant R μ hμ (ssytFilling T)) =
       dualWeylModule R N fun s : Fin n => μ.rowLen s :=
-  le_antisymm (span_bideterminant_le hμ) (dualWeylModule_le_span_bideterminant R N μ hμ)
+  le_antisymm (span_bideterminant_ssytFilling_le hμ)
+    (dualWeylModule_le_span_bideterminant_ssytFilling R N μ hμ)
 
 /-- **The span of all bideterminants.** Over every commutative ring, the bideterminants of all
 fillings of the Young diagram `μ` by rows of the `N × n` matrix of variables span the dual Weyl
 module of the column degrees given by the row lengths of `μ`. -/
-theorem span_range_bideterminant :
+theorem span_range_bideterminant_eq :
     Submodule.span R (Set.range (bideterminant (N := N) R μ hμ)) =
       dualWeylModule R N fun s : Fin n => μ.rowLen s :=
   le_antisymm (Submodule.span_le.mpr (Set.range_subset_iff.mpr
       (bideterminant_mem_dualWeylModule R μ hμ)))
-    ((span_bideterminant_eq R N hμ).symm.le.trans
+    ((span_bideterminant_ssytFilling_eq R N hμ).symm.le.trans
       (Submodule.span_mono (Set.range_comp_subset_range ssytFilling _)))
 
 /-- **The standard bideterminant basis** of the dual Weyl module over a commutative ring `R`:
 the bideterminants of the semistandard tableaux of shape `μ` with entries smaller than `N`. -/
 noncomputable def standardBasis :
     Module.Basis (BoundedSSYT N μ) R (dualWeylModule R N fun s : Fin n => μ.rowLen s) :=
-  (Module.Basis.span (linearIndependent_bideterminant R N μ hμ)).map
-    (LinearEquiv.ofEq _ _ (span_bideterminant_eq R N hμ))
+  (Module.Basis.span (linearIndependent_bideterminant_ssytFilling R N μ hμ)).map
+    (LinearEquiv.ofEq _ _ (span_bideterminant_ssytFilling_eq R N hμ))
 
 @[simp]
 theorem coe_standardBasis (T : BoundedSSYT N μ) :
@@ -542,7 +546,7 @@ theorem span_map_dualWeylModule {S : Type*} [CommRing S] (φ : R →+* S) :
   refine le_antisymm (Submodule.span_le.mpr ?_) ?_
   · rintro _ ⟨f, hf, rfl⟩
     exact map_mem_dualWeylModule φ hf
-  · rw [← span_bideterminant_eq S N hμ]
+  · rw [← span_bideterminant_ssytFilling_eq S N hμ]
     refine Submodule.span_mono (Set.range_subset_iff.mpr fun T => ⟨_,
       bideterminant_mem_dualWeylModule R μ hμ (ssytFilling T), map_bideterminant R φ μ hμ _⟩)
 
@@ -551,13 +555,13 @@ include hμ in
 commutative rings `φ : R → S` (for instance a domain in its field of fractions), a polynomial over
 `R` whose image is a combination over `S` of the standard bideterminants is a combination over
 `R` of them. -/
-theorem mem_span_bideterminant_of_map {S : Type*} [CommRing S] {φ : R →+* S}
+theorem mem_span_bideterminant_ssytFilling_of_map {S : Type*} [CommRing S] {φ : R →+* S}
     (hφ : Function.Injective φ) {f : MvPolynomial (Fin N × Fin n) R}
     (hf : map φ f ∈ Submodule.span S
       (Set.range fun T : BoundedSSYT N μ => bideterminant S μ hμ (ssytFilling T))) :
     f ∈ Submodule.span R
       (Set.range fun T : BoundedSSYT N μ => bideterminant R μ hμ (ssytFilling T)) := by
-  rw [span_bideterminant_eq] at hf ⊢
+  rw [span_bideterminant_ssytFilling_eq] at hf ⊢
   exact (map_mem_dualWeylModule_iff hφ).mp hf
 
 end StandardBasis

@@ -24,7 +24,6 @@ multiply to zero, so it computes leading terms over every commutative semiring.
   products, sums and linear combinations.
 * `MonomialOrder.linearIndependent_of_hasLeadingTerm`: linear independence from leading terms with
   distinct exponents and independent leading coefficients.
-* `MvPolynomial.prod_pow_ite_C_mul_X`: substituting `c * X j` for `X i` in a monomial.
 
 ## References
 
@@ -177,24 +176,3 @@ theorem linearIndependent_of_hasLeadingTerm {A S : Type*} [CommRing A] [CommRing
     (Fintype.linearIndependent_iff.mp (hq i.1) (fun a => g ⟨i.1, a⟩) h_coeff i.2)
 
 end MonomialOrder
-
-namespace MvPolynomial
-
-/-- Substituting `c * X j` for `X i` turns `X ^ η` into a monomial: the exponent of `X i` is moved
-to `X j`, and the coefficient is `c ^ η i`. -/
-theorem prod_pow_ite_C_mul_X {σ A : Type*} [Fintype σ] [DecidableEq σ] [CommSemiring A]
-    {i : σ} (j : σ) (c : A) (η : σ →₀ ℕ) :
-    ∏ l, (if l = i then C c * X j else X l : MvPolynomial σ A) ^ η l =
-      monomial (η.erase i + Finsupp.single j (η i)) (c ^ η i) := by
-  rw [monomial_eq, Finsupp.prod_add_index' (fun _ => pow_zero _) (fun _ _ _ => pow_add _ _ _)]
-  simp only [Finsupp.prod_single_index, pow_zero]
-  rw [Finsupp.prod_fintype _ _ (fun _ => pow_zero _), Fintype.prod_eq_mul_prod_compl i,
-    Fintype.prod_eq_mul_prod_compl i]
-  have h_ne {l : σ} (hl : l ∈ ({i}ᶜ : Finset σ)) : l ≠ i := by simpa using hl
-  rw [Finset.prod_congr rfl (g := fun l => X l ^ η l) fun l hl => by simp [h_ne hl],
-    Finset.prod_congr rfl (f := fun l => X l ^ (η.erase i) l) (g := fun l => X l ^ η l)
-      fun l hl => by rw [Finsupp.erase_ne (h_ne hl)]]
-  simp only [ite_true, Finsupp.erase_same, pow_zero, one_mul, mul_pow, map_pow]
-  ring
-
-end MvPolynomial

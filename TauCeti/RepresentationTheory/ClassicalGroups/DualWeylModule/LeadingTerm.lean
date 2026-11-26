@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
 public import TauCeti.Data.Finsupp.MonomialOrder.Colex
 public import TauCeti.RepresentationTheory.ClassicalGroups.DualWeylModule.Basic
 public import TauCeti.RingTheory.MvPolynomial.HasLeadingTerm
+import TauCeti.Algebra.MvPolynomial.Monomial
 
 /-!
 # Leading terms of dual Weyl vectors in the last row
