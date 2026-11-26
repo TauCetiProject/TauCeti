@@ -55,8 +55,8 @@ spaces (`TauCeti.OrthonormalFrameBundle.continuous_cliffordMul_canonicalSpinor`,
 
 ## Main results
 
-* `TauCeti.OrthonormalFrameBundle.vectorFrame_canonicalSpinCStructureInl_apply_apply`: the vector
-  frame of `[p, 1]` carries `J` to the model complex structure.
+* `TauCeti.OrthonormalFrameBundle.cliffordMul_canonicalSpinor_eq_mk`:
+  `c(v) u₀(x) = [[p, 1], c(κ_p v) u]` for every unitary frame `p` over `x`.
 * `TauCeti.OrthonormalFrameBundle.cliffordMul_apply_apply_canonicalSpinor`:
   `c(J v) u₀ = i c(v) u₀`.
 * `TauCeti.OrthonormalFrameBundle.inner_cliffordMul_canonicalSpinor`:
@@ -130,23 +130,6 @@ private theorem inner_apply_apply_of_repr_symm (v w : V) : ⟪JV v, JV w⟫ = �
   rw [← b.repr.symm_apply_apply v, ← b.repr.symm_apply_apply w, hJV, hJV,
     LinearIsometryEquiv.inner_map_map, LinearIsometryEquiv.inner_map_map, Unitary.inner_map_map]
 
-omit [Fact (finrank ℝ V = 4)] in
-include hJV in
-/-- **The vector frame of `[p, 1]` carries `J` to the model complex structure**: for a unitary
-frame `p` over `x`, `κ_p (J v) = JV (κ_p v)`. -/
-theorem vectorFrame_canonicalSpinCStructureInl_apply_apply {x : X}
-    (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x) (v : E x) :
-    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
-        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) (J x v) =
-      JV ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
-        (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) v) := by
-  rw [SpinCStructure.vectorFrame_apply_eq_repr_symm, SpinCStructure.vectorFrame_apply_eq_repr_symm,
-    frameAt_canonicalSpinCStructureInl, hJV]
-  congr 1
-  have hp := mem_unitaryFrames_iff.1 p.property (p.val.frame.symm v)
-  rw [LinearIsometryEquiv.apply_symm_apply] at hp
-  rw [← hp, LinearIsometryEquiv.symm_apply_apply]
-
 include hJV hu in
 /-- On the canonical line of the model, Clifford multiplication turns `JV` into `i`. -/
 private theorem cliffordMul_apply_of_cliffordProjection (w : V) :
@@ -161,6 +144,34 @@ private theorem cliffordMul_apply_of_cliffordProjection (w : V) :
     coe_toEigenspace_cliffordMul]
 
 include hJV hu in
+/-- On the canonical line of the model, Clifford multiplication by `u` is Hermitian up to the factor
+`‖u‖²`: `⟪c(w) u, c(w') u⟫ = (⟪w, w'⟫ - i ⟪w, JV w'⟫) ‖u‖²`. -/
+private theorem inner_cliffordMul_of_cliffordProjection (w w' : V) :
+    ⟪Orientation.HalfSpinModel.cliffordMul (ε' := -1) rfl w u,
+      Orientation.HalfSpinModel.cliffordMul (ε' := -1) rfl w' u⟫_ℂ =
+      ((⟪w, w'⟫ : ℂ) - ⟪w, JV w'⟫ * Complex.I) * ‖u‖ ^ 2 := by
+  rw [← LinearIsometryEquiv.inner_map_map toEigenspace, Submodule.coe_inner,
+    coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, ← coe_toPositiveHalfSpinors,
+    inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ
+      (inner_apply_apply_of_repr_symm b hJV) hρ hu, coe_toPositiveHalfSpinors,
+    Submodule.norm_coe, LinearIsometryEquiv.norm_map]
+
+include hJV hu in
+/-- **Clifford multiplication on the canonical spinor in every unitary frame**:
+`c(v) u₀(x) = [[p, 1], c(κ_p v) u]` for every unitary frame `p` over `x`, where `κ_p` is the vector
+frame of `[p, 1]`. -/
+theorem cliffordMul_canonicalSpinor_eq_mk {x : X} (p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x)
+    (v : E x) :
+    (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ (ε' := -1) rfl x v
+        (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x) =
+      AssociatedBundle.mk SpinC (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
+        (Orientation.HalfSpinModel.cliffordMul (ε' := -1) rfl
+          ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
+            (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) v) u) := by
+  rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
+    SpinCStructure.cliffordMul_mk]
+
+include hJV hu in
 /-- **Clifford multiplication turns `J` into `i` on the canonical spinor**: `c(J v) u₀ = i c(v) u₀`
 on every fibre. Equivalently, `v ↦ c(v) u₀` is complex linear from `(E x, J x)` to `W⁻_x`. -/
 theorem cliffordMul_apply_apply_canonicalSpinor {x : X} (v : E x) :
@@ -169,8 +180,8 @@ theorem cliffordMul_apply_apply_canonicalSpinor {x : X} (v : E x) :
       Complex.I • (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).cliffordMul o hQ b ρ hρ
         (ε' := -1) rfl x v (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x) := by
   have p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x := Classical.arbitrary _
-  rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
-    SpinCStructure.cliffordMul_mk, SpinCStructure.cliffordMul_mk,
+  rw [cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
+    cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
     vectorFrame_canonicalSpinCStructureInl_apply_apply hJ hJ₂ hJ₀ hF e h₀ h₂ b hJV p,
     cliffordMul_apply_of_cliffordProjection o hQ b ρ hρ hJV hu, AssociatedBundle.mk_smul_scalar]
 
@@ -186,15 +197,9 @@ theorem inner_cliffordMul_canonicalSpinor {x : X} (v w : E x) :
         (canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ u x)⟫_ℂ =
       ((⟪v, w⟫ : ℂ) - ⟪v, J x w⟫ * Complex.I) * ‖u‖ ^ 2 := by
   have p : (unitaryFrameLift hJ hJ₂ hJ₀ hF).P x := Classical.arbitrary _
-  set κ := (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b
-    (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
-  rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
-    SpinCStructure.cliffordMul_mk, SpinCStructure.cliffordMul_mk, AssociatedBundle.inner_mk,
-    ← LinearIsometryEquiv.inner_map_map toEigenspace, Submodule.coe_inner,
-    coe_toEigenspace_cliffordMul, coe_toEigenspace_cliffordMul, ← coe_toPositiveHalfSpinors,
-    inner_ι_apply_ι_apply_of_cliffordProjection_apply_eq_self hQ
-      (inner_apply_apply_of_repr_symm b hJV) hρ hu, coe_toPositiveHalfSpinors,
-    Submodule.norm_coe, LinearIsometryEquiv.norm_map,
+  rw [cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
+    cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
+    AssociatedBundle.inner_mk, inner_cliffordMul_of_cliffordProjection o hQ b ρ hρ hJV hu,
     ← vectorFrame_canonicalSpinCStructureInl_apply_apply hJ hJ₂ hJ₀ hF e h₀ h₂ b hJV p,
     LinearIsometryEquiv.inner_map_map, LinearIsometryEquiv.inner_map_map]
 
@@ -223,37 +228,22 @@ theorem continuous_cliffordMul_canonicalSpinor :
   have hinl : ContinuousOn (fun v : TotalSpace F E ↦ TotalSpace.mk' SpinC v.proj
       (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ (t.symm v.proj 1))) s :=
     (continuous_canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂).comp_continuousOn hσ
-  -- The coordinates `(σ y)⁻¹ v` of `v` in the local frame are inner products with the frame.
+  -- The coordinates `(σ y)⁻¹ v` of `v` in the local frame.
   have hframe :
-      ContinuousOn (fun v : TotalSpace F E ↦ (t.symm v.proj 1).val.frame.symm v.snd) s := by
-    have h (i : Fin 4) : ContinuousOn (fun v : TotalSpace F E ↦
-        ⟪(t.symm v.proj 1).val.frame (e i), v.snd⟫ • e i) s := by
-      have hfr : Continuous fun p : TotalSpace (Subgroup.centralizer {J₀})
-          (unitaryFrameLift hJ hJ₂ hJ₀ hF).P ↦ TotalSpace.mk' F p.proj (p.snd.val.frame (e i)) :=
-        continuous_totalSpaceMk_frame_apply.comp
-          ((unitaryFrameLift hJ hJ₂ hJ₀ hF).continuous_toFrame.prodMk continuous_const)
-      exact ((hfr.comp_continuousOn hσ).inner_bundle_of_continuousFiberNorm (𝕜 := ℝ)
-        (continuous_id (X := TotalSpace F E)).continuousOn).smul continuousOn_const
-    refine (continuousOn_finsetSum Finset.univ fun i _ ↦ h i).congr fun v _ ↦ ?_
-    rw [← e.sum_repr' ((t.symm v.proj 1).val.frame.symm v.snd)]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← LinearIsometryEquiv.inner_map_map (t.symm v.proj 1).val.frame,
-      LinearIsometryEquiv.apply_symm_apply]
+      ContinuousOn (fun v : TotalSpace F E ↦ (t.symm v.proj 1).val.frame.symm v.snd) s :=
+    continuousOn_frame_symm_apply (w := fun v ↦ v.snd)
+      ((unitaryFrameLift hJ hJ₂ hJ₀ hF).continuous_toFrame.comp_continuousOn hσ)
+      continuousOn_id
   -- Model Clifford multiplication on `u` is a linear map out of the finite-dimensional `V`.
-  let L : V →ₗ[ℝ] o.HalfSpinModel hQ b ρ hρ (-1) :=
-    { toFun w := Orientation.HalfSpinModel.cliffordMul (ε' := -1) rfl w u
-      map_add' w w' := by simp
-      map_smul' r w := by simp }
-  have hmodel : ContinuousOn (fun v : TotalSpace F E ↦ L (b.repr.symm
-      ((t.symm v.proj 1).val.frame.symm v.snd))) s :=
-    L.continuous_of_finiteDimensional.comp_continuousOn
+  have hmodel : ContinuousOn (fun v : TotalSpace F E ↦
+      (Orientation.HalfSpinModel.cliffordMul (ε' := -1) rfl).flip u
+        (b.repr.symm ((t.symm v.proj 1).val.frame.symm v.snd))) s :=
+    LinearMap.continuous_of_finiteDimensional _ |>.comp_continuousOn
       (b.repr.symm.continuous.comp_continuousOn hframe)
   refine ((hinl.totalSpaceMk_associatedBundleMk hmodel).congr fun v _ ↦ ?_).continuousAt hs
-  rw [canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu (t.symm v.proj 1),
-    SpinCStructure.cliffordMul_mk, SpinCStructure.vectorFrame_apply_eq_repr_symm,
-    frameAt_canonicalSpinCStructureInl]
-  -- `L w` is `c(w) u` by definition.
-  rfl
+  rw [cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu (t.symm v.proj 1),
+    SpinCStructure.vectorFrame_apply_eq_repr_symm, frameAt_canonicalSpinCStructureInl,
+    LinearMap.flip_apply]
 
 variable {Jc : Bundle.ContinuousComplexStructure F E} (hJc : ∀ x v, Jc x v = J x v)
 
@@ -270,12 +260,9 @@ private def cliffordMulCanonicalSpinorLinearMap (x : X) :
     rw [Bundle.ContinuousComplexStructure.fiberEquiv_smul, map_add, _root_.map_smul,
       _root_.map_smul, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.smul_apply, hJc,
       cliffordMul_apply_apply_canonicalSpinor hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu,
-      RingHom.id_apply]
-    conv_rhs => rw [← Complex.re_add_im z]
-    rw [add_smul, mul_smul, Complex.coe_smul, Complex.coe_smul]
-    -- The two sides differ only in how the real scalar action on `W⁻_x` is presented: restricted
-    -- from `ℂ` on the left, through `Complex.coe_smul` on the right.
-    rfl
+      RingHom.id_apply, RCLike.real_smul_eq_coe_smul (K := ℂ),
+      RCLike.real_smul_eq_coe_smul (K := ℂ), smul_smul, ← add_smul]
+    exact congrArg (· • _) (Complex.re_add_im z)
 
 include hJV hu hJc in
 private theorem cliffordMulCanonicalSpinorLinearMap_apply {x : X} (v : Jc.Fiber x) :
@@ -312,8 +299,8 @@ private theorem bijective_cliffordMulCanonicalSpinorLinearMap
       (((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).vectorFrame b q).symm
         (f.symm (toEigenspace φ))), ?_⟩
     rw [cliffordMulCanonicalSpinorLinearMap_apply, ContinuousLinearEquiv.apply_symm_apply,
-      canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
-      SpinCStructure.cliffordMul_mk, LinearIsometryEquiv.apply_symm_apply]
+      cliffordMul_canonicalSpinor_eq_mk hJ hJ₂ hJ₀ hF e h₀ h₂ o hQ b ρ hρ hJV hu p,
+      LinearIsometryEquiv.apply_symm_apply]
     congr 1
     apply toEigenspace.injective
     apply Subtype.ext
