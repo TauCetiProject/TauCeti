@@ -275,6 +275,14 @@ theorem archWeight_nonneg (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy :
   rw [archWeight_eq_infinityType]
   exact χ.toHeckeCharacter.infinityType.archWeight_nonneg hy
 
+/-- A common upper bound for nonnegative parameter coordinates bounds the archimedean weight. -/
+theorem archWeight_le_of_le_const (χ : Grossencharacter K 𝔪) {y : realSpace K} {C : ℝ}
+    (hy : ∀ w, 0 ≤ y w) (hC : ∀ w, y w ≤ C) :
+    χ.archWeight y ≤ ∏ w : InfinitePlace K, C ^ ((χ.harmonicExponent w : ℝ) / 2) := by
+  rw [archWeight_def]
+  exact Finset.prod_le_prod₀ (fun w _ ↦ Real.rpow_nonneg (hy w) _)
+    (fun w _ ↦ Real.rpow_le_rpow (hy w) (hC w) (by positivity))
+
 /-- For positive parameters, `χ.archWeight` is strictly positive. -/
 theorem archWeight_pos (χ : Grossencharacter K 𝔪) {y : realSpace K} (hy : ∀ w, 0 < y w) :
     0 < χ.archWeight y := by
@@ -322,10 +330,24 @@ theorem heckeEpsilon_def (χ : Grossencharacter K 𝔪) :
       if χ.toHeckeCharacter.finiteConductor = ⊤ ∧ χ.harmonicDegree = 0 then 1 else 0 :=
   (rfl)
 
+/-- The constant term of the twisted theta series is either zero or one. -/
+theorem heckeEpsilon_eq_zero_or_eq_one (χ : Grossencharacter K 𝔪) :
+    χ.heckeEpsilon = 0 ∨ χ.heckeEpsilon = 1 := by
+  rw [heckeEpsilon_def]
+  split <;> simp
+
 @[simp]
 theorem heckeEpsilon_eq_one_iff (χ : Grossencharacter K 𝔪) :
     χ.heckeEpsilon = 1 ↔ χ.toHeckeCharacter.finiteConductor = ⊤ ∧ χ.harmonicDegree = 0 := by
   simp [heckeEpsilon_def]
+
+/-- The archimedean weight fixes the constant term of the twisted theta series. -/
+theorem archWeight_mul_heckeEpsilon (χ : Grossencharacter K 𝔪) (y : realSpace K) :
+    (χ.archWeight y : ℂ) * χ.heckeEpsilon = χ.heckeEpsilon := by
+  rcases χ.heckeEpsilon_eq_zero_or_eq_one with h | h
+  · simp [h]
+  have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
+  simp [h, archWeight_def, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg]
 
 @[simp]
 theorem heckeEpsilon_eq_zero_iff (χ : Grossencharacter K 𝔪) :

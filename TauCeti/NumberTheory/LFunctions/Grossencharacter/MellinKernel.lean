@@ -122,7 +122,9 @@ theorem heckeMellinKernel_eq_mellinKernel (χ : Grossencharacter K 𝔪)
   dsimp only
   rw [χ.heckeTheta_eq_latticeTheta hχ J
     (surfaceScale_pos (mem_normOneSurface.mp x.property).1 (by positivity))]
-  simp [archWeight_def, hP]
+  have hweight : (χ.archWeight (x : realSpace K) : ℂ) = 1 := by
+    simpa only [hχ, mul_one] using χ.archWeight_mul_heckeEpsilon (x : realSpace K)
+  rw [hweight, one_mul]
 
 -- The radial power can be moved from the centered theta integrand into the Mellin exponent.
 private theorem archWeight_mul_heckeTheta_sub_surfaceScale (χ : Grossencharacter K 𝔪)
@@ -166,15 +168,6 @@ private theorem continuous_surfaceIntegrand (χ : Grossencharacter K 𝔪)
     (χ.continuousAt_heckeTheta J (surfaceScale_pos (mem_normOneSurface.mp x.property).1 ht))
     hradial.continuousAt
 
-private theorem archWeight_le_of_le_const (χ : Grossencharacter K 𝔪) (x : normOneSurface K)
-    {C : ℝ} (hC : ∀ w, (x : realSpace K) w ≤ C) :
-    χ.archWeight (x : realSpace K) ≤
-      ∏ w : InfinitePlace K, C ^ ((χ.harmonicExponent w : ℝ) / 2) := by
-  rw [archWeight_def]
-  have hx := (mem_normOneSurface.mp x.property).1
-  exact Finset.prod_le_prod₀ (fun w _ ↦ Real.rpow_nonneg (hx w).le _)
-    (fun w _ ↦ Real.rpow_le_rpow (hx w).le (hC w) (by positivity))
-
 private theorem exists_norm_surfaceIntegrand_le (χ : Grossencharacter K 𝔪)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) {D : Set (realSpace K)} (hD : Bornology.IsBounded D)
     {t₀ : ℝ} (ht₀ : 0 < t₀) :
@@ -207,7 +200,8 @@ private theorem exists_norm_surfaceIntegrand_le (χ : Grossencharacter K 𝔪)
       (add_le_add_right (tsum_of_norm_bounded hsum.hasSum hterm) _)
   rw [surfaceIntegrand, norm_mul,
     Complex.norm_of_nonneg (χ.archWeight_nonneg fun w ↦ (hxpos w).le)]
-  exact mul_le_mul (archWeight_le_of_le_const χ x (fun w ↦ (hbox x hx x.property w).2))
+  exact mul_le_mul (χ.archWeight_le_of_le_const (fun w ↦ (hxpos w).le)
+    (fun w ↦ (hbox x hx x.property w).2))
     htheta (norm_nonneg _) (by positivity)
 
 private theorem integrableOn_surfaceIntegrand (χ : Grossencharacter K 𝔪)
@@ -252,19 +246,11 @@ private theorem heckeMellinKernel_sub_eq_integral (χ : Grossencharacter K 𝔪)
       mellinFactor χ J * ∫ x in Subtype.val ⁻¹' D, (χ.archWeight (x : realSpace K) : ℂ) *
         (χ.heckeTheta J (surfaceScale (x : realSpace K) (u / χ.heckeScale J)) - χ.heckeEpsilon)
         ∂surfaceHaar K := by
-  have hε : χ.heckeEpsilon = 0 ∨ χ.heckeEpsilon = 1 := by
-    rw [heckeEpsilon_def]
-    split <;> simp
-  have hweight (x : normOneSurface K) :
-      (χ.archWeight (x : realSpace K) : ℂ) * χ.heckeEpsilon = χ.heckeEpsilon := by
-    rcases hε with h | h
-    · simp [h]
-    have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
-    simp [h, archWeight_def, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg]
+  rw [heckeMellinKernel]
   have hconst :
       mellinFactor χ J * ((surfaceHaar K).real (Subtype.val ⁻¹' D) : ℂ) * χ.heckeEpsilon =
         χ.heckeEpsilon * mellinConstant K := by
-    rcases hε with h | h
+    rcases χ.heckeEpsilon_eq_zero_or_eq_one with h | h
     · simp [h]
     have hdeg := (χ.heckeEpsilon_eq_one_iff.mp h).2
     simp only [mellinFactor, hdeg, χ.harmonicExponent_eq_zero_of_harmonicDegree_eq_zero hdeg,
@@ -277,10 +263,9 @@ private theorem heckeMellinKernel_sub_eq_integral (χ : Grossencharacter K 𝔪)
   have hInt := integrableOn_surfaceIntegrand χ J hD.measurableSet hD.isBounded
     (div_pos hu (χ.heckeScale_pos J))
   unfold surfaceIntegrand at hInt
-  simp_rw [mul_sub, hweight]
+  simp_rw [mul_sub, archWeight_mul_heckeEpsilon]
   rw [integral_sub hInt (integrableOn_const hfin.ne), setIntegral_const,
     Complex.real_smul, mul_sub, ← mul_assoc, hconst]
-  rfl
 
 private theorem norm_surfaceWeight_mul_sub_le (χ : Grossencharacter K 𝔪)
     (J : (FractionalIdeal (𝓞 K)⁰ K)ˣ) (x : normOneSurface K) {t : ℝ} (ht : 1 ≤ t) :
