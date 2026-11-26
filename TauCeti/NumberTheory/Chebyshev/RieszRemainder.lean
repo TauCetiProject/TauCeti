@@ -13,7 +13,7 @@ import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
 import TauCeti.NumberTheory.Chebyshev.Mertens
-import TauCeti.NumberTheory.Chebyshev.PsiSubTheta
+import TauCeti.NumberTheory.Chebyshev.WeightMethod
 
 /-!
 # Lipschitz and size bounds for the Riesz remainder
@@ -68,9 +68,9 @@ open TauCeti
 `Icc 1 ⌊y⌋₊` of `TauCeti.rieszSum`: `∑_{1 ≤ n ≤ y} ‖c(n)‖ ≤ ψ(y) ≤ 3 y` for `y ≥ 0`. -/
 private theorem sum_Icc_norm_le_three_mul {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ ≤ Λ n) {y : ℝ}
     (hy : 0 ≤ y) : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ ≤ 3 * y := by
-  refine (sum_le_sum fun n _ ↦ hc n).trans ?_
-  rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ by ext n; simp only [mem_Ioc, mem_Icc]; omega, ← psi]
-  exact psi_le_three_mul_self hy
+  have h := psi_le_three_mul_self hy
+  rw [psi, ← Icc_add_one_left_eq_Ioc, zero_add] at h
+  exact (sum_le_sum fun n _ ↦ hc n).trans h
 
 /-- Ordered case of `Chebyshev.norm_mul_rieszSum_div_add_mul_sub_le`. -/
 private theorem norm_mul_rieszSum_div_add_mul_sub_le_of_le {c : ℕ → ℂ}
@@ -111,9 +111,9 @@ theorem norm_rieszSum_add_mul_sub_le {c : ℕ → ℂ} (hc : ∀ n, ‖c n‖ �
     exact this (by rwa [max_comm]) (not_le.1 hzy).le
   rw [max_eq_left hzy] at h ⊢
   have hsum : ∑ n ∈ Icc 1 ⌊y⌋₊, ‖c n‖ / n ≤ Real.log y + (Real.log 4 + 4) := by
-    refine (sum_le_sum fun n _ ↦ div_le_div_of_nonneg_right (hc n) n.cast_nonneg).trans ?_
-    rw [show Icc 1 ⌊y⌋₊ = Ioc 0 ⌊y⌋₊ by ext n; simp only [mem_Ioc, mem_Icc]; omega]
-    exact sum_vonMangoldt_div_le h
+    have hΛ := sum_vonMangoldt_div_le h
+    rw [← Icc_add_one_left_eq_Ioc, zero_add] at hΛ
+    exact (sum_le_sum fun n _ ↦ div_le_div_of_nonneg_right (hc n) n.cast_nonneg).trans hΛ
   rw [abs_of_nonneg (sub_nonneg.2 hzy), add_sub_add_comm, ← sub_mul, mul_add]
   refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
   · refine (norm_rieszSum_sub_rieszSum_le c hzy).trans ?_
