@@ -223,8 +223,6 @@ theorem formalCharacter_eq_one_of_isHighestWeightVector_zero
     formalCharacter K H M = 1 := by
   have _ : LieModule.IsTrivial L M :=
     isTrivial_of_isHighestWeightVector_weight_zero_of_lieSpan_eq_top hv hgen
-  -- The Cartan subalgebra acts through `L`, hence trivially as well.
-  have _ : LieModule.IsTrivial H M := ⟨fun x m ↦ LieModule.IsTrivial.trivial (x : L) m⟩
   have hdim : finrank K M = 1 := by
     have h := finrank_eq_prod_coweightPairing_div hv hgen
     rw [zero_add, Finset.prod_eq_one fun i _ ↦ div_self (by

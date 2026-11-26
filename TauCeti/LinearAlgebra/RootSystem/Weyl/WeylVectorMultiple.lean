@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Denominator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Numerator
 import Mathlib.Algebra.Order.Interval.Finset.SuccPred
 import TauCeti.Algebra.MonoidAlgebra.Telescope
+import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
 # Characters at multiples of the Weyl vector
@@ -122,10 +123,9 @@ theorem eq_single_nsmul_weylVector_mul_prod_of_mul_weylDenominator_eq
     rw [mul_assoc, hf, ← mapDomainRingHom_single_weylVector_mul_weylNumerator_zero, ← hΔ, hdil,
       hsplit]
     ring
-  have hunit : single (-weylVector P b) (1 : ℤ) * single (weylVector P b) 1 = 1 := by
-    rw [single_mul_single, neg_add_cancel, mul_one, one_def]
   have := (isRegular_weylDenominator P b).right key
-  rw [← one_mul f, ← hunit, mul_assoc, this, ← mul_assoc, hunit, one_mul]
+  rw [← one_mul f, ← single_neg_mul_single (R := ℤ) (weylVector P b), mul_assoc, this,
+    ← mul_assoc, single_neg_mul_single, one_mul]
 
 /-- **The character at an even multiple of the Weyl vector is a product of centred root
 strings.** If `f · Δ = N(n · 2ρ)`, and the denominator identity `Δ = N(0)` holds, then
