@@ -51,77 +51,8 @@ namespace TauCeti.Examples.TwoOpenCells
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {a : ℝ}
 
-/-- A set on which the height `h` in the direction of `v` is at most `a < 1` misses the pole `v`,
-where `h = 1`. -/
-theorem self_notMem_of_subset_setOf_sphereHeight_le (v : sphere (0 : E) 1) (ha' : a < 1)
-    {S : Set (sphere (0 : E) 1)} (hS : S ⊆ {x | sphereHeight v x ≤ a}) : v ∉ S := by
-  intro hv
-  have := hS hv
-  rw [mem_ofPred_eq, sphereHeight_self] at this
-  linarith
-
-/-- A set of the sphere missing the pole `v` is the image of its preimage under the inverse of
-stereographic projection from `v`. -/
-theorem stereographic_symm_image_preimage_of_notMem (v : sphere (0 : E) 1)
-    {S : Set (sphere (0 : E) 1)} (hS : v ∉ S) :
-    (stereographic (norm_eq_of_mem_sphere v)).symm ''
-      ((stereographic (norm_eq_of_mem_sphere v)).symm ⁻¹' S) = S := by
-  refine image_preimage_eq_of_subset fun x hx ↦ ?_
-  rw [range_stereographic_symm (norm_eq_of_mem_sphere v) v.property, mem_compl_singleton_iff]
-  rintro rfl
-  exact hS hx
-
-/-- In `U`-coordinates the closed polar cap `{h ≤ a}` is the closed ball of radius
-`√(4 (1 + a) / (1 - a))`. -/
-theorem stereographic_symm_preimage_setOf_sphereHeight_le (v : sphere (0 : E) 1)
-    (ha : -1 ≤ a) (ha' : a < 1) :
-    (stereographic (norm_eq_of_mem_sphere v)).symm ⁻¹' {x | sphereHeight v x ≤ a} =
-      closedBall 0 √(4 * (1 + a) / (1 - a)) := by
-  ext w
-  rw [mem_preimage, mem_ofPred_eq, sphereHeight_stereographic_symm_apply,
-    neg_stereographicHeight_le_iff ha ha', mem_closedBall_zero_iff]
-
-/-- In `U`-coordinates the parallel `{h = a}` is the sphere of radius `√(4 (1 + a) / (1 - a))`. -/
-theorem stereographic_symm_preimage_setOf_sphereHeight_eq (v : sphere (0 : E) 1)
-    (ha : -1 ≤ a) (ha' : a < 1) :
-    (stereographic (norm_eq_of_mem_sphere v)).symm ⁻¹' {x | sphereHeight v x = a} =
-      sphere 0 √(4 * (1 + a) / (1 - a)) := by
-  ext w
-  rw [mem_preimage, mem_ofPred_eq, sphereHeight_stereographic_symm_apply,
-    neg_stereographicHeight_eq_iff ha ha', mem_sphere_zero_iff_norm]
-
-/-- The interior of the closed polar cap `{h ≤ a}`, `-1 < a < 1`, is the open polar cap
-`{h < a}`: read in `U`-coordinates, it is the interior of a closed round ball. -/
-theorem interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) (ha : -1 < a)
-    (ha' : a < 1) : interior {x | sphereHeight v x ≤ a} = {x | sphereHeight v x < a} := by
-  have he := isOpenEmbedding_stereographic_symm (norm_eq_of_mem_sphere v)
-  have hR : √(4 * (1 + a) / (1 - a)) ≠ 0 :=
-    (Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))).ne'
-  have hlt : {x | sphereHeight v x < a} =
-      {x | sphereHeight v x ≤ a} \ {x | sphereHeight v x = a} := by
-    ext x
-    simp [lt_iff_le_and_ne]
-  rw [← stereographic_symm_image_preimage_of_notMem v (S := interior {x | sphereHeight v x ≤ a})
-      (self_notMem_of_subset_setOf_sphereHeight_le v ha' interior_subset),
-    ← stereographic_symm_image_preimage_of_notMem v (S := {x | sphereHeight v x < a})
-      (self_notMem_of_subset_setOf_sphereHeight_le v ha'
-        (ofPred_subset_ofPred.2 fun _ ↦ le_of_lt)),
-    he.isOpenMap.preimage_interior_eq_interior_preimage he.continuous,
-    stereographic_symm_preimage_setOf_sphereHeight_le v ha.le ha', interior_closedBall _ hR, hlt,
-    preimage_sdiff, stereographic_symm_preimage_setOf_sphereHeight_le v ha.le ha',
-    stereographic_symm_preimage_setOf_sphereHeight_eq v ha.le ha', closedBall_sdiff_sphere]
-
-/-- `C = X \ int D` is the closed cap `{h' ≤ -a}` of the height `h'` in the direction of the south
-pole. -/
-theorem compl_interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) (ha : -1 < a)
-    (ha' : a < 1) :
-    (interior {x | sphereHeight v x ≤ a})ᶜ = {x | sphereHeight (-v) x ≤ -a} := by
-  rw [interior_setOf_sphereHeight_le v ha ha']
-  ext x
-  simp
-
 /-- `D ∩ C` is the parallel `{h = a}`. -/
-theorem inter_compl_interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) (ha : -1 < a)
+private theorem inter_compl_interior_setOf_sphereHeight_le (v : sphere (0 : E) 1) (ha : -1 < a)
     (ha' : a < 1) :
     {x | sphereHeight v x ≤ a} ∩ (interior {x | sphereHeight v x ≤ a})ᶜ =
       {x | sphereHeight v x = a} := by
@@ -138,13 +69,11 @@ example (p : sphere (0 : E) 1) (ha : -1 < a) (ha' : a < 1) :
         {x | sphereHeight p x ≤ a} ∧
       interior {x | sphereHeight p x ≤ a} = {x | sphereHeight p x < a} ∧
       ({-p}ᶜ : Set (sphere (0 : E) 1))ᶜ ⊆ interior {x | sphereHeight p x ≤ a} := by
-  refine ⟨?_, interior_setOf_sphereHeight_le p ha ha', ?_⟩
-  · rw [← stereographic_symm_preimage_setOf_sphereHeight_le p ha.le ha',
-      stereographic_symm_image_preimage_of_notMem p
-        (self_notMem_of_subset_setOf_sphereHeight_le p ha' subset_rfl)]
-  · rw [compl_compl, singleton_subset_iff, interior_setOf_sphereHeight_le p ha ha', mem_ofPred_eq,
-      sphereHeight_neg_self]
-    exact ha
+  refine ⟨stereographic_symm_image_closedBall p ha.le ha', interior_setOf_sphereHeight_le p ha ha',
+    ?_⟩
+  rw [compl_compl, singleton_subset_iff, interior_setOf_sphereHeight_le p ha ha', mem_ofPred_eq,
+    sphereHeight_neg_self]
+  exact ha
 
 /-- `C = X \ int D` is the opposite closed polar cap `{h ≥ a}` around the north pole `p`. It is
 the closed round ball of radius `√(4 (1 - a) / (1 + a))` in the stereographic coordinates from the
@@ -160,9 +89,7 @@ example (p : sphere (0 : E) 1) (ha : -1 < a) (ha' : a < 1) :
     ext x
     simp
   · rw [compl_interior_setOf_sphereHeight_le p ha ha',
-      ← stereographic_symm_preimage_setOf_sphereHeight_le (-p) (by linarith) (by linarith),
-      stereographic_symm_image_preimage_of_notMem (-p)
-        (self_notMem_of_subset_setOf_sphereHeight_le (-p) (a := -a) (by linarith) subset_rfl)]
+      stereographic_symm_image_closedBall (-p) (by linarith) (by linarith)]
   · rw [compl_interior_setOf_sphereHeight_le p ha ha']
     rintro x hx rfl
     rw [mem_ofPred_eq, sphereHeight_self] at hx
@@ -174,35 +101,30 @@ example (p : sphere (0 : E) 1) (ha : -1 < a) (ha' : a < 1) :
     {x | sphereHeight p x ≤ a} ∩ (interior {x | sphereHeight p x ≤ a})ᶜ =
       (stereographic (norm_eq_of_mem_sphere p)).symm '' sphere 0 √(4 * (1 + a) / (1 - a)) := by
   rw [inter_compl_interior_setOf_sphereHeight_le p ha ha',
-    ← stereographic_symm_preimage_setOf_sphereHeight_eq p ha.le ha',
-    stereographic_symm_image_preimage_of_notMem p
-      (self_notMem_of_subset_setOf_sphereHeight_le p ha'
-        (ofPred_subset_ofPred.2 fun _ ↦ le_of_eq))]
+    stereographic_symm_image_sphere p ha.le ha']
 
 /-- **`D` and `C` are closed discs glued along their boundary spheres.** `D = {h ≤ a}` and
-`C = X \ int D` cover the sphere, each is homeomorphic to the closed unit ball of `ℝⁿ`, and each
-meets the other exactly in its boundary sphere, the parallel `{h = a}`. These are the hypotheses
-of `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`. -/
-theorem exists_homeomorph_closedBall_of_sphereHeight {n : ℕ}
+`C = X \ int D` are each homeomorphic to the closed unit ball of `ℝⁿ`, and each meets the other
+exactly in its boundary sphere, the parallel `{h = a}`. With the cover `D ∪ C = X`, these are the
+hypotheses of `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall`. -/
+theorem exists_homeomorph_closedBall_setOf_sphereHeight_le {n : ℕ}
     [Fact (finrank ℝ E = n + 1)] (p : sphere (0 : E) 1) (ha : -1 < a) (ha' : a < 1) :
-    {x | sphereHeight p x ≤ a} ∪ (interior {x | sphereHeight p x ≤ a})ᶜ = univ ∧
-      ∃ (eD : {x | sphereHeight p x ≤ a} ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)
-        (eC : ((interior {x | sphereHeight p x ≤ a})ᶜ : Set (sphere (0 : E) 1)) ≃ₜ
-          closedBall (0 : EuclideanSpace ℝ (Fin n)) 1),
-        (∀ x : {x | sphereHeight p x ≤ a},
-          (x : sphere (0 : E) 1) ∈ (interior {x | sphereHeight p x ≤ a})ᶜ ↔
-            ‖(eD x : EuclideanSpace ℝ (Fin n))‖ = 1) ∧
-        ∀ x : ((interior {x | sphereHeight p x ≤ a})ᶜ : Set (sphere (0 : E) 1)),
-          (x : sphere (0 : E) 1) ∈ {x | sphereHeight p x ≤ a} ↔
-          ‖(eC x : EuclideanSpace ℝ (Fin n))‖ = 1 := by
+    ∃ (eD : {x | sphereHeight p x ≤ a} ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)
+      (eC : ((interior {x | sphereHeight p x ≤ a})ᶜ : Set (sphere (0 : E) 1)) ≃ₜ
+        closedBall (0 : EuclideanSpace ℝ (Fin n)) 1),
+      (∀ x : {x | sphereHeight p x ≤ a},
+        (x : sphere (0 : E) 1) ∈ (interior {x | sphereHeight p x ≤ a})ᶜ ↔
+          ‖(eD x : EuclideanSpace ℝ (Fin n))‖ = 1) ∧
+      ∀ x : ((interior {x | sphereHeight p x ≤ a})ᶜ : Set (sphere (0 : E) 1)),
+        (x : sphere (0 : E) 1) ∈ {x | sphereHeight p x ≤ a} ↔
+        ‖(eC x : EuclideanSpace ℝ (Fin n))‖ = 1 := by
   obtain ⟨eD, heD⟩ := exists_homeomorph_sublevel_sphereHeight_disk.{_, 0} (n := n) p ha ha'
   -- `C` is the sublevel `{h' ≤ -a}` of the height `h'` in the direction of `-p`, also a disc.
   have hC := compl_interior_setOf_sphereHeight_le p ha ha'
   obtain ⟨eC, heC⟩ := exists_homeomorph_sublevel_sphereHeight_disk.{_, 0} (n := n) (-p)
     (a := -a) (by linarith) (by linarith)
   have hDC := inter_compl_interior_setOf_sphereHeight_le p ha ha'
-  refine ⟨eq_univ_of_forall fun x ↦ (em (x ∈ interior _)).imp (interior_subset ·) id,
-    eD.trans Homeomorph.ulift, ((Homeomorph.setCongr hC).trans eC).trans Homeomorph.ulift,
+  refine ⟨eD.trans Homeomorph.ulift, ((Homeomorph.setCongr hC).trans eC).trans Homeomorph.ulift,
     fun x ↦ ?_, fun x ↦ ?_⟩
   · have hx := Set.ext_iff.1 hDC x
     rw [mem_inter_iff, and_iff_right x.property] at hx
@@ -215,15 +137,17 @@ theorem exists_homeomorph_closedBall_of_sphereHeight {n : ℕ}
     -- `Homeomorph.setCongr` is the identity on points and `Homeomorph.ulift` is `ULift.down`.
     exact heC (Homeomorph.setCongr hC x)
 
-/-- **Gluing `D` and `C` gives `Sⁿ`.** -/
+/-- **Gluing `D` and `C` gives `Sⁿ`.** `D` and `C = X \ int D` cover the sphere, so the two discs
+glue to `Sⁿ`. -/
 example {n : ℕ} [Fact (finrank ℝ E = n + 1)] (p : sphere (0 : E) 1) (ha : -1 < a)
     (ha' : a < 1) :
     Nonempty (sphere (0 : E) 1 ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
-  obtain ⟨hDC, eD, eC, heD, heC⟩ :=
-    exists_homeomorph_closedBall_of_sphereHeight (n := n) p ha ha'
+  obtain ⟨eD, eC, heD, heC⟩ :=
+    exists_homeomorph_closedBall_setOf_sphereHeight_le (n := n) p ha ha'
   exact nonempty_homeomorph_sphere_of_union_closedBall (by simp)
     (isClosed_le (contMDiff_sphereHeight (n := n) (m := 0) p).continuous continuous_const)
-    isOpen_interior.isClosed_compl hDC eD eC heD heC
+    isOpen_interior.isClosed_compl
+    (eq_univ_of_forall fun x ↦ (em (x ∈ interior _)).imp (interior_subset ·) id) eD eC heD heC
 
 /-- **The circle.** On `S¹`, `U` and `V` are two open arcs, and `D = {h ≤ a}` and
 `C = X \ int D` are two closed arcs meeting exactly in their two common endpoints. -/
@@ -236,10 +160,7 @@ example (hE : finrank ℝ E = 2) (p : sphere (0 : E) 1) (ha : -1 < a) (ha' : a <
   have hR : 0 < √(4 * (1 + a) / (1 - a)) := Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))
   obtain ⟨w, hw⟩ := (NormedSpace.sphere_nonempty (x := (0 : (ℝ ∙ (p : E))ᗮ))).2 hR.le
   rw [inter_compl_interior_setOf_sphereHeight_le p ha ha',
-    ← stereographic_symm_image_preimage_of_notMem p (S := {x | sphereHeight p x = a})
-      (self_notMem_of_subset_setOf_sphereHeight_le p ha'
-        (ofPred_subset_ofPred.2 fun _ ↦ le_of_eq)),
-    stereographic_symm_preimage_setOf_sphereHeight_eq p ha.le ha',
+    ← stereographic_symm_image_sphere p ha.le ha',
     ncard_image_of_injective _ (isOpenEmbedding_stereographic_symm _).injective,
     sphere_eq_pair_of_finrank_eq_one hdim hw, ncard_pair]
   simpa [Subtype.ext_iff] using ne_neg_of_mem_sphere ℝ hR.ne' ⟨w, hw⟩
