@@ -221,10 +221,9 @@ theorem eulerChar_ulift : eulerChar (ULift.{v} X) = eulerChar X := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := ‹FiniteCWType X›.exists_homotopyEquiv
   -- The lift of `C` to `ULift.{v} Y` is a finite CW complex with the cells of `C`.
   let := CWComplex.ulift.{v} (C := C)
-  have := finite_ulift.{v} (C := C) (D := ∅)
   rw [eulerChar_eq_cwEulerChar e.ulift, eulerChar_eq_cwEulerChar e, cwEulerChar_def,
     cwEulerChar_def]
-  exact finsum_congr fun n ↦ by rw [Nat.card_congr (uliftCellEquiv (C := C) (D := ∅) n)]
+  exact finsum_congr fun n ↦ by rw [Nat.card_congr (CWComplex.uliftCellEquiv (C := C) n)]
 
 end
 

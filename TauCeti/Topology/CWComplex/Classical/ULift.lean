@@ -28,12 +28,14 @@ homeomorphic spaces in different universes.
   `ULift.down ⁻¹' D`.
 * `Topology.RelCWComplex.uliftCellEquiv`: its `n`-cells are the `n`-cells of `C`.
 * `Topology.CWComplex.ulift`: the lift of an absolute CW complex, with empty base.
+* `Topology.CWComplex.uliftCellEquiv`: its `n`-cells are the `n`-cells of `C`.
 * `ContinuousMap.HomotopyEquiv.ulift`: a homotopy equivalence `X ≃ₕ C` lifted to
   `ULift.{v} X ≃ₕ ULift.down ⁻¹' C`.
 
 ## Main results
 
-* `Topology.RelCWComplex.finite_ulift`: the lift of a finite CW complex is finite.
+* `Topology.RelCWComplex.finite_ulift`, `Topology.CWComplex.finite_ulift`: the lift of a finite
+  (relative) CW complex is finite.
 * `TauCeti.FiniteCWType.ulift`: `ULift.{v} X` has finite CW type when `X` has.
 
 ## References
@@ -152,6 +154,18 @@ variable {X : Type w} [TopologicalSpace X] {C : Set X} [CWComplex C]
 def ulift : CWComplex (ULift.down ⁻¹' C : Set (ULift.{v} X)) :=
   @RelCWComplex.toCWComplex _ _ _ (RelCWComplex.ulift (C := C) (D := ∅))
 
+/-- The `n`-cells of the lift `Topology.CWComplex.ulift` are the `n`-cells of `C`. -/
+def uliftCellEquiv (n : ℕ) :
+    @cell (ULift.{v} X) _ (ULift.down ⁻¹' C) ∅ (@instRelCWComplex _ _ _ ulift) n ≃ cell C n :=
+  -- The base `ULift.down ⁻¹' ∅` of the relative lift is `∅` by definition of the preimage.
+  RelCWComplex.uliftCellEquiv (D := ∅) n
+
+/-- The lift of a finite CW complex to a higher universe is finite. -/
+instance finite_ulift [RelCWComplex.Finite C] :
+    @RelCWComplex.Finite (ULift.{v} X) _ (ULift.down ⁻¹' C) ∅ (@instRelCWComplex _ _ _ ulift) :=
+  -- The base `ULift.down ⁻¹' ∅` of the relative lift is `∅` by definition of the preimage.
+  RelCWComplex.finite_ulift (D := ∅)
+
 end Topology.CWComplex
 
 /-- A homotopy equivalence `X ≃ₕ C` with a subset `C` of `Y` lifts to a homotopy equivalence
@@ -173,6 +187,6 @@ instance FiniteCWType.ulift (X : Type w) [TopologicalSpace X] [h : FiniteCWType 
     FiniteCWType (ULift.{v} X) := by
   obtain ⟨Y, _, _, C, _, _, ⟨e⟩⟩ := h.exists_homotopyEquiv
   exact ⟨ULift.{v} Y, _, inferInstance, _, CWComplex.ulift (C := C),
-    finite_ulift (C := C) (D := ∅), ⟨e.ulift⟩⟩
+    CWComplex.finite_ulift (C := C), ⟨e.ulift⟩⟩
 
 end TauCeti
