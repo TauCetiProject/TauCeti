@@ -112,6 +112,14 @@ theorem mem_morseBrokenTrajectorySpaceBoundary {x y : M} {w : hX.morseBrokenTraj
       hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) :=
   Iff.rfl
 
+/-- A point of a trajectory space lies outside the boundary exactly when it records an unbroken
+trajectory. -/
+theorem notMem_morseBrokenTrajectorySpaceBoundary {x y : M}
+    {w : hX.morseBrokenTrajectorySpace c x y} :
+    w ∉ hX.morseBrokenTrajectorySpaceBoundary c x y ↔ (w : c ⁻¹' Ioo (f y) (f x) → M) ∈
+      hX.morseTrajectoryRecords x y ((c ⁻¹' Ioo (f y) (f x)).domRestrict c) :=
+  not_not
+
 /-- The trajectory space from a point to itself is empty. -/
 @[simp]
 theorem morseBrokenTrajectorySpace_self (x : M) : hX.morseBrokenTrajectorySpace c x x = ∅ :=
