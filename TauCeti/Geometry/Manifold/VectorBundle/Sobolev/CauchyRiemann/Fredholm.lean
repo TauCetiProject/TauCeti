@@ -211,7 +211,7 @@ section Difference
 
 variable {D' : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x}
   (hD' : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D')
-  (hD's : ContMDiffCovariantDerivativeOn F ∞ D' univ)
+  (hD's : ContMDiffCovariantDerivativeOn F ∞ D' univ) (μ : Measure ℂ) [μ.IsAddHaarMeasure]
 
 include hD hDs hD' hD's in
 /-- The difference `D' - D` of two smooth real Cauchy–Riemann operators, as a continuous section
@@ -250,25 +250,24 @@ include hD' hD's in
 zeroth-order term `TauCeti.IsRealCauchyRiemannOperator.perturbationL` of the difference section,
 read as an `L^r` coefficient. -/
 private theorem sobolevL_apply_eq_add_perturbationL {q r : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
-    [Fact (1 ≤ (r : ℝ≥0∞))] (hr : 2 < r) (hqr : q ≤ r) (ξ : SobolevSection A volume q 1) :
-    hD'.sobolevL A hD's volume q ξ = hD.sobolevL A hDs volume q ξ +
-      perturbationL A volume hr hqr
-        (SobolevSection.ofContMDiffSection _ volume r 0 (differenceSection hD hDs hD' hD's)) ξ := by
+    [Fact (1 ≤ (r : ℝ≥0∞))] (hr : 2 < r) (hqr : q ≤ r) (ξ : SobolevSection A μ q 1) :
+    hD'.sobolevL A hD's μ q ξ = hD.sobolevL A hDs μ q ξ +
+      perturbationL A μ hr hqr
+        (SobolevSection.ofContMDiffSection _ μ r 0 (differenceSection hD hDs hD' hD's)) ξ := by
   rw [← sub_eq_iff_eq_add']
   refine Subtype.ext (SectionChartData.eq_of_chartValueL_ae_eq fun i ↦
-    (ae_image_tangentHom_iff A volume i).2 ?_)
+    (ae_image_tangentHom_iff A μ i).2 ?_)
   have hα := SobolevSection.chartValueL_ofContMDiffSection_ae
-    (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume r 0
+    (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) μ r 0
     (differenceSection hD hDs hD' hD's) i
   rw [FiniteBundleAtlas.image_hom (A := A) (h := A.tangentHom.closure_dom_subset_baseSet)
     (𝕜 := ℝ) i] at hα
-  filter_upwards [chartValueL_sobolevL_sub_ae A hD hDs volume q hD' hD's ξ i,
-    chartValueL_perturbationL_ae A volume hr hqr _ ξ i, hα,
+  filter_upwards [chartValueL_sobolevL_sub_ae A hD hDs μ q hD' hD's ξ i,
+    chartValueL_perturbationL_ae A μ hr hqr _ ξ i,
+    hα.trans (ae_restrict_of_forall_mem (A.image i).isOpen.measurableSet fun y hy ↦
+      coord_differenceSection A hD hDs hD' hD's hy),
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h₁ h₂ h₃ hy
   rw [h₁, h₂, h₃]
-  -- The reading of the coefficient in `hα` carries the scalar instances of the generic hom atlas,
-  -- which agree with those of `coord_differenceSection` only after unfolding instances.
-  erw [coord_differenceSection A hD hDs hD' hD's hy]
   rw [complexAntilinearPartL_eq_self_iff.2 fun v ↦ ?_]
   simp only [sub_apply, A.chartZeroOrder_apply_I_smul hD hy, A.chartZeroOrder_apply_I_smul hD' hy,
     smul_sub, neg_sub_neg, neg_sub]
@@ -278,30 +277,31 @@ include hD hDs hD' hD's in
 compact operator: the zeroth-order term of `D' - D`, read as an `L^{p+2}` coefficient. -/
 private theorem exists_isCompactOperator_sobolevL_apply_eq_add {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (hp_top : p ≠ ⊤) :
-    ∃ K : SobolevSection A volume p 1 →L[ℝ] zeroOneSobolevSections A volume p 0,
+    ∃ K : SobolevSection A μ p 1 →L[ℝ] zeroOneSobolevSections A μ p 0,
       IsCompactOperator K ∧
-        ∀ ξ, hD'.sobolevL A hD's volume p ξ = hD.sobolevL A hDs volume p ξ + K ξ := by
+        ∀ ξ, hD'.sobolevL A hD's μ p ξ = hD.sobolevL A hDs μ p ξ + K ξ := by
   lift p to ℝ≥0 using hp_top
   have : Fact (1 ≤ ((p + 2 : ℝ≥0) : ℝ≥0∞)) :=
     ⟨(Fact.out : (1 : ℝ≥0∞) ≤ p).trans (ENNReal.coe_le_coe.2 le_self_add)⟩
   have hr : 2 < p + 2 := lt_add_of_pos_left 2
     (ENNReal.coe_pos.1 (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)))
-  exact ⟨_, isCompactOperator_perturbationL A volume hr le_self_add _,
-    sobolevL_apply_eq_add_perturbationL A hD hDs hD' hD's hr le_self_add⟩
+  exact ⟨_, isCompactOperator_perturbationL A μ hr le_self_add _,
+    sobolevL_apply_eq_add_perturbationL A hD hDs hD' hD's μ hr le_self_add⟩
 
 include hD hDs hD' hD's in
 /-- **Two smooth real Cauchy–Riemann operators differ by a compact operator.** On a closed
 surface, the realizations on `W^{1,p}` of two smooth real Cauchy–Riemann operators on the same
 bundle differ by a compact operator, for every finite `p ≥ 1`. -/
 theorem isCompactOperator_sobolevL_sub {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp_top : p ≠ ⊤) :
-    IsCompactOperator fun ξ : SobolevSection A volume p 1 ↦
-      hD'.sobolevL A hD's volume p ξ - hD.sobolevL A hDs volume p ξ := by
-  obtain ⟨K, hK, hK'⟩ := exists_isCompactOperator_sobolevL_apply_eq_add A hD hDs hD' hD's hp_top
+    IsCompactOperator fun ξ : SobolevSection A μ p 1 ↦
+      hD'.sobolevL A hD's μ p ξ - hD.sobolevL A hDs μ p ξ := by
+  obtain ⟨K, hK, hK'⟩ :=
+    exists_isCompactOperator_sobolevL_apply_eq_add A hD hDs hD' hD's μ hp_top
   convert hK using 1
   funext ξ
   rw [hK' ξ]
   -- The `AddCommGroup` structure of the `(0,1)`-forms is only found once the type is given.
-  exact add_sub_cancel_left (G := zeroOneSobolevSections A volume p 0) _ _
+  exact add_sub_cancel_left (G := zeroOneSobolevSections A μ p 0) _ _
 
 include hD hDs hD' hD's in
 /-- **The index does not depend on the operator.** On a closed surface, the realizations
@@ -309,7 +309,8 @@ include hD hDs hD' hD's in
 bundle have the same index, `1 < p < ∞`. -/
 theorem index_sobolevL_eq {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) :
     (hD'.sobolevL A hD's volume p).index = (hD.sobolevL A hDs volume p).index := by
-  obtain ⟨K, hK, hK'⟩ := exists_isCompactOperator_sobolevL_apply_eq_add A hD hDs hD' hD's hp_top
+  obtain ⟨K, hK, hK'⟩ :=
+    exists_isCompactOperator_sobolevL_apply_eq_add A hD hDs hD' hD's volume hp_top
   exact (isFredholm_and_index_eq_of_apply_eq_add A hD hDs hp hp_top hK hK').2
 
 end Difference
