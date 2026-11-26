@@ -151,7 +151,7 @@ def diffeomorphOfEquivariant :
     rw [Equiv.coe_fn_mk]
     have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
     intro x₀
-    let b₀ := ((homeomorph F (AssociatedBundle G P F)).symm x₀).proj
+    let b₀ := x₀.proj
     let eP := trivializationAt G P b₀
     have hπ := contMDiff_proj n F (AssociatedBundle G P F) IB IF x₀
     refine ((contMDiffAt_section_comp 1 hφc.contMDiffAt hπ).totalSpaceMk_associatedBundleMk
@@ -162,7 +162,9 @@ def diffeomorphOfEquivariant :
     have hbP : b ∈ eP.baseSet := by simpa using hy
     obtain ⟨v, rfl⟩ := (mk_bijective (G := G) (P := P) (F := F) (eP.symm b 1)).surjective z
     rw [fiberwiseMap_homeomorph]
-    dsimp only [Function.comp_def]; rw [Homeomorph.symm_apply_apply]
+    dsimp only [Function.comp_def]; rw [proj_homeomorph, Homeomorph.symm_apply_apply,
+      homeomorph_symm_proj]
+    dsimp only [TotalSpace.proj]
     exact congrArg (fun w ↦ homeomorph F _ ⟨b, w⟩) <| by
       rw [equivOfEquivariant_mk, trivializationAt_mk_snd hbP,
         congrArg Prod.snd (eP.apply_mk_symm hbP 1), one_smul]
@@ -170,7 +172,7 @@ def diffeomorphOfEquivariant :
     rw [Equiv.coe_fn_symm_mk]
     have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
     intro x₀
-    let b₀ := ((homeomorph F (AssociatedBundle H Q F)).symm x₀).proj
+    let b₀ := x₀.proj
     let eP := trivializationAt G P b₀; let eQ := trivializationAt H Q b₀
     have hπ := contMDiff_proj n F (AssociatedBundle H Q F) IB IF x₀
     rw [fiberwiseMap_eq, ManifoldTotalSpace.contMDiffAt_iff]
@@ -185,7 +187,7 @@ def diffeomorphOfEquivariant :
     have hbP : b ∈ eP.baseSet := by simpa using hyP
     have hbQ : b ∈ eQ.baseSet := by simpa using hyQ
     obtain ⟨v, rfl⟩ := (mk_bijective (G := H) (P := Q) (F := F) (φ b (eP.symm b 1))).surjective z
-    rw [Pi.smul_apply', Homeomorph.symm_apply_apply]
+    rw [Pi.smul_apply', proj_homeomorph, Homeomorph.symm_apply_apply, homeomorph_symm_proj]
     dsimp only [TotalSpace.proj, b₀]
     rw [equivOfEquivariant_symm_mk, trivializationAt_mk_snd hbP,
       congrArg Prod.snd (eP.apply_mk_symm hbP 1), one_smul, trivializationAt_mk_snd hbQ,

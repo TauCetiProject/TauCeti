@@ -247,7 +247,7 @@ theorem contMDiff_comp_iff [Nonempty F] {h : B → M} :
     ContMDiff IP IM n (h ∘ proj) ↔ ContMDiff IB IM n h := by
   let := A.fiberBundle
   have hfun : (h ∘ proj) ∘ A.totalSpaceDiffeomorph hA =
-      fun y ↦ h ((ManifoldTotalSpace.homeomorph F (MapFiber proj)).symm y).proj :=
+      fun y ↦ h y.proj :=
     funext fun x ↦ congrArg h (A.proj_totalSpaceDiffeomorph hA x)
   rw [← (A.totalSpaceDiffeomorph hA).contMDiff_comp_diffeomorph_iff le_rfl, hfun,
     ManifoldTotalSpace.contMDiff_comp_proj_iff (IF := IF)]

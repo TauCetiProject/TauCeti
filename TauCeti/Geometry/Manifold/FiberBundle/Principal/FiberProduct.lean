@@ -114,8 +114,9 @@ private theorem self_transverse (hn : 1 ≤ n) (z : T × T) (_ : π₀ z.1 = π�
     (mfderiv (IB.prod IG) IB π₀ z.1).range ⊔
       (((tangentSpaceCast IB (π₀ z.2) (π₀ z.1)).toContinuousLinearMap).comp
         (mfderiv (IB.prod IG) IB π₀ z.2)).range = ⊤ := by
-  have h := (ManifoldTotalSpace.isSubmersion_proj n G P IB IG).surjective_mfderiv
-    (ne_of_gt (lt_of_lt_of_le zero_lt_one hn)) z.1
+  have h : Function.Surjective (mfderiv (IB.prod IG) IB π₀ z.1) :=
+    (ManifoldTotalSpace.isSubmersion_proj n G P IB IG).surjective_mfderiv
+      (ne_of_gt (lt_of_lt_of_le zero_lt_one hn)) z.1
   rw [LinearMap.range_eq_top.2 h, top_sup_eq]
 
 local notation "K" => 𝓘(ℝ, Fin (Module.finrank ℝ (EB × EG) +

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.FundamentalVectorField.Right
 public import TauCeti.Geometry.Manifold.FiberBundle.Principal.Equivariant
 public import TauCeti.Geometry.Manifold.FiberBundle.Pullback.Basic
+public import TauCeti.Geometry.Manifold.FiberBundle.Vertical
 
 /-!
 # Fundamental vector fields on smooth principal bundles
@@ -33,7 +34,7 @@ This file connects the general right-action theory of
   (`TauCeti.PrincipalBundle.mfderiv_proj_rightFundamentalVectorField`),
   the map `ξ ↦ ξ♯ x` is injective (`TauCeti.PrincipalBundle.rightFundamentalVectorField_injective`),
   and its corestriction `TauCeti.PrincipalBundle.verticalLinearEquiv` is a linear equivalence
-  between `GroupLieAlgebra IG G` and the vertical tangent space `(mfderiv proj x).ker`.
+  between `GroupLieAlgebra IG G` and the vertical tangent space `VerticalSpace IB IG G P x`.
 * **Naturality under bundle maps and trivial-bundle formula**: equivariant principal-bundle
   diffeomorphisms (`diffeomorphOfEquivariant`) and canonical pullback lifts (`Pullback.lift`)
   intertwine fundamental vector fields, and under the product diffeomorphism
@@ -46,7 +47,7 @@ This file connects the general right-action theory of
 * `TauCeti.PrincipalBundle.rightFundamentalLinearMap`: the linear map `ξ ↦ ξ♯ x` from
   `GroupLieAlgebra IG G` into `TangentSpace (IB.prod IG) x`.
 * `TauCeti.PrincipalBundle.verticalLinearEquiv`: the canonical linear isomorphism
-  `GroupLieAlgebra IG G ≃ₗ[𝕜] (mfderiv proj x).ker` onto the vertical tangent space at `x`.
+  `GroupLieAlgebra IG G ≃ₗ[𝕜] VerticalSpace IB IG G P x` onto the vertical tangent space at `x`.
 
 ## Main results
 
@@ -58,7 +59,7 @@ This file connects the general right-action theory of
   equivariance, Lie bracket homomorphism, and exponential flow on `ManifoldTotalSpace G P`.
 * `TauCeti.PrincipalBundle.mfderiv_proj_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.rightFundamentalVectorField_injective`,
-  `TauCeti.PrincipalBundle.range_rightFundamentalLinearMap_eq_ker_mfderiv_proj`: verticality,
+  `TauCeti.PrincipalBundle.range_rightFundamentalLinearMap_eq_verticalSubmodule`: verticality,
   pointwise freeness, and exactness at the vertical tangent space.
 * `TauCeti.PrincipalBundle.mfderiv_diffeomorphOfEquivariant_rightFundamentalVectorField`,
   `TauCeti.PrincipalBundle.mfderiv_pullbackLift_rightFundamentalVectorField`,
@@ -173,20 +174,19 @@ projection annihilates `rightFundamentalVectorField (IB.prod IG) ξ x` at every 
 @[simp]
 theorem mfderiv_proj_rightFundamentalVectorField (x : ManifoldTotalSpace G P)
     (ξ : GroupLieAlgebra IG G) :
-    mfderiv (IB.prod IG) IB
-        (fun y : ManifoldTotalSpace G P => ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x
+    mfderiv (IB.prod IG) IB (ManifoldTotalSpace.proj : ManifoldTotalSpace G P → B) x
         (rightFundamentalVectorField (IB.prod IG) ξ x) = 0 := by
   have hproj : MDifferentiableAt (IB.prod IG) IB
-      (fun y : ManifoldTotalSpace G P => ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x :=
+      (ManifoldTotalSpace.proj : ManifoldTotalSpace G P → B) x :=
     (ManifoldTotalSpace.contMDiff_proj 1 G P IB IG x).mdifferentiableAt one_ne_zero
-  have hconst : ((fun y : ManifoldTotalSpace G P =>
-      ((ManifoldTotalSpace.homeomorph G P).symm y).proj) ∘ fun g : G => op g • x) =
-        fun _ : G => ((ManifoldTotalSpace.homeomorph G P).symm x).proj := by
+  have hconst : ((ManifoldTotalSpace.proj : ManifoldTotalSpace G P → B) ∘
+      fun g : G => op g • x) =
+        fun _ : G => x.proj := by
     funext g
     simp
   rw [rightFundamentalVectorField_apply, ← mfderiv_comp_apply_of_eq (1 : G) hproj
-    (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1) (by simp) ξ, hconst, mfderiv_const]
-  rfl
+    (mdifferentiableAt_orbit (n := 1) one_ne_zero x 1) (by simp) ξ, hconst, mfderiv_const,
+    zero_apply]
 
 variable [ContMDiffFiberBundle 1 G P IB IG]
 
@@ -221,64 +221,59 @@ theorem rightFundamentalVectorField_eq_iff (x : ManifoldTotalSpace G P)
   (rightFundamentalVectorField_injective x).eq_iff
 
 /-- **Exactness at the vertical tangent space.** At every point `x` of a `C¹` principal bundle,
-the range of `ξ ↦ ξ♯ x` equals the kernel of the derivative of the bundle projection. -/
-theorem range_rightFundamentalLinearMap_eq_ker_mfderiv_proj (x : ManifoldTotalSpace G P) :
+the range of `ξ ↦ ξ♯ x` equals `verticalSubmodule IB IG G P x`. -/
+theorem range_rightFundamentalLinearMap_eq_verticalSubmodule (x : ManifoldTotalSpace G P) :
     LinearMap.range (rightFundamentalLinearMap IB IG x) =
-      (mfderiv (IB.prod IG) IB
-        (fun y : ManifoldTotalSpace G P =>
-          ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x).ker := by
+      verticalSubmodule IB IG G P x := by
   refine le_antisymm ?_ ?_
   · rintro _ ⟨ξ, rfl⟩
-    exact mfderiv_proj_rightFundamentalVectorField x ξ
+    exact mem_verticalSubmodule_iff.2 (mfderiv_proj_rightFundamentalVectorField x ξ)
   · intro w hw
     obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
     have hw' : w ∈ (mfderiv IG (IB.prod IG)
         (fun g : G => ManifoldTotalSpace.homeomorph G P ⟨b, op g • p⟩) 1).range := by
-      rwa [← ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one G IB IG (n := 1)
+      rw [← ker_mfderiv_proj_eq_range_mfderiv_totalSpaceMk_smul_one G IB IG (n := 1)
         one_ne_zero p]
+      exact mem_verticalSubmodule_iff.1 hw
     obtain ⟨ξ, hξ⟩ := hw'
     exact ⟨ξ, (rightFundamentalVectorField_homeomorph b p ξ).trans hξ⟩
 
 variable (IB IG) in
 /-- **The canonical vertical-fibre isomorphism `𝔤 ≃ₗ[𝕜] V_x P`.** At every point `x` of a `C¹`
 principal `G`-bundle, evaluation of fundamental vector fields identifies `GroupLieAlgebra IG G`
-linearly with the vertical tangent space `(mfderiv proj x).ker`. -/
+linearly with the vertical tangent space `VerticalSpace IB IG G P x`. -/
 def verticalLinearEquiv (x : ManifoldTotalSpace G P) :
-    GroupLieAlgebra IG G ≃ₗ[𝕜]
-      (mfderiv (IB.prod IG) IB
-        (fun y : ManifoldTotalSpace G P =>
-          ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x).ker :=
-  (LinearEquiv.ofInjective (rightFundamentalLinearMap IB IG x)
-    (rightFundamentalVectorField_injective x)).trans
-    (LinearEquiv.ofEq _ _ (range_rightFundamentalLinearMap_eq_ker_mfderiv_proj x))
+    GroupLieAlgebra IG G ≃ₗ[𝕜] VerticalSpace IB IG G P x :=
+  ((LinearEquiv.ofInjective (rightFundamentalLinearMap IB IG x)
+    ((funext (rightFundamentalLinearMap_apply (IB := IB) (IG := IG) x)).symm ▸
+      rightFundamentalVectorField_injective x)).trans
+    (LinearEquiv.ofEq _ _ (range_rightFundamentalLinearMap_eq_verticalSubmodule x))).trans
+    (VerticalSpace.equivSubmodule x).symm.toLinearEquiv
 
 @[simp]
 theorem coe_verticalLinearEquiv_apply (x : ManifoldTotalSpace G P)
     (ξ : GroupLieAlgebra IG G) :
     (verticalLinearEquiv IB IG x ξ : TangentSpace (IB.prod IG) x) =
-      rightFundamentalVectorField (IB.prod IG) ξ x :=
-  (rfl)
+      rightFundamentalVectorField (IB.prod IG) ξ x := by
+  simp [verticalLinearEquiv]
 
 @[simp]
 theorem verticalLinearEquiv_symm_mk (x : ManifoldTotalSpace G P)
     (ξ : GroupLieAlgebra IG G)
     (hξ : rightFundamentalVectorField (IB.prod IG) ξ x ∈
-      (mfderiv (IB.prod IG) IB
-        (fun y : ManifoldTotalSpace G P =>
-          ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x).ker) :
+      verticalSubmodule IB IG G P x) :
     (verticalLinearEquiv IB IG x).symm
-        ⟨rightFundamentalVectorField (IB.prod IG) ξ x, hξ⟩ = ξ :=
-  (verticalLinearEquiv IB IG x).symm_apply_eq.2 rfl
+        (VerticalSpace.mk (rightFundamentalVectorField (IB.prod IG) ξ x) hξ) = ξ :=
+  (verticalLinearEquiv IB IG x).symm_apply_eq.2 <| VerticalSpace.ext <| by
+    rw [VerticalSpace.val_mk, coe_verticalLinearEquiv_apply]
 
 @[simp]
 theorem rightFundamentalVectorField_verticalLinearEquiv_symm
     (x : ManifoldTotalSpace G P)
-    (v : (mfderiv (IB.prod IG) IB
-      (fun y : ManifoldTotalSpace G P =>
-        ((ManifoldTotalSpace.homeomorph G P).symm y).proj) x).ker) :
+    (v : VerticalSpace IB IG G P x) :
     rightFundamentalVectorField (IB.prod IG)
-        ((verticalLinearEquiv IB IG x).symm v) x = (v : TangentSpace (IB.prod IG) x) :=
-  congrArg Subtype.val ((verticalLinearEquiv IB IG x).apply_symm_apply v)
+        ((verticalLinearEquiv IB IG x).symm v) x = (v : TangentSpace (IB.prod IG) x) := by
+  rw [← coe_verticalLinearEquiv_apply, LinearEquiv.apply_symm_apply]
 
 end Vertical
 

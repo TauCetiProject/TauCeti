@@ -69,22 +69,19 @@ theorem contMDiff_symm_of_equivariant [LieGroup IG n G]
   have hs := hσ.comp q hπ
   have hfs : ContMDiffAt (IB.prod IG) (IB.prod IG) n
       (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q
-        ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
-          e _ (σ ((ManifoldTotalSpace.homeomorph G Q).symm y).proj)⟩) q := by
+        ⟨y.proj, e y.proj (σ y.proj)⟩) q := by
     simpa only [Function.comp_def, fiberwiseMap_homeomorph] using hf.contMDiffAt.comp q hs
   have hq : ContMDiffAt (IB.prod IG) (IB.prod IG) n
-      (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q
-        ⟨((ManifoldTotalSpace.homeomorph G Q).symm y).proj,
-          ((ManifoldTotalSpace.homeomorph G Q).symm y).snd⟩) q := by
-    exact contMDiffAt_id.congr_of_eventuallyEq (.of_forall fun y ↦ by
-      simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq])
+      (fun y : ManifoldTotalSpace G Q ↦ ManifoldTotalSpace.homeomorph G Q ⟨y.proj, y.snd⟩) q :=
+    contMDiffAt_id.congr_of_eventuallyEq (.of_forall fun y ↦ by
+      simp only [← homeomorph_symm_apply, Homeomorph.apply_symm_apply, id_eq])
   have hd := hfs.division hq
   refine (hs.totalSpaceMk_smul hd).congr_of_eventuallyEq (Filter.Eventually.of_forall ?_)
   intro y
   apply (ManifoldTotalSpace.homeomorph G P).symm.injective
-  simp only [Homeomorph.symm_apply_apply, homeomorph_symm_fiberwiseMap]
-  apply congrArg (TotalSpace.mk _)
-  apply (e _).injective
+  rw [homeomorph_symm_fiberwiseMap, Homeomorph.symm_apply_apply, homeomorph_symm_apply]
+  apply congrArg (TotalSpace.mk y.proj)
+  apply (e y.proj).injective
   simp only [Equiv.apply_symm_apply, he, smul_division]
 
 variable (G) in

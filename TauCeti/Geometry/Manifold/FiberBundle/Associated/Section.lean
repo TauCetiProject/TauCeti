@@ -80,7 +80,7 @@ theorem contMDiff_sectionFunction_iff (s : ∀ b, AssociatedBundle G P F b) :
           ((ManifoldTotalSpace.homeomorph G P).symm p).snd⟩ :=
     contMDiff_id.congr fun p ↦ by simp only [TotalSpace.eta, Homeomorph.apply_symm_apply, id_eq]
   exact (hp.totalSpaceMk_associatedBundleMk hu).congr fun p ↦ by
-    rw [mk_sectionFunction]
+    rw [mk_sectionFunction, ManifoldTotalSpace.homeomorph_symm_proj]
 
 /-- The associated-bundle correspondence restricted to `C^n` sections and `C^n`
 inverse-equivariant functions. The functions are evaluated on the manifold total-space copy. -/
