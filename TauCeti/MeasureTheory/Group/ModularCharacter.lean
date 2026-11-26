@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.SeparatingDual
 public import Mathlib.MeasureTheory.Group.ModularCharacter
 public import TauCeti.MeasureTheory.Group.Integral
 public import TauCeti.MeasureTheory.Measure.WithDensity
+import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.Topology.Instances.NNReal
 
 /-!
@@ -62,8 +63,6 @@ none of this assumes σ-finiteness.
   inner regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_absolutelyContinuous_of_innerRegular`: `μ.inv ≪ μ` for an inner
   regular locally finite left-invariant measure `μ` (without `[μ.IsOpenPosMeasure]`).
-* `MeasureTheory.Measure.quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous`: `y ↦ y⁻¹ * x`
-  preserves null sets of any left-invariant measure satisfying `μ.inv ≪ μ`.
 * `MeasureTheory.Measure.map_right_mul_eq_modularCharacter_smul_of_regular`:
   `map (· * g) μ = c(g) • μ` for a regular Haar measure `μ`.
 * `MeasureTheory.Measure.inv_eq_withDensity_modularCharacter_of_regular`:
@@ -285,24 +284,6 @@ end TauCeti
 namespace MeasureTheory.Measure
 
 open TauCeti
-
-section Measurable
-
-variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [MeasurableInv G]
-  (μ : Measure G)
-
-/-- If `μ` is left-invariant and `μ.inv ≪ μ`, then `y ↦ y⁻¹ * x` is quasi-measure-preserving for
-every `x : G`, since `y⁻¹ * x = (x⁻¹ * y)⁻¹` is left translation followed by inversion. -/
-theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeftInvariant]
-    (hinv : μ.inv ≪ μ) (x : G) :
-    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ := by
-  have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
-  have hcomp := hinv_qmp.comp (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving
-  convert hcomp using 1
-  ext y
-  simp [mul_inv_rev]
-
-end Measurable
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [LocallyCompactSpace G]

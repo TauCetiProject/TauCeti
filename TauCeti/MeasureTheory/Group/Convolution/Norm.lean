@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
-import TauCeti.MeasureTheory.Group.Convolution.Support
+import TauCeti.MeasureTheory.Group.Convolution.Fubini
 
 /-!
 # Norm estimates for convolution-type integrals over a group

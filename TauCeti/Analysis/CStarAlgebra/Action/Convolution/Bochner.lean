@@ -8,7 +8,8 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.L1
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
-import TauCeti.MeasureTheory.Group.Convolution.Support
+import TauCeti.MeasureTheory.Group.Convolution.Fubini
+import TauCeti.MeasureTheory.Group.Measure
 
 /-!
 # Pointwise Bochner formulas for twisted `L¹` convolution and involution
@@ -27,9 +28,8 @@ integrable functions `f, g : G → A` by the pointwise Bochner formulas
 * `(α.bochnerInvolution f) s = c(s) • α s (star (f s⁻¹))`,
 
 where `c = MeasureTheory.Measure.modularCharacter` is Mathlib's modular character
-(`g ↦ μ(· * g⁻¹) / μ`, equal to `Δ⁻¹` in Williams' normalization). To avoid global Fubini or
-second-countability hypotheses on non-σ-compact groups, the proof expands `L¹` approximations into
-telescopic series in `C_c(G, A)` and exchanges integration on each compactly supported term.
+(`g ↦ μ(· * g⁻¹) / μ`, equal to `Δ⁻¹` in Williams' normalization). No global Fubini or
+second-countability hypotheses are required on non-σ-compact groups.
 
 ## Main definitions
 
@@ -46,13 +46,15 @@ telescopic series in `C_c(G, A)` and exchanges integration on each compactly sup
   inner regular on finite-measure sets, and satisfying `μ.inv ≪ μ` (with no second-countability
   assumption on `G`), the twisted convolution integrand is a.e. integrable, `bochnerConvolution` is
   integrable, and it represents `convolutionL1` almost everywhere.
-* `TauCeti.CStarAction.integrable_bochnerInvolution`,
+* `TauCeti.CStarAction.lintegral_eNorm_twistedInvolution`,
+  `TauCeti.CStarAction.integrable_bochnerInvolution`,
   `TauCeti.CStarAction.twistedInvolutionL1_toL1_eq_bochnerInvolution`,
   `TauCeti.CStarAction.coeFn_twistedInvolutionL1`, and
-  `TauCeti.CStarAction.twistedInvolutionL1_trivial`: twisted involution of an integrable function
-  is integrable with the same `L¹` norm, represents `twistedInvolutionL1` almost everywhere whenever
-  `μ.inv ≪ μ` (without `[μ.Regular]`), and specializes to `star ∘ MeasureTheory.Lp.modularInversion`
-  for the trivial action on a regular Haar measure.
+  `TauCeti.CStarAction.twistedInvolutionL1_trivial`: twisted involution preserves the `ℝ≥0∞` `L¹`
+  norm on `C_c(G, A)`, sends integrable functions to integrable functions with the same `L¹` norm,
+  represents `twistedInvolutionL1` almost everywhere whenever `μ.inv ≪ μ` (without `[μ.Regular]`),
+  and specializes to `star ∘ MeasureTheory.Lp.modularInversion` for the trivial action on a regular
+  Haar measure.
 
 ## References
 
@@ -341,6 +343,14 @@ private theorem ae_integrable_and_tendsto_convolution (hinv : μ.inv ≪ μ)
       (fun n => (α.integrable_integrand (φ n) (ψ n) μ s).aestronglyMeasurable)
       hDs_int hr_bound hr_lim
 
+omit [IsTopologicalGroup G] [LocallyCompactSpace G] [μ.InnerRegularCompactLTTop]
+  [μ.IsMulLeftInvariant] in
+private theorem toL1_eq_integrable_toL1 (f : ConvolutionAlgebra α μ) :
+    ConvolutionAlgebra.toL1 f = f.ofConv.integrable.toL1 f.ofConv :=
+  Lp.ext ((ConvolutionAlgebra.coeFn_toL1 f).trans f.ofConv.integrable.coeFn_toL1.symm)
+
+-- Expand `L¹` approximations into telescopic series in `C_c(G, A)` and exchange integration on
+-- each compactly supported term to avoid global Fubini or second-countability assumptions.
 private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
     (hf : Integrable f μ) (hg : Integrable g μ) :
     (∀ᵐ s ∂μ, Integrable (fun r => f r * α r (g (r⁻¹ * s))) μ) ∧
@@ -383,15 +393,10 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
   have hmul_eq (n : ℕ) :
       α.convolutionL1 μ ((φ n).integrable.toL1 (φ n)) ((ψ n).integrable.toL1 (ψ n)) =
         (α.convolution μ (φ n) (ψ n)).integrable.toL1 (α.convolution μ (φ n) (ψ n)) := by
-    have hφn : (φ n).integrable.toL1 (φ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n) :=
-      Lp.ext ((φ n).integrable.coeFn_toL1.trans
-        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (φ n)).symm)
-    have hψn : (ψ n).integrable.toL1 (ψ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (ψ n) :=
-      Lp.ext ((ψ n).integrable.coeFn_toL1.trans
-        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (ψ n)).symm)
-    rw [hφn, hψn, α.convolutionL1_toLp]
-    exact Lp.ext ((CompactlySupportedContinuousMap.coeFn_toLp ℂ _).trans
-      (α.convolution μ (φ n) (ψ n)).integrable.coeFn_toL1.symm)
+    simpa only [toL1_eq_integrable_toL1, ConvolutionAlgebra.ofConv_toConv,
+      ConvolutionAlgebra.ofConv_mul] using
+      (ConvolutionAlgebra.toL1_mul (α := α) (μ := μ)
+        (ConvolutionAlgebra.toConv (φ n)) (ConvolutionAlgebra.toConv (ψ n))).symm
   simp_rw [hmul_eq] at hmul_tendsto
   exact tendsto_nhds_unique hmul_tendsto hh_tendsto
 
@@ -441,32 +446,47 @@ theorem coeFn_convolutionL1 (hinv : μ.inv ≪ μ) (u v : Lp A 1 μ) :
     (L1.integrable_coeFn u) (L1.integrable_coeFn v)]
   exact Integrable.coeFn_toL1 _
 
-private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
-    ∃ hh : Integrable (α.bochnerInvolution f) μ,
-      α.twistedInvolutionL1 μ (hf.toL1 f) = hh.toL1 (α.bochnerInvolution f) := by
-  obtain ⟨φ, u, hsum_u, hφ_L1, hφ_ae, hu_fin⟩ := hf.exists_sum_compactlySupported_tendsto
-  -- Each `w k = α.twistedInvolution (u k)` has the same `L¹` norm as `u k`.
+omit [μ.InnerRegularCompactLTTop] in
+/-- The twisted involution on `C_c(G, A)` preserves the `ℝ≥0∞` `L¹` norm against any left-invariant
+measure finite on compact sets. -/
+theorem lintegral_eNorm_twistedInvolution (u : C_c(G, A)) :
+    ∫⁻ s, ‖α.twistedInvolution u s‖ₑ ∂μ = ∫⁻ s, ‖u s‖ₑ ∂μ := by
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm (α.twistedInvolution u).integrable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm u.integrable]
+  congr 1
+  simp only [norm_twistedInvolution_apply]
+  simpa only [smul_eq_mul] using integral_modularCharacter_smul_inv_eq_self
+    (μ := μ) (f := fun s => ‖u s‖) u.continuous.norm u.hasCompactSupport.norm
+
+omit [μ.InnerRegularCompactLTTop] in
+/-- Construct the `L¹` majorant `W` for the twisted involution of a telescopic `C_c(G, A)` series
+`u` with partial sums `φ`, bounding `‖α.twistedInvolution (φ n) s‖ₑ ≤ W s` everywhere. -/
+private theorem exists_bochnerInvolution_majorant {φ u : ℕ → C_c(G, A)}
+    (hsum_u : ∀ n, ∑ i ∈ Finset.range (n + 1), u i = φ n)
+    (hu_fin : (∑' k, ∫⁻ s, ‖u k s‖ₑ ∂μ) ≠ ∞) :
+    ∃ W : G → ℝ≥0∞, MemLp W 1 μ ∧ ∀ n s, ‖α.twistedInvolution (φ n) s‖ₑ ≤ W s := by
   let w : ℕ → C_c(G, A) := fun k => α.twistedInvolution (u k)
   let W : G → ℝ≥0∞ := fun s => ∑' k, ‖w k s‖ₑ
-  have hw_int (k : ℕ) : ∫⁻ s, ‖w k s‖ₑ ∂μ = ∫⁻ s, ‖u k s‖ₑ ∂μ := by
-    rw [← ofReal_integral_norm_eq_lintegral_eNorm (w k).integrable,
-      ← ofReal_integral_norm_eq_lintegral_eNorm (u k).integrable]
-    have hnorm := ConvolutionAlgebra.norm_star (α := α) (μ := μ)
-      (ConvolutionAlgebra.toConv (u k))
-    simp only [ConvolutionAlgebra.norm_eq_integral_norm, ConvolutionAlgebra.ofConv_star] at hnorm
-    exact congrArg ENNReal.ofReal hnorm
   have hW_meas : AEMeasurable W μ :=
     AEMeasurable.tsum fun k => (w k).integrable.aestronglyMeasurable.eNorm
   have hW_fin : ∫⁻ s, W s ∂μ ≠ ∞ := by
     rw [lintegral_tsum fun k => (w k).integrable.aestronglyMeasurable.eNorm]
-    simpa only [hw_int] using hu_fin
+    simpa only [w, α.lintegral_eNorm_twistedInvolution] using hu_fin
   have hW_memLp : MemLp W 1 μ :=
     (eLpNorm_one_eq_lintegral_eNorm hW_meas.aestronglyMeasurable).trans_lt hW_fin.lt_top
-  have hk_le (n : ℕ) (s : G) : ‖α.twistedInvolution (φ n) s‖ₑ ≤ W s := by
-    have hsum_s : α.twistedInvolution (φ n) s = ∑ i ∈ Finset.range (n + 1), w i s := by
-      rw [← hsum_u n, map_sum, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
-    rw [hsum_s]
-    exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
+  refine ⟨W, hW_memLp, fun n s => ?_⟩
+  have hsum_s : α.twistedInvolution (φ n) s = ∑ i ∈ Finset.range (n + 1), w i s := by
+    rw [← hsum_u n, map_sum, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
+  rw [hsum_s]
+  exact (eNorm_sum_le _ _).trans (sum_le_tsum (Finset.range (n + 1)))
+
+private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf : Integrable f μ) :
+    ∃ hh : Integrable (α.bochnerInvolution f) μ,
+      α.twistedInvolutionL1 μ (hf.toL1 f) = hh.toL1 (α.bochnerInvolution f) := by
+  -- 1. Approximate `f` in `L¹` and a.e. by a telescopic `C_c` series, and build its `L¹` majorant.
+  obtain ⟨φ, u, hsum_u, hφ_L1, hφ_ae, hu_fin⟩ := hf.exists_sum_compactlySupported_tendsto
+  obtain ⟨W, hW_memLp, hk_le⟩ := α.exists_bochnerInvolution_majorant hsum_u hu_fin
+  -- 2. Deduce a.e. convergence along `μ.inv ≪ μ` and dominated `L¹` convergence in `s`.
   have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
   have hlim : ∀ᵐ s ∂μ,
       Tendsto (fun n => α.twistedInvolution (φ n) s) atTop (𝓝 (α.bochnerInvolution f s)) := by
@@ -487,6 +507,7 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
       (fun n => memLp_one_iff_integrable.2 (α.twistedInvolution (φ n)).integrable)
       hh_memLp hW_memLp (.of_forall fun n => .of_forall fun s => hk_le n s) hlim
   refine ⟨hh, ?_⟩
+  -- 3. Identify the `L¹` limit with `twistedInvolutionL1` by continuity.
   have hstar_tendsto :
       Tendsto (fun n => α.twistedInvolutionL1 μ ((φ n).integrable.toL1 (φ n))) atTop
         (𝓝 (α.twistedInvolutionL1 μ (hf.toL1 f))) :=
@@ -494,12 +515,9 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
   have hstar_eq (n : ℕ) :
       α.twistedInvolutionL1 μ ((φ n).integrable.toL1 (φ n)) =
         (α.twistedInvolution (φ n)).integrable.toL1 (α.twistedInvolution (φ n)) := by
-    have hφn : (φ n).integrable.toL1 (φ n) = CompactlySupportedContinuousMap.toLp 1 μ ℂ (φ n) :=
-      Lp.ext ((φ n).integrable.coeFn_toL1.trans
-        (CompactlySupportedContinuousMap.coeFn_toLp ℂ (φ n)).symm)
-    rw [hφn, α.twistedInvolutionL1_toLp]
-    exact Lp.ext ((CompactlySupportedContinuousMap.coeFn_toLp ℂ _).trans
-      (α.twistedInvolution (φ n)).integrable.coeFn_toL1.symm)
+    simpa only [toL1_eq_integrable_toL1, ConvolutionAlgebra.ofConv_toConv,
+      ConvolutionAlgebra.ofConv_star] using
+      (ConvolutionAlgebra.toL1_star (α := α) (μ := μ) (ConvolutionAlgebra.toConv (φ n))).symm
   simp_rw [hstar_eq] at hstar_tendsto
   exact tendsto_nhds_unique hstar_tendsto hh_tendsto
 

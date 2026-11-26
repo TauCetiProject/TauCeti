@@ -16,9 +16,10 @@ import TauCeti.MeasureTheory.Integral.Bochner.SumMeasure
 Let `P = (π, U)` be a covariant representation of a C⋆-dynamical system `(G, A, α)` on a Hilbert
 space `H`. Combining `TauCeti.CStarAction.CovariantRepresentation.integratedOperatorBochnerL1` with
 the pointwise Bochner twisted convolution and involution formulas in
-`TauCeti.CStarAction.Action.Convolution.Bochner` shows that `integratedOperatorBochnerL1` turns
-`bochnerConvolution` and `bochnerInvolution` of integrable functions into operator composition and
-adjoint whenever `μ.inv ≪ μ` (in particular for both inner regular and regular Haar measures).
+`TauCeti.Analysis.CStarAlgebra.Action.Convolution.Bochner` shows that `integratedOperatorBochnerL1`
+turns `bochnerConvolution` and `bochnerInvolution` of integrable functions into operator
+composition and adjoint whenever `μ.inv ≪ μ` (in particular for both inner regular and regular
+Haar measures).
 
 On any topological group, a norm-summable family `f : G → A` yields unconditionally summable
 Hilbert-space terms `s ↦ π(f s)(U_s v)`. On an `R1Space` topological group with measurable

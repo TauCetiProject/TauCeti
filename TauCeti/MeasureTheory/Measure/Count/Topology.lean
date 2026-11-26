@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.MeasureTheory.Group.Measure
+public import TauCeti.MeasureTheory.Measure.Regular
 
 /-!
 # Counting measure on discrete spaces
@@ -29,11 +29,6 @@ variable {X : Type*} [MeasurableSpace X] [TopologicalSpace X]
 /-- Counting measure gives positive mass to every nonempty open set. -/
 instance count_isOpenPosMeasure : (count : Measure X).IsOpenPosMeasure where
   open_pos _ _ hs := count_ne_zero hs
-
-/-- Every measure on a discrete space is outer regular, since every subset is open. -/
-instance outerRegular_of_discreteTopology [DiscreteTopology X] (μ : Measure X) :
-    μ.OuterRegular where
-  outerRegular s _ _ hr := ⟨s, Set.Subset.rfl, isOpen_discrete s, hr⟩
 
 /-- Any strict lower bound for the counting measure of a set `s` is exceeded on a finite (hence
 compact) subset of `s`. -/

@@ -71,6 +71,8 @@ up to a null set.
 * `measure_preimage_monoidHom`, `measure_preimage_addMonoidHom`: for a surjective homomorphism
   `φ : G → F` onto a finite group with measurable kernel and a left-invariant measure `μ` on `G`,
   the preimage of `T ⊆ F` has measure `#T / #F · μ G`.
+* `Measure.quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous`: `y ↦ y⁻¹ * x` preserves
+  null sets of any left-invariant measure satisfying `μ.inv ≪ μ`.
 -/
 
 public section
@@ -288,6 +290,24 @@ theorem isInvInvariant_withDensity [μ.IsInvInvariant] {f : G → ℝ≥0∞} (h
     (MeasurableEquiv.inv G).measurableEmbedding f t
 
 end InvolutiveInv
+
+section Measurable
+
+variable {G : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] [MeasurableInv G]
+  (μ : Measure G)
+
+/-- If `μ` is left-invariant and `μ.inv ≪ μ`, then `y ↦ y⁻¹ * x` is quasi-measure-preserving for
+every `x : G`, since `y⁻¹ * x = (x⁻¹ * y)⁻¹` is left translation followed by inversion. -/
+theorem quasiMeasurePreserving_inv_mul_of_inv_absolutelyContinuous [μ.IsMulLeftInvariant]
+    (hinv : μ.inv ≪ μ) (x : G) :
+    QuasiMeasurePreserving (fun y => y⁻¹ * x) μ μ := by
+  have hinv_qmp : QuasiMeasurePreserving Inv.inv μ μ := ⟨measurable_inv.aemeasurable, hinv⟩
+  have hcomp := hinv_qmp.comp (measurePreserving_mul_left μ x⁻¹).quasiMeasurePreserving
+  convert hcomp using 1
+  ext y
+  simp [mul_inv_rev]
+
+end Measurable
 
 end MeasureTheory.Measure
 
