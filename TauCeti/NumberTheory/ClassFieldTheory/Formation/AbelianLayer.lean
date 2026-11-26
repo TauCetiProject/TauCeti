@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.Order.Closure
 public import Mathlib.Topology.Algebra.Group.TopologicalAbelianization
 public import TauCeti.GroupTheory.QuotientGroup.Index
 public import TauCeti.NumberTheory.ClassFieldTheory.Formation.Restriction
@@ -44,6 +45,8 @@ class-field correspondences directly in terms of their abelian Galois groups.
   condition.
 * `OpenNormalSubgroup.maximalAbelianLayer`: the least abelian-layer subgroup above a given
   open normal subgroup.
+* `OpenNormalSubgroup.abelianLayerClosure`: `maximalAbelianLayer` as a closure operator whose
+  closed elements are the abelian layers.
 * `TauCeti.ClassFieldTheory.abelianizationGalEquiv`: the canonical equivalence from the
   abelianization of an abelian layer's Galois group to that Galois group.
 
@@ -53,7 +56,7 @@ class-field correspondences directly in terms of their abelian Galois groups.
   condition is equivalent to commutativity of `G ⧸ V`.
 * `OpenNormalSubgroup.le_maximalAbelianLayer` and
   `OpenNormalSubgroup.maximalAbelianLayer_le`: the universal property of the maximal
-  abelian sublayer.
+  abelian sublayer, read off from the closure operator `abelianLayerClosure`.
 * `OpenNormalSubgroup.maximalAbelianLayer_inf_of_isAbelianClassFieldLayer`: the maximal abelian
   sublayer of `V ⊓ W` is that of `V` intersected with `W`, when `W` is abelian.
 * `OpenNormalSubgroup.maximalAbelianLayer_eq_self_iff`: the construction fixes exactly the
@@ -163,33 +166,44 @@ theorem mem_maximalAbelianLayer {V : OpenNormalSubgroup G} {x : G} :
       x ∈ V.toSubgroup ⊔ (commutator G).topologicalClosure :=
   (Iff.rfl)
 
+/-- **The maximal abelian sublayer as a closure operator.** Its closed elements are exactly the
+abelian class-field layers, so its type of closed elements is `AbelianLayer G` and
+`abelianLayerClosure.gi` is the Galois insertion of the abelian layers into all open normal
+subgroups. The universal property of `maximalAbelianLayer` is read off from this structure. -/
+def abelianLayerClosure : ClosureOperator (OpenNormalSubgroup G) :=
+  .ofPred maximalAbelianLayer IsAbelianClassFieldLayer
+    (fun _ _ hx ↦ mem_maximalAbelianLayer.2 (Subgroup.mem_sup_left hx))
+    (fun _ _ hx ↦ mem_maximalAbelianLayer.2 (Subgroup.mem_sup_right hx))
+    (fun _ W hVW hW _ hx ↦
+      (sup_le (fun _ h ↦ hVW h) hW : _ ≤ W.toSubgroup) (mem_maximalAbelianLayer.1 hx))
+
+/-- The closure operator `abelianLayerClosure` is `maximalAbelianLayer`. -/
+@[simp]
+theorem abelianLayerClosure_apply (V : OpenNormalSubgroup G) :
+    abelianLayerClosure V = maximalAbelianLayer V :=
+  (rfl)
+
+/-- The closed elements of `abelianLayerClosure` are the abelian class-field layers. -/
+@[simp]
+theorem isClosed_abelianLayerClosure_iff {V : OpenNormalSubgroup G} :
+    abelianLayerClosure.IsClosed V ↔ V.IsAbelianClassFieldLayer :=
+  Iff.rfl
+
 /-- Every layer subgroup lies in its maximal abelian sublayer subgroup. -/
 theorem le_maximalAbelianLayer (V : OpenNormalSubgroup G) : V ≤ maximalAbelianLayer V :=
-  by
-    intro x hx
-    rw [mem_maximalAbelianLayer]
-    exact (le_sup_left : V.toSubgroup ≤
-      V.toSubgroup ⊔ (commutator G).topologicalClosure) hx
+  abelianLayerClosure.le_closure V
 
 /-- The maximal abelian sublayer is an abelian class-field layer. -/
 @[simp]
 theorem isAbelianClassFieldLayer_maximalAbelianLayer (V : OpenNormalSubgroup G) :
     IsAbelianClassFieldLayer (maximalAbelianLayer V) :=
-  by
-    intro x hx
-    exact mem_maximalAbelianLayer.2
-      ((le_sup_right : (commutator G).topologicalClosure ≤
-        V.toSubgroup ⊔ (commutator G).topologicalClosure) hx)
+  abelianLayerClosure.isClosed_closure V
 
 /-- The universal property of the maximal abelian sublayer: it is the least abelian-layer
 subgroup containing `V`. -/
 theorem maximalAbelianLayer_le {V W : OpenNormalSubgroup G} (hVW : V ≤ W)
     (hW : IsAbelianClassFieldLayer W) : maximalAbelianLayer V ≤ W :=
-  by
-    intro x hx
-    rw [mem_maximalAbelianLayer] at hx
-    exact (sup_le (fun _ hxV ↦ hVW hxV) hW :
-      V.toSubgroup ⊔ (commutator G).topologicalClosure ≤ W.toSubgroup) hx
+  abelianLayerClosure.closure_min hVW hW
 
 /-- The maximal abelian sublayer of a join is the join of the maximal abelian sublayers: the
 maximal abelian subextension of an intersection of two finite Galois extensions is the
@@ -215,12 +229,8 @@ theorem maximalAbelianLayer_inf_of_isAbelianClassFieldLayer {V W : OpenNormalSub
 /-- A layer is already abelian exactly when its maximal abelian sublayer is itself. -/
 @[simp]
 theorem maximalAbelianLayer_eq_self_iff (V : OpenNormalSubgroup G) :
-    maximalAbelianLayer V = V ↔ IsAbelianClassFieldLayer V := by
-  constructor
-  · intro h
-    rw [← h]
-    exact isAbelianClassFieldLayer_maximalAbelianLayer V
-  · exact fun h ↦ le_antisymm (maximalAbelianLayer_le le_rfl h) (le_maximalAbelianLayer V)
+    maximalAbelianLayer V = V ↔ IsAbelianClassFieldLayer V :=
+  abelianLayerClosure.isClosed_iff.symm
 
 end AbelianLayer
 
