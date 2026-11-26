@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
+import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Log.Summable
 import Mathlib.NumberTheory.EulerProduct.ExpLog
@@ -45,6 +46,9 @@ Euler product `TauCeti.EulerProductData.hasProd_eulerFactor` already in the libr
 * `TauCeti.hasProd_primeEulerProduct`: unconditional convergence for `Re s > 1`.
 * `TauCeti.primeEulerProduct_eq_exp`: the product is `exp (∑_𝔭 -log (1 - a(𝔭) N(𝔭) ^ (-s)))`,
   and `TauCeti.primeEulerProduct_ne_zero`: it does not vanish.
+* `TauCeti.continuousOn_tsum_neg_log_one_sub_div_absNorm_cpow` and
+  `TauCeti.continuousOn_primeEulerProduct`: the sum of the logarithms and the product are
+  continuous in real `s > 1`.
 * `TauCeti.abs_log_norm_primeEulerProduct_le`: `|log ‖P(a, s)‖| ≤ 3 [K : ℚ]` for `Re s ≥ 2`.
 * `TauCeti.primeEulerProduct_indicator_compl_mul_prod`: deleting the factors at a finite set `Q`
   of primes divides the product by them.
@@ -184,6 +188,39 @@ theorem primeEulerProduct_ne_zero (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) (hs : 1 < 
     primeEulerProduct a s ≠ 0 := by
   rw [primeEulerProduct_eq_exp ha hs]
   exact exp_ne_zero _
+
+/-- The sum of the logarithms of the Euler factors is continuous in real `s > 1`, by dominated
+convergence against `∑_𝔭 3/2 N(𝔭) ^ (-σ)` for `1 < σ < s`. -/
+theorem continuousOn_tsum_neg_log_one_sub_div_absNorm_cpow (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
+    ContinuousOn (fun s : ℝ ↦ ∑' 𝔭 : HeightOneSpectrum (𝓞 K),
+      -log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ))) (Set.Ioi 1) := by
+  intro s₀ hs₀
+  rw [Set.mem_Ioi] at hs₀
+  obtain ⟨σ, hσ, hσs⟩ := exists_between hs₀
+  refine ContinuousAt.continuousWithinAt ?_
+  refine tendsto_tsum_of_dominated_convergence
+    (bound := fun 𝔭 ↦ 3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-σ))
+    ((summable_absNorm_rpow_primes_of_one_lt hσ).mul_left _) (fun 𝔭 ↦ ?_) ?_
+  · have hN : (Ideal.absNorm 𝔭.asIdeal : ℂ) ≠ 0 :=
+      Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).ne_bot
+    have hpow : Continuous fun t : ℝ ↦ (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ) :=
+      continuous_ofReal.const_cpow (Or.inl hN)
+    have hcont : ContinuousAt (fun t : ℝ ↦ 1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ))
+        s₀ :=
+      (continuous_const.sub (continuous_const.div hpow
+        fun t ↦ cpow_ne_zero_iff.mpr (Or.inl hN))).continuousAt
+    exact (hcont.clog (one_sub_div_absNorm_cpow_mem_slitPlane (ha 𝔭)
+      (by rw [ofReal_re]; exact hs₀.le))).neg
+  · filter_upwards [Ici_mem_nhds hσs] with t (ht : σ ≤ t) 𝔭
+    exact norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) (by rw [ofReal_re]; linarith)
+      (by rwa [ofReal_re])
+
+/-- **The Euler product is continuous** in real `s > 1`, as the exponential of the continuous sum
+of the logarithms of its factors. -/
+theorem continuousOn_primeEulerProduct (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
+    ContinuousOn (fun s : ℝ ↦ primeEulerProduct a s) (Set.Ioi 1) :=
+  (continuousOn_tsum_neg_log_one_sub_div_absNorm_cpow ha).cexp.congr fun s (hs : 1 < s) ↦
+    primeEulerProduct_eq_exp ha (by rwa [ofReal_re])
 
 /-- **A bound for the Euler product depending only on `K`.** For `Re s ≥ 2` and `‖a‖ ≤ 1`,
 `|log ‖P(a, s)‖| ≤ 3 [K : ℚ]`: each logarithm has modulus at most `3/2 N(𝔭) ^ (-2)`, and

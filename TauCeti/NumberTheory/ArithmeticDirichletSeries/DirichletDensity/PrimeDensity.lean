@@ -218,6 +218,14 @@ theorem HasPrimeDensity.sub (ha : HasPrimeDensity a l) (hb : HasPrimeDensity b l
     HasPrimeDensity (a - b) (l - l') := by
   simpa [sub_eq_add_neg, neg_mul, Pi.neg_def] using ha.add (hb.const_mul (-1))
 
+/-- A property holding at all but finitely many points holds outside the finite set where it
+fails. -/
+private theorem eventually_cofinite_of_notMem_toFinset {α : Type*} {p : α → Prop}
+    (h : ∀ᶠ x in cofinite, p x) {𝔭 : α} (h𝔭 : 𝔭 ∉ (eventually_cofinite.mp h).toFinset) :
+    p 𝔭 := by
+  by_contra hp
+  exact h𝔭 ((eventually_cofinite.mp h).mem_toFinset.mpr hp)
+
 /-- A lower bound for the real part of the series over the primes of degree one, when the real
 part of the coefficients is nonnegative at the primes of degree one outside a finite set `E`. -/
 private theorem neg_sum_le_re_degreeOnePrimeSum {E : Finset (HeightOneSpectrum (𝓞 K))}
@@ -270,8 +278,8 @@ theorem HasPrimeDensity.re_le_re (ha : HasPrimeDensity a l) (hb : HasPrimeDensit
   set E := (eventually_cofinite.mp h).toFinset
   have hE (𝔭 : HeightOneSpectrum (𝓞 K)) (h𝔭E : 𝔭 ∉ E) (h𝔭 : 𝔭 ∉ higherDegreePrimes K) :
       0 ≤ ((b - a) 𝔭).re := by
-    have := not_not.mp (mt (eventually_cofinite.mp h).mem_toFinset.mpr h𝔭E)
-    have hp := not_not.mp (mt mem_higherDegreePrimes_iff_not_prime_absNorm.mpr h𝔭)
+    have := eventually_cofinite_of_notMem_toFinset h h𝔭E
+    have hp := notMem_higherDegreePrimes_iff_prime_absNorm.mp h𝔭
     simpa using this hp
   -- `Re (l' - l) · log (1 / (s - 1)) → -∞`
   have hlim := (Real.tendsto_log_one_div_sub_atTop 1).const_mul_atTop_of_neg
@@ -307,8 +315,8 @@ theorem hasPrimeDensity_zero_of_eventually_eq_zero
       (higherDegreePrimes K)ᶜ.indicator a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ s = 0 := by
     by_cases h𝔭 : 𝔭 ∈ higherDegreePrimes K
     · rw [Set.indicator_of_notMem (Set.notMem_compl_iff.mpr h𝔭), zero_div]
-    have := not_not.mp (mt (eventually_cofinite.mp h).mem_toFinset.mpr h𝔭E)
-    have hp := not_not.mp (mt mem_higherDegreePrimes_iff_not_prime_absNorm.mpr h𝔭)
+    have := eventually_cofinite_of_notMem_toFinset h h𝔭E
+    have hp := notMem_higherDegreePrimes_iff_prime_absNorm.mp h𝔭
     rw [Set.indicator_of_mem (Set.mem_compl h𝔭), this hp, zero_div]
   refine ⟨.of_forall fun s ↦ summable_of_ne_finset_zero (s := E) (hzero _), ?_⟩
   refine IsBigO.of_bound (∑ 𝔭 ∈ E, ‖a 𝔭‖) ?_
@@ -401,12 +409,8 @@ theorem HasPrimeDensity.hasDirichletDensity {S : Set (HeightOneSpectrum (𝓞 K)
 density one (`TauCeti.hasDirichletDensity_compl_higherDegreePrimes`). -/
 theorem infinite_setOf_prime_absNorm :
     {𝔭 : HeightOneSpectrum (𝓞 K) | (Ideal.absNorm 𝔭.asIdeal).Prime}.Infinite := by
-  have hset : (higherDegreePrimes K)ᶜ =
-      {𝔭 : HeightOneSpectrum (𝓞 K) | (Ideal.absNorm 𝔭.asIdeal).Prime} := by
-    ext 𝔭
-    rw [Set.mem_compl_iff, mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
-    rfl
-  exact hset ▸ hasDirichletDensity_compl_higherDegreePrimes.infinite one_ne_zero
+  exact compl_higherDegreePrimes (K := K) ▸
+    hasDirichletDensity_compl_higherDegreePrimes.infinite one_ne_zero
 
 /-! ### The density from the Euler product -/
 
@@ -462,32 +466,6 @@ theorem norm_tsum_neg_log_sub_degreeOnePrimeSum_le (ha : ∀ 𝔭, ‖a 𝔭‖ 
   have h2 := primeIdealZetaSum_higherDegreePrimes_le (K := K) le_rfl
   linarith
 
-/-- The sum of the logarithms of the Euler factors is continuous in real `s > 1`, by dominated
-convergence against `∑_𝔭 3/2 N(𝔭) ^ (-σ)` for `1 < σ < s`. -/
-private theorem continuousOn_tsum_neg_log (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) :
-    ContinuousOn (fun s : ℝ ↦ ∑' 𝔭 : HeightOneSpectrum (𝓞 K),
-      -log (1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (s : ℂ))) (Set.Ioi 1) := by
-  intro s₀ hs₀
-  rw [Set.mem_Ioi] at hs₀
-  obtain ⟨σ, hσ, hσs⟩ := exists_between hs₀
-  refine ContinuousAt.continuousWithinAt ?_
-  refine tendsto_tsum_of_dominated_convergence
-    (bound := fun 𝔭 ↦ 3 / 2 * (Ideal.absNorm 𝔭.asIdeal : ℝ) ^ (-σ))
-    ((summable_absNorm_rpow_primes_of_one_lt hσ).mul_left _) (fun 𝔭 ↦ ?_) ?_
-  · have hN : (Ideal.absNorm 𝔭.asIdeal : ℂ) ≠ 0 :=
-      Nat.cast_ne_zero.mpr (NumberField.HeightOneSpectrum.one_lt_absNorm 𝔭).ne_bot
-    have hpow : Continuous fun t : ℝ ↦ (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ) :=
-      continuous_ofReal.const_cpow (Or.inl hN)
-    have hcont : ContinuousAt (fun t : ℝ ↦ 1 - a 𝔭 / (Ideal.absNorm 𝔭.asIdeal : ℂ) ^ (t : ℂ))
-        s₀ :=
-      (continuous_const.sub (continuous_const.div hpow
-        fun t ↦ cpow_ne_zero_iff.mpr (Or.inl hN))).continuousAt
-    exact (hcont.clog (one_sub_div_absNorm_cpow_mem_slitPlane (ha 𝔭)
-      (by rw [ofReal_re]; exact hs₀.le))).neg
-  · filter_upwards [Ici_mem_nhds hσs] with t (ht : σ ≤ t) 𝔭
-    exact norm_neg_log_one_sub_div_absNorm_cpow_le (ha 𝔭) (by rw [ofReal_re]; linarith)
-      (by rwa [ofReal_re])
-
 /-- **The prime density from the Euler product.** Let `‖a‖ ≤ 1`. If `P(a, s) (s - 1) ^ (-l)` tends
 to a nonzero limit as real `s → 1⁺`, for some real `l`, then `a` has prime density `-l`. For example
 `P(1, s) = ζ_K(s)` has a simple pole, `l = -1`, and the constant `1` has density `1`. -/
@@ -501,7 +479,8 @@ theorem hasPrimeDensity_of_tendsto (ha : ∀ 𝔭, ‖a 𝔭‖ ≤ 1) {l : ℝ}
     continuousOn_const.mul (continuous_ofReal.comp_continuousOn
       (Real.continuousOn_log.comp (continuousOn_id.sub continuousOn_const)
         fun t (ht : 1 < t) ↦ (sub_pos.mpr ht).ne'))
-  have hGcont : ContinuousOn G (Set.Ioi 1) := (continuousOn_tsum_neg_log ha).sub hlog
+  have hGcont : ContinuousOn G (Set.Ioi 1) :=
+    (continuousOn_tsum_neg_log_one_sub_div_absNorm_cpow ha).sub hlog
   -- `exp G` is the normalized Euler product
   have hexp : ∀ᶠ s : ℝ in 𝓝[>] (1 : ℝ),
       primeEulerProduct a s * (((s - 1) ^ (-l) : ℝ) : ℂ) = exp (G s) := by

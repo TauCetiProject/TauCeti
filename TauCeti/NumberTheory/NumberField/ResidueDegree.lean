@@ -35,7 +35,9 @@ objects that description involves and records their elementary theory.
 * `TauCeti.absNorm_eq_rationalPrimeBelow_pow`: the absolute norm of `𝔭` is the rational prime
   below it raised to the residue degree.
 * `TauCeti.mem_higherDegreePrimes_iff_not_prime_absNorm`: a height-one prime has residue degree
-  above one exactly when its absolute norm is not a prime number.
+  above one exactly when its absolute norm is not a prime number;
+  `TauCeti.notMem_higherDegreePrimes_iff_prime_absNorm` and `TauCeti.compl_higherDegreePrimes`
+  state the complementary form.
 * `TauCeti.rationalPrimeBelow_pow_le_absNorm`: the norm of `𝔭` is at least the rational prime
   below it raised to any power at most the residue degree.
 * `TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg`: residue degree above one over an
@@ -136,6 +138,16 @@ theorem mem_higherDegreePrimes_iff_not_prime_absNorm {𝔭 : HeightOneSpectrum (
     ← Nat.prime_iff, not_and_or, or_iff_right (not_not_intro (prime_rationalPrimeBelow 𝔭))]
   omega
 
+/-- A height-one prime has residue degree one exactly when its absolute norm is a prime number. -/
+theorem notMem_higherDegreePrimes_iff_prime_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} :
+    𝔭 ∉ higherDegreePrimes K ↔ (Ideal.absNorm 𝔭.asIdeal).Prime := by
+  rw [mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
+
+/-- The primes of residue degree one are the height-one primes of prime absolute norm. -/
+theorem compl_higherDegreePrimes :
+    (higherDegreePrimes K)ᶜ = {𝔭 : HeightOneSpectrum (𝓞 K) | (Ideal.absNorm 𝔭.asIdeal).Prime} :=
+  Set.ext fun _ ↦ notMem_higherDegreePrimes_iff_prime_absNorm
+
 /-- The absolute norm of a height-one prime is at least the rational prime below it raised to any
 exponent bounded by the residue degree.  The matching bound from above is the divisibility
 `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`.  Use
@@ -174,7 +186,7 @@ theorem notMem_higherDegreePrimes_iff_of_under_eq {E : Type*} [Field E] [NumberF
       𝔭 ∉ higherDegreePrimes K ∧ Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm 𝔭.asIdeal := by
   subst h
   have hpow := Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal
-  simp only [mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
+  simp only [notMem_higherDegreePrimes_iff_prime_absNorm]
   refine ⟨fun hP ↦ ?_, fun ⟨hp, heq⟩ ↦ heq ▸ hp⟩
   obtain ⟨heq, -⟩ := hP.pow_eq_iff.mp hpow
   exact ⟨heq ▸ hP, heq.symm⟩
