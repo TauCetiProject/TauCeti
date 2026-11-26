@@ -84,6 +84,7 @@ dimension function `dim` and boundary faces `∂S` (Pardon, Definition 6.1.6): s
 with the footprint maps on the zero sets, cell-like on the regular loci for the dimensions
 `dim s + m_I`, and pulled back from a cell-like stratification of the first factor of a local
 product model of the extra obstruction over `ψ_IJ⁻¹(X_I^reg)`. -/
+@[ext]
 structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d)
     (S : Type*) [Preorder S] (dim : S → ℤ) (bdS : LowerSet S) where
   /-- The stratification `σ_I : X_I → S` of the thickening `X_I`. -/
