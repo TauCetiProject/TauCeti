@@ -318,8 +318,8 @@ theorem baseSetChart_source (x : M) :
 
 /-- As a function, `baseSetChart F I V x` is the extended chart at `x`. -/
 theorem coe_baseSetChart (x : M) : ⇑(baseSetChart F I V x) = extChartAt I x := by
-  rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl]
-  rfl
+  rw [baseSetChart, OpenPartialHomeomorph.coe_extendTrans_refl, OpenPartialHomeomorph.extend_coe,
+    extChartAt_coe, OpenPartialHomeomorph.restr_apply]
 
 /-- The point `x` lies in the source of `baseSetChart F I V x`. -/
 theorem mem_baseSetChart_source (x : M) : x ∈ (baseSetChart F I V x).source := by
