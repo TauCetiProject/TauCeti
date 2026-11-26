@@ -629,14 +629,9 @@ theorem mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm
   have hY := (ν.contMDiff_orbitMap_coadjointRepresentation_apply
     (lieAlgebraEquiv.symm (heisenbergY ℝ))).mdifferentiableAt (x := x) (by simp)
   -- In the coordinates `(p, q)` the generator of `(s, t, u)` is `(t r, -s r)`.
-  rw [map_smul, SmoothBundleForm.eval₂_apply, Submodule.coe_smul, Pi.smul_apply,
-    ContinuousAlternatingMap.smul_apply, ← SmoothBundleForm.eval₂_apply,
-    SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
-    funext (coadjointOrbitPlaneDiffeomorph_apply hν), hX.mvfderiv_prodMk_apply hY,
-    hX.mvfderiv_prodMk_apply hY,
-    mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
-    mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
-    mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
+  rw [map_smul, SmoothForm.eval₂_smul, SmoothForm.eval₂_mpullback,
+    SymplecticForm.eval₂_constSmooth_mfderiv_eq, funext (coadjointOrbitPlaneDiffeomorph_apply hν)]
+  simp only [hX.mvfderiv_prodMk_apply hY,
     mvfderiv_orbitMap_coadjointRepresentation_apply_fundamentalVectorField,
     eval₂_coadjointOrbitForm_fundamentalVectorField, stdSymplecticForm_apply]
   simp [tangentSpaceCastModel_lieAlgebraEquiv_symm]
@@ -651,11 +646,8 @@ theorem mpullback_coadjointOrbitPlaneDiffeomorph_symm_coadjointOrbitForm
     SmoothForm.mpullback (coadjointOrbitPlaneDiffeomorph hν).symm
         (coadjointOrbitPlaneDiffeomorph hν).symm.contMDiff ν.coadjointOrbitForm =
       (ν (lieAlgebraEquiv.symm (heisenbergZ ℝ)))⁻¹ •
-        (stdSymplecticForm (V := ℝ)).constSmooth := by
-  rw [← mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm hν,
-    SmoothForm.mpullback_mpullback_of_comp_eq (coadjointOrbitPlaneDiffeomorph hν).symm.contMDiff
-      (coadjointOrbitPlaneDiffeomorph hν).contMDiff contMDiff_id contMDiff_id
-      (funext (coadjointOrbitPlaneDiffeomorph hν).apply_symm_apply), SmoothForm.mpullback_id,
-    LinearMap.id_apply, LinearMap.id_apply]
+        (stdSymplecticForm (V := ℝ)).constSmooth :=
+  SmoothForm.mpullback_symm_eq_of_mpullback_eq
+    (mpullback_coadjointOrbitPlaneDiffeomorph_stdSymplecticForm hν)
 
 end TauCeti.Nil
