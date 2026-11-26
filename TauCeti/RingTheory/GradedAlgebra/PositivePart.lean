@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.GradedAlgebra.AlgHom
 public import Mathlib.RingTheory.GradedAlgebra.Basic
@@ -21,6 +22,12 @@ free graded-commutative algebra `ΛV` on generators of positive degree, `Q(ΛV)`
 classes of the generators, and a Sullivan algebra `(ΛV, d)` is minimal exactly when the map `d`
 induces on `Q(ΛV)` vanishes.
 
+In a graded algebra the decomposables `A⁺ · A⁺` form a homogeneous submodule, so `Q(A)` is graded
+in turn: its degree-`p` part `Qᵖ(A)` is `Aᵖ` modulo the span of the products `Aⁱ · Aʲ` with
+`i, j > 0` and `i + j = p`, and a graded algebra map induces a linear map on each `Qᵖ`. For the
+cohomology algebra of a compact Lie group or of an arithmetic group, `Qᵖ` is the space of
+primitive classes of degree `p` whose determinant lines Borel compares through invariant forms.
+
 Mathlib's irrelevant ideal `HomogeneousIdeal.irrelevant` is the same construction for gradings by
 a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotangent` the analogue of
 `Q(A)` for commutative rings; here the grading is by `ℤ` and `A` need not be commutative.
@@ -32,6 +39,14 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
   `TauCeti.Indecomposables.mk`.
 * `TauCeti.Indecomposables.map`: the map induced on indecomposables by a linear map carrying
   positive parts and decomposables into positive parts and decomposables.
+* `TauCeti.homogeneousDecomposables 𝒜 p`: the decomposables of degree `p`, the span of the
+  products `Aⁱ · Aʲ` with `i, j > 0` and `i + j = p`.
+* `TauCeti.Indecomposables.homogeneousSubmodule 𝒜 p`: the degree-`p` indecomposables `Qᵖ(A)`,
+  the classes of the elements of `A⁺` of degree `p`, and
+  `TauCeti.Indecomposables.homogeneousSubmoduleEquiv`: for `p > 0`, the identification of `Qᵖ(A)`
+  with `Aᵖ` modulo the decomposables of degree `p`.
+* `TauCeti.Indecomposables.homogeneousMap`: the map `Qᵖ(A) → Qᵖ(B)` induced by a graded algebra
+  map.
 
 ## Main results
 
@@ -50,6 +65,19 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
   induced maps.
 * `TauCeti.Indecomposables.map_eq_zero_iff`: the induced map vanishes exactly when it carries
   `A⁺` into the decomposables.
+* `TauCeti.Indecomposables.lift`, `TauCeti.Indecomposables.hom_ext`: the universal property of
+  `Q(A)` as a quotient.
+* `TauCeti.positivePart_mul_positivePart_eq_iSup`,
+  `TauCeti.inf_positivePart_mul_positivePart`: in a graded algebra, `A⁺ · A⁺` is the sum of the
+  decomposables of each degree, and its elements of degree `p` are the decomposables of degree
+  `p`.
+* `TauCeti.Indecomposables.isInternal_homogeneousSubmodule`: `Q(A)` is the internal direct sum
+  of the degree-`p` indecomposables `Qᵖ(A)`, which vanish for `p ≤ 0`
+  (`TauCeti.Indecomposables.homogeneousSubmodule_eq_bot`).
+* `TauCeti.Indecomposables.map_homogeneousSubmodule_le`: a linear map raising degrees by `n`
+  carries `Qᵖ(A)` into `Qᵖ⁺ⁿ(B)`; `TauCeti.Indecomposables.homogeneousMap_id` and
+  `TauCeti.Indecomposables.homogeneousMap_comp`: functoriality of the maps induced by graded
+  algebra maps.
 
 ## References
 
@@ -57,9 +85,13 @@ a canonically ordered monoid such as `ℕ`, and its cotangent space `Ideal.Cotan
   (1978), §5, after Definition 5.2.
 * Y. Félix, S. Halperin, J.-C. Thomas, *Rational homotopy theory*, Graduate Texts in Mathematics
   205, Springer, 2001, §12.
+* A. Borel, *Cohomologie de SLₙ et valeurs de fonctions zêta aux points entiers*, Ann. Scuola
+  Norm. Sup. Pisa 4 (1977), §1.3, for the indecomposables of a cohomology algebra in each degree.
 -/
 
 public section
+
+open scoped DirectSum
 
 namespace TauCeti
 
@@ -125,6 +157,15 @@ theorem mem_positivePart_iff {a : A} :
     · rw [ha p hp0]
       exact zero_mem _
     · exact mem_positivePart_of_mem (by omega) (SetLike.coe_mem _)
+
+/-- **The positive part is homogeneous**: every homogeneous component of an element of the
+positive part lies in the positive part. -/
+theorem decompose_mem_positivePart {a : A} (ha : a ∈ positivePart 𝒜) (p : ℤ) :
+    (DirectSum.decompose 𝒜 a p : A) ∈ positivePart 𝒜 := by
+  rcases le_or_gt p 0 with hp | hp
+  · rw [mem_positivePart_iff.1 ha p hp]
+    exact zero_mem _
+  · exact mem_positivePart_of_mem hp (SetLike.coe_mem _)
 
 /-- When `A` vanishes in negative degrees, the positive part is a right ideal. -/
 theorem mul_mem_positivePart_of_left (h𝒜 : ∀ p < 0, 𝒜 p = ⊥) {a : A}
@@ -262,9 +303,254 @@ theorem map_eq_zero_iff (hf : (positivePart 𝒜).map f ≤ positivePart ℬ)
     rw [map_mk, LinearMap.zero_apply, mk_eq_zero_iff]
     exact h ⟨a, a.property, rfl⟩
 
+/-- **The universal property of the indecomposables**: a linear map `g : A → M` vanishing on the
+products of two elements of positive degree induces a linear map `Q(A) → M`. -/
+def lift {M : Type*} [AddCommGroup M] [Module R M] (g : A →ₗ[R] M)
+    (hg : ∀ a ∈ positivePart 𝒜, ∀ b ∈ positivePart 𝒜, g (a * b) = 0) :
+    Indecomposables 𝒜 →ₗ[R] M :=
+  Submodule.liftQ _ (g ∘ₗ (positivePart 𝒜).subtype) fun a ha =>
+    LinearMap.mem_ker.2 <| Submodule.mul_induction_on (C := fun x => g x = 0)
+      (Submodule.mem_comap.1 ha) hg fun x y hx hy => by rw [map_add, hx, hy, add_zero]
+
+@[simp]
+theorem lift_mk {M : Type*} [AddCommGroup M] [Module R M] (g : A →ₗ[R] M)
+    (hg : ∀ a ∈ positivePart 𝒜, ∀ b ∈ positivePart 𝒜, g (a * b) = 0) (a : positivePart 𝒜) :
+    lift g hg (mk 𝒜 a) = g a :=
+  (rfl)
+
+/-- Linear maps out of the indecomposables agree when they agree on the classes of the elements of
+positive degree: the uniqueness half of the universal property of `lift`. -/
+theorem hom_ext {M : Type*} [AddCommGroup M] [Module R M]
+    {φ ψ : Indecomposables 𝒜 →ₗ[R] M} (h : ∀ a, φ (mk 𝒜 a) = ψ (mk 𝒜 a)) : φ = ψ :=
+  Submodule.linearMap_qext _ (LinearMap.ext h)
+
 end Indecomposables
 
 end Indecomposables
+
+section HomogeneousDecomposables
+
+variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A] (𝒜 : ℤ → Submodule R A)
+
+/-- The decomposables of degree `p`: the span of the products `a * b` of homogeneous elements
+`a ∈ Aⁱ` and `b ∈ Aʲ` of positive degrees with `i + j = p`. In a graded algebra these are the
+elements of degree `p` of `A⁺ · A⁺` (`TauCeti.inf_positivePart_mul_positivePart`). -/
+def homogeneousDecomposables (p : ℤ) : Submodule R A :=
+  ⨆ (i : ℤ) (_ : 0 < i) (_ : 0 < p - i), 𝒜 i * 𝒜 (p - i)
+
+variable {𝒜}
+
+/-- A product of homogeneous elements of positive degrees `i` and `j` is decomposable of degree
+`i + j`. -/
+theorem mul_mem_homogeneousDecomposables {i j : ℤ} (hi : 0 < i) (hj : 0 < j) {a b : A}
+    (ha : a ∈ 𝒜 i) (hb : b ∈ 𝒜 j) : a * b ∈ homogeneousDecomposables 𝒜 (i + j) := by
+  have hb' : b ∈ 𝒜 (i + j - i) := by rwa [add_sub_cancel_left]
+  exact (le_iSup₂_of_le i hi (le_iSup_of_le (by omega) le_rfl) :
+    𝒜 i * 𝒜 (i + j - i) ≤ homogeneousDecomposables 𝒜 (i + j)) (Submodule.mul_mem_mul ha hb')
+
+/-- The decomposables of degree `p` are the least submodule containing the products of
+homogeneous elements of positive degrees adding up to `p`. -/
+theorem homogeneousDecomposables_le_iff {p : ℤ} {P : Submodule R A} :
+    homogeneousDecomposables 𝒜 p ≤ P ↔
+      ∀ i j, 0 < i → 0 < j → i + j = p → ∀ a ∈ 𝒜 i, ∀ b ∈ 𝒜 j, a * b ∈ P := by
+  refine ⟨fun h i j hi hj hij a ha b hb => h (hij ▸ mul_mem_homogeneousDecomposables hi hj ha hb),
+    fun h => iSup₂_le fun i hi => iSup_le fun hpi => Submodule.mul_le.2 fun a ha b hb =>
+      h i (p - i) hi hpi (by omega) a ha b hb⟩
+
+/-- The decomposables `A⁺ · A⁺` are the sum of the decomposables of each degree. -/
+theorem positivePart_mul_positivePart_eq_iSup :
+    positivePart 𝒜 * positivePart 𝒜 = ⨆ p, homogeneousDecomposables 𝒜 p := by
+  refine le_antisymm (Submodule.mul_le.2 fun a ha b hb => ?_) (iSup_le fun p =>
+    homogeneousDecomposables_le_iff.2 fun i j hi hj _ a ha b hb =>
+      Submodule.mul_mem_mul (mem_positivePart_of_mem hi ha) (mem_positivePart_of_mem hj hb))
+  refine positivePart_le_iff (P := (⨆ p, homogeneousDecomposables 𝒜 p).comap
+    (LinearMap.mulRight R b)).2 (fun i hi a ha => ?_) ha
+  refine positivePart_le_iff (P := (⨆ p, homogeneousDecomposables 𝒜 p).comap
+    (LinearMap.mulLeft R a)).2 (fun j hj b hb => ?_) hb
+  exact Submodule.mem_iSup_of_mem (i + j) (mul_mem_homogeneousDecomposables hi hj ha hb)
+
+/-- The decomposables of degree `p` have degree `p`. -/
+theorem homogeneousDecomposables_le [SetLike.GradedMul 𝒜] (p : ℤ) :
+    homogeneousDecomposables 𝒜 p ≤ 𝒜 p :=
+  homogeneousDecomposables_le_iff.2 fun _ _ _ _ hij _ ha _ hb =>
+    hij ▸ SetLike.GradedMul.mul_mem ha hb
+
+/-- The decomposables of degree `p` are decomposable. -/
+theorem homogeneousDecomposables_le_positivePart_mul_positivePart (p : ℤ) :
+    homogeneousDecomposables 𝒜 p ≤ positivePart 𝒜 * positivePart 𝒜 :=
+  positivePart_mul_positivePart_eq_iSup (𝒜 := 𝒜) ▸ le_iSup (homogeneousDecomposables 𝒜) p
+
+variable [GradedAlgebra 𝒜]
+
+/-- **The decomposables form a homogeneous submodule**: the degree-`p` component of a decomposable
+element is decomposable of degree `p`. -/
+theorem decompose_mem_homogeneousDecomposables {a : A}
+    (ha : a ∈ positivePart 𝒜 * positivePart 𝒜) (p : ℤ) :
+    (DirectSum.decompose 𝒜 a p : A) ∈ homogeneousDecomposables 𝒜 p := by
+  rw [positivePart_mul_positivePart_eq_iSup] at ha
+  refine Submodule.iSup_induction _ (motive := fun a =>
+    (DirectSum.decompose 𝒜 a p : A) ∈ homogeneousDecomposables 𝒜 p) ha (fun q x hx => ?_)
+    (by simp) fun x y hx hy => by simpa using add_mem hx hy
+  by_cases hqp : q = p
+  · subst hqp
+    rwa [DirectSum.decompose_of_mem_same 𝒜 (homogeneousDecomposables_le q hx)]
+  · rw [DirectSum.decompose_of_mem_ne 𝒜 (homogeneousDecomposables_le q hx) hqp]
+    exact zero_mem _
+
+/-- The elements of degree `p` of `A⁺ · A⁺` are the decomposables of degree `p`. -/
+theorem inf_positivePart_mul_positivePart (p : ℤ) :
+    𝒜 p ⊓ (positivePart 𝒜 * positivePart 𝒜) = homogeneousDecomposables 𝒜 p :=
+  le_antisymm (fun a ha => by
+      simpa [DirectSum.decompose_of_mem_same 𝒜 ha.1] using
+        decompose_mem_homogeneousDecomposables ha.2 p)
+    (le_inf (homogeneousDecomposables_le p)
+      (homogeneousDecomposables_le_positivePart_mul_positivePart p))
+
+/-- A homogeneous element of degree `p` is decomposable exactly when it lies in the decomposables
+of degree `p`. -/
+theorem mem_positivePart_mul_positivePart_iff_of_mem {p : ℤ} {a : A} (ha : a ∈ 𝒜 p) :
+    a ∈ positivePart 𝒜 * positivePart 𝒜 ↔ a ∈ homogeneousDecomposables 𝒜 p := by
+  rw [← inf_positivePart_mul_positivePart, Submodule.mem_inf, and_iff_right ha]
+
+end HomogeneousDecomposables
+
+section HomogeneousSubmodule
+
+variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A] (𝒜 : ℤ → Submodule R A)
+
+namespace Indecomposables
+
+/-- The degree-`p` indecomposables `Qᵖ(A)`: the classes in `Q(A)` of the elements of `A⁺` of
+degree `p`. For `p > 0` this is `Aᵖ` modulo the decomposables of degree `p`
+(`TauCeti.Indecomposables.homogeneousSubmoduleEquiv`), and for `p ≤ 0` it is zero. -/
+def homogeneousSubmodule (p : ℤ) : Submodule R (Indecomposables 𝒜) :=
+  ((𝒜 p).comap (positivePart 𝒜).subtype).map (mk 𝒜)
+
+variable {𝒜}
+
+/-- The elements of the degree-`p` indecomposables are the classes of the elements of `A⁺` of
+degree `p`. -/
+theorem mem_homogeneousSubmodule_iff {p : ℤ} {x : Indecomposables 𝒜} :
+    x ∈ homogeneousSubmodule 𝒜 p ↔ ∃ a : positivePart 𝒜, (a : A) ∈ 𝒜 p ∧ mk 𝒜 a = x :=
+  Submodule.mem_map
+
+/-- The class of an element of `A⁺` of degree `p` is a degree-`p` indecomposable. -/
+theorem mk_mem_homogeneousSubmodule {p : ℤ} {a : positivePart 𝒜} (ha : (a : A) ∈ 𝒜 p) :
+    mk 𝒜 a ∈ homogeneousSubmodule 𝒜 p :=
+  ⟨a, ha, rfl⟩
+
+/-- A linear map raising degrees by `n` carries the degree-`p` indecomposables into the
+degree-`p + n` indecomposables. -/
+theorem map_homogeneousSubmodule_le {B : Type*} [Ring B] [Algebra R B] {ℬ : ℤ → Submodule R B}
+    {f : A →ₗ[R] B} (hf : (positivePart 𝒜).map f ≤ positivePart ℬ)
+    (hf' : (positivePart 𝒜 * positivePart 𝒜).map f ≤ positivePart ℬ * positivePart ℬ) {n : ℤ}
+    (hdeg : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → f a ∈ ℬ (p + n)) (p : ℤ) :
+    (homogeneousSubmodule 𝒜 p).map (map f hf hf') ≤ homogeneousSubmodule ℬ (p + n) := by
+  rintro _ ⟨_, hx, rfl⟩
+  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
+  rw [map_mk]
+  exact mk_mem_homogeneousSubmodule (hdeg ha)
+
+/-- For `p > 0`, the degree-`p` indecomposables are the range of the class map `Aᵖ → Q(A)`. -/
+theorem homogeneousSubmodule_eq_range {p : ℤ} (hp : 0 < p) :
+    homogeneousSubmodule 𝒜 p =
+      LinearMap.range (mk 𝒜 ∘ₗ Submodule.inclusion fun _ => mem_positivePart_of_mem hp) := by
+  ext x
+  rw [mem_homogeneousSubmodule_iff, LinearMap.mem_range]
+  exact ⟨fun ⟨a, ha, h⟩ => ⟨⟨a, ha⟩, h⟩, fun ⟨a, h⟩ => ⟨_, a.property, h⟩⟩
+
+variable [GradedAlgebra 𝒜]
+
+/-- The indecomposables have no component of degree `p ≤ 0`. -/
+theorem homogeneousSubmodule_eq_bot {p : ℤ} (hp : p ≤ 0) : homogeneousSubmodule 𝒜 p = ⊥ := by
+  refine eq_bot_iff.2 fun x hx => ?_
+  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
+  have : (a : A) = 0 := by
+    rw [← DirectSum.decompose_of_mem_same 𝒜 ha]
+    exact mem_positivePart_iff.1 a.property p hp
+  rw [Submodule.mem_bot, mk_eq_zero_iff, this]
+  exact zero_mem _
+
+/-- For `p > 0`, the kernel of the class map `Aᵖ → Q(A)` is the decomposables of degree `p`. -/
+theorem ker_mk_comp_inclusion {p : ℤ} (hp : 0 < p) :
+    LinearMap.ker (mk 𝒜 ∘ₗ Submodule.inclusion fun _ => mem_positivePart_of_mem hp) =
+      (homogeneousDecomposables 𝒜 p).comap (𝒜 p).subtype := by
+  ext a
+  simp [mem_positivePart_mul_positivePart_iff_of_mem a.property]
+
+/-- **The homogeneous components of the indecomposables**: for `p > 0`, the degree-`p`
+indecomposables are `Aᵖ` modulo the span of the products `Aⁱ · Aʲ`, `i, j > 0`, `i + j = p`. -/
+noncomputable def homogeneousSubmoduleEquiv {p : ℤ} (hp : 0 < p) :
+    (𝒜 p ⧸ (homogeneousDecomposables 𝒜 p).comap (𝒜 p).subtype) ≃ₗ[R]
+      homogeneousSubmodule 𝒜 p :=
+  (Submodule.quotEquivOfEq _ _ (ker_mk_comp_inclusion hp).symm).trans <|
+    (LinearMap.quotKerEquivRange _).trans
+      (LinearEquiv.ofEq _ _ (homogeneousSubmodule_eq_range hp).symm)
+
+@[simp]
+theorem homogeneousSubmoduleEquiv_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
+    (homogeneousSubmoduleEquiv hp (Submodule.Quotient.mk a) : Indecomposables 𝒜) =
+      mk 𝒜 ⟨a, mem_positivePart_of_mem hp a.property⟩ :=
+  (rfl)
+
+@[simp]
+theorem homogeneousSubmoduleEquiv_symm_mk {p : ℤ} (hp : 0 < p) (a : 𝒜 p) :
+    (homogeneousSubmoduleEquiv hp).symm ⟨mk 𝒜 ⟨a, mem_positivePart_of_mem hp a.property⟩,
+      mk_mem_homogeneousSubmodule a.property⟩ = Submodule.Quotient.mk a := by
+  rw [LinearEquiv.symm_apply_eq]
+  exact Subtype.ext (homogeneousSubmoduleEquiv_mk hp a).symm
+
+/-- **The grading of the indecomposables**: `Q(A)` is the internal direct sum of its homogeneous
+components `Qᵖ(A)`. -/
+theorem isInternal_homogeneousSubmodule :
+    DirectSum.IsInternal (homogeneousSubmodule 𝒜) := by
+  classical
+  -- The homogeneous projections of `A` preserve `A⁺` and `A⁺ · A⁺`, so descend to `Q(A)`.
+  let π (p : ℤ) : Indecomposables 𝒜 →ₗ[R] Indecomposables 𝒜 :=
+    Submodule.mapQ _ _ ((GradedAlgebra.proj 𝒜 p).restrict fun a ha =>
+      decompose_mem_positivePart ha p) fun a ha =>
+        homogeneousDecomposables_le_positivePart_mul_positivePart p
+          (decompose_mem_homogeneousDecomposables (Submodule.mem_comap.1 ha) p)
+  have hπ (p q : ℤ) (x : homogeneousSubmodule 𝒜 q) :
+      π p x = if p = q then (x : Indecomposables 𝒜) else 0 := by
+    obtain ⟨a, ha, hx⟩ := mem_homogeneousSubmodule_iff.1 x.property
+    rw [← hx]
+    split_ifs with hpq
+    · subst hpq
+      exact congrArg (mk 𝒜) (Subtype.ext (DirectSum.decompose_of_mem_same 𝒜 ha))
+    · refine (congrArg (mk 𝒜) (Subtype.ext ?_)).trans (map_zero _)
+      exact DirectSum.decompose_of_mem_ne 𝒜 ha (Ne.symm hpq)
+  -- These projections recover every coordinate of the direct sum.
+  have hcoord (x : ⨁ p, homogeneousSubmodule 𝒜 p) (p : ℤ) :
+      π p (DirectSum.coeAddMonoidHom (homogeneousSubmodule 𝒜) x) = (x p : Indecomposables 𝒜) := by
+    induction x using DirectSum.induction_on with
+    | zero => simp
+    | of q y =>
+      rw [DirectSum.coeAddMonoidHom_of, hπ]
+      split_ifs with hpq
+      · subst hpq
+        simp
+      · simp [DirectSum.of_eq_of_ne _ _ _ hpq]
+    | add x y hx hy => simp [hx, hy]
+  refine ⟨fun x y hxy => DFinsupp.ext fun p => Subtype.ext ?_, fun x => ?_⟩
+  · rw [← hcoord x p, ← hcoord y p, hxy]
+  -- An element of `A⁺` is the sum of its homogeneous components, each of positive degree.
+  obtain ⟨a, rfl⟩ := mk_surjective x
+  have ha : a = ∑ p ∈ (DirectSum.decompose 𝒜 (a : A)).support,
+      (⟨_, decompose_mem_positivePart a.property p⟩ : positivePart 𝒜) := by
+    ext1
+    rw [Submodule.coe_sum]
+    exact (DirectSum.sum_support_decompose 𝒜 (a : A)).symm
+  have hmem : mk 𝒜 a ∈ ⨆ p, homogeneousSubmodule 𝒜 p := by
+    rw [ha, map_sum]
+    exact sum_mem fun p _ => Submodule.mem_iSup_of_mem p (mk_mem_homogeneousSubmodule
+      (SetLike.coe_mem _))
+  rw [← DirectSum.range_coeLinearMap] at hmem
+  exact LinearMap.mem_range.1 hmem
+
+end Indecomposables
+
+end HomogeneousSubmodule
 
 end TauCeti
 
@@ -290,3 +576,42 @@ theorem map_positivePart_mul_positivePart_le (f : 𝒜 →ₐᵍ[R] ℬ) :
   TauCeti.map_positivePart_mul_positivePart_le f.map_positivePart_le
 
 end GradedAlgHom
+
+namespace TauCeti.Indecomposables
+
+variable {R A B C : Type*} [CommRing R] [Ring A] [Algebra R A] [Ring B] [Algebra R B] [Ring C]
+  [Algebra R C] {𝒜 : ℤ → Submodule R A} {ℬ : ℤ → Submodule R B} {𝒞 : ℤ → Submodule R C}
+  [GradedAlgebra 𝒜] [GradedAlgebra ℬ] [GradedAlgebra 𝒞]
+
+/-- The map `Qᵖ(A) → Qᵖ(B)` induced on the degree-`p` indecomposables by a graded algebra map. -/
+def homogeneousMap (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :
+    homogeneousSubmodule 𝒜 p →ₗ[R] homogeneousSubmodule ℬ p :=
+  (map (f : A →ₐ[R] B).toLinearMap f.map_positivePart_le
+      f.map_positivePart_mul_positivePart_le).restrict fun x hx => by
+    simpa using map_homogeneousSubmodule_le f.map_positivePart_le
+      f.map_positivePart_mul_positivePart_le (n := 0)
+      (fun ha => by simpa using Graded.map_mem f ha) p
+      ⟨x, hx, rfl⟩
+
+@[simp]
+theorem homogeneousMap_mk (f : 𝒜 →ₐᵍ[R] ℬ) {p : ℤ} {a : positivePart 𝒜} (ha : (a : A) ∈ 𝒜 p) :
+    (homogeneousMap f p ⟨mk 𝒜 a, mk_mem_homogeneousSubmodule ha⟩ : Indecomposables ℬ) =
+      mk ℬ ⟨f a, f.map_positivePart_le ⟨a, a.property, rfl⟩⟩ :=
+  (rfl)
+
+/-- The identity induces the identity on the degree-`p` indecomposables. -/
+@[simp]
+theorem homogeneousMap_id (p : ℤ) :
+    homogeneousMap (GradedAlgHom.id R 𝒜) p = LinearMap.id := by
+  ext ⟨x, hx⟩
+  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
+  exact homogeneousMap_mk _ ha
+
+/-- The maps induced on the degree-`p` indecomposables are functorial. -/
+theorem homogeneousMap_comp (g : ℬ →ₐᵍ[R] 𝒞) (f : 𝒜 →ₐᵍ[R] ℬ) (p : ℤ) :
+    homogeneousMap (g.comp f) p = homogeneousMap g p ∘ₗ homogeneousMap f p := by
+  ext ⟨x, hx⟩
+  obtain ⟨a, ha, rfl⟩ := mem_homogeneousSubmodule_iff.1 hx
+  exact homogeneousMap_mk _ ha
+
+end TauCeti.Indecomposables
