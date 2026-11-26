@@ -125,8 +125,7 @@ private lemma isCompact_halfDisc (R : ℝ) :
     IsCompact ({w : ℂ | 0 ≤ w.im} ∩ closedBall 0 R) :=
   (isCompact_closedBall 0 R).inter_left (isClosed_le continuous_const continuous_im)
 
-/-- Bound on the shift increment `‖m_ν(z + t w) - m_ν(z)‖` off the real axis. -/
-theorem norm_resolventTransform_add_nnreal_mul_sub_le {ν : Measure ℝ} [IsFiniteMeasure ν]
+private lemma norm_resolventTransform_add_nnreal_mul_sub_le {ν : Measure ℝ} [IsFiniteMeasure ν]
     {t : ℝ≥0} {z w : ℂ} (hζ : (z + t * w).im ≠ 0) (hz : z.im ≠ 0) :
     ‖resolventTransform ν (z + t * w) - resolventTransform ν z‖ ≤
       (t : ℝ) * ‖w‖ / (|(z + t * w).im| * |z.im|) * ν.real univ := by

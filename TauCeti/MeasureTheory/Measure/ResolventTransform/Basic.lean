@@ -80,7 +80,7 @@ theorem norm_resolvent_real_le (z : ℂ) (x : ℝ) (hz : z.im ≠ 0) :
 /-- A real number lies in the real resolvent set of every complex number off the real axis. -/
 theorem mem_resolventSet_real {z : ℂ} (hz : z.im ≠ 0) (x : ℝ) : x ∈ resolventSet ℝ z := by
   rw [spectrum.mem_resolventSet_iff, isUnit_iff_ne_zero]
-  exact Complex.ofReal_sub_ne_zero_of_im_ne_zero hz x
+  exact fun h ↦ hz (by simpa using congrArg Complex.im h)
 
 /-- Off the real axis the real resolvent kernel is continuous. -/
 theorem continuous_resolvent_real {z : ℂ} (hz : z.im ≠ 0) : Continuous (resolvent (R := ℝ) z) :=
@@ -175,8 +175,10 @@ theorem continuousAt_resolventTransform_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0
 
 /-- The real resolvent kernel is integrable for a finite measure off the real axis. -/
 theorem integrable_resolvent_of_im_ne_zero {z : ℂ} (hz : z.im ≠ 0) :
-    Integrable (resolvent (R := ℝ) z) μ :=
-  integrable_resolvent (by simpa using Complex.notMem_image_ofReal_of_im_ne_zero hz)
+    Integrable (resolvent (R := ℝ) z) μ := by
+  apply integrable_resolvent
+  rintro ⟨x, _, hx⟩
+  exact hz (by simpa using (congrArg Complex.im hx).symm)
 
 /-- The squared norm of the real resolvent kernel is integrable for a finite measure off the real
 axis. -/

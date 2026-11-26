@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Pick.Nevanlinna
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Basic
 import TauCeti.Analysis.Asymptotics.Lemmas
 import TauCeti.Analysis.Complex.Pick.Herglotz.Finite
-import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
-import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 
 /-!
@@ -32,8 +29,6 @@ We use Mathlib's `MeasureTheory.resolventTransform`, with sign `(x - z)⁻¹`, n
 
 ## Main results
 
-* `TauCeti.nevanlinnaKernel_eq_one_add_sq_mul_resolvent_sub`: away from its pole, the Nevanlinna
-  kernel `(1 + x z) / (x - z)` equals `(1 + x²) (x - z)⁻¹ - x`.
 * `MeasureTheory.exists_isFiniteMeasure_resolventTransform_eq`: existence of a representing finite
   measure from `0 ≤ Im F` and an eventual bound on `y ‖F(iy)‖`.
 * `MeasureTheory.exists_isFiniteMeasure_resolventTransform_eq_iff`: analytic characterization of
@@ -60,20 +55,6 @@ noncomputable section
 
 open Complex Filter MeasureTheory Set
 open scoped Topology
-
-namespace TauCeti
-
-/-- Away from its pole, the Nevanlinna kernel `(1 + x z) / (x - z)` decomposes into the weighted
-resolvent `(1 + x²) (x - z)⁻¹` minus `x`. -/
-theorem nevanlinnaKernel_eq_one_add_sq_mul_resolvent_sub {z : ℂ} {x : ℝ}
-    (h : (x : ℂ) - z ≠ 0) :
-    nevanlinnaKernel z x = ((1 + x ^ 2 : ℝ) : ℂ) * resolvent z x - x := by
-  rw [nevanlinnaKernel_def, resolvent_real_eq_inv]
-  push_cast
-  field_simp [h]
-  ring
-
-end TauCeti
 
 namespace MeasureTheory
 

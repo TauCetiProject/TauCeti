@@ -6,30 +6,31 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.ResolventTransform.Pastur.Basic
-public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.Analysis.Calculus.DSlope
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
 /-!
-# Stieltjes–Burgers time evolution of the Pastur semigroup
+# Differentiated Stieltjes–Burgers time evolution of the Pastur semigroup
 
 For a finite Borel measure `ν` on `ℝ`, the resolvent transform `m_t(z) = ∫ (x - z)⁻¹ d(ν.pastur t)`
 of its Pastur evolution satisfies Pastur's self-consistent equation `m_t(z) = m_ν(z + t m_t(z))`
-off the real axis. Differentiating with respect to `t` and eliminating `m_ν'(z + t m_t(z))` against
-`∂_z m_t(z) = m_ν'(ζ) / (1 - t m_ν'(ζ))` yields the **complex inviscid Burgers equation**
+off the real axis. Differentiating with respect to `t` via the `dslope` linearization of the Pastur
+equation and eliminating `m_ν'(z + t m_t(z))` against `∂_z m_t(z) = m_ν'(ζ) / (1 - t m_ν'(ζ))`
+yields the **complex inviscid Burgers differential equation**
 
 `∂_t m_t(z) = m_t(z) ∂_z m_t(z)`
 
-and its integral form
-
-`m_t(z) = m_ν(z) + ∫ s in 0..t, m_s(z) ∂_z m_s(z)`.
+at every `z` off the real axis (for an infinite measure `ν`, `ν.pastur t = 0` so both sides vanish).
+The integrated Burgers flow `TauCeti.Probability.IsBurgersFlow` and uniqueness from the initial
+measure are established in `TauCeti.Probability.DysonBrownianMotion.Pastur`.
 
 Note the sign convention: Mathlib's `MeasureTheory.resolventTransform` uses `(x - z)⁻¹`. For the
 opposite-sign Stieltjes transform `G_t(z) = ∫ (z - x)⁻¹ dμ_t(x) = -m_t(z)` used in Anderson,
-Guionnet, and Zeitouni, Proposition 4.3.10, this same identity reads `∂_t G_t = -G_t ∂_z G_t`, i.e.,
-`G_t(z) = G_0(z) - ∫ s in 0..t, G_s(z) ∂_z G_s(z)`.
+Guionnet, and Zeitouni, Proposition 4.3.10, this same differential equation reads
+`∂_t G_t = -G_t ∂_z G_t`.
 
 ## Main results
 
@@ -41,8 +42,6 @@ Guionnet, and Zeitouni, Proposition 4.3.10, this same identity reads `∂_t G_t 
 * `MeasureTheory.hasDerivWithinAt_resolventTransform_pastur_Ici` and
   `MeasureTheory.hasDerivAt_resolventTransform_pastur_time`: time derivative
   `∂_t m_t(z) = m_t(z) ∂_z m_t(z)` on `[0, ∞)` and `(0, ∞)`.
-* `MeasureTheory.resolventTransform_pastur_eq_add_integral`: the Stieltjes–Burgers integral equation
-  off the real axis for every finite measure `ν`.
 
 ## References
 
@@ -88,8 +87,12 @@ theorem norm_resolventTransform_pastur_sub_le (s t : ℝ≥0) {z : ℂ} (hz : z.
     im_add_mul_resolventTransform_pastur_ne_zero (ν := ν.pastur s) d hz
   have hwt_norm : ‖wt‖ ≤ |z.im|⁻¹ * ν.real univ := by
     simpa [wt] using norm_resolventTransform_le (μ := (ν.pastur s).pastur d) hz
-  have hsub := norm_resolventTransform_add_nnreal_mul_sub_le (ν := ν.pastur s) hζ0 hz
-  rw [Measure.pastur_real_univ] at hsub
+  have hsub :
+      ‖resolventTransform (ν.pastur s) (z + d * wt) - resolventTransform (ν.pastur s) z‖ ≤
+        (d : ℝ) * ‖wt‖ / (|(z + d * wt).im| * |z.im|) * ν.real univ := by
+    simpa [add_sub_cancel_left, norm_mul, norm_real, Real.norm_of_nonneg d.coe_nonneg,
+      Measure.pastur_real_univ] using
+      norm_resolventTransform_sub_le (μ := ν.pastur s) hζ0 hz
   calc ‖wt - resolventTransform (ν.pastur s) z‖
       = ‖resolventTransform (ν.pastur s) (z + d * wt) - resolventTransform (ν.pastur s) z‖ := by
         rw [← hwt_eq]
@@ -230,42 +233,6 @@ theorem continuous_deriv_resolventTransform_pastur {z : ℂ} (hz : z.im ≠ 0) :
     exact hd_cont.div hden_cont fun t ↦
       one_sub_mul_deriv_resolventTransform_add_mul_resolventTransform_pastur_ne_zero t hz
   · simpa [Measure.pastur_of_not_isFiniteMeasure hν] using continuous_const
-
-/-- The Burgers nonlinearity `s ↦ m_s(z) ∂_z m_s(z)` is interval-integrable on `a..b` with respect
-to any locally finite measure `μ` on `ℝ` off the real axis. -/
-theorem intervalIntegrable_resolventTransform_pastur_mul_deriv
-    {μ : Measure ℝ} [IsLocallyFiniteMeasure μ] {z : ℂ} (hz : z.im ≠ 0) (a b : ℝ) :
-    IntervalIntegrable (fun s : ℝ ↦
-      resolventTransform (ν.pastur s.toNNReal) z *
-        deriv (resolventTransform (ν.pastur s.toNNReal)) z) μ a b := by
-  refine Continuous.intervalIntegrable ?_ a b
-  exact ((continuous_resolventTransform_pastur hz).comp continuous_real_toNNReal).mul
-    ((continuous_deriv_resolventTransform_pastur hz).comp continuous_real_toNNReal)
-
-/-- **The Stieltjes–Burgers integral equation.** For every finite Borel measure `ν` on `ℝ`,
-`t : ℝ≥0`, and `z : ℂ` with `z.im ≠ 0`,
-`m_{ν.pastur t}(z) = m_ν(z) + ∫ s in 0..t, m_{ν.pastur s}(z) ∂_z m_{ν.pastur s}(z)`. -/
-theorem resolventTransform_pastur_eq_add_integral [IsFiniteMeasure ν] (t : ℝ≥0) {z : ℂ}
-    (hz : z.im ≠ 0) :
-    resolventTransform (ν.pastur t) z = resolventTransform ν z +
-      ∫ s in (0 : ℝ)..t, resolventTransform (ν.pastur s.toNNReal) z *
-        deriv (resolventTransform (ν.pastur s.toNNReal)) z := by
-  let f : ℝ → ℂ := fun s ↦ resolventTransform (ν.pastur s.toNNReal) z
-  let f' : ℝ → ℂ := fun s ↦
-    resolventTransform (ν.pastur s.toNNReal) z *
-      deriv (resolventTransform (ν.pastur s.toNNReal)) z
-  have hcont : ContinuousOn f (Icc 0 t) :=
-    ((continuous_resolventTransform_pastur hz).comp continuous_real_toNNReal).continuousOn
-  have hderiv : ∀ s ∈ Ioo (0 : ℝ) t, HasDerivWithinAt f (f' s) (Ioi s) s :=
-    fun s hs ↦ (hasDerivAt_resolventTransform_pastur_time hz hs.1).hasDerivWithinAt
-  have hint : IntervalIntegrable f' volume 0 t :=
-    intervalIntegrable_resolventTransform_pastur_mul_deriv hz 0 t
-  have hftc := intervalIntegral.integral_eq_sub_of_hasDeriv_right_of_le t.coe_nonneg hcont hderiv
-    hint
-  have hf0 : f 0 = resolventTransform ν z := by simp [f]
-  have hft : f t = resolventTransform (ν.pastur t) z := by simp [f]
-  dsimp only [f'] at hftc
-  rw [hftc, hf0, hft, add_sub_cancel]
 
 end MeasureTheory
 
