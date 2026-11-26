@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.CompletedPartialZeta
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.IdealLattice
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
@@ -60,6 +61,11 @@ pole of `Λ_K` there), and has a simple pole at `s = 1` whose residue is Mathlib
 * `TauCeti.LFunctions.tendsto_sub_one_mul_completedDedekindZeta`,
   `TauCeti.LFunctions.tendsto_mul_completedDedekindZeta_zero`: the residues
   `2 ^ (r₁ + r₂) h R / w` at `s = 1` and `-2 ^ (r₁ + r₂) h R / w` at `s = 0`.
+* `TauCeti.LFunctions.toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum`: the entire repair of
+  `s(s - 1) Λ_K(s)` is the sum of the pole-cleared ideal-lattice Mellin completions. At both
+  former poles it takes the value of the residue of `Λ_K` at `1`.
+  The identity `completedPartialZeta_eq_mellinKernelFEPair_Λ` uses Neukirch's normalization
+  (Chapter VII, §5).
 * `TauCeti.LFunctions.completedDedekindZeta_one_sub`: the functional equation
   `Λ_K(1 - s) = Λ_K(s)` for every `s : ℂ`.
 * `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta`: away from `0` and `1`,
@@ -312,6 +318,71 @@ pole `s = 1`. -/
 theorem completedDedekindZeta_one : completedDedekindZeta K 1 = 0 := by
   obtain ⟨rep, -, h⟩ := exists_completedDedekindZeta_eq_sum K
   simp [h]
+
+/-! ### Pole-cleared completion -/
+
+open _root_.NumberField.mixedEmbedding in
+/-- The pole-cleared Dedekind completion is the sum of the pole-cleared Mellin completions
+of the lattices of any system of ideal class representatives, including at `0` and `1`. -/
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum
+    {D : Set (realSpace K)} (hD : IsUnitFundamentalDomain K D)
+    (rep : ClassGroup (𝓞 K) → (FractionalIdeal (𝓞 K)⁰ K)ˣ)
+    (hrep : ∀ c, ClassGroup.mk K (rep c) = c) :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ =
+      ∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c)) := by
+  classical
+  have hm : Meromorphic (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) := by fun_prop
+  have hd : Differentiable ℂ (∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c))) :=
+    Differentiable.sum fun c _ ↦ differentiable_mellinKernelEntireCompletion hD _
+  ext z
+  have hne (w : ℂ) : ∀ᶠ s in 𝓝[≠] z, s ≠ w := by
+    by_cases h : z = w
+    · subst w
+      exact self_mem_nhdsWithin
+    · exact (eventually_ne_nhds h).filter_mono nhdsWithin_le_nhds
+  -- Compare the punctured germs: the finite sum gives the analytic value even at a pole.
+  have hgerm : (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) =ᶠ[𝓝[≠] z]
+      ∑ c, mellinKernelEntireCompletion hD (idealLattice K (rep c)) := by
+    filter_upwards [hne 0, hne 1] with s hs₀ hs₁
+    rw [completedDedekindZeta_eq_sum_completedPartialZeta rep hrep, Finset.sum_apply,
+      Finset.sum_apply, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun c _ ↦ ?_
+    rw [mellinKernelEntireCompletion_eq_mul_Λ hD _ hs₀ hs₁,
+      completedPartialZeta_eq_mellinKernelFEPair_Λ hD (rep c) hs₀ hs₁]
+  have hnf := meromorphicNFOn_toMeromorphicNFOn
+    (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ (mem_univ z)
+  exact ((hnf.eventuallyEq_nhdsNE_iff_eventuallyEq_nhds (hd.analyticAt z).meromorphicNFAt).mp
+    ((hm.meromorphicOn.toMeromorphicNFOn_eq_self_on_nhdsNE (mem_univ z)).trans hgerm)).eq_of_nhds
+
+/-- The repaired product `s(s - 1) Λ_K(s)` is entire. -/
+@[fun_prop]
+theorem differentiable_toMeromorphicNFOn_mul_completedDedekindZeta :
+    Differentiable ℂ (toMeromorphicNFOn
+      (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep]
+  exact Differentiable.sum fun c _ ↦ differentiable_mellinKernelEntireCompletion _ _
+
+/-- The repaired product `s(s - 1) Λ_K(s)` at `0` equals the residue of `Λ_K` at `1`. -/
+@[simp]
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_zero :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ 0 =
+      classNumber K * (2 * mellinConstant K) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
+  simp [classNumber]
+
+/-- The repaired product `s(s - 1) Λ_K(s)` at `1` equals the residue of `Λ_K` at `1`. -/
+@[simp]
+theorem toMeromorphicNFOn_mul_completedDedekindZeta_one :
+    toMeromorphicNFOn (fun s : ℂ ↦ s * (s - 1) * completedDedekindZeta K s) univ 1 =
+      classNumber K * (2 * mellinConstant K) := by
+  obtain ⟨rep, hrep, -⟩ := exists_completedDedekindZeta_eq_sum K
+  rw [toMeromorphicNFOn_mul_completedDedekindZeta_eq_sum K
+    isUnitFundamentalDomain_unitFundamentalDomain rep hrep, Finset.sum_apply]
+  simp [classNumber]
 
 /-! ### Functional equation -/
 
