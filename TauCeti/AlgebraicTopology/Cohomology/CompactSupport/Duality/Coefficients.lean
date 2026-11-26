@@ -81,6 +81,13 @@ theorem fundamentalClassOver_def [CompactSpace M] :
         (ModuleCat.uliftUnitToRestrictScalars _) n (o.fundamentalClass hn) :=
   (rfl)
 
+/-- Reversing the orientation negates the fundamental class over `k`. -/
+@[simp]
+theorem fundamentalClassOver_neg [CompactSpace M] :
+    (-o).fundamentalClassOver hn k = -o.fundamentalClassOver hn k := by
+  rw [fundamentalClassOver_def, fundamentalClassOver_def, fundamentalClass_neg]
+  exact map_neg _ _
+
 /-- **Poincaré duality with coefficients in a commutative ring.** For a compact Hausdorff manifold
 `M` without boundary of dimension `n` with a homological orientation, and a commutative ring `k`,
 capping with the fundamental class `[M]_k ∈ Hₙ(M; k)` over `k` is a bijection
@@ -155,7 +162,9 @@ variable [LinearOrder k] [IsStrictOrderedRing k]
 manifold `M` of dimension `2p + d + 1` with `p + d + 1` even and an ordered field `k` over which
 `Hᵖ⁺ᵈ⁺¹(M; k)` and `Hᵖ(M; k)` are finite dimensional, the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)`
 against `[Sᵈ⁺¹] × [M]_k` has positive index of inertia `dim Hᵖ(M; k)`. For a closed oriented
-three-manifold `Y`, `k = ℝ`, `d = 0` and `p = 1`, this is `b₂⁺ = b₁(Y)` for `S¹ × Y`. -/
+three-manifold `Y` with finite-dimensional real cohomology, `k = ℝ`, `d = 0` and `p = 1`, this gives
+`b₂⁺ = b₁(Y)` for the real cup pairing of `S¹ × Y` against `[S¹] × [Y]_ℝ`; identifying this class
+with the fundamental class of `S¹ × Y` is not done here. -/
 theorem sigPos_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
@@ -178,8 +187,9 @@ theorem sigPos_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d
 /-- **The negative index of inertia of the cup pairing on `Sᵈ⁺¹ × M`**: under the hypotheses of
 `TauCeti.HomologicalOrientation.sigPos_singularCupPairing_sphere_fundamentalClassOver`, the cup
 pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × M; k)` against `[Sᵈ⁺¹] × [M]_k` has negative index of inertia
-`dim Hᵖ(M; k)`. For a closed oriented three-manifold `Y`, `k = ℝ`, `d = 0` and `p = 1`, this is
-`b₂⁻ = b₁(Y)` for `S¹ × Y`. -/
+`dim Hᵖ(M; k)`. For a closed oriented three-manifold `Y` with finite-dimensional real cohomology,
+`k = ℝ`, `d = 0` and `p = 1`, this gives `b₂⁻ = b₁(Y)` for the real cup pairing of `S¹ × Y` against
+`[S¹] × [Y]_ℝ`; identifying this class with the fundamental class of `S¹ × Y` is not done here. -/
 theorem sigNeg_singularCupPairing_sphere_fundamentalClassOver (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k
       (𝟙_ (ModuleCat k)) (p + (d + 1)))]
