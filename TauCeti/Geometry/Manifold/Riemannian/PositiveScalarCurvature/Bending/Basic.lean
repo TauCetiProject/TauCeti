@@ -67,6 +67,8 @@ far the curve bends.
   larger lower bound, a smaller error constant and a larger tube radius.
 * `TauCeti.IsGromovLawsonBendingCurve.exists_radius_eq`: a bending curve ends in a vertical line
   `r = ρ` with `0 < ρ < r₀`.
+* `TauCeti.IsGromovLawsonBendingCurve.radius_of_nonpos`: a unit speed bending curve has radius
+  `r u = r 0 - u` along its initial horizontal part.
 
 ## References
 
@@ -176,6 +178,18 @@ theorem exists_radius_eq (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 
     (fun x hx ↦ ?_) u ⟨hu, le_rfl⟩
   have hx : θ x = π / 2 := hb x ((le_max_left b 0).trans hx.1)
   simpa [hx] using (hγ.hasDerivAt_radius x).hasDerivWithinAt
+
+/-- On the initial horizontal part `u ≤ 0` of a bending curve with unit speed, the radius is
+`r u = r 0 - u`. -/
+theorem radius_of_nonpos (hγ : IsGromovLawsonBendingCurve q R₀ C r₀ r h θ 1) {u : ℝ}
+    (hu : u ≤ 0) : r u = r 0 - u := by
+  have hd (x : ℝ) (hx : x ≤ 0) : HasDerivAt (fun u ↦ r u + u) 0 x :=
+    ((hγ.hasDerivAt_radius x).add (hasDerivAt_id' x)).congr_deriv
+      (by simp [hγ.angle_of_nonpos hx])
+  have := constant_of_has_deriv_right_zero (f := fun u ↦ r u + u)
+    (fun x hx ↦ (hd x hx.2).continuousAt.continuousWithinAt)
+    (fun x hx ↦ (hd x hx.2.le).hasDerivWithinAt) 0 ⟨hu, le_rfl⟩
+  linarith
 
 /-- A bending curve for the constants `R₀`, `C` and `r₀` is also one for a larger lower bound
 `R₀'`, a smaller error constant `C'` and a larger tube radius `r₀'`. -/
