@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Logic.Equiv.Fin.Rotate
-public import TauCeti.Data.Fin.Tuple.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Data.Fin.Basic
 
@@ -52,17 +52,15 @@ theorem finRotate_finProdFinEquiv_last {r k : ℕ} (a : Fin r) :
 
 /-- If each block is extended by the head of the next block, the entry after any position
 in that block is the entry of the original tuple at the cyclic successor of that position. -/
-theorem snoc_cons_blockHeadTailEquiv_succ {α : Type*} {r k : ℕ}
+theorem snoc_finProdFinEquiv_succ {α : Type*} {r k : ℕ}
     (u : Fin (r * (k + 1)) → α) (a : Fin r) (t : Fin (k + 1)) :
-    snoc (α := fun _ ↦ α) (cons ((blockHeadTailEquiv r k u).1 a) ((blockHeadTailEquiv r k u).2 a))
-        ((blockHeadTailEquiv r k u).1 (finRotate r a)) t.succ =
+    snoc (α := fun _ ↦ α) (fun j ↦ u (finProdFinEquiv (a, j)))
+        (u (finProdFinEquiv (finRotate r a, 0))) t.succ =
       u (finRotate (r * (k + 1)) (finProdFinEquiv (a, t))) := by
   induction t using lastCases with
   | last =>
     rw [finRotate_finProdFinEquiv_last, succ_last, snoc_last]
-    exact blockHeadTailEquiv_apply_fst u (finRotate r a)
   | cast t =>
-    rw [finRotate_finProdFinEquiv_castSucc, succ_castSucc, snoc_castSucc, cons_succ]
-    exact blockHeadTailEquiv_apply_snd u a t
+    rw [finRotate_finProdFinEquiv_castSucc, succ_castSucc, snoc_castSucc]
 
 end Fin

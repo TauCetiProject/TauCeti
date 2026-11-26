@@ -9,6 +9,8 @@ public import TauCeti.Combinatorics.TraceWord.Counting
 public import TauCeti.Data.Fin.Sum
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.Data.Fintype.Sum
+import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Fin.Rotate
 
 /-!
 # Vertex and edge counts of bipartite trace words
@@ -189,6 +191,26 @@ theorem bipartiteNonbacktracking_iff {r k : ℕ} (u : Fin (r * (k + 1)) → α)
       ∀ t, u t ≠ u (finRotate _ t) ∧ (t.modNat ≠ Fin.last k → v t ≠ v (finRotate _ t)) :=
   (Iff.rfl)
 
+/-- A cyclic bipartite word is non-backtracking in blocks exactly when adjacent rows differ in
+each block extended by the next block's head, and adjacent columns differ within each block. -/
+theorem bipartiteNonbacktracking_iff_blocks {r k : ℕ} (u : Fin (r * (k + 1)) → α)
+    (v : Fin (r * (k + 1)) → β) :
+    let rows (a : Fin r) := Fin.snoc (α := fun _ ↦ α) (fun t ↦ u (finProdFinEquiv (a, t)))
+      (u (finProdFinEquiv (finRotate r a, 0)))
+    BipartiteNonbacktracking k u v ↔ ∀ a : Fin r,
+      (∀ t : Fin (k + 1), rows a t.castSucc ≠ rows a t.succ) ∧
+      (∀ t : Fin k, v (finProdFinEquiv (a, t.castSucc)) ≠ v (finProdFinEquiv (a, t.succ))) := by
+  simp only [bipartiteNonbacktracking_iff, Fin.snoc_castSucc, Fin.snoc_finProdFinEquiv_succ]
+  refine ⟨fun h a ↦ ⟨fun t ↦ (h (finProdFinEquiv (a, t))).1, fun t ↦ ?_⟩, fun h t ↦ ?_⟩
+  · rw [← Fin.finRotate_finProdFinEquiv_castSucc]
+    apply (h (finProdFinEquiv (a, t.castSucc))).2
+    simpa only [Fin.modNat_finProdFinEquiv] using Fin.castSucc_ne_last t
+  · obtain ⟨⟨a, t⟩, rfl⟩ := finProdFinEquiv.surjective t
+    refine ⟨(h a).1 t, fun ht ↦ ?_⟩
+    rw [Fin.modNat_finProdFinEquiv] at ht
+    obtain ⟨j, rfl⟩ := Fin.eq_castSucc_of_ne_last ht
+    simpa only [Fin.finRotate_finProdFinEquiv_castSucc] using (h a).2 j
+
 /-- Interleave the row and column vertices and append the final row vertex. -/
 def bipartitePath (u : Fin (k + 1) → α) (v : Fin k → β) :
     Fin (2 * k + 1) → α ⊕ β :=
@@ -241,27 +263,43 @@ theorem bipartitePath_injective :
   · simpa only [bipartitePath_even, Sum.inl.injEq] using congrFun huv ⟨2 * t, by omega⟩
   · simpa only [bipartitePath_odd, Sum.inr.injEq] using congrFun huv ⟨2 * t + 1, by omega⟩
 
-/-- A word with row vertices at the even positions and column vertices at the odd positions
-is represented by a bipartite path. -/
-theorem exists_eq_bipartitePath (w : Fin (2 * k + 1) → α ⊕ β)
-    (h : ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0)) :
-    ∃ (u : Fin (k + 1) → α) (v : Fin k → β), bipartitePath u v = w := by
-  let u (t : Fin (k + 1)) := (w ⟨2 * t, by omega⟩).getLeft (by
-    rw [h]
-    exact decide_eq_true (by simp))
-  let v (t : Fin k) := (w ⟨2 * t + 1, by omega⟩).getRight (by
-    rw [← Sum.not_isLeft, h]
-    simp)
-  refine ⟨u, v, funext fun t ↦ ?_⟩
-  by_cases ht : (t : ℕ) % 2 = 0
-  · let j : Fin (k + 1) := ⟨t / 2, by omega⟩
-    have hEq : t = ⟨2 * j, by omega⟩ := Fin.ext (by dsimp [j]; omega)
-    rw [hEq, bipartitePath_even]
-    exact Sum.inl_getLeft _ _
-  · let j : Fin k := ⟨t / 2, by omega⟩
-    have hEq : t = ⟨2 * j + 1, by omega⟩ := Fin.ext (by dsimp [j]; omega)
-    rw [hEq, bipartitePath_odd]
-    exact Sum.inr_getRight _ _
+/-- Two bipartite paths are equal exactly when their row and column tuples agree. -/
+@[simp]
+theorem bipartitePath_inj {u u' : Fin (k + 1) → α} {v v' : Fin k → β} :
+    bipartitePath u v = bipartitePath u' v' ↔ u = u' ∧ v = v' :=
+  ⟨fun h ↦ Prod.mk.inj (bipartitePath_injective (a₁ := (u, v)) (a₂ := (u', v')) h),
+    by rintro ⟨rfl, rfl⟩; rfl⟩
+
+/-- A word is a bipartite path exactly when it has row vertices at the even positions and
+column vertices at the odd positions. -/
+theorem exists_eq_bipartitePath_iff (w : Fin (2 * k + 1) → α ⊕ β) :
+    (∃ (u : Fin (k + 1) → α) (v : Fin k → β), bipartitePath u v = w) ↔
+      ∀ t, (w t).isLeft = decide ((t : ℕ) % 2 = 0) := by
+  constructor
+  · rintro ⟨u, v, rfl⟩ t
+    induction t using Fin.lastCases with
+    | last => simp
+    | cast t =>
+      obtain ⟨a | b, rfl⟩ := (finSumFinInterleaveEquiv k).surjective t
+      · simp [bipartitePath]
+      · simp [bipartitePath]
+  · intro h
+    let u (t : Fin (k + 1)) := (w ⟨2 * t, by omega⟩).getLeft (by
+      rw [h]
+      exact decide_eq_true (by simp))
+    let v (t : Fin k) := (w ⟨2 * t + 1, by omega⟩).getRight (by
+      rw [← Sum.not_isLeft, h]
+      simp)
+    refine ⟨u, v, funext fun t ↦ ?_⟩
+    by_cases ht : (t : ℕ) % 2 = 0
+    · let j : Fin (k + 1) := ⟨t / 2, by omega⟩
+      have hEq : t = ⟨2 * j, by omega⟩ := Fin.ext (by dsimp [j]; omega)
+      rw [hEq, bipartitePath_even]
+      exact Sum.inl_getLeft _ _
+    · let j : Fin k := ⟨t / 2, by omega⟩
+      have hEq : t = ⟨2 * j + 1, by omega⟩ := Fin.ext (by dsimp [j]; omega)
+      rw [hEq, bipartitePath_odd]
+      exact Sum.inr_getRight _ _
 
 /-- A bipartite path has no immediate reversals exactly when adjacent row vertices differ
 and adjacent column vertices differ. -/

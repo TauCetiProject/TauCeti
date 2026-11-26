@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Data.Matrix.Block
 public import TauCeti.Combinatorics.TraceWord.Bipartite.Basic
+public import TauCeti.Data.Fin.Tuple.Basic
 public import TauCeti.LinearAlgebra.Matrix.NonBacktracking
+import TauCeti.Data.Fin.Basic
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Block
 
@@ -76,15 +78,15 @@ theorem toBlocks₁₁_nonbacktrackingPow_apply (A : Matrix p n R) (B : Matrix n
       ∑ w ∈ W, P w := by
     refine sum_filter_of_ne fun w hw hn ↦ ?_
     have hi := (mem_filter.mp hw).2.1
-    exact exists_eq_bipartitePath w (isLeft_eq_of_prod_fromBlocks_ne_zero A B (by simp [hi]) hn)
+    exact (exists_eq_bipartitePath_iff w).2
+      (isLeft_eq_of_prod_fromBlocks_ne_zero A B (by simp [hi]) hn)
   rw [← hfilter]
   have hmem (uv : (Fin (k + 1) → p) × (Fin k → n)) :
       bipartitePath uv.1 uv.2 ∈ W.filter (fun w ↦ ∃ u v, bipartitePath u v = w) ↔
         uv.1 0 = i ∧ uv.1 (Fin.last k) = j ∧
           (∀ t : Fin k, uv.1 t.castSucc ≠ uv.1 t.succ) ∧
           (∀ s t : Fin k, (s : ℕ) + 1 = t → uv.2 s ≠ uv.2 t) := by
-    have hpath : ∃ u v, bipartitePath u v = bipartitePath uv.1 uv.2 := ⟨uv.1, uv.2, rfl⟩
-    simp [W, bipartitePath_nonbacktracking_iff, hpath]
+    simp [W, bipartitePath_nonbacktracking_iff]
   symm
   refine Finset.sum_nbij (fun uv ↦ bipartitePath uv.1 uv.2) (fun uv h ↦ (hmem uv).2 ?_)
     bipartitePath_injective.injOn ?_
@@ -93,5 +95,32 @@ theorem toBlocks₁₁_nonbacktrackingPow_apply (A : Matrix p n R) (B : Matrix n
   · intro w hw
     obtain ⟨u, v, rfl⟩ := (mem_filter.mp hw).2
     exact ⟨(u, v), mem_filter.mpr ⟨mem_univ _, (hmem (u, v)).1 hw⟩, rfl⟩
+
+/-- The row block entry for a positive even walk length sums over the interior row vertices
+and all column vertices. The two row endpoints are inserted by `Fin.fixedEndpointsEquiv`. -/
+theorem toBlocks₁₁_nonbacktrackingPow_apply_succ
+    (A : Matrix p n R) (B : Matrix n p R) (k : ℕ) (i j : p) :
+    let rows (u : Fin k → p) := (Fin.fixedEndpointsEquiv i j u).val
+    (nonbacktrackingPow (fromBlocks 0 A B 0) (2 * (k + 1))).toBlocks₁₁ i j =
+      ∑ uv : (Fin k → p) × (Fin (k + 1) → n) with
+          (∀ t : Fin (k + 1), rows uv.1 t.castSucc ≠ rows uv.1 t.succ) ∧
+          (∀ t : Fin k, uv.2 t.castSucc ≠ uv.2 t.succ),
+        ∏ t : Fin (k + 1), A (rows uv.1 t.castSucc) (uv.2 t) * B (uv.2 t) (rows uv.1 t.succ) := by
+  dsimp only
+  rw [toBlocks₁₁_nonbacktrackingPow_apply]
+  symm
+  let e := Fin.fixedEndpointsEquiv (k := k) i j
+  refine sum_nbij (fun uv ↦ ((e uv.1).val, uv.2)) (fun uv huv ↦ ?_)
+    (fun a _ b _ hab ↦ ?_) (fun uv huv ↦ ?_) (fun _ _ ↦ rfl)
+  · simpa [e, Fin.forall_val_add_one_eq_iff] using huv
+  · obtain ⟨hrows, hcols⟩ := Prod.mk.inj hab
+    exact Prod.ext (e.injective (Subtype.ext hrows)) hcols
+  · have h := (mem_filter.mp huv).2
+    let u := e.symm ⟨uv.1, h.1, h.2.1⟩
+    have he : (Fin.fixedEndpointsEquiv i j u).val = uv.1 :=
+      congrArg Subtype.val (e.apply_symm_apply _)
+    refine ⟨(u, uv.2), mem_filter.mpr ⟨mem_univ _, ?_⟩, Prod.ext he rfl⟩
+    rw [he]
+    exact ⟨h.2.2.1, (Fin.forall_val_add_one_eq_iff _).1 h.2.2.2⟩
 
 end Matrix
