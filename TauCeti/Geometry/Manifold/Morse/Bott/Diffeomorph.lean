@@ -38,7 +38,7 @@ submanifold of `f ∘ π` exactly when `i'` is one of `f`.
 For a smooth diffeomorphism `σ : M → M'` the global conditions of a Morse–Bott family, which
 concern the connected components of the critical set and the local finiteness of the pieces, are
 carried along too, since `σ` is a homeomorphism matching the critical sets
-(`TauCeti.criticalPoints_comp_diffeomorph`). So a family `i'` exhibits `f` as a Morse–Bott
+(`IsLocalDiffeomorph.criticalPoints_comp`). So a family `i'` exhibits `f` as a Morse–Bott
 function exactly when the family `i = σ⁻¹ ∘ i'`, with the same pieces, exhibits `f ∘ σ` as one
 (`TauCeti.isMorseBottFamily_comp_diffeomorph_iff`); then each piece keeps its index
 (`TauCeti.IsMorseBottFamily.index_comp_diffeomorph`), and the Morse–Bott counts of the two
@@ -165,7 +165,7 @@ theorem IsMorseBottFamily.comp_diffeomorph (h : IsMorseBottFamily i' f)
   have hrange (a : ι) : range (i a) = σ ⁻¹' range (i' a) := by
     rw [hi, range_comp, preimage_image_eq _ (EquivLike.injective σ)]
   have hcrit : criticalPoints I (f ∘ σ) = σ ⁻¹' criticalPoints I' f :=
-    criticalPoints_comp_diffeomorph σ (one_le_two.trans hm2)
+    σ.isLocalDiffeomorph.criticalPoints_comp (one_le_two.trans hm2)
   refine
     { contMDiff := h.contMDiff.comp (σ.contMDiff.of_le hm)
       isNondegenerateCriticalSubmanifold := fun a ↦

@@ -33,8 +33,8 @@ preimages of those of `f`, with the same nondegeneracy and indices.
   at `x` is that of `f` at `π x`.
 * `IsLocalDiffeomorphAt.ker_criticalHessian_eq_map`: at a critical point the differential of `π`
   carries the kernel of the critical Hessian of `f ∘ π` onto that of `f`.
-* `TauCeti.criticalPoints_comp_diffeomorph`: the critical set of `f ∘ σ`, for a diffeomorphism
-  `σ`, is the preimage under `σ` of that of `f`.
+* `IsLocalDiffeomorph.criticalPoints_comp`: the critical set of `f ∘ π`, for a local
+  diffeomorphism `π`, is the preimage under `π` of that of `f`.
 * `TauCeti.IsMorse.comp_isLocalDiffeomorph`: a Morse function pulls back to a Morse function along
   a smooth local diffeomorphism, for instance to every open submanifold.
 
@@ -126,22 +126,24 @@ theorem ker_criticalHessian_eq_map
 
 end IsLocalDiffeomorphAt
 
-namespace TauCeti
-
-section Diffeomorph
+namespace IsLocalDiffeomorph
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
   {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+  {π : M → M'}
 
-/-- **Critical points under a diffeomorphism.** If `σ : M → M'` is a `C^n` diffeomorphism with
-`1 ≤ n`, the critical set of `f ∘ σ` is the preimage under `σ` of the critical set of `f`. -/
-theorem criticalPoints_comp_diffeomorph (σ : M ≃ₘ^n⟮I, I'⟯ M') (hn : 1 ≤ n) {f : M' → ℝ} :
-    criticalPoints I (f ∘ σ) = σ ⁻¹' criticalPoints I' f :=
-  ext fun x ↦ (σ.isLocalDiffeomorph x).mem_criticalPoints_comp_iff hn
+/-- **Critical points under a local diffeomorphism.** If `π : M → M'` is a `C^n` local
+diffeomorphism with `1 ≤ n`, the critical set of `f ∘ π` is the preimage under `π` of the critical
+set of `f`. -/
+theorem criticalPoints_comp (hπ : IsLocalDiffeomorph I I' n π) (hn : 1 ≤ n) {f : M' → ℝ} :
+    criticalPoints I (f ∘ π) = π ⁻¹' criticalPoints I' f :=
+  ext fun x ↦ (hπ x).mem_criticalPoints_comp_iff hn
 
-end Diffeomorph
+end IsLocalDiffeomorph
+
+namespace TauCeti
 
 variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
