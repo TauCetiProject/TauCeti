@@ -131,11 +131,11 @@ theorem shiftedEntry_def {ι : Type*} (γ : ℤ) (m : ℕ) (l : ι → ℤ) (i :
 theorem shiftedEntry_injective {ι : Type*} {γ : ℤ} {m : ℕ} {l : ι → ℤ} (hl : l.Injective) :
     (shiftedEntry γ m l).Injective := fun _ _ hxy ↦ hl (by simpa [shiftedEntry_def] using hxy)
 
-/-- If `l` has parity `card ι - 1` and `card ι = m + d`, then `shiftedEntry γ m l i + d - 1` is
-even. -/
-theorem even_shiftedEntry_add_sub_one {ι : Type*} [Fintype ι] {γ : ℤ} {m d : ℕ} {l : ι → ℤ}
-    (hparity : ∀ i, Even (l i + card ι - 1)) (hd : card ι = m + d) (i : ι) :
-    Even (shiftedEntry γ m l i + d - 1) := by grind [shiftedEntry_def, hparity i]
+/-- The even character shift preserves the parity of `l i + m + d - 1` at each index. -/
+theorem even_shiftedEntry_add_sub_one {ι : Type*} {γ : ℤ} {m d : ℕ} {l : ι → ℤ} (i : ι) :
+    Even (shiftedEntry γ m l i + d - 1) ↔ Even (l i + (m : ℤ) + d - 1) := by
+  simp only [shiftedEntry_def, Int.even_iff]
+  omega
 
 /-- If `univ.image b = univ.image a ∪ doubledBlock d` with `b` injective and
 `card R = card C + d`, then the union is disjoint and `a` is injective. -/
@@ -300,13 +300,16 @@ private theorem isBlockRule_iff_isMatching_of_le (hle : card ι₁ ≤ card ι�
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · obtain ⟨hrows, hcols⟩ := exists_matched_of_entries_eq hd
       (shiftedEntry_injective h.injective_right)
-      (even_shiftedEntry_add_sub_one h.parity_right hd)
+      (fun r ↦ (even_shiftedEntry_add_sub_one r).2 (by
+        simpa only [hd, Nat.cast_add, ← add_assoc] using h.parity_right r))
       (by simpa [hd] using h.entries_of_le hle) h.sign_of_pos h.sign_of_neg
     exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
       h.gap_right, fun r ↦ by simpa [hdiff] using hrows r,
       fun c ↦ Or.inl (by simpa [hdiff] using hcols c)⟩
   · obtain ⟨hentries, hpos, hneg⟩ := entries_eq_of_exists_matched hd
-      (shiftedEntry_injective h.injective_right) (even_shiftedEntry_add_sub_one h.parity_right hd)
+      (shiftedEntry_injective h.injective_right)
+      (fun r ↦ (even_shiftedEntry_add_sub_one r).2 (by
+        simpa only [hd, Nat.cast_add, ← add_assoc] using h.parity_right r))
       (fun r ↦ by simpa [hdiff] using h.right_matched r)
     exact ⟨h.injective_left, h.injective_right, h.parity_left, h.parity_right, h.gap_left,
       h.gap_right, fun _ ↦ by simpa [hd] using hentries, fun hge ↦ by
