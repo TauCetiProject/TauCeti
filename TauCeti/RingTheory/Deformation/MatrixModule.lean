@@ -251,8 +251,7 @@ theorem exists_toLift_eq_smul (a : A.strictKernel n) :
     -- The matrix `M = a⁻¹` lies in the strict kernel, so it reduces to the identity.
     have hMij : A.augmentation (M i j) = (1 : Matrix n n k) i j := by
       have h := congrArg (fun x : GL n k ↦ x i j) (mem_strictKernel_iff.mp (a⁻¹).property)
-      rw [GeneralLinearGroup.map_apply] at h
-      exact h
+      rwa [GeneralLinearGroup.map_apply, Units.val_one] at h
     rw [← D.augmentation_repr b hb, hrepr, hMij, Matrix.one_apply, Pi.single_apply]
   obtain ⟨a', ha', h⟩ := D.exists_smul_toLift_eq hb hb'
   refine ⟨b', hb', h.symm.trans (congrArg (· • D.toLift b hb) (Subtype.ext (Units.ext ?_)))⟩
@@ -361,8 +360,9 @@ noncomputable def ofLift (ρ : Lift ρbar A) : FramedModuleDeformation ρbar A w
       congrArg Units.val (ρ.map_augmentation_apply g)
     have hv : stdReduction n A v = A.augmentation ∘ (stdBasis n A).repr v :=
       funext (stdReduction_apply n A v)
-    rw [stdReduction_apply, MonoidHom.coe_mk, OneHom.coe_mk, Matrix.repr_toLin, ← RingHom.coe_coe,
-      RingHom.map_mulVec, RingHom.coe_coe, hρ, hv]
+    simpa [stdReduction_apply, Matrix.repr_toLin, ← hρ, hv] using
+      RingHom.map_mulVec (A.augmentation : A.obj.left →+* k) (ρ g : Matrix n n A.obj.left)
+        ((stdBasis n A).repr v) i
   basis := stdBasis n A
   reduction_basis i := funext fun j ↦ by
     simp [stdReduction_apply, Finsupp.single_apply, Pi.single_apply, eq_comm]
