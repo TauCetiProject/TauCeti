@@ -63,10 +63,16 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`: membership is local on
+  inputs. A properly supported operator has order `m` exactly when, on the functions supported in
+  any given compact set, it agrees with some operator of order `m`.
 * `TauCeti.locallyFiniteSum_mem_classicalPseudodifferentialOperators`: a locally finite sum
   `ContMDiffMap.locallyFiniteSum P hP = ∑ᵢ Pᵢ` of classical pseudodifferential operators of
   order `m` is one, provided each `Pᵢ` has outputs supported in a compact set `Sᵢ` and only sees its
   input near `Sᵢ`, with `(Sᵢ)` locally finite. Near a compact set only finitely many `Pᵢ` matter.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_isCompact`: a properly supported
+  operator which agrees on every compact set with a classical pseudodifferential operator of
+  order `m` is one.
 * `TauCeti.conj_mem_classicalPseudodifferentialOperators_iff`: invariance under diffeomorphisms.
   For a diffeomorphism `Φ : N → M`, the transport `f ↦ (P (f ∘ Φ⁻¹)) ∘ Φ` of `P` to `N` is a
   classical pseudodifferential operator of order `m` exactly when `P` is one; proper support is
@@ -399,6 +405,26 @@ theorem mem_classicalPseudodifferentialOperators_of_dim_eq_zero (hn : n = 0)
     map_smul, ContMDiffMap.complex_smul_apply, Subsingleton.elim x 0]
   simp [mul_comm]
 
+/-- **Membership is decided on compactly supported inputs.** A complex-linear operator `P` is a
+classical pseudodifferential operator of order `m` exactly when it is properly supported and, for
+every compact set `K`, it agrees on the functions supported in `K` with some classical
+pseudodifferential operator `Q` of order `m`, which may depend on `K`. The chart compressions of
+`P` only evaluate it on functions supported in the compact sets `e⁻¹(supp ψ)`. -/
+theorem mem_classicalPseudodifferentialOperators_iff_forall_isCompact {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} :
+    P ∈ classicalPseudodifferentialOperators m ↔ IsProperlySupported P ∧
+      ∀ K : Set M, IsCompact K → ∃ Q ∈ classicalPseudodifferentialOperators m,
+        ∀ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯, tsupport f ⊆ K → P f = Q f := by
+  refine ⟨fun hP ↦ ⟨hP.1, fun _ _ ↦ ⟨P, hP, fun _ _ ↦ rfl⟩⟩, fun ⟨hP, h⟩ ↦ ?_⟩
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨Q, hQ, hPQ⟩ := h _ (e.isCompact_symm_image_tsupport ψ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply,
+    hPQ _ (OpenPartialHomeomorph.tsupport_complexCutoffPullback_subset he ψ _)]
+
 /-! ### Locally finite sums of pseudodifferential operators -/
 
 section LocallyFiniteSum
@@ -433,6 +459,27 @@ theorem locallyFiniteSum_mem_classicalPseudodifferentialOperators (hS : LocallyF
   rw [ContMDiffMap.locallyFiniteSum_apply_eq_sum hS hsupp hK _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 end LocallyFiniteSum
+
+/-- **The class is determined on compact sets.** A properly supported operator `P` is a classical
+pseudodifferential operator of order `m` as soon as it agrees on every compact set `K` with one:
+there is a classical pseudodifferential operator `Q` of order `m` with `P f = Q f` on `K` for
+every `f`. Indeed a chart compression of `P` only evaluates its outputs on a compact set. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_isCompact {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ Q ∈ classicalPseudodifferentialOperators m,
+      ∀ f, ∀ x ∈ K, P f x = Q f x) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨Q, hQ, hPQ⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hQ).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply]
+  by_cases hx : φ x = 0
+  · simp [hx]
+  · rw [hPQ _ _ ⟨x, subset_tsupport _ hx, rfl⟩]
 
 /-! ### Invariance under diffeomorphisms -/
 

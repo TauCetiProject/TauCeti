@@ -58,6 +58,8 @@ depends on the cutoffs only through their values at the point.
   principal symbol `0` in order `m`.
 * `TauCeti.classicalPrincipalSymbol_add_of_mem_sub_one`: adding an operator of order `m - 1`
   does not change the principal symbol of order `m`.
+* `TauCeti.classicalPrincipalSymbol_smul_of_ne_zero`: multiplying by a nonzero constant `c`
+  multiplies the principal symbol by `c`, even when `P` is not of order `m`.
 * `TauCeti.classicalPrincipalSymbol_eq_zero_iff`: conversely, the principal symbol of an operator
   of order `m` vanishes exactly when it has order `m - 1`; so two operators with the same principal
   symbol differ by an operator of order `m - 1`
@@ -602,6 +604,18 @@ theorem classicalPrincipalSymbol_add_of_mem_sub_one
     have hPQ : P + Q ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
       simpa using sub_mem h hQ'
     rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem hPQ]
+
+/-- The principal symbol of `c • P` for a nonzero constant `c` is `c` times that of `P`, whether or
+not `P` has order `m`. -/
+theorem classicalPrincipalSymbol_smul_of_ne_zero {c : ℂ} (hc : c ≠ 0) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (c • P) x ξ = c * classicalPrincipalSymbol m P x ξ := by
+  by_cases hP : P ∈ classicalPseudodifferentialOperators m
+  · exact classicalPrincipalSymbol_smul hP c x ξ
+  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
+    have hcP : c • P ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
+      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
+    rw [classicalPrincipalSymbol_of_notMem hP, classicalPrincipalSymbol_of_notMem hcP, mul_zero]
 
 /-- **The kernel of the principal symbol.** A classical pseudodifferential operator of order `m`
 has vanishing principal symbol exactly when it is a classical pseudodifferential operator of order

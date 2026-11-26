@@ -565,36 +565,16 @@ private theorem floer_restrict_receiving (hω : ω.IsNondegenerate) (hq : q ≠ 
   -- The truncation `S_{max R 0}` lies in `Σ_L`.
   obtain ⟨hTT₀, hTP, -⟩ := preimage_truncation_max_subset_plumbedSphere hq hL hLR
   -- On `S_R` the plumbed datum is the datum of the receiving pair of pants.
-  have hK {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) :
-      (fun x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) =
-        fun x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x v :=
-    funext fun x ↦ DFunLike.congr_fun
-      (plumbedPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation hq hab (by linarith)
-        (hΩT hz) x) v
-  have hD {z : ℝ × ℝ} (hz : z ∈ Ω) : ω.perturbedMFDeriv
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      ω.perturbedMFDeriv
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z := by
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hK hz 1, hK hz Complex.I]
-  refine ⟨hu.mono fun z hz ↦ hTP (hTT₀ (hΩT hz)), fun z hz ↦ hD hz ▸ hfl z (hTP (hTT₀ (hΩT hz))),
+  exact ⟨hu.mono fun z hz ↦ hTP (hTT₀ (hΩT hz)), fun z hz ↦
+    ω.perturbedMFDeriv_plumbedPerturbation_of_mem_truncation hq hab (L := L) (by linarith) u
+      (hΩT hz) ▸
+      hfl z (hTP (hTT₀ (hΩT hz))),
     (hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_truncationAt hHb
       (fun r ↦ (hHbs r).of_le (by norm_num)) (fun _ ↦ le_max_right R 0)
       (isOpen_plumbedSphere q L) (by rwa [truncationAt_const]) (hu.of_le (by norm_num))).mono_set
-      (by rw [truncationAt_const]; exact hΩT.trans hTT₀), ?_⟩
-  have hdens {z : ℝ × ℝ} (hz : z ∈ Ω) : ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation Hb (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z := by
-    rw [floerEnergyDensity_def, floerEnergyDensity_def, hD hz]
-  rw [setIntegral_congr_fun hΩ.measurableSet fun z hz ↦ hdens hz]
-  exact setIntegral_le_of_lintegral_ofReal_le hE _
+      (by rw [truncationAt_const]; exact hΩT.trans hTT₀),
+    ω.setIntegral_floerEnergyDensity_pairOfPantsPerturbation_le hq hab (L := L) (by linarith)
+      hΩ.measurableSet hΩT hE⟩
 
 omit [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- **The inserted piece.** Let `u` be a `C³` solution of the Floer equation of the plumbed

@@ -59,6 +59,9 @@ extension of scalars to a larger field is
   morphisms locally of finite type.
 * `TauCeti.AlgebraicGeometry.PureRelativeDimension.of_isPullback`: stability under base change of
   morphisms locally of finite type.
+* `TauCeti.AlgebraicGeometry.topologicalKrullDim_fiber_eq_of_pureRelativeDimension_comp`: an
+  irreducible fibre of a morphism locally of finite type that meets an open on which the morphism
+  has pure relative dimension `d` has dimension `d`.
 
 ## References
 
@@ -235,6 +238,21 @@ instance pullback_fst (f : X ⟶ Z) (g : Y ⟶ Z) [LocallyOfFiniteType g]
   .of_isPullback (IsPullback.of_hasPullback f g).flip
 
 end PureRelativeDimension
+
+/-- Let `f` be locally of finite type with irreducible fibre over `y`, and let `i` be an open
+immersion such that `i ≫ f` has pure relative dimension `d`. If the image of `i` meets the fibre
+of `f` over `y`, then that fibre has Krull dimension `d`. -/
+theorem topologicalKrullDim_fiber_eq_of_pureRelativeDimension_comp (i : Z ⟶ X) [IsOpenImmersion i]
+    (f : X ⟶ Y) [LocallyOfFiniteType f] [PureRelativeDimension d (i ≫ f)] {y : Y}
+    [IrreducibleSpace (f.fiber y)] (z : Z) (hz : f (i z) = y) :
+    topologicalKrullDim (f.fiber y) = d := by
+  have : Nonempty ↥(i ⁻¹' (f ⁻¹' {y})) := ⟨⟨z, hz⟩⟩
+  have hpure : IsPureDimensional d ↥(i ⁻¹' (f ⁻¹' {y})) := by
+    have := PureRelativeDimension.isPureDimensional_preimage (d := d) (f := i ≫ f) y
+    rwa [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp] at this
+  exact isPureDimensional_iff_topologicalKrullDim_eq.mp <|
+    hpure.of_isOpenEmbedding_of_irreducibleSpace (topologicalKrullDim_fiber_inter_eq f y)
+      (isOpenEmbedding_fiber i f y)
 
 /-- A morphism locally of finite type has pure relative dimension `d` exactly when its
 restrictions to the members of an open cover of the source do. -/

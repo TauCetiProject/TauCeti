@@ -135,15 +135,9 @@ theorem isClassicalElliptic_add_iff (hQ : Q ∈ classicalPseudodifferentialOpera
 /-- Multiplying by a nonzero complex number does not change ellipticity at a point. -/
 @[simp]
 theorem isClassicalEllipticAt_smul_iff {c : ℂ} (hc : c ≠ 0) {x : M} :
-    IsClassicalEllipticAt m (c • P) x ↔ IsClassicalEllipticAt m P x := by
-  by_cases hP : P ∈ classicalPseudodifferentialOperators m
-  · refine forall₂_congr fun ξ _ ↦ ?_
-    rw [classicalPrincipalSymbol_smul hP, mul_ne_zero_iff, and_iff_right hc]
-  · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
-    have hcP : c • P ∉ classicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
-    simp [isClassicalEllipticAt_iff, classicalPrincipalSymbol_of_notMem hP,
-      classicalPrincipalSymbol_of_notMem hcP]
+    IsClassicalEllipticAt m (c • P) x ↔ IsClassicalEllipticAt m P x :=
+  forall₂_congr fun ξ _ ↦ by
+    rw [classicalPrincipalSymbol_smul_of_ne_zero hc, mul_ne_zero_iff, and_iff_right hc]
 
 /-- Multiplying by a nonzero complex number does not change ellipticity. -/
 @[simp]

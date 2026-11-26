@@ -33,6 +33,8 @@ meromorphic order to every point of `closedBall c R`.
   forces meromorphic order exactly `-1`.
 * `Filter.BoundedAtFilter.meromorphicOrderAt_nonneg`: boundedness on a punctured neighbourhood
   forces nonnegative meromorphic order.
+* `exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero`: a negative meromorphic order is `-(m + 1)`
+  for some `m : ℕ`.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
   set rules out infinite order throughout the set.
 * `AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero`: an analytic function at `x` has positive
@@ -162,6 +164,15 @@ theorem _root_.Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
     (tendsto_norm_atTop_iff_cobounded.mpr
       (tendsto_cobounded_of_meromorphicOrderAt_neg (not_le.mp hlt)))
     ((Asymptotics.isBigO_one_iff (F := ℝ)).mp hbdd)
+
+/-- A negative meromorphic order is `-(m + 1)` for some `m : ℕ`: this is the form of the pole
+order taken by `Contour.exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ`. -/
+theorem exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero (h : meromorphicOrderAt g x < 0) :
+    ∃ m : ℕ, meromorphicOrderAt g x = (-(↑(m + 1) : ℤ) : WithTop ℤ) := by
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp h.ne_top
+  have hn' : n < 0 := WithTop.coe_lt_coe.mp (hn ▸ h)
+  obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hn'
+  exact ⟨m, by simpa [Int.negSucc_eq] using hn.symm⟩
 
 end Bounded
 

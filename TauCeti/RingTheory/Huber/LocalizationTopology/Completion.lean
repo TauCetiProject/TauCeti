@@ -51,6 +51,8 @@ complete Hausdorff targets.
   concrete `D`, `J` and `locIdealImage`.
 * `toCompletionLoc_sub_mem_completionIdealImage`: an approximation of a point of `A⟨T/s⟩` from `Aₛ`
   can be corrected by an element of `locIdealImage` to one from `A`.
+* `map_divBy_mul_toCompletionLoc` and `map_divBy_eq_iff`: clearing and characterising the image
+  of a distinguished fraction `t/s` under a multiplicative or monoid homomorphism out of `A⟨T/s⟩`.
 * `continuous_toCompletionLoc`: the structure map `A → A⟨T/s⟩` is continuous.
 * `isOpen_map_toCompletionLoc`: the structure map carries open ideals to ideals generating open
   ideals.
@@ -60,6 +62,8 @@ complete Hausdorff targets.
   denominator becomes a pseudouniformiser, so the completed localization is Tate.
 * `isTateRing_completion_locTopology_of_isTateRing`: over a Tate base the completed localization
   is Tate for every denominator.
+* `subsingleton_completion_locTopology_of_eq_zero`: when the denominator is zero, the completed
+  localization is trivial (`Subsingleton`).
 * `existsUnique_continuous_ringHom_completion_locTopology_of_isBounded_submonoidClosure`: the
   universal property, for complete Hausdorff targets and an arbitrary numerator set.
 * `existsUnique_continuous_ringHom_completion_locTopology`: its form for a finite numerator set,
@@ -263,6 +267,47 @@ theorem toCompletionLoc_apply [IsTopologicalRing A] (P : PairOfDefinition A) (T 
     letI := isUniformAddGroup_locUniformSpace P T s S hden
     letI := isTopologicalRing_locUniformSpace P T s S hden
     toCompletionLoc P T s S hden a = (algebraMap A S a : UniformSpace.Completion S) := (rfl)
+
+/-- Any multiplicative homomorphism out of `A⟨T/s⟩` sends the cleared fraction `(t/s) · s` to the
+image of `t`. -/
+theorem map_divBy_mul_toCompletionLoc [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A)
+    (s : A) (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (t : A) {B F : Type*} [Mul B] :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ [FunLike F (UniformSpace.Completion S) B] [MulHomClass F (UniformSpace.Completion S) B]
+      (φ : F),
+      φ ((divBy t s : S) : UniformSpace.Completion S) * φ (toCompletionLoc P T s S hden s) =
+        φ (toCompletionLoc P T s S hden t) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro _ _ φ
+  rw [← map_mul, toCompletionLoc_apply, toCompletionLoc_apply, ← UniformSpace.Completion.coe_mul,
+    divBy_mul_algebraMap]
+
+/-- Characterisation of the image of the distinguished fraction `t/s` under a monoid homomorphism
+out of `A⟨T/s⟩`: since `s` maps to a unit, `φ(t/s) = y` iff `y · φ(s) = φ(t)`. -/
+theorem map_divBy_eq_iff [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A) (s : A)
+    (S : Type*) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) (t : A) {B F : Type*} [Monoid B] :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ [FunLike F (UniformSpace.Completion S) B] [MonoidHomClass F (UniformSpace.Completion S) B]
+      (φ : F) (y : B),
+      φ ((divBy t s : S) : UniformSpace.Completion S) = y ↔
+        y * φ (toCompletionLoc P T s S hden s) = φ (toCompletionLoc P T s S hden t) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro _ _ φ y
+  have hu : IsUnit (φ (toCompletionLoc P T s S hden s)) := by
+    rw [toCompletionLoc_apply]
+    exact ((IsLocalization.Away.algebraMap_isUnit (S := S) s).map
+      UniformSpace.Completion.coeRingHom).map φ
+  rw [← hu.mul_left_inj, map_divBy_mul_toCompletionLoc P T s S hden t φ, eq_comm]
 
 /-- **The structure map `A → A⟨T/s⟩` carries open ideals to ideals generating open ideals.** Under
 the induced map of adic spectra, preimages of rational subsets of `Spa(A, A⁺)` are therefore
@@ -592,6 +637,22 @@ theorem isTateRing_completion_locTopology_of_isTateRing [IsTopologicalRing A] [I
   have _ := isHuberRing_completion_locTopology P T s S hden
   -- the structure map is continuous, so `IsTateRing.of_continuous` carries the pseudouniformiser
   exact IsTateRing.of_continuous (A := A) (continuous_toCompletionLoc P T s S hden)
+
+/-- If the denominator `s` is zero, the completed rational localisation `A⟨T/s⟩` is trivial
+(`Subsingleton`). -/
+theorem subsingleton_completion_locTopology_of_eq_zero [IsTopologicalRing A]
+    (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*) [CommRing S] [Algebra A S]
+    [IsLocalization.Away s S] (hden : HasDenominatorPower P T s S) (hs : s = 0) :
+    letI := locUniformSpace P T s S hden
+    Subsingleton (UniformSpace.Completion S) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ : Subsingleton S :=
+    IsLocalization.subsingleton (M := Submonoid.powers s) ⟨1, by simp [hs]⟩
+  exact subsingleton_of_zero_eq_one <| by
+    simpa only [UniformSpace.Completion.coe_zero, UniformSpace.Completion.coe_one] using
+      congrArg (fun x : S ↦ (x : UniformSpace.Completion S)) (Subsingleton.elim 0 1)
 
 /-- **Maps out of `A⟨T/s⟩` are determined on `A`.** Two continuous ring homomorphisms into a
 semiring carrying a Hausdorff topology that agree after composing with the structure map
