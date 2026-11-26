@@ -88,6 +88,17 @@ theorem isQuotientMap_restrictGaloisGroupS (S : Set (HeightOneSpectrum (𝓞 K))
   (restrictGaloisGroupS K Ω S).continuous.isClosedMap.isQuotientMap
     (restrictGaloisGroupS K Ω S).continuous (restrictGaloisGroupS_surjective K Ω S)
 
+private theorem restrictNormalHom_inclusion_comp_restrictGaloisGroupS
+    {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
+    (IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom.comp
+      (restrictGaloisGroupS K Ω T).toMonoidHom = (restrictGaloisGroupS K Ω S).toMonoidHom := by
+  ext σ x
+  have h1 := congrArg Subtype.val
+    ((IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom_commutes
+      (restrictGaloisGroupS K Ω T σ) x)
+  exact h1.trans ((restrictGaloisGroupS_apply K Ω T σ _).trans
+    (restrictGaloisGroupS_apply K Ω S σ x).symm)
+
 /-- **Functoriality of `G_{K,S}` in `S`.** For `S ⊆ T`, restricting from `K_T` to `K_S` gives a
 continuous group homomorphism `G_{K,T} →ₜ* G_{K,S}`. -/
 def galoisGroupSMap {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
@@ -95,21 +106,8 @@ def galoisGroupSMap {S T : Set (HeightOneSpectrum (𝓞 K))} (h : S ⊆ T) :
   toMonoidHom := (IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom
   continuous_toFun := by
     refine (isQuotientMap_restrictGaloisGroupS K Ω T).continuous_iff.2 ?_
-    have hcomp :
-        ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
-          restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S := by
-      funext σ
-      ext x
-      rw [Function.comp_apply, restrictGaloisGroupS_apply]
-      exact (congrArg Subtype.val
-        ((IntermediateField.inclusion (maxUnramifiedOutside_mono h)).restrictNormalHom_commutes
-          (restrictGaloisGroupS K Ω T σ) x)).trans (restrictGaloisGroupS_apply K Ω T σ _)
-    -- `ContinuousMonoidHom` evaluates through `toMonoidHom.toFun`.
-    change Continuous
-      ((⇑(IntermediateField.inclusion (maxUnramifiedOutside_mono (Ω := Ω) h)).restrictNormalHom) ∘
-        restrictGaloisGroupS K Ω T)
-    rw [hcomp]
-    exact (restrictGaloisGroupS K Ω S).continuous
+    convert (restrictGaloisGroupS K Ω S).continuous using 1
+    exact funext (DFunLike.congr_fun (restrictNormalHom_inclusion_comp_restrictGaloisGroupS K Ω h))
 
 /-- The transition map `G_{K,T} → G_{K,S}` acts on `K_S` by applying the element of `G_{K,T}`. -/
 @[simp]
@@ -130,9 +128,9 @@ to `G_{K,S}`. -/
 @[simp]
 theorem galoisGroupSMap_comp_restrictGaloisGroupS {S T : Set (HeightOneSpectrum (𝓞 K))}
     (h : S ⊆ T) :
-    (galoisGroupSMap K Ω h).comp (restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S := by
-  ext σ x
-  simp
+    (galoisGroupSMap K Ω h).comp (restrictGaloisGroupS K Ω T) = restrictGaloisGroupS K Ω S :=
+  ContinuousMonoidHom.ext fun σ ↦
+    DFunLike.congr_fun (restrictNormalHom_inclusion_comp_restrictGaloisGroupS K Ω h) σ
 
 /-- The transition map for `S ⊆ S` is the identity homomorphism. -/
 @[simp]
