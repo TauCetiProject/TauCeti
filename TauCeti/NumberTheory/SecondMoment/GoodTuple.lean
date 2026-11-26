@@ -114,7 +114,7 @@ private lemma prod_ncard_le_ncard_isGoodTuple_add (M r : ℕ) :
   classical
   have hA (w : ι) : {f : (K w)[X] | f.natDegree = r ∧ IsAllowedLabel M f}.Finite :=
     (finite_setOf_monic_natDegree_eq (K w) r).subset fun _ hf ↦
-      ⟨(isLabel_iff.mp (isAllowedLabel_iff.mp hf.2).1).1, hf.1⟩
+      ⟨hf.2.monic, hf.1⟩
   set sA : ∀ w, Finset (K w)[X] := fun w ↦ (hA w).toFinset
   set sB : ∀ w, Finset (K w)[X] := fun w ↦ (sA w).filter fun f ↦ ¬f.IsPrimitivePolynomial
   have hgood : {c : ∀ w, (K w)[X] | (∀ w, (c w).natDegree = r) ∧ IsGoodTuple M c} =
@@ -136,14 +136,17 @@ private lemma prod_ncard_le_ncard_isGoodTuple_add (M r : ℕ) :
     refine Set.ncard_le_ncard (fun f hf ↦ ?_)
       ((finite_setOf_monic_natDegree_eq (K w) r).subset fun _ hf ↦ ⟨hf.1, hf.2.1⟩)
     simp only [sB, sA, Finset.coe_filter, Set.Finite.mem_toFinset] at hf
-    exact ⟨(isLabel_iff.mp (isAllowedLabel_iff.mp hf.1.2).1).1, hf.1.1, hf.2⟩
+    exact ⟨hf.1.2.monic, hf.1.1, hf.2⟩
   rw [hgood, Set.ncard_coe_finset]
   have hA' : ∏ w, {f : (K w)[X] | f.natDegree = r ∧ IsAllowedLabel M f}.ncard =
       ∏ w, (sA w).card :=
     Finset.prod_congr rfl fun w _ ↦ Set.ncard_eq_toFinset_card _ (hA w)
-  rw [← Nat.cast_prod, hA', ← hcard, Nat.cast_add, Fintype.card_piFinset, Nat.cast_prod]
-  gcongr with w
-  exact_mod_cast hB w
+  have hcount : ∏ w, {f : (K w)[X] | f.natDegree = r ∧ IsAllowedLabel M f}.ncard ≤
+      (Fintype.piFinset sA \ Fintype.piFinset sB).card +
+        ∏ w, {f : (K w)[X] | f.Monic ∧ f.natDegree = r ∧ ¬f.IsPrimitivePolynomial}.ncard := by
+    rw [hA', ← hcard, Fintype.card_piFinset]
+    exact Nat.add_le_add_left (Finset.prod_le_prod fun w _ ↦ hB w) _
+  exact_mod_cast hcount
 
 /-- The weight `(1 - r / q) / q ^ r` is nonnegative when `(1 + M + 2r) / q ≤ 1`. -/
 private lemma weight_nonneg {q : ℝ} {M r : ℕ} (hq : 0 < q) (h : (1 + M + 2 * r) / q ≤ 1) :

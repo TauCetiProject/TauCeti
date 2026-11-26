@@ -269,27 +269,6 @@ theorem totient_le_mul_ncard_isPrimitivePolynomial (r : ℕ) :
     φ (Nat.card K ^ r - 1) ≤ r * {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.ncard :=
   (totient_eq_mul_ncard_isPrimitivePolynomial r).le
 
-/-- The monic polynomials of degree `r` are the primitive polynomials of degree `r` and the
-others. -/
-private lemma ncard_isPrimitivePolynomial_add (r : ℕ) :
-    {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.ncard +
-      {p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial}.ncard =
-        Nat.card K ^ r := by
-  have hdisj : Disjoint {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}
-      {p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial} :=
-    Set.disjoint_left.mpr fun _ hp hp' ↦ hp'.2.2 hp.1
-  have hP : {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.Finite :=
-    (finite_setOf_monic_natDegree_eq K r).subset fun _ hp ↦ ⟨hp.1.monic, hp.2⟩
-  have hN : {p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial}.Finite :=
-    (finite_setOf_monic_natDegree_eq K r).subset fun _ hp ↦ ⟨hp.1, hp.2.1⟩
-  rw [← ncard_setOf_monic_natDegree_eq K r, ← Set.ncard_union_eq hdisj hP hN]
-  congr 1
-  ext p
-  simp only [Set.mem_union, Set.mem_ofPred_eq]
-  refine ⟨?_, fun ⟨hm, hr⟩ ↦ (em p.IsPrimitivePolynomial).imp (⟨·, hr⟩) (⟨hm, hr, ·⟩)⟩
-  rintro (⟨hp, hr⟩ | ⟨hm, hr, -⟩)
-  exacts [⟨hp.monic, hr⟩, ⟨hm, hr⟩]
-
 /-- **Few monic polynomials are not primitive.** Over a finite field with `q` elements, the monic
 polynomials of degree `r` that are not primitive make up at most a share
 `exp(-1 / (2r (2r log q + 1)))` of all `q ^ r` monic polynomials of degree `r`. This combines
@@ -302,7 +281,14 @@ theorem ncard_monic_not_isPrimitivePolynomial_div_le_exp (r : ℕ) :
   set P := {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r}.ncard
   set N := {p : K[X] | p.Monic ∧ p.natDegree = r ∧ ¬p.IsPrimitivePolynomial}.ncard
   have hPN : (P : ℝ) + N = (Nat.card K : ℝ) ^ r := by
-    exact_mod_cast ncard_isPrimitivePolynomial_add (K := K) r
+    have := ncard_monic_pred_add_ncard_monic_not_pred K r IsPrimitivePolynomial
+      (fun _ hp ↦ hp.monic)
+    have hset : {p : K[X] | p.natDegree = r ∧ p.IsPrimitivePolynomial} =
+        {p : K[X] | p.IsPrimitivePolynomial ∧ p.natDegree = r} := by
+      ext p
+      exact and_comm
+    rw [hset] at this
+    exact_mod_cast this
   have hφ : (φ (Nat.card K ^ r - 1) : ℝ) ≤ r * P := by
     exact_mod_cast totient_le_mul_ncard_isPrimitivePolynomial r
   have hqr : (0 : ℝ) < (Nat.card K : ℝ) ^ r := pow_pos (Nat.cast_pos.mpr Nat.card_pos) r
