@@ -27,6 +27,12 @@ whose diagonal entries `Σₖ Rₖᵢ⋆Rₖᵢ` vanish has `R = 0`. It is lower
 (`LowerSemicontinuousOn.matrixTrace`), and it is additive over the diagonal blocks of a block
 matrix (`TauCeti.matrixTrace_fromBlocks`).
 
+For a unitary `u ∈ M_n(ℂ)`, conjugation `x ↦ u x u⋆` of `M_n(B)` is the compression
+`CStarMatrix.compress u u` (for nonunital `B` the scalar matrices are not elements of `M_n(B)`),
+and `τ_n(u x u⋆) = τ_n(x)` for `x ∈ M_n(B)₊` (`TauCeti.IsTrace.matrixTrace_compress_self`):
+writing `x = R⋆R` and `z = R u⋆`, we have `z⋆z = u x u⋆` and `zz⋆ = RR⋆`, so the trace identity
+of `τ_n` gives `τ_n(u x u⋆) = τ_n(RR⋆) = τ_n(R⋆R)`.
+
 ## Main definitions
 
 * `TauCeti.matrixTrace`: the amplification `τ_n(x) = Σᵢ τ(xᵢᵢ)`.
@@ -35,6 +41,7 @@ matrix (`TauCeti.matrixTrace_fromBlocks`).
 
 * `TauCeti.IsTrace.isTrace_matrixTrace`: `τ_n` is a trace.
 * `TauCeti.IsTrace.mem_sqIntegrable_matrixTrace_iff`: `𝔫_{τ_n} = M_n(𝔫_τ)`.
+* `TauCeti.IsTrace.matrixTrace_compress_self`: `τ_n(u x u⋆) = τ_n(x)` for unitary scalar `u`.
 * `TauCeti.IsFaithful.matrixTrace`: `τ_n` is faithful when `τ` is.
 * `LowerSemicontinuousOn.matrixTrace`: `τ_n` is lower semicontinuous when `τ` is.
 * `TauCeti.matrixTrace_fromBlocks`: `τ_{n ⊕ m}([[x, b], [c, y]]) = τ_n(x) + τ_m(y)`.
@@ -103,6 +110,16 @@ theorem mem_sqIntegrable_matrixTrace_iff (hτ : IsTrace τ) {x : CStarMatrix n n
   simp only [mem_sqIntegrable, hτ.matrixTrace_star_mul_self, ENNReal.sum_lt_top,
     Finset.mem_univ, forall_const]
   exact forall_comm
+
+/-- **Invariance under scalar unitaries**: for a trace `τ`, a unitary `u ∈ M_n(ℂ)` and
+`x ∈ M_n(B)₊`, `τ_n(u x u⋆) = τ_n(x)`. -/
+theorem matrixTrace_compress_self [DecidableEq n] (hτ : IsTrace τ) {u : CStarMatrix n n ℂ}
+    (hu : u ∈ unitary (CStarMatrix n n ℂ)) {x : CStarMatrix n n B} (hx : 0 ≤ x) :
+    matrixTrace τ n (CStarMatrix.compress u u x) = matrixTrace τ n x := by
+  obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hx
+  rw [← CStarMatrix.star_compress_one_mul_self, hτ.isTrace_matrixTrace.map_star_mul_self,
+    CStarMatrix.compress_one_mul_star_self (Unitary.star_mul_self_of_mem hu),
+    hτ.isTrace_matrixTrace.map_star_mul_self]
 
 end IsTrace
 
