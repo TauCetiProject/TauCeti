@@ -27,9 +27,11 @@ matrix trace on `M_n(ℂ)₊` (`TauCeti.TraceExamples.matrixTrace_complexTrace_o
   (`TauCeti.TraceExamples.matrixTrace_allOnes`), while the sum of all its entries is `4`
   (`TauCeti.TraceExamples.sum_sum_allOnes`); the unitary `U = 2^{-1/2} [[1, 1], [-1, 1]]`
   (`TauCeti.TraceExamples.rotation_mem_unitary`) carries `x` to `diag(2, 0)`
-  (`TauCeti.TraceExamples.rotation_mul_allOnes_mul_star_rotation`), which has `τ₂ = 2` but whose
-  entries sum to `2` (`TauCeti.TraceExamples.sum_sum_diagTwoZero`), so the sum of all entries is
-  not unitarily invariant.
+  (`TauCeti.TraceExamples.rotation_mul_allOnes_mul_star_rotation`; `diag(2, 0)` is
+  `TauCeti.MatrixOrderExample.diagonal 2 0`), which has `τ₂ = 2`
+  (`TauCeti.TraceExamples.matrixTrace_diagonal_two_zero`) but whose entries sum to `2`
+  (`TauCeti.TraceExamples.sum_sum_diagonal_two_zero`), so the sum of all entries is not unitarily
+  invariant.
 -/
 
 public section
@@ -108,20 +110,6 @@ theorem allOnes_nonneg : 0 ≤ allOnes := by
   rw [allOnes_eq_star_topRow_mul_topRow]
   exact star_mul_self_nonneg _
 
-/-- The matrix `diag(2, 0)` of `M₂(ℂ)`. -/
-def diagTwoZero : CStarMatrix (Fin 2) (Fin 2) ℂ :=
-  CStarMatrix.ofMatrix !![2, 0; 0, 0]
-
-/-- `diag(2, 0) = [[1, 1], [0, 0]] [[1, 1], [0, 0]]⋆`. -/
-theorem diagTwoZero_eq_topRow_mul_star_topRow : diagTwoZero = topRow 1 1 * star (topRow 1 1) := by
-  rw [topRow_mul_star_topRow, diagTwoZero]
-  norm_num
-
-/-- `diag(2, 0) ≥ 0`. -/
-theorem diagTwoZero_nonneg : 0 ≤ diagTwoZero := by
-  rw [diagTwoZero_eq_topRow_mul_star_topRow]
-  exact mul_star_self_nonneg _
-
 /-- The unitary `2^{-1/2} [[1, 1], [-1, 1]]` of `M₂(ℂ)`. -/
 noncomputable def rotation : CStarMatrix (Fin 2) (Fin 2) ℂ :=
   CStarMatrix.ofMatrix !![(√2 : ℂ)⁻¹, (√2 : ℂ)⁻¹; -(√2 : ℂ)⁻¹, (√2 : ℂ)⁻¹]
@@ -143,10 +131,10 @@ theorem rotation_mem_unitary : rotation ∈ unitary (CStarMatrix (Fin 2) (Fin 2)
 
 /-- The unitary `U = 2^{-1/2} [[1, 1], [-1, 1]]` carries `[[1, 1], [1, 1]]` to `diag(2, 0)`. -/
 theorem rotation_mul_allOnes_mul_star_rotation :
-    rotation * allOnes * star rotation = diagTwoZero := by
+    rotation * allOnes * star rotation = MatrixOrderExample.diagonal 2 0 := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    norm_num [rotation, allOnes, diagTwoZero, CStarMatrix.mul_apply, CStarMatrix.star_apply,
+    norm_num [rotation, allOnes, CStarMatrix.mul_apply, CStarMatrix.star_apply,
       Fin.sum_univ_two, add_mul, inv_sqrt_two_mul_self]
 
 /-- The amplified trace of `[[1, 1], [1, 1]]` is `2`. -/
@@ -155,9 +143,11 @@ theorem matrixTrace_allOnes : matrixTrace complexTrace (Fin 2) allOnes = 2 := by
   norm_num [allOnes, Matrix.trace_fin_two]
 
 /-- The amplified trace of `diag(2, 0)` is `2`. -/
-theorem matrixTrace_diagTwoZero : matrixTrace complexTrace (Fin 2) diagTwoZero = 2 := by
-  rw [matrixTrace_complexTrace_of_nonneg diagTwoZero_nonneg]
-  norm_num [diagTwoZero, Matrix.trace_fin_two]
+theorem matrixTrace_diagonal_two_zero :
+    matrixTrace complexTrace (Fin 2) (MatrixOrderExample.diagonal 2 0) = 2 := by
+  rw [matrixTrace_complexTrace_of_nonneg
+    ((MatrixOrderExample.diagonal_nonneg_iff 2 0).2 ⟨by norm_num, le_rfl⟩)]
+  norm_num [Matrix.trace_fin_two]
 
 /-- The entries of `[[1, 1], [1, 1]]` sum to `4`. -/
 theorem sum_sum_allOnes : ∑ i, ∑ j, allOnes i j = 4 := by
@@ -165,8 +155,8 @@ theorem sum_sum_allOnes : ∑ i, ∑ j, allOnes i j = 4 := by
 
 /-- The entries of `diag(2, 0)` sum to `2`, so the sum of all entries is not unitarily
 invariant. -/
-theorem sum_sum_diagTwoZero : ∑ i, ∑ j, diagTwoZero i j = 2 := by
-  simp [diagTwoZero, Fin.sum_univ_two]
+theorem sum_sum_diagonal_two_zero : ∑ i, ∑ j, MatrixOrderExample.diagonal 2 0 i j = 2 := by
+  simp [Fin.sum_univ_two]
 
 end Complex
 
