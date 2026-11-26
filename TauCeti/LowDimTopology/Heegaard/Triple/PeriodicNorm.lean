@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Group.LatticeBound
+public import TauCeti.LowDimTopology.Heegaard.PeriodicNorm
 public import TauCeti.LowDimTopology.Heegaard.Triple.SpincAdmissibility
 
 /-!
@@ -21,7 +21,9 @@ Szabó produce such triples by winding the attaching curves, which creates regio
 nonzero sum of doubly periodic domains has large positive and negative multiplicities, measured by
 a norm. This file is the part of that argument which takes place on the incidence data
 `TauCeti.HeegaardTripleRegionSystem`, in parallel with
-`TauCeti.LowDimTopology.Heegaard.PeriodicNorm` for diagrams.
+`TauCeti.LowDimTopology.Heegaard.PeriodicNorm` for diagrams; both apply the criteria for subgroups
+of `Region → ℤ` of that file, `TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le` and
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`.
 
 The norms are the sup norms `‖ν P‖` of an additive map `ν : (Region → ℤ) →+ (κ → ℤ)`, with `κ`
 finite, injective on the sums of doubly periodic domains; in the winding argument `ν P` records the
@@ -80,15 +82,8 @@ doubly periodic domains and, for some `D > 0`, every such sum `P` has a region o
 least `D * ‖ν P‖`, the triple is weakly admissible. -/
 theorem weaklyAdmissible_of_forall_exists_mul_norm_le
     (hν : ∀ P ∈ T.doublyPeriodicDomains, ν P = 0 → P = 0) {D : ℝ} (hD₀ : 0 < D)
-    (hD : ∀ P ∈ T.doublyPeriodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) : T.WeaklyAdmissible := by
-  refine weaklyAdmissible_iff.mpr fun P hP hP₀ ↦ by_contra fun hne ↦ ?_
-  have hpos : 0 < D * ‖ν P‖ :=
-    mul_pos hD₀ (zero_lt_one.trans_le (one_le_pi_norm_of_ne_zero fun h ↦ hne (hν P hP h)))
-  -- Applied to `-P`, the hypothesis gives a region on which `P` is negative.
-  obtain ⟨s, hs⟩ := hD (-P) (neg_mem hP)
-  rw [map_neg, norm_neg, Pi.neg_apply, Int.cast_neg] at hs
-  have : (0 : ℝ) ≤ P s := by exact_mod_cast hP₀ s
-  linarith
+    (hD : ∀ P ∈ T.doublyPeriodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) : T.WeaklyAdmissible :=
+  weaklyAdmissible_iff.mpr (forall_nonneg_eq_zero_of_forall_exists_mul_norm_le hν hD₀ hD)
 
 variable [Fintype PointAB] [Fintype PointBC] [Fintype PointAC] [Fintype Region]
 
@@ -132,18 +127,9 @@ theorem stronglyAdmissible_of_forall_exists_mul_norm_le
     {x : T.alphaBeta.Generator} {w : T.alphaGamma.Generator} {E : Region → ℤ} {C D : ℝ}
     (hC : ∀ P ∈ T.doublyPeriodicDomains, (T.periodicMaslovIndex χ x w E P : ℝ) ≤ C * ‖ν P‖)
     (hD : ∀ P ∈ T.doublyPeriodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) (hCD : C < 2 * D) :
-    T.StronglyAdmissible χ x w E := by
-  rw [stronglyAdmissible_iff]
-  intro P hP hne _
-  have hlt : C * ‖ν P‖ < 2 * D * ‖ν P‖ :=
-    mul_lt_mul_of_pos_right hCD
-      (zero_lt_one.trans_le (one_le_pi_norm_of_ne_zero fun h ↦ hne (hν P hP h)))
-  obtain ⟨r, hr⟩ := hD P hP
-  refine ⟨r, ?_⟩
-  have h : ((T.periodicMaslovIndex χ x w E P / 2 : ℚ) : ℝ) < ((P r : ℚ) : ℝ) := by
-    push_cast
-    linarith [hC P hP]
-  exact_mod_cast h
+    T.StronglyAdmissible χ x w E :=
+  stronglyAdmissible_iff.mpr fun P hP hne _ ↦
+    forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν hC hD hCD P hP hne
 
 /-- **Strong admissibility of a triple at every triangle domain from a detected norm.** If `ν` is
 injective on the sums of doubly periodic domains, there is a constant `C ≥ 0` such that, whenever

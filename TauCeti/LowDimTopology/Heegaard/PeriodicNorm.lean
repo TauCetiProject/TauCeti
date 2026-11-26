@@ -40,6 +40,12 @@ multiplicities of the boundary of `P` on the attaching curves.
   makes every `D > C` force strong admissibility at all generators at once
   (`TauCeti.HeegaardRegionSystem.exists_forall_stronglyAdmissible_of_forall_exists_mul_norm_le`).
 
+Both criteria hold for any subgroup `S` of `Region → ℤ` on which `ν` is injective
+(`TauCeti.forall_nonneg_eq_zero_of_forall_exists_mul_norm_le` and
+`TauCeti.forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le`), so the versions for the
+sums of doubly periodic domains of Heegaard triples in
+`TauCeti.LowDimTopology.Heegaard.Triple.PeriodicNorm` use them too.
+
 The winding estimate `AddMonoidHom.exists_forall_exists_le_add_mul_abs_and_sub_mul_abs_le`
 supplies the hypothesis on the regions created by winding, with `D` growing linearly in the
 winding amount. The construction of the wound diagram, and the identification of its periodic
@@ -59,32 +65,68 @@ open Finset
 
 namespace TauCeti
 
+section Subgroup
+
+variable {Region κ : Type*} [Fintype κ] {ν : (Region → ℤ) →+ (κ → ℤ)}
+  {S : AddSubgroup (Region → ℤ)}
+
+/-- A nonzero element of a subgroup `S` of domains has norm at least `1`, for a norm `‖ν P‖`
+injective on `S`. -/
+private theorem one_le_norm_of_mem (hν : ∀ P ∈ S, ν P = 0 → P = 0) {P : Region → ℤ}
+    (hP : P ∈ S) (hne : P ≠ 0) : 1 ≤ ‖ν P‖ :=
+  one_le_pi_norm_of_ne_zero fun h ↦ hne (hν P hP h)
+
+/-- **Nonnegative domains vanish under a detected norm.** If `ν` is injective on a subgroup `S` of
+domains and, for some `D > 0`, every `P ∈ S` has a region of multiplicity at least `D * ‖ν P‖`,
+then the only nonnegative element of `S` is `0`. This is the weak admissibility of
+`TauCeti.HeegaardRegionSystem.weaklyAdmissible_of_forall_exists_mul_norm_le` and of its version for
+Heegaard triples, for `S` the periodic domains. -/
+theorem forall_nonneg_eq_zero_of_forall_exists_mul_norm_le (hν : ∀ P ∈ S, ν P = 0 → P = 0)
+    {D : ℝ} (hD₀ : 0 < D) (hD : ∀ P ∈ S, ∃ r, D * ‖ν P‖ ≤ P r) : ∀ P ∈ S, 0 ≤ P → P = 0 := by
+  refine fun P hP hP₀ ↦ by_contra fun hne ↦ ?_
+  have hpos : 0 < D * ‖ν P‖ :=
+    mul_pos hD₀ (zero_lt_one.trans_le (one_le_norm_of_mem hν hP hne))
+  -- Applied to `-P`, the hypothesis gives a region on which `P` is negative.
+  obtain ⟨s, hs⟩ := hD (-P) (neg_mem hP)
+  rw [map_neg, norm_neg, Pi.neg_apply, Int.cast_neg] at hs
+  have : (0 : ℝ) ≤ P s := by exact_mod_cast hP₀ s
+  linarith
+
+/-- **Large coefficients under a detected norm.** If `ν` is injective on a subgroup `S` of domains,
+`m P ≤ C * ‖ν P‖` for every `P ∈ S`, and every `P ∈ S` has a region of multiplicity at least
+`D * ‖ν P‖` with `C < 2 * D`, then every nonzero `P ∈ S` has a coefficient larger than `m P / 2`.
+This is the strong admissibility of
+`TauCeti.HeegaardRegionSystem.stronglyAdmissible_of_forall_exists_mul_norm_le` and of its version
+for Heegaard triples, for `m` the Maslov index. -/
+theorem forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le
+    (hν : ∀ P ∈ S, ν P = 0 → P = 0) {m : (Region → ℤ) → ℚ} {C D : ℝ}
+    (hC : ∀ P ∈ S, (m P : ℝ) ≤ C * ‖ν P‖) (hD : ∀ P ∈ S, ∃ r, D * ‖ν P‖ ≤ P r)
+    (hCD : C < 2 * D) : ∀ P ∈ S, P ≠ 0 → ∃ r, m P / 2 < P r := by
+  intro P hP hne
+  have hlt : C * ‖ν P‖ < 2 * D * ‖ν P‖ :=
+    mul_lt_mul_of_pos_right hCD (zero_lt_one.trans_le (one_le_norm_of_mem hν hP hne))
+  obtain ⟨r, hr⟩ := hD P hP
+  refine ⟨r, ?_⟩
+  have h : ((m P / 2 : ℚ) : ℝ) < ((P r : ℚ) : ℝ) := by
+    push_cast
+    linarith [hC P hP]
+  exact_mod_cast h
+
+end Subgroup
+
 namespace HeegaardRegionSystem
 
 variable {n : ℕ} {Point Region Basepoint κ : Type*}
   {H : HeegaardRegionSystem n Point Region Basepoint} [Fintype κ]
   {ν : (Region → ℤ) →+ (κ → ℤ)}
 
-/-- A nonzero periodic domain has norm at least `1`, for a norm `‖ν P‖` injective on periodic
-domains. -/
-private theorem one_le_norm_of_mem_periodicDomains
-    (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) {P : Region → ℤ}
-    (hP : P ∈ H.periodicDomains) (hne : P ≠ 0) : 1 ≤ ‖ν P‖ :=
-  one_le_pi_norm_of_ne_zero fun h ↦ hne (hν P hP h)
-
 /-- **Weak admissibility from a detected norm.** If `ν` is injective on periodic domains and, for
 some `D > 0`, every periodic domain `P` has a region of multiplicity at least `D * ‖ν P‖`, the
 diagram is weakly admissible. -/
 theorem weaklyAdmissible_of_forall_exists_mul_norm_le
     (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) {D : ℝ} (hD₀ : 0 < D)
-    (hD : ∀ P ∈ H.periodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) : H.WeaklyAdmissible := by
-  refine weaklyAdmissible_iff.mpr fun P hP hP₀ ↦ by_contra fun hne ↦ ?_
-  have hpos : 0 < D * ‖ν P‖ :=
-    mul_pos hD₀ (zero_lt_one.trans_le (one_le_norm_of_mem_periodicDomains hν hP hne))
-  obtain ⟨s, hs⟩ := hD (-P) (H.periodicDomains.neg_mem hP)
-  rw [map_neg, norm_neg, Pi.neg_apply, Int.cast_neg] at hs
-  have : (0 : ℝ) ≤ P s := by exact_mod_cast hP₀ s
-  linarith
+    (hD : ∀ P ∈ H.periodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) : H.WeaklyAdmissible :=
+  weaklyAdmissible_iff.mpr (forall_nonneg_eq_zero_of_forall_exists_mul_norm_le hν hD₀ hD)
 
 variable [Fintype Point] [Fintype Region] [DecidableEq Region]
 
@@ -116,18 +158,9 @@ theorem stronglyAdmissible_of_forall_exists_mul_norm_le
     (hν : ∀ P ∈ H.periodicDomains, ν P = 0 → P = 0) {χ : Region → ℤ} {x : H.Generator}
     {C D : ℝ} (hC : ∀ P ∈ H.periodicDomains, (H.maslovIndex χ x x P : ℝ) ≤ C * ‖ν P‖)
     (hD : ∀ P ∈ H.periodicDomains, ∃ r, D * ‖ν P‖ ≤ P r) (hCD : C < 2 * D) :
-    H.StronglyAdmissible χ x := by
-  rw [stronglyAdmissible_iff]
-  intro P hP hne _
-  have hlt : C * ‖ν P‖ < 2 * D * ‖ν P‖ :=
-    mul_lt_mul_of_pos_right hCD
-      (zero_lt_one.trans_le (one_le_norm_of_mem_periodicDomains hν hP hne))
-  obtain ⟨r, hr⟩ := hD P hP
-  refine ⟨r, ?_⟩
-  have h : ((H.maslovIndex χ x x P / 2 : ℚ) : ℝ) < ((P r : ℚ) : ℝ) := by
-    push_cast
-    linarith [hC P hP]
-  exact_mod_cast h
+    H.StronglyAdmissible χ x :=
+  stronglyAdmissible_iff.mpr fun P hP hne _ ↦
+    forall_ne_zero_exists_half_lt_of_forall_exists_mul_norm_le hν hC hD hCD P hP hne
 
 /-- **Strong admissibility at every generator from a detected norm.** If `ν` is injective on
 periodic domains, there is a constant `C ≥ 0` such that, whenever every periodic domain `P` has a

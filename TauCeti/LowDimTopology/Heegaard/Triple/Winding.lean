@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LowDimTopology.Heegaard.Triple.SpincAdmissibility
 public import TauCeti.LowDimTopology.Heegaard.Winding
-import TauCeti.Analysis.Normed.Group.LatticeBound
 
 /-!
 # Admissibility of Heegaard triples by winding
@@ -30,7 +29,12 @@ of the attaching curves in the boundary, are wound `N` times: for each `i` there
 `AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul` then gives one `N₀`, depending only
 on `L`, the `aᵢ`, `p_i`, `q_i` and the Maslov functional, such that every wound triple with
 `N ≥ N₀` is admissible. The weak admissibility at a triangle domain only needs the `aᵢ` to detect
-the elements of Maslov index zero.
+the elements of Maslov index zero. The arguments are those for diagrams, stated in
+`TauCeti.LowDimTopology.Heegaard.Winding` for any subgroup of `Region → ℤ`
+(`TauCeti.exists_forall_nonneg_eq_zero_of_winding`,
+`TauCeti.exists_forall_exists_pos_and_neg_of_winding` and
+`TauCeti.exists_forall_exists_half_lt_of_winding`), applied here to the sums of doubly periodic
+domains.
 
 The triples are abstract incidence data (`TauCeti.HeegaardTripleRegionSystem`), and the winding
 regions and the transport `e` are hypotheses: constructing the wound triples of an actual Heegaard
@@ -78,15 +82,9 @@ theorem exists_forall_weaklyAdmissible_of_winding {a : ι → L →+ ℤ}
       (e : L →+ (Region → ℤ)), (∀ D ∈ T.doublyPeriodicDomains, ∃ P, e P = D) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → T.WeaklyAdmissible := by
-  obtain ⟨N₀, hN₀⟩ :=
-    AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q (0 : L →+ ℝ)
-  refine ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint T e he hp hq =>
-    weaklyAdmissible_iff.mpr fun D hD hD₀ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  by_contra hne
-  obtain ⟨-, r, hr⟩ := exists_pos_and_neg_of_winding (P := P) hp hq (hN₀ N hN)
-    (by rintro rfl; exact hne (map_zero e))
-  exact (hD₀ r).not_gt hr
+  obtain ⟨N₀, hN₀⟩ := exists_forall_nonneg_eq_zero_of_winding ha p q
+  exact ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint T e he hp hq =>
+    weaklyAdmissible_iff.mpr (hN₀ N hN T.doublyPeriodicDomains e he hp hq)⟩
 
 /-- **Weak admissibility of triples at a triangle domain by winding.** Let `c : L →+ ℚ` give the
 changes of the Maslov index of a triangle domain `E` by the transported sums of doubly periodic
@@ -107,21 +105,10 @@ theorem exists_forall_weaklyAdmissibleAt_of_winding (c : L →+ ℚ) {a : ι →
       (∀ P, T.periodicMaslovIndex χ x w E (e P) = c P) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → T.WeaklyAdmissibleAt χ x w E := by
-  -- Apply the estimate on the lattice `ker c` of elements of Maslov index zero.
-  let incl := c.ker.subtype
-  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul
-    (a := fun i => (a i).comp incl)
-    (fun P hP => Subtype.ext (ha P P.property (by simpa [incl] using hP)))
-    (fun i => (p i).comp incl) (fun i => (q i).comp incl)
-    (0 : c.ker →+ ℝ)
-  refine ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint _ _ _ _ T χ x w E e he hc hp hq =>
-    weaklyAdmissibleAt_def.mpr fun D hD hD0 hD₀ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  have hP : P ∈ c.ker := by rw [AddMonoidHom.mem_ker, ← hc]; exact hD0
-  exact exists_pos_and_neg_of_winding (e := e.comp incl) (P := ⟨P, hP⟩)
-    (fun i => (hp i).imp fun _ hr P => by simpa [incl] using hr P)
-    (fun i => (hq i).imp fun _ hr P => by simpa [incl] using hr P)
-    (hN₀ N hN) fun h => hD₀ (by rw [(AddSubgroup.mk_eq_zero _).mp h, map_zero])
+  obtain ⟨N₀, hN₀⟩ := exists_forall_exists_pos_and_neg_of_winding c ha p q
+  exact ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint _ _ _ _ T χ x w E e he hc hp hq =>
+    weaklyAdmissibleAt_def.mpr
+      (hN₀ N hN T.doublyPeriodicDomains (T.periodicMaslovIndex χ x w E) e he hc hp hq)⟩
 
 /-- **Strong admissibility of triples at a triangle domain by winding.** Let `c : L →+ ℚ` give the
 changes of the Maslov index of a triangle domain `E` by the transported sums of doubly periodic
@@ -142,16 +129,10 @@ theorem exists_forall_stronglyAdmissible_of_winding (c : L →+ ℚ) {a : ι →
       (∀ P, T.periodicMaslovIndex χ x w E (e P) = c P) →
       (∀ i, ∃ r, ∀ P, e P r = p i P + N * a i P) →
       (∀ i, ∃ r, ∀ P, e P r = q i P - N * a i P) → T.StronglyAdmissible χ x w E := by
-  obtain ⟨N₀, hN₀⟩ := AddMonoidHom.exists_forall_exists_lt_add_mul_or_lt_sub_mul ha p q
-    ((Rat.castHom ℝ).toAddMonoidHom.comp ((AddMonoidHom.mulLeft (2⁻¹ : ℚ)).comp c))
-  refine ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint _ _ _ _ T χ x w E e he hc hp hq =>
-    stronglyAdmissible_iff.mpr fun D hD hD₀ _ => ?_⟩
-  obtain ⟨P, rfl⟩ := he D hD
-  have hP : P ≠ 0 := by rintro rfl; exact hD₀ (map_zero e)
-  obtain ⟨r, hr⟩ := exists_lt_of_winding hp hq (hN₀ N hN P hP)
-  refine ⟨r, ?_⟩
-  rw [hc, div_eq_inv_mul, ← Rat.cast_lt (K := ℝ)]
-  simpa using hr
+  obtain ⟨N₀, hN₀⟩ := exists_forall_exists_half_lt_of_winding c ha p q
+  exact ⟨N₀, fun N hN n PointAB PointBC PointAC Region Basepoint _ _ _ _ T χ x w E e he hc hp hq =>
+    stronglyAdmissible_iff.mpr fun D hD hD₀ _ =>
+      hN₀ N hN T.doublyPeriodicDomains (T.periodicMaslovIndex χ x w E) e he hc hp hq D hD hD₀⟩
 
 end HeegaardTripleRegionSystem
 
