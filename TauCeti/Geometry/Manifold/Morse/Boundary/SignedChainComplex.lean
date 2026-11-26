@@ -30,7 +30,9 @@ function on the torus. This file proves it under the Morse–Smale condition on 
 dimension at most two with a unique minimum
 (`IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`): there the
 differential into degree `0` vanishes, and no critical point has index `3` or more. This covers the
-moment function on `ℝℙ²` and the sphere `S²` with two maxima.
+moment function on `ℝℙ²` and the sphere `S²` with two maxima. In dimension at most one it holds
+for every pseudo-gradient and every choice of orientations, since there are no critical points of
+index `2` (`signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`).
 
 With coefficients in `ZMod 2` and under the Morse–Smale condition, the integral boundary squares to
 zero and the complex is the mod-two Morse complex
@@ -54,6 +56,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `IsMorseSmale.signedMorseComplex_zmod_two`: modulo two it is the mod-two Morse complex.
 * `IsMorseSmale.signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_two`: `∂² = 0`
   in dimension at most two when the minimum is unique.
+* `signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one`: `∂² = 0` in dimension
+  at most one.
 * `isZero_homology_signedMorseComplex_of_finrank_lt`: the homology vanishes above the dimension.
 * `free_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`,
   `finrank_homology_signedMorseComplex_of_signedMorseBoundary_eq_zero`: with zero boundary, the
@@ -177,6 +181,20 @@ theorem signedMorseComplex_d_eq_zero_of_signedMorseBoundary_eq_zero
     exact signedMorseComplex_d_eq_zero_of_signedMorseBoundaryAt_eq_zero hsq j
       (signedMorseBoundaryAt_eq_zero_of_signedMorseBoundary_eq_zero h0 j)
   · exact (hX.signedMorseComplex 𝔬 hf R hsq).shape i j hij
+
+/-- **`∂² = 0` in dimension at most one.** On a manifold of dimension at most one the integral
+Morse boundary squares to zero, with coefficients in any ring and whatever the orientations and the
+pseudo-gradient: a composite of two graded boundaries starts at critical points of index at least
+`2`, and there are none. -/
+theorem signedMorseBoundary_comp_signedMorseBoundary_eq_zero_of_finrank_le_one
+    (hdim : finrank ℝ E ≤ 1) :
+    hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
+  refine (signedMorseBoundaryAt_comp_signedMorseBoundaryAt_eq_zero_iff hf).1 fun n ↦ ?_
+  have : IsEmpty {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n + 1 + 1} :=
+    ⟨fun p ↦ by
+      have := manifoldMorseIndex_le_finrank (I := 𝓘(ℝ, E)) (f := f) (x := p.val)
+      omega⟩
+  exact LinearMap.ext fun c ↦ by simp [Subsingleton.elim c 0]
 
 /-- **Integral Morse homology with zero boundary is free.** If the integral Morse boundary
 vanishes, the Morse homology in each degree is a free `R`-module. -/
