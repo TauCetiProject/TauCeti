@@ -11,6 +11,7 @@ public import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Topology.Order.Compact
 import TauCeti.Dynamics.Flow.Basic
+import TauCeti.Dynamics.Flow.Lyapunov
 
 /-!
 # Lusternik–Schnirelmann bounds for flows with a Lyapunov function
@@ -34,11 +35,8 @@ The standard example is the Lusternik–Schnirelmann count of categorical open c
 contractible space, which gives `Flow.lsCategoryCount_univ_le_encard` and the cup-length bound
 `Flow.lsCupLength_add_one_le_encard` for singular cohomology, in
 `TauCeti.Topology.Homotopy.LusternikSchnirelmann.Flow`. The axioms above do not mention local
-contractibility. This matters for compact invariant sets of flows, such as the maximal invariant
-set of an isolating block in the Conley–Zehnder proof of the Poincaré–Birkhoff theorem, which need
-not be locally contractible; there the index is `1` plus the Čech cup length of the classes
-restricted to a set, for which the four properties are the continuity and relative cup product
-properties of Čech cohomology.
+contractibility, so the bound also applies to indices, such as a Čech-cohomological index, on
+compact spaces which are not locally contractible.
 
 The proof is the Lusternik–Schnirelmann minimax argument, with the deformation lemma supplied by
 the flow and compactness (`Flow.exists_pos_forall_apply_le_sub`): given a level `c` and an open set
@@ -73,15 +71,6 @@ namespace Flow
 
 variable {α : Type*} [TopologicalSpace α] {ϕ : Flow ℝ α} {W : α → ℝ}
 
-/-- A function strictly decreasing along nonconstant orbits never increases along the flow. -/
-private lemma apply_le_of_nonneg (hW : ∀ x t, 0 < t → ϕ t x ≠ x → W (ϕ t x) < W x) (x : α)
-    {t : ℝ} (ht : 0 ≤ t) : W (ϕ t x) ≤ W x := by
-  rcases ht.eq_or_lt with rfl | ht
-  · rw [map_zero_apply]
-  by_cases h : ϕ t x = x
-  · rw [h]
-  · exact (hW x t ht h).le
-
 /-- **The deformation lemma.** Let `W` be a continuous function on a compact space which strictly
 decreases along every nonconstant orbit of the flow `ϕ`, and let `U` be an open set containing
 every rest point on the level `W = c`. Then for some `ε > 0` and `T ≥ 0` the time-`T` map of the
@@ -95,7 +84,7 @@ theorem exists_pos_forall_apply_le_sub [CompactSpace α] (hWc : Continuous W)
   -- Counterexamples `x n` for `ε = 1 / (n + 1)` and `T = n`, and a cluster point `y` of them.
   choose x hx using fun n : ℕ ↦ h (1 / (n + 1)) Nat.one_div_pos_of_nat n n.cast_nonneg
   obtain ⟨y, hy⟩ := exists_clusterPt_of_compactSpace (map x atTop)
-  have hy : MapClusterPt y atTop x := hy
+  have hy : MapClusterPt y atTop x := mapClusterPt_def.2 hy
   -- Eventually `1 / (n + 1)` is below any given `δ > 0`.
   have hsmall {δ : ℝ} (hδ : 0 < δ) : ∀ᶠ n : ℕ in atTop, 1 / ((n : ℝ) + 1) ≤ δ := by
     obtain ⟨N, hN⟩ := exists_nat_one_div_lt hδ
@@ -114,10 +103,8 @@ theorem exists_pos_forall_apply_le_sub [CompactSpace α] (hWc : Continuous W)
     (isClosed_le continuous_const (hWc.comp (ϕ.continuous_toFun t))).mem_of_mapClusterPt hy <| by
       filter_upwards [hsmall hδ, eventually_ge_atTop ⌈t⌉₊] with n hn hnt
       have htn : t ≤ n := (Nat.le_ceil t).trans (Nat.cast_le.2 hnt)
-      have hle : W (ϕ n (x n)) ≤ W (ϕ t (x n)) := by
-        rw [show (n : ℝ) = (n - t) + t by ring, map_add]
-        exact apply_le_of_nonneg hW _ (sub_nonneg.2 htn)
-      exact (by linarith [(hx n).2.2] : c - δ ≤ W (ϕ n (x n))).trans hle
+      exact (by linarith [(hx n).2.2] : c - δ ≤ W (ϕ n (x n))).trans
+        (antitone_apply_of_lt hW (x n) htn)
   -- So `W` is constant along the forward orbit of `y`, which is therefore a rest point on the
   -- level `c`, inside `U`.
   have hrest : ∀ t, ϕ t y = y := apply_eq_self_of_forall_pos fun t ht ↦ by
@@ -159,6 +146,8 @@ theorem index_sublevel_le_encard [CompactSpace α] (hWc : Continuous W)
   -- Write `g a` for the index of `{W ≤ a}` and `h a` for the number of rest points in it.
   set g : ℝ → ℕ∞ := fun a ↦ ν {x | W x ≤ a} with hg
   set h : ℝ → ℕ∞ := fun a ↦ {x | (∀ t, ϕ t x = x) ∧ W x ≤ a}.encard with hh
+  -- `set` abstracts only the lambdas, not their beta-reduced applications at `b` in the goal, so
+  -- fold those applications by hand.
   change g b ≤ h b
   by_cases hfin : {x | (∀ t, ϕ t x = x) ∧ W x ≤ b}.Finite
   swap
