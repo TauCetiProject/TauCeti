@@ -108,6 +108,24 @@ def torusChordSum :
     matchedSummand R genusOne.pair 1 ⊗[R] matchedSummand R genusOne.reverse.pair 1 :=
   ∑ i : Fin 4, ∑ j : Fin 4, if h : i < j then torusChordTensor R h else 0
 
+/-- The elementary tensor of the chord `ξ` from `i` to `j` is `a(ξ) ⊗ a(-ξ)`, where `-ξ` runs from
+`3 - j` to `3 - i`. -/
+theorem torusChordTensor_def {i j : Fin 4} (h : i < j) :
+    torusChordTensor R h = oneStrandChord R genusOne.pair h ⊗ₜ
+      oneStrandChord R genusOne.reverse.pair (Fin.rev_lt_rev.2 h) :=
+  (rfl)
+
+/-- The chord sum `∑_ξ a(ξ) ⊗ a(-ξ)` written out over the six chords
+`ρ₁, ρ₁₂, ρ₁₂₃, ρ₂, ρ₂₃, ρ₃`. -/
+theorem torusChordSum_eq :
+    torusChordSum R = torusChordTensor R (by decide : (0 : Fin 4) < 1) +
+      torusChordTensor R (by decide : (0 : Fin 4) < 2) +
+      torusChordTensor R (by decide : (0 : Fin 4) < 3) +
+      torusChordTensor R (by decide : (1 : Fin 4) < 2) +
+      torusChordTensor R (by decide : (1 : Fin 4) < 3) +
+      torusChordTensor R (by decide : (2 : Fin 4) < 3) := by
+  simp [torusChordSum, Fin.sum_univ_four, add_assoc]
+
 /-- **The identity type `DD` bimodule of the torus algebra.** It has the generator `x₀` over the
 idempotents `I({0, 2})` of `Z` and of `-Z`, and the generator `x₁` over the idempotents
 `I({1, 3})`; its structure map is `δ¹ x₀ = (ρ₁ ⊗ σ₃ + ρ₃ ⊗ σ₁ + ρ₁₂₃ ⊗ σ₁₂₃) ⊗ x₁` and
@@ -199,19 +217,6 @@ theorem torusIdentityTypeDD_coeff_eq_mul_torusChordSum_mul (x y : Fin 2) :
   -- order.
   abel
 
-/-- The coordinate of the chord from `i` to `j` on the torus algebra of a matching `M` of four
-points: its coefficient on the strand diagram `i ↦ j`. -/
-private def chordCoord (M : Fin 4 → Sym2 (Fin 4)) {i j : Fin 4} (h : i < j) :
-    Module.Dual R (matchedSummand R M 1) :=
-  ((basis R (Fin 4)).coord (single i j h.le)).comp (matchedSummand R M 1).toSubmodule.subtype
-
-/-- The coordinate of a chord on a chord is `1` if they agree and `0` otherwise. -/
-private theorem chordCoord_oneStrandChord (M : Fin 4 → Sym2 (Fin 4)) {i j i' j' : Fin 4}
-    (h : i < j) (h' : i' < j') :
-    chordCoord R M h (oneStrandChord R M h') = if i' = i ∧ j' = j then 1 else 0 := by
-  rw [chordCoord, LinearMap.comp_apply, Module.Basis.coord_apply, Submodule.coe_subtype]
-  simp [basis_repr_of, Finsupp.single_apply, single_inj]
-
 /-- Each generator has a functional which takes the value `1` on its coefficient to the other
 generator: the coordinate of `ρ₁ ⊗ σ₃` for `x₀`, and that of `ρ₂ ⊗ σ₂` for `x₁`. -/
 private theorem exists_dual_coeff_add_one_eq_one :
@@ -219,13 +224,13 @@ private theorem exists_dual_coeff_add_one_eq_one :
         (matchedSummand R genusOne.pair 1 ⊗[R] matchedSummand R genusOne.reverse.pair 1),
       ∀ a, ψ a ((torusIdentityTypeDD R).coeff a (a + 1)) = 1 := by
   refine ⟨![TensorProduct.dualDistrib R _ _
-      (chordCoord R genusOne.pair (by decide : (0 : Fin 4) < 1) ⊗ₜ
-        chordCoord R genusOne.reverse.pair (by decide : (2 : Fin 4) < 3)),
+      (oneStrandChordCoord R genusOne.pair (by decide : (0 : Fin 4) < 1) ⊗ₜ
+        oneStrandChordCoord R genusOne.reverse.pair (by decide : (2 : Fin 4) < 3)),
     TensorProduct.dualDistrib R _ _
-      (chordCoord R genusOne.pair (by decide : (1 : Fin 4) < 2) ⊗ₜ
-        chordCoord R genusOne.reverse.pair (by decide : (1 : Fin 4) < 2))], fun a ↦ ?_⟩
+      (oneStrandChordCoord R genusOne.pair (by decide : (1 : Fin 4) < 2) ⊗ₜ
+        oneStrandChordCoord R genusOne.reverse.pair (by decide : (1 : Fin 4) < 2))], fun a ↦ ?_⟩
   fin_cases a <;>
-    simp [torusChordTensor, TensorProduct.dualDistrib_apply, chordCoord_oneStrandChord]
+    simp [torusChordTensor, TensorProduct.dualDistrib_apply]
 
 -- The path through the generators is `i ↦ i mod 2`, written with the cast `ℕ → Fin 2`.
 open Fin.NatCast in
