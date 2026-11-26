@@ -609,9 +609,9 @@ bounded operator on `L²(ℂ; ℝ⁴)` such that `Q f` is a weak solution of `L_
 and let `g ∈ L²` be orthogonal to the weak kernel of `L_x` with
 `‖exp(c ρ) Q† g‖_(L²) ≤ K₀ ‖exp(c ρ) g‖_(L²)`, where `ρ(z) = √(1 + |z|²)`. If the coordinates of
 `exp(c ρ) g` are given by `v : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) Q† g` are given by some
-`u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K₁ (1 + 4 K₀) ‖v‖`. This is the step shared by the weighted
-Sobolev estimates for the adjoint of the right inverse, which differ in where `K₀` and `K₁` come
-from. -/
+`u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K₁ (1 + 4 K₀) ‖v‖`. This is the last step of the weighted
+Sobolev estimate for the adjoint of the right inverse at a plane vortex,
+`exists_norm_exp_mul_smul_adjoint_apply_le_mul_norm`. -/
 theorem exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_adjoint_apply_le (k : ℕ)
     (hx : ContDiff ℝ ∞ x)
     (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)

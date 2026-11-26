@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.EllipticEstimate
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.NormEquivalence.Real
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Weighted Sobolev estimates for the right inverse, uniformly over windows of vortices
@@ -624,16 +625,18 @@ theorem exists_forall_norm_exp_mul_smul_adjoint_apply_le_mul_norm_of_forall_mem_
   -- Sobolev bound.
   obtain ⟨K₀, hK₀⟩ := exists_forall_eLpNorm_exp_mul_smul_adjoint_apply_le_of_forall_mem_norm_le
     (μ := volume) m r hc
-  obtain ⟨M, -, hM⟩ := exists_forall_norm_iteratedFDeriv_expWeightCoeff_le c k
   obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_norm_le_mul_add_of_integral_inner_gaugeFixedOperator_eq_add k (max B M)
-  exact ⟨K₁ * (1 + 4 * K₀), by positivity,
-    fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦
-      exists_inclusionLp_ae_eq_and_norm_le_of_eLpNorm_exp_mul_smul_adjoint_apply_le k hx
-        (fun i n hn ↦ ⟨B, hxb i n hn⟩) hK₁
-        (hK₁b x _ hx (fun i n hn z ↦ (hxb i n hn z).trans (le_max_left _ _))
-          (fun i j ↦ (contDiff_expWeightCoeff c j i).neg)
-          fun i j n hn z ↦ by simpa using (hM j i n hn z).trans (le_max_right _ _))
-        hweak hg (hK₀ x D hx hsol hframe hD hDr Q hweak horth g) hv⟩
+    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_of_gaugeFixedOperator k B c
+  refine ⟨K₁ * (1 + 4 * K₀), by positivity,
+    fun x D hx hsol hframe hD hDr hxb Q hweak horth g hg v hv ↦ ?_⟩
+  obtain ⟨hm, hn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
+    (hK₀ x D hx hsol hframe hD hDr Q hweak horth g)
+    (eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hv)
+  obtain ⟨u, hu, hun⟩ := hK₁b x hx hxb _ g (Lp.memLp _) (Lp.memLp g)
+    (fun w hw hwc ↦ integral_inner_adjoint_apply_gaugeFixedOperator_eq hx.continuous hweak hg
+      (hw.of_le (by exact_mod_cast le_top)) hwc) hm v hv
+  refine ⟨u, hu, hun.trans ?_⟩
+  calc K₁ * (‖v‖ + _) ≤ K₁ * (‖v‖ + K₀ * (4 * ‖v‖)) := by gcongr
+    _ = K₁ * (1 + 4 * K₀) * ‖v‖ := by ring
 
 end TauCeti.Vortex
