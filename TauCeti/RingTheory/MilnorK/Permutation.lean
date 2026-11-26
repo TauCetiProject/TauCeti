@@ -25,15 +25,13 @@ If the unit `a` occurs twice in a list `l` of units, then moving both copies to 
 `{l} = {a, -1} · {l'}`, where `l'` is `l` with the two copies removed; the sign of the moving
 permutation is absorbed because `{a, -1}` has order dividing two. Consequently a symbol with a
 repeated entry is killed by `2`, it vanishes in characteristic two, and it is twice another
-element as soon as `-1` is a square in `F`. A consecutive repeated pair `a, a` may be replaced by
-`a, -1` in place.
+element as soon as `-1` is a square in `F`.
 
 ## Main results
 
 * `TauCeti.MilnorK.symbol_ofFn_comp_perm`: permuting the entries of a Milnor symbol multiplies it
   by the sign of the permutation.
 * `TauCeti.MilnorK.symbol_ofFn_comp_swap`: interchanging two entries negates a Milnor symbol.
-* `TauCeti.MilnorK.symbol_append_cons_cons_self`: `{…, a, a, …} = {…, a, -1, …}`.
 * `TauCeti.MilnorK.symbol_eq_ofUnit_mul_ofUnit_neg_one_mul_of_perm`: if `l` is a permutation of
   `a :: a :: l'`, then `{l} = {a, -1} · {l'}`.
 * `TauCeti.MilnorK.exists_perm_and_symbol_eq_ofUnit_mul_ofUnit_neg_one_mul_of_not_nodup`: a
@@ -84,18 +82,12 @@ private theorem symbol_eq_or_eq_neg_of_perm {l₁ l₂ : List Fˣ} (h : l₁.Per
   | trans _ _ ih₁ ih₂ =>
     rcases ih₁ with ih₁ | ih₁ <;> rcases ih₂ with ih₂ | ih₂ <;> simp [ih₁, ih₂]
 
-/-- Over a field, a consecutive repeated pair of entries `a, a` of a Milnor symbol may be replaced
-by `a, -1`. -/
-theorem symbol_append_cons_cons_self (l₁ l₂ : List Fˣ) (a : Fˣ) :
-    symbol (l₁ ++ a :: a :: l₂) = symbol (l₁ ++ a :: (-1) :: l₂) := by
-  simp only [symbol_append, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_self]
-
 /-- Over a field, if the list `l` is a permutation of `a :: a :: l'`, then the Milnor symbol of `l`
 is `{a, -1} · {l'}`. No sign appears, because `{a, -1}` has order dividing two. -/
 theorem symbol_eq_ofUnit_mul_ofUnit_neg_one_mul_of_perm {l l' : List Fˣ} {a : Fˣ}
     (h : l.Perm (a :: a :: l')) : symbol l = ofUnit a * ofUnit (-1) * symbol l' := by
   have hneg : -(ofUnit a * ofUnit (-1) * symbol l') = ofUnit a * ofUnit (-1) * symbol l' := by
-    rw [← neg_mul, ← mul_neg, neg_ofUnit_neg_one]
+    rw [← neg_mul, neg_ofUnit_mul_ofUnit_neg_one]
   rcases symbol_eq_or_eq_neg_of_perm h with h | h <;>
     rw [symbol_cons, symbol_cons, ← mul_assoc, ofUnit_mul_ofUnit_self] at h
   · exact h.symm
@@ -115,8 +107,8 @@ theorem exists_perm_and_symbol_eq_ofUnit_mul_ofUnit_neg_one_mul_of_not_nodup {l 
 `{-1, -1} ≠ 0` over `ℝ`. -/
 theorem two_nsmul_symbol_of_not_nodup {l : List Fˣ} (h : ¬l.Nodup) : 2 • symbol l = 0 := by
   obtain ⟨a, l', -, hl⟩ := exists_perm_and_symbol_eq_ofUnit_mul_ofUnit_neg_one_mul_of_not_nodup h
-  rw [hl, two_nsmul, ← add_mul, ← mul_add, ← ofUnit_mul, neg_mul_neg, mul_one, ofUnit_one,
-    mul_zero, zero_mul]
+  rw [hl, two_nsmul, ← add_mul,
+    eq_neg_iff_add_eq_zero.1 (neg_ofUnit_mul_ofUnit_neg_one a).symm, zero_mul]
 
 /-- Over a field of characteristic two, a Milnor symbol with a repeated entry vanishes. -/
 theorem symbol_eq_zero_of_not_nodup [CharP F 2] {l : List Fˣ} (h : ¬l.Nodup) : symbol l = 0 := by
