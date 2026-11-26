@@ -92,7 +92,7 @@ variable {D : Type*} [NormedAddCommGroup D] [InnerProductSpace ℝ D] [FiniteDim
   [MeasurableSpace D] [BorelSpace D]
 
 /-- The Fourier transform of a normalized bump function is bounded by one. -/
-theorem norm_fourier_normed_le (σ : ContDiffBump (0 : D)) (b : D) :
+theorem norm_fourier_normed_le {c : D} (σ : ContDiffBump c) (b : D) :
     ‖𝓕 (fun y ↦ (σ.normed volume y : ℂ)) b‖ ≤ 1 := by
   refine (Real.norm_fourier_le_integral_norm _ _).trans_eq ?_
   simp [abs_of_nonneg (σ.nonneg_normed _), σ.integral_normed]

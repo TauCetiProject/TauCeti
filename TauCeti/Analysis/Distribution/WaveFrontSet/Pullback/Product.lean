@@ -13,6 +13,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Mollifier
+import TauCeti.Analysis.InnerProductSpace.ProdL2
 
 /-!
 # The product of distributions as a pullback along the diagonal
@@ -23,8 +24,8 @@ Euclidean product `WithLp 2 (E × E)` by `Distribution.transportCLM`, is a distr
 variables. Restricting it to the diagonal `x ↦ (x, x)` is the product `S T` in the same variable
 (Hörmander I, Theorem 8.2.10 and the remark after it).
 
-The transpose of the derivative of the diagonal map sends `(ξ, η)` to `ξ + η`
-(`Distribution.adjoint_fderiv_diagonal_apply`), so its normal set consists of the covectors
+The diagonal map is the continuous linear map `WithLp.diagL2`, whose transpose sends `(ξ, η)` to
+`ξ + η` (`WithLp.adjoint_diagL2_apply`), so its normal set consists of the covectors
 `((x, x), (ξ, -ξ))` with `ξ ≠ 0`. By the wave front bound for tensor products, such a covector lies
 in `WF(S ⊗ T)` only if `(x, ξ) ∈ WF(S)` and `(x, -ξ) ∈ WF(T)`. So Hörmander's condition for the
 product, that no covector of `WF(S)` is opposite to a covector of `WF(T)` at the same point, makes
@@ -61,7 +62,6 @@ inversion again, hence the product integral above.
 
 ## Main declarations
 
-* `Distribution.adjoint_fderiv_diagonal_apply`: the transpose of the derivative of the diagonal.
 * `Distribution.adjoint_fderiv_diagonal_apply_ne_zero`: under Hörmander's condition the wave front
   set of `S ⊗ T` misses the normal set of the diagonal.
 * `Distribution.pullback_diagonal_transportCLM_tensorProduct`: the pullback of `S ⊗ T` along the
@@ -89,34 +89,7 @@ namespace Distribution
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Opens E}
 
-/-! ### The diagonal -/
-
-/-- The diagonal embedding `x ↦ (x, x)` of `E` into the Euclidean product, as a continuous linear
-map. -/
-private def diagonalCLM : E →L[ℝ] WithLp 2 (E × E) :=
-  (prodContinuousLinearEquiv 2 ℝ E E).symm.toContinuousLinearMap ∘L
-    (ContinuousLinearMap.id ℝ E).prod (ContinuousLinearMap.id ℝ E)
-
-omit [FiniteDimensional ℝ E] in
-private theorem coe_diagonalCLM : ⇑(diagonalCLM : E →L[ℝ] WithLp 2 (E × E)) =
-    fun x ↦ toLp 2 (x, x) :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] in
-private theorem fderiv_diagonal (x : E) :
-    fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x = diagonalCLM := by
-  rw [← coe_diagonalCLM]
-  exact diagonalCLM.fderiv
-
-/-- **The transpose of the diagonal.** The adjoint of the derivative of `x ↦ (x, x)` sends
-`(ξ, η)` to `ξ + η`. -/
-theorem adjoint_fderiv_diagonal_apply (x : E) (η : WithLp 2 (E × E)) :
-    (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint η = η.fst + η.snd := by
-  rw [fderiv_diagonal]
-  refine ext_inner_left ℝ fun v ↦ ?_
-  rw [ContinuousLinearMap.adjoint_inner_right, coe_diagonalCLM, prod_inner_apply,
-    inner_add_right]
-  simp
+/-! ### The diagonal is admissible -/
 
 variable {V : Opens (E × E)} {W : Opens (WithLp 2 (E × E))} {S T : 𝓓'(Ω, ℂ)}
   (hV : (V : Set (E × E)) = (Ω : Set E) ×ˢ (Ω : Set E))
@@ -132,7 +105,8 @@ theorem adjoint_fderiv_diagonal_apply_ne_zero (h : ∀ x, NoOppositeCovectorsOn 
         (S.tensorProduct T hV.subset)).waveFrontSet →
       (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint η ≠ 0 := by
   intro x _ η hη h0
-  rw [adjoint_fderiv_diagonal_apply] at h0
+  rw [← show ⇑(diagL2 ℝ E) = fun x : E ↦ toLp 2 (x, x) from funext (diagL2_apply ℝ E),
+    (diagL2 ℝ E).fderiv, adjoint_diagL2_apply] at h0
   have hη0 : η ≠ 0 := (mem_waveFrontSet_iff.1 hη).2.1
   have hsnd : η.snd = -η.fst := eq_neg_of_add_eq_zero_right h0
   have hfst : η.fst ≠ 0 := fun hf ↦ hη0 (ofLp_injective 2 (by ext <;> simp [hf, hsnd]))
@@ -190,16 +164,6 @@ private theorem fourierInv_fiberIntegralCLM_addSnd_diagonal
 
 /-! ### The limit integral -/
 
-/-- The inverse Fourier transform of a real test function `ψ`, as the function underlying the
-inverse Fourier transform of `ψ` read as a Schwartz function. -/
-private theorem fourierInv_toSchwartzMapCLM (ψ : 𝓓(Ω, ℝ)) :
-    ⇑(𝓕⁻ (toSchwartzMapCLM ℝ (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) =
-      𝓕⁻ (fun x ↦ (ψ x : ℂ)) := by
-  rw [SchwartzMap.fourierInv_coe]
-  congr 1
-  ext x
-  simp
-
 /-- **The limit integral is the product integral.** Let `χ` be a real cutoff, one on the support
 of a real test function `ψ`, over whose support `S` and `T` have no opposite covectors. Then
 `ζ ↦ 𝓕⁻ ψ (ζ.1 + ζ.2) S (χ e_ζ.1) T (χ e_ζ.2)` is integrable on `WithLp 2 (E × E)`, and its integral
@@ -224,7 +188,7 @@ private theorem integrable_and_integral_fourierInv_mul_localFourier_mul_localFou
   -- localFourier` after the measure preserving change of variables `(ζ, η) ↦ (ζ + η, ζ)`.
   have hK : Integrable K (volume.prod volume) := by
     have hH := h.integrable_mul_localFourier_mul_localFourier subset_rfl (𝓕⁻ a)
-    rw [fourierInv_toSchwartzMapCLM] at hH
+    rw [fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM] at hH
     have hmp : MeasurePreserving (fun q : E × E ↦ (q.1 + q.2, q.1)) (volume.prod volume)
         (volume.prod volume) :=
       (Measure.measurePreserving_swap).comp (measurePreserving_prod_add volume volume)
@@ -244,7 +208,7 @@ private theorem integrable_and_integral_fourierInv_mul_localFourier_mul_localFou
     have hinner : ∫ ν, b (ζ + ν) * T.localFourier χc ν = T.localFourier
         (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) (-ζ) := by
       rw [← integral_fourierInv_mul_localFourier_add T χc a (φa := postcompCLM (𝕜 := ℝ)
-        ofRealCLM ψ) (fun x ↦ ?_) (-ζ), fourierInv_toSchwartzMapCLM,
+        ofRealCLM ψ) (fun x ↦ ?_) (-ζ), fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM,
         ← integral_add_left_eq_self (μ := volume)
           (fun ν ↦ 𝓕⁻ (fun x ↦ (ψ x : ℂ)) ν * T.localFourier χc (-ζ + ν)) ζ]
       · simp [b]

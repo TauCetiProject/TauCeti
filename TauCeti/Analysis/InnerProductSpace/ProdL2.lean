@@ -19,7 +19,8 @@ For inner product spaces `E` and `F` over `𝕜` (`[RCLike 𝕜]`), `WithLp.inlL
 of operator norm `1` on nontrivial spaces (`WithLp.norm_inlL2`, `WithLp.norm_inrL2`). When `E` and
 `F` are complete, they are the Hilbert-space adjoints of the coordinate projections
 `WithLp.fstL 2 𝕜 E F` and `WithLp.sndL 2 𝕜 E F` (`WithLp.adjoint_fstL`, `WithLp.adjoint_sndL`,
-`WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`).
+`WithLp.adjoint_inlL2`, `WithLp.adjoint_inrL2`). The diagonal embedding `WithLp.diagL2 𝕜 E`,
+`x ↦ (x, x)`, has adjoint `(x, y) ↦ x + y` (`WithLp.adjoint_diagL2`).
 
 An operator on `WithLp 2 (E × F)` is a `2 × 2` block matrix of operators between the factors:
 `WithLp.blockL2 a b c d` is the operator `(x, y) ↦ (a x + b y, c x + d y)`, and every operator is
@@ -77,6 +78,13 @@ theorem isometry_inrL2 : Isometry (inrL2 𝕜 E F) :=
 @[simp] theorem norm_inrL2 [Nontrivial F] : ‖inrL2 𝕜 E F‖ = 1 :=
   (inrL2 𝕜 E F).homothety_norm fun _ => by simp
 
+/-- The diagonal embedding `x ↦ (x, x)` of `E` into the `L²` direct sum `WithLp 2 (E × E)`. -/
+def diagL2 : E →L[𝕜] WithLp 2 (E × E) :=
+  (WithLp.prodContinuousLinearEquiv 2 𝕜 E E).symm.toContinuousLinearMap.comp
+    ((ContinuousLinearMap.id 𝕜 E).prod (ContinuousLinearMap.id 𝕜 E))
+
+@[simp] theorem diagL2_apply (x : E) : diagL2 𝕜 E x = WithLp.toLp 2 (x, x) := by rfl
+
 section Adjoint
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -92,6 +100,15 @@ variable [CompleteSpace E] [CompleteSpace F]
 
 @[simp] theorem adjoint_inrL2 : (inrL2 𝕜 E F).adjoint = WithLp.sndL 2 𝕜 E F := by
   rw [← adjoint_sndL, ContinuousLinearMap.adjoint_adjoint]
+
+/-- The adjoint of the diagonal embedding is the sum of the coordinates, `(x, y) ↦ x + y`. -/
+theorem adjoint_diagL2 : (diagL2 𝕜 E).adjoint = WithLp.fstL 2 𝕜 E E + WithLp.sndL 2 𝕜 E E :=
+  ((ContinuousLinearMap.eq_adjoint_iff _ _).mpr fun _ _ => by
+    simp [WithLp.prod_inner_apply, inner_add_left]).symm
+
+@[simp] theorem adjoint_diagL2_apply (z : WithLp 2 (E × E)) :
+    (diagL2 𝕜 E).adjoint z = z.fst + z.snd := by
+  simp [adjoint_diagL2]
 
 end Adjoint
 

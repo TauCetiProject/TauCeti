@@ -222,23 +222,35 @@ theorem integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω,
     FourierTransform.fourier_fourierInv_eq]
   simp only [smul_eq_mul]
 
-/-- **Fourier inversion against a distribution.** If a cutoff `φ` is one on the support of a real
+/-- The inverse Fourier transform of a real test function `ψ`, read as a complex Schwartz function,
+is the inverse Fourier transform of `x ↦ (ψ x : ℂ)`. -/
+theorem fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM (ψ : 𝓓(Ω, ℝ)) :
+    ⇑(𝓕⁻ (toSchwartzMapCLM ℝ (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) =
+      𝓕⁻ (fun x ↦ (ψ x : ℂ)) := by
+  rw [SchwartzMap.fourierInv_coe]
+  congr 1
+  ext x
+  simp
+
+/-- **Fourier inversion against a distribution.** If a cutoff `φ` is one on the support of a
 test function `ψ`, then `T ψ = ∫ 𝓕⁻ ψ (η) T (φ e_η) dη`. -/
+theorem complexPairing_eq_integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) {φ ψ : 𝓓(Ω, ℂ)}
+    (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
+    T.complexPairing ψ = ∫ η, 𝓕⁻ (toSchwartzMapCLM ℝ ψ) η * T.localFourier φ η := by
+  rw [integral_fourierInv_mul_localFourier, cutoffTempered_apply T φ (χ := ψ)]
+  intro x
+  by_cases hx : x ∈ tsupport ψ
+  · simp [hφ x hx]
+  · simp [image_eq_zero_of_notMem_tsupport hx]
+
+/-- **Fourier inversion against a distribution, for real test functions.** If a cutoff `φ` is one
+on the support of a real test function `ψ`, then `T ψ = ∫ 𝓕⁻ ψ (η) T (φ e_η) dη`. -/
 theorem apply_eq_integral_fourierInv_mul_localFourier (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(Ω, ℂ)}
     {ψ : 𝓓(Ω, ℝ)} (hφ : ∀ x ∈ tsupport ψ, φ x = 1) :
     T ψ = ∫ η, 𝓕⁻ (fun x ↦ (ψ x : ℂ)) η * T.localFourier φ η := by
-  set ψc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM ψ
-  have hf : 𝓕⁻ (toSchwartzMapCLM ℝ ψc) = 𝓕⁻ (fun x ↦ (ψ x : ℂ)) := by
-    rw [SchwartzMap.fourierInv_coe]
-    congr 1
-    ext x
-    simp [ψc]
-  rw [← hf, integral_fourierInv_mul_localFourier, cutoffTempered_apply T φ (χ := ψc),
-    complexPairing_postcompCLM_ofRealCLM]
-  intro x
-  by_cases hx : x ∈ tsupport ψ
-  · simp [ψc, hφ x hx]
-  · simp [ψc, image_eq_zero_of_notMem_tsupport hx]
+  rw [← fourierInv_toSchwartzMapCLM_postcompCLM_ofRealCLM, ← complexPairing_postcompCLM_ofRealCLM,
+    complexPairing_eq_integral_fourierInv_mul_localFourier T fun x hx ↦
+      hφ x (tsupport_comp_subset (g := ofRealCLM) (by simp) ψ hx)]
 
 /-- **Fourier inversion for `φ T`, shifted.** Averaging the localized Fourier transform of `T`
 against the inverse Fourier transform of a Schwartz function `a` multiplies the cutoff by `a`:
