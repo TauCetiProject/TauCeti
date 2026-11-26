@@ -26,7 +26,10 @@ top cell, shifted by `n`:
 and `Hₘ(E, F; R) = 0` for `m < n`
 (`TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`). Together with the long exact
 sequence of the pair `(E, F)` these are the terms of the Wang sequence
-`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. When the total
+`⋯ ⟶ Hₖ(F) ⟶ Hₖ(E) ⟶ Hₖ₋ₙ(p⁻¹(x₁)) ⟶ Hₖ₋₁(F) ⟶ ⋯` of a fibration over a sphere. One consequence
+needs no knowledge of the connecting maps: `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` whenever `F` has no
+homology in degrees `q + n` and `q + n - 1`
+(`TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`). When the total
 space is contractible, the connecting isomorphisms of the pair turn them into
 `H~q+n-1(F; R) ≅ Hq(p⁻¹(x₁); R)`; for the path fibration of the sphere this computes the homology of
 the loop space of the sphere.
@@ -50,6 +53,8 @@ sphere, read on the sphere itself rather than on the ambient Euclidean space
 
 * `TauCeti.TopCat.sphereFibrationSingularHomologyIso`: `Hq+n(E, F; R) ≅ Hq(p⁻¹(x₁); R)`.
 * `TauCeti.TopCat.isZero_singularHomology_sphereFibration_of_lt`: `Hₘ(E, F; R) = 0` for `m < n`.
+* `TauCeti.TopCat.singularHomologySphereFibrationIsoOfIsZero`: `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)` when
+  `Hq+n(F; R)` and `Hq+n-1(F; R)` vanish.
 * `TauCeti.TopCat.reducedSingularHomologySphereFibrationIso`,
   `TauCeti.TopCat.isZero_reducedSingularHomology_sphereFibration_of_lt`: for a contractible total
   space over `Sⁿ⁺¹`, `H~q+n(F; R) ≅ Hq(p⁻¹(x₁); R)`, and `H~ₖ(F; R) = 0` for `k < n`.
@@ -227,6 +232,31 @@ theorem isZero_singularHomology_sphereFibration_of_lt {m : ℕ} (hm : m < n) :
   -- `(i : ℕ∞) + 1` and `((i + 1 : ℕ) : ℕ∞)` are defeq, so the pair is `preimageSkeletonPair p _ n`.
   exact (TopPair.singularHomologyMapIso (ModuleCat.of R R)
     (spherePreimageSkeletonPairIso h (by omega)) m).symm
+
+/-- **`Hq+n(E) ≅ Hq(p⁻¹(x₁))` when the fibre has no homology in degrees `q + n` and
+`q + n - 1`.** For a Serre fibration `p : E ⟶ Sⁿ`, `n ≥ 1`, whose fibre `F` over the pole has
+vanishing homology in the degrees `q + n` and `m = q + n - 1`, the map `Hq+n(E) ⟶ Hq+n(E, F)` of
+the long exact sequence of the pair is an isomorphism, so `Hq+n(E; R) ≅ Hq(p⁻¹(x₁); R)`, where
+`x₁` is the centre of the top cell of `Sⁿ`. -/
+def singularHomologySphereFibrationIsoOfIsZero (hn : 1 ≤ n) {q m : ℕ} (hm : m + 1 = q + n)
+    (hq : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E))))
+    (hm' : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) m).obj
+      (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {spherePolePoint h} : Set E)))) :
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) (q + n)).obj
+        (ModuleCat.of R R)).obj E ≅
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) q).obj
+        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {sphereTopCellCenter h} : Set E)) :=
+  eqToIso (singularHomologyFunctor_obj_obj_eq_toSSet_homology _ _ E) ≪≫
+    @asIso _ _ _ _ ((TopPair.ofSubset (p ⁻¹' {spherePolePoint h})).singularHomologyπ
+      (ModuleCat.of R R) (q + n)) (by
+        rw [← hm] at hq ⊢
+        -- The subspace of `TopPair.ofSubset s` is `TopCat.of s` by definition, and reduced
+        -- homology embeds into singular homology, so it vanishes with it.
+        exact TopPair.isIso_singularHomologyπ _ _
+          (hq.of_iso ((reducedSingularHomologySuccIso _ m).app _))
+          (hm'.of_mono ((reducedSingularHomologyι _ m).app _))) ≪≫
+    sphereFibrationSingularHomologyIso h hp R hn q
 
 section Contractible
 

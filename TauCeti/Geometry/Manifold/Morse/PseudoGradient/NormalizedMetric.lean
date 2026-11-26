@@ -276,8 +276,8 @@ theorem isAdaptedPseudoGradient_inv_two_smul_neg_mgradient
   mvfderiv_apply_lt_zero y hy := by
     have hg : mgradient 𝓘(ℝ, E) f y ≠ 0 := by
       rwa [ne_eq, mgradient_eq_zero_iff, mvfderiv_eq_zero_iff]
-    rw [map_smul, map_neg, mvfderiv_apply_mgradient, smul_eq_mul]
-    exact mul_neg_of_pos_of_neg (by norm_num) (neg_lt_zero.2 (real_inner_self_pos.2 hg))
+    rw [map_smul, mvfderiv_apply_neg_mgradient, smul_eq_mul]
+    exact mul_neg_of_pos_of_neg (by norm_num) (neg_lt_zero.2 (pow_pos (norm_pos_iff.2 hg) 2))
   exists_morseChart x hx := by
     obtain ⟨φ, hφ⟩ := hφ x hx
     exact ⟨φ, fun y hy ↦ hφ.coord_mfderiv_inv_two_smul_neg_mgradient hy⟩

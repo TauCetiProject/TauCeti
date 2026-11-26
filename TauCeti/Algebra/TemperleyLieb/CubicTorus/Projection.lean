@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MonoidAlgebra.Twisted.Trace
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
-public import TauCeti.Algebra.TemperleyLieb.Star
 -- Private: finite-product helpers, `ZMod 3` case split, permutation trace, and involution trace.
 import TauCeti.Data.Fin.Basic
 import TauCeti.Data.ZMod.Three
@@ -23,9 +21,8 @@ Building on `TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic`, this file supplies
   dimension formula `finrank_cubicFixed : Module.finrank ℂ (cubicFixed N) = (3 ^ N + 1) / 2`.
 * The universal property `liftSite` of `CubicTorus N` on the site unitaries `cubicSite N`,
   together with `adjoin_range_cubicSite` and `algHom_ext_cubicSite`.
-* Star-compatibility of `cubicHom m` (`cubicHom_star`), generation of `cubicFixed N` by the
-  spectral projections (`adjoin_range_cubicProjection`), and surjectivity of `cubicHom m`
-  (`cubicHom_surjective`).
+* Generation of `cubicFixed N` by the spectral projections (`adjoin_range_cubicProjection`), and
+  surjectivity of `cubicHom m` (`cubicHom_surjective`).
 
 ## Main definitions and results
 
@@ -33,7 +30,7 @@ Building on `TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic`, this file supplies
   `TauCeti.TemperleyLieb.cubicFixedBasis`, `TauCeti.TemperleyLieb.finrank_cubicFixed`.
 * `TauCeti.TemperleyLieb.liftSite`, `TauCeti.TemperleyLieb.adjoin_range_cubicSite`,
   `TauCeti.TemperleyLieb.algHom_ext_cubicSite`.
-* `TauCeti.TemperleyLieb.cubicHom_star`, `TauCeti.TemperleyLieb.adjoin_range_cubicProjection`,
+* `TauCeti.TemperleyLieb.adjoin_range_cubicProjection`,
   `TauCeti.TemperleyLieb.cubicHom_surjective`.
 -/
 
@@ -42,10 +39,6 @@ public section
 namespace TauCeti.TemperleyLieb
 
 open Multiplicative TwistedMonoidAlgebra
-
-/-- Registers `IsSelfAdjoint (Real.sqrt 3 : ℂ)` as a `Fact` for the analytic `StarRing` structure
-on `TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m`. -/
-instance : Fact (IsSelfAdjoint (Real.sqrt 3 : ℂ)) := ⟨Complex.conj_ofReal _⟩
 
 /-! ### Inversion-orbit basis and dimension of `cubicFixed N` -/
 
@@ -476,32 +469,6 @@ theorem algHom_ext_cubicSite {N : ℕ} {A : Type*} [Semiring A] [Algebra ℂ A]
     {F G : CubicTorus N →ₐ[ℂ] A} (h : ∀ j : Fin N, F (cubicSite N j) = G (cubicSite N j)) :
     F = G :=
   AlgHom.ext_of_adjoin_eq_top (adjoin_range_cubicSite N) (by rintro _ ⟨j, rfl⟩; exact h j)
-
-/-! ### Star compatibility of `cubicHom` -/
-
-/-- `cubicHom m` intertwines `star` with `cubicAdjoint (m - 1)` in `CubicTorus (m - 1)`. -/
-theorem coe_cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    (cubicHom m (star x) : CubicTorus (m - 1)) = cubicAdjoint (m - 1) (cubicHom m x) := by
-  induction x using TemperleyLieb.induction with
-  | e j =>
-    rw [star_e, coe_cubicHom_e, map_smulₛₗ, starRingEnd_apply, Complex.star_def,
-      Complex.conj_ofReal, cubicAdjoint_cubicProjection]
-  | algebraMap c =>
-    rw [← algebraMap_star_comm, AlgHom.commutes, AlgHom.commutes]
-    simp [Algebra.algebraMap_eq_smul_one]
-  | add x y hx hy =>
-    -- Propagate domain/codomain via expected type to avoid `AddHomClass` metavariable search.
-    have hadd (a b) : cubicHom m (a + b) = cubicHom m a + cubicHom m b :=
-      map_add (cubicHom m) a b
-    rw [star_add, hadd, hadd, Subalgebra.coe_add, Subalgebra.coe_add, map_add, hx, hy]
-  | mul x y hx hy =>
-    rw [star_mul, map_mul, map_mul, Subalgebra.coe_mul, Subalgebra.coe_mul, cubicAdjoint_mul,
-      hx, hy]
-
-/-- `cubicHom m` intertwines `star` with `cubicFixedAdjoint (m - 1)`. -/
-@[simp] theorem cubicHom_star {m : ℕ} (x : TemperleyLieb ℂ (Real.sqrt 3 : ℂ) m) :
-    cubicHom m (star x) = cubicFixedAdjoint (m - 1) (cubicHom m x) :=
-  Subtype.ext (by rw [coe_cubicHom_star, coe_cubicFixedAdjoint])
 
 /-! ### Generation of `cubicFixed N` by `cubicProjection N` and surjectivity of `cubicHom` -/
 

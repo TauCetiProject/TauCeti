@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Extension.Presentation.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 public import TauCeti.Topology.PureDimension
+import Mathlib.RingTheory.KrullDimension.NonZeroDivisors
 import Mathlib.RingTheory.KrullDimension.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.KrullDimension.FiniteType
@@ -44,6 +45,8 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_tensorProduct_of_field`:
   the dimension condition holds for all fibres over fields, not just over residue fields: if
   `R → K` is a ring map to a field and `K ⊗[R] S` is nontrivial, it has Krull dimension `n`.
+* `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.ringKrullDim_of_field`: over a field, a
+  nonzero standard syntomic algebra of relative dimension `n` has Krull dimension `n`.
 * `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.isPureDimensional_primeSpectrum`: over a
   field, the spectrum of a standard syntomic algebra of relative dimension `n` is pure-dimensional
   of dimension `n`, since it is a global complete intersection.
@@ -56,6 +59,8 @@ a complete intersection, is not standard syntomic of relative dimension zero.
 * `Algebra.Presentation.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le`: over a field, a
   nonzero algebra of dimension at most `n` presented with at least `n` more generators than
   relations is standard syntomic of relative dimension `n`.
+* `TauCeti.Algebra.IsStandardSyntomicOfRelativeDimension.quotient_span_singleton`: over a field, a
+  hypersurface `k[x₀, …, xₙ] ⧸ (f)` with `f ≠ 0` is standard syntomic of relative dimension `n`.
 
 ## References
 
@@ -182,6 +187,24 @@ theorem ringKrullDim_tensorProduct_of_field (K : Type w) [Field K] [Algebra R K]
   | inr hF => rw [hdim, h.ringKrullDim_fiber p]
 
 variable (n) in
+/-- Over a field `k`, a nonzero standard syntomic algebra of relative dimension `n` has Krull
+dimension `n`. -/
+theorem ringKrullDim_of_field (k : Type u) (A : Type v) [Field k] [CommRing A] [Algebra k A]
+    [hA : IsStandardSyntomicOfRelativeDimension n k A] [Nontrivial A] : ringKrullDim A = n := by
+  let e := _root_.Algebra.TensorProduct.lid k A
+  have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
+  rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, hA.ringKrullDim_tensorProduct_of_field k]
+
+variable (n) in
+/-- Over a field `k`, a standard syntomic algebra of relative dimension `n` has Krull dimension at
+most `n`; the zero algebra has dimension `⊥`. -/
+theorem ringKrullDim_le_of_field (k : Type u) (A : Type v) [Field k] [CommRing A] [Algebra k A]
+    [IsStandardSyntomicOfRelativeDimension n k A] : ringKrullDim A ≤ n := by
+  cases subsingleton_or_nontrivial A with
+  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
+  | inr _ => exact (ringKrullDim_of_field n k A).le
+
+variable (n) in
 /-- Over a field `k`, the spectrum of a standard syntomic algebra of relative dimension `n` is
 pure-dimensional of dimension `n`: every irreducible component has dimension `n`. -/
 theorem isPureDimensional_primeSpectrum (k : Type u) (A : Type v) [Field k] [CommRing A]
@@ -194,12 +217,7 @@ theorem isPureDimensional_primeSpectrum (k : Type u) (A : Type v) [Field k] [Com
   rw [← hdim]
   refine P.isPureDimensional_primeSpectrum ?_
   rw [hdim]
-  cases subsingleton_or_nontrivial A with
-  | inl _ => simp [ringKrullDim_eq_bot_of_subsingleton]
-  | inr _ =>
-    let e := _root_.Algebra.TensorProduct.lid k A
-    have : Nontrivial (k ⊗[k] A) := e.toEquiv.nontrivial
-    rw [← ringKrullDim_eq_of_ringEquiv e.toRingEquiv, hA.ringKrullDim_tensorProduct_of_field k]
+  exact ringKrullDim_le_of_field n k A
 
 include h in
 /-- Standard syntomic algebras of relative dimension `n` are invariant under isomorphism. -/
@@ -242,6 +260,26 @@ variable (n R) in
 /-- A polynomial algebra in `n` variables is standard syntomic of relative dimension `n`. -/
 instance mvPolynomial_fin : IsStandardSyntomicOfRelativeDimension n R (MvPolynomial (Fin n) R) := by
   simpa using mvPolynomial R (Fin n)
+
+/-- Over a field `k`, the hypersurface `k[x₀, …, xₙ] ⧸ (f)` cut out by a nonzero polynomial `f` is
+standard syntomic of relative dimension `n`: `f` is a nonzerodivisor, so the hypersurface has
+Krull dimension at most `n`. -/
+theorem quotient_span_singleton {k : Type u} [Field k] {f : MvPolynomial (Fin (n + 1)) k}
+    (hf : f ≠ 0) :
+    IsStandardSyntomicOfRelativeDimension n k (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f}) := by
+  let P := (_root_.Algebra.Presentation.naive (v := ![f])).ofAlgEquiv
+    (Ideal.quotientEquivAlgOfEq k (I := Ideal.span (Set.range ![f])) (J := Ideal.span {f})
+      (by simp))
+  cases subsingleton_or_nontrivial (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f}) with
+  | inl _ =>
+    -- `f` is a nonzero constant, and all fibres of the zero algebra are empty.
+    exact P.isStandardSyntomicOfRelativeDimension (by simp) fun p _ _ ↦ (not_subsingleton
+      (p.Fiber (MvPolynomial (Fin (n + 1)) k ⧸ Ideal.span {f})) inferInstance).elim
+  | inr _ =>
+    refine P.isStandardSyntomicOfRelativeDimension_of_ringKrullDim_le (by simp [add_comm]) ?_
+    rw [← ENat.WithBot.add_le_add_one_right_iff]
+    simpa [MvPolynomial.ringKrullDim_of_isNoetherianRing_of_finite, ringKrullDim_eq_zero_of_field]
+      using ringKrullDim_quotient_succ_le_of_nonZeroDivisor (mem_nonZeroDivisors_of_ne_zero hf)
 
 end IsStandardSyntomicOfRelativeDimension
 

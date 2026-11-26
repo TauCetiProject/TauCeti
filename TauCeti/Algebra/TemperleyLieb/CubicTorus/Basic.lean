@@ -50,8 +50,6 @@ in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`.
   `U_j` and the projections `p_j = 3⁻¹ (1 + U_j + U_j ^ 2)`.
 * `TauCeti.TemperleyLieb.cubicInversion` and `TauCeti.TemperleyLieb.cubicFixed`: the inversion
   `W(a) ↦ W(-a)` and its fixed subalgebra `C_N`.
-* `TauCeti.TemperleyLieb.cubicAdjoint` and `TauCeti.TemperleyLieb.cubicFixedAdjoint`: the
-  conjugate-linear reversal `†` on `G_N` and its restriction to `C_N`.
 * `TauCeti.TemperleyLieb.cubicHom`: the comparison map
   `TemperleyLieb ℂ (√3 : ℂ) m →ₐ[ℂ] cubicFixed (m - 1)`, `e j ↦ √3 p_j`.
 
@@ -69,10 +67,9 @@ in `TauCeti.Algebra.TemperleyLieb.CubicTorus.Trace`.
   `TauCeti.TemperleyLieb.cubicProjection_mul_cubicProjection_mul_cubicProjection` and
   `TauCeti.TemperleyLieb.commute_cubicProjection`: the Temperley–Lieb relations of the `p_j`
   at `δ = √3` after rescaling by `√3`.
-* `TauCeti.TemperleyLieb.cubicInversion_cubicInversion`,
-  `TauCeti.TemperleyLieb.cubicInversion_cubicProjection` and
-  `TauCeti.TemperleyLieb.cubicAdjoint_cubicProjection`: `θ_N` is an involution fixing every `p_j`,
-  and each `p_j` is self-adjoint for `†`.
+* `TauCeti.TemperleyLieb.cubicInversion_cubicInversion` and
+  `TauCeti.TemperleyLieb.cubicInversion_cubicProjection`: `θ_N` is an involution fixing every
+  `p_j`.
 
 ## Implementation notes
 
@@ -183,10 +180,10 @@ theorem cubeRootPow_eq_one_iff {x : ZMod 3} : cubeRootPow x = 1 ↔ x = 0 := by
   simpa [← Units.val_inj, coe_cubeRootPow] using
     (ZMod.isPrimitive_stdAddChar 3).zmod_char_eq_one_iff 3 x
 
-theorem star_coe_cubeRootPow (x : ZMod 3) :
-    star (cubeRootPow x : ℂ) = (cubeRootPow (-x) : ℂ) := by
-  rw [coe_cubeRootPow, coe_cubeRootPow, ZMod.stdAddChar_apply, ZMod.stdAddChar_apply,
-    AddChar.map_neg_eq_inv, Circle.coe_inv_eq_conj, Complex.star_def]
+/-- Conjugating `ω ^ x` gives `ω ^ (-x)`. -/
+@[simp]
+theorem star_cubeRootPow (x : ZMod 3) : star (cubeRootPow x : ℂ) = cubeRootPow (-x) := by
+  simp [coe_cubeRootPow, AddChar.map_neg_eq_conj]
 
 theorem cubeRootPow_pow_val (z n : ZMod 3) :
     (cubeRootPow z : ℂ) ^ n.val = (cubeRootPow (z * n) : ℂ) := by
@@ -251,15 +248,12 @@ theorem cubicFactor_apply (a b : Multiplicative (Fin N → ZMod 3)) :
     cubicFactor N a b = cubeRootPow (2 * chainForm (ZMod 3) N a.toAdd b.toAdd) :=
   (rfl)
 
-theorem cubicFactor_inv_self (N : ℕ) (a : Multiplicative (Fin N → ZMod 3)) :
-    cubicFactor N a⁻¹ a = 1 := by
-  rw [cubicFactor_apply, toAdd_inv, LinearMap.map_neg₂, chainForm_self,
-    neg_zero, mul_zero, AddChar.map_zero_eq_one]
-
-theorem star_coe_cubicFactor (N : ℕ) (a b : Multiplicative (Fin N → ZMod 3)) :
-    star (cubicFactor N a b : ℂ) = (cubicFactor N b⁻¹ a⁻¹ : ℂ) := by
-  rw [cubicFactor_apply, star_coe_cubeRootPow, cubicFactor_apply, toAdd_inv, toAdd_inv,
-    LinearMap.map_neg₂, LinearMap.map_neg, neg_neg, chainForm_swap, mul_neg, neg_neg]
+/-- The factor set is trivial on a pair `(g⁻¹, g)`: `α(-a, a) = 1`, since the chain form is
+alternating. -/
+@[simp]
+theorem cubicFactor_inv_self (g : Multiplicative (Fin N → ZMod 3)) :
+    (cubicFactor N g⁻¹ g : ℂ) = 1 := by
+  simp [cubicFactor_apply, chainForm_self]
 
 theorem weyl_def (a : Fin N → ZMod 3) : weyl N a = of (Multiplicative.ofAdd a) :=
   (rfl)
@@ -310,6 +304,11 @@ theorem cubicScalarCoefficient_eq_scalarTrace (N : ℕ) :
     cubicScalarCoefficient N =
       TwistedMonoidAlgebra.scalarTrace ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N) :=
   (rfl)
+
+/-- The scalar coefficient of `x` is its coefficient at `1` in the basis of `G_N`. -/
+theorem cubicScalarCoefficient_eq_repr_one (x : CubicTorus N) :
+    cubicScalarCoefficient N x = (basis ℂ _ (cubicFactor N)).repr x 1 :=
+  scalarTrace_apply x
 
 @[simp]
 theorem cubicScalarCoefficient_weyl (a : Fin N → ZMod 3) :
@@ -510,108 +509,6 @@ theorem mem_cubicFixed {x : CubicTorus N} : x ∈ cubicFixed N ↔ cubicInversio
 
 theorem cubicProjection_mem_cubicFixed (j : Fin N) : cubicProjection N j ∈ cubicFixed N :=
   mem_cubicFixed.2 (cubicInversion_cubicProjection j)
-
-/-! ### Conjugate-linear reversal on `CubicTorus N` and `cubicFixed N` -/
-
-/-- **The conjugate-linear adjoint** `†` on `CubicTorus N`, sending `∑ z_a • W(a)` to
-`∑ star z_a • W(-a)`. -/
-noncomputable def cubicAdjoint (N : ℕ) : CubicTorus N →ₗ⋆[ℂ] CubicTorus N :=
-  TwistedMonoidAlgebra.conjReverse ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N)
-
-theorem cubicAdjoint_eq_conjReverse (N : ℕ) :
-    cubicAdjoint N =
-      TwistedMonoidAlgebra.conjReverse ℂ (Multiplicative (Fin N → ZMod 3)) (cubicFactor N) :=
-  (rfl)
-
-@[simp]
-theorem cubicAdjoint_one (N : ℕ) : cubicAdjoint N 1 = 1 := by
-  rw [cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_one]
-
-@[simp]
-theorem cubicAdjoint_cubicAdjoint (N : ℕ) (x : CubicTorus N) :
-    cubicAdjoint N (cubicAdjoint N x) = x := by
-  rw [cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_conjReverse]
-
-@[simp]
-theorem cubicAdjoint_weyl (N : ℕ) (a : Fin N → ZMod 3) :
-    cubicAdjoint N (weyl N a) = weyl N (-a) := by
-  rw [weyl_def, cubicAdjoint_eq_conjReverse, TwistedMonoidAlgebra.conjReverse_of,
-    ← ofAdd_neg, ← weyl_def]
-
-theorem cubicAdjoint_mul (N : ℕ) (x y : CubicTorus N) :
-    cubicAdjoint N (x * y) = cubicAdjoint N y * cubicAdjoint N x :=
-  TwistedMonoidAlgebra.conjReverse_mul (star_coe_cubicFactor N) x y
-
-@[simp]
-theorem cubicAdjoint_cubicSite (N : ℕ) (j : Fin N) :
-    cubicAdjoint N (cubicSite N j) = cubicSite N j ^ 2 := by
-  nth_rw 1 [cubicSite_def]
-  rw [cubicAdjoint_weyl, ← cubicSite_sq_eq_weyl_neg_single]
-
-@[simp]
-theorem cubicAdjoint_cubicProjection (N : ℕ) (j : Fin N) :
-    cubicAdjoint N (cubicProjection N j) = cubicProjection N j := by
-  have hsq : cubicAdjoint N (cubicSite N j ^ 2) = cubicSite N j := by
-    rw [sq, cubicAdjoint_mul, cubicAdjoint_cubicSite, ← sq, ← pow_mul, cubicSite_pow_four]
-  rw [cubicProjection_def, map_smulₛₗ, starRingEnd_apply, star_inv₀, star_ofNat, map_add, map_add,
-    cubicAdjoint_one, cubicAdjoint_cubicSite, hsq, add_right_comm]
-
-theorem cubicAdjoint_cubicInversion (N : ℕ) (x : CubicTorus N) :
-    cubicAdjoint N (cubicInversion N x) = cubicInversion N (cubicAdjoint N x) := by
-  rw [cubicInversion_eq_mapDomain, cubicAdjoint_eq_conjReverse]
-  exact TwistedMonoidAlgebra.conjReverse_mapDomain _ _ x
-
-@[simp]
-theorem cubicScalarCoefficient_cubicAdjoint (N : ℕ) (x : CubicTorus N) :
-    cubicScalarCoefficient N (cubicAdjoint N x) = star (cubicScalarCoefficient N x) := by
-  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse,
-    TwistedMonoidAlgebra.scalarTrace_conjReverse]
-
-section Order
-
-open scoped ComplexOrder
-
-/-- **Positivity** of `cubicScalarCoefficient N (cubicAdjoint N x * x)`. -/
-theorem cubicScalarCoefficient_cubicAdjoint_mul_self_nonneg (N : ℕ) (x : CubicTorus N) :
-    0 ≤ cubicScalarCoefficient N (cubicAdjoint N x * x) := by
-  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse]
-  exact TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_nonneg (cubicFactor_inv_self N) x
-
-/-- **Faithfulness** of `cubicScalarCoefficient N (cubicAdjoint N x * x)`. -/
-@[simp]
-theorem cubicScalarCoefficient_cubicAdjoint_mul_self_eq_zero_iff (N : ℕ) (x : CubicTorus N) :
-    cubicScalarCoefficient N (cubicAdjoint N x * x) = 0 ↔ x = 0 := by
-  rw [cubicScalarCoefficient_eq_scalarTrace, cubicAdjoint_eq_conjReverse]
-  exact TwistedMonoidAlgebra.scalarTrace_conjReverse_mul_self_eq_zero_iff
-    (cubicFactor_inv_self N) x
-
-end Order
-
-theorem cubicAdjoint_mem_cubicFixed {N : ℕ} {x : CubicTorus N} (hx : x ∈ cubicFixed N) :
-    cubicAdjoint N x ∈ cubicFixed N := by
-  rw [mem_cubicFixed, ← cubicAdjoint_cubicInversion, mem_cubicFixed.mp hx]
-
-/-- Restriction of `cubicAdjoint N` to the inversion-fixed subalgebra `cubicFixed N`. -/
-noncomputable def cubicFixedAdjoint (N : ℕ) : cubicFixed N →ₗ⋆[ℂ] cubicFixed N :=
-  (cubicAdjoint N).restrict (p := (cubicFixed N).toSubmodule) (q := (cubicFixed N).toSubmodule)
-    fun _ hx ↦ cubicAdjoint_mem_cubicFixed hx
-
-@[simp]
-theorem coe_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
-    (cubicFixedAdjoint N x : CubicTorus N) = cubicAdjoint N x := by
-  rw [cubicFixedAdjoint, _root_.LinearMap.coe_restrict_apply]
-
-@[simp]
-theorem cubicFixedAdjoint_cubicFixedAdjoint (N : ℕ) (x : cubicFixed N) :
-    cubicFixedAdjoint N (cubicFixedAdjoint N x) = x :=
-  Subtype.ext (by
-    rw [coe_cubicFixedAdjoint, coe_cubicFixedAdjoint, cubicAdjoint_cubicAdjoint])
-
-theorem cubicFixedAdjoint_mul (N : ℕ) (x y : cubicFixed N) :
-    cubicFixedAdjoint N (x * y) = cubicFixedAdjoint N y * cubicFixedAdjoint N x :=
-  Subtype.ext (by
-    rw [coe_cubicFixedAdjoint, Subalgebra.coe_mul, cubicAdjoint_mul, Subalgebra.coe_mul,
-      coe_cubicFixedAdjoint, coe_cubicFixedAdjoint])
 
 end CubicTorus
 

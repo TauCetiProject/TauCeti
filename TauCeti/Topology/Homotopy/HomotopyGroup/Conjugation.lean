@@ -11,6 +11,7 @@ public import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.BasepointChange
+import TauCeti.Topology.Homotopy.Path
 import TauCeti.Topology.PathSpace.Prepend
 
 /-!
@@ -43,11 +44,28 @@ bounding `p⁻¹ ⬝ γ ⬝ p`, and the result here says that the spheres glued 
 base-point change of `π₂`. In particular they keep their Hurewicz classes
 (`HomotopyGroup.hurewicz_homotopyGroupTransport`).
 
+Conjugation also turns a *free* homotopy of loops into a based one. A homotopy `F` through loops,
+from a loop `γ₀` at `x` to a loop `γ₁` at `y`, is a `ContinuousMap.HomotopyWith` of maps `I → X`
+for the property `g 0 = g 1`; it is a cylinder whose seam, the path `F.basepointPath` traced by
+the base points of its loops, runs from `x` to `y`. Conjugating the loop of `F` at time `a` by the
+tail of the seam from time `a` gives a path of loops at `y` from
+`F.basepointPath.conjLoop γ₀` to `(Path.refl y).conjLoop γ₁`, and the reverse of the
+reparametrization `Path.conjLoopReflPath γ₁` ends it at `γ₁`. Its class is the morphism
+`F.conjLoopHom` of the fundamental groupoid of `Ω X y`. When the seam stays at `x`, `F` is
+already a homotopy of loops at `x`, `F.loopPath`, and `F.conjLoopHom` is its class up to these
+identifications (`ContinuousMap.HomotopyWith.conjLoopHom_of_forall_eq`).
+
 ## Main definitions
 
 * `Path.conjLoop p : C(Ω X x, Ω X y)`: conjugation of loops by `p`.
 * `Path.conjLoopContraction p`: the contraction of `p⁻¹ ⬝ refl ⬝ p` to the constant loop at `y`.
 * `Path.loopSpaceTransport p`: the conjugation transport on fundamental groups of loop spaces.
+* `Path.conjLoopReflPath ℓ`: the reparametrization of a loop `ℓ` into its conjugate by the
+  constant path.
+* `ContinuousMap.HomotopyWith.basepointPath F`, `ContinuousMap.HomotopyWith.conjLoopPath F`,
+  `ContinuousMap.HomotopyWith.conjLoopHom F`: the seam of a free homotopy of loops `F`, the path
+  of loops obtained by conjugating `F` along its seam, and the class of the based homotopy of
+  loops it gives.
 
 ## Main results
 
@@ -56,6 +74,11 @@ base-point change of `π₂`. In particular they keep their Hurewicz classes
 * `Path.loopSpaceTransport_refl`: conjugation by a constant path acts trivially.
 * `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv_loopSpaceTransport`: conjugation transport is
   base-point change of `π₂` along `p`.
+* `Path.mk_conjLoopReflPath_comp_map`: the reparametrization by the constant path is natural.
+* `ContinuousMap.HomotopyWith.conjLoopHom_of_forall_eq`: for a free homotopy of loops whose
+  seam is constant, the conjugated homotopy is the homotopy of loops itself, up to the
+  identification of the seam with `Path.refl x` and the reparametrization
+  `Path.conjLoopReflPath γ₀`.
 
 ## References
 
@@ -91,23 +114,28 @@ private def tail (p : Path x y) (a : I) : Path (p a) y :=
 private theorem tail_apply (p : Path x y) (a u : I) : p.tail a u = p.subpath a 1 u :=
   (rfl)
 
-/-- **The contraction of the conjugated constant loop**: the path of loops at `y` whose value at
-`a` is `q_a⁻¹ ⬝ (refl ⬝ q_a)` for the tail `q_a` of `p` from time `a`. It starts at
-`p.conjLoop (Path.refl x)` and ends at the constant loop. -/
-def conjLoopContraction (p : Path x y) : Path (p.conjLoop (refl x)) (refl y) where
-  toFun a := (p.tail a).symm.trans ((refl (p a)).trans (p.tail a))
+/-- The family of loops at `y` whose value at `a` is `q_a⁻¹ ⬝ (ℓ a ⬝ q_a)`, for a continuous
+family `ℓ` of loops along `p` and the tail `q_a` of `p` from time `a`. -/
+private def conjLoopFamily (p : Path x y) (ℓ : ∀ a, Ω X (p a)) (hℓ : Continuous ↿ℓ) :
+    C(I, Ω X y) where
+  toFun a := (p.tail a).symm.trans ((ℓ a).trans (p.tail a))
   continuous_toFun := by
     have ht : Continuous ↿p.tail := p.subpath_continuous_family.comp
       (continuous_fst.prodMk (continuous_const.prodMk continuous_snd))
     exact continuous_uncurry_iff.1 <| trans_continuous_family _
-      (symm_continuous_family _ ht) _
-      (trans_continuous_family _ (p.continuous.comp continuous_fst) _ ht)
+      (symm_continuous_family _ ht) _ (trans_continuous_family _ hℓ _ ht)
+
+/-- **The contraction of the conjugated constant loop**: the path of loops at `y` whose value at
+`a` is `q_a⁻¹ ⬝ (refl ⬝ q_a)` for the tail `q_a` of `p` from time `a`. It starts at
+`p.conjLoop (Path.refl x)` and ends at the constant loop. -/
+def conjLoopContraction (p : Path x y) : Path (p.conjLoop (refl x)) (refl y) where
+  toContinuousMap := p.conjLoopFamily (fun a => refl (p a)) (p.continuous.comp continuous_fst)
   source' := by
     ext t
-    simp [tail, trans_apply]
+    simp [conjLoopFamily, tail, trans_apply]
   target' := by
     ext t
-    simp [tail_apply, trans_apply]
+    simp [conjLoopFamily, tail_apply, trans_apply]
 
 theorem conjLoopContraction_apply (p : Path x y) (a : I) :
     p.conjLoopContraction a =
@@ -179,14 +207,47 @@ private theorem conjLoopContraction_refl_apply (a : I) :
   ext t
   simp [conjLoopContraction_apply, trans_apply, subpath]
 
-private theorem evalAt_conjLoopReflHomotopy (x : X) :
-    (conjLoopReflHomotopy x).evalAt (refl x) = (refl x).conjLoopContraction.symm := by
+/-- The path in `Ω X x` from a loop `ℓ` to its conjugate `(Path.refl x).conjLoop ℓ` by the
+constant path, which reparametrizes `ℓ`. It is the trace at `ℓ` of a homotopy from the identity
+of `Ω X x` to conjugation by the constant path. -/
+def conjLoopReflPath (ℓ : Ω X x) : Path ℓ ((Path.refl x).conjLoop ℓ) :=
+  (conjLoopReflHomotopy x).evalAt ℓ
+
+/-- At the constant loop, the reparametrization `Path.conjLoopReflPath` is the reverse of the
+contraction `Path.conjLoopContraction` of the conjugated constant loop. -/
+theorem conjLoopReflPath_refl (x : X) :
+    conjLoopReflPath (Path.refl x) = (Path.refl x).conjLoopContraction.symm := by
   -- every point of both paths is the constant loop
   refine Path.ext (funext fun u => ?_)
   have h : (conjLoopReflHomotopy x).evalAt (refl x) u = refl x := by
     rw [ContinuousMap.Homotopy.evalAt_apply, conjLoopReflHomotopy,
       ContinuousMap.Homotopy.cast_apply, reparamHomotopy_apply, Homotopy.reparam_refl_eval]
   exact h.trans (conjLoopContraction_refl_apply (σ u)).symm
+
+/-- **Naturality of the reparametrization**: in the fundamental groupoid of `Ω X x`, following
+`Path.conjLoopReflPath ℓ` and then the image of a path class `D` under conjugation by the constant
+path is `D` followed by `Path.conjLoopReflPath ℓ'`. -/
+@[reassoc]
+theorem mk_conjLoopReflPath_comp_map {ℓ ℓ' : Ω X x}
+    (D : (⟨ℓ⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨ℓ'⟩) :
+    FundamentalGroupoid.fromPath (Homotopic.Quotient.mk (conjLoopReflPath ℓ)) ≫
+        (FundamentalGroupoid.map (Path.refl x).conjLoop).map D =
+      D ≫ FundamentalGroupoid.fromPath (Homotopic.Quotient.mk (conjLoopReflPath ℓ')) := by
+  have h := (FundamentalGroupoidFunctor.homotopicMapsNatIso (conjLoopReflHomotopy x)).naturality D
+  simp only [FundamentalGroupoidFunctor.homotopicMapsNatIso_app] at h
+  -- `h` states the same with `D` replaced by its image under the identity, which is `D` once a
+  -- representative is chosen
+  induction D using Homotopic.Quotient.ind with
+  | mk D => exact h.symm
+
+/-- Reparametrizing the constant loop into its conjugate by the constant path and then following
+the contraction `Path.conjLoopContraction` of the conjugated constant loop is trivial. -/
+@[reassoc (attr := simp)]
+theorem mk_conjLoopReflPath_comp_mk_conjLoopContraction (x : X) :
+    FundamentalGroupoid.fromPath (Homotopic.Quotient.mk (conjLoopReflPath (Path.refl x))) ≫
+        FundamentalGroupoid.fromPath (Homotopic.Quotient.mk (Path.refl x).conjLoopContraction) =
+      𝟙 (⟨Path.refl x⟩ : FundamentalGroupoid (Ω X x)) := by
+  simp [conjLoopReflPath_refl, FundamentalGroupoid.comp_eq, FundamentalGroupoid.id_eq_path_refl]
 
 /-- The double loop `c⁻¹ ⬝ (conj_p α ⬝ c)` representing the conjugation transport of the class
 of `α`, where `c` is the contraction `Path.conjLoopContraction p`. -/
@@ -213,7 +274,7 @@ theorem loopSpaceTransport_refl (x : X) :
       (refl x).conjLoopContraction).symm g =
         FundamentalGroup.map (refl x).conjLoop (refl x) g := by
     have h := (conjLoopReflHomotopy x).fundamentalGroupMulEquivOfPath_evalAt_map (refl x) g
-    rw [hid, evalAt_conjLoopReflHomotopy] at h
+    rw [hid, ← conjLoopReflPath, conjLoopReflPath_refl] at h
     rwa [← FundamentalGroup.fundamentalGroupMulEquivOfPath_symm]
   rw [loopSpaceTransport, MonoidHom.comp_apply, ← h, MulEquiv.coe_toMonoidHom,
     MulEquiv.apply_symm_apply, MonoidHom.id_apply]
@@ -341,3 +402,122 @@ theorem fundamentalGroupLoopSpaceMulEquiv_loopSpaceTransport (p : Path x y)
   exact Quotient.sound (p.conjDoubleLoopHomotopyAlong α).homotopic_transport
 
 end HomotopyGroup
+
+/-! ### Free homotopies of loops
+
+A homotopy `F` of loops whose base point moves, from a loop `γ₀` at `x` to a loop `γ₁` at `y`, is a
+homotopy of maps `I → X` through loops (`ContinuousMap.HomotopyWith` for the property
+`g 0 = g 1`). Its base points trace the path `F.basepointPath` from `x` to `y`. Conjugating each
+intermediate loop by the tail of this path from its base point gives a path of loops at `y`,
+`F.conjLoopPath`, from `F.basepointPath.conjLoop γ₀` to `(Path.refl y).conjLoop γ₁`. Followed by
+the reverse of the reparametrization `Path.conjLoopReflPath γ₁`, its class is `F.conjLoopHom`. -/
+
+namespace ContinuousMap.HomotopyWith
+
+variable {X : Type*} [TopologicalSpace X] {x y : X} {γ₀ : Ω X x} {γ₁ : Ω X y}
+  (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1)
+
+/-- The **base-point path** of a free homotopy of loops: the path `s ↦ F (s, 0)` traced by the
+base points of its loops, from the base point `x` of `γ₀` to the base point `y` of `γ₁`. -/
+def basepointPath : Path x y :=
+  (F.toHomotopy.evalAt 0).cast γ₀.source.symm γ₁.source.symm
+
+@[simp]
+theorem basepointPath_apply (s : I) : F.basepointPath s = F (s, 0) :=
+  (rfl)
+
+/-- The loop `t ↦ F (s, t)` of a free homotopy of loops at time `s`, based at `F (s, 0)`. -/
+def loopAt (s : I) : Ω X (F.basepointPath s) where
+  toFun t := F (s, t)
+  continuous_toFun := by fun_prop
+  source' := rfl
+  target' := (F.prop s).symm
+
+@[simp]
+theorem loopAt_apply (s t : I) : F.loopAt s t = F (s, t) :=
+  (rfl)
+
+/-- The path of loops at `y` obtained from a free homotopy of loops by conjugating its loop at
+time `a` by the tail of the base-point path from time `a`. -/
+def conjLoopPath : Path (F.basepointPath.conjLoop γ₀) ((Path.refl y).conjLoop γ₁) where
+  toContinuousMap := F.basepointPath.conjLoopFamily F.loopAt F.continuous
+  source' := by
+    ext t
+    simp [Path.conjLoopFamily, Path.tail, Path.trans_apply]
+  target' := by
+    ext t
+    simp [Path.conjLoopFamily, Path.tail_apply, Path.trans_apply]
+
+theorem conjLoopPath_apply (a : I) :
+    F.conjLoopPath a =
+      ((F.basepointPath.subpath a 1).cast rfl F.basepointPath.target.symm).symm.trans
+        ((F.loopAt a).trans ((F.basepointPath.subpath a 1).cast rfl F.basepointPath.target.symm)) :=
+  (rfl)
+
+/-- The **based homotopy class of a free homotopy of loops**: the morphism, in the fundamental
+groupoid of the loop space `Ω X y`, from `F.basepointPath.conjLoop γ₀` to `γ₁` given by the path
+of loops `F.conjLoopPath` to `(Path.refl y).conjLoop γ₁`, which conjugates every loop of `F` by
+the tail of its base-point path, followed by the reverse of the reparametrization
+`Path.conjLoopReflPath γ₁`. -/
+def conjLoopHom :
+    (⟨F.basepointPath.conjLoop γ₀⟩ : FundamentalGroupoid (Ω X y)) ⟶ ⟨γ₁⟩ :=
+  FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk F.conjLoopPath) ≫
+    inv (FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (Path.conjLoopReflPath γ₁)))
+
+theorem conjLoopHom_def :
+    F.conjLoopHom =
+      FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk F.conjLoopPath) ≫
+        inv (FundamentalGroupoid.fromPath
+          (Path.Homotopic.Quotient.mk (Path.conjLoopReflPath γ₁))) :=
+  (rfl)
+
+section Based
+
+variable {γ₀ γ₁ : Ω X x} (F : HomotopyWith (γ₀ : C(I, X)) γ₁ fun g => g 0 = g 1)
+
+/-- The homotopy of loops at `x` given by a free homotopy of loops whose base point stays at
+`x`: the path `s ↦ F (s, ·)` in `Ω X x`. -/
+def loopPath (h : ∀ s, F (s, 0) = x) : Path γ₀ γ₁ :=
+  Path.ofContinuousFamily (fun s t => F (s, t)) F.continuous h
+    (fun s => (F.prop s).symm.trans (h s)) F.apply_zero F.apply_one
+
+@[simp]
+theorem loopPath_apply (h : ∀ s, F (s, 0) = x) (s t : I) : F.loopPath h s t = F (s, t) :=
+  Path.ofContinuousFamily_apply _ _ _ _ _ _ s t
+
+/-- If the base point of every loop of `F` is `x`, the base-point path of `F` is constant. -/
+theorem basepointPath_eq_refl (h : ∀ s, F (s, 0) = x) : F.basepointPath = Path.refl x :=
+  Path.ext (funext fun s => (F.basepointPath_apply s).trans (h s))
+
+/-- **A free homotopy of loops with a fixed base point** is, after conjugation, its own homotopy
+of loops: if the base point of every loop of `F` is `x`, then `F.conjLoopHom` is the homotopy
+class of `F.loopPath`, preceded by the identification of `F.basepointPath.conjLoop γ₀` with
+`(Path.refl x).conjLoop γ₀` and the reparametrization `Path.conjLoopReflPath γ₀` backwards. -/
+theorem conjLoopHom_of_forall_eq (h : ∀ s, F (s, 0) = x) :
+    F.conjLoopHom = eqToHom (congrArg (fun q : Path x x =>
+        (⟨q.conjLoop γ₀⟩ : FundamentalGroupoid (Ω X x))) (F.basepointPath_eq_refl h)) ≫
+      inv (FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (Path.conjLoopReflPath γ₀))) ≫
+        FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk (F.loopPath h)) := by
+  have hb : F.basepointPath.conjLoop γ₀ = (Path.refl x).conjLoop γ₀ :=
+    congrArg (fun q : Path x x => q.conjLoop γ₀) (F.basepointPath_eq_refl h)
+  set Q := (F.loopPath h).map (Path.refl x).conjLoop.continuous
+  -- conjugating by the tails of a constant base-point path is conjugating by the constant path
+  have hA : FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk F.conjLoopPath) =
+      eqToHom (congrArg FundamentalGroupoid.mk hb) ≫
+        FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk Q) := by
+    have hc := FundamentalGroupoid.conj_eqToHom (p := Path.Homotopic.Quotient.mk Q) hb rfl
+    rw [eqToHom_refl, Category.comp_id] at hc
+    rw [hc, ← Path.Homotopic.Quotient.mk_cast]
+    refine congrArg (fun q => FundamentalGroupoid.fromPath (Path.Homotopic.Quotient.mk q))
+      (Path.ext (funext fun a => Path.ext (funext fun t => ?_)))
+    simp [conjLoopPath, Path.conjLoopFamily, Q, Path.tail_apply, Path.trans_apply, h]
+  have hR := Path.mk_conjLoopReflPath_comp_map (Path.Homotopic.Quotient.mk (F.loopPath h))
+  rw [FundamentalGroupoid.map_map, ← Path.Homotopic.Quotient.mk_map] at hR
+  rw [conjLoopHom, hA, Category.assoc]
+  congr 1
+  rw [IsIso.comp_inv_eq, Category.assoc, IsIso.eq_inv_comp]
+  exact hR
+
+end Based
+
+end ContinuousMap.HomotopyWith

@@ -99,6 +99,18 @@ theorem characterPairing_invMap_invMap (f₁ f₂ : ClassFunction k G) :
   congr 1
   exact Fintype.sum_equiv (Equiv.inv G) _ _ fun g => by simp
 
+/-- **The character pairing is invariant under a group isomorphism**: pulling two class functions
+back along an isomorphism `e : H ≃* G` does not change their pairing. For an automorphism of `G`,
+this says that automorphisms act on class functions by isometries of the pairing. -/
+@[simp]
+theorem characterPairing_comap_mulEquiv {H : Type*} [Group H] [Fintype H] (e : H ≃* G)
+    (f₁ f₂ : ClassFunction k G) :
+    characterPairing (comap (e : H →* G) f₁) (comap (e : H →* G) f₂) =
+      characterPairing f₁ f₂ := by
+  rw [characterPairing_apply, characterPairing_apply, Nat.card_congr e.toEquiv]
+  congr 1
+  exact Fintype.sum_equiv e.toEquiv _ _ fun h => by simp
+
 /-- **Pairing against a class indicator evaluates a class function.** Pairing `f` with the indicator
 of the class of `x⁻¹` returns the value of `f` at `x`, weighted by the size of the class of `x` and
 the normalization `|G|⁻¹`. -/

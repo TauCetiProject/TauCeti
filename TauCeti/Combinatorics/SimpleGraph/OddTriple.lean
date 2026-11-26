@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Clique
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 import Mathlib.Combinatorics.Enumerative.DoubleCounting
 import Mathlib.Data.Finset.Sym
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Triples spanning an odd number of edges
@@ -18,6 +19,10 @@ vertex sets spanning an odd number of edges of `G`. Reading `G` as a binary one-
 full simplex on its vertices, these are the two-dimensional faces of the simplex on which the
 coboundary is nonzero, so its cardinality is the size of the coboundary of `G`. They need not
 be triangles of `G` in the sense of `G.cliqueFinset 3`: a triple spanning a single edge is odd.
+On a linearly ordered vertex type,
+`SimpleGraph.card_filter_lt_xor_adj_triple_eq_card_powersetCard_three_odd` identifies these
+three-element sets bijectively with the strictly increasing triples `(u, v, w)` satisfying
+`Xor (G.Adj u v) (Xor (G.Adj v w) (G.Adj w u))`.
 
 The main result counts these triples by vertex degrees:
 `#G.oddTripleFinset + 2 * ∑ v, (G.degree v).choose 2 = (card V - 2) * #G.edgeFinset +
@@ -35,6 +40,8 @@ public section
 open Finset
 
 namespace SimpleGraph
+
+section DecidableEq
 
 variable {V : Type*} [DecidableEq V]
 
@@ -213,5 +220,43 @@ theorem CliqueFree.card_oddTripleFinset_add_two_mul_sum_degree_choose_two
       (Fintype.card V - 2) * #G.edgeFinset := by
   rw [G.card_oddTripleFinset_add_two_mul_sum_degree_choose_two, hG.cliqueFinset, card_empty,
     mul_zero, add_zero]
+
+end DecidableEq
+
+section LinearOrder
+
+variable {V : Type*} [Fintype V] [LinearOrder V] (G : SimpleGraph V) [DecidableRel G.Adj]
+
+/-- On a finite linear order, strictly increasing triples `(u, v, w)` with odd edge parity around
+the triangle correspond bijectively to `3`-element subsets of `V` spanning an odd number of edges
+in `G`. -/
+theorem card_filter_lt_xor_adj_triple_eq_card_powersetCard_three_odd :
+    #{t : V × V × V | t.1 < t.2.1 ∧ t.2.1 < t.2.2 ∧
+        Xor (G.Adj t.1 t.2.1) (Xor (G.Adj t.2.1 t.2.2) (G.Adj t.2.2 t.1))} =
+      #{s ∈ (univ : Finset V).powersetCard 3 |
+        Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} := by
+  have hfinset : {s ∈ (univ : Finset V).powersetCard 3 |
+      Odd #{e ∈ G.edgeFinset | e.toFinset ⊆ s}} = G.oddTripleFinset := by
+    simp only [oddTripleFinset, filter_edgeFinset_toFinset_subset]
+  rw [hfinset]
+  refine card_bij
+    (fun t ht =>
+      (Set.powersetCard.ofLtTriple ⟨t, (mem_filter.mp ht).2.1, (mem_filter.mp ht).2.2.1⟩).val)
+    (fun t ht => ?_) (fun _ _ _ _ heq => ?_) (fun s hs => ?_)
+  · obtain ⟨-, h₁, h₂, hxor⟩ := mem_filter.mp ht
+    rw [Set.powersetCard.val_ofLtTriple, triple_mem_oddTripleFinset_iff,
+      xor_comm (G.Adj t.1 t.2.2), G.adj_comm t.1 t.2.2]
+    exact hxor
+  · exact congrArg Subtype.val
+      (Set.powersetCard.ofLtTriple.injective (Subtype.ext heq))
+  · let u := Set.powersetCard.ofLtTriple.symm ⟨s, (mem_oddTripleFinset.mp hs).1⟩
+    have hval : (Set.powersetCard.ofLtTriple u).val = s :=
+      congrArg Subtype.val (Set.powersetCard.ofLtTriple.apply_symm_apply _)
+    refine ⟨u.val, mem_filter.mpr ⟨mem_univ _, u.property.1, u.property.2, ?_⟩, hval⟩
+    have hmem : (Set.powersetCard.ofLtTriple u).val ∈ G.oddTripleFinset := hval.symm ▸ hs
+    rwa [Set.powersetCard.val_ofLtTriple, triple_mem_oddTripleFinset_iff,
+      xor_comm (G.Adj u.val.1 u.val.2.2), G.adj_comm u.val.1 u.val.2.2] at hmem
+
+end LinearOrder
 
 end SimpleGraph

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.CubicTorus.Basic
 public import TauCeti.Algebra.TemperleyLieb.MarkovTrace
+import TauCeti.Algebra.Group.Fin.Tuple
 import TauCeti.Analysis.Complex.Sqrt
 
 /-!
@@ -34,8 +35,6 @@ particular the spin-model `markovTrace`, is this one.
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.cubicAdjoint_cubicIncl` and
-  `TauCeti.TemperleyLieb.cubicFixedAdjoint_cubicFixedIncl`: the inclusions commute with `†`.
 * `TauCeti.TemperleyLieb.cubicHom_strandIncl` and
   `TauCeti.TemperleyLieb.cubicHom_strandIncl_eq_cubicFixedIncl`:
   `F_(n+2) ∘ strandIncl = I_n ∘ F_(n+1)`.
@@ -137,11 +136,7 @@ theorem cubicIncl_cubicProjection (j : Fin N) :
 theorem cubicInversion_cubicIncl (x : CubicTorus N) :
     cubicInversion (N + 1) (cubicIncl N x) = cubicIncl N (cubicInversion N x) := by
   have h : (cubicInversion (N + 1)).comp (cubicIncl N) = (cubicIncl N).comp (cubicInversion N) :=
-    algHom_ext fun g ↦ by
-      have hneg : (-Fin.snoc g.toAdd 0 : Fin (N + 1) → ZMod 3) = Fin.snoc (-g.toAdd) 0 := by
-        funext i
-        refine Fin.lastCases ?_ (fun i ↦ ?_) i <;> simp
-      simp [of_eq_weyl, hneg]
+    algHom_ext fun g ↦ by simp [of_eq_weyl, Fin.neg_snoc]
   exact AlgHom.congr_fun h x
 
 /-- The inclusion preserves the scalar coefficient. -/
@@ -191,20 +186,6 @@ theorem coe_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
 
 theorem cubicFixedIncl_injective (N : ℕ) : Function.Injective (cubicFixedIncl N) :=
   fun _ _ h ↦ Subtype.ext (cubicIncl_injective N (congrArg Subtype.val h))
-
-@[simp]
-theorem cubicAdjoint_cubicIncl (N : ℕ) (x : CubicTorus N) :
-    cubicAdjoint (N + 1) (cubicIncl N x) = cubicIncl N (cubicAdjoint N x) := by
-  rw [cubicIncl_eq_mapDomain, cubicAdjoint_eq_conjReverse, cubicAdjoint_eq_conjReverse]
-  exact TwistedMonoidAlgebra.conjReverse_mapDomain
-    (cubicExtendHom N) (cubicFactor_cubicExtendHom N) x
-
-@[simp]
-theorem cubicFixedAdjoint_cubicFixedIncl (N : ℕ) (x : cubicFixed N) :
-    cubicFixedAdjoint (N + 1) (cubicFixedIncl N x) = cubicFixedIncl N (cubicFixedAdjoint N x) :=
-  Subtype.ext (by
-    rw [coe_cubicFixedAdjoint, coe_cubicFixedIncl, coe_cubicFixedIncl, coe_cubicFixedAdjoint,
-      cubicAdjoint_cubicIncl])
 
 end Inclusion
 

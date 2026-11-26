@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.UnitAction
 public import TauCeti.NumberTheory.LFunctions.Theta.UnitFundamentalDomain
+import TauCeti.Topology.DiscreteSubset
 
 /-!
 # Archimedean Gaussians and the unit-invariant theta kernel
@@ -184,23 +185,15 @@ theorem latticeTheta_def (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) :
     latticeTheta L y = ∑' x : L, archGaussian y x := (rfl)
 
 /-- The archimedean Gaussian is not summable over a non-discrete lattice: it is continuous with
-value `1` at `0`, but `0` is a limit of other lattice points. -/
+value `1` at `0`, so summability would make `0` isolated
+(`Filter.Tendsto.isOpen_singleton_of_cofinite`). -/
 theorem not_summable_archGaussian_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
     (hL : ¬ DiscreteTopology L) (y : realSpace K) : ¬ Summable fun x : L ↦ archGaussian y x := by
   intro hs
-  have hg : Continuous fun x : L ↦ archGaussian y x := by
-    simp only [archGaussian_apply]
-    fun_prop
-  have hne : (nhdsWithin (0 : L) {0}ᶜ).NeBot := by
-    rw [Filter.neBot_iff]
-    intro h
-    exact hL (discreteTopology_iff_isOpen_singleton_zero.2
-      ((isOpen_singleton_iff_punctured_nhds _).2 h))
-  have h1 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 1) := by
-    simpa using (hg.tendsto 0).mono_left nhdsWithin_le_nhds
-  have h2 : Filter.Tendsto (fun x : L ↦ archGaussian y x) (nhdsWithin (0 : L) {0}ᶜ) (nhds 0) :=
-    hs.tendsto_cofinite_zero.mono_left (nhdsNE_le_cofinite 0)
-  exact one_ne_zero (tendsto_nhds_unique h1 h2)
+  refine hL (discreteTopology_iff_isOpen_singleton_zero.2
+    (hs.tendsto_cofinite_zero.isOpen_singleton_of_cofinite ?_ (by simp)))
+  simp only [archGaussian_apply]
+  fun_prop
 
 /-- The theta series of a non-discrete lattice is `0`, by the convention for non-summable
 series. -/

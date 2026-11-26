@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.Analysis.ODE.Regularity
-import TauCeti.Analysis.Sobolev.Cylinder.Slice
+import TauCeti.Analysis.Sobolev.Cylinder.Slice.Basic
 
 /-!
 # The stationary cylinder operator at a nondegenerate orbit has dense range

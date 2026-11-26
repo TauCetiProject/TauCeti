@@ -67,7 +67,8 @@ Cauchy–Schwarz and identifying the trace radical with the quadratic null space
 The results are stated for an arbitrary Markov trace, so they apply to the spin-model trace
 `TauCeti.TemperleyLieb.markovTrace` through `TauCeti.TemperleyLieb.isMarkovTrace_markovTrace`.
 Over `ℂ` the analytic adjoint is the instance `TauCeti.TemperleyLieb.instStarRing`, whose
-hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by `Complex.conj_ofReal`.
+hypothesis `Fact (IsSelfAdjoint (δ : ℂ))` holds for every real `δ` by the instance
+`TauCeti.instFactIsSelfAdjointComplexOfReal`.
 
 ## Main definitions
 
@@ -347,7 +348,7 @@ end StarOrderedCommRing
 
 open scoped ComplexOrder
 
-variable {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))]
+variable {δ : ℝ}
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ}
 
 /-- **Failure of positivity from level `k` on.** Let `0 < δ` be an inadmissible loop parameter and
@@ -404,6 +405,7 @@ theorem map_star_mul_self_nonneg_of_eq_two_mul_cos (htr : IsMarkovTrace ℂ (δ 
   have hpos (t : Fin (k + 1)) : 0 < qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t + 1) :=
     qInt_two_mul_cos_pi_div_pos (by omega) (by omega)
   exact htr.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo
+    (δ := ((2 * cos (π / (k + 2 : ℕ)) : ℝ) : ℂ))
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
     (fun t ↦ Complex.conj_ofReal _)
     ((isPathEigenvectorUpTo_pathGraph_two_mul_cos 0 n).map Complex.ofRealHom) x
@@ -418,7 +420,7 @@ theorem map_star_mul_self_nonneg_of_qInt_pos (htr : IsMarkovTrace ℂ (δ : ℂ)
     (x : TemperleyLieb ℂ (δ : ℂ) n) : 0 ≤ tr n (star x * x) := by
   have hpos (t : Fin (n + 1)) : 0 < qInt ℝ δ (t + 1) :=
     hq (t + 1) (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
-  exact htr.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo
+  exact htr.map_star_mul_self_nonneg_of_isPathEigenvectorUpTo (δ := (δ : ℂ))
     (fun t ↦ Complex.ofReal_ne_zero.2 (Real.sqrt_pos.2 (hpos t)).ne')
     (fun t ↦ Complex.conj_ofReal _)
     ((isPathEigenvectorUpTo_pathGraph_sqrt_qInt le_rfl (fun t ↦ (hpos t).le)).map
@@ -649,7 +651,7 @@ open scoped ComplexOrder in
 /-- **Jones's positivity theorem** for the spin-model trace. Let `δ > 0` and let `q` be a unit with
 `δ = -(q + q⁻¹)`. Then `TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)` is real and nonnegative
 for every number of strands and every `x` exactly when `δ` is an admissible loop parameter. -/
-theorem markovTrace_nonneg_iff {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : 0 < δ) (q : ℂˣ)
+theorem markovTrace_nonneg_iff {δ : ℝ} (hδ : 0 < δ) (q : ℂˣ)
     (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) :
     (∀ (n : ℕ) (x : TemperleyLieb ℂ (δ : ℂ) n), 0 ≤ markovTrace q hq (star x * x)) ↔
       δ ∈ jonesLoopParameters :=
@@ -659,7 +661,7 @@ open scoped ComplexOrder in
 /-- **The first bad level** for the spin-model trace. Let `δ > 0` be an inadmissible loop parameter
 and let `q` be a unit with `δ = -(q + q⁻¹)`. Then `TauCeti.TemperleyLieb.markovTrace q hq (x⋆ * x)`
 is real and nonnegative for every `x` on `n` strands if and only if `n < ⌊π / arccos (δ / 2)⌋`. -/
-theorem markovTrace_nonneg_iff_lt_floor {δ : ℝ} [Fact (IsSelfAdjoint (δ : ℂ))] (hδ : 0 < δ)
+theorem markovTrace_nonneg_iff_lt_floor {δ : ℝ} (hδ : 0 < δ)
     (hδJ : δ ∉ jonesLoopParameters) (q : ℂˣ)
     (hq : (δ : ℂ) = -((q : ℂ) + ((q⁻¹ : ℂˣ) : ℂ))) (n : ℕ) :
     (∀ x : TemperleyLieb ℂ (δ : ℂ) n, 0 ≤ markovTrace q hq (star x * x)) ↔

@@ -61,8 +61,15 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   proves it through a product of primes of `l` (`primeProductCoprime` and two supports), which is
   not ported.
 * `ZMod.unitOfCoprime_mul` — `ZMod.unitOfCoprime` is multiplicative in its numerator.
+* `ZMod.val_mul_unitOfCoprime` — the least nonnegative representative of `c b` is `b c₀ mod d`
+  for a unit `c` and the class of `b`. Its consumer is the positive smoothing of the Stickelberger
+  element in `TauCeti/NumberTheory/Cyclotomic/Stickelberger/Smoothing.lean`.
 * `ZMod.unitsMap_unitOfCoprime` — `ZMod.unitsMap` sends the class of `a` modulo `n` to the
   class of `a` modulo a divisor of `n`.
+* `ZMod.unitOfCoprime_mem_ker_unitsMap_iff` — the class of `a` prime to `n` lies in the kernel
+  of `ZMod.unitsMap` to a divisor `m` of `n` exactly when `a ≡ 1 (mod m)`. Its consumer is the
+  group form of the Jacobi symbol on the class of `1` in
+  `TauCeti/NumberTheory/LegendreSymbol/JacobiSymbol/ClassOfOne.lean`.
 * `ZMod.eq_comp_unitsMap_of_comp_unitsMap_eq` — a unit homomorphism that agrees with a lowered
   one after restriction along `ZMod.unitsMap` is itself that lowered one, read at the smaller
   modulus. Its consumers are the descent arguments of
@@ -268,6 +275,12 @@ theorem ZMod.unitOfCoprime_mul {m n : ℕ} (hm : Nat.Coprime m d) (hn : Nat.Copr
       = ZMod.unitOfCoprime m hm * ZMod.unitOfCoprime n hn :=
   Units.ext (by push_cast [ZMod.coe_unitOfCoprime]; ring)
 
+/-- **The representative of a unit times `ZMod.unitOfCoprime b`.** The least nonnegative
+representative of `c b` is `b c₀ mod d`, where `c₀` is that of `c`. -/
+theorem ZMod.val_mul_unitOfCoprime {b : ℕ} (hb : b.Coprime d) (c : (ZMod d)ˣ) :
+    ((c * ZMod.unitOfCoprime b hb : (ZMod d)ˣ) : ZMod d).val = b * (c : ZMod d).val % d := by
+  simp [mul_comm, ZMod.coe_unitOfCoprime, ZMod.val_mul, ZMod.val_natCast]
+
 /-- **Reducing `ZMod.unitOfCoprime` to a divisor of the modulus.** The class of `a` modulo `n`
 reduces to the class of `a` modulo `m` for `m ∣ n`. -/
 @[simp]
@@ -276,6 +289,14 @@ theorem ZMod.unitsMap_unitOfCoprime {m n : ℕ} (hmn : m ∣ n) {a : ℕ} (ha : 
       ZMod.unitOfCoprime a (ha.coprime_dvd_right hmn) :=
   Units.ext (by rw [ZMod.unitsMap_val, ZMod.coe_unitOfCoprime, ZMod.coe_unitOfCoprime,
     ZMod.cast_natCast hmn])
+
+/-- For `m ∣ n`, the class of a natural number `a` prime to `n` lies in the kernel of the reduction
+`ZMod.unitsMap : (ZMod n)ˣ →* (ZMod m)ˣ` exactly when `a ≡ 1 (mod m)`. -/
+theorem ZMod.unitOfCoprime_mem_ker_unitsMap_iff {m n : ℕ} (hmn : m ∣ n) {a : ℕ}
+    (ha : Nat.Coprime a n) :
+    ZMod.unitOfCoprime a ha ∈ (ZMod.unitsMap hmn).ker ↔ a ≡ 1 [MOD m] := by
+  rw [MonoidHom.mem_ker, ZMod.unitsMap_unitOfCoprime, Units.ext_iff, ZMod.coe_unitOfCoprime,
+    Units.val_one, ← Nat.cast_one, ZMod.natCast_eq_natCast_iff]
 
 /-- **A unit with an integer lift `c`, `c n ≡ 1` modulo a divisor `Q`, reduces to `n⁻¹`.** If the
 unit `u` of `ZMod N` is the class of an integer `c` with `c n = 1 + Q t`, where `Q ∣ N` and `n` is
