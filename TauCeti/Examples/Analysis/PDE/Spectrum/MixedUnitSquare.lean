@@ -65,9 +65,9 @@ Completeness is proved slice by slice
 (`TauCeti.ae_eq_zero_prod_of_forall_integral_mul_eq_zero`): for `f ∈ L²((0, 1)²)` orthogonal to
 every mode, each coefficient `y ↦ ∫ f (x, y) sin ((2m + 1) π x / 2) dx` is orthogonal to every
 cosine, so it vanishes by the completeness of the cosines
-(`TauCeti.ae_eq_zero_of_forall_integral_mul_cos_eq_zero`); then almost every slice `f (·, y)` is
+(`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero`); then almost every slice `f (·, y)` is
 orthogonal to every quarter-wave sine, so it vanishes
-(`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`). An eigenfunction for
+(`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero`). An eigenfunction for
 any other `κ` is orthogonal to all modes, since the form `∫ ∇u · ∇v` is symmetric, hence zero.
 
 ## References

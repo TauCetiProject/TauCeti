@@ -39,7 +39,7 @@ classically, so it is a weak Dirichlet eigenfunction
 (`TauCeti.PDE.exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq`). Conversely, the energy
 form is symmetric, so an eigenfunction for any other `κ` is orthogonal in `L²(a, b)` to every
 sine mode, and it vanishes by completeness of the sine system
-(`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`).
+(`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero`).
 
 The same explicit description holds for the other boundary conditions of the mixed problem, posed
 on the space `H¹_Γ(a, b)` of Sobolev functions vanishing on a boundary part `Γ`
@@ -62,8 +62,8 @@ term `g'(b) φ(b) - g'(a) φ(a)`, which vanishes: `g'` vanishes at each Neumann 
 each Dirichlet one. By density the mode is a weak eigenfunction. The Neumann modes are generators
 themselves after multiplication by a bump equal to one near `[a, b]`; the mixed modes are
 restrictions of the Dirichlet modes of the doubled interval `(a, 2b - a)`, symmetric about `b`.
-Completeness of the cosines (`TauCeti.ae_eq_zero_of_forall_integral_mul_cos_eq_zero`) and of the
-quarter-wave sines (`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`)
+Completeness of the cosines (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero`) and of the
+quarter-wave sines (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero`)
 excludes every other eigenvalue.
 
 ## Main declarations
