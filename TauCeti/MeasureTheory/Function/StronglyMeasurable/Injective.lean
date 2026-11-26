@@ -17,10 +17,10 @@ measurability and almost everywhere strong measurability. The inverse need not b
 Mathlib's Lusin–Souslin theorem `Continuous.measurableEmbedding` supplies its measurability.
 
 For a continuous linear operator, it suffices that the operator be injective on a complete
-separable supporting subspace. The subspace need contain the function's values only almost
-everywhere. The finite-support versions hold for arbitrary measures, because injectivity on
-the supporting subspace also detects zeros. Neither ambient space needs to be separable or
-complete.
+separable supporting subspace. Containment is required everywhere for the pointwise criteria,
+and only almost everywhere for the a.e. criteria. The finite-support versions hold for arbitrary
+measures, because injectivity on the supporting subspace also detects zeros. Neither ambient
+space needs to be separable or complete.
 
 ## References
 
