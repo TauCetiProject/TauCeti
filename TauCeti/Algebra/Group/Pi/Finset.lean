@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.Prod
 public import TauCeti.Algebra.Group.Equiv.Pi
 public import TauCeti.Data.Finset.Pi
+public import TauCeti.Data.Finset.Sum
 
 /-!
 # Products of monoids indexed by finite sets
@@ -24,18 +25,22 @@ associative: this is the statement on underlying functions, `Equiv.restrict₂_p
 For an embedding `f : ι' ↪ ι`, a family indexed by `s` with values in `π (f i)` is a family indexed
 by `s.map f`, by the multiplicative equivalence
 `MulEquiv.piFinsetMap π f s : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j`, which commutes with
-restriction.
+restriction. A family indexed by a finite `s ⊆ ι ⊕ ι'` is the pair of its restrictions to
+`s.toLeft` and `s.toRight`, by the multiplicative equivalence
+`MulEquiv.piFinsetSum π s : (∀ i : s, π i) ≃* (∀ a : s.toLeft, π (.inl a)) × ∀ b, π (.inr b)`,
+so such a family restricts to `1` on a smaller finite set exactly when both its parts do.
 
 These are the projections `Γ_J → Γ_I`, the disjoint-union identifications
 `Γ_(I ⊔ J) ≅ Γ_I × Γ_J` and the injective-reindexing identifications `Γ_I ≅ Γ_(f I)` of the groups
 `Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of charts of an implicit atlas, in the sense
-of Pardon.
+of Pardon, and the splittings `Γ_I ≅ Γ₁_(I₁) × Γ₂_(I₂)` for a product of implicit atlases.
 
 ## Main definitions
 
 * `Finset.restrict₂MonoidHom`: restriction to a smaller finite set, as a monoid homomorphism.
 * `MulEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a multiplicative equivalence.
 * `MulEquiv.piFinsetMap`: relabelling along an embedding, as a multiplicative equivalence.
+* `MulEquiv.piFinsetSum`: `Equiv.piFinsetSum` as a multiplicative equivalence.
 
 ## Main results
 
@@ -45,6 +50,8 @@ of Pardon.
   `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_right`: the restrictions to the two pieces are
   the projections of the product.
 * `MulEquiv.restrict₂_piFinsetMap`: relabelling along an embedding commutes with restriction.
+* `Finset.restrict₂_eq_one_iff_piFinsetSum`: a family on a finite subset of a sum type restricts
+  to `1` exactly when both of its parts do.
 
 ## References
 
@@ -199,4 +206,48 @@ theorem restrict₂_piFinsetMap [∀ i, Mul (π i)] (h : s ⊆ t) (g : ∀ i : t
 
 end Map
 
+section Sum
+
+variable {ι ι' : Type*} (π : ι ⊕ ι' → Type*) [∀ i, Mul (π i)]
+
+/-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to `s.toLeft` and
+`s.toRight`. This is `Equiv.piFinsetSum` as a `MulEquiv`. -/
+@[to_additive /-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to
+`s.toLeft` and `s.toRight`. This is `Equiv.piFinsetSum` as an `AddEquiv`. -/]
+def piFinsetSum (s : Finset (ι ⊕ ι')) :
+    (∀ i : s, π i) ≃* (∀ a : s.toLeft, π (.inl a)) × ∀ b : s.toRight, π (.inr b) where
+  __ := Equiv.piFinsetSum π s
+  map_mul' _ _ := (rfl)
+
+@[to_additive (attr := simp)]
+theorem coe_piFinsetSum (s : Finset (ι ⊕ ι')) : ⇑(piFinsetSum π s) = Equiv.piFinsetSum π s :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem coe_piFinsetSum_symm (s : Finset (ι ⊕ ι')) :
+    ⇑(piFinsetSum π s).symm = (Equiv.piFinsetSum π s).symm :=
+  (rfl)
+
+end Sum
+
 end MulEquiv
+
+namespace Finset
+
+variable {ι ι' : Type*} {π : ι ⊕ ι' → Type*} [∀ i, MulOneClass (π i)]
+
+/-- A family `f` on `t ⊆ ι ⊕ ι'` restricts to `1` on `s ⊆ t` exactly when its left and right parts
+restrict to `1` on `s.toLeft` and `s.toRight`. For families of groups: the subgroup `Γ_(t \ s)`
+of `Γ_t` splits as `Γ₁_(t₁ \ s₁) × Γ₂_(t₂ \ s₂)`. -/
+@[to_additive /-- A family `f` on `t ⊆ ι ⊕ ι'` restricts to `0` on `s ⊆ t` exactly when its left
+and right parts restrict to `0` on `s.toLeft` and `s.toRight`. -/]
+theorem restrict₂_eq_one_iff_piFinsetSum {s t : Finset (ι ⊕ ι')} (h : s ⊆ t) (f : ∀ i : t, π i) :
+    restrict₂ h f = 1 ↔
+      restrict₂ (π := fun a ↦ π (.inl a)) (toLeft_subset_toLeft h)
+          (Equiv.piFinsetSum π t f).1 = 1 ∧
+        restrict₂ (π := fun b ↦ π (.inr b)) (toRight_subset_toRight h)
+          (Equiv.piFinsetSum π t f).2 = 1 := by
+  rw [← (MulEquiv.piFinsetSum π s).map_eq_one_iff, MulEquiv.coe_piFinsetSum,
+    Equiv.piFinsetSum_restrict₂, Prod.mk_eq_one]
+
+end Finset

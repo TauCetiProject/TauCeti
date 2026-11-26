@@ -5,14 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Finset.Pi
 public import Mathlib.Data.Finset.Sum
 
 /-!
-# Images and erasures of finite sets on sum types
+# Images and erasures of finite sets on sum types, and families indexed by them
 
 These identities compute the image of a disjoint sum, the two projections of an image under
 `Sum.map`, of a filtered set, and after erasing an element of either summand. They are used to
 calculate joins of simplicial complexes factor by factor.
+
+A family indexed by a finite set `s` of `α ⊕ β` is the pair of its restrictions to the left part
+`s.toLeft` and the right part `s.toRight` (`Equiv.piFinsetSum`), the finite-set analogue of
+`Equiv.sumPiEquivProdPi`; this splitting commutes with restriction to a smaller finite set.
+
+## Main definitions
+
+* `Equiv.piFinsetSum`: a family on a finite `s ⊆ α ⊕ β` is a pair of families on `s.toLeft` and
+  `s.toRight`.
 
 ## Main results
 
@@ -24,6 +34,7 @@ calculate joins of simplicial complexes factor by factor.
 * `Finset.toLeft_filter` and `Finset.toRight_filter`: projections of a filtered set.
 * `Finset.disjoint_disjSum_iff`: disjointness from a disjoint sum is characterized by disjointness
   from its two projections.
+* `Equiv.piFinsetSum_restrict₂`: splitting a family commutes with restriction.
 -/
 
 public section
@@ -109,3 +120,59 @@ theorem disjoint_disjSum_iff {ρ : Finset (α ⊕ β)} {s : Finset α} {t : Fins
   simp [disjoint_left, Sum.forall]
 
 end Finset
+
+open Finset
+
+namespace Equiv
+
+variable {α β : Type*} (π : α ⊕ β → Type*)
+
+/-- A family on a finite set `s` of `α ⊕ β` is the pair of its restrictions to the left part
+`s.toLeft` and the right part `s.toRight`. This is the finite-set analogue of
+`Equiv.sumPiEquivProdPi`. -/
+@[expose] def piFinsetSum (s : Finset (α ⊕ β)) :
+    ((i : s) → π i) ≃ ((a : s.toLeft) → π (.inl a)) × ((b : s.toRight) → π (.inr b)) where
+  toFun f := (fun a ↦ f ⟨.inl a, mem_toLeft.1 a.property⟩,
+    fun b ↦ f ⟨.inr b, mem_toRight.1 b.property⟩)
+  invFun p := fun
+    | ⟨.inl a, h⟩ => p.1 ⟨a, mem_toLeft.2 h⟩
+    | ⟨.inr b, h⟩ => p.2 ⟨b, mem_toRight.2 h⟩
+  left_inv f := funext fun ⟨i, _⟩ ↦ by cases i <;> rfl
+  right_inv _ := rfl
+
+variable {π}
+
+/-- The left part of a split family is its restriction to `s.toLeft`. -/
+@[simp]
+theorem piFinsetSum_apply_fst (s : Finset (α ⊕ β)) (f : (i : s) → π i) (a : s.toLeft) :
+    (piFinsetSum π s f).1 a = f ⟨.inl a, mem_toLeft.1 a.property⟩ :=
+  (rfl)
+
+/-- The right part of a split family is its restriction to `s.toRight`. -/
+@[simp]
+theorem piFinsetSum_apply_snd (s : Finset (α ⊕ β)) (f : (i : s) → π i) (b : s.toRight) :
+    (piFinsetSum π s f).2 b = f ⟨.inr b, mem_toRight.1 b.property⟩ :=
+  (rfl)
+
+/-- Gluing a pair of families reads the left family at a left-tagged index. -/
+@[simp]
+theorem piFinsetSum_symm_apply_inl (s : Finset (α ⊕ β))
+    (p : ((a : s.toLeft) → π (.inl a)) × ((b : s.toRight) → π (.inr b))) (a : α)
+    (h : .inl a ∈ s) : (piFinsetSum π s).symm p ⟨.inl a, h⟩ = p.1 ⟨a, mem_toLeft.2 h⟩ :=
+  (rfl)
+
+/-- Gluing a pair of families reads the right family at a right-tagged index. -/
+@[simp]
+theorem piFinsetSum_symm_apply_inr (s : Finset (α ⊕ β))
+    (p : ((a : s.toLeft) → π (.inl a)) × ((b : s.toRight) → π (.inr b))) (b : β)
+    (h : .inr b ∈ s) : (piFinsetSum π s).symm p ⟨.inr b, h⟩ = p.2 ⟨b, mem_toRight.2 h⟩ :=
+  (rfl)
+
+/-- Splitting a family on `t ⊆ α ⊕ β` commutes with restriction to `s ⊆ t`. -/
+theorem piFinsetSum_restrict₂ {s t : Finset (α ⊕ β)} (h : s ⊆ t) (f : (i : t) → π i) :
+    piFinsetSum π s (restrict₂ h f) =
+      (restrict₂ (π := fun a ↦ π (.inl a)) (toLeft_subset_toLeft h) (piFinsetSum π t f).1,
+        restrict₂ (π := fun b ↦ π (.inr b)) (toRight_subset_toRight h) (piFinsetSum π t f).2) :=
+  (rfl)
+
+end Equiv
