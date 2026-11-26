@@ -58,6 +58,8 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
   composition, up to the binomial coefficient `(m + k).choose m`.
 * `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
   multiplication by `δ f`.
+* `TauCeti.commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top`: for entries `a₁, …, aₘ` in
+  an ideal `I`, the iterated commutator `[⋯[D, a₁], …, aₘ] x` is `D ((a₁ ⋯ aₘ) • x)` modulo `I`.
 * `TauCeti.cotangentSymbol_toCotangent`: the cotangent symbol on classes of elements of `I`;
   `TauCeti.cotangentSymbol_comp_perm` and `TauCeti.cotangentSymbol_comp_const` give its symmetry
   and its composition law.
