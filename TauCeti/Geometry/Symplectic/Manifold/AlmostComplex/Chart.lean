@@ -236,20 +236,21 @@ theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy
     rw [hleft]
   exact (key _ (ψ.left_inv hy)).symm
 
-/-- **Changing the chart.** For two charts `ψ₁` and `ψ₂` of `M` with values in a normed space
+/-- **Changing the chart.** For two charts `ψ₁` and `ψ₂` of `M` with values in normed spaces
 and a point `w` of the source of the transition `Θ = ψ₂ ∘ ψ₁⁻¹`, the derivative of `Θ` at `w`
 intertwines the structure read in `ψ₁` at `w` with the structure read in `ψ₂` at `Θ w`, provided
 `ψ₁` is differentiable at `ψ₁⁻¹ w`, `ψ₂⁻¹` at `Θ w` and `Θ` at `w`. -/
-theorem chartPushforward_symm_trans_comp_fderiv {ψ₁ ψ₂ : OpenPartialHomeomorph M G} {w : G}
+theorem chartPushforward_symm_trans_comp_fderiv {G' : Type*} [NormedAddCommGroup G']
+    [NormedSpace ℝ G'] {ψ₁ : OpenPartialHomeomorph M G} {ψ₂ : OpenPartialHomeomorph M G'} {w : G}
     (hw : w ∈ (ψ₁.symm.trans ψ₂).source) (hψ₁ : MDifferentiableAt I 𝓘(ℝ, G) ψ₁ (ψ₁.symm w))
-    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
+    (hψ₂s : MDifferentiableAt 𝓘(ℝ, G') I ψ₂.symm (ψ₁.symm.trans ψ₂ w))
     (hΘ : DifferentiableAt ℝ (ψ₁.symm.trans ψ₂) w) :
     (J.chartPushforward ψ₂ (ψ₁.symm.trans ψ₂ w)).comp (fderiv ℝ (ψ₁.symm.trans ψ₂) w) =
       (fderiv ℝ (ψ₁.symm.trans ψ₂) w).comp (J.chartPushforward ψ₁ w) := by
   have hw' : w ∈ ψ₁.target ∧ ψ₁.symm w ∈ ψ₂.source := by simpa using hw
   have hy : ψ₂.symm (ψ₁.symm.trans ψ₂ w) = ψ₁.symm w := by simp [ψ₂.left_inv hw'.2]
   have hsymm : ∀ v : G, mfderiv 𝓘(ℝ, G) I ψ₁.symm w v =
-      mfderiv 𝓘(ℝ, G) I ψ₂.symm (ψ₁.symm.trans ψ₂ w) (fderiv ℝ (ψ₁.symm.trans ψ₂) w v) :=
+      mfderiv 𝓘(ℝ, G') I ψ₂.symm (ψ₁.symm.trans ψ₂ w) (fderiv ℝ (ψ₁.symm.trans ψ₂) w v) :=
     DFunLike.congr_fun (ψ₁.mfderiv_symm_eq_mfderiv_symm_comp_fderiv_symm_trans hw hψ₂s hΘ)
   ext v
   simp only [ContinuousLinearMap.comp_apply]
