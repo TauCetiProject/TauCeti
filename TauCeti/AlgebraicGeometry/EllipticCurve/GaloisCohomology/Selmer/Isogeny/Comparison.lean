@@ -163,21 +163,11 @@ private theorem sum_localPairing_eq_zero (S : Finset (GlobalNumberFields.Place K
     {d : H1 (AbsoluteGaloisGroup K) (ofIsogeny φ.dual).KerCoeff}
     (hd : d ∈ φ.dual.selmerGroup τ) :
     ∑ v : S, localPairing φ v (φ.kerRes (τ v) c) (φ.dualKerRes (τ v) d) = 0 := by
-  -- Outside `S` both classes satisfy their local conditions, so their pairing vanishes there.
-  have h0 (v : GlobalNumberFields.Place K) (hv : v ∉ S) :
-      basePairing φ v (φ.kerRes (τ v) c) (φ.dualKerRes (τ v) d) = 0 :=
-    basePairing_eq_zero φ v
-      (by simpa using ((φ.selmerStructure τ).mem_selmerGroup_relaxedAt_iff _).mp hc v hv)
-      (φ.dualKerRes_mem_localKummerCondition_of_mem_selmerGroup τ hd v)
-  have h :=
-    φ.finsum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero c d
-      (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w))
-  rw [finsum_eq_sum_of_support_subset _ (s := S.toLeft) fun v hv ↦ by_contra fun hvS ↦ hv <| by
-      rw [Finset.mem_coe, Finset.mem_toLeft] at hvS
-      exact (congrArg _ (h0 _ hvS)).trans (map_zero _),
-    ← Finset.sum_subset (Finset.subset_univ S.toRight) fun w _ hw ↦ by
-      rw [Finset.mem_toRight] at hw
-      exact (congrArg _ (h0 _ hw)).trans (map_zero _)] at h
+  have hc' (v : GlobalNumberFields.Place K) (hv : v ∉ S) :=
+    ((φ.selmerStructure τ).mem_selmerGroup_relaxedAt_iff _).mp hc v hv
+  have hd' := (φ.dual.mem_selmerGroup_iff_forall_kerRes_mem_localKummerCondition τ).mp hd
+  simp only [selmerStructure_localization, selmerStructure_localCondition,
+    mem_localKummerCondition_iff] at hc' hd'
   have hl (v : GlobalNumberFields.Place K) (_ : v ∈ S) :
       ZMod.toRatAddCircle φ.degree (localPairing φ v (φ.kerRes (τ v) c) (φ.dualKerRes (τ v) d)) =
         ZMod.toRatAddCircle (φ.baseChange v.Completion).degree
@@ -187,7 +177,11 @@ private theorem sum_localPairing_eq_zero (S : Finset (GlobalNumberFields.Place K
   rw [map_sum, map_zero, Finset.sum_coe_sort S fun v ↦ ZMod.toRatAddCircle φ.degree
       (localPairing φ v (φ.kerRes (τ v) c) (φ.dualKerRes (τ v) d)),
     Finset.sum_congr rfl hl, Finset.sum_sum_eq_sum_toLeft_add_sum_toRight]
-  simpa only [basePairing_inl, basePairing_inr] using h
+  simp only [basePairing_inl, basePairing_inr]
+  refine φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero c d (fun v ↦ τ (.inl v))
+    (fun w ↦ τ (.inr w)) S (fun v hv ↦ ?_) (fun v _ ↦ ?_) (fun w hw ↦ ?_) (fun w _ ↦ ?_) <;>
+  rw [pointRes_kerCoeffIncl]
+  exacts [hc' (.inl v) hv, hd' (.inl v), hc' (.inr w) hw, hd' (.inr w)]
 
 /-! ### The orthogonality bound -/
 
