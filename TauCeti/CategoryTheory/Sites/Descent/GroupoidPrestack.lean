@@ -9,7 +9,7 @@ public import Mathlib.CategoryTheory.Bicategory.Functor.LocallyDiscrete
 public import Mathlib.CategoryTheory.Sites.Descent.IsPrestack
 public import Mathlib.CategoryTheory.Sites.Subsheaf
 public import TauCeti.CategoryTheory.Sites.GroupoidObject
-public import TauCeti.CategoryTheory.Sites.Over.Basic
+public import TauCeti.CategoryTheory.Comma.Over
 
 /-!
 # The prestack of a groupoid object in sheaves
