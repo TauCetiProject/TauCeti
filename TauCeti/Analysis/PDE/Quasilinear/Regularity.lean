@@ -320,11 +320,8 @@ private theorem exists_mem_nhds_holderOnWith_preciseRepresentative_gradient (hα
   have hBΩ : B ≤ Omega := (ball_subset_ball (min_le_right _ _)).trans hρΩ
   -- The datum is Hölder, hence bounded, on `B`.
   have hfB : HolderOnWith Cf α f B := hCf.mono (ball_subset_ball (min_le_left _ _))
-  obtain ⟨M, hM⟩ := (hfB.isBounded_image isBounded_ball).exists_norm_le
   have hftop : MemLp f ⊤ (volume.restrict B) :=
-    memLp_top_of_bound ((hfB.continuousOn hα).aestronglyMeasurable
-      B.isOpen.measurableSet) M (ae_restrict_of_forall_mem B.isOpen.measurableSet
-        (forall_mem_image.1 hM))
+    MeasureTheory.memLp_top_of_holderOnWith B.isOpen.measurableSet isBounded_ball hα hfB
   -- The restriction of `u` to `B` solves the restricted equation against test functions.
   have huB : ∀ φ : 𝓓(B, ℝ), energyFormH1 (fun y => A y (W1p.value (W1p.restrictL hBΩ u) y)) 0 0
       (W1p.restrictL hBΩ u) (W1p.ofTestFunctionₗ volume B 2 φ) =
