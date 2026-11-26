@@ -8,11 +8,10 @@ module
 public import TauCeti.RepresentationTheory.SU2.Weyl.Integration
 
 /-!
-# Haar probability and symmetric-power characters in the conjugacy angle
+# Haar probability in the conjugacy angle
 
 In the coordinate given by `TauCeti.SU2.conjugacyAngle`, Haar probability on `SU(2)` has density
-`(2/π) sin² θ` on `[0, π]`, and the character of the degree-`d` symmetric power is the Chebyshev
-value `U_d(cos θ)`.
+`(2/π) sin² θ` on `[0, π]`.
 
 See K. S. Kedlaya, *Notes on analytic number theory*, §24.5.
 -/
@@ -51,15 +50,5 @@ theorem integral_comp_conjugacyAngle {f : ℝ → ℝ}
         (1 / (2 * Real.pi)) * (4 * ∫ θ in (0 : ℝ)..Real.pi, f θ * Real.sin θ ^ 2) := by
       exact_mod_cast h
     _ = _ := by ring
-
-/-- The symmetric-power character of an element with conjugacy angle `θ` is the real
-Chebyshev value `U_d(cos θ)`. -/
-theorem character_symPower_eq_chebyshevU_eval_cos_conjugacyAngle (d : ℕ) (g : SU2) :
-    (symPower d).character g =
-      ((Polynomial.Chebyshev.U ℝ d).eval (Real.cos (conjugacyAngle g)) : ℝ) := by
-  rw [character_symPower_eq_chebyshevU_eval, trace_eq_of_isConj (isConj_torusExp_conjugacyAngle g),
-    trace_torusExp, mul_comm (2 : ℂ), mul_div_cancel_right₀ _ (by norm_num : (2 : ℂ) ≠ 0)]
-  rw [← Polynomial.Chebyshev.map_U Complex.ofRealHom]
-  exact Polynomial.eval_map_apply Complex.ofRealHom _
 
 end TauCeti.SU2
