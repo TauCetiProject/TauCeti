@@ -32,9 +32,8 @@ of `𝒪_X^n ⟶ N` for finitely many global sections of `N`.
   of finite type is of finite type.
 * `AlgebraicGeometry.Scheme.Modules.isFiniteType_cokernel`: the cokernel of a morphism into a
   module of finite type is of finite type.
-* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj` and
-  `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorPow`: tensor products and tensor powers of
-  modules of finite type are of finite type.
+* `AlgebraicGeometry.Scheme.Modules.isFiniteType_tensorObj`: the tensor product of two modules of
+  finite type is of finite type.
 
 ## References
 
@@ -85,15 +84,5 @@ open MonoidalCategory in
 instance isFiniteType_tensorObj (M N : X.Modules) [M.IsFiniteType] [N.IsFiniteType] :
     (M ⊗ N).IsFiniteType :=
   SheafOfModules.isFiniteType_tensorObj (R := X.sheaf)
-
-open MonoidalCategory in
-/-- Tensor powers of an `𝒪_X`-module of finite type are of finite type. -/
-instance isFiniteType_tensorPow (M : X.Modules) [M.IsFiniteType] (n : ℕ) :
-    (TauCeti.tensorPow M n).IsFiniteType := by
-  induction n with
-  | zero =>
-    exact SheafOfModules.IsFiniteType.of_iso (R := X.ringCatSheaf)
-      (TauCeti.SheafOfModules.freePUnitIsoUnit X.ringCatSheaf)
-  | succ n ih => exact inferInstanceAs (M ⊗ TauCeti.tensorPow M n).IsFiniteType
 
 end AlgebraicGeometry.Scheme.Modules

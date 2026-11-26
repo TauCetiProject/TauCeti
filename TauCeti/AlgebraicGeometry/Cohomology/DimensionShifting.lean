@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
-import TauCeti.AlgebraicGeometry.Modules.Biprod
 
 /-!
 # Finiteness of cohomology by dimension shifting
@@ -34,10 +33,8 @@ cohomology is computed here from that of the summand.
 
 ## Main results
 
-* `Scheme.Modules.subsingleton_cohomology_free_tensor` and
-  `Scheme.Modules.finite_cohomology_free_tensor`: `Hᵠ(X, 𝒪^{⊕I} ⊗ L)` vanishes (respectively is
-  finitely generated) when `I` is finite and `Hᵠ(X, L)` vanishes (respectively is finitely
-  generated).
+* `Scheme.Modules.finite_cohomology_free_tensor`: `Hᵠ(X, 𝒪^{⊕I} ⊗ L)` is finitely generated when
+  `I` is finite and `Hᵠ(X, L)` is finitely generated.
 * `Scheme.Modules.finite_cohomology_of_forall_exists_epi`: the dimension-shifting criterion above.
 
 ## References
@@ -56,13 +53,6 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 universe u
 
-/-- The cohomology of `𝒪^{⊕I} ⊗ L`, for a finite type `I`, vanishes in every degree in which the
-cohomology of `L` vanishes: `𝒪^{⊕I} ⊗ L` is the direct sum of `I` copies of `L`. -/
-instance subsingleton_cohomology_free_tensor {X : Scheme.{u}} (I : Type u) [Finite I]
-    (L : X.Modules) (q : ℕ) [Subsingleton (Cohomology L q)] :
-    Subsingleton (Cohomology ((SheafOfModules.free I : X.Modules) ⊗ L) q) :=
-  subsingleton_cohomology_of_iso (freeTensorIsoBiproduct I L) q
-
 variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 
 /-- The cohomology of `𝒪^{⊕I} ⊗ L`, for a finite type `I`, is finitely generated over the base
@@ -72,8 +62,20 @@ instance finite_cohomology_free_tensor (I : Type u) [Finite I] (L : X.Modules) (
     [Module.Finite R (Cohomology L q)] :
     Module.Finite R (Cohomology ((SheafOfModules.free I : X.Modules) ⊗ L) q) := by
   have : Fintype I := .ofFinite I
+  -- Tensoring is additive in each variable, so it commutes with the finite direct sum
+  -- `𝒪^{⊕I} ≅ ⨁_I 𝒪`.
+  -- The instances are stated on `X.Modules`: the tensor product and `biproductIsoFree` are
+  -- elaborated in the defeq category `SheafOfModules (ringCatSheaf X.sheaf)`, where instance
+  -- search does not find them for `X.Modules`.
+  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  have : HasBiproduct (C := X.Modules) fun _ : I ↦ L := HasBiproduct.of_hasCoproduct _
+  have : HasBiproduct (C := X.Modules) fun _ : I ↦ 𝟙_ X.Modules := HasBiproduct.of_hasCoproduct _
+  let e₀ : Iso (C := X.Modules) (SheafOfModules.free I) (⨁ fun _ : I ↦ 𝟙_ X.Modules) :=
+    (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm
+  let e : Iso (C := X.Modules) ((SheafOfModules.free I : X.Modules) ⊗ L) (⨁ fun _ : I ↦ L) :=
+    whiskerRightIso e₀ L ≪≫ (tensorRight L).mapBiproduct _ ≪≫ biproduct.mapIso fun _ ↦ λ_ L
   exact .equiv ((cohomologyBiproductLinearEquiv R (fun _ : I ↦ L) q).symm ≪≫ₗ
-    (cohomologyBaseLinearEquivOfIso R (freeTensorIsoBiproduct I L) q).symm)
+    (cohomologyBaseLinearEquivOfIso R e q).symm)
 
 /-- **Finiteness of cohomology by dimension shifting.** Let `X` be a locally Noetherian scheme over
 a Noetherian ring `R`. Suppose that quasi-coherent sheaves of finite type on `X` have no cohomology

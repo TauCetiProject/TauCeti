@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
@@ -57,8 +56,7 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
 * `AlgebraicGeometry.Proj.isIso_pullbackTwistingSheafMap`: it is an isomorphism when the
   degree-one standard opens cover `Proj 𝒜`.
 * `AlgebraicGeometry.Proj.pullbackTwistingSheafIso`: the resulting isomorphism
-  `(Proj.map f hf)^* 𝒪(n) ≅ 𝒪(n)`, specialized to surjective linear maps of symmetric algebras in
-  `AlgebraicGeometry.Proj.pullbackTwistingSheafMapSymmetricAlgebraIso`.
+  `(Proj.map f hf)^* 𝒪(n) ≅ 𝒪(n)`.
 
 ## References
 
@@ -241,40 +239,6 @@ theorem pullbackTwistingSheafIso_hom {ι : Type*} (a : ι → A) (ha : ∀ i, a 
     (hcover : ⨆ i, basicOpen 𝒜 (a i) = ⊤) (n : ℤ) :
     (pullbackTwistingSheafIso f hf a ha hcover n).hom = pullbackTwistingSheafMap f hf n := by
   simp [pullbackTwistingSheafIso]
-
-section SymmetricAlgebra
-
-open TauCeti.SymmetricAlgebra
-
-variable {R M P : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
-  [AddCommMonoid P] [Module R P]
-
-/-- Along `mapSymmetricAlgebraOfSurjective φ hφ`, the twisting sheaf `𝒪(n)` on `Proj (Sym_R P)`
-pulls back isomorphically to `𝒪(n)` on `Proj (Sym_R M)`. -/
-def pullbackTwistingSheafMapSymmetricAlgebraIso (φ : P →ₗ[R] M)
-    (hφ : Function.Surjective φ) (n : ℤ) :
-    (pullback (mapSymmetricAlgebraOfSurjective φ hφ)).obj
-        (twistingSheaf (homogeneousSubmodule R P) n) ≅
-      twistingSheaf (homogeneousSubmodule R M) n :=
-  (Scheme.Modules.pullbackCongr (mapSymmetricAlgebraOfSurjective_def φ hφ)).app _ ≪≫
-    pullbackTwistingSheafIso (SymmetricAlgebra.gradedMap R φ) _
-      (_root_.SymmetricAlgebra.ι R P) (ι_mem_homogeneousSubmodule R P)
-      (iSup_basicOpen_ι_eq_top R P id (by simp)) n
-
-/-- The forward morphism of `pullbackTwistingSheafMapSymmetricAlgebraIso` is
-`pullbackTwistingSheafMap` along `SymmetricAlgebra.gradedMap R φ` after transporting along
-`mapSymmetricAlgebraOfSurjective_def`. -/
-@[simp]
-theorem pullbackTwistingSheafMapSymmetricAlgebraIso_hom (φ : P →ₗ[R] M)
-    (hφ : Function.Surjective φ) (n : ℤ) :
-    (pullbackTwistingSheafMapSymmetricAlgebraIso φ hφ n).hom =
-      (Scheme.Modules.pullbackCongr (mapSymmetricAlgebraOfSurjective_def φ hφ)).hom.app _ ≫
-        pullbackTwistingSheafMap (SymmetricAlgebra.gradedMap R φ)
-          (HomogeneousIdeal.irrelevant_le_map_of_surjective _
-            (SymmetricAlgebra.gradedMap_surjective R hφ)) n := by
-  simp [pullbackTwistingSheafMapSymmetricAlgebraIso]
-
-end SymmetricAlgebra
 
 end AlgebraicGeometry.Proj
 

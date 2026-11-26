@@ -34,9 +34,7 @@ infinite-dimensional and `I` is nonempty.
 
 ## Main declarations
 
-* `Scheme.Modules.cohomologyBiproductLinearEquiv`: `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, Hⁱ(X, Mⱼ)`, and
-  `Scheme.Modules.subsingleton_cohomology_biproduct`: vanishing of `Hⁱ(X, ⨁ⱼ Mⱼ)` when each
-  `Hⁱ(X, Mⱼ)` vanishes;
+* `Scheme.Modules.cohomologyBiproductLinearEquiv`: `Hⁱ(X, ⨁ⱼ Mⱼ) ≃ₗ[R] ∀ j, Hⁱ(X, Mⱼ)`;
 * `Scheme.Modules.cohomologyBiprodLinearEquiv`: `Hⁱ(X, M ⊞ N) ≃ₗ[R] Hⁱ(X, M) × Hⁱ(X, N)`, with
   `Scheme.Modules.finrank_cohomology_biprod` and `Scheme.Modules.eulerCharBelow_biprod` computing
   dimensions and truncated Euler characteristics when the cohomology is finite-dimensional;
@@ -60,22 +58,6 @@ universe u
 noncomputable section
 
 namespace Scheme.Modules
-
-/-- `Hⁱ(X, ⨁ⱼ Mⱼ)` vanishes when `Hⁱ(X, Mⱼ)` vanishes for every `j`. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_biproduct
-    {X : Scheme.{u}} {J : Type*} [Finite J] (F : J → X.Modules) [HasBiproduct F] (i : ℕ)
-    [hF : ∀ j, Subsingleton (Cohomology (F j) i)] :
-    Subsingleton (Cohomology (⨁ F) i) := by
-  classical
-  have : Fintype J := .ofFinite J
-  have hπ (j : J) : (cohomologyFunctor X i).map (biproduct.π F j) = 0 :=
-    have : Subsingleton ↑((cohomologyFunctor X i).obj (F j)) := hF j
-    AddCommGrpCat.ext fun _ ↦ Subsingleton.elim _ _
-  have h : 𝟙 ((cohomologyFunctor X i).obj (⨁ F)) = 0 := by
-    rw [← (cohomologyFunctor X i).map_id, ← biproduct.total, CategoryTheory.Functor.map_sum]
-    exact Finset.sum_eq_zero fun j _ ↦ by
-      rw [(cohomologyFunctor X i).map_comp, hπ, Limits.zero_comp]
-  exact ⟨fun x y ↦ (ConcreteCategory.congr_hom h x).trans (ConcreteCategory.congr_hom h y).symm⟩
 
 variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 

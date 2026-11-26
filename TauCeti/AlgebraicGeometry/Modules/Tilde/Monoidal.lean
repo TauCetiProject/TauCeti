@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import TauCeti.Algebra.Category.ModuleCat.Colimits
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Evaluation
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
+import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 
 /-!
 # The sheaf associated with a tensor product of modules
@@ -91,24 +92,19 @@ private instance : IsIso (ε (globalSections (R := R))) := by
 /-- Mathlib's global sections functor agrees with `globalSections`: both are the sections over
 `⊤`, with the same action of `R`. -/
 private def moduleSpecΓFunctorIso : moduleSpecΓFunctor (R := R) ≅ globalSections :=
-  NatIso.ofComponents (fun M ↦
-    let e : moduleSpecΓFunctor.obj M ≃ₗ[R] globalSections.obj M :=
-      { AddEquiv.refl _ with
-        map_smul' := fun r x ↦ by
-          -- `moduleSpecΓFunctor` lets `R` act through the restriction of `Γ(Spec R, ⊤)` along the
-          -- endomorphism of `⊤` given by initiality, which is the identity.
-          have h : ((Spec R).ringCatSheaf.obj.map
-              ((initialOpOfTerminal isTerminalTop).to (.op ⊤))).hom = RingHom.id _ := by
-            rw [IsInitial.to_self, CategoryTheory.Functor.map_id]
-            rfl
-          exact congrArg (fun f : _ →+* _ ↦ f ((Scheme.ΓSpecIso R).inv.hom r) •
-            (show M.val.obj (.op ⊤) from x)) h }
-    e.toModuleIso)
-    (fun _ ↦ by ext; rfl)
+  NatIso.ofComponents
+    (fun M ↦ (M.moduleSpecΓAddEquiv.toLinearEquiv M.moduleSpecΓAddEquiv_smul).toModuleIso)
+    fun f ↦ ModuleCat.hom_ext <| LinearMap.ext f.moduleSpecΓAddEquiv_naturality
 
 /-- The tilde--global sections adjunction, with right adjoint the lax monoidal `globalSections`. -/
 private def tildeAdjunction : tilde.functor R ⊣ globalSections :=
   tilde.adjunction.ofNatIsoRight moduleSpecΓFunctorIso
+
+private lemma tildeAdjunction_unit_apply (M : ModuleCat.{u} R) (m : M) :
+    tildeAdjunction.unit.app M m = tilde.toOpen M ⊤ m := by
+  simp only [tildeAdjunction, moduleSpecΓFunctorIso, Adjunction.ofNatIsoRight_unit,
+    NatTrans.comp_app, Functor.whiskerLeft_app, ConcreteCategory.comp_apply]
+  exact Scheme.Modules.moduleSpecΓAddEquiv_toOpen_top M m
 
 private lemma isIso_η :
     letI := (tildeAdjunction (R := R)).leftAdjointOplaxMonoidal
@@ -166,6 +162,11 @@ theorem tilde_η : η (tilde.functor R) = (tildeSelf (R := R)).hom := by
     Equiv.apply_symm_apply]
   ext
   rw [globalSections_ε_apply]
+  refine Eq.symm <| (ConcreteCategory.congr_hom
+    (tildeAdjunction.homEquiv_unit _ _ (tildeSelf (R := R)).hom) (1 : R)).trans ?_
+  rw [ConcreteCategory.comp_apply]
+  change (tildeSelf (R := R)).hom.app ⊤ (tildeAdjunction.unit.app (ModuleCat.of R R) (1 : R)) = _
+  rw [tildeAdjunction_unit_apply]
   -- Both sides are the image of `1` in `Γ(Spec R, ⊤)`.
   rfl
 
@@ -203,27 +204,30 @@ theorem tilde_μ_app_top_toOpen (M N : ModuleCat.{u} R) (m : M) (n : N) :
       (tildeAdjunction.unit.app M ⊗ₘ tildeAdjunction.unit.app N) ≫ μ globalSections _ _ :=
     (tildeAdjunction.homEquiv_unit _ _ _).symm.trans
       ((tildeAdjunction.homEquiv _ _).apply_symm_apply _)
+  have htmul : (tildeAdjunction.unit.app M ⊗ₘ tildeAdjunction.unit.app N) (m ⊗ₜ n) =
+      tilde.toOpen M ⊤ m ⊗ₜ[R] tilde.toOpen N ⊤ n :=
+    (ModuleCat.MonoidalCategory.tensorHom_tmul _ _ m n).trans
+      (congrArg₂ (· ⊗ₜ[R] ·) (tildeAdjunction_unit_apply M m) (tildeAdjunction_unit_apply N n))
   have key : globalSections.map (δ (tilde.functor R) M N) (tildeAdjunction.unit.app (M ⊗ N)
       (m ⊗ₜ n)) =
       (μ forgetSpec (tilde M) (tilde N)).app' (.op ⊤)
         (tilde.toOpen M ⊤ m ⊗ₜ tilde.toOpen N ⊤ n) := by
     have hA := ConcreteCategory.congr_hom h (m ⊗ₜ n)
     simp only [ConcreteCategory.comp_apply] at hA
-    exact hA.trans (globalSections_μ_apply (tilde M) (tilde N) (tilde.toOpen M ⊤ m)
-      (tilde.toOpen N ⊤ n))
-  -- The goal is stated with `SheafOfModules.forget`, which is `forgetSpec` with the same lax
-  -- monoidal structure.
+    exact hA.trans ((congrArg (μ globalSections (tilde M) (tilde N)) htmul).trans
+      (globalSections_μ_apply (tilde M) (tilde N) (tilde.toOpen M ⊤ m) (tilde.toOpen N ⊤ n)))
+  -- It remains to see that `μ` undoes `δ`; `SheafOfModules.forget` is `forgetSpec` and on
+  -- underlying sections `globalSections.map f` is `(forgetSpec.map f).app' (.op ⊤)`.
+  have hδμ : globalSections.map (μ (tilde.functor R) M N)
+      (globalSections.map (δ (tilde.functor R) M N) (tildeAdjunction.unit.app (M ⊗ N) (m ⊗ₜ n))) =
+      tilde.toOpen (M ⊗ N) ⊤ (m ⊗ₜ n) := by
+    rw [← ConcreteCategory.comp_apply, ← CategoryTheory.Functor.map_comp, Functor.Monoidal.δ_μ,
+      CategoryTheory.Functor.map_id, ConcreteCategory.id_apply, tildeAdjunction_unit_apply]
   change (forgetSpec.map (μ (tilde.functor R) M N)).app' (.op ⊤)
     ((μ forgetSpec (tilde M) (tilde N)).app' (.op ⊤)
       (tilde.toOpen M ⊤ m ⊗ₜ tilde.toOpen N ⊤ n)) = _
   rw [← key]
-  -- It remains to see that `μ` undoes `δ`. On underlying sections, `globalSections.map f` is
-  -- `(forgetSpec.map f).app' (.op ⊤)`, and the unit of `tildeAdjunction` is `tilde.toOpen`.
-  change globalSections.map (μ (tilde.functor R) M N)
-    (globalSections.map (δ (tilde.functor R) M N) (tildeAdjunction.unit.app (M ⊗ N) (m ⊗ₜ n))) =
-      tildeAdjunction.unit.app (M ⊗ N) (m ⊗ₜ n)
-  rw [← ConcreteCategory.comp_apply, ← CategoryTheory.Functor.map_comp, Functor.Monoidal.δ_μ,
-    CategoryTheory.Functor.map_id, ConcreteCategory.id_apply]
+  exact hδμ
 
 end
 

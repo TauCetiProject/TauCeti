@@ -32,11 +32,9 @@ For a scheme `X` and `M : X.Modules`, the main declarations are:
   `Scheme.Modules.cohomologyOnMap` its functoriality in the coefficient sheaf, bundled as the
   functor `Scheme.Modules.cohomologyOnFunctor X n U`,
   `Scheme.Modules.cohomologyOnZeroEquiv` the identification of `H⁰(U, M)` with `Γ(M, U)`, and
-  `Scheme.Modules.cohomologyOnTopIso` the natural identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`
-  (`AlgebraicGeometry.Scheme.Modules.cohomologyOnTopIso_hom_cohomologyOnMap`);
-* `Scheme.Modules.subsingleton_cohomology_congr`, `Scheme.Modules.subsingleton_cohomology_of_iso`,
-  and `Scheme.Modules.subsingleton_cohomology_of_isEmpty`, invariance of cohomology vanishing under
-  isomorphism and the vanishing of all cohomology on the empty scheme.
+  `Scheme.Modules.cohomologyOnTopIso` the identification of `Hⁿ(⊤, M)` with `Hⁿ(X, M)`;
+* `Scheme.Modules.subsingleton_cohomology_of_isEmpty`, the vanishing of all cohomology on the
+  empty scheme.
 
 The construction is stated for every sheaf of modules, which is the natural generality of sheaf
 cohomology. In particular it applies to finitely presented sheaves through their underlying
@@ -106,18 +104,6 @@ lemma cohomologyZeroEquiv_naturality {M N : X.Modules} (f : M ⟶ N) (x : Cohomo
       f.app ⊤ (cohomologyZeroEquiv M x) :=
   (CategoryTheory.Sheaf.H.equiv₀_naturality isTerminalTop
     ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).map f) x).symm
-
-/-- Isomorphic `𝒪_X`-modules have simultaneously trivial cohomology in degree `i`. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr
-    {M N : X.Modules} (e : M ≅ N) (i : ℕ) :
-    Subsingleton (Cohomology M i) ↔ Subsingleton (Cohomology N i) :=
-  ((cohomologyFunctor X i).mapIso e).addCommGroupIsoToAddEquiv.toEquiv.subsingleton_congr
-
-/-- Transfer vanishing of degree-`i` cohomology along an isomorphism of `𝒪_X`-modules. -/
-theorem _root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_of_iso
-    {M N : X.Modules} (e : M ≅ N) (i : ℕ) [Subsingleton (Cohomology N i)] :
-    Subsingleton (Cohomology M i) :=
-  (_root_.AlgebraicGeometry.Scheme.Modules.subsingleton_cohomology_congr e i).mpr ‹_›
 
 /-- On an empty scheme every sheaf of modules has trivial cohomology in every degree, as it is the
 zero sheaf. -/

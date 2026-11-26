@@ -23,12 +23,10 @@ algebra `⨁ n, 𝒜 n`, the lift into the degree-one summand is degree-preservi
 (`SymmetricAlgebra.lift_apply_of_mem_homogeneousSubmodule`).
 
 In particular, a linear map `M → N` induces a degree-preserving map of symmetric algebras, the
-graded lift into the degree-one part of `Sym N`, preserving the base-ring structure in degree zero
-(`SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap`); its underlying map is
-`SymmetricAlgebra.map`. The bundled graded map allows linear equivalences to act on the projective
-spectrum of the symmetric algebra. Conversely, an algebra homomorphism of symmetric algebras is
-induced by a unique linear map exactly when the images of its generators lie in degree one
-(`existsUnique_map_eq_iff`).
+graded lift into the degree-one part of `Sym N`; its underlying map is `SymmetricAlgebra.map`. The
+bundled graded map allows linear equivalences to act on the projective spectrum of the symmetric
+algebra. Conversely, an algebra homomorphism of symmetric algebras is induced by a unique linear
+map exactly when the images of its generators lie in degree one (`existsUnique_map_eq_iff`).
 -/
 
 public section
@@ -157,12 +155,6 @@ theorem gradedMap_apply (f : M →ₗ[R] N) (a : SymmetricAlgebra R M) :
 theorem gradedMap_toRingHom (f : M →ₗ[R] N) :
     (gradedMap R f).toRingHom = (map R f).toRingHom :=
   RingHom.ext (gradedMap_apply R f)
-
-/-- A surjective linear map induces a surjective graded map of symmetric algebras. -/
-theorem gradedMap_surjective {f : M →ₗ[R] N} (hf : Function.Surjective f) :
-    Function.Surjective (gradedMap R f) := fun b ↦ by
-  obtain ⟨a, rfl⟩ := map_surjective R f hf b
-  exact ⟨a, gradedMap_apply R f a⟩
 
 /-- The identity linear map induces the identity graded map. -/
 @[simp]
