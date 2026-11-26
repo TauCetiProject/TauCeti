@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Data.ZMod.OrderOf
 import TauCeti.GroupTheory.OrderOfElement.SignedPowers
-import TauCeti.NumberTheory.Multiplicity
 
 /-!
 # Avoiding pairs of short signed powers
@@ -25,52 +24,6 @@ The application to sparse sets is from `New.Parameters.exists_large_isSparse` in
 public section
 
 namespace ZMod
-
-/-- If a positive power of an integer `a > 1` is one modulo `2^(s+1)`, then the exponent
-times `a + 1` is at least `2^s`. -/
-theorem two_pow_le_mul_succ_of_pow_eq_one {a n s : ℕ} (ha : 1 < a) (hn : 0 < n)
-    (h : (a : ZMod (2 ^ (s + 1))) ^ n = 1) : 2 ^ s ≤ n * (a + 1) := by
-  have hd : 2 ^ (s + 1) ∣ a ^ n - 1 :=
-    (dvd_pow_sub_one_iff_orderOf_natCast_dvd (by omega) n).2 (orderOf_dvd_of_pow_eq_one h)
-  have hpow : 1 < a ^ n := Nat.one_lt_pow hn.ne' ha
-  have hao : Odd a := by
-    refine Nat.not_even_iff_odd.mp fun he => ?_
-    have h₁ := (dvd_pow_self 2 (by omega : s + 1 ≠ 0)).trans hd
-    have h₂ := dvd_pow (even_iff_two_dvd.1 he) hn.ne'
-    omega
-  have hle := (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1)
-    (Nat.sub_ne_zero_of_lt hpow)).1 hd
-  have hminus : 2 ^ multiplicity 2 (a - 1) ≤ a - 1 :=
-    Nat.le_of_dvd (by omega) (pow_multiplicity_dvd _ _)
-  by_cases hne : Even n
-  swap
-  · have hv := Nat.multiplicity_pow_two_sub_pow_of_odd hao odd_one (Nat.not_even_iff_odd.mp hne)
-    rw [one_pow] at hv
-    rw [hv] at hle
-    calc
-      2 ^ s ≤ 2 ^ multiplicity 2 (a - 1) := Nat.pow_le_pow_right (by decide) (by omega)
-      _ ≤ a + 1 := hminus.trans (by omega)
-      _ ≤ n * (a + 1) := Nat.le_mul_of_pos_left _ hn
-  have hv := Nat.multiplicity_pow_two_sub_one ha hao.not_two_dvd_nat hn.ne' hne
-  have hlow : multiplicity 2 (a + 1) ≤ 1 ∨ multiplicity 2 (a - 1) ≤ 1 := by
-    have hcases : ¬4 ∣ a + 1 ∨ ¬4 ∣ a - 1 := by omega
-    have hval (b : ℕ) (hb : b ≠ 0) (h4 : ¬4 ∣ b) : multiplicity 2 b ≤ 1 := by
-      have hnot : ¬2 ≤ multiplicity 2 b := fun hh =>
-        h4 ((Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1) hb).2 hh)
-      omega
-    exact hcases.imp (hval _ (by omega)) (hval _ (by omega))
-  have hn' : 2 ^ multiplicity 2 n ≤ n := Nat.le_of_dvd hn (pow_multiplicity_dvd _ _)
-  rcases hlow with hl | hl
-  · calc
-      2 ^ s ≤ 2 ^ (multiplicity 2 n + multiplicity 2 (a - 1)) :=
-        Nat.pow_le_pow_right (by decide) (by omega)
-      _ ≤ n * (a + 1) := by rw [pow_add]; gcongr; omega
-  · have hplus : 2 ^ multiplicity 2 (a + 1) ≤ a + 1 :=
-      Nat.le_of_dvd (by omega) (pow_multiplicity_dvd _ _)
-    calc
-      2 ^ s ≤ 2 ^ (multiplicity 2 n + multiplicity 2 (a + 1)) :=
-        Nat.pow_le_pow_right (by decide) (by omega)
-      _ ≤ n * (a + 1) := by rw [pow_add]; gcongr
 
 /-- If `g` reduces to one modulo `3^(r+1)`, then two powers of `g` cannot differ
 by a signed power `2^i` with `0 < i < 3^r`. -/
