@@ -34,6 +34,7 @@ A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factor
 * `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one`: `q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1)` for
   `i ≤ n`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
+* `Nat.lt_pow_add_one_self`: `n < b ^ (n + 1)` for `1 < b`.
 -/
 
 public section
@@ -93,5 +94,9 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
     rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← add_mul,
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
+
+/-- For `1 < b`, every natural number `n` is strictly smaller than `b ^ (n + 1)`. -/
+theorem lt_pow_add_one_self {b : ℕ} (hb : 1 < b) (n : ℕ) : n < b ^ (n + 1) :=
+  n.lt_succ_self.trans ((n + 1).lt_pow_self hb)
 
 end Nat

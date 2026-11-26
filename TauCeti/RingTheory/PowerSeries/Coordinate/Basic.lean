@@ -333,6 +333,12 @@ noncomputable def map (f : R →+* S) : FormalCoordinate R →* FormalCoordinate
 theorem toPowerSeries_map (f : R →+* S) (φ : FormalCoordinate R) :
     (map f φ).toPowerSeries = PowerSeries.map f φ.toPowerSeries := (rfl)
 
+/-- Base change along `f` maps the linear coefficient of `φ` via `Units.map f`. -/
+@[simp]
+theorem linearCoeff_map (f : R →+* S) (φ : FormalCoordinate R) :
+    linearCoeff (map f φ) = Units.map f (linearCoeff φ) :=
+  Units.ext <| by simp
+
 /-- Base change of formal coordinates along the identity changes nothing. -/
 @[simp]
 theorem map_id : map (RingHom.id R) = MonoidHom.id (FormalCoordinate R) :=

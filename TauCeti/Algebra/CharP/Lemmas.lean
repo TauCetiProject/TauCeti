@@ -50,8 +50,9 @@ law.
   characteristic `p`.
 * `TauCeti.natCast_mul_natCast_val_inv_eq_one`: `m * (m⁻¹ : ZMod p).val = 1` in characteristic
   `p` when `m` is prime to `p`.
-* `TauCeti.isUnit_natCast_of_not_dvd`: in a semiring of characteristic a prime `p`, a natural
-  number prime to `p` is a unit.
+* `TauCeti.isUnit_natCast_of_not_dvd`, `TauCeti.isUnit_natCast_of_prime_ne`: in a semiring of
+  characteristic a prime `p`, a natural number prime to `p` (in particular any prime `q ≠ p`) is a
+  unit.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -141,6 +142,11 @@ theorem isUnit_natCast_of_not_dvd {R : Type*} [Semiring R] {p : ℕ} [CharP R p]
     {n : ℕ} (hn : ¬p ∣ n) : IsUnit (n : R) := by
   have h := natCast_mul_natCast_val_inv_eq_one (R := R) p ((hp.coprime_iff_not_dvd.2 hn).symm)
   exact ⟨⟨n, _, h, (Nat.cast_commute _ _).eq.symm.trans h⟩, rfl⟩
+
+/-- In a semiring of characteristic a prime `p`, every prime `q ≠ p` casts to a unit. -/
+theorem isUnit_natCast_of_prime_ne {R : Type*} [Semiring R] {p : ℕ} [CharP R p] (hp : p.Prime)
+    ⦃q : ℕ⦄ (hq : q.Prime) (hqp : q ≠ p) : IsUnit (q : R) :=
+  isUnit_natCast_of_not_dvd hp fun hdvd ↦ hqp ((Nat.prime_dvd_prime_iff_eq hp hq).mp hdvd).symm
 
 variable {R : Type*} [Ring R] (p n : ℕ) [ExpChar R p]
 

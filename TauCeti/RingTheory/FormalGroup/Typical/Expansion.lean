@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.PTypical
 public import TauCeti.RingTheory.FormalGroup.Curve.Expansion
 public import TauCeti.RingTheory.FormalGroup.Typical
+import TauCeti.Data.Nat.Pow
 
 /-!
 # Expansions of curves in the degrees `p ^ i`
@@ -25,7 +27,8 @@ stated coefficientwise: `γ` agrees with `∑^F_{i < n} t_i X ^ (p ^ i)` below d
 every `n`. Applied to the inverse series of an isomorphism `f : F ≅ G` out of a `p`-typical law,
 this is Ravenel's Lemma A2.1.26: `G` is `p`-typical exactly when
 `f⁻¹(X) = ∑^F_{i ≥ 0} t_i X ^ (p ^ i)` with `t_0` a unit, and `t_0 = 1` when the isomorphism is
-strict. Ravenel uses these expansions to parametrize strict isomorphisms of `p`-typical laws.
+strict. Ravenel uses these expansions to parametrize strict isomorphisms of `p`-typical laws
+(`FormalGroup.IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul`).
 
 In terms of the full formal-group expansion `γ = ∑^F_{n ≥ 1} c_n X ^ n`
 (`FormalGroup.Curve.expansionCoeff`), the same hypotheses make `γ` `p`-typical exactly when
@@ -45,6 +48,11 @@ form in which Ravenel proves Lemma A2.1.26.
   `FormalGroup.Curve.isPTypical_of_coeff_eq_coeff_sum` and
   `FormalGroup.Curve.isPTypical_iff_exists_coeff_eq_coeff_sum`: a curve on a `p`-typical law is
   `p`-typical exactly when it has a `p`-typical expansion.
+* `FormalGroup.IsPTypical.pTypicalStrictCurve`,
+  `FormalGroup.IsPTypical.pTypicalStrictCoordinate_smul`, and
+  `FormalGroup.IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul`:
+  `p`-typicality of `F.pTypicalStrictCurve p t` and unique parametrization of strict coordinates
+  transporting `F` to a `p`-typical law.
 * `TauCeti.FormalGroupIso.isPTypical_iff_exists_coeff_invHom_eq_coeff_sum` and
   `TauCeti.FormalGroupIso.isPTypical_iff_exists_coeff_invHom_eq_coeff_sum_of_isStrict`:
   Ravenel's Lemma A2.1.26 for isomorphisms out of a `p`-typical law.
@@ -282,6 +290,64 @@ theorem IsPTypical.pTypicalCoeff_eq_expansionCoeff (hF : F.IsPTypical p) (hp : p
     sum_range_monomialCurve_eq_sum_pow hp _ fun _ ↦ hγ.expansionCoeff_eq_zero hF hp hunit]
 
 end Curve
+
+/-- On a commutative `p`-typical formal group law (`p` prime), `F.pTypicalStrictCurve p t` is
+`p`-typical over every commutative ring. -/
+theorem IsPTypical.pTypicalStrictCurve {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (t : ℕ+ → R) :
+    (F.pTypicalStrictCurve p t).IsPTypical p := by
+  refine Curve.isPTypical_of_coeff_eq_coeff_sum hF hp
+    (fun j ↦ Nat.casesOn j 1 fun m ↦ t m.succPNat) fun n k hk ↦ ?_
+  rcases n with _ | n
+  · simp only [pow_zero, Nat.lt_one_iff] at hk
+    subst hk
+    simp [Curve.coeff_zero_toPowerSeries]
+  · exact F.coeff_pTypicalStrictCurve_eq_coeff_sum hp.one_lt t hk
+
+/-- Transporting a commutative `p`-typical formal group law along `F.pTypicalStrictCoordinate p t`
+(`p` prime) produces a `p`-typical formal group law over every commutative ring. -/
+theorem IsPTypical.pTypicalStrictCoordinate_smul {F : FormalGroup R} [F.IsComm] {p : ℕ}
+    (hF : F.IsPTypical p) (hp : p.Prime) (t : ℕ+ → R) :
+    ((F.pTypicalStrictCoordinate p t) • F).IsPTypical p := by
+  rw [F.isPTypical_smul_iff]
+  have hγ : (⟨(F.pTypicalStrictCoordinate p t)⁻¹.toPowerSeries,
+      (F.pTypicalStrictCoordinate p t)⁻¹.constantCoeff_toPowerSeries⟩ : F.Curve) =
+      F.pTypicalStrictCurve p t :=
+    Curve.ext (F.toPowerSeries_inv_pTypicalStrictCoordinate p t)
+  rw [hγ]
+  exact hF.pTypicalStrictCurve hp t
+
+/-- **Strict `p`-typical coordinate parametrization on a `p`-typical law.** Over a ring in which
+every prime `q ≠ p` is invertible, if `F` is commutative and `p`-typical (`p` prime) and a strict
+coordinate `φ` transports `F` to a `p`-typical law `φ • F`, then
+`φ = F.pTypicalStrictCoordinate p t` for a unique `t : ℕ+ → R`. -/
+theorem IsPTypical.existsUnique_pTypicalStrictCoordinate_eq_of_isPTypical_smul
+    {F : FormalGroup R} [F.IsComm] {p : ℕ} (hF : F.IsPTypical p) (hp : p.Prime)
+    (hlocal : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R))
+    {φ : TauCeti.FormalCoordinate R} (hφ : TauCeti.FormalCoordinate.linearCoeff φ = 1)
+    (hsmul : (φ • F).IsPTypical p) :
+    ∃! t : ℕ+ → R, φ = F.pTypicalStrictCoordinate p t := by
+  let γ : F.Curve := ⟨φ⁻¹.toPowerSeries, φ⁻¹.constantCoeff_toPowerSeries⟩
+  have hγ : γ.IsPTypical p := (F.isPTypical_smul_iff φ p).mp hsmul
+  obtain ⟨t₀, ht₀⟩ := (Curve.isPTypical_iff_exists_coeff_eq_coeff_sum hF hp hlocal γ).mp hγ
+  have ht₀_zero : t₀ 0 = 1 := by
+    have h1 := ht₀ 1 1 (by simpa using hp.one_lt)
+    simp only [γ, range_one, sum_singleton, pow_zero, toPowerSeries_monomialCurve,
+      PowerSeries.coeff_smul, PowerSeries.coeff_X_pow, ite_true, smul_eq_mul, mul_one,
+      ← TauCeti.FormalCoordinate.val_linearCoeff, map_inv, hφ, inv_one, Units.val_one] at h1
+    exact h1.symm
+  let t : ℕ+ → R := fun i ↦ t₀ i
+  have hcases : ∀ j : ℕ, (Nat.casesOn j 1 fun m ↦ t m.succPNat) = t₀ j
+    | 0 => ht₀_zero.symm
+    | _ + 1 => rfl
+  have hφ_eq : φ = F.pTypicalStrictCoordinate p t := by
+    apply inv_injective; ext k
+    have hk : k < p ^ (k + 1) := Nat.lt_pow_add_one_self hp.one_lt k
+    rw [toPowerSeries_inv_pTypicalStrictCoordinate,
+      F.coeff_pTypicalStrictCurve_eq_coeff_sum hp.one_lt t hk]
+    simpa only [γ, hcases] using ht₀ (k + 1) k hk
+  exact ⟨t, hφ_eq, fun t' ht' ↦
+    F.pTypicalStrictCoordinate_injective hp.one_lt (ht'.symm.trans hφ_eq)⟩
 
 end FormalGroup
 
