@@ -29,7 +29,9 @@ terminal-object comparison compatible with inverse image on sheaf cohomology.
 * `CategoryTheory.Sheaf.cohomologyPresheafEvaluationIsoFunctorH`: the comparison as a natural
   isomorphism in the coefficient sheaf;
 * `CategoryTheory.Sheaf.cohomologyPresheafObjIsoH`: its specialization
-  `Hⁿ(T, F) ≅ Hⁿ(F)` at a terminal object `T`, as an isomorphism of abelian groups.
+  `Hⁿ(T, F) ≅ Hⁿ(F)` at a terminal object `T`, as an isomorphism of abelian groups;
+* `CategoryTheory.Sheaf.H.equiv₀_cohomologyPresheafObjIsoH_hom_apply`: in degree `0` the
+  comparison is the identity on sections over `T`.
 -/
 
 public section
@@ -135,5 +137,24 @@ lemma cohomologyPresheafObjIsoH_hom_apply (F : Sheaf J AddCommGrpCat.{v}) (n : �
     (F.cohomologyPresheafObjIsoH n hT).hom x =
       (Abelian.Ext.mk₀ hT.freeYonedaSheafIsoConstant.inv).comp x (zero_add n) :=
   (rfl)
+
+end CategoryTheory.Sheaf
+
+namespace CategoryTheory.Sheaf
+
+variable {C : Type u} [Category.{v} C] {J : GrothendieckTopology C}
+  [HasSheafify J AddCommGrpCat.{v}] [HasExt.{v} (Sheaf J AddCommGrpCat.{v})]
+
+/-- In degree `0`, the terminal-object comparison is compatible with the identifications of both
+`H⁰(T, F)` and `H⁰(F)` with the sections of `F` over the terminal object `T`. -/
+lemma H.equiv₀_cohomologyPresheafObjIsoH_hom_apply (F : Sheaf J AddCommGrpCat.{v})
+    {T : C} (hT : IsTerminal T) (x : F.H' 0 T) :
+    H.equiv₀ F hT ((F.cohomologyPresheafObjIsoH 0 hT).hom x) =
+      TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv F T x := by
+  rw [cohomologyPresheafObjIsoH_hom_apply, TauCeti.CategoryTheory.cohomologyZeroSectionsEquiv_apply,
+    ← hT.freeYonedaSheafSectionsEquiv_inv_comp]
+  exact congrArg (fun a ↦ AddCommGrpCat.uliftZMultiplesAddEquiv _
+    ((constantSheafAdj J AddCommGrpCat.{v} hT).homEquiv _ _ a))
+    (TauCeti.ext_addEquiv₀_mk₀_comp _ _)
 
 end CategoryTheory.Sheaf
