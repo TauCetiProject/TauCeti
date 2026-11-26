@@ -180,32 +180,6 @@ section TimeExponentFinite
 
 variable {q : ℝ≥0} {r : ℝ≥0∞}
 
-/-- The free solutions satisfy the Strichartz estimate with Besov data at every wave-admissible
-pair `(q, r)` with `2 ≤ q < ∞`, where `q = 2` only in dimension `n ≥ 4`: the pairs with `q > 2`
-are `exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum`, and the pairs `(2, r)`
-are `exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint`. -/
-private theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_two_le
-    (hq : 2 ≤ q)
-    (hqr : 2 / (q : ℝ) + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
-      ((Module.finrank ℝ E : ℝ) - 1) / 2)
-    (hq2 : q = 2 → 3 < Module.finrank ℝ E) :
-    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
-      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
-      ∀ f g : Lp ℂ 2 (volume : Measure E),
-        eLpNorm (fun t ↦ eLpNorm (waveCosPropagator ℂ t f + waveSinPropagator ℂ t g) r volume) q
-            volume ≤
-          C * (∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹)) *
-                ‖Lp.fourierMultiplierCLM ℂ (m j) f‖ₑ +
-            ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ ((Module.finrank ℝ E : ℝ) / 2 -
-              Module.finrank ℝ E * (r⁻¹).toReal - (q : ℝ)⁻¹ - 1)) *
-                ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
-  rcases hq.lt_or_eq with hq | rfl
-  · exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
-  · simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, div_self (two_ne_zero (α := ℝ))] at hqr ⊢
-    exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint
-      (hq2 rfl) hqr
-
 /-- **The Strichartz estimate for the forced wave equation on `[0, T]`.** Let `E` be nontrivial
 of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley cutoff `ψⱼ`
 built from `φ` as symbol, let `(q, r)` be wave-admissible, `2 / q + (n - 1) / r ≤ (n - 1) / 2`,
