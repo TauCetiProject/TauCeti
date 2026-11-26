@@ -366,9 +366,10 @@ open scoped Classical in
 linear map from `W^{1,p}(ℝ × S¹, V)` to `Lᵖ` sending `h` to the class of
 `h_s + A(u₀) h_t + (A'(u₀) h) (b + ξ₀_t) + G'(u₀) h`, with `u₀ = w + ξ₀` and `A'`, `G'` the
 derivatives of `A`, `G` in the value. The value of `h` enters the term with `ξ₀_t`, which lies
-only in `Lᵖ`, through its continuous representative. Under the bounds of
-`TauCeti.CylinderSobolev.quasilinearLinearization_apply_ae` such an operator exists, and it is
-unique; otherwise the linearization is `0`. It is the strict derivative of
+only in `Lᵖ`, through its continuous representative. When no continuous linear map with this
+pointwise expression exists, the linearization is `0`; under the bounds of
+`TauCeti.CylinderSobolev.quasilinearLinearization_apply_ae` one exists, and it is unique. It is the
+strict derivative of
 `TauCeti.CylinderSobolev.quasilinearSection` at `x₀`
 (`TauCeti.CylinderSobolev.hasStrictFDerivAt_quasilinearSection`). -/
 def quasilinearLinearization (A : ℝ × ℝ → V → V →L[ℝ] V)

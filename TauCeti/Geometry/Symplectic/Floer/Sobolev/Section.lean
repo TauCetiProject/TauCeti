@@ -21,9 +21,10 @@ zeroth-order term `G = -X_{K_s} - J X_{K_t}` (`TauCeti.SymplecticForm.floerZerot
 `TauCeti.SymplecticForm.floerOperator_eq_add_floerZerothOrder`). The **Floer section** around a
 reference map `w`, `TauCeti.SymplecticForm.floerSection`, is therefore the quasilinear section
 `TauCeti.CylinderSobolev.quasilinearSection` of these coefficients, with `b = ∂t w`: a map from
-`W^{1,p}(ℝ × S¹, V)` to `Lᵖ`, for `p > 2`. When `w` is differentiable, `∂t w` and `J` are
-bounded, and `J` and `G` are Lipschitz in `y` uniformly in `z`, its value at a test section `ξ` is
-`F(w + ξ) - F(w)` almost everywhere on the strip (`TauCeti.SymplecticForm.floerSection_toW1p_ae`).
+`W^{1,p}(ℝ × S¹, V)` to `Lᵖ`, for `p > 2`. When `2 < p < ∞`, `J` and `G` are continuous in
+`(z, y)`, `w` is differentiable, `∂t w` and `J` are bounded, and `J` and `G` are Lipschitz in `y`
+uniformly in `z`, its value at a test section `ξ` is `F(w + ξ) - F(w)` almost everywhere on the
+strip (`TauCeti.SymplecticForm.floerSection_toW1p_ae`).
 It is strictly differentiable, with derivative the linearization
 `TauCeti.CylinderSobolev.quasilinearLinearization` of these coefficients
 (`TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`).
@@ -83,8 +84,9 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- **The Floer section** around a reference map `w`: the quasilinear section
 `TauCeti.CylinderSobolev.quasilinearSection` from `W^{1,p}(ℝ × S¹, V)` to `Lᵖ` of the Floer
 operator, with coefficients `A = J` and `G = -X_{K_s} - J X_{K_t}` and with `b = ∂t w`. Under the
-hypotheses of `TauCeti.SymplecticForm.floerSection_toW1p_ae` (`w` differentiable, `∂t w` and `J`
-bounded, `J` and `G` Lipschitz in `y`), on the jet of a test section `ξ` it is almost everywhere
+hypotheses of `TauCeti.SymplecticForm.floerSection_toW1p_ae` (`2 < p < ∞`, `J` and `G` continuous
+in `(z, y)`, `w` differentiable, `∂t w` and `J` bounded, `J` and `G` Lipschitz in `y`), on the jet
+of a test section `ξ` it is almost everywhere
 `F(w + ξ) - F(w)`. When the pointwise expression of the section does not lie in `Lᵖ`, its value is
 `0`. -/
 def floerSection (ω : SymplecticForm V) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
