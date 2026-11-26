@@ -211,19 +211,9 @@ theorem specializingMap_specialization [IsTopologicalRing A] (Aplus : Subring A)
   obtain ⟨x', hxx', hsupp, hle1, hlt⟩ := exists_specializes_supp_eq_and_valuation_lt_one_iff_mem
     Aplus.subtype (fun a ↦ valuation_le_one_of_mem_spa x.property a.property)
     (𝔭 : PrimeSpectrum Aplus).asIdeal fun a ha ↦ hle ((mem_specialization_asIdeal_iff x a).mpr ha)
-  -- `x'` has the support of `x` and refines it, so it is continuous along with `x`
-  have h0 (b : A) : x'.valuation b = 0 ↔ (x : Spv A).valuation b = 0 := by
-    rw [← Valuation.mem_supp_iff, ← supp_eq_valuation_supp, hsupp, supp_eq_valuation_supp,
-      Valuation.mem_supp_iff]
-  have hlt' (a b : A) (hab : (x : Spv A).valuation a < (x : Spv A).valuation b) :
-      x'.valuation a < x'.valuation b := by
-    refine (valuation_lt_iff _ _ _).mpr (vlt_of_specializes hxx' ((valuation_lt_iff _ _ _).mp hab)
-      (.inr fun hb ↦ ?_))
-    have hb0 := (h0 b).mp (by simpa using (valuation_le_iff x' b 0).mpr hb)
-    simp [hb0] at hab
-  have hcont : x'.IsContinuous := (isContinuous_def x').mpr <|
-    ((isContinuous_def _).mp ((mem_spa_iff _ _).mp x.property).1).of_lt_imp_lt
-      (fun b hb ↦ (h0 b).mpr hb) hlt'
+  -- `x'` has the support of `x`, so it is continuous along with `x`
+  have hcont : x'.IsContinuous :=
+    ((mem_spa_iff _ _).mp x.property).1.of_specializes_of_supp_eq hxx' hsupp
   have hx' : x' ∈ spa Aplus := (mem_spa_iff _ _).mpr ⟨hcont, fun a ha ↦
     (valuation_le_iff x' a 1).mp (by rw [map_one]; exact hle1 ⟨a, ha⟩)⟩
   exact ⟨⟨x', hx'⟩, IsInducing.subtypeVal.specializes_iff.mp hxx', specialization_eq_iff.mpr hlt⟩

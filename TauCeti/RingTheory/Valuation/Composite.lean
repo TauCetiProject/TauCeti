@@ -135,6 +135,7 @@ theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U
 
 /-- An element of `A` is a nonunit of the composite of `A` with `U` exactly when its residue is a
 nonunit of `U`. -/
+@[simp]
 theorem coe_mem_nonunits_comapResidue_iff {a : A} :
     (a : K) ∈ (A.comapResidue U).nonunits ↔ residue A a ∈ U.nonunits := by
   by_cases ha : a ∈ maximalIdeal A

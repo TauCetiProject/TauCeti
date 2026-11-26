@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.ResidueField.Basic
 import TauCeti.AlgebraicGeometry.AdicSpace.ValuationSpectrum.VerticalGeneralization
 import TauCeti.RingTheory.Valuation.Composite
-import TauCeti.RingTheory.Valuation.Domination
+import TauCeti.RingTheory.Valuation.ValuationSubring
 
 /-!
 # Points of the valuation spectrum with prescribed support and centre
