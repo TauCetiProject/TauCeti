@@ -337,16 +337,8 @@ theorem cutoffFrameCoeff_map_smul_eq_sum_sectionEntry [FiniteDimensional ℂ V]
   have hΨ : tsupport Ψ ⊆ t.baseSet := fun x hx ↦
     hψ (subset_tsupport _ (by rw [Function.mem_support, hψΨ x hx]; exact one_ne_zero))
   -- `Ψ gₖ` is the cut-off frame coefficient of `u` cut off by `Ψ` itself, since `ψ = 1` there.
-  have hcoeff (k : κ) :
-      ContMDiffMap.ofReal Ψ * t.cutoffFrameCoeff ψ hψ (b.coord k).toContinuousLinearMap u =
-        t.cutoffFrameCoeff Ψ hΨ (b.coord k).toContinuousLinearMap u := by
-    ext x
-    simp only [ContMDiffMap.coe_mul, Pi.mul_apply, ContMDiffMap.ofReal_apply,
-      Bundle.Trivialization.cutoffFrameCoeff_apply, Complex.real_smul]
-    by_cases hx : Ψ x = 0
-    · simp [hx]
-    · rw [hψΨ x (subset_tsupport _ hx), Complex.ofReal_one, one_mul]
-  simp_rw [hcoeff, sectionEntry_apply_eq_cutoffFrameCoeff, ← map_sum]
+  simp_rw [t.ofReal_mul_cutoffFrameCoeff_of_eq_one Ψ hΨ ψ hψ hψΨ,
+    sectionEntry_apply_eq_cutoffFrameCoeff, ← map_sum]
   congr 2
   ext x
   rw [Bundle.Trivialization.sum_cutoffFrameCoeff_smul_cutoffFrameSection_apply t Ψ hΨ ψ hψ hψΨ,

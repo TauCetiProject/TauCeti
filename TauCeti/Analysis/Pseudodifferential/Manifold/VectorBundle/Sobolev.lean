@@ -252,12 +252,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_sectionCutoffPushforwardSchwartz_a
       t' φ hφ (he' i) (t i) (ψ i) (hψ i) s
   refine ⟨∑ i, max (C i) 0, fun u ↦ ?_⟩
   -- `u = ∑ᵢ Ψᵢ u`.
-  have hu : u = ∑ i, ContMDiffMap.ofReal ((e' i).cutoffPullback (he' i) (ψ i) 1) • u := by
-    rw [← Finset.sum_smul, ← map_sum]
-    ext x
-    rw [ContMDiffSection.smul_apply_of_normedAlgebra, ContMDiffMap.ofReal_apply,
-      ContMDiffMap.coe_sum, Finset.sum_apply, hψ1 x, Complex.ofReal_one, one_smul]
-  conv_lhs => rw [hu, map_sum, map_sum, map_sum]
+  conv_lhs => rw [ContMDiffSection.eq_sum_ofReal_smul (σ := u) Finset.univ _ (subset_univ _)
+    fun x _ ↦ hψ1 x, map_sum, map_sum, map_sum]
   refine (norm_sum_le _ _).trans ((Finset.sum_le_sum fun i _ ↦ hC i u).trans ?_)
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i _ ↦ ?_
