@@ -92,6 +92,7 @@ theorem mextDeriv_radialPrimitive : mextDeriv ω.radialPrimitive.val = ω.constS
   exact h.symm
 
 /-- **The radial primitive is a primitive**, as smooth forms: `dλ = ω`. -/
+@[simp]
 theorem mextDerivₗ_radialPrimitive : mextDerivₗ 𝓘(ℝ, V) 1 ω.radialPrimitive = ω.constSmooth :=
   Subtype.ext ((mextDerivₗ_apply (I := 𝓘(ℝ, V)) 1 _).trans ω.mextDeriv_radialPrimitive)
 
