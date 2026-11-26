@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.DirichletDomain.Faces
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.ExtSegment
-public import TauCeti.Topology.Order.Interval
+public import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Unbounded faces of hyperbolic Dirichlet domains

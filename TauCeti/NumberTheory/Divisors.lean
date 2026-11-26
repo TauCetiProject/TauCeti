@@ -11,6 +11,7 @@ public import Mathlib.Data.PNat.Defs
 public import Mathlib.NumberTheory.Divisors
 import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.Algebra.Order.Ring.Abs
+import Mathlib.Algebra.Order.Ring.GeomSum
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Nat.Factorization.Basic
 import Mathlib.Tactic.Linarith
@@ -42,6 +43,18 @@ of `n` into two positive integers.
 strictly increasing factors. `Nat.injOn_add_divisorsAntidiagonal_filter_lt` and
 `Int.isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal` identify those factor pairs
 by their sum and by a positive square discriminant.
+
+`Int.card_divisors` counts the integer divisors of `z` as twice the natural divisors of `|z|`.
+
+`Nat.card_divisors_le_two_mul_sqrt` bounds the number of divisors of `n` by `2 * Nat.sqrt n`,
+pairing each divisor `d > √n` with `n / d`.
+
+`Nat.le_div_two_of_mem_properDivisors` bounds a proper divisor of `n` by `n / 2`. Hence
+`Nat.pow_sub_two_mul_pow_div_two_le_of_le_sum_divisors`: if `q ^ n ≤ 1 + ∑_{d ∣ n} f d` and
+`f d ≤ q ^ d` for the proper divisors `d`, then `q ^ n - 2 q ^ (n / 2) ≤ f n` with the subtraction
+in `ℤ` and `n / 2` the natural-number quotient. Applied with
+`f d = d · N_q(d)`, where `N_q(d)` is the number of monic irreducible polynomials of degree `d`
+over `𝔽_q`, it bounds the degree-weighted count `n · N_q(n)` from below.
 
 `Nat.prod_Ioc_prod_divisors` (and its additive form `Nat.sum_Ioc_sum_divisors`) regroups a
 product over the divisors of `1, …, N` by divisor: `d` occurs `N / d` times.
@@ -172,6 +185,65 @@ theorem injOn_add_divisorsAntidiagonal_filter_lt (n : ℕ) :
   · exact Prod.ext (by omega) (by omega)
   · omega
 
+/-- A proper divisor of `n` is at most `n / 2`. -/
+theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisors) :
+    d ≤ n / 2 := by
+  obtain ⟨k, hk, rfl⟩ :=
+    (mem_properDivisors_iff_exists (Nat.ne_zero_of_lt (one_lt_of_mem_properDivisors hd))).mp hd
+  exact (Nat.le_div_iff_mul_le two_pos).mpr (Nat.mul_le_mul_left d hk)
+
+open Finset in
+/-- A natural number `n` has at most `2 * Nat.sqrt n` divisors: every divisor `d` of `n` with
+`d > √n` is `n / e` for the divisor `e = n / d ≤ √n`. -/
+theorem card_divisors_le_two_mul_sqrt (n : ℕ) : #n.divisors ≤ 2 * n.sqrt := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  set A := {d ∈ n.divisors | d ≤ n.sqrt}
+  have hA : #A ≤ n.sqrt := by
+    refine (card_le_card fun d hd ↦ ?_).trans (card_Icc 1 n.sqrt).le
+    obtain ⟨hd, hle⟩ := mem_filter.mp hd
+    exact mem_Icc.mpr ⟨pos_of_mem_divisors hd, hle⟩
+  have hsub : n.divisors ⊆ A ∪ A.image (n / ·) := by
+    intro d hd
+    by_cases hle : d ≤ n.sqrt
+    · exact mem_union_left _ (mem_filter.mpr ⟨hd, hle⟩)
+    have hdvd := dvd_of_mem_divisors hd
+    refine mem_union_right _ (mem_image.mpr ⟨n / d, mem_filter.mpr
+      ⟨mem_divisors.mpr ⟨div_dvd_of_dvd hdvd, hn⟩, ?_⟩, Nat.div_div_self hdvd hn⟩)
+    rw [Nat.le_sqrt] at hle ⊢
+    have hmul : n / d * d = n := Nat.div_mul_cancel hdvd
+    nlinarith
+  calc #n.divisors ≤ #A + #(A.image (n / ·)) := (card_le_card hsub).trans (card_union_le _ _)
+    _ ≤ 2 * n.sqrt := by linarith [card_image_le (s := A) (f := (n / ·))]
+
+/-- If `f d ≤ q ^ d` for every proper divisor `d` of `n` and `q ^ n ≤ ∑_{d ∣ n} f d + 1`, then
+`q ^ n - 2 q ^ (n / 2) ≤ f n` in `ℤ` (integer subtraction), with `n / 2` the natural-number
+quotient: the proper divisors are
+at most `n / 2`, and `1 + ∑_{d < n / 2} q ^ d + q ^ (n / 2) ≤ 2 q ^ (n / 2)` for `q ≥ 2`. -/
+theorem pow_sub_two_mul_pow_div_two_le_of_le_sum_divisors {f : ℕ → ℕ} {q n : ℕ}
+    (hle : ∀ d ∈ n.properDivisors, f d ≤ q ^ d) (hge : q ^ n ≤ ∑ d ∈ n.divisors, f d + 1) :
+    (q ^ n - 2 * q ^ (n / 2) : ℤ) ≤ f n := by
+  suffices q ^ n < f n + 2 * q ^ (n / 2) + 1 by
+    zify at this
+    linarith
+  rcases Nat.lt_or_ge q 2 with hq | hq
+  · have := pow_le_pow_of_le_one (Nat.zero_le q) (by omega) (Nat.div_le_self n 2)
+    omega
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  -- `0` and the proper divisors lie in `range (n / 2 + 1)`.
+  have hsub : insert 0 n.properDivisors ⊆ Finset.range (n / 2 + 1) := Finset.insert_subset
+    (Finset.mem_range.mpr (Nat.succ_pos _))
+    fun d hd ↦ Finset.mem_range.mpr (Nat.lt_succ_of_le (le_div_two_of_mem_properDivisors hd))
+  have hprop : 1 + ∑ d ∈ n.properDivisors, f d ≤ ∑ d ∈ Finset.range (n / 2 + 1), q ^ d := by
+    refine le_trans ?_ (Finset.sum_le_sum_of_subset hsub)
+    rw [Finset.sum_insert fun h0 ↦ (Nat.pos_of_mem_properDivisors h0).ne' rfl, pow_zero]
+    exact Nat.add_le_add_left (Finset.sum_le_sum hle) 1
+  have hgeom := Nat.geomSum_lt hq (s := Finset.range (n / 2)) fun k hk ↦ Finset.mem_range.mp hk
+  rw [Finset.sum_range_succ] at hprop
+  rw [← cons_self_properDivisors hn, Finset.sum_cons] at hge
+  omega
+
 end Nat
 
 namespace Int
@@ -236,6 +308,12 @@ theorem isSquare_sq_sub_four_mul_iff_exists_mem_divisorsAntidiagonal
     have hm : (p.1 : ℤ) * p.2 = n := by exact_mod_cast (Nat.mem_divisorsAntidiagonal.mp hp).1
     refine ⟨(p.2 : ℤ) - p.1, ?_⟩
     nlinarith [sq_abs t]
+
+open Finset in
+/-- An integer has twice as many integer divisors as its absolute value has natural divisors,
+one of each sign. -/
+theorem card_divisors (z : ℤ) : #z.divisors = 2 * #z.natAbs.divisors := by
+  rw [Int.divisors, card_disjUnion, card_map, card_map, two_mul]
 
 end Int
 

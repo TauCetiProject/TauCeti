@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import Mathlib.Basic.Complex.Basic
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
@@ -18,6 +19,10 @@ estimates at division points to real inequalities.
 
 For real `t`, the complex number `1 + t ^ 2` is nonzero (`Complex.one_add_ofReal_sq_ne_zero`), as
 needed to clear the denominator of kernels such as `t / (1 + t ^ 2)`.
+
+Every real number cast to `ℂ` is self-adjoint, registered as the instance
+`TauCeti.instFactIsSelfAdjointComplexOfReal : Fact (IsSelfAdjoint (r : ℂ))`. It supplies the
+self-adjointness hypotheses of star structures with a real parameter.
 -/
 
 public section
@@ -35,3 +40,13 @@ theorem one_add_ofReal_sq_ne_zero (t : ℝ) : 1 + (t : ℂ) ^ 2 ≠ 0 := by
   exact_mod_cast (by positivity : (1 + t ^ 2 : ℝ) ≠ 0)
 
 end Complex
+
+namespace TauCeti
+
+/-- A real number cast to `ℂ` is self-adjoint. This supplies the `Fact (IsSelfAdjoint _)`
+hypothesis of star structures with a parameter, such as the analytic adjoint on Temperley–Lieb
+algebras with a real loop value. -/
+instance instFactIsSelfAdjointComplexOfReal (r : ℝ) : Fact (IsSelfAdjoint (r : ℂ)) :=
+  ⟨Complex.conj_ofReal r⟩
+
+end TauCeti

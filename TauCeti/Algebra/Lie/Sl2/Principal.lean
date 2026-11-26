@@ -5,11 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.AdjointAction.Regular
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Finite
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Vector
+import Mathlib.Algebra.CharZero.Infinite
+import TauCeti.Algebra.Lie.Killing.Regular
 import TauCeti.Algebra.Lie.Presentation.Serre.Killing
 import TauCeti.Algebra.Lie.Sl2.Centralizer
+import TauCeti.Algebra.Lie.Submodule.Finrank
 import TauCeti.Algebra.Lie.Weights.Rank
 
 /-!
@@ -51,9 +55,17 @@ and its weighted Dynkin diagram is the constant labelling `2`; conversely this l
 a module over the triple, `dim L(0) + dim L(1)`, which is therefore `dim H`
 (`IsSl2Triple.finrank_ker_ad_e_eq_finrank_cartan`): the principal nilpotent element has a
 centralizer whose dimension is the rank of `L`, and `[L, e]` has dimension `dim L - dim H`
-(`IsSl2Triple.finrank_range_ad_e_add_finrank_cartan`). This file does not show that `e` is regular
-in the sense of `LieAlgebra.IsCentralizerRegular`, which also needs the lower bound
-`dim H ≤ dim ker (ad x)` for every `x : L`.
+(`IsSl2Triple.finrank_range_ad_e_add_finrank_cartan`).
+
+**Regularity.** Since `dim H` is the rank of `L`, the least dimension of a centralizer
+(`LieAlgebra.isCentralizerRegular_iff_finrank_ker_ad_eq_rank`), the nilpositive element of a
+principal triple is regular in the sense of `LieAlgebra.IsCentralizerRegular`
+(`IsSl2Triple.isCentralizerRegular_e`). Conversely, let `(h, e, f)` be any `sl₂` triple with `h`
+a dominant neutral element. The centralizer of `e` has dimension `dim L(0) + dim L(1)`, where
+`L(n)` is the `n`-eigenspace of `ad h`, and `H ≤ L(0)`. If a simple root took the value `0` or `1`
+at `h`, its root space would make `L(0) ⊔ L(1)` larger than `H`. So `e` is regular exactly when
+every simple root takes the value `2` at `h`, that is, when `h = 2ρ^∨`
+(`IsSl2Triple.isCentralizerRegular_e_iff`): the regular nilpotent elements are the principal ones.
 
 ## Main results
 
@@ -76,6 +88,9 @@ in the sense of `LieAlgebra.IsCentralizerRegular`, which also needs the lower bo
   `IsSl2Triple.finrank_range_ad_e_add_finrank_cartan`: the nilpositive element of a triple with
   neutral element `2ρ^∨` has a centralizer of dimension `dim H`, and `[L, e]` has dimension
   `dim L - dim H`.
+* `IsSl2Triple.isCentralizerRegular_e` and `IsSl2Triple.isCentralizerRegular_e_iff`: the
+  nilpositive element of a triple with dominant neutral element `h` is regular exactly when
+  `h = 2ρ^∨`.
 
 ## References
 
@@ -249,13 +264,12 @@ theorem finrank_range_ad_e_add_finrank_cartan
     have : ((1 : ℤ) : K) = ((2 * n : ℤ) : K) := by push_cast; exact hn
     have := Int.cast_injective this
     omega
-  -- the Cartan subalgebra and its underlying submodule have the same carrier
-  have hH : finrank K H.toSubmodule = finrank K H := rfl
   have h := t.finrank_range_ad_e_add_finrank_eigenspace_zero_add_finrank_eigenspace_one (K := K)
   -- no root vanishes at `2ρ^∨`, so its centralizer is `H`
   rwa [Module.End.eigenspace_zero, H.ker_ad_eq_toSubmodule_of_forall_root_apply_ne_zero
       fun α hα ↦ TauCeti.root_apply_twoWeylVector_flip_ne_zero b ⟨α, hα⟩,
-    TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot b h1, finrank_bot, add_zero, hH] at h
+    TauCeti.eigenspace_ad_twoWeylVector_flip_eq_bot b h1, finrank_bot, add_zero,
+    LieSubalgebra.finrank_toSubmodule] at h
 
 /-- **The centralizer of a principal nilpotent element has dimension `dim H`.** For an `sl₂`
 triple `(2ρ^∨, e, f)`, the kernel of `ad e` has the dimension of the Cartan subalgebra, which is
@@ -300,3 +314,66 @@ theorem weightedDynkinDiagram_eq_two_iff (h : b.dominantNeutralElements) :
     ⟨_, b.twoWeylVector_flip_mem_dominantNeutralElements⟩) (hd.trans (h2 _ rfl).symm)
 
 end RootPairing.Base
+
+namespace IsSl2Triple
+
+variable {b : (rootSystem H).Base} {e f : L}
+
+/-- **A principal nilpotent element is regular.** The nilpositive element of an `sl₂` triple with
+neutral element `2ρ^∨` has a centralizer of the least possible dimension, the rank of `L`. -/
+theorem isCentralizerRegular_e
+    (t : IsSl2Triple ((TauCeti.twoWeylVector (rootSystem H).flip b.flip : H) : L) e f) :
+    IsCentralizerRegular K e := by
+  rw [isCentralizerRegular_iff_finrank_ker_ad_eq_rank, t.finrank_ker_ad_e_eq_finrank_cartan,
+    H.rank_eq_finrank_cartan]
+
+/-- **Regular nilpotent elements are principal.** If the neutral element `h` of an `sl₂` triple
+`(h, e, f)` lies in `H` and is dominant for `b`, then `e` is regular exactly when `h = 2ρ^∨`, that
+is, when every label of the weighted Dynkin diagram is `2`. -/
+theorem isCentralizerRegular_e_iff {h : H} (t : IsSl2Triple (h : L) e f)
+    (hh : ∀ i ∈ b.support, ∃ n : ℕ, (i : Weight K H L) h = n) :
+    IsCentralizerRegular K e ↔ h = TauCeti.twoWeylVector (rootSystem H).flip b.flip := by
+  refine ⟨fun he ↦ ?_, by rintro rfl; exact t.isCentralizerRegular_e⟩
+  -- the centralizer of `e` has dimension `dim L(0) + dim L(1)`, and regularity makes it `dim H`
+  have hker : finrank K (LinearMap.ker (ad K L e)) =
+      finrank K ((ad K L h).eigenspace 0) + finrank K ((ad K L h).eigenspace 1) :=
+    t.finrank_ker_toEnd_e_eq_finrank_eigenspace_zero_add_finrank_eigenspace_one (M := L)
+  rw [isCentralizerRegular_iff_finrank_ker_ad_eq_rank, H.rank_eq_finrank_cartan] at he
+  -- a root with value `0` or `1` at `h` would make `L(0) ⊔ L(1)` strictly larger than `H`
+  have key (α : H.root) (hα : (α : Weight K H L) h = 0 ∨ (α : Weight K H L) h = 1) : False := by
+    obtain ⟨y, hy, hy0⟩ := (α : Weight K H L).exists_ne_zero
+    have hyh (z : H) : ⁅(z : L), y⁆ = (α : Weight K H L) z • y :=
+      lie_eq_smul_of_mem_rootSpace hy z
+    -- `y ∉ H`, because `H` is abelian and the root `α` is nonzero
+    have hyH : y ∉ H.toSubmodule := fun hyH ↦ by
+      have hα0 : (α : Weight K H L).IsNonZero := (Finset.mem_filter.mp α.property).2
+      refine hα0 (funext fun z ↦ ?_)
+      have hz : ⁅(z : L), y⁆ = 0 := congrArg Subtype.val (trivial_lie_zero H H z ⟨y, hyH⟩)
+      rw [hyh] at hz
+      exact (smul_eq_zero.mp hz).resolve_right hy0
+    have hle : H.toSubmodule ⊔ K ∙ y ≤ (ad K L h).eigenspace 0 ⊔ (ad K L h).eigenspace 1 := by
+      refine sup_le (fun z hz ↦ Submodule.mem_sup_left ?_)
+        ((Submodule.span_singleton_le_iff_mem _ _).mpr ?_)
+      · rw [Module.End.mem_eigenspace_iff, zero_smul, ad_apply]
+        exact congrArg Subtype.val (trivial_lie_zero H H h ⟨z, hz⟩)
+      · rcases hα with hα | hα
+        · exact Submodule.mem_sup_left (by rw [Module.End.mem_eigenspace_iff, ad_apply, hyh, hα])
+        · exact Submodule.mem_sup_right (by rw [Module.End.mem_eigenspace_iff, ad_apply, hyh, hα])
+    have hlt := Submodule.finrank_lt_finrank_of_lt
+      (left_lt_sup.mpr (by rwa [Submodule.span_singleton_le_iff_mem]) :
+        H.toSubmodule < H.toSubmodule ⊔ K ∙ y)
+    have hmono := Submodule.finrank_mono hle
+    have hsup := Submodule.finrank_add_le_finrank_add_finrank ((ad K L h).eigenspace 0)
+      ((ad K L h).eigenspace 1)
+    have hH := H.finrank_toSubmodule
+    omega
+  -- so every simple root takes the value `2` at `h`
+  refine (b.weightedDynkinDiagram_eq_two_iff
+    ⟨h, (b.mem_dominantNeutralElements_iff h).mpr ⟨⟨e, f, t⟩, hh⟩⟩).mp (funext fun i ↦ ?_)
+  rw [b.weightedDynkinDiagram_apply_eq_iff]
+  rcases t.root_apply_eq_zero_or_eq_one_or_eq_two hh i.property with hi | hi | hi
+  · exact (key i (.inl hi)).elim
+  · exact (key i (.inr hi)).elim
+  · simpa using hi
+
+end IsSl2Triple

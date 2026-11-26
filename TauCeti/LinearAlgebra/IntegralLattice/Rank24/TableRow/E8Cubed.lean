@@ -215,7 +215,7 @@ theorem sum_mul_e8CubedD8PlusIsometry
         e8CubedD8PlusIsometry x k j * e8CubedD8PlusIsometry y k j) =
       niemeierE8Cubed.form x y := by
   rw [← e8CubedD8PlusIsometry.map_app x y, IntegralLattice.pi_form,
-    IntegralLattice.piForm_apply]
+    LinearMap.BilinForm.pi_apply]
   refine Finset.sum_congr rfl fun k _ ↦ ?_
   rw [IntegralLattice.checkerboardPlusLattice_form,
     IntegralLattice.checkerboardLattice_form_apply]

@@ -8,7 +8,12 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Distributions.Gaussian.CharFun
+import Mathlib.Probability.Distributions.Gaussian.Fernique
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Group.Convolution.Translation
+import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Probability.Distributions.Gaussian.Sum.Multivariate
 import TauCeti.Probability.Kernel.Randomization
 
 /-!
@@ -27,6 +32,14 @@ conditionals of denoising diffusion models. It is the isotropic case of the cond
 jointly Gaussian vectors in `TauCeti.Probability.Distributions.Gaussian.Conditional.Basic`; here
 the two joint laws are compared directly through their characteristic functions.
 
+The file also proves the composition law of these kernels: observing `N(c • x, v)` and then
+`N(c' • y, v')` is observing `N((c' * c) • x, c' ^ 2 * v + v')`. This is the law of the
+transitions between two noise levels of a Gaussian noising path.
+
+It also computes the second moments of the displacement `Y - X`: the mean squared distance
+from `x` to its observation, and the quadratic transport cost of the coupling
+`μ₀ ⊗ₘ gaussianKernel c v` of a law and its Gaussian noising.
+
 ## Main definitions
 
 * `TauCeti.Probability.gaussianKernel c v` — the Markov kernel `x ↦ N(c • x, v)`.
@@ -34,8 +47,14 @@ the two joint laws are compared directly through their characteristic functions.
 ## Main results
 
 * `TauCeti.Probability.gaussianKernel_apply` — `gaussianKernel c v x = N(c • x, v)`.
+* `TauCeti.Probability.gaussianKernel_comp` — the composition law
+  `gaussianKernel c' v' ∘ₖ gaussianKernel c v = gaussianKernel (c' * c) (c' ^ 2 * v + v')`.
 * `TauCeti.Probability.compProd_gaussianKernel_eq_swap` — the Bayes update, as an equality of
   joint laws.
+* `TauCeti.Probability.integral_norm_sub_sq_gaussianKernel` — the mean squared displacement of
+  the Gaussian observation kernel, `∫ ‖x - y‖² ∂N(c • x, v) = (1 - c)² ‖x‖² + v d`.
+* `TauCeti.Probability.eLpNorm_edist_compProd_gaussianKernel_sq` — the quadratic transport cost
+  of the coupling `μ₀ ⊗ₘ gaussianKernel c v`, as an extended integral, with no moment assumption.
 
 ## References
 
@@ -76,6 +95,31 @@ theorem gaussianKernel_apply (c v : ℝ) (x : EuclideanSpace ℝ ι) :
 
 instance (c v : ℝ) : IsMarkovKernel (gaussianKernel (ι := ι) c v) :=
   ⟨fun x ↦ by rw [gaussianKernel_apply]; infer_instance⟩
+
+/-- **Composition of Gaussian observation kernels.** Observing `N(c • x, v)` and then
+`N(c' • y, v')` is observing `N((c' * c) • x, c' ^ 2 * v + v')`: the first noise is rescaled by
+`c'` and the two independent noises add. Neither variance may be negative, since a negative
+variance parameter gives a point mass. -/
+theorem gaussianKernel_comp {c v c' v' : ℝ} (hv : 0 ≤ v) (hv' : 0 ≤ v') :
+    gaussianKernel (ι := ι) c' v' ∘ₖ gaussianKernel c v =
+      gaussianKernel (c' * c) (c' ^ 2 * v + v') := by
+  ext1 x
+  -- The second step adds the independent noise `N(0, v')` to the rescaled first step.
+  have hbind : (gaussianKernel c v x).bind (gaussianKernel c' v') =
+      (gaussianKernel c v x).map (fun y ↦ c' • y) ∗ multivariateGaussian 0 (v' • 1) := by
+    rw [← Measure.bind_map_add_eq_conv _ _ (by fun_prop)]
+    congr 1
+    funext y
+    exact gaussianKernel_apply_eq_map c' v' y
+  have hS : (v • (1 : Matrix ι ι ℝ)).PosSemidef := Matrix.PosSemidef.one.smul hv
+  have hmap : (gaussianKernel c v x).map (fun y ↦ c' • y) =
+      multivariateGaussian (c' • c • x) (c' ^ 2 • v • (1 : Matrix ι ι ℝ)) := by
+    simpa only [zero_add, gaussianKernel_apply] using
+      map_add_smul_multivariateGaussian (c • x) hS 0 c'
+  -- Gaussian convolution adds the means and the covariances.
+  rw [Kernel.comp_apply, hbind, hmap, multivariateGaussian_conv_multivariateGaussian _ _
+    (hS.smul (sq_nonneg c')) (Matrix.PosSemidef.one.smul hv'), gaussianKernel_apply, add_zero,
+    smul_smul, smul_smul, ← add_smul]
 
 /-- The two joint laws of the Bayes update, as affine images of products of isotropic Gaussians:
 `(x, e) ↦ (x, c • x + e)` with `x ~ N(m, u)`, `e ~ N(0, v)`, and
@@ -158,5 +202,48 @@ theorem compProd_gaussianKernel_eq_swap (m : EuclideanSpace ℝ ι) {u v c w : �
   · exact map_prod_multivariateGaussian_eq m hu hv hw hw₀
   · -- The posterior kernel at `y` is its noise law translated by the posterior mean.
     rw [Kernel.map_id_prod_const_apply _ _ (by fun_prop)]
+
+/-- The mean squared displacement of the Gaussian observation kernel: a point `x` and its noisy
+observation `y ~ N(c • x, v)` are at mean squared distance `(1 - c)² ‖x‖² + v d`, where `d` is the
+dimension. -/
+theorem integral_norm_sub_sq_gaussianKernel (c : ℝ) {v : ℝ} (hv : 0 ≤ v)
+    (x : EuclideanSpace ℝ ι) :
+    ∫ y, ‖x - y‖ ^ 2 ∂(gaussianKernel c v x) = (1 - c) ^ 2 * ‖x‖ ^ 2 + v * Fintype.card ι := by
+  have hmean : c • x - x = (c - 1) • x := by rw [sub_smul, one_smul]
+  simp_rw [norm_sub_rev x]
+  rw [gaussianKernel_apply, integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix _
+      IsGaussian.memLp_two_id, integral_id_multivariateGaussian, hmean,
+    covMatrix_multivariateGaussian _ (Matrix.PosSemidef.one.smul hv)]
+  simp only [Matrix.trace_smul, Matrix.trace_one, smul_eq_mul, norm_smul, mul_pow,
+    Real.norm_eq_abs, sq_abs]
+  ring
+
+/-- **The quadratic cost of the noising coupling.** For a probability measure `μ₀`, the joint law
+`μ₀ ⊗ₘ gaussianKernel c v` of a point and its Gaussian observation has squared `L²` transport cost
+`(1 - c)² ∫ ‖x‖² ∂μ₀ + v d`, where `d` is the dimension. The second moment is an extended integral,
+so no integrability is assumed and both sides may be infinite. -/
+theorem eLpNorm_edist_compProd_gaussianKernel_sq (μ₀ : Measure (EuclideanSpace ℝ ι))
+    [IsProbabilityMeasure μ₀] (c : ℝ) {v : ℝ} (hv : 0 ≤ v) :
+    eLpNorm (fun z ↦ edist z.1 z.2) 2 (μ₀ ⊗ₘ gaussianKernel c v) ^ 2 =
+      ENNReal.ofReal ((1 - c) ^ 2) * ∫⁻ x, ‖x‖ₑ ^ 2 ∂μ₀ +
+        ENNReal.ofReal (v * Fintype.card ι) := by
+  have hinner (x : EuclideanSpace ℝ ι) :
+      ∫⁻ y, ‖x - y‖ₑ ^ 2 ∂(gaussianKernel c v x) =
+        ENNReal.ofReal ((1 - c) ^ 2) * ‖x‖ₑ ^ 2 + ENNReal.ofReal (v * Fintype.card ι) := by
+    have hint : Integrable (fun y ↦ ‖x - y‖ ^ 2) (gaussianKernel c v x) := by
+      have hX : MemLp id 2 (gaussianKernel c v x) := by
+        rw [gaussianKernel_apply]
+        exact IsGaussian.memLp_two_id
+      exact (memLp_two_iff_integrable_sq_norm (by fun_prop)).1 ((memLp_const x).sub hX)
+    simp_rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+    rw [← ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun _ ↦ by positivity),
+      integral_norm_sub_sq_gaussianKernel c hv x, ENNReal.ofReal_add (by positivity)
+        (by positivity), ENNReal.ofReal_mul (by positivity)]
+  rw [eLpNorm_two_sq_eq_lintegral (by fun_prop)]
+  simp_rw [eNorm_eq_self]
+  rw [Measure.lintegral_compProd (by fun_prop)]
+  simp_rw [eDist_eq_eNorm_sub, hinner]
+  rw [lintegral_add_right _ measurable_const, lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+    lintegral_const, measure_univ, mul_one]
 
 end TauCeti.Probability

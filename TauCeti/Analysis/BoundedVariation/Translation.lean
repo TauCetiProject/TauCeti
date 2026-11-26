@@ -29,8 +29,8 @@ direction. Translation preserves both its pointwise norm and its divergence, and
 right-invariant measure, such as an additive Haar measure, makes the resulting distributional
 pairings equal.
 
-These results give the translation part of affine-isometric transport for BV functions and sets of
-finite perimeter. No integrability, measurability, boundedness, or finiteness assumption is needed.
+These results establish translation invariance of total variation and perimeter without any
+integrability, measurability, boundedness, or finiteness assumption.
 
 The file also proves the translation estimate `∫_V |u (x + h) - u x| dx ≤ ‖h‖ |Du|(Ω)` for `u`
 locally integrable on `Ω`, when the segments `x + [0, 1] h` starting in `V` lie in `Ω`. By the

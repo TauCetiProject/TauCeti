@@ -6,15 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Model
+import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period.Compact
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Hamiltonian
 import Mathlib.Algebra.Group.Subgroup.Finsupp
+import TauCeti.Analysis.Calculus.FDeriv.Matrix
+import TauCeti.Geometry.Symplectic.Cotangent.Bundle.LatticeQuotient.DevelopingMap
 import TauCeti.Geometry.Manifold.Flow.Related
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
+import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
-# Global action–angle coordinates force exact periods, injective actions and a Lagrangian section
+# Global action–angle coordinates: Duistermaat's criterion and uniqueness
 
 Let `σ` be a symplectic form on a boundaryless manifold `M`, let `π : M → B` be a regular
 Lagrangian torus fibration (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration`)
@@ -26,7 +31,8 @@ into the cotangent bundle of the torus which pulls the canonical form `ω = ∑ 
 to `σ` and whose actions are functions on the base, `I ∘ Φ = a ∘ π` for a map `a : B → ℝ^ι`
 (`TauCeti.CotangentBundle.torusActions`). This is the conclusion of
 `IsLagrangianTorusFibration.exists_actionAngle_of_lagrangian_section`, the sufficiency half of
-Duistermaat's criterion. This file proves the necessity half: such a chart forces
+Duistermaat's criterion. This file proves the necessity half, and with it the criterion itself:
+such a chart forces
 
 * **exact periods**: the period lattice at `b` is spanned by the covectors `p • da_j(b)`
   (`IsLagrangianTorusFibration.periodLattice_eq_closure_of_actionAngle`), so the period forms are
@@ -37,7 +43,13 @@ Duistermaat's criterion. This file proves the necessity half: such a chart force
   `s^* σ = 0` (`IsLagrangianTorusFibration.exists_lagrangian_section_of_actionAngle`).
 
 Together with `exists_actionAngle_of_lagrangian_section`, this characterizes the regular Lagrangian
-torus fibrations admitting global action–angle coordinates.
+torus fibrations admitting global action–angle coordinates, **Duistermaat's criterion**
+(`IsLagrangianTorusFibration.exists_actionAngle_iff`): over a base of dimension `|ι|`, there are
+global action–angle coordinates with actions `a ∘ π` exactly when `a` is smooth and injective, the
+period lattice is spanned by the exact one-forms `p • da_j`, and `π` has a smooth Lagrangian
+section. A globally framed period lattice has trivial linear monodromy, and conversely trivial
+monodromy over a connected base gives a global frame of closed one-forms
+(`IsLagrangianTorusFibration.exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one`).
 
 Everything follows from one identity. The Hamiltonian flow of `(c ⬝ᵥ a) ∘ π` on `M` and that of
 `c ⬝ᵥ I` on `T*Tⁿ` are related by `Φ`, since `Φ` is symplectic and `(c ⬝ᵥ a) ∘ π = (c ⬝ᵥ I) ∘ Φ`,
@@ -56,6 +68,27 @@ the image of the fibre over `b`, and `Φ⁻¹(κ(0, a(·)))` is the Lagrangian s
 pulls `ω` back to zero
 (`TauCeti.CotangentBundle.mpullback_actionAngleCover_zero_comp_symplecticForm`).
 
+Such coordinates are **unique up to integral affine changes and an angle gauge**. If `Φ'` is a
+second chart, with actions `a'`, over a preconnected base, then `a' = P a + b₀` for some
+`P ∈ GL(ι, ℤ)` and `b₀ : ι → ℝ` (`IsLagrangianTorusFibration.exists_eq_mulVec_add_of_actionAngle`),
+and in action–angle coordinates `Φ' ∘ Φ⁻¹` is `(θ, I) ↦ (P⁻ᵀ θ + g, P I + b₀)` for angles `g`,
+smooth modulo `p ℤ^ι`, with `∑ i, dg_i ∧ da'_i = 0`
+(`IsLagrangianTorusFibration.exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle`).
+So for local real lifts of `g` the one-form `∑ i, g_i dI'_i` in the actions `I' = a'` is closed, and
+by the Poincaré lemma `g` is locally a gradient `∂S/∂I'` of a function of the actions: the angle
+gauge of local action–angle coordinates.
+
+The proof compares the period lattices. At each point both `p • da_j(b)` and `p • da'_j(b)` span
+the period lattice, so `da' = N da` with `N ∈ GL(ι, ℤ)`
+(`IsLagrangianTorusFibration.exists_mfderiv_eq_mulVec_of_actionAngle`). Read on the open set
+`a(B)`, the map `a' ∘ a⁻¹` has these integer matrices as derivatives, so it is affine there
+(`TauCeti.exists_eq_mulVec_add_of_forall_exists_fderiv_eq`). The covector `θ ⬝ᵥ da` then equals
+`θ P⁻¹ ⬝ᵥ da'`, so the fibre action that moves the point `s(b)` with zero angles in `Φ` to the point
+with angles `θ` translates the angles in `Φ'` by `θ P⁻¹`; the gauge `g(b)` is the angle of `s(b)`
+in `Φ'`. Since `s` is Lagrangian, `Φ' ∘ s` pulls the canonical form back to zero, which in angle and
+action differentials (`TauCeti.CotangentBundle.eval₂_symplecticForm_eq_dotProduct_sub`) is the
+closedness of the gauge.
+
 ## Main results
 
 All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration`.
@@ -65,12 +98,22 @@ All in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFib
 * `bijective_mfderiv_of_actionAngle`: the differential of the actions is invertible.
 * `periodLattice_eq_closure_of_actionAngle`: the period lattice is spanned by the `p • da_j`.
 * `injective_of_actionAngle`: the actions are injective on the base.
-* `exists_lagrangian_section_of_actionAngle`: there is a smooth Lagrangian section.
+* `isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle`: the actions identify the base
+  with the open set `a(B)`, with smooth inverse `c ↦ π(Φ⁻¹(κ(0, c)))`.
+* `exists_lagrangian_section_of_actionAngle`: the zero angles give a smooth Lagrangian section.
+* `exists_actionAngle_iff`: Duistermaat's criterion for global action–angle coordinates.
+* `exists_mfderiv_eq_mulVec_of_actionAngle`: the differentials of the actions of two charts differ
+  by an element of `GL(ι, ℤ)` at every point.
+* `exists_eq_mulVec_add_of_actionAngle`: over a preconnected base, the actions of two charts differ
+  by an integral affine change.
+* `exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle`: over a preconnected base,
+  two charts differ by an integral affine change of the actions and an angle gauge.
 
 ## References
 
 * J. J. Duistermaat, *On global action-angle coordinates*, Comm. Pure Appl. Math. 33 (1980),
-  687–706, Section 2 (the obstructions to global action–angle coordinates).
+  687–706, Sections 1–2 (the integral affine structure of the actions, and the obstructions to
+  global action–angle coordinates).
 -/
 
 public section
@@ -173,16 +216,22 @@ theorem apply_fiberAction_of_actionAngle (b : B) (c : ι → ℝ) {α : F →L[�
   simp only [zero_smul, add_zero, one_smul] at h0
   exact h0
 
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [DecidableEq ι] in
+include hΦσ in
+/-- A symplectic form with global action–angle coordinates is closed, as the pullback of the closed
+canonical form. -/
+private theorem isClosed_of_actionAngle : σ.IsClosed :=
+  hΦσ ▸ (isSymplectic_symplecticForm (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+    (M := ι → AddCircle p)).isClosed.mpullback Φ hΦ.contMDiff
+
 include h hΦ hΦσ hΦa in
 /-- **The fibres fill the tori of the actions.** For global action–angle coordinates with actions
 `a ∘ π`, every point `κ(θ, a(b))` of the torus `{I = a(b)}` is the image of a point of the fibre
 over `b`: translating the angles by the fibre action reaches it. -/
 theorem exists_apply_eq_actionAngleCover_of_actionAngle (b : B) (θ : ι → ℝ) :
     ∃ y, π y = b ∧ Φ y = actionAngleCover p (θ, a b) := by
-  -- `σ` is closed, as the pullback of the closed canonical form.
-  have hσc : σ.IsClosed := hΦσ ▸ (isSymplectic_symplecticForm
-    (I := ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (M := ι → AddCircle p)).isClosed.mpullback Φ
-    hΦ.contMDiff
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
   obtain ⟨x, θ₀, hθ₀⟩ := h.exists_apply_eq_actionAngleCover p hΦa b
   -- The covector `v ↦ (θ - θ₀) ⬝ᵥ da_b(v)` moves `x` to the point with angles `θ`.
   set α : F →L[ℝ] ℝ := (dotProductCLM (θ - θ₀)).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
@@ -290,6 +339,39 @@ theorem injective_of_actionAngle (hΦi : Injective Φ) : Injective a := by
   obtain ⟨y, hy, hyθ⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b θ
   rw [← hy, hΦi (hyθ.trans hθ.symm), x'.property]
 
+include h hΦ hΦσ hΦa in
+/-- **The actions identify the base with an open set of actions.** For global action–angle
+coordinates `Φ` with actions `a ∘ π`, the set `a(B)` is open and the map `c ↦ π(Φ⁻¹(κ(0, c)))` is
+smooth on `a(B)` and inverts `a`. -/
+theorem isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle [Nonempty M]
+    (hΦi : Injective Φ) :
+    IsOpen (range a) ∧
+      ∃ e : (ι → ℝ) → B, ContMDiffOn 𝓘(ℝ, ι → ℝ) J ∞ e (range a) ∧ ∀ b, e (a b) = b := by
+  set k : (ι → ℝ) → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p) :=
+    fun c ↦ actionAngleCover p ((0 : ι → ℝ), c)
+  have hk : ContMDiff 𝓘(ℝ, ι → ℝ)
+      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ k :=
+    (contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space contMDiff_id)
+  -- `a(B)` is the set of actions whose zero angles lie in the open image of `Φ`.
+  have hV : range a = k ⁻¹' (Φ '' univ) := by
+    ext c
+    refine ⟨?_, fun ⟨y, _, hy⟩ ↦ ⟨π y, ?_⟩⟩
+    · rintro ⟨b, rfl⟩
+      obtain ⟨y, -, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
+      exact ⟨y, mem_univ _, hy⟩
+    · rw [← hΦa, hy, torusActions_actionAngleCover]
+  refine ⟨by rw [hV, image_univ]; exact hΦ.isOpenMap.isOpen_range.preimage hk.continuous,
+    π ∘ invFunOn Φ univ ∘ k, ?_, fun b ↦ ?_⟩
+  · refine h.isSubmersion.contMDiff.comp_contMDiffOn
+      ((IsLocalDiffeomorphOn.contMDiffOn_invFunOn (hΦ.isLocalDiffeomorphOn univ) isOpen_univ
+        hΦi.injOn).comp hk.contMDiffOn fun c hc ↦ ?_)
+    rwa [hV] at hc
+  · -- `Φ⁻¹(κ(0, a b))` is the point with zero angles over `b`.
+    obtain ⟨y, hyb, hy⟩ := h.exists_apply_eq_actionAngleCover_of_actionAngle p hΦ hΦσ hΦa b 0
+    have hinv : invFunOn Φ univ (k (a b)) = y :=
+      hΦi ((invFunOn_eq ⟨y, mem_univ _, hy⟩).trans hy.symm)
+    simp only [Function.comp_apply, hinv, hyb]
+
 /-! ### A Lagrangian section -/
 
 include h hΦ hΦσ hΦa in
@@ -297,7 +379,8 @@ include h hΦ hΦσ hΦa in
 coordinates `Φ` with actions `a ∘ π`, the zero angles `θ = 0` define a smooth section `s` of `π`,
 `Φ(s(b)) = κ(0, a(b))`, and `s^* σ = 0` because `κ(0, ·)` pulls the canonical form back to zero. -/
 theorem exists_lagrangian_section_of_actionAngle (hΦi : Injective Φ) :
-    ∃ (s : B → M) (hsm : ContMDiff J I ∞ s), (∀ b, π (s b) = b) ∧
+    ∃ (s : B → M) (hsm : ContMDiff J I ∞ s),
+      (∀ b, π (s b) = b ∧ Φ (s b) = actionAngleCover p ((0 : ι → ℝ), a b)) ∧
       SmoothForm.mpullback s hsm σ = 0 := by
   rcases isEmpty_or_nonempty B with hB | ⟨⟨b₀⟩⟩
   · refine ⟨isEmptyElim, fun b ↦ isEmptyElim b, fun b ↦ isEmptyElim b, ?_⟩
@@ -317,7 +400,7 @@ theorem exists_lagrangian_section_of_actionAngle (hΦi : Injective Φ) :
       hΦi.injOn).comp_contMDiff
       ((contMDiff_actionAngleCover p).comp (contMDiff_const.prodMk_space ha))
       fun b ↦ ⟨(hfib b).choose, mem_univ _, (hfib b).choose_spec.2⟩
-  refine ⟨s, hsm, fun b ↦ ?_, ?_⟩
+  refine ⟨s, hsm, fun b ↦ ⟨?_, hΦs b⟩, ?_⟩
   · obtain ⟨y, hy, hyg⟩ := hfib b
     rw [hΦi ((hΦs b).trans hyg.symm), hy]
   · -- `Φ ∘ s = κ(0, a(·))`, so `s^* σ` is the pullback of `ω` along the zero angles.
@@ -325,5 +408,270 @@ theorem exists_lagrangian_section_of_actionAngle (hΦi : Injective Φ) :
       (contMDiff_const.prodMk_space ha) (contMDiff_actionAngleCover p) (funext hΦs),
       SmoothForm.mpullback_mpullback]
     exact mpullback_actionAngleCover_zero_comp_symplecticForm p ha
+
+/-! ### Duistermaat's criterion -/
+
+include h in
+/-- **Duistermaat's criterion for global action–angle coordinates.** Let `π` be a regular
+Lagrangian torus fibration over a base of dimension `|ι|`. There are global action–angle
+coordinates with period `p` and actions `a ∘ π` exactly when `a` is smooth and injective, the period
+lattice is spanned at every point by the exact one-forms `p • da_j`, and `π` has a smooth Lagrangian
+section. A period lattice spanned by a global frame has trivial linear monodromy
+(`latticeMonodromyHom_eq_one_of_periodLattice_eq_closure_mvfderiv`), and conversely trivial
+monodromy over a connected base gives a closed global frame
+(`exists_periodLattice_eq_closure_of_latticeMonodromyHom_eq_one`); the period condition asks that
+it can be chosen exact with an injective developing map. -/
+theorem exists_actionAngle_iff [BoundarylessManifold J B]
+    (hι : Fintype.card ι = Module.finrank ℝ F) :
+    (∃ (Φ : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p))
+        (hΦ : IsLocalDiffeomorph I
+          ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ),
+        Injective Φ ∧
+          SmoothForm.mpullback Φ hΦ.contMDiff (CotangentBundle.symplecticForm
+            (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) = σ ∧
+          ∀ y, torusActions p (Φ y) = a (π y)) ↔
+      ContMDiff J 𝓘(ℝ, ι → ℝ) ∞ a ∧ Injective a ∧
+        (∀ b, h.periodLattice hσc b = AddSubgroup.closure (range fun j ↦
+          p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp
+            (mfderiv J 𝓘(ℝ, ι → ℝ) a b) : F →L[ℝ] ℝ))) ∧
+        ∃ (s : B → M) (hsm : ContMDiff J I ∞ s), (∀ b, π (s b) = b) ∧
+          SmoothForm.mpullback s hsm σ = 0 := by
+  constructor
+  · rintro ⟨Φ, hΦ, hΦi, hΦσ, hΦa⟩
+    obtain ⟨s, hsm, hs, hsσ⟩ := h.exists_lagrangian_section_of_actionAngle p hΦ hΦσ hΦa hΦi
+    exact ⟨h.contMDiff_of_actionAngle p hΦ hΦa, h.injective_of_actionAngle p hΦ hΦσ hΦa hΦi,
+      h.periodLattice_eq_closure_of_actionAngle p hσc hΦ hΦσ hΦa hΦi, s, hsm, fun b ↦ (hs b).1,
+      hsσ⟩
+  · rintro ⟨ha, hinj, hΛ, s, hsm, hs, hsσ⟩
+    -- The exact frame `α_j = p • da_j` spans the period lattice.
+    let α : ι → SmoothForm J B ℝ 1 := CotangentBundle.developingForm p ⟨a, ha⟩
+    have hα (j : ι) (b : B) (v : TangentSpace J b) :
+        SmoothForm.degreeOneEquiv (α j) b v = p * mfderiv J 𝓘(ℝ, ι → ℝ) a b v j :=
+      CotangentBundle.degreeOneEquiv_developingForm_apply p ⟨a, ha⟩ j b v
+    have hαΛ (b : B) : (fun j ↦ (SmoothForm.degreeOneEquiv (α j) b : F →L[ℝ] ℝ)) =
+        fun j ↦ p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp
+          (mfderiv J 𝓘(ℝ, ι → ℝ) a b) : F →L[ℝ] ℝ) :=
+      funext fun j ↦ ContinuousLinearMap.ext fun v ↦ by
+        rw [hα]
+        -- Both sides are `p * da_b(v)_j`, read through the definitional identification
+        -- `TangentSpace J b = F`, which `simp` does not see through.
+        rfl
+    have hli (b : B) : LinearIndependent ℝ fun j ↦ SmoothForm.degreeOneEquiv (α j) b := by
+      rw [hαΛ]
+      exact h.linearIndependent_of_periodLattice_le_closure hσc hι.le (hΛ b).le
+    have hframe : IsLocalFrameOn J (F →L[ℝ] ℝ) ∞
+        (fun j b ↦ SmoothForm.degreeOneEquiv (α j) b) univ :=
+      .of_linearIndependent_of_card_eq_finrank (by simp [hι, ContinuousLinearMap.dual_finrank_eq])
+        (fun j ↦ (SmoothForm.degreeOneEquiv (α j)).contMDiff.contMDiffOn) fun b _ ↦ hli b
+    obtain ⟨Φ, hΦ, hΦi, hΦσ, hΦa, -⟩ := h.exists_actionAngle_of_lagrangian_section hσc hs hframe
+      -- The two spanning families agree up to the definitional identification
+      -- `TangentSpace J b = F`.
+      (fun b ↦ (hΛ b).trans (by rw [hαΛ]; rfl)) p hsm hsσ ha hα hinj
+    exact ⟨Φ, hΦ, hΦi, hΦσ, hΦa⟩
+
+/-! ### Uniqueness of global action–angle coordinates -/
+
+section Uniqueness
+
+open Matrix
+
+variable {a' : B → ι → ℝ}
+  {Φ' : M → CotangentBundle (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)}
+  (hΦ' : IsLocalDiffeomorph I
+    ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ)) ∞ Φ')
+  (hΦ'σ : SmoothForm.mpullback Φ' hΦ'.contMDiff
+    (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) =
+      σ)
+  (hΦ'a : ∀ y, torusActions p (Φ' y) = a' (π y))
+
+include h hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a in
+/-- **The actions of two global action–angle charts differ by `GL(ι, ℤ)` to first order.** If `Φ`
+and `Φ'` are global action–angle coordinates with period `p` for the same fibration, with actions
+`a ∘ π` and `a' ∘ π`, then at every point `b` of the base `da'_b = N da_b` for an invertible
+integer matrix `N`: the covectors `p • da_j(b)` and `p • da'_j(b)` are two bases of the period
+lattice at `b`. -/
+theorem exists_mfderiv_eq_mulVec_of_actionAngle (hΦi : Injective Φ) (hΦ'i : Injective Φ')
+    (b : B) :
+    ∃ N : GL ι ℤ, ∀ v, mfderiv J 𝓘(ℝ, ι → ℝ) a' b v =
+      (N : Matrix ι ι ℤ).map (↑) *ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v := by
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
+  -- The period lattice at `b` is spanned both by the `p • da_j(b)` and by the `p • da'_j(b)`;
+  -- dividing by `p`, the `da_j(b)` and the `da'_j(b)` span the same subgroup of covectors.
+  have hcl (D : F →L[ℝ] ι → ℝ) : AddSubgroup.closure (range fun j ↦
+      p • ((ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp D : F →L[ℝ] ℝ)) =
+      (AddSubgroup.closure (range fun j ↦
+        (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp D)).map
+        (DistribSMul.toAddMonoidHom (F →L[ℝ] ℝ) p) := by
+    rw [AddMonoidHom.map_closure, ← range_comp]
+    simp [Function.comp_def]
+  have hL : AddSubgroup.closure (range fun j ↦
+      (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)) =
+      AddSubgroup.closure (range fun j ↦
+        (ContinuousLinearMap.proj j : (ι → ℝ) →L[ℝ] ℝ).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a' b)) := by
+    refine AddSubgroup.map_injective (f := DistribSMul.toAddMonoidHom (F →L[ℝ] ℝ) p)
+      (fun α β hαβ ↦ smul_right_injective _ (Fact.out : 0 < p).ne' (by simpa using hαβ)) ?_
+    exact (hcl _).symm.trans
+      (((h.periodLattice_eq_closure_of_actionAngle p hσc hΦ hΦσ hΦa hΦi b).symm.trans
+        (h.periodLattice_eq_closure_of_actionAngle p hσc hΦ' hΦ'σ hΦ'a hΦ'i b)).trans (hcl _))
+  exact ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_closure_range_proj_comp_eq
+    (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b).2 hL
+
+include h hΦ hΦσ hΦa hΦ' hΦ'a in
+/-- The actions `a` identify the base with the open set `a(B)`, on which `a' ∘ a⁻¹` is smooth. -/
+private theorem exists_contDiffOn_apply_eq_of_actionAngle [Nonempty M] (hΦi : Injective Φ) :
+    IsOpen (range a) ∧
+      ∃ A' : (ι → ℝ) → ι → ℝ, ContDiffOn ℝ 1 A' (range a) ∧ ∀ b, A' (a b) = a' b := by
+  obtain ⟨hVo, e, he, hea⟩ :=
+    h.isOpen_range_and_exists_contMDiffOn_apply_eq_of_actionAngle p hΦ hΦσ hΦa hΦi
+  refine ⟨hVo, a' ∘ e, ?_, fun b ↦ by simp [hea]⟩
+  exact (contMDiffOn_iff_contDiffOn.1
+    ((h.contMDiff_of_actionAngle p hΦ' hΦ'a).comp_contMDiffOn he)).of_le (by simp)
+
+include h hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a in
+/-- **Global actions are unique up to integral affine changes.** If `Φ` and `Φ'` are global
+action–angle coordinates with period `p` for the same fibration over a preconnected base, with
+actions `a ∘ π` and `a' ∘ π`, then `a' = P a + b₀` for some `P ∈ GL(ι, ℤ)` and `b₀ : ι → ℝ`, and
+hence `da' = P da` at every point. -/
+theorem exists_eq_mulVec_add_of_actionAngle [PreconnectedSpace B] (hΦi : Injective Φ)
+    (hΦ'i : Injective Φ') :
+    ∃ (P : GL ι ℤ) (b₀ : ι → ℝ), (∀ b, a' b = (P : Matrix ι ι ℤ).map (↑) *ᵥ a b + b₀) ∧
+      ∀ b v, mfderiv J 𝓘(ℝ, ι → ℝ) a' b v =
+        (P : Matrix ι ι ℤ).map (↑) *ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v := by
+  rcases isEmpty_or_nonempty B with hB | ⟨⟨b₁⟩⟩
+  · exact ⟨1, 0, isEmptyElim, isEmptyElim⟩
+  have : Nonempty M := (h.isConnected_preimage_singleton b₁).nonempty.to_subtype.map (↑)
+  have ha := h.contMDiff_of_actionAngle p hΦ hΦa
+  obtain ⟨hVo, A', hA', hA'a⟩ :=
+    h.exists_contDiffOn_apply_eq_of_actionAngle p hΦ hΦσ hΦa hΦ' hΦ'a hΦi
+  -- At `c = a b`, the derivative of `A' = a' ∘ a⁻¹` is the matrix relating `da'_b` and `da_b`.
+  choose N hN using h.exists_mfderiv_eq_mulVec_of_actionAngle p hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a hΦi hΦ'i
+  have hfd (b : B) (w : ι → ℝ) :
+      fderiv ℝ A' (a b) w = ((N b : GL ι ℤ) : Matrix ι ι ℤ).map (↑) *ᵥ w := by
+    have hdA : DifferentiableAt ℝ A' (a b) :=
+      (hA'.differentiableOn one_ne_zero (a b) ⟨b, rfl⟩).differentiableAt
+        (hVo.mem_nhds ⟨b, rfl⟩)
+    obtain ⟨v, rfl⟩ := (h.bijective_mfderiv_of_actionAngle p hΦ hΦa b).2 w
+    have hcomp := mfderiv_comp_apply (I' := 𝓘(ℝ, ι → ℝ)) b hdA.mdifferentiableAt
+      ((ha b).mdifferentiableAt (by simp)) v
+    -- The manifold derivative of a map between normed spaces is its Fréchet derivative.
+    rw [show A' ∘ a = a' from funext hA'a, mfderiv_eq_fderiv] at hcomp
+    exact hcomp.symm.trans (hN b v)
+  obtain ⟨M₀, b₀, hMb⟩ := exists_eq_mulVec_add_of_forall_exists_fderiv_eq hVo
+    (isPreconnected_range ha.continuous) contDiffOn_id hA'
+    (fun c _ ↦ by simpa [fderiv_id] using injective_id)
+    (by
+      rintro _ ⟨b, rfl⟩
+      exact ⟨N b, fun w ↦ by simpa [fderiv_id] using hfd b w⟩)
+  -- The constant matrix is every `N b`, the derivative of `A' = M₀ c + b₀` at `a b`.
+  have hM (b : B) : M₀ = N b := by
+    have hd := (hasFDerivAt_id (a b)).of_eventuallyEq_mulVec_add
+      (Filter.eventually_of_mem (hVo.mem_nhds ⟨b, rfl⟩) hMb)
+    refine Matrix.map_injective (Int.cast_injective (α := ℝ))
+      (Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_))
+    rw [Matrix.toLin'_apply, Matrix.toLin'_apply, ← hfd b, hd.fderiv]
+    simp
+  refine ⟨N b₁, b₀, fun b ↦ by rw [← hA'a, hMb _ ⟨b, rfl⟩, hM, id], fun b v ↦ ?_⟩
+  rw [hN b v, ← hM, hM b₁]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless]
+  [FiniteDimensional ℝ F] [T2Space B] in
+include hΦ'σ hΦ'a in
+/-- Along a Lagrangian section `s` of `π`, the angles `θ` of `Φ' ∘ s` and the actions `a'` satisfy
+`dθ(v) ⬝ᵥ da'(w) = dθ(w) ⬝ᵥ da'(v)`, since `(Φ' ∘ s)^* ω = s^* σ = 0`. -/
+private theorem mfderiv_proj_dotProduct_comm_of_lagrangian {s : B → M}
+    (hsm : ContMDiff J I ∞ s) (hs : ∀ b, π (s b) = b) (hsσ : SmoothForm.mpullback s hsm σ = 0)
+    (b : B) (v w : TangentSpace J b) :
+    mfderiv J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun b ↦ (Φ' (s b)).proj) b v ⬝ᵥ
+        mfderiv J 𝓘(ℝ, ι → ℝ) a' b w =
+      mfderiv J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun b ↦ (Φ' (s b)).proj) b w ⬝ᵥ
+        mfderiv J 𝓘(ℝ, ι → ℝ) a' b v := by
+  have hΨ := ((hΦ'.contMDiff.comp hsm) b).mdifferentiableAt (n := ∞) (by simp)
+  -- `(Φ' ∘ s)^* ω = s^* σ = 0`.
+  have h0 : SmoothBundleForm.eval₂ (SmoothForm.mpullback s hsm σ) b v w = 0 := by
+    rw [hsσ]
+    simp
+  simp only [← hΦ'σ, SmoothForm.mpullback_mpullback, SmoothForm.eval₂_mpullback] at h0
+  rw [eval₂_symplecticForm_eq_dotProduct_sub, sub_eq_zero] at h0
+  -- The angles and actions of `Φ' ∘ s` are `proj ∘ Φ' ∘ s` and `a'`.
+  have hIΨ : torusActions p ∘ Φ' ∘ s = a' := funext fun b ↦ by simp [hΦ'a, hs]
+  have hproj (u : TangentSpace J b) :
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) TotalSpace.proj (Φ' (s b))
+          (mfderiv J _ (Φ' ∘ s) b u) =
+        mfderiv J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun b ↦ (Φ' (s b)).proj) b u :=
+    (mfderiv_comp_apply b
+      ((Bundle.contMDiff_proj (n := ∞) _ (Φ' (s b))).mdifferentiableAt (by simp)) hΨ u).symm
+  have hI (u : TangentSpace J b) :
+      mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, (ι → ℝ) →L[ℝ] ℝ))
+          𝓘(ℝ, ι → ℝ) (torusActions p) (Φ' (s b)) (mfderiv J _ (Φ' ∘ s) b u) =
+        mfderiv J 𝓘(ℝ, ι → ℝ) a' b u :=
+    (mfderiv_comp_apply b ((contMDiff_torusActions p (Φ' (s b))).mdifferentiableAt (by simp)) hΨ
+      u).symm.trans (congrArg (fun f ↦ mfderiv J 𝓘(ℝ, ι → ℝ) f b u) hIΨ)
+  rwa [Function.comp_apply, hproj, hproj, hI, hI] at h0
+
+include h hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a in
+/-- **Uniqueness of global action–angle coordinates.** Let `Φ` and `Φ'` be global action–angle
+coordinates with period `p` for the same fibration over a preconnected base, with actions `a ∘ π`
+and `a' ∘ π`. Then they differ by an integral affine change of the actions together with the
+corresponding change of the angles and an angle gauge: there are `P ∈ GL(ι, ℤ)`, `b₀ : ι → ℝ`
+and angles `g : B → ι → ℝ`, smooth modulo `p ℤ^ι`, such that `a' = P a + b₀` and, at every point
+with coordinates `Φ x = κ(θ, a(π x))`,
+
+`Φ' x = κ(θ P⁻¹ + g(π x), P a(π x) + b₀)`,
+
+that is, `(θ, I) ↦ (P⁻ᵀ θ + g, P I + b₀)` in action–angle coordinates: the integral affine change
+`TauCeti.CotangentBundle.integralAffineDiffeomorph P⁻ᵀ b₀` followed by a translation of the angles
+by `g`. The gauge `g(b)` is the angle in `Φ'` of the point with zero angles in `Φ` over `b`, and it
+is closed in the actions: `dg(v) ⬝ᵥ da'(w) = dg(w) ⬝ᵥ da'(v)`, that is, `∑ i, dg_i ∧ da'_i = 0`. -/
+theorem exists_eq_mulVec_add_and_apply_eq_actionAngleCover_of_actionAngle [PreconnectedSpace B]
+    (hΦi : Injective Φ) (hΦ'i : Injective Φ') :
+    ∃ (P : GL ι ℤ) (b₀ : ι → ℝ) (g : B → ι → ℝ),
+      (∀ b, a' b = (P : Matrix ι ι ℤ).map (↑) *ᵥ a b + b₀) ∧
+      ContMDiff J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ∞ (fun b i ↦ (g b i : AddCircle p)) ∧
+      (∀ b v w,
+        mfderiv J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun b i ↦ (g b i : AddCircle p)) b v ⬝ᵥ
+            mfderiv J 𝓘(ℝ, ι → ℝ) a' b w =
+          mfderiv J (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun b i ↦ (g b i : AddCircle p)) b w ⬝ᵥ
+            mfderiv J 𝓘(ℝ, ι → ℝ) a' b v) ∧
+      ∀ x θ, Φ x = actionAngleCover p (θ, a (π x)) →
+        Φ' x = actionAngleCover p
+          (θ ᵥ* ((P⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map (↑) + g (π x), a' (π x)) := by
+  have hσc := isClosed_of_actionAngle p hΦ hΦσ
+  obtain ⟨P, b₀, hP, hdP⟩ :=
+    h.exists_eq_mulVec_add_of_actionAngle p hΦ hΦσ hΦa hΦ' hΦ'σ hΦ'a hΦi hΦ'i
+  -- The points `s b` with zero angles in `Φ`, and their angles `g b` in `Φ'`.
+  obtain ⟨s, hsm, hs, hsσ⟩ := h.exists_lagrangian_section_of_actionAngle p hΦ hΦσ hΦa hΦi
+  have hg (b : B) : ∃ θ : ι → ℝ, Φ' (s b) = actionAngleCover p (θ, a' b) := by
+    obtain ⟨⟨θ, A⟩, hθ⟩ := surjective_actionAngleCover p (Φ' (s b))
+    have hA : A = a' b := by
+      rw [← (hs b).1, ← hΦ'a, ← hθ, torusActions_actionAngleCover]
+    exact ⟨θ, hθ ▸ hA ▸ rfl⟩
+  choose g hg using hg
+  -- `[g b]` is the base point of `Φ'(s b)`.
+  have hgs : (fun b i ↦ (g b i : AddCircle p)) = fun b ↦ (Φ' (s b)).proj :=
+    funext fun b ↦ by rw [hg b, proj_actionAngleCover]
+  refine ⟨P, b₀, g, hP, hgs ▸ (Bundle.contMDiff_proj _).comp (hΦ'.contMDiff.comp hsm),
+    hgs ▸ mfderiv_proj_dotProduct_comm_of_lagrangian p hΦ' hΦ'σ hΦ'a hsm (fun b ↦ (hs b).1) hsσ,
+    fun x θ hx ↦ ?_⟩
+  -- The covector `α = θ ⬝ᵥ da` is `θ P⁻¹ ⬝ᵥ da'`, and moves `s b` to `x`.
+  set b := π x
+  set Q : Matrix ι ι ℝ := ((P⁻¹ : GL ι ℤ) : Matrix ι ι ℤ).map (↑)
+  have hQP : Q * (P : Matrix ι ι ℤ).map (↑) = 1 :=
+    congrArg Units.val (Matrix.GeneralLinearGroup.map_inv_mul_map (Int.castRingHom ℝ) P)
+  set α : F →L[ℝ] ℝ := (dotProductCLM θ).comp (mfderiv J 𝓘(ℝ, ι → ℝ) a b)
+  have hα (v : F) : α v = θ ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a b v := dotProductCLM_apply _ _
+  have hα' (v : F) : α v = (θ ᵥ* Q) ⬝ᵥ mfderiv J 𝓘(ℝ, ι → ℝ) a' b v := by
+    rw [hα, hdP b v]
+    refine Eq.symm ((dotProduct_mulVec _ _ _).trans ?_)
+    rw [vecMul_vecMul, hQP, vecMul_one]
+  let x₀ : π ⁻¹' {b} := ⟨s b, (hs b).1⟩
+  have h₁ := h.apply_fiberAction_of_actionAngle p hσc hΦ hΦσ hΦa b θ hα x₀ 0 (hs b).2
+  have hx₀ : (h.fiberAction hσc b α x₀ : M) = x := hΦi (h₁.trans (by rw [zero_add, hx]))
+  have h₂ := h.apply_fiberAction_of_actionAngle p hσc hΦ' hΦ'σ hΦ'a b (θ ᵥ* Q) hα' x₀ (g b)
+    (hg b)
+  rw [hx₀, add_comm] at h₂
+  exact h₂
+
+end Uniqueness
 
 end TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianTorusFibration

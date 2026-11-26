@@ -28,6 +28,8 @@ additional structures such as filtrations, bialgebras, or antipodes.
   attached to a Lie module `M`, in particular the adjoint action of `U(L)` on `L` at `M = L`.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_lie_of_mem_center`: a central element of
   `U(L)` acts on a Lie module by a map commuting with the Lie action.
+* `TauCeti.UniversalEnvelopingAlgebra.representation_apply_of_lie_eq_smul`: on a module where `L`
+  acts through a Lie algebra homomorphism `f : L → R`, every `u ∈ U(L)` acts by `lift f u`.
 * `TauCeti.UniversalEnvelopingAlgebra.mem_center_iff_forall_lie_ι`: centrality in `U(L)` is
   detected on the canonical Lie generators alone.
 * `TauCeti.UniversalEnvelopingAlgebra.ι_mem_center_of_mem_center`: the canonical generator of a
@@ -178,6 +180,19 @@ theorem representation_lie_of_mem_center {u : U} (hu : u ∈ Subalgebra.center R
   have h := LinearMap.congr_fun (congrArg (representation R L M)
     (Subalgebra.mem_center_iff.mp hu (_root_.UniversalEnvelopingAlgebra.ι R x))) m
   simpa only [map_mul, mul_apply_eq_comp, representation_ι_apply] using h.symm
+
+variable {R L M} in
+/-- **On a module where `L` acts through a Lie algebra homomorphism `f : L → R`, every element `u`
+of `U(L)` acts by the scalar `lift f u`.** -/
+theorem representation_apply_of_lie_eq_smul (f : L →ₗ⁅R⁆ R)
+    (hf : ∀ (y : L) (m : M), ⁅y, m⁆ = f y • m) (u : U) (m : M) :
+    representation R L M u m = _root_.UniversalEnvelopingAlgebra.lift R f u • m := by
+  have key : representation R L M =
+      (Algebra.ofId R (Module.End R M)).comp (_root_.UniversalEnvelopingAlgebra.lift R f) := by
+    refine _root_.UniversalEnvelopingAlgebra.hom_ext R
+      (LieHom.ext fun y ↦ LinearMap.ext fun m ↦ ?_)
+    simp [hf, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
+  simp [key, Algebra.ofId_apply, Algebra.algebraMap_eq_smul_one]
 
 variable {R L}
 
