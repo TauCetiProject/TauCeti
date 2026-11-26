@@ -115,25 +115,11 @@ theorem mem_integers_place_iff {x : X} {f : MeromorphicFunction X} :
     f ∈ (place x).integers ↔ f x ≠ ∞ := by
   rw [place_def, Place.mem_integers_ofAddValuation_iff, order_nonneg_iff]
 
-/-- The valuation of the place at `x` is at most `1` at `f` exactly when `x` is not a pole of
-`f`. -/
-theorem valuation_place_le_one_iff {x : X} {f : MeromorphicFunction X} :
-    (place x).valuation f ≤ 1 ↔ f x ≠ ∞ := by
-  rw [← Place.mem_integers_iff, mem_integers_place_iff]
-
 /-- A nonzero meromorphic function has positive order at the place at `x` exactly when it
 vanishes at `x`. -/
 theorem ord_place_pos_iff {x : X} {f : MeromorphicFunction X} (hf : f ≠ 0) :
     0 < (place x).ord f ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
   rw [← WithTop.coe_lt_coe, coe_ord_place x hf, WithTop.coe_zero, order_pos_iff]
-
-/-- A meromorphic function lies in the maximal ideal of the place at `x` exactly when it
-vanishes at `x`. -/
-theorem valuation_place_lt_one_iff {x : X} {f : MeromorphicFunction X} :
-    (place x).valuation f < 1 ↔ f x = ((0 : ℂ) : OnePoint ℂ) := by
-  rcases eq_or_ne f 0 with rfl | hf
-  · simp
-  rw [Place.valuation_lt_one_iff_ord_pos _ hf, ord_place_pos_iff hf]
 
 /-- **Different points give different places**, since meromorphic functions separate the points
 of a compact connected Riemann surface. -/
