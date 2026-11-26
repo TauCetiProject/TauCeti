@@ -120,28 +120,20 @@ private def mayerVietorisIntegration (U V : Opens M) (hUV : U ⊔ V = ⊤) :
   comm₁₂ := by
     -- Restricting to `U` (or `V`) and integrating is integrating over `M` and restricting to the
     -- smooth simplices of `U` (or `V`), by naturality of integration.
-    -- Expose the first maps of the two short complexes, which are by definition biproduct lifts.
-    change CategoryStruct.comp _ (biprod.lift _ _) = biprod.lift
-        (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_left : U ≤ U ⊔ V))
-          (contMDiff_inclusion _))
-        (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (le_sup_right : V ≤ U ⊔ V))
-          (contMDiff_inclusion _)) ≫
-      biprod.map (deRhamIntegration I U) (deRhamIntegration I V)
+    -- Expose the first maps of the two short complexes as biproduct lifts. The de Rham one is
+    -- unfolded rather than rewritten with `mayerVietorisShortComplex_f`, since the composites in
+    -- the goal are typed by the terms `(mayerVietorisShortComplex I U V).Xᵢ`, which a rewrite of
+    -- the map alone would leave ill-typed; the singular one is an `abbrev`.
+    dsimp only [mayerVietorisShortComplex]
     apply biprod.hom_ext
     · simp only [Category.assoc, biprod.lift_fst, biprod.map_fst, biprod.lift_fst_assoc]
       exact integration_toSmallSmoothSingularSubcomplex I U V U hUV le_sup_left _
     · simp only [Category.assoc, biprod.lift_snd, biprod.map_snd, biprod.lift_snd_assoc]
       exact integration_toSmallSmoothSingularSubcomplex I U V V hUV le_sup_right _
   comm₂₃ := by
-    -- Expose the second maps of the two short complexes, which are by definition biproduct
-    -- descents.
-    change CategoryStruct.comp (biprod.map (deRhamIntegration I U) (deRhamIntegration I V))
-      (biprod.desc _ _) =
-      biprod.desc
-        (deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_left : U ⊓ V ≤ U))
-          (contMDiff_inclusion _))
-        (-deRhamComplex.map (I := I) (I' := I) (Opens.inclusion (inf_le_right : U ⊓ V ≤ V))
-          (contMDiff_inclusion _)) ≫ deRhamIntegration I (U ⊓ V : Opens M)
+    -- Expose the second maps of the two short complexes as biproduct descents, unfolding the de
+    -- Rham short complex as in `comm₁₂`.
+    dsimp only [mayerVietorisShortComplex]
     apply biprod.hom_ext'
     · rw [biprod.inl_map_assoc, biprod.inl_desc, biprod.inl_desc_assoc,
         deRhamIntegration_naturality]
