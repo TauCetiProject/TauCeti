@@ -287,7 +287,7 @@ end Infinitesimal
 
 /-- The moment map identity `μ(x) = μ(p) + μ_model(chart x)` of a weight chart, read in the
 continuous dual. -/
-private theorem toContinuousLinearMap_eq_add_weightMomentMap
+theorem toContinuousLinearMap_eq_add_weightMomentMap
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] {H' : Type*} [TopologicalSpace H']
     {I' : ModelWithCorners ℝ E' H'} {M : Type*} [TopologicalSpace M] [ChartedSpace H' M]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
