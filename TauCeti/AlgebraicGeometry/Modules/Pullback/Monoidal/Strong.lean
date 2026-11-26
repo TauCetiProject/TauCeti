@@ -111,7 +111,7 @@ theorem pullback_id_ε (X : Scheme.{u}) :
 
 /-- The strong monoidal tensor map of identity pullback intertwines `Scheme.Modules.pullbackId`
 with the tensor product of identity comparisons. -/
-@[reassoc (attr := simp)]
+@[reassoc]
 theorem pullback_id_μ (X : Scheme.{u}) (M N : X.Modules) :
     Functor.LaxMonoidal.μ (pullback (𝟙 X)) M N ≫ (pullbackId X).hom.app (M ⊗ N) =
       (pullbackId X).hom.app M ⊗ₘ (pullbackId X).hom.app N :=
