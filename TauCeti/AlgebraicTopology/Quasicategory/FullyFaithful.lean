@@ -114,79 +114,98 @@ private lemma rlp_restrictionMap_bot {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}
     (Subcomplex.unionJoin.isPushout _ _) (Subcomplex.unionJoin.ι₁_ι _ _)
     (Subcomplex.unionJoin.ι₂_ι _ _)).2 this σ
 
+/-- **The map of right mapping spaces is a base change of a relative slice map.** For a map
+`p : X ⟶ Y` and vertices `x` and `y` of `X`, the map `Hom^R_X(x, y) ⟶ Hom^R_Y(p x, p y)` is,
+through `SSet.rightMappingSpace.sliceFiberIso`, the base change of the relative slice map
+`X_{/y} ⟶ X_{/∅} ×_{Y_{/∅}} Y_{/p y}` along the empty diagram, along a map `g` which is constant
+at `x` in `X_{/∅} ≅ X` and includes `Hom^R_Y(p x, p y)` as the fibre of `Y_{/p y}` over `p x`. -/
+private lemma isPullback_map (p : X ⟶ Y) (x y : X _⦋0⦌)
+    (g : (Y.rightMappingSpace (p.app _ x) (p.app _ y) : SSet.{u}) ⟶
+      pullback (slice.map (𝟙 _) p (by simp) :
+          slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y) ⟶ _)
+        (slice.map (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι (𝟙 Y) (by simp) :
+          slice (yonedaEquiv.symm y ≫ p) ⟶ _))
+    (hg₁ : g ≫ pullback.fst _ _ ≫ slice.π _ = const x)
+    (hg₂ : g ≫ pullback.snd _ _ = (sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
+      (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
+        slice.map (𝟙 _) (𝟙 _) (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp])) :
+    IsPullback ((sliceFiberIso x y).inv ≫ (fiber (slice.π (yonedaEquiv.symm y)) x).ι)
+      (map x y p) (slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p
+        (yonedaEquiv.symm y)) g := by
+  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y)) :=
+    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
+  -- `fE` and `fB` include the right mapping spaces as the fibres of the slices over `x` and
+  -- `p x`, and `φ` identifies two slices of `Y`.
+  obtain ⟨fE, hfE⟩ : ∃ fE, fE = (sliceFiberIso x y).inv ≫
+      (fiber (slice.π (yonedaEquiv.symm y)) x).ι := ⟨_, rfl⟩
+  obtain ⟨φ, hφ⟩ : ∃ φ : _ ⟶ slice (yonedaEquiv.symm y ≫ p), φ =
+      (sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
+        (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
+          slice.map (𝟙 _) (𝟙 _)
+            (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp]) :=
+    ⟨_, rfl⟩
+  rw [← hfE]; rw [← hφ] at hg₂
+  have : Mono fE := by rw [hfE]; infer_instance
+  have : Mono φ := by rw [hφ]; infer_instance
+  have hE : fE ≫ slice.π (yonedaEquiv.symm y) = const x := by
+    rw [hfE, Category.assoc, fiber.ι_comp, comp_const]
+  have hfst : slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p (yonedaEquiv.symm y) ≫
+      pullback.fst _ _ ≫ slice.π _ = slice.π (yonedaEquiv.symm y) := by
+    rw [slice.restrictionMap_fst_assoc, slice.map_π, Category.comp_id]
+  -- By naturality of `sliceFiberIso`, pushing cones forward along `p` is `map x y p`.
+  have hsnd : fE ≫ slice.restrictionMap (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι p
+      (yonedaEquiv.symm y) ≫ pullback.snd _ _ = map x y p ≫ φ := by
+    rw [slice.restrictionMap_snd, hfE, hφ, Category.assoc,
+      ← reassoc_of% (sliceFiberIso_inv_comp_map x y p), slice.map_comp]
+    simp only [Category.comp_id]
+  have w : fE ≫ slice.restrictionMap _ p _ = map x y p ≫ g := by
+    refine pullback.hom_ext ?_ ?_
+    · rw [← cancel_mono (slice.π _), Category.assoc, Category.assoc, hfst, hE, Category.assoc,
+        Category.assoc, hg₁, comp_const]
+    · rw [Category.assoc, hsnd, Category.assoc, hg₂]
+  -- A cone over the cospan lies, by `hfst`, over `x`, so it lifts to the fibre over `x`, which
+  -- is the right mapping space.
+  have hl (s : PullbackCone (slice.restrictionMap _ p _) g) :
+      s.fst ≫ slice.π (yonedaEquiv.symm y) = const x := by
+    rw [← hfst, reassoc_of% s.condition, hg₁, comp_const]
+  have hlift (s : PullbackCone (slice.restrictionMap _ p _) g) :
+      (fiber.lift s.fst _ x (hl s) ≫ (sliceFiberIso x y).hom) ≫ fE = s.fst := by
+    rw [hfE, Category.assoc, Iso.hom_inv_id_assoc, fiber.lift_ι]
+  refine IsPullback.of_isLimit (PullbackCone.IsLimit.mk w
+    (fun s ↦ fiber.lift s.fst _ x (hl s) ≫ (sliceFiberIso x y).hom) hlift
+    (fun s ↦ ?_) (fun s m hm₁ _ ↦ by rw [← cancel_mono fE, hm₁, hlift]))
+  rw [← cancel_mono φ, Category.assoc, ← hsnd, ← Category.assoc _ fE, hlift,
+    reassoc_of% s.condition, hg₂]
+
 /-- **A trivial fibration induces trivial fibrations of right mapping spaces**: if
 `p : X ⟶ Y` has the right lifting property with respect to every monomorphism, then so does
-`Hom^R_X(x, y) ⟶ Hom^R_Y(p x, p y)`. Through `SSet.rightMappingSpace.sliceFiberIso`, a lifting
-problem against it is one against the relative slice map
-`X_{/y} ⟶ X ×_Y Y_{/p y}` along the empty diagram, which lifts against monomorphisms since the
-pushout-joins of monomorphisms with `∅ ⟶ Δ[0]` are monomorphisms. -/
+`Hom^R_X(x, y) ⟶ Hom^R_Y(p x, p y)`. It is a base change of the relative slice map
+`X_{/y} ⟶ X ×_Y Y_{/p y}` along the empty diagram (`isPullback_map`), which lifts against
+monomorphisms since the pushout-joins of monomorphisms with `∅ ⟶ Δ[0]` are monomorphisms. -/
 theorem rlp_map {p : X ⟶ Y} (hp : (monomorphisms SSet.{u}).rlp p) (x y : X _⦋0⦌) :
     (monomorphisms SSet.{u}).rlp (map x y p) := by
-  let σ : Δ[0] ⟶ X := yonedaEquiv.symm y
-  let i := (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι
-  have hL : ¬ (((⊥ : (Δ[0] : SSet.{u}).Subcomplex) : SSet.{u})).Nonempty := by
-    rintro ⟨⟨_, ⟨⟩⟩⟩
-  have hr := rlp_restrictionMap_bot hp σ
-  -- A lifting problem against `map x y p` is one against the relative slice map, whose first
-  -- component is constant at `x`: the right mapping spaces are the fibres over `x` and `p x`.
-  intro A B j hj
-  have := hr j hj
-  refine ⟨fun {t b} sq ↦ ?_⟩
-  -- The slices over the empty diagram are `X` and `Y`; `fE` and `fB` include the right mapping
-  -- spaces as the fibres of the slices over `x` and `p x`, and `φ` identifies two slices of `Y`.
-  have : IsIso (slice.π (i ≫ σ)) := slice.isIso_π _ hL
-  have : IsIso (slice.π (i ≫ σ ≫ p)) := slice.isIso_π _ hL
-  let fE := (sliceFiberIso x y).inv ≫ (fiber (slice.π σ) x).ι
-  let fB := (sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
-    (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι
-  have hσp : 𝟙 Δ[0] ≫ yonedaEquiv.symm (p.app _ y) ≫ 𝟙 Y = σ ≫ p := by simp [σ]
-  let φ : slice (yonedaEquiv.symm (p.app _ y)) ⟶ slice (σ ≫ p) := slice.map (𝟙 _) (𝟙 _) hσp
-  let u : B ⟶ slice (i ≫ σ) := const x ≫ inv (slice.π (i ≫ σ))
-  have hfB : fB ≫ slice.π _ = const (p.app _ x) := by
-    simp only [fB, Category.assoc, fiber.ι_comp, comp_const]
-  have hfE : fE ≫ slice.π σ = const x := by
-    simp only [fE, Category.assoc, fiber.ι_comp, comp_const]
-  let mE : slice (i ≫ σ) ⟶ slice (i ≫ σ ≫ p) := slice.map (𝟙 _) p (by simp)
-  let mB : slice (σ ≫ p) ⟶ slice (i ≫ σ ≫ p) := slice.map i (𝟙 _) (by simp)
-  have w : u ≫ mE = (b ≫ fB ≫ φ) ≫ mB := by
-    rw [← cancel_mono (slice.π (i ≫ σ ≫ p))]
-    simp only [u, φ, mE, mB, Category.assoc, slice.map_π, IsIso.inv_hom_id_assoc, Category.comp_id]
-    rw [hfB, const_comp, comp_const]
-  -- The lifting problem against the relative slice map.
-  have hnat := sliceFiberIso_inv_comp_map x y p
-  have hm : (slice.map (𝟙 _) p (by simp) : slice σ ⟶ slice (σ ≫ p)) =
-      slice.map (𝟙 Δ[0]) p (by rw [Category.id_comp, yonedaEquiv_symm_comp]) ≫ φ := by
-    rw [slice.map_comp]
-    congr 1
-  have sq' : CommSq (t ≫ fE) j (slice.restrictionMap i p σ) (pullback.lift u (b ≫ fB ≫ φ) w) := by
-    refine ⟨pullback.hom_ext ?_ ?_⟩
-    · rw [← cancel_mono (slice.π (i ≫ σ))]
-      simp only [Category.assoc, slice.restrictionMap_fst, pullback.lift_fst, slice.map_π,
-        Category.comp_id, u, IsIso.inv_hom_id, hfE, comp_const]
-    · simp only [Category.assoc, slice.restrictionMap_snd, pullback.lift_snd]
-      rw [hm, ← Category.assoc fE, show fE ≫ _ = _ ≫ fB from hnat, Category.assoc,
-        reassoc_of% sq.w]
-  have hl : sq'.lift ≫ slice.π σ = const x := by
-    have h₁ : slice.restrictionMap i p σ ≫ pullback.fst _ _ ≫ slice.π (i ≫ σ) = slice.π σ := by
-      rw [slice.restrictionMap_fst_assoc, slice.map_π, Category.comp_id]
-    rw [← h₁, reassoc_of% sq'.fac_right, pullback.lift_fst_assoc, Category.assoc,
-      IsIso.inv_hom_id, Category.comp_id]
-  -- Its solution lies in the fibre over `x`, hence in the right mapping space.
-  have : Mono fB := by dsimp [fB]; infer_instance
-  have : IsIso φ := by dsimp [φ]; infer_instance
-  refine ⟨⟨{ l := fiber.lift sq'.lift (slice.π σ) x hl ≫ (sliceFiberIso x y).hom
-             fac_left := ?_
-             fac_right := ?_ }⟩⟩
-  · rw [← cancel_mono (sliceFiberIso x y).inv, Category.assoc, Category.assoc, Iso.hom_inv_id,
-      Category.comp_id, ← cancel_mono (fiber (slice.π σ) x).ι, Category.assoc, fiber.lift_ι,
-      sq'.fac_left, Category.assoc]
-  · have hnat' : map x y p ≫ fB = fE ≫ slice.map (𝟙 Δ[0]) p
-        (by rw [Category.id_comp, yonedaEquiv_symm_comp]) := hnat.symm
-    rw [← cancel_mono fB, ← cancel_mono φ]
-    simp only [Category.assoc]
-    rw [reassoc_of% hnat']
-    simp only [fE, Category.assoc, Iso.hom_inv_id_assoc, fiber.lift_ι_assoc]
-    rw [← hm, ← slice.restrictionMap_snd i p σ, reassoc_of% sq'.fac_right, pullback.lift_snd]
+  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) :=
+    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
+  have : IsIso (slice.π ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y)) :=
+    slice.isIso_π _ (by rintro ⟨⟨_, ⟨⟩⟩⟩)
+  -- The map `g` of `isPullback_map`, constant at `x` in its first component.
+  have w : (const x ≫ inv (slice.π _)) ≫ (slice.map (𝟙 _) p (by simp) :
+        slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y) ⟶
+          slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) =
+      ((sliceFiberIso (p.app _ x) (p.app _ y)).inv ≫
+        (fiber (slice.π (yonedaEquiv.symm (p.app _ y))) (p.app _ x)).ι ≫
+          (slice.map (𝟙 _) (𝟙 _)
+            (by rw [Category.id_comp, Category.comp_id, yonedaEquiv_symm_comp]) :
+            _ ⟶ slice (yonedaEquiv.symm y ≫ p))) ≫
+        (slice.map (⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι (𝟙 Y) (by simp) :
+          slice (yonedaEquiv.symm y ≫ p) ⟶
+            slice ((⊥ : (Δ[0] : SSet.{u}).Subcomplex).ι ≫ yonedaEquiv.symm y ≫ p)) := by
+    rw [← cancel_mono (slice.π _), Category.assoc, slice.map_π, Category.assoc,
+      IsIso.inv_hom_id_assoc, const_comp]
+    simp only [Category.assoc, slice.map_π, Category.comp_id, fiber.ι_comp, comp_const]
+  exact MorphismProperty.of_isPullback (isPullback_map p x y (pullback.lift _ _ w)
+    (by rw [pullback.lift_fst_assoc, Category.assoc, IsIso.inv_hom_id, Category.comp_id])
+    (pullback.lift_snd _ _ _)) (rlp_restrictionMap_bot hp _)
 
 end rightMappingSpace
 
@@ -363,28 +382,31 @@ private lemma exists_map_eq [Y.Quasicategory] (α : Edge F G) (hα : α.IsEquiva
       α.yonedaEquiv_symm_edge_app_one]
 
 /-- For a natural transformation `α : F ⟶ G` of maps `X ⟶ Y` into a quasicategory which is an
+equivalence of `Fun(X, Y)`, the maps of right mapping spaces induced by `F` and `G` satisfy together
+any property `P` of maps which is invariant under postcomposition with trivial fibrations: by
+`exists_map_eq`, they are one map followed by trivial fibrations. -/
+private lemma map_iff_of_isEquivalence [Y.Quasicategory] (P : ∀ {A B : SSet.{u}}, (A ⟶ B) → Prop)
+    (hP : ∀ {A B C : SSet.{u}} (f : A ⟶ B) (g : B ⟶ C),
+      (MorphismProperty.monomorphisms SSet.{u}).rlp g → (P (f ≫ g) ↔ P f))
+    {α : Edge F G} (hα : α.IsEquivalence) (x y : X _⦋0⦌) :
+    P (rightMappingSpace.map x y (ihomObj₀Equiv X Y F)) ↔
+      P (rightMappingSpace.map x y (ihomObj₀Equiv X Y G)) := by
+  obtain ⟨H, hF, hG⟩ := exists_map_eq α hα
+  rw [hF, hG, rightMappingSpace.map_comp x y H, rightMappingSpace.map_comp x y H,
+    hP _ _ (rightMappingSpace.rlp_map (isom.rlp_evalAt 0) _ _),
+    hP _ _ (rightMappingSpace.rlp_map (isom.rlp_evalAt 1) _ _)]
+
+/-- For a natural transformation `α : F ⟶ G` of maps `X ⟶ Y` into a quasicategory which is an
 equivalence of `Fun(X, Y)`, **`F` and `G` induce weak homotopy equivalences
 `Hom^R_X(x, y) ⟶ Hom^R_Y(F x, F y)` and `Hom^R_X(x, y) ⟶ Hom^R_Y(G x, G y)` together.** -/
 theorem rightMappingSpace.isWeakHomotopyEquivalence_map_iff_of_isEquivalence [Y.Quasicategory]
     {α : Edge F G}
     (hα : α.IsEquivalence) (x y : X _⦋0⦌) :
     IsWeakHomotopyEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y F)) ↔
-      IsWeakHomotopyEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y G)) := by
-  obtain ⟨H, hF, hG⟩ := exists_map_eq α hα
-  have (i : Fin 2) (a b : (isom Y : SSet.{u}) _⦋0⦌) : IsWeakHomotopyEquivalence
-      (rightMappingSpace.map a b ((isom Y).ι ≫ evalAt (stdSimplex.obj₀Equiv.symm i) Y)) :=
-    isWeakHomotopyEquivalence_of_rlp_monomorphisms
-      (rightMappingSpace.rlp_map (isom.rlp_evalAt i) a b)
-  rw [hF, hG, rightMappingSpace.map_comp x y H, rightMappingSpace.map_comp x y H]
-  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · have := IsWeakHomotopyEquivalence.of_postcomp (rightMappingSpace.map x y H)
-      (rightMappingSpace.map (H.app _ x) (H.app _ y)
-        ((isom Y).ι ≫ evalAt (stdSimplex.obj₀Equiv.symm 0) Y))
-    infer_instance
-  · have := IsWeakHomotopyEquivalence.of_postcomp (rightMappingSpace.map x y H)
-      (rightMappingSpace.map (H.app _ x) (H.app _ y)
-        ((isom Y).ι ≫ evalAt (stdSimplex.obj₀Equiv.symm 1) Y))
-    infer_instance
+      IsWeakHomotopyEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y G)) :=
+  map_iff_of_isEquivalence (fun f ↦ IsWeakHomotopyEquivalence f) (fun f g hg ↦
+    have := isWeakHomotopyEquivalence_of_rlp_monomorphisms hg
+    ⟨fun _ ↦ .of_postcomp f g, fun _ ↦ inferInstance⟩) hα x y
 
 /-- For a natural transformation `α : F ⟶ G` of maps `X ⟶ Y` into a quasicategory which is an
 equivalence of `Fun(X, Y)`, `F` and `G` induce weak equivalences of right mapping spaces
@@ -393,14 +415,10 @@ theorem rightMappingSpace.weakEquivalence_map_iff_of_isEquivalence [Y.Quasicateg
     {α : Edge F G}
     (hα : α.IsEquivalence) (x y : X _⦋0⦌) :
     WeakEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y F)) ↔
-      WeakEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y G)) := by
-  obtain ⟨H, hF, hG⟩ := exists_map_eq α hα
-  have (i : Fin 2) (a b : (isom Y : SSet.{u}) _⦋0⦌) : WeakEquivalence
-      (rightMappingSpace.map a b ((isom Y).ι ≫ evalAt (stdSimplex.obj₀Equiv.symm i) Y)) :=
-    modelCategoryQuillen.weakEquivalence_of_rlp_monomorphisms
-      (rightMappingSpace.rlp_map (isom.rlp_evalAt i) a b)
-  rw [hF, hG, rightMappingSpace.map_comp x y H, rightMappingSpace.map_comp x y H,
-    weakEquivalence_postcomp_iff, weakEquivalence_postcomp_iff]
+      WeakEquivalence (rightMappingSpace.map x y (ihomObj₀Equiv X Y G)) :=
+  map_iff_of_isEquivalence (fun f ↦ WeakEquivalence f) (fun f g hg ↦
+    have := modelCategoryQuillen.weakEquivalence_of_rlp_monomorphisms hg
+    weakEquivalence_postcomp_iff f g) hα x y
 
 /-- **Full faithfulness is invariant under natural equivalence**: for an equivalence `α : F ⟶ G`
 of `Fun(X, Y)`, with `Y` a quasicategory, the map `X ⟶ Y` given by `F` is fully faithful exactly

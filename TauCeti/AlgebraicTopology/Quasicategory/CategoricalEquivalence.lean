@@ -142,8 +142,7 @@ lemma exists_isEquivalence_of_iso {f g : X ⟶ Y} (e : f ≅ g) :
       HomotopyCategory.mk ((ihomObj₀Equiv X.obj Y.obj).symm g.hom) :=
     eqToIso (homEquiv_eq_mk f).symm ≪≫ ⟨e.hom.base, e.inv.base, h₁, h₂⟩ ≪≫
       eqToIso (homEquiv_eq_mk g)
-  obtain ⟨α, hα⟩ := HomotopyCategory.homMk_surjective φ.hom
-  exact ⟨α, (Edge.isEquivalence_iff_isIso_homotopyCategoryHomMk α).2 (hα ▸ inferInstance)⟩
+  exact HomotopyCategory.nonempty_iso_mk_iff.1 ⟨φ⟩
 
 /-- Isomorphic `1`-morphisms of the bicategory of quasicategories induce weak homotopy
 equivalences of right mapping spaces together. -/
