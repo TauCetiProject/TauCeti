@@ -20,8 +20,9 @@ coordinate `y ↦ F₁(x, y)` is strictly increasing (Katok–Hasselblatt, *Intr
 Theory of Dynamical Systems*, Section 9.2; Herman, *Sur les courbes invariantes par les
 difféomorphismes de l'anneau*, Chapitre I, 1.2, for the differentiable form). A *negative twist
 lift* is the same with strictly decreasing; for `ℓ ≠ 0` it is described here through its
-inverse. The positive twist condition is Herman's *deviation of the verticals* (Appendice, §2):
-the image of a vertical crosses every vertical it meets from left to right.
+inverse. The positive twist condition is the *deviation of the verticals* (A. Fathi, Appendice to
+Herman, *Sur les courbes invariantes…*, §2): the image of a vertical crosses every vertical it
+meets from left to right.
 
 The geometric case is `ℓ ≠ 0` and `a < b`: then `F` is the lift of a homeomorphism of the closed
 annulus `AddCircle ℓ × [a, b]` preserving its two boundary circles. The predicate itself makes
@@ -89,8 +90,9 @@ structure IsTwistLift (ℓ : ℝ) {a b : ℝ} (F : ℝ × Icc a b ≃ₜ ℝ × 
   /-- `F` maps the upper boundary line `y = b` into itself. -/
   snd_apply_of_eq_right : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = b → ((F p).2 : ℝ) = b
   /-- Positive twist: the first coordinate of `F` is strictly increasing on every vertical. This
-  says that `F` *deviates the verticals* (Herman, Appendice, §2): the image of a vertical crosses
-  every vertical it meets from left to right, so it meets each vertical at most once. -/
+  says that `F` *deviates the verticals* (Fathi, Appendice to Herman (1983), §2): the image of a
+  vertical crosses every vertical it meets from left to right, so it meets each vertical at most
+  once. -/
   strictMono_fst_apply : ∀ x : ℝ, StrictMono fun y : Icc a b => (F (x, y)).1
 
 namespace IsTwistLift
