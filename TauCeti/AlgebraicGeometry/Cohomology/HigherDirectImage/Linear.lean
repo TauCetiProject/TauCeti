@@ -85,23 +85,17 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 forcing the kernel to unfold `CategoryTheory.Sheaf.H'` during typeclass unification. -/
 private def cohomologyOnTopEquivPreimageTop (M : X.Modules) (n : ℕ) :
     cohomologyOn M n ⊤ ≃ₗ[Γ(X, ⊤)] cohomologyOn M n (f ⁻¹ᵁ ⊤) :=
+  have h {U V : X.Opens} (hUV : U ≤ V) (hVU : V ≤ U) :
+      cohomologyOnResLinear M n hVU ∘ₗ cohomologyOnResLinear M n hUV = .id := by
+    ext x
+    simp only [LinearMap.comp_apply, LinearMap.id_apply, cohomologyOnResLinear_apply,
+      cohomologyOnRes_comp_apply]
+    exact (ConcreteCategory.congr_hom (cohomologyOnRes_refl M n V) x).trans
+      (ConcreteCategory.id_apply x)
   LinearEquiv.ofLinearMap
     (cohomologyOnResLinear M n (le_of_eq f.preimage_top))
     (cohomologyOnResLinear M n (le_of_eq f.preimage_top.symm))
-    (LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, cohomologyOnResLinear_apply,
-        cohomologyOnRes_comp_apply]
-      exact ConcreteCategory.congr_hom
-        (CategoryTheory.Functor.map_id
-          ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M |>.cohomologyPresheaf n)
-          (.op (f ⁻¹ᵁ ⊤))) x)
-    (LinearMap.ext fun x ↦ by
-      simp only [LinearMap.comp_apply, LinearMap.id_apply, cohomologyOnResLinear_apply,
-        cohomologyOnRes_comp_apply]
-      exact ConcreteCategory.congr_hom
-        (CategoryTheory.Functor.map_id
-          ((_root_.SheafOfModules.toSheaf X.ringCatSheaf).obj M |>.cohomologyPresheaf n)
-          (.op ⊤)) x)
+    (h _ _) (h _ _)
 
 section QuasiCompactQuasiSeparated
 
@@ -172,10 +166,7 @@ lemma higherDirectImageGlobalSectionsAddEquiv_smul (r : Γ(Y, ⊤)) (x : Cohomol
     f.higherDirectImageGlobalSectionsAddEquiv M n (f.appTop r • x) =
       r • f.higherDirectImageGlobalSectionsAddEquiv M n x := by
   have htop : (Y.presheaf.map (⊤ : Y.Opens).leTop.op r : Γ(Y, ⊤)) = r := by
-    -- The inclusion `⊤ ≤ ⊤` is the identity morphism in the preorder `Y.Opens`.
-    change Y.presheaf.map (𝟙 (.op (⊤ : Y.Opens))) r = r
-    rw [CategoryTheory.Functor.map_id]
-    rfl
+    simp [TopologicalSpace.Opens.leTop]
   rw [higherDirectImageGlobalSectionsAddEquiv_apply, higherDirectImageGlobalSectionsAddEquiv_apply]
   have h1 := (cohomologyOnTopLinearEquiv M n).symm.map_smul (f.appTop r) x
   have h2 := (cohomologyOnResLinear M n (le_of_eq f.preimage_top)).map_smul (f.appTop r)
