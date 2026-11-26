@@ -12,9 +12,12 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.FDeriv.Smul
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -44,10 +47,11 @@ precomposition also preserves zero boundary values: a test function on `V` compo
 vanishes off the compact set `Φ⁻¹(tsupport φ) ⊆ U`.
 
 The same change of variables at exponent one, applied on small balls, gives the chain rule for
-weak derivatives under a `C¹` map `Φ`, injective with invertible derivative on `U` and mapping it
-into `V`, with no bound on `DΦ` or on the Jacobian: if `Du` is a weak derivative of `u` on `V`,
-then `x ↦ Du(Φ x) ∘ DΦ(x)` is one of `u ∘ Φ` on `U`, for any complete codomain. On a ball whose
-closure lies in `U` the derivative of `Φ` is bounded and its Jacobian is bounded below, so
+weak derivatives under a `C¹` map `Φ` with invertible derivative on `U` and mapping it into `V`,
+with no bound on `DΦ` or on the Jacobian and no injectivity: if `Du` is a weak derivative of `u`
+on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is one of `u ∘ Φ` on `U`, for any complete codomain. By the
+inverse function theorem `Φ` is injective on a small ball around each point of `U`; on such a ball
+whose closure lies in `U` the derivative of `Φ` is bounded and its Jacobian is bounded below, so
 `TauCeti.W1p.compL` applies to each scalar component `ℓ ∘ u`; the local identities glue
 (`TauCeti.hasWeakFDerivOn_iff_locally`) and continuous linear functionals detect the
 vector-valued identity (`TauCeti.hasWeakFDerivOn_of_forall_strongDual`).
@@ -63,7 +67,14 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
 * `TauCeti.W1p.value_compL_ae`, `TauCeti.W1p.gradient_compL_ae`: its value is `u ∘ Φ` and its
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
+* `TauCeti.W1p.norm_value_compL_inv_smul`, `TauCeti.W1p.norm_gradient_compL_inv_smul`: for the
+  dilation `x ↦ r⁻¹ • x` from `U = r • V` onto `V`, the norms of the value and of the gradient
+  are multiplied exactly by `|r| ^ (n / p)` and `|r| ^ (n / p - 1)`, where `n` is the dimension.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
+* `TauCeti.W1p.compContinuousLinearEquivL`: precomposition with a linear automorphism `e`.
+* `TauCeti.W1p.norm_value_compContinuousLinearEquivL`,
+  `TauCeti.W1p.norm_gradient_compContinuousLinearEquivL_le`: the `Lᵖ` norm of the value scales by
+  `|det e| ^ (-1/p)`, and that of the gradient by at most `‖e‖ |det e| ^ (-1/p)`.
 * `TauCeti.HasWeakFDerivOn.comp_contDiffOn_diffeo`: the chain rule for weak derivatives under a
   `C¹` change of variables.
 * `TauCeti.HasWeakFDerivOn.comp_continuousLinearEquiv_add`: its affine case `x ↦ A x + b`.
@@ -81,7 +92,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter TopologicalSpace
-open scoped ContDiff InnerProductSpace Topology
+open scoped ContDiff InnerProductSpace Pointwise Topology
 
 namespace TauCeti
 
@@ -424,6 +435,143 @@ theorem W1p.compL_compL_of_leftInvOn {Ψ : E → E} {L' c' : ℝ} (hΨ : Differe
 
 end ChangeOfVariables
 
+/-! ### Linear changes of variables -/
+
+section LinearChangeOfVariables
+
+variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUV : (U : Set E) = e ⁻¹' V)
+
+/-- **Linear changes of variables in `W^{1,p}`.** Precomposition with a continuous linear
+automorphism `e` of `E`, as the operator `TauCeti.W1p.compL` from `W^{1,p}(V)` to `W^{1,p}(U)` for
+`U = e⁻¹(V)`, with the bounds `‖De‖ ≤ ‖e‖` and `|det e| ≤ |det De|`. -/
+def W1p.compContinuousLinearEquivL : W1p mu V p →L[ℝ] W1p mu U p :=
+  W1p.compL e hp (L := ‖(e : E →L[ℝ] E)‖) (c := |(e : E →L[ℝ] E).det|)
+    e.differentiable.differentiableOn e.injective.injOn (hUV ▸ mapsTo_preimage e V)
+    (fun x _ => by rw [e.fderiv]) (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)
+    (fun x _ => by rw [e.fderiv])
+
+/-- Precomposition with a linear automorphism `e` is the change of variables `W1p.compL` along
+`e`, with the bounds `‖De‖ ≤ ‖e‖` and `|det e| ≤ |det De|`. -/
+theorem W1p.compContinuousLinearEquivL_eq_compL :
+    W1p.compContinuousLinearEquivL (mu := mu) hp e hUV =
+      W1p.compL e hp (L := ‖(e : E →L[ℝ] E)‖) (c := |(e : E →L[ℝ] E).det|)
+        e.differentiable.differentiableOn e.injective.injOn (hUV ▸ mapsTo_preimage e V)
+        (fun x _ => by rw [e.fderiv])
+        (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)
+        (fun x _ => by rw [e.fderiv]) := by
+  rw [W1p.compContinuousLinearEquivL]
+
+/-- The value of `W1p.compContinuousLinearEquivL hp e hUV u` is `u ∘ e`, almost everywhere on
+`U`. -/
+theorem W1p.value_compContinuousLinearEquivL_ae (u : W1p mu V p) :
+    W1p.value (W1p.compContinuousLinearEquivL hp e hUV u) =ᵐ[mu.restrict U]
+      fun x => W1p.value u (e x) :=
+  W1p.value_compL_ae e hp _ _ _ _ _ _ u
+
+/-- The weak gradient of `W1p.compContinuousLinearEquivL hp e hUV u` is `e* (∇u ∘ e)`, almost
+everywhere on `U`. -/
+theorem W1p.gradient_compContinuousLinearEquivL_ae (u : W1p mu V p) :
+    W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u) =ᵐ[mu.restrict U]
+      fun x => (e : E →L[ℝ] E).adjoint (W1p.gradient u (e x)) := by
+  filter_upwards [W1p.gradient_compL_ae e hp _ _ _ _ _ _ u] with x hx
+  rw [W1p.compContinuousLinearEquivL, hx, e.fderiv]
+
+/-- Precomposition with a linear automorphism maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`. -/
+theorem W1p.compContinuousLinearEquivL_mem_w1p0Submodule {u : W1p mu V p}
+    (hu : u ∈ w1p0Submodule mu V p) :
+    W1p.compContinuousLinearEquivL hp e hUV u ∈ w1p0Submodule mu U p :=
+  W1p.compL_mem_w1p0Submodule e hp _ _ _ _ _ _ e.toHomeomorph.isProperMap hUV hu
+
+/-- **Linear changes of variables scale the `Lᵖ` norm.** For a linear automorphism `e` of `E` and
+`U = e⁻¹(V)`, the value of `u ∘ e` has `Lᵖ(U)` norm `|det e| ^ (-1/p)` times the `Lᵖ(V)` norm of
+the value of `u`. -/
+theorem W1p.norm_value_compContinuousLinearEquivL (u : W1p mu V p) :
+    ‖W1p.value (W1p.compContinuousLinearEquivL hp e hUV u)‖ =
+      |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.value u‖ := by
+  have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.value u) e p
+    (s := V)
+  rw [← hUV] at h
+  rw [Lp.norm_def, Lp.norm_def,
+    eLpNorm_congr_ae (W1p.value_compContinuousLinearEquivL_ae hp e hUV u), ← Function.comp_def, h,
+    ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
+
+/-- **Linear changes of variables and the weak gradient.** For a linear automorphism `e` of `E`
+and `U = e⁻¹(V)`, the weak gradient of `u ∘ e` has `Lᵖ(U)` norm at most `‖e‖ |det e| ^ (-1/p)`
+times the `Lᵖ(V)` norm of the weak gradient of `u`. -/
+theorem W1p.norm_gradient_compContinuousLinearEquivL_le (u : W1p mu V p) :
+    ‖W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u)‖ ≤
+      ‖(e : E →L[ℝ] E)‖ *
+        (|(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal * ‖W1p.gradient u‖) := by
+  have h := Measure.eLpNorm_comp_continuousLinearEquiv_restrict_preimage mu (W1p.gradient u) e p
+    (s := V)
+  rw [← hUV] at h
+  -- Pointwise, `∇(u ∘ e) = e* (∇u ∘ e)` and `‖e*‖ = ‖e‖`.
+  have hle : eLpNorm (W1p.gradient (W1p.compContinuousLinearEquivL hp e hUV u)) p
+      (mu.restrict U) ≤ ENNReal.ofReal ‖(e : E →L[ℝ] E)‖ * eLpNorm (W1p.gradient u ∘ e) p
+        (mu.restrict U) := by
+    refine eLpNorm_le_mul_eLpNorm_of_ae_le_mul (Lp.aestronglyMeasurable _) ?_ p
+    filter_upwards [W1p.gradient_compContinuousLinearEquivL_ae hp e hUV u] with x hx
+    rw [hx]
+    exact ((e : E →L[ℝ] E).adjoint.le_opNorm _).trans_eq (by simp)
+  rw [h] at hle
+  rw [Lp.norm_def, Lp.norm_def]
+  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.mul_ne_top
+    (ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg ENNReal.ofReal_ne_top)
+    (Lp.eLpNorm_ne_top _))) hle).trans_eq ?_
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.toReal_ofReal (norm_nonneg _),
+    ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
+
+end LinearChangeOfVariables
+
+/-! ### Dilations -/
+
+section Dilation
+
+variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) {r : ℝ}
+  (hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U) (hinj : InjOn (fun x : E => r⁻¹ • x) U)
+  (hmaps : MapsTo (fun x : E => r⁻¹ • x) U V)
+  (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ (fun x : E => r⁻¹ • x) x‖ ≤ L) (hc : 0 < c)
+  (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ (fun x : E => r⁻¹ • x) x).det|)
+
+/-- **Dilation scaling of the value.** If `U = r • V` with `r ≠ 0`, the dilate `u (r⁻¹ • ·)` of
+`u ∈ W^{1,p}(V)` has `‖u (r⁻¹ • ·)‖_{Lᵖ(U)} = |r| ^ (n / p) * ‖u‖_{Lᵖ(V)}`, where `n` is the
+dimension of `E`. The regularity hypotheses of `TauCeti.W1p.compL` are arguments, since they
+appear in the statement; each holds for every such dilation. -/
+theorem W1p.norm_value_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E))
+    (u : W1p mu V p) :
+    ‖W1p.value (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
+      |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value u‖ := by
+  have he : eLpNorm (W1p.value (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.value u) p (mu.restrict V) := by
+    rw [eLpNorm_congr_ae (W1p.value_compL_ae _ hp hΦ hinj hmaps hL hc hdet u), hUV,
+      Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r)]
+
+/-- **Dilation scaling of the gradient.** If `U = r • V` with `r ≠ 0`, the dilate `u (r⁻¹ • ·)` of
+`u ∈ W^{1,p}(V)` has `‖∇(u (r⁻¹ • ·))‖_{Lᵖ(U)} = |r| ^ (n / p - 1) * ‖∇u‖_{Lᵖ(V)}`, where `n` is
+the dimension of `E`: the chain rule contributes the factor `r⁻¹`. -/
+theorem W1p.norm_gradient_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E))
+    (u : W1p mu V p) :
+    ‖W1p.gradient (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
+      |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient u‖ := by
+  -- The chain rule contributes the factor `r⁻¹`, and the dilation law the factor `|r| ^ (n / p)`.
+  have h := W1p.gradient_compL_ae _ hp hΦ hinj hmaps hL hc hdet u
+  simp only [fderiv_const_smul_id, map_smulₛₗ, ContinuousLinearMap.adjoint_id, conj_trivial,
+    smul_apply, ContinuousLinearMap.id_apply] at h
+  have he : eLpNorm (W1p.gradient (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ‖r⁻¹‖ₑ * (ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.gradient u) p (mu.restrict V)) := by
+    rw [eLpNorm_congr_ae h, hUV, ← Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+    exact eLpNorm_const_smul _ _ _ _
+  -- It remains to compute the real factor `|r|⁻¹ * |r| ^ (n / p) = |r| ^ (n / p - 1)`.
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r), Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  ring
+
+end Dilation
+
 /-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
 
 section ChainRule
@@ -459,12 +607,12 @@ private theorem exists_w1p_one_ae_eq {u : E → ℝ} {Du : E → E →L[ℝ] ℝ
   · filter_upwards [hg1.coeFn_toLp] with y hy
     rw [W1p.gradient_mk, hy, hg]
 
-/-- The scalar chain rule on a ball whose closure lies in `U`, from the first-order change of
-variables `TauCeti.W1p.compL` at exponent one. -/
+/-- The scalar chain rule on a ball whose closure lies in `U` and on which `Φ` is injective, from
+the first-order change of variables `TauCeti.W1p.compL` at exponent one. -/
 private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ] ℝ}
-    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U) (hinj : InjOn Φ U)
+    (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U)
     (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0) (hmaps : MapsTo Φ U V) {x : E} {r : ℝ}
-    (hr : Metric.closedBall x r ⊆ U) :
+    (hr : Metric.closedBall x r ⊆ U) (hinj : InjOn Φ (Metric.ball x r)) :
     HasWeakFDerivOn mu ⟨Metric.ball x r, Metric.isOpen_ball⟩ (fun y => u (Φ y))
       (fun y => (Du (Φ y)).comp (fderiv ℝ Φ y)) := by
   set B : Opens E := ⟨Metric.ball x r, Metric.isOpen_ball⟩
@@ -486,47 +634,49 @@ private theorem hasWeakFDerivOn_comp_ball {u : E → ℝ} {Du : E → E →L[ℝ
     hLK y (Metric.ball_subset_closedBall hy)
   obtain ⟨w, hwu, hwg⟩ := exists_w1p_one_ae_eq (V' := V') hu hWV hWc
   have hcomp := W1p.hasWeakFDerivOn
-    (W1p.compL Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc hcB w)
+    (W1p.compL Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w)
   -- Almost-everywhere statements on `V'` pull back to `B` along `Φ`.
   have hpull : ∀ {P : E → Prop}, (∀ᵐ z ∂mu.restrict V', P z) → ∀ᵐ y ∂mu.restrict B, P (Φ y) :=
     fun h => ae_comp_of_map_absolutelyContinuous
       (hΦB.continuousOn.aemeasurable B.isOpen.measurableSet)
       (Measure.absolutelyContinuous_of_le_smul
-        (map_restrict_le_smul_restrict_of_differentiableOn mu B.isOpen hΦB (hinj.mono hBU)
-          hmaps' hc hcB)) h
+        (map_restrict_le_smul_restrict_of_differentiableOn mu B.isOpen hΦB hinj hmaps' hc hcB)) h
   refine (hcomp.congr_ae ?_).congr_ae_deriv ?_
-  · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hwu] with y h1 h2
+  · filter_upwards [W1p.value_compL_ae Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w,
+      hpull hwu] with y h1 h2
     rw [h1, h2]
-  · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB (hinj.mono hBU) hmaps' hLB hc
-      hcB w, hpull hwg] with y h1 h2
+  · filter_upwards [W1p.gradient_compL_ae Φ ENNReal.one_ne_top hΦB hinj hmaps' hLB hc hcB w,
+      hpull hwg] with y h1 h2
     rw [h1, ← h2]
     ext v
     simp [ContinuousLinearMap.adjoint_inner_left]
 
-/-- **The chain rule for weak derivatives under a `C¹` change of variables.** Let `Φ` be `C¹`
-and injective on an open set `U`, with invertible derivative there, mapping `U` into an open set
-`V`. If `Du` is a weak derivative of `u` on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is a weak derivative
-of `u ∘ Φ` on `U`. The derivative of `Φ` need not be bounded on `U`, nor its Jacobian bounded
-below, and the codomain may be any complete real normed space. -/
+/-- **The chain rule for weak derivatives under a `C¹` change of variables.** Let `Φ` be `C¹` on
+an open set `U`, with invertible derivative there, mapping `U` into an open set `V`. If `Du` is a
+weak derivative of `u` on `V`, then `x ↦ Du(Φ x) ∘ DΦ(x)` is a weak derivative of `u ∘ Φ` on `U`.
+The map `Φ` need not be injective, its derivative need not be bounded on `U`, nor its Jacobian
+bounded below, and the codomain may be any complete real normed space. -/
 theorem HasWeakFDerivOn.comp_contDiffOn_diffeo {u : E → F} {Du : E → E →L[ℝ] F}
     (hu : HasWeakFDerivOn mu V u Du) (hΦ : ContDiffOn ℝ 1 Φ U)
-    (hinj : InjOn Φ U) (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
-    (hmaps : MapsTo Φ U V) :
+    (hdet : ∀ x ∈ (U : Set E), (fderiv ℝ Φ x).det ≠ 0) (hmaps : MapsTo Φ U V) :
     HasWeakFDerivOn mu U (fun x => u (Φ x)) (fun x => (Du (Φ x)).comp (fderiv ℝ Φ x)) := by
   have := hu.completeSpace
-  have hDloc := hu.locallyIntegrableOn_deriv.comp_fderiv_contDiffOn_diffeo U.isOpen hΦ hinj hdet
-    hmaps
+  have hDloc := hu.locallyIntegrableOn_deriv.comp_fderiv_contDiffOn_diffeo U.isOpen hΦ hdet hmaps
   refine hasWeakFDerivOn_of_forall_strongDual
-    (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hinj hdet hmaps)
+    (hu.locallyIntegrableOn.comp_contDiffOn_diffeo U.isOpen hΦ hdet hmaps)
     (fun v => by
       simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
         (ContinuousLinearMap.apply ℝ F v).locallyIntegrableOn_comp hDloc) fun ℓ => ?_
   refine hasWeakFDerivOn_iff_locally.2 fun x hx => ?_
-  obtain ⟨r, hr, hrU⟩ := Metric.nhds_basis_closedBall.mem_iff.1 (U.isOpen.mem_nhds hx)
+  -- Near `x` the map `Φ` is injective, by the inverse function theorem.
+  obtain ⟨W, hW, hinj⟩ := (hΦ.contDiffAt (U.isOpen.mem_nhds hx)).exists_mem_nhds_injOn
+    one_ne_zero ⟨_, ContinuousLinearMap.coe_toContinuousLinearEquivOfDetNeZero _ (hdet x hx)⟩
+  obtain ⟨r, hr, hrUW⟩ :=
+    Metric.nhds_basis_closedBall.mem_iff.1 (Filter.inter_mem (U.isOpen.mem_nhds hx) hW)
   refine ⟨⟨Metric.ball x r, Metric.isOpen_ball⟩, Metric.mem_ball_self hr, ?_⟩
   simpa only [ContinuousLinearMap.comp_assoc] using
-    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hinj hdet hmaps hrU
+    hasWeakFDerivOn_comp_ball (hu.clm_comp ℓ) hΦ hdet hmaps (hrUW.trans inter_subset_left)
+      (hinj.mono (Metric.ball_subset_closedBall.trans (hrUW.trans inter_subset_right)))
 
 /-- **Affine changes of variables.** For `A : E ≃L[ℝ] E` and `b : E` with `x ↦ A x + b` mapping `U`
 into `V`, a weak derivative `Du` of `u` on `V` gives the weak derivative `x ↦ Du (A x + b) ∘ A` of
@@ -536,7 +686,7 @@ theorem HasWeakFDerivOn.comp_continuousLinearEquiv_add {u : E → F} {Du : E →
     (hmaps : MapsTo (fun x => A x + b) U V) :
     HasWeakFDerivOn mu U (fun x => u (A x + b)) (fun x => (Du (A x + b)).comp (A : E →L[ℝ] E)) := by
   simpa only [fderiv_add_const, A.fderiv] using hu.comp_contDiffOn_diffeo (Φ := fun x => A x + b)
-    (A.contDiff.add contDiff_const).contDiffOn ((add_left_injective b).comp A.injective).injOn
+    (A.contDiff.add contDiff_const).contDiffOn
     (fun x _ => by rw [fderiv_add_const, A.fderiv]; exact A.toLinearEquiv.isUnit_det'.ne_zero)
     hmaps
 

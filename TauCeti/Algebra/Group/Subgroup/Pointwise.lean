@@ -40,6 +40,10 @@ form of that computation: every element of `H ⊔ K` is a product `x * t` with `
   a product of an element of `H` followed by an element of `K`.
 * `Subgroup.mem_smul_set_iff_exists_smul_mem`: a point lies in the translate `H • t` of a set by a
   subgroup exactly when some element of `H` moves it into `t`.
+* `TauCeti.inv_mul_mem_of_mem_smul_set` and `TauCeti.div_mem_of_mem_smul_set` (with additive
+  versions `TauCeti.neg_add_mem_of_mem_vadd_set` and `TauCeti.sub_mem_of_mem_vadd_set`): two
+  elements in the same left coset `g • (H : Set G)` satisfy `x⁻¹ * y ∈ H`, and `x / y ∈ H` in a
+  commutative group.
 -/
 
 public section
@@ -47,6 +51,8 @@ public section
 open scoped Pointwise
 
 namespace TauCeti
+
+section Group
 
 variable {G : Type*} [Group G]
 
@@ -74,6 +80,25 @@ theorem conjAct_inv_smul_inf_conjAct_smul_le (U : Subgroup G) (g : G) :
     ConjAct.toConjAct g⁻¹ • (U ⊓ ConjAct.toConjAct g • U) ≤ U := by
   rw [Subgroup.smul_inf, map_inv, inv_smul_smul]
   exact inf_le_right
+
+/-- Two elements of the same left coset `g • (H : Set G)` satisfy `x⁻¹ * y ∈ H`. -/
+@[to_additive /-- Two elements of the same left additive coset `g +ᵥ (H : Set G)` satisfy
+`-x + y ∈ H`. -/]
+theorem inv_mul_mem_of_mem_smul_set {S : Type*} [SetLike S G] [SubgroupClass S G]
+    {H : S} {g x y : G} (hx : x ∈ g • (H : Set G)) (hy : y ∈ g • (H : Set G)) : x⁻¹ * y ∈ H := by
+  rw [Set.mem_smul_set_iff_inv_smul_mem, smul_eq_mul, SetLike.mem_coe] at hx hy
+  simpa only [mul_inv_rev, inv_inv, mul_assoc, mul_inv_cancel_left] using mul_mem (inv_mem hx) hy
+
+end Group
+
+/-- Two elements of the same left coset `g • (H : Set G)` in a commutative group satisfy
+`x / y ∈ H`. -/
+@[to_additive /-- Two elements of the same left additive coset `g +ᵥ (H : Set G)` in an additive
+commutative group satisfy `x - y ∈ H`. -/]
+theorem div_mem_of_mem_smul_set {G S : Type*} [CommGroup G] [SetLike S G] [SubgroupClass S G]
+    {H : S} {g x y : G} (hx : x ∈ g • (H : Set G)) (hy : y ∈ g • (H : Set G)) : x / y ∈ H := by
+  rw [div_eq_inv_mul]
+  exact inv_mul_mem_of_mem_smul_set hy hx
 
 end TauCeti
 

@@ -75,8 +75,9 @@ The hypothesis `hV` gives the negative normal spaces local frames of size `r j`,
 vector bundle of rank `r j`; such frames exist exactly when `r j` is the Morse index of `f` along
 `S j` (in the namespace `TauCeti.SmoothEmbedding`,
 `IsNondegenerateCriticalSubmanifold.hasLocalContMDiffSubbundleFrames_negativeNormalSpace`).
-The model fibres of these bundles lie in `Type`, so the manifolds and the coefficient field here
-live in `Type`.
+The manifolds and the coefficient field here live in `Type`, as in the untwisted inequalities
+(`TauCeti.Geometry.Manifold.Morse.Bott.Inequalities`) and the Thom classes of oriented negative
+normal bundles (`TauCeti.Geometry.Manifold.Morse.Bott.Thom.Class`) that this file compares with.
 
 ## Main results
 

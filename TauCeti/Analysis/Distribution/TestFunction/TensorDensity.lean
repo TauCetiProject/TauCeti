@@ -263,7 +263,7 @@ theorem continuous_prodSMulCLM_apply (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V) 
   let W : Opens (D × E) := ⟨(O : Set D) ×ˢ (Ω : Set E), O.isOpen.prod Ω.isOpen⟩
   have hW : MapsTo (ContinuousLinearEquiv.prodComm ℝ D E) W V := fun p hp ↦ hV ⟨hp.2, hp.1⟩
   have h : (fun ψ : 𝓓(O, ℝ) ↦ prodSMulCLM ψ hV φ) =
-      (ContinuousLinearEquiv.prodComm ℝ D E).transportTestFunction hW ∘
+      (ContinuousLinearEquiv.prodComm ℝ D E).transportTestFunction ℝ hW ∘
         prodSMulCLM (V := W) φ Subset.rfl := by
     ext ψ p
     simp [mul_comm]

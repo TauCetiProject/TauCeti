@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Calculus.ContDiff.Operations
-import Mathlib.Topology.MetricSpace.HausdorffDistance
 import Mathlib.Topology.Order.Compact
+import TauCeti.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Uniform inverse bounds near compact families
@@ -24,11 +24,13 @@ A continuous family of bounded operators with a continuous family of left invers
 by a uniformly bounded factor in both directions on a compact parameter set
 (`IsCompact.exists_norm_apply_le_and_norm_le`).
 
-Since the invertible operators from a Banach space form an open set, invertibility at the zeros of
-a map `d` is uniform on a compact set: if `A x` is invertible wherever `d x = 0` on a compact `K`,
-with `d` and `A` continuous on `K`, then every operator close to `A x` at a point `x ∈ K` where
-`d x` is small is invertible (`IsCompact.exists_pos_forall_isInvertible_of_norm_le`). This drives
-the persistence of nondegenerate critical points and fixed points under small perturbations.
+Invertibility at the zeros of a map `d` is uniform on a compact set: if `A x` is invertible
+wherever `d x = 0` on a compact `K`, with `d` and `A` continuous on `K`, then every operator close
+to `A x` at a point `x ∈ K` where `d x` is small is invertible
+(`IsCompact.exists_pos_forall_isInvertible_of_norm_le`). This is the case of the open set of
+invertible operators from a Banach space in `IsCompact.exists_pos_forall_mem_of_norm_le`. This
+drives the persistence of nondegenerate critical points and fixed points under small
+perturbations.
 -/
 
 public section
@@ -103,7 +105,6 @@ theorem exists_pos_isInvertible_map_sub_smul_norm_inverse_le
 
 end IsCompact
 
-open Metric in
 /-- **Invertibility near the zeros of a map is uniform on a compact set.**
 
 Let `d` and `A` be continuous on a compact set `K`, where `A` takes values in the operators from a
@@ -115,31 +116,9 @@ theorem IsCompact.exists_pos_forall_isInvertible_of_norm_le {𝕜 X F E G : Type
     (hK : IsCompact K) {d : X → F} {A : X → E →L[𝕜] G} (hd : ContinuousOn d K)
     (hA : ContinuousOn A K) (h : ∀ x ∈ K, d x = 0 → (A x).IsInvertible) :
     ∃ δ > 0, ∀ x ∈ K, ∀ T : E →L[𝕜] G, ‖d x‖ ≤ δ → ‖T - A x‖ ≤ δ → T.IsInvertible := by
-  -- The non-invertible operators form a closed set `S`; if it is empty there is nothing to prove.
-  set S : Set (E →L[𝕜] G) := {T | ¬T.IsInvertible}
-  have hS : IsClosed S := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  rcases S.eq_empty_or_nonempty with hSe | hSne
-  · refine ⟨1, one_pos, fun x _ T _ _ ↦ ?_⟩
-    by_contra hT
-    exact hSe.subset (mem_ofPred.2 hT)
-  -- `φ x` is positive on `K`: at a zero of `d` the operator `A x` lies outside `S`.
-  set φ : X → ℝ := fun x ↦ ‖d x‖ + infDist (A x) S
-  have hφ : ContinuousOn φ K := hd.norm.add ((continuous_infDist_pt S).comp_continuousOn hA)
-  have hpos (x : X) (hx : x ∈ K) : 0 < φ x := by
-    by_cases h₀ : d x = 0
-    · have hx' := (hS.notMem_iff_infDist_pos hSne).1 fun hxS ↦ hxS (h x hx h₀)
-      simpa [φ, h₀] using hx'
-    · exact add_pos_of_pos_of_nonneg (norm_pos_iff.2 h₀) infDist_nonneg
-  -- By compactness, `φ` has a positive lower bound `m` on `K`.
-  obtain ⟨m, hm, hmK⟩ := hK.exists_forall_le' hφ hpos
-  -- If `‖d x‖ ≤ m / 3`, then `A x` is at distance at least `2m / 3` from `S`, so an operator in
-  -- `S` cannot lie within `m / 3` of it.
-  refine ⟨m / 3, by positivity, fun x hx T hdx hT ↦ ?_⟩
-  by_contra hTS
-  have hinf : infDist (A x) S ≤ ‖T - A x‖ :=
-    (infDist_le_dist_of_mem (mem_ofPred.2 hTS : T ∈ S)).trans_eq (dist_comm _ _ |>.trans
-      (dist_eq_norm _ _))
-  linarith [hmK x hx]
+  obtain ⟨δ, hδ, hO⟩ := hK.exists_pos_forall_mem_of_norm_le hd hA
+    ContinuousLinearMap.isOpen_setOfPred_isInvertible h
+  exact ⟨δ, hδ, fun x hx T hdx hT ↦ hO x hx T hdx (by rwa [dist_eq_norm])⟩
 
 namespace IsCompact
 

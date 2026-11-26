@@ -8,6 +8,7 @@ module
 public import TauCeti.Data.ZMod.ExactDivisor
 public import TauCeti.NumberTheory.DirichletCharacter.Conductor
 public import TauCeti.NumberTheory.DirichletCharacter.Quadratic
+import TauCeti.NumberTheory.DirichletCharacter.Basic
 
 /-!
 # The local factors of a Dirichlet character
@@ -35,10 +36,16 @@ reduces questions about conductors of (quadratic) characters to prime-power leve
 * `DirichletCharacter.localFactor_apply_of_unitsMap`: the value of the local factor at a unit `a`
   is `χ x` for any unit `x` that is `a` modulo `p ^ v_p(N)` and `1` modulo the complementary
   divisor.
+* `DirichletCharacter.localFactor_changeLevel`: taking local factors commutes with raising the
+  level.
+* `DirichletCharacter.localFactor_ringHomComp`: taking local factors commutes with a change of
+  coefficient ring.
 * `DirichletCharacter.prod_changeLevel_localFactor`: for `N ≠ 0`, `χ` is the product over the
   primes `p ∣ N` of the lifts of its local factors.
 * `DirichletCharacter.localFactor_prod_changeLevel`: the local factors of such a product are its
-  factors, so the decomposition is unique.
+  factors.
+* `DirichletCharacter.prod_changeLevel_eq_iff_eq_localFactor`: for `N ≠ 0`, the local factors are
+  the only family of characters of the levels `p ^ v_p(N)` whose lifts multiply to `χ`.
 * `DirichletCharacter.conductor_eq_prod_conductor_localFactor`: the conductor of `χ` is the
   product of the conductors of its local factors.
 * `DirichletCharacter.conductor_localFactor`: the conductor of the local factor at `p` is
@@ -47,6 +54,8 @@ reduces questions about conductors of (quadratic) characters to prime-power leve
   when all its local factors are.
 * `DirichletCharacter.localFactor_pow_eq_one`: the local factors of a character of order dividing
   `n` have order dividing `n`.
+* `DirichletCharacter.orderOf_eq_lcm_orderOf_localFactor`: for `N ≠ 0`, the order of `χ` is the
+  least common multiple of the orders of its local factors.
 * `DirichletCharacter.isQuadratic_iff_forall_isQuadratic_localFactor`: `χ` is quadratic exactly
   when all its local factors are.
 
@@ -97,6 +106,29 @@ theorem localFactor_apply_of_unitsMap (p : ℕ) (χ : DirichletCharacter R N)
   · exact (isExactDivisor_primePow.unitsEquivProd_apply_fst u).trans ha |>.symm
   · exact (isExactDivisor_primePow.unitsEquivProd_apply_snd u).trans h1 |>.symm
 
+/-- Taking local factors commutes with a change of coefficient ring, such as Galois conjugation
+of the values. -/
+@[simp]
+theorem localFactor_ringHomComp {S S' : Type*} [CommRing S] [CommRing S'] (p : ℕ)
+    (χ : DirichletCharacter S N) (f : S →+* S') :
+    localFactor p (χ.ringHomComp f) = (localFactor p χ).ringHomComp f := by
+  ext a
+  simp [MulChar.ringHomComp_apply]
+
+/-- **Local factors commute with raising the level**: for `M ∣ N` with `N ≠ 0`, the local factor
+at `p` of a character of level `M` lifted to level `N` is its local factor at `p` lifted from
+level `p ^ v_p(M)` to level `p ^ v_p(N)`. -/
+theorem localFactor_changeLevel [NeZero N] {M : ℕ} (hMN : M ∣ N) (p : ℕ)
+    (χ : DirichletCharacter R M) :
+    localFactor p (changeLevel hMN χ) =
+      changeLevel (Nat.ordProj_dvd_ordProj_of_dvd (NeZero.ne N) hMN p) (localFactor p χ) := by
+  have hpp := Nat.ordProj_dvd_ordProj_of_dvd (NeZero.ne N) hMN p
+  refine MulChar.ext fun a ↦ ?_
+  rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
+    isExactDivisor_primePow.unitsMap_unitsEquivProd_symm isExactDivisor_primePow hpp
+      (Nat.ordCompl_dvd_ordCompl_of_dvd hMN p), map_one,
+    changeLevel_apply_unitsMap, localFactor_apply_unit]
+
 /-- **A Dirichlet character is the product of its local factors**: for `N ≠ 0`, `χ` is the
 product over the primes `p ∣ N` of its local factors lifted back to level `N`. -/
 theorem prod_changeLevel_localFactor [NeZero N] (χ : DirichletCharacter R N) :
@@ -108,30 +140,43 @@ theorem prod_changeLevel_localFactor [NeZero N] (χ : DirichletCharacter R N) :
   conv_rhs => rw [← prod_unitsEquivProd_symm_primePow (NeZero.ne N) u, Units.coe_prod, map_prod]
   rw [h, map_prod, MonoidHom.finsetProd_apply, Units.coe_prod]
   refine Finset.prod_congr rfl fun p _ ↦ ?_
-  rw [← h, changeLevel_eq_cast_of_dvd, ← ZMod.unitsMap_val, localFactor_apply_unit]
+  rw [← h, changeLevel_apply_unitsMap, localFactor_apply_unit]
 
-/-- **Uniqueness of the local decomposition**: if `ψ p` is a character of level `p ^ v_p(N)` for
-each prime `p ∣ N`, then the local factor at `q` of the product of their lifts to level `N` is
-`ψ q`. With `DirichletCharacter.prod_changeLevel_localFactor`, the local factors are the only
-such family whose product is a given character. -/
-theorem localFactor_prod_changeLevel (ψ : ∀ p, DirichletCharacter R (ordProj[p] N))
-    {q : ℕ} (hq : q ∈ N.primeFactors) :
+/-- **The local factors of a product of lifts**: if `ψ p` is a character of level `p ^ v_p(N)` for
+each `p`, then the local factor at `q` of the product over the primes `p ∣ N` of their lifts to
+level `N` is `ψ q`. For `q ∤ N` both sides are characters of level `1`. -/
+@[simp↓]
+theorem localFactor_prod_changeLevel (ψ : ∀ p, DirichletCharacter R (ordProj[p] N)) (q : ℕ) :
     localFactor q (∏ p ∈ N.primeFactors, changeLevel (Nat.ordProj_dvd N p) (ψ p)) = ψ q := by
+  by_cases hq : q ∉ N.primeFactors
+  · -- `v_q(N) = 0`, so both sides have level `1`
+    have h1 : ordProj[q] N = 1 := by
+      rw [Finsupp.notMem_support_iff.mp (by rwa [Nat.support_factorization]), pow_zero]
+    exact (level_one' _ h1).trans (level_one' _ h1).symm
+  rw [not_not] at hq
   rw [map_prod, Finset.prod_eq_single q]
   · refine MulChar.ext fun a ↦ ?_
-    rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd,
-      ← ZMod.unitsMap_val (Nat.ordProj_dvd N q),
+    rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
       isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd dvd_rfl, ZMod.unitsMap_self,
       MonoidHom.id_apply]
   · -- for `p ≠ q`, the lift of `(a, 1)` is `1` modulo `p ^ v_p(N)`
     intro p _ hpq
     refine MulChar.ext fun a ↦ ?_
-    rw [localFactor_apply_unit, changeLevel_eq_cast_of_dvd,
-      ← ZMod.unitsMap_val (Nat.ordProj_dvd N p),
+    rw [localFactor_apply_unit, changeLevel_apply_unitsMap,
       isExactDivisor_primePow.unitsMap_unitsEquivProd_symm_of_dvd_div
         (ordProj_dvd_ordCompl_of_ne (Nat.prime_of_mem_primeFactors hq) hpq), map_one,
       MulChar.one_apply_coe, Units.val_one, map_one]
   · exact fun h ↦ (h hq).elim
+
+/-- **Uniqueness of the local decomposition**: for `N ≠ 0`, the product over the primes `p ∣ N` of
+the lifts of characters `ψ p` of level `p ^ v_p(N)` is `χ` exactly when each `ψ p` is the local
+factor of `χ` at `p`. -/
+theorem prod_changeLevel_eq_iff_eq_localFactor [NeZero N]
+    (ψ : ∀ p, DirichletCharacter R (ordProj[p] N)) (χ : DirichletCharacter R N) :
+    ∏ p ∈ N.primeFactors, changeLevel (Nat.ordProj_dvd N p) (ψ p) = χ ↔
+      ∀ p ∈ N.primeFactors, ψ p = localFactor p χ := by
+  refine ⟨fun h p _ ↦ h ▸ (localFactor_prod_changeLevel ψ p).symm, fun h ↦ ?_⟩
+  rw [Finset.prod_congr rfl fun p hp ↦ congrArg _ (h p hp), prod_changeLevel_localFactor]
 
 /-- **The conductor is the product of the local conductors**: for `N ≠ 0`, the conductor of `χ` is
 the product over the primes `p ∣ N` of the conductors of its local factors. -/
@@ -191,6 +236,19 @@ theorem isPrimitive_iff_forall_isPrimitive_localFactor [NeZero N] {χ : Dirichle
 theorem localFactor_pow_eq_one {χ : DirichletCharacter R N} {n : ℕ} (hχ : χ ^ n = 1) (p : ℕ) :
     localFactor p χ ^ n = 1 := by
   rw [← map_pow, hχ, map_one]
+
+/-- **The order of a character is the least common multiple of the orders of its local
+factors**, for `N ≠ 0`. -/
+theorem orderOf_eq_lcm_orderOf_localFactor [NeZero N] (χ : DirichletCharacter R N) :
+    orderOf χ = N.primeFactors.lcm fun p ↦ orderOf (localFactor p χ) := by
+  set L := N.primeFactors.lcm fun p ↦ orderOf (localFactor p χ)
+  refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_)
+    (Finset.lcm_dvd fun p _ ↦ orderOf_map_dvd (localFactor p) χ)
+  -- each local factor is killed by `L`, hence so is the product of their lifts, `χ`
+  have hpow (p : ℕ) (hp : p ∈ N.primeFactors) : localFactor p χ ^ L = 1 :=
+    orderOf_dvd_iff_pow_eq_one.mp (Finset.dvd_lcm hp)
+  rw [← prod_changeLevel_localFactor χ, ← Finset.prod_pow]
+  exact Finset.prod_eq_one fun p hp ↦ by rw [← map_pow, hpow p hp, map_one]
 
 /-- The local factors of a quadratic character are quadratic. -/
 theorem _root_.MulChar.IsQuadratic.localFactor {R : Type*} [CommRing R]

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CommSq
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
+public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.Topology.Sheaves.KSheaf.Basic
 
 /-!
@@ -30,7 +31,8 @@ cone is, in degree `n`, `F(K₂ ∪ K₃)ⁿ⁺² ⊕ (F(K₂) ⊞ F(K₃))ⁿ�
 of the three-term sequence up to a shift and the signs of the differential. A morphism of cochain
 complexes in an abelian category is a quasi-isomorphism exactly when its mapping cone is acyclic,
 so the total complex is acyclic exactly when this map is a quasi-isomorphism, which is the form
-of the axiom used here.
+of the axiom used here. The map `mayerVietorisDesc` is natural with respect to morphisms of
+K-presheaves (`TopCat.KPresheaf.mappingConeMap_comp_mayerVietorisDesc`).
 
 In Pardon's construction of virtual fundamental cycles, the virtual cochain complexes of implicit
 atlases are homotopy K-sheaves, and their cohomology is related to sheaf cohomology through the
@@ -123,6 +125,28 @@ theorem inl_mayerVietorisDesc {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.Bi
     (mappingCone.inl _).comp (HomComplex.Cochain.ofHom (F.mayerVietorisDesc h)) (add_zero _) =
       0 :=
   mappingCone.inl_desc ..
+
+/-- **Naturality of the Mayer–Vietoris map.** A morphism `τ : F ⟶ G` of K-presheaves of cochain
+complexes induces a map between the mapping cones of the restrictions
+`F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃)` and `G(K₂ ∪ K₃) ⟶ G(K₂) ⊞ G(K₃)`, and the Mayer–Vietoris maps
+`mappingCone _ ⟶ F(K₂ ∩ K₃)` and `mappingCone _ ⟶ G(K₂ ∩ K₃)` commute with it and with
+`τ_(K₂ ∩ K₃)`. -/
+@[reassoc]
+theorem mappingConeMap_comp_mayerVietorisDesc {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
+    {K₁ K₂ K₃ K₄ : Compacts X} (h : Lattice.BicartSq K₁ K₂ K₃ K₄) :
+    mappingCone.map (biprod.lift (F.map (opHomOfLE h.le₂₄)) (F.map (opHomOfLE h.le₃₄)))
+      (biprod.lift (G.map (opHomOfLE h.le₂₄)) (G.map (opHomOfLE h.le₃₄))) (τ.app (op K₄))
+      (biprod.map (τ.app (op K₂)) (τ.app (op K₃))) (by apply biprod.hom_ext <;> simp) ≫
+        G.mayerVietorisDesc h =
+      F.mayerVietorisDesc h ≫ τ.app (op K₁) := by
+  have hdesc : biprod.map (τ.app (op K₂)) (τ.app (op K₃)) ≫
+      biprod.desc (G.map (opHomOfLE h.le₁₂)) (-G.map (opHomOfLE h.le₁₃)) =
+      biprod.desc (F.map (opHomOfLE h.le₁₂)) (-F.map (opHomOfLE h.le₁₃)) ≫ τ.app (op K₁) := by
+    apply biprod.hom_ext' <;> simp
+  ext n
+  apply mappingCone.ext_from _ (n + 1) n rfl
+  · simp
+  · simpa using HomologicalComplex.congr_hom hdesc n
 
 /-- A K-presheaf `F` of cochain complexes is a *homotopy K-sheaf* (Pardon, Definition A.2.5) if
 `F(∅)` is acyclic, the total complex of `F(K₂ ∪ K₃) ⟶ F(K₂) ⊞ F(K₃) ⟶ F(K₂ ∩ K₃)` is acyclic for

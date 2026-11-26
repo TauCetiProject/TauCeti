@@ -182,8 +182,7 @@ theorem nontransversal_actual_and_predicted_mass_mul_le {t₀ : ℕ}
   set m := Fintype.card V / t₀ + 1
   have hm (A) (hA : A ∈ C.skeleton.vertexPart.parts) : #A ≤ m := hC.card_le ht₀ hA
   have htm : t₀ * m ≤ 2 * Fintype.card V := by
-    have hparts := (TriadicComplex3.vertexCellsControlled_iff.1 hC).2.trans
-      (C.skeleton.vertexPart.card_parts_le_card.trans_eq card_univ)
+    have hparts := hC.le_card
     have := Nat.mul_div_le (Fintype.card V) t₀
     rw [mul_add, mul_one]
     omega
