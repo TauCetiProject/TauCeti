@@ -42,12 +42,6 @@ public section
 
 namespace Polynomial
 
-private lemma prod_map_filter_mul_prod_map_filter_not {α M : Type*} [CommMonoid M]
-    (s : Multiset α) (p : α → Prop) [DecidablePred p] (f : α → M) :
-    ((s.filter p).map f).prod * ((s.filter fun a ↦ ¬ p a).map f).prod = (s.map f).prod :=
-  Quotient.inductionOn s fun l ↦ by
-    simpa using List.prod_map_filter_mul_prod_map_filter_not p f l
-
 private lemma map_sub_eq_max_of_ne {R Γ₀ : Type*} [Ring R]
     [LinearOrderedCommMonoidWithZero Γ₀] (v : Valuation R Γ₀) {x α : R} (h : v α ≠ v x) :
     v (x - α) = max (v x) (v α) := by
@@ -86,9 +80,11 @@ theorem gaussValuation_eq_gaussValuation_one_mul_prod_roots_le_one (v : Valuatio
     Multiset.map_congr rfl fun α hα ↦ by
       have h1 : 1 < v α := lt_of_not_ge (Multiset.mem_filter.mp hα).2
       rw [max_eq_right (hr.trans h1.le), max_eq_right h1.le]
-  rw [← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α ≤ 1) (fun α ↦ max r (v α)),
-    ← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α ≤ 1) (fun α ↦ max 1 (v α)),
-    hle, one_mul, hgt]
+  have hsplit (t : Γ₀) : ((p.roots.filter fun α ↦ v α ≤ 1).map fun α ↦ max t (v α)).prod *
+      ((p.roots.filter fun α ↦ ¬ v α ≤ 1).map fun α ↦ max t (v α)).prod =
+      (p.roots.map fun α ↦ max t (v α)).prod := by
+    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
+  rw [← hsplit r, ← hsplit 1, hle, one_mul, hgt]
   ac_rfl
 
 /-- If a split polynomial `p` satisfies `v (x - α) = v x` for every root `α` with `v α = v x`,
@@ -134,11 +130,11 @@ theorem valuation_eval_eq_gaussValuation_mul_prod_roots_eq (v : Valuation R Γ�
     · rw [v.map_sub_of_left_eq_zero hx0, hα', hx0]
       simp
     · rw [max_eq_left hα'.le, mul_div_cancel₀ _ hx0]
+  have hsplit (f : R → Γ₀) : ((p.roots.filter fun α ↦ v α = v x).map f).prod *
+      ((p.roots.filter fun α ↦ ¬ v α = v x).map f).prod = (p.roots.map f).prod := by
+    rw [← Multiset.prod_add, ← Multiset.map_add, Multiset.filter_add_not]
   simp only [Function.comp_def]
-  rw [← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α = v x) (fun α ↦ v (x - α)),
-    ← prod_map_filter_mul_prod_map_filter_not p.roots (fun α ↦ v α = v x)
-      (fun α ↦ max (v x) (v α)),
-    hne, heq]
+  rw [← hsplit (fun α ↦ v (x - α)), ← hsplit (fun α ↦ max (v x) (v α)), hne, heq]
   ac_rfl
 
 end Group
