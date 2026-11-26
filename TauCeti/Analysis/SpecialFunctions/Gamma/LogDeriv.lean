@@ -61,6 +61,28 @@ theorem logDeriv_Gammaℝ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(2 * n)) :
     ((hasDerivAt_id' s).div_const 2).logDeriv_Gamma hh]
   ring
 
+/-- The real-place gamma recurrence adds `1 / s` to the logarithmic derivative when
+shifting `s` by two, away from the poles of `Gammaℝ`. -/
+theorem logDeriv_Gammaℝ_add_two {s : ℂ} (hs : Gammaℝ s ≠ 0) :
+    logDeriv Gammaℝ (s + 2) = logDeriv Gammaℝ s + s⁻¹ := by
+  have hnp : ∀ n : ℕ, s ≠ -(2 * n) := by
+    simpa only [Ne, Gammaℝ_eq_zero_iff, not_exists] using hs
+  have hs₀ : s ≠ 0 := by simpa using hnp 0
+  have hshift : Gammaℝ (s + 2) ≠ 0 := by
+    rw [Gammaℝ_add_two hs₀]
+    exact div_ne_zero (div_ne_zero (mul_ne_zero hs hs₀) two_ne_zero)
+      (ofReal_ne_zero.mpr Real.pi_ne_zero)
+  have hnp' : ∀ n : ℕ, s + 2 ≠ -(2 * n) := by
+    simpa only [Ne, Gammaℝ_eq_zero_iff, not_exists] using hshift
+  have hhalf : ∀ n : ℕ, s / 2 ≠ -(n : ℂ) := by
+    intro n hn
+    apply hnp n
+    linear_combination 2 * hn
+  rw [logDeriv_Gammaℝ hnp', logDeriv_Gammaℝ hnp,
+    (by ring : (s + 2) / 2 = s / 2 + 1), digamma_apply_add_one _ hhalf]
+  field_simp
+  ring
+
 /-- The logarithmic derivative of the complex-place gamma factor, away from its poles. -/
 theorem logDeriv_Gammaℂ {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) :
     logDeriv Gammaℂ s = digamma s - (Real.log (2 * Real.pi) : ℂ) := by
