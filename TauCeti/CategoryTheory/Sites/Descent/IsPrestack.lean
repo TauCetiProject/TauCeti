@@ -33,7 +33,8 @@ therefore morphisms of presheaves on `Over S`
 (`CategoryTheory.Pseudofunctor.presheafHomComp`, `CategoryTheory.Pseudofunctor.presheafHomId`), and
 so are pre- and postcomposition with the pullbacks of a morphism
 (`CategoryTheory.Pseudofunctor.presheafHomPrecomp`,
-`CategoryTheory.Pseudofunctor.presheafHomPostcomp`).
+`CategoryTheory.Pseudofunctor.presheafHomPostcomp`), which are composition with the global section
+of pullbacks of that morphism (`CategoryTheory.Pseudofunctor.presheafHomGlobalSection`).
 Mathlib's identification `Pseudofunctor.overMapCompPresheafHomIso` of the restriction of a presheaf
 of morphisms with the presheaf of morphisms between pullbacks conjugates by the comparison
 isomorphisms of `F` (`CategoryTheory.Pseudofunctor.overMapCompPresheafHomIso_hom_app_apply`), so it
@@ -266,6 +267,45 @@ def presheafHomPrecomp {M' M N : F.obj (.mk (op S))} (φ : M' ⟶ M) :
 lemma presheafHomPrecomp_app_apply {M' M N : F.obj (.mk (op S))} (φ : M' ⟶ M) (T : (Over S)ᵒᵖ)
     (a : (F.presheafHom M N).obj T) :
     (presheafHomPrecomp φ).app T a = (F.map T.unop.hom.op.toLoc).toFunctor.map φ ≫ a := (rfl)
+
+open MonoidalCategory in
+/-- The global section `T ↦ T.hom^* ψ` of the presheaf of morphisms from `N` to `P` given by a
+morphism `ψ : N ⟶ P`. -/
+def presheafHomGlobalSection {N P : F.obj (.mk (op S))} (ψ : N ⟶ P) :
+    𝟙_ ((Over S)ᵒᵖ ⥤ Type _) ⟶ F.presheafHom N P where
+  app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map ψ
+  naturality T T' g := by
+    ext
+    exact (pullHom_map ψ _ _ _ (Over.w g.unop)).symm
+
+open MonoidalCategory in
+lemma presheafHomGlobalSection_app_apply {N P : F.obj (.mk (op S))} (ψ : N ⟶ P)
+    (T : (Over S)ᵒᵖ) (p : (𝟙_ ((Over S)ᵒᵖ ⥤ Type _)).obj T) :
+    (presheafHomGlobalSection ψ).app T p = (F.map T.unop.hom.op.toLoc).toFunctor.map ψ := (rfl)
+
+/-- Postcomposition with the pullbacks of `ψ` is composition of local morphisms with the global
+section `presheafHomGlobalSection ψ`. -/
+lemma presheafHomPostcomp_eq_lift_comp_presheafHomComp {M N P : F.obj (.mk (op S))}
+    (ψ : N ⟶ P) :
+    presheafHomPostcomp (M := M) ψ = CartesianMonoidalCategory.lift (𝟙 _)
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection ψ) ≫
+        presheafHomComp M N P := by
+  ext T a
+  exact (presheafHomPostcomp_app_apply ψ T a).trans
+    (presheafHomComp_app_apply M N P T ((CartesianMonoidalCategory.lift (𝟙 _)
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection ψ)).app T a)).symm
+
+/-- Precomposition with the pullbacks of `φ` is composition of the global section
+`presheafHomGlobalSection φ` with local morphisms. -/
+lemma presheafHomPrecomp_eq_lift_comp_presheafHomComp {M' M N : F.obj (.mk (op S))}
+    (φ : M' ⟶ M) :
+    presheafHomPrecomp (N := N) φ = CartesianMonoidalCategory.lift
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _) ≫
+        presheafHomComp M' M N := by
+  ext T a
+  exact (presheafHomPrecomp_app_apply φ T a).trans
+    (presheafHomComp_app_apply M' M N T ((CartesianMonoidalCategory.lift
+      (CartesianMonoidalCategory.toUnit _ ≫ presheafHomGlobalSection φ) (𝟙 _)).app T a)).symm
 
 /-- The pullback of the comparison isomorphism `f^* (p^* N) ⟶ k^* N` (for `f ≫ p = k`) is the
 comparison isomorphism. -/

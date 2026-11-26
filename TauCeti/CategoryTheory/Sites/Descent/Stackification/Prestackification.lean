@@ -314,21 +314,18 @@ lemma Fiber.pullbackHom_homMk (f : V ⟶ U) {M N : Fiber J F U}
   exact (ConcreteCategory.congr_hom ((toSheafifySections J V).naturality
     (F.overMapCompPresheafHomIso M.obj N.obj f).hom) _).symm.trans (Fiber.homEquiv_homMk _).symm
 
-open Functor.LaxMonoidal Functor.OplaxMonoidal in
+open Functor.LaxMonoidal in
 lemma Fiber.pullbackHom_comp (f : V ⟶ U) {M N P : Fiber J F U} (s : M ⟶ N) (t : N ⟶ P) :
     Fiber.pullbackHom f (s ≫ t) = Fiber.pullbackHom f s ≫ Fiber.pullbackHom f t := by
   let R := (Functor.whiskeringLeft (Over V)ᵒᵖ (Over U)ᵒᵖ (Type v')).obj (Over.map f).op
   let _ : R.Monoidal := .ofChosenFiniteProducts _
-  -- The monoidal structure of the restriction `R` is the identity, as for evaluation in
-  -- `μ_toSheafifySections`.
-  have hδ : δ R (F.presheafHom M.obj N.obj) (F.presheafHom N.obj P.obj) = 𝟙 _ := by
-    apply CartesianMonoidalCategory.hom_ext
-    · exact (Functor.OplaxMonoidal.δ_fst _ _ _).trans (Category.id_comp _).symm
-    · exact (Functor.OplaxMonoidal.δ_snd _ _ _).trans (Category.id_comp _).symm
-  have hμ : μ R (F.presheafHom M.obj N.obj) (F.presheafHom N.obj P.obj) = 𝟙 _ := by
-    have h := Functor.Monoidal.μ_δ R (F.presheafHom M.obj N.obj) (F.presheafHom N.obj P.obj)
-    rw [hδ] at h
-    exact (Category.comp_id _).symm.trans h
+  -- The monoidal structure of the restriction `R` is the identity, as its components are the
+  -- projections (`Functor.Monoidal.μ_fst`, `Functor.Monoidal.μ_snd`).
+  have hμ : μ R (F.presheafHom M.obj N.obj) (F.presheafHom N.obj P.obj) = 𝟙 _ :=
+    CartesianMonoidalCategory.hom_ext (X := R.obj (F.presheafHom M.obj N.obj))
+      (Y := R.obj (F.presheafHom N.obj P.obj)) _ _
+      ((Functor.Monoidal.μ_fst _ _ _).trans (Category.id_comp _).symm)
+      ((Functor.Monoidal.μ_snd _ _ _).trans (Category.id_comp _).symm)
   -- Restricting presheaves of morphisms and then identifying them with the presheaves of
   -- morphisms between pullbacks is compatible with composition of local morphisms.
   have key : μ R _ _ ≫ R.map (presheafHomComp M.obj N.obj P.obj) ≫
@@ -509,10 +506,15 @@ lemma toFiber_map_comp_pullbackHom_sheafifyPresheafHomEquiv_comp (M N : F.obj (.
     (F.overMapCompPresheafHomIso M N T.hom).hom) ((restrictSectionsOver J T).app _ t)
   apply Fiber.hom_ext
   refine (Fiber.homEquiv_toFiber_map_comp _ _).trans ?_
+  -- The goal types its morphisms by the objects `(toFiber J F T'.left).obj X` and over the
+  -- composite `F.map T.hom.op.toLoc ≫ F.map p.left.op.toLoc`, where these lemmas have `Fiber.mk X`
+  -- and `F.map T'.hom.op.toLoc`; these agree only up to unfolding `toFiber_obj` and the
+  -- composite, so the rewrites need `erw`.
   erw [Fiber.homEquiv_comp_toFiber_map, Fiber.homEquiv_pullbackHom,
     Fiber.homEquiv_sheafifyPresheafHomEquiv, Fiber.homEquiv_sheafifyPresheafHomEquiv,
     ← restrictSectionsOver_comp J p]
   simp only [ConcreteCategory.comp_apply] at hθ
+  -- For the same reason, `hθ` matches the goal only up to unfolding.
   erw [hθ]
   exact ConcreteCategory.congr_hom key' _
 
@@ -540,6 +542,9 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
     exact h
   apply Fiber.hom_ext
   refine Eq.trans ?_ (Fiber.homEquiv_toFiber_map_comp _ _).symm
+  -- The morphisms of the goal are typed by `Fiber.mk ((F.map (Over.mk (𝟙 U)).hom.op.toLoc) ...)`
+  -- and `Fiber.mk (𝟙 _ ...)`, which agree with the objects in these lemmas only up to unfolding
+  -- `Fiber.obj` and `(Over.mk (𝟙 U)).hom = 𝟙 U`, so the rewrites need `erw`.
   erw [Fiber.homEquiv_comp_toFiber_map, Equiv.apply_symm_apply]
   refine Eq.trans ?_ (congrArg (fun z ↦ (sheafifySections J U).map
     (presheafHomPrecomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).hom.toNatTrans.app M))
@@ -547,8 +552,12 @@ lemma sheafifyPresheafHomEquiv_mkId (M N : F.obj (.mk (op U)))
         (presheafHomPostcomp ((F.mapId' (𝟙 U).op.toLoc (by simp)).inv.toNatTrans.app N)) z))
           (Equiv.apply_symm_apply (Fiber.homEquiv (Fiber.mk M) (Fiber.mk N)) s).symm)
   conv_rhs => rw [← restrictSectionsOver_mkId J _ s]
+  -- The goal contains `F.overMapCompPresheafHomIso M N (Over.mk (𝟙 U)).hom`, which is `key`'s
+  -- left side only after reducing `(Over.mk (𝟙 U)).hom` to `𝟙 U`.
   erw [key]
   simp only [Functor.map_comp, ConcreteCategory.comp_apply]
+  -- The two sides differ only in writing the slice site as over `(Over.mk (𝟙 U)).left` or
+  -- over `U`, which are the same object.
   rfl
 
 /-- The pullback functors are compatible with the comparison functors `toFiber`. -/
@@ -581,6 +590,9 @@ def Fiber.pullbackId (U : C) [HasSheafify (J.over U) (Type v')]
       exact ConcreteCategory.congr_hom ((sheafify (J.over U) _).map_id _) _
     have h := (Fiber.pullbackHom_eq_sheafifyPresheafHomEquiv (𝟙 U) s).trans
       ((congrArg _ hs).trans (sheafifyPresheafHomEquiv_mkId J M.obj N.obj _))
+    -- `h` contains `(Fiber.homEquiv (Fiber.mk M.obj) (Fiber.mk N.obj)).symm` applied to
+    -- `Fiber.homEquiv M N s`; the two equivalences agree only up to unfolding `Fiber.mk M.obj = M`
+    -- (`Fiber.mk_obj`), so the cancellation needs `erw`.
     erw [Equiv.symm_apply_apply] at h
     exact (Iso.eq_comp_inv _).1 (h.trans (Category.assoc _ _ _).symm)
 

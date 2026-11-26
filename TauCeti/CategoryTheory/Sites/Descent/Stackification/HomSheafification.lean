@@ -176,16 +176,13 @@ lemma μ_toSheafifySections {P Q : (Over U)ᵒᵖ ⥤ Type v'} (x : P.obj (op (O
       (toSheafifySections J U).app (P ⊗ Q) ((x, y) : (P ⊗ Q).obj (op (Over.mk (𝟙 U)))) := by
   -- Evaluation at the terminal object preserves finite products, so `toSheafifySections J U` is
   -- a monoidal natural transformation (`NatTrans.IsMonoidal.of_cartesianMonoidalCategory`), and
-  -- the monoidal structure of evaluation is the identity on pairs.
+  -- the monoidal structure of evaluation is the identity on pairs, as its components are the
+  -- projections (`Functor.Monoidal.μ_fst`, `Functor.Monoidal.μ_snd`).
   let _ : ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))).Monoidal := .ofChosenFiniteProducts _
-  have hδ : δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
-    apply CartesianMonoidalCategory.hom_ext
-    · exact (Functor.OplaxMonoidal.δ_fst _ P Q).trans (Category.id_comp _).symm
-    · exact (Functor.OplaxMonoidal.δ_snd _ P Q).trans (Category.id_comp _).symm
-  have hμ : μ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ := by
-    have h := Functor.Monoidal.μ_δ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q
-    rw [hδ] at h
-    exact (Category.comp_id _).symm.trans h
+  have hμ : μ ((evaluation _ (Type v')).obj (op (Over.mk (𝟙 U)))) P Q = 𝟙 _ :=
+    CartesianMonoidalCategory.hom_ext _ _
+      ((Functor.Monoidal.μ_fst _ P Q).trans (Category.id_comp _).symm)
+      ((Functor.Monoidal.μ_snd _ P Q).trans (Category.id_comp _).symm)
   have := ConcreteCategory.congr_hom (NatTrans.IsMonoidal.tensor (τ := toSheafifySections J U) P Q)
     (show P.obj (op (Over.mk (𝟙 U))) × Q.obj (op (Over.mk (𝟙 U))) from (x, y))
   simp only [evaluation_obj_obj, Monoidal.tensorObj_obj, hμ, toSheafifySections_app,
@@ -305,25 +302,15 @@ lemma Fiber.homEquiv_comp_toFiber_map {M : Fiber J F U} {N P : F.obj (.mk (op U)
     (x : M ⟶ Fiber.mk N) (ψ : N ⟶ P) :
     Fiber.homEquiv M (Fiber.mk P) (x ≫ (toFiber J F U).map ψ) =
       (sheafifySections J U).map (presheafHomPostcomp ψ) (Fiber.homEquiv M (Fiber.mk N) x) := by
-  -- the global section `T ↦ T.hom^* ψ` of `F.presheafHom N P`
-  let y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ F.presheafHom N P :=
-    { app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map ψ
-      naturality T T' g := by
-        ext
-        exact (pullHom_map ψ _ _ _ (Over.w g.unop)).symm }
-  have hpost : presheafHomPostcomp ψ = CartesianMonoidalCategory.lift (𝟙 _)
-      (CartesianMonoidalCategory.toUnit _ ≫ y) ≫ presheafHomComp M.obj N P := by
-    ext T a
-    exact (presheafHomPostcomp_app_apply ψ T a).trans
-      (presheafHomComp_app_apply M.obj N P T ((CartesianMonoidalCategory.lift (𝟙 _)
-        (CartesianMonoidalCategory.toUnit _ ≫ y)).app T a)).symm
-  rw [hpost, Functor.map_comp, ← Functor.Monoidal.lift_μ_assoc]
+  rw [presheafHomPostcomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
+    ← Functor.Monoidal.lift_μ_assoc]
   refine (Fiber.homEquiv_comp x ((toFiber J F U).map ψ)).trans ?_
   exact congrArg (μ (sheafifySections J U) _ _ ≫
     (sheafifySections J U).map (presheafHomComp M.obj N P))
       (Prod.ext (ConcreteCategory.congr_hom ((sheafifySections J U).map_id _) _).symm
-        ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp y _).trans
-          (congrArg _ (presheafHomObjHomEquiv_eq_map F ψ).symm)).symm))
+        ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp _ _).trans
+          (congrArg _ ((presheafHomGlobalSection_app_apply ψ _ _).trans
+            (presheafHomObjHomEquiv_eq_map F ψ).symm))).symm))
 
 /-- Composing on the left with the image under `toFiber` of a morphism `φ` of `F` is induced by
 precomposition of local morphisms with the pullbacks of `φ`. -/
@@ -331,24 +318,14 @@ lemma Fiber.homEquiv_toFiber_map_comp {M M' : F.obj (.mk (op U))} {N : Fiber J F
     (φ : M' ⟶ M) (x : Fiber.mk M ⟶ N) :
     Fiber.homEquiv (Fiber.mk M') N ((toFiber J F U).map φ ≫ x) =
       (sheafifySections J U).map (presheafHomPrecomp φ) (Fiber.homEquiv (Fiber.mk M) N x) := by
-  -- the global section `T ↦ T.hom^* φ` of `F.presheafHom M' M`
-  let y : 𝟙_ ((Over U)ᵒᵖ ⥤ Type v') ⟶ F.presheafHom M' M :=
-    { app T := TypeCat.ofHom fun _ ↦ (F.map T.unop.hom.op.toLoc).toFunctor.map φ
-      naturality T T' g := by
-        ext
-        exact (pullHom_map φ _ _ _ (Over.w g.unop)).symm }
-  have hpre : presheafHomPrecomp φ = CartesianMonoidalCategory.lift
-      (CartesianMonoidalCategory.toUnit _ ≫ y) (𝟙 _) ≫ presheafHomComp M' M N.obj := by
-    ext T a
-    exact (presheafHomPrecomp_app_apply φ T a).trans
-      (presheafHomComp_app_apply M' M N.obj T ((CartesianMonoidalCategory.lift
-        (CartesianMonoidalCategory.toUnit _ ≫ y) (𝟙 _)).app T a)).symm
-  rw [hpre, Functor.map_comp, ← Functor.Monoidal.lift_μ_assoc]
+  rw [presheafHomPrecomp_eq_lift_comp_presheafHomComp, Functor.map_comp,
+    ← Functor.Monoidal.lift_μ_assoc]
   refine (Fiber.homEquiv_comp ((toFiber J F U).map φ) x).trans ?_
   exact congrArg (μ (sheafifySections J U) _ _ ≫
     (sheafifySections J U).map (presheafHomComp M' M N.obj))
-      (Prod.ext ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp y _).trans
-          (congrArg _ (presheafHomObjHomEquiv_eq_map F φ).symm)).symm)
+      (Prod.ext ((Fiber.homEquiv_homMk _).trans ((sheafifySections_map_toUnit_comp _ _).trans
+          (congrArg _ ((presheafHomGlobalSection_app_apply φ _ _).trans
+            (presheafHomObjHomEquiv_eq_map F φ).symm))).symm)
         (ConcreteCategory.congr_hom ((sheafifySections J U).map_id _) _).symm)
 
 instance essSurj_toFiber : (toFiber J F U).EssSurj where
