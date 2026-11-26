@@ -71,7 +71,9 @@ homology from `R` to `Λ` is asserted: the homology on the right is that of the 
   Laurent extension of a graded matrix is the complex of the matrix over the Novikov ring with the
   degrees read modulo `n`.
 * `TauCeti.NovikovModule.novikovComplexHomotopyEquivOfLaurentEquiv`: the Novikov complex of a
-  Laurent differential homotopy equivalent to the Laurent extension is homotopy equivalent to it.
+  Laurent differential homotopy equivalent to the Laurent extension is homotopy equivalent to the
+  complex of the matrix over the Novikov ring with the degrees read modulo `n` (the regraded
+  `K ⊗_R Λ`).
 
 ## Main results
 
