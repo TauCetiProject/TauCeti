@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.Circle.Antiperiodic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.ModeSobolev
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
 # The orbit-torus operator twisted along both circle factors
@@ -28,7 +27,12 @@ cover of `γ`: in the modes `u = ∑ₖ cos (ωₖ s) aₖ(t) + sin (ωₖ s) b�
 coefficients vanish (`TauCeti.CircleSobolev.antiperiodic`,
 `TauCeti.CircleSobolev.mem_antiperiodic_iff_toContinuousMap`). These maps form the closed subspace
 `TauCeti.doublyAntiperiodicSobolev F ℓ` of the Sobolev space `H¹`, and the corresponding mode
-sequences in `H⁰(F)²` form the subspace `TauCeti.doublyAntiperiodicL2 F` of the `L²` target.
+sequences in `H⁰(F)²` form the subspace `TauCeti.doublyAntiperiodicL2 F` of the `L²` target. Both
+are subspaces of the ambient spaces of mode sequences, the first contained in
+`TauCeti.torusModeSobolev F ω` (`TauCeti.doublyAntiperiodicSobolev_le_torusModeSobolev`), rather
+than subspaces of `TauCeti.torusModeSobolev F ω` itself: on a subspace of a subspace, instance
+synthesis does not find the operator norm of the restricted operators, which their continuity and
+determinant lines need.
 
 **The operator.** The loop `S` of the orbit has period `T / 2`; read on the double cover it is a
 loop of period `T` with `S (t + T / 2) = S t`. The rotation by `T / 2` then commutes with `A`
@@ -38,17 +42,23 @@ between the two subspaces.
 
 **Invertibility.** On the double cover the operator `D` is invertible, for every infinitesimally
 symplectic loop `S` (`TauCeti.isInvertible_torusModeOperator_antiperiodic`). It commutes with the
-half rotation `R` of every mode, and the twisted maps are the solutions of `R x = -x`. If `D x` is
+half rotation `R` of every mode (`TauCeti.torusModeOperator_rotateMode` for the rotation by
+`T / 2`), and the twisted maps are the solutions of `R x = -x`. If `D x` is
 twisted, then `D (R x) = R (D x) = -D x = D (-x)`, so `R x = -x` by injectivity: the inverse of
 `D` maps twisted targets to twisted maps. Hence the restricted operator is invertible
 (`TauCeti.isInvertible_doublyAntiperiodicTorusOperator`, through
-`ContinuousLinearMap.IsInvertible.restrictOfTower`). For `S = 0` it is complex linear
-(`TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`). Since `τ • S` is again
+`TauCeti.isInvertible_restrictTorusModeOperator`). For `S = 0` it is complex linear
+(`TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`,
+`TauCeti.exists_restrictScalars_eq_doublyAntiperiodicTorusOperator_zero`). Since `τ • S` is again
 infinitesimally symplectic and invariant under the half rotation, every operator of the path
-`τ ↦ ∂s + J₀ (∂t - τ S)` is invertible. On the double cover this path depends continuously on
-`τ` (`TauCeti.continuous_torusModeOperator`), and restricting to the closed twisted
-subspaces does not increase operator norms. This file states the invertibility along the path;
-the continuity of the restricted path is not stated here.
+`τ ↦ ∂s + J₀ (∂t - τ S)` is invertible.
+
+**Continuity.** The restricted operator depends continuously, in operator norm, on the loop
+(`TauCeti.continuous_doublyAntiperiodicTorusOperator`), and so along every continuous path of
+invariant loops (`TauCeti.continuousOn_doublyAntiperiodicTorusOperator`): composed with the
+inclusion of the target, which induces the topology of the operators, it is the operator
+`∂s + A` of the double cover (`TauCeti.continuous_torusModeOperator`) composed with the inclusion
+of the domain.
 
 ## Main definitions
 
@@ -63,8 +73,11 @@ the continuity of the restricted path is not stated here.
 
 * `TauCeti.torusModeOperator_mem_doublyAntiperiodicL2`: the orbit-torus operator maps
   doubly twisted maps to doubly twisted targets.
-* `TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`: the reference operator `∂s + J₀ ∂t`
-  is complex linear.
+* `TauCeti.doublyAntiperiodicTorusOperator_zero_apply_smul`,
+  `TauCeti.exists_restrictScalars_eq_doublyAntiperiodicTorusOperator_zero`: the reference
+  operator `∂s + J₀ ∂t` is complex linear.
+* `TauCeti.continuous_doublyAntiperiodicTorusOperator`,
+  `TauCeti.continuousOn_doublyAntiperiodicTorusOperator`: continuous dependence on the loop.
 * `TauCeti.isInvertible_doublyAntiperiodicTorusOperator`: invertibility for every infinitesimally
   symplectic loop invariant under the rotation by `T / 2`.
 
@@ -115,28 +128,34 @@ variable (F) in
 /-- The Sobolev space `H¹` of maps `u(s, t)` antiperiodic of antiperiod `ℓ` in `s` and antiperiodic
 of antiperiod `T / 2` in `t`, for any period `T` of the modes: the elements of
 `TauCeti.torusModeSobolev F ω` with the antiperiodic frequencies `ωₖ = (2k + 1)π/ℓ` all of whose
-modes `aₖ, bₖ` are antiperiodic loops (`TauCeti.CircleSobolev.antiperiodic`). -/
-def doublyAntiperiodicSobolev (ℓ : ℝ) :
-    Submodule ℂ (torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ) where
-  carrier := {x | ∀ k, ((x : 𝕏[F]).1 k).fst ∈ antiperiodic 1 F ∧
-    ((x : 𝕏[F]).1 k).snd ∈ antiperiodic 1 F}
-  add_mem' hx hy k := ⟨add_mem (hx k).1 (hy k).1, add_mem (hx k).2 (hy k).2⟩
-  zero_mem' _ := ⟨zero_mem _, zero_mem _⟩
-  smul_mem' c _ hx k := ⟨Submodule.smul_mem _ c (hx k).1, Submodule.smul_mem _ c (hx k).2⟩
+modes `aₖ, bₖ` are antiperiodic loops (`TauCeti.CircleSobolev.antiperiodic`). It is a subspace of
+the ambient space of pairs of mode sequences, contained in `TauCeti.torusModeSobolev F ω`
+(`TauCeti.doublyAntiperiodicSobolev_le_torusModeSobolev`). -/
+def doublyAntiperiodicSobolev (ℓ : ℝ) : Submodule ℂ 𝕏[F] where
+  carrier := {x | x ∈ torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ∧
+    ∀ k, (x.1 k).fst ∈ antiperiodic 1 F ∧ (x.1 k).snd ∈ antiperiodic 1 F}
+  add_mem' hx hy := ⟨add_mem hx.1 hy.1,
+    fun k ↦ ⟨add_mem (hx.2 k).1 (hy.2 k).1, add_mem (hx.2 k).2 (hy.2 k).2⟩⟩
+  zero_mem' := ⟨zero_mem _, fun _ ↦ ⟨zero_mem _, zero_mem _⟩⟩
+  smul_mem' c _ hx := ⟨Submodule.smul_mem _ c hx.1,
+    fun k ↦ ⟨Submodule.smul_mem _ c (hx.2 k).1, Submodule.smul_mem _ c (hx.2 k).2⟩⟩
 
-theorem mem_doublyAntiperiodicSobolev_iff {ℓ : ℝ}
-    {x : torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ} :
-    x ∈ doublyAntiperiodicSobolev F ℓ ↔ ∀ k, ((x : 𝕏[F]).1 k).fst ∈ antiperiodic 1 F ∧
-      ((x : 𝕏[F]).1 k).snd ∈ antiperiodic 1 F :=
+theorem mem_doublyAntiperiodicSobolev_iff {ℓ : ℝ} {x : 𝕏[F]} :
+    x ∈ doublyAntiperiodicSobolev F ℓ ↔
+      x ∈ torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ∧
+        ∀ k, (x.1 k).fst ∈ antiperiodic 1 F ∧ (x.1 k).snd ∈ antiperiodic 1 F :=
   Iff.rfl
 
-/-- `TauCeti.doublyAntiperiodicSobolev` is closed, as an intersection of preimages of the closed
-subspaces of antiperiodic loops. -/
+theorem doublyAntiperiodicSobolev_le_torusModeSobolev (ℓ : ℝ) :
+    doublyAntiperiodicSobolev F ℓ ≤ torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ :=
+  fun _ hx ↦ hx.1
+
+/-- `TauCeti.doublyAntiperiodicSobolev` is closed: it is the intersection of the closed subspace
+`TauCeti.torusModeSobolev F ω` with preimages of the closed subspaces of antiperiodic loops. -/
 theorem isClosed_doublyAntiperiodicSobolev (ℓ : ℝ) :
-    IsClosed (doublyAntiperiodicSobolev F ℓ :
-      Set (torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ)) :=
-  isClosed_setOf_forall_mem_antiperiodic 1 fun k ↦
-    (lp.evalCLM ℂ _ 2 k).continuous.comp (continuous_fst.comp continuous_subtypeVal)
+    IsClosed (doublyAntiperiodicSobolev F ℓ : Set 𝕏[F]) :=
+  (isClosed_torusModeSobolev _).inter <| isClosed_setOf_forall_mem_antiperiodic 1 fun k ↦
+    (lp.evalCLM ℂ _ 2 k).continuous.comp continuous_fst
 
 /-- The Sobolev space `H¹` of maps antiperiodic in both factors is complete. -/
 instance [CompleteSpace F] (ℓ : ℝ) : CompleteSpace (doublyAntiperiodicSobolev F ℓ) :=
@@ -182,30 +201,32 @@ maps antiperiodic in both factors to targets antiperiodic in both factors. -/
 theorem torusModeOperator_mem_doublyAntiperiodicL2 {ℓ : ℝ}
     {S : C(AddCircle T, F →L[ℝ] F)} (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t)
     {x : torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ}
-    (hx : x ∈ doublyAntiperiodicSobolev F ℓ) :
+    (hx : (x : 𝕏[F]) ∈ doublyAntiperiodicSobolev F ℓ) :
     torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x ∈ doublyAntiperiodicL2 F := fun k ↦ by
   rw [torusModeOperator_apply_apply_eq]
-  exact ⟨add_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx k).1))
-      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx k).2)),
-    sub_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx k).2))
-      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx k).1))⟩
+  exact ⟨add_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx.2 k).1))
+      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx.2 k).2)),
+    sub_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx.2 k).2))
+      (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx.2 k).1))⟩
 
 /-- The orbit-torus operator `∂s + A`, `A ζ = J₀ (ζ' - S ζ)`, on maps antiperiodic of antiperiod
 `ℓ` in `s` and of antiperiod `T / 2` in `t`, for a loop `S` of period `T` invariant under the
 rotation by `T / 2`: the restriction of `TauCeti.torusModeOperator T ω S`, `ωₖ = (2k + 1)π/ℓ`, to
-`TauCeti.doublyAntiperiodicSobolev F ℓ`, with values in `TauCeti.doublyAntiperiodicL2 F`. -/
+`TauCeti.doublyAntiperiodicSobolev F ℓ`, with values in `TauCeti.doublyAntiperiodicL2 F`
+(`TauCeti.restrictTorusModeOperator`). -/
 def doublyAntiperiodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) :
     doublyAntiperiodicSobolev F ℓ →L[ℝ] doublyAntiperiodicL2 F :=
-  (torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S).restrictOfTower fun _ ↦
-    torusModeOperator_mem_doublyAntiperiodicL2 T hS
+  restrictTorusModeOperator T (doublyAntiperiodicSobolev_le_torusModeSobolev ℓ) _ S fun x ↦
+    torusModeOperator_mem_doublyAntiperiodicL2 T hS x.property
 
 @[simp]
 theorem coe_doublyAntiperiodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : doublyAntiperiodicSobolev F ℓ) :
     (doublyAntiperiodicTorusOperator T ℓ S hS x : 𝕐[F]) =
-      torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x :=
-  ContinuousLinearMap.coe_restrictOfTower_apply _ _ _
+      torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S
+        (Submodule.inclusion (doublyAntiperiodicSobolev_le_torusModeSobolev ℓ) x) :=
+  coe_restrictTorusModeOperator_apply _ _ _ _ _ x
 
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` on maps
 antiperiodic in both factors commutes with multiplication by complex scalars, the complex
@@ -216,45 +237,39 @@ theorem doublyAntiperiodicTorusOperator_zero_apply_smul (ℓ : ℝ) (c : ℂ)
       c • doublyAntiperiodicTorusOperator T ℓ 0 (fun _ ↦ rfl) x :=
   Subtype.ext <| by
     have h := coe_doublyAntiperiodicTorusOperator_apply (F := F) T ℓ 0 fun _ ↦ rfl
-    rw [Submodule.coe_smul, h, h, Submodule.coe_smul, torusModeOperator_zero_apply_smul]
+    rw [Submodule.coe_smul, h, h, map_smul, torusModeOperator_zero_apply_smul]
 
-/-! ### The half rotation -/
+/-- **The reference operator as a complex-linear map.** For `S = 0` the operator `∂s + J₀ ∂t` on
+maps antiperiodic in both factors is the restriction of scalars of a bounded complex-linear map,
+for the complex structures given by `J₀`. -/
+theorem exists_restrictScalars_eq_doublyAntiperiodicTorusOperator_zero (ℓ : ℝ) :
+    ∃ L : doublyAntiperiodicSobolev F ℓ →L[ℂ] doublyAntiperiodicL2 F,
+      L.restrictScalars ℝ = doublyAntiperiodicTorusOperator T ℓ 0 fun _ ↦ rfl :=
+  ⟨{ toFun := doublyAntiperiodicTorusOperator T ℓ 0 fun _ ↦ rfl
+     map_add' := map_add _
+     map_smul' := doublyAntiperiodicTorusOperator_zero_apply_smul T ℓ
+     cont := (doublyAntiperiodicTorusOperator T ℓ 0 fun _ ↦ rfl).continuous }, rfl⟩
 
-/-- The rotation by half the period of both loops of a mode. -/
-private def halfRotatePair (s : ℝ) :
-    WithLp 2 (CircleSobolev s F × CircleSobolev s F) →L[ℂ]
-      WithLp 2 (CircleSobolev s F × CircleSobolev s F) :=
-  let r : CircleSobolev s F →L[ℂ] CircleSobolev s F :=
-    (rotate ((T / 2 : ℝ) : AddCircle T)).toLinearIsometry.toContinuousLinearMap
-  r.withLpProdMap 2 r
+/-- **Continuous dependence on the loop.** The orbit-torus operator on maps antiperiodic in both
+factors depends continuously, in operator norm, on the loop `S`, with its uniform norm, among the
+loops invariant under the rotation by `T / 2`. -/
+theorem continuous_doublyAntiperiodicTorusOperator (ℓ : ℝ) :
+    Continuous fun S : {S : C(AddCircle T, F →L[ℝ] F) // ∀ t, S (t + (T / 2 : ℝ)) = S t} ↦
+      doublyAntiperiodicTorusOperator T ℓ S.val S.property :=
+  continuous_restrictTorusModeOperator T _ _ fun _ hS x ↦
+    torusModeOperator_mem_doublyAntiperiodicL2 T hS x.property
 
-omit hT [FiniteDimensional ℂ F] in
-@[simp]
-private theorem halfRotatePair_apply (s : ℝ)
-    (y : WithLp 2 (CircleSobolev s F × CircleSobolev s F)) :
-    halfRotatePair T s y = WithLp.toLp 2 (rotate ((T / 2 : ℝ) : AddCircle T) y.fst,
-      rotate ((T / 2 : ℝ) : AddCircle T) y.snd) := by
-  simp [halfRotatePair]
-
-omit hT [FiniteDimensional ℂ F] in
-/-- The half rotation of every mode of an element of `TauCeti.torusModeSobolev F ω`. -/
-private def halfRotate {ω : ℕ → ℝ} (x : torusModeSobolev F ω) : torusModeSobolev F ω :=
-  ⟨(lp.ampliation ℕ 2 (halfRotatePair T 1) (x : 𝕏[F]).1,
-      lp.ampliation ℕ 2 (halfRotatePair T 0) (x : 𝕏[F]).2), mem_torusModeSobolev_iff.2 fun k ↦ by
-    rw [lp.ampliation_apply_apply, lp.ampliation_apply_apply,
-      mem_torusModeSobolev_iff.1 x.property k]
-    refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-      simp [← Complex.coe_smul, map_smul]⟩
-
-/-- For a loop `S` invariant under the rotation by `T / 2`, the orbit-torus operator commutes with
-the half rotation of every mode. -/
-private theorem torusModeOperator_halfRotate {ω : ℕ → ℝ} {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : torusModeSobolev F ω) (k : ℕ) :
-    torusModeOperator T ω S (halfRotate T x) k =
-      halfRotatePair T 0 (torusModeOperator T ω S x k) := by
-  rw [torusModeOperator_apply_apply_eq, torusModeOperator_apply_apply_eq]
-  refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_) <;>
-    simp [halfRotate, ← Complex.coe_smul, loopOperator_rotate_of_invariant T hS]
+/-- Along a family of loops `M x` invariant under the rotation by `T / 2`, continuous on `s` in the
+uniform norm, the orbit-torus operators on maps antiperiodic in both factors are continuous on `s`
+in operator norm. -/
+theorem continuousOn_doublyAntiperiodicTorusOperator {X : Type*} [TopologicalSpace X] (ℓ : ℝ)
+    {M : X → C(AddCircle T, F →L[ℝ] F)} {s : Set X} (hM : ContinuousOn M s)
+    (hM' : ∀ x t, M x (t + (T / 2 : ℝ)) = M x t) :
+    ContinuousOn (fun x ↦ doublyAntiperiodicTorusOperator T ℓ (M x) (hM' x)) s := by
+  refine (continuous_doublyAntiperiodicTorusOperator T ℓ).comp_continuousOn
+    (f := fun x ↦ ⟨M x, hM' x⟩) ?_
+  exact (Topology.IsInducing.subtypeVal (t := {S : C(AddCircle T, F →L[ℝ] F) |
+    ∀ t, S (t + (T / 2 : ℝ)) = S t})).continuousOn_iff.2 hM
 
 end Operator
 
@@ -274,19 +289,19 @@ private theorem mem_doublyAntiperiodicSobolev_of_mem {ℓ : ℝ} (hℓ : ℓ ≠
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
     (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) {x : torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ}
     (hx : torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x ∈ doublyAntiperiodicL2 F) :
-    x ∈ doublyAntiperiodicSobolev F ℓ := by
+    (x : 𝕏[F]) ∈ doublyAntiperiodicSobolev F ℓ := by
   have hT : T ≠ 0 := hT.out.ne'
-  have hrot : halfRotate T x = -x := by
+  have hrot : rotateMode ((T / 2 : ℝ) : AddCircle T) x = -x := by
     refine (isInvertible_torusModeOperator_antiperiodic T hℓ S hS).injective
       (lp.ext (funext fun k ↦ ?_))
-    rw [torusModeOperator_halfRotate T hS', map_neg]
+    rw [torusModeOperator_rotateMode T hS', map_neg]
     refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).1
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).2
-  intro k
+  refine ⟨x.property, fun k ↦ ?_⟩
   have hk := congrArg
     (fun z : torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ↦ (z : 𝕏[F]).1 k) hrot
-  simp only [halfRotate, lp.ampliation_apply_apply, halfRotatePair_apply] at hk
+  simp only [rotateMode_fst_apply, rotatePair_apply] at hk
   exact ⟨(rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.fst hk),
     (rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.snd hk)⟩
 
@@ -303,8 +318,9 @@ theorem isInvertible_doublyAntiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠
     (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) :
     (doublyAntiperiodicTorusOperator T ℓ S hS').IsInvertible :=
   -- The inverse of `D` maps doubly antiperiodic targets to doubly antiperiodic maps.
-  (isInvertible_torusModeOperator_antiperiodic T hℓ S hS).restrictOfTower _
-    fun _ hx ↦ mem_doublyAntiperiodicSobolev_of_mem T hℓ hS hS' hx
+  isInvertible_restrictTorusModeOperator T _ _ _
+    (isInvertible_torusModeOperator_antiperiodic T hℓ S hS) fun _ hx ↦
+      mem_doublyAntiperiodicSobolev_of_mem T hℓ hS hS' hx
 
 end Inner
 

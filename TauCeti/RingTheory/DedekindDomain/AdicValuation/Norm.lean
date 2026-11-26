@@ -25,6 +25,8 @@ related by
 
 * `IsDedekindDomain.HeightOneSpectrum.norm_adicCompletionExtension`: the normalized
   absolute value under the canonical extension of completions.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionExtensionEquiv`: when the local degree is
+  `1`, the canonical map `K_v → L_w` is an isomorphism of topological `K_v`-algebras.
 * `IsDedekindDomain.HeightOneSpectrum.norm_norm_adicCompletion`: the field norm preserves
   normalized absolute values. This uses `TauCeti.normalizedValuationWithZero_norm` together
   with the residue-cardinality formula.
@@ -102,5 +104,43 @@ theorem norm_norm_adicCompletion
     WithZeroMulInt.toNNReal_neg_apply _ (by simpa using hx)]
   simp only [hcard, Nat.cast_pow, NNReal.coe_zpow,
     ← zpow_natCast, ← zpow_mul, mul_comm]
+
+/-- **Completions of local degree one.** When the local degree `[L_w : K_v]` is `1`, the canonical
+map `K_v → L_w` is an isomorphism of topological `K_v`-algebras, for the algebra structure of the
+`AdicCompletionExtension` scope. Its inverse is continuous because the map preserves the normalized
+absolute value (`norm_adicCompletionExtension` with exponent `1`). -/
+noncomputable def adicCompletionExtensionEquiv
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) :
+    v.adicCompletion K ≃A[v.adicCompletion K] w.adicCompletion L where
+  toAlgEquiv := AlgEquiv.ofRingEquiv
+    (f := .ofBijective _ (adicCompletionExtension_bijective_of_finrank_eq_one v w h))
+    fun x ↦ by simp
+  continuous_toFun := continuous_adicCompletionExtension K L v w
+  continuous_invFun := by
+    let f := RingEquiv.ofBijective _ (adicCompletionExtension_bijective_of_finrank_eq_one v w h)
+    have hiso : Isometry f := AddMonoidHomClass.isometry_of_norm f fun x ↦ by
+      rw [RingEquiv.ofBijective_apply, norm_adicCompletionExtension, h, pow_one]
+    exact (hiso.right_inv f.right_inv).continuous
+
+/-- `adicCompletionExtensionEquiv` is the canonical map `K_v → L_w`. -/
+@[simp]
+theorem coe_adicCompletionExtensionEquiv
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) :
+    ⇑(adicCompletionExtensionEquiv v w h) = v.adicCompletionExtension K L w := by
+  funext x
+  unfold adicCompletionExtensionEquiv
+  exact (congr_fun (ContinuousAlgEquiv.coe_mk _ _ _) x).trans <|
+    (AlgEquiv.ofRingEquiv_apply _ x).trans (RingEquiv.ofBijective_apply _ _ x)
+
+/-- The inverse of `adicCompletionExtensionEquiv` sends the image of `x ∈ K_v` under the
+canonical map `K_v → L_w` back to `x`. -/
+@[simp]
+theorem adicCompletionExtensionEquiv_symm_adicCompletionExtension
+    (v : HeightOneSpectrum R) (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
+    (h : Module.finrank (v.adicCompletion K) (w.adicCompletion L) = 1) (x : v.adicCompletion K) :
+    (adicCompletionExtensionEquiv v w h).symm (v.adicCompletionExtension K L w x) = x := by
+  rw [← coe_adicCompletionExtensionEquiv v w h, ContinuousAlgEquiv.symm_apply_apply]
 
 end IsDedekindDomain.HeightOneSpectrum

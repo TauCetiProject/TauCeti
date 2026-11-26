@@ -42,6 +42,8 @@ composition `ι.compLpL p (mu.restrict Ω)` with a continuous linear map `ι : D
   `TauCeti.WeakDerivStep.norm_smulLeftCLM_apply_le_mul_opNorm`, `‖ψ u‖ ≤ (√2 C₀ + C₁ ‖T‖) ‖u‖`
   over a base `T`.
 * `TauCeti.WeakDerivStep.sum_smulLeftCLM`: if `∑ᵢ ψᵢ = 1` on `Ω`, then `∑ᵢ ψᵢ u = u`.
+* `TauCeti.WeakDerivStep.exists_forall_norm_fderiv_le_of_abs_deriv_le`: a bound on `|ψ'|` over an
+  open `U ⊆ ℝ` in the form of the derivative hypothesis of `smulLeftCLM`.
 
 ## References
 
@@ -294,5 +296,11 @@ theorem sum_smulLeftCLM {κ : Type*} (t : Finset κ) (ψ : κ → E → ℝ)
   refine ext (Lp.ext ?_)
   filter_upwards [key t, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
   rw [hx, hsum x hxΩ, one_smul]
+
+/-- A bound `|ψ'| ≤ C` on an open set `U ⊆ ℝ`, for a function of one real variable, in the form
+of the derivative hypothesis of `TauCeti.WeakDerivStep.smulLeftCLM`. -/
+theorem exists_forall_norm_fderiv_le_of_abs_deriv_le {U : Opens ℝ} {χ : ℝ → ℝ} {C : ℝ}
+    (h : ∀ s ∈ U, |deriv χ s| ≤ C) : ∃ C, ∀ s ∈ U, ‖fderiv ℝ χ s‖ ≤ C :=
+  ⟨C, fun s hs ↦ by rw [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs]; exact h s hs⟩
 
 end TauCeti.WeakDerivStep

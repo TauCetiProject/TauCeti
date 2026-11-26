@@ -100,6 +100,9 @@ both its tempered distribution and this `Lᵖ` data.
   `2^{ks} ‖∑_{k - L ≤ j < k + L} gⱼ‖ ≤ max C 0 2^{|s| L} ∑_{k - L ≤ j < k + L} 2^{js} ‖xⱼ‖` when
   `‖gⱼ‖ ≤ C ‖xⱼ‖`, by which a block that is a sum of boundedly many pieces of nearby index is
   controlled by the weighted pieces.
+* `Memℓp.two_rpow_mul_mono` and `Memℓp.two_rpow_mul_of_lt`: for `a ≥ 0`, `(2^{js} aⱼ)ⱼ ∈ ℓ^q`
+  implies `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` when `s' ≤ s` and `q ≤ q'`, or when `s' < s` and `q' ≠ 0`; the
+  monotonicity of the Besov scale, here and on the torus, is this statement for `aⱼ = ‖Δⱼ u‖_p`.
 * `TauCeti.two_rpow_mul_norm_tsum_le`: the weighted estimate
   `2^{ks} ‖∑ⱼ gⱼ‖ ≤ K 2^{|s| N} ∑_{k - N ≤ j < k + N} aⱼ + K ∑_{d ≥ 0} (2^{-s})^d a_{d + k}` when
   `gⱼ = 0` for `j + N ≤ k`, `‖gⱼ‖ ≤ K xⱼ` and `2^{js} xⱼ ≤ aⱼ`, by which a block meeting all pieces
@@ -139,6 +142,32 @@ theorem TauCeti.two_rpow_mul_norm_sum_Ico_le {G H : Type*} [SeminormedAddCommGro
         · exact Real.rpow_mul_natCast_le_of_mem_Ico' one_le_two s hj
         · exact (hg j).trans (by gcongr; exact le_max_left C 0)
     _ = _ := by ring
+
+/-- **Monotonicity of dyadically weighted sequences.** If `a ≥ 0` and `(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then
+`(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' ≤ s` and `q ≤ q'`. -/
+theorem Memℓp.two_rpow_mul_mono {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥0∞}
+    (h : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * a j) q) (ha : ∀ j, 0 ≤ a j) (hs : s' ≤ s)
+    (hq : q ≤ q') : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * a j) q' := by
+  refine (h.of_exponent_ge hq).mono fun j ↦ ?_
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))]
+  gcongr
+  · exact ha j
+  · exact one_le_two
+
+/-- **Strict monotonicity of dyadically weighted sequences.** If `a ≥ 0` and
+`(2^{js} aⱼ)ⱼ ∈ ℓ^q`, then `(2^{js'} aⱼ)ⱼ ∈ ℓ^{q'}` for `s' < s`, every `q` and every `q' ≠ 0`: the
+weighted sequence for `s'` decays geometrically. -/
+theorem Memℓp.two_rpow_mul_of_lt {a : ℕ → ℝ} {s s' : ℝ} {q q' : ℝ≥0∞}
+    (h : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s * j) * a j) q) (ha : ∀ j, 0 ≤ a j) (hs : s' < s)
+    (hq' : q' ≠ 0) : Memℓp (fun j : ℕ ↦ (2 : ℝ) ^ (s' * j) * a j) q' := by
+  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (h.of_exponent_ge le_top)
+  refine Memℓp.of_norm_le_geometric (C := C) (by positivity)
+    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'
+  have hj : ‖(2 : ℝ) ^ (s * j) * a j‖ ≤ C := hC ⟨j, rfl⟩
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j))] at hj
+  rw [Real.norm_of_nonneg (mul_nonneg (by positivity) (ha j)),
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm C]
+  exact mul_le_mul_of_nonneg_left hj (by positivity)
 
 /-- **Weighted tail sums.** Let `gⱼ` be vectors that vanish for `j + N ≤ k`, with `‖gⱼ‖ ≤ K xⱼ`
 and `2^{js} xⱼ ≤ aⱼ`. Splitting `∑ⱼ gⱼ` at `j = k`, the contributing terms below `k` lie within
@@ -276,33 +305,26 @@ theorem MemBesov.smul {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : ℂ) :
   refine ⟨c • a, fun j ↦ ?_⟩
   rw [lp.coeFn_smul, Pi.smul_apply, Lp.toTemperedDistribution_smul, ha, map_smul, smul_comm]
 
+/-- `B^s_{p,q}` is closed under scalar multiplication by any scalars acting on tempered
+distributions through `ℂ`, such as real numbers. -/
+theorem MemBesov.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
+    [IsScalarTower R ℂ 𝓢'(E, F)] {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (c : R) :
+    (c • u).MemBesov φ s p q := by
+  rw [← smul_one_smul ℂ c u]
+  exact hu.smul _
+
 /-- **Monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' ≤ s` and `q ≤ q'`. -/
 theorem MemBesov.mono {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' ≤ s) (hq : q ≤ q') : u.MemBesov φ s' p q' := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  refine memBesov_iff.2 ⟨f, hf, (hmem.of_exponent_ge hq).mono fun j ↦ ?_⟩
-  rw [Real.norm_of_nonneg (by positivity)]
-  gcongr
-  exact one_le_two
-
-/-- Lowering the order from `s` to `s'` multiplies the `j`-th weight `2^{js}` by
-`(2^{s' - s})^j`. -/
-private theorem two_rpow_mul_natCast_eq (s s' : ℝ) (j : ℕ) :
-    (2 : ℝ) ^ (s' * j) = (2 ^ (s' - s)) ^ j * 2 ^ (s * j) := by
-  rw [← Real.rpow_mul_natCast zero_le_two, ← Real.rpow_add two_pos, ← add_mul, sub_add_cancel]
+  exact memBesov_iff.2 ⟨f, hf, hmem.two_rpow_mul_mono (fun _ ↦ norm_nonneg _) hs hq⟩
 
 /-- **Strict monotonicity of the Besov scale.** `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s`, every
 `q` and every `q' ≠ 0`: the weighted blocks for `s'` decay geometrically. -/
 theorem MemBesov.of_lt {u : 𝓢'(E, F)} {s' : ℝ} {q' : ℝ≥0∞} (hu : u.MemBesov φ s p q)
     (hs : s' < s) (hq' : q' ≠ 0) : u.MemBesov φ s' p q' := by
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
-  obtain ⟨C, hC⟩ := memℓp_infty_iff.1 (hmem.of_exponent_ge le_top)
-  refine memBesov_iff.2 ⟨f, hf, Memℓp.of_norm_le_geometric (C := C) (by positivity)
-    (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) (fun j ↦ ?_) hq'⟩
-  have hj : ‖(2 : ℝ) ^ (s * j) * ‖f j‖‖ ≤ C := hC ⟨j, rfl⟩
-  rw [Real.norm_of_nonneg (by positivity)] at hj ⊢
-  rw [two_rpow_mul_natCast_eq s s' j, mul_assoc, mul_comm C]
-  exact mul_le_mul_of_nonneg_left hj (by positivity)
+  exact memBesov_iff.2 ⟨f, hf, hmem.two_rpow_mul_of_lt (fun _ ↦ norm_nonneg _) hs hq'⟩
 
 theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBesov φ s p q := by
   simpa using hu.smul (-1)
@@ -489,6 +511,12 @@ instance : Module ℂ (BesovSpace F φ s p q) :=
   fast_instance% Function.Injective.module ℂ
     (⟨⟨toDistr, toDistr_zero⟩, toDistr_add⟩ : BesovSpace F φ s p q →+ 𝓢'(E, F))
     (fun _ _ ↦ ext) toDistr_smul
+
+/-- The real action on `B^s_{p,q}`, obtained from its complex structure, acts on the underlying
+tempered distribution. -/
+@[simp]
+theorem toDistr_real_smul (a : ℝ) (u : BesovSpace F φ s p q) : (a • u).toDistr = a • u.toDistr :=
+  (rfl)
 
 variable (F φ s p q) in
 /-- The weighted Littlewood–Paley blocks `u ↦ (2^{js} Δⱼ u)ⱼ`, as an injective linear map into
@@ -917,17 +945,10 @@ private theorem norm_le_of_toDistr_eq_of_le (hs : s' ≤ s) (hq : q ≤ q')
     {u : BesovSpace F φ s p q} {v : BesovSpace F φ s' p q'} (h : u.toDistr = v.toDistr) :
     ‖v‖ ≤ ‖u‖ := by
   rw [← norm_weightedBlocks, ← norm_weightedBlocks]
-  set w : lp (fun _ : ℕ ↦ Lp F p (volume : Measure E)) q' :=
-    ⟨u.weightedBlocks, (lp.memℓp u.weightedBlocks).of_exponent_ge hq⟩
-  -- The entries of the anonymous `lp` element `w` are those of `u.weightedBlocks` by definition:
-  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
-  have hw : ∀ j, w j = u.weightedBlocks j := fun _ ↦ rfl
-  calc _ ≤ ‖w‖ := lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ by
-          rw [hw j, norm_weightedBlocks_apply, norm_weightedBlocks_apply,
-            block_eq_of_toDistr_eq h j]
-          gcongr
-          exact one_le_two
-    _ ≤ _ := lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq hw
+  refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le Fact.out).ne' hq fun j ↦ ?_
+  rw [norm_weightedBlocks_apply, norm_weightedBlocks_apply, block_eq_of_toDistr_eq h j]
+  gcongr
+  exact one_le_two
 
 /-- For `s' < s`, the `B^{s'}_{p,q'}` norm of a distribution is at most `(1 - 2^{s' - s})⁻¹` times
 its `B^s_{p,q}` norm: the weighted blocks for `s'` decay geometrically. -/
@@ -937,8 +958,8 @@ private theorem norm_le_of_toDistr_eq_of_lt (hs : s' < s) {u : BesovSpace F φ s
   rw [← norm_weightedBlocks, mul_comm]
   refine lp.norm_le_of_norm_le_geometric (by positivity)
     (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (sub_neg.2 hs)) fun j ↦ ?_
-  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h, two_rpow_mul_natCast_eq s s' j,
-    mul_assoc, mul_comm ‖u‖]
+  rw [norm_weightedBlocks_apply, ← block_eq_of_toDistr_eq h,
+    ← Real.rpow_sub_pow_mul_rpow_mul_natCast two_pos s' s j, mul_assoc, mul_comm ‖u‖]
   exact mul_le_mul_of_nonneg_left (rpow_mul_norm_block_le u j) (by positivity)
 
 variable (F φ p) in

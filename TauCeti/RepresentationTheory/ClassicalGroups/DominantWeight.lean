@@ -73,6 +73,9 @@ for a nonempty weight (`TauCeti.DominantWeight.detShift_shift`).
   invariant of a weight modulo the constant weights, and
   `TauCeti.DominantWeight.detShiftShape_weightOfShape` shows every diagram with at most `n - 1`
   rows occurs as one.
+* `TauCeti.DominantWeight.antitone_add_iff_of_zero_le_le_one`: adding a `0`/`1` vector to a
+  dominant weight gives a dominant weight exactly when the vector decreases weakly along each
+  block of equal coordinates.
 * `TauCeti.existsUnique_dominantWeight`: each orbit of the symmetric group permuting the
   coordinates of `ℤⁿ` contains exactly one dominant weight.
 
@@ -95,6 +98,25 @@ namespace DominantWeight
 variable {n : ℕ}
 
 theorem antitone (l : DominantWeight n) : Antitone l.val := l.property
+
+/-- **Dominance criterion for vertical strips**: adding a `0`/`1` vector `ε` to a dominant weight
+`λ` gives a dominant weight exactly when `ε` decreases weakly along each block of equal
+coordinates of `λ`. -/
+theorem antitone_add_iff_of_zero_le_le_one (lam : DominantWeight n) {ε : Fin n → ℤ}
+    (hε : ∀ i, 0 ≤ ε i ∧ ε i ≤ 1) :
+    Antitone (lam.val + ε) ↔ ∀ ⦃i j : Fin n⦄, i ≤ j → lam.val i = lam.val j → ε j ≤ ε i := by
+  refine ⟨fun h i j hij heq => ?_, fun h i j hij => ?_⟩
+  · have := h hij
+    simp only [Pi.add_apply] at this
+    omega
+  · have := lam.antitone hij
+    have := hε i
+    have := hε j
+    simp only [Pi.add_apply]
+    by_cases heq : lam.val j = lam.val i
+    · have := h hij heq.symm
+      omega
+    · omega
 
 /-- Translating a dominant weight by `m·(1, …, 1)`.  On representations this is tensoring with
 the `m`-th power of the determinant. -/

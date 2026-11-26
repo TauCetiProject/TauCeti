@@ -25,7 +25,7 @@ The orientation-preserving isometries of the plane act on plane-vortex fields by
 gauge transformation fixing the framing at infinity, they preserve the affine Sobolev space
 `A_m^k = x_m + H^k` of framed degree-`m` fields (`TauCeti.Vortex.framedFieldSpace`), for every
 natural order `k`. The direction `H^k` is invariant under translations and rotations
-(`translateField_mem_sobolevFields_natCast`, `rotateField_mem_sobolevFields_natCast`), so the
+(`translateField_mem_sobolevFields_natCast`, `rotateField_mem_sobolevFields`), so the
 question is whether the transformed reference field `x_m` stays in `A_m^k`.
 
 * **Rotations.** The reference field is rotation-equivariant up to the constant line-frame gauge
@@ -71,14 +71,14 @@ theorem translateField_mem_sobolevFields_natCast (a : ℂ) {k : ℕ} {y : ℂ �
       comp_add_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num) a
         (mem_sobolevFields.1 hy i)
 
-/-- Rotations preserve the integer-order Sobolev fields. -/
-theorem rotateField_mem_sobolevFields_natCast (u : Circle) {k : ℕ}
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
-    rotateField u y ∈ sobolevFields k := by
-  have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ k 2 := by
+/-- Rotations preserve the Sobolev fields of every real order. -/
+theorem rotateField_mem_sobolevFields (u : Circle) {s : ℝ}
+    {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) :
+    rotateField u y ∈ sobolevFields s := by
+  have h (j : Fin 4) : (fun z ↦ y ((u : ℂ) * z) j) ∈ realSobolevFunctions ℂ s 2 := by
     simpa only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       rotation_apply] using
-      comp_continuousLinearEquiv_mem_realSobolevFunctions_natCast (by norm_num) (by norm_num)
+      comp_continuousLinearEquiv_mem_realSobolevFunctions (by norm_num) (by norm_num)
         (rotation u).toContinuousLinearEquiv (mem_sobolevFields.1 hy j)
   refine mem_sobolevFields.2 fun i ↦ ?_
   fin_cases i
@@ -155,7 +155,7 @@ theorem gaugeTransform_rotateField_mem_framedFieldSpace {f : ContDiffBump (0 : �
   rw [h]
   -- The constant gauge has bounded derivatives of every order.
   refine gaugeLinearAction_mem_sobolevFields_natCast contDiff_const (fun n _ ↦ ⟨1, fun z ↦ ?_⟩)
-    (rotateField_mem_sobolevFields_natCast u hx)
+    (rotateField_mem_sobolevFields u hx)
   rcases n with _ | n
   · simp
   · simp [iteratedFDeriv_const_of_ne n.succ_ne_zero]
@@ -266,8 +266,7 @@ theorem coe_translationGauge_mul_pow {m : ℕ} {a z : ℂ} (hz : ‖a‖ ^ 2 + 2
   have hw : 1 + a / z = (z + a) / z := by field_simp
   -- `exp (i arg w) = w / ‖w‖` for `w = 1 + a / z = (z + a) / z`.
   have hexp : exp (arg (1 + a / z) * I) = (z + a) / z / ‖(z + a) / z‖ := by
-    rw [hw, eq_div_iff (ofReal_ne_zero.2 (norm_ne_zero_iff.2 (div_ne_zero hza0 hz0))), mul_comm,
-      norm_mul_exp_arg_mul_I]
+    rw [hw, exp_arg_mul_I (div_ne_zero hza0 hz0)]
   -- The gauge is `exp (-i m arg w) = (exp (i arg w) ^ m)⁻¹`.
   have hg : (translationGauge m a z : ℂ) = (exp (arg (1 + a / z) * I) ^ m)⁻¹ := by
     rw [translationGauge, Circle.coe_exp, translationPhase_eq hz, ← exp_natCast_mul, ← exp_neg]
@@ -406,11 +405,13 @@ theorem gaugeTransform_translationGauge_translateField_mem_framedFieldSpace
     gaugeTransform (translationGauge m a) (translateField a x) ∈ framedFieldSpace f m k := by
   rw [mem_framedFieldSpace] at hx ⊢
   have hg := ((mem_framedGaugeGroup _).1 (translationGauge_mem_framedGaugeGroup m a)).1
-  have htr : ContDiff ℝ ∞ (translateField a (referenceField f m)) :=
-    contDiff_translateField a (contDiff_referenceField f m)
+  have htr : ContDiff ℝ ∞
+      (gaugeTransform (translationGauge m a) (translateField a (referenceField f m))) := by
+    simpa using contDiff_framedGaugeGroup_smul ⟨_, translationGauge_mem_framedGaugeGroup m a⟩
+      (contDiff_translateField a (contDiff_referenceField f m))
   have hD : gaugeTransform (translationGauge m a) (translateField a (referenceField f m)) -
       referenceField f m ∈ sobolevFields k := mem_sobolevFields_of_hasCompactSupport
-    ((contDiff_gaugeTransform (by simpa using hg) htr).sub (contDiff_referenceField f m))
+    (htr.sub (contDiff_referenceField f m))
     (hasCompactSupport_gaugeTransform_translationGauge_translateField_sub f m a) k
   have hsub : translateField a x - translateField a (referenceField f m) =
       translateField a (x - referenceField f m) := by

@@ -55,10 +55,7 @@ theorem index_coprod_prod_coprod (hS : (A.schurComplement B C D).IsFredholm) :
     (((A : E₁ →L[K] F₁).coprod B).prod (C.coprod D)).index =
       (A.schurComplement B C D).index := by
   obtain ⟨L, U, h⟩ := exists_coprod_prod_coprod_eq_comp_prodMap_comp A B C D
-  have := A.isFredholm.finite_ker
-  have := A.isFredholm.finite_coker
-  have := hS.finite_ker
-  have := hS.finite_coker
-  rw [h, index_equiv_comp, index_comp_equiv, index_prodMap, A.index_eq_zero, zero_add]
+  rw [h, index_equiv_comp, index_comp_equiv, A.isFredholm.index_prodMap hS,
+    A.index_eq_zero, zero_add]
 
 end ContinuousLinearEquiv

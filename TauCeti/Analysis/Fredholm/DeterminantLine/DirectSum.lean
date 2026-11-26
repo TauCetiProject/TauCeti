@@ -222,14 +222,8 @@ theorem detLineStabilizationEquiv_prodMap
       finrank 𝕜 (F ⧸ D₁.range) + finrank 𝕜 (F' ⧸ D₁'.range) := by
     rw [← Module.finrank_prod]
     exact eD.finrank_eq.symm
-  have hΛ : finrank 𝕜 Λ = finrank 𝕜 (parameterProj D₁ D₂).range + finrank 𝕜 (F ⧸ D₁.range) := by
-    rw [← finrank_quotient_range_parameterProj D₁ D₂ h, add_comm]
-    exact (Submodule.finrank_quotient_add_finrank _).symm
-  have hΛ' : finrank 𝕜 Λ' =
-      finrank 𝕜 (parameterProj D₁' D₂').range + finrank 𝕜 (F' ⧸ D₁'.range) := by
-    rw [← finrank_quotient_range_parameterProj D₁' D₂' h', add_comm]
-    exact (Submodule.finrank_quotient_add_finrank _).symm
-  rw [hc, Module.finrank_prod, hΛ, hΛ']
+  rw [hc, Module.finrank_prod, ← finrank_range_parameterProj_add_finrank_quotient_range D₁ D₂ h,
+    ← finrank_range_parameterProj_add_finrank_quotient_range D₁' D₂' h']
   simp only [← pow_add]
   rw [← TauCeti.neg_one_pow_add_two_mul _ (finrank 𝕜 (F ⧸ D₁.range) * finrank 𝕜 D₁'.ker)]
   conv_rhs => rw [← TauCeti.neg_one_pow_add_two_mul _
@@ -504,13 +498,14 @@ theorem detLineOrientationTransport_prodMap (hT : ContinuousOn T (uIcc a b))
             ((T b).prodMap (T' b) : E × E' →ₗ[ℝ] F × F').detLine))
         (LinearMap.neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero _ _ _ hu hu') := by
   classical
-  -- Coherent families through `v₀` and `v₀'` end on the rays of `u` and `u'`.
-  obtain ⟨V, rfl, hV⟩ := exists_isDetLineCoherentOn_Icc hT hF left_mem_uIcc hv₀
-  obtain ⟨V', rfl, hV'⟩ := exists_isDetLineCoherentOn_Icc hT' hF' left_mem_uIcc hv₀'
-  have hb := (ray_eq_iff _ _).1 ((detLineOrientationTransport_rayOfNeZero hT hF hV).symm.trans htr)
-  have hb' := (ray_eq_iff _ _).1
-    ((detLineOrientationTransport_rayOfNeZero hT' hF' hV').symm.trans htr')
-  -- Their normalized direct sums form a coherent family for `T ⊕ T'`.
+  refine detLineOrientationTransport_rayOfNeZero_apply_tmul hT hT' (hT.prod_mapL ℝ hT') hF hF'
+    (fun t ht ↦ (hF t ht).prodMap (hF' t ht))
+    ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T a).range) * finrank ℝ (F' ⧸ (T' a).range)) •
+      (LinearMap.detLineProdMapEquiv (T a : E →ₗ[ℝ] F) (T' a : E' →ₗ[ℝ] F')).symm.toLinearMap)
+    ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T b).range) * finrank ℝ (F' ⧸ (T' b).range)) •
+      (LinearMap.detLineProdMapEquiv (T b : E →ₗ[ℝ] F) (T' b : E' →ₗ[ℝ] F')).symm.toLinearMap)
+    (fun V V' hV hV' ↦ ?_) hv₀ hv₀' hu hu' _ _ htr htr'
+  -- The normalized direct sums of coherent families form a coherent family for `T ⊕ T'`.
   let W (t : ℝ) : ((T t).prodMap (T' t) : E × E' →ₗ[ℝ] F × F').detLine :=
     if ht : t ∈ uIcc a b then
       have := (hF t ht).finite_ker
@@ -521,21 +516,8 @@ theorem detLineOrientationTransport_prodMap (hT : ContinuousOn T (uIcc a b))
         (LinearMap.detLineProdMapEquiv (T t : E →ₗ[ℝ] F) (T' t : E' →ₗ[ℝ] F')).symm
           (V t ⊗ₜ V' t)
     else 0
-  have hW : IsDetLineCoherentOn (fun t ↦ (T t).prodMap (T' t)) W (uIcc a b) :=
-    IsDetLineCoherentOn.prodMap hT hT' hF hF' hV hV' fun t ht _ _ _ _ ↦ dite_eq_left ht
-  have hWa : W a = _ := dite_eq_left left_mem_uIcc
-  have hWb : W b = _ := dite_eq_left right_mem_uIcc
-  refine (congrArg (detLineOrientationTransport a b _ _) ?_).trans
-    ((detLineOrientationTransport_rayOfNeZero (hT.prod_mapL ℝ hT')
-      (fun t ht ↦ (hF t ht).prodMap (hF' t ht)) hW).trans ?_)
-  · refine (ray_eq_iff _ _).2 ?_
-    rw [hWa]
-    exact SameRay.rfl
-  · refine (ray_eq_iff _ _).2 ?_
-    rw [hWb]
-    exact (hb.tmul hb').map
-      ((-1 : ℝ) ^ (finrank ℝ (F ⧸ (T b).range) * finrank ℝ (F' ⧸ (T' b).range)) •
-        (LinearMap.detLineProdMapEquiv (T b : E →ₗ[ℝ] F) (T' b : E' →ₗ[ℝ] F')).symm.toLinearMap)
+  exact ⟨W, IsDetLineCoherentOn.prodMap hT hT' hF hF' hV hV' fun t ht _ _ _ _ ↦ dite_eq_left ht,
+    dite_eq_left left_mem_uIcc, dite_eq_left right_mem_uIcc⟩
 
 end Transport
 

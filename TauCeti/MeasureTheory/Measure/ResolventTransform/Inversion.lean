@@ -10,7 +10,6 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.Basic.Real.Sign
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 import TauCeti.MeasureTheory.Measure.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Prod
@@ -30,7 +29,7 @@ mass of the corresponding interval, with half weight at the two endpoints:
 
 The proof integrates the Poisson kernel in `x` first, which gives a difference of arctangents
 (`Real.integral_div_sub_sq_add_sq`), and then applies dominated convergence in the measure
-variable, using the limits `Real.tendsto_arctan_div_nhdsGT_zero`. As a consequence a finite measure
+variable, using `Real.tendsto_intervalIntegral_upperHalfPlanePoissonKernel`. A finite measure
 on `ℝ` is determined by the imaginary part of its resolvent transform on the upper half-plane.
 This uniqueness is what lets limits of resolvent transforms identify limiting spectral laws.
 
@@ -118,10 +117,9 @@ theorem tendsto_intervalIntegral_im_resolventTransform {a b : ℝ} (hab : a < b)
     constructor <;> linarith [Real.arctan_lt_pi_div_two ((b - t) / η),
       Real.neg_pi_div_two_lt_arctan ((b - t) / η), Real.arctan_lt_pi_div_two ((a - t) / η),
       Real.neg_pi_div_two_lt_arctan ((a - t) / η)]
-  · refine ae_of_all _ fun t => ?_
-    convert ((Real.tendsto_arctan_div_nhdsGT_zero (b - t)).sub
-      (Real.tendsto_arctan_div_nhdsGT_zero (a - t))).const_mul π⁻¹ using 2
-    field_simp
+  · exact ae_of_all _ fun t ↦ by
+      simpa only [Real.integral_div_sub_sq_add_sq] using
+        Real.tendsto_intervalIntegral_upperHalfPlanePoissonKernel a b t
 
 namespace Measure
 

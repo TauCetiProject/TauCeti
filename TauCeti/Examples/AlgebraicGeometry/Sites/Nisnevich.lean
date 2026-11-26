@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Basic
+import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Affine
+import TauCeti.AlgebraicGeometry.Sites.Nisnevich.EtaleComparison
 
 /-!
 # Checks for Nisnevich coverings
@@ -13,9 +14,14 @@ import TauCeti.AlgebraicGeometry.Sites.Nisnevich.Basic
 The identity is a Nisnevich covering, while the spectrum of a quadratic field extension is not a
 Nisnevich covering of the spectrum of the base field: its residue field extension is not an
 isomorphism.
+
+Presheaves of sets, of abelian groups and of `Λ`-modules on the small Nisnevich site can be
+sheafified, sheaves of `Λ`-modules form a Grothendieck abelian category, and the inverse image of
+the comparison morphism `Sh(X_ét) → Sh(X_Nis)` applies to Nisnevich sheafifications of presheaves
+of `Λ`-modules.
 -/
 
-open CategoryTheory AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme
+open CategoryTheory Limits AlgebraicGeometry TauCeti.AlgebraicGeometry.Scheme
 
 universe u
 
@@ -44,5 +50,23 @@ example (k K : Type u) [Field k] [Field K] [Algebra k K] (h : Module.finrank k K
   have := (LinearEquiv.ofBijective (Algebra.linearMap k K) hb).finrank_eq
   rw [Module.finrank_self] at this
   omega
+
+example (X : Scheme.{u}) : HasSheafify X.smallNisnevichTopology (Type u) := inferInstance
+
+example (X : Scheme.{u}) : HasSheafify X.smallNisnevichTopology AddCommGrpCat.{u} := inferInstance
+
+example (X : Scheme.{u}) (Λ : Type u) [Ring Λ] :
+    HasSheafify X.smallNisnevichTopology (ModuleCat.{u} Λ) :=
+  inferInstance
+
+example (X : Scheme.{u}) (Λ : Type u) [Ring Λ] :
+    IsGrothendieckAbelian.{u} (Sheaf X.smallNisnevichTopology (ModuleCat.{u} Λ)) :=
+  inferInstance
+
+-- Nisnevich sheafification followed by the inverse image to the étale site is exact.
+example (X : Scheme.{u}) (Λ : Type u) [Ring Λ] :
+    PreservesFiniteLimits (presheafToSheaf X.smallNisnevichTopology (ModuleCat.{u} Λ) ⋙
+      X.etaleToNisnevichPullback (ModuleCat.{u} Λ)) :=
+  inferInstance
 
 end TauCeti.Examples

@@ -36,14 +36,21 @@ closed, since a proper specialization of such a point would have codimension at 
 * `TauCeti.isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one`: on a T₀ space all
   of whose points have codimension at most one for the specialization order, a point of
   codimension one is closed.
-* `TauCeti.coheight_le_topologicalKrullDim`: the codimension of a point for the specialization
-  preorder is at most the Krull dimension of the space.
+* `TauCeti.krullDim_le_topologicalKrullDim`: the Krull dimension of the specialization preorder
+  is at most the topological Krull dimension.
+* `TauCeti.coheight_le_topologicalKrullDim` and `TauCeti.height_le_topologicalKrullDim`: the
+  codimension and the height of a point for the specialization preorder are at most the Krull
+  dimension of the space.
 * `Specializes.one_le_topologicalKrullDim_of_ne`: a T₀ space with a proper specialization has
   Krull dimension at least one.
 * `TauCeti.topologicalKrullDim_eq_iSup_coheight`: on a quasi-sober space, the Krull dimension is
   the supremum of the codimensions of the points for the specialization preorder.
+* `TauCeti.topologicalKrullDim_le_of_forall_coheight_le`: on a quasi-sober space all of whose
+  points have codimension at most `n`, the Krull dimension is at most `n`.
 * `TauCeti.height_eq_topologicalKrullDim_closure_singleton`: on a quasi-sober space, the height
   of a point for the specialization preorder is the Krull dimension of its closure.
+* `IsGenericPoint.height_eq_topologicalKrullDim`: on a quasi-sober space, the height of a generic
+  point of the whole space is the Krull dimension of the space.
 * `TauCeti.topologicalKrullDim_closure_singleton_le_of_not_isMax`: on a quasi-sober space all
   of whose points have codimension at most `d + 1`, the closure of a point that is not a generic
   point of an irreducible component has dimension at most `d`.
@@ -97,10 +104,10 @@ theorem isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one {α : Ty
   simpa [hx] using Order.coheight_strictAnti (lt_of_le_of_ne hyx hne) (by simp [hx])
 
 attribute [local instance] specializationPreorder in
-/-- The codimension of a point for the specialization preorder is at most the Krull dimension of
-the space. -/
-theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : α) :
-    (coheight x : WithBot ℕ∞) ≤ topologicalKrullDim α := by
+/-- The Krull dimension of a space for the specialization preorder is at most its topological
+Krull dimension. -/
+theorem krullDim_le_topologicalKrullDim (α : Type*) [TopologicalSpace α] :
+    krullDim α ≤ topologicalKrullDim α := by
   -- A chain of proper specializations `y₀ ⤳ … ⤳ yₙ` gives the chain of irreducible closed sets
   -- `closure {yₙ} ⊆ … ⊆ closure {y₀}`, strictly increasing since the specializations are proper.
   let c : α → IrreducibleCloseds α :=
@@ -108,7 +115,21 @@ theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : 
   have hc : StrictMono c := fun y z hyz ↦
     lt_of_le_of_ne (specializes_iff_closure_subset.mp hyz.le) fun h ↦ hyz.not_ge
       (specializes_iff_closure_subset.mpr (congrArg SetLike.coe h).ge)
-  exact (coheight_le_krullDim x).trans (krullDim_le_of_strictMono c hc)
+  exact krullDim_le_of_strictMono c hc
+
+attribute [local instance] specializationPreorder in
+/-- The codimension of a point for the specialization preorder is at most the Krull dimension of
+the space. -/
+theorem coheight_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : α) :
+    (coheight x : WithBot ℕ∞) ≤ topologicalKrullDim α :=
+  (coheight_le_krullDim x).trans (krullDim_le_topologicalKrullDim α)
+
+attribute [local instance] specializationPreorder in
+/-- The height of a point for the specialization preorder is at most the Krull dimension of the
+space. -/
+theorem height_le_topologicalKrullDim {α : Type*} [TopologicalSpace α] (x : α) :
+    (height x : WithBot ℕ∞) ≤ topologicalKrullDim α :=
+  (height_le_krullDim x).trans (krullDim_le_topologicalKrullDim α)
 
 attribute [local instance] specializationOrder in
 /-- In a T₀ space, a proper specialization `x ⤳ y` makes `y` a point of positive codimension, so
@@ -136,6 +157,14 @@ theorem topologicalKrullDim_eq_iSup_coheight (α : Type*) [TopologicalSpace α] 
         specializes_iff_closure_subset.mp h)
   rw [← krullDim_eq_iSup_coheight]
   exact krullDim_le_of_strictMono g hmono
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space all of whose points have codimension at most `n` for the
+specialization preorder, the Krull dimension is at most `n`. -/
+theorem topologicalKrullDim_le_of_forall_coheight_le {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {n : ℕ∞} (h : ∀ x : α, coheight x ≤ n) : topologicalKrullDim α ≤ n := by
+  rw [topologicalKrullDim_eq_iSup_coheight]
+  exact iSup_le fun x ↦ by exact_mod_cast h x
 
 attribute [local instance] specializationPreorder in
 /-- On a quasi-sober topological space, the height of a point for the specialization preorder
@@ -174,6 +203,15 @@ theorem topologicalKrullDim_closure_singleton_le_of_not_isMax {α : Type*} [Topo
   exact (ENat.add_le_add_iff_right ENat.one_ne_top).mp this
 
 end TauCeti
+
+attribute [local instance] specializationPreorder in
+/-- On a quasi-sober topological space, the height of a generic point `x` of the whole space for the
+specialization preorder is the Krull dimension of the space, the closure of `x`. -/
+theorem IsGenericPoint.height_eq_topologicalKrullDim {α : Type*} [TopologicalSpace α]
+    [QuasiSober α] {x : α} (hx : IsGenericPoint x ⊤) :
+    (height x : WithBot ℕ∞) = topologicalKrullDim α := by
+  rw [TauCeti.height_eq_topologicalKrullDim_closure_singleton, hx.def, Set.top_eq_univ,
+    (Homeomorph.Set.univ α).isHomeomorph.topologicalKrullDim_eq]
 
 attribute [local instance] specializationPreorder in
 /-- A continuous generalizing map cannot increase the coheight of a point for the specialization

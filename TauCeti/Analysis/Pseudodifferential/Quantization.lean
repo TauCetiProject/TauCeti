@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Laplacian
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Map
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
@@ -17,7 +17,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Fourier.FourierCharDeriv
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 
 /-!
 # Kohn–Nirenberg quantization on Schwartz functions
@@ -92,6 +92,8 @@ frequency derivative of its Fourier transform.
   of the position multiplies its quantization by `ψ`, `Op(ψ a) u = ψ Op(a) u`.
 * `TauCeti.Symbol.quantizeSchwartzValue_comp_comp`: quantizing `L ∘ a(x, ξ) ∘ K` for constant
   maps `L` and `K` of the fibres gives `L ∘ Op(a) (K ∘ u)`.
+* `TauCeti.Symbol.quantizeSchwartzValue_map_singleEntryMap`: a scalar symbol placed into
+  `V →L[ℂ] W` by `w ∘ a(x, ξ) ∘ K` quantizes to `Op(a) (K ∘ u) • w`.
 * `TauCeti.differentiable_quantizeSchwartzValue` and
   `TauCeti.fderiv_quantizeSchwartzValue_apply`: `Op(a) u` is differentiable for a `C¹`
   coefficient whose values and position derivatives have growth bounds locally uniform in `x`,
@@ -104,10 +106,12 @@ frequency derivative of its Fourier transform.
   `TauCeti.Symbol.ofLp_smul_quantizeSchwartzValue`: `⟪x, v⟫ Op(a) u (x) = Op(a) (⟪·, v⟫ u) (x) +
   i Op(∂_{ξ, v} a) u (x)` for a coefficient that is `C¹` in the frequency with polynomial growth
   at `x`, and `x_j Op(a) u = Op(a) (x_j u) + i Op(∂_{ξ_j} a) u` for a symbol.
-* `TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub` and
-  `TauCeti.Symbol.quantizeSchwartzValue_smulLeftCLM_norm_sub_pow`: the same integration by parts
-  evaluated at `x`, `Op(a) (⟪x - ·, v⟫ u) (x) = i Op(∂_{ξ, v} a) u (x)`, and its iterate for a
-  symbol, `Op(a) (‖x - ·‖^(2N) u) (x) = (-1)^N Op(Δ_ξ^N a) u (x)`.
+* `TauCeti.quantizeSchwartzValue_smulLeftCLM_inner_sub`,
+  `TauCeti.Symbol.quantizeSchwartzValue_smulLeftCLM_norm_sub_pow`, and
+  `TauCeti.Symbol.quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian`: the same integration
+  by parts evaluated at `x`, `Op(a) (⟪x - ·, v⟫ u) (x) = i Op(∂_{ξ, v} a) u (x)`, its iterate
+  `Op(a) (‖x - ·‖^(2N) u) (x) = (-1)^N Op(Δ_ξ^N a) u (x)`, and the shifted version trading
+  `(1 - Δ_ξ)^N` against `(1 + ‖x - ·‖²)^(-N)`.
 
 ## References
 
@@ -470,10 +474,10 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
         ≤ ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x‖ * ‖h‖ * ‖f ζ‖ := by gcongr; exact le_opNorm _ _
       _ ≤ C' * w ^ (m / 2) * ‖h‖ * ‖f ζ‖ := by gcongr; exact hC' _
       _ = C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by ring
-  have hw₁ := one_add_norm_sq_rpow_mul_norm_le ((2 * π) • ζ) m
+  have hw₁ := Real.one_add_sq_rpow_mul_abs_le ‖(2 * π) • ζ‖ m
   have hw₂ : w ^ (m / 2) ≤ w ^ ((m + 1) / 2) :=
     Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖(2 * π) • ζ‖]) (by linarith)
-  rw [← hw] at hw₁
+  rw [abs_norm, ← hw] at hw₁
   calc _ ≤ C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ + C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ :=
         add_le_add h₁ h₂
     _ ≤ C * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ + C' * w ^ ((m + 1) / 2) * ‖f ζ‖ * ‖h‖ := by
@@ -1043,6 +1047,16 @@ theorem quantizeSchwartzValue_comp_comp [CompleteSpace V] [CompleteSpace W] {V' 
   simp only [ContinuousLinearMap.comp_apply, SchwartzMap.fourier_postcompCLM_apply,
     Circle.smul_def, map_smul]
 
+/-- Quantizing a scalar symbol placed into `V →L[ℂ] W` by `TauCeti.Symbol.singleEntryMap K w` on
+`u` gives the quantization of the scalar symbol on `K ∘ u`, times `w`. -/
+theorem quantizeSchwartzValue_map_singleEntryMap [CompleteSpace V] [CompleteSpace W]
+    (a : Symbol n ℂ ℂ m) (K : V →L[ℂ] ℂ) (w : W) (u : 𝓢(CoordinateSpace n, V))
+    (x : CoordinateSpace n) :
+    quantizeSchwartzValue (a.map (singleEntryMap K w)).coefficient u x =
+      quantizeSchwartzValue a.coefficient (u.postcompCLM K) x • w := by
+  rw [coefficient_map_eq_comp_comp _ K (singleEntryMap_apply K w),
+    quantizeSchwartzValue_comp_comp, ContinuousLinearMap.toSpanSingleton_apply]
+
 open scoped ContDiff in
 /-- **Multiplication by a smooth function of the position.** The quantization of the symbol
 `ψ(x) a(x, ξ)` is `ψ Op(a)`: `Op(ψ a) u (x) = ψ(x) Op(a) u (x)`. -/
@@ -1134,6 +1148,56 @@ theorem quantizeSchwartzValue_smulLeftCLM_norm_sub_pow (N : ℕ) (a : Symbol n V
         (Function.hasTemperateGrowth_norm_sub_pow x N),
       quantizeSchwartzValue_smulLeftCLM_norm_sub_sq, ih, hc, pow_succ, mul_smul, neg_one_smul,
       smul_neg]
+
+/-- Multiplying the input by `1 + ‖x - y‖²` and evaluating `Op(a)` at `x` replaces `a` by
+`(1 - Δ_ξ) a`. -/
+theorem quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue a.coefficient
+        (SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u) x =
+      quantizeSchwartzValue (oneSubFrequencyLaplacian a).coefficient u x := by
+  have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
+    simpa using Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
+  have h2 : (fun y : CoordinateSpace n ↦ ‖x - y‖ ^ 2).HasTemperateGrowth := by
+    simpa using Function.hasTemperateGrowth_norm_sub_pow x 1
+  have hu : SchwartzMap.smulLeftCLM V (fun y ↦ 1 + ‖x - y‖ ^ 2) u =
+      u + SchwartzMap.smulLeftCLM V (fun y ↦ ‖x - y‖ ^ 2) u := by
+    ext y; simp [SchwartzMap.smulLeftCLM_apply_apply h12,
+      SchwartzMap.smulLeftCLM_apply_apply h2, add_smul]
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
+  have hsub : (oneSubFrequencyLaplacian a).coefficient =
+      a.coefficient + (-frequencyLaplacian a).coefficient :=
+    funext fun _ ↦ by simp [sub_eq_add_neg]
+  rw [hu, quantizeSchwartzValue_add_right
+    (a.continuous_coefficient_slice x).aestronglyMeasurable hC,
+    quantizeSchwartzValue_smulLeftCLM_norm_sub_sq, hsub,
+    Symbol.quantizeSchwartzValue_coefficient_add a (-frequencyLaplacian a) u x, coefficient_neg,
+    ← neg_one_smul ℂ (frequencyLaplacian a).coefficient, quantizeSchwartzValue_smul_left,
+    neg_one_smul]
+
+/-- **Trading `(1 - Δ_ξ) ^ N` against `(1 + ‖x - y‖²) ^ (-N)`.** At `x`, `Op(a) u (x)` equals
+`Op((1 - Δ_ξ) ^ N a)` applied to `y ↦ (1 + ‖x - y‖²) ^ (-N) u(y)`. -/
+theorem quantizeSchwartzValue_eq_iterate_oneSubFrequencyLaplacian (N : ℕ) (a : Symbol n V W m)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeSchwartzValue a.coefficient u x =
+      quantizeSchwartzValue ((oneSubFrequencyLaplacian (m := m))^[N] a).coefficient
+        (SchwartzMap.smulLeftCLM V (fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) u) x := by
+  induction N generalizing u with
+  | zero =>
+    have h0 : SchwartzMap.smulLeftCLM V
+        (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-(0 : ℕ) : ℝ)) u = u := by ext y; simp
+    rw [h0, Function.iterate_zero_apply]
+  | succ N ih =>
+    have h12 : (fun y : CoordinateSpace n ↦ 1 + ‖x - y‖ ^ 2).HasTemperateGrowth := by
+      simpa using Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x 1
+    have hweight : (fun y : CoordinateSpace n ↦ (1 + ‖x - y‖ ^ 2) ^ (-(N : ℝ))) =
+        (fun y ↦ 1 + ‖x - y‖ ^ 2) * fun y ↦ (1 + ‖x - y‖ ^ 2) ^ (-((N + 1 : ℕ) : ℝ)) := by
+      funext y; simp only [Pi.mul_apply]
+      rw [show -(N : ℝ) = (1 : ℝ) + -((N + 1 : ℕ) : ℝ) by push_cast; ring,
+        Real.rpow_add (by positivity), Real.rpow_one]
+    rw [ih u, hweight, ← SchwartzMap.smulLeftCLM_smulLeftCLM_apply h12
+        (Function.hasTemperateGrowth_one_add_norm_sub_sq_rpow x _),
+      quantizeSchwartzValue_smulLeftCLM_one_add_norm_sub_sq, Function.iterate_succ_apply']
 
 /-- The quantization of a symbol with compact spatial support vanishes outside that support. -/
 theorem HasCompactSpatialSupport.hasCompactSupport_quantizeSchwartzValue

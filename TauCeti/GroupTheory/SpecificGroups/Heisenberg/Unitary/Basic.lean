@@ -21,7 +21,9 @@ root group in `SU₃`, including in characteristic two.
 
 Multiplication and inversion are inherited from the Heisenberg group, so the parameters obey
 `(x,z)(x',z') = (x+x', z+z'+x σ(x'))`. The commutator has parameters
-`(0, x σ(x') - x' σ(x))` and is central. No division by two is used.
+`(0, x σ(x') - x' σ(x))` and is central. These formulas use no division by two. Over a
+nontrivial commutative ring with an involution the group is nontrivial
+(`TauCeti.HeisenbergGroup.nontrivial_unitarySubgroup`).
 
 ## References
 
@@ -42,6 +44,11 @@ variable {R : Type*} [CommRing R] (σ : R →+* R)
 the trace of the second free coordinate equals the norm of the first. -/
 def unitarySubgroup : Subgroup (HeisenbergGroup R) :=
   (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear
+
+/-- The unitary root subgroup is the preimage of the signed reversal isometry group. -/
+theorem unitarySubgroup_eq_comap :
+    unitarySubgroup σ =
+      (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear := (rfl)
 
 variable {σ}
 
@@ -65,21 +72,28 @@ theorem y_eq (a : unitarySubgroup σ) :
       congrFun (congrFun h 1) 2
   linear_combination -hy
 
+/-- The square of the endomorphism fixes the first coordinate of every unitary root element. -/
+@[simp]
+theorem map_map_x (a : unitarySubgroup σ) :
+    σ (σ (a : HeisenbergGroup R).x) = (a : HeisenbergGroup R).x := by
+  have h := mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
+  have hx : (a : HeisenbergGroup R).x - σ (a : HeisenbergGroup R).y = 0 := by
+    simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
+      congrFun (congrFun h 2) 1
+  simpa only [y_eq a] using (sub_eq_zero.mp hx).symm
+
 /-- The trace of the last coordinate of a unitary root element is the norm of its first. -/
 theorem z_add_map_z (a : unitarySubgroup σ) :
     (a : HeisenbergGroup R).z + σ (a : HeisenbergGroup R).z =
       (a : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x := by
   have h := mem_unitarySubgroup_iff_transpose_map_toMatrix_mul_mul_eq.mp a.property
-  have hx : (a : HeisenbergGroup R).x - σ (a : HeisenbergGroup R).y = 0 := by
-    simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
-      congrFun (congrFun h 2) 1
   have hz : (a : HeisenbergGroup R).z -
       σ (a : HeisenbergGroup R).y * (a : HeisenbergGroup R).y +
       σ (a : HeisenbergGroup R).z = 0 := by
     simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, sub_eq_add_neg] using
       congrFun (congrFun h 2) 2
-  rw [y_eq a] at hx hz
-  linear_combination hz - σ (a : HeisenbergGroup R).x * hx
+  rw [y_eq a, map_map_x a] at hz
+  linear_combination hz
 
 end unitarySubgroup
 
@@ -221,5 +235,17 @@ theorem commutatorElement_unitaryMk (x z x' z' : R)
         ring) := by
   apply Subtype.ext
   exact (unitarySubgroup.coe_commutatorElement _ _).trans (by simp)
+
+/-- **The unitary root group is nontrivial** over every nontrivial commutative ring with an
+involution `σ`, including `σ = id`. -/
+theorem nontrivial_unitarySubgroup [Nontrivial R] (hσ : Function.Involutive σ) :
+    Nontrivial (unitarySubgroup σ) := by
+  -- The parameters `(2, 2)` satisfy the trace equation, and are nontrivial unless `2 = 0`, in
+  -- which case the parameters `(0, 1)` do.
+  by_cases h₂ : (2 : R) = 0
+  · refine nontrivial_of_ne (unitaryMk σ hσ 0 1 (by simp [one_add_one_eq_two, h₂])) 1 ?_
+    simp
+  · refine nontrivial_of_ne (unitaryMk σ hσ 2 2 (by rw [map_ofNat]; ring)) 1 ?_
+    simpa using h₂
 
 end TauCeti.HeisenbergGroup

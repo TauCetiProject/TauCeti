@@ -61,13 +61,22 @@ bijective.
 * `TauCeti.intervalBaseOrbit` and `TauCeti.isIntegralCurve_intervalBaseOrbit`: a trajectory from
   `0` to `1`, the flow line through `1 / √2` (`TauCeti.intervalBaseOrbit_eq_intervalBaseFlow`).
 * `TauCeti.intervalBaseTimeCoordinate` and
-  `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`.
+  `TauCeti.intervalBaseTimeCoordinate_intervalBaseOrbit`: the coordinate `U` with `U(q(s)) = C s`,
+  also along the signed copies `±q`
+  (`TauCeti.intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit`).
 * `TauCeti.mul_one_sub_sq_inv_mul_eq_of_hasDerivAt`: the linearized flow along a solution in
   `(0, 1)` preserves `U'(x) w = w / (x (1 - x²))`.
 * `TauCeti.bijOn_intervalBaseTimeCoordinate` and
   `TauCeti.intervalBaseOrbit_one_intervalBaseTimeCoordinate`: `U` identifies `(0, 1)` with `ℝ`.
 * `TauCeti.exists_intervalBaseOrbit_eq`: for `C ≠ 0`, the trajectory `q` passes through every
   point of `(0, 1)`.
+* `TauCeti.intervalBaseSourceGluing`, `TauCeti.intervalBaseTargetGluing`,
+  `TauCeti.intervalBaseOrbit_one_add_log`, `TauCeti.intervalBaseOrbit_one_sub_log`,
+  `TauCeti.hasDerivAt_intervalBaseSourceGluing_zero`,
+  `TauCeti.hasDerivAt_intervalBaseTargetGluing_zero` and
+  `TauCeti.hasDerivAt_deriv_intervalBaseTargetGluing_zero`: the unit-rate trajectory `q` in the
+  gluing parameter `ρ = e^{-T}` at its two ends, smooth up to `ρ = 0` with rate `1` at `0` (nonzero
+  first derivative) and rate `2` at `1` (vanishing first and nonzero second derivative).
 * `TauCeti.intervalBaseFlow`, `TauCeti.isIntegralCurve_intervalBaseFlow` and
   `TauCeti.intervalBaseFlow_add`: the flow.
 * `TauCeti.intervalBaseTimeCoordinate_intervalBaseFlow`, `TauCeti.strictMonoOn_intervalBaseFlow`,
@@ -82,8 +91,15 @@ bijective.
   `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the trajectory `q` through the sigmoid, and
   every flow line through `(0, 1)` as a reparametrization of `q`.
 * `TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt` and
-  `TauCeti.intervalBaseOrbit_eq_one_sub_exp_sq_mul`: `q` near its two ends in closed form in the
-  gluing parameters `e^{C s}` and `e^{-C s}`.
+  `TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`: `q` is `ε / √(1 + ε²)` in the gluing
+  parameter `ε = e^{C s}` of its source and `1 / √(1 + ε²)` in the gluing parameter
+  `ε = e^{-C s}` of its sink, a function of `ε²`.
+* `TauCeti.intervalBaseOrbit_add_log_div` and `TauCeti.intervalBaseOrbit_sub_log_div`: shifting
+  the time of `q` by `log x / C` scales its gluing parameters at the two ends by `x`.
+* `TauCeti.intervalBaseFlow_mul_inv_sqrt_one_add_sq` and
+  `TauCeti.intervalBaseFlow_inv_sqrt_one_add_sq`: the flow acts on the end forms
+  `x / √(1 + x²)` and `1 / √(1 + y²)` of the trajectory by scaling `x` with `e^{C s}` and `y` with
+  `e^{-C s}`.
 * `TauCeti.mem_Icc_of_isIntegralCurve_intervalBasePotential`: for `C > 0`, a trajectory whose
   backward limit lies in `[-1, 1]` stays in `[-1, 1]`.
 * `TauCeti.exists_eq_intervalBaseOrbit_of_isIntegralCurve` and
@@ -237,6 +253,11 @@ noncomputable def intervalBaseFlow (C s t : ℝ) : ℝ :=
 theorem intervalBaseFlow_apply (C s t : ℝ) :
     intervalBaseFlow C s t = t / √(t ^ 2 + (1 - t ^ 2) * Real.exp (-(2 * C * s))) := (rfl)
 
+/-- The flow depends on the rate `C` and the time `s` only through `C * s`. -/
+theorem intervalBaseFlow_eq_intervalBaseFlow_one_mul (C s : ℝ) :
+    intervalBaseFlow C s = intervalBaseFlow 1 (C * s) := by
+  ext; simp only [intervalBaseFlow_apply, mul_one, mul_assoc]
+
 /-- At time `0` the flow is the identity. -/
 @[simp]
 theorem intervalBaseFlow_zero (C t : ℝ) : intervalBaseFlow C 0 t = t := by
@@ -343,6 +364,11 @@ theorem intervalBaseFlow_neg (C s t : ℝ) : intervalBaseFlow C s (-t) = -interv
 @[simp]
 theorem intervalBaseFlow_apply_neg_one (C s : ℝ) : intervalBaseFlow C s (-1) = -1 := by
   rw [intervalBaseFlow_neg, intervalBaseFlow_apply_one]
+
+/-- The flow commutes with multiplication by a sign `a` in `{-1, 0, 1}`. -/
+theorem intervalBaseFlow_mul (C s : ℝ) {a : ℝ} (ha : a = -1 ∨ a = 0 ∨ a = 1) (t : ℝ) :
+    intervalBaseFlow C s (a * t) = a * intervalBaseFlow C s t := by
+  rcases ha with rfl | rfl | rfl <;> simp [intervalBaseFlow_neg]
 
 /-- The negative gradient field of the base potential is `2 |C|`-Lipschitz on `[-1, 1]`: the
 difference quotient of `C t (1 - t²)` is `C (1 - (a² + a b + b²))`. -/
@@ -466,21 +492,32 @@ theorem intervalBaseOrbit_eq_exp_mul_inv_sqrt (C s : ℝ) :
   rw [intervalBaseOrbit_apply, h, Real.sqrt_div' _ (by positivity), Real.sqrt_sq he.le]
   field_simp
 
-/-- **The end chart of `q` at its sink.** In the gluing parameter `ε = e^{-C s}`, which tends to
-`0` as `s → ∞` for `C > 0`, the trajectory is `q(s) = 1 - ε² / (√(1 + ε²) (√(1 + ε²) + 1))`.
-This theorem is only that identity; it shows (without formalizing it) that the factor of `ε²` is a
-smooth function of `ε` equal to `1 / 2` at `ε = 0`, so that `q` approaches `1` at rate `2 C`. -/
-theorem intervalBaseOrbit_eq_one_sub_exp_sq_mul (C s : ℝ) :
-    intervalBaseOrbit C s = 1 - Real.exp (-(C * s)) ^ 2 *
-      (√(1 + Real.exp (-(C * s)) ^ 2) * (√(1 + Real.exp (-(C * s)) ^ 2) + 1))⁻¹ := by
-  set ε := Real.exp (-(C * s))
-  have := Real.sqrt_pos.2 (by positivity : (0 : ℝ) < 1 + ε ^ 2)
-  have hsq : √(1 + ε ^ 2) ^ 2 = 1 + ε ^ 2 := Real.sq_sqrt (by positivity)
-  have h : Real.exp (-(2 * C * s)) = ε ^ 2 := by
-    rw [← Real.exp_natCast_mul, show -(2 * C * s) = (2 : ℕ) * -(C * s) by push_cast; ring]
-  rw [intervalBaseOrbit_apply, h]
-  field_simp
-  linear_combination -hsq
+/-- **Arrival at its sink through `ε²`.** In the gluing parameter `ε = e^{-C s}` of the sink, the
+trajectory is `q(s) = 1 / √(1 + ε²)`: it depends on `ε` only through `ε²`, so that `q` approaches
+`1` at rate `2 C`. -/
+theorem intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq (C s : ℝ) :
+    intervalBaseOrbit C s = (√(1 + Real.exp (-(C * s)) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_apply, ← Real.exp_natCast_mul]
+  congr 4
+  push_cast
+  ring
+
+/-- **The departing chart under a time shift.** Shifting the time of `q` by `+log x / C`
+multiplies its departing gluing parameter `ε = e^{C t}`
+(`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x > 0`. -/
+theorem intervalBaseOrbit_add_log_div {C x : ℝ} (hC : C ≠ 0) (hx : 0 < x) (t : ℝ) :
+    intervalBaseOrbit C (t + Real.log x / C) =
+      Real.exp (C * t) * x * (√(1 + (Real.exp (C * t) * x) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_eq_exp_mul_inv_sqrt, mul_add, mul_div_cancel₀ _ hC, Real.exp_add,
+    Real.exp_log hx]
+
+/-- **The arriving chart under a time shift.** Shifting the time of `q` by `-log y / C`
+multiplies its arriving gluing parameter `ε = e^{-C t}`
+(`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y > 0`. -/
+theorem intervalBaseOrbit_sub_log_div {C y : ℝ} (hC : C ≠ 0) (hy : 0 < y) (t : ℝ) :
+    intervalBaseOrbit C (t - Real.log y / C) = (√(1 + (Real.exp (-(C * t)) * y) ^ 2))⁻¹ := by
+  rw [intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq, mul_sub, mul_div_cancel₀ _ hC, neg_sub',
+    sub_neg_eq_add, Real.exp_add, Real.exp_log hy]
 
 private theorem inv_sqrt_two_mem_Ioo : (√2)⁻¹ ∈ Ioo (0 : ℝ) 1 :=
   ⟨by positivity, inv_lt_one_of_one_lt₀ Real.one_lt_sqrt_two⟩
@@ -504,6 +541,43 @@ theorem intervalBaseFlow_intervalBaseOrbit (C s r : ℝ) :
   rw [intervalBaseOrbit_eq_intervalBaseFlow, intervalBaseOrbit_eq_intervalBaseFlow,
     intervalBaseFlow_add C s r inv_sqrt_two_mem_Icc]
 
+/-- The flow of the base for time `s` acts on the departing form `x / √(1 + x²)` of the
+trajectory (`TauCeti.intervalBaseOrbit_eq_exp_mul_inv_sqrt`) by `x ↦ e^{C s} x`, for every real
+`x`. -/
+theorem intervalBaseFlow_mul_inv_sqrt_one_add_sq (C s x : ℝ) :
+    intervalBaseFlow C s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp (C * s) * x * (√(1 + (Real.exp (C * s) * x) ^ 2))⁻¹ := by
+  rw [intervalBaseFlow_eq_intervalBaseFlow_one_mul]
+  generalize C * s = s
+  have key : ∀ x : ℝ, 0 < x → intervalBaseFlow 1 s (x * (√(1 + x ^ 2))⁻¹) =
+      Real.exp s * x * (√(1 + (Real.exp s * x) ^ 2))⁻¹ := fun x hx ↦ by
+    have h := intervalBaseOrbit_add_log_div one_ne_zero hx
+    simp only [div_one, one_mul] at h
+    have h0 := h 0
+    rw [Real.exp_zero, one_mul, zero_add] at h0
+    rw [← h0, intervalBaseFlow_intervalBaseOrbit, h]
+  rcases lt_trichotomy x 0 with hx | rfl | hx
+  · simpa only [neg_sq, mul_neg, neg_mul, intervalBaseFlow_neg, neg_inj] using
+      key (-x) (by linarith)
+  · simp
+  · exact key x hx
+
+/-- The flow of the base for time `s` acts on the arriving form `1 / √(1 + y²)` of the trajectory
+(`TauCeti.intervalBaseOrbit_eq_inv_sqrt_one_add_exp_sq`) by `y ↦ e^{-C s} y`, for every real `y`. -/
+theorem intervalBaseFlow_inv_sqrt_one_add_sq (C s y : ℝ) :
+    intervalBaseFlow C s (√(1 + y ^ 2))⁻¹ = (√(1 + (Real.exp (-(C * s)) * y) ^ 2))⁻¹ := by
+  rw [intervalBaseFlow_eq_intervalBaseFlow_one_mul]
+  generalize C * s = s
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp
+  have key (t : ℝ) :
+      intervalBaseOrbit 1 (t - Real.log |y|) = (√(1 + (Real.exp (-t) * y) ^ 2))⁻¹ := by
+    rw [← div_one (Real.log |y|), intervalBaseOrbit_sub_log_div one_ne_zero (abs_pos.2 hy),
+      one_mul, mul_pow, sq_abs, ← mul_pow]
+  have h0 := key 0
+  rw [neg_zero, Real.exp_zero, one_mul, zero_sub] at h0
+  rw [← h0, intervalBaseFlow_intervalBaseOrbit, ← sub_eq_add_neg, key]
+
 /-- The trajectory `q` takes values in `(0, 1)`. -/
 theorem intervalBaseOrbit_mem_Ioo (C s : ℝ) : intervalBaseOrbit C s ∈ Ioo 0 1 := by
   rw [intervalBaseOrbit_eq_intervalBaseFlow]
@@ -525,6 +599,18 @@ theorem tendsto_intervalBaseOrbit_atTop (hC : 0 < C) :
     Tendsto (intervalBaseOrbit C) atTop (𝓝 1) := by
   rw [funext (intervalBaseOrbit_eq_intervalBaseFlow C)]
   exact tendsto_intervalBaseFlow_atTop hC (Ioo_subset_Ioc_self inv_sqrt_two_mem_Ioo)
+
+/-- For `C > 0`, the trajectory `q` tends to `0` from above at `-∞`. -/
+theorem tendsto_intervalBaseOrbit_atBot_nhdsGT (hC : 0 < C) :
+    Tendsto (intervalBaseOrbit C) atBot (𝓝[>] 0) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨tendsto_intervalBaseOrbit_atBot hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).1⟩
+
+/-- For `C > 0`, the trajectory `q` tends to `1` from below at `+∞`. -/
+theorem tendsto_intervalBaseOrbit_atTop_nhdsLT (hC : 0 < C) :
+    Tendsto (intervalBaseOrbit C) atTop (𝓝[<] 1) :=
+  tendsto_nhdsWithin_iff.2
+    ⟨tendsto_intervalBaseOrbit_atTop hC, .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo C s).2⟩
 
 /-- The trajectory `q` is a negative gradient trajectory of the base potential. -/
 theorem isIntegralCurve_intervalBaseOrbit (C : ℝ) :
@@ -550,6 +636,12 @@ theorem intervalBaseTimeCoordinate_neg (t : ℝ) :
 /-- The factor `t (1 - t²)` of the vector field `C t (1 - t²)` is positive on `(0, 1)`. -/
 theorem mul_one_sub_sq_pos_of_mem_Ioo {t : ℝ} (ht : t ∈ Ioo 0 1) : 0 < t * (1 - t ^ 2) :=
   mul_pos ht.1 (by nlinarith [ht.1, ht.2])
+
+/-- On `(0, 1)` the exponential of the time coordinate is `t / √(1 - t²)`. -/
+theorem exp_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
+    Real.exp (intervalBaseTimeCoordinate t) = t / √(1 - t ^ 2) := by
+  have h1 : 0 < 1 - t ^ 2 := sub_pos.2 (pow_lt_one₀ ht.1.le ht.2 two_ne_zero)
+  rw [intervalBaseTimeCoordinate, Real.exp_sub, Real.exp_log ht.1, Real.exp_half, Real.exp_log h1]
 
 /-- On `(0, 1)` the derivative of the time coordinate is `1 / (t (1 - t²))`. -/
 theorem hasDerivAt_intervalBaseTimeCoordinate {t : ℝ} (ht : t ∈ Ioo 0 1) :
@@ -629,6 +721,13 @@ theorem intervalBaseTimeCoordinate_intervalBaseOrbit (C s : ℝ) :
     intervalBaseTimeCoordinate_intervalBaseFlow C s inv_sqrt_two_mem_Ioo,
     intervalBaseTimeCoordinate_inv_sqrt_two, zero_add]
 
+/-- Along a signed copy `c q` of the trajectory, `c = ±1`, the time coordinate of the absolute value
+is `C s`. -/
+theorem intervalBaseTimeCoordinate_abs_mul_intervalBaseOrbit {c : ℝ} (hc : c = -1 ∨ c = 1)
+    (C s : ℝ) : intervalBaseTimeCoordinate |c * intervalBaseOrbit C s| = C * s := by
+  rw [abs_mul, (abs_eq zero_le_one).2 hc.symm, one_mul,
+    abs_of_pos (intervalBaseOrbit_mem_Ioo C s).1, intervalBaseTimeCoordinate_intervalBaseOrbit]
+
 /-- For `C ≠ 0` the trajectory `q` is injective: its time coordinate `C s` recovers the time. -/
 theorem intervalBaseOrbit_injective (hC : C ≠ 0) : Function.Injective (intervalBaseOrbit C) :=
   fun s t h ↦ mul_left_cancel₀ hC (by
@@ -703,6 +802,136 @@ theorem tendsto_intervalBaseTimeCoordinate_nhdsLT_one :
     simpa using (Real.continuousAt_log one_ne_zero).tendsto.mono_left nhdsWithin_le_nhds
   refine (h₃.add_atTop h₂).congr fun t ↦ ?_
   rw [intervalBaseTimeCoordinate_apply]; ring
+
+/-! ### The unit-rate trajectory in the gluing parameter -/
+
+section Gluing
+
+open Real
+
+/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its source `0`, read in the
+gluing parameter `ρ = e^{s - a}`: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})` for `ρ > 0`
+(`TauCeti.intervalBaseOrbit_one_add_log`). The right side is defined and smooth for every real
+`ρ`, and vanishes at `ρ = 0`, the critical point `0`, to first order. -/
+noncomputable def intervalBaseSourceGluing (a ρ : ℝ) : ℝ := ρ / √(ρ ^ 2 + exp (-(2 * a)))
+
+theorem intervalBaseSourceGluing_apply (a ρ : ℝ) :
+    intervalBaseSourceGluing a ρ = ρ / √(ρ ^ 2 + exp (-(2 * a))) := (rfl)
+
+/-- The unit-rate trajectory `q = TauCeti.intervalBaseOrbit 1` near its target `1`, read in the
+gluing parameter `ρ = e^{a - s}`: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)` for `ρ > 0`
+(`TauCeti.intervalBaseOrbit_one_sub_log`). The right side is defined and smooth for every real
+`ρ`, and equals the critical point `1` at `ρ = 0`, which it approaches to second order. -/
+noncomputable def intervalBaseTargetGluing (a ρ : ℝ) : ℝ := (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹
+
+theorem intervalBaseTargetGluing_apply (a ρ : ℝ) :
+    intervalBaseTargetGluing a ρ = (√(1 + exp (-(2 * a)) * ρ ^ 2))⁻¹ := (rfl)
+
+/-- **The source end in the gluing parameter**: `q (a + log ρ) = ρ / √(ρ² + e^{-2a})`. -/
+theorem intervalBaseOrbit_one_add_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (a + log ρ) = intervalBaseSourceGluing a ρ := by
+  have hρ2 : 0 < ρ ^ 2 := pow_pos hρ 2
+  -- The `log ρ` part of the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1` becomes the factor
+  -- `ρ⁻²`, as `exp (2 * log ρ) = ρ ^ 2`.
+  have he : exp (-(2 * 1 * (a + log ρ))) = exp (-(2 * a)) / ρ ^ 2 := by
+    rw [← exp_log hρ2, log_pow, ← exp_sub]
+    congr 1
+    push_cast
+    ring
+  -- Put the radicand over the common denominator `ρ²`, whose square root is `ρ`.
+  have hsum : 1 + exp (-(2 * a)) / ρ ^ 2 = (ρ ^ 2 + exp (-(2 * a))) / ρ ^ 2 := by field_simp
+  rw [intervalBaseOrbit_apply, he, intervalBaseSourceGluing_apply, hsum,
+    sqrt_div' _ hρ2.le, sqrt_sq hρ.le, inv_div]
+
+/-- **The target end in the gluing parameter**: `q (a - log ρ) = 1 / √(1 + e^{-2a} ρ²)`. -/
+theorem intervalBaseOrbit_one_sub_log (a : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    intervalBaseOrbit 1 (a - log ρ) = intervalBaseTargetGluing a ρ := by
+  -- The `log ρ` part of the exponent `-(2 * 1 * s)` of `intervalBaseOrbit 1` becomes the factor
+  -- `ρ²`, as `exp (2 * log ρ) = ρ ^ 2`.
+  have he : exp (-(2 * 1 * (a - log ρ))) = exp (-(2 * a)) * ρ ^ 2 := by
+    rw [← exp_log (pow_pos hρ 2), log_pow, ← exp_add]
+    congr 1
+    push_cast
+    ring
+  rw [intervalBaseOrbit_apply, intervalBaseTargetGluing_apply, he]
+
+@[simp]
+theorem intervalBaseSourceGluing_zero (a : ℝ) : intervalBaseSourceGluing a 0 = 0 := by
+  simp [intervalBaseSourceGluing_apply]
+
+@[simp]
+theorem intervalBaseTargetGluing_zero (a : ℝ) : intervalBaseTargetGluing a 0 = 1 := by
+  simp [intervalBaseTargetGluing_apply]
+
+/-- The target end is an even function of the gluing parameter. -/
+@[simp]
+theorem intervalBaseTargetGluing_neg (a ρ : ℝ) :
+    intervalBaseTargetGluing a (-ρ) = intervalBaseTargetGluing a ρ := by
+  simp [intervalBaseTargetGluing_apply]
+
+/-- For fixed `a`, the source end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
+theorem contDiff_intervalBaseSourceGluing (a : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseSourceGluing a) := by
+  rw [funext (intervalBaseSourceGluing_apply a)]
+  exact contDiff_id.div (((contDiff_id.pow 2).add contDiff_const).sqrt fun _ ↦ by positivity)
+    fun _ ↦ by positivity
+
+/-- For fixed `a`, the target end is smooth in the gluing parameter on all of `ℝ`, including the
+broken-trajectory value `ρ = 0`. -/
+theorem contDiff_intervalBaseTargetGluing (a : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (intervalBaseTargetGluing a) := by
+  rw [funext (intervalBaseTargetGluing_apply a)]
+  exact (contDiff_const.add (contDiff_const.mul (contDiff_id.pow 2))).sqrt
+    (fun _ ↦ by positivity) |>.inv fun _ ↦ by positivity
+
+/-- **Rate `1` at the source**: the source end leaves `0` with derivative `e^a` in the gluing
+parameter. -/
+theorem hasDerivAt_intervalBaseSourceGluing_zero (a : ℝ) :
+    HasDerivAt (intervalBaseSourceGluing a) (exp a) 0 := by
+  have hD : HasDerivAt (fun ρ : ℝ ↦ ρ ^ 2 + exp (-(2 * a))) 0 0 := by
+    simpa using (hasDerivAt_pow 2 (0 : ℝ)).add_const (exp (-(2 * a)))
+  have hs : √(exp (-(2 * a))) = (exp a)⁻¹ := by
+    rw [← exp_neg, ← exp_half]
+    congr 1
+    ring
+  rw [funext (intervalBaseSourceGluing_apply a)]
+  -- The quotient rule at `ρ = 0`, where the numerator vanishes, leaves `√(e^{-2a}) / √(e^{-2a})²`.
+  refine ((hasDerivAt_id (0 : ℝ)).div (hD.sqrt (by positivity)) (by positivity)).congr_deriv ?_
+  simp [hs]
+  field_simp
+
+/-- The derivative of the target end in the gluing parameter: `-e^{-2a} ρ T(ρ)³` for the target end
+`T = TauCeti.intervalBaseTargetGluing a`. -/
+theorem hasDerivAt_intervalBaseTargetGluing (a ρ : ℝ) :
+    HasDerivAt (intervalBaseTargetGluing a)
+      (-(exp (-(2 * a)) * ρ * intervalBaseTargetGluing a ρ ^ 3)) ρ := by
+  have hg : 0 < 1 + exp (-(2 * a)) * ρ ^ 2 := by positivity
+  have hD : HasDerivAt (fun ρ : ℝ ↦ 1 + exp (-(2 * a)) * ρ ^ 2) (exp (-(2 * a)) * (2 * ρ)) ρ := by
+    simpa using ((hasDerivAt_pow 2 ρ).const_mul (exp (-(2 * a)))).const_add 1
+  rw [funext (intervalBaseTargetGluing_apply a)]
+  refine ((hD.sqrt hg.ne').inv (by positivity)).congr_deriv ?_
+  -- The chain rule gives `-(2 e^{-2a} ρ / (2 √g)) / √g²` for the radicand `g`.
+  beta_reduce
+  field_simp
+
+/-- The target end reaches `1` with vanishing derivative in the gluing parameter. -/
+theorem hasDerivAt_intervalBaseTargetGluing_zero (a : ℝ) :
+    HasDerivAt (intervalBaseTargetGluing a) 0 0 := by
+  simpa using hasDerivAt_intervalBaseTargetGluing a 0
+
+/-- **Rate `2` at the target**: the second derivative of the target end at `ρ = 0` is
+`-e^{-2a} ≠ 0`, so with the vanishing first derivative
+(`TauCeti.hasDerivAt_intervalBaseTargetGluing_zero`) the target end approaches `1` to exactly
+second order in the gluing parameter. -/
+theorem hasDerivAt_deriv_intervalBaseTargetGluing_zero (a : ℝ) :
+    HasDerivAt (deriv (intervalBaseTargetGluing a)) (-exp (-(2 * a))) 0 := by
+  rw [funext fun ρ ↦ (hasDerivAt_intervalBaseTargetGluing a ρ).deriv]
+  refine (((hasDerivAt_id' (0 : ℝ)).const_mul (exp (-(2 * a)))).mul
+    ((hasDerivAt_intervalBaseTargetGluing_zero a).pow 3)).neg.congr_deriv ?_
+  simp
+
+end Gluing
 
 /-! ### The flow and the time coordinate -/
 

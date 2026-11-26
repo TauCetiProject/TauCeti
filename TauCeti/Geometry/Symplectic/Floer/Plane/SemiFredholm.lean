@@ -72,31 +72,6 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 omit [FiniteDimensional ℝ V] in
-/-- On the cylinder of the end, the `W^{1,2}` energy density of the lift of a `C¹` section with
-compact support in a part `‖w‖ > exp (2π r)` of the end is integrable over `ℝ × [0, 1]`: the lift
-vanishes outside a band of finite length. -/
-private theorem integrableOn_comp_realChart_cylindricalEndLift (p : PSSPlane)
-    {ξ : ℝ × ℝ → V} (hξ : ContDiff ℝ 1 ξ) (hξc : HasCompactSupport ξ) {r : ℝ}
-    (hξr : tsupport ξ ⊆ {z | Real.exp (2 * π * r) < ‖Complex.equivRealProdCLM.symm z‖}) :
-    IntegrableOn (fun ζ ↦
-      ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineReal‖ ^ 2 +
-        ‖fderiv ℝ (ξ ∘ realChart p.cylindricalEndLift) ζ stdComplexLineImag‖ ^ 2 +
-        ‖(ξ ∘ realChart p.cylindricalEndLift) ζ‖ ^ 2) (univ ×ˢ Icc (0 : ℝ) 1) := by
-  set φ := realChart p.cylindricalEndLift
-  have hφ : ContDiff ℝ 1 φ := contDiff_realChart p.contDiff_cylindricalEndLift
-  have hξφ : ContDiff ℝ 1 (ξ ∘ φ) := hξ.comp hφ
-  have := hξφ.continuous_fderiv one_ne_zero
-  have hg : Continuous fun ζ ↦ ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineReal‖ ^ 2 +
-      ‖fderiv ℝ (ξ ∘ φ) ζ stdComplexLineImag‖ ^ 2 + ‖(ξ ∘ φ) ζ‖ ^ 2 := by fun_prop
-  -- The lift vanishes near every point outside a band of finite length.
-  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hξc hξr
-  refine IntegrableOn.of_forall_sdiff_eq_zero (s := Icc a b ×ˢ Icc 0 1)
-    (hg.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-    (MeasurableSet.univ.prod measurableSet_Icc) fun ζ hζ ↦ ?_
-  have hev : ξ ∘ φ =ᶠ[𝓝 ζ] 0 := hout ζ fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-  simp [hev.fderiv_eq, show ξ (φ ζ) = 0 from hev.eq_of_nhds]
-
-omit [FiniteDimensional ℝ V] in
 /-- **Comparing with a cut-off section on the end.** If `β = 1` near every point with
 `‖w‖ ≥ exp (2π R)`, then on the part `ε s > R` of the end the lift of `ξ` has the energy density
 of the lift of `β ξ`, so its `W^{1,2}` energy there is at most that of the lift of `β ξ` over
@@ -163,24 +138,16 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
             ‖ξ z‖ ^ 2) := by
   have hlt : Real.exp (2 * π * Re) < Real.exp (2 * π * (Re + 1)) :=
     Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-  -- A cutoff `β = 1 - ψ` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
+  -- A cutoff `β` vanishing near `‖w‖ ≤ exp (2π Re)` and equal to `1` near
   -- `‖w‖ ≥ exp (2π (Re + 1))`.
-  obtain ⟨ψ, hψ, hψ01, hψ1, hψ0, hψK⟩ :=
-    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_sublevel
+  obtain ⟨β, hβ, hβ01, hβ0, hβ1, hβK⟩ :=
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le _).exists_contDiff_cutoff_superlevel
       Complex.equivRealProdCLM.symm.continuous.norm hlt
-  set β : ℝ × ℝ → ℝ := fun z ↦ 1 - ψ z
-  have hβ : ContDiff ℝ 2 β := (contDiff_const.sub hψ).of_le (by simp)
-  have hβ01 (z : ℝ × ℝ) : β z ∈ Icc 0 1 := ⟨by simp [β, (hψ01 z).2], by simp [β, (hψ01 z).1]⟩
-  have hβ0 (z : ℝ × ℝ) (hz : _ ≤ Real.exp (2 * π * Re)) : β =ᶠ[𝓝 z] 0 :=
-    (hψ1 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 1 from h]
-  have hβ1 (z : ℝ × ℝ) (hz : Real.exp (2 * π * (Re + 1)) ≤ _) : β =ᶠ[𝓝 z] 1 :=
-    (hψ0 z hz).mono fun z' h ↦ by simp [β, show ψ z' = 0 from h]
-  have hdβ (z : ℝ × ℝ) : fderiv ℝ β z = -fderiv ℝ ψ z :=
-    fderiv_const_sub 1
+  replace hβ : ContDiff ℝ 2 β := hβ.of_le (by simp)
   obtain ⟨C₁, -, herr⟩ := ω.exists_integral_norm_floerLinearization_smul_sq_le
     (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
     (hβ.of_le one_le_two) hβ01 (isCompact_setOf_norm_equivRealProdCLM_symm_le _)
-    fun z hz ↦ by rw [hdβ, hψK z (not_le.1 hz), neg_zero]
+    fun z hz ↦ hβK z (not_le.1 hz)
   refine ⟨max Ce 0 * max 2 C₁, by positivity, fun ξ hξ hξc ↦ ?_⟩
   -- The cut-off section `β ξ` is supported in the part `‖w‖ > exp (2π Re)` of the end.
   have hξ₁c : HasCompactSupport fun w ↦ β w • ξ w := hξc.smul_left
@@ -193,9 +160,10 @@ private theorem exists_setIntegral_comp_realChart_le_of_end (ω : SymplecticForm
       Ks Kt u ξ z‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hI₂ : 0 ≤ ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ Real.exp (2 * π * (Re + 1))},
       ‖ξ z‖ ^ 2 := setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ ↦ by positivity)
+  obtain ⟨a, b, -, -, -, -, hout⟩ := p.exists_band_of_tsupport_subset hξ₁c hξ₁r
   calc _ ≤ _ := setIntegral_comp_realChart_le_of_eventuallyEq_one p hβ1
-        (integrableOn_comp_realChart_cylindricalEndLift p ((hβ.smul hξ).of_le one_le_two) hξ₁c
-          hξ₁r)
+        (p.integrableOn_comp_realChart_cylindricalEndLift ((hβ.smul hξ).of_le one_le_two)
+          MeasurableSet.univ fun ζ _ ↦ hout ζ)
     _ ≤ _ := he (hβ.smul hξ) hξ₁c hξ₁r
     _ ≤ max Ce 0 * ∫ z, ‖ω.floerLinearization
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u (fun w ↦ β w • ξ w) z‖ ^ 2 :=

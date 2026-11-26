@@ -15,8 +15,10 @@ import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.IsolatedZero
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.LinearAlgebra.LinearIndependent.Prod
 import TauCeti.LinearAlgebra.LinearMap.Coprod
+import TauCeti.Topology.Algebra.Group.Basic
 
 /-!
 # Local intersection numbers of holomorphic discs with a holomorphic graph
@@ -53,10 +55,25 @@ immersed branches, and each meeting with a critical branch, contributes at least
 (`TauCeti.HomologicalOrientation.two_le_localIndex_of_apply_eq_graph_sub`,
 `TauCeti.HomologicalOrientation.two_le_localIndex_of_apply_eq_graph_sub_of_deriv_eq_zero`). These
 are the model cases, for the standard complex structure of `ℂ²`, of the local intersection
-multiplicities of tangent and critical branches of pseudoholomorphic curves in a four-manifold. A
-disc immersed at a point is a graph over its tangent line after a unitary change of coordinates of
-`ℂ²`; the invariance of local intersection numbers under such changes of coordinates, which would
-extend these statements to every pair of discs one of which is immersed, is not proved here.
+multiplicities of tangent and critical branches of pseudoholomorphic curves in a four-manifold.
+
+**Changes of coordinates and immersed branches.** Local intersection numbers do not depend on the
+parametrizations of the discs: reparametrizing them by maps with nonzero complex derivatives at the
+intersection does not change the local index
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_comp_sub_comp`). Nor do they depend on
+the coordinates of the target, for changes of coordinates whose derivative at the intersection
+point is complex linear, such as unitary maps
+(`TauCeti.HomologicalOrientation.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt`). Hence the
+order of vanishing computes the local intersection number of a disc `u₂` with every disc `u₁` that
+runs in a holomorphic graph over one of the coordinate axes with a coordinate of nonzero derivative,
+not only with the graph itself: after reparametrizing `u₁` by the inverse of that coordinate, and
+exchanging the two coordinates of `ℂ²` if the graph is over the second axis, `u₁` is the graph
+(`localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq`,
+`localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq` in the namespace
+`TauCeti.HomologicalOrientation`). Every holomorphic disc immersed at a point runs near it in such
+a graph, over an axis on which its tangent vector has a nonzero component, since the local inverse
+of that coordinate is holomorphic (`AnalyticAt.analyticAt_localInverse`); so these statements apply
+to every pair of holomorphic discs whose first disc `u₁` is immersed.
 
 ## Proof
 
@@ -82,10 +99,17 @@ In the namespace `TauCeti.HomologicalOrientation`:
 * `two_le_localIndex_of_apply_eq_graph_sub`,
   `two_le_localIndex_of_apply_eq_graph_sub_of_deriv_eq_zero`: an isolated tangential intersection,
   in particular a meeting with a critical branch, counts at least `2`.
+* `localIndex_eq_of_apply_eq_comp_sub_comp`: local intersection numbers do not depend on the
+  parametrizations of the discs.
+* `localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq`,
+  `localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq`: the local intersection
+  number of a disc with a disc running in a holomorphic graph over the first or the second
+  coordinate axis is an order of vanishing.
 
 The examples at the end of the file compute the local intersection numbers of the line `w = 0` with
 the curves `w = z ^ k` (it is `k`, and in particular `2` for the parabola) and of the lines `w = 0`
-and `w = z` with the cusp `w ↦ (w², w³)` (they are `3` and `2`).
+and `w = z` with the cusp `w ↦ (w², w³)` (they are `3` and `2`), and of the vertical line `z = 0`
+with the curve `z = w²` (it is `2`).
 
 ## References
 
@@ -229,7 +253,8 @@ private theorem localIndex_eq_zero_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1
 
 variable (hn : finrank ℝ (ℂ × ℂ) = n)
 
-include hn in
+include hn
+
 /-- The isolated case of `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub`, on a closed disc
 of radius `r` about `w₀` on which `φ w = (u w).2 - f (u w).1` is analytic with `w₀` as its only zero
 and only possible critical point, and along which `u` and `f` are analytic. -/
@@ -238,13 +263,13 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
     (hr : 0 < r) (hφr : AnalyticOnNhd ℂ (fun w ↦ (u w).2 - f (u w).1) (closedBall w₀ r))
     (hiso : ∀ w ∈ closedBall w₀ r, w ≠ w₀ → (u w).2 - f (u w).1 ≠ 0)
     (hder : ∀ w ∈ ball w₀ r, w ≠ w₀ → deriv (fun w ↦ (u w).2 - f (u w).1) w ≠ 0)
-    (hgood : ∀ w ∈ ball w₀ r, AnalyticAt ℂ u w ∧ AnalyticAt ℂ f (u w).1)
-    (ha : ContinuousAt (fun w ↦ (u w).1) w₀) :
+    (hgood : ∀ w ∈ ball w₀ r, AnalyticAt ℂ u w ∧ AnalyticAt ℂ f (u w).1) :
     o.localIndex o F ((u w₀).1, w₀) = analyticOrderNatAt (fun w ↦ (u w).2 - f (u w).1) w₀ := by
   have hφ₀ : (u w₀).2 - f (u w₀).1 = 0 := sub_eq_zero.2 h.symm
   -- The first coordinate of `u` maps the ball of radius `r'` into the ball of radius `r`. The map
   -- `F` stays `δ₂` away from `0` on the sphere of radius `r`, and below `δ₃` and `δ₄` the
   -- solutions of `φ w = ε` in the balls of radius `r` and `min r' r` are counted by the order.
+  have ha := continuousAt_fst.comp (hgood w₀ (mem_ball_self hr)).1.continuousAt
   obtain ⟨r', hr', hr'a⟩ := Metric.mem_nhds_iff.1 (ha.preimage_mem_nhds (ball_mem_nhds _ hr))
   obtain ⟨δ₂, hδ₂, hδ₂le⟩ := exists_pos_le_norm_of_mem_sphere
     (f := fun p ↦ F p - F ((u w₀).1, w₀)) (F.continuous.continuousOn.sub continuousOn_const)
@@ -273,7 +298,7 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
   have hy : ‖((0 : ℂ), -ε) - F ((u w₀).1, w₀)‖ < δ₂ := by
     rw [apply_eq_zero_of_apply_eq_graph_sub hF h, sub_zero]
     simpa [Prod.norm_def] using hεδ.trans_le ((min_le_left _ _).trans (min_le_left _ _))
-  rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr hδ₂ hδ₂le
+  rw [o.localIndex_eq_ncard_of_hasFDerivAt hn hr.le hδ₂le
     (fun p hp ↦ eq_of_mem_closedBall_of_apply_eq hF h hiso (ball_subset_closedBall hp)) hy
     (fun p hp hFp ↦ (hL p hp hFp).1) (fun p hp hFp ↦ (hL p hp hFp).2), hS,
     ncard_image_of_injective _ fun _ _ hab ↦ congrArg Prod.snd hab]
@@ -288,7 +313,6 @@ private theorem localIndex_eq_analyticOrderNatAt_of_closedBall
   have h₂ := hcard₃ ▸ ncard_le_ncard hsub₂ hfin₃
   exact_mod_cast le_antisymm h₂ h₁
 
-include hn in
 /-- **The local intersection number of a holomorphic graph and a holomorphic disc is an order of
 vanishing.** Let `f : ℂ → ℂ` be holomorphic near `(u w₀).1` and `u : ℂ → ℂ²` near `w₀`, such that
 the disc `u` meets the graph `z ↦ (z, f z)` at `u w₀`. Then their local intersection number, the
@@ -312,9 +336,8 @@ theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub
       (hisol.mono fun w hw ↦ by rwa [hφ₀])).and (Ioo_mem_nhdsGT hr₁)).exists
   exact o.localIndex_eq_analyticOrderNatAt_of_closedBall hn hF h hr hφr
     (fun w hw hne ↦ by simpa [hφ₀] using hisor w hw hne) hderr
-    (fun w hw ↦ hgood w (ball_subset_ball hrr₁.le hw)) (continuousAt_fst.comp hu.continuousAt)
+    (fun w hw ↦ hgood w (ball_subset_ball hrr₁.le hw))
 
-include hn in
 /-- **Two holomorphic graphs meet with their order of contact.** If `f` and `g` are holomorphic
 near `z₀` and `f z₀ = g z₀`, the local intersection number at `(z₀, z₀)` of the graphs
 `z ↦ (z, f z)` and `w ↦ (w, g w)`, the local index of `F (z, w) = (z, f z) - (w, g w)`, is the
@@ -326,7 +349,6 @@ theorem localIndex_eq_analyticOrderNatAt_sub_of_apply_eq_graph_sub_graph {g : �
   o.localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub hn (u := fun w ↦ (w, g w)) hF hf
     (analyticAt_id.prod hg) h
 
-include hn in
 /-- **A transverse intersection, and only a transverse one, counts `1`.** In the setting of
 `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub`, the local intersection number of the graph
 of `f` and the disc `u` at `u w₀` is `1` exactly when their tangent vectors `(1, f' ((u w₀).1))`
@@ -344,7 +366,6 @@ theorem localIndex_eq_one_iff_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p
     linearIndependent_pair_mk_one_iff, ← key, analyticOrderNatAt]
   exact ENat.toNat_eq_iff one_ne_zero
 
-include hn in
 /-- **Tangential intersections count at least `2`.** In the setting of
 `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub`, suppose that the disc `u` does not run
 inside the graph of `f` near `w₀`, so that their intersection at `u w₀` is isolated, and that it is
@@ -367,7 +388,6 @@ theorem two_le_localIndex_of_apply_eq_graph_sub (hF : ∀ p, F p = (p.1, f p.1) 
   rw [o.localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub hn hF hf hu h] at hne₁ ⊢
   omega
 
-include hn in
 /-- **Critical branches count at least `2`.** If the disc `u` is critical at `w₀`, `u' w₀ = 0`,
 and meets the graph of `f` at `u w₀` without running inside it near `w₀`, then their local
 intersection number there is at least `2`. -/
@@ -379,9 +399,120 @@ theorem two_le_localIndex_of_apply_eq_graph_sub_of_deriv_eq_zero
   o.two_le_localIndex_of_apply_eq_graph_sub hn hF hf hu h hiso fun hli ↦
     hli.ne_zero 1 (by simp [hcrit])
 
+/-! #### Changes of coordinates and immersed branches -/
+
+/-- **Local intersection numbers do not depend on the parametrizations of the discs.** If
+`φ₁` and `φ₂` are strictly complex differentiable at `z₀` and `w₀` with nonzero derivatives, as
+holomorphic reparametrizations are, then the local intersection number of the discs `u₁ ∘ φ₁` and
+`u₂ ∘ φ₂` at `(z₀, w₀)`, the local index of `G (z, w) = u₁ (φ₁ z) - u₂ (φ₂ w)`, is that of `u₁` and
+`u₂` at `(φ₁ z₀, φ₂ w₀)`, the local index of `F (z, w) = u₁ z - u₂ w`. -/
+theorem localIndex_eq_of_apply_eq_comp_sub_comp {F G : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ}
+    {φ₁ φ₂ : C(ℂ, ℂ)} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2)
+    (hG : ∀ p, G p = u₁ (φ₁ p.1) - u₂ (φ₂ p.2)) {z₀ w₀ a b : ℂ} (h₁ : HasStrictDerivAt φ₁ a z₀)
+    (h₂ : HasStrictDerivAt φ₂ b w₀) (ha : a ≠ 0) (hb : b ≠ 0) :
+    o.localIndex o G (z₀, w₀) = o.localIndex o F (φ₁ z₀, φ₂ w₀) := by
+  have hGF : G = F.comp (φ₁.prodMap φ₂) := ContinuousMap.ext fun p ↦ by simp [hF, hG]
+  have hd : HasStrictFDerivAt (φ₁.prodMap φ₂)
+      ((((1 : ℂ →L[ℂ] ℂ).smulRight a).prodMap ((1 : ℂ →L[ℂ] ℂ).smulRight b)).restrictScalars ℝ)
+      (z₀, w₀) :=
+    (HasStrictFDerivAt.prodMap (z₀, w₀) h₁ h₂).restrictScalars ℝ
+  rw [hGF, o.localIndex_comp_eq_of_hasStrictFDerivAt o hn hd]
+  · simp
+  · rintro ⟨z, w⟩ ⟨z', w'⟩ h
+    have h₁ := congrArg Prod.fst h
+    have h₂ := congrArg Prod.snd h
+    simp only [ContinuousLinearMap.coe_prodMap', Prod.map_fst, Prod.map_snd,
+      ContinuousLinearMap.smulRight_apply, one_apply_eq_self, smul_eq_mul] at h₁ h₂
+    simp [mul_right_cancel₀ ha h₁, mul_right_cancel₀ hb h₂]
+
+/-- **The local intersection number with a disc running in a holomorphic graph.** Let `u₁` be a
+disc whose first coordinate is strictly complex differentiable at `z₀` with nonzero derivative, and
+which runs near `z₀` in the graph `{(z, f z)}` of a function `f` holomorphic at `(u₁ z₀).1`. Then
+the local intersection number of `u₁` with a holomorphic disc `u₂` at `u₁ z₀ = u₂ w₀`, the local
+index at `(z₀, w₀)` of `F (z, w) = u₁ z - u₂ w`, is the order of vanishing at `w₀` of
+`w ↦ (u₂ w).2 - f (u₂ w).1`. -/
+theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq
+    {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z₀ w₀ a : ℂ}
+    (h₁ : HasStrictDerivAt (fun z ↦ (u₁ z).1) a z₀) (ha : a ≠ 0)
+    (hf : AnalyticAt ℂ f (u₁ z₀).1) (hgraph : ∀ᶠ z in 𝓝 z₀, (u₁ z).2 = f (u₁ z).1)
+    (h₂ : AnalyticAt ℂ u₂ w₀) (h : u₁ z₀ = u₂ w₀) :
+    o.localIndex o F (z₀, w₀) = analyticOrderNatAt (fun w ↦ (u₂ w).2 - f (u₂ w).1) w₀ := by
+  -- Reparametrizing `u₁` by the inverse of its first coordinate turns it into the graph of `f`, so
+  -- this is `localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub` read through
+  -- `localIndex_eq_of_apply_eq_comp_sub_comp`.
+  set c := (u₁ z₀).1
+  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
+  have hg : Continuous fun z ↦ (u₁ z).1 := continuous_fst.comp hu₁
+  -- Cut `f` off outside a closed ball about `c` on which it is continuous, so that the graph of the
+  -- cut-off function `f₀` is the image of a continuous map.
+  obtain ⟨r₀, hr₀, hfr₀⟩ := Metric.eventually_nhds_iff_ball.1 hf.eventually_analyticAt
+  set r := r₀ / 2
+  have hr : 0 < r := half_pos hr₀
+  set f₀ : ℂ → ℂ := fun y ↦ f (centeredRadialRetraction c r y)
+  have hf₀ : Continuous f₀ := by
+    refine ContinuousOn.comp_continuous (s := closedBall c r) (fun y hy ↦ ?_)
+      (lipschitzWith_centeredRadialRetraction hr.le).continuous
+      (centeredRadialRetraction_mem_closedBall hr.le)
+    exact (hfr₀ y (closedBall_subset_ball (half_lt_self hr₀) hy)).continuousAt.continuousWithinAt
+  have hf₀f : f₀ =ᶠ[𝓝 c] f :=
+    (centeredRadialRetraction_eventuallyEq_id (mem_ball_self hr)).fun_comp f
+  set F₀ : C(ℂ × ℂ, ℂ × ℂ) := ⟨fun p ↦ (p.1, f₀ p.1) - u₂ p.2, by fun_prop⟩
+  set g : C(ℂ, ℂ) := ⟨fun z ↦ (u₁ z).1, hg⟩
+  -- Near `(z₀, w₀)`, `F` is `F₀` read through the reparametrization `g × id`.
+  have hFG : F =ᶠ[𝓝 (z₀, w₀)] F₀.comp (g.prodMap (ContinuousMap.id ℂ)) := by
+    have hz : ∀ᶠ z in 𝓝 z₀, (u₁ z).2 = f (u₁ z).1 ∧ f₀ (u₁ z).1 = f (u₁ z).1 :=
+      hgraph.and (hg.continuousAt.tendsto.eventually hf₀f)
+    filter_upwards [hz.prod_inl_nhds w₀] with p hp
+    simp [hF, F₀, g, hp.2, ← hp.1]
+  rw [o.localIndex_congr o hn hFG, o.localIndex_eq_of_apply_eq_comp_sub_comp hn (F := F₀)
+    (u₁ := fun z ↦ (z, f₀ z)) (u₂ := u₂) (fun _ ↦ rfl) (fun _ ↦ rfl) (φ₁ := g) h₁
+    (hasStrictDerivAt_id w₀) ha one_ne_zero]
+  have hc : (u₂ w₀).1 = c := by rw [← h]
+  have hφ : (u₂ w₀).2 = f₀ (u₂ w₀).1 := by
+    rw [hc, hf₀f.self_of_nhds, ← hgraph.self_of_nhds, h]
+  have key := o.localIndex_eq_analyticOrderNatAt_of_apply_eq_graph_sub hn (F := F₀) (fun _ ↦ rfl)
+    (hc ▸ hf.congr hf₀f.symm) h₂ hφ.symm
+  rw [hc] at key
+  -- The cut-off does not change the order of vanishing, since `u₂` stays near `c` near `w₀`.
+  have hcongr : (fun w ↦ (u₂ w).2 - f₀ (u₂ w).1) =ᶠ[𝓝 w₀] fun w ↦ (u₂ w).2 - f (u₂ w).1 := by
+    have : Tendsto (fun w ↦ (u₂ w).1) (𝓝 w₀) (𝓝 c) := hc ▸ (continuous_fst.comp hu₂).tendsto w₀
+    filter_upwards [this.eventually hf₀f] with w hw
+    rw [hw]
+  simpa [g, analyticOrderNatAt, analyticOrderAt_congr hcongr] using key
+
+/-- **The local intersection number with a disc running in a holomorphic graph over the second
+coordinate.** Let `u₁` be a disc whose second coordinate is strictly complex differentiable at
+`z₀` with nonzero derivative, and which runs near `z₀` in the graph `{(f w, w)}` of a function `f`
+holomorphic at `(u₁ z₀).2`. Then the local intersection number of `u₁` with a holomorphic disc
+`u₂` at `u₁ z₀ = u₂ w₀` is the order of vanishing at `w₀` of `w ↦ (u₂ w).1 - f (u₂ w).2`.
+
+If the holomorphic disc `u₁` is immersed, it has a coordinate of nonzero derivative, so by the
+holomorphic inverse function theorem it runs in a holomorphic graph over the first or the second
+coordinate, and one of the two statements applies. -/
+theorem localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq
+    {F : C(ℂ × ℂ, ℂ × ℂ)} {u₁ u₂ : ℂ → ℂ × ℂ} (hF : ∀ p, F p = u₁ p.1 - u₂ p.2) {z₀ w₀ a : ℂ}
+    (h₁ : HasStrictDerivAt (fun z ↦ (u₁ z).2) a z₀) (ha : a ≠ 0)
+    (hf : AnalyticAt ℂ f (u₁ z₀).2) (hgraph : ∀ᶠ z in 𝓝 z₀, (u₁ z).1 = f (u₁ z).2)
+    (h₂ : AnalyticAt ℂ u₂ w₀) (h : u₁ z₀ = u₂ w₀) :
+    o.localIndex o F (z₀, w₀) = analyticOrderNatAt (fun w ↦ (u₂ w).1 - f (u₂ w).2) w₀ := by
+  -- Exchanging the two coordinates of `ℂ²` is a unitary change of coordinates of the target, which
+  -- does not change local intersection numbers, and reduces this to the graph over the first one.
+  set S : ℂ × ℂ →L[ℂ] ℂ × ℂ := (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ : ℂ × ℂ →L[ℂ] ℂ × ℂ)
+  set F' : C(ℂ × ℂ, ℂ × ℂ) := ContinuousMap.prodSwap.comp F
+  have hF' (p : ℂ × ℂ) : F' p = S (u₁ p.1) - S (u₂ p.2) := by
+    ext <;> simp [F', S, hF]
+  have hS : HasStrictFDerivAt S (S.restrictScalars ℝ) (u₁ z₀) :=
+    (S.restrictScalars ℝ).hasStrictFDerivAt
+  obtain ⟨hu₁, hu₂⟩ := continuous_and_continuous_of_continuous_sub (F.continuous.congr hF)
+  rw [← o.localIndex_eq_of_apply_eq_sub_of_hasStrictFDerivAt o hn hF hF'
+    (hu₁.comp continuous_fst).continuousAt (hu₂.comp continuous_snd).continuousAt h hS
+    (ContinuousLinearEquiv.prodComm ℂ ℂ ℂ).injective]
+  exact o.localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_snd_eq hn
+    (u₁ := fun z ↦ (u₁ z).swap) (u₂ := fun w ↦ (u₂ w).swap)
+    (fun p ↦ by ext <;> simp [F', hF]) h₁ ha hf hgraph ((S.analyticAt _).comp h₂) (by rw [h])
+
 /-! #### Examples -/
 
-include hn in
 /-- The line `w = 0` and the curve `w = z ^ (k + 1)` of `ℂ²` meet at the origin with local
 intersection number `k + 1`; for `k = 1` this is the parabola, tangent to the line. -/
 example (k : ℕ) :
@@ -393,7 +524,6 @@ example (k : ℕ) :
   rw [analyticOrderNatAt, hpow, analyticOrderAt_centeredMonomial, ENat.toNat_natCast]
   exact Nat.cast_succ k
 
-include hn in
 /-- The line `w = 0` and the cusp `w ↦ (w², w³)` of `ℂ²`, critical at `0`, meet at the origin with
 local intersection number `3`. -/
 example : o.localIndex o ⟨fun p ↦ (p.1 - p.2 ^ 2, -p.2 ^ 3), by fun_prop⟩ (0, 0) = 3 := by
@@ -405,7 +535,6 @@ example : o.localIndex o ⟨fun p ↦ (p.1 - p.2 ^ 2, -p.2 ^ 3), by fun_prop⟩ 
   simp only [hpow, analyticOrderNatAt, analyticOrderAt_centeredMonomial] at this
   simpa using this
 
-include hn in
 /-- The line `w = z` and the cusp `w ↦ (w², w³)` of `ℂ²` meet at the origin with local intersection
 number `2`: the cusp has a horizontal tangent cone, transverse to the line, but it is critical. -/
 example : o.localIndex o ⟨fun p ↦ (p.1 - p.2 ^ 2, p.1 - p.2 ^ 3), by fun_prop⟩ (0, 0) = 2 := by
@@ -419,6 +548,19 @@ example : o.localIndex o ⟨fun p ↦ (p.1 - p.2 ^ 2, p.1 - p.2 ^ 3), by fun_pro
       ⟨fun w ↦ w - 1, by fun_prop, by norm_num,
         .of_forall fun w ↦ by simp only [id, smul_eq_mul]; ring⟩
   rw [analyticOrderNatAt, hord, ENat.toNat_natCast] at this
+  simpa using this
+
+/-- The vertical line `z = 0` and the curve `z = w²` of `ℂ²`, tangent to it at the origin, meet
+there with local intersection number `2`. The line is a graph over the second coordinate, so the
+intersection number is computed after exchanging the coordinates. -/
+example : o.localIndex o ⟨fun p ↦ (-p.2 ^ 2, p.1 - p.2), by fun_prop⟩ (0, 0) = 2 := by
+  have := o.localIndex_eq_analyticOrderNatAt_of_apply_eq_sub_of_eventually_fst_eq hn
+    (F := ⟨fun p ↦ (-p.2 ^ 2, p.1 - p.2), by fun_prop⟩) (f := fun _ ↦ 0)
+    (u₁ := fun z ↦ (0, z)) (u₂ := fun w ↦ (w ^ 2, w)) (z₀ := 0) (w₀ := 0)
+    (fun p ↦ by simp [Prod.mk_sub_mk]) (hasStrictDerivAt_id 0) one_ne_zero analyticAt_const
+    (.of_forall fun _ ↦ rfl) (by fun_prop) (by simp)
+  have hpow : (fun w : ℂ ↦ ((w ^ 2, w) : ℂ × ℂ).1 - 0) = (· - 0) ^ 2 := funext fun w ↦ by simp
+  simp only [hpow, analyticOrderNatAt, analyticOrderAt_centeredMonomial] at this
   simpa using this
 
 end Graph

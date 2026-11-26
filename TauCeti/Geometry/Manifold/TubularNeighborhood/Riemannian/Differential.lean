@@ -129,12 +129,12 @@ tangent vector and the orthogonal representative of the normal class. -/
 theorem mfderiv_normalExp_zeroSection_apply
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (h2 : 1 + 1 ≤ n)
     (hdim : Module.finrank ℝ P = Module.finrank ℝ V - Module.finrank ℝ E)
-    (x : M) (u : TangentSpace I x) (v : f.NormalSpace x hn) :
+    (x : M) (u : TangentSpace I x) (v : f.isImmersion.NormalSpace x hn) :
     haveI : IsManifold I 1 M := .of_le (n := 1 + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     letI := f.normalSpaceVectorBundle hn hdim
     mfderiv (I.prod 𝓘(ℝ, P)) J (f.normalExp (P := P) hn)
-        (zeroSection P (fun x ↦ f.NormalSpace x hn) x)
+        (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x)
         ((Bundle.zeroSectionTangentEquiv (I := I) x).symm (u, v)) =
       mfderiv I J f x u + f.normalRepresentative x hn v := by
   have : IsManifold I 1 M := .of_le (n := 1 + 1) le_add_self
@@ -143,7 +143,7 @@ theorem mfderiv_normalExp_zeroSection_apply
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle (m := 1) hn h2 hdim
   have he : MDifferentiableAt (I.prod 𝓘(ℝ, P)) J (f.normalExp (P := P) hn)
-      (zeroSection P (fun x ↦ f.NormalSpace x hn) x) :=
+      (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x) :=
     ((f.contMDiffOn_normalExp (m := 1) hn h2 hdim).contMDiffAt
       ((f.isOpen_normalExpDomain hn hdim).mem_nhds
         (f.zeroSection_mem_normalExpDomain hn x))).mdifferentiableAt one_ne_zero
@@ -161,24 +161,25 @@ theorem isInvertible_mfderiv_normalExp_zeroSection
     haveI : IsManifold I 1 M := .of_le (n := 1 + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     (mfderiv (I.prod 𝓘(ℝ, P)) J (f.normalExp (P := P) hn)
-      (zeroSection P (fun x ↦ f.NormalSpace x hn) x)).IsInvertible := by
+      (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x)).IsInvertible := by
   have : IsManifold I 1 M := .of_le (n := 1 + 1) le_add_self
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   -- The value at zero is `f x`; use that tangent-space type for the linear algebra below.
-  let D : TangentSpace (I.prod 𝓘(ℝ, P)) (zeroSection P (fun x ↦ f.NormalSpace x hn) x)
+  let D : TangentSpace (I.prod 𝓘(ℝ, P)) (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x)
       →L[ℝ] TangentSpace J (f x) :=
     mfderiv (I.prod 𝓘(ℝ, P)) J (f.normalExp (P := P) hn)
-      (zeroSection P (fun x ↦ f.NormalSpace x hn) x)
-  let e := Bundle.zeroSectionTangentEquiv (I := I) (F := P) (V := fun x ↦ f.NormalSpace x hn) x
-  have hD (u : TangentSpace I x) (v : f.NormalSpace x hn) :
+      (zeroSection P (fun x ↦ f.isImmersion.NormalSpace x hn) x)
+  let e := Bundle.zeroSectionTangentEquiv (I := I) (F := P)
+      (V := fun x ↦ f.isImmersion.NormalSpace x hn) x
+  have hD (u : TangentSpace I x) (v : f.isImmersion.NormalSpace x hn) :
       D (e.symm (u, v)) = mfderiv I J f x u + f.normalRepresentative x hn v :=
     f.mfderiv_normalExp_zeroSection_apply hn h2 hdim x u v
   have hinj : Function.Injective D := by
     refine (injective_iff_map_eq_zero D).2 fun w hw ↦ ?_
     obtain ⟨⟨u, v⟩, rfl⟩ := e.symm.surjective w
-    have hv := congrArg (f.normalClass x hn) hw
-    rw [hD, map_add, normalClass_mfderiv, normalClass_normalRepresentative,
+    have hv := congrArg (f.isImmersion.normalClass x hn) hw
+    rw [hD, map_add, Manifold.IsImmersion.normalClass_mfderiv, normalClass_normalRepresentative,
       zero_add, map_zero] at hv
     subst v
     rw [hD, map_zero, add_zero] at hw
@@ -188,12 +189,15 @@ theorem isInvertible_mfderiv_normalExp_zeroSection
     simp [hu]
   have hsurj : Function.Surjective D := by
     intro w
-    have ht : w - f.normalRepresentative x hn (f.normalClass x hn w) ∈ f.tangentRange x hn :=
-      (f.normalClass_eq_zero_iff x hn _).mp (by simp)
+    have ht : w - f.normalRepresentative x hn
+        (f.isImmersion.normalClass x hn w) ∈ f.isImmersion.tangentRange x hn :=
+      (f.isImmersion.normalClass_eq_zero_iff x hn _).mp (by simp)
     obtain ⟨u, hu⟩ := ht
-    refine ⟨e.symm (u, f.normalClass x hn w), ?_⟩
+    refine ⟨e.symm (u, f.isImmersion.normalClass x hn w), ?_⟩
     rw [hD]
-    exact (congrArg (fun z ↦ z + f.normalRepresentative x hn (f.normalClass x hn w)) hu).trans
+    exact
+        (congrArg
+            (fun z ↦ z + f.normalRepresentative x hn (f.isImmersion.normalClass x hn w)) hu).trans
       (sub_add_cancel _ _)
   exact ⟨(LinearEquiv.ofBijective D.toLinearMap ⟨hinj, hsurj⟩).toContinuousLinearEquiv, rfl⟩
 

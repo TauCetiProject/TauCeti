@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.IntegralCurve.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Topology.OmegaLimit
-import TauCeti.Topology.Order.MonotoneConvergence
+import TauCeti.Topology.Order.Monotone.Convergence
 
 /-!
 # Convergence of negative gradient trajectories trapped in a compact set
@@ -176,7 +176,7 @@ theorem hasDerivAt_comp_maximalIntegralCurve_neg_mgradient (hf : ContMDiff I ùì
     (contMDiff_neg_mgradient_one hf)).isMIntegralCurveAt
       (isOpen_maximalIntegralCurveInterval.mem_nhds ht)).hasMFDerivAt
   have h := hasDerivAt_comp_curve ((hf.mdifferentiable (by norm_num)) _) hŒ≥
-  rwa [Pi.neg_apply, map_neg, mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq] at h
+  rwa [Pi.neg_apply, mvfderiv_apply_neg_mgradient] at h
 
 /-- **Energy monotonicity.** The function `f` is antitone along the maximal integral curve of its
 negative gradient. -/

@@ -29,7 +29,9 @@ maps, so it defines an isomorphism of cores by `FiniteRankBundleCore.constIso`. 
 intertwining relations, applied to the fibre maps of bundle morphisms, give naturality, and the
 coherence laws hold fibrewise as identities between coordinate permutations. Tensor powers are
 provided by the generic monoidal construction `TauCeti.tensorPow`, with rank computed by
-`FiniteRankBundleCore.rank_tensorPow`.
+`FiniteRankBundleCore.rank_tensorPow`; when a transition map of a core is multiplication by a
+scalar, the corresponding transition map of its `m`th tensor power is multiplication by the `m`th
+power of that scalar (`FiniteRankBundleCore.coordChange_tensorPow_of_eq_smul_id`).
 
 Together with the Whitney biproducts of `TauCeti.Topology.VectorBundle.FiniteRank.Biproduct`,
 this is the structure of a symmetric monoidal preadditive category with binary biproducts, which
@@ -65,13 +67,13 @@ instance : MonoidalCategoryStruct (FiniteRankBundleCore 𝕜 B) where
   tensorHom := tensorHom
   tensorUnit := trivial 𝕜 B 1
   associator A D C :=
-    constIso (fun _ => Set.inter_assoc _ _ _) (kroneckerAssoc 𝕜 A.rank D.rank C.rank)
+    constIso (fun _ => (Set.inter_assoc _ _ _).le) (kroneckerAssoc 𝕜 A.rank D.rank C.rank)
       fun _ _ _ _ _ => kroneckerAssoc_comp_kronecker _ _ _
   leftUnitor A :=
-    constIso (fun _ => Set.univ_inter _) (kroneckerLid 𝕜 A.rank)
+    constIso (fun _ => (Set.univ_inter _).le) (kroneckerLid 𝕜 A.rank)
       fun _ _ _ _ _ => kroneckerLid_comp_kronecker _
   rightUnitor A :=
-    constIso (fun _ => Set.inter_univ _) (kroneckerRid 𝕜 A.rank)
+    constIso (fun _ => (Set.inter_univ _).le) (kroneckerRid 𝕜 A.rank)
       fun _ _ _ _ _ => kroneckerRid_comp_kronecker _
 
 variable {A A' D D' C : FiniteRankBundleCore 𝕜 B}
@@ -176,7 +178,7 @@ instance : MonoidalPreadditive (FiniteRankBundleCore 𝕜 B) where
 /-- The braiding `A ⊗ D ≅ D ⊗ A` of cores, with the coordinate swap `kroneckerComm` as its
 constant coordinate matrix. -/
 def tensorComm (A D : FiniteRankBundleCore 𝕜 B) : A ⊗ D ≅ D ⊗ A :=
-  constIso (fun _ => Set.inter_comm _ _) (kroneckerComm 𝕜 A.rank D.rank)
+  constIso (fun _ => (Set.inter_comm _ _).le) (kroneckerComm 𝕜 A.rank D.rank)
     fun _ _ _ _ _ => kroneckerComm_comp_kronecker _ _
 
 @[simp] theorem fiberMap_tensorComm_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
@@ -215,7 +217,7 @@ instance : SymmetricCategory (FiniteRankBundleCore 𝕜 B) where
 /-- The monoidal braiding is the constant isomorphism induced by the Kronecker swap. -/
 theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
     (β_ A D) =
-      constIso (fun _ => Set.inter_comm _ _) (kroneckerComm 𝕜 A.rank D.rank)
+      constIso (fun _ => (Set.inter_comm _ _).le) (kroneckerComm 𝕜 A.rank D.rank)
         (fun _ _ _ _ _ => kroneckerComm_comp_kronecker _ _) := (rfl)
 
 @[simp] theorem fiberMap_braiding_hom (A D : FiniteRankBundleCore 𝕜 B) (x : B) :
@@ -231,6 +233,34 @@ theorem braiding_def (A D : FiniteRankBundleCore 𝕜 B) :
     ∀ m : ℕ, (tensorPow A m).rank = A.rank ^ m
   | 0 => rfl
   | m + 1 => by rw [tensorPow_succ, rank_tensorObj, rank_tensorPow A m, pow_succ']
+
+/-- Every tensor power of a core of rank one has rank one. -/
+theorem rank_tensorPow_of_rank_eq_one {A : FiniteRankBundleCore 𝕜 B} (hA : A.rank = 1) (m : ℕ) :
+    (tensorPow A m).rank = 1 := by
+  rw [rank_tensorPow, hA, one_pow]
+
+/-- The chart domains of a core lie in those of each of its tensor powers. -/
+theorem baseSet_subset_baseSet_tensorPow (A : FiniteRankBundleCore 𝕜 B) (i : B) :
+    ∀ m : ℕ, A.core.baseSet i ⊆ (tensorPow A m).core.baseSet i
+  | 0 => Set.subset_univ _
+  | m + 1 => Set.subset_inter subset_rfl (baseSet_subset_baseSet_tensorPow A i m)
+
+/-- If a transition map of `A` is multiplication by `c`, the corresponding transition map of the
+`m`th tensor power of `A` is multiplication by `c ^ m`. -/
+theorem coordChange_tensorPow_of_eq_smul_id (A : FiniteRankBundleCore 𝕜 B) {i j x : B} {c : 𝕜}
+    (hc : A.core.coordChange i j x = c • ContinuousLinearMap.id 𝕜 (Fin A.rank → 𝕜)) :
+    ∀ m : ℕ, (tensorPow A m).core.coordChange i j x =
+      c ^ m • ContinuousLinearMap.id 𝕜 (Fin (tensorPow A m).rank → 𝕜)
+  | 0 => by
+    rw [pow_zero, one_smul]
+    -- `tensorPow A 0` is the tensor unit by definition (`tensorPow_zero`).
+    exact coordChange_tensorUnit i j x
+  | m + 1 => by
+    rw [tensorPow_succ, coordChange_tensorObj, coordChange_tensorPow_of_eq_smul_id A hc m, hc,
+      smul_kronecker, kronecker_smul, id_kronecker_id, smul_smul, ← pow_succ']
+    -- The two identities are stated on `Fin (A.rank * (tensorPow A m).rank) → 𝕜`, the model of
+    -- `A ⊗ tensorPow A m` by definition (`rank_tensorObj`).
+    rfl
 
 /-- Over a nonempty base, any left factor in a tensor-product isomorphism with the monoidal unit
 has rank one. -/

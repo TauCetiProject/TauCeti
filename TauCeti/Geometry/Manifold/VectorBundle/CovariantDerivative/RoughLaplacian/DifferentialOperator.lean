@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
+public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Section
 public import TauCeti.Geometry.Manifold.DifferentialOperator.PrincipalSymbol.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Energy
 import TauCeti.Geometry.Manifold.Riemannian.Basic
@@ -37,7 +38,8 @@ geometric principal symbol (`TauCeti.sectionPrincipalSymbol`) is
 `σ_geom(∇*∇)(ξ) = -‖ξ‖² Id`,
 
 equivalently `σ_F(∇*∇)(ξ) = ‖ξ‖² Id` in the Fourier convention, where `∂ⱼ` has symbol `i ξⱼ`.
-This is the symbol of an operator of Laplace type with constant `1`. For a metric connection
+This is the symbol of an operator of Laplace type with constant `1`
+(`CovariantDerivative.isSectionLaplaceType_smoothRoughLaplacian`). For a metric connection
 `∇`, the Levi-Civita connection `∇ᵀ` and a manifold without boundary, the energy identity makes
 `∇*∇` its own formal adjoint for the Riemannian volume
 (`CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothRoughLaplacian`).
@@ -47,12 +49,16 @@ This is the symbol of an operator of Laplace type with constant `1`. For a metri
 * `CovariantDerivative.contMDiff_roughLaplacian`: the rough Laplacian of every section is smooth.
 * `CovariantDerivative.smoothRoughLaplacian`: the rough Laplacian as a real-linear endomorphism of
   the smooth sections.
+* `CovariantDerivative.smulCommutator_smoothRoughLaplacian_apply`: with the Levi-Civita
+  connection on the tangent bundle, the commutators `[∇*∇, f] σ = -2 ∇_{grad f} σ - (Δ f) σ`.
 * `CovariantDerivative.smulCommutator_smulCommutator_smoothRoughLaplacian_apply`: the double
   commutators `[[∇*∇, f], g] σ = -2 ⟪grad f, grad g⟫ σ`.
 * `CovariantDerivative.smoothRoughLaplacian_mem_differentialOperators_two`: `∇*∇` has order at
   most two.
 * `CovariantDerivative.sectionPrincipalSymbol_smoothRoughLaplacian`: its geometric principal
   symbol is `ξ ↦ -‖ξ‖² Id`.
+* `CovariantDerivative.isSectionLaplaceType_smoothRoughLaplacian`: `∇*∇` is of Laplace type with
+  constant `1`.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_smoothRoughLaplacian`: for a metric
   connection, `∇*∇` is formally self-adjoint for the Riemannian volume.
 
@@ -137,6 +143,19 @@ theorem smoothRoughLaplacian_apply (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     cov.smoothRoughLaplacian covT σ x = cov.roughLaplacian covT σ x :=
   (rfl)
 
+/-- **The commutator of the rough Laplacian with multiplication.** With the Levi-Civita connection
+on the tangent bundle, `[∇*∇, f] σ = ∇*∇(f σ) - f ∇*∇ σ = -2 ∇_{grad f} σ - (Δ f) σ`, where
+`Δ = div ∘ grad` is the Laplace–Beltrami operator. The leading part `-2 ∇_{grad f}` of this
+first-order operator is where the connection `∇` enters. -/
+theorem smulCommutator_smoothRoughLaplacian_apply (f : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    smulCommutator ℝ f (cov.smoothRoughLaplacian (leviCivitaConnection I M)) σ x =
+      -(2 : ℝ) • cov σ x (TauCeti.Manifold.mgradient I f x) -
+        TauCeti.Manifold.laplaceBeltrami I f x • σ x := by
+  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
+    smoothRoughLaplacian_apply, ContMDiffSection.coe_smul_contMDiffMap, Pi.smul_apply',
+    roughLaplacian_smul cov f.contMDiff σ.contMDiff x]
+  module
+
 /-- The double commutator of the rough Laplacian with multiplication by smooth functions is
 multiplication by `-2` times the inner product of their gradients:
 `[[∇*∇, f], g] σ = -2 ⟪grad f, grad g⟫ σ`. -/
@@ -144,11 +163,10 @@ theorem smulCommutator_smulCommutator_smoothRoughLaplacian_apply (f g : C^∞⟮
     (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
     smulCommutator ℝ g (smulCommutator ℝ f (cov.smoothRoughLaplacian covT)) σ x =
       -(2 * ⟪TauCeti.Manifold.mgradient I f x, TauCeti.Manifold.mgradient I g x⟫) • σ x := by
-  have hfun (a : C^∞⟮I, M; ℝ⟯) (τ : Cₛ^∞⟮I; F, V⟯) : ⇑(a • τ) = ⇑a • ⇑τ :=
-    funext fun y ↦ ContMDiffSection.smul_apply a τ y
   rw [← roughLaplacian_smul_smul_sub cov covT f.contMDiff g.contMDiff σ.contMDiff x]
-  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, hfun, Pi.sub_apply,
-    Pi.smul_apply', smoothRoughLaplacian_apply]
+  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub,
+    ContMDiffSection.coe_smul_contMDiffMap, Pi.sub_apply, Pi.smul_apply',
+    smoothRoughLaplacian_apply]
   module
 
 /-- The rough Laplacian is a differential operator of order at most two on the smooth sections. -/
@@ -177,6 +195,15 @@ theorem sectionPrincipalSymbol_smoothRoughLaplacian [FiniteDimensional ℝ F] {x
     real_inner_self_eq_norm_sq, TauCeti.Manifold.norm_mgradient_eq_norm_mvfderiv,
     Nat.factorial_two, LinearMap.smul_apply, LinearMap.id_apply]
   module
+
+/-- **The rough Laplacian is of Laplace type** with constant `1`: its geometric principal symbol
+is `-‖ξ‖² Id`. In particular it is elliptic (`TauCeti.IsSectionLaplaceType.isSectionElliptic`). -/
+theorem isSectionLaplaceType_smoothRoughLaplacian [FiniteDimensional ℝ F] :
+    TauCeti.IsSectionLaplaceType
+      ⟨cov.smoothRoughLaplacian covT, cov.smoothRoughLaplacian_mem_differentialOperators_two covT⟩
+        1 :=
+  TauCeti.isSectionLaplaceType_iff.2
+    ⟨one_pos, fun _ hx ξ ↦ by rw [sectionPrincipalSymbol_smoothRoughLaplacian, one_mul]⟩
 
 end Operator
 
