@@ -54,11 +54,12 @@ maps of the upper half-plane onto `Ω` with the same limits at three real points
 the three-point normalization
 `TauCeti.eqOn_upperHalfPlaneSet_of_tendsto_of_bijOn`.
 
-The uniqueness statements assume that the two maps meet on their lower boundary lines. The
-conclusion holds without that assumption, since a holomorphic automorphism of the strip fixing both
-ends preserves each boundary line, but that orientation argument is not formalized here. For the
-same reason the existence statement does not say which of the two arcs carries the lower boundary
-line.
+The uniqueness statements here assume that the two maps meet on their lower boundary lines. For
+maps which, like those of the existence statement, extend continuously to the closed strip without
+taking the values `x` and `y` there, `TauCeti.exists_eqOn_add_of_bijOn_of_notMem_image` removes
+that assumption: a holomorphic automorphism of the strip fixing both ends is a translation
+(`TauCeti.exists_eqOn_add_of_bijOn_strip`), so it preserves each boundary line. The existence
+statement does not say which of the two arcs carries the lower boundary line.
 
 ## References
 
