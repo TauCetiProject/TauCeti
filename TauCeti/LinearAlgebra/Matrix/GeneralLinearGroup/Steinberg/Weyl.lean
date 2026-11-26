@@ -95,12 +95,12 @@ private theorem conj_x_of_commute {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l)
   rw [MulAut.conj_apply, (commute_x hij hkl hjk hli a b).eq, mul_inv_cancel_right]
 
 private theorem conj_x_chain {i j k : ι} (hij : i ≠ j) (hjk : j ≠ k) (hik : i ≠ k) (a b : R) :
-    MulAut.conj (x hij a) (x hjk b) = x hik (a * b) * x hjk b :=
-  x_mul_x_mul_inv hij hjk hik a b
+    MulAut.conj (x hij a) (x hjk b) = x hik (a * b) * x hjk b := by
+  rw [MulAut.conj_apply, x_mul_x_mul_inv hij hjk hik a b]
 
 private theorem conj_x_chain_reverse {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j)
-    (a b : R) : MulAut.conj (x hij a) (x hki b) = x hkj (-(b * a)) * x hki b :=
-  x_mul_x_mul_inv_reverse hij hki hkj a b
+    (a b : R) : MulAut.conj (x hij a) (x hki b) = x hkj (-(b * a)) * x hki b := by
+  rw [MulAut.conj_apply, x_mul_x_mul_inv_reverse hij hki hkj a b]
 
 /-- Two root generators `x_{ij}(a)` and `x_{ij}(c)` separated by a generator `x_{kl}(b)` commuting
 with them merge into `x_{ij}(a + c)`. -/
