@@ -40,8 +40,9 @@ particular it is continuous on a solution with continuous `b₁` and `C¹` secti
 (`continuous_energyDensity_of_equation_eq_zero`).
 
 `equation_add_smul` gives the exact quadratic expansion, whose quadratic remainder
-`quadraticTerm` is the diagonal of the bilinear map `quadraticTermBilinear`, and
-`hasDerivAt_equation` identifies `linearizedEquation` as its first variation. For the
+`quadraticTerm` is the diagonal of the bilinear map `quadraticTermBilinear` and is homogeneous of
+degree two under real weights (`quadraticTerm_fun_smul`), and `hasDerivAt_equation` identifies
+`linearizedEquation` as its first variation. For the
 charge-one infinitesimal gauge action `gaugeDirection x f`, the off-shell composition is
 `(0, -f * (equation x)₂, f * (equation x)₁)`. Consequently it vanishes at every
 solution, giving the differential-complex identity without a gauge-fixing assumption.
@@ -893,6 +894,13 @@ theorem quadraticTerm_eq_quadraticTermBilinear (y : ℂ → EuclideanSpace ℝ (
   ext z i
   fin_cases i <;> simp
   ring
+
+/-- The quadratic term is homogeneous of degree two under multiplication by a real function. -/
+theorem quadraticTerm_fun_smul (y : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ → ℝ) (z : ℂ) :
+    quadraticTerm (fun t ↦ w t • y t) z = w z ^ 2 • quadraticTerm y z := by
+  ext i
+  fin_cases i <;>
+    simp [quadraticTerm_apply_zero, quadraticTerm_apply_one, quadraticTerm_apply_two] <;> ring
 
 /-- The first connection component of the infinitesimal gauge action. -/
 @[simp]

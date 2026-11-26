@@ -599,13 +599,6 @@ theorem linearizedEquation_fun_smul (x : ℂ → EuclideanSpace ℝ (Fin 4))
   simpa only [gaugeFixedOperator_apply_succ, gaugeFixedOperatorSymbol_apply_succ, PiLp.add_apply,
     PiLp.smul_apply] using congr($(gaugeFixedOperator_fun_smul x hw hy) i.succ)
 
-/-- The quadratic term is homogeneous of degree two under multiplication by a real function. -/
-theorem quadraticTerm_fun_smul (y : ℂ → EuclideanSpace ℝ (Fin 4)) (w : ℂ → ℝ) (z : ℂ) :
-    quadraticTerm (fun t ↦ w t • y t) z = w z ^ 2 • quadraticTerm y z := by
-  ext i
-  fin_cases i <;>
-    simp [quadraticTerm_apply_zero, quadraticTerm_apply_one, quadraticTerm_apply_two] <;> ring
-
 /-- **The vortex defect of an interpolation.** For a real function `χ` and fields `x`, `y`,
 differentiable at `z`, the interpolation `x + χ (y - x)` has defect
 `(1 - χ) equation x + χ equation y + σ(dχ) (y - x) + (χ² - χ) quadraticTerm (y - x)` at `z`, with
