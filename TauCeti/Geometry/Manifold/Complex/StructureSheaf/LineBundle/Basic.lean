@@ -388,6 +388,40 @@ theorem hom_ext {f g : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectio
   intro s
   exact ext (h U s)
 
+/-- The identity of a sheaf of holomorphic sections does not change the values of a section. -/
+@[simp]
+theorem id_hom_app_apply {U : (Opens (TopCat.of X))ᵒᵖ}
+    (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U) (x : ↥(unop U)) :
+    (𝟙 (holomorphicSectionSheaf I F₁ V₁) :
+      holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₁ V₁).hom.app U s x = s x :=
+  (rfl)
+
+/-- A composite of morphisms between sheaves of holomorphic sections acts on sections by
+composition. -/
+@[simp]
+theorem comp_hom_app_apply {F₃ : Type*} [NormedAddCommGroup F₃] [NormedSpace ℂ F₃]
+    {V₃ : X → Type v} [TopologicalSpace (TotalSpace F₃ V₃)] [∀ x, TopologicalSpace (V₃ x)]
+    [FiberBundle F₃ V₃] [∀ x, AddCommGroup (V₃ x)] [∀ x, Module ℂ (V₃ x)] [VectorBundle ℂ F₃ V₃]
+    (f : holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂)
+    (g : holomorphicSectionSheaf I F₂ V₂ ⟶ holomorphicSectionSheaf I F₃ V₃)
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (f ≫ g).hom.app U s x = g.hom.app U (f.hom.app U s) x :=
+  (rfl)
+
+/-- A finite sum of morphisms between sheaves of holomorphic sections acts on the values of a
+section as the sum of the values. -/
+@[simp]
+theorem sum_hom_app_apply {ι : Type*} (t : Finset ι)
+    (f : ι → (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂))
+    {U : (Opens (TopCat.of X))ᵒᵖ} (s : (holomorphicSectionSheaf I F₁ V₁).obj.obj U)
+    (x : ↥(unop U)) :
+    (∑ i ∈ t, f i).hom.app U s x = ∑ i ∈ t, (f i).hom.app U s x :=
+  map_sum ({ toFun := fun g ↦ g.hom.app U s x
+             map_zero' := rfl
+             map_add' := fun _ _ ↦ rfl } :
+    (holomorphicSectionSheaf I F₁ V₁ ⟶ holomorphicSectionSheaf I F₂ V₂) →+ V₂ x) f t
+
 /-- A fibrewise linear map `φ : V₁ x → V₂ x` whose total-space map is complex analytic induces a
 morphism of sheaves of holomorphic sections, by `s ↦ (x ↦ φ x (s x))`. -/
 def homOfLinearMap (φ : ∀ x, V₁ x →ₗ[ℂ] V₂ x)
