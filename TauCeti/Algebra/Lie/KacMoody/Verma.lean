@@ -124,10 +124,8 @@ noncomputable abbrev vermaGenerator : VermaModule R lam :=
 /-- Every Cartan element `h` acts on the canonical generator by `lam(h)`. -/
 @[simp]
 theorem lie_cartanElement_vermaGenerator (x : H) :
-    ⁅cartanElement R x, vermaGenerator R lam⁆ = lam x • vermaGenerator R lam := by
-  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, ← algebraMap_smul U (lam x),
-    smul_cyclicGenerator, cyclicMk_eq_iff]
-  exact ι_cartanElement_sub_algebraMap_mem_vermaIdeal R lam x
+    ⁅cartanElement R x, vermaGenerator R lam⁆ = lam x • vermaGenerator R lam :=
+  lie_cyclicGenerator_eq_smul_of_sub_mem _ (ι_cartanElement_sub_algebraMap_mem_vermaIdeal R lam x)
 
 /-- The canonical generator has weight `lam`. -/
 theorem vermaGenerator_mem_weightSpace :
@@ -137,9 +135,8 @@ theorem vermaGenerator_mem_weightSpace :
 /-- Every raising generator kills the canonical generator. -/
 @[simp]
 theorem lie_positiveGenerator_vermaGenerator (i : I) :
-    ⁅positiveGenerator R i, vermaGenerator R lam⁆ = 0 := by
-  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, cyclicMk_eq_zero_iff]
-  exact ι_positiveGenerator_mem_vermaIdeal R lam i
+    ⁅positiveGenerator R i, vermaGenerator R lam⁆ = 0 :=
+  lie_cyclicGenerator_eq_zero_of_mem _ (ι_positiveGenerator_mem_vermaIdeal R lam i)
 
 /-! ## The universal property -/
 
@@ -155,8 +152,7 @@ private theorem representation_eq_zero_of_mem_vermaIdeal {v : N}
     (hu : u ∈ vermaIdeal R lam) : representation K (PresentedLieAlgebra R) N u v = 0 := by
   refine representation_eq_zero_of_mem_span (fun u hu => ?_) hu
   rcases hu with ⟨x, rfl⟩ | ⟨i, rfl⟩
-  · rw [map_sub, AlgHom.commutes, LinearMap.sub_apply, representation_ι_apply,
-      Module.algebraMap_end_apply, mem_weightSpace_iff.mp hv x, sub_self]
+  · exact representation_ι_sub_algebraMap_apply_eq_zero (mem_weightSpace_iff.mp hv x)
   · rw [representation_ι_apply, hpos]
 
 /-- **The universal property of the Verma module.** If `v` is a vector of weight `lam` killed by

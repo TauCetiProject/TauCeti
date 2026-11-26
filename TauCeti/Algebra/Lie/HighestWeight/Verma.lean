@@ -203,16 +203,13 @@ noncomputable abbrev vermaGenerator : VermaModule b lam :=
 /-- **The Cartan subalgebra acts on the canonical generator through `lam`.** -/
 @[simp]
 theorem lie_vermaGenerator_eq_smul (x : H) :
-    ⁅(x : L), vermaGenerator b lam⁆ = lam x • vermaGenerator b lam := by
-  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, ← algebraMap_smul U (lam x),
-    smul_cyclicGenerator, cyclicMk_eq_iff]
-  exact ι_sub_algebraMap_mem_vermaIdeal b lam x
+    ⁅(x : L), vermaGenerator b lam⁆ = lam x • vermaGenerator b lam :=
+  lie_cyclicGenerator_eq_smul_of_sub_mem _ (ι_sub_algebraMap_mem_vermaIdeal b lam x)
 
 /-- **The positive nilradical annihilates the canonical generator.** -/
 theorem lie_vermaGenerator_eq_zero_of_mem_positiveNilradical {x : L}
-    (hx : x ∈ positiveNilradical H b) : ⁅x, vermaGenerator b lam⁆ = 0 := by
-  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, cyclicMk_eq_zero_iff]
-  exact ι_mem_vermaIdeal_of_mem_positiveNilradical b lam hx
+    (hx : x ∈ positiveNilradical H b) : ⁅x, vermaGenerator b lam⁆ = 0 :=
+  lie_cyclicGenerator_eq_zero_of_mem _ (ι_mem_vermaIdeal_of_mem_positiveNilradical b lam hx)
 
 /-! ### The universal property -/
 
@@ -226,8 +223,7 @@ private theorem representation_eq_zero_of_mem_vermaIdeal {v : N}
     representation K L N u v = 0 := by
   refine representation_eq_zero_of_mem_span (fun u hu => ?_) hu
   rcases hu with ⟨x, rfl⟩ | ⟨x, hx, rfl⟩
-  · rw [map_sub, AlgHom.commutes, LinearMap.sub_apply, representation_ι_apply,
-      Module.algebraMap_end_apply, hcartan x, sub_self]
+  · exact representation_ι_sub_algebraMap_apply_eq_zero (hcartan x)
   · rw [representation_ι_apply, hpos x hx]
 
 /-- **The universal property of the Verma module.** If `H` acts on a vector `v` of an `L`-module

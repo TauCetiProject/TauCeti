@@ -40,6 +40,9 @@ the original quotient construction of the finite-type Verma module.
 
 ## Main results
 
+* `TauCeti.UniversalEnvelopingAlgebra.lie_cyclicGenerator_eq_smul_of_sub_mem` and
+  `TauCeti.UniversalEnvelopingAlgebra.lie_cyclicGenerator_eq_zero_of_mem`: degree-one relations
+  `ι x - c` and `ι x` in `J` make `x` act on the generator by `c` and by zero.
 * `TauCeti.UniversalEnvelopingAlgebra.representation_cyclicModule_apply`: the enveloping
   representation induced by the `L`-action is the `U(L)`-module structure of `U(L) ⧸ J`.
 * `TauCeti.UniversalEnvelopingAlgebra.lieSpan_cyclicGenerator_eq_top`: the generator generates
@@ -135,6 +138,20 @@ noncomputable def cyclicGenerator : CyclicModule J :=
 theorem smul_cyclicGenerator (u : U) : u • cyclicGenerator J = cyclicMk J u := by
   rw [cyclicGenerator, smul_cyclicMk, mul_one]
 
+/-- **A Lie generator acts on the canonical generator by a scalar** `c` as soon as `ι x - c` lies
+in `J`. -/
+theorem lie_cyclicGenerator_eq_smul_of_sub_mem {x : L} {c : R}
+    (h : (ι R x : U) - algebraMap R U c ∈ J) : ⁅x, cyclicGenerator J⁆ = c • cyclicGenerator J := by
+  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, ← algebraMap_smul U c, smul_cyclicGenerator,
+    cyclicMk_eq_iff]
+  exact h
+
+/-- **A Lie generator kills the canonical generator** as soon as `ι x` lies in `J`. -/
+theorem lie_cyclicGenerator_eq_zero_of_mem {x : L} (h : (ι R x : U) ∈ J) :
+    ⁅x, cyclicGenerator J⁆ = 0 := by
+  rw [← cyclicModule_ι_smul, smul_cyclicGenerator, cyclicMk_eq_zero_iff]
+  exact h
+
 /-- The canonical generator spans the cyclic module over `U(L)`. -/
 theorem span_cyclicGenerator_eq_top : Submodule.span U {cyclicGenerator J} = ⊤ := by
   refine top_le_iff.mp fun m _ => ?_
@@ -163,6 +180,13 @@ theorem representation_eq_zero_of_mem_span {s : Set U} {v : N}
   | zero => rw [map_zero, LinearMap.zero_apply]
   | add u w _ _ hu hw => rw [map_add, LinearMap.add_apply, hu, hw, add_zero]
   | smul a u _ hu => rw [smul_eq_mul, map_mul, mul_apply_eq_comp, hu, map_zero]
+
+/-- If `x` acts on `v` by the scalar `c`, then the relation `ι x - c` of `U(L)` acts on `v` by
+zero. -/
+theorem representation_ι_sub_algebraMap_apply_eq_zero {x : L} {c : R} {v : N}
+    (h : ⁅x, v⁆ = c • v) : representation R L N (ι R x - algebraMap R U c) v = 0 := by
+  rw [map_sub, AlgHom.commutes, LinearMap.sub_apply, representation_ι_apply,
+    Module.algebraMap_end_apply, h, sub_self]
 
 /-- **The universal property of the cyclic module.** If the left ideal `J` acts by zero on a vector
 `v` of an `L`-module `N`, then there is a unique homomorphism of `L`-modules `U(L) ⧸ J → N` sending
