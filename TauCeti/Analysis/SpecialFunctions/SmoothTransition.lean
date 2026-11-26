@@ -606,6 +606,11 @@ theorem add_one_sub_ne_zero {x : ℝ} (hx : 0 ≤ x) : x + (1 - smoothTransition
   · simp [← h]
   · exact (h.trans_le (le_add_one_sub x)).ne'
 
+/-- Every value in `[0, 1]` is attained by `smoothTransition` on `[0, 1]`. -/
+theorem surjOn_Icc : SurjOn smoothTransition (Icc 0 1) (Icc 0 1) := by
+  have h := intermediate_value_Icc zero_le_one smoothTransition.continuous.continuousOn
+  rwa [smoothTransition.zero, smoothTransition.one] at h
+
 end Real.smoothTransition
 
 /-- The chain rule for the smooth transition function `ψ`: if `f` has derivative `f'` at `x`,
