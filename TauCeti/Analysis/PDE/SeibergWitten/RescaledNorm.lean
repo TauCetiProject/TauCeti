@@ -41,10 +41,11 @@ space `V`, a flat chart, with the derivatives `∇ʲ` read as the iterated deriv
 * **Equivalence with the fixed-order norms.** For `0 < h ≤ 1`, that is `λ ≥ 1`, the rescaled norm
   lies between `h^(2s+2)` times and one times the unit-scale norm of the same fields
   (`TauCeti.SeibergWitten.pow_mul_rescaledFieldNormSq_one_le`,
-  `TauCeti.SeibergWitten.rescaledFieldNormSq_le_one`, and for the target
+  `TauCeti.SeibergWitten.rescaledFieldNormSq_le_rescaledFieldNormSq_one`, and for the target
   `TauCeti.SeibergWitten.pow_mul_rescaledTargetNormSq_one_le`,
-  `TauCeti.SeibergWitten.rescaledTargetNormSq_le_one`). The constants degenerate as `h → 0`,
-  which is why the estimates of the construction are stated in the rescaled norms.
+  `TauCeti.SeibergWitten.rescaledTargetNormSq_le_rescaledTargetNormSq_one`). The constants
+  degenerate as `h → 0`, which is why the estimates of the construction are stated in the
+  rescaled norms.
 * **Comparison with the semiclassical norms.** Up to the factor `hⁿ` and the constant `s + 1`,
   the rescaled field norm is the square of the semiclassical Sobolev norms
   `‖f‖_{s,h} = h^(-n/2) ∑_{i ≤ s} hⁱ ‖Dⁱ f‖₂` (`TauCeti.semiclassicalSobolevNorm`):
@@ -140,6 +141,13 @@ theorem rescaledFieldNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (b : V → B) (ζ : V 
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   ring
 
+/-- The target norm as a sum of squares of the scaled `L²` norms of the derivatives:
+`‖y‖_(F_(r,s-1))² = ∑_{j < s} (hʲ ‖Dʲ y‖₂)²`. -/
+theorem rescaledTargetNormSq_eq_sum_sq (s : ℕ) (h : ℝ) (y : V → T) :
+    rescaledTargetNormSq s h y =
+      ∑ j ∈ Finset.range s, (h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume) ^ 2 :=
+  Finset.sum_congr rfl fun j _ ↦ by ring
+
 @[simp]
 theorem rescaledFieldNormSq_zero (s : ℕ) (h : ℝ) :
     rescaledFieldNormSq s h (0 : V → B) (0 : V → S) = 0 := by
@@ -148,6 +156,45 @@ theorem rescaledFieldNormSq_zero (s : ℕ) (h : ℝ) :
 @[simp]
 theorem rescaledTargetNormSq_zero (s : ℕ) (h : ℝ) : rescaledTargetNormSq s h (0 : V → T) = 0 := by
   simp [rescaledTargetNormSq]
+
+@[simp]
+theorem rescaledFieldNormSq_neg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h (-b) (-ζ) = rescaledFieldNormSq s h b ζ := by
+  simp [rescaledFieldNormSq, iteratedFDeriv_neg]
+
+@[simp]
+theorem rescaledTargetNormSq_neg (s : ℕ) (h : ℝ) (y : V → T) :
+    rescaledTargetNormSq s h (-y) = rescaledTargetNormSq s h y := by
+  simp [rescaledTargetNormSq, iteratedFDeriv_neg]
+
+/-- Scaling both increments by `c` scales the rescaled norm by `c²`. -/
+theorem rescaledFieldNormSq_smul (s : ℕ) (h c : ℝ) (b : V → B) (ζ : V → S) :
+    rescaledFieldNormSq s h (c • b) (c • ζ) = c ^ 2 * rescaledFieldNormSq s h b ζ := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  -- Multiplication by `c ≠ 0` is a continuous linear equivalence, so it commutes with `Dʲ`.
+  have hb (j : ℕ) : iteratedFDeriv ℝ j (c • b) = c • iteratedFDeriv ℝ j b :=
+    funext fun _ ↦
+      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+  have hζ (j : ℕ) : iteratedFDeriv ℝ j (c • ζ) = c • iteratedFDeriv ℝ j ζ :=
+    funext fun _ ↦
+      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+  simp only [rescaledFieldNormSq, hb, hζ, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs,
+    mul_pow, sq_abs, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
+
+/-- Scaling the field by `c` scales the target norm by `c²`. -/
+theorem rescaledTargetNormSq_smul (s : ℕ) (h c : ℝ) (y : V → T) :
+    rescaledTargetNormSq s h (c • y) = c ^ 2 * rescaledTargetNormSq s h y := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  -- Multiplication by `c ≠ 0` is a continuous linear equivalence, so it commutes with `Dʲ`.
+  have hy (j : ℕ) : iteratedFDeriv ℝ j (c • y) = c • iteratedFDeriv ℝ j y :=
+    funext fun _ ↦
+      (ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 c hc)).iteratedFDeriv_comp_left
+  simp only [rescaledTargetNormSq, hy, lpNorm_const_smul, coe_nnNorm, Real.norm_eq_abs, mul_pow,
+    sq_abs, Finset.mul_sum]
+  exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 theorem rescaledFieldNormSq_nonneg (s : ℕ) (h : ℝ) (b : V → B) (ζ : V → S) :
     0 ≤ rescaledFieldNormSq s h b ζ := by
@@ -219,8 +266,8 @@ theorem rescaledTargetNormSq_eq_rpow_mul {s : ℕ} {y : V → T} (hy : ContDiff 
 
 /-- **The rescaled norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
 `‖(b, ζ)‖_(E_(r,s))² ≤ ∑_{j ≤ s} (‖Dʲ b‖₂² + ‖Dʲ ζ‖₂² / 4)`. -/
-theorem rescaledFieldNormSq_le_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1) (b : V → B)
-    (ζ : V → S) : rescaledFieldNormSq s h b ζ ≤ rescaledFieldNormSq s 1 b ζ := by
+theorem rescaledFieldNormSq_le_rescaledFieldNormSq_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1)
+    (b : V → B) (ζ : V → S) : rescaledFieldNormSq s h b ζ ≤ rescaledFieldNormSq s 1 b ζ := by
   refine Finset.sum_le_sum fun j _ ↦ ?_
   rw [one_pow, one_pow, one_mul, one_mul]
   have h2 : h ^ 2 ≤ 1 := pow_le_one₀ hh hh₁
@@ -251,7 +298,8 @@ theorem pow_mul_rescaledFieldNormSq_one_le (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (h
 
 /-- **The target norm below the unit-scale norm.** For `0 ≤ h ≤ 1`,
 `‖y‖_(F_(r,s-1))² ≤ ∑_{j < s} ‖Dʲ y‖₂²`. -/
-theorem rescaledTargetNormSq_le_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h) (hh₁ : h ≤ 1) (y : V → T) :
+theorem rescaledTargetNormSq_le_rescaledTargetNormSq_one (s : ℕ) {h : ℝ} (hh : 0 ≤ h)
+    (hh₁ : h ≤ 1) (y : V → T) :
     rescaledTargetNormSq s h y ≤ rescaledTargetNormSq s 1 y := by
   refine Finset.sum_le_sum fun j _ ↦ ?_
   rw [one_pow, one_mul]
@@ -381,18 +429,12 @@ theorem rescaledFieldNormSq_comp_le {s : ℕ} {h L c : ℝ} {b : V → B} {ζ : 
 
 /-! ### The target norm against the semiclassical norms -/
 
-/-- The target norm through order `k` is the square sum `∑_{j ≤ k} (hʲ ‖Dʲ y‖₂)²`. -/
-theorem rescaledTargetNormSq_succ_eq_sum_sq (k : ℕ) (h : ℝ) (y : V → T) :
-    rescaledTargetNormSq (k + 1) h y =
-      ∑ j ∈ Finset.range (k + 1), (h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume) ^ 2 :=
-  Finset.sum_congr rfl fun j _ ↦ by ring
-
 /-- **The target norm below the semiclassical norm.** For `h > 0`,
 `‖y‖_(F_(r,k))² ≤ hⁿ ‖y‖_{k,h}²`. -/
 theorem rescaledTargetNormSq_succ_le_rpow_mul (k : ℕ) {h : ℝ} (hh : 0 < h) (y : V → T) :
     rescaledTargetNormSq (k + 1) h y ≤
       h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm k h y ^ 2 := by
-  rw [rescaledTargetNormSq_succ_eq_sum_sq]
+  rw [rescaledTargetNormSq_eq_sum_sq]
   exact sum_sq_le_rpow_mul_semiclassicalSobolevNorm_sq k hh y
 
 /-- **The semiclassical norm below the target norm.** For `h > 0`,
@@ -400,7 +442,7 @@ theorem rescaledTargetNormSq_succ_le_rpow_mul (k : ℕ) {h : ℝ} (hh : 0 < h) (
 theorem rpow_mul_le_mul_rescaledTargetNormSq_succ (k : ℕ) {h : ℝ} (hh : 0 < h) (y : V → T) :
     h ^ (finrank ℝ V : ℝ) * semiclassicalSobolevNorm k h y ^ 2 ≤
       (k + 1) * rescaledTargetNormSq (k + 1) h y := by
-  rw [rescaledTargetNormSq_succ_eq_sum_sq]
+  rw [rescaledTargetNormSq_eq_sum_sq]
   exact rpow_mul_semiclassicalSobolevNorm_sq_le k hh y
 
 /-- **Changes of frame of the target bundle.** If `y` is of class `Cᵏ` with square-integrable
@@ -413,7 +455,7 @@ theorem rescaledTargetNormSq_clm_apply_le {k : ℕ} {h M : ℝ} {y : V → T} {T
     (hM : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ M) :
     rescaledTargetNormSq (k + 1) h (fun x ↦ A x (y x)) ≤
       (k + 1) * ((k + 1) * 2 ^ k * M) ^ 2 * rescaledTargetNormSq (k + 1) h y := by
-  rw [rescaledTargetNormSq_succ_eq_sum_sq, rescaledTargetNormSq_succ_eq_sum_sq]
+  rw [rescaledTargetNormSq_eq_sum_sq, rescaledTargetNormSq_eq_sum_sq]
   exact sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le k hh
     (semiclassicalSobolevNorm_clm_apply_le_of_le_left hA hy hym hh hM).2
 
@@ -427,10 +469,8 @@ theorem sqrt_rescaledTargetNormSq_add_le {s : ℕ} {y y' : V → T}
     (hym : ∀ j < s, MemLp (iteratedFDeriv ℝ j y) 2) {h : ℝ} (hh : 0 ≤ h) :
     √(rescaledTargetNormSq s h (y + y')) ≤
       √(rescaledTargetNormSq s h y) + √(rescaledTargetNormSq s h y') := by
-  have key : ∀ f : V → T, rescaledTargetNormSq s h f =
-      ∑ j ∈ Finset.range s, (h ^ j * lpNorm (iteratedFDeriv ℝ j f) 2 volume) ^ 2 := fun f ↦
-    Finset.sum_congr rfl fun j _ ↦ by ring
-  rw [key, key, key]
+  rw [rescaledTargetNormSq_eq_sum_sq, rescaledTargetNormSq_eq_sum_sq,
+    rescaledTargetNormSq_eq_sum_sq]
   -- Minkowski's inequality in `ℓ²`, after bounding each term by the triangle inequality in `L²`.
   have hM := Real.Lp_add_le (Finset.range s)
     (fun j ↦ h ^ j * lpNorm (iteratedFDeriv ℝ j y) 2 volume)

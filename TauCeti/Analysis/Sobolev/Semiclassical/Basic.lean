@@ -527,43 +527,6 @@ theorem semiclassicalSobolevNorm_smul_le_of_le_right (hg : ContDiff ℝ k g) (hf
     (nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB 0)
     fun _n hn ↦ hg.pow_mul_norm_iteratedFDeriv_smul_le_of_le_right hf hh.le hB hn
 
-/-- **The Leibniz rule in scaled units, with a bounded operator-valued factor.** If
-`A : X → F →L[ℝ] G` satisfies `hⁱ ‖Dⁱ A‖ ≤ B` everywhere for `i ≤ k`, then for `n ≤ k`, at every
-point, `hⁿ ‖Dⁿ (A f)‖ ≤ 2ᵏ B ∑_{j ≤ k} hʲ ‖Dʲ f‖`, where `A f` is `y ↦ A y (f y)`. -/
-theorem _root_.ContDiff.pow_mul_norm_iteratedFDeriv_clm_apply_le_of_le_left {X G : Type*}
-    [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {A : X → F →L[ℝ] G} {f : X → F} (hA : ContDiff ℝ k A) (hf : ContDiff ℝ k f) (hh : 0 ≤ h)
-    (hB : ∀ i ≤ k, ∀ x, h ^ i * ‖iteratedFDeriv ℝ i A x‖ ≤ B) {n : ℕ} (hn : n ≤ k) (x : X) :
-    h ^ n * ‖iteratedFDeriv ℝ n (fun y ↦ A y (f y)) x‖ ≤
-      2 ^ k * B * ∑ j ∈ Finset.range (k + 1), h ^ j * ‖iteratedFDeriv ℝ j f x‖ := by
-  have hB0 : 0 ≤ B := nonneg_of_forall_pow_mul_norm_iteratedFDeriv_le hB x
-  refine (mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_clm_apply hA hf x
-    (by exact_mod_cast hn)) (pow_nonneg hh n)).trans ?_
-  rw [Finset.mul_sum]
-  calc ∑ i ∈ Finset.range (n + 1), h ^ n * ((n.choose i : ℝ) * ‖iteratedFDeriv ℝ i A x‖ *
-        ‖iteratedFDeriv ℝ (n - i) f x‖)
-      ≤ ∑ i ∈ Finset.range (n + 1),
-          2 ^ k * B * (h ^ (n - i) * ‖iteratedFDeriv ℝ (n - i) f x‖) := by
-        refine Finset.sum_le_sum fun i hi ↦ ?_
-        have hin : i ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
-        have hc : (n.choose i : ℝ) ≤ 2 ^ k := by
-          exact_mod_cast (Nat.choose_le_two_pow n i).trans (Nat.pow_le_pow_right two_pos hn)
-        calc h ^ n * ((n.choose i : ℝ) * ‖iteratedFDeriv ℝ i A x‖ *
-              ‖iteratedFDeriv ℝ (n - i) f x‖)
-            = (n.choose i : ℝ) * (h ^ i * ‖iteratedFDeriv ℝ i A x‖) *
-                (h ^ (n - i) * ‖iteratedFDeriv ℝ (n - i) f x‖) := by
-              rw [← Nat.add_sub_cancel' hin, pow_add, Nat.add_sub_cancel_left]
-              ring
-          _ ≤ 2 ^ k * B * (h ^ (n - i) * ‖iteratedFDeriv ℝ (n - i) f x‖) :=
-              mul_le_mul_of_nonneg_right (mul_le_mul hc (hB i (hin.trans hn) x)
-                (by positivity) (by positivity)) (by positivity)
-    _ = 2 ^ k * B * ∑ j ∈ Finset.range (n + 1), h ^ j * ‖iteratedFDeriv ℝ j f x‖ := by
-        rw [Finset.mul_sum]
-        exact Finset.sum_range_reflect (fun j ↦ 2 ^ k * B * (h ^ j * ‖iteratedFDeriv ℝ j f x‖))
-          (n + 1)
-    _ ≤ _ := mul_le_mul_of_nonneg_left (Finset.sum_le_sum_of_subset_of_nonneg
-        (Finset.range_subset_range.2 (by omega)) fun j _ _ ↦ by positivity) (by positivity)
-
 /-- **Operator-valued multipliers with semiclassical `Cᵏ` bounds.** Let `A : E → F →L[ℝ] G` be of
 class `Cᵏ` with `hⁱ ‖Dⁱ A‖ ≤ B` everywhere for `i ≤ k`, such as a change of frame of a vector
 bundle varying on the scale `h`. For `h > 0` and `f` of class `Cᵏ` with square-integrable
