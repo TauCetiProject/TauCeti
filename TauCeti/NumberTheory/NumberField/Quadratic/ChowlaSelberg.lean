@@ -79,11 +79,6 @@ namespace TauCeti.NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-variable (K) in
-/-- The square root of the absolute discriminant is positive. -/
-private theorem sqrt_abs_discr_pos : 0 < √|(discr K : ℝ)| :=
-  Real.sqrt_pos.mpr (abs_cast_discr_pos K)
-
 /-! ### A fractional ideal whose image is homothetic to `ℤ τ + ℤ` -/
 
 section Lattice
@@ -155,8 +150,7 @@ private theorem isTotallyComplex_of_image_eq (hK : finrank ℚ K = 2) (hc : c �
     exact τ.im_pos.ne' h'
   have h1 : 0 < nrComplexPlaces K :=
     Fintype.card_pos_iff.mpr ⟨⟨mk σ, isComplex_mk_iff.mpr hσ⟩⟩
-  have h2 := card_add_two_mul_card_eq_rank K
-  exact nrRealPlaces_eq_zero_iff.mp (by omega)
+  exact .of_finrank_le_two_mul_nrComplexPlaces (by omega)
 
 /-- **The covolume of an ideal lattice of an imaginary quadratic field.** If the image of a
 fractional ideal `I` under a complex embedding `σ` is `c (ℤ + ℤ τ)`, then
@@ -253,7 +247,7 @@ private theorem hasSum_mul_im_div_norm_sq_rpow [IsTotallyComplex K] (hK : finran
   set N : ℝ := (FractionalIdeal.absNorm (I : FractionalIdeal (𝓞 K)⁰ K) : ℝ)
   have hN : 0 < N := Rat.cast_pos.mpr (FractionalIdeal.absNorm_pos I.ne_zero)
   have hcov := absNorm_mul_sqrt_abs_discr_of_image_eq σ hK hc hI
-  have hd := sqrt_abs_discr_pos K
+  have hd := sqrt_abs_cast_discr_pos K
   -- Transport Tau Ceti's sum over the points of the lattice of `I` in the fundamental cone to
   -- `ℤ² ∖ {0}`.
   let Φ := intPairEquivIdealLattice σ hc hI
@@ -389,7 +383,7 @@ private theorem sum_rpow_mul_epsteinZeta_eq [IsTotallyComplex K] (hK : finrank �
       (c C * ·) '' (Submodule.span ℤ {(1 : ℂ), (τ C : ℂ)} : Set ℂ)) {s : ℝ} (hs : 1 < s) :
     ((∑ C, (2 / √|(discr K : ℝ)|) ^ s * (τ C).epsteinZeta s : ℝ) : ℂ) =
       Units.torsionOrder K * dedekindZeta K s := by
-  have hk : 0 < 2 / √|(discr K : ℝ)| := div_pos two_pos (sqrt_abs_discr_pos K)
+  have hk : 0 < 2 / √|(discr K : ℝ)| := div_pos two_pos (sqrt_abs_cast_discr_pos K)
   have hclass (C : ClassGroup (𝓞 K)) :
       (((2 / √|(discr K : ℝ)|) ^ s * (τ C).epsteinZeta s : ℝ) : ℂ) =
         Units.torsionOrder K * ∑' 𝔟 : {𝔟 : (Ideal (𝓞 K))⁰ //
@@ -459,7 +453,7 @@ theorem chowlaSelberg_classMean (hK : finrank ℚ K = 2) (σ : K →+* ℂ) (D :
     IsTotallyComplex.of_discr_lt_zero (by have := NeZero.ne D; omega) hK
   choose I hIC c hc hI using hτ
   set k : ℝ := 2 / √|(discr K : ℝ)| with hk_def
-  have hk : 0 < k := div_pos two_pos (sqrt_abs_discr_pos K)
+  have hk : 0 < k := div_pos two_pos (sqrt_abs_cast_discr_pos K)
   set w : ℂ := (Units.torsionOrder K : ℂ)
   have hw : w ≠ 0 := Nat.cast_ne_zero.mpr (Units.torsionOrder_ne_zero K)
   -- Both `W(s) = w (s - 1) ζ(s) L(s, χ)` and `∑_C kˢ (s - 1) E(τ_C, s)` are `w (s - 1) ζ_K(s)`.

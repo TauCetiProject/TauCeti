@@ -40,6 +40,8 @@ period of the lattice `ℤ τ + ℤ`. Equivalently, the classical form is
 * `UpperHalfPlane.logPeriod`: the logarithmic period `log (4 π Im τ |η(τ)|⁴)`.
 * `UpperHalfPlane.logPeriod_smul`: it is invariant under `SL(2, ℤ)`, so it only depends on the
   homothety class of the lattice `ℤ τ + ℤ`.
+* `UpperHalfPlane.summable_norm_mul_add_rpow`: the lattice sum `∑ |m τ + n| ^ r` over `ℤ²`
+  converges for `r < -2`.
 * `UpperHalfPlane.epsteinZeta`: the real Epstein zeta function `E(τ, s)` of `ℤ τ + ℤ`.
 * `UpperHalfPlane.hasSum_epsteinZeta`: the series `E(τ, s)` converges for `s > 1`.
 * `UpperHalfPlane.tendsto_epsteinZeta_sub`: **Kronecker's first limit formula**, the constant
@@ -187,10 +189,6 @@ private theorem hasDerivAt_betaFactor {y : ℝ} (hy : 0 < y) :
   norm_num [Real.Gamma_one_half_eq, rpow_neg_one, ← mul_assoc, Real.mul_self_sqrt, pi_pos.le]
   field
 
-/-- The powers `q^(j+1)` of `q = exp (2 π i τ)` have modulus less than one. -/
-private theorem norm_eta_q_lt_one (τ : ℍ) (j : ℕ) : ‖eta_q j (τ : ℂ)‖ < 1 := by
-  simpa [eta_q] using pow_lt_one₀ (norm_nonneg _) (norm_qParam_lt_one 1 τ) j.succ_ne_zero
-
 /-- For `q = exp (2 π i τ)`, so that `eta_q m τ = q^(m+1)`, the double series
 `∑ q^((m+1)(j+1)) / (m+1)` converges absolutely, and it is minus a logarithm of
 `∏ (1 - q^(j+1))`. -/
@@ -201,7 +199,7 @@ private theorem tprod_one_sub_eta_q (τ : ℍ) :
   intro c
   have hc : Summable (uncurry c) := by
     refine .of_norm_bounded ((summable_prod_mul_pow 0
-      (norm_eta_q_lt_one τ 0)).norm.comp_injective
+      (TauCeti.ModularForm.norm_eta_q_lt_one 0 τ.im_pos)).norm.comp_injective
         (Nat.succPNat_injective.prodMap Nat.succPNat_injective)) fun ⟨a, b⟩ ↦ ?_
     simp only [pow_zero, one_mul, norm_pow, comp_apply, Prod.map_fst, Nat.succPNat_coe,
       Nat.succ_eq_add_one, Prod.map_snd, uncurry_apply_pair, c, norm_div, eta_q, ← pow_mul,
@@ -210,16 +208,17 @@ private theorem tprod_one_sub_eta_q (τ : ℍ) :
     rw [Complex.norm_real, Real.norm_eq_abs]
     exact_mod_cast Nat.succ_pos a
   have h_log (j : ℕ) : ∑' m : ℕ, c m j = -Complex.log (1 - eta_q j (τ : ℂ)) := by
-    simp [c, (hasSum_taylorSeries_neg_log' (norm_eta_q_lt_one τ _)).tsum_eq, pow_right_comm]
+    simp [c, (hasSum_taylorSeries_neg_log'
+      (TauCeti.ModularForm.norm_eta_q_lt_one _ τ.im_pos)).tsum_eq, pow_right_comm]
   have h_sum : HasSum (fun j : ℕ ↦ Complex.log (1 - eta_q j (τ : ℂ)))
       (-∑' m : ℕ, ∑' j : ℕ, c m j) := by
     rw [← hc.tsum_comm]
     exact hc.prod_symm.prod.hasSum.neg.congr_fun (by simp [h_log])
   exact ⟨hc, (hasProd_of_hasSum_log (one_sub_eta_q_ne_zero · τ.im_pos) h_sum).tprod_eq⟩
 
-/-- The series `∑ |m τ + n| ^ r` over `(m, n) ∈ ℤ²` converges for `r < -2`; its term at `(0, 0)`
-is `0`. -/
-private theorem summable_norm_mul_add_rpow (τ : ℍ) {r : ℝ} (hr : r < -2) :
+/-- The series `∑ |m τ + n| ^ r` over the points `m τ + n` of the lattice `ℤ τ + ℤ`, indexed by
+`(m, n) ∈ ℤ²`, converges for `r < -2`; its term at `(0, 0)` is `0`. -/
+theorem summable_norm_mul_add_rpow (τ : ℍ) {r : ℝ} (hr : r < -2) :
     Summable fun p : ℤ × ℤ ↦ ‖p.1 * (τ : ℂ) + p.2‖ ^ r := by
   have h_vec : Summable fun v : Fin 2 → ℤ ↦ ‖v 0 * (τ : ℂ) + v 1‖ ^ (- -r) :=
     .of_nonneg_of_le (fun _ ↦ by positivity)
@@ -349,7 +348,12 @@ private theorem tsum_meanError_row_one (τ : ℍ) (m : ℕ) :
       (S + π / τ.im * m.succPNat ^ (1 - 2 * 1 : ℝ) - F 0) := by
     simpa [sub_eq_add_neg] using (hasSum_nat_add_iff' 1).2 h_row.nat_add_neg
   have h_im (n : ℕ) : (cotTerm z n).im = -m.succ * τ.im * (F ↑(n + 1) + F (-↑(n + 1))) := by
-    simp [z, F, shiftedTerm, Complex.sq_norm, normSq]
+    simp only [Nat.succ_eq_add_one, Nat.cast_add, Nat.cast_one, add_im, one_div, inv_im, sub_im,
+      mul_im, add_re, natCast_re, one_re, coe_im, natCast_im, one_im, add_zero, coe_re, zero_mul,
+      sub_zero, normSq_apply, sub_re, mul_re, neg_add_rev, shiftedTerm, Nat.succPNat_coe,
+      ofReal_zero, zero_add, mul_one, rpow_neg_ofNat, Int.reduceNeg, zpow_neg, zpow_ofNat,
+      Complex.sq_norm, intCast_re, intCast_im, Int.cast_add, Int.cast_natCast, Int.cast_one,
+      Int.cast_neg, F, z]
     ring
   have h_sum : (∑' n : ℕ, cotTerm z n).im =
       -m.succ * τ.im * (S + π / τ.im * m.succPNat ^ (1 - 2 * 1 : ℝ) - F 0) := by
@@ -368,7 +372,8 @@ private theorem tsum_meanError_row_one (τ : ℍ) (m : ℕ) :
       -ofReal_add, hm_norm] at h_sum
     linear_combination (norm := field) h_sum
   rw [show (∑' j : ℕ, eta_q m (τ : ℂ) ^ j.succ / ofReal m.succ).re = (Q - 1) / (m + 1) by
-    norm_num [Q, tsum_div_const, geom_series_succ _ (norm_eta_q_lt_one τ m), -ofReal_add]]
+    norm_num [Q, tsum_div_const,
+      geom_series_succ _ (TauCeti.ModularForm.norm_eta_q_lt_one m τ.im_pos), -ofReal_add]]
   linear_combination (norm := field) ((m + 1) * τ.im)⁻¹ * h_key
 
 /-- At `s = 1` the errors sum to `-2 π / Im τ * log |∏ (1 - q^(j+1))|`, `q = exp (2 π i τ)`. -/
@@ -405,7 +410,12 @@ private theorem continuousWithinAt_regularPart (τ : ℍ) :
 private theorem regularPart_one (τ : ℍ) :
     regularPart τ 1 = 2 * (-2 * π / τ.im * Real.log ‖∏' j : ℕ, (1 - eta_q j (τ : ℂ))‖ +
       π ^ 2 / 6 + π / τ.im * eulerMascheroniConstant) := by
-  norm_num [regularPart, tsum_meanError_one τ, betaFactor_one, riemannZeta₀, riemannZeta_two, sq]
+  have h_two : (riemannZeta₀ 2).re = π ^ 2 / 6 - 1 := by
+    have h := riemannZeta_eq_inv_sub_add (s := 2) (by norm_num)
+    rw [riemannZeta_two, show (2 : ℂ) - 1 = 1 by norm_num, inv_one, ← sub_eq_iff_eq_add'] at h
+    rw [← h]
+    norm_cast
+  norm_num [regularPart, tsum_meanError_one τ, betaFactor_one, h_two]
 
 /-- For `1 < s < 2`, the sum `∑ |m τ + n|^(-2s)` over `ℤ²` is
 `regularPart τ s + betaFactor (Im τ) s / (s - 1)`, where
