@@ -43,10 +43,11 @@ private theorem integral_exp_neg_mul_rieszTerm (a : ℂ) {n : ℕ} {T : ℝ} (hn
     filter_upwards [volume.ae_ne (Real.log n)] with u hu
     simp only [mem_inter_iff, mem_Ici, mem_Ioc]
     grind
+  have hexp : (∫ u in Real.log n..T, Real.exp (-u)) = (n : ℝ)⁻¹ - (Real.exp T)⁻¹ := by
+    rw [intervalIntegral.integral_comp_neg, integral_exp]
+    simp [Real.exp_neg, Real.exp_log hn0]
   rw [setIntegral_congr_set he, ← intervalIntegral.integral_of_le hlogT,
-    intervalIntegral.integral_mul_const, intervalIntegral.integral_ofReal,
-    intervalIntegral.integral_comp_neg, integral_exp, Real.exp_neg, Real.exp_neg,
-    Real.exp_log hn0]
+    intervalIntegral.integral_mul_const, intervalIntegral.integral_ofReal, hexp]
   push_cast
   have hnC : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.ne_zero_of_lt hn)
   field_simp
@@ -120,8 +121,11 @@ theorem tendsto_rieszSum_div_of_analyticAt {a : ℕ → ℂ} {F : ℂ → ℂ} {
     have hshift := (hasLaplace_cexp_mul_smul_iff (s := z) (w := -1)).mpr
       (by simpa using hl)
     rw [integral_Ici_eq_integral_Ioi]
-    simpa only [G, g, A, h.LSeries_eq, smul_eq_mul, neg_one_mul, mul_neg_one, mul_comm] using
-      hshift.integral_eq.symm
+    calc
+      _ = ∫ u in Ioi (0 : ℝ), Complex.exp (-z * u) * g u := by
+        simpa only [G, g, A, h.LSeries_eq, smul_eq_mul, neg_one_mul, mul_neg_one] using
+          hshift.integral_eq.symm
+      _ = _ := integral_congr_ae (Eventually.of_forall fun _ ↦ mul_comm _ _)
   have hlim := LSeries.newmanLaplace_tendsto_integral_of_analyticAt hg.aestronglyMeasurable
     (M := C) (fun u hu ↦ by
       rw [Set.mem_Ici] at hu
@@ -129,7 +133,7 @@ theorem tendsto_rieszSum_div_of_analyticAt {a : ℕ → ℂ} {F : ℂ → ℂ} {
       rw [norm_mul, Complex.norm_exp, Complex.neg_re, Complex.ofReal_re]
       calc _ ≤ Real.exp (-u) * (C * Real.exp u) :=
               mul_le_mul_of_nonneg_left (hbound _ (Real.one_le_exp hu)) (Real.exp_pos _).le
-        _ = C := by rw [mul_left_comm, ← Real.exp_add, neg_add_cancel, Real.exp_zero, mul_one])
+        _ = C := by rw [mul_left_comm, ← Real.exp_add]; simp)
     hG hLap
   have hlog := hlim.comp Real.tendsto_log_atTop
   simp only [G, zero_add, div_one] at hlog

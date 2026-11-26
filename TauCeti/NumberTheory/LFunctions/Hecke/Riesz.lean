@@ -17,11 +17,10 @@ import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Boundary
 /-!
 # First Riesz sums of nontrivial ray class characters
 
-The first Riesz sum of the twisted ideal von Mangoldt coefficients, divided by its cutoff,
-converges to the negative logarithmic derivative at `1` when the continued L-function is
-nonzero there. Thus adding the linear term with
-coefficient `L′(1, χ) / L(1, χ)` leaves a remainder of sublinear growth. The proof uses the
-partial-summation continuation of the Hecke series, so it does not require a functional equation.
+When the continued L-function of a nontrivial ray class character `χ` is nonzero at `1`,
+the first Riesz sum `R(x)` of its twisted ideal von Mangoldt coefficients satisfies
+`R(x) / x → −L′(1, χ) / L(1, χ)` as `x → ∞`. For any complex coefficient `c`, there is
+a constant `C` such that `‖R(x) + c x‖ ≤ C x` for all `x ≥ 1`.
 -/
 
 public section
