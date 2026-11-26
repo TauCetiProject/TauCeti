@@ -175,7 +175,7 @@ private theorem IsExplicit.stageMap_iterate_apply_eq (hT : T.IsExplicit) (m : �
   | succ m ih =>
     simp only [iterate_succ_apply', stageMap_apply, hT.sum_eq_sum_Iio]
     refine congrArg (fun v ↦ f _ (y + h • v)) (Finset.sum_congr rfl fun l hl ↦ ?_)
-    rw [ih l (lt_of_lt_of_le (Fin.lt_def.mp (Finset.mem_Iio.mp hl)) (Nat.lt_succ_iff.mp hj))]
+    rw [ih l (by simp only [Finset.mem_Iio, Fin.lt_def] at hl; omega)]
 
 /-- For an explicit tableau with `s` stages, the `s`-th iterate of the stage map does not depend
 on the starting vector. -/

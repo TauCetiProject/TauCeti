@@ -52,7 +52,7 @@ theorem increment_of_zero (T : ButcherTableau 0) (f : ℝ → E → E) (t : ℝ)
 noncomputable def euler : ButcherTableau 1 := ⟨!![0], ![1], ![0]⟩
 
 theorem euler_isExplicit : euler.IsExplicit :=
-  isExplicit_iff.mpr fun i j _ ↦ by fin_cases i; fin_cases j; rfl
+  isExplicit_iff.mpr fun i j _ ↦ by fin_cases i; fin_cases j; simp [euler]
 
 /-- The stage of `euler` is `f t y`: the stage time is `t + 0 * h = t`. -/
 theorem euler_stages (f : ℝ → E → E) (t : ℝ) (y : E) (h : ℝ) :
@@ -75,7 +75,7 @@ noncomputable def twoStage : ButcherTableau 2 := ⟨!![0, 0; 1, 0], ![1 / 2, 1 /
 
 theorem twoStage_isExplicit : twoStage.IsExplicit :=
   isExplicit_iff.mpr fun i j hij ↦ by
-    fin_cases i <;> fin_cases j <;> first | rfl | exact absurd hij (by decide)
+    fin_cases i <;> fin_cases j <;> simp_all [twoStage]
 
 /-- The stages of `twoStage`: `k 0 = f t y` and `k 1 = f (t + h) (y + h • k 0)`. -/
 theorem twoStage_stages (f : ℝ → E → E) (t : ℝ) (y : E) (h : ℝ) :
