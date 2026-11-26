@@ -137,7 +137,8 @@ theorem isHNSeries_shift_const_iff {c : 𝕜} {p : LTSeries L} :
 
 /-- Shifting the degree by the partial sums of an antitone sequence preserves the attainment of
 the maximal degree on each rank level. -/
-theorem DegreeMaxAttained.shift (h : D.DegreeMaxAttained) : (D.shift T hT).DegreeMaxAttained := by
+theorem DegreeMaxAttained.shift (h : D.DegreeMaxAttained) (T : ℕ → 𝕜) (hT : Antitone T) :
+    (D.shift T hT).DegreeMaxAttained := by
   refine (degreeMaxAttained_iff _).2 fun a b e hae heb ↦ ?_
   obtain ⟨c, hac, hcb, hrc, hmax⟩ := (degreeMaxAttained_iff _).1 h a b e hae heb
   refine ⟨c, hac, hcb, hrc, fun e' hae' he'b hr ↦ ?_⟩

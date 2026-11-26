@@ -63,6 +63,8 @@ truncation of automorphic forms and stacks of shtukas.
   Harder–Narasimhan series of an interval.
 * `TauCeti.RankDegree.IsHNSeries.eq_hnSeries`: every Harder–Narasimhan series is the one chosen by
   `TauCeti.RankDegree.DegreeMaxAttained.hnSeries`.
+* `TauCeti.RankDegree.DegreeMaxAttained.hnSeries_one`: the first step of the Harder–Narasimhan
+  series is the maximal destabilizing element.
 * `TauCeti.RankDegree.IsHNSeries.length_eq_one_iff`: the series is trivial exactly when the
   interval is semistable.
 
@@ -603,6 +605,20 @@ theorem last_hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) : (h.hnSeries ha
 theorem isHNSeries_hnSeries (h : D.DegreeMaxAttained) (hab : a ≤ b) :
     D.IsHNSeries (h.hnSeries hab) :=
   (h.exists_isHNSeries hab).choose_spec.2.2
+
+/-- The Harder–Narasimhan series of an interval `[a, b]` with `a < b` has positive length. -/
+theorem length_hnSeries_ne_zero (h : D.DegreeMaxAttained) (hab : a < b) :
+    (h.hnSeries hab.le).length ≠ 0 :=
+  RelSeries.length_ne_zero_of_nontrivial
+    ⟨_, RelSeries.head_mem _, _, RelSeries.last_mem _, by simpa using hab.ne⟩
+
+/-- The first step of the Harder–Narasimhan series of an interval `[a, b]` with `a < b` is its
+maximal destabilizing element. -/
+theorem hnSeries_one (h : D.DegreeMaxAttained) (hab : a < b) :
+    h.hnSeries hab.le 1 = h.maxDestabilizing hab := by
+  have hmd := (h.isHNSeries_hnSeries hab.le).isMaxDestabilizing_head (h.length_hnSeries_ne_zero hab)
+  rw [head_hnSeries, last_hnSeries] at hmd
+  exact hmd.eq_maxDestabilizing h
 
 end DegreeMaxAttained
 
