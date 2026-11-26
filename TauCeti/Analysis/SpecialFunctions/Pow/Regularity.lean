@@ -7,12 +7,19 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.InnerProductSpace.NormPow
 
 /-!
 # The sharp finite regularity of absolute powers
 
 For `k < p < k + 1`, the function `x ↦ |x| ^ p` is not `C^(k+1)` at zero. This supplies
 sharp obstructions to finite regularity for radial powers and their restrictions to real lines.
+
+Positive regularity is read off from the derivative `p |x| ^ (p - 2) x` of `|x| ^ p` (Mathlib's
+`hasDerivAt_abs_rpow`) and of the odd power `|x| ^ p x`, whose derivative is `(p + 1) |x| ^ p`
+for `p > 1` (`TauCeti.hasDerivAt_abs_rpow_mul_self`). Differentiation thus alternates between the
+even powers `|x| ^ p` and the odd powers `|x| ^ (p - 2) x`, lowering the exponent by one at each
+step.
 -/
 
 public section
@@ -21,6 +28,18 @@ open Set Filter Topology Real
 open scoped ContDiff
 
 namespace TauCeti
+
+/-- The odd power `|x| ^ p * x`, that is `sign(x) |x| ^ (p + 1)`, has derivative `(p + 1) |x| ^ p`,
+for `p > 1`. -/
+theorem hasDerivAt_abs_rpow_mul_self {p : ℝ} (hp : 1 < p) (x : ℝ) :
+    HasDerivAt (fun x : ℝ ↦ |x| ^ p * x) ((p + 1) * |x| ^ p) x := by
+  refine ((hasDerivAt_abs_rpow x hp).mul (hasDerivAt_id' x)).congr_deriv ?_
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [Real.zero_rpow (by linarith : p ≠ 0)]
+  · have h2 : |x| ^ (p - 2) * (x * x) = |x| ^ p := by
+      rw [← abs_mul_abs_self x, ← sq, ← Real.rpow_two, ← Real.rpow_add (abs_pos.2 hx),
+        sub_add_cancel]
+    linear_combination p * h2
 
 /-- A nonintegral absolute power fails to have the next order of continuous differentiability
 at the origin. -/
