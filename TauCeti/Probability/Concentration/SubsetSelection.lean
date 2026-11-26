@@ -101,13 +101,11 @@ theorem le_measureReal_forall_abs_card_filter_sub_sum_le {Ω α Q : Type*} [Meas
         variance_card_filter_mem_le S (T q) (fun a _ ↦ hm a) (hi.set_pairwise _)
     have hc := meas_ge_le_variance_div_sq hLp hr
     rw [he] at hc
-    have hnonneg : 0 ≤ Var[X q; μ] / r ^ 2 := div_nonneg (variance_nonneg _ _) (sq_nonneg r)
-    have hreal : μ.real {x | r ≤ |X q x - M q|} ≤ Var[X q; μ] / r ^ 2 := by
-      simpa only [measureReal_def, ENNReal.toReal_ofReal hnonneg] using
-        ENNReal.toReal_mono ENNReal.ofReal_ne_top hc
-    refine (measureReal_mono (s₂ := {x | r ≤ |X q x - M q|}) ?_).trans <|
-      hreal.trans (div_le_div_of_nonneg_right hv (sq_nonneg r))
-    exact fun _ hx ↦ (mem_ofPred_eq.mp hx).le
+    refine ENNReal.toReal_le_of_le_ofReal
+      (div_nonneg ((variance_nonneg _ _).trans hv) (sq_nonneg r)) ?_
+    calc
+      _ ≤ μ {x | r ≤ |X q x - M q|} := measure_mono fun _ hx ↦ (mem_ofPred_eq.mp hx).le
+      _ ≤ _ := hc.trans (ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right hv (sq_nonneg r)))
   let B := ⋃ q, {x | r < |X q x - M q|}
   have hB : MeasurableSet B := MeasurableSet.iUnion fun q ↦
     measurableSet_lt measurable_const (continuous_abs.measurable.comp ((hmeas q).sub_const _))
@@ -141,24 +139,22 @@ private theorem scaled_fiber_error_le {k o D ω₀ : ℝ} (hω₀ : 0 < ω₀)
 /-- The size and relative errors follow deterministically from the absolute errors of the
 individual fibre counts. -/
 private theorem card_fiber_bounds_of_abs_sub_le {Q : Type*} [Fintype Q] (c ω : Q → ℝ)
-    {a D ω₀ : ℝ} (hD : 0 < D) (hω₀ : 0 < ω₀) (hω : ∀ q, ω q ∈ Icc ω₀ 1)
-    (hE₀ : ω₀ * D ≤ a * ∑ j, ω j)
+    {a D E ω₀ : ℝ} (hE : E = a * ∑ j, ω j) (hD : 0 < D) (hω₀ : 0 < ω₀)
+    (hω : ∀ q, ω q ∈ Icc ω₀ 1) (ho : 0 < (Fintype.card Q : ℝ))
+    (hW₀ : (Fintype.card Q : ℝ) * ω₀ ≤ ∑ j, ω j) (hE₀ : ω₀ * D ≤ E)
     (hsize : 16 * (Fintype.card Q : ℝ) ^ 2 / ω₀ ^ 2 ≤ D)
     (hclose : ∀ q, |c q - a * ω q| ≤ 2 * Real.sqrt D) :
-    let E := a * ∑ j, ω j
     E / 2 ≤ (∑ j, c j) ∧ (∑ j, c j) ≤ 3 * E / 2 ∧
       (36 * (Fintype.card Q : ℝ) ^ 2 / ω₀ ^ 2 ≤ D → 2 * E / 3 ≤ (∑ j, c j)) ∧
       ∀ q, |c q - (ω q / ∑ j, ω j) * ∑ j, c j| ≤
         (4 * (1 + ω₀) / ω₀ ^ 2 / Real.sqrt D) * ∑ j, c j := by
-  dsimp only
   let o : ℝ := Fintype.card Q
   let W := ∑ q, ω q
-  let E := a * W
   let M (q : Q) := a * ω q
   have hsumErr : (∑ q, |c q - M q|) ≤ o * (2 * Real.sqrt D) := by
     simpa [o, nsmul_eq_mul] using Finset.sum_le_sum (s := Finset.univ) fun q _ ↦ hclose q
   have htot : |(∑ j, c j) - E| ≤ o * (2 * Real.sqrt D) := by
-    simpa only [Finset.sum_sub_distrib, M, ← Finset.mul_sum, E, W] using
+    simpa only [Finset.sum_sub_distrib, M, ← Finset.mul_sum, ← hE] using
       (Finset.abs_sum_le_sum_abs (fun q ↦ c q - M q) Finset.univ).trans hsumErr
   have hhalf := (scaled_fiber_error_le (k := 2) (o := o) hω₀
     (by simpa only [show (2 * 2 : ℝ) ^ 2 = 16 by norm_num, o] using hsize)).trans hE₀
@@ -167,19 +163,17 @@ private theorem card_fiber_bounds_of_abs_sub_le {Q : Type*} [Fintype Q] (c ω : 
   · have hthird := (scaled_fiber_error_le (k := 3) (o := o) hω₀
       (by simpa only [show (2 * 3 : ℝ) ^ 2 = 36 by norm_num, o] using h)).trans hE₀
     linarith [(abs_le.mp htot).1]
-  · have : Nonempty Q := ⟨q⟩
-    have ho : 0 < o := by dsimp [o]; exact_mod_cast Fintype.card_pos
-    have hW₀ : o * ω₀ ≤ W := by
-      simpa [o, W, nsmul_eq_mul] using Finset.univ.card_nsmul_le_sum ω ω₀ (fun q _ ↦ (hω q).1)
-    have hW : 0 < W := (mul_pos ho hω₀).trans_le hW₀
-    have hν : ω q / W * E = M q := by dsimp only [E, M]; field_simp
+  · have hW : 0 < W := (mul_pos ho hω₀).trans_le hW₀
+    have hν : ω q / W * E = M q := calc
+      _ = ω q / W * (a * W) := congrArg (fun t ↦ ω q / W * t) hE
+      _ = M q := by rw [mul_left_comm, div_mul_cancel₀ _ hW.ne']
     have hν₀ : 0 ≤ ω q / W := div_nonneg (hω₀.le.trans (hω q).1) hW.le
     have hν₁ : (ω q / W) * o ≤ 1 / ω₀ := by
       calc
         _ = ω q * o / W := by ring
         _ ≤ 1 * o / (o * ω₀) := div_le_div₀ (by positivity)
           (mul_le_mul_of_nonneg_right (hω q).2 ho.le) (mul_pos ho hω₀) hW₀
-        _ = _ := by field_simp
+        _ = _ := by field_simp [(ne_of_gt ho : o ≠ 0)]
     calc
       _ = |(c q - M q) - (ω q / W) * ((∑ j, c j) - E)| := by
         congr 1
@@ -266,8 +260,9 @@ theorem three_div_four_le_measureReal_card_fiber_bounds {Ω α Q : Type*} [Measu
   have hc : (∑ q, c q) = (S x).card := by
     rw [Finset.card_eq_sum_card_fiberwise (f := p) (t := Finset.univ) (fun _ _ ↦ Finset.mem_univ _),
       Nat.cast_sum]
-  simpa only [mem_ofPred_eq, ← hE, hc, c, D] using
-    card_fiber_bounds_of_abs_sub_le c ω hD hω₀ hω (by simpa only [hE] using hE₀) hsize
-      (by simpa only [mem_ofPred_eq, hMdef, c, D] using hx)
+  simp only [mem_ofPred_eq, hMdef] at hx
+  have hb := card_fiber_bounds_of_abs_sub_le c ω hE hD hω₀ hω ho hW₀ hE₀ hsize hx
+  rw [hc] at hb
+  exact hb
 
 end TauCeti
