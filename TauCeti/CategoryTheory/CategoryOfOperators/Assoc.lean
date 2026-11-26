@@ -134,7 +134,7 @@ instance : SmallCategory Assoc.{u} where
       mem_word_iff i k := by
         simp only [List.mem_flatMap, g.mem_word_iff, f.mem_word_iff, FinPointed.comp_toFun]
         refine ⟨fun ⟨_, hj, hi⟩ ↦ hi ▸ hj, fun h ↦ ?_⟩
-        obtain ⟨j, hj⟩ := FinPointed.exists_toFun_eq_succ_of_toFun_toFun_eq_succ h
+        obtain ⟨j, hj⟩ := FinPointed.exists_eq_succ_of_toFun_eq_succ h
         exact ⟨j, hj ▸ h, hj⟩
       nodup_word k := by
         refine List.nodup_flatMap.2 ⟨fun j _ ↦ f.nodup_word j, (g.nodup_word k).imp ?_⟩
@@ -328,7 +328,7 @@ theorem isStronglyCocartesian_of_isInert (φ : X ⟶ Y) (hφ : φ.base.IsInert) 
   -- Every letter `i` of a word of `φ'` is sent by `φ` to some `j + 1`.
   have hcover {k : Fin Z.len} {i : Fin X.len} (hi : i ∈ φ'.word k) : ∃ j, τ i = some j := by
     rw [φ'.mem_word_iff, hφ', FinPointed.comp_toFun] at hi
-    obtain ⟨j, hj⟩ := FinPointed.exists_toFun_eq_succ_of_toFun_toFun_eq_succ hi
+    obtain ⟨j, hj⟩ := FinPointed.exists_eq_succ_of_toFun_eq_succ hi
     exact ⟨j, hτ.2 hj⟩
   -- The factorization `χ` of `φ'` through `φ` reads the words of `φ'` along `τ`.
   let χ : Y ⟶ Z :=

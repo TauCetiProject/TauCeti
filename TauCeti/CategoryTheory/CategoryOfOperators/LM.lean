@@ -285,7 +285,8 @@ lemma homLiftEquiv_symm_apply_word
     ((homLiftEquiv g).symm f).val.toAssoc.word j = (f j).val.toAssoc.word 0 :=
   assocLift_word g f j
 
-/-- Over an inert map, the color of each output is the color of its unique input. -/
+/-- If the word of `f` over the output `j` is the single letter `i`, then the output `j` has
+the color of the input `i`. -/
 lemma Hom.color_eq_of_word_eq_singleton (f : X ⟶ Y) {j : Fin Y.len} {i : Fin X.len}
     (h : f.toAssoc.word j = [i]) : Y.color j = X.color i :=
   (by simpa [h] using f.isProfile j : X.color i = Y.color j).symm
