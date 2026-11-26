@@ -574,6 +574,29 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
     finrank_quotient_range_floerSobolevOperator_eq_finrank_quotient_range_trajectoryOperator hω hH
       hγ ha haγ hA]
 
+/-- The coefficient `y ↦ -i dX_H(y)` of the Morse operator of a `C²` Hamiltonian is continuous. -/
+theorem continuous_neg_comp_fderiv_hamiltonianVectorField (hH : ContDiff ℝ 2 H) :
+    Continuous fun y ↦
+      -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField H) y)) :=
+  (continuous_const.clm_comp
+    ((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero)).neg
+
+/-- If `ω = Im ⟪·, ·⟫` and `H` is `C²`, then at every point `p` the operator `-i dX_H(p)` is
+symmetric for the real inner product `Re ⟪·, ·⟫`: it is the negative of the Hessian of `H` at
+`p`. -/
+theorem isSymmetric_neg_comp_fderiv_hamiltonianVectorField
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) (hH : ContDiff ℝ 2 H) (p : F) :
+    let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+      (fderiv ℝ (ω.hamiltonianVectorField H) p)) : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := by
+  intro _ u v
+  have hg := ω.apply_ofComplexModule_eq_inner hω
+  have h := (ω.invariant_of_apply_apply_eq_inner
+    hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm (hH.contDiffAt (x := p)) u v
+  rw [associatedBilinForm_apply, associatedBilinForm_apply, hg, hg] at h
+  simpa [inner_neg_left, inner_neg_right] using h
+
 /-- **The index along a gradient line between nondegenerate zeros.** Let `F` be a
 finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H` be
 a `C²` autonomous Hamiltonian and `γ` a continuous curve with `‖dX_H(γ(s))‖ ≤ a < 2π` for every
@@ -598,23 +621,18 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
             (fderiv ℝ (ω.hamiltonianVectorField H) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio 0)) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg := ω.apply_ofComplexModule_eq_inner hω
   set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
   -- The coefficient `B(y) = -i dX_H(y)` of the Morse operator, continuous in `y`.
   set B : F → F →L[ℝ] F := fun y ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField H) y))
-  have hBc : Continuous B := (continuous_const.clm_comp
-    ((ω.contDiff_hamiltonianVectorField (n := 1) hH).continuous_fderiv one_ne_zero)).neg
+  have hBc : Continuous B := continuous_neg_comp_fderiv_hamiltonianVectorField hH
   have hAL : MemLp (fun s ↦ B (γ s)) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) :=
     memLp_top_of_bound (hBc.comp hγ).aestronglyMeasurable (‖Jc‖ * a) (.of_forall fun s ↦ by
       rw [norm_neg]
       exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (haγ s) (norm_nonneg _)))
   rw [index_floerSobolevOperator_eq_index_trajectoryOperator hω hH hγ ha haγ hAL.coeFn_toLp]
   -- `B(p)` is the negative of the Hessian, symmetric for the real inner product.
-  have hsym (p : F) : ((B p : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := fun u v ↦ by
-    have h := (ω.invariant_of_apply_apply_eq_inner
-      hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm (hH.contDiffAt (x := p)) u v
-    rw [associatedBilinForm_apply, associatedBilinForm_apply, hg, hg] at h
-    simpa [B, Jc, inner_neg_left, inner_neg_right] using h
+  have hsym (p : F) : ((B p : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric :=
+    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω hH p
   -- At the limits, `B(p±)` is injective, hence bounded below.
   have hbound (p : F) (hp : Function.Injective (fderiv ℝ (ω.hamiltonianVectorField H) p)) :
       ∃ c > 0, ∀ v, c * ‖v‖ ≤ ‖B p v‖ := by

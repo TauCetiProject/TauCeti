@@ -654,6 +654,15 @@ theorem hamiltonianVectorField_div_two_mul_norm_sq {ω : SymplecticForm E}
   simp [hJ]
   ring
 
+/-- If the inner product of `E` is the metric `ω(·, J ·)`, the almost complex structure `J`, an
+isometry, has operator norm at most one. -/
+theorem norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner {ω : SymplecticForm E}
+    {J : AlmostComplexStructure E} (hg : ∀ v w, ω v (J w) = ⟪v, w⟫) :
+    ‖J.toLinearMap.toContinuousLinearMap‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
+    rw [one_mul, LinearMap.coe_toContinuousLinearMap']
+    exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
+
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, the derivative `-c J` of the Hamiltonian
 vector field of `Q(y) = (c / 2) ‖y‖²` has norm at most `c ≥ 0`, since `J` is an isometry. -/
 theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : SymplecticForm E}
@@ -661,9 +670,7 @@ theorem norm_fderiv_hamiltonianVectorField_div_two_mul_norm_sq_le {ω : Symplect
     ‖fderiv ℝ (ω.hamiltonianVectorField fun y ↦ c / 2 * ‖y‖ ^ 2) y‖ ≤ c := by
   rw [hamiltonianVectorField_div_two_mul_norm_sq hg c, ContinuousLinearMap.fderiv, norm_smul,
     norm_neg, Real.norm_eq_abs, abs_of_nonneg hc]
-  refine mul_le_of_le_one_right hc (ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ ?_)
-  rw [one_mul, LinearMap.coe_toContinuousLinearMap']
-  exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
+  exact mul_le_of_le_one_right hc (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
 
 /-- If the inner product of `E` is the metric `ω(·, J ·)`, adding `(δ / 2) ‖y‖²` to a Hamiltonian
 whose vector field is differentiable at `y` subtracts `δ J` from the derivative of the Hamiltonian
@@ -710,14 +717,11 @@ theorem norm_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq_le {ω : Symp
     (hX : DifferentiableAt ℝ (ω.hamiltonianVectorField H) y) (δ : ℝ) :
     ‖fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) y‖ ≤
       ‖fderiv ℝ (ω.hamiltonianVectorField H) y‖ + |δ| := by
-  have hJ : ‖J.toLinearMap.toContinuousLinearMap‖ ≤ 1 :=
-    ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
-      rw [one_mul]
-      exact (ω.norm_apply_eq_norm_of_apply_apply_self_eq_inner (fun v ↦ hg v v) v).le
   rw [fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq hg hH hX]
   refine (norm_sub_le _ _).trans (add_le_add le_rfl ?_)
   rw [norm_smul, Real.norm_eq_abs]
-  exact mul_le_of_le_one_right (abs_nonneg δ) hJ
+  exact mul_le_of_le_one_right (abs_nonneg δ)
+    (norm_toContinuousLinearMap_le_one_of_apply_apply_eq_inner hg)
 
 end Gradient
 
