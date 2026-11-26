@@ -11,6 +11,7 @@ import Mathlib.Analysis.Polynomial.CauchyBound
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 import Mathlib.Combinatorics.SimpleGraph.Paths
+import TauCeti.Analysis.Polynomial.RootLocation
 
 /-!
 # Hölder dependence of the roots of a polynomial on its coefficients
@@ -33,7 +34,7 @@ family to symmetric functions of its roots that are not polynomial in the coeffi
 
 The one-sided estimate is elementary: if `g(z) = 0`, then `∏ ‖z - a‖ = ‖f(z)‖ = ‖(f - g)(z)‖` over
 the roots `a` of `f`, so some root of `f` lies within `‖(f - g)(z)‖^(1/n)` of `z`
-(`Polynomial.Monic.exists_mem_roots_norm_sub_pow_le`; compare
+(`Polynomial.Splits.exists_mem_roots_norm_sub_pow_le`; compare
 `Polynomial.exists_roots_norm_sub_lt_of_norm_coeff_sub_lt`). The matching needs more, because
 several roots of `g` could cluster near a single simple root of `f`. It comes from a continuity
 argument along a path of polynomials, which holds over any proper algebraically closed normed
@@ -49,8 +50,6 @@ path through the cluster. For complex polynomials the straight path `f + t (g - 
 
 ## Main results
 
-* `Polynomial.Monic.exists_mem_roots_norm_sub_pow_le`: every point `z` lies within
-  `‖f(z)‖^(1/n)` of a root of a monic `f` of degree `n ≥ 1`.
 * `Polynomial.rel_roots_norm_sub_le_of_isPreconnected`: along a preconnected family of
   polynomials of degree `n` whose roots stay within `ρ` of those of `F x₀`, the roots of `F x₀`
   and `F x₁` match with multiplicity within `(2n - 1) ρ`.
@@ -161,35 +160,9 @@ private theorem clusterLabel_eq_clusterLabel {R : Finset K} {ρ η : ℝ}
   · rw [hne]
   · exact SimpleGraph.Adj.reachable (clusterGraph_adj.2 ⟨hne, hab'⟩)
 
-/-! ### A root near every point -/
-
-variable [IsAlgClosed K]
-
-/-- **A root near every point.** If `f` is monic of positive degree `n` over an algebraically closed
-normed field, then every point `z` lies within `‖f(z)‖^(1/n)` of a root of `f`: some root `a`
-has `‖z - a‖ⁿ ≤ ‖f(z)‖`, since `‖f(z)‖` is the product of the distances from `z` to the `n` roots
-of `f`, counted with multiplicity. -/
-theorem Monic.exists_mem_roots_norm_sub_pow_le {f : K[X]} (hf : f.Monic) (hn : f.natDegree ≠ 0)
-    (z : K) : ∃ a ∈ f.roots, ‖z - a‖ ^ f.natDegree ≤ ‖f.eval z‖ := by
-  classical
-  have hne : f.roots.toFinset.Nonempty := by
-    rw [Multiset.toFinset_nonempty, ← Multiset.card_pos, IsAlgClosed.card_roots_eq_natDegree]
-    exact Nat.pos_of_ne_zero hn
-  obtain ⟨a, ha, hmin⟩ := f.roots.toFinset.exists_min_image (fun a => ‖z - a‖) hne
-  refine ⟨a, Multiset.mem_toFinset.1 ha, ?_⟩
-  calc ‖z - a‖ ^ f.natDegree = (f.roots.map fun _ => ‖z - a‖).prod := by
-        rw [Multiset.map_const', Multiset.prod_replicate, IsAlgClosed.card_roots_eq_natDegree]
-    _ ≤ (f.roots.map fun b => ‖z - b‖).prod :=
-        Multiset.prod_map_le_prod_map₀ _ _ (fun _ _ => norm_nonneg _)
-          fun b hb => hmin b (Multiset.mem_toFinset.2 hb)
-    _ = ‖f.eval z‖ := by
-        rw [(IsAlgClosed.splits f).eval_eq_prod_roots_of_monic hf, Multiset.norm_prod,
-          Multiset.map_map]
-        rfl
-
 /-! ### Matching roots along a path of polynomials -/
 
-variable [ProperSpace K]
+variable [IsAlgClosed K] [ProperSpace K]
 
 /-- **Matching roots along a path.** Let `F x` be polynomials of degree `n` over a proper
 algebraically closed normed field, with coefficients continuous at the points of a preconnected
@@ -283,8 +256,8 @@ private theorem norm_coeff_segment_le {B : ℝ} {i : ℕ} (hf : ‖f.coeff i‖ 
   rw [h]
   calc _ ≤ ‖((1 - t : ℝ) : ℂ) * f.coeff i‖ + ‖(t : ℂ) * g.coeff i‖ := norm_add_le _ _
     _ = (1 - t) * ‖f.coeff i‖ + t * ‖g.coeff i‖ := by
-      rw [norm_mul, norm_mul, Complex.norm_real, Complex.norm_real, Real.norm_eq_abs,
-        Real.norm_eq_abs, abs_of_nonneg (sub_nonneg.2 ht.2), abs_of_nonneg ht.1]
+      simp only [norm_mul, Complex.norm_real, Real.norm_of_nonneg (sub_nonneg.2 ht.2),
+        Real.norm_of_nonneg ht.1]
     _ ≤ (1 - t) * B + t * B := by
       gcongr
       · exact sub_nonneg.2 ht.2
@@ -302,12 +275,11 @@ private theorem norm_le_of_mem_roots_segment (hf : f.Monic) (hg : g.Monic)
       natDegree_eq_of_degree_eq_some (degree_segment hf hg hdeg t)]
     gcongr
     refine Finset.sup_le fun i hi => ?_
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal _ hB]
-    exact norm_coeff_segment_le (hfB i (Finset.mem_range.1 hi)) (hgB i (Finset.mem_range.1 hi)) ht
-  have hlt := ((isRoot_of_mem_roots hz).norm_lt_cauchyBound hm.ne_zero).trans_le hb
-  rw [← NNReal.coe_lt_coe, coe_nnNorm, NNReal.coe_add, Real.coe_toNNReal _ hB,
-    NNReal.coe_one] at hlt
-  exact hlt.le
+    exact (Real.le_toNNReal_iff_coe_le hB).2
+      (norm_coeff_segment_le (hfB i (Finset.mem_range.1 hi)) (hgB i (Finset.mem_range.1 hi)) ht)
+  have hlt : ‖z‖ < B.toNNReal + 1 := by
+    exact_mod_cast ((isRoot_of_mem_roots hz).norm_lt_cauchyBound hm.ne_zero).trans_le hb
+  linarith [Real.coe_toNNReal _ hB]
 
 /-- The one-sided estimate: every root of `f + t (g - f)`, `0 ≤ t ≤ 1`, lies within
 `(n δ (B + 1)ⁿ⁻¹)^(1/n)` of a root of `f`. -/
@@ -324,9 +296,8 @@ private theorem exists_mem_roots_norm_sub_le_of_mem_roots_segment (hf : f.Monic)
   have hfz : ‖f.eval z‖ ≤ ‖(g - f).eval z‖ := by
     have hroot := (isRoot_of_mem_roots hz).eq_zero
     rw [segment, eval_add, eval_smul, smul_eq_mul] at hroot
-    rw [show f.eval z = -((t : ℂ) * (g - f).eval z) by linear_combination hroot, norm_neg,
-      norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+    rw [show f.eval z = -((t : ℂ) * (g - f).eval z) by linear_combination hroot]
+    simpa [abs_of_nonneg ht.1] using mul_le_of_le_one_left (norm_nonneg ((g - f).eval z)) ht.2
   -- the lower coefficients of `g - f` are at most `δ`, and `‖z‖ ≤ B + 1`
   have hgfz : ‖(g - f).eval z‖ ≤ n * δ * (B + 1) ^ (n - 1) := by
     have hlt : (g - f).natDegree < n := by
@@ -345,7 +316,8 @@ private theorem exists_mem_roots_norm_sub_le_of_mem_roots_segment (hf : f.Monic)
       _ = n * δ * (B + 1) ^ (n - 1) := by
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul, mul_assoc]
   -- so the nearest root of `f` is within the `n`-th root of `‖f(z)‖`
-  obtain ⟨a, ha, hpow⟩ := hf.exists_mem_roots_norm_sub_pow_le hn z
+  obtain ⟨a, ha, hpow⟩ := (IsAlgClosed.splits f).exists_mem_roots_norm_sub_pow_le hn z
+  rw [hf.leadingCoeff, norm_one, one_mul] at hpow
   refine ⟨a, ha, ?_⟩
   calc ‖z - a‖ = (‖z - a‖ ^ n) ^ (n⁻¹ : ℝ) := (Real.pow_rpow_inv_natCast (norm_nonneg _) hn).symm
     _ ≤ _ := Real.rpow_le_rpow (by positivity) (hpow.trans (hfz.trans hgfz)) (by positivity)
