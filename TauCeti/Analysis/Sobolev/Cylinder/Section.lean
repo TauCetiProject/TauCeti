@@ -30,11 +30,14 @@ dimension of the domain. This file constructs the map `ξ ↦ F(w + ξ) - F(w)` 
 and its derivative. The difference lies in `Lᵖ` under the hypotheses of
 `TauCeti.CylinderSobolev.quasilinearSection_apply_ae` (`b` and `A` bounded, `A` and `G` Lipschitz
 in `y`, uniformly in `z`), and the section is then everywhere given by its formula; outside these
-hypotheses it may take the junk value `0`. Under them, its zeros are the solutions of
-`F(w + ξ) = F(w)` almost everywhere, which are the zeros of `F` near `w` when `w` is itself a
-solution, `F(w) = 0`. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued map, the chart
-map `ξ ↦ F(w + ξ)` of `F` is then the section plus the constant `F(w)`, an affine shift with the
-same derivative.
+hypotheses it may take the junk value `0`. Under them, its zeros are the `ξ` in `W^{1,p}` solving
+the weak equation `ξ_s + A(z, w + ξ) (b + ξ_t) - A(z, w) b + G(z, w + ξ) - G(z, w) = 0` almost
+everywhere, with the weak derivatives `ξ_s`, `ξ_t` of `ξ`. The section is related to `F` only on
+smooth `ξ` with `b = ∂t w` (`TauCeti.CylinderSobolev.quasilinearSection_toW1p_ae`), where this
+equation reads `F(w + ξ) = F(w)`; that a general `W^{1,p}` zero is a classical solution is elliptic
+regularity, which is not proved here. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued
+map, the section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on such smooth `ξ`, an affine
+shift with the same derivative.
 
 **The section.** For `x = (ξ, ξ_s, ξ_t)` in `W^{1,p}` (`TauCeti.CylinderSobolev.W1p`), with `ξ`
 read through its continuous representative (`TauCeti.CylinderSobolev.continuousValue`), and for
@@ -69,8 +72,8 @@ four terms: `(A(u₁) - A(u₀)) (ξ₁_t - ξ₂_t)`, which is small since the 
 `u₁` uniformly close to `u₀`; the Taylor remainders of `A` and `G` between `u₂` and `u₁`, which the
 mean value inequality bounds by the oscillation of `A'` and `G'` near `u₀`; and
 `(A'(u₀) (ξ₁ - ξ₂)) (ξ₂_t - ξ₀_t)`, which is small since `ξ₂_t` is close to `ξ₀_t` in `Lᵖ`. Strict
-differentiability is what the implicit function theorem and the Sard–Smale theorem ask of the map
-whose zeros are the solutions.
+differentiability is what the implicit function theorem and the Sard–Smale theorem ask of the
+section.
 
 The analogue for paths on the line, the trajectory section of a vector field, is
 `TauCeti.WeakDerivStep.trajectorySection`.

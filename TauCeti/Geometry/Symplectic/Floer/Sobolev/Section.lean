@@ -31,12 +31,17 @@ It is strictly differentiable, with derivative the linearization
 Under the hypotheses of `TauCeti.SymplecticForm.floerSection_apply_ae` (`∂t w` and `J` bounded,
 `J` and `G` Lipschitz in `y` uniformly in `z`), the Floer section is everywhere given by its
 pointwise formula; outside them it may take the junk value `0`. Under these hypotheses, with `w`
-differentiable, the zeros of the Floer section are the maps `u = w + ξ` with `F(u) = F(w)` almost
-everywhere. When the reference map is itself a Floer cylinder, `F(w) = 0`, they are the Floer
-cylinders near `w`, and the Floer section is the map to which the implicit function theorem and the
-Sard–Smale theorem are applied in the transversality theory of Floer cylinders. For a reference map
-with `F(w)` in `Lᵖ`, such as a pre-glued map, the chart map `ξ ↦ F(w + ξ)` is then the Floer
-section plus the constant `F(w)`, which has the same derivative.
+differentiable, the zeros of the Floer section are the `ξ` in `W^{1,p}` for which `u = w + ξ` is a
+weak solution of `F(u) = F(w)`: the equation holds almost everywhere with the weak derivatives
+`ξ_s`, `ξ_t` of `ξ` in place of its classical derivatives. Agreement with
+`TauCeti.SymplecticForm.floerOperator` is proved only on test sections
+(`TauCeti.SymplecticForm.floerSection_toW1p_ae`). When the reference map is itself a Floer
+cylinder, `F(w) = 0`, these zeros are the weak solutions of the Floer equation near `w`; that they
+are classical Floer cylinders is elliptic regularity, which is not proved here. The Floer section is
+the map to which the implicit function theorem and the Sard–Smale theorem are applied in the
+transversality theory of Floer cylinders. For a reference map with `F(w)` in `Lᵖ`, such as a
+pre-glued map, the Floer section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on test
+sections, and has the same derivative.
 
 ## Main definitions
 
@@ -49,8 +54,8 @@ section plus the constant `F(w)`, which has the same derivative.
 
 * `TauCeti.SymplecticForm.floerSection_apply_ae`: the pointwise formula of the Floer section.
 * `TauCeti.SymplecticForm.floerSection_zero`: it vanishes at the reference map.
-* `TauCeti.SymplecticForm.floerSection_toW1p_ae`: on the jet of a test section `ξ`, the Floer
-  section is `F(w + ξ) - F(w)`.
+* `TauCeti.SymplecticForm.floerSection_toW1p_ae`: under bounds on the coefficients, on the jet of
+  a test section `ξ` the Floer section is `F(w + ξ) - F(w)` almost everywhere.
 * `TauCeti.SymplecticForm.hasStrictFDerivAt_floerSection`: the Floer section is strictly
   differentiable, with derivative the linearization of the Floer coefficients.
 
