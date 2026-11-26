@@ -71,7 +71,7 @@ theorem basePointsRepresentation_expPointAt
   have hd_smul : differential (R := R) (H := H) (M := M) (t • d) =
       t • differential (R := R) (H := H) (M := M) d :=
     (differential (R := R) (H := H) (M := M)).toLinearMap.map_smul t d
-  congr!
+  simp_rw [hd_smul]
 
 /-- **When the differentiated action is nilpotent, `expPointAt d hd t` acts as
 `IsNilpotent.exp (t • differential d)`.** -/

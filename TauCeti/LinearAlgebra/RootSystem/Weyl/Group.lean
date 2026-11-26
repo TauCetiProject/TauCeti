@@ -467,7 +467,7 @@ theorem exists_flip_weylGroup_smul_eq_coweightEquiv (w : P.weylGroup) :
   refine ⟨⟨Equiv.autFlip P ((w⁻¹ : P.weylGroup) : P.Aut),
     Equiv.autFlip_mem_weylGroup (w⁻¹).property⟩, fun z ↦ ?_⟩
   rw [Subgroup.smul_def, Equiv.autFlip_smul_coweight, Subgroup.coe_inv, Equiv.coweightEquiv_inv]
-  rfl
+  exact DFunLike.congr_fun (LinearEquiv.symm_symm (w : P.Aut).coweightEquiv) z
 
 end
 

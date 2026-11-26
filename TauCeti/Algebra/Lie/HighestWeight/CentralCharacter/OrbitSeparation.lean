@@ -65,10 +65,7 @@ private theorem symmetricAlgebraLift_comp_corootRep_eq
   let := (rootSystem H).weylGroupCorootRep.symmetricAlgebraMulSemiringAction
   have := (rootSystem H).weylGroupCorootRep.smulCommClass_symmetricAlgebraMulSemiringAction
   refine _root_.SymmetricAlgebra.algHom_ext <| LinearMap.ext fun h ↦ ?_
-  change (SymmetricAlgebra.lift lam)
-      ((MulSemiringAction.toAlgHom K (SymmetricAlgebra K H)
-        (Subgroup.equivOp (rootSystem H).weylGroup w)) (SymmetricAlgebra.ι K H h)) =
-    SymmetricAlgebra.lift (w • lam) (SymmetricAlgebra.ι K H h)
+  simp only [LinearMap.comp_apply, LinearMap.coe_ofClass, AlgHom.comp_apply]
   rw [MulSemiringAction.toAlgHom_apply, Representation.symmetricAlgebraMulSemiringAction_smul,
     Representation.symmetricAlgebra_apply, _root_.SymmetricAlgebra.map_apply_ι,
     SymmetricAlgebra.lift_ι_apply, SymmetricAlgebra.lift_ι_apply,
@@ -99,22 +96,13 @@ theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
     (∀ p ∈ linearInvariants H,
         SymmetricAlgebra.lift lam p = SymmetricAlgebra.lift mu p) ↔
       ∃ w : (rootSystem H).weylGroup, w • lam = mu := by
-  have : Finite (rootSystem H).weylGroup := RootPairing.finite_weylGroup (rootSystem H)
-  have : Finite (rootSystem H).weylGroup.op := Finite.of_equiv _ (Subgroup.equivOp _)
-  let ρ := (rootSystem H).weylGroupCorootRep
-  let := ρ.symmetricAlgebraMulSemiringAction
-  have := ρ.smulCommClass_symmetricAlgebraMulSemiringAction
-  rw [linearInvariants_eq_symmetricAlgebraInvariants,
-    ρ.symmetricAlgebraInvariants_eq_fixedPoints, FixedPoints.forall_mem_subalgebra_eq_iff]
   constructor
-  · rintro ⟨g, hg⟩
-    let w : (rootSystem H).weylGroup := (Subgroup.equivOp _).symm g
-    have hgw : g = Subgroup.equivOp _ w := ((Subgroup.equivOp _).apply_symm_apply g).symm
-    rw [hgw, symmetricAlgebraLift_comp_corootRep_eq] at hg
-    exact ⟨w, SymmetricAlgebra.lift.injective hg⟩
-  · rintro ⟨w, hw⟩
-    refine ⟨Subgroup.equivOp _ w, ?_⟩
-    rw [symmetricAlgebraLift_comp_corootRep_eq, hw]
+  · intro heq
+    by_contra h
+    obtain ⟨p, hp, hlam, hmu⟩ := exists_mem_linearInvariants_lift_eq_zero_one h
+    simpa [hlam, hmu] using heq p hp
+  · rintro ⟨w, rfl⟩ p hp
+    exact (mem_linearInvariants_iff.mp hp w lam).symm
 
 /-- **The Weyl invariants `S(H)^W` separate Weyl orbits on `H`** when read through
 `LieAlgebra.IsKilling.cartanEquivDual`. -/

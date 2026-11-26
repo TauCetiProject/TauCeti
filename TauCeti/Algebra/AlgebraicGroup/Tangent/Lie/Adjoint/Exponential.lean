@@ -51,7 +51,8 @@ nilpotence of the left-invariant derivation on `H` holds in two geometric settin
    (`TauCeti.isNilpotent_apply_of_isNilpotent_ad`). This shows that `x` induces a locally nilpotent
    left-invariant derivation on `H`, realizes `Int(𝔤)` inside any closed subgroup with full Lie
    algebra, and (when `G` is of finite type) yields the packaged exponential point
-   `TauCeti.expAdPoint hx : G(k)` landing in `G°(k)` (and `C_G(y)°(k)` when `⁅x, y⁆ = 0`).
+   `TauCeti.expAdPoint hx : G(k)`, which—over an algebraically closed field—lands in `G°(k)` (and
+   `C_G(y)°(k)` when `⁅x, y⁆ = 0`).
 
 ## Main declarations
 
@@ -77,7 +78,8 @@ nilpotence of the left-invariant derivation on `H` holds in two geometric settin
   `TauCeti.intLieAlgebra_le_range_basePointsRepresentation`, and
   `TauCeti.intLieAlgebra_le_map_quotientPointsSubgroup_identityComponent`:
   when `𝔤` is Killing, `ad`-nilpotent elements integrate to `G` and `Int(𝔤)` is realized by
-  closed subgroups with full Lie algebra and by `G°(k)`.
+  closed subgroups with full Lie algebra and (over an algebraically closed field, when `G` is of
+  finite type) by `G°(k)`.
 
 ## References
 

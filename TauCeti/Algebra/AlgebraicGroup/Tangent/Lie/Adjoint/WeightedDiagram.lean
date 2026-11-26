@@ -66,11 +66,9 @@ orbit images in `P(𝔤 × k)`—if and only if their weighted Dynkin diagrams c
 (`IsSl2Triple.exists_basePointsRepresentation_eq_iff_weightedDynkinDiagram_eq`,
 `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`), and we obtain the
 explicit equivalence `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`, the
-injective invariant `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, the exact nilpotent
+injective invariant `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`, and the exact nilpotent
 orbit counts (`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq`,
-`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`), and the identification of the
-rational orbits on the nilpotent cone
-(`TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`).
+`TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`).
 
 ## Main declarations
 
@@ -104,11 +102,9 @@ rational orbits on the nilpotent cone
   `IsSl2Triple.range_projectiveOrbitMap_adjoint_eq_iff_weightedDynkinDiagram_eq`,
   `RootPairing.Base.optionDominantNeutralElementsEquivNilpotentOrbit`,
   `RootPairing.Base.nilpotentOrbitWeightedDynkinDiagram`,
-  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq`,
-  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`, and
-  `TauCeti.image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval`: complete
-  weighted-Dynkin-diagram classification, exact orbit counts, and nilpotent-cone orbit
-  identification for connected `G`.
+  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_and_ne_mk_zero_eq` and
+  `TauCeti.Comodule.VectorOrbit.ncard_setOf_isNilpotentAd_eq`: complete
+  weighted-Dynkin-diagram classification and exact orbit counts for connected `G`.
 
 ## References
 
@@ -782,33 +778,3 @@ theorem ncard_setOf_isNilpotentAd_eq
 end TauCeti.Comodule.VectorOrbit
 
 end Connected
-
-namespace TauCeti
-
-section NilpotentCone
-
-variable {k : Type u} [Field k] [CharZero k] [IsAlgClosed k]
-  (H : Type u) [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
-  [ConnectedSpace (PrimeSpectrum H)]
-  [LieAlgebra.IsKilling k (Module.Dual k (Bialgebra.CotangentSpace k H))]
-
-/-- **Rational `G`-orbits on the nilpotent cone.** For a connected Killing group, the rational
-orbits of `k`-points of the nilpotent cone are the nilpotent `G`-orbits. -/
-theorem image_vectorOrbit_mk_setOf_nilpotentConeIdeal_le_ker_lift_eval :
-    Comodule.VectorOrbit.mk (k := k) (H := H) ''
-        {x : Module.Dual k (Bialgebra.CotangentSpace k H) |
-          nilpotentConeIdeal k H ≤
-            RingHom.ker (SymmetricAlgebra.lift (Module.Dual.eval k _ x))} =
-      {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) |
-        O.IsNilpotentAd} := by
-  rw [← Set.image_preimage_eq
-    {O : Comodule.VectorOrbit k H (Module.Dual k (Bialgebra.CotangentSpace k H)) | O.IsNilpotentAd}
-    Comodule.VectorOrbit.mk_surjective]
-  congr 1
-  ext x
-  simp only [Set.mem_preimage, Set.mem_ofPred_eq, Comodule.VectorOrbit.isNilpotentAd_mk_iff]
-  exact nilpotentConeIdeal_le_ker_lift_eval_iff (H := FiniteTypeCommHopfAlgCat.of k H)
-
-end NilpotentCone
-
-end TauCeti
