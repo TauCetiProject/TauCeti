@@ -20,11 +20,11 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves zeros and exact
-meromorphic orders there, including the simple pole at `s = 1` for principal characters. At `s = 1`
-pointwise L-function comparison requires nonprincipal characters, as in the native continuation API.
-The factors are also nonzero on `Re(s) < 0`:
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`.
+The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves exact meromorphic
+orders there, including the simple pole at `s = 1` for principal characters.
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`, so the
+level change preserves zeros off the imaginary axis. At `s = 1` pointwise L-function comparison
+requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,
 by David Loeffler and Michael Stoll.
@@ -133,14 +133,14 @@ theorem LFunction_changeLevel_eventuallyEq_nhds {M N : ℕ} [NeZero M] [NeZero N
   · exact Eventually.of_forall fun z ↦ by
       simp [Finset.prod_apply, LFunction_changeLevel hMN χ (.inl hχ), mul_comm]
 
-/-- Raising the level preserves the zeros of the continued L-function in the open right
-half-plane. At the possible pole `1`, require the original character to be nonprincipal. -/
+/-- Raising the level preserves the zeros of the continued L-function off the imaginary axis.
+At the possible pole `1`, require the original character to be nonprincipal. -/
 @[simp] theorem LFunction_changeLevel_eq_zero_iff {M N : ℕ} [NeZero M] [NeZero N]
-    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : 0 < s.re)
+    (χ : DirichletCharacter ℂ M) (hMN : M ∣ N) {s : ℂ} (hs : s.re ≠ 0)
     (h : χ ≠ 1 ∨ s ≠ 1) :
     (changeLevel hMN χ).LFunction s = 0 ↔ χ.LFunction s = 0 := by
   rw [LFunction_changeLevel hMN χ h, mul_eq_zero]
-  simp [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs.ne']
+  simp only [prod_one_sub_mul_prime_cpow_ne_zero (N := N) χ hs, or_false]
 
 /-- Raising the level preserves the meromorphic order of the continued L-function at every point of
 the open right half-plane `Re(s) > 0`, including `s = 1` for principal characters. -/
