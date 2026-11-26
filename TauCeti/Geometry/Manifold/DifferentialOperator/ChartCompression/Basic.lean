@@ -78,6 +78,9 @@ with no continuity assumed) and computes their principal symbols:
 
 ## Main results
 
+* `OpenPartialHomeomorph.exists_testFunction_apply_eq`: a smooth function with compact support in
+  the source of a chart with smooth inverse is read in the chart as a test function on the chart
+  target.
 * `IsCompact.exists_sum_cutoffPullback_eq_one`: a compact set has finitely many cutoffs in preferred
   charts whose pullbacks sum to `1` on it, through which operators on `M` are assembled from
   operators in charts.
@@ -110,6 +113,41 @@ open Set Filter Topology TauCeti
 open scoped ContDiff Manifold Distributions
 
 namespace OpenPartialHomeomorph
+
+section ChartReading
+
+variable {E H X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace X] [ChartedSpace H X]
+
+/-- **Reading a function supported in a chart.** A smooth function `ψ` with compact support in the
+source of a chart `c` with smooth inverse is read in the chart as a test function on the chart
+target, supported in the image of the support of `ψ`. -/
+theorem exists_testFunction_apply_eq {c : OpenPartialHomeomorph X E}
+    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {ψ : C^∞⟮I, X; ℝ⟯}
+    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source) :
+    ∃ ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ), tsupport ψ' ⊆ c '' tsupport ψ ∧
+      ∀ x ∈ c.source, ψ' (c x) = ψ x := by
+  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = θ · (ψ ∘ c⁻¹)`.
+  have hC : IsCompact (c '' tsupport ψ) :=
+    hψc.isCompact.image_of_continuousOn (c.continuousOn.mono hψ)
+  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
+    (Ω := ⟨c.target, c.open_target⟩) (n := ⊤) hC
+    (image_subset_iff.2 fun p hp ↦ c.map_source (hψ hp))
+  have hsmooth : ContDiff ℝ ∞ fun z ↦ θ z * ψ (c.symm z) := by
+    have h := ContMDiffOn.contMDiff_smul_of_tsupport_subset
+      (ψ.contMDiff.comp_contMDiffOn hcs) c.open_target θ.contDiff.contMDiff.contMDiffOn
+      θ.tsupport_subset
+    simpa only [smul_eq_mul, Function.comp_apply] using contMDiff_iff_contDiff.1 h
+  refine ⟨⟨fun z ↦ θ z * ψ (c.symm z), hsmooth, θ.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_, fun x hx ↦ ?_⟩
+  · refine closure_minimal (fun z hz ↦ ?_) hC.isClosed
+    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hz))
+    exact ⟨c.symm z, subset_tsupport _ (right_ne_zero_of_mul hz), c.right_inv hzt⟩
+  · rw [TestFunction.coe_mk, c.left_inv hx]
+    exact mul_eq_right_of_ne_zero_imp_eq_one fun hψx ↦
+      hθ.self_of_nhdsSet _ (mem_image_of_mem c (subset_tsupport _ hψx))
+
+end ChartReading
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [T2Space M]
@@ -231,20 +269,12 @@ cutoffs in the charts. -/
 theorem exists_cutoffPullback_one_eq [FiniteDimensional ℝ E] {g : C^∞⟮𝓘(ℝ, E), M; ℝ⟯}
     (hgc : HasCompactSupport g) (hg : tsupport g ⊆ e.source) :
     ∃ ρ : 𝓓(⟨e.target, e.open_target⟩, ℝ), e.cutoffPullback he ρ 1 = g := by
-  -- A cutoff `θ` equal to `1` near the image `e (supp g)`, and `ρ = θ · (g ∘ e⁻¹)`.
-  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨e.target, e.open_target⟩) (n := ⊤)
-    (hgc.isCompact.image_of_continuousOn (e.continuousOn.mono hg))
-    (image_subset_iff.2 fun p hp ↦ e.map_source (hg hp))
-  have hρ : ContDiff ℝ ∞ fun y ↦ θ y * g (e.symm y) :=
-    funext (e.cutoffPushforward_apply he θ g) ▸ e.contDiff_cutoffPushforward he θ g
-  refine ⟨⟨fun y ↦ θ y * g (e.symm y), hρ, θ.hasCompactSupport.mul_right,
-    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_⟩
+  obtain ⟨ρ, -, hρ⟩ :=
+    exists_testFunction_apply_eq (contMDiffOn_symm_of_mem_maximalAtlas he) hgc hg
+  refine ⟨ρ, ?_⟩
   ext p
   by_cases hp : p ∈ e.source
-  · rw [cutoffPullback_one_apply_of_mem he _ hp, TestFunction.coe_mk, e.left_inv hp]
-    exact mul_eq_right_of_ne_zero_imp_eq_one fun hgp ↦
-      hθ.self_of_nhdsSet _ (mem_image_of_mem e (subset_tsupport _ hgp))
+  · rw [cutoffPullback_one_apply_of_mem he _ hp, hρ p hp]
   · rw [cutoffPullback_apply_of_notMem he _ _ hp,
       image_eq_zero_of_notMem_tsupport fun h ↦ hp (hg h)]
 

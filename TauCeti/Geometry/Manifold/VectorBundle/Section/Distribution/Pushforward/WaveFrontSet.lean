@@ -8,8 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Algebra.GroupWithZero.Indicator
-import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
+import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
@@ -53,8 +52,6 @@ with the cutoff `ρᵢ χ` read in `cᵢ`. The transpose of the derivative of `�
 
 ## Main results
 
-* `TauCeti.BundleTest.isMicrolocallySmoothAt_of_notMem_dsupport`: a functional on bundle tests is
-  microlocally smooth at every covector over a point outside its support.
 * `TauCeti.BundleTest.IsMicrolocallySmoothAt.cutoffPushforwardCLM`: `f_* (χ T)` is microlocally
   smooth at `(y, η)` if `T` is microlocally smooth at the nonzero covectors `η ∘ df_x` for the
   points `x` of `supp χ ∩ supp T` over `y`.
@@ -83,70 +80,6 @@ open scoped Manifold ContDiff Distributions Topology InnerProduct CompactConverg
 
 namespace TauCeti.BundleTest
 
-/-! ### Microlocal smoothness off the support -/
-
-section Support
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  [ContMDiffVectorBundle ∞ F V I] [IsManifold I ∞ M]
-
-/-- If a functional `T` on bundle tests vanishes on a set `U`, then its components in a chart `c`
-and a frame `t` vanish on the part `c.target ∩ c⁻¹ ⁻¹' U` of the chart target read from `U`. -/
-theorem _root_.Bundle.Trivialization.isVanishingOn_chartComponent (t : Trivialization F (π F V))
-    [MemTrivializationAtlas t] (c : OpenPartialHomeomorph M E)
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    {T : BundleTest I F V →L_c[ℝ] ℝ} {U : Set M} (hTU : IsVanishingOn ⇑T U) (v : F) :
-    Distribution.IsVanishingOn (t.chartComponent c hc hct T v) (c.target ∩ c.symm ⁻¹' U) := by
-  intro φ hφ
-  rw [chartComponent_apply, isVanishingOn_iff.1 hTU _ ?_, Complex.ofReal_zero]
-  have h := tsupport_chartTestSection (n := ⊤) t c hc hct
-    (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ)
-  rw [ContMDiffSection.tsupport_def] at h
-  rw [coe_chartTestCLM, h]
-  rintro _ ⟨z, hz, rfl⟩
-  have hsupp : tsupport (TestFunction.postcompCLM (toSpanSingleton ℝ v) φ) ⊆ tsupport φ := by
-    refine closure_mono fun w hw ↦ ?_
-    simp only [mem_support, ne_eq] at hw ⊢
-    intro hφw
-    apply hw
-    simp [hφw]
-  have hzφ : z ∈ tsupport φ := hsupp hz
-  exact (hφ hzφ).2
-
-/-- **A functional is microlocally smooth off its support.** On a manifold without boundary, a
-functional `T` on bundle tests is microlocally smooth at every covector over a point outside its
-support. -/
-theorem isMicrolocallySmoothAt_of_notMem_dsupport [I.Boundaryless]
-    {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} (hx : x ∉ dsupport ⇑T)
-    (ξ : TangentSpace I x →L[ℝ] ℝ) : IsMicrolocallySmoothAt T x ξ := by
-  obtain ⟨U, hU, hxU, hTU⟩ := notMem_dsupport_iff.1 hx
-  obtain ⟨c, hc, hcs, hct, hxc⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
-  refine (isMicrolocallySmoothAt_iff T hc hcs hct hxc ξ).2 fun v ↦
-    Distribution.isMicrolocallySmoothAt_of_notMem_dsupport (c.map_source hxc)
-      ((Distribution.notMem_dsupport_iff _).2 ⟨_, isVanishingOn_chartComponent _ c hc hct hTU v,
-        c.isOpen_inter_preimage_symm hU, c.map_source hxc, by simpa [c.left_inv hxc] using hxU⟩) _
-
-/-- If a component of `T` in a chart `c` has the point `z` of the chart target in its support, then
-`c⁻¹ z` lies in the support of `T`. -/
-theorem _root_.Bundle.Trivialization.symm_mem_dsupport_of_mem_dsupport_chartComponent
-    (t : Trivialization F (π F V))
-    [MemTrivializationAtlas t] (c : OpenPartialHomeomorph M E)
-    (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-    (T : BundleTest I F V →L_c[ℝ] ℝ) (v : F) {z : E} (hz : z ∈ c.target)
-    (h : z ∈ Distribution.dsupport (t.chartComponent c hc hct T v)) : c.symm z ∈ dsupport ⇑T := by
-  by_contra hzT
-  obtain ⟨U, hU, hzU, hTU⟩ := notMem_dsupport_iff.1 hzT
-  exact (Distribution.notMem_dsupport_iff _).2 ⟨_, isVanishingOn_chartComponent _ c hc hct hTU v,
-    c.isOpen_inter_preimage_symm hU, hz, hzU⟩ h
-
-end Support
-
 /-! ### Reading cutoffs and pushforwards in charts -/
 
 section Pushforward
@@ -158,35 +91,6 @@ variable {E H X : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace Y] [ChartedSpace H' Y]
   [T2Space Y] [IsManifold J ∞ Y]
   {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimensional ℝ G]
-
-omit [T2Space X] [IsManifold I ∞ X] in
-/-- A smooth function `ψ` with compact support in the source of a chart `c` with smooth inverse is
-read in the chart as a test function on the chart target, supported in the image of the support
-of `ψ`. -/
-private theorem exists_testFunction_apply_eq {c : OpenPartialHomeomorph X E}
-    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {ψ : C^∞⟮I, X; ℝ⟯}
-    (hψc : HasCompactSupport ψ) (hψ : tsupport ψ ⊆ c.source) :
-    ∃ ψ' : 𝓓(⟨c.target, c.open_target⟩, ℝ), tsupport ψ' ⊆ c '' tsupport ψ ∧
-      ∀ x ∈ c.source, ψ' (c x) = ψ x := by
-  -- A cutoff `θ` equal to `1` near the compact set `c (supp ψ)`, and `ψ' = θ · (ψ ∘ c⁻¹)`.
-  have hC : IsCompact (c '' tsupport ψ) :=
-    hψc.isCompact.image_of_continuousOn (c.continuousOn.mono hψ)
-  obtain ⟨θ, hθ, -⟩ := TestFunction.exists_eventually_eq_one
-    (Ω := ⟨c.target, c.open_target⟩) (n := ⊤) hC
-    (image_subset_iff.2 fun p hp ↦ c.map_source (hψ hp))
-  have hsmooth : ContDiff ℝ ∞ fun z ↦ θ z * ψ (c.symm z) := by
-    have h := ContMDiffOn.contMDiff_smul_of_tsupport_subset
-      (ψ.contMDiff.comp_contMDiffOn hcs) c.open_target θ.contDiff.contMDiff.contMDiffOn
-      θ.tsupport_subset
-    simpa only [smul_eq_mul, Function.comp_apply] using contMDiff_iff_contDiff.1 h
-  refine ⟨⟨fun z ↦ θ z * ψ (c.symm z), hsmooth, θ.hasCompactSupport.mul_right,
-    tsupport_mul_subset_left.trans θ.tsupport_subset⟩, ?_, fun x hx ↦ ?_⟩
-  · refine closure_minimal (fun z hz ↦ ?_) hC.isClosed
-    have hzt : z ∈ c.target := θ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul hz))
-    exact ⟨c.symm z, subset_tsupport _ (right_ne_zero_of_mul hz), c.right_inv hzt⟩
-  · rw [TestFunction.coe_mk, c.left_inv hx]
-    exact mul_eq_right_of_ne_zero_imp_eq_one fun hψx ↦
-      hθ.self_of_nhdsSet _ (mem_image_of_mem c (subset_tsupport _ hψx))
 
 /-- **The pushforward read in charts.** Let `c` be a smooth chart of `X` and `c'` one of `Y`, and
 let `ψ` be a smooth cutoff with compact support in `c.source ∩ f⁻¹(c'.source)`, read in `c` as the
@@ -223,49 +127,6 @@ private theorem chartComponent_cutoffPushforwardCLM {c : OpenPartialHomeomorph X
   · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx,
       image_eq_zero_of_notMem_tsupport fun h ↦ hx (hψ h).1, zero_smul]
 
-omit [T2Space X] [IsManifold I ∞ X] [T2Space Y] [IsManifold J ∞ Y] in
-/-- **Covectors along a smooth map, read in charts.** For a smooth map `f : X → Y`, charts `c` at
-`x` and `c'` at `f x` with smooth inverses, and a covector `η` at `f x`, the transpose of the
-derivative of the coordinate expression `Φ = c' ∘ f ∘ c⁻¹` of `f` sends `η` read in `c'` to the
-pulled back covector `η ∘ df_x` read in `c`. -/
-private theorem adjoint_fderiv_toDual_symm_comp_mfderiv_symm {c : OpenPartialHomeomorph X E}
-    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {c' : OpenPartialHomeomorph Y E'}
-    (hc' : ContMDiffOn J 𝓘(ℝ, E') ∞ c' c'.source)
-    (hc's : ContMDiffOn 𝓘(ℝ, E') J ∞ c'.symm c'.target) (f : C^∞⟮I, X; J, Y⟯) {x : X}
-    (hx : x ∈ c.source) (hfx : f x ∈ c'.source) (η : TangentSpace J (f x) →L[ℝ] ℝ) :
-    ((fderiv ℝ (c' ∘ f ∘ c.symm) (c x))†)
-        ((toDual ℝ E').symm (η ∘L mfderiv 𝓘(ℝ, E') J c'.symm (c' (f x)))) =
-      (toDual ℝ E).symm ((η ∘L mfderiv I J f x) ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) := by
-  have hcx : MDifferentiableAt 𝓘(ℝ, E) I c.symm (c x) :=
-    (hcs.contMDiffAt (c.open_target.mem_nhds (c.map_source hx))).mdifferentiableAt (by simp)
-  have hc'x : MDifferentiableAt J 𝓘(ℝ, E') c' (f x) :=
-    (hc'.contMDiffAt (c'.open_source.mem_nhds hfx)).mdifferentiableAt (by simp)
-  have hc'sx : MDifferentiableAt 𝓘(ℝ, E') J c'.symm (c' (f x)) :=
-    (hc's.contMDiffAt (c'.open_target.mem_nhds (c'.map_source hfx))).mdifferentiableAt (by simp)
-  -- The chain rule for `Φ = c' ∘ f ∘ c⁻¹` at `c x`.
-  have hf : HasMFDerivAt I J f (c.symm (c x)) (mfderiv I J f x) := by
-    rw [c.left_inv hx]
-    exact (f.contMDiff.mdifferentiableAt (by simp)).hasMFDerivAt
-  have hc'f : HasMFDerivAt J 𝓘(ℝ, E') c' (f (c.symm (c x))) (mfderiv J 𝓘(ℝ, E') c' (f x)) := by
-    rw [c.left_inv hx]
-    exact hc'x.hasMFDerivAt
-  have hΦ : HasMFDerivAt 𝓘(ℝ, E) 𝓘(ℝ, E') (c' ∘ f ∘ c.symm) (c x)
-      ((mfderiv J 𝓘(ℝ, E') c' (f x)).comp ((mfderiv I J f x).comp
-        (mfderiv 𝓘(ℝ, E) I c.symm (c x)))) :=
-    hc'f.comp (c x) (hf.comp (c x) hcx.hasMFDerivAt)
-  apply (toDual ℝ E).injective
-  ext w
-  have key : fderiv ℝ (c' ∘ f ∘ c.symm) (c x) w =
-      mfderiv J 𝓘(ℝ, E') c' (f x) (mfderiv I J f x (mfderiv 𝓘(ℝ, E) I c.symm (c x) w)) := by
-    have h := DFunLike.congr_fun hΦ.mfderiv w
-    rw [mfderiv_eq_fderiv] at h
-    -- The casts `NormedSpace.fromTangentSpace` inserted by `mfderiv_eq_fderiv` act as the identity
-    -- by definition.
-    exact h
-  rw [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply,
-    ContinuousLinearMap.adjoint_inner_left, toDual_symm_apply, key]
-  exact congrArg η (c'.mfderiv_symm_apply_mfderiv_apply hfx hc'x hc'sx _)
-
 /-! ### Microlocal smoothness of a pushforward -/
 
 /-- The pushforward with a cutoff `ψ` supported in the source of a chart `c` whose source `f` maps
@@ -284,7 +145,7 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_chart {c : OpenPa
     (h : ∀ x ∈ tsupport ψ ∩ dsupport ⇑T, f x = y →
       η ∘L mfderiv I J f x ≠ 0 ∧ IsMicrolocallySmoothAt T x (η ∘L mfderiv I J f x)) :
     IsMicrolocallySmoothAt (cutoffPushforwardCLM ψ hψc f T) y η := by
-  obtain ⟨ψ', hψ's, hψ'⟩ := exists_testFunction_apply_eq hcs hψc hψ
+  obtain ⟨ψ', hψ's, hψ'⟩ := c.exists_testFunction_apply_eq hcs hψc hψ
   have hΦ : ContDiffOn ℝ (⊤ : ℕ∞) (c' ∘ f ∘ c.symm) c.target :=
     contMDiffOn_iff_contDiffOn.1 (hc'.comp (f.contMDiff.comp_contMDiffOn hcs)
       fun z hz ↦ hf (c.map_target hz))
@@ -302,7 +163,15 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_chart {c : OpenPa
   have hfx : f x = y := c'.injOn (hf hx) hy (by simpa [c.left_inv hx] using hzy)
   subst hfx
   obtain ⟨hne, hT⟩ := h x ⟨hxψ, hxT⟩ rfl
-  rw [adjoint_fderiv_toDual_symm_comp_mfderiv_symm hcs hc' hc's f hx (hf hx) η]
+  have hcx : MDifferentiableAt 𝓘(ℝ, E) I c.symm (c x) :=
+    (hcs.contMDiffAt (c.open_target.mem_nhds (c.map_source hx))).mdifferentiableAt (by simp)
+  have hc'x : MDifferentiableAt J 𝓘(ℝ, E') c' (f x) :=
+    (hc'.contMDiffAt (c'.open_source.mem_nhds (hf hx))).mdifferentiableAt (by simp)
+  have hc'sx : MDifferentiableAt 𝓘(ℝ, E') J c'.symm (c' (f x)) :=
+    (hc's.contMDiffAt (c'.open_target.mem_nhds (c'.map_source (hf hx)))).mdifferentiableAt
+      (by simp)
+  rw [OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm hx (hf hx) hcx
+    (f.contMDiff.mdifferentiableAt (by simp)) hc'x hc'sx η]
   refine ⟨fun h0 ↦ hne ?_, (isMicrolocallySmoothAt_iff T hc hcs hct hx _).1 hT v⟩
   -- A covector read as the zero vector in the chart `c` is zero.
   exact ((OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
@@ -317,13 +186,8 @@ private theorem cutoffPushforwardCLM_eq_sum_add {ι : Type*} [Fintype ι] (ρ : 
     (T : BundleTest I G (Trivial X G) →L_c[ℝ] ℝ) :
     cutoffPushforwardCLM χ hχ f T = ∑ i, cutoffPushforwardCLM (ρ i * χ) hχ.mul_left f T +
       cutoffPushforwardCLM ((1 - ∑ i, ρ i) * χ) hχ.mul_left f T := by
-  have hsum : smulLeftDualCLM (∑ i, ρ i) =
-      (∑ i, smulLeftDualCLM (ρ i) : (BundleTest I G (Trivial X G) →L_c[ℝ] ℝ) →L[ℝ] _) :=
-    map_sum (AddMonoidHom.mk' (fun g : C^∞⟮I, X; ℝ⟯ ↦
-      (smulLeftDualCLM g : (BundleTest I G (Trivial X G) →L_c[ℝ] ℝ) →L[ℝ] _))
-      smulLeftDualCLM_add) _ _
   conv_lhs => rw [← smulLeftDualCLM_one T, ← add_sub_cancel (∑ i, ρ i) 1, smulLeftDualCLM_add,
-    _root_.add_apply, hsum, _root_.sum_apply, map_add, map_sum]
+    _root_.add_apply, smulLeftDualCLM_sum, _root_.sum_apply, map_add, map_sum]
   simp only [cutoffPushforwardCLM_smulLeftDualCLM]
 
 variable [I.Boundaryless] [J.Boundaryless]
