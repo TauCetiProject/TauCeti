@@ -28,23 +28,17 @@ open TauCeti.RestrictedRamification
 
 variable {Ω : Type*} [Field Ω] [Algebra ℚ Ω] {x : Ω}
 
-/-- A place not above `2` contains no power of `2`. -/
-theorem two_pow_notMem {v : HeightOneSpectrum (𝓞 ℚ)} (hv : (2 : 𝓞 ℚ) ∉ v.asIdeal)
-    (k : ℕ) : ((2 ^ k : ℕ) : 𝓞 ℚ) ∉ v.asIdeal := by
-  push_cast
-  exact fun h ↦ hv (v.isPrime.mem_of_pow_mem k h)
-
 /-- Every `2^k`-th root of unity lies in `ℚ_S`, `S` the places above `2`. -/
 example (k : ℕ) (hx : x ^ 2 ^ k = 1) :
     x ∈ maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} :=
   mem_maxUnramifiedOutside_of_pow_eq_one (n := 2 ^ k) (by exact_mod_cast hx)
-    (pow_ne_zero k two_ne_zero) fun _ hv ↦ two_pow_notMem hv k
+    (pow_ne_zero k two_ne_zero) fun v hv h ↦ hv (v.isPrime.mem_of_pow_mem k (by exact_mod_cast h))
 
 /-- A root `i` of `X² + 1` lies in `ℚ_S`, `S` the places above `2`. -/
 example (hx : x ^ 2 = -1) : x ∈ maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} :=
   mem_maxUnramifiedOutside_of_pow_eq_one (n := 2 ^ 2)
-    (by rw [show 2 ^ 2 = 2 * 2 from rfl, pow_mul, hx]; norm_num) (by norm_num)
-    fun _ hv ↦ two_pow_notMem hv 2
+    (by linear_combination (x ^ 2 - 1) * hx) (by norm_num)
+    fun v hv h ↦ hv (v.isPrime.mem_of_pow_mem 2 (by exact_mod_cast h))
 
 /-- A root `√2` of `X² - 2` lies in `ℚ_S`, `S` the places above `2`. -/
 example (hx : x ^ 2 = 2) : x ∈ maxUnramifiedOutside ℚ Ω {v | (2 : 𝓞 ℚ) ∈ v.asIdeal} := by

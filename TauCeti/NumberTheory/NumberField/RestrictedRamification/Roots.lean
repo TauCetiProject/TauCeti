@@ -14,8 +14,8 @@ import TauCeti.NumberTheory.NumberField.Kummer.Ramification
 
 Let `K` be a number field, `Ω` an extension of `K` and `S` a set of finite places of `K`. If
 `xⁿ = a` with `n ≠ 0` and `a ∈ K`, and every finite place `v ∉ S` has `n ∉ v` and `v(a) = 1`, then
-`K(x)` is unramified outside `S` (main's
-`TauCeti.NumberField.isUnramifiedIn_adjoin_simple_of_pow_eq_of_valuation_eq_one`, by the
+`K(x)` is unramified outside `S`
+(`TauCeti.NumberField.isUnramifiedIn_adjoin_simple_of_pow_eq_of_valuation_eq_one`, by the
 derivative of `Xⁿ - a`), so `x` lies in the maximal extension `K_S` unramified outside `S`. In
 particular:
 
