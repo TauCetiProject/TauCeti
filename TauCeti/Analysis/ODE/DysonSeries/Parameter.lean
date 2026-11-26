@@ -39,9 +39,12 @@ factor tends to `p' μ r` and is bounded by the mean value theorem, and `Ψ_{p �
 the variational equation of a linear ODE in its coefficients: it computes, for instance, how the
 return map of a linearized Hamiltonian equation moves with the Hamiltonian.
 
-When `Ψ_p` preserves a bilinear form, as the propagator of a linearized Hamiltonian equation
-preserves the symplectic form, its inverse is its adjoint for that form
-(`TauCeti.apply_dysonSeries_neg_apply`); this evaluates the derivative above against the form.
+**Against a preserved form.** When the propagator `Ψ_μ` of a family `S μ` of bounded operators
+preserves a continuous bilinear map `B`, as the propagator of a linearized Hamiltonian equation
+preserves the symplectic form, its inverse is its adjoint for `B`
+(`TauCeti.apply_dysonSeries_neg_apply`). At a fixed vector `v` of `Ψ_μ(t)` the derivative above
+then becomes `B v (∂_μ Ψ_μ(t) v) = ∫₀ᵗ B (Ψ_μ(r) v) (∂_μ S μ r (Ψ_μ(r) v)) dr`
+(`TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral`).
 
 The holomorphic analogue for propagators of integrable coefficients is
 `TauCeti.hasDerivAt_propagator`.
@@ -137,27 +140,49 @@ theorem hasDerivAt_dysonSeriesLeft_parameter {p p' : ℝ → ℝ → B}
       (by linarith : μ < μ + 1))] with ν hν
     refine Eventually.of_forall fun r hr ↦ ?_
     have hr' : r ∈ [[0, t]] := uIoc_subset_uIcc hr
-    refine (norm_mul_le _ _).trans (mul_le_mul ((norm_mul_le _ _).trans
-      (mul_le_mul (hC₃ r hr') (hslope hν hr') (norm_nonneg _) ((norm_nonneg _).trans
-        (hC₃ r hr')))) (hC₂ (ν, r) ⟨hν, hr'⟩) (norm_nonneg _) ?_)
-    exact mul_nonneg ((norm_nonneg _).trans (hC₃ r hr'))
-      ((norm_nonneg _).trans (hC₁ (μ, r) ⟨hμI, hr'⟩))
+    refine (norm_mul_le _ _).trans <| (mul_le_mul_of_nonneg_right (norm_mul_le _ _)
+      (norm_nonneg _)).trans ?_
+    have hC₃' := hC₃ r hr'
+    have hC₁' := hslope hν hr'
+    have hC₂' : ‖dysonSeriesLeft (p ν) r‖ ≤ C₂ := hC₂ (ν, r) ⟨hν, hr'⟩
+    have hC₃₀ : 0 ≤ C₃ := (norm_nonneg _).trans hC₃'
+    have hC₁₀ : 0 ≤ C₁ := (norm_nonneg _).trans hC₁'
+    gcongr
   · -- Pointwise, the difference quotient tends to `p' μ r` and `Ψ_{p ν}(r)` to `Ψ_{p μ}(r)`.
     refine Eventually.of_forall fun r _ ↦ ?_
     refine ((tendsto_const_nhds.mul (hd μ r).tendsto_slope).mul ?_)
     exact ((hΨ.comp (continuous_id.prodMk continuous_const)).tendsto μ).mono_left
       nhdsWithin_le_nhds
 
-/-- **The inverse propagator is the adjoint for a preserved form.** If the continuous path `M` of
-bounded operators is skew for a bilinear map `B`, so that the propagator `Ψ = dysonSeriesLeft M`
-preserves `B` (`TauCeti.apply_dysonSeriesLeft_apply_dysonSeriesLeft`), then its inverse
-`Ψ(t)⁻¹ = dysonSeries (-M) t` satisfies `B u (Ψ(t)⁻¹ w) = B (Ψ(t) u) w`. -/
-theorem apply_dysonSeries_neg_apply {X W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [CompleteSpace X] [NormedAddCommGroup W] [NormedSpace ℝ W] {M : ℝ → X →L[ℝ] X}
-    (hM : Continuous M) (B : X →L[ℝ] X →L[ℝ] W)
-    (hskew : ∀ r u w, B (M r u) w + B u (M r w) = 0) (t : ℝ) (u w : X) :
-    B u (dysonSeries (-M) t w) = B (dysonSeriesLeft M t u) w := by
-  rw [← apply_dysonSeriesLeft_apply_dysonSeriesLeft hM B hskew t u, ← mul_apply_eq_comp,
-    dysonSeriesLeft_mul_dysonSeries_neg hM, one_apply_eq_self]
+/-- **The derivative of a propagator against a preserved form.** Let `S μ r` be jointly
+continuous with a jointly continuous parameter derivative `S' μ r`, and let `S μ r` be skew for a
+continuous bilinear map `B` at the parameter `μ`. If `v` is a fixed vector of the propagator
+`Ψ_μ(t) = dysonSeriesLeft (S μ) t`, then
+`B v (∂_μ Ψ_μ(t) v) = ∫₀ᵗ B (Ψ_μ(r) v) (S' μ r (Ψ_μ(r) v)) dr`. -/
+theorem apply_deriv_dysonSeriesLeft_apply_eq_integral {X W : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [CompleteSpace X] [NormedAddCommGroup W] [NormedSpace ℝ W]
+    [CompleteSpace W] {S S' : ℝ → ℝ → X →L[ℝ] X} (hS : Continuous (Function.uncurry S))
+    (hS' : Continuous (Function.uncurry S')) (hd : ∀ μ r, HasDerivAt (fun μ ↦ S μ r) (S' μ r) μ)
+    (B : X →L[ℝ] X →L[ℝ] W) {μ t : ℝ} (hskew : ∀ r u w, B (S μ r u) w + B u (S μ r w) = 0)
+    {v : X} (hv : dysonSeriesLeft (S μ) t v = v) :
+    B v (deriv (fun ν ↦ dysonSeriesLeft (S ν) t) μ v) =
+      ∫ r in 0..t, B (dysonSeriesLeft (S μ) r v) (S' μ r (dysonSeriesLeft (S μ) r v)) := by
+  have hSμ : Continuous (S μ) := hS.comp (Continuous.prodMk_right μ)
+  have hc : Continuous fun r ↦ dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r :=
+    ((continuous_dysonSeries hSμ.neg).mul (hS'.comp (Continuous.prodMk_right μ))).mul
+      (continuous_dysonSeriesLeft hSμ)
+  -- Move the outer `Ψ_μ(t)` and the inverses `Ψ_μ(r)⁻¹` into the first slot of `B`.
+  have hrhs : (∫ r in 0..t, B (dysonSeriesLeft (S μ) r v) (S' μ r (dysonSeriesLeft (S μ) r v))) =
+      ∫ r in 0..t, B v ((dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r) v) :=
+    integral_congr fun r _ ↦ by
+      simp only [mul_apply_eq_comp, apply_dysonSeries_neg_apply hSμ B hskew]
+  calc B v (deriv (fun ν ↦ dysonSeriesLeft (S ν) t) μ v)
+      = B (dysonSeriesLeft (S μ) t v) (dysonSeriesLeft (S μ) t
+          ((∫ r in 0..t, dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r) v)) := by
+        rw [hv, (hasDerivAt_dysonSeriesLeft_parameter hS hS' hd μ t).deriv, mul_apply_eq_comp]
+    _ = _ := by
+      rw [apply_dysonSeriesLeft_apply_dysonSeriesLeft hSμ B hskew, hrhs,
+        ContinuousLinearMap.intervalIntegral_apply (hc.intervalIntegrable 0 t),
+        (B v).intervalIntegral_comp_comm ((hc.clm_apply continuous_const).intervalIntegrable 0 t)]
 
 end TauCeti

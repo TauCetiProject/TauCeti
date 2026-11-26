@@ -15,9 +15,12 @@ Let `(V, ω)` be a finite-dimensional symplectic vector space and `S μ r` a fam
 Hamiltonian fields depending on a real parameter `μ`, with `S μ r` infinitesimally symplectic,
 `ω(S v, w) + ω(v, S w) = 0`. For each `μ` let `Ψ_μ = TauCeti.dysonSeriesLeft (S μ)` be the
 propagator of `ζ' = S μ r ζ`, a path of symplectic maps, and `A_μ ζ = J_r (ζ' - S μ r ζ)` the
-asymptotic operator (`TauCeti.Floer.asymptoticOperator`). A loop `ζ` lies in the kernel of `A_μ`
-exactly when `ζ r = Ψ_μ(r) v` with `v = ζ 0`, and it closes up at time `t` exactly when
-`Ψ_μ(t) v = v` (`TauCeti.Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero`).
+asymptotic operator (`TauCeti.Floer.asymptoticOperator`). A differentiable path `ζ` lies in the
+kernel of `A_μ` exactly when it solves `ζ' = S μ r ζ`
+(`TauCeti.Floer.asymptoticOperator_eq_zero_iff`), that is, when `ζ r = Ψ_μ(r) v` with `v = ζ 0`.
+For a one-periodic family `S μ`, a nonzero one-periodic loop lies in the kernel exactly when
+`Ψ_μ(1)` has a nonzero fixed vector, by
+`Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self`.
 
 As `μ` varies, two families can cross the degenerate locus: the self-adjoint operators `A_μ`,
 whose crossings are governed by the crossing form `ζ ↦ ∫ g_r(ζ, ∂_μ A_μ ζ) dr` on their kernel,
@@ -28,7 +31,9 @@ This file proves that the two forms agree under `ζ = Ψ_μ(·) v`:
 
 * **The return map.** For `Ψ_μ(t) v = v`,
   `ω(v, ∂_μ Ψ_μ(t) v) = ∫₀ᵗ ω(Ψ_μ(r) v, ∂_μ S μ r (Ψ_μ(r) v)) dr`
-  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral`). By
+  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral`). This is the case `B = ω` of
+  the identity for any continuous bilinear map preserved by the propagators
+  (`TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral`): by
   `TauCeti.hasDerivAt_dysonSeriesLeft_parameter`, `∂_μ Ψ_μ(t) = Ψ_μ(t) ∫₀ᵗ Ψ_μ(r)⁻¹ ∂_μ S Ψ_μ(r)`,
   and since `Ψ_μ(t)` and `Ψ_μ(r)` preserve `ω` and `Ψ_μ(t) v = v`, the outer `Ψ_μ(t)` and the
   inverse `Ψ_μ(r)⁻¹` move to the first slot of `ω`
@@ -77,7 +82,8 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 /-- **The crossing form of a family of return maps.** Let `S μ r` be jointly continuous with a
 jointly continuous parameter derivative `S' μ r`, and let `S μ r` be infinitesimally symplectic
 at the parameter `μ`. If `v` is a fixed vector of the propagator `Ψ_μ(t)` of `ζ' = S μ r ζ`, then
-`ω(v, ∂_μ Ψ_μ(t) v) = ∫₀ᵗ ω(Ψ_μ(r) v, S' μ r (Ψ_μ(r) v)) dr`. -/
+`ω(v, ∂_μ Ψ_μ(t) v) = ∫₀ᵗ ω(Ψ_μ(r) v, S' μ r (Ψ_μ(r) v)) dr`. This is the case `B = ω` of
+`TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral`. -/
 theorem apply_deriv_dysonSeriesLeft_apply_eq_integral {S S' : ℝ → ℝ → V →L[ℝ] V}
     (hS : Continuous (uncurry S)) (hS' : Continuous (uncurry S'))
     (hd : ∀ μ r, HasDerivAt (fun μ ↦ S μ r) (S' μ r) μ) {μ t : ℝ}
@@ -85,27 +91,10 @@ theorem apply_deriv_dysonSeriesLeft_apply_eq_integral {S S' : ℝ → ℝ → V 
     (hv : dysonSeriesLeft (S μ) t v = v) :
     ω v (deriv (fun ν ↦ dysonSeriesLeft (S ν) t) μ v) =
       ∫ r in 0..t, ω (dysonSeriesLeft (S μ) r v) (S' μ r (dysonSeriesLeft (S μ) r v)) := by
-  have hSμ : Continuous (S μ) := hS.comp (Continuous.prodMk_right μ)
-  set B := ω.toBilinForm.toContinuousBilinearMap
-  have hB (u w : V) : B u w = ω u w := LinearMap.toContinuousBilinearMap_apply _ _ _
-  have hskew' (r : ℝ) (u w : V) : B (S μ r u) w + B u (S μ r w) = 0 := by
-    simpa only [hB] using hskew r u w
-  have hc : Continuous fun r ↦ dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r :=
-    ((continuous_dysonSeries hSμ.neg).mul (hS'.comp (Continuous.prodMk_right μ))).mul
-      (continuous_dysonSeriesLeft hSμ)
-  -- Move the outer `Ψ_μ(t)` and the inverses `Ψ_μ(r)⁻¹` into the first slot of `ω`.
-  have hrhs : (∫ r in 0..t, ω (dysonSeriesLeft (S μ) r v) (S' μ r (dysonSeriesLeft (S μ) r v))) =
-      ∫ r in 0..t, B v ((dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r) v) :=
-    integral_congr fun r _ ↦ by
-      simp only [mul_apply_eq_comp, apply_dysonSeries_neg_apply hSμ B hskew', hB]
-  calc ω v (deriv (fun ν ↦ dysonSeriesLeft (S ν) t) μ v)
-      = B (dysonSeriesLeft (S μ) t v) (dysonSeriesLeft (S μ) t
-          ((∫ r in 0..t, dysonSeries (-S μ) r * S' μ r * dysonSeriesLeft (S μ) r) v)) := by
-        rw [hB, hv, (hasDerivAt_dysonSeriesLeft_parameter hS hS' hd μ t).deriv, mul_apply_eq_comp]
-    _ = _ := by
-      rw [apply_dysonSeriesLeft_apply_dysonSeriesLeft hSμ B hskew', hrhs,
-        ContinuousLinearMap.intervalIntegral_apply (hc.intervalIntegrable 0 t),
-        (B v).intervalIntegral_comp_comm ((hc.clm_apply continuous_const).intervalIntegrable 0 t)]
+  have hB (u w : V) : ω.toBilinForm.toContinuousBilinearMap u w = ω u w :=
+    LinearMap.toContinuousBilinearMap_apply _ _ _
+  simpa only [hB] using TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral hS hS' hd
+    ω.toBilinForm.toContinuousBilinearMap (by simpa only [hB] using hskew) hv
 
 /-- **The parameter derivative of the asymptotic operator.** If `ν ↦ S ν t` has the derivative
 `S'` at `μ`, then at a fixed loop `ζ` the asymptotic operators `A_ν ζ (t)` of `S ν` have the
