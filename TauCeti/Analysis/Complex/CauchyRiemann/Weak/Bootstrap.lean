@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
+public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Weak
 public import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
-import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.HigherOrder.Basic
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Invariance
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Data.ENNReal.Holder
@@ -44,6 +45,9 @@ structure need not be `W^{2,∞}` (`TauCeti.not_memWkpLoc_two_top_graph_logLogEx
 
 ## Main results
 
+* `TauCeti.IsWeakCauchyRiemannOn.isWeakCRSolution`: a weak solution of the equation with frozen
+  coefficients `∂ₛu + A ∂ₜu = f` is a weak solution of the real Cauchy–Riemann equation with
+  coefficients `(A, DA, 0)`, to which the linear theory applies.
 * `TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn`: a weak solution for `C^ℓ` data and finite
   `p > 2` lies in `W^{ℓ+1,p}_loc(Ω)`.
 * `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`: a weak solution for `C^ℓ` data, `ℓ ≤ ∞`, and any
@@ -64,6 +68,26 @@ namespace TauCeti
 
 /-! ### The linear step -/
 
+/-- **The frozen equation as a real Cauchy–Riemann equation.** Let `p ≥ 2` be finite. If `u` solves
+`∂ₛu + A ∂ₜu = f` weakly on `Ω`, with `A ∈ W^{1,p}_loc` of weak derivative `DA` and `f` locally
+`Lᵖ`, then `u` is a weak solution of the real Cauchy–Riemann equation with coefficients
+`(A, DA, 0)` and right side `f`, in the sense of `TauCeti.IsWeakCRSolution`. -/
+theorem IsWeakCauchyRiemannOn.isWeakCRSolution {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {p : ℝ≥0} (hp : 2 ≤ p)
+    {A : ℂ → V →L[ℝ] V} {DA : ℂ → ℂ →L[ℝ] V →L[ℝ] V} {f u : ℂ → V}
+    (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
+    (hc : IsSobolevCRCoefficients p Ω A DA 0) (hf : MemLpLoc p Ω f) :
+    IsWeakCRSolution p Ω A DA 0 u f := by
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
+  obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
+  have hp' : (2 : ℝ≥0∞) ≤ p := by exact_mod_cast hp
+  have hpp : (p : ℝ≥0∞)⁻¹ + (p : ℝ≥0∞)⁻¹ ≤ 1 := by
+    rw [← ENNReal.inv_two_add_inv_two]
+    exact add_le_add (ENNReal.inv_le_inv.2 hp') (ENNReal.inv_le_inv.2 hp')
+  exact (hc.isWeakCRSolution_iff_ae hpp ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
+    (hf.locallyIntegrableOn (by exact_mod_cast one_le_two.trans hp)
+      Ω.isOpen.isLocallyClosed)).2 (by simpa using hae)
+
 /-- **The linear step on an inner product space.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω`
 for `p > 2`, with `A, f ∈ W^{k+1,p}_loc` and `A² = -1`, then `u ∈ W^{k+2,p}_loc`. -/
 private theorem memWkpLoc_add_two_of_inner {V : Type*} [NormedAddCommGroup V]
@@ -72,17 +96,11 @@ private theorem memWkpLoc_add_two_of_inner {V : Type*} [NormedAddCommGroup V]
     (h : IsWeakCauchyRiemannOn p Ω (fun z _ => A z) (fun z _ => f z) u)
     (hA : MemWkpLoc p Ω (k + 1) A) (hA2 : ∀ᵐ z ∂volume.restrict Ω, A z * A z = -1)
     (hf : MemWkpLoc p Ω (k + 1) f) : MemWkpLoc p Ω (k + 2) u := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  obtain ⟨-, hu, D, hD, hDp, hae⟩ := isWeakCauchyRiemannOn_iff_of_isOpen.1 h
   obtain ⟨DA, hDA, hDAk⟩ := hA.exists_weakFDeriv_of_isOpen
   have hc : IsSobolevCRCoefficients p Ω A DA 0 :=
     ⟨hDA, hA.memLpLoc, hDAk.memLpLoc, memLpLoc_zero⟩
-  have hpp := ENNReal.inv_add_inv_lt_one_of_two_lt (p := (p : ℝ≥0∞)) (by exact_mod_cast hp)
-  have hsol : IsWeakCRSolution p Ω A DA 0 u f :=
-    (hc.isWeakCRSolution_iff_ae hpp.le ENNReal.coe_ne_top ENNReal.coe_ne_top hD hu hDp
-      (hf.memLpLoc.locallyIntegrableOn (by exact_mod_cast (one_lt_two.trans hp).le)
-        Ω.isOpen.isLocallyClosed)).2 (by simpa using hae)
-  exact hsol.memWkpLoc_succ hc hp hA2 hpp le_rfl hA memWkpLoc_zero_fun hf
+  exact (h.isWeakCRSolution hp.le hc hf.memLpLoc).memWkpLoc_succ hc hp hA2
+    (ENNReal.inv_add_inv_lt_one_of_two_lt (by exact_mod_cast hp)) le_rfl hA memWkpLoc_zero_fun hf
 
 /-- **The linear step.** If `u` solves `∂ₛu + A ∂ₜu = f` weakly on `Ω` for `p > 2`, with
 `A, f ∈ W^{k+1,p}_loc` and `A² = -1`, then `u ∈ W^{k+2,p}_loc`. The target is read in a

@@ -271,14 +271,15 @@ section Family
 open Set Filter
 
 variable {ι : Type*} {l : Filter ι} {J : ι → W → W →L[𝕜] W} {J₀ : W → W →L[𝕜] W} {γ : V → W}
-  {U : Set V} {Ω : Set W} {ℓ : ℕ}
+  {U : Set V} {Ω : Set W} {ℓ : ℕ∞}
 
-/-- **The adapted extensions converge in `C^ℓ`.** Let `γ` be `C^(ℓ+1)` on an open `U`, mapping
-it into an open `Ω` on which `J₀` and eventually all `J i` are `C^ℓ`. If `J i → J₀` in `C^ℓ` at
-`γ x` for some `x ∈ U`, then the adapted extensions `adaptedNormalExtension γ (J i)` converge in
-`C^ℓ` to `adaptedNormalExtension γ J₀` at every point `(x, y)`. -/
+/-- **The adapted extensions converge in `C^ℓ`.** Let `ℓ : ℕ∞`, and let `γ` be `C^(ℓ+1)` on an
+open `U`, mapping it into an open `Ω` on which `J₀` and eventually all `J i` are `C^ℓ`. If
+`J i → J₀` in `C^ℓ` at `γ x` for some `x ∈ U`, then the adapted extensions
+`adaptedNormalExtension γ (J i)` converge in `C^ℓ` to `adaptedNormalExtension γ J₀` at every point
+`(x, y)`. -/
 theorem tendstoContDiffAt_adaptedNormalExtension (hU : IsOpen U) (hΩ : IsOpen Ω)
-    (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U) (hγΩ : MapsTo γ U Ω)
+    (hγ : ContDiffOn 𝕜 ((ℓ : ℕ∞ω) + 1) γ U) (hγΩ : MapsTo γ U Ω)
     (hJ : ∀ᶠ i in l, ContDiffOn 𝕜 ℓ (J i) Ω) (hJ₀ : ContDiffOn 𝕜 ℓ J₀ Ω) {p : V × V}
     (hp : p.1 ∈ U) (hconv : TendstoContDiffAt 𝕜 ℓ J J₀ l (γ p.1)) :
     TendstoContDiffAt 𝕜 ℓ (fun i ↦ adaptedNormalExtension γ (J i))

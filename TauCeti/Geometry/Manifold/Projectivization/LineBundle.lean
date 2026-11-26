@@ -241,6 +241,14 @@ theorem twistCore_localTriv_apply (k : ℤ) (j : Fin (n + 1)) (s : ℙ 𝕜 (Fin
       twistTransition k ((twistCore k).indexAt x) j x * s x :=
   (rfl)
 
+/-- In the trivialization of `𝒪(k)` at `x₀`, a vector at `x` with coordinate `c` in the frame of the
+preferred chart at `x` has the coordinate
+`twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c`. -/
+theorem twistCore_trivializationAt_apply_snd (k : ℤ) (x₀ x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) (c : 𝕜) :
+    (trivializationAt 𝕜 (twistCore k).Fiber x₀ ⟨x, c⟩).2 =
+      twistTransition k ((twistCore k).indexAt x) ((twistCore k).indexAt x₀) x * c :=
+  (rfl)
+
 /-- **Sections of `𝒪(k)` in the standard charts.** A section `s` of `𝒪(k)` is `C^r` exactly when,
 for every `j`, its coordinate `x ↦ twistTransition k ((twistCore k).indexAt x) j x * s x` in the
 frame of the chart `j` is `C^r` on the standard affine open `U_j`. -/
