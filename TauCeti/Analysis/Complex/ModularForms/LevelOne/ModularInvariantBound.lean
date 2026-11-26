@@ -20,7 +20,9 @@ invariant `j` stays within an absolute constant of the leading term `q⁻¹` of 
 
   `‖j τ - q⁻¹‖ ≤ 2114567 / 1000`, hence `‖j τ‖ ≤ e^{2π Im τ} + 2114567 / 1000`.
 
-At a CM point `τ = (-b + i √D) / (2a)` this reads `|j(τ)| ≤ e^{π √D / a} + 2114.567`, the
+At the root `τ = (-b + i √D) / (2a)` of a reduced positive definite form `a x² + b x y + c y²`
+of discriminant `-D`, which satisfies `Im τ ≥ √3 / 2`, this reads
+`|j(τ)| ≤ e^{π √D / a} + 2114.567` (`TauCeti.BinaryQuadraticForm.norm_j_root_le`). This is the
 unconditional bound on singular moduli used to bound the coefficients of Hilbert class
 polynomials, and hence the precision needed to recover them from approximate roots or from
 reductions modulo primes.
