@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import TauCeti.Analysis.Sobolev.Cylinder.Morrey
-import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Algebra.Order.Floor.Ring
 
 /-!
@@ -89,7 +88,8 @@ namespace TauCeti.CylinderSobolev
 
 open StripSobolev (jet jet_apply stripMeasure toJetClosure coe_toJetClosure
   norm_toJetClosure denseRange_toJetClosure jetClosure_induction translate_toJetClosure coeFn_jetLp
-  exists_forall_mem_strip_norm_le)
+  exists_forall_mem_strip_norm_le fst_ae_eq_of_forall_toJetClosure
+  tendsto_of_forall_tendsto_toJetClosure)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -227,33 +227,15 @@ private theorem continuous_eval_const_continuousValue (z : ℝ × ℝ) :
     Continuous fun x : W1p V p ↦ continuousValue p x z :=
   (BoundedContinuousFunction.evalCLM ℝ z).continuous.comp (continuousValue p).continuous
 
-omit [CompleteSpace V] in
-/-- Every element of `W1p V p` is the limit of the jets of a sequence of test sections. -/
-private theorem exists_seq_tendsto_toW1p (x : W1p V p) :
-    ∃ ξ : ℕ → testSection V, Tendsto (fun n ↦ toW1p p (ξ n)) atTop (𝓝 x) := by
-  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p (testSection V) x)
-  choose ξ hξ using hy
-  exact ⟨ξ, by simpa only [hξ] using hlim⟩
-
 /-- **The continuous representative.** For `2 < p < ∞`, the value of an element of
 `W^{1,p}(ℝ × S¹, V)` agrees almost everywhere on the strip with its image under the Sobolev
 embedding, a bounded continuous function. -/
 theorem valueL_ae_eq_continuousValue (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     valueL p x =ᵐ[stripMeasure] continuousValue p x := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
-  -- The values converge in `Lᵖ`, so a subsequence converges almost everywhere.
-  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
-    (((valueL p).continuous.tendsto x).comp hξ)).exists_seq_tendsto_ae
-  -- The continuous representatives converge uniformly, so pointwise.
-  have hcont := ((continuousValue p).continuous.tendsto x).comp hξ
-  filter_upwards [hns, ae_all_iff.2 fun n ↦ valueL_toW1p_ae_eq (p := p) (ξ (ns n))]
-    with z hz hzn
-  refine tendsto_nhds_unique hz ?_
-  have hev := (((BoundedContinuousFunction.evalCLM ℝ z).continuous.tendsto _).comp
-    (hcont.comp hmono.tendsto_atTop))
-  refine hev.congr fun n ↦ ?_
-  simp only [Function.comp_apply, BoundedContinuousFunction.evalCLM_apply,
-    coe_continuousValue_toW1p hp hpt, hzn n]
+  refine (coeFn_valueL x).trans (fst_ae_eq_of_forall_toJetClosure (continuousValue p).continuous
+    (φ := id) (fun ξ ↦ ?_) x)
+  filter_upwards [coeFn_jetLp p ξ] with z hz
+  simp only [coe_toJetClosure, hz, jet_apply, id, coe_continuousValue_toW1p hp hpt]
 
 /-- The first component of the jet of an element of `W1p V p` is its continuous representative,
 almost everywhere on the strip. -/
@@ -289,15 +271,11 @@ element of `W^{1,p}(ℝ × S¹, V)` under the Sobolev embedding tends to zero as
 uniformly in `t`. -/
 theorem tendsto_continuousValue_comap_fst_cocompact (hp : 2 < p) (hpt : p ≠ ∞) (x : W1p V p) :
     Tendsto (continuousValue p x) (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
-  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toW1p x
-  have hunif := BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
-    (((continuousValue p).continuous.tendsto x).comp hξ)
-  refine hunif.tendsto_of_eventually_tendsto (L := fun _ ↦ 0)
-    (Eventually.of_forall fun n ↦ ?_) tendsto_const_nhds
-  simp only [Function.comp_apply, coe_continuousValue_toW1p hp hpt]
+  refine tendsto_of_forall_tendsto_toJetClosure (continuousValue p).continuous (fun ξ ↦ ?_) x
+  rw [coe_continuousValue_toW1p hp hpt]
   -- The value of a test section is the first component of its jet, which decays.
   simpa [Function.comp_def, jet_apply] using
-    (continuous_fst.tendsto 0).comp (tendsto_jet_comap_fst_cocompact (ξ n).property)
+    (continuous_fst.tendsto 0).comp (tendsto_jet_comap_fst_cocompact ξ.property)
 
 /-- **The Sobolev embedding commutes with translation**: the continuous representative of the
 translate of an element of `W1p V p` is the translate of its continuous representative. -/
