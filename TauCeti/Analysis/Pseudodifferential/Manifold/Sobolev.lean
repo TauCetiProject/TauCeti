@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.ChartPatching
-public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Pseudodifferential.UniformSobolev
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
 
 /-!
@@ -40,8 +40,8 @@ the target norm `H^{s - m}`. Their hypotheses hold because the inclusion of Schw
 `H^s` is injective (`SchwartzMap.toBesselPotentialSpaceCLM_injective`), localized changes of
 variables are bounded on `H^s`
 (`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`), and `Op(a)` is
-bounded `H^s → H^{s - m}` for every symbol `a` of order `m` with compact spatial support
-(`TauCeti.Symbol.quantizeSobolev`).
+bounded `H^s → H^{s - m}` for every uniform symbol `a` of order `m`, in particular for every symbol
+with compact spatial support (`TauCeti.Symbol.hasSobolevExtension_quantizeUniformCLM`).
 
 ## Main results
 
@@ -79,23 +79,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
     C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {m : ℝ}
   {e e' : OpenPartialHomeomorph M (CoordinateSpace n)}
 
-/-- A quantization `Op(a)` with `a` of order `m` and compact spatial support is bounded
-`H^s → H^{s - m}` on Schwartz functions (`TauCeti.Symbol.quantizeSobolev`). -/
-private theorem exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le
-    (s : ℝ) (a : Symbol n ℂ ℂ m) (ha : a.HasCompactSpatialSupport) :
-    ∃ A, ∀ w : 𝓢(CoordinateSpace n, ℂ),
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) 2
-          (Symbol.quantizeUniformCLM a ha.isUniform w)‖ ≤
-        A * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 w‖ := by
-  refine ⟨‖a.quantizeSobolev ha s‖, fun w ↦ ?_⟩
-  have h := ha.quantizeSobolev_toBesselPotentialSpaceCLM s w
-  -- Both Schwartz functions have underlying function `quantizeSchwartzValue a.coefficient w`.
-  rw [show (ha.hasCompactSupport_quantizeSchwartzValue w).toSchwartzMap
-      (a.contDiff_quantizeSchwartzValue w) = Symbol.quantizeUniformCLM a ha.isUniform w from
-    SchwartzMap.ext fun y ↦ (Symbol.quantizeUniformCLM_apply a ha.isUniform w y).symm] at h
-  rw [← h]
-  exact (a.quantizeSobolev ha s).le_opNorm _
-
 /-- **The Sobolev estimate between two charts.** Let `P` be a classical pseudodifferential
 operator of order `m`, `φ` a cutoff in a chart `e` and `ψ` a cutoff in a chart `e'`, with `Ψ` the
 smooth function `ψ ∘ e'` on `M`, extended by `0`. For every real `s` there is a constant `C`
@@ -117,7 +100,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mu
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
         hθc hθs s)
-    _ (exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he he' φ ψ
 
 /-- **The Sobolev estimate in one chart.** Let `P` be a classical pseudodifferential operator of
@@ -144,7 +128,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
         hθc hθs s)
-    _ (exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he φ he' ψ hψ
 
 /-- **Sobolev estimate for classical pseudodifferential operators on a manifold.** Let `P` be a
@@ -175,7 +160,8 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_appl
     (fun hκ hκ' _ hθ hθc hθs ↦
       BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
         hθc hθs s)
-    _ (exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s)
+    _ (fun a ha ↦ (SchwartzMap.hasSobolevExtension_iff_exists_norm_le.1
+      (Symbol.hasSobolevExtension_quantizeUniformCLM a ha.isUniform s)).imp fun _ h ↦ h.2)
     he φ he' ψ hψ
 
 end TauCeti
