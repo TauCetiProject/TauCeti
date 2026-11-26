@@ -46,7 +46,9 @@ multiplicity.
   eigenfunctions.
 * `TauCeti.exists_mem_apply_ne_zero_mul_norm_sq_le_apply_self`: the lower bound on every
   subspace of dimension at least `k + 1`.
-* `TauCeti.isLeast_minMax_of_hilbertBasis`: the min–max principle.
+* `TauCeti.isLeast_minMax_of_hilbertBasis`: the min–max principle, and
+  `TauCeti.isLeast_minMax_of_hilbertBasis_of_neg_mul_le` for a form bounded below by
+  `-β ‖J v‖²` rather than by `0`.
 
 ## References
 
@@ -191,5 +193,34 @@ theorem isLeast_minMax_of_hilbertBasis (hsymm : ∀ v w : V, B v w = B w v)
     obtain ⟨v, hvW, hv0, hv⟩ := exists_mem_apply_ne_zero_mul_norm_sq_le_apply_self hsymm hnonneg
       e hkappa hJu heq hW
     exact le_of_mul_le_mul_right (hv.trans (hC v hvW)) (by positivity)
+
+/-- **The Courant–Fischer min–max principle for a form bounded below.** The conclusion of
+`TauCeti.isLeast_minMax_of_hilbertBasis` holds when `B v v ≥ 0` is weakened to
+`B v v ≥ -β ‖J v‖²` for some real `β`: shifting `B` by `β ⟪J ·, J ·⟫` moves every eigenvalue and
+every admissible constant by `β`. -/
+theorem isLeast_minMax_of_hilbertBasis_of_neg_mul_le {β : ℝ} (hsymm : ∀ v w : V, B v w = B w v)
+    (hlower : ∀ v : V, -β * ‖J v‖ ^ 2 ≤ B v v) (e : HilbertBasis ℕ ℝ H) (hkappa : Monotone kappa)
+    (hJu : ∀ j, J (u j) = e j) (heq : ∀ (j : ℕ) (v : V), B (u j) v = kappa j * ⟪J (u j), J v⟫_ℝ)
+    (k : ℕ) :
+    IsLeast {C : ℝ | ∃ W : Submodule ℝ V, k + 1 ≤ Module.finrank ℝ (W.map J) ∧
+      ∀ v ∈ W, B v v ≤ C * ‖J v‖ ^ 2} (kappa k) := by
+  set B' : V →ₗ[ℝ] V →ₗ[ℝ] ℝ := B + β • (innerₗ H).compl₁₂ J J
+  have hB' (v w : V) : B' v w = B v w + β * ⟪J v, J w⟫_ℝ := by simp [B']
+  have hB'self (v : V) : B' v v = B v v + β * ‖J v‖ ^ 2 := by
+    rw [hB', real_inner_self_eq_norm_sq]
+  have h := isLeast_minMax_of_hilbertBasis (B := B') (kappa := fun j ↦ kappa j + β)
+    (fun v w ↦ by rw [hB', hB', hsymm, real_inner_comm])
+    (fun v ↦ by rw [hB'self]; linarith [hlower v]) e
+    (fun i j hij ↦ by linarith [hkappa hij])
+    hJu (fun j v ↦ by rw [hB', heq]; ring) k
+  refine ⟨?_, fun C ⟨W, hW, hC⟩ ↦ ?_⟩
+  · obtain ⟨W, hW, hC⟩ := h.1
+    refine ⟨W, hW, fun v hv ↦ ?_⟩
+    have hv := hC v hv
+    rw [hB'self, add_mul] at hv
+    linarith
+  · have hC' : kappa k + β ≤ C + β :=
+      h.2 ⟨W, hW, fun v hv ↦ by rw [hB'self, add_mul]; linarith [hC v hv]⟩
+    linarith
 
 end TauCeti
