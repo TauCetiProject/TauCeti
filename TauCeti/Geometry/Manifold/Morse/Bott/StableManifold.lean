@@ -43,9 +43,9 @@ dimension `n - λ`, where `λ` is the Morse index at `p`
 (`TauCeti.IsBottAdaptedPseudoGradient.exists_isSliceChart_biUnion_stableSet`). When the Morse
 index is constant on `S`, these charts make `W^s(S)` an embedded submanifold of dimension `n - λ`
 (`TauCeti.IsBottAdaptedPseudoGradient.exists_isManifold_isSmoothEmbedding_biUnion_stableSet`).
-Near `y` the endpoint map is the projection of the chart onto the coordinates of weight `0`,
-composed with the time-`T` map, so it is smooth
-(`TauCeti.IsBottAdaptedPseudoGradient.exists_contMDiffOn_tendsto_flow_atTop`).
+Near `y` the endpoint map `TauCeti.IsBottAdaptedPseudoGradient.stableEndpoint` is the projection
+of the chart onto the coordinates of weight `0`, composed with the time-`T` map, so it is smooth
+(`TauCeti.IsBottAdaptedPseudoGradient.exists_contMDiffOn_eqOn_stableEndpoint`).
 
 The unstable side follows by reversing time: `-X` is adapted to `-f`, its flow is the reversed flow,
 and the Morse index of `-f` at a point of `S` is the dimension of the positive normal bundle. So
@@ -68,8 +68,9 @@ In the namespace `TauCeti.IsBottAdaptedPseudoGradient`:
 * `exists_isManifold_isSmoothEmbedding_biUnion_stableSet`,
   `exists_isManifold_isSmoothEmbedding_biUnion_unstableSet`: when the indices are constant on `S`,
   `W^s(S)` and `W^u(S)` are embedded submanifolds.
-* `exists_contMDiffOn_tendsto_flow_atTop`, `exists_contMDiffOn_tendsto_flow_atBot`: the endpoint
-  maps `W^s(S) → S` and `W^u(S) → S` are smooth.
+* `exists_contMDiffOn_eqOn_stableEndpoint`, `exists_contMDiffOn_eqOn_unstableEndpoint`: the
+  endpoint maps `stableEndpoint : W^s(S) → S` and `unstableEndpoint : W^u(S) → S` of
+  `TauCeti.Geometry.Manifold.Morse.Bott.Flow` are smooth.
 
 ## References
 
@@ -227,14 +228,15 @@ theorem exists_isSliceChart_biUnion_stableSet (hc : ∀ p ∈ S, f p = c)
 
 /-- **The endpoint map of the stable manifold is smooth.** Let `S` be a set of points on the level
 `c` of `f` containing every critical point near each of its points. Near every point `y` of the
-stable set of a point of `S`, there is a smooth map `g` such that every point `z` of
-`⋃ p ∈ S, W^s(p)` near `y` flows to `g z ∈ S` as `t → ∞`. -/
-theorem exists_contMDiffOn_tendsto_flow_atTop (hc : ∀ p ∈ S, f p = c)
+stable set of a point of `S`, the forward endpoint map
+`TauCeti.IsBottAdaptedPseudoGradient.stableEndpoint`, which sends `⋃ p ∈ S, W^s(p)` to `S`
+(`TauCeti.IsBottAdaptedPseudoGradient.mem_biUnion_stableSet_iff`), agrees on
+`⋃ p ∈ S, W^s(p)` with a map `g` that is smooth on a neighbourhood of `y` in `M`. -/
+theorem exists_contMDiffOn_eqOn_stableEndpoint (hc : ∀ p ∈ S, f p = c)
     (hSo : ∀ p ∈ S, ∀ᶠ q in 𝓝 p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 → q ∈ S)
     {p y : M} (hp : p ∈ S) (hy : y ∈ hX.flow.stableSet p) :
     ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ g : M → M, ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ g U ∧
-      ∀ z ∈ U ∩ ⋃ p ∈ S, hX.flow.stableSet p,
-        g z ∈ S ∧ Tendsto (fun t ↦ hX.flow t z) atTop (𝓝 (g z)) := by
+      EqOn g hX.stableEndpoint (U ∩ ⋃ p ∈ S, hX.flow.stableSet p) := by
   obtain ⟨φ, r, T, hφ, hrT, hloc, hT⟩ := hX.exists_slice_data hc hSo hp hy
   have := φ.finiteDimensional
   set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < r / 2}
@@ -272,11 +274,7 @@ theorem exists_contMDiffOn_tendsto_flow_atTop (hc : ∀ p ∈ S, f p = c)
     (Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn (b := T) fun s _ ↦ by
       dsimp only
       rw [← Flow.map_add, sub_add_cancel]).2 (Flow.mem_stableSet.2 hlim)
-  obtain ⟨p', hp', hzp'⟩ := mem_iUnion₂.1 hzS
-  refine ⟨?_, hlim'⟩
-  beta_reduce
-  rw [← tendsto_nhds_unique (Flow.mem_stableSet.1 hzp') hlim']
-  exact hp'
+  exact (hX.stableEndpoint_eq_iff_mem_stableSet.2 (Flow.mem_stableSet.2 hlim')).symm
 
 /-- **The stable manifold of a piece of the critical set.** Let `S` be a set of points on the level
 `c` of `f` containing every critical point near each of its points, on which the Morse index of `f`
@@ -334,24 +332,19 @@ theorem exists_isSliceChart_biUnion_unstableSet (hc : ∀ p ∈ S, f p = c)
 
 /-- **The endpoint map of the unstable manifold is smooth.** Let `S` be a set of points on the
 level `c` of `f` containing every critical point near each of its points. Near every point `y` of
-the unstable set of a point of `S`, there is a smooth map `g` such that every point `z` of
-`⋃ p ∈ S, W^u(p)` near `y` flows to `g z ∈ S` as `t → -∞`. -/
-theorem exists_contMDiffOn_tendsto_flow_atBot (hc : ∀ p ∈ S, f p = c)
+the unstable set of a point of `S`, the backward endpoint map
+`TauCeti.IsBottAdaptedPseudoGradient.unstableEndpoint`, which sends `⋃ p ∈ S, W^u(p)` to `S`
+(`TauCeti.IsBottAdaptedPseudoGradient.mem_biUnion_unstableSet_iff`), agrees on
+`⋃ p ∈ S, W^u(p)` with a map `g` that is smooth on a neighbourhood of `y` in `M`. -/
+theorem exists_contMDiffOn_eqOn_unstableEndpoint (hc : ∀ p ∈ S, f p = c)
     (hSo : ∀ p ∈ S, ∀ᶠ q in 𝓝 p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 → q ∈ S)
     {p y : M} (hp : p ∈ S) (hy : y ∈ hX.flow.unstableSet p) :
     ∃ U : Set M, IsOpen U ∧ y ∈ U ∧ ∃ g : M → M, ContMDiffOn 𝓘(ℝ, E) 𝓘(ℝ, E) ∞ g U ∧
-      ∀ z ∈ U ∩ ⋃ p ∈ S, hX.flow.unstableSet p,
-        g z ∈ S ∧ Tendsto (fun t ↦ hX.flow t z) atBot (𝓝 (g z)) := by
+      EqOn g hX.unstableEndpoint (U ∩ ⋃ p ∈ S, hX.flow.unstableSet p) := by
   rw [← Flow.stableSet_reverse, ← hX.neg_flow] at hy
   obtain ⟨hc', hSo'⟩ := neg_hyps hc hSo
-  obtain ⟨U, hU, hyU, g, hg, hlim⟩ :=
-    hX.neg.exists_contMDiffOn_tendsto_flow_atTop hc' hSo' hp hy
-  refine ⟨U, hU, hyU, g, hg, fun z hz ↦ ?_⟩
-  rw [← hX.biUnion_stableSet_neg] at hz
-  obtain ⟨hgS, hgz⟩ := hlim z hz
-  rw [hX.neg_flow] at hgz
-  refine ⟨hgS, ?_⟩
-  simpa only [comp_def, Flow.reverse_apply, neg_neg] using hgz.comp tendsto_neg_atBot_atTop
+  rw [← hX.biUnion_stableSet_neg, ← hX.neg_stableEndpoint]
+  exact hX.neg.exists_contMDiffOn_eqOn_stableEndpoint hc' hSo' hp hy
 
 /-- **The unstable manifold of a piece of the critical set.** Let `S` be a set of points on the
 level `c` of `f` containing every critical point near each of its points, on which the Morse index

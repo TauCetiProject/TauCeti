@@ -72,6 +72,11 @@ critical point `p` is the centre of the chart.
 * `TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atTop`,
   `TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atBot`: every orbit converges to a critical
   point forward, and backward, in time.
+* `TauCeti.IsBottAdaptedPseudoGradient.stableEndpoint`,
+  `TauCeti.IsBottAdaptedPseudoGradient.unstableEndpoint`: the endpoint maps, sending a point to
+  the limit of its orbit forward, and backward, in time, characterised by
+  `TauCeti.IsBottAdaptedPseudoGradient.stableEndpoint_eq_iff_mem_stableSet` and
+  `TauCeti.IsBottAdaptedPseudoGradient.unstableEndpoint_eq_iff_mem_unstableSet`.
 
 ## References
 
@@ -496,6 +501,76 @@ theorem exists_mem_unstableSet (y : M) :
     ∃ p, mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0 ∧ y ∈ hX.flow.unstableSet p :=
   let ⟨p, hp, hlim⟩ := hX.exists_tendsto_atBot y
   ⟨p, hp, Flow.mem_unstableSet.2 hlim⟩
+
+/-- The **forward endpoint** of the orbit of `y`: the critical point to which `hX.flow t y`
+converges as `t → ∞` (`TauCeti.IsBottAdaptedPseudoGradient.tendsto_flow_stableEndpoint`), that is,
+the critical point whose stable set contains `y`. -/
+noncomputable def stableEndpoint (y : M) : M :=
+  letI : Nonempty M := ⟨y⟩
+  limUnder atTop fun t ↦ hX.flow t y
+
+/-- The **backward endpoint** of the orbit of `y`: the critical point to which `hX.flow t y`
+converges as `t → -∞` (`TauCeti.IsBottAdaptedPseudoGradient.tendsto_flow_unstableEndpoint`), that
+is, the critical point whose unstable set contains `y`. -/
+noncomputable def unstableEndpoint (y : M) : M :=
+  letI : Nonempty M := ⟨y⟩
+  limUnder atBot fun t ↦ hX.flow t y
+
+/-- The orbit of `y` converges to its forward endpoint as `t → ∞`. -/
+theorem tendsto_flow_stableEndpoint (y : M) :
+    Tendsto (fun t ↦ hX.flow t y) atTop (𝓝 (hX.stableEndpoint y)) :=
+  let ⟨_, _, hlim⟩ := hX.exists_tendsto_atTop y
+  tendsto_nhds_limUnder ⟨_, hlim⟩
+
+/-- The orbit of `y` converges to its backward endpoint as `t → -∞`. -/
+theorem tendsto_flow_unstableEndpoint (y : M) :
+    Tendsto (fun t ↦ hX.flow t y) atBot (𝓝 (hX.unstableEndpoint y)) :=
+  let ⟨_, _, hlim⟩ := hX.exists_tendsto_atBot y
+  tendsto_nhds_limUnder ⟨_, hlim⟩
+
+/-- The forward endpoint of `y` is `p` exactly when `y` lies in the stable set of `p`. -/
+theorem stableEndpoint_eq_iff_mem_stableSet {p y : M} :
+    hX.stableEndpoint y = p ↔ y ∈ hX.flow.stableSet p :=
+  ⟨fun h ↦ h ▸ Flow.mem_stableSet.2 (hX.tendsto_flow_stableEndpoint y),
+    fun hy ↦ tendsto_nhds_unique (hX.tendsto_flow_stableEndpoint y) (Flow.mem_stableSet.1 hy)⟩
+
+/-- The backward endpoint of `y` is `p` exactly when `y` lies in the unstable set of `p`. -/
+theorem unstableEndpoint_eq_iff_mem_unstableSet {p y : M} :
+    hX.unstableEndpoint y = p ↔ y ∈ hX.flow.unstableSet p :=
+  ⟨fun h ↦ h ▸ Flow.mem_unstableSet.2 (hX.tendsto_flow_unstableEndpoint y),
+    fun hy ↦
+      tendsto_nhds_unique (hX.tendsto_flow_unstableEndpoint y) (Flow.mem_unstableSet.1 hy)⟩
+
+/-- The forward endpoint of every orbit is a critical point of `f`. -/
+theorem mfderiv_stableEndpoint_eq_zero (y : M) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (hX.stableEndpoint y) = 0 :=
+  hX.mfderiv_eq_zero_of_mem_stableSet (Flow.mem_stableSet.2 (hX.tendsto_flow_stableEndpoint y))
+
+/-- The backward endpoint of every orbit is a critical point of `f`. -/
+theorem mfderiv_unstableEndpoint_eq_zero (y : M) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (hX.unstableEndpoint y) = 0 :=
+  hX.mfderiv_eq_zero_of_mem_unstableSet
+    (Flow.mem_unstableSet.2 (hX.tendsto_flow_unstableEndpoint y))
+
+/-- The stable set of a set `S` of critical points is the preimage of `S` under the forward endpoint
+map. -/
+theorem mem_biUnion_stableSet_iff {S : Set M} {y : M} :
+    y ∈ ⋃ p ∈ S, hX.flow.stableSet p ↔ hX.stableEndpoint y ∈ S := by
+  simp only [mem_iUnion₂, exists_prop, ← hX.stableEndpoint_eq_iff_mem_stableSet, exists_eq_right']
+
+/-- The unstable set of a set `S` of critical points is the preimage of `S` under the backward
+endpoint map. -/
+theorem mem_biUnion_unstableSet_iff {S : Set M} {y : M} :
+    y ∈ ⋃ p ∈ S, hX.flow.unstableSet p ↔ hX.unstableEndpoint y ∈ S := by
+  simp only [mem_iUnion₂, exists_prop, ← hX.unstableEndpoint_eq_iff_mem_unstableSet,
+    exists_eq_right']
+
+/-- The forward endpoint map of `-X`, adapted to `-f`, is the backward endpoint map of `X`. -/
+@[simp]
+theorem neg_stableEndpoint : hX.neg.stableEndpoint = hX.unstableEndpoint := by
+  ext y
+  rw [stableEndpoint_eq_iff_mem_stableSet, hX.neg_flow, Flow.stableSet_reverse]
+  exact Flow.mem_unstableSet.2 (hX.tendsto_flow_unstableEndpoint y)
 
 end IsBottAdaptedPseudoGradient
 

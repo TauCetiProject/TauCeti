@@ -257,13 +257,15 @@ theorem mfderiv_eq_zero_of_forall_eq {z : M}
 
 /-- A point with a nonempty stable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_stableSet {a y : M} (hy : y ∈ hX.flow.stableSet a) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 := by
-  exact hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy t]
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_mem_stableSet
+    (hX.isBottAdaptedPseudoGradient_flow ▸ hy)
 
 /-- A point with a nonempty unstable set is a critical point of `f`: it is fixed by the flow. -/
 theorem mfderiv_eq_zero_of_mem_unstableSet {a y : M} (hy : y ∈ hX.flow.unstableSet a) :
-    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 := by
-  exact hX.mfderiv_eq_zero_of_forall_eq fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy t]
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a = 0 :=
+  hX.isBottAdaptedPseudoGradient.mfderiv_eq_zero_of_mem_unstableSet
+    (hX.isBottAdaptedPseudoGradient_flow ▸ hy)
 
 /-- **Every orbit converges forward in time to a critical point**, a special case of
 `TauCeti.IsBottAdaptedPseudoGradient.exists_tendsto_atTop`. -/
