@@ -12,6 +12,7 @@ public import Mathlib.Topology.Algebra.Constructions
 public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import Mathlib.Topology.Instances.Matrix
 -- Non-public: used only inside proofs.
+import Mathlib.Topology.Algebra.Group.Units
 import Mathlib.Topology.ContinuousMap.Algebra
 import TauCeti.LinearAlgebra.Trace.Basic
 import TauCeti.RepresentationTheory.Semisimple.TraceForm
@@ -20,8 +21,8 @@ import TauCeti.Topology.Algebra.Module.ModuleTopology
 /-!
 # Continuity of a semisimple representation from its character
 
-Let `ρ` be a finite-dimensional representation of a monoid `G` with separately continuous
-multiplication over a topological field `k`, given only as an abstract homomorphism, with no
+Let `ρ` be a finite-dimensional representation of a monoid `G` with continuous right
+translations over a topological field `k`, given only as an abstract homomorphism, with no
 continuity assumed. If `ρ` is semisimple, `k` has characteristic zero and the character
 `g ↦ tr(ρ g)` is continuous, then `ρ` is continuous: every linear functional of `ρ`, in particular
 every matrix coefficient, is a continuous function on `G`.
@@ -45,9 +46,13 @@ nor absolute irreducibility of `ρ` is needed.
   the character.
 * `Representation.continuous_linearMap_apply_of_continuous_character`: the same for a semisimple
   `ρ` in characteristic zero.
+* `Representation.continuous_action_of_continuous_character_of_nondegenerate`: nondegeneracy and
+  continuous character imply joint continuity on the module topology in any characteristic.
 * `Representation.continuous_action_of_continuous_character`: a semisimple representation in
   characteristic zero with continuous character acts jointly continuously on `V` with its module
   topology.
+* `MonoidHom.continuous_of_continuous_trace_of_nondegenerate`: the matrix form under
+  nondegeneracy in any characteristic.
 * `MonoidHom.continuous_of_continuous_trace`: a homomorphism `G →* GL_n(k)` whose representation
   on `k ^ n` is semisimple, in characteristic zero, is continuous when its trace is.
 
@@ -95,7 +100,7 @@ pairing.** Suppose that the only element `f` of the span of the operators `ρ g`
 `g ↦ φ (ρ g)` is continuous for every linear functional `φ` on `End_k(V)`. No assumption on the
 characteristic of `k` is made. -/
 theorem continuous_linearMap_apply_of_continuous_character_of_nondegenerate
-    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [SeparatelyContinuousMul G]
+    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
     (ρ : Representation k G V)
     (hρ : ∀ f ∈ Submodule.span k (Set.range ρ), (∀ g, LinearMap.trace k V (f * ρ g) = 0) → f = 0)
     (hχ : Continuous ρ.character) (φ : Module.End k V →ₗ[k] k) :
@@ -114,45 +119,86 @@ theorem continuous_linearMap_apply_of_continuous_character_of_nondegenerate
   let ev : (S →ₗ[k] k) →ₗ[k] G → k :=
     LinearMap.pi fun g ↦ LinearMap.applyₗ ⟨ρ g, Submodule.subset_span ⟨g, rfl⟩⟩
   have hL (h : G) : Continuous (ev (L h)) :=
-    (hχ.comp (continuous_mul_const h)).congr fun g ↦ by simp [ev, L, character]
-  exact Submodule.mem_span.1 hφ ((continuousSubmodule G k k).comap ev) (Set.range_subset_iff.2 hL)
+    (hχ.comp (continuous_const_smul (MulOpposite.op h))).congr fun g ↦ by simp [ev, L, character]
+  have hev (ψ : S →ₗ[k] k) (g : G) :
+      ev ψ g = ψ ⟨ρ g, Submodule.subset_span ⟨g, rfl⟩⟩ := by
+    simp [ev]
+  have hcont := Submodule.mem_span.1 hφ ((continuousSubmodule G k k).comap ev)
+    (Set.range_subset_iff.2 hL)
+  rw [Submodule.mem_comap] at hcont
+  have hcont' : Continuous (ev (φ.domRestrict S)) := hcont
+  exact hcont'.congr fun g ↦ by rw [hev, LinearMap.domRestrict_apply]
 
 /-- **The linear functionals of a semisimple representation are as continuous as its character.**
 Over a topological field of characteristic zero, if `ρ` is a finite-dimensional semisimple
 representation whose character is continuous, then `g ↦ φ (ρ g)` is continuous for every linear
 functional `φ` on `End_k(V)`; for instance every matrix coefficient of `ρ` is continuous. -/
 theorem continuous_linearMap_apply_of_continuous_character [CharZero k] [FiniteDimensional k V]
-    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [SeparatelyContinuousMul G]
+    [IsTopologicalAddGroup k] [ContinuousConstSMul k k] [ContinuousConstSMul Gᵐᵒᵖ G]
     (ρ : Representation k G V)
     [ρ.IsSemisimpleRepresentation] (hχ : Continuous ρ.character) (φ : Module.End k V →ₗ[k] k) :
     Continuous fun g ↦ φ (ρ g) :=
   ρ.continuous_linearMap_apply_of_continuous_character_of_nondegenerate
     (fun _ hf h ↦ ρ.eq_zero_of_mem_span_of_forall_trace_mul_eq_zero hf h) hχ φ
 
+/-- A representation with nondegenerate trace pairing and continuous character acts jointly
+continuously on its vector space with the module topology, in any characteristic. -/
+theorem continuous_action_of_continuous_character_of_nondegenerate
+    [IsTopologicalRing k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
+    [IsModuleTopology k V] (ρ : Representation k G V)
+    (hρ : ∀ f ∈ Submodule.span k (Set.range ρ), (∀ g, LinearMap.trace k V (f * ρ g) = 0) → f = 0)
+    (hχ : Continuous ρ.character) : Continuous fun p : G × V ↦ ρ p.1 p.2 := by
+  have := finiteDimensional_of_nondegenerate ρ hρ
+  let b := Module.finBasis k V
+  refine (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b ρ).2
+    (continuous_matrix fun i j ↦ ?_)
+  exact ρ.continuous_linearMap_apply_of_continuous_character_of_nondegenerate hρ hχ
+    (Matrix.entryLinearMap k k i j ∘ₗ (LinearMap.toMatrix b b).toLinearMap)
+
 /-- **A semisimple representation with continuous character is continuous.** Over a topological
 field of characteristic zero, a finite-dimensional semisimple representation whose character is
 continuous acts jointly continuously on `V` with its module topology. -/
 theorem continuous_action_of_continuous_character [CharZero k] [FiniteDimensional k V]
-    [IsTopologicalRing k] [SeparatelyContinuousMul G] [TopologicalSpace V] [IsModuleTopology k V]
-    (ρ : Representation k G V)
+    [IsTopologicalRing k] [ContinuousConstSMul Gᵐᵒᵖ G] [TopologicalSpace V]
+    [IsModuleTopology k V] (ρ : Representation k G V)
     [ρ.IsSemisimpleRepresentation] (hχ : Continuous ρ.character) :
-    Continuous fun p : G × V ↦ ρ p.1 p.2 := by
-  let b := Module.finBasis k V
-  refine (TauCeti.ModuleTopology.continuous_linearMap_apply_iff_continuous_toMatrix b b ρ).2
-    (continuous_matrix fun i j ↦ ?_)
-  exact ρ.continuous_linearMap_apply_of_continuous_character hχ
-    (Matrix.entryLinearMap k k i j ∘ₗ (LinearMap.toMatrix b b).toLinearMap)
+    Continuous fun p : G × V ↦ ρ p.1 p.2 :=
+  ρ.continuous_action_of_continuous_character_of_nondegenerate
+    (fun _ hf h ↦ ρ.eq_zero_of_mem_span_of_forall_trace_mul_eq_zero hf h) hχ
 
 end Representation
 
 namespace MonoidHom
 
-variable {G k n : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+variable {G k n : Type*} [Group G] [TopologicalSpace G] [ContinuousConstSMul Gᵐᵒᵖ G]
   [ContinuousInv G] [Field k] [TopologicalSpace k] [Fintype n] [DecidableEq n]
+
+/-- A matrix representation with nondegenerate trace pairing on the span of its operators is
+continuous whenever its trace is continuous, in any characteristic. -/
+theorem continuous_of_continuous_trace_of_nondegenerate [IsTopologicalAddGroup k]
+    [ContinuousConstSMul k k] (r : G →* GL n k)
+    (hρ : ∀ f ∈ Submodule.span k (Set.range
+      ((Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r) :
+        Representation k G (n → k))),
+      (∀ g, LinearMap.trace k (n → k)
+        (f * ((Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r)) g) = 0) →
+        f = 0)
+    (htr : Continuous fun g ↦ (r g : Matrix n n k).trace) : Continuous r := by
+  let ρ : Representation k G (n → k) :=
+    (Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r)
+  have hρ_apply (g : G) : ρ g = Matrix.toLin' (r g : Matrix n n k) := by
+    simp [ρ, Matrix.toLin'_apply']
+  have hχ : Continuous ρ.character := htr.congr fun g ↦ by
+    simp [Representation.character, hρ_apply, Matrix.trace_toLin'_eq]
+  have hval : Continuous fun g ↦ (r g : Matrix n n k) := continuous_matrix fun i j ↦
+    (ρ.continuous_linearMap_apply_of_continuous_character_of_nondegenerate hρ hχ
+      (Matrix.entryLinearMap k k i j ∘ₗ LinearMap.toMatrix'.toLinearMap)).congr fun g ↦ by
+        simp [hρ_apply]
+  exact Continuous.of_coeHom_comp (f := r) hval
 
 /-- **A semisimple matrix representation with continuous trace is continuous.** Let `k` be a
 topological field of characteristic zero and `r : G →* GL_n(k)` a homomorphism from a group with
-separately continuous multiplication and continuous inversion whose representation on `k ^ n` is
+continuous right translations and continuous inversion whose representation on `k ^ n` is
 semisimple. If `g ↦ tr(r g)` is continuous, then `r` is continuous for the topology of `GL_n(k)`
 as the units of the matrix ring. -/
 theorem continuous_of_continuous_trace [CharZero k] [IsTopologicalAddGroup k]
@@ -161,17 +207,8 @@ theorem continuous_of_continuous_trace [CharZero k] [IsTopologicalAddGroup k]
       ((Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r) :
         Representation k G (n → k))]
     (htr : Continuous fun g ↦ (r g : Matrix n n k).trace) : Continuous r := by
-  let ρ : Representation k G (n → k) :=
-    (Units.coeHom _).comp (Matrix.GeneralLinearGroup.toLin.toMonoidHom.comp r)
-  have hρ (g : G) : ρ g = Matrix.toLin' (r g : Matrix n n k) := by
-    simp [ρ, Matrix.toLin'_apply']
-  have hχ : Continuous ρ.character := htr.congr fun g ↦ by
-    simp [Representation.character, hρ, Matrix.trace_toLin'_eq]
-  have hval : Continuous fun g ↦ (r g : Matrix n n k) := continuous_matrix fun i j ↦
-    (ρ.continuous_linearMap_apply_of_continuous_character hχ
-      (Matrix.entryLinearMap k k i j ∘ₗ LinearMap.toMatrix'.toLinearMap)).congr fun g ↦ by
-        simp [hρ]
-  refine Units.continuous_iff.2 ⟨hval, (hval.comp continuous_inv).congr fun g ↦ ?_⟩
-  simp
+  apply r.continuous_of_continuous_trace_of_nondegenerate ?_ htr
+  exact fun _ hf h ↦
+    Representation.eq_zero_of_mem_span_of_forall_trace_mul_eq_zero _ hf h
 
 end MonoidHom

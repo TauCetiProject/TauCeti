@@ -51,14 +51,9 @@ theorem eq_zero_of_mem_span_of_forall_trace_mul_eq_zero [CharZero k] [FiniteDime
     f = 0 := by
   have := ρ.isSemisimpleModule_range_asAlgebraHom
   have hspan : ∀ b ∈ Submodule.span k (Set.range ρ), LinearMap.trace k V (f * b) = 0 := by
-    intro b hb
-    induction hb using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨g, rfl⟩ := hx
-      exact h g
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => simp [mul_add, h₁, h₂]
-    | smul c _ _ h₁ => simp [h₁]
+    apply LinearMap.eqOn_span (f := LinearMap.trace k V ∘ₗ LinearMap.mulLeft k f) (g := 0)
+    rintro _ ⟨g, rfl⟩
+    exact h g
   rw [← toSubmodule_range_asAlgebraHom] at hf hspan
   exact ρ.asAlgebraHom.range.eq_zero_of_forall_trace_mul_eq_zero hf hspan
 

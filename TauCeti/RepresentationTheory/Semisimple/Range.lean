@@ -27,11 +27,14 @@ variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V]
 action. -/
 theorem isSemisimpleModule_range_asAlgebraHom (ρ : Representation k G V)
     [ρ.IsSemisimpleRepresentation] : IsSemisimpleModule ρ.asAlgebraHom.range V := by
-  rw [isSemisimpleRepresentation_iff_isSemisimpleModule_asModule] at *
-  -- `ρ.asModule` is a type synonym for `V`; its monoid-algebra action factors through the range.
-  let : Module ρ.asAlgebraHom.range ρ.asModule := (inferInstance : Module ρ.asAlgebraHom.range V)
-  exact (RingHom.isSemisimpleModule_iff_of_surjective (M := ρ.asModule)
-    ρ.asAlgebraHom.rangeRestrict.toRingHom (AlgHom.rangeRestrict_surjective _)
-    fun _ _ ↦ rfl).mp ‹_›
+  have hsem := (isSemisimpleRepresentation_iff_isSemisimpleModule_asModule ρ).mp
+    (inferInstance : ρ.IsSemisimpleRepresentation)
+  let σ := ρ.asAlgebraHom.rangeRestrict.toRingHom
+  have : RingHomSurjective σ := ⟨AlgHom.rangeRestrict_surjective _⟩
+  let e : ρ.asModule →ₛₗ[σ] V :=
+    { ρ.asModuleEquiv.toAddEquiv.toAddMonoidHom with
+      map_smul' := fun r v ↦ by
+        simp [σ, Subalgebra.smul_def] }
+  exact (e.isSemisimpleModule_iff_of_bijective ρ.asModuleEquiv.bijective).mp hsem
 
 end Representation

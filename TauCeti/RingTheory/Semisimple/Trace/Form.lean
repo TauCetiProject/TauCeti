@@ -129,17 +129,6 @@ theorem isSemisimpleRing_iff_nondegenerate_regularTraceForm [CharZero K] :
     IsSemisimpleRing A ↔ (regularTraceForm K A).Nondegenerate :=
   ⟨fun _ => nondegenerate_regularTraceForm, isSemisimpleRing_of_nondegenerate_regularTraceForm⟩
 
-/-- An element whose products with every element are traceless is nilpotent, in characteristic
-zero: `tr(L_x ^ k) = tr(L_{x ^ (k - 1) x})` vanishes for every `k > 0`. -/
-private theorem isNilpotent_of_forall_regularTraceForm_eq_zero [CharZero K] {x : A}
-    (h : ∀ y, regularTraceForm K A y x = 0) : IsNilpotent x := by
-  have hL : IsNilpotent (lmul K A x) := by
-    refine isNilpotent_iff_forall_trace_pow_eq_zero.2 fun k hk => ?_
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hk.ne'
-    have hk := h (x ^ k)
-    rwa [regularTraceForm_apply, ← pow_succ, map_pow] at hk
-  exact (LinearMap.isNilpotent_mulLeft_iff K x).1 hL
-
 /-- **The Jacobson radical is the kernel of the regular trace form.** Over a field of
 characteristic zero, an element `x` of a finite-dimensional algebra lies in its Jacobson radical
 exactly when `tr(L_{xy}) = 0` for every `y`. -/
@@ -150,8 +139,9 @@ theorem mem_jacobson_iff_forall_regularTraceForm_eq_zero [CharZero K] {x : A} :
   simp only [hsymm]
   refine ⟨fun hx y => regularTraceForm_eq_zero_of_mem_jacobson hx y,
     fun h => Ring.mem_jacobson_of_forall_isNilpotent_mul fun y =>
-      isNilpotent_of_forall_regularTraceForm_eq_zero (K := K) fun z => ?_⟩
-  simpa [mul_assoc] using h (z * y)
+      (lmul K A).isNilpotent_of_forall_trace_mul_eq_zero
+        Algebra.lmul_injective fun z => ?_⟩
+  simpa only [regularTraceForm_apply, mul_assoc] using h (z * y)
 
 variable (K A) in
 /-- **The Jacobson radical is the kernel of the regular trace form**, as `K`-subspaces: over a field

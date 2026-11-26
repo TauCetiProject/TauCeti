@@ -41,6 +41,8 @@ construction of the neutral element of an `sl₂`-triple in the Jacobson–Moroz
 
 * `LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero`: in characteristic zero, an endomorphism is
   nilpotent if and only if all traces of its positive powers vanish.
+* `AlgHom.isNilpotent_of_forall_trace_mul_eq_zero`: the corresponding nilpotence criterion
+  for an algebra faithfully acting on a finite-dimensional vector space.
 * `LinearMap.isNilpotent_lie_of_lie_lie_eq_zero`: Jacobson's lemma.
 * `LinearMap.trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero`: if `A` is nilpotent and
   `⁅A, ⁅A, B⁆⁆ = 0`, then `trace (A * B) = 0`.
@@ -214,3 +216,19 @@ theorem trace_mul_eq_zero_of_isNilpotent_of_lie_lie_eq_zero (hA : IsNilpotent A)
   simp only [mem_ker, hn, LinearMap.zero_apply]
 
 end LinearMap
+
+namespace AlgHom
+
+/-- An element of an algebra faithfully acting on a finite-dimensional vector space is nilpotent
+if its products with all elements have trace zero, in characteristic zero. -/
+theorem isNilpotent_of_forall_trace_mul_eq_zero {K A M : Type*} [Field K] [CharZero K]
+    [Ring A] [Algebra K A] [AddCommGroup M] [Module K M] [FiniteDimensional K M]
+    (φ : A →ₐ[K] Module.End K M) (hφ : Function.Injective φ) {x : A}
+    (h : ∀ y, LinearMap.trace K M (φ (y * x)) = 0) : IsNilpotent x := by
+  refine (IsNilpotent.map_iff hφ).mp ?_
+  apply LinearMap.isNilpotent_iff_forall_trace_pow_eq_zero.mpr
+  intro n hn
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
+  simpa only [map_mul, map_pow, pow_succ] using h (x ^ m)
+
+end AlgHom
