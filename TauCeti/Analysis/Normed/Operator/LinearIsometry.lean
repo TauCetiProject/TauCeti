@@ -28,7 +28,8 @@ Dually, precomposition with a linear isometric equivalence `e : E ≃ₗᵢ[𝕜
 equivalence `LinearIsometryEquiv.precomp G e : (F →L[𝕜] G) ≃ₗᵢ[𝕜] (E →L[𝕜] G)` for any seminormed
 target `G`. Taking `G = 𝕜` gives contravariant functoriality of the continuous dual on linear
 isometric equivalences, used to pass between duals and biduals of submodules and quotients.
-Conjugating an operator by a linear isometric equivalence preserves its distance to the identity
+Conjugating an operator by a linear isometric equivalence preserves its norm
+(`LinearIsometryEquiv.norm_conjContinuousAlgEquiv_apply`) and its distance to the identity
 (`LinearIsometryEquiv.norm_comp_comp_symm_sub_id`).
 
 Also defines `SeparationQuotient.liftₗᵢ`, descending any semilinear isometry `E →ₛₗᵢ[σ₁₂] F`
@@ -221,6 +222,15 @@ theorem norm_comp_comp_symm_sub_id (e : E ≃ₗᵢ[𝕜] F) (B : E →L[𝕜] E
     ext x; simp
   rw [h, ContinuousLinearMap.opNorm_linearIsometryEquiv_comp,
     ContinuousLinearMap.opNorm_comp_linearIsometryEquiv]
+
+/-- Conjugating an operator by a linear isometric equivalence preserves its norm:
+`‖e ∘ M ∘ e⁻¹‖ = ‖M‖`. -/
+@[simp]
+theorem norm_conjContinuousAlgEquiv_apply (e : E ≃ₗᵢ[𝕜] F) (M : E →L[𝕜] E) :
+    ‖e.toContinuousLinearEquiv.conjContinuousAlgEquiv M‖ = ‖M‖ := by
+  rw [ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  exact (ContinuousLinearMap.opNorm_linearIsometryEquiv_comp e _).trans
+    (ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e.symm)
 
 end LinearIsometryEquiv
 

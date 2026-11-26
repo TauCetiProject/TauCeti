@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Opposite
-public import TauCeti.RepresentationTheory.OfMulAction.CosetLift
+public import TauCeti.RepresentationTheory.OfMulAction.Coset.Lift
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 public import TauCeti.RepresentationTheory.OfMulAction.Hecke.Basic
 
