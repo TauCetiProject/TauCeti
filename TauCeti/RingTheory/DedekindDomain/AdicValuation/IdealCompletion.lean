@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.AdicCompletion.CofinalLimit
 public import TauCeti.RingTheory.AdicCompletion.Coprime
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import Mathlib.RingTheory.AdicCompletion.Noetherian
+import TauCeti.RingTheory.DedekindDomain.Ideal.Basic
 import TauCeti.RingTheory.Valuation.AdicSeparated
 
 /-!
@@ -19,9 +20,11 @@ completions `lim R ⧸ Iⁿ` of the ring `R` with products of the valuation ring
 completions `K_v`.
 
 For a height-one prime `v`, the `v`-adic completion of `R` is `𝒪_v`
-(`IsDedekindDomain.HeightOneSpectrum.adicCompletionAlgEquiv`). Indeed `R ⧸ vⁿ → 𝒪_v ⧸ 𝔪ⁿ` is
-bijective for every `n`: both ideal filtrations are cut out by the valuation, and `R` is dense in
-`𝒪_v`. Since `𝒪_v` is `𝔪`-adically complete, the completions agree.
+(`IsDedekindDomain.HeightOneSpectrum.adicCompletionAsIdealAlgEquivIntegers`). Indeed
+`R ⧸ vⁿ → 𝒪_v ⧸ 𝔪ⁿ` is bijective for every `n`
+(`IsDedekindDomain.HeightOneSpectrum.quotientMap_maximalIdeal_pow_bijective`): both ideal
+filtrations are cut out by the valuation, and `R` is dense in `𝒪_v`. Since `𝒪_v` is `𝔪`-adically
+complete, the completions agree.
 
 For a nonzero ideal `I`, only finitely many height-one primes contain `I`. They are pairwise
 comaximal, and their intersection, the radical of `I`, has a power inside `I`. So the Chinese
@@ -43,23 +46,20 @@ dyadic factor gives its fraction field.
 
 ## Main definitions
 
-* `IsDedekindDomain.HeightOneSpectrum.adicCompletionAlgEquiv`: the `R`-algebra isomorphism
-  `AdicCompletion v.asIdeal R ≃ₐ[R] 𝒪_v`.
+* `IsDedekindDomain.HeightOneSpectrum.adicCompletionAsIdealAlgEquivIntegers`: the `R`-algebra
+  isomorphism `AdicCompletion v.asIdeal R ≃ₐ[R] 𝒪_v`.
 * `Ideal.adicCompletionAlgEquivPi`: for `I ≠ ⊥`, the `R`-algebra isomorphism
   `AdicCompletion I R ≃ₐ[R] ∏_{v ⊇ I} 𝒪_v`.
 
 ## Main results
 
-* `IsDedekindDomain.HeightOneSpectrum.under_maximalIdeal_pow_adicCompletionIntegers`: the powers
-  of the maximal ideal of `𝒪_v` contract to the powers of `v`.
-* `IsDedekindDomain.HeightOneSpectrum.quotientMap_maximalIdeal_pow_bijective`: the maps
-  `R ⧸ vⁿ → 𝒪_v ⧸ 𝔪ⁿ` are bijective.
-* `IsDedekindDomain.HeightOneSpectrum.mk_adicCompletionAlgEquiv`: modulo `𝔪ⁿ`, the isomorphism
-  `adicCompletionAlgEquiv` is the projection of the completion to `R ⧸ vⁿ`.
+* `IsDedekindDomain.HeightOneSpectrum.mk_adicCompletionAsIdealAlgEquivIntegers`: modulo `𝔪ⁿ`,
+  the isomorphism `adicCompletionAsIdealAlgEquivIntegers` is the projection of the completion to
+  `R ⧸ vⁿ`.
 * `Ideal.adicCompletionAlgEquivPi_apply`: each coordinate of `adicCompletionAlgEquivPi` is the
-  canonical map `lim R ⧸ Iⁿ → lim R ⧸ vⁿ` followed by `adicCompletionAlgEquiv`. With
-  `AdicCompletion.ofPowLe_of` and `adicCompletionAlgEquiv_of`, `simp` reduces each coordinate on
-  `R` to the canonical map `R → 𝒪_v`.
+  canonical map `lim R ⧸ Iⁿ → lim R ⧸ vⁿ` followed by `adicCompletionAsIdealAlgEquivIntegers`.
+  With `AdicCompletion.ofPowLe_of` and `adicCompletionAsIdealAlgEquivIntegers_of`, `simp` reduces
+  each coordinate on `R` to the canonical map `R → 𝒪_v`.
 * `IsDedekindDomain.HeightOneSpectrum.isLocalization_away_adicCompletion`: `𝒪_v[1/r] = K_v` for
   a nonzero `r ∈ v`.
 
@@ -82,33 +82,6 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K] (v : HeightOneSpectrum R)
 
-/-- The `n`-th power of the maximal ideal of the ring of integers `𝒪_v` of the completion at `v`
-contracts to `v ^ n`: the ideal filtrations of `R` at `v` and of `𝒪_v` are both the valuation
-filtration. -/
-@[simp]
-theorem under_maximalIdeal_pow_adicCompletionIntegers (n : ℕ) :
-    (maximalIdeal (v.adicCompletionIntegers K) ^ n).under R = v.asIdeal ^ n := by
-  ext r
-  rw [Ideal.under_def, Ideal.mem_comap, mem_maximalIdeal_pow_iff,
-    mem_asIdeal_pow_iff_valued_algebraMap_le (K := K),
-    IsScalarTower.algebraMap_apply R (v.adicCompletionIntegers K) (v.adicCompletion K)]
-  rfl
-
-/-- The map `R ⧸ v ^ n → 𝒪_v ⧸ 𝔪 ^ n` to the quotients of the ring of integers of the completion
-at `v` is bijective. -/
-theorem quotientMap_maximalIdeal_pow_bijective (n : ℕ) :
-    Function.Bijective (Ideal.quotientMap (maximalIdeal (v.adicCompletionIntegers K) ^ n)
-      (algebraMap R (v.adicCompletionIntegers K))
-      (v.under_maximalIdeal_pow_adicCompletionIntegers K n).ge) := by
-  refine ⟨Ideal.quotientMap_injective' (v.under_maximalIdeal_pow_adicCompletionIntegers K n).le,
-    fun y ↦ ?_⟩
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-  obtain ⟨a, ha⟩ := v.exists_valued_sub_le (K := K) x n
-  refine ⟨Ideal.Quotient.mk _ a, ?_⟩
-  rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_maximalIdeal_pow_iff, AddSubgroupClass.coe_sub,
-    Valuation.map_sub_swap]
-  exact ha
-
 /-- `under_maximalIdeal_adicCompletionIntegers` in the form taken by `AdicCompletion.mapₐ`. -/
 private theorem asIdeal_le_comap_maximalIdeal :
     v.asIdeal ≤ (maximalIdeal (v.adicCompletionIntegers K)).comap
@@ -117,33 +90,34 @@ private theorem asIdeal_le_comap_maximalIdeal :
 
 /-- The `v`-adic completion `lim R ⧸ vⁿ` of a Dedekind domain is the ring of integers `𝒪_v` of
 the completion of its fraction field at `v`. -/
-noncomputable def adicCompletionAlgEquiv :
+noncomputable def adicCompletionAsIdealAlgEquivIntegers :
     AdicCompletion v.asIdeal R ≃ₐ[R] v.adicCompletionIntegers K :=
   (AlgEquiv.ofBijective (mapₐ (Algebra.ofId R (v.adicCompletionIntegers K))
       (v.asIdeal_le_comap_maximalIdeal K))
-    (mapₐ_bijective _ _ fun n ↦ v.quotientMap_maximalIdeal_pow_bijective K n)).trans
+    (mapₐ_bijective _ _ fun n ↦ v.quotientMap_maximalIdeal_pow_bijective (K := K) n)).trans
     ((ofAlgEquiv (maximalIdeal (v.adicCompletionIntegers K))).symm.restrictScalars R)
 
-/-- Modulo the `n`-th power of the maximal ideal of `𝒪_v`, `adicCompletionAlgEquiv` is the
-projection of the completion to `R ⧸ v ^ n`. This characterizes `adicCompletionAlgEquiv`, as `𝒪_v`
-is `𝔪`-adically separated. -/
+/-- Modulo the `n`-th power of the maximal ideal of `𝒪_v`, `adicCompletionAsIdealAlgEquivIntegers`
+is the projection of the completion to `R ⧸ v ^ n`. This characterizes
+`adicCompletionAsIdealAlgEquivIntegers`, as `𝒪_v` is `𝔪`-adically separated. -/
 @[simp]
-theorem mk_adicCompletionAlgEquiv (n : ℕ) (x : AdicCompletion v.asIdeal R) :
+theorem mk_adicCompletionAsIdealAlgEquivIntegers (n : ℕ) (x : AdicCompletion v.asIdeal R) :
     Ideal.Quotient.mk (maximalIdeal (v.adicCompletionIntegers K) ^ n)
-        (v.adicCompletionAlgEquiv K x) =
+        (v.adicCompletionAsIdealAlgEquivIntegers K x) =
       Ideal.quotientMap _ (algebraMap R (v.adicCompletionIntegers K))
-        (v.under_maximalIdeal_pow_adicCompletionIntegers K n).ge
+        (v.under_maximalIdeal_pow_adicCompletionIntegers (K := K) n).ge
         (evalₐ v.asIdeal n x) := by
-  rw [adicCompletionAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply,
+  rw [adicCompletionAsIdealAlgEquivIntegers, AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply,
     mk_ofAlgEquiv_symm, AlgEquiv.ofBijective_apply, evalₐ_mapₐ]
   -- `(Algebra.ofId R _).toRingHom` is `algebraMap R _` by definition.
   rfl
 
-/-- `adicCompletionAlgEquiv` extends the canonical map `R → 𝒪_v`. -/
+/-- `adicCompletionAsIdealAlgEquivIntegers` extends the canonical map `R → 𝒪_v`. -/
 @[simp]
-theorem adicCompletionAlgEquiv_of (r : R) :
-    v.adicCompletionAlgEquiv K (of v.asIdeal R r) = algebraMap R (v.adicCompletionIntegers K) r :=
-  (v.adicCompletionAlgEquiv K).commutes r
+theorem adicCompletionAsIdealAlgEquivIntegers_of (r : R) :
+    v.adicCompletionAsIdealAlgEquivIntegers K (of v.asIdeal R r) =
+      algebraMap R (v.adicCompletionIntegers K) r :=
+  (v.adicCompletionAsIdealAlgEquivIntegers K).commutes r
 
 /-- Inverting a nonzero element `r ∈ v` of `R` in `𝒪_v` gives the completion `K_v`. For instance
 `𝒪_v[1/2] = K_v` at a prime `v` containing `2`. The hypothesis `r ∈ v` is needed: an element
@@ -166,27 +140,11 @@ namespace Ideal
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
   [IsFractionRing R K] {I : Ideal R}
 
-/-- A nonzero ideal of a Dedekind domain lies in only finitely many height-one primes. -/
-private theorem finite_heightOneSpectrum_le (hI : I ≠ ⊥) :
-    Finite {v : HeightOneSpectrum R // I ≤ v.asIdeal} :=
-  ((Ideal.finite_factors hI).subset (t := {v : HeightOneSpectrum R | I ≤ v.asIdeal})
-    fun _ hv ↦ Ideal.dvd_iff_le.mpr hv).to_subtype
-
 /-- Distinct height-one primes are comaximal. -/
 private theorem pairwise_isCoprime_heightOneSpectrum :
     Pairwise fun v w : {v : HeightOneSpectrum R // I ≤ v.asIdeal} ↦
       IsCoprime v.val.asIdeal w.val.asIdeal :=
   fun _ _ hvw ↦ isCoprime_of_isMaximal fun h ↦ hvw (Subtype.ext (HeightOneSpectrum.ext h))
-
-/-- The intersection of the height-one primes containing a nonzero ideal `I` of a Dedekind domain
-lies in the radical of `I`, so a power of it lies in `I`. -/
-private theorem exists_iInf_heightOneSpectrum_pow_le (hI : I ≠ ⊥) :
-    ∃ k : ℕ, (⨅ v : {v : HeightOneSpectrum R // I ≤ v.asIdeal}, v.val.asIdeal) ^ k ≤ I := by
-  refine exists_pow_le_of_le_radical_of_fg ?_ (IsNoetherian.noetherian _)
-  rw [radical_eq_sInf]
-  refine le_sInf fun P ⟨hIP, hP⟩ ↦ ?_
-  have hP0 : P ≠ ⊥ := ne_bot_of_le_ne_bot hI hIP
-  exact iInf_le_of_le ⟨⟨P, hP, hP0⟩, hIP⟩ le_rfl
 
 /-- **Decomposition of an ideal-adic completion of a Dedekind domain.** For a nonzero ideal `I`
 of a Dedekind domain `R` with fraction field `K`, the `I`-adic completion `lim R ⧸ Iⁿ` is the
@@ -202,15 +160,16 @@ noncomputable def adicCompletionAlgEquivPi (hI : I ≠ ⊥) :
   (equivOfPowLe ⟨1, (pow_one I).le.trans (le_iInf fun v ↦ v.property)⟩
       (exists_iInf_heightOneSpectrum_pow_le hI)).trans <|
     (coprimeEquiv _ pairwise_isCoprime_heightOneSpectrum).trans <|
-      AlgEquiv.piCongrRight fun v ↦ v.val.adicCompletionAlgEquiv K
+      AlgEquiv.piCongrRight fun v ↦ v.val.adicCompletionAsIdealAlgEquivIntegers K
 
 /-- The coordinate of `adicCompletionAlgEquivPi` at `v ⊇ I` is the canonical map
-`lim R ⧸ Iⁿ → lim R ⧸ vⁿ` followed by `adicCompletionAlgEquiv`. -/
+`lim R ⧸ Iⁿ → lim R ⧸ vⁿ` followed by `adicCompletionAsIdealAlgEquivIntegers`. -/
 @[simp]
 theorem adicCompletionAlgEquivPi_apply (hI : I ≠ ⊥) (x : AdicCompletion I R)
     (v : {v : HeightOneSpectrum R // I ≤ v.asIdeal}) :
     adicCompletionAlgEquivPi K hI x v =
-      v.val.adicCompletionAlgEquiv K (ofPowLe ⟨1, (pow_one I).le.trans v.property⟩ x) := by
+      v.val.adicCompletionAsIdealAlgEquivIntegers K
+        (ofPowLe ⟨1, (pow_one I).le.trans v.property⟩ x) := by
   rw [adicCompletionAlgEquivPi, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
     AlgEquiv.piCongrRight_apply, coprimeEquiv_apply, equivOfPowLe_apply]
   congr 1
