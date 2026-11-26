@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.Empty
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Finrank
 public import TauCeti.Topology.Order.Sublevel
@@ -17,6 +18,11 @@ Let `f : X → β` be any function to a preorder. If `a < f ≤ b` everywhere, t
 the singular homology of `X` (`TauCeti.singularHomologyIsoSublevelPair`). No continuity
 or regularity of `f` is needed. Since the subspace is empty, the comparison is the quotient map
 `TopPair.singularHomologyπ`, an isomorphism by `TauCeti.AlgebraicTopology.Singular.Empty`.
+More generally, if only `f ≤ b` everywhere but the sublevel `{f ≤ a}` is contractible, the pair is
+`(X, {f ≤ a})` and its relative homology is the homology of `X` in positive degrees
+(`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). This reads the homology of `X` off
+the band above a contractible sublevel, as for the height function on a sphere, whose sublevels
+below the maximum are contractible.
 
 Consequently the homology of `X` is controlled by any finite filtration of `X` by sublevels. Let
 `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)` everywhere, let `V` be a module over a
@@ -100,6 +106,49 @@ theorem singularHomologyπ_comp_singularHomologyIsoSublevelPair_inv (hab : a ≤
         (TopCat.ofHom ⟨Subtype.val, continuous_subtypeVal⟩) := by
   rw [singularHomologyIsoSublevelPair, Iso.trans_inv]
   exact (@asIso _ _ _ _ _ (isIso_singularHomologyπ_sublevelPair hab ha R n)).hom_inv_id_assoc _
+
+section Contractible
+
+variable {A : Type v} [Category.{w} A] [Abelian A] [HasCoproducts.{u} A]
+
+/-- **The sublevel pair of a band covering `X` over a contractible sublevel.** If `f ≤ b`
+everywhere and the sublevel `{f ≤ a}` is contractible, then in positive degrees the relative
+singular homology of `({f ≤ b}, {f ≤ a}) = (X, {f ≤ a})` is the singular homology of `X`. The
+isomorphism is the map induced by the homeomorphism `X ≃ {f ≤ b}`, followed by the quotient map
+`TopPair.singularHomologyπ` (`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace_hom`).
+When `{f ≤ a}` is empty instead, this holds in every degree
+(`TauCeti.singularHomologyIsoSublevelPair`). -/
+def singularHomologyIsoSublevelPairOfContractibleSpace (hab : a ≤ b)
+    [ContractibleSpace {x | f x ≤ a}] (hb : ∀ x, f x ≤ b) (R : A) (k : ℕ) :
+    ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).obj (TopCat.of X) ≅
+      (sublevelPair f hab).singularHomology R (k + 1) :=
+  -- The subspace of `sublevelPair f hab` is `TopCat.of {x | f x ≤ a}` by definition.
+  have : ContractibleSpace (sublevelPair f hab).snd := ‹ContractibleSpace {x | f x ≤ a}›
+  ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).mapIso
+      (TopCat.isoOfHomeo (X := TopCat.of {x | f x ≤ b}) (sublevelHomeomorphUniv hb)).symm ≪≫
+    (sublevelPair f hab).singularHomologyIsoOfContractibleSpace R k
+
+/-- The isomorphism `TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace` is the map induced
+by the inclusion `x ↦ x` of `X` into the subspace `{f ≤ b}`, which is all of `X`, followed by the
+quotient map `Hₖ₊₁({f ≤ b}) ⟶ Hₖ₊₁({f ≤ b}, {f ≤ a})`. -/
+theorem singularHomologyIsoSublevelPairOfContractibleSpace_hom (hab : a ≤ b)
+    [ContractibleSpace {x | f x ≤ a}] (hb : ∀ x, f x ≤ b) (R : A) (k : ℕ) :
+    (singularHomologyIsoSublevelPairOfContractibleSpace hab hb R k).hom =
+      ((AlgebraicTopology.singularHomologyFunctor A (k + 1)).obj R).map
+          (TopCat.ofHom (X := TopCat.of X) (Y := TopCat.of {x | f x ≤ b})
+            ⟨fun x ↦ ⟨x, hb x⟩, by fun_prop⟩) ≫
+        (sublevelPair f hab).singularHomologyπ R (k + 1) := by
+  have : ContractibleSpace (sublevelPair f hab).snd := ‹ContractibleSpace {x | f x ≤ a}›
+  have he : (TopCat.isoOfHomeo (X := TopCat.of {x | f x ≤ b}) (sublevelHomeomorphUniv hb)).inv =
+      TopCat.ofHom ⟨fun x ↦ ⟨x, hb x⟩, by fun_prop⟩ := by
+    ext x
+    simp
+  -- The forward map is `F.map e.inv ≫ π` for the homeomorphism `e : {f ≤ b} ≃ₜ X`, by the
+  -- definitions of the composite and of `Functor.mapIso`.
+  rw [← TopPair.singularHomologyIsoOfContractibleSpace_hom, ← he]
+  rfl
+
+end Contractible
 
 /-! ### The Morse inequalities of a sublevel filtration -/
 
