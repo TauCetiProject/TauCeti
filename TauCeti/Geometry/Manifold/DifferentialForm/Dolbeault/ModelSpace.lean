@@ -58,7 +58,7 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 * `TauCeti.SmoothForm.IsOfType.apply_eq_of_conjCoeff_eq`,
   `TauCeti.SmoothForm.IsOfType.ext_conjCoeff`: `(0,k)`-forms are determined by their
   coefficients.
-* `TauCeti.SmoothForm.conjCoeffForm`: the alternating map `∑_J a_J d(conj z)_J` with prescribed
+* `TauCeti.conjCoeffForm`: the alternating map `∑_J a_J d(conj z)_J` with prescribed
   coefficients, the pointwise value of a `(0,k)`-form.
 * `TauCeti.SmoothForm.exists_isOfType_conjCoeff_eq`: `(0,k)`-forms with prescribed smooth
   coefficients.
@@ -249,18 +249,18 @@ increasing order; it vanishes unless `J` has `k` elements. When `φ` has type `(
 coefficient of `d(conj z)_J`, the wedge product of the `d(conj z_j)`, `j ∈ J`, in increasing
 order: these are the coefficients consumed by the coordinate operator `TauCeti.delBarCoeff`. -/
 def conjCoeff (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) (J : Finset ι) (z : ι → ℂ) : F :=
-  if h : #J = k then φ.val z fun a ↦ Pi.single (J.orderEmbOfFin h a) 1 else 0
+  ContinuousAlternatingMap.conjCoeff (φ.val z : (ι → ℂ) [⋀^Fin k]→L[ℝ] F) J
 
 /-- A coefficient indexed by a set with `k` elements is a value of the form. -/
 theorem conjCoeff_of_card_eq (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) {J : Finset ι}
     (h : #J = k) (z : ι → ℂ) :
     φ.conjCoeff J z = φ.val z fun a ↦ Pi.single (J.orderEmbOfFin h a) 1 := by
-  simp [conjCoeff, h]
+  exact ContinuousAlternatingMap.conjCoeff_of_card_eq _ h
 
 /-- The coefficients indexed by sets without `k` elements vanish. -/
 theorem conjCoeff_of_card_ne (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) {J : Finset ι}
     (h : #J ≠ k) : φ.conjCoeff J = 0 :=
-  funext fun _ ↦ by simp [conjCoeff, h]
+  funext fun _ ↦ ContinuousAlternatingMap.conjCoeff_of_card_ne _ h
 
 /-- The coefficients of a smooth form are smooth. -/
 theorem contDiff_conjCoeff (φ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k) (J : Finset ι) :
@@ -314,14 +314,7 @@ theorem IsOfType.apply_eq_of_conjCoeff_eq {φ ψ : SmoothForm 𝓘(ℝ, ι → �
     (hφ : φ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k)
     (hψ : ψ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k) {z : ι → ℂ}
     (h : ∀ J, #J = k → φ.conjCoeff J z = ψ.conjCoeff J z) : φ.val z = ψ.val z := by
-  -- The tangent and coefficient fibres at `z` are the model spaces `ι → ℂ` and `F`.
-  let A : (ι → ℂ) [⋀^Fin k]→L[ℝ] F := φ.val z
-  let B : (ι → ℂ) [⋀^Fin k]→L[ℝ] F := ψ.val z
-  suffices A - B = 0 from sub_eq_zero.1 this
-  refine ((hφ.apply_modelSpace z).sub (hψ.apply_modelSpace z)).eq_zero_of_forall_apply_orderEmbOfFin
-    fun J hJ ↦ ?_
-  refine (ContinuousAlternatingMap.sub_apply A B _).trans (sub_eq_zero.2 ?_)
-  exact (φ.conjCoeff_of_card_eq hJ z).symm.trans ((h J hJ).trans (ψ.conjCoeff_of_card_eq hJ z))
+  exact (hφ.apply_modelSpace z).eq_of_conjCoeff_eq (hψ.apply_modelSpace z) h
 
 /-- Smooth forms of type `(0,k)` on `ι → ℂ` are determined by their coefficients. -/
 theorem IsOfType.ext_conjCoeff {φ ψ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F k}
@@ -329,64 +322,6 @@ theorem IsOfType.ext_conjCoeff {φ ψ : SmoothForm 𝓘(ℝ, ι → ℂ) (ι →
     (hψ : ψ.IsOfType (ofComplexManifold (ι → ℂ) (ι → ℂ)) 0 k)
     (h : ∀ J, #J = k → φ.conjCoeff J = ψ.conjCoeff J) : φ = ψ :=
   Subtype.ext <| funext fun z ↦ hφ.apply_eq_of_conjCoeff_eq hψ fun J hJ ↦ congrFun (h J hJ) z
-
-/-- The alternating map `∑_J a_J d(conj z)_J` on `ι → ℂ`, summed over the sets `J` with `k`
-elements, with coefficients `a_J ∈ F`; the entries of `a` at other sets are ignored. It has type
-`(0,k)` (`SmoothForm.isOfType_conjCoeffForm`) and takes the value `a_J` on the coordinate vectors
-indexed by `J` (`SmoothForm.conjCoeffForm_apply_orderEmbOfFin`). -/
-def conjCoeffForm (k : ℕ) (a : Finset ι → F) : (ι → ℂ) [⋀^Fin k]→L[ℝ] F :=
-  ∑ J, if h : #J = k then ((ContinuousLinearMap.lsmul ℝ ℂ).flip (a J)).compContinuousAlternatingMap
-    (ContinuousAlternatingMap.conjCoordForm (J.orderEmbOfFin h)) else 0
-
-/-- The alternating map `∑_J a_J d(conj z)_J` has type `(0,k)`. -/
-theorem isOfType_conjCoeffForm (a : Finset ι → F) :
-    (conjCoeffForm k a).IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) 0 k := by
-  refine ContinuousAlternatingMap.IsOfType.sum (zero_add k) fun J _ ↦ ?_
-  by_cases h : #J = k
-  · simp only [h, ↓reduceDIte]
-    exact (ContinuousAlternatingMap.isOfType_conjCoordForm _).compContinuousAlternatingMap
-      fun c x ↦ by simp [smul_smul]
-  · simp only [h, ↓reduceDIte]
-    exact ContinuousAlternatingMap.isOfType_zero_iff.2 (zero_add k)
-
-/-- The alternating map `∑_J a_J d(conj z)_J` takes the value `a_J` on the coordinate vectors
-indexed by a set `J` with `k` elements, in increasing order. -/
-@[simp]
-theorem conjCoeffForm_apply_orderEmbOfFin (a : Finset ι → F) {J : Finset ι} (hJ : #J = k) :
-    conjCoeffForm k a (fun i ↦ Pi.single (J.orderEmbOfFin hJ i) 1) = a J := by
-  classical
-  rw [conjCoeffForm, ContinuousAlternatingMap.sum_apply, Finset.sum_eq_single J]
-  · simp [hJ, ContinuousAlternatingMap.conjCoordForm_apply_single_self
-      (J.orderEmbOfFin hJ).injective]
-  · intro K _ hKJ
-    by_cases hK : #K = k
-    · -- Some element of `J` lies outside `K`, so `d(conj z)_K` vanishes on the coordinate
-      -- vectors indexed by `J`.
-      obtain ⟨x, hxJ, hxK⟩ := Finset.not_subset.1 fun hJK ↦
-        hKJ (Finset.eq_of_subset_of_card_le hJK (hK.trans hJ.symm).le).symm
-      obtain ⟨b, rfl⟩ : x ∈ Set.range (J.orderEmbOfFin hJ) := by
-        rwa [Finset.range_orderEmbOfFin]
-      have h₀ := ContinuousAlternatingMap.conjCoordForm_apply_single_eq_zero
-        (K.orderEmbOfFin hK) (f := J.orderEmbOfFin hJ) (a := b)
-        (by rwa [Finset.range_orderEmbOfFin])
-      simp [hK, h₀]
-    · simp [hK]
-  · simp
-
-/-- Assembling coefficients `u_J` that are `C^n` on a set into `∑_J u_J d(conj z)_J` gives a
-field of alternating maps that is `C^n` there. -/
-theorem contDiffOn_conjCoeffForm {n : WithTop ℕ∞} {u : Finset ι → (ι → ℂ) → F}
-    {s : Set (ι → ℂ)} (hu : ∀ J, #J = k → ContDiffOn ℝ n (u J) s) :
-    ContDiffOn ℝ n (fun z ↦ conjCoeffForm k fun J ↦ u J z) s := by
-  simp only [conjCoeffForm]
-  refine ContDiffOn.sum fun J _ ↦ ?_
-  by_cases h : #J = k
-  · simp only [h, ↓reduceDIte]
-    exact ((ContinuousLinearMap.compContinuousAlternatingMapCLM ℝ (ι → ℂ) ℂ F (Fin k) ∘L
-      (ContinuousLinearMap.lsmul ℝ ℂ).flip).contDiff.comp_contDiffOn (hu J h)).clm_apply
-        contDiffOn_const
-  · simp only [h, ↓reduceDIte]
-    exact contDiffOn_const
 
 /-- **Forms with prescribed coefficients.** Smooth functions `u_J`, indexed by the sets `J` with
 `k` elements, are the coefficients of a smooth form of type `(0,k)` on `ι → ℂ`, namely of
@@ -464,14 +399,8 @@ theorem isOfType_holInterior {p q : ℕ} {η : SmoothForm 𝓘(ℝ, E) E F (k + 
     (hη : η.IsOfType (ofComplexManifold E E) (p + 1) q) (v : E) :
     (holInterior v η).IsOfType (ofComplexManifold E E) p q := by
   refine isOfType_iff_forall.2 ⟨by have := hη.add_eq; omega, fun z ↦ ?_⟩
-  let φ : E [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
-  have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ E) (p + 1) q := hη.apply_modelSpace z
-  have h := hφ.curryLeftTopological_sub_I_smul (fun w ↦ by simp [smul_smul]) v
-  simp only [smul_apply, ContinuousLinearMap.id_apply,
-    ← ContinuousAlternatingMap.curryLeft_eq_curryLeftTopological, ← holCurry_apply] at h
-  rw [toEndomorphism_ofComplexManifold]
-  -- The value of the contraction at `z` is `holCurry v φ`, read in the tangent space at `z`.
-  rw [holInterior_val]
+  have h := ContinuousAlternatingMap.IsOfType.holCurry (E := E) (hη.apply_modelSpace z) v
+  rw [toEndomorphism_ofComplexManifold, holInterior_val]
   exact h
 
 /-- The `(1,0)`-contraction with a constant vector anticommutes with `∂bar`. -/
@@ -539,30 +468,11 @@ theorem sum_wedgeWith_dz_holInterior_apply {k p q : ℕ}
       (Nat.add_comm 1 k) (wedgeWith (ContinuousLinearMap.lsmul ℝ ℂ) (dz i)
         (holInterior (Pi.single i 1) η))).val z =
       (2 * p : ℂ) • η.val z := by
-  let φ : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F := η.val z
-  -- The coordinate expansion of the contractions with the vectors `u`.
-  have hsum : ∑ i, (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
-      (holCurry (Pi.single i 1) φ) = φ.curryLeft - I • φ.curryLeft ∘L
-        (I • ContinuousLinearMap.id ℝ (ι → ℂ)) := by
-    ext u : 1
-    have hu := congrArg (fun w ↦ holCurry (k := k) (F := F) w φ) (pi_eq_sum_univ' u)
-    simp only [map_sum, map_smul, sum_apply, _root_.smul_apply] at hu
-    simp [← holCurry_apply, hu]
   ext v
   simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply, cast_apply,
-    coe_wedgeWith, RoughForm.wedgeWith_apply', dz_val, holInterior_val]
-  refine (Finset.sum_congr rfl fun i _ ↦
-    (ContinuousAlternatingMap.alternatizeUncurryFin_smulRight_apply (E := ι → ℂ)
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i) (holCurry (Pi.single i 1) φ)
-        v).symm).trans ?_
-  have hfin : ∑ i, ContinuousAlternatingMap.alternatizeUncurryFin
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℂ) i).smulRight
-        (holCurry (Pi.single i 1) φ)) = (2 * p : ℂ) • φ := by
-    simp only [← ContinuousAlternatingMap.alternatizeUncurryFinCLM_apply, ← map_sum, hsum]
-    have hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) p q := hη.apply_modelSpace z
-    exact hφ.alternatizeUncurryFin_curryLeft_sub_I_smul_comp
-  -- Evaluate `hfin` at `v`, whose entries lie in the tangent space at `z`, that is, in `ι → ℂ`.
-  exact (ContinuousAlternatingMap.sum_apply _ _).symm.trans (congrArg (fun A ↦ A v) hfin)
+    coe_wedgeWith, RoughForm.wedgeWith_apply', dz_val, holInterior_val,
+    ContinuousAlternatingMap.smul_apply]
+  exact (hη.apply_modelSpace z).sum_wedgeWith_holCurry v
 
 end Coordinates
 

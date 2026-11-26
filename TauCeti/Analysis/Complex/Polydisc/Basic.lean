@@ -43,4 +43,27 @@ theorem mem_polydisc {c z : ι → ℂ} {r : ι → ℝ} :
     z ∈ polydisc c r ↔ ∀ i, z i ∈ ball (c i) (r i) := by
   rw [← SetLike.mem_coe, coe_polydisc, mem_univ_pi]
 
+/-- A polydisc is empty exactly when one of its radii is nonpositive. -/
+@[simp]
+theorem polydisc_eq_bot_iff {c : ι → ℂ} {r : ι → ℝ} :
+    polydisc c r = ⊥ ↔ ∃ i, r i ≤ 0 := by
+  classical
+  constructor
+  · intro h
+    by_contra! hpos
+    have hc : c ∈ polydisc c r := mem_polydisc.2 fun i ↦ mem_ball_self (hpos i)
+    rw [h] at hc
+    exact hc
+  · rintro ⟨i, hi⟩
+    apply bot_unique
+    intro z hz
+    have hzi := mem_ball.1 (mem_polydisc.1 hz i)
+    exact False.elim ((not_lt_of_ge hi) (dist_nonneg.trans_lt hzi))
+
+/-- Increasing the radii gives an inclusion of concentric polydiscs. -/
+theorem polydisc_mono {c : ι → ℂ} {r' r : ι → ℝ} (h : r' ≤ r) :
+    polydisc c r' ≤ polydisc c r := by
+  intro z hz
+  exact mem_polydisc.2 fun i ↦ ball_subset_ball (h i) (mem_polydisc.1 hz i)
+
 end TauCeti
