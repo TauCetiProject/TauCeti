@@ -11,6 +11,8 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.RingTheory.Ideal.Maximal
+-- `ContinuousMap.isUltrametricDist`: the supremum norm on `C(X, k)` is ultrametric.
+import Mathlib.Topology.MetricSpace.Ultra.ContinuousMaps
 import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
@@ -89,17 +91,6 @@ theorem mem_multiplierSubalgebra {N : Submodule k C(X, k)} {u : C(X, k)} :
 
 end MultiplierSubalgebra
 
-/-- The supremum norm on `C(X, k)` is ultrametric whenever the norm on `k` is ultrametric. -/
-theorem norm_add_le_max {X k : Type*} [TopologicalSpace X] [CompactSpace X]
-    [SeminormedAddCommGroup k] [IsUltrametricDist k] (f g : C(X, k)) :
-    ‖f + g‖ ≤ max ‖f‖ ‖g‖ := by
-  rw [ContinuousMap.norm_le _ (le_max_of_le_left (norm_nonneg f))]
-  intro x
-  calc
-    ‖(f + g) x‖ = ‖f x + g x‖ := rfl
-    _ ≤ max ‖f x‖ ‖g x‖ := IsUltrametricDist.norm_add_le_max (f x) (g x)
-    _ ≤ max ‖f‖ ‖g‖ := max_le_max (norm_coe_le_norm f x) (norm_coe_le_norm g x)
-
 section UltrametricStoneWeierstrass
 
 variable {X k : Type*} [TopologicalSpace X] [CompactSpace X] [NormedField k] [IsUltrametricDist k]
@@ -114,7 +105,7 @@ private def boundedMultipliers (N : Submodule k C(X, k)) : Subring C(X, k) where
     ⟨(multiplierSubalgebra N).one_mem, (ContinuousMap.norm_le _ zero_le_one).2 fun _ ↦ by simp⟩
   add_mem' {u v} hu hv :=
     ⟨(multiplierSubalgebra N).add_mem hu.1 hv.1,
-      (norm_add_le_max u v).trans (max_le hu.2 hv.2)⟩
+      (IsUltrametricDist.norm_add_le_max u v).trans (max_le hu.2 hv.2)⟩
   zero_mem' := ⟨(multiplierSubalgebra N).zero_mem, by simp⟩
   neg_mem' {u} hu := ⟨(multiplierSubalgebra N).neg_mem hu.1, by simpa using hu.2⟩
 
@@ -127,7 +118,7 @@ private lemma exists_maximal_ideal_of_far (N : Submodule k C(X, k)) (φ : C(X, k
     { N.toAddSubmonoid with smul_mem' := fun c _ hd ↦ c.property.1 _ hd }
   let ball : Submodule B C(X, k) :=
     { carrier := {f | ‖f‖ ≤ ε}
-      add_mem' := fun {f g} hf hg ↦ (norm_add_le_max f g).trans (max_le hf hg)
+      add_mem' := fun {f g} hf hg ↦ (IsUltrametricDist.norm_add_le_max f g).trans (max_le hf hg)
       zero_mem' := by simpa using hε.le
       smul_mem' := fun c f hf ↦ by
         change ‖(c : C(X, k)) * f‖ ≤ ε
