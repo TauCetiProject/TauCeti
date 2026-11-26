@@ -344,6 +344,13 @@ theorem commutatorElement_h_h {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk 
         rw [commutatorElement_def]; group
     _ = h hij u * h hij v * (h hij (v * u))⁻¹ := by rw [hconj]; group
 
+/-- The product formula for diagonal elements: for pairwise distinct `i, j, k`,
+`h_{ij}(v u) = ⁅h_{ij}(u), h_{ik}(v)⁆⁻¹ h_{ij}(u) h_{ij}(v)`. -/
+theorem h_mul {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u v : Rˣ) :
+    h hij (v * u) = ⁅h hij u, h hik v⁆⁻¹ * h hij u * h hij v := by
+  rw [commutatorElement_h_h hij hik hjk]
+  group
+
 /-- `h_{ij}(-u) h_{ij}(u⁻¹) = h_{ij}(-1)`, in the presence of a third index `k`. -/
 theorem h_neg_mul_h_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ) :
     h hij (-u) * h hij u⁻¹ = h hij (-1) := by
@@ -557,17 +564,14 @@ in `St(R)`. -/
 theorem commutatorElement_h_h_mul_left {i j k : ℕ} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
     (u u' v : Rˣ) :
     ⁅h hij (u * u'), h hik v⁆ = ⁅h hij u, h hik v⁆ * ⁅h hij u', h hik v⁆ := by
-  have hc := commutatorElement_h_h_mem_center hij hik u u'
-  have hmul : h hij (u * u') = h hij u * h hij u' * ⁅h hij u, h hik u'⁆⁻¹ := by
-    rw [Subgroup.mem_center_iff.mp (inv_mem hc), commutatorElement_h_h hij hik hjk, mul_comm u' u]
-    group
-  have hdrop := commutatorElement_mul_mul_of_mem_center (a := h hij u * h hij u') (c := h hik v)
-    (inv_mem hc) (one_mem _)
+  have hc := inv_mem (commutatorElement_h_h_mem_center hij hik u' u)
+  have hdrop := commutatorElement_mul_mul_of_mem_center (a := h hij u' * h hij u) (c := h hik v)
+    hc (one_mem _)
   rw [mul_one] at hdrop
-  rw [hmul, hdrop, commutatorElement_mul_left_eq_conj_mul,
-    Subgroup.mem_center_iff.mp (commutatorElement_h_h_mem_center hij hik u' v) (h hij u),
-    mul_inv_cancel_right,
-    Subgroup.mem_center_iff.mp (commutatorElement_h_h_mem_center hij hik u v)]
+  rw [h_mul hij hik hjk u' u, mul_assoc, ← Subgroup.mem_center_iff.mp hc, hdrop,
+    commutatorElement_mul_left_eq_conj_mul,
+    Subgroup.mem_center_iff.mp (commutatorElement_h_h_mem_center hij hik u v) (h hij u'),
+    mul_inv_cancel_right]
 
 /-- **Bimultiplicativity of symbols, right variable.** Over a commutative ring and for pairwise
 distinct `i, j, k`, `⁅h_{ij}(u), h_{ik}(v v')⁆ = ⁅h_{ij}(u), h_{ik}(v)⁆ ⁅h_{ij}(u), h_{ik}(v')⁆`
@@ -575,15 +579,12 @@ in `St(R)`. -/
 theorem commutatorElement_h_h_mul_right {i j k : ℕ} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k)
     (u v v' : Rˣ) :
     ⁅h hij u, h hik (v * v')⁆ = ⁅h hij u, h hik v⁆ * ⁅h hij u, h hik v'⁆ := by
-  have hc := commutatorElement_h_h_mem_center hik hij v v'
-  have hmul : h hik (v * v') = h hik v * h hik v' * ⁅h hik v, h hij v'⁆⁻¹ := by
-    rw [Subgroup.mem_center_iff.mp (inv_mem hc), commutatorElement_h_h hik hij hjk.symm,
-      mul_comm v' v]
-    group
+  have hc := inv_mem (commutatorElement_h_h_mem_center hik hij v v')
   have hdrop := commutatorElement_mul_mul_of_mem_center (a := h hij u) (c := h hik v * h hik v')
-    (one_mem _) (inv_mem hc)
+    (one_mem _) hc
   rw [mul_one] at hdrop
-  rw [hmul, hdrop, commutatorElement_mul_right_eq_mul_conj, mul_assoc _ (h hik v),
+  rw [mul_comm v v', h_mul hik hij hjk.symm v v', mul_assoc, ← Subgroup.mem_center_iff.mp hc,
+    hdrop, commutatorElement_mul_right_eq_mul_conj, mul_assoc _ (h hik v),
     Subgroup.mem_center_iff.mp (commutatorElement_h_h_mem_center hij hik u v') (h hik v),
     ← mul_assoc, mul_inv_cancel_right]
 
