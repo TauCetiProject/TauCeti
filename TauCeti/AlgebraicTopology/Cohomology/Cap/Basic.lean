@@ -47,6 +47,10 @@ Section 3.3.
   `TopCat.singularCapAddHom_zsmul` its additivity in the class.
 * `TopCat.singularCapLinearMap`: capping with a fixed class `μ ∈ Hₙ(X; k)`, as a `k`-linear map
   `Hᵖ(X; k) → H_q(X; k)`, with `TopCat.singularCapLinearMap_naturality` its naturality.
+* `TopCat.singularCapLinearMap_singularCohomologyChainCoefficientMap`: capping with a class whose
+  chain coefficients are changed along an isomorphism to the unit object.
+* `TopCat.singularCap_eqToHom`: the cap product does not depend on how the `k`-linear structure
+  of `C` is presented.
 * `TopCat.singularCap_coefficient_naturality`: compatible changes of every coefficient object
   commute with the native cap product on homology and cohomology.
 * `TopCat.singularCap_coefficient_naturality_map`: the same square combined with a map of spaces.
@@ -149,6 +153,20 @@ lemma singularCap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [Ring 
   TauCeti.ChainComplex.cap_naturality _ _ _ _ _ _ _ _
     (alexanderWhitneyDiagonal_naturality f u)
     (SSet.chainComplexPairing_naturality (toSSet.map f) μ).symm p q n h α
+
+/-- The singular cap product does not depend on how the `k`-linear structure of `C` is presented:
+along an equality `L₁ = L₂` of `k`-linear structures, capping with the image of a class under the
+identification `eqToHom` of the two cohomology modules is capping with the class. -/
+lemma singularCap_eqToHom {k : Type*} [Ring k] (L₁ L₂ : Linear k C) (h : L₁ = L₂)
+    [@MonoidalLinear k _ C _ _ L₁ _ _] [@MonoidalLinear k _ C _ _ L₂ _ _] (X : TopCat.{w})
+    (u : T ⟶ R ⊗ S) (μ : M ⊗ S ⟶ P) (p q n : ℕ) (hpq : p + q = n)
+    (a : @TopCat.singularCohomology _ _ _ _ R k _ L₁ M X p) :
+    @TopCat.singularCap _ _ _ _ _ _ _ _ _ _ _ _ X k _ L₂ _ u μ p q n hpq
+        (eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M X p) h) a) =
+      @TopCat.singularCap _ _ _ _ _ _ _ _ _ _ _ _ X k _ L₁ _ u μ p q n hpq a := by
+  subst h
+  simp
 
 section Coefficients
 
@@ -337,6 +355,27 @@ theorem singularCapLinearMap_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) {p q n 
   rw [singularCapLinearMap_apply, singularCapLinearMap_apply, ← singularCapAddHom_apply,
     ← singularCapAddHom_apply]
   exact singularCapAddHom_naturality k _ _ f h μ α
+
+/-- **Capping across a change of chain coefficients**: for an isomorphism `e : A ≅ 𝟙_ (ModuleCat k)`
+of chain coefficients, capping the image of `μ ∈ Hₙ(X; A)` under `e` with the pull-back along
+`e⁻¹` of `α ∈ Hᵖ(X; A)` is the cap product of `μ` with `α` along the right unitors. -/
+theorem singularCapLinearMap_singularCohomologyChainCoefficientMap {p q n : ℕ} (h : p + q = n)
+    {A : ModuleCat.{w} k} (e : A ≅ 𝟙_ (ModuleCat.{w} k))
+    (μ : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj A).obj X)
+    (α : X.singularCohomology A k (𝟙_ (ModuleCat.{w} k)) p) :
+    X.singularCapLinearMap k h
+        ((((singularHomologyFunctor (ModuleCat.{w} k) n).map e.hom).app X).hom μ)
+        (X.singularCohomologyChainCoefficientMap k (𝟙_ (ModuleCat.{w} k)) e.inv p α) =
+      (X.singularCap k (ρ_ A).inv (ρ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h α).hom μ := by
+  have hc := singularCap_coefficient_naturality X k (ρ_ A).inv (λ_ (𝟙_ (ModuleCat.{w} k))).inv
+    (ρ_ (𝟙_ (ModuleCat.{w} k))).hom (λ_ (𝟙_ (ModuleCat.{w} k))).hom
+    e.inv (𝟙 _) e.inv (𝟙 _) (𝟙 _) (by simp [unitors_inv_equal]) (by simp [unitors_equal]) p q n h α
+  rw [ChainComplex.linearYonedaObjMap_id, HomologicalComplex.homologyMap_id] at hc
+  simp only [CategoryTheory.Functor.map_id, NatTrans.id_app, Category.comp_id,
+    ConcreteCategory.id_apply] at hc
+  rw [singularCapLinearMap_apply, hc, ModuleCat.hom_comp, LinearMap.comp_apply]
+  congr 1
+  exact (((singularHomologyFunctor (ModuleCat.{w} k) n).mapIso e).app X).hom_inv_id_apply μ
 
 end ModuleCat
 
