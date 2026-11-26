@@ -350,6 +350,41 @@ theorem ofNat_lcm (m n : ℕ+) : ofNat (PNat.lcm m n) = ofNat m ⊔ ofNat n := b
     ofNat_apply_eq_factorization, PNat.lcm_coe, Nat.factorization_lcm m.ne_zero n.ne_zero]
   exact Nat.mono_cast.map_max
 
+/-- The supernatural number of a prime power `p ^ k` is the supernatural prime power. -/
+@[simp]
+theorem ofNat_prime_pow (p : Nat.Primes) (k : ℕ) :
+    ofNat ((p : ℕ+) ^ k) = primePower p k := by
+  ext q
+  refine (ofNat_apply_eq_factorization _ q).trans ?_
+  rw [PNat.pow_coe, Nat.Primes.coe_pnat_nat, p.prop.factorization_pow]
+  by_cases hq : q = p
+  · subst hq
+    simp
+  · have hpq : (p : ℕ) ≠ q := fun h ↦ hq (Subtype.ext h.symm)
+    simp [primePower_apply_of_ne hq, hpq]
+
+/-- `p ^ k` is at most a supernatural number exactly when `k` is at most its exponent at `p`.
+
+Not `@[simp]`: the simp lemma `ofNat_prime_pow` already rewrites the left-hand side. -/
+theorem ofNat_prime_pow_le_iff (p : Nat.Primes) (k : ℕ) (ν : Supernatural) :
+    ofNat ((p : ℕ+) ^ k) ≤ ν ↔ (k : ℕ∞) ≤ ν p := by
+  rw [ofNat_prime_pow, primePower_le_iff]
+
+/-- A positive natural number divides `p ^ ∞` exactly when it is a power of `p`. -/
+theorem ofNat_le_primePower_top_iff {p : Nat.Primes} {b : ℕ+} :
+    ofNat b ≤ primePower p ⊤ ↔ ∃ k : ℕ, (b : ℕ) = (p : ℕ) ^ k := by
+  refine ⟨fun hb ↦ ⟨_, Nat.eq_prime_pow_of_unique_prime_dvd b.ne_zero fun {q} hq hqb ↦ ?_⟩, ?_⟩
+  · -- A prime `q ≠ p` dividing `b` would have positive exponent in `ofNat b` but not in `p ^ ∞`.
+    by_contra hne
+    have hqp : (⟨q, hq⟩ : Nat.Primes) ≠ p := fun h ↦ hne (congrArg Subtype.val h)
+    have h := (ofNat_apply_eq_factorization b ⟨q, hq⟩).symm.trans_le
+      ((le_iff.1 hb ⟨q, hq⟩).trans_eq (primePower_apply_of_ne hqp ⊤))
+    exact (hq.factorization_pos_of_dvd b.ne_zero hqb).ne' (by exact_mod_cast nonpos_iff_eq_zero.1 h)
+  · rintro ⟨k, hk⟩
+    rw [show b = (p : ℕ+) ^ k from PNat.eq (by rw [hk, PNat.pow_coe, Nat.Primes.coe_pnat_nat]),
+      ofNat_prime_pow]
+    exact (primePower_le_primePower_iff p).2 le_top
+
 /-- A supernatural number is natural when it lies in the image of `ofNat`. -/
 def IsNatural (n : Supernatural) : Prop :=
   ∃ m : ℕ+, ofNat m = n
