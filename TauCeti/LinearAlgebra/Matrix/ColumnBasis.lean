@@ -210,7 +210,7 @@ theorem eq_basicSolution_iff (e : A.ColumnBasis) {b : κ → ℝ} {x : ι → �
     (hx : ∀ j ∉ Set.range e, x j = 0) :
     x = e.basicSolution b ↔ A.map (Int.cast : ℤ → ℝ) *ᵥ x = b := by
   refine ⟨fun h => h ▸ e.mulVec_basicSolution b, fun h => ?_⟩
-  have hext : x = extend e (x ∘ e) 0 := (e.injective.extend_comp_eq_of_forall_notMem_range hx).symm
+  have hext : x = extend e (x ∘ e) 0 := (extend_comp_eq_of_forall_notMem_range hx).symm
   rw [hext, mulVec_extend_zero e.injective, ← basisCoordinates_eq_iff] at h
   rw [basicSolution, h]
   exact hext

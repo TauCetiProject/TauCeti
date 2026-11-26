@@ -148,7 +148,7 @@ theorem exists_columnBasis_submatrix_mulVec_eq_of_nonneg [Fintype κ] [Decidable
   -- Its support extends to a column basis `e`, and `y` is `y ∘ e` extended by zero.
   obtain ⟨f, hyf, hdet⟩ := exists_det_submatrix_ne_zero_of_linearIndepOn hrow hli
   let e : A.ColumnBasis := ⟨f, det_submatrix_ne_zero_of_map (Int.castRingHom K) hdet⟩
-  have hext : y = extend e (y ∘ e) 0 := (e.injective.extend_comp_eq_of_forall_notMem_range
+  have hext : y = extend e (y ∘ e) 0 := (extend_comp_eq_of_forall_notMem_range
     fun _ hj => by_contra fun hyj => hj (hyf hyj)).symm
   refine ⟨e, y ∘ e, fun k => hy (e k), ?_⟩
   rw [← mulVec_extend_zero e.injective, ← hext, hyx]

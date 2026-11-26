@@ -182,7 +182,7 @@ theorem isCompl_ker_mulVecLin_ker_funLeft (A : Matrix σ ι K) {s : σ → ι}
     intro v hv hv'
     rw [hmem] at hv'
     have hext : v = Function.extend s (v ∘ s) 0 :=
-      (hs.extend_comp_eq_of_forall_notMem_range hv').symm
+      (Function.extend_comp_eq_of_forall_notMem_range hv').symm
     rw [LinearMap.mem_ker, Matrix.mulVecLin_apply, hext, Matrix.mulVec_extend_zero hs] at hv
     have h0 : v ∘ s = 0 := by
       simpa [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul _ hA] using
