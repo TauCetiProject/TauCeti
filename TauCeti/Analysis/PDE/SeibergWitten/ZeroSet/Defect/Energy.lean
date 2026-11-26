@@ -58,6 +58,11 @@ chart, `α` is a section of the trivial line with connection form `a = i b`, and
 in an arbitrary normed group. The measure in the integral is arbitrary; the volume of the ball is
 computed only for an additive Haar measure.
 
+## Main definitions
+
+* `TauCeti.SeibergWitten.defectMeasure`: the defect measure `(r / 4) |1 - |α|² - |β|²| μ`, whose
+  value on a set is its defect energy.
+
 ## Main results
 
 * `TauCeti.SeibergWitten.norm_sq_le_mul_dist_of_eq_zero`: `|α(y)|² ≤ 2 A G |y - x₀|` on a convex
@@ -156,7 +161,44 @@ theorem inv_two_le_one_sub_norm_sq_sub_norm_sq_of_eq_zero {C r ρ : ℝ} (hC : 0
     nlinarith [hw y, mul_le_mul_of_nonneg_left (hw y) (div_nonneg hC hr₀.le)]
   linarith
 
+/-- For `C ≥ 0`, every `c₀ > 0` dominates a radius `c > 0` with `256 C c² ≤ 1`, the smallness
+condition under which the coarse bounds control the defect energy at the smallest scale
+(`ofReal_div_le_setLIntegral_of_eq_zero`). -/
+theorem exists_le_and_mul_sq_le_one {C c₀ : ℝ} (hC : 0 ≤ C) (hc₀ : 0 < c₀) :
+    ∃ c, 0 < c ∧ c ≤ c₀ ∧ 256 * C * c ^ 2 ≤ 1 := by
+  set c := min c₀ (16 * (C + 1))⁻¹
+  have h₁ : c * (16 * (C + 1)) ≤ 1 :=
+    (mul_le_mul_of_nonneg_right (min_le_right _ _) (by positivity)).trans_eq
+      (inv_mul_cancel₀ (by positivity))
+  refine ⟨c, lt_min hc₀ (by positivity), min_le_left _ _, ?_⟩
+  nlinarith [mul_le_mul h₁ h₁ (by positivity) zero_le_one,
+    mul_nonneg (sq_nonneg c) (by positivity : (0 : ℝ) ≤ C ^ 2 + C + 1)]
+
 variable [MeasurableSpace E]
+
+/-- The **defect measure** `(r / 4) |1 - |α|² - |β|²| μ` of the normalized spinor `χ = α u₀ + β` at
+parameter `r`. Its value on a set `B` is the defect energy `E_r(B)` (`defectMeasure_apply`). Only
+the norm of `α` enters, so `α` may take values in any normed group; for instance it may be the
+canonical-line component `φ = α u₀` itself. -/
+noncomputable def defectMeasure {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) : Measure E :=
+  μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure is the measure with density `(r / 4) |1 - |α|² - |β|²|` against `μ`. -/
+theorem defectMeasure_def {G : Type*} [NormedAddCommGroup G] (μ : Measure E) (r : ℝ)
+    (α : E → G) (β : E → F) :
+    defectMeasure μ r α β =
+      μ.withDensity fun y ↦ ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) :=
+  (rfl)
+
+omit [NormedAddCommGroup E] [NormedSpace ℝ E] in
+/-- The defect measure of a set `B` is the defect energy
+`E_r(B) = (r / 4) ∫_B |1 - |α|² - |β|²|`. -/
+theorem defectMeasure_apply {G : Type*} [NormedAddCommGroup G] (μ : Measure E) [SFinite μ]
+    (r : ℝ) (α : E → G) (β : E → F) (s : Set E) :
+    defectMeasure μ r α β s = ∫⁻ y in s, ENNReal.ofReal (r / 4 * |1 - ‖α y‖ ^ 2 - ‖β y‖ ^ 2|) ∂μ :=
+  withDensity_apply' _ s
 
 section OpensMeasurable
 
@@ -307,16 +349,7 @@ theorem exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero {G : Ty
   have hB₁ : 0 < μ.real (ball (0 : E) 1) :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
   -- The smallest scale `c₀ / √r` is at most `R / 2` and keeps `|α|²` below `1 / 4`.
-  set c₀ := min (R / 2) (1 / (16 * (K + 1)))
-  have hc₀ : 0 < c₀ := lt_min (half_pos hR) (by positivity)
-  have hc₀K : 256 * K * c₀ ^ 2 ≤ 1 := by
-    have h1 : 256 * K * (1 / (16 * (K + 1))) ^ 2 ≤ 1 := by
-      rw [div_pow, one_pow, mul_one_div, div_le_one (by positivity)]
-      nlinarith
-    calc 256 * K * c₀ ^ 2 ≤ 256 * K * (1 / (16 * (K + 1))) ^ 2 := by
-          gcongr
-          exact min_le_right _ _
-      _ ≤ 1 := h1
+  obtain ⟨c₀, hc₀, hc₀R, hc₀K⟩ := exists_le_and_mul_sq_le_one hK (half_pos hR)
   obtain ⟨c, hc, ρ₀, hρ₀, hdens⟩ :=
     TauCeti.exists_forall_ofReal_mul_sq_le_measure_closedBall_of_ae_le (X := E) hC hC₁ hK' hc₀
       (by positivity : 0 < c₀ ^ 4 * μ.real (ball (0 : E) 1) / 8) (half_pos hR)
@@ -337,7 +370,7 @@ theorem exists_forall_ofReal_mul_sq_le_withDensity_closedBall_of_eq_zero {G : Ty
   · -- The defect energy at the smallest scale.
     have hsR : c₀ / √r < R :=
       (div_le_self hc₀.le (Real.one_le_sqrt.2 hr)).trans_lt
-        ((min_le_left _ _).trans_lt (half_lt_self hR))
+        (hc₀R.trans_lt (half_lt_self hR))
     have hsub : closedBall x₀ (c₀ / √r) ⊆ ball x₀ R := closedBall_subset_ball hsR
     rw [← ENNReal.ofReal_le_iff_le_toReal (hfin _ hsR)]
     exact ofReal_div_le_withDensity_closedBall_of_eq_zero hE hK hr hrK hc₀.le hc₀K
