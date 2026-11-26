@@ -50,13 +50,14 @@ similitude of `ψ i` with the common multiplier `algebraMap F K c`; so independe
 * `LinearMap.separatingLeft_compBilinForm_iff`, `LinearMap.separatingRight_compBilinForm_iff`,
   `LinearMap.nondegenerate_compBilinForm_iff`: transfer along a nonzero functional preserves and
   reflects separation and nondegeneracy.
-* `LinearMap.compl₁₂_compBilinForm_eq_smul_iff`: similitudes of the transferred form are the
-  similitudes of the original form with a multiplier from `F`.
+* `LinearMap.compl₁₂_compBilinForm_eq_smul_iff`: for a nonzero functional, the `K`-linear
+  similitudes of the transferred form are the similitudes of the original form with a multiplier
+  from `F`.
 * `LinearMap.nondegenerate_trace_compBilinForm_iff`: the trace transfer of a nondegenerate form
   on a nonzero space is nondegenerate exactly for separable extensions.
-* `LinearMap.compl₁₂_compBilinForm_pi_piMap_eq_smul_iff`: the similitudes of the transferred
-  orthogonal sum given by families of `K`-linear maps are the families of similitudes with one
-  common multiplier from `F`.
+* `LinearMap.compl₁₂_compBilinForm_pi_piMap_eq_smul_iff`: for a nonzero functional, the
+  similitudes of the transferred orthogonal sum given by families of `K`-linear maps are the
+  families of similitudes with one common multiplier from `F`.
 
 ## References
 
