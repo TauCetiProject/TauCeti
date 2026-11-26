@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Algebra.Order.BigOperators.Sum.CommonLowerBound
 import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 import TauCeti.Order.Chain
+import TauCeti.Topology.MetricSpace.Lebesgue
 
 /-!
 # Iterated barycentric subdivisions and the simplicial approximation theorem
@@ -148,6 +149,18 @@ theorem iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply (n : ℕ)
   congrArg (K.iteratedBarycentricSubdivisionRealizationHomeomorph n)
     (barycentricSubdivisionRealizationHomeomorph_apply _ x)
 
+/-- `b_(n + 1)` sends the vertex of `sd^(n + 1) K` given by a face `τ` of `sd^n K` to the image
+under `b_n` of the barycenter of `τ`. -/
+theorem iteratedBarycentricSubdivisionRealizationHomeomorph_succ_vertex (n : ℕ)
+    (τ : TauCeti.SetLike.Face (K.iteratedBarycentricSubdivision n).2.toPreAbstractSimplicialComplex)
+    {x : Realization (K.iteratedBarycentricSubdivision n).2}
+    (hx : x.val = faceBarycenter (K.iteratedBarycentricSubdivision n).2 τ) :
+    K.iteratedBarycentricSubdivisionRealizationHomeomorph (n + 1)
+        (vertex (K.iteratedBarycentricSubdivision (n + 1)).2 τ) =
+      K.iteratedBarycentricSubdivisionRealizationHomeomorph n x := by
+  rw [iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply]
+  exact congrArg _ (Subtype.ext ((barycentricSubdivisionRealizationMap_vertex _ τ).trans hx.symm))
+
 /-- The iterated barycentric subdivisions of a finite complex are finite. -/
 instance finite_iteratedBarycentricSubdivision_fst [Finite ι] (n : ℕ) :
     Finite (K.iteratedBarycentricSubdivision n).1 := by
@@ -203,17 +216,12 @@ private theorem norm_restrict_sub_le_l1Dist {κ : Type*} {s : Finset κ} {x y : 
   rw [Pi.sub_apply, Real.norm_eq_abs]
   exact Finset.single_le_sum (f := fun v => |x v - y v|) (fun _ _ => abs_nonneg _) v.property
 
-/-- The barycentric coordinates of a point sum to one over every set containing its support. -/
-private theorem sum_eq_one_of_support_subset {κ : Type*} {L : AbstractSimplicialComplex κ}
-    (z : Realization L) {s : Finset κ} (hz : z.val.support ⊆ s) : ∑ v ∈ s, z.val v = 1 := by
-  rw [← Realization.sum_eq_one L z, Finsupp.sum_of_support_subset _ hz _ fun _ _ => rfl]
-
 /-- Two points of a realization are at `ℓ¹` distance at most `2`. -/
 private theorem l1Dist_le_two {κ : Type*} {L : AbstractSimplicialComplex κ}
     (x y : Realization L) : l1Dist x.val y.val ≤ 2 := by
   have hsum (z : Realization L) (hz : z.val.support ⊆ x.val.support ∪ y.val.support) :
       ∑ v ∈ x.val.support ∪ y.val.support, z.val v = 1 :=
-    sum_eq_one_of_support_subset z hz
+    Realization.sum_eq_one_of_support_subset L z hz
   rw [l1Dist_eq_sum_of_subset Finset.subset_union_left Finset.subset_union_right]
   calc ∑ v ∈ x.val.support ∪ y.val.support, |x.val v - y.val v|
       ≤ ∑ v ∈ x.val.support ∪ y.val.support, (x.val v + y.val v) :=
@@ -223,44 +231,6 @@ private theorem l1Dist_le_two {κ : Type*} {L : AbstractSimplicialComplex κ}
         rw [Finset.sum_add_distrib, hsum x Finset.subset_union_left,
           hsum y Finset.subset_union_right]
         norm_num
-
-/-- The coordinates of the image in `|L|` of a point of the closed simplex of `sd L` spanned by
-`ρ`: the weighted sum of the coordinates of the barycenters of the faces in `ρ`. -/
-private theorem barycentricSubdivisionRealizationMap_apply_eq_sum {κ : Type*}
-    {L : AbstractSimplicialComplex κ}
-    {ρ : Finset (TauCeti.SetLike.Face L.toPreAbstractSimplicialComplex)}
-    {z : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      L.toPreAbstractSimplicialComplex)} (hz : z.val.support ⊆ ρ) (v : κ) :
-    (barycentricSubdivisionRealizationMap L z).val v =
-      ∑ τ ∈ ρ, z.val τ * if v ∈ τ.val then (τ.val.card : ℝ)⁻¹ else 0 := by
-  rw [barycentricSubdivisionRealizationMap_val, barycentricSubdivisionLinearMap_apply]
-  exact Finset.sum_subset hz fun τ _ hτ => by simp [Finsupp.notMem_support_iff.mp hτ]
-
-/-- The coordinates of the barycenter of a face `τ` sum to one over every set containing `τ`. -/
-private theorem sum_ite_mem_inv_card {κ : Type*} {L : AbstractSimplicialComplex κ}
-    {τ : TauCeti.SetLike.Face L.toPreAbstractSimplicialComplex} {σ : Finset κ}
-    (hτσ : τ.val ⊆ σ) : ∑ v ∈ σ, (if v ∈ τ.val then (τ.val.card : ℝ)⁻¹ else 0) = 1 := by
-  have hcard : (τ.val.card : ℝ) ≠ 0 := by
-    exact_mod_cast (Finset.card_pos.mpr (L.isRelLowerSet_faces.prop_of_mem τ.property)).ne'
-  rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr hτσ, Finset.sum_const, nsmul_eq_mul,
-    mul_inv_cancel₀ hcard]
-
-/-- The image in `|L|` of the closed simplex of `sd L` spanned by `ρ` lies in the closed simplex
-of every set `σ` containing all faces in `ρ`. -/
-private theorem support_barycentricSubdivisionRealizationMap_subset {κ : Type*}
-    {L : AbstractSimplicialComplex κ}
-    {ρ : Finset (TauCeti.SetLike.Face L.toPreAbstractSimplicialComplex)} {σ : Finset κ}
-    (hρσ : ∀ τ ∈ ρ, τ.val ⊆ σ)
-    {z : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      L.toPreAbstractSimplicialComplex)} (hz : z.val.support ⊆ ρ) :
-    (barycentricSubdivisionRealizationMap L z).val.support ⊆ σ := by
-  intro v hv
-  by_contra hvσ
-  refine Finsupp.mem_support_iff.mp hv
-    ((barycentricSubdivisionRealizationMap_apply_eq_sum hz v).trans
-      (Finset.sum_eq_zero fun τ hτ => ?_))
-  have hvτ : v ∉ τ.val := fun h => hvσ (hρσ τ hτ h)
-  simp [hvτ]
 
 /-- **The carrier of `b_n`.** The image under `b_n : |sd^n K| ≃ₜ |K|` of the closed simplex of a
 face `ρ` of `sd^n K` lies in the closed simplex of some face `σ` of `K`. -/
@@ -278,7 +248,7 @@ theorem exists_support_iteratedBarycentricSubdivisionRealizationHomeomorph_subse
     obtain ⟨σ, hσ, hσx⟩ := ih τ.property
     refine ⟨σ, hσ, fun x hx => ?_⟩
     rw [iteratedBarycentricSubdivisionRealizationHomeomorph_succ_apply]
-    exact hσx _ (support_barycentricSubdivisionRealizationMap_subset
+    exact hσx _ (support_barycentricSubdivisionRealizationMap_subset _
       (fun τ' hτ' => face_le_iff.mp (hτ hτ')) hx)
 
 /-- **One subdivision step contracts `ℓ¹` distances within a closed simplex.** Let every face of
@@ -307,39 +277,35 @@ private theorem exists_support_subset_and_l1Dist_le {κ : Type*} {L : AbstractSi
   have hsupp {z : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
       L.toPreAbstractSimplicialComplex)} (hz : z.val.support ⊆ ρ) :
       (barycentricSubdivisionRealizationMap L z).val.support ⊆ σ.val :=
-    support_barycentricSubdivisionRealizationMap_subset (fun _ hτ => hτσ hτ) hz
+    support_barycentricSubdivisionRealizationMap_subset L (fun _ hτ => hτσ hτ) hz
   refine ⟨σ.val, σ.property, hsupp hx, hsupp hy, ?_⟩
-  -- The image of a point of the simplex `ρ` is the combination of the barycenters of `ρ`.
-  set β : TauCeti.SetLike.Face L.toPreAbstractSimplicialComplex → κ → ℝ :=
-    fun τ v => if v ∈ τ.val then (τ.val.card : ℝ)⁻¹ else 0 with hβ
-  have hcoord {z : Realization (TauCeti.PreAbstractSimplicialComplex.barycentricSubdivision
-      L.toPreAbstractSimplicialComplex)} (hz : z.val.support ⊆ ρ) (v : κ) :
-      (barycentricSubdivisionRealizationMap L z).val v = ∑ τ ∈ ρ, z.val τ * β τ v :=
-    barycentricSubdivisionRealizationMap_apply_eq_sum hz v
   -- Every barycenter of `ρ` gives weight at least `1 / D` to `v₀`.
   set δ : κ → ℝ := fun v => if v = v₀ then (D : ℝ)⁻¹ else 0 with hδ
-  have hβδ {τ} (hτ : τ ∈ ρ) (v : κ) : 0 ≤ β τ v - δ v := by
+  have hδle {τ} (hτ : τ ∈ ρ) (v : κ) : δ v ≤ faceBarycenter L τ v := by
+    rw [faceBarycenter_apply]
     by_cases hv : v = v₀
     · subst hv
-      simp only [hβ, hδ, hv₀τ hτ, ite_true, sub_nonneg]
+      simp only [hδ, hv₀τ hτ, ite_true]
       exact inv_anti₀ (Nat.cast_pos.mpr (Finset.card_pos.mpr
         (L.isRelLowerSet_faces.prop_of_mem τ.property))) (Nat.cast_le.mpr (hD _ τ.property))
-    · simp only [hβ, hδ, hv, ite_false, sub_zero]
+    · simp only [hδ, hv, ite_false]
       split_ifs <;> positivity
   have hδsum : ∑ v ∈ σ.val, δ v = (D : ℝ)⁻¹ := by simp [hδ, hτσ hτ₀ (hv₀τ hτ₀)]
   -- The differences of the coordinates of `x` and `y` sum to zero.
   have hdiff : ∑ τ ∈ ρ, (x.val τ - y.val τ) = 0 := by
-    rw [Finset.sum_sub_distrib, sum_eq_one_of_support_subset x hx,
-      sum_eq_one_of_support_subset y hy, sub_self]
+    rw [Finset.sum_sub_distrib, Realization.sum_eq_one_of_support_subset _ x hx,
+      Realization.sum_eq_one_of_support_subset _ y hy, sub_self]
+  -- The image of a point of the simplex `ρ` is the combination of the barycenters of `ρ`.
   have hpt (v : κ) : (barycentricSubdivisionRealizationMap L x).val v -
       (barycentricSubdivisionRealizationMap L y).val v =
-        ∑ τ ∈ ρ, (x.val τ - y.val τ) * β τ v := by
-    rw [hcoord hx, hcoord hy, ← Finset.sum_sub_distrib]
-    simp only [sub_mul]
+        ∑ τ ∈ ρ, (x.val τ - y.val τ) * faceBarycenter L τ v := by
+    rw [barycentricSubdivisionRealizationMap_apply_eq_sum L hx,
+      barycentricSubdivisionRealizationMap_apply_eq_sum L hy, ← Finset.sum_sub_distrib]
+    exact Finset.sum_congr rfl fun _ _ => (sub_mul _ _ _).symm
   rw [l1Dist_eq_sum_of_subset (hsupp hx) (hsupp hy), l1Dist_eq_sum_of_subset hx hy]
   simp only [hpt]
-  exact TauCeti.sum_abs_sum_mul_le hdiff (fun τ hτ => hβδ hτ)
-    (fun τ hτ => sum_ite_mem_inv_card (hτσ hτ)) hδsum
+  exact TauCeti.sum_abs_sum_mul_le hdiff (fun τ hτ v _ => hδle hτ v)
+    (fun τ hτ => sum_faceBarycenter_of_subset L τ (hτσ hτ)) hδsum
 
 /-- **`n` subdivision steps contract `ℓ¹` distances within a closed simplex by `(1 - 1 / D) ^ n`**,
 when every face of `K` has at most `D` vertices. -/
@@ -398,22 +364,16 @@ theorem eventually_forall_exists_image_openStarRealization_subset (hfin : K.face
     PreAbstractSimplicialComplex.subset_faceUnion hfin (support_mem K x)
   let g : Realization K → (V → ℝ) := fun x v => x.val v
   have : CompactSpace (Realization K) := K.compactSpace_realization_of_finite_faces hfin
-  have hemb : IsClosedEmbedding g := by
-    refine Continuous.isClosedEmbedding
-      (continuous_pi fun v => (continuous_apply v.val).comp (continuous_realization_coe K)) ?_
+  have hgc : Continuous g :=
+    continuous_pi fun v => (continuous_apply v.val).comp (continuous_realization_coe K)
+  have hginj : Function.Injective g := by
     intro x y hxy
     refine Subtype.ext (Finsupp.ext fun v => ?_)
     by_cases hv : v ∈ V
     · exact congrFun hxy ⟨v, hv⟩
     · rw [Finsupp.notMem_support_iff.mp fun h => hv (hV x h),
         Finsupp.notMem_support_iff.mp fun h => hv (hV y h)]
-  choose W hWopen hWU using fun i => hemb.isInducing.isOpen_iff.mp (hU i)
-  have hcpt : IsCompact (range g) := isCompact_range hemb.continuous
-  have hsub : range g ⊆ ⋃ i, W i := by
-    rintro _ ⟨x, rfl⟩
-    obtain ⟨i, hi⟩ := mem_iUnion.mp (hcov.symm ▸ mem_univ x : x ∈ ⋃ i, U i)
-    exact mem_iUnion.mpr ⟨i, by rw [← hWU i] at hi; exact hi⟩
-  obtain ⟨ε, hε, hball⟩ := lebesgue_number_lemma_of_metric hcpt hWopen hsub
+  obtain ⟨ε, hε, hball⟩ := TauCeti.exists_pos_forall_exists_forall_dist_lt_mem hgc hginj hU hcov.ge
   -- Every face of `K` has at most `D = card V + 1` vertices, and `(1 - 1 / D) ^ n → 0`.
   set D := V.card + 1
   have hD : ∀ σ ∈ K, σ.card ≤ D := fun σ hσ =>
@@ -424,12 +384,11 @@ theorem eventually_forall_exists_image_openStarRealization_subset (hfin : K.face
   have hlim : Tendsto (fun n => 2 * (1 - (D : ℝ)⁻¹) ^ n) atTop (𝓝 0) := by
     simpa using (tendsto_pow_atTop_nhds_zero_of_lt_one hc₀ hc).const_mul 2
   filter_upwards [hlim.eventually (gt_mem_nhds hε)] with n hn w
-  obtain ⟨i, hi⟩ := hball _ ⟨K.iteratedBarycentricSubdivisionRealizationHomeomorph n
-    (vertex (K.iteratedBarycentricSubdivision n).2 w), rfl⟩
+  obtain ⟨i, hi⟩ := hball (K.iteratedBarycentricSubdivisionRealizationHomeomorph n
+    (vertex (K.iteratedBarycentricSubdivision n).2 w))
   refine ⟨i, ?_⟩
   rintro _ ⟨x, hx, rfl⟩
-  rw [← hWU i]
-  refine hi (Metric.mem_ball.mpr ?_)
+  refine hi _ ?_
   rw [dist_eq_norm]
   exact ((norm_restrict_sub_le_l1Dist (hV _) (hV _)).trans
     (l1Dist_iteratedBarycentricSubdivisionRealizationHomeomorph_vertex_le hD n hx)).trans_lt hn

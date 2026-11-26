@@ -122,6 +122,16 @@ theorem support_faceBarycenter (K : AbstractSimplicialComplex ι) (σ : Face K) 
     simp [Finsupp.mem_support_iff, hv, hcard]
   · simp [Finsupp.mem_support_iff, hv]
 
+/-- The coordinates of the barycenter of a face `σ` sum to one over every finite set containing
+`σ`. -/
+theorem sum_faceBarycenter_of_subset (K : AbstractSimplicialComplex ι) (σ : Face K)
+    {s : Finset ι} (hσs : σ.val ⊆ s) : ∑ v ∈ s, faceBarycenter K σ v = 1 := by
+  have hcard : (σ.val.card : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.2 (K.isRelLowerSet_faces.prop_of_mem σ.property).card_pos.ne'
+  simp only [faceBarycenter_apply]
+  rw [Finset.sum_ite_mem, Finset.inter_eq_right.mpr hσs, Finset.sum_const, nsmul_eq_mul,
+    mul_inv_cancel₀ hcard]
+
 /-- The topology induced by the coordinatewise topology on `ι → ℝ`. These are the domain
 topologies used to define the weak topology on the whole realization. -/
 instance (σ : Finset ι) : TopologicalSpace (StandardSimplex σ) :=
@@ -487,6 +497,12 @@ theorem Realization.nonneg (K : AbstractSimplicialComplex ι) (x : Realization K
 theorem Realization.sum_eq_one (K : AbstractSimplicialComplex ι) (x : Realization K) :
     x.val.sum (fun _ r => r) = 1 :=
   StandardSimplex.sum_eq_one ⟨x.val, mem_convexHull_carrier K x⟩
+
+/-- The barycentric coordinates of a realization point sum to one over every finite set containing
+its support. -/
+theorem Realization.sum_eq_one_of_support_subset (K : AbstractSimplicialComplex ι)
+    (x : Realization K) {s : Finset ι} (hx : x.val.support ⊆ s) : ∑ v ∈ s, x.val v = 1 := by
+  rw [← Realization.sum_eq_one K x, Finsupp.sum_of_support_subset _ hx _ fun _ _ => rfl]
 
 /-- The segment between two points of `|K|` whose supports together span a face of `K` lies
 in `|K|`. -/

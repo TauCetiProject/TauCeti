@@ -32,18 +32,18 @@ weights on `s` with sum zero, and let every row `β τ`, `τ ∈ s`, have total 
 dominate a common vector `δ` of total mass `c` on `t`. Then the `ℓ¹` norm on `t` of
 `∑ τ, a τ β τ` is at most `1 - c` times the `ℓ¹` norm of `a`: the common part `δ` cancels. -/
 theorem sum_abs_sum_mul_le {s : Finset A} {t : Finset B} {a : A → R} {β : A → B → R}
-    {δ : B → R} {c : R} (ha : ∑ τ ∈ s, a τ = 0) (hβδ : ∀ τ ∈ s, ∀ v, 0 ≤ β τ v - δ v)
+    {δ : B → R} {c : R} (ha : ∑ τ ∈ s, a τ = 0) (hβδ : ∀ τ ∈ s, ∀ v ∈ t, δ v ≤ β τ v)
     (hβ : ∀ τ ∈ s, ∑ v ∈ t, β τ v = 1) (hδ : ∑ v ∈ t, δ v = c) :
     ∑ v ∈ t, |∑ τ ∈ s, a τ * β τ v| ≤ (1 - c) * ∑ τ ∈ s, |a τ| := by
-  have hpt (v : B) : |∑ τ ∈ s, a τ * β τ v| ≤ ∑ τ ∈ s, |a τ| * (β τ v - δ v) := by
+  have hpt (v : B) (hv : v ∈ t) : |∑ τ ∈ s, a τ * β τ v| ≤ ∑ τ ∈ s, |a τ| * (β τ v - δ v) := by
     have heq : ∑ τ ∈ s, a τ * β τ v = ∑ τ ∈ s, a τ * (β τ v - δ v) := by
       rw [sum_congr rfl fun τ _ => mul_sub _ _ _, sum_sub_distrib, ← sum_mul, ha, zero_mul,
         sub_zero]
     rw [heq]
     refine (abs_sum_le_sum_abs _ _).trans (sum_le_sum fun τ hτ => ?_)
-    rw [abs_mul, abs_of_nonneg (hβδ τ hτ v)]
+    rw [abs_mul, abs_of_nonneg (sub_nonneg.2 (hβδ τ hτ v hv))]
   calc ∑ v ∈ t, |∑ τ ∈ s, a τ * β τ v|
-      ≤ ∑ v ∈ t, ∑ τ ∈ s, |a τ| * (β τ v - δ v) := sum_le_sum fun v _ => hpt v
+      ≤ ∑ v ∈ t, ∑ τ ∈ s, |a τ| * (β τ v - δ v) := sum_le_sum fun v hv => hpt v hv
     _ = (1 - c) * ∑ τ ∈ s, |a τ| := by
         rw [sum_comm, mul_sum]
         refine sum_congr rfl fun τ hτ => ?_
