@@ -37,7 +37,9 @@ dimensions of the maximal generalized eigenspaces. No semisimplicity of `φ` is 
 * If `2 ≠ 0` and `c ≠ 0`, then `b - m₊ - m₋` is even
   (`LinearMap.BilinForm.even_finrank_sub_finrank_maxGenEigenspace_of_compl₁₂_self_eq_smul`), so
   also `det φ = (-1) ^ (b - m₊) * s ^ b`
-  (`LinearMap.BilinForm.det_eq_neg_one_pow_finrank_sub_mul_pow_of_compl₁₂_self_eq_smul`).
+  (`LinearMap.BilinForm.det_eq_neg_one_pow_finrank_sub_mul_pow_of_compl₁₂_self_eq_smul`). This
+  second sign formula holds without assumptions on `2` or `c`: if `2 = 0` then `-1 = 1`, and if
+  `c = 0` both sides vanish in positive dimension.
 * If `B` is alternating and `c ≠ 0`, the generalized eigenspaces at the square roots of `c` have
   even dimension
   (`LinearMap.BilinForm.even_finrank_maxGenEigenspace_of_isAlt_of_compl₁₂_self_eq_smul`), and
@@ -79,15 +81,6 @@ open LinearMap (BilinForm)
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
   {φ : End K V} {c s : K}
-
-omit [FiniteDimensional K V] in
-/-- A similitude of `B` is a similitude of the scalar extension of `B`, with the same
-multiplier. -/
-private theorem compl₁₂_baseChange_eq_smul {L : Type*} [CommRing L] [Algebra K L]
-    (B : BilinForm K V) (h : B.compl₁₂ φ φ = c • B) :
-    (B.baseChange L).compl₁₂ (φ.baseChange L) (φ.baseChange L) =
-      algebraMap K L c • B.baseChange L := by
-  rw [← baseChange_compl₁₂, h, baseChange_smul]
 
 /-- The degenerate case `c = 0`: a similitude with multiplier `0` of a perfect form has
 `det φ = (-1) ^ m * 0 ^ b` for every `m ≤ b`, since both sides vanish in positive dimension and are
@@ -149,7 +142,7 @@ theorem det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul (B : BilinForm K 
     LinearMap.det φ = (-1) ^ finrank K (φ.maxGenEigenspace (-s)) * s ^ finrank K V := by
   let L := AlgebraicClosure K
   apply (algebraMap K L).injective
-  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
+  have hL := compl₁₂_baseChange_eq_smul (A := L) h
   rw [← LinearMap.det_baseChange, det_eq_neg_one_pow_mul_pow_of_splits _ hL
     (s := algebraMap K L s) (by rw [← map_mul, hs]) (IsAlgClosed.splits _), ← map_neg,
     LinearMap.finrank_maxGenEigenspace_baseChange_algebraMap, finrank_baseChange]
@@ -166,7 +159,7 @@ theorem algebraMap_det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul {L : T
       (-1) ^ finrank L (maxGenEigenspace (φ.baseChange L) (-s)) * s ^ finrank K V := by
   rw [← LinearMap.det_baseChange, ← finrank_baseChange (R := L) (M' := V)]
   exact det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul _
-    (compl₁₂_baseChange_eq_smul B h) hs
+    (compl₁₂_baseChange_eq_smul h) hs
 
 /-- **Parity of the multiplicities of the square roots of the multiplier.** If `φ` is a similitude
 with multiplier `c ≠ 0` of a perfect bilinear form, `s * s = c` and `2 ≠ 0`, then
@@ -178,7 +171,7 @@ theorem even_finrank_sub_finrank_maxGenEigenspace_of_compl₁₂_self_eq_smul (B
     Even ((finrank K V : ℤ) - finrank K (φ.maxGenEigenspace s) -
       finrank K (φ.maxGenEigenspace (-s))) := by
   let L := AlgebraicClosure K
-  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
+  have hL := compl₁₂_baseChange_eq_smul (A := L) h
   have h2L : (2 : L) ≠ 0 := by
     rw [← map_ofNat (algebraMap K L) 2]
     exact (_root_.map_ne_zero _).2 h2
@@ -189,13 +182,16 @@ theorem even_finrank_sub_finrank_maxGenEigenspace_of_compl₁₂_self_eq_smul (B
     finrank_baseChange] at this
 
 /-- **The determinant of a similitude, through the multiplicity of `s`.** If `φ` is a similitude
-with multiplier `c` of a perfect bilinear form, `s * s = c` and `2 ≠ 0`, then
+with multiplier `c` of a perfect bilinear form and `s * s = c`, then
 `det φ = (-1) ^ (b - m₊) * s ^ b`, where `b` is the dimension and `m₊` is the algebraic
 multiplicity of `s` as an eigenvalue of `φ`. -/
 theorem det_eq_neg_one_pow_finrank_sub_mul_pow_of_compl₁₂_self_eq_smul (B : BilinForm K V)
-    [B.IsPerfPair] (h2 : (2 : K) ≠ 0) (h : B.compl₁₂ φ φ = c • B) (hs : s * s = c) :
+    [B.IsPerfPair] (h : B.compl₁₂ φ φ = c • B) (hs : s * s = c) :
     LinearMap.det φ =
       (-1) ^ (finrank K V - finrank K (φ.maxGenEigenspace s)) * s ^ finrank K V := by
+  rcases eq_or_ne (2 : K) 0 with h2 | h2
+  · have h1 : (-1 : K) = 1 := by linear_combination -h2
+    rw [det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul B h hs, h1, one_pow, one_pow]
   rcases eq_or_ne c 0 with rfl | hc
   · obtain rfl : s = 0 := mul_self_eq_zero.1 hs
     exact det_eq_neg_one_pow_mul_zero_pow_of_compl₁₂_self_eq_zero B h (Nat.sub_le _ _)
@@ -238,7 +234,7 @@ theorem det_eq_pow_of_isAlt_of_compl₁₂_self_eq_smul (B : BilinForm K V) [B.I
   let L := AlgebraicClosure K
   obtain ⟨t, ht⟩ := IsAlgClosed.isSquare (algebraMap K L c)
   apply (algebraMap K L).injective
-  have hL := compl₁₂_baseChange_eq_smul (L := L) B h
+  have hL := compl₁₂_baseChange_eq_smul (A := L) h
   have hm := even_finrank_maxGenEigenspace_of_isAlt_of_compl₁₂_self_eq_smul _
     halt.baseChange hL (by simpa using hc) (α := -t) (by rw [neg_mul_neg, ht])
   rw [algebraMap_det_eq_neg_one_pow_mul_pow_of_compl₁₂_self_eq_smul B h ht.symm,
