@@ -554,7 +554,7 @@ theorem exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_o
                 ‖Lp.fourierMultiplierCLM ℂ (m j) g‖ₑ) := by
   rcases hq.lt_or_eq with hq | rfl
   · exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum hq hqr
-  · simp only [NNReal.coe_ofNat, div_self (two_ne_zero' ℝ)] at hqr ⊢
+  · simp only [NNReal.coe_ofNat, ENNReal.coe_ofNat, div_self (two_ne_zero' ℝ)] at hqr ⊢
     exact φ.exists_eLpNorm_eLpNorm_waveCosPropagator_add_waveSinPropagator_le_tsum_of_le_endpoint
       (hq2 rfl) hqr
 
