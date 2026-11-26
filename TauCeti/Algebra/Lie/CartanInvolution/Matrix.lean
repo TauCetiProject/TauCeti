@@ -144,24 +144,13 @@ open TauCeti
 variable {𝕜 n : Type*} [RCLike 𝕜] [Fintype n] [DecidableEq n]
   (L : LieSubalgebra ℝ (Matrix n n 𝕜)) (hL : ∀ X ∈ L, Xᴴ ∈ L)
 
-private theorem isSymm_twistedKillingForm :
-    (L.restrictNegConjTranspose hL).twistedKillingForm.IsSymm :=
-  (L.restrictNegConjTranspose hL).isSymm_twistedKillingForm
-    (L.restrictNegConjTranspose_involutive hL)
-
 variable [HasTrivialRadical ℝ L]
-
-private theorem separatingLeft_twistedKillingForm :
-    (L.restrictNegConjTranspose hL).twistedKillingForm.SeparatingLeft :=
-  LinearMap.BilinForm.separatingLeft_of_anisotropic
-    (L.isCartanInvolution_restrictNegConjTranspose hL).posDef_twistedKillingForm.anisotropic
 
 /-- The endomorphism `A` of `L` with `B_θ(A x, y) = Re tr(x yᴴ)`. -/
 private noncomputable def traceFormRatio : Module.End ℝ L :=
   (reTraceFormRestrict L).symmCompOfNondegenerate
     (L.restrictNegConjTranspose hL).twistedKillingForm
-    ((isSymm_twistedKillingForm L hL).isRefl.nondegenerate_iff_separatingLeft.2
-      (separatingLeft_twistedKillingForm L hL))
+    (L.isCartanInvolution_restrictNegConjTranspose hL).nondegenerate_twistedKillingForm
 
 private theorem twistedKillingForm_traceFormRatio (x y : L) :
     (L.restrictNegConjTranspose hL).twistedKillingForm (traceFormRatio L hL x) y =
@@ -172,7 +161,9 @@ private theorem twistedKillingForm_traceFormRatio (x y : L) :
 /-- `A` commutes with every `ad z`. -/
 private theorem traceFormRatio_lie (z x : L) :
     traceFormRatio L hL ⁅z, x⁆ = ⁅z, traceFormRatio L hL x⁆ := by
-  refine sub_eq_zero.1 (separatingLeft_twistedKillingForm L hL _ fun y ↦ ?_)
+  refine sub_eq_zero.1
+    ((L.isCartanInvolution_restrictNegConjTranspose hL).nondegenerate_twistedKillingForm.1 _
+      fun y ↦ ?_)
   simp only [map_sub, LinearMap.sub_apply, twistedKillingForm_traceFormRatio,
     (L.restrictNegConjTranspose hL).twistedKillingForm_lie_apply
       (L.restrictNegConjTranspose_involutive hL),
@@ -183,7 +174,8 @@ private theorem traceFormRatio_lie (z x : L) :
 private theorem isSelfAdjoint_traceFormRatio :
     (L.restrictNegConjTranspose hL).twistedKillingForm.IsSelfAdjoint (traceFormRatio L hL) :=
   fun x y ↦ by
-    rw [twistedKillingForm_traceFormRatio, (isSymm_twistedKillingForm L hL).eq x,
+    rw [twistedKillingForm_traceFormRatio,
+      (L.isCartanInvolution_restrictNegConjTranspose hL).isSymm_twistedKillingForm.eq x,
       twistedKillingForm_traceFormRatio,
       (isSymm_reTraceForm 𝕜 n n).eq]
 

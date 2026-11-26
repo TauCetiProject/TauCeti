@@ -41,6 +41,9 @@ derived algebra, the latter semisimple with negative definite Killing form.
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie
   algebra with a Cartan involution has nondegenerate Killing form, hence is finite-dimensional
   (`LieEquiv.IsCartanInvolution.finiteDimensional`) and semisimple.
+* `LieEquiv.IsCartanInvolution.isSymm_twistedKillingForm`,
+  `LieEquiv.IsCartanInvolution.nondegenerate_twistedKillingForm`: `B_θ` is symmetric and
+  nondegenerate.
 * `LieEquiv.IsCartanInvolution.orthogonal_fixedSubalgebra_eq_cartanP`: `𝔭` is the
   Killing-orthogonal complement of `𝔨`.
 * `LieEquiv.IsCartanInvolution.eq_of_fixedSubalgebra_eq`: a Cartan involution is determined by
@@ -171,6 +174,19 @@ theorem nondegenerate_killingForm_restrict (hθ : θ.IsCartanInvolution) {𝔞 :
     (LinearMap.BilinForm.separatingLeft_of_anisotropic fun H hH ↦ by
       by_contra hne
       exact (hθ.killingForm_restrict_pos h𝔞 H hne).ne' hH)
+
+omit [IsStrictOrderedRing K] in
+/-- The twisted Killing form of a Cartan involution is symmetric. -/
+theorem isSymm_twistedKillingForm (hθ : θ.IsCartanInvolution) : θ.twistedKillingForm.IsSymm :=
+  θ.isSymm_twistedKillingForm hθ.involutive
+
+omit [IsStrictOrderedRing K] in
+/-- The twisted Killing form of a Cartan involution is nondegenerate, since it is positive
+definite. -/
+theorem nondegenerate_twistedKillingForm (hθ : θ.IsCartanInvolution) :
+    θ.twistedKillingForm.Nondegenerate :=
+  hθ.isSymm_twistedKillingForm.isRefl.nondegenerate_iff_separatingLeft.2
+    (LinearMap.BilinForm.separatingLeft_of_anisotropic hθ.posDef_twistedKillingForm.anisotropic)
 
 /-- A Lie algebra with a Cartan involution is semisimple. -/
 theorem isSemisimple (hθ : θ.IsCartanInvolution) : IsSemisimple K L :=
