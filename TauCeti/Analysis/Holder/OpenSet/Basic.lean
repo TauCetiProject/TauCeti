@@ -547,6 +547,11 @@ theorem coe_smul (c : ℝ) (f : CkHolderSpaceOn k α Ω F) : ⇑(c • f) = c �
     Pi.smul_apply]
   simp
 
+/-- The underlying function of a difference is the difference of the underlying functions. -/
+@[simp]
+theorem coe_sub (f g : CkHolderSpaceOn k α Ω F) : ⇑(f - g) = f - g := by
+  rw [eq_sub_iff_add_eq, ← coe_add, sub_add_cancel]
+
 /-- The derivative field of order zero has the norm of the underlying function at each point. -/
 theorem norm_iteratedFDeriv_zero (f : CkHolderSpaceOn k α Ω F) (x : Ω) :
     ‖f.iteratedFDeriv 0 x‖ = ‖f x‖ := by
@@ -578,6 +583,11 @@ def extend (f : CkHolderSpaceOn k α Ω F) : E → F :=
 @[simp]
 theorem extend_apply (f : CkHolderSpaceOn k α Ω F) (x : Ω) : f.extend x = f x :=
   Subtype.val_injective.extend_apply _ _ x
+
+/-- The extension by zero vanishes outside `Ω`. -/
+theorem extend_apply_of_notMem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x ∉ Ω) :
+    f.extend x = 0 :=
+  Function.extend_apply' _ _ _ fun ⟨y, hy⟩ ↦ hx (hy ▸ y.property)
 
 /-- The extension by zero of an element of `C^{k,α}(Ω)` is `k` times continuously differentiable
 on `Ω`. -/
