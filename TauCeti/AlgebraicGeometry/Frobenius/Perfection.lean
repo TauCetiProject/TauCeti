@@ -853,14 +853,15 @@ theorem universallyInjective_perfection_iff :
 
 /-- The perfection of `f` is surjective exactly when `f` is. -/
 @[simp]
-theorem surjective_perfection_iff : Surjective (f.perfection p hX hY) ↔ Surjective f := by
-  refine ⟨fun _ ↦ ?_, fun _ ↦ ?_⟩
-  · have : Surjective (X.fromPerfection p hX ≫ f) := by
-      rw [← perfection_fromPerfection f p hX hY]
-      infer_instance
-    exact Surjective.of_comp (X.fromPerfection p hX) f
-  · rw [← perfectionToPullback_snd]
-    infer_instance
+theorem surjective_perfection_iff : Surjective (f.perfection p hX hY) ↔ Surjective f :=
+  -- Instance search finds neither this parent of Mathlib's `IsMultiplicative @Surjective` nor
+  -- Mathlib's `HasOfPrecompProperty @Surjective P`, even with the universe fixed.
+  have : MorphismProperty.IsStableUnderComposition @Surjective.{u} :=
+    ⟨fun _ _ _ _ ↦ inferInstance⟩
+  have : MorphismProperty.HasOfPrecompProperty @Surjective.{u} @Surjective.{u} :=
+    ⟨fun π g _ _ ↦ .of_comp π g⟩
+  f.perfection_mem_iff p hX hY @Surjective.{u} @Surjective.{u} (fun _ _ _ _ ↦ inferInstance)
+    fun _ _ _ _ ↦ inferInstance
 
 /-- The perfection of `f` is a universal homeomorphism exactly when `f` is (Bhatt–Scholze 2017,
 Lemma 3.4 (vii)). -/
