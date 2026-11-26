@@ -7,6 +7,7 @@ module
 
 public import TauCeti.GroupTheory.Coset.Card
 public import TauCeti.GroupTheory.DoubleCoset.Basic
+public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.NumberTheory.HeckeRing.Basic
 
 /-!
@@ -182,12 +183,8 @@ theorem isCosetSystem_congr_of_mem {g' : G} (hg' : g' ∈ doubleCoset g H K) :
 
 /-- The identity double coset `H1H = H` has the singleton coset system `{1}`. -/
 theorem isCosetSystem_one (H : Subgroup G) : IsCosetSystem H H 1 fun _ : Unit ↦ (1 : G) := by
-  rw [isCosetSystem_iff]
-  refine ⟨?_, Subsingleton.pairwise⟩
-  ext x
-  simp only [one_smul, Set.iUnion_const, SetLike.mem_coe, mem_doubleCoset, mul_one]
-  exact ⟨fun hx ↦ ⟨x, hx, 1, H.one_mem, by simp⟩,
-    by rintro ⟨a, ha, b, hb, rfl⟩; exact mul_mem ha hb⟩
+  rw [isCosetSystem_iff, TauCeti.doubleCoset_one_self]
+  exact ⟨by simp only [one_smul, Set.iUnion_const], Subsingleton.pairwise⟩
 
 /-- **The canonical coset system.** For representatives `σᵢ` of `H ⧸ (H ∩ gKg⁻¹)`, the elements
 `σᵢ g` form a coset system for `HgK`. -/
