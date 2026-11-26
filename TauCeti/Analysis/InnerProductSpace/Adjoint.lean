@@ -65,7 +65,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between real or complex
   Hilbert spaces as a real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
-  continuous family it is continuous (`Continuous.clm_adjoint`).
+  continuous family it is continuous (`Continuous.clm_adjoint`). Its derivative is the adjoint of
+  the derivative (`HasFDerivAt.clm_adjoint`, `fderiv_clm_adjoint`).
 * `ContinuousLinearMap.adjointCompL`, `ContinuousLinearMap.compAdjointL`: the real-bilinear
   continuous maps `(S, T) ↦ S† ∘ T` and `(T, S) ↦ S ∘ T†`; sandwiched compositions obey
   `‖P† ∘ T ∘ Q‖ ≤ ‖P‖ * ‖T‖ * ‖Q‖` (`ContinuousLinearMap.norm_adjoint_comp_comp_le`).
@@ -261,6 +262,28 @@ theorem _root_.ContDiff.clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSp
     ContDiff ℝ n fun x ↦ adjoint (f x) := by
   simpa only [Function.comp_def, adjointRealCLM_apply] using
     hf.continuousLinearMap_comp adjointRealCLM
+
+/-- The pointwise adjoint `x ↦ (f x)†` of a family of operators with derivative `f'` at `x₀` has
+derivative `v ↦ (f' v)†` at `x₀`. -/
+theorem _root_.HasFDerivAt.clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : G → V →L[𝕜] W} {f' : G →L[ℝ] V →L[𝕜] W} {x₀ : G} (hf : HasFDerivAt f f' x₀) :
+    HasFDerivAt (fun x ↦ adjoint (f x)) (adjointRealCLM.comp f') x₀ := by
+  simpa only [Function.comp_def, adjointRealCLM_apply] using
+    adjointRealCLM.hasFDerivAt.comp x₀ hf
+
+/-- The pointwise adjoint of a family of operators differentiable at `x₀` is differentiable
+at `x₀`. -/
+theorem _root_.DifferentiableAt.clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : G → V →L[𝕜] W} {x₀ : G} (hf : DifferentiableAt ℝ f x₀) :
+    DifferentiableAt ℝ (fun x ↦ adjoint (f x)) x₀ :=
+  hf.hasFDerivAt.clm_adjoint.differentiableAt
+
+/-- The derivative of the pointwise adjoint of a family of operators is the adjoint of the
+derivative: `(f†)' v = (f' v)†`. -/
+theorem _root_.fderiv_clm_adjoint {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : G → V →L[𝕜] W} {x₀ : G} (hf : DifferentiableAt ℝ f x₀) :
+    fderiv ℝ (fun x ↦ adjoint (f x)) x₀ = adjointRealCLM.comp (fderiv ℝ f x₀) :=
+  hf.hasFDerivAt.clm_adjoint.fderiv
 
 end RealAdjoint
 
