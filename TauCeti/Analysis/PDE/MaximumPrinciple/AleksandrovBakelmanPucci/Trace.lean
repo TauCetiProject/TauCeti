@@ -150,6 +150,28 @@ theorem le_of_traceCLM_comp_iteratedGradient_nonneg_le_frontier
   exact congrArg (fun v => (b.repr (Wkp.iteratedGradient 1 u (e.symm y) v)).ofLp i)
     (b.repr_symm_single j).symm
 
+/-- The reduction of the weak maximum principles with `c ≤ 0` to `c = 0`: if `ū x > m ≥ 0` at
+`x ∈ Ω`, then `x` lies in the open set `V = {y ∈ Ω | m < ū y} ⊆ Ω`, on whose frontier `ū ≤ m`, and
+`c u ≤ 0` almost everywhere on `V`. -/
+private theorem exists_le_and_mem_and_le_frontier_and_mul_value_nonpos
+    (hcont : ContinuousOn ū (closure Ω)) {u : Wkp volume Ω p 2}
+    (hū : Wkp.value 2 u =ᵐ[volume.restrict Ω] ū) {c : F → ℝ}
+    (hc : ∀ᵐ x ∂volume.restrict Ω, c x ≤ 0) (hm0 : 0 ≤ m)
+    (hm : ∀ z ∈ frontier (Ω : Set F), ū z ≤ m) {x : F} (hx : x ∈ Ω) (hxm : m < ū x) :
+    ∃ V : Opens F, V ≤ Ω ∧ x ∈ V ∧ (∀ z ∈ frontier (V : Set F), ū z ≤ m) ∧
+      ∀ᵐ y ∂volume.restrict (V : Set F), c y * Wkp.value 2 u y ≤ 0 := by
+  let V : Opens F := ⟨Ω ∩ ū ⁻¹' Ioi m,
+    (hcont.mono subset_closure).isOpen_inter_preimage Ω.isOpen isOpen_Ioi⟩
+  have hVΩ : V ≤ Ω := fun _ hy => hy.1
+  refine ⟨V, hVΩ, ⟨hx, hxm⟩,
+    fun z hz => le_of_mem_frontier_inter_preimage_Ioi Ω.isOpen (hcont.mono subset_closure) hm hz,
+    ?_⟩
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hVΩ hc,
+    ae_restrict_of_ae_restrict_of_subset hVΩ hū, ae_restrict_mem V.isOpen.measurableSet]
+    with y hcy hūy hyV
+  rw [hūy]
+  exact mul_nonpos_of_nonpos_of_nonneg hcy (hm0.trans hyV.2.le)
+
 /-- **The weak maximum principle for strong subsolutions with a zeroth-order term**
 (Gilbarg–Trudinger, Theorem 9.1 with `b = 0` and `f = 0`). Let `Ω` be a bounded open subset of a
 real inner product space of dimension `n`, let `u ∈ W^{2,n}(Ω)` have a representative `ū`
@@ -165,29 +187,35 @@ theorem le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier
       0 ≤ traceCLM ℝ F (A x ∘L Wkp.iteratedGradient 1 u x) + c x * Wkp.value 2 u x)
     (hm0 : 0 ≤ m) (hm : ∀ z ∈ frontier (Ω : Set F), ū z ≤ m) {x : F} (hx : x ∈ Ω) : ū x ≤ m := by
   by_contra! hxm
-  -- Apply the case `c = 0` on `V = {y ∈ Ω | m < ū y}`, where `ū > 0`.
-  let V : Opens F := ⟨Ω ∩ ū ⁻¹' Ioi m,
-    (hcont.mono subset_closure).isOpen_inter_preimage Ω.isOpen isOpen_Ioi⟩
-  have hVΩ : V ≤ Ω := fun _ hy => hy.1
+  -- Apply the case `c = 0` on `V = {y ∈ Ω | m < ū y}`, where `c u ≤ 0`.
+  obtain ⟨V, hVΩ, hxV, hVm, hcV⟩ :=
+    exists_le_and_mem_and_le_frontier_and_mul_value_nonpos hcont hū hc hm0 hm hx hxm
   have hVsub {P : F → Prop} (h : ∀ᵐ y ∂volume.restrict Ω, P y) :
       ∀ᵐ y ∂volume.restrict (V : Set F), P y :=
     ae_restrict_of_ae_restrict_of_subset hVΩ h
-  have hVae : ∀ᵐ y ∂volume.restrict (V : Set F), y ∈ V :=
-    ae_restrict_mem V.isOpen.measurableSet
   refine (le_of_traceCLM_comp_iteratedGradient_nonneg_le_frontier (hΩb.subset hVΩ) hp
     (Wkp.restrictL hVΩ 2 u) (hcont.mono (closure_mono hVΩ))
-    ((Wkp.value_restrictL_ae hVΩ 2 u).trans (hVsub hū)) (hVsub hA) ?_ (fun z hz => ?_)
-    ⟨hx, hxm⟩).not_gt hxm
-  · filter_upwards [hVsub hL, hVsub hc, hVsub hū, hVae,
-      Wkp.iteratedGradient_restrictL_ae hVΩ 1 u] with y hy hcy hūy hyV hD
-    rw [hD]
-    have : c y * Wkp.value 2 u y ≤ 0 := by
-      rw [hūy]
-      exact mul_nonpos_of_nonpos_of_nonneg hcy (hm0.trans hyV.2.le)
-    linarith
-  · exact le_of_mem_frontier_inter_preimage_Ioi Ω.isOpen (hcont.mono subset_closure) hm hz
+    ((Wkp.value_restrictL_ae hVΩ 2 u).trans (hVsub hū)) (hVsub hA) ?_ hVm hxV).not_gt hxm
+  filter_upwards [hVsub hL, hcV, Wkp.iteratedGradient_restrictL_ae hVΩ 1 u] with y hy hcy hD
+  rw [hD]
+  linarith
 
 section Drift
+
+omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
+/-- The exponent `p = n` of the maximum principles is at least `1`, so the dimension `n` is
+positive. -/
+private theorem one_le_finrank_of_eq (hp : p = finrank ℝ F) : 1 ≤ finrank ℝ F := by
+  have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  rw [hp] at h1
+  exact_mod_cast h1
+
+omit [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] in
+/-- The set where a strongly measurable `G` is nonzero with `‖G‖ ≤ r` is measurable. -/
+private theorem measurableSet_setOf_ne_zero_and_norm_le {G : F → F} (hG : StronglyMeasurable G)
+    (r : ℝ) : MeasurableSet {y | G y ≠ 0 ∧ ‖G y‖ ≤ r} :=
+  (hG.measurable (measurableSet_singleton 0)).compl.inter
+    (measurableSet_le hG.measurable.norm measurable_const)
 
 omit [MeasurableSpace F] [BorelSpace F] in
 /-- **The pointwise bound by the elliptic operator, without coordinates.** If `-T` is a positive
@@ -297,18 +325,13 @@ private theorem volume_ball_le_ofReal_mul_setLIntegral_of_add_inner_nonneg
         ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y‖ ≤ r},
         ENNReal.ofReal (‖b y‖ ^ finrank ℝ F / ((2⁻¹ : ℝ) • (A y + (A y).adjoint)).det)
         ∂volume.restrict Ω := by
-  have hn : finrank ℝ F ≠ 0 := by
-    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-    rw [hp] at h1
-    exact Nat.one_le_iff_ne_zero.1 (by exact_mod_cast h1)
+  have hn : finrank ℝ F ≠ 0 := Nat.one_le_iff_ne_zero.1 (one_le_finrank_of_eq hp)
   set G : F → F := fun y => Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y
   set D := {y | G y ≠ 0 ∧ ‖G y‖ ≤ r}
   set h : F → ℝ≥0∞ := fun y => ENNReal.ofReal ((r / finrank ℝ F) ^ finrank ℝ F *
     (‖b y‖ ^ finrank ℝ F / ((2⁻¹ : ℝ) • (A y + (A y).adjoint)).det))
   have hGm : StronglyMeasurable G := Lp.stronglyMeasurable _
-  have hDm : MeasurableSet D :=
-    (hGm.measurable (measurableSet_singleton 0)).compl.inter
-      (measurableSet_le hGm.measurable.norm measurable_const)
+  have hDm : MeasurableSet D := measurableSet_setOf_ne_zero_and_norm_le hGm r
   -- The weak gradient is the classical gradient of the `C¹` representative.
   have hG : G =ᵐ[volume.restrict Ω] ∇ ū := by
     simpa only [iteratedGradientChain_zero] using
@@ -368,10 +391,8 @@ private theorem tendsto_setLIntegral_setOf_ne_zero_and_norm_le {G : F → F}
     exact (hy k).2.not_gt hk
   have hfin : ν (D 0) ≠ ∞ :=
     ne_top_of_le_ne_top (by rwa [hν, Measure.restrict_univ]) (measure_mono (subset_univ _))
-  have hDm (k : ℕ) : MeasurableSet (D k) :=
-    (hG.measurable (measurableSet_singleton 0)).compl.inter
-      (measurableSet_le hG.measurable.norm measurable_const)
-  have h := tendsto_measure_iInter_atTop (s := D) (fun k => (hDm k).nullMeasurableSet) hanti
+  have h := tendsto_measure_iInter_atTop (s := D)
+    (fun k => (measurableSet_setOf_ne_zero_and_norm_le hG _).nullMeasurableSet) hanti
     ⟨0, hfin⟩
   rw [hinter, measure_empty] at h
   simpa only [Function.comp_def, hν] using h
@@ -397,10 +418,7 @@ theorem le_of_traceCLM_comp_iteratedGradient_add_inner_nonneg_le_frontier
     (hm : ∀ z ∈ frontier (Ω : Set F), ū z ≤ m) {x : F} (hx : x ∈ Ω) : ū x ≤ m := by
   by_contra! hxm
   set n := finrank ℝ F
-  have hn : 1 ≤ n := by
-    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-    rw [hp] at h1
-    exact_mod_cast h1
+  have hn : 1 ≤ n := one_le_finrank_of_eq hp
   have : Nontrivial F := Module.nontrivial_of_finrank_pos hn
   set I : ℕ → ℝ≥0∞ := fun k => ∫⁻ y in {y | Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y ≠ 0 ∧
     ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) y‖ ≤ (ū x - m) / diam (Ω : Set F) / (k + 1)},
@@ -445,15 +463,12 @@ theorem le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontie
       ⟪b x, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x⟫ + c x * Wkp.value 2 u x)
     (hm0 : 0 ≤ m) (hm : ∀ z ∈ frontier (Ω : Set F), ū z ≤ m) {x : F} (hx : x ∈ Ω) : ū x ≤ m := by
   by_contra! hxm
-  -- Apply the case `c = 0` on `V = {y ∈ Ω | m < ū y}`, where `ū > 0`.
-  let V : Opens F := ⟨Ω ∩ ū ⁻¹' Ioi m,
-    (hcont.mono subset_closure).isOpen_inter_preimage Ω.isOpen isOpen_Ioi⟩
-  have hVΩ : V ≤ Ω := fun _ hy => hy.1
+  -- Apply the case `c = 0` on `V = {y ∈ Ω | m < ū y}`, where `c u ≤ 0`.
+  obtain ⟨V, hVΩ, hxV, hVm, hcV⟩ :=
+    exists_le_and_mem_and_le_frontier_and_mul_value_nonpos hcont hū hc hm0 hm hx hxm
   have hVsub {P : F → Prop} (h : ∀ᵐ y ∂volume.restrict Ω, P y) :
       ∀ᵐ y ∂volume.restrict (V : Set F), P y :=
     ae_restrict_of_ae_restrict_of_subset hVΩ h
-  have hVae : ∀ᵐ y ∂volume.restrict (V : Set F), y ∈ V :=
-    ae_restrict_mem V.isOpen.measurableSet
   have hgrad : Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 (Wkp.restrictL hVΩ 2 u)) =ᵐ[volume.restrict
       (V : Set F)] Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) := by
     rw [Wkp.lowerOrder_restrictL]
@@ -461,15 +476,11 @@ theorem le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontie
   refine (le_of_traceCLM_comp_iteratedGradient_add_inner_nonneg_le_frontier (hΩb.subset hVΩ) hp
     (Wkp.restrictL hVΩ 2 u) (hcont.mono (closure_mono hVΩ))
     ((Wkp.value_restrictL_ae hVΩ 2 u).trans (hVsub hū)) (hdiff.mono hVΩ) (hVsub hA)
-    (ne_top_of_le_ne_top hb (lintegral_mono_set hVΩ)) ?_ (fun z hz => ?_) ⟨hx, hxm⟩).not_gt hxm
-  · filter_upwards [hVsub hL, hVsub hc, hVsub hū, hVae, Wkp.iteratedGradient_restrictL_ae hVΩ 1 u,
-      hgrad] with y hy hcy hūy hyV hD hG
-    rw [hD, hG]
-    have : c y * Wkp.value 2 u y ≤ 0 := by
-      rw [hūy]
-      exact mul_nonpos_of_nonpos_of_nonneg hcy (hm0.trans hyV.2.le)
-    linarith
-  · exact le_of_mem_frontier_inter_preimage_Ioi Ω.isOpen (hcont.mono subset_closure) hm hz
+    (ne_top_of_le_ne_top hb (lintegral_mono_set hVΩ)) ?_ hVm hxV).not_gt hxm
+  filter_upwards [hVsub hL, hcV, Wkp.iteratedGradient_restrictL_ae hVΩ 1 u, hgrad]
+    with y hy hcy hD hG
+  rw [hD, hG]
+  linarith
 
 end Drift
 

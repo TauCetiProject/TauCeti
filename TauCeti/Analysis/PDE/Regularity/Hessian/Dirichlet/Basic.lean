@@ -161,6 +161,42 @@ theorem exists_norm_le_of_continuousWithinAt_of_contDiff_graph (hp : 1 < p) (hp_
   linarith [hE u, mul_nonneg (mul_nonneg hC hC₁) (norm_nonneg f),
     mul_nonneg hC (norm_nonneg (value 2 u)), mul_nonneg hC₁ (norm_nonneg f)]
 
+/-- The frame of the uniqueness theorems below. Let `Ω ⊆ ℝ × E` be a bounded Lipschitz domain of
+dimension `n`, let `n ≤ p < ∞` and let `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`. By Morrey's embedding `u`
+has a representative `ū` continuous on `closure Ω` and vanishing on `frontier Ω`, and `u` lies in
+`W^{2,n}(Ω)`, as some `v` with the same value and Hessian. If `ū ≤ 0` and `-ū ≤ 0` on `Ω` for all
+such `ū` and `v`, as the weak maximum principle applied to `v` and `-v` gives, then `u = 0`. -/
+private theorem eq_zero_of_forall_le_zero_and_neg_le_zero (hp_top : p ≠ ⊤)
+    (hpn : (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞) ≤ p) {Omega : Opens (WithLp 2 (ℝ × E))}
+    {L : ℝ≥0} (hΩ : (Omega : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hb : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
+    {u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2}
+    (hu0 : firstOrder 1 u ∈ w1p0Submodule volume Omega p)
+    (h : ∀ [Fact (1 ≤ (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞))] (ū : WithLp 2 (ℝ × E) → ℝ)
+      (v : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega (finrank ℝ (WithLp 2 (ℝ × E))) 2),
+      ContinuousOn ū (closure (Omega : Set (WithLp 2 (ℝ × E)))) →
+      ⇑(value 2 u) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ū →
+      EqOn ū 0 (frontier (Omega : Set (WithLp 2 (ℝ × E)))) →
+      ⇑(value 2 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(value 2 u) →
+      ⇑(iteratedGradient 1 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))]
+        ⇑(iteratedGradient 1 u) →
+      (∀ x ∈ Omega, ū x ≤ 0) ∧ ∀ x ∈ Omega, -ū x ≤ 0) :
+    u = 0 := by
+  obtain ⟨ū, hcont, huū, hfr⟩ :=
+    exists_continuousOn_closure_ae_eq_and_eqOn_frontier hp_top (hpn.trans_lt (by
+      rw [two_mul]
+      exact ENNReal.lt_add_right hp_top (zero_lt_one.trans_le Fact.out).ne')) hΩ hb hu0
+  -- `v = u ∈ W^{2,n}(Ω)`.
+  have : Fact (1 ≤ (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)) :=
+    ⟨Nat.one_le_cast.2 Module.finrank_pos⟩
+  have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  obtain ⟨hle, hge⟩ := h ū (ofExponentLEL hpn 2 u) hcont huū hfr (value_ofExponentLEL_ae hpn 2 u)
+    (iteratedGradient_ofExponentLEL_ae hpn 1 u)
+  refine Wkp.ext 2 (Lp.ext (huū.trans ?_ |>.trans (value_zero_ae 2).symm))
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
+  exact le_antisymm (hle x hx) (neg_nonpos.1 (hge x hx))
+
 /-- **Uniqueness for the Dirichlet problem with strong solutions.** Let `Ω ⊆ ℝ × E` be a bounded
 Lipschitz domain of dimension `n` and let `n ≤ p < ∞`. Let `A(x)` be positive definite,
 `⟪A(x) ξ, ξ⟫ > 0` for `ξ ≠ 0`, and let `c(x) ≤ 0`, for almost every `x ∈ Ω`. If
@@ -180,30 +216,16 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
     (heq : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x = 0) :
     u = 0 := by
-  obtain ⟨ū, hcont, huū, hfr⟩ :=
-    exists_continuousOn_closure_ae_eq_and_eqOn_frontier hp_top (hpn.trans_lt (by
-      rw [two_mul]
-      exact ENNReal.lt_add_right hp_top (zero_lt_one.trans_le Fact.out).ne')) hΩ hb hu0
   -- Apply the weak maximum principle to `v = u ∈ W^{2,n}(Ω)` and to `-v`.
-  have : Fact (1 ≤ (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)) :=
-    ⟨Nat.one_le_cast.2 Module.finrank_pos⟩
-  have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  set v := ofExponentLEL hpn 2 u
-  have hv : ⇑(value 2 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(value 2 u) :=
-    value_ofExponentLEL_ae hpn 2 u
-  have hvū := hv.trans huū
-  have hD : ⇑(iteratedGradient 1 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))]
-      ⇑(iteratedGradient 1 u) :=
-    iteratedGradient_ofExponentLEL_ae hpn 1 u
-  have hle : ∀ x ∈ Omega, ū x ≤ 0 := fun x hx =>
-    PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier hb rfl v hcont hvū hA hc
+  refine eq_zero_of_forall_le_zero_and_neg_le_zero hp_top hpn hΩ hb hu0
+    fun ū v hcont huū hfr hv hD => ⟨fun x hx => ?_, fun x hx => ?_⟩
+  · exact PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier hb rfl v hcont
+      (hv.trans huū) hA hc
       (by
         filter_upwards [heq, hD, hv] with y hy hDy hvy
         rw [hDy, hvy, hy]) le_rfl (fun z hz => (hfr hz).le) hx
-  have hge : ∀ x ∈ Omega, -ū x ≤ 0 := fun x hx =>
-    PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier (ū := -ū) hb rfl (-v)
-      hcont.neg ((value_neg_ae 2 v).trans hvū.neg) hA hc
+  · exact PDE.le_of_traceCLM_comp_iteratedGradient_add_mul_nonneg_le_frontier (ū := -ū) hb rfl
+      (-v) hcont.neg ((value_neg_ae 2 v).trans (hv.trans huū).neg) hA hc
       (by
         filter_upwards [heq, hD, hv, value_neg_ae 2 v,
           iteratedGradient_neg_ae 1 v] with y hy hDy hvy hnv hnD
@@ -211,11 +233,6 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_mul_eq_zero (hp_top : p �
         rw [ContinuousLinearMap.comp_neg, map_neg]
         linarith)
       le_rfl (fun z hz => by simp [hfr hz]) hx
-  refine valueL_injective 2 ?_
-  rw [map_zero, valueL_apply]
-  refine Lp.ext (huū.trans ?_ |>.trans (Lp.coeFn_zero _ _ _).symm)
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-  exact le_antisymm (hle x hx) (neg_nonpos.1 (hge x hx))
 
 /-- **Uniqueness for the Dirichlet problem with strong solutions and a drift.** Let `Ω ⊆ ℝ × E` be a
 bounded Lipschitz domain of dimension `n` and let `n < p < ∞`. Let `A(x)` be positive definite,
@@ -241,45 +258,30 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_zero (hp_
       traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) +
         ⟪b x, iteratedGradient 0 (lowerOrder 1 u) x⟫_ℝ + c x * value 2 u x = 0) :
     u = 0 := by
-  obtain ⟨ū, hcont, huū, hfr⟩ :=
-    exists_continuousOn_closure_ae_eq_and_eqOn_frontier hp_top (hpn.le.trans_lt (by
-      rw [two_mul]
-      exact ENNReal.lt_add_right hp_top (zero_lt_one.trans_le Fact.out).ne')) hΩ hb hu0
+  -- Apply the weak maximum principle with drift to `v = u ∈ W^{2,n}(Ω)` and to `-v`.
+  refine eq_zero_of_forall_le_zero_and_neg_le_zero hp_top hpn.le hΩ hb hu0
+    fun ū v hcont huū hfr hv hD => ?_
   -- By Morrey's embedding, `ū` is `C¹` in `Ω`.
   have hdiff : ContDiffOn ℝ 1 ū Omega := by
     obtain ⟨q, rfl⟩ : ∃ q : ℝ≥0, (q : ℝ≥0∞) = p := ⟨p.toNNReal, ENNReal.coe_toNNReal hp_top⟩
     exact contDiffOn_of_value_ae_eq_of_isLipschitzDomainWith_image (j := 1)
       (LinearIsometryEquiv.refl ℝ (WithLp 2 (ℝ × E))) (by simpa using hΩ) hb
       (by exact_mod_cast hpn) u (hcont.mono subset_closure) huū
-  -- Apply the weak maximum principle with drift to `v = u ∈ W^{2,n}(Ω)` and to `-v`.
-  have : Fact (1 ≤ (finrank ℝ (WithLp 2 (ℝ × E)) : ℝ≥0∞)) :=
-    ⟨Nat.one_le_cast.2 Module.finrank_pos⟩
-  have : IsFiniteMeasure (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))) :=
-    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
-  set v := ofExponentLEL hpn.le 2 u
-  have hv : ⇑(value 2 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(value 2 u) :=
-    value_ofExponentLEL_ae hpn.le 2 u
-  have hvū := hv.trans huū
-  have hD : ⇑(iteratedGradient 1 v) =ᵐ[volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))]
-      ⇑(iteratedGradient 1 u) :=
-    iteratedGradient_ofExponentLEL_ae hpn.le 1 u
   have hG : ⇑(iteratedGradient 0 (lowerOrder 1 v)) =ᵐ[volume.restrict
-      (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(iteratedGradient 0 (lowerOrder 1 u)) := by
-    rw [lowerOrder_ofExponentLEL]
-    exact iteratedGradient_ofExponentLEL_ae hpn.le 0 _
+      (Omega : Set (WithLp 2 (ℝ × E)))] ⇑(iteratedGradient 0 (lowerOrder 1 u)) :=
+    iteratedGradient_ae_eq_of_value_ae_eq 0 (by simpa only [value_succ] using hv)
   have hGneg : ⇑(iteratedGradient 0 (lowerOrder 1 (-v))) =ᵐ[volume.restrict
       (Omega : Set (WithLp 2 (ℝ × E)))] -⇑(iteratedGradient 0 (lowerOrder 1 v)) := by
     rw [← lowerOrderL_apply, map_neg, lowerOrderL_apply]
     exact iteratedGradient_neg_ae 0 _
-  have hle : ∀ x ∈ Omega, ū x ≤ 0 := fun x hx =>
-    PDE.le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontier hb rfl v hcont
-      hvū hdiff hA hbA hc
+  refine ⟨fun x hx => ?_, fun x hx => ?_⟩
+  · exact PDE.le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontier hb rfl v
+      hcont (hv.trans huū) hdiff hA hbA hc
       (by
         filter_upwards [heq, hD, hv, hG] with y hy hDy hvy hGy
         rw [hDy, hvy, hGy, hy]) le_rfl (fun z hz => (hfr hz).le) hx
-  have hge : ∀ x ∈ Omega, -ū x ≤ 0 := fun x hx =>
-    PDE.le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontier (ū := -ū) hb rfl
-      (-v) hcont.neg ((value_neg_ae 2 v).trans hvū.neg) hdiff.neg hA hbA hc
+  · exact PDE.le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_nonneg_le_frontier (ū := -ū) hb
+      rfl (-v) hcont.neg ((value_neg_ae 2 v).trans (hv.trans huū).neg) hdiff.neg hA hbA hc
       (by
         filter_upwards [heq, hD, hv, hG, value_neg_ae 2 v, iteratedGradient_neg_ae 1 v,
           hGneg] with y hy hDy hvy hGy hnv hnD hnG
@@ -287,11 +289,6 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_zero (hp_
         rw [ContinuousLinearMap.comp_neg, map_neg, inner_neg_right]
         linarith)
       le_rfl (fun z hz => by simp [hfr hz]) hx
-  refine valueL_injective 2 ?_
-  rw [map_zero, valueL_apply]
-  refine Lp.ext (huū.trans ?_ |>.trans (Lp.coeFn_zero _ _ _).symm)
-  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
-  exact le_antisymm (hle x hx) (neg_nonpos.1 (hge x hx))
 
 /-- On a bounded open set, if `A` is continuous within `Ω` and positive definite at every point of
 `closure Ω` and the drift `b` is bounded, then `|b|ⁿ / det S` is integrable over `Ω`, for the
@@ -389,11 +386,8 @@ theorem eq_zero_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq_zero_of_c
     hqn hL hΩ hpos (lintegral_ofReal_norm_pow_div_det_ne_top hΩ hcont hell hbβ) hc0 hv0 (by
       filter_upwards [heq, hv, hvD, hvG] with x hx hvx hDx hGx
       rw [hvx, hDx, hGx, hx])
-  refine valueL_injective 2 ?_
-  rw [map_zero, valueL_apply]
-  refine Lp.ext (hv.symm.trans ?_ |>.trans (Lp.coeFn_zero _ _ _).symm)
-  rw [hv']
-  exact value_zero_ae 2
+  rw [hv'] at hv
+  exact Wkp.ext 2 (Lp.ext (hv.symm.trans (value_zero_ae 2) |>.trans (value_zero_ae 2).symm))
 
 /-- **The operator of the Dirichlet problem is bounded.** Let `Ω ⊆ ℝ × E` be a bounded open set,
 let `A` be continuous within `Ω` at every point of `closure Ω`, and let `b` and `c` be measurable
