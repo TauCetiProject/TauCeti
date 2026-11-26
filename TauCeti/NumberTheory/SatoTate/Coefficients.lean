@@ -35,8 +35,8 @@ theory it becomes:
 * on `O(d)` the coefficients are real and `a_(d-i) = (-1)^d det(g) a_i`.
 
 The power sums `s_k(g) = tr (g^k)` and the coefficients are related by **Newton's identities**
-`k a_k = -(a_(k-1) s_1 + ⋯ + a_0 s_k)`; since `a_0 = 1`, every `s_k` with `k ≥ 1` is the universal
-integer polynomial `TauCeti.newtonTracePolynomial k` in `a_1, …, a_k`.
+`k a_k = -(a_(k-1) s_1 + ⋯ + a_0 s_k)`, and every `s_k` is `(-1)^k` times the integer Newton
+polynomial `TauCeti.newtonMvPolynomial ℤ d k` in `a_1, …, a_d`.
 
 ## Main definitions
 
@@ -115,8 +115,8 @@ theorem coeff_eq_neg_one_pow_mul_esymm (g : U d) (i : ℕ) :
 `det (T - g)`. -/
 theorem coeff_dim_sub_eq_coeff_charpoly (g : U d) {i : ℕ} (hi : i ≤ d) :
     coeff g (d - i) = (g : Matrix (Fin d) (Fin d) ℂ).charpoly.coeff i := by
-  rw [coeff_def, charpolyRev_eq_reflect, Polynomial.coeff_reflect, Fintype.card_fin,
-    Polynomial.revAt_le (Nat.sub_le d i), Nat.sub_sub_self hi]
+  simpa [coeff_def] using
+    coeff_charpolyRev_card_sub (g : Matrix (Fin d) (Fin d) ℂ) (k := i) (by simpa)
 
 /-- Each coefficient `a_i` is continuous on `U(d)`. -/
 @[continuity, fun_prop]
@@ -137,7 +137,7 @@ eigenvalues of a unitary matrix are closed under `λ ↦ (conj λ)⁻¹`. -/
 theorem coeff_dim_sub (g : U d) {i : ℕ} (hi : i ≤ d) :
     coeff g (d - i) = (-1) ^ d * (g : Matrix (Fin d) (Fin d) ℂ).det * conj (coeff g i) := by
   set M := (g : Matrix (Fin d) (Fin d) ℂ)
-  have hdet : star M.det * M.det = 1 := (det_of_mem_unitary g.property).1
+  have hdet : conj M.det * M.det = 1 := (det_of_mem_unitary g.property).1
   have hdet0 : M.det ≠ 0 := right_ne_zero_of_mul_eq_one hdet
   -- `g⁻¹ = gᴴ`, whose characteristic polynomial is the conjugate of that of `g`; compare
   -- coefficients in `charpoly g⁻¹ = (-1)^d (det g)⁻¹ det (1 - T g)`.
@@ -147,14 +147,14 @@ theorem coeff_dim_sub (g : U d) {i : ℕ} (hi : i ≤ d) :
     ext i j
     simp [M]
   have hC : (-1 : Polynomial ℂ) ^ d * Polynomial.C M.det⁻¹ = Polynomial.C ((-1) ^ d * M.det⁻¹) := by
-    rw [Polynomial.C_mul, Polynomial.C_pow, Polynomial.C_neg, Polynomial.C_1]
+    simp
   simp only [hinv, charpoly_map, charpoly_transpose, Polynomial.coeff_map, Fintype.card_fin,
     Ring.inverse_eq_inv', hC, Polynomial.coeff_C_mul] at h
   rw [← coeff_dim_sub_eq_coeff_charpoly g hi, ← coeff_def] at h
   have h' := congrArg conj h
   rw [Complex.conj_conj] at h'
-  rw [h', map_mul, map_mul, map_pow, map_neg, map_one, map_inv₀, starRingEnd_apply,
-    inv_eq_of_mul_eq_one_right hdet]
+  rw [h']
+  simp [inv_eq_of_mul_eq_one_right hdet]
 
 /-- **Palindromy on `USp(d)`.** For even `d` and `g ∈ USp(d)`, `a_(d-i)(g) = a_i(g)` for `i ≤ d`:
 a symplectic matrix has the same characteristic polynomial as its inverse. -/
@@ -198,13 +198,17 @@ theorem mul_coeff_eq_neg_sum (g : U d) (k : ℕ) :
       coeff g (k - (j + 1)) * ((g : Matrix (Fin d) (Fin d) ℂ) ^ (j + 1)).trace :=
   (g : Matrix (Fin d) (Fin d) ℂ).mul_coeff_charpolyRev_eq_neg_sum k
 
-/-- **The power sums are integer polynomials in the coefficients.** For `k ≥ 1`,
-`s_k(g) = tr (g^k)` is the universal integer polynomial `TauCeti.newtonTracePolynomial k`, which
-involves only `a_1, …, a_k`, evaluated at the coefficients of `g`. -/
-theorem trace_pow_eq_aeval_coeff (g : U d) {k : ℕ} (hk : 0 < k) :
+/-- **The power sums are integer polynomials in the coefficients.** `s_k(g) = tr (g^k)` is
+`(-1)^k` times the integer Newton polynomial `TauCeti.newtonMvPolynomial ℤ d k` evaluated at the
+coefficients `a_1(g), …, a_d(g)`. -/
+theorem trace_pow_eq_aeval_coeff (g : U d) (k : ℕ) :
     ((g : Matrix (Fin d) (Fin d) ℂ) ^ k).trace =
-      MvPolynomial.aeval (coeff g) (newtonTracePolynomial k) :=
-  (g : Matrix (Fin d) (Fin d) ℂ).trace_pow_eq_aeval_newtonTracePolynomial hk
+      (-1) ^ k *
+        MvPolynomial.aeval (fun j : Fin d ↦ coeff g (j + 1)) (newtonMvPolynomial ℤ d k) := by
+  have h := ((g : Matrix (Fin d) (Fin d) ℂ).trace_pow_eq_aeval_newtonMvPolynomial k).trans
+    (aeval_neg_one_pow_mul_newtonMvPolynomial _)
+  rw [Fintype.card_fin] at h
+  simpa [coeff_def] using h
 
 /-- The coefficient vector `(a_0(g), a_1(g), …, a_d(g))` of `g ∈ U(d)`. -/
 noncomputable def coeffVec (g : U d) : Fin (d + 1) → ℂ :=

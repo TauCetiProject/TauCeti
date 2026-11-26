@@ -33,6 +33,8 @@ the dimension.
 * `Matrix.coeff_charpolyRev`: the `k`-th coefficient is `(-1) ^ k` times the sum of the `k × k`
   principal minors. In particular the constant coefficient is `1` and the coefficient in degree
   `Fintype.card ι` is `(-1) ^ Fintype.card ι * det A`.
+* `Matrix.coeff_charpolyRev_card_sub`: the coefficient in degree `Fintype.card ι - k` is the
+  coefficient of `X ^ k` in the characteristic polynomial.
 * `Matrix.eval_charpolyRev_eq_det_one_sub_smul`: the value of `det (1 - X A)` at `X = t` is
   `det (1 - t A)`; at `X = 1` this is `Matrix.eval_one_charpolyRev`.
 * `Matrix.charpolyRev_map`, `Matrix.charpolyRev_transpose`, `Matrix.charpolyRev_reindex`:
@@ -105,13 +107,18 @@ theorem coeff_charpolyRev (A : Matrix ι ι R) (k : ℕ) :
 theorem coeff_charpolyRev_zero (A : Matrix ι ι R) : A.charpolyRev.coeff 0 = 1 := by
   rw [coeff_zero_eq_eval_zero, eval_charpolyRev]
 
+/-- For `k ≤ Fintype.card ι`, the coefficient of `det (1 - X A)` in degree `Fintype.card ι - k` is
+the coefficient of `X ^ k` in the characteristic polynomial of `A`. -/
+theorem coeff_charpolyRev_card_sub (A : Matrix ι ι R) {k : ℕ} (hk : k ≤ Fintype.card ι) :
+    A.charpolyRev.coeff (Fintype.card ι - k) = A.charpoly.coeff k := by
+  rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le (Nat.sub_le _ _), Nat.sub_sub_self hk]
+
 /-- The coefficient of `det (1 - X A)` in degree `Fintype.card ι` is `(-1) ^ Fintype.card ι` times
 the determinant of `A`. -/
 theorem coeff_charpolyRev_card (A : Matrix ι ι R) :
     A.charpolyRev.coeff (Fintype.card ι) = (-1) ^ Fintype.card ι * A.det := by
-  rw [charpolyRev_eq_reflect, coeff_reflect, revAt_le le_rfl, Nat.sub_self,
-    det_eq_sign_charpoly_coeff]
-  simp [← mul_assoc, ← mul_pow]
+  simpa [det_eq_sign_charpoly_coeff, ← mul_assoc, ← mul_pow] using
+    A.coeff_charpolyRev_card_sub (Nat.zero_le _)
 
 /-- Evaluating `det (1 - X A)` at `X = t` gives `det (1 - t A)`. -/
 theorem eval_charpolyRev_eq_det_one_sub_smul (A : Matrix ι ι R) (t : R) :
