@@ -44,28 +44,6 @@ namespace TauCeti
 /-- The discriminant of a monic quadratic in terms of its two lower coefficients. -/
 private def quadDiscr (p : ℤ × ℤ) : ℤ := p.1 ^ 2 - 4 * p.2
 
-/-- In an interval `(-c, c)` with `c ≥ 1`, at most `(8 c - 1) / q + 1` integers `b` have
-`q ∣ t - 4 b`: the map `b ↦ t - 4 b` sends them injectively to multiples of `q` in an interval
-with `8 c - 1` integers. -/
-private theorem card_filter_dvd_sub_four_mul_le (t : ℤ) {q c : ℤ} (hq : 0 < q) (hc : 1 ≤ c) :
-    (#{b ∈ Ioo (-c) c | q ∣ t - 4 * b} : ℝ) ≤ (8 * c - 1) / q + 1 := by
-  have hinj : #{b ∈ Ioo (-c) c | q ∣ t - 4 * b} ≤
-      #{v ∈ Ico (t - 4 * c + 1) (t + 4 * c) | v ≡ 0 [ZMOD q]} := by
-    refine card_le_card_of_injOn (fun b ↦ t - 4 * b) (fun b hb ↦ ?_) fun b _ b' _ h ↦ ?_
-    · simp only [coe_filter, mem_Ioo, Set.mem_ofPred_eq] at hb
-      simp only [coe_filter, mem_Ico, Set.mem_ofPred_eq, Int.modEq_zero_iff_dvd]
-      exact ⟨⟨by omega, by omega⟩, hb.2⟩
-    · simp only at h
-      omega
-  have hle := Int.card_Ico_filter_modEq_le hq (show t - 4 * c + 1 ≤ t + 4 * c by omega) 0
-  have hle' : (#{v ∈ Ico (t - 4 * c + 1) (t + 4 * c) | v ≡ 0 [ZMOD q]} : ℝ) ≤
-      (8 * c - 1) / q + 1 := by
-    have := (Rat.cast_le (K := ℝ)).mpr hle
-    push_cast at this
-    convert this using 2
-    ring
-  exact (Nat.cast_le.mpr hinj).trans hle'
-
 variable {X : ℝ}
 
 /-- A quadratic discriminant with `|a| < X` and `|b| < X^2` has absolute value at most
@@ -100,7 +78,8 @@ private theorem sum_squareDivisorMultiplicity_quadDiscr_le (M : ℕ) (hX : 1 ≤
     exact ncard_setOf_abs_intCast_lt_le hX
   have hN : (#(Ioc M N) : ℝ) ≤ 4 * X := by
     rw [Nat.card_Ioc]
-    have := Nat.ceil_lt_add_one (show 0 ≤ 3 * X by linarith)
+    have h3X : 0 ≤ 3 * X := by linarith
+    have := Nat.ceil_lt_add_one h3X
     have : ((N - M : ℕ) : ℝ) ≤ N := by exact_mod_cast Nat.sub_le N M
     linarith
   have hinv : ∑ m ∈ Ioc M N, ((m : ℝ) ^ 2)⁻¹ ≤ 2 / (M + 1) :=
@@ -110,9 +89,13 @@ private theorem sum_squareDivisorMultiplicity_quadDiscr_le (M : ℕ) (hX : 1 ≤
   have hfib (a : ℤ) {m : ℕ} (hm : 0 < m) :
       (#{b ∈ B | ((m : ℤ) ^ 2) ∣ a ^ 2 - 4 * b} : ℝ) ≤ 15 * X ^ 2 * ((m : ℝ) ^ 2)⁻¹ + 1 := by
     have hc : (1 : ℤ) ≤ ⌈X ^ 2⌉ := Int.one_le_ceil_iff.mpr (by linarith)
-    refine (card_filter_dvd_sub_four_mul_le (a ^ 2) (by positivity) hc).trans ?_
+    have hq : (0 : ℤ) < (m : ℤ) ^ 2 := by positivity
+    have h := Int.card_Ioo_filter_dvd_sub_mul_le (a ^ 2) four_pos hq hc
+    have h' : (#{b ∈ B | ((m : ℤ) ^ 2) ∣ a ^ 2 - 4 * b} : ℝ) ≤
+        (2 * 4 * ⌈X ^ 2⌉ - 1) / (m : ℝ) ^ 2 + 1 := by
+      exact_mod_cast h
+    refine h'.trans ?_
     have := Int.ceil_lt_add_one (X ^ 2)
-    push_cast
     rw [div_eq_mul_inv]
     gcongr
     linarith
@@ -138,8 +121,9 @@ private theorem sum_squareDivisorMultiplicity_quadDiscr_le (M : ℕ) (hX : 1 ≤
 /-- The discriminant of a monic quadratic `x^2 + a x + b` is `a^2 - 4 b`. -/
 private theorem discr_eq_quadDiscr {f : ℤ[X]} (hm : f.Monic) (hd : f.natDegree = 2) :
     f.discr = quadDiscr (f.coeff 1, f.coeff 0) := by
-  rw [discr_of_degree_eq_two ((degree_eq_iff_natDegree_eq hm.ne_zero).mpr hd), quadDiscr,
-    show f.coeff 2 = 1 from hd ▸ hm.coeff_natDegree, mul_one]
+  have h2 : f.coeff 2 = 1 := hd ▸ hm.coeff_natDegree
+  rw [discr_of_degree_eq_two ((degree_eq_iff_natDegree_eq hm.ne_zero).mpr hd), quadDiscr, h2,
+    mul_one]
 
 /-- A monic quadratic is determined by its two lower coefficients. -/
 private theorem injOn_coeff_one_coeff_zero (X : ℝ) :
