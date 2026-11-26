@@ -20,8 +20,9 @@ then draw an i.i.d. path from it.
 
 This file supplies evaluation on measurable events, the point-mass and zero cases, the total mass
 and preservation of finite and probability measures, additivity and homogeneity in the mixing
-measure, and compatibility with coordinatewise measurable pushforwards. The symmetry and uniqueness
-properties of the mixture belong in `TauCeti.Probability.DeFinetti.Barycenter`.
+measure, measurability in the mixing measure, and compatibility with coordinatewise measurable
+pushforwards. The symmetry and uniqueness properties of the mixture belong in
+`TauCeti.Probability.DeFinetti.Barycenter`.
 
 ## References
 
@@ -130,6 +131,14 @@ theorem deFinettiBarycenter_add (π₁ π₂ : Measure (ProbabilityMeasure α)) 
 theorem deFinettiBarycenter_smul (c : ℝ≥0∞) (π : Measure (ProbabilityMeasure α)) :
     deFinettiBarycenter (c • π) = c • deFinettiBarycenter π :=
   Measure.bind_smul c π TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable
+
+/-- **The barycenter is measurable in the mixing law**, for the Giry measurable spaces: it is the
+join of the pushforward along the measurable power map `P ↦ P^{⊗ℕ}`. -/
+@[fun_prop]
+theorem measurable_deFinettiBarycenter :
+    Measurable (deFinettiBarycenter : Measure (ProbabilityMeasure α) → Measure (ℕ → α)) :=
+  Measure.measurable_join.comp
+    (Measure.measurable_map _ TauCeti.MeasureTheory.measurable_infinitePi_const)
 
 /-- **The barycenter is natural in the state space.** Pushing every coordinate of a barycenter
 forward by a measurable `f : α → β` gives the barycenter of the mixing law pushed forward by
