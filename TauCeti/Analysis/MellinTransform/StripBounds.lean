@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MellinTransform
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Bounds for Mellin transforms on closed strips
@@ -18,17 +19,14 @@ public section
 
 open Complex Filter MeasureTheory Set
 
--- Below one use the left edge as majorant; above one use the right edge.
 private theorem norm_mellinIntegrand_le_on_strip {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] (x : E) {a b u : ℝ} (hu : 0 < u) {s : ℂ} (hs : s.re ∈ Icc a b) :
     ‖(u : ℂ) ^ (s - 1) • x‖ ≤
       ‖(u : ℂ) ^ ((a : ℂ) - 1) • x‖ + ‖(u : ℂ) ^ ((b : ℂ) - 1) • x‖ := by
-  simp only [norm_smul, norm_cpow_eq_rpow_re_of_pos hu, sub_re, one_re, ofReal_re]
-  rcases le_or_gt u 1 with h | h
-  · refine le_add_of_le_of_nonneg (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)) (by positivity)
-    exact Real.rpow_le_rpow_of_exponent_ge hu h (sub_le_sub_right hs.1 _)
-  · refine le_add_of_nonneg_of_le (by positivity) (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
-    exact Real.rpow_le_rpow_of_exponent_le h.le (sub_le_sub_right hs.2 _)
+  simp only [norm_smul, ← add_mul, ← ofReal_one, ← ofReal_sub]
+  refine mul_le_mul_of_nonneg_right (norm_ofReal_cpow_le_add_of_re_mem_Icc hu ?_) (norm_nonneg _)
+  rw [sub_re, ofReal_re]
+  exact ⟨sub_le_sub_right hs.1 1, sub_le_sub_right hs.2 1⟩
 
 /-- Absolute convergence at both real edges gives absolute convergence at every point of the
 closed vertical strip. -/
