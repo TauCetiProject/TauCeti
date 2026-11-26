@@ -90,6 +90,8 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
   over `E` and `β ^ n` lies in `E` for some `n ≠ 0`, then `[L : E] ≤ n`.
 * `TauCeti.IntermediateField.finrank_eq_one_of_adjoin_eq_top_of_mem_bot`: if `L = K(y)` with `y`
   in the bottom intermediate field, then `[L : K] = 1`.
+* `TauCeti.IntermediateField.finrank_adjoin_add_inv_le_two`: if `ζ` generates `L` over `K`,
+  then `L` has degree at most `2` over `K(ζ + ζ⁻¹)`.
 
 ## Generating sets
 
@@ -395,5 +397,32 @@ theorem finrank_eq_one_of_adjoin_eq_top_of_mem_bot {K L : Type*} [Field K] [Fiel
     (hy : y ∈ (⊥ : IntermediateField K L)) : Module.finrank K L = 1 := by
   rw [IntermediateField.adjoin_simple_eq_bot_iff.2 hy] at hgen
   exact IntermediateField.bot_eq_top_iff_finrank_eq_one.mp hgen
+
+open Polynomial in
+/-- If `ζ` generates `L` over `K`, then `L` has degree at most `2` over `K(ζ + ζ⁻¹)`: for `ζ ≠ 0`,
+`ζ` is a root of `X ^ 2 - (ζ + ζ⁻¹) X + 1`, and it generates `L` over the larger field
+`K(ζ + ζ⁻¹)` as well. -/
+theorem finrank_adjoin_add_inv_le_two {K L : Type*} [Field K] [Field L] [Algebra K L] {ζ : L}
+    (hζ : IntermediateField.adjoin K {ζ} = ⊤) :
+    Module.finrank (IntermediateField.adjoin K {ζ + ζ⁻¹}) L ≤ 2 := by
+  set F := IntermediateField.adjoin K {ζ + ζ⁻¹}
+  have htop : IntermediateField.adjoin F {ζ} = ⊤ := by
+    refine IntermediateField.restrictScalars_injective K ?_
+    rw [IntermediateField.restrictScalars_adjoin, IntermediateField.restrictScalars_top,
+      eq_top_iff, ← hζ]
+    exact IntermediateField.adjoin.mono _ _ _ Set.subset_union_right
+  rcases eq_or_ne ζ 0 with rfl | hζ0
+  · exact (finrank_eq_one_of_adjoin_eq_top_of_mem_bot htop (zero_mem _)).trans_le one_le_two
+  set p : F[X] := X ^ 2 - C ⟨ζ + ζ⁻¹, IntermediateField.mem_adjoin_simple_self K _⟩ * X + 1
+  have hmonic : p.Monic := by unfold p; monicity!
+  have hroot : aeval ζ p = 0 := by
+    simp only [p, map_add, map_sub, map_mul, map_pow, aeval_X, aeval_C, map_one,
+      IntermediateField.algebraMap_apply]
+    field_simp
+    ring
+  rw [← IntermediateField.finrank_top', ← htop,
+    IntermediateField.adjoin.finrank ⟨_, hmonic, hroot⟩]
+  exact (natDegree_le_of_dvd (minpoly.dvd F ζ hroot) hmonic.ne_zero).trans
+    (by unfold p; compute_degree)
 
 end TauCeti.IntermediateField
