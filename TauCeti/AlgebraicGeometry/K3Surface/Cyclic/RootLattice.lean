@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.K3Surface.CyclicOrbitArithmetic
+public import TauCeti.AlgebraicGeometry.K3Surface.Cyclic.OrbitArithmetic
 public import TauCeti.LinearAlgebra.IntegralLattice.Discriminant.Pi
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Scaling
@@ -174,6 +174,12 @@ theorem IsK3CyclicOrbitData.mem_fixedPointTable {n : ℕ} {a : ℕ → ℕ}
       simp [hF]
 
 /-! ### Examples -/
+
+/-- Under the rank bound `19`, as in characteristic zero, the nonsquare hypothesis is vacuous and
+the order is at most `8`. -/
+example {n : ℕ} {a : ℕ → ℕ} (h : IsK3CyclicOrbitData n a) (hrank : cyclicRootRank n a ≤ 19) :
+    n ≤ 8 :=
+  h.le_eight_of_not_isSquare (by omega) fun h20 ↦ absurd h20 (by omega)
 
 /-- A symplectic involution: eight `A₁` points, an exceptional lattice `8 A₁(-1)` of determinant
 `2 ^ 8`. -/
