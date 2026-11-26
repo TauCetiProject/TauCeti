@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.FiniteDimensional.ScalarTower
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 public import TauCeti.RingTheory.SimpleModule.Basic
 
@@ -34,7 +35,10 @@ block of size three), which is why the full composition series is used.
 * `TauCeti.seriesSemisimplification s`: the product of the factors `s i.succ / s i.castSucc` of a
   composition series `s`.
 * `TauCeti.semisimplification R M`: the semisimplification of a module of finite length, the
-  product of the factors of a chosen composition series from `⊥` to `⊤`.
+  product of the factors of a chosen composition series from `⊥` to `⊤`. It is a `k`-module for
+  every `k`-module structure on `M` compatible with the `R`-action, such as that of a `k`-algebra
+  `R` (`TauCeti.semisimplification.instModule`), and for a field `k` it is finite-dimensional when
+  `M` is (`TauCeti.semisimplification.instFiniteDimensional`).
 
 ## Main results
 
@@ -98,9 +102,22 @@ transferred from the chosen series. -/
 noncomputable instance : AddCommGroup (semisimplification R M) :=
   inferInstanceAs (AddCommGroup (seriesSemisimplification _))
 
-/-- The module structure of `M^ss`, that of the product of the factors. -/
-noncomputable instance : Module R (semisimplification R M) :=
-  inferInstanceAs (Module R (seriesSemisimplification _))
+section ScalarTower
+
+variable {k : Type*} [Semiring k] [SMul k R] [Module k M] [IsScalarTower k R M]
+
+/-- The module structure of `M^ss`, that of the product of the factors, for every `k`-module
+structure on `M` compatible with the `R`-action (such as that of a `k`-algebra `R`). Taking
+`k = R` gives the `R`-module structure, so `M^ss` has one module instance for each ring of
+scalars. -/
+noncomputable instance semisimplification.instModule : Module k (semisimplification R M) :=
+  inferInstanceAs (Module k (seriesSemisimplification _))
+
+/-- The `k`- and `R`-actions on the semisimplification are compatible. -/
+instance semisimplification.instIsScalarTower : IsScalarTower k R (semisimplification R M) :=
+  inferInstanceAs (IsScalarTower k R (seriesSemisimplification _))
+
+end ScalarTower
 
 /-- The semisimplification is semisimple, as a product of simple modules. -/
 instance : IsSemisimpleModule R (semisimplification R M) :=
@@ -113,6 +130,17 @@ instance : IsNoetherian R (semisimplification R M) :=
 /-- The semisimplification is Artinian, as a finite product of simple modules. -/
 instance : IsArtinian R (semisimplification R M) :=
   inferInstanceAs (IsArtinian R (seriesSemisimplification _))
+
+section Algebra
+
+variable {k : Type*} [Field k] [Algebra k R] [Module k M] [IsScalarTower k R M]
+
+/-- The semisimplification of a finite-dimensional module is finite-dimensional. -/
+instance semisimplification.instFiniteDimensional [FiniteDimensional k M] :
+    FiniteDimensional k (semisimplification R M) :=
+  inferInstanceAs (FiniteDimensional k (seriesSemisimplification _))
+
+end Algebra
 
 /-- The semisimplification has the Jordan-Hölder multiplicities of the module. -/
 @[simp]
