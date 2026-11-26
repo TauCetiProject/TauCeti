@@ -21,7 +21,8 @@ algebras between the finite tensor products `⨂_{i ∈ S} A i`. Their direct li
 `TauCeti.RestrictedTensorAlgebra R A e he` is a nonunital `R`-algebra, the **restricted tensor
 product of the `A i` stabilized by the `e i`**: the product of two elements is computed at a common
 finite stage (`TauCeti.RestrictedTensorAlgebra.ofFinite_mul_ofFinite`), where pure tensors multiply
-factorwise (`TauCeti.RestrictedTensorAlgebra.ofFinite_tprod_mul_ofFinite_tprod`). As a module it is
+factorwise (`TauCeti.RestrictedTensorAlgebra.ofFinite_tprod_mul_ofFinite_tprod`,
+`TauCeti.RestrictedTensorAlgebra.tprod_mul_tprod`). As a module it is
 the restricted tensor product `TauCeti.RestrictedTensor R A e`
 (`TauCeti.RestrictedTensorAlgebra.linearEquiv`). Morphisms of nonunital algebras out of it
 correspond to compatible morphisms out of the finite stages
@@ -33,6 +34,7 @@ correspond to compatible morphisms out of the finite stages
   algebras.
 * `TauCeti.RestrictedTensorAlgebra R A e he`: the restricted tensor product algebra.
 * `TauCeti.RestrictedTensorAlgebra.ofFinite`: the inclusion of a finite stage.
+* `TauCeti.RestrictedTensorAlgebra.tprod`: restricted pure tensors.
 * `TauCeti.RestrictedTensorAlgebra.lift`: the universal property.
 * `TauCeti.RestrictedTensorAlgebra.linearEquiv`: the identification with
   `TauCeti.RestrictedTensor R A e` as modules.
@@ -45,8 +47,7 @@ correspond to compatible morphisms out of the finite stages
 * `TauCeti.RestrictedTensorAlgebra.ofFinite_eq_ofFinite_iff`: equality is detected at a common
   finite stage.
 * `TauCeti.RestrictedTensorAlgebra.linearEquiv_ofFinite`: the identification on finite stages.
-* `TauCeti.RestrictedTensorAlgebra.linearEquiv_symm_tprod_mul_linearEquiv_symm_tprod`: restricted
-  pure tensors multiply factorwise.
+* `TauCeti.RestrictedTensorAlgebra.tprod_mul_tprod`: restricted pure tensors multiply factorwise.
 
 ## References
 
@@ -176,8 +177,8 @@ theorem ofFinite_mul_ofFinite {S T : Finset ι} (x : ⨂[R] i : S, A i) (y : ⨂
 @[simp]
 theorem ofFinite_tprod_mul_ofFinite_tprod (S : Finset ι) (f g : ∀ i : S, A i) :
     ofFinite he S (⨂ₜ[R] i, f i) * ofFinite he S (⨂ₜ[R] i, g i) =
-      ofFinite he S (⨂ₜ[R] i, (f * g) i) := by
-  rw [← map_mul, PiTensorProduct.tprod_mul_tprod]
+      ofFinite he S (⨂ₜ[R] i, f i * g i) := by
+  rw [← map_mul, PiTensorProduct.tprod_mul_tprod, Pi.mul_def]
 
 variable (he) in
 /-- As a module, the restricted tensor product algebra is the restricted tensor product of the
@@ -217,20 +218,43 @@ theorem ofFinite_eq_ofFinite_iff {S T : Finset ι} (x : ⨂[R] i : S, A i) (y : 
   rw [← (linearEquiv he).injective.eq_iff, linearEquiv_ofFinite, linearEquiv_ofFinite,
     RestrictedTensor.ofFinite_eq_ofFinite_iff]
 
+variable (R he) in
+/-- The restricted pure tensor `⨂ₜ f` of a family `f` equal to the idempotents `e` at all but
+finitely many places, computed at the finite stage of the places where `f` differs from `e`. -/
+def tprod (f : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite) : RestrictedTensorAlgebra R A e he :=
+  ofFinite he hf.toFinset (⨂ₜ[R] i, f i)
+
+/-- The identification with the restricted tensor product on restricted pure tensors. -/
+@[simp]
+theorem linearEquiv_tprod (f : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite) :
+    linearEquiv he (tprod R he f hf) = RestrictedTensor.tprod R e f hf := by
+  rw [tprod, linearEquiv_ofFinite, RestrictedTensor.tprod_eq_ofFinite f hf hf.toFinset (by simp)]
+
+/-- The inverse identification on restricted pure tensors. -/
+@[simp]
+theorem linearEquiv_symm_tprod (f : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite) :
+    (linearEquiv he).symm (RestrictedTensor.tprod R e f hf) = tprod R he f hf := by
+  rw [LinearEquiv.symm_apply_eq, linearEquiv_tprod]
+
+/-- A restricted pure tensor can be computed at any finite stage containing the places where the
+family differs from the idempotents. -/
+theorem tprod_eq_ofFinite (f : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite) (S : Finset ι)
+    (hS : ∀ i ∉ S, f i = e i) : tprod R he f hf = ofFinite he S (⨂ₜ[R] i, f i) := by
+  rw [← linearEquiv_symm_tprod, RestrictedTensor.tprod_eq_ofFinite f hf S hS,
+    linearEquiv_symm_ofFinite]
+
 /-- **Restricted pure tensors multiply factorwise**: `(⨂ f i) (⨂ g i) = ⨂ f i g i`. -/
-theorem linearEquiv_symm_tprod_mul_linearEquiv_symm_tprod (f g : ∀ i, A i)
-    (hf : {i | f i ≠ e i}.Finite) (hg : {i | g i ≠ e i}.Finite) :
-    (linearEquiv he).symm (RestrictedTensor.tprod R e f hf) *
-        (linearEquiv he).symm (RestrictedTensor.tprod R e g hg) =
-      (linearEquiv he).symm (RestrictedTensor.tprod R e (f * g) (finite_mul_ne he hf hg)) := by
+@[simp]
+theorem tprod_mul_tprod (f g : ∀ i, A i) (hf : {i | f i ≠ e i}.Finite)
+    (hg : {i | g i ≠ e i}.Finite) :
+    tprod R he f hf * tprod R he g hg = tprod R he (f * g) (finite_mul_ne he hf hg) := by
   have hfS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, f i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).1
   have hgS : ∀ i ∉ hf.toFinset ∪ hg.toFinset, g i = e i := fun i hi ↦ by
     simpa using (Finset.notMem_union.mp hi).2
-  rw [RestrictedTensor.tprod_eq_ofFinite f hf _ hfS, RestrictedTensor.tprod_eq_ofFinite g hg _ hgS,
-    RestrictedTensor.tprod_eq_ofFinite (f * g) _ _ fun i hi ↦ by
+  rw [tprod_eq_ofFinite f hf _ hfS, tprod_eq_ofFinite g hg _ hgS,
+    tprod_eq_ofFinite (f * g) (finite_mul_ne he hf hg) _ fun i hi ↦ by
       rw [Pi.mul_apply, hfS i hi, hgS i hi, (he i).eq],
-    linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite, linearEquiv_symm_ofFinite,
     ofFinite_tprod_mul_ofFinite_tprod]
   simp only [Pi.mul_apply]
 
