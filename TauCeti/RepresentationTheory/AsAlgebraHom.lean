@@ -57,6 +57,9 @@ the group algebra to the vanishing of the norm map.
 * `Representation.asAlgebraHom_domCongr` and `Representation.asAlgebraHom_eq_sum`: the action of
   a transported element is the action through the pulled-back representation, and over a finite
   monoid the action of `x` is `∑ g, x g • ρ g`.
+* `Representation.asAlgebraHom_apply` and `Representation.apply_asAlgebraHom_apply`: over any
+  monoid, `a` sends `x` to the finite sum `Σ_g a_g ρ(g) x`, and the translate by `g` of this
+  vector is `Σ_{g'} a_{g'} ρ(g g') x`.
 * `Representation.asAlgebraHom_directSum`: the monoid algebra acts on a direct sum summand by
   summand.
 * `Representation.asAlgebraHom_trivial`: an element of the monoid algebra acts on the trivial
@@ -160,6 +163,19 @@ theorem asAlgebraHom_domCongr {H : Type*} [Monoid H] (ρ : Representation k H V)
 theorem asAlgebraHom_eq_sum [Fintype G] (ρ : Representation k G V) (x : MonoidAlgebra k G) :
     ρ.asAlgebraHom x = ∑ g, x.coeff g • ρ g := by
   simp [Representation.asAlgebraHom_def, MonoidAlgebra.lift_apply, Finsupp.sum_fintype]
+
+/-- **The action of an element of the monoid algebra on a vector** is the finite combination
+`Σ_g a_g ρ(g) x` of the translates of `x`, weighted by the coefficients of `a`. Unlike
+`asAlgebraHom_eq_sum`, this needs no finiteness of `G`. -/
+theorem asAlgebraHom_apply (ρ : Representation k G V) (a : MonoidAlgebra k G) (x : V) :
+    ρ.asAlgebraHom a x = a.coeff.sum fun g c ↦ c • ρ g x := by
+  simp [asAlgebraHom_def, MonoidAlgebra.lift_apply, Finsupp.sum, LinearMap.coe_sum,
+    Finset.sum_apply]
+
+/-- The translate by `g` of the action of `a` on `x` is `Σ_{g'} a_{g'} ρ(g g') x`. -/
+theorem apply_asAlgebraHom_apply (ρ : Representation k G V) (a : MonoidAlgebra k G) (g : G)
+    (x : V) : ρ g (ρ.asAlgebraHom a x) = a.coeff.sum fun g' c ↦ c • ρ (g * g') x := by
+  simp [asAlgebraHom_apply, Finsupp.sum, map_mul]
 
 /-- **The monoid algebra acts on a direct sum summand by summand.** The linear extension of the
 direct-sum representation to `k[G]` is the direct sum of the linear extensions of the
