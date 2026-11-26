@@ -9,7 +9,6 @@ public import TauCeti.Analysis.ODE.DiracCoefficient
 public import TauCeti.Analysis.ODE.Propagator.Holomorphic.Basic
 public import TauCeti.Analysis.ODE.Propagator.Liouville
 public import Mathlib.Analysis.CStarAlgebra.Matrix
-import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import TauCeti.Analysis.Matrix.EuclideanLin
 import TauCeti.Analysis.ODE.Propagator.Parameter
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -51,9 +50,7 @@ initial value `(1, 0)`, and its second column `(B, D)` the Dirichlet solution, w
 * `TauCeti.det_diracFundamentalMatrix`: `det M_q(t, z) = 1`, by Liouville's formula, since the
   coefficient is trace-free (`TauCeti.trace_diracCoeff`);
 * `TauCeti.diracFundamentalMatrix_zero_potential`: for `q = 0`,
-  `M_0(t, z) = [[cos tz, -sin tz], [sin tz, cos tz]]`;
-* `TauCeti.diracFundamentalMatrix_ofReal_const_zero`: for a real constant `q = c`,
-  `M_c(t, 0) = diag(e^{ct}, e^{-ct})`, which fixes the sign convention of the system.
+  `M_0(t, z) = [[cos tz, -sin tz], [sin tz, cos tz]]`.
 
 ## Implementation notes
 
@@ -299,25 +296,5 @@ theorem diracFundamentalMatrix_zero_potential (t : ℝ) (z : ℂ) :
   rw [diracFundamentalMatrix, hP, hX, map_add, map_smul, map_smul, map_one, diracGen,
     StarAlgEquiv.symm_apply_apply]
   simp [← Matrix.ext_iff, Fin.forall_fin_two]
-
-open scoped Matrix.Norms.L2Operator in
-/-- **A real constant potential at `z = 0`.** For `q = c` real, the fundamental matrix at the
-spectral parameter `0` is `M_c(t, 0) = diag(e^{ct}, e^{-ct})`. The opposite sign convention
-`Ω X' = z X + Q_q X` would give `diag(e^{-ct}, e^{ct})`. -/
-theorem diracFundamentalMatrix_ofReal_const_zero (c t : ℝ) :
-    diracFundamentalMatrix (fun _ ↦ (c : ℂ)) t 0 =
-      !![(Real.exp (c * t) : ℂ), 0; 0, (Real.exp (-(c * t)) : ℂ)] := by
-  have hP : (fun s ↦ toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diracCoeff (fun _ ↦ (c : ℂ)) 0 s)) =
-      fun _ ↦ (c : ℂ) • toEuclideanCLM (n := Fin 2) (𝕜 := ℂ) (diagonal ![1, -1]) := by
-    ext1 s
-    rw [← map_smul]
-    congr 1
-    simp [diracCoeff_def, ← Matrix.ext_iff, Fin.forall_fin_two]
-  -- `M_c(t, 0)` is the exponential of the diagonal matrix `t c diag(1, -1)`.
-  let +nondep : NormedAlgebra ℚ (Matrix (Fin 2) (Fin 2) ℂ) := .restrictScalars ℚ ℂ _
-  rw [diracFundamentalMatrix, hP, propagator_smul_const, ← map_smul,
-    ← NormedSpace.map_exp _ continuous_toEuclideanCLM, StarAlgEquiv.symm_apply_apply,
-    ← diagonal_smul, exp_diagonal]
-  simp [← Matrix.ext_iff, Fin.forall_fin_two, ← Complex.exp_eq_exp_ℂ, Complex.ofReal_exp, mul_comm]
 
 end TauCeti
