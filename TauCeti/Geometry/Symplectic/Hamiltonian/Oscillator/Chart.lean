@@ -453,6 +453,8 @@ theorem mfderiv_oscillatorActionAngleChart_hamiltonianVectorField (hm : ∀ i, 0
     hh.differentiableAt, hh.fderiv]
   congr 2
   funext j
-  rcases eq_or_ne j i with rfl | hji <;> simp [*]
+  rcases eq_or_ne j i with rfl | hji
+  · simp
+  · simp [hji]
 
 end TauCeti
