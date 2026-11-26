@@ -12,28 +12,28 @@ import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
 import TauCeti.Data.Matrix.Mul
 
 /-!
-# Hermite reduction over pre-valuation rings
+# Block-triangular reduction over pre-valuation rings
 
 Over a pre-valuation ring `A` (a commutative ring in which divisibility is total, including
-valuation domains and their quotients such as `ℤ / p^n`), elementary row transvections in `GL n A`
-can clear any single entry of a column against a pivot row without altering rows outside that pair
-or columns where both rows vanish. Iterating this clearing step along an embedding `ι : k ↪ n`
-ordered by a column weight `wt : k → α` into any linear order `α` yields a rectangular Hermite
-factorization `y = U_ι * D` with `U ∈ GL n A`, `D` block upper triangular for `wt`, and
-`U⁻¹_ι * y = D`. Here `D` is not canonical and is only guaranteed to be block upper triangular for
-the chosen weight `wt`. Transposing gives a column-clearing matrix `V ∈ GL n A` killing all columns
-of `M * V` outside `Set.range ι`.
+valuation domains and their quotients such as `ℤ / p^n`), some `W : GL n A` clears a single entry
+against a distinct pivot row while preserving rows outside that pair and columns where both rows
+vanish. Iterating this clearing step along an embedding `ι : k ↪ n` in order of column weight
+`wt : k → α` yields a decomposition `y = U_ι * D` with `U ∈ GL n A`, `D` block upper triangular
+for `wt`, and `U⁻¹_ι * y = D`. The decomposition depends on the chosen weight and is noncanonical.
+Transposing the row reduction gives a matrix `V ∈ GL n A` that clears all columns of `M * V`
+outside `Set.range ι`.
 
 ## Main results
 
-* `Matrix.exists_gl_mul_apply_eq_zero_of_preValuationRing`: over a pre-valuation ring, a product of
-  elementary row transvections clears a single entry `(i, a)` using a distinct pivot row `i₀`.
+* `Matrix.exists_gl_mul_apply_eq_zero_of_preValuationRing`: some `W : GL n A` clears a single
+  entry `(i, a)` using a distinct pivot row `i₀`.
 * `Matrix.exists_gl_mul_eq_zero_on_of_preValuationRing`: clears an arbitrary finite set `t` of rows
   in column `a` against a pivot row `i₀ ∉ t`.
-* `Matrix.exists_hermite_factorization_of_preValuationRing`: rectangular Hermite factorization
-  `y = U.val.submatrix id ι * D` with `D.BlockTriangular wt` and `U⁻¹.val.submatrix ι id * y = D`.
-* `Matrix.exists_mul_gl_apply_eq_zero_off_range_of_preValuationRing`: transposed form clearing all
-  columns of `M * V` outside `Set.range ι`.
+* `Matrix.exists_eq_submatrix_mul_blockTriangular_of_preValuationRing`: block-triangular
+  decomposition `y = U.val.submatrix id ι * D` with `D.BlockTriangular wt` and
+  `U⁻¹.val.submatrix ι id * y = D`.
+* `Matrix.exists_mul_gl_apply_eq_zero_off_range_of_preValuationRing`: clears all columns of
+  `M * V` outside `Set.range ι`.
 
 ## References
 
@@ -114,17 +114,14 @@ theorem exists_gl_mul_eq_zero_on_of_preValuationRing (y : Matrix n k A) (a : k) 
       have W_col : ∀ r : n, (W.val * y) r j = y r j := W_keep j hj₀ hjt
       rw [V_keep r j ((W_col i₀).trans hj₀) ((W_col i).trans hji), W_col]
 
-/-- **Rectangular Hermite factorization over a pre-valuation ring.** Given an embedding `ι : k ↪ n`,
-an `n × k` matrix `y` over a pre-valuation ring `A`, and a column weight `wt : k → α` into a linear
-order `α`, there exist `U : GL n A` and `D : Matrix k k A` such that `D` is block upper triangular
-for `wt`, `y = U.val.submatrix id ι * D`, and `U⁻¹.val.submatrix ι id * y = D`. -/
-theorem exists_hermite_factorization_of_preValuationRing [Fintype k] {α : Type*} [LinearOrder α]
-    (y : Matrix n k A) (ι : k ↪ n) (wt : k → α) :
-    ∃ (U : GL n A) (D : Matrix k k A),
-      D.BlockTriangular wt ∧
-      y = U.val.submatrix id ι * D ∧
-      U⁻¹.val.submatrix ι id * y = D := by
+/-- A single row reduction makes the rows indexed by `ι` block upper triangular and clears
+all rows outside the range of `ι`. -/
+private theorem exists_gl_mul_blockTriangular_and_eq_zero_off_range_of_preValuationRing
+    {α : Type*} [LinearOrder α] (y : Matrix n k A) (ι : k ↪ n) (wt : k → α) :
+    ∃ U : GL n A, ((U.val * y).submatrix ι id).BlockTriangular wt ∧
+      ∀ (i : n), i ∉ Set.range ι → ∀ j : k, (U.val * y) i j = 0 := by
   classical
+  let _ : Fintype k := Fintype.ofInjective ι ι.injective
   -- Reduce columns in order of increasing weight so that in each reduced column `j ∈ s`,
   -- only rows `ι b` with `b ∈ s` and `wt b ≤ wt j` can be nonzero.
   let IsReduced (s : Finset k) (U : GL n A) : Prop :=
@@ -154,11 +151,26 @@ theorem exists_hermite_factorization_of_preValuationRing [Fintype k] {α : Type*
       · refine (s_cols j hjs r).trans (hs j hjs r fun b hb hbr ↦ ?_)
         exact hr b (mem_insert_of_mem hb) hbr
   obtain ⟨U, hzero⟩ := exists_reduced univ
-  refine ⟨U⁻¹, (U.val * y).submatrix ι id,
-    fun i j hij ↦ hzero j (mem_univ j) (ι i) fun b _ h ↦ by cases ι.injective h; exact hij, ?_, ?_⟩
-  · have hrows (i : n) (hi : i ∉ Set.range ι) (j : k) : (U.val * y) i j = 0 :=
-      hzero j (mem_univ j) i fun b _ h ↦ absurd ⟨b, h.symm⟩ hi
-    calc
+  refine ⟨U, ?_, fun i hi j ↦ hzero j (mem_univ j) i fun b _ h ↦ absurd ⟨b, h.symm⟩ hi⟩
+  intro i j hij
+  exact hzero j (mem_univ j) (ι i) fun b _ h ↦ by
+    cases ι.injective h
+    exact hij
+
+/-- Given an embedding `ι : k ↪ n`, an `n × k` matrix `y` over a pre-valuation ring `A`,
+and a column weight `wt : k → α` into a linear order `α`, there exist `U : GL n A` and
+`D : Matrix k k A` such that `D` is block upper triangular for `wt`,
+`y = U.val.submatrix id ι * D`, and `U⁻¹.val.submatrix ι id * y = D`. -/
+theorem exists_eq_submatrix_mul_blockTriangular_of_preValuationRing
+    [Fintype k] {α : Type*} [LinearOrder α] (y : Matrix n k A) (ι : k ↪ n) (wt : k → α) :
+    ∃ (U : GL n A) (D : Matrix k k A),
+      D.BlockTriangular wt ∧
+      y = U.val.submatrix id ι * D ∧
+      U⁻¹.val.submatrix ι id * y = D := by
+  obtain ⟨U, htri, hrows⟩ :=
+    y.exists_gl_mul_blockTriangular_and_eq_zero_off_range_of_preValuationRing ι wt
+  refine ⟨U⁻¹, (U.val * y).submatrix ι id, htri, ?_, ?_⟩
+  · calc
       y = (U⁻¹.val * (U.val * y)).submatrix id id := by simp [← Matrix.mul_assoc]
       _ = U⁻¹.val.submatrix id ι * (U.val * y).submatrix ι id :=
         submatrix_mul_of_injective_right U⁻¹.val (U.val * y) id ι id ι.injective
@@ -166,29 +178,17 @@ theorem exists_hermite_factorization_of_preValuationRing [Fintype k] {α : Type*
   · ext i j
     simp [Matrix.mul_apply]
 
-/-- **Transposed Hermite reduction over a pre-valuation ring.** For a `k × n` matrix `M` over a
-pre-valuation ring `A` and an embedding `ι : k ↪ n`, some `V : GL n A` clears all columns of
-`M * V` outside `Set.range ι`. -/
+/-- For a `k × n` matrix `M` over a pre-valuation ring `A` and an embedding `ι : k ↪ n`,
+some `V : GL n A` clears all columns of `M * V` outside `Set.range ι`. -/
 theorem exists_mul_gl_apply_eq_zero_off_range_of_preValuationRing (M : Matrix k n A) (ι : k ↪ n) :
     ∃ V : GL n A, ∀ (a : k) (j : n), j ∉ Set.range ι → (M * V.val) a j = 0 := by
-  let _ : Fintype k := Fintype.ofInjective ι ι.injective
-  obtain ⟨U, D, -, h_form, -⟩ :=
-    Mᵀ.exists_hermite_factorization_of_preValuationRing ι (fun _ ↦ ())
-  have h_rows : U⁻¹.val * Mᵀ = (1 : Matrix n n A).submatrix id ι * D := by
-    rw [h_form, ← Matrix.mul_assoc, ← submatrix_id_id U⁻¹.val,
-      ← submatrix_mul U⁻¹.val U.val id id ι Function.bijective_id,
-      ← Units.val_mul, inv_mul_cancel, Units.val_one]
-  let V : GL n A := (GeneralLinearGroup.transposeMulEquiv n U⁻¹).unop
+  obtain ⟨U, -, hrows⟩ :=
+    Mᵀ.exists_gl_mul_blockTriangular_and_eq_zero_off_range_of_preValuationRing ι (fun _ ↦ ())
+  let V : GL n A := (GeneralLinearGroup.transposeMulEquiv n U).unop
   refine ⟨V, fun a j hj ↦ ?_⟩
-  have h_entry : ((1 : Matrix n n A).submatrix id ι * D) j a = 0 := by
-    simp only [Matrix.mul_apply, submatrix_apply, id_eq, Matrix.one_apply]
-    refine Finset.sum_eq_zero fun b _ ↦ ?_
-    have hjb : j ≠ ι b := fun h ↦ hj ⟨b, h.symm⟩
-    simp [hjb]
-  have hMV : (M * V.val) a j = (U⁻¹.val * Mᵀ) j a := by
-    have hV : V.val = U⁻¹.valᵀ := GeneralLinearGroup.coe_unop_transposeMulEquiv n U⁻¹
-    rw [← transpose_apply (M * V.val), Matrix.transpose_mul, hV, transpose_transpose]
-  exact hMV.trans ((congrFun₂ h_rows j a).trans h_entry)
+  have hV : V.val = U.valᵀ := GeneralLinearGroup.coe_unop_transposeMulEquiv n U
+  rw [← transpose_apply (M * V.val), Matrix.transpose_mul, hV, transpose_transpose]
+  exact hrows j hj a
 
 end PreValuationRing
 
