@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder
-public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basis
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ConleyZehnder
@@ -274,69 +273,6 @@ theorem isNondegenerateFixedPt_timeDependentHamiltonianFlow_mul_norm_sq_zero_iff
 
 /-! ### The Conley–Zehnder index of the origin -/
 
-/-- The diagonal unitary matrices `diag (e^{i b t})`, `t ∈ [0, 1]`, as a path of unitary
-matrices. -/
-private def diagonalExpPath (ι : Type*) [Fintype ι] [DecidableEq ι] (b : ℝ) :
-    Path (unitaryTorusHom ι fun _ ↦ Circle.exp (b * (0 : unitInterval)))
-      (unitaryTorusHom ι fun _ ↦ Circle.exp (b * (1 : unitInterval))) where
-  toFun t := unitaryTorusHom ι fun _ ↦ Circle.exp (b * t)
-  continuous_toFun := by fun_prop
-  source' := rfl
-  target' := rfl
-
-private theorem coe_diagonalExpPath_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (b : ℝ)
-    (t : unitInterval) :
-    ((diagonalExpPath ι b t : unitaryGroup ι ℂ) : Matrix ι ι ℂ) =
-      diagonal fun _ ↦ exp ((b * t : ℝ) * I) := by
-  simp only [diagonalExpPath, Path.coe_mk_mk, coe_unitaryTorusHom, Circle.coe_exp]
-
-/-- The realified path `t ↦ diag (e^{i b t})` has Conley–Zehnder index
-`-n (⌊b / 2π⌋ + ⌈b / 2π⌉)`, where `n = card ι`. -/
-private theorem conleyZehnderIndex_diagonalExpPath (ι : Type*) [Fintype ι] [DecidableEq ι]
-    (b : ℝ) :
-    GLSymplectic.conleyZehnderIndex ((diagonalExpPath ι b).map GLSymplectic.continuous_ofUnitary) =
-      -(Fintype.card ι : ℝ) *
-        (⌊b / (2 * Real.pi)⌋ + ⌈b / (2 * Real.pi)⌉ : ℤ) := by
-  rw [GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_of_diagonal _
-    (θ := fun _ t ↦ b * t) (fun _ ↦ by fun_prop) (coe_diagonalExpPath_apply b)]
-  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, zero_div, Int.floor_zero,
-    Int.ceil_zero, add_zero, Int.cast_zero, sub_zero, Finset.sum_const, Finset.card_univ,
-    nsmul_eq_mul]
-  ring
-
-omit [FiniteDimensional ℂ G] in
-/-- Multiplication by a complex scalar `c`, as a real-linear map, is the complex-linear map `c • id`
-with scalars restricted to `ℝ`. -/
-private theorem coe_lsmul_eq_restrictScalars_smul_id (c : ℂ) :
-    ((ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) : G →ₗ[ℝ] G) =
-      (c • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ := by
-  ext
-  simp
-
-omit [FiniteDimensional ℂ G] in
-/-- In the basis `(i e, e)`, multiplication by a complex scalar `c` has the matrix of the realified
-`diag (conj c)`. -/
-private theorem toMatrix_imInnerSymplecticBasis_lsmul {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (e : OrthonormalBasis ι ℂ G) (c : ℂ) :
-    LinearMap.toMatrix e.imInnerSymplecticBasis e.imInnerSymplecticBasis
-        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
-      (diagonal fun _ ↦ starRingEnd ℂ c).realify := by
-  rw [coe_lsmul_eq_restrictScalars_smul_id, e.toMatrix_imInnerSymplecticBasis_restrictScalars,
-    map_smul, LinearMap.toMatrix_id, smul_one_eq_diagonal, diagonal_map (map_zero _)]
-
-omit [FiniteDimensional ℂ G] in
-/-- In the basis `(e, i e)`, multiplication by a complex scalar `c` has the matrix of the realified
-`diag c`. -/
-private theorem toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul {ι : Type*} [Fintype ι]
-    [DecidableEq ι] (e : OrthonormalBasis ι ℂ G) (c : ℂ) :
-    LinearMap.toMatrix (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
-        (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
-        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
-      (diagonal fun _ ↦ c).realify := by
-  rw [coe_lsmul_eq_restrictScalars_smul_id,
-    e.toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars, map_smul,
-    LinearMap.toMatrix_id, smul_one_eq_diagonal]
-
 /-- **The Conley–Zehnder index of the origin for `a ‖z‖²`.** On a complex inner product space of
 complex dimension `n` with the symplectic form `Im ⟪·, ·⟫_ℂ`, the constant orbit at the origin of
 the quadratic Hamiltonian `a ‖z‖²` has Conley–Zehnder index `-n (⌊a / π⌋ + ⌈a / π⌉)`, read in
@@ -372,12 +308,12 @@ theorem orbitConleyZehnderIndex_mul_norm_sq (a : ℝ)
       ring_nf
     refine Subtype.ext (Units.ext ?_)
     rw [SymplecticForm.matrixPath_apply, SymplecticForm.coe_toGLSymplectic, hΨ t,
-      toMatrix_imInnerSymplecticBasis_lsmul, hconj, Path.map_coe, Function.comp_apply,
+      e.toMatrix_imInnerSymplecticBasis_lsmul, hconj, Path.map_coe, Function.comp_apply,
       GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply]
   have h2 : 2 * a / (2 * Real.pi) = a / Real.pi := mul_div_mul_left _ _ two_ne_zero
   rw [SymplecticForm.orbitConleyZehnderIndex_def, ω.conleyZehnderIndex_eq hb,
-    GLSymplectic.conleyZehnderIndex_congr _ _ hmat, conleyZehnderIndex_diagonalExpPath, h2,
-    Fintype.card_fin]
+    GLSymplectic.conleyZehnderIndex_congr _ _ hmat,
+    GLSymplectic.conleyZehnderIndex_map_ofUnitary_diagonalExpPath, h2, Fintype.card_fin]
 
 /-- **The index jumps by `2 n` at each multiple of `π`.** For `k π < a < (k + 1) π`, the constant
 orbit at the origin of `a ‖z‖²` has Conley–Zehnder index `-n (2 k + 1)`, where `n` is the complex
@@ -421,12 +357,12 @@ theorem conleyZehnderIndex_eq_of_toMatrix_fderiv_timeDependentHamiltonianFlow_mu
       γ t = (diagonalExpPath ι (-2 * a)).map GLSymplectic.continuous_ofUnitary t := by
     refine Subtype.ext (Units.ext ?_)
     rw [hγ t, fderiv_timeDependentHamiltonianFlow_mul_norm_sq, sub_zero,
-      toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul, Path.map_coe, Function.comp_apply,
+      e.toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul, Path.map_coe, Function.comp_apply,
       GLSymplectic.coe_ofUnitary, coe_diagonalExpPath_apply]
   have h2 : -2 * a / (2 * Real.pi) = -(a / Real.pi) := by
     rw [neg_mul, neg_div, mul_div_mul_left _ _ two_ne_zero]
-  rw [GLSymplectic.conleyZehnderIndex_congr _ _ hmat, conleyZehnderIndex_diagonalExpPath, h2,
-    Int.floor_neg, Int.ceil_neg]
+  rw [GLSymplectic.conleyZehnderIndex_congr _ _ hmat,
+    GLSymplectic.conleyZehnderIndex_map_ofUnitary_diagonalExpPath, h2, Int.floor_neg, Int.ceil_neg]
   push_cast
   ring
 

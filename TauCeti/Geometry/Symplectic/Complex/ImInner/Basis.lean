@@ -40,6 +40,10 @@ realification of `U` itself as its real matrix.
 * `OrthonormalBasis.toMatrix_reindex_sumComm_imInnerSymplecticForm`,
   `OrthonormalBasis.toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars`: in the basis
   `(e, i e)` the form has the matrix `-J`, and a complex-linear map has the realified matrix.
+* `OrthonormalBasis.toMatrix_imInnerSymplecticBasis_lsmul`,
+  `OrthonormalBasis.toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul`: multiplication by a
+  complex scalar `c` has the matrix of the realified `diag (conj c)` in `(i e, e)` and of the
+  realified `diag c` in `(e, i e)`.
 -/
 
 public section
@@ -124,5 +128,31 @@ theorem toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars
         (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι)) (f.restrictScalars ℝ) =
       (LinearMap.toMatrix e.toBasis e.toBasis f).realify := by
   ext (i | i) (j | j) <;> simp [LinearMap.toMatrix_apply]
+
+/-- In the basis `(i e, e)`, multiplication by a complex scalar `c` has the matrix of the realified
+`diag (conj c)`. -/
+theorem toMatrix_imInnerSymplecticBasis_lsmul (e : OrthonormalBasis ι ℂ G) (c : ℂ) :
+    LinearMap.toMatrix e.imInnerSymplecticBasis e.imInnerSymplecticBasis
+        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
+      (diagonal fun _ ↦ starRingEnd ℂ c).realify := by
+  -- As a real-linear map, multiplication by `c` is the complex-linear map `c • id`.
+  rw [show ((ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) : G →ₗ[ℝ] G) =
+      (c • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ from LinearMap.ext fun _ ↦ rfl,
+    e.toMatrix_imInnerSymplecticBasis_restrictScalars, map_smul, LinearMap.toMatrix_id,
+    smul_one_eq_diagonal, diagonal_map (map_zero _)]
+
+/-- In the basis `(e, i e)`, multiplication by a complex scalar `c` has the matrix of the realified
+`diag c`. -/
+theorem toMatrix_reindex_sumComm_imInnerSymplecticBasis_lsmul (e : OrthonormalBasis ι ℂ G)
+    (c : ℂ) :
+    LinearMap.toMatrix (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
+        (e.imInnerSymplecticBasis.reindex (Equiv.sumComm ι ι))
+        (ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) =
+      (diagonal fun _ ↦ c).realify := by
+  -- As a real-linear map, multiplication by `c` is the complex-linear map `c • id`.
+  rw [show ((ContinuousLinearMap.lsmul ℝ ℂ c : G →L[ℝ] G) : G →ₗ[ℝ] G) =
+      (c • LinearMap.id : G →ₗ[ℂ] G).restrictScalars ℝ from LinearMap.ext fun _ ↦ rfl,
+    e.toMatrix_reindex_sumComm_imInnerSymplecticBasis_restrictScalars, map_smul,
+    LinearMap.toMatrix_id, smul_one_eq_diagonal]
 
 end OrthonormalBasis
