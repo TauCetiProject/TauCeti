@@ -229,7 +229,9 @@ theorem isRiemannianSymmetricSpace_circle :
     IsRiemannianSymmetricSpace (𝓡 1) Circle := by
   let := TauCeti.roundMetricCircle
   have : Fact (Module.finrank ℝ ℂ = 1 + 1) := Complex.finrank_real_complex_fact
-  exact sphereComplexToCircleIsometry.isRiemannianSymmetricSpace
+  -- `Circle` is definitionally `Metric.sphere (0 : ℂ) 1` and `roundMetricCircle` exposes
+  -- `instRiemannianBundleSphere`, so the unit-sphere instance applies directly.
+  exact instIsRiemannianSymmetricSpaceSphere (E := ℂ) (n := 1)
 
 /-- The flat 2-torus `Circle × Circle` equipped with the product of round circle metrics is a
 Riemannian symmetric space. -/

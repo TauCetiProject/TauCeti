@@ -18,7 +18,7 @@ as `Φ ∘ Ψ`. Forgetting the metric condition is an injective group homomorphi
 diffeomorphism group. The action of `Isom(M)` on `M` is in
 `TauCeti.Geometry.Manifold.Riemannian.Isometry.Action`.
 
-## Main definitions
+## Main definitions and results
 
 * `TauCeti.Isom I M`: the isometry group of the Riemannian manifold `M`.
 * `TauCeti.RiemannianIsometry.instGroup`: the group of Riemannian self-isometries.
