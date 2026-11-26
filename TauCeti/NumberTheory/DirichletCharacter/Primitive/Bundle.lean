@@ -153,6 +153,11 @@ theorem level_one : (1 : PrimitiveDirichletCharacter).level = 1 :=
 theorem character_one : (1 : PrimitiveDirichletCharacter).character = 1 :=
   (rfl)
 
+/-- The character of the trivial bundle takes the value `1` at every natural number. -/
+theorem character_one_apply (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 := by
+  rw [character_one]
+  exact MulChar.one_apply (isUnit_of_subsingleton (n : ZMod 1))
+
 /-- The principal character of every nonzero level has the trivial bundle. -/
 @[simp]
 theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=

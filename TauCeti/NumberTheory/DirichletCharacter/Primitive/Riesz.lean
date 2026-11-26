@@ -57,10 +57,8 @@ untwisted sum. -/
     (1 : PrimitiveDirichletCharacter).rieszRemainder y =
       rieszSum (fun n ↦ (Λ n : ℂ)) y +
         ((y : ℂ) * (1 + (Real.eulerMascheroniConstant : ℂ)) - (y : ℂ) * Real.log y) := by
-  have h (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 :=
-    DirichletCharacter.modOne_eq_one' (χ := (1 : DirichletCharacter ℂ 1)) n
   rw [rieszRemainder, ite_eq_left rfl]
-  simp only [h, one_mul]
+  simp only [character_one_apply, one_mul]
 
 /-- A nontrivial primitive character has only a linear main term, given by the logarithmic
 derivative at `1`. -/
@@ -90,14 +88,11 @@ theorem continuous_rieszRemainder (χ : PrimitiveDirichletCharacter) :
   by_cases hχ : χ = 1
   · subst χ
     simp [rieszSum_def]
-  · have hc : χ.character ≠ 1 := (character_eq_one_iff χ).not.mpr hχ
-    have hi : χ⁻¹ ≠ 1 := fun hi ↦ hχ (by
+  · have hi : χ⁻¹ ≠ 1 := fun hi ↦ hχ (by
       simpa only [inv_inv, inv_one] using congrArg Inv.inv hi)
     have hlog : logDeriv (χ.character⁻¹).LFunction 1 =
         conj (logDeriv χ.character.LFunction 1) := by
-      simpa only [map_one, logDeriv_apply, map_div₀] using congrArg₂ (· / ·)
-        (χ.character.deriv_LFunction_inv_conj 1)
-        (χ.character.LFunction_inv_conj (.inr hc) (s := 1))
+      simpa only [map_one] using χ.character.logDeriv_LFunction_inv_conj 1
     simp [rieszRemainder_of_ne_one hi, rieszRemainder_of_ne_one hχ, character_inv,
       rieszSum_def, hlog, ← MulChar.star_apply']
 
@@ -122,18 +117,18 @@ theorem hasLaplace_rieszRemainder_comp_exp (χ : PrimitiveDirichletCharacter) {s
   have hlin (c : ℂ) := (hasLaplace_exp_mul_pow 0 hs).const_smul c
   by_cases hχ : χ = 1
   · subst χ
-    have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta :=
-      DirichletCharacter.LFunction_modOne_eq (χ := (1 : DirichletCharacter ℂ 1))
+    have hzeta : (1 : PrimitiveDirichletCharacter).character.LFunction = riemannZeta := by
+      rw [character_one]
+      exact DirichletCharacter.LFunction_modOne_eq
     rw [hzeta] at hr ⊢
     have h := hr.add ((hlin (1 + (Real.eulerMascheroniConstant : ℂ))).sub
       (hasLaplace_exp_mul_pow 1 hs))
     rw [rieszRemainderMellin_riemannZeta hs]
     convert h using 1
     · ext u
-      have h1 (n : ℕ) : (1 : PrimitiveDirichletCharacter).character n = 1 :=
-        DirichletCharacter.modOne_eq_one' (χ := (1 : DirichletCharacter ℂ 1)) n
       rw [Function.comp_apply, rieszRemainder_one]
-      simp [h1, Real.log_exp, mul_comm, -character_one]
+      simp only [character_one_apply, one_mul]
+      simp [Real.log_exp, mul_comm]
     · simp only [Nat.factorial_zero, Nat.factorial_one, Nat.cast_one, Nat.reduceAdd, pow_one,
         smul_eq_mul, Complex.ofReal_one]
       field_simp
