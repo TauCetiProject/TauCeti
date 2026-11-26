@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 
+import TauCeti.Analysis.Holder.CompLinear
 import TauCeti.Analysis.Holder.FaaDiBruno
 import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Analysis.Holder.Leibniz
@@ -160,19 +161,13 @@ theorem exists_holderOnWith_fderiv_pullbackPrincipal_apply
   -- The factors `(DΨ(Φ ·) eₖ)ₘ` are `C^{1,α}` near `x`.
   have hT (m k : ι) : IsC1HolderNear α x (fun y => ℓ m k (fderiv ℝ Ψ (Φ y))) := by
     obtain ⟨ρ, hρ, K, hK⟩ := hΨH
-    refine isC1HolderNear_comp (g := fun v => ℓ m k (fderiv ℝ Ψ v)) hα hs U.isOpen hΦ2
+    have hU : IsOpen ((U : Set (EuclideanSpace ℝ ι)) ∩ ball (Φ x) ρ) := U.isOpen.inter isOpen_ball
+    exact isC1HolderNear_comp (g := fun v => ℓ m k (fderiv ℝ Ψ v)) hα hs U.isOpen hΦ2
       (fun y hy => hΦ.mapsTo (hsU hy)) ((ℓ m k).contDiff.comp_contDiffOn hDΨ) hx hρ
-      (C := ‖ℓ m k‖₊ * K) (HolderOnWith.of_dist_le fun y hy z hz => ?_)
-    -- The derivative of `ℓ ∘ DΨ` is `ℓ ∘ D²Ψ`.
-    have hd (w : EuclideanSpace ℝ ι) (hw : w ∈ (U : Set (EuclideanSpace ℝ ι))) :
-        fderiv ℝ (fun v => ℓ m k (fderiv ℝ Ψ v)) w = (ℓ m k).comp (fderiv ℝ (fderiv ℝ Ψ) w) :=
-      ((ℓ m k).hasFDerivAt.comp w ((hDΨ.differentiableOn one_ne_zero w hw).differentiableAt
-        (U.isOpen.mem_nhds hw)).hasFDerivAt).fderiv
-    rw [hd y hy.1, hd z hz.1, dist_eq_norm, ← ContinuousLinearMap.comp_sub, NNReal.coe_mul,
-      mul_assoc]
-    refine ((ℓ m k).opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
-    rw [← dist_eq_norm]
-    exact (hK.mono inter_subset_right).dist_le hy hz
+      (holderOnWith_iteratedFDeriv_zero_iff.1 (holderOnWith_iteratedFDeriv_succ_iff.1
+        ((ℓ m k).holderOnWith_iteratedFDeriv_comp_left hU (hDΨ.mono inter_subset_left)
+          (holderOnWith_iteratedFDeriv_succ_iff.2
+            (holderOnWith_iteratedFDeriv_zero_iff.2 (hK.mono inter_subset_right))))))
   -- The factors `aₖₗ ∘ Φ` are `C^{1,α}` near `x`.
   have hA (k l : ι) : IsC1HolderNear α x (fun y => a (Φ y) k l) := by
     obtain ⟨ρ, hρ, K, hK⟩ := haH
