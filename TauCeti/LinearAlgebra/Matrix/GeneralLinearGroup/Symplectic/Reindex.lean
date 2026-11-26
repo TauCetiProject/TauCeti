@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Data.Fin.Sum
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Unitary
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Unitary
 
@@ -52,7 +53,6 @@ presentation to `Fin (2 * n)` (`TauCeti.reindex_finCongr_JFin`,
   `TauCeti.GLSymplectic.map_reindexGL_inf_map_reindexGL_range_realify` and
   `Matrix.GeneralLinearGroup.unitarySubgroup_inf_map_reindexGL_range_realify`: the three pairwise
   intersections after reindexing.
-* `TauCeti.finSumFinEquivTwoMul`: the equivalence `Fin n ⊕ Fin n ≃ Fin (2 * n)`.
 * `TauCeti.GLSymplecticFin_eq_map_reindexGL`, `TauCeti.map_reindexGL_finCongr_GLSymplecticFin`:
   the `Fin (n + n)` symplectic subgroup is the reindexed one, and casting it gives the
   `Fin (2 * n)` one.
@@ -135,25 +135,22 @@ form. -/
 theorem mem_map_reindexGL_iff {M : GL p R} :
     M ∈ (GLSymplectic l R).map (e.reindexGL R) ↔
       (M : Matrix p p R) * reindex e e (J l R) * (M : Matrix p p R)ᵀ = reindex e e (J l R) := by
-  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, mem_iff_mem_symplecticGroup,
-    mul_reindex_J_mul_transpose_eq_iff, Equiv.reindexGL_symm, Equiv.coe_reindexGL, reindex_apply,
-    Equiv.symm_symm]
+  rw [Equiv.mem_map_reindexGL_iff, mem_iff_mem_symplecticGroup, mul_reindex_J_mul_transpose_eq_iff,
+    Equiv.coe_reindexGL, reindex_apply, Equiv.symm_symm]
 
 /-- Membership in the reindexed symplectic subgroup, in the transposed form `Mᵀ J M = J`. -/
 theorem mem_map_reindexGL_iff' {M : GL p R} :
     M ∈ (GLSymplectic l R).map (e.reindexGL R) ↔
       (M : Matrix p p R)ᵀ * reindex e e (J l R) * (M : Matrix p p R) = reindex e e (J l R) := by
-  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, mem_iff_mem_symplecticGroup,
-    transpose_mul_reindex_J_mul_eq_iff, Equiv.reindexGL_symm, Equiv.coe_reindexGL, reindex_apply,
-    Equiv.symm_symm]
+  rw [Equiv.mem_map_reindexGL_iff, mem_iff_mem_symplecticGroup, transpose_mul_reindex_J_mul_eq_iff,
+    Equiv.coe_reindexGL, reindex_apply, Equiv.symm_symm]
 
 /-- **The reindexed symplectic subgroup is closed under transposition.** -/
 theorem star_mem_map_reindexGL [StarRing R] [TrivialStar R] {M : GL p R}
     (hM : M ∈ (GLSymplectic l R).map (e.reindexGL R)) :
     star M ∈ (GLSymplectic l R).map (e.reindexGL R) := by
-  rw [mem_map_reindexGL_iff] at hM
-  rw [mem_map_reindexGL_iff', Units.coe_star, star_eq_conjTranspose,
-    conjTranspose_eq_transpose_of_trivial, transpose_transpose, hM]
+  obtain ⟨N, hN, rfl⟩ := hM
+  exact ⟨star N, star_mem hN, (Equiv.star_reindexGL e R N).symm⟩
 
 end TauCeti.GLSymplectic
 
@@ -166,9 +163,8 @@ alternating form**. -/
 theorem mem_map_reindexGL_range_realify_iff {M : GL p ℝ} :
     M ∈ (realify l ℂ).range.map (e.reindexGL ℝ) ↔
       Commute (Matrix.reindex e e (J l ℝ)) (M : Matrix p p ℝ) := by
-  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, mem_range_realify_iff,
-    commute_reindex_J_iff, Equiv.reindexGL_symm, Equiv.coe_reindexGL, Matrix.reindex_apply,
-    Equiv.symm_symm]
+  rw [Equiv.mem_map_reindexGL_iff, mem_range_realify_iff, commute_reindex_J_iff,
+    Equiv.coe_reindexGL, Matrix.reindex_apply, Equiv.symm_symm]
 
 /-- **The reindexed realified general linear group is closed under transposition.** -/
 theorem star_mem_map_reindexGL_range_realify {M : GL p ℝ}
@@ -179,9 +175,9 @@ theorem star_mem_map_reindexGL_range_realify {M : GL p ℝ}
 
 /-- **`O(2n) ∩ GL(n, ℂ) = U(n)` after reindexing**: the orthogonal elements of the reindexed
 realified general linear group are the reindexed realified unitary matrices. -/
-theorem unitarySubgroup_inf_map_reindexGL_range_realify :
-    unitarySubgroup (GL p ℝ) ⊓ (realify l ℂ).range.map (e.reindexGL ℝ) =
-      ((unitarySubgroup (GL l ℂ)).map (realify l ℂ)).map (e.reindexGL ℝ) := by
+theorem unitarySubgroup_inf_map_reindexGL_range_realify {𝕜 : Type*} [RCLike 𝕜] :
+    unitarySubgroup (GL p ℝ) ⊓ (realify l 𝕜).range.map (e.reindexGL ℝ) =
+      ((unitarySubgroup (GL l 𝕜)).map (realify l 𝕜)).map (e.reindexGL ℝ) := by
   rw [← Equiv.map_reindexGL_unitarySubgroup e ℝ,
     ← Subgroup.map_inf _ _ _ (e.reindexGL ℝ).injective, unitarySubgroup_inf_range_realify]
 
@@ -213,38 +209,18 @@ end TauCeti.GLSymplectic
 
 namespace TauCeti
 
-variable (n : ℕ)
-
-/-- The equivalence `Fin n ⊕ Fin n ≃ Fin (2 * n)`: `finSumFinEquiv` followed by the cast
-`Fin (n + n) ≃ Fin (2 * n)`. The left summand goes to the first `n` indices and the right summand
-to the last `n`, so `Matrix.J` becomes the block matrix `!![0, -1; 1, 0]` in `Fin (2 * n)`
-coordinates. -/
-def finSumFinEquivTwoMul : Fin n ⊕ Fin n ≃ Fin (2 * n) :=
-  finSumFinEquiv.trans (finCongr (two_mul n).symm)
-
-variable {n}
-
-/-- The left summand of `Fin n ⊕ Fin n` goes to the first `n` indices of `Fin (2 * n)`. -/
-@[simp]
-theorem finSumFinEquivTwoMul_inl (i : Fin n) :
-    finSumFinEquivTwoMul n (.inl i) = ⟨i, by omega⟩ :=
-  (rfl)
-
-/-- The right summand of `Fin n ⊕ Fin n` goes to the last `n` indices of `Fin (2 * n)`. -/
-@[simp]
-theorem finSumFinEquivTwoMul_inr (i : Fin n) :
-    finSumFinEquivTwoMul n (.inr i) = ⟨n + i, by omega⟩ :=
-  (rfl)
-
-variable (n) (R : Type*) [CommRing R]
+variable (n : ℕ) (R : Type*) [CommRing R]
 
 /-- For `n = 1` the reindexed alternating form is the rotation by a quarter turn,
 `!![0, -1; 1, 0]`, matching `TauCeti.JFin_one_eq`. -/
 theorem reindex_finSumFinEquivTwoMul_J_one :
     reindex (finSumFinEquivTwoMul 1) (finSumFinEquivTwoMul 1) (J (Fin 1) R) = !![0, -1; 1, 0] := by
+  have h0 : (finSumFinEquivTwoMul 1).symm 0 = .inl 0 :=
+    finSumFinEquivTwoMul_symm_apply_of_lt 0 Nat.zero_lt_one
+  have h1 : (finSumFinEquivTwoMul 1).symm 1 = .inr 0 :=
+    finSumFinEquivTwoMul_symm_apply_of_le 1 le_rfl
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [J, finSumFinEquivTwoMul, finSumFinEquiv, Fin.addCases, fromBlocks]
+  fin_cases i <;> fin_cases j <;> simp [J, h0, h1]
 
 /-- The `Fin (n + n)` symplectic subgroup `TauCeti.GLSymplecticFin` is the symplectic subgroup
 reindexed along `finSumFinEquiv`. -/
@@ -263,7 +239,7 @@ theorem reindex_finCongr_JFin :
     reindex (finCongr (two_mul n).symm) (finCongr (two_mul n).symm) (JFin n R) =
       reindex (finSumFinEquivTwoMul n) (finSumFinEquivTwoMul n) (J (Fin n) R) := by
   rw [JFin_eq_submatrix, ← reindex_apply, ← Equiv.trans_apply, reindex_trans,
-    finSumFinEquivTwoMul]
+    finSumFinEquivTwoMul_eq]
 
 /-- The `Fin (n + n)` symplectic subgroup `TauCeti.GLSymplecticFin`, cast to `Fin (2 * n)`, is
 the symplectic subgroup reindexed along `TauCeti.finSumFinEquivTwoMul`. -/
@@ -271,9 +247,7 @@ theorem map_reindexGL_finCongr_GLSymplecticFin :
     (GLSymplecticFin n R).map ((finCongr (two_mul n).symm).reindexGL R) =
       (GLSymplectic (Fin n) R).map
         ((finSumFinEquivTwoMul n).reindexGL R : GL (Fin n ⊕ Fin n) R →* GL (Fin (2 * n)) R) := by
-  rw [GLSymplecticFin_eq_map_reindexGL, Subgroup.map_map]
-  congr 1
-  ext M i j
-  simp [finSumFinEquivTwoMul]
+  rw [GLSymplecticFin_eq_map_reindexGL, Subgroup.map_map, ← MulEquiv.toMonoidHom_trans,
+    Equiv.reindexGL_trans_reindexGL, finSumFinEquivTwoMul_eq]
 
 end TauCeti
