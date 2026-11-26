@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length
+public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
@@ -37,7 +37,7 @@ the first-variation integrand of such a variation is
 
 For the length, the first variation formula
 `TauCeti.Manifold.hasDerivAt_toReal_pathELength` of
-`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length` allows moving endpoints. When the
+`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Length.Basic` allows moving endpoints. When the
 central curve `γ` has constant speed `C > 0` and is a geodesic on `(a, b)`, its integral term
 vanishes and only the boundary terms `(⟪V(b), γ'(b)⟫ - ⟪V(a), γ'(a)⟫) / C` remain. Hence, if the
 length of `F s` has a local extremum at `s = 0`, then `⟪V(a), γ'(a)⟫ = ⟪V(b), γ'(b)⟫`; if it has a

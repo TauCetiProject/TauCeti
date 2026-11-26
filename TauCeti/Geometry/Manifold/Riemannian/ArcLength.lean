@@ -109,6 +109,13 @@ theorem pathELength_eq_setLIntegral_enorm_curveVelocity_Ioo {γ : ℝ → M} {a 
     Manifold.pathELength I γ a b = ∫⁻ t in Ioo a b, ‖curveVelocity I γ t‖ₑ := by
   rw [pathELength_eq_setLIntegral_enorm_curveVelocity_Icc, restrict_Ioo_eq_restrict_Icc]
 
+omit [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] in
+/-- The Riemannian length vanishes when the terminal time is at most the initial time. -/
+@[simp] theorem pathELength_eq_zero_of_le {γ : ℝ → M} {a b : ℝ} (h : b ≤ a) :
+    Manifold.pathELength I γ a b = 0 := by
+  rw [Manifold.pathELength_eq_lintegral_mfderiv_Ioo, Ioo_eq_empty_of_le h]
+  simp
+
 /-- The Riemannian speed of a curve that is `C¹` within a set with unique derivatives is
 continuous within that set at the tested parameter. -/
 theorem _root_.ContMDiffWithinAt.continuousWithinAt_norm_curveVelocityWithin
@@ -187,6 +194,18 @@ theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWith
       Measure.restrict_empty, lintegral_zero_measure, intervalIntegral.integral_symm,
       ENNReal.ofReal_of_nonpos]
     exact neg_nonpos.2 (intervalIntegral.integral_nonneg hab.le fun _ _ ↦ norm_nonneg _)
+
+/-- The Riemannian length of a `C¹` curve on an open set is `ENNReal.ofReal` of its speed
+integral between any two times whose intervening interval lies in that set. -/
+theorem _root_.ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocity
+    {γ : ℝ → M} {s : Set ℝ} (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ s) (hs : IsOpen s)
+    {a b : ℝ} (hsub : uIcc a b ⊆ s) :
+    Manifold.pathELength I γ a b = ENNReal.ofReal (∫ t in a..b, ‖curveVelocity I γ t‖) := by
+  rw [hγ.pathELength_eq_ofReal_integral_norm_curveVelocityWithin
+    (Icc_subset_uIcc.trans hsub)]
+  congr 1
+  exact intervalIntegral.integral_congr fun t ht ↦ by
+    rw [curveVelocityWithin_of_mem_nhds (hs.mem_nhds (hsub ht))]
 
 /-- The squared Riemannian speed of a `C¹` curve is interval integrable between any two
 parameters of a parameter set with unique derivatives containing the interval between them. -/

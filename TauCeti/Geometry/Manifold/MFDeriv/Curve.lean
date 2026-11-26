@@ -458,25 +458,25 @@ variable
 
 section Surface
 
-variable {f : 𝕜 → 𝕜 → M} {u : 𝕜}
+variable {u : 𝕜}
 
-/-- **The velocity of a curve of a two-parameter family.** The velocity of the curve `f u` of a
-family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the direction of the
-second parameter. -/
-theorem curveVelocity_eq_mfderiv_snd
-    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+/-- **The velocity of a curve in a family.** The velocity of the curve `f u` of a
+family `f : F → 𝕜 → M` is the differential of the uncurried family in the direction of the
+curve parameter. -/
+theorem curveVelocity_eq_mfderiv_snd {f : F → 𝕜 → M} {u : F}
+    (hf : MDifferentiableAt 𝓘(𝕜, F × 𝕜) I (fun z : F × 𝕜 ↦ f z.1 z.2) (u, t)) :
     curveVelocity I (f u) t =
-      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : 𝕜), (1 : 𝕜)) :=
+      mfderiv 𝓘(𝕜, F × 𝕜) I (fun z : F × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : F), (1 : 𝕜)) :=
   hf.curveVelocity_comp_mfderiv (g := fun r : 𝕜 ↦ (u, r))
     ((hasDerivAt_const t u).prodMk (hasDerivAt_id t))
 
-/-- **The transverse velocity of a two-parameter family.** The velocity of the curve
-`q ↦ f q t` of a family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the
+/-- **The velocity in the first parameter of a family.** The velocity of the curve
+`q ↦ f q t` of a family `f : 𝕜 → F → M` is the differential of the uncurried family in the
 direction of the first parameter. -/
-theorem curveVelocity_eq_mfderiv_fst
-    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+theorem curveVelocity_eq_mfderiv_fst {f : 𝕜 → F → M} {t : F}
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × F) I (fun z : 𝕜 × F ↦ f z.1 z.2) (u, t)) :
     curveVelocity I (fun q ↦ f q t) u =
-      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : 𝕜)) :=
+      mfderiv 𝓘(𝕜, 𝕜 × F) I (fun z : 𝕜 × F ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : F)) :=
   hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
     ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
 
