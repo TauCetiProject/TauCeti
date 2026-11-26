@@ -192,6 +192,7 @@ theorem topologicalPressure_add_const [UniformSpace X] (T : X → X) (φ : X →
 
 /-- The pressure of the identity of a nonempty finite uniform space is the maximum of the
 potential: `P(id, φ) = max_x φ x`. -/
+@[simp]
 theorem topologicalPressure_id [UniformSpace X] [Fintype X] [Nonempty X] (φ : X → ℝ) :
     topologicalPressure id φ = (Finset.univ.sup' Finset.univ_nonempty φ : ℝ) := by
   set M := Finset.univ.sup' Finset.univ_nonempty φ with hM
