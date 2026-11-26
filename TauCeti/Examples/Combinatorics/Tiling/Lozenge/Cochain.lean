@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
+public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 /-!
 # Regression examples: edge cochains and simply connected regions
@@ -23,6 +24,8 @@ public import TauCeti.Combinatorics.Tiling.Lozenge.Cochain
 * The neutral cochain `c₀` is not closed on any face; the cochain of the all-type-1 tiling `M₁`
   (`1` along `e₁` and `e₃`, `0` along `e₂`) has primitive `x`, and that of the all-type-3 tiling
   `M₃` is `0`, with primitive `0`.
+* `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
+  `TauCeti.not_isSimplyConnectedRegion_of_hole`, which shows again that it is not simply connected.
 -/
 
 public section
@@ -114,5 +117,22 @@ example : IsCochainPrimitiveOn Set.univ (fun e => if e.k = 1 then 0 else 1) fun 
 
 /-- The cochain of the all-type-3 tiling `M₃` is `0`, with primitive `0`. -/
 example : IsCochainPrimitiveOn Set.univ 0 0 := isCochainPrimitiveOn_def.2 fun _ _ => by simp
+
+/-- The faces sharing an edge with `W(0)` are `W(0)` itself and `B(0, −1)`, `B(1, 0)`, `B(0)`. -/
+theorem eq_of_mem_edges_whiteZero {g : TriFace} {e : TriEdge}
+    (he : e ∈ (⟨(0, 0), true⟩ : TriFace).edges) (hg : e ∈ g.edges) :
+    g = ⟨(0, 0), true⟩ ∨ g = ⟨(0, -1), false⟩ ∨ g = ⟨(1, 0), false⟩ ∨ g = ⟨(0, 0), false⟩ := by
+  simp only [TriFace.edges_mk_true, Finset.mem_insert, Finset.mem_singleton] at he
+  rcases TriFace.mem_edges_iff.1 hg with rfl | rfl <;> rcases he with rfl | rfl | rfl <;>
+    simp [Prod.ext_iff]
+
+/-- `R_ring` with the hole `Q = {W(0)}` satisfies the hypothesis of
+`not_isSimplyConnectedRegion_of_hole`, so it is not simply connected. -/
+example : ¬ IsSimplyConnectedRegion ringRegion :=
+  not_isSimplyConnectedRegion_of_hole (Q := {⟨(0, 0), true⟩}) (Finset.singleton_nonempty _)
+    (fun q hq => by rw [Finset.mem_singleton.1 hq]; simp [ringRegion])
+    (fun q hq g e he hg => by
+      rw [Finset.mem_singleton.1 hq] at he
+      rcases eq_of_mem_edges_whiteZero he hg with rfl | rfl | rfl | rfl <;> simp [ringRegion])
 
 end TauCeti.Examples.Cochain
