@@ -178,23 +178,11 @@ theorem IsMaximalTorus.exists_mem_stabilizer_Ad_mem_lieSubalgebraOfSubgroup {T :
     rw [← map_smul, ← lieExp_eq_mulInvariantExp]
     exact mem_stabilizer_continuousAdjointRepresentation_iff.2
       (Ad_lieExp_smul_apply_eq_self_of_lie_eq_zero hYX t)
-  -- Cartan's theorem makes `K` a compact Lie group. A maximal torus of `K` containing `S` is
-  -- conjugate in `K` to `T`, so the conjugating element carries `S` into `T`.
-  let L := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
-  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
-    (I := I) (K := K) hK
-  let _ : ChartedSpace L K := d.chartedSpace
-  let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
-  let _ : CompactSpace K := isCompact_iff_compactSpace.mp hK.isCompact
-  obtain ⟨S', hS', hSS'⟩ :=
-    ((isTorus_closedOneParameterSubgroup _).subgroupOf hSK).exists_isMaximalTorus_le 𝓘(ℝ, L)
-  obtain ⟨c, hc⟩ := hS'.exists_map_conj_eq 𝓘(ℝ, L) (hT.subgroupOf hTK)
-  have hle : S.map (MulAut.conj (c : G)).toMonoidHom ≤ T := by
-    rintro _ ⟨s, hs, rfl⟩
-    have hmem : MulAut.conj c ⟨s, hSK hs⟩ ∈ T.subgroupOf K :=
-      hc ▸ ⟨_, hSS' (Subgroup.mem_subgroupOf.mpr hs), rfl⟩
-    exact hmem
-  refine ⟨c, c.property, lieSubalgebraOfSubgroup_mono hle ?_⟩
+  -- A maximal torus of `K` containing `S` is conjugate in `K` to `T`, so some `c ∈ K` carries `S`
+  -- into `T`.
+  obtain ⟨c, hcK, hle⟩ :=
+    hT.exists_mem_map_conj_le_of_le I hK (isTorus_closedOneParameterSubgroup _) hSK hTK
+  refine ⟨c, hcK, lieSubalgebraOfSubgroup_mono hle ?_⟩
   rw [lieSubalgebraOfSubgroup_map_conj]
   exact ⟨Y, mem_lieSubalgebraOfSubgroup_of_forall hexp, rfl⟩
 

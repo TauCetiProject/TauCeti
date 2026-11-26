@@ -46,8 +46,6 @@ finite union of connected orbits. For instance, on the full flag manifold of `U(
 
 ## Main results
 
-* `TauCeti.Lie.mk_mem_criticalPoints_orbitMap_coadjointRepresentation_iff`: the point `[g]` is a
-  critical point of `f_X` exactly when `⁅X, Ad_g μ⁆ = 0`.
 * `TauCeti.Lie.criticalPoints_eq_iUnion_orbit_normalizerQuotientToCoadjointOrbit`: the critical
   set of `f_X` is the union of the `Z_G(X)`-orbits of the Weyl group points.
 * `TauCeti.Lie.orbit_normalizerQuotientToCoadjointOrbit_eq_iff`: two such orbits agree exactly when
@@ -80,31 +78,6 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
   {T : Subgroup G} [IsMulCommutative T] {B : LinearMap.BilinForm ℝ (GroupLieAlgebra I G)}
-
-omit [T2Space G] [IsMulCommutative T] in
-/-- **The critical points of a height in coset coordinates.** For an invariant form `B` with trivial
-left radical, the point `[g]` of the coadjoint orbit of `B (e μ)` is a critical point of the height
-`f_X = ⟨·, e X⟩` exactly when `⁅X, Ad_g μ⁆ = 0`. -/
-theorem mk_mem_criticalPoints_orbitMap_coadjointRepresentation_iff
-    (hB : Representation.IsInvariantForm (adjointRepresentation ℝ I G) B)
-    (hsep : B.SeparatingLeft) (μ X : LeftInvariantDerivation I G) (g : G) :
-    (g : G ⧸ (coadjointRepresentation ℝ I G).stabilizer
-        (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-          BoundarylessManifold.isInteriorPoint μ))) ∈
-      criticalPoints
-        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer
-          (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint μ))))
-        (fun y ↦ (coadjointRepresentation ℝ I G).orbitMap
-          (B (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint μ)) y
-          (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-            BoundarylessManifold.isInteriorPoint X)) ↔
-      ⁅X, Ad (I := I) g μ⁆ = 0 := by
-  rw [Module.Dual.mem_criticalPoints_orbitMap_coadjointRepresentation_apply_iff_lie_eq_zero
-    (lieInvariant_of_isInvariantForm_adjointRepresentation hB) hsep
-    (orbitMap_coadjointRepresentation_bilinForm_mk hB μ g), ← LieEquiv.map_lie,
-    EmbeddingLike.map_eq_zero_iff]
 
 /-! ### The critical set as a union of stabilizer orbits -/
 
@@ -183,8 +156,7 @@ private theorem exists_smul_normalizerQuotientToCoadjointOrbit_eq_mul
   refine ⟨⟨m, mem_stabilizer_continuousAdjointRepresentation_iff.mpr hm⟩, ?_⟩
   rw [← QuotientGroup.mk_mul, normalizerQuotientToCoadjointOrbit_mk,
     normalizerQuotientToCoadjointOrbit_mk, Subgroup.smul_def, MulAction.Quotient.smul_mk,
-    smul_eq_mul]
-  rfl
+    smul_eq_mul, Subgroup.coe_mul]
 
 /-- **Stabilizer orbits of Weyl group points are indexed by double cosets.** Let `T` be a maximal
 torus of a compact Lie group, `B` an invariant form with trivial left radical, and `μ`, `X` in the
@@ -218,12 +190,10 @@ theorem orbit_normalizerQuotientToCoadjointOrbit_eq_iff [CompactSpace G] (hT : I
     have hAd := congrArg ((coadjointRepresentation ℝ I G).orbitMap _) hkw
     rw [orbitMap_coadjointRepresentation_bilinForm_mk hB,
       orbitMap_coadjointRepresentation_bilinForm_mk hB, Ad_mul, LieEquiv.trans_apply] at hAd
-    have hinj := (LinearMap.ker_eq_bot.mp (LinearMap.separatingLeft_iff_ker_eq_bot.mp hsep)).comp
-      (LieEquiv.injective (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
-        BoundarylessManifold.isInteriorPoint))
     obtain ⟨m, hmX, hmN, hm⟩ := hT.exists_mem_stabilizer_mem_normalizer_Ad_eq X.property
       (Ad_mem_lieSubalgebraOfSubgroup n.property μ.property)
-      (Ad_mem_lieSubalgebraOfSubgroup n'.property μ.property) hk (hinj hAd)
+      (Ad_mem_lieSubalgebraOfSubgroup n'.property μ.property) hk
+      (injective_bilinForm_comp_leftInvariantDerivationLieEquivGroupLieAlgebra hsep hAd)
     set v : T.normalizerQuotient :=
       ((⟨m, hmN⟩ : Subgroup.normalizer (T : Set G)) : T.normalizerQuotient)
     have hv : v ∈ (T.weylAdjointRepresentation (I := I)).stabilizer X :=
