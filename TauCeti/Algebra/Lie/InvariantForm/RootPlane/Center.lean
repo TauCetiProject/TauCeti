@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Coadjoint.Height
 public import TauCeti.Algebra.Lie.InvariantForm.Positive
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.Algebra.Lie.Solvable.Basic
 
 /-!
 # The centre, the roots and the coroots of a root-plane decomposition
@@ -25,8 +26,10 @@ the coroot directions.
   `H ∈ t` lies in `t` (`TauCeti.IsRootPlaneDecomposition.mem_of_forall_lie_eq_zero`): its component
   `a_i` in `E_i` satisfies `α_i(H) B(a_i, a_i) = 0`. In particular the centre lies in `t`
   (`TauCeti.IsRootPlaneDecomposition.center_le`).
-* **The roots vanish exactly on the centre.** For nonzero planes, `H ∈ t` is central exactly when
-  `α_i(H) = 0` for every `i` (`TauCeti.IsRootPlaneDecomposition.mem_center_iff`). So the common
+* **The roots vanish exactly on the centre.** An element `H ∈ t` commuting with every plane is
+  central (`TauCeti.IsRootPlaneDecomposition.mem_center_of_forall_lie_eq_zero`). For nonzero
+  planes, `H ∈ t` is central exactly when `α_i(H) = 0` for every `i`
+  (`TauCeti.IsRootPlaneDecomposition.mem_center_iff`). So the common
   kernel of the roots is `𝔷 ∩ t`
   (`TauCeti.IsRootPlaneDecomposition.dualCoannihilator_span_range`), and in finite dimensions the
   roots span the annihilator of the centre in `t*`
@@ -42,14 +45,15 @@ this splitting restricts to
 
 (`TauCeti.IsRootPlaneDecomposition.isCompl_comap_center_comap_derivedSeries`).
 
-* **The roots span the dual of `t_ss`.** For nonzero planes, the restrictions of the roots to
+* **The roots span the dual of `t_ss`.** The restrictions of the roots to
   `t_ss` span `t_ss*` (`TauCeti.IsRootPlaneDecomposition.span_range_domRestrict_eq_top`): no
   nonzero vector of `t_ss` is killed by all of them.
 * **The coroot directions span `t_ss`.** For `v ∈ E_i` the bracket `⁅v, J_i v⁆` lies in
   `t ∩ [L, L]`, and an invariant form pairs `H ∈ t` with it to `α_i(H) B(J_i v, J_i v)`. A vector
   of `t` orthogonal to all of them is therefore central, and the brackets span `t_ss`
-  (`TauCeti.IsRootPlaneDecomposition.span_lie_eq_inf_derivedSeries`). For `v ≠ 0` the bracket is a
-  positive multiple of the coroot of `α_i`
+  (`TauCeti.IsRootPlaneDecomposition.span_lie_eq_inf_derivedSeries`). The pairing identity is
+  `LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul`; when `B` is positive
+  definite and `v ≠ 0`, also `α_i(⁅v, J_i v⁆) > 0`
   (`LinearMap.BilinForm.lieInvariant.root_apply_lie_pos_of_lie_eq_smul`).
 
 For the Lie algebra `𝔲(n)` of the unitary group, with `t` the diagonal matrices, the roots
@@ -114,21 +118,29 @@ theorem center_le [Finite ι] (hD : IsRootPlaneDecomposition B t α E J) (hα : 
   hD.mem_of_forall_lie_eq_zero hα fun H ↦
     (LieModule.mem_maxTrivSubmodule K L L z).mp hz H
 
+/-- **An element of the torus commuting with every plane is central.** In a root-plane
+decomposition, an element `H ∈ t` with `⁅H, v⁆ = 0` for every `v` in every plane `E_i` is
+central. -/
+theorem mem_center_of_forall_lie_eq_zero [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
+    {H : t} (h : ∀ i (v : E i), ⁅(H : L), (v : L)⁆ = 0) : (H : L) ∈ center K L := by
+  have := Fintype.ofFinite ι
+  rw [center, LieModule.mem_maxTrivSubmodule]
+  intro x
+  obtain ⟨H', hH', a, rfl⟩ := hD.exists_eq_add_sum x
+  rw [← lie_skew, neg_eq_zero, lie_add, hD.lie_eq_zero H.property hH', zero_add, lie_sum]
+  exact Finset.sum_eq_zero fun i _ ↦ h i (a i)
+
 /-- **The roots vanish exactly on the centre.** In a root-plane decomposition with nonzero planes,
 an element `H ∈ t` is central exactly when every root vanishes at `H`. -/
 theorem mem_center_iff [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
     (hE : ∀ i, E i ≠ ⊥) (H : t) : (H : L) ∈ center K L ↔ ∀ i, α i H = 0 := by
-  have := Fintype.ofFinite ι
-  rw [center, LieModule.mem_maxTrivSubmodule]
-  refine ⟨fun h i ↦ ?_, fun h x ↦ ?_⟩
-  · obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hE i)
-    have hHv : ⁅(H : L), v⁆ = 0 := by rw [← lie_skew, h v, neg_zero]
-    exact ((hD.isRootPlane i).lie_eq_zero_iff H ⟨v, hv⟩ |>.mp hHv).resolve_right
-      fun h0 ↦ hv0 (congrArg Subtype.val h0)
-  · obtain ⟨H', hH', a, rfl⟩ := hD.exists_eq_add_sum x
-    rw [← lie_skew, neg_eq_zero, lie_add, hD.lie_eq_zero H.property hH', zero_add, lie_sum]
-    exact Finset.sum_eq_zero fun i _ ↦ ((hD.isRootPlane i).lie_eq_zero_iff H (a i)).mpr
-      (Or.inl (h i))
+  refine ⟨fun h i ↦ ?_, fun h ↦ hD.mem_center_of_forall_lie_eq_zero fun i v ↦
+    ((hD.isRootPlane i).lie_eq_zero_iff H v).mpr (Or.inl (h i))⟩
+  rw [center, LieModule.mem_maxTrivSubmodule] at h
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hE i)
+  have hHv : ⁅(H : L), v⁆ = 0 := by rw [← lie_skew, h v, neg_zero]
+  exact ((hD.isRootPlane i).lie_eq_zero_iff H ⟨v, hv⟩ |>.mp hHv).resolve_right
+    fun h0 ↦ hv0 (congrArg Subtype.val h0)
 
 /-- **The common kernel of the roots is the centre.** In a root-plane decomposition with nonzero
 planes, the elements of `t` killed by every root are exactly the central ones. -/
@@ -168,34 +180,32 @@ theorem isCompl_comap_center_comap_derivedSeries [Finite ι]
     (hD.center_le hα)
 
 /-- **The roots span the dual of the semisimple part of the torus.** For a reflexive invariant
-form with anisotropic diagonal and a root-plane decomposition with nonzero planes, the restrictions
-of the roots to `t ∩ [L, L]` span its dual: a vector of `t ∩ [L, L]` killed by every root is
-central, hence zero. -/
+form with anisotropic diagonal and a root-plane decomposition, the restrictions of the roots to
+`t ∩ [L, L]` span its dual: a vector of `t ∩ [L, L]` killed by every root is central, hence
+zero. -/
 theorem span_range_domRestrict_eq_top [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
-    (hE : ∀ i, E i ≠ ⊥) (hrefl : B.IsRefl) (hani : B.toQuadraticMap.Anisotropic)
-    (hinv : B.lieInvariant L) :
+    (hrefl : B.IsRefl) (hani : B.toQuadraticMap.Anisotropic) (hinv : B.lieInvariant L) :
     Submodule.span K
         (Set.range fun i ↦ (α i).domRestrict ((derivedSeries K L 1).toSubmodule.comap t.subtype)) =
       ⊤ := by
-  have hdisj := (B.isCompl_center_derivedSeries_one_of_anisotropic hrefl hani hinv).disjoint
   rw [← Subspace.dualCoannihilator_dualAnnihilator_eq (W := Submodule.span K _),
     Submodule.dualAnnihilator_eq_top_iff, eq_bot_iff]
   intro H hH
-  rw [← SetLike.mem_coe, Submodule.coe_dualCoannihilator_span, Set.mem_ofPred_eq,
-    Set.forall_mem_range] at hH
-  have hc : ((H : t) : L) ∈ center K L :=
-    (hD.mem_center_iff hE H).mpr fun i ↦ by simpa using hH i
-  have hd : ((H : t) : L) ∈ derivedSeries K L 1 := H.property
-  have h0 : ((H : t) : L) = 0 := by
-    simpa using (LieSubmodule.disjoint_toSubmodule.mpr hdisj).le_bot
-      (Submodule.mem_inf.mpr ⟨hc, hd⟩)
-  exact (Submodule.mem_bot K).mpr (Subtype.ext (Subtype.ext h0))
+  -- Every root vanishes at `H`, so `H` commutes with every plane.
+  have hα (i : ι) : α i H = 0 :=
+    (Submodule.mem_dualCoannihilator H).mp hH _ (Submodule.subset_span ⟨i, rfl⟩)
+  have hc : ((H : t) : L) ∈ center K L := hD.mem_center_of_forall_lie_eq_zero fun i v ↦
+    ((hD.isRootPlane i).lie_eq_zero_iff H v).mpr (Or.inl (hα i))
+  have hd : ((H : t) : L) ∈ derivedSeries K L 1 :=
+    LieSubmodule.mem_toSubmodule _ |>.mp (Submodule.mem_comap.mp H.property)
+  exact (Submodule.mem_bot K).mpr <| Subtype.ext <| Subtype.ext <|
+    B.eq_zero_of_mem_center_of_mem_derivedSeries_one hrefl hani hinv hc hd
 
 /-- **The coroot directions span the semisimple part of the torus.** For a reflexive invariant form
-with anisotropic diagonal and a root-plane decomposition with nonzero roots and planes, the
+with anisotropic diagonal and a root-plane decomposition with nonzero roots, the
 brackets `⁅v, J_i v⁆`, for `v` in a plane `E_i`, span `t ∩ [L, L]`. -/
 theorem span_lie_eq_inf_derivedSeries [Finite ι] (hD : IsRootPlaneDecomposition B t α E J)
-    (hα : ∀ i, α i ≠ 0) (hE : ∀ i, E i ≠ ⊥) (hrefl : B.IsRefl)
+    (hα : ∀ i, α i ≠ 0) (hrefl : B.IsRefl)
     (hani : B.toQuadraticMap.Anisotropic) (hinv : B.lieInvariant L) :
     Submodule.span K {x | ∃ i, ∃ v : E i, ⁅(v : L), (J i v : L)⁆ = x} =
       t ⊓ (derivedSeries K L 1).toSubmodule := by
@@ -208,26 +218,24 @@ theorem span_lie_eq_inf_derivedSeries [Finite ι] (hD : IsRootPlaneDecomposition
       (fun H ↦ (hD.isRootPlane i).lie_apply H v) (fun H ↦ ?_), ?_⟩
     · rw [(hD.isRootPlane i).lie_apply, (hD.isRootPlane i).apply_apply, Submodule.coe_neg,
         smul_neg]
-    · rw [SetLike.mem_coe, LieSubmodule.mem_toSubmodule, derivedSeries_def,
-        derivedSeriesOfIdeal_succ, derivedSeriesOfIdeal_zero]
-      exact LieSubmodule.lie_mem_lie (LieSubmodule.mem_top _) (LieSubmodule.mem_top _)
-  -- A vector of `t` orthogonal to every bracket is killed by every root, hence central.
+    · exact LieAlgebra.lie_mem_derivedSeries_one _ _
+  -- A vector of `t` orthogonal to every bracket commutes with every plane, hence is central:
+  -- for `v ≠ 0` in `E_i` it pairs with `⁅v, J_i v⁆` to `α_i(h) B(J_i v, J_i v)`, so `α_i(h) = 0`.
   have horth {h : L} (ht : h ∈ t) (hh : h ∈ B.orthogonal C) : h ∈ center K L := by
-    refine (hD.mem_center_iff hE ⟨h, ht⟩).mpr fun i ↦ ?_
-    obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (hE i)
-    have hJv : (J i ⟨v, hv⟩ : L) ≠ 0 := by
+    refine hD.mem_center_of_forall_lie_eq_zero (H := ⟨h, ht⟩) fun i v ↦ ?_
+    refine ((hD.isRootPlane i).lie_eq_zero_iff _ v).mpr ((eq_or_ne v 0).symm.imp (fun hv0 ↦ ?_) id)
+    have hJv : (J i v : L) ≠ 0 := by
       rw [ne_eq, ZeroMemClass.coe_eq_zero, map_eq_zero_iff _ (hD.isRootPlane i).injective]
-      exact fun h0 ↦ hv0 (congrArg Subtype.val h0)
+      exact hv0
     have hpair := LinearMap.BilinForm.lieInvariant.apply_lie_eq_mul_of_lie_eq_smul hinv
-      (fun H ↦ (hD.isRootPlane i).lie_apply H ⟨v, hv⟩) ⟨h, ht⟩
-    rw [hrefl _ _ (hh _ (Submodule.subset_span ⟨i, ⟨v, hv⟩, rfl⟩))] at hpair
+      (fun H ↦ (hD.isRootPlane i).lie_apply H v) ⟨h, ht⟩
+    rw [hrefl _ _ (hh _ (Submodule.subset_span ⟨i, v, rfl⟩))] at hpair
     exact (mul_eq_zero.mp hpair.symm).resolve_right fun h0 ↦ hJv (hani _ h0)
   have hCcompl : IsCompl C (B.orthogonal C) := by
     refine B.isCompl_orthogonal_of_restrict_nondegenerate hrefl ?_
     rw [LinearMap.BilinForm.restrict_eq_compl₁₂]
     exact LinearMap.BilinForm.nondegenerate_of_anisotropic _
       (B.anisotropic_toQuadraticMap_compl₁₂ hani C.subtype C.injective_subtype)
-  have hdisj := (B.isCompl_center_derivedSeries_one_of_anisotropic hrefl hani hinv).disjoint
   -- Write `x ∈ t ∩ [L, L]` as `c + h` with `c ∈ C` and `h ⊥ C`; then `h` is central and lies in
   -- the derived algebra, so it vanishes.
   refine le_antisymm hCle fun x ⟨hxt, hxd⟩ ↦ ?_
@@ -238,9 +246,8 @@ theorem span_lie_eq_inf_derivedSeries [Finite ι] (hD : IsRootPlaneDecomposition
   have hht : h ∈ t := by simpa using t.sub_mem hxt hct
   have hhd : h ∈ (derivedSeries K L 1).toSubmodule := by
     simpa using (derivedSeries K L 1).toSubmodule.sub_mem hxd hcd
-  have h0 : h = 0 := by
-    simpa using (LieSubmodule.disjoint_toSubmodule.mpr hdisj).le_bot
-      (Submodule.mem_inf.mpr ⟨horth hht hh, hhd⟩)
+  have h0 : h = 0 := B.eq_zero_of_mem_center_of_mem_derivedSeries_one hrefl hani hinv
+    (horth hht hh) hhd
   simpa [h0] using hc
 
 end TauCeti.IsRootPlaneDecomposition
