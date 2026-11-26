@@ -70,8 +70,8 @@ A smooth cylinder from the loop `γ` to the loop `γ₀` (`TauCeti.IsSmoothCylin
 `f : M → M`, a smooth `f`-seamed cylinder (`TauCeti.IsSmoothSeamedCylinder`) asks
 `u (s, 1) = f (u (s, 0))` instead, so that it joins two `f`-seamed paths, the paths `γ` with
 `γ 1 = f (γ 0)` on which the Floer theory of a symplectomorphism `f` is built; the cylinders are
-the case `f = id` (`TauCeti.isSmoothSeamedCylinder_id_iff`). Seamed cylinders concatenate and
-reverse, and a smooth family of seamed paths gives seamed cylinders between any two of its members.
+defined as the case `f = id`. Seamed cylinders concatenate and reverse, and a smooth family of
+seamed paths gives seamed cylinders between any two of its members.
 
 Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
@@ -602,8 +602,7 @@ variable (I) in
 over `t ∈ [0, 1]`, with `u (s, 1) = f (u (s, 0))` for `s ∈ [0, 1]`, so that every `u (s, ·)` is an
 `f`-seamed path (`TauCeti.SeamedPath`). The start is prescribed for all `t`, so that two seamed
 cylinders from the same path can be glued smoothly along it; the other conditions only concern the
-unit square. For `f = id` these are the smooth cylinders `TauCeti.IsSmoothCylinder`
-(`TauCeti.isSmoothSeamedCylinder_id_iff`). -/
+unit square. For `f = id` these are the smooth cylinders `TauCeti.IsSmoothCylinder`. -/
 structure IsSmoothSeamedCylinder (f : M → M) (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop where
   contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u
   apply_zero (t : ℝ) : u (0, t) = γ t
@@ -613,24 +612,21 @@ structure IsSmoothSeamedCylinder (f : M → M) (γ γ₀ : ℝ → M) (u : ℝ �
 variable (I) in
 /-- A smooth cylinder from the loop `γ` to the loop `γ₀`: a smooth map `u : ℝ × ℝ → M` running
 along `γ` at `s = 0` and along `γ₀` at `s = 1`, each loop being traversed over `t ∈ [0, 1]`,
-with `u (s, 1) = u (s, 0)` for `s ∈ [0, 1]`. The start is prescribed for all `t`, so that two
-cylinders from the same loop can be glued smoothly along it; the other conditions only concern
-the unit square. When `γ₀` is constant, `u` is a cap of `γ`. -/
-structure IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop where
-  contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u
-  apply_zero (t : ℝ) : u (0, t) = γ t
-  apply_one : ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t
-  periodic : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)
+with `u (s, 1) = u (s, 0)` for `s ∈ [0, 1]`: a smooth `id`-seamed cylinder. The start is
+prescribed for all `t`, so that two cylinders from the same loop can be glued smoothly along it;
+the other conditions only concern the unit square. When `γ₀` is constant, `u` is a cap of `γ`. -/
+@[expose] def IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop :=
+  IsSmoothSeamedCylinder I id γ γ₀ u
 
 section Seamed
 
 variable {f : M → M} {γ γ' γ₀ : ℝ → M} {u u₁ u₂ : ℝ × ℝ → M}
 
 /-- **Seamed cylinders for the identity are cylinders.** -/
+@[simp]
 theorem isSmoothSeamedCylinder_id_iff :
     IsSmoothSeamedCylinder I id γ γ₀ u ↔ IsSmoothCylinder I γ γ₀ u :=
-  ⟨fun h ↦ ⟨h.contMDiff, h.apply_zero, h.apply_one, h.seam⟩,
-    fun h ↦ ⟨h.contMDiff, h.apply_zero, h.apply_one, h.periodic⟩⟩
+  Iff.rfl
 
 /-- The initial path of an `f`-seamed cylinder is `f`-seamed. -/
 theorem IsSmoothSeamedCylinder.source_apply_one (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
@@ -728,7 +724,7 @@ def VanishesOnSpheres (φ : RoughForm I M F 2) : Prop :=
 vanishes for every smooth map `u : ℝ × ℝ → M` that agrees on the two vertical edges of the square
 and maps its bottom edge to its top edge by `f`, `u (s, 1) = f (u (s, 0))`. Such a map is the
 torus swept out by a loop `s ↦ u (s, ·)` of `f`-seamed paths. For `f = id` this is
-`TauCeti.VanishesOnTori` (`TauCeti.vanishesOnSeamedTori_id_iff`). -/
+`TauCeti.VanishesOnTori`. -/
 def VanishesOnSeamedTori (f : M → M) (φ : RoughForm I M F 2) : Prop :=
   ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
     (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
@@ -736,12 +732,10 @@ def VanishesOnSeamedTori (f : M → M) (φ : RoughForm I M F 2) : Prop :=
 
 /-- A two-form `φ` **vanishes on tori** when its integral over the unit square vanishes for every
 smooth map `u : ℝ × ℝ → M` that agrees on opposite edges of the square, so that it factors
-through the torus. For a symplectic form this formulates the area condition of symplectic
-atoroidality on maps of the square. -/
-def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
-  ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
-    (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
-    (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) → rectangleIntegral φ u (0, 0) (1, 1) = 0
+through the torus: it vanishes on `id`-seamed tori. For a symplectic form this formulates the
+area condition of symplectic atoroidality on maps of the square. -/
+@[expose] def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
+  VanishesOnSeamedTori id φ
 
 /-- Unfolding `TauCeti.VanishesOnSpheres`. -/
 theorem vanishesOnSpheres_iff (φ : RoughForm I M F 2) :
@@ -765,6 +759,7 @@ theorem vanishesOnSeamedTori_iff (f : M → M) (φ : RoughForm I M F 2) :
   Iff.rfl
 
 /-- **Vanishing on seamed tori for the identity is vanishing on tori.** -/
+@[simp]
 theorem vanishesOnSeamedTori_id_iff (φ : RoughForm I M F 2) :
     VanishesOnSeamedTori id φ ↔ VanishesOnTori φ :=
   Iff.rfl
@@ -788,7 +783,7 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
   have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
   have hglue := hS _ hw.contMDiff
     (fun t ht ↦ by rw [hw.apply_zero, hw.apply_zero, hu.apply_one t ht, hu.apply_one 0 h₀])
-    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_one 0 h₀]) hw.periodic
+    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_one 0 h₀]) hw.seam
   rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
     (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
   exact hglue.symm

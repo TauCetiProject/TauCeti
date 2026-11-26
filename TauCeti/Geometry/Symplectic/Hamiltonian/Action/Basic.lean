@@ -322,7 +322,7 @@ theorem contractibleAction_eq_zero_of_not_exists
 theorem contractibleAction_const (hσ : VanishesOnSpheres σ.val) (x : M) :
     σ.contractibleAction H (fun _ ↦ x) = -∫ t in 0..1, H t x := by
   have hc : IsSmoothCylinder I (fun _ ↦ x) (fun _ ↦ x) ((fun _ : ℝ ↦ x) ∘ Prod.fst) :=
-    ⟨contMDiff_const, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
+    isSmoothSeamedCylinder_id_iff.mp ⟨contMDiff_const, fun _ ↦ rfl, fun _ _ ↦ rfl, fun _ _ ↦ rfl⟩
   rw [contractibleAction_eq hσ hc, cylinderAction_eq_of_isSmoothCylinder hc,
     rectangleIntegral_comp_fst, zero_sub]
 
@@ -366,36 +366,31 @@ theorem seamedReferenceAction_self (hT : VanishesOnSeamedTori f σ.val)
   rw [seamedReferenceAction_eq hT hc, cylinderAction_eq_of_isSmoothSeamedCylinder hc,
     rectangleIntegral_comp_snd, zero_sub]
 
-open Classical in
 /-- The Hamiltonian action of a loop `γ` relative to the reference loop `γ₀`, measured against a
-smooth cylinder from `γ` to `γ₀`; it is `0` when there is no such cylinder. When `σ` vanishes on
-tori it does not depend on the cylinder (`TauCeti.SmoothTwoForm.referenceAction_eq`). -/
+smooth cylinder from `γ` to `γ₀`; it is `0` when there is no such cylinder. This is the seamed
+action `TauCeti.SmoothTwoForm.seamedReferenceAction` for `f = id`. When `σ` vanishes on tori it
+does not depend on the cylinder (`TauCeti.SmoothTwoForm.referenceAction_eq`). -/
 def referenceAction (σ : SmoothTwoForm I M) (H : ℝ → M → ℝ) (γ₀ γ : ℝ → M) : ℝ :=
-  if h : ∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u then cylinderAction σ.val H h.choose else 0
+  σ.seamedReferenceAction id H γ₀ γ
+
+/-- **The seamed action for the identity is the action relative to a reference loop.** -/
+@[simp]
+theorem seamedReferenceAction_id :
+    σ.seamedReferenceAction id H γ₀ γ = σ.referenceAction H γ₀ γ :=
+  (rfl)
 
 /-- The action of a loop relative to `γ₀` is `0` when there is no smooth cylinder to `γ₀`. -/
 @[simp]
 theorem referenceAction_eq_zero_of_not_exists (h : ¬∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u) :
     σ.referenceAction H γ₀ γ = 0 :=
-  dite_eq_right h
-
-/-- **The seamed action for the identity is the action relative to a reference loop.** If `σ`
-vanishes on tori, the action of a loop relative to `γ₀` measured against `id`-seamed cylinders is
-`TauCeti.SmoothTwoForm.referenceAction`. -/
-theorem seamedReferenceAction_id (hT : VanishesOnTori σ.val) :
-    σ.seamedReferenceAction id H γ₀ γ = σ.referenceAction H γ₀ γ := by
-  by_cases h : ∃ u : ℝ × ℝ → M, IsSmoothCylinder I γ γ₀ u
-  · rw [seamedReferenceAction_eq ((vanishesOnSeamedTori_id_iff _).mpr hT)
-      (isSmoothSeamedCylinder_id_iff.mpr h.choose_spec)]
-    simp only [referenceAction, h, ↓reduceDIte]
-  · rw [referenceAction_eq_zero_of_not_exists h, seamedReferenceAction_eq_zero_of_not_exists]
+  seamedReferenceAction_eq_zero_of_not_exists <| by
     simpa only [isSmoothSeamedCylinder_id_iff] using h
 
 /-- If `σ` vanishes on tori, the action of a loop relative to `γ₀` is its action measured against
 any smooth cylinder to `γ₀`. -/
 theorem referenceAction_eq (hσ : VanishesOnTori σ.val) (hu : IsSmoothCylinder I γ γ₀ u) :
     σ.referenceAction H γ₀ γ = cylinderAction σ.val H u := by
-  rw [← seamedReferenceAction_id hσ]
+  rw [← seamedReferenceAction_id]
   exact seamedReferenceAction_eq ((vanishesOnSeamedTori_id_iff _).mpr hσ)
     (isSmoothSeamedCylinder_id_iff.mpr hu)
 
@@ -404,7 +399,7 @@ theorem referenceAction_eq (hσ : VanishesOnTori σ.val) (hu : IsSmoothCylinder 
 @[simp]
 theorem referenceAction_self (hσ : VanishesOnTori σ.val) (hγ₀ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ₀)
     (hper : γ₀ 1 = γ₀ 0) : σ.referenceAction H γ₀ γ₀ = -∫ t in 0..1, H t (γ₀ t) := by
-  rw [← seamedReferenceAction_id hσ]
+  rw [← seamedReferenceAction_id]
   exact seamedReferenceAction_self ((vanishesOnSeamedTori_id_iff _).mpr hσ) hγ₀ hper
 
 end SmoothTwoForm

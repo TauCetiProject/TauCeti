@@ -97,7 +97,7 @@ theorem SmoothTwoForm.IsNondegenerate.hasDerivAt_referenceAction (h : σ.IsNonde
       (∫ t in 0..1, σ.val (w (s₀, t))
         ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
           mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)]) s₀ := by
-  simp only [← seamedReferenceAction_id hT]
+  simp only [← seamedReferenceAction_id]
   exact h.hasDerivAt_seamedReferenceAction ((vanishesOnSeamedTori_id_iff _).mpr hT) hH hwc
     (fun s ↦ by simpa using hper (s, 0)) (by simpa only [isSmoothSeamedCylinder_id_iff] using hcyl)
 
@@ -147,7 +147,7 @@ theorem SmoothTwoForm.IsNondegenerate.isReferenceActionCritical (h : σ.IsNondeg
   apply_add_one := (mem_periodicSolutions.mp horbit).2
   exists_isSmoothCylinder := hcyl
   hasDerivAt w hwc hper h0 := by
-    simp only [← seamedReferenceAction_id hT]
+    simp only [← seamedReferenceAction_id]
     exact (h.isSeamedReferenceActionCritical ((vanishesOnSeamedTori_id_iff _).mpr hT) hH hγ
       (by simpa only [isSmoothSeamedCylinder_id_iff] using hcyl)
       fun t _ ↦ (mem_periodicSolutions.mp horbit).1 t).hasDerivAt hwc
