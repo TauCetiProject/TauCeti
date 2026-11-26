@@ -16,8 +16,10 @@ import Mathlib.Topology.WithTopology
 The constructible topology refines the given topology on a prespectral space. Spectral maps
 are continuous for the constructible topologies, and every generic point of the closure of a
 subset lies in its constructible closure. These facts let pro-constructible subspaces inherit
-compactness and quasi-sobriety under their respective ambient hypotheses. On a T₀ prespectral
-space the constructible topology is totally separated, which makes compact subsets of it closed.
+compactness and quasi-sobriety under their respective ambient hypotheses. On a spectral space the
+constructible subsets are exactly the clopens of the constructible topology, and they form a
+basis of it. On a T₀ prespectral space the constructible topology is totally separated, which
+makes compact subsets of it closed.
 
 ## Main results
 
@@ -32,6 +34,10 @@ space the constructible topology is totally separated, which makes compact subse
   statement for the induced map between the `WithConstructibleTopology` type synonyms.
 * `IsGenericPoint.mem_closure_constructibleTopology`: a generic point of the closure of a
   subset lies in its constructible closure, in any topological space.
+* `TauCeti.isTopologicalBasis_constructibleTopology`: on a compact quasi-separated space the
+  constructible subsets form a basis of the constructible topology.
+* `TauCeti.isClopen_constructibleTopology_iff_isConstructible`: on a spectral space the clopen
+  subsets of the constructible topology are exactly the constructible subsets.
 * `PrespectralSpace.not_specializes_iff_exists_isOpen_isCompact`: `x` does not specialize to `y`
   if and only if some quasi-compact open subset contains `y` but not `x`.
 * `IsCompact.eq_sInter_of_stableUnderGeneralization`: in a prespectral space, a quasi-compact
@@ -125,6 +131,45 @@ theorem IsGenericPoint.mem_closure_constructibleTopology {s : Set X} {η : X}
   · exact mem_sInter.1 hxO U ⟨hUF, hUopen⟩
   · exact (hη.mem_closed_set_iff hUclosed).1 (mem_sInter.1 hηF U hUF)
       (subset_closure hxs)
+
+/-! ### Constructible subsets as clopens of the constructible topology -/
+
+variable (X) in
+/-- On a compact quasi-separated space the constructible subsets form a basis of the
+constructible topology: they generate it and are stable under finite intersections. -/
+theorem TauCeti.isTopologicalBasis_constructibleTopology [CompactSpace X]
+    [QuasiSeparatedSpace X] :
+    @IsTopologicalBasis X (constructibleTopology X) {s : Set X | IsConstructible s} :=
+  @isTopologicalBasis_of_subbasis_of_finiteInter X (constructibleTopology X) _
+    (constructibleTopology_eq_generateFrom_isConstructible X)
+    ⟨IsConstructible.univ, fun _ hs _ ht ↦ hs.inter ht⟩
+
+/-- On a compact quasi-separated space a constructible subset is clopen for the constructible
+topology. -/
+theorem Topology.IsConstructible.isClopen_constructibleTopology [CompactSpace X]
+    [QuasiSeparatedSpace X] {s : Set X} (hs : IsConstructible s) :
+    IsClopen[constructibleTopology X] s := by
+  have hb := TauCeti.isTopologicalBasis_constructibleTopology X
+  exact ⟨@IsClosed.mk X (constructibleTopology X) s
+      (@IsTopologicalBasis.isOpen X (constructibleTopology X) _ _ hb hs.compl),
+    @IsTopologicalBasis.isOpen X (constructibleTopology X) _ _ hb hs⟩
+
+/-- On a compact, quasi-sober, quasi-separated prespectral space (for instance a spectral space)
+the subsets that are clopen for the constructible topology are exactly the constructible subsets.
+A clopen subset is compact for the compact constructible topology, hence a finite union of basic
+constructible subsets. -/
+theorem TauCeti.isClopen_constructibleTopology_iff_isConstructible [CompactSpace X]
+    [QuasiSober X] [PrespectralSpace X] [QuasiSeparatedSpace X] {s : Set X} :
+    IsClopen[constructibleTopology X] s ↔ IsConstructible s := by
+  refine ⟨fun hs ↦ ?_, IsConstructible.isClopen_constructibleTopology⟩
+  have hb : @IsTopologicalBasis X (constructibleTopology X)
+      (range (Subtype.val : {s : Set X // IsConstructible s} → Set X)) := by
+    simpa using TauCeti.isTopologicalBasis_constructibleTopology X
+  have := TauCeti.compactSpace_constructibleTopology X
+  obtain ⟨t, ht, rfl⟩ := @eq_finite_iUnion_of_isTopologicalBasis_of_isCompact_open X _
+    (constructibleTopology X) Subtype.val hb s
+    (@IsClosed.isCompact X (constructibleTopology X) s this hs.1) hs.2
+  exact IsConstructible.biUnion ht fun i _ ↦ i.property
 
 /-! ### Separation of the constructible topology -/
 
