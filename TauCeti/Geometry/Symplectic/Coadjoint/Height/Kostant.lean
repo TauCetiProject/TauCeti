@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Coadjoint.Height.Weyl
 -- Proof-only: root-plane decompositions over a maximal torus, and density of the regular
 -- elements of `t` by the Baire property of locally compact spaces.
 import Mathlib.Topology.Baire.LocallyCompactRegular
-import TauCeti.Geometry.Lie.Subgroup.Torus.RootPlane
+import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 import TauCeti.Topology.Algebra.Module.Baire
 
 /-!
