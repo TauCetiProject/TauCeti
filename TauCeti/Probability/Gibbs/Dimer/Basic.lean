@@ -469,8 +469,9 @@ theorem IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq {w : G.edgeSe
     rw [← measure_biUnion_finset
       (f := fun ω' : G.edgeSet → Bool => {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ω' e}) ?_
       fun ω' _ => by
-        rw [← SymbolicDynamics.FullShift.cylinder_eq_setOf]
-        exact SymbolicDynamics.FullShift.measurableSet_cylinder E ω']
+        convert SymbolicDynamics.FullShift.measurableSet_cylinder E ω' using 1
+        ext η
+        exact SymbolicDynamics.FullShift.mem_cylinder.symm]
     · refine measure_congr (Filter.eventuallyEqSet_iff.2 ?_)
       filter_upwards [hμ.ae_isDimerConfiguration] with η hη
       simp only [mem_ofPred_eq, mem_iUnion, exists_prop, Finite.mem_toFinset]
