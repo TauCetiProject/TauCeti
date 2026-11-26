@@ -57,6 +57,59 @@ namespace Matrix
 variable {p q 𝕜 : Type*} [Fintype p] [Fintype q] [DecidableEq p] [DecidableEq q] [RCLike 𝕜]
   {n : ℕ} {F F' : Matrix (p ⊕ q) (Fin (n + 1)) 𝕜} {T T' : ℝ}
 
+/-- The form of the Gram matrix of `fromCols F F'` is nonpositive on the span of the first
+frame `F`, the image of `fromRows 1 0`: at `fromRows 1 0 *ᵥ c` it is `-T * ‖c (last n)‖ ^ 2`. -/
+private theorem re_star_dotProduct_fromCols_mulVec_fromRows_one_zero_nonpos (hT : 0 ≤ T)
+    (hF : Fᴴ * indefiniteDiagonal p q 𝕜 * F = single (last n) (last n) (-(T : 𝕜)))
+    (c : Fin (n + 1) → 𝕜) :
+    RCLike.re (star (fromRows 1 0 *ᵥ c) ⬝ᵥ
+      ((fromCols F F')ᴴ * indefiniteDiagonal p q 𝕜 * fromCols F F') *ᵥ (fromRows 1 0 *ᵥ c)) ≤
+      0 := by
+  set J := indefiniteDiagonal p q 𝕜
+  set P := fromCols F F'
+  set E : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1)) 𝕜 := fromRows 1 0
+  have hPE : P * E = F := by simp [P, E, fromCols_mul_fromRows]
+  rw [← star_dotProduct_conjTranspose_mul_mul_mulVec,
+    show Eᴴ * (Pᴴ * J * P) * E = (P * E)ᴴ * J * (P * E) by
+      simp only [conjTranspose_mul, Matrix.mul_assoc], hPE, hF]
+  -- the form of `single (last n) (last n) (-T)` at `c` is `-T * ‖c (last n)‖ ^ 2`
+  have h_val : star c ⬝ᵥ single (last n) (last n) (-(T : 𝕜)) *ᵥ c =
+      ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) := by
+    suffices h : star (c (last n)) * (-(T : 𝕜) * c (last n)) =
+        ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) by
+      simpa [dotProduct, single_mulVec, Function.update_apply] using h
+    rw [RCLike.star_def, mul_left_comm, RCLike.conj_mul]
+    push_cast
+    ring
+  rw [h_val, RCLike.ofReal_re, neg_mul, neg_nonpos]
+  positivity
+
+/-- The form of the Gram matrix `Pᴴ * J * P` is nonnegative at the vectors `v` whose image
+`P v` has vanishing `q` coordinates. -/
+private theorem re_star_dotProduct_gram_mulVec_nonneg_of_mem_ker {m : Type*} [Fintype m]
+    {P : Matrix (p ⊕ q) m 𝕜} {v : m → 𝕜}
+    (hv : v ∈ LinearMap.ker (P.submatrix Sum.inr id).mulVecLin) :
+    0 ≤ RCLike.re (star v ⬝ᵥ (Pᴴ * indefiniteDiagonal p q 𝕜 * P) *ᵥ v) := by
+  have h_q (j : q) : (P *ᵥ v) (Sum.inr j) = 0 := congrFun (LinearMap.mem_ker.1 hv) j
+  rw [star_dotProduct_conjTranspose_mul_mul_mulVec,
+    star_dotProduct_indefiniteDiagonal_mulVec_self, RCLike.ofReal_re]
+  simp only [h_q, norm_zero, zero_pow two_ne_zero, Finset.sum_const_zero, sub_zero]
+  positivity
+
+/-- The real part of `(-1) ^ (n + 1) * (a * star a - T * T' * (b * star b))` is
+`(-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2)`. -/
+private theorem re_neg_one_pow_mul_sub_mul_mul (a b : 𝕜) :
+    RCLike.re ((-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b))) =
+      (-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) := by
+  have h_real (z : 𝕜) : z * star z = ((‖z‖ ^ 2 : ℝ) : 𝕜) := by
+    rw [RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
+  have h : (-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b)) =
+      (((-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) : ℝ) : 𝕜) := by
+    rw [h_real, h_real]
+    push_cast
+    ring
+  rw [h, RCLike.ofReal_re]
+
 /-- **The Gram determinant of two frames in `U(p, q)`.** Let `F` and `F'` be frames of norms
 `-T` and `-T'` for the form `J` of signature `(p, q)`, with `q ≤ n + 1` and `T ≥ 0`. With
 `Z = Fᴴ * J * F'` the matrix of the products `⟨F_a, F'_b⟩` and `D` its leading principal minor of
@@ -75,60 +128,30 @@ theorem mul_mul_norm_det_submatrix_castSucc_sq_le (hq : Fintype.card q ≤ n + 1
   set E : Matrix (Fin (n + 1) ⊕ Fin (n + 1)) (Fin (n + 1)) 𝕜 := fromRows 1 0
   have hE : Function.Injective E.mulVecLin := fun c c' h => funext fun i => by
     simpa [E, fromRows_mulVec] using congrFun h (Sum.inl i)
-  have hW (v) (hv : v ∈ LinearMap.range E.mulVecLin) :
-      RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) ≤ 0 := by
-    obtain ⟨c, rfl⟩ := hv
-    have hPE : P * E = F := by simp [P, E, fromCols_mul_fromRows]
-    rw [mulVecLin_apply, ← star_dotProduct_conjTranspose_mul_mul_mulVec,
-      show Eᴴ * (Pᴴ * J * P) * E = (P * E)ᴴ * J * (P * E) by
-        simp only [conjTranspose_mul, Matrix.mul_assoc], hPE, hF]
-    -- the form of `single (last n) (last n) (-T)` at `c` is `-T * ‖c (last n)‖ ^ 2`
-    have h_val : star c ⬝ᵥ single (last n) (last n) (-(T : 𝕜)) *ᵥ c =
-        ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) := by
-      suffices h : star (c (last n)) * (-(T : 𝕜) * c (last n)) =
-          ((-T * ‖c (last n)‖ ^ 2 : ℝ) : 𝕜) by
-        simpa [dotProduct, single_mulVec, Function.update_apply] using h
-      rw [RCLike.star_def, mul_left_comm, RCLike.conj_mul]
-      push_cast
-      ring
-    rw [h_val, RCLike.ofReal_re, neg_mul, neg_nonpos]
-    positivity
-  -- The form is nonnegative on the vectors `v` whose image `P v` has vanishing `q` coordinates.
+  have hW : ∀ v ∈ LinearMap.range E.mulVecLin, RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) ≤ 0 := by
+    rintro _ ⟨c, rfl⟩
+    exact re_star_dotProduct_fromCols_mulVec_fromRows_one_zero_nonpos hT hF c
+  -- The form is nonnegative on the vectors `v` whose image `P v` has vanishing `q` coordinates,
+  -- a subspace of dimension at least `2 * (n + 1) - q`.
   set K := (P.submatrix Sum.inr id).mulVecLin
-  have hW' (v) (hv : v ∈ LinearMap.ker K) : 0 ≤ RCLike.re (star v ⬝ᵥ (Pᴴ * J * P) *ᵥ v) := by
-    have h_q (j : q) : (P *ᵥ v) (Sum.inr j) = 0 := congrFun (LinearMap.mem_ker.1 hv) j
-    rw [star_dotProduct_conjTranspose_mul_mul_mulVec,
-      star_dotProduct_indefiniteDiagonal_mulVec_self, RCLike.ofReal_re]
-    simp only [h_q, norm_zero, zero_pow two_ne_zero, Finset.sum_const_zero, sub_zero]
-    positivity
   have h_ker : 2 * (n + 1) ≤ Fintype.card q + finrank 𝕜 (LinearMap.ker K) := by
     have h := LinearMap.finrank_range_add_finrank_ker K
     have h_range := Submodule.finrank_le (LinearMap.range K)
     simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin] at h h_range
     omega
-  have h_sign := hG.neg_one_pow_finrank_mul_re_det_nonneg hW hW' (by
-    rw [LinearMap.finrank_range_of_inj hE]
-    simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin]
-    omega)
+  have h_sign := hG.neg_one_pow_finrank_mul_re_det_nonneg hW
+    (W' := LinearMap.ker K) (fun _ hv => re_star_dotProduct_gram_mulVec_nonneg_of_mem_ker hv) (by
+      rw [LinearMap.finrank_range_of_inj hE]
+      simp only [finrank_fintype_fun_eq_card, Fintype.card_sum, Fintype.card_fin]
+      omega)
   rw [LinearMap.finrank_range_of_inj hE, finrank_fintype_fun_eq_card, Fintype.card_fin,
     det_conjTranspose_fromCols_mul_mul_fromCols_of_frame isHermitian_indefiniteDiagonal hF hF']
     at h_sign
   -- The Gram determinant is `(-1) ^ (n + 1)` times the real number `|det Z|² - T T' |D|²`.
-  have h_real (z : 𝕜) : z * star z = ((‖z‖ ^ 2 : ℝ) : 𝕜) := by
-    rw [RCLike.star_def, RCLike.mul_conj, RCLike.ofReal_pow]
-  have h_re (a b : 𝕜) :
-      RCLike.re ((-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b))) =
-        (-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) := by
-    have h : (-1 : 𝕜) ^ (n + 1) * (a * star a - (T : 𝕜) * T' * (b * star b)) =
-        (((-1) ^ (n + 1) * (‖a‖ ^ 2 - T * T' * ‖b‖ ^ 2) : ℝ) : 𝕜) := by
-      rw [h_real, h_real]
-      push_cast
-      ring
-    rw [h, RCLike.ofReal_re]
   have h_sq : ((-1 : ℝ) ^ (n + 1)) ^ 2 = 1 := by
     rw [← pow_mul]
     exact Even.neg_one_pow ⟨n + 1, by ring⟩
-  rwa [h_re, ← mul_assoc, ← sq, h_sq, one_mul, sub_nonneg] at h_sign
+  rwa [re_neg_one_pow_mul_sub_mul_mul, ← mul_assoc, ← sq, h_sq, one_mul, sub_nonneg] at h_sign
 
 end Matrix
 
