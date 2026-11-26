@@ -65,6 +65,8 @@ defined, it agrees with Mathlib's multipliers.
 * `SchwartzMap.coeFn_fourierMultiplierCLM_toLp`: for a Schwartz symbol `σ`, `T_σ` is
   convolution with the Schwartz kernel `𝓕⁻ σ`, that is `T_σ f x = ∫ 𝓕⁻ σ (x - y) • f y` for
   almost every `x`. On Schwartz functions this is `SchwartzMap.fourierMultiplierCLM_eq_convolution`.
+* `SchwartzMap.integral_fourierInv_sub_mul_fourierChar`: convolution with `𝓕⁻ σ` multiplies the
+  character `𝐞 ⟪·, ξ⟫` by `σ ξ`.
 * `TauCeti.convolutionLp_eq_fourierMultiplierCLM`: convolution with an integrable kernel `k` is
   the multiplier whose symbol is the Fourier transform of `k`, and
   `TauCeti.coeFn_fourier_convolutionLp`, its Fourier-side form `𝓕 (k ⋆ f) = 𝓕 k • 𝓕 f`.
@@ -400,6 +402,23 @@ theorem _root_.SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ : 𝓢(E, ℂ))
   simp only [Function.comp_apply, hxs, ← hpair]
   exact ((((lsmul ℂ ℂ).lpPairing volume 2 2 ((hK x).toLp _)).continuous.tendsto f).comp hu).comp
     hns.tendsto_atTop
+
+/-- Convolution with the kernel `𝓕⁻ σ` of a Schwartz symbol `σ` multiplies the character
+`y ↦ 𝐞 ⟪y, ξ⟫` by `σ ξ`: `∫ 𝓕⁻ σ (x - y) 𝐞 ⟪y, ξ⟫ dy = σ ξ 𝐞 ⟪x, ξ⟫`. Characters are not in
+`L²`, so this is the pointwise form of `SchwartzMap.coeFn_fourierMultiplierCLM_toLp` for them. -/
+theorem _root_.SchwartzMap.integral_fourierInv_sub_mul_fourierChar (σ : 𝓢(E, ℂ)) (ξ x : E) :
+    ∫ y, 𝓕⁻ σ (x - y) * (𝐞 (inner ℝ y ξ) : ℂ) = σ ξ * 𝐞 (inner ℝ x ξ) := by
+  have h := integral_sub_left_eq_self (fun z ↦ 𝓕⁻ σ z * (𝐞 (inner ℝ (x - z) ξ) : ℂ)) volume x
+  simp only [sub_sub_cancel] at h
+  rw [h]
+  have hz : ∀ z, 𝓕⁻ σ z * (𝐞 (inner ℝ (x - z) ξ) : ℂ) =
+      (𝐞 (inner ℝ x ξ) : ℂ) * (𝐞 (-inner ℝ z ξ) • 𝓕⁻ σ z) := fun z ↦ by
+    rw [inner_sub_left, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.smul_def, smul_eq_mul]
+    push_cast
+    ring
+  simp_rw [hz, integral_const_mul]
+  rw [← Real.fourier_eq, ← SchwartzMap.fourier_coe, FourierTransform.fourier_fourierInv_eq,
+    mul_comm]
 
 /-- **Young's inequality for an `L²` multiplier with Schwartz symbol.** For a Schwartz symbol `σ`,
 exponents `1 ≤ c, p` with `1/c + 1/p = 1 + 1/q` and every `f ∈ L²`,
