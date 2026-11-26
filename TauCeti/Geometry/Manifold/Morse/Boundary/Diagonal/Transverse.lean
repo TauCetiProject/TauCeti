@@ -75,7 +75,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `IsMorseSmaleTriple.span_mtangentConeAt_morseYSlice` and
   `IsMorseSmaleTriple.finrank_span_mtangentConeAt_morseYSlice_add_manifoldMorseIndex`: the Y-slice
   is flattened onto the intersection of the three tangent spaces, of dimension
-  `ind a - ind b - ind c`.
+  `ind a - ind b - ind c`. Each specializes the lemma of the same name in
+  `TauCeti.IsAdaptedPseudoGradient`, which assumes the transversality only at the point considered.
 * `IsMorseSmaleTriple.exists_morseYSlice_isManifold`: the Y-slice is a smooth manifold of dimension
   `ind a - ind b - ind c`.
 * `IsMorseSmaleTriple.manifoldMorseIndex_add_le`, `IsMorseSmaleTriple.morseYSlice_eq_empty` and
@@ -166,6 +167,116 @@ theorem isMorseSmaleTriple_comm {hX₀ : IsAdaptedPseudoGradient f₀ X₀}
     IsMorseSmaleTriple hX₀ hX₂ hX₁ ↔ IsMorseSmaleTriple hX₀ hX₁ hX₂ :=
   ⟨IsMorseSmaleTriple.swap, IsMorseSmaleTriple.swap⟩
 
+section TransverseAt
+
+variable (hX₀ : IsAdaptedPseudoGradient f₀ X₀) (hX₁ : IsAdaptedPseudoGradient f₁ X₁)
+  (hX₂ : IsAdaptedPseudoGradient f₂ X₂)
+
+/-- The slice chart and the tangent space of a Y-slice at a point where it is transverse, proved
+together since they share the charts of the pair intersection and of the second leaf. -/
+private theorem exists_isSliceChart_morseYSlice_and_span_mtangentConeAt
+    (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hy : y ∈ hX₀.morseYSlice hX₁ hX₂ a b c)
+    (h₁ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤)
+    (h₂ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) = ⊤) :
+    (∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
+      q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+      IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) :
+          Submodule ℝ E) : Set E) (hX₀.morseYSlice hX₁ hX₂ a b c)) ∧
+    Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.morseYSlice hX₁ hX₂ a b c) y) =
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) := by
+  obtain ⟨hya, hyb, hyc⟩ := (hX₀.mem_morseYSlice hX₁ hX₂).1 hy
+  -- Flatten `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` as for a pair, then intersect with `W^s_{X₂}(c)`.
+  obtain ⟨q₁, hy₁, hq₁, hs₁⟩ := hX₀.exists_unstableSet_inter_stableSet_chart hX₁ hf₀ ⟨hya, hyb⟩ h₁
+  obtain ⟨L₂, q₂, -, hy₂, hq₂, hs₂⟩ :=
+    hX₂.exists_isSliceChart_stableSet (hX₂.mfderiv_eq_zero_of_mem_stableSet hyc) hyc
+  have hT := hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ ⟨hya, hyb⟩ h₁
+  have hc (L : Submodule ℝ E) : L.ClosedComplemented :=
+    Submodule.ClosedComplemented.of_finiteDimensional_quotient
+      (Submodule.isClosed_of_finiteDimensional _)
+  rw [morseYSlice_def, ← hT]
+  exact ⟨exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ hs₁ hs₂
+    hy₁ hy₂ (hT ▸ h₂) (hc _) (hc _) (hc _),
+    span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ hs₁ hs₂ hy₁ hy₂
+      (hT ▸ h₂) (hc _) (hc _) (hc _)⟩
+
+/-- **Transverse Y-slices are embedded submanifolds.** Let `X₀`, `X₁` and `X₂` be pseudo-gradients
+adapted to `f₀`, `f₁` and `f₂`, with `f₀` Morse. If at a point `y` of
+`W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` the tangent spaces `U`, `S₁` and `S₂` of the three
+manifolds satisfy `U + S₁ = T_y M` and `(U ∩ S₁) + S₂ = T_y M`, then near `y` a chart of the
+maximal atlas flattens this Y-slice onto `U ∩ S₁ ∩ S₂`. -/
+theorem exists_isSliceChart_morseYSlice (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hy : y ∈ hX₀.morseYSlice hX₁ hX₂ a b c)
+    (h₁ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤)
+    (h₂ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) = ⊤) :
+    ∃ q : OpenPartialHomeomorph M E, y ∈ q.source ∧
+      q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
+      IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) :
+          Submodule ℝ E) : Set E) (hX₀.morseYSlice hX₁ hX₂ a b c) :=
+  (hX₀.exists_isSliceChart_morseYSlice_and_span_mtangentConeAt hX₁ hX₂ hf₀ hy h₁ h₂).1
+
+/-- **The tangent space of a transverse Y-slice.** Let `X₀`, `X₁` and `X₂` be pseudo-gradients
+adapted to `f₀`, `f₁` and `f₂`, with `f₀` Morse. If at a point `y` of
+`W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` the tangent spaces `U`, `S₁` and `S₂` of the three
+manifolds satisfy `U + S₁ = T_y M` and `(U ∩ S₁) + S₂ = T_y M`, then the tangent space of this
+Y-slice at `y` is `U ∩ S₁ ∩ S₂`. -/
+theorem span_mtangentConeAt_morseYSlice (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
+    (hy : y ∈ hX₀.morseYSlice hX₁ hX₂ a b c)
+    (h₁ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤)
+    (h₂ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) = ⊤) :
+    Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.morseYSlice hX₁ hX₂ a b c) y) =
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) :=
+  (hX₀.exists_isSliceChart_morseYSlice_and_span_mtangentConeAt hX₁ hX₂ hf₀ hy h₁ h₂).2
+
+/-- **A transverse Y-slice has dimension `ind a - ind b - ind c`.** Let `X₀`, `X₁` and `X₂` be
+pseudo-gradients adapted to `f₀`, `f₁` and `f₂`, with `f₀` Morse. If at a point `y` of
+`W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` the tangent spaces `U`, `S₁` and `S₂` of the three
+manifolds satisfy `U + S₁ = T_y M` and `(U ∩ S₁) + S₂ = T_y M`, then the tangent space of this
+Y-slice at `y` has dimension `ind a - ind b - ind c`, the indices being taken for `f₀`, `f₁` and
+`f₂`. -/
+theorem finrank_span_mtangentConeAt_morseYSlice_add_manifoldMorseIndex
+    (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hy : y ∈ hX₀.morseYSlice hX₁ hX₂ a b c)
+    (h₁ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) = ⊤)
+    (h₂ : Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊔
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) = ⊤) :
+    Module.finrank ℝ (Submodule.span ℝ
+        (mtangentConeAt 𝓘(ℝ, E) (hX₀.morseYSlice hX₁ hX₂ a b c) y)) +
+      manifoldMorseIndex 𝓘(ℝ, E) f₁ b + manifoldMorseIndex 𝓘(ℝ, E) f₂ c =
+        manifoldMorseIndex 𝓘(ℝ, E) f₀ a := by
+  obtain ⟨hya, hyb, hyc⟩ := (hX₀.mem_morseYSlice hX₁ hX₂).1 hy
+  -- `dim (A ⊓ B) = ind a - ind b` for the pair, and `(A ⊓ B) ⊔ C = ⊤` with `dim C = n - ind c`.
+  have hpair :=
+    hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀
+      ⟨hya, hyb⟩ h₁
+  rw [hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ ⟨hya, hyb⟩ h₁] at hpair
+  have hdim := Submodule.finrank_sup_add_finrank_inf_eq
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
+      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
+    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y))
+  rw [h₂, finrank_top, ← hX₀.span_mtangentConeAt_morseYSlice hX₁ hX₂ hf₀ hy h₁ h₂] at hdim
+  have hs := hX₂.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hyc
+  omega
+
+end TransverseAt
+
 namespace IsMorseSmaleTriple
 
 variable {hX₀ : IsAdaptedPseudoGradient f₀ X₀} {hX₁ : IsAdaptedPseudoGradient f₁ X₁}
@@ -193,23 +304,8 @@ theorem exists_isSliceChart_morseYSlice (h : IsMorseSmaleTriple hX₀ hX₁ hX�
       IsSliceChart q ((Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) :
-          Submodule ℝ E) : Set E) (hX₀.morseYSlice hX₁ hX₂ a b c) := by
-  obtain ⟨hya, hyb, hyc⟩ := (hX₀.mem_morseYSlice hX₁ hX₂).1 hy
-  obtain ⟨h₁, h₂⟩ := h hy
-  -- Flatten `W^u_{X₀}(a) ∩ W^s_{X₁}(b)` as for a pair, then intersect with `W^s_{X₂}(c)`.
-  obtain ⟨q₁, hy₁, hq₁, hs₁⟩ := hX₀.exists_unstableSet_inter_stableSet_chart hX₁ hf₀ ⟨hya, hyb⟩ h₁
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, hs₂⟩ :=
-    hX₂.exists_isSliceChart_stableSet (hX₂.mfderiv_eq_zero_of_mem_stableSet hyc) hyc
-  have hT := hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ ⟨hya, hyb⟩ h₁
-  rw [morseYSlice_def, ← hT]
-  exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ hs₁ hs₂ hy₁
-    hy₂ (hT ▸ h₂)
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
+          Submodule ℝ E) : Set E) (hX₀.morseYSlice hX₁ hX₂ a b c) :=
+  hX₀.exists_isSliceChart_morseYSlice hX₁ hX₂ hf₀ hy (h hy).1 (h hy).2
 
 /-- **The tangent space of a transverse Y-slice.** For a Morse–Smale triple, the tangent space of
 `W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` at each of its points is the intersection of the tangent
@@ -219,22 +315,8 @@ theorem span_mtangentConeAt_morseYSlice (h : IsMorseSmaleTriple hX₀ hX₁ hX�
     Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.morseYSlice hX₁ hX₂ a b c) y) =
       Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y) ⊓
-        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) := by
-  obtain ⟨hya, hyb, hyc⟩ := (hX₀.mem_morseYSlice hX₁ hX₂).1 hy
-  obtain ⟨h₁, h₂⟩ := h hy
-  obtain ⟨q₁, hy₁, hq₁, hs₁⟩ := hX₀.exists_unstableSet_inter_stableSet_chart hX₁ hf₀ ⟨hya, hyb⟩ h₁
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, hs₂⟩ :=
-    hX₂.exists_isSliceChart_stableSet (hX₂.mfderiv_eq_zero_of_mem_stableSet hyc) hyc
-  have hT := hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ ⟨hya, hyb⟩ h₁
-  rw [morseYSlice_def, ← hT]
-  exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ hs₁ hs₂ hy₁
-    hy₂ (hT ▸ h₂)
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
-    (Submodule.ClosedComplemented.of_finiteDimensional_quotient
-      (Submodule.isClosed_of_finiteDimensional _))
+        Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y) :=
+  hX₀.span_mtangentConeAt_morseYSlice hX₁ hX₂ hf₀ hy (h hy).1 (h hy).2
 
 /-- **A transverse Y-slice has dimension `ind a - ind b - ind c`.** For a Morse–Smale triple, the
 tangent space of `W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` at each of its points has dimension
@@ -245,21 +327,10 @@ theorem finrank_span_mtangentConeAt_morseYSlice_add_manifoldMorseIndex
     Module.finrank ℝ (Submodule.span ℝ
         (mtangentConeAt 𝓘(ℝ, E) (hX₀.morseYSlice hX₁ hX₂ a b c) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f₁ b + manifoldMorseIndex 𝓘(ℝ, E) f₂ c =
-        manifoldMorseIndex 𝓘(ℝ, E) f₀ a := by
-  obtain ⟨hya, hyb, hyc⟩ := (hX₀.mem_morseYSlice hX₁ hX₂).1 hy
-  obtain ⟨h₁, h₂⟩ := h hy
-  -- `dim (A ⊓ B) = ind a - ind b` for the pair, and `(A ⊓ B) ⊔ C = ⊤` with `dim C = n - ind c`.
-  have hpair :=
-    hX₀.finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMorseIndex hX₁ hf₀
-      ⟨hya, hyb⟩ h₁
-  rw [hX₀.span_mtangentConeAt_unstableSet_inter_stableSet hX₁ hf₀ ⟨hya, hyb⟩ h₁] at hpair
-  have hdim := Submodule.finrank_sup_add_finrank_inf_eq
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) y) ⊓
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₂.flow.stableSet c) y))
-  rw [h₂, finrank_top, ← h.span_mtangentConeAt_morseYSlice hf₀ hy] at hdim
-  have hs := hX₂.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hyc
-  omega
+        manifoldMorseIndex 𝓘(ℝ, E) f₀ a :=
+  hX₀.finrank_span_mtangentConeAt_morseYSlice_add_manifoldMorseIndex hX₁ hX₂ hf₀ hy (h hy).1
+    (h hy).2
+
 
 /-- **Transverse Y-slices are manifolds.** For a Morse–Smale triple, if the Y-slice
 `W^u_{X₀}(a) ∩ W^s_{X₁}(b) ∩ W^s_{X₂}(c)` is nonempty, then it carries a smooth manifold structure,
