@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
-import Mathlib.Data.ZMod.Units
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 
 /-!
