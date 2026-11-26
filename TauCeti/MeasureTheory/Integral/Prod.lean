@@ -419,16 +419,15 @@ variable {α β E : Type*} [MeasurableSpace α] [MeasurableSpace β]
 section, even when the ambient measures are not s-finite. -/
 theorem prod_right_ae_of_support_subset [SFinite (ν.restrict t)]
     (hf : Integrable f ((μ.restrict s).prod (ν.restrict t)))
-    (hs : MeasurableSet s) (hfs : support f ⊆ s ×ˢ t) :
+    (hfs : support f ⊆ s ×ˢ t) :
     ∀ᵐ x ∂μ, Integrable (fun y ↦ f (x, y)) ν := by
   have hzero : ∀ z, z ∉ s ×ˢ t → f z = 0 := support_subset_iff'.1 hfs
-  refine ae_of_ae_restrict_of_ae_restrict_compl s ?_ ?_
-  · filter_upwards [((integrable_prod_iff hf.aestronglyMeasurable).mp hf).1] with x hx
-    exact IntegrableOn.integrable_of_forall_notMem_eq_zero hx fun y hy ↦
+  filter_upwards [ae_imp_of_ae_restrict
+    ((integrable_prod_iff hf.aestronglyMeasurable).mp hf).1] with x hx
+  by_cases hxs : x ∈ s
+  · exact IntegrableOn.integrable_of_forall_notMem_eq_zero (hx hxs) fun y hy ↦
       hzero (x, y) (fun h ↦ hy h.2)
-  · apply (ae_restrict_iff' hs.compl).2
-    exact .of_forall fun x hx ↦ by
-      simp [fun y ↦ hzero (x, y) (fun h ↦ hx h.1)]
+  · simp [fun y ↦ hzero (x, y) (fun h ↦ hxs h.1)]
 
 /-- The integral of the ambient sections is integrable when the integrand is integrable
 on a supporting rectangle with s-finite restricted measures. -/
@@ -496,8 +495,6 @@ theorem _root_.MeasureTheory.StronglyMeasurable.fubini_of_countable_rectangles
       (∫ x, ∫ y, f (x, y) ∂ν ∂μ) = ∫ y, ∫ x, f (x, y) ∂μ ∂ν := by
   let S := fun n ↦ toMeasurable μ (s n)
   let T := fun n ↦ toMeasurable ν (t n)
-  have hS : ∀ n, MeasurableSet (S n) := fun n ↦ measurableSet_toMeasurable μ (s n)
-  have hT : ∀ n, MeasurableSet (T n) := fun n ↦ measurableSet_toMeasurable ν (t n)
   let := μ.sigmaFinite_restrict_iUnion S fun n ↦ (measure_toMeasurable (s n)).trans_lt (hμ n)
   let := ν.sigmaFinite_restrict_iUnion T fun n ↦ (measure_toMeasurable (t n)).trans_lt (hν n)
   have hsupport : support f ⊆ (⋃ n, S n) ×ˢ (⋃ n, T n) := by
@@ -518,8 +515,8 @@ theorem _root_.MeasureTheory.StronglyMeasurable.fubini_of_countable_rectangles
   have hswap : support (f ∘ Prod.swap) ⊆ (⋃ n, T n) ×ˢ (⋃ n, S n) := by
     intro z hz
     exact ⟨(hsupport hz).2, (hsupport hz).1⟩
-  exact ⟨hI.prod_right_ae_of_support_subset (MeasurableSet.iUnion hS) hsupport,
-    hI.swap.prod_right_ae_of_support_subset (MeasurableSet.iUnion hT) hswap,
+  exact ⟨hI.prod_right_ae_of_support_subset hsupport,
+    hI.swap.prod_right_ae_of_support_subset hswap,
     hI.integral_prod_left_of_support_subset hsupport,
     hI.swap.integral_prod_left_of_support_subset hswap,
     integral_integral_swap_of_support_subset hsupport hI⟩
