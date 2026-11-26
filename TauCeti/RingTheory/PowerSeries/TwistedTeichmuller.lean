@@ -154,6 +154,11 @@ private theorem iterateFrobeniusEquiv_symm_pow (n : ℕ) (a : S) :
     (iterateFrobeniusEquiv S p (f * n)).symm a ^ (p ^ f) ^ n = a := by
   rw [← pow_mul, ← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
 
+/-- The constant lift of the `p ^ (f * n)`-th root of `a` lifts a `(p ^ f) ^ n`-th root of `a`. -/
+private theorem constantCoeff_C_iterateFrobeniusEquiv_symm_pow (n : ℕ) (a : S) :
+    constantCoeff (C ((iterateFrobeniusEquiv S p (f * n)).symm a)) ^ (p ^ f) ^ n = a := by
+  rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow]
+
 /-- Raising to a power of `p` is injective on a perfect ring of characteristic `p`. -/
 private theorem pow_pow_injective (k : ℕ) : Function.Injective fun x : S ↦ x ^ (p ^ f) ^ k := by
   simpa only [← pow_mul, ← iterateFrobeniusEquiv_def] using
@@ -181,7 +186,7 @@ theorem coeff_twistedTeichmuller (hf : f ≠ 0) (hQ : Q.map constantCoeff = Poly
     coeff k (twistedTeichmuller p f Q a) = coeff k ((Q.eval ·)^[n] b) := by
   have h := X_pow_succ_dvd_iterate_eval_sub_of_le hf hQ hkn hb (b' :=
     C ((iterateFrobeniusEquiv S p (f * k)).symm a))
-    (by rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow])
+    (constantCoeff_C_iterateFrobeniusEquiv_symm_pow k a)
   rw [X_pow_dvd_iff] at h
   have := h k (Nat.lt_succ_self k)
   rw [map_sub, sub_eq_zero] at this
@@ -207,9 +212,9 @@ theorem eq_twistedTeichmuller_iff (hf : f ≠ 0) (hQ : Q.map constantCoeff = Pol
   refine ⟨?_, fun h ↦ ext fun n ↦ ?_⟩
   · rintro rfl n
     exact ⟨C ((iterateFrobeniusEquiv S p (f * n)).symm a),
-      by rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow],
+      constantCoeff_C_iterateFrobeniusEquiv_symm_pow n a,
       X_pow_succ_dvd_twistedTeichmuller_sub hf hQ
-        (by rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow])⟩
+        (constantCoeff_C_iterateFrobeniusEquiv_symm_pow n a)⟩
   · obtain ⟨b, hb, hy⟩ := h n
     have hdvd := dvd_sub hy (X_pow_succ_dvd_twistedTeichmuller_sub hf hQ hb)
     rw [sub_sub_sub_cancel_right, X_pow_dvd_iff] at hdvd
@@ -227,8 +232,8 @@ theorem eval_twistedTeichmuller (hf : f ≠ 0) (hQ : Q.map constantCoeff = Polyn
   refine (eq_twistedTeichmuller_iff hf hQ).2 fun n ↦ ?_
   -- Compare with `Q_n(Q(â_n)) = Q(Q_n(â_n))`, where `â_n` is the constant lift of the root of `a`.
   set c := C ((iterateFrobeniusEquiv S p (f * n)).symm a)
-  have hc : constantCoeff c ^ (p ^ f) ^ n = a := by
-    rw [constantCoeff_C, iterateFrobeniusEquiv_symm_pow]
+  have hc : constantCoeff c ^ (p ^ f) ^ n = a :=
+    constantCoeff_C_iterateFrobeniusEquiv_symm_pow n a
   refine ⟨Q.eval c, by rw [constantCoeff_eval hQ, ← pow_mul, mul_comm, pow_mul, hc], ?_⟩
   rw [← Function.iterate_succ_apply, Function.iterate_succ_apply']
   exact (pow_dvd_pow X (Nat.le_succ _)).trans
@@ -282,6 +287,7 @@ theorem twistedTeichmuller_add (hadd : ∀ x y, Q.eval (x + y) = Q.eval x + Q.ev
   simp only [twistedTeichmuller, coeff_mk, map_add, hiter]
 
 /-- For `Q = X ^ (p ^ f)` the `Q`-Teichmüller lift is the constant series `C a`. -/
+@[simp]
 theorem twistedTeichmuller_X_pow (hf : f ≠ 0) (a : S) :
     twistedTeichmuller p f (Polynomial.X ^ p ^ f) a = C a := by
   have h := eq_twistedTeichmuller_of_eval (p := p) hf (Q := Polynomial.X ^ p ^ f)
