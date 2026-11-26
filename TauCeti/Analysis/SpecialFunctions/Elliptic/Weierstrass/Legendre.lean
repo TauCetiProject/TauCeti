@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Defs
+public import TauCeti.Algebra.Module.ZLattice.Complex
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.E2.Transform
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
@@ -40,6 +41,8 @@ general relation.
   absolutely convergent in `m`.
 * `UpperHalfPlane.quasiPeriod_ω₂_periodPair`: `η(1; ℤ z + ℤ) = G₂(z)`.
 * `UpperHalfPlane.quasiPeriod_ω₁_periodPair`: `η(z; ℤ z + ℤ) = z η(1; ℤ z + ℤ) - 2π i`.
+* `PeriodPair.quasiPeriod_legendre_covolume`: the orientation-free relation using the lattice's
+  Lebesgue covolume.
 * `PeriodPair.quasiPeriod_legendre`: `η(ω₁) ω₂ - η(ω₂) ω₁ = 2π i` when `Im(ω₂ / ω₁) > 0`.
 * `PeriodPair.quasiPeriod_legendre_of_im_neg`: `η(ω₁) ω₂ - η(ω₂) ω₁ = -2π i` when
   `Im(ω₂ / ω₁) < 0`.
@@ -166,5 +169,37 @@ theorem quasiPeriod_legendre (L : PeriodPair) (h : 0 < (L.ω₂ / L.ω₁).im) :
     Subtype.ext hω₁.symm
   rw [e₁, e₂, ← hω₁, ← hω₂]
   linear_combination -key
+
+open scoped ComplexConjugate
+
+/-- The orientation-free Legendre relation, with the area expressed as Lebesgue covolume. -/
+theorem quasiPeriod_legendre_covolume (L : PeriodPair) :
+    L.quasiPeriod ⟨_, L.ω₁_mem_lattice⟩ * L.ω₂ -
+        L.quasiPeriod ⟨_, L.ω₂_mem_lattice⟩ * L.ω₁ =
+      (Real.pi / ZLattice.covolume L.lattice : ℝ) *
+        (conj L.ω₁ * L.ω₂ - conj L.ω₂ * L.ω₁) := by
+  have harea : ZLattice.covolume L.lattice = |(conj L.ω₁ * L.ω₂).im| := by
+    simpa using ZLattice.covolume_eq_abs_im L.lattice L.latticeBasis
+  have hδ : (conj L.ω₁ * L.ω₂).im ≠ 0 := by
+    have := ZLattice.covolume_pos L.lattice MeasureTheory.volume
+    rw [harea] at this
+    exact abs_pos.mp this
+  have hdiv : (L.ω₂ / L.ω₁).im = (conj L.ω₁ * L.ω₂).im / normSq L.ω₁ := by
+    simp [div_im, mul_im, mul_comm]
+    ring
+  have hdiff : conj L.ω₁ * L.ω₂ - conj L.ω₂ * L.ω₁ =
+      2 * ((conj L.ω₁ * L.ω₂).im : ℂ) * I := by
+    apply Complex.ext <;> simp [mul_re, mul_im] <;> ring
+  have hnorm := normSq_pos.mpr L.ω₁_ne_zero
+  have hδc : ((conj L.ω₁ * L.ω₂).im : ℂ) ≠ 0 := by exact_mod_cast hδ
+  rcases hδ.lt_or_gt with hδ | hδ
+  · rw [L.quasiPeriod_legendre_of_im_neg (hdiv ▸ div_neg_of_neg_of_pos hδ hnorm),
+      harea, abs_of_neg hδ, hdiff]
+    push_cast
+    field_simp [hδc]
+  · rw [L.quasiPeriod_legendre (hdiv ▸ div_pos hδ hnorm), harea, abs_of_pos hδ]
+    rw [hdiff]
+    push_cast
+    field_simp [hδc]
 
 end PeriodPair
