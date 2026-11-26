@@ -157,24 +157,19 @@ theorem eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainS
       ⟪A₁ s x, (1 : E →L[ℝ] E) y⟫_ℝ = ⟪(1 : E →L[ℝ] E) x, A₁ s y⟫_ℝ := by
     simpa using hsym₁ s x y
   have hF₁ : (familyDomainTrajectoryOperator (p := 2) (1 : E →L[ℝ] E) (hm₁.toLp A₁)).IsFredholm :=
-    isFredholm_familyDomainTrajectoryOperator hι₁
-      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot₁
-        (.of_forall fun s ↦ hSymm₁ s x y)) hB₁bot
-      (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop₁
-        (.of_forall fun s ↦ hSymm₁ s x y)) hB₁top hm₁.coeFn_toLp hbot₁ htop₁
-      fun _ ↦ ⟨C₁ + ‖B₁top‖, .of_forall fun s _ x ↦ ((A₁ s - B₁top).le_opNorm x).trans
-        (mul_le_mul_of_nonneg_right ((norm_sub_le _ _).trans (add_le_add_left (hC₁ s) _))
-          (norm_nonneg x))⟩
+    isFredholm_familyDomainTrajectoryOperator_of_forall_symm hι₁ hSymm₁ hB₁bot hB₁top
+      hm₁.coeFn_toLp hbot₁ htop₁ fun _ ↦ ⟨C₁ + ‖B₁top‖, .of_forall fun s _ x ↦
+        calc ‖(A₁ s - B₁top) x‖ ≤ ‖A₁ s - B₁top‖ * ‖x‖ := (A₁ s - B₁top).le_opNorm x
+          _ ≤ (C₁ + ‖B₁top‖) * ‖x‖ := by
+            gcongr
+            exact (norm_sub_le _ _).trans (by gcongr; exact hC₁ s)⟩
   have h₀₁ (t : ℝ) : ∃ c₀ : ℝ, (c₀ • (1 : E →L[ℝ] E) - A₁ t).IsInvertible :=
     ⟨‖A₁ t‖ + 1, ContinuousLinearMap.isInvertible_smul_one_sub_of_norm_lt <| by
       rw [Real.norm_of_nonneg (by positivity)]
       linarith⟩
   -- The invertible block is Fredholm and contributes neither index nor spectral flow.
-  have hF₂ := isFredholm_familyDomainTrajectoryOperator hι
-    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot₂
-      (.of_forall fun s ↦ hSymm₂ s x y)) hB₂bot
-    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop₂
-      (.of_forall fun s ↦ hSymm₂ s x y)) hB₂top hm₂.coeFn_toLp hbot₂ htop₂ hc
+  have hF₂ := isFredholm_familyDomainTrajectoryOperator_of_forall_symm hι hSymm₂ hB₂bot hB₂top
+    hm₂.coeFn_toLp hbot₂ htop₂ hc
   have hind₂ := index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι hA₂ hSymm₂
     hInv₂ hB₂bot hB₂top hm₂.coeFn_toLp hbot₂ htop₂ hc
   filter_upwards [eventually_index_familyDomainTrajectoryOperator_one_eq_domainSpectralFlow hA₁

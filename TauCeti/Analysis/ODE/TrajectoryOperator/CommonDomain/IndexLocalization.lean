@@ -118,6 +118,24 @@ private theorem exists_norm_sub_apply_le {B : D →L[ℝ] H}
 
 variable [CompleteSpace D] [CompleteSpace H] {Bbot Btop : D →L[ℝ] H} {AL : Lp (D →L[ℝ] H) ∞ μ₀}
 
+/-- **A path of `ι`-symmetric operators has a Fredholm trajectory operator.** Let `ι` be compact
+and let `A` be a path of operators `D → H` which are `ι`-symmetric at every time, converging to
+invertible operators `Bbot` and `Btop` at `-∞` and `∞`, and differing from `Btop` on every bounded
+interval by an operator bounded through `ι`. Then `u ↦ (ι ∘ u)' + A u` is Fredholm. This is
+`TauCeti.WeakDerivStep.isFredholm_familyDomainTrajectoryOperator`, whose hypothesis that the limits
+are `ι`-symmetric follows from the symmetry of `A`. -/
+theorem isFredholm_familyDomainTrajectoryOperator_of_forall_symm (hι : IsCompactOperator ι)
+    (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ) (hBbot : Bbot.IsInvertible)
+    (hBtop : Btop.IsInvertible) (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 Bbot))
+    (htop : Tendsto A atTop (𝓝 Btop))
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL).IsFredholm :=
+  isFredholm_familyDomainTrajectoryOperator hι
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hbot
+      (.of_forall fun s ↦ hSymm s x y)) hBbot
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop
+      (.of_forall fun s ↦ hSymm s x y)) hBtop hAL hbot htop hc
+
 /-- **A path of invertible operators has index zero.** Let `ι` be compact and let `A` be a
 continuous path of invertible `ι`-symmetric operators, converging to invertible operators `Bbot`
 and `Btop` at `-∞` and `∞`, and differing from `Btop` on every bounded interval by an operator
@@ -151,9 +169,7 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
   obtain ⟨t₀, -, ht₀⟩ := (((hD.tendsto _).comp (tendsto_atBot_of_ae_eq_comp_min hbot
     (fun t ↦ (hm t).coeFn_toLp) (memLp_top_const Bbot).coeFn_toLp)).eventually
     hFredbot.eventually_isFredholm_and_index_eq).exists
-  have hSymmtop (x y : D) : ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ :=
-    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (.of_forall fun s ↦ hSymm s x y)
-  have hFredA := isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot hSymmtop hBtop hAL
+  have hFredA := isFredholm_familyDomainTrajectoryOperator_of_forall_symm hι hSymm hBbot hBtop hAL
     hbot htop hc
   obtain ⟨t₁, -, ht₁⟩ := (((hD.tendsto _).comp (tendsto_atTop_of_ae_eq_comp_min htop
     (fun t ↦ (hm t).coeFn_toLp) hAL)).eventually
