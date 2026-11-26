@@ -52,6 +52,8 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
   `Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem`: only the cosets `g` fixes contribute, so the
   coset sum may be taken over any finite set of cosets containing the fixed ones.  This is what
   turns the formula into a finite explicit computation for a concrete group.
+* `Subgroup.indClassFun_apply_of_notMem`: induction from a normal subgroup is supported on the
+  subgroup.
 * `Function.indTerm_eq_of_mk_eq_of_conj`: a summand depends only on its coset representative when
   the inducing function is invariant under conjugation in the subgroup.
 * `Subgroup.indClassFun_conj` and `Subgroup.indClassFun_mem_classFunction`: induction preserves
@@ -243,6 +245,16 @@ theorem indClassFun_eq_sum_of_smul_eq_self_mem (S : Subgroup G) [S.FiniteIndex]
   refine ((Finset.sum_subset (Finset.subset_univ T) fun t _ ht => ?_).trans rfl).symm
   refine Function.indTerm_eq_zero_of_smul_mk_ne f fun hfix => ht (hT t ?_)
   rwa [QuotientGroup.out_eq'] at hfix
+
+/-- **An induced class function from a normal subgroup vanishes off the subgroup.**  For `g ∉ S`
+no conjugate `t⁻¹ g t` lies in the normal subgroup `S`, so every summand of the coset formula is
+zero. -/
+theorem indClassFun_apply_of_notMem (S : Subgroup G) [S.FiniteIndex] [S.Normal] (f : S → k)
+    {g : G} (hg : g ∉ S) : indClassFun S f g = 0 := by
+  let := Fintype.ofFinite (G ⧸ S)
+  refine Finset.sum_eq_zero fun t _ => Function.indTerm_eq_zero_of_smul_mk_ne f fun ht => hg ?_
+  have hconj := (TauCeti.smul_quotientGroup_mk_eq_self_iff S g t.out).mp ht
+  simpa [mul_assoc] using ‹S.Normal›.conj_mem _ hconj t.out
 
 /-! ### Additivity -/
 
