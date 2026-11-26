@@ -34,10 +34,10 @@ makes the periodic Littlewood–Paley blocks bounded on `Lᵖ` uniformly in thei
 ## The argument
 
 The **periodic kernel** `K = ∑ₙ σ(n) eₙ` is a continuous function on the torus, since `σ` is
-summable over `ℤᵈ`. For `f ∈ L²(𝕋ᵈ)` the Fourier series of `T_m f` converges absolutely, hence
-uniformly, and integrating it term by term identifies `T_m f` with the convolution `K ⋆ f` on the
-torus. Young's inequality on the torus (`MeasureTheory.eLpNorm_convolution_le`) bounds
-`‖K ⋆ f‖_p` by `‖K‖₁ ‖f‖_p`.
+summable over `ℤᵈ`. For integrable `f`, integrating this series term by term identifies the
+convolution `K ⋆ f` on the torus with the series `∑ₙ σ(n) f̂(n) eₙ`; for `f ∈ L²(𝕋ᵈ)` this is the
+absolutely convergent Fourier series of `T_m f`. Young's inequality on the torus
+(`MeasureTheory.eLpNorm_convolution_le`) bounds `‖K ⋆ f‖_p` by `‖K‖₁ ‖f‖_p`.
 
 It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝᵈ` is the periodization
 `x ↦ ∑_{ℓ ∈ ℤᵈ} (𝓕⁻ σ)(x + ℓ)` of the kernel `𝓕⁻ σ`, whose integral over the torus is at most
@@ -51,6 +51,9 @@ It remains to bound `‖K‖₁`. By Poisson summation the lift of `K` to `ℝ�
 * `SchwartzMap.eLpNorm_periodicKernel_le`: its `L¹` norm is at most `‖𝓕⁻ σ‖_{L¹(ℝᵈ)}`.
 * `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`: the `Lᵖ` bound for a Fourier multiplier
   whose symbol is a Schwartz function sampled on `ℤᵈ`.
+* `TauCeti.UnitAddTorus.eLpNorm_tsum_mul_mFourierCoeff_mul_mFourier_le`: the same bound for the
+  multiplied Fourier series `∑ₙ σ(n) f̂(n) eₙ` of any `f ∈ Lᵖ(𝕋ᵈ)`, which need not lie in
+  `L²(𝕋ᵈ)` when `p < 2`.
 
 ## References
 
@@ -154,13 +157,13 @@ private theorem _root_.UnitAddTorus.integral_mFourier_mul_sub (f : UnitAddTorus 
 
 variable (σ : 𝓢(EuclideanSpace ℝ d, ℂ)) {m : ℓ^∞(d → ℤ, ℂ)}
 
-/-- The convolution of the periodic kernel with an `L²` function `f` is the absolutely convergent
-Fourier series `∑ₙ σ(n) f̂(n) eₙ`. -/
-private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply (f : L²(UnitAddTorus d))
-    (x : UnitAddTorus d) :
+/-- The convolution of the periodic kernel with an integrable function `f` is the absolutely
+convergent Fourier series `∑ₙ σ(n) f̂(n) eₙ`. -/
+private theorem _root_.UnitAddTorus.periodicKernel_convolution_apply {f : UnitAddTorus d → ℂ}
+    (hf : Integrable f) (x : UnitAddTorus d) :
     (σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) x =
       ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x := by
-  have hf : Integrable (fun t ↦ f (x - t)) := ((Lp.memLp f).integrable one_le_two).comp_sub_left x
+  replace hf : Integrable (fun t ↦ f (x - t)) := hf.comp_sub_left x
   rw [convolution_def]
   simp only [ContinuousLinearMap.mul_apply', SchwartzMap.periodicKernel_apply, ← tsum_mul_right]
   rw [← integral_tsum_of_summable_integral_norm]
@@ -193,10 +196,30 @@ private theorem fourierMultiplier_ae_eq_convolution (hm : ∀ n, m n = σ (latti
   have hL2 := (hasSum_fourierMultiplier m f).unique hsum
   rw [hL2]
   refine (ContinuousMap.coeFn_toLp volume _).trans (Filter.Eventually.of_forall fun x ↦ ?_)
-  rw [periodicKernel_convolution_apply, ← ContinuousMap.tsum_apply hc]
+  rw [periodicKernel_convolution_apply σ ((Lp.memLp f).integrable one_le_two),
+    ← ContinuousMap.tsum_apply hc]
   simp [c, hm]
 
 /-! ### The `Lᵖ` bound -/
+
+/-- Young's inequality for the periodic kernel: convolution with it is bounded on `Lᵖ(𝕋ᵈ)`,
+`1 ≤ p ≤ ∞`, by the `L¹` norm of `𝓕⁻ σ` on `ℝᵈ`. -/
+private theorem eLpNorm_periodicKernel_convolution_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {f : UnitAddTorus d → ℂ} (hf : AEStronglyMeasurable f) :
+    eLpNorm (σ.periodicKernel ⋆[ContinuousLinearMap.mul ℂ ℂ, volume] f) p volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
+  refine (eLpNorm_convolution_le _ σ.periodicKernel.continuous.aestronglyMeasurable hf hp).trans ?_
+  have hL : ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ ≤ 1 := by
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, coe_nnNorm]
+    exact ContinuousLinearMap.opNorm_mul_le ℂ ℂ
+  calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm σ.periodicKernel 1 volume * eLpNorm f p volume
+      ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
+        gcongr
+        -- The bound is stated for the global volume, the product of the Haar probability
+        -- measures, which is by definition the volume given by the local instance here.
+        have h := σ.eLpNorm_periodicKernel_le
+        rwa [volume_eq_pi_haarAddCircle] at h
+    _ = _ := by rw [one_mul]
 
 /-- **Fourier multipliers with Schwartz symbols are bounded on `Lᵖ(𝕋ᵈ)`.** If the symbol `m` of a
 Fourier multiplier `T_m` on `L²(𝕋ᵈ)` is the restriction to `ℤᵈ` of a Schwartz function `σ` on
@@ -211,18 +234,22 @@ theorem eLpNorm_fourierMultiplier_le (hm : ∀ n, m n = σ (latticePoint n)) {p 
     eLpNorm (fourierMultiplier m f) p volume ≤
       ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
   rw [eLpNorm_congr_ae (fourierMultiplier_ae_eq_convolution σ hm f)]
-  refine (eLpNorm_convolution_le _ σ.periodicKernel.continuous.aestronglyMeasurable
-    (Lp.aestronglyMeasurable f) hp).trans ?_
-  have hL : ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ ≤ 1 := by
-    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff, ← NNReal.coe_le_one, coe_nnNorm]
-    exact ContinuousLinearMap.opNorm_mul_le ℂ ℂ
-  calc ‖ContinuousLinearMap.mul ℂ ℂ‖ₑ * eLpNorm σ.periodicKernel 1 volume * eLpNorm f p volume
-      ≤ 1 * ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
-        gcongr
-        -- The bound is stated for the global volume, the product of the Haar probability
-        -- measures, which is by definition the volume given by the local instance here.
-        have h := σ.eLpNorm_periodicKernel_le
-        rwa [volume_eq_pi_haarAddCircle] at h
-    _ = _ := by rw [one_mul]
+  exact eLpNorm_periodicKernel_convolution_le σ hp (Lp.aestronglyMeasurable f)
+
+/-- **Schwartz multipliers of `Lᵖ` functions on the torus.** Let `σ` be a Schwartz function on
+`ℝᵈ` and let `1 ≤ p ≤ ∞`. For every `f ∈ Lᵖ(𝕋ᵈ)`, not necessarily in `L²(𝕋ᵈ)`, the Fourier series
+`∑ₙ σ(n) f̂(n) eₙ` with the multiplied coefficients satisfies
+
+`‖∑ₙ σ(n) f̂(n) eₙ‖_p ≤ ‖𝓕⁻ σ‖_{L¹(ℝᵈ)} ‖f‖_p`.
+
+For `f ∈ L²(𝕋ᵈ)` this is `TauCeti.UnitAddTorus.eLpNorm_fourierMultiplier_le`. -/
+theorem eLpNorm_tsum_mul_mFourierCoeff_mul_mFourier_le {p : ℝ≥0∞} (hp : 1 ≤ p)
+    {f : UnitAddTorus d → ℂ} (hf : MemLp f p) :
+    eLpNorm (fun x ↦ ∑' n : d → ℤ, σ (latticePoint n) * mFourierCoeff f n * mFourier n x) p
+        volume ≤
+      ENNReal.ofReal (∫ x, ‖𝓕⁻ (σ : EuclideanSpace ℝ d → ℂ) x‖) * eLpNorm f p volume := by
+  -- The series is the convolution of `f` with the periodic kernel.
+  have h := eLpNorm_periodicKernel_convolution_le σ hp hf.aestronglyMeasurable
+  rwa [funext (periodicKernel_convolution_apply σ (hf.integrable hp))] at h
 
 end TauCeti.UnitAddTorus
