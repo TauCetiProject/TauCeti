@@ -245,9 +245,8 @@ private theorem exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWi
 
 /-- The exponent conditions `0 < β ≤ 1 - (n + 1) / q` of the `C^{1,β}` estimates force
 `q > n + 1`: the datum `f ∈ L^q` costs `(n + 1) / q < 1` of a derivative. -/
-theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ≥0} (hβ : 0 < β) {q : ℝ≥0∞} (hq : q ≠ 0)
-    (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
-  have hβ' : (0 : ℝ) < β := hβ
+theorem natCast_add_one_lt_of_le_one_sub_div {β : ℝ} (hβ : 0 < β) {q : ℝ≥0∞} (hq : q ≠ 0)
+    (hβq : β ≤ 1 - ((n : ℝ) + 1) / q.toReal) : (n : ℝ≥0∞) + 1 < q := by
   rcases eq_or_ne q ⊤ with rfl | hqt
   · simp
   · have hq0 : 0 < q.toReal := ENNReal.toReal_pos hq hqt
@@ -289,7 +288,8 @@ theorem exists_holderOnWith_preciseRepresentative_gradient_of_forall_energyFormH
     (hR : 0 < R) (hRS : thickening R S ⊆ Omega) :
     ∃ C : ℝ≥0, HolderOnWith C β (preciseRepresentative volume (W1p.gradient u)) S := by
   have hα : 0 < α := hβ.trans_le hβα
-  have hqn := natCast_add_one_lt_of_le_one_sub_div hβ (zero_lt_two.trans_le hq2).ne' hβq
+  have hqn := natCast_add_one_lt_of_le_one_sub_div (NNReal.coe_pos.2 hβ)
+    (zero_lt_two.trans_le hq2).ne' hβq
   -- De Giorgi: `ū` is `γ₀`-Hölder on `S_{R/2}`.
   obtain ⟨γ₀, C₀, hγ₀, h₀⟩ :=
     exists_holderOnWith_preciseRepresentative_value hα hq2 hqn hA hAx hAs hG hf hu hS hR hRS

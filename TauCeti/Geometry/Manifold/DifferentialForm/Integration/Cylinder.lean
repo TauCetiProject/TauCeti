@@ -65,14 +65,30 @@ the sum of those of `u₁` and `u₂` (`TauCeti.rectangleIntegral_loopwiseTrans`
 two loops based at the same point are placed side by side, as a cap of their collared
 concatenation (`Path.collaredTrans`).
 
+A smooth cylinder from the loop `γ` to the loop `γ₀` (`TauCeti.IsSmoothCylinder`) is a smooth map
+`u` with `u (0, ·) = γ`, `u (1, ·) = γ₀` and `u (s, 1) = u (s, 0)`. More generally, for a map
+`f : M → M`, a smooth `f`-seamed cylinder (`TauCeti.IsSmoothSeamedCylinder`) asks
+`u (s, 1) = f (u (s, 0))` instead, so that it joins two `f`-seamed paths, the paths `γ` with
+`γ 1 = f (γ 0)` on which the Floer theory of a symplectomorphism `f` is built; the cylinders are
+defined as the case `f = id`. Seamed cylinders concatenate and reverse, and a smooth family of
+seamed paths gives seamed cylinders between any two of its members.
+
 Finally, a two-form vanishes on spheres (`TauCeti.VanishesOnSpheres`) or on tori
 (`TauCeti.VanishesOnTori`) when its integral over every map of the square factoring through a
-sphere, respectively a torus, vanishes. Such a form has the same integral over any two caps of a
-loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any two cylinders
-between the same loops (`TauCeti.VanishesOnTori.rectangleIntegral_eq`). By Green's formula
+sphere, respectively a torus, vanishes. It vanishes on `f`-seamed tori
+(`TauCeti.VanishesOnSeamedTori`) when its integral vanishes over every map of the square that
+agrees on the two vertical edges and is `f`-seamed along the horizontal ones, so that it sweeps out
+a loop of `f`-seamed paths; for `f = id` these are the tori. Such a form has the same integral over
+any two caps of a loop (`TauCeti.VanishesOnSpheres.rectangleIntegral_eq`), respectively over any
+two seamed cylinders between the same seamed paths
+(`TauCeti.VanishesOnSeamedTori.rectangleIntegral_eq`, and
+`TauCeti.VanishesOnTori.rectangleIntegral_eq` for cylinders). By Green's formula
 `TauCeti.rectangleIntegral_mextDeriv` from `Integration.Homotopy`, which expresses the integral of
 an exact two-form `dα` as the signed sum of the line integrals of `α` along the four edges of the
-rectangle, exact two-forms vanish on spheres and on tori.
+rectangle, exact two-forms vanish on spheres, and on `f`-seamed tori when `f` preserves the
+primitive, `f^* α = α`, in particular on tori. A symplectic form need not vanish on seamed tori
+even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed paths
+`s ↦ (t ↦ (t, s))` sweeps out the whole torus.
 
 ## Main definitions
 
@@ -80,8 +96,12 @@ rectangle, exact two-forms vanish on spheres and on tori.
   coordinate.
 * `TauCeti.loopwiseTrans u₁ u₂`: the concatenation of two maps of the plane along the second
   coordinate, periodic in it.
+* `TauCeti.IsSmoothSeamedCylinder I f γ γ₀ u`, `TauCeti.IsSmoothCylinder I γ γ₀ u`: `u` is a
+  smooth `f`-seamed cylinder, respectively a smooth cylinder, from `γ` to `γ₀`.
 * `TauCeti.VanishesOnSpheres φ`, `TauCeti.VanishesOnTori φ`: the integral of `φ` vanishes over
   every map of the square factoring through a sphere, respectively a torus.
+* `TauCeti.VanishesOnSeamedTori f φ`: the integral of `φ` vanishes over every map of the square
+  that agrees on its vertical edges and is `f`-seamed, `u (s, 1) = f (u (s, 0))`.
 
 ## Main results
 
@@ -97,16 +117,22 @@ rectangle, exact two-forms vanish on spheres and on tori.
   glued along their common start.
 * `TauCeti.contMDiff_loopwiseTrans`, `TauCeti.rectangleIntegral_loopwiseTrans`: smoothness of and
   the integral over a loopwise concatenation.
-* `TauCeti.IsSmoothCylinder.trans`: the concatenation of two smooth cylinders is a smooth
+* `TauCeti.IsSmoothSeamedCylinder.trans`, `TauCeti.IsSmoothCylinder.trans`: the concatenation of
+  two smooth (seamed) cylinders is a smooth (seamed) cylinder.
+* `TauCeti.IsSmoothSeamedCylinder.comp_prodMap_one_sub`,
+  `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth (seamed) cylinder run backwards is a
+  smooth (seamed) cylinder.
+* `TauCeti.isSmoothSeamedCylinder_comp_prodMap_affine`,
+  `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth family of seamed paths, or a
+  smooth map `1`-periodic in `t`, from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth
+  (seamed) cylinder.
+* `TauCeti.VanishesOnSpheres.rectangleIntegral_eq`,
+  `TauCeti.VanishesOnSeamedTori.rectangleIntegral_eq`,
+  `TauCeti.VanishesOnTori.rectangleIntegral_eq`: independence of the cap and of the (seamed)
   cylinder.
-* `TauCeti.IsSmoothCylinder.comp_prodMap_one_sub`: a smooth cylinder run backwards is a smooth
-  cylinder.
-* `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth map, `1`-periodic in `t`,
-  from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth cylinder.
-* `TauCeti.VanishesOnSpheres.rectangleIntegral_eq`, `TauCeti.VanishesOnTori.rectangleIntegral_eq`:
-  independence of the cap and of the cylinder.
-* `TauCeti.vanishesOnSpheres_mextDeriv`, `TauCeti.vanishesOnTori_mextDeriv`: exact two-forms
-  vanish on spheres and on tori.
+* `TauCeti.vanishesOnSpheres_mextDeriv`, `TauCeti.vanishesOnSeamedTori_mextDeriv`,
+  `TauCeti.vanishesOnTori_mextDeriv`: exact two-forms vanish on spheres, on seamed tori when the
+  seam preserves the primitive, and on tori.
 
 ## References
 
@@ -114,6 +140,9 @@ rectangle, exact two-forms vanish on spheres and on tori.
   (Stokes' theorem).
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS, 2012,
   the chapter on Floer homology (gluing cylinders and caps of loops).
+* Y.-J. Lee, *Reidemeister torsion in Floer–Novikov theory and counting pseudo-holomorphic tori,
+  I*, J. Symplectic Geom. 3 (2005), 221–311, §3.1 (paths seamed by a symplectomorphism and the
+  tori swept out by their loops).
 -/
 
 public section
@@ -565,41 +594,136 @@ theorem rectangleIntegral_loopwiseTrans [IsManifold I 1 M] {φ : RoughForm I M F
       rectangleIntegral_comp_prodMap_snd_of_contDiff hφ hu₂ (hβ 4)]
     norm_num [Real.smoothTransition.one_of_one_le, Real.smoothTransition.zero_of_nonpos]
 
+/-! ### Seamed cylinders and cylinders -/
+
 variable (I) in
-/-- A smooth cylinder from the loop `γ` to the loop `γ₀`: a smooth map `u : ℝ × ℝ → M` running
-along `γ` at `s = 0` and along `γ₀` at `s = 1`, each loop being traversed over `t ∈ [0, 1]`,
-with `u (s, 1) = u (s, 0)` for `s ∈ [0, 1]`. The start is prescribed for all `t`, so that two
-cylinders from the same loop can be glued smoothly along it; the other conditions only concern
-the unit square. When `γ₀` is constant, `u` is a cap of `γ`. -/
-structure IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop where
+/-- A smooth `f`-seamed cylinder from the path `γ` to the path `γ₀`: a smooth map
+`u : ℝ × ℝ → M` running along `γ` at `s = 0` and along `γ₀` at `s = 1`, each path being traversed
+over `t ∈ [0, 1]`, with `u (s, 1) = f (u (s, 0))` for `s ∈ [0, 1]`, so that every `u (s, ·)` is an
+`f`-seamed path (`TauCeti.SeamedPath`). The start is prescribed for all `t`, so that two seamed
+cylinders from the same path can be glued smoothly along it; the other conditions only concern the
+unit square. For `f = id` these are the smooth cylinders `TauCeti.IsSmoothCylinder`. -/
+structure IsSmoothSeamedCylinder (f : M → M) (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop where
   contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u
   apply_zero (t : ℝ) : u (0, t) = γ t
   apply_one : ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t
-  periodic : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)
+  seam : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = f (u (s, 0))
+
+variable (I) in
+/-- A smooth cylinder from the loop `γ` to the loop `γ₀`: a smooth map `u : ℝ × ℝ → M` running
+along `γ` at `s = 0` and along `γ₀` at `s = 1`, each loop being traversed over `t ∈ [0, 1]`,
+with `u (s, 1) = u (s, 0)` for `s ∈ [0, 1]`: a smooth `id`-seamed cylinder. The start is
+prescribed for all `t`, so that two cylinders from the same loop can be glued smoothly along it;
+the other conditions only concern the unit square. When `γ₀` is constant, `u` is a cap of `γ`. -/
+def IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop :=
+  IsSmoothSeamedCylinder I id γ γ₀ u
+
+section Seamed
+
+variable {f : M → M} {γ γ' γ₀ : ℝ → M} {u u₁ u₂ : ℝ × ℝ → M}
+
+/-- **Seamed cylinders for the identity are cylinders.** -/
+@[simp]
+theorem isSmoothSeamedCylinder_id_iff :
+    IsSmoothSeamedCylinder I id γ γ₀ u ↔ IsSmoothCylinder I γ γ₀ u :=
+  Iff.rfl
+
+/-- A smooth cylinder is smooth. -/
+theorem IsSmoothCylinder.contMDiff (hu : IsSmoothCylinder I γ γ₀ u) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u :=
+  IsSmoothSeamedCylinder.contMDiff hu
+
+/-- A smooth cylinder from `γ` runs along `γ` at `s = 0`. -/
+theorem IsSmoothCylinder.apply_zero (hu : IsSmoothCylinder I γ γ₀ u) (t : ℝ) : u (0, t) = γ t :=
+  IsSmoothSeamedCylinder.apply_zero hu t
+
+/-- A smooth cylinder to `γ₀` runs along `γ₀` at `s = 1`, for `t ∈ [0, 1]`. -/
+theorem IsSmoothCylinder.apply_one (hu : IsSmoothCylinder I γ γ₀ u) :
+    ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t :=
+  IsSmoothSeamedCylinder.apply_one hu
+
+/-- Every loop `u (s, ·)`, `s ∈ [0, 1]`, of a smooth cylinder closes up at `t = 1`. -/
+theorem IsSmoothCylinder.periodic (hu : IsSmoothCylinder I γ γ₀ u) :
+    ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0) :=
+  IsSmoothSeamedCylinder.seam hu
+
+/-- Constructing a smooth cylinder from its smoothness, its two ends and the closing condition
+`u (s, 1) = u (s, 0)` of its loops. -/
+theorem IsSmoothCylinder.mk (contMDiff : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
+    (apply_zero : ∀ t, u (0, t) = γ t) (apply_one : ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t)
+    (periodic : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) : IsSmoothCylinder I γ γ₀ u :=
+  ⟨contMDiff, apply_zero, apply_one, periodic⟩
+
+/-- The initial path of an `f`-seamed cylinder is `f`-seamed. -/
+theorem IsSmoothSeamedCylinder.source_apply_one (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
+    γ 1 = f (γ 0) := by
+  simpa only [hu.apply_zero] using hu.seam 0 (left_mem_Icc.mpr zero_le_one)
+
+/-- The final path of an `f`-seamed cylinder is `f`-seamed. -/
+theorem IsSmoothSeamedCylinder.target_apply_one (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
+    γ₀ 1 = f (γ₀ 0) := by
+  have h₀ : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.mpr zero_le_one
+  have h₁ : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.mpr zero_le_one
+  rw [← hu.apply_one 1 h₁, ← hu.apply_one 0 h₀]
+  exact hu.seam 1 h₁
+
+/-- The concatenation of a smooth `f`-seamed cylinder from `γ` to `γ'` and a smooth `f`-seamed
+cylinder from `γ'` to `γ₀`, sharing their common edge for every `t`, is a smooth `f`-seamed
+cylinder from `γ` to `γ₀`. -/
+theorem IsSmoothSeamedCylinder.trans (h₁ : IsSmoothSeamedCylinder I f γ γ' u₁)
+    (h₂ : IsSmoothSeamedCylinder I f γ' γ₀ u₂) (h : ∀ t, u₁ (1, t) = u₂ (0, t)) :
+    IsSmoothSeamedCylinder I f γ γ₀ (rectangleTrans u₁ u₂) where
+  contMDiff := contMDiff_rectangleTrans h₁.contMDiff h₂.contMDiff h
+  apply_zero t := by rw [rectangleTrans_apply_zero, h₁.apply_zero]
+  apply_one t ht := by rw [rectangleTrans_apply_one, h₂.apply_one t ht]
+  seam s _ := by
+    -- Near each `s` the concatenation is one of the two maps, reparametrized in the first
+    -- coordinate by `smoothTransition`, which takes values in `[0, 1]`.
+    have hβ (r : ℝ) : Real.smoothTransition r ∈ Icc (0 : ℝ) 1 :=
+      ⟨Real.smoothTransition.nonneg r, Real.smoothTransition.le_one r⟩
+    rcases lt_or_ge s (2 / 3) with hs | hs
+    · rw [rectangleTrans_eq_left h (z := (s, 1)) hs, rectangleTrans_eq_left h (z := (s, 0)) hs]
+      exact h₁.seam _ (hβ _)
+    · have hs' : (1 / 3 : ℝ) < s := by linarith
+      rw [rectangleTrans_eq_right h (z := (s, 1)) hs', rectangleTrans_eq_right h (z := (s, 0)) hs']
+      exact h₂.seam _ (hβ _)
+
+/-- Reversing the first coordinate of a smooth `f`-seamed cylinder from `γ` gives a smooth
+`f`-seamed cylinder from its final edge `u (1, ·)` back to `γ`. -/
+theorem IsSmoothSeamedCylinder.comp_prodMap_one_sub (hu : IsSmoothSeamedCylinder I f γ γ₀ u) :
+    IsSmoothSeamedCylinder I f (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) where
+  contMDiff := hu.contMDiff.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff
+  apply_zero t := by simp
+  apply_one t _ := by simp [hu.apply_zero]
+  seam s hs := by simpa using hu.seam (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
+
+/-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth family `u` of
+`f`-seamed paths `u (s, ·)` into a smooth `f`-seamed cylinder from `u (a, ·)` to `u (b, ·)`. -/
+theorem isSmoothSeamedCylinder_comp_prodMap_affine (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u)
+    (hseam : ∀ s, u (s, 1) = f (u (s, 0))) (a b : ℝ) :
+    IsSmoothSeamedCylinder I f (fun t ↦ u (a, t)) (fun t ↦ u (b, t))
+      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) where
+  contMDiff := hu.comp (contMDiff_prodMap_affine a b)
+  apply_zero t := by simp
+  apply_one t _ := by simp
+  seam s _ := by simpa using hseam (a + (b - a) * s)
+
+end Seamed
 
 /-- The concatenation of a smooth cylinder from `γ` to `γ'` and a smooth cylinder from `γ'` to
 `γ₀`, sharing their common edge for every `t`, is a smooth cylinder from `γ` to `γ₀`. -/
 theorem IsSmoothCylinder.trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × ℝ → M}
     (h₁ : IsSmoothCylinder I γ γ' u₁) (h₂ : IsSmoothCylinder I γ' γ₀ u₂)
-    (h : ∀ t, u₁ (1, t) = u₂ (0, t)) : IsSmoothCylinder I γ γ₀ (rectangleTrans u₁ u₂) where
-  contMDiff := contMDiff_rectangleTrans h₁.contMDiff h₂.contMDiff h
-  apply_zero t := by rw [rectangleTrans_apply_zero, h₁.apply_zero]
-  apply_one t ht := by rw [rectangleTrans_apply_one, h₂.apply_one t ht]
-  periodic s _ := by
-    -- Both maps are only evaluated at first coordinates `smoothTransition r ∈ [0, 1]`.
-    have hβ (r : ℝ) : Real.smoothTransition r ∈ Icc (0 : ℝ) 1 :=
-      ⟨Real.smoothTransition.nonneg r, Real.smoothTransition.le_one r⟩
-    simp only [rectangleTrans, h₁.periodic _ (hβ _), h₂.periodic _ (hβ _)]
+    (h : ∀ t, u₁ (1, t) = u₂ (0, t)) : IsSmoothCylinder I γ γ₀ (rectangleTrans u₁ u₂) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    ((isSmoothSeamedCylinder_id_iff.mpr h₁).trans (isSmoothSeamedCylinder_id_iff.mpr h₂) h)
 
 /-- Reversing the first coordinate of a smooth cylinder from `γ` gives a smooth cylinder from its
 final edge `u (1, ·)` back to `γ`. -/
 theorem IsSmoothCylinder.comp_prodMap_one_sub {γ γ₀ : ℝ → M} {u : ℝ × ℝ → M}
     (hu : IsSmoothCylinder I γ γ₀ u) :
-    IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) where
-  contMDiff := hu.contMDiff.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff
-  apply_zero t := by simp
-  apply_one t _ := by simp [hu.apply_zero]
-  periodic s hs := by simpa using hu.periodic (1 - s) ⟨by linarith [hs.2], by linarith [hs.1]⟩
+    IsSmoothCylinder I (fun t ↦ u (1, t)) γ (u ∘ Prod.map (fun s ↦ 1 - s) id) :=
+  isSmoothSeamedCylinder_id_iff.mp (isSmoothSeamedCylinder_id_iff.mpr hu).comp_prodMap_one_sub
 
 /-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
 `1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
@@ -607,11 +731,9 @@ theorem isSmoothCylinder_comp_prodMap_affine {u : ℝ × ℝ → M}
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
     (a b : ℝ) :
     IsSmoothCylinder I (fun t ↦ u (a, t)) (fun t ↦ u (b, t))
-      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) where
-  contMDiff := hu.comp (contMDiff_prodMap_affine a b)
-  apply_zero t := by simp
-  apply_one t _ := by simp
-  periodic s _ := by simpa using hper (a + (b - a) * s, 0)
+      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) :=
+  isSmoothSeamedCylinder_id_iff.mp
+    (isSmoothSeamedCylinder_comp_prodMap_affine hu (fun s ↦ by simpa using hper (s, 0)) a b)
 
 /-- A two-form `φ` **vanishes on spheres** when its integral over the unit square vanishes for
 every smooth map `u : ℝ × ℝ → M` that is constant on each of the two vertical edges of the square
@@ -624,14 +746,22 @@ def VanishesOnSpheres (φ : RoughForm I M F 2) : Prop :=
     (∀ t ∈ Icc (0 : ℝ) 1, u (0, t) = u (0, 0)) → (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (1, 0)) →
     (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) → rectangleIntegral φ u (0, 0) (1, 1) = 0
 
-/-- A two-form `φ` **vanishes on tori** when its integral over the unit square vanishes for every
-smooth map `u : ℝ × ℝ → M` that agrees on opposite edges of the square, so that it factors
-through the torus. For a symplectic form this formulates the area condition of symplectic
-atoroidality on maps of the square. -/
-def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
+/-- A two-form `φ` **vanishes on `f`-seamed tori** when its integral over the unit square
+vanishes for every smooth map `u : ℝ × ℝ → M` that agrees on the two vertical edges of the square
+and maps its bottom edge to its top edge by `f`, `u (s, 1) = f (u (s, 0))`. Such a map is the
+torus swept out by a loop `s ↦ u (s, ·)` of `f`-seamed paths. For `f = id` this is
+`TauCeti.VanishesOnTori`. -/
+def VanishesOnSeamedTori (f : M → M) (φ : RoughForm I M F 2) : Prop :=
   ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
     (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
-    (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) → rectangleIntegral φ u (0, 0) (1, 1) = 0
+    (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = f (u (s, 0))) → rectangleIntegral φ u (0, 0) (1, 1) = 0
+
+/-- A two-form `φ` **vanishes on tori** when its integral over the unit square vanishes for every
+smooth map `u : ℝ × ℝ → M` that agrees on opposite edges of the square, so that it factors
+through the torus: it vanishes on `id`-seamed tori. For a symplectic form this formulates the
+area condition of symplectic atoroidality on maps of the square. -/
+def VanishesOnTori (φ : RoughForm I M F 2) : Prop :=
+  VanishesOnSeamedTori id φ
 
 /-- Unfolding `TauCeti.VanishesOnSpheres`. -/
 theorem vanishesOnSpheres_iff (φ : RoughForm I M F 2) :
@@ -645,6 +775,19 @@ theorem vanishesOnTori_iff (φ : RoughForm I M F 2) :
     VanishesOnTori φ ↔ ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
       (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
       (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)) → rectangleIntegral φ u (0, 0) (1, 1) = 0 :=
+  Iff.rfl
+
+/-- Unfolding `TauCeti.VanishesOnSeamedTori`. -/
+theorem vanishesOnSeamedTori_iff (f : M → M) (φ : RoughForm I M F 2) :
+    VanishesOnSeamedTori f φ ↔ ∀ u : ℝ × ℝ → M, ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u →
+      (∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = u (0, t)) →
+      (∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = f (u (s, 0))) → rectangleIntegral φ u (0, 0) (1, 1) = 0 :=
+  Iff.rfl
+
+/-- **Vanishing on seamed tori for the identity is vanishing on tori.** -/
+@[simp]
+theorem vanishesOnSeamedTori_id_iff (φ : RoughForm I M F 2) :
+    VanishesOnSeamedTori id φ ↔ VanishesOnTori φ :=
   Iff.rfl
 
 /-! ### Independence of the cylinder -/
@@ -671,19 +814,28 @@ theorem VanishesOnSpheres.rectangleIntegral_eq (hS : VanishesOnSpheres φ)
     (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
   exact hglue.symm
 
+/-- **Independence of the seamed cylinder.** A continuous two-form that vanishes on `f`-seamed
+tori has the same integral over any two `f`-seamed cylinders from a path `γ` to a path `γ₀`. -/
+theorem VanishesOnSeamedTori.rectangleIntegral_eq {f : M → M} (hT : VanishesOnSeamedTori f φ)
+    (hφ : IsSmoothForm I 0 φ) (hu : IsSmoothSeamedCylinder I f γ γ₀ u)
+    (hv : IsSmoothSeamedCylinder I f γ γ₀ v) :
+    rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
+  -- Glue `u`, run backwards, to `v` along `γ`: this is a seamed torus, with integral `∫ v - ∫ u`.
+  have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
+  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
+  have hglue := hT _ hw.contMDiff
+    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_zero, hu.apply_one t ht]) hw.seam
+  rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
+    (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
+  exact hglue.symm
+
 /-- **Independence of the cylinder.** A continuous two-form that vanishes on tori has the same
 integral over any two cylinders from a loop `γ` to a loop `γ₀`. -/
 theorem VanishesOnTori.rectangleIntegral_eq (hT : VanishesOnTori φ) (hφ : IsSmoothForm I 0 φ)
     (hu : IsSmoothCylinder I γ γ₀ u) (hv : IsSmoothCylinder I γ γ₀ v) :
-    rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) := by
-  -- Glue `u`, run backwards, to `v` along `γ`: this is a torus, with integral `∫ v - ∫ u`.
-  have h t : u (0, t) = v (0, t) := (hu.apply_zero t).trans (hv.apply_zero t).symm
-  have hw := hu.comp_prodMap_one_sub.trans hv fun t ↦ by simpa using h t
-  have hglue := hT _ hw.contMDiff
-    (fun t ht ↦ by rw [hw.apply_one t ht, hw.apply_zero, hu.apply_one t ht]) hw.periodic
-  rw [rectangleIntegral_rectangleTrans_comp_prodMap_one_sub hφ (hu.contMDiff.of_le (by simp))
-    (hv.contMDiff.of_le (by simp)) h, sub_eq_zero] at hglue
-  exact hglue.symm
+    rectangleIntegral φ u (0, 0) (1, 1) = rectangleIntegral φ v (0, 0) (1, 1) :=
+  ((vanishesOnSeamedTori_id_iff φ).mpr hT).rectangleIntegral_eq hφ
+    (isSmoothSeamedCylinder_id_iff.mpr hu) (isSmoothSeamedCylinder_id_iff.mpr hv)
 
 end Independence
 
@@ -712,20 +864,37 @@ theorem vanishesOnSpheres_mextDeriv (hα : IsSmoothForm I 1 α) :
       fun s hs ↦ hp s (hI hs)]
   simp
 
-/-- Exact two-forms vanish on tori: by Stokes' formula the integral over a torus is the sum of the
-line integrals along its edges, which cancel on opposite edges. -/
-theorem vanishesOnTori_mextDeriv (hα : IsSmoothForm I 1 α) : VanishesOnTori (mextDeriv α) := by
-  intro u hu h₁ hp
+/-- **Exact forms with an invariant primitive vanish on seamed tori.** If `f` is differentiable
+and preserves the `C¹` one-form `α`, `f^* α = α`, then `dα` vanishes on `f`-seamed tori: by
+Stokes' formula the integral over a seamed torus is the sum of the line integrals of `α` along
+its edges, which cancel on the two vertical edges, and on the two horizontal edges since one is
+the image of the other under `f`. -/
+theorem vanishesOnSeamedTori_mextDeriv (hα : IsSmoothForm I 1 α) {f : M → M}
+    (hf : MDifferentiable I I f) (hfα : mpullback I I f α = α) :
+    VanishesOnSeamedTori f (mextDeriv α) := by
+  intro u hu h₁ hseam
   have hI : uIoo (0 : ℝ) 1 ⊆ Icc 0 1 := by
     rw [uIoo_of_le zero_le_one]
     exact Ioo_subset_Icc_self
+  -- the line integral along the top edge is that of `f^* α = α` along the bottom edge
+  have htop : pathIntegral α (fun s ↦ u (s, 1)) 0 1 = pathIntegral α (fun s ↦ u (s, 0)) 0 1 := by
+    have hbot : ContMDiff 𝓘(ℝ, ℝ) I ∞ fun s ↦ u (s, 0) :=
+      hu.comp (contDiff_id.prodMk contDiff_const).contMDiff
+    rw [pathIntegral_congr_of_eqOn_uIoo (γ' := f ∘ fun s ↦ u (s, 0))
+        fun s hs ↦ hseam s (hI hs),
+      ← pathIntegral_mpullback (a := 0) (b := 1) α (fun _ _ ↦ hf _)
+        fun _ _ ↦ hbot.mdifferentiableAt (by simp), hfα]
   rw [rectangleIntegral_mextDeriv hα (hu.of_le (by simp))]
   dsimp only
   rw [pathIntegral_congr_of_eqOn_uIoo (γ := fun t ↦ u (1, t)) (γ' := fun t ↦ u (0, t))
-      fun t ht ↦ h₁ t (hI ht),
-    pathIntegral_congr_of_eqOn_uIoo (γ := fun s ↦ u (s, 1)) (γ' := fun s ↦ u (s, 0))
-      fun s hs ↦ hp s (hI hs)]
+      fun t ht ↦ h₁ t (hI ht), htop]
   simp
+
+/-- Exact two-forms vanish on tori: by Stokes' formula the integral over a torus is the sum of the
+line integrals along its edges, which cancel on opposite edges. -/
+theorem vanishesOnTori_mextDeriv (hα : IsSmoothForm I 1 α) : VanishesOnTori (mextDeriv α) :=
+  (vanishesOnSeamedTori_id_iff _).mp
+    (vanishesOnSeamedTori_mextDeriv hα mdifferentiable_id (mpullback_id α))
 
 end Exact
 
