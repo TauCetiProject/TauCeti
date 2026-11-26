@@ -43,7 +43,7 @@ an injective immersion near every anchor `z ≠ 0` but identifies `z` with `-z`.
   points `y ∈ s` near `x` extends to all `y ∈ s` as soon as `x` is the only point of `s` with
   image `f x`
   (`IsCompact.exists_forall_dist_le_mul_dist_of_eventually`,
-  `TauCeti.exists_antilipschitzWithFrom_of_eventually`): away from `x` compactness and the
+  `Continuous.exists_antilipschitzWithFrom_of_eventually`): away from `x` compactness and the
   injectivity at `x` bound `dist (f x) (f y)` below, while `dist x y` stays bounded.
 * The bound with a fixed constant passes to limits of maps and anchor points
   (`TauCeti.AntilipschitzWithFrom.of_tendsto`), so it defines a closed set of pairs of a map and an
@@ -200,7 +200,7 @@ theorem antilipschitzWithFrom_iff :
     AntilipschitzWithFrom K f x ↔ ∀ y, edist x y ≤ K * edist (f x) (f y) :=
   Iff.rfl
 
-theorem AntilipschitzWithFrom.edist_le_mul (h : AntilipschitzWithFrom K f x) (y : α) :
+theorem AntilipschitzWithFrom.le_mul_edist (h : AntilipschitzWithFrom K f x) (y : α) :
     edist x y ≤ K * edist (f x) (f y) :=
   h y
 
@@ -285,8 +285,8 @@ theorem antilipschitzWithFrom_iff_inv_le_div {α : Type*} [MetricSpace α] {f : 
 /-- Let `f` be a continuous map from a compact space to a metric space, and `x` the only point with
 image `f x`. If `f` is antilipschitz near `x`, that is `dist x y ≤ K * dist (f x) (f y)` for `y`
 near `x`, then it is antilipschitz from `x` over the whole source, with some constant `L`. -/
-theorem exists_antilipschitzWithFrom_of_eventually {β : Type*} [MetricSpace β] [CompactSpace α]
-    {f : α → β} (hf : Continuous f) (hinj : ∀ y, f y = f x → y = x)
+theorem _root_.Continuous.exists_antilipschitzWithFrom_of_eventually {β : Type*} [MetricSpace β]
+    [CompactSpace α] {f : α → β} (hf : Continuous f) (hinj : ∀ y, f y = f x → y = x)
     (hK : ∀ᶠ y in 𝓝 x, dist x y ≤ K * dist (f x) (f y)) : ∃ L, AntilipschitzWithFrom L f x := by
   obtain ⟨L, hL⟩ := isCompact_univ.exists_forall_dist_le_mul_dist_of_eventually hf.continuousOn
     (fun y _ ↦ hinj y) (by rwa [nhdsWithin_univ])

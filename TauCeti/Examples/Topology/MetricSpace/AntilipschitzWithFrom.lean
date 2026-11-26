@@ -35,13 +35,13 @@ example (x : ℂ) : AntilipschitzWithFrom 1 id x :=
 -- invertible.
 example {x : ℂ} (hx : x ≠ 0) :
     ∃ K : ℝ≥0, ∀ᶠ y in 𝓝 x, dist x y ≤ K * dist (x ^ 2) (y ^ 2) := by
-  have hx' : ‖x‖ ≠ 0 := norm_ne_zero_iff.2 hx
+  have h2x : ‖(2 : ℂ) * x‖ ≠ 0 := norm_ne_zero_iff.2 (mul_ne_zero two_ne_zero hx)
   refine (hasDerivAt_pow 2 x).hasFDerivAt.exists_eventually_dist_le_mul_dist
     (C := ‖(2 : ℂ) * x‖₊⁻¹) (.of_le_mul_dist fun y z ↦ ?_)
-  simp only [dist_eq_norm]
-  simp [← sub_mul]
-  field_simp
-  exact le_rfl
+  -- The derivative `2 x` multiplies distances by `‖2 x‖`.
+  calc dist y z = ‖(2 : ℂ) * x‖⁻¹ * (‖y - z‖ * ‖(2 : ℂ) * x‖) := by
+        rw [dist_eq_norm]; field_simp
+    _ ≤ _ := by simp [dist_eq_norm, ← sub_mul]
 
 -- Over all of `ℂ`, the squaring map is antilipschitz from no point `x ≠ 0`.
 example {x : ℂ} (hx : x ≠ 0) (K : ℝ≥0) : ¬ AntilipschitzWithFrom K (fun z : ℂ ↦ z ^ 2) x :=
