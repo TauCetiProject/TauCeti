@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Factorization
-import Mathlib.RingTheory.Polynomial.GaussNorm
-import TauCeti.Analysis.Normed.Ring.Ultra
+import Mathlib.Order.Northcott
+import TauCeti.Analysis.Normed.Ring.InfiniteProd.Ultra
+import TauCeti.Data.Set.Card
 import TauCeti.RingTheory.Polynomial.Roots
+import TauCeti.RingTheory.PowerSeries.GaussNorm.NearOne
+import TauCeti.RingTheory.PowerSeries.Order
 
 /-!
 # Canonical Weierstrass products of entire power series
@@ -22,7 +25,9 @@ unconditional infinite product
 
 in the Gauss topology of `PowerSeries.IsEntire.subring R` if and only if `c` tends to `0` along the
 cofinite filter; the forward implication needs no completeness hypothesis on `R`, since the
-degree-`1` coefficients of the finite partial products recover `- ∑ cᵢ`.
+degree-`1` coefficients of the finite partial products recover `- ∑ cᵢ`. When `c → 0` cofinitely,
+evaluating `∏' i, (1 - cᵢ X)` at any element `b` of a complete normed commutative `R`-algebra with
+bounded scalar action gives the unconditional product `∏' i, (1 - cᵢ • b)`.
 
 Specialising to a complete ultrametric normed field `K` and a family `α : ι → K` with `‖α i‖ → ∞`
 cofinitely yields the canonical Weierstrass product `∏' i, (1 - αᵢ⁻¹ X)`. When every `α i` is
@@ -33,14 +38,17 @@ remaining tail product is restricted at `r` with Gauss distance strictly below `
 consequence, in every complete normed field extension `L` of `K`, the multiplicity of each `x ∈ L`
 as a zero of the infinite product is the number of indices `i` with `algebraMap K L (α i) = x`, the
 zero multiset on `{x ∈ L : ‖x‖ ≤ r}` is the multiset image of `s`, and the zeros in `L` are
-precisely the images of the `α i`.
+precisely the images of the `α i`. Allowing a power of `X` for a zero at `0` constructs a nonzero
+entire series with any prescribed multiplicity function `m : K → ℕ` whose support meets every closed
+disc in a finite set.
 
 Conversely, over an algebraically closed complete ultrametric normed field `K`, every entire power
 series `f` with constant coefficient `1` is the unconditional `HasProd` of the factors `1 - αᵢ⁻¹ X`
 along any family `α : ι → K` listing each zero of `f` as many times as its multiplicity, and admits
-a countable such indexing. This upgrades the radius-filtered disc-subproduct convergence of
-`PowerSeries.IsEntire.tendsto_polynomialHom_prod_zeroMultiset` to an enumeration-independent
-unconditional infinite product in `PowerSeries.IsEntire.subring K`.
+a countable such indexing; this also evaluates pointwise at any element of a complete normed
+commutative `K`-algebra with bounded scalar action. This upgrades the radius-filtered
+disc-subproduct convergence of `PowerSeries.IsEntire.tendsto_polynomialHom_prod_zeroMultiset` to an
+enumeration-independent unconditional infinite product in `PowerSeries.IsEntire.subring K`.
 
 ## Main results
 
@@ -48,8 +56,12 @@ unconditional infinite product in `PowerSeries.IsEntire.subring K`.
   `tendsto_cofinite_zero_of_multipliable_polynomialHom_one_sub_C_mul_X` and
   `multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero`): unconditional
   convergence of `∏' i, (1 - cᵢ X)` in `PowerSeries.IsEntire.subring R` iff `c → 0` cofinitely.
-* `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod_polynomialHom_one_sub_C_mul_X`: the constant
-  coefficient of `∏' i, (1 - cᵢ X)` is `1`.
+* `TauCeti.PowerSeries.IsEntire.constantCoeff_tprod_one_sub_polynomialHom_C_mul_X`,
+  `TauCeti.PowerSeries.IsEntire.hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X`,
+  `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_le`, and
+  `TauCeti.PowerSeries.IsEntire.gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt`:
+  constant coefficient, pointwise evaluation, and closed/strict Gauss-norm bounds for
+  `∏' i, (1 - cᵢ X)`.
 * `TauCeti.PowerSeries.IsEntire.multipliable_polynomialHom_one_sub_C_inv_mul_X` and
   `TauCeti.PowerSeries.IsEntire.multipliable_polynomialHom_one_sub_C_inv_mul_X_iff`: unconditional
   convergence of `∏' i, (1 - αᵢ⁻¹ X)` from `‖α i‖ → ∞` cofinitely.
@@ -61,11 +73,18 @@ unconditional infinite product in `PowerSeries.IsEntire.subring K`.
   `TauCeti.PowerSeries.IsEntire.evalAt_tprod_polynomialHom_one_sub_C_inv_mul_X_eq_zero_iff`:
   Taylor-order multiplicities, closed-disc zero multisets, and zeros of the canonical product in
   every complete normed field extension.
-* `PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X` and
-  `PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_sub_C_inv_mul_X`: over an
-  algebraically closed complete ultrametric field, every entire series with constant coefficient `1`
-  is the unconditional `HasProd` over any multiplicity-accurate enumeration of its zeros, and admits
-  a countable such enumeration.
+* `TauCeti.PowerSeries.IsEntire.exists_isEntire_order_taylor_eq`,
+  `TauCeti.PowerSeries.IsEntire.exists_isEntire_constantCoeff_eq_one_order_taylor_eq` and
+  `TauCeti.PowerSeries.IsEntire.existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq`:
+  existence of a nonzero entire series for any multiplicity function `m` whose support meets every
+  closed disc in a finite set; existence with constant coefficient `1` when additionally
+  `m 0 = 0`; and uniqueness with constant coefficient `1` when `K` is also algebraically closed.
+* `PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X`,
+  `PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_sub_C_inv_mul_X` and
+  `PowerSeries.IsEntire.hasProd_evalAt_one_sub_inv_smul`: over an algebraically closed complete
+  ultrametric field, every entire series with constant coefficient `1` is the unconditional
+  `HasProd` over any multiplicity-accurate enumeration of its zeros, admits a countable such
+  enumeration, and evaluates pointwise as `∏' i, (1 - αᵢ⁻¹ • b)`.
 
 ## References
 
@@ -95,11 +114,11 @@ private theorem norm_restrict_polynomialHom_C_mul_X_le (r : Set.Ioi (0 : ℝ)) (
       ‖c‖ * (r : ℝ) := by
   rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict,
     _root_.PowerSeries.IsEntire.coe_polynomialHom, Polynomial.coe_mul, Polynomial.coe_C,
-    Polynomial.coe_X, ← pow_one (_root_.PowerSeries.X (R := R)),
-    ← _root_.PowerSeries.monomial_eq_C_mul_X_pow]
-  have h : (_root_.PowerSeries.monomial 1 c).gaussNorm norm (r : ℝ) = ‖c‖ * (r : ℝ) ^ 1 :=
-    _root_.PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := c) r.property.le 1
-  rw [h, pow_one]
+    Polynomial.coe_X]
+  have heq : (_root_.PowerSeries.C c * _root_.PowerSeries.X : R⟦X⟧) =
+      (1 - _root_.PowerSeries.C (-c) * _root_.PowerSeries.X) - 1 := by
+    rw [map_neg, neg_mul, sub_neg_eq_add, add_sub_cancel_left]
+  rw [heq, TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (-c) r.property.le, norm_neg]
 
 /-- **Necessary condition for multipliability of `1 - cᵢ X`.** Over an ultrametric normed
 commutative ring, if the linear factors `1 - cᵢ X` are unconditionally multipliable in the Gauss
@@ -176,44 +195,84 @@ theorem multipliable_polynomialHom_one_sub_C_mul_X_iff [CompleteSpace R] {ι : T
   ⟨tendsto_cofinite_zero_of_multipliable_polynomialHom_one_sub_C_mul_X,
     multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero⟩
 
-/-- The infinite product `∏' i, (1 - cᵢ X)` in `PowerSeries.IsEntire.subring R` always has constant
-coefficient `1` (both when it converges and, through the `tprod` default `1`, when it does not). -/
-theorem constantCoeff_tprod_polynomialHom_one_sub_C_mul_X {ι : Type*} (c : ι → R) :
+/-- The infinite product `∏' i, (1 - cᵢ X)` in `PowerSeries.IsEntire.subring R` (in `simp`-normal
+form `∏' i, (1 - polynomialHom (C cᵢ) * polynomialHom X)`) always has constant coefficient `1`
+(both when it converges and, through the `tprod` default `1`, when it does not). -/
+@[simp]
+theorem constantCoeff_tprod_one_sub_polynomialHom_C_mul_X {ι : Type*} (c : ι → R) :
     _root_.PowerSeries.constantCoeff
-      ((∏' i, _root_.PowerSeries.IsEntire.polynomialHom
-        (1 - Polynomial.C (c i) * Polynomial.X) :
+      ((∏' i, (1 - _root_.PowerSeries.IsEntire.polynomialHom (Polynomial.C (c i)) *
+        _root_.PowerSeries.IsEntire.polynomialHom Polynomial.X) :
           _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) = 1 := by
   by_cases hm : Multipliable fun i ↦
-      _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
+      1 - _root_.PowerSeries.IsEntire.polynomialHom (Polynomial.C (c i)) *
+        _root_.PowerSeries.IsEntire.polynomialHom Polynomial.X
   · rw [constantCoeff_tprod hm]
     simp
   · rw [tprod_eq_one_of_not_multipliable hm]
     simp
 
-/-- When every `cᵢ` satisfies `‖cᵢ‖ * r < 1` (`r > 0`) and `c → 0` cofinitely, the infinite product
-`∏' i, (1 - cᵢ X)` is within `< 1` of `1` in the Gauss norm at radius `r`. -/
-private theorem gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt [CompleteSpace R]
-    {ι : Type*} {c : ι → R} (hc : Tendsto c cofinite (𝓝 0)) (r : Set.Ioi (0 : ℝ))
-    (hlt : ∀ i, ‖c i‖ * (r : ℝ) < 1) :
+omit [IsUltrametricDist R] in
+/-- The underlying formal power series of `polynomialHom (1 - C c * X)` is `1 - C c * X`. -/
+private theorem coe_polynomialHom_one_sub_C_mul_X (c : R) :
+    ((_root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C c * Polynomial.X) :
+      _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) =
+      1 - _root_.PowerSeries.C c * _root_.PowerSeries.X := by
+  simp
+
+/-- **Pointwise evaluation of a Weierstrass product.** Over a complete ultrametric normed
+commutative ring `R`, if `c → 0` along the cofinite filter, then at every element `b` of a
+complete normed commutative `R`-algebra with bounded scalar action, evaluating `∏' i, (1 - cᵢ X)`
+gives the unconditional product `∏' i, (1 - cᵢ • b)`. -/
+theorem hasProd_evalAt_tprod_polynomialHom_one_sub_C_mul_X
+    [CompleteSpace R] {A ι : Type*} [NormedCommRing A] [Algebra R A] [IsBoundedSMul R A]
+    [CompleteSpace A] {c : ι → R} (hc : Tendsto c cofinite (𝓝 0)) (b : A) :
+    HasProd (fun i ↦ 1 - c i • b)
+      (((∏' i, _root_.PowerSeries.IsEntire.polynomialHom
+        (1 - Polynomial.C (c i) * Polynomial.X) :
+          _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧).evalAt b) := by
+  have hprod := evalAt_hasProd
+    (multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero hc).hasProd b
+  exact hprod.congr_fun fun i ↦ by
+    rw [coe_polynomialHom_one_sub_C_mul_X, _root_.PowerSeries.evalAt_one_sub_C_mul_X]
+
+/-- **Closed Gauss-norm bound for a Weierstrass product.** When every `cᵢ` satisfies
+`‖cᵢ‖ * r ≤ B` (`0 ≤ r`, `0 ≤ B ≤ 1`), the infinite product `∏' i, (1 - cᵢ X)` is within `≤ B` of
+`1` in the Gauss norm at radius `r` (both when it converges and, via the `tprod` default `1`, when
+it does not). -/
+theorem gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_le {ι : Type*} {c : ι → R}
+    {r B : ℝ} (hr : 0 ≤ r) (hB0 : 0 ≤ B) (hB1 : B ≤ 1) (hle : ∀ i, ‖c i‖ * r ≤ B) :
     (((∏' i, _root_.PowerSeries.IsEntire.polynomialHom
       (1 - Polynomial.C (c i) * Polynomial.X) :
-        _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm (r : ℝ) < 1 := by
-  set g : ι → _root_.PowerSeries.IsEntire.subring R := fun i ↦
-    _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
-  have hm : Multipliable g := multipliable_polynomialHom_one_sub_C_mul_X_of_tendsto_cofinite_zero hc
-  have hnorm : ‖(∏' i, restrict r (g i)) - 1‖ =
-      (((∏' i, g i : _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm
-        (r : ℝ) := by
-    rw [← restrict_tprod hm r, ← map_one (restrict r), ← map_sub,
-      TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict, AddSubgroupClass.coe_sub,
-      OneMemClass.coe_one]
-  rw [← hnorm]
-  refine TauCeti.norm_tprod_sub_one_lt _ zero_lt_one le_rfl fun i ↦ ?_
-  have hsub : restrict r (g i) - 1 =
-      -restrict r (_root_.PowerSeries.IsEntire.polynomialHom
-        (Polynomial.C (c i) * Polynomial.X)) := by simp [g, sub_eq_add_neg]
-  rw [hsub, norm_neg]
-  exact (norm_restrict_polynomialHom_C_mul_X_le r (c i)).trans_lt (hlt i)
+        _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm r ≤ B := by
+  by_cases hm : Multipliable fun i ↦
+      _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
+  · refine gaussNorm_sub_one_le_of_hasProd hm.hasProd hr hB0 hB1 fun i ↦ ?_
+    rw [coe_polynomialHom_one_sub_C_mul_X,
+      TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (c i) hr]
+    exact hle i
+  · rw [tprod_eq_one_of_not_multipliable hm, OneMemClass.coe_one, sub_self,
+      _root_.PowerSeries.gaussNorm_zero norm r norm_zero]
+    exact hB0
+
+/-- **Strict Gauss-norm bound for a Weierstrass product.** When every `cᵢ` satisfies `‖cᵢ‖ * r < B`
+(`0 ≤ r`, `0 < B ≤ 1`), the infinite product `∏' i, (1 - cᵢ X)` is within `< B` of `1` in the
+Gauss norm at radius `r` (both when it converges and, via the `tprod` default `1`, when it does
+not). -/
+theorem gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt {ι : Type*} {c : ι → R}
+    {r B : ℝ} (hr : 0 ≤ r) (hB0 : 0 < B) (hB1 : B ≤ 1) (hlt : ∀ i, ‖c i‖ * r < B) :
+    (((∏' i, _root_.PowerSeries.IsEntire.polynomialHom
+      (1 - Polynomial.C (c i) * Polynomial.X) :
+        _root_.PowerSeries.IsEntire.subring R) : R⟦X⟧) - 1).gaussNorm norm r < B := by
+  by_cases hm : Multipliable fun i ↦
+      _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (c i) * Polynomial.X)
+  · refine gaussNorm_sub_one_lt_of_hasProd hm.hasProd hr hB0 hB1 fun i ↦ ?_
+    rw [coe_polynomialHom_one_sub_C_mul_X,
+      TauCeti.PowerSeries.gaussNorm_one_sub_C_mul_X_sub_one (c i) hr]
+    exact hlt i
+  · rw [tprod_eq_one_of_not_multipliable hm, OneMemClass.coe_one, sub_self,
+      _root_.PowerSeries.gaussNorm_zero norm r norm_zero]
+    exact hB0
 
 end NormedCommRing
 
@@ -317,23 +376,19 @@ theorem isDiscPreparation_tprod_polynomialHom_one_sub_C_inv_mul_X [CompleteSpace
       (norm_pos_iff.mpr (hα0 i)).not_ge ((hs i).mp hi)
     have hUF : (U : K⟦X⟧) = (F : K⟦X⟧) := by simpa [hs0, Polynomial.coe_one] using hmul.symm
     rw [hUF, hs0, Finset.card_empty, Finset.prod_empty]
-    exact TauCeti.PowerSeries.isDiscPreparation_zero
-      (constantCoeff_tprod_polynomialHom_one_sub_C_mul_X _)
+    exact TauCeti.PowerSeries.isDiscPreparation_zero (by simp [F])
   · obtain ⟨hPdeg, hPdist⟩ := isDistinguished_prod_one_sub_C_inv_mul_X s (fun i _ ↦ hα0 i) hr0
       fun i hi ↦ (hs i).mp hi
     have hP0 : (∏ i ∈ s, (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)).coeff 0 = 1 := by
       simp [Polynomial.coeff_zero_eq_eval_zero, Polynomial.eval_prod]
     have hUent : (U : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp U.property
-    have hcinv : Tendsto (fun j : ↑((s : Set ι)ᶜ) ↦ (α j.val)⁻¹) cofinite (𝓝 0) :=
-      (tendsto_inv₀_cobounded.comp (tendsto_norm_atTop_iff_cobounded.mp hα)).comp
-        Subtype.val_injective.tendsto_cofinite
     have hUlt : ((U : K⟦X⟧) - 1).gaussNorm norm r < 1 :=
-      gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt hcinv ⟨r, hr0⟩ fun j ↦ by
+      gaussNorm_tprod_polynomialHom_one_sub_C_mul_X_sub_one_lt hr0.le zero_lt_one le_rfl
+        fun j ↦ by
         have hj : r < ‖α j.val‖ := lt_of_not_ge (mt (hs j.val).mpr j.property)
         rw [norm_inv, inv_mul_lt_iff₀ (hr0.trans hj), mul_one]
         exact hj
-    have hU0 : _root_.PowerSeries.constantCoeff (U : K⟦X⟧) = 1 :=
-      constantCoeff_tprod_polynomialHom_one_sub_C_mul_X _
+    have hU0 : _root_.PowerSeries.constantCoeff (U : K⟦X⟧) = 1 := by simp [U]
     have hUdist : TauCeti.PowerSeries.IsDistinguished r 0 (U : K⟦X⟧) :=
       (TauCeti.PowerSeries.gaussNorm_sub_one_lt_one_iff hr0 (hUent.isRestricted r) hU0).mp hUlt
     refine ⟨?_, hPdeg, hP0, hUent.isRestricted r, hU0, hUlt, hmul⟩
@@ -365,8 +420,7 @@ theorem order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X [CompleteSpace K]
     ∏' i, _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
   have hF0 : (F : K⟦X⟧) ≠ 0 := by
     intro h
-    have h1 : _root_.PowerSeries.constantCoeff (F : K⟦X⟧) = 1 :=
-      constantCoeff_tprod_polynomialHom_one_sub_C_mul_X (fun i ↦ (α i)⁻¹)
+    have h1 : _root_.PowerSeries.constantCoeff (F : K⟦X⟧) = 1 := by simp [F]
     rw [h, map_zero] at h1
     exact zero_ne_one h1
   have hFent : (F : K⟦X⟧).IsEntire := _root_.PowerSeries.IsEntire.mem_subring.mp F.property
@@ -451,23 +505,21 @@ theorem _root_.PowerSeries.IsEntire.hasProd_polynomialHom_one_sub_C_inv_mul_X
     have h1 : (1 : ℕ∞) ≤ (_root_.PowerSeries.taylor 0 f).order := by
       rw [← hα 0]
       exact Set.one_le_encard_iff_nonempty.mpr ⟨i, hi⟩
-    rw [_root_.PowerSeries.taylor_zero, Order.one_le_iff_ne_zero,
-      _root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero, h0] at h1
-    exact one_ne_zero h1
-  have hfid : _root_.PowerSeries.map (algebraMap K K) f = f := by ext n; simp
+    have h0' : (_root_.PowerSeries.taylor 0 f).order = 0 := by
+      simp [_root_.PowerSeries.order_eq_zero_iff_constantCoeff_ne_zero, h0]
+    rw [h0'] at h1
+    exact absurd h1 (by decide)
   have hgrow : Tendsto (fun i ↦ ‖α i‖) cofinite atTop :=
     hf.tendsto_norm_cofinite_atTop_of_encard_le_order_taylor (L := K) hf0 fun i ↦ by
-      rw [hfid, hα (α i)]
+      rw [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq, hα (α i)]
   have hm := multipliable_polynomialHom_one_sub_C_inv_mul_X hgrow
   set G : _root_.PowerSeries.IsEntire.subring K :=
     ∏' i, _root_.PowerSeries.IsEntire.polynomialHom (1 - Polynomial.C (α i)⁻¹ * Polynomial.X)
   have hGeq : f = (G : K⟦X⟧) := by
     refine hf.eq_of_order_taylor_eq (_root_.PowerSeries.IsEntire.mem_subring.mp G.property) h0
-      (constantCoeff_tprod_polynomialHom_one_sub_C_mul_X _) fun x ↦ ?_
+      (by simp [G]) fun x ↦ ?_
     have hord := order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X (L := K) hgrow hα0 x
-    have hGid : _root_.PowerSeries.map (algebraMap K K) (G : K⟦X⟧) = (G : K⟦X⟧) := by ext n; simp
-    rw [hGid] at hord
-    simp only [Algebra.algebraMap_self_apply] at hord
+    simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq] at hord
     exact (hα x).symm.trans hord.symm
   have hsub : G = ⟨f, _root_.PowerSeries.IsEntire.mem_subring.mpr hf⟩ := Subtype.ext hGeq.symm
   exact hsub ▸ hm.hasProd
@@ -489,9 +541,9 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
   have hf0 : f ≠ 0 := by
     rintro rfl
     simp at h0
-  have hfid : _root_.PowerSeries.map (algebraMap K K) f = f := by ext n; simp
   have hcnt : {x : K | f.evalAt x = 0}.Countable := by
-    simpa only [hfid] using hf.countable_setOf_evalAt_eq_zero (L := K) hf0
+    simpa only [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq] using
+      hf.countable_setOf_evalAt_eq_zero (L := K) hf0
   have : Countable {x : K | f.evalAt x = 0} := hcnt.to_subtype
   let ι : Type u :=
     Σ x : {x : K | f.evalAt x = 0}, Fin (_root_.PowerSeries.taylor x.val f).order.toNat
@@ -504,22 +556,11 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
   have hα : ∀ x : K, {i : ι | α i = x}.encard = (_root_.PowerSeries.taylor x f).order := by
     intro x
     by_cases hx : f.evalAt x = 0
-    · have htop : (_root_.PowerSeries.taylor x f).order ≠ ⊤ := by
-        have hR0 : 0 < max ‖x‖ 1 := lt_of_lt_of_le zero_lt_one (le_max_right _ _)
-        have ho := (hf.isRestricted (max ‖x‖ 1)).order_taylor_eq_count_zeroMultiset (L := K) hR0
-          hf0 (le_max_left _ _)
-        rw [hfid] at ho
-        exact ho.trans_lt (ENat.natCast_lt_top _) |>.ne
-      let e : Fin (_root_.PowerSeries.taylor x f).order.toNat → ι := fun j ↦ ⟨⟨x, hx⟩, j⟩
-      have hinj : Function.Injective e := fun _ _ h ↦ (Sigma.mk.inj_iff.mp h).2 |> eq_of_heq
-      have himg : e '' Set.univ = {i : ι | α i = x} := by
-        ext ⟨⟨y, hy⟩, j⟩
-        simp only [Set.mem_image, Set.mem_univ, true_and, Set.mem_ofPred_eq, α, e]
-        refine ⟨fun ⟨_, h⟩ ↦ congrArg (fun p : ι ↦ p.1.val) h.symm, fun h ↦ ?_⟩
-        subst h
-        exact ⟨j, rfl⟩
-      rw [← himg, hinj.encard_image, Set.encard_univ, ENat.card_eq_coe_fintype_card,
-        Fintype.card_fin, ENat.natCast_toNat_eq_self.mpr htop]
+    · have hfib : {i : ι | α i = x} = {i : ι | i.1 = ⟨x, hx⟩} := by
+        ext i
+        simp [α, Subtype.ext_iff]
+      rw [hfib, Set.encard_setOf_sigma_fst_eq, ENat.card_eq_coe_fintype_card,
+        Fintype.card_fin, ENat.natCast_toNat_eq_self.mpr (hf.order_taylor_ne_top hf0 x)]
     · have hemp : {i : ι | α i = x} = ∅ := Set.eq_empty_iff_forall_notMem.mpr fun i hi ↦
         hx (hi ▸ i.1.property)
       have hord : (_root_.PowerSeries.taylor x f).order = 0 := by
@@ -528,6 +569,89 @@ theorem _root_.PowerSeries.IsEntire.exists_countable_hasProd_polynomialHom_one_s
           (_root_.PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mp hne))
       rw [hemp, Set.encard_empty, hord]
   exact ⟨ι, inferInstance, α, hα0, hα, hf.hasProd_polynomialHom_one_sub_C_inv_mul_X h0 hα⟩
+
+/-- **Existence of an entire series with prescribed zero divisor (normalised at `0`).** Given
+`m : K → ℕ` with `m 0 = 0` whose support meets every closed disc in a finite set, there exists an
+entire series over `K` with constant coefficient `1` whose Taylor order at each `x : K` is
+`m x`. -/
+theorem exists_isEntire_constantCoeff_eq_one_order_taylor_eq
+    [CompleteSpace K] {m : K → ℕ} (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite)
+    (hm0 : m 0 = 0) :
+    ∃ f : K⟦X⟧, f.IsEntire ∧ _root_.PowerSeries.constantCoeff f = 1 ∧
+      ∀ x : K, (_root_.PowerSeries.taylor x f).order = m x := by
+  let ι := Σ x : K, Fin (m x)
+  have hα : ∀ p : ι, p.fst ≠ 0 := by
+    rintro ⟨x, hx⟩ rfl
+    rw [hm0] at hx
+    exact Fin.elim0 hx
+  have hfin : Tendsto (fun p : ι ↦ ‖p.fst‖) cofinite atTop := by
+    rw [← northcott_iff_tendsto, northcott_iff]
+    intro r
+    refine Set.Finite.of_finite_fibers Sigma.fst ?_ fun x _ ↦ ?_
+    · refine (hm r).subset ?_
+      rintro x ⟨⟨y, hy⟩, hle, rfl⟩
+      exact ⟨hle, Nat.ne_of_gt (Fin.pos hy)⟩
+    · rw [← Set.range_sigmaMk]
+      exact (Set.finite_range _).inter_of_right _
+  set F : _root_.PowerSeries.IsEntire.subring K :=
+    ∏' p : ι, _root_.PowerSeries.IsEntire.polynomialHom
+      (1 - Polynomial.C p.fst⁻¹ * Polynomial.X)
+  refine ⟨F, _root_.PowerSeries.IsEntire.mem_subring.mp F.property, by simp [F], fun x ↦ ?_⟩
+  have hord := order_taylor_tprod_polynomialHom_one_sub_C_inv_mul_X (L := K) hfin hα x
+  simp only [Algebra.algebraMap_self, _root_.PowerSeries.map_id, id_eq, RingHom.id_apply] at hord
+  rw [hord, Set.encard_setOf_sigma_fst_eq, ENat.card_eq_coe_fintype_card, Fintype.card_fin]
+
+/-- **Existence of an entire series with prescribed zero divisor.** Given `m : K → ℕ` whose support
+meets every closed disc in a finite set, there exists a nonzero entire series over `K` whose Taylor
+order at every `x : K` is `m x`. -/
+theorem exists_isEntire_order_taylor_eq [CompleteSpace K] {m : K → ℕ}
+    (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite) :
+    ∃ f : K⟦X⟧, f.IsEntire ∧ f ≠ 0 ∧ ∀ x : K, (_root_.PowerSeries.taylor x f).order = m x := by
+  classical
+  let m' : K → ℕ := Function.update m 0 0
+  have hm' : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m' x ≠ 0}.Finite := fun r ↦
+    (hm r).subset fun x ⟨hx, hne⟩ ↦ ⟨hx, by
+      by_cases hx0 : x = 0
+      · simp [m', hx0] at hne
+      · simpa [m', hx0] using hne⟩
+  obtain ⟨g, hg, hg0, hord⟩ :=
+    exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm' (by simp [m'])
+  refine ⟨_root_.PowerSeries.X ^ m 0 * g, (_root_.PowerSeries.isEntire_X.pow _).mul hg,
+    mul_ne_zero (pow_ne_zero _ _root_.PowerSeries.X_ne_zero) ?_, fun x ↦ ?_⟩
+  · rintro rfl
+    simp at hg0
+  · rw [(_root_.PowerSeries.isEntire_X.pow _).taylor_mul hg x, _root_.PowerSeries.order_mul,
+      _root_.PowerSeries.order_taylor_X_pow, hord x]
+    by_cases hx : x = 0 <;> simp [m', hx]
+
+/-- **Unique normalised entire series with prescribed zeros.** Over an algebraically closed complete
+ultrametric normed field, there is a unique entire series with constant coefficient `1` and a given
+multiplicity function `m : K → ℕ` with `m 0 = 0` whose support meets every closed disc in a finite
+set. -/
+theorem existsUnique_isEntire_constantCoeff_eq_one_order_taylor_eq
+    [CompleteSpace K] [IsAlgClosed K] {m : K → ℕ}
+    (hm : ∀ r : ℝ, {x | ‖x‖ ≤ r ∧ m x ≠ 0}.Finite) (hm0 : m 0 = 0) :
+    ∃! f : K⟦X⟧, f.IsEntire ∧ _root_.PowerSeries.constantCoeff f = 1 ∧
+      ∀ x : K, (_root_.PowerSeries.taylor x f).order = m x := by
+  obtain ⟨f, hf, hf0, hord⟩ :=
+    exists_isEntire_constantCoeff_eq_one_order_taylor_eq hm hm0
+  refine ⟨f, ⟨hf, hf0, hord⟩, fun g ⟨hg, hg0, hord'⟩ ↦
+    hg.eq_of_order_taylor_eq hf hg0 hf0 fun x ↦ (hord' x).trans (hord x).symm⟩
+
+/-- **Pointwise unconditional product expansion of an entire series.** Over an algebraically closed
+complete ultrametric normed field `K`, for any entire series `f` with constant coefficient `1`, any
+indexing `α : ι → K` of its zeros with multiplicity, and any element `b` of a complete normed
+commutative `K`-algebra with bounded scalar action, `f(b) = ∏' i, (1 - αᵢ⁻¹ • b)`
+unconditionally. -/
+theorem _root_.PowerSeries.IsEntire.hasProd_evalAt_one_sub_inv_smul [CompleteSpace K]
+    [IsAlgClosed K] {A ι : Type*} [NormedCommRing A] [Algebra K A] [IsBoundedSMul K A]
+    [CompleteSpace A] {f : K⟦X⟧} (hf : f.IsEntire) (h0 : _root_.PowerSeries.constantCoeff f = 1)
+    {α : ι → K} (hα : ∀ x : K, {i : ι | α i = x}.encard = (_root_.PowerSeries.taylor x f).order)
+    (b : A) :
+    HasProd (fun i ↦ 1 - (α i)⁻¹ • b) (f.evalAt b) := by
+  have hprod := evalAt_hasProd (hf.hasProd_polynomialHom_one_sub_C_inv_mul_X h0 hα) b
+  exact hprod.congr_fun fun i ↦ by
+    simp [_root_.PowerSeries.evalAt_one_sub_C_mul_X]
 
 end NormedField
 

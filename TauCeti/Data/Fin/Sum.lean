@@ -46,6 +46,9 @@ two- or three-variable object can rewrite rather than unfold them.
   `(i, 0)` and `Sum.inr i` to `(i, 1)`.
 * `TauCeti.finSumFinEquivInterleave`: the equivalence `Fin n ⊕ Fin n ≃ Fin (n + n)` sending
   `Sum.inl i` to `2 i` and `Sum.inr i` to `2 i + 1`.
+* `TauCeti.finSumFinEquivTwoMul`: the equivalence `Fin n ⊕ Fin n ≃ Fin (2 * n)` sending the left
+  summand to the first `n` indices and the right summand to the last `n`, with its evaluation
+  lemmas in both directions.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
 * `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
@@ -248,6 +251,42 @@ theorem finRotate_finSumFinInterleaveEquiv_inr {k : ℕ} (t : Fin k) :
     Fin.coe_finRotate_eq_ite]
   simp only [val_finSumFinInterleaveEquiv_inr]
   split_ifs <;> omega
+
+/-- The equivalence `Fin n ⊕ Fin n ≃ Fin (2 * n)`: `finSumFinEquiv` followed by the cast
+`Fin (n + n) ≃ Fin (2 * n)`. The left summand goes to the first `n` indices and the right summand
+to the last `n`. -/
+def finSumFinEquivTwoMul (n : ℕ) : Fin n ⊕ Fin n ≃ Fin (2 * n) :=
+  finSumFinEquiv.trans (finCongr (Nat.two_mul n).symm)
+
+/-- `TauCeti.finSumFinEquivTwoMul` is `finSumFinEquiv` followed by the cast to `Fin (2 * n)`. -/
+theorem finSumFinEquivTwoMul_eq (n : ℕ) :
+    finSumFinEquivTwoMul n = finSumFinEquiv.trans (finCongr (Nat.two_mul n).symm) :=
+  (rfl)
+
+/-- The left summand of `Fin n ⊕ Fin n` goes to the first `n` indices of `Fin (2 * n)`. -/
+@[simp]
+theorem finSumFinEquivTwoMul_inl {n : ℕ} (i : Fin n) :
+    finSumFinEquivTwoMul n (.inl i) = ⟨i, by omega⟩ :=
+  (rfl)
+
+/-- The right summand of `Fin n ⊕ Fin n` goes to the last `n` indices of `Fin (2 * n)`. -/
+@[simp]
+theorem finSumFinEquivTwoMul_inr {n : ℕ} (i : Fin n) :
+    finSumFinEquivTwoMul n (.inr i) = ⟨n + i, by omega⟩ :=
+  (rfl)
+
+/-- The first `n` indices of `Fin (2 * n)` come from the left summand. -/
+@[simp]
+theorem finSumFinEquivTwoMul_symm_apply_of_lt {n : ℕ} (i : Fin (2 * n)) (h : (i : ℕ) < n) :
+    (finSumFinEquivTwoMul n).symm i = .inl ⟨i, h⟩ := by
+  rw [Equiv.symm_apply_eq, finSumFinEquivTwoMul_inl]
+
+/-- The last `n` indices of `Fin (2 * n)` come from the right summand. -/
+@[simp]
+theorem finSumFinEquivTwoMul_symm_apply_of_le {n : ℕ} (i : Fin (2 * n)) (h : n ≤ (i : ℕ)) :
+    (finSumFinEquivTwoMul n).symm i = .inr ⟨i - n, by omega⟩ := by
+  rw [Equiv.symm_apply_eq, finSumFinEquivTwoMul_inr, Fin.ext_iff]
+  exact (Nat.add_sub_cancel' h).symm
 
 /-- An upper-block and a lower-block index have distinct images under `finSumFinEquiv`. -/
 theorem _root_.Fin.finSumFinEquiv_inl_ne_inr {m n : ℕ} (i : Fin m) (j : Fin n) :

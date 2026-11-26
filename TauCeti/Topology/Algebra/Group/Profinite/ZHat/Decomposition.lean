@@ -60,6 +60,8 @@ domain (`zHat.not_isDomain`). The finite sums of the prime idempotents tend to `
 * `TauCeti.zHat.idem_ne_intCast`: `ω_ℓ` is not an integer.
 * `TauCeti.zHat.not_surjective_ofInt`: the integers are a proper subgroup of `ℤ̂`.
 * `TauCeti.zHat.not_isDomain`: the profinite integers are not a domain.
+* The `IsMulTorsionFree zHat` instance and `TauCeti.zHat.lift_gen_pow_injective`: the profinite
+  integers are torsion free, so raising to a nonzero power is injective.
 
 ## References
 
@@ -72,7 +74,7 @@ namespace TauCeti
 
 namespace zHat
 
-universe u
+universe u v
 
 open Additive Multiplicative
 
@@ -189,6 +191,26 @@ compact space `Additive zHat` to the Hausdorff space `∀ ℓ, ℤ_[ℓ]` is a h
 theorem continuous_ringEquivPiPadicInt_symm : Continuous ringEquivPiPadicInt.{u}.symm := by
   rw [← RingEquiv.coe_coe_toEquiv_symm]
   exact continuous_ringEquivPiPadicInt.continuous_symm_of_equiv_compact_to_t2
+
+/-- The profinite integers are torsion free: by the product decomposition, `n • a = 0` with
+`n ≠ 0` forces every `ℓ`-adic component of `a` to vanish. -/
+instance : IsAddTorsionFree (Additive zHat.{u}) :=
+  Function.Injective.isAddTorsionFree ringEquivPiPadicInt.toAddMonoidHom
+    ringEquivPiPadicInt.injective
+
+/-- The profinite integers, written multiplicatively, are torsion free. -/
+instance : IsMulTorsionFree zHat.{u} :=
+  inferInstanceAs (IsMulTorsionFree (Multiplicative (Additive zHat.{u})))
+
+/-- Raising to a nonzero power `n` is injective on the profinite integers, also when composed
+with the change of universe `zHat.lift gen`: the lift of `gen ^ n` is injective. -/
+theorem lift_gen_pow_injective {n : ℕ} (hn : n ≠ 0) :
+    Function.Injective (lift (gen.{u} ^ n) : zHat.{v} →ₜ* zHat.{u}) := by
+  intro x y hxy
+  rw [← zpow_natCast, lift_zpow_apply, lift_zpow_apply, zpow_natCast, zpow_natCast] at hxy
+  have h := congrArg (lift gen.{v} : zHat.{u} →ₜ* zHat.{v})
+    (Commute.eq_of_pow_eq_pow (mul_comm' _ _) hn hxy)
+  rwa [map_lift, map_lift, lift_gen, lift_gen_apply, lift_gen_apply] at h
 
 end ProductDecomposition
 
