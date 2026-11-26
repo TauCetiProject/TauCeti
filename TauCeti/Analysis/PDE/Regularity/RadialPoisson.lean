@@ -462,19 +462,18 @@ private theorem not_holderOnWith_of_eqOn_radialSolution_add [Nonempty ι] (hγ :
   rw [div_mul_eq_mul_div, le_div_iff₀ hc]
   linarith
 
-/-- For `d ≥ 2` and `0 < γ < 2` there is an exponent `r > max 1 (2d / (d + 2))` with `γ r < d`, so
-that `‖x‖ ^ (-γ)` is `r`-integrable near the origin and acts continuously on `H¹₀`. -/
+/-- For `d ≥ 2` and `0 < γ < 2` there is an exponent `r > d / 2`, hence `r > 1` and
+`r > 2d / (d + 2)`, with `γ r < d`, so that `‖x‖ ^ (-γ)` is `r`-integrable near the origin and
+acts continuously on `H¹₀`. -/
 private theorem exists_one_lt_and_mul_two_sub_lt_and_mul_lt {d : ℝ} (hd : 2 ≤ d) (hγ0 : 0 < γ)
     (hγ2 : γ < 2) : ∃ r : ℝ≥0, 1 < r ∧ d * (2 - r) < 2 * r ∧ γ * r < d := by
-  obtain ⟨r, hr₁, hr₂⟩ : ∃ r : ℝ, 2 * d / (d + 2) < r ∧ r < d / γ := exists_between (by
-    rw [div_lt_div_iff₀ (by linarith) hγ0]
-    nlinarith)
-  have hr1 : 1 < r := lt_of_le_of_lt (by rw [le_div_iff₀ (by linarith)]; linarith) hr₁
+  obtain ⟨r, hr₁, hr₂⟩ : ∃ r : ℝ, d / 2 < r ∧ r < d / γ :=
+    exists_between (div_lt_div_of_pos_left (by linarith) hγ0 hγ2)
+  have hr1 : 1 < r := by linarith
   refine ⟨r.toNNReal, by rwa [Real.one_lt_toNNReal], ?_⟩
   rw [Real.coe_toNNReal _ (by linarith)]
-  rw [div_lt_iff₀ (by linarith)] at hr₁
   rw [lt_div_iff₀ hγ0, mul_comm] at hr₂
-  exact ⟨by linarith, hr₂⟩
+  exact ⟨mul_two_sub_lt_two_mul_of_lt_two_mul (by linarith) hr1 (by linarith), hr₂⟩
 
 /-- **The Dirichlet problem on the unit ball with a radial power datum.** For `d ≥ 2` and
 `0 < γ < 2`, the shifted radial solution `(1 - ‖x‖ ^ (2 - γ)) / ((2 - γ) (d - γ))` lies in

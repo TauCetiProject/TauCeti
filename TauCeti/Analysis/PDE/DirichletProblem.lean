@@ -375,19 +375,15 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction_of_memLp [Non
       fun x hx => congrArg (f x * ·) hx))
   simp only [← hℓ, ← htest]
   refine ⟨fun h φ => h (T φ), fun h v => ?_⟩
-  -- The set where the two functionals agree is closed in `H¹₀(Ω)` and contains the test
-  -- functions, which are dense.
+  -- The set where the two functionals agree is closed in `H¹₀(Ω)`, hence in `H¹(Ω)`, and
+  -- contains the test functions.
   have hclosed : IsClosed {w : W1p0 mu Omega 2 | energyFormH1L hcoeff u w = ℓ w} :=
     isClosed_eq ((energyFormH1L hcoeff u).continuous.comp continuous_subtypeVal) ℓ.continuous
-  have hv : (v : W1p mu Omega 2) ∈ closure (Set.range (W1p.ofTestFunctionₗ mu Omega 2)) := by
-    rw [← coe_w1p0Submodule]
-    exact v.property
-  have hdense : v ∈ closure (Set.range T) := by
-    rw [closure_subtype, ← Set.range_comp]
-    exact hv
-  rw [← energyFormH1L_apply hcoeff]
-  exact closure_minimal (Set.range_subset_iff.2 fun φ =>
-    (energyFormH1L_apply hcoeff u _).trans (h φ)) hclosed hdense
+  obtain ⟨w, hw, hwv⟩ := w1p0Submodule_subset_of_isClosed
+    (hclosed.trans (w1p0Submodule mu Omega 2).isClosed)
+    (fun φ => ⟨T φ, (energyFormH1L_apply hcoeff u _).trans (h φ), rfl⟩) v.property
+  rw [← energyFormH1L_apply hcoeff, ← Subtype.ext hwv]
+  exact hw
 
 /-- A homogeneous weak equation holding for smooth compactly supported tests holds for every
 `H¹₀` test when the energy density is essentially bounded. No boundary condition is imposed on
