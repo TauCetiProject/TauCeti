@@ -107,13 +107,11 @@ signs of these functions cut `κ → ℝ` into cells, whose full-dimensional mem
 cone are the chambers of `A`. -/
 noncomputable def chamberArrangement (A : Matrix κ ι ℤ) (p : A.ColumnBasis × κ) :
     (κ → ℝ) →ᴬ[ℝ] ℝ :=
-  (LinearMap.toContinuousLinearMap
-    { toFun b := p.1.basisCoordinates b p.2
-      map_add' b b' := by simp
-      map_smul' c b := by simp }).toContinuousAffineMap
+  (LinearMap.toContinuousLinearMap (p.1.basis.coord p.2)).toContinuousAffineMap
 
 @[simp] theorem chamberArrangement_apply (A : Matrix κ ι ℤ) (p : A.ColumnBasis × κ) (b : κ → ℝ) :
-    A.chamberArrangement p b = p.1.basisCoordinates b p.2 := (rfl)
+    A.chamberArrangement p b = p.1.basisCoordinates b p.2 := by
+  simp [chamberArrangement]
 
 /-- A *chamber* of the integer matrix `A`: a full-dimensional cell of the chamber arrangement
 inside the cone spanned by the columns of `A`. It is recorded by its sign pattern `sign`, which
@@ -265,15 +263,17 @@ theorem iUnion_chamber [Fintype ι] {A : Matrix κ ι ℤ} (hA : LinearIndepende
   -- `U` is the interior of the basis cone of `e`, and `G` the complement of all walls.
   set U := {y : κ → ℝ | ∀ k, 0 < e.basisCoordinates y k}
   set G := ⋂ p : A.ColumnBasis × κ, {y : κ → ℝ | p.1.basisCoordinates y p.2 ≠ 0}
+  have hcont (p : A.ColumnBasis × κ) : Continuous fun y => p.1.basisCoordinates y p.2 :=
+    (A.chamberArrangement p).continuous.congr (A.chamberArrangement_apply p)
   have hU : IsOpen U := by
     simp only [U, Set.ofPred_forall]
     exact isOpen_iInter_of_finite fun k =>
-      isOpen_lt continuous_const (A.chamberArrangement (e, k)).continuous
+      isOpen_lt continuous_const (hcont (e, k))
   have hG : Dense G := by
     simp only [G, ← Set.sInter_range]
     exact (Set.finite_range _).dense_sInter
       (Set.forall_mem_range.2 fun p =>
-        isOpen_ne_fun (A.chamberArrangement p).continuous continuous_const)
+        isOpen_ne_fun (hcont p) continuous_const)
       (Set.forall_mem_range.2 fun p => dense_setOf_basisCoordinates_ne_zero p.1 p.2)
   -- `b` is a limit of points of `U`, moving into the basis cone along `∑ k, A.col (e k)`.
   have hbU : b ∈ closure U := by
@@ -293,7 +293,7 @@ theorem iUnion_chamber [Fintype ι] {A : Matrix κ ι ℤ} (hA : LinearIndepende
       { sign := fun p => SignType.sign (A.chamberArrangement p y)
         sign_ne_zero := fun p => by simpa using Set.mem_iInter.1 hyG p
         nonempty_signCell := ⟨y, mem_signCell.2 fun _ => rfl⟩
-        exists_forall_sign_eq_one := ⟨e, fun k => sign_eq_one_iff.2 (hyU k)⟩ }
+        exists_forall_sign_eq_one := ⟨e, fun k => by simpa [sign_eq_one_iff] using hyU k⟩ }
     exact Set.mem_iUnion.2 ⟨D, D.signCell_subset (mem_signCell.2 fun _ => rfl)⟩
   have hclosed : IsClosed (⋃ D : A.Chamber, (D : Set (κ → ℝ))) :=
     isClosed_iUnion_of_finite fun _ => isClosed_weakSignCell _ _
