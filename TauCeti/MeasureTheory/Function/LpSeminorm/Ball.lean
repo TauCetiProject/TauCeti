@@ -300,8 +300,8 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p �
       Real.eNorm_eq_ofReal (le_max_right _ 0), ENNReal.ofReal_max, ENNReal.ofReal_zero,
       max_zero, and_self]
   have hdom : ∀ x, ‖h₁ x‖ ≤ (h₁ + h₂) x ∧ ‖h₂ x‖ ≤ (h₁ + h₂) x := fun x => by
-    have h₁x : 0 ≤ h₁ x := mul_nonneg (le_max_right _ _) (norm_nonneg _)
-    have h₂x : 0 ≤ h₂ x := mul_nonneg (le_max_right _ _) (norm_nonneg _)
+    have h₁x : 0 ≤ h₁ x := by simp only [h₁, Pi.smul_apply, smul_eq_mul]; positivity
+    have h₂x : 0 ≤ h₂ x := by simp only [h₂, Pi.smul_apply, smul_eq_mul]; positivity
     rw [Real.norm_of_nonneg h₁x, Real.norm_of_nonneg h₂x, Pi.add_apply]
     constructor <;> linarith
   have hlocal : ∀ᵐ y ∂μ, eLpNorm g p (μ.restrict (ball y r)) ≤
