@@ -24,6 +24,7 @@ namespace TauCeti
 
 /-- The Birkhoff sums of a coboundary `ψ ∘ T - ψ` telescope: at time `n` they equal
 `ψ (T^[n] x) - ψ x`. -/
+@[simp]
 theorem birkhoffSum_comp_sub_self_apply {X G : Type*} [AddCommGroup G] (T : X → X) (ψ : X → G)
     (n : ℕ) (x : X) :
     birkhoffSum T (ψ ∘ T - ψ) n x = ψ (T^[n] x) - ψ x := by

@@ -101,25 +101,34 @@ theorem topologicalPressure_le_add_of_abs_sub_le [UniformSpace X] {c : ℝ}
     topologicalPressure T φ ≤ topologicalPressure T ψ + c :=
   topologicalPressure_le_add_of_le fun x ↦ by linarith [le_abs_self (φ x - ψ x), h x]
 
+/-- If `|φ x - ψ x| ≤ c` for every `x` and `P(T, ψ) ≠ ⊤`, then `P(T, φ) ≠ ⊤`. -/
+theorem topologicalPressure_ne_top_of_abs_sub_le [UniformSpace X] {c : ℝ}
+    (h : ∀ x, |φ x - ψ x| ≤ c) (hψ : topologicalPressure T ψ ≠ ⊤) :
+    topologicalPressure T φ ≠ ⊤ :=
+  ne_top_of_le_ne_top (EReal.add_ne_top hψ (EReal.coe_ne_top c))
+    (topologicalPressure_le_add_of_abs_sub_le h)
+
+/-- If `|φ x - ψ x| ≤ c` for every `x` and `P(T, ψ) ≠ ⊥`, then `P(T, φ) ≠ ⊥`. -/
+theorem topologicalPressure_ne_bot_of_abs_sub_le [UniformSpace X] {c : ℝ}
+    (h : ∀ x, |φ x - ψ x| ≤ c) (hψ : topologicalPressure T ψ ≠ ⊥) :
+    topologicalPressure T φ ≠ ⊥ := by
+  rintro hp
+  have h₂ := topologicalPressure_le_add_of_abs_sub_le (T := T) fun x ↦
+    abs_sub_comm (ψ x) (φ x) ▸ h x
+  rw [hp, EReal.bot_add, le_bot_iff] at h₂
+  exact hψ h₂
+
 /-- The Lipschitz bound for pressure, in real form: if `|φ x - ψ x| ≤ c` for every `x` and the
-pressure of `ψ` is finite, then the pressure of `φ` is finite and
-`|P(T, φ) - P(T, ψ)| ≤ c`. -/
+pressure of `ψ` is finite, then `|P(T, φ) - P(T, ψ)| ≤ c`. -/
 theorem abs_toReal_topologicalPressure_sub_le [UniformSpace X] {c : ℝ}
     (h : ∀ x, |φ x - ψ x| ≤ c) (hψ : topologicalPressure T ψ ≠ ⊤)
     (hψ' : topologicalPressure T ψ ≠ ⊥) :
-    topologicalPressure T φ ≠ ⊤ ∧ topologicalPressure T φ ≠ ⊥ ∧
-      |(topologicalPressure T φ).toReal - (topologicalPressure T ψ).toReal| ≤ c := by
+    |(topologicalPressure T φ).toReal - (topologicalPressure T ψ).toReal| ≤ c := by
   have h' : ∀ x, |ψ x - φ x| ≤ c := fun x ↦ abs_sub_comm (ψ x) (φ x) ▸ h x
   have h₁ := topologicalPressure_le_add_of_abs_sub_le (T := T) h
   have h₂ := topologicalPressure_le_add_of_abs_sub_le (T := T) h'
-  have hp_top : topologicalPressure T φ ≠ ⊤ :=
-    ne_top_of_le_ne_top (EReal.add_ne_top hψ (EReal.coe_ne_top c)) h₁
-  have hp_bot : topologicalPressure T φ ≠ ⊥ := by
-    rintro hp
-    rw [hp, EReal.bot_add, le_bot_iff] at h₂
-    exact hψ' h₂
-  refine ⟨hp_top, hp_bot, ?_⟩
-  rw [← EReal.coe_toReal hp_top hp_bot, ← EReal.coe_toReal hψ hψ'] at h₁ h₂
+  rw [← EReal.coe_toReal (topologicalPressure_ne_top_of_abs_sub_le h hψ)
+    (topologicalPressure_ne_bot_of_abs_sub_le h hψ'), ← EReal.coe_toReal hψ hψ'] at h₁ h₂
   have h₁' := EReal.coe_le_coe_iff.mp (by simpa only [← EReal.coe_add] using h₁)
   have h₂' := EReal.coe_le_coe_iff.mp (by simpa only [← EReal.coe_add] using h₂)
   rw [abs_le]
