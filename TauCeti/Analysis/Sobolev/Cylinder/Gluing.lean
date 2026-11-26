@@ -8,10 +8,11 @@ module
 public import TauCeti.Analysis.Gluing.Coefficient
 public import TauCeti.Analysis.Sobolev.Cylinder.Parametrix
 public import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+public import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import Mathlib.Analysis.Normed.Operator.Prod
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.MeasureTheory.Function.Lp.Multiplication
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Coprod
 
 /-!
@@ -86,6 +87,14 @@ This is the cylinder version of
 `TauCeti.WeakDerivStep.exists_forall_ge_exists_rightInverse_trajectoryOperator_gluedCoeff`, which
 glues trajectory operators on the line, and it uses the same glued coefficient and cutoffs.
 
+**Cut-offs beyond the neck.** Translating the cut-off of an `L²` section to a set is cutting off
+its translate to the translated set
+(`TauCeti.CylinderSobolev.translateLp_multiplicationOperator_linftyIndicator`), and the parts on
+`s ≥ R` and on `s ≤ -R` of the sections of a finite-dimensional space of `L²` sections are
+uniformly small for large `R`
+(`TauCeti.CylinderSobolev.eventually_forall_norm_multiplicationOperator_le`). These control the
+tails of kernel elements of the pieces beyond the neck when comparing kernels of glued operators.
+
 ## References
 
 * A. Floer, *The unregularized gradient flow of the symplectic action*, Comm. Pure Appl. Math. 41
@@ -102,7 +111,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set
+open Filter MeasureTheory Set Topology
 open scoped ENNReal
 
 namespace TauCeti.CylinderSobolev
@@ -116,34 +125,29 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 /-! ### The error of one spliced piece -/
 
-/-- **The error of one piece.** Let `x ∈ W^{1,2}` solve `D_N x = ζ` for a coefficient field `N`,
-and let `β` be a cutoff equal to `1` wherever `ζ` does not vanish. If `‖G‖ ≤ B` and `|β'| ≤ d`, and
-`G` is within `ε` of `N` wherever `β ≠ 0`, then `D_G (β x)` is within `(ε + d B) ‖x‖` of `ζ`. -/
-private theorem norm_jetOperator_cutoffL_sub_le {G N : ℝ × ℝ → V × V × V →L[ℝ] W}
+/-- **The error of a cutoff.** Let `x ∈ W^{1,2}`, let `N` be a coefficient field and let `ζ` be
+`β(s) D_N x` for a cutoff `β`. If `‖G‖ ≤ B` and `|β'| ≤ d`, and `G` is within `ε` of `N` wherever
+`β ≠ 0`, then `D_G (β x)` is within `(ε + d B) ‖x‖` of `ζ`: the two differ by `β (G - N) x` and by
+the term `β' G (0, x, 0)` of the derivative of the cutoff. -/
+theorem norm_jetOperator_cutoffL_sub_le {G N : ℝ × ℝ → V × V × V →L[ℝ] W}
     (hG : MemLp G ∞ stripMeasure) (hN : MemLp N ∞ stripMeasure) {β : ℝ → ℝ}
     (hβ : ContDiff ℝ 2 β) (hβ1 : ∀ s, |β s| ≤ 1) (hβ'1 : ∀ s, |deriv β s| ≤ 1) {B d ε : ℝ}
     (hB : ∀ᵐ z ∂stripMeasure, ‖G z‖ ≤ B) (hd : ∀ s, |deriv β s| ≤ d) (hε : 0 ≤ ε)
-    (hGN : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖G z - N z‖ ≤ ε) {ζ : Lp W 2 stripMeasure}
-    (hζ : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 1 → ζ z = 0) {x : H1 V}
-    (hx : jetOperator stripMeasure N (x : Lp (V × V × V) 2 stripMeasure) = ζ) :
+    (hGN : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 0 → ‖G z - N z‖ ≤ ε) {x : H1 V}
+    {ζ : Lp W 2 stripMeasure} (hζ : ∀ᵐ z ∂stripMeasure,
+      ζ z = β z.1 • jetOperator stripMeasure N (x : Lp (V × V × V) 2 stripMeasure) z) :
     ‖jetOperator stripMeasure G (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure) - ζ‖ ≤
       (ε + d * B) * ‖x‖ := by
   rw [← Submodule.norm_coe x]
   refine Lp.norm_le_mul_norm_of_ae_le_mul ?_
-  have hx' := coeFn_jetOperator hN (x : Lp (V × V × V) 2 stripMeasure)
-  rw [hx] at hx'
   filter_upwards [Lp.coeFn_sub (jetOperator stripMeasure G
       (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure)) ζ,
     coeFn_jetOperator hG (cutoffL hβ hβ1 hβ'1 x : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβ1 hβ'1)
-      (x : Lp (V × V × V) 2 stripMeasure), hx', hζ, hB, hGN] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
+      (x : Lp (V × V × V) 2 stripMeasure), coeFn_jetOperator hN (x : Lp (V × V × V) 2 stripMeasure),
+    hζ, hB, hGN] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇
   set v := (x : Lp (V × V × V) 2 stripMeasure) z
-  -- `ζ = β ζ`, since `β = 1` wherever `ζ ≠ 0`.
-  have hβζ : ζ z = β z.1 • N z v := by
-    rw [← h₄]
-    by_cases hz : β z.1 = 1
-    · rw [hz, one_smul]
-    · rw [h₅ hz, smul_zero]
+  have hβζ : ζ z = β z.1 • N z v := by rw [h₅, h₄]
   have hd0 : 0 ≤ d := (abs_nonneg _).trans (hd 0)
   have hsv : ‖sSlot V v‖ ≤ ‖v‖ := by simp [Prod.norm_def]
   have key : G z (cutoffCoeff V β z v) - β z.1 • N z v =
@@ -192,17 +196,21 @@ private theorem norm_jetOperator_cutoffL_add_sub_le {S : Type*} [NormedAddCommGr
   set y := Q χη
   have hy : jetOperator stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) + ι y.2 = χη := by
     simpa using congrArg (fun T ↦ T χη) hQ
-  -- `D_N x = 𝟙_A η - ι σ`, which vanishes wherever `β ≠ 1`.
-  have hζ : ∀ᵐ z ∂stripMeasure, β z.1 ≠ 1 → (χη - ι y.2) z = 0 := by
+  -- `D_N x = 𝟙_A η - ι σ`, which vanishes wherever `β ≠ 1`, so it is `β D_N x`.
+  have hζ : ∀ᵐ z ∂stripMeasure, (χη - ι y.2) z =
+      β z.1 • jetOperator stripMeasure N (y.1 : Lp (V × V × V) 2 stripMeasure) z := by
+    rw [eq_sub_of_add_eq hy]
     filter_upwards [Lp.coeFn_sub χη (ι y.2), Lp.multiplicationOperator_linftyIndicator_ae hA η,
-      hι y.2] with z h₁ h₂ h₃ hz
+      hι y.2] with z h₁ h₂ h₃
+    by_cases hz : β z.1 = 1
+    · rw [hz, one_smul]
     have hzA : z ∉ A := fun hzA ↦ hz (hβA z hzA)
-    rw [h₁, Pi.sub_apply, h₂, h₃ hzA, indicator_of_notMem hzA, sub_zero]
+    rw [h₁, Pi.sub_apply, h₂, h₃ hzA, indicator_of_notMem hzA, sub_zero, smul_zero]
   have hδ : 0 ≤ ε + d * B := add_nonneg hε (mul_nonneg ((abs_nonneg _).trans (hd 0)) hB0)
   calc _ = ‖jetOperator stripMeasure G (cutoffL hβ hβ1 hβ'1 y.1 : Lp (V × V × V) 2 stripMeasure) -
         (χη - ι y.2)‖ := by rw [sub_sub_eq_add_sub]
     _ ≤ (ε + d * B) * ‖y.1‖ :=
-        norm_jetOperator_cutoffL_sub_le hG hN hβ hβ1 hβ'1 hB hd hε hGN hζ (eq_sub_of_add_eq hy)
+        norm_jetOperator_cutoffL_sub_le hG hN hβ hβ1 hβ'1 hB hd hε hGN hζ
     _ ≤ (ε + d * B) * (‖Q‖ * ‖η‖) :=
         mul_le_mul_of_nonneg_left ((norm_fst_le y).trans ((Q.le_opNorm _).trans
           (mul_le_mul_of_nonneg_left (Lp.norm_multiplicationOperator_linftyIndicator_apply_le hA η)
@@ -265,7 +273,7 @@ theorem memLp_uncurry_gluedCoeff {M₁ M₂ : ℝ × ℝ → V × V × V →L[�
 /-- On the support of the left cutoff `TauCeti.neckCutoff (-(2 / R))`, the glued coefficient field
 is within `2 ε` of `M₁(· + R, ·)`: they agree on `s < 0`, and on `[0, R / 2)` both are close to
 `M`. -/
-private theorem ae_neck_bound_left {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+theorem ae_norm_uncurry_gluedCoeff_sub_le_left {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} {ε T₁ T₂ R : ℝ}
     (hT₁ : ∀ s ≥ T₁, ∀ t ∈ Icc (0 : ℝ) 1, dist (M t) (M₁ (s, t)) < ε)
     (hT₂ : ∀ s ≤ T₂, ∀ t ∈ Icc (0 : ℝ) 1, dist (M t) (M₂ (s, t)) < ε) (hε : 0 ≤ ε)
@@ -290,7 +298,7 @@ private theorem ae_neck_bound_left {M₁ M₂ : ℝ × ℝ → V × V × V →L[
 /-- On the support of the right cutoff `TauCeti.neckCutoff (2 / R)`, the glued coefficient field is
 within `2 ε` of `M₂(· - R, ·)`: they agree on `s ≥ 0`, and on `(-R / 2, 0)` both are close to
 `M`. -/
-private theorem ae_neck_bound_right {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
+theorem ae_norm_uncurry_gluedCoeff_sub_le_right {M₁ M₂ : ℝ × ℝ → V × V × V →L[ℝ] W}
     {M : ℝ → V × V × V →L[ℝ] W} {ε T₁ T₂ R : ℝ}
     (hT₁ : ∀ s ≥ T₁, ∀ t ∈ Icc (0 : ℝ) 1, dist (M t) (M₁ (s, t)) < ε)
     (hT₂ : ∀ s ≤ T₂, ∀ t ∈ Icc (0 : ℝ) 1, dist (M t) (M₂ (s, t)) < ε) (hε : 0 ≤ ε)
@@ -448,27 +456,82 @@ theorem gluedStabilizer_apply (ι₁ : S₁ →L[ℝ] Lp W 2 stripMeasure)
     gluedStabilizer ι₁ ι₂ R σ = translateLp R (ι₁ σ.1) + translateLp (-R) (ι₂ σ.2) :=
   (rfl)
 
-/-- If the sections `ι σ` vanish for `s > T`, then their translates by `R > T` vanish for
-`s ≥ 0`. -/
-private theorem ae_translateLp_eq_zero_of_lt {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S]
-    {ι : S →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
-    (hι : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι σ z = 0) (hTR : T < R) (σ : S) :
-    ∀ᵐ z ∂stripMeasure, 0 ≤ z.1 → translateLp R (ι σ) z = 0 := by
-  filter_upwards [coeFn_translateLp R (ι σ),
-    (measurePreserving_add_strip R).quasiMeasurePreserving.ae (hι σ)] with z h₁ h₂ hz
+/-- If the sections `ι σ` vanish for `s > T`, then their translates `(ι σ)(· + a, ·)` vanish for
+`s > T - a`. -/
+theorem ae_translateLp_eq_zero_of_sub_lt {S : Type*} [NormedAddCommGroup S] [NormedSpace ℝ S]
+    {ι : S →L[ℝ] Lp W 2 stripMeasure} {T : ℝ}
+    (hι : ∀ σ, ∀ᵐ z ∂stripMeasure, T < z.1 → ι σ z = 0) (a : ℝ) (σ : S) :
+    ∀ᵐ z ∂stripMeasure, T - a < z.1 → translateLp a (ι σ) z = 0 := by
+  filter_upwards [coeFn_translateLp a (ι σ),
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae (hι σ)] with z h₁ h₂ hz
   rw [h₁]
   exact h₂ (by rw [Prod.fst_add]; linarith)
 
-/-- If the sections `ι σ` vanish for `s < -T`, then their translates by `-R ≤ -T` vanish for
-`s < 0`. -/
-private theorem ae_translateLp_neg_eq_zero_of_lt {S : Type*} [NormedAddCommGroup S]
-    [NormedSpace ℝ S] {ι : S →L[ℝ] Lp W 2 stripMeasure} {T R : ℝ}
-    (hι : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι σ z = 0) (hTR : T ≤ R) (σ : S) :
-    ∀ᵐ z ∂stripMeasure, z.1 < 0 → translateLp (-R) (ι σ) z = 0 := by
-  filter_upwards [coeFn_translateLp (-R) (ι σ),
-    (measurePreserving_add_strip (-R)).quasiMeasurePreserving.ae (hι σ)] with z h₁ h₂ hz
+/-- If the sections `ι σ` vanish for `s < -T`, then their translates `(ι σ)(· + a, ·)` vanish for
+`s < -T - a`. -/
+theorem ae_translateLp_eq_zero_of_lt_neg_sub {S : Type*} [NormedAddCommGroup S]
+    [NormedSpace ℝ S] {ι : S →L[ℝ] Lp W 2 stripMeasure} {T : ℝ}
+    (hι : ∀ σ, ∀ᵐ z ∂stripMeasure, z.1 < -T → ι σ z = 0) (a : ℝ) (σ : S) :
+    ∀ᵐ z ∂stripMeasure, z.1 < -T - a → translateLp a (ι σ) z = 0 := by
+  filter_upwards [coeFn_translateLp a (ι σ),
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae (hι σ)] with z h₁ h₂ hz
   rw [h₁]
   exact h₂ (by rw [Prod.fst_add]; linarith)
+
+/-! ### Cut-offs beyond the neck -/
+
+/-- Translating the cut-off of an `L²` class to `A` by `a` is cutting off its translate to the set
+`B` of the points that `z ↦ z + (a, 0)` maps into `A`. -/
+theorem translateLp_multiplicationOperator_linftyIndicator {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {A B : Set (ℝ × ℝ)} (hA : MeasurableSet A) (hB : MeasurableSet B) (a : ℝ)
+    (hAB : ∀ z, z ∈ B ↔ z + (a, 0) ∈ A) (f : Lp E 2 stripMeasure) :
+    translateLp a (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f) =
+      Lp.multiplicationOperator (linftyIndicator stripMeasure B hB) (translateLp a f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp a
+      (Lp.multiplicationOperator (linftyIndicator stripMeasure A hA) f),
+    Lp.multiplicationOperator_linftyIndicator_ae hB (translateLp a f), coeFn_translateLp a f,
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae
+      (Lp.multiplicationOperator_linftyIndicator_ae hA f)] with z h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₄]
+  by_cases hz : z ∈ B
+  · rw [indicator_of_mem ((hAB z).1 hz), indicator_of_mem hz, h₃]
+  · rw [indicator_of_notMem (mt (hAB z).2 hz), indicator_of_notMem hz]
+
+/-- **Uniformly small tails.** The parts on `s ≥ R` and on `s ≤ -R` of the sections in a
+finite-dimensional space `K` of `L²` sections are, for large `R`, at most `θ` times the norms of
+the sections. -/
+theorem eventually_forall_norm_multiplicationOperator_le {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (K : Submodule ℝ (Lp E 2 stripMeasure)) [FiniteDimensional ℝ K] {θ : ℝ}
+    (hθ : 0 < θ) :
+    (∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | R ≤ z.1} (measurableSet_le measurable_const measurable_fst)) f‖ ≤ θ * ‖f‖) ∧
+      ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator (linftyIndicator stripMeasure
+        {z : ℝ × ℝ | z.1 ≤ -R} (measurableSet_le measurable_fst measurable_const)) f‖ ≤
+          θ * ‖f‖ := by
+  -- The cut-offs to a decreasing family of sets with empty intersection, as operators on `K`,
+  -- tend to zero in operator norm.
+  have key {s : ℝ → Set (ℝ × ℝ)} (hs : ∀ R, MeasurableSet (s R)) (hanti : Antitone s)
+      (hempty : ⋂ R, s R = ∅) : ∀ᶠ R in atTop, ∀ f ∈ K, ‖Lp.multiplicationOperator
+        (linftyIndicator stripMeasure (s R) (hs R)) f‖ ≤ θ * ‖f‖ := by
+    let T (R : ℝ) : K →L[ℝ] Lp E 2 stripMeasure :=
+      (Lp.multiplicationOperator (linftyIndicator stripMeasure (s R) (hs R))).comp K.subtypeL
+    have hT : Tendsto (fun R ↦ ‖T R‖) atTop (𝓝 0) :=
+      ContinuousLinearMap.tendsto_opNorm_zero_of_forall_tendsto_zero fun f ↦
+        tendsto_zero_iff_norm_tendsto_zero.2 (Lp.tendsto_norm_multiplicationOperator_linftyIndicator
+          ENNReal.ofNat_ne_top hs hanti hempty _)
+    filter_upwards [hT.eventually (ge_mem_nhds hθ)] with R hR f hf
+    exact ((T R).le_opNorm ⟨f, hf⟩).trans (mul_le_mul_of_nonneg_right hR (norm_nonneg _))
+  refine ⟨key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_,
+    key _ (fun _ _ hab _ h ↦ by simp only [mem_ofPred_eq] at h ⊢; linarith) ?_⟩
+  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+    have := mem_iInter.1 hz (z.1 + 1)
+    simp only [mem_ofPred_eq] at this
+    linarith
+  · refine eq_empty_of_forall_notMem fun z hz ↦ ?_
+    have := mem_iInter.1 hz (-z.1 + 1)
+    simp only [mem_ofPred_eq] at this
+    linarith
 
 variable [CompleteSpace W]
 
@@ -526,10 +589,11 @@ theorem exists_forall_ge_exists_rightInverse_coprod_jetOperator_gluedCoeff
     (hM₁.comp_measurePreserving (measurePreserving_add_strip R))
     (hM₂.comp_measurePreserving (measurePreserving_add_strip (-R))) (hB ▸ hGB) hB0
     (by positivity) hRpos hL hcut
-    (ae_neck_bound_left hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂)
-    (ae_neck_bound_right hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂)
-    (ae_translateLp_eq_zero_of_lt hι₁ (by linarith))
-    (ae_translateLp_neg_eq_zero_of_lt hι₂ (by linarith)) hQ₁' hQ₂'
+    (ae_norm_uncurry_gluedCoeff_sub_le_left hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂)
+    (ae_norm_uncurry_gluedCoeff_sub_le_right hT₁ hT₂ hε0.le hRpos hRT₁ hRT₂)
+    (fun σ ↦ (ae_translateLp_eq_zero_of_sub_lt hι₁ R σ).mono fun _ h hz ↦ h (by linarith))
+    (fun σ ↦ (ae_translateLp_eq_zero_of_lt_neg_sub hι₂ (-R) σ).mono fun _ h hz ↦ h (by linarith))
+    hQ₁' hQ₂'
   -- The arithmetic making the error at most `1 / 2`.
   have hK' : ‖Q₁'‖ + ‖Q₂'‖ ≤ K := hK ▸ add_le_add hQ₁'n hQ₂'n
   have hδ : (2 * ε + 2 / R * L * B) * (‖Q₁'‖ + ‖Q₂'‖) ≤ 1 / 2 := by

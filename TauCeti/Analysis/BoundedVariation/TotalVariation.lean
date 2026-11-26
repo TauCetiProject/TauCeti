@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Divergence
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.Analysis.Distribution.TestFunction.NormDuality
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 
 /-!
@@ -72,8 +72,8 @@ For `u` not locally integrable on `Ω` the integrals in the supremum may be Math
 * `TauCeti.HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm`: a weakly differentiable
   function has total variation at most the integral of the norm of its weak derivative, hence
   locally finite variation (`TauCeti.HasWeakFDerivOn.exists_totalVariationOn_ne_top`).
-* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: against an additive Haar
-  measure this is an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
+* `TauCeti.HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm`: for any measure `μ` this is
+  an equality, so a `W^{1,1}(Ω)` function has bounded variation on `Ω`, with
   variation the `L¹` norm of its weak derivative
   (`TauCeti.HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn`).
 * `LocallyLipschitzOn.totalVariationOn_eq_setLIntegral_enorm_fderiv`: for a locally Lipschitz
@@ -515,8 +515,9 @@ section Haar
 
 variable [BorelSpace E] [μ.IsAddHaarMeasure]
 
+omit [μ.IsAddHaarMeasure] in
 /-- **The total variation of a weakly differentiable function.** If `u` has weak derivative `U`
-on `Ω`, then against an additive Haar measure `|Du|(Ω) = ∫_Ω ‖U‖`. In particular a function in
+on `Ω`, then `|Du|(Ω) = ∫_Ω ‖U‖`, for any measure `μ`. In particular a function in
 `W^{1,1}(Ω)` has bounded variation on `Ω`, and its variation is the `L¹(Ω)` norm of its weak
 derivative. -/
 theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L[ℝ] ℝ}
@@ -535,8 +536,9 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
   simpa using (Equiv.neg 𝓓(Ω, E)).iSup_comp (g := fun φ => ⨆ (_ : ∀ x, ‖φ x‖ ≤ 1),
     ENNReal.ofReal (∫ x, U x (φ x) ∂μ))
 
-/-- A weakly differentiable function has finite total variation on `Ω`, against an additive Haar
-measure, exactly when its weak derivative is integrable on `Ω`. -/
+omit [μ.IsAddHaarMeasure] in
+/-- A weakly differentiable function has finite total variation on `Ω`, for any measure `μ`,
+exactly when its weak derivative is integrable on `Ω`. -/
 theorem HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn {U : E → E →L[ℝ] ℝ}
     (h : HasWeakFDerivOn μ Ω u U) : totalVariationOn μ Ω u < ∞ ↔ IntegrableOn U Ω μ := by
   rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_eNorm]

@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
 public import TauCeti.Analysis.CStarAlgebra.Matrix.Trace
 public import TauCeti.Analysis.CStarAlgebra.State.TraceKernel
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
 
 /-!
 # Amenable, quasidiagonal and uniform amenable traces
@@ -60,6 +61,19 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 * `TauCeti.admitsFaithfulAmenableTrace_congr`: admitting a faithful amenable trace is invariant
   under star isomorphisms, and `TauCeti.not_admitsFaithfulAmenableTrace_of_subsingleton`: the
   zero algebra admits none.
+* `TauCeti.convex_amenableTraces`, `TauCeti.convex_quasidiagonalTraces` and
+  `TauCeti.convex_uniformAmenableTraces`: the three sets are convex. For `τ = θ τ₁ + (1 - θ) τ₂`,
+  approximants `φ₁ : A → M_{k₁}` and `φ₂ : A → M_{k₂}` of `τ₁` and `τ₂` give the block-diagonal
+  sum of `p k₂` copies of `φ₁` and `(N - p) k₁` copies of `φ₂`, whose normalized trace is
+  `(p / N) tr ∘ φ₁ + (1 - p / N) tr ∘ φ₂`; choosing `p / N` close to `θ` recovers `τ`, and the
+  multiplicativity defect of a block-diagonal sum is bounded by the largest defect of its blocks
+  (with equality in the operator norm).
+* `TauCeti.closure_amenableTraces_inter_tracialStates` and
+  `TauCeti.closure_quasidiagonalTraces_inter_tracialStates`: `AT(A)` and `AT_QD(A)` are weak-*
+  closed in `T(A)`, hence weak-* closed for unital `A` (`TauCeti.isClosed_amenableTraces`,
+  `TauCeti.isClosed_quasidiagonalTraces`), and
+  `TauCeti.isClosed_preimage_toWeakDual_uniformAmenableTraces`: `UAT(A)` is closed in the norm
+  topology of the continuous dual. It need not be weak-* closed (Brown 2006, Remark 4.1.7).
 * `TauCeti.pullbackFunctional_mem_amenableTraces` and its siblings: the restriction of an element
   of each of the three sets along a star homomorphism lies in the corresponding set as soon as it
   is a state. Hence `TauCeti.mapsTo_pullbackFunctional_amenableTraces_of_surjective` and its
@@ -71,7 +85,8 @@ tracial state space `TauCeti.tracialStates A` in the weak-* dual.
 
 * N. P. Brown, *Invariant means and finite representation theory of C⋆-algebras*,
   Mem. Amer. Math. Soc. 184 (2006), no. 865; arXiv:math/0304009v2 (numbering cited),
-  Theorem 3.1.6 (2), Definitions 3.2.1 and 3.3.1, Section 3.5.
+  Theorem 3.1.6 (2), Definitions 3.2.1 and 3.3.1, Section 3.5 (Proposition 3.5.1 for convexity
+  and closure).
 * A. Tikuisis, S. White, W. Winter, *Quasidiagonality of nuclear C⋆-algebras*, Ann. of Math.
   185 (2017), Definition 1.2 and Remark 1.5.
 * C. Schafhauser, *Subalgebras of simple AF-algebras*, Ann. of Math. 192 (2020), no. 2,
@@ -316,6 +331,247 @@ theorem isUniformAmenableTrace_comp_iff (e : A ≃⋆ₐ[ℂ] B) :
 
 end Pullback
 
+section Convex
+
+open CompletelyPositiveMap
+
+/-- An approximant may be taken into a nonzero matrix algebra: a map into `M_0` is replaced by the
+zero map into `M_1`, which has the same normalized trace `0` and multiplicativity defect `0`. -/
+private theorem exists_pos_approximant {k : ℕ} (φ : A →CP CStarMatrix (Fin k) (Fin k) ℂ)
+    (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) : ∃ (l : ℕ) (ψ : A →CP CStarMatrix (Fin l) (Fin l) ℂ), 0 < l ∧
+      (∀ a, ‖ψ a‖ ≤ ‖a‖) ∧
+      (∀ a, CStarMatrix.normalizedTrace (ψ a) = CStarMatrix.normalizedTrace (φ a)) ∧
+      (∀ a b, CStarMatrix.normalizedTwoNorm (ψ (a * b) - ψ a * ψ b) ≤
+        CStarMatrix.normalizedTwoNorm (φ (a * b) - φ a * φ b)) ∧
+      ∀ a b, ‖ψ (a * b) - ψ a * ψ b‖ ≤ ‖φ (a * b) - φ a * φ b‖ := by
+  rcases Nat.eq_zero_or_pos k with rfl | hk
+  · exact ⟨1, 0, one_pos, fun _ => by simp,
+      fun _ => by simp [CStarMatrix.normalizedTrace_of_isEmpty], fun _ _ => by simp,
+      fun _ _ => by simp⟩
+  · exact ⟨k, φ, hk, hφ, fun _ => rfl, fun _ _ => le_rfl, fun _ _ => le_rfl⟩
+
+/-- The normalized trace of the block-diagonal sum of `m₁` copies of `φ₁ : A → M_{k₁}` and `m₂`
+copies of `φ₂ : A → M_{k₂}` weights `tr ∘ φ₁` by `m₁ k₁ / (m₁ k₁ + m₂ k₂)` and `tr ∘ φ₂` by
+`m₂ k₂ / (m₁ k₁ + m₂ k₂)`. -/
+private theorem normalizedTrace_blockDiagonal_sumRec {k₁ k₂ m₁ m₂ : ℕ}
+    (φ₁ : A →CP CStarMatrix (Fin k₁) (Fin k₁) ℂ) (φ₂ : A →CP CStarMatrix (Fin k₂) (Fin k₂) ℂ)
+    (a : A) :
+    CStarMatrix.normalizedTrace (blockDiagonal
+      (n := fun i : Fin m₁ ⊕ Fin m₂ => Fin (Sum.elim (fun _ => k₁) (fun _ => k₂) i))
+      (Sum.rec (fun _ => φ₁) (fun _ => φ₂)) a) =
+      (m₁ * k₁ / (m₁ * k₁ + m₂ * k₂) : ℂ) * CStarMatrix.normalizedTrace (φ₁ a) +
+        (m₂ * k₂ / (m₁ * k₁ + m₂ * k₂) : ℂ) * CStarMatrix.normalizedTrace (φ₂ a) := by
+  have hc : ∑ i : Fin m₁ ⊕ Fin m₂, Fintype.card (Fin (Sum.elim (fun _ => k₁) (fun _ => k₂) i)) =
+      m₁ * k₁ + m₂ * k₂ := by
+    simp [Fintype.sum_sum_type]
+  -- the block at `inl j` is `φ₁` on `M_{k₁}` and the block at `inr j` is `φ₂` on `M_{k₂}`; the
+  -- block family is dependent, so `Sum.elim_inl`/`Sum.elim_inr` cannot be rewritten (the motive is
+  -- not type-correct), and each `rfl` instead reduces `Sum.rec`/`Sum.elim` at `inl j`/`inr j`
+  rw [normalizedTrace_blockDiagonal_apply, Fintype.card_sigma, hc, Fintype.sum_sum_type,
+    Fintype.sum_congr _ (fun _ : Fin m₁ =>
+      (k₁ / (m₁ * k₁ + m₂ * k₂ : ℕ) : ℂ) * CStarMatrix.normalizedTrace (φ₁ a))
+      fun _ => by rw [Fintype.card_fin]; rfl,
+    Fintype.sum_congr _ (fun _ : Fin m₂ =>
+      (k₂ / (m₁ * k₁ + m₂ * k₂ : ℕ) : ℂ) * CStarMatrix.normalizedTrace (φ₂ a))
+      fun _ => by rw [Fintype.card_fin]; rfl]
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+  push_cast
+  ring
+
+/-- The block-diagonal sum of `p k₂` copies of `φ₁ : A → M_{k₁}` and `(N - p) k₁` copies of
+`φ₂ : A → M_{k₂}`, reindexed to `M_{N k₁ k₂}`, is a completely positive contraction with
+normalized trace `(p / N) tr(φ₁) + (1 - p / N) tr(φ₂)`, whose multiplicativity defects are bounded
+by the larger of those of `φ₁` and `φ₂`, in the normalized 2-norm and in the operator norm. -/
+private theorem exists_blockDiagonal_approximant {k₁ k₂ : ℕ}
+    (φ₁ : A →CP CStarMatrix (Fin k₁) (Fin k₁) ℂ) (φ₂ : A →CP CStarMatrix (Fin k₂) (Fin k₂) ℂ)
+    (h₁ : ∀ a, ‖φ₁ a‖ ≤ ‖a‖) (h₂ : ∀ a, ‖φ₂ a‖ ≤ ‖a‖) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) {N p : ℕ}
+    (hN : 0 < N) (hp : p ≤ N) :
+    ∃ (K : ℕ) (Φ : A →CP CStarMatrix (Fin K) (Fin K) ℂ), (∀ a, ‖Φ a‖ ≤ ‖a‖) ∧
+      (∀ a, CStarMatrix.normalizedTrace (Φ a) = ((p / N : ℝ) : ℂ) *
+        CStarMatrix.normalizedTrace (φ₁ a) + ((1 - p / N : ℝ) : ℂ) *
+          CStarMatrix.normalizedTrace (φ₂ a)) ∧
+      (∀ a b, CStarMatrix.normalizedTwoNorm (Φ (a * b) - Φ a * Φ b) ≤
+        max (CStarMatrix.normalizedTwoNorm (φ₁ (a * b) - φ₁ a * φ₁ b))
+          (CStarMatrix.normalizedTwoNorm (φ₂ (a * b) - φ₂ a * φ₂ b))) ∧
+      ∀ a b, ‖Φ (a * b) - Φ a * Φ b‖ ≤
+        max ‖φ₁ (a * b) - φ₁ a * φ₁ b‖ ‖φ₂ (a * b) - φ₂ a * φ₂ b‖ := by
+  classical
+  -- The blocks: `p k₂` copies of `M_{k₁}` and `(N - p) k₁` copies of `M_{k₂}`.
+  let n := fun i : Fin (p * k₂) ⊕ Fin ((N - p) * k₁) => Fin (Sum.elim (fun _ => k₁) (fun _ => k₂) i)
+  let φ : ∀ i, A →CP CStarMatrix (n i) (n i) ℂ := Sum.rec (fun _ => φ₁) (fun _ => φ₂)
+  let ρ := CStarMatrix.reindexₐ ℂ ℂ (Fintype.equivFin (Σ i, n i))
+  have hρ (x : CStarMatrix (Σ i, n i) (Σ i, n i) ℂ) : ‖ρ x‖ = ‖x‖ :=
+    NonUnitalStarAlgHom.norm_map ρ ρ.injective x
+  have hdef (a b : A) : ρ (blockDiagonal φ (a * b)) - ρ (blockDiagonal φ a) *
+      ρ (blockDiagonal φ b) = ρ (CStarMatrix.ofMatrix (Matrix.blockDiagonal' fun i =>
+        CStarMatrix.ofMatrix.symm (φ i (a * b) - φ i a * φ i b))) := by
+    rw [← map_mul, ← map_sub, blockDiagonal_map_mul_sub]
+  refine ⟨_, (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap ρ).comp (blockDiagonal φ),
+    ?_, ?_, ?_, ?_⟩ <;>
+    simp only [CompletelyPositiveMap.comp_apply,
+      CompletelyPositiveMapClass.coe_toCompletelyPositiveLinearMap]
+  · intro a
+    rw [hρ, norm_blockDiagonal_apply, pi_norm_le_iff_of_nonneg (norm_nonneg a)]
+    rintro (_ | _)
+    exacts [h₁ a, h₂ a]
+  · intro a
+    have hden : ((p * k₂ : ℕ) : ℂ) * k₁ + ((N - p) * k₁ : ℕ) * k₂ = N * k₁ * k₂ := by
+      push_cast [Nat.cast_sub hp]
+      ring
+    have hN' : (N : ℂ) ≠ 0 := by exact_mod_cast hN.ne'
+    have hk₁' : (k₁ : ℂ) ≠ 0 := by exact_mod_cast hk₁.ne'
+    have hk₂' : (k₂ : ℂ) ≠ 0 := by exact_mod_cast hk₂.ne'
+    rw [CStarMatrix.normalizedTrace_reindexₐ, normalizedTrace_blockDiagonal_sumRec, hden]
+    push_cast [Nat.cast_sub hp]
+    field_simp
+  · intro a b
+    rw [hdef, CStarMatrix.normalizedTwoNorm_reindexₐ]
+    refine CStarMatrix.normalizedTwoNorm_blockDiagonal'_le
+      (le_max_of_le_left (CStarMatrix.normalizedTwoNorm_nonneg _)) ?_
+    rintro (_ | _)
+    exacts [le_max_left _ _, le_max_right _ _]
+  · intro a b
+    rw [hdef, hρ, CStarMatrix.norm_ofMatrix_blockDiagonal',
+      pi_norm_le_iff_of_nonneg (le_max_of_le_left (norm_nonneg _))]
+    rintro (_ | _)
+    exacts [le_max_left _ _, le_max_right _ _]
+
+/-- **Approximants of a convex combination.** If `τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then
+for every `η > 0` completely positive contractions `φ₁` and `φ₂` combine into a completely
+positive contraction `Φ` whose multiplicativity defects are bounded by the larger of those of `φ₁`
+and `φ₂`, and which recovers `τ` at `a` up to the larger of the recovery errors of `φ₁` and `φ₂`
+plus `η (|τ₁ a| + |τ₂ a|)`. The map `Φ` is a block-diagonal sum of copies of `φ₁` and `φ₂` whose
+normalized trace has weight `w = p / N` on `φ₁`, with `|w - θ| ≤ η`. -/
+private theorem exists_approximant_of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} {θ : ℝ} (hθ₀ : 0 ≤ θ)
+    (hθ₁ : θ ≤ 1) (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) {k₁ k₂ : ℕ}
+    (φ₁ : A →CP CStarMatrix (Fin k₁) (Fin k₁) ℂ) (φ₂ : A →CP CStarMatrix (Fin k₂) (Fin k₂) ℂ)
+    (h₁ : ∀ a, ‖φ₁ a‖ ≤ ‖a‖) (h₂ : ∀ a, ‖φ₂ a‖ ≤ ‖a‖) {η : ℝ} (hη : 0 < η) :
+    ∃ (K : ℕ) (Φ : A →CP CStarMatrix (Fin K) (Fin K) ℂ), (∀ a, ‖Φ a‖ ≤ ‖a‖) ∧
+      (∀ a b, CStarMatrix.normalizedTwoNorm (Φ (a * b) - Φ a * Φ b) ≤
+        max (CStarMatrix.normalizedTwoNorm (φ₁ (a * b) - φ₁ a * φ₁ b))
+          (CStarMatrix.normalizedTwoNorm (φ₂ (a * b) - φ₂ a * φ₂ b))) ∧
+      (∀ a b, ‖Φ (a * b) - Φ a * Φ b‖ ≤
+        max ‖φ₁ (a * b) - φ₁ a * φ₁ b‖ ‖φ₂ (a * b) - φ₂ a * φ₂ b‖) ∧
+      ∀ a, ‖CStarMatrix.normalizedTrace (Φ a) - τ a‖ ≤
+        max ‖CStarMatrix.normalizedTrace (φ₁ a) - τ₁ a‖
+          ‖CStarMatrix.normalizedTrace (φ₂ a) - τ₂ a‖ + η * (‖τ₁ a‖ + ‖τ₂ a‖) := by
+  obtain ⟨l₁, ψ₁, hl₁, hψ₁, tr₁, d₁, n₁⟩ := exists_pos_approximant φ₁ h₁
+  obtain ⟨l₂, ψ₂, hl₂, hψ₂, tr₂, d₂, n₂⟩ := exists_pos_approximant φ₂ h₂
+  -- The weight `w = ⌊θ N⌋ / N` is within `1 / N < η` of `θ`.
+  obtain ⟨N, hN⟩ := exists_nat_gt η⁻¹
+  have hN0 : (0 : ℝ) < N := (inv_pos.2 hη).trans hN
+  have hp : ⌊θ * N⌋₊ ≤ N := Nat.floor_le_of_le (by nlinarith)
+  obtain ⟨K, Φ, hΦ, htr, hd, hn⟩ :=
+    exists_blockDiagonal_approximant ψ₁ ψ₂ hψ₁ hψ₂ hl₁ hl₂ (by exact_mod_cast hN0) hp
+  set w : ℝ := (⌊θ * N⌋₊ / N : ℝ)
+  have hw₀ : 0 ≤ w := by positivity
+  have hw₁ : w ≤ 1 := div_le_one_of_le₀ (by exact_mod_cast hp) hN0.le
+  have hwθ : |w - θ| ≤ η := by
+    have hlt : θ * N < ⌊θ * N⌋₊ + 1 := Nat.lt_floor_add_one _
+    have hle : (⌊θ * N⌋₊ : ℝ) ≤ θ * N := Nat.floor_le (by positivity)
+    have hNη : 1 / (N : ℝ) < η := by rwa [one_div, inv_lt_comm₀ hN0 hη]
+    rw [abs_sub_comm, abs_of_nonneg (by rw [sub_nonneg, div_le_iff₀ hN0]; exact hle)]
+    refine le_of_lt (lt_of_le_of_lt ?_ hNη)
+    rw [sub_le_iff_le_add, ← add_div, le_div_iff₀ hN0]
+    linarith
+  refine ⟨K, Φ, hΦ, fun a b => (hd a b).trans (max_le_max (d₁ a b) (d₂ a b)),
+    fun a b => (hn a b).trans (max_le_max (n₁ a b) (n₂ a b)), fun a => ?_⟩
+  set t₁ := CStarMatrix.normalizedTrace (φ₁ a)
+  set t₂ := CStarMatrix.normalizedTrace (φ₂ a)
+  have hsplit : CStarMatrix.normalizedTrace (Φ a) - τ a = (w : ℂ) * (t₁ - τ₁ a) +
+      ((1 - w : ℝ) : ℂ) * (t₂ - τ₂ a) + ((w - θ : ℝ) : ℂ) * (τ₁ a - τ₂ a) := by
+    rw [htr, tr₁, tr₂, hτ]
+    push_cast
+    ring
+  have hmax₁ : ‖t₁ - τ₁ a‖ ≤ max ‖t₁ - τ₁ a‖ ‖t₂ - τ₂ a‖ := le_max_left _ _
+  have hmax₂ : ‖t₂ - τ₂ a‖ ≤ max ‖t₁ - τ₁ a‖ ‖t₂ - τ₂ a‖ := le_max_right _ _
+  rw [hsplit]
+  refine (norm_add₃_le).trans ?_
+  simp only [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hw₀,
+    abs_of_nonneg (sub_nonneg.2 hw₁)]
+  have h₃ : |w - θ| * ‖τ₁ a - τ₂ a‖ ≤ η * (‖τ₁ a‖ + ‖τ₂ a‖) :=
+    mul_le_mul hwθ (norm_sub_le _ _) (norm_nonneg _) hη.le
+  nlinarith [mul_le_mul_of_nonneg_left hmax₁ hw₀,
+    mul_le_mul_of_nonneg_left hmax₂ (sub_nonneg.2 hw₁)]
+
+/-- Convex combinations preserve the approximation property shared by amenable and quasidiagonal
+traces, for a measure `d` of the multiplicativity defect for which approximants combine as in
+`exists_approximant_of_apply_eq`. -/
+private theorem forall_approxBy_recoverOn_of_apply_eq
+    {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ} {τ₁ τ₂ : A →P[ℂ] ℂ}
+    (hd : ∀ {k₁ k₂ : ℕ} (φ₁ : A →CP CStarMatrix (Fin k₁) (Fin k₁) ℂ)
+      (φ₂ : A →CP CStarMatrix (Fin k₂) (Fin k₂) ℂ), (∀ a, ‖φ₁ a‖ ≤ ‖a‖) → (∀ a, ‖φ₂ a‖ ≤ ‖a‖) →
+      ∀ η : ℝ, 0 < η → ∃ (K : ℕ) (Φ : A →CP CStarMatrix (Fin K) (Fin K) ℂ),
+        (∀ a, ‖Φ a‖ ≤ ‖a‖) ∧
+        (∀ a b, d K (Φ (a * b) - Φ a * Φ b) ≤
+          max (d k₁ (φ₁ (a * b) - φ₁ a * φ₁ b)) (d k₂ (φ₂ (a * b) - φ₂ a * φ₂ b))) ∧
+        ∀ a, ‖CStarMatrix.normalizedTrace (Φ a) - τ a‖ ≤
+          max ‖CStarMatrix.normalizedTrace (φ₁ a) - τ₁ a‖
+            ‖CStarMatrix.normalizedTrace (φ₂ a) - τ₂ a‖ + η * (‖τ₁ a‖ + ‖τ₂ a‖))
+    (h₁ : ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy d (RecoverOn τ₁) F ε)
+    (h₂ : ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy d (RecoverOn τ₂) F ε) :
+    ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy d (RecoverOn τ) F ε := by
+  intro F ε hε
+  set M := ∑ a ∈ F, (‖τ₁ a‖ + ‖τ₂ a‖)
+  have hM : 0 ≤ M := by positivity
+  obtain ⟨k₁, φ₁, c₁, m₁, r₁⟩ := h₁ F (ε / 2) (half_pos hε)
+  obtain ⟨k₂, φ₂, c₂, m₂, r₂⟩ := h₂ F (ε / 2) (half_pos hε)
+  obtain ⟨K, Φ, c, m, r⟩ := hd φ₁ φ₂ c₁ c₂ (ε / (2 * (M + 1))) (by positivity)
+  refine ⟨K, Φ, c, fun a ha b hb => (m a b).trans_lt
+    ((max_lt (m₁ a ha b hb) (m₂ a ha b hb)).trans (half_lt_self hε)), fun a ha => (r a).trans_lt ?_⟩
+  have hMa : ‖τ₁ a‖ + ‖τ₂ a‖ ≤ M :=
+    Finset.single_le_sum (f := fun b => ‖τ₁ b‖ + ‖τ₂ b‖) (fun _ _ => by positivity) ha
+  have hη : ε / (2 * (M + 1)) * (‖τ₁ a‖ + ‖τ₂ a‖) < ε / 2 := by
+    calc ε / (2 * (M + 1)) * (‖τ₁ a‖ + ‖τ₂ a‖) ≤ ε / (2 * (M + 1)) * M := by gcongr
+      _ < ε / (2 * (M + 1)) * (M + 1) := by gcongr; linarith
+      _ = ε / 2 := by field_simp
+  linarith [max_lt (r₁ a ha) (r₂ a ha)]
+
+/-- **Convex combinations of amenable traces.** If `τ₁` and `τ₂` are amenable traces and
+`τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then `τ` is amenable. -/
+private theorem IsAmenableTrace.of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ} (h₁ : τ₁.IsAmenableTrace)
+    (h₂ : τ₂.IsAmenableTrace) {θ : ℝ} (hθ₀ : 0 ≤ θ) (hθ₁ : θ ≤ 1)
+    (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) : τ.IsAmenableTrace :=
+  forall_approxBy_recoverOn_of_apply_eq (fun φ₁ φ₂ c₁ c₂ _ hη =>
+    let ⟨K, Φ, c, m, _, r⟩ := exists_approximant_of_apply_eq hθ₀ hθ₁ hτ φ₁ φ₂ c₁ c₂ hη
+    ⟨K, Φ, c, m, r⟩) h₁ h₂
+
+/-- **Convex combinations of quasidiagonal traces.** If `τ₁` and `τ₂` are quasidiagonal traces
+and `τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then `τ` is quasidiagonal. -/
+private theorem IsQuasidiagonalTrace.of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ}
+    (h₁ : τ₁.IsQuasidiagonalTrace) (h₂ : τ₂.IsQuasidiagonalTrace) {θ : ℝ} (hθ₀ : 0 ≤ θ)
+    (hθ₁ : θ ≤ 1) (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) : τ.IsQuasidiagonalTrace :=
+  forall_approxBy_recoverOn_of_apply_eq (d := fun _ => norm) (fun φ₁ φ₂ c₁ c₂ _ hη =>
+    let ⟨K, Φ, c, _, n, r⟩ := exists_approximant_of_apply_eq hθ₀ hθ₁ hτ φ₁ φ₂ c₁ c₂ hη
+    ⟨K, Φ, c, n, r⟩) h₁ h₂
+
+/-- **Convex combinations of uniform amenable traces.** If `τ₁` and `τ₂` are uniform amenable
+traces and `τ = θ τ₁ + (1 - θ) τ₂` with `θ ∈ [0, 1]`, then `τ` is uniform amenable; the extra
+recovery error `η (|τ₁ a| + |τ₂ a|)` is at most `η (‖τ₁‖ + ‖τ₂‖) ‖a‖`. -/
+private theorem IsUniformAmenableTrace.of_apply_eq {τ₁ τ₂ : A →P[ℂ] ℂ}
+    (h₁ : τ₁.IsUniformAmenableTrace) (h₂ : τ₂.IsUniformAmenableTrace) {θ : ℝ} (hθ₀ : 0 ≤ θ)
+    (hθ₁ : θ ≤ 1) (hτ : ∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) : τ.IsUniformAmenableTrace := by
+  intro F ε hε
+  set C := ‖(τ₁ : A →L[ℂ] ℂ)‖ + ‖(τ₂ : A →L[ℂ] ℂ)‖
+  have hC : 0 ≤ C := by positivity
+  obtain ⟨k₁, φ₁, c₁, m₁, r₁⟩ := h₁ F (ε / 2) (half_pos hε)
+  obtain ⟨k₂, φ₂, c₂, m₂, r₂⟩ := h₂ F (ε / 2) (half_pos hε)
+  obtain ⟨K, Φ, c, m, -, r⟩ :=
+    exists_approximant_of_apply_eq hθ₀ hθ₁ hτ φ₁ φ₂ c₁ c₂ (η := ε / (2 * (C + 1))) (by positivity)
+  refine ⟨K, Φ, c, fun a ha b hb => (m a b).trans_lt
+    ((max_lt (m₁ a ha b hb) (m₂ a ha b hb)).trans (half_lt_self hε)), fun a => (r a).trans ?_⟩
+  have hτa : ‖τ₁ a‖ + ‖τ₂ a‖ ≤ C * ‖a‖ := by
+    rw [add_mul]
+    exact add_le_add (by simpa using (τ₁ : A →L[ℂ] ℂ).le_opNorm a)
+      (by simpa using (τ₂ : A →L[ℂ] ℂ).le_opNorm a)
+  have hη : ε / (2 * (C + 1)) * (‖τ₁ a‖ + ‖τ₂ a‖) ≤ ε / 2 * ‖a‖ := by
+    calc ε / (2 * (C + 1)) * (‖τ₁ a‖ + ‖τ₂ a‖) ≤ ε / (2 * (C + 1)) * (C * ‖a‖) := by gcongr
+      _ ≤ ε / (2 * (C + 1)) * ((C + 1) * ‖a‖) := by gcongr; linarith
+      _ = ε / 2 * ‖a‖ := by field_simp
+  linarith [max_le (r₁ a) (r₂ a)]
+
+end Convex
+
 end PositiveContinuousLinearMap
 
 namespace TauCeti
@@ -368,8 +624,7 @@ variable {n : Type*} [Fintype n]
 /-- The normalized trace of a nonempty matrix algebra is a tracial state. -/
 theorem isTracialState_normalizedTraceMap [Nonempty n] :
     (normalizedTraceMap n).IsTracialState :=
-  isTracialState_iff.2 ⟨norm_normalizedTraceMap n, fun x y => by
-    simpa using normalizedTrace_mul_comm x y⟩
+  isTracialState_iff.2 ⟨norm_normalizedTraceMap n, normalizedTraceMap_mul_comm⟩
 
 /-- On `M_k` the identity map is an exact approximant: it is a contraction, its multiplicativity
 defect is `d k 0`, and it satisfies any recovery clause that holds for it. -/
@@ -509,6 +764,118 @@ theorem uniformAmenableTraces_subset_amenableTraces :
     uniformAmenableTraces A ⊆ amenableTraces A :=
   image_mono fun _ hτ => ⟨hτ.1, hτ.2.isAmenableTrace⟩
 
+/-- The set of tracial states with a property `P` is convex as soon as `P` passes to convex
+combinations `θ τ₁ + (1 - θ) τ₂` of tracial states, since `T(A)` is convex. -/
+private theorem convex_image_toWeakDual {P : (A →P[ℂ] ℂ) → Prop}
+    (hP : ∀ ⦃τ₁ τ₂ τ : A →P[ℂ] ℂ⦄, P τ₁ → P τ₂ → ∀ ⦃θ : ℝ⦄, 0 ≤ θ → θ ≤ 1 →
+      (∀ a, τ a = θ * τ₁ a + (1 - θ) * τ₂ a) → P τ) :
+    Convex ℝ ((fun τ : A →P[ℂ] ℂ => StrongDual.toWeakDual (τ : A →L[ℂ] ℂ)) ''
+      {τ | τ.IsTracialState ∧ P τ}) := by
+  rintro _ ⟨τ₁, ⟨hτ₁, h₁⟩, rfl⟩ _ ⟨τ₂, ⟨hτ₂, h₂⟩, rfl⟩ s t hs ht hst
+  obtain rfl : t = 1 - s := by linarith
+  obtain ⟨τ, hτ, he⟩ := mem_tracialStates_iff_exists_isTracialState.1 <| convex_tracialStates
+    (toWeakDual_mem_tracialStates_iff.2 hτ₁) (toWeakDual_mem_tracialStates_iff.2 hτ₂) hs ht hst
+  refine ⟨τ, ⟨hτ, hP h₁ h₂ hs (by linarith) fun a => ?_⟩, he⟩
+  calc τ a = (s • StrongDual.toWeakDual (τ₁ : A →L[ℂ] ℂ) +
+        (1 - s) • StrongDual.toWeakDual (τ₂ : A →L[ℂ] ℂ)) a := congrArg (fun φ => φ a) he
+    -- functionals in the weak-* dual are added and scaled pointwise; Mathlib states this for
+    -- `WeakDual` only definitionally (it has no `IsAddApply` or `smul_apply` API), hence `rfl`
+    _ = s • τ₁ a + (1 - s) • τ₂ a := rfl
+    _ = s * τ₁ a + (1 - s) * τ₂ a := by simp [Complex.real_smul]
+
+/-- **Convexity of `AT(A)`.** Convex combinations of amenable traces are amenable: the
+approximants are block-diagonal sums of copies of approximants of the two traces. -/
+theorem convex_amenableTraces : Convex ℝ (amenableTraces A) :=
+  convex_image_toWeakDual fun _ _ _ h₁ h₂ _ hθ₀ hθ₁ hτ =>
+    IsAmenableTrace.of_apply_eq h₁ h₂ hθ₀ hθ₁ hτ
+
+/-- **Convexity of `AT_QD(A)`.** Convex combinations of quasidiagonal traces are quasidiagonal. -/
+theorem convex_quasidiagonalTraces : Convex ℝ (quasidiagonalTraces A) :=
+  convex_image_toWeakDual fun _ _ _ h₁ h₂ _ hθ₀ hθ₁ hτ =>
+    IsQuasidiagonalTrace.of_apply_eq h₁ h₂ hθ₀ hθ₁ hτ
+
+/-- **Convexity of `UAT(A)`.** Convex combinations of uniform amenable traces are uniform
+amenable. -/
+theorem convex_uniformAmenableTraces : Convex ℝ (uniformAmenableTraces A) :=
+  convex_image_toWeakDual fun _ _ _ h₁ h₂ _ hθ₀ hθ₁ hτ =>
+    IsUniformAmenableTrace.of_apply_eq h₁ h₂ hθ₀ hθ₁ hτ
+
+/-- A tracial state in the weak-* closure of the tracial states with an approximation property of
+amenable or quasidiagonal type has that property: near `τ` on a finite set `F` there is such a
+state `σ`, and an approximant of `σ` for `F` approximates `τ` on `F`. -/
+private theorem of_mem_closure_image_toWeakDual {d : ∀ k : ℕ, CStarMatrix (Fin k) (Fin k) ℂ → ℝ}
+    {P : (A →P[ℂ] ℂ) → Prop}
+    (hP : ∀ σ, P σ ↔ ∀ (F : Finset A) (ε : ℝ), 0 < ε → ApproxBy d (RecoverOn σ) F ε)
+    {τ : A →P[ℂ] ℂ} (hτ : StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) ∈
+      closure ((fun σ : A →P[ℂ] ℂ => StrongDual.toWeakDual (σ : A →L[ℂ] ℂ)) ''
+        {σ | σ.IsTracialState ∧ P σ})) :
+    P τ := by
+  refine (hP τ).2 fun F ε hε => ?_
+  let U : Set (WeakDual ℂ A) := ⋂ a ∈ F, {y | ‖y a - τ a‖ < ε / 2}
+  have hU : IsOpen U := isOpen_biInter_finset fun a _ =>
+    isOpen_lt (continuous_norm.comp ((eval_continuous a).sub continuous_const)) continuous_const
+  have hτU : StrongDual.toWeakDual (τ : A →L[ℂ] ℂ) ∈ U :=
+    mem_iInter₂.2 fun a _ => by simpa using half_pos hε
+  obtain ⟨_, hyU, σ, ⟨-, hσ⟩, rfl⟩ := mem_closure_iff.1 hτ U hU hτU
+  obtain ⟨k, φ, hφ, hm, hr⟩ := (hP σ).1 hσ F (ε / 2) (half_pos hε)
+  refine ⟨k, φ, hφ, fun a ha b hb => (hm a ha b hb).trans (half_lt_self hε), fun a ha => ?_⟩
+  have hστ : ‖σ a - τ a‖ < ε / 2 := by simpa using mem_iInter₂.1 hyU a ha
+  calc ‖CStarMatrix.normalizedTrace (φ a) - τ a‖
+      ≤ ‖CStarMatrix.normalizedTrace (φ a) - σ a‖ + ‖σ a - τ a‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ < ε / 2 + ε / 2 := add_lt_add (hr a ha) hστ
+    _ = ε := add_halves ε
+
+/-- **`AT(A)` is weak-* closed in `T(A)`.** A tracial state in the weak-* closure of the amenable
+traces is amenable. -/
+theorem closure_amenableTraces_inter_tracialStates :
+    closure (amenableTraces A) ∩ tracialStates A = amenableTraces A := by
+  refine Subset.antisymm ?_ (subset_inter subset_closure amenableTraces_subset_tracialStates)
+  rintro _ ⟨hcl, hT⟩
+  obtain ⟨τ, hτ, rfl⟩ := mem_tracialStates_iff_exists_isTracialState.1 hT
+  exact toWeakDual_mem_amenableTraces_iff.2
+    ⟨hτ, of_mem_closure_image_toWeakDual (fun _ => isAmenableTrace_iff_approxBy) hcl⟩
+
+/-- **`AT_QD(A)` is weak-* closed in `T(A)`.** A tracial state in the weak-* closure of the
+quasidiagonal traces is quasidiagonal. -/
+theorem closure_quasidiagonalTraces_inter_tracialStates :
+    closure (quasidiagonalTraces A) ∩ tracialStates A = quasidiagonalTraces A := by
+  refine Subset.antisymm ?_ (subset_inter subset_closure quasidiagonalTraces_subset_tracialStates)
+  rintro _ ⟨hcl, hT⟩
+  obtain ⟨τ, hτ, rfl⟩ := mem_tracialStates_iff_exists_isTracialState.1 hT
+  exact toWeakDual_mem_quasidiagonalTraces_iff.2
+    ⟨hτ, of_mem_closure_image_toWeakDual (fun _ => isQuasidiagonalTrace_iff_approxBy) hcl⟩
+
+/-- **`UAT(A)` is norm closed.** In the norm topology of the continuous dual, the uniform amenable
+traces form a closed set: if `‖σ - τ‖ ≤ ε / 2`, an approximant of `σ` with recovery error
+`(ε / 2)‖a‖` recovers `τ` with error `ε ‖a‖`. -/
+theorem isClosed_preimage_toWeakDual_uniformAmenableTraces :
+    IsClosed (StrongDual.toWeakDual ⁻¹' uniformAmenableTraces A) := by
+  refine isClosed_of_closure_subset fun x hx => ?_
+  have hT : StrongDual.toWeakDual x ∈ tracialStates A := mem_preimage.1 <|
+    closure_minimal (preimage_mono uniformAmenableTraces_subset_tracialStates)
+      isClosed_preimage_toWeakDual_tracialStates hx
+  obtain ⟨τ, hτ, he⟩ := mem_tracialStates_iff_exists_isTracialState.1 hT
+  have hτx : (τ : A →L[ℂ] ℂ) = x := StrongDual.toWeakDual.injective he
+  rw [mem_preimage, ← hτx, toWeakDual_mem_uniformAmenableTraces_iff]
+  refine ⟨hτ, fun F ε hε => ?_⟩
+  obtain ⟨y, hy, hxy⟩ := Metric.mem_closure_iff.1 hx (ε / 2) (half_pos hε)
+  obtain ⟨σ, -, hσ, hσy⟩ := mem_uniformAmenableTraces_iff.1 (mem_preimage.1 hy)
+  have hσy' : (σ : A →L[ℂ] ℂ) = y := StrongDual.toWeakDual.injective hσy
+  obtain ⟨k, φ, hφ, hm, hr⟩ := hσ F (ε / 2) (half_pos hε)
+  refine ⟨k, φ, hφ, fun a ha b hb => (hm a ha b hb).trans (half_lt_self hε), fun a => ?_⟩
+  have hστ : ‖σ a - τ a‖ ≤ ε / 2 * ‖a‖ := by
+    have h : σ a - τ a = (y - x) a := by rw [← hσy', ← hτx]; simp
+    rw [h]
+    refine ((y - x).le_opNorm a).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg a))
+    rw [← dist_eq_norm, dist_comm]
+    exact hxy.le
+  calc ‖CStarMatrix.normalizedTrace (φ a) - τ a‖
+      ≤ ‖CStarMatrix.normalizedTrace (φ a) - σ a‖ + ‖σ a - τ a‖ :=
+        norm_sub_le_norm_sub_add_norm_sub _ _ _
+    _ ≤ ε / 2 * ‖a‖ + ε / 2 * ‖a‖ := add_le_add (hr a) hστ
+    _ = ε * ‖a‖ := by ring
+
 variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B] {φ : WeakDual ℂ B}
 
@@ -603,6 +970,16 @@ theorem mapsTo_pullbackFunctional_uniformAmenableTraces (f : F) :
   fun _ hφ => pullbackFunctional_mem_uniformAmenableTraces f hφ <|
     mapsTo_pullbackFunctional_stateSpace f <| tracialStates_subset_stateSpace <|
       uniformAmenableTraces_subset_tracialStates hφ
+
+/-- For unital `A`, the set `AT(A)` of amenable traces is weak-* closed, as `T(A)` is. -/
+theorem isClosed_amenableTraces : IsClosed (amenableTraces A) :=
+  isClosed_of_closure_subset fun _ hx => closure_amenableTraces_inter_tracialStates (A := A) ▸
+    ⟨hx, closure_minimal amenableTraces_subset_tracialStates isClosed_tracialStates hx⟩
+
+/-- For unital `A`, the set `AT_QD(A)` of quasidiagonal traces is weak-* closed, as `T(A)` is. -/
+theorem isClosed_quasidiagonalTraces : IsClosed (quasidiagonalTraces A) :=
+  isClosed_of_closure_subset fun _ hx => closure_quasidiagonalTraces_inter_tracialStates (A := A) ▸
+    ⟨hx, closure_minimal quasidiagonalTraces_subset_tracialStates isClosed_tracialStates hx⟩
 
 end Unital
 

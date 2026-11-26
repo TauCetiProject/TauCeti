@@ -37,6 +37,12 @@ on the groups or on the representations.
   coincides with the original action of `g`.
 * `Representation.IndV.lift_mk` and `Representation.IndV.lift_comp_ind`: evaluation on generators
   and `H`-equivariance of `Representation.IndV.lift`.
+* `Representation.iSup_range_indV_mk_eq_top`: the images of the generator maps `a ↦ ⟦h ⊗ a⟧`
+  span an induced representation.
+* `Representation.indV_mk_apply_eq_ind`: the generator map at `h` turns the action of `g` on the
+  coefficient into the induced action of `h⁻¹ φ(g) h`, and `Representation.indV_mk_comp_conjNormal`
+  is the resulting `N`-equivariance for subgroups `N ≤ H` of `G` with `N` normal, twisted by
+  conjugation `n ↦ s n s⁻¹`.
 * `Rep.indMap_injective` and `Rep.indFunctor_faithful`: induction from a subgroup is faithful.
 * `Representation.IntertwiningMap.ind_id`, `Representation.IntertwiningMap.ind_comp`: induction
   of intertwining maps is functorial.
@@ -44,11 +50,11 @@ on the groups or on the representations.
 ## Implementation notes
 
 As in `TauCeti/RepresentationTheory/Induction/Projection.lean`, the generator lemmas
-`Representation.ind_apply_map_mk_one`, `Representation.IndV.lift_mk`,
-`Representation.IntertwiningMap.ind_mk`, `Representation.Equiv.ind_mk`, and
-`Representation.Equiv.ind_symm_mk` are stated with the reducible abbreviation
-`Representation.IndV.mk`, which `simp` unfolds, so they are not `simp` lemmas and are applied by
-`rw`.
+`Representation.ind_apply_map_mk_one`, `Representation.indV_mk_apply_eq_ind`,
+`Representation.IndV.lift_mk`, `Representation.IntertwiningMap.ind_mk`,
+`Representation.Equiv.ind_mk`, and `Representation.Equiv.ind_symm_mk` are stated with the
+reducible abbreviation `Representation.IndV.mk`, which `simp` unfolds, so they are not `simp`
+lemmas and are applied by `rw`.
 -/
 
 public section
@@ -210,6 +216,42 @@ theorem ind_symm_mk (e : Equiv ρ σ) (h : H) (b : B) :
 end Equiv
 
 end Ind
+
+section Generators
+
+variable {k G G' U : Type*} [CommRing k] [Group G] [Group G'] [AddCommGroup U] [Module k U]
+
+/-- The images of the generator maps `a ↦ ⟦s ⊗ a⟧`, for `s` ranging over the target group, span an
+induced representation. -/
+theorem iSup_range_indV_mk_eq_top (φ : G' →* G) (ρ : Representation k G' U) :
+    ⨆ s : G, LinearMap.range (IndV.mk φ ρ s) = ⊤ := by
+  set P := ⨆ s : G, LinearMap.range (IndV.mk φ ρ s)
+  have h : P.mkQ = 0 := IndV.hom_ext _ _ fun s ↦ LinearMap.ext fun a ↦ by
+    simpa using (le_iSup (fun s : G ↦ LinearMap.range (IndV.mk φ ρ s)) s)
+      (LinearMap.mem_range_self _ a)
+  rw [← Submodule.ker_mkQ P, h, LinearMap.ker_zero]
+
+/-- The generator map at `s` turns the action of `h` on the coefficient into the induced action of
+the conjugate `s⁻¹ φ(h) s`: `⟦s ⊗ h a⟧ = (s⁻¹ φ(h) s) ⟦s ⊗ a⟧`. -/
+theorem indV_mk_apply_eq_ind (φ : G' →* G) (ρ : Representation k G' U) (h : G') (s : G)
+    (a : U) : IndV.mk φ ρ s (ρ h a) = ind φ ρ (s⁻¹ * φ h * s) (IndV.mk φ ρ s a) := by
+  rw [ind_mk]
+  simpa [ofMulAction_single, mul_assoc] using Coinvariants.mk_tmul_inv
+    (ρ := (leftRegular k G).comp φ) (τ := ρ) (MonoidAlgebra.single s (1 : k)) a h⁻¹
+
+variable {H N : Subgroup G} [N.Normal]
+
+/-- For `s ∈ G` and a representation `ρ` of `H ≥ N`, the generator map `a ↦ ⟦s ⊗ a⟧` into
+`Ind_H^G ρ` is `N`-equivariant from `ρ` restricted along `n ↦ s n s⁻¹ : N → H`. -/
+theorem indV_mk_comp_conjNormal (ρ : Representation k H U) (hNH : N ≤ H) (s : G) (n : N) :
+    IndV.mk H.subtype ρ s ∘ₗ
+        ρ ((Subgroup.inclusion hNH).comp (MulAut.conjNormal s).toMonoidHom n) =
+      ind H.subtype ρ (n : G) ∘ₗ IndV.mk H.subtype ρ s := by
+  refine LinearMap.ext fun a ↦ ?_
+  rw [LinearMap.comp_apply, indV_mk_apply_eq_ind, LinearMap.comp_apply]
+  simp [MulAut.conjNormal_apply, mul_assoc]
+
+end Generators
 
 end Representation
 

@@ -21,8 +21,8 @@ spaces induced by `a ⊗ b` acts on points as `q^* a ⊗ q^* b` acts on sections
 
 The bijection combines the section-valued universal property `totalSpaceHomEquiv` of the total
 space with the tensor comparison `q^* (E ⊗ F) ≅ q^* E ⊗ q^* F` of module pullback, which is an
-isomorphism because `E` is quasicoherent
-(`AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ_of_isQuasicoherent`).
+isomorphism for arbitrary module sheaves
+(`AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ`).
 
 Here `𝕍(E)` means `Spec_X (Sym E^∨)`, covariantly in the sheaf of sections `E`; see
 `TauCeti.AlgebraicGeometry.totalSpaceScheme`. In the convention `V(F) = Spec_X (Sym F)` of the

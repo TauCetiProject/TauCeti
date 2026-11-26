@@ -23,10 +23,10 @@ source model coordinates along a continuous linear equivalence.
 
 * `Diffeomorph.isRegularPoint`, `Diffeomorph.isRegularValue`: every point and value of a `C^n`
   diffeomorphism (`n ≠ 0`) is regular.
-* `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp_iff`,
-  `Diffeomorph.isRegularPoint_comp_iff`, `Diffeomorph.isRegularValue_comp_iff`: invariance of
-  regular points and regular values under precomposition with a `C^n` local diffeomorphism or
-  diffeomorphism (`n ≠ 0`).
+* `IsLocalDiffeomorphAt.isRegularPoint_comp_iff`, `IsLocalDiffeomorph.isRegularValue_comp`,
+  `IsLocalDiffeomorph.isRegularValue_comp_iff`, `Diffeomorph.isRegularPoint_comp_iff`,
+  `Diffeomorph.isRegularValue_comp_iff`: invariance of regular points and regular values under
+  precomposition with a `C^n` local diffeomorphism or diffeomorphism (`n ≠ 0`).
 * `TauCeti.isRegularPoint_transContinuousLinearEquiv_left_iff`,
   `TauCeti.isRegularValue_transContinuousLinearEquiv_left_iff`: continuous linear changes of
   source model coordinates preserve regular points and regular values.
@@ -78,15 +78,21 @@ theorem IsLocalDiffeomorphAt.isRegularPoint_comp_iff {φ : P → M} {f : M → N
     simp [isRegularPoint_iff, mfderiv_zero_of_not_mdifferentiableAt hf,
       mfderiv_zero_of_not_mdifferentiableAt hcomp, Function.Surjective]
 
+/-- A regular value of a map stays regular after precomposing with a `C^n` local diffeomorphism
+(`n ≠ 0`). No surjectivity is needed for this direction. -/
+theorem IsLocalDiffeomorph.isRegularValue_comp {φ : P → M} {f : M → N} {y : N}
+    (hφ : IsLocalDiffeomorph K I n φ) (hn : n ≠ 0) (hy : IsRegularValue I J f y) :
+    IsRegularValue K J (f ∘ φ) y :=
+  isRegularValue_iff.2 fun x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (hy.isRegularPoint hx)
+
 /-- Precomposing a map with a surjective `C^n` local diffeomorphism (`n ≠ 0`) preserves regular
 values. -/
 theorem IsLocalDiffeomorph.isRegularValue_comp_iff {φ : P → M} {f : M → N} {y : N}
     (hφ : IsLocalDiffeomorph K I n φ) (hsurj : Surjective φ) (hn : n ≠ 0) :
     IsRegularValue K J (f ∘ φ) y ↔ IsRegularValue I J f y := by
-  rw [isRegularValue_iff, isRegularValue_iff]
-  refine ⟨fun h z hz ↦ ?_, fun h x hx ↦ ((hφ x).isRegularPoint_comp_iff hn).2 (h (φ x) hx)⟩
+  refine ⟨fun h ↦ isRegularValue_iff.2 fun z hz ↦ ?_, hφ.isRegularValue_comp hn⟩
   obtain ⟨x, rfl⟩ := hsurj z
-  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h x hz)
+  exact ((hφ x).isRegularPoint_comp_iff hn).1 (h.isRegularPoint hz)
 
 end Precomposition
 

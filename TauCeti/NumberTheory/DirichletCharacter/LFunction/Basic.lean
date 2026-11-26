@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Meromorphic.Order
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.NumberTheory.LSeries.Injectivity
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.Meromorphic.Order
 
@@ -41,14 +42,29 @@ function `χ.LFunction`, without going through completed `L`-functions or Gamma 
   function `LFunctionTrivChar₁ N`, which is `(s - 1) L(s)` away from `s = 1` and, for `N = 1`,
   `(s - 1) ζ(s)` away from `1` and `1` at `1`; it is nonzero wherever `ζ` is, and away from `1`
   its analytic orders agree with `ζ`.
+* `DirichletCharacter.meromorphicOrderAt_LFunction_ne_top`,
+  `DirichletCharacter.analyticOrderAt_LFunction_ne_top`,
+  `DirichletCharacter.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt`,
+  `DirichletCharacter.one_le_analyticOrderNatAt_LFunction_iff`, and
+  `DirichletCharacter.meromorphicOrderAt_LFunction_eq_natCast_iff`: the orders of `χ.LFunction`
+  are finite everywhere, away from the pole `(s = 1, χ = 1)` its meromorphic order is the cast of
+  `analyticOrderNatAt`, the multiplicity in which zero sums over `χ.LFunction` are stated, and
+  everywhere a positive meromorphic order `n` is the same as `analyticOrderNatAt` equal to `n`.
 * `DirichletCharacter.re_lt_one_of_LFunction_eq_zero`: every zero of `χ.LFunction` away from the
   simple pole `(s = 1, χ = 1)` satisfies `s.re < 1`.
+* `DirichletCharacter.eq_of_LFunction_eq`: a Dirichlet character is determined by its
+  `L`-function on `Re s > 1`.
 
 ## References
 
 * D. Loeffler, M. Stoll, `Mathlib.NumberTheory.LSeries.DirichletContinuation`.
 * M. Stoll, D. Loeffler, T. Tao, `Mathlib.NumberTheory.LSeries.Nonvanishing`.
 * H. Davenport, *Multiplicative Number Theory*, Ch. 4.
+
+The order lemmas are adapted, with the hypothesis `χ ≠ 1` weakened, from chrisflav's
+file `LFunction/Order.lean` in
+https://github.com/TauCetiProject/TauCeti/pull/45143
+(feat: prove Layer 6 zero-free regions over Q).
 -/
 
 public section
@@ -181,9 +197,78 @@ theorem meromorphicOrderAt_LFunction_pos_iff {s : ℂ} :
   · have hs' := not_and_or.mp hs
     simp [(χ.analyticAt_LFunction hs').meromorphicOrderAt_pos_iff_eq_zero, hs']
 
+/-- The continued Dirichlet `L`-function `χ.LFunction` has finite meromorphic order at every
+point: it is meromorphic on the connected set `ℂ` and nonzero at `s = 2`. -/
+theorem meromorphicOrderAt_LFunction_ne_top (s : ℂ) : meromorphicOrderAt χ.LFunction s ≠ ⊤ := by
+  have h2 : χ.LFunction 2 ≠ 0 := χ.LFunction_ne_zero_of_one_le_re (.inr (by norm_num)) (by norm_num)
+  have ha2 : AnalyticAt ℂ χ.LFunction 2 := χ.analyticAt_LFunction (.inl (by norm_num))
+  refine (meromorphicOn_univ.mpr χ.meromorphic_LFunction)
+    |>.meromorphicOrderAt_ne_top_of_isPreconnected isPreconnected_univ (Set.mem_univ 2)
+      (Set.mem_univ s) ?_
+  rw [ha2.meromorphicOrderAt_eq, ha2.analyticOrderAt_eq_zero.mpr h2]
+  simp
+
+/-- The continued Dirichlet `L`-function `χ.LFunction` has finite analytic order at every point. At
+the pole `(s = 1, χ = 1)` the analytic order is the junk value `0`. -/
+theorem analyticOrderAt_LFunction_ne_top (s : ℂ) : analyticOrderAt χ.LFunction s ≠ ⊤ := by
+  by_cases ha : AnalyticAt ℂ χ.LFunction s
+  · simpa [ha.meromorphicOrderAt_eq] using χ.meromorphicOrderAt_LFunction_ne_top s
+  · simp [ha]
+
+/-- Away from the pole `(s = 1, χ = 1)`, the meromorphic order of `χ.LFunction` is the cast of its
+natural analytic order. -/
+theorem meromorphicOrderAt_LFunction_eq_analyticOrderNatAt {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) :
+    meromorphicOrderAt χ.LFunction s = (analyticOrderNatAt χ.LFunction s : ℤ) := by
+  rw [(χ.analyticAt_LFunction h1).meromorphicOrderAt_eq,
+    ← Nat.cast_analyticOrderNatAt (χ.analyticOrderAt_LFunction_ne_top s), ENat.map_natCast]
+
+/-- The natural analytic order of `χ.LFunction` at `s` is at least `1` if and only if
+`χ.LFunction s = 0` and `(s ≠ 1 ∨ χ ≠ 1)`. -/
+theorem one_le_analyticOrderNatAt_LFunction_iff {s : ℂ} :
+    1 ≤ analyticOrderNatAt χ.LFunction s ↔ χ.LFunction s = 0 ∧ (s ≠ 1 ∨ χ ≠ 1) := by
+  rw [← meromorphicOrderAt_LFunction_pos_iff]
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt h1]
+    norm_cast
+  · obtain ⟨rfl, rfl⟩ := not_or.mp h1 |>.imp not_ne_iff.mp not_ne_iff.mp
+    rw [← LFunctionTrivChar]
+    simp
+
+/-- For `n ≠ 0`, the meromorphic order of `χ.LFunction` at `s` is `n` if and only if its natural
+analytic order at `s` is `n`. At the pole `(s = 1, χ = 1)` both sides are false, the orders being
+`-1` and `0`. -/
+theorem meromorphicOrderAt_LFunction_eq_natCast_iff {s : ℂ} {n : ℕ} (hn : n ≠ 0) :
+    meromorphicOrderAt χ.LFunction s = n ↔ analyticOrderNatAt χ.LFunction s = n := by
+  by_cases h1 : s ≠ 1 ∨ χ ≠ 1
+  · rw [χ.meromorphicOrderAt_LFunction_eq_analyticOrderNatAt h1]
+    norm_cast
+  · obtain ⟨rfl, rfl⟩ := not_or.mp h1 |>.imp not_ne_iff.mp not_ne_iff.mp
+    rw [← LFunctionTrivChar, TauCeti.meromorphicOrderAt_LFunctionTrivChar_one]
+    have h : ((-1 : ℤ) : WithTop ℤ) ≠ (n : ℤ) := WithTop.coe_injective.ne (by omega)
+    simpa [hn.symm] using h
+
 /-- Every zero of `χ.LFunction` away from the simple pole `(s = 1, χ = 1)` lies in `s.re < 1`. -/
 theorem re_lt_one_of_LFunction_eq_zero {s : ℂ} (h1 : s ≠ 1 ∨ χ ≠ 1) (h : χ.LFunction s = 0) :
     s.re < 1 :=
   not_le.mp fun hs ↦ χ.LFunction_ne_zero_of_one_le_re h1.symm hs h
+
+/-- **A Dirichlet character is determined by its `L`-function.** Two Dirichlet characters of the
+same level whose `L`-functions agree on `Re s > 1` are equal, since a Dirichlet series determines
+its coefficients. -/
+theorem eq_of_LFunction_eq {ψ : DirichletCharacter ℂ N}
+    (h : ∀ s : ℂ, 1 < s.re → χ.LFunction s = ψ.LFunction s) : χ = ψ := by
+  have hcoef (n : ℕ) (hn : n ≠ 0) : χ n = ψ n := by
+    refine LSeries.eq_of_LSeries_eventually_eq (f := fun n ↦ χ n) (g := fun n ↦ ψ n) ?_ ?_ ?_ hn
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · rw [abscissaOfAbsConv_eq_one (NeZero.ne N)]
+      exact EReal.coe_lt_top 1
+    · filter_upwards [eventually_gt_atTop 1] with x hx
+      rw [← LFunction_eq_LSeries _ (by simpa using hx),
+        ← LFunction_eq_LSeries _ (by simpa using hx), h _ (by simpa using hx)]
+  refine MulChar.ext' fun a ↦ ?_
+  have ha : ((a.val + N : ℕ) : ZMod N) = a := by simp
+  rw [← ha]
+  exact hcoef _ (by have := NeZero.pos N; omega)
 
 end DirichletCharacter

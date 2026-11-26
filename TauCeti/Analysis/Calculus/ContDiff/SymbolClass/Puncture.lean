@@ -21,6 +21,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Flat
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.InnerProductSpace.NormPow
 
 /-!
 # Symbol classes at a puncture
@@ -500,7 +501,7 @@ symbol of order `ℓ`. -/
 theorem isPuncturedSymbol_norm_rpow {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [ProperSpace E] (ℓ : ℝ) : IsPuncturedSymbol ℓ fun z : E ↦ ‖z‖ ^ ℓ :=
   isPuncturedSymbol_of_homogeneous (fun x hx ↦
-    ((contDiffAt_norm ℝ hx (n := ∞)).rpow_const_of_ne (norm_ne_zero_iff.2 hx)).contDiffWithinAt)
+    (contDiffAt_norm_rpow_of_ne (n := ∞) ℓ hx).contDiffWithinAt)
     fun t ht x _ ↦ by
       rw [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg x), smul_eq_mul]
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Corners.Depth
+import TauCeti.Topology.Algebra.Module.AddSMul
 
 /-!
 # The local faces of a manifold with corners do not depend on the chart
@@ -69,13 +70,6 @@ namespace TauCeti
 
 variable {ι ι' : Type*} {S : Set ι} {S' : Set ι'}
 
-/-- The path `t ↦ z + t • v` tends to `z` as `t` decreases to `0`. -/
-private theorem tendsto_add_smul [Finite ι] (z v : EuclideanSpace ℝ ι) :
-    Tendsto (fun t : ℝ ↦ z + t • v) (𝓝[>] 0) (𝓝 z) := by
-  have := Fintype.ofFinite ι
-  have h : Continuous fun t : ℝ ↦ z + t • v := by fun_prop
-  simpa using (h.tendsto 0).mono_left nhdsWithin_le_nhds
-
 /-- **Distinct local faces through a point are distinct near it.** If `y` lies on the faces
 `z i = 0` and `z k = 0` of the region `{z | ∀ i ∈ S, 0 ≤ z i}`, and near `y` every point of the
 region on the first face lies on the second, then `i = k`. -/
@@ -87,7 +81,8 @@ theorem eq_of_eventually_apply_eq_zero_imp [Finite ι] {y : EuclideanSpace ℝ �
   -- Move off `y` in the direction of the `k`-th coordinate: this stays on the face `z i = 0`.
   set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun j ↦ if j = k then 1 else 0
   have hT : Tendsto (fun t : ℝ ↦ y + t • v) (𝓝[>] 0) (𝓝[{z | ∀ i ∈ S, 0 ≤ z i}] y) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_add_smul y v, ?_⟩
+    have := Fintype.ofFinite ι
+    refine tendsto_nhdsWithin_iff.2 ⟨tendsto_add_smul_nhdsWithin_zero (Ioi (0 : ℝ)) y v, ?_⟩
     filter_upwards [self_mem_nhdsWithin] with t (ht : 0 < t) j hj
     have := hy j hj
     simp only [v, PiLp.add_apply, PiLp.smul_apply, smul_eq_mul]
@@ -150,8 +145,11 @@ private theorem mem_closure_apply_eq_zero_pos [Finite ι] {U : Set (EuclideanSpa
   classical
   -- Move off `z` in the direction of the coordinates other than the `i`-th one.
   set v : EuclideanSpace ℝ ι := WithLp.toLp 2 fun k ↦ if k = i then 0 else 1
-  refine mem_closure_of_tendsto (tendsto_add_smul z v) ?_
-  filter_upwards [(tendsto_add_smul z v).eventually (hU.mem_nhds hz), self_mem_nhdsWithin]
+  have hlim : Tendsto (fun t : ℝ ↦ z + t • v) (𝓝[>] 0) (𝓝 z) := by
+    have := Fintype.ofFinite ι
+    exact tendsto_add_smul_nhdsWithin_zero _ z v
+  refine mem_closure_of_tendsto hlim ?_
+  filter_upwards [hlim.eventually (hU.mem_nhds hz), self_mem_nhdsWithin]
     with t ht (ht0 : 0 < t)
   refine ⟨ht, by simp [v, hzi], fun k hk hki ↦ ?_⟩
   have := hzS k hk

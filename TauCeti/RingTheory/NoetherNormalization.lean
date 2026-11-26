@@ -15,6 +15,7 @@ import TauCeti.LinearAlgebra.Matrix.BlockSucc
 import TauCeti.LinearAlgebra.Matrix.LastRowTransvection
 import TauCeti.RingTheory.AlgebraicIndependent.BaseChange
 import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
+import TauCeti.RingTheory.MvPolynomial.Basic
 import TauCeti.RingTheory.MvPolynomial.GenericShear
 import TauCeti.RingTheory.MvPolynomial.LineRestriction
 import TauCeti.RingTheory.TensorProduct.MvPolynomial
@@ -24,10 +25,10 @@ import TauCeti.RingTheory.TensorProduct.MvPolynomial
 
 Over an arbitrary field, Mathlib's `exists_finite_inj_algHom_of_fg` proves Noether normalization via
 Nagata's nonlinear exponential shears `Xⱼ ↦ Xⱼ + X₀ ^ (r ^ j)`. Over an *infinite* field `k`, the
-normalizing parameters can be chosen to be `k`-linear combinations of any prescribed finite tuple
-of generators `x₀, …, xₙ₋₁` of a nontrivial `k`-algebra `A` (`TauCeti.exists_linear_normalization`),
-and in fact as the first `d` entries of an invertible linear change of coordinates `M *ᵥ x`
-(`TauCeti.exists_linear_normalization_units`), where `d` is the Krull dimension of `A`.
+normalizing parameters can be chosen to be `k`-linear combinations of any prescribed finite family
+of generators `x : ι → A` of a nontrivial `k`-algebra `A` (`TauCeti.exists_linear_normalization`),
+and for `x : Fin n → A` as the first `d` entries of an invertible linear change of coordinates
+`M *ᵥ x` (`TauCeti.exists_linear_normalization_units`), where `d` is the Krull dimension of `A`.
 
 The inductive elimination step holds over any commutative ring `R`: if `p(x₀, …, xᵣ) = 0` for a
 polynomial `p` whose top homogeneous part evaluates at `i.insertNth 1 a` to a unit of `R`, then
@@ -60,9 +61,9 @@ nonzero principal localization on which the finite algebra is free
   `TauCeti.exists_linear_normalization_units`: invertible linear change of coordinates whose first
   `d` entries normalize `A`.
 * `TauCeti.exists_linear_normalization_of_finite`: linear Noether normalization for a nontrivial
-  `k`-algebra finite over `k[x₀, …, xₙ₋₁]`.
-* `TauCeti.exists_linear_normalization`: linear Noether normalization in prescribed algebra
-  generators `x : Fin n → A` over an infinite field `k`.
+  `k`-algebra module-finite over `MvPolynomial ι k` via a finite family `x : ι → A`.
+* `TauCeti.exists_linear_normalization`: linear Noether normalization in prescribed finite algebra
+  generators `x : ι → A` over an infinite field `k`.
 * `TauCeti.linear_normalization_tensorProduct_field`: persistence of the normalizing matrix `C`
   under flat base change to a field.
 
@@ -271,27 +272,40 @@ theorem exists_linear_normalization_units [Nontrivial A] {n : ℕ} (x : Fin n �
   refine Subalgebra.sum_mem _ fun i _ ↦ Subalgebra.smul_mem _ ?_ (M⁻¹.val l i)
   exact Algebra.subset_adjoin ⟨i, rfl⟩
 
-/-- **Linear Noether normalization (module-finite form).** Let `k` be an infinite field and
-`A` be a nontrivial `k`-algebra that is module-finite over `k[x₀, …, xₙ₋₁]`. Then there exist
-`d ≤ n` and `C : Matrix (Fin d) (Fin n) k` such that `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` is algebraically
-independent over `k`, makes `A` module-finite over `k[X₀, …, X_{d-1}]`, and satisfies
-`ringKrullDim A = d`. -/
-theorem exists_linear_normalization_of_finite [Nontrivial A] {n : ℕ} (x : Fin n → A)
-    (hx : (aeval (R := k) x).Finite) :
-    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
+/-- **Linear Noether normalization (module-finite form).** Let `k` be an infinite field and `A` be
+a nontrivial `k`-algebra that is module-finite over `MvPolynomial ι k` via `x : ι → A` for a finite
+index type `ι`. Then there exist `d ≤ Fintype.card ι` and a matrix `C : Matrix (Fin d) ι k` such
+that `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` is algebraically independent over `k`, makes `A` module-finite over
+`k[X₀, …, X_{d-1}]`, and satisfies `ringKrullDim A = d`. -/
+theorem exists_linear_normalization_of_finite [Nontrivial A] {ι : Type*} [Fintype ι]
+    (x : ι → A) (hx : (aeval (R := k) x).Finite) :
+    ∃ (d : ℕ) (_ : d ≤ Fintype.card ι) (C : Matrix (Fin d) ι k),
       let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
-  obtain ⟨d, hd, M, hy_ind, hy_fin, hdim⟩ := exists_linear_normalization_units_of_finite x hx
-  exact ⟨d, hd, (M : Matrix (Fin n) (Fin n) k).submatrix (Fin.castLE hd) id, hy_ind, hy_fin, hdim⟩
+  let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
+  obtain ⟨d, hd, M, hy_ind, hy_fin, hdim⟩ :=
+    exists_linear_normalization_units_of_finite (x ∘ e)
+      (hx.aeval_comp_of_surjective e.surjective)
+  refine ⟨d, hd, (M : Matrix _ _ k).submatrix (Fin.castLE hd) e.symm, ?_⟩
+  have hy : (fun i : Fin d ↦
+      ∑ j : ι, (M : Matrix _ _ k).submatrix (Fin.castLE hd) e.symm i j • x j) =
+      fun i : Fin d ↦
+        ∑ j : Fin (Fintype.card ι), (M : Matrix _ _ k) (Fin.castLE hd i) j • x (e j) := by
+    funext i
+    simpa [Function.comp_apply] using
+      (e.symm.sum_comp fun j ↦ (M : Matrix _ _ k) (Fin.castLE hd i) j • x (e j))
+  dsimp only
+  rw [hy]
+  exact ⟨hy_ind, hy_fin, hdim⟩
 
 /-- **Linear Noether normalization in prescribed generators.** Let `k` be an infinite field and `A`
-be a nontrivial `k`-algebra generated by `x : Fin n → A`. Then there exist `d ≤ n` and a matrix
-`C : Matrix (Fin d) (Fin n) k` such that the `k`-linear combinations `yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are
-algebraically independent over `k`, make `A` a finite `k[X₀, …, X_{d-1}]`-module via `Xᵢ ↦ yᵢ`,
-and satisfy `ringKrullDim A = d`. -/
-theorem exists_linear_normalization [Nontrivial A] {n : ℕ} (x : Fin n → A)
-    (hx : Algebra.adjoin k (Set.range x) = ⊤) :
-    ∃ (d : ℕ) (_ : d ≤ n) (C : Matrix (Fin d) (Fin n) k),
+be a nontrivial `k`-algebra generated by a finite family `x : ι → A`. Then there exist
+`d ≤ Fintype.card ι` and a matrix `C : Matrix (Fin d) ι k` such that the `k`-linear combinations
+`yᵢ = ∑ⱼ Cᵢⱼ • xⱼ` are algebraically independent over `k`, make `A` module-finite over
+`k[X₀, …, X_{d-1}]` via `Xᵢ ↦ yᵢ`, and satisfy `ringKrullDim A = d`. -/
+theorem exists_linear_normalization [Nontrivial A] {ι : Type*} [Fintype ι]
+    (x : ι → A) (hx : Algebra.adjoin k (Set.range x) = ⊤) :
+    ∃ (d : ℕ) (_ : d ≤ Fintype.card ι) (C : Matrix (Fin d) ι k),
       let y : Fin d → A := fun i ↦ ∑ j, C i j • x j
       AlgebraicIndependent k y ∧ (aeval (R := k) y).Finite ∧ ringKrullDim A = d := by
   have hsurj : Function.Surjective (aeval (R := k) x) := by
