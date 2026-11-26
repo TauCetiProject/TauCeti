@@ -32,6 +32,7 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 ## Main declarations
 
 * `Unitization.mul_inr`: `A` is a left ideal of `Unitization R A`.
+* `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
 * `Unitization.map`: the unital algebra homomorphism induced on forced unitizations.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
@@ -61,6 +62,11 @@ namespace Unitization
 theorem mul_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring A]
     [SMulWithZero R A] (x : Unitization R A) (a : A) : x * inr a = inr (x.fst • a + x.snd * a) :=
   Unitization.ext (by simp) (by simp)
+
+/-- An element of the unitization with scalar part `0` is the image of its `A`-part. -/
+theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
+    (inr w.snd : Unitization R A) = w :=
+  Unitization.ext (by simp [h]) rfl
 
 section Map
 
