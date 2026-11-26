@@ -54,20 +54,29 @@ Under the Morse–Smale condition and on countably many levels:
   trajectory is a limit of unbroken ones
   (`IsMorseSmale.morseBrokenTrajectoryRecords_subset_closure`).
 
-In index difference at most two, the boundary is understood:
+With the unbroken trajectories as the interiors `N x y`, the facts above are the
+hypotheses `hj`, `hιj`, `hU` and `hUι` of
+`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for the trajectory
+spaces, and `hUA` follows from the injectivity of concatenation. Of its other hypotheses, the
+charts on the unbroken trajectories hold in every index difference
+(`IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`, in
+`TauCeti.Geometry.Manifold.Morse.Stable.Broken.Boundary`), and the charts on the boundary and its
+collar are understood in index difference at most two. There:
 
-* it is empty when `ind x ≤ ind y + 1`
+* the boundary is empty when `ind x ≤ ind y + 1`
   (`IsMorseSmale.morseBrokenTrajectorySpaceBoundary_eq_empty`), since a broken trajectory passes
   through a critical point of intermediate index;
 * when `ind x ≤ ind y + 2`, every broken trajectory breaks once, into two unbroken trajectories
   (`IsMorseSmale.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two`), and the boundary is
-  discrete (`IsMorseSmale.discreteTopology_morseBrokenTrajectorySpaceBoundary`).
+  discrete (`IsMorseSmale.discreteTopology_morseBrokenTrajectorySpaceBoundary`);
+* the boundary is collared in index difference two
+  (`IsMorseSmale.isCollared_morseBrokenTrajectorySpaceBoundary`, in
+  `TauCeti.Geometry.Manifold.Morse.Stable.Broken.Collar`).
 
-With the unbroken trajectories as the interiors `N x y`, these are the hypotheses `hj`, `hιj`,
-`hU` and `hUι` of `TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for
-the trajectory spaces, and `hUA` follows from the injectivity of concatenation. Of its other
-hypotheses, the manifold structure and the collar of the boundary near the deeper strata come from
-the gluing of broken trajectories and are not proved here.
+`TauCeti.Geometry.Manifold.Morse.Stable.Broken.Representing` puts these together into
+representing chain systems in index difference at most two. In larger index differences, the
+charts and the collar of the boundary near the deeper strata come from the gluing of trajectories
+broken several times and are not proved here.
 
 ## Main results
 
