@@ -116,35 +116,6 @@ variable {k : Type*} {Ω : Type v} [Field k] [Field Ω] [Algebra k Ω] [IsAlgClo
 
 namespace TauCeti.IsAlgClosed
 
-private theorem algHom_injective_of_isAlgebraic {A E Ω : Type*} [CommRing A] [CommRing E]
-    [IsDomain E] [Algebra A E] [Algebra.IsAlgebraic A E] [Field Ω] [Algebra A Ω]
-    (φ : E →ₐ[A] Ω) (hA : Function.Injective (algebraMap A Ω)) : Function.Injective φ := by
-  have : Nontrivial A := RingHom.domain_nontrivial (algebraMap A Ω)
-  refine (injective_iff_map_eq_zero φ).2 fun x hx ↦ ?_
-  obtain ⟨p, hp0, hpx⟩ := Algebra.IsAlgebraic.isAlgebraic (R := A) x
-  suffices ∀ (n : ℕ) (q : Polynomial A), q.natDegree = n → q ≠ 0 →
-      Polynomial.aeval x q = 0 → x = 0 from this p.natDegree p rfl hp0 hpx
-  intro n
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-    intro q hdeg hq0 hqx
-    by_cases hc0 : q.coeff 0 = 0
-    · obtain ⟨r, rfl⟩ := Polynomial.X_dvd_iff.2 hc0
-      have hr0 : r ≠ 0 := right_ne_zero_of_mul hq0
-      have hrdeg : r.natDegree < n := by
-        rw [← hdeg, Polynomial.natDegree_X_mul hr0]; exact Nat.lt_succ_self _
-      have hxr : x = 0 ∨ Polynomial.aeval x r = 0 := by
-        simpa [map_mul, Polynomial.aeval_X] using hqx
-      rcases hxr with hx0 | hrx
-      · exact hx0
-      · exact ih r.natDegree hrdeg r rfl hr0 hrx
-    · have h0 : algebraMap A Ω (q.coeff 0) = 0 := by
-        have h1 := congrArg φ hqx
-        rw [map_zero, ← Polynomial.aeval_algHom_apply, hx, Polynomial.aeval_def,
-          Polynomial.eval₂_at_zero] at h1
-        exact h1
-      exact absurd (hA (h0.trans (map_zero _).symm)) hc0
-
 /-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
 field `Ω` embeds over `R` into `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
 theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : Type v}
@@ -168,12 +139,13 @@ theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : 
       rw [heq]
       exact algebraicIndependent_iff_injective_aeval.1 hw
     exact (Function.Injective.of_comp_iff' _ hs.1.aevalEquiv.bijective).1 hcomp
-  let : Algebra A Ω := (φ.comp A.val).toRingHom.toAlgebra
+  algebraize [φ.toRingHom]
   have := hs.isAlgebraic
-  let φA : E →ₐ[A] Ω :=
-    { φ.toRingHom with commutes' := fun a ↦ by simp [RingHom.algebraMap_toAlgebra] }
-  exact ⟨φ, algHom_injective_of_isAlgebraic φA
-    (by simpa [RingHom.algebraMap_toAlgebra] using hA_inj)⟩
+  have hinj : Function.Injective (algebraMap E Ω) :=
+    Algebra.IsAlgebraic.injective_tower_top E (R := ↥A) fun a b hab ↦ hA_inj <| by
+      simpa [IsScalarTower.algebraMap_apply (↥A) E Ω, RingHom.algebraMap_toAlgebra] using hab
+  exact ⟨φ, by
+    simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hinj⟩
 
 /-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
 field `Ω` maps over `R` to `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/

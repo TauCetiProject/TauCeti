@@ -7,9 +7,9 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.RingTheory.AlgebraicIndependent.Transcendental
-import Mathlib.Algebra.FreeAlgebra.Cardinality
 import Mathlib.RingTheory.Algebraic.Cardinality
 import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
+import Mathlib.RingTheory.AlgebraicIndependent.RankAndCardinality
 
 /-!
 # Transcendence bases and transcendence degree in towers
@@ -136,28 +136,34 @@ theorem nonempty_equiv_of_lift_trdeg_eq (hv : IsTranscendenceBasis R v)
 /-- A transcendence basis of an uncountable integral domain `E` over a countable commutative ring
 `R` has the same cardinality as `E`. This generalizes Mathlib's
 `IsAlgClosed.cardinal_eq_cardinal_transcendence_basis_of_aleph0_lt` from algebraically closed
-fields to arbitrary integral domains, combining `Algebra.IsAlgebraic.cardinalMk_le_max` with
-`Algebra.lift_cardinalMk_adjoin_le` (cf. `IsTranscendenceBasis.lift_cardinalMk_eq_max_lift`). -/
+fields to arbitrary integral domains via `IsTranscendenceBasis.lift_cardinalMk_eq_max_lift`,
+ruling out an empty basis with `IsTranscendenceBasis.isEmpty_iff_isAlgebraic` and
+`Algebra.IsAlgebraic.lift_cardinalMk_le_max`. -/
 theorem cardinalMk_eq_of_aleph0_lt {R : Type u} {E : Type v} {ι : Type w} [CommRing R]
     [Countable R] [CommRing E] [IsDomain E] [Algebra R E] {x : ι → E}
     (hx : IsTranscendenceBasis R x) (hE : ℵ₀ < #E) :
     Cardinal.lift.{v} #ι = Cardinal.lift.{w} #E := by
   have : Nontrivial R := RingHom.domain_nontrivial (algebraMap R E)
-  have := hx.isAlgebraic
-  have hle : Cardinal.lift.{u} #E ≤ Cardinal.lift.{u} #(Set.range x) ⊔ ℵ₀ := by
-    have h1 : Cardinal.lift.{u} #E ≤ Cardinal.lift.{u} #(Algebra.adjoin R (Set.range x)) ⊔ ℵ₀ := by
-      simpa [lift_max] using lift_le.{u}.2
-        (Algebra.IsAlgebraic.cardinalMk_le_max (Algebra.adjoin R (Set.range x)) E)
-    have h2 := Algebra.lift_cardinalMk_adjoin_le (R := R) (Set.range x)
-    have hR : Cardinal.lift.{v} #R ≤ ℵ₀ := by simp
-    exact h1.trans (sup_le (h2.trans (sup_le (sup_le (hR.trans le_sup_right) le_sup_left)
-      le_sup_right)) le_sup_right)
-  have hEq : #(Set.range x) = #E := by
-    rcases le_sup_iff.1 hle with h | h
-    · exact le_antisymm (mk_set_le (Set.range x)) (lift_le.1 h)
-    · exact (not_le_of_gt (aleph0_lt_lift.2 hE) h).elim
-  rw [← hEq]
-  exact Cardinal.lift_mk_eq'.2 ⟨Equiv.ofInjective x hx.1.injective⟩
+  have : Nonempty ι := by
+    by_contra hne
+    rw [not_nonempty_iff] at hne
+    have : Algebra.IsAlgebraic R E := hx.isEmpty_iff_isAlgebraic.1 hne
+    have hinj : Function.Injective (algebraMap R E) := fun a b hab ↦
+      MvPolynomial.C_injective ι R (algebraicIndependent_iff_injective_aeval.1 hx.1
+        (by simpa using hab))
+    have : IsDomain R := hinj.isDomain (algebraMap R E)
+    have : Module.IsTorsionFree R E := Module.isTorsionFree_iff_algebraMap_injective.2 hinj
+    have hle : lift.{u} #E ≤ ℵ₀ :=
+      (Algebra.IsAlgebraic.lift_cardinalMk_le_max R E).trans (sup_le (by simp) le_rfl)
+    exact not_le_of_gt (aleph0_lt_lift.2 hE) hle
+  have h := hx.lift_cardinalMk_eq_max_lift
+  have hE' : ℵ₀ < lift.{max u w} #E := aleph0_lt_lift.2 hE
+  have hι : ℵ₀ < lift.{max u v} #ι := by
+    by_contra hle
+    exact not_le_of_gt hE' (h.le.trans (sup_le (sup_le (by simp) (le_of_not_gt hle)) le_rfl))
+  have hR : lift.{max v w} #R ≤ lift.{max u v} #ι := le_trans (by simp) hι.le
+  rw [sup_eq_right.2 hR, sup_eq_left.2 hι.le] at h
+  exact Cardinal.lift_injective.{u, max v w} (by simpa using h.symm)
 
 end IsTranscendenceBasis
 
