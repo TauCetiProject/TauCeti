@@ -45,11 +45,12 @@ constant. Hence:
   (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_zero_iff`);
 * the `J₀`-holomorphic spheres with component degrees `(1, 0)`, the class `A`, are exactly the
   maps `z ↦ (g • z, w)` for a Möbius transformation `g` and a point `w`
-  (`TauCeti.degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff`), and those of class `B` are
-  exactly the maps `z ↦ (w, g • z)`
-  (`TauCeti.degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff`);
+  (`TauCeti.degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff_exists_smul`), and those of
+  class `B` are exactly the maps `z ↦ (w, g • z)`
+  (`TauCeti.degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff_exists_smul`);
 * for equal areas `a = b ≠ 0`, the `J₀`-holomorphic spheres of area `a` are exactly the spheres
-  of these two forms (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff`).
+  of these two forms
+  (`TauCeti.integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff_exists_smul_or_exists_smul`).
 
 The maps `z ↦ (g • z, w)` and `z ↦ (w, g • z)` are themselves smooth and pseudoholomorphic
 (`TauCeti.contMDiff_smul_prodMk_const`, `TauCeti.isPseudoholomorphic_smul_prodMk_const`,
@@ -130,7 +131,7 @@ compact oriented boundaryless surface to `S² × S²` with the split form
 `pr₁^*(a • ω_FS) + pr₂^*(a • ω_FS)`, a positive area is at least `a`, whatever the sign of `a`:
 it is a positive integer multiple of `a`. For `a > 0` the bound is attained by the spheres of the
 ruling classes `[S² × pt]` and `[pt × S²]`
-(`integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff`, with
+(`integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff_exists_smul_or_exists_smul`, with
 `isPseudoholomorphic_smul_prodMk_const` and `isPseudoholomorphic_const_prodMk_smul`), so it is
 then the minimum positive area. -/
 theorem le_integralTopForm_mpullback_prod_smul_fubiniStudyForm {a : ℝ}
@@ -171,7 +172,7 @@ private theorem mdifferentiable_snd_comp :
 /-- **The spheres of class `A`.** A map `u : S² → S² × S²`, pseudoholomorphic for the product
 of the complex structures of the two factors, has component degrees `(1, 0)` exactly when
 it is `z ↦ (g • z, w)` for a Möbius transformation `g` and a point `w`. -/
-theorem degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff :
+theorem degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff_exists_smul :
     degree ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
@@ -196,7 +197,7 @@ theorem degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff :
 /-- **The spheres of class `B`.** A map `u : S² → S² × S²`, pseudoholomorphic for the product
 of the complex structures of the two factors, has component degrees `(0, 1)` exactly when
 it is `z ↦ (w, g • z)` for a point `w` and a Möbius transformation `g`. -/
-theorem degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff :
+theorem degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff_exists_smul :
     degree ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
@@ -294,15 +295,16 @@ smooth map `u : S² → S² × S²`, pseudoholomorphic for the product of the co
 two factors, has area `a` for the split form `pr₁^*(a • ω_FS) + pr₂^*(a • ω_FS)` exactly when it
 is `z ↦ (g • z, w)` or `z ↦ (w, g • z)` for a Möbius transformation `g` and a point `w`: a sphere
 of one of the two ruling classes. -/
-theorem integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff {a : ℝ} (ha : a ≠ 0) :
+theorem integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_iff_exists_smul_or_exists_smul
+    {a : ℝ} (ha : a ≠ 0) :
     integralTopForm ((complexManifoldOrientation ℂ (OnePoint ℂ)).reindex
         (finCongr ((finrank_real_of_complex ℂ).symm.trans Complex.finrank_real_complex)))
       (SmoothForm.mpullback u hu
         ((a • OnePoint.fubiniStudyForm).prod (a • OnePoint.fubiniStudyForm))).val = a ↔
       (∃ (g : GL (Fin 2) ℂ) (w : OnePoint ℂ), u = fun z ↦ (g • z, w)) ∨
         ∃ (w : OnePoint ℂ) (g : GL (Fin 2) ℂ), u = fun z ↦ (w, g • z) := by
-  rw [← degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff hhol,
-    ← degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff hhol,
+  rw [← degree_fst_comp_eq_one_and_degree_snd_comp_eq_zero_iff_exists_smul hhol,
+    ← degree_fst_comp_eq_zero_and_degree_snd_comp_eq_one_iff_exists_smul hhol,
     integralTopForm_mpullback_prod_smul_fubiniStudyForm_eq_degree_mul_add_degree_mul _ hu a a,
     ← add_mul, mul_eq_right₀ ha]
   have hm := (mdifferentiable_fst_comp hhol).degree_reindex_complexManifoldOrientation_nonneg
