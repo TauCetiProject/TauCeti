@@ -253,14 +253,20 @@ private theorem mk_lineLiftUnit (y : Fin 2 → I) :
 
 /-! ### The class of the coordinate line -/
 
+/-- The base point `affineParam 1 0` of the coordinate line is the base point `[e₁]` of
+`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`. -/
+private theorem id_affineParam_one_zero :
+    ContinuousMap.id (ComplexProjectiveSpace (n + 1)) (affineParam 1 0) =
+      mk (n + 1) (affineUnitVector 1 0) :=
+  (ContinuousMap.id_apply _).trans (affineParam_def 1 0)
+
 /-- The class of the coordinate line `lineSquare n` in `π₂(CPⁿ⁺¹)` at the base point
 `[e₁] = mk (n + 1) (affineUnitVector 1 0)` of `TauCeti.ComplexProjectiveSpace.pi2MulEquivInt`,
 carried there by `HomotopyGroup.map` of the identity from its own base point `affineParam 1 0`,
 which is the same point (`affineParam_def`). -/
 def lineClass :
     HomotopyGroup (Fin 2) (ComplexProjectiveSpace (n + 1)) (mk (n + 1) (affineUnitVector 1 0)) :=
-  HomotopyGroup.map (ContinuousMap.id _) ((ContinuousMap.id_apply _).trans (affineParam_def 1 0))
-    ⟦lineSquare n⟧
+  HomotopyGroup.map (ContinuousMap.id _) (id_affineParam_one_zero n) ⟦lineSquare n⟧
 
 /-- `lineClass n` is the class of `lineSquare n` carried to `[e₁]` by `HomotopyGroup.map` of the
 identity. -/
@@ -268,6 +274,19 @@ theorem lineClass_def :
     lineClass n = HomotopyGroup.map (ContinuousMap.id _)
       ((ContinuousMap.id_apply _).trans (affineParam_def 1 0)) ⟦lineSquare n⟧ :=
   (rfl)
+
+/-- The coordinate line carried to `[e₁]`, with its cube reindexed along `finSuccEquiv 1` so that
+the homotopy parameter of the boundary map comes first. -/
+private def lineGenLoop :
+    GenLoop (Option (Fin 1)) (ComplexProjectiveSpace (n + 1)) (mk (n + 1) (affineUnitVector 1 0)) :=
+  GenLoop.congr (mk (n + 1) (affineUnitVector 1 0)) (finSuccEquiv 1)
+    (GenLoop.map (ContinuousMap.id _) (id_affineParam_one_zero n) (lineSquare n))
+
+/-- Reindexing the cube along `finSuccEquiv 1` sends `lineClass n` to the class of
+`lineGenLoop n`. -/
+private theorem congrEquiv_lineClass :
+    HomotopyGroup.congrEquiv (finSuccEquiv 1) (lineClass n) = ⟦lineGenLoop n⟧ := by
+  rw [lineClass_def, HomotopyGroup.map_mk, HomotopyGroup.congrEquiv_mk, lineGenLoop]
 
 /-! ### The boundary of the coordinate line -/
 
@@ -287,10 +306,10 @@ private theorem comp_finSuccEquiv_piOptionEquivProdHomeomorph_symm (p : I × (Fi
       squarePoint p := by
   funext m
   refine Fin.cases ?_ (fun j ↦ ?_) m
-  · rw [finSuccEquiv_zero, piOptionEquivProdHomeomorph_symm_apply_none]
-    rfl
-  · rw [finSuccEquiv_succ, Subsingleton.elim j 0, piOptionEquivProdHomeomorph_symm_apply_some]
-    rfl
+  · rw [finSuccEquiv_zero, piOptionEquivProdHomeomorph_symm_apply_none, squarePoint,
+      Matrix.cons_val_zero]
+  · rw [finSuccEquiv_succ, Subsingleton.elim j 0, piOptionEquivProdHomeomorph_symm_apply_some,
+      squarePoint, Matrix.cons_val_succ, Matrix.cons_val_zero]
 
 /-- **The lift of the coordinate line through the Hopf fibration**: the lift `lineLiftUnit`
 rotated by the phase, so that it starts at `e₁` and stays there over the boundary of the cube. -/
@@ -328,12 +347,9 @@ private theorem lineLift_of_isPhaseEdge {p : I × (Fin 1 → I)} (hp : IsPhaseEd
 /-- `lineLift` is a boundary lift of the coordinate line, read in `I^(Option (Fin 1))`. -/
 private theorem isBoundaryLift_lineLift :
     TopCat.IsBoundaryLift (hopfHom (n + 1)) ⟨affineUnitVector 1 0, rfl⟩
-      (GenLoop.congr (mk (n + 1) (affineUnitVector 1 0)) (finSuccEquiv 1)
-        (GenLoop.map (ContinuousMap.id _) ((ContinuousMap.id_apply _).trans (affineParam_def 1 0))
-          (lineSquare n)))
-      (lineLift n) where
+      (lineGenLoop n) (lineLift n) where
   proj_apply p := by
-    rw [GenLoop.congr_apply, GenLoop.map_apply, ContinuousMap.id_apply,
+    rw [lineGenLoop, GenLoop.congr_apply, GenLoop.map_apply, ContinuousMap.id_apply,
       comp_finSuccEquiv_piOptionEquivProdHomeomorph_symm]
     exact (mk_circle_smul _ _ _).trans (mk_lineLiftUnit n _)
   apply_zero t := lineLift_of_isPhaseEdge n (.inl rfl)
@@ -396,16 +412,9 @@ private theorem hopfBoundary_lineSquare :
         (HomotopyGroup.congrEquiv (finSuccEquiv 1) (lineClass n)) =
       HomotopyGroup.map ⟨Circle.homeomorphSphere, Homeomorph.continuous _⟩ (by ext; simp)
         ⟦(genLoopEquivOfUnique (Fin 1)).symm rightEdgeLoop⟧ := by
-  -- Reindexing the cube puts the homotopy parameter of `lineLift` first.
-  have hγ : HomotopyGroup.congrEquiv (finSuccEquiv 1) (lineClass n) =
-      (⟦GenLoop.congr (mk (n + 1) (affineUnitVector 1 0)) (finSuccEquiv 1)
-        (GenLoop.map (ContinuousMap.id _) ((ContinuousMap.id_apply _).trans (affineParam_def 1 0))
-          (lineSquare n))⟧ :
-        HomotopyGroup (Option (Fin 1)) (ComplexProjectiveSpace (n + 1))
-          (mk (n + 1) (affineUnitVector 1 0))) := by
-    rw [lineClass_def, HomotopyGroup.map_mk, HomotopyGroup.congrEquiv_mk]
-  -- The boundary is the class of the end of the boundary lift `lineLift`.
-  refine (congrArg _ hγ).trans <| (hopfBoundary_apply _ _).trans <|
+  -- Reindexing the cube puts the homotopy parameter of `lineLift` first; the boundary is the
+  -- class of the end of the boundary lift `lineLift`.
+  refine (congrArg _ (congrEquiv_lineClass n)).trans <| (hopfBoundary_apply _ _).trans <|
     (congrArg _ (TopCat.fibrationBoundary_mk (mk_mem_serreFibrations (n + 1))
       (isBoundaryLift_lineLift n))).trans <|
     (HomotopyGroup.homeomorphEquivOfEq_apply _ _ _).trans <|
