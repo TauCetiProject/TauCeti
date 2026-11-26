@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Gibbs.Dimer.Basic
-public import TauCeti.Probability.Gibbs.Specification
+public import TauCeti.Probability.Gibbs.Closed
 import TauCeti.MeasureTheory.Constructions.Cylinder.Events
+import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # The dimer specification
@@ -34,6 +35,18 @@ Boltzmann laws `γ^w_F(· | ω)` (`SimpleGraph.dimerBoltzmann`), restricted to `
 
 The specification does not change under a gauge transformation of the weight
 (`SimpleGraph.dimerSpecification_gaugeWeight`).
+
+**Quasilocality.** For dimer configurations `ω₁`, `ω₂` agreeing on the edges outside `F` that
+share a vertex with an edge of `F`, and on the edges of a finite set `s` outside `F`, the laws
+`γ^w_F(· | ω₁)` and `γ^w_F(· | ω₂)` give every cylinder event over `s` the same mass
+(`SimpleGraph.dimerBoltzmann_cylinder_congr`): the completion sets of `ω₁` and `ω₂` have the same
+restrictions to `F`, and the weights only see `F`. As a locally finite graph has only finitely
+many edges sharing a vertex with an edge of `F`
+(`SimpleGraph.finite_setOf_exists_mem_and_mem`), the mass of a cylinder event is a locally
+constant function of `ω`, so `γ^w` is quasilocal (`SimpleGraph.isQuasilocal_dimerSpecification`).
+Hence its Gibbs measures and its invariant Gibbs measures form weakly compact sets
+(`SimpleGraph.isCompact_setOf_isGibbs_dimerSpecification`,
+`SimpleGraph.isCompact_setOf_mem_gibbsInvariant_dimerSpecification`).
 
 ## References
 
@@ -201,6 +214,88 @@ theorem dimerSpecification_gaugeWeight {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < 
     dimerSpecification Γ hΓ (gaugeWeight_pos hw hg) = dimerSpecification Γ hΓ hw := by
   ext F ω A _
   simp only [dimerSpecification_kernel, dimerKernel_apply, dimerBoltzmann_gaugeWeight w hg]
+
+/-! ### Quasilocality -/
+
+omit [G.LocallyFinite] [Countable G.edgeSet] in
+/-- **Locality of the Boltzmann law.** For dimer configurations `ω₁`, `ω₂` agreeing on the edges
+outside `F` that share a vertex with an edge of `F`, and on the edges of `s` outside `F`, the laws
+`γ^w_F(· | ω₁)` and `γ^w_F(· | ω₂)` give every cylinder event over `s` the same mass. -/
+theorem dimerBoltzmann_cylinder_congr (w : G.edgeSet → ℝ) (F s : Finset G.edgeSet)
+    {t : Set (s → Bool)} (ht : MeasurableSet t) {ω₁ ω₂ : G.edgeSet → Bool}
+    (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
+    (hF : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e)
+    (hs : ∀ e ∈ s, e ∉ F → ω₁ e = ω₂ e) :
+    G.dimerBoltzmann w F ω₁ (cylinder s t) = G.dimerBoltzmann w F ω₂ (cylinder s t) := by
+  classical
+  have hD (η : F → Bool) : G.IsDimerConfiguration (updateFinset ω₁ F η) ↔
+      G.IsDimerConfiguration (updateFinset ω₂ F η) := by
+    rw [isDimerConfiguration_updateFinset_iff, isDimerConfiguration_updateFinset_iff,
+      image_restrict_dimerCompletionSet_eq h₁ h₂ hF]
+  have hW (η : F → Bool) :
+      G.dimerWeight w F (updateFinset ω₁ F η) = G.dimerWeight w F (updateFinset ω₂ F η) :=
+    dimerWeight_congr w fun e he => by
+      rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
+  have hZ : G.dimerPartitionFunction w F ω₁ = G.dimerPartitionFunction w F ω₂ := by
+    rw [dimerPartitionFunction_eq_sum_updateFinset, dimerPartitionFunction_eq_sum_updateFinset]
+    exact Finset.sum_congr (Finset.filter_congr fun η _ => hD η) fun η _ => hW η
+  have hC (η : F → Bool) :
+      s.restrict (updateFinset ω₁ F η) = s.restrict (updateFinset ω₂ F η) := by
+    funext ⟨e, he⟩
+    by_cases heF : e ∈ F
+    · simp only [Finset.restrict_def, updateFinset_apply_of_mem heF]
+    · simp only [Finset.restrict_def, updateFinset_apply_of_notMem heF, hs e he heF]
+  rw [dimerBoltzmann_apply_eq_sum_updateFinset w F ω₁ (.cylinder s ht),
+    dimerBoltzmann_apply_eq_sum_updateFinset w F ω₂ (.cylinder s ht)]
+  refine Finset.sum_congr (Finset.filter_congr fun η _ => hD η) fun η _ => ?_
+  simp only [indicator_apply, mem_cylinder, hC η, hW η, hZ]
+
+variable (Γ hΓ) in
+/-- The mass of a set under `γ^w_F(· | ω)` on `𝔛(G)` is the Boltzmann mass of the set of
+configurations it is the trace of. -/
+theorem dimerKernel_apply_preimage_val (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+    (ω : G.dimerSubshift Γ hΓ) (A : Set (G.edgeSet → Bool)) :
+    dimerKernel Γ hΓ w F ω (Subtype.val ⁻¹' A) = G.dimerBoltzmann w F ω.val A := by
+  rw [dimerKernel_apply, image_preimage_eq_inter_range, Subtype.range_coe_subtype,
+    measure_inter_conull]
+  simpa [compl_ofPred] using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω.val
+
+variable (Γ hΓ) in
+/-- **The dimer specification is quasilocal.** The mass `γ^w_F(C | ω)` of a cylinder event `C`
+depends on `ω` only through the finitely many edges of `C` and the edges sharing a vertex with an
+edge of `F`, so it is a locally constant, hence continuous, function of `ω`. -/
+theorem isQuasilocal_dimerSpecification {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
+    (dimerSpecification Γ hΓ hw).IsQuasilocal := by
+  refine TauCeti.Specification.isQuasilocal_iff.2 fun F s t ht => ?_
+  simp_rw [dimerSpecification_kernel, dimerKernel_apply_preimage_val]
+  refine IsLocallyConstant.continuous ((IsLocallyConstant.iff_eventually_eq _).2 fun ω => ?_)
+  have hE := (G.finite_setOf_exists_mem_and_mem F).union s.finite_toSet
+  have hev : ∀ e ∈ {e : G.edgeSet | ∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)} ∪ ↑s,
+      ∀ᶠ ω' : G.dimerSubshift Γ hΓ in nhds ω, ω'.val e = ω.val e := fun e _ => by
+    have hc : Continuous fun ω' : G.dimerSubshift Γ hΓ => ω'.val e :=
+      (continuous_apply e).comp continuous_subtypeVal
+    simpa using hc.continuousAt.eventually_mem ((isOpen_discrete {ω.val e}).mem_nhds rfl)
+  filter_upwards [(Filter.eventually_all_finite hE).2 hev] with ω' hω'
+  exact dimerBoltzmann_cylinder_congr w F s ht (mem_dimerSubshift.1 ω'.property)
+    (mem_dimerSubshift.1 ω.property) (fun e _ he => hω' e (Or.inl he))
+    fun e he _ => hω' e (Or.inr he)
+
+variable (Γ hΓ) in
+/-- The Gibbs probability measures of the dimer specification form a weakly compact set. -/
+theorem isCompact_setOf_isGibbs_dimerSpecification {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
+    IsCompact {μ : ProbabilityMeasure (G.dimerSubshift Γ hΓ) |
+      (dimerSpecification Γ hΓ hw).IsGibbs (μ : Measure (G.dimerSubshift Γ hΓ))} :=
+  TauCeti.Specification.isCompact_setOf_isGibbs (isQuasilocal_dimerSpecification Γ hΓ hw)
+
+variable (Γ hΓ) in
+/-- The invariant Gibbs probability measures of the dimer specification form a weakly compact
+set. -/
+theorem isCompact_setOf_mem_gibbsInvariant_dimerSpecification {w : G.edgeSet → ℝ}
+    (hw : ∀ e, 0 < w e) :
+    IsCompact {μ : ProbabilityMeasure (G.dimerSubshift Γ hΓ) |
+      (μ : Measure (G.dimerSubshift Γ hΓ)) ∈ (dimerSpecification Γ hΓ hw).gibbsInvariant} :=
+  TauCeti.Specification.isCompact_setOf_mem_gibbsInvariant
+    (isQuasilocal_dimerSpecification Γ hΓ hw)
 
 end Specification
 
