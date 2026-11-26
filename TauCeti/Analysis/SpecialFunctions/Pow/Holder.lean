@@ -26,7 +26,8 @@ The signed powers `|x|^β sgn(x)^j` are `β`-Hölder on all of `ℝ` with consta
 of the cusp `|x| ^ β` (`TauCeti.holderWith_norm_rpow`), and across it both values are at most
 `|x - y|^β` in absolute value (`TauCeti.abs_abs_rpow_mul_sign_pow_le`, in
 `TauCeti.Analysis.SpecialFunctions.Pow.PowSign`). For `j = 1` this is the odd power
-`sign(x) |x| ^ β`, the derivative of `|x| ^ (β + 1) / (β + 1)`, which is therefore `C^{1,β}`.
+`sign(x) |x| ^ β`. When `0 < β ≤ 1` it is the derivative of `|x| ^ (β + 1) / (β + 1)`, which is
+therefore `C^{1,β}`; at `β = 0` that primitive is `|x|`, which is not differentiable at `0`.
 -/
 
 public section

@@ -34,8 +34,8 @@ so that `D^j |x|^p = p (p - 1) ⋯ (p - j + 1) |x|^(p - j) sgn(x)^j` for `j < p`
 (`TauCeti.iteratedDeriv_abs_rpow`). Away from the origin the sign is locally constant
 (`Real.eventually_sign_eq_nhds`), and the signed power is at most `|x|^r` in absolute value
 (`TauCeti.abs_abs_rpow_mul_sign_pow_le`, in `TauCeti.Analysis.SpecialFunctions.Pow.PowSign`).
-Mathlib's derivative `p |x| ^ (p - 2) x` of `|x| ^ p` (`hasDerivAt_abs_rpow`) is the signed power
-`p |x| ^ (p - 1) sgn(x)` (`Real.abs_rpow_sub_two_mul_eq_mul_sign`, ibid.).
+For `p > 1`, Mathlib's derivative `p |x| ^ (p - 2) x` of `|x| ^ p` (`hasDerivAt_abs_rpow`) is the
+signed power `p |x| ^ (p - 1) sgn(x)` (`Real.abs_rpow_sub_two_mul_eq_mul_sign`, ibid.).
 
 For `0 < β ≤ 1` the `k`-th derivative of `|x| ^ (k + β)` is `β`-Hölder on the whole line, with an
 explicit constant (`TauCeti.holderWith_iteratedFDeriv_abs_rpow`). For `p > k` the `k`-th derivative

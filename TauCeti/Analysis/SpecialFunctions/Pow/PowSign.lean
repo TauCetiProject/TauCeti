@@ -20,9 +20,10 @@ is `sgn(c) |c| ^ w`: it keeps the direction of `c` and replaces its length by th
 Thorin's analytic family `sgn(f) |f| ^ w` through `f`, used to prove the Riesz–Thorin theorem.
 
 On the real line the signed powers `|x|^r sgn(x)^j` are at most `|x|^r` in absolute value
-(`TauCeti.abs_abs_rpow_mul_sign_pow_le`), and Mathlib's derivative `p |x| ^ (p - 2) x` of
-`|x| ^ p` (`hasDerivAt_abs_rpow`) is the signed power `p |x| ^ (p - 1) sgn(x)`
-(`Real.abs_rpow_sub_two_mul_eq_mul_sign`).
+(`TauCeti.abs_abs_rpow_mul_sign_pow_le`). For all real `r` and `x`,
+`|x| ^ (r - 2) x = |x| ^ (r - 1) sgn(x)` (`Real.abs_rpow_sub_two_mul_eq_mul_sign`). For `p > 1`,
+where `|x| ^ p` is differentiable everywhere, this turns Mathlib's derivative `p |x| ^ (p - 2) x`
+of `|x| ^ p` (`hasDerivAt_abs_rpow`) into the signed power `p |x| ^ (p - 1) sgn(x)`.
 -/
 
 public section
@@ -31,7 +32,9 @@ open Complex
 
 namespace Real
 
-/-- Mathlib's derivative `|x|^(r - 2) x` of `|x|^r / r` is the signed power `|x|^(r - 1) sgn(x)`. -/
+/-- The identity `|x|^(r - 2) x = |x|^(r - 1) sgn(x)`, for all real `r` and `x`. For `r > 1` it
+rewrites Mathlib's derivative `|x|^(r - 2) x` of `|x|^r / r` (`hasDerivAt_abs_rpow`) as a signed
+power. -/
 theorem abs_rpow_sub_two_mul_eq_mul_sign (r x : ℝ) :
     |x| ^ (r - 2) * x = |x| ^ (r - 1) * sign x := by
   rcases eq_or_ne x 0 with rfl | hx
