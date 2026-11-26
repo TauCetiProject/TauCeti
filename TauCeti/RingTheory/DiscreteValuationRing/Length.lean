@@ -129,8 +129,9 @@ theorem exists_matrix_span_range_row_eq {ι : Type*} [Finite ι] (R : Submodule 
   have hrow : (Matrix.of fun i ↦ (b i : ι → O)).row = R.subtype ∘ b := by
     ext i j
     simp [Matrix.row_apply]
-  rw [hrow, Set.range_comp, Submodule.span_image, b.span_eq, Submodule.map_top,
-    Submodule.range_subtype]
+  -- The rows are the basis vectors `b i`, which span `R`.
+  rw [hrow, Set.range_comp, Submodule.span_image, b.span_eq]
+  simp
 
 /-- An ideal containing `x` has colength at most the valuation of `x`. -/
 theorem length_quotient_le_addVal {J : Ideal O} {x : O} (hx : x ∈ J) :
@@ -144,8 +145,7 @@ theorem length_quotient_le_of_pow_mul_mem {ϖ : O} (hϖ : Irreducible ϖ) {J : I
     {u : O} (hu : IsUnit u) (hJ : ϖ ^ m * u ∈ J) :
     Module.length O (O ⧸ J) ≤ m := by
   refine (length_quotient_le_addVal hJ).trans_eq ?_
-  rw [addVal_mul, addVal_pow, addVal_uniformizer hϖ, (addVal_eq_zero_iff).2 hu, add_zero,
-    nsmul_one]
+  simp [addVal_uniformizer hϖ, (addVal_eq_zero_iff).2 hu]
 
 end IsDiscreteValuationRing
 
@@ -174,11 +174,12 @@ theorem length_quotient_span_range_eq_top {M : Matrix ι ι O} (hM : M.det = 0) 
     | smul c v _ hv => rw [smul_dotProduct, hv, smul_zero]
   refine length_eq_top_of_injective (f := toSpanSingleton O _ (S.mkQ (Pi.single i 1)))
     fun r s h ↦ ?_
-  rw [toSpanSingleton_apply, toSpanSingleton_apply, ← map_smul, ← map_smul,
-    Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, ← sub_smul] at h
-  have := hS _ h
-  rw [smul_dotProduct, single_dotProduct, one_mul, smul_eq_mul, mul_eq_zero, sub_eq_zero] at this
-  exact this.resolve_right (by simpa using hi)
+  -- `h` says `r • eᵢ ≡ s • eᵢ` modulo `S`, so `(r - s) • eᵢ ∈ S` is orthogonal to `y`.
+  have hrs : (r - s) • Pi.single i (1 : O) ∈ S := by
+    rw [sub_smul]
+    refine (Submodule.Quotient.eq S).1 ?_
+    simpa only [Submodule.Quotient.mk_smul, toSpanSingleton_apply, Submodule.mkQ_apply] using h
+  simpa [sub_eq_zero, show y i ≠ 0 from hi] using hS _ hrs
 
 /-- **Cokernel length and determinant for rows.** The rows of a square matrix `M` over a discrete
 valuation ring span a submodule of `O^ι` of colength `v(det M)`, both sides infinite when

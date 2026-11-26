@@ -320,6 +320,9 @@ private theorem exists_generic_factorization {B : Type*} [Fintype B] {n : B → 
       (∀ b r, Θ b r ∈ Rel) ∧ (∀ b, ∃ t, IsUnit ((G b).coeff t)) ∧
       (∀ b, (Matrix.of fun (ri qj : ι × n b) ↦ ∑ k, X k *
         C (ψ b (Θ ((Fintype.equivFin B).symm k) ri.1 qj.1) ri.2 qj.2)).det = C (ϖ ^ c b) * G b) ∧
+      (∏ b, (Matrix.of fun (ri qj : ι × n b) ↦ ∑ k, X k *
+        C (ψ b (Θ ((Fintype.equivFin B).symm k) ri.1 qj.1) ri.2 qj.2)).det =
+          C (ϖ ^ ∑ b, c b) * ∏ b, G b) ∧
       ∀ b, (c b : ℕ∞) ≤
         Module.length O (blockSolutions (ψ b) Rel (K ⧸ range (Algebra.linearMap O K))) := by
   classical
@@ -330,14 +333,19 @@ private theorem exists_generic_factorization {B : Type*} [Fintype B] {n : B → 
   have hF (b : B) : eval (Pi.single (e b) 1) (Matrix.of fun (ri qj : ι × n b) ↦
       ∑ k, X k * C (ψ b (Θ (e.symm k) ri.1 qj.1) ri.2 qj.2)).det =
       (comp ι ι (n b) (n b) O ((Θ b).map (ψ b))).det := by
-    rw [eval_det_generic]
-    congr 4
-    simp [Pi.single_apply, Finset.sum_ite_eq']
+    have hsum : ∑ k, (Pi.single (e b) 1 : Fin (Fintype.card B) → O) k • Θ (e.symm k) = Θ b := by
+      simp [Pi.single_apply, Finset.sum_ite_eq']
+    rw [eval_det_generic, hsum]
   have hF0 (b : B) : (Matrix.of fun (ri qj : ι × n b) ↦
       ∑ k, X k * C (ψ b (Θ (e.symm k) ri.1 qj.1) ri.2 qj.2)).det ≠ 0 := fun h ↦ htop b <| by
     rw [← hdet b, ← hF b, h, map_zero, AddValuation.map_zero]
   choose c G hFG hG using fun b ↦ exists_eq_C_pow_mul_isUnit_coeff hϖ (hF0 b)
-  refine ⟨Θ, c, G, hΘ, hG, hFG, fun b ↦ ?_⟩
+  have hprod : ∏ b, (Matrix.of fun (ri qj : ι × n b) ↦
+      ∑ k, X k * C (ψ b (Θ (e.symm k) ri.1 qj.1) ri.2 qj.2)).det =
+        C (ϖ ^ ∑ b, c b) * ∏ b, G b := by
+    rw [Finset.prod_congr rfl fun b _ ↦ hFG b, Finset.prod_mul_distrib, ← map_prod,
+      Finset.prod_pow_eq_pow_sum]
+  refine ⟨Θ, c, G, hΘ, hG, hFG, hprod, fun b ↦ ?_⟩
   rw [← hdet b, ← hF b, hFG b, map_mul, eval_C, addVal_mul, addVal_pow,
     addVal_uniformizer hϖ, nsmul_one]
   exact le_self_add
@@ -375,11 +383,10 @@ theorem length_quot_le_sum_length_blockSolutions {B : Type*} [Fintype B] {n : B 
     exact le_sum_length_blockSolutions_of_eq_top ψ Rel hb _
   push Not at htop
   obtain ⟨ϖ, hϖ⟩ := exists_irreducible O
-  obtain ⟨Θ, c, G, hΘ, hG, hFG, hc⟩ := exists_generic_factorization ψ hψ Rel hϖ htop
+  obtain ⟨Θ, c, G, hΘ, hG, -, hprod, hc⟩ := exists_generic_factorization ψ hψ Rel hϖ htop
   obtain ⟨t, ht⟩ := IsLocalRing.exists_isUnit_coeff_prod Finset.univ fun b _ ↦ hG b
   have hmem := hJ _ (fun k ↦ Θ ((Fintype.equivFin B).symm k)) (fun k r ↦ hΘ _ r) t
-  simp_rw [hFG] at hmem
-  rw [Finset.prod_mul_distrib, ← map_prod, Finset.prod_pow_eq_pow_sum, coeff_C_mul] at hmem
+  rw [hprod, coeff_C_mul] at hmem
   calc Module.length O (O ⧸ J) ≤ ((∑ b, c b : ℕ) : ℕ∞) :=
         length_quotient_le_of_pow_mul_mem hϖ ht hmem
     _ ≤ _ := by
@@ -429,7 +436,7 @@ theorem length_quot_le_sum_length_blockSolutions_of_card_residueField {B : Type*
     exact le_sum_length_blockSolutions_of_eq_top ψ Rel hb _
   push Not at htop
   obtain ⟨ϖ, hϖ⟩ := exists_irreducible O
-  obtain ⟨Θ, c, G, hΘ, hG, hFG, hc⟩ := exists_generic_factorization ψ hψ Rel hϖ htop
+  obtain ⟨Θ, c, G, hΘ, hG, hFG, hprod, hc⟩ := exists_generic_factorization ψ hψ Rel hϖ htop
   set e := Fintype.equivFin B
   -- The reduction of `∏_b G_b` is a nonzero polynomial of small degree over the residue field.
   have hP : map (IsLocalRing.residue O) (∏ b, G b) ≠ 0 := by
@@ -456,8 +463,12 @@ theorem length_quot_le_sum_length_blockSolutions_of_card_residueField {B : Type*
       simp [Matrix.sum_apply]
     rw [hr]
     exact Rel.sum_mem fun k _ ↦ Rel.smul_of_tower_mem (a' k) (hΘ _ r)
-  simp_rw [← eval_det_generic, hFG, ← map_prod, Finset.prod_mul_distrib, ← map_prod,
-    Finset.prod_pow_eq_pow_sum, map_mul, eval_C] at hmem
+  -- Each block determinant of `Θ` is the generic one evaluated at `a'`.
+  have heval : ∏ b, (comp ι ι (n b) (n b) O ((∑ k, a' k • Θ (e.symm k)).map (ψ b))).det =
+      ϖ ^ (∑ b, c b) * eval a' (∏ b, G b) := by
+    rw [← eval_C (f := a') (ϖ ^ ∑ b, c b), ← map_mul, ← hprod, map_prod]
+    exact Finset.prod_congr rfl fun b _ ↦ (eval_det_generic (ψ b) _ a').symm
+  rw [heval] at hmem
   have hu : IsUnit (eval a' (∏ b, G b)) := by
     have hra : (IsLocalRing.residue O) ∘ a' = a := funext ha'
     rw [← IsLocalRing.residue_ne_zero_iff_isUnit, eval₂_comp, hra, ← eval_map]
