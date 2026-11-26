@@ -37,8 +37,9 @@ small manifolds and show which hypotheses and conventions the bounds need.
   give `2 + 2 = 4` critical points, so the minimal critical count is `4`. The normalized category
   of the disjoint union is `3`, not `1 + 1`.
 * **Minimal counts.** Every smooth function on the circle has at least two critical points.
-* **The empty manifold.** The cup length and the category count are both `0`, so
-  `lsCupLength M R + 1 ≤ lsCategoryCount M univ` fails: the cup-length bound needs `M` nonempty.
+* **The empty manifold.** The cup length, the category count and the critical count are all `0`,
+  so `lsCupLength M R + 1 ≤ totalCriticalCount I f` fails: the cup-length bound needs `M`
+  nonempty.
 * **A point.** Every function has exactly one critical point, the category count is `1` and the
   cup length `0`: `1 ≥ 1 ≥ 0 + 1`.
 
@@ -112,15 +113,10 @@ example (v v' : sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) :
       minCriticalCount (𝓡 1)
         (sphere (0 : EuclideanSpace ℝ (Fin 2)) 1 ⊕ sphere (0 : EuclideanSpace ℝ (Fin 2)) 1) =
         4 := by
-  have hcat := lsCategoryCount_univ_sum_sphere (E := EuclideanSpace ℝ (Fin 2))
-    (E' := EuclideanSpace ℝ (Fin 2))
-  have hcount : totalCriticalCount (𝓡 1) (Sum.elim (sphereHeight v) (sphereHeight v')) = 4 := by
-    rw [totalCriticalCount_sumElim, totalCriticalCount_sphereHeight,
-      totalCriticalCount_sphereHeight]
-    rfl
-  refine ⟨hcat, hcount, le_antisymm ?_ (hcat ▸ lsCategoryCount_univ_le_minCriticalCount)⟩
-  exact hcount ▸
-    minCriticalCount_le ((contMDiff_sphereHeight v).sumElim (contMDiff_sphereHeight v'))
+  refine ⟨lsCategoryCount_univ_sum_sphere, ?_, minCriticalCount_sum_sphere⟩
+  rw [totalCriticalCount_sumElim, totalCriticalCount_sphereHeight,
+    totalCriticalCount_sphereHeight]
+  norm_num
 
 /-- The normalized category `lsCategoryCount - 1` is not additive over disjoint unions: each
 circle has normalized category `1`, but two disjoint circles have `3`, not `1 + 1`. -/
@@ -145,7 +141,7 @@ example (p : Fin 2 → ℝ) [∀ i, Fact (0 < p i)] :
       totalCriticalCount (ModelWithCorners.pi fun _ : Fin 2 ↦ 𝓘(ℝ)) (torusCos p) = 4 := by
   simp only [lsCupLength_pi_addCircle, lsCategoryCount_univ_pi_addCircle,
     totalCriticalCount_torusCos, Fintype.card_fin]
-  exact ⟨rfl, rfl, rfl⟩
+  norm_num
 
 /-! ### The real projective plane -/
 
@@ -156,13 +152,12 @@ example {f : ℙ ℝ (Fin 3 → ℝ) → ℝ} (hf : ContMDiff 𝓘(ℝ, Fin 2 �
     lsCupLength (ℙ ℝ (Fin 3 → ℝ)) (ZMod 2) = 2 ∧ 3 ≤ totalCriticalCount 𝓘(ℝ, Fin 2 → ℝ) f ∧
       totalCriticalCount 𝓘(ℝ, Fin 2 → ℝ)
         (projectiveMomentFunction ℝ fun i : Fin 3 ↦ (i : ℝ)) = 3 := by
-  have : Nonempty (ℙ ℝ (Fin 3 → ℝ)) := ⟨Projectivization.mk ℝ (Pi.single 0 1) (by simp)⟩
   have hcup := lsCupLength_projectivization_real_fin_three_zmod_two
   refine ⟨hcup, ?_, ?_⟩
   · have h := lsCupLength_add_one_le_totalCriticalCount (ZMod 2) hf
     rwa [hcup] at h
   · rw [totalCriticalCount_projectiveMomentFunction fun _ _ h ↦ Fin.ext (by exact_mod_cast h)]
-    rfl
+    norm_num
 
 /-- On the real projective plane, over `ℚ`, the cup length is `0`, so the cup-length bound gives
 only one critical point, whereas over `ZMod 2` it gives three: the coefficient ring matters. -/
