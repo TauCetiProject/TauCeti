@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.PowerSeries.Inverse
 
+import TauCeti.RingTheory.PowerSeries.Geometric
+
 /-!
 # Pre-λ structures
 
@@ -275,14 +277,11 @@ variable {Λ} in
 /-- The negative of a line element `l` has total operation `(1 + l t)⁻¹ = ∑ₖ (-l)ᵏ tᵏ`. -/
 theorem IsLine.totalSeries_neg {l : R} (h : Λ.IsLine l) :
     Λ.totalSeries (-l) = PowerSeries.mk fun k => (-l) ^ k := by
+  -- `∑ (-l)ᵏ tᵏ` is the geometric series inverting `1 - (-l) t = 1 + l t`
   have hinv : (PowerSeries.mk fun k => (-l) ^ k) * Λ.totalSeries l = 1 := by
     rw [h.totalSeries_eq]
-    ext n
-    rcases n with _ | n
-    · simp
-    · rw [mul_add, mul_one, mul_left_comm, ← mul_assoc, map_add, coeff_succ_mul_X, coeff_C_mul]
-      simp only [coeff_mk, coeff_one, n.succ_ne_zero, ite_false]
-      ring
+    simpa only [map_neg, neg_mul, sub_neg_eq_add] using
+      powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one (-l)
   exact (Λ.isUnit_totalSeries l).mul_left_inj.1 ((Λ.totalSeries_neg_mul l).trans hinv.symm)
 
 variable {Λ} in
