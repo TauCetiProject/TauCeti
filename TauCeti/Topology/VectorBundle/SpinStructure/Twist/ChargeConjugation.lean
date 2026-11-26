@@ -280,9 +280,11 @@ which has the transition functions of `L⁻¹ ⊗ E⁻¹`: `conj (s ⊗ E) ≃ s
 `[[(p, q), 1], h] ↦ [(p, [(p, q), 1]), h]`. The analogous equivalence with `L⁻¹ ⊗ E⁻¹`
 presented as a tensor product of circle bundles is
 `TauCeti.SpinCStructure.chargeConjTwistEquivTwist`. For the canonical `Spinᶜ` structure `s_ω` of
-an almost Hermitian four-manifold, where `L = K⁻¹`, composing that one with
-`TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle` gives
-`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`. -/
+an almost Hermitian four-manifold, where `L = K⁻¹`, composing that one with the twist by
+`L⁻¹ ⊗ E⁻¹ ≃ K ⊗ E⁻¹`, the tensor product (`TauCeti.PrincipalBundle.Equiv.extend` of
+`TauCeti.PrincipalBundle.Equiv.fiberProd`) of
+`TauCeti.OrthonormalFrameBundle.inverseDeterminantBundleEquivCanonicalBundle` with the identity,
+gives `TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`. -/
 def twistChargeConjEquivTwist :
     (s.twist Q).chargeConj.Equiv (s.twist (s.inverseDeterminantTwistBundle Q)) :=
   ((s.fiberProd Circle Q).extendCompEquiv μ hμ hπμ

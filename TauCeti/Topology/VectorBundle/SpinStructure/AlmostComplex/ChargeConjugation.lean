@@ -39,7 +39,7 @@ of the charge conjugation theorems of
   along `det⁻¹ ∘ σ = det_ℂ⁻¹`.
 * **`conj s_ω ≃ s_ω ⊗ K`** (`TauCeti.OrthonormalFrameBundle.chargeConjEquivTwistCanonicalBundle`),
   from `conj s ≃ s ⊗ L⁻¹` (`TauCeti.SpinCStructure.chargeConjEquivTwist`).
-* **`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`** for every principal `U(1)`-bundle `E`
+* **`conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`** for every principal `U(1)`-bundle `Q` with line `E`
   (`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle`), from
   `conj (s ⊗ E) ≃ s ⊗ (L⁻¹ ⊗ E⁻¹)` (`TauCeti.SpinCStructure.chargeConjTwistEquivTwist`) and the
   functoriality of the tensor product (`TauCeti.PrincipalBundle.Equiv.extend`).
@@ -48,8 +48,9 @@ The last is Taubes's isomorphism `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`
 Seiberg–Witten equations of the label `E` to those of the label `K ⊗ E⁻¹`. It is an equivalence of
 `Spinᶜ` structures over the frame bundle, constructed through the `U(2)` and `Spinᶜ`
 representations, so it keeps every two-torsion label: no class is replaced by its first Chern
-class. In frames it sends `[[(p, e), 1], 1]` to `[(p, [([p, 1], [e, 1]), 1]), 1]` for a unitary
-frame `p` (`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl`).
+class. In frames it sends `[[([p, 1], q), 1], 1]` to `[([p, 1], [([p, 1], [q, 1]), 1]), 1]` for
+a unitary frame `p` and a point `q` of `Q`
+(`TauCeti.OrthonormalFrameBundle.chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl`).
 
 ## Main definitions
 
