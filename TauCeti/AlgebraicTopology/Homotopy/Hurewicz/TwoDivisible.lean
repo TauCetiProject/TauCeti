@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Singular.Coefficients.TwoDivisible
 public import Mathlib.Algebra.Module.ULift
-import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
+import TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField
 
 /-!
 # Mod-two vanishing and the first possible homotopy group
@@ -69,9 +69,9 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_mod_two {k : Type u
     IsUniquelyTwoDivisible (Additive (HomotopyGroup (Fin (n + 2)) X x)) := by
   rw [← singularHomologyFunctor_obj_obj] at hn hn'
   exact isUniquelyTwoDivisible_homotopyGroup_of_isZero_mod_two hX
-    (((TopCat.of X).isZero_singularHomology_modTwo_iff_of_ringEquiv e _).2
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e _).2
       (ModuleCat.isZero_iff_subsingleton.2 hn))
-    (((TopCat.of X).isZero_singularHomology_modTwo_iff_of_ringEquiv e _).2
+    (((TopCat.of X).isZero_singularHomology_zmod_iff_of_ringEquiv 2 e _).2
       (ModuleCat.isZero_iff_subsingleton.2 hn'))
 
 end TauCeti

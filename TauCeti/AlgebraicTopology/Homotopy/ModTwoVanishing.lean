@@ -10,7 +10,7 @@ public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
-import TauCeti.AlgebraicTopology.Singular.Coefficients.ModTwo
+import TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
 
@@ -138,7 +138,7 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_isZero_singularHomology_mod_two 
     (y : Y) (n : ℕ) : IsUniquelyTwoDivisible (Additive (π_ (n + 2) Y y)) :=
   isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology ULift.ringEquiv
     (fun i ↦ ModuleCat.isZero_iff_subsingleton.1
-      (((TopCat.of Y).isZero_singularHomology_modTwo_iff_of_ringEquiv ULift.ringEquiv _).1
+      (((TopCat.of Y).isZero_singularHomology_zmod_iff_of_ringEquiv 2 ULift.ringEquiv _).1
         (hY i))) y n
 
 /-- **Mod-two vanishing for a path component.** If the fundamental group of `Y` at `y` is trivial

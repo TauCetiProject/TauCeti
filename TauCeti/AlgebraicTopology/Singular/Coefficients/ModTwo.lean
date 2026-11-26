@@ -25,7 +25,8 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, or with the field `�
 homology, so the integer-module homology is the mod-two homology with its scalars restricted
 (`TopCat.singularHomologyModTwoIso`). In particular one vanishes exactly when the other does
 (`TopCat.isZero_singularHomology_modTwo_iff`, and
-`TopCat.isZero_singularHomology_modTwo_iff_of_ringEquiv` for any coefficient ring isomorphic to
+`TopCat.isZero_singularHomology_zmod_iff_of_ringEquiv` of
+`TauCeti.AlgebraicTopology.Singular.Coefficients.PrimeField` for any coefficient ring isomorphic to
 `𝔽₂`, such as `𝔽₂` itself for a space in the lowest universe).
 
 The coefficient long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0` relates integral homology to mod-two
@@ -118,26 +119,6 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
         (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).obj X) := by
   rw [Iso.isZero_iff (singularHomologyModTwoIso X n), ModuleCat.isZero_iff_subsingleton,
     ModuleCat.isZero_iff_subsingleton]
-  -- restriction of scalars does not change the underlying abelian group
-  rfl
-
-/-- Singular homology with coefficients in the integer module `ℤ/2` vanishes exactly when singular
-homology with coefficients in a ring `k ≅ 𝔽₂`, as a module over itself, does. For `k = ZMod 2` and
-a space in the lowest universe this compares `ℤ/2` and `𝔽₂` themselves rather than their lifts. -/
-theorem isZero_singularHomology_modTwo_iff_of_ringEquiv (X : TopCat.{u}) {k : Type u}
-    [CommRing k] (e : k ≃+* ZMod 2) (n : ℕ) :
-    IsZero (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).obj
-        (ModuleCat.of ℤ (ULift.{u} (ZMod 2)))).obj X) ↔
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj X) := by
-  -- `ℤ/2` and `k` are isomorphic abelian groups, and `k` as an integer module is `k` with its
-  -- scalars restricted along `ℤ → k`, which preserves coproducts and homology
-  rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-      (AddEquiv.ulift.trans e.symm.toAddEquiv).toIntLinearEquiv.toModuleIso).app X),
-    Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{u} ℤ) n).mapIso
-      (ModuleCat.restrictScalarsAlgebraMapIso (R := ℤ) (S := k) k).symm).app X ≪≫
-      ((Functor.singularHomologyFunctorObjCompIso
-        (ModuleCat.restrictScalars.{u} (algebraMap ℤ k)) (ModuleCat.of k k) n).app X).symm),
-    ModuleCat.isZero_iff_subsingleton, ModuleCat.isZero_iff_subsingleton]
   -- restriction of scalars does not change the underlying abelian group
   rfl
 
