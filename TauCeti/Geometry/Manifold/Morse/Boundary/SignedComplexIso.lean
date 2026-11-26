@@ -44,10 +44,11 @@ implies it with coefficients in `R'`
 this gives every ring at once. For commutative rings the complex with coefficients in `R'` is the
 extension of scalars of the complex with coefficients in `R`: the isomorphisms
 `R' ⊗_R R^{(P)} ≅ R'^{(P)}` of free modules on the critical points `P` of each index,
-`r' ⊗ c ↦ r' • g(c)`, form an isomorphism of chain complexes
-(`TauCeti.IsAdaptedPseudoGradient.signedMorseComplexExtendScalarsIso`). For `R = ℤ` this is the
-identification `CM_*(f; R') = CM_*(f; ℤ) ⊗ R'` of the Morse complex with coefficients in any
-commutative ring with the integral Morse complex tensored with that ring.
+`r' ⊗ c ↦ r' • g(c)` (`ModuleCat.extendScalarsFinsuppIso`), form an isomorphism of chain complexes
+(`TauCeti.IsAdaptedPseudoGradient.signedMorseComplexExtendScalarsIso`). The ring `R'` may be in any
+universe above that of `R`, so for `R = ℤ` this is the identification
+`CM_*(f; R') = CM_*(f; ℤ) ⊗ R'` of the Morse complex with coefficients in any commutative ring with
+the integral Morse complex tensored with that ring.
 
 ## Main definitions
 
@@ -132,6 +133,13 @@ orientation of `𝔬'` is opposite to the orientation of `𝔬` transported into
 def reversalSet : Set (criticalPoints 𝓘(ℝ, E) f) :=
   {p | 𝔬'.orientation p ≠ (𝔬.transport 𝔬').orientation p}
 
+/-- A critical point is in the reversal set when the orientation of `𝔬'` there is not the
+transported orientation of `𝔬`. -/
+@[simp]
+theorem mem_reversalSet {p : criticalPoints 𝓘(ℝ, E) f} :
+    p ∈ 𝔬.reversalSet 𝔬' ↔ 𝔬'.orientation p ≠ (𝔬.transport 𝔬').orientation p :=
+  Iff.rfl
+
 /-- Membership in the reversal set is decided classically. -/
 noncomputable instance : DecidablePred (· ∈ 𝔬.reversalSet 𝔬') :=
   Classical.decPred _
@@ -141,19 +149,11 @@ orientations of `𝔬`, transported into the Morse charts of `𝔬'`, at the poi
 set gives `𝔬'`, since two orientations of a finite-dimensional real vector space are equal or
 opposite. -/
 theorem transport_reverse_reversalSet : (𝔬.transport 𝔬').reverse (𝔬.reversalSet 𝔬') = 𝔬' := by
-  obtain ⟨chart', hc', o'⟩ := 𝔬'
-  simp only [reverse, transport]
-  congr 1
-  funext p
-  by_cases hp :
-      o' p = Orientation.map _ ((𝔬.chart p).negativeChange (chart' p)) (𝔬.orientation p)
-  · have hp' : p ∉ 𝔬.reversalSet ⟨chart', hc', o'⟩ := not_not.2 hp
-    simp only [hp', ↓reduceIte]
-    exact hp.symm
-  · have hp' : p ∈ 𝔬.reversalSet ⟨chart', hc', o'⟩ := hp
-    simp only [hp', ↓reduceIte]
-    exact ((Orientation.eq_or_eq_neg_of_card_eq_finrank (o' p) _
-      (chart' p).card_fin_manifoldMorseIndex_eq_finrank).resolve_left hp).symm
+  -- `reverse_eq_mk` reverses on the reversal set itself, with another decidability instance.
+  classical
+  convert (𝔬.transport 𝔬').reverse_eq_mk 𝔬'.orientation
+  · exact 𝔬.mem_reversalSet 𝔬'
+  · rfl
 
 end MorseOrientation
 
@@ -227,20 +227,14 @@ zero exactly when the one for `𝔬` does, since the two are conjugate by an inv
 theorem signedMorseBoundary_comp_self_eq_zero_iff :
     hX.signedMorseBoundary 𝔬' hf R ∘ₗ hX.signedMorseBoundary 𝔬' hf R = 0 ↔
       hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0 := by
-  set σ := Finsupp.signReversal (A := R) R (𝔬.reversalSet 𝔬')
-  have key (φ : (criticalPoints 𝓘(ℝ, E) f →₀ R) →ₗ[R] (criticalPoints 𝓘(ℝ, E) f →₀ R)) :
-      σ.toLinearMap ∘ₗ (σ.toLinearMap ∘ₗ φ ∘ₗ σ.toLinearMap) ∘ₗ σ.toLinearMap = φ :=
-    LinearMap.ext fun c ↦ by simp [σ]
-  have h : hX.signedMorseBoundary 𝔬' hf R ∘ₗ hX.signedMorseBoundary 𝔬' hf R =
-      σ.toLinearMap ∘ₗ (hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R) ∘ₗ
-        σ.toLinearMap :=
-    LinearMap.ext fun c ↦ by simp [signedMorseBoundary_eq_signReversal_comp hf 𝔬 𝔬', σ]
-  constructor
-  · intro h0
-    rw [← key (hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R), ← h, h0,
-      LinearMap.zero_comp, LinearMap.comp_zero]
-  · intro h0
-    rw [h, h0, LinearMap.zero_comp, LinearMap.comp_zero]
+  have h : hX.signedMorseBoundary 𝔬' hf R =
+      (Finsupp.signReversal R (𝔬.reversalSet 𝔬')).conjRingEquiv (hX.signedMorseBoundary 𝔬 hf R) :=
+    LinearMap.ext fun c ↦ by
+      rw [LinearEquiv.conjRingEquiv_apply_apply, Finsupp.signReversal_symm,
+        signedMorseBoundary_eq_signReversal_comp hf 𝔬 𝔬', LinearMap.comp_apply,
+        LinearMap.comp_apply, LinearEquiv.coe_coe]
+  rw [h, ← Module.End.mul_eq_comp, ← Module.End.mul_eq_comp, ← map_mul,
+    map_eq_zero_iff _ (RingEquiv.injective _)]
 
 variable (𝔬 𝔬') in
 /-- **The integral Morse complexes of two choices of orientation data are isomorphic.** In degree
@@ -276,6 +270,19 @@ theorem signedMorseComplexOrientationIso_hom_f_apply
           ↑p ∈ 𝔬.reversalSet 𝔬'} c :=
   (rfl)
 
+/-- The component in degree `n` of the inverse of the isomorphism of integral Morse complexes for
+two choices of orientation data again negates the coefficients of the points of the reversal
+set. -/
+@[simp]
+theorem signedMorseComplexOrientationIso_inv_f_apply
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ)
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
+    (signedMorseComplexOrientationIso hf 𝔬 𝔬' hsq).inv.f n c =
+      Finsupp.signReversal R
+        {p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} |
+          ↑p ∈ 𝔬.reversalSet 𝔬'} c :=
+  DFunLike.congr_fun Finsupp.signReversal_symm c
+
 end Orientation
 
 /-! ### Changing the coefficients -/
@@ -294,41 +301,17 @@ theorem signedMorseBoundary_comp_self_eq_zero_of_ringHom {R R' : Type*} [Ring R]
     (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
     hX.signedMorseBoundary 𝔬 hf R' ∘ₗ hX.signedMorseBoundary 𝔬 hf R' = 0 := by
   refine Finsupp.lhom_ext fun p a ↦ ?_
-  have h1 : Finsupp.single p a = a • Finsupp.mapRange g (map_zero g) (Finsupp.single p 1) := by
-    rw [Finsupp.mapRange_single, map_one, Finsupp.smul_single, smul_eq_mul, mul_one]
-  rw [LinearMap.comp_apply, LinearMap.zero_apply, h1, map_smul, map_smul,
-    ← mapRange_signedMorseBoundary, ← mapRange_signedMorseBoundary,
-    ← LinearMap.comp_apply (hX.signedMorseBoundary 𝔬 hf R), hsq, LinearMap.zero_apply,
-    Finsupp.mapRange_zero, smul_zero]
+  calc hX.signedMorseBoundary 𝔬 hf R' (hX.signedMorseBoundary 𝔬 hf R' (Finsupp.single p a))
+      = a • hX.signedMorseBoundary 𝔬 hf R' (hX.signedMorseBoundary 𝔬 hf R'
+          (Finsupp.mapRange g (map_zero g) (Finsupp.single p 1))) := by
+        simp [← map_smul, Finsupp.smul_single]
+    _ = a • Finsupp.mapRange g (map_zero g)
+          ((hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R)
+            (Finsupp.single p 1)) := by
+        rw [LinearMap.comp_apply, mapRange_signedMorseBoundary, mapRange_signedMorseBoundary]
+    _ = 0 := by simp [hsq]
 
-variable {R R' : Type u} [CommRing R] [CommRing R'] (g : R →+* R')
-
-/-- The extension of scalars along `g : R →+* R'` of the free `R`-module on `ι` is the free
-`R'`-module on `ι`, by `r' ⊗ c ↦ r' • g(c)`. -/
-private noncomputable def extendScalarsFinsuppIso (ι : Type v) [DecidableEq ι] :
-    (ModuleCat.extendScalars.{u, u, max u v} g).obj (ModuleCat.of R (ι →₀ R)) ≅
-      ModuleCat.of R' (ι →₀ R') :=
-  letI := g.toAlgebra
-  ModuleCat.extendScalarsAlgebraMapIso (S := R') (ModuleCat.of R (ι →₀ R)) ≪≫
-    (TensorProduct.finsuppScalarRight R R' R' ι).toModuleIso
-
-/-- The isomorphism `extendScalarsFinsuppIso` sends `1 ⊗ c` to `g(c)`. -/
-private theorem extendScalarsFinsuppIso_hom_one_tmul {ι : Type v} [DecidableEq ι] (c : ι →₀ R) :
-    (extendScalarsFinsuppIso g ι).hom ((1 : R') ⊗ₜ[R,g] c) =
-      Finsupp.mapRange g (map_zero g) c := by
-  let := g.toAlgebra
-  calc (extendScalarsFinsuppIso g ι).hom ((1 : R') ⊗ₜ[R,g] c)
-      = TensorProduct.finsuppScalarRight R R' R' ι
-          ((ModuleCat.extendScalarsAlgebraMapIso (S := R') (ModuleCat.of R (ι →₀ R))).hom
-            ((1 : R') ⊗ₜ[R,algebraMap R R'] c)) := rfl
-    _ = TensorProduct.finsuppScalarRight R R' R' ι ((1 : R') ⊗ₜ[R] c) :=
-      congrArg (TensorProduct.finsuppScalarRight R R' R' ι)
-        (ModuleCat.extendScalarsAlgebraMapIso_hom_tmul (S := R') (ModuleCat.of R (ι →₀ R)) 1 c)
-    _ = Finsupp.mapRange g (map_zero g) c := by
-      ext i
-      rw [TensorProduct.finsuppScalarRight_apply_tmul_apply, Algebra.smul_def, mul_one,
-        Finsupp.mapRange_apply]
-      rfl
+variable {R : Type u} {R' : Type (max u v)} [CommRing R] [CommRing R'] (g : R →+* R')
 
 variable (𝔬) in
 open scoped Classical in
@@ -336,31 +319,30 @@ open scoped Classical in
 commutative rings, the extension of scalars along `g` of the integral Morse complex with
 coefficients in `R` is the integral Morse complex with coefficients in `R'`. In degree `n` the
 isomorphism sends `r' ⊗ c` to `r' • g(c)`, where `g(c)` applies `g` to the coefficients of the chain
-`c` (`TauCeti.IsAdaptedPseudoGradient.signedMorseComplexExtendScalarsIso_hom_f_one_tmul`). For
-`R = ℤ` this identifies the integral Morse complex with coefficients in any commutative ring `R'`
-with `CM_*(f; ℤ) ⊗ R'`. -/
+`c` (`TauCeti.IsAdaptedPseudoGradient.signedMorseComplexExtendScalarsIso_hom_f_tmul`). The ring
+`R'` may be in any universe above that of `R`, so for `R = ℤ` this identifies the integral Morse
+complex with coefficients in any commutative ring `R'` with `CM_*(f; ℤ) ⊗ R'`. -/
 noncomputable def signedMorseComplexExtendScalarsIso
     (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) :
     ((ModuleCat.extendScalars g).mapHomologicalComplex _).obj
         (hX.signedMorseComplex 𝔬 hf R hsq) ≅
       hX.signedMorseComplex 𝔬 hf R' (signedMorseBoundary_comp_self_eq_zero_of_ringHom hf 𝔬 g hsq) :=
-  HomologicalComplex.Hom.isoOfComponents (fun n ↦ extendScalarsFinsuppIso g _) fun i j hij ↦ by
-    obtain rfl : j + 1 = i := hij
-    refine ModuleCat.ExtendScalars.hom_ext fun c ↦ ?_
-    change (hX.signedMorseComplex 𝔬 hf R' _).d (j + 1) j
-        ((extendScalarsFinsuppIso g _).hom ((1 : R') ⊗ₜ[R,g] c)) =
-      (extendScalarsFinsuppIso g _).hom
-        ((1 : R') ⊗ₜ[R,g] ((hX.signedMorseComplex 𝔬 hf R hsq).d (j + 1) j c))
-    refine (congrArg ((hX.signedMorseComplex 𝔬 hf R' _).d (j + 1) j)
-      (extendScalarsFinsuppIso_hom_one_tmul g
-        (ι := {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = j + 1}) c)).trans ?_
-    refine (signedMorseComplex_d_apply _ j _).trans ?_
-    refine (mapRange_signedMorseBoundaryAt hf g _).symm.trans ?_
-    refine (extendScalarsFinsuppIso_hom_one_tmul g
-      (ι := {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = j})
-      (hX.signedMorseBoundaryAt 𝔬 hf R j c)).symm.trans ?_
-    exact congrArg (fun x ↦ (extendScalarsFinsuppIso g _).hom ((1 : R') ⊗ₜ[R,g] x))
-      (signedMorseComplex_d_apply hsq j c).symm
+  HomologicalComplex.Hom.isoOfComponents (fun n ↦ ModuleCat.extendScalarsFinsuppIso g _)
+    fun i j hij ↦ by
+      obtain rfl : j + 1 = i := hij
+      rw [Functor.mapHomologicalComplex_obj_d, signedMorseComplex_d, signedMorseComplex_d]
+      exact (ModuleCat.extendScalarsFinsuppIso_hom_naturality g
+        (mapRange_signedMorseBoundaryAt hf g)).symm
+
+open scoped Classical in
+/-- The component in degree `n` of the change of coefficients sends `r' ⊗ c` to `r' • g(c)`, where
+the chain `g(c)` is obtained by applying `g` to the coefficients of `c`. -/
+theorem signedMorseComplexExtendScalarsIso_hom_f_tmul
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ) (r' : R')
+    (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
+    (signedMorseComplexExtendScalarsIso hf 𝔬 g hsq).hom.f n (r' ⊗ₜ[R,g] c) =
+      r' • Finsupp.mapRange g (map_zero g) c :=
+  ModuleCat.extendScalarsFinsuppIso_hom_tmul g r' c
 
 open scoped Classical in
 /-- The component in degree `n` of the change of coefficients sends `1 ⊗ c` to the chain `g(c)`
@@ -370,7 +352,17 @@ theorem signedMorseComplexExtendScalarsIso_hom_f_one_tmul
     (c : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n} →₀ R) :
     (signedMorseComplexExtendScalarsIso hf 𝔬 g hsq).hom.f n ((1 : R') ⊗ₜ[R,g] c) =
       Finsupp.mapRange g (map_zero g) c :=
-  extendScalarsFinsuppIso_hom_one_tmul g c
+  ModuleCat.extendScalarsFinsuppIso_hom_one_tmul g c
+
+open scoped Classical in
+/-- The component in degree `n` of the inverse of the change of coefficients sends the chain
+`r' • p` of a critical point `p` of index `n` to `r' ⊗ p`. -/
+theorem signedMorseComplexExtendScalarsIso_inv_f_single
+    (hsq : hX.signedMorseBoundary 𝔬 hf R ∘ₗ hX.signedMorseBoundary 𝔬 hf R = 0) (n : ℕ)
+    (p : {p : criticalPoints 𝓘(ℝ, E) f // manifoldMorseIndex 𝓘(ℝ, E) f p = n}) (r' : R') :
+    (signedMorseComplexExtendScalarsIso hf 𝔬 g hsq).inv.f n (Finsupp.single p r') =
+      r' ⊗ₜ[R,g] Finsupp.single p (1 : R) :=
+  ModuleCat.extendScalarsFinsuppIso_inv_single g p r'
 
 end Coefficients
 
