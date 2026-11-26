@@ -134,9 +134,8 @@ private theorem augmentedConjWirtingerDerivL_pi_eq_iff
   · rintro ⟨rfl, rfl, rfl⟩ i
     exact ⟨rfl, rfl, rfl⟩
   · intro h
-    refine ⟨HolderSpace.ext fun z ↦ funext fun i ↦ ?_, funext fun i ↦ (h i).2.1,
+    exact ⟨HolderSpace.ext_compLeftL_proj fun i ↦ (h i).1, funext fun i ↦ (h i).2.1,
       funext fun i ↦ (h i).2.2⟩
-    simpa using congrArg (· z) (h i).1
 
 /-! ### Surjectivity and injectivity -/
 
@@ -159,9 +158,8 @@ theorem exists_mem_rotatingLinePiSubspace_augmentedConjWirtingerDerivL_eq (hk : 
   set u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) (ι → ℂ) := ∑ j : ι,
     compLeftL ((ContinuousLinearMap.single ℂ (fun _ : ι ↦ ℂ) j).restrictScalars ℝ) (v j)
   have hu (i : ι) : compLeftL
-      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i := by
-    ext z
-    simp [u, Pi.single_apply]
+      ((ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : ι ↦ ℂ) i).restrictScalars ℝ) u = v i :=
+    compLeftL_proj_sum_compLeftL_single v i
   exact ⟨u, mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.2 fun i ↦ hu i ▸ hv i,
     augmentedConjWirtingerDerivL_pi_eq_iff.2 fun i ↦ by rw [hu i, hLv i]⟩
 
@@ -176,8 +174,7 @@ theorem injOn_augmentedConjWirtingerDerivL_pi :
     (mem_rotatingLinePiSubspace_iff_forall_compLeftL_mem.1 hv i)
     ((augmentedConjWirtingerDerivL_pi_eq_iff.1 huv i).trans
       (augmentedConjWirtingerDerivL_pi_eq_iff.1 rfl i).symm)
-  ext z i
-  simpa using congrArg (· z) (h i)
+  exact ext_compLeftL_proj h
 
 /-! ### The Banach isomorphism -/
 
