@@ -274,14 +274,13 @@ theorem waveFrontSet_subset_dsupport [I.Boundaryless] (T : BundleTest I F V →L
 omit [T2Space M] [IsManifold I ∞ M] in
 /-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
 vector of `E` exactly when it is zero. -/
-theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
+private theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeomorph M E}
     (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target)
     {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
     (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
   (toDual ℝ E).symm.map_eq_zero_iff.trans
-    ((OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx).1.eq_iff'
-      (zero_comp _))
+    (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff
+      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx)
 
 /-! ### The singular support and the projection of the wave front set -/
 

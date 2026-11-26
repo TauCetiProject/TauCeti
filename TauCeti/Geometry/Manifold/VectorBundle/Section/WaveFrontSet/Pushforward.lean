@@ -247,7 +247,9 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_tsupport_subset {
   subst hxy
   obtain ⟨hne, hT⟩ := h x ⟨hxχ, hxT⟩ rfl
   rw [adjoint_fderiv_toDual_symm_comp_mfderiv_symm hcs hc' hcs' f hxc hfx η]
-  refine ⟨mt (toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hxc).1 hne, ?_⟩
+  refine ⟨mt ((toDual ℝ E).symm.map_eq_zero_iff.trans
+    (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff
+      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hxc)).1 hne, ?_⟩
   rw [isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.restrictCLM_iff (chartPreimage_le f)
     (χ'.tsupport_subset hz.1)]
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hxc _).1 hT v
