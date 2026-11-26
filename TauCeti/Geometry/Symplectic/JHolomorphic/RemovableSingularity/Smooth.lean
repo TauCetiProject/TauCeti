@@ -18,10 +18,10 @@ import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 
 Let `J` be a target structure on a finite-dimensional real inner product space `V`, of class `C^ℓ`
 with `ℓ ≥ 2` on an open set `W`, and let `u` be a finite-energy solution of the Cauchy--Riemann
-equation `∂ₜu = J(u) ∂ₛu` on a punctured disc, with image in a compact set `K ⊆ W` on which `J` is
-a complex structure, uniformly tamed by a symplectic form along `u`. Then `u` has a limit `q` at
-the puncture, and the filling of the puncture by `q` is of class `C^ℓ` on the whole disc and
-solves the Cauchy--Riemann equation there, the puncture included
+equation `∂ₜu = J(u) ∂ₛu` on a punctured disc, of class `C³` there, with image in a compact set
+`K ⊆ W` on which `J` is a complex structure, uniformly tamed by a symplectic form along `u`. Then
+`u` has a limit `q` at the puncture, and the filling of the puncture by `q` is of class `C^ℓ` on
+the whole disc and solves the Cauchy--Riemann equation there, the puncture included
 (`SymplecticForm.exists_contDiffOn_update_of_finite_energy`). In particular the filling is smooth
 when `J` is.
 
@@ -33,10 +33,10 @@ puncture the map is a classical `C¹` solution, hence `C^ℓ` by the same bootst
 (`TauCeti.contDiffOn_of_fderiv_apply_I_eq`). The classical equation at the puncture follows from
 the weak one, since the filling is `C¹`.
 
-The same holds at the end of a plane. For a finite-energy solution on the exterior `‖z‖ > R` of a
-disc, the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of `u` at infinity, is of class
-`C^ℓ` on the disc `‖w‖ < R⁻¹` and solves the equation there
-(`SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy`). Hence a finite-energy
+The same holds at the end of a plane. For a finite-energy solution of class `C³` on the exterior
+`‖z‖ > R` of a disc, the inverted map `w ↦ u w⁻¹`, filled at `0` with the limit of `u` at
+infinity, is of class `C^ℓ` on the disc `‖w‖ < R⁻¹` and solves the equation there
+(`SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy`). Hence a finite-energy `C³`
 solution on the whole plane extends to a `C^ℓ` map on the Riemann sphere `OnePoint ℂ`, regarded as
 a real two-dimensional manifold through its affine and inverted charts
 (`SymplecticForm.exists_contMDiff_onePoint_elim_of_finite_energy`). This identifies finite-energy
@@ -69,10 +69,10 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 
 open Classical in
 /-- **Removal of singularities.** Let `J` be `C^ℓ`, `ℓ ≥ 2`, on an open set `W`. A finite-energy
-solution `u` of `∂ₜu = J(u) ∂ₛu` on the punctured disc `0 < ‖z - z₀‖ < R`, with image in a compact
-set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by `ω`, has a limit `q ∈ K` at
-`z₀`. Its filling by `q` takes values in `K`, is of class `C^ℓ` on the whole disc `‖z - z₀‖ < R`,
-and solves `∂ₜu = J(u) ∂ₛu` at every point of it, including `z₀`. -/
+solution `u` of `∂ₜu = J(u) ∂ₛu` on the punctured disc `0 < ‖z - z₀‖ < R`, of class `C³` there,
+with image in a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by `ω`,
+has a limit `q ∈ K` at `z₀`. Its filling by `q` takes values in `K`, is of class `C^ℓ` on the
+whole disc `‖z - z₀‖ < R`, and solves `∂ₜu = J(u) ∂ₛu` at every point of it, including `z₀`. -/
 theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c) (hR : 0 < R)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)
@@ -100,14 +100,9 @@ theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
       (fun z hz ↦ hJsq _ (huK hz)) hCR).congr hvu
   -- Near the puncture the filling is a weak solution, hence `C^ℓ` by bootstrapping.
   have hvε : ContDiffOn ℝ ℓ v (ball z₀ ε) :=
-    contDiffOn_of_isWeakCauchyRiemannOn (Ω := ⟨ball z₀ ε, isOpen_ball⟩)
-      (by simpa using hp) (isOpen_univ.prod hW)
-      (hJ.comp contDiff_snd.contDiffOn fun x hx ↦ (mem_prod.1 hx).2) contDiffOn_const
-      (fun z hz ↦ ⟨mem_univ _, hKW (hmaps (ball_subset_ball hεR.le hz))⟩)
-      ((ae_restrict_iff' measurableSet_ball).2 <| .of_forall fun z hz ↦
-        ContinuousLinearMap.ext fun x ↦ by
-          simp [hJsq _ (hmaps (ball_subset_ball hεR.le hz))])
-      hweak
+    contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one (Ω := ⟨ball z₀ ε, isOpen_ball⟩)
+      (by simpa using hp) hW hJ (fun z hz ↦ hKW (hmaps (ball_subset_ball hεR.le hz)))
+      (fun z hz ↦ hJsq _ (hmaps (ball_subset_ball hεR.le hz))) hweak
   have hvR : ContDiffOn ℝ ℓ v (ball z₀ R) := by
     refine contDiffOn_of_locally_contDiffOn fun z hz ↦ ?_
     rcases eq_or_ne z z₀ with rfl | hz₀
@@ -132,11 +127,11 @@ theorem exists_contDiffOn_update_of_finite_energy (hℓ : 2 ≤ ℓ)
 
 open Classical in
 /-- **Removal of the end of a plane.** Let `J` be `C^ℓ`, `ℓ ≥ 2`, on an open set `W`. For a
-finite-energy solution `u` of `∂ₜu = J(u) ∂ₛu` on the exterior `‖z‖ > R` of a disc, with image in
-a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed by `ω`, the limit
-`q ∈ K` of `u` at infinity exists. The inverted map `w ↦ u w⁻¹`, filled at `0` by `q`, is of
-class `C^ℓ` on the disc `‖w‖ < R⁻¹` and solves `∂ₜv = J(v) ∂ₛv` at every point of it. This is the
-chart of the Riemann sphere at the point at infinity of the plane. -/
+finite-energy solution `u` of `∂ₜu = J(u) ∂ₛu` on the exterior `‖z‖ > R` of a disc, of class `C³`
+there, with image in a compact set `K ⊆ W` on which `J² = -1`, and with `J(u)` uniformly tamed
+by `ω`, the limit `q ∈ K` of `u` at infinity exists. The inverted map `w ↦ u w⁻¹`, filled at `0`
+by `q`, is of class `C^ℓ` on the disc `‖w‖ < R⁻¹` and solves `∂ₜv = J(v) ∂ₛv` at every point of
+it. This is the chart of the Riemann sphere at the point at infinity of the plane. -/
 theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
     (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (hc : 0 < c)
     (hW : IsOpen W) (hJ : ContDiffOn ℝ ℓ J W) (hK : IsCompact K) (hKW : K ⊆ W)

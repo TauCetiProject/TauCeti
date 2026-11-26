@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Rigidity
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 
@@ -20,7 +21,9 @@ Cauchy–Riemann equation `∂ₜu = J(u) ∂ₛu` on `U`, is of class `C^ℓ` o
 needs `J(u)² = -1` along the image (`TauCeti.contDiffOn_of_fderiv_apply_I_eq`). Then it is
 `∂ₛu + J(u) ∂ₜu = 0`, so the classical solution is a weak one
 (`TauCeti.isWeakCauchyRiemannOn_of_contDiffOn`), and interior elliptic bootstrapping
-(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) gives the regularity.
+(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`) gives the regularity. For a structure depending only
+on the target, the bootstrapping applies to any weak solution along whose image `J² = -1`
+(`TauCeti.contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one`).
 
 Limits of rescaled solutions of the Floer equation, the bubbles of Gromov–Floer compactness, are
 `C¹` solutions of this equation for the structure frozen at the bubbling point, and their area is
@@ -45,6 +48,22 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
+/-- **Regularity of weak pseudoholomorphic maps.** Let `p > 2` and let `J` be of class `C^ℓ` on
+an open set `W ⊆ V`, as a map into `V →L[ℝ] V`. A weak solution `u` of `∂ₛu + J(u) ∂ₜu = 0` on an
+open set `Ω ⊆ ℂ`, with values in `W` and such that `J(u z)` is a complex structure at every point
+of `Ω`, is of class `C^ℓ` on `Ω`. -/
+theorem contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one {p : ENNReal} (hp : 2 < p)
+    {J : V → V →L[ℝ] V} {Ω : Opens ℂ} {W : Set V} {u : ℂ → V} {ℓ : ℕ∞} (hW : IsOpen W)
+    (hJ : ContDiffOn ℝ ℓ J W) (huW : MapsTo u Ω W)
+    (hJsq : ∀ z ∈ Ω, ∀ v, J (u z) (J (u z) v) = -v)
+    (h : IsWeakCauchyRiemannOn p Ω (fun _ ↦ J) 0 u) : ContDiffOn ℝ ℓ u Ω :=
+  contDiffOn_of_isWeakCauchyRiemannOn (J := fun _ ↦ J) (η := 0) hp (isOpen_univ.prod hW)
+    (hJ.comp contDiff_snd.contDiffOn fun q hq ↦ (mem_prod.1 hq).2) contDiffOn_const
+    (fun z hz ↦ ⟨mem_univ _, huW hz⟩)
+    ((ae_restrict_iff' Ω.isOpen.measurableSet).2 <| .of_forall fun z hz ↦
+      ContinuousLinearMap.ext fun v ↦ by simp [hJsq z hz])
+    h
+
 /-- **Regularity of `C¹` pseudoholomorphic maps, in the complex coordinate.** Let `J` be of class
 `C^ℓ` on an open set `W ⊆ V`, as a map into `V →L[ℝ] V`. A map `u` of class `C¹` on an open set
 `Ω ⊆ ℂ`, with values in `W`, such that `J(u z)` is a complex structure and
@@ -59,12 +78,8 @@ theorem contDiffOn_of_fderiv_apply_I_eq {J : V → V →L[ℝ] V} {Ω : Set ℂ}
   -- With `J² = -1`, the equation `∂ₜu = J(u) ∂ₛu` is `∂ₛu + J(u) ∂ₜu = 0`.
   have hweak := isWeakCauchyRiemannOn_of_contDiffOn (Ω := ⟨Ω, hΩ⟩) (p := ⊤)
     (J := fun _ ↦ J) (η := fun _ _ ↦ 0) hu fun z hz ↦ by simp [hCR z hz, hJsq z hz]
-  exact contDiffOn_of_isWeakCauchyRiemannOn (by simp) (isOpen_univ.prod hW)
-    (hJ.comp contDiff_snd.contDiffOn fun q hq ↦ (mem_prod.1 hq).2) contDiffOn_const
-    (fun z hz ↦ ⟨mem_univ _, huW hz⟩)
-    ((ae_restrict_iff' hΩ.measurableSet).2 <| .of_forall fun z hz ↦
-      ContinuousLinearMap.ext fun v ↦ by simp [hJsq z hz])
-    hweak
+  exact contDiffOn_of_isWeakCauchyRiemannOn_of_sq_eq_neg_one (Ω := ⟨Ω, hΩ⟩) (by simp) hW hJ huW
+    hJsq hweak
 
 /-- **Regularity of `C¹` pseudoholomorphic maps of the plane.** Let `J` be an almost complex
 structure on `V` which is `C^ℓ` on an open set `W`, as a map into `V →L[ℝ] V`. A map `u` of class
