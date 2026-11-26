@@ -769,32 +769,20 @@ theorem nonempty_linearEquiv_homology_signedMorseComplex_sphereHeight_sq_add_smu
   simp only [↓reduceIte] at hcard
   obtain ⟨a, -⟩ := Nat.card_eq_two_iff.1 hcard
   set K := hX.signedMorseComplex 𝔬 hf R hsq
-  -- The cycles of index `n` are the elements of the kernel of the graded boundary.
-  have hmem (c : K.X (j + 1 + 1)) :
-      c ∈ LinearMap.ker (K.d (j + 1 + 1) ((ComplexShape.down ℕ).next (j + 1 + 1))).hom ↔
-        hX.signedMorseBoundaryAt 𝔬 hf R (j + 1) c = 0 := by
-    rw [ChainComplex.next_nat_succ, LinearMap.mem_ker]
-    exact Eq.congr_left (signedMorseComplex_d_apply hsq (j + 1) c)
   -- The coefficient at `a` identifies the cycles with `R`.
   have hP := bijective_lapply_comp_subtype_ker_signedMorseBoundaryAt huv ht₀ ht₂ hX 𝔬 hf (R := R)
     hn rfl a
-  let ψ : LinearMap.ker (K.d (j + 1 + 1) ((ComplexShape.down ℕ).next (j + 1 + 1))).hom →ₗ[R] R :=
-    Finsupp.lapply a ∘ₗ Submodule.subtype _
-  -- The kernels of `K.d` and of the graded boundary live in `K.X (j + 1 + 1)` and in the chain
-  -- module, which agree only by definition (`signedMorseComplex_X`), so they cannot be compared
-  -- by `LinearEquiv.ofEq`. Instead, move cycles between them with `hmem`: on a cycle, `ψ` and the
-  -- map of `hP` both take the coefficient at `a`, so they agree by definition.
-  have hψ : Bijective ψ := by
-    refine ⟨fun z w h ↦ ?_, fun r ↦ ?_⟩
-    · have := hP.1 (a₁ := ⟨z.val, (hmem z.val).1 z.property⟩)
-        (a₂ := ⟨w.val, (hmem w.val).1 w.property⟩) h
-      exact Subtype.ext (Subtype.mk.inj this)
-    · obtain ⟨⟨c, hc⟩, rfl⟩ := hP.2 r
-      exact ⟨⟨c, (hmem c).2 hc⟩, rfl⟩
-  -- Nothing has index `n + 1`, so the homology in degree `n` is the module of cycles.
+  -- The differential of `K` out of degree `n` is the graded integral Morse boundary, and the terms
+  -- of `K` are the chain modules by definition (`signedMorseComplex_X`).
+  have hd : (K.d (j + 1 + 1) (j + 1)).hom = hX.signedMorseBoundaryAt 𝔬 hf R (j + 1) :=
+    LinearMap.ext (signedMorseComplex_d_apply hsq (j + 1))
+  rw [← hd] at hP
+  -- Nothing has index `n + 1`, so the homology in degree `n` is the kernel of `K.d n (n - 1)`.
   exact ⟨((K.isoHomologyπ _ _ (ChainComplex.prev ℕ _)
       ((isZero_signedMorseComplex_X_of_finrank_lt hsq (by simp)).eq_of_src _ _)).symm ≪≫
-        (K.sc (j + 1 + 1)).moduleCatCyclesIso).toLinearEquiv.trans (LinearEquiv.ofBijective ψ hψ)⟩
+        K.cyclesIsoSc' _ _ _ (ChainComplex.prev ℕ _) (ChainComplex.next_nat_succ _) ≪≫
+          (K.sc' _ (j + 1 + 1) (j + 1)).moduleCatCyclesIso).toLinearEquiv.trans
+            (LinearEquiv.ofBijective _ hP)⟩
 
 /-- **The other integral homology groups of the sphere with two maxima vanish.** For `n ≥ 2`,
 the integral Morse homology of `hᵤ² + t hᵥ`, with coefficients in any ring, vanishes in every
