@@ -7,16 +7,20 @@ module
 
 public import TauCeti.Analysis.LaplaceTransform.Basic
 import TauCeti.Analysis.LaplaceTransform.GammaKernel
+import TauCeti.Analysis.LaplaceTransform.WindowCoefficients
 import Mathlib.Analysis.Real.Sqrt
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Window bounds for Laplace coefficients with an integrable weight
 
-An exponential moment of the absolute input controls the contribution outside a scale window.
-The degree is chosen so that both tails can be compared with kernels at tilted rates. This gives
-an upper bound for the signed Taylor coefficients at a real centre and at every vertical shift
-of that centre, without a pointwise growth hypothesis on the input.
+An exponential moment of the absolute input controls the contribution outside a scale window
+`[U, L U]`. At the degree `k = ⌈(σ - A) √L U⌉` of
+`TauCeti.pow_mul_exp_neg_mul_div_factorial_le_off_window`, the norm of the signed Taylor
+coefficient `(-1)^k Φ⁽ᵏ⁾/k!` at any vertical shift `σ + iγ`, plus the real part of the same
+coefficient at the real centre `σ`, is bounded uniformly in the shift. The real-part term can be
+negative, so this does not bound the coefficient at `σ + iγ` by itself. No pointwise growth
+hypothesis on the input is needed.
 
 The coefficient comparison uses the same normalization as `Deduction.landau_coeff` in
 Levent Alpöge's Lean formalization of the Riemann hypothesis for Dirichlet L-functions
@@ -26,67 +30,11 @@ Levent Alpöge's Lean formalization of the Riemann hypothesis for Dirichlet L-fu
 public section
 
 open Complex Filter MeasureTheory Real Set
-open scoped Nat AbsoluteValue
+open scoped Nat AbsoluteValue Topology
 
 namespace TauCeti
 
 local notation "W" => fun (k : ℕ) (a u : ℝ) ↦ u ^ k * Real.exp (-(a * u)) / k !
-local notation "P" => fun (t : ℝ) ↦ t * Real.exp (1 - t)
-local notation "C" => fun (Φ : ℂ → ℂ) (k : ℕ) (z : ℂ) ↦
-  ((-1) ^ k / k ! : ℂ) * iteratedDeriv k Φ z
-
-/-- At a degree `k` large enough for the tails of `[U, b⁴ U]` to lie on the two sides of the
-kernel's peak, the tilted rates used in the tails give a uniform majorant. -/
-private theorem gammaKernel_le_inv_pow_of_notMem_window {b a r U : ℝ} {k : ℕ}
-    (hb : 1 < b) (ha : 0 < a)
-    (hr : 0 < r) (hq : max (P (b ^ 2)⁻¹) (P b) * r ≤ a)
-    (hk₁ : a * b ^ 2 * U ≤ (k : ℝ)) (hk₂ : (k : ℝ) ≤ a * b ^ 3 * U)
-    {u : ℝ} (hu : 0 ≤ u) (h : u ∉ Icc U (b ^ 4 * U)) : W k a u ≤ (r ^ k)⁻¹ := by
-  have tilt (t : ℝ) (ht : 0 < t) (hexp : (a / t - a) * u ≤ (1 - t) * k)
-      (htr : P t * r ≤ a) : W k a u ≤ (r ^ k)⁻¹ := by
-    have ht' : 0 < a / t := div_pos ha ht
-    have hs : a - (a - a / t) = a / t := by ring
-    dsimp only
-    rw [pow_mul_exp_neg_mul_div_factorial_eq_exp_neg_mul_mul k a (a - a / t), hs]
-    calc
-      _ ≤ Real.exp ((1 - t) * k) * ((a / t) ^ k)⁻¹ := by
-        refine mul_le_mul ?_ (pow_mul_exp_neg_mul_div_factorial_le_inv_pow k ht' hu)
-          (pow_mul_exp_neg_mul_div_factorial_nonneg k _ hu) (by positivity)
-        apply Real.exp_le_exp.mpr
-        linarith
-      _ = (P t / a) ^ k := by
-        rw [mul_comm (1 - t) (k : ℝ), Real.exp_natCast_mul, ← inv_pow, inv_div, ← mul_pow]
-        congr 1
-        dsimp
-        ring
-      _ ≤ (r ^ k)⁻¹ := by
-        rw [← inv_pow]
-        apply pow_le_pow_left₀ (by positivity)
-        calc
-          P t / a ≤ (a / r) / a := div_le_div_of_nonneg_right ((le_div_iff₀ hr).2 htr) ha.le
-          _ = r⁻¹ := by field_simp [ha.ne']
-  have hb₀ : 0 < b := lt_trans zero_lt_one hb
-  rw [mem_Icc, not_and_or, not_le, not_le] at h
-  rcases h with hleft | hright
-  · have hb₂ : 1 ≤ b ^ 2 := by nlinarith
-    refine tilt (b ^ 2)⁻¹ (by positivity) ?_ ?_
-    · rw [div_inv_eq_mul, ← mul_sub_one, mul_comm a, mul_assoc]
-      have h₁ : (b ^ 2 - 1) * (a * u) ≤ (b ^ 2 - 1) * (a * U) := by gcongr
-      have h₂ := mul_le_mul_of_nonneg_left hk₁ (sub_nonneg.mpr (inv_le_one_of_one_le₀ hb₂))
-      have he : (1 - (b ^ 2)⁻¹) * (a * b ^ 2 * U) = (b ^ 2 - 1) * (a * U) := by
-        field_simp
-      rw [he] at h₂
-      exact h₁.trans h₂
-    · exact (mul_le_mul_of_nonneg_right (le_max_left _ _) hr.le).trans hq
-  · refine tilt b hb₀ ?_ ((mul_le_mul_of_nonneg_right (le_max_right _ _) hr.le).trans hq)
-    apply (mul_le_mul_iff_right₀ hb₀).mp
-    have he : b * (a / b - a) = (1 - b) * a := by field_simp
-    rw [← mul_assoc, he, mul_assoc, mul_left_comm b]
-    apply mul_le_mul_of_nonpos_left _ (sub_nonpos.mpr hb.le)
-    calc
-      b * (k : ℝ) ≤ b * (a * b ^ 3 * U) := mul_le_mul_of_nonneg_left hk₂ hb₀.le
-      _ = a * (b ^ 4 * U) := by ring
-      _ ≤ a * u := mul_le_mul_of_nonneg_left hright.le ha.le
 
 /-- Compare an integrand bounded by the positive-part Gamma moment with its two integrable
 majorants, using the different rates on and off the window. -/
@@ -149,104 +97,68 @@ private theorem integral_le_window_of_le_kernel {g J : ℝ → ℝ} {A θ σ U V
   simpa only [Pi.add_apply, integral_const_mul, integral_add hF hG, integral_indicator hs,
     hrestrict] using hi
 
-/-- Integrate the real and vertical-shift integrands against the window majorants. -/
-private theorem laplace_taylorCoeff_le_of_window_tail {g : ℝ → ℝ} {Φ : ℂ → ℂ} {A θ σ U V : ℝ}
-    (hΦ : ∀ z : ℂ, A < z.re → HasLaplace (fun u ↦ (g u : ℂ)) z (Φ z))
-    (hA : IntegrableOn (fun u ↦ g u * Real.exp (-(A * u))) (Ioi 0))
-    (hσ : A < σ) (hθ : θ < σ) (hU : 0 < U) (k : ℕ)
-    (htail : ∀ u > 0, u ∉ Icc U V → W k (σ - A) u ≤ ((σ - θ) ^ k)⁻¹)
-    (γ : ℝ) :
-    ‖C Φ k ((σ : ℂ) + (γ : ℂ) * I)‖ + (C Φ k (σ : ℂ)).re ≤
+/-- **Laplace coefficients on a window, with an integrable weight.** Let `Φ` be the Laplace
+transform of a real input `g` on `re z > A`, and let `g u * exp (-A u)` be integrable on
+`(0, ∞)`. At the degree `k = ⌈(σ - A) √L U⌉`, the norm of the signed Taylor coefficient
+`(-1)^k Φ⁽ᵏ⁾/k!` at `σ + iγ`, plus the real part of that coefficient at `σ`, is at most
+`2 (σ - θ)⁻ᵏ` times the positive part of `g` damped at rate `θ` on `[U, L U]` plus the absolute
+exponential moment of `g` at rate `A`.
+
+With `p(t) = t exp (1 - t)`, the rate condition is `q (σ - θ) ≤ σ - A` for
+`q = max (p (1/√L)) (p (L^(1/4)))`, and the hypotheses on `σ - A` and `U` are those of
+`TauCeti.pow_mul_exp_neg_mul_div_factorial_le_off_window`, which also gives `U ≤ k`. -/
+theorem norm_add_re_laplace_coeff_le_window_of_integrableOn {g : ℝ → ℝ} {Φ : ℂ → ℂ}
+    {A θ σ L U : ℝ} (hΦ : ∀ z : ℂ, A < z.re → HasLaplace (fun u ↦ (g u : ℂ)) z (Φ z))
+    (hA : IntegrableOn (fun u ↦ g u * Real.exp (-(A * u))) (Ioi 0)) (hL : 1 < L)
+    (hσ : 1 ≤ (σ - A) * √L) (hθ : θ < σ)
+    (hq : max ((√L)⁻¹ * Real.exp (1 - (√L)⁻¹)) (√(√L) * Real.exp (1 - √(√L))) * (σ - θ) ≤
+      σ - A)
+    (hU : ((σ - A) * √L * (√(√L) - 1))⁻¹ ≤ U) (γ : ℝ) :
+    let k := ⌈(σ - A) * √L * U⌉₊
+    ‖((-1) ^ k / k ! : ℂ) • iteratedDeriv k Φ ((σ : ℂ) + (γ : ℂ) * I)‖ +
+        (((-1) ^ k / k ! : ℂ) • iteratedDeriv k Φ (σ : ℂ)).re ≤
       2 * ((σ - θ) ^ k)⁻¹ *
-        ((∫ u in Icc U V, max (g u) 0 * Real.exp (-(θ * u))) +
+        ((∫ u in Icc U (L * U), max (g u) 0 * Real.exp (-(θ * u))) +
           ∫ u in Ioi 0, |g u| * Real.exp (-(A * u))) := by
-  let μ : Measure ℝ := volume.restrict (Ioi 0)
-  let H (z : ℂ) (u : ℝ) := Complex.exp (-z * u) * (((u : ℂ) ^ k / k !) * (g u : ℂ))
-  have hT (z : ℂ) (hz : z.re = σ) : Integrable (H z) μ ∧ (∫ u, H z u ∂μ) = C Φ k z := by
-    have hn := (isOpen_lt continuous_const Complex.continuous_re).mem_nhds (hz ▸ hσ)
-    have h := hasLaplace_pow_div_factorial_smul_iteratedDeriv
-      (eventually_of_mem hn fun w hw ↦ hΦ w hw) k
-    exact ⟨by simpa only [H, smul_eq_mul] using h.integrable,
-      by simpa only [H, smul_eq_mul] using h.integral_eq⟩
-  let z : ℂ := (σ : ℂ) + (γ : ℂ) * I
-  obtain ⟨hz, hzeq⟩ := hT z (by simp [z])
-  obtain ⟨hs, hseq⟩ := hT (σ : ℂ) (by simp)
-  have hpoint (u : ℝ) (hu : 0 < u) : ‖H z u‖ + (H σ u).re ≤ 2 * (max (g u) 0 * W k σ u) := by
-    have hn : ‖H z u‖ = |g u| * W k σ u := by
-      simp [H, z, Complex.norm_exp, norm_pow, abs_of_pos hu]
-      ring
-    have hr : (H σ u).re = g u * W k σ u := by
-      dsimp only [H]
-      rw [← ofReal_neg, ← ofReal_mul, ← ofReal_exp, ← ofReal_pow, ← ofReal_natCast,
-        ← ofReal_div, ← ofReal_mul, ← ofReal_mul, ofReal_re]
-      simp only [neg_mul]
-      ring
-    rw [hn, hr, ← add_mul, abs_add_eq_two_nsmul_posPart, two_nsmul, ← two_mul, mul_assoc]
-    rfl
-  rw [← hzeq, ← hseq, ← reCLM_apply, ← reCLM.integral_comp_comm hs]
-  simp only [reCLM_apply]
-  refine (add_le_add_left (norm_integral_le_integral_norm (μ := μ) (H z)) _).trans ?_
-  have hsr : Integrable (fun u ↦ (H σ u).re) μ := hs.re
-  rw [← integral_add hz.norm hsr]
-  exact integral_le_window_of_le_kernel k hU hθ hA (hz.norm.add hsr) hpoint htail
-
-/-- For the reflected Taylor coefficient `(-1)^k Φ⁽ᵏ⁾/k!`, bound the sum of its norm at any
-vertical shift of the centre and its real part at the real centre. Only absolute integrability
-of the input at the baseline rate `A` is used to control the tails.
-
-The constants `q ∈ (0,1)` and `D > 0` depend only on the window ratio `L`. With `b = √√L`
-and `p(t) = t exp (1 - t)`, one can take `q = max (p(1/b²), p(b))` and `D = 1 / (b² (b - 1))`.
-The chosen degree is `⌈(σ - A) √L U⌉`, and the estimate holds once `(σ - A) U ≥ D` and the
-expansion line `σ` satisfies `(σ - A) √L ≥ 1` and `q (σ - θ) ≤ σ - A`. -/
-theorem exists_laplace_taylorCoeff_window_le {L : ℝ} (hL : 1 < L) :
-    ∃ q ∈ Ioo (0 : ℝ) 1, ∃ D > 0,
-      ∀ {g : ℝ → ℝ} {Φ : ℂ → ℂ} {A θ σ U : ℝ},
-        (∀ z : ℂ, A < z.re → HasLaplace (fun u ↦ (g u : ℂ)) z (Φ z)) →
-        IntegrableOn (fun u ↦ g u * Real.exp (-(A * u))) (Ioi 0) →
-        1 ≤ (σ - A) * √L → θ < σ → q * (σ - θ) ≤ σ - A → D ≤ (σ - A) * U →
-        let k := ⌈(σ - A) * √L * U⌉₊
-        U ≤ (k : ℝ) ∧ ∀ γ : ℝ,
-          ‖((-1) ^ k / k ! : ℂ) * iteratedDeriv k Φ ((σ : ℂ) + (γ : ℂ) * I)‖ +
-              (((-1) ^ k / k ! : ℂ) * iteratedDeriv k Φ (σ : ℂ)).re ≤
-            2 * ((σ - θ) ^ k)⁻¹ *
-              ((∫ u in Icc U (L * U), max (g u) 0 * Real.exp (-(θ * u))) +
-                ∫ u in Ioi 0, |g u| * Real.exp (-(A * u))) := by
-  let b := √(√L)
-  have hb : 1 < b := by
-    dsimp [b]
-    have hs : ∀ {x : ℝ}, 1 < x → 1 < √x := fun hx ↦ by
-      simpa using (lt_sqrt (x := 1) zero_le_one).2 (by simpa using hx)
-    exact hs (hs hL)
-  have hb₂ : b ^ 2 = √L := sq_sqrt (sqrt_nonneg _)
-  have hb₄ : b ^ 4 = L := by rw [show (4 : ℕ) = 2 * 2 by decide, pow_mul, hb₂,
-    sq_sqrt (by linarith)]
-  have hprof {t : ℝ} (ht : t ≠ 1) : P t < 1 := by
-    dsimp only
-    rw [← lt_div_iff₀ (Real.exp_pos _), one_div, ← Real.exp_neg]
-    simpa only [neg_sub, sub_add_cancel] using Real.add_one_lt_exp (sub_ne_zero.mpr ht)
-  have hleft : (b ^ 2)⁻¹ < 1 := inv_lt_one_of_one_lt₀ (by nlinarith)
-  let q := max (P (b ^ 2)⁻¹) (P b)
-  let D := (b ^ 2 * (b - 1))⁻¹
-  have hD : 0 < D := by dsimp [D]; positivity
-  refine ⟨q, ⟨lt_of_lt_of_le (by dsimp only; positivity : 0 < P b) (le_max_right _ _),
-    max_lt (hprof hleft.ne) (hprof hb.ne')⟩, D, hD, ?_⟩
-  intro g Φ A θ σ U hΦ hA hσ hθ hq hU k
+  intro k
+  obtain ⟨hq₀, -, -, hker⟩ := pow_mul_exp_neg_mul_div_factorial_le_off_window hL hσ hU
   have ha : 0 < σ - A := pos_of_mul_pos_left (zero_lt_one.trans_le hσ) (sqrt_nonneg L)
-  have hu : 0 < U := pos_of_mul_pos_right (hD.trans_le hU) ha.le
-  have hk₁ : (σ - A) * b ^ 2 * U ≤ (k : ℝ) := by rw [hb₂]; exact Nat.le_ceil _
-  have hk₂ : (k : ℝ) ≤ (σ - A) * b ^ 3 * U := by
-    have hgap := (inv_le_iff_one_le_mul₀ (by positivity : 0 < b ^ 2 * (b - 1))).mp hU
-    have hceil : (k : ℝ) < (σ - A) * b ^ 2 * U + 1 := by
-      rw [hb₂]
-      exact Nat.ceil_lt_add_one (by positivity)
-    linarith [show (σ - A) * b ^ 3 * U =
-      (σ - A) * b ^ 2 * U + (σ - A) * U * (b ^ 2 * (b - 1)) by ring]
-  refine ⟨?_, ?_⟩
-  · rw [hb₂] at hk₁
-    exact (le_mul_of_one_le_left hu.le hσ).trans hk₁
-  · have htail (u : ℝ) (hpos : 0 < u) (hnot : u ∉ Icc U (L * U)) :=
-      gammaKernel_le_inv_pow_of_notMem_window hb ha (sub_pos.mpr hθ) hq hk₁ hk₂ hpos.le
-        (by rwa [hb₄])
-    exact laplace_taylorCoeff_le_of_window_tail hΦ hA (sub_pos.mp ha) hθ hu k htail
+  have hσθ : 0 < σ - θ := sub_pos.mpr hθ
+  have hU₀ : 0 < U := by
+    have hr : 1 < √(√L) := by
+      rw [lt_sqrt zero_le_one, one_pow, lt_sqrt zero_le_one, one_pow]
+      exact hL
+    have : 0 < (σ - A) * √L * (√(√L) - 1) :=
+      mul_pos (zero_lt_one.trans_le hσ) (sub_pos.mpr hr)
+    exact (inv_pos.mpr this).trans_le hU
+  -- Off the window, the kernel at the tilted rate `σ - A` is at most `(σ - θ)⁻ᵏ`.
+  have htail (u : ℝ) (hu : 0 < u) (hout : u ∉ Icc U (L * U)) :
+      W k (σ - A) u ≤ ((σ - θ) ^ k)⁻¹ := by
+    refine (hker u hu.le hout).trans ?_
+    rw [← inv_pow, ← inv_pow, ← mul_pow]
+    refine pow_le_pow_left₀ (mul_nonneg (inv_nonneg.mpr ha.le) hq₀.le) ?_ k
+    rw [inv_mul_le_iff₀ ha, le_mul_inv_iff₀ hσθ]
+    exact hq
+  -- Reduce to the positive-part moment, then split it along the window.
+  have hev (z : ℂ) (hz : A < z.re) :
+      ∀ᶠ w in 𝓝 z, HasLaplace (fun u ↦ (g u : ℂ)) w (Φ w) :=
+    eventually_of_mem ((isOpen_lt continuous_const Complex.continuous_re).mem_nhds hz)
+      fun w hw ↦ hΦ w hw
+  have hzre : ((σ : ℂ) + (γ : ℂ) * I).re = σ := by simp
+  have hσA : A < σ := sub_pos.mp ha
+  have h₁ := norm_add_re_laplace_coeff_le (hev ((σ : ℂ) + (γ : ℂ) * I) (by rwa [hzre]))
+    (hev (((σ : ℂ) + (γ : ℂ) * I).re : ℂ) (by rwa [ofReal_re, hzre])) k
+  rw [hzre] at h₁
+  refine h₁.trans ?_
+  have hJ (u : ℝ) : max (g u) 0 * (u ^ k * Real.exp (-σ * u) / k !) =
+      max (g u) 0 * W k σ u := by
+    rw [neg_mul]
+  simp only [hJ]
+  by_cases hint : IntegrableOn (fun u ↦ max (g u) 0 * W k σ u) (Ioi 0)
+  · rw [← integral_const_mul]
+    exact integral_le_window_of_le_kernel k hU₀ hθ hA (hint.const_mul 2) (fun _ _ ↦ le_rfl)
+      htail
+  · rw [integral_undef hint, mul_zero]
+    positivity
 
 end TauCeti
