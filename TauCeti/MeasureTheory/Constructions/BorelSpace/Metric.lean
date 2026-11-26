@@ -48,8 +48,7 @@ theorem measurable_of_measurable_dist [MeasurableSpace α] [MeasurableSpace β] 
     {g : α → β} (h : ∀ y, Measurable fun a ↦ dist (g a) y) : Measurable g := by
   rw [measurable_iff_le_map, BorelSpace.measurable_eq (α := β)]
   refine borel_le_of_measurable_dist fun y ↦ ?_
-  rw [measurable_iff_comap_le, ← MeasurableSpace.comap_le_iff_le_map, MeasurableSpace.comap_comp,
-    ← measurable_iff_comap_le, Function.comp_def]
-  exact h y
+  simpa only [measurable_iff_comap_le, ← MeasurableSpace.comap_le_iff_le_map,
+    MeasurableSpace.comap_comp, Function.comp_def] using h y
 
 end TauCeti
