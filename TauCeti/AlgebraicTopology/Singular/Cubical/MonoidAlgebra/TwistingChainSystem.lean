@@ -43,12 +43,21 @@ the system is a representing chain system, `G` is the Moore loops of a space `B`
 trajectories into loops, this is the **Barraud–Cornea cocycle**, the input of the Morse complex
 with coefficients in a DG local system.
 
+A twisting chain system can be pushed forward along maps `g x y : M x y → M' x y` compatible with
+the composition maps (`TauCeti.TwistingChainSystem.map`), and its twisting cocycle is then that of
+the system itself evaluated by the composites `q ∘ g`
+(`TauCeti.TwistingChainSystem.twistingCocycle_map`). This is how a homeomorphism of the
+compactified trajectory spaces compatible with breaking, such as a change of the levels on which
+broken trajectories are recorded, carries chain systems and their cocycles.
+
 ## Main definitions
 
 * `TauCeti.twistingChainSum`: the twisting sum `Σ_z (-1) ^ (ind x - ind z) • ι_* (s x z × s z y)`.
 * `TauCeti.TwistingChainSystem`: chains satisfying the twisting equation.
 * `TauCeti.TwistingChainSystem.twistingCocycle`: the twisting cocycle of push-forwards along
   multiplicative evaluation maps.
+* `TauCeti.TwistingChainSystem.map`: the push-forward of a twisting chain system along maps
+  compatible with the composition maps.
 
 ## Main results
 
@@ -60,6 +69,9 @@ with coefficients in a DG local system.
   only depends on the chains of the pairs `(x, z)` and `(z, y)` for those `z`.
 * `TauCeti.cubicalChainDifferential_twistingChainSum`: the twisting sum is a cycle.
 * `TauCeti.cubicalChainSumMap_twistingChainSum`: push-forward along multiplicative evaluation maps.
+* `TauCeti.cubicalChainSumMap_twistingChainSum_of_comp`,
+  `TauCeti.TwistingChainSystem.twistingCocycle_map`: push-forward along maps compatible with the
+  composition maps.
 
 ## References
 
@@ -307,5 +319,64 @@ theorem twistingCocycle_m (S : TwistingChainSystem ind ι R)
 end TwistingChainSystem
 
 end Evaluation
+
+/-! ### Push-forward along maps of spaces -/
+
+section Map
+
+variable {M' : P → P → Type*} [∀ x y, TopologicalSpace (M' x y)]
+  {ι' : ∀ x y z, C(M' x y × M' y z, M' x z)} {g : ∀ x y, C(M x y, M' x y)}
+
+/-- **Push-forward of the twisting sum along maps of spaces** compatible with the composition
+maps: if `g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v)`, the push-forward of the twisting
+sum of `s` is the twisting sum of the push-forwards of `s`. -/
+theorem cubicalChainSumMap_twistingChainSum_of_comp {x y : P}
+    (hg : ∀ z (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
+    (s : ∀ x y, normalizedCubicalChainAlgebra (M x y) R) :
+    cubicalChainSumMap R (g x y) (twistingChainSum ind ι R s x y) =
+      twistingChainSum ind ι' R (fun x y ↦ cubicalChainSumMap R (g x y) (s x y)) x y := by
+  rw [twistingChainSum_def, twistingChainSum_def, map_sum]
+  refine Finset.sum_congr rfl fun z _ ↦ ?_
+  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing_of_comp (hg z)]
+
+namespace TwistingChainSystem
+
+variable (g) in
+/-- **The push-forward of a twisting chain system** along maps `g x y : M x y → M' x y`
+compatible with the composition maps, `g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v)`:
+the push-forwards `g_* (s x y)` of its chains satisfy the twisting equation for `ι'`. -/
+def map (S : TwistingChainSystem ind ι R)
+    (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v)) :
+    TwistingChainSystem ind ι' R where
+  chain x y := cubicalChainSumMap R (g x y) (S.chain x y)
+  mem_graded x y := cubicalChainSumMap_mem _ (S.mem_graded x y)
+  twisting x y := by
+    rw [cubicalChainDifferential_cubicalChainSumMap, S.twisting,
+      cubicalChainSumMap_twistingChainSum_of_comp (hg x · y)]
+
+/-- The chains of a push-forward are the push-forwards of the chains. -/
+@[simp]
+theorem map_chain (S : TwistingChainSystem ind ι R)
+    (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
+    (x y : P) : (S.map g hg).chain x y = cubicalChainSumMap R (g x y) (S.chain x y) :=
+  (rfl)
+
+variable {G : Type*} [Monoid G] [TopologicalSpace G] [ContinuousMul G] {q : ∀ x y, C(M' x y, G)}
+
+/-- **The twisting cocycle of a push-forward** along `g`, evaluated by `q`, is the twisting cocycle
+of the system itself evaluated by the composites `q x y ∘ g x y`. -/
+theorem twistingCocycle_map (S : TwistingChainSystem ind ι R)
+    (hg : ∀ x z y (u : M x z) (v : M z y), g x y (ι x z y (u, v)) = ι' x z y (g x z u, g z y v))
+    (hq : ∀ x z y (u : M' x z) (v : M' z y), q x y (ι' x z y (u, v)) = q x z u * q z y v) :
+    (S.map g hg).twistingCocycle q hq =
+      S.twistingCocycle (fun x y ↦ (q x y).comp (g x y))
+        fun x z y u v ↦ by simp only [ContinuousMap.comp_apply, hg, hq] := by
+  ext x y
+  rw [twistingCocycle_m, twistingCocycle_m, map_chain, cubicalChainSumMap_comp,
+    LinearMap.comp_apply]
+
+end TwistingChainSystem
+
+end Map
 
 end TauCeti
