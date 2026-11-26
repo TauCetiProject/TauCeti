@@ -43,19 +43,20 @@ namespace ConjOpposite
 variable {A : Type*}
 
 /-- An element of `A`, viewed in the conjugate opposite algebra. -/
-@[expose]
 def toConj (x : A) : ConjOpposite A := MulOpposite.op x
 
 /-- The underlying element of `A` of an element of the conjugate opposite algebra. -/
-@[expose]
 def ofConj (x : ConjOpposite A) : A := MulOpposite.unop x
 
-@[simp] theorem ofConj_toConj (x : A) : ofConj (toConj x) = x := rfl
+@[simp] theorem ofConj_toConj (x : A) : ofConj (toConj x) = x := (rfl)
 
-@[simp] theorem toConj_ofConj (x : ConjOpposite A) : toConj (ofConj x) = x := rfl
+@[simp] theorem toConj_ofConj (x : ConjOpposite A) : toConj (ofConj x) = x := (rfl)
 
 theorem ofConj_injective : Function.Injective (ofConj : ConjOpposite A → A) :=
   MulOpposite.unop_injective
+
+theorem toConj_injective : Function.Injective (toConj : A → ConjOpposite A) :=
+  MulOpposite.op_injective
 
 variable [Ring A]
 
@@ -64,25 +65,27 @@ instance : Ring (ConjOpposite A) := inferInstanceAs (Ring Aᵐᵒᵖ)
 instance [Algebra ℂ A] : Algebra ℂ (ConjOpposite A) :=
   Algebra.compHom Aᵐᵒᵖ (starRingEnd ℂ)
 
-@[simp] theorem ofConj_one : ofConj (1 : ConjOpposite A) = 1 := rfl
+@[simp] theorem ofConj_zero : ofConj (0 : ConjOpposite A) = 0 := (rfl)
 
-@[simp] theorem ofConj_add (x y : ConjOpposite A) : ofConj (x + y) = ofConj x + ofConj y := rfl
+@[simp] theorem ofConj_one : ofConj (1 : ConjOpposite A) = 1 := (rfl)
 
-@[simp] theorem ofConj_sub (x y : ConjOpposite A) : ofConj (x - y) = ofConj x - ofConj y := rfl
+@[simp] theorem ofConj_add (x y : ConjOpposite A) : ofConj (x + y) = ofConj x + ofConj y := (rfl)
 
-@[simp] theorem ofConj_neg (x : ConjOpposite A) : ofConj (-x) = -ofConj x := rfl
+@[simp] theorem ofConj_sub (x y : ConjOpposite A) : ofConj (x - y) = ofConj x - ofConj y := (rfl)
+
+@[simp] theorem ofConj_neg (x : ConjOpposite A) : ofConj (-x) = -ofConj x := (rfl)
 
 /-- Multiplication in the conjugate opposite algebra is reversed. -/
-@[simp] theorem ofConj_mul (x y : ConjOpposite A) : ofConj (x * y) = ofConj y * ofConj x := rfl
+@[simp] theorem ofConj_mul (x y : ConjOpposite A) : ofConj (x * y) = ofConj y * ofConj x := (rfl)
 
 variable [Algebra ℂ A]
 
 /-- Complex scalars act on the conjugate opposite algebra through complex conjugation. -/
 @[simp] theorem ofConj_smul (r : ℂ) (x : ConjOpposite A) :
-    ofConj (r • x) = star r • ofConj x := rfl
+    ofConj (r • x) = star r • ofConj x := (rfl)
 
 @[simp] theorem ofConj_algebraMap (r : ℂ) :
-    ofConj (algebraMap ℂ (ConjOpposite A) r) = algebraMap ℂ A (star r) := rfl
+    ofConj (algebraMap ℂ (ConjOpposite A) r) = algebraMap ℂ A (star r) := (rfl)
 
 end ConjOpposite
 

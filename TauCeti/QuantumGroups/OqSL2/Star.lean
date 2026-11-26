@@ -371,21 +371,21 @@ theorem starAlgHom_ext {f g : OqSL2 q →⋆ₐ[ℂ] B} (ha : f (a q) = g (a q))
 /-- The universal property of `SU_q(2)`: star algebra maps out of `OqSL2 q` correspond to pairs
 satisfying its five relations, through the images of `a` and `c`. -/
 noncomputable def starLiftEquiv :
-    {p : B × B // IsSUq2Pair q p.1 p.2} ≃ (OqSL2 q →⋆ₐ[ℂ] B) where
-  toFun p := starLift p.property
-  invFun f := ⟨(f (a q), f (c q)), (isSUq2Pair_a_c q).map f⟩
-  left_inv p := by ext <;> simp
-  right_inv f := by ext <;> simp
-
-/-- The star algebra map attached to a pair is `starLift`. -/
-@[simp]
-theorem starLiftEquiv_apply (p : {p : B × B // IsSUq2Pair q p.1 p.2}) :
-    starLiftEquiv p = starLift p.property := (rfl)
+    (OqSL2 q →⋆ₐ[ℂ] B) ≃ {p : B × B // IsSUq2Pair q p.1 p.2} where
+  toFun f := ⟨(f (a q), f (c q)), (isSUq2Pair_a_c q).map f⟩
+  invFun p := starLift p.property
+  left_inv f := by ext <;> simp
+  right_inv p := by ext <;> simp
 
 /-- The pair attached to a star algebra map records its values on `a` and `c`. -/
 @[simp]
-theorem starLiftEquiv_symm_apply (f : OqSL2 q →⋆ₐ[ℂ] B) :
-    starLiftEquiv.symm f = ⟨(f (a q), f (c q)), (isSUq2Pair_a_c q).map f⟩ := (rfl)
+theorem starLiftEquiv_apply (f : OqSL2 q →⋆ₐ[ℂ] B) :
+    starLiftEquiv f = ⟨(f (a q), f (c q)), (isSUq2Pair_a_c q).map f⟩ := (rfl)
+
+/-- The star algebra map attached to a pair is `starLift`. -/
+@[simp]
+theorem starLiftEquiv_symm_apply (p : {p : B × B // IsSUq2Pair q p.1 p.2}) :
+    starLiftEquiv.symm p = starLift p.property := (rfl)
 
 end StarLift
 
