@@ -75,7 +75,8 @@ to `p.perturbation H` with fixed-point nondegeneracy
 public section
 
 open Set Real Function Filter MeasureTheory
-open TauCeti.Complex (realChart realChart_apply realChart_mk contDiff_realChart)
+open TauCeti.Complex (realChart realChart_apply realChart_mk contDiff_realChart
+  isOpen_setOf_lt_norm_equivRealProdCLM_symm)
 open scoped ENNReal NNReal Topology Manifold
 
 namespace TauCeti.SymplecticForm
@@ -174,13 +175,11 @@ private theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_positive_l
   refine ⟨κ, hκ, C, (hdecay.and (eventually_gt_atTop a)).mono fun R ⟨hR, hRa⟩ ↦ ?_⟩
   have hrR : r < Real.exp (2 * π * R) :=
     hr.trans_lt (Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left hRa Real.two_pi_pos))
-  have hopen : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
-    isOpen_lt continuous_const (by fun_prop)
   rw [← ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq h𝔎 hH
     (fun t ↦ (hHs.of_uncurry_left t).differentiable two_ne_zero)
     (haT.trans hRa.le) fun z hz ↦
-      ((hu.differentiableOn two_ne_zero) z (hrR.trans_le hz)).differentiableAt
-        (hopen.mem_nhds (hrR.trans_le hz))]
+      (hu.contDiffAt ((isOpen_setOf_lt_norm_equivRealProdCLM_symm r).mem_nhds
+        (hrR.trans_le hz))).differentiableAt two_ne_zero]
   exact hR
 
 omit [FiniteDimensional ℝ V] in
@@ -540,8 +539,7 @@ theorem exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylin
   have hmem {R : ℝ} (hR : a < R) (t : ℝ) :
       r < ‖Complex.equivRealProdCLM.symm
         (realChart p.cylindricalEndLift (p.endSign * R, t))‖ :=
-    hr.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-      (by simpa [← mul_assoc] using hR))
+    p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr (by simpa [← mul_assoc] using hR)
   have hxK (t : ℝ) : x t ∈ K :=
     hK.isClosed.mem_of_tendsto (hconv.tendsto_at t)
       ((eventually_gt_atTop a).mono fun R hR ↦ by rw [← realChart_mk]; exact huK _ (hmem hR t))
@@ -561,13 +559,11 @@ theorem exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylin
         (ContinuousLinearMap.snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))‖
       else ‖(u ∘ realChart p.cylindricalEndLift) (p.endSign * R, t) - x t‖)
     (Bool.forall_bool.2 ⟨⟨κ₀, hκ₀, C₀, h₀⟩, ⟨κ₁, hκ₁, C₁, h₁⟩⟩)
-  have hopen : IsOpen {z : ℝ × ℝ | r < ‖Complex.equivRealProdCLM.symm z‖} :=
-    isOpen_lt continuous_const (by fun_prop)
   refine ⟨x, hxper, hx, κ, hκ, C, ?_⟩
   filter_upwards [h, eventually_gt_atTop a] with R hR hRa t
   have hd : DifferentiableAt ℝ (u ∘ realChart p.cylindricalEndLift) (p.endSign * R, t) :=
-    (((hu.differentiableOn (by norm_num)) _ (hmem hRa t)).differentiableAt
-      (hopen.mem_nhds (hmem hRa t))).comp _
+    ((hu.contDiffAt ((isOpen_setOf_lt_norm_equivRealProdCLM_symm r).mem_nhds
+      (hmem hRa t))).differentiableAt (by norm_num)).comp _
       ((contDiff_realChart p.contDiff_cylindricalEndLift).differentiable one_ne_zero _)
   exact ⟨hd, hR false t, hR true t⟩
 
@@ -674,10 +670,11 @@ theorem exists_pos_eventually_norm_sub_add_norm_fderiv_sub_le_exp_pssPlanePertur
         Jq t (u (realChart p.cylindricalEndLift (p.endSign * s, t))) := by
     have hlt : r < ‖Complex.equivRealProdCLM.symm
         (realChart p.cylindricalEndLift (p.endSign * s, t))‖ :=
-      hr.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-        (by simpa [← mul_assoc] using (lt_add_one a).trans_le hs))
-    rw [hJ _ hlt, realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
-      p.apply_im_endCoord_cylindricalEndLift hJqper, Complex.equivRealProdCLM_symm_apply_im]
+      p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr
+        (by simpa [← mul_assoc] using (lt_add_one a).trans_le hs)
+    rw [hJ _ hlt, TauCeti.Complex.equivRealProdCLM_symm_realChart,
+      p.apply_im_endCoord_cylindricalEndLift hJqper]
+    simp
   obtain ⟨x, hxper, hx, κ, hκ, C, h⟩ :=
     exists_pos_eventually_norm_sub_and_fderiv_comp_realChart_le_exp_of_cylindrical p
       (𝔎 := p.perturbation H) (T₀ := a + 1)
@@ -763,6 +760,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop_pssPlanePerturbation
     exists_pos_eventually_norm_sub_le_exp_pssPlanePerturbation p hH hHs hu hK huK hfloer hE hW
       hJq hJqper hKW hJqt hJ hL hnd
   refine ⟨x, hxper, hx, Metric.tendstoUniformly_iff.2 fun δ hδ ↦ ?_⟩
+  -- The bound `A exp (-κ s)` tends to `0`.
   have h0 : Tendsto (fun s ↦ A * Real.exp (-(κ * s))) atTop (𝓝 0) := by
     simpa using (Real.tendsto_exp_neg_atTop_nhds_zero.comp
       (tendsto_id.const_mul_atTop hκ)).const_mul A

@@ -457,6 +457,7 @@ theorem dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse
     fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (fun y ↦ -H (-t) y)) (x t)
   have hSc : Continuous S :=
     omega.continuous_fderiv_hamiltonianVectorField_comp hH (hxc.comp continuous_neg)
+  -- The linearization of the reversed Hamiltonian is `S'_t = -S_{-t}`.
   have hS' (t : ℝ) : S' t = -S (-t) := by
     have hX' : omega.hamiltonianVectorField (fun y ↦ -H (-t) y) =
         fun y ↦ -omega.hamiltonianVectorField (H (-t)) y :=
@@ -467,6 +468,8 @@ theorem dysonSeriesLeft_fderiv_hamiltonianVectorField_apply_eq_self_of_reverse
     exact (hSc.comp continuous_neg).neg
   have hS'p : Periodic S' 1 := fun t ↦ by
     simp only [S', hxp t, neg_add, ← sub_eq_add_neg, hHp.sub_eq]
+  -- The periodic solution `t ↦ Ψ'(t) v` of `ζ' = S'_t ζ`, run backwards, is a periodic solution
+  -- of `ζ' = S_t ζ` starting at `v`.
   set ζ : ℝ → V := fun t ↦ dysonSeriesLeft S' (-t) v
   have hζ (t : ℝ) : HasDerivAt ζ (S t (ζ t)) t := by
     have h := (hasDerivAt_dysonSeriesLeft_apply hS'c v (-t)).scomp t (hasDerivAt_neg t)

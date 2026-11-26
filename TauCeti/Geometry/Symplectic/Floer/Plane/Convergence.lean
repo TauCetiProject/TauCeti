@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Basic
 import TauCeti.Algebra.Ring.Periodic
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.ExponentialDecay
 
 /-!
 # Convergence and bounded derivatives at the end of a PSS plane
@@ -74,7 +75,8 @@ section NormedSpace
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
-  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {K : Set V}
+  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {K : Set V} {W : Set (ℝ × V)}
+  {Jq : ℝ → V → AlmostComplexStructure V}
 
 /-- Nondegeneracy of the time-one map at `x 0` for every `1`-periodic orbit `x` of `H` in `K`
 implies uniform isolation of `1`-periodic orbits of `H` in `K`. -/
@@ -261,7 +263,7 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_isolated
   obtain ⟨b', hbb', hrb'⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r b
   have hmem {z : ℝ × ℝ} (hz : b' < p.endSign * z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ :=
-    hrb'.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
+    p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hrb' hz
   obtain ⟨x', -, -, hx'⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_atTop_of_eq_smul_endAngularForm_of_isolated p
       (𝔎 := p.perturbation H) (T₀ := 2) (fun _ y _ hw ↦ p.perturbation_eq_smul_endAngularForm hw y)
@@ -272,15 +274,6 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_isolated
   have hxx' : x = x' := funext fun t ↦
     tendsto_nhds_unique (hσx.tendsto_at t) ((hx'.tendsto_at t).comp hσ)
   exact ⟨x, hxper, hx, hxx' ▸ hx', hA, hEx⟩
-
-end NormedSpace
-
-section InnerProductSpace
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {ω : SymplecticForm V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
-  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {K : Set V} {W : Set (ℝ × V)}
-  {Jq : ℝ → V → AlmostComplexStructure V}
 
 /-- **Cylindrical half-cylinder pullback on `(a, ∞)` of the positive plane.** Where `𝔎 = H(t) dt`
 and `J(realChart φ_+ (s, t)) = Jq(t, u(realChart φ_+ (s, t)))` for `s ≥ T₀` on the positive plane,
@@ -373,6 +366,15 @@ theorem floer_comp_realChart_negative_of_cylindrical (ω : SymplecticForm V)
       (fun w y hw hz ↦ eq_smul_endAngularForm_positive_of_negative h𝔎 y hw hz) hH'
       (fun t ↦ (hHs'.of_uncurry_left t).differentiable hn) hn ha hr hu huK hfloer hE
       fun s t hs ↦ by simpa [realChart_cylindricalEndLift_negative] using hJ s (-t) hs⟩
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {ω : SymplecticForm V} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {H : ℝ → V → ℝ} {T₀ : ℝ}
+  {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {K : Set V} {W : Set (ℝ × V)}
+  {Jq : ℝ → V → AlmostComplexStructure V}
 
 /-! ### Bounded derivatives and convergence on cylindrical ends -/
 
@@ -474,8 +476,8 @@ theorem exists_forall_norm_fderiv_comp_realChart_cylindricalEndLift_le_and_tame 
         u (realChart p.cylindricalEndLift z) ∈ K := by
     have h1 : p.endSign * (p.endSign * z.1) = z.1 := by
       rw [← mul_assoc, endSign_mul_endSign, one_mul]
-    refine ⟨?_, huK _ (hr.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2
-      ((lt_add_one a).trans hz)))⟩
+    refine ⟨?_, huK _ (p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr
+      ((lt_add_one a).trans hz))⟩
     have h := hJ (p.endSign * z.1) z.2 (hb.trans hz).le
     rwa [h1] at h
   refine ⟨b, C, c, hc, M, fun z hz ↦ hC z hz.le, fun z hz v ↦ ?_, fun z hz v ↦ ?_⟩
@@ -602,9 +604,8 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindric
     hJ hfloer hE hiso hC
 
 /-- **Whole-plane energy of a finite-energy PSS plane with a cylindrical end.** Specialization of
-`exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical_of_isolated`
-when the suspension of `H` is globally Lipschitz and every `1`-periodic orbit in `K` starts at a
-nondegenerate fixed point of the time-one map. -/
+`exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical_of_isolated` when every
+`1`-periodic orbit of `H` in `K` has no nonzero fixed vector under the linearized return map. -/
 theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical
     (p : PSSPlane) (hH : Periodic H 1) (hHs : ContDiff ℝ 3 (uncurry H)) (hu : ContDiff ℝ 3 u)
     (hK : IsCompact K) {r : ℝ}
@@ -624,10 +625,10 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindric
     (hJcyl : ∀ s t, T₀ ≤ s →
       J (realChart p.cylindricalEndLift (p.endSign * s, t)) =
         Jq t (u (realChart p.cylindricalEndLift (p.endSign * s, t))))
-    {L : ℝ≥0} (hL : LipschitzWith L (ω.timeDependentHamiltonianSuspension H))
     (hnd : ∀ x : ℝ → V, Periodic x 1 →
       (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) → (∀ t, x t ∈ K) →
-      IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hL 0 1) (x 0)) :
+      ∀ v, dysonSeriesLeft
+        (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 v = v → v = 0) :
     ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
       TendstoUniformly (fun R t ↦ u (Complex.equivRealProdCLM
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) x atTop ∧
@@ -641,8 +642,11 @@ theorem exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindric
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) :=
   exists_lintegral_floerEnergyDensity_pssPlanePerturbation_eq_of_cylindrical_of_isolated
-    p hH hHs hu hK huK hJ hfloer hE hW hJq hJqper hKW hJqt hJcyl
-    (isolated_of_isNondegenerateFixedPt hL hnd)
+    p hH hHs hu hK huK hJ hfloer hE hW hJq hJqper hKW hJqt hJcyl fun y hyper hy hyK ↦ by
+      obtain ⟨δ, hδ, hiso⟩ :=
+        exists_pos_forall_periodic_eq_of_nondegenerate (hHs.of_le (by norm_num)) hyper hy
+          (hnd y hyper hy hyK)
+      exact ⟨δ, hδ, fun z hzper hz _ hzy ↦ hiso z hzper hz hzy⟩
 
 end InnerProductSpace
 

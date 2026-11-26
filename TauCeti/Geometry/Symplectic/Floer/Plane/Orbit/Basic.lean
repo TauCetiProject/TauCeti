@@ -79,36 +79,9 @@ The case of a manifold target is treated in
 public section
 
 open Set Real Function MeasureTheory Filter
-open TauCeti.Complex (realChart realChart_mk contDiff_realChart)
+open TauCeti.Complex (realChart realChart_mk contDiff_realChart
+  isOpen_setOf_lt_norm_equivRealProdCLM_symm)
 open scoped Topology
-
-namespace TauCeti
-
-namespace Floer.PSSPlane
-
-/-- The end lift of the positive plane maps the closed half-strip `[a, ∞) × [0, 1)` onto the
-exterior `{‖w‖ ≥ exp (2πa)}`. -/
-theorem image_realChart_positive_Ici_prod_Ico (a : ℝ) :
-    realChart positive.cylindricalEndLift '' (Ici a ×ˢ Ico 0 1) =
-      {z | Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖} := by
-  ext z
-  constructor
-  · rintro ⟨w, hw, rfl⟩
-    rw [Set.mem_ofPred_eq, positive.norm_symm_realChart_cylindricalEndLift, endSign_positive,
-      one_mul]
-    exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hw.1 Real.two_pi_pos.le)
-  · intro (hz : Real.exp _ ≤ _)
-    have hlt : Real.exp (2 * π * (a - 1)) < ‖Complex.equivRealProdCLM.symm z‖ :=
-      lt_of_lt_of_le
-        (Real.exp_lt_exp.2 (mul_lt_mul_of_pos_left (sub_one_lt a) Real.two_pi_pos)) hz
-    obtain ⟨ζ, _, hζ₂, rfl⟩ := positive.exists_realChart_cylindricalEndLift_eq hlt
-    rw [positive.norm_symm_realChart_cylindricalEndLift, endSign_positive, one_mul,
-      Real.exp_le_exp, mul_le_mul_iff_right₀ Real.two_pi_pos] at hz
-    exact ⟨ζ, ⟨hz, hζ₂⟩, rfl⟩
-
-end Floer.PSSPlane
-
-end TauCeti
 
 namespace TauCeti.SymplecticForm
 
@@ -119,36 +92,6 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
   {c M : ℝ} {K : Set V} {p : PSSPlane} {𝔎 : ℂ → V → ℂ →L[ℝ] ℝ} {T₀ : ℝ}
 
 /-! ### The end in real coordinates -/
-
-/-- **The exterior energy on `{‖w‖ ≥ exp (2πa)}` of the positive plane.** Where `𝔎` is `H(t) dt`
-on `{s ≥ T₀}` of the positive plane, for `a ≥ T₀` the energy of `u ∘ ψ` over `[a, ∞) × [0, 1]`
-equals the energy of `u` over `{‖w‖ ≥ exp (2πa)}`. -/
-theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_Ici_eq
-    (ω : SymplecticForm V)
-    (hKH : ∀ w x, w ≠ 0 → T₀ ≤ (positive.endCoord w).re →
-      𝔎 w x = H (positive.endCoord w).im x • positive.endAngularForm w)
-    (hH : Periodic H 1) (hHd : ∀ t, Differentiable ℝ (H t)) {a : ℝ} (ha : T₀ ≤ a)
-    (hu : ∀ z, Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖ →
-      DifferentiableAt ℝ u z) :
-    ∫⁻ z in Ici a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) =
-      ∫⁻ z in {z | Real.exp (2 * π * a) ≤ ‖Complex.equivRealProdCLM.symm z‖},
-        ENNReal.ofReal (ω.floerEnergyDensity
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ 𝔎 (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  have hae : (Ici a ×ˢ Icc (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ici a ×ˢ Ico 0 1 := by
-    rw [Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq EventuallyEqSet.rfl Ico_ae_eq_Icc.symm
-  rw [setLIntegral_congr hae,
-    setLIntegral_floerEnergyDensity_comp_realChart_cylindricalEndLift_eq (p := positive)
-      (fun w x hw hre ↦ hKH w x hw (by simpa using hre)) hH
-      (measurableSet_Ici.prod measurableSet_Ico) (fun ζ hζ ↦ by simpa using ha.trans hζ.1)
-      (t₀ := 0) (fun ζ hζ ↦ by simpa using hζ.2)
-      (fun ζ hζ ↦ hu _ <| by
-        rw [positive.norm_symm_realChart_cylindricalEndLift, endSign_positive, one_mul]
-        exact Real.exp_le_exp.2 (mul_le_mul_of_nonneg_left hζ.1 Real.two_pi_pos.le))
-      (fun _ _ ↦ hHd _ _),
-    image_realChart_positive_Ici_prod_Ico]
 
 /-- **Pullback of a finite-energy Floer end along `realChart p.cylindricalEndLift`.** Let `𝔎` agree
 with `H(t) dt` on the part `ε s ≥ T₀` of the end of `p`. For any `a ≥ T₀` with `r ≤ exp (2πa)`, a
@@ -182,12 +125,11 @@ theorem floer_comp_realChart_cylindricalEndLift (ω : SymplecticForm V) (p : PSS
       {z | r < ‖Complex.equivRealProdCLM.symm z‖} := fun _ hz ↦ hr.trans_lt hz
   have hmem {z : ℝ × ℝ} (hz : a < p.endSign * z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ :=
-    hsub (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
-  have hud := (hu.mono hsub).differentiableOn hn
+    p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr hz
   have hdiff {z : ℝ × ℝ} (hz : a < p.endSign * z.1) :
       DifferentiableAt ℝ u (realChart p.cylindricalEndLift z) :=
-    hud.differentiableAt <| (isOpen_lt continuous_const (by fun_prop)).mem_nhds
-      (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
+    (hu.contDiffAt ((isOpen_setOf_lt_norm_equivRealProdCLM_symm r).mem_nhds
+      (hmem hz))).differentiableAt hn
   refine ⟨(hu.mono hsub).comp (contDiff_realChart p.contDiff_cylindricalEndLift).contDiffOn
       fun z hz ↦ p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz,
     fun z hz ↦ huK _ (hmem hz),
@@ -272,10 +214,11 @@ private theorem exists_halfCylinder_comp_realChart_cylindricalEndLift
       ∀ P : Set ℝ, MeasurableSet P → (∀ s ∈ P, a < p.endSign * s) →
         ∫⁻ z in P ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
           (fun w ↦ H w.2) (u ∘ realChart p.cylindricalEndLift) z) ≠ ⊤ := by
+  -- Shrink the end to a part `‖w‖ > exp (2πa)` with `a ≥ T₀`, where the datum is cylindrical.
   obtain ⟨a, ha, hr⟩ := exists_le_and_le_exp_mul Real.two_pi_pos r T₀
   have hmem {z : ℝ × ℝ} (hz : a < p.endSign * z.1) :
       r < ‖Complex.equivRealProdCLM.symm (realChart p.cylindricalEndLift z)‖ :=
-    hr.trans_lt (p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hz)
+    p.lt_norm_symm_realChart_cylindricalEndLift_of_le_exp hr hz
   obtain ⟨hv, hvK, hfloer', hE'⟩ :=
     ω.floer_comp_realChart_cylindricalEndLift p hKH hH hHd hn ha hr hu huK hfloer hE
   exact ⟨a, hv, hvK, fun z hz ↦ hJc _ (hmem hz), fun z hz ↦ hJM _ (hmem hz), hfloer', hE'⟩
@@ -305,7 +248,7 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset
     (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH hs
     (fun ζ hζ ↦ by simpa using ha.trans (hst hζ).1.le) (fun ζ hζ ↦ (hst hζ).2)
     (fun ζ hζ ↦ hu.differentiableAt <|
-      (isOpen_lt continuous_const (by fun_prop)).mem_nhds (hnorm hζ))
+      (isOpen_setOf_lt_norm_equivRealProdCLM_symm _).mem_nhds (hnorm hζ))
     fun ζ _ ↦ (hHs.of_uncurry_left ζ.2).differentiable one_ne_zero _]
   refine lintegral_mono_set ?_
   rintro _ ⟨ζ, hζ, rfl⟩
@@ -330,6 +273,7 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) := by
+  -- The energy of the translated end over `s` is that of `u ∘ φ` over `s + (R, 0)`.
   have h := ω.constSmooth.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
     (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) (R, 0)
     ((· + ((R, 0) : ℝ × ℝ)) '' s)
@@ -339,53 +283,6 @@ theorem setLIntegral_floerEnergyDensity_comp_realChart_positive_add_le
   exact ω.setLIntegral_floerEnergyDensity_comp_realChart_positive_le_of_subset hH hHs ha hu
     ((measurableEmbedding_addRight _).measurableSet_image' hs)
     (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
-
-/-- **The half-cylinder at the end of the positive plane.** If `u` is `Cⁿ`, `n ≠ 0`, on a part
-`‖w‖ > r` of the positive plane, with image in `K`, solving the Floer equation there for structures
-`J(z)` bounded by `c` and `M`, and with finite energy there, then on some half-cylinder `s > a` the
-map `u ∘ φ` and the structures `J ∘ φ` satisfy the hypotheses of the finite-energy half-cylinder
-theorems of `TauCeti.Geometry.Symplectic.Floer.HalfCylinder.Basic` for the cylindrical datum
-`H(t) dt`. -/
-theorem exists_halfCylinder_comp_realChart_positive (ω : SymplecticForm V)
-    {n : WithTop ℕ∞} (hn : n ≠ 0) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {r : ℝ}
-    (hu : ContDiffOn ℝ n u {z | r < ‖Complex.equivRealProdCLM.symm z‖})
-    (huK : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → u z ∈ K)
-    (hJc : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v))
-    (hJM : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ → ∀ v, ‖J z v‖ ≤ M * ‖v‖)
-    (hfloer : ∀ z, r < ‖Complex.equivRealProdCLM.symm z‖ →
-      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-        (ω.perturbedFDeriv
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          u z : ℝ × ℝ →ₗ[ℝ] V))
-    (hE : ∫⁻ z in {z | r < ‖Complex.equivRealProdCLM.symm z‖},
-      ENNReal.ofReal (ω.floerEnergyDensity
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ positive.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u z) ≠ ⊤) :
-    ∃ a : ℝ, ContDiffOn ℝ n (u ∘ realChart positive.cylindricalEndLift) (Ioi a ×ˢ univ) ∧
-      (∀ s, a < s → Periodic (fun t ↦ (u ∘ realChart positive.cylindricalEndLift) (s, t)) 1) ∧
-      (∀ s, a < s → ∀ t, (u ∘ realChart positive.cylindricalEndLift) (s, t) ∈ K) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
-        c * ‖v‖ ^ 2 ≤ ω v ((J ∘ realChart positive.cylindricalEndLift) z v)) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, ∀ v,
-        ‖(J ∘ realChart positive.cylindricalEndLift) z v‖ ≤ M * ‖v‖) ∧
-      (∀ z ∈ Ioi a ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-        ((J ∘ realChart positive.cylindricalEndLift) z)
-        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2)
-          (u ∘ realChart positive.cylindricalEndLift) z : ℝ × ℝ →ₗ[ℝ] V)) ∧
-      ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
-        (fun w ↦ H w.2) (u ∘ realChart positive.cylindricalEndLift) z) ≠ ⊤ := by
-  obtain ⟨a, hv, hvK, hJc', hJM', hfloer', hE'⟩ :=
-    exists_halfCylinder_comp_realChart_cylindricalEndLift
-      (fun _ x _ hw ↦ perturbation_eq_smul_endAngularForm hw x) hH
-      (fun t ↦ (hHs.of_uncurry_left t).differentiable one_ne_zero) hn hu huK hJc hJM hfloer hE
-  have hpos (s : ℝ) (hs : a < s) : a < positive.endSign * s := by rwa [endSign_positive, one_mul]
-  exact ⟨a, hv.mono fun z hz ↦ hpos _ hz.1,
-    fun s _ ↦ periodic_comp_realChart_cylindricalEndLift _ u s,
-    fun s hs t ↦ hvK (s, t) (hpos s hs), fun z hz ↦ hJc' z (hpos _ hz.1),
-    fun z hz ↦ hJM' z (hpos _ hz.1), fun z hz ↦ hfloer' z (hpos _ hz.1),
-    hE' _ measurableSet_Ioi hpos⟩
 
 /-! ### The orbit at the end -/
 
@@ -421,6 +318,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_cylindricalEndLift_of_floer
       hfloer hE
   cases p with
   | positive =>
+    -- On the positive plane the end is the positive half-cylinder `s > a`.
     have hpos (s : ℝ) (hs : a < s) : a < positive.endSign * s := by rwa [endSign_positive, one_mul]
     obtain ⟨x, hxper, hx, φ, -, hφ, hux⟩ :=
       exists_periodic_hasDerivAt_tendstoUniformly_of_floer hHs hH
@@ -432,6 +330,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_cylindricalEndLift_of_floer
     simp_rw [comp_apply, realChart_mk] at hux
     exact ⟨x, hxper, hx, φ, hφ, by simpa only [endSign_positive, one_mul] using hux⟩
   | negative =>
+    -- On the negative plane the end is the negative half-cylinder `s < -a`.
     have hneg (s : ℝ) (hs : s < -a) : a < negative.endSign * s := by
       rw [endSign_negative]
       linarith
@@ -483,6 +382,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_cylindricalEndLift_
       hfloer hE
   cases p with
   | positive =>
+    -- On the positive plane the end is the positive half-cylinder `s > a`.
     have hpos (s : ℝ) (hs : a < s) : a < positive.endSign * s := by rwa [endSign_positive, one_mul]
     obtain ⟨x, hxper, hx, ⟨φ, -, hφ, hux⟩, hA⟩ :=
       exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer hHs hH
@@ -495,6 +395,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_cylindricalEndLift_
     refine ⟨x, hxper, hx, ⟨φ, hφ, by simpa only [endSign_positive, one_mul] using hux⟩, ?_⟩
     simpa only [endSign_positive, one_mul] using hA
   | negative =>
+    -- On the negative plane the end is the negative half-cylinder `s < -a`.
     have hneg (s : ℝ) (hs : s < -a) : a < negative.endSign * s := by
       rw [endSign_negative]
       linarith
