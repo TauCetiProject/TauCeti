@@ -81,6 +81,10 @@ notions of microlocal regularity on bundles (`TauCeti.BundleTest.isMicrolocallyA
   reflects the wave front set of a distribution (`Distribution.waveFrontSet_conj`).
 * `TauCeti.BundleTest.waveFrontSet_add_subset`, `TauCeti.BundleTest.waveFrontSet_smul`: the wave
   front set of a sum lies in the union, and nonzero real multiples do not change it.
+* `TauCeti.BundleTest.isMicrolocallySmoothAt_of_notMem_dsupport`,
+  `TauCeti.BundleTest.waveFrontSet_subset_dsupport`: on a manifold without boundary, `T` is
+  microlocally smooth over every point outside its support, so the wave front set lies over the
+  support of `T`.
 * `TauCeti.BundleTest.singularSupport`: the singular support of `T`, the points near which `T` is
   not smooth, read in a chart and a frame; on a manifold with boundary it contains every boundary
   point. It does not depend on the chart and the frame
@@ -270,6 +274,23 @@ theorem waveFrontSet_sub_subset (S T : BundleTest I F V →L_c[ℝ] ℝ) :
     waveFrontSet I (S - T) ⊆ waveFrontSet I S ∪ waveFrontSet I T :=
   microlocalSingularSet_sub_subset isInvariantMicrolocalRegularity_isMicrolocallySmoothAt S T
 
+/-- On a manifold without boundary, a functional is microlocally smooth at every covector over a
+point outside its support. -/
+theorem isMicrolocallySmoothAt_of_notMem_dsupport [I.Boundaryless]
+    {T : BundleTest I F V →L_c[ℝ] ℝ} {x : M} (hx : x ∉ dsupport T)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) : IsMicrolocallySmoothAt T x ξ := by
+  obtain ⟨c, hc, hcs, hct, hxc⟩ := exists_chart_source_subset_baseSet F I V (n := ∞) x
+  refine (isMicrolocallySmoothAt_iff T hc hcs hct hxc ξ).2 fun v ↦
+    Distribution.isMicrolocallySmoothAt_of_notMem_dsupport (c.map_source hxc) (fun h ↦ hx ?_) _
+  simpa [c.left_inv hxc] using (trivializationAt F V x).dsupport_chartComponent_inter_target_subset
+    c hc hct T v ⟨h, c.map_source hxc⟩
+
+/-- On a manifold without boundary, the wave front set lies over the support of the functional. -/
+theorem waveFrontSet_subset_dsupport [I.Boundaryless] (T : BundleTest I F V →L_c[ℝ] ℝ) :
+    waveFrontSet I T ⊆ TotalSpace.proj ⁻¹' dsupport T :=
+  fun p hp ↦ by_contra fun h ↦
+    (mem_waveFrontSet_iff.1 hp).2 (isMicrolocallySmoothAt_of_notMem_dsupport h p.snd)
+
 omit [T2Space M] [IsManifold I ∞ M] in
 /-- In a smooth chart `c` at `x` with smooth inverse, a covector `ξ` at `x` is read as the zero
 vector of `E` exactly when it is zero. -/
@@ -278,9 +299,8 @@ private theorem toDual_symm_comp_mfderiv_symm_eq_zero_iff {c : OpenPartialHomeom
     {x : M} (hx : x ∈ c.source) {ξ : TangentSpace I x →L[ℝ] ℝ} :
     (toDual ℝ E).symm (ξ ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) = 0 ↔ ξ = 0 :=
   (toDual ℝ E).symm.map_eq_zero_iff.trans
-    ((OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx).1.eq_iff'
-      (zero_comp _))
+    (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff
+      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx)
 
 /-! ### The singular support and the projection of the wave front set -/
 
