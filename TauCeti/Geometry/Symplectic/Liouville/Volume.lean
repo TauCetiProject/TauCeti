@@ -99,10 +99,10 @@ theorem liouvilleMeasure_image_flowOf (t : ℝ) (s : Set M) :
   have hmp := ψ.toHomeomorph.measurePreserving_liouvilleMeasure (n := n)
     (ψ.mdifferentiable (by simp)) hpull
   rw [Diffeomorph.coe_toHomeomorph] at hmp
-  have hinj : Function.Injective ψ := ψ.injective
   rw [← hψ, ← hmp.measure_preimage_emb ψ.toHomeomorph.measurableEmbedding,
-    hinj.preimage_image, SmoothTwoForm.liouvilleMeasure_smul, smul_apply, smul_eq_mul,
-    abs_of_pos (Real.exp_pos t), ← Real.exp_natCast_mul]
+    (EquivLike.injective ψ).preimage_image, SmoothTwoForm.liouvilleMeasure_smul]
+  -- What remains is the scalar identity `|e^t|^n = e^{n t}`.
+  simp [abs_of_pos (Real.exp_pos t), ← Real.exp_natCast_mul]
 
 /-- **A manifold with a complete Liouville vector field has Liouville volume `0` or `∞`.** In
 positive dimension `2 n`, the time-one map of the flow of a complete `C¹` Liouville vector field
