@@ -359,6 +359,16 @@ theorem potential_le_of_kernelComp_ne_zero {D : ℝ} {p₁ : S₁} {p₂ : S₂}
   obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
   linarith [hm p₀ (left_ne_zero_of_mul hp₀), hm' p₀ (right_ne_zero_of_mul hp₀)]
 
+/-- **Degree of a composite kernel.** If the outputs of `m` at `p₁` have degree `d₁ p₁ + a` and
+`m'` raises degrees by `b`, then the outputs of the composite kernel at `p₁` have degree
+`d₁ p₁ + a + b`. -/
+theorem degree_eq_of_kernelComp_ne_zero {d₁ : S₁ → ℤ} {d₀ : S₀ → ℤ} {d₂ : S₂ → ℤ} {a b : ℤ}
+    {p₁ : S₁} {p₂ : S₂} (hm : ∀ p₀, m p₁ p₀ ≠ 0 → d₀ p₀ = d₁ p₁ + a)
+    (hm' : ∀ p₀, m' p₀ p₂ ≠ 0 → d₂ p₂ = d₀ p₀ + b) (h : kernelComp m m' p₁ p₂ ≠ 0) :
+    d₂ p₂ = d₁ p₁ + a + b := by
+  obtain ⟨p₀, hp₀⟩ : ∃ p₀, m p₁ p₀ * m' p₀ p₂ ≠ 0 := exists_ne_zero_of_finsum_ne_zero h
+  rw [hm' p₀ (right_ne_zero_of_mul hp₀), hm p₀ (left_ne_zero_of_mul hp₀)]
+
 /-- **Finite outputs of a composite kernel.** If the output of `m` at `p₁` and every output of
 `m'` are finite combinations, so is the output of the composite kernel at `p₁`. -/
 theorem finite_support_kernelComp {p₁ : S₁} (hm : (support (m p₁)).Finite)

@@ -72,6 +72,20 @@ turns into graded commutativity on cohomology. This is the kernel-level form of 
 a product which is graded commutative up to `ε` for the raw degrees is graded commutative up to
 `(-1)^n ε` for the cochain degrees.
 
+**Continuation.** A continuation map between two Floer complexes regraded by the same `n` is the
+same operator in both gradings, of degree `0`. Gluing continuation cylinders to the three ends of
+a pair of pants gives a family whose count is a functional of degree `-1` on `C₁ ⊗ C₂ ⊗ C₀'^∨`,
+with boundary the readout of the first product followed by the output continuation map minus the
+readout of the input continuation maps followed by the second product. The cochain kernel of each
+product is its raw kernel twisted by `(-1)^(n μ₁)` at the first input, and a continuation map
+preserves raw degrees, so both composites are twisted by the same sign `(-1)^(n μ₁ p₁)`. Regrading
+therefore turns such a raw functional into the continuation kernel identity of the cochain grading
+(`kernelComp_sub_kernelComp_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout`),
+which `TauCeti.NovikovModule.kernelMap_kernelProduct_sub_kernelProduct_kernelMap_of_mem_gradeBy`
+turns into the chain homotopy between `φ₀ (a ⋆ b)` and `φ₁ a ⋆' φ₂ b`, and
+`TauCeti.NovikovModule.cohomologyMap_cohomologyProduct_kernelProduct` into the multiplicativity
+of continuation maps on cohomology.
+
 The functional identities in the raw grading are hypotheses: they are the boundary theorems for
 the oriented one-dimensional moduli spaces, which are not constructed here.
 
@@ -96,6 +110,9 @@ the oriented one-dimensional moduli spaces, which are not constructed here.
   `NovikovModule.sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout`
   give the Leibniz rule and the commutativity kernel identity in the cochain grading from
   functional identities in the raw grading.
+* `kernelComp_sub_kernelComp_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout`
+  gives the continuation kernel identity in the cochain grading from a functional identity in the
+  raw grading.
 
 ## References
 
@@ -287,6 +304,23 @@ theorem sub_eq_sub_add_sub_of_eq_negOnePowCast_mul {t : S₁ × S₂ → S₀ �
   rw [ht (p₁, p₂) p₀ (right_ne_zero_of_mul h)]
   ring
 
+/-- Composing a degree-preserving tensor product of kernels `φ₁ ⊗ φ₂` with the twisted kernel
+`m'(s₁, s₂, ·) = (-1)^(n ν₁ s₁) t'((s₁, s₂), ·)` moves the sign to the first input: the result is
+`(-1)^(n μ₁ p₁)` times the composite with `t'`. -/
+private theorem kernelComp_kernelTensor_eq_negOnePowCast_mul {T₁ T₂ T₀ : Type*} {ν₁ : T₁ → ℤ}
+    {t' : T₁ × T₂ → T₀ → R} {m' : T₁ → T₂ → T₀ → R} {φ₁ : S₁ → T₁ → R} {φ₂ : S₂ → T₂ → R}
+    (hmt' : ∀ s₁ s₂ t₀, m' s₁ s₂ t₀ = negOnePowCast R (n * ν₁ s₁) * t' (s₁, s₂) t₀)
+    (hφ₁ : ∀ p s, φ₁ p s ≠ 0 → ν₁ s = μ₁ p) (q : S₁ × S₂) (t₀ : T₀) :
+    kernelComp (kernelTensor φ₁ φ₂) (fun s : T₁ × T₂ => m' s.1 s.2) q t₀ =
+      negOnePowCast R (n * μ₁ q.1) * kernelComp (kernelTensor φ₁ φ₂) t' q t₀ := by
+  rw [kernelComp_apply, kernelComp_apply,
+    (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ q.1))).mul_finsum]
+  refine finsum_congr fun s => ?_
+  by_cases hs : φ₁ q.1 s.1 = 0
+  · simp [hs]
+  rw [kernelTensor_apply, hmt', hφ₁ _ _ hs]
+  ring
+
 variable [DecidableEq S₁] [DecidableEq S₂] {δ₁ : S₁ → S₁ → R} {δ₂ : S₂ → S₂ → R}
   {δ₀ : S₀ → S₀ → R}
 
@@ -444,6 +478,94 @@ theorem sub_negOnePow_mul_eq_kernelComp_add_kernelComp_of_functionalBoundary_ker
     rw [← hk, functionalBoundary_regradeProductFunctional hδ₂deg hδ₀deg,
       regradeProductFunctional_apply, hψ, ← hm, regradeProductFunctional_apply, hm'q,
       ← negOnePowCast_eq_intCast, ← hswap]
+    ring
+
+/-- **The continuation kernel identity from a functional of the continuation family, in the raw
+grading.** Let `t` and `t'` be operator kernels of raw degree `-n`, of the products out of
+`C₁ ⊗ C₂` and `C₁' ⊗ C₂'`, and let `φ₁`, `φ₂`, `φ₀` be operator kernels of raw degree `0` from
+the inputs and the output of the first product to those of the second, as continuation maps are.
+Let `h` be an operator kernel of raw degree `1 - n` from `C₁ ⊗ C₂` to the output `C₀'` of the
+second product, and suppose that `δ₂` and `η₀` lower the raw degrees by one. If, in the raw
+grading, the boundary of the readout of `h` is the readout of the composite `t φ₀` minus the
+readout of the composite `(φ₁ ⊗ φ₂) t'`, then the kernels
+`m(p₁, p₂, ·) = (-1)^(n μ₁ p₁) t((p₁, p₂), ·)`, `m'(s₁, s₂, ·) = (-1)^(n ν₁ s₁) t'((s₁, s₂), ·)`
+and `k = (-1)^(n (μ₁ p₁ - 1)) h` satisfy the continuation kernel identity of the cochain grading,
+
+`∑ₚ m(p₁, p₂, p) φ₀(p, t₀) - ∑ₛ φ₁(p₁, s₁) φ₂(p₂, s₂) m'(s₁, s₂, t₀) = (k η₀ + δ⊗ k)(q, t₀)`
+
+at `q = (p₁, p₂)`, with the tensor differential `δ⊗` built with the cochain degrees `n - μ₁`, as
+consumed by
+`TauCeti.NovikovModule.kernelMap_kernelProduct_sub_kernelProduct_kernelMap_of_mem_gradeBy`.
+The continuation kernels are the same in both gradings: regrading is the identity on chain maps
+between complexes regraded by the same `n`. -/
+theorem kernelComp_sub_kernelComp_eq_kernelComp_add_kernelComp_of_functionalBoundary_kernelReadout
+    {T₁ T₂ T₀ : Type*} {ν₁ : T₁ → ℤ} {ν₂ : T₂ → ℤ} {ν₀ : T₀ → ℤ} {η₀ : T₀ → T₀ → R}
+    {t : S₁ × S₂ → S₀ → R} {t' : T₁ × T₂ → T₀ → R} {h : S₁ × S₂ → T₀ → R}
+    {m' : T₁ → T₂ → T₀ → R}
+    {φ₁ : S₁ → T₁ → R} {φ₂ : S₂ → T₂ → R} {φ₀ : S₀ → T₀ → R} {k : S₁ × S₂ → T₀ → R}
+    (hmt : ∀ p₁ p₂ p₀, m p₁ p₂ p₀ = negOnePowCast R (n * μ₁ p₁) * t (p₁, p₂) p₀)
+    (hmt' : ∀ s₁ s₂ t₀, m' s₁ s₂ t₀ = negOnePowCast R (n * ν₁ s₁) * t' (s₁, s₂) t₀)
+    (hkh : ∀ q t₀, k q t₀ = negOnePowCast R (n * (μ₁ q.1 - 1)) * h q t₀)
+    (ht : ∀ q p₀, t q p₀ ≠ 0 → μ₀ p₀ = μ₁ q.1 + μ₂ q.2 - n)
+    (ht' : ∀ s t₀, t' s t₀ ≠ 0 → ν₀ t₀ = ν₁ s.1 + ν₂ s.2 - n)
+    (hh : ∀ q t₀, h q t₀ ≠ 0 → ν₀ t₀ = μ₁ q.1 + μ₂ q.2 - n + 1)
+    (hφ₁ : ∀ p s, φ₁ p s ≠ 0 → ν₁ s = μ₁ p) (hφ₂ : ∀ p s, φ₂ p s ≠ 0 → ν₂ s = μ₂ p)
+    (hφ₀ : ∀ p t₀, φ₀ p t₀ ≠ 0 → ν₀ t₀ = μ₀ p)
+    (hδ₂deg : ∀ p q, δ₂ p q ≠ 0 → μ₂ q = μ₂ p - 1) (hη₀deg : ∀ t t', η₀ t t' ≠ 0 → ν₀ t' = ν₀ t - 1)
+    {q : S₁ × S₂} {t₀ : T₀}
+    (hψ : functionalBoundary (fun q : S₁ × S₂ => μ₁ q.1 + μ₂ q.2) ν₀
+      (tensorDifferential μ₁ δ₁ δ₂) η₀ (kernelReadout ν₀ h) q t₀ =
+        kernelReadout ν₀ (kernelComp t φ₀) q t₀ -
+          kernelReadout ν₀ (kernelComp (kernelTensor φ₁ φ₂) t') q t₀) :
+    kernelComp (fun q : S₁ × S₂ => m q.1 q.2) φ₀ q t₀ -
+        kernelComp (kernelTensor φ₁ φ₂) (fun s : T₁ × T₂ => m' s.1 s.2) q t₀ =
+      kernelComp k η₀ q t₀ +
+        kernelComp (tensorDifferential (fun p => n - μ₁ p) δ₁ δ₂) k q t₀ := by
+  -- The cochain composites are the raw composites twisted by the sign of the first input.
+  have hT (q : S₁ × S₂) (t₀ : T₀) : kernelComp (fun q : S₁ × S₂ => m q.1 q.2) φ₀ q t₀ =
+      negOnePowCast R (n * μ₁ q.1) * kernelComp t φ₀ q t₀ := by
+    rw [kernelComp_apply, kernelComp_apply,
+      (isLeftRegular_of_mul_eq_one (negOnePowCast_mul_self (n * μ₁ q.1))).mul_finsum]
+    exact finsum_congr fun p => by rw [hmt]; ring
+  -- Both raw composites have raw degree `-n`.
+  have hTdeg (q : S₁ × S₂) (t₀ : T₀) (hq : kernelComp t φ₀ q t₀ ≠ 0) :
+      ν₀ t₀ = μ₁ q.1 + μ₂ q.2 - n := by
+    rw [degree_eq_of_kernelComp_ne_zero (d₁ := fun q : S₁ × S₂ => μ₁ q.1 + μ₂ q.2) (d₀ := μ₀)
+      (d₂ := ν₀) (a := -n) (b := 0) (fun p hp => by rw [ht q p hp, sub_eq_add_neg])
+      (fun p hp => by rw [hφ₀ p t₀ hp, add_zero]) hq]
+    ring
+  have hT'deg (q : S₁ × S₂) (t₀ : T₀) (hq : kernelComp (kernelTensor φ₁ φ₂) t' q t₀ ≠ 0) :
+      ν₀ t₀ = μ₁ q.1 + μ₂ q.2 - n := by
+    rw [degree_eq_of_kernelComp_ne_zero (d₁ := fun q : S₁ × S₂ => μ₁ q.1 + μ₂ q.2)
+      (d₀ := fun s : T₁ × T₂ => ν₁ s.1 + ν₂ s.2) (d₂ := ν₀) (a := 0) (b := -n) (fun s hs => ?_)
+      (fun s hs => by rw [ht' s t₀ hs, sub_eq_add_neg]) hq]
+    · ring
+    rw [kernelTensor_apply] at hs
+    rw [hφ₁ _ _ (left_ne_zero_of_mul hs), hφ₂ _ _ (right_ne_zero_of_mul hs), add_zero]
+  -- Regrading the raw readouts gives the cochain readouts of `k` and of the two composites.
+  have hk : regradeProductFunctional n μ₂ ν₀ (kernelReadout ν₀ h) =
+      kernelReadout (fun p => n - ν₀ p) k := by
+    rw [regradeProductFunctional_kernelReadout (ε := -1) fun q t₀ hq => by
+      rw [hh q t₀ hq]; ring]
+    exact congrArg _ (funext fun q => funext fun t₀ => by rw [hkh, sub_eq_add_neg])
+  have hTr := regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul
+    (m := fun p₁ p₂ => kernelComp (fun q : S₁ × S₂ => m q.1 q.2) φ₀ (p₁, p₂))
+    (fun p₁ p₂ t₀ => hT (p₁, p₂) t₀) hTdeg
+  have hT'r := regradeProductFunctional_kernelReadout_of_eq_negOnePowCast_mul
+    (m := fun p₁ p₂ => kernelComp (kernelTensor φ₁ φ₂) (fun s : T₁ × T₂ => m' s.1 s.2) (p₁, p₂))
+    (fun p₁ p₂ t₀ => kernelComp_kernelTensor_eq_negOnePowCast_mul hmt' hφ₁ (p₁, p₂) t₀) hT'deg
+  refine ((functionalBoundary_kernelReadout_eq_kernelReadout_iff
+    (d := fun q : S₁ × S₂ => (n - μ₁ q.1) + (n - μ₂ q.2)) (d₀ := fun p => n - ν₀ p)
+    (s := (fun q => kernelComp (fun q : S₁ × S₂ => m q.1 q.2) φ₀ (q.1, q.2)) -
+      fun q => kernelComp (kernelTensor φ₁ φ₂) (fun s : T₁ × T₂ => m' s.1 s.2) (q.1, q.2))
+    (fun q t₀ hq => ?_) q t₀).1 ?_).symm
+  · rw [hkh] at hq
+    rw [hh q t₀ (right_ne_zero_of_mul hq)]
+    ring
+  · -- Regrade the raw identity and read off each composite in the cochain grading.
+    rw [← hk, functionalBoundary_regradeProductFunctional hδ₂deg hη₀deg,
+      regradeProductFunctional_apply, hψ, kernelReadout_sub, ← hTr, ← hT'r, Pi.sub_apply,
+      Pi.sub_apply, regradeProductFunctional_apply, regradeProductFunctional_apply]
     ring
 
 end Product
