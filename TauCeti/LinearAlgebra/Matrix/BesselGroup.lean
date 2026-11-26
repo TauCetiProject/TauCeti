@@ -15,8 +15,8 @@ public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 
 Let `R` be a commutative ring with involution, `ϱ` a natural number and `κ` a finite type. The
 space `R^𝐁` has the basis `e₀, …, e_{ϱ-1}`, then a middle block `x_i` (`i ∈ κ`) and `z`, then
-`e*₀, …, e*_{ϱ-1}`; the index type is `TauCeti.Matrix.BesselIndex ϱ κ`. For a matrix `T` on the
-middle block, the **split form** `TauCeti.Matrix.splitGram ϱ T` pairs `e_a` with `e*_b` by
+`e*₀, …, e*_{ϱ-1}`; the index type is `Matrix.BesselIndex ϱ κ`. For a matrix `T` on the
+middle block, the **split form** `Matrix.splitGram ϱ T` pairs `e_a` with `e*_b` by
 `δ_ab`, makes the hyperbolic pairs orthogonal to the middle block, and has Gram matrix `T` on the
 middle block. Its unitary group is `Matrix.unitaryGroupOf (splitGram ϱ T)`.
 
@@ -27,25 +27,25 @@ frame with its image under `γ`.
 
 The subgroups are cut out by conditions on entries.
 
-* `TauCeti.Matrix.blockTriangularSubgroup lev`: the block upper triangular invertible matrices
+* `Matrix.blockTriangularSubgroup lev`: the block upper triangular invertible matrices
   for a level function `lev`.
-* `TauCeti.Matrix.agreeWithOneOn r`: the invertible matrices agreeing with `1` at the entries
+* `Matrix.agreeWithOneOn r`: the invertible matrices agreeing with `1` at the entries
   `(i, j)` with `r i j`, for a relation `r` such that `r i j` implies `r i k` or `r k j`.
-* `TauCeti.Matrix.unitriangularSubgroup lev`: the block upper unitriangular matrices.
-* `TauCeti.Matrix.besselU`, `TauCeti.Matrix.besselFixer`, `TauCeti.Matrix.besselU0`,
-  `TauCeti.Matrix.floorFixer`: the unipotent Bessel group `𝖴` of isometries that are block
+* `Matrix.unitriangularSubgroup lev`: the block upper unitriangular matrices.
+* `Matrix.besselU`, `Matrix.besselFixer`, `Matrix.besselU0`,
+  `Matrix.floorFixer`: the unipotent Bessel group `𝖴` of isometries that are block
   unitriangular for the levels, the fixer of the frame, their intersection `𝖴⁰`, and the group
   `H_l` of isometries fixing every basis vector of floor `< l`.
-* `TauCeti.Matrix.leviSubgroup τ`, `TauCeti.Matrix.parahoricSubgroup I τ`: the block diagonal
+* `Matrix.leviSubgroup τ`, `Matrix.parahoricSubgroup I τ`: the block diagonal
   matrices for a labelling `τ`, and the matrices whose entries below the blocks of `τ` lie in an
   ideal `I`; for the maximal ideal of a local ring this is the parahoric subgroup.
 
 ## Main results
 
-* `TauCeti.Matrix.splitGram_isHermitian`: the split form of a hermitian `T` is hermitian.
-* `TauCeti.Matrix.frameGram_one`: the frame Gram matrix of `1` has the single entry `T z z`.
-* `TauCeti.Matrix.det_eq_one_of_mem_unitriangularSubgroup`: unitriangular matrices have det `1`.
-* `TauCeti.Matrix.conj_mem_unitriangularSubgroup`: block triangular matrices normalize them.
+* `Matrix.splitGram_isHermitian`: the split form of a hermitian `T` is hermitian.
+* `Matrix.frameGram_one`: the frame Gram matrix of `1` has the single entry `T z z`.
+* `Matrix.det_eq_one_of_mem_unitriangularSubgroup`: unitriangular matrices have det `1`.
+* `Matrix.conj_mem_unitriangularSubgroup`: block triangular matrices normalize them.
 
 ## References
 
@@ -63,9 +63,7 @@ For the Bessel subgroups compare
 
 @[expose] public section
 
-namespace TauCeti.Matrix
-
-open _root_.Matrix
+namespace Matrix
 
 variable {R : Type*} [CommRing R]
 
@@ -317,4 +315,4 @@ theorem det_eq_one_of_mem_besselU {g : unitaryGroupOf (splitGram ϱ T)} (hg : g 
     ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R).det = 1 :=
   det_eq_one_of_mem_unitriangularSubgroup hg
 
-end TauCeti.Matrix
+end Matrix
