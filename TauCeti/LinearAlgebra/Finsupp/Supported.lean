@@ -212,8 +212,9 @@ theorem op_smul_single_one (k : α) (b : A) : op b • single k (1 : A) = single
 
 /-- A right-linear map on `α →₀ A` is determined on `single k b` by its value on the basis vector
 `single k 1`. -/
-theorem map_single_eq_op_smul [AddCommMonoid N] [Module Aᵐᵒᵖ N] (f : (α →₀ A) →ₗ[Aᵐᵒᵖ] N)
-    (k : α) (b : A) : f (single k b) = op b • f (single k 1) := by
+theorem map_single_eq_op_smul {F : Type*} [AddCommMonoid N] [Module Aᵐᵒᵖ N]
+    [FunLike F (α →₀ A) N] [LinearMapClass F Aᵐᵒᵖ (α →₀ A) N] (f : F) (k : α) (b : A) :
+    f (single k b) = op b • f (single k 1) := by
   rw [← map_smul, op_smul_single_one]
 
 /-- On a vector supported on the first `n` coordinates, a right-linear map is the matrix of its

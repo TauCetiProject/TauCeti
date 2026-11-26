@@ -125,9 +125,8 @@ private theorem IsFinitaryOn.symm {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒᵖ] (ℕ �
   obtain ⟨y₁, hy₁, y₂, hy₂, hy⟩ :=
     Submodule.mem_sup.1 (hsup ▸ Submodule.mem_top : g.symm (single k 1) ∈ _)
   -- `g` fixes `y₂`, so `g y₁ + y₂ = eₖ`; off `s` both `g y₁` and `eₖ` vanish, so `y₂ = 0`.
-  have hgy : g y₁ + y₂ = single k 1 := by
-    rw [← hg.map_eq_self hy₂, ← LinearEquiv.coe_coe, ← map_add,
-      LinearEquiv.coe_coe, hy, LinearEquiv.apply_symm_apply]
+  have hgy₂ : g y₂ = y₂ := by simpa using hg.map_eq_self hy₂
+  have hgy : g y₁ + y₂ = single k 1 := by simpa [hgy₂] using congr(g $hy)
   have hy₂0 : y₂ = 0 := by
     ext i
     by_cases hi : i ∈ s
@@ -136,8 +135,8 @@ private theorem IsFinitaryOn.symm {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒᵖ] (ℕ �
       have := congr($hgy i)
       rwa [Finsupp.add_apply, hgy₁, zero_add,
         single_eq_of_ne fun (hik : i = k) ↦ hi (hik ▸ hk)] at this
-  rw [LinearEquiv.coe_coe, ← hy, hy₂0, add_zero]
-  exact hy₁
+  subst hy₂0
+  simpa [← hy] using hy₁
 
 end FreeModule
 
@@ -356,14 +355,11 @@ private theorem exists_toFreeModuleAut_of_eq {g : (ℕ →₀ A) ≃ₗ[Aᵐᵒ�
   refine ⟨u, LinearEquiv.toLinearMap_injective (Finsupp.lhom_ext fun k a ↦ ?_)⟩
   rw [LinearEquiv.coe_coe, toFreeModuleAut_of_apply_single, hu]
   split_ifs with hk
-  · have hgk : g (single k a) ∈ supported A Aᵐᵒᵖ (Finset.range n : Set ℕ) := by
-      rw [← LinearEquiv.coe_coe, map_single_eq_op_smul]
-      exact Submodule.smul_mem _ _ (hg.2 k (hmem hk))
-    rw [LinearEquiv.coe_coe, ← coordinateInclusion_coordinateRestriction hgk,
-      coordinateInclusion_eq_sum]
+  · have hgk := hg.map_mem_supported (single_mem_supported Aᵐᵒᵖ a (hmem hk))
+    rw [← coordinateInclusion_coordinateRestriction hgk, coordinateInclusion_eq_sum]
     refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [coordinateRestriction_apply, ← LinearEquiv.coe_coe, map_single_eq_op_smul,
-      Finsupp.smul_apply, op_smul_eq_mul, coordMatrix, Matrix.of_apply]
+    rw [coordinateRestriction_apply, map_single_eq_op_smul, Finsupp.smul_apply, op_smul_eq_mul,
+      coordMatrix, Matrix.of_apply]
   · rw [map_single_eq_op_smul, hg.1 k (by simpa using hk), op_smul_single_one]
 
 /-- The image of `GL_∞(A)` in the automorphisms of `ℕ →₀ A` is the subgroup of finitary
