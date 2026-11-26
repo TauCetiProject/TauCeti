@@ -17,10 +17,9 @@ a completely positive map: `π` is a point-norm limit of composites `A → M_n �
 positive contractions. The approximating maps return to `B(H)`, not to `A`; this is the
 difference from nuclearity, where the identity of `A` itself is approximated.
 
-By the CStarAlgebras roadmap (C7.1), this is equivalent to exactness, the tensor exactness of
-`A ⊗min −`, and does not depend on the faithful representation (nuclear embeddability,
-Blackadar IV.3.4.16 and IV.3.4.18). This file states the notion and its first
-properties, which need neither the minimal tensor product nor the Arveson extension theorem.
+Nuclear embeddability is equivalent to exactness, the tensor exactness of `A ⊗min −`, and does
+not depend on the faithful representation (Blackadar IV.3.4.16 and IV.3.4.18); neither fact is
+proved here.
 
 ## Main declarations
 
@@ -78,34 +77,27 @@ theorem IsNuclearlyEmbeddable.of_isNuclearContraction {H : Type u} [NormedAddCom
 
 variable {B : Type u} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
 
-/-- **Subalgebras.** If `ι : A → B` is an injective star homomorphism and `B` is nuclearly
-embeddable, then so is `A`: a faithful nuclear representation of `B` restricts along `ι` to a
-faithful nuclear representation of `A`. -/
+/-- **Subalgebras.** If `A` embeds into a nuclearly embeddable `B` by an injective star
+homomorphism `ι`, then `A` is nuclearly embeddable. -/
 theorem IsNuclearlyEmbeddable.of_injective [IsNuclearlyEmbeddable B] (ι : A →⋆ₙₐ[ℂ] B)
     (hι : Function.Injective ι) : IsNuclearlyEmbeddable A := by
   obtain ⟨H, _, _, _, π, hπ, h⟩ :=
     IsNuclearlyEmbeddable.exists_injective_isNuclearContraction (A := B)
   refine .of_isNuclearContraction (π.comp ι) (hπ.comp hι) ?_
-  convert h.comp_right (toCompletelyPositiveLinearMap ι) (NonUnitalStarAlgHom.norm_apply_le ι)
-    using 1
-  ext a : 1
-  simp
+  rw [toCompletelyPositiveLinearMap_comp]
+  exact h.comp_right (toCompletelyPositiveLinearMap ι) (NonUnitalStarAlgHom.norm_apply_le ι)
 
 /-- Nuclear embeddability is invariant under star isomorphism. -/
 theorem IsNuclearlyEmbeddable.of_starAlgEquiv [IsNuclearlyEmbeddable B] (e : A ≃⋆ₐ[ℂ] B) :
     IsNuclearlyEmbeddable A :=
   .of_injective (NonUnitalStarAlgHom.ofClass e) e.injective
 
-/-- **Nuclear C⋆-algebras are nuclearly embeddable**: composing completely positive contractions
-`A → M_n → A` approximating the identity with a faithful representation of `A` (Gelfand–Naimark)
-approximates that representation. -/
+/-- **Nuclear C⋆-algebras are nuclearly embeddable.** -/
 instance (priority := 100) IsNuclear.isNuclearlyEmbeddable [IsNuclear A] :
     IsNuclearlyEmbeddable A := by
   obtain ⟨H, _, _, _, π, hπ, -⟩ := exists_faithful_nondegenerate_representation A
   refine .of_isNuclearContraction π hπ ?_
-  convert (IsNuclear.isNuclearContraction_id (A := A)).comp_left
-    (toCompletelyPositiveLinearMap π) (NonUnitalStarAlgHom.norm_apply_le π) using 1
-  ext a : 1
-  simp
+  simpa using (IsNuclear.isNuclearContraction_id (A := A)).comp_left
+    (toCompletelyPositiveLinearMap π) (NonUnitalStarAlgHom.norm_apply_le π)
 
 end TauCeti.CStarAlgebra
