@@ -170,6 +170,7 @@ theorem hausdorffDist_hutchinson_iterate_le_mul_div (hK : F.IsAttractor K)
 
 end IsAttractor
 
+variable {F} in
 /-- *Uniqueness among bounded sets.* If `K` is an attractor, every nonempty bounded set `A` with
 `closure (⋃ i, F i '' A) = A` equals `K`: such an `A` is closed, and the Hausdorff distance between
 `A` and `K` is finite and at most the largest ratio times itself. -/
