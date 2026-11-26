@@ -52,6 +52,8 @@ cellular chain complex of `X` in positive degrees.
   cube, which `TauCeti.isCubicalRepresentative_ofCube_skeletonCellCube` represents.
 * `TauCeti.homologyMap_cubicalHomologyδ_eq_of_isCubicalRepresentative`: the cubical cellular
   boundary computed on representatives in `X`.
+* `TauCeti.brownModel_baseChain_isCubicalRepresentative`: the base chain of an `(m + 2)`-cell of
+  Brown's model represents its basis vector.
 * `TauCeti.cellCubeBasis_repr_homologyMap_cubicalHomologyδ`: the cellular boundary of Brown's model
   has the augmented entries `ε(m_{x,y})` of Brown's twisting cocycle as its matrix in the bases of
   characteristic cubes.
@@ -393,6 +395,15 @@ variable {B : Type} [TopologicalSpace B] [T2Space B] {b : B} {C : Set B} [CWComp
   (τ : ∀ (n : ℕ) (j : cell C n), MoorePathBetween B b (map n j 0)) (hC : pathComponent b ⊆ C)
   (m : ℕ)
 
+/-- A chain of `B` lies in stage `q = k - 1` of the skeletal filtration of `B` that supports Brown's
+model exactly when it is supported in the skeleton `skeletonLT C k`. -/
+private theorem cubicalChainModuleLof_mem_preimageSkeleton_id_iff {n k : ℕ} {q : ℤ}
+    (hq : q = k - 1) {c : NormalizedCubicalChain B R n} :
+    cubicalChainModuleLof B H R n c ∈ cubicalChainModuleSupportedIn H R (preimageSkeleton C id q) ↔
+      c ∈ NormalizedCubicalChain.supportedIn R (skeletonLT C (k : ℕ∞)) n := by
+  rw [preimageSkeleton_eq_preimage_skeletonLT id k q hq, preimage_id,
+    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff]
+
 /-- The `(m + 1)`-cells in the row of an `(m + 2)`-cell `x` of Brown's cocycle. -/
 private def brownRowCells (x : cell C (m + 1 + 1)) : Finset (cell C (m + 1)) :=
   ((brownModel H R τ hC).cocycle.m ⟨m + 1 + 1, x⟩).support.preimage (Sigma.mk (m + 1))
@@ -421,8 +432,7 @@ private theorem boundary_sub_sum_mem_supportedIn {x : cell C (m + 1 + 1)}
   have h :=
     brownModel_cubicalChainModuleDifferential_baseChain_sub_mem_cubicalChainModuleSupportedIn
       (H := H) (R := R) τ hC ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1) _ (by push_cast; ring), preimage_id,
-    ← hce, cubicalChainModuleDifferential_lof_succ] at h
+  rw [← hce, cubicalChainModuleDifferential_lof_succ] at h
   -- Split the row into its `(m + 1)`-cells and the cells of lower dimension, whose
   -- characteristic cubes lie in the `m`-skeleton.
   set row := (brownModel H R τ hC).cocycle.m ⟨m + 1 + 1, x⟩
@@ -446,20 +456,52 @@ private theorem boundary_sub_sum_mem_supportedIn {x : cell C (m + 1 + 1)}
       exact absurd ⟨j, rfl⟩ hy
     · simp [u, h]
   have hv : ∑ y ∈ row.support, (t y - u y) ∈
-      cubicalChainModuleSupportedIn H R (skeletonLT C ((m + 1 : ℕ) : ℕ∞)) := by
+      cubicalChainModuleSupportedIn H R (preimageSkeleton C id (((m + 1 + 1 : ℕ) : ℤ) - 2)) := by
     refine Submodule.sum_mem _ fun y hy ↦ ?_
     by_cases hym : y.1 = m + 1
     · simp [u, hym]
     · have hlt : y.1 < m + 1 + 1 :=
         brownModel_cocycle_m_mem_supported (H := H) τ hC ⟨m + 1 + 1, x⟩ hy
       simp only [u, hym, ↓reduceIte, sub_zero, t]
-      exact Submodule.smul_mem _ _ (cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn
-        ((range_subset_iff.2 (cellCube_mem_skeletonLT_succ C y.1 y.2)).trans
-          (skeletonLT_mono (by norm_cast; omega))))
+      exact Submodule.smul_mem _ _
+        ((cubicalChainModuleLof_mem_preimageSkeleton_id_iff (k := m + 1) (by push_cast; ring)).2
+          (NormalizedCubicalChain.ofCube_mem_supportedIn R
+            ((range_subset_iff.2 (cellCube_mem_skeletonLT_succ C y.1 y.2)).trans
+              (skeletonLT_mono (by norm_cast; omega)))))
   rw [hsum, hu, ← sub_sub] at h
   have h' := add_mem h hv
   rw [sub_add_cancel, ← map_sub] at h'
-  exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff.1 h'
+  exact (cubicalChainModuleLof_mem_preimageSkeleton_id_iff (k := m + 1) (by push_cast; ring)).1 h'
+
+/-- **The base chain of an `(m + 2)`-cell represents its basis vector.** In Brown's model of a CW
+complex, the base chain `e_x` of an `(m + 2)`-cell `x` is the push-forward of a chain of `Xᵐ⁺²`
+that represents the basis vector `[χ_x]` of `Hₘ₊₂(Xᵐ⁺², Xᵐ⁺¹)` (`TauCeti.cellCubeBasis`). -/
+theorem brownModel_baseChain_isCubicalRepresentative (x : cell C (m + 1 + 1)) :
+    ∃ c : NormalizedCubicalChain (skeletonPair C (m + 1 + 1)).fst R (m + 1 + 1),
+      cubicalChainModuleLof B H R (m + 1 + 1) (NormalizedCubicalChain.map R
+          (ContinuousMap.subtypeVal (skeletonLT C ((m + 1 + 1 + 1 : ℕ) : ℕ∞) : Set B))
+          (m + 1 + 1) c) = (brownModel H R τ hC).baseChain ⟨_, x⟩ ∧
+        (skeletonPair C (m + 1 + 1)).IsCubicalRepresentative R c (cellCubeBasis C R (m + 1) x) := by
+  -- The base chain of `x` is a chain of `Xᵐ⁺²`, congruent to the characteristic cube of `x`
+  -- modulo `Xᵐ⁺¹`, so it represents the basis vector of `x`.
+  obtain ⟨c, hce⟩ := exists_cubicalChainModuleLof_eq
+    ((brownModel H R τ hC).baseChain_mem_cubicalChainModuleGrading ⟨m + 1 + 1, x⟩) (m + 1 + 1)
+    (by simp)
+  have hc₁ := brownModel_baseChain_mem_cubicalChainModuleSupportedIn (H := H) (R := R) τ hC
+    ⟨m + 1 + 1, x⟩
+  rw [← hce] at hc₁
+  obtain ⟨c', rfl⟩ := (NormalizedCubicalChain.supportedIn_def R _ _).le
+    ((cubicalChainModuleLof_mem_preimageSkeleton_id_iff (k := m + 1 + 1 + 1)
+      (by push_cast; ring)).1 hc₁)
+  have hc₂ := brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn (H := H)
+    (R := R) τ hC ⟨m + 1 + 1, x⟩
+  rw [← hce, ← map_sub] at hc₂
+  refine ⟨c', hce, (isCubicalRepresentative_ofCube_skeletonCellCube C R (m + 1) x).of_sub_mem_range
+    (TopPair.sub_mem_range_map_ofInclusion (skeletonLT_subset_skeletonLT_succ C (m + 1 + 1)) _ _
+      ?_)⟩
+  convert (cubicalChainModuleLof_mem_preimageSkeleton_id_iff (k := m + 1 + 1)
+    (by push_cast; ring)).1 hc₂ using 2
+  exact map_ofCube_skeletonCellCube C R (m + 1 + 1) x
 
 /-- **The cellular boundary of Brown's model of a CW complex.** In the bases of the characteristic
 cubes of the cells (`TauCeti.cellCubeBasis`), the boundary of the cubical cellular chains, the
@@ -476,29 +518,8 @@ theorem cellCubeBasis_repr_homologyMap_cubicalHomologyδ (x : cell C (m + 1 + 1)
             (cellCubeBasis C R (m + 1) x))) y =
       loopChainAugmentation B b R ((brownModel H R τ hC).cocycle.m ⟨m + 1 + 1, x⟩ ⟨m + 1, y⟩) := by
   classical
-  -- The base chain of `x` is a chain `c` of `Xᵐ⁺²`, congruent to the characteristic cube of `x`
-  -- modulo `Xᵐ⁺¹`, so it represents the basis vector of `x`.
-  obtain ⟨c, hce⟩ := exists_cubicalChainModuleLof_eq
-    ((brownModel H R τ hC).baseChain_mem_cubicalChainModuleGrading ⟨m + 1 + 1, x⟩) (m + 1 + 1)
-    (by simp)
-  have hc₁ := brownModel_baseChain_mem_cubicalChainModuleSupportedIn (H := H) (R := R) τ hC
-    ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1 + 1 + 1) _ (by push_cast; ring),
-    preimage_id, ← hce,
-    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff,
-    NormalizedCubicalChain.supportedIn_def] at hc₁
-  obtain ⟨c', rfl⟩ := hc₁
-  have hc₂ := brownModel_baseChain_sub_cellCube_mem_cubicalChainModuleSupportedIn (H := H)
-    (R := R) τ hC ⟨m + 1 + 1, x⟩
-  rw [preimageSkeleton_eq_preimage_skeletonLT id (m + 1 + 1) _ (by push_cast; ring), preimage_id,
-    ← hce, ← map_sub,
-    cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff] at hc₂
-  have hrep : (skeletonPair C (m + 1 + 1)).IsCubicalRepresentative R c'
-      (cellCubeBasis C R (m + 1) x) :=
-    (isCubicalRepresentative_ofCube_skeletonCellCube C R (m + 1) x).of_sub_mem_range
-      (TopPair.sub_mem_range_map_ofInclusion
-        (skeletonLT_subset_skeletonLT_succ C (m + 1 + 1)) _ _
-        (by convert hc₂ using 2; exact map_ofCube_skeletonCellCube C R (m + 1 + 1) x))
+  -- The base chain of `x` represents the basis vector of `x`.
+  obtain ⟨c', hce, hrep⟩ := brownModel_baseChain_isCubicalRepresentative (H := H) (R := R) τ hC m x
   -- Its boundary is, modulo `Xᵐ`, the combination of the characteristic cubes of the
   -- `(m + 1)`-cells with the augmented row of `x` as coefficients.
   have hrep₁ := TopPair.IsCubicalRepresentative.sum (s := brownRowCells (H := H) (R := R) τ hC m x)

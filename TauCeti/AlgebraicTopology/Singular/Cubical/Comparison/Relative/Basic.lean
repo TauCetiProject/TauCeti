@@ -561,10 +561,9 @@ theorem IsCubicalRepresentative.of_sub_mem_range {c c' : NormalizedCubicalChain 
     {μ : (P.cubicalChainComplex k).homology n} (h : P.IsCubicalRepresentative k c' μ)
     (hc : c - c' ∈ LinearMap.range (NormalizedCubicalChain.map k P.map.hom n)) :
     P.IsCubicalRepresentative k c μ := by
-  -- The chain map of the inclusion of the subspace is `NormalizedCubicalChain.map` in each degree
-  -- (`normalizedCubicalChainComplex_map_f_apply`).
-  have hc' : c - c' ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom :=
-    hc
+  have hc' : c - c' ∈ LinearMap.range (((normalizedCubicalChainComplex k).map P.map).f n).hom := by
+    obtain ⟨d, hd⟩ := hc
+    exact ⟨d, (normalizedCubicalChainComplex_map_f_apply ..).trans hd⟩
   obtain ⟨r, hr, rfl⟩ := (TopPair.isCubicalRepresentative_iff _ _).1 h
   refine (TopPair.isCubicalRepresentative_iff _ _).2 ⟨r, ?_, rfl⟩
   rw [← hr]
