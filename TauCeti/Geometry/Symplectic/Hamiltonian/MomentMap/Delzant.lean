@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Vertex
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Lattice
 public import TauCeti.Geometry.Toric.Delzant.VertexCone
 import TauCeti.Geometry.Lie.Subgroup.Stabilizer
+import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 import TauCeti.Topology.Algebra.ConstMulAction
 
@@ -226,7 +227,7 @@ private theorem apply_le_apply_of_forall_nonneg
         refine mul_nonpos_of_nonpos_of_nonneg (by norm_num) (Finset.sum_nonneg fun k _ ↦ ?_)
         exact mul_nonneg (hξ'V k).le (by positivity)
     exact h.isMaxOn_of_isLocalMax hσ.isNondegenerate
-      (eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG) hM hmax (mem_univ x)
+      (SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG) hM hmax (mem_univ x)
   -- The weights are the coordinates of an isomorphism `𝔤 ≃ ℝⁿ`, so some `ξ₁` has all weights `1`,
   -- and `ξ + t ξ₁ ∈ V` for `t > 0` tends to `ξ`.
   set A : GroupLieAlgebra I G →ₗ[ℝ] Fin n → ℝ := LinearMap.pi fun k ↦ (α k).toLinearMap

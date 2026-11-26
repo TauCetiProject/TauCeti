@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Chart
 import Mathlib.Analysis.Convex.Strict.Extreme
 import TauCeti.Analysis.Convex.Extreme
+import TauCeti.Geometry.Manifold.GroupAction.InvariantForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
@@ -65,15 +66,11 @@ effective circle action on `ℂ²` with weights `1` and `-1`
 
 ## Main results
 
-Apart from `TauCeti.bijective_pi_of_mfderiv_eq` and
-`TauCeti.SmoothTwoForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`, all declarations are in the
-namespace `TauCeti.SmoothTwoForm.IsMomentMap`.
+Apart from `TauCeti.bijective_pi_of_mfderiv_eq`, all declarations are in the namespace
+`TauCeti.SmoothTwoForm.IsMomentMap`.
 
 * `TauCeti.bijective_pi_of_mfderiv_eq`: in a weight chart of a symplectic toric manifold, the
   weights are the coordinates of a linear isomorphism `𝔤 ≃ ℝⁿ`, so they form a basis of `𝔤*`.
-* `TauCeti.SmoothTwoForm.eval₂_mfderiv_smul_of_mpullback_smul_eq`: a `G`-invariant two-form is
-  preserved by the differentials of the action, the form of invariance the Morse theory of moment
-  map components takes as hypothesis.
 * `eventually_mem_fixedPoints_imp_eq`, `finite_fixedPoints_of_faithfulSMul`: the fixed points of
   a symplectic toric manifold are isolated, hence finite in number.
 * `isMorse_of_eq_top_of_faithfulSMul`: a component `μ^ξ` whose one-parameter subgroup is dense in
@@ -162,21 +159,7 @@ theorem bijective_pi_of_mfderiv_eq {n : ℕ} {α : Fin n → StrongDual ℝ E}
   refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
   rwa [Module.finrank_fin_fun]
 
-namespace SmoothTwoForm
-
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [LieGroup I ∞ G] [T2Space G]
-  [IsTopologicalGroup G] [CompactSpace G] [PreconnectedSpace G] [FiniteDimensional ℝ E']
-  [I'.Boundaryless] [T2Space M] [CompactSpace M] [PreconnectedSpace M] [FaithfulSMul G M] in
-/-- **A `G`-invariant two-form is preserved by the differentials of the action.** If
-`(g • ·)^* σ = σ` for every `g`, then `σ_{a • x}(d(a • ·) u, d(a • ·) v) = σ_x(u, v)`. -/
-theorem eval₂_mfderiv_smul_of_mpullback_smul_eq
-    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
-    (a : G) (x : M) (u v : TangentSpace I' x) :
-    σ.eval₂ (a • x) (mfderiv I' I' (a • ·) x u) (mfderiv I' I' (a • ·) x v) = σ.eval₂ x u v := by
-  rw [← SmoothForm.eval₂_mpullback _ (ContMDiffSMul.contMDiff_const_smul (I := I) a), hG a]
-
-namespace IsMomentMap
+namespace SmoothTwoForm.IsMomentMap
 
 omit [PreconnectedSpace G] [CompactSpace M] in
 /-- **The local picture at a fixed point of a symplectic toric manifold.** Near a fixed point `p`,
@@ -275,7 +258,7 @@ theorem exists_forall_lt_of_mem_fixedPoints
     ∃ ξ : GroupLieAlgebra I G, ∀ y, y ≠ p → μ y ξ < μ p ξ := by
   have : IsMulCommutative G := ⟨⟨mul_comm⟩⟩
   have : ConnectedSpace M := { toNonempty := ⟨p⟩ }
-  have hσG := eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG
+  have hσG := SmoothForm.eval₂_mfderiv_smul_of_mpullback_smul_eq (I := I) hG
   obtain ⟨U, hU, -, V, hVo, hVne, hV⟩ := h.exists_nhds_of_mem_fixedPoints hσ hG hdim hp
   -- Choose `ξ` in the open cone `V` with dense one-parameter subgroup; then `μ^ξ` is Morse.
   obtain ⟨ξ, hξV, hξ⟩ :=
@@ -347,8 +330,6 @@ theorem notMem_interior_convexHull_range_of_mem_fixedPoints [Nontrivial E]
     exact hξ y fun hyp ↦ hy (congrArg f hyp)
   exact fun hint ↦ disjoint_left.1 (disjoint_interior_extremePoints _) hint hext
 
-end IsMomentMap
-
-end SmoothTwoForm
+end SmoothTwoForm.IsMomentMap
 
 end TauCeti
