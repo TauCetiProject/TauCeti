@@ -98,17 +98,18 @@ theorem countable_support_inner_right (hv : Orthonormal 𝕜 v) (x : E) :
   apply hi
   rw [← inner_conj_symm, h0, map_zero]
 
+private theorem pairwise_disjoint_ball (hv : Orthonormal 𝕜 v) :
+    Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) :=
+  fun _ _ hij ↦ Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
+
 /-- If `ψ : α → E` has dense range, then any orthonormal family `v : ι → E` has lifted index
 cardinality at most `#α`. -/
 theorem lift_mk_le_of_denseRange {𝕜 E : Type*} {ι : Type u} {α : Type v}
     [RCLike 𝕜] [SeminormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     {v : ι → E} (hv : Orthonormal 𝕜 v) {ψ : α → E} (hψ : DenseRange ψ) :
-    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α := by
-  have hr : 0 < √2 / 2 := by positivity
-  have hd : Pairwise (Function.onFun Disjoint fun i ↦ Metric.ball (v i) (√2 / 2)) :=
-    fun i j hij ↦ Metric.ball_disjoint_ball (by rw [add_halves, hv.dist_eq_sqrt_two hij])
-  exact hd.lift_mk_le_of_isOpen_disjoint_of_denseRange (fun _ ↦ Metric.isOpen_ball)
-    (fun i ↦ ⟨v i, Metric.mem_ball_self hr⟩) hψ
+    Cardinal.lift.{v} #ι ≤ Cardinal.lift.{u} #α :=
+  hv.pairwise_disjoint_ball.lift_mk_le_of_isOpen_disjoint_of_denseRange
+    (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by positivity)⟩) hψ
 
 /-- **Density-character bound.** If `E` is a topological `𝕜`-module densely spanned by `w : ι → E`
 and `f : E → F` is continuous with dense range, then any orthonormal family `v : κ → F` has index
@@ -140,13 +141,9 @@ theorem lift_mk_le_max_aleph0_of_denseRange {𝕜 E F : Type*} {ι : Type u} {κ
 
 /-- Every orthonormal family in a separable inner product space is countable. -/
 theorem countable_of_separableSpace (hv : Orthonormal 𝕜 v)
-    [TopologicalSpace.SeparableSpace E] : Countable ι := by
-  rcases isEmpty_or_nonempty E with hE | _
-  · have : IsEmpty ι := ⟨fun i ↦ hE.false (v i)⟩
-    infer_instance
-  · have h := hv.lift_mk_le_of_denseRange (TopologicalSpace.denseRange_denseSeq E)
-    rw [Cardinal.mk_nat, Cardinal.lift_aleph0, Cardinal.lift_le_aleph0] at h
-    exact Cardinal.mk_le_aleph0_iff.1 h
+    [TopologicalSpace.SeparableSpace E] : Countable ι :=
+  hv.pairwise_disjoint_ball.countable_of_isOpen_disjoint
+    (fun _ ↦ Metric.isOpen_ball) (fun i ↦ ⟨v i, Metric.mem_ball_self (by positivity)⟩)
 
 /-- Two distinct entries of an orthonormal family form an orthonormal pair. -/
 theorem pair {f : ι → E} (hf : Orthonormal 𝕜 f) {i j : ι} (hij : i ≠ j) :
