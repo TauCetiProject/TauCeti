@@ -322,10 +322,9 @@ private theorem exists_forall_le_norm_lt_norm_sectionValue (hs : 1 < s)
   rw [← Metric.cobounded_eq_cocompact] at hev
   obtain ⟨R, -, hR⟩ := (Metric.hasBasis_cobounded_compl_closedBall (0 : ℂ)).eventually_iff.1 hev
   refine ⟨R + 1, fun z hz ↦ ?_⟩
-  have h4 := hR (show z ∈ (closedBall 0 R)ᶜ by
+  refine lt_norm_sectionValue_of_sq_lt ((by norm_num : (1 / 2 : ℝ) ^ 2 = 1 / 4).trans_lt ?_)
+  exact hR (show z ∈ (closedBall 0 R)ᶜ by
     rw [Set.mem_compl_iff, mem_closedBall_zero_iff, not_le]; linarith)
-  rw [← sq_norm_sectionValue] at h4
-  nlinarith [norm_nonneg (sectionValue x z)]
 
 /-- The moment coordinates of radius `R` of a vortex of `A_m^k`, `k ≥ 4`, whose section has norm
 above `1 / 4` outside the disc of radius `R`, are the coefficients of its zero divisor. -/
@@ -426,11 +425,10 @@ theorem exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq (hm : 0 < m) (
       1 / 2 < ‖sectionValue (Vortex.normalizedVortex c) z‖ := by
     obtain ⟨hx, hsol, hframe, hD⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm c
     rw [← normalizedVortex_def] at hx hsol hframe hD
-    have h4 := hR₀ _ _ hx hsol hframe hD (fun b hb ↦ by
+    refine lt_norm_sectionValue_of_sq_lt ((by norm_num : (1 / 2 : ℝ) ^ 2 = 1 / 4).trans_lt ?_)
+    exact hR₀ _ _ hx hsol hframe hD (fun b hb ↦ by
       linarith [norm_lt_of_isRoot_monicOfCoeff c (_root_.Polynomial.isRoot_of_mem_roots hb),
         hr c hc]) z (by linarith)
-    rw [← sq_norm_sectionValue] at h4
-    nlinarith [norm_nonneg (sectionValue (Vortex.normalizedVortex c) z)]
   -- The power sums of `Φ x` are the moments of `log |α|²` and `|α|² - 1` of the section `α` of `x`
   -- against a cutoff equal to `1` on the disc of radius `R`.
   refine ⟨fun u ↦ momentDivisorCoeff m R (sectionBCF f m hk1 u),

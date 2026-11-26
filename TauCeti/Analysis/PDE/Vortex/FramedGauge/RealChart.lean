@@ -347,14 +347,14 @@ theorem coe_sectionBCF_realSubRef (hs : 1 < s) (x : SobolevFieldSpace f m s) :
     ⇑(sectionBCF f m hs (x.realSubRef h)) = sectionValue x :=
   funext (referenceSectionBCF_add_sectionCLM_realSubRef hs x)
 
-/-- **The section is Lipschitz in the real coordinates.** For `s > 1` there is a constant `C` such
-that, at every point, the sections of two continuous fields of `A_m^s` differ by at most `C` times
-the distance of their real coordinates in `(H^s_ℝ)⁴`: the Sobolev embedding of `H^s(ℂ)` into the
-bounded continuous functions. -/
+/-- **The section is Lipschitz in the real coordinates.** For `s > 1` there is a constant `C ≥ 0`
+such that, at every point, the sections of two continuous fields of `A_m^s` differ by at most `C`
+times the distance of their real coordinates in `(H^s_ℝ)⁴`: the Sobolev embedding of `H^s(ℂ)` into
+the bounded continuous functions. -/
 theorem exists_forall_norm_sectionValue_sub_le_mul (hs : 1 < s) :
-    ∃ C, ∀ (x y : SobolevFieldSpace f m s) (z : ℂ),
+    ∃ C ≥ 0, ∀ (x y : SobolevFieldSpace f m s) (z : ℂ),
       ‖sectionValue x z - sectionValue y z‖ ≤ C * ‖x.realSubRef h - y.realSubRef h‖ := by
-  refine ⟨‖sectionCLM (h := h) hs‖, fun x y z ↦ ?_⟩
+  refine ⟨‖sectionCLM (h := h) hs‖, by positivity, fun x y z ↦ ?_⟩
   have hxy : sectionBCF f m hs (x.realSubRef h) - sectionBCF f m hs (y.realSubRef h) =
       sectionCLM hs (x.realSubRef h - y.realSubRef h) := by
     simp only [sectionBCF, map_sub, add_sub_add_left_eq_sub]

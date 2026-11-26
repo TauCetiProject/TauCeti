@@ -465,24 +465,21 @@ theorem coeFn_inclusionLp_gaugeDirectionCoord_ae_eq (x : SobolevFieldSpace f m k
     push_cast
     ring
 
-/-- **The norm of the section is uniformly continuous along gauge orbits.** For `k ≥ 2` and every
-`δ > 0` there is `ε > 0` such that, for all continuous fields `x` and `y` of `A_m^k` and every
-gauge `g ∈ G_(k+1)`, if the real coordinates of `x` are within `ε` of those of `g · y`, then the
-norms of the sections of `x` and `y` differ by at most `δ` everywhere. -/
+/-- **Fields close to a gauge orbit have sections close in norm, uniformly in the gauge.** For
+`k ≥ 2` and every `δ > 0` there is `ε > 0` such that, for all continuous fields `x` and `y` of
+`A_m^k` and every gauge `g ∈ G_(k+1)`, if the real coordinates of `x` are within `ε` of those of
+`g · y`, then the norms of the sections of `x` and `y` differ by at most `δ` everywhere. -/
 theorem exists_pos_forall_abs_norm_sectionValue_sub_le {δ : ℝ} (hδ : 0 < δ) :
     ∃ ε > 0, ∀ (x y : SobolevFieldSpace f m k) (g : SobolevTopologicalGaugeGroup hs),
       ‖x.realSubRef (Nat.cast_nonneg k) - (g • y).realSubRef (Nat.cast_nonneg k)‖ < ε →
         ∀ z, |‖sectionValue x z‖ - ‖sectionValue y z‖| ≤ δ := by
-  obtain ⟨C, hC⟩ := exists_forall_norm_sectionValue_sub_le_mul (f := f) (m := m)
+  obtain ⟨C, hC0, hC⟩ := exists_forall_norm_sectionValue_sub_le_mul (f := f) (m := m)
     (h := Nat.cast_nonneg k) (by exact_mod_cast (Fact.out : 1 < k))
-  refine ⟨δ / (|C| + 1), by positivity, fun x y g hxy z ↦ ?_⟩
+  refine ⟨δ / (C + 1), by positivity, fun x y g hxy z ↦ ?_⟩
   rw [← norm_sectionValue_smul g y z]
   refine (abs_norm_sub_norm_le _ _).trans ((hC x (g • y) z).trans ?_)
-  calc C * ‖x.realSubRef _ - (g • y).realSubRef _‖
-      ≤ (|C| + 1) * ‖x.realSubRef _ - (g • y).realSubRef _‖ := by
-        gcongr; linarith [le_abs_self C]
-    _ ≤ (|C| + 1) * (δ / (|C| + 1)) := mul_le_mul_of_nonneg_left hxy.le (by positivity)
-    _ = δ := by field_simp
+  rw [lt_div_iff₀ (by positivity)] at hxy
+  nlinarith [norm_nonneg (x.realSubRef _ - (g • y).realSubRef (Nat.cast_nonneg k))]
 
 end SobolevFieldSpace
 
