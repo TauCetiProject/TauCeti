@@ -54,7 +54,8 @@ In the namespace `TauCeti.ThricePuncturedSphere`:
   `cylindricalEndLift_inf_mem_puncturedSphereTruncation`: the end pieces lie in `Σ_R`.
 * `exists_add_mul_cylindricalEndLift_eq`: the converse for the input ends; for the output end it
   is `Puncture.exists_cylindricalEndLift_inf_eq`.
-* `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center.
+* `add_mul_cylindricalEndLift_ne`: a point with `s > 0` on an input end is no center, and
+  `equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne`: the same in real coordinates.
 -/
 
 public section
@@ -306,5 +307,16 @@ theorem norm_symm_realChart_add_mul_cylindricalEndLift_sub_le (c a : ℂ) {ζ : 
       nlinarith [pi_pos])
   have := norm_nonneg a
   nlinarith
+
+/-- If the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint, then a point with `s > 0` of the
+chart `ψ_i = realChart (z ↦ c i + a i φ₀(z))` of an input end with nonzero scale is not the
+center of any input end. -/
+theorem equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne
+    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖) {i : ι} (ha : a i ≠ 0)
+    {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) (j : ι) :
+    Complex.equivRealProdCLM.symm
+      (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart]
+  exact add_mul_cylindricalEndLift_ne hsep ha (by simpa using hζ) j
 
 end TauCeti.ThricePuncturedSphere

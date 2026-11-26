@@ -230,19 +230,14 @@ theorem det_fderiv_realChart_add_mul_cylindricalEndLift_mul_le {V : Type*}
   rw [det_fderiv_realChart_add_mul_cylindricalEndLift]
   nlinarith [sq_nonneg π]
 
-/-- **The weighted density on the output end.** On the part `s ≥ 2` of the output end, read in
-the positive end chart `φ'_∞`, and if the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the disc
-`‖w‖ ≤ 2 exp (2π)`, the Jacobian of `φ'_∞` times the weighted density
-`ρ ‖ξ‖² + ‖∂s ξ‖² + ‖∂t ξ‖²` at `φ'_∞(ζ)` is at most `20π² (1 + 4 n)` times the `W^{1,2}` density
-of `ξ ∘ φ'_∞` at `ζ`, where `n` is the number of input ends. -/
-theorem det_fderiv_positiveEndChart_inf_mul_le {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {ξ : ℝ × ℝ → V}
-    {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) (hξ : DifferentiableAt ℝ ξ (positiveEndChart inf ζ)) :
-    (fderiv ℝ (positiveEndChart inf) ζ).det *
-        (puncturedSphereWeight c (positiveEndChart inf ζ) * ‖ξ (positiveEndChart inf ζ)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖ ^ 2) ≤
-      20 * π ^ 2 * (1 + 4 * Fintype.card ι) * sobolevDensity (ξ ∘ positiveEndChart inf) ζ := by
+/-- **The weight on the output end, in the positive end chart.** On the part `s ≥ 2` of the output
+end, read in the positive end chart `φ'_∞`, and if the discs `‖w - c i‖ < ‖a i‖ / 2` lie in the
+disc `‖w‖ ≤ 2 exp (2π)`, the weight at `φ'_∞(ζ)` is at most `1 + 4 n` times the cylindrical weight
+of the pair of pants, where `n` is the number of input ends. -/
+theorem puncturedSphereWeight_positiveEndChart_inf_le
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 2 ≤ ζ.1) :
+    puncturedSphereWeight c (positiveEndChart inf ζ) ≤
+      (1 + 4 * Fintype.card ι) * cylindricalWeight (positiveEndChart inf ζ) := by
   set w := Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)
   -- Beyond `s = 2` the point is at norm `2 exp (2π s) ≥ 4 exp (2π)`, at least twice every center.
   have hw : ‖w‖ = 2 * Real.exp (2 * π * ζ.1) := norm_equivRealProdCLM_symm_positiveEndChart_inf _ _
@@ -257,35 +252,8 @@ theorem det_fderiv_positiveEndChart_inf_mul_le {V : Type*} [NormedAddCommGroup V
   have hc (i : ι) : 2 * ‖c i‖ ≤ ‖w‖ := by
     rw [hw]
     nlinarith [hout i, norm_nonneg (a i)]
-  have hw0 : w ≠ 0 := norm_pos_iff.1 (by rw [hw]; positivity)
-  have hρ := puncturedSphereWeight_le_mul_cylindricalWeight hw0 hc
-  have hdet := (det_fderiv_positiveEndChart_pos inf ζ).le
-  have hcyl := det_fderiv_positiveEndChart_mul_le inf (ξ := ξ) (by linarith) hξ
-  rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
-  -- Compare with the cylindrical weight of the pair of pants.
-  have hmono : puncturedSphereWeight c (positiveEndChart inf ζ) *
-        ‖ξ (positiveEndChart inf ζ)‖ ^ 2 + ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖ ^ 2 ≤
-      (1 + 4 * Fintype.card ι) * (cylindricalWeight (positiveEndChart inf ζ) *
-        ‖ξ (positiveEndChart inf ζ)‖ ^ 2 + ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖ ^ 2) := by
-    nlinarith [mul_le_mul_of_nonneg_right hρ (sq_nonneg ‖ξ (positiveEndChart inf ζ)‖),
-      sq_nonneg ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖,
-      sq_nonneg ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖]
-  calc _ ≤ (fderiv ℝ (positiveEndChart inf) ζ).det * ((1 + 4 * Fintype.card ι) *
-        (cylindricalWeight (positiveEndChart inf ζ) * ‖ξ (positiveEndChart inf ζ)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖ ^ 2)) :=
-        mul_le_mul_of_nonneg_left hmono hdet
-    _ = (1 + 4 * Fintype.card ι) * ((fderiv ℝ (positiveEndChart inf) ζ).det *
-        (cylindricalWeight (positiveEndChart inf ζ) * ‖ξ (positiveEndChart inf ζ)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖ ^ 2)) := by ring
-    _ ≤ (1 + 4 * Fintype.card ι) * (20 * π ^ 2 *
-        (‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (1, 0)‖ ^ 2 +
-          ‖fderiv ℝ (ξ ∘ positiveEndChart inf) ζ (0, 1)‖ ^ 2 +
-          ‖ξ (positiveEndChart inf ζ)‖ ^ 2)) := by gcongr
-    _ = _ := by simp only [Function.comp_apply]; ring
+  exact puncturedSphereWeight_le_mul_cylindricalWeight
+    (norm_pos_iff.1 (by rw [hw]; positivity)) hc
 
 section Energy
 
@@ -341,21 +309,39 @@ private theorem setLIntegral_image_positiveEndChart_inf_le (ha : ∀ i, a i ≠ 
           ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
       ENNReal.ofReal (20 * π ^ 2 * (1 + 4 * Fintype.card ι) *
         ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart inf) ζ) := by
-  set M : ℝ := 20 * π ^ 2 * (1 + 4 * Fintype.card ι)
-  have hM : 0 ≤ M := by positivity
-  rw [lintegral_image_positiveEndChart inf measurableSet_Ioi]
-  have hint : IntegrableOn (fun ζ ↦ M * sobolevDensity (ξ ∘ positiveEndChart inf) ζ)
-      (Ioi T ×ˢ Icc 0 1) :=
-    (integrableOn_sobolevDensity_comp_positiveEndChart_of_movingEnds ha hξ hξc hξU T).const_mul M
-  refine (setLIntegral_mono'
-    (g := fun ζ ↦ ENNReal.ofReal (M * sobolevDensity (ξ ∘ positiveEndChart inf) ζ))
-    (measurableSet_Ioi.prod measurableSet_Ico) fun ζ hζ ↦ ?_).trans
-    ((lintegral_mono_set (prod_mono subset_rfl Ico_subset_Icc_self)).trans_eq ?_)
-  · rw [← ENNReal.ofReal_mul (abs_nonneg _), abs_of_pos (det_fderiv_positiveEndChart_pos inf ζ)]
-    exact ENNReal.ofReal_le_ofReal (det_fderiv_positiveEndChart_inf_mul_le hout
-      (hT.trans (le_of_lt hζ.1)) (hξ.differentiable one_ne_zero _))
-  · rw [← integral_const_mul, ofReal_integral_eq_lintegral_ofReal hint
-      (ae_of_all _ fun ζ ↦ mul_nonneg hM (sobolevDensity_nonneg _ ζ))]
+  set n : ℝ := 1 + 4 * Fintype.card ι
+  have hn : 0 ≤ n := by positivity
+  have hband : MeasurableSet (Ioi T ×ˢ Ico (0 : ℝ) 1) := measurableSet_Ioi.prod measurableSet_Ico
+  -- On the band the weight is at most `n` times the cylindrical weight of the pair of pants.
+  have hρ : ∫⁻ w in positiveEndChart inf '' (Ioi T ×ˢ Ico 0 1),
+        ENNReal.ofReal (puncturedSphereWeight c w * ‖ξ w‖ ^ 2 + ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) ≤
+      ENNReal.ofReal n * ∫⁻ w in positiveEndChart inf '' (Ioi T ×ˢ Ico 0 1),
+        ENNReal.ofReal (cylindricalWeight w * ‖ξ w‖ ^ 2 + ‖fderiv ℝ ξ w (1, 0)‖ ^ 2 +
+          ‖fderiv ℝ ξ w (0, 1)‖ ^ 2) := by
+    rw [lintegral_image_positiveEndChart inf measurableSet_Ioi,
+      lintegral_image_positiveEndChart inf measurableSet_Ioi,
+      ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+    refine setLIntegral_mono' hband fun ζ hζ ↦ ?_
+    rw [mul_left_comm, ← ENNReal.ofReal_mul hn]
+    gcongr
+    have := puncturedSphereWeight_positiveEndChart_inf_le hout (hT.trans hζ.1.le)
+    nlinarith [mul_le_mul_of_nonneg_right this (sq_nonneg ‖ξ (positiveEndChart inf ζ)‖),
+      sq_nonneg ‖fderiv ℝ ξ (positiveEndChart inf ζ) (1, 0)‖,
+      sq_nonneg ‖fderiv ℝ ξ (positiveEndChart inf ζ) (0, 1)‖]
+  -- The cylindrical energy is bounded by the band estimate of the pair of pants.
+  refine (hρ.trans (mul_le_mul_right (lintegral_image_positiveEndChart_le inf measurableSet_Ioi
+    (fun s hs ↦ by linarith [mem_Ioi.1 hs]) fun ζ _ ↦ hξ.differentiable one_ne_zero _) _)).trans ?_
+  rw [← mul_assoc, ← ENNReal.ofReal_mul hn, mul_comm n,
+    ENNReal.ofReal_mul (show 0 ≤ 20 * π ^ 2 * n by positivity), ofReal_integral_eq_lintegral_ofReal
+      (integrableOn_sobolevDensity_comp_positiveEndChart_of_movingEnds ha hξ hξc hξU T)
+      (ae_of_all _ (sobolevDensity_nonneg _))]
+  refine mul_le_mul_right ?_ _
+  calc _ = ∫⁻ ζ in Ioi T ×ˢ Ico 0 1,
+        ENNReal.ofReal (sobolevDensity (ξ ∘ positiveEndChart inf) ζ) := by
+        simp only [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq,
+          Function.comp_apply]
+    _ ≤ _ := lintegral_mono_set (prod_mono subset_rfl Ico_subset_Icc_self)
 
 /-- The weighted energy of a `C¹` section with compact support in the plane minus the centers is
 at most the sum of the energies of its pieces: `B + 1` times its energy on `Σ_T`, where the weight
@@ -528,9 +514,8 @@ private theorem norm_floerConformalJetCoeff_realChart_add_mul_cylindricalEndLift
   -- The chart scale is `2π d` for the distance `d` from `ψ_i(s, t)` to the center `c i`.
   set d := ‖Complex.equivRealProdCLM.symm (ψ (s, t)) - c i‖
   have hd : 0 < d := by
-    refine norm_pos_iff.2 (sub_ne_zero.2 ?_)
-    rw [equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simp; linarith) i
+    exact norm_pos_iff.2 (sub_ne_zero.2
+      (equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) (by linarith) i))
   have hr : (fderiv ℝ ψ (s, t) stdComplexLineReal).1 ^ 2 +
       (fderiv ℝ ψ (s, t) stdComplexLineReal).2 ^ 2 = (2 * π * d) ^ 2 := by
     have h1 := det_fderiv_realChart_add_mul_cylindricalEndLift (c i) (a i) (s, t)
@@ -699,9 +684,8 @@ theorem memLp_floerConformalJetCoeff_puncturedSpherePerturbation (ω : Symplecti
   · -- On an input end, read the operator in the chart `ψ_i`.
     obtain ⟨i, ⟨s, t⟩, ⟨hs, ht⟩, rfl⟩ := mem_iUnion.1 hzi
     have hs' : 2 < s := by linarith [show T < s from hs]
-    have hψU : realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) (s, t) ∈ U := fun j ↦ by
-      rw [equivRealProdCLM_symm_realChart]
-      exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simp; linarith) j
+    have hψU : realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) (s, t) ∈ U :=
+      equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) (by linarith)
     exact le_max_of_le_right (norm_floerConformalJetCoeff_realChart_add_mul_cylindricalEndLift_le
       ω hH hHs ha hsep hout i hs' (hJeq i (s, t) hs') ((hu _ hψU).differentiableAt one_ne_zero)
       (hF i (s, t) hs') (((hT s hs.le).1.1 i t (Ico_subset_Icc_self ht)).trans (hBiB i)))
@@ -709,10 +693,9 @@ theorem memLp_floerConformalJetCoeff_puncturedSpherePerturbation (ω : Symplecti
     obtain ⟨⟨s, t⟩, ⟨hs, ht⟩, rfl⟩ := hzo
     have hs' : 2 < s := by linarith [show T < s from hs]
     -- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` of the input ends.
-    have hU : positiveEndChart inf (s, t) ∈ U := fun j h ↦ by
-      have h2 := h ▸ norm_equivRealProdCLM_symm_positiveEndChart_inf s t
-      linarith [hout j, norm_nonneg (a j), Real.exp_lt_exp.2 (show 2 * π < 2 * π * s by
-        nlinarith [pi_pos])]
+    have hU : positiveEndChart inf (s, t) ∈ U := fun j ↦
+      equivRealProdCLM_symm_positiveEndChart_inf_ne (by linarith)
+        (by linarith [hout j, norm_nonneg (a j)])
     exact le_max_of_le_right (norm_floerConformalJetCoeff_positiveEndChart_inf_le ω hHout hHouts
       hout hs' (hJoutq (s, t) hs') ((hu _ hU).differentiableAt one_ne_zero) (hFout (s, t) hs')
       (((hT s hs.le).1.2 t (Ico_subset_Icc_self ht)).trans hBoB))

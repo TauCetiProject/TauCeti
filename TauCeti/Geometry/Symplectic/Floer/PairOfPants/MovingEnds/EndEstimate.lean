@@ -39,6 +39,9 @@ pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero sc
   the same estimate holds, in the namespace `TauCeti.SymplecticForm`:
   `exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds`
 
+Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)`, so it avoids the centers
+of the input ends (`TauCeti.Floer.equivRealProdCLM_symm_positiveEndChart_inf_ne`).
+
 Both are instances of the end estimate in a holomorphic end chart,
 `exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart` in the namespace
 `TauCeti.SymplecticForm`.
@@ -70,6 +73,22 @@ open Filter Function Set MeasureTheory TauCeti.ThricePuncturedSphere
 open scoped Topology NNReal Manifold Real
 open TauCeti.Complex (realChart realChart_mk equivRealProdCLM_symm_realChart contDiff_realChart
   fderiv_realChart_apply fderiv_realChart_ne_zero)
+
+namespace TauCeti.Floer
+
+/-- Beyond `s = 1` the output end, read in the positive end chart `φ'_∞`, avoids every point of
+the disc `‖w‖ ≤ 2 exp (2π)`. -/
+theorem equivRealProdCLM_symm_positiveEndChart_inf_ne {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) :
+    Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ w := by
+  intro h
+  have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
+  rw [Prod.mk.eta, h] at h₁
+  have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
+    Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
+  linarith
+
+end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm
 
@@ -177,9 +196,8 @@ theorem
       ‖Complex.equivRealProdCLM.symm (ψ (s, t)) - c i‖ = ‖a i‖ * Real.exp (-(2 * π * s)) / 2 := by
     rw [hψ, equivRealProdCLM_symm_realChart, norm_add_mul_cylindricalEndLift_sub]
     simp
-  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j := by
-    rw [hψ, equivRealProdCLM_symm_realChart]
-    exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
+  have hψne (ζ : ℝ × ℝ) (hζ : 0 < ζ.1) (j : ι) : Complex.equivRealProdCLM.symm (ψ ζ) ≠ c j :=
+    equivRealProdCLM_symm_realChart_add_mul_cylindricalEndLift_ne hsep (ha i) hζ j
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       (hHs i) hx hnd hJe hJex (fun ζ _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
@@ -266,13 +284,8 @@ theorem
             Complex.I) u ξ z‖ ^ 2 := by
   -- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` of the input ends.
   have hψne (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
-      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
-    intro h
-    have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-    rw [Prod.mk.eta, h] at h₁
-    have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
-      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [hout j, norm_nonneg (a j)]
+      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j :=
+    equivRealProdCLM_symm_positiveEndChart_inf_ne hζ (by linarith [hout j, norm_nonneg (a j)])
   obtain ⟨C, R, hR, hest⟩ :=
     ω.exists_forall_setIntegral_comp_le_mul_integral_floerLinearization_of_chart (R₁ := 2) hX
       ((hHouts.comp (contDiff_fst.neg.prodMk contDiff_snd)).neg) hx hnd hJe hJex
