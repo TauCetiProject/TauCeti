@@ -37,10 +37,17 @@ global functions of the base change.
   restricts to an isomorphism over every open contained in its range.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_resLE_of_eq`: the restriction of `f` to an open `U`
   of the target and an open `V` of the source equal to `f ⁻¹ᵁ U` is a pullback of `f`.
+* `AlgebraicGeometry.Scheme.Hom.isPullback_morphismRestrict_homOfLE`: for opens `V ≤ U`, `f ∣_ V`
+  is the pullback of `f ∣_ U` along the inclusion `V ⟶ U`.
+* `AlgebraicGeometry.Scheme.Hom.exists_dense_open_of_comp_iso`: a property respecting isomorphisms
+  that holds for the restriction of `f ≫ e.hom` over a dense open, for an isomorphism `e`, holds for
+  the restriction of `f` over a dense open.
 * `AlgebraicGeometry.Scheme.Hom.isIso_morphismRestrict_of_isIso_comp`: if an open immersion `ι`
   contains `f ⁻¹ᵁ V` in its range and `(ι ≫ f) ∣_ V` is an isomorphism, so is `f ∣_ V`.
 * `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_morphismRestrict`: being an isomorphism over an
   open is preserved by base change.
+* `AlgebraicGeometry.Scheme.Hom.isIso_pullbackFst_of_preimage_eq_top`: if `f⁻¹(U)` is all of `X`
+  and `φ` is an isomorphism over `U`, the base change `X ×_Y S' ⟶ X` is an isomorphism.
 * `AlgebraicGeometry.Scheme.Hom.existsUnique_apply_eq_of_isIso_morphismRestrict`: if `f` restricts
   to an isomorphism over `U`, every point of `U` has a unique preimage under `f`.
 * `AlgebraicGeometry.HasRingHomProperty.resLE_iff`: for affine opens `V ⊆ f ⁻¹ᵁ U`, a property
@@ -107,6 +114,28 @@ theorem Scheme.Hom.isPullback_resLE_of_eq (U : Y.Opens) {V : X.Opens} (h : V = f
   subst h
   simpa [Scheme.Hom.resLE_eq_morphismRestrict] using isPullback_morphismRestrict f U
 
+/-- For opens `V ≤ U` of the target, restricting `f` over `V` is the pullback of restricting it
+over `U` along the inclusion `V ⟶ U`. -/
+theorem Scheme.Hom.isPullback_morphismRestrict_homOfLE {U V : Y.Opens} (hVU : V ≤ U) :
+    IsPullback (X.homOfLE (f.preimage_mono hVU)) (f ∣_ V) (f ∣_ U) (Y.homOfLE hVU) := by
+  -- Paste onto the pullback square of `f ∣_ U` over `U.ι`.
+  refine (IsPullback.of_bot ?_ (morphismRestrict_homOfLE f V U hVU)
+    (isPullback_morphismRestrict f U)).flip
+  rw [Scheme.homOfLE_ι, Scheme.homOfLE_ι]
+  exact isPullback_morphismRestrict f V
+
+/-- A property respecting isomorphisms that holds for the restriction of `f ≫ e.hom` over a
+dense open, for an isomorphism of targets `e`, holds for the restriction of `f` over the preimage
+of that open, which is dense. -/
+theorem Scheme.Hom.exists_dense_open_of_comp_iso (P : MorphismProperty Scheme.{u})
+    [P.RespectsIso] {Z : Scheme.{u}} (e : Y ≅ Z)
+    (h : ∃ U : Z.Opens, Dense (U : Set Z) ∧ P ((f ≫ e.hom) ∣_ U)) :
+    ∃ U : Y.Opens, Dense (U : Set Y) ∧ P (f ∣_ U) := by
+  obtain ⟨U, hU, hP⟩ := h
+  refine ⟨e.hom ⁻¹ᵁ U, hU.preimage e.hom.homeomorph.isOpenMap, ?_⟩
+  rw [morphismRestrict_comp] at hP
+  exact (P.cancel_right_of_respectsIso _ _).mp hP
+
 /-- If the range of an open immersion `ι` contains `f ⁻¹ᵁ V` and `(ι ≫ f) ∣_ V` is an
 isomorphism, then so is `f ∣_ V`: over `V`, the morphism `f` is `ι ≫ f` up to an isomorphism. -/
 theorem Scheme.Hom.isIso_morphismRestrict_of_isIso_comp {Z : Scheme.{u}} (ι : Z ⟶ X)
@@ -126,6 +155,14 @@ theorem Scheme.Hom.isIso_pullbackFst_morphismRestrict {S' : Scheme.{u}} (φ : S'
     (IsPullback.of_hasPullback f φ).flip
   rw [← morphismRestrict_ι] at s
   exact (s.of_right' (isPullback_morphismRestrict φ U).flip).isIso_snd_of_isIso
+
+/-- If `f⁻¹(U)` is all of `X` and `φ : S' ⟶ Y` is an isomorphism over `U`, then the projection
+`X ×_Y S' ⟶ X` is an isomorphism. -/
+theorem Scheme.Hom.isIso_pullbackFst_of_preimage_eq_top {S' : Scheme.{u}} (φ : S' ⟶ Y)
+    {U : Y.Opens} (h : f ⁻¹ᵁ U = ⊤) (hU : IsIso (φ ∣_ U)) : IsIso (Limits.pullback.fst f φ) := by
+  have := f.isIso_pullbackFst_morphismRestrict φ hU
+  exact IsZariskiLocalAtTarget.of_iSup_eq_top (P := MorphismProperty.isomorphisms Scheme)
+    (fun _ : Unit ↦ f ⁻¹ᵁ U) (by simp [h]) fun _ ↦ this
 
 /-- If the restriction of `f` over `U` is an isomorphism, every point in `U` has a
 unique preimage in the whole source of `f`. -/

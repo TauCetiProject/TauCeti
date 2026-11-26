@@ -5,8 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
+public import TauCeti.Analysis.Meromorphic.LogDeriv
+import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 import TauCeti.Algebra.Order.GroupWithZero.Basic
+import TauCeti.Analysis.Calculus.LogDeriv
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
+import TauCeti.NumberTheory.LSeries.RiemannZeta.Meromorphic
 
 /-!
 # The logarithmic derivative of the Riemann zeta function near `s = 1`
@@ -14,7 +20,8 @@ import TauCeti.Algebra.Order.GroupWithZero.Basic
 The function `ζ′/ζ(s) + (s - 1)⁻¹` is bounded on every compact subset of the closed half-plane
 `1 ≤ re s`, punctured at `s = 1`. In particular there is one absolute constant `C` with
 `‖-ζ′/ζ(1 + η) - η⁻¹‖ ≤ C` (and hence `-(ζ′/ζ(1 + η)).re ≤ η⁻¹ + C` with `C ≥ 0`) for all
-`0 < η ≤ 1`.
+`0 < η ≤ 1`. The constant term of `ζ′/ζ` at `s = 1`, its finite part in the sense of
+`TauCeti.logDerivFinitePart`, is Euler's constant.
 
 The proof identifies `ζ′/ζ(s) + (s - 1)⁻¹` with the logarithmic derivative of the regularized
 function `(s - 1) ζ(s)`, which is Mathlib's `DirichletCharacter.LFunctionTrivChar₁` at level one.
@@ -25,6 +32,7 @@ Its negative logarithmic derivative is continuous wherever `ζ` does not vanish,
 ## Main results
 
 * `TauCeti.logDeriv_riemannZeta_add_inv_sub_one`
+* `TauCeti.logDerivFinitePart_riemannZeta_one`
 * `IsCompact.exists_norm_logDeriv_riemannZeta_add_inv_sub_one_le`
 * `TauCeti.exists_norm_neg_logDeriv_riemannZeta_one_add_sub_inv_le`
 * `TauCeti.exists_neg_re_logDeriv_riemannZeta_one_add_le`
@@ -43,8 +51,19 @@ theorem logDeriv_riemannZeta_add_inv_sub_one {s : ℂ} (hs : s ≠ 1) (hζ : rie
     logDeriv riemannZeta s + (s - 1)⁻¹ = logDeriv (LFunctionTrivChar₁ 1) s := by
   have hs' : s - 1 ≠ 0 := sub_ne_zero_of_ne hs
   rw [logDeriv_apply, logDeriv_apply, deriv_LFunctionTrivChar₁_apply_of_ne_one _ hs,
-    LFunctionTrivChar₁, Function.update_of_ne hs, LFunctionTrivChar, LFunction_modOne_eq]
+    LFunctionTrivChar₁_one_apply_of_ne_one hs, LFunctionTrivChar, LFunction_modOne_eq]
   field_simp
+
+/-- The finite part of `ζ′ / ζ` at `1` is the Euler–Mascheroni constant. -/
+@[simp] theorem logDerivFinitePart_riemannZeta_one :
+    logDerivFinitePart riemannZeta 1 = (Real.eulerMascheroniConstant : ℂ) := by
+  have ha := differentiable_riemannZeta₁.analyticAt (z := (1 : ℂ))
+  have hlog : AnalyticAt ℂ (logDeriv riemannZeta₁) 1 := ha.logDeriv (by simp)
+  rw [hlog.logDerivFinitePart_eq, logDeriv_apply]
+  · simp
+  · filter_upwards [log_deriv_riemannZeta_eq_neg_inv_sub_add] with s hs
+    simp [logDeriv_apply, hs, meromorphicOrderAt_riemannZeta_one]
+    ring
 
 end TauCeti
 

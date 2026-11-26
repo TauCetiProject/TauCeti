@@ -41,6 +41,11 @@ orthonormal basis taken twice, this is the dimension times `‖A‖`. Every valu
 Young-type bound `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
+For a continuous bilinear map `B : G × V → H`, the expression `B(A ∘ D, v)` is linear in each of
+`A`, `D` and `v`; `ContinuousLinearMap.compPrecompL E F B` is the continuous bilinear map
+`(D, v) ↦ (A ↦ B(A ∘ D, v))` that treats `A` as a separate factor
+(`ContinuousLinearMap.compPrecompL_apply`).
+
 Composing a bilinear map `f` with linear maps `g` and `h` gives a bilinear map of norm at most
 `‖f‖ ‖g‖ ‖h‖` (`ContinuousLinearMap.norm_bilinearComp_le`), and the bilinear map
 `(h, k) ↦ B h k • c` has norm at most `‖c‖ ‖B‖`
@@ -66,7 +71,9 @@ On normable spaces over nontrivially normed fields, with isometric scalar homomo
 `σ₂₃` and `σ₂₃` surjective, the flip of a continuous pairing `μ : E →SL[σ₁₃] F →SL[σ₂₃] H` is
 Mathlib's flip: `μ.toLinearMap.pairingFlip hμ = μ.flip`, where `hμ` is a proof of joint continuity
 of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which callers supply
-explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`).
+explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`). Forgetting continuity via
+`ContinuousLinearMap.toLinearMap₁₂` commutes with `flip` and `bilinearComp`
+(`ContinuousLinearMap.toLinearMap₁₂_flip`, `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`).
 -/
 
 public section
@@ -112,6 +119,29 @@ theorem bilinearCompL_apply (e : V' →L[𝕜] V) (f : W' →L[𝕜] W)
   simp only [bilinearCompL, comp_apply, compL_apply, flip_apply, bilinearComp_apply]
 
 end BilinearComp
+
+section CompPrecompL
+
+variable {E F H : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+variable (E F) in
+/-- For a continuous bilinear map `B : G × V → H`, the continuous bilinear map
+`(D, v) ↦ (A ↦ B.precompL E (A ∘L D) v)`. It writes the expression `B(A ∘ D, v)`, which is linear
+in each of `A`, `D` and `v`, as `compPrecompL E F B D v` applied to `A`, so that `A` can be
+treated as one factor of a product and `(D, v)` as the other. In the chain rule
+`D B(g ∘ u, v) = B(Dg(u) ∘ Du, v) + B(g ∘ u, Dv)` this separates `Dg(u)` from `Du` and `v`. -/
+def compPrecompL (B : G →L[𝕜] V →L[𝕜] H) :
+    (E →L[𝕜] F) →L[𝕜] V →L[𝕜] (F →L[𝕜] G) →L[𝕜] E →L[𝕜] H :=
+  (((compL 𝕜 (F →L[𝕜] G) (E →L[𝕜] G) (E →L[𝕜] H)).comp (B.precompL E).flip).flip).comp
+    (compL 𝕜 E F G).flip
+
+@[simp]
+theorem compPrecompL_apply (B : G →L[𝕜] V →L[𝕜] H) (D : E →L[𝕜] F) (v : V)
+    (A : F →L[𝕜] G) : compPrecompL E F B D v A = B.precompL E (A.comp D) v :=
+  (rfl)
+
+end CompPrecompL
 
 /-- Pulling a continuous bilinear map back along a continuous linear map `u`,
 `B ↦ B (u ·) (u ·)`, as a continuous linear map in `B`. -/
@@ -381,6 +411,54 @@ theorem norm_smulRightL_flip_comp_le (c : H) (B : E →L[𝕜] StrongDual 𝕜 E
   exact norm_smulRightL_le
 
 end Comp
+
+section ToLinearMap₁₂Flip
+
+variable {𝕜 𝕜₂ 𝕜₃ : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃}
+  [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+  {E F G : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsNormableSpace 𝕜 E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup G] [Module 𝕜₃ G] [TopologicalSpace G] [IsNormableSpace 𝕜₃ G]
+  [IsTopologicalAddGroup G]
+
+/-- Forgetting continuity commutes with transposing the arguments. -/
+@[simp]
+theorem toLinearMap₁₂_flip (L : E →SL[σ₁₃] F →SL[σ₂₃] G) :
+    toLinearMap₁₂ L.flip = (toLinearMap₁₂ L).flip :=
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.flip_apply, flip_apply]
+
+end ToLinearMap₁₂Flip
+
+section ToLinearMap₁₂BilinearComp
+
+variable {𝕜 𝕜₂ 𝕜₃ 𝕜₁' 𝕜₂' : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+  [NontriviallyNormedField 𝕜₃] [NontriviallyNormedField 𝕜₁'] [NontriviallyNormedField 𝕜₂']
+  {σ₁₃ : 𝕜 →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} {σ₁' : 𝕜₁' →+* 𝕜} {σ₁₃' : 𝕜₁' →+* 𝕜₃}
+  {σ₂' : 𝕜₂' →+* 𝕜₂} {σ₂₃' : 𝕜₂' →+* 𝕜₃} [RingHomCompTriple σ₁' σ₁₃ σ₁₃']
+  [RingHomCompTriple σ₂' σ₂₃ σ₂₃'] [RingHomIsometric σ₂₃] [RingHomIsometric σ₁₃']
+  [RingHomIsometric σ₂₃']
+  {E F G E' F' : Type*} [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
+  [AddCommGroup F] [Module 𝕜₂ F] [TopologicalSpace F] [IsNormableSpace 𝕜₂ F]
+  [AddCommGroup G] [Module 𝕜₃ G] [TopologicalSpace G] [IsNormableSpace 𝕜₃ G]
+  [IsTopologicalAddGroup G]
+  [AddCommGroup E'] [Module 𝕜₁' E'] [TopologicalSpace E'] [IsNormableSpace 𝕜₁' E']
+  [AddCommGroup F'] [Module 𝕜₂' F'] [TopologicalSpace F'] [IsNormableSpace 𝕜₂' F']
+
+/-- Forgetting continuity commutes with precomposition in both arguments: the continuous pullback
+`L.bilinearComp f g` becomes the algebraic pullback `(L.comp f).compl₂ g`. For linear maps this is
+`L.compl₁₂ f g`, by definition of `LinearMap.compl₁₂`. -/
+@[simp]
+theorem toLinearMap₁₂_bilinearComp (L : E →SL[σ₁₃] F →SL[σ₂₃] G) (f : E' →SL[σ₁'] E)
+    (g : F' →SL[σ₂'] F) :
+    toLinearMap₁₂ (L.bilinearComp f g) =
+      ((toLinearMap₁₂ L).comp (f : E' →ₛₗ[σ₁'] E)).compl₂ (g : F' →ₛₗ[σ₂'] F) :=
+  LinearMap.ext₂ fun _ _ ↦ by
+    simp only [toLinearMap₁₂_apply_apply_apply, LinearMap.compl₂_apply, LinearMap.comp_apply,
+      bilinearComp_apply, coe_coe]
+
+end ToLinearMap₁₂BilinearComp
 
 end ContinuousLinearMap
 

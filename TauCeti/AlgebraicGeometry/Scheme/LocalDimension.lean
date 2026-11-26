@@ -50,6 +50,8 @@ All in the namespace `TauCeti.AlgebraicGeometry`:
   `dim_x X = dim O_{X,x} + dim {x}⁻`.
 * `topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents`: `dim_x X` is the
   supremum of the dimensions of the irreducible components through `x`.
+* `topologicalKrullDimAt_eq_of_isPureDimensional`: if `X` is pure of dimension `d`, then
+  `dim_x X = d` at every point.
 * `topologicalKrullDimAt_eq_iSup_toNat_trdeg_residueField`: `dim_x X` is the supremum of
   `trdeg_k κ(ξ)` over the generic points `ξ` of the irreducible components through `x`.
 * `coheight_add_height_eq_topologicalKrullDim`: for `X` irreducible, `codim x + dim {x}⁻ = dim X`.
@@ -231,6 +233,18 @@ theorem height_apply_eq_height_of_residueDegree_ne_zero {Y : Scheme.{u}} [Y.Over
   rw [height_eq_toNat_trdeg_residueField k, height_eq_toNat_trdeg_residueField k,
     ← trdeg_add_eq k (Y.residueField (f x)) (A := X.residueField x),
     trdeg_eq_zero (R := Y.residueField (f x)), add_zero]
+
+include k in
+/-- On a scheme locally of finite type over a field and pure of dimension `d`, the local
+dimension at every point is `d`. -/
+theorem topologicalKrullDimAt_eq_of_isPureDimensional {d : ℕ} (h : IsPureDimensional d X)
+    (x : X) :
+    topologicalKrullDimAt X x = d := by
+  rw [topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents k]
+  refine le_antisymm (iSup₂_le fun Z hZ ↦ iSup_le fun _ ↦ (isPureDimensional_iff.mp h Z hZ).le) ?_
+  exact le_iSup₂_of_le (irreducibleComponent x) (irreducibleComponent_mem_irreducibleComponents x)
+    (le_iSup_of_le mem_irreducibleComponent (isPureDimensional_iff.mp h _
+      (irreducibleComponent_mem_irreducibleComponents x)).ge)
 
 include k in
 /-- Over a field, an open immersion preserves the dimension of points: its residue degrees are

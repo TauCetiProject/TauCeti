@@ -68,8 +68,11 @@ vectors indexed by `ι`.
 * `Module.Basis.algebraMap_sum_mul_eq_mul` and
   `Module.Basis.algebraMap_mul_constr_eq_algebraMap_sum`: coordinate-clearing identities for a
   finite basis over an algebra `F` of a commutative semiring `T`.
+* `Module.Basis.repr_mul_algebraMap`: the coordinates of `x * algebraMap R A r` in a basis of an
+  `R`-algebra `A` are `r` times those of `x`.
 * `Module.Basis.sum_coord_add_smul`: a vector whose coordinates in a basis `B` are those of `X`
   plus the matrix of a linear map `Z` applied to `v` is `X + Z (∑ j, v j • b j)`.
+* `Module.Basis.map_sum_smul`: a linear map applied to `∑ i, c i • b i`, expanded in `b`.
 -/
 
 public section
@@ -375,6 +378,12 @@ theorem algebraMap_mul_constr_eq_algebraMap_sum
   rw [map_smul, b.constr_basis, smul_eq_mul, ← mul_assoc,
     ← Algebra.smul_def s (b.repr y j), ← ha j, ← map_mul]
 
+/-- The mirror image of `Module.Basis.repr_smul'`, for multiplication by a scalar on the right. -/
+theorem repr_mul_algebraMap {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (b : Basis ι R A) (i : ι) (x : A) (r : R) :
+    b.repr (x * algebraMap R A r) i = r * b.repr x i := by
+  rw [← Algebra.commutes, ← Algebra.smul_def, map_smul, Finsupp.smul_apply, smul_eq_mul]
+
 end Algebra
 
 section SumCoord
@@ -394,6 +403,13 @@ theorem sum_coord_add_smul {R F H : Type*} [CommSemiring R] [AddCommMonoid F] [M
   · rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     simp_rw [mul_comm _ (v j), mul_smul, ← Finset.smul_sum, B.sum_repr]
+
+/-- A linear map applied to a combination of a finite basis, expanded in the same basis: the new
+coefficients are those of `c` transformed by the matrix of `f` in `b`. -/
+theorem map_sum_smul {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
+    {F : Type*} [FunLike F M M] [LinearMapClass F R M M] (b : Basis ι R M) (f : F) (c : ι → R) :
+    f (∑ i, c i • b i) = ∑ i, (∑ j, b.repr (f (b j)) i * c j) • b i := by
+  simpa using (b.sum_coord_add_smul b 0 (f : M →ₗ[R] M) c).symm
 
 end SumCoord
 

@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import TauCeti.NumberTheory.Arakelov.SectionDegree
 
 import Mathlib.Analysis.InnerProductSpace.Basic
 import Mathlib.RingTheory.Flat.Basic
@@ -40,9 +41,10 @@ The structure is `TauCeti.HermitianVectorBundle`; the other names are in its nam
 * `rescale`: the bundle `Ē(c)` with norms `e^{-c} ‖·‖_σ`.
 * `Isometry`: `𝓞 K`-linear isomorphisms whose complexifications
   are unitary at every embedding.
-* `sectionDegree`: the expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`.
-  For a nonzero section of a bundle of rank one it is the Arakelov degree of the bundle; for other
-  bundles or sections it is only this expression, not a degree of the bundle.
+* `sectionDegree`: the expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`,
+  `TauCeti.sectionDegreeOfNorms` for the norms of the bundle. For a nonzero section of a bundle
+  of rank one it is the Arakelov degree of the bundle; for other bundles or sections it is only
+  this expression, not a degree of the bundle.
 
 ## References
 
@@ -253,6 +255,13 @@ theorem norm_smul (σ : K →+* ℂ) (a : 𝓞 K) (x : E) :
   simp only [norm_def, inner_def, h, hz, RCLike.re_to_complex, Complex.re_ofReal_mul,
     Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq (norm_nonneg _)]
 
+variable (E) in
+/-- The zero element of a hermitian vector bundle has norm zero at every embedding. -/
+@[simp]
+protected theorem norm_zero (σ : K →+* ℂ) : E.norm σ 0 = 0 := by
+  let := E.metric.core σ
+  simp [norm_def, inner_def, InnerProductSpace.Core.inner_zero_left]
+
 section Trivial
 
 variable (σ : K →+* ℂ)
@@ -379,36 +388,39 @@ section SectionDegree
 variable [NumberField K]
 
 /-- The expression `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ` attached to a section `s`, the sum
-running over all field embeddings `σ : K →+* ℂ`. For a nonzero section of a hermitian vector
-bundle of rank one this is the Arakelov degree of the bundle; its independence of the section is
-the product formula. For other bundles or sections it is only this expression. -/
+running over all field embeddings `σ : K →+* ℂ`: `TauCeti.sectionDegreeOfNorms` for the norms of
+`E`. For a nonzero section of a hermitian vector bundle of rank one this is the Arakelov degree of
+the bundle; its independence of the section is the product formula. For other bundles or sections
+it is only this expression. -/
 def sectionDegree (s : E) : ℝ :=
-  Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s)
+  sectionDegreeOfNorms E.norm s
 
 /-- The degree computed with `s` is `log #(E / 𝓞 K • s) - Σ_σ log ‖s‖_σ`. -/
 theorem sectionDegree_def (s : E) :
     E.sectionDegree s =
       Real.log (Submodule.span (𝓞 K) {s}).cardQuot - ∑ σ : K →+* ℂ, Real.log (E.norm σ s) :=
+  sectionDegreeOfNorms_def _ _
+
+/-- The degree computed with `s` is `TauCeti.sectionDegreeOfNorms` for the norms of `E`. -/
+theorem sectionDegree_eq_sectionDegreeOfNorms (s : E) :
+    E.sectionDegree s = sectionDegreeOfNorms E.norm s :=
   (rfl)
 
 /-- The degree of `Ō_K` computed with the section `1` is zero. -/
 @[simp]
-theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 := by
-  simp [sectionDegree, Ideal.span_singleton_one, Submodule.cardQuot_top]
+theorem sectionDegree_trivial_one : (trivial K).sectionDegree 1 = 0 :=
+  sectionDegreeOfNorms_eq_zero Ideal.span_singleton_one trivial_norm_one
 
 /-- Rescaling the metric by `e^{-c}` adds `[K : ℚ] c` to the degree computed with a nonzero
 section. -/
 theorem sectionDegree_rescale (c : ℝ) {s : E} (hs : s ≠ 0) :
     (E.rescale c).sectionDegree s = E.sectionDegree s + finrank ℚ K * c := by
-  have h σ : Real.log ((E.rescale c).norm σ s) = -c + Real.log (E.norm σ s) := by
-    rw [rescale_norm, Real.log_mul (by positivity) (E.norm_pos σ hs).ne', Real.log_exp]
-  simp only [sectionDegree, h, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
-    NumberField.Embeddings.card, nsmul_eq_mul]
+  have h := sectionDegreeOfNorms_exp_neg_mul E.norm c fun σ => (E.norm_pos σ hs).ne'
+  simp only [← E.rescale_norm c] at h
   -- `E.rescale c` is `E` with a new metric: its carrier is `E` by definition, but the module
-  -- instance on the span differs syntactically, so `rw` cannot identify the two `cardQuot` terms
-  -- and `change` restates the left one over `E`.
-  change Real.log (Submodule.span (𝓞 K) {s}).cardQuot - _ = _
-  ring
+  -- instance on the span differs syntactically, so `rw` cannot identify the two degrees and
+  -- `exact` closes the goal up to this unfolding.
+  exact h
 
 end SectionDegree
 
