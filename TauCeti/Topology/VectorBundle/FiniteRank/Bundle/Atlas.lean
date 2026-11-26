@@ -124,7 +124,8 @@ noncomputable def toAtlasMap (f : E ⟶ F) : E.toAtlas ⟶ F.toAtlas where
   continuous_totalSpaceMap :=
     -- `rfl` unfolds `LinearMap.comp`; `LinearMap.comp_apply` does not fire syntactically because
     -- `E.toAtlas.Fiber x` is `Fin (E.rank x) → 𝕜` only up to the `rfl` lemma `rank_ofBundles`.
-    continuous_totalSpace_conj _ _ E.toAtlasHomeomorph_symm_apply F.toAtlasHomeomorph_apply
+    continuous_totalSpace_conj E.toAtlasHomeomorph.symm.continuous
+      F.toAtlasHomeomorph.continuous E.toAtlasHomeomorph_symm_apply F.toAtlasHomeomorph_apply
       (fun _ ↦ rfl) f.continuous_totalSpaceMap
 
 @[simp] theorem fiberMap_toAtlasMap (f : E ⟶ F) (x : X) :
@@ -143,7 +144,8 @@ noncomputable def ofAtlasMap (g : E.toAtlas ⟶ F.toAtlas) : E ⟶ F where
     (E.fiberContinuousLinearEquiv x).toLinearMap
   continuous_totalSpaceMap :=
     -- `rfl` unfolds `LinearMap.comp`, as in `toAtlasMap`.
-    continuous_totalSpace_conj _ _ E.toAtlasHomeomorph_apply F.toAtlasHomeomorph_symm_apply
+    continuous_totalSpace_conj E.toAtlasHomeomorph.continuous
+      F.toAtlasHomeomorph.symm.continuous E.toAtlasHomeomorph_apply F.toAtlasHomeomorph_symm_apply
       (fun _ ↦ rfl) g.continuous_totalSpaceMap
 
 @[simp] theorem fiberMap_ofAtlasMap (g : E.toAtlas ⟶ F.toAtlas) (x : X) :
@@ -271,13 +273,15 @@ fibre the isomorphism is the inverse preferred chart of the reconstruction, foll
 noncomputable def toAtlasToBundleIso : (toBundle.{w} A).toAtlas ≅ A :=
   isoMk (fun x ↦ (((toBundle.{w} A).fiberContinuousLinearEquiv x).symm.trans
       ContinuousLinearEquiv.ulift).toLinearEquiv)
-    (continuous_totalSpace_conj (toBundle.{w} A).toAtlasHomeomorph.symm (toBundleHomeomorph A)
+    (continuous_totalSpace_conj (toBundle.{w} A).toAtlasHomeomorph.symm.continuous
+      (toBundleHomeomorph A).continuous
       (f := fun q ↦ q.snd) (FiniteRankBundle.toAtlasHomeomorph_symm_apply _)
       (toBundleHomeomorph_apply A)
       (fun _ ↦ (ContinuousLinearEquiv.trans_apply _ _ _).trans
         (ContinuousLinearEquiv.ulift_apply _))
       continuous_id)
-    (continuous_totalSpace_conj (toBundleHomeomorph A).symm (toBundle.{w} A).toAtlasHomeomorph
+    (continuous_totalSpace_conj (toBundleHomeomorph A).symm.continuous
+      (toBundle.{w} A).toAtlasHomeomorph.continuous
       (f := fun q ↦ q.snd) (toBundleHomeomorph_symm_apply A)
       (FiniteRankBundle.toAtlasHomeomorph_apply _)
       (fun _ ↦ (ContinuousLinearEquiv.symm_trans_apply _ _ _).trans <|
@@ -311,7 +315,8 @@ noncomputable def toBundleMap {B : FiniteRankAtlas 𝕜 X} (g : A ⟶ B) :
   fiberMap x := ContinuousLinearEquiv.ulift.symm.toLinearMap ∘ₗ g.fiberMap x ∘ₗ
     ContinuousLinearEquiv.ulift.toLinearMap
   continuous_totalSpaceMap :=
-    continuous_totalSpace_conj (toBundleHomeomorph A) (toBundleHomeomorph B).symm
+    continuous_totalSpace_conj (toBundleHomeomorph A).continuous
+      (toBundleHomeomorph B).symm.continuous
       (toBundleHomeomorph_apply A) (toBundleHomeomorph_symm_apply B)
       (fun _ ↦ ulift_conj_apply _ _) g.continuous_totalSpaceMap
 
