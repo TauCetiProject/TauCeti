@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Quasiregular.Euclidean
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.InnerProductSpace.Radial.Stretch
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
-import TauCeti.MeasureTheory.Integral.NormRpow
 
 /-!
 # Quasiregularity of the radial stretch
@@ -37,12 +36,12 @@ any open set containing it (`TauCeti.not_isQuasiregularOn_norm_inv_smul_self`).
 
 ## Checks
 
-In `ℝ³`, the radial stretch with `a = 1/2` is `2`-quasiregular and not `K`-quasiregular for
-`K < 2` (`TauCeti.isQuasiregularOn_radialStretch_half_three`,
-`TauCeti.two_le_of_isQuasiregularOn_radialStretch_half_three`), and the one with `a = 2` is
-`4`-quasiregular and not `K`-quasiregular for `K < 4`
-(`TauCeti.isQuasiregularOn_radialStretch_two_three`,
-`TauCeti.four_le_of_isQuasiregularOn_radialStretch_two_three`).
+In `ℝ³`, the radial stretch with `a = 1/2` is `2`-quasiregular, and on a nonempty open set not
+`K`-quasiregular for `K < 2` (`TauCeti.isQuasiregularOn_norm_rpow_smul_self_half_fin_three`,
+`TauCeti.two_le_of_isQuasiregularOn_norm_rpow_smul_self_half_fin_three`), and the one with `a = 2`
+is `4`-quasiregular, and on a nonempty open set not `K`-quasiregular for `K < 4`
+(`TauCeti.isQuasiregularOn_norm_rpow_smul_self_two_fin_three`,
+`TauCeti.four_le_of_isQuasiregularOn_norm_rpow_smul_self_two_fin_three`).
 -/
 
 public section
@@ -55,16 +54,7 @@ noncomputable section
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Away from the origin, the derivative of the radial stretch is the radial-field formula of
-`TauCeti.hasFDerivAt_norm_rpow_smul_self_of_ne`. -/
-private theorem fderiv_norm_rpow_smul_self_eq (a : ℝ) {x : E} (hx : x ≠ 0) :
-    fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x =
-      ‖x‖ ^ (a - 1) • ContinuousLinearMap.id ℝ E +
-        (((a - 1) * ‖x‖ ^ (a - 1 - 2)) • innerSL ℝ x).smulRight x :=
-  (hasFDerivAt_norm_rpow_smul_self_of_ne (a - 1) hx).fderiv
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+  [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- **Quasiregularity of the radial stretch from the pointwise inequality.** For `a > 0` and
 `1 ≤ K`, if the derivative `D` of the radial stretch `x ↦ ‖x‖ ^ (a - 1) • x` satisfies
@@ -79,32 +69,14 @@ theorem isQuasiregularOn_norm_rpow_smul_self_of_forall_ne {a K : ℝ} (ha : 0 < 
   have hDu := hasWeakFDerivOn_norm_rpow_smul_self (μ := volume) hp Ω
   refine (isQuasiregularOn_iff hDu).2
     ⟨hK, (continuous_norm_rpow_smul_self hp).continuousOn, ?_, ?_⟩
-  · rcases Nat.eq_zero_or_pos (finrank ℝ E) with hd | hd
-    · simp only [hd, pow_zero]
-      exact locallyIntegrableOn_const 1
-    have hd' : (1 : ℝ) ≤ finrank ℝ E := by exact_mod_cast hd
-    have hpow : LocallyIntegrable (fun x : E ↦ ‖x‖ ^ ((a - 1) * finrank ℝ E)) volume := by
-      simpa only [zero_sub, norm_neg] using
-        locallyIntegrable_norm_sub_rpow (mu := volume) (s := (a - 1) * finrank ℝ E)
-          (by nlinarith) (0 : E)
-    have hmeas := ((locallyIntegrable_rpow_smul_id_add_smulRight (μ := volume)
-      (by linarith : -(finrank ℝ E : ℝ) < a - 1)).aestronglyMeasurable.norm.pow
-        (finrank ℝ E))
-    refine ((hpow.smul ((1 + |a - 1|) ^ finrank ℝ E)).mono hmeas
-      (ae_of_all _ fun x ↦ ?_)).locallyIntegrableOn _
-    simp only [Pi.smul_apply, Pi.pow_apply, smul_eq_mul]
-    rw [norm_pow, norm_norm, norm_mul, norm_pow,
-      Real.norm_of_nonneg (by positivity : (0 : ℝ) ≤ 1 + |a - 1|),
-      Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _),
-      Real.rpow_mul_natCast (norm_nonneg x), ← mul_pow]
-    exact pow_le_pow_left₀ (norm_nonneg _) (norm_rpow_smul_id_add_smulRight_le (a - 1) x) _
+  · exact (locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow hp).locallyIntegrableOn _
   · rcases Nat.eq_zero_or_pos (finrank ℝ E) with hd | hd
     · refine ae_of_all _ fun x ↦ ?_
       rw [hd, pow_zero, LinearMap.det_eq_one_of_finrank_eq_zero hd, mul_one]
       exact hK
     have : Nontrivial E := Module.nontrivial_of_finrank_pos hd
     filter_upwards [ae_restrict_of_ae (Measure.ae_ne volume (0 : E))] with x hx
-    rw [← fderiv_norm_rpow_smul_self_eq a hx]
+    rw [← fderiv_norm_rpow_smul_self_of_ne (a - 1) hx]
     exact h x hx
 
 /-- **The radial stretch with `a ≥ 1` is `a ^ (n - 1)`-quasiregular** on every open set of an
@@ -156,17 +128,15 @@ private theorem le_of_isQuasiregularOn_norm_rpow_smul_self [Nontrivial E] {a c K
   have hmain : ∀ᵐ _ ∂volume.restrict (Ω : Set E), c ≤ K := by
     filter_upwards [hf.ae_norm_pow_le_mul_det hDu,
       ae_restrict_of_ae (Measure.ae_ne volume (0 : E))] with x hle hx
-    rw [← fderiv_norm_rpow_smul_self_eq a hx, hc x hx] at hle
+    rw [← fderiv_norm_rpow_smul_self_of_ne (a - 1) hx, hc x hx] at hle
     have hdet : 0 < LinearMap.det
         (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E) := by
       rw [det_fderiv_norm_rpow_smul_self a hx]
       have := norm_pos_iff.mpr hx
       positivity
     exact le_of_mul_le_mul_right hle hdet
-  by_contra hcK
-  have hfalse : ∀ᵐ _ ∂volume.restrict (Ω : Set E), False := hmain.mono fun _ h ↦ hcK h
-  rw [Filter.eventually_false_iff_eq_bot, ae_eq_bot, Measure.restrict_eq_zero] at hfalse
-  exact (Ω.isOpen.measure_pos volume hΩ).ne' hfalse
+  have := ae_restrict_neBot.2 (Ω.isOpen.measure_pos volume hΩ).ne'
+  exact hmain.exists.choose_spec
 
 /-- **Sharpness for `a ≥ 1`.** If the radial stretch with `a ≥ 1` is `K`-quasiregular on a
 nonempty open set, then `a ^ (n - 1) ≤ K`. -/
@@ -210,14 +180,14 @@ theorem not_isQuasiregularOn_norm_inv_smul_self [Nontrivial E] {K : ℝ} {Ω : O
 /-! ### Checks in `ℝ³` -/
 
 /-- **Check.** In `ℝ³` the radial stretch with `a = 1/2` is `2`-quasiregular on every open set. -/
-theorem isQuasiregularOn_radialStretch_half_three (Ω : Opens (EuclideanSpace ℝ (Fin 3))) :
+theorem isQuasiregularOn_norm_rpow_smul_self_half_fin_three (Ω : Opens (EuclideanSpace ℝ (Fin 3))) :
     IsQuasiregularOn 2 Ω (fun x : EuclideanSpace ℝ (Fin 3) ↦ ‖x‖ ^ ((1 / 2 : ℝ) - 1) • x) := by
   simpa using isQuasiregularOn_norm_rpow_smul_self_of_le_one (E := EuclideanSpace ℝ (Fin 3))
     (a := 1 / 2) (by norm_num) (by norm_num) Ω
 
 /-- **Check.** In `ℝ³` the radial stretch with `a = 1/2` is not `K`-quasiregular on a nonempty
 open set for any `K < 2`. -/
-theorem two_le_of_isQuasiregularOn_radialStretch_half_three {K : ℝ}
+theorem two_le_of_isQuasiregularOn_norm_rpow_smul_self_half_fin_three {K : ℝ}
     {Ω : Opens (EuclideanSpace ℝ (Fin 3))} (hΩ : (Ω : Set (EuclideanSpace ℝ (Fin 3))).Nonempty)
     (hf : IsQuasiregularOn K Ω
       (fun x : EuclideanSpace ℝ (Fin 3) ↦ ‖x‖ ^ ((1 / 2 : ℝ) - 1) • x)) : 2 ≤ K := by
@@ -225,7 +195,7 @@ theorem two_le_of_isQuasiregularOn_radialStretch_half_three {K : ℝ}
     (by norm_num) hΩ hf
 
 /-- **Check.** In `ℝ³` the radial stretch with `a = 2` is `4`-quasiregular on every open set. -/
-theorem isQuasiregularOn_radialStretch_two_three (Ω : Opens (EuclideanSpace ℝ (Fin 3))) :
+theorem isQuasiregularOn_norm_rpow_smul_self_two_fin_three (Ω : Opens (EuclideanSpace ℝ (Fin 3))) :
     IsQuasiregularOn 4 Ω (fun x : EuclideanSpace ℝ (Fin 3) ↦ ‖x‖ ^ ((2 : ℝ) - 1) • x) := by
   have h := isQuasiregularOn_norm_rpow_smul_self_of_one_le (E := EuclideanSpace ℝ (Fin 3))
     (a := 2) one_le_two Ω
@@ -233,7 +203,7 @@ theorem isQuasiregularOn_radialStretch_two_three (Ω : Opens (EuclideanSpace ℝ
 
 /-- **Check.** In `ℝ³` the radial stretch with `a = 2` is not `K`-quasiregular on a nonempty
 open set for any `K < 4`. -/
-theorem four_le_of_isQuasiregularOn_radialStretch_two_three {K : ℝ}
+theorem four_le_of_isQuasiregularOn_norm_rpow_smul_self_two_fin_three {K : ℝ}
     {Ω : Opens (EuclideanSpace ℝ (Fin 3))} (hΩ : (Ω : Set (EuclideanSpace ℝ (Fin 3))).Nonempty)
     (hf : IsQuasiregularOn K Ω
       (fun x : EuclideanSpace ℝ (Fin 3) ↦ ‖x‖ ^ ((2 : ℝ) - 1) • x)) : 4 ≤ K := by
