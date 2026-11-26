@@ -83,7 +83,8 @@ theorem integrable_sq_sqrt_toReal_rnDeriv_sub (μ ν κ : Measure α) [IsFiniteM
     ((integrable_sqrt_toReal_rnDeriv_mul μ ν κ).const_mul 2)
 
 /-- If `μ ≤ c • ν` for a σ-finite `ν`, the Radon–Nikodym derivative `dμ/dν` is at most `c`
-`ν`-almost everywhere. -/
+`ν`-almost everywhere. This generalises `MeasureTheory.Measure.rnDeriv_le_one_of_le` (the case
+`c = 1`), whose proof it follows. -/
 theorem rnDeriv_le_of_le_smul {μ ν : Measure α} [SigmaFinite ν] {c : ℝ≥0∞} (h : μ ≤ c • ν) :
     μ.rnDeriv ν ≤ᵐ[ν] fun _ ↦ c := by
   refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite (μ.measurable_rnDeriv ν) fun s _ _ ↦ ?_
