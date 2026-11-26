@@ -134,11 +134,8 @@ theorem kerFst_eq_normalClosure :
       have hp : IndexedSteinbergGroup.x hij (doubleInr (doubleSnd_sub_doubleFst_mem p)) ∈ N :=
         subset_normalClosure ⟨i, j, hij, _, _, rfl⟩
       conv_rhs => rw [← doubleDiag_add_doubleInr p]
-      rw [MonoidHom.comp_apply, MonoidHom.comp_apply, IndexedSteinbergGroup.map_x,
-        IndexedSteinbergGroup.map_x, IndexedSteinbergGroup.x_add, map_mul,
-        (QuotientGroup.mk'_apply N _).trans ((QuotientGroup.eq_one_iff _).2 hp), mul_one]
-    rw [← QuotientGroup.eq_one_iff, ← QuotientGroup.mk'_apply, ← key, MonoidHom.comp_apply,
-      MonoidHom.comp_apply, mem_kerFst_iff.1 hz, map_one, map_one]
+      simpa [IndexedSteinbergGroup.x_add] using hp
+    simpa [mem_kerFst_iff.1 hz] using (DFunLike.congr_fun key z).symm
   · rintro _ ⟨i, j, hij, v, hv, rfl⟩
     exact x_doubleInr_mem_kerFst I hij hv
 
@@ -176,10 +173,9 @@ theorem cross_le_ker_map_doubleSnd : cross I ≤ (IndexedSteinbergGroup.map I.do
 theorem cross_le_ker_toStableGL : cross I ≤ (SteinbergGroup.toStableGL I.double).ker := by
   -- Both the projection and the image under the addition map of a cross commutator are trivial.
   intro z hz
-  rw [MonoidHom.mem_ker, SteinbergGroup.toStableGL_eq_one_iff_of_injective_prod
+  simp [SteinbergGroup.toStableGL_eq_one_iff_of_injective_prod
     I.doubleFst_prod_doubleSnd_injective, mem_kerFst_iff.1 (cross_le_kerFst I hz),
-    (MonoidHom.mem_ker).1 (cross_le_ker_map_doubleSnd I hz), map_one]
-  exact ⟨rfl, rfl⟩
+    (MonoidHom.mem_ker).1 (cross_le_ker_map_doubleSnd I hz)]
 
 /-- The cross subgroup is central in `St(R ⊕ I)`. -/
 theorem cross_le_center : cross I ≤ center (SteinbergGroup I.double) :=
@@ -215,6 +211,11 @@ namespace IdealSteinbergGroup
 def mk : kerFst I →* IdealSteinbergGroup I :=
   QuotientGroup.mk' _
 
+/-- The coercion of `St'(R, I)` into the quotient `St(R, I)` is the quotient map `mk`. -/
+@[simp]
+theorem coe_eq_mk (y : kerFst I) : (y : IdealSteinbergGroup I) = mk I y :=
+  (rfl)
+
 theorem mk_surjective : Function.Surjective (mk I) :=
   QuotientGroup.mk'_surjective _
 
@@ -243,28 +244,28 @@ theorem toSteinbergGroup_mk (y : kerFst I) :
     toSteinbergGroup I (mk I y) = IndexedSteinbergGroup.map I.doubleSnd y :=
   QuotientGroup.lift_mk _ _ _
 
+/-- The range of `St(R, I) →* St(R)` is the image of `St'(R, I)` under the addition map. -/
+theorem range_toSteinbergGroup_eq_map :
+    (toSteinbergGroup I).range = (kerFst I).map (IndexedSteinbergGroup.map I.doubleSnd) := by
+  have h : (toSteinbergGroup I).comp (mk I) =
+      (IndexedSteinbergGroup.map I.doubleSnd).comp (kerFst I).subtype :=
+    MonoidHom.ext (toSteinbergGroup_mk I)
+  calc (toSteinbergGroup I).range = ((toSteinbergGroup I).comp (mk I)).range := by
+        rw [MonoidHom.range_comp, (mk I).range_eq_top_of_surjective (mk_surjective I),
+          ← MonoidHom.range_eq_map]
+    _ = (kerFst I).map (IndexedSteinbergGroup.map I.doubleSnd) := by
+        rw [h, MonoidHom.range_comp, range_subtype]
+
 /-- **The range of `St(R, I) →* St(R)` is the normal closure of the generators `x_{ij}(v)`,
 `v ∈ I`.** -/
 theorem range_toSteinbergGroup :
     (toSteinbergGroup I).range = normalClosure {z | ∃ (i j : ℕ) (hij : i ≠ j) (v : R),
       v ∈ I ∧ IndexedSteinbergGroup.x hij v = z} := by
-  have hrange : (toSteinbergGroup I).range = (kerFst I).map
-      (IndexedSteinbergGroup.map I.doubleSnd) := by
-    ext z
-    simp only [MonoidHom.mem_range, mem_map]
-    refine ⟨fun ⟨w, hw⟩ ↦ ?_, fun ⟨y, hy, hyz⟩ ↦ ⟨mk I ⟨y, hy⟩, by rw [toSteinbergGroup_mk, hyz]⟩⟩
-    obtain ⟨y, rfl⟩ := mk_surjective I w
-    exact ⟨y, y.property, by rw [← hw, toSteinbergGroup_mk]⟩
-  rw [hrange, kerFst_eq_normalClosure, map_normalClosure _ _
+  rw [range_toSteinbergGroup_eq_map, kerFst_eq_normalClosure, map_normalClosure _ _
     (IndexedSteinbergGroup.map_surjective I.doubleSnd_surjective)]
   congr 1
   ext z
-  simp only [Set.mem_image]
-  constructor
-  · rintro ⟨_, ⟨i, j, hij, v, hv, rfl⟩, rfl⟩
-    exact ⟨i, j, hij, v, hv, by rw [IndexedSteinbergGroup.map_x, doubleSnd_doubleInr]⟩
-  · rintro ⟨i, j, hij, v, hv, rfl⟩
-    exact ⟨_, ⟨i, j, hij, v, hv, rfl⟩, by rw [IndexedSteinbergGroup.map_x, doubleSnd_doubleInr]⟩
+  simp [eq_comm]
 
 /-- For the unit ideal, `St(R, R) →* St(R)` is surjective. -/
 theorem range_toSteinbergGroup_top : (toSteinbergGroup (⊤ : TwoSidedIdeal R)).range = ⊤ := by
@@ -321,10 +322,8 @@ variable {I} in
 theorem IdealSteinbergGroup.mk_mem_idealAlgebraicK2_iff {y : IdealSteinbergGroup.kerFst I} :
     IdealSteinbergGroup.mk I y ∈ idealAlgebraicK2 I ↔
       (y : SteinbergGroup I.double) ∈ (SteinbergGroup.toStableGL I.double).ker := by
-  rw [mem_idealAlgebraicK2_iff, MonoidHom.mem_ker, IdealSteinbergGroup.toSteinbergGroup_mk,
-    SteinbergGroup.toStableGL_eq_one_iff_of_injective_prod I.doubleFst_prod_doubleSnd_injective,
-    IdealSteinbergGroup.mem_kerFst_iff.1 y.property, map_one]
-  exact ⟨fun h ↦ ⟨rfl, h⟩, fun h ↦ h.2⟩
+  simp [SteinbergGroup.toStableGL_eq_one_iff_of_injective_prod
+    I.doubleFst_prod_doubleSnd_injective, IdealSteinbergGroup.mem_kerFst_iff.1 y.property]
 
 /-- **`K₂(R, I)` is central in `St(R, I)`.** -/
 theorem idealAlgebraicK2_le_center : idealAlgebraicK2 I ≤ center (IdealSteinbergGroup I) := by
@@ -396,9 +395,7 @@ theorem ker_ofKerFst :
     (ofKerFst I).ker = (IdealSteinbergGroup.cross I).comap
       ((SteinbergGroup.toStableGL I.double).ker.subtype.comp (kerFst I).subtype) := by
   ext x
-  rw [MonoidHom.mem_ker, Subgroup.mem_comap, ← OneMemClass.coe_eq_one, coe_ofKerFst_apply,
-    IdealSteinbergGroup.mk_eq_one_iff, MonoidHom.coe_comp, Function.comp_apply,
-    Subgroup.coe_subtype, Subgroup.coe_subtype]
+  simp [← OneMemClass.coe_eq_one, IdealSteinbergGroup.mk_eq_one_iff]
 
 /-- **`K₂(R, I) ≃* K₂'(R, I) / C`**: relative `K₂` is the kernel of `K₂(R ⊕ I) →* K₂(R)` induced
 by the projection, modulo the cross commutators. -/
