@@ -64,9 +64,6 @@ of `a`, localized by cutoffs equal to `1` on the supports of `φ` and `ψ`, is
 
 ## Main results
 
-* `toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodifferentialOperators`:
-  a scalar classical pseudodifferential operator tensored with a cut-off frame coefficient of `E`
-  and a smooth section of `F` is a classical pseudodifferential operator between bundles.
 * `OpenPartialHomeomorph.sectionChartQuantization_eq_sum`: the chart quantization as a sum of
   scalar chart quantizations of the entries of the symbol.
 * `OpenPartialHomeomorph.sectionChartQuantization_mem_sectionClassicalPseudodifferentialOperators`:
@@ -102,55 +99,17 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   [VectorBundle ℝ W F] [VectorBundle ℂ W F] [ContMDiffVectorBundle ∞ W F 𝓘(ℝ, CoordinateSpace n)]
   {m : ℝ}
 
-namespace TauCeti
-
-/-- **Scalar operators tensored with cut-off frames.** Let `A` be a classical pseudodifferential
-operator of order `m` on the complex-valued smooth functions on `M`, let `ρ ℓ(t s)` be a cut-off
-frame coefficient of the sections `s` of `E` (`Bundle.Trivialization.cutoffFrameCoeff`), and let
-`σ` be a smooth section of `F`. Then `s ↦ A (ρ ℓ(t s)) σ` is a classical pseudodifferential
-operator of order `m` from the sections of `E` to those of `F`: each of its entries is `A`
-multiplied on both sides by smooth functions. -/
-theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodifferentialOperators
-    {A : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hA : A ∈ classicalPseudodifferentialOperators m)
-    (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
-    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet) (ℓ : V →L[ℂ] ℂ)
-    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-    (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ ∈
-      sectionClassicalPseudodifferentialOperators m := by
-  -- The cut-off frame coefficient of `f s` is `f` times that of `s`.
-  have hC (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-      (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
-      t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
-    ext x
-    simp [mul_comm, mul_left_comm]
-  refine mem_sectionClassicalPseudodifferentialOperators_iff.2
-    ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
-  · obtain ⟨K', hK', hA₁, hA₂⟩ :=
-      isProperlySupported_iff.1 (mem_classicalPseudodifferentialOperators_iff.1 hA).1 K hK
-    refine ⟨K', hK', fun s hs ↦ ?_, fun s hs x hx ↦ ?_⟩
-    · have hCs : tsupport (t.cutoffFrameCoeff ρ hρ ℓ s) ⊆ K := by
-        rw [ContMDiffSection.tsupport_def] at hs
-        refine (closure_mono (t := {x | s x ≠ 0}) fun y hy h ↦ ?_).trans hs
-        exact Function.mem_support.1 hy (by simp [h])
-      exact (ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra _ σ).trans
-        (inter_subset_left.trans (hA₁ _ hCs))
-    · have h0 := hA₂ (t.cutoffFrameCoeff ρ hρ ℓ s) (hs.mono fun y hy ↦ by simp [hy]) x hx
-      simp [h0]
-  · have hentry : sectionEntry T ψ hψ v T' χ hχ ℓ'
-        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ) =
-        LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
-          LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
-      ext f x
-      simp [hC, mul_comm, mul_assoc]
-    rw [hentry]
-    exact mulLeft_comp_mem_classicalPseudodifferentialOperators
-      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
-
-end TauCeti
-
 namespace OpenPartialHomeomorph
+
+omit [ChartedSpace (CoordinateSpace n) M] [T2Space M] in
+/-- At a point `x` of the source of `e` with `φ (e x) ≠ 0`, a function `ρ` equal to `1` on
+`e⁻¹(supp φ)` takes the value `1`, and `x` lies in every set containing `e⁻¹(supp φ)`. -/
+private theorem eq_one_and_mem_of_apply_ne_zero {e : OpenPartialHomeomorph M (CoordinateSpace n)}
+    {φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {U : Set M} (hφ : e.symm '' tsupport φ ⊆ U)
+    {ρ : M → ℝ} (hρφ : ∀ y ∈ tsupport φ, ρ (e.symm y) = 1) {x : M} (hx : x ∈ e.source)
+    (hφx : φ (e x) ≠ 0) : ρ x = 1 ∧ x ∈ U := by
+  have hxφ : e x ∈ tsupport φ := subset_tsupport _ hφx
+  exact ⟨by simpa [e.left_inv hx] using hρφ (e x) hxφ, hφ ⟨e x, hxφ, e.left_inv hx⟩⟩
 
 variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
   (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
@@ -261,9 +220,7 @@ private theorem contMDiff_symmL_cutoffPullback_smul [FiniteDimensional ℂ W]
         Trivialization.cutoffFrameSection_apply, e.cutoffPullback_one_apply_of_mem he _ hx]
       by_cases hφx : φ (e x) = 0
       · simp [hφx]
-      have hxφ : e x ∈ tsupport φ := subset_tsupport _ hφx
-      have hρx : ρ x = 1 := by simpa [e.left_inv hx] using hρφ (e x) hxφ
-      have hxt : x ∈ t'.baseSet := hφ ⟨e x, hxφ, e.left_inv hx⟩
+      obtain ⟨hρx, hxt⟩ := eq_one_and_mem_of_apply_ne_zero hφ hρφ hx hφx
       simp only [hρx, one_smul, ← t'.symmL_apply (R := ℂ) hxt, ← map_smul, ← map_sum]
       congr 1
       conv_lhs => rw [← b.sum_repr (g (e x)), Finset.smul_sum]
@@ -381,9 +338,7 @@ theorem sectionChartQuantization_eq_sum {ι κ : Type*} [Fintype ι] [Fintype κ
       e.chartQuantization_apply_of_mem he φ ψ _ _ (cutoffPushforwardSchwartz_apply he ψ _) hx]
     by_cases hφx : φ (e x) = 0
     · simp [hφx]
-    have hxφ : e x ∈ tsupport φ := subset_tsupport _ hφx
-    have hρx : ρ' x = 1 := by simpa [e.left_inv hx] using hρ'φ (e x) hxφ
-    have hxt : x ∈ t'.baseSet := hφ ⟨e x, hxφ, e.left_inv hx⟩
+    obtain ⟨hρx, hxt⟩ := eq_one_and_mem_of_apply_ne_zero hφ hρ'φ hx hφx
     -- Expand `Op(a) v` in the basis `(cⱼ)`, and each coordinate in the entries of `a`.
     have key : quantizeSchwartzValue a.toSymbol.coefficient
         (e.sectionCutoffPushforwardSchwartz he t ψ hψ s) (e x) = ∑ j, (∑ i,
@@ -447,13 +402,13 @@ theorem sectionChartQuantization_eq_smul_comp_comp_smul {φ ψ : 𝓓(⟨e.targe
     {φ₁ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hφ₁ : ∀ y ∈ tsupport φ, φ₁ y = 1)
     (hψ₁ : ∀ y ∈ tsupport ψ, ψ₁ y = 1) :
     e.sectionChartQuantization he t t' φ₁ ψ₁
-        (image_subset_iff.2 fun _ hy ↦ hF (e.map_target (φ₁.tsupport_subset hy)))
-        (image_subset_iff.2 fun _ hy ↦ hE (e.map_target (ψ₁.tsupport_subset hy))) a =
+        ((e.symm_image_tsupport_subset_source φ₁).trans hF)
+        ((e.symm_image_tsupport_subset_source ψ₁).trans hE) a =
       e.complexCutoffPullback he φ 1 • (P ∘ₗ (e.complexCutoffPullback he ψ 1 • LinearMap.id)) := by
   -- The chart cut-off section of the reading of `s` by `ψ₁`, cut off by `ψ`, is `(ψ ∘ e) s`.
   have hsec (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
       t.chartCutoffSection he hE ψ (e.sectionCutoffPushforwardSchwartz he t ψ₁
-        (image_subset_iff.2 fun _ hy ↦ hE (e.map_target (ψ₁.tsupport_subset hy))) s) =
+        ((e.symm_image_tsupport_subset_source ψ₁).trans hE) s) =
         e.complexCutoffPullback he ψ 1 • s := by
     ext y
     rw [ContMDiffSection.smul_apply_of_normedAlgebra]
@@ -492,8 +447,8 @@ theorem exists_sectionChartQuantization_eq_smul_comp_comp_smul
     (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
     ∃ (φ₁ ψ₁ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) (a : ClassicalSymbol n V W m),
       e.sectionChartQuantization he t t' φ₁ ψ₁
-          (image_subset_iff.2 fun _ hy ↦ hF (e.map_target (φ₁.tsupport_subset hy)))
-          (image_subset_iff.2 fun _ hy ↦ hE (e.map_target (ψ₁.tsupport_subset hy))) a =
+          ((e.symm_image_tsupport_subset_source φ₁).trans hF)
+          ((e.symm_image_tsupport_subset_source ψ₁).trans hE) a =
         e.complexCutoffPullback he φ 1 •
           (P ∘ₗ (e.complexCutoffPullback he ψ 1 • LinearMap.id)) := by
   obtain ⟨a, ha⟩ := exists_quantizeSchwartzValue_eq_apply_chartCutoffSection he t hE hP t' hF φ ψ

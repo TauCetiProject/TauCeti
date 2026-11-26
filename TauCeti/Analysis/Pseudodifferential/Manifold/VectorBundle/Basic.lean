@@ -71,6 +71,9 @@ is the local description of a pseudodifferential operator between bundles in Tay
 * `TauCeti.smul_mem_sectionClassicalPseudodifferentialOperators` and
   `TauCeti.comp_smul_mem_sectionClassicalPseudodifferentialOperators`: multiplying an operator of
   order `m` by a smooth function on either side gives an operator of order `m`.
+* `toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodifferentialOperators`:
+  a scalar classical pseudodifferential operator tensored with a cut-off frame coefficient of `E`
+  and a smooth section of `F` is a classical pseudodifferential operator between bundles.
 * `TauCeti.exists_quantizeSchwartzValue_eq_apply_chartCutoffSection`: in a chart over which both
   bundles are trivial, the compression of an operator of order `m` is the quantization of a
   classical symbol of order `m` with values in `V →L[ℂ] W`.
@@ -370,6 +373,50 @@ theorem comp_smul_mem_sectionClassicalPseudodifferentialOperators
     simp [mul_smul]
   rw [hentry]
   exact comp_mulLeft_mem_classicalPseudodifferentialOperators (hP.2 t ψ hψ v t' χ hχ ℓ) g
+
+/-- **Scalar operators tensored with cut-off frames.** Let `A` be a classical pseudodifferential
+operator of order `m` on the complex-valued smooth functions on `M`, let `ρ ℓ(t s)` be a cut-off
+frame coefficient of the sections `s` of `E` (`Bundle.Trivialization.cutoffFrameCoeff`), and let
+`σ` be a smooth section of `F`. Then `s ↦ A (ρ ℓ(t s)) σ` is a classical pseudodifferential
+operator of order `m` from the sections of `E` to those of `F`: each of its entries is `A`
+multiplied on both sides by smooth functions. -/
+theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodifferentialOperators
+    {A : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hA : A ∈ classicalPseudodifferentialOperators m)
+    (t : Trivialization V (π V E)) [MemTrivializationAtlas t]
+    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet) (ℓ : V →L[ℂ] ℂ)
+    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    (LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ ∈
+      sectionClassicalPseudodifferentialOperators m := by
+  -- The cut-off frame coefficient of `f s` is `f` times that of `s`.
+  have hC (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+      (s : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯) :
+      t.cutoffFrameCoeff ρ hρ ℓ (f • s) = t.cutoffFrameCoeff ρ hρ ℓ s * f := by
+    ext x
+    simp [mul_comm, mul_left_comm]
+  refine mem_sectionClassicalPseudodifferentialOperators_iff.2
+    ⟨isSectionProperlySupported_iff.2 fun K hK ↦ ?_, fun T _ ψ hψ v T' _ χ hχ ℓ' ↦ ?_⟩
+  · obtain ⟨K', hK', hA₁, hA₂⟩ :=
+      isProperlySupported_iff.1 (mem_classicalPseudodifferentialOperators_iff.1 hA).1 K hK
+    refine ⟨K', hK', fun s hs ↦ ?_, fun s hs x hx ↦ ?_⟩
+    · have hCs : tsupport (t.cutoffFrameCoeff ρ hρ ℓ s) ⊆ K := by
+        rw [ContMDiffSection.tsupport_def] at hs
+        refine (closure_mono (t := {x | s x ≠ 0}) fun y hy h ↦ ?_).trans hs
+        exact Function.mem_support.1 hy (by simp [h])
+      exact (ContMDiffSection.tsupport_smul_function_subset_of_normedAlgebra _ σ).trans
+        (inter_subset_left.trans (hA₁ _ hCs))
+    · have h0 := hA₂ (t.cutoffFrameCoeff ρ hρ ℓ s) (hs.mono fun y hy ↦ by simp [hy]) x hx
+      simp [h0]
+  · have hentry : sectionEntry T ψ hψ v T' χ hχ ℓ'
+        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ) =
+        LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
+          LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
+      ext f x
+      simp [hC, mul_comm, mul_assoc]
+    rw [hentry]
+    exact mulLeft_comp_mem_classicalPseudodifferentialOperators
+      (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
 
 end Class
 
