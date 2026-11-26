@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 public import TauCeti.Algebra.MonoidAlgebra.Face.Coaction
 public import TauCeti.Algebra.MonoidAlgebra.IntegrallyClosed
 public import TauCeti.FieldTheory.IsAlgClosed.Units
-public import TauCeti.GroupTheory.Divisible
+public import TauCeti.GroupTheory.Divisible.Basic
 public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
