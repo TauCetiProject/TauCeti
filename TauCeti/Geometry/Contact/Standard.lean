@@ -123,9 +123,8 @@ theorem standardContactForm_apply (p : ℝ × ℝ × ℝ)
   simp only [standardContactForm, standardNegXDy, SmoothForm.add_toRoughForm, Pi.add_apply,
     ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.smul_apply,
     SmoothForm.const_apply_one]
-  rw [standardDz_apply, standardDy_apply, smul_eq_mul, neg_mul, ← sub_eq_add_neg]
-  -- `![v] 0` is `v` by definition.
-  rfl
+  rw [standardDz_apply, standardDy_apply, smul_eq_mul, neg_mul, ← sub_eq_add_neg,
+    Matrix.cons_val_zero (α := ℝ × ℝ × ℝ) v ![]]
 
 /-- The exterior derivative of the standard contact form is `-dx ∧ dy`. -/
 theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
@@ -143,9 +142,8 @@ theorem mextDeriv_standardContactForm_apply (p : ℝ × ℝ × ℝ)
       ((SmoothForm.const standardDy).mdifferentiableAt p), hdy]
   simp only [SmoothForm.const_apply_one, Pi.zero_apply, ContinuousAlternatingMap.coe_zero,
     mul_zero, add_zero]
-  rw [standardDy_apply, standardDy_apply, mvfderiv_neg_fst, mvfderiv_neg_fst]
-  -- `![v] 0` and `![w] 0` are `v` and `w` by definition.
-  change -v.1 * w.2.1 - -w.1 * v.2.1 = _
+  rw [standardDy_apply, standardDy_apply, mvfderiv_neg_fst, mvfderiv_neg_fst,
+    Matrix.cons_val_zero (α := ℝ × ℝ × ℝ) v ![], Matrix.cons_val_zero (α := ℝ × ℝ × ℝ) w ![]]
   ring
 
 /-- The kernel of the standard contact form is the standard contact distribution. -/

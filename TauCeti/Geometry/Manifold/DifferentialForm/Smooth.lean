@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Algebra.Module.Alternating.Basic
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Topology.FiberBundle.Separation
@@ -800,10 +801,8 @@ theorem const_apply_one {V F : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
     [NormedAddCommGroup F] [NormedSpace ℝ F]
     (A : V [⋀^Fin 1]→L[ℝ] F) {x : V} (v : TangentSpace (modelWithCornersSelf ℝ V) x) :
     (const A).val x ![v] = A ![v] := by
-  rw [const_apply]
-  -- `NormedSpace.fromTangentSpace` is the identity on model-space tangent vectors, and the
-  -- remaining difference is the eta-expansion `fun i ↦ ![v] i` of `![v]`.
-  rfl
+  simp only [const_apply, NormedSpace.fromTangentSpace_apply (𝕜 := ℝ), Matrix.cons_val_fin_one]
+  exact congrArg A (funext fun i ↦ (Matrix.cons_val_fin_one v ![] i).symm)
 
 /-- The coordinate one-form `dz` of the real line. -/
 def realLineCoordForm : SmoothForm 𝓘(ℝ) ℝ ℝ 1 :=
