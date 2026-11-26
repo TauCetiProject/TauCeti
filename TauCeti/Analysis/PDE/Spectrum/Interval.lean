@@ -321,19 +321,6 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
       Real.sin_pi_div_two]
     exact one_ne_zero
 
-private theorem measurePreserving_lineEquiv_restrict :
-    MeasurePreserving lineEquiv (volume.restrict (Ioo a b))
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))) := by
-  have := measurePreserving_lineEquiv.restrict_preimage (intervalDomain a b).isOpen.measurableSet
-  rwa [preimage_lineEquiv_intervalDomain] at this
-
-private theorem measurePreserving_lineEquiv_symm_restrict :
-    MeasurePreserving lineEquiv.symm
-      (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))))
-      (volume.restrict (Ioo a b)) := by
-  have := measurePreserving_lineEquiv_symm.restrict_preimage (measurableSet_Ioo (a := a) (b := b))
-  rwa [← coe_intervalDomain_eq_preimage] at this
-
 /-- A system of functions `φ k` that is complete among the integrable functions on `(a, b]` is
 complete in `L²` of the interval domain, read through `x ↦ x 0`. -/
 private theorem eq_zero_of_forall_setIntegral_mul_eq_zero (P : ℕ → Prop) (φ : ℕ → ℝ → ℝ)
@@ -461,17 +448,6 @@ theorem isGreatest_mul_norm_value_sq_le_energyFormH1_intervalDomain (hab : a < b
     (nonempty_intervalDomain_iff.2 hab)
 
 /-! ### The Neumann spectrum -/
-
-/-- The `L²` pairing on the interval domain is the pairing on the real interval. -/
-private theorem inner_value_eq_setIntegral_intervalDomainEquivL
-    (u v : W1p volume (intervalDomain a b) 2) :
-    ⟪W1p.value u, W1p.value v⟫_ℝ =
-      ∫ t in Ioo a b, W1p.value (intervalDomainEquivL a b 2 u) t *
-        W1p.value (intervalDomainEquivL a b 2 v) t := by
-  rw [W1p.inner_value_eq_setIntegral, setIntegral_intervalDomain_eq_setIntegral_Ioo]
-  refine integral_congr_ae ?_
-  filter_upwards [value_intervalDomainEquivL_ae u, value_intervalDomainEquivL_ae v] with t hu hv
-  rw [hu, hv]
 
 /-- On the real interval, the Neumann mode tested against the derivative of any `v ∈ H¹(a, b)`:
 `∫ w' v' = (k π / (b - a))² ∫ w v` for `w = cos (k π (· - a) / (b - a))`. The boundary terms of

@@ -64,26 +64,34 @@ namespace TauCeti
 
 variable {a b : ℝ}
 
+/-- A Fourier monomial on `[2a - b, b]` at `y` and at its reflection `2a - y` about `a`, written
+as exponentials with phases `∓ n π (y - a) / (b - a)` about the common phase
+`-(π i n a / (b - a))`. -/
+private theorem fourier_coe_eq_and_fourier_reflect_eq (hab : a < b) (n : ℤ) (y : ℝ) :
+    fourier (-n) (y : AddCircle (b - (2 * a - b))) =
+        exp (-(π * I * n * a / (b - a)) + -((n * π * (y - a) / (b - a) : ℝ) : ℂ) * I) ∧
+      fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b))) =
+        exp (-(π * I * n * a / (b - a)) + ((n * π * (y - a) / (b - a) : ℝ) : ℂ) * I) := by
+  have hba : (b : ℂ) - a ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hab.ne')
+  rw [fourier_coe_apply, fourier_coe_apply]
+  constructor <;>
+  · congr 1
+    push_cast
+    rw [show (b : ℂ) - (2 * a - b) = 2 * (b - a) by ring]
+    field_simp
+    ring
+
 /-- The difference of a Fourier monomial on `[2a - b, b]` at `y` and at its reflection `2a - y`
 about `a` is a multiple of `sin (n π (y - a) / (b - a))`. -/
 private theorem fourier_sub_fourier_reflect (hab : a < b) (n : ℤ) (y : ℝ) :
     fourier (-n) (y : AddCircle (b - (2 * a - b))) -
         fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b))) =
       -2 * I * exp (-(π * I * n * a / (b - a))) * (Real.sin (n * π * (y - a) / (b - a)) : ℂ) := by
-  have hba : (b : ℂ) - a ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hab.ne')
-  set C : ℂ := -(π * I * n * a / (b - a))
+  obtain ⟨h1, h2⟩ := fourier_coe_eq_and_fourier_reflect_eq hab n y
+  rw [h1, h2, ofReal_sin, sin, exp_add, exp_add]
+  set C : ℂ := exp (-(π * I * n * a / (b - a)))
   set Y : ℂ := ((n * π * (y - a) / (b - a) : ℝ) : ℂ)
-  have hrhs : -2 * I * exp C * ((exp (-Y * I) - exp (Y * I)) * I / 2) =
-      exp (C + -Y * I) - exp (C + Y * I) := by
-    rw [exp_add, exp_add]
-    linear_combination (-(exp C * exp (-Y * I) - exp C * exp (Y * I))) * I_sq
-  rw [fourier_coe_apply, fourier_coe_apply, ofReal_sin, sin, hrhs]
-  congr 2 <;>
-  · simp only [C, Y]
-    push_cast
-    rw [show (b : ℂ) - (2 * a - b) = 2 * (b - a) by ring]
-    field_simp
-    ring
+  linear_combination (C * exp (-Y * I) - C * exp (Y * I)) * I_sq
 
 /-- Orthogonality to the sines `sin (k π (x - a) / (b - a))` for `k ≥ 1` extends to every integer
 frequency, since `sin` is odd. -/
@@ -224,20 +232,9 @@ private theorem fourier_add_fourier_reflect (hab : a < b) (n : ℤ) (y : ℝ) :
     fourier (-n) (y : AddCircle (b - (2 * a - b))) +
         fourier (-n) ((2 * a - y : ℝ) : AddCircle (b - (2 * a - b))) =
       2 * exp (-(π * I * n * a / (b - a))) * (Real.cos (n * π * (y - a) / (b - a)) : ℂ) := by
-  have hba : (b : ℂ) - a ≠ 0 := sub_ne_zero.2 (by exact_mod_cast hab.ne')
-  set C : ℂ := -(π * I * n * a / (b - a))
-  set Y : ℂ := ((n * π * (y - a) / (b - a) : ℝ) : ℂ)
-  have hrhs : 2 * exp C * ((exp (Y * I) + exp (-Y * I)) / 2) =
-      exp (C + -Y * I) + exp (C + Y * I) := by
-    rw [exp_add, exp_add]
-    ring
-  rw [fourier_coe_apply, fourier_coe_apply, ofReal_cos, cos, hrhs]
-  congr 2 <;>
-  · simp only [C, Y]
-    push_cast
-    rw [show (b : ℂ) - (2 * a - b) = 2 * (b - a) by ring]
-    field_simp
-    ring
+  obtain ⟨h1, h2⟩ := fourier_coe_eq_and_fourier_reflect_eq hab n y
+  rw [h1, h2, ofReal_cos, cos, exp_add, exp_add]
+  ring
 
 /-- Orthogonality to the cosines `cos (k π (x - a) / (b - a))` for `k ≥ 0` extends to every
 integer frequency, since `cos` is even. -/
