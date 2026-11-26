@@ -381,10 +381,7 @@ theorem isArithFrobAt_iff (h : A.IsCenteredAt P) {R : Type*} [CommRing R] [Algeb
       IsLocalRing.residue A ((⟨σ, hσ⟩ : A.decompositionSubgroup K) • x) =
         IsLocalRing.residue A x ^ Nat.card (R ⧸ P.under R) := by
   have hiff := h.forall_smul_sub_pow_mem_iff (g := σ) (q := Nat.card (R ⧸ P.under R))
-  rw [IsArithFrobAt, AlgHom.IsArithFrobAt]
-  simp only [MulSemiringAction.toAlgHom_apply]
-  refine ⟨fun hσ ↦ ⟨(h.decompositionSubgroup_eq (K := K)).ge
-      (Ideal.mem_stabilizer_of_forall_smul_sub_pow_mem hσ), fun x ↦
+  refine ⟨fun hσ ↦ ⟨(h.decompositionSubgroup_eq (K := K)).ge hσ.mem_stabilizer, fun x ↦
     (residue_smul_eq_pow_iff A _ x _).mpr (hiff.mp hσ x x.property)⟩, fun ⟨hσ, hres⟩ ↦
     hiff.mpr fun x hx ↦ (residue_smul_eq_pow_iff A ⟨σ, hσ⟩ ⟨x, hx⟩ _).mp (hres ⟨x, hx⟩)⟩
 
