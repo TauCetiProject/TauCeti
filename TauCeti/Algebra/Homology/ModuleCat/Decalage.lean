@@ -41,6 +41,7 @@ of abelian groups of `C` (`CochainComplex.forget₂PrincipalDecalageIso`).
 * `CochainComplex.principalDecalage C f hC`: the complex `E_f(C)`.
 * `CochainComplex.principalDecalageMap`: the cochain map `E_f(C) ⟶ E_f(D)` restricting a cochain
   map `C ⟶ D`.
+* `CochainComplex.principalDecalageCyclesIso`: the cocycles of `E_f(C)` are those of `C`.
 * `CochainComplex.homologyToPrincipalDecalage`: the map `Hⁿ(C) ⟶ Hⁿ(E_f(C))`.
 * `CochainComplex.homologyPrincipalDecalageEquiv`: `Hⁿ(C) ⧸ Hⁿ(C)[f] ≃ₗ[R] Hⁿ(E_f(C))`.
 * `CochainComplex.forget₂PrincipalDecalageIso`: for `f = p` a natural number, `E_p(C)` and the
@@ -307,6 +308,54 @@ private lemma d_cyclesToDecalage (n : ℤ) (z : C.cycles n) :
   rw [principalDecalage_d_eq_zero_iff]
   exact C.iCycles_d_apply n (n + 1) z
 
+variable (f) in
+/-- The cocycles of the principal décalage `E_f(C)` are the cocycles of `C`: an element of
+`E_f(C)ⁿ` is killed by `δ` exactly when it is killed by `d`. -/
+noncomputable def principalDecalageCyclesIso (n : ℤ) :
+    (C.principalDecalage f hC).cycles n ≅ C.cycles n where
+  hom := C.liftCycles ((C.principalDecalage f hC).iCycles n ≫
+      ModuleCat.ofHom (X := (C.principalDecalage f hC).X n) (Y := C.X n)
+        (C.decalageSubmodule f n).subtype) (n + 1) (by simp) (by
+    ext z
+    exact (principalDecalage_d_eq_zero_iff hC).1
+      ((C.principalDecalage f hC).moduleCat_d_iCycles_apply n (n + 1) z))
+  inv := (C.principalDecalage f hC).liftCycles
+    (ModuleCat.ofHom (X := C.cycles n) (Y := (C.principalDecalage f hC).X n)
+      (cyclesToDecalage f n)) (n + 1) (by simp) (by
+    ext z : 2
+    exact d_cyclesToDecalage hC n z)
+  hom_inv_id := by
+    ext z : 2
+    refine (C.principalDecalage f hC).moduleCat_iCycles_injective n (Subtype.ext ?_)
+    exact (congrArg Subtype.val (ConcreteCategory.congr_hom
+      ((C.principalDecalage f hC).liftCycles_i _ _ _ _) _)).trans
+        (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) z)
+  inv_hom_id := by
+    ext z : 2
+    refine C.moduleCat_iCycles_injective n ?_
+    exact (ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) _).trans
+      (congrArg Subtype.val (ConcreteCategory.congr_hom
+        ((C.principalDecalage f hC).liftCycles_i _ _ _ _) z))
+
+/-- `principalDecalageCyclesIso` does not change the underlying element of a cocycle. -/
+@[simp]
+lemma iCycles_principalDecalageCyclesIso_hom_apply (n : ℤ)
+    (z : (C.principalDecalage f hC).cycles n) :
+    C.iCycles n ((C.principalDecalageCyclesIso f hC n).hom z) =
+      Subtype.val ((C.principalDecalage f hC).iCycles n z) := by
+  dsimp only [principalDecalageCyclesIso]
+  exact ConcreteCategory.congr_hom (C.liftCycles_i _ _ _ _) z
+
+/-- The inverse of `principalDecalageCyclesIso` does not change the underlying element of a
+cocycle. -/
+@[simp]
+lemma iCycles_principalDecalageCyclesIso_inv_apply (n : ℤ) (z : C.cycles n) :
+    Subtype.val ((C.principalDecalage f hC).iCycles n
+      ((C.principalDecalageCyclesIso f hC n).inv z)) = C.iCycles n z := by
+  dsimp only [principalDecalageCyclesIso]
+  exact congrArg Subtype.val
+    (ConcreteCategory.congr_hom ((C.principalDecalage f hC).liftCycles_i _ _ _ _) z)
+
 /-- The class in `Hⁿ(E_f(C))` of a cocycle of `C`. -/
 private noncomputable def cyclesToHomologyPrincipalDecalage (n : ℤ) :
     C.cycles n →ₗ[R] (C.principalDecalage f hC).homology n :=
@@ -347,6 +396,28 @@ private lemma homologyToPrincipalDecalage_homologyπ (n : ℤ) (z : C.cycles n) 
   rw [← ModuleCat.comp_apply]
   exact ConcreteCategory.congr_hom
     (Limits.Cofork.IsColimit.π_desc (C.homologyIsCokernel (n - 1) n (CochainComplex.prev ℤ n))) z
+
+/-- `homologyToPrincipalDecalage` sends the class of a cocycle of `C` to the class of the same
+cocycle of `E_f(C)`. -/
+@[simp]
+lemma homologyToPrincipalDecalage_homologyπ_apply (n : ℤ) (z : C.cycles n) :
+    C.homologyToPrincipalDecalage f hC n (C.homologyπ n z) =
+      (C.principalDecalage f hC).homologyπ n ((C.principalDecalageCyclesIso f hC n).inv z) := by
+  rw [homologyToPrincipalDecalage_homologyπ, cyclesToHomologyPrincipalDecalage,
+    HomologicalComplex.moduleCatHomologyClass_apply]
+  congr 1
+  refine (C.principalDecalage f hC).moduleCat_iCycles_injective n (Subtype.ext ?_)
+  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, iCycles_principalDecalageCyclesIso_inv_apply]
+  rfl
+
+/-- `homologyToPrincipalDecalage` sends the class of a cocycle of `C` to the class of the same
+cocycle of `E_f(C)`. -/
+@[reassoc (attr := simp)]
+lemma homologyπ_homologyToPrincipalDecalage (n : ℤ) :
+    C.homologyπ n ≫ C.homologyToPrincipalDecalage f hC n =
+      (C.principalDecalageCyclesIso f hC n).inv ≫ (C.principalDecalage f hC).homologyπ n := by
+  ext z : 2
+  exact homologyToPrincipalDecalage_homologyπ_apply hC n z
 
 /-- `homologyToPrincipalDecalage` sends the class of a cocycle of `C` lying in `E_f(C)` to its
 class as a cocycle of `E_f(C)`. -/
