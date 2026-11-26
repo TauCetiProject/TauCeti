@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Basic
 import Mathlib.Algebra.Ring.Regular
 import TauCeti.LinearAlgebra.RootSystem.EquivComp
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 
 /-!
 # Finite internal direct sums of root pairings

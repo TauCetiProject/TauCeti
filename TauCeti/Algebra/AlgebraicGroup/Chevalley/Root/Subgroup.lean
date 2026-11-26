@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Conjugate
 public import Mathlib.GroupTheory.Subgroup.Centralizer
 

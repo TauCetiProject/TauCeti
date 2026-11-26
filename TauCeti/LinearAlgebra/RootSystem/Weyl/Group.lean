@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Data.Finite.Perm
 public import Mathlib.LinearAlgebra.RootSystem.WeylGroup
-public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
 import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 
 /-!

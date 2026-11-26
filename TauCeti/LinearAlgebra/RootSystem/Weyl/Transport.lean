@@ -129,14 +129,6 @@ theorem _root_.RootPairing.Equiv.weylGroupEquiv_ofIdx (e : P.Equiv Q) (i : ι) :
       RootPairing.weylGroup.ofIdx Q (e.indexEquiv i) :=
   Subtype.ext <| e.autCongr_reflection i
 
-/-- The inverse isomorphism of Weyl groups matches up the reflections in the indexed roots along
-`e.indexEquiv.symm`. -/
-@[simp]
-theorem _root_.RootPairing.Equiv.weylGroupEquiv_symm_ofIdx (e : P.Equiv Q) (j : ι₂) :
-    e.weylGroupEquiv.symm (RootPairing.weylGroup.ofIdx Q j) =
-      RootPairing.weylGroup.ofIdx P (e.indexEquiv.symm j) := by
-  rw [MulEquiv.symm_apply_eq, RootPairing.Equiv.weylGroupEquiv_ofIdx, Equiv.apply_symm_apply]
-
 /-- The isomorphism of Weyl groups is equivariant for the permutation actions on root indices:
 the permutation of `Q`'s root indices is the one of `P`'s conjugated by `e.indexEquiv`.
 

@@ -29,15 +29,13 @@ of roots is the union of the coordinate images of the summands' roots, with no c
 
 The construction preserves root systems (`IsRootSystem`), subring-valuedness (`IsValuedIn`, hence
 `IsCrystallographic`), and reducedness (when `2` is regular, in particular when `R` has no zero
-divisors). Functoriality `RootPairing.Equiv.piCongr` preserves identity and composition, and
-specializes to the product-of-automorphisms embedding `RootPairing.piAut`.
+divisors). Functoriality `RootPairing.Equiv.piCongr` preserves identity and composition.
 
 ## Main definitions
 
 * `RootPairing.pi`: the finite external direct sum of a family of root pairings.
 * `RootPairing.Equiv.piCongr`: functoriality of `RootPairing.pi` under reindexing and summand
   equivalences.
-* `RootPairing.piAut`: the canonical monoid embedding `(∀ c, (P c).Aut) →* (pi P).Aut`.
 
 ## Main results
 
@@ -49,8 +47,6 @@ specializes to the product-of-automorphisms embedding `RootPairing.piAut`.
   `RootPairing.isReduced_pi_iff`: structural characterizations for finite direct sums.
 * `RootPairing.Equiv.piCongr_id`, `RootPairing.Equiv.piCongr_comp`: identity and composition laws
   for `RootPairing.Equiv.piCongr`.
-* `RootPairing.piAut_injective`, `RootPairing.piAut_mulSingle_reflection`: injectivity and
-  reflection formulas for `RootPairing.piAut`.
 
 ## References
 
@@ -491,59 +487,5 @@ theorem Equiv.piCongr_comp
   · rfl
 
 end Functoriality
-
-section Aut
-
-variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : R)]
-  {ι M N : κ → Type*}
-  [∀ c, AddCommGroup (M c)] [∀ c, Module R (M c)]
-  [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
-  (P : ∀ c, RootPairing (ι c) R (M c) (N c))
-
-/-- The canonical embedding of the product of summand automorphism groups into the automorphism
-group of `RootPairing.pi P`. -/
-noncomputable def piAut : (∀ c, (P c).Aut) →* (pi P).Aut where
-  toFun g := Equiv.piCongr (_root_.Equiv.refl κ) g
-  map_one' := Equiv.piCongr_id
-  map_mul' g h := (Equiv.piCongr_comp (_root_.Equiv.refl κ) (_root_.Equiv.refl κ) h g).symm
-
-@[simp]
-theorem piAut_weightMap_apply (g : ∀ c, (P c).Aut) (x : ∀ c, M c) (c : κ) :
-    (piAut P g).weightMap x c = (g c).weightMap (x c) :=
-  Equiv.piCongr_weightMap_apply (_root_.Equiv.refl κ) g x c
-
-@[simp]
-theorem piAut_coweightMap_apply (g : ∀ c, (P c).Aut) (y : ∀ c, N c) (c : κ) :
-    (piAut P g).coweightMap y c = (g c).coweightMap (y c) :=
-  Equiv.piCongr_coweightMap_apply (_root_.Equiv.refl κ) g y c
-
-@[simp]
-theorem piAut_indexEquiv (g : ∀ c, (P c).Aut) (c : κ) (i : ι c) :
-    (piAut P g).indexEquiv ⟨c, i⟩ = ⟨c, (g c).indexEquiv i⟩ :=
-  Equiv.piCongr_indexEquiv (_root_.Equiv.refl κ) g c i
-
-/-- `RootPairing.piAut` is injective: an automorphism of `RootPairing.pi P` in its image
-determines every coordinate automorphism. -/
-theorem piAut_injective : Function.Injective (piAut P) := by
-  intro g h hgh
-  funext c
-  refine Equiv.weightHom_injective (P c) (LinearEquiv.ext fun x ↦ ?_)
-  have h1 := congrFun (congrArg (fun a : (pi P).Aut ↦ a.weightMap (Pi.single c x)) hgh) c
-  simpa using h1
-
-/-- Inserting a single reflection at coordinate `c` maps under `piAut` to the reflection of the
-direct sum at `⟨c, i⟩`. -/
-@[simp]
-theorem piAut_mulSingle_reflection (c : κ) (i : ι c) :
-    piAut P (Pi.mulSingle c (Equiv.reflection (P c) i)) = Equiv.reflection (pi P) ⟨c, i⟩ := by
-  refine Equiv.weightHom_injective (pi P) (LinearEquiv.ext fun x ↦ funext fun d ↦ ?_)
-  by_cases h : d = c
-  · subst h
-    simp only [Equiv.weightHom_apply, Equiv.weightEquiv_apply, piAut_weightMap_apply,
-      Pi.mulSingle_eq_same, Equiv.reflection_weightEquiv, pi_reflection_apply_same]
-    exact LinearEquiv.congr_fun (Equiv.reflection_weightEquiv (P d) i) (x d)
-  · simp [Equiv.weightHom_apply, Equiv.reflection_weightEquiv, h]
-
-end Aut
 
 end RootPairing
