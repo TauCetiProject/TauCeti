@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
+import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
 # Power-law asymptotics
@@ -46,7 +47,8 @@ every `c ≤ a`.
 ## Complex powers of a positive real variable
 
 Along any filter eventually in `(0, ∞)`, the complex power `t ^ w` of the real variable `t` is
-`O(t ^ Re w)`.
+`O(t ^ Re w)`. For natural `n ≠ 0`, `‖ρ ^ n * n ^ α‖ = ‖ρ‖ ^ n * n ^ Re α`, and
+`ρ ^ n * n ^ α = O(r ^ n)` as `n → ∞` whenever `‖ρ‖ < r`.
 
 ## Families bounded by integer powers
 
@@ -152,6 +154,25 @@ theorem isBigO_ofReal_cpow_rpow {l : Filter ℝ} (hl : ∀ᶠ t in l, 0 < t) (w 
   IsBigO.of_bound 1 <| hl.mono fun t ht ↦ by
     rw [Complex.norm_cpow_eq_rpow_re_of_pos ht, Real.norm_of_nonneg (Real.rpow_nonneg ht.le _),
       one_mul]
+
+/-- The norm of `ρ ^ n * n ^ α` is `‖ρ‖ ^ n * n ^ Re α` for `n ≠ 0`. -/
+theorem norm_pow_mul_cpow (ρ α : ℂ) {n : ℕ} (hn : n ≠ 0) :
+    ‖ρ ^ n * (n : ℂ) ^ α‖ = ‖ρ‖ ^ n * (n : ℝ) ^ α.re := by
+  rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos (Nat.pos_of_ne_zero hn)]
+
+/-- The comparison `ρⁿ n^α = O(rⁿ)` for `‖ρ‖ < r`. -/
+theorem isBigO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
+    (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =O[atTop] fun n ↦ r ^ n := by
+  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) ⌈α.re⌉₊
+    (show ‖‖ρ‖‖ < r by rwa [norm_norm])
+  refine IsBigO.trans ?_ hlo.isBigO
+  refine IsBigO.of_bound 1 ?_
+  filter_upwards [eventually_ge_atTop 1] with n hn
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  rw [norm_pow_mul_cpow ρ α (by omega), one_mul, Real.norm_of_nonneg (by positivity),
+    mul_comm ((n : ℝ) ^ _)]
+  exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
+    (Real.rpow_natCast _ _)) (by positivity)
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 

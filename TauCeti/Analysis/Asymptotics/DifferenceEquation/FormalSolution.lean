@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.RingTheory.Binomial
 import TauCeti.Analysis.Asymptotics.TruncatedPowerSeries
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
@@ -56,6 +57,8 @@ term is the residual estimated here (Wong and Li); for the root of smaller modul
 * `TauCeti.norm_pow_mul_cpow_mul_inv_pow`: `‖ρⁿ n^α n⁻ᴹ‖ = |ρ|ⁿ n^{Re α - M}` for `n ≠ 0`.
 * `TauCeti.isBigO_formalDifferenceSolution_sub`: for `N ≤ M`, the truncations after `M` and after
   `N` terms differ by `O(|ρ|ⁿ n^{Re α - N})`.
+* `TauCeti.eventually_norm_formalDifferenceSolution`: for `M ≥ 1` and `a₀ = 1`, the truncation
+  after `M` terms is eventually between half and twice `|ρ|ⁿ n^{Re α}` in norm.
 * `TauCeti.isBigO_formalDifferenceSolution_residual_sub`: for arbitrary coefficients `a`, the
   residual of the truncation after `N + 1` terms is
   `ρⁿ n^α ∑_{t ≤ N} (differenceResidualCoeff fs gs ρ α a t) n⁻ᵗ + O(|ρ|ⁿ n^{Re α - N - 1})`.
@@ -306,6 +309,35 @@ theorem isBigO_formalDifferenceSolution_sub (a : ℕ → ℂ) (ρ α : ℂ) {N M
   have := (mem_Ico.1 hs).1
   have : (N : ℝ) ≤ s := by exact_mod_cast this
   linarith
+
+/-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is eventually between
+half and twice `|ρ|ⁿ n^{Re α}` in norm. -/
+theorem eventually_norm_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ)
+    {M : ℕ} (hM : 1 ≤ M) : ∀ᶠ k : ℕ in atTop,
+      ‖ρ‖ ^ k * (k : ℝ) ^ α.re / 2 ≤ ‖formalDifferenceSolution a ρ α M k‖ ∧
+        ‖formalDifferenceSolution a ρ α M k‖ ≤ 2 * (‖ρ‖ ^ k * (k : ℝ) ^ α.re) := by
+  -- the truncation differs from `ρⁿ n^α` by `O(|ρ|ⁿ n^{Re α - 1})`
+  have hsub := isBigO_formalDifferenceSolution_sub a ρ α hM
+  simp only [Nat.cast_one] at hsub
+  obtain ⟨C₁, hC₁⟩ := hsub.bound
+  filter_upwards [hC₁, eventually_ge_atTop (⌈2 * C₁⌉₊ + 1)] with k h₁ hk₂
+  set u := formalDifferenceSolution a ρ α M k
+  have hu₁ : formalDifferenceSolution a ρ α 1 k = ρ ^ k * (k : ℂ) ^ α := by
+    simp [formalDifferenceSolution_def, ha]
+  have hk0 : (0 : ℝ) < k := by exact_mod_cast (show 0 < k by omega)
+  have hk' : 2 * C₁ ≤ k := by
+    have := Nat.cast_le (α := ℝ).2 hk₂; push_cast at this; linarith [Nat.le_ceil (2 * C₁)]
+  rw [hu₁, Real.norm_of_nonneg (by positivity), Real.rpow_sub hk0, Real.rpow_one] at h₁
+  have hφ := norm_pow_mul_cpow ρ α (show k ≠ 0 by omega)
+  have hP : 0 ≤ ‖ρ‖ ^ k * (k : ℝ) ^ α.re := by positivity
+  -- `C₁ |ρ|^k k^{Re α} / k ≤ |ρ|^k k^{Re α} / 2`
+  have hsmall : C₁ * (‖ρ‖ ^ k * ((k : ℝ) ^ α.re / k)) ≤ ‖ρ‖ ^ k * (k : ℝ) ^ α.re / 2 := by
+    rw [mul_div_assoc', mul_div_assoc', div_le_div_iff₀ hk0 two_pos]
+    nlinarith
+  have h₂ := norm_sub_norm_le (ρ ^ k * (k : ℂ) ^ α) u
+  have h₃ := norm_le_norm_add_norm_sub' u (ρ ^ k * (k : ℂ) ^ α)
+  rw [norm_sub_rev] at h₂
+  constructor <;> linarith
 
 /-- **Residual of a truncated formal solution.** Let `f` and `g` have the expansions
 `f n = ∑_{q ≤ N} f_q n^{-q} + O(n^{-N-1})` and `g n = ∑_{q ≤ N} g_q n^{-q} + O(n^{-N-1})`. For

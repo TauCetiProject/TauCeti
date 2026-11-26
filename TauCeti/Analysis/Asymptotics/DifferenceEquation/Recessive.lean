@@ -11,6 +11,7 @@ import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecificLimits.Normed
 import TauCeti.Analysis.Asymptotics.DiscreteVolterra
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -41,8 +42,8 @@ constant factor among the solutions of this size.
   for all `n` with that expansion.
 * `TauCeti.difference_solution_unique_of_norm_sq_lt`: two solutions asymptotic to `ρⁿ n^α` agree
   for large `n`.
-* `TauCeti.exists_eventuallyEq_const_mul_of_isBigO_pow`: if `g n → g₀`, a solution that is
-  `O(rⁿ)` with `r ^ 2 < ‖g₀‖` is, for large `n`, a constant multiple of any eventually nonzero
+* `TauCeti.exists_eventuallyEq_const_mul_of_isBigO_pow`: if `‖g n‖ ≥ γ` for large `n`, a solution
+  that is `O(rⁿ)` with `r ^ 2 < γ` is, for large `n`, a constant multiple of any eventually nonzero
   solution of the same size.
 * `TauCeti.exists_difference_solution_eventuallyEq`: if `g` vanishes nowhere, a solution for
   large `n` agrees for large `n` with a solution for all `n`.
@@ -148,15 +149,17 @@ private lemma difference_eq_of_eq_tsum_kernel {f g u h F : ℕ → ℂ} (hu : �
     (n : ℕ) : u (n + 3) * (1 + h (n + 2)) + f (n + 1) * (u (n + 2) * (1 + h (n + 1))) +
       g (n + 1) * (u (n + 1) * (1 + h n)) = 0 := by
   set t := tailTerm g u F
-  have ht_summ (p : ℕ) : Summable (t p) := by
-    refine (((hsum p).sub (hsum (p + 1))).mul_left (u (p + 1) * u (p + 2))).congr fun m ↦ ?_
+  have hkt (p m : ℕ) : u (p + 1) * u (p + 2) *
+      (kernel g u (p + 1) m * F m - kernel g u (p + 1 + 1) m * F m) = t p m := by
     rw [kernel_mul_sub_kernel_mul, ← mul_assoc, mul_inv_cancel₀ (mul_ne_zero (hu _) (hu _)),
       one_mul]
-  -- `h p - h (p + 1)` is a multiple of `T p = ∑ m, t p m`, and
+  have ht_summ (p : ℕ) : Summable (t p) :=
+    (((hsum p).sub (hsum (p + 1))).mul_left (u (p + 1) * u (p + 2))).congr (hkt p)
+  -- `u (p + 1) * u (p + 2) * (h p - h (p + 1)) = T p` with `T p = ∑ m, t p m`, and
   -- `g (p + 1) * T p = u (p + 2) * F (p + 1) + T (p + 1)`
-  have hstep₁ (p : ℕ) : h p - h (p + 1) = (u (p + 1) * u (p + 2))⁻¹ * ∑' m, t p m := by
+  have hstep₁ (p : ℕ) : u (p + 1) * u (p + 2) * (h p - h (p + 1)) = ∑' m, t p m := by
     rw [hrep p, hrep (p + 1), ← (hsum p).tsum_sub (hsum (p + 1)), ← tsum_mul_left]
-    exact tsum_congr fun m ↦ kernel_mul_sub_kernel_mul g u F p m
+    exact tsum_congr (hkt p)
   have hstep₂ (p : ℕ) :
       g (p + 1) * ∑' m, t p m = u (p + 2) * F (p + 1) + ∑' m, t (p + 1) m := by
     rw [← tsum_mul_left, tsum_congr (mul_tailTerm u F (hg (p + 1))),
@@ -165,15 +168,11 @@ private lemma difference_eq_of_eq_tsum_kernel {f g u h F : ℕ → ℂ} (hu : �
   have hA := hstep₁ n
   have hB := hstep₁ (n + 1)
   have hC := hstep₂ n
-  have hu1 := hu (n + 1)
-  have hu2 := hu (n + 2)
-  have hu3 := hu (n + 3)
   rw [hF] at hC
-  field_simp at hA hB
   have key : u (n + 2) * (u (n + 3) * (1 + h (n + 2)) + f (n + 1) * (u (n + 2) * (1 + h (n + 1))) +
       g (n + 1) * (u (n + 1) * (1 + h n))) = 0 := by
-    linear_combination (-1 : ℂ) * hB + g (n + 1) * hA + hC
-  exact (mul_eq_zero.1 key).resolve_left hu2
+    linear_combination g (n + 1) * hA - hB + hC
+  exact (mul_eq_zero.1 key).resolve_left (hu (n + 2))
 
 /-- **Reduction to a summation equation.** Let `u` be an approximate solution of
 `w (n + 2) + f n * w (n + 1) + g n * w n = 0` with residual `r`, and let `u` and `g` vanish
@@ -450,10 +449,10 @@ private theorem exists_solution_of_tail_bounds {f g u : ℕ → ℂ} {R γ a t C
 
 /-- If `w₁` is eventually nonzero and the Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n`
 eventually vanishes, then `w` is eventually a constant multiple of `w₁`. -/
-private lemma exists_eventuallyEq_const_mul_of_casoratian {w₁ w : ℕ → ℂ}
+private lemma exists_eventuallyEq_const_mul_of_casoratian {K : Type*} [Field K] {w₁ w : ℕ → K}
     (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0)
     (hC : ∀ᶠ n in atTop, w₁ n * w (n + 1) - w₁ (n + 1) * w n = 0) :
-    ∃ c : ℂ, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
+    ∃ c : K, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
   obtain ⟨n₂, hn₂⟩ := eventually_atTop.1 (hw₁0.and hC)
   refine ⟨w n₂ / w₁ n₂, eventually_atTop.2 ⟨n₂, fun m hm ↦ ?_⟩⟩
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
@@ -467,22 +466,21 @@ private lemma exists_eventuallyEq_const_mul_of_casoratian {w₁ w : ℕ → ℂ}
     rw [← add_assoc]
     exact mul_left_cancel₀ h₀ (by linear_combination hC0)
 
-/-- **Small solutions are proportional.** Let `g n → g₀` and let `w₁` and `w` be solutions of
-`w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n`, both `O(r ^ n)` with `r ^ 2 < ‖g₀‖`.
-If `w₁` is eventually nonzero, then `w` is eventually a constant multiple of `w₁`.
+/-- **Small solutions are proportional.** Let `‖g n‖ ≥ γ` for large `n` and let `w₁` and `w` be
+solutions of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n`, both `O(r ^ n)` with
+`r ^ 2 < γ`. If `w₁` is eventually nonzero, then `w` is eventually a constant multiple of `w₁`.
 
 The Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n` is multiplied by `g n` at each step, so it
-is either eventually zero or at least of the order `γ ^ n` for every `γ < ‖g₀‖`; the bound
-`O((r ^ 2) ^ n)` excludes the second case. -/
-theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {g₀ : ℂ} {r : ℝ}
-    (hg : Tendsto g atTop (𝓝 g₀)) (hr : r ^ 2 < ‖g₀‖)
+is either eventually zero or at least of the order `γ ^ n`; the bound `O((r ^ 2) ^ n)` excludes
+the second case. -/
+theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {r γ : ℝ}
+    (hrγ : r ^ 2 < γ) (hgγ : ∀ᶠ n in atTop, γ ≤ ‖g n‖)
     (hw₁ : ∀ᶠ n in atTop, w₁ (n + 2) + f n * w₁ (n + 1) + g n * w₁ n = 0)
     (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0)
     (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0) (hw₁r : w₁ =O[atTop] fun n ↦ r ^ n)
     (hwr : w =O[atTop] fun n ↦ r ^ n) :
     ∃ c : ℂ, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
   set C : ℕ → ℂ := fun n ↦ w₁ n * w (n + 1) - w₁ (n + 1) * w n with hC_def
-  obtain ⟨γ, hrγ, hγg⟩ := exists_between hr
   have hγ0 : 0 < γ := (sq_nonneg r).trans_lt hrγ
   -- the Casoratian is `o(γ ^ n)`
   have hshift {v : ℕ → ℂ} (hv : v =O[atTop] fun n ↦ r ^ n) :
@@ -494,7 +492,6 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {
       ((hw₁r.mul (hshift hwr)).sub ((hshift hw₁r).mul hwr)).congr_right fun n ↦ by ring
     exact hCO.trans_isLittleO (isLittleO_pow_pow_of_lt_left (sq_nonneg r) hrγ)
   -- beyond `n₁` the Casoratian is multiplied by `g n` with `‖g n‖ ≥ γ`
-  have hgγ : ∀ᶠ n in atTop, γ ≤ ‖g n‖ := hg.norm.eventually (eventually_ge_nhds hγg)
   obtain ⟨n₁, hn₁⟩ := eventually_atTop.1 (hw₁.and (hw.and hgγ))
   have hCrec (n : ℕ) (hn : n₁ ≤ n) : C (n + 1) = g n * C n := by
     obtain ⟨h₁, h₂, -⟩ := hn₁ n hn
@@ -523,9 +520,9 @@ theorem exists_eventuallyEq_const_mul_of_isBigO_pow {f g w₁ w : ℕ → ℂ} {
 /-- **Extension of a solution backwards.** If `g` vanishes nowhere, a solution of
 `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` agrees for large `n` with a solution
 for all `n`. -/
-theorem exists_difference_solution_eventuallyEq {f g w : ℕ → ℂ} (hg : ∀ n, g n ≠ 0)
-    (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) :
-    ∃ w' : ℕ → ℂ, (∀ n, w' (n + 2) + f n * w' (n + 1) + g n * w' n = 0) ∧ w' =ᶠ[atTop] w := by
+theorem exists_difference_solution_eventuallyEq {K : Type*} [Field K] {f g w : ℕ → K}
+    (hg : ∀ n, g n ≠ 0) (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) :
+    ∃ w' : ℕ → K, (∀ n, w' (n + 2) + f n * w' (n + 1) + g n * w' n = 0) ∧ w' =ᶠ[atTop] w := by
   obtain ⟨n₀, hn₀⟩ := eventually_atTop.1 hw
   induction n₀ generalizing w with
   | zero => exact ⟨w, fun n ↦ hn₀ n (Nat.zero_le n), .rfl⟩
@@ -546,20 +543,6 @@ theorem exists_difference_solution_eventuallyEq {f g w : ℕ → ℂ} (hg : ∀ 
         exact hn₀ n hn
     obtain ⟨w', hw', hw'v⟩ := ih (w := v) (eventually_atTop.2 ⟨n₀, hvsol⟩) hvsol
     exact ⟨w', hw', hw'v.trans hv⟩
-
-/-- The comparison `ρⁿ n^α = O(rⁿ)` for `‖ρ‖ < r`. -/
-private lemma isBigO_pow_mul_cpow_pow_of_norm_lt {ρ : ℂ} (α : ℂ) {r : ℝ} (h : ‖ρ‖ < r) :
-    (fun n : ℕ ↦ ρ ^ n * (n : ℂ) ^ α) =O[atTop] fun n ↦ r ^ n := by
-  have hlo := isLittleO_pow_const_mul_const_pow_const_pow_of_norm_lt (R := ℝ) ⌈α.re⌉₊
-    (show ‖‖ρ‖‖ < r by rwa [norm_norm])
-  refine IsBigO.trans ?_ hlo.isBigO
-  refine IsBigO.of_bound 1 ?_
-  filter_upwards [eventually_ge_atTop 1] with n hn
-  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-  rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos hn, one_mul,
-    Real.norm_of_nonneg (by positivity), mul_comm ((n : ℝ) ^ _)]
-  exact mul_le_mul_of_nonneg_left ((Real.rpow_le_rpow_of_exponent_le hn' (Nat.le_ceil _)).trans_eq
-    (Real.rpow_natCast _ _)) (by positivity)
 
 /-- **Uniqueness of the recessive solution.** Let `g n → g₀` and `‖ρ‖ ^ 2 < ‖g₀‖`. Two solutions
 of `w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` that are both asymptotic to
@@ -596,7 +579,9 @@ theorem difference_solution_unique_of_norm_sq_lt {f g w w' : ℕ → ℂ} {g₀ 
   obtain ⟨r, hRr, hr⟩ := exists_between ((Real.lt_sqrt (norm_nonneg ρ)).2 hlt)
   have hr2 : r ^ 2 < ‖g₀‖ := (Real.lt_sqrt ((norm_nonneg ρ).trans hRr.le)).1 hr
   have hφr : φ =O[atTop] fun n ↦ r ^ n := isBigO_pow_mul_cpow_pow_of_norm_lt α hRr
-  obtain ⟨c, hc⟩ := exists_eventuallyEq_const_mul_of_isBigO_pow hg hr2 hw hw' hw0
+  obtain ⟨γ, hrγ, hγg⟩ := exists_between hr2
+  obtain ⟨c, hc⟩ := exists_eventuallyEq_const_mul_of_isBigO_pow hrγ
+    (hg.norm.eventually (eventually_ge_nhds hγg)) hw hw' hw0
     ((hO hwl).trans hφr) ((hO hw'l).trans hφr)
   -- the constant is `1`, since `(c - 1) φ = o(φ)`
   obtain rfl : c = 1 := by
@@ -624,36 +609,6 @@ private lemma mul_ne_zero_of_norm_sq_lt {fs gs : ℕ → ℂ} {ρ : ℂ} (hρ : 
   · have : gs 0 = ρ ^ 2 := by linear_combination hρ - ρ * h
     rw [this, norm_pow] at hlt
     exact lt_irrefl _ hlt
-
-/-- For `M ≥ 1` and `a₀ = 1`, the truncation `ρⁿ n^α ∑_{s < M} aₛ n⁻ˢ` is eventually between
-half and twice `|ρ|ⁿ n^{Re α}` in norm. -/
-private lemma eventually_norm_formalDifferenceSolution {a : ℕ → ℂ} (ha : a 0 = 1) (ρ α : ℂ)
-    {M : ℕ} (hM : 1 ≤ M) : ∀ᶠ k : ℕ in atTop,
-      ‖ρ‖ ^ k * (k : ℝ) ^ α.re / 2 ≤ ‖formalDifferenceSolution a ρ α M k‖ ∧
-        ‖formalDifferenceSolution a ρ α M k‖ ≤ 2 * (‖ρ‖ ^ k * (k : ℝ) ^ α.re) := by
-  -- the truncation differs from `ρⁿ n^α` by `O(|ρ|ⁿ n^{Re α - 1})`
-  have hsub := isBigO_formalDifferenceSolution_sub a ρ α hM
-  simp only [Nat.cast_one] at hsub
-  obtain ⟨C₁, hC₁⟩ := hsub.bound
-  filter_upwards [hC₁, eventually_ge_atTop (⌈2 * C₁⌉₊ + 1)] with k h₁ hk₂
-  set u := formalDifferenceSolution a ρ α M k
-  have hu₁ : formalDifferenceSolution a ρ α 1 k = ρ ^ k * (k : ℂ) ^ α := by
-    simp [formalDifferenceSolution_def, ha]
-  have hk0 : (0 : ℝ) < k := by exact_mod_cast (show 0 < k by omega)
-  have hk' : 2 * C₁ ≤ k := by
-    have := Nat.cast_le (α := ℝ).2 hk₂; push_cast at this; linarith [Nat.le_ceil (2 * C₁)]
-  rw [hu₁, Real.norm_of_nonneg (by positivity), Real.rpow_sub hk0, Real.rpow_one] at h₁
-  have hφ : ‖ρ ^ k * (k : ℂ) ^ α‖ = ‖ρ‖ ^ k * (k : ℝ) ^ α.re := by
-    rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos (by exact_mod_cast hk0)]
-  have hP : 0 ≤ ‖ρ‖ ^ k * (k : ℝ) ^ α.re := by positivity
-  -- `C₁ |ρ|^k k^{Re α} / k ≤ |ρ|^k k^{Re α} / 2`
-  have hsmall : C₁ * (‖ρ‖ ^ k * ((k : ℝ) ^ α.re / k)) ≤ ‖ρ‖ ^ k * (k : ℝ) ^ α.re / 2 := by
-    rw [mul_div_assoc', mul_div_assoc', div_le_div_iff₀ hk0 two_pos]
-    nlinarith
-  have h₂ := norm_sub_norm_le (ρ ^ k * (k : ℂ) ^ α) u
-  have h₃ := norm_le_norm_add_norm_sub' u (ρ ^ k * (k : ℂ) ^ α)
-  rw [norm_sub_rev] at h₂
-  constructor <;> linarith
 
 /-- **A solution to a given order.** For every `N`, there is a solution for large `n` whose
 difference from each truncation `ρⁿ n^α ∑_{s < N'} aₛ n⁻ˢ` with `N' ≤ N` is
@@ -751,8 +706,7 @@ theorem exists_eventually_difference_solution_of_norm_sq_lt {f g fs gs : ℕ →
       refine h₁.congr' ?_ EventuallyEq.rfl
       filter_upwards [eventually_ge_atTop 1] with n hn
       have hn0 : (0 : ℝ) < n := by exact_mod_cast hn
-      rw [norm_mul, norm_pow, Complex.norm_natCast_cpow_of_pos hn, Nat.cast_one,
-        Real.rpow_sub hn0, Real.rpow_one]
+      rw [norm_pow_mul_cpow ρ α (by omega), Nat.cast_one, Real.rpow_sub hn0, Real.rpow_one]
       ring
     refine (hv.trans_isLittleO hsmall).congr_left fun n ↦ ?_
     simp [formalDifferenceSolution_def, a]
