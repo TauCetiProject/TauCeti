@@ -7,7 +7,9 @@ module
 
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
 public import TauCeti.FieldTheory.MatsumotoGroup.Basic
+public import TauCeti.FieldTheory.MatsumotoGroup.OrderedField
 public import TauCeti.RingTheory.MilnorK.Homogeneous
+public import TauCeti.RingTheory.MilnorK.Sign
 import TauCeti.LinearAlgebra.TensorPower.Basic
 
 /-!
@@ -17,8 +19,9 @@ Using the homogeneous presentation `TauCeti.MilnorK.degreeEquiv` from
 `TauCeti.RingTheory.MilnorK.Homogeneous`, this file identifies the degree-two Milnor K-group
 `K₂ᴹ(R)` of any commutative ring `R` with `TauCeti.MatsumotoGroup R`
 (`TauCeti.MilnorK.degreeTwoEquiv`), establishes `TauCeti.MilnorK.isSteinbergPairing_ofUnit_mul`,
-and provides the graded functorial maps `TauCeti.MilnorK.gradedMap` and `TauCeti.MilnorK.mapDegree`
-together with naturality of `degreeTwoEquiv`.
+provides the graded functorial maps `TauCeti.MilnorK.gradedMap` and `TauCeti.MilnorK.mapDegree`
+together with naturality of `degreeTwoEquiv`, and identifies `TauCeti.MilnorK.sign R 2` with
+`TauCeti.MatsumotoGroup.sign R` (`TauCeti.MilnorK.sign_two_eq_matsumotoGroup_sign`).
 
 ## Main definitions
 
@@ -36,6 +39,8 @@ together with naturality of `degreeTwoEquiv`.
   extensionality for `ℤ`-linear maps out of `degree R n` and `degree R 2`.
 * `TauCeti.MilnorK.degreeTwoEquiv_mapDegree`: naturality of `degreeTwoEquiv` with respect to
   `MatsumotoGroup.map`.
+* `TauCeti.MilnorK.sign_two_eq_matsumotoGroup_sign`: agreement of `MilnorK.sign R 2` and
+  `MatsumotoGroup.sign R` under `degreeTwoEquiv`.
 
 ## References
 
@@ -212,18 +217,17 @@ section Map
 variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
 
 /-- Graded ring homomorphism `degree R →+*ᵍ degree S` induced by `f : R →+* S`. -/
-@[expose]
 def gradedMap (f : R →+* S) : degree R →+*ᵍ degree S where
   toRingHom := map f
   map_mem hx := map_mem_degree f hx
 
 @[simp]
 theorem gradedMap_toRingHom (f : R →+* S) : (gradedMap f).toRingHom = map f :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem gradedMap_apply (f : R →+* S) (x : MilnorK R) : gradedMap f x = map f x :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem gradedMap_id : gradedMap (RingHom.id R) = GradedRingHom.id (degree R) :=
@@ -235,14 +239,13 @@ theorem gradedMap_comp (g : S →+* T) (f : R →+* S) :
   GradedRingHom.ext fun x => RingHom.congr_fun (map_comp g f) x
 
 /-- The degree-`n` `ℤ`-linear map `Kₙᴹ(R) →ₗ[ℤ] Kₙᴹ(S)` induced by `f : R →+* S`. -/
-@[expose]
 def mapDegree (f : R →+* S) (n : ℕ) : degree R n →ₗ[ℤ] degree S n :=
   ((gradedMap f).gradedAddHom n).toIntLinearMap
 
 @[simp]
 theorem mapDegree_coe (f : R →+* S) (n : ℕ) (x : degree R n) :
     (mapDegree f n x : MilnorK S) = map f x.val :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem mapDegree_id (n : ℕ) : mapDegree (RingHom.id R) n = LinearMap.id := by
@@ -274,5 +277,24 @@ theorem degreeTwoEquiv_mapDegree (f : R →+* S) (x : degree R 2) :
         MatsumotoGroup.map_symbol]) x
 
 end Map
+
+section OrderedCommRing
+
+variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+
+/-- In degree `2`, `MilnorK.sign` agrees with `MatsumotoGroup.sign` under `degreeTwoEquiv`. -/
+theorem sign_two_eq_matsumotoGroup_sign (x : degree R 2) :
+    sign R 2 x = MatsumotoGroup.sign R (degreeTwoEquiv R x) :=
+  LinearMap.congr_fun
+    (f := (sign R 2).toIntLinearMap.comp (degree R 2).subtype)
+    (g := (MatsumotoGroup.sign R).toIntLinearMap.comp (degreeTwoEquiv R).toLinearMap)
+    (degreeTwo_linearMap_ext fun a b => by
+      rw [← degreeTwo_symbol_eq_ofUnit_mul]
+      simp only [LinearMap.comp_apply, Submodule.coe_subtype, AddMonoidHom.coe_toIntLinearMap,
+        LinearEquiv.coe_coe, degreeTwoEquiv_symbol, MatsumotoGroup.sign_symbol, sign_symbol,
+        List.length_cons, List.length_nil, Nat.zero_add, Nat.reduceAdd, List.forall_mem_cons,
+        List.not_mem_nil, false_implies, implies_true, and_true, true_and]) x
+
+end OrderedCommRing
 
 end TauCeti.MilnorK
