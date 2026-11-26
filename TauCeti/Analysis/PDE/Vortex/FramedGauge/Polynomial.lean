@@ -58,13 +58,11 @@ with the smooth transition `χ` vanishing on `(-∞, 0]` and equal to one on `[1
   `TauCeti.Vortex.rotateCoeff_mul`). In the elementary symmetric chart the rotated coefficients
   are the divisor multiplied by `u⁻¹` (`TauCeti.Vortex.coeffEquiv_symm_rotateCoeff`). The gauge of
   `Wᵐ` is trivial (`TauCeti.Vortex.polynomialGauge_zero`).
-* Translations of the plane act on the coefficients too: `TauCeti.Vortex.translateCoeff a c` are
-  the coefficients of `P_c(z + a)` (`TauCeti.Vortex.monicOfCoeff_translateCoeff`), the divisor
-  moved by `-a` (`TauCeti.Vortex.coeffEquiv_symm_translateCoeff`), and these translations compose
-  (`TauCeti.Vortex.translateCoeff_zero`, `TauCeti.Vortex.translateCoeff_add`). The polynomial
-  gauge is not translation-equivariant, since translations do not preserve the winding phase; the
-  laws of the normalized vortices under both symmetries are in
-  `TauCeti.Analysis.PDE.Vortex.Divisor.Symmetry`.
+* Translations of the plane act on the coefficients too, by
+  `TauCeti.Polynomial.translateCoeff a c`, the coefficients of `P_c(z + a)`: the divisor moves by
+  `-a` (`Sym.coeffEquiv_symm_translateCoeff`). The polynomial gauge is not
+  translation-equivariant, since translations do not preserve the winding phase; the laws of the
+  normalized vortices under both symmetries are in `TauCeti.Analysis.PDE.Vortex.Divisor.Symmetry`.
 
 Applied to a field whose section is a nonnegative multiple `ρ P_c` of the polynomial, such as
 the reconstructed field `TauCeti.Vortex.amplitudeField u P_c` of Taubes's existence proof, the
@@ -89,7 +87,6 @@ monic polynomial of degree `m` at once, smoothly in its coefficients.
 * `TauCeti.Vortex.polynomialGauge c`: the end-normalizing gauge of the monic polynomial with
   lower coefficients `c`.
 * `TauCeti.Vortex.rotateCoeff u c`: the coefficients of `u⁻ᵐ P_c(u z)`.
-* `TauCeti.Vortex.translateCoeff a c`: the coefficients of `P_c(z + a)`.
 
 ## Main results
 
@@ -260,8 +257,7 @@ theorem polynomialGauge_mem_framedGaugeGroup (c : Fin m → ℂ) :
 /-- The polynomial gauge is differentiable in the point. -/
 theorem differentiable_polynomialGauge (c : Fin m → ℂ) :
     Differentiable ℝ fun z ↦ (polynomialGauge c z : ℂ) :=
-  ((mem_framedGaugeGroup _).1 (polynomialGauge_mem_framedGaugeGroup c)).1.differentiable
-    (by simp)
+  differentiable_of_mem_framedGaugeGroup (polynomialGauge_mem_framedGaugeGroup c)
 
 /-- The polynomial gauge is trivial where `‖z‖² ≤ m ∑ᵢ ‖cᵢ‖² + 1`. -/
 theorem polynomialGauge_eq_one {c : Fin m → ℂ} {z : ℂ}
@@ -520,60 +516,6 @@ theorem rotateField_gaugeTransform_polynomialGauge (u : Circle) (c : Fin m → �
   congr 1
   funext w
   exact (polynomialGauge_rotateCoeff u c w).symm
-
-/-! ### Translations -/
-
-section Translations
-
-open _root_.Polynomial
-
-/-- **The translated coefficients**: the lower coefficients of the monic polynomial
-`P_c(· + a)`, whose zeros are those of `P_c` translated by `-a`
-(`TauCeti.Vortex.monicOfCoeff_translateCoeff`). -/
-def translateCoeff (a : ℂ) (c : Fin m → ℂ) (i : Fin m) : ℂ :=
-  ((monicOfCoeff c).comp (X + C a)).coeff i
-
-/-- The `i`-th translated coefficient is the `i`-th coefficient of `P_c(· + a)`. -/
-theorem translateCoeff_apply (a : ℂ) (c : Fin m → ℂ) (i : Fin m) :
-    translateCoeff a c i = ((monicOfCoeff c).comp (X + C a)).coeff i :=
-  (rfl)
-
-/-- The polynomial with translated coefficients is the translated polynomial `P_c(· + a)`. -/
-theorem monicOfCoeff_translateCoeff (a : ℂ) (c : Fin m → ℂ) :
-    monicOfCoeff (translateCoeff a c) = (monicOfCoeff c).comp (X + C a) :=
-  monicOfCoeff_coeff ((monic_monicOfCoeff c).comp_X_add_C a)
-    (by rw [natDegree_comp, natDegree_X_add_C, mul_one, natDegree_monicOfCoeff])
-
-/-- The polynomial with translated coefficients at `z` is `P_c(z + a)`. -/
-@[simp]
-theorem eval_monicOfCoeff_translateCoeff (a : ℂ) (c : Fin m → ℂ) (z : ℂ) :
-    (monicOfCoeff (translateCoeff a c)).eval z = (monicOfCoeff c).eval (z + a) := by
-  simp [monicOfCoeff_translateCoeff]
-
-/-- In the elementary symmetric chart, translating the coefficients translates the divisor: the
-zeros of `P_c(· + a)` are those of `P_c` moved by `-a`. -/
-theorem coeffEquiv_symm_translateCoeff (a : ℂ) (c : Fin m → ℂ) :
-    (Sym.coeffEquiv ℂ m).symm (translateCoeff a c) = ((Sym.coeffEquiv ℂ m).symm c).map (· - a) := by
-  apply Sym.coe_injective
-  have h := roots_comp_C_mul_X_add_C (monicOfCoeff c) 1 a isUnit_one
-  rw [C_1, one_mul] at h
-  rw [Sym.coeffEquiv_symm_apply, Sym.coe_map, Sym.coeffEquiv_symm_apply,
-    monicOfCoeff_translateCoeff, h]
-  simp
-
-/-- The zero translation fixes the coefficients. -/
-@[simp]
-theorem translateCoeff_zero (c : Fin m → ℂ) : translateCoeff 0 c = c := by
-  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, map_zero, add_zero, comp_X]
-
-/-- Translating by `a + b` is translating by `a` and then by `b`. -/
-theorem translateCoeff_add (a b : ℂ) (c : Fin m → ℂ) :
-    translateCoeff (a + b) c = translateCoeff b (translateCoeff a c) := by
-  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, monicOfCoeff_translateCoeff,
-    monicOfCoeff_translateCoeff, comp_assoc, add_comp, X_comp, C_comp, map_add, add_assoc,
-    add_comm (C b)]
-
-end Translations
 
 /-! ### Normalizing fields whose section is a multiple of `P_c` -/
 

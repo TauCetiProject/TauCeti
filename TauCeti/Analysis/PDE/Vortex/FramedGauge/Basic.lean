@@ -78,6 +78,11 @@ theorem mem_framedGaugeGroup (u : ℂ → Circle) :
     u ∈ framedGaugeGroup ↔
       ContDiff ℝ ∞ (fun z ↦ (u z : ℂ)) ∧ Tendsto u (cocompact ℂ) (𝓝 1) := Iff.rfl
 
+/-- A gauge of the smooth framed group is differentiable. -/
+theorem differentiable_of_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) :
+    Differentiable ℝ fun z ↦ (u z : ℂ) :=
+  ((mem_framedGaugeGroup u).1 hu).1.differentiable (by simp)
+
 /-- A gauge of the smooth framed group composed with a translation is again in the smooth
 framed group. -/
 theorem comp_add_mem_framedGaugeGroup {u : ℂ → Circle} (hu : u ∈ framedGaugeGroup) (a : ℂ) :
@@ -346,9 +351,8 @@ theorem hasDerivAt_gaugeTransform_add_smul (u : ℂ → Circle)
 instance : MulAction framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) where
   smul u x := gaugeTransform u.val x
   one_smul := gaugeTransform_one
-  mul_smul u v x := gaugeTransform_mul
-    (((mem_framedGaugeGroup _).mp u.property).1.differentiable (by simp))
-    (((mem_framedGaugeGroup _).mp v.property).1.differentiable (by simp)) x
+  mul_smul u v x := gaugeTransform_mul (differentiable_of_mem_framedGaugeGroup u.property)
+    (differentiable_of_mem_framedGaugeGroup v.property) x
 
 /-- The bundled action is the charge-one coordinate transformation. -/
 @[simp]

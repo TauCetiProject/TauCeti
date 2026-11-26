@@ -49,7 +49,7 @@ is rotation-equivariant up to the constant line-frame gauge `u⁻ᵐ`, like the 
 
 **The normalized vortices.** On the symmetric coordinates `c` of the divisor, a rotation acts by
 `TauCeti.Vortex.rotateCoeff` (the coefficients of `u⁻ᵐ P_c(u ·)`) and a translation by
-`TauCeti.Vortex.translateCoeff` (the coefficients of `P_c(· + a)`). Then:
+`TauCeti.Polynomial.translateCoeff` (the coefficients of `P_c(· + a)`). Then:
 
 * `y_(c^u) = u⁻ᵐ · R_u y_c` (`TauCeti.Vortex.normalizedVortex_rotateCoeff`): the normalized
   family is equivariant for the action `x ↦ u⁻ᵐ · R_u x` of rotations on the framed fields, which
@@ -265,9 +265,8 @@ coefficients is the translated normalized vortex transformed by the normalizing 
 theorem normalizedVortex_translateCoeff (a : ℂ) (c : Fin m → ℂ) :
     normalizedVortex (translateCoeff a c) =
       gaugeTransform (normalizingTranslationGauge a c) (translateField a (normalizedVortex c)) := by
-  have hh : Differentiable ℝ fun z ↦ (normalizingTranslationGauge a c z : ℂ) :=
-    ((mem_framedGaugeGroup _).1 (normalizingTranslationGauge_mem_framedGaugeGroup a c)).1
-      |>.differentiable (by simp)
+  have hh := differentiable_of_mem_framedGaugeGroup
+    (normalizingTranslationGauge_mem_framedGaugeGroup a c)
   have hg : Differentiable ℝ fun z ↦ (polynomialGauge c (z + a) : ℂ) :=
     (differentiable_polynomialGauge c).comp (differentiable_id.add_const a)
   have hprod : normalizingTranslationGauge a c * (fun z ↦ polynomialGauge c (z + a)) =
@@ -308,18 +307,15 @@ theorem exists_forall_normalizingTranslationGauge_eq_translationGauge (a : ℂ)
   rw [eval_monicOfCoeff_translateCoeff, coe_windingPhase m hz0] at hgca
   rw [coe_windingPhase m hza0] at hgc
   have htr := coe_translationGauge_mul_pow (m := m) hza2
-  apply Circle.ext
-  have hgc0 : (polynomialGauge c (z + a) : ℂ) ≠ 0 := Circle.coe_ne_zero _
-  rw [normalizingTranslationGauge_apply, Circle.coe_mul, Circle.coe_inv]
-  field_simp
   -- Cancel the common nonzero value `P_c(z + a)` from the two normalizations.
-  have : (translationGauge m a z : ℂ) * (polynomialGauge c (z + a) : ℂ) *
-      (monicOfCoeff c).eval (z + a) =
-      (polynomialGauge (translateCoeff a c) z : ℂ) * (monicOfCoeff c).eval (z + a) := by
+  have key : (translationGauge m a z : ℂ) * (polynomialGauge c (z + a) : ℂ) =
+      (polynomialGauge (translateCoeff a c) z : ℂ) := by
+    refine mul_right_cancel₀ hP ?_
     rw [hgca, mul_assoc, hgc, ← htr]
     ring
-  rw [mul_comm]
-  exact (mul_right_cancel₀ hP this).symm
+  apply Circle.ext
+  rw [normalizingTranslationGauge_apply, Circle.coe_mul, Circle.coe_inv, ← key,
+    mul_inv_cancel_right₀ (Circle.coe_ne_zero _)]
 
 /-- **The translated normalized vortex up to the translation gauge.** The normalized vortex with
 translated coefficients is the translated normalized vortex followed by the translation gauge
@@ -330,11 +326,11 @@ theorem normalizedVortex_translateCoeff_eq_gaugeTransform_mul_inv (a : ℂ) (c :
     normalizedVortex (translateCoeff a c) =
       gaugeTransform (normalizingTranslationGauge a c * (translationGauge m a)⁻¹)
         (gaugeTransform (translationGauge m a) (translateField a (normalizedVortex c))) := by
-  have hτ := (mem_framedGaugeGroup _).1 (translationGauge_mem_framedGaugeGroup m a)
-  have hu := (mem_framedGaugeGroup _).1 (mul_mem (normalizingTranslationGauge_mem_framedGaugeGroup
-    a c) (inv_mem (translationGauge_mem_framedGaugeGroup m a)))
-  rw [← gaugeTransform_mul (hu.1.differentiable (by simp)) (hτ.1.differentiable (by simp)),
-    inv_mul_cancel_right, normalizedVortex_translateCoeff]
+  have hτ := translationGauge_mem_framedGaugeGroup m a
+  have hu := mul_mem (normalizingTranslationGauge_mem_framedGaugeGroup a c) (inv_mem hτ)
+  rw [← gaugeTransform_mul (differentiable_of_mem_framedGaugeGroup hu)
+    (differentiable_of_mem_framedGaugeGroup hτ), inv_mul_cancel_right,
+    normalizedVortex_translateCoeff]
 
 /-- **The translated normalized vortex lies in the same Sobolev gauge orbit.** For `k ≥ 2`, the
 gauge `h τ⁻¹` relating the normalized vortex with translated coefficients to the translated

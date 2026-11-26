@@ -36,6 +36,9 @@ a *free* tuple rather than as the data of a polynomial subtype.
   two constructions are mutually inverse.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
   the constant `t`.
+* `TauCeti.Polynomial.translateCoeff a c`: the lower coefficients of `P_c(· + a)`, where
+  `P_c = monicOfCoeff c` (`TauCeti.Polynomial.monicOfCoeff_translateCoeff`). These translations
+  compose (`TauCeti.Polynomial.translateCoeff_zero`, `TauCeti.Polynomial.translateCoeff_add`).
 
 Mathlib writes the same polynomial in the same shape one universe up: `Polynomial.freeMonic R n`,
 in `Mathlib/RingTheory/Polynomial/UniversalFactorizationRing.lean`, is
@@ -156,6 +159,50 @@ theorem monicOfCoeff_coeff {p : R[X]} (hp : p.Monic) (hdeg : p.natDegree = n) :
       coeff_eq_zero_of_natDegree_lt (by rwa [hdeg])]
 
 end OfCoeff
+
+section Translate
+
+variable {R : Type*} [CommSemiring R] {n : ℕ}
+
+/-- **The translated coefficients**: the lower coefficients of the monic polynomial
+`P_c(· + a)`, where `P_c = TauCeti.Polynomial.monicOfCoeff c`
+(`TauCeti.Polynomial.monicOfCoeff_translateCoeff`). -/
+noncomputable def translateCoeff (a : R) (c : Fin n → R) (i : Fin n) : R :=
+  ((monicOfCoeff c).comp (X + C a)).coeff i
+
+/-- The `i`-th translated coefficient is the `i`-th coefficient of `P_c(· + a)`. -/
+theorem translateCoeff_apply (a : R) (c : Fin n → R) (i : Fin n) :
+    translateCoeff a c i = ((monicOfCoeff c).comp (X + C a)).coeff i :=
+  (rfl)
+
+/-- The polynomial with translated coefficients is the translated polynomial `P_c(· + a)`. -/
+theorem monicOfCoeff_translateCoeff (a : R) (c : Fin n → R) :
+    monicOfCoeff (translateCoeff a c) = (monicOfCoeff c).comp (X + C a) := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · exact Subsingleton.elim _ _
+  exact monicOfCoeff_coeff ((monic_monicOfCoeff c).comp_X_add_C a)
+    (by rw [natDegree_comp_eq_of_mul_ne_zero (by simp), natDegree_X_add_C, mul_one,
+      natDegree_monicOfCoeff])
+
+/-- The polynomial with translated coefficients at `z` is `P_c(z + a)`. -/
+@[simp]
+theorem eval_monicOfCoeff_translateCoeff (a : R) (c : Fin n → R) (z : R) :
+    (monicOfCoeff (translateCoeff a c)).eval z = (monicOfCoeff c).eval (z + a) := by
+  simp [monicOfCoeff_translateCoeff]
+
+/-- The zero translation fixes the coefficients. -/
+@[simp]
+theorem translateCoeff_zero (c : Fin n → R) : translateCoeff 0 c = c := by
+  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, map_zero, add_zero, comp_X]
+
+/-- Translating by `a + b` is translating by `a` and then by `b`. -/
+theorem translateCoeff_add (a b : R) (c : Fin n → R) :
+    translateCoeff (a + b) c = translateCoeff b (translateCoeff a c) := by
+  rw [← monicOfCoeff_inj, monicOfCoeff_translateCoeff, monicOfCoeff_translateCoeff,
+    monicOfCoeff_translateCoeff, comp_assoc, add_comp, X_comp, C_comp, map_add, add_assoc,
+    add_comm (C b)]
+
+end Translate
 
 end Polynomial
 
