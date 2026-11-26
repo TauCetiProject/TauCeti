@@ -100,6 +100,7 @@ def cutoffPushforwardSchwartz (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
 
 omit [T2Space M] in
 /-- The Schwartz function `cutoffPushforwardSchwartz he ψ u` takes the value `ψ(y) u(e⁻¹ y)`. -/
+@[simp]
 theorem cutoffPushforwardSchwartz_apply (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) (y : CoordinateSpace n) :
     cutoffPushforwardSchwartz he ψ u y = ψ y • u (e.symm y) :=
