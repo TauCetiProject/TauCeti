@@ -691,33 +691,13 @@ theorem polar_hessianQuadraticForm_centralForceHamiltonian_sub_mul_angularMoment
   refine stdSymplecticForm.polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal hFC
     (comp_fderiv_centralForceEnergyMomentum_eq_zero b hq (hU.differentiableAt two_ne_zero) h0 hc)
     (fun ℓ' ↦ ?_) hw.2 u
-  -- Since `{H, L} = 0`, the Hamiltonian vector of `H - κ L` lies in `ker d(H, L)` near `x`.
-  filter_upwards [hFC.eventually (by simp)] with y hy
-  have hdy := hy.differentiableAt two_ne_zero
-  have hi (i : Fin 2) := hasFDerivAt_pi'.1 hdy.hasFDerivAt i
-  have hH : DifferentiableAt ℝ (centralForceHamiltonian m U) y := by
-    simpa using (hi 0).differentiableAt
-  have hL : DifferentiableAt ℝ (angularMomentum (b 0) (b 1)) y := by
-    simpa using (hi 1).differentiableAt
-  have hHL := stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum
-    (m := m) (U := U) (x := y) (b 0) (b 1)
-  have hX : fderiv ℝ (centralForceEnergyMomentum b m U) y
-      (stdSymplecticForm.hamiltonianVectorField (l₀ ∘ centralForceEnergyMomentum b m U) y) = 0 := by
-    ext i
-    rw [Pi.zero_apply, ← ContinuousLinearMap.proj_apply (R := ℝ) i
-        (fderiv ℝ (centralForceEnergyMomentum b m U) y _), ← ContinuousLinearMap.comp_apply,
-      ← (hi i).fderiv, ← hf, ← SymplecticForm.poissonBracket_eq_fderiv,
-      ← Pi.sub_def,
-      SymplecticForm.poissonBracket_sub_right _ _ hH (hL.const_mul κ),
-      SymplecticForm.poissonBracket_const_mul_right]
-    fin_cases i
-    · simp [hHL]
-    · simp only [Fin.mk_one, centralForceEnergyMomentum_one, SymplecticForm.poissonBracket_self,
-        mul_zero, sub_zero]
-      rw [← SymplecticForm.neg_poissonBracket, hHL, neg_zero]
-  rw [Pi.zero_apply, SymplecticForm.poissonBracket_eq_fderiv,
-    fderiv_comp y ℓ'.differentiableAt hdy, ContinuousLinearMap.fderiv,
-    ContinuousLinearMap.comp_apply, hX, map_zero]
+  -- The components `H` and `L` Poisson-commute everywhere, so all `ℓ ∘ (H, L)` do near `x`.
+  refine stdSymplecticForm.poissonBracket_comp_eventuallyEq_zero
+    (hFC.eventually (by simp) |>.mono fun _ hy ↦ hy.differentiableAt two_ne_zero)
+    (fun i j ↦ Filter.Eventually.of_forall fun y ↦ ?_) ℓ' l₀
+  fin_cases i <;> fin_cases j <;>
+    simp [stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum,
+      stdSymplecticForm_poissonBracket_angularMomentum_centralForceHamiltonian]
 
 /-- **Stable circular orbits are elliptic, on the transversal plane.** At a point of a circular
 orbit, as in `TauCeti.isNondegeneratePoint_centralForceEnergyMomentum_iff`, at which `‖q‖` is a
