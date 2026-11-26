@@ -45,7 +45,8 @@ class `{t}` would specialize to `{c}` rather than to `0`.
   `TauCeti.MilnorK.leadingCoeffSpecialization_symbol`: `λ{f₁, …, fₙ} = {lc f₁, …, lc fₙ}`.
 * `TauCeti.MilnorK.leadingCoeffSpecialization_map_C`: `λ` retracts
   `K_*ᴹ(F) → K_*ᴹ(F(t))`, which is therefore injective
-  (`TauCeti.MilnorK.map_ratFunc_C_injective`).
+  (`TauCeti.MilnorK.map_ratFunc_C_injective`), and `λ` is surjective
+  (`TauCeti.MilnorK.leadingCoeffSpecialization_surjective`).
 * `TauCeti.MilnorK.leadingCoeffSpecialization_mem_degree`: `λ` preserves degrees.
 
 ## References
@@ -106,12 +107,10 @@ private theorem inftyResidueFieldToConst_unitPartResidue (f : (RatFunc F)ˣ) :
     simp [u, Units.val_zpow_eq_zpow_val]
   have hmem : ((u : (RatFunc F)ˣ) : RatFunc F) ∈ (infty F).integers :=
     (infty F).mem_integers_iff_ord_nonneg.2 (by rw [ord_infty, hu, neg_zero])
-  rw [Valuation.unitPartResidue_apply, ValuationSubring.coe_unitGroupToResidueFieldUnits_apply,
-    ← IsLocalRing.residue_def, inftyResidueFieldToConst, RingHom.comp_apply,
-    RingEquiv.coe_toRingHom, residueFieldEquivValuationSubring_symm_residue]
-  simp only [ValuationSubring.coe_unitGroupMulEquiv_apply]
-  rw [residue_infty_eq_algebraMap_leadingCoeff (x := ⟨_, hmem⟩) hu, ← inftyResidueFieldEquiv_apply]
-  simpa [RatFunc.leadingCoeffHom_apply] using hlc
+  rw [Valuation.coe_unitPartResidue_eq_residue _ _ _
+    (x := ⟨_, (Valuation.mem_valuationSubring_iff _ _).2 ((infty F).mem_integers_iff.1 hmem)⟩) rfl]
+  simpa [inftyResidueFieldToConst, residue_infty_eq_algebraMap_leadingCoeff (x := ⟨_, hmem⟩) hu,
+    ← inftyResidueFieldEquiv_apply, RatFunc.leadingCoeffHom_apply] using hlc
 
 /-- `λ{f} = {lc f}`. -/
 @[simp]
@@ -143,6 +142,7 @@ theorem leadingCoeffSpecialization_comp_map_C :
     ext
     simp
 
+/-- `λ` is the identity on the image of `K_*ᴹ(F)`: `λ (map C x) = x`. -/
 @[simp]
 theorem leadingCoeffSpecialization_map_C (x : MilnorK F) :
     leadingCoeffSpecialization F (map (RatFunc.C : F →+* RatFunc F) x) = x :=
@@ -170,6 +170,8 @@ theorem map_ratFunc_C_injective :
     Function.Injective (map (RatFunc.C : F →+* RatFunc F)) :=
   Function.LeftInverse.injective leadingCoeffSpecialization_map_C
 
+/-- The leading-coefficient specialization is surjective, with section the map induced by the
+inclusion of constants. -/
 theorem leadingCoeffSpecialization_surjective :
     Function.Surjective (leadingCoeffSpecialization F) :=
   Function.LeftInverse.surjective leadingCoeffSpecialization_map_C
