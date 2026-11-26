@@ -36,8 +36,8 @@ This is what makes the exponential `exp (t • B)` of a Metzler matrix entrywise
   `c`.
 * `Matrix.IsQMatrix.apply_self_eq_neg_sum`, `Matrix.IsQMatrix.apply_self_nonpos`: the diagonal
   entry of a Q-matrix is minus the sum of the off-diagonal entries of its row, hence nonpositive.
-* `Matrix.isQMatrix_iff_mulVec_one_eq_zero`: a Metzler matrix is a Q-matrix if and only if it
-  kills the all-ones column vector.
+* `Matrix.isQMatrix_iff_isMetzler_and_mulVec_one_eq_zero`: a matrix is a Q-matrix if and only if
+  it is Metzler and kills the all-ones column vector.
 * `Matrix.IsQMatrix.eq_zero`: on at most one state, the only Q-matrix is the zero matrix.
 
 ## References
@@ -186,8 +186,8 @@ theorem IsQMatrix.mulVec_one_eq_zero {Q : Matrix n n R} (hQ : Q.IsQMatrix) : Q *
   ext i
   simpa [mulVec, dotProduct] using hQ.sum_apply_eq_zero i
 
-/-- A Metzler matrix is a Q-matrix if and only if it kills the all-ones column vector. -/
-theorem isQMatrix_iff_mulVec_one_eq_zero {Q : Matrix n n R} :
+/-- A matrix is a Q-matrix if and only if it is Metzler and kills the all-ones column vector. -/
+theorem isQMatrix_iff_isMetzler_and_mulVec_one_eq_zero {Q : Matrix n n R} :
     Q.IsQMatrix ↔ Q.IsMetzler ∧ Q *ᵥ 1 = 0 := by
   refine ⟨fun h ↦ ⟨h.isMetzler, h.mulVec_one_eq_zero⟩, fun ⟨hM, h1⟩ ↦ ⟨hM, fun i ↦ ?_⟩⟩
   simpa [mulVec, dotProduct] using congrFun h1 i
