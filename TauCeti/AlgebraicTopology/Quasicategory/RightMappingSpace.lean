@@ -836,6 +836,8 @@ theorem sliceFiberIso_inv_comp_map {Y : SSet.{u}} (f : X ⟶ Y) :
   induction m using Opposite.rec with | op m
   apply slice.objEquiv.injective
   apply Subtype.ext
+  -- Reduce componentwise composition and the fiber inclusions (subtype projections) so the
+  -- cone maps are explicit arguments of `slice.objEquiv`; its computation lemmas then apply.
   change (slice.objEquiv ((slice.map (𝟙 Δ[0]) f
       (by rw [Category.id_comp, yonedaEquiv_symm_comp])).app _
         ((sliceFiberIso x y).inv.app _ s).val)).val =

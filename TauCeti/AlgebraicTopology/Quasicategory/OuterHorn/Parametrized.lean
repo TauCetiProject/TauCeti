@@ -160,6 +160,7 @@ theorem exists_ext_unionProd_horn_one_one [Quasicategory C] {n : ℕ}
       unionProd.{u} Λ[1, 1] ∂Δ[n + 1] := by
     dsimp [e]
     rw [preimage_comp, preimage_op_unionProd, preimage_unionProd, op_boundary, op_horn]
+    -- The remaining reversed horn index is `(0 : Fin 2).rev`, definitionally `1`.
     rfl
   let E := isoOfPreimageEq e.symm hA
   -- Maps from the opposite of a simplicial set to `C` are maps to the opposite of `C`.
@@ -191,6 +192,8 @@ theorem exists_ext_unionProd_horn_one_one [Quasicategory C] {n : ℕ}
           ⟨(stdSimplex.edge 1 0 1 (Fin.zero_le _), stdSimplex.const (n + 1) t.rev _),
             const_mem_unionProd_boundary _ t.rev _⟩) := by
       rw [← h]
+      -- The adjunction's hom-equivalence applies `opObjEquiv.symm` to the input simplex,
+      -- evaluates the given map, then applies `C.opObjEquiv.symm` to its value.
       rfl
     rw [hψ, Edge.isEquivalence_mk'_opObjEquiv_symm_iff]
     exact ha t.rev

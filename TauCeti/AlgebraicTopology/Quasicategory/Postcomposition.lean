@@ -82,9 +82,8 @@ the base to the maps lying over the composite of `e` and the image of `g`
   `SSet.rightMappingSpace.postcompSpace.rlp_tgt`: `Hom^R_X(x, g)` is the preimage of
   `Hom^R_X(x, z)` under restriction of cones to the target of `g`, and for an equivalence `g`,
   `tgt` is a trivial fibration.
-* `SSet.rightMappingSpace.isWeakHomotopyEquivalence_postcomp`,
-  `SSet.rightMappingSpace.weakEquivalence_postcomp`: **postcomposition with an equivalence is a
-  weak homotopy equivalence**, and a weak equivalence of the Kan–Quillen model structure.
+* `SSet.rightMappingSpace.isWeakHomotopyEquivalence_postcomp`: **postcomposition with an
+  equivalence is a weak homotopy equivalence**.
 
 ## References
 
@@ -405,14 +404,6 @@ theorem isWeakHomotopyEquivalence_postcomp [X.Quasicategory] {g : Edge y z}
   have := IsWeakHomotopyEquivalence.of_postcomp (section_ (postcompSpace.src x g))
     (postcompSpace.src x g)
   exact inferInstanceAs (IsWeakHomotopyEquivalence (section_ _ ≫ postcompSpace.tgt x g))
-
-open modelCategoryQuillen in
-/-- For a quasicategory `X`, postcomposition with an equivalence `g : y ⟶ z` is a weak
-equivalence `Hom^R_X(x, y) ⟶ Hom^R_X(x, z)` of the Kan–Quillen model structure. -/
-theorem weakEquivalence_postcomp [X.Quasicategory] {g : Edge y z} (hg : g.IsEquivalence) :
-    WeakEquivalence (postcomp x g) :=
-  have := isWeakHomotopyEquivalence_postcomp (x := x) hg
-  weakEquivalence_of_isWeakHomotopyEquivalence _
 
 end rightMappingSpace
 

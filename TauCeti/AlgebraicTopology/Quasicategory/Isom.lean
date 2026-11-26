@@ -67,6 +67,24 @@ def isom : ((ihom Δ[1]).obj C).Subcomplex :=
   ((ihom Δ[1]).obj C).fullEnhancedSubcategory fun v ↦
     (Edge.mk' ((ihomObj₀Equiv _ C v).app _ (stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence
 
+/-- The quasicategory of equivalences is the full enhanced subcategory on equivalence edges. -/
+lemma isom_def : isom C = ((ihom Δ[1]).obj C).fullEnhancedSubcategory (fun v ↦
+    (Edge.mk' ((ihomObj₀Equiv _ C v).app _
+      (stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence) := (rfl)
+
+/-- A simplex lies in the quasicategory of equivalences exactly when each of its vertices
+corresponds to an equivalence edge of `C`. -/
+lemma mem_isom_obj_iff {n : SimplexCategoryᵒᵖ} (s : ((ihom Δ[1]).obj C).obj n) :
+    s ∈ (isom C).obj n ↔ ∀ v : ⦋0⦌ ⟶ n.unop,
+      (Edge.mk' ((ihomObj₀Equiv _ C (((ihom Δ[1]).obj C).map v.op s)).app _
+        (stdSimplex.edge 1 0 1 (Fin.zero_le _)))).IsEquivalence := by
+  rw [isom_def, mem_fullEnhancedSubcategory_obj_iff]
+
+/-- The full enhanced subcategory on equivalence edges of a quasicategory is a quasicategory. -/
+instance [Quasicategory C] : Quasicategory (isom C : SSet) := by
+  rw [isom_def]
+  infer_instance
+
 /-- A vertex of `Fun(Δ[1], C)` lies in the quasicategory of equivalences exactly when its edge of
 `C` is an equivalence. -/
 @[simp]
