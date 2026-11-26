@@ -89,6 +89,13 @@ theorem smulLeftCLM_apply (f : C^∞⟮I, M; ℝ⟯) (s : BundleTest I F V) (x :
     smulLeftCLM f s x = f x • s x := by
   simp [smulLeftCLM, LinearMap.restrict_apply]
 
+/-- Multiplying a bundle test by a smooth function `f` gives a test supported in the supports of
+`f` and of the test. -/
+theorem closure_smulLeftCLM_ne_zero_subset (f : C^∞⟮I, M; ℝ⟯) (s : BundleTest I F V) :
+    closure {x | smulLeftCLM f s x ≠ 0} ⊆ tsupport f ∩ closure {x | s x ≠ 0} := by
+  simpa [ContMDiffSection.tsupport_def, ContMDiffSection.smul_apply] using
+    tsupport_smul_function_subset f ((ofCompactlySupported I F V).symm s).val
+
 /-- Multiplying by the constant function `1` does nothing. -/
 @[simp]
 theorem smulLeftCLM_one :

@@ -23,8 +23,8 @@ Restriction to an open subset and multiplication by a smooth scalar function are
 (`ContMDiffSection.continuous_restrict_frameTopology`,
 `ContMDiffSection.continuous_smul_function_frameTopology`). On a trivial bundle the frame topology
 is the weak Whitney topology of the corresponding maps: the identification of sections with maps
-is continuous in both directions (`ContMDiffSection.continuous_trivialEquiv`,
-`ContMDiffSection.continuous_trivialEquiv_symm`).
+is continuous in both directions (`ContMDiffSection.continuous_trivialEquiv_frameTopology`,
+`ContMDiffSection.continuous_trivialEquiv_symm_frameTopology`).
 -/
 
 public noncomputable section
@@ -220,14 +220,15 @@ omit [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalS
   [ContMDiffVectorBundle n F V I]
 
 variable (M F) in
-/-- The preferred frames of the trivial bundle with fibre `F` over `M`. -/
+/-- The frame topology on the sections of the trivial bundle with fibre `F` over `M`, defined using
+its preferred trivializations. -/
 private abbrev trivialFrameTopology : TopologicalSpace Cₛ^n⟮I; F, Bundle.Trivial M F⟯ :=
   frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
     (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
 
 /-- On the sections of a trivial bundle, the identification with maps (`trivialEquiv`) is
 continuous from the frame topology to the weak Whitney topology. -/
-theorem continuous_trivialEquiv :
+theorem continuous_trivialEquiv_frameTopology :
     letI := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
       (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
     Continuous (fun s : Cₛ^n⟮I; F, Bundle.Trivial M F⟯ ↦
@@ -247,7 +248,7 @@ theorem continuous_trivialEquiv :
 
 /-- On the sections of a trivial bundle, the identification with maps (`trivialEquiv`) has an
 inverse which is continuous from the weak Whitney topology to the frame topology. -/
-theorem continuous_trivialEquiv_symm :
+theorem continuous_trivialEquiv_symm_frameTopology :
     letI := frameTopology (I := I) (n := n) (fun x : M ↦ trivializationAt F (Bundle.Trivial M F) x)
       (fun x ↦ ⟨_, (trivializationAt F (Bundle.Trivial M F) x).open_baseSet⟩) fun _ ↦ subset_rfl
     Continuous (fun g : C^n⟮I, M; 𝓘(𝕜, F), F⟯ ↦

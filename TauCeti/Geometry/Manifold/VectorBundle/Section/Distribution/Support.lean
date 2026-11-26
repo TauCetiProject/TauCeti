@@ -142,18 +142,11 @@ variable [FiniteDimensional ℝ E] [T2Space M] [ContMDiffVectorBundle ∞ F V I]
   [AddCommMonoid W] {𝓕 : Type*} [FunLike 𝓕 (BundleTest I F V) W]
   [AddMonoidHomClass 𝓕 (BundleTest I F V) W] (T : 𝓕)
 
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- Multiplying a bundle test by a smooth function `ρ` gives a test supported in the supports of
-`ρ` and of the test. -/
-theorem closure_smulLeftCLM_ne_zero_subset (ρ : C^∞⟮I, M; ℝ⟯) (s : BundleTest I F V) :
-    closure {x | smulLeftCLM ρ s x ≠ 0} ⊆ tsupport ρ ∩ closure {x | s x ≠ 0} := by
-  simpa [ContMDiffSection.tsupport_def, ContMDiffSection.smul_apply] using
-    tsupport_smul_function_subset ρ ((ofCompactlySupported I F V).symm s).val
-
 /-- **Localization principle.** An additive map on bundle tests vanishes on the complement of its
-support. A test supported off the support is, by a smooth partition of unity on its compact
-support, a finite sum of tests each supported in an open set on which the map vanishes. -/
+support. -/
 theorem isVanishingOn_compl_dsupport : IsVanishingOn T (dsupport T)ᶜ := by
+  -- By a smooth partition of unity on its compact support, a test supported off the support is a
+  -- finite sum of tests each supported in an open set on which the map vanishes.
   intro s hs
   have hK : IsCompact (closure {x | s x ≠ 0}) := s.isCompact_tsupport
   -- Near every point off the support, an open set on which `T` vanishes.

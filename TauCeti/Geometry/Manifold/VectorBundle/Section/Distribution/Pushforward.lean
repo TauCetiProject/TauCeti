@@ -50,7 +50,8 @@ one cutoff serves all the tests supported in a fixed compact set.
   `TauCeti.BundleTest.pushforward_apply_of_eventuallyEq` and
   `TauCeti.BundleTest.pushforward_apply_eq_cutoffCompCLM`, and
   `TauCeti.BundleTest.pushforward_eq_cutoffPushforwardCLM` for compactly supported `T`.
-* `TauCeti.BundleTest.dsupport_pushforward_subset`: `supp (f_* T) ⊆ f (supp T)`.
+* `TauCeti.BundleTest.dsupport_pushforward_subset`: `supp (f_* T) ⊆ f (supp T)`, and
+  `TauCeti.BundleTest.IsProperOnSupport.pushforward`.
 * `TauCeti.BundleTest.pushforward_zero`, `TauCeti.BundleTest.pushforward_add`,
   `TauCeti.BundleTest.pushforward_smul`: linearity in `T`.
 * `TauCeti.BundleTest.pushforward_id`, `TauCeti.BundleTest.pushforward_pushforward`:
@@ -149,6 +150,13 @@ theorem isProperOnSupport_id (T : BundleTest I F V → W) : IsProperOnSupport T 
 
 end IsProperOnSupport
 
+/-- Near a point mapped off the support of a test `s` on `Y`, the composite `s ∘ f` vanishes. -/
+private theorem eventually_apply_comp_eq_zero {f : X → Y} (hf : Continuous f)
+    (s : BundleTest J G (Trivial Y G)) {x : X} (hfx : f x ∉ closure {y | s y ≠ 0}) :
+    ∀ᶠ z in 𝓝 x, s (f z) = 0 :=
+  eventually_of_mem (hf.continuousAt.preimage_mem_nhds (isClosed_closure.isOpen_compl.mem_nhds hfx))
+    fun _ hz ↦ Bundle.apply_eq_zero_of_notMem_closure hz
+
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ X] [FiniteDimensional ℝ E'] [IsManifold J ∞ Y]
 
 /-! ### Pulling tests back along a smooth map -/
@@ -188,9 +196,10 @@ def cutoffCompCLM (χ : C^∞⟮I, X; ℝ⟯) (hχ : HasCompactSupport χ) (f : 
     -- On sections, the map is `s ↦ χ • (s ∘ f)`, continuous for the frame topologies.
     have hP : Continuous fun s : Cₛ^∞⟮J; G, Trivial Y G⟯ ↦
         χ • (trivialEquiv.symm ((trivialEquiv s).comp f) : Cₛ^∞⟮I; G, Trivial X G⟯) :=
-      (continuous_smul_function_frameTopology _ _ _ χ).comp <| continuous_trivialEquiv_symm.comp <|
-        ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp <|
-          continuous_trivialEquiv.prodMk continuous_const
+      (continuous_smul_function_frameTopology _ _ _ χ).comp <|
+        continuous_trivialEquiv_symm_frameTopology.comp <|
+          ContMDiffMap.continuous_comp_manifoldWeakWhitney.comp <|
+            continuous_trivialEquiv_frameTopology.prodMk continuous_const
     -- It sends the stage of tests supported in `K` into the stage of sections supported in
     -- `tsupport χ`.
     refine ((continuous_ofSupportedIn ⟨tsupport χ, hχ⟩).comp
@@ -215,9 +224,8 @@ theorem cutoffCompCLM_eventuallyEq {χ : C^∞⟮I, X; ℝ⟯} (hχc : HasCompac
       (show x ∈ S ∩ f ⁻¹' closure {y | s y ≠ 0} from ⟨hx, hfx⟩))] with z hz
     simp [hz]
   · -- Near `x`, `f` takes values off the support of `s`, where `s` vanishes.
-    filter_upwards [f.contMDiff.continuous.continuousAt.preimage_mem_nhds
-      (isClosed_closure.isOpen_compl.mem_nhds hfx)] with z hz
-    simp [Bundle.apply_eq_zero_of_notMem_closure (show f z ∉ closure {y | s y ≠ 0} from hz)]
+    filter_upwards [eventually_apply_comp_eq_zero f.contMDiff.continuous s hfx] with z hz
+    simp [hz]
 
 section Dual
 
@@ -360,9 +368,9 @@ private theorem pushforward_apply_eq_zero (hT : IsProperOnSupport ⇑T f)
     (hs : Disjoint (closure {y | s y ≠ 0}) (f '' dsupport ⇑T)) : pushforward T f hT s = 0 := by
   rw [pushforward_apply_of_eventuallyEq hT s (t := 0) fun x hx ↦ ?_, map_zero]
   -- Near `x`, `f` takes values off the support of `s`.
-  filter_upwards [f.contMDiff.continuous.continuousAt.preimage_mem_nhds
-    (isClosed_closure.isOpen_compl.mem_nhds fun h ↦ disjoint_left.1 hs h ⟨x, hx, rfl⟩)] with z hz
-  simp [Bundle.apply_eq_zero_of_notMem_closure (show f z ∉ closure {y | s y ≠ 0} from hz)]
+  filter_upwards [eventually_apply_comp_eq_zero f.contMDiff.continuous s
+    fun h ↦ disjoint_left.1 hs h ⟨x, hx, rfl⟩] with z hz
+  simp [hz]
 
 /-- **The support of the pushforward** lies in the image of the support:
 `supp (f_* T) ⊆ f (supp T)`. -/
@@ -381,6 +389,21 @@ theorem dsupport_pushforward_subset [T2Space Y] (hT : IsProperOnSupport ⇑T f) 
   refine pushforward_apply_eq_zero hT (disjoint_left.2 fun z hz ⟨x, hx, hxz⟩ ↦ (hs hz).2 ?_)
   exact ⟨x, ⟨hx, mem_preimage.2 (hxz ▸ interior_subset (hs hz).1)⟩, hxz⟩
 
+/-- If `f` is proper on the support of `T` and `g ∘ f` is too, then `g` is proper on the support of
+the pushforward `f_* T`. -/
+theorem IsProperOnSupport.pushforward [T2Space Y] {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
+    (hT : IsProperOnSupport ⇑T f) (hgfT : IsProperOnSupport ⇑T (g ∘ f)) :
+    IsProperOnSupport ⇑(pushforward T f hT) g := fun K hK ↦ by
+  -- Over `K`, the support of `f_* T` lies in the compact image of `supp T ∩ (g ∘ f)⁻¹(K)`.
+  have h : dsupport ⇑(BundleTest.pushforward T f hT) ∩ g ⁻¹' K =
+      f '' (dsupport ⇑T ∩ (g ∘ f) ⁻¹' K) ∩ dsupport ⇑(BundleTest.pushforward T f hT) := by
+    ext y
+    refine ⟨fun hy ↦ ⟨?_, hy.1⟩, fun ⟨⟨x, hx, hxy⟩, hy⟩ ↦ ⟨hy, hxy ▸ hx.2⟩⟩
+    obtain ⟨x, hx, rfl⟩ := dsupport_pushforward_subset hT hy.1
+    exact ⟨x, ⟨hx, hy.2⟩, rfl⟩
+  rw [h]
+  exact ((hgfT K hK).image f.contMDiff.continuous).inter_right (isClosed_dsupport _)
+
 /-! ### Linearity -/
 
 /-- The pushforward of the zero functional is zero. -/
@@ -394,7 +417,7 @@ theorem pushforward_zero (h0 : IsProperOnSupport ⇑(0 : BundleTest I G (Trivial
 /-- The pushforward is additive. -/
 theorem pushforward_add {S : BundleTest I G (Trivial X G) →L_c[ℝ] W}
     (hS : IsProperOnSupport ⇑S f) (hT : IsProperOnSupport ⇑T f)
-    (hST : IsProperOnSupport ⇑(S + T) f) :
+    (hST : IsProperOnSupport ⇑(S + T) f := hS.add hT) :
     pushforward (S + T) f hST = pushforward S f hS + pushforward T f hT := by
   ext s
   -- One cutoff serves `S`, `T` and `S + T`.
@@ -411,8 +434,9 @@ theorem pushforward_add {S : BundleTest I G (Trivial X G) →L_c[ℝ] W}
     pushforward_apply_eq_cutoffCompCLM hT s hc (hsub subset_union_right), _root_.add_apply]
 
 /-- The pushforward commutes with scalar multiplication. -/
-theorem pushforward_smul (hT : IsProperOnSupport ⇑T f) (c : ℝ)
-    (hcT : IsProperOnSupport ⇑(c • T) f) :
+theorem pushforward_smul {R : Type*} [Monoid R] [DistribMulAction R W] [SMulCommClass ℝ R W]
+    [ContinuousConstSMul R W] (hT : IsProperOnSupport ⇑T f) (c : R)
+    (hcT : IsProperOnSupport ⇑(c • T) f := hT.smul c) :
     pushforward (c • T) f hcT = c • pushforward T f hT := by
   ext s
   obtain ⟨χ, hc, h1⟩ := hT.exists_eventually_eq_one s.isCompact_tsupport
@@ -437,8 +461,8 @@ theorem pushforward_pushforward [T2Space Y] {E'' H'' Z : Type*} [NormedAddCommGr
     [NormedSpace ℝ E''] [FiniteDimensional ℝ E''] [TopologicalSpace H'']
     {K : ModelWithCorners ℝ E'' H''}
     [TopologicalSpace Z] [ChartedSpace H'' Z] [IsManifold K ∞ Z] {g : C^∞⟮J, Y; K, Z⟯}
-    (hT : IsProperOnSupport ⇑T f) (hgT : IsProperOnSupport ⇑(pushforward T f hT) g)
-    (hgfT : IsProperOnSupport ⇑T (g.comp f)) :
+    (hT : IsProperOnSupport ⇑T f) (hgfT : IsProperOnSupport ⇑T (g.comp f))
+    (hgT : IsProperOnSupport ⇑(pushforward T f hT) g := hT.pushforward hgfT) :
     pushforward (pushforward T f hT) g hgT = pushforward T (g.comp f) hgfT := by
   ext s
   -- The part `L` of the support of `T` over `supp s` is compact, and so is its image in `Y`.
@@ -449,8 +473,8 @@ theorem pushforward_pushforward [T2Space Y] {E'' H'' Z : Type*} [NormedAddCommGr
     (hL.image f.contMDiff.continuous)
   -- `f (supp T) ∩ g⁻¹(supp s)` is the image of `L`.
   have hfL : f '' dsupport ⇑T ∩ g ⁻¹' closure {z | s z ≠ 0} = f '' L := by
-    rw [← image_inter_preimage]
-    rfl
+    rw [← image_inter_preimage, preimage_preimage]
+    simp_rw [L, ← ContMDiffMap.comp_apply g f]
   -- Pull `s` back to `Y` with the cutoff `χ'`, which is one near the image of `L`.
   have h₁ : pushforward (pushforward T f hT) g hgT s =
       pushforward T f hT (cutoffCompCLM χ' hχc' g s) :=
@@ -461,8 +485,7 @@ theorem pushforward_pushforward [T2Space Y] {E'' H'' Z : Type*} [NormedAddCommGr
   filter_upwards [cutoffCompCLM_eventuallyEq hχc (g.comp f) s hχ hx,
     (f.contMDiff.continuous.tendsto x).eventually (cutoffCompCLM_eventuallyEq hχc' g s
       (S := f '' dsupport ⇑T) (by rwa [hfL]) ⟨x, hx, rfl⟩)] with z h h'
-  rw [h, h']
-  rfl
+  rw [h, h', ContMDiffMap.comp_apply]
 
 /-! ### Point masses -/
 
