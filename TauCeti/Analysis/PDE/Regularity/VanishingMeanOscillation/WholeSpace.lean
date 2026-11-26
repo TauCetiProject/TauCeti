@@ -58,7 +58,7 @@ is small only below some radius, are not covered. The a priori estimate
   (`TauCeti.PDE.existsUnique_forall_integral_matrixBilinearForm_eq_integral_inner`). The
   transposed coefficients are uniformly elliptic with the same constants, and their BMO seminorm is
   that of `a`, since the operator of `Aᵀ` is the adjoint of that of `A`
-  (`Matrix.bmoSeminorm_toEuclideanCLM_conjTranspose`). So the case
+  (`Matrix.bmoSeminorm_toEuclideanCLM_transpose`). So the case
   `p' > 2` gives `‖∇w‖_{L^{p'}} ≤ C ‖H‖_{L^{p'}}`. Testing the two equations with each other
   (`TauCeti.PDE.integral_matrixBilinearForm_eq_integral_inner_of_forall`),
   `∫ ⟨∇u, H⟩ = ∫ ⟨aᵀ ∇w, ∇u⟩ = ∫ ⟨a ∇u, ∇w⟩ = ∫ ⟨G, ∇w⟩`,
@@ -246,9 +246,7 @@ private theorem exists_memLp_and_eLpNorm_le_of_lt_two {p : ℝ≥0∞} (hp : 1 <
     (continuous_id.matrix_transpose).comp_aestronglyMeasurable ha
   have hbmoT : bmoSeminorm (fun x => toEuclideanCLM (𝕜 := ℝ) (a x)ᵀ) volume ≤
       ENNReal.ofReal δ := by
-    have h := bmoSeminorm_toEuclideanCLM_conjTranspose (𝕜 := ℝ) (a := a) (μ := volume)
-    simp only [conjTranspose_eq_transpose_of_trivial] at h
-    rwa [h]
+    rwa [bmoSeminorm_toEuclideanCLM_transpose]
   refine AEStronglyMeasurable.eLpNorm_le_of_forall_enorm_integral_inner_le
     (aestronglyMeasurable_and_eLpNorm_ne_top_coe_d1p0 u).1 (𝕜 := ℝ) (q' := q)
     fun H s hs hsupp hH => ?_
