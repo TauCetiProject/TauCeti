@@ -62,6 +62,9 @@ vectors indexed by `ι`.
   basis vectors lift through a ring homomorphism `g`.
 * `Module.Basis.ne_neg`: over a ring in which `2 ≠ 0`, no basis vector is the negative of a basis
   vector.
+* `Module.Basis.repr_eq_sub_mul_invOf_mul`: recovering the coordinates of a vector in a basis `e`
+  from the coordinates of its image under a linear map `f` in a basis `b`, when `f (e l)` equals
+  `b (j l)` up to a multiple of a vector `v` with an invertible coordinate at a pivot index `k₀`.
 * `Module.Basis.constrSumInrEquiv`: the linear maps with prescribed values on the basis vectors
   `b (inr j)` correspond to their values on the basis vectors `b (inl l)`.
 * `Module.Basis.algebraMap_sum_mul_eq_mul` and
@@ -298,6 +301,34 @@ theorem ne_neg (b : Basis ι R M) (h2 : (2 : R) ≠ 0) (i j : ι) : b i ≠ -b j
     exact neg_add_cancel 1
   · rw [Finsupp.single_eq_of_ne (Ne.symm hji), neg_zero] at h'
     exact h2 (by rw [← one_add_one_eq_two, h', add_zero])
+
+/-- **Coordinate recovery after eliminating a pivot vector.** If a linear map `f : M →ₗ[R] N` sends
+each basis vector `e l` to `b (j l)` up to a scalar multiple of a vector `v` whose coordinate at a
+pivot index `k₀` (outside the range of an injection `j : ι → κ`) is invertible, then the `r`-th
+coordinate of `y : M` in `e` is recovered from the coordinates of `f y` in `b` as
+`b.repr (f y) (j r) - b.repr (f y) k₀ * ⅟(b.repr v k₀) * b.repr v (j r)`. This multiplication
+order holds over any (possibly noncommutative) ring `R`. -/
+theorem repr_eq_sub_mul_invOf_mul {κ N : Type*} [AddCommGroup N] [Module R N]
+    (e : Basis ι R M) (b : Basis κ R N) (f : M →ₗ[R] N) {j : ι → κ}
+    (hj : Function.Injective j) {k₀ : κ} (hk₀ : ∀ l, j l ≠ k₀) {v : N}
+    [Invertible (b.repr v k₀)] (hf : ∀ l, f (e l) - b (j l) ∈ R ∙ v) (y : M) (r : ι) :
+    e.repr y r = b.repr (f y) (j r) - b.repr (f y) k₀ * ⅟(b.repr v k₀) * b.repr v (j r) := by
+  let g : M →ₗ[R] R := b.coord (j r) ∘ₗ f -
+    LinearMap.mulRight R (⅟(b.repr v k₀) * b.repr v (j r)) ∘ₗ (b.coord k₀ ∘ₗ f)
+  have h : e.coord r = g := e.ext fun l ↦ by
+    obtain ⟨s, hs⟩ := Submodule.mem_span_singleton.1 (hf l)
+    have hfe : f (e l) = b (j l) + s • v := by rw [hs, add_sub_cancel]
+    have h₀ : b.repr (b (j l)) k₀ = 0 := by
+      rw [b.repr_self, Finsupp.single_eq_of_ne' (hk₀ l)]
+    have h₁ : b.repr (b (j l)) (j r) = e.repr (e l) r := by
+      by_cases hlr : l = r
+      · subst hlr; simp
+      · rw [b.repr_self, e.repr_self, Finsupp.single_eq_of_ne' (hj.ne hlr),
+          Finsupp.single_eq_of_ne' hlr]
+    simp only [g, LinearMap.sub_apply, LinearMap.comp_apply, LinearMap.mulRight_apply,
+      Basis.coord_apply, hfe, map_add, map_smul, smul_eq_mul, h₀, h₁, zero_add, ← mul_assoc,
+      mul_invOf_cancel_right, add_sub_cancel_right]
+  simpa [g, mul_assoc] using LinearMap.congr_fun h y
 
 end Ring
 
