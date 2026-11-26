@@ -14,6 +14,7 @@ import TauCeti.NumberTheory.NumberField.ClassNumber.RingEquiv
 import TauCeti.NumberTheory.NumberField.Quadratic.ClassNumber
 import TauCeti.NumberTheory.NumberField.Quadratic.PrimeDecomposition
 import TauCeti.NumberTheory.NumberField.WorkedExamples.SqrtNegFive.Norm
+import TauCeti.RingTheory.DedekindDomain.Basic
 
 /-!
 # The class group of `ℚ(√-5)` and the failure of unique factorization in `ℤ[√-5]`
@@ -37,6 +38,7 @@ This file specializes the class-number interfaces of the model `QuadraticAlgebra
 ## Main results
 
 * `TauCeti.NumberField.SqrtNegFive.classNumber_eq_two`: the class number of `ℚ(√-5)` is `2`.
+* `TauCeti.NumberField.SqrtNegFive.isDedekindDomain`: `ℤ[√-5]` is a Dedekind domain.
 * `TauCeti.NumberField.SqrtNegFive.natCard_classGroup_eq_two`: `ℤ[√-5]` has two ideal classes.
 * `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_omega_sub_one`,
   `TauCeti.NumberField.SqrtNegFive.not_isPrincipal_span_two_integralSqrt_sub_one`: the prime
@@ -76,6 +78,10 @@ private theorem squarefree_neg_five : Squarefree (-5 : ℤ) :=
   (Int.prime_iff_natAbs_prime.mpr (by simpa using Nat.prime_five)).squarefree
 
 private theorem neg_five_emod_four : (-5 : ℤ) % 4 = 3 := by decide
+
+/-- `ℤ[√-5]` is a Dedekind domain, being isomorphic to the ring of integers of `ℚ(√-5)`. -/
+instance isDedekindDomain : IsDedekindDomain (QuadraticAlgebra ℤ (-5) 0) :=
+  .of_ringEquiv (ringOfIntegersEquiv squarefree_neg_five (by decide)).toRingEquiv
 
 /-! ### Class number two -/
 
