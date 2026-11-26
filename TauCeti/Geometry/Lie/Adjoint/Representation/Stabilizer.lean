@@ -158,6 +158,20 @@ theorem stabilizer_adjointRepresentation_eq_centralizer (μ : GroupLieAlgebra I 
     mem_stabilizer_continuousAdjointRepresentation_iff, ← EquivLike.apply_eq_iff_eq e,
     leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, e.apply_symm_apply, tangentAd_apply]
 
+/-- **The adjoint stabilizer of a left-invariant derivation is that of its value at the
+identity.** An element `g` fixes `Y` under `Ad` exactly when it fixes the tangent vector at `1`
+corresponding to `Y`. -/
+theorem stabilizer_continuousAdjointRepresentation_eq_stabilizer_adjointRepresentation
+    (Y : LeftInvariantDerivation I G) :
+    (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer Y =
+      (adjointRepresentation ℝ I G).stabilizer
+        (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) Y) := by
+  ext g
+  rw [mem_stabilizer_continuousAdjointRepresentation_iff, Representation.mem_stabilizer,
+    adjointRepresentation_apply, ← tangentAd_apply,
+    ← leftInvariantDerivationLieEquivGroupLieAlgebra_Ad, EquivLike.apply_eq_iff_eq]
+
 section TopologicalGroup
 
 variable [IsTopologicalGroup G]
