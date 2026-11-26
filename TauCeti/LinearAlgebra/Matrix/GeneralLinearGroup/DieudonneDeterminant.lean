@@ -44,10 +44,10 @@ of its entries, is surjective as soon as there is an index, and whose kernel is 
 subgroup `Eₙ(D)` as soon as there are at least two indices. With a single index `E₁(D)` is
 trivial, while the determinant of `(u)` is the class of `u`, trivial for every commutator `u`.
 
-Every invertible matrix over `D` is an elementary matrix times a diagonal matrix with a single
-entry `d` different from `1`. With at least two indices the commutator subgroup of `GLₙ(D)` is
-the elementary subgroup, except for `GL₂(𝔽₂)`; when `D` has an element other than `0` and `1`,
-the elementary subgroup lies in the commutator subgroup in every size. Hence the Dieudonné
+Every invertible matrix over `D` is an elementary matrix times a diagonal matrix with a chosen
+diagonal entry `d` and all others `1`. With at least two indices the commutator subgroup of
+`GLₙ(D)` is the elementary subgroup, except for `GL₂(𝔽₂)`; when `D` has an element other than `0`
+and `1`, the elementary subgroup lies in the commutator subgroup in every size. Hence the Dieudonné
 determinant is the **only** homomorphism `GLₙ(D) → Dˣ/[Dˣ, Dˣ]`, for `n ≥ 1`, that sends such a
 diagonal matrix to the class of `d`. Through `K₁(D)` the determinant inherits the rules of
 computation of classes in `K₁`: it is multiplicative on block diagonal matrices, and an invertible
@@ -75,7 +75,7 @@ determinant.
 * `TauCeti.dieudonne_determinant`: the Dieudonné determinant theorem, as an existence statement.
 * `TauCeti.elementarySubgroup_le_ker_dieudonneDet`: elementary matrices have determinant one.
 * `TauCeti.exists_mem_elementarySubgroup_eq_mul_diagGL_mulSingle`: every invertible matrix is an
-  elementary matrix times a diagonal matrix with a single entry different from `1`.
+  elementary matrix times a diagonal matrix with a chosen diagonal entry `d` and all others `1`.
 * `TauCeti.hom_ext_of_elementarySubgroup_le_ker`, `TauCeti.eq_dieudonneDet`: uniqueness of the
   Dieudonné determinant.
 * `TauCeti.commutator_eq_elementarySubgroup`: the commutator subgroup of `GLₙ(D)` is `Eₙ(D)` for
@@ -88,8 +88,9 @@ determinant.
 * `TauCeti.dieudonneDet_permutationGL`: a permutation matrix has the class of its sign.
 * `TauCeti.dieudonneDet_unitsMap_mapMatrix`, `TauCeti.AlgebraicK1.divisionRingEquiv_map`:
   naturality in ring homomorphisms of division rings.
-* `TauCeti.dieudonneDet_eq_of_det`, `TauCeti.AlgebraicK1.divisionRingEquiv_eq_of_det`: over a field
-  the Dieudonné determinant is the class of the usual determinant.
+* `TauCeti.dieudonneDet_eq_abelianizationOf_det`,
+  `TauCeti.AlgebraicK1.divisionRingEquiv_eq_abelianizationOf_det`: over a field the Dieudonné
+  determinant is the class of the usual determinant.
 
 ## Implementation notes
 
@@ -648,7 +649,7 @@ theorem divisionRingEquiv_map {D D' : Type*} [DivisionRing D] [DivisionRing D'] 
 /-- Over a field `F`, the isomorphism `K₁(F) ≃* Fˣ/[Fˣ, Fˣ]` is the determinant
 `K₁(F) →* Fˣ` followed by the class map, the abelianization of the commutative group `Fˣ` being
 `Fˣ` itself. -/
-theorem divisionRingEquiv_eq_of_det {F : Type*} [Field F] (x : AlgebraicK1 F) :
+theorem divisionRingEquiv_eq_abelianizationOf_det {F : Type*} [Field F] (x : AlgebraicK1 F) :
     divisionRingEquiv F x = Group.Abelianization.of (det F x) := by
   obtain ⟨u, rfl⟩ := ofUnits_surjective (hasStableRangeLE_one_of_isLocalRing F) x
   simp
@@ -671,9 +672,10 @@ theorem dieudonneDet_unitsMap_mapMatrix {D D' : Type*} [DivisionRing D] [Divisio
     AlgebraicK1.divisionRingEquiv_map, AlgebraicK1.divisionRingEquiv_mkOfFintype]
 
 /-- Over a field the Dieudonné determinant is the class of the usual determinant. -/
-theorem dieudonneDet_eq_of_det {F : Type*} [Field F] (g : GL n F) :
+theorem dieudonneDet_eq_abelianizationOf_det {F : Type*} [Field F] (g : GL n F) :
     dieudonneDet n F g = Group.Abelianization.of (GeneralLinearGroup.det g) := by
-  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype, AlgebraicK1.divisionRingEquiv_eq_of_det,
+  rw [← AlgebraicK1.divisionRingEquiv_mkOfFintype,
+    AlgebraicK1.divisionRingEquiv_eq_abelianizationOf_det,
     AlgebraicK1.det_mkOfFintype]
 
 end Naturality

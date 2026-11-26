@@ -192,18 +192,6 @@ theorem elementarySubgroup_le_commutator (hn : 3 ≤ Fintype.card n) :
   rw [← commutator_elementarySubgroup_self hn]
   exact Subgroup.commutator_mono le_top le_top
 
-/-- Conjugating the elementary matrix `eᵢⱼ(b)` by the diagonal matrix with `i`-th entry `a` and
-all others `1` gives `eᵢⱼ(a b)`: the `i`-th row is multiplied by `a` on the left. -/
-theorem diagGL_mulSingle_mul_transvectionUnit_mul_inv (hij : i ≠ j) (a : Aˣ) (b : A) :
-    diagGL (Pi.mulSingle i a) * transvectionUnit hij b * (diagGL (Pi.mulSingle i a))⁻¹ =
-      transvectionUnit hij (a * b) := by
-  rw [mul_inv_eq_iff_eq_mul]
-  ext p q
-  simp only [Units.val_mul, diagGL_coe, coe_transvectionUnit_eq_one_add_single, diagonal_mul,
-    mul_diagonal, Matrix.add_apply, single_apply, Matrix.one_apply, Pi.mulSingle_apply]
-  by_cases hp : p = i <;> by_cases hq : q = i <;> subst_vars <;>
-    simp_all [Ne.symm hij, eq_comm]
-
 /-- If some unit `a` of `A` has `a - 1` invertible, the elementary subgroup lies in the
 commutator subgroup of `GL n A`, in every size: `eᵢⱼ((a - 1) b)` is the commutator of the
 diagonal matrix with `i`-th entry `a` and all others `1` with `eᵢⱼ(b)`. -/
@@ -213,7 +201,8 @@ theorem elementarySubgroup_le_commutator_of_isUnit_sub_one (a : Aˣ) (ha : IsUni
   refine elementarySubgroup_le_iff.2 fun i j hij c ↦ ?_
   have hc : transvectionUnit hij c =
       ⁅diagGL (Pi.mulSingle i a), transvectionUnit hij (↑u⁻¹ * c)⁆ := by
-    rw [commutatorElement_def, diagGL_mulSingle_mul_transvectionUnit_mul_inv, transvectionUnit_inv,
+    rw [commutatorElement_def, diagGL_mul_transvectionUnit_mul_inv, Pi.mulSingle_eq_same,
+      Pi.mulSingle_eq_of_ne hij.symm, inv_one, Units.val_one, mul_one, transvectionUnit_inv,
       ← transvectionUnit_add]
     congr 1
     -- `a b - b = (a - 1) b` with `b = (a - 1)⁻¹ c`
