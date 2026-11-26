@@ -63,14 +63,13 @@ Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E
 `E'`, `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree
 (`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
-(`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
-over every point. Its lift is a Thom class of `E'`
-(`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
-`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
-(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it transposes to
-cohomology with values in any injective module
-(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the same
+(`TauCeti.twistedThomClass`), which takes the value `1` on the fibre class over every point. Its
+lift is a Thom class of `E'` (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so
+`Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle, over any base, and every commutative
+ring `k` (`nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`, in the
+namespace `TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it
+transposes to cohomology with values in any injective module
+(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`, in the same
 namespace).
 
 The base, the fibres and the ring lie in any common universe `w`, and the orientations are indexed
@@ -88,9 +87,9 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `(E, E₀)` with coefficients in `π^*o(E)` whose lifted class is a Thom class of `E'`, and
   `nonempty_singularHomology_thomPair_iso_twistedHomology`: the same from a class of
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
-* `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
+* `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
-* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: its transpose
+* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem`: its transpose
   `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in cohomology, for injective values `N`.
 
 ## References
@@ -241,14 +240,13 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology
     (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
   exact ⟨thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hU p⟩
 
-/-- **The Thom isomorphism with coefficients in the orientation system over a compact base, over
-every ring.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or
-not, with orientation local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
+/-- **The Thom isomorphism with coefficients in the orientation system, over every ring.** Let
+`E → B` be a real vector bundle of rank `r` over any base, orientable or not, with orientation
+local system `o(E)`, and let `k` be a commutative ring, `ℤ` included. Then
 `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree `p`. For the Möbius line over the circle and
 `k = ℤ` this gives `H₁(E, E₀; ℤ) ≅ H₀(S¹; o(E)) ≅ ℤ/2`, where constant coefficients would give
 `ℤ`. -/
-theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [CompactSpace B]
-    (p : ℕ) :
+theorem nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem (p : ℕ) :
     Nonempty ((thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p) := by
   classical
@@ -260,20 +258,20 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [
     (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
 
 variable (F E) in
-/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over a compact
-base.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with
-orientation local system `o(E)`, let `k` be any commutative ring and `N` an injective `k`-module,
-for instance `k = ℤ` and `N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`.
+/-- **The Thom isomorphism in cohomology with orientation-twisted coefficients.** Let `E → B` be a
+real vector bundle of rank `r` over any base, orientable or not, with orientation local system
+`o(E)`, let `k` be any commutative ring and `N` an injective `k`-module, for instance `k = ℤ` and
+`N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`.
 
-It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`:
+It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem`:
 with injective values both cohomologies are the duals `Hom(-, N)` of the corresponding homologies,
 by the universal coefficient theorem (`TopPair.singularKronecker_bijective` and
 `TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
-theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
-    [CompactSpace B] (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
+theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_signLocalSystem
+    (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace
+  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_signLocalSystem
     (F := F) (E := E) hι k p
   exact ⟨((LinearEquiv.ofBijective _ ((thomPair F E).singularKronecker_bijective k _)).trans
     ((Linear.homCongr k e (Iso.refl N)).trans

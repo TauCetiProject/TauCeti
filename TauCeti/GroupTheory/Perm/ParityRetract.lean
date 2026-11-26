@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Perm.MovedNorm
+import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # A nonexpanding parity retraction
@@ -32,12 +33,9 @@ def parityRetract (ht : t.IsSwap) : Perm α →* Perm α where
   toFun σ := if sign σ = 1 then 1 else t
   map_one' := by simp
   map_mul' σ τ := by
-    have htt : t * t = 1 := by
-      obtain ⟨a, b, _, rfl⟩ := ht
-      simp
     rcases Int.units_eq_one_or (sign σ) with hσ | hσ <;>
       rcases Int.units_eq_one_or (sign τ) with hτ | hτ <;>
-      simp [hσ, hτ, htt, Units.ext_iff]
+      simp [hσ, hτ, ht.mul_self_eq_one, Units.ext_iff]
 
 /-- The parity retraction chooses between the identity and the given transposition. -/
 theorem parityRetract_apply (ht : t.IsSwap) (σ : Perm α) :

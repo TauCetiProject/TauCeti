@@ -126,6 +126,35 @@ theorem thomPairOverTwistedHomologyMap_def {W W' : Set B} (h : W ⊆ W') (n : �
         inter_subset_left (preimage_mono h) (inter_subset_inter_left _ (preimage_mono h))) n :=
   (rfl)
 
+/-- The restriction map on twisted homology of Thom pairs over `W ⊆ W'` is the change of
+coefficients identifying the two restrictions of `L` to `E|_W`, followed by the map induced by
+`TauCeti.thomPairOverMap`. -/
+theorem thomPairOverTwistedHomologyMap_eq {W W' : Set B} (h : W ⊆ W') (n : ℕ) :
+    thomPairOverTwistedHomologyMap L h n =
+      (thomPairOver F E W).twistedHomologyCoefficientMap
+          ((LocalCoefficientSystem.pullbackCompIso
+              (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h))).hom
+              (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).hom.app L ≫
+            eqToHom (congrArg (fun g : (thomPairOver F E W).fst ⟶ (thomPairOver F E W').fst ↦
+              (LocalCoefficientSystem.pullback g.hom).obj
+                ((LocalCoefficientSystem.pullback
+                  (TopCat.ofHom (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).hom).obj L))
+              (thomPairOverMap_fst F E h).symm)) n ≫
+        TopPair.twistedHomologyMap (thomPairOverMap F E h)
+          ((LocalCoefficientSystem.pullback (X := TopCat.of ↥(π F E ⁻¹' W'))
+            (ContinuousMap.subtypeVal (π F E ⁻¹' W'))).obj L) n := by
+  have hmap : TopPair.ofHom (X := thomPairOver F E W) (Y := thomPairOver F E W')
+      (TopCat.ofHom (ContinuousMap.inclusion (preimage_mono h)))
+      (TopCat.ofHom (ContinuousMap.inclusion (inter_subset_inter_left _ (preimage_mono h)))) rfl =
+      thomPairOverMap F E h :=
+    TopPair.hom_ext_of_fst _ (thomPairOverMap_fst F E h).symm
+  rw [thomPairOverTwistedHomologyMap_def, subsetPairTwistedChainComplexMap_def]
+  -- `erw`: `(TopPair.ofInclusion _).fst` matches `TopCat.of ↥(π F E ⁻¹' W)` after unfolding.
+  erw [TopPair.twistedChainComplexMap_congr _ (congrArg TopPair.Hom.fst hmap),
+    ← TopPair.twistedChainComplexCoefficientMap_comp_assoc, HomologicalComplex.homologyMap_comp]
+  -- Both `eqToHom` proofs witness the same equality of local systems, equal by proof irrelevance.
+  rfl
+
 /-- The map induced by the identity inclusion is the identity. -/
 @[simp]
 theorem thomPairOverTwistedHomologyMap_self (W : Set B) (n : ℕ) :
@@ -237,6 +266,14 @@ def thomPairOverTwistedMayerVietorisToBiprod (n : ℕ) :
   biprod.lift (thomPairOverTwistedHomologyMap L inter_subset_left n)
     (-thomPairOverTwistedHomologyMap L inter_subset_right n)
 
+/-- The first map of the Mayer–Vietoris sequence of Thom pairs is the biproduct lift of the
+restriction to `U` and minus the restriction to `V`. -/
+theorem thomPairOverTwistedMayerVietorisToBiprod_def (n : ℕ) :
+    thomPairOverTwistedMayerVietorisToBiprod L U V n =
+      biprod.lift (thomPairOverTwistedHomologyMap L inter_subset_left n)
+        (-thomPairOverTwistedHomologyMap L inter_subset_right n) :=
+  (rfl)
+
 @[reassoc (attr := simp)]
 theorem thomPairOverTwistedMayerVietorisToBiprod_fst (n : ℕ) :
     thomPairOverTwistedMayerVietorisToBiprod L U V n ≫ biprod.fst =
@@ -256,6 +293,14 @@ def thomPairOverTwistedMayerVietorisFromBiprod (n : ℕ) :
       thomPairOverTwistedHomology L (U ∪ V) n :=
   biprod.desc (thomPairOverTwistedHomologyMap L subset_union_left n)
     (thomPairOverTwistedHomologyMap L subset_union_right n)
+
+/-- The second map of the Mayer–Vietoris sequence of Thom pairs is the biproduct desc of the
+restrictions from `U` and from `V`. -/
+theorem thomPairOverTwistedMayerVietorisFromBiprod_def (n : ℕ) :
+    thomPairOverTwistedMayerVietorisFromBiprod L U V n =
+      biprod.desc (thomPairOverTwistedHomologyMap L subset_union_left n)
+        (thomPairOverTwistedHomologyMap L subset_union_right n) :=
+  (rfl)
 
 @[reassoc (attr := simp)]
 theorem inl_thomPairOverTwistedMayerVietorisFromBiprod (n : ℕ) :
