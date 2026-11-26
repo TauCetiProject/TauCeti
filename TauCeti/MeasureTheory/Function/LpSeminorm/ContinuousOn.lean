@@ -20,7 +20,9 @@ continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-m
 of `Continuous.memLp_top_of_hasCompactSupport`.
 
 Without compactness, a function continuous on a measurable set `s` and bounded there lies in
-`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`).
+`L^∞(μ.restrict s)` (`ContinuousOn.memLp_top_restrict_of_bound`). Multiplication by such a function
+`φ`, with `‖φ‖ ≤ C` on `s`, scales the `Lᵖ(s)` seminorm by at most `C`
+(`ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le`).
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -60,6 +62,20 @@ theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither 
     (hC : ∀ x ∈ s, ‖f x‖ ≤ C) : MemLp f ∞ (μ.restrict s) :=
   memLp_top_of_bound_eNorm (hf.aestronglyMeasurable hs) C.toNNReal <| (ae_restrict_iff' hs).2 <|
     .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
+
+/-- **Multiplication by a bounded continuous factor on `Lᵖ(s)`.** Multiplying by a factor `φ`
+continuous on a measurable set `s` with `‖φ‖ ≤ C` on `s` scales the `Lᵖ(s)` seminorm by at
+most `C`. -/
+theorem ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le {𝕜 F : Type*} [NormedRing 𝕜]
+    [SecondCountableTopologyEither X 𝕜] [NormedAddCommGroup F] [MulActionWithZero 𝕜 F]
+    [IsBoundedSMul 𝕜 F] {φ : X → 𝕜} {s : Set X} (hφ : ContinuousOn φ s) (hs : MeasurableSet s)
+    {C : ℝ} (hC : ∀ x ∈ s, ‖φ x‖ ≤ C) (f : X → F) (p : ℝ≥0∞) (μ : Measure X) :
+    eLpNorm (fun x ↦ φ x • f x) p (μ.restrict s) ≤
+      ENNReal.ofReal C * eLpNorm f p (μ.restrict s) := by
+  have hφ' := hφ.aestronglyMeasurable (μ := μ) hs
+  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ').trans (mul_le_mul_left ?_ _)
+  rw [eLpNorm_exponent_top hφ']
+  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hs).mono hC)
 
 omit [OpensMeasurableSpace X] in
 /-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous

@@ -58,8 +58,9 @@ frame-independent. In the form through the roots, the roots become `g R`, and th
 `\bar∂ b_j + j ν b_j + μ ∑_{V ∈ R} \bar V e_{j-1}(R ∖ V)` is multiplied by `gʲ`
 (`TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`): the remainder `R_j`
 transforms like `b_j`. For a constant frame this holds without differentiability
-(`TauCeti.conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul`); a real constant `a`,
-the passage from rescaled to physical coefficients `aʲ b_j`, leaves `ν` and `μ` unchanged.
+(`TauCeti.conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul`); a nonzero real
+constant `a`, the passage from rescaled to physical coefficients `aʲ b_j`, leaves `ν` and `μ`
+unchanged.
 
 Here `\bar∂` is `TauCeti.conjWirtingerDeriv`, the base is any complex normed space, and the
 `(0,1)`-forms `ν`, `μ` and `E_k` are complex-antilinear functionals.
@@ -268,7 +269,8 @@ unchanged and `μ` becomes `(c / \bar c) μ`; the left side
 
 of the equation of `TauCeti.conjWirtingerDeriv_add_esymm_erase_eq_of_newton` is multiplied by
 `cʲ`, for `0 < j`. Unlike `TauCeti.conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul`,
-this needs no differentiability of `b` and allows `c = 0`. For a real `c = a`, `μ` is unchanged:
+this needs no differentiability of `b` and allows `c = 0`. For a nonzero real `c = a`,
+`c / \bar c = 1` and `μ` is unchanged:
 this is the passage from rescaled coefficients `b_j` to physical coefficients `aʲ b_j`. -/
 theorem conjWirtingerDeriv_const_pow_mul_add_add_esymm_erase_eq_pow_smul {b : V → ℂ} (c : ℂ)
     (hj : 0 < j) (ν μ : V →L⋆[ℂ] ℂ) (R : Multiset ℂ) :

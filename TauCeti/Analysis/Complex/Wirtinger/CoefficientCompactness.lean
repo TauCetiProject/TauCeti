@@ -17,6 +17,7 @@ import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import Mathlib.Analysis.Complex.Polynomial.Basic
 
 /-!
@@ -470,19 +471,6 @@ theorem exists_strictMono_hasWeakConjWirtingerDerivOn_of_esymm {m : ℕ} {p : �
 
 section Frame
 
-/-- Multiplying by a factor `φ` continuous on a measurable set `K` with `‖φ‖ ≤ C` on `K` scales the
-`Lᵖ(K)` norm by at most `C`. -/
-private lemma eLpNorm_smul_restrict_le_of_norm_le {X E : Type*} [TopologicalSpace X]
-    [MeasurableSpace X] [OpensMeasurableSpace X] [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {φ : X → ℂ} {f : X → E} {K : Set X} (hK : MeasurableSet K) (hφ : ContinuousOn φ K)
-    {C : ℝ} (hC : ∀ x ∈ K, ‖φ x‖ ≤ C) (p : ℝ≥0∞) (ρ : Measure X) :
-    eLpNorm (fun x ↦ φ x • f x) p (ρ.restrict K) ≤
-      ENNReal.ofReal C * eLpNorm f p (ρ.restrict K) := by
-  have hφ' := hφ.aestronglyMeasurable (μ := ρ) hK
-  refine (eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm p hφ').trans (mul_le_mul_left ?_ _)
-  rw [eLpNorm_exponent_top hφ']
-  exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_mem hK).mono hC)
-
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [MeasurableSpace V]
   [OpensMeasurableSpace V] {j : ℕ} {g b : V → ℂ} {ν μ : V → V →L⋆[ℂ] ℂ} {R : V → Multiset ℂ}
   {K : Set V}
@@ -509,9 +497,9 @@ theorem eLpNorm_conjWirtingerDeriv_pow_mul_add_add_esymm_erase_le (hK : Measurab
   rw [eLpNorm_congr_ae ((ae_restrict_mem hK).mono fun x hx ↦
     conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx) hj
       (ν x) (μ x) (R x))]
-  exact eLpNorm_smul_restrict_le_of_norm_le hK
-    (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
-    (fun x hx ↦ (norm_pow (g x) j).trans_le (pow_le_pow_left₀ (norm_nonneg _) (hG x hx) j)) p ρ
+  exact ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le
+    (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt) hK
+    (fun x hx ↦ (norm_pow (g x) j).trans_le (pow_le_pow_left₀ (norm_nonneg _) (hG x hx) j)) _ p ρ
 
 /-- **Comparison of the remainders in two frames, from below.** Under a change of frame
 `W ↦ g W` over a measurable set `K` of the base with `c ≤ |g|` on `K`, `0 < c`, the remainder
@@ -538,9 +526,9 @@ theorem eLpNorm_conjWirtingerDeriv_add_add_esymm_erase_le (hK : MeasurableSet K)
     (eq_inv_smul_iff₀ (pow_ne_zero j (hgK x hx))).2
       (conjWirtingerDeriv_pow_mul_add_add_esymm_erase_eq_pow_smul (hg x hx) (hgK x hx) (hb x hx)
         hj (ν x) (μ x) (R x)).symm)]
-  refine eLpNorm_smul_restrict_le_of_norm_le (φ := fun x ↦ (g x ^ j)⁻¹) hK
+  refine ContinuousOn.eLpNorm_smul_restrict_le_of_norm_le (φ := fun x ↦ (g x ^ j)⁻¹)
     (ContinuousOn.inv₀ (fun x hx ↦ ((hg x hx).continuousAt.pow j).continuousWithinAt)
-      fun x hx ↦ pow_ne_zero j (hgK x hx)) (fun x hx ↦ ?_) p ρ
+      fun x hx ↦ pow_ne_zero j (hgK x hx)) hK (fun x hx ↦ ?_) _ p ρ
   rw [norm_inv, norm_pow]
   exact inv_anti₀ (pow_pos hc j) (pow_le_pow_left₀ hc.le (hcK x hx) j)
 
