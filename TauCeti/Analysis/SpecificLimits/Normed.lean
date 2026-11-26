@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
+public import Mathlib.Data.PNat.Basic
 import Mathlib.Tactic.Ring
 import TauCeti.Analysis.Normed.Ring.InfiniteSum
 
@@ -28,6 +29,8 @@ Quantitatively, Abel's inequality bounds a block `∑ n ∈ Ioc K M, w n • a n
 when the partial sums of `a` are at most `B` and the weights `w` are nonnegative and antitone, so
 a convergent series of this shape has tail at most `2 B w (K + 1)` after `K` terms.
 
+A real geometric series indexed by positive integers sums to `r / (1 - r)` for `|r| < 1`.
+
 Over a normed field, the evaluations below specialize Mathlib's binomial geometric-series
 formula to linear and quadratic coefficients, without requiring completeness or an ultrametric
 norm; the affine case `∑ (a k + b) xᵏ` holds more generally in a normed division ring.
@@ -48,6 +51,12 @@ lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>), file
 -/
 
 public section
+
+/-- The real geometric series over the positive integers sums to `r / (1 - r)`. -/
+theorem hasSum_geometric_pnat {r : ℝ} (hr : |r| < 1) :
+    HasSum (fun n : ℕ+ ↦ r ^ (n : ℕ)) (r / (1 - r)) := by
+  refine (hasSum_pnat_iff_hasSum_succ (f := fun n : ℕ ↦ r ^ n)).2 ?_
+  simpa only [pow_succ', div_eq_mul_inv] using (hasSum_geometric_of_abs_lt_one hr).mul_left r
 
 namespace TauCeti
 
