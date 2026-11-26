@@ -104,21 +104,6 @@ open scoped Manifold
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_injective
   det_fderiv_realChart_nonneg)
 
-namespace TauCeti.Floer
-
-/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the datum of the comparison family is the
-pair-of-pants perturbation. -/
-private theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation
-    {X : Type*} {H : Puncture → ℝ → X → ℝ} {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
-    (hw : w ∈ truncation T) (v : ℂ) :
-    (fun x ↦ cappedComparisonPerturbation H R w x v) = fun x ↦ pairOfPantsPerturbation H w x v :=
-  funext fun x ↦ by
-    rw [cappedComparisonPerturbation_of_two_le H hR,
-      cappedPerturbation_eq_smul_pairOfPantsPerturbation
-        (fun q ↦ ((mem_truncation.1 hw).2.2 q).trans (by linarith)), one_smul]
-
-end TauCeti.Floer
-
 namespace TauCeti.SmoothTwoForm
 
 open Floer
@@ -210,22 +195,6 @@ theorem integral_floerEnergyDensity_image_endShift (ω : SmoothTwoForm I M)
       equivRealProdCLM_symm_stdComplexLineReal]
   · rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR (hΩ w hw),
       equivRealProdCLM_symm_stdComplexLineImag]
-
-/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the structure of the comparison family
-is the capped structure with neck length `T`: both are the pair-of-pants structure there. -/
-private theorem cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation
-    {ω : SmoothTwoForm I M} {J₀ : SmoothAlmostComplexStructure I M} (h₀ : ω.Compatible J₀)
-    {J : Puncture → ℝ → SmoothAlmostComplexStructure I M} (hJ : ∀ q t, ω.Tames (J q t))
-    {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ} (hw : w ∈ truncation T) :
-    h₀.cappedComparisonAlmostComplex J hJ R w = h₀.cappedAlmostComplex J hJ 1 T w := by
-  have hσ {L : ℝ} (hL : T ≤ L + 2) (q : Puncture) : q.endSign * (q.endCoord w).re ≤ L + 2 :=
-    ((mem_truncation.1 hw).2.2 q).trans hL
-  rw [h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR]
-  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ ?_
-  rw [Compatible.almostComplexStructureAt_cappedAlmostComplex,
-    Compatible.almostComplexStructureAt_cappedAlmostComplex,
-    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith)),
-    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith))]
 
 end TauCeti.SmoothTwoForm
 
@@ -332,15 +301,9 @@ theorem
         ∃ v : ℝ × ℝ → M, ContinuousOn v (Ω \ ↑Z) ∧
           TendstoLocallyUniformlyOn (fun n ↦ e ∘ u (φ n)) (e ∘ v) atTop (Ω \ ↑Z) ∧
           ∀ z ∈ Ω \ ↑Z, Tendsto (fun n ↦ u (φ n) z) atTop (𝓝 (v z)) := by
+  -- On `S_T` the family is the pair-of-pants datum with the fixed structure of neck length `T`.
   -- Each component `z ↦ K_z(w)` of the pair-of-pants perturbation is `C³` jointly in `z ∈ S` and
   -- the target point, so its Hamiltonian vector field is `C²` in every chart.
-  have hK (w : ℂ) (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) (x : M) :
-      ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) ((2 : ℕ∞) + 1)
-        (uncurry fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x w) (z, x) :=
-    (((contMDiffAt_pairOfPantsPerturbation hH hHs ⟨equivRealProdCLM.symm z, hz⟩ x).comp (z, x)
-      ((equivRealProdCLM.symm.contDiff.contMDiff.comp contMDiff_fst).prodMk
-        contMDiff_snd).contMDiffAt).clm_apply contMDiffAt_const).of_le (by norm_num)
-  -- On `S_T` the family is the pair-of-pants datum with the fixed structure of neck length `T`.
   obtain ⟨δ, hδ, hconv⟩ := hω.exists_pos_forall_tendstoLocallyUniformlyOn_comp_subseq_off_finset
     (Ks := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
     (Kt := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x Complex.I)
@@ -350,14 +313,18 @@ theorem
     (preimage_truncation_subset_thricePuncturedSphereReal T)
     (fun α ↦ (contDiffOn_almostComplexInChartAt_cappedAlmostComplex h₀ hJ hJp hJs T α).mono
       (prod_mono (subset_univ _) subset_rfl))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK 1))
-    (hω.contDiffOn_hamiltonianVectorFieldInChartAt (hK Complex.I))
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun z hz x ↦
+      (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x 1).of_le (by norm_num))
+    (hω.contDiffOn_hamiltonianVectorFieldInChartAt fun z hz x ↦
+      (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x Complex.I).of_le (by norm_num))
     (fun z _ x ↦ h₀.isNondegenerate.tames_iff.1 (h₀.tames_cappedAlmostComplex J hJ 1 T _) x)
     hc hJc hLs hLt
   refine ⟨δ, hδ, fun Ω R u A hΩ hΩT hR2 hRT hu hfl hint hcurv harea ↦ ?_⟩
-  have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) :=
-    cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation (H := H) (hR2 k)
-      (hRT k) (hΩT hz) v
+  have hKb (k : ℕ) {z : ℝ × ℝ} (hz : z ∈ Ω) (v : ℂ) :
+      (fun x ↦ cappedComparisonPerturbation H (R k) (equivRealProdCLM.symm z) x v) =
+        fun x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x v := by
+    rw [cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation H (hR2 k)
+      (hRT k) (hΩT hz)]
   -- The Floer energy over `Ω` is at most `A + 2 (B₀ + B₁ + B_∞)`.
   have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)
@@ -375,7 +342,7 @@ theorem
   exact hconv hΩ hΩT (fun k ↦ (hu k).contMDiffOn)
     (fun k z hz ↦ by
       have h := hfl k z
-      rwa [cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation h₀ hJ (hR2 k)
+      rwa [h₀.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation J hJ (hR2 k)
           (hRT k) (hΩT hz),
         ω.perturbedMFDeriv_congr_perturbation _
           (Ks' := fun z x ↦ pairOfPantsPerturbation H (equivRealProdCLM.symm z) x 1)

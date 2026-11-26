@@ -42,7 +42,9 @@ coordinate relative to `J₀` is `β(r) • ∑ q, β(σ_q - 1) β(L + 3 - σ_q)
 The comparison family `TauCeti.SmoothTwoForm.Compatible.cappedComparisonAlmostComplex` takes the
 cutoff parameter `3R - 1` and the neck length `TauCeti.Floer.comparisonNeckLength R`. It starts at
 the domain-independent `J₀`, has no necks on the collar `2/3 ≤ R ≤ 3/2`, has necks of length
-`R - 1` for `R ≥ 2`, and is smooth in `R`.
+`R - 1` for `R ≥ 2`, where on the truncation `S_T` with `T ≤ R + 1` it is the structure with neck
+length `T` (`Compatible.cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation`),
+and is smooth in `R`.
 
 The structure is the end-weighted structure
 `TauCeti.SmoothTwoForm.Compatible.endWeightedAlmostComplex` with the weights above, so tameness
@@ -299,6 +301,19 @@ theorem cappedComparisonAlmostComplex_of_two_le (hR : 2 ≤ R) :
     h₀.cappedComparisonAlmostComplex J hJ R = h₀.cappedAlmostComplex J hJ 1 (R - 1) := by
   rw [cappedComparisonAlmostComplex_def, Floer.comparisonNeckLength_of_ge hR,
     cappedAlmostComplex_of_one_le h₀ J hJ (by linarith)]
+
+/-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the structure is the capped structure
+with neck length `T`: both are the pair-of-pants structure there. -/
+theorem cappedComparisonAlmostComplex_eq_cappedAlmostComplex_of_mem_truncation {T : ℝ}
+    (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ} (hw : w ∈ truncation T) :
+    h₀.cappedComparisonAlmostComplex J hJ R w = h₀.cappedAlmostComplex J hJ 1 T w := by
+  have hσ {L : ℝ} (hL : T ≤ L + 2) (q : Puncture) : q.endSign * (q.endCoord w).re ≤ L + 2 :=
+    ((mem_truncation.1 hw).2.2 q).trans hL
+  rw [h₀.cappedComparisonAlmostComplex_of_two_le J hJ hR]
+  refine SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ ?_
+  rw [almostComplexStructureAt_cappedAlmostComplex, almostComplexStructureAt_cappedAlmostComplex,
+    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith)),
+    Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex _ le_rfl (hσ (by linarith))]
 
 /-- **The comparison family is smooth** along every `C^n` family of family parameters `R`, points
 `f` of `ℂ` and points `b` of `M`. -/
