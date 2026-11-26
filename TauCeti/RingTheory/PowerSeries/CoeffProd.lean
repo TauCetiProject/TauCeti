@@ -111,12 +111,6 @@ theorem coeff_prod_sum_type {A B : Type*} [CommSemiring A] [CommSemiring B] {σ 
       φ (coeff p.1 (∏ i, f i)) * ψ (coeff p.2 (∏ j, g j)) := by
   simp only [Fintype.prod_sum_type, hf, hg, ← map_prod, coeff_mul, coeff_map]
 
-private theorem map_sym_eq_piAntidiag_apply [DecidableEq ι] (n : ℕ) (k : Sym ι n) (i : ι) :
-    (⟨fun m a ↦ m.val.count a, Multiset.count_injective.comp Sym.coe_injective⟩ :
-        Sym ι n ↪ (ι → ℕ)) k i =
-      Multiset.count i (k : Multiset ι) := by
-  simp only [Function.Embedding.coeFn_mk, Sym.val_eq_coe]
-
 /-- **Symmetric-power expansion of a product coefficient.** The `n`-th coefficient of a finite
 product `∏ i ∈ s, f i` is the sum over `k ∈ s.sym n` of the product of the `Multiset.count i k`-th
 coefficients of the factors `f i`. -/
@@ -132,8 +126,7 @@ theorem coeff_prod_eq_sum_sym [DecidableEq ι] (s : Finset ι) (f : ι → R⟦X
         simp
     _ = ∑ k ∈ s.sym n, ∏ i ∈ s, coeff (Multiset.count i (k : Multiset ι)) (f i) := by
         rw [← Finset.map_sym_eq_piAntidiag, Finset.sum_map]
-        refine sum_congr rfl fun k _ ↦ prod_congr rfl fun i _ ↦ ?_
-        rw [map_sym_eq_piAntidiag_apply]
+        simp [Sym.val_eq_coe]
 
 section Ring
 

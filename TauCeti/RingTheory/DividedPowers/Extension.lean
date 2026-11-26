@@ -138,6 +138,12 @@ private theorem add_pow_mul_map_dpow (hI : DividedPowers I) (f : A →+* B)
         rw [← map_mul_dpow hI f hx k.1 k.2]
     _ = b₁ ^ k.1 * f (hI.dpow k.1 x) * (b₂ ^ k.2 * f (hI.dpow k.2 x)) := by ring
 
+private theorem pow_mul_eq_pow_mul_of_mul_eq {M : Type*} [CommMonoid M] {b c y : M}
+    (h : b * y = c * y) (k : ℕ) : b ^ k * y = c ^ k * y := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [pow_succ', mul_assoc, ih, mul_left_comm, h, ← mul_assoc, ← pow_succ]
+
 /-- **Well-definedness of the principal extension formula** (Stacks 23.4.2, tag 07H1): if
 `I = Ideal.span {x}`, then `b * f x = c * f x` implies
 `b ^ n * f (hI.dpow n x) = c ^ n * f (hI.dpow n x)` for all `n : ℕ`. -/
@@ -147,17 +153,7 @@ theorem pow_mul_map_dpow_eq_of_mul_eq (hI : DividedPowers I) (f : A →+* B)
   rcases eq_or_ne n 0 with rfl | hn
   · simp
   · obtain ⟨a, ha⟩ := exists_dpow_eq_mul hI hIx hn
-    have hstep : ∀ k : ℕ, b ^ k * (f x * f a) = c ^ k * (f x * f a) := fun k ↦ by
-      induction k with
-      | zero => simp
-      | succ k ih =>
-        calc b ^ (k + 1) * (f x * f a) = b ^ k * ((b * f x) * f a) := by ring
-          _ = b ^ k * ((c * f x) * f a) := by rw [hbc]
-          _ = c * (b ^ k * (f x * f a)) := by ring
-          _ = c * (c ^ k * (f x * f a)) := by rw [ih]
-          _ = c ^ (k + 1) * (f x * f a) := by ring
-    rw [ha, map_mul]
-    exact hstep n
+    rw [ha, map_mul, ← mul_assoc, pow_mul_eq_pow_mul_of_mul_eq hbc n, mul_assoc]
 
 private theorem exists_mul_map_of_mem_span_singleton (f : A →+* B) {x : A}
     (hIx : I = Ideal.span {x}) {z : B} (hz : z ∈ I.map f) :
