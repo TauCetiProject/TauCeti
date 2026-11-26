@@ -28,6 +28,7 @@ A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, both of single elements and
 of the whole monoid, and a group action with continuous orbit maps on a `T₁` space has closed
 point stabilisers. If every orbit of a group action is open, then every orbit is also closed.
+Scaling by a nonzero element of a group with zero commutes with taking the frontier.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
 an ambient scalar action; and a properly discontinuous action has `Finite` point stabilisers.
 It also records that a properly discontinuous scalar family on a nonempty σ-compact space is
@@ -57,6 +58,7 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
   space is closed.
 * `TauCeti.isClosed_orbit_of_forall_isOpen_orbit`: if every orbit of a group action is open,
   then every orbit is closed.
+* `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -131,6 +133,13 @@ theorem isClosed_orbit_of_forall_isOpen_orbit {G X : Type*} [Group G] [MulAction
   refine Filter.mem_of_superset ((h z).mem_nhds (MulAction.mem_orbit_self z)) fun w hw hwx ↦ hz ?_
   rw [← (MulAction.orbit_eq_iff.2 hw).symm.trans (MulAction.orbit_eq_iff.2 hwx)]
   exact MulAction.mem_orbit_self z
+
+/-- Scaling by a nonzero element of a group with zero commutes with taking the frontier, as
+Mathlib's `interior_smul₀` and `closure_smul₀'` do for interior and closure. -/
+theorem frontier_smul₀ {G₀ X : Type*} [GroupWithZero G₀] [MulAction G₀ X] [TopologicalSpace X]
+    [ContinuousConstSMul G₀ X] {c : G₀} (hc : c ≠ 0) (s : Set X) :
+    frontier (c • s) = c • frontier s :=
+  ((Homeomorph.smulOfNeZero c hc).image_frontier s).symm
 
 section DisjointTranslates
 

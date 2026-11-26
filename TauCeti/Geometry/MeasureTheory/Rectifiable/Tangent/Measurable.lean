@@ -123,10 +123,7 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∃ Q : V → V →L[ℝ] V, Measurable Q ∧
       ∀ᵐ x ∂μHE[k], x ∈ E → ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-        Q x = P.starProjection ∧
-        ∀ ε > (0 : ℝ), Tendsto (fun r ↦
-          μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-            volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+        Q x = P.starProjection ∧ DensityZeroOutsideCones k E x P := by
   classical
   obtain ⟨T, A, hTm, hAm, hcover, hcone⟩ := hE.exists_measurable_cover_tangent_projection
   let S := ⋃ n, T n
@@ -151,7 +148,8 @@ theorem CountablyRectifiable.exists_measurable_approximate_tangent_projection
   let n := Nat.find (hindex ⟨x, hxS⟩)
   have hxn : x ∈ T n := Nat.find_spec (hindex ⟨x, hxS⟩)
   obtain ⟨P, hdim, hproj, hP⟩ := hcone n x hxn
-  refine ⟨P, hdim, (congrFun hQ ⟨x, hxS⟩).trans hproj, fun ε hε ↦ ?_⟩
+  refine ⟨P, hdim, (congrFun hQ ⟨x, hxS⟩).trans hproj,
+    densityZeroOutsideCones_iff.2 fun ε hε ↦ ?_⟩
   obtain ⟨δ, hδ, hlocal⟩ := hP ε hε
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (hzero n (fun h ↦ h.2 hxn))
     (Eventually.of_forall fun _ ↦ zero_le) ?_

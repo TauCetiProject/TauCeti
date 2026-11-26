@@ -404,13 +404,9 @@ theorem ordinaryHypergeometric_gaussEquation (a b c : 𝕂) (hc : ∀ k : ℕ, (
       (ordinaryHypergeometricSeries 𝕂 a b c).radius :=
     (ordinaryHypergeometricSeries 𝕂 a b c).hasFPowerSeriesOnBall (pos_of_gt hx)
   have hf' := hf.deriv_ofScalars
-  have hxb : x ∈ Metric.eball (0 : 𝕂) (ordinaryHypergeometricSeries 𝕂 a b c).radius :=
-    mem_eball_zero_iff.mpr hx
   -- the series of `f`, `f'`, `x f'`, `x f''` and `x² f''` at `x`, all indexed by powers `x ^ n`
-  have h0 : HasSum (fun n : ℕ ↦ C n * x ^ n) (f x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hf.hasSum hxb
-  have h1 : HasSum (fun n : ℕ ↦ (n + 1) * C (n + 1) * x ^ n) (deriv f x) := by
-    simpa [FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using hf'.hasSum hxb
+  have h0 := hf.hasSum_ofScalars hx
+  have h1 := hf'.hasSum_ofScalars hx
   have h2 := hf.hasSum_mul_deriv_ofScalars hx
   have h3 := hf'.hasSum_mul_deriv_ofScalars hx
   have h4 : HasSum (fun n : ℕ ↦ ((n : 𝕂) - 1) * n * C n * x ^ n) (x * (x * deriv (deriv f) x)) := by

@@ -356,12 +356,9 @@ theorem exists_inclusion_eq_sharpCommutator
     simp [hz]
   obtain ⟨c, hc⟩ := (principal_eq_zero_iff_exists_inclusion _).1 h0
   refine ⟨c, hc, fun z => ?_⟩
-  -- The principal symbol of `c` is the term of index `1` of the commutator.
-  have hterm := congrArg (fun d : ClassicalSymbol n V V (m' + m) => (d.term (1 + 0)).coefficient z)
-    hc
-  simp only [term_inclusion_add, coefficient_castDegree] at hterm
-  rw [coefficient_principal, hterm, coefficient_term_sharpCommutator, coefficient_term_one_sharp,
-    coefficient_term_one_sharp, Finset.sum_sub_distrib, smul_sub, neg_smul, neg_smul]
+  rw [coefficient_principal_of_inclusion_eq hc, coefficient_term_sharpCommutator,
+    coefficient_term_one_sharp, coefficient_term_one_sharp, Finset.sum_sub_distrib, smul_sub,
+    neg_smul, neg_smul]
   abel
 
 /-- **The Poisson bracket formula for a central symbol.** If every value of the full symbol of

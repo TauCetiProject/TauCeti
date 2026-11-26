@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Euclidean.Volume.Measure
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
-public import TauCeti.MeasureTheory.Covering.EssentialBoundary
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
+public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
+import TauCeti.Analysis.BoundedVariation.DeGiorgi
 import TauCeti.Analysis.BoundedVariation.LowerDensityEstimates
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
 import TauCeti.Geometry.Euclidean.Volume.Measure
@@ -28,7 +29,10 @@ proves **Federer's theorem**: in `Ω` the two differ by an `Hⁿ⁻¹`-null set,
 (`TauCeti.euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero`),
 where `Hⁿ⁻¹ = μHE[n - 1]` is the normalized Euclidean Hausdorff measure. Equivalently,
 `∂ᵉs ∩ Ω` and `∂*s` agree `Hⁿ⁻¹`-almost everywhere
-(`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`).
+(`TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`). Combined with De Giorgi's theorem
+`P(s; Ω) = Hⁿ⁻¹(∂*s)` (`TauCeti.perimeter_eq_euclideanHausdorffMeasure_reducedBoundary`), this
+expresses the perimeter as the measure of the essential boundary, `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`
+(`TauCeti.perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter`).
 
 ## Proof
 
@@ -58,6 +62,11 @@ is carried by the reduced boundary (`TauCeti.ae_mem_reducedBoundary`).
   **Federer's theorem**, `Hⁿ⁻¹((∂ᵉs ∩ Ω) \ ∂*s) = 0`.
 * `TauCeti.essentialBoundary_inter_ae_eq_reducedBoundary`: `∂ᵉs ∩ Ω = ∂*s` up to an `Hⁿ⁻¹`-null
   set.
+* `TauCeti.ae_forall_exists_hasDensityAt`: off an `Hⁿ⁻¹`-null set, countably many sets of
+  locally finite perimeter each have density `0`, `1/2` or `1` at every point of `Ω`, with density
+  `1/2` exactly on the reduced boundary.
+* `TauCeti.perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter`: the perimeter is the
+  measure of the essential boundary, `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`.
 
 ## References
 
@@ -200,5 +209,40 @@ theorem essentialBoundary_inter_ae_eq_reducedBoundary (hn : 2 ≤ finrank ℝ E)
     ⟨euclideanHausdorffMeasure_essentialBoundary_inter_sdiff_reducedBoundary_eq_zero hn hu hfin, ?_⟩
   rw [sdiff_eq_empty.2 (subset_inter (reducedBoundary_subset_essentialBoundary hn)
     reducedBoundary_subset), measure_empty]
+
+/-- **Densities of sets of locally finite perimeter.** In dimension `n ≥ 2`, for countably many sets
+`s i` of locally finite perimeter in an open set `Ω`, off an `Hⁿ⁻¹`-null set every `s i` has
+density `0`, `1/2` or `1` at each point of `Ω`, and density `1/2` exactly on its reduced
+boundary. -/
+theorem ae_forall_exists_hasDensityAt {ι : Type*} [Countable ι]
+    {s : ι → Set E} (hn : 2 ≤ finrank ℝ E)
+    (hu : ∀ i, LocallyIntegrableOn ((s i).indicator (1 : E → ℝ)) Ω μ)
+    (hfin : ∀ i K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn μ U ((s i).indicator 1) ≠ ∞) :
+    ∀ᵐ x ∂μHE[finrank ℝ E - 1], x ∈ Ω → ∀ i, ∃ d : ℝ≥0∞, (d = 0 ∨ d = 1 / 2 ∨ d = 1) ∧
+      HasDensityAt μ (s i) x d ∧ (d = 1 / 2 ↔ x ∈ reducedBoundary μ Ω (s i)) := by
+  have hne : (1 / 2 : ℝ≥0∞) ≠ 0 := by simp
+  have hne1 : (1 / 2 : ℝ≥0∞) ≠ 1 := (ENNReal.half_lt_self one_ne_zero ENNReal.one_ne_top).ne
+  filter_upwards [ae_all_iff.2 fun i => essentialBoundary_inter_ae_eq_reducedBoundary hn (hu i)
+    (hfin i)] with x hx hxΩ i
+  by_cases hr : x ∈ reducedBoundary μ Ω (s i)
+  · exact ⟨1 / 2, Or.inr (Or.inl rfl), hasDensityAt_of_mem_reducedBoundary hn hr,
+      iff_of_true rfl hr⟩
+  · have hb : x ∉ essentialBoundary μ (s i) := fun hb => hr ((hx i).1 ⟨hb, hxΩ⟩)
+    simp only [mem_essentialBoundary, not_and_or, not_not, mem_essentialInterior,
+      mem_essentialExterior] at hb
+    rcases hb with h1 | h0
+    · exact ⟨1, Or.inr (Or.inr rfl), h1, iff_of_false hne1.symm hr⟩
+    · exact ⟨0, Or.inl rfl, h0, iff_of_false hne.symm hr⟩
+
+/-- **The perimeter is the measure of the essential boundary.** In dimension `n ≥ 2`, a set `s` of
+locally finite perimeter in an open set `Ω` has `P(s; Ω) = Hⁿ⁻¹(∂ᵉs ∩ Ω)`. -/
+theorem perimeter_eq_euclideanHausdorffMeasure_essentialBoundary_inter (hn : 2 ≤ finrank ℝ E)
+    (hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω volume)
+    (hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞) :
+    perimeter volume Ω s = μHE[finrank ℝ E - 1] (essentialBoundary volume s ∩ Ω) := by
+  rw [perimeter_eq_euclideanHausdorffMeasure_reducedBoundary hn hu hfin,
+    measure_congr (essentialBoundary_inter_ae_eq_reducedBoundary hn hu hfin)]
 
 end TauCeti

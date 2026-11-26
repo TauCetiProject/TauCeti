@@ -46,6 +46,8 @@ an isomorphism of topological groups, which is not `G`-equivariant.
 * `TauCeti.NonabelianH1.Twist.continuousMulEquiv c`: the underlying identification `₍c₎A ≃ₜ* A`.
 * `TauCeti.NonabelianH1.Twist.map`: the map `₍c₎A →ₜ* ₍φ ∘ c ∘ ψ₎A'` induced by a compatible
   pair `(ψ, φ)`.
+* `TauCeti.NonabelianH1.Twist.ker c p h`: the kernel of the map `₍c₎A → ₍p ∘ c₎A''` induced by a
+  `G`-equivariant `p : A →ₜ* A''`, a `G`-stable subgroup of `₍c₎A`.
 * `TauCeti.NonabelianH1.Cocycle.ofTwistEquiv c`: the bijection `Z¹(G, ₍c₎A) ≃ Z¹(G, A)`,
   `d ↦ (g ↦ d g * c g)`.
 * `TauCeti.NonabelianH1.ofTwistEquiv c`: the induced bijection `H¹(G, ₍c₎A) ≃ H¹(G, A)`.
@@ -231,6 +233,54 @@ theorem map_smul (ψ : G' →ₜ* G) (φ : A →ₜ* A')
   simp [h]
 
 end Map
+
+section Ker
+
+variable {A'' : Type*} [Group A''] [TopologicalSpace A''] [MulDistribMulAction G A'']
+
+variable (c) (p : A →ₜ* A'') (h : ∀ (g : G) (a : A), p (ContinuousMonoidHom.id G g • a) = g • p a)
+
+/-- The **twisted kernel**: the kernel of the map `₍c₎A → ₍p ∘ c₎A''` of twists induced by a
+`G`-equivariant `p : A →ₜ* A''`. It consists of the elements of `₍c₎A` whose underlying element of
+`A` lies in the kernel of `p` (`TauCeti.NonabelianH1.Twist.mem_ker`), and it is stable under the
+twisted action. For a short exact sequence `1 → A' → A → A'' → 1` it is the twist `₍c₎A'` of `A'`
+by `c`, defined although `c` need not take values in `A'`. -/
+def ker : Subgroup (Twist c) :=
+  (map c (ContinuousMonoidHom.id G) p h).toMonoidHom.ker
+
+variable {c p h}
+
+/-- An element of `₍c₎A` lies in the twisted kernel exactly when its underlying element of `A` lies
+in the kernel of `p`. -/
+@[simp]
+theorem mem_ker {x : Twist c} : x ∈ ker c p h ↔ p x.toOriginal = 1 := by
+  simp [ker, Twist.ext_iff]
+
+/-- The twisted kernel is the kernel of the map of twists induced by `p`. -/
+theorem map_eq_one_iff_mem_ker {x : Twist c} :
+    map c (ContinuousMonoidHom.id G) p h x = 1 ↔ x ∈ ker c p h := by
+  simp [Twist.ext_iff]
+
+/-- The twisted kernel is stable under the twisted action. -/
+theorem smul_mem_ker (g : G) {x : Twist c} (hx : x ∈ ker c p h) : g • x ∈ ker c p h := by
+  rw [mem_ker] at hx ⊢
+  have hg : p (g • x.toOriginal) = 1 := (h g _).trans (by rw [hx, smul_one])
+  simp [hg]
+
+/-- The twisted action of `G` on `₍c₎A` restricts to the twisted kernel. -/
+instance : MulDistribMulAction G (ker c p h) where
+  smul g x := ⟨g • (x : Twist c), smul_mem_ker g x.property⟩
+  one_smul x := Subtype.ext (one_smul G (x : Twist c))
+  mul_smul g g' x := Subtype.ext (mul_smul g g' (x : Twist c))
+  smul_mul g x y := Subtype.ext (smul_mul' g (x : Twist c) y)
+  smul_one g := Subtype.ext (smul_one g)
+
+@[simp, norm_cast]
+theorem coe_smul_ker (g : G) (x : ker c p h) :
+    ((g • x : ker c p h) : Twist c) = g • (x : Twist c) :=
+  (rfl)
+
+end Ker
 
 end Twist
 

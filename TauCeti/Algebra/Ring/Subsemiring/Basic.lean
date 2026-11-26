@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Ring.Subsemiring.Basic
+public import Mathlib.Algebra.BigOperators.Ring.Finset
 public import Mathlib.RingTheory.Ideal.Maps
 
-/-! # Subsemirings containing the kernel of a ring map
+/-! # Subsemiring membership and finite patching
 
 For a subsemiring containing the kernel of a ring homomorphism, membership can be
 tested in its image, and pulling back that image recovers the original subsemiring.
+Finite certificates for one also test membership from denominator-cleared products, in either
+multiplication order. No membership assumption is needed on the denominators themselves.
 -/
 
 public section
@@ -35,3 +38,30 @@ theorem mem_map_iff_mem_of_ker_subset {f : A →+* B} {P : Subsemiring A}
   exact mem_map_iff_mem_of_ker_subset hker
 
 end Subsemiring
+
+
+namespace NonUnitalSubsemiringClass
+
+variable {R S ι : Type*} [Semiring R] [SetLike S R] [NonUnitalSubsemiringClass S R]
+
+/-- A certificate `∑ aᵢ uᵢ = 1`, with `uᵢ` and `f aᵢ` in `H`, implies `f ∈ H`.
+The individual `aᵢ` need not belong to `H`. -/
+theorem mem_of_sum_mul_eq_one (H : S) (s : Finset ι) (a u : ι → R) {f : R}
+    (h1 : ∑ i ∈ s, a i * u i = 1) (hu : ∀ i ∈ s, u i ∈ H)
+    (hf : ∀ i ∈ s, f * a i ∈ H) : f ∈ H := by
+  rw [← mul_one f, ← h1, Finset.mul_sum]
+  exact sum_mem fun i hi ↦ by
+    rw [← mul_assoc]
+    exact mul_mem (hf i hi) (hu i hi)
+
+/-- A certificate `∑ uᵢ aᵢ = 1`, with `uᵢ` and `aᵢ f` in `H`, implies `f ∈ H`.
+The individual `aᵢ` need not belong to `H`. -/
+theorem mem_of_sum_mul_eq_one_left (H : S) (s : Finset ι) (u a : ι → R) {f : R}
+    (h1 : ∑ i ∈ s, u i * a i = 1) (hu : ∀ i ∈ s, u i ∈ H)
+    (hf : ∀ i ∈ s, a i * f ∈ H) : f ∈ H := by
+  rw [← one_mul f, ← h1, Finset.sum_mul]
+  exact sum_mem fun i hi ↦ by
+    rw [mul_assoc]
+    exact mul_mem (hu i hi) (hf i hi)
+
+end NonUnitalSubsemiringClass
