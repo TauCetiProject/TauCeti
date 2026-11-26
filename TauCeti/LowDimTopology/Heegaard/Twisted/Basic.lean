@@ -66,6 +66,8 @@ formalized here.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.instNonempty`: reference domains exist.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.label_mem_periodicDomains`: labels are periodic.
 * `TauCeti.HeegaardRegionSystem.ReferenceDomains.label_add`: labels are additive.
+* `TauCeti.HeegaardRegionSystem.instUniqueSumsPeriodicDomains`: the periodic domains have unique
+  sums, so the group ring of twisted coefficients has no zero divisors.
 * `TauCeti.HeegaardRegionSystem.augmentation_twistedHatCoefficient` and
   `TauCeti.HeegaardRegionSystem.mapRange_augmentation_twistedHatDifferential`: the augmentation
   of the twisted differential is the hat differential.
@@ -265,6 +267,13 @@ theorem changeEquiv_apply (h : r.base = r'.base)
 end ReferenceDomains
 
 end ReferenceDomains
+
+/-- The periodic domains form a subgroup of the torsion-free group `Region → ℤ`, so they have
+unique sums, and the group ring of twisted coefficients over a domain such as `𝔽₂` has no zero
+divisors. -/
+instance instUniqueSumsPeriodicDomains : UniqueSums H.periodicDomains :=
+  UniqueSums.of_injective_addHom H.periodicDomains.subtype.toAddHom Subtype.val_injective
+    inferInstance
 
 variable [Fintype Point] [DecidableEq Region] [Fintype Region]
 

@@ -6,10 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.AddBasepoint
-public import TauCeti.LowDimTopology.Heegaard.LensSpace.Diagram
 public import TauCeti.LowDimTopology.Heegaard.Twisted.Basic
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.Algebra.MonoidAlgebra.NoZeroDivisors
 
 /-!
 # The twisted hat complex after adding a basepoint: the Koszul factor `1 + t`
@@ -52,30 +49,19 @@ new one (`TauCeti.HeegaardRegionSystem.ReferenceDomains.addBasepoint`): the refe
   from `x` to `y` avoiding the basepoints together with one crescent. When `E = 0` is the only such
   domain, the twisted coefficient is `1 + t` for `x = y` and `0` otherwise: the crescent `C_β` has
   label `0` and the crescent `C_α` has label `C_α - C_β`
-  (`HeegaardRegionSystem.WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self` and
+  (`TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_zero_one_self` and
   `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_zero_one_of_ne`).
 
-So, when the zero domain is the only nonnegative domain of Maslov index zero avoiding the
-basepoints, the twisted hat differential of the new diagram is
+So, when the zero domain is the only nonnegative domain of Maslov index zero to `y` avoiding the
+basepoints, the twisted hat differential of the new diagram at `y` is
 `(∂' c)(y, k) = ∑ₓ c(x, k) ι(c(x, y)) + [k = q] (1 + t) c(y, p)`
 (`TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_apply`), the tensor product of
 the old twisted differential with the Koszul complex of `1 + t`. Under the augmentation `t ↦ 1` the
 factor `1 + t` becomes `0`, recovering `∂ ⊗ 1` on `CF̂ ⊗ W` at the level of chains. This is a
 chain-level comparison only: homology does not commute with the non-flat augmentation.
 
-**Lens spaces and the twice-pointed sphere.** The genus-one diagram of a lens space `L(p, q)`
-(`TauCeti.HeegaardRegionSystem.lensSpace`) has no nonzero domain from a generator to itself avoiding
-the basepoint, and no domain between distinct generators, so the hypothesis holds. Its twisted hat
-differential vanishes, and after adding a basepoint in the basepoint region the twisted hat
-differential sends the generator `(x, 0)` to `(1 + t) (x, 1)` and `(x, 1)` to `0`
-(`TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_lensSpace_apply`). Its cycles are
-the chains vanishing on the generators `(x, 0)`, since `1 + t` is not a zero divisor
-(`TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_lensSpace_eq_zero_iff`). For
-`L(1, 1) = S³` this is the twice-pointed diagram of `S³`: the raw complex has two generators and
-zero differential, while the twisted one is the injective multiplication by `1 + t` on the group
-ring `𝔽₂[t, t⁻¹]` of the single new periodic domain. Its cokernel `𝔽₂[t, t⁻¹] ⧸ (1 + t)` is `𝔽₂`,
-as for `S¹ × S²` in `TauCeti.HeegaardRegionSystem.circleTimesSphereQuotientEquiv`; that quotient is
-not computed again here.
+The genus-one diagram of a lens space with an added basepoint, in particular the twice-pointed
+diagram of `S³`, is treated in `TauCeti.LowDimTopology.Heegaard.Twisted.LensSpace`.
 
 ## Main definitions
 
@@ -87,14 +73,13 @@ not computed again here.
 
 * `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_self`,
   `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_one_zero`,
-  `TauCeti.HeegaardRegionSystem.WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self`
-  and `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_zero_one_of_ne`: the twisted
+  `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_zero_one_self` and
+  `TauCeti.HeegaardRegionSystem.twistedHatCoefficient_addBasepoint_zero_one_of_ne`: the twisted
   coefficients of the diagram with an added basepoint.
+* `HeegaardRegionSystem.WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self`: the
+  coefficient `1 + t` at a generator where the diagram is weakly admissible.
 * `TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_apply`: its twisted hat
   differential is the old one tensored with the Koszul complex of `1 + t`.
-* `TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_lensSpace_apply` and
-  `TauCeti.HeegaardRegionSystem.twistedHatDifferential_addBasepoint_lensSpace_eq_zero_iff`: the
-  twisted hat complex of the diagram of a lens space with an added basepoint.
 
 ## References
 
@@ -241,7 +226,7 @@ theorem twistedHatCoefficient_addBasepoint_self (x y : H.Generator) (k : Fin 2) 
         ReferenceDomains.addBasepoint_label]
       funext s
       rcases s with s | m
-      · rfl
+      · simp
       · fin_cases m <;> simp
   · rw [twistedHatCoefficient_of_infinite hinf, map_zero, twistedHatCoefficient_of_infinite]
     rw [hset]
@@ -270,54 +255,61 @@ private theorem setOf_maslovIndex_eq_zero {x y : H.Generator}
   · rintro ⟨rfl, rfl⟩
     exact ⟨isDomainBetween_zero x, fun z => rfl, le_rfl, map_zero _⟩
 
-variable {H} in
+include hr₀ in
+/-- Under the hypothesis that the zero domain is the only nonnegative periodic domain of Maslov
+index zero at `x` avoiding the basepoints, the domains counted from `(x, 0)` to `(x, 1)` in the
+diagram with an added basepoint are exactly the two crescents `C_β` and `C_α`. -/
+private theorem hatDomains_addBasepoint_zero_one_self {x : H.Generator}
+    (h₀ : ∀ E, H.IsDomainBetween x x E → (∀ z, E (H.basepoint z) = 0) → 0 ≤ E →
+      H.maslovIndex χ x x E = 0 → E = 0) :
+    (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x 0)
+        (H.addBasepointGenerator r₀ x 1) =
+      {Sum.elim (0 : Region → ℤ) (Pi.single 1 1), Sum.elim (0 : Region → ℤ) (Pi.single 0 1)} := by
+  ext D
+  rw [H.hatDomains_addBasepoint_zero_one r₀ hr₀ x x]
+  constructor
+  · rintro ⟨⟨E, k⟩, ⟨hE, -⟩, rfl⟩
+    obtain ⟨-, rfl⟩ := (H.setOf_maslovIndex_eq_zero h₀ E).mp hE
+    fin_cases k <;> simp
+  · have h0 := (H.setOf_maslovIndex_eq_zero h₀ 0).mpr ⟨rfl, rfl⟩
+    rintro (rfl | rfl)
+    exacts [⟨(0, 1), ⟨h0, Set.mem_univ _⟩, rfl⟩, ⟨(0, 0), ⟨h0, Set.mem_univ _⟩, rfl⟩]
+
 /-- **The Koszul coefficient `1 + t` from `p` to `q`.** Suppose that `r₀` contains a basepoint and
-that the diagram is weakly admissible at `x`, so that the zero domain is the only nonnegative
-periodic domain of Maslov index zero at `x`. Then the twisted coefficient of the diagram with an
-added basepoint from `(x, 0)` to `(x, 1)` is `1 + t`, for the monomial `t` of the periodic domain
-`C_α - C_β`: the crescent `C_α` is counted with label `C_α - C_β` and the crescent `C_β` with
-label `0`. -/
-theorem WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self {x : H.Generator}
-    (hW : H.WeaklyAdmissibleAt χ x) :
+that the zero domain is the only nonnegative periodic domain of Maslov index zero at `x` avoiding
+the basepoints. Then the twisted coefficient of the diagram with an added basepoint from `(x, 0)`
+to `(x, 1)` is `1 + t`, for the monomial `t` of the periodic domain `C_α - C_β`: the crescent `C_α`
+is counted with label `C_α - C_β` and the crescent `C_β` with label `0`. -/
+theorem twistedHatCoefficient_addBasepoint_zero_one_self {x : H.Generator}
+    (h₀ : ∀ E, H.IsDomainBetween x x E → (∀ z, E (H.basepoint z) = 0) → 0 ≤ E →
+      H.maslovIndex χ x x E = 0 → E = 0) :
     (H.addBasepoint r₀).twistedHatCoefficient (r.addBasepoint hr₀) (addBasepointEuler χ r₀)
         (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1) =
       1 + single (Multiplicative.ofAdd (H.addBasepointPeriodicDomainsEquiv r₀ (0, 1))) 1 := by
   classical
-  have h₀ (E : Region → ℤ) (hE : H.IsDomainBetween x x E) (hz : ∀ z, E (H.basepoint z) = 0)
-      (hE₀ : 0 ≤ E) (hμ : H.maslovIndex χ x x E = 0) : E = 0 :=
-    weaklyAdmissibleAt_iff.mp hW E (isDomainBetween_self_iff.mp ⟨hE, hz⟩) hμ hE₀
-  have hset := H.hatDomains_addBasepoint_zero_one (χ := χ) r₀ hr₀ x x
-  have hC (k : Fin 2) : (Sum.elim 0 (Pi.single k.castSucc 1) : Region ⊕ Fin 3 → ℤ) ∈
+  have hset := H.hatDomains_addBasepoint_zero_one_self hr₀ h₀
+  have := (show Set.Finite ((H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
+    (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) by
+      rw [hset]; exact Set.toFinite _).fintype
+  have hβ : (Sum.elim 0 (Pi.single 1 1) : Region ⊕ Fin 3 → ℤ) ∈
       (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x 0)
         (H.addBasepointGenerator r₀ x 1) := by
-    rw [hset]
-    exact ⟨((0 : Region → ℤ), k),
-      ⟨(H.setOf_maslovIndex_eq_zero h₀ 0).mpr ⟨rfl, rfl⟩, Set.mem_univ _⟩, rfl⟩
-  have hfin : Set.Finite ((H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
-      (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) :=
-    (Set.toFinite ({Pi.single (Sum.inr 0) 1, Pi.single (Sum.inr 1) 1} :
-      Set (Region ⊕ Fin 3 → ℤ))).subset
-      fun D hD => by
-        rw [hset] at hD
-        obtain ⟨⟨E, k⟩, ⟨hE, -⟩, rfl⟩ := hD
-        obtain ⟨-, rfl⟩ := (H.setOf_maslovIndex_eq_zero h₀ E).mp hE
-        fin_cases k <;> simp
-  have := hfin.fintype
-  have hne : (⟨_, hC 1⟩ : (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
-      (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) ≠ ⟨_, hC 0⟩ := by
+    rw [hset]; exact Set.mem_insert _ _
+  have hα : (Sum.elim 0 (Pi.single 0 1) : Region ⊕ Fin 3 → ℤ) ∈
+      (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀) (H.addBasepointGenerator r₀ x 0)
+        (H.addBasepointGenerator r₀ x 1) := by
+    rw [hset]; exact Set.mem_insert_of_mem _ rfl
+  have hne : (⟨_, hβ⟩ : (H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
+      (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1)) ≠ ⟨_, hα⟩ := by
     intro h
-    have := congrFun (congrArg Subtype.val h) (Sum.inr 0)
-    simp at this
+    simpa using congrFun (congrArg Subtype.val h) (Sum.inr 0)
   have huniv : (Finset.univ : Finset ((H.addBasepoint r₀).hatDomains (addBasepointEuler χ r₀)
       (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1))) =
-      {⟨_, hC 1⟩, ⟨_, hC 0⟩} := by
+      {⟨_, hβ⟩, ⟨_, hα⟩} := by
     ext ⟨D, hD⟩
     simp only [Finset.mem_univ, Finset.mem_insert, Finset.mem_singleton, Subtype.mk.injEq,
       true_iff]
-    rw [hset] at hD
-    obtain ⟨⟨E, k⟩, ⟨hE, -⟩, rfl⟩ := hD
-    obtain ⟨-, rfl⟩ := (H.setOf_maslovIndex_eq_zero h₀ E).mp hE
-    fin_cases k <;> simp
+    rwa [hset] at hD
   rw [twistedHatCoefficient_eq_sum, huniv, Finset.sum_pair hne, one_def, ← ofAdd_zero]
   -- The crescent `C_β` has label `0` and the crescent `C_α` has label `C_α - C_β`.
   congr 3 <;> refine Subtype.ext ?_ <;> dsimp only <;>
@@ -326,6 +318,18 @@ theorem WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self {x :
   · fin_cases m <;> simp
   · simp
   · fin_cases m <;> simp
+
+variable {H} in
+/-- **The Koszul coefficient `1 + t` at a weakly admissible generator.** If `r₀` contains a
+basepoint and the diagram is weakly admissible at `x`, then the twisted coefficient of the diagram
+with an added basepoint from `(x, 0)` to `(x, 1)` is `1 + t`. -/
+theorem WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self {x : H.Generator}
+    (hW : H.WeaklyAdmissibleAt χ x) :
+    (H.addBasepoint r₀).twistedHatCoefficient (r.addBasepoint hr₀) (addBasepointEuler χ r₀)
+        (H.addBasepointGenerator r₀ x 0) (H.addBasepointGenerator r₀ x 1) =
+      1 + single (Multiplicative.ofAdd (H.addBasepointPeriodicDomainsEquiv r₀ (0, 1))) 1 :=
+  H.twistedHatCoefficient_addBasepoint_zero_one_self hr₀ fun E hE hz hE₀ hμ =>
+    weaklyAdmissibleAt_iff.mp hW E (isDomainBetween_self_iff.mp ⟨hE, hz⟩) hμ hE₀
 
 /-- **No twisted coefficient from `p` to `q` between distinct generators.** Suppose that `r₀`
 contains a basepoint and that the zero domain is the only nonnegative domain of Maslov index zero
@@ -342,19 +346,20 @@ theorem twistedHatCoefficient_addBasepoint_zero_one_of_ne {x y : H.Generator}
     hxy ((H.setOf_maslovIndex_eq_zero h₀ E).mp hE).1)
 
 /-- **The twisted hat differential after adding a basepoint is a Koszul tensor product.** Suppose
-that `r₀` contains a basepoint and that the zero domain is the only nonnegative domain of Maslov
-index zero avoiding the basepoints. Then the twisted hat differential of the diagram with an added
-basepoint in `r₀` sends a chain `c` to the chain whose coefficient at `(y, k)` is
+that `r₀` contains a basepoint and that, for every generator `x`, the zero domain is the only
+nonnegative domain of Maslov index zero from `x` to `y` avoiding the basepoints. Then the twisted
+hat differential of the diagram with an added basepoint in `r₀` sends a chain `c` to the chain
+whose coefficient at `(y, k)` is
 `∑ₓ c(x, k) ι(c(x, y)) + [k = 1] (1 + t) c(y, 0)`, where `c(x, y)` are the twisted coefficients of
 the original diagram, `ι` is `TauCeti.HeegaardRegionSystem.addBasepointTwistedRingHom` and `t` is
 the monomial of the periodic domain `C_α - C_β`: the old twisted differential tensored with the
 Koszul complex `p ↦ (1 + t) q`. -/
-theorem twistedHatDifferential_addBasepoint_apply
-    (h₀ : ∀ x y E, H.IsDomainBetween x y E → (∀ z, E (H.basepoint z) = 0) → 0 ≤ E →
+theorem twistedHatDifferential_addBasepoint_apply (y : H.Generator)
+    (h₀ : ∀ x E, H.IsDomainBetween x y E → (∀ z, E (H.basepoint z) = 0) → 0 ≤ E →
       H.maslovIndex χ x y E = 0 → E = 0)
     (c : (H.addBasepoint r₀).Generator →₀
       MonoidAlgebra (ZMod 2) (Multiplicative (H.addBasepoint r₀).periodicDomains))
-    (y : H.Generator) (k : Fin 2) :
+    (k : Fin 2) :
     (H.addBasepoint r₀).twistedHatDifferential (r.addBasepoint hr₀) (addBasepointEuler χ r₀) c
         (H.addBasepointGenerator r₀ y k) =
       (∑ x, c (H.addBasepointGenerator r₀ x k) *
@@ -377,76 +382,13 @@ theorem twistedHatDifferential_addBasepoint_apply
         else 0 := by
       split_ifs with hxy
       · subst hxy
-        refine WeaklyAdmissibleAt.twistedHatCoefficient_addBasepoint_zero_one_self hr₀
-          (weaklyAdmissibleAt_iff.mpr fun P hP hμ hP₀ => ?_)
-        obtain ⟨hD, hz⟩ := isDomainBetween_self_iff.mpr hP
-        exact h₀ x x P hD hz hP₀ hμ
-      · exact H.twistedHatCoefficient_addBasepoint_zero_one_of_ne hr₀ (h₀ x y) hxy
+        exact H.twistedHatCoefficient_addBasepoint_zero_one_self hr₀ (h₀ _)
+      · exact H.twistedHatCoefficient_addBasepoint_zero_one_of_ne hr₀ (h₀ x) hxy
     simp only [hcoef, twistedHatCoefficient_addBasepoint_self H hr₀, mul_ite, mul_zero,
       Finset.sum_add_distrib, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
     exact add_comm _ _
 
 end Hat
-
-section LensSpace
-
-variable {p : ℕ} [NeZero p] {q : (ZMod p)ˣ} {s : ZMod p}
-  (r : (lensSpace p q s).ReferenceDomains)
-
-/-- **The twisted hat complex of a lens space with an added basepoint.** After adding a basepoint to
-the genus-one diagram of `L(p, q)` in its basepoint region, the twisted hat differential sends a
-chain `c` to the chain whose coefficient at `(y, 1)` is `(1 + t) c(y, 0)` and whose coefficient at
-`(y, 0)` is zero: the direct sum over the generators of the Koszul complex of `1 + t`. For `p = 1`
-this is the twice-pointed diagram of `S³`. -/
-theorem twistedHatDifferential_addBasepoint_lensSpace_apply
-    (c : ((lensSpace p q s).addBasepoint s).Generator →₀
-      MonoidAlgebra (ZMod 2) (Multiplicative ((lensSpace p q s).addBasepoint s).periodicDomains))
-    (y : (lensSpace p q s).Generator) (k : Fin 2) :
-    ((lensSpace p q s).addBasepoint s).twistedHatDifferential
-        (r.addBasepoint (Set.mem_range.mpr ⟨(), lensSpace_basepoint ()⟩))
-        (addBasepointEuler 1 s) c ((lensSpace p q s).addBasepointGenerator s y k) =
-      if k = 1 then c ((lensSpace p q s).addBasepointGenerator s y 0) *
-        (1 + single (Multiplicative.ofAdd
-          ((lensSpace p q s).addBasepointPeriodicDomainsEquiv s (0, 1))) 1)
-      else 0 := by
-  rw [twistedHatDifferential_addBasepoint_apply _ _
-    (fun _ _ _ hE hz _ _ => eq_zero_of_isDomainBetween_lensSpace hE hz)]
-  simp [twistedHatCoefficient_eq_zero_of_hatDomains_eq_empty (hatDomains_lensSpace _ _)]
-
-/-- **The cycles of the twisted hat complex of a lens space with an added basepoint** are the
-chains vanishing on the generators `(x, 0)`: the coefficient `1 + t` is not a zero divisor. -/
-theorem twistedHatDifferential_addBasepoint_lensSpace_eq_zero_iff
-    (c : ((lensSpace p q s).addBasepoint s).Generator →₀
-      MonoidAlgebra (ZMod 2) (Multiplicative ((lensSpace p q s).addBasepoint s).periodicDomains)) :
-    ((lensSpace p q s).addBasepoint s).twistedHatDifferential
-        (r.addBasepoint (Set.mem_range.mpr ⟨(), lensSpace_basepoint ()⟩))
-        (addBasepointEuler 1 s) c = 0 ↔
-      ∀ x, c ((lensSpace p q s).addBasepointGenerator s x 0) = 0 := by
-  have : UniqueSums ((lensSpace p q s).addBasepoint s).periodicDomains :=
-    UniqueSums.of_injective_addHom
-      ((lensSpace p q s).addBasepoint s).periodicDomains.subtype.toAddHom Subtype.val_injective
-      inferInstance
-  have hne : (1 + single (Multiplicative.ofAdd
-      ((lensSpace p q s).addBasepointPeriodicDomainsEquiv s (0, 1))) 1 :
-      MonoidAlgebra (ZMod 2) (Multiplicative ((lensSpace p q s).addBasepoint s).periodicDomains))
-      ≠ 0 := by
-    intro h
-    have := congrArg (fun f => f.coeff 1) h
-    have h01 : (lensSpace p q s).addBasepointPeriodicDomainsEquiv s (0, 1) ≠ 0 := by
-      simp
-    simp [one_def, coeff_single, h01] at this
-  constructor
-  · intro h x
-    have := twistedHatDifferential_addBasepoint_lensSpace_apply r c x 1
-    simp only [h, Finsupp.zero_apply, ite_true] at this
-    exact (mul_eq_zero.mp this.symm).resolve_right hne
-  · intro h
-    ext g
-    obtain ⟨⟨y, k⟩, rfl⟩ := ((lensSpace p q s).addBasepointGeneratorEquiv s).surjective g
-    rw [addBasepointGeneratorEquiv_apply, twistedHatDifferential_addBasepoint_lensSpace_apply,
-      h, zero_mul, ite_self, Finsupp.zero_apply]
-
-end LensSpace
 
 end HeegaardRegionSystem
 
