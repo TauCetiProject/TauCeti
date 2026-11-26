@@ -90,6 +90,7 @@ theorem regularizedHGFun_singleton_neg_natCast_right (a z : ℂ) (n : ℕ) :
 
 /-- The case `a = 1`, `n = 0` of DLMF 13.2.5: `𝐌(1, 0, z) = z e^z`. Here
 `𝐌(1, 0, z) = ∑_{k ≥ 1} zᵏ / (k - 1)!`, whose `k = 0` term vanishes. -/
+@[simp]
 theorem regularizedHGFun_one_singleton_zero (z : ℂ) :
     regularizedHGFun {1} {0} z = z * exp z := by
   have h : regularizedHGFun {1} {0} z = z * regularizedHGFun {2} {2} z := by
