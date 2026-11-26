@@ -61,7 +61,13 @@ it. Its operator theory follows from that construction:
 For `-Δ`, with energy form `∫_Ω ∇u · ∇v`, the Gårding inequality holds with `θ = ω = 1` and every
 hypothesis but the Rellich property holds outright: the mixed Laplacian `-Δ_Γ` is self-adjoint and
 nonnegative, every negative number is a resolvent point, and on a domain with the Rellich property
-it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
+it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative. Its kernel consists
+of the values of the `u ∈ H¹_Γ(Ω)` with vanishing gradient
+(`TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`), so `0` is a spectral value as soon as
+`H¹_Γ(Ω)` contains such a `u` with nonzero value. This happens for the Neumann Laplacian `-Δ_∅` on
+every nonempty bounded open set, where the constant `1` lies in `H¹_∅(Ω)`: `0` is the least point of
+its spectrum and `-Δ_∅` has no inverse
+(`TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty`).
 
 ## Main declarations
 
@@ -96,6 +102,10 @@ it has compact resolvent and spectrum its mixed eigenvalues, all nonnegative.
   `TauCeti.PDE.mem_graph_mixedOperator_laplacian_iff`,
   `TauCeti.PDE.mem_domain_mixedOperator_laplacian_iff` and
   `TauCeti.PDE.value_mem_domain_mixedOperator_laplacian`: the mixed Laplacian `-Δ_Γ`.
+* `TauCeti.PDE.mixedOperator_laplacian_apply_eq_zero_iff`,
+  `TauCeti.PDE.zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero` and
+  `TauCeti.PDE.isLeast_spectrum_mixedOperator_laplacian_empty`: the kernel of `-Δ_Γ`, and the
+  eigenvalue `0` at the bottom of the spectrum of the Neumann Laplacian `-Δ_∅`.
 
 ## References
 
@@ -751,6 +761,83 @@ theorem spectrum_mixedOperator_laplacian (hΓ : Disjoint Γ Omega)
           ⟪W1p.gradient (u : W1p mu Omega 2), W1p.gradient (v : W1p mu Omega 2)⟫_ℝ =
             kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ} :=
   Set.ext fun _ ↦ mem_spectrum_mixedOperator_laplacian_iff hΓ hK
+
+/-- **The kernel of the mixed Laplacian `-Δ_Γ`**: an element `f` of its domain has `-Δ_Γ f = 0`
+exactly when `f` is the value of some `u ∈ H¹_Γ(Ω)` with vanishing weak gradient. -/
+theorem mixedOperator_laplacian_apply_eq_zero_iff (hΓ : Disjoint Γ Omega)
+    (f : (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).domain) :
+    mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+        (1 : Matrix ι ι ℝ)) Γ f = 0 ↔
+      ∃ u : W1pVanishingOn mu Omega 2 Γ, W1p.value (u : W1p mu Omega 2) = f ∧
+        W1p.gradient (u : W1p mu Omega 2) = 0 := by
+  constructor
+  · -- Testing the weak equation `∫ ∇u · ∇v = 0` with `v = u` gives `‖∇u‖² = 0`.
+    intro hf
+    obtain ⟨u, hu, -⟩ := (mem_domain_mixedOperator_iff _ hΓ).1 f.property
+    have huu := energyFormH1_eq_inner_mixedOperator _ hΓ f hu u
+    rw [hf, inner_zero_left, energyFormH1_one_zero_zero_eq_inner] at huu
+    exact ⟨u, hu, inner_self_eq_zero.1 huu⟩
+  · rintro ⟨u, hu, hgrad⟩
+    refine mixedOperator_apply_eq _ hΓ hu fun v ↦ ?_
+    rw [energyFormH1_one_zero_zero_eq_inner, hgrad, inner_zero_left, inner_zero_left]
+
+/-- **A function of `H¹_Γ(Ω)` with vanishing gradient makes `0` a spectral value of `-Δ_Γ`**: if
+some `u ∈ H¹_Γ(Ω)` with nonzero value has `∇u = 0`, then its value is an eigenvector of `-Δ_Γ` for
+the eigenvalue `0`, and `-Δ_Γ` is not invertible. -/
+theorem zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (hΓ : Disjoint Γ Omega)
+    {u : W1p mu Omega 2} (hu : u ∈ w1pVanishingOnSubmodule mu Omega 2 Γ)
+    (hval : W1p.value u ≠ 0) (hgrad : W1p.gradient u = 0) :
+    (0 : ℝ) ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ).spectrum := by
+  rw [LinearPMap.mem_spectrum_iff]
+  intro h0
+  -- The value of `u` lies in the kernel, which a resolvent point `0` makes trivial.
+  have hdom : W1p.value u ∈ (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu)
+      (Omega := Omega) (1 : Matrix ι ι ℝ)) Γ).domain :=
+    value_mem_domain_mixedOperator_laplacian (u := ⟨u, hu⟩) hΓ (g := 0) fun v ↦ by
+      rw [hgrad, inner_zero_left, inner_zero_left]
+  have hker := (mixedOperator_laplacian_apply_eq_zero_iff hΓ ⟨_, hdom⟩).2 ⟨⟨u, hu⟩, rfl, hgrad⟩
+  have h := LinearPMap.eq_zero_of_apply_eq_smul h0 ⟨_, hdom⟩ (by rw [hker, zero_smul])
+  exact hval (congrArg Subtype.val h)
+
+/-- **The Neumann Laplacian is not invertible.** On a nonempty bounded open set, `0` is the least
+point of the spectrum of the Neumann Laplacian `-Δ_∅`: the constant `1` lies in
+`H¹_∅(Ω) = H¹(Ω)` and has vanishing gradient, while every negative number is a resolvent point. -/
+theorem isLeast_spectrum_mixedOperator_laplacian_empty
+    (hb : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΩ : (Omega : Set (EuclideanSpace ℝ ι)).Nonempty) :
+    IsLeast (mixedOperator (memLp_energyIntegrand_const_zero_zero (mu := mu) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) ∅).spectrum 0 := by
+  have : IsFiniteMeasure (mu.restrict (Omega : Set (EuclideanSpace ℝ ι))) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  refine ⟨?_, fun kappa hkappa ↦ not_lt.1 fun h ↦
+    (LinearPMap.mem_spectrum_iff _ _).1 hkappa
+      (mem_resolventSet_mixedOperator_laplacian_of_neg (empty_disjoint _) h)⟩
+  -- A smooth bump equal to `1` on a ball containing `Ω` exhibits `1 ∈ H¹_∅(Ω)`.
+  obtain ⟨R, hR⟩ := hb.subset_closedBall 0
+  let φ : ContDiffBump (0 : EuclideanSpace ℝ ι) :=
+    ⟨max R 1, max R 1 + 1, by positivity, by linarith⟩
+  have hmem : (W1p.const 1 : W1p mu Omega 2) ∈ w1pVanishingOnSubmodule mu Omega 2 ∅ := by
+    refine W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz ENNReal.ofNat_ne_top
+      (φ.contDiff (n := 1)).locallyLipschitz φ.hasCompactSupport (by simp) ?_
+    filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1,
+      ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
+    rw [hx, φ.one_of_mem_closedBall (Metric.closedBall_subset_closedBall (le_max_left R 1)
+      (hR hxΩ))]
+  -- The constant `1` is nonzero in `L²(Ω)`, since `Ω` has positive measure.
+  have hval : W1p.value (W1p.const 1 : W1p mu Omega 2) ≠ 0 := by
+    intro h0
+    have : (ae (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))).NeBot :=
+      ae_restrict_neBot.2 (Omega.isOpen.measure_ne_zero mu hΩ)
+    have h1 : ∀ᵐ _ ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)), (1 : ℝ) = 0 := by
+      filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := 2) 1,
+        Lp.coeFn_zero ℝ 2 (mu.restrict (Omega : Set (EuclideanSpace ℝ ι)))] with _ hx hx0
+      rw [← hx, h0, hx0, Pi.zero_apply]
+    obtain ⟨-, h⟩ := h1.exists
+    exact one_ne_zero h
+  exact zero_mem_spectrum_mixedOperator_laplacian_of_gradient_eq_zero (empty_disjoint _) hmem
+    hval (W1p.gradient_const 1)
 
 end Laplacian
 
