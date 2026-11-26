@@ -56,6 +56,8 @@ The converse direction of the universal property is
 * `TauCeti.exists_chart_source_subset_baseSet`: on a boundaryless manifold, every point lies in a
   smooth chart into the model space with smooth inverse, inside the base set of the trivialization
   at that point.
+* `TauCeti.ChartCutoffs.exists_source_subset_baseSet`: on a boundaryless Hausdorff `σ`-compact
+  manifold, chart cutoffs whose charts lie inside the base sets of the trivializations.
 * `ContMDiffSection.ChartTestData`: a trivialization together with a chart smooth on its source
   inside the base set, indexing the chart extensions `ChartTestData.chartTestSection`.
 * `ContMDiffSection.span_iUnion_range_chartTestSection_eq_top`: compactly supported sections are
@@ -312,6 +314,17 @@ theorem TauCeti.exists_chart_source_subset_baseSet {n : ℕ∞ω} [IsManifold I 
   TauCeti.exists_chart_source_subset (trivializationAt F V x).open_baseSet
     (FiberBundle.mem_baseSet_trivializationAt' x)
 
+variable (I F) in
+/-- On a boundaryless Hausdorff `σ`-compact manifold with finite-dimensional model, there are chart
+cutoffs whose chart at each point `x` has its source in the base set of the trivialization at
+`x`. -/
+theorem TauCeti.ChartCutoffs.exists_source_subset_baseSet {n : ℕ∞} [FiniteDimensional ℝ E]
+    [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M] :
+    ∃ A : TauCeti.ChartCutoffs I M n M,
+      ∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet :=
+  TauCeti.ChartCutoffs.exists_source_subset (fun x ↦ (trivializationAt F V x).open_baseSet)
+    (FiberBundle.mem_baseSet_trivializationAt' ·)
+
 end TestChart
 
 namespace ContMDiffSection
@@ -396,8 +409,7 @@ theorem span_iUnion_range_chartTestSection_eq_top :
   refine Submodule.eq_top_iff'.2 fun s ↦ ?_
   let K : Compacts M := ⟨_, mem_compactlySupported.1 s.property⟩
   let σ : supportedIn I F n V K := ⟨s, mem_supportedIn.2 subset_rfl⟩
-  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset (I := I) (n := n)
-    (fun x ↦ (trivializationAt F V x).open_baseSet) (FiberBundle.mem_baseSet_trivializationAt' ·)
+  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset_baseSet F I V (n := n)
   have hs : s = ofSupportedIn K σ := Subtype.ext (ofSupportedIn_apply K σ).symm
   rw [hs, ofSupportedIn_eq_sum A hA K σ]
   refine Submodule.sum_mem _ fun x _ ↦ Submodule.subset_span (mem_iUnion.2
@@ -426,8 +438,7 @@ theorem compactlySupportedTopology_eq_finalLocallyConvexTopology_chartTestSectio
     continuous_chartTestSection _ _ p.contMDiffOn_chart p.source_subset e U hU)
   -- Each fixed-compact stage is a finite sum of continuous factorizations through the chart
   -- extensions of test charts at points of `M`.
-  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset (I := I) (n := n)
-    (fun x ↦ (trivializationAt F V x).open_baseSet) (FiberBundle.mem_baseSet_trivializationAt' ·)
+  obtain ⟨A, hA⟩ := TauCeti.ChartCutoffs.exists_source_subset_baseSet F I V (n := n)
   let p : M → ChartTestData I F V n := fun x ↦ ⟨trivializationAt F V x, A.chart x,
     A.contMDiffOn_chart x, hA x⟩
   let := TauCeti.finalLocallyConvexTopology

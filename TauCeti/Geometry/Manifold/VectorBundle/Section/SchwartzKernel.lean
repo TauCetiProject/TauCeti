@@ -74,8 +74,8 @@ spaces (`TauCeti.ChartCutoffs.chartTestCLM_localize`).
   `B (ρᵢ φ) (σⱼ ψ)`, and summing gives `B φ ψ`.
 
 With coefficients in bundles, the charts are chosen inside base sets of trivializations of `V` and
-of `W` (`TauCeti.ChartCutoffs.exists_source_subset`), so that a test of `V ⊠ W` localized to a
-product chart is a test function with values in the tensor product `F ⊗ F'` of the model fibres.
+of `W` (`TauCeti.ChartCutoffs.exists_source_subset_baseSet`), so that a test of `V ⊠ W` localized to
+a product chart is a test function with values in the tensor product `F ⊗ F'` of the model fibres.
 Its coordinates in a basis `fₐ ⊗ g_b` are scalar test functions, and the term of the kernel at a
 product chart is the sum over `(a, b)` of the Euclidean kernels of `(φ, ψ) ↦ B (φ • fₐ) (ψ • g_b)`,
 the functions `φ • fₐ` and `ψ • g_b` being extended to bundle tests through the charts and the
@@ -737,10 +737,8 @@ private theorem exists_chartCutoffs_baseSet :
     ∃ (A : ChartCutoffs I M ⊤ M) (A' : ChartCutoffs J N ⊤ N),
       (∀ x, (A.chart x).source ⊆ (trivializationAt F V x).baseSet) ∧
         ∀ y, (A'.chart y).source ⊆ (trivializationAt F' W y).baseSet := by
-  obtain ⟨A, hA⟩ := ChartCutoffs.exists_source_subset (I := I) (n := ⊤)
-    (fun x : M ↦ (trivializationAt F V x).open_baseSet) fun x ↦ mem_baseSet_trivializationAt F V x
-  obtain ⟨A', hA'⟩ := ChartCutoffs.exists_source_subset (I := J) (n := ⊤)
-    (fun y : N ↦ (trivializationAt F' W y).open_baseSet) fun y ↦ mem_baseSet_trivializationAt F' W y
+  obtain ⟨A, hA⟩ := ChartCutoffs.exists_source_subset_baseSet F I V (n := ⊤)
+  obtain ⟨A', hA'⟩ := ChartCutoffs.exists_source_subset_baseSet F' J W (n := ⊤)
   exact ⟨A, A', hA, hA'⟩
 
 /-- **Kernels with coefficients in vector bundles are determined by their values on external

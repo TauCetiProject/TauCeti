@@ -200,10 +200,13 @@ theorem externalTensor_apply (s : Cₛ^n⟮I; F, V⟯) (t : Cₛ^n⟮J; G, W⟯)
 theorem tsupport_externalTensor_subset (s : Cₛ^n⟮I; F, V⟯) (t : Cₛ^n⟮J; G, W⟯) :
     (s.externalTensor t).tsupport ⊆ s.tsupport ×ˢ t.tsupport := by
   rw [tsupport_def, tsupport_def, tsupport_def, ← closure_prod_eq]
-  refine closure_mono fun p hp ↦ ⟨fun h ↦ hp ?_, fun h ↦ hp ?_⟩
-  · rw [externalTensor_apply, show s p.1 = 0 from h]
+  refine closure_mono fun p hp ↦ ?_
+  rw [Set.mem_ofPred_eq] at hp
+  rw [Set.mem_prod, Set.mem_ofPred_eq, Set.mem_ofPred_eq]
+  refine ⟨fun h ↦ hp ?_, fun h ↦ hp ?_⟩
+  · rw [externalTensor_apply, h]
     exact TensorProduct.zero_tmul _ _
-  · rw [externalTensor_apply, show t p.2 = 0 from h]
+  · rw [externalTensor_apply, h]
     exact TensorProduct.tmul_zero _ _
 
 end ContMDiffSection
