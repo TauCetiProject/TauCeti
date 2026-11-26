@@ -83,8 +83,8 @@ theorem binomialPow_eq_sum {u : A} {n : ℕ} (hn : (u - 1) ^ n = 0) (t : R) :
 /-- The binomial power evaluates the truncated binomial series `(1 + X) ^ t` at `u - 1`. -/
 private theorem binomialPow_eq_aeval {u : A} {n : ℕ} (hn : (u - 1) ^ n = 0) (t : R) :
     binomialPow u t = aeval (u - 1) (PowerSeries.trunc n (PowerSeries.binomialSeries R t)) := by
-  rw [binomialPow_eq_sum hn, aeval_def, PowerSeries.eval₂_trunc_eq_sum_range]
-  simp [Algebra.smul_def]
+  rw [binomialPow_eq_sum hn, PowerSeries.aeval_trunc]
+  simp [PowerSeries.binomialSeries_coeff]
 
 variable {u : A}
 

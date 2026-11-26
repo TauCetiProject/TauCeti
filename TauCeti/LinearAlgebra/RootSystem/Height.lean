@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Base.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!

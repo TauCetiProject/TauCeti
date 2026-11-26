@@ -11,11 +11,13 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.Topology.Algebra.PontryaginDual
+public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Projection
 public import TauCeti.MeasureTheory.Function.Lp.PiLp
 
 import Mathlib.Analysis.Convolution
 import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.MeasureTheory.Integral.Bochner.Star
+import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 import TauCeti.Topology.Circle.AddCircle
 
 /-!
@@ -66,8 +68,11 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
 
 * `TauCeti.fourier_injective`: `n ↦ fourier n` is injective, so distinct indices give distinct
   characters.
+* `TauCeti.injective_exp_intCast_mul_mul_I`: the same at period `2π`, read on the real line:
+  `ℓ ↦ (θ ↦ e^{iℓθ})` is injective.
 * `TauCeti.fourier_apply_ne_zero`, `TauCeti.fourier_neg_mul_fourier`: the monomials vanish
   nowhere, and `fourier (-n)` is the pointwise inverse of `fourier n`.
+* `TauCeti.star_fourier_mul_fourier`: `fourier n` is unitary in `C(AddCircle T, ℂ)`.
 * `TauCeti.fourier_one_coe_apply`, `TauCeti.fourier_neg_one_coe_apply`: the first harmonics
   `fourier (±1)` evaluated at a real point, in terms of the cosine and sine of `2π t / T`.
 * `TauCeti.fourier_apply_eq_coe_toCircle_zpow`: `fourier n` is the `n`-th power of the point of
@@ -83,10 +88,14 @@ becomes that the continuous representations of the circle on `ℂ` are exactly t
   circle takes values of modulus one.
 * `ContinuousMonoidHom.existsUnique_circle_eq_zpow`: every continuous character of the
   multiplicative unit circle is a unique integer power.
+* `ContinuousMonoidHom.exists_eq_comp_id_pow_iff`: a character of the circle factors through
+  `z ↦ zⁿ` exactly when its exponent is divisible by `n`.
 * `TauCeti.norm_fourierLp`, `TauCeti.fourierLp_smul_fourierLp`, `TauCeti.star_fourierLp`: norm,
   multiplication, and conjugation of `Lᵖ` Fourier monomials.
 * `TauCeti.inner_fourierBasis_left`, `TauCeti.innerSL_fourierBasis_apply`: taking the inner product
   with the `n`-th Fourier basis vector in the first slot gives the `n`-th Fourier coefficient.
+* `TauCeti.fourierCoeff_fourierBasis_projection`, `TauCeti.fourierBasis_projection_fourierLp`:
+  projection onto a set of Fourier modes restricts the coefficients and modes to that set.
 * `TauCeti.fourierCoeff_smul_fourierBasis`: multiplying the `L²` Fourier mode `e_m` by an
   essentially bounded function `a` shifts the Fourier coefficients of `a` by `m`.
 * `TauCeti.fourierCoeff_fourierLp_smul`: multiplying an `Lᵖ` function by the monomial `e_n`
@@ -153,6 +162,19 @@ theorem fourier_injective (hT : T ≠ 0) : Function.Injective (fourier (T := T))
       _ = 1 := by rw [hx, div_self (Complex.exp_ne_zero _)]
   norm_num at hcontra
 
+/-- The characters `θ ↦ e^{iℓθ}` of the rotation group are distinct for distinct `ℓ`. -/
+theorem injective_exp_intCast_mul_mul_I :
+    Function.Injective fun (ℓ : ℤ) (θ : ℝ) ↦ Complex.exp (ℓ * θ * Complex.I) := by
+  intro ℓ ℓ' h
+  -- On the circle `ℝ / 2πℤ` the Fourier monomial `fourier n` is `θ ↦ e^{inθ}`.
+  have key (n : ℤ) (x : ℝ) :
+      2 * (Real.pi : ℂ) * Complex.I * n * x / ((2 * Real.pi : ℝ) : ℂ) = n * x * Complex.I := by
+    push_cast
+    field_simp
+  refine fourier_injective (T := 2 * Real.pi) Real.two_pi_pos.ne' (ContinuousMap.ext fun x ↦ ?_)
+  induction x using QuotientAddGroup.induction_on with
+  | H x => rw [fourier_coe_apply, fourier_coe_apply, key, key]; exact congrFun h x
+
 /-- The Fourier monomial of frequency `1` in terms of the cosine and sine of `2π t / T`. -/
 theorem fourier_one_coe_apply (t : ℝ) :
     fourier 1 (t : AddCircle T) =
@@ -189,6 +211,11 @@ theorem fourier_apply_ne_zero (n : ℤ) (x : AddCircle T) : fourier n x ≠ 0 :=
 /-- The monomial `fourier (-n)` is the pointwise inverse of `fourier n`. -/
 theorem fourier_neg_mul_fourier (n : ℤ) (x : AddCircle T) : fourier (-n) x * fourier n x = 1 := by
   rw [← fourier_add, neg_add_cancel, fourier_zero]
+
+/-- The Fourier monomials are unitary elements of `C(AddCircle T, ℂ)`. -/
+theorem star_fourier_mul_fourier (n : ℤ) : star (fourier (T := T) n) * fourier n = 1 := by
+  ext x
+  rw [star_fourier, ContinuousMap.mul_apply, fourier_neg_mul_fourier, ContinuousMap.one_apply]
 
 /-- The Fourier monomial `fourier n` is the `n`-th power of the point `toCircle x` of the unit
 circle. -/
@@ -309,6 +336,21 @@ theorem inner_fourierBasis_left (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ
 theorem innerSL_fourierBasis_apply (f : Lp ℂ 2 (haarAddCircle (T := T))) (n : ℤ) :
     innerSL ℂ (fourierBasis (T := T) n) f = fourierCoeff f n := by
   rw [innerSL_apply_apply, inner_fourierBasis_left]
+
+/-- Fourier coefficients of the projection onto a set of modes are restricted to that set. -/
+@[simp↓]
+theorem fourierCoeff_fourierBasis_projection (s : Set ℤ) (f : Lp ℂ 2 (haarAddCircle (T := T)))
+    (n : ℤ) : fourierCoeff ((fourierBasis (T := T)).projection s f) n =
+      s.indicator (fourierCoeff f) n := by
+  rw [← fourierBasis_repr, HilbertBasis.repr_projection]
+  exact congrArg (fun g : ℤ → ℂ ↦ s.indicator g n) (funext (fourierBasis_repr f))
+
+/-- The Fourier projection fixes the modes in the given set and kills those outside it. -/
+@[simp]
+theorem fourierBasis_projection_fourierLp (s : Set ℤ) (n : ℤ) :
+    (fourierBasis (T := T)).projection s (fourierLp (T := T) 2 n) =
+      s.indicator (fourierLp (T := T) 2) n := by
+  rw [← coe_fourierBasis, HilbertBasis.projection_apply_self]
 
 /-- The zero-frequency Fourier coefficient is the integral against normalized Haar measure. -/
 theorem fourierCoeff_zero_eq_integral {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -717,6 +759,20 @@ theorem existsUnique_circle_eq_zpow (χ : Circle →ₜ* Circle) :
   ext x
   simp only [fourier_apply, AddCircle.toCircle_zsmul]
   exact congrArg (fun z : Circle ↦ (z : ℂ)) ((hm _).symm.trans (hn' _))
+
+/-- **Characters through a power map of the circle.** A continuous character `χ` of the circle
+factors through the power map `z ↦ zⁿ` exactly when it is `z ↦ z^(n k)` for some integer `k`:
+the characters of the target circle pull back to the characters whose exponent is divisible by
+`n`. -/
+theorem exists_eq_comp_id_pow_iff (χ : Circle →ₜ* Circle) (n : ℕ) :
+    (∃ ψ : Circle →ₜ* Circle, χ = ψ.comp (ContinuousMonoidHom.id Circle ^ n)) ↔
+      ∃ k : ℤ, ∀ z : Circle, χ z = z ^ ((n : ℤ) * k) := by
+  constructor
+  · rintro ⟨ψ, rfl⟩
+    obtain ⟨k, hk, -⟩ := existsUnique_circle_eq_zpow ψ
+    exact ⟨k, fun z ↦ by simp [hk, zpow_mul]⟩
+  · rintro ⟨k, hk⟩
+    exact ⟨ContinuousMonoidHom.id Circle ^ k, ext fun z ↦ by simp [hk, zpow_mul]⟩
 
 end ContinuousMonoidHom
 

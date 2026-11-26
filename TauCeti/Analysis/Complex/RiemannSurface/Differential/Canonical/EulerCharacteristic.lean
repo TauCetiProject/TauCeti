@@ -24,9 +24,9 @@ The canonical-divisor form of Riemann--Hurwitz says that every canonical divisor
 degree `-2 deg f + deg R_f`
 (`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_two_mul_degree_add_ramificationDegree`).
 Comparing the two analytic and topological counts gives `deg K = -χ(X)`
-(`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_eulerChar`). When `H¹(X, 𝒪)` is
-finite-dimensional, Riemann–Roch provides the finite map, so every canonical divisor has degree
-`-χ(X)` (`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_eulerChar_of_finiteDimensional`).
+(`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_eulerChar_of_finiteHolomorphicMap`).
+Riemann–Roch provides the finite map, so every canonical divisor has degree `-χ(X)`
+(`TauCeti.RiemannSurface.IsCanonicalDivisor.degree_eq_neg_eulerChar`).
 
 With the topological genus defined by `χ(X) = 2 - 2g` this is `deg K = 2g - 2`. Identifying `g`
 with the analytic genus `dim H¹(X, 𝒪)` needs Serre duality and is not done here.
@@ -58,21 +58,17 @@ variable [ConnectedSpace X] {K : WeilDivisor X}
 /-- **The degree of a canonical divisor is minus the Euler characteristic.** If a compact
 connected Riemann surface `X` admits a finite holomorphic map to `ℙ¹`, then every canonical
 divisor `K` of `X` has `deg K = -χ(X)`. -/
-theorem degree_eq_neg_eulerChar (hK : IsCanonicalDivisor K)
+theorem degree_eq_neg_eulerChar_of_finiteHolomorphicMap (hK : IsCanonicalDivisor K)
     (f : FiniteHolomorphicMap X (OnePoint ℂ)) : WeilDivisor.degree K = -eulerChar X := by
   rw [hK.degree_eq_neg_two_mul_degree_add_ramificationDegree f,
     f.neg_two_mul_degree_add_ramificationDegree_eq_neg_eulerChar]
 
 /-- **The degree of a canonical divisor is minus the Euler characteristic.** On a compact
-connected Riemann surface with finite-dimensional `H¹(X, 𝒪)`, every canonical divisor `K` has
-`deg K = -χ(X)`. The variant `IsCanonicalDivisor.degree_eq_neg_eulerChar` takes a finite map to
-`ℙ¹` instead of the finiteness of `H¹(X, 𝒪)`. -/
-theorem degree_eq_neg_eulerChar_of_finiteDimensional
-    [FiniteDimensional ℂ ((TauCeti.Topology.cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-      (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
-    (hK : IsCanonicalDivisor K) : WeilDivisor.degree K = -eulerChar X := by
+connected Riemann surface, every canonical divisor `K` has `deg K = -χ(X)`. -/
+theorem degree_eq_neg_eulerChar (hK : IsCanonicalDivisor K) :
+    WeilDivisor.degree K = -eulerChar X := by
   obtain ⟨F, -⟩ := exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one (X := X)
-  exact hK.degree_eq_neg_eulerChar F
+  exact hK.degree_eq_neg_eulerChar_of_finiteHolomorphicMap F
 
 /-- On the Riemann sphere, the canonical divisor `-2[∞]` has degree `-2 = -χ(S²)`. -/
 example : WeilDivisor.degree (-2 • WeilDivisor.ofPoint (∞ : OnePoint ℂ)) =

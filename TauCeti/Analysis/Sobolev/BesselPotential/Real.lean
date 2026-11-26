@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.Sobolev.BesselPotential.Conj
-import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 
 /-!
 # The real elements of the Bessel-potential space `H^s`
@@ -49,6 +49,11 @@ smoothness, analytic included.
 The real action on `H^s(E)` is restricted from the complex one
 (`BesselPotentialSpace.isScalarTower_real_complex`), so `ℂ`-bilinear maps of `H^s(E)` restrict
 to real ones.
+
+Applied in each coordinate, the inclusion of the real subspace and the real part give bounded
+real-linear maps `BesselPotentialSpace.coordInclusion` and `BesselPotentialSpace.realPartPi`
+between `(realSubmodule E h)^ι` and `H^s(E)^ι`, the second a left inverse of the first
+(`BesselPotentialSpace.realPartPi_coordInclusion`).
 
 The inclusions `H^s(E) ⊆ H^r(E)`, `r ≤ s`, preserve real elements
 (`BesselPotentialSpace.inclusion_mem_realSubmodule`). For equal orders `s = t` written differently
@@ -133,6 +138,16 @@ theorem continuous_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule
 theorem coeFn_inclusionLp_ae_eq_continuousRep (hs : finrank ℝ E < 2 * s) (F : realSubmodule E h) :
     inclusionLp h (F : H^{s}(E)) =ᵐ[volume] fun z ↦ (continuousRep F z : ℂ) :=
   (continuousRep_spec hs F).2
+
+/-- Above the Sobolev threshold, the Sobolev embedding of a real element `F` of `H^s(E)` is its
+continuous representative. -/
+@[simp]
+theorem toZeroAtInfty_coe_apply_eq_continuousRep (hs : finrank ℝ E < 2 * s)
+    (F : realSubmodule E h) (z : E) : toZeroAtInfty hs (F : H^{s}(E)) z = (continuousRep F z : ℂ) :=
+  congrFun ((Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs (F : H^{s}(E))).continuous
+    (Complex.continuous_ofReal.comp (continuous_continuousRep hs F))).1
+      ((coeFn_inclusionLp_ae_eq_toZeroAtInfty h (F : H^{s}(E))).symm.trans
+        (coeFn_inclusionLp_ae_eq_continuousRep hs F))) z
 
 /-- The continuous representative is the only continuous function representing `F`. -/
 theorem continuousRep_eq_of_ae_eq (hs : finrank ℝ E < 2 * s) {F : realSubmodule E h}
@@ -339,6 +354,41 @@ from `ℂ` only up to definitional unfolding. With it, `ℂ`-linear and `ℂ`-bi
 restrict to real ones (`ContinuousLinearMap.bilinearRestrictScalars`). -/
 instance isScalarTower_real_complex : IsScalarTower ℝ ℂ H^{s}(E) :=
   ⟨fun r c v ↦ by rw [Complex.real_smul, mul_smul, Complex.coe_smul]; rfl⟩
+
+/-! ### Coordinatewise inclusion and real part -/
+
+variable (E h) in
+/-- **The inclusion of real coordinates**: the bounded real-linear map
+`(ι → realSubmodule E h) → (ι → H^s(E))` including each coordinate into `H^s(E)`. -/
+def coordInclusion {ι : Type*} : (ι → realSubmodule E h) →L[ℝ] (ι → H^{s}(E)) :=
+  ContinuousLinearMap.piMap fun _ ↦ (realSubmodule E h).subtypeL
+
+@[simp]
+theorem coordInclusion_apply {ι : Type*} (u : ι → realSubmodule E h) (i : ι) :
+    coordInclusion E h u i = u i :=
+  (rfl)
+
+/-- The inclusion of real coordinates as a function: it coerces each coordinate into `H^s(E)`. -/
+theorem coe_coordInclusion {ι : Type*} :
+    ⇑(coordInclusion E h (ι := ι)) = fun u i ↦ (u i : H^{s}(E)) :=
+  (rfl)
+
+variable (E h) in
+/-- **The real part, coordinatewise**: the bounded real-linear projection
+`(ι → H^s(E)) → (ι → realSubmodule E h)` applying `realPartCLM` in each coordinate. -/
+def realPartPi {ι : Type*} : (ι → H^{s}(E)) →L[ℝ] (ι → realSubmodule E h) :=
+  ContinuousLinearMap.piMap fun _ ↦ realPartCLM E h
+
+@[simp]
+theorem realPartPi_apply {ι : Type*} (v : ι → H^{s}(E)) (i : ι) :
+    realPartPi E h v i = realPartCLM E h (v i) :=
+  (rfl)
+
+/-- The coordinatewise real part is a left inverse of the inclusion of real coordinates. -/
+@[simp]
+theorem realPartPi_coordInclusion {ι : Type*} (u : ι → realSubmodule E h) :
+    realPartPi E h (coordInclusion E h u) = u :=
+  funext fun i ↦ by rw [realPartPi_apply, coordInclusion_apply, realPartCLM_coe]
 
 /-! ### Inclusions between orders -/
 

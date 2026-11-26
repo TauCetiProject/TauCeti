@@ -44,10 +44,9 @@ simple graphs, together with the resulting Hall marriage equivalences:
 
 ## Implementation notes
 
-On a finite vertex type, Kőnig's theorem is transported from the multigraph theorem
-`Graph.IsBipartition.exists_isCapacitatedMatching_sum_eq_vertexCoverNum` on `Graph.ofSimpleGraph G`
-after extending a bipartition `G.IsBipartiteWith s t` to the covering bipartition
-`G.IsBipartiteWith s sᶜ`.
+On a finite vertex type, Kőnig's theorem is transported from the ordinary multigraph theorem
+`Graph.IsBipartition.exists_isMatching_card_eq_vertexCoverNum` on `Graph.ofSimpleGraph G` via
+`SimpleGraph.IsBipartite.exists_isBipartition_ofSimpleGraph` and `SimpleGraph.matchingSubgraph`.
 
 From a matching `M` and vertex cover `C` with `M.edgeSet.encard = C.encard`, setting `S = L \ C`
 places all neighbours of `S` inside `C \ L`, yielding Kőnig–Ore directly without subtraction in
@@ -76,33 +75,20 @@ open scoped Graph in
 vertex cover number. -/
 theorem IsBipartite.matchingNum_eq_vertexCoverNum [Finite V] (h : G.IsBipartite) :
     G.matchingNum = G.vertexCoverNum := by
-  classical
-  let _ : Fintype V := Fintype.ofFinite V
-  let _ : Fintype E(Graph.ofSimpleGraph G) := Fintype.ofFinite _
-  obtain ⟨s, _, hst⟩ := h.exists_isBipartiteWith
-  let L : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.val ∈ s
-  let R : Finset V(Graph.ofSimpleGraph G) := Finset.univ.filter fun x ↦ x.val ∈ sᶜ
-  have hLimg : Subtype.val '' (L : Set V(Graph.ofSimpleGraph G)) = s := by
-    ext v; simp [L]
-  have hRimg : Subtype.val '' (R : Set V(Graph.ofSimpleGraph G)) = sᶜ := by
-    ext v; simp [R]
-  have hLR : (Graph.ofSimpleGraph G).IsBipartition L R :=
-    (G.isBipartition_ofSimpleGraph_iff L R).2 ⟨hLimg ▸ hRimg ▸ hst.compl_right, by
-      rw [hLimg, hRimg, union_compl_self]⟩
-  obtain ⟨x, hx, hsum⟩ := hLR.exists_isCapacitatedMatching_sum_eq_vertexCoverNum
-  let M₀ : Finset E(Graph.ofSimpleGraph G) := Finset.univ.filter fun e ↦ x e ≠ 0
-  have hM₀ : (G.matchingSubgraph (M₀ : Set E(Graph.ofSimpleGraph G))).IsMatching :=
-    (G.matchingSubgraph_isMatching_iff _).2 (hx.supportFinset_isMatching hLR.loopless)
+  obtain ⟨L, R, hLR⟩ := h.exists_isBipartition_ofSimpleGraph
+  obtain ⟨M₀, hM₀, hcard⟩ := hLR.exists_isMatching_card_eq_vertexCoverNum
+  have hM : (G.matchingSubgraph (M₀ : Set E(Graph.ofSimpleGraph G))).IsMatching :=
+    (G.matchingSubgraph_isMatching_iff _).2 hM₀
   refine le_antisymm G.matchingNum_le_vertexCoverNum ?_
   calc
     G.vertexCoverNum
       = (Graph.ofSimpleGraph G).toSimpleGraph.vertexCoverNum :=
         (vertexCoverNum_congr (Graph.toSimpleGraphOfSimpleGraphIso G)).symm
-    _ = ((∑ e, x e : ℕ) : ℕ∞) := hsum.symm
+    _ = (M₀.card : ℕ∞) := hcard.symm
     _ = (G.matchingSubgraph (M₀ : Set E(Graph.ofSimpleGraph G))).edgeSet.encard := by
-        rw [← (Set.toFinite _).cast_ncard_eq, G.ncard_edgeSet_matchingSubgraph,
-          Set.ncard_coe_finset, ← hx.sum_eq_card_support]
-    _ ≤ G.matchingNum := hM₀.encard_edgeSet_le_matchingNum
+        rw [edgeSet_matchingSubgraph, Subtype.val_injective.encard_image,
+          Set.encard_coe_eq_coe_finsetCard]
+    _ ≤ G.matchingNum := hM.encard_edgeSet_le_matchingNum
 
 /-- **Kőnig's theorem with witnesses in `ℕ∞`.** Every finite bipartite simple graph has a matching
 and a vertex cover of equal extended cardinality. -/

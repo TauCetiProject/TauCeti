@@ -14,6 +14,7 @@ import TauCeti.Algebra.Lie.Basic
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
 import TauCeti.Geometry.Lie.Subgroup.Differential
 import Mathlib.GroupTheory.NoncommCoprod
+import TauCeti.Topology.Connected.TypeTags
 
 /-!
 # Tori and maximal tori
@@ -357,7 +358,6 @@ theorem IsMaximalTorus.lieSubalgebraOfSubgroup_centralizer {T : Subgroup G}
       rw [MonoidHom.noncommCoprod_apply, Subgroup.coe_subtype, ContinuousMonoidHom.coe_toMonoidHom,
         MonoidHom.coe_ofClass]
   have _ : ConnectedSpace T := isConnected_iff_connectedSpace.mp hT.isTorus.isConnected
-  have _ : ConnectedSpace (Multiplicative ℝ) := inferInstanceAs (ConnectedSpace ℝ)
   have _ : IsMulCommutative φ.range := by
     rw [MonoidHom.range_eq_map]
     infer_instance

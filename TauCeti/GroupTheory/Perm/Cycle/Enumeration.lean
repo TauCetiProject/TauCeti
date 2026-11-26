@@ -78,6 +78,11 @@ theorem sameCycle_out_iff {x : α} {O : Quotient (SameCycle.setoid σ)} :
   conv_rhs => rw [← Quotient.out_eq O]
   exact ⟨fun h ↦ Quotient.sound h.symm, fun h ↦ (Quotient.exact h).symm⟩
 
+/-- Distinct cycles have representatives in distinct `SameCycle` classes. -/
+theorem not_sameCycle_out_of_ne {O₁ O₂ : Quotient (SameCycle.setoid σ)} (h : O₁ ≠ O₂) :
+    ¬σ.SameCycle O₁.out O₂.out :=
+  fun hsc ↦ h ((σ.sameCycle_out_iff.mp hsc).symm.trans (Quotient.out_eq O₂))
+
 /-- The iterates of the representative of a cycle stay in that cycle. -/
 @[simp]
 theorem mk_pow_apply_out (O : Quotient (SameCycle.setoid σ)) (n : ℕ) :

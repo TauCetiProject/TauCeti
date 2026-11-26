@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Component.Cycle.Basic
+public import TauCeti.GroupTheory.Perm.Cycle.Enumeration
+public import TauCeti.LinearAlgebra.RootSystem.Component.Cycle.Diag
 public import TauCeti.LinearAlgebra.RootSystem.Component.InvariantForm
 
 /-!
@@ -67,15 +68,13 @@ private theorem bilinear_componentCycleDiag (B : M →ₗ[K] M →ₗ[K] K)
     (hB : ∀ x y, B (σ.weightMap x) (σ.weightMap y) = B x y)
     (horth : ∀ {D E : P.Component}, D ≠ E → ∀ {x y : M},
       x ∈ P.componentSpace D → y ∈ P.componentSpace E → B x y = 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     B ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * B (u : M) (v : M) := by
-  have hpow (r : ℕ) (x y : M) : B ((σ.weightMap ^ r) x) ((σ.weightMap ^ r) y) = B x y := by
-    induction r with
-    | zero => rfl
-    | succ r ih =>
-      rw [pow_succ', Module.End.mul_eq_comp, LinearMap.comp_apply, LinearMap.comp_apply, hB, ih]
+  have hpow (r : ℕ) (x y : M) : B ((σ.weightMap ^ r) x) ((σ.weightMap ^ r) y) = B x y :=
+    Nat.recOn r rfl fun r ih ↦ by
+      simp only [pow_succ', mul_apply_eq_comp, hB, ih]
   rw [P.coe_componentCycleDiag_apply, P.coe_componentCycleDiag_apply]
   simp only [map_sum, LinearMap.sum_apply]
   rw [Finset.sum_congr rfl fun s hs ↦ by
@@ -88,7 +87,7 @@ private theorem bilinear_componentCycleDiag (B : M →ₗ[K] M →ₗ[K] K)
 /-- **Scaling of a `σ`-invariant `B : P.InvariantForm` along `componentCycleDiag`** (`2 ≠ 0`). -/
 theorem InvariantForm.form_componentCycleDiag [NeZero (2 : K)] (B : P.InvariantForm) {σ : P.Aut}
     (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y) (C : P.Component)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * (B.restrictComponent C).form u.val v.val := by
@@ -101,7 +100,7 @@ is nonzero in `K`. -/
 theorem InvariantForm.cartanRatio_componentCycleDiag (B : P.InvariantForm)
     {σ : P.Aut} (hB : ∀ x y, B.form (σ.weightMap x) (σ.weightMap y) = B.form x y)
     (C : P.Component) (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     2 * B.form ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
         B.form ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
@@ -121,20 +120,20 @@ variable (P : RootPairing ι K M N) [Fintype ι] [P.IsRootSystem] (σ : P.Aut) (
 
 /-- **Scaling of `P.RootForm` along `componentCycleDiag`** (without needing `2 ≠ 0`). -/
 theorem rootForm_componentCycleDiag [Fintype C.supp]
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
         ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) =
       (minimalPeriod σ.componentEquiv C : K) * (P.componentPairing C).RootForm u.val v.val := by
   rw [P.bilinear_componentCycleDiag σ C P.RootForm (fun x y ↦ σ.toHom.rootForm_weightMap x y)
     (fun h _ _ hx hy ↦ P.rootForm_apply_eq_zero_of_mem_componentSpace h hx hy) u v,
-    P.rootForm_componentPairing C]
-  rfl
+    P.rootForm_componentPairing C, LinearMap.BilinForm.restrict_apply,
+    LinearMap.domRestrict_apply]
 
 /-- **Cartan ratios for `P.RootForm` are preserved by `componentCycleDiag`** when the cycle
 length is nonzero in `K`. -/
 theorem rootForm_cartanRatio_componentCycleDiag [Fintype C.supp]
     (hc : (minimalPeriod σ.componentEquiv C : K) ≠ 0)
-    (u v : LinearMap.fixedSubmodule (P.componentReturnAut σ C).weightMap) :
+    (u v : LinearMap.fixedSubmodule (σ.componentReturn C).toHom.weightMap) :
     2 * P.RootForm ((P.componentCycleDiag σ C u : LinearMap.fixedSubmodule σ.weightMap) : M)
           ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M) /
         P.RootForm ((P.componentCycleDiag σ C v : LinearMap.fixedSubmodule σ.weightMap) : M)
@@ -173,7 +172,7 @@ theorem rootForm_eq_sum_componentCycleFixedProj
             LinearMap.fixedSubmodule σ.weightMap) : M) :=
     Finset.sum_eq_single O (fun O' _ hO' ↦ P.rootForm_apply_eq_zero_of_mem_componentCycleSpace σ
       (C₁ := O'.out) (C₂ := O.out)
-      (fun hsc ↦ hO' ((O'.out_eq.symm.trans (Quotient.sound hsc)).trans O.out_eq))
+      (_root_.Equiv.Perm.not_sameCycle_out_of_ne σ.componentEquiv hO')
       (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O'.out _).property)
       (P.mem_componentCycleFixedSubmodule.mp (P.componentCycleDiag σ O.out _).property))
       (by simp)

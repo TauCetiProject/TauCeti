@@ -21,20 +21,28 @@ determinant trick behind the Cayley–Hamilton and Nakayama arguments for finite
 
 It also identifies the adjugate of a matrix `A` with a right inverse `B` as `det A • B`
 (`Matrix.adjugate_eq_det_smul_of_mul_eq_one`); for a unitary matrix, `B` is the conjugate
-transpose.
+transpose. Consequently the adjugate commutes with conjugation by an invertible matrix:
+`adj (P * A * Q) = P * adj A * Q` when `P * Q = 1` (`Matrix.adjugate_mul_mul_of_mul_eq_one`).
 
-The same identity cancels a square matrix `A` with `A * B = c • 1` for a non-zero-divisor `c`, so
-that `B * A = c • 1` as well (`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is
-`mul_eq_one_comm`; for general `c` it compares a form with its `c`-scaled dual, whose Gram matrix
-is `c` times the inverse Gram matrix. Such inverses up to `c` are transported by congruence: if
-`B₁ = Pᵀ * B₂ * P` where `P` has a right inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then
-`D₁ = P' * D₂ * P'ᵀ` (`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`).
+The same identity shows that if `A * B = c • 1` for a left-regular scalar `c`, then `det A` and
+`det B` are left-regular (`Matrix.isLeftRegular_det_left_of_mul_eq_smul_one`,
+`Matrix.isLeftRegular_det_right_of_mul_eq_smul_one`) and hence `A` and `B` are regular
+(`Matrix.isRegular_left_of_mul_eq_smul_one`, `Matrix.isRegular_right_of_mul_eq_smul_one`).
+In particular, such scalar quasi-inverses commute: `A * B = c • 1 ↔ B * A = c • 1`
+(`Matrix.mul_eq_smul_one_comm`). For `c = 1` this is `mul_eq_one_comm`; for general `c` it compares
+a form with its `c`-scaled dual, whose Gram matrix is `c` times the inverse Gram matrix. Such
+inverses up to `c` are transported by congruence: if `B₁ = Pᵀ * B₂ * P` where `P` has a right
+inverse `P'`, and `B₁ * D₁ = B₂ * D₂ = c • 1`, then `D₁ = P' * D₂ * P'ᵀ`
+(`Matrix.mul_mul_transpose_eq_of_mul_eq_smul_one`).
 
 Cramer's rule expresses the determinant of `A` with one row or one column replaced through the
 adjugate. Summing over the replaced row, or over the replaced column, gives in both cases
 `trace (adj A * B)` (`Matrix.sum_det_updateRow_eq_trace_adjugate_mul` and
 `Matrix.sum_det_updateCol_eq_trace_adjugate_mul`): Jacobi's formula for the derivative of `det` at
 `A` in the direction `B`, read row by row or column by column.
+
+For a matrix indexed by `Fin (n + 1)`, the corner entry of the adjugate is the leading principal
+minor of order `n` (`Matrix.adjugate_last_last_eq_det_submatrix_castSucc`).
 -/
 
 public section
@@ -61,6 +69,17 @@ theorem adjugate_eq_det_smul_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq 
   rw [← Matrix.mul_one A.adjugate, ← h, ← Matrix.mul_assoc, adjugate_mul, Matrix.smul_mul,
     Matrix.one_mul]
 
+/-- **The adjugate commutes with conjugation.** If `P * Q = 1`, then the adjugate of `P * A * Q`
+is `P * adj A * Q`. For a unitary `P`, `Q` is the conjugate transpose. -/
+theorem adjugate_mul_mul_of_mul_eq_one {n : Type*} [Fintype n] [DecidableEq n]
+    {P Q : Matrix n n R} (h : P * Q = 1) (A : Matrix n n R) :
+    (P * A * Q).adjugate = P * A.adjugate * Q := by
+  have h' : Q * P = 1 := mul_eq_one_comm.1 h
+  -- `adj Q = det Q • P` and `adj P = det P • Q`, and `det Q * det P = det (Q * P) = 1`.
+  rw [adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one h,
+    adjugate_eq_det_smul_of_mul_eq_one h', Matrix.smul_mul, Matrix.mul_smul, Matrix.mul_smul,
+    smul_smul, ← det_mul, h', det_one, one_smul, Matrix.mul_assoc]
+
 /-- **The determinant trick.** If a family `v` of elements of a module satisfies the linear
 relations `∑ⱼ A i j • v j = 0` for every `i`, then `det A` kills every member of the family. -/
 theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [DecidableEq ι]
@@ -71,18 +90,43 @@ theorem det_smul_eq_zero_of_sum_smul_eq_zero {ι M : Type*} [Fintype ι] [Decida
     _ = ∑ i, A.adjugate k i • ∑ j, A i j • v j := Matrix.sum_mul_apply_smul A.adjugate A v k
     _ = 0 := by simp [hv]
 
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `det A` is
+left-regular. -/
+theorem isLeftRegular_det_left_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsLeftRegular A.det := by
+  have hBA : B.det * A.det = c ^ Fintype.card n := by
+    rw [mul_comm, ← det_mul, h, det_smul, det_one, mul_one]
+  exact .of_mul (hBA ▸ hc.pow _)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `det B` is
+left-regular. -/
+theorem isLeftRegular_det_right_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsLeftRegular B.det := by
+  have hAB : A.det * B.det = c ^ Fintype.card n := by
+    rw [← det_mul, h, det_smul, det_one, mul_one]
+  exact .of_mul (hAB ▸ hc.pow _)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `A` is regular. -/
+theorem isRegular_left_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsRegular A :=
+  isRegular_of_isLeftRegular_det (isLeftRegular_det_left_of_mul_eq_smul_one hc h)
+
+/-- If `A * B = c • 1` over a commutative ring with `c` left-regular, then `B` is regular. -/
+theorem isRegular_right_of_mul_eq_smul_one {n : Type*} [Fintype n] [DecidableEq n]
+    {A B : Matrix n n R} {c : R} (hc : IsLeftRegular c) (h : A * B = c • 1) :
+    IsRegular B :=
+  isRegular_of_isLeftRegular_det (isLeftRegular_det_right_of_mul_eq_smul_one hc h)
+
 /-- **Inverses up to a scalar commute.** If `A * B = c • 1` for square matrices over a commutative
 ring and a non-zero-divisor `c`, then `B * A = c • 1`. -/
 theorem mul_eq_smul_one_comm {n : Type*} [Fintype n] [DecidableEq n] {A B : Matrix n n R} {c : R}
     (hc : c ∈ nonZeroDivisors R) : A * B = c • 1 ↔ B * A = c • 1 := by
   suffices key : ∀ A B : Matrix n n R, A * B = c • 1 → B * A = c • 1 from ⟨key A B, key B A⟩
   intro A B h
-  -- `det A` divides a power of `c`, so it is a non-zero-divisor and cancels `A` on the left.
-  have hdet : IsLeftRegular A.det := by
-    have hBA : B.det * A.det = c ^ Fintype.card n := by
-      rw [mul_comm, ← det_mul, h, det_smul, det_one, mul_one]
-    exact .of_mul (hBA ▸ (isRegular_iff_mem_nonZeroDivisors.mpr hc).left.pow _)
-  apply (isRegular_of_isLeftRegular_det hdet).left
+  apply (isRegular_left_of_mul_eq_smul_one (isRegular_iff_mem_nonZeroDivisors.mpr hc).left h).left
   simp only [← Matrix.mul_assoc, h, Matrix.smul_mul, Matrix.mul_smul, Matrix.one_mul,
     Matrix.mul_one]
 
@@ -131,5 +175,12 @@ theorem sum_det_updateCol_eq_trace_adjugate_mul {n : Type*} [Fintype n] [Decidab
     (A B : Matrix n n R) : ∑ j, (A.updateCol j fun i ↦ B i j).det = (adjugate A * B).trace := by
   simp only [← cramer_apply, cramer_eq_adjugate_mulVec, trace, diag_apply, Matrix.mul_apply, mulVec,
     dotProduct]
+
+/-- The corner entry of the adjugate of a matrix indexed by `Fin (n + 1)` is its leading principal
+minor of order `n`. -/
+theorem adjugate_last_last_eq_det_submatrix_castSucc {n : ℕ}
+    (Z : Matrix (Fin (n + 1)) (Fin (n + 1)) R) :
+    Z.adjugate (Fin.last n) (Fin.last n) = (Z.submatrix Fin.castSucc Fin.castSucc).det := by
+  simp [adjugate_fin_succ_eq_det_submatrix, ← two_mul, pow_mul]
 
 end Matrix

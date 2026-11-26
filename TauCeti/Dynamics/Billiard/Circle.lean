@@ -5,14 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
+public import Mathlib.NumberTheory.Real.Irrational
+public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.Inverse
 public import TauCeti.Dynamics.Billiard.PeriodicPolygon
+public import TauCeti.Dynamics.Billiard.RotationNumber
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.InnerProductSpace.Convex
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
+import Mathlib.MeasureTheory.Integral.CircleIntegral
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleMap
+import TauCeti.Dynamics.Rotation.Orbit
 import TauCeti.Order.Filter.Extr
 import TauCeti.Topology.Circle.Metric
 
@@ -23,13 +29,29 @@ The circle of radius `R > 0` about the origin of `ℂ`, parametrized countercloc
 `χ(s) = R e^{i s / R}` with length `L = 2 π R`, is a strictly convex billiard table
 (`TauCeti.StrictConvexBilliardTable.circle`). Its dynamics is explicit, and this file computes it
 as a test of the general billiard API of `TauCeti.Dynamics.Billiard.NextCollision`,
-`TauCeti.Dynamics.Billiard.Inverse` and `TauCeti.Dynamics.Billiard.PeriodicPolygon`.
+`TauCeti.Dynamics.Billiard.Inverse`, `TauCeti.Dynamics.Billiard.PeriodicPolygon` and
+`TauCeti.Dynamics.Billiard.RotationNumber`.
 
 * **The billiard map.** A ball leaving `χ(s)` with tangential component `v = cos α`, `0 < α < π`,
   travels along the chord subtending the arc `2 α` and leaves the next collision point with the same
   tangential component, so the billiard map on `AddCircle L × (-1, 1)` is the rotation
   `β(s, v) = (s + 2 R arccos v mod L, v)`
   (`TauCeti.StrictConvexBilliardTable.billiardMap_circle_coe`).
+* **Rotation numbers.** The constant graphs `v = cos α` are invariant graphs of the billiard map
+  (`TauCeti.StrictConvexBilliardTable.isInvariantGraph_circle`) with rotation number `α / π`
+  (`TauCeti.StrictConvexBilliardTable.rotationNumber_circle`). These are all its invariant graphs
+  (`TauCeti.StrictConvexBilliardTable.IsInvariantGraph.exists_eq_const_circle`): along an invariant
+  graph through a level `c` with `arccos c / π` irrational, the level set of `c` contains a dense
+  orbit of the rotation by `2 R arccos c`, so the graph is constant; and a nonconstant graph would
+  pass through such a level. So the constant graphs foliate the open cylinder: every state lies on
+  exactly one invariant graph
+  (`TauCeti.StrictConvexBilliardTable.existsUnique_isInvariantGraph_circle`), and the rotation
+  number `c ↦ arccos c / π` is a homeomorphism from `(-1, 1)` onto `(0, 1)`
+  (`TauCeti.StrictConvexBilliardTable.circleRotationNumberHomeomorph`).
+* **The oriented-plane circle.** The table is the circular table
+  `Complex.orientation.circleBilliardTable 0 1 R` of `TauCeti.Dynamics.Billiard.Circle.Basic`
+  (`TauCeti.StrictConvexBilliardTable.circle_eq_circleBilliardTable`), so the formulas stated there
+  in every oriented Euclidean plane apply to it.
 * **Periodic states.** A state returns after `n` bounces exactly when `n arccos v` is a multiple of
   `π` (`TauCeti.StrictConvexBilliardTable.isPeriodicPt_billiardMap_circle_iff`), so the periodic
   states are those whose angle `arccos v` is a rational multiple of `π`
@@ -153,6 +175,22 @@ theorem circle_apply (s : ℝ) : circle hR s = circleMap 0 R (s / R) :=
 @[simp]
 theorem period_circle : (circle hR).period = 2 * π * R :=
   (rfl)
+
+/-- The circle billiard table of radius `R` is the circular table
+`Complex.orientation.circleBilliardTable 0 1 R` of center `0` starting at `R`, so the
+next-collision and quotient billiard formulas of `TauCeti.Dynamics.Billiard.Circle.Basic`, stated
+in every oriented Euclidean plane, apply to it. -/
+theorem circle_eq_circleBilliardTable :
+    circle hR = Complex.orientation.circleBilliardTable 0 1 R (by simp) hR := by
+  refine StrictConvexBilliardTable.ext (funext fun s => ?_) ?_
+  · rw [circle_apply, Orientation.coe_circleBilliardTable, Complex.orientation_circleCurve_one]
+  · rw [period_circle, Orientation.circleBilliardTable_period]
+
+/-- The parametrization `s ↦ R e^{i s / R}` of the circular table is smooth. -/
+theorem contDiff_circle {n : WithTop ℕ∞} : ContDiff ℝ n (circle hR) := by
+  convert (contDiff_circleMap 0 R).comp (contDiff_id.div_const R) using 1
+  funext s
+  exact circle_apply s
 
 /-- The unit tangent of the circle table at `χ(s)` is `i e^{i s / R}`. -/
 @[simp]
@@ -502,6 +540,152 @@ theorem isMaxOn_inscribedPerimeter_circle_iff_add_add_eq_zero {s : ZMod 3 → �
   rw [isMaxOn_univ_iff_eq
       (inscribedPerimeter_le_three_mul_sqrt_three fun t ↦ (norm_circle t).le) hd,
     inscribedPerimeter_eq_three_mul_sqrt_three_iff norm_circle]
+
+/-! ### Rotation numbers -/
+
+section RotationNumber
+
+variable (hR)
+
+/-- On the circular table every constant graph `v = c`, `c ∈ (-1, 1)`, is invariant. -/
+theorem isInvariantGraph_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
+    (circle hR).IsInvariantGraph fun _ ↦ c where
+  continuous := continuous_const
+  periodic _ := rfl
+  mem_Ioo _ := hc
+  nextTangential_eq s := nextTangential_circle hc s
+
+/-- **The rotation numbers of the circular table.** The constant graph `v = cos α`, `α ∈ (0, π)`,
+of the circular table has rotation number `α / π`. -/
+@[simp]
+theorem rotationNumber_circle {c : ℝ} (hc : c ∈ Ioo (-1) 1) :
+    (isInvariantGraph_circle hR hc).rotationNumber contDiff_circle =
+      Real.arccos c / Real.pi := by
+  have : (isInvariantGraph_circle hR hc).circleLift contDiff_circle =
+      (CircleDeg1Lift.translate (Multiplicative.ofAdd (Real.arccos c / Real.pi)) :
+        CircleDeg1Lift) :=
+    CircleDeg1Lift.ext fun x ↦ by
+      rw [IsInvariantGraph.circleLift_apply, graphLift_def, nextParam_circle hc,
+        CircleDeg1Lift.translate_apply, period_circle]
+      field_simp
+      ring
+  rw [IsInvariantGraph.rotationNumber_def, this, CircleDeg1Lift.translationNumber_translate]
+
+/-- The rotation number `c ↦ arccos c / π` of the constant invariant graphs of the circular table,
+as a homeomorphism from `(-1, 1)` onto `(0, 1)`, with inverse `r ↦ cos (π r)`. -/
+def circleRotationNumberHomeomorph : Ioo (-1 : ℝ) 1 ≃ₜ Ioo (0 : ℝ) 1 :=
+  (Real.cosPartialHomeomorph.symm.homeomorphOfImageSubsetSource (s := Ioo (-1) 1)
+      (t := Ioo 0 π) (by simp)
+      (by simpa using Real.cosPartialHomeomorph.symm.image_source_eq_target)).trans <|
+    ((Homeomorph.mulLeft₀ π pi_ne_zero).subtype (p := (· ∈ Ioo (0 : ℝ) 1))
+      (q := (· ∈ Ioo 0 π)) fun _ ↦ and_congr (mul_pos_iff_of_pos_left pi_pos).symm
+        (mul_lt_iff_lt_one_right pi_pos).symm).symm
+
+@[simp]
+theorem coe_circleRotationNumberHomeomorph_apply (c : Ioo (-1 : ℝ) 1) :
+    (circleRotationNumberHomeomorph c : ℝ) = Real.arccos c / π := by
+  simp [circleRotationNumberHomeomorph, div_eq_inv_mul]
+
+@[simp]
+theorem coe_circleRotationNumberHomeomorph_symm_apply (r : Ioo (0 : ℝ) 1) :
+    (circleRotationNumberHomeomorph.symm r : ℝ) = Real.cos (π * r) := by
+  simp [circleRotationNumberHomeomorph]
+
+/-- The rotation number `c ↦ arccos c / π` of the circular table is strictly antitone. -/
+theorem strictAnti_circleRotationNumberHomeomorph : StrictAnti circleRotationNumberHomeomorph :=
+  fun c c' hlt ↦ by
+    simpa only [← Subtype.coe_lt_coe, coe_circleRotationNumberHomeomorph_apply] using
+      div_lt_div_of_pos_right (Real.strictAntiOn_arccos ⟨c.property.1.le, c.property.2.le⟩
+        ⟨c'.property.1.le, c'.property.2.le⟩ hlt) pi_pos
+
+/-- The rotation number of the constant graph `v = c` of the circular table is the value of
+`circleRotationNumberHomeomorph` at `c`. -/
+theorem rotationNumber_circle_eq_circleRotationNumberHomeomorph (c : Ioo (-1 : ℝ) 1) :
+    (isInvariantGraph_circle hR c.property).rotationNumber contDiff_circle =
+      circleRotationNumberHomeomorph c := by
+  rw [rotationNumber_circle hR c.property, coe_circleRotationNumberHomeomorph_apply]
+
+/-- Along an invariant graph `ψ` of the circular table, the next collision advances the parameter
+by `2 R arccos (ψ s)` without changing the height: `ψ (s + 2 R arccos (ψ s)) = ψ s`. -/
+theorem IsInvariantGraph.apply_add_circle {ψ : ℝ → ℝ} (h : (circle hR).IsInvariantGraph ψ)
+    (s : ℝ) : ψ (s + 2 * R * Real.arccos (ψ s)) = ψ s := by
+  rw [← nextParam_circle (hR := hR) (h.mem_Ioo s), ← h.nextTangential_eq,
+    nextTangential_circle (h.mem_Ioo s)]
+
+/-- An invariant graph of the circular table that takes a value `c` with `arccos c / π`
+irrational is the constant graph `v = c`. -/
+private theorem IsInvariantGraph.eq_const_circle_of_irrational {ψ : ℝ → ℝ}
+    (h : (circle hR).IsInvariantGraph ψ) {s₀ : ℝ} (hirr : Irrational (Real.arccos (ψ s₀) / π)) :
+    ψ = fun _ ↦ ψ s₀ := by
+  have : Fact (0 < 2 * π * R) := ⟨by positivity⟩
+  have hper : Periodic ψ (2 * π * R) := period_circle (hR := hR) ▸ h.periodic
+  have hlift : Continuous hper.lift := (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 <| by
+    simpa only [Function.comp_def, hper.lift_coe] using h.continuous
+  -- The level set of `ψ s₀` descends to a nonempty closed subset of the circle that the rotation
+  -- by `2 R arccos (ψ s₀)` maps into itself; that rotation is minimal.
+  have hS := AddCircle.eq_univ_of_isClosed_of_mapsTo_add
+    (a := ((2 * R * Real.arccos (ψ s₀) : ℝ) : AddCircle (2 * π * R)))
+    (AddCircle.denseRange_nsmul_iff.1 <| AddCircle.denseRange_nsmul_coe_iff.2 <| by
+      rwa [show 2 * R * Real.arccos (ψ s₀) / (2 * π * R) = Real.arccos (ψ s₀) / π by
+        field_simp])
+    (s := hper.lift ⁻¹' {ψ s₀})
+    (isClosed_eq hlift continuous_const) ⟨s₀, hper.lift_coe s₀⟩ <| by
+      intro x hx
+      induction x using QuotientAddGroup.induction_on with | H u => ?_
+      have hu : ψ u = ψ s₀ := by simpa [hper.lift_coe] using hx
+      simp only [mem_preimage, mem_singleton_iff, ← AddCircle.coe_add, hper.lift_coe]
+      rw [add_comm, ← hu]
+      exact h.apply_add_circle hR u
+  exact funext fun t ↦ by simpa [hper.lift_coe] using eq_univ_iff_forall.1 hS t
+
+/-- **The invariant graphs of the circular table are the constant graphs.** Every invariant graph
+`ψ` of the circular table is a constant graph `v = c` with `c ∈ (-1, 1)`. -/
+theorem IsInvariantGraph.exists_eq_const_circle {ψ : ℝ → ℝ}
+    (h : (circle hR).IsInvariantGraph ψ) : ∃ c ∈ Ioo (-1) 1, ψ = fun _ ↦ c := by
+  refine ⟨ψ 0, h.mem_Ioo 0, funext fun t ↦ ?_⟩
+  by_contra hne
+  -- If `ψ a < ψ b`, some level `c` between them has an irrational rotation number, and `ψ` takes
+  -- it by the intermediate value theorem, so `ψ` is constant.
+  obtain ⟨a, b, hab⟩ : ∃ a b, ψ a < ψ b := by
+    rcases lt_or_gt_of_ne hne with h' | h'
+    · exact ⟨t, 0, h'⟩
+    · exact ⟨0, t, h'⟩
+  have hφ := strictAnti_circleRotationNumberHomeomorph
+  let A : Ioo (-1 : ℝ) 1 := ⟨ψ a, h.mem_Ioo a⟩
+  let B : Ioo (-1 : ℝ) 1 := ⟨ψ b, h.mem_Ioo b⟩
+  obtain ⟨r, hr, hBr, hrA⟩ := exists_irrational_btwn (hφ (show A < B from Subtype.mk_lt_mk.2 hab))
+  let C := circleRotationNumberHomeomorph.symm
+    ⟨r, (circleRotationNumberHomeomorph B).property.1.trans hBr,
+      hrA.trans (circleRotationNumberHomeomorph A).property.2⟩
+  have hC : (circleRotationNumberHomeomorph C : ℝ) = r := by simp [C]
+  have hAC : A < C := hφ.lt_iff_gt.1 <| show circleRotationNumberHomeomorph C < _ by
+    rw [← Subtype.coe_lt_coe, hC]; exact hrA
+  have hCB : C < B := hφ.lt_iff_gt.1 <| show _ < circleRotationNumberHomeomorph C by
+    rw [← Subtype.coe_lt_coe, hC]; exact hBr
+  obtain ⟨s₀, -, hs₀⟩ := intermediate_value_uIcc h.continuous.continuousOn
+    (Set.mem_uIcc.2 (Or.inl ⟨(Subtype.coe_lt_coe.2 hAC).le, (Subtype.coe_lt_coe.2 hCB).le⟩))
+  have hconst := h.eq_const_circle_of_irrational hR (s₀ := s₀) <| by
+    rwa [hs₀, ← coe_circleRotationNumberHomeomorph_apply, hC]
+  exact hAC.ne <| Subtype.ext <| (congrFun hconst a).trans hs₀
+
+/-- The invariant graphs of the circular table are exactly the constant graphs `v = c`,
+`c ∈ (-1, 1)`. -/
+theorem isInvariantGraph_circle_iff {ψ : ℝ → ℝ} :
+    (circle hR).IsInvariantGraph ψ ↔ ∃ c ∈ Ioo (-1) 1, ψ = fun _ ↦ c := by
+  refine ⟨fun h ↦ h.exists_eq_const_circle hR, ?_⟩
+  rintro ⟨c, hc, rfl⟩
+  exact isInvariantGraph_circle hR hc
+
+/-- **The constant graphs foliate the open cylinder.** Every state `(s, v)`, `v ∈ (-1, 1)`, of the
+circular table lies on exactly one invariant graph, the constant graph `v`. -/
+theorem existsUnique_isInvariantGraph_circle (s : ℝ) {v : ℝ} (hv : v ∈ Ioo (-1) 1) :
+    ∃! ψ : ℝ → ℝ, (circle hR).IsInvariantGraph ψ ∧ ψ s = v := by
+  refine ⟨fun _ ↦ v, ⟨isInvariantGraph_circle hR hv, rfl⟩, ?_⟩
+  rintro ψ ⟨h, hs⟩
+  obtain ⟨c, -, rfl⟩ := h.exists_eq_const_circle hR
+  exact hs ▸ rfl
+
+end RotationNumber
 
 end StrictConvexBilliardTable
 

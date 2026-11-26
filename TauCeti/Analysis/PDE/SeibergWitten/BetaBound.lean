@@ -64,7 +64,9 @@ If the `β` inequality keeps the term `(r / 4)|β|⁴`, that is if it reads
 `|β|² ≤ (4 c² / r) (w₊ + (4 + 8 K₁ + K₃) / r)`
 
 (`TauCeti.SeibergWitten.norm_sq_le_div_mul_max_one_sub_add_div`). In particular `β = 0` when
-`c = 0`.
+`c = 0`. The `α` inequality alone supplies this coarse bound with `K₃ = 4 K₁`
+(`TauCeti.SeibergWitten.norm_sq_le_one_add_mul_div` in
+`TauCeti.Analysis.PDE.SeibergWitten.PointwiseBounds`).
 
 The sections and their covariant derivatives are arbitrary dependent functions with values in
 seminormed groups, such as the fibres of vector bundles. Only `|α|²` and `|β|²` need to be `C²`.
@@ -244,7 +246,8 @@ theorem norm_sq_le_div_mul_one_sub_add_div_sq_of_isLocalMax_of_le_const (hr : 0 
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (1 - ‖α x₀‖ ^ 2) +
       32 * c ^ 2 * (K₁ + K₃ / 8 + 2 * (1 + K₃ / r)) / r ^ 2 := by
   exact sq_le_of_add_mul_nonpos hr hK₁ hK₃ hWα hWβ
-    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα hmax) hC
+    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα
+      BoundarylessManifold.isInteriorPoint hmax) hC
 
 /-- **Taubes's pointwise bound** `|β|² ≤ (C / r) w₊ + C / r²`, with `w₊ = max (1 - |α|²) 0` and
 `C = 32 c² (K₁ + 3 K₃ + 2)`. On a compact boundaryless Riemannian manifold, suppose `|α|²` and
@@ -309,7 +312,8 @@ theorem norm_sq_le_div_mul_max_one_sub_add_div_of_isLocalMax (hr : 0 < r) (hK₁
     (hmax : IsLocalMax (fun y ↦ ‖β y‖ ^ 2 + 4 * c ^ 2 / r * ‖α y‖ ^ 2) x₀) :
     ‖β x₀‖ ^ 2 ≤ 4 * c ^ 2 / r * (max (1 - ‖α x₀‖ ^ 2) 0 + 4 * (1 + 2 * K₁) / r) := by
   exact sq_le_of_add_div_mul_nonpos hr hK₁ hWβ hWα
-    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα hmax)
+    (Manifold.laplaceBeltrami_add_mul_nonpos_of_isLocalMax hβ hα
+      BoundarylessManifold.isInteriorPoint hmax)
 
 /-- **Taubes's pointwise bound** `|β|² ≤ (C / r) w₊ + C / r²`, with `w₊ = max (1 - |α|²) 0`.
 On a compact boundaryless Riemannian manifold, suppose `|α|²` and `|β|²` are `C²` and satisfy

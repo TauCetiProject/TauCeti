@@ -43,6 +43,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
   function of the nonzero homogeneous coordinates is `C^r`.
 * `Projectivization.contMDiffAt_of_eventually_eq_mk`: a map to projective space given near a point
   by `C^r` nonzero homogeneous coordinates is `C^r` at that point.
+* `Projectivization.exists_contMDiffAt_eventually_eq_mk`: conversely, a map to projective space that
+  is `C^r` at a point has `C^r` nonzero homogeneous coordinates near that point.
 
 ## References
 
@@ -197,5 +199,23 @@ theorem contMDiffAt_of_eventually_eq_mk {E H M : Type*} [NormedAddCommGroup E] [
   filter_upwards [hf, hj'] with y ⟨hy, hfy⟩ hyj
   rw [Function.comp_apply, hfy, affineChart_symm_apply, eq_comm, mk_eq_mk_iff']
   exact ⟨(F y j)⁻¹, (Fin.insertNth_one_div_eq_inv_smul j (F y) hyj).symm⟩
+
+/-- **Local homogeneous coordinates of a `C^r` map to projective space.** A map to projective space
+that is `C^r` at `x` is given near `x` by nonzero homogeneous coordinates `F y` that are `C^r` at
+`x`: those normalized in a standard affine chart containing the image of `x`. This is the converse
+of `Projectivization.contMDiffAt_of_eventually_eq_mk`. -/
+theorem exists_contMDiffAt_eventually_eq_mk {E H M : Type*} [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M]
+    [ChartedSpace H M] {f : M → ℙ 𝕜 (Fin (n + 1) → 𝕜)} {x : M} {r : ℕ∞ω}
+    (hf : ContMDiffAt I 𝓘(𝕜, Fin n → 𝕜) r f x) :
+    ∃ F : M → Fin (n + 1) → 𝕜, ContMDiffAt I 𝓘(𝕜, Fin (n + 1) → 𝕜) r F x ∧
+      ∀ᶠ y in 𝓝 x, ∃ hy : F y ≠ 0, f y = mk 𝕜 (F y) hy := by
+  obtain ⟨i, hi⟩ := exists_mem_affineOpen (f x)
+  have hU := (isOpen_affineOpen (K := 𝕜) i).mem_nhds hi
+  refine ⟨fun y ↦ Fin.insertNth (α := fun _ ↦ 𝕜) i 1 (affineChart i (f y)),
+    ((contMDiffOn_insertNth_affineChart i r).contMDiffAt hU).comp x hf, ?_⟩
+  filter_upwards [hf.continuousAt.preimage_mem_nhds hU] with y hy
+  exact ⟨Fin.insertNth_one_ne_zero i _, ((affineChart i).left_inv
+    (by rwa [affineChart_source])).symm.trans (affineChart_symm_apply i _)⟩
 
 end Projectivization

@@ -5,13 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Valuation.ValuationRing
 public import Mathlib.Topology.Algebra.Valued.WithVal
 public import TauCeti.Algebra.GroupWithZero.Range
+public import TauCeti.RingTheory.Valuation.Integers
 public import TauCeti.RingTheory.Valuation.RingEquiv
 public import TauCeti.Topology.Algebra.UniformRing
 
 /-!
-# Valuation-preserving isomorphisms extend to the completions
+# Valued rings and their completions
+
+If `O` is a ring of integers for a valuation `v` on `R`, the same algebra map identifies `O`
+with the integers for the canonical valuation on `WithVal v` (`Valuation.Integers.withVal`).
 
 Let `σ : K ≃+* K'` be a ring isomorphism carrying a valuation `v` on `K` to a valuation `w`
 on `K'`, in the sense that `w (σ x) = v x`. Then `σ` is uniformly continuous for the uniform
@@ -19,12 +24,22 @@ structures that `v` and `w` define, so it extends to an isomorphism of the compl
 `v.Completion ≃+* w.Completion`. This is how an automorphism of a field fixing a place acts on the
 completion at that place.
 
+The completion `q.Completion` of a field at a valuation `q` carries two descriptions of its
+valuation: the completed valuation `Valued.v` of the `Valued` structure, and Mathlib's valuative
+relation `UniformSpace.Completion.valuativeRel`, induced by the extension of the valuation of
+`WithVal q`. They are the same valuation, so `Valued.v` is compatible with the valuative relation.
+This lets results about fields with a valuative relation, such as nonarchimedean local fields, be
+read through the concrete completed valuation.
+
 The uniform-continuity and completion-transport arguments are extracted and generalized from
 `IsDedekindDomain.HeightOneSpectrum.uniformContinuous_withValCongr` and
 `IsDedekindDomain.HeightOneSpectrum.adicCompletionCongr` in
 `TauCeti/RingTheory/DedekindDomain/AdicValuation/Transport.lean`.
 
 ## Main definitions
+
+* `ValuationRing.equivIntegerWithVal`: identifies a valuation domain with the integer subring in
+  its fraction field equipped with the canonical valuation.
 
 * `Valuation.Completion.congr`: the isomorphism of completions `v.Completion ≃+* w.Completion`
   extending `σ`.
@@ -41,11 +56,48 @@ The uniform-continuity and completion-transport arguments are extracted and gene
 * `Valuation.Completion.valued_congr`: it preserves the completed valuations.
 * `Valuation.Completion.congr_refl`, `Valuation.Completion.congr_trans` and
   `Valuation.Completion.congr_symm`: functoriality.
+* `Valuation.Completion.valued_eq_extension`: the completed valuation is the extension
+  `Valuation.extension` of the valuation of `WithVal q`.
+* `Valuation.Completion.compatible_valued`: the completed valuation is compatible with the
+  valuative relation of `q.Completion`.
 -/
 
 public section
 
 open Filter WithZeroTopology MonoidWithZeroHom MonoidWithZeroHom.ValueGroup₀
+
+/-- A ring of integers for `v` is also a ring of integers for the canonical valuation on
+`WithVal v`. -/
+theorem Valuation.Integers.withVal {O R Γ₀ : Type*} [CommRing O] [CommRing R] [Algebra O R]
+    [LinearOrderedCommGroupWithZero Γ₀] {v : Valuation R Γ₀} (hv : v.Integers O) :
+    (Valued.v (R := WithVal v)).Integers O where
+  hom_inj := WithVal.algebraMap_right_injective v hv.hom_inj
+  map_le_one := hv.map_le_one
+  exists_of_le_one := fun {x} hx ↦ by
+    obtain ⟨a, ha⟩ := hv.exists_of_le_one (r := x.ofVal) hx
+    exact ⟨a, WithVal.ofVal_injective v ha⟩
+
+namespace ValuationRing
+
+variable {O : Type*} [CommRing O] [IsDomain O] [ValuationRing O]
+  (K : Type*) [Field K] [Algebra O K] [IsFractionRing O K]
+
+variable (O) in
+/-- The canonical ring isomorphism from `O` to the valuation subring `(Valued.v).integer` of
+`WithVal (ValuationRing.valuation O K)`. -/
+noncomputable def equivIntegerWithVal :
+    O ≃+* (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer :=
+  (ValuationRing.integers O K).withVal.equivInteger
+
+@[simp]
+theorem coe_equivIntegerWithVal (a : O) :
+    ((equivIntegerWithVal O K a :
+      (Valued.v : Valuation (WithVal (ValuationRing.valuation O K)) _).integer) :
+        WithVal (ValuationRing.valuation O K)) =
+      algebraMap O (WithVal (ValuationRing.valuation O K)) a :=
+  (ValuationRing.integers O K).withVal.coe_equivInteger_apply a
+
+end ValuationRing
 
 namespace WithVal
 
@@ -169,5 +221,34 @@ theorem congr_symm :
     (UniformSpace.Completion.continuous_mapRingEquiv_symm _ _ _) fun y ↦ ?_
   rw [RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom, RingEquiv.symm_apply_eq, congr_coe,
     RingEquiv.apply_symm_apply]
+
+section ValuativeRel
+
+variable {L : Type*} [Field L] (q : Valuation L Γ₀)
+
+/-- **The completed valuation is the extended valuation.** On the completion of a field `L` at a
+valuation `q`, the completed valuation `Valued.v` of the `Valued` structure is the extension
+`Valuation.extension` of the valuation of `WithVal q`, which defines Mathlib's valuative relation
+on `q.Completion`. -/
+theorem valued_eq_extension :
+    (Valued.v : Valuation q.Completion Γ₀) = (WithVal.valuation q).extension := by
+  ext x
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp
+  -- Away from `0` both valuations are locally constant, so they agree at `x` because they agree
+  -- at a nearby element of `L`.
+  obtain ⟨r, hr₁, hr₂⟩ := UniformSpace.Completion.denseRange_coe.mem_nhds <|
+    Filter.inter_mem (Valued.locally_const ((Valuation.ne_zero_iff _).2 hx))
+      ((WithVal.valuation q).extension_locally_const hx)
+  rw [← Set.mem_ofPred_eq.mp hr₁, ← Set.mem_ofPred_eq.mp hr₂, Valuation.extension_apply_coe]
+  exact (Valued.valuedCompletion_apply r).trans
+    ((WithVal.apply_ofVal q r).symm.trans (WithVal.valuation_apply_eq_ofVal q r).symm)
+
+/-- The completed valuation of `q.Completion` is compatible with its valuative relation. -/
+instance compatible_valued : (Valued.v : Valuation q.Completion Γ₀).Compatible := by
+  rw [valued_eq_extension]
+  infer_instance
+
+end ValuativeRel
 
 end Valuation.Completion

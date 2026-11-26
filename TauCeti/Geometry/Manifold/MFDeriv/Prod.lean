@@ -62,6 +62,10 @@ fields on a product manifold.
 * `TauCeti.mfderiv_prodMap_comp_prodMkLeft` and `TauCeti.mfderiv_prodMap_comp_prodMkRight`:
   composing the differential of `Prod.map f g` with a slice inclusion commutes with the
   differential on the varied factor.
+* `TauCeti.mfderiv_prodMap_apply_fst`: the differential of `Prod.map f g` acts on the first
+  component of a tangent vector by the differential of `f`.
+* `TauCeti.mfderiv_extChartAt_prod_apply`: the derivative of a product chart acts on each
+  component through the derivative of the chart of that factor.
 * `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`: the derivative of the inverse of a product
   chart acts on each component through the derivative of the inverse chart of that factor;
   `TauCeti.mfderiv_extChartAt_symm_prod_apply` is the same for `mfderiv` without boundary.
@@ -428,6 +432,25 @@ theorem mfderiv_prodMap_comp_prodMkRight {f : M → M''} {g : N → N''} {x : M}
     rw [mfderiv_zero_of_not_mdifferentiableAt hg, mfderiv_zero_of_not_mdifferentiableAt hdiff,
       ContinuousLinearMap.zero_comp, ContinuousLinearMap.comp_zero]
 
+/-- The differential of `Prod.map f g` acts on the first component of a tangent vector by the
+differential of `f`. Differentiability is needed only for `g`: when `f` is not differentiable at
+`p.1`, neither is `Prod.map f g` at `p`, so both sides vanish. -/
+theorem mfderiv_prodMap_apply_fst {f : M → M''} {g : N → N''} {p : M × N}
+    (hg : MDifferentiableAt J J'' g p.2) (v : TangentSpace (I.prod J) p) :
+    (mfderiv (I.prod J) (I''.prod J'') (Prod.map f g) p v).1 = mfderiv I I'' f p.1 v.1 := by
+  by_cases hf : MDifferentiableAt I I'' f p.1
+  · rw [mfderiv_prodMap hf hg]
+    -- `ContinuousLinearMap.prodMap` acts componentwise by definition. Its domain, the product of
+    -- the coordinate tangent spaces, is the tangent space of the product only by definition, so
+    -- `ContinuousLinearMap.coe_prodMap'` cannot be rewritten here.
+    rfl
+  · have hfg : ¬MDifferentiableAt (I.prod J) (I''.prod J'') (Prod.map f g) p := fun h ↦
+      hf (h.fst.comp_of_eq p.1 (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+        (Prod.mk.eta (p := p)))
+    rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfg]
+    -- Both sides are zero, in tangent spaces that are products of model spaces by definition.
+    rfl
+
 end ProdMap
 
 section ExtChartAt
@@ -455,6 +478,26 @@ theorem mfderivWithin_extChartAt_symm_prod_apply [IsManifold I 1 M] [IsManifold 
   -- `ContinuousLinearMap.prodMap` acts componentwise by definition; rewriting with
   -- `ContinuousLinearMap.coe_prodMap'` fails, because the product of the model tangent spaces is
   -- the tangent space of the product only up to definitional unfolding.
+  rfl
+
+/-- **The derivative of a product chart.** On the source of the preferred chart of `M × N` at `p`,
+its derivative sends a tangent vector `v` at `q` to the pair of the derivatives of the charts of
+`M` at `p.1` and of `N` at `p.2`, applied to the components of `v`. -/
+theorem mfderiv_extChartAt_prod_apply [IsManifold I 1 M] [IsManifold J 1 N] {p q : M × N}
+    (hq : q ∈ (extChartAt (I.prod J) p).source) (v : TangentSpace (I.prod J) q) :
+    mfderiv (I.prod J) 𝓘(𝕜, E × E') (extChartAt (I.prod J) p) q v =
+      (mfderiv I 𝓘(𝕜, E) (extChartAt I p.1) q.1 v.1,
+        mfderiv J 𝓘(𝕜, E') (extChartAt J p.2) q.2 v.2) := by
+  have hq' : q.1 ∈ (extChartAt I p.1).source ∧ q.2 ∈ (extChartAt J p.2).source := by
+    rwa [extChartAt_prod, PartialEquiv.prod_source, mem_prod] at hq
+  have hfun : (extChartAt (I.prod J) p : M × N → E × E') =
+      Prod.map (extChartAt I p.1) (extChartAt J p.2) := by
+    rw [extChartAt_prod, PartialEquiv.prod_coe, Prod.map_def]
+  rw [hfun, modelWithCornersSelf_prod, ← chartedSpaceSelf_prod,
+    mfderiv_prodMap (mdifferentiableAt_extChartAt (by simpa using hq'.1))
+      (mdifferentiableAt_extChartAt (by simpa using hq'.2))]
+  -- `ContinuousLinearMap.prodMap` acts componentwise by definition, as in
+  -- `TauCeti.mfderivWithin_extChartAt_symm_prod_apply`.
   rfl
 
 /-- **The derivative of the inverse of a product chart, without boundary.** On the target of the

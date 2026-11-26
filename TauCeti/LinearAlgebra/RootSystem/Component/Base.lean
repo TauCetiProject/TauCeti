@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Basis.Basic
-public import TauCeti.LinearAlgebra.RootSystem.Component.Aut
+public import TauCeti.LinearAlgebra.RootSystem.Component.Pairing
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 import TauCeti.Algebra.Group.Submonoid.Closure
@@ -556,29 +556,14 @@ variable {ι ι₂ K M N M₂ N₂ : Type*} [Field K]
   [Finite ι] [Finite ι₂] [P.IsRootSystem] [Q.IsRootSystem]
 
 /-- A base-preserving equivalence carries the simple roots of `b.componentBase C` onto the simple
-roots of `b'.componentBase (e.componentEquiv C)`. -/
+roots of `b'.componentBase D` when `e.componentEquiv C = D`. -/
 theorem Equiv.mem_support_componentPairingEquiv_indexEquiv_iff (e : P.Equiv Q) {b : P.Base}
     {b' : Q.Base} (hb : ∀ i, i ∈ b.support ↔ e.indexEquiv i ∈ b'.support) (C : P.Component)
-    (i : C.supp) :
-    (e.componentPairingEquiv C).indexEquiv i ∈ (b'.componentBase (e.componentEquiv C)).support ↔
+    {D : Q.Component} (hD : e.componentEquiv C = D) (i : C.supp) :
+    (e.componentPairingEquiv C hD).indexEquiv i ∈ (b'.componentBase D).support ↔
       i ∈ (b.componentBase C).support := by
+  subst hD
   simp [hb]
-
-/-- A base-preserving automorphism fixing `C` permutes the simple roots of `b.componentBase C`. -/
-theorem Equiv.mem_support_restrictComponentAut_indexEquiv_iff {τ : P.Aut} {b : P.Base}
-    (hb : ∀ i, i ∈ b.support ↔ τ.indexEquiv i ∈ b.support) {C : P.Component}
-    (hC : τ.componentEquiv C = C) (i : C.supp) :
-    (τ.restrictComponentAut C hC).indexEquiv i ∈ (b.componentBase C).support ↔
-      i ∈ (b.componentBase C).support := by
-  have htransport {D : P.Component} (h : D = C) (j : D.supp) (k : C.supp)
-      (hjk : (k : ι) = (j : ι)) :
-      k ∈ (b.componentBase C).support ↔ j ∈ (b.componentBase D).support := by
-    subst h
-    obtain rfl : k = j := Subtype.ext hjk
-    rfl
-  rw [htransport hC ((τ.componentPairingEquiv C).indexEquiv i)
-    ((τ.restrictComponentAut C hC).indexEquiv i) (by simp)]
-  exact τ.mem_support_componentPairingEquiv_indexEquiv_iff hb C i
 
 end EquivComponentBase
 

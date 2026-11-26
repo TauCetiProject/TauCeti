@@ -10,7 +10,8 @@ public import Mathlib.Combinatorics.SimpleGraph.Connectivity.Connected
 public import Mathlib.LinearAlgebra.RootSystem.Hom
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
 public import Mathlib.LinearAlgebra.RootSystem.RootPositive
-import TauCeti.LinearAlgebra.RootSystem.EquivComp
+public import TauCeti.LinearAlgebra.RootSystem.EquivComp
+import TauCeti.Dynamics.PeriodicPts.Basic
 
 /-!
 # Irreducible components of a root pairing
@@ -57,6 +58,9 @@ root system is irreducible exactly when its graph is connected.
 * `RootPairing.Equiv.map_componentSpace`, `RootPairing.Equiv.map_corootComponentSpace`,
   `RootPairing.Equiv.coe_componentProj_weightMap`: an equivalence carries component spaces to
   component spaces, intertwines component projections, and likewise for coroots.
+* `RootPairing.Equiv.componentEquiv_one`, `RootPairing.Equiv.componentEquiv_mul`: automorphisms
+  permute the components by a group action, and `RootPairing.Equiv.componentEquiv_pow`: the
+  permutation induced by a power is the corresponding power.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
   the graph.
 
@@ -592,6 +596,17 @@ theorem Equiv.coweightMap_mem_corootComponentSpace (e : P.Equiv Q) {C : P.Compon
     (hy : y ∈ Q.corootComponentSpace (e.componentEquiv C)) :
     e.coweightMap y ∈ P.corootComponentSpace C :=
   e.map_corootComponentSpace C ▸ Submodule.mem_map_of_mem hy
+
+/-- Conjugating an automorphism preserves the minimal period of its component action. -/
+theorem Equiv.minimalPeriod_componentEquiv_of_autCongr (e : P.Equiv Q) {σ : P.Aut}
+    {τ : Q.Aut} (hστ : e.autCongr σ = τ) (C : P.Component) :
+    Function.minimalPeriod τ.componentEquiv (e.componentEquiv C) =
+      Function.minimalPeriod σ.componentEquiv C := by
+  have hsemi : Function.Semiconj e.componentEquiv σ.componentEquiv τ.componentEquiv :=
+    fun D ↦ D.ind fun j ↦ by
+      rw [← hστ]
+      simp [Equiv.autCongr_apply]
+  exact (hsemi.minimalPeriod_eq e.componentEquiv.injective C).symm
 
 section EquivProjection
 

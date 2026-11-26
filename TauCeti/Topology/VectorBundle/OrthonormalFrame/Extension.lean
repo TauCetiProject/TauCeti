@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Topology.FiberBundle.Principal.Extension
-public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift
+public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Lift.Basic
 
 /-!
 # Extending a lift of the orthonormal frame bundle along a structure group homomorphism
@@ -262,6 +262,37 @@ theorem Equiv.extend_toEquiv_inl {s t : OrthonormalFrameLift F E n G ρ} (φ : s
     (φ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x (Extend.inl σ hσ p) =
       Extend.inl σ hσ (φ.toEquiv x p) :=
   s.extendEquivOfEquivariant_toEquiv_inl σ hσ hσρ hρ'n hρ'c _ _ _ _ _ x p
+
+/-- Extending the identity equivalence of a lift gives the identity equivalence. -/
+@[simp]
+theorem Equiv.extend_refl (s : OrthonormalFrameLift F E n G ρ) :
+    (refl s).extend σ hσ hσρ hρ'n hρ'c = refl (s.extend σ hσ hσρ hρ'n hρ'c) := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, extend_toEquiv_mk, refl_toEquiv, refl_toEquiv]
+  rfl
+
+/-- Extending the inverse of an equivalence of lifts gives the inverse of its extension. -/
+@[simp]
+theorem Equiv.extend_symm {s t : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t) :
+    φ.symm.extend σ hσ hσρ hρ'n hρ'c = (φ.extend σ hσ hσρ hρ'n hρ'c).symm := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := t.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, symm_toEquiv]
+  refine (_root_.Equiv.eq_symm_apply _).2 ?_
+  rw [extend_toEquiv_mk, extend_toEquiv_mk, symm_toEquiv, _root_.Equiv.apply_symm_apply]
+
+/-- Extending a composite of equivalences of lifts gives the composite of their extensions. -/
+@[simp]
+theorem Equiv.extend_trans {s t u : OrthonormalFrameLift F E n G ρ} (φ : s.Equiv t)
+    (ψ : t.Equiv u) :
+    (φ.trans ψ).extend σ hσ hσρ hρ'n hρ'c =
+      (φ.extend σ hσ hσρ hρ'n hρ'c).trans (ψ.extend σ hσ hσρ hρ'n hρ'c) := by
+  ext x z
+  obtain ⟨p, h, hz⟩ := Extend.exists_mk (P := s.P) (ρ := σ) (hρ := hσ) (b := x) z
+  rw [← hz, trans_toEquiv, extend_toEquiv_mk, trans_toEquiv]
+  exact ((congrArg ((ψ.extend σ hσ hσρ hρ'n hρ'c).toEquiv x)
+    (extend_toEquiv_mk _ _ _ _ _ φ x p h)).trans (extend_toEquiv_mk _ _ _ _ _ ψ x _ h)).symm
 
 end Universal
 

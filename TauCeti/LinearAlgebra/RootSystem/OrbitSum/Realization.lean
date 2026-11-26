@@ -8,9 +8,11 @@ module
 public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.RootSystem.Basic
 public import TauCeti.LinearAlgebra.FixedSubmodule.Permutation
+public import TauCeti.LinearAlgebra.RootSystem.Dominance
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Cone
 
 /-!
 # Orbit-sum realizations of a root-pairing automorphism
@@ -28,6 +30,16 @@ by evaluation, with orbit-sum roots and simple-orbit base. Over a characteristic
 unique (`ext`, `Subsingleton`); when `σ` stabilizes `b` over a characteristic-zero ring, positivity
 in `F.base` matches `b`. We also construct `OrbitSumRealization.one` (`equivOne`) and transport
 along intertwining based equivalences (`map`, `mapEquiv`, `equivOfMap`).
+
+The folded integral structures are the invariant parts of the original ones: when `σ` stabilizes
+`b.support`, a `σ`-fixed vector lies in the positive root monoid, respectively the root lattice, of
+`b` exactly when it lies in that of `F` (`OrbitSumRealization.coe_mem_posRootCone_iff`,
+`OrbitSumRealization.coe_mem_rootSpan_int_iff`). So integral root dominance between fixed vectors
+is folded integral dominance (`OrbitSumRealization.rootLE_coe_iff`), with no integrality of the
+endpoints, and the `F.base`-coordinate of a fixed vector at a simple-orbit sum `β_O` is its
+`b`-coordinate at any member of `O` (`OrbitSumRealization.base_toWeightBasis_repr`). These rest on
+the regrouping of fixed natural and integral combinations of simple roots in
+`TauCeti.LinearAlgebra.RootSystem.OrbitSum.Cone`.
 
 ## References
 
@@ -49,7 +61,8 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommG
 /-- The canonical embedding of `P.foldedIndices σ` into `LinearMap.fixedSubmodule σ.weightMap`. -/
 def foldedRootEmb (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut) :
     P.foldedIndices σ ↪ LinearMap.fixedSubmodule σ.weightMap where
-  toFun u := ⟨(u : M), P.foldedIndices_subset_fixedSubmodule σ u.property⟩
+  toFun u := ⟨(u : M),
+    let ⟨r, hr⟩ := mem_foldedIndices.mp u.property; hr ▸ P.orbitSum_mem_fixedSubmodule σ r⟩
   inj' _ _ h := Subtype.ext (Subtype.mk.inj h)
 
 @[simp] theorem coe_foldedRootEmb_apply (P : RootPairing ι R M N) [Finite ι] (σ : P.Aut)
@@ -61,32 +74,28 @@ variable {P : RootPairing ι R M N} [P.IsRootSystem] (b : P.Base) {σ : P.Aut}
 
 private theorem equivFun_comp_weightMap (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
     b.toWeightBasis.equivFun.toLinearMap ∘ₗ σ.weightMap =
-      (LinearEquiv.funCongrLeft R R
-        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm).symm).toLinearMap ∘ₗ
+      (LinearEquiv.funCongrLeft R R (b.supportPerm hσ).symm).toLinearMap ∘ₗ
         b.toWeightBasis.equivFun.toLinearMap := by
   refine b.toWeightBasis.ext fun i ↦ funext fun j ↦ ?_
   classical
-  set π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, Module.Basis.equivFun_apply,
     b.toWeightBasis_apply i, Hom.root_weightMap_apply P P i σ.toHom,
     LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
-  have hπ : P.root (σ.indexEquiv i) = b.toWeightBasis (π i) := by
-    rw [← σ.coe_supportEquiv_apply _ i, b.toWeightBasis_apply]
+  have hπ : P.root (σ.indexEquiv i) = b.toWeightBasis (b.supportPerm hσ i) := by
+    rw [← b.coe_supportPerm_apply hσ i, b.toWeightBasis_apply]
   rw [hπ, ← b.toWeightBasis_apply i, Module.Basis.repr_self, Module.Basis.repr_self,
     Finsupp.single_apply, Finsupp.single_apply]
-  exact if_congr π.eq_symm_apply.symm rfl rfl
+  exact if_congr (b.supportPerm hσ).eq_symm_apply.symm rfl rfl
 
 /-- **The simple-orbit basis of the `σ`-fixed weight submodule**, indexed by the `σ`-cycles of
 `b.support`. -/
 noncomputable def fixedSubmoduleBasis (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) :
-    Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid
-      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) R
+    Module.Basis (Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) R
       (LinearMap.fixedSubmodule σ.weightMap) :=
-  let π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid π⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid π) :=
+  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
+      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
     Quotient.congr (_root_.Equiv.refl _) fun _ _ ↦ Equiv.Perm.sameCycle_inv
-  ((Equiv.Perm.permutationFixedBasis (R := R) π⁻¹).reindex qCongr).map
+  ((Equiv.Perm.permutationFixedBasis (R := R) (b.supportPerm hσ)⁻¹).reindex qCongr).map
     (b.toWeightBasis.equivFun.fixedSubmoduleCongr (b.equivFun_comp_weightMap hσ)).symm
 
 /-- The coordinate of a `σ`-fixed vector on the simple orbit of `j` is its `b.toWeightBasis`
@@ -94,9 +103,8 @@ coordinate at `j`. -/
 @[simp] theorem fixedSubmoduleBasis_repr (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (x : LinearMap.fixedSubmodule σ.weightMap) (j : b.support) :
     (b.fixedSubmoduleBasis hσ).repr x (Quotient.mk _ j) = b.toWeightBasis.repr (x : M) j := by
-  let π := σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm
-  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid π⁻¹) ≃
-      Quotient (Equiv.Perm.SameCycle.setoid π) :=
+  let qCongr : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)⁻¹) ≃
+      Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) :=
     Quotient.congr (_root_.Equiv.refl b.support) fun _ _ ↦ Equiv.Perm.sameCycle_inv
   have hq : qCongr.symm (Quotient.mk _ j) = Quotient.mk _ j := rfl
   simp only [fixedSubmoduleBasis, Module.Basis.map_repr, LinearEquiv.trans_apply,
@@ -109,8 +117,7 @@ coordinate at `j`. -/
 at `O.out`. -/
 theorem fixedSubmoduleBasis_repr_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (x : LinearMap.fixedSubmodule σ.weightMap)
-    (O : Quotient (Equiv.Perm.SameCycle.setoid
-      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
+    (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
     (b.fixedSubmoduleBasis hσ).repr x O = b.toWeightBasis.repr (x : M) O.out := by
   simpa only [Quotient.out_eq] using b.fixedSubmoduleBasis_repr hσ x O.out
 
@@ -120,18 +127,15 @@ variable [Finite ι]
 
 /-- Each basis vector of `fixedSubmoduleBasis` at a cycle `O` is `P.orbitSum σ O.out`. -/
 theorem coe_fixedSubmoduleBasis_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    (O : Quotient (Equiv.Perm.SameCycle.setoid
-      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
+    (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
     ((b.fixedSubmoduleBasis hσ O) : M) = P.orbitSum σ (O.out : ι) := by
   classical
   refine b.toWeightBasis.equivFun.injective (funext fun j ↦ ?_)
   rw [Module.Basis.equivFun_apply, ← b.fixedSubmoduleBasis_repr hσ (b.fixedSubmoduleBasis hσ O) j,
     Module.Basis.repr_self, Finsupp.single_apply, orbitSum_def, map_sum, Finset.sum_apply]
   have hmem : (j : ι) ∈ P.orbitIndices σ (O.out : ι) ↔
-      Quotient.mk (Equiv.Perm.SameCycle.setoid
-        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) j = O := by
-    rw [mem_orbitIndices,
-      ← σ.sameCycle_supportEquiv_iff fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm]
+      Quotient.mk (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) j = O := by
+    rw [mem_orbitIndices, ← b.sameCycle_supportPerm_iff hσ]
     exact ⟨fun h ↦ (Quotient.sound h.symm).trans (Quotient.out_eq O),
       fun h ↦ (Quotient.exact (h.trans (Quotient.out_eq O).symm)).symm⟩
   have hterm (k : ι) (hk : k ∈ P.orbitIndices σ (O.out : ι)) :
@@ -146,10 +150,9 @@ theorem coe_fixedSubmoduleBasis_out (hσ : ∀ j ∈ b.support, σ.indexEquiv j 
 /-- The `fixedSubmoduleBasis` vector at the cycle of `j : b.support` is `P.orbitSum σ j`. -/
 @[simp] theorem coe_fixedSubmoduleBasis_mk (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
     (j : b.support) : ((b.fixedSubmoduleBasis hσ (Quotient.mk _ j)) : M) = P.orbitSum σ j := by
-  let O : Quotient (Equiv.Perm.SameCycle.setoid
-      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) := Quotient.mk _ j
+  let O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) := Quotient.mk _ j
   exact (b.coe_fixedSubmoduleBasis_out hσ O).trans (orbitSum_eq_of_mem (mem_orbitIndices.mpr
-    ((σ.sameCycle_supportEquiv_iff _).mp (Quotient.exact (Quotient.out_eq O))).symm))
+    ((b.sameCycle_supportPerm_iff hσ).mp (Quotient.exact (Quotient.out_eq O))).symm))
 
 /-- When `σ` stabilizes `b.support`, `P.foldedRootEmb σ` spans the `σ`-fixed weight submodule. -/
 theorem span_foldedRootEmb_eq_top (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support) :
@@ -165,9 +168,7 @@ theorem linearIndepOn_foldedRootEmb (hσ : ∀ k ∈ b.support, σ.indexEquiv k 
       {u : P.foldedIndices σ | ∃ j ∈ b.support, P.orbitSum σ j = (u : M)} := by
   rcases subsingleton_or_nontrivial R with _ | _
   · exact linearIndepOn_iff'.mpr fun _ _ _ _ _ _ ↦ Subsingleton.elim _ _
-  · let idxMap : Quotient (Equiv.Perm.SameCycle.setoid
-        (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) →
-        P.foldedIndices σ :=
+  · let idxMap : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) → P.foldedIndices σ :=
       fun O ↦ ⟨P.orbitSum σ (O.out : ι), P.orbitSum_mem_foldedIndices σ _⟩
     have hcomp : P.foldedRootEmb σ ∘ idxMap = b.fixedSubmoduleBasis hσ :=
       funext fun O ↦ Subtype.ext (b.coe_fixedSubmoduleBasis_out hσ O).symm
@@ -177,10 +178,8 @@ theorem linearIndepOn_foldedRootEmb (hσ : ∀ k ∈ b.support, σ.indexEquiv k 
         {u : P.foldedIndices σ | ∃ j ∈ b.support, P.orbitSum σ j = (u : M)} := by
       ext u
       refine ⟨fun ⟨O, hO⟩ ↦ hO ▸ ⟨O.out, O.out.property, rfl⟩, fun ⟨j, hj, hju⟩ ↦ ?_⟩
-      let O : Quotient (Equiv.Perm.SameCycle.setoid
-          (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm)) :=
-        Quotient.mk _ ⟨j, hj⟩
-      have hsc := (σ.sameCycle_supportEquiv_iff _).mp (Quotient.exact (Quotient.out_eq O))
+      let O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ)) := Quotient.mk _ ⟨j, hj⟩
+      have hsc := (b.sameCycle_supportPerm_iff hσ).mp (Quotient.exact (Quotient.out_eq O))
       exact ⟨O, Subtype.ext ((orbitSum_eq_of_mem (mem_orbitIndices.mpr hsc.symm)).trans hju)⟩
     exact hrange ▸ (linearIndepOn_range_iff (Injective.of_comp hli.injective) _).mpr hli
 
@@ -194,8 +193,7 @@ theorem foldedRootEmb_orbitSum_mem_closure_of_isPos [CharZero R]
   classical
   set x := P.foldedRootEmb σ ⟨P.orbitSum σ r, P.orbitSum_mem_foldedIndices σ r⟩
   obtain ⟨c, hc⟩ := (mem_posRootCone P b).mp (orbitSum_mem_posRootCone hσ hr)
-  have hrepr (O : Quotient (Equiv.Perm.SameCycle.setoid
-      (σ.supportEquiv fun i ↦ (b.mem_support_indexEquiv_iff hσ i).symm))) :
+  have hrepr (O : Quotient (Equiv.Perm.SameCycle.setoid (b.supportPerm hσ))) :
       (b.fixedSubmoduleBasis hσ).repr x O = (c (O.out : ι) : R) := by
     rw [b.fixedSubmoduleBasis_repr_out hσ x O, ← Module.Basis.equivFun_apply,
       coe_foldedRootEmb_apply, Subtype.coe_mk]
@@ -305,6 +303,97 @@ instance : Subsingleton (P.OrbitSumRealization b σ) := ⟨ext⟩
 
 end Uniqueness
 
+/-! ### Integral cones, root lattices and dominance -/
+
+section Cone
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  {P : RootPairing ι R M N} [Finite ι] {b : P.Base} {σ : P.Aut} (F : P.OrbitSumRealization b σ)
+
+/-- The ambient vectors of the simple roots of `F.base` are exactly the simple-orbit sums. -/
+theorem image_coe_root_support :
+    Subtype.val '' (F.pairing.root '' F.base.support) = P.orbitSum σ '' b.support := by
+  ext x
+  simp only [Set.image_image, Set.mem_image, Finset.mem_coe, F.coe_root, F.mem_support_base_iff]
+  refine ⟨fun ⟨u, ⟨j, hj, hju⟩, hux⟩ ↦ ⟨j, hj, hju.trans hux⟩, fun ⟨j, hj, hjx⟩ ↦ ?_⟩
+  exact ⟨⟨P.orbitSum σ j, P.orbitSum_mem_foldedIndices σ j⟩, ⟨j, hj, rfl⟩, hjx⟩
+
+/-- The positive root monoid of `F.base`, viewed in `M`, is the monoid generated by the
+simple-orbit sums. -/
+theorem map_posRootCone :
+    (posRootCone F.pairing F.base).map (LinearMap.fixedSubmodule σ.weightMap).subtype =
+      AddSubmonoid.closure (P.orbitSum σ '' b.support) := by
+  rw [posRootCone_def, AddMonoidHom.map_mclosure, Submodule.coe_subtype, image_coe_root_support]
+
+/-- The root lattice of `F.pairing`, viewed in `M`, is the group generated by the simple-orbit
+sums. -/
+theorem map_rootSpan_int :
+    (F.pairing.rootSpan ℤ).map
+        ((LinearMap.fixedSubmodule σ.weightMap).subtype.restrictScalars ℤ) =
+      Submodule.span ℤ (P.orbitSum σ '' b.support) := by
+  rw [rootSpan, ← F.base.span_int_root_support, Submodule.map_span, LinearMap.coe_restrictScalars,
+    Submodule.coe_subtype, image_coe_root_support]
+
+/-- **The invariant positive root monoid is the folded one.** When `σ` permutes the simple roots
+of `b`, a `σ`-fixed vector lies in the positive root monoid `Q⁺` of `b` exactly when it lies in the
+positive root monoid of `F.base`, that is, when it is a natural combination of the simple-orbit
+sums. -/
+theorem coe_mem_posRootCone_iff (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    {x : LinearMap.fixedSubmodule σ.weightMap} :
+    (x : M) ∈ posRootCone P b ↔ x ∈ posRootCone F.pairing F.base := by
+  rw [mem_posRootCone_iff_mem_closure_orbitSum hσ x.property, ← F.map_posRootCone]
+  exact AddSubmonoid.mem_map_iff_mem Subtype.val_injective
+
+/-- **The invariant root lattice is the folded one.** When `σ` permutes the simple roots of `b`,
+a `σ`-fixed vector lies in the root lattice of `P` exactly when it lies in the root lattice of
+`F.pairing`, that is, when it is an integral combination of the simple-orbit sums. -/
+theorem coe_mem_rootSpan_int_iff (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    {x : LinearMap.fixedSubmodule σ.weightMap} :
+    (x : M) ∈ P.rootSpan ℤ ↔ x ∈ F.pairing.rootSpan ℤ := by
+  rw [mem_rootSpan_int_iff_mem_span_orbitSum hσ x.property, ← F.map_rootSpan_int, ← SetLike.mem_coe,
+    Submodule.map_coe]
+  exact Subtype.val_injective.mem_set_image
+
+/-- **Integral root dominance between fixed vectors is folded dominance.** When `σ` permutes the
+simple roots of `b`, two `σ`-fixed vectors are comparable for `b` exactly when they are comparable
+for `F.base`. No integrality of the endpoints is needed, since only their difference is tested. -/
+theorem rootLE_coe_iff (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
+    {x y : LinearMap.fixedSubmodule σ.weightMap} :
+    P.rootLE b x y ↔ F.pairing.rootLE F.base x y := by
+  rw [rootLE_iff_sub_mem_posRootCone, rootLE_iff_sub_mem_posRootCone, ← Submodule.coe_sub,
+    F.coe_mem_posRootCone_iff hσ]
+
+/-- **The folded simple-root coordinates of a fixed vector.** When `σ` permutes the simple roots
+of `b`, the coordinate of a `σ`-fixed vector at the simple root `β_O` of `F.base` is its
+`b`-coordinate at any simple root `αⱼ` with `j ∈ O`. So the unique expansion of a fixed vector in
+the simple-orbit sums has, at `β_O`, the common `b`-coordinate of the members of `O`. -/
+theorem base_toWeightBasis_repr [P.IsRootSystem]
+    (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support) (x : LinearMap.fixedSubmodule σ.weightMap)
+    {j : ι} (hj : j ∈ b.support) :
+    F.base.toWeightBasis.repr x ⟨_, F.orbitSum_mem_support_base hj⟩ =
+      b.toWeightBasis.repr (x : M) ⟨j, hj⟩ := by
+  classical
+  -- Compare the two coordinate functionals on the basis `F.base.toWeightBasis`.
+  suffices F.base.toWeightBasis.coord ⟨_, F.orbitSum_mem_support_base hj⟩ =
+      (b.toWeightBasis.coord ⟨j, hj⟩).comp (LinearMap.fixedSubmodule σ.weightMap).subtype from
+    LinearMap.congr_fun this x
+  refine F.base.toWeightBasis.ext fun w ↦ ?_
+  obtain ⟨k, hk, hkw⟩ := F.mem_support_base_iff.mp w.property
+  have hsub := b.orbitIndices_subset_support hσ hk
+  have hw : w = ⟨_, F.orbitSum_mem_support_base hj⟩ ↔ j ∈ P.orbitIndices σ k := by
+    rw [Subtype.ext_iff, Subtype.ext_iff, ← hkw]
+    exact b.orbitSum_eq_orbitSum_iff_of_mem_support hσ hk hj
+  simp only [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply, hw]
+  simp only [LinearMap.comp_apply, Submodule.coe_subtype, Base.toWeightBasis_apply, F.coe_root,
+    ← hkw, orbitSum_def, Module.Basis.coord_apply, map_sum]
+  have hcoord (i : ι) (hi : i ∈ P.orbitIndices σ k) :
+      b.toWeightBasis.repr (P.root i) ⟨j, hj⟩ = if i = j then 1 else 0 := by
+    rw [← b.toWeightBasis_apply ⟨i, hsub hi⟩, Module.Basis.repr_self, Finsupp.single_apply]
+    exact if_congr Subtype.ext_iff rfl rfl
+  rw [Finset.sum_congr rfl hcoord, Finset.sum_ite_eq']
+
+end Cone
+
 /-! ### Positive roots -/
 
 section Positive
@@ -312,18 +401,6 @@ section Positive
 variable {ι R M N : Type*} [CommRing R] [CharZero R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} [Finite ι] {b : P.Base} {σ : P.Aut} (F : P.OrbitSumRealization b σ)
-
-/-- Over a characteristic-zero ring, when `σ` stabilizes `b.support`, every vector in the positive
-root cone of `F` lies in the ambient positive root cone of `b`. -/
-theorem coe_mem_posRootCone (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.support)
-    {x : LinearMap.fixedSubmodule σ.weightMap} (hx : x ∈ posRootCone F.pairing F.base) :
-    (x : M) ∈ posRootCone P b := by
-  obtain ⟨c, rfl⟩ := (mem_posRootCone F.pairing F.base).mp hx
-  rw [Submodule.coe_sum]
-  refine sum_mem fun u hu ↦ ?_
-  obtain ⟨j, hj, hju⟩ := F.mem_support_base_iff.mp hu
-  rw [Submodule.coe_smul_of_tower, F.coe_root, ← hju]
-  exact nsmul_mem (orbitSum_mem_posRootCone hσ (b.isPos_of_mem_support hj)) (c u)
 
 /-- **Positivity of an orbit sum in `F.base` matches positivity in `b`** when `σ` stabilizes
 `b.support` over a characteristic-zero ring. -/
@@ -336,7 +413,7 @@ theorem isPos_orbitSum_iff (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.sup
     have hneg_pos : F.pairing.reflectionPerm u u ∈ posRoots F.pairing F.base :=
       (mem_posRoots _ _ _).mpr ((isPos_reflectionPerm_self_iff_mem_negRoots F.pairing F.base u).mpr
         ((mem_negRoots _ _ _).mpr hnot))
-    have hm := F.coe_mem_posRootCone hσ
+    have hm := (F.coe_mem_posRootCone_iff hσ).mpr
       (root_mem_posRootCone_of_mem_posRoots F.pairing F.base hneg_pos)
     rw [root_reflectionPerm, reflection_apply_self, Submodule.coe_neg, F.coe_root] at hm
     exact orbitSum_ne_zero hσ k (eq_zero_of_add_eq_zero_of_mem_posRootCone P b
@@ -346,7 +423,7 @@ theorem isPos_orbitSum_iff (hσ : ∀ j ∈ b.support, σ.indexEquiv j ∈ b.sup
   have hneg_pos : b.IsPos (P.reflectionPerm j j) :=
     (isPos_reflectionPerm_self_iff_mem_negRoots P b j).mpr ((mem_negRoots P b j).mpr hnot)
   have h₁ : P.orbitSum σ j ∈ posRootCone P b := by
-    simpa [F.coe_root] using F.coe_mem_posRootCone hσ
+    simpa [F.coe_root] using (F.coe_mem_posRootCone_iff hσ).mpr
       (root_mem_posRootCone_of_mem_posRoots F.pairing F.base ((mem_posRoots _ _ _).mpr h))
   have h₂ : -P.orbitSum σ j ∈ posRootCone P b := by
     simpa [orbitSum_reflectionPerm_self] using orbitSum_mem_posRootCone hσ hneg_pos

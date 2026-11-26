@@ -120,9 +120,9 @@ theorem exists_injective_contMDiffMonoidMorphism_matrixUnitarySubgroup :
         (unitarySubgroupUnitsEquiv (M := Matrix (Fin n) (Fin n) 𝕜)).symm.toMonoidHom.comp
           ψ.toMonoidHom
       continuous_toFun :=
-        ((TauCeti.unitarySubgroupUnitsHomeomorph (Matrix (Fin n) (Fin n) 𝕜)).symm.continuous.comp
-          ψ.continuous).congr fun g ↦
-          TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply (ψ g) }
+        ((TauCeti.unitarySubgroupUnitsContinuousMulEquiv
+          (Matrix (Fin n) (Fin n) 𝕜)).symm.continuous.comp ψ.continuous).congr fun g ↦
+          TauCeti.unitarySubgroupUnitsContinuousMulEquiv_symm_apply (ψ g) }
   have hφ_inj : Function.Injective φ :=
     (unitarySubgroupUnitsEquiv (M := Matrix (Fin n) (Fin n) 𝕜)).symm.injective.comp
       ((hπu.injective_toMatrixUnitaryGroupHom_iff hπc).mpr hinj)
