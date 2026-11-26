@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.Circle
 public import TauCeti.AlgebraicTopology.Singular.Contractible
 public import TauCeti.AlgebraicTopology.Singular.WedgeCircles
 public import TauCeti.CategoryTheory.Limits.Shapes.Products
+public import TauCeti.Topology.Connected.Sigma
 
 /-!
 # Checks of the Hurewicz isomorphism in degree one
@@ -103,15 +104,13 @@ image, so it stays in the clopen summand of the point. -/
 theorem subsingleton_fundamentalGroup_isolatedPoint :
     Subsingleton (FundamentalGroup circleSumPoint isolatedPoint) := by
   refine subsingleton_fundamentalGroup_iff.2 fun γ ↦ ?_
-  have h₀ : γ 0 ∈ Set.range (Sigma.mk (β := fun b ↦ circleOrPoint b) false) :=
-    ⟨PUnit.unit, γ.source.symm⟩
-  have h : Set.range γ ⊆ Set.range (Sigma.mk (β := fun b ↦ circleOrPoint b) false) :=
-    (isPreconnected_range γ.continuous).subset_isClopen isClopen_range_sigmaMk
-      ⟨γ 0, Set.mem_range_self 0, h₀⟩
   -- Every point of the loop lies in the summand of the point, which has a single element.
   have hγ : γ = Path.refl _ := Path.ext <| funext fun t ↦ by
-    obtain ⟨y, hy⟩ := h (Set.mem_range_self t)
-    exact hy.symm.trans (congrArg _ (Subsingleton.elim (α := PUnit) y PUnit.unit))
+    have h : (γ t).1 = false := (γ.continuous.fst_apply_eq_fst_apply t 0).trans (by simp)
+    generalize γ t = p at h ⊢
+    obtain ⟨b, y⟩ := p
+    obtain rfl : b = false := h
+    exact congrArg _ (Subsingleton.elim (α := PUnit) y PUnit.unit)
   rw [hγ]
 
 /-- `H₁(S¹ ⊔ pt; ℤ) ≅ ℤ`: by additivity, `H₁(S¹ ⊔ pt; ℤ)` is `H₁(S¹; ℤ) ⊕ H₁(pt; ℤ)`, and the

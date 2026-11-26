@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.FundamentalGroup.WedgeSum
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Basic
-public import Mathlib.Algebra.FreeAbelianGroup.Finsupp
+public import TauCeti.GroupTheory.FreeGroup.Abelianization
 
 /-!
 # The first homology of a wedge of circles
@@ -18,7 +18,8 @@ circles `⋁_ι S¹` is the free abelian group `ι →₀ ℤ` on the circles
 Hurewicz isomorphism `H₁(⋁_ι S¹; ℤ) ≅ π₁(⋁_ι S¹)ᵃᵇ`
 (`TauCeti.HurewiczOne.hurewiczHomologyAddEquiv`) with the computation of the fundamental group of a
 wedge of circles as the free group on `ι` (`TauCeti.WedgeSum.circleFundamentalGroupMulEquiv`): the
-abelianization of a free group is the free abelian group on the same generators. The Hurewicz class
+abelianization of a free group is the free abelian group on the same generators
+(`FreeGroupBasis.abelianizationBasis`). The Hurewicz class
 of the loop going once counterclockwise around the `i`-th circle corresponds to the basis vector
 `Finsupp.single i 1` (`TauCeti.WedgeSum.circleFirstHomologyEquiv_hurewiczHomologyAddEquiv_expLoop`).
 
@@ -54,11 +55,9 @@ Hurewicz class of the loop around the `i`-th circle going to `Finsupp.single i 1
 def circleFirstHomologyEquiv :
     ((singularChains ℤ).obj (TopCat.of (WedgeSum fun _ : ι ↦ (1 : Circle)))).homology 1 ≃ₗ[ℤ]
       (ι →₀ ℤ) :=
-  ((hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : ι ↦ (1 : Circle))) (base _)
-      (.refl ℤ)).symm.trans
-    ((MulEquiv.toAdditive (circleFundamentalGroupMulEquiv ι).abelianizationCongr).trans
-      (FreeAddCommGroup.freeAddCommGroupEquivAdditive.symm.trans
-        (FreeAddCommGroup.equivFinsupp ι)))).toIntLinearEquiv
+  (hurewiczHomologyAddEquiv (X := TopCat.of (WedgeSum fun _ : ι ↦ (1 : Circle))) (base _)
+      (.refl ℤ)).symm.toIntLinearEquiv ≪≫ₗ
+    (FreeGroupBasis.ofRepr (circleFundamentalGroupMulEquiv ι)).abelianizationBasis.repr
 
 variable {ι}
 
@@ -72,26 +71,15 @@ theorem circleFirstHomologyEquiv_hurewiczHomologyAddEquiv_expLoop (i : ι) :
             (FundamentalGroup.mapOfEq (incl _ i) (incl_apply_self i)
               (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))))) =
       Finsupp.single i 1 := by
-  -- The loop goes to the generator `i` of the free group, whose class in the abelianization is
-  -- the generator `i` of the free commutative group on `ι` (`FreeCommGroup.of`).
-  have h : MulEquiv.toAdditive (circleFundamentalGroupMulEquiv ι).abelianizationCongr
-      (Additive.ofMul (Group.Abelianization.of
-        (FundamentalGroup.mapOfEq (incl _ i) (incl_apply_self i)
-          (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))))) =
-      Additive.ofMul (Group.Abelianization.of (FreeGroup.of i)) := by
-    simp [MulEquiv.toAdditive]
-  have hB : (FreeAddCommGroup.freeAddCommGroupEquivAdditive.symm.trans
-      (FreeAddCommGroup.equivFinsupp ι)) (Additive.ofMul (FreeCommGroup.of i)) =
-      Finsupp.single i 1 := by
-    rw [AddEquiv.trans_apply, FreeAddCommGroup.freeAddCommGroupEquivAdditive_symm_ofMul_of,
-      FreeAddCommGroup.equivFinsupp_apply, FreeAddCommGroup.toFinsupp_of]
-  rw [circleFirstHomologyEquiv, AddEquiv.coe_toIntLinearEquiv, AddEquiv.trans_apply,
-    AddEquiv.symm_apply_apply]
-  -- `FreeCommGroup ι` is `Group.Abelianization (FreeGroup ι)` only up to unfolding, so the
-  -- composite is not type-correct at reducible transparency and `AddEquiv.trans_apply` cannot
-  -- rewrite it; the two steps are composed by unification instead.
-  exact (congrArg (FreeAddCommGroup.freeAddCommGroupEquivAdditive.symm.trans
-    (FreeAddCommGroup.equivFinsupp ι)) h).trans hB
+  -- The loop is the `i`-th element of the free basis given by `circleFundamentalGroupMulEquiv`,
+  -- so its class is the `i`-th vector of the induced basis of the abelianization.
+  have h : (FreeGroupBasis.ofRepr (circleFundamentalGroupMulEquiv ι)) i =
+      FundamentalGroup.mapOfEq (incl _ i) (incl_apply_self i)
+        (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)) :=
+    MulEquiv.symm_apply_eq _ |>.2 (circleFundamentalGroupMulEquiv_expLoop i).symm
+  rw [circleFirstHomologyEquiv, LinearEquiv.trans_apply, AddEquiv.coe_toIntLinearEquiv,
+    AddEquiv.symm_apply_apply, ← h, ← FreeGroupBasis.abelianizationBasis_apply,
+    Module.Basis.repr_self]
 
 /-- The inverse of `TauCeti.WedgeSum.circleFirstHomologyEquiv` sends the basis vector
 `Finsupp.single i 1` to the Hurewicz class of the loop around the `i`-th circle. -/
