@@ -69,10 +69,11 @@ private theorem algebraMap_mul_mk_X_eq_one (hϖ0 : ϖ ≠ 0) :
     algebraMap O (closure K (Ideal.span
         {(1 : K) ⊗ₜ[O] (X : O[X]) - (algebraMap O K ϖ)⁻¹ ⊗ₜ[O] (1 : O[X])})) ϖ *
       Ideal.Quotient.mk _ X = 1 := by
-  rw [← sub_eq_zero, ← Ideal.Quotient.mk_algebraMap, Polynomial.algebraMap_eq, ← map_mul,
-    ← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
-    closureIdeal_span_X_sub_inv hϖ0]
-  exact Ideal.subset_span rfl
+  -- `ϖx - 1` lies in the closure ideal, so its class vanishes.
+  have h := Ideal.Quotient.eq_zero_iff_mem.mpr
+    ((closureIdeal_span_X_sub_inv (K := K) hϖ0).ge (Ideal.mem_span_singleton_self (C ϖ * X - 1)))
+  rw [map_sub, map_mul, map_one, sub_eq_zero] at h
+  exact h
 
 /-- **The closure of `x = ϖ⁻¹` has no section**: an `O`-point of `O[x] ⧸ (ϖx - 1)` would make
 `ϖ` a unit. -/
@@ -110,8 +111,7 @@ theorem mem_closureIdeal_bot_prod_iff (hϖ0 : ϖ ≠ 0) (a : O) (b : O ⧸ Ideal
   · rintro rfl
     refine ⟨⟨ϖ, mem_nonZeroDivisors_of_ne_zero hϖ0⟩, Prod.ext (smul_zero _) ?_⟩
     obtain ⟨b, rfl⟩ := Ideal.Quotient.mk_surjective b
-    rw [Prod.smul_snd, Prod.snd_zero, Submonoid.smul_def, Algebra.smul_def,
-      Ideal.Quotient.algebraMap_eq, ← map_mul, Ideal.Quotient.eq_zero_iff_mem]
-    exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
+    exact Ideal.Quotient.eq_zero_iff_mem.mpr
+      (Ideal.mul_mem_right _ _ (Ideal.mem_span_singleton_self ϖ))
 
 end TauCeti.Examples
