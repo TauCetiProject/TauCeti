@@ -39,6 +39,8 @@ invariant line when `2 ≠ 0`, as for the quaternion matrices `i` and `j`.
 * `MonoidHom.hasInvariantLine_comp_ker_det_subtype_iff`: the restriction of `ρ` to the kernel of
   its determinant has an invariant line exactly when some line is invariant under every `ρ g` of
   determinant one.
+* `MonoidHom.hasInvariantLine_comp_ker_det_subtype_iff_exists_mulVec_mem_span`: equivalently, some
+  nonzero vector has its span preserved by every `ρ g` of determinant one.
 * `MonoidHom.hasInvariantLine_conj_iff`: invariance under change of basis.
 * `MonoidHom.hasInvariantLine_one`: the trivial representation has an invariant line.
 * `MonoidHom.not_hasInvariantLine_of_mul_eq_neg_mul`: anticommuting values exclude an invariant
@@ -126,9 +128,8 @@ theorem not_hasInvariantLine_of_mul_eq_neg_mul (h2 : (2 : K) ≠ 0) {g h : G}
   simp only [neg_mulVec, ← mulVec_mulVec, ha, hb, mulVec_smul, smul_smul] at hprod
   rw [mul_comm a b] at hprod
   have hab : ((2 : K) * (b * a)) • v = 0 := by
-    rw [two_mul, add_smul]
-    nth_rw 1 [hprod]
-    exact neg_add_cancel _
+    rw [two_mul, add_smul, ← eq_neg_iff_add_eq_zero]
+    exact hprod
   rcases mul_eq_zero.1 ((smul_eq_zero.1 hab).resolve_right hv) with h0 | h0
   · exact h2 h0
   -- A zero eigenvalue of an invertible matrix forces `v = 0`.
@@ -155,6 +156,16 @@ theorem hasInvariantLine_comp_ker_det_subtype_iff :
         ∀ g, GeneralLinearGroup.det (ρ g) = 1 → ∀ v ∈ W, (ρ g : Matrix n n K) *ᵥ v ∈ W := by
   rw [hasInvariantLine_iff]
   refine exists_congr fun W ↦ and_congr_right fun _ ↦ ⟨fun h g hg ↦ h ⟨g, hg⟩, ?_⟩
+  rintro h ⟨g, hg⟩
+  exact h g hg
+
+/-- The restriction of `ρ` to the kernel of its determinant has an invariant line exactly when some
+nonzero vector `v` has its span `K ∙ v` preserved by every `ρ g` of determinant one. -/
+theorem hasInvariantLine_comp_ker_det_subtype_iff_exists_mulVec_mem_span :
+    (ρ.comp (GeneralLinearGroup.det.comp ρ).ker.subtype).HasInvariantLine ↔
+      ∃ v ≠ 0, ∀ g, GeneralLinearGroup.det (ρ g) = 1 → (ρ g : Matrix n n K) *ᵥ v ∈ K ∙ v := by
+  rw [hasInvariantLine_iff_exists_mulVec_mem_span]
+  refine exists_congr fun v ↦ and_congr_right fun _ ↦ ⟨fun h g hg ↦ h ⟨g, hg⟩, ?_⟩
   rintro h ⟨g, hg⟩
   exact h g hg
 

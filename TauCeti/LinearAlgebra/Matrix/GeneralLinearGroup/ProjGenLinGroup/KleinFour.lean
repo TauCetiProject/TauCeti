@@ -8,6 +8,7 @@ module
 public import Mathlib.GroupTheory.SpecificGroups.KleinFour
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InvariantLine
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.ProjectiveImage
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroTrace
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -65,10 +66,8 @@ variable {R : Type*} [CommRing R] {g : GL (Fin 2) R}
 `PGL(2, R)` squares to the identity. -/
 theorem mk_sq_eq_one_of_trace_eq_zero (h : (g : Matrix (Fin 2) (Fin 2) R).trace = 0) :
     mk g ^ 2 = 1 := by
-  have hsq : g ^ 2 = GeneralLinearGroup.scalar (Fin 2) (-GeneralLinearGroup.det g) := by
-    ext : 1
-    simp [sq_eq_trace_smul_sub_det_smul_one_fin_two, h, smul_one_eq_diagonal]
-  rw [← map_pow, hsq, mk_scalar]
+  rw [← map_pow, sq, mk_eq_one]
+  exact GeneralLinearGroup.mul_self_mem_center_of_trace_eq_zero h
 
 /-- A traceless invertible `2 × 2` matrix is not scalar when `2 ≠ 0`, since a scalar `u` has
 trace `2 u`. -/
@@ -76,9 +75,8 @@ theorem mk_ne_one_of_trace_eq_zero (h2 : (2 : R) ≠ 0)
     (h : (g : Matrix (Fin 2) (Fin 2) R).trace = 0) : mk g ≠ 1 := by
   rw [Ne, mk_eq_one, GeneralLinearGroup.center_eq_range_scalar]
   rintro ⟨u, rfl⟩
-  rw [GeneralLinearGroup.coe_scalar, trace_fin_two, scalar_apply, diagonal_apply_eq,
-    diagonal_apply_eq, ← two_mul] at h
-  exact h2 (u.isUnit.mul_left_eq_zero.1 h)
+  -- The trace of the scalar `u` is `2 * u`, so `2 = 0` since `u` is a unit.
+  exact h2 (by simpa using h)
 
 end CommRing
 
@@ -91,16 +89,16 @@ theorem trace_eq_zero_of_mk_sq_eq_one (hsq : mk g ^ 2 = 1) (hne : mk g ≠ 1) :
   rw [← map_pow, mk_eq_one, GeneralLinearGroup.mem_center_iff_val_mem_range_scalar] at hsq
   obtain ⟨c, hc⟩ := hsq
   by_contra htr
-  set A := (g : Matrix (Fin 2) (Fin 2) K)
+  have hg2 : (g : Matrix (Fin 2) (Fin 2) K) ^ 2 = c • 1 := by
+    simpa [smul_one_eq_diagonal] using hc.symm
   -- Cayley–Hamilton with `g ^ 2 = c • 1` exhibits `trace g • g` as a scalar.
-  have hCH : A.trace • A = (c + A.det) • 1 := by
-    have h := sq_eq_trace_smul_sub_det_smul_one_fin_two A
-    rw [← Units.val_pow_eq_pow_val, ← hc, scalar_apply, ← smul_one_eq_diagonal] at h
-    rw [add_smul, h, sub_add_cancel]
+  have hCH : (g : Matrix (Fin 2) (Fin 2) K).trace • (g : Matrix (Fin 2) (Fin 2) K) =
+      (c + (g : Matrix (Fin 2) (Fin 2) K).det) • 1 := by
+    rw [add_smul, ← hg2, sq_eq_trace_smul_sub_det_smul_one_fin_two, sub_add_cancel]
   refine hne (mk_eq_one.2 (GeneralLinearGroup.mem_center_iff_val_mem_range_scalar.2
-    ⟨A.trace⁻¹ * (c + A.det), ?_⟩))
-  rw [scalar_apply, ← smul_one_eq_diagonal, mul_smul, ← hCH, smul_smul, inv_mul_cancel₀ htr,
-    one_smul]
+    ⟨(g : Matrix (Fin 2) (Fin 2) K).trace⁻¹ * (c + (g : Matrix (Fin 2) (Fin 2) K).det), ?_⟩))
+  rw [scalar_apply, ← smul_one_eq_diagonal, mul_smul, ← hCH]
+  simp [smul_smul, htr]
 
 /-- When `2 ≠ 0`, the class of an invertible `2 × 2` matrix in `PGL(2, K)` has order two exactly
 when the matrix is traceless. -/
