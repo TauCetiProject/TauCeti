@@ -79,9 +79,12 @@ noncomputable def fiberIsomActionFunctor (U : C) (x : F.obj (.mk (op U)))
   map m := (bG.postcomposeActionIso (componentIso m U x)).hom
   map_id X := by
     rw [componentIso_id, AbelianBanding.postcomposeActionIso_refl]
+    -- `𝟙` of the object `bG.fiberAction y (X_U x)` is by definition `𝟙` of `obj X`.
     exact Iso.refl_hom _
   map_comp m n := by
     rw [componentIso_comp, AbelianBanding.postcomposeActionIso_trans]
+    -- The `fiberAction` objects in this composite are by definition the objects `obj X`,
+    -- `obj Y` and `obj Z` of the functor being defined.
     exact Iso.trans_hom _ _
 
 variable (bF bG) in
@@ -131,14 +134,17 @@ end Functor
 
 section Self
 
-variable {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
-  {b : F.AbelianBanding J A} {U : C} {x x' x'' : F.obj (.mk (op U))}
+variable {F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {b : F.AbelianBanding J A} {U : C}
+  {x x' x'' : F.obj (.mk (op U))}
 
 /-- **Self transport** along `e : x ≅ x'`: the isomorphism of `A(U)`-sets from `x ≅ X_U x` to
 `x' ≅ X_U x'` sending `p` to `e⁻¹ ≫ p ≫ X_U e`, the composite of precomposition with `e⁻¹` and
-postcomposition with `X_U e`. -/
+postcomposition with `X_U e`. When the fibres are groupoids, its source and target are the
+objects `(fiberIsomActionFunctor b b U x x).obj X` and `(fiberIsomActionFunctor b b U x' x').obj X`
+(`fiberIsomActionFunctor_obj`). -/
 noncomputable def selfTransportActionIso (X : HomCategory b b) (e : x ≅ x') :
-    (fiberIsomActionFunctor b b U x x).obj X ≅ (fiberIsomActionFunctor b b U x' x').obj X :=
+    b.fiberAction x ((X.obj.app (.mk (op U))).toFunctor.obj x) ≅
+      b.fiberAction x' ((X.obj.app (.mk (op U))).toFunctor.obj x') :=
   b.precomposeActionIso e ≪≫
     b.postcomposeActionIso ((X.obj.app (.mk (op U))).toFunctor.mapIso e)
 
@@ -147,33 +153,28 @@ theorem selfTransportActionIso_hom_hom (X : HomCategory b b) (e : x ≅ x')
     (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x) :
     (selfTransportActionIso X e).hom.hom p =
       e.symm ≪≫ p ≪≫ (X.obj.app (.mk (op U))).toFunctor.mapIso e := by
-  -- The source and target of `selfTransportActionIso` are objects of `fiberIsomActionFunctor`,
-  -- which `simp` and `rw` do not unfold to `fiberAction`, so `Iso.trans_hom` cannot fire;
-  -- `change` unfolds the forward map to the composite applied to `p`.
-  change (b.postcomposeActionIso _).hom.hom ((b.precomposeActionIso e).hom.hom p) = _
-  rw [b.precomposeActionIso_hom_hom, b.postcomposeActionIso_hom_hom]
-  exact Iso.trans_assoc _ _ _
+  -- The carrier of `fiberAction` is `x ≅ y` only after unfolding `Action.ofMulAction`, so `rw`
+  -- and `simp` cannot evaluate the composite `Action.comp_hom` at the isomorphism `p`. By
+  -- definition the composite applied to `p` is postcomposition applied to the precomposition of
+  -- `p`, so the two evaluation lemmas are chained by `Eq.trans`.
+  refine (b.postcomposeActionIso_hom_hom _ ((b.precomposeActionIso e).hom.hom p)).trans ?_
+  rw [b.precomposeActionIso_hom_hom, Iso.trans_assoc]
 
 @[simp]
 theorem selfTransportActionIso_inv_hom (X : HomCategory b b) (e : x ≅ x')
     (p : x' ≅ (X.obj.app (.mk (op U))).toFunctor.obj x') :
     (selfTransportActionIso X e).inv.hom p =
       e ≪≫ p ≪≫ ((X.obj.app (.mk (op U))).toFunctor.mapIso e).symm := by
-  -- As in `selfTransportActionIso_hom_hom`, `change` unfolds the inverse map to the composite
-  -- applied to `p`, which `Iso.trans_inv` cannot reach through `fiberIsomActionFunctor`.
-  change (b.precomposeActionIso e).inv.hom ((b.postcomposeActionIso _).inv.hom p) = _
-  rw [b.postcomposeActionIso_inv_hom, b.precomposeActionIso_inv_hom]
+  -- As in `selfTransportActionIso_hom_hom`, the evaluation lemmas are chained by `Eq.trans`.
+  exact (b.precomposeActionIso_inv_hom e ((b.postcomposeActionIso _).inv.hom p)).trans
+    (congrArg (e ≪≫ ·) (b.postcomposeActionIso_inv_hom _ p))
 
 /-- Transport along the identity is the identity. -/
 @[simp]
 theorem selfTransportActionIso_refl (X : HomCategory b b) :
     selfTransportActionIso X (Iso.refl x) = Iso.refl _ := by
   simp only [selfTransportActionIso, AbelianBanding.precomposeActionIso_refl,
-    Functor.mapIso_refl, AbelianBanding.postcomposeActionIso_refl]
-  -- The goal `Iso.refl _ ≪≫ Iso.refl _ = Iso.refl _` has `fiberAction` objects on the left and
-  -- `(fiberIsomActionFunctor b b U x x).obj X` on the right; they agree only after unfolding
-  -- `fiberIsomActionFunctor`, which `simp` does not do, so `Iso.refl_trans` is applied by `exact`.
-  exact Iso.refl_trans _
+    Functor.mapIso_refl, AbelianBanding.postcomposeActionIso_refl, Iso.refl_trans]
 
 /-- Transport along `e ≪≫ f` is transport along `e` followed by transport along `f`. -/
 @[simp]
@@ -181,11 +182,11 @@ theorem selfTransportActionIso_trans (X : HomCategory b b) (e : x ≅ x') (f : x
     selfTransportActionIso X (e ≪≫ f) =
       selfTransportActionIso X e ≪≫ selfTransportActionIso X f := by
   ext (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x)
-  refine (selfTransportActionIso_hom_hom X _ p).trans ?_
-  -- `change` evaluates the composite of the two transports at `p`, so that
-  -- `selfTransportActionIso_hom_hom` applies to each factor.
-  change _ = (selfTransportActionIso X f).hom.hom ((selfTransportActionIso X e).hom.hom p)
-  rw [selfTransportActionIso_hom_hom, selfTransportActionIso_hom_hom]
+  -- As in `selfTransportActionIso_hom_hom`, the composite of the two transports applied to `p`
+  -- is evaluated by chaining `selfTransportActionIso_hom_hom` with `Eq.trans`.
+  refine (selfTransportActionIso_hom_hom X _ p).trans (Eq.trans ?_
+    (selfTransportActionIso_hom_hom X f ((selfTransportActionIso X e).hom.hom p)).symm)
+  rw [selfTransportActionIso_hom_hom]
   refine Iso.ext ?_
   simp
 
@@ -205,19 +206,21 @@ theorem selfTransportActionIso_independent (X : HomCategory b b) (e f : x ≅ x'
   rw [BandPreserving.map_mulEquiv_hom_assoc b X.obj, ← AbelianBanding.mulEquiv_hom_comp_assoc b p,
     Iso.inv_hom_id_assoc]
 
+variable [∀ U : C, IsGroupoid (F.obj (.mk (op U)))]
+
 /-- **The natural self transport** along `e : x ≅ x'`: the natural isomorphism of fibre action
 functors with components `selfTransportActionIso X e`. -/
 noncomputable def selfTransportNatIso (e : x ≅ x') :
     fiberIsomActionFunctor b b U x x ≅ fiberIsomActionFunctor b b U x' x' :=
   NatIso.ofComponents (selfTransportActionIso · e) fun {X Y} m ↦ by
     ext (p : x ≅ (X.obj.app (.mk (op U))).toFunctor.obj x)
-    -- `change` evaluates both sides of the naturality square at `p`, so that
-    -- `fiberIsomActionFunctor_map_hom_apply` and `selfTransportActionIso_hom_hom` apply.
-    change (selfTransportActionIso Y e).hom.hom
-        (((fiberIsomActionFunctor b b U x x).map m).hom p) =
-      ((fiberIsomActionFunctor b b U x' x').map m).hom ((selfTransportActionIso X e).hom.hom p)
-    rw [fiberIsomActionFunctor_map_hom_apply, selfTransportActionIso_hom_hom,
-      selfTransportActionIso_hom_hom, fiberIsomActionFunctor_map_hom_apply]
+    -- As in `selfTransportActionIso_hom_hom`, both sides of the naturality square are evaluated
+    -- at `p` by chaining the evaluation lemmas with `Eq.trans`.
+    refine (selfTransportActionIso_hom_hom Y e
+      (((fiberIsomActionFunctor b b U x x).map m).hom p)).trans (Eq.trans ?_
+        (fiberIsomActionFunctor_map_hom_apply U x' x' m
+          ((selfTransportActionIso X e).hom.hom p)).symm)
+    rw [fiberIsomActionFunctor_map_hom_apply, selfTransportActionIso_hom_hom]
     refine Iso.ext ?_
     simp only [Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom, componentIso_hom,
       Category.assoc]
