@@ -140,22 +140,21 @@ theorem integrable_inv_sub_one_mul_mul_cpow {psi : ℝ → ℂ} {x sigma : ℝ} 
     (.of_forall fun t ↦ by ring)
 
 /-- The linear map `x ↦ -(2π)⁻¹ ∑ᵢ xᵢ ⬝ᵢ` from `ℝ^ι` to its dual, sending `x` to the frequency
-of the character `e^{i ∑ᵢ xᵢyᵢ}` in the normalization of `Real.fourierChar`. -/
-private noncomputable def charFreq (ι : Type*) [Fintype ι] :
+of the character `e^{i ∑ᵢ xᵢyᵢ}` in the normalization of `Real.fourierChar`. It is Mathlib's
+`dotProductEquiv`, scaled by `-(2π)⁻¹`. -/
+private noncomputable def charFreq (ι : Type*) [Fintype ι] [DecidableEq ι] :
     (ι → ℝ) →ₗ[ℝ] StrongDual ℝ (ι → ℝ) :=
-  -(2 * π)⁻¹ • ∑ i, (LinearMap.toSpanSingleton ℝ _ (ContinuousLinearMap.proj i)).comp
-    (LinearMap.proj i)
+  -(2 * π)⁻¹ • (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ (dotProductEquiv ℝ ι).toLinearMap)
 
-private theorem charFreq_apply {ι : Type*} [Fintype ι] (x y : ι → ℝ) :
+private theorem charFreq_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (x y : ι → ℝ) :
     charFreq ι x y = -(2 * π)⁻¹ * ∑ i, x i * y i := by
-  simp [charFreq, Finset.sum_apply]
+  simp [charFreq, dotProduct]
 
-private theorem charFreq_injective (ι : Type*) [Fintype ι] :
-    Function.Injective (charFreq ι) := by
-  classical
-  refine (injective_iff_map_eq_zero _).2 fun x hx ↦ funext fun i ↦ ?_
-  have h := congrArg (fun φ : StrongDual ℝ (ι → ℝ) ↦ φ (Pi.single i 1)) hx
-  simpa [charFreq_apply, Pi.single_apply, Real.pi_ne_zero] using h
+private theorem charFreq_injective (ι : Type*) [Fintype ι] [DecidableEq ι] :
+    Function.Injective (charFreq ι) :=
+  (smul_right_injective (StrongDual ℝ (ι → ℝ)) (r := -(2 * π)⁻¹)
+    (by simp [Real.pi_ne_zero])).comp
+    (LinearMap.toContinuousLinearMap.injective.comp (dotProductEquiv ℝ ι).injective)
 
 /-- **Riemann--Lebesgue on `ℝ^ι`**: the Fourier integrals `∫ e^{i ∑ᵢ ξᵢxᵢ} f(x) dx` of any
 function `f` on `ℝ^ι`, for a finite index type `ι`, tend to `0` as the real frequency `ξ → ∞` in
@@ -164,6 +163,7 @@ theorem tendsto_integral_exp_sum_mul_I_smul_cocompact {ι : Type*} [Fintype ι]
     (f : (ι → ℝ) → E) :
     Tendsto (fun ξ : ι → ℝ ↦ ∫ x, exp ((∑ i, ξ i * x i : ℝ) * I) • f x) (cocompact (ι → ℝ))
       (𝓝 0) := by
+  classical
   refine ((tendsto_integral_exp_smul_cocompact f volume).comp
     ((charFreq ι).isClosedEmbedding_of_injective
       (LinearMap.ker_eq_bot.2 (charFreq_injective ι))).tendsto_cocompact).congr
