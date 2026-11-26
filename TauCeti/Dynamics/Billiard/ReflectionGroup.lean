@@ -181,14 +181,14 @@ theorem natCard_reflectionGroup_exp (θ : ℝ) {s : Set ℤ} (h0 : 0 ∈ s) (h1 
 /-- **The reflections of a finite reflection group.** If the reflection group of `D` is finite,
 with a rotation subgroup of order `N`, and `d₀ ∈ D`, then its reflections are the reflections in
 the `N` lines through `0` spanned by `d₀ e^{ikπ/N}`, `k ∈ ℤ`, at angles `π/N` apart: the
-reflection `v ↦ b · conj v` lies in it exactly when `b = (d₀ e^{ikπ/N})²` for some `k`. -/
+reflection `v ↦ b · conj v` lies in it exactly when `b = (d₀ e^{ikπ/N})²` for some `k`. This is
+`TauCeti.Complex.conjReflection_mem_iff_exists_exp` for the reflection `σ_{d₀}`. -/
 theorem conjReflection_mem_reflectionGroup_iff_exists [Finite (reflectionGroup D)] {d₀ b : Circle}
     (hd₀ : d₀ ∈ D) :
     conjReflection b ∈ reflectionGroup D ↔ ∃ k : ℤ, b =
       (d₀ * Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))) ^ 2 := by
   have : Finite (rotationSubgroup (reflectionGroup D)) :=
     finite_iff_finite_rotationSubgroup.1 inferInstance
-  have hN : Nat.card (rotationSubgroup (reflectionGroup D)) ≠ 0 := Nat.card_pos.ne'
   have hsq : ∀ k : ℤ,
       Circle.exp (k * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D))) ^ 2 =
         Circle.exp (k * (2 * Real.pi / Nat.card (rotationSubgroup (reflectionGroup D)))) :=
@@ -197,18 +197,8 @@ theorem conjReflection_mem_reflectionGroup_iff_exists [Finite (reflectionGroup D
       congr 1
       push_cast
       ring
-  rw [conjReflection_mem_reflectionGroup_iff hd₀, Circle.mem_iff_pow_natCard_eq_one]
-  constructor
-  · intro h
-    rw [← Circle.exp_arg (b * (d₀ ^ 2)⁻¹), Circle.exp_pow_eq_one_iff hN] at h
-    obtain ⟨k, hk⟩ := h
-    refine ⟨k, ?_⟩
-    rw [mul_pow, hsq, ← hk, Circle.exp_arg, mul_comm]
-    exact (inv_mul_cancel_right b _).symm
-  · rintro ⟨k, rfl⟩
-    rw [mul_pow d₀ _ 2, hsq, mul_comm (d₀ ^ 2), mul_assoc, mul_inv_cancel, mul_one,
-      Circle.exp_pow_eq_one_iff hN]
-    exact ⟨k, rfl⟩
+  rw [conjReflection_mem_iff_exists_exp (conjReflection_sq_mem_reflectionGroup hd₀)]
+  exact exists_congr fun k => by rw [mul_pow, hsq]
 
 /-- **The side directions of a finite reflection group lie on its lines.** If the reflection group
 of `D` is finite, with a rotation subgroup of order `N`, then every direction `d ∈ D` is
