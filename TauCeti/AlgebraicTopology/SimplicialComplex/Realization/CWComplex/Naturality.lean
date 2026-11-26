@@ -230,7 +230,7 @@ private theorem cellularChainRealizationLinearEquiv_naturality_aux (n : ℕ)
   · -- Both maps kill a cell on which `f` is not injective.
     rw [cellularChainGroupMap_realization_cellularChainBasis_eq_zero f R c hc, map_zero,
       cellularChainRealizationLinearEquiv_cellularChainBasis,
-      OrderedSimplicialChain.map_single_of_not_injOn f c hc]
+      OrderedSimplicialChain.map_single_eq_zero_of_not_injOn f c hc]
   rcases n with _ | n
   · -- In degree zero `f` is increasing on every cell, so both maps relabel cells.
     have hmono : StrictMonoOn f (↑c.val.val : Set ι) := by

@@ -294,7 +294,7 @@ theorem map_single_of_strictMonoOn (c : RealizationCell K n)
     smul_single, smul_eq_mul, mul_one]
 
 /-- A simplicial map not injective on a cell sends every multiple of that cell to `0`. -/
-theorem map_single_of_not_injOn (c : RealizationCell K n)
+theorem map_single_eq_zero_of_not_injOn (c : RealizationCell K n)
     (hc : ¬Set.InjOn f (↑c.val.val : Set ι)) (r : R) :
     map R f n (single c r) = 0 := by
   have hinj : ¬Function.Injective (f ∘ c.vertexEmbedding) := fun h ↦ hc fun x hx y hy hxy ↦ by
@@ -308,15 +308,9 @@ theorem map_single_of_not_injOn (c : RealizationCell K n)
 cell. -/
 theorem map_single_eq_single_map_of_injOn (c : RealizationCell K n)
     (hc : Set.InjOn f (↑c.val.val : Set ι)) (r : R) :
-    map R f n (single c r) = single (c.map f hc) (map R f n (single c r) (c.map f hc)) := by
-  ext d
-  by_cases hd : d = c.map f hc
-  · rw [hd, single_eq_same]
-  · rw [single_eq_of_ne hd]
-    by_contra hne
-    refine hd (RealizationCell.ext ?_)
-    rw [val_eq_image_of_mem_support_map_single f (Finsupp.mem_support_iff.mpr hne),
-      RealizationCell.map_face,
+    map R f n (single c r) = single (c.map f hc) (map R f n (single c r) (c.map f hc)) :=
+  eq_single_of_forall_mem_support_subset fun d hd ↦ by
+    rw [val_eq_image_of_mem_support_map_single f hd, RealizationCell.map_face,
       TauCeti.PreAbstractSimplicialComplex.SimplicialMap.coe_faceOrderHom_apply]
 
 /-- The induced map on `0`-chains preserves the augmentation, the sum of the coefficients. -/
