@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
+import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
 import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 
@@ -59,5 +60,16 @@ theorem meromorphicOrderAt_dedekindZetaC_of_re_neg {s : ℂ} (hs : s.re < 0) :
   funext z
   rw [AnalyticLFunctionData.invGammaFactor_def, dedekindZetaData_gammaFactor,
     mul_inv_rev, ← inv_pow, ← inv_pow, mul_comm]
+
+/-- At `1 - n` for `n ≥ 2`, the order of Dedekind zeta is the number of complex places,
+plus the number of real places when `n` is odd. -/
+theorem meromorphicOrderAt_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
+    meromorphicOrderAt (dedekindZetaC K) (1 - n) =
+      (((if Even n then 0 else nrRealPlaces K) + nrComplexPlaces K : ℕ) : ℤ) := by
+  have hr : ((1 : ℂ) - n).re < 0 := by simpa [sub_re] using Nat.lt_of_succ_le hn
+  rw [meromorphicOrderAt_dedekindZetaC_of_re_neg K hr,
+    (analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _).meromorphicOrderAt_eq,
+    analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
+    ENat.map_natCast]
 
 end TauCeti.LFunctions

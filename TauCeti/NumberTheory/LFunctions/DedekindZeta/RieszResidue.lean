@@ -53,18 +53,8 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2
     residue (fun s ↦ rieszRemainderMellin (dedekindZetaC K) s * y ^ s) (1 - n) =
       ((if Even n then nrComplexPlaces K else nrRealPlaces K + nrComplexPlaces K : ℕ) : ℂ) *
         y ^ ((1 : ℂ) - n) / ((1 - n) * n) := by
-  have hr : ((1 : ℂ) - n).re < 0 := by
-    simp only [sub_re, one_re, natCast_re, sub_neg]
-    exact_mod_cast (show 1 < n by omega)
-  have h₀ : (1 : ℂ) - n ≠ 0 := by
-    intro h
-    simp [h] at hr
-  have horder : meromorphicOrderAt (dedekindZetaC K) (1 - n) =
-      (((if Even n then 0 else nrRealPlaces K) + nrComplexPlaces K : ℕ) : ℤ) := by
-    rw [meromorphicOrderAt_dedekindZetaC_of_re_neg K hr,
-      (analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _).meromorphicOrderAt_eq,
-      analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
-      ENat.map_natCast]
+  have h₀ : (1 : ℂ) - n ≠ 0 :=
+    sub_ne_zero.mpr (Nat.cast_ne_one.mpr (Nat.ne_of_gt (Nat.lt_of_succ_le hn))).symm
   have hy : AnalyticAt ℂ (fun s : ℂ ↦ y ^ s) (1 - n) := by
     by_cases hy : y = 0
     · subst y
@@ -72,8 +62,8 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2
       filter_upwards [eventually_ne_nhds h₀] with s hs
       exact (zero_cpow hs).symm
     · exact Differentiable.analyticAt (fun _ ↦ differentiableAt_id.const_cpow (.inl hy)) _
-  rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul h₀ horder hy,
-    sub_sub_cancel]
+  rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul h₀
+    (meromorphicOrderAt_dedekindZetaC_one_sub_nat K hn) hy, sub_sub_cancel]
   by_cases h : Even n <;> simp [h]
 
 end TauCeti.LFunctions

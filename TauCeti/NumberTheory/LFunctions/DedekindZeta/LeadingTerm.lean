@@ -43,10 +43,6 @@ namespace TauCeti.LFunctions
 
 variable (K : Type*) [Field K] [NumberField K]
 
-private theorem one_sub_natCast_ne_zero {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n ≠ 0 := by
-  have hne : 1 ≠ n := by omega
-  exact sub_ne_zero.mpr (by exact_mod_cast hne)
-
 private theorem one_sub_natCast_ne_one {n : ℕ} (hn : 2 ≤ n) : (1 : ℂ) - n ≠ 1 := by
   have h : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
   exact fun he ↦ h (sub_eq_self.mp he)
@@ -81,8 +77,7 @@ private theorem leadingTermFactor_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
 
 private theorem leadingTermFactor_ne_zero {n : ℕ} (hn : 2 ≤ n) :
     leadingTermFactor K (1 - n) ≠ 0 := by
-  have hr : ((1 : ℂ) - n).re < 0 := by
-    simpa only [sub_re, one_re, sub_neg] using one_lt_re_natCast hn
+  have hr : ((1 : ℂ) - n).re < 0 := by simpa [sub_re] using Nat.lt_of_succ_le hn
   have hd : ((|discr K| : ℤ) : ℂ) ≠ 0 := by exact_mod_cast (abs_discr_pos K).ne'
   rw [leadingTermFactor]
   exact mul_ne_zero (cpow_ne_zero_iff.mpr (.inl hd))
@@ -101,14 +96,10 @@ equals the dimension of the embedding Tate space in twist `n - 1`. -/
 theorem analyticOrderAt_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
     analyticOrderAt (dedekindZetaC K) (1 - n) =
       (finrank ℝ (TauCeti.NumberField.tateEmbeddingSpace K (n - 1)) : ℕ∞) := by
-  have hr : ((1 : ℂ) - n).re < 0 := by
-    simpa only [sub_re, one_re, sub_neg] using one_lt_re_natCast hn
   apply ENat.map_natCast_injective (α := ℤ)
   rw [← (analyticAt_dedekindZetaC K (one_sub_natCast_ne_one hn)).meromorphicOrderAt_eq,
-    meromorphicOrderAt_dedekindZetaC_of_re_neg K hr,
-    (TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow _ _ _).meromorphicOrderAt_eq,
-    analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
-    TauCeti.NumberField.finrank_tateEmbeddingSpace_pred K (by omega : 1 ≤ n)]
+    meromorphicOrderAt_dedekindZetaC_one_sub_nat K hn,
+    TauCeti.NumberField.finrank_tateEmbeddingSpace_pred K (by omega : 1 ≤ n), ENat.map_natCast]
 
 private theorem discr_cpow_mul_one_sub {n : ℕ} (hn : 2 ≤ n) :
     ((|discr K| : ℤ) : ℂ) ^ (-((1 : ℂ) - n) / 2) * ((|discr K| : ℤ) : ℂ) ^ ((n : ℂ) / 2) =
@@ -131,7 +122,8 @@ private theorem exists_rat_meromorphicTrailingCoeffAt_dedekindZetaC_one_sub_nat
         (q : ℂ) * (Real.sqrt (|discr K| : ℤ) : ℂ) *
           (Real.pi : ℂ) ^ ((finrank ℝ (TauCeti.NumberField.tateEmbeddingSpace K (n - 1)) : ℤ) -
             (finrank ℚ K : ℤ) * n) * dedekindZeta K n := by
-  have h₀ := one_sub_natCast_ne_zero hn
+  have h₀ : (1 : ℂ) - n ≠ 0 :=
+    sub_ne_zero.mpr (Nat.cast_ne_one.mpr (Nat.ne_of_gt (Nat.lt_of_succ_le hn))).symm
   have h₁ := one_sub_natCast_ne_one hn
   have hf := analyticAt_leadingTermFactor K h₀ h₁
   have hg := TauCeti.analyticAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow
