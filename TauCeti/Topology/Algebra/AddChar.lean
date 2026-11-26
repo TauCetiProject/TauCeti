@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.AddChar
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
+public import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
 # Additive characters trivial on a neighbourhood of zero
@@ -20,7 +21,9 @@ This file records two sources of such characters. A continuous circle-valued cha
 nonarchimedean additive group is trivial on a neighbourhood of `0`: some open subgroup maps into
 the arc of angles less than `π / 2`, and the only subgroup of the circle inside that arc is
 trivial. The condition is also preserved by the shifts `x ↦ ψ (b * x)` of a character of a
-topological ring.
+topological ring. Conversely, a character of an additive group with continuous translations that
+is trivial on a neighbourhood of `0` is constant on a neighbourhood of every point, so it is locally
+constant and continuous for every topology on its values.
 
 ## Main results
 
@@ -28,6 +31,8 @@ topological ring.
   nonarchimedean additive group is trivial on a neighbourhood of `0`.
 * `AddChar.setOf_mulShift_eq_one_mem_nhds_zero`: the shift `ψ.mulShift b` of a character trivial
   on a neighbourhood of `0` is again trivial on a neighbourhood of `0`.
+* `AddChar.isLocallyConstant_of_setOf_eq_one_mem_nhds_zero`: a character of an additive group with
+  continuous translations which is trivial on a neighbourhood of `0` is locally constant.
 -/
 
 public section
@@ -59,5 +64,17 @@ theorem setOf_mulShift_eq_one_mem_nhds_zero {R M : Type*} [Ring R] [TopologicalS
   have hb : Tendsto (b * ·) (𝓝 (0 : R)) (𝓝 0) := by
     simpa using (continuous_const_mul b).tendsto (0 : R)
   simpa using hb h0
+
+/-- An additive character of an additive group with continuous translations which is trivial on a
+neighbourhood of `0` is locally constant: near `x` it equals `ψ x`, since
+`ψ y = ψ x * ψ (-x + y)`. -/
+theorem isLocallyConstant_of_setOf_eq_one_mem_nhds_zero {G M : Type*} [AddGroup G]
+    [TopologicalSpace G] [SeparatelyContinuousAdd G] [Monoid M] {ψ : AddChar G M}
+    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : G)) : IsLocallyConstant ψ := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  have hx : Tendsto (-x + ·) (𝓝 x) (𝓝 0) := by
+    simpa using ((continuous_const_add (-x)).tendsto x)
+  filter_upwards [hx h0] with y hy
+  rw [← add_neg_cancel_left x y, map_add_eq_mul, hy.out, mul_one]
 
 end AddChar
