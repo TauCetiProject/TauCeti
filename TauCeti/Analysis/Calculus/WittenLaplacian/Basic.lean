@@ -70,6 +70,8 @@ second derivatives of `C²` maps.
   form itself.
 * `TauCeti.continuousAt_euclideanWittenLaplacian` and `TauCeti.continuous_euclideanWittenLaplacian`:
   the Witten Laplacian of a `C²` form is continuous.
+* `TauCeti.fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply`: the product rule for frame
+  sums `∑ᵢ Lᵢ (c ∂ᵢφ + t ∂ᵢf φ)` of the shape of the Witten operators, in any frame.
 
 ## References
 
@@ -326,41 +328,30 @@ theorem sum_euclideanWittenExtDeriv_mul_sub_sum_mul_euclideanWittenCodifferentia
 
 section FrameFormula
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-omit [LinearOrder ι] in
-/-- The derivative of one summand `c ∂ᵥ φ + t ∂ᵥ f · φ` of a Witten operator, by the product
-rule. -/
-private theorem hasFDerivAt_wittenSummand {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → F} {x : ι → ℝ}
-    (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t c : ℝ) (v : ι → ℝ) :
-    HasFDerivAt (fun y ↦ c • fderiv ℝ φ y v + (t * fderiv ℝ f y v) • φ y)
-      (c • (ContinuousLinearMap.apply ℝ F v).comp (fderiv ℝ (fderiv ℝ φ) x) +
-        ((t * fderiv ℝ f x v) • fderiv ℝ φ x +
-          (t • (ContinuousLinearMap.apply ℝ ℝ v).comp (fderiv ℝ (fderiv ℝ f) x)).smulRight
-            (φ x))) x := by
-  have hφ' : DifferentiableAt ℝ (fderiv ℝ φ) x :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have h₁ : HasFDerivAt (fun y ↦ fderiv ℝ φ y v)
-      ((ContinuousLinearMap.apply ℝ F v).comp (fderiv ℝ (fderiv ℝ φ) x)) x :=
-    (ContinuousLinearMap.apply ℝ F v).hasFDerivAt.comp x hφ'.hasFDerivAt
-  have h₂ : HasFDerivAt (fun y ↦ t * fderiv ℝ f y v)
-      (t • (ContinuousLinearMap.apply ℝ ℝ v).comp (fderiv ℝ (fderiv ℝ f) x)) x :=
-    ((ContinuousLinearMap.apply ℝ ℝ v).hasFDerivAt.comp x hf'.hasFDerivAt).const_mul t
-  exact (h₁.const_smul c).add (h₂.smul (hφ.differentiableAt (by norm_num)).hasFDerivAt)
-
-omit [LinearOrder ι] in
-/-- The derivative of one summand of a Witten operator, evaluated on a vector. -/
-private theorem fderiv_wittenSummand_apply {f : (ι → ℝ) → ℝ} {φ : (ι → ℝ) → F} {x : ι → ℝ}
-    (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t c : ℝ) (v w : ι → ℝ) :
-    fderiv ℝ (fun y ↦ c • fderiv ℝ φ y v + (t * fderiv ℝ f y v) • φ y) x w =
-      c • fderiv ℝ (fderiv ℝ φ) x w v + (t * fderiv ℝ (fderiv ℝ f) x w v) • φ x +
-        (t * fderiv ℝ f x v) • fderiv ℝ φ x w := by
-  rw [(hasFDerivAt_wittenSummand hf hφ t c v).fderiv]
-  simp only [add_apply, smul_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.apply_apply,
-    ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+/-- **The derivative of a frame sum of Witten summands**, by the product rule: for continuous
+linear maps `Lᵢ` and vectors `bᵢ`, with `∂ᵢ` the derivative in the direction `bᵢ`, the
+derivative of `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ + t ∂ᵢf φ)` at `x` in the direction `w` is
+`∑ᵢ Lᵢ (c ∂_w ∂ᵢφ + t ∂_w ∂ᵢf φ + t ∂ᵢf ∂_w φ)`, for `f` and `φ` that are `C²` at `x`. -/
+theorem fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply {𝕜 κ E F G : Type*}
+    [NontriviallyNormedField 𝕜] [Fintype κ] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (L : κ → F →L[𝕜] G) (b : κ → E) {f : E → 𝕜} {φ : E → F} {x : E} (hf : ContDiffAt 𝕜 2 f x)
+    (hφ : ContDiffAt 𝕜 2 φ x) (t c : 𝕜) (w : E) :
+    fderiv 𝕜 (fun y ↦ ∑ i, L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y)) x w =
+      ∑ i, L i (c • fderiv 𝕜 (fderiv 𝕜 φ) x w (b i) + (t * fderiv 𝕜 (fderiv 𝕜 f) x w (b i)) • φ x +
+        (t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x w) := by
+  have h (i : κ) : HasFDerivAt
+      (fun y ↦ L i (c • fderiv 𝕜 φ y (b i) + (t * fderiv 𝕜 f y (b i)) • φ y))
+      ((L i).comp (c • (fderiv 𝕜 (fderiv 𝕜 φ) x).flip (b i) +
+        ((t * fderiv 𝕜 f x (b i)) • fderiv 𝕜 φ x +
+          (t • (fderiv 𝕜 (fderiv 𝕜 f) x).flip (b i)).smulRight (φ x)))) x :=
+    (L i).hasFDerivAt.comp x (((hφ.hasFDerivAt_fderiv_apply le_rfl (b i)).const_smul c).add
+      (((hf.hasFDerivAt_fderiv_apply le_rfl (b i)).const_mul t).smul
+        (hφ.differentiableAt (by norm_num)).hasFDerivAt))
+  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
+  simp only [sum_apply, ContinuousLinearMap.comp_apply, add_apply, smul_apply,
+    ContinuousLinearMap.flip_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
   abel
 
 /-- The derivative of a sum `∑ᵢ Lᵢ (c ∂ᵢ φ + t ∂ᵢ f · φ)` of summands of a Witten operator, for
@@ -373,17 +364,9 @@ private theorem fderiv_sum_wittenSummand_apply {f : (ι → ℝ) → ℝ} {φ : 
       ∑ i, L i (c • fderiv ℝ (fderiv ℝ φ) x w (Pi.single i 1) +
         (t * fderiv ℝ (fderiv ℝ f) x w (Pi.single i 1)) • φ x +
           (t * fderiv ℝ f x (Pi.single i 1)) • fderiv ℝ φ x w) := by
-  have h : ∀ i, HasFDerivAt (fun y ↦ LinearMap.toContinuousLinearMap (L i)
-      (c • fderiv ℝ φ y (Pi.single i 1) + (t * fderiv ℝ f y (Pi.single i 1)) • φ y))
-      ((LinearMap.toContinuousLinearMap (L i)).comp
-        (fderiv ℝ (fun y ↦ c • fderiv ℝ φ y (Pi.single i 1) +
-          (t * fderiv ℝ f y (Pi.single i 1)) • φ y) x)) x := fun i ↦
-    (LinearMap.toContinuousLinearMap (L i)).hasFDerivAt.comp x
-      (hasFDerivAt_wittenSummand hf hφ t c (Pi.single i 1)).differentiableAt.hasFDerivAt
-  simp only [LinearMap.coe_toContinuousLinearMap'] at h
-  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
-  simp only [FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
-    LinearMap.coe_toContinuousLinearMap', fderiv_wittenSummand_apply hf hφ]
+  simpa only [LinearMap.coe_toContinuousLinearMap'] using
+    fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply
+      (fun i ↦ LinearMap.toContinuousLinearMap (L i)) (fun i ↦ Pi.single i 1) hf hφ t c w
 
 /-- **The Witten differential squares to zero**: `d_t d_t φ = 0` at `x` for `f` and `φ` that are
 `C²` at `x`. -/

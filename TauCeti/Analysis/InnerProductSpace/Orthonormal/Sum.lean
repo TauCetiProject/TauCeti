@@ -36,6 +36,8 @@ curvature:
   orthonormal family `e` preserves their inner product,
   `⟪∑ i, ⟪b i, x⟫ • e i, ∑ i, ⟪b i, y⟫ • e i⟫ = ⟪x, y⟫`.
 * `OrthonormalBasis.sum_inner_self`: `∑ i, ⟪b i, b i⟫ = card ι`, the trace of the identity.
+* `OrthonormalBasis.sum_sum_inner_smul`: contracting a double frame sum against `⟪b j, b i⟫`
+  leaves its diagonal, `∑ i, ∑ j, ⟪b j, b i⟫ • X i j = ∑ i, X i i`.
 * `OrthonormalBasis.inner_eq_sum_repr`: the inner product in coordinates,
   `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`.
 * `OrthonormalBasis.real_sum_inner_mul_inner`: Parseval's identity over `ℝ` with both inner
@@ -88,6 +90,14 @@ theorem sum_apply_mul_inner_sub_sum_apply_mul_inner_starProjection {F : Type*} [
 /-- The vectors of an orthonormal basis have unit length, so `∑ i, ⟪b i, b i⟫ = card ι`. -/
 theorem sum_inner_self (b : OrthonormalBasis ι 𝕜 E) : ∑ i, ⟪b i, b i⟫_𝕜 = Fintype.card ι := by
   simp [inner_self_eq_norm_sq_to_K, b.orthonormal.1]
+
+/-- Contracting a double sum over an orthonormal basis against `⟪b j, b i⟫` leaves its diagonal:
+`∑ i, ∑ j, ⟪b j, b i⟫ • X i j = ∑ i, X i i`. -/
+theorem sum_sum_inner_smul {M : Type*} [AddCommMonoid M] [Module 𝕜 M]
+    (b : OrthonormalBasis ι 𝕜 E) (X : ι → ι → M) :
+    ∑ i, ∑ j, ⟪b j, b i⟫_𝕜 • X i j = ∑ i, X i i := by
+  classical
+  simp [orthonormal_iff_ite.mp b.orthonormal]
 
 /-- The inner product in the coordinates of an orthonormal basis:
 `⟪x, y⟫ = ∑ i, conj (b.repr x i) * b.repr y i`. -/

@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import TauCeti.Analysis.Calculus.DifferentialForm.HodgeLaplacian
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
+import TauCeti.Analysis.Calculus.WittenLaplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
 # The Witten differential, codifferential and Laplacian of forms in an orthonormal frame
@@ -123,45 +125,15 @@ theorem wittenExtDeriv_apply_eq_exp_smul {f : V → ℝ} {ω : V → V [⋀^Fin 
   -- `extDeriv_function_smul` is stated for the pointwise product `c • ω` of the two functions.
   rw [show (fun y ↦ Real.exp (t * f y) • ω y) = (fun y ↦ Real.exp (t * f y)) • ω from rfl,
     extDeriv_function_smul hc.differentiableAt hω, hc.fderiv,
-    alternatizeUncurryFin_innerSL_smulRight, wedgeCovector_smul, smul_apply, smul_add, smul_smul,
-    smul_smul, ← mul_assoc, ← Real.exp_add, neg_add_cancel, Real.exp_zero, one_smul, one_mul,
-    wittenExtDeriv_apply]
+    alternatizeUncurryFin_innerSL_smulRight, wedgeCovector_smul, wittenExtDeriv_apply]
+  simp only [smul_apply, smul_add, smul_smul, ← mul_assoc, ← Real.exp_add, neg_add_cancel,
+    Real.exp_zero, one_mul, one_smul]
 
 /-! ### Witten's frame formula -/
 
 section FrameFormula
 
-variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup G]
-  [NormedSpace ℝ G]
-
-omit [FiniteDimensional ℝ V] in
-/-- The derivative of a frame sum `y ↦ ∑ᵢ Lᵢ (c ∂ᵢφ + t ∂ᵢf φ)` of the shape of the Witten
-operators, for fixed continuous linear maps `Lᵢ`, by the product rule. -/
-private theorem fderiv_sum_wittenSummand_apply (L : ι → F →L[ℝ] G) (b : ι → V) {f : V → ℝ}
-    {φ : V → F} {x : V} (hf : ContDiffAt ℝ 2 f x) (hφ : ContDiffAt ℝ 2 φ x) (t c : ℝ) (w : V) :
-    fderiv ℝ (fun y ↦ ∑ i, L i (c • fderiv ℝ φ y (b i) + (t * fderiv ℝ f y (b i)) • φ y)) x w =
-      ∑ i, L i (c • fderiv ℝ (fderiv ℝ φ) x w (b i) + (t * fderiv ℝ (fderiv ℝ f) x w (b i)) • φ x +
-        (t * fderiv ℝ f x (b i)) • fderiv ℝ φ x w) := by
-  have hφ' : DifferentiableAt ℝ (fderiv ℝ φ) x :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have hf' : DifferentiableAt ℝ (fderiv ℝ f) x :=
-    (hf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  have h (i : ι) : HasFDerivAt
-      (fun y ↦ L i (c • fderiv ℝ φ y (b i) + (t * fderiv ℝ f y (b i)) • φ y))
-      ((L i).comp (c • (ContinuousLinearMap.apply ℝ F (b i)).comp (fderiv ℝ (fderiv ℝ φ) x) +
-        ((t * fderiv ℝ f x (b i)) • fderiv ℝ φ x +
-          (t • (ContinuousLinearMap.apply ℝ ℝ (b i)).comp
-            (fderiv ℝ (fderiv ℝ f) x)).smulRight (φ x)))) x :=
-    (L i).hasFDerivAt.comp x
-      ((((ContinuousLinearMap.apply ℝ F (b i)).hasFDerivAt.comp x
-        hφ'.hasFDerivAt).const_smul c).add
-      ((((ContinuousLinearMap.apply ℝ ℝ (b i)).hasFDerivAt.comp x
-        hf'.hasFDerivAt).const_mul t).smul (hφ.differentiableAt (by norm_num)).hasFDerivAt))
-  rw [(HasFDerivAt.fun_sum fun i _ ↦ h i).fderiv]
-  simp only [sum_apply, ContinuousLinearMap.comp_apply, add_apply, smul_apply,
-    ContinuousLinearMap.apply_apply, ContinuousLinearMap.smulRight_apply, smul_eq_mul]
-  refine Finset.sum_congr rfl fun i _ ↦ congrArg _ ?_
-  abel
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- The part `-∂ᵢ∂ⱼω + t ∂ⱼf ∂ᵢω - t ∂ᵢf ∂ⱼω + t² ∂ᵢf ∂ⱼf ω` of the double frame sums of
 `d_t δ_t ω` and `δ_t d_t ω` that does not involve the Hessian of `f`. -/
@@ -179,13 +151,6 @@ private theorem sum_frameTerm_self (b : OrthonormalBasis ι ℝ V) (f : V → �
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   simp only [frameTerm, inner_gradient_left]
   module
-
-omit [FiniteDimensional ℝ V] in
-/-- Contracting a double frame sum against `⟪eⱼ, eᵢ⟫` leaves its diagonal. -/
-private theorem sum_sum_inner_smul (b : OrthonormalBasis ι ℝ V) (X : ι → ι → F) :
-    ∑ i, ∑ j, ⟪b j, b i⟫ • X i j = ∑ i, X i i := by
-  classical
-  simp [orthonormal_iff_ite.mp b.orthonormal]
 
 end FrameFormula
 
@@ -247,9 +212,10 @@ theorem wittenCodifferential_apply_eq_exp_smul (hkl : k + 1 + l = finrank ℝ V)
       simp only [smul_apply, neg_apply, Pi.neg_apply, toDual_apply_apply, real_inner_smul_left,
         inner_gradient_left, smul_eq_mul]
       ring
-  rw [o.codifferential_function_smul hkl hc.differentiableAt hω, hc.gradient, map_smul, smul_sub,
-    smul_smul, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul, ← mul_assoc,
-    ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_mul, wittenCodifferential_apply]
+  rw [o.codifferential_function_smul hkl hc.differentiableAt hω, hc.gradient,
+    wittenCodifferential_apply]
+  simp only [map_smul, smul_sub, smul_smul, ← mul_assoc, ← Real.exp_add, add_neg_cancel,
+    Real.exp_zero, one_mul, one_smul]
   module
 
 /-- **The Witten codifferential is the formal adjoint of the Witten differential**:
@@ -302,8 +268,8 @@ private theorem wittenExtDeriv_wittenCodifferential_eq_sum (b : OrthonormalBasis
       rw [curryLeftFlipL_apply_apply, (neg_one_smul ℝ (fderiv ℝ ω y (b j)) :)]
   rw [wittenExtDeriv_eq_sum b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [hcod, fderiv_sum_wittenSummand_apply _ _ hf hω t (-1) (b i), ← hcod,
-    o.wittenCodifferential_eq_sum b, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
+  rw [hcod, fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply _ _ hf hω t (-1) (b i),
+    ← hcod, o.wittenCodifferential_eq_sum b, Finset.smul_sum, ← Finset.sum_add_distrib, map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   simp only [frameTerm, ← curryLeftFlipL_apply_apply, map_add, map_sub, map_smul, map_neg]
   module
@@ -327,9 +293,10 @@ private theorem wittenCodifferential_wittenExtDeriv_eq_sum (b : OrthonormalBasis
   rw [o.wittenCodifferential_eq_sum b, Finset.sum_comm]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← curryLeftFlipL_apply_apply, hdiff,
-    fderiv_sum_wittenSummand_apply (fun i ↦ wedgeCovector (b i) k) b hf hω t 1 (b j), ← hdiff,
-    wittenExtDeriv_eq_sum b, Finset.smul_sum, ← Finset.sum_neg_distrib, ← Finset.sum_add_distrib,
-    map_sum]
+    fderiv_sum_comp_smul_fderiv_add_mul_fderiv_smul_apply (fun i ↦ wedgeCovector (b i) k) b hf
+      hω t 1 (b j),
+    ← hdiff, wittenExtDeriv_eq_sum b, Finset.smul_sum, ← Finset.sum_neg_distrib,
+    ← Finset.sum_add_distrib, map_sum]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [hS i j, hH i j]
   simp only [frameTerm, map_add, map_sub, map_smul, map_neg]
@@ -355,7 +322,7 @@ theorem wittenCodifferential_wittenExtDeriv_add_wittenExtDeriv_wittenCodifferent
             (wedgeCovector (b i) (k + 1) (ω x)).curryLeft (b j)) := by
   rw [o.wittenCodifferential_wittenExtDeriv_eq_sum b hkl' hf hω,
     o.wittenExtDeriv_wittenCodifferential_eq_sum b hkl hf hω, ← Finset.sum_add_distrib,
-    ← sum_frameTerm_self b f ω x t, ← sum_sum_inner_smul b, Finset.smul_sum,
+    ← sum_frameTerm_self b f ω x t, ← b.sum_sum_inner_smul, Finset.smul_sum,
     ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finset.smul_sum, ← Finset.sum_add_distrib, ← Finset.sum_add_distrib]
@@ -374,7 +341,7 @@ theorem wittenCodifferential_wittenExtDeriv_of_degree_zero (hkl : 0 + 1 + l = fi
   set b := stdOrthonormalBasis ℝ V
   rw [o.wittenCodifferential_wittenExtDeriv_eq_sum b hkl hf hω,
     Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
-      curryLeftFlipL_wedgeCovector_zero (b j) (b i) _, sum_sum_inner_smul b fun i j ↦
+      curryLeftFlipL_wedgeCovector_zero (b j) (b i) _, b.sum_sum_inner_smul fun i j ↦
         frameTerm b f ω x t i j - (t * fderiv ℝ (fderiv ℝ f) x (b i) (b j)) • ω x,
     Finset.sum_sub_distrib, sum_frameTerm_self b f ω x t,
     laplacian_eq_sum_fderiv_fderiv_orthonormalBasis b f, Finset.mul_sum, ← Finset.sum_smul]
@@ -390,7 +357,7 @@ theorem wittenExtDeriv_wittenCodifferential_of_eq_finrank (hkl : k + 1 + 0 = fin
   set b := stdOrthonormalBasis ℝ V
   rw [o.wittenExtDeriv_wittenCodifferential_eq_sum b hkl hf hω,
     Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦
-      wedgeCovector_curryLeftFlipL_of_eq_finrank (b j) (b i) hkl _, sum_sum_inner_smul b fun i j ↦
+      wedgeCovector_curryLeftFlipL_of_eq_finrank (b j) (b i) hkl _, b.sum_sum_inner_smul fun i j ↦
         frameTerm b f ω x t i j + (t * fderiv ℝ (fderiv ℝ f) x (b i) (b j)) • ω x,
     Finset.sum_add_distrib, sum_frameTerm_self b f ω x t,
     laplacian_eq_sum_fderiv_fderiv_orthonormalBasis b f, Finset.mul_sum, ← Finset.sum_smul]
