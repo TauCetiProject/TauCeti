@@ -236,6 +236,29 @@ theorem walkGenerator_mul_apply {m : ℕ} {W : Type*} [Fintype W]
   · exact Finset.sum_eq_zero fun _ _ ↦ by
       rw [walkGenerator_apply, ite_eq_right fun ⟨h1, h2, _⟩ ↦ hs ⟨h1, h2⟩, zero_mul]
 
+/-- When every neighbour `x ≠ x₀` of `toFun s a` makes `X (upd ... x) u = 0`, the matrix product
+`(walkGenerator ... * X) s u` collapses to the single term at `x₀`. -/
+private theorem walkGenerator_mul_apply_eq_single {m : ℕ} {W : Type*} [Fintype W]
+    (toFun : W → Fin (m + 1) → V) (hinj : Function.Injective toFun)
+    (valid : W → Prop) [DecidablePred valid] {a b c : Fin (m + 1)}
+    (upd : ∀ (s : W), valid s → toFun s a = toFun s c → ∀ (x : V), G.Adj (toFun s a) x → W)
+    (hupd : ∀ {s : W} (hs : valid s) (hac : toFun s a = toFun s c) {x : V}
+      (hx : G.Adj (toFun s a) x), toFun (upd s hs hac x hx) = update (toFun s) b x)
+    (X : Matrix W W K) {s u : W} (hs : valid s ∧ toFun s a = toFun s c)
+    (x₀ : V) (hx₀ : G.Adj (toFun s a) x₀)
+    (hzero : ∀ {x : V} (hx : G.Adj (toFun s a) x), x ≠ x₀ →
+      X (upd s hs.1 hs.2 x hx) u = 0) :
+    (walkGenerator G r toFun valid a b c * X) s u =
+      r (toFun s b) * r x₀ / r (toFun s a) ^ 2 * X (upd s hs.1 hs.2 x₀ hx₀) u := by
+  classical
+  rw [walkGenerator_mul_apply toFun hinj valid upd hupd, dite_eq_left hs]
+  exact Finset.sum_eq_single_of_mem
+    (f := fun x : ↥(G.neighborFinset (toFun s a)) ↦
+      r (toFun s b) * r x.val / r (toFun s a) ^ 2 *
+        X (upd s hs.1 hs.2 x.val ((G.mem_neighborFinset _ _).1 x.property)) u)
+    ⟨x₀, (G.mem_neighborFinset _ _).2 hx₀⟩ (Finset.mem_attach _ _) fun x _ hne ↦ by
+      rw [hzero ((G.mem_neighborFinset _ _).1 x.property) (fun h ↦ hne (Subtype.ext h)), mul_zero]
+
 omit [G.LocallyFinite] in
 /-- Evaluating `walkGenerator` at a walk `s'` whose position `b` has been updated to `x`. -/
 theorem walkGenerator_update_apply {m : ℕ} {W : Type*} (toFun : W → Fin (m + 1) → V)
@@ -345,21 +368,24 @@ theorem walkGenerator_zigzag (hr : ∀ v, r v ≠ 0)
   have ⟨hab₁', hcb₁, hac₁'⟩ : a₁ ≠ b₁ ∧ c₁ ≠ b₁ ∧ a₁ ≠ c₁ :=
     ⟨Fin.ne_of_val_ne (by omega), Fin.ne_of_val_ne (by omega), Fin.ne_of_val_ne (by omega)⟩
   ext s u
-  rw [mul_assoc, walkGenerator_mul_apply toFun hinj valid (upd hab₁ hbc₁) (hupd hab₁ hbc₁),
-    walkGenerator_apply]
+  rw [mul_assoc, walkGenerator_apply]
   by_cases hs : valid s ∧ toFun s a₁ = toFun s c₁
-  · rw [dite_eq_left hs]
-    have hqadj : G.Adj (toFun s a₁) (toFun s q) :=
+  · have hqadj : G.Adj (toFun s a₁) (toFun s q) :=
       hc.elim (fun ⟨_, rfl, rfl⟩ ↦ hs.2 ▸ (hwalk hs.1).adj hbc₂)
         fun ⟨_, rfl, rfl⟩ ↦ ((hwalk hs.1).adj hab₂).symm
-    rw [Finset.sum_eq_single_of_mem ⟨toFun s q, (G.mem_neighborFinset _ _).2 hqadj⟩
-      (Finset.mem_attach _ _) fun x _ hxq ↦ by
-        rw [walkGenerator_mul_apply toFun hinj valid (upd hab₂ hbc₂) (hupd hab₂ hbc₂),
-          dite_eq_right fun hEq ↦ hxq <| Subtype.ext <| by
-            have hxcoe := hupd hab₁ hbc₁ hs.1 hs.2 ((G.mem_neighborFinset _ _).1 x.property)
-            rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
-            · simpa [hxcoe, update_of_ne hb₁q.symm] using hEq.2
-            · simpa [hxcoe, update_of_ne hb₁q.symm] using hEq.2.symm, mul_zero]]
+    -- Stage 1: in `e₁ * (e₂ * e₁)`, only the update of `b₁` to `toFun s q` survives, since `e₂`
+    -- requires the two endpoints `{a₂, c₂} = {b₁, q}` of the intermediate walk to agree.
+    have hstage1 : ∀ {x : V} (hx : G.Adj (toFun s a₁) x), x ≠ toFun s q →
+        (walkGenerator G r toFun valid a₂ b₂ c₂ * walkGenerator G r toFun valid a₁ b₁ c₁)
+          (upd hab₁ hbc₁ s hs.1 hs.2 x hx) u = 0 := fun hx hxq ↦ by
+      rw [walkGenerator_mul_apply toFun hinj valid (upd hab₂ hbc₂) (hupd hab₂ hbc₂),
+        dite_eq_right fun hEq ↦ hxq <| by
+          have hxcoe := hupd hab₁ hbc₁ hs.1 hs.2 hx
+          rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
+          · simpa [hxcoe, update_of_ne hb₁q.symm] using hEq.2
+          · simpa [hxcoe, update_of_ne hb₁q.symm] using hEq.2.symm]
+    rw [walkGenerator_mul_apply_eq_single toFun hinj valid (upd hab₁ hbc₁) (hupd hab₁ hbc₁) _ hs
+      (toFun s q) hqadj hstage1]
     let s₁ := upd hab₁ hbc₁ s hs.1 hs.2 (toFun s q) hqadj
     have hs₁_valid : valid s₁ := hvalid_upd hab₁ hbc₁ hs.1 hs.2 hqadj
     have hs₁_coe : toFun s₁ = update (toFun s) b₁ (toFun s q) := hupd hab₁ hbc₁ hs.1 hs.2 hqadj
@@ -368,25 +394,27 @@ theorem walkGenerator_zigzag (hr : ∀ v, r v ≠ 0)
       rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩ <;>
         simp [hs₁_coe, update_of_ne hb₁q.symm, update_of_ne hab₁', update_of_ne hcb₁, hs.2]
     have hs₁ : toFun s₁ a₂ = toFun s₁ c₂ := hs₁a₂.trans hs₁c₂.symm
-    have hamem : toFun s a₁ ∈ G.neighborFinset (toFun s₁ a₂) :=
-      (G.mem_neighborFinset _ _).2 (hs₁a₂ ▸ hqadj.symm)
-    rw [walkGenerator_mul_apply toFun hinj valid (upd hab₂ hbc₂) (hupd hab₂ hbc₂),
-      dite_eq_left ⟨hs₁_valid, hs₁⟩,
-      Finset.sum_eq_single_of_mem ⟨toFun s a₁, hamem⟩ (Finset.mem_attach _ _) fun y _ hya ↦ by
-        rw [walkGenerator_apply, ite_eq_right fun ⟨_, hEq, _, _⟩ ↦ hya <| Subtype.ext <| by
+    have haadj : G.Adj (toFun s₁ a₂) (toFun s a₁) := hs₁a₂ ▸ hqadj.symm
+    -- Stage 2: from `s₁`, only the update of `b₂ ∈ {a₁, c₁}` back to `toFun s a₁` survives,
+    -- since the final `e₁` requires endpoints `a₁` and `c₁` to agree; that step restores `s₁`.
+    have hstage2 : ∀ {y : V} (hy : G.Adj (toFun s₁ a₂) y), y ≠ toFun s a₁ →
+        walkGenerator G r toFun valid a₁ b₁ c₁ (upd hab₂ hbc₂ s₁ hs₁_valid hs₁ y hy) u = 0 :=
+      fun hy hya ↦ by
+        rw [walkGenerator_apply, ite_eq_right fun ⟨_, hEq, _, _⟩ ↦ hya <| by
           rcases hc with ⟨rfl, rfl, rfl⟩ | ⟨rfl, rfl, rfl⟩
-          · simp only [hupd hab₂ hbc₂, hupd hab₁ hbc₁] at hEq
+          · simp only [hupd hab₂ hbc₂, hs₁_coe] at hEq
             simpa [update_of_ne hac₁', update_of_ne hab₁'] using hEq.symm
-          · simp only [hupd hab₂ hbc₂, hupd hab₁ hbc₁] at hEq
-            simpa [update_of_ne hac₁'.symm, update_of_ne hcb₁, ← hs.2] using hEq,
-          mul_zero],
-      hinj ((hupd hab₂ hbc₂ hs₁_valid hs₁ ((G.mem_neighborFinset _ _).1 hamem)).trans
-        (by rw [← hs₁b₂, update_eq_self])),
+          · simp only [hupd hab₂ hbc₂, hs₁_coe] at hEq
+            simpa [update_of_ne hac₁'.symm, update_of_ne hcb₁, ← hs.2] using hEq]
+    rw [walkGenerator_mul_apply_eq_single toFun hinj valid (upd hab₂ hbc₂) (hupd hab₂ hbc₂) _
+        ⟨hs₁_valid, hs₁⟩ (toFun s a₁) haadj hstage2,
+      hinj ((hupd hab₂ hbc₂ hs₁_valid hs₁ haadj).trans (by rw [← hs₁b₂, update_eq_self])),
       walkGenerator_update_apply toFun valid hab₁ hbc₁ hs₁_valid hs.2 hs₁_coe]
     simp only [hs, true_and]; split_ifs
     · rw [hs₁b₂, hs₁a₂, hs.2]; have := hr (toFun s c₁); have := hr (toFun s q); field_simp
     · simp
-  · rw [dite_eq_right hs, ite_eq_right fun h ↦ hs ⟨h.1, h.2.1⟩]
+  · rw [walkGenerator_mul_apply toFun hinj valid (upd hab₁ hbc₁) (hupd hab₁ hbc₁),
+      dite_eq_right hs, ite_eq_right fun h ↦ hs ⟨h.1, h.2.1⟩]
 
 /-- Product of two `walkGenerator`s whose updated positions are disjoint. -/
 theorem walkGenerator_mul_walkGenerator_apply {m : ℕ} {W : Type*} [Fintype W]
@@ -407,27 +435,30 @@ theorem walkGenerator_mul_walkGenerator_apply {m : ℕ} {W : Type*} [Fintype W]
           (r (toFun s b') * r (toFun u b') / r (toFun s a') ^ 2)
       else 0 := by
   classical
-  rw [walkGenerator_mul_apply toFun hinj valid upd hupd]
   by_cases hs : valid s ∧ toFun s a = toFun s c
-  · rw [dite_eq_left hs]
-    by_cases hub : G.Adj (toFun s a) (toFun u b)
-    · rw [Finset.sum_eq_single_of_mem ⟨toFun u b, (G.mem_neighborFinset _ _).2 hub⟩
-        (Finset.mem_attach _ _) fun x _ hxu ↦ by
-          rw [walkGenerator_apply, ite_eq_right fun ⟨_, _, hEq, _⟩ ↦ hxu <| Subtype.ext <| by
-            have hxcoe := hupd hs.1 hs.2 ((G.mem_neighborFinset _ _).1 x.property)
-            simpa [hxcoe, update_of_ne h₂] using (congrFun hEq b).symm, mul_zero],
+  · by_cases hub : G.Adj (toFun s a) (toFun u b)
+    · -- Only `x = toFun u b` survives since the second generator leaves position `b ≠ b'` fixed.
+      have hzero : ∀ {x : V} (hx : G.Adj (toFun s a) x), x ≠ toFun u b →
+          walkGenerator G r toFun valid a' b' c' (upd s hs.1 hs.2 x hx) u = 0 := fun hx hxu ↦ by
+        rw [walkGenerator_apply, ite_eq_right fun ⟨_, _, hEq, _⟩ ↦ hxu <| by
+          have hxcoe := hupd hs.1 hs.2 hx
+          simpa [hxcoe, update_of_ne h₂] using (congrFun hEq b).symm]
+      rw [walkGenerator_mul_apply_eq_single toFun hinj valid upd hupd _ hs (toFun u b) hub hzero,
         walkGenerator_apply]
       have hucoe := hupd hs.1 hs.2 hub
       have huval := hvalid_upd hs.1 hs.2 hub
       simp only [hucoe, update_of_ne h₁.symm, update_of_ne h₂.symm, update_of_ne h₃.symm,
         hs.1, hs.2, huval, hs.2 ▸ hub, true_and]
       split_ifs <;> simp
-    · rw [ite_eq_right fun h ↦ hub h.2.2.2.2.1]; refine Finset.sum_eq_zero fun x _ ↦ ?_
+    · rw [walkGenerator_mul_apply toFun hinj valid upd hupd, dite_eq_left hs,
+        ite_eq_right fun h ↦ hub h.2.2.2.2.1]
+      refine Finset.sum_eq_zero fun x _ ↦ ?_
       rw [walkGenerator_apply, ite_eq_right fun ⟨_, _, hEq, _⟩ ↦ hub <| by
         have hxcoe := hupd hs.1 hs.2 ((G.mem_neighborFinset _ _).1 x.property)
         exact (by simpa [hxcoe, update_of_ne h₂] using congrFun hEq b : toFun u b = x.val) ▸
           (G.mem_neighborFinset _ _).1 x.property, mul_zero]
-  · rw [dite_eq_right hs, ite_eq_right fun h ↦ hs ⟨h.1, h.2.1⟩]
+  · rw [walkGenerator_mul_apply toFun hinj valid upd hupd, dite_eq_right hs,
+      ite_eq_right fun h ↦ hs ⟨h.1, h.2.1⟩]
 
 /-- Far-commutation relation for disjoint `walkGenerator`s. -/
 theorem walkGenerator_mul_walkGenerator_comm {m : ℕ} {W : Type*} [Fintype W]

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import Mathlib.RingTheory.Jacobson.Ideal
 public import TauCeti.Algebra.TemperleyLieb.Quotient.Tower
-import TauCeti.Combinatorics.SimpleGraph.PathGraph.Basic
+import TauCeti.Combinatorics.SimpleGraph.PathGraph.Counting
 import TauCeti.RingTheory.Idempotents.Jacobson
 /-! # Low-strand examples of positive Jones quotients and Markov formulas
 
@@ -86,22 +86,20 @@ variable {δ : ℝ} (hδ : δ ∈ jonesLoopParameters)
   {tr : ∀ n : ℕ, TemperleyLieb ℂ (δ : ℂ) n →ₗ[ℂ] ℂ} (htr : IsMarkovTrace ℂ (δ : ℂ) tr)
 /-- Unnormalized positive trace value of the first Jones projection `p_0`. -/
 theorem quotientStarPositiveFunctional_jonesProjection_zero :
-    htr.quotientStarPositiveFunctional hδ 2
-        (htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 0) = 1 := by
+    htr.quotientStarPositiveFunctional hδ 2 (htr.jonesProjection 0) = 1 := by
   have h1 := htr.quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection hδ
     (1 : htr.Quotient 1)
   simpa [inv_mul_cancel₀ (isUnit_of_mem_jonesLoopParameters hδ).ne_zero] using h1
 /-- Normalized tracial state value of the first Jones projection `p_0`. -/
 theorem normalizedQuotientTrace_jonesProjection_zero :
-    htr.normalizedQuotientTrace hδ 2
-        (htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 0) = (δ : ℂ)⁻¹ ^ 2 := by
+    htr.normalizedQuotientTrace hδ 2 (htr.jonesProjection 0) = (δ : ℂ)⁻¹ ^ 2 := by
   rw [htr.normalizedQuotientTrace_apply,
     quotientStarPositiveFunctional_jonesProjection_zero, mul_one]
 /-- Unnormalized positive trace value of `e_0 * p_1` on `3` strands. -/
 theorem quotientStarPositiveFunctional_quotientStrandIncl_mk_e_mul_jonesProjection_one :
     htr.quotientStarPositiveFunctional hδ 3
         (htr.quotientStrandIncl 2 (Ideal.Quotient.mk (htr.traceRadical 2) (e (δ : ℂ) 0)) *
-          htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 1) = 1 := by
+          htr.jonesProjection 1) = 1 := by
   have he : tr 2 (e (δ : ℂ) 0) = (δ : ℂ) := by
     simpa [htr.map_one] using htr.map_strandIncl_mul_e_last 0 1
   rw [htr.quotientStarPositiveFunctional_quotientStrandIncl_mul_jonesProjection,
@@ -111,7 +109,7 @@ theorem quotientStarPositiveFunctional_quotientStrandIncl_mk_e_mul_jonesProjecti
 theorem normalizedQuotientTrace_quotientStrandIncl_mk_e_mul_jonesProjection_one :
     htr.normalizedQuotientTrace hδ 3
         (htr.quotientStrandIncl 2 (Ideal.Quotient.mk (htr.traceRadical 2) (e (δ : ℂ) 0)) *
-          htr.jonesProjection (pos_of_mem_jonesLoopParameters hδ).ne' 1) = (δ : ℂ)⁻¹ ^ 3 := by
+          htr.jonesProjection 1) = (δ : ℂ)⁻¹ ^ 3 := by
   rw [htr.normalizedQuotientTrace_apply,
     quotientStarPositiveFunctional_quotientStrandIncl_mk_e_mul_jonesProjection_one, mul_one]
 end MarkovChecks

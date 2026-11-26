@@ -200,16 +200,20 @@ theorem discretePathWeight_ne_zero {m : ℕ} (t : Fin (m - 1)) : discretePathWei
 theorem isSelfAdjoint_discretePathWeight (m : ℕ) (t : Fin (m - 1)) :
     IsSelfAdjoint (discretePathWeight m t) := Complex.conj_ofReal _
 
+/-- On `A_(m-1)`, the square of `discretePathWeight m t` equals the quantum integer `[t + 1]` at
+`δ = 2 cos (π / m)`. -/
+@[simp] theorem discretePathWeight_sq {m : ℕ} (t : Fin (m - 1)) :
+    discretePathWeight m t ^ 2 = (qInt ℝ (2 * cos (π / m)) (t.val + 1) : ℂ) := by
+  have hm : 2 ≤ m := by have := t.isLt; omega
+  rw [discretePathWeight, ← Complex.ofReal_pow,
+    Real.sq_sqrt (qInt_two_mul_cos_pi_div_pos (by omega) (by omega)).le]
+
 /-- `discretePathWeight m ^ 2` is a `2 cos (π / m)`-eigenvector of `pathGraph (m - 1)`. -/
 theorem sum_neighborFinset_discretePathWeight_sq {m : ℕ} (v : Fin (m - 1)) :
     ∑ u ∈ (pathGraph (m - 1)).neighborFinset v, discretePathWeight m u ^ 2 =
       ((2 * cos (π / m) : ℝ) : ℂ) * discretePathWeight m v ^ 2 := by
   obtain ⟨k, rfl⟩ : ∃ k, m = k + 2 := ⟨m - 2, by have := v.isLt; omega⟩
-  have hsq (t : Fin (k + 1)) : discretePathWeight (k + 2) t ^ 2 =
-      (qInt ℝ (2 * cos (π / (k + 2 : ℕ))) (t.val + 1) : ℂ) := by
-    rw [discretePathWeight, ← Complex.ofReal_pow,
-      Real.sq_sqrt (qInt_two_mul_cos_pi_div_pos (Nat.succ_pos _) (by omega)).le]
-  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_pathGraph_qInt (k := k) v
+  simp_rw [discretePathWeight_sq]; exact_mod_cast sum_neighborFinset_pathGraph_qInt (k := k) v
 
 /-- For `δ ≥ 2`, every vertex weight `genericPathWeight δ t` on `A_∞` is nonzero. -/
 theorem genericPathWeight_ne_zero {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) : genericPathWeight δ t ≠ 0 :=
@@ -219,13 +223,16 @@ theorem genericPathWeight_ne_zero {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) : generi
 theorem isSelfAdjoint_genericPathWeight (δ : ℝ) (t : ℕ) :
     IsSelfAdjoint (genericPathWeight δ t) := Complex.conj_ofReal _
 
+/-- For `δ ≥ 2`, the square of `genericPathWeight δ t` equals the quantum integer `[t + 1]`. -/
+@[simp] theorem genericPathWeight_sq {δ : ℝ} (hδ : 2 ≤ δ) (t : ℕ) :
+    genericPathWeight δ t ^ 2 = (qInt ℝ δ (t + 1) : ℂ) := by
+  rw [genericPathWeight, ← Complex.ofReal_pow,
+    Real.sq_sqrt (qInt_pos_of_two_le hδ (Nat.succ_pos t)).le]
+
 /-- For `δ ≥ 2`, `genericPathWeight δ ^ 2` is a `δ`-eigenvector of `hasse ℕ`. -/
 theorem sum_neighborFinset_genericPathWeight_sq {δ : ℝ} (hδ : 2 ≤ δ) (v : ℕ) :
     ∑ u ∈ (hasse ℕ).neighborFinset v, genericPathWeight δ u ^ 2 =
       (δ : ℂ) * genericPathWeight δ v ^ 2 := by
-  have hsq (t : ℕ) : genericPathWeight δ t ^ 2 = (qInt ℝ δ (t + 1) : ℂ) := by
-    rw [genericPathWeight, ← Complex.ofReal_pow,
-      Real.sq_sqrt (qInt_pos_of_two_le hδ (Nat.succ_pos t)).le]
-  simp_rw [hsq]; exact_mod_cast sum_neighborFinset_hasse_qInt δ v
+  simp_rw [genericPathWeight_sq hδ]; exact_mod_cast sum_neighborFinset_hasse_qInt δ v
 
 end TauCeti.TemperleyLieb

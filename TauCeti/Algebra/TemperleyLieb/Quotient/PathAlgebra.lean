@@ -130,9 +130,7 @@ theorem pathAlgebraExtend_apply (X : PathAlgebra K G v₀ n) (v : G.walkEndpoint
   simp only [pathAlgebraExtend, AlgHom.pi_apply, AlgHom.comp_apply, AlgEquiv.toAlgHom_apply,
     Matrix.coe_reindexAlgEquiv, Matrix.reindex_apply, Equiv.symm_symm,
     Matrix.blockDiagonal'AlgHom_apply]
-  rw [show (AlgHom.pi fun u : G.neighborSet v.val ↦ PathAlgebra.blockAt u.val) X =
-      fun u : G.neighborSet v.val ↦ PathAlgebra.blockAt u.val X from
-    funext fun u ↦ AlgHom.pi_apply _ X u]
+  rfl
 /-- Matrix entries of `pathAlgebraExtend G v₀ X` on extended walks `p.snoc h₁` and `q.snoc h₂`. -/
 theorem pathAlgebraExtend_apply_snoc (X : PathAlgebra K G v₀ n) {u₁ u₂ v : V}
     (p : G.EndpointWalk v₀ n u₁) (q : G.EndpointWalk v₀ n u₂) (h₁ : G.Adj u₁ v) (h₂ : G.Adj u₂ v)
