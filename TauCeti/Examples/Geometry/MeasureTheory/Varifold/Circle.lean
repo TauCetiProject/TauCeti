@@ -57,25 +57,13 @@ private theorem circleTangent_ne_zero (θ : ℝ) : circleTangent θ ≠ 0 :=
 private def circleTangentLine (θ : ℝ) : grassmannian ℝ ℂ 1 :=
   grassmannian.spanLine ℝ (circleTangent θ) (circleTangent_ne_zero θ)
 
-/-- The projection onto the tangent line is `v ↦ ⟪τ, v⟫ τ`. -/
-private theorem coe_circleTangentLine (θ : ℝ) :
-    (circleTangentLine θ : ℂ →L[ℝ] ℂ) =
-      (innerSL ℝ (circleTangent θ)).smulRight (circleTangent θ) := by
-  ext1 v
-  rw [circleTangentLine, grassmannian.coe_spanLine, Submodule.starProjection_singleton,
-    norm_circleTangent]
-  simp
-
 /-- The unit tangent depends continuously on the angle. -/
 private theorem continuous_circleTangent : Continuous circleTangent :=
   (continuous_circleMap 0 1).mul continuous_const
 
 /-- The tangent line depends continuously on the angle. -/
-private theorem continuous_circleTangentLine : Continuous circleTangentLine := by
-  refine continuous_induced_rng.2 (continuous_clm_apply.2 fun v => ?_)
-  simp only [Function.comp_apply, coe_circleTangentLine, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply]
-  exact ((continuous_circleTangent.inner (𝕜 := ℝ) continuous_const).smul continuous_circleTangent)
+private theorem continuous_circleTangentLine : Continuous circleTangentLine :=
+  grassmannian.continuous_spanLine continuous_circleTangent circleTangent_ne_zero
 
 /-- The point `e^{iθ}` of the circle, in the plane `(⊤ : Opens ℂ)`. -/
 private def circlePoint (θ : ℝ) : (⊤ : Opens ℂ) := ⟨circleMap 0 1 θ, by simp⟩
@@ -131,20 +119,6 @@ theorem weight_circleVarifold : weight circleVarifold = μHE[1].restrict (sphere
   rw [weight_circleVarifold_eq_map]
   simpa using TauCeti.smul_map_volume_restrict_circleMap 0 1
 
-/-- Along the circle, the tangential divergence of `X` is `⟪τ, DX(γ) τ⟫`. -/
-private theorem tangentialDivergence_circleTangentLine (X : ℂ → ℂ) (θ : ℝ) :
-    tangentialDivergence X (circleMap 0 1 θ) (circleTangentLine θ) =
-      ⟪circleTangent θ, fderiv ℝ X (circleMap 0 1 θ) (circleTangent θ)⟫ := by
-  rw [tangentialDivergence_def, coe_circleTangentLine]
-  have hlin : (((innerSL ℝ (circleTangent θ)).smulRight (circleTangent θ) ∘L
-      fderiv ℝ X (circleMap 0 1 θ) : ℂ →L[ℝ] ℂ) : ℂ →ₗ[ℝ] ℂ) =
-      (((innerSL ℝ (circleTangent θ)) ∘L fderiv ℝ X (circleMap 0 1 θ) : ℂ →L[ℝ] ℝ) :
-        ℂ →ₗ[ℝ] ℝ).smulRight (circleTangent θ) := by
-    ext v
-    simp
-  rw [hlin, LinearMap.trace_smulRight]
-  simp
-
 /-- The derivative of `g(θ) = ⟪X(γ(θ)), τ(θ)⟫`. -/
 private theorem hasDerivAt_inner_circleTangent {X : ℂ → ℂ} (hX : Differentiable ℝ X) (θ : ℝ) :
     HasDerivAt (fun t => ⟪X (circleMap 0 1 t), circleTangent t⟫)
@@ -173,7 +147,8 @@ theorem firstVariation_circleVarifold_apply (X : 𝓓^{1}((⊤ : Opens ℂ), ℂ
   rw [firstVariation_apply, circleVarifold, integral_map
     continuous_circleVarifoldParam.aemeasurable
     (integrable_tangentialDivergence X).aestronglyMeasurable]
-  simp only [circleVarifoldParam, coe_circlePoint, tangentialDivergence_circleTangentLine]
+  simp only [circleVarifoldParam, circleTangentLine, coe_circlePoint,
+    tangentialDivergence_spanLine _ _ _ (norm_circleTangent _)]
   have hD : Continuous fun θ =>
       ⟪circleTangent θ, fderiv ℝ X (circleMap 0 1 θ) (circleTangent θ)⟫ :=
     continuous_circleTangent.inner (((X.contDiff.continuous_fderiv one_ne_zero).comp
