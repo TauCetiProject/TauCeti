@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 
 /-!
 # Quasiregular maps of Euclidean domains
@@ -39,10 +38,10 @@ with the operator norm and Mathlib's `LinearMap.det`. The condition uses `det Du
   integrable derivative, the weak derivative may be taken to be `fderiv ℝ f`.
 * `TauCeti.IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn`: where a quasiregular map agrees, on a
   nonempty open subset of `Ω`, with a linear map `A`, the outer inequality `‖A‖ⁿ ≤ K det A` holds.
+* `TauCeti.not_isQuasiregularOn_of_eqOn_of_det_nonpos`: a map that agrees, on a nonempty open
+  subset of `Ω`, with a nonzero linear map of nonpositive determinant is not quasiregular on `Ω`.
 * `TauCeti.not_isQuasiregularOn_of_eqOn_of_det_neg`: a map that agrees, on a nonempty open
   subset of `Ω`, with a linear map of negative determinant is not quasiregular on `Ω`.
-* `TauCeti.not_isQuasiregularOn_of_eqOn_of_det_eq_zero`: a map that agrees, on a nonempty open
-  subset of `Ω`, with a nonzero linear map of determinant zero is not quasiregular on `Ω`.
 
 ## Checks
 
@@ -199,27 +198,28 @@ theorem IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn (hf : IsQuasiregularOn K Ω
     (ae_restrict_of_ae_restrict_of_subset hU (hf.ae_norm_pow_le_mul_det hDu))).exists
   rwa [hx] at hle
 
+/-- **Degenerate or orientation-reversing linear maps exclude quasiregularity.** If `f` agrees, on
+a nonempty open subset `U` of `Ω`, with a nonzero continuous linear map `A` with `det A ≤ 0`, then
+`f` is not `K`-quasiregular on `Ω` for any `K`: `0 < ‖A‖ⁿ ≤ K det A ≤ 0` would follow
+(`TauCeti.IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn`). -/
+theorem not_isQuasiregularOn_of_eqOn_of_det_nonpos {U : Opens E} (hU : U ≤ Ω)
+    (hUne : (U : Set E).Nonempty) {A : E →L[ℝ] E} (hA : A ≠ 0)
+    (hdet : LinearMap.det (A : E →ₗ[ℝ] E) ≤ 0) (hfA : EqOn f A U) :
+    ¬ IsQuasiregularOn K Ω f := fun hf ↦
+  (pow_pos (norm_pos_iff.2 hA) _).not_ge ((hf.norm_pow_le_mul_det_of_eqOn hU hUne hfA).trans
+    (mul_nonpos_of_nonneg_of_nonpos (zero_le_one.trans hf.one_le) hdet))
+
 /-- **Orientation reversal excludes quasiregularity.** If `f` agrees, on a nonempty open subset
 `U` of `Ω`, with a continuous linear map `A` with `det A < 0`, then `f` is not `K`-quasiregular on
-`Ω` for any `K`: `0 ≤ ‖A‖ⁿ ≤ K det A < 0` would follow
-(`TauCeti.IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn`). -/
+`Ω` for any `K`. This is `TauCeti.not_isQuasiregularOn_of_eqOn_of_det_nonpos`, since `det 0 ≥ 0`
+forces `A ≠ 0`. -/
 theorem not_isQuasiregularOn_of_eqOn_of_det_neg {U : Opens E} (hU : U ≤ Ω)
     (hUne : (U : Set E).Nonempty) {A : E →L[ℝ] E} (hA : LinearMap.det (A : E →ₗ[ℝ] E) < 0)
-    (hfA : EqOn f A U) : ¬ IsQuasiregularOn K Ω f := fun hf ↦
-  ((pow_nonneg (norm_nonneg A) _).trans (hf.norm_pow_le_mul_det_of_eqOn hU hUne hfA)).not_gt
-    (mul_neg_of_pos_of_neg (zero_lt_one.trans_le hf.one_le) hA)
-
-/-- **Degenerate linear maps exclude quasiregularity.** If `f` agrees, on a nonempty open subset
-`U` of `Ω`, with a nonzero continuous linear map `A` with `det A = 0`, then `f` is not
-`K`-quasiregular on `Ω` for any `K`: `0 < ‖A‖ⁿ ≤ K det A = 0` would follow
-(`TauCeti.IsQuasiregularOn.norm_pow_le_mul_det_of_eqOn`). -/
-theorem not_isQuasiregularOn_of_eqOn_of_det_eq_zero {U : Opens E} (hU : U ≤ Ω)
-    (hUne : (U : Set E).Nonempty) {A : E →L[ℝ] E} (hA : A ≠ 0)
-    (hdet : LinearMap.det (A : E →ₗ[ℝ] E) = 0) (hfA : EqOn f A U) :
-    ¬ IsQuasiregularOn K Ω f := fun hf ↦ by
-  have hle := hf.norm_pow_le_mul_det_of_eqOn hU hUne hfA
-  rw [hdet, mul_zero] at hle
-  exact (pow_pos (norm_pos_iff.2 hA) _).not_ge hle
+    (hfA : EqOn f A U) : ¬ IsQuasiregularOn K Ω f := by
+  refine not_isQuasiregularOn_of_eqOn_of_det_nonpos hU hUne ?_ hA.le hfA
+  rintro rfl
+  rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.det_zero] at hA
+  exact (pow_nonneg le_rfl _).not_gt hA
 
 /-- **The fold is not quasiregular.** For a unit vector `u`, the fold
 `x ↦ x + (|⟪u, x⟫| - ⟪u, x⟫) u`, which is `(x₁, …, xₙ) ↦ (|x₁|, x₂, …, xₙ)` for `u = e₁`, is not

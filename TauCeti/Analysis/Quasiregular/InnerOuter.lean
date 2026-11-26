@@ -184,8 +184,8 @@ hypothesis. -/
 theorem not_isQuasiregularOn_starProjection (hV₀ : V ≠ ⊥) (hV : V ≠ ⊤)
     (hΩ : (Ω : Set E).Nonempty) : ¬ IsQuasiregularOn K Ω V.starProjection := by
   obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hV₀
-  refine not_isQuasiregularOn_of_eqOn_of_det_eq_zero le_rfl hΩ (fun h ↦ hv0 ?_)
-    (V.det_starProjection_eq_zero hV) fun _ _ ↦ rfl
+  refine not_isQuasiregularOn_of_eqOn_of_det_nonpos le_rfl hΩ (fun h ↦ hv0 ?_)
+    (V.det_starProjection_eq_zero hV).le fun _ _ ↦ rfl
   rw [← Submodule.starProjection_eq_self_iff.2 hv, h, zero_apply]
 
 end Projection
