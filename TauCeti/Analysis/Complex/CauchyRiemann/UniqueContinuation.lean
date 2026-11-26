@@ -38,6 +38,11 @@ open preconnected `Ω ⊆ ℂ` that admits a factorization at every zero in `Ω`
   (`TauCeti.exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt`). That the order does not
   depend on the factorization is `TauCeti.analyticOrderAt_eq_of_eventually_eq_clm_apply`.
 
+When the family `Ψ` is complex-linear, the factorization `η = Ψ σ` determines a leading term:
+either `η` vanishes near `z₀`, or `η z = (z - z₀) ^ m • c + o(‖z - z₀‖ ^ m)` with `c ≠ 0`, where `c`
+is `Ψ z₀` applied to the leading coefficient of `σ`. Here `Ψ z₀` need only be injective
+(`TauCeti.eventually_eq_zero_or_exists_isLittleO_sub_pow_smul_of_eventually_eq_clm_apply`).
+
 A scalar power factorization `f w = (w - z₀) ^ m * v w` at a zero `z₀`, with `v` continuous and
 nonzero at `z₀`, is itself a similarity factorization with `Φ = v • id` and `σ = (· - z₀) ^ m`
 (`TauCeti.hasSimilarityFactorizationAt_of_eventually_eq_pow_mul`). Then `m` is positive
@@ -155,6 +160,35 @@ theorem analyticOrderAt_eq_of_eventually_eq_clm_apply
   refine hσ.analyticOrderAt_eq_of_isTheta hσ' ?_
   exact (isTheta_of_eventually_eq_clm_apply hΦ hΦ₀ hξ).symm.trans
     (isTheta_of_eventually_eq_clm_apply hΦ' hΦ'₀ hξ')
+
+omit [CompleteSpace V] in
+/-- **Leading term of a complex-linear factorization.** Let `η = Ψ σ` near `z₀`, with `Ψ` a family
+of complex-linear maps, continuous at `z₀` and injective there, and `σ` analytic at `z₀`. Then
+either `η` vanishes near `z₀`, or there are `m` and `c ≠ 0` with
+`η z = (z - z₀) ^ m • c + o(‖z - z₀‖ ^ m)`: the leading term is `Ψ z₀` applied to the leading
+coefficient of `σ`. -/
+theorem eventually_eq_zero_or_exists_isLittleO_sub_pow_smul_of_eventually_eq_clm_apply
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W] {η : ℂ → W} {Ψ : ℂ → V →L[ℂ] W}
+    (hΨ : ContinuousAt Ψ z₀) (hΨ₀ : Function.Injective (Ψ z₀)) (hσ : AnalyticAt ℂ σ z₀)
+    (hη : ∀ᶠ z in 𝓝 z₀, η z = Ψ z (σ z)) :
+    (∀ᶠ z in 𝓝 z₀, η z = 0) ∨ ∃ (m : ℕ) (c : W), c ≠ 0 ∧
+      (fun z ↦ η z - (z - z₀) ^ m • c) =o[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ m := by
+  by_cases h : ∀ᶠ z in 𝓝 z₀, σ z = 0
+  · refine .inl ?_
+    filter_upwards [h, hη] with z hz hzη
+    rw [hzη, hz, map_zero]
+  obtain ⟨m, g, hg, hg₀, hσg⟩ := hσ.exists_eventuallyEq_pow_smul_ne_zero_iff.2 h
+  refine .inr ⟨m, Ψ z₀ (g z₀), fun h0 ↦ hg₀ (hΨ₀ (h0.trans (map_zero _).symm)), ?_⟩
+  -- near `z₀`, `η z - (z - z₀) ^ m • c = (z - z₀) ^ m • (Ψ z (g z) - c)`, and the last factor
+  -- tends to `0`
+  have hlim : Tendsto (fun z ↦ Ψ z (g z) - Ψ z₀ (g z₀)) (𝓝 z₀) (𝓝 0) :=
+    tendsto_sub_nhds_zero_iff.2 (hΨ.clm_apply hg.continuousAt)
+  refine IsLittleO.of_bound fun ε hε ↦ ?_
+  filter_upwards [hη, hσg, hlim.eventually (closedBall_mem_nhds 0 hε)] with z hzη hzσ hzε
+  rw [dist_zero_right] at hzε
+  rw [hzη, hzσ, map_smul, ← smul_sub, norm_smul, norm_pow, Real.norm_of_nonneg (by positivity),
+    mul_comm ε]
+  gcongr
 
 /-- A scalar power factorization `f w = (w - z₀) ^ m * v w` near `z₀`, with `v` continuous and
 nonzero at `z₀`, is a similarity factorization of `f` at `z₀`. -/
@@ -327,6 +361,20 @@ theorem exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt
   refine Nat.pos_of_ne_zero fun h0 ↦ ?_
   rw [h0, Nat.cast_zero] at hm
   exact (hσ.analyticOrderAt_ne_zero.2 hσ₀) hm.symm
+
+/-- **Positive orders through a change of frame.** On an open preconnected `Ω`, let `η` take
+values in a real normed space `W`, and let `e : W ≃L[ℝ] V` be such that `e ∘ η` is continuous on
+`Ω` and factors at each of its zeros in `Ω`. If `η` is not identically zero on `Ω`, then each zero
+`z₀ ∈ Ω` of `η` has a finite positive order `m`: `‖η z‖` is comparable to `‖z - z₀‖ ^ m`. -/
+theorem exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt
+    {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W] (e : W ≃L[ℝ] V) {η : ℂ → W}
+    (hΩ : IsOpen Ω) (hΩc : IsPreconnected Ω) (hη : ContinuousOn (fun z ↦ e (η z)) Ω)
+    (hfac : ∀ z ∈ Ω, e (η z) = 0 → HasSimilarityFactorizationAt (fun z ↦ e (η z)) z)
+    (hne : ∃ z ∈ Ω, η z ≠ 0) (hz₀ : z₀ ∈ Ω) (hη₀ : η z₀ = 0) :
+    ∃ m : ℕ, 0 < m ∧ η =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
+  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc hη
+    hfac (by simpa using hne) hz₀ (by simp [hη₀])
+  exact ⟨m, hm, IsTheta.trans ⟨e.isBigO_comp_rev _ _, e.isBigO_comp _ _⟩ hθ⟩
 
 end Global
 

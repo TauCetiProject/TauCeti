@@ -10,10 +10,12 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
+public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 public import TauCeti.Topology.Algebra.Module.Quotient
-public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
 import Mathlib.Topology.Separation.Connected
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
+import TauCeti.Topology.Algebra.Module.Finite
 
 /-!
 # Compact modules over a compact ring
@@ -69,6 +71,8 @@ witness that a compact totally disconnected topological ring is a compact module
   `TauCeti.IsCompactModule.existsUnique_forall_mkQ_eq`, `TauCeti.IsCompactModule.quotient`,
   `TauCeti.IsCompactModule.self`: the same statements for the predicate, its stability under
   quotients by closed submodules, and the self-module witness.
+* `TauCeti.IsCompactModule.of_finite`: a finitely generated Hausdorff topological module over a
+  compact totally disconnected ring is a compact module.
 
 ## References
 
@@ -237,28 +241,28 @@ variable [CompactSpace M]
 continuous addition. The element is unique when `M` moreover has continuous addition and is `T1`
 and linearly topologized (`TauCeti.existsUnique_forall_mkQ_eq`). -/
 theorem exists_forall_mkQ_eq [SeparatelyContinuousAdd M]
-    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
-    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.val)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.val ≤ N'.val),
       Submodule.factor h (x N) = x N') :
-    ∃ m : M, ∀ N, N.1.mkQ m = x N := by
+    ∃ m : M, ∀ N, N.val.mkQ m = x N := by
   -- The fibres `C N` of `mkQ` over `x N` are cosets of open, hence closed, subgroups of the
   -- compact space `M`; they are nonempty and decrease along intersections, so Cantor's
   -- intersection theorem produces a common point.
-  set C : {N : Submodule R M // IsOpen (N : Set M)} → Set M := fun N ↦ N.1.mkQ ⁻¹' {x N} with hC
+  set C : {N : Submodule R M // IsOpen (N : Set M)} → Set M := fun N ↦ N.val.mkQ ⁻¹' {x N} with hC
   have hclosed : ∀ N, IsClosed (C N) := fun N ↦ by
-    have := Submodule.Quotient.discreteTopology_of_isOpen N.1 N.2
-    exact isClosed_singleton.preimage N.1.continuous_mkQ
-  have hne : ∀ N, (C N).Nonempty := fun N ↦ N.1.mkQ_surjective (x N)
+    have := Submodule.Quotient.discreteTopology_of_isOpen N.val N.property
+    exact isClosed_singleton.preimage N.val.continuous_mkQ
+  have hne : ∀ N, (C N).Nonempty := fun N ↦ N.val.mkQ_surjective (x N)
   have hdir : Directed (· ⊇ ·) C := by
     intro N N'
-    have hopen : IsOpen ((N.1 ⊓ N'.1 : Submodule R M) : Set M) := by
+    have hopen : IsOpen ((N.val ⊓ N'.val : Submodule R M) : Set M) := by
       rw [Submodule.coe_inf]
-      exact N.2.inter N'.2
-    refine ⟨⟨N.1 ⊓ N'.1, hopen⟩, fun m hm ↦ ?_, fun m hm ↦ ?_⟩
+      exact N.property.inter N'.property
+    refine ⟨⟨N.val ⊓ N'.val, hopen⟩, fun m hm ↦ ?_, fun m hm ↦ ?_⟩
     · rw [hC, Set.mem_preimage, Set.mem_singleton_iff] at hm ⊢
-      rw [← hx (N := ⟨N.1 ⊓ N'.1, hopen⟩) inf_le_left, ← hm, Submodule.factor_mk]
+      rw [← hx (N := ⟨N.val ⊓ N'.val, hopen⟩) inf_le_left, ← hm, Submodule.factor_mk]
     · rw [hC, Set.mem_preimage, Set.mem_singleton_iff] at hm ⊢
-      rw [← hx (N := ⟨N.1 ⊓ N'.1, hopen⟩) inf_le_right, ← hm, Submodule.factor_mk]
+      rw [← hx (N := ⟨N.val ⊓ N'.val, hopen⟩) inf_le_right, ← hm, Submodule.factor_mk]
   have : Nonempty {N : Submodule R M // IsOpen (N : Set M)} := ⟨⟨⊤, by simp⟩⟩
   obtain ⟨m, hm⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed C hdir hne
     (fun N ↦ (hclosed N).isCompact) hclosed
@@ -268,12 +272,12 @@ theorem exists_forall_mkQ_eq [SeparatelyContinuousAdd M]
 family of elements of the quotients `M ⧸ N` by the open submodules comes from exactly one element
 of `M`. -/
 theorem existsUnique_forall_mkQ_eq [ContinuousAdd M] [IsLinearTopology R M] [T1Space M]
-    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
-    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.val)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.val ≤ N'.val),
       Submodule.factor h (x N) = x N') :
-    ∃! m : M, ∀ N, N.1.mkQ m = x N := by
+    ∃! m : M, ∀ N, N.val.mkQ m = x N := by
   obtain ⟨m, hm⟩ := exists_forall_mkQ_eq x hx
-  refine ⟨m, hm, fun m' (hm' : ∀ N, N.1.mkQ m' = x N) ↦ ?_⟩
+  refine ⟨m, hm, fun m' (hm' : ∀ N, N.val.mkQ m' = x N) ↦ ?_⟩
   rw [← sub_eq_zero]
   refine IsLinearTopology.eq_zero_of_forall_mem_of_isOpen (R := R) fun N hN ↦ ?_
   rw [← Submodule.Quotient.mk_eq_zero, ← Submodule.mkQ_apply, map_sub, hm' ⟨N, hN⟩, hm ⟨N, hN⟩,
@@ -305,6 +309,21 @@ namespace IsCompactModule
 theorem self [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R] :
     IsCompactModule R R :=
   ⟨inferInstance, inferInstance, inferInstance, inferInstance⟩
+
+/-- **Finitely generated modules are compact modules.** A finitely generated Hausdorff topological
+module over a compact totally disconnected ring is a compact module. For example, every finitely
+generated Hausdorff topological `ℤ_p`-module is a compact module. -/
+theorem of_finite [IsTopologicalRing R] [CompactSpace R] [TotallyDisconnectedSpace R]
+    [Module.Finite R M] [ContinuousAdd M] [ContinuousSMul R M] [T2Space M] :
+    IsCompactModule R M := by
+  -- The topology of `M` is the module topology, which is nonarchimedean because the topology of
+  -- the ring is, and a nonarchimedean Hausdorff group is totally disconnected.
+  have := isModuleTopology_of_finite_of_compactSpace (R := R) (M := M)
+  have := IsModuleTopology.isTopologicalAddGroup R M
+  have : NonarchimedeanAddGroup M :=
+    (eq_moduleTopology R M).symm ▸ nonarchimedeanAddGroup_moduleTopology (A := R)
+  refine ⟨inferInstance, inferInstance, ⟨?_⟩, inferInstance⟩
+  simpa using (Module.Finite.fg_top (R := R) (M := M)).isCompact
 
 variable (hM : IsCompactModule R M)
 include hM
@@ -343,10 +362,10 @@ theorem eq_zero_of_forall_mem_of_isOpen [CompactSpace R] {x : M}
 of its quotients by the open submodules: a compatible family of elements of those quotients comes
 from exactly one element of the module. -/
 theorem existsUnique_forall_mkQ_eq [CompactSpace R]
-    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.1)
-    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.1 ≤ N'.1),
+    (x : ∀ N : {N : Submodule R M // IsOpen (N : Set M)}, M ⧸ N.val)
+    (hx : ∀ ⦃N N' : {N : Submodule R M // IsOpen (N : Set M)}⦄ (h : N.val ≤ N'.val),
       Submodule.factor h (x N) = x N') :
-    ∃! m : M, ∀ N, N.1.mkQ m = x N :=
+    ∃! m : M, ∀ N, N.val.mkQ m = x N :=
   have := hM.isTopologicalAddGroup
   have := hM.compactSpace
   have := hM.totallyDisconnectedSpace

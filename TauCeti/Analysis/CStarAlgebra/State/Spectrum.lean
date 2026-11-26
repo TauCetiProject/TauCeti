@@ -19,9 +19,11 @@ spectral value `z ∈ spectrum ℂ a` of a normal `a` a state sending `star a ^ 
 `star z ^ m * z ^ n`
 (`exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum`), hence a state on
 any `0 ≤ a` attaining `‖a‖ ^ n` (`exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow`,
-`exists_positiveContinuousLinearMap_apply_eq_norm`). Pulling back along `A → 𝓜(ℂ, A)` yields a
-norm-one positive functional on any nontrivial C⋆-algebra `A` with `ω a = ‖a‖` and
-`ω (a * a) = ‖a‖ ^ 2` (`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
+`exists_positiveContinuousLinearMap_apply_eq_norm`), and a state on any normal `a` with
+`‖ω a‖ = ‖a‖` (`exists_positiveContinuousLinearMap_norm_apply_eq_norm`). Pulling back along
+`A → 𝓜(ℂ, A)` yields a norm-one positive functional on any nontrivial C⋆-algebra `A` with
+`ω a = ‖a‖` and `ω (a * a) = ‖a‖ ^ 2`
+(`exists_positiveContinuousLinearMap_apply_mul_self_eq_norm_sq`).
 
 ## References
 
@@ -52,11 +54,11 @@ theorem exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spec
   obtain ⟨χ, hχa⟩ := WeakDual.CharacterSpace.mem_spectrum_iff_exists.1
     (StarSubalgebra.spectrum_eq (S := S) (a := x) ▸ spectrum.algebraMap_mem ℂ hz)
   have hχ_strong : WeakDual.toStrongDual (χ : WeakDual ℂ S) =
-      (WeakDual.CharacterSpace.toAlgHom χ).toContinuousLinearMap :=
+      (WeakDual.CharacterSpace.toAlgHom χ : S →ₙₐ[ℂ] ℂ).toStrongDual :=
     DFunLike.ext _ _ fun _ => by simp
   have hχ_state : (χ : WeakDual ℂ S) ∈ stateSpace S :=
     mem_stateSpace_iff_norm_eq_one_and_map_one.2
-      ⟨hχ_strong ▸ AlgHom.toContinuousLinearMap_norm _, by simp⟩
+      ⟨hχ_strong ▸ AlgHom.norm_toStrongDual_toNonUnitalAlgHom _, by simp⟩
   obtain ⟨ψ, hψ, hψ_ext⟩ := S.exists_mem_stateSpace_forall_apply_coe_eq hχ_state
   refine ⟨.mk₀ (WeakDual.toStrongDual ψ) fun _ => map_nonneg_of_mem_stateSpace hψ,
     (PositiveContinuousLinearMap.mk₀_apply _ _ 1).trans <|
@@ -89,6 +91,18 @@ theorem exists_positiveContinuousLinearMap_apply_eq_norm {a : M} (ha : 0 ≤ a) 
     ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ω a = ‖a‖ :=
   let ⟨ω, h1, hn, hp⟩ := exists_positiveContinuousLinearMap_apply_pow_eq_norm_pow ha
   ⟨ω, h1, hn, by simpa using hp 1⟩
+
+/-- On a nontrivial unital C⋆-algebra, every normal element `a` admits a state `ω` with
+`‖ω a‖ = ‖a‖`: evaluate at a spectral value of maximal modulus. -/
+theorem exists_positiveContinuousLinearMap_norm_apply_eq_norm (a : M) [IsStarNormal a] :
+    ∃ ω : M →P[ℂ] ℂ, ω 1 = 1 ∧ ‖(ω : M →L[ℂ] ℂ)‖ = 1 ∧ ‖ω a‖ = ‖a‖ := by
+  obtain ⟨z, hz, hza⟩ := exists_eNorm_spectrum_eq_spectralRadius_of_nonempty (spectrum.nonempty a)
+  rw [IsStarNormal.spectralRadius_eq_nnNorm, eNorm_eq_nnNorm, ENNReal.coe_inj] at hza
+  obtain ⟨ω, h1, hn, hp⟩ :=
+    exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum hz
+  refine ⟨ω, h1, hn, ?_⟩
+  have hωa : ω a = z := by simpa using hp 0 1
+  rw [hωa, ← coe_nnNorm, ← coe_nnNorm, hza]
 
 end Unital
 

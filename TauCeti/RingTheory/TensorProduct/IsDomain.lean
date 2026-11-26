@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 import Mathlib.RingTheory.Adjoin.FG
 import TauCeti.LinearAlgebra.TensorProduct.Separation
+import TauCeti.RingTheory.Localization.TensorProduct
 
 /-!
 # Tensor products over a field that are domains
@@ -45,10 +46,17 @@ field.
 
 * `TauCeti.isDomain_tensorProduct_of_isLocalization`: localizing the first factor at nonzero
   divisors preserves domains.
+* `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_left`,
+  `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct_right`: if a localization `Q` of
+  `K ⊗[R] B` (or `A ⊗[R] K`) at nonzero divisors is tensored over the field `K` with a `K`-algebra
+  `L`, the result is a domain whenever `L ⊗[R] B` (or `A ⊗[R] L`) is a domain.
 * `TauCeti.isDomain_fractionRing_mvPolynomial_tensorProduct`: a rational function field over `K`
   tensored with a domain is a domain.
 * `TauCeti.isDomain_tensorProduct_of_isAlgClosed`: over an algebraically closed field, the tensor
   product of two domains is a domain.
+* `TauCeti.not_isDomain_tensorProduct_of_mul_self_mem_range`: if `A` contains an element `a ∉ K`
+  with `a * a ∈ K`, then `A ⊗[K] A` is not a domain, as `(a ⊗ 1 - 1 ⊗ a) * (a ⊗ 1 + 1 ⊗ a) = 0`.
+  Both factors are nonzero by `TauCeti.tmul_one_add_smul_one_tmul_ne_zero`.
 
 ## References
 
@@ -76,16 +84,46 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
   let φ : A ⊗[K] L →ₐ[K] B ⊗[K] L :=
     Algebra.TensorProduct.map (IsScalarTower.toAlgHom K A B) (AlgHom.id K L)
   algebraize [φ.toRingHom]
-  have : IsScalarTower A (A ⊗[K] L) (B ⊗[K] L) := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra, φ]
-  have : IsLocalization (Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (B ⊗[K] L) :=
-    IsLocalization.tensorProduct_tensorProduct K L M B
-      (by ext; simp [RingHom.algebraMap_toAlgebra, φ])
+  have := IsLocalization.tensorProduct_tensorProduct_of_algebraMap_eq K L M B rfl
   -- `A ⟶ A ⊗[K] L` is injective, so it carries the nonzero divisors `M` to nonzero elements.
   have hinj : Function.Injective (algebraMap A (A ⊗[K] L)) :=
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective
   exact IsLocalization.isDomain_of_le_nonZeroDivisors _
     (M := Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (map_le_nonZeroDivisors_of_injective _ hinj hM)
+
+/-- Let `Q` be a localization of `K ⊗[R] B` at a submonoid of nonzero divisors (for instance, its
+fraction field), where `K` is a field over `R`. If `L` is a `K`-algebra such that `L ⊗[R] B` is a
+domain, then `Q ⊗[K] L` is a domain. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_left
+    {R B : Type*} [CommSemiring R] [CommSemiring B] [Algebra R K] [Algebra R B]
+    (M : Submonoid (K ⊗[R] B)) (hM : M ≤ nonZeroDivisors (K ⊗[R] B))
+    (Q : Type*) [CommRing Q] [Algebra K Q] [Algebra (K ⊗[R] B) Q] [IsScalarTower K (K ⊗[R] B) Q]
+    [IsLocalization M Q] (L : Type*) [CommRing L] [Algebra R L] [Algebra K L] [IsScalarTower R K L]
+    [IsDomain (L ⊗[R] B)] : IsDomain (Q ⊗[K] L) := by
+  let e : ((K ⊗[R] B) ⊗[K] L) ≃+* L ⊗[R] B :=
+    (Algebra.TensorProduct.comm K (K ⊗[R] B) L).toRingEquiv.trans
+      (Algebra.TensorProduct.cancelBaseChange R K K L B).toRingEquiv
+  have : IsDomain ((K ⊗[R] B) ⊗[K] L) := e.toMulEquiv.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q L
+
+attribute [local instance] Algebra.TensorProduct.rightAlgebra in
+/-- Let `Q` be a localization of `A ⊗[R] K` at a submonoid of nonzero divisors (for instance, its
+fraction field), where `K` is a field over `R`. If `L` is a `K`-algebra such that `A ⊗[R] L` is a
+domain, then `Q ⊗[K] L` is a domain. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct_right
+    {R A : Type*} [CommSemiring R] [CommRing A] [Algebra R K] [Algebra R A]
+    (M : Submonoid (A ⊗[R] K)) (hM : M ≤ nonZeroDivisors (A ⊗[R] K))
+    (Q : Type*) [CommRing Q] [Algebra K Q] [Algebra (A ⊗[R] K) Q] [IsScalarTower K (A ⊗[R] K) Q]
+    [IsLocalization M Q] (L : Type*) [CommRing L] [Algebra R L] [Algebra K L] [IsScalarTower R K L]
+    [IsDomain (A ⊗[R] L)] : IsDomain (Q ⊗[K] L) := by
+  let e : (A ⊗[R] K) ⊗[K] L ≃* A ⊗[R] L :=
+    (((Algebra.TensorProduct.comm K (A ⊗[R] K) L).trans
+      (Algebra.TensorProduct.congr (AlgEquiv.refl : L ≃ₐ[K] L)
+        (Algebra.TensorProduct.commRight R K A).symm)).trans
+      (Algebra.TensorProduct.cancelBaseChange R K K L A)).toMulEquiv.trans
+      (Algebra.TensorProduct.comm R L A).toMulEquiv
+  have : IsDomain ((A ⊗[R] K) ⊗[K] L) := e.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q L
 
 /-- The tensor product of a domain over a field `K` with a rational function field over `K` is a
 domain. -/
@@ -167,5 +205,43 @@ instance isDomain_tensorProduct_of_isAlgClosed [IsAlgClosed K] (A B : Type*) [Co
   rcases eq_zero_or_eq_zero_of_mul_eq_zero_of_finiteType (hι h) with h0 | h0
   · exact .inl (by rw [h0, map_zero])
   · exact .inr (by rw [h0, map_zero])
+
+/-- If `a ∈ A` is not in the image of `K`, then `a ⊗ 1 + c • (1 ⊗ a)` is nonzero in `A ⊗[K] A`
+for every `c : K`: a functional on `A` vanishing at `1` and not at `a`, applied to the left
+factor, sends it to a nonzero multiple of `1`. -/
+theorem tmul_one_add_smul_one_tmul_ne_zero {A : Type*} [CommRing A] [Algebra K A] {a : A}
+    (ha : a ∉ Set.range (algebraMap K A)) (c : K) :
+    a ⊗ₜ[K] (1 : A) + c • ((1 : A) ⊗ₜ[K] a) ≠ 0 := by
+  have ha' : a ∉ Submodule.span K {(1 : A)} := by
+    rw [Submodule.mem_span_singleton]
+    rintro ⟨b, rfl⟩
+    exact ha ⟨b, Algebra.algebraMap_eq_smul_one b⟩
+  obtain ⟨f, hfa, hf⟩ := Submodule.exists_dual_map_eq_bot_of_notMem ha' inferInstance
+  have hf1 : f 1 = 0 := by
+    simpa [Submodule.map_span] using hf
+  intro h
+  have h1 : (1 : A) = 0 := by
+    simpa [hf1, hfa] using
+      congrArg ((TensorProduct.lid K A).toLinearMap ∘ₗ TensorProduct.map f LinearMap.id) h
+  -- A trivial ring `A` would put `a` in the image of `K`.
+  have := subsingleton_of_zero_eq_one h1.symm
+  exact ha ⟨0, Subsingleton.elim _ _⟩
+
+/-- If `A` contains an element `a` not in the image of `K` whose square `a * a` is in the image
+of `K`, then `A ⊗[K] A` is not a domain: `(a ⊗ 1 - 1 ⊗ a) * (a ⊗ 1 + 1 ⊗ a) = 0`, and both
+factors are nonzero. -/
+theorem not_isDomain_tensorProduct_of_mul_self_mem_range {A : Type*} [CommRing A] [Algebra K A]
+    {a : A} (ha : a ∉ Set.range (algebraMap K A))
+    (haa : a * a ∈ Set.range (algebraMap K A)) : ¬ IsDomain (A ⊗[K] A) := by
+  intro _
+  have h₁ := tmul_one_add_smul_one_tmul_ne_zero ha (-1)
+  have h₂ := tmul_one_add_smul_one_tmul_ne_zero ha 1
+  rw [neg_one_smul, ← sub_eq_add_neg] at h₁
+  rw [one_smul] at h₂
+  refine mul_ne_zero h₁ h₂ ?_
+  obtain ⟨c, hc⟩ := haa
+  simp only [sub_mul, mul_add, Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul, ← hc,
+    Algebra.algebraMap_eq_smul_one, TensorProduct.smul_tmul]
+  abel
 
 end TauCeti

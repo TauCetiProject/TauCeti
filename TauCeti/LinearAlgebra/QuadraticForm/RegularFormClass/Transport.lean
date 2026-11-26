@@ -467,7 +467,7 @@ theorem RegularFormClass.mapRingEquiv_hyperbolicClass (e : K ≃+* L) :
 
 /-- **The discriminant commutes with transport along a field isomorphism**: transporting a class
 along `e` pushes its discriminant forward along `(e : K →+* L).squareClassMap`. -/
-@[simp]
+@[simp↓]
 theorem RegularFormClass.discr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
     RegularFormClass.discr (RegularFormClass.mapRingEquiv e x) =
       (e : K →+* L).squareClassMap (RegularFormClass.discr x) := by
@@ -478,7 +478,7 @@ theorem RegularFormClass.discr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClas
 
 /-- **The signed discriminant commutes with transport along a field isomorphism**: transporting a
 class along `e` pushes its signed discriminant forward along `(e : K →+* L).squareClassMap`. -/
-@[simp]
+@[simp↓]
 theorem RegularFormClass.signedDiscr_mapRingEquiv (e : K ≃+* L) (x : RegularFormClass K) :
     RegularFormClass.signedDiscr (RegularFormClass.mapRingEquiv e x) =
       (e : K →+* L).squareClassMap (RegularFormClass.signedDiscr x) := by

@@ -22,6 +22,11 @@ coordinates maps it onto a set with nonempty interior. That image lies in the cl
 projection of `s`, which is semialgebraic, so the projection of `s` itself has nonempty interior
 and `s` has dimension at least `d`.
 
+Semialgebraic sets are semianalytic (`TauCeti.IsSemialgebraic.isSemianalytic`), and the same
+statement holds for semianalytic sets (`TauCeti.IsSemianalytic.semialgebraicDim_closure`). That
+proof uses local normal decompositions of semianalytic germs, which are built on the semialgebraic
+dimension theory, so the semialgebraic case is kept here with its direct proof.
+
 ## Main declarations
 
 * `TauCeti.IsSemialgebraic.semialgebraicDim_closure`: the closure of a semialgebraic set has the
@@ -53,7 +58,7 @@ theorem IsSemialgebraic.semialgebraicDim_closure (hs : IsSemialgebraic s) :
   -- A projection onto `d` coordinates maps `closure s` onto a set with nonempty interior.
   obtain ⟨ι, hι, hint⟩ := hs.closure.natCast_le_semialgebraicDim_iff.1 hd.ge
   rw [hd, hs.natCast_le_semialgebraicDim_iff]
-  refine ⟨ι, hι, nonempty_iff_ne_empty.2 fun h0 ↦ hint.ne_empty ?_⟩
+  refine ⟨ι, hι, Set.ne_empty_iff_nonempty.1 fun h0 ↦ hint.ne_empty ?_⟩
   -- That image lies in the closure of the projection of `s`, which is nowhere dense if the
   -- projection of `s` has empty interior.
   have hnd := (hs.image_comp ι).isNowhereDense_iff.2 h0

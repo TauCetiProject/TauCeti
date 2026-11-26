@@ -113,7 +113,7 @@ private noncomputable def componentLinearEquiv
       Module.finrank k
         (τ.asSubmodule →ₗ[k[N]] _root_.Representation.asModule (ρ.comp N.subtype)) = e)
     (q : G ⧸ inertia (FDRep.of σ.toRepresentation)) :
-    ((ρ.isotypicComponentsEquivQuotientInertia σ hσ).symm q).1 ≃ₗ[k[N]]
+    ((ρ.isotypicComponentsEquivQuotientInertia σ hσ).symm q).val ≃ₗ[k[N]]
       Fin e → _root_.Representation.asModule
         (conjNormalFDRep (Quotient.out q) (FDRep.of σ.toRepresentation)).ρ := by
   let g : G := Quotient.out q
@@ -172,14 +172,14 @@ private noncomputable def restrictLinearEquivPi {k : Type u} {G : Type v} [Field
   let M := _root_.Representation.asModule (ρ.comp N.subtype)
   have : IsSemisimpleModule k[N] M :=
     (_root_.Representation.isSemisimpleRepresentation_iff_isSemisimpleModule_asModule _).mp
-      (Representation.isSemisimpleRepresentation_comp_subtype ρ)
+      (Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible ρ)
   have : IsNoetherian k[N] M := isNoetherian_of_tower k inferInstance
   let _ : Fintype (isotypicComponents k[N] M) := Fintype.ofFinite _
   -- `M` is the internal direct sum of its finitely many isotypic components, which
   -- `isotypicComponentsEquivQuotientInertia` indexes by the inertia cosets; each component is `e`
   -- copies of its translated constituent.
   IsSemisimpleModule.linearEquivIsotypicComponents k[N] M ≪≫ₗ DFinsupp.linearEquivFunOnFintype ≪≫ₗ
-    .piCongrLeft' k[N] (fun c ↦ c.1) (ρ.isotypicComponentsEquivQuotientInertia σ hσ) ≪≫ₗ
+    .piCongrLeft' k[N] (fun c ↦ c.val) (ρ.isotypicComponentsEquivQuotientInertia σ hσ) ≪≫ₗ
     .piCongrRight (componentLinearEquiv ρ σ hσ e hcommon)
 
 end TauCeti

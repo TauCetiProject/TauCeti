@@ -30,9 +30,10 @@ import Mathlib.Tactic.Ring
 # Basic results about finite ordinal types
 
 This file collects elementary facts about finite ordinal types, including the classification of
-permutations of `Fin 2`, sums of reversed indices, indicator sums indexed by `Fin n`, the final
-value of a partial product, sums of families vanishing beyond an index, and the cyclic index
-arithmetic of `Fin 3`.
+permutations of `Fin 2`, the consecutive pair `(castSucc i, succ i)` that is the extreme pair
+`(0, n)` of `Fin (n + 1)`, sums of indices and of reversed indices, indicator sums indexed by
+`Fin n`, the final value of a partial product, sums of families vanishing beyond an index, and the
+cyclic index arithmetic of `Fin 3`.
 
 `Fintype.sum_ite_eq` evaluates a sum whose indicator compares two elements of the index type.
 When the comparison is instead between a natural number and the `Fin.val` of the index — as it is
@@ -42,7 +43,9 @@ range, so the value is a `dite` rather than a plain application.
 ## Main results
 
 * `Equiv.Perm.eq_one_or_swap_fin_two` and `Equiv.Perm.univ_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, and these form the set of all permutations.
+  `Fin 2` is the identity or the transposition, and these form the set of all permutations;
+  so a function of a pair that is invariant under the swap is invariant under every permutation
+  (`Equiv.Perm.apply_comp_fin_two`).
 * `TauCeti.forall_cons_swap_eq_zero_iff`: vanishing of the final coordinates after swapping
   coordinate zero with coordinate `d` in a vector built with `Fin.cons`.
 * `Fin.sum_univ_eq_sum_castLE_add`: a sum over `Fin n` of a family vanishing beyond `i`
@@ -56,12 +59,22 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finRotate_ofNat`: reading natural times modulo `k`, `finRotate k` moves to the next time;
+  `Fin.image_range_ofNat_eq_image_univ`: at least `k` consecutive times visit every entry of a
+  tuple of length `k`.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
 * `Finset.card_filter_val_lt_le`: at most `j` indices have value below `j`.
+* `Fin.sum_val_eq_choose_two`: the sum of the values of `Fin n` is `n.choose 2`.
 * `Fin.sum_rev_castLE`: the sum of the values of a reversed embedded finite ordinal.
 * `Fin.castLE_last`: the last index of an initial segment embeds as the specified endpoint.
+* `Fin.castAdd_ne_natAdd`, `Fin.natAdd_ne_castAdd`: the first `m` and the last `n` indices of
+  `Fin (m + n)` are distinct.
+* `Fin.natAdd_comp_finProdFinEquiv_injective`: listing `Fin n × Fin k` as `Fin (n * k)` after
+  the first `m` indices is injective.
+* `Fin.map_partialProd`, `Fin.comp_partialProd`: applying a monoid homomorphism entrywise commutes
+  with `Fin.partialProd` (`Fin.map_partialSum` and `Fin.comp_partialSum` for `Fin.partialSum`).
 * `Fin.partialProd_last_eq_mul_tail`, `Fin.partialProd_last_eq_init_mul`: the final partial
   product of a tuple in a monoid, split at its first or its last entry.
 * `Fin.castSucc_add_one_of_ne_last`, `Fin.castSucc_sub_one_of_ne_zero`: how `Fin.castSucc`
@@ -117,8 +130,18 @@ range, so the value is a `dite` rather than a plain application.
   tuple indexed by `Fin ((k + 1) + (l + 1))` after inserting an entry into one of the two blocks.
 * `Fin.Ioo_eq_empty_of_le_two` and `Fin.eq_empty_of_subset_Ioo_of_le_two`: open intervals in
   `Fin n`, and hence finsets inside them, are empty when `n ≤ 2`.
+* `Fin.partialProd_last_eq_prod_ofFn` and `Fin.partialSum_last_eq_sum_ofFn`: the final partial
+  product (sum) is the ordered product (sum) of all the entries, in any monoid.
 * `Fin.partialProd_last`: the final partial product is the product of all the entries.
 * `Fin.partialSum_last`: the final partial sum is the sum of all the entries.
+* `Fin.last_mul_partialProd`: the last entry times the final partial product of the initial
+  segment is the product of all the entries of a tuple in a commutative monoid.
+* `Fin.apply_last_mul_inv_mul_partialProd_last`: in a group, for a tuple `y` and an element `g`,
+  `y (last n) * (g * partialProd y (last (n + 1)))⁻¹ = (g * partialProd (init y) (last n))⁻¹`,
+  that is, the last entry of `y` cancels on the left of the inverse of `g` times the final partial
+  product.
+* `Fin.partialProd_contractNth_castSucc`: multiplying two adjacent entries of a tuple does not
+  change its final partial product.
 * `Fin.prod_contractNth_castSucc` and `Fin.sum_contractNth_castSucc`: multiplying (adding) two
   adjacent entries of a tuple does not change the product (sum) of all its entries.
 * `TauCeti.add_one_ne_self`: adding one in `Fin n` is nontrivial when `2 ≤ n`.
@@ -143,12 +166,20 @@ range, so the value is a `dite` rather than a plain application.
   consecutive entries.
 * `Fin.exists_succ_lt_lt_castSucc`: a `Fin` family in a linear order that starts above a level,
   ends below it and never equals it drops below the level at some step.
+* `Antitone.eq_of_mem_Ioo_of_mem_Icc_fin`: for an antitone `Fin` family, the open interval between
+  two consecutive values meets the closed interval of no other step.
+* `Fin.append_init_castLE`, `Fin.append_init_zero`, `Fin.append_init_last`,
+  `Fin.append_init_eq_or_eq`, `Fin.forall_append_init_castSucc_succ`: two chains with a common
+  point glue to the chain `Fin.append (Fin.init x₁) x₂`, whose endpoints, points and steps are
+  those of the two chains.
 * `TauCeti.exists_mem_Icc_castSucc_succ`: consecutive closed intervals cover the interval
   between the first and last values of any `Fin` family with at least two entries.
 * `TauCeti.univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ`: in a linear order, the two outer
   rays of a `Fin` family and the consecutive closed intervals cover the whole order.
 * `TauCeti.apply_zero_le_of_forall_mem_range`, `TauCeti.le_apply_last_of_forall_mem_range`: points
   that lie in the range of a monotone `Fin` family lie between its first and last values.
+* `TauCeti.apply_fin_eq_of_val_eq`: evaluating a dependent family indexed by `Fin (f i)` at equal
+  outer indices and finite ordinals with equal underlying values gives the same value.
 -/
 
 public section
@@ -200,10 +231,45 @@ end Finset
 
 namespace Fin
 
+/-- Two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are the extreme pair `(0, n)`
+only when `n = 1`. -/
+theorem castSucc_eq_zero_and_succ_eq_last_iff {n : ℕ} (i : Fin n) :
+    i.castSucc = 0 ∧ i.succ = last n ↔ n = 1 := by
+  rw [Fin.ext_iff, Fin.ext_iff, val_castSucc, val_zero, val_succ, val_last]
+  have := i.isLt
+  constructor <;> intro h <;> omega
+
+/-- For `n ≥ 2`, two consecutive indices `castSucc i < succ i` of `Fin (n + 1)` are never the
+extreme pair `(0, n)`. -/
+theorem not_castSucc_eq_zero_and_succ_eq_last {n : ℕ} (hn : 2 ≤ n) (i : Fin n) :
+    ¬ (i.castSucc = 0 ∧ i.succ = last n) :=
+  mt (castSucc_eq_zero_and_succ_eq_last_iff i).1 (by omega)
+
 /-- The last index of the initial segment ending at `i` embeds as `i`. -/
 theorem castLE_last {n : ℕ} (i : Fin (n + 1)) :
     castLE (Nat.succ_le_iff.mpr i.isLt) (last i.val) = i := by
   rfl
+
+/-- The first `m` indices of `Fin (m + n)` are distinct from the last `n`. -/
+@[simp]
+theorem castAdd_ne_natAdd {m n : ℕ} (i : Fin m) (j : Fin n) : castAdd n i ≠ natAdd m j := by
+  simp only [ne_eq, Fin.ext_iff, val_castAdd, val_natAdd]
+  omega
+
+/-- The last `n` indices of `Fin (m + n)` are distinct from the first `m`. -/
+@[simp]
+theorem natAdd_ne_castAdd {m n : ℕ} (i : Fin m) (j : Fin n) : natAdd m j ≠ castAdd n i :=
+  (castAdd_ne_natAdd i j).symm
+
+/-- Listing the pairs of `Fin n × Fin k` as `Fin (n * k)` after the first `m` indices of
+`Fin (m + n * k)` is injective. -/
+theorem natAdd_comp_finProdFinEquiv_injective {m n k : ℕ} :
+    Function.Injective fun l : Fin n × Fin k ↦ natAdd m (finProdFinEquiv l) :=
+  (natAdd_injective _ _).comp finProdFinEquiv.injective
+
+/-- The sum of the positions `0, 1, …, n - 1` is `n.choose 2`. -/
+theorem sum_val_eq_choose_two (n : ℕ) : ∑ i : Fin n, (i : ℕ) = n.choose 2 := by
+  rw [Fin.sum_univ_eq_sum_range (fun i ↦ i) n, Finset.sum_range_id, Nat.choose_two_right]
 
 /-- The sum of the values in the first `k` positions of the reversed finite ordinal `Fin N`. -/
 theorem sum_rev_castLE (N k : ℕ) (hk : k ≤ N) :
@@ -237,12 +303,28 @@ theorem sum_shift_mul_eq {K : Type*} [Field K] [NeZero (2 : K)] {N : ℕ} (b : F
   rw [one_div, h4]
   linear_combination (b i - (i : K) + 2⁻¹) * h2
 
+/-- The final partial product is the ordered product of all the entries. -/
+@[to_additive /-- The final partial sum is the ordered sum of all the entries. -/]
+theorem partialProd_last_eq_prod_ofFn {M : Type*} [Monoid M] {n : ℕ} (f : Fin n → M) :
+    partialProd f (last n) = (List.ofFn f).prod := by
+  rw [partialProd, val_last, (List.take_eq_self_iff _).mpr (by simp)]
+
 /-- The final partial product is the product of all the entries. -/
 @[to_additive /-- The final partial sum is the sum of all the entries. -/]
 theorem partialProd_last {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin n → M) :
     partialProd f (last n) = ∏ i, f i := by
-  rw [partialProd, val_last]
-  rw [(List.take_eq_self_iff _).mpr (by simp), prod_ofFn]
+  rw [partialProd_last_eq_prod_ofFn, prod_ofFn]
+
+/-- The partial product up to the `i`-th entry is the product of the entries of index less than
+`i`. -/
+@[to_additive /-- The partial sum up to the `i`-th entry is the sum of the entries of index less
+than `i`. -/]
+theorem partialProd_castSucc {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M)
+    (i : Fin (n + 1)) : partialProd f i.castSucc = ∏ k < i, f k := by
+  rw [partialProd, val_castSucc, List.prod_take_ofFn]
+  congr 1
+  ext k
+  simp
 
 /-- The last entry times the preceding partial product is the product of all entries. -/
 theorem last_mul_partialProd {M : Type*} [CommMonoid M] {n : ℕ} (f : Fin (n + 1) → M) :
@@ -287,6 +369,22 @@ theorem partialProd_contractNth_castSucc {M : Type*} [Monoid M] {n : ℕ} (j : F
     partialProd (contractNth j.castSucc (· * ·) y) (last n) = partialProd y (last (n + 1)) := by
   rw [partialProd_contractNth, Function.comp_apply, succAbove_of_le_castSucc, succ_last]
   simp [le_def]
+
+/-- Applying a monoid homomorphism to a partial product applies it to each entry. -/
+@[to_additive /-- Applying an additive monoid homomorphism to a partial sum applies it to each
+entry. -/]
+theorem map_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) (i : Fin (n + 1)) :
+    φ (partialProd x i) = partialProd (φ ∘ x) i := by
+  simp [partialProd, map_list_prod, List.map_take, List.map_ofFn]
+
+/-- Composing a monoid homomorphism with `Fin.partialProd` applies it entrywise. -/
+@[to_additive /-- Composing an additive monoid homomorphism with `Fin.partialSum` applies it
+entrywise. -/]
+theorem comp_partialProd {G H F : Type*} [Monoid G] [Monoid H] [FunLike F G H]
+    [MonoidHomClass F G H] (φ : F) {n : ℕ} (x : Fin n → G) :
+    φ ∘ partialProd x = partialProd (φ ∘ x) :=
+  funext (map_partialProd φ x)
 
 /-- A product over `Fin n` of a family equal to `1` beyond `i` is its product over the first
 `i` indices times its value at `i`. -/
@@ -368,6 +466,27 @@ theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
   | succ m =>
     rw [coe_finRotate]
     simp [Fin.ext_iff]
+
+/-- Reading the times `i : ℕ` modulo `k`, the cyclic successor `finRotate k` of the index at time
+`i` is the index at time `i + 1`. -/
+theorem finRotate_ofNat {k : ℕ} [NeZero k] (i : ℕ) :
+    finRotate k (Fin.ofNat k i) = Fin.ofNat k (i + 1) := by
+  obtain ⟨k, rfl⟩ : ∃ k', k = k' + 1 := ⟨k - 1, by have := NeZero.ne k; omega⟩
+  simp [finRotate_apply, Fin.ext_iff, Fin.val_add, Fin.ofNat_eq_cast, Nat.add_mod]
+
+/-- Reading a tuple of length `k` along at least `k` consecutive times modulo `k` visits exactly
+the entries of the tuple. -/
+theorem image_range_ofNat_eq_image_univ {α : Type*} [DecidableEq α] {k m : ℕ} [NeZero k]
+    (w : Fin k → α) (hkm : k ≤ m) :
+    (Finset.range m).image (fun i => w (Fin.ofNat k i)) = Finset.univ.image w := by
+  ext x
+  constructor
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨_, Finset.mem_univ _, rfl⟩
+  · rintro hx
+    obtain ⟨i, -, rfl⟩ := Finset.mem_image.mp hx
+    exact Finset.mem_image.mpr ⟨i.val, Finset.mem_range.mpr (by omega), by simp⟩
 
 /-- Collapsing the hole opened immediately after `p` back onto `p` inverts the embedding
 `p.succ.succAbove`. -/
@@ -926,7 +1045,74 @@ theorem exists_succ_lt_lt_castSucc {α : Type*} [LinearOrder α] {k : ℕ} {g : 
     (fun j ↦ OrderDual.toDual (g j)) hk (x := OrderDual.toDual c) ⟨h0.le, hl.le⟩
   exact ⟨i, lt_of_le_of_ne hi.2 (hne _), lt_of_le_of_ne hi.1 (hne _).symm⟩
 
+/-! ### Gluing two chains at a common point
+
+A chain `x₁ : Fin (k₁ + 1) → α` ending where a chain `x₂ : Fin (k₂ + 1) → α` starts glues to the
+chain `Fin.append (Fin.init x₁) x₂ : Fin (k₁ + k₂ + 1) → α`, which runs through `x₁` and then
+through `x₂`. -/
+
+section AppendInit
+
+variable {α β : Type*} {k₁ k₂ : ℕ} {x₁ : Fin (k₁ + 1) → α} {x₂ : Fin (k₂ + 1) → α}
+
+/-- Two chains glued at a common point run through the first one on its indices. -/
+theorem append_init_castLE (h : x₁ (last k₁) = x₂ 0) (l : Fin (k₁ + 1)) :
+    append (init x₁) x₂ (castLE (by omega) l : Fin (k₁ + k₂ + 1)) = x₁ l := by
+  rcases eq_castSucc_or_eq_last l with ⟨l, rfl⟩ | rfl
+  · rw [castLE_castSucc, append_left', init]
+  · rw [show (castLE (by omega) (last k₁) : Fin (k₁ + (k₂ + 1))) = natAdd k₁ 0 from
+      Fin.ext (by simp), append_right, h]
+
+/-- Two chains glued at a common point start where the first one starts. -/
+theorem append_init_zero (h : x₁ (last k₁) = x₂ 0) :
+    append (init x₁) x₂ (0 : Fin (k₁ + k₂ + 1)) = x₁ 0 := by
+  rw [← castLE_zero (show k₁ + 1 ≤ k₁ + k₂ + 1 by omega), append_init_castLE h]
+
+/-- Two chains glued at a common point end where the second one ends. -/
+theorem append_init_last : append (init x₁) x₂ (last (k₁ + k₂)) = x₂ (last k₂) := by
+  rw [← natAdd_last, append_right]
+
+/-- Every point of two chains glued together is a point of one of them. -/
+theorem append_init_eq_or_eq (l : Fin (k₁ + k₂ + 1)) :
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂ :=
+  addCases (motive := fun l : Fin (k₁ + (k₂ + 1)) ↦
+    (∃ l₁, append (init x₁) x₂ l = x₁ l₁) ∨ ∃ l₂, append (init x₁) x₂ l = x₂ l₂)
+    (fun l ↦ .inl ⟨l.castSucc, append_left _ _ l⟩) (fun l ↦ .inr ⟨l, append_right _ _ l⟩) l
+
+/-- **The steps of two chains glued together are the steps of the two chains.** If every step
+`(x₁ j.castSucc, x₁ j.succ)` of the first chain, labelled by `z₁ j`, and every step of the second
+chain, labelled by `z₂ j`, satisfies `P`, then so does every step of the glued chain, labelled by
+`Fin.append z₁ z₂`. -/
+theorem forall_append_init_castSucc_succ {z₁ : Fin k₁ → β} {z₂ : Fin k₂ → β}
+    (h : x₁ (last k₁) = x₂ 0) {P : α → α → β → Prop}
+    (h₁ : ∀ j, P (x₁ j.castSucc) (x₁ j.succ) (z₁ j))
+    (h₂ : ∀ j, P (x₂ j.castSucc) (x₂ j.succ) (z₂ j)) (j : Fin (k₁ + k₂)) :
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j) := by
+  refine addCases (motive := fun j : Fin (k₁ + k₂) ↦
+    P (append (init x₁) x₂ j.castSucc) (append (init x₁) x₂ j.succ) (append z₁ z₂ j))
+    (fun j ↦ ?_) (fun j ↦ ?_) j
+  · rw [castSucc_castAdd, append_left, append_left, init,
+      show (castAdd k₂ j).succ = (castLE (by omega) j.succ : Fin (k₁ + k₂ + 1)) from
+        Fin.ext (by simp), append_init_castLE h]
+    exact h₁ j
+  · rw [← natAdd_castSucc, succ_natAdd, append_right, append_right, append_right]
+    exact h₂ j
+
+end AppendInit
+
 end Fin
+
+/-- **The steps of an antitone sequence overlap only at their ends.** If `a : Fin (n + 1) → α` is
+antitone, a point strictly between `a (i + 1)` and `a i` lies between `a (j + 1)` and `a j` only
+for `j = i`. -/
+theorem Antitone.eq_of_mem_Ioo_of_mem_Icc_fin {α : Type*} [Preorder α] {n : ℕ}
+    {a : Fin (n + 1) → α} (ha : Antitone a) {i j : Fin n} {x : α}
+    (hi : x ∈ Set.Ioo (a i.succ) (a i.castSucc)) (hj : x ∈ Set.Icc (a j.succ) (a j.castSucc)) :
+    i = j := by
+  rcases lt_trichotomy i j with hij | rfl | hij
+  · exact absurd (hj.2.trans (ha (Fin.succ_le_castSucc_iff.2 hij))) (not_le_of_gt hi.1)
+  · rfl
+  · exact absurd ((ha (Fin.succ_le_castSucc_iff.2 hij)).trans hj.1) (not_le_of_gt hi.2)
 
 namespace TauCeti
 
@@ -1014,6 +1200,20 @@ theorem univ_fin_two :
   ext e
   simpa using e.eq_one_or_swap_fin_two
 
+/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
+permutation of the entries. -/
+theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
+    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
+  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
+  · rfl
+  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
+      ext i
+      fin_cases i <;> simp
+    have hμ : μ = ![μ 0, μ 1] := by
+      ext i
+      fin_cases i <;> simp
+    rw [hswap, ← hf, ← hμ]
+
 end Equiv.Perm
 
 namespace TauCeti
@@ -1043,13 +1243,13 @@ theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {k : ℕ} {d : Fin k → ℕ}
     {x y : (i : Fin k) × Fin (d i)} :
     finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
   -- The offset of block `i` is the sum of the sizes of the blocks before it.
-  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
+  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.isLt.le j) with hs
   have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
     set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
     have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
       rw [hs, ← Fin.sum_univ_eq_sum_range]
       refine Fintype.sum_congr _ _ fun l ↦ ?_
-      simp [F, l.2.trans i.2, Fin.castLE]
+      simp [F, l.isLt.trans i.isLt, Fin.castLE]
     have hFi : F i = d i := by simp [F]
     rw [hF, hF, ← hFi, ← sum_range_succ, ← sum_range_add_sum_Ico F (Fin.lt_def.1 h)]
     exact Nat.le_add_right _ _
@@ -1092,5 +1292,14 @@ theorem sum_fin_three_rotate {M : Type*} [AddCommMonoid M] (f : Fin 3 → M) (j 
   have h : ∑ m : Fin 3, f (j + m) = ∑ m : Fin 3, f m :=
     Fintype.sum_equiv (Equiv.addLeft j) _ _ fun _ => rfl
   rw [← h, Fin.sum_univ_three, add_zero]
+
+/-- Evaluating a dependent family `x : ∀ i, Fin (f i) → α` at equal outer indices `a = b` and
+finite ordinals with equal underlying values produces the same value. -/
+theorem apply_fin_eq_of_val_eq {ι : Sort*} {f : ι → ℕ} {α : Sort*}
+    (x : ∀ i, Fin (f i) → α) {a b : ι} (hab : a = b)
+    {j₁ : Fin (f a)} {j₂ : Fin (f b)} (hj : j₁.val = j₂.val) :
+    x a j₁ = x b j₂ := by
+  subst hab
+  exact congrArg (x a) (Fin.ext hj)
 
 end TauCeti

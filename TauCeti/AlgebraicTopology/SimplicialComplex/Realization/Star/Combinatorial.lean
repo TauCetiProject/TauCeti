@@ -42,10 +42,10 @@ theorem IsCombinatorialSphere.exists_homeomorph_openStar_ball
     {ι : Type*} [DecidableEq ι] {K : AbstractSimplicialComplex ι} {v : ι} {n : ℕ}
     (h : IsCombinatorialSphere (link K.toPreAbstractSimplicialComplex {v}) n) :
     ∃ e : openStarRealization K v ≃ₜ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1,
-      ∀ x, ‖(e x).1‖ = 1 - x.1.1 v := by
+      ∀ x, ‖(e x).val‖ = 1 - x.val.val v := by
   obtain ⟨e⟩ := h.nonempty_homeomorph_sphere link_le
   let r := Homeomorph.setCongr (s := K.geometricLink v)
-    (t := {x : Realization K | x.1.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
+    (t := {x : Realization K | x.val.support ∈ K.link {v}}) (Set.ext (mem_geometricLink_iff K v))
   have hc := K.isCompact_closedStarRealization (finite_faces_closedStar_iff.mpr h.finite_faces)
   refine ⟨openStarHomeomorphBall hc (r.trans e), fun x => ?_⟩
   rw [openStarHomeomorphBall_apply, norm_closedStarHomeomorphClosedBall]
@@ -60,11 +60,11 @@ theorem IsCombinatorialSphere.exists_openPartialHomeomorph_openStar_ball
       c.source = openStarRealization K v ∧
       c.target = ball 0 1 ∧
       c (vertex K v) = 0 ∧
-      ∀ x : openStarRealization K v, ‖c x.1‖ = 1 - x.1.1 v := by
+      ∀ x : openStarRealization K v, ‖c x.val‖ = 1 - x.val.val v := by
   obtain ⟨e, he⟩ := h.exists_homeomorph_openStar_ball
   obtain ⟨c, hs, ht, hc⟩ := OpenPartialHomeomorph.exists_source_eq_target_eq_of_homeomorph
     (K.isOpen_openStarRealization v) isOpen_ball e ⟨vertex K v, by simp [mem_openStarRealization]⟩
-  have hradius (x : openStarRealization K v) : ‖c x.1‖ = 1 - x.1.1 v := by
+  have hradius (x : openStarRealization K v) : ‖c x.val‖ = 1 - x.val.val v := by
     rw [hc x]
     exact he x
   refine ⟨c, hs, ht, ?_, hradius⟩

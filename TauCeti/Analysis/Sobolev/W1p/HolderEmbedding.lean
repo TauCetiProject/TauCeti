@@ -23,6 +23,9 @@ Hölder's inequality controls the average by its `Lᵖ` norm.
 
 * `TauCeti.W1p.morreyEmbedding`: Morrey's embedding as a continuous linear map into
   `TauCeti.HolderSpace`.
+* `TauCeti.W1p.norm_morreyRepresentative_le_norm_morreyEmbedding`,
+  `TauCeti.W1p.memLp_top_morreyRepresentative`: the canonical continuous representative is
+  bounded by the norm of its Morrey embedding, hence essentially bounded.
 
 ## References
 
@@ -52,14 +55,14 @@ private def W1p.morreyHolderSpace (hp : (finrank ℝ E : ℝ≥0) < p)
     have hvalue : MemLp (W1p.value u) (p : ℝ≥0∞) mu := by
       simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (W1p.value u)
     exact MemLp.ae_eq (W1p.value_ae_eq_morreyRepresentative u hp) hvalue
-  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα Fact.out
-    ENNReal.coe_ne_top hmem
+  exact (W1p.holderWith_morreyRepresentative u hp).toHolderSpace hα
+    (zero_lt_one.trans_le Fact.out).ne' hmem
 
 private theorem W1p.morreyHolderSpace_apply (hp : (finrank ℝ E : ℝ≥0) < p)
     (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
     W1p.morreyHolderSpace hp u x = W1p.morreyRepresentative u hp x := by
   rw [W1p.morreyHolderSpace]
-  exact HolderWith.toHolderSpace_apply _ _ _ _ _ _
+  exact HolderWith.toHolderSpace_apply _ _ _ _ _
 
 private def W1p.morreyEmbeddingLinearMap (hp : (finrank ℝ E : ℝ≥0) < p) :
     W1p mu ⊤ (p : ℝ≥0∞) →ₗ[ℝ] HolderSpace (1 - finrank ℝ E / p) E ℝ where
@@ -96,7 +99,7 @@ private theorem W1p.norm_morreyHolderSpace_le_aux
           (1 - 1 / (p : ℝ)) * 2 ^ (1 - finrank ℝ E / (p : ℝ))) *
             ‖W1p.gradient u‖₊) := by
   rw [W1p.morreyHolderSpace]
-  exact HolderWith.norm_toHolderSpace_le _ _ _ _ _
+  exact HolderWith.norm_toHolderSpace_le _ _ _ _
 
 omit [FiniteDimensional ℝ E] in
 private theorem W1p.toReal_morreyEmbedding_bound (A : ℝ≥0) (V : ℝ≥0∞) (hV : V ≠ ∞)
@@ -205,5 +208,23 @@ theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < 
       W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
     simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
   simpa only [Function.comp_def, eNorm_zero] using (continuous_eNorm.tendsto 0).comp hsub
+
+/-- The canonical Morrey representative is bounded by the norm of the Morrey embedding. -/
+theorem W1p.norm_morreyRepresentative_le_norm_morreyEmbedding
+    (hp : (finrank ℝ E : ℝ≥0) < p) (u : W1p mu ⊤ (p : ℝ≥0∞)) (x : E) :
+    ‖W1p.morreyRepresentative u hp x‖ ≤ ‖W1p.morreyEmbedding hp u‖ := by
+  rw [← W1p.morreyEmbedding_apply_apply, ← HolderSpace.toBoundedContinuousFunction_apply]
+  exact (BoundedContinuousFunction.norm_coe_le_norm
+    (W1p.morreyEmbedding hp u).toBoundedContinuousFunction x).trans
+      (HolderSpace.norm_toBoundedContinuousFunction_le (W1p.morreyEmbedding hp u))
+
+/-- The canonical Morrey representative is essentially bounded, for every measure. -/
+theorem W1p.memLp_top_morreyRepresentative (hp : (finrank ℝ E : ℝ≥0) < p)
+    (u : W1p mu ⊤ (p : ℝ≥0∞)) {ν : Measure E} :
+    MemLp (W1p.morreyRepresentative u hp) ∞ ν := by
+  refine ((W1p.morreyEmbedding hp u).toBoundedContinuousFunction.memLp_top (μ := ν)).ae_eq ?_
+  filter_upwards with x
+  rw [HolderSpace.toBoundedContinuousFunction_apply,
+    W1p.morreyEmbedding_apply_apply]
 
 end TauCeti

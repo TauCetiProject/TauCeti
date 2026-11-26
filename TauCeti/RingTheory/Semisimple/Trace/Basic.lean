@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Data.Fintype.BigOperators
 public import TauCeti.LinearAlgebra.Trace.Pi
+public import TauCeti.RingTheory.Semisimple.Burnside
 public import TauCeti.RingTheory.Semisimple.Multiplicity
 public import TauCeti.RingTheory.SimpleModule.Basic
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # Semisimple modules are determined by their traces
@@ -31,10 +33,21 @@ simple submodule. Applied to `X = M × N`, the trace of `a` on `M` is the multip
 give equal multiplicities, and finite semisimple modules with equal multiplicities are isomorphic
 (`IsSemisimpleModule.nonempty_linearEquiv_of_jordanHolderMultiplicity_eq`).
 
+Over any field, the trace of `a` on a semisimple module is `∑ i, [M : T_i] • tr(a | T_i)` for a
+family `T_i` of pairwise non-isomorphic modules covering its simple submodules
+(`IsSemisimpleModule.trace_lsmul_eq_sum`). Over an algebraically closed field of any
+characteristic, Burnside's theorem shows that the traces on a spanning set of `A` determine the
+multiplicities cast into `k` (`IsSemisimpleModule.natCast_eq_of_sum_trace_eq`).
+
 ## Main results
 
 * `IsSemisimpleModule.nonempty_linearEquiv_of_trace_eq`: **finite-dimensional semisimple
   modules over an algebra in characteristic zero with the same traces are isomorphic.**
+* `IsSemisimpleModule.trace_lsmul_eq_sum`: the trace on a semisimple module, computed from the
+  multiplicities of its simple constituents.
+* `IsSemisimpleModule.natCast_jordanHolderMultiplicity_eq_of_trace_eq`: over an algebraically
+  closed field, semisimple modules with the same trace on a spanning set have the same
+  multiplicities of every simple module, cast into `k`.
 
 ## References
 
@@ -52,25 +65,6 @@ namespace IsSemisimpleModule
 section Trace
 
 variable {k : Type*} [Field k] {A : Type u} [Ring A] [Algebra k A]
-
-open scoped Classical in
-/-- An element acting as in `IsSemisimpleModule.exists_forall_smul_eq_ite` on the simple
-submodules of `X` acts in the same way on every simple module embedded in `X`. -/
-private theorem smul_eq_ite_of_injective {X : Type*} [AddCommGroup X] [Module A X]
-    {S : Type*} [AddCommGroup S] [Module A S] {a : A}
-    (ha : ∀ T : Submodule A X, IsSimpleModule A T → ∀ x ∈ T,
-      a • x = if Nonempty (T ≃ₗ[A] S) then x else 0)
-    {Y : Type*} [AddCommGroup Y] [Module A Y] [IsSimpleModule A Y]
-    (f : Y →ₗ[A] X) (hf : Function.Injective f) (y : Y) :
-    a • y = if Nonempty (S ≃ₗ[A] Y) then y else 0 := by
-  let e := LinearEquiv.ofInjective f hf
-  have hT : IsSimpleModule A (LinearMap.range f) := IsSimpleModule.congr e.symm
-  have hiff : Nonempty (LinearMap.range f ≃ₗ[A] S) ↔ Nonempty (S ≃ₗ[A] Y) :=
-    ⟨fun ⟨e'⟩ => ⟨e'.symm.trans e.symm⟩, fun ⟨e'⟩ => ⟨(e'.trans e).symm⟩⟩
-  have hy := ha _ hT (f y) (LinearMap.mem_range_self f y)
-  rw [← map_smul, hiff] at hy
-  apply hf
-  split_ifs at hy ⊢ <;> simpa using hy
 
 open scoped Classical in
 /-- The trace of such an element on a module embedded in `X`, computed on a decomposition into
@@ -121,12 +115,10 @@ theorem nonempty_linearEquiv_of_trace_eq [CharZero k]
     Module.Finite.of_restrictScalars_finite k _ _
   refine nonempty_linearEquiv_of_jordanHolderMultiplicity_eq M N fun S _ _ _ => ?_
   obtain ⟨a, ha⟩ := exists_forall_smul_eq_ite (R := A) (M := M × N) S
-  obtain ⟨n, P, eP, hP⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A M
-  obtain ⟨m, Q, eQ, hQ⟩ := IsSemisimpleModule.exists_linearEquiv_fin_dfinsupp A N
+  obtain ⟨n, P, hP, ⟨eM⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_submodule (R := A) M
+  obtain ⟨m, Q, hQ, ⟨eN⟩⟩ := IsSemisimpleModule.exists_linearEquiv_pi_submodule (R := A) N
   let _ (i : Fin n) : IsSimpleModule A (P i) := hP i
   let _ (i : Fin m) : IsSimpleModule A (Q i) := hQ i
-  let eM : M ≃ₗ[A] ∀ i, P i := eP.trans DFinsupp.linearEquivFunOnFintype
-  let eN : N ≃ₗ[A] ∀ i, Q i := eQ.trans DFinsupp.linearEquivFunOnFintype
   rw [jordanHolderMultiplicity_eq_of_linearEquiv eM, jordanHolderMultiplicity_pi_eq_natCard,
     jordanHolderMultiplicity_eq_of_linearEquiv eN, jordanHolderMultiplicity_pi_eq_natCard]
   have htM :=
@@ -157,10 +149,105 @@ theorem nonempty_linearEquiv_of_trace_eq [CharZero k]
     exact Nat.eq_of_mul_eq_mul_right hd (Nat.cast_injective heq)
   · -- If `S` occurs in neither module, both counts vanish.
     push Not at hS
-    have : IsEmpty {i // Nonempty (S ≃ₗ[A] P i)} := ⟨fun i => (hS.1 i.1).false i.2.some⟩
-    have : IsEmpty {j // Nonempty (S ≃ₗ[A] Q j)} := ⟨fun j => (hS.2 j.1).false j.2.some⟩
+    have : IsEmpty {i // Nonempty (S ≃ₗ[A] P i)} := ⟨fun i => (hS.1 i.val).false i.property.some⟩
+    have : IsEmpty {j // Nonempty (S ≃ₗ[A] Q j)} := ⟨fun j => (hS.2 j.val).false j.property.some⟩
     rw [Nat.card_of_isEmpty, Nat.card_of_isEmpty]
 
 end Trace
+
+section Multiplicity
+
+variable {k A : Type*} [Field k] [Ring A] [Algebra k A]
+
+section Decomposition
+
+variable {ι : Type*} [Fintype ι] {T : ι → Type*} [∀ i, AddCommGroup (T i)] [∀ i, Module k (T i)]
+  [∀ i, Module A (T i)] [∀ i, IsScalarTower k A (T i)] [∀ i, FiniteDimensional k (T i)]
+variable {M : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [IsSemisimpleModule A M] [Module.Finite A M]
+
+/-- **The trace on a semisimple module.** If every simple submodule of `M` is isomorphic to one
+of the pairwise non-isomorphic modules `T i`, then the trace of `a` on `M` is
+`∑ i, [M : T i] • tr(a | T i)`. -/
+theorem trace_lsmul_eq_sum (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] T j))
+    (hM : ∀ P : Submodule A M, IsSimpleModule A P → ∃ i, Nonempty (P ≃ₗ[A] T i)) (a : A) :
+    LinearMap.trace k M (Algebra.lsmul k k M a) =
+      ∑ i, jordanHolderMultiplicity A M (T i) • LinearMap.trace k (T i) (Algebra.lsmul k k (T i) a)
+    := by
+  classical
+  obtain ⟨n, σ, ⟨e⟩, hσ⟩ := exists_linearEquiv_pi_natCard_eq hT hM
+  rw [← LinearMap.trace_conj' _ (e.restrictScalars k), e.conj_lsmul_eq_piMap,
+    LinearMap.trace_piMap, ← Finset.sum_fiberwise Finset.univ σ]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.sum_congr rfl fun x hx => by rw [(Finset.mem_filter.1 hx).2], Finset.sum_const,
+    ← hσ i, Nat.card_eq_fintype_card, Fintype.card_subtype]
+
+end Decomposition
+
+variable [IsAlgClosed k]
+
+section Family
+
+variable {ι : Type*} [Finite ι] {T : ι → Type*} [∀ i, AddCommGroup (T i)] [∀ i, Module k (T i)]
+  [∀ i, Module A (T i)] [∀ i, IsScalarTower k A (T i)] [∀ i, IsSimpleModule A (T i)]
+  [∀ i, FiniteDimensional k (T i)]
+
+/-- **Traces separate multiplicities.** Over an algebraically closed field, if the trace
+combinations `∑ i, c i • tr(a | T i)` and `∑ i, d i • tr(a | T i)` agree on a spanning set of `A`,
+for pairwise non-isomorphic simple `T i`, then `c i` and `d i` agree in `k`. -/
+theorem natCast_eq_of_sum_trace_eq [Fintype ι]
+    (hT : Pairwise fun i j => IsEmpty (T i ≃ₗ[A] T j)) {Γ : Type*} {g : Γ → A}
+    (hg : Submodule.span k (Set.range g) = ⊤) (c d : ι → ℕ)
+    (h : ∀ γ, ∑ i, c i • LinearMap.trace k (T i) (Algebra.lsmul k k (T i) (g γ)) =
+      ∑ i, d i • LinearMap.trace k (T i) (Algebra.lsmul k k (T i) (g γ))) (i : ι) :
+    (c i : k) = d i := by
+  classical
+  let φ (e : ι → ℕ) : A →ₗ[k] k :=
+    ∑ j, e j • (LinearMap.trace k (T j)).comp (Algebra.lsmul k k (T j)).toLinearMap
+  have hφ : φ c = φ d := LinearMap.ext_on_range hg fun γ => by simpa [φ] using h γ
+  -- An element acting on `T i` by a rank-one idempotent and by zero on the other `T j`.
+  have : Nontrivial (T i) := IsSimpleModule.nontrivial A (T i)
+  let B := Module.finBasis k (T i)
+  let j₀ : Fin (finrank k (T i)) := ⟨0, finrank_pos⟩
+  obtain ⟨a, ha⟩ := exists_forall_lsmul_eq hT
+    (Pi.single i ((B.coord j₀).smulRight (B j₀)) : ∀ j, Module.End k (T j))
+  have hφa (e : ι → ℕ) : φ e a = e i := by
+    simp only [φ, LinearMap.sum_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+      AlgHom.toLinearMap_apply, ha]
+    rw [Finset.sum_eq_single i (fun j _ hj => by simp [Pi.single_eq_of_ne hj]) (by simp)]
+    simp [B, LinearMap.trace_smulRight]
+  rw [← hφa c, ← hφa d, hφ]
+
+end Family
+
+variable {M N : Type*} [AddCommGroup M] [Module k M] [Module A M] [IsScalarTower k A M]
+  [FiniteDimensional k M] [IsSemisimpleModule A M] [AddCommGroup N] [Module k N] [Module A N]
+  [IsScalarTower k A N] [FiniteDimensional k N] [IsSemisimpleModule A N]
+
+/-- **Traces determine multiplicities modulo the characteristic.** Over an algebraically closed
+field, finite-dimensional semisimple modules on which every element of `A` acts with the same
+trace contain every simple module the same number of times, counted in `k`. In characteristic `p`
+the multiplicities are thus congruent modulo `p`, and need not be equal: over an algebraic closure
+of `𝔽₃`, three copies
+of the trivial representation of `ℤ/2` and three copies of its sign representation have the same
+trace everywhere, and contain the trivial representation `3` and `0` times. -/
+theorem natCast_jordanHolderMultiplicity_eq_of_trace_eq [Module.Finite A M] [Module.Finite A N]
+    {Γ : Type*} {g : Γ → A} (hg : Submodule.span k (Set.range g) = ⊤)
+    (h : ∀ γ, LinearMap.trace k M (Algebra.lsmul k k M (g γ)) =
+      LinearMap.trace k N (Algebra.lsmul k k N (g γ)))
+    (S : Type*) [AddCommGroup S] [Module A S] :
+    (jordanHolderMultiplicity A M S : k) = jordanHolderMultiplicity A N S := by
+  obtain ⟨ι, _, T, hTs, hT, hM, hN⟩ := exists_simple_family (R := A) M N
+  have (i : ι) : FiniteDimensional k (T i) :=
+    .of_injective ((T i).subtype.restrictScalars k) Subtype.val_injective
+  have (i : ι) : IsSimpleModule A (T i) := hTs i
+  have hmult := natCast_eq_of_sum_trace_eq hT hg
+    (fun i => jordanHolderMultiplicity A M (T i)) (fun i => jordanHolderMultiplicity A N (T i))
+    fun γ => by
+      rw [← trace_lsmul_eq_sum (k := k) hT hM, ← trace_lsmul_eq_sum (k := k) hT hN]
+      exact h γ
+  exact apply_jordanHolderMultiplicity_eq_of_forall_eq (Nat.cast : ℕ → k) hM hN hmult S
+
+end Multiplicity
 
 end IsSemisimpleModule

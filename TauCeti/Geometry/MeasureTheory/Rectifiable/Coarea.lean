@@ -9,7 +9,7 @@ public import TauCeti.Geometry.MeasureTheory.Rectifiable.Subspace
 public import TauCeti.MeasureTheory.Function.Coarea.Lipschitz
 import Mathlib.Analysis.Normed.Module.ContinuousInverse
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.Analysis.Calculus.ApproximatesLinearOn
+import TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic
 import TauCeti.Topology.EMetricSpace.Lipschitz
 
 /-!
@@ -21,8 +21,8 @@ the fibre-rectifiability statements accompanying the coarea formula:
 * **Near a surjective linear map.** If `f` is approximated on `s` up to `δ` by a continuous linear
   map `L` with a continuous linear right inverse `M` satisfying `δ ‖M‖ < 1`, then every fibre
   `s ∩ f ⁻¹' {y}` is countably `(n - m)`-rectifiable: the straightening map from
-  `TauCeti.Analysis.Calculus.ApproximatesLinearOn` exhibits `s ∩ f ⁻¹' {y}` as a Lipschitz image of
-  a slice of the linear fibre `L ⁻¹' {y}`.
+  `TauCeti.Analysis.Calculus.ApproximatesLinearOn.Basic` exhibits `s ∩ f ⁻¹' {y}` as a Lipschitz
+  image of a slice of the linear fibre `L ⁻¹' {y}`.
 * **On the regular locus.** If `f` has a surjective derivative within `s` at every point of `s`,
   then every fibre `s ∩ f ⁻¹' {y}` is countably `(n - m)`-rectifiable, without any measurability or
   Lipschitz assumption on `s`.
@@ -268,7 +268,7 @@ openness nor measurability of `s` is required. -/
 theorem ae_countablyRectifiable_inter_preimage {f : E → F} {s : Set E}
     (hf : LocallyLipschitzOn s f) :
     ∀ᵐ y ∂μ, CountablyRectifiable (finrank ℝ E - finrank ℝ F) (s ∩ f ⁻¹' {y}) := by
-  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith
+  obtain ⟨U, K, -, hcov, hK⟩ := hf.exists_open_cover_lipschitzOnWith (.of_separableSpace s)
   filter_upwards [ae_all_iff.2 fun n ↦ (hK n).ae_countablyRectifiable_inter_preimage μ] with y hy
   rw [← inter_eq_left.2 hcov, inter_iUnion, iUnion_inter]
   exact CountablyRectifiable.iUnion hy

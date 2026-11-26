@@ -33,7 +33,7 @@ McCann's condition on an internal energy is exactly what turns this into convexi
 
 The proof first treats `A = 1`: with `μ i ≥ 0` the eigenvalues of `B`, the inequality reads
 `1 + (∏ i, μ i) ^ (1 / n) ≤ (∏ i, (1 + μ i)) ^ (1 / n)`, the superadditivity of the geometric mean
-(`Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`). A positive definite `A` factors as `C * Cᵀ` with
+(`Real.prod_rpow_inv_card_add_le`). A positive definite `A` factors as `C * Cᵀ` with
 `C` invertible, and congruence by `C⁻¹` reduces the general inequality to that case. If neither
 matrix is positive definite then both determinants vanish and there is nothing to prove.
 
@@ -65,18 +65,13 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 private theorem PosSemidef.one_add_det_rpow_le [Nonempty n] {M : Matrix n n ℝ}
     (hM : M.PosSemidef) :
     1 + M.det ^ (Fintype.card n : ℝ)⁻¹ ≤ (1 + M).det ^ (Fintype.card n : ℝ)⁻¹ := by
-  have hμ := hM.eigenvalues_nonneg
-  have hw : ∑ _i : n, (Fintype.card n : ℝ)⁻¹ = 1 := by
-    simp [Finset.card_univ, Fintype.card_ne_zero]
   have hdet : M.det = ∏ i, hM.isHermitian.eigenvalues i := by
     simpa using hM.isHermitian.det_eq_prod_eigenvalues
   have hdet_one_add : (1 + M).det = ∏ i, (1 + hM.isHermitian.eigenvalues i) := by
     simpa [sub_eq_add_neg] using hM.isHermitian.det_one_sub_smul (-1)
-  rw [hdet, hdet_one_add, ← Real.finsetProd_rpow _ _ fun i _ => hμ i,
-    ← Real.finsetProd_rpow _ _ fun i _ => add_nonneg zero_le_one (hμ i)]
-  simpa using Real.prod_rpow_add_prod_rpow_le_prod_add_rpow Finset.univ
-    (w := fun _ => (Fintype.card n : ℝ)⁻¹) (a := fun _ => 1)
-    (fun _ _ => inv_nonneg.2 (Nat.cast_nonneg _)) hw (fun _ _ => zero_le_one) fun i _ => hμ i
+  rw [hdet, hdet_one_add]
+  simpa using Real.prod_rpow_inv_card_add_le (a := fun _ => 1) (fun _ => zero_le_one)
+    hM.eigenvalues_nonneg
 
 /-- **Minkowski's determinant inequality.** For positive semidefinite real `n × n` matrices `A`
 and `B` with `n ≥ 1`, `det A ^ (1 / n) + det B ^ (1 / n) ≤ det (A + B) ^ (1 / n)`. -/

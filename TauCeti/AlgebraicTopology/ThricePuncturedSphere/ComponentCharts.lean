@@ -9,8 +9,8 @@ public import TauCeti.AlgebraicTopology.ThricePuncturedSphere.PuncturedNeighborh
 public import TauCeti.Topology.Covering.PuncturedDisc
 
 import TauCeti.GroupTheory.Perm.Partition
-import TauCeti.Topology.Covering.Finite
-import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.Covering.Finite.Basic
+import TauCeti.Topology.IsLocalHomeomorph.Basic
 
 /-!
 # The power-map charts of the components over the punctures
@@ -112,7 +112,7 @@ private theorem ncard_connectedComponent_inter_fiber (hS : IsOpen S)
   -- Two of these points lie in one component exactly when their sheets lie in one cycle.
   have hjoin' (j : Fin n) : x j ∈ connectedComponent (x i) ↔ σ.SameCycle i j := by
     rw [← pathComponent_eq_connectedComponent, mem_pathComponent_iff, hjoin,
-      joinedIn_iff_joined (x i).2 (x j).2]
+      joinedIn_iff_joined (x i).property (x j).property]
   have hset : {z ∈ connectedComponent (x i) | p z = y} = x '' {j | σ.SameCycle i j} := by
     ext z
     constructor
@@ -124,7 +124,7 @@ private theorem ncard_connectedComponent_inter_fiber (hS : IsOpen S)
           Equiv.apply_symm_apply]
       exact ⟨j, (hjoin' j).1 (hxj ▸ hzC), hxj⟩
     · rintro ⟨j, hj, rfl⟩
-      exact ⟨(hjoin' j).2 hj, (hp.monodromy (.mk α) (ν.symm j)).2⟩
+      exact ⟨(hjoin' j).2 hj, (hp.monodromy (.mk α) (ν.symm j)).property⟩
   rw [hset, ncard_image_of_injective _ hx, ncard_setOf_sameCycle]
 
 include hp in
@@ -195,7 +195,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_iff_minimalPerio
               p ⁻¹' puncturedNeighborhoodZero)).domRestrict
                 (κZero ∘ puncturedNeighborhoodZero.restrictPreimage p)) ↔
       minimalPeriod (hp.monodromyTriple ν).σ0 i = e :=
-  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν zeroBasePt.2
+  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν zeroBasePt.property
     isOpen_puncturedNeighborhoodZero hp.monodromy_αZero_mem_preimage
     (hp.sameCycle_monodromyTriple_σ0_iff_joinedIn ν) κZero i he
 
@@ -235,7 +235,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_iff_minimalPerio
               p ⁻¹' puncturedNeighborhoodOne)).domRestrict
                 (κOne ∘ puncturedNeighborhoodOne.restrictPreimage p)) ↔
       minimalPeriod (hp.monodromyTriple ν).σ1 i = e :=
-  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν oneBasePt.2
+  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν oneBasePt.property
     isOpen_puncturedNeighborhoodOne hp.monodromy_αOne_mem_preimage
     (hp.sameCycle_monodromyTriple_σ1_iff_joinedIn ν) κOne i he
 
@@ -276,7 +276,7 @@ theorem _root_.IsCoveringMap.exists_homeomorph_puncturedDiscPow_iff_minimalPerio
               p ⁻¹' puncturedNeighborhoodInf)).domRestrict
                 (κInf ∘ puncturedNeighborhoodInf.restrictPreimage p)) ↔
       minimalPeriod (hp.monodromyTriple ν).σinf i = e :=
-  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν infBasePt.2
+  exists_homeomorph_puncturedDiscPow_iff_minimalPeriod hp ν infBasePt.property
     isOpen_puncturedNeighborhoodInf hp.monodromy_αPlus_mem_preimage
     (hp.sameCycle_monodromyTriple_σinf_iff_joinedIn ν) κInf i he
 
