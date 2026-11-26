@@ -81,15 +81,10 @@ theorem exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin_LFunction {β
     (hβ : 0 < β) (hpole : meromorphicOrderAt (TauCeti.rieszRemainderMellin χ.LFunction) β < 0) :
     ∃ c : ℝ, 0 < c ∧
       meromorphicTrailingCoeffAt (TauCeti.rieszRemainderMellin χ.LFunction) β = (c : ℂ) := by
-  have h₀ : (β : ℂ) ≠ 0 := Complex.ofReal_ne_zero.mpr hβ.ne'
-  have hzero := (χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff h₀).mp hpole
+  have hzero := (χ.meromorphicOrderAt_rieszRemainderMellin_LFunction_neg_iff
+    (Complex.ofReal_ne_zero.mpr hβ.ne')).mp hpole
   obtain ⟨hz, hguard⟩ := χ.meromorphicOrderAt_LFunction_pos_iff.mp hzero
-  have hβ₁ : β < 1 := χ.re_lt_one_of_LFunction_eq_zero hguard hz
-  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp (χ.meromorphicOrderAt_LFunction_ne_top β)
-  have hnpos : 0 < n := by simpa [← hn] using hzero
-  refine ⟨(n : ℝ) / (β * (1 - β)), by positivity, ?_⟩
-  rw [(χ.rieszRemainderMellin_LFunction_simplePole h₀ hzero).2, ← hn, WithTop.untop₀_coe]
-  push_cast
-  ring
+  exact χ.meromorphic_LFunction.exists_pos_meromorphicTrailingCoeffAt_rieszRemainderMellin hβ
+    (χ.re_lt_one_of_LFunction_eq_zero hguard hz) (χ.meromorphicOrderAt_LFunction_ne_top β) hzero
 
 end DirichletCharacter
