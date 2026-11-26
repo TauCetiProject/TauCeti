@@ -262,7 +262,7 @@ def orbitEquivSphereMapComponents [PathConnectedSpace X] :
       have hc : c ∈ Set.range (sphereMapComponentOfOrbit k s₀ x) := by
         rw [range_sphereMapComponentOfOrbit, Set.mem_preimage, Set.mem_singleton_iff]
         exact Subsingleton.elim _ _
-      exact hc⟩
+      exact Set.mem_range.1 hc⟩
 
 @[simp]
 theorem orbitEquivSphereMapComponents_apply [PathConnectedSpace X]
@@ -322,7 +322,8 @@ def homotopyGroupEquivSphereMapComponents [SimplyConnectedSpace X] :
     fun c ↦ by
       obtain ⟨a, ha⟩ := (orbitEquivSphereMapComponents k s₀ x).surjective c
       induction a using Quotient.inductionOn with | h a => ?_
-      exact ⟨a, ha⟩⟩
+      refine ⟨a, ?_⟩
+      rwa [orbitEquivSphereMapComponents_apply, sphereMapComponentOfOrbit_mk] at ha⟩
 
 @[simp]
 theorem homotopyGroupEquivSphereMapComponents_apply [SimplyConnectedSpace X]
