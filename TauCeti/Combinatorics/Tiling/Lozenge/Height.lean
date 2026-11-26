@@ -47,9 +47,9 @@ is a bijection from the height functions vanishing at `0` onto the plane tilings
 * `TauCeti.IsTiling.tilingHeight_vadd`: `H_{τ_w M}(v) = H_M(v − w) − H_M(−w)`.
 * `TauCeti.IsHeightFunction.sub_le_max`, `TauCeti.IsTiling.tilingHeight_sub_le_max`: the Lipschitz
   bound `H(u + (a, b)) − H(u) ≤ max(a, b, 0)`.
-* `TauCeti.IsTiling.tilingHeight_image_rot`: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`; for height functions,
+* `TauCeti.IsTiling.tilingHeight_rot`: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`; for height functions,
   `TauCeti.IsHeightFunction.comp_latticeRot_symm_add_fst` and
-  `TauCeti.IsHeightFunction.tilingOfHeight_comp_latticeRot_symm_add_fst`.
+  `TauCeti.tilingOfHeight_comp_latticeRot_symm_add_fst`.
 * `TauCeti.IsTiling.gorinHeight_target_sub_v`: Gorin's height increases by `1` or `−2` along `e₁`
   and `e₂`, and by `−1` or `2` along `e₃`, according as the edge is off or on `M`.
 
@@ -341,36 +341,15 @@ theorem IsTiling.tilingHeight_sub_le_max (h : IsTiling Set.univ M) (u : ℤ × �
 
 /-! ### The rotation -/
 
-/-- The height cochain of `ρ M` at `ρ e` is that of `M` at `e` for `e` of direction `e₁`, and its
-complement `1 − c` for the other two directions, whose images under `ρ` point backwards. -/
-theorem heightCochain_image_rot (M : Set TriEdge) (e : TriEdge) :
-    heightCochain (TriEdge.rot '' M) (TriEdge.rot e) =
-      if e.k = 0 then heightCochain M e else 1 - heightCochain M e := by
-  have hmem : TriEdge.rot e ∈ TriEdge.rot '' M ↔ e ∈ M := TriEdge.rot.injective.mem_set_image
-  obtain ⟨v, k⟩ := e
-  by_cases he : (⟨v, k⟩ : TriEdge) ∈ M
-  · rw [heightCochain_of_mem (hmem.2 he), heightCochain_of_mem he]
-    fin_cases k <;> simp [neutralIncrement_def]
-  · rw [heightCochain_of_notMem (mt hmem.1 he), heightCochain_of_notMem he]
-    fin_cases k <;> simp [neutralIncrement_def]
-
-/-- **Heights of rotated tilings**: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`. -/
-theorem IsTiling.tilingHeight_image_rot (h : IsTiling Set.univ M) (w : ℤ × ℤ) :
-    tilingHeight (TriEdge.rot '' M) w = tilingHeight M (latticeRot.symm w) + w.1 := by
-  have hρ : IsTiling Set.univ (TriEdge.rot '' M) := by
-    have := (isTiling_rot_iff (R := Set.univ) (M := M)).2 h
-    rwa [Set.image_univ_of_surjective TriFace.rot.surjective] at this
-  have hg : IsCochainPrimitiveOn Set.univ (heightCochain (TriEdge.rot '' M))
-      fun w => tilingHeight M (latticeRot.symm w) + w.1 := by
-    rw [isCochainPrimitiveOn_univ_iff]
-    intro e'
-    obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e'
-    have hinc := h.tilingHeight_target_sub_v e
-    rw [heightCochain_image_rot]
-    obtain ⟨⟨x, y⟩, k⟩ := e
-    fin_cases k <;> simp at hinc ⊢ <;> ring_nf at hinc ⊢ <;> omega
-  exact congrFun (hρ.eq_tilingHeight hg (by
-    simp only [map_zero, Prod.fst_zero, add_zero, tilingHeight_zero])).symm w
+/-- The increment of `w ↦ H(ρ⁻¹ w) + w₁` along `ρ e` is that of `H` along `e` for `e` of direction
+`e₁`, and its complement `1 − (H(v + e_k) − H(v))` for the other two directions, whose images
+under `ρ` point backwards. -/
+theorem comp_latticeRot_symm_add_fst_target_sub_v (H : ℤ × ℤ → ℤ) (e : TriEdge) :
+    (H (latticeRot.symm (TriEdge.rot e).target) + (TriEdge.rot e).target.1) -
+        (H (latticeRot.symm (TriEdge.rot e).v) + (TriEdge.rot e).v.1) =
+      if e.k = 0 then H e.target - H e.v else 1 - (H e.target - H e.v) := by
+  obtain ⟨⟨x, y⟩, k⟩ := e
+  fin_cases k <;> simp <;> ring_nf
 
 /-- Rotating a height function: if `H` is a height function, so is `w ↦ H(ρ⁻¹ w) + w₁`. -/
 theorem IsHeightFunction.comp_latticeRot_symm_add_fst (hH : IsHeightFunction H) :
@@ -378,19 +357,24 @@ theorem IsHeightFunction.comp_latticeRot_symm_add_fst (hH : IsHeightFunction H) 
   intro e'
   obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e'
   have hinc := hH e
-  obtain ⟨⟨x, y⟩, k⟩ := e
-  fin_cases k <;> simp at hinc ⊢ <;> ring_nf at hinc ⊢ <;> omega
+  rw [comp_latticeRot_symm_add_fst_target_sub_v]
+  split_ifs <;> omega
 
-/-- The tiling of the rotated height function `w ↦ H(ρ⁻¹ w) + w₁` is `ρ` applied to the tiling of
-`H`. -/
-theorem IsHeightFunction.tilingOfHeight_comp_latticeRot_symm_add_fst (hH : IsHeightFunction H) :
+/-- The tiling of the rotated function `w ↦ H(ρ⁻¹ w) + w₁` is `ρ` applied to the tiling of `H`. -/
+theorem tilingOfHeight_comp_latticeRot_symm_add_fst (H : ℤ × ℤ → ℤ) :
     tilingOfHeight (fun w => H (latticeRot.symm w) + w.1) = TriEdge.rot '' tilingOfHeight H := by
   ext e'
   obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e'
-  rw [TriEdge.rot.injective.mem_set_image, mem_tilingOfHeight, mem_tilingOfHeight]
-  have hinc := hH e
-  obtain ⟨⟨x, y⟩, k⟩ := e
-  fin_cases k <;> simp [neutralIncrement_def] at hinc ⊢ <;> ring_nf at hinc ⊢ <;> omega
+  rw [TriEdge.rot.injective.mem_set_image, mem_tilingOfHeight, mem_tilingOfHeight,
+    comp_latticeRot_symm_add_fst_target_sub_v, neutralIncrement_rot]
+  split_ifs <;> omega
+
+/-- **Heights of rotated tilings**: `H_{ρM}(w) = H_M(ρ⁻¹ w) + w₁`. -/
+theorem IsTiling.tilingHeight_rot (h : IsTiling Set.univ M) (w : ℤ × ℤ) :
+    tilingHeight (TriEdge.rot '' M) w = tilingHeight M (latticeRot.symm w) + w.1 := by
+  conv_lhs => rw [← h.tilingOfHeight_tilingHeight, ← tilingOfHeight_comp_latticeRot_symm_add_fst,
+    h.isHeightFunction_tilingHeight.comp_latticeRot_symm_add_fst.tilingHeight_tilingOfHeight
+      (by simp only [map_zero, Prod.fst_zero, add_zero, tilingHeight_zero])]
 
 /-! ### Gorin's height -/
 
