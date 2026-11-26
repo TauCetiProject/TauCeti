@@ -33,6 +33,9 @@ inverse of `V`, a frame in the sense of displays.
 
 * `WittVector.map_frobenius` : `φ` is natural, `W(f) (φ x) = φ (W(f) x)` for every ring
   homomorphism `f`.
+* `WittVector.semiconj_map_frobeniusEquiv`, `WittVector.semiconj_map_frobeniusEquiv_symm`,
+  `WittVector.map_frobeniusEquiv`, `WittVector.map_frobeniusEquiv_symm` : for perfect rings of
+  characteristic `p`, `W(f)` commutes with `φ` and `φ⁻¹`.
 * `WittVector.frobenius_teichmuller` : `φ [r] = [r] ^ p` in characteristic `p`.
 * `WittVector.frobenius_eq_self_iff_forall_coeff` : `φ x = x` iff every coordinate of `x` is fixed
   by the `p`-power map, in characteristic `p`.
@@ -69,6 +72,38 @@ theorem map_frobenius (f : R →+* S) (x : WittVector p R) :
   simp only [map_coeff, coeff_frobenius, MvPolynomial.aeval_def, MvPolynomial.eval₂_comp_left]
   congr 1
   exact RingHom.ext_int _ _
+
+section Perfect
+
+variable {R S : Type*} [CommRing R] [CharP R p] [PerfectRing R p] [CommRing S] [CharP S p]
+  [PerfectRing S p]
+
+/-- `W(f)` commutes with the Witt-vector Frobenius of perfect rings of characteristic `p`:
+`W(f) ∘ φ = φ ∘ W(f)`. -/
+theorem semiconj_map_frobeniusEquiv (f : R →+* S) :
+    Function.Semiconj (map f) (frobeniusEquiv p R) (frobeniusEquiv p S) := fun x ↦ by
+  rw [frobeniusEquiv_apply, frobeniusEquiv_apply, map_frobenius]
+
+/-- `W(f)` commutes with the inverse of the Witt-vector Frobenius of perfect rings of
+characteristic `p`: `W(f) ∘ φ⁻¹ = φ⁻¹ ∘ W(f)`. -/
+theorem semiconj_map_frobeniusEquiv_symm (f : R →+* S) :
+    Function.Semiconj (map f) (frobeniusEquiv p R).symm (frobeniusEquiv p S).symm :=
+  (semiconj_map_frobeniusEquiv f).inverses_right (frobeniusEquiv p R).apply_symm_apply
+    (frobeniusEquiv p S).symm_apply_apply
+
+/-- `W(f) (φ x) = φ (W(f) x)` for the Witt-vector Frobenius of perfect rings of
+characteristic `p`. -/
+theorem map_frobeniusEquiv (f : R →+* S) (x : WittVector p R) :
+    map f (frobeniusEquiv p R x) = frobeniusEquiv p S (map f x) :=
+  semiconj_map_frobeniusEquiv f x
+
+/-- `W(f) (φ⁻¹ x) = φ⁻¹ (W(f) x)` for the Witt-vector Frobenius of perfect rings of
+characteristic `p`. -/
+theorem map_frobeniusEquiv_symm (f : R →+* S) (x : WittVector p R) :
+    map f ((frobeniusEquiv p R).symm x) = (frobeniusEquiv p S).symm (map f x) :=
+  semiconj_map_frobeniusEquiv_symm f x
+
+end Perfect
 
 end Map
 
