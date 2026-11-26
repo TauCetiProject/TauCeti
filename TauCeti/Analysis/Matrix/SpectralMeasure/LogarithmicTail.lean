@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.SpectralMeasure.SingularValues
 
 import TauCeti.Analysis.Matrix.SingularValues.RowDistance
+import TauCeti.Analysis.Real.Sqrt
 
 /-!
 # Logarithmic tails of singular-value measures
@@ -60,38 +61,21 @@ private theorem logTail_term_le {a x y : ℝ} (hy : 0 < y) (hxy : y ≤ x) :
   · rw [indicator_of_notMem hx]
     positivity
 
-private theorem sum_inv_sqrt_rank_profile_le {N : ℕ} {c : ℝ} (hc : 0 < c) :
+private theorem sum_inv_sqrt_rank_profile_le (N : ℕ) (c : ℝ) :
     (∑ i : Fin N, (Real.sqrt (c * ((i : ℝ) + 1) / N))⁻¹) ≤ 2 * N / Real.sqrt c := by
-  rcases N.eq_zero_or_pos with rfl | hN
-  · simp
-  have hn : 0 < (N : ℝ) := by exact_mod_cast hN
-  have hstep (i : ℕ) : (Real.sqrt ((i : ℝ) + 1))⁻¹ ≤
-      2 * (Real.sqrt ((i : ℝ) + 1) - Real.sqrt i) := by
-    have hpos : 0 < Real.sqrt ((i : ℝ) + 1) := by positivity
-    have hsq := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (i : ℝ) + 1)
-    have hsq' := Real.sq_sqrt (Nat.cast_nonneg i : (0 : ℝ) ≤ i)
-    rw [inv_eq_one_div, div_le_iff₀ hpos]
-    nlinarith only [hsq, hsq', sq_nonneg (Real.sqrt ((i : ℝ) + 1) - Real.sqrt i)]
   have hsum : (∑ i : Fin N, (Real.sqrt ((i : ℝ) + 1))⁻¹) ≤ 2 * Real.sqrt N := by
     rw [Fin.sum_univ_eq_sum_range (fun i ↦ (Real.sqrt ((i : ℝ) + 1))⁻¹)]
-    calc
-      _ ≤ ∑ i ∈ Finset.range N, 2 * (Real.sqrt ((i : ℝ) + 1) - Real.sqrt i) :=
-        Finset.sum_le_sum fun i _ ↦ hstep i
-      _ = _ := by
-        rw [← Finset.mul_sum]
-        simp only [← Nat.cast_succ]
-        rw [Finset.sum_range_sub (fun i : ℕ ↦ Real.sqrt (i : ℝ))]
-        simp
+    exact TauCeti.sum_range_inv_sqrt_add_one_le N
   have hterm (i : Fin N) : (Real.sqrt (c * ((i : ℝ) + 1) / N))⁻¹ =
       (Real.sqrt N / Real.sqrt c) * (Real.sqrt ((i : ℝ) + 1))⁻¹ := by
-    rw [Real.sqrt_div (by positivity), Real.sqrt_mul hc.le]
-    field_simp
+    rw [Real.sqrt_div' _ (Nat.cast_nonneg N), Real.sqrt_mul' c (by positivity),
+      inv_div, ← div_eq_mul_inv, div_div]
   simp_rw [hterm]
   rw [← Finset.mul_sum]
   refine (mul_le_mul_of_nonneg_left hsum (by positivity)).trans_eq ?_
   calc
     _ = 2 * (Real.sqrt N) ^ 2 / Real.sqrt c := by ring
-    _ = _ := by rw [Real.sq_sqrt hn.le]
+    _ = _ := by rw [Real.sq_sqrt (Nat.cast_nonneg N)]
 
 private theorem sum_logTail_le {N r : ℕ} {σ : Fin N → ℝ}
     {a b c : ℝ} (hb : 0 < b) (hc : 0 < c)
@@ -133,7 +117,7 @@ private theorem sum_logTail_le {N r : ℕ} {σ : Fin N → ℝ}
         (Finset.subset_univ _),
         Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum]
       refine add_le_add (mul_le_mul_of_nonneg_right (by exact_mod_cast hcard) (le_max_left _ _)) ?_
-      refine (mul_le_mul_of_nonneg_left (sum_inv_sqrt_rank_profile_le hc) hC).trans_eq ?_
+      refine (mul_le_mul_of_nonneg_left (sum_inv_sqrt_rank_profile_le N c) hC).trans_eq ?_
       dsimp [C]
       ring
 
