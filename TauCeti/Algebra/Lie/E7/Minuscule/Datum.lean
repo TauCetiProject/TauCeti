@@ -228,8 +228,8 @@ theorem chevalleyDatum_def :
     (μ : chevalleyDatum.weightLattice) (i : Fin E7.rank) :
     (dsimp% only [rank] chevalleyDatum.weightLatticeBasis.repr μ i) =
       (μ : Fin E7.rank → ℤ) i := by
-  exact chevalleyDatum.weightLatticeBasis_repr_of_coe_weightLatticeBasis
-    coe_chevalleyDatum_weightLatticeBasis μ i
+  exact weightTable.chevalleyDatum_weightLatticeBasis_repr (t := E7) valid_E7
+    weightTable_cartanMatrix_eq_transpose _ μ i
 
 /-- Fundamental-weight torus coordinates are the original minuscule weights. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
