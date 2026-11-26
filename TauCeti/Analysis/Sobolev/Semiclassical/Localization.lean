@@ -21,8 +21,9 @@ scale. This file compares the semiclassical Sobolev norm `‖f‖_{k,h}`
 `χ a • f` by a finite family of real cutoffs `χ a`, `a ∈ s`, varying on the scale `h`, when the
 cutoffs have **bounded overlap**: every point `y` lies in the support of at most `K` of them,
 `#{a ∈ s | y ∈ tsupport (χ a)} ≤ K`. All constants depend only on `k`, `K` and a bound `B` for the
-semiclassical derivatives `hⁱ ‖Dⁱ χ a‖`, `i ≤ k`; they are independent of `h`, of the number of
-cutoffs, and of `f`.
+semiclassical derivatives `hⁱ ‖Dⁱ ·‖`, `i ≤ k`, of the cutoffs that multiply: the `χ a` in the
+upper bound and the second cutoffs `ψ a` in the lower bound. They are independent of `h`, of the
+number of cutoffs, and of `f`.
 
 * **Upper bound.** If `hⁱ ‖Dⁱ χ a‖ ≤ B` for `i ≤ k`, then
   `∑_{a ∈ s} ‖χ a • f‖²_{k,h} ≤ (k + 1)⁴ 4ᵏ B² K ‖f‖²_{k,h}`
@@ -74,8 +75,8 @@ nonzero, so the square of the sum is at most `K` times the sum of the squares
 * `TauCeti.uniformlyLocalSemiclassicalSobolevNorm_le_mul_semiclassicalSobolevNorm`: the uniformly
   local norm is bounded by the global norm.
 * `TauCeti.sq_semiclassicalSobolevNorm_le_mul_card_mul_sq_uniformlyLocalSemiclassicalSobolevNorm`:
-  the global norm is bounded by the uniformly local norm times the square root of the number of
-  balls.
+  the global norm is bounded by `(k + 1)² 2ᵏ B √(K #s)` times the uniformly local norm, where `#s`
+  is the number of balls.
 
 ## References
 
