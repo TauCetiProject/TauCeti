@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Fourier.Continuous
+import TauCeti.Analysis.Fourier.Prod
 import TauCeti.Analysis.Fourier.Mollifier
 import TauCeti.Analysis.InnerProductSpace.ProdL2
 
@@ -135,17 +136,17 @@ private theorem fourierInv_fiberIntegralCLM_addSnd_diagonal
       𝓕⁻ (fun x ↦ (ψ x : ℂ)) (ζ.fst + ζ.snd) * 𝓕⁻ (fun y ↦ (ρ y : ℂ)) ζ := by
   set g : WithLp 2 (E × E) → ℂ := fun z ↦ (𝐞 ⟪z, ζ⟫ : ℂ)
   have hg : Continuous g := by fun_prop
-  -- On `E × (E × E)` the integrand splits as a product of a function of `x` and one of `y`.
-  have hsplit (p : WithLp 2 (E × WithLp 2 (E × E))) :
+  -- On `E × (E × E)` the integrand is the inverse Fourier kernel at `(ζ.1 + ζ.2, ζ)` against
+  -- `(x, y) ↦ ψ x ρ y`.
+  have hin (p : WithLp 2 (E × WithLp 2 (E × E))) :
       F p • g (addSnd (fun x : E ↦ toLp 2 (x, x)) p) =
-        (𝐞 ⟪p.fst, ζ.fst + ζ.snd⟫ • (ψ p.fst : ℂ)) * (𝐞 ⟪p.snd, ζ⟫ • (ρ p.snd : ℂ)) := by
-    have hin : ⟪toLp 2 (p.fst, p.fst) + p.snd, ζ⟫ = ⟪p.fst, ζ.fst + ζ.snd⟫ + ⟪p.snd, ζ⟫ := by
-      rw [inner_add_left, prod_inner_apply, inner_add_right]
-      simp
-    simp only [g, addSnd_apply, hin, AddChar.map_add_eq_mul, hF, Circle.smul_def,
-      Circle.coe_mul, Complex.real_smul, Complex.ofReal_mul]
+        𝐞 ⟪p, toLp 2 (ζ.fst + ζ.snd, ζ)⟫ • ((ψ p.fst : ℂ) * (ρ p.snd : ℂ)) := by
+    have h : ⟪toLp 2 (p.fst, p.fst) + p.snd, ζ⟫ = ⟪p, toLp 2 (ζ.fst + ζ.snd, ζ)⟫ := by
+      simp only [inner_add_left, inner_add_right, prod_inner_apply, ofLp_fst, ofLp_snd]
+    simp only [g, addSnd_apply, h, hF, Complex.real_smul, Complex.ofReal_mul, Circle.smul_def,
+      smul_eq_mul]
     ring
-  rw [Real.fourierInv_eq, Real.fourierInv_eq, Real.fourierInv_eq]
+  rw [Real.fourierInv_eq]
   have hL : ∫ z, 𝐞 ⟪z, ζ⟫ • ((fiberIntegralCLM volume volume
       (addSnd fun x : E ↦ toLp 2 (x, x)) (contDiffOn_addSnd hf) (mapsTo_addSnd _)
       (surjective_fderiv_addSnd _ (hf.differentiableOn (by simp))) F z : ℝ) : ℂ) =
@@ -155,12 +156,12 @@ private theorem fourierInv_fiberIntegralCLM_addSnd_diagonal
     refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
     simp [g, Circle.smul_def, Complex.real_smul, mul_comm]
   rw [hL, integral_fiberIntegralCLM_smul volume volume _ _ _ F hg.continuousOn]
-  simp_rw [hsplit]
-  rw [← (volume_preserving_symm_measurableEquiv_toLp_prod E (WithLp 2 (E × E))).symm.integral_comp']
-  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
-  rw [Measure.volume_eq_prod]
-  exact integral_prod_mul (fun x : E ↦ 𝐞 ⟪x, ζ.fst + ζ.snd⟫ • (ψ x : ℂ))
-    (fun y ↦ 𝐞 ⟪y, ζ⟫ • (ρ y : ℂ))
+  simp_rw [hin]
+  rw [← Real.fourierInv_eq (fun p : WithLp 2 (E × WithLp 2 (E × E)) ↦
+      (ψ p.fst : ℂ) * (ρ p.snd : ℂ)), Real.fourierInv_eq_fourier_neg,
+    Real.fourier_prod_mul (fun x ↦ (ψ x : ℂ)) (fun y ↦ (ρ y : ℂ)), Real.fourierInv_eq_fourier_neg,
+    Real.fourierInv_eq_fourier_neg]
+  simp
 
 /-! ### The limit integral -/
 
@@ -258,21 +259,22 @@ private theorem eventually_forall_mem_tsupport_fiberIntegralCLM
 near the support of a real test function `ψ`, over whose support `S` and `T` have no opposite
 covectors, and such that `(x, y) ↦ χ x χ y` is a test function on `W`. Then the pullback of `S ⊗ T`
 along the diagonal, at `ψ`, is `∫ S (χ e_η) T (ψ e_(-η)) dη`. -/
-private theorem pullback_diagonal_apply_eq_integral
-    (hf : ContDiffOn ℝ ∞ (fun x : E ↦ toLp 2 (x, x)) Ω)
+private theorem pullback_diagonal_apply_eq_integral (hST : ∀ x, NoOppositeCovectorsOn S T {x})
     (hΔ : MapsTo (fun x : E ↦ toLp 2 (x, x)) Ω W)
-    (hN : ∀ x ∈ Ω, ∀ η, (toLp 2 (x, x), η) ∈ (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
-        (S.tensorProduct T hV.subset)).waveFrontSet →
-      (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint η ≠ 0)
     {ψ χ : 𝓓(Ω, ℝ)}
     (h : NoOppositeCovectorsOn S T (tsupport (postcompCLM (𝕜 := ℝ) ofRealCLM χ)))
     (hχ : ∀ᶠ x in 𝓝ˢ (tsupport ψ), χ x = 1) {κ : 𝓓(W, ℂ)}
     (hκ : ∀ q, κ q = postcompCLM (𝕜 := ℝ) ofRealCLM χ q.fst *
       postcompCLM (𝕜 := ℝ) ofRealCLM χ q.snd) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
-        (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x)) hf hΔ hN ψ =
+        (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x))
+        ((diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm) hΔ
+        (adjoint_fderiv_diagonal_apply_ne_zero hV hW hST) ψ =
       ∫ η, S.localFourier (postcompCLM (𝕜 := ℝ) ofRealCLM χ) η *
         T.localFourier (postcompCLM (𝕜 := ℝ) ofRealCLM ψ) (-η) := by
+  have hf : ContDiffOn ℝ ∞ (fun x : E ↦ toLp 2 (x, x)) Ω :=
+    (diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm
+  have hN := adjoint_fderiv_diagonal_apply_ne_zero hV hW hST
   set U := transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW (S.tensorProduct T hV.subset)
   set χc : 𝓓(Ω, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM χ
   set G : WithLp 2 (E × E) → ℂ := fun ζ ↦ 𝓕⁻ (fun x ↦ (ψ x : ℂ)) (ζ.fst + ζ.snd) *
@@ -326,13 +328,11 @@ opposite to a covector of the wave front set of `T`, then the tensor product `S 
 Euclidean product `WithLp 2 (E × E)`, has a pullback along the diagonal `x ↦ (x, x)`
 (`Distribution.adjoint_fderiv_diagonal_apply_ne_zero`), and this pullback is the product `S T`. -/
 theorem pullback_diagonal_transportCLM_tensorProduct (h : ∀ x, NoOppositeCovectorsOn S T {x})
-    (hf : ContDiffOn ℝ ∞ (fun x : E ↦ toLp 2 (x, x)) Ω)
-    (hΔ : MapsTo (fun x : E ↦ toLp 2 (x, x)) Ω W)
-    (hN : ∀ x ∈ Ω, ∀ η, (toLp 2 (x, x), η) ∈ (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
-        (S.tensorProduct T hV.subset)).waveFrontSet →
-      (fderiv ℝ (fun x : E ↦ toLp 2 (x, x)) x).adjoint η ≠ 0) :
+    (hΔ : MapsTo (fun x : E ↦ toLp 2 (x, x)) Ω W) :
     (transportCLM (prodContinuousLinearEquiv 2 ℝ E E) hW
-        (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x)) hf hΔ hN =
+        (S.tensorProduct T hV.subset)).pullback (fun x : E ↦ toLp 2 (x, x))
+        ((diagL2 ℝ E).contDiff.contDiffOn.congr fun x _ ↦ (diagL2_apply ℝ E x).symm) hΔ
+        (adjoint_fderiv_diagonal_apply_ne_zero hV hW h) =
       S.product T h := by
   refine (eq_product_iff h).2 fun x₀ hx₀ ↦ ?_
   obtain ⟨φ, hφ, U₀, hU₀, hxU₀, hφU₀, -⟩ := (eq_product_iff h).1 rfl x₀ hx₀
@@ -352,7 +352,7 @@ theorem pullback_diagonal_transportCLM_tensorProduct (h : ∀ x, NoOppositeCovec
     interior_subset (hχU (hχc hx)).1.2
   obtain ⟨κ, hκ, -⟩ := hprod _ _ (fun x hx ↦ (hχB x hx).1) fun x hx ↦ (hχB x hx).2
   have hφχ (x : E) (hx : x ∈ tsupport χ) : φ x = 1 := hφU₀ (hχU hx).1.1
-  rw [pullback_diagonal_apply_eq_integral hV hW hf hΔ hN (hφ.mono fun x hx ↦ subset_tsupport _
+  rw [pullback_diagonal_apply_eq_integral hV hW h hΔ (hφ.mono fun x hx ↦ subset_tsupport _
       (by simp [hφχ x (hχc hx)] : φ x ≠ 0)) hχψ hκ,
     cutoffProduct_apply_eq_integral hφ hφχ fun x hx ↦ hχψ.self_of_nhdsSet x hx]
 
