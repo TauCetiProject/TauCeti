@@ -159,6 +159,7 @@ theorem coe_smul_subtypeLevelMulAction (hμ : σ.IsEquivariantMomentMap μ) :
 omit [I'.Boundaryless] in
 /-- The action of `N` on the first-stage level, as a subgroup of `G`, is the restriction of its
 action on `M`. -/
+@[simp]
 theorem coe_smul_subtypeLevelMulAction_subgroup (hμ : σ.IsEquivariantMomentMap μ) :
     letI : T2Space G := I.t2Space_of_lieGroup ∞
     letI := (Lie.EmbeddedLieSubgroupData.ofIsClosed (I := I) hN).chartedSpace
