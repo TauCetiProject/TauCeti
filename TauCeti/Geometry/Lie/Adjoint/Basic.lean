@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Conjugation
+public import TauCeti.Geometry.Lie.RightInvariantVectorField
 public import TauCeti.Geometry.Lie.Tangent.Differential
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 
@@ -33,12 +34,16 @@ The construction works over any nontrivially normed field. Its differential only
 
 * `TauCeti.Lie.mfderiv_mul_right_mulInvariantVectorField`: right translation by `g` carries the
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
+* `TauCeti.Lie.mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint`: the
+  left-invariant vector field of `X` at `g` is the right-invariant vector field of `Ad_g X` at `g`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
 * `TauCeti.Lie.adjointContinuousLinearMap_eq_id`: the adjoint action of a commutative Lie group is
   trivial.
 * `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
   adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
+* `MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker`: when that differential is injective,
+  the kernel of the homomorphism acts trivially on the Lie algebra.
 
 ## References
 
@@ -184,6 +189,19 @@ theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
   exact (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
     hcomp'.trans (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm
 
+/-- **The kernel of a homomorphism with injective differential acts trivially on the Lie
+algebra.** If the differential `dφ` at the identity of `φ : K →* G` is injective, then every
+`k ∈ ker φ` has trivial adjoint action, `Ad_k = id`, since `dφ (Ad_k ξ) = Ad_1 (dφ ξ) = dφ ξ`. -/
+theorem _root_.MonoidHom.adjointContinuousLinearMap_eq_id_of_mem_ker
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [LieGroup J 1 K] (φ : K →* G) (hφ : Function.Injective (φ.groupLieAlgebraMap J I)) {k : K}
+    (hk : k ∈ φ.ker) :
+    adjointContinuousLinearMap (I := J) k = ContinuousLinearMap.id 𝕜 (GroupLieAlgebra J K) := by
+  refine ContinuousLinearMap.ext fun ξ ↦ hφ ?_
+  rw [φ.groupLieAlgebraMap_adjointContinuousLinearMap, φ.mem_ker.1 hk,
+    adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :
     conjDiffeomorph (I := I) (n := 1) g⁻¹ =
@@ -271,6 +289,27 @@ theorem mfderiv_mul_right_mulInvariantVectorField (g x : G) (X : GroupLieAlgebra
   -- type-correctness check and `change` is needed.
   change mfderiv I I (g * ·) (C x) (mfderiv I I C x (mulInvariantVectorField X x)) = _
   rw [mfderiv_conjugation_mulInvariantVectorField, mfderiv_mul_left_mulInvariantVectorField, hpt]
+
+/-- **Left-invariant fields through the adjoint action**: the left-invariant vector field of `X`
+at `g` is the right-invariant vector field of `Ad_g X` at `g`, `X^L(g) = (Ad_g X)^R(g)`, since
+`(g x g⁻¹) g = g x`. -/
+theorem mulInvariantVectorField_eq_mulRightInvariantVectorField_adjoint
+    (X : GroupLieAlgebra I G) (g : G) :
+    mulInvariantVectorField X g =
+      mulRightInvariantVectorField (adjointContinuousLinearMap (I := I) g X) g := by
+  have hreg : (1 : ℕ∞ω) ≠ 0 := by simp
+  have hfun : (fun x : G ↦ x * g) ∘ (conjDiffeomorph (I := I) (n := 1) g) = (g * ·) := by
+    funext x
+    simp [mul_assoc]
+  have h := congrArg (fun f : G → G ↦ mfderiv I I f 1 X) hfun
+  rw [mfderiv_comp_apply (I := I) (I' := I) (I'' := I)] at h
+  · rw [mfderiv_congr_point (I := I) (I' := I) (f := fun x : G ↦ x * g)
+      (x := conjDiffeomorph (I := I) (n := 1) g 1) (x' := 1) (by simp)] at h
+    rw [GroupLieAlgebra.mulInvariantVectorField_apply, mulRightInvariantVectorField_apply,
+      adjointContinuousLinearMap_apply]
+    exact h.symm
+  · exact (contMDiff_mul_right (I := I) (n := 1) (a := g)).contMDiffAt.mdifferentiableAt hreg
+  · exact ((conjDiffeomorph (I := I) (n := 1) g).mdifferentiable hreg) _
 
 /-- Pullback through inverse conjugation is the derivative of forward conjugation. -/
 theorem mpullback_conjugation (g x : G) (V : ∀ y : G, TangentSpace I y) :

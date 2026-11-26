@@ -7,7 +7,7 @@ module
 
 public import TauCeti.FieldTheory.Galois.AbsoluteGaloisGroup.Map
 public import TauCeti.NumberTheory.LocalField.Herbrand.FiniteGalois
-public import TauCeti.NumberTheory.LocalField.WildInertia
+public import TauCeti.NumberTheory.LocalField.WildInertia.Basic
 
 import TauCeti.FieldTheory.Galois.FiberProduct
 import TauCeti.NumberTheory.LocalField.Herbrand.Unramified
@@ -417,13 +417,13 @@ theorem coe_biSup_pos_localAbsoluteUpperRamificationGroup :
         (localAbsoluteUpperRamificationGroup K v : Set (Field.absoluteGaloisGroup K)) := by
   let PosIdx := {v : RamificationIndexDomain // 0 < (v : ℝ)}
   have : Nonempty PosIdx := ⟨⟨⟨1, by norm_num⟩, by norm_num⟩⟩
-  have hdir : Directed (· ≤ ·) (fun i : PosIdx ↦ localAbsoluteUpperRamificationGroup K i.1) :=
-    fun i j ↦ ⟨⟨min i.1 j.1, lt_min i.2 j.2⟩,
+  have hdir : Directed (· ≤ ·) (fun i : PosIdx ↦ localAbsoluteUpperRamificationGroup K i.val) :=
+    fun i j ↦ ⟨⟨min i.val j.val, lt_min i.property j.property⟩,
       localAbsoluteUpperRamificationGroup_antitone K (min_le_left _ _),
       localAbsoluteUpperRamificationGroup_antitone K (min_le_right _ _)⟩
   have hsup : (⨆ (v : RamificationIndexDomain) (_ : 0 < (v : ℝ)),
         localAbsoluteUpperRamificationGroup K v) =
-      ⨆ i : PosIdx, localAbsoluteUpperRamificationGroup K i.1 := iSup_subtype'
+      ⨆ i : PosIdx, localAbsoluteUpperRamificationGroup K i.val := iSup_subtype'
   rw [hsup, Subgroup.coe_iSup_of_directed hdir]
   ext σ
   simp [PosIdx]
@@ -509,7 +509,7 @@ theorem iInf_natCast_localAbsoluteUpperRamificationGroup :
   ext x
   -- Build the finite Galois splitting field of `minpoly K x` inside `AlgebraicClosure K`,
   -- avoiding any separability assumption on `AlgebraicClosure K / K`.
-  have hxsep : IsSeparable K (x : AlgebraicClosure K) := mem_separableClosure_iff.1 x.2
+  have hxsep : IsSeparable K (x : AlgebraicClosure K) := mem_separableClosure_iff.1 x.property
   let f : K[X] := minpoly K (x : AlgebraicClosure K)
   let L : IntermediateField K (AlgebraicClosure K) := adjoin K (f.rootSet (AlgebraicClosure K))
   have hsplit : (f.map (algebraMap K (AlgebraicClosure K))).Splits := IsAlgClosed.splits _

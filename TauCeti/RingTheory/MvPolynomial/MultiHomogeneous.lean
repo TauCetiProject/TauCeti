@@ -5,9 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.MvPolynomial.Division
 public import Mathlib.Algebra.Order.Antidiag.FinsuppEquiv
 public import Mathlib.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous
+import TauCeti.Data.Finsupp.MapDomain
+
+import TauCeti.Algebra.MvPolynomial.Division
+import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
 /-!
 # Multihomogeneous polynomials
@@ -18,7 +23,7 @@ multidegree `d : κ → ℕ`* when every monomial occurring in `P` has degree ex
 variables of block `h`, for every `h`. Equivalently, `P` is weighted homogeneous of weight `d h`
 for the indicator weight of every block, which is how the block-homogeneous calculus of
 `TauCeti.RingTheory.MvPolynomial.HasseDeriv.WeightedHomogeneous` and
-`TauCeti.RingTheory.MvPolynomial.BlockHomogenize` already phrases it; the predicate
+`TauCeti.RingTheory.MvPolynomial.Block.Homogenize` already phrases it; the predicate
 `MvPolynomial.IsMultiHomogeneous` names that conjunction.
 
 Multihomogeneous polynomials are the auxiliary polynomials of Schmidt's proof of the Subspace
@@ -33,6 +38,8 @@ conditions of the construction be imposed on derivatives.
 
 * `MvPolynomial.IsMultiHomogeneous d P`: `P` is homogeneous of degree `d h` in block `h`, for every
   block `h`.
+* `MvPolynomial.multiHomogeneousSubmodule R ι d`: the submodule of multihomogeneous polynomials of
+  multidegree `d`.
 * `MvPolynomial.multiMons d`: the finite set of exponent vectors of multidegree `d`.
 
 ## Main results
@@ -43,6 +50,8 @@ conditions of the construction be imposed on derivatives.
   elements.
 * `MvPolynomial.IsMultiHomogeneous.mul`, `.pow`, `.prod`, `.add`, `.sum`: multidegrees add
   under products and are preserved by sums.
+* `MvPolynomial.IsHomogeneous.isMultiHomogeneous_rename`: a form of degree `m` written in the
+  variables of block `h` is multihomogeneous of multidegree `Pi.single h m`.
 * `MvPolynomial.IsMultiHomogeneous.isHomogeneous`: a multihomogeneous polynomial is homogeneous of
   total degree `∑ h, d h`, and `MvPolynomial.IsMultiHomogeneous.degreeOf_le` bounds the degree in
   each variable of block `h` by `d h`.
@@ -50,6 +59,10 @@ conditions of the construction be imposed on derivatives.
   multihomogeneous of multidegree `fun h ↦ d h - ∑ i, I (h, i)`, and
   `MvPolynomial.IsMultiHomogeneous.sum_le_of_hasseDeriv_ne_zero`: if it is nonzero, then
   `∑ i, I (h, i) ≤ d h` for every block.
+* `MvPolynomial.IsMultiHomogeneous.aeval`, `MvPolynomial.IsMultiHomogeneous.rename`,
+  `MvPolynomial.isMultiHomogeneous_rename_iff`, `MvPolynomial.IsMultiHomogeneous.modMonomial`,
+  `MvPolynomial.IsMultiHomogeneous.divMonomial`: preservation of multihomogeneity under block-linear
+  evaluation, blockwise renaming, and monomial remainder/division.
 
 ## References
 
@@ -180,10 +193,59 @@ theorem IsMultiHomogeneous.prod {α : Type*} (s : Finset α) (φ : α → MvPoly
   simpa only [Finset.sum_apply] using
     IsWeightedHomogeneous.prod s φ (fun a ↦ d a h) fun a ha ↦ hφ a ha h
 
+/-- For `m ≤ d`, the block monomial `∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h)`, with the
+coordinates `i` and `j` taken in every block, is multihomogeneous of multidegree `d`. -/
+theorem isMultiHomogeneous_prod_X_pow_mul_X_pow [Fintype κ] {m : κ → ℕ} (hm : ∀ h, m h ≤ d h)
+    (i j : ι) :
+    IsMultiHomogeneous d
+      (∏ h, X (h, i) ^ m h * X (h, j) ^ (d h - m h) : MvPolynomial (κ × ι) R) := by
+  have hprod := IsMultiHomogeneous.prod (R := R) Finset.univ
+    (fun h ↦ X (h, i) ^ m h * X (h, j) ^ (d h - m h)) (fun h ↦ Pi.single h (d h)) fun h _ ↦ by
+      have hXX := ((isMultiHomogeneous_X (R := R) h i).pow (m h)).mul
+        ((isMultiHomogeneous_X (R := R) h j).pow (d h - m h))
+      rwa [← add_smul, Nat.add_sub_cancel' (hm h), ← Pi.single_smul', smul_eq_mul,
+        mul_one] at hXX
+  rwa [Finset.univ_sum_single] at hprod
+
 /-- The multidegree of a nonzero multihomogeneous polynomial is unique. -/
 theorem IsMultiHomogeneous.inj_right (hP₀ : P ≠ 0) (hd : IsMultiHomogeneous d P)
     (he : IsMultiHomogeneous e P) : d = e :=
   funext fun h ↦ (hd h).inj_right hP₀ (he h)
+
+section Submodule
+
+variable (R ι) in
+/-- The submodule of polynomials in the variables `X (h, i)`, grouped into blocks indexed by
+`h : κ`, that are multihomogeneous of multidegree `d`. -/
+noncomputable def multiHomogeneousSubmodule (d : κ → ℕ) : Submodule R (MvPolynomial (κ × ι) R) :=
+  ⨅ h, weightedHomogeneousSubmodule R (fun p : κ × ι ↦ if p.1 = h then 1 else 0) (d h)
+
+@[simp]
+theorem mem_multiHomogeneousSubmodule :
+    P ∈ multiHomogeneousSubmodule R ι d ↔ IsMultiHomogeneous d P := by
+  simp [multiHomogeneousSubmodule, isMultiHomogeneous_iff_forall_isWeightedHomogeneous]
+
+end Submodule
+
+/-- A form of degree `m` written in the variables `X (h, i)` of block `h` is multihomogeneous of
+multidegree `Pi.single h m`. -/
+theorem IsHomogeneous.isMultiHomogeneous_rename {p : MvPolynomial ι R} {m : ℕ}
+    (hp : p.IsHomogeneous m) (h : κ) :
+    IsMultiHomogeneous (Pi.single h m) (rename (Prod.mk h) p) := by
+  rw [isMultiHomogeneous_iff_forall_isWeightedHomogeneous]
+  intro h' s hs
+  obtain ⟨u, rfl, hu⟩ := coeff_rename_ne_zero _ _ _ hs
+  rw [Finsupp.weight_mapDomain]
+  by_cases hh : h = h'
+  · subst hh
+    have hw : (fun p : κ × ι ↦ if p.1 = h then 1 else 0) ∘ Prod.mk h = 1 := by
+      ext; simp
+    rw [hw, Pi.single_eq_same]
+    exact hp hu
+  · have hw : (fun p : κ × ι ↦ if p.1 = h' then 1 else 0) ∘ Prod.mk h = 0 := by
+      ext; simp [hh]
+    rw [hw, Pi.single_eq_of_ne' hh]
+    simp [Finsupp.weight_apply]
 
 section Ring
 
@@ -215,6 +277,54 @@ theorem IsMultiHomogeneous.sum_le_of_hasseDeriv_ne_zero (hP : IsMultiHomogeneous
   (hP h).sum_le_of_hasseDeriv_ne_zero hI
 
 end HasseDeriv
+
+/-- Substituting into each variable `X (h, i)` a polynomial that is multihomogeneous of degree `1`
+in block `h` and `0` in every other block preserves multihomogeneity of multidegree `d`. -/
+protected theorem IsMultiHomogeneous.aeval {τ : Type*} (hP : IsMultiHomogeneous d P)
+    {g : κ × ι → MvPolynomial (κ × τ) R}
+    (hg : ∀ h i, IsMultiHomogeneous (Pi.single h 1) (g (h, i))) :
+    IsMultiHomogeneous d (MvPolynomial.aeval g P) := fun h ↦
+  (hP h).aeval fun ⟨h', i⟩ ↦ by
+    simpa [Pi.single_apply, eq_comm] using hg h' i h
+
+/-- Renaming coordinates within each block preserves multihomogeneity. -/
+protected theorem IsMultiHomogeneous.rename {τ : Type*} (hP : IsMultiHomogeneous d P)
+    (f : κ → ι → τ) :
+    IsMultiHomogeneous d (MvPolynomial.rename (fun p : κ × ι ↦ (p.1, f p.1 p.2)) P) := by
+  rw [rename_eq_aeval]
+  exact hP.aeval fun h i ↦ isMultiHomogeneous_X h (f h i)
+
+/-- Blockwise injective variable renaming preserves and reflects multihomogeneity. -/
+theorem isMultiHomogeneous_rename_iff {τ : Type*} {f : κ → τ → ι}
+    (hf : ∀ h, Function.Injective (f h)) {Q : MvPolynomial (κ × τ) R} :
+    IsMultiHomogeneous d (MvPolynomial.rename (fun p : κ × τ ↦ (p.1, f p.1 p.2)) Q) ↔
+      IsMultiHomogeneous d Q := by
+  refine ⟨fun hhom h u hu ↦ ?_, fun hQ ↦ hQ.rename f⟩
+  set emb : κ × τ → κ × ι := fun p ↦ (p.1, f p.1 p.2)
+  have hemb : Function.Injective emb := by
+    rintro ⟨h, a₁⟩ ⟨_, a₂⟩ heq
+    obtain ⟨rfl, ha⟩ := Prod.mk.inj heq
+    exact Prod.ext rfl (hf h ha)
+  have hc : (rename emb Q).coeff (u.mapDomain emb) ≠ 0 := by
+    rwa [coeff_rename_mapDomain emb hemb]
+  have hw := hhom h hc
+  rwa [Finsupp.weight_apply, Finsupp.sum_mapDomain_index_inj hemb, ← Finsupp.weight_apply] at hw
+
+/-- Taking the remainder modulo a monomial preserves multihomogeneity. -/
+protected theorem IsMultiHomogeneous.modMonomial (hP : IsMultiHomogeneous d P) (s : κ × ι →₀ ℕ) :
+    IsMultiHomogeneous d (P.modMonomial s) := fun h _ hn ↦
+  hP h (coeff_modMonomial_of_mem_support (mem_support_iff.mpr hn) ▸ hn)
+
+/-- Dividing a multihomogeneous polynomial of multidegree `d` by `monomial s 1` gives a
+multihomogeneous polynomial of residual multidegree `fun h ↦ d h - ∑ i, s (h, i)`. -/
+protected theorem IsMultiHomogeneous.divMonomial [Fintype ι] (hP : IsMultiHomogeneous d P)
+    (s : κ × ι →₀ ℕ) :
+    IsMultiHomogeneous (fun h ↦ d h - ∑ i, s (h, i)) (P.divMonomial s) := by
+  rw [isMultiHomogeneous_iff] at hP ⊢
+  intro n hn h
+  have hsn := hP (s + n) (by simpa using hn) h
+  simp only [Finsupp.coe_add, Pi.add_apply, sum_add_distrib] at hsn
+  omega
 
 section multiMons
 

@@ -21,13 +21,18 @@ norm bound, so the induced map is open and is a quotient map. This extends the
 coefficient-lifting argument of
 `TauCeti.MvPowerSeries.exists_restrictedMap_eq_and_norm_coeff_le` to module coefficients.
 
-Complete coefficient groups give complete restricted families. The construction allows arbitrary
+Complete coefficient groups give complete restricted families. Every restricted family is the
+unconditional sum of its single coefficients, so its finite-support truncations converge to it
+and finite-support families are dense. The construction allows arbitrary
 variable sets and seminormed additive coefficient groups. It is a norm for normed coefficients.
 Neither completeness nor an ultrametric norm is needed for the additive norm; the latter is
 required for the convolution estimate. For ring-valued coefficients, the existing comparison
-with scalar restricted series preserves the Gauss norm. Over an ultrametric ring, bounded
-coefficient maps induce continuous linear maps over the scalar restricted series, and
-coefficient equivalences bounded in both directions induce topological isomorphisms.
+with scalar restricted series preserves the Gauss norm, so over a commutative ultrametric ring it
+is a linear isometric equivalence
+(`TauCeti.MvPowerSeries.IsRestrictedFamily.Gauss.subringLinearIsometryEquiv`). Over an
+ultrametric ring, bounded coefficient maps induce continuous linear maps over the scalar
+restricted series, and coefficient equivalences bounded in both directions induce topological
+isomorphisms.
 
 ## References
 
@@ -75,7 +80,7 @@ theorem ofAddSubgroup_toAddSubgroup (a : Gauss c E) :
 
 @[simp]
 theorem ofAddSubgroup_apply (a : IsRestrictedFamily.addSubgroup E c)
-    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.1 t := (rfl)
+    (t : σ →₀ ℕ) : ofAddSubgroup a t = a.val t := (rfl)
 
 instance : AddCommGroup (Gauss c E) :=
   Equiv.addCommGroup
@@ -145,7 +150,7 @@ theorem toAddSubgroupLinearEquiv_symm_apply
 theorem smul_apply (r : R) (a : Gauss c E) (t : σ →₀ ℕ) :
     (r • a) t = r • a t := by
   simpa only [toAddSubgroupLinearEquiv_apply, coe_smul, Pi.smul_apply] using
-    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.1 t)
+    congrArg (fun b : IsRestrictedFamily.addSubgroup E c ↦ b.val t)
       ((toAddSubgroupLinearEquiv R).map_smul r a)
 
 /-- Include finite-support coefficient families in the Gauss-topological carrier. -/
@@ -205,10 +210,10 @@ instance instSeminormedAddCommGroup : SeminormedAddCommGroup (Gauss c E) :=
             exact add_le_add
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
               (le_ciSup
                 (isRestrictedFamily_iff.mp
-                  (mem_addSubgroup.mp b.toAddSubgroup.2)).bddAbove_range_of_cofinite t)
+                  (mem_addSubgroup.mp b.toAddSubgroup.property)).bddAbove_range_of_cofinite t)
       neg' a := by simp }
 
 /-- The norm is the supremum of the weighted coefficient norms. Restrictedness ensures that
@@ -220,7 +225,7 @@ theorem norm_eq_iSup (a : Gauss c E) :
 theorem norm_coeff_mul_prod_le (a : Gauss c E) (t : σ →₀ ℕ) :
     ‖(a : (σ →₀ ℕ) → E) t‖ * t.prod (c · ^ ·) ≤ ‖a‖ :=
   le_ciSup (isRestrictedFamily_iff.mp
-    (mem_addSubgroup.mp a.toAddSubgroup.2)).bddAbove_range_of_cofinite t
+    (mem_addSubgroup.mp a.toAddSubgroup.property)).bddAbove_range_of_cofinite t
 
 /-- The Gauss seminorm is a norm when the coefficient seminorm is a norm. -/
 instance instNormedAddCommGroup {F : Type*} [NormedAddCommGroup F] :
@@ -276,7 +281,7 @@ instance [CompleteSpace E] : CompleteSpace (Gauss c E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun A hA ↦ ?_
   obtain ⟨a, hres, hunif⟩ := exists_weighted_coefficient_limit
     (fun i ↦ (Fact.out : 0 < c i).le) (fun k ↦ (A k : (σ →₀ ℕ) → E))
-    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.2)) (by
+    (fun k ↦ isRestrictedFamily_iff.mp (mem_addSubgroup.mp (A k).toAddSubgroup.property)) (by
       intro ε hε
       obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.mp hA ε hε
       refine ⟨N, fun k hk l hl t ↦ ?_⟩
@@ -320,6 +325,36 @@ theorem norm_ofFinsupp_single (t : σ →₀ ℕ) (e : E) :
       simp
     · simp [h, mul_nonneg (norm_nonneg e) (prod_pow_pos t).le]
   · simpa using norm_coeff_mul_prod_le (ofFinsupp R c (Finsupp.single t e)) t
+
+variable (R) in
+/-- **Finite-support truncations converge**: a restricted family is the unconditional sum of its
+single coefficients, so its truncations to finite sets of exponents tend to it in the Gauss norm,
+at every positive polyradius. -/
+theorem hasSum_ofFinsupp_single (a : Gauss c E) :
+    HasSum (fun t ↦ ofFinsupp R c (Finsupp.single t (a t))) a := by
+  classical
+  refine Metric.tendsto_nhds.mpr fun ε hε ↦ ?_
+  -- only finitely many weighted coefficient norms are at least `ε / 2`
+  have hF : {t | ε / 2 ≤ ‖a t‖ * t.prod (c · ^ ·)}.Finite := by
+    simpa [eventually_cofinite, not_lt] using
+      (isRestrictedFamily_iff.mp (mem_addSubgroup.mp a.toAddSubgroup.property)).eventually
+        (gt_mem_nhds (half_pos hε))
+  refine (eventually_ge_atTop hF.toFinset).mono fun s hs ↦ ?_
+  rw [dist_eq_norm']
+  refine (norm_le_iff.mpr fun t ↦ ?_).trans_lt (half_lt_self hε)
+  by_cases ht : t ∈ s
+  · simpa [← map_sum, Finsupp.single_apply, ht] using (half_pos hε).le
+  · simpa [← map_sum, Finsupp.single_apply, ht] using
+      (not_le.mp fun h ↦ ht (hs (hF.mem_toFinset.mpr h))).le
+
+variable (R) in
+/-- **Finite-support families are dense** in the restricted families for the Gauss norm, at every
+positive polyradius. -/
+theorem denseRange_ofFinsupp : DenseRange (ofFinsupp (σ := σ) (E := E) R c) := by
+  classical
+  intro a
+  exact mem_closure_of_tendsto (hasSum_ofFinsupp_single R a) <|
+    .of_forall fun s ↦ ⟨∑ t ∈ s, Finsupp.single t (a t), by simp⟩
 
 /-- Coefficientwise scalar multiplication is bounded for the Gauss norm. -/
 instance : IsBoundedSMul R (Gauss c E) :=
@@ -468,6 +503,37 @@ theorem norm_subringLinearEquiv (f : IsRestricted.subring (R := R) c) :
   rw [norm_eq_iSup, _root_.MvPowerSeries.norm_eq_gaussNorm, gaussNorm]
   simp only [coe_subringLinearEquiv]
 
+section Comm
+
+variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
+
+variable (R) in
+/-- The ring-valued coefficient comparison as a linear isometric equivalence between the scalar
+restricted series and the Gauss families of their coefficients, at every positive polyradius. -/
+def subringLinearIsometryEquiv : IsRestricted.subring (R := R) c ≃ₗᵢ[R] Gauss c R where
+  toLinearEquiv := (IsRestrictedFamily.subringLinearEquiv.restrictScalars R).trans
+    (toAddSubgroupLinearEquiv R).symm
+  norm_map' := norm_subringLinearEquiv
+
+/-- The coefficient isometry sends a restricted series to its family of coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_apply (f : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
+    subringLinearIsometryEquiv R f t = _root_.MvPowerSeries.coeff t (f : MvPowerSeries σ R) := by
+  rw [← LinearIsometryEquiv.coe_toLinearEquiv]
+  simp only [subringLinearIsometryEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.restrictScalars_apply, toAddSubgroupLinearEquiv_symm_apply,
+    coe_subringLinearEquiv]
+
+/-- The inverse coefficient isometry sends a Gauss family to the series with those
+coefficients. -/
+@[simp]
+theorem subringLinearIsometryEquiv_symm_apply (a : Gauss c R) (t : σ →₀ ℕ) :
+    _root_.MvPowerSeries.coeff t
+      ((subringLinearIsometryEquiv R).symm a : MvPowerSeries σ R) = a t := by
+  rw [← subringLinearIsometryEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
+end Comm
+
 variable [SeminormedAddCommGroup F] [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
 
 /-- A coefficient map bounded by `C` induces a continuous linear map of Gauss families over the
@@ -526,9 +592,10 @@ Gauss families over the scalar restricted series. -/
 def mapContinuousLinearEquiv (e : E ≃ₗ[R] F) {C D : ℝ} (he : ∀ x, ‖e x‖ ≤ C * ‖x‖)
     (he' : ∀ y, ‖e.symm y‖ ≤ D * ‖y‖) :
     Gauss c E ≃L[IsRestricted.subring (R := R) c] Gauss c F :=
-  .equivOfInverse (mapContinuousLinearMap e.toLinearMap he)
+  .ofContinuousLinearMap (mapContinuousLinearMap e.toLinearMap he)
     (mapContinuousLinearMap e.symm.toLinearMap he')
-    (fun a ↦ ext fun t ↦ by simp) (fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun b ↦ ext fun t ↦ by simp)
+    (ContinuousLinearMap.ext fun a ↦ ext fun t ↦ by simp)
 
 /-- The induced isomorphism applies the coefficient equivalence coefficientwise. -/
 @[simp]

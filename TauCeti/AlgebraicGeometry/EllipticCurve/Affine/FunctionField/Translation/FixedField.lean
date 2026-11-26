@@ -53,6 +53,8 @@ arbitrary finite subgroup of points, no isogeny being needed to state or prove t
 * `WeierstrassCurve.Affine.finrank_translationFixedField` and
   `WeierstrassCurve.Affine.isGalois_translationFixedField`: the function field has degree `#Φ` over
   the fixed field, and for a finite `Φ` it is Galois.
+* `WeierstrassCurve.Affine.translationFixedField_gc`: fixed fields and fixing subgroups of points
+  form a Galois connection.
 * `WeierstrassCurve.Affine.fixingSubgroup_translationFixedField`: the automorphisms fixing that
   field are exactly the translations by points of `Φ`, whence
   `WeierstrassCurve.Affine.translationFixingSubgroup_translationFixedField` and
@@ -142,11 +144,6 @@ theorem mem_translationFixedField_iff {z : W.FunctionField} :
   exact ⟨fun h P hP ↦ h _ (translation_mem_translationSubgroup W Φ hP),
     fun h σ hσ ↦ by obtain ⟨P, hP, rfl⟩ := (mem_translationSubgroup_iff W Φ).mp hσ; exact h P hP⟩
 
-/-- A larger subgroup of points fixes a smaller field. -/
-theorem translationFixedField_antitone : Antitone (translationFixedField W) := fun _ _ h _ hz ↦
-  (mem_translationFixedField_iff W _).mpr fun P hP ↦
-    (mem_translationFixedField_iff W _).mp hz P (h hP)
-
 instance finiteDimensional_translationFixedField [Finite Φ] :
     FiniteDimensional (translationFixedField W Φ) W.FunctionField :=
   inferInstanceAs (FiniteDimensional
@@ -206,11 +203,6 @@ theorem mem_translationFixingSubgroup_iff {L : IntermediateField F W.FunctionFie
     translationHom_apply, IntermediateField.mem_fixingSubgroup_iff]
   rfl
 
-/-- A larger field is fixed by fewer points. -/
-theorem translationFixingSubgroup_antitone : Antitone (translationFixingSubgroup W) :=
-  fun _ _ h _ hP ↦ (mem_translationFixingSubgroup_iff W).mpr fun z hz ↦
-    (mem_translationFixingSubgroup_iff W).mp hP z (h hz)
-
 /-- **The two constructions are adjoint**: a subgroup of points fixes an intermediate field
 exactly when that field consists of functions fixed by the subgroup. -/
 theorem le_translationFixingSubgroup_iff_le_translationFixedField
@@ -221,11 +213,27 @@ theorem le_translationFixingSubgroup_iff_le_translationFixedField
     fun h P hP ↦ (mem_translationFixingSubgroup_iff W).mpr fun _z hz ↦
       (mem_translationFixedField_iff W Φ).mp (h hz) P hP⟩
 
+/-- **The translation Galois connection.** Fixed fields of subgroups of points and the points
+fixing an intermediate field form a Galois connection, with intermediate fields ordered by reverse
+inclusion. -/
+theorem translationFixedField_gc :
+    @GaloisConnection (AddSubgroup (W⁄F).toAffine.Point) (IntermediateField F W.FunctionField)ᵒᵈ
+      _ _ (translationFixedField W) (translationFixingSubgroup W) :=
+  fun Φ L ↦ (le_translationFixingSubgroup_iff_le_translationFixedField W Φ L).symm
+
+/-- A larger subgroup of points fixes a smaller field. -/
+theorem translationFixedField_antitone : Antitone (translationFixedField W) :=
+  (translationFixedField_gc W).monotone_l
+
+/-- A larger field is fixed by fewer points. -/
+theorem translationFixingSubgroup_antitone : Antitone (translationFixingSubgroup W) :=
+  fun _ _ h ↦ (translationFixedField_gc W).monotone_u h
+
 /-- A field is fixed by the translations that fix it. -/
 theorem le_translationFixedField_translationFixingSubgroup
     (L : IntermediateField F W.FunctionField) :
     L ≤ translationFixedField W (translationFixingSubgroup W L) :=
-  (le_translationFixingSubgroup_iff_le_translationFixedField W _ L).mp le_rfl
+  (translationFixedField_gc W).l_u_le L
 
 /-- **A finite subgroup of points is recovered from its fixed field.** Together with
 `WeierstrassCurve.Affine.le_translationFixedField_translationFixingSubgroup` this is the Galois
@@ -242,7 +250,7 @@ theorem translationFixingSubgroup_translationFixedField [Finite Φ] :
 private noncomputable def toFixingSubgroup (L : IntermediateField F W.FunctionField)
     (P : translationFixingSubgroup W L) : L.fixingSubgroup :=
   ⟨translation W (P : (W⁄F).toAffine.Point), (IntermediateField.mem_fixingSubgroup_iff L _).mpr
-    ((mem_translationFixingSubgroup_iff W).mp P.2)⟩
+    ((mem_translationFixingSubgroup_iff W).mp P.property)⟩
 
 private theorem toFixingSubgroup_injective (L : IntermediateField F W.FunctionField) :
     Function.Injective (toFixingSubgroup W L) := fun _ _ h ↦
@@ -322,9 +330,9 @@ theorem card_translationFixingSubgroup_eq_finrank_of_forall_exists_translation
     (h : ∀ σ ∈ L.fixingSubgroup, ∃ P : (W⁄F).toAffine.Point, translation W P = σ) :
     Nat.card (translationFixingSubgroup W L) = Module.finrank L W.FunctionField := by
   have hsurj : Function.Surjective (toFixingSubgroup W L) := fun σ ↦ by
-    obtain ⟨P, hP⟩ := h σ σ.2
+    obtain ⟨P, hP⟩ := h σ σ.property
     exact ⟨⟨P, (mem_translationFixingSubgroup_iff W).2 fun z hz ↦ by
-      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.2 z hz⟩,
+      rw [hP]; exact (IntermediateField.mem_fixingSubgroup_iff L _).1 σ.property z hz⟩,
       Subtype.ext hP⟩
   -- `IsGalois.card_fixingSubgroup_eq_finrank` counts a fixing subgroup inside a Galois extension
   -- of the *base*; here `K(W)` is transcendental over `F` and only `K(W)/L` is Galois, so the count

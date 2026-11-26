@@ -13,13 +13,10 @@ public import Mathlib.Topology.Homotopy.Path
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Calculus.ContDiff.Approximation
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
-import TauCeti.Analysis.Contour.NullHomologous
-import TauCeti.Analysis.Contour.Winding.Proximity
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Proximity
 import TauCeti.Analysis.Contour.Winding.Number.Affine
 import Mathlib.Analysis.SpecialFunctions.Bernstein
 import Mathlib.MeasureTheory.Integral.CircleIntegral
-import Mathlib.Topology.LocallyConstant.Basic
-import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Homotopy invariance of the winding number
@@ -116,7 +113,8 @@ private theorem windingNumber_eq_of_dist_lt_of_le_dist {γ δ : ℝ → ℂ} {w 
     (hγ : IsPiecewiseC1On γ 0 1) (hδ : IsPiecewiseC1On δ 0 1) (h₀ : γ 0 = δ 0) (h₁ : γ 1 = δ 1)
     (hclose : ∀ t : I, dist (γ t) (δ t) < c) (hfar : ∀ t : I, c ≤ dist (δ t) w) :
     windingNumber γ 0 1 w = windingNumber δ 0 1 w := by
-  refine hδ.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints hγ h₀.symm h₁.symm fun t ht => ?_
+  refine hδ.absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist_of_eq_endpoints
+    hγ.absolutelyContinuousOnInterval h₀.symm h₁.symm fun t ht => ?_
   rw [Set.uIcc_of_le zero_le_one] at ht
   have hcoe : ((⟨t, ht⟩ : I) : ℝ) = t := rfl
   have hc := hclose ⟨t, ht⟩
@@ -325,13 +323,14 @@ theorem windingNumber_eq_of_continuousOn_uncurry {P : Type*} [TopologicalSpace P
     obtain ⟨v, hv, hclose⟩ := isCompact_uIcc.mem_uniformity_of_prod hH hq
       (Metric.dist_mem_uniformity (dist_pos.2 (havoid q hq t₀ ht₀)))
     filter_upwards [hv, self_mem_nhdsWithin] with p hpv hpS
-    exact (hpw q hq).windingNumber_eq_of_dist_lt_dist (hpw p hpS) (hclosed q hq) (hclosed p hpS)
+    exact (hpw q hq).absolutelyContinuousOnInterval.windingNumber_eq_of_dist_lt_dist
+      (hpw p hpS).absolutelyContinuousOnInterval (hclosed q hq) (hclosed p hpS)
       fun t ht ↦ (hclose p hpv t ht).trans_le (hmin ht)
   -- A locally constant function on a preconnected space is constant.
   have := isPreconnected_iff_preconnectedSpace.1 hS
   have hconst : IsLocallyConstant fun x : S ↦ windingNumber (H x) a b w :=
     (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦
-      (eventually_nhds_subtype_iff S x _).2 (hloc x x.2)
+      (eventually_nhds_subtype_iff S x _).2 (hloc x x.property)
   exact hconst.apply_eq_of_preconnectedSpace ⟨p, hp⟩ ⟨q, hq⟩
 
 /-- **Concentric circles through an annulus avoiding `w` wind equally often.** If `f` is `C¹` on

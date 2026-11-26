@@ -29,7 +29,9 @@ polygons is a horizontal half-line.
 A nonzero entire series is restricted at every radius `b ^ σ`, so its Newton polygon touches a
 supporting line of every slope `σ`, and it lies above a line of the larger slope `σ + 1`. Hence it
 has a finite face of every slope. Consequently only finitely many finite unit edges have slope
-below any real cutoff, and if there are infinitely many finite edges their slopes tend to infinity.
+below any real cutoff, and an entire series is either a polynomial (when its Newton polygon has
+only finitely many finite unit edges) or has infinitely many finite unit edges whose slopes tend to
+infinity.
 
 ## Main results
 
@@ -39,9 +41,16 @@ below any real cutoff, and if there are infinitely many finite edges their slope
   the Minkowski sum of the Newton polygons of the factors.
 * `PowerSeries.IsEntire.exists_isFiniteFace_newtonPolygon`: a nonzero entire series has a finite
   face of every slope.
+* `PowerSeries.IsEntire.finite_finiteEdges_newtonPolygon_iff`: the Newton polygon of an entire
+  series has finitely many finite unit edges if and only if the series is a polynomial.
+* `PowerSeries.IsEntire.newtonPolygon_ncard_setOf_unitSlope_le_le`: if the Newton polygon of an
+  entire series starts at or below `a`, its height at the number `N` of finite unit edges of slope
+  at most `σ` is at most `a + σ N`.
 * `PowerSeries.IsEntire.finite_setOf_unitSlope_newtonPolygon_le`,
-  `PowerSeries.IsEntire.tendsto_unitSlope_newtonPolygon`: the slopes of an entire series are
-  locally finite, and tend to infinity if there are infinitely many.
+  `PowerSeries.IsEntire.tendsto_unitSlope_newtonPolygon` and
+  `PowerSeries.IsEntire.exists_polynomial_or_tendsto_unitSlope_newtonPolygon`: the slopes of an
+  entire series are locally finite, and an entire series is either a polynomial or has infinitely
+  many finite unit edges with slopes tending to infinity.
 
 ## References
 
@@ -121,6 +130,20 @@ theorem IsEntire.finite_setOf_unitSlope_newtonPolygon_le (hf : f.IsEntire) (c : 
   obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 c
   exact hface.finite_setOf_unitSlope_le (f.isConvexSeq_newtonPolygon v)
 
+/-- **Slopes at most `σ` lie under the line of slope `σ`.** If the Newton polygon of an entire
+series starts at or below `a` and has `N` finite unit edges of slope at most `σ`, its height at `N`
+is at most `a + σ N`. -/
+theorem IsEntire.newtonPolygon_ncard_setOf_unitSlope_le_le (hf : f.IsEntire) (σ : ℝ) {a : ℝ}
+    (ha : f.newtonPolygon v 0 ≤ a) :
+    f.newtonPolygon v {n | n ∈ finiteEdges (f.newtonPolygon v) ∧
+      unitSlope (f.newtonPolygon v) n ≤ σ}.ncard ≤
+      ((a + σ * {n | n ∈ finiteEdges (f.newtonPolygon v) ∧
+        unitSlope (f.newtonPolygon v) n ≤ σ}.ncard : ℝ) : WithTop ℝ) := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp [newtonPolygon_zero] at ha
+  obtain ⟨l, u, hface⟩ := hf.exists_isFiniteFace_newtonPolygon v hb hv hf0 σ
+  exact hface.apply_ncard_setOf_unitSlope_le_le (f.isConvexSeq_newtonPolygon v) ha
+
 /-- If the Newton polygon of an entire series has infinitely many finite unit edges, their
 slopes tend to infinity. -/
 theorem IsEntire.tendsto_unitSlope_newtonPolygon (hf : f.IsEntire)
@@ -138,5 +161,23 @@ theorem IsEntire.tendsto_unitSlope_newtonPolygon (hf : f.IsEntire)
   rw [Nat.cofinite_eq_atTop] at hfin
   filter_upwards [hedges, hfin] with n hn hnc
   exact le_of_not_ge fun hle => hnc ⟨hn, hle⟩
+
+/-- The Newton polygon of an entire series has finitely many finite unit edges if and only if the
+series is a polynomial. -/
+theorem IsEntire.finite_finiteEdges_newtonPolygon_iff (hf : f.IsEntire) :
+    (finiteEdges (f.newtonPolygon v)).Finite ↔ ∃ P : Polynomial K, (P : K⟦X⟧) = f :=
+  PowerSeries.finite_finiteEdges_newtonPolygon_iff (fun _ => v.top_iff.mp)
+    ((isAdmissible_addValuation_coeff_iff_exists_isRestricted f v hb hv).mpr
+      ⟨1, zero_lt_one, hf.isRestricted 1⟩)
+
+/-- **Slope dichotomy for entire series.** An entire power series is either a polynomial or has
+infinitely many finite unit edges whose slopes tend to infinity. -/
+theorem IsEntire.exists_polynomial_or_tendsto_unitSlope_newtonPolygon (hf : f.IsEntire) :
+    (∃ P : Polynomial K, (P : K⟦X⟧) = f) ∨
+      (finiteEdges (f.newtonPolygon v)).Infinite ∧
+        Tendsto (unitSlope (f.newtonPolygon v)) atTop atTop := by
+  rcases Set.finite_or_infinite (finiteEdges (f.newtonPolygon v)) with hfin | hinf
+  · exact Or.inl ((hf.finite_finiteEdges_newtonPolygon_iff v hb hv).mp hfin)
+  · exact Or.inr ⟨hinf, hf.tendsto_unitSlope_newtonPolygon v hb hv hinf⟩
 
 end PowerSeries

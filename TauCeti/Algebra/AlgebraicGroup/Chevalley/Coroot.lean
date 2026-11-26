@@ -6,33 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Basic
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# Simple coroots of a Chevalley datum
+# Coroots of a Chevalley datum
 
-The torus of a Chevalley datum `D` has character lattice `D.weightLattice`, not necessarily the
-full weight lattice. The simple coroot at node `i` is restriction of the functional `μ ↦ μ i`
-to this lattice. Consequently its coordinates in the chosen torus are
-`fun j => s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i`, rather than a single nontrivial
-coordinate in general.
+The coroot of a numbered root restricts to a functional on the actual character lattice
+`D.weightLattice`. We use that functional in the chosen basis to parametrize the coroot in the
+actual torus. This is also the restriction of its full-weight torus parameter; no surjectivity
+of full-weight restriction is needed. At a simple root the functional is the corresponding
+node coordinate, and products of these simple coroots give all restricted full-weight parameters.
 
-This file defines that parameter homomorphism and its values in `D.points A`. It identifies
-those values with the rank-one words `n_i(s) n_i(1)⁻¹` in the numbered positive and negative
-simple root subgroups, over every commutative ring. In particular this identifies the coroot
-normalization without treating the full-weight parametrization as the actual torus.
-
-The rank-one identity is Steinberg's quotient `kostantWeylParam_mul_inv_kostantWeylParam` in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne`, used through its
-matrix-coordinate form `kostantRootSubgroupMatrix_mul_mul_mul_inv` in
-`TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate`.
-The additional content here is its comparison with the coordinates of the datum's own torus.
-`simpleCorootParameter_eq_fullWeightTorusRestriction` identifies the simple coroot with restriction
-of a single full-weight coordinate.
+The rank-one identification with Steinberg's words `n_α(s) n_α(1)⁻¹` is proved in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Root.Weyl`.
 
 ## References
 
-* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 19 and Lemma 28(c).
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemmas 19 and 28(c), and Chapter 6.
 * R. W. Carter, *Simple Groups of Lie Type*, §§6.4 and 7.1.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
@@ -43,76 +33,167 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 
 open _root_.TauCeti.UniversalEnvelopingAlgebra
 
-universe v
+noncomputable section
+
+universe v w
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-noncomputable section
+section AllRoots
 
-/-- The simple coroot at `i`, as a homomorphism into the torus parameters in the chosen basis
-of the actual character lattice. -/
+variable (α : Fin t.numRoots) (A : Type v) [CommRing A]
+
+/-- The coroot of `α` restricted to the actual character lattice, in its chosen basis. -/
+def corootParameter : Aˣ →* (Fin t.rank → Aˣ) :=
+  GeneralLinear.weightDiagonalUnits fun j =>
+    (t.simplyConnectedRootDatum ht).coroot' α (D.weightLatticeBasis j)
+
+/-- The `j`-th torus coordinate is `s` raised to the coroot pairing with the `j`-th basis
+character of the actual weight lattice. -/
+@[simp]
+theorem corootParameter_apply (s : Aˣ) (j : Fin t.rank) :
+    D.corootParameter α A s j =
+      s ^ (t.simplyConnectedRootDatum ht).coroot' α (D.weightLatticeBasis j) :=
+  GeneralLinear.weightDiagonalUnits_apply _ s j
+
+/-- The coroot parameter is the restriction of its full-weight torus parameter. -/
+theorem corootParameter_eq_fullWeightTorusRestriction (s : Aˣ) :
+    D.corootParameter α A s = D.fullWeightTorusRestriction A
+      (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) := by
+  ext j
+  simp only [corootParameter_apply, fullWeightTorusRestriction_apply,
+    torusCharacter_zpow, t.coroot'_simplyConnectedRootDatum_apply ht, dotProduct, mul_comm]
+
+/-- Evaluating an actual lattice character on the coroot gives `s` raised to its native
+pairing with that coroot. -/
+@[simp]
+theorem torusCharacter_corootParameter (s : Aˣ) (μ : D.weightLattice) :
+    torusCharacter (D.corootParameter α A s) (D.weightLatticeBasis.repr μ) =
+      s ^ (t.simplyConnectedRootDatum ht).coroot' α μ := by
+  rw [D.corootParameter_eq_fullWeightTorusRestriction,
+    D.torusCharacter_fullWeightTorusRestriction]
+  simp only [torusCharacter_zpow, t.coroot'_simplyConnectedRootDatum_apply ht,
+    dotProduct, mul_comm]
+
+/-- A weight-basis character on the coroot gives `s` raised to its native coroot pairing. -/
+@[simp]
+theorem torusCharacter_corootParameter_coordinateWeight (s : Aˣ) (j : Fin D.dim) :
+    torusCharacter (D.corootParameter α A s) (D.coordinateWeight j) =
+      s ^ (t.simplyConnectedRootDatum ht).coroot' α (D.weight j) := by
+  rw [coordinateWeight_def]
+  exact D.torusCharacter_corootParameter α A s ⟨_, D.weight_mem_weightLattice j⟩
+
+/-- A root character on the coroot gives `s` raised to the corresponding Cartan integer. -/
+@[simp]
+theorem torusCharacter_corootParameter_coordinateRoot (s : Aˣ) (β : Fin t.numRoots) :
+    torusCharacter (D.corootParameter α A s) (D.coordinateRoot β) =
+      s ^ (t.simplyConnectedRootDatum ht).pairing β α := by
+  rw [coordinateRoot_def, torusCharacter_corootParameter, RootPairing.root_coroot'_eq_pairing]
+
+/-- The parameter of the opposite coroot is the inverse parameter homomorphism. -/
+@[simp]
+theorem corootParameter_reflectionPerm_self :
+    D.corootParameter ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A =
+      (D.corootParameter α A)⁻¹ := by
+  ext s j
+  simp [corootParameter_apply, RootPairing.coroot'_reflectionPerm_self]
+
+/-- The coroot of `α` as a homomorphism into the points of the datum, obtained by evaluating
+its actual torus at `corootParameter`. -/
+def corootPoints : Aˣ →* D.points A :=
+  (D.torusPoints A).comp (D.corootParameter α A)
+
+/-- A coroot point is its specified value in the actual torus. -/
+theorem corootPoints_eq_torusPoints (s : Aˣ) :
+    D.corootPoints α A s = D.torusPoints A (D.corootParameter α A s) := by
+  rw [corootPoints, MonoidHom.comp_apply]
+
+/-- A coroot point is the torus evaluated at the restriction of the full-weight parameter. -/
+theorem corootPoints_apply (s : Aˣ) :
+    D.corootPoints α A s = D.torusPoints A (D.fullWeightTorusRestriction A
+      (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i)) := by
+  rw [corootPoints_eq_torusPoints, corootParameter_eq_fullWeightTorusRestriction]
+
+/-- In the weight basis the coroot is diagonal, with `j`-th entry `s` raised to the native
+pairing of `D.weight j` with the coroot. -/
+@[simp]
+theorem coe_corootPoints (s : Aˣ) :
+    (D.corootPoints α A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
+      diagGL (fun j => s ^ (t.simplyConnectedRootDatum ht).coroot' α (D.weight j)) := by
+  rw [corootPoints_eq_torusPoints, coe_torusPoints, kostantTorusMatrix_apply]
+  simp only [torusCharacter_corootParameter_coordinateWeight]
+
+/-- The value of the opposite coroot is the inverse coroot value. -/
+@[simp]
+theorem corootPoints_reflectionPerm_self (s : Aˣ) :
+    D.corootPoints ((t.simplyConnectedRootDatum ht).reflectionPerm α α) A s =
+      (D.corootPoints α A s)⁻¹ := by
+  simp only [corootPoints_eq_torusPoints, corootParameter_reflectionPerm_self,
+    MonoidHom.inv_apply, map_inv]
+
+/-- Coroot values commute with arbitrary changes of the value ring. -/
+@[simp↓]
+theorem map_corootPoints {A : Type v} {B : Type w} [CommRing A] [CommRing B]
+    (f : A →+* B) (α : Fin t.numRoots) (s : Aˣ) :
+    (D.pointsPresentation A).map (D.pointsPresentation B) f (D.corootPoints α A s) =
+      D.corootPoints α B (Units.map f.toMonoidHom s) := by
+  apply Subtype.ext
+  rw [GeneralLinear.IntegralPointsPresentation.coe_map, coe_corootPoints, coe_corootPoints]
+  simp only [map_diagGL, map_zpow, RingHom.toMonoidHom_eq_coe]
+
+end AllRoots
+
+/-- The parameter of the coroot at the `i`-th simple root. -/
 def simpleCorootParameter (i : Fin t.rank) (A : Type v) [CommRing A] :
     Aˣ →* (Fin t.rank → Aˣ) :=
-  GeneralLinear.weightDiagonalUnits fun j => (D.weightLatticeBasis j : Fin t.rank → ℤ) i
+  D.corootParameter (t.simpleIndex ht i) A
 
+/-- A simple coroot parameter takes the unit to the power given by the node coordinate. -/
 @[simp]
 theorem simpleCorootParameter_apply (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) (j : Fin t.rank) :
-    D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i :=
-  GeneralLinear.weightDiagonalUnits_apply _ s j
+    D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i := by
+  rw [simpleCorootParameter, corootParameter_apply, t.coroot'_simpleIndex_apply ht]
 
-/-- A simple coroot parameter is restriction of a single coordinate of the full-weight torus. -/
+/-- A simple coroot parameter is the restriction of a single coordinate of the full-weight
+torus. -/
 theorem simpleCorootParameter_eq_fullWeightTorusRestriction (i : Fin t.rank)
     (A : Type v) [CommRing A] (s : Aˣ) :
     D.simpleCorootParameter i A s = D.fullWeightTorusRestriction A (Pi.mulSingle i s) := by
   ext j
   simp
 
-/-- Evaluation of any character on a simple coroot is its pairing with that coroot. The
-character is written in the chosen basis of the actual weight lattice. -/
+/-- Evaluating a character on a simple coroot gives `s` raised to its node coordinate. -/
+@[simp]
 theorem torusCharacter_simpleCorootParameter (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) (μ : D.weightLattice) :
     torusCharacter (D.simpleCorootParameter i A s) (D.weightLatticeBasis.repr μ) =
       s ^ (μ : Fin t.rank → ℤ) i := by
-  have hcoord := congrArg (fun ν : D.weightLattice => (ν : Fin t.rank → ℤ) i)
-    (D.weightLatticeBasis.sum_repr μ)
-  simp only [Submodule.coe_sum, Finset.sum_apply, SetLike.val_smul, Pi.smul_apply,
-    smul_eq_mul] at hcoord
-  rw [torusCharacter_def]
-  simp only [simpleCorootParameter_apply, ← zpow_mul]
-  rw [Finset.prod_zpow_eq_zpow_sum]
-  congr 1
-  simpa only [mul_comm] using hcoord
+  rw [simpleCorootParameter, torusCharacter_corootParameter, t.coroot'_simpleIndex_apply ht]
 
-/-- Each weight-basis character takes the expected value on the simple coroot. -/
+/-- Each weight-basis character evaluates to `s` raised to the weight's node coordinate. -/
 @[simp]
 theorem torusCharacter_simpleCorootParameter_coordinateWeight (i : Fin t.rank)
     (A : Type v) [CommRing A] (s : Aˣ) (j : Fin D.dim) :
     torusCharacter (D.simpleCorootParameter i A s) (D.coordinateWeight j) =
       s ^ D.weight j i := by
-  rw [coordinateWeight_def]
-  exact D.torusCharacter_simpleCorootParameter i A s ⟨D.weight j, D.weight_mem_weightLattice j⟩
+  rw [simpleCorootParameter, torusCharacter_corootParameter_coordinateWeight,
+    t.coroot'_simpleIndex_apply ht]
 
-/-- The simple coroot as a homomorphism into the points of the datum, obtained by evaluating
-its actual torus at `simpleCorootParameter`. -/
+/-- The coroot in the points of the datum at the `i`-th simple root. -/
 def simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] : Aˣ →* D.points A :=
-  MonoidHom.codRestrict
-    ((kostantTorusMatrix D.lattice D.basis D.coordinateWeight).comp (D.simpleCorootParameter i A))
-    (D.points A) (fun _ => D.kostantTorusMatrix_mem_points A _)
+  D.corootPoints (t.simpleIndex ht i) A
 
-/-- The simple coroot is a point of the datum's torus with the specified lattice coordinates. -/
-theorem coe_simpleCorootPoints_eq_kostantTorusMatrix (i : Fin t.rank) (A : Type v) [CommRing A]
-    (s : Aˣ) :
-    (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) := by
-  rfl
+/-- At a simple root, the general coroot homomorphism specializes to the simple one. -/
+theorem simpleCorootPoints_eq_corootPoints (i : Fin t.rank) (A : Type v) [CommRing A] :
+    D.simpleCorootPoints i A = D.corootPoints (t.simpleIndex ht i) A := by
+  rw [simpleCorootPoints]
 
 /-- The simple coroot is the actual torus evaluated at its coroot parameter. -/
 theorem simpleCorootPoints_eq_torusPoints (i : Fin t.rank) (A : Type v) [CommRing A]
     (s : Aˣ) :
-    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) := by
-  apply Subtype.ext
-  rw [coe_torusPoints, coe_simpleCorootPoints_eq_kostantTorusMatrix]
+    D.simpleCorootPoints i A s = D.torusPoints A (D.simpleCorootParameter i A s) :=
+  D.corootPoints_eq_torusPoints (t.simpleIndex ht i) A s
 
 /-- A full-weight torus parameter is the product of the corresponding simple coroots in node
 order. This identity holds over every commutative ring, even when restriction does not reach the
@@ -128,13 +209,12 @@ theorem torusPoints_fullWeightTorusRestriction_eq_prod_simpleCorootPoints
   rw [hp, map_list_prod]
   simp only [List.map_ofFn, Function.comp_def, simpleCorootPoints_eq_torusPoints]
 
-/-- On a weight vector, the simple coroot acts by its weight's `i`-th coordinate. -/
+/-- The diagonal entries of the simple coroot are `s` raised to the weights' node coordinates. -/
 @[simp]
 theorem coe_simpleCorootPoints (i : Fin t.rank) (A : Type v) [CommRing A] (s : Aˣ) :
     (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
       diagGL (fun j => s ^ D.weight j i) := by
-  rw [coe_simpleCorootPoints_eq_kostantTorusMatrix, kostantTorusMatrix_apply]
-  simp
+  simp only [simpleCorootPoints_eq_corootPoints, coe_corootPoints, t.coroot'_simpleIndex_apply ht]
 
 /-- The coordinate cocharacter on lattice automorphisms is the simple coroot in the weight
 basis. -/
@@ -145,41 +225,6 @@ theorem basisMatrix_kostantCoordinateCocharacter (i : Fin t.rank) (A : Type v) [
         (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
   rw [kostantCoordinateCocharacter_apply, coe_simpleCorootPoints]
   simp only [basisMatrix_kostantTorusPoints, kostantTorusMatrix_apply, torusCharacter_mulSingle]
-
-/-- Simple coroot values commute with every scalar extension of the value ring. -/
-theorem map_simpleCorootPoints {A : Type v} {B : Type*} [CommRing A] [CommRing B]
-    (f : A →+* B) (i : Fin t.rank) (s : Aˣ) :
-    Matrix.GeneralLinearGroup.map f (D.simpleCorootPoints i A s) =
-      (D.simpleCorootPoints i B (Units.map f.toMonoidHom s) :
-        Matrix.GeneralLinearGroup (Fin D.dim) B) := by
-  apply Matrix.GeneralLinearGroup.ext
-  intro r c
-  simp [coe_simpleCorootPoints, diagGL_apply]
-
-attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance high] Algebra.toModule
-
-/-- The simple coroot value is the rank-one word `n_i(s) n_i(1)⁻¹`. Here `x` denotes the
-existing numbered root-subgroup matrix, with its additive parameter read in `Multiplicative A`.
-This holds over every commutative ring, without requiring that `s` have a square root. -/
-theorem coe_simpleCorootPoints_eq_root_word (i : Fin t.rank) (A : Type v) [CommRing A]
-    (s : Aˣ) :
-    let x := fun k (u : A) => kostantRootSubgroupMatrix (t.lieBasis ht).rootGenerator
-      (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice k
-      (D.isNilpotent_representation_rootGenerator k) D.basis
-      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
-    (D.simpleCorootPoints i A s : Matrix.GeneralLinearGroup (Fin D.dim) A) =
-      x (.inl i) s * x (.inr i) (-((s⁻¹ : Aˣ) : A)) * x (.inl i) s *
-        (x (.inl i) 1 * x (.inr i) (-1) * x (.inl i) 1)⁻¹ := by
-  have h := kostantRootSubgroupMatrix_mul_mul_mul_inv
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator D.basis D.weight
-    D.isCartanWeightVector_basis (D.isSl2Triple_representation_rootGenerator i)
-    (t.lie_lieBasis_h_rootGenerator ht (.inl i))
-    (t.lie_lieBasis_h_rootGenerator_inr_neg ht i) A s 1
-  rw [coe_simpleCorootPoints_eq_kostantTorusMatrix,
-    simpleCorootParameter_eq_fullWeightTorusRestriction, ← kostantTorusMatrix_weight]
-  simpa only [inv_one, mul_one, Units.val_one] using h.symm
 
 end
 

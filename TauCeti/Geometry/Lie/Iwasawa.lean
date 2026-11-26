@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Iwasawa
-public import TauCeti.Geometry.Lie.Subgroup.Unitary
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Diagonal
 public import TauCeti.Geometry.Lie.Subgroup.UpperUnitriangular
 public import TauCeti.Analysis.Matrix.Normed
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.Instances.GeneralLinearGroup
-import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
+import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 import Mathlib.Analysis.InnerProductSpace.PiL2
 

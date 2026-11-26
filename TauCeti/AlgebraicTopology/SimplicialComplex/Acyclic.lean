@@ -19,10 +19,13 @@ face of `K`, has a *cone* `c * v`, the cell with vertex set `c ∪ {v}`, in whic
 vertex. Extending linearly, and sending the cells that cannot be coned off to zero, gives the
 cone operator `TauCeti.OrderedSimplicialChain.cone` over any coefficient semiring, built from the
 cone on a cell `AbstractSimplicialComplex.RealizationCell.cone`. Over a coefficient ring, on chains
-supported on cells that can be coned off it satisfies the cone identities
+supported on the closed cone at `v`, that is, on cells all of whose vertices are at most `v` and to
+which `v` can be adjoined, it satisfies the cone identities
 
 * `∂ (z * v) = ε(z) [v] - z` in degree `0`, where `ε` sums the coefficients;
 * `∂ (z * v) = (∂ z) * v + (-1) ^ (n + 1) z` in degree `n ≥ 1`.
+
+The cells containing `v` have zero cone, and both sides of each identity vanish on them.
 
 If every finite set of vertices admits such a cone vertex, every cycle is supported on finitely
 many vertices and is therefore the boundary of a multiple of its cone: the augmented ordered
@@ -83,34 +86,63 @@ whose vertices are smaller than `v`, and to which `v` can be adjoined, goes to i
 def cone (v : ι) (n : ℕ) : OrderedSimplicialChain K R n →ₗ[R] OrderedSimplicialChain K R (n + 1) :=
   open Classical in
   linearCombination R fun c ↦
-    if h : (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K then single (c.cone v h.1 h.2) 1 else 0
+    if h : (∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K then single (c.cone v h.1 h.2) 1 else 0
 
 variable {R}
 
 /-- The cone operator sends a multiple of a cell that can be coned off at `v` to the same
 multiple of its cone. -/
 @[simp]
-theorem cone_single {v : ι} {n : ℕ} (c : RealizationCell K n) (hlt : ∀ w ∈ c.1.1, w < v)
-    (hK : insert v c.1.1 ∈ K) (a : R) :
+theorem cone_single {v : ι} {n : ℕ} (c : RealizationCell K n) (hlt : ∀ w ∈ c.val.val, w < v)
+    (hK : insert v c.val.val ∈ K) (a : R) :
     cone R v n (single c a) = single (c.cone v hlt hK) a := by
   simp [cone, iff_true_intro hlt, hK]
 
 /-- The cone operator sends a multiple of a cell that cannot be coned off at `v` to `0`. -/
 @[simp]
 theorem cone_single_of_not {v : ι} {n : ℕ} (c : RealizationCell K n)
-    (h : ¬((∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K)) (a : R) :
+    (h : ¬((∀ w ∈ c.val.val, w < v) ∧ insert v c.val.val ∈ K)) (a : R) :
     cone R v n (single c a) = 0 := by
   simp [cone, h]
+
+/-- Every cell in the support of a cone is the cone on a cell of the original chain that can be
+coned off. -/
+theorem exists_eq_cone_of_mem_support_cone {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R n}
+    {d : RealizationCell K (n + 1)} (hd : d ∈ (cone R v n z).support) :
+    ∃ e ∈ z.support, ∃ (hlt : ∀ x ∈ e.val.val, x < v) (hK : insert v e.val.val ∈ K),
+      d = e.cone v hlt hK := by
+  classical
+  rw [← z.sum_single, Finsupp.sum, map_sum] at hd
+  obtain ⟨e, he, hd⟩ := Finsupp.mem_support_finsetSum _ hd
+  by_cases h : (∀ x ∈ e.val.val, x < v) ∧ insert v e.val.val ∈ K
+  · rw [cone_single e h.1 h.2] at hd
+    exact ⟨e, he, h.1, h.2, Finset.mem_singleton.mp (Finsupp.support_single_subset hd)⟩
+  · simp [cone_single_of_not e h] at hd
 
 end Semiring
 
 variable {R : Type v} [Ring R]
 
-/-- **The cone identity in degree `0`.** For a `0`-chain supported on vertices smaller than `v`
-and joined to `v` by an edge, the boundary of its cone is its augmentation times `[v]`, minus the
-chain. -/
+/-- Coning off the boundary of a cell at the last vertex of the cell recovers the cell, with the
+sign of the face opposite that vertex: every other face contains the cone vertex, so its cone
+vanishes. -/
+theorem cone_vertexEmbedding_last_boundary_single {n : ℕ} (c : RealizationCell K (n + 1))
+    (a : R) :
+    cone R (c.vertexEmbedding (Fin.last (n + 1))) n (boundary R n (single c a)) =
+      (-1 : R) ^ (n + 1) • single c a := by
+  rw [boundary_single, Fin.sum_univ_castSucc, map_add, map_sum, Finset.sum_eq_zero, zero_add,
+    map_smul, cone_single _ (fun _ hw ↦ c.lt_of_mem_face_last hw)
+      (by rw [RealizationCell.insert_face_last]; exact c.val.property),
+    RealizationCell.cone_face_last, Fin.val_last]
+  intro j _
+  rw [map_smul, cone_single_of_not _
+    (fun h ↦ (h.1 _ (c.vertexEmbedding_last_mem_face_castSucc j)).false), smul_zero]
+
+/-- **The cone identity in degree `0`.** For a `0`-chain supported on vertices at most `v` and
+joined to `v` by an edge or equal to it, the boundary of its cone is its augmentation times
+`[v]`, minus the chain. -/
 theorem boundary_cone_zero {v : ι} {z : OrderedSimplicialChain K R 0}
-    (hz : ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K) :
+    (hz : ∀ c ∈ z.support, (∀ w ∈ c.val.val, w ≤ v) ∧ insert v c.val.val ∈ K) :
     boundary R 0 (cone R v 0 z) =
       single (RealizationCell.vertex K v) (linearCombination R (fun _ ↦ (1 : R)) z) - z := by
   classical
@@ -119,17 +151,25 @@ theorem boundary_cone_zero {v : ι} {z : OrderedSimplicialChain K R 0}
   simp only [Finsupp.sum, map_sum, linearCombination_single, smul_eq_mul, mul_one,
     Finsupp.single_finsetSum, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
-  obtain ⟨hlt, hK⟩ := hz c hc
+  obtain ⟨hle, hK⟩ := hz c hc
+  by_cases hv : v ∈ c.val.val
+  · -- The cell `c` is the vertex `v` itself, whose cone vanishes.
+    have hc : c = RealizationCell.vertex K v := by
+      have h := c.vertexEmbedding_last_eq hv hle
+      rw [Fin.last_zero] at h
+      rw [c.eq_vertex, h]
+    rw [cone_single_of_not c fun h ↦ (h.1 v hv).false, map_zero, hc, sub_self]
+  have hlt : ∀ w ∈ c.val.val, w < v := fun w hw ↦ (hle w hw).lt_of_ne fun h ↦ hv (h ▸ hw)
   -- Splitting off the last vertex puts the second face in the form of `face_cone_last`.
   rw [cone_single c hlt hK, boundary_single, Fin.sum_univ_castSucc,
     RealizationCell.face_cone_last]
   simp [sub_eq_add_neg]
 
-/-- **The cone identity in positive degrees.** For an `(n + 1)`-chain supported on cells that can
-be coned off at `v`, the boundary of its cone is the cone on its boundary plus
-`(-1) ^ (n + 2)` times the chain. -/
+/-- **The cone identity in positive degrees.** For an `(n + 1)`-chain supported on cells all of
+whose vertices are at most `v` and to which `v` can be adjoined, the boundary of its cone is the
+cone on its boundary plus `(-1) ^ (n + 2)` times the chain. -/
 theorem boundary_cone_succ {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R (n + 1)}
-    (hz : ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K) :
+    (hz : ∀ c ∈ z.support, (∀ w ∈ c.val.val, w ≤ v) ∧ insert v c.val.val ∈ K) :
     boundary R (n + 1) (cone R v (n + 1) z) =
       cone R v n (boundary R n z) + (-1 : R) ^ (n + 2) • z := by
   classical
@@ -137,7 +177,15 @@ theorem boundary_cone_succ {v : ι} {n : ℕ} {z : OrderedSimplicialChain K R (n
   conv_rhs => rw [← z.sum_single]
   simp only [Finsupp.sum, map_sum, Finset.smul_sum, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun c hc ↦ ?_
-  obtain ⟨hlt, hK⟩ := hz c hc
+  obtain ⟨hle, hK⟩ := hz c hc
+  by_cases hv : v ∈ c.val.val
+  · -- The cone vertex is the last vertex of `c`, so `c` has zero cone, and the cone on its
+    -- boundary cancels the second term.
+    obtain rfl := c.vertexEmbedding_last_eq hv hle
+    rw [cone_single_of_not c fun h ↦ (h.1 _ hv).false, map_zero,
+      cone_vertexEmbedding_last_boundary_single, pow_succ _ (n + 1), mul_neg_one, neg_smul,
+      add_neg_cancel]
+  have hlt : ∀ w ∈ c.val.val, w < v := fun w hw ↦ (hle w hw).lt_of_ne fun h ↦ hv (h ▸ hw)
   rw [cone_single c hlt hK, boundary_single, Fin.sum_univ_castSucc, Fin.val_last,
     RealizationCell.face_cone_last, boundary_single, map_sum]
   congr 1
@@ -158,11 +206,11 @@ be coned off at a common vertex. -/
 private theorem exists_cone_vertex_of_cone
     (h : ∀ s : Finset ι, ∃ v, (∀ w ∈ s, w < v) ∧ ∀ σ ∈ K, σ ⊆ s → insert v σ ∈ K) {n : ℕ}
     (z : OrderedSimplicialChain K R n) :
-    ∃ v, ∀ c ∈ z.support, (∀ w ∈ c.1.1, w < v) ∧ insert v c.1.1 ∈ K := by
+    ∃ v, ∀ c ∈ z.support, (∀ w ∈ c.val.val, w ≤ v) ∧ insert v c.val.val ∈ K := by
   classical
-  obtain ⟨v, hlt, hK⟩ := h (z.support.biUnion fun c ↦ c.1.1)
-  exact ⟨v, fun c hc ↦ ⟨fun w hw ↦ hlt w (Finset.mem_biUnion.mpr ⟨c, hc, hw⟩),
-    hK _ c.1.2 (Finset.subset_biUnion_of_mem (fun c ↦ c.1.1) hc)⟩⟩
+  obtain ⟨v, hlt, hK⟩ := h (z.support.biUnion fun c ↦ c.val.val)
+  exact ⟨v, fun c hc ↦ ⟨fun w hw ↦ (hlt w (Finset.mem_biUnion.mpr ⟨c, hc, hw⟩)).le,
+    hK _ c.val.property (Finset.subset_biUnion_of_mem (fun c ↦ c.val.val) hc)⟩⟩
 
 variable {R}
 variable (h : ∀ s : Finset ι, ∃ v, (∀ w ∈ s, w < v) ∧ ∀ σ ∈ K, σ ⊆ s → insert v σ ∈ K)

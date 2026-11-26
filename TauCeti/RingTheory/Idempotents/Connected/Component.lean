@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Connected.LocallyConnected
 public import TauCeti.RingTheory.Spectrum.Prime.Topology
 
+import TauCeti.RingTheory.Idempotents.Connected.Spectrum
 import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
@@ -32,6 +33,8 @@ Tau Ceti already supplies the locally connected instance.
 * `PrimeSpectrum.map_connectedComponentIdeal`: a ring equivalence transports component ideals.
 * `PrimeSpectrum.apply_mem_connectedComponentIdeal_iff`: the corresponding elementwise
   membership equivalence.
+* `PrimeSpectrum.connectedComponentIdeal_comap_le_ker`: a ring homomorphism into a ring with
+  preconnected spectrum kills the component ideal of the pullback of any point.
 * `PrimeSpectrum.primeSpectrumQuotientHomeomorphConnectedComponent`: the spectrum of the quotient
   by that ideal is the selected connected component.
 
@@ -63,13 +66,13 @@ It is the inverse image of the clopen connected component under Mathlib's order 
 between idempotents and clopen subsets of the prime spectrum. -/
 noncomputable def connectedComponentIdempotent (x : PrimeSpectrum R) : R :=
   (isIdempotentElemEquivClopens.symm
-    ⟨connectedComponent x, isClopen_connectedComponent⟩).1
+    ⟨connectedComponent x, isClopen_connectedComponent⟩).val
 
 /-- The element selecting a connected component is idempotent. -/
 theorem isIdempotentElem_connectedComponentIdempotent (x : PrimeSpectrum R) :
     IsIdempotentElem (connectedComponentIdempotent x) :=
   (isIdempotentElemEquivClopens.symm
-    ⟨connectedComponent x, isClopen_connectedComponent⟩).2
+    ⟨connectedComponent x, isClopen_connectedComponent⟩).property
 
 /-- The basic open of the component idempotent is exactly the connected component. -/
 theorem basicOpen_connectedComponentIdempotent (x : PrimeSpectrum R) :
@@ -216,6 +219,22 @@ theorem connectedComponentIdeal_le_asIdeal (x : PrimeSpectrum R) :
   rw [← SetLike.coe_subset_coe, ← mem_zeroLocus,
     zeroLocus_connectedComponentIdeal]
   exact mem_connectedComponent
+
+/-- A ring homomorphism `φ : R → S` into a ring with preconnected prime spectrum kills the ideal
+cutting out the connected component of the pullback of any point `y` of `Spec S`: the image of the
+component idempotent is an idempotent outside `y`, hence one. -/
+theorem connectedComponentIdeal_comap_le_ker [PreconnectedSpace (PrimeSpectrum S)]
+    (φ : R →+* S) (y : PrimeSpectrum S) :
+    connectedComponentIdeal (comap φ y) ≤ RingHom.ker φ := by
+  have hne : φ (connectedComponentIdempotent (comap φ y)) ≠ 0 := fun h ↦
+    connectedComponentIdempotent_notMem_asIdeal (comap φ y) <| by
+      rw [comap_asIdeal, Ideal.mem_comap, h]
+      exact y.asIdeal.zero_mem
+  have he : φ (connectedComponentIdempotent (comap φ y)) = 1 :=
+    ((isIdempotentElem_connectedComponentIdempotent _).map φ
+      ).eq_zero_or_eq_one_of_preconnectedSpace.resolve_left hne
+  rw [connectedComponentIdeal, Ideal.span_le, Set.singleton_subset_iff, SetLike.mem_coe,
+    RingHom.mem_ker, map_sub, map_one, he, sub_self]
 
 /-- **The spectrum of `R / (1 - eₓ)` is homeomorphic to the connected component of `x`.**
 

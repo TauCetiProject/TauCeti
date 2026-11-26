@@ -173,7 +173,7 @@ theorem one_le_integralBasisHouse : 1 ≤ integralBasisHouse K := by
   let i₀ : Fin (finrank ℚ K) := ⟨0, Module.finrank_pos⟩
   have hi₀ : (reducedIntegralBasis K i₀ : K) ≠ 0 :=
     RingOfIntegers.coe_ne_zero_iff.2 ((reducedIntegralBasis K).ne_zero i₀)
-  exact (one_le_house_of_isIntegral (reducedIntegralBasis K i₀).2 hi₀).trans
+  exact (one_le_house_of_isIntegral (reducedIntegralBasis K i₀).property hi₀).trans
     (house_reducedIntegralBasis_le i₀)
 
 /-- `integralBasisHouse K` is positive. -/

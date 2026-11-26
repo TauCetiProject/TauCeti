@@ -7,15 +7,26 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import Mathlib.Topology.Algebra.Module.Equiv.Prod
-import Mathlib.Logic.Equiv.Fin.Basic
+public import TauCeti.LinearAlgebra.Pi
+public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 /-!
 # Splitting and regrouping finite coordinates
 
 Continuous linear equivalences split vectors indexed by `Fin (n + m)` into two blocks,
 split `Fin n` at an index `d ≤ n`, and regroup the initial blocks of a pair of vectors
-before the remaining blocks. The vanishing characterizations identify products of
-coordinate subspaces with a single coordinate subspace, as needed for product charts.
+before the remaining blocks. Reindexing lemmas (`splitCoords_cast`, `splitCoords_cast_fst`,
+`splitCoords_cast_snd`, `splitCoords_symm_cast`) describe how `splitCoords` and its inverse
+interact with `Fin.cast` when block sizes are transported along equalities, and
+`ContinuousLinearEquiv.piCongrLeft_finCongr_apply` reads the coordinates of a vector reindexed
+along an equality of lengths. The vanishing
+characterizations identify products of coordinate subspaces with a single coordinate subspace,
+as needed for product charts.
+
+For a family of operators over `Fin (n + 1)`, splitting off the first coordinate with
+`Fin.consEquivL` turns the product operator `ContinuousLinearMap.piMap T` into the binary product
+of its first factor with the product of the remaining ones
+(`ContinuousLinearMap.consEquivL_symm_comp_piMap`).
 
 The constructions combine Mathlib's `ContinuousLinearEquiv.piCongrLeft`,
 `sumPiEquivProdPi`, and `prodProdProdComm` with finite-index equivalences.
@@ -55,6 +66,39 @@ this before `splitCoords_apply`: with equal block sizes, `simp` would otherwise 
 theorem splitCoords_append (a : Fin n → M) (b : Fin m → M) :
     splitCoords (𝕜 := 𝕜) n m (Fin.append a b) = (a, b) :=
   Prod.ext (funext <| Fin.append_left a b) (funext <| Fin.append_right a b)
+
+/-- Splitting a vector reindexed along `Fin.cast` reindexes both coordinate blocks. -/
+theorem splitCoords_cast {n' m' : ℕ} (hn : n' = n) (hm : m' = m)
+    (x : Fin (n + m) → M) :
+    splitCoords (𝕜 := 𝕜) n' m' (fun k ↦ x (Fin.cast (by rw [hn, hm]) k)) =
+      (fun i ↦ (splitCoords (𝕜 := 𝕜) n m x).1 (Fin.cast hn i),
+        fun j ↦ (splitCoords (𝕜 := 𝕜) n m x).2 (Fin.cast hm j)) := by
+  subst hn hm
+  rfl
+
+/-- The first block of a split reindexed vector is the reindexed first block. -/
+theorem splitCoords_cast_fst {n' m' : ℕ} (hn : n' = n) (h : n' + m' = n + m)
+    (x : Fin (n + m) → M) :
+    (splitCoords (𝕜 := 𝕜) n' m' (fun k ↦ x (Fin.cast h k))).1 =
+      fun i ↦ (splitCoords (𝕜 := 𝕜) n m x).1 (Fin.cast hn i) :=
+  congrArg Prod.fst (splitCoords_cast (𝕜 := 𝕜) hn (by omega) x)
+
+/-- The second block of a split reindexed vector is the reindexed second block. -/
+theorem splitCoords_cast_snd {n' m' : ℕ} (hm : m' = m) (h : n' + m' = n + m)
+    (x : Fin (n + m) → M) :
+    (splitCoords (𝕜 := 𝕜) n' m' (fun k ↦ x (Fin.cast h k))).2 =
+      fun j ↦ (splitCoords (𝕜 := 𝕜) n m x).2 (Fin.cast hm j) :=
+  congrArg Prod.snd (splitCoords_cast (𝕜 := 𝕜) (by omega) hm x)
+
+/-- Rejoining two coordinate blocks reindexed along `Fin.cast` reindexes the concatenated
+vector. -/
+theorem splitCoords_symm_cast {n' m' : ℕ} (hn : n' = n) (hm : m' = m)
+    (a : Fin n → M) (b : Fin m → M) :
+    (splitCoords (𝕜 := 𝕜) n' m').symm
+      (fun i ↦ a (Fin.cast hn i), fun j ↦ b (Fin.cast hm j)) =
+      fun k ↦ (splitCoords (𝕜 := 𝕜) n m).symm (a, b) (Fin.cast (by rw [hn, hm]) k) := by
+  subst hn hm
+  rfl
 
 /-- Split a vector into its first `d` coordinates and its remaining coordinates. -/
 def splitAt (h : d ≤ n) :
@@ -174,3 +218,50 @@ theorem productCoords_vanishing_iff (hd : d ≤ n) (he : e ≤ m)
   exact Prod.mk_eq_zero
 
 end TauCeti
+
+namespace ContinuousLinearMap
+
+variable {R : Type*} [Semiring R] {n : ℕ} {E F : Fin (n + 1) → Type*}
+variable [∀ i, AddCommMonoid (E i)] [∀ i, TopologicalSpace (E i)] [∀ i, Module R (E i)]
+variable [∀ i, AddCommMonoid (F i)] [∀ i, TopologicalSpace (F i)] [∀ i, Module R (F i)]
+
+/-- Splitting off the first coordinate turns a product over `Fin (n + 1)` into the binary product
+of its first factor with the product of the remaining ones. -/
+theorem consEquivL_symm_comp_piMap (T : ∀ i, E i →L[R] F i) :
+    ((Fin.consEquivL R F).symm : (∀ i, F i) →L[R] F 0 × ∀ i : Fin n, F i.succ) ∘L piMap T =
+      ((T 0).prodMap (piMap fun i : Fin n ↦ T i.succ)) ∘L
+        ((Fin.consEquivL R E).symm : (∀ i, E i) →L[R] E 0 × ∀ i : Fin n, E i.succ) := by
+  ext x <;> simp [Fin.tail]
+
+end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 M : Type*} [Semiring 𝕜] [AddCommMonoid M] [Module 𝕜 M] [TopologicalSpace M]
+  {a b : ℕ}
+
+/-- Reindexing coordinates along an equality of lengths reads each coordinate at the cast index.
+Not `@[simp]`: `simp` proves it from `ContinuousLinearEquiv.piCongrLeft_const_apply`. -/
+theorem piCongrLeft_finCongr_apply (h : a = b) (x : Fin a → M) (i : Fin b) :
+    piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x i = x (Fin.cast h.symm i) :=
+  piCongrLeft_const_apply 𝕜 M (finCongr h) x i
+
+/-- The inverse of reindexing coordinates along `h` is reindexing along `h.symm`. -/
+@[simp]
+theorem piCongrLeft_finCongr_symm (h : a = b) :
+    (piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h)).symm =
+      piCongrLeft 𝕜 (fun _ : Fin a ↦ M) (finCongr h.symm) := by
+  subst h
+  rfl
+
+/-- Reindexing coordinates along `h` and then along `h'` is reindexing along `h.trans h'`. -/
+@[simp]
+theorem piCongrLeft_finCongr_piCongrLeft_finCongr {c : ℕ} (h : a = b) (h' : b = c)
+    (x : Fin a → M) :
+    piCongrLeft 𝕜 (fun _ : Fin c ↦ M) (finCongr h')
+        (piCongrLeft 𝕜 (fun _ : Fin b ↦ M) (finCongr h) x) =
+      piCongrLeft 𝕜 (fun _ : Fin c ↦ M) (finCongr (h.trans h')) x := by
+  subst h h'
+  rfl
+
+end ContinuousLinearEquiv

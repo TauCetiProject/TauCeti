@@ -69,7 +69,8 @@ theorem matrixCoefficient_eq_zero_of_mem_dualAnnihilator (W : Submodule R M) {m 
     {φ : Module.Dual R M} (hφ : φ ∈ W.dualAnnihilator) :
     Comodule.matrixCoefficient (R := R) (C := C) φ m = 0 := by
   obtain ⟨t, ht⟩ := hm
-  have hzero : φ ∘ₗ W.subtype = 0 := LinearMap.ext fun w ↦ (mem_dualAnnihilator φ).mp hφ w w.2
+  have hzero : φ ∘ₗ W.subtype = 0 := LinearMap.ext fun w ↦ (mem_dualAnnihilator φ).mp hφ w
+      w.property
   rw [Comodule.matrixCoefficient_def, ← ht, ← LinearMap.comp_apply, ← TensorProduct.map_comp,
     LinearMap.id_comp, hzero, TensorProduct.map_zero_left, LinearMap.zero_apply, map_zero]
 

@@ -59,4 +59,15 @@ theorem abs_sub_le_of_bounded_differences {ι : Type*} [Fintype ι] {β : ι →
     rw [Finset.sum_insert hi, ← sub_add_sub_cancel (f y) (f y'')]
     exact (abs_add_le _ _).trans (add_le_add h1 h2)
 
+/-- A bounded-differences function is constant when the sum of its coordinate bounds is zero. -/
+theorem eq_of_bounded_differences_of_sum_eq_zero {ι : Type*} [Fintype ι] {β : ι → Type*}
+    {α : Type*} [AddCommGroup α] [Lattice α] [AddLeftMono α]
+    (c : ι → α) (f : (∀ i, β i) → α)
+    (hbd : ∀ (i : ι) (x x' : ∀ i, β i), (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
+    (hc : ∑ i, c i = 0) (x x' : ∀ i, β i) : f x = f x' := by
+  have hle : |f x - f x'| ≤ 0 :=
+    (abs_sub_le_of_bounded_differences c f hbd x x').trans_eq hc
+  exact sub_eq_zero.mp
+    (le_antisymm (abs_le'.mp hle).1 (neg_nonpos.mp (abs_le'.mp hle).2))
+
 end TauCeti

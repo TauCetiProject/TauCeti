@@ -34,6 +34,8 @@ order exactly.
 * `profiniteOrder_eq_bot_iff`: a profinite group has order `⊥ = 1` exactly when it is trivial.
 * `profiniteOrder_apply_eq_top_iff`: a prime has infinite exponent exactly when its powers divide
   the orders of finite continuous quotients without bound.
+* `profiniteOrder_apply_eq_zero_iff`: a prime has exponent zero exactly when it divides the order
+  of no finite continuous quotient.
 * `Subgroup.profiniteOrder_eq_iSup_image`: a subgroup's order as the supremum of its
   images in the ambient finite quotients.
 * `Subgroup.profiniteOrder_apply_eq_iSup_image`: the primewise form of this description.
@@ -188,6 +190,16 @@ theorem profiniteOrder_apply_eq_top_iff (p : Nat.Primes) :
     Set.mem_range, exists_exists_eq_and]
   exact ⟨fun h n ↦ (h n).imp fun _ ↦ le_of_lt, fun h n ↦ (h (n + 1)).imp fun _ ↦ id⟩
 
+/-- The exponent of a prime `p` in `profiniteOrder G` is zero exactly when `p` divides the order
+of no finite continuous quotient. -/
+theorem profiniteOrder_apply_eq_zero_iff (p : Nat.Primes) :
+    profiniteOrder G p = 0 ↔
+      ∀ U : OpenNormalSubgroup G, ¬ (p : ℕ) ∣ Nat.card (G ⧸ U.toSubgroup) := by
+  have : Fact (p : ℕ).Prime := ⟨p.prop⟩
+  simp only [profiniteOrder_apply, ENat.iSup_eq_zero, Nat.cast_eq_zero]
+  refine forall_congr' fun U ↦ ?_
+  rw [Nat.padicValNat_def, dvd_iff_multiplicity_ne_zero Nat.card_pos.ne', not_not]
+
 end Profinite
 
 section ClosedSubgroup
@@ -215,10 +227,10 @@ theorem _root_.Subgroup.profiniteOrder_apply_eq_iSup_image (H : Subgroup G) (ℓ
     exact_mod_cast (multiplicity_dvd_iff_le (p := (ℓ : ℕ)) Nat.card_pos.ne').mp
       ((pow_multiplicity_dvd _ _).trans hdvd)
   · refine iSup_le fun N ↦ ?_
-    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtype_val
+    let V := OpenNormalSubgroup.comap N H.subtype continuous_subtypeVal
     refine le_iSup_of_le V ?_
     have hV : V.toSubgroup = N.toSubgroup.comap H.subtype :=
-      OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtype_val
+      OpenNormalSubgroup.toSubgroup_comap N H.subtype continuous_subtypeVal
     rw [← V.toSubgroup.index_eq_card, hV, Subgroup.index_comap_subtype_eq_card_map]
 
 /-- The supernatural order of a subgroup is the supremum of the orders of its images in the

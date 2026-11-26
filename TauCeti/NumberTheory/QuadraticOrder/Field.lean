@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Wentao Li
+Authors: Wentao Li, The Tau Ceti contributors
 -/
 module
 public import TauCeti.NumberTheory.QuadraticOrder.Basic
@@ -19,10 +19,11 @@ For a nonsquare integer `D ≡ 0, 1 mod 4`, the rational quadratic algebra is a 
 The subalgebra `ℤ[(D + √D)/2]` constructed in `QuadraticOrder/Basic` is therefore an actual
 `GlobalNumberFields.NumberFieldOrder`, of discriminant `D`.
 
-This order is maximal exactly when `D` is a fundamental discriminant. For a fundamental
-`D`, the supplier's discriminant/index formula and Stickelberger's congruence force index one.
-If `D` is not fundamental, a proper square factor `D = p²e` with `e ≡ 0, 1 mod 4` supplies
-the integral element `(e + √D/p)/2` outside the order.
+This order is maximal — equivalently, the field discriminant of `QuadraticAlgebra ℚ D 0` equals
+`D` (`QuadraticAlgebra.discr_eq_iff_isFundamentalDiscr`) — exactly when `D` is a fundamental
+discriminant. For a fundamental `D`, the supplier's discriminant/index formula and Stickelberger's
+congruence force index one. If `D` is not fundamental, a proper square factor `D = p²e` with
+`e ≡ 0, 1 mod 4` supplies the integral element `(e + √D/p)/2` outside the order.
 
 ## References
 
@@ -135,6 +136,19 @@ theorem toSubalgebra_eq_integralClosure_iff (D : ℤ) (hD : D % 4 = 0 ∨ D % 4 
     ← GlobalNumberFields.maximalNumberFieldOrder_toSubalgebra]
   exact ⟨GlobalNumberFields.NumberFieldOrder.ext, congrArg _⟩
 
+/-- For a nonsquare integer `D`, the field discriminant of `QuadraticAlgebra ℚ D 0` equals `D` if
+and only if `D` is a fundamental discriminant. -/
+theorem _root_.QuadraticAlgebra.discr_eq_iff_isFundamentalDiscr {D : ℤ} [Fact (¬ IsSquare D)] :
+    NumberField.discr (QuadraticAlgebra ℚ (D : ℚ) 0) = D ↔ Int.IsFundamentalDiscr D := by
+  constructor
+  · intro h
+    have hD : D % 4 = 0 ∨ D % 4 = 1 :=
+      h ▸ TauCeti.NumberField.discr_emod_four_eq_zero_or_one (QuadraticAlgebra ℚ (D : ℚ) 0)
+    exact (numberFieldOrder_eq_maximal_iff D hD).mp <|
+      (numberFieldOrder D hD).discr_eq_discr_iff.mp ((numberFieldOrder_discr D hD).trans h.symm)
+  · intro hfund
+    have hD := hfund.emod_four_eq_zero_or_one
+    exact ((numberFieldOrder D hD).discr_eq_discr_iff.mpr
+      ((numberFieldOrder_eq_maximal_iff D hD).mpr hfund)).symm.trans (numberFieldOrder_discr D hD)
+
 end TauCeti.QuadraticOrder
-
-

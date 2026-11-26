@@ -80,8 +80,7 @@ private def integralCLM : StrongDual ℝ (SobolevH1 I M) :=
 private theorem integralCLM_apply (w : SobolevH1 I M) :
     integralCLM w = ∫ x, toLp w x ∂riemannianVolume I M := by
   rw [integralCLM, ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm,
-    inner_toLp_ofSmooth_right]
-  simp
+    integral_toLp_eq_inner_toLp_ofSmooth_one]
 
 /-- The value of the constant function `1` has integral `Vol(M)`. -/
 private theorem integral_toLp_ofSmooth_one :
@@ -109,7 +108,7 @@ theorem exists_norm_toLp_sq_le :
         ((riemannianVolume I M).real univ)⁻¹ * (∫ x, toLp w x ∂riemannianVolume I M) ^ 2 := by
   obtain ⟨C, hC⟩ := exists_integral_sq_sub_average_le_mul_integral_norm_sq_mgradient
     (I := I) (M := M)
-  refine ⟨C, C.2, fun w ↦ ?_⟩
+  refine ⟨C, C.property, fun w ↦ ?_⟩
   simp only [← integralCLM_apply]
   refine induction_on w (isClosed_le (by fun_prop) (by fun_prop)) fun u ↦ ?_
   set μ := riemannianVolume I M

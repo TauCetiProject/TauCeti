@@ -13,6 +13,7 @@ import Mathlib.GroupTheory.FiniteAbelian.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.GroupTheory.FiniteAbelian.IntegralDual
 
 /-!
 # Finitely generated abelian groups with injective real extension
@@ -85,7 +86,7 @@ theorem finite_setOf_sum_intCast_smul_mem {v : ι → E} (hv : LinearIndependent
     intro a
     simp [φ, b, Basis.equivFun_symm_apply, Basis.span_apply]
   have hs' : Bornology.IsBounded (((↑) : span ℝ (Set.range v) → E) ⁻¹' s) :=
-    isometry_subtype_coe.antilipschitzWith.isBounded_preimage hs
+    isometry_subtypeVal.antilipschitzWith.isBounded_preimage hs
   refine ((ZSpan.setFinite_inter b hs').preimage hφ.injOn).subset fun a ha =>
     Set.mem_preimage.2 ⟨?_, ?_⟩
   · simpa [hφv] using ha
@@ -123,19 +124,13 @@ theorem finite_preimage_of_injective_liftBaseChange (l : H →ₗ[ℤ] E)
     refine (liftBaseChange_injective_iff (l ∘ₗ j) Finsupp.basisSingleOne).1 ?_
     rw [hfac, LinearMap.coe_comp, LinearMap.baseChange_eq_lTensor]
     exact hl.comp (Module.Flat.lTensor_preserves_injective_linearMap j hj)
-  -- The torsion part maps to zero, since `E` is torsion-free.
+  -- The torsion part maps to zero, since `E` is torsion-free, so `l x` is the combination of `v`
+  -- with the free coordinates of `x`.
   have : HasUniqueDiv E := .of_isTorsionFree ℝ E
-  have htors : ∀ t, l (e.symm (0, t)) = 0 := fun t =>
-    (l.toAddMonoidHom.isOfFinAddOrder ((e.symm.toAddMonoidHom.comp
-      (AddMonoidHom.inr _ _)).isOfFinAddOrder (isOfFinAddOrder_of_finite t))).eq_zero'
-  -- So `l x` is the combination of `v` with the free coordinates of `x`.
-  have hlx : ∀ x, l x = ∑ i, ((e x).1 i : ℝ) • v i := by
-    intro x
-    have hx : x = j (e x).1 + e.symm (0, (e x).2) := by
-      simp [j, ← map_add]
-    conv_lhs => rw [hx, map_add, htors, add_zero, ← (e x).1.univ_sum_single]
-    simp only [map_sum, v, Function.comp_apply, Finsupp.coe_basisSingleOne,
-      Int.cast_smul_eq_zsmul, ← map_zsmul, Finsupp.smul_single_one]
+  have hlx : ∀ x, l x = ∑ i, ((e x).1 i : ℝ) • v i := fun x ↦ by
+    have h := l.toAddMonoidHom.apply_eq_sum_zsmul_of_addEquiv e x
+    simp only [LinearMap.toAddMonoidHom_coe] at h
+    simp [h, v, j, Int.cast_smul_eq_zsmul]
   -- An element of the preimage is determined by its free coordinates, of which there are finitely
   -- many choices, and its finitely many possible torsion parts.
   refine (((hv.finite_setOf_sum_intCast_smul_mem hs).prod Set.finite_univ).image
@@ -188,7 +183,7 @@ theorem finite_setOf_forall_abs_apply_le [AddGroup.FG H] (θ : ι → H →+ ℝ
   -- A finite linearly independent subfamily `b` of the `θ i` still spans.
   obtain ⟨b, hbθ, hbspan, hb⟩ := exists_linearIndependent ℝ (range θ)
   have : Fintype b := hb.setFinite.fintype
-  choose c hc using fun f : b ↦ hbθ f.2
+  choose c hc using fun f : b ↦ hbθ f.property
   refine (LinearMap.finite_preimage_of_injective_liftBaseChange _
     (liftBaseChange_pi_injective_of_span_eq_top (fun f : b ↦ (f : H →+ ℝ))
       (by rw [Subtype.range_coe, hbspan, hθ]))

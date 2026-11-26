@@ -11,7 +11,6 @@ public import TauCeti.Algebra.Lie.Current.Topology
 public import TauCeti.Algebra.Lie.Loop.Cocycle
 -- Non-public: used only inside proofs.
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.Algebra.Lie.Killing.Perfect
 
 /-!
 # Continuous cochains on formal currents
@@ -160,7 +159,7 @@ theorem twoCochainOfBilinear_mem_continuousTwoCocycle (Φ : LinearMap.BilinForm 
     twoCochainOfBilinear R L Φ hΦs ∈
       continuousTwoCocycle R (currentAlgebra R L) (TrivialLieModule R (currentAlgebra R L) R) :=
   mem_continuousTwoCocycle_iff.mpr ⟨twoCochainOfBilinear_mem_continuousTwoCochain R L Φ hΦs,
-    twoCocycleOfBilinear_coe R L Φ hΦ hΦs ▸ (twoCocycleOfBilinear R L Φ hΦ hΦs).2⟩
+    twoCocycleOfBilinear_coe R L Φ hΦ hΦs ▸ (twoCocycleOfBilinear R L Φ hΦ hΦs).property⟩
 
 /-- The residue class of an invariant symmetric form `Φ`: the class of the residue cocycle
 `(f ⊗ x, g ⊗ y) ↦ Res(f dg) Φ(x, y)` in the continuous second cohomology of formal currents with
@@ -533,7 +532,7 @@ theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieI
     Function.Surjective (residueClassMap K L Ψ hΨ hΨs (Z := Z)) := by
   intro a
   obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan c.2
+  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan c.property
   refine ⟨z, ?_⟩
   rw [residueClassMap_apply, continuousSecondCohomologyMk_eq_iff]
   exact ⟨-f, neg_mem hf, by

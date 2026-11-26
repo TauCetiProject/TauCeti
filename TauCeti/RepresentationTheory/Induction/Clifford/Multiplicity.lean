@@ -29,8 +29,9 @@ compares two such dimensions for two constituents of the *same* restriction, and
 a transport statement rather than a counting one: it needs no decomposition of the restriction, no
 algebraically closed field and no finiteness, so no such hypothesis is imposed, and the statements
 say only that the dimensions agree.  Whenever `ρ` is irreducible and `V` is finite-dimensional the
-restriction is semisimple (`Representation.isSemisimpleRepresentation_comp_subtype`), so
-there is a decomposition to count there; if in addition `k` splits the constituents, the common
+restriction is semisimple
+(`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`), so there is a
+decomposition to count there; if in addition `k` splits the constituents, the common
 dimension produced below is literally the classical multiplicity `e`.
 
 What makes the transport work is the one identity Clifford theory runs on, `ρ g ∘ ρ n = ρ (g n g⁻¹)
@@ -196,14 +197,14 @@ noncomputable def conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : �
   -- is `Subrepresentation.mem_asSubmodule_iff`, but that lemma cannot be *rewritten* with here: it
   -- states the membership for an element of `V`, and these elements carry the synonym as their
   -- type, so only the definitional identification applies.
-  ⟨asModuleConjEquiv ρ g x.1, h x.1 x.2⟩
+  ⟨asModuleConjEquiv ρ g x.val, h x.val x.property⟩
 
 omit [N.Normal] in
 /-- The underlying vector of a translated vector. -/
 @[simp]
 theorem coe_conjSubrepMap (g : G) (h : ∀ v ∈ σ, ρ g v ∈ τ) (x : σ.asSubmodule) :
     (conjSubrepMap ρ g h x : Representation.asModule (ρ.comp N.subtype))
-      = asModuleConjEquiv ρ g x.1 :=
+      = asModuleConjEquiv ρ g x.val :=
   (rfl)
 
 omit [N.Normal] in
@@ -412,8 +413,8 @@ theorem finrank_linearMap_pos [FiniteDimensional k V] {σ : Subrepresentation (�
 /-- **Clifford's theorem, the common multiplicity.**  For a finite-dimensional irreducible `ρ`
 there is a positive natural number `e` such that the hom space of every irreducible
 `N`-constituent of the restriction has dimension `e`.  The restriction is semisimple
-(`Representation.isSemisimpleRepresentation_comp_subtype`), so over a splitting field this
-`e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
+(`Representation.isSemisimpleRepresentation_comp_subtype_of_isIrreducible`), so over a splitting
+field this `e` is the `e` of the classical decomposition `Res_N W ≅ e · ⨁ᵢ {}^{gᵢ} V`. -/
 theorem exists_forall_finrank_linearMap_eq [ρ.IsIrreducible] [FiniteDimensional k V] :
     ∃ e : ℕ, 0 < e ∧ ∀ σ : Subrepresentation (ρ.comp N.subtype), IsAtom σ →
       Module.finrank k

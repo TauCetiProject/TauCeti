@@ -16,7 +16,10 @@ Additive and conjugate-linear compatibility are separate properties of this data
 none of these interfaces imposes norm, completeness, or positivity assumptions.
 
 Unitary arrows have their dagger as a two-sided inverse. They compose, and define native
-categorical isomorphisms. Endomorphisms inherit the usual algebraic star structures, with
+categorical isomorphisms. Isometries `v`, with `v ≫ dagger v = 𝟙`, that have the same
+range projection `dagger v ≫ v` differ by a unique unitary. A dagger category has unitary
+splittings, `TauCeti.HasUnitarySplittings`, when every self-adjoint idempotent is the range
+projection of an isometry. Endomorphisms inherit the usual algebraic star structures, with
 Mathlib's operator-order multiplication on `CategoryTheory.End`.
 -/
 
@@ -250,6 +253,45 @@ end IsUnitary
   · intro h
     have hd : dagger f = inv f := IsIso.eq_inv_of_hom_inv_id h.hom_dagger_id
     simpa only [hd] using h.dagger
+
+/-- An arrow `u` through which an isometry `v` factors as `u ≫ w = v`, for an isometry `w`, is
+`v ≫ dagger w`. Here `w` is an isometry when `w ≫ dagger w = 𝟙`, that is `w† w = 1`. -/
+theorem eq_comp_dagger_of_comp_eq {u : Y ⟶ Z} {v : Y ⟶ X} {w : Z ⟶ X}
+    (hw : w ≫ dagger w = 𝟙 Z) (h : u ≫ w = v) : u = v ≫ dagger w := by
+  rw [← h, Category.assoc, hw, Category.comp_id]
+
+/-- Isometries `v : Y ⟶ X` and `w : Z ⟶ X` with the same range projection
+`dagger v ≫ v = dagger w ≫ w` differ by the unitary `v ≫ dagger w`; by
+`TauCeti.eq_comp_dagger_of_comp_eq` it is the only arrow `u` with `u ≫ w = v`. -/
+theorem isUnitary_comp_dagger_of_dagger_comp_eq {v : Y ⟶ X} {w : Z ⟶ X}
+    (hv : v ≫ dagger v = 𝟙 Y) (hw : w ≫ dagger w = 𝟙 Z) (h : dagger v ≫ v = dagger w ≫ w) :
+    IsUnitary (v ≫ dagger w) := by
+  constructor
+  · rw [dagger_comp, dagger_dagger, Category.assoc, reassoc_of% h.symm, hv, Category.comp_id, hv]
+  · rw [dagger_comp, dagger_dagger, Category.assoc, reassoc_of% h, hw, Category.comp_id, hw]
+
+/-- Isometries `v : Y ⟶ X` and `w : Z ⟶ X` with the same range projection satisfy
+`(v ≫ dagger w) ≫ w = v`. -/
+@[reassoc] theorem comp_dagger_comp_of_dagger_comp_eq {v : Y ⟶ X} {w : Z ⟶ X}
+    (hv : v ≫ dagger v = 𝟙 Y) (h : dagger v ≫ v = dagger w ≫ w) :
+    (v ≫ dagger w) ≫ w = v := by
+  rw [Category.assoc, ← h, reassoc_of% hv]
+
+variable (C) in
+/-- A dagger category *has unitary splittings* when every self-adjoint idempotent `p : X ⟶ X` has
+a unitary splitting: an isometry `v : Y ⟶ X`, with `v ≫ dagger v = 𝟙 Y`, whose range projection
+`dagger v ≫ v` is `p`. -/
+class HasUnitarySplittings : Prop where
+  /-- Every self-adjoint idempotent is the range projection of an isometry. -/
+  exists_isometry : ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
+    ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p
+
+variable (C) in
+/-- Unfolding `TauCeti.HasUnitarySplittings`. -/
+theorem hasUnitarySplittings_iff : HasUnitarySplittings C ↔
+    ∀ (X : C) (p : X ⟶ X), dagger p = p → p ≫ p = p →
+      ∃ (Y : C) (v : Y ⟶ X), v ≫ dagger v = 𝟙 Y ∧ dagger v ≫ v = p :=
+  ⟨fun h => h.exists_isometry, fun h => ⟨h⟩⟩
 
 end TauCeti
 

@@ -19,6 +19,9 @@ import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Set.Finite.Range
+import TauCeti.Data.List.Forall2
+import TauCeti.GroupTheory.FreeGroup.Basic
+import TauCeti.Logic.Function.Extend
 
 /-!
 # Quadratic words and standard quadratic equations
@@ -59,6 +62,10 @@ where the variables are pairwise distinct and the coefficients `cⱼ` and `d` ar
 Equations without commutators or squares are of type (2), so the non-orientable types have
 positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` are the atoms.
 
+The atoms are words in pairwise disjoint sets of variables, so their values can be prescribed
+independently, and the values of each atom are closed under conjugation: standard equations are
+*separable* and their atoms have *complete spectrum* ([VAR-I], §2).
+
 ## Main definitions
 
 * `TauCeti.GroupAlgGeom.Quadratic.occurrences x w`: the number of occurrences of `x` in `w`.
@@ -87,6 +94,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.isQuadratic_map_iff`,
   `TauCeti.GroupAlgGeom.Quadratic.isStrictlyQuadratic_map_iff`: an injective map transporting
   occurrence counts along a bijection of the variables preserves (strictly) quadratic systems.
+* `TauCeti.GroupAlgGeom.Quadratic.IsQuadratic.image_map`: every change of coefficients
+  `G →* H`, injective or not, keeps a system quadratic.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_isCyclicallyReduced_conj`,
   `TauCeti.GroupAlgGeom.Quadratic.IsStrictlyQuadratic.exists_isCyclicallyReduced_conj`: cyclic
   reduction relative to `G`, and of strictly quadratic words.
@@ -96,7 +105,21 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars`,
   `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_ncard_vars_add_one`: `κ(S)` is the number of
   variables of `S`, plus one when the coefficient `d` occurs; it equals `2 - χ(S)`
-  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`).
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.eulerChar_eq_two_sub_kappa`). When every variable of
+  `X` occurs in `S`, this is the count `κ(S) = |X| + ε(S)` of [IFT], Definition 6
+  (`TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_of_vars_eq_univ`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.kappa_eq_card_add_one_of_vars_eq_univ`).
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_map_eval_atoms_eq`: separability, values that
+  each atom takes at some point are taken by all the atoms at one point.
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.exists_eval_eq_of_mem_atoms_of_isConj`: complete
+  spectrum, the values of an atom are closed under conjugation. This holds for every word in the
+  variables alone (`FreeGroup.exists_lift_eq_of_isConj`) and for every conjugate `z⁻¹ c z` of a
+  coefficient by a variable, whose values are exactly the conjugates of the image of `c`
+  (`TauCeti.GroupAlgGeom.exists_eval_inv_mul_inl_mul_eq_iff_isConj`).
+* `TauCeti.GroupAlgGeom.Quadratic.Standard.isDegenerate_iff_of_genus_eq_zero`,
+  `TauCeti.GroupAlgGeom.Quadratic.Standard.not_isDegenerate_of_genus_eq_zero_of_injective`: a
+  point is degenerate for an equation of genus `0` exactly when a coefficient `cⱼ` is mapped to
+  `1`, so never when the coefficients embed.
 * `TauCeti.GroupAlgGeom.Quadratic.exists_standard_toWord_eq_commutator`: the commutator
   `x⁻¹ y⁻¹ x y` is a standard quadratic word.
 * `TauCeti.GroupAlgGeom.Quadratic.Standard.isCommutative_of_mem_V_genusTwo`: every solution of
@@ -110,7 +133,8 @@ positive genus. The factors `[xᵢ, yᵢ]`, `xᵢ²` and `zⱼ⁻¹ cⱼ zⱼ` a
 * [IFT] O. Kharlampovich, A. Myasnikov, *Implicit function theorem over free groups*, J. Algebra
   290 (2005), §2.2 and §2.7, Definitions 2–6 and Lemma 1.
 * [VAR-I] O. Kharlampovich, A. Myasnikov, *Irreducible affine varieties over a free group. I:
-  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1.
+  Irreducibility of quadratic equations and Nullstellensatz*, J. Algebra 200 (1998), §1 and §2,
+  Definitions 14–16 and the proof of Proposition 5.
 -/
 
 public section
@@ -334,6 +358,18 @@ theorem IsStrictlyQuadratic.isQuadratic {S : Finset (GX G X)} (h : IsStrictlyQua
 
 theorem IsQuadratic.mono {S T : Finset (GX G X)} (hT : IsQuadratic T) (h : S ⊆ T) :
     IsQuadratic S := fun x => (Finset.sum_le_sum_of_subset h).trans (hT x)
+
+/-- A change of coefficients `f : G →* H` keeps a system quadratic: it does not increase the
+number of occurrences of a variable in a word, and identifying words only lowers the counts. -/
+theorem IsQuadratic.image_map [DecidableEq (GX H X)] {S : Finset (GX G X)} (hS : IsQuadratic S)
+    (f : G →* H) : IsQuadratic (S.image (Monoid.Coprod.map f (FreeGroup.map id))) := fun x =>
+  calc ∑ w ∈ S.image (Monoid.Coprod.map f (FreeGroup.map id)), occurrences x w
+      ≤ ∑ w ∈ S, occurrences x (Monoid.Coprod.map f (FreeGroup.map id) w) :=
+        Finset.sum_image_le_of_nonneg fun _ _ => Nat.zero_le _
+    _ ≤ ∑ w ∈ S, occurrences x w := Finset.sum_le_sum fun w _ =>
+        occurrences_map_le _ x x (by simp [occurrences_inl]) (by simp [occurrences_inr_of_self])
+          (fun z hz => by simp [occurrences_inr_of_of_ne hz]) w
+    _ ≤ 2 := hS x
 
 section Map
 
@@ -741,6 +777,18 @@ theorem kappa_eq_ncard_vars (h : S.constant = 1) : S.kappa = S.vars.ncard := by
 theorem kappa_eq_ncard_vars_add_one (h : S.constant ≠ 1) : S.kappa = S.vars.ncard + 1 := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective, two_mul]
 
+/-- A standard quadratic equation without the coefficient `d` in which every variable of `X`
+occurs has `κ(S) = |X|`. -/
+theorem kappa_eq_card_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant = 1) :
+    S.kappa = Nat.card X := by
+  rw [kappa_eq_ncard_vars h, hX, Set.ncard_univ]
+
+/-- A standard quadratic equation with the coefficient `d` in which every variable of `X` occurs
+has `κ(S) = |X| + 1`. -/
+theorem kappa_eq_card_add_one_of_vars_eq_univ (hX : S.vars = Set.univ) (h : S.constant ≠ 1) :
+    S.kappa = Nat.card X + 1 := by
+  rw [kappa_eq_ncard_vars_add_one h, hX, Set.ncard_univ]
+
 /-- An orientable standard quadratic equation of genus `n` with `r` atoms has `n + r`
 variables. -/
 theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
@@ -751,6 +799,22 @@ theorem ncard_vars_of_isOrientable (h : S.IsOrientable) :
 theorem ncard_vars_of_not_isOrientable (h : ¬S.IsOrientable) : S.vars.ncard = S.atomicRank := by
   cases S <;> simp_all [-Set.Sum.elim_range, Set.ncard_range_of_injective]
 
+/-- An orientable standard quadratic equation without the constant `d` is of type (1),
+`∏ᵢ₌₁ⁿ [xᵢ, yᵢ] = 1`. -/
+theorem exists_eq_orientable_of_isOrientable (ho : S.IsOrientable) (hc : S.constant = 1) :
+    ∃ n hn x y inj, S = orientable n hn x y inj := by
+  cases S with
+  | orientable n hn x y inj => exact ⟨n, hn, x, y, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
+/-- A non-orientable standard quadratic equation without the constant `d` is of type (3),
+`∏ᵢ₌₁ⁿ xᵢ² = 1`. -/
+theorem exists_eq_nonorientable_of_not_isOrientable (ho : ¬S.IsOrientable)
+    (hc : S.constant = 1) : ∃ n hn x inj, S = nonorientable n hn x inj := by
+  cases S with
+  | nonorientable n hn x inj => exact ⟨n, hn, x, inj, rfl⟩
+  | _ => simp_all [IsOrientable]
+
 /-- The Euler characteristic of a standard quadratic equation is `2 - κ(S)`. -/
 theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kappa := by
   cases S <;> simp <;> lia
@@ -758,6 +822,21 @@ theorem eulerChar_eq_two_sub_kappa (S : Standard G X) : S.eulerChar = 2 - S.kapp
 /-- A standard quadratic equation with `κ(S) ≥ 4` has at least two atoms. -/
 theorem two_le_atomicRank_of_four_le_kappa (h : 4 ≤ S.kappa) : 2 ≤ S.atomicRank := by
   cases S <;> simp_all <;> lia
+
+/-- The value of `r₁ ⋯ r_k d` at a point is the product of the values of the atoms `rᵢ` and of the
+constant `d` (which is `1` for the types without coefficients). -/
+-- Low priority: the closed forms of the four types of equation (`eval_toWord_orientable` and its
+-- analogues in `Quadratic/Surface.lean`) and of restrictions are tried first.
+@[simp low]
+theorem eval_toWord (S : Standard G X) (ι : G →* H) (v : X → H) :
+    eval ι v S.toWord = (S.atoms.map (eval ι v)).prod * ι S.constant := by
+  simp [toWord_def, map_list_prod]
+
+/-- A point is a solution of `r₁ ⋯ r_k d = 1` exactly when the product of the values of the atoms
+is the inverse of the value of `d`. -/
+theorem mem_V_toWord_iff {ι : G →* H} {v : X → H} :
+    v ∈ V ι {S.toWord} ↔ (S.atoms.map (eval ι v)).prod * ι S.constant = 1 := by
+  rw [mem_V, Set.forall_mem_singleton, eval_toWord]
 
 /-- The values of the atoms of a standard quadratic equation depend only on the values of its
 coefficients and of its variables. -/
@@ -770,12 +849,85 @@ theorem map_eval_atoms_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g �
 and of its variables. -/
 theorem eval_toWord_congr {ι ι' : G →* H} {v v' : X → H} (hι : ∀ g ∈ S.coeffs, ι g = ι' g)
     (hv : ∀ x ∈ S.vars, v x = v' x) : eval ι v S.toWord = eval ι' v' S.toWord := by
-  simp only [toWord_def, map_mul, map_list_prod, map_eval_atoms_congr hι hv, eval_inl]
+  rw [eval_toWord, eval_toWord, map_eval_atoms_congr hι hv]
   by_cases h : S.constant = 1
   · simp [h]
   · rw [hι _ (constant_mem_coeffs_iff.2 h)]
 
 end Kappa
+
+/-! ### Separability and complete spectrum -/
+
+section Atoms
+
+variable {S : Standard G X} {ι : G →* H}
+
+-- Values of the words `F i` can be prescribed independently when, along an injective `e`, each
+-- `F i` depends only on the variables `e a` with `p a = i`.
+private theorem exists_map_eval_ofFn_eq {k : ℕ} {K : Type*} {e : K → X} (he : e.Injective)
+    (p : K → Fin k) {F : Fin k → GX G X}
+    (hF : ∀ i, DependsOn (fun v : X → H => eval ι v (F i)) (e '' (p ⁻¹' {i})))
+    {l : List H} (h : List.Forall₂ (fun r a => ∃ v : X → H, eval ι v r = a) (List.ofFn F) l) :
+    ∃ v : X → H, (List.ofFn F).map (eval ι v) = l := by
+  obtain ⟨a, ha, rfl⟩ := List.forall₂_ofFn_left_iff.1 h
+  choose V hV using ha
+  refine ⟨Function.extend e (fun a => V (p a) (e a)) 1, ?_⟩
+  rw [List.map_ofFn, List.ofFn_inj]
+  funext i
+  exact ((he.factorsThrough _).apply_extend_eq_apply 1 (hF i)).trans (hV i)
+
+/-- **Separability.** The atoms of a standard quadratic equation are words in pairwise disjoint
+sets of variables, so values that each atom takes at some point are taken by all the atoms at one
+point. -/
+theorem exists_map_eval_atoms_eq {l : List H}
+    (h : List.Forall₂ (fun r a => ∃ v : X → H, eval ι v r = a) S.atoms l) :
+    ∃ v : X → H, S.atoms.map (eval ι v) = l := by
+  cases S with
+  | orientable n hn x y inj =>
+    rw [atoms_orientable] at h ⊢
+    refine exists_map_eval_ofFn_eq inj (Sum.elim id id) (fun i v w hvw => ?_) h
+    simp_all [map_commutatorElement]
+  | orientableCoeff n m hnm x y z inj c hc d hd =>
+    rw [atoms_orientableCoeff, ← List.ofFn_fin_append] at h ⊢
+    refine exists_map_eval_ofFn_eq inj
+      (Sum.elim (Sum.elim (Fin.castAdd m) (Fin.castAdd m)) (Fin.natAdd n)) (fun i v w hvw => ?_) h
+    induction i using Fin.addCases <;> simp_all [Sum.forall, map_commutatorElement]
+  | nonorientable n hn x inj =>
+    rw [atoms_nonorientable] at h ⊢
+    refine exists_map_eval_ofFn_eq inj id (fun i v w hvw => ?_) h
+    simp_all
+  | nonorientableCoeff n m hn x z inj c hc d hd =>
+    rw [atoms_nonorientableCoeff, ← List.ofFn_fin_append] at h ⊢
+    refine exists_map_eval_ofFn_eq inj (Sum.elim (Fin.castAdd m) (Fin.natAdd n))
+      (fun i v w hvw => ?_) h
+    induction i using Fin.addCases <;> simp_all
+
+-- Each atom is a word in the variables alone, a commutator or a square, or the conjugate
+-- `z⁻¹ c z` of a coefficient.
+private theorem exists_inr_eq_or_exists_conj_eq_of_mem_atoms :
+    ∀ r ∈ S.atoms, (∃ w : FreeGroup X, inr w = r) ∨
+      ∃ (z : X) (c : G), (inr (FreeGroup.of z))⁻¹ * inl c * inr (FreeGroup.of z) = r := by
+  have hcomm (a b : X) : (inr ⁅(FreeGroup.of a)⁻¹, (FreeGroup.of b)⁻¹⁆ : GX G X) =
+      ⁅(inr (FreeGroup.of a) : GX G X)⁻¹, (inr (FreeGroup.of b))⁻¹⁆ := by
+    simp [map_commutatorElement]
+  cases S <;> simp only [atoms_orientable, atoms_orientableCoeff, atoms_nonorientable,
+    atoms_nonorientableCoeff, List.forall_mem_append, List.forall_mem_ofFn_iff]
+  · exact fun i => .inl ⟨_, hcomm ..⟩
+  · exact ⟨fun i => .inl ⟨_, hcomm ..⟩, fun j => .inr ⟨_, _, rfl⟩⟩
+  · exact fun i => .inl ⟨_, map_pow ..⟩
+  · exact ⟨fun i => .inl ⟨_, map_pow ..⟩, fun j => .inr ⟨_, _, rfl⟩⟩
+
+/-- **Complete spectrum.** The values of an atom of a standard quadratic equation are closed under
+conjugation. -/
+theorem exists_eval_eq_of_mem_atoms_of_isConj {r : GX G X} (hr : r ∈ S.atoms) (v : X → H) {a : H}
+    (ha : IsConj (eval ι v r) a) : ∃ w : X → H, eval ι w r = a := by
+  obtain ⟨u, rfl⟩ | ⟨z, c, rfl⟩ := exists_inr_eq_or_exists_conj_eq_of_mem_atoms r hr
+  · rw [eval_inr] at ha
+    simpa only [eval_inr] using FreeGroup.exists_lift_eq_of_isConj v ha
+  · exact exists_eval_inv_mul_inl_mul_eq_iff_isConj.2
+      ((exists_eval_inv_mul_inl_mul_eq_iff_isConj.1 ⟨v, rfl⟩).trans ha)
+
+end Atoms
 
 /-! ### Standard equations are quadratic -/
 
@@ -892,6 +1044,22 @@ theorem isGeneralPosition_iff :
 
 variable {S ι v}
 
+/-- A standard quadratic equation of genus `0` is `∏ⱼ zⱼ⁻¹ cⱼ zⱼ d = 1`, so a point is degenerate
+for it exactly when some coefficient `cⱼ` is mapped to `1`. -/
+theorem isDegenerate_iff_of_genus_eq_zero (hg : S.genus = 0) :
+    S.IsDegenerate ι v ↔ ∃ c ∈ S.coeffs.tail, ι c = 1 := by
+  cases S <;> simp only [genus_orientable, genus_orientableCoeff, genus_nonorientable,
+    genus_nonorientableCoeff] at hg <;> subst hg <;>
+    simp_all [isDegenerate_iff, List.mem_ofFn, mul_assoc, inv_mul_eq_one]
+
+/-- When the coefficients embed into `H`, a standard quadratic equation of genus `0` has no
+degenerate point, since its atoms are conjugates of the nontrivial coefficients `cⱼ`. -/
+theorem not_isDegenerate_of_genus_eq_zero_of_injective (hg : S.genus = 0)
+    (hι : Function.Injective ι) : ¬S.IsDegenerate ι v := by
+  rw [isDegenerate_iff_of_genus_eq_zero hg]
+  rintro ⟨c, hc, h⟩
+  exact ne_one_of_mem_coeffs (List.mem_of_mem_tail hc) ((map_eq_one_iff ι hι).1 h)
+
 /-- With at least two atoms, a point in general position is not commutative. -/
 theorem IsGeneralPosition.not_isCommutative (h : S.IsGeneralPosition ι v)
     (hS : 2 ≤ S.atomicRank) : ¬S.IsCommutative ι v := by
@@ -928,8 +1096,7 @@ variable {n : ℕ} {x y : Fin n → X}
 theorem mem_V_orientable_of_commute (ι : G →* H) (hn : 0 < n) (inj : (Sum.elim x y).Injective)
     {v : X → H} (hv : ∀ i, Commute (v (x i)) (v (y i))) :
     v ∈ V ι {(orientable n hn x y inj).toWord} := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_one,
-    mul_one, map_list_prod, atoms_orientable]
+  rw [mem_V_toWord_iff, constant_orientable, map_one, mul_one]
   exact List.prod_eq_one <| by
     simp [map_commutatorElement, commutatorElement_eq_one_iff_commute, hv]
 
@@ -956,14 +1123,12 @@ its two atoms are inverse to each other. -/
 theorem isCommutative_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x y : Fin 2 → X}
     (inj : (Sum.elim x y).Injective) (hv : v ∈ V ι {(orientable 2 two_pos x y inj).toWord}) :
     (orientable 2 two_pos x y inj).IsCommutative ι v := by
-  simp only [mem_V, Set.mem_singleton_iff, forall_eq, toWord_def, constant_orientable, map_mul,
-    map_one, mul_one, atoms_orientable, List.ofFn_succ, List.ofFn_zero, List.prod_cons,
-    List.prod_nil] at hv
+  rw [mem_V_toWord_iff, constant_orientable, map_one, mul_one] at hv
   rw [isCommutative_iff]
   simp only [atoms_orientable, List.ofFn_succ, List.ofFn_zero, List.map_cons, List.map_nil,
-    List.isChain_cons_cons, List.isChain_singleton, and_true]
-  rw [mul_eq_one_iff_eq_inv] at hv
-  rw [hv]
+    List.prod_cons, List.prod_nil, mul_one, List.isChain_cons_cons, List.isChain_singleton,
+    and_true] at hv ⊢
+  rw [mul_eq_one_iff_eq_inv.1 hv]
   exact (Commute.refl _).inv_left
 
 /-- The genus-two equation `[x₁, y₁][x₂, y₂] = 1` has no solution in general position. -/
@@ -973,6 +1138,21 @@ theorem not_isGeneralPosition_of_mem_V_genusTwo {ι : G →* H} {v : X → H} {x
   h.not_isCommutative (by simp) (isCommutative_of_mem_V_genusTwo inj hv)
 
 end Commutators
+
+/-! ### The value at the trivial point -/
+
+/- The priority `high` makes this formula fire before the evaluation formulas at a general point,
+`eval_toWord_orientable` and its analogues in `Quadratic.Surface`, which would rewrite the value at
+the trivial point into a surface word. -/
+
+/-- The value of a standard quadratic equation `r₁ ⋯ r_k d = 1` at the trivial point is the product
+`(∏ⱼ₌₁ᵐ cⱼ) d` of its coefficients, mapped to `H`, where `c₁, …, c_m` are the coefficients of its
+conjugate atoms `zⱼ⁻¹ cⱼ zⱼ`. It is `1` for the types (1) and (3), which have no coefficients. -/
+@[simp high]
+theorem eval_one_toWord (ι : G →* H) (S : Standard G X) :
+    eval ι 1 S.toWord = ι (S.coeffs.tail.prod * S.constant) := by
+  cases S <;>
+    simp [toWord_def, map_list_prod, List.map_ofFn, Function.comp_def, map_commutatorElement]
 
 end Standard
 
@@ -1073,10 +1253,10 @@ theorem isGeneralPosition_genusThree :
     v ∈ V (.id _) {S.toWord} ∧ S.IsGeneralPosition (.id _) v := by
   intro S v
   refine ⟨?_, ?_⟩
-  · simp only [S, v, mem_V, Set.mem_singleton_iff, forall_eq, Standard.toWord_def,
-      Standard.atoms_orientable, Standard.constant_orientable, List.ofFn_succ, List.ofFn_zero,
-      List.prod_cons, List.prod_nil, _root_.map_mul, _root_.map_one, map_commutatorElement,
-      _root_.map_inv, eval_inr, FreeGroup.lift_apply_of, mul_one]
+  · simp only [S, v, Standard.mem_V_toWord_iff, Standard.atoms_orientable,
+      Standard.constant_orientable, List.ofFn_succ, List.ofFn_zero, List.map_cons, List.map_nil,
+      List.prod_cons, List.prod_nil, _root_.map_one, map_commutatorElement, _root_.map_inv,
+      eval_inr, FreeGroup.lift_apply_of, mul_one]
     decide
   · simp only [S, v, Standard.isGeneralPosition_iff, Standard.atoms_orientable, List.ofFn_succ,
       List.ofFn_zero, List.map_cons, List.map_nil, List.isChain_cons_cons, List.isChain_singleton,
@@ -1096,10 +1276,10 @@ theorem isGeneralPosition_conjugates :
       1 ∈ V (.id _) {S.toWord} ∧ S.IsGeneralPosition (.id _) 1 := by
   intro S
   refine ⟨by simp [S], by simp [S], by simp [S], by simp [S], ?_, ?_⟩
-  · simp only [S, mem_V, Set.mem_singleton_iff, forall_eq, Standard.toWord_def,
-      Standard.atoms_orientableCoeff, Standard.constant_orientableCoeff, List.ofFn_succ,
-      List.ofFn_zero, List.nil_append, List.prod_cons, List.prod_nil, _root_.map_mul,
-      _root_.map_inv, eval_inr, eval_inl, mul_one]
+  · simp only [S, Standard.mem_V_toWord_iff, Standard.atoms_orientableCoeff,
+      Standard.constant_orientableCoeff, List.ofFn_succ, List.ofFn_zero, List.nil_append,
+      List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, _root_.map_mul, _root_.map_inv,
+      eval_inr, eval_inl, mul_one]
     decide
   · simp only [S, Standard.isGeneralPosition_iff, Standard.atoms_orientableCoeff, List.ofFn_succ,
       List.ofFn_zero, List.nil_append, List.map_cons, List.map_nil, List.isChain_cons_cons,

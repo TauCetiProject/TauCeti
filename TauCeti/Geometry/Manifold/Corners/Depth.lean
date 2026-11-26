@@ -64,6 +64,10 @@ along `Sᵏ⁻¹ × Sⁿ⁻ᵏ⁻¹`, and `M × [0, 1]` along `∂M × {0, 1}`.
 * `ModelWithCorners.depthAt_eq_natCard_of_range_eq`: for a model whose range is cut out by the
   nonnegativity of some coordinates, the depth counts the vanishing ones among them.
 * `ModelWithCorners.depthAt_extend_eq_depth`: the depth does not depend on the chart.
+* `ModelWithCorners.depth_modelWithCornersEuclideanQuadrant`: on a manifold modelled on the
+  quadrant, the depth of a point counts the vanishing coordinates of its image in any chart.
+* `ModelWithCorners.depth_eq_card_filter_chartAt`: the same count in a preferred chart, as the
+  cardinality of a finset.
 * `MDifferentiableAt.finrank_sub_depth_le`: a map with injective differential does not decrease
   the dimension of the largest linear subspace in the cone.
 * `IsLocalDiffeomorphAt.depth_eq`, `Diffeomorph.depth_eq`: (local) diffeomorphisms preserve the
@@ -314,7 +318,7 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
     LinearMap.pi fun j ↦ (EuclideanSpace.proj (j : ι) : EuclideanSpace ℝ ι →L[ℝ] ℝ)
   have hπ : Surjective π := fun w ↦
     ⟨(EuclideanSpace.equiv ι ℝ).symm fun i ↦ if h : i ∈ S ∧ y i = 0 then w ⟨i, h⟩ else 0, by
-      ext j; simp [π, j.2]⟩
+      ext j; simp [π, j.property]⟩
   have hK : finrank ℝ (LinearMap.ker π) + Nat.card {i // i ∈ S ∧ y i = 0} =
       finrank ℝ (EuclideanSpace ℝ ι) := by
     rw [← LinearMap.finrank_range_add_finrank_ker π, LinearMap.range_eq_top.mpr hπ,
@@ -350,8 +354,8 @@ theorem depthAt_eq_natCard_of_range_eq (hJ : range J = {z | ∀ i ∈ S, 0 ≤ z
   · -- A subspace in the cone contains `-v` with `v`, so it vanishes on those coordinates.
     have hVK : V ≤ LinearMap.ker π := fun v hv ↦ by
       refine LinearMap.mem_ker.mpr (funext fun j ↦ ?_)
-      have h₁ := hcone (hV hv) j.2.1 j.2.2
-      have h₂ := hcone (hV (V.neg_mem hv)) j.2.1 j.2.2
+      have h₁ := hcone (hV hv) j.property.1 j.property.2
+      have h₂ := hcone (hV (V.neg_mem hv)) j.property.1 j.property.2
       simp only [PiLp.neg_apply] at h₂
       simp [π]
       linarith
@@ -374,8 +378,9 @@ theorem depthAt_modelWithCornersEuclideanHalfSpace {n : ℕ} [NeZero n]
     (𝓡∂ n).depthAt y = if y 0 = 0 then 1 else 0 := by
   rw [depthAt_eq_natCard_of_range_eq (range_modelWithCornersEuclideanHalfSpace_eq n) hy]
   split_ifs with h
-  · exact Nat.card_eq_one_iff_exists.mpr ⟨⟨0, rfl, h⟩, fun j ↦ Subtype.ext j.2.1⟩
-  · have : IsEmpty {i // i ∈ ({0} : Set (Fin n)) ∧ y i = 0} := ⟨fun j ↦ h (j.2.1 ▸ j.2.2)⟩
+  · exact Nat.card_eq_one_iff_exists.mpr ⟨⟨0, rfl, h⟩, fun j ↦ Subtype.ext j.property.1⟩
+  · have : IsEmpty {i // i ∈ ({0} : Set (Fin n)) ∧ y i = 0} := ⟨fun j ↦ h
+      (j.property.1 ▸ j.property.2)⟩
     exact Nat.card_of_isEmpty
 
 end Coordinates
@@ -456,6 +461,33 @@ theorem depthAt_extend_eq_depth (hn : n ≠ 0) {e : OpenPartialHomeomorph M H}
   omega
 
 end Manifold
+
+section Quadrant
+
+variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanQuadrant n) M]
+  {r : WithTop ℕ∞} [IsManifold (𝓡c n) r M]
+
+/-- On a `C^r` manifold modelled on the quadrant `𝓡c n`, `r ≠ 0`, the depth of a point is the
+number of vanishing coordinates of its image in any chart of the maximal atlas. -/
+theorem depth_modelWithCornersEuclideanQuadrant (hr : r ≠ 0)
+    {e : OpenPartialHomeomorph M (EuclideanQuadrant n)}
+    (he : e ∈ IsManifold.maximalAtlas (𝓡c n) r M) {x : M} (hx : x ∈ e.source) :
+    (𝓡c n).depth x = Nat.card {i // (e x).val i = 0} := by
+  rw [← depthAt_extend_eq_depth hr he hx, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
+    depthAt_modelWithCornersEuclideanQuadrant (mem_range_self _),
+    modelWithCornersEuclideanQuadrant_apply]
+
+open scoped Finset in
+/-- On a `C^r` manifold modelled on the quadrant `𝓡c n`, `r ≠ 0`, the depth of a point `y` of the
+source of the preferred chart at `x` is the number of vanishing coordinates of its image in that
+chart. -/
+theorem depth_eq_card_filter_chartAt (hr : r ≠ 0) {x y : M}
+    (hy : y ∈ (chartAt (EuclideanQuadrant n) x).source) :
+    (𝓡c n).depth y = #{i | (chartAt (EuclideanQuadrant n) x y).val i = 0} := by
+  rw [depth_modelWithCornersEuclideanQuadrant hr (IsManifold.chart_mem_maximalAtlas x) hy,
+    Nat.card_eq_fintype_card, Fintype.card_subtype]
+
+end Quadrant
 
 section HalfSpace
 

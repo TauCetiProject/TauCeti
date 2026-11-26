@@ -287,7 +287,7 @@ stored triples represent each isomorphism class of the passport exactly once. -/
 theorem exists_mem_triples_equivalent_cyclicFivePassportRecord {s : ConnectedTriple 5}
     (hs : PassportSpec.HasPassport s
       (ConnectedTriple.passportOf ⟨cyclicPowTriple 5 1, isConnected_cyclicPowTriple (by decide)⟩)) :
-    ∃ s' ∈ cyclicFivePassportRecord.triples, s.1.Equivalent s' := by
+    ∃ s' ∈ cyclicFivePassportRecord.triples, s.val.Equivalent s' := by
   have hmem : ConnectedIsoClass.mk s ∈ (PassportSpec.cyclicTotallyRamified 5).classSet := by
     rw [PassportSpec.mem_classSet, ConnectedIsoClass.hasPassport_mk,
       ← passportOf_cyclicPowTriple_five_one]
@@ -465,7 +465,7 @@ theorem isPrimitivizationOf_torusPassportRecord :
     ⟨torusTriple.blockQuotient _ e, torusTriple.isConnected_blockQuotient _ e⟩
   -- The quotient is the double cover branched over `0` and `1` computed in
   -- `blockQuotient_torusTriple`, once the stored block is identified with `{0, 2}`.
-  have hQ : Q.1.cycleData = ({2}, {2}, {1, 1}) := by
+  have hQ : Q.val.cycleData = ({2}, {2}, {1, 1}) := by
     have key : ∀ (B : Set (Fin 4)) (_ : B = {0, 2})
         (e : orbit torusTriple.monodromyGroup B ≃ Fin 2),
         torusTriple.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
@@ -575,7 +575,7 @@ theorem geometryType_genusOneHyperbolicTriple :
 `torusTriple` and `genusOneHyperbolicTriple` both have genus one, but the first is Euclidean
 and the second hyperbolic. -/
 theorem not_exists_geometryType_eq_comp_genus :
-    ¬ ∃ f : ℕ → GeometryType, ∀ t : ConnectedTriple 4, t.1.geometryType = f t.1.genus := by
+    ¬ ∃ f : ℕ → GeometryType, ∀ t : ConnectedTriple 4, t.val.geometryType = f t.val.genus := by
   rintro ⟨f, hf⟩
   have hE := hf ⟨torusTriple, isConnected_torusTriple⟩
   have hH := hf ⟨genusOneHyperbolicTriple, isConnected_genusOneHyperbolicTriple⟩

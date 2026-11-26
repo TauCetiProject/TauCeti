@@ -134,7 +134,7 @@ theorem HasLaw.pgf_eq {X : Ω → ℕ} {ν : Measure ℕ} (hX : HasLaw X ν μ) 
 function of the real-valued cast of the random variable. -/
 theorem pgf_exp (X : Ω → ℕ) (μ : Measure Ω) (t : ℝ) :
     pgf X μ (Real.exp t) = mgf (fun ω => (X ω : ℝ)) μ t := by
-  simp only [pgf_def, mgf, ← Real.exp_nat_mul]
+  simp only [pgf_def, mgf, ← Real.exp_natCast_mul]
   congr 1
   funext ω
   rw [Nat.cast_comm, mul_comm]
@@ -329,7 +329,7 @@ theorem hasFPowerSeriesOnBall_pgf_of_integrable_exp_mul_natCast {ν : Measure �
       (ENNReal.ofReal (Real.exp t)) := by
   let p := ofScalars ℝ fun k => ν.real {k}
   have hexp (k : ℕ) : Real.exp (t * (k : ℝ)) = Real.exp t ^ k := by
-    rw [mul_comm t, Real.exp_nat_mul]
+    rw [mul_comm t, Real.exp_natCast_mul]
   have hsum_exp : Summable (fun k : ℕ => ν.real {k} * ‖Real.exp (t * (k : ℝ))‖) :=
     summable_measureReal_mul_norm_of_integrable hExp
   have hp_radius : ENNReal.ofReal (Real.exp t) ≤ p.radius := by

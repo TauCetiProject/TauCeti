@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
+import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Torsion
 
 /-!
@@ -16,7 +17,8 @@ import TauCeti.LinearAlgebra.TensorProduct.Torsion
 Let `B` be a `ℤ`-valued bilinear form on an abelian group `H`, and let `v, t ∈ H` be a hyperbolic
 pair, `B v v = B t t = 0` and `B v t = B t v = 1`, which spans `H` modulo torsion: every `x ∈ H`
 differs from some `a v + c t` by an element of finite additive order. Such a form is even
-(`LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`). This file computes its scalar
+(`LinearMap.BilinForm.even_apply_self_of_isOfFinAddOrder_span`) and symmetric
+(`LinearMap.BilinForm.isSymm_of_isOfFinAddOrder_span`). This file computes its scalar
 extension `B_𝕜 = B.baseChange 𝕜` to `𝕜 ⊗[ℤ] H`, for a field `𝕜` of characteristic zero, typically
 `ℝ`.
 
@@ -37,9 +39,14 @@ both lines, and its polar form pairs them perfectly: `polar (a (1 ⊗ v)) (c (1 
 The example is the intersection form of the symplectic product `X = (ℝ / ℤ) × Y_φ` of the circle
 with the mapping torus `Y_φ` of a surface diffeomorphism with `b₁(Y_φ) = 1`, in the setting of
 `TauCeti.SmoothMappingTorus.apply_self_sub_apply_canonical_eq`: `H = H²(X; ℤ)`, `v` is the pullback
-of a class of `H²(Y_φ; ℤ)` pairing to one with the fibre, and `t = [ds ∧ dt]`. That `v, t` is a
-hyperbolic pair spanning `H²(X; ℤ)` modulo torsion is a geometric input, not proved here. Given it,
-and `ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)`, the results say `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
+of a class of `H²(Y_φ; ℤ)` pairing to one with the fibre, and `t = [ds ∧ dt]`. Writing `t` as
+`[ds] ⌣ pr₂^* a` for a generator `a` of `H¹(Y_φ; ℤ)`, the classes `v, t` span `H²(X; ℤ)` modulo
+torsion (`TauCeti.MappingTorus.exists_isOfFinAddOrder_sub_smul_add_smul_addCircleProd`). They
+form a hyperbolic pair for a generator `a` with `⟨v ⌣ a, [Y_φ]⟩ = 1`, which Poincaré duality on
+`Y_φ` provides (`TauCeti.MappingTorus.exists_forall_eq_zsmul_and_singularCupPairing_eq_one`). The
+results then give `b₂⁺ = b₂⁻ = 1` for the real extension of the intersection form
+(`TauCeti.MappingTorus.sigPos_eq_one_and_sigNeg_eq_one_singularCupPairing_addCircleProd`); with
+`ℝ ⊗[ℤ] H²(X; ℤ) = H²(X; ℝ)` this says `b₂(X) = 2` and `b₂⁺(X) = b₂⁻(X) = 1`. Together
 with the evenness of the intersection form, which excludes classes of square `-1`, this places `X`
 among the minimal four-manifolds with `b₂⁺ = 1`, where Seiberg–Witten invariants depend on a
 chamber.
@@ -57,7 +64,23 @@ open scoped TensorProduct
 
 namespace LinearMap.BilinForm
 
-variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] {B : LinearMap.BilinForm ℤ H} {v t : H}
+variable {𝕜 H : Type*} [Field 𝕜] [AddCommGroup H] [Module ℤ H] {B : LinearMap.BilinForm ℤ H}
+  {v t : H}
+
+/-- A `ℤ`-valued form on a group spanned modulo torsion by `v` and `t` is symmetric as soon as
+`B v t = B t v`, since it sees each argument only modulo torsion. In particular a form spanned by
+a hyperbolic pair is symmetric, as is its scalar extension `B_𝕜` (`IsSymm.baseChange`). -/
+theorem isSymm_of_isOfFinAddOrder_span (hvt : B v t = B t v)
+    (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) : B.IsSymm := by
+  refine ⟨fun x y ↦ ?_⟩
+  obtain ⟨a, c, hx⟩ := hspan x
+  obtain ⟨a', c', hy⟩ := hspan y
+  rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left hx,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hy,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_left hy,
+    B.apply_eq_apply_of_isOfFinAddOrder_sub_right hx]
+  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hvt]
+  ring
 
 /-- The polar form of `B_𝕜` on `a (1 ⊗ v)` and `c (1 ⊗ t)`, for a hyperbolic pair `v, t`, is
 `2ac`. -/
@@ -74,6 +97,8 @@ private theorem isTotallyIsotropic_span_one_tmul {x : H} (hx : B x x = 0) :
     (B.baseChange 𝕜).toQuadraticMap.IsTotallyIsotropic (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] x)) :=
   QuadraticMap.isTotallyIsotropic_span_singleton_iff.mpr <| by
     simp [BilinMap.toQuadraticMap_apply, hx]
+
+section CharZero
 
 variable [CharZero 𝕜]
 
@@ -103,6 +128,8 @@ of the lines through `1 ⊗ v` and `1 ⊗ t`. -/
 private theorem isCompl_span_one_tmul (ht : B t t = 0) (hvt : B v t = 1) (htv : B t v = 1)
     (hspan : ∀ x : H, ∃ a c : ℤ, IsOfFinAddOrder (x - (a • v + c • t))) :
     IsCompl (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v)) (𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t)) := by
+  -- `H` has only one `ℤ`-module structure, the one `span_one_tmul_eq_top_of_isOfFinAddOrder` uses.
+  obtain rfl : ‹Module ℤ H› = AddCommGroup.toIntModule H := Subsingleton.elim _ _
   -- The torsion of `H` dies in `𝕜 ⊗[ℤ] H`, so the two lines span it.
   have hsup : 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] v) ⊔ 𝕜 ∙ ((1 : 𝕜) ⊗ₜ[ℤ] t) = ⊤ := by
     have h := TauCeti.span_one_tmul_eq_top_of_isOfFinAddOrder (A := 𝕜) (s := {v, t}) fun x ↦ by
@@ -159,6 +186,8 @@ theorem nondegenerate_toQuadraticMap_baseChange_of_isOfFinAddOrder_span (ht : B 
       (h _ (hline v)) with h1 | rfl
     · exact absurd h1 one_ne_zero
     · exact zero_smul _ _
+
+end CharZero
 
 variable [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜]
 

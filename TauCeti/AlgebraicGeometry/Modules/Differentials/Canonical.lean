@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.WeilRegularity
 public import TauCeti.AlgebraicGeometry.LineBundle.SerreDuality
+import TauCeti.Topology.Sets.Opens
 
 /-!
 # The differential line bundle and canonical divisors
@@ -15,7 +16,10 @@ On an integral curve over an exact constant field, with invertible differential 
 discrete valuation rings at its codimension-one points, the sheaf of relative differentials is the
 sheaf of a canonical divisor. A separating rational function `t` gives the rational basis
 `dt`; its Weil divisor `K` identifies a regular differential `f dt` with a section `f` of
-`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula. The
+`𝒪_X(K)`. The isomorphism is characterized by this rational-coordinate formula, and changing
+the separating function from `t` to `t'` composes it with multiplication by `dt/dt'`
+(`relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι`); the divisor of `dt'` is
+`K - div (dt/dt')` (`eq_sub_principalDivisor_derivativeOfSeparating`). The
 codimension-one points need not be rational, and the constant field need not be perfect: the
 local comparison only uses that the differentials of each codimension-one local ring are free of
 rank one, which follows from invertibility of the differential sheaf. In particular this applies
@@ -128,7 +132,7 @@ variable [IsLocallyNoetherian X]
 variable (hdim : ∀ y : X, coheight y ≤ 1) (K : SchemeWeilDivisor X)
   (hK : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K y =
     weilDifferentialOrder hF hk
-      (weilDifferentialOfSeparating hF ht).2
+      (weilDifferentialOfSeparating hF ht).property
       (coe_weilDifferentialOfSeparating_ne_zero hF ht) (X.toPlace (k := k) (y : X)))
 
 include hF hdim hK in
@@ -150,8 +154,7 @@ private lemma range_differentialCoordinateHom_app (U : X.Opens)
     · rintro ⟨a, ha⟩
       refine ⟨a, (Scheme.rationalFunctionsEquiv U).injective ?_⟩
       rw [differentialCoordinateHom_app, ha, LinearEquiv.apply_symm_apply]
-  · have hbot : U = ⊥ := TopologicalSpace.Opens.not_nonempty_iff_eq_bot U |>.mp
-      (fun ⟨x, hx⟩ ↦ hU ⟨⟨x, hx⟩⟩)
+  · have hbot : U = ⊥ := TopologicalSpace.Opens.eq_bot_of_not_nonempty hU
     have := Scheme.subsingleton_rationalFunctions U hbot
     simp only [SchemeWeilDivisor.sections_eq_top_of_eq_bot K hbot, Submodule.mem_top,
       iff_true]
@@ -205,6 +208,54 @@ lemma relativeDifferentialsIsoDivisorSheaf_inv_app (U : X.Opens) [Nonempty U]
   rw [← differentialCoordinateEquiv_symm_apply ht, LinearEquiv.apply_symm_apply]
   exact h.symm
 
+section ChangeOfSeparatingFunction
+
+variable {t' : X.functionField} (ht' : Transcendental k t')
+  [Algebra.IsSeparable k⟮t'⟯ X.functionField] (K' : SchemeWeilDivisor X)
+  (hK' : ∀ y : CodimensionOnePoint X, WeilDivisor.coeff K' y =
+    weilDifferentialOrder hF hk
+      (weilDifferentialOfSeparating hF ht').property
+      (coe_weilDifferentialOfSeparating_ne_zero hF ht') (X.toPlace (k := k) (y : X)))
+
+include hK hK' in
+omit [IsLocallyNoetherian X] [SheafOfModules.isInvertible X (X.relativeDifferentials k)] in
+/-- The divisors of `dt` and of `dt'` differ by the principal divisor of `dt/dt'`:
+`K' = K - div (dt/dt')`, by the chain rule `dt = (dt/dt') dt'`. -/
+lemma eq_sub_principalDivisor_derivativeOfSeparating [IsNoetherian X] :
+    K' = K - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor
+      (Additive.ofMul (Units.mk0 (derivativeOfSeparating ht' t)
+        (derivativeOfSeparating_ne_zero ht'))) := by
+  ext y
+  rw [hK', SchemeWeilDivisor.coeff_sub_principalDivisor, hK, toMul_ofMul, Units.val_mk0,
+    ← CodimensionOnePoint.toPlace_ord (k := k),
+    Place.ord_derivativeOfSeparating_eq_sub _ hF hk ht' ht]
+  ring
+
+/-- **Change of separating function.** Reading a differential in the basis `dt'` instead of
+`dt` multiplies its rational coefficient by `dt/dt'`: going from `𝒪_X(K)` back to `Ω_{X/k}`
+through `dt` and then to `𝒪_X(K')` through `dt'` is multiplication by `dt/dt'` on rational
+functions. -/
+@[reassoc]
+lemma relativeDifferentialsIsoDivisorSheaf_inv_hom_sheafι :
+    (relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK).inv ≫
+        (relativeDifferentialsIsoDivisorSheaf ht' hF hk hdim K' hK').hom ≫
+          SchemeWeilDivisor.sheafι K' =
+      SchemeWeilDivisor.sheafι K ≫
+        Scheme.rationalFunctionsMul X (derivativeOfSeparating ht' t) := by
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  ext s
+  by_cases hU : Nonempty U
+  · apply (Scheme.rationalFunctionsEquiv U).injective
+    simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+      relativeDifferentialsIsoDivisorSheaf_hom_app, relativeDifferentialsIsoDivisorSheaf_inv_app,
+      Scheme.rationalFunctionsEquiv_rationalFunctionsMul_app, map_smul,
+      Module.Basis.coord_apply, kaehlerBasisOfSeparating_repr_D, smul_eq_mul]
+    exact mul_comm _ _
+  · exact (Scheme.subsingleton_rationalFunctions U
+      (TopologicalSpace.Opens.eq_bot_of_not_nonempty hU)).elim _ _
+
+end ChangeOfSeparatingFunction
+
 end Comparison
 
 section ProperCurve
@@ -229,15 +280,15 @@ theorem nonempty_iso_relativeDifferentials_canonicalBundle :
   have hω : (ω : Module.Dual k (repartitionSpace k X.functionField)) ≠ 0 :=
     coe_weilDifferentialOfSeparating_ne_zero hF ht
   let K := (SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-    (weilDifferentialDivisor hF hk ω.2 hω)
+    (weilDifferentialDivisor hF hk ω.property hω)
   have hK (y : CodimensionOnePoint X) : WeilDivisor.coeff K y =
-      weilDifferentialOrder hF hk ω.2 hω (X.toPlace (k := k) (y : X)) := by
+      weilDifferentialOrder hF hk ω.property hω (X.toPlace (k := k) (y : X)) := by
     simp only [K, SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
       coeff_weilDifferentialDivisor]
   obtain ⟨e⟩ := InvertibleSheaf.nonempty_iso_canonicalBundle_sheaf hex hdim hF hk (K := K) (by
     dsimp only [K]
     rw [(SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).apply_symm_apply]
-    exact divisorClass_weilDifferentialDivisor hF hk ω.2 hω)
+    exact divisorClass_weilDifferentialDivisor hF hk ω.property hω)
   exact ⟨relativeDifferentialsIsoDivisorSheaf ht hF hk hdim K hK ≪≫ e.symm⟩
 
 include hF hk hdim hex in

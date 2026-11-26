@@ -126,7 +126,8 @@ private theorem exists_sum_mul_sub_one_mem_map (I : Ideal R)
     (A' : Subalgebra R A) (s : Finset A) (hsA' : (s : Set A) ⊆ A')
     (hspan : Ideal.span (s : Set A) = ⊤) (hZ : ∀ r ∈ s, ∀ x : A, ∀ᶠ m in atTop, r ^ m * x ∈ A') :
     ∃ u : ↥(s : Set A) → A',
-      ((∑ r : ↥(s : Set A), u r * ⟨r.1, hsA' r.2⟩ : A') : A) - 1 ∈ I.map (algebraMap R A) := by
+      ((∑ r : ↥(s : Set A), u r * ⟨r.val, hsA' r.property⟩ : A') : A) - 1 ∈ I.map (algebraMap R A)
+          := by
   classical
   obtain ⟨k, y₀, hy₀⟩ := Module.Finite.exists_fin (R := R) (M := A ⧸ I.map (algebraMap R A))
   choose y hy using fun l ↦ Ideal.Quotient.mk_surjective (y₀ l)
@@ -140,9 +141,9 @@ private theorem exists_sum_mul_sub_one_mem_map (I : Ideal R)
       Ideal.Quotient.mk (I.map (algebraMap R A)) (w r) ∈ Submodule.span R (Set.range y₀) := by
     rw [hy₀]; trivial
   choose t ht using fun r ↦ (Submodule.mem_span_range_iff_exists_fun R).mp (hmem r)
-  let r' (r : ↥(s : Set A)) : A' := ⟨r.1, hsA' r.2⟩
+  let r' (r : ↥(s : Set A)) : A' := ⟨r.val, hsA' r.property⟩
   let u (r : ↥(s : Set A)) : A' :=
-    (∑ l : Fin k, t r l • ⟨(r : A) ^ N * y l, hN r r.2 l⟩) * r' r ^ N
+    (∑ l : Fin k, t r l • ⟨(r : A) ^ N * y l, hN r r.property l⟩) * r' r ^ N
   refine ⟨u, ?_⟩
   have hdiff (r : ↥(s : Set A)) :
       (∑ l : Fin k, algebraMap R A (t r l) * y l) - w r ∈ I.map (algebraMap R A) := by
@@ -170,7 +171,7 @@ private theorem exists_mem_span_and_mul_sub_one_mem (I : Ideal R)
     ∃ a : A', (a : A) - 1 ∈ I.map (algebraMap R A) ∧
       a ∈ Ideal.span {x : A' | (x : A) ∈ s} ∧ a * (a - 1) ∈ I.map (algebraMap R A') := by
   classical
-  let r' (r : ↥(s : Set A)) : A' := ⟨r.1, hsA' r.2⟩
+  let r' (r : ↥(s : Set A)) : A' := ⟨r.val, hsA' r.property⟩
   obtain ⟨u, hγ1⟩ := exists_sum_mul_sub_one_mem_map I A' s hsA' hspan hZ
   set γ : A' := ∑ r, u r * r' r
   have hγ_smul : (γ : A) - 1 ∈ I • Submodule.span R (Set.range (id : A → A)) := by
@@ -191,12 +192,13 @@ private theorem exists_mem_span_and_mul_sub_one_mem (I : Ideal R)
   have ha_mul_mem (c : A) (hc : c ∈ b.support) : ((γ ^ K : A') : A) * c ∈ A' := by
     refine Submodule.span_induction (p := fun (x : A') _ ↦ (x : A) * c ∈ A') ?_ (by simp)
       (fun x y _ _ hx hy ↦ by simpa [add_mul] using A'.add_mem hx hy)
-      (fun (t : A') x _ hx ↦ by simpa [Algebra.smul_def, mul_assoc] using A'.mul_mem t.2 hx) ha_pow
+      (fun (t : A') x _ hx ↦ by simpa [Algebra.smul_def, mul_assoc] using A'.mul_mem t.property hx)
+          ha_pow
     rintro _ ⟨r, rfl⟩
-    exact hM r.1 r.2 c hc
+    exact hM r.val r.property c hc
   have haγ : γ ^ K * (γ - 1) ∈ I.map (algebraMap R A') := by
     have hdec : γ ^ K * (γ - 1) =
-        ∑ c ∈ b.support.attach, b c • ⟨((γ ^ K : A') : A) * c, ha_mul_mem c c.2⟩ := by
+        ∑ c ∈ b.support.attach, b c • ⟨((γ ^ K : A') : A) * c, ha_mul_mem c c.property⟩ := by
       ext
       simp only [MulMemClass.coe_mul, AddSubgroupClass.coe_sub, OneMemClass.coe_one, ← hsum,
         Finsupp.sum, id_eq, Finset.mul_sum, AddSubmonoidClass.coe_finsetSum, Subalgebra.coe_smul,
@@ -214,7 +216,7 @@ private theorem exists_mem_span_and_mul_sub_one_mem (I : Ideal R)
     exact Ideal.mul_mem_right _ _ hγ1
   · refine Ideal.span_le.mpr ?_ ha_pow
     rintro _ ⟨r, rfl⟩
-    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : A' | (x : A) ∈ s}) r.2) _
+    exact Ideal.pow_mem_of_mem _ (Ideal.subset_span (s := {x : A' | (x : A) ∈ s}) r.property) _
       (Nat.succ_pos M)
   · have hmul : γ ^ K * (γ ^ K - 1) = γ ^ K * (γ - 1) * d := by rw [hd]; ring
     rw [hmul]
@@ -247,7 +249,7 @@ private theorem quotient_mk_comp_val_surjective {I : Ideal R} (hI : I ≤ Ideal.
   obtain ⟨y, hy, z, hz, hyz⟩ := Submodule.mem_sup.mp h1
   obtain ⟨u, rfl⟩ := Ideal.mem_span_singleton'.mp hz
   obtain ⟨T, hT, w, hw⟩ := (Submodule.mem_span_image_iff_exists_fun A').mp hy
-  let x : A' := ∑ i, w i * ⟨(i : A) ^ m * c, hm _ (hT i.2)⟩
+  let x : A' := ∑ i, w i * ⟨(i : A) ^ m * c, hm _ (hT i.property)⟩
   refine ⟨x, Ideal.Quotient.eq.mpr (Ideal.mem_span_singleton'.mpr ⟨-(u : A) * c, ?_⟩)⟩
   have hx : (x : A) = (y : A) * c := by
     rw [← hw]
@@ -276,9 +278,8 @@ theorem exists_etale_and_finite_and_tensorProduct_algEquiv {R : Type u} [CommRin
     Module.Finite.equiv
       ((Algebra.TensorProduct.quotIdealMapEquivQuotTensor A I).trans eA).symm.toLinearEquiv
   have : Module.Finite R (A ⧸ I.map (algebraMap R A)) := Module.Finite.trans (R ⧸ I) _
-  obtain ⟨A', s, hfg, hsA', hspan, hZ⟩ :=
+  obtain ⟨A', s, _, hsA', hspan, hZ⟩ :=
     Algebra.QuasiFinite.exists_fg_subalgebra_and_span_eq_top (R := R) (A := A)
-  have : Module.Finite R A' := ⟨(Submodule.fg_top _).mpr hfg⟩
   obtain ⟨a, ha1, has, ha_idem⟩ := exists_mem_span_and_mul_sub_one_mem I A' s hsA' hspan hZ
   obtain ⟨e, he, hea⟩ := Ideal.exists_isIdempotentElem_sub_mem_map_of_isIntegral I
     (by simpa only [mul_sub, mul_one] using ha_idem)

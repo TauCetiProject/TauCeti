@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.Topology.Semicontinuity.Defs
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.DyadicMaximalFunction
@@ -327,24 +327,24 @@ private theorem mul_volume_czUnion_two_mul_inter_le {f : (ι → ℝ) → F} (hf
       (two_mul t ▸ le_self_add) hp hq hpQ)]
     exact mul_volume_le_setLIntegral_enorm_sub ht' hp ha
   have hdisj : Pairwise (Function.onFun Disjoint fun p :
-      calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t) => dyadicCube p.1.1 p.1.2 ∩ Q) :=
-    fun p p' hne => (pairwiseDisjoint_calderonZygmundCubes p.2 p'.2
+      calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t) => dyadicCube p.val.1 p.val.2 ∩ Q) :=
+    fun p p' hne => (pairwiseDisjoint_calderonZygmundCubes p.property p'.property
       (Subtype.coe_ne_coe.2 hne)).mono inter_subset_left inter_subset_left
   have hmeas : ∀ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-      MeasurableSet (dyadicCube p.1.1 p.1.2 ∩ Q) :=
+      MeasurableSet (dyadicCube p.val.1 p.val.2 ∩ Q) :=
     fun p => (measurableSet_dyadicCube _ _).inter (measurableSet_dyadicCube _ _)
   have hunion : czUnion f (2 * t) ∩ Q =
-      ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t), dyadicCube p.1.1 p.1.2 ∩ Q := by
+      ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t), dyadicCube p.val.1 p.val.2 ∩ Q := by
     rw [czUnion, biUnion_eq_iUnion, iUnion_inter]
   calc t * volume (czUnion f (2 * t) ∩ Q)
       = ∑' p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          t * volume (dyadicCube p.1.1 p.1.2 ∩ Q) := by
+          t * volume (dyadicCube p.val.1 p.val.2 ∩ Q) := by
         rw [hunion, measure_iUnion hdisj hmeas, ENNReal.tsum_mul_left]
     _ ≤ ∑' p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          ∫⁻ y in dyadicCube p.1.1 p.1.2 ∩ Q, ‖f y - a‖ₑ :=
-        tsum_le_tsum fun p => key p.1 p.2
+          ∫⁻ y in dyadicCube p.val.1 p.val.2 ∩ Q, ‖f y - a‖ₑ :=
+        tsum_le_tsum fun p => key p.val p.property
     _ = ∫⁻ y in ⋃ p : calderonZygmundCubes (fun x => ‖f x‖ₑ) (2 * t),
-          dyadicCube p.1.1 p.1.2 ∩ Q, ‖f y - a‖ₑ :=
+          dyadicCube p.val.1 p.val.2 ∩ Q, ‖f y - a‖ₑ :=
         (lintegral_iUnion hmeas hdisj _).symm
     _ ≤ ∫⁻ y in Q', ‖f y - a‖ₑ :=
         lintegral_mono_set (iUnion_subset fun _ => inter_subset_right.trans hQQ')
@@ -390,29 +390,31 @@ private theorem volume_czUnion_two_mul_le {f : (ι → ℝ) → F}
       t * (K * γ * volume (dyadicCube q.1 q.2)) by ring] at hle
     exact (ENNReal.mul_le_mul_iff_right ht ht').1 hle
   have hmeas : ∀ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-      MeasurableSet (dyadicCube q.1.1 q.1.2) := fun q => measurableSet_dyadicCube _ _
+      MeasurableSet (dyadicCube q.val.1 q.val.2) := fun q => measurableSet_dyadicCube _ _
   have hU : czUnion f t = ⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-      dyadicCube q.1.1 q.1.2 := by
+      dyadicCube q.val.1 q.val.2 := by
     rw [czUnion, biUnion_eq_iUnion]
   have hdisj : Pairwise (Function.onFun Disjoint fun q :
-      calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.1.1 q.1.2) :=
-    fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.2 q'.2 (Subtype.coe_ne_coe.2 hne)
+      calderonZygmundCubes (fun x => ‖f x‖ₑ) t => dyadicCube q.val.1 q.val.2) :=
+    fun q q' hne => pairwiseDisjoint_calderonZygmundCubes q.property q'.property
+        (Subtype.coe_ne_coe.2 hne)
   have hsub : czUnion f (2 * t) ⊆ czUnion f t :=
     biUnion_calderonZygmundCubes_subset hp₀ hfp₀ ht (two_mul t ▸ le_self_add)
   calc volume (czUnion f (2 * t))
       = volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) := by
+          czUnion f (2 * t) ∩ dyadicCube q.val.1 q.val.2) := by
         rw [← inter_iUnion, ← hU, inter_eq_left.2 hsub]
     _ = ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          volume (czUnion f (2 * t) ∩ dyadicCube q.1.1 q.1.2) :=
+          volume (czUnion f (2 * t) ∩ dyadicCube q.val.1 q.val.2) :=
         measure_iUnion (fun q q' hne => (hdisj hne).mono
             inter_subset_right inter_subset_right)
           fun q => (measurableSet_biUnion_calderonZygmundCubes (fun x => ‖f x‖ₑ) _).inter (hmeas q)
     _ ≤ ∑' q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t,
-          (K * γ * volume (dyadicCube q.1.1 q.1.2) + volume (dyadicCube q.1.1 q.1.2 ∩ S)) :=
-        tsum_le_tsum fun q => hcube q.1 q.2
+          (K * γ * volume (dyadicCube q.val.1 q.val.2) + volume (dyadicCube q.val.1 q.val.2 ∩ S)) :=
+        tsum_le_tsum fun q => hcube q.val q.property
     _ = K * γ * volume (czUnion f t) +
-          volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t, dyadicCube q.1.1 q.1.2 ∩ S) := by
+          volume (⋃ q : calderonZygmundCubes (fun x => ‖f x‖ₑ) t, dyadicCube q.val.1 q.val.2 ∩ S)
+              := by
         rw [tsum_add, ENNReal.tsum_mul_left, hU,
           measure_iUnion hdisj hmeas,
           measure_iUnion (fun q q' hne => (hdisj hne).mono
@@ -709,7 +711,7 @@ private theorem volume_ball_sqrt_card_mul_div_volume_ball (c : ι → ℝ) (c' :
 /-- The sharp maximal function of `f` read in coordinates, for sup-distance balls, is at most a
 fixed multiple of the sharp maximal function of `f` for Euclidean balls. -/
 private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] {f : EuclideanSpace ℝ ι → F} (hf : Integrable f)
+    [NormedSpace ℝ F] [CompleteSpace F] {f : EuclideanSpace ℝ ι → F} (hf : LocallyIntegrable f)
     (y : ι → ℝ) :
     sharpMaximalFunction volume (fun z => f (WithLp.toLp 2 z)) y ≤
       2 * (ENNReal.ofReal (√(Fintype.card ι) ^ Fintype.card ι) *
@@ -728,7 +730,9 @@ private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGrou
   rw [← setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul he one_ne_zero
     ENNReal.one_ne_top]
   -- Compare with the oscillation about the Euclidean average `f_B`, and enlarge `S` to `B`.
-  refine (setLAverage_enorm_sub_setAverage_le (s := S) hf.integrableOn (⨍ x in B, f x)).trans ?_
+  have hfS : IntegrableOn f S := (hf.integrableOn_isCompact (isCompact_closedBall _ _)).mono_set
+    (hSB.trans ball_subset_closedBall)
+  refine (setLAverage_enorm_sub_setAverage_le hfS (⨍ x in B, f x)).trans ?_
   rw [mul_assoc]
   gcongr 2 * ?_
   refine (setLAverage_le_div_mul_setLAverage_of_subset hSB measure_ball_lt_top.ne).trans ?_
@@ -740,16 +744,18 @@ private theorem sharpMaximalFunction_comp_toLp_le {F : Type*} [NormedAddCommGrou
 /- This transport from the sup-distance version is shared with
 https://github.com/TauCetiProject/TauCeti/pull/33788. -/
 /-- **The Fefferman–Stein inequality for Euclidean balls.** For `1 < p < ∞` there is a constant
-`C`, depending only on `ι` and `p`, such that every integrable `f` on `EuclideanSpace ℝ ι`,
-`ι` nonempty, with values in any real Banach space, satisfies
+`C`, depending only on `ι` and `p`, such that every `f ∈ L^p₀(EuclideanSpace ℝ ι)` for some
+`1 ≤ p₀ ≤ p`, `ι` nonempty, with values in any real Banach space, satisfies
 
 `∫ ‖f‖^p ≤ C ∫ (f^#)^p`,
 
-where `f^#` is the sharp maximal function for the balls of the Euclidean distance. -/
+where `f^#` is the sharp maximal function for the balls of the Euclidean distance. The case
+`p₀ = 1` is that of an integrable `f`, and `p₀ = p` that of `f ∈ Lᵖ`. -/
 theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {p : ℝ}
     (hp : 1 < p) :
     ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (f : EuclideanSpace ℝ ι → F), Integrable f →
+      {f : EuclideanSpace ℝ ι → F} {p₀ : ℝ≥0∞}, MemLp f p₀ volume → 1 ≤ p₀ →
+        p₀ ≤ ENNReal.ofReal p →
         ∫⁻ x, ‖f x‖ₑ ^ p ≤ C * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
   have hp0 : 0 ≤ p := zero_le_one.trans hp.le
   set T : (ι → ℝ) → EuclideanSpace ℝ ι := WithLp.toLp 2
@@ -761,45 +767,51 @@ theorem exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow {
     (ENNReal.mul_ne_top ENNReal.ofReal_ne_top measure_ball_lt_top.ne)
     (measure_ball_pos _ _ one_pos).ne')
   set C₀ : ℝ≥0∞ := ENNReal.ofReal (2 ^ (p + 1) * 2 ^ ((p + 2 * Fintype.card ι + 2) * p))
-  refine ⟨(C₀ * K ^ p).toNNReal, fun {F} _ _ _ f hf => ?_⟩
+  refine ⟨(C₀ * K ^ p).toNNReal, fun {F} _ _ _ f p₀ hf hp₀ hp₀p => ?_⟩
   rw [ENNReal.coe_toNNReal (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (ENNReal.rpow_ne_top_of_nonneg hp0 hK))]
+  have hp₀_top : p₀ ≠ ∞ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hp₀p
+  -- The sup-distance inequality, applied to `f ∘ T ∈ L^p₀`, with `p₀` read as a real exponent.
+  have hfT := hf.comp_measurePreserving hT
   calc ∫⁻ x, ‖f x‖ₑ ^ p
       = ∫⁻ y, ‖f (T y)‖ₑ ^ p := (hT.lintegral_comp_emb hTe (fun x => ‖f x‖ₑ ^ p)).symm
     _ ≤ C₀ * ∫⁻ y, sharpMaximalFunction volume (fun z => f (T z)) y ^ p :=
         lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow
-          (hT.integrable_comp_of_integrable hf).aestronglyMeasurable le_rfl hp.le hp
-          (by simpa using (hT.integrable_comp_of_integrable hf).hasFiniteIntegral.ne)
+          hfT.aestronglyMeasurable (by simpa using ENNReal.toReal_mono hp₀_top hp₀)
+          (ENNReal.toReal_le_of_le_ofReal hp0 hp₀p) hp
+          (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp₀).ne' hp₀_top
+            hfT.eLpNorm_lt_top).ne
     _ ≤ C₀ * ∫⁻ y, (K * sharpMaximalFunction volume f (T y)) ^ p := by
         gcongr with y
-        exact sharpMaximalFunction_comp_toLp_le hf y
+        exact sharpMaximalFunction_comp_toLp_le (hf.locallyIntegrable hp₀) y
     _ = C₀ * K ^ p * ∫⁻ x, sharpMaximalFunction volume f x ^ p := by
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hp0]
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hp0 hK), mul_assoc,
           hT.lintegral_comp_emb hTe (fun x => sharpMaximalFunction volume f x ^ p)]
 
 /-- **The Fefferman–Stein inequality for Euclidean balls**, in terms of `Lᵖ` seminorms. For
-`1 < p < ∞` there is a constant `C`, depending only on `ι` and `p`, such that every integrable `f`
-on `EuclideanSpace ℝ ι`, `ι` nonempty, with values in any real Banach space, satisfies
-`‖f‖_p ≤ C ‖f^#‖_p`, where `f^#` is the sharp maximal function for the balls of the Euclidean
-distance. -/
+`1 < p < ∞` there is a constant `C`, depending only on `ι` and `p`, such that every
+`f ∈ L^p₀(EuclideanSpace ℝ ι)` for some `1 ≤ p₀ ≤ p`, `ι` nonempty, with values in any real
+Banach space, satisfies `‖f‖_p ≤ C ‖f^#‖_p`, where `f^#` is the sharp maximal function for the
+balls of the Euclidean distance. The case `p₀ = 1` is that of an integrable `f`, and `p₀ = p`
+that of `f ∈ Lᵖ`. -/
 theorem exists_eLpNorm_le_mul_eLpNorm_sharpMaximalFunction {p : ℝ≥0∞} (hp : 1 < p)
     (hp_top : p ≠ ∞) :
     ∃ C : ℝ≥0, ∀ {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-      (f : EuclideanSpace ℝ ι → F), Integrable f →
+      {f : EuclideanSpace ℝ ι → F} {p₀ : ℝ≥0∞}, MemLp f p₀ volume → 1 ≤ p₀ → p₀ ≤ p →
         eLpNorm f p volume ≤ C * eLpNorm (sharpMaximalFunction volume f) p volume := by
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
   obtain ⟨C, hC⟩ :=
     exists_lintegral_enorm_rpow_le_mul_lintegral_sharpMaximalFunction_rpow (ι := ι) hpr
-  refine ⟨C ^ (1 / p.toReal), fun {F} _ _ _ f hf => ?_⟩
-  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.1,
+  refine ⟨C ^ (1 / p.toReal), fun {F} _ _ _ f p₀ hf h1 hp₀p => ?_⟩
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ENNReal.coe_rpow_of_nonneg _ (by positivity), ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [eNorm_eq_self] using hC f hf
+  simpa only [eNorm_eq_self] using hC hf h1 (hp₀p.trans_eq (ENNReal.ofReal_toReal hp_top).symm)
 
 end Euclidean
 

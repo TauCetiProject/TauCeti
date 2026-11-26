@@ -23,8 +23,8 @@ These image bundles are the bundle side of the correspondence between vector bun
 projections used in topological K-theory: classically, over a compact Hausdorff base every
 finite-rank vector bundle is isomorphic to one of them, a fact not proved here.
 
-The local trivialization at `x₀` uses the intertwining operator
-`U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`, which equals `1` at `x₀`. Where `U x` is
+The local trivialization at `x₀` uses the intertwiner `U x = TauCeti.intertwiner (p x₀) (p x)`,
+that is `p x * p x₀ + (1 - p x) * (1 - p x₀)`, which equals `1` at `x₀`. Where `U x` is
 invertible, which is an open condition containing `x₀`, it carries the range of `p x₀`
 isomorphically onto the range of `p x` (`ContinuousLinearMap.IsIdempotentElem.rangeEquiv`), and
 this gives the trivialization (`TauCeti.rangeTrivialization`). The resulting local constancy of
@@ -66,8 +66,7 @@ public section
 open Bundle Set Topology
 open scoped Ring
 open ContinuousLinearMap.IsIdempotentElem (apply_coe_range coe_rangeEquiv_apply
-  coe_rangeEquiv_symm_apply isUnit_mul_self_add_one_sub_mul_one_sub
-  mul_self_add_one_sub_mul_one_sub)
+  coe_rangeEquiv_symm_apply)
 
 namespace TauCeti
 
@@ -82,11 +81,11 @@ section Topology
 parameter `F'` of `Bundle.TotalSpace` plays no role. -/
 instance instTopologicalSpaceTotalSpaceRange (F' : Type*) (p : B → F →L[𝕜] F) :
     TopologicalSpace (TotalSpace F' fun x ↦ (p x).range) :=
-  .induced (fun v ↦ (v.proj, (v.2 : F))) inferInstance
+  .induced (fun v ↦ (v.proj, (v.snd : F))) inferInstance
 
 /-- The total space of the ranges of a family of operators on `F` is embedded in `B × F`. -/
 theorem isEmbedding_totalSpace_range (F' : Type*) (p : B → F →L[𝕜] F) :
-    IsEmbedding fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.2 : F)) := by
+    IsEmbedding fun v : TotalSpace F' (fun x ↦ (p x).range) ↦ (v.proj, (v.snd : F)) := by
   refine ⟨⟨rfl⟩, fun ⟨x, v⟩ ⟨y, w⟩ h ↦ ?_⟩
   obtain rfl : x = y := congrArg Prod.fst h
   exact congrArg (TotalSpace.mk x) (Subtype.ext (congrArg Prod.snd h))
@@ -106,28 +105,28 @@ variable (hp : Continuous p) (hidem : ∀ x, IsIdempotentElem (p x)) (x₀ : B)
   (φ : F' ≃L[𝕜] (p x₀).range)
 
 /-- The local trivialization at `x₀` of the ranges of a continuous family `p` of projections.
-Over the open set where the intertwiner `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)` is
-invertible, a vector `w` in the range of `p x` is sent to `φ.symm (U x)⁻¹ w`, using an
-isomorphism `φ` of the model fibre with the range of `p x₀`. -/
+Over the open set where the intertwiner `U x = intertwiner (p x₀) (p x)` is invertible, a vector
+`w` in the range of `p x` is sent to `φ.symm (U x)⁻¹ w`, using an isomorphism `φ` of the model
+fibre with the range of `p x₀`. -/
 noncomputable def rangeTrivialization :
     Trivialization F' (π F' fun x ↦ (p x).range) where
   toFun v := (v.proj, φ.symm ((p x₀).rangeRestrict
-    ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2)))
+    ((intertwiner (p x₀) (p v.proj))⁻¹ʳ v.snd)))
   invFun q := TotalSpace.mk' F' (E := fun x ↦ (p x).range) q.1
-    ((p q.1).rangeRestrict ((p q.1 * p x₀ + (1 - p q.1) * (1 - p x₀)) (φ q.2)))
-  source := π F' (fun x ↦ (p x).range) ⁻¹' {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
-  target := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))} ×ˢ univ
+    ((p q.1).rangeRestrict (intertwiner (p x₀) (p q.1) (φ q.2)))
+  source := π F' (fun x ↦ (p x).range) ⁻¹' {x | IsUnit (intertwiner (p x₀) (p x))}
+  target := {x | IsUnit (intertwiner (p x₀) (p x))} ×ˢ univ
   map_source' _ hv := ⟨hv, mem_univ _⟩
   map_target' _ hq := hq.1
   left_inv' := by
-    rintro ⟨x, w⟩ (hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)))
+    rintro ⟨x, w⟩ (hx : IsUnit (intertwiner (p x₀) (p x)))
     refine congrArg (TotalSpace.mk x) (Subtype.ext ?_)
     simp only [ContinuousLinearEquiv.apply_symm_apply, ContinuousLinearMap.coe_codRestrict_apply]
     rw [← coe_rangeEquiv_symm_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x₀),
       ← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
       ContinuousLinearEquiv.apply_symm_apply]
   right_inv' := by
-    rintro ⟨x, v⟩ ⟨hx : IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)), -⟩
+    rintro ⟨x, v⟩ ⟨hx : IsUnit (intertwiner (p x₀) (p x)), -⟩
     simp only [TotalSpace.mk', ContinuousLinearMap.coe_codRestrict_apply]
     refine Prod.ext rfl ((φ.symm_apply_eq).mpr (Subtype.ext ?_))
     rw [← coe_rangeEquiv_apply (hidem x₀) (hidem x) hx, apply_coe_range (hidem x),
@@ -146,8 +145,8 @@ noncomputable def rangeTrivialization :
     refine Continuous.continuousOn ((isEmbedding_totalSpace_range F' p).continuous_iff.mpr ?_)
     exact continuous_fst.prodMk ((hp.comp continuous_fst).clm_apply
       ((continuous_intertwiner hp x₀ |>.comp continuous_fst).clm_apply
-        (continuous_subtype_val.comp (φ.continuous.comp continuous_snd))))
-  baseSet := {x | IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀))}
+        (continuous_subtypeVal.comp (φ.continuous.comp continuous_snd))))
+  baseSet := {x | IsUnit (intertwiner (p x₀) (p x))}
   open_baseSet := isOpen_setOf_isUnit_intertwiner hp x₀
   source_eq := rfl
   target_eq := rfl
@@ -156,30 +155,29 @@ noncomputable def rangeTrivialization :
 /-- The trivialization at `x₀` is defined over a neighbourhood of `x₀`. -/
 theorem mem_baseSet_rangeTrivialization :
     x₀ ∈ (rangeTrivialization hp hidem x₀ φ).baseSet :=
-  isUnit_mul_self_add_one_sub_mul_one_sub (hidem x₀)
+  (hidem x₀).isUnit_intertwiner_self
 
 /-- A point lies in the base set of the trivialization at `x₀` exactly when the intertwiner
-`p x * p x₀ + (1 - p x) * (1 - p x₀)` is invertible. -/
+`intertwiner (p x₀) (p x)` is invertible. -/
 theorem mem_baseSet_rangeTrivialization_iff {x : B} :
-    x ∈ (rangeTrivialization hp hidem x₀ φ).baseSet ↔
-      IsUnit (p x * p x₀ + (1 - p x) * (1 - p x₀)) :=
+    x ∈ (rangeTrivialization hp hidem x₀ φ).baseSet ↔ IsUnit (intertwiner (p x₀) (p x)) :=
   Iff.rfl
 
 /- The two evaluation lemmas below are not `simp` lemmas, so that the evaluations at the base point
 `x₀` stay in simp normal form. -/
 
 /-- The trivialization at `x₀` sends a vector `w` of the range of `p x` to `φ.symm (U x)⁻¹ w`,
-where `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`. -/
+where `U x = intertwiner (p x₀) (p x)`. -/
 theorem rangeTrivialization_apply (v : TotalSpace F' fun x ↦ (p x).range) :
     rangeTrivialization hp hidem x₀ φ v = (v.proj, φ.symm ((p x₀).rangeRestrict
-      ((p v.proj * p x₀ + (1 - p v.proj) * (1 - p x₀))⁻¹ʳ v.2))) :=
+      ((intertwiner (p x₀) (p v.proj))⁻¹ʳ v.snd))) :=
   (rfl)
 
 /-- The inverse of the trivialization at `x₀` sends `(x, v)` to `U x (φ v)` in the range of `p x`,
-where `U x = p x * p x₀ + (1 - p x) * (1 - p x₀)`. -/
+where `U x = intertwiner (p x₀) (p x)`. -/
 theorem rangeTrivialization_symm_apply (x : B) (v : F') :
     (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x, v) =
-      ⟨x, (p x).rangeRestrict ((p x * p x₀ + (1 - p x) * (1 - p x₀)) (φ v))⟩ :=
+      ⟨x, (p x).rangeRestrict (intertwiner (p x₀) (p x) (φ v))⟩ :=
   (rfl)
 
 /-- At the base point `x₀`, the trivialization reads a vector of the range of `p x₀` through `φ`. -/
@@ -187,19 +185,19 @@ theorem rangeTrivialization_symm_apply (x : B) (v : F') :
 theorem rangeTrivialization_apply_self (w : (p x₀).range) :
     rangeTrivialization hp hidem x₀ φ ⟨x₀, w⟩ = (x₀, φ.symm w) := by
   refine Prod.ext rfl (congrArg φ.symm (Subtype.ext ?_))
-  simp [mul_self_add_one_sub_mul_one_sub (hidem x₀), apply_coe_range (hidem x₀)]
+  simp [(hidem x₀).intertwiner_self, apply_coe_range (hidem x₀)]
 
 /-- At the base point `x₀`, the inverse of the trivialization is `φ`. -/
 @[simp]
 theorem rangeTrivialization_symm_apply_self (v : F') :
     (rangeTrivialization hp hidem x₀ φ).toOpenPartialHomeomorph.symm (x₀, v) = ⟨x₀, φ v⟩ := by
   refine congrArg (TotalSpace.mk x₀) (Subtype.ext ?_)
-  simp [mul_self_add_one_sub_mul_one_sub (hidem x₀), apply_coe_range (hidem x₀)]
+  simp [(hidem x₀).intertwiner_self, apply_coe_range (hidem x₀)]
 
 /-- The trivialization at `x₀` is linear on every fibre. -/
 instance isLinear_rangeTrivialization : (rangeTrivialization hp hidem x₀ φ).IsLinear 𝕜 where
   linear x _ := (φ.symm.toLinearMap ∘ₗ ((p x₀).rangeRestrict).toLinearMap ∘ₗ
-    ((p x * p x₀ + (1 - p x) * (1 - p x₀))⁻¹ʳ).toLinearMap ∘ₗ ((p x).range).subtype).isLinear
+    ((intertwiner (p x₀) (p x))⁻¹ʳ).toLinearMap ∘ₗ ((p x).range).subtype).isLinear
 
 /-- The coordinate changes between two trivializations given by intertwiners are continuous on
 the intersection of their base sets. -/
@@ -211,8 +209,8 @@ theorem continuousOn_coordChangeL_rangeTrivialization (x₁ : B)
         (rangeTrivialization hp hidem x₁ φ₁).baseSet) := by
   -- On the overlap the coordinate change is an explicit composite of continuous operator families.
   have hc : ContinuousOn (fun x ↦ (φ₁.symm : (p x₁).range →L[𝕜] F') ∘L
-      (p x₁).rangeRestrict ∘L (p x * p x₁ + (1 - p x) * (1 - p x₁))⁻¹ʳ ∘L
-      p x ∘L (p x * p x₀ + (1 - p x) * (1 - p x₀)) ∘L ((p x₀).range).subtypeL ∘L
+      (p x₁).rangeRestrict ∘L (intertwiner (p x₁) (p x))⁻¹ʳ ∘L
+      p x ∘L intertwiner (p x₀) (p x) ∘L ((p x₀).range).subtypeL ∘L
       (φ : F' →L[𝕜] (p x₀).range))
       ((rangeTrivialization hp hidem x₀ φ).baseSet ∩
         (rangeTrivialization hp hidem x₁ φ₁).baseSet) :=
@@ -286,7 +284,7 @@ space of the direct sum of the ranges of `p x` and of `1 - p x` onto `B × F`, o
 def rangeProdRangeOneSubHomeomorph (F' F'' : Type*) (hp : Continuous p)
     (hidem : ∀ x, IsIdempotentElem (p x)) :
     TotalSpace (F' × F'') ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range) ≃ₜ B × F where
-  toFun v := (v.proj, (v.2.1 : F) + v.2.2)
+  toFun v := (v.proj, (v.snd.1 : F) + v.snd.2)
   invFun q := ⟨q.1, ((p q.1).rangeRestrict q.2, (1 - p q.1).rangeRestrict q.2)⟩
   left_inv := by
     rintro ⟨x, w₁, w₂⟩
@@ -327,7 +325,7 @@ inside the type of the total space, so their left-hand sides are not in simp nor
 /-- The homeomorphism adds the two components of a vector of the direct sum. -/
 theorem rangeProdRangeOneSubHomeomorph_apply
     (v : TotalSpace (F' × F'') ((fun x ↦ (p x).range) ×ᵇ fun x ↦ (1 - p x).range)) :
-    rangeProdRangeOneSubHomeomorph F' F'' hp hidem v = (v.proj, (v.2.1 : F) + v.2.2) :=
+    rangeProdRangeOneSubHomeomorph F' F'' hp hidem v = (v.proj, (v.snd.1 : F) + v.snd.2) :=
   (rfl)
 
 /-- The inverse homeomorphism splits a vector of `F` by the projections `p x` and `1 - p x`. -/

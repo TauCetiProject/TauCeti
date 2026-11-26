@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Strong
 import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
 import TauCeti.Topology.LocallyFinite.Basic
 public import TauCeti.Geometry.Manifold.ExtChartAt
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
 # Restriction and locality in the manifold Whitney topologies
@@ -17,7 +18,9 @@ public import TauCeti.Geometry.Manifold.ExtChartAt
 Restriction to an open source is continuous for the existing weak Whitney topology. Its
 coordinate derivatives agree with the ambient derivatives in inherited charts, so a compact chart
 `C^k` seminorm of a restricted map is the seminorm of the ambient map on the same coordinate set
-read in the ambient chart (`ContMDiffMap.chartCkSeminorm_restrict`).
+read in the ambient chart (`ContMDiffMap.chartCkSeminorm_restrict`). Likewise the differential of
+a restricted map at `x ∈ U` is the ambient differential at `x`, the tangent spaces being identified
+through `TauCeti.Manifold.tangentSpaceOpenEquiv` (`ContMDiffMap.mvfderiv_restrict`).
 
 For the strong Whitney topology the situation is different, because a strong neighbourhood on an
 open subset `U` may impose tolerances tending to zero near the frontier of `U`, where the ambient
@@ -56,13 +59,18 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- Restriction of a native smooth map to an open source. -/
 def restrict (f : C^n⟮I, M; J, N⟯) (U : Opens M) : C^n⟮I, U; J, N⟯ :=
-  f.comp ⟨Subtype.val, contMDiff_subtype_val⟩
+  f.comp ⟨Subtype.val, contMDiff_subtypeVal⟩
 
 /-- Restricting a map does not change its value. -/
 @[simp]
 theorem restrict_apply (f : C^n⟮I, M; J, N⟯) (U : Opens M) (x : U) :
     f.restrict U x = f x := by
   rfl
+
+/-- A restricted native map is the composition with the inclusion of the open source. -/
+theorem restrict_eq_comp (f : C^n⟮I, M; J, N⟯) (U : Opens M) :
+    f.restrict U = f.comp ⟨Subtype.val, contMDiff_subtypeVal⟩ :=
+  (rfl)
 
 /-- The underlying function of a restricted native map is ordinary composition with inclusion. -/
 @[simp]
@@ -83,6 +91,29 @@ theorem restrict_sub (f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) :
     (f - g).restrict U = f.restrict U - g.restrict U := by
   ext x
   simp
+
+/-- The restriction of the constant function one is one. -/
+@[simp]
+theorem restrict_one (U : Opens M) :
+    (1 : C^n⟮I, M; 𝕜⟯).restrict U = 1 := by
+  ext x
+  simp
+
+/-- Restriction to an open subset commutes with multiplication of scalar functions. -/
+@[simp]
+theorem restrict_mul (f g : C^n⟮I, M; 𝕜⟯) (U : Opens M) :
+    (f * g).restrict U = f.restrict U * g.restrict U := by
+  ext x
+  simp
+
+/-- The differential at `x ∈ U` of the restriction of `f` is the differential of `f` at `x`,
+composed with the identification of the tangent spaces of `U` and `M`. -/
+theorem mvfderiv_restrict (hn : n ≠ 0) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) (x : U) :
+    mvfderiv I (f.restrict U) x =
+      (mvfderiv I f x).comp
+        (TauCeti.Manifold.tangentSpaceOpenEquiv (I := I) x).toContinuousLinearMap := by
+  rw [coe_restrict, mvfderiv_comp x (f.contMDiff.mdifferentiable hn _)
+    (contMDiff_subtypeVal.mdifferentiableAt hn), TauCeti.Manifold.mfderiv_subtype_val]
 
 /-- Restriction to an open source is continuous for the native weak Whitney topologies. -/
 theorem continuous_restrict [IsManifold I n M] [IsManifold J n N] [LocallyCompactSpace E]
@@ -119,10 +150,10 @@ theorem chartIteratedFDeriv_restrict_apply [IsManifold I n M]
     (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) (U : Opens M) (x : U) (m : ℕ) (hm : m ≤ n)
     (z : (extChartAt I x).target) :
     chartIteratedFDeriv (f.restrict U) x m hm z =
-      chartIteratedFDeriv f (x : M) m hm ⟨z, U.extChartAt_target_subset x z.2⟩ := by
+      chartIteratedFDeriv f (x : M) m hm ⟨z, U.extChartAt_target_subset x z.property⟩ := by
   rw [chartIteratedFDeriv_self_target_apply, chartIteratedFDeriv_self_target_apply]
   simpa only [ftaylorSeriesWithin, Function.comp_def, restrict_apply] using
-    congrFun (ftaylorSeriesWithin_restrict_extChartAt f U x z.2) m
+    congrFun (ftaylorSeriesWithin_restrict_extChartAt f U x z.property) m
 
 /-- Coordinate derivatives may be computed through a chart of an open restriction, using the
 ordinary Faà di Bruno composition with the ambient coordinate change. -/
@@ -246,13 +277,13 @@ theorem continuous_of_forall_continuous_restrict [IsManifold I n M] [LocallyComp
   refine hK.eventually_forall_of_forall_eventually fun w hw ↦ ?_
   obtain ⟨i, hi⟩ := hU ((extChartAt I x).symm w)
   have hlim := tendsto_iteratedFDerivWithin_of_restrict (U := U i)
-    ((hg i).continuousAt (x := p₀)) x (z := w) w.2 hi m hm
+    ((hg i).continuousAt (x := p₀)) x (z := w) w.property hi m hm
   have hv : V ∈ 𝓝 (iteratedFDerivWithin 𝕜 m (g p₀ ∘ (extChartAt I x).symm)
       (extChartAt I x).target w) := by
     apply hV.mem_nhds
     simpa only [chartIteratedFDeriv_self_target_apply] using h₀ hw
   rw [nhds_prod_eq]
-  have h := (tendsto_id.prodMap (map_nhds_subtype_val w).le).eventually
+  have h := (tendsto_id.prodMap (map_nhds_subtypeVal w).le).eventually
     (hlim.eventually_mem hv)
   simpa only [chartIteratedFDeriv_self_target_apply, Prod.map_fst, Prod.map_snd, id_eq] using h
 
@@ -311,9 +342,9 @@ def ofOpens {U : Opens M} (c : StrongCkControl I U n)
         Subtype.val '' ((extChartAt I (c.center i)).symm '' (Subtype.val ''
           (c.compact i : Set (extChartAt I (c.center i)).target))) := by
       simp only [Compacts.coe_map, image_image]
-      exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.2).symm
+      exact image_congr fun z _ ↦ (U.coe_extChartAt_symm_apply _ z.property).symm
     simp only [h]
-    exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtype_val fun _ ↦
+    exact LocallyFinite.image_of_isClosedMap c.locallyFinite hU.isClosedMap_subtypeVal fun _ ↦
       (subsingleton_singleton.preimage Subtype.val_injective).isCompact
 
 /-- The ambient neighbourhood of `f` of a strong control on a closed open subset is the preimage,

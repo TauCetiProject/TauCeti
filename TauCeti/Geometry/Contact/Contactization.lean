@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
 public import TauCeti.Geometry.Symplectic.Lagrangian.Exact
 import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Contact.Volume
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.Immersion.Differential
@@ -31,6 +32,12 @@ projection (`TauCeti.SmoothForm.mextDerivₗ_contactization`), and `α` is a con
 algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of `θ`
 (`TauCeti.SmoothForm.mem_kerDistribution_contactization`), which the projection identifies with
 `T_w W`, and on it `dα` is `ω`.
+
+When `W` has dimension `2 n`, the contact volume of `α` is the product volume:
+`α ∧ (dα)ⁿ = dz ∧ ωⁿ` (`TauCeti.SmoothForm.wedge_contactization_wedgePow_mextDerivₗ`). Indeed
+`α ∧ (dα)ⁿ = dz ∧ ωⁿ - θ ∧ ωⁿ`, and `θ ∧ ωⁿ` is pulled back from a form of degree `2 n + 1` on
+`W`, which vanishes. So `dz ∧ ωⁿ` vanishes nowhere when `ω` is nondegenerate
+(`TauCeti.SmoothForm.wedge_mpullback_realLineCoordForm_wedgePow_apply_ne_zero`).
 
 For the cotangent bundle `W = T*Q` with its Liouville form `λ_Q`, this is the standard contact
 form `dz - λ_Q` of the space of one-jets `J¹Q = T*Q × ℝ`
@@ -71,6 +78,8 @@ Legendrian immersions into `W × ℝ` are exactly the lifts of the exact Lagrang
 * `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(ι, h)^* (dz - θ) = dh - ι^* θ`.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
+* `TauCeti.SmoothForm.wedge_contactization_wedgePow_mextDerivₗ`: the contact volume formula
+  `α ∧ (dα)ⁿ = dz ∧ ωⁿ` for `α = dz - θ` and `ω = -dθ`.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
 * `TauCeti.SmoothForm.isHorizontalMap_contactization_iff`: `(ι, h)` is horizontal exactly when
   `ι^* θ = dh`.
@@ -114,13 +123,20 @@ is a contact form (`TauCeti.SmoothForm.isContactForm_contactization_iff`). -/
 def contactization (θ : SmoothForm I W ℝ 1) : SmoothForm (I.prod 𝓘(ℝ)) (W × ℝ) ℝ 1 :=
   mpullback Prod.snd contMDiff_snd realLineCoordForm - mpullback Prod.fst contMDiff_fst θ
 
+/-- The contactization form is `dz - θ`, with `dz` and `θ` pulled back along the two
+projections of `W × ℝ`. -/
+theorem contactization_def (θ : SmoothForm I W ℝ 1) :
+    θ.contactization =
+      mpullback Prod.snd contMDiff_snd realLineCoordForm - mpullback Prod.fst contMDiff_fst θ :=
+  (rfl)
+
 /-- The contactization form sends a tangent vector `(v, c)` at `(w, z)` to `c - θ_w(v)`. -/
 @[simp]
 theorem contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     (v : TangentSpace (I.prod 𝓘(ℝ)) p) :
-    θ.contactization.1 p ![v] =
+    θ.contactization.val p ![v] =
       NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 -
-        θ.1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
+        θ.val p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
   simp only [contactization, Submodule.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
     mpullback_apply, mfderiv_fst, mfderiv_snd, realLineCoordForm_apply,
     Matrix.vec_single_eq_const, Manifold.tangentSpaceProdEquiv_apply,
@@ -152,7 +168,7 @@ theorem eval₂_mextDerivₗ_contactization (θ : SmoothForm I W ℝ 1) (p : W �
 vectors, is `-dθ` on their components in `W`. -/
 theorem mextDeriv_contactization_apply (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     (v w : TangentSpace (I.prod 𝓘(ℝ)) p) :
-    mextDeriv θ.contactization.1 p ![v, w] =
+    mextDeriv θ.contactization.val p ![v, w] =
       (-mextDerivₗ I 1 θ).eval₂ p.1 (Manifold.tangentSpaceProdEquiv p v).1
         (Manifold.tangentSpaceProdEquiv p w).1 := by
   rw [← eval₂_mextDerivₗ_contactization, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
@@ -163,7 +179,7 @@ theorem mem_kerDistribution_contactization {θ : SmoothForm I W ℝ 1} {p : W ×
     {v : TangentSpace (I.prod 𝓘(ℝ)) p} :
     v ∈ θ.contactization.kerDistribution p ↔
       NormedSpace.fromTangentSpace p.2 (Manifold.tangentSpaceProdEquiv p v).2 =
-        θ.1 p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
+        θ.val p.1 ![(Manifold.tangentSpaceProdEquiv p v).1] := by
   rw [mem_kerDistribution, contactization_apply, sub_eq_zero]
 
 /-- For smooth maps `ι : L → W` and `h : L → ℝ`, the map `x ↦ (ι x, h x)` pulls the contactization
@@ -172,8 +188,8 @@ theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E'
     [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace L]
     [ChartedSpace H' L] [IsManifold J ∞ L] (θ : SmoothForm I W ℝ 1) {ι : L → W} {h : L → ℝ}
     (hι : ContMDiff J I ∞ ι) (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
-    (mpullback (fun x ↦ (ι x, h x)) (hι.prodMk hh) θ.contactization).1 =
-      mextDeriv (RoughForm.ofFunction J h) - (mpullback ι hι θ).1 := by
+    (mpullback (fun x ↦ (ι x, h x)) (hι.prodMk hh) θ.contactization).val =
+      mextDeriv (RoughForm.ofFunction J h) - (mpullback ι hι θ).val := by
   -- The two projections of `x ↦ (ι x, h x)` are `ι` and `h`.
   have hfst : Prod.fst ∘ (fun x ↦ (ι x, h x)) = ι := rfl
   have hsnd : Prod.snd ∘ (fun x ↦ (ι x, h x)) = h := rfl
@@ -184,8 +200,8 @@ theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E'
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)
     (v : TangentSpace I p.1) :
-    θ.contactization.1 p ![(Manifold.tangentSpaceProdEquiv p).symm
-      (v, (NormedSpace.fromTangentSpace p.2).symm (θ.1 p.1 ![v]))] = 0 :=
+    θ.contactization.val p ![(Manifold.tangentSpaceProdEquiv p).symm
+      (v, (NormedSpace.fromTangentSpace p.2).symm (θ.val p.1 ![v]))] = 0 :=
   mem_kerDistribution.1 <| mem_kerDistribution_contactization.2 <| by
     simp only [ContinuousLinearEquiv.apply_symm_apply]
 
@@ -200,7 +216,7 @@ theorem isContactForm_contactization_iff {θ : SmoothForm I W ℝ 1} :
     -- is in the kernel of `dz - θ` and `d(dz - θ)`-orthogonal to that kernel.
     intro h w a ha
     set e := Manifold.tangentSpaceProdEquiv (I := I) (J := 𝓘(ℝ)) (w, (0 : ℝ))
-    have hv := (h (w, 0)).2 (e.symm (a, (NormedSpace.fromTangentSpace 0).symm (θ.1 w ![a])))
+    have hv := (h (w, 0)).2 (e.symm (a, (NormedSpace.fromTangentSpace 0).symm (θ.val w ![a])))
       (contactization_apply_graph θ (w, 0) a) fun u _ ↦ by
         rw [mextDeriv_contactization_apply, ContinuousLinearEquiv.apply_symm_apply]
         exact ha _
@@ -209,21 +225,54 @@ theorem isContactForm_contactization_iff {θ : SmoothForm I W ℝ 1} :
     refine ⟨⟨(Manifold.tangentSpaceProdEquiv p).symm (0, (NormedSpace.fromTangentSpace p.2).symm 1),
       ?_⟩, fun v hv hvw ↦ ?_⟩
     · simp only [contactization_apply, ContinuousLinearEquiv.apply_symm_apply]
-      rw [(θ.1 p.1).map_coord_zero 0 rfl, sub_zero]
+      rw [(θ.val p.1).map_coord_zero 0 rfl, sub_zero]
       exact one_ne_zero
     rw [contactization_apply, sub_eq_zero] at hv
     set e := Manifold.tangentSpaceProdEquiv (I := I) (J := 𝓘(ℝ)) p
     -- The `W`-component of `v` is in the kernel of `-dθ`, by testing against the lifts
     -- `(b, θ b)` of all tangent vectors `b` of `W`.
     have h₁ : (e v).1 = 0 := h p.1 _ fun b ↦ by
-      have := hvw (e.symm (b, (NormedSpace.fromTangentSpace p.2).symm (θ.1 p.1 ![b])))
+      have := hvw (e.symm (b, (NormedSpace.fromTangentSpace p.2).symm (θ.val p.1 ![b])))
         (contactization_apply_graph θ p b)
       rwa [mextDeriv_contactization_apply, ContinuousLinearEquiv.apply_symm_apply] at this
     -- Its real component is then `θ` of the zero vector.
     have h₂ : (e v).2 = 0 := by
-      rw [h₁, (θ.1 p.1).map_coord_zero 0 rfl] at hv
+      rw [h₁, (θ.val p.1).map_coord_zero 0 rfl] at hv
       exact (NormedSpace.fromTangentSpace p.2).map_eq_zero_iff.1 hv
     exact e.injective (by rw [map_zero]; exact Prod.ext h₁ h₂)
+
+/-! ### The contact volume -/
+
+variable [FiniteDimensional ℝ E] {n : ℕ}
+
+variable (I) in
+/-- **The contact volume of a contactization.** If the model space of `W` has dimension at most
+`2 n`, the contactization form `α = dz - θ` on `W × ℝ` satisfies `α ∧ (dα)ⁿ = dz ∧ ωⁿ` with
+`ω = -dθ`, where `dz` and `ωⁿ` are pulled back along the two projections. -/
+theorem wedge_contactization_wedgePow_mextDerivₗ (hn : Module.finrank ℝ E ≤ 2 * n)
+    (θ : SmoothForm I W ℝ 1) :
+    wedge θ.contactization ((mextDerivₗ (I.prod 𝓘(ℝ)) 1 θ.contactization).wedgePow n) =
+      wedge (mpullback Prod.snd contMDiff_snd realLineCoordForm)
+        (mpullback Prod.fst contMDiff_fst ((-mextDerivₗ I 1 θ).wedgePow n)) := by
+  -- `α ∧ (dα)ⁿ = dz ∧ ωⁿ - θ ∧ ωⁿ`, and `θ ∧ ωⁿ` has degree `2 n + 1` on `W`, so it vanishes.
+  rw [mextDerivₗ_contactization, ← mpullback_wedgePow, contactization, map_sub,
+    LinearMap.sub_apply, ← mpullback_wedge,
+    eq_zero_of_finrank_lt (by omega) (wedge θ ((-mextDerivₗ I 1 θ).wedgePow n)), map_zero,
+    sub_zero]
+
+/-- **The contactization volume vanishes nowhere.** If `W` has dimension `2 n` and `ω = -dθ` is
+nondegenerate, the volume form `dz ∧ ωⁿ` on `W × ℝ`, which is the contact volume `α ∧ (dα)ⁿ` of
+the contactization form `α = dz - θ`, vanishes nowhere. -/
+theorem wedge_mpullback_realLineCoordForm_wedgePow_apply_ne_zero (hn : Module.finrank ℝ E = 2 * n)
+    {θ : SmoothForm I W ℝ 1} (hθ : SmoothTwoForm.IsNondegenerate (-mextDerivₗ I 1 θ))
+    (p : W × ℝ) :
+    (wedge (mpullback Prod.snd contMDiff_snd realLineCoordForm)
+      (mpullback Prod.fst contMDiff_fst ((-mextDerivₗ I 1 θ).wedgePow n))).val p ≠ 0 := by
+  have hn' : Module.finrank ℝ (E × ℝ) = 2 * n + 1 := by
+    rw [Module.finrank_prod, Module.finrank_self, hn]
+  rw [← wedge_contactization_wedgePow_mextDerivₗ I hn.le]
+  exact (isContactForm_iff_wedge_wedgePow_apply_ne_zero hn' _).1
+    (isContactForm_contactization_iff.2 hθ) p
 
 end SmoothForm
 
@@ -265,7 +314,7 @@ diffeomorphism `(w, z) ↦ (w, z - g w)` of `W × ℝ` pulls the contactization 
 `dz - θ'`. When `-dθ` is nondegenerate, so that both forms are contact forms, it is therefore a
 strict contactomorphism between the two contactizations. -/
 theorem mpullback_contactizationShift_contactization (hg : ContMDiff I 𝓘(ℝ) ∞ g)
-    {θ θ' : SmoothForm I W ℝ 1} (hθ' : θ'.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g)) :
+    {θ θ' : SmoothForm I W ℝ 1} (hθ' : θ'.val = θ.val + mextDeriv (RoughForm.ofFunction I g)) :
     SmoothForm.mpullback (contactizationShift I hg) (contactizationShift I hg).contMDiff
       θ.contactization = θ'.contactization := by
   have hΦ := (contactizationShift I hg).contMDiff.mdifferentiable (by simp)
@@ -275,14 +324,14 @@ theorem mpullback_contactizationShift_contactization (hg : ContMDiff I 𝓘(ℝ)
     (contMDiff_snd.sub (hg.comp contMDiff_fst)).mdifferentiable (by simp)
   -- The shift changes the coordinate `z` by `-g`, so it pulls `dz` back to `d(z - g)`.
   have hdz : mpullback (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (contactizationShift I hg)
-      (mpullback (I.prod 𝓘(ℝ)) 𝓘(ℝ) Prod.snd SmoothForm.realLineCoordForm.1) =
+      (mpullback (I.prod 𝓘(ℝ)) 𝓘(ℝ) Prod.snd SmoothForm.realLineCoordForm.val) =
         mextDeriv (RoughForm.ofFunction (I.prod 𝓘(ℝ)) (Prod.snd - g ∘ Prod.fst : W × ℝ → ℝ)) := by
     rw [← mpullback_comp hΦ mdifferentiable_snd]
     exact SmoothForm.mpullback_realLineCoordForm _
   -- The shift fixes the first coordinate, so it fixes forms pulled back from `W`.
   have hθ : mpullback (I.prod 𝓘(ℝ)) (I.prod 𝓘(ℝ)) (contactizationShift I hg)
-      (mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.1) =
-        mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.1 := by
+      (mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.val) =
+        mpullback (I.prod 𝓘(ℝ)) I Prod.fst θ.val := by
     rw [← mpullback_comp hΦ mdifferentiable_fst]
     rfl
   -- `dz = d(z - g) + d(g ∘ pr₁)` on `W × ℝ`.
@@ -320,7 +369,7 @@ contactization form `dz - θ` exactly when `ι` pulls `θ` back to `dh`. -/
 theorem isHorizontalMap_contactization_iff (θ : SmoothForm I W ℝ 1) (hι : ContMDiff J I ∞ ι)
     (hh : ContMDiff J 𝓘(ℝ) ∞ h) :
     IsHorizontalMap J θ.contactization.kerDistribution (fun x ↦ (ι x, h x)) ↔
-      (mpullback ι hι θ).1 = mextDeriv (RoughForm.ofFunction J h) := by
+      (mpullback ι hι θ).val = mextDeriv (RoughForm.ofFunction J h) := by
   rw [isHorizontalMap_kerDistribution_iff_mpullback_eq_zero _ (hι.prodMk hh), ← Subtype.coe_inj,
     mpullback_prodMk_contactization θ hι hh, ZeroMemClass.coe_zero, sub_eq_zero, eq_comm]
 
@@ -337,7 +386,7 @@ theorem isImmersion_of_isHorizontalMap_contactization [FiniteDimensional ℝ E] 
   have hpull := (isHorizontalMap_contactization_iff θ hι hh).1 hhor
   rw [coe_mpullback] at hpull
   have hdh (x : L) (u : TangentSpace J x) :
-      mfderiv J 𝓘(ℝ) h x u = θ.1 (ι x) ![mfderiv J I ι x u] := by
+      mfderiv J 𝓘(ℝ) h x u = θ.val (ι x) ![mfderiv J I ι x u] := by
     have := congr($hpull x ![u])
     rw [_root_.TauCeti.mpullback_apply, mextDeriv_ofFunction_apply] at this
     rw [← this]

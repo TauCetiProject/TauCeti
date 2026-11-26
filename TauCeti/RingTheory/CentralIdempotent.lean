@@ -112,8 +112,8 @@ theorem map_mem_centralIdempotents (f : R ≃+* S) {e : R} (he : e ∈ centralId
 
 /-- **A ring isomorphism restricts to a bijection of central idempotents.** -/
 def centralIdempotentsCongr (f : R ≃+* S) : centralIdempotents R ≃ centralIdempotents S where
-  toFun e := ⟨f e, map_mem_centralIdempotents f e.2⟩
-  invFun e := ⟨f.symm e, map_mem_centralIdempotents f.symm e.2⟩
+  toFun e := ⟨f e, map_mem_centralIdempotents f e.property⟩
+  invFun e := ⟨f.symm e, map_mem_centralIdempotents f.symm e.property⟩
   left_inv e := Subtype.ext (f.symm_apply_apply e)
   right_inv e := Subtype.ext (f.apply_symm_apply e)
 

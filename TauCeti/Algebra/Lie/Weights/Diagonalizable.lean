@@ -157,6 +157,8 @@ end Trivial
 
 /-! ### Semisimplicity of the Cartan action -/
 
+section CorootAction
+
 variable {K : Type u} {L : Type v} [Field K] [CharZero K]
   [LieRing L] [LieAlgebra K L] [IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
@@ -189,7 +191,16 @@ private lemma mem_span_coroot_cartan (x : H) :
   rw [RootPairing.IsRootSystem.span_coroot_eq_top]
   trivial
 
-omit [FiniteDimensional K L] in
+end CorootAction
+
+section CartanAction
+
+variable {K : Type u} {L : Type v} [Field K] [CharZero K]
+  [LieRing L] [LieAlgebra K L] [IsKilling K L]
+  {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [IsTriangularizable K H L]
+  {M : Type w} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
+  [FiniteDimensional K M]
+
 /-- **The Cartan subalgebra acts semisimply.** Every element of a Cartan subalgebra of a
 Killing-semisimple Lie algebra split over the ground field acts on a finite-dimensional module
 by a semisimple endomorphism.
@@ -204,7 +215,7 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
   induction mem_span_coroot_cartan x using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨α, rfl⟩ := hy
-    exact isSemisimple_toEnd_coroot α.1
+    exact isSemisimple_toEnd_coroot α.val
   | zero => simp
   | add y z _ _ hy hz =>
     rw [map_add]
@@ -214,7 +225,6 @@ theorem isSemisimple_toEnd_cartan (x : H) : (toEnd K H M x).IsSemisimple := by
     exact hy.of_mem_adjoin_singleton
       (Subalgebra.smul_mem _ (Algebra.self_mem_adjoin_singleton _ _) c)
 
-omit [FiniteDimensional K L] in
 /-- A split Cartan subalgebra acts triangularizably on every finite-dimensional module. -/
 instance instIsTriangularizableCartan : IsTriangularizable K H M where
   maxGenEigenspace_eq_top x := by
@@ -222,7 +232,7 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
     let f : H.root → End K M := fun α ↦ toEnd K H M (IsKilling.coroot α)
     have hdiag (α : H.root) : ⨆ μ : K, (f α).eigenspace μ = ⊤ := by
       exact iSup_eigenspace_toEnd_coroot_eq_top (H.isNonZero_coe_root α)
-    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.1).isFinitelySemisimple
+    have hss (α : H.root) := (isSemisimple_toEnd_coroot (M := M) α.val).isFinitelySemisimple
     have hcomm : Pairwise fun α β ↦ Commute (f α) (f β) := fun α β _ ↦
       commute_toEnd_of_isLieAbelian _ _
     -- First decompose into simultaneous eigenspaces of the coroots.
@@ -256,14 +266,12 @@ instance instIsTriangularizableCartan : IsTriangularizable K H M where
 
 /-! ### Honest weight spaces -/
 
-omit [FiniteDimensional K L] in
 /-- The generalized eigenspace of `x : H` at a scalar is an honest eigenspace. -/
 @[simp]
 theorem genWeightSpaceOf_eq_eigenspace (μ : K) (x : H) :
     (genWeightSpaceOf M μ x).toSubmodule = (toEnd K H M x).eigenspace μ :=
   (isSemisimple_toEnd_cartan (M := M) x).isFinitelySemisimple.maxGenEigenspace_eq_eigenspace μ
 
-omit [FiniteDimensional K L] in
 /-- **The generalized weight spaces are honest weight spaces.** For a finite-dimensional module over
 a Killing-semisimple Lie algebra with a split Cartan subalgebra, `LieModule.genWeightSpace M χ`
 is the simultaneous eigenspace `LieModule.weightSpace M χ`.
@@ -275,7 +283,6 @@ theorem genWeightSpace_eq_weightSpace (χ : H → K) : genWeightSpace M χ = wei
   genWeightSpace_eq_weightSpace_of_isFinitelySemisimple
     (fun x ↦ (isSemisimple_toEnd_cartan x).isFinitelySemisimple) χ
 
-omit [FiniteDimensional K L] in
 /-- **Membership of a weight space is the eigenvector equation.** An element of a
 finite-dimensional module lies in the `χ`-weight space exactly when every `x : H` acts on it by the
 scalar `χ x`.
@@ -288,7 +295,6 @@ theorem mem_genWeightSpace_iff_forall_lie_eq_smul {χ : H → K} {m : M} :
   rw [genWeightSpace_eq_weightSpace, mem_weightSpace]
   simp
 
-omit [FiniteDimensional K L] in
 variable (K H M) in
 /-- **The honest weight spaces span.** A finite-dimensional module over a Killing-semisimple Lie
 algebra with a split Cartan subalgebra is spanned by its simultaneous eigenspaces. -/
@@ -296,7 +302,6 @@ theorem iSup_weightSpace_eq_top :
     ⨆ χ : Weight K H M, weightSpace M (χ : H → K) = ⊤ := by
   simpa only [genWeightSpace_eq_weightSpace] using iSup_genWeightSpace_eq_top' K H M
 
-omit [FiniteDimensional K L] in
 variable (K H M) in
 open scoped Classical in
 /-- **The honest weight-space decomposition.** A finite-dimensional module over a
@@ -308,7 +313,6 @@ theorem isInternal_weightSpace :
 
 /-! ### Traces -/
 
-omit [FiniteDimensional K L] in
 /-- **The trace of a power of a Cartan element**: `tr (ρ_M(h) ^ m) = ∑_μ dim M_μ · μ(h) ^ m`, the
 sum over the weights `μ` of `M`. -/
 theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
@@ -331,8 +335,10 @@ theorem trace_toEnd_pow_eq_sum_finrank_nsmul (h : H) (m : ℕ) :
   rw [LinearMap.trace_eq_sum_trace_restrict (isInternal_genWeightSpace K H M) hmaps]
   refine Finset.sum_congr rfl fun chi _ ↦ ?_
   have hres : (toEnd K H M h ^ m).restrict (hmaps chi) = chi h ^ m • LinearMap.id :=
-    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.2)
+    LinearMap.ext fun x ↦ Subtype.ext (hact chi m x x.property)
   rw [hres, map_smul, LinearMap.trace_id, smul_eq_mul, nsmul_eq_mul, mul_comm,
     LieSubmodule.finrank_toSubmodule]
+
+end CartanAction
 
 end TauCeti

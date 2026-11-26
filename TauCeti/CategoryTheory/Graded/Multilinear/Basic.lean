@@ -54,7 +54,7 @@ abbrev PathOperation (q : ℤ) := ∀ d : Fin n → ℤ, PathMultilinear R X d q
 
 /-- Homogeneous multilinear operations on the total Hom modules of a composable string. -/
 abbrev HomogeneousPathOperation (q : ℤ) :=
-  TauCeti.MultilinearMap.homogeneousSubmodule (R := R) (S := R)
+  MultilinearMap.homogeneousSubmodule (R := R) (S := R)
     (fun i : Fin n ↦ (grading (R := R) (X i.rev.castSucc) (X i.rev.succ)).piece)
     (grading (R := R) (X 0) (X (Fin.last n))).piece q
 

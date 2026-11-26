@@ -166,7 +166,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
     weilDifferentialDivisor hF (isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy)
         (repartitionDualMul_mem_weilDifferentialSpace hF ((y⁻¹ : Fˣ) : F)
           (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2)
+            ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property)
         (repartitionDualMul_ne_zero hF (Units.ne_zero _)
           (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF)) =
       (genus k F - 1 : ℤ) • Divisor.poles hF (Units.map (algebraMap (RatFunc k) F : RatFunc k →* F)
@@ -176,7 +176,7 @@ theorem weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_o
   have hex := isIntegrallyClosedIn_of_sq_eq h2 hf hdeg hgen hy
   rw [weilDifferentialDivisor_repartitionDualMul hF hex
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property
       (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF),
     weilDifferentialDivisor_weilDifferentialCotrace_ratFuncWeilDifferential,
     genus_eq_of_sq_eq h2 hf hdeg hgen hy]
@@ -232,7 +232,7 @@ theorem weilDifferentialFiltration_zero_eq_span_of_sq_eq (h2 : (2 : k) ≠ 0) {f
   have hW := isGreatest_weilDifferentialDivisor hF hex
     (repartitionDualMul_mem_weilDifferentialSpace hF ((y⁻¹ : Fˣ) : F)
       (weilDifferentialCotrace k F (IsFunctionField.ratFunc k) hF
-        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).2)
+        ⟨ratFuncWeilDifferential k, ratFuncWeilDifferential_mem k⟩).property)
     (repartitionDualMul_ne_zero hF (Units.ne_zero _)
       (weilDifferentialCotrace_ratFuncWeilDifferential_ne_zero hF))
   rw [weilDifferentialDivisor_repartitionDualMul_inv_weilDifferentialCotrace_of_sq_eq h2 hf hdeg

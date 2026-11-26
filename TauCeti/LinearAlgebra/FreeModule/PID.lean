@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
+import Mathlib.Algebra.EuclideanDomain.Int
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.SetTheory.Cardinal.Order
 
@@ -29,7 +30,8 @@ module, so every submodule of a projective module is free as well
 (`Submodule.free_of_projective_of_isPrincipalIdealRing`), as is every module that injects into a
 projective module (`Module.Free.of_injective_of_projective_of_isPrincipalIdealRing`), and any
 middle term of an exact sequence `0 → M → N → P` with `M` free and `P` projective
-(`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`).
+(`Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing`). Over `ℤ`, every
+subgroup of a free abelian group is free (`AddSubgroup.free_of_free`).
 -/
 
 public section
@@ -57,7 +59,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
   let J : Set ι := {i | generator (I i) ≠ 0}
   let pivot (i : J) : N := ⟨x i, (hx i).1⟩
   have coord_pivot (i : J) : b.coord i (pivot i) = generator (I i) := hx_coord i
-  have coord_pivot_eq_zero {i : J} {j : ι} (hij : i.1 < j) : b.coord j (pivot i) = 0 :=
+  have coord_pivot_eq_zero {i : J} {j : ι} (hij : i.val < j) : b.coord j (pivot i) = 0 :=
     Finsupp.notMem_support_iff.mp fun hj ↦ (b.mem_span_image.mp (hx i).2 hj).not_gt hij
   -- In a relation among pivots, the greatest index isolates one nonzero coordinate.
   have pivot_linearIndependent : LinearIndependent R pivot := by
@@ -74,7 +76,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
           LinearMap.comp_apply, subtype_apply, coord_pivot] at this
         rw [Finset.sum_eq_zero fun j hj ↦ by rw [coord_pivot_eq_zero (hsa j hj), mul_zero],
           add_zero] at this
-        exact (mul_eq_zero.mp this).resolve_right a.2
+        exact (mul_eq_zero.mp this).resolve_right a.property
       simp only [Finset.sum_insert ha, hga, zero_smul, zero_add] at hsum
       intro i hi
       obtain rfl | hi := Finset.mem_insert.mp hi
@@ -96,7 +98,7 @@ theorem free_of_isPrincipalIdealRing (N : Submodule R M) [Module.Free R M] :
       exact Finsupp.mem_support_iff.mp (h ▸ Finset.max'_mem _ hne) hzi
     intro y hy
     have hy_span : (y : M) ∈ span R (b '' Iic i) := b.mem_span_image.mpr hy
-    obtain ⟨c, hc⟩ := (mem_iff_eq_smul_generator (I i)).mp (mem_map_of_mem ⟨y.2, hy_span⟩)
+    obtain ⟨c, hc⟩ := (mem_iff_eq_smul_generator (I i)).mp (mem_map_of_mem ⟨y.property, hy_span⟩)
     by_cases hg : generator (I i) = 0
     · exact lower y hy (by rw [hc, hg, smul_zero])
     rw [← sub_add_cancel y (c • pivot ⟨i, hg⟩)]
@@ -134,6 +136,11 @@ theorem of_injective_of_projective_of_isPrincipalIdealRing [Module.Projective R 
 
 end Module.Free
 
+/-- Every subgroup of a free abelian group is free. -/
+theorem AddSubgroup.free_of_free {G : Type*} [AddCommGroup G] [Module.Free ℤ G]
+    (H : AddSubgroup G) : Module.Free ℤ H :=
+  H.toIntSubmodule.free_of_isPrincipalIdealRing
+
 /-- Over a principal ideal ring without zero divisors, if `0 → M → N → P` is exact with `M` free
 and `P` projective, then `N` is free: the image of `N → P` is a submodule of `P`, hence free and
 projective, so the surjection `N → range g` splits and `N ≃ M × range g`. -/
@@ -147,4 +154,4 @@ theorem Function.Exact.free_of_injective_of_projective_of_isPrincipalIdealRing
   obtain ⟨l, hl⟩ :=
     Module.projective_lifting_property g.rangeRestrict .id g.surjective_rangeRestrict
   have hex : Function.Exact f g.rangeRestrict := fun x ↦ Subtype.ext_iff.trans (h x)
-  exact .of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).1.symm
+  exact .of_equiv (hex.splitSurjectiveEquiv hf ⟨l, hl⟩).val.symm

@@ -84,15 +84,6 @@ of the chart**, `z ↦ (-wᵢ zᵢ)ᵢ`. -/
 theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
     (hy : y ∈ φ.toChart.source) : -mgradient 𝓘(ℝ, E) f y = φ.field y := by
   have h : -φ.field y = mgradient 𝓘(ℝ, E) f y := eq_mgradient_iff.2 fun v ↦ by
-    have hdf : mvfderiv 𝓘(ℝ, E) f y v =
-        ∑ i, φ.weight i * φ.coord (φ.toChart y) i *
-          φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y v) i := by
-      -- `mvfderiv` composes `mfderiv` with `NormedSpace.fromTangentSpace`, which is the identity
-      -- on the underlying type `ℝ` of `TangentSpace 𝓘(ℝ) (f y)` and has no Mathlib `simp` lemma.
-      rw [mvfderiv, ContinuousLinearMap.comp_apply,
-        mfderiv_eq_fderiv_comp_of_eqOn
-          (IsManifold.maximalAtlas_subset_of_le (by simp) φ.mem_maximalAtlas) φ.eqOn_quadratic hy]
-      exact φ.fderiv_quadratic_apply _ _
     have hX : φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (-φ.field y)) =
         fun i ↦ φ.weight i * φ.coord (φ.toChart y) i := by
       -- `dψ` acts on tangent spaces and `L` on `E`; negation goes through each separately.
@@ -102,7 +93,7 @@ theorem IsEuclidean.neg_mgradient_eq_field (hφ : φ.IsEuclidean) {y : M}
       rw [hneg, φ.coord_mfderiv_field hy]
       ext i
       simp
-    rw [hφ.inner_eq hy, hdf, hX]
+    rw [hφ.inner_eq hy, φ.mvfderiv_apply hy, hX]
     rfl
   rw [← h, neg_neg]
 
@@ -123,11 +114,8 @@ theorem isAdaptedPseudoGradient_neg_mgradient
   mvfderiv_apply_lt_zero y hy := by
     have hg : mgradient 𝓘(ℝ, E) f y ≠ 0 := by
       rwa [ne_eq, mgradient_eq_zero_iff, mvfderiv_eq_zero_iff]
-    have h : mvfderiv 𝓘(ℝ, E) f y (-mgradient 𝓘(ℝ, E) f y) =
-        -inner ℝ (mgradient 𝓘(ℝ, E) f y) (mgradient 𝓘(ℝ, E) f y) :=
-      (map_neg _ _).trans (congrArg Neg.neg mvfderiv_apply_mgradient)
-    rw [h, neg_lt_zero]
-    exact real_inner_self_pos.2 hg
+    rw [mvfderiv_apply_neg_mgradient, neg_lt_zero]
+    exact pow_pos (norm_pos_iff.2 hg) 2
   exists_morseChart x hx := by
     obtain ⟨φ, hφ⟩ := hφ x hx
     exact ⟨φ, fun y hy ↦ by rw [hφ.neg_mgradient_eq_field hy, φ.coord_mfderiv_field hy]⟩

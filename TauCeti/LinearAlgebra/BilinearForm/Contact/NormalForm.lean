@@ -165,7 +165,7 @@ theorem IsContact.exists_linearEquiv_eq_stdContact (hB : B.IsAlt) (h : a.IsConta
     -- The reassociation, swap and `Sum.elim` steps are the identity on these coordinates.
     rfl
   have ha (x : (Fin n → K) × (Fin n → K) × K) : a (f x) = x.2.2 := by
-    rw [hf, map_add, LinearMap.mem_ker.1 (w x).2, map_smul, h.apply_reebVector, smul_eq_mul,
+    rw [hf, map_add, LinearMap.mem_ker.1 (w x).property, map_smul, h.apply_reebVector, smul_eq_mul,
       mul_one, zero_add]
   have hw (x : (Fin n → K) × (Fin n → K) × K) : ⇑(c.repr (w x)) = Sum.elim x.2.1 x.1 := by
     ext s

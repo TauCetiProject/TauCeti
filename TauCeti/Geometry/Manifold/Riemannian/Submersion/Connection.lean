@@ -9,11 +9,14 @@ public import TauCeti.Geometry.Manifold.Riemannian.Submersion.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Adjoint
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Basic
 public import TauCeti.Geometry.Manifold.VectorField.Related
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Horizontal Levi-Civita differentiation under a Riemannian submersion
 
-Horizontal lifts of vector fields on the base preserve their regularity and inner products.
+Horizontal lifts of vector fields on the base preserve their regularity and inner products, and
+every horizontal tangent vector extends locally to a `C^n` basic horizontal lift on an open
+neighbourhood without assuming `[T2Space N]` (`exists_contMDiffOn_horizontalLift`).
 Their brackets project to the brackets on the base, although those brackets need not themselves
 be horizontal. The Koszul formula then identifies the horizontal component of their covariant
 derivative with the lift of the base covariant derivative. This is the connection comparison
@@ -55,6 +58,8 @@ variable
 
 section Regularity
 
+section ContMDiff
+
 variable [IsManifold I 1 M] [IsManifold J 1 N]
   {n : ℕ∞ω} [IsManifold I (n + 1) M]
   [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
@@ -70,6 +75,45 @@ theorem contMDiffAt_horizontalLift {X : Π y : N, TangentSpace J y} {x : M}
   simpa only [h.horizontalLift_apply, Function.comp_def] using
     hf.mfderiv_adjoint_apply (hX.comp x (hf.of_le le_self_add))
 
+/-- Horizontal lifting of a `C^n` base vector field is `C^n`, for `C^n` metrics and
+`n + 1 ≤ ∞`. -/
+theorem contMDiff_horizontalLift {X : Π y : N, TangentSpace J y}
+    (hX : ContMDiff J (J.prod 𝓘(ℝ, F)) n (T% X)) (hn : n + 1 ≤ ∞) :
+    ContMDiff I (I.prod 𝓘(ℝ, E)) n
+      (T% (fun y ↦ h.horizontalLift y (X (f y)))) :=
+  fun x ↦ h.contMDiffAt_horizontalLift (hX (f x)) hn
+
+variable (n) in
+/-- Extend a horizontal tangent vector at `x` locally to a basic horizontal lift that is `C^n` on
+an open neighbourhood of `x`, for `C^n` metrics and `n + 1 ≤ ∞`, without assuming `[T2Space N]`. -/
+theorem exists_contMDiffOn_horizontalLift [IsManifold J (n + 1) N] {x : M}
+    {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ) (hn : n + 1 ≤ ∞) :
+    ∃ (W : Set N) (B : Π z : N, TangentSpace J z),
+      IsOpen W ∧ f x ∈ W ∧ CMDiff[W] n (T% B) ∧
+      CMDiff[f ⁻¹' W] n (T% (fun y ↦ h.horizontalLift y (B (f y)))) ∧
+      h.horizontalLift x (B (f x)) = u := by
+  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := n)
+  obtain ⟨s, hs, hBs⟩ := FiberBundle.exists_contMDiffOn_extend (k := n) J F (mfderiv I J f x u)
+  refine ⟨interior s, FiberBundle.extend F (mfderiv I J f x u), isOpen_interior,
+    mem_interior_iff_mem_nhds.2 hs, hBs.mono interior_subset, fun y hy ↦ ?_, ?_⟩
+  · exact (h.contMDiffAt_horizontalLift
+      ((hBs.mono interior_subset).contMDiffAt (isOpen_interior.mem_nhds hy))
+      hn).contMDiffWithinAt
+  · simp [FiberBundle.extend_apply_self, h.horizontalLift_mfderiv_of_mem x hu]
+
+end ContMDiff
+
+/-- Horizontal lifting of a base vector field that is `C^1` at `f x` is differentiable at `x`. -/
+theorem mdifferentiableAt_horizontalLift [IsManifold I 2 M] [IsManifold J 1 N]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
+    {Y : Π y : N, TangentSpace J y} {x : M}
+    (hY : CMDiffAt 1 (T% Y) (f x)) :
+    MDiffAt (T% (fun y ↦ h.horizontalLift y (Y (f y)))) x := by
+  let : IsManifold I ((1 : ℕ∞ω) + 1) M := by
+    simpa only [one_add_one_eq_two] using (inferInstance : IsManifold I 2 M)
+  exact (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
+
 end Regularity
 
 section Connection
@@ -79,18 +123,7 @@ variable [IsManifold I 2 M] [IsManifold J 2 N]
   [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
   {X Y Z : Π y : N, TangentSpace J y} {x : M}
 
--- These regularity indices are propositionally, but not definitionally, equal to two.
-local instance : IsManifold I ((1 : ℕ∞ω) + 1) M := by
-  rw [one_add_one_eq_two]
-  infer_instance
-
-local instance : IsManifold I (minSmoothness ℝ 2) M := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  infer_instance
-
-local instance : IsManifold J (minSmoothness ℝ 2) N := by
-  rw [minSmoothness_of_isRCLikeNormedField]
-  infer_instance
+attribute [local instance] IsManifold.minSmoothness_of_isRCLikeNormedField
 
 /-- The bracket of horizontal lifts projects to the base bracket. Its vertical component is
 not asserted to vanish. -/
@@ -102,8 +135,8 @@ theorem mfderiv_mlieBracket_horizontalLift
       mlieBracket J X Y (f x) := by
   exact TauCeti.mfderiv_mlieBracket_of_eventually_related
     (h.isSubmersion.contMDiff x) (by simp)
-    ((h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero)
-    ((h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero)
+    (h.mdifferentiableAt_horizontalLift hX)
+    (h.mdifferentiableAt_horizontalLift hY)
     (hX.mdifferentiableAt one_ne_zero) (hY.mdifferentiableAt one_ne_zero)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
     (Filter.Eventually.of_forall fun y ↦ h.mfderiv_horizontalLift y _)
@@ -137,10 +170,8 @@ theorem koszul_horizontalLift
   rw [TauCeti.Manifold.koszul_apply, TauCeti.Manifold.koszul_apply,
     h.mvfderiv_inner_horizontalLift hY hZ, h.mvfderiv_inner_horizontalLift hZ hX,
     h.mvfderiv_inner_horizontalLift hX hY]
-  have hi (v : TangentSpace I x) (w : TangentSpace J (f x)) :
-      inner ℝ v (h.horizontalLift x w) = inner ℝ (mfderiv I J f x v) w := by
-    rw [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right]
-  rw [hi, hi, hi, h.mfderiv_mlieBracket_horizontalLift hX hY,
+  rw [h.inner_horizontalLift_right, h.inner_horizontalLift_right, h.inner_horizontalLift_right,
+    h.mfderiv_mlieBracket_horizontalLift hX hY,
     h.mfderiv_mlieBracket_horizontalLift hX hZ, h.mfderiv_mlieBracket_horizontalLift hY hZ]
 
 variable {covM : CovariantDerivative I E (TangentSpace I : M → Type _)}
@@ -158,14 +189,11 @@ theorem mfderiv_covariantDerivative_horizontalLift
   have hZ : CMDiffAt 1 (T% (FiberBundle.extend F w)) (f x) := FiberBundle.contMDiffAt_extend ..
   have hX : CMDiffAt 1 (T% (FiberBundle.extend F v)) (f x) := FiberBundle.contMDiffAt_extend ..
   have hk := h.koszul_horizontalLift hX hY hZ
-  have hXM := (h.contMDiffAt_horizontalLift hX (by norm_num)).mdifferentiableAt one_ne_zero
-  have hYM := (h.contMDiffAt_horizontalLift hY (by norm_num)).mdifferentiableAt one_ne_zero
-  have hZM := (h.contMDiffAt_horizontalLift hZ (by norm_num)).mdifferentiableAt one_ne_zero
-  rw [← hM.two_inner_eq_koszul hXM hYM hZM,
+  rw [← hM.two_inner_eq_koszul (h.mdifferentiableAt_horizontalLift hX)
+      (h.mdifferentiableAt_horizontalLift hY) (h.mdifferentiableAt_horizontalLift hZ),
     ← hN.two_inner_eq_koszul (hX.mdifferentiableAt one_ne_zero)
       (hY.mdifferentiableAt one_ne_zero) (hZ.mdifferentiableAt one_ne_zero)] at hk
-  simp only [h.horizontalLift_apply, ContinuousLinearMap.adjoint_inner_right,
-    FiberBundle.extend_apply_self] at hk ⊢
+  simp only [h.inner_horizontalLift_right, FiberBundle.extend_apply_self] at hk ⊢
   linarith
 
 /-- The horizontal component of the total-space covariant derivative of basic horizontal

@@ -93,30 +93,30 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   {A : E →L[𝕜] E} {B : F →L[𝕜] F} {δ : ℝ}
 
 /-- The phase-twisted coefficient sum of `C : F →ₗ[𝕜] E` against families `(uₗ)` and `(vₗ)`,
-written through the functional calculi of symmetric `A` and `B`: with `A eᵢ = αᵢ eᵢ` and
-`B fⱼ = βⱼ fⱼ`, the sum `∑ₗ (⟪sin (τA) uₗ, C cos (τB) vₗ⟫ + ⟪cos (τA) uₗ, C (-sin (τB)) vₗ⟫)` is
+written through the functional calculi of symmetric `S` and `T`: with `S eᵢ = αᵢ eᵢ` and
+`T fⱼ = βⱼ fⱼ`, the sum `∑ₗ (⟪sin (τS) uₗ, C cos (τT) vₗ⟫ + ⟪cos (τS) uₗ, C (-sin (τT)) vₗ⟫)` is
 `∑ₗ ∑ᵢ ∑ⱼ ⟪uₗ, eᵢ⟫ ⟪eᵢ, C fⱼ⟫ ⟪fⱼ, vₗ⟫ sin ((αᵢ - βⱼ) τ)`. -/
-private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E} {B : F →ₗ[𝕜] F}
-    (hA : A.IsSymmetric) (hB : B.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
+private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {S : E →ₗ[𝕜] E} {T : F →ₗ[𝕜] F}
+    (hS : S.IsSymmetric) (hT : T.IsSymmetric) (hn : finrank 𝕜 E = n) (hm : finrank 𝕜 F = m)
     (C : F →ₗ[𝕜] E) (u : Fin p → E) (v : Fin p → F) (τ : ℝ) :
-    ∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
-      ⟪hA.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜) =
-      ∑ l, ∑ i, ∑ j, ⟪u l, hA.eigenvectorBasis hn i⟫_𝕜 *
-        ⟪hA.eigenvectorBasis hn i, C (hB.eigenvectorBasis hm j)⟫_𝕜 *
-          ⟪hB.eigenvectorBasis hm j, v l⟫_𝕜 *
-            (Real.sin ((hA.eigenvalues hn i - hB.eigenvalues hm j) * τ) : 𝕜) := by
-  set e := hA.eigenvectorBasis hn
-  set f := hB.eigenvectorBasis hm
+    ∑ l, (⟪hS.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
+      ⟪hS.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜) =
+      ∑ l, ∑ i, ∑ j, ⟪u l, hS.eigenvectorBasis hn i⟫_𝕜 *
+        ⟪hS.eigenvectorBasis hn i, C (hT.eigenvectorBasis hm j)⟫_𝕜 *
+          ⟪hT.eigenvectorBasis hm j, v l⟫_𝕜 *
+            (Real.sin ((hS.eigenvalues hn i - hT.eigenvalues hm j) * τ) : 𝕜) := by
+  set e := hS.eigenvectorBasis hn
+  set f := hT.eigenvectorBasis hm
   refine sum_congr rfl fun l _ ↦ ?_
   rw [← e.sum_sum_inner_mul_inner_mul_inner f C, ← e.sum_sum_inner_mul_inner_mul_inner f C]
   simp only [← sum_add_distrib]
   refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
   -- Move the functional calculi onto the eigenvectors, where they act by scalars.
-  rw [hA.isSymmetric_cfc _ (u l), hA.isSymmetric_cfc _ (u l), ← hB.isSymmetric_cfc _ _ (v l),
-    ← hB.isSymmetric_cfc _ _ (v l)]
-  simp only [e, f, hA.cfc_apply_eigenvectorBasis, hB.cfc_apply_eigenvectorBasis,
+  rw [hS.isSymmetric_cfc _ (u l), hS.isSymmetric_cfc _ (u l), ← hT.isSymmetric_cfc _ _ (v l),
+    ← hT.isSymmetric_cfc _ _ (v l)]
+  simp only [e, f, hS.cfc_apply_eigenvectorBasis, hT.cfc_apply_eigenvectorBasis,
     inner_smul_right, inner_smul_left, RCLike.conj_ofReal]
   rw [sub_mul, Real.sin_sub]
   push_cast
@@ -124,18 +124,18 @@ private theorem sum_inner_cfc_add_inner_cfc {n m p : ℕ} {A : E →ₗ[𝕜] E}
 
 /-- The phase-twisted coefficient sums of `C : F →ₗ[𝕜] E` against orthonormal families of `p`
 vectors are bounded by the Ky Fan `p`-sum of `C`, since `sin² + cos² = 1`. -/
-private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {A : E →ₗ[𝕜] E}
-    {B : F →ₗ[𝕜] F} (hA : A.IsSymmetric) (hB : B.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
+private theorem norm_sum_inner_cfc_add_inner_cfc_le_kyFanSum {p : ℕ} {S : E →ₗ[𝕜] E}
+    {T : F →ₗ[𝕜] F} (hS : S.IsSymmetric) (hT : T.IsSymmetric) (C : F →ₗ[𝕜] E) {u : Fin p → E}
     {v : Fin p → F} (hu : Orthonormal 𝕜 u) (hv : Orthonormal 𝕜 v) (τ : ℝ) :
-    ‖∑ l, (⟪hA.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
-      ⟪hA.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
-        C (hB.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜)‖ ≤ C.kyFanSum p := by
-  simpa using C.norm_sum_inner_add_inner_le_kyFanSum (hA.isSymmetric_cfc _)
-    (hA.isSymmetric_cfc _) (hB.isSymmetric_cfc _) (hB.isSymmetric_cfc _)
-    (fun y ↦ (hA.norm_cfc_apply_sq_add_norm_cfc_apply_sq
+    ‖∑ l, (⟪hS.cfc (fun μ ↦ Real.sin (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ Real.cos (ν * τ)) (v l))⟫_𝕜 +
+      ⟪hS.cfc (fun μ ↦ Real.cos (μ * τ)) (u l),
+        C (hT.cfc (fun ν ↦ -Real.sin (ν * τ)) (v l))⟫_𝕜)‖ ≤ C.kyFanSum p := by
+  simpa using C.norm_sum_inner_add_inner_le_kyFanSum (hS.isSymmetric_cfc _)
+    (hS.isSymmetric_cfc _) (hT.isSymmetric_cfc _) (hT.isSymmetric_cfc _)
+    (fun y ↦ (hS.norm_cfc_apply_sq_add_norm_cfc_apply_sq
       (fun μ _ ↦ Real.sin_sq_add_cos_sq (μ * τ)) y).le)
-    (fun x ↦ (hB.norm_cfc_apply_sq_add_norm_cfc_apply_sq (f := fun ν ↦ Real.cos (ν * τ))
+    (fun x ↦ (hT.norm_cfc_apply_sq_add_norm_cfc_apply_sq (f := fun ν ↦ Real.cos (ν * τ))
       (g := fun ν ↦ -Real.sin (ν * τ))
       (fun ν _ ↦ by rw [neg_sq, add_comm, Real.sin_sq_add_cos_sq]) x).le) hu hv
 
@@ -164,41 +164,31 @@ private theorem sum_inner_eq_inv_mul_integral_realKernel_mul {p : ℕ}
     h.le_abs_sub (by simpa using hA.hasEigenvalue_eigenvalues rfl i)
       (by simpa using hB.hasEigenvalue_eigenvalues rfl j)
   have hij (i j) : α i - β j ≠ 0 := abs_pos.mp (hδ.trans_le (hgap i j))
-  -- Integrate the expanded sums term by term.
   set c : Fin p → Fin (finrank 𝕜 E) → Fin (finrank 𝕜 F) → 𝕜 :=
     fun l i j ↦ ⟪u l, e i⟫_𝕜 * ⟪e i, C (f j)⟫_𝕜 * ⟪f j, v l⟫_𝕜
-  -- The scaled sine against the kernel, with a `𝕜`-valued coefficient.
-  have hint (l i j) : Integrable fun t ↦
-      (realKernel t : 𝕜) * (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) :=
-    ((integrable_realKernel_mul_sin ((α i - β j) / δ)).ofReal (𝕜 := 𝕜)).const_mul (c l i j)
-      |>.congr (.of_forall fun t ↦ by
-        beta_reduce
-        rw [show (α i - β j) / δ * t = (α i - β j) * (t / δ) by ring]
-        push_cast
-        ring)
-  have hterm (l i j) : ∫ t, (realKernel t : 𝕜) *
-      (c l i j * (Real.sin ((α i - β j) * (t / δ)) : 𝕜)) =
-        c l i j * ((δ * (α i - β j)⁻¹ : ℝ) : 𝕜) := by
-    rw [← integral_realKernel_mul_sin_mul_div hδ (hgap i j), ← integral_ofReal,
-      ← integral_const_mul]
-    exact integral_congr_ae (.of_forall fun t ↦ by push_cast; ring)
-  simp only [mul_sum]
-  rw [integral_finsetSum _ fun l _ ↦ integrable_finsetSum _ fun i _ ↦
-    integrable_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
-  refine sum_congr rfl fun l _ ↦ ?_
-  rw [integral_finsetSum _ fun i _ ↦ integrable_finsetSum _ fun j _ ↦ hint l i j,
-    ← e.sum_sum_inner_mul_inner_mul_inner f, mul_sum]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [integral_finsetSum _ fun j _ ↦ hint l i j, mul_sum]
-  refine sum_congr rfl fun j _ ↦ ?_
-  have hδ' : (δ : 𝕜) ≠ 0 := RCLike.ofReal_ne_zero.mpr hδ.ne'
-  rw [hterm, coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply hA hB rfl rfl
-    X i j (hij i j)]
-  simp only [c]
-  push_cast
-  field_simp
-  rw [hC, coe_coe]
-  ring
+  -- In the eigenbases, `X` has the coefficients `(αᵢ - βⱼ)⁻¹ ⟪eᵢ, C fⱼ⟫`.
+  have hX (l) : ⟪u l, (X : F →ₗ[𝕜] E) (v l)⟫_𝕜 =
+      ∑ i, ∑ j, ((α i - β j)⁻¹ : ℝ) * c l i j := by
+    rw [← e.sum_sum_inner_mul_inner_mul_inner f]
+    refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j _ ↦ ?_
+    rw [coe_coe, inner_eigenvectorBasis_apply_eq_inv_mul_inner_sylvester_apply hA hB rfl rfl
+      X i j (hij i j)]
+    simp only [c, hC, coe_coe]
+    ring
+  calc _ = ∑ i, ∑ j, ((α i - β j)⁻¹ : ℝ) * ∑ l, c l i j := by
+        simp only [hX, mul_sum]
+        rw [sum_comm]
+        exact sum_congr rfl fun i _ ↦ sum_comm
+    _ = _ := sum_sum_inv_sub_mul_eq_inv_mul_integral_realKernel_mul hδ
+        (fun i _ j _ ↦ hgap i j) _
+    _ = _ := by
+        congr 2 with t
+        congr 1
+        simp only [mul_sum]
+        rw [Finset.sum_comm (s := univ (α := Fin p))]
+        refine sum_congr rfl fun i _ ↦ ?_
+        rw [Finset.sum_comm (s := univ (α := Fin p))]
+        exact sum_congr rfl fun j _ ↦ sum_congr rfl fun l _ ↦ mul_comm _ _
 
 /-- **The simultaneous Ky Fan estimate for the Sylvester equation.** Let `A` and `B` be symmetric
 operators on finite-dimensional inner product spaces. If every eigenvalue of `A` is at distance at

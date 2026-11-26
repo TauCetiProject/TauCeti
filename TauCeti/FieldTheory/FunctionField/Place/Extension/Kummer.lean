@@ -205,7 +205,7 @@ private theorem mem_integers_of_map_eq_minpoly {P : Place k F} {P' : Place k' F'
   let _ : Algebra P.integers F' := ((algebraMap F F').comp (algebraMap P.integers F)).toAlgebra
   refine P'.mem_integers_of_isIntegral (fun r ↦ ?_) ⟨φ, monic_of_map_eq_minpoly hmin, ?_⟩
   · rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, ValuationSubring.algebraMap_apply]
-    exact (restrict_eq_iff_integers_le k F P' P).mp hres _ r.2
+    exact (restrict_eq_iff_integers_le k F P' P).mp hres _ r.property
   · rw [RingHom.algebraMap_toAlgebra, ← coe_eval₂RingHom, ← integersEval,
       integersEval_eq_aeval_map, hmin]
     exact minpoly.aeval F y
@@ -262,7 +262,7 @@ private theorem mem_integers_of_valuation_integersEval_lt_one (P' : Place k' F')
   rw [mem_integers_iff, not_le] at hy
   have hcoeff (a : (P'.restrict k F).integers) :
       P'.valuation (algebraMap F F' (a : F)) ≤ 1 :=
-    P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
+    P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.property)
   set f := (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) with hf
   rw [integersEval, coe_eval₂RingHom, eval₂_eq_eval_map, ← hf] at hv
   rw [P'.valuation.map_eval_eq_of_one_lt (hg.map f) (fun i _ ↦ ?_) hy] at hv
@@ -595,8 +595,8 @@ theorem exists_restrict_eq_relativeDegree_eq_and_isSeparable (hF : IsFunctionFie
     rw [← hdeg, hprod, hφ.natDegree_map, natDegree_eq_finrank_of_map_eq_minpoly hy hmin]
   -- Kummer's theorem attaches to the factors pairwise distinct places over `P`.
   obtain ⟨Q, hQinj, hQ⟩ := exists_injective_restrict_eq (k' := k') hF P y hmin (ι := S)
-    (γ := Subtype.val) (fun q ↦ ((hS q).mp q.2).2.1) (fun q ↦ ((hS q).mp q.2).1)
-    (fun q ↦ ((hS q).mp q.2).2.2) Subtype.val_injective
+    (γ := Subtype.val) (fun q ↦ ((hS q).mp q.property).2.1) (fun q ↦ ((hS q).mp q.property).1)
+    (fun q ↦ ((hS q).mp q.property).2.2) Subtype.val_injective
   -- The fundamental inequality then forces `f (Q q ∣ P) = deg q` for every factor `q`.
   have hle : ∑ q : S, relativeDegree k F (Q q) ≤ ∑ q : S, (q : P.ResidueField[X]).natDegree := by
     rw [Finset.sum_coe_sort S fun q ↦ q.natDegree, hdegS]
@@ -704,12 +704,12 @@ theorem exists_equiv_restrict_eq_of_prod_eq_map_residue (hF : IsFunctionField k 
     {γ : ι → P.ResidueField[X]} (hmonic : ∀ i, (γ i).Monic) (hirr : ∀ i, Irreducible (γ i))
     (hinj : Function.Injective γ) (hprod : ∏ i, γ i = φ.map (IsLocalRing.residue P.integers)) :
     ∃ e : ι ≃ {P' : Place k' F' // P'.restrict k F = P},
-      ∀ i, relativeDegree k F (e i).1 = (γ i).natDegree := by
+      ∀ i, relativeDegree k F (e i).val = (γ i).natDegree := by
   obtain ⟨Q, hQinj, hQ, hsurj⟩ := exists_injective_restrict_eq_of_prod_eq (k' := k') hF P hy hmin
     hmonic hirr hinj hprod
   refine ⟨.ofBijective (fun i ↦ ⟨Q i, (hQ i).1⟩)
     ⟨fun i j h ↦ hQinj (congrArg Subtype.val h), fun P' ↦ ?_⟩, fun i ↦ (hQ i).2.2⟩
-  obtain ⟨i, hi⟩ := hsurj P'.1 P'.2
+  obtain ⟨i, hi⟩ := hsurj P'.val P'.property
   exact ⟨i, Subtype.ext hi⟩
 
 /-- **A reduction without repeated factors is unramified** (Stichtenoth, Theorem 3.3.7): under the
@@ -742,12 +742,9 @@ private theorem ofPrime_maximalIdeal (P : Place k F) :
     ofPrime k F (IsDiscreteValuationRing.maximalIdeal P.integers) = P := by
   have hR : ∀ r : P.integers, algebraMap P.integers F r ∈ P.integers := fun r ↦ by
     rw [ValuationSubring.algebraMap_apply]
-    exact r.2
-  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR := by
-    ext r
-    rw [mem_center_asIdeal, ValuationSubring.algebraMap_apply,
-      ← mem_maximalIdeal_iff_valuation_lt_one]
-    rfl
+    exact r.property
+  have h : IsDiscreteValuationRing.maximalIdeal P.integers = P.center hR :=
+    HeightOneSpectrum.ext (P.center_integers_asIdeal hR).symm
   rw [h, ofPrime_center]
 
 variable {P : Place k F} {y : F'}
@@ -817,23 +814,7 @@ private def normalizedFactorsEquiv {φ : P.integers[X]}
 
 variable [Algebra k F'] [IsScalarTower k k' F'] [IsScalarTower k F F'] [Algebra.IsIntegral k k']
 
-/-- The constants of `F' / k'` lie in the integral closure `𝒪'_P` of `𝒪_P` in `F'`, because they
-are integral over `k ⊆ 𝒪_P`. -/
-private theorem algebraMap_mem_integralClosure (P : Place k F) (c : k') :
-    algebraMap k' F' c ∈ integralClosure P.integers F' :=
-  have : IsScalarTower k P.integers F' := .of_algebraMap_eq fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply P.integers F F',
-      ← IsScalarTower.algebraMap_apply k P.integers F, ← IsScalarTower.algebraMap_apply k F F']
-  (IsIntegral.algebraMap (Algebra.IsIntegral.isIntegral (R := k) c)).tower_top
-
-/-- The action of the constants `k'` on the local model `𝒪'_P`. -/
-private noncomputable instance algebraConstantsIntegralClosure (P : Place k F) :
-    Algebra k' (integralClosure P.integers F') :=
-  ((algebraMap k' F').codRestrict _ (algebraMap_mem_integralClosure P)).toAlgebra
-
-private instance isScalarTowerConstantsIntegralClosure (P : Place k F) :
-    IsScalarTower k' (integralClosure P.integers F') F' :=
-  .of_algebraMap_eq fun _ ↦ rfl
+attribute [local instance] algebraConstantsIntegralClosure isScalarTower_constants_integralClosure
 
 variable [FiniteDimensional F F']
 variable (k k' F) (P)
@@ -876,11 +857,11 @@ private theorem coe_restrictEquivNormalizedFactors_symm_apply {φ : P.integers[X
       γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
     haveI := TauCeti.integralClosure.isDedekindDomain P.integers F F'
     haveI := moduleFinite_integralClosure_of_adjoin_eq hy
-    ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
+    ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).val =
       ((restrictOfPrimeEquivNormalizedFactors k F (IsDiscreteValuationRing.maximalIdeal P.integers)
         (conductor_sup_eq_top_of_adjoin_eq hy)
         (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩)).symm
-          ((normalizedFactorsEquiv hmin hy).symm γ)).1 :=
+          ((normalizedFactorsEquiv hmin hy).symm γ)).val :=
   rfl
 
 open scoped Classical in
@@ -893,8 +874,8 @@ theorem relativeDegree_restrictEquivNormalizedFactors_symm_apply {φ : P.integer
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
     (γ : {γ : P.ResidueField[X] //
       γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
-    relativeDegree k F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
-      γ.1.natDegree := by
+    relativeDegree k F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).val =
+      γ.val.natDegree := by
   have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
   have := moduleFinite_integralClosure_of_adjoin_eq hy
   rw [coe_restrictEquivNormalizedFactors_symm_apply,
@@ -912,8 +893,8 @@ theorem ramificationIdx_restrictEquivNormalizedFactors_symm_apply {φ : P.intege
     (hy : Algebra.adjoin P.integers {y} = integralClosure P.integers F')
     (γ : {γ : P.ResidueField[X] //
       γ ∈ normalizedFactors (φ.map (IsLocalRing.residue P.integers))}) :
-    ramificationIdx F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).1 =
-      multiplicity γ.1 (φ.map (IsLocalRing.residue P.integers)) := by
+    ramificationIdx F ((restrictEquivNormalizedFactors k k' F P hmin hy).symm γ).val =
+      multiplicity γ.val (φ.map (IsLocalRing.residue P.integers)) := by
   have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
   have := moduleFinite_integralClosure_of_adjoin_eq hy
   rw [coe_restrictEquivNormalizedFactors_symm_apply,
@@ -931,14 +912,14 @@ theorem valuation_integersEval_restrictEquivNormalizedFactors_symm_apply_lt_one
     (hQ : Q.map (IsLocalRing.residue P.integers) ∈
       normalizedFactors (φ.map (IsLocalRing.residue P.integers))) :
     ((restrictEquivNormalizedFactors k k' F P hmin hy).symm
-        ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).1.valuation (P.integersEval y Q) < 1 := by
+        ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).val.valuation (P.integersEval y Q) < 1 := by
   have := TauCeti.integralClosure.isDedekindDomain P.integers F F'
   have := moduleFinite_integralClosure_of_adjoin_eq hy
   have h := valuation_restrictOfPrimeEquivNormalizedFactors_symm_apply_lt_one (k' := k')
     (F' := F') k F (IsDiscreteValuationRing.maximalIdeal P.integers)
     (conductor_sup_eq_top_of_adjoin_eq hy)
     (integralClosure.isIntegral ⟨y, mem_integralClosure_of_adjoin_eq hy⟩) (Q := Q)
-    ((normalizedFactorsEquiv hmin hy).symm ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).2
+    ((normalizedFactorsEquiv hmin hy).symm ⟨Q.map (IsLocalRing.residue P.integers), hQ⟩).property
   -- `Q (y)` computed in `F'` is the image of `Q (y)` computed in `𝒪'_P`.
   have heval : algebraMap (integralClosure P.integers F') F'
       (aeval (⟨y, mem_integralClosure_of_adjoin_eq hy⟩ : integralClosure P.integers F') Q) =

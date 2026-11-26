@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Cartan.Basic
 
 /-!
 # The KAK decomposition of the real and complex special linear groups
@@ -60,11 +60,11 @@ theorem existsUnique_pos_antitone_and_eq_specialUnitary_mul_diagonal_mul_special
   have hprod : ∏ i, d i = 1 := by
     have hnorm := congrArg (‖·‖) (congrArg det hg)
     simp only [det_coe, norm_one, det_mul, norm_mul, det_diagonal, ← RCLike.ofReal_prod,
-      RCLike.norm_ofReal, CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.2),
-      CStarRing.norm_of_mem_unitary (det_of_mem_unitary V.2), one_mul, mul_one] at hnorm
+      RCLike.norm_ofReal, CStarRing.norm_of_mem_unitary (det_of_mem_unitary U.property),
+      CStarRing.norm_of_mem_unitary (det_of_mem_unitary V.property), one_mul, mul_one] at hnorm
     rw [hnorm, abs_of_pos (Finset.prod_pos fun i _ ↦ hd i)]
   refine ⟨d, ⟨hd, hanti, hprod, ?_⟩, fun d' ⟨hd', hanti', _, U', V', hg'⟩ ↦
-    huniq d' ⟨hd', hanti', ⟨U', U'.2.1⟩, ⟨V', V'.2.1⟩, by rwa [coe_GL_coe_matrix]⟩⟩
+    huniq d' ⟨hd', hanti', ⟨U', U'.property.1⟩, ⟨V', V'.property.1⟩, by rwa [coe_GL_coe_matrix]⟩⟩
   -- `g` and the diagonal factor have the same singular values and the same determinant.
   refine (exists_specialUnitary_mul_mul_specialUnitary_iff_singularValues_eq_and_det_eq _ _).mpr
     ⟨(exists_unitary_mul_mul_unitary_iff_singularValues_eq _ _).mp ⟨U, V, hg⟩, ?_⟩

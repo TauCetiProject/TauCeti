@@ -7,10 +7,9 @@ module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.Probability.HasLaw
-public import Mathlib.Probability.Moments.IntegrableExpMul
 public import Mathlib.Probability.Moments.Variance
 public import TauCeti.Probability.Cdf
-public import TauCeti.Probability.Distributions.Uniform.Finite
+public import TauCeti.Probability.Distributions.Uniform.Finite.Moments
 public import TauCeti.Probability.GeneratingFunction
 public import TauCeti.Probability.Quantile.Discrete
 import Mathlib.Algebra.Field.GeomSum
@@ -122,13 +121,6 @@ theorem map_toNat_sub_uniformOn_Icc_int :
 
 /-! ### Integration -/
 
-/-- Every function is integrable against the uniform law on an integer interval. -/
-@[simp]
-theorem integrable_uniformOn_Icc_int {E : Type*} [SeminormedAddGroup E] (f : ℤ → E) :
-    Integrable f (uniformOn (Icc a b : Set ℤ)) := by
-  rw [← Finset.coe_Icc]
-  exact Finset.integrable_uniformOn_finset _ f
-
 /-- Integration against the uniform law on `Icc a b` is the average over the interval. -/
 theorem integral_uniformOn_Icc_int {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] (f : ℤ → E) :
@@ -202,21 +194,14 @@ theorem variance_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) :
 normalized finite geometric sum. -/
 theorem pgf_uniformOn_Iio (N : ℕ) (z : ℝ) :
     pgf id (uniformOn (Iio N : Set ℕ)) z = (N : ℝ)⁻¹ * ∑ j ∈ Finset.range N, z ^ j := by
-  rw [pgf_def, ← Finset.coe_range, Finset.integral_uniformOn_finset, Finset.card_range]
-  simp
+  simpa only [Finset.coe_range, Finset.card_range, id_eq] using
+    (Finset.range N).pgf_uniformOn_finset id z
 
 /-- Away from `z = 1`, the probability generating function of the uniform law on
 `{0, …, N - 1}` is `(z ^ N - 1) / (N (z - 1))`. -/
 theorem pgf_uniformOn_Iio_of_ne_one (N : ℕ) {z : ℝ} (hz : z ≠ 1) :
     pgf id (uniformOn (Iio N : Set ℕ)) z = (z ^ N - 1) / (N * (z - 1)) := by
   rw [pgf_uniformOn_Iio, geom_sum_eq hz, mul_comm (N : ℝ), ← div_div, inv_mul_eq_div]
-
-/-- Every exponential moment of the uniform law on an integer interval is finite. -/
-@[simp]
-theorem integrableExpSet_intCast_uniformOn_Icc :
-    integrableExpSet (Int.cast : ℤ → ℝ) (uniformOn (Icc a b : Set ℤ)) = univ := by
-  ext t
-  simp [integrableExpSet]
 
 /-- Away from `t = 0`, the moment generating function of the uniform law on `Icc a b` is the
 finite geometric sum `e ^ (t a) (e ^ (t N) - 1) / (N (e ^ t - 1))`, where `N = b - a + 1`. At
@@ -227,12 +212,12 @@ theorem mgf_intCast_uniformOn_Icc {a b : ℤ} (h : a ≤ b) {t : ℝ} (ht : t �
   have hexp : exp t ≠ 1 := fun h ↦ ht (Real.exp_eq_one_iff t |>.mp h)
   rw [mgf, integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : exp (t * ((a + j : ℤ) : ℝ)) = exp (t * a) * exp t ^ j := by
-    rw [← Real.exp_nat_mul, ← Real.exp_add]
+    rw [← Real.exp_natCast_mul, ← Real.exp_add]
     push_cast
     ring_nf
   simp only [hterm, ← Finset.mul_sum, smul_eq_mul]
   have hN : (((b + 1 - a).toNat : ℕ) : ℝ) = b - a + 1 := by norm_cast; omega
-  rw [geom_sum_eq hexp, ← Real.exp_nat_mul, hN,
+  rw [geom_sum_eq hexp, ← Real.exp_natCast_mul, hN,
     mul_comm (b - a + 1 : ℝ) t]
   have hpos : (b - a + 1 : ℝ) ≠ 0 := by
     have : (a : ℝ) ≤ b := by exact_mod_cast h
@@ -285,13 +270,13 @@ theorem charFun_map_intCast_uniformOn_Icc_of_exp_ne_one {a b : ℤ} (h : a ≤ b
     integral_uniformOn_Icc_int_eq_sum_range]
   have hterm (j : ℕ) : Complex.exp ((t : ℂ) * (((a + j : ℤ) : ℝ) : ℂ) * Complex.I) =
       Complex.exp ((t : ℂ) * a * Complex.I) * Complex.exp ((t : ℂ) * Complex.I) ^ j := by
-    rw [← Complex.exp_nat_mul, ← Complex.exp_add]
+    rw [← Complex.exp_natCast_mul, ← Complex.exp_add]
     push_cast
     ring_nf
   have hN : ((((b + 1 - a).toNat : ℕ) : ℝ) : ℂ) = (b : ℂ) - a + 1 := by norm_cast; omega
   have hpow : Complex.exp ((t : ℂ) * Complex.I) ^ (b + 1 - a).toNat =
       Complex.exp ((t : ℂ) * (b - a + 1) * Complex.I) := by
-    rw [← Complex.exp_nat_mul]
+    rw [← Complex.exp_natCast_mul]
     congr 1
     rw [← Complex.ofReal_natCast, hN]
     ring

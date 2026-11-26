@@ -8,15 +8,26 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 
 /-!
-# Lowering the smoothness of a Riemannian metric
+# Basic API for `C^n` Riemannian metrics on vector bundles
 
 A `C^n` Riemannian metric on a vector bundle is in particular a `C^m` Riemannian metric for every
 `m ≤ n`. This lets a metric built with more regularity than needed, such as an analytic model
-metric, be used by results stated for smooth metrics.
+metric, be used by results stated for smooth metrics. The file also evaluates the fibre inner
+product space structure that `RiemannianBundle` installs from a `C^n` metric `g`: its inner
+product is `g.inner` (`Bundle.ContMDiffRiemannianMetric.inner_eq`) and its squared norm is the
+diagonal value `g.inner x v v` (`Bundle.ContMDiffRiemannianMetric.norm_sq`).
+
+In a `C^n` Riemannian bundle the squared fibre norm is a `C^n` function on the total space, the
+smooth counterpart of `TauCeti.continuous_norm_bundle`.
 
 ## Main definitions
 
 * `Bundle.ContMDiffRiemannianMetric.ofLE`: a `C^n` metric regarded as a `C^m` metric, `m ≤ n`.
+
+## Main results
+
+* `TauCeti.contMDiff_norm_sq_bundle`: the squared fibre norm `z ↦ ‖z.snd‖²` is `C^n` on the total
+  space of a `C^n` Riemannian bundle.
 -/
 
 public section
@@ -54,16 +65,34 @@ theorem toRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m 
     (g.ofLE h).toRiemannianMetric = g.toRiemannianMetric :=
   (rfl)
 
+/-- The continuous metric underlying a `C^n` metric has the same inner products. -/
+@[simp]
+theorem toContinuousRiemannianMetric_inner (g : ContMDiffRiemannianMetric IB n F E) :
+    g.toContinuousRiemannianMetric.inner = g.inner :=
+  (rfl)
+
+/-- Lowering the smoothness of a metric does not change the underlying continuous metric. -/
+@[simp]
+theorem toContinuousRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m ≤ n) :
+    (g.ofLE h).toContinuousRiemannianMetric = g.toContinuousRiemannianMetric :=
+  (rfl)
+
 /-- Forgetting regularity to the same order leaves a metric unchanged. -/
 @[simp]
 theorem ofLE_refl (g : ContMDiffRiemannianMetric IB n F E) (h : n ≤ n) :
     g.ofLE h = g := (rfl)
+
+/-- On an empty base manifold, `C^n` Riemannian metrics form a subsingleton. -/
+instance subsingleton_of_isEmpty [IsEmpty B] : Subsingleton (ContMDiffRiemannianMetric IB n F E) :=
+  ⟨fun g₁ g₂ ↦ by cases g₁; cases g₂; congr; exact funext isEmptyElim⟩
 
 /-- The native fibre inner product installed from a metric evaluates to that metric. -/
 theorem inner_eq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
     (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v w : E x) :
     letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
     Inner.inner ℝ v w = g.inner x v w := by
+  -- By construction: Mathlib's scoped fibre `InnerProductSpace` instance for `RiemannianBundle`
+  -- is built from `RiemannianMetric.toCore`, whose inner product unfolds to `g.inner`.
   rfl
 
 /-- The squared fibre norm installed from a metric is its diagonal value. -/
@@ -72,6 +101,28 @@ theorem norm_sq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul
     letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
     ‖v‖ ^ 2 = g.inner x v v := by
   let : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
-  exact norm_sq_eq_re_inner (𝕜 := ℝ) v
+  exact (real_inner_self_eq_norm_sq v).symm.trans (g.inner_eq x v v)
 
 end Bundle.ContMDiffRiemannianMetric
+
+namespace TauCeti
+
+variable
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners ℝ EB HB} {n : ℕ∞ω}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, NormedAddCommGroup (E b)]
+  [∀ b, InnerProductSpace ℝ (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+  [IsContMDiffRiemannianBundle IB n F E]
+
+variable (IB n F E) in
+/-- In a `C^n` Riemannian bundle, the squared fibre norm is a `C^n` function on the total
+space. -/
+theorem contMDiff_norm_sq_bundle :
+    ContMDiff (IB.prod 𝓘(ℝ, F)) 𝓘(ℝ) n fun z : TotalSpace F E ↦ ‖z.snd‖ ^ 2 := by
+  have hid : ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, F)) n
+      fun z : TotalSpace F E ↦ (⟨z.proj, z.snd⟩ : TotalSpace F E) := contMDiff_id
+  simpa only [real_inner_self_eq_norm_sq] using hid.inner_bundle hid
+
+end TauCeti

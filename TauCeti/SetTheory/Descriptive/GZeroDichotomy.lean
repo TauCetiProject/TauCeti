@@ -272,7 +272,8 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
   -- Then extend its words by one letter and shrink its vertices.
   obtain ⟨w, hpre, hlen, Ψ₁, hΨ₁, hΨ₁a, hΨ₁s, hΨ₁w⟩ :=
     SetRel.exists_subset_not_isSmallFamily_witness_extension (κ := levelEdges S (n + 1))
-      (e := Subtype.val) (w := fun k ↦ w₀ k.1) hg hΨa hΨ (fun ψ hψ k ↦ hΨw k.1 k.2 ψ hψ) 1
+      (e := Subtype.val) (w := fun k ↦ w₀ k.val) hg hΨa hΨ (fun ψ hψ k ↦ hΨw k.val k.property ψ hψ)
+          1
   obtain ⟨Ψ₂, hΨ₂, hΨ₂a, hΨ₂s, hΨ₂d⟩ :=
     SetRel.exists_subset_not_isSmallFamily_dist_lt hΨ₁a hΨ₁s
       (by positivity : (0 : ℝ) < (1 / 2) ^ (n + 1))

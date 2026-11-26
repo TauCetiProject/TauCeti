@@ -72,7 +72,7 @@ theorem torsion_eq_bot_iff : torsion R L M = ⊥ ↔ Module.IsTorsionFree R M :=
       ⟨⟨r, isRegular_iff_mem_nonZeroDivisors.1 hr⟩, (Submodule.mem_torsionBy_iff r m).1 hm⟩
   · obtain ⟨a, ha⟩ := (mem_torsion_iff (L := L) m).1 hm
     exact (mem_bot (R := R) (L := L) m).2 <|
-      ((isRegular_iff_mem_nonZeroDivisors.2 a.2).smul_eq_zero_iff_right).1 ha
+      ((isRegular_iff_mem_nonZeroDivisors.2 a.property).smul_eq_zero_iff_right).1 ha
 
 /-- The torsion Lie submodule is everything exactly when the module is torsion. -/
 theorem torsion_eq_top_iff :
@@ -82,7 +82,7 @@ theorem torsion_eq_top_iff :
 
 /-- The torsion Lie submodule is a torsion module. -/
 theorem torsion_isTorsion : Module.IsTorsion R (torsion R L M) := fun x ↦ by
-  obtain ⟨a, ha⟩ := (mem_torsion_iff _).1 x.2
+  obtain ⟨a, ha⟩ := (mem_torsion_iff _).1 x.property
   exact ⟨a, Subtype.ext ha⟩
 
 /-- The torsion Lie submodule of the torsion Lie submodule is everything. -/

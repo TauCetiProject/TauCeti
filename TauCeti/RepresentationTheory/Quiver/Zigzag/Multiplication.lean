@@ -43,6 +43,8 @@ and each identity below degenerates to a true statement about `0` there.
 * `TauCeti.zigzagMk_ofArrow_mul_zigzagVolume`, `TauCeti.zigzagVolume_mul_zigzagMk_ofArrow` and
   `TauCeti.zigzagVolume_mul_zigzagVolume`: every product reaching path length three vanishes.
 * `TauCeti.zigzagBasis_mul`: the whole table, as products of basis vectors.
+* `TauCeti.zigzagBasis_coord_volume_mul`: the volume coordinates of a product, which see the
+  idempotent and volume coordinates at its base and the backtracks there.
 * `TauCeti.zigzagBasis_coord_dart_mul`: the arrow coordinates of a product, which only see the
   idempotents at the two ends of the arrow.
 * `TauCeti.zigzagVolume_mul` and `TauCeti.mul_zigzagVolume`: a volume class absorbs only the
@@ -62,7 +64,7 @@ open PathAlgebra DoubledQuiver
 
 universe u w
 
-variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V) [Finite V]
+variable (k : Type w) [CommRing k] {V : Type u} (G : SimpleGraph V)
 
 open Classical in
 /-- The product index for the vertex--dart--volume basis of the public componentwise
@@ -82,7 +84,6 @@ noncomputable def zigzagBasisMul : ZigzagBasisIndex G → ZigzagBasisIndex G →
   | .inr (.inr _), .inr (.inl _) => none
   | .inr (.inr _), .inr (.inr _) => none
 
-omit [Finite V] in
 open Classical in
 /-- The product index of two vertex vectors. -/
 @[simp]
@@ -90,7 +91,6 @@ theorem zigzagBasisMul_vertex_vertex (i j : V) :
     zigzagBasisMul G (.inl i) (.inl j) =
       (if i = j then some (.inl i) else none : Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 open Classical in
 /-- The product index of a vertex vector and a dart vector. -/
 @[simp]
@@ -98,7 +98,6 @@ theorem zigzagBasisMul_vertex_dart (i : V) (d : G.Dart) :
     zigzagBasisMul G (.inl i) (.inr (.inl d)) =
       (if i = d.snd then some (.inr (.inl d)) else none : Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 open Classical in
 /-- The product index of a vertex vector and a volume vector. -/
 @[simp]
@@ -106,7 +105,6 @@ theorem zigzagBasisMul_vertex_volume (i j : V) :
     zigzagBasisMul G (.inl i) (.inr (.inr j)) =
       (if i = j then some (.inr (.inr j)) else none : Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 open Classical in
 /-- The product index of a dart vector and a vertex vector. -/
 @[simp]
@@ -114,7 +112,6 @@ theorem zigzagBasisMul_dart_vertex (d : G.Dart) (i : V) :
     zigzagBasisMul G (.inr (.inl d)) (.inl i) =
       (if i = d.fst then some (.inr (.inl d)) else none : Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 open Classical in
 /-- The product index of two dart vectors. -/
 @[simp]
@@ -123,13 +120,11 @@ theorem zigzagBasisMul_dart_dart (d e : G.Dart) :
       (if e = d.symm then some (.inr (.inr d.snd)) else none :
         Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 /-- A dart vector followed by a volume vector has zero product index. -/
 @[simp]
 theorem zigzagBasisMul_dart_volume (d : G.Dart) (i : V) :
     zigzagBasisMul G (.inr (.inl d)) (.inr (.inr i)) = none := by rfl
 
-omit [Finite V] in
 open Classical in
 /-- The product index of a volume vector and a vertex vector. -/
 @[simp]
@@ -137,17 +132,17 @@ theorem zigzagBasisMul_volume_vertex (i j : V) :
     zigzagBasisMul G (.inr (.inr i)) (.inl j) =
       (if i = j then some (.inr (.inr i)) else none : Option (ZigzagBasisIndex G)) := by rfl
 
-omit [Finite V] in
 /-- A volume vector followed by a dart vector has zero product index. -/
 @[simp]
 theorem zigzagBasisMul_volume_dart (i : V) (d : G.Dart) :
     zigzagBasisMul G (.inr (.inr i)) (.inr (.inl d)) = none := by rfl
 
-omit [Finite V] in
 /-- Two volume vectors have zero product index. -/
 @[simp]
 theorem zigzagBasisMul_volume_volume (i j : V) :
     zigzagBasisMul G (.inr (.inr i)) (.inr (.inr j)) = none := by rfl
+
+variable [Finite V]
 
 /-- The volume class of a vertex with no neighbour is zero: it carries no backtrack. This is the
 form of `TauCeti.zigzagVolume_eq_zero_of_isIsolated` that the case splits below produce. -/
@@ -468,6 +463,95 @@ theorem zigzagBasis_coord_dart_mul (hns : ∀ i : V, ∃ j, G.Adj i j) (d : G.Da
   simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.add_apply,
     LinearMap.compl₁₂_apply] using LinearMap.congr_fun₂ key x y
 
+/-- The volume coordinate at `v` of a product of two basis vectors: `zigzagBasis_coord_volume_mul`
+for basis vectors. -/
+private theorem zigzagBasis_coord_volume_zigzagBasis_mul [Fintype G.Dart] [DecidableEq V]
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (v : V) (b c : ZigzagBasisIndex G) :
+    (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagBasis k G hns b * zigzagBasis k G hns c) =
+      (zigzagBasis k G hns).coord (.inl v) (zigzagBasis k G hns b) *
+          (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagBasis k G hns c) +
+        (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagBasis k G hns b) *
+          (zigzagBasis k G hns).coord (.inl v) (zigzagBasis k G hns c) +
+        ∑ d : G.Dart with d.snd = v,
+          (zigzagBasis k G hns).coord (.inr (.inl d)) (zigzagBasis k G hns b) *
+            (zigzagBasis k G hns).coord (.inr (.inl d.symm)) (zigzagBasis k G hns c) := by
+  classical
+  simp only [zigzagBasis_mul, zigzagBasis_coord_apply]
+  rcases b with i | e | i <;> rcases c with j | f | j
+  case inr.inl.inr.inl =>
+    -- The products of two arrows: only the backtrack `e, e.symm` contributes.
+    rcases eq_or_ne f e.symm with rfl | hf
+    · simp only [zigzagBasisMul_dart_dart, ↓reduceIte, Option.elim_some, zigzagBasis_coord_apply,
+        Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, mul_zero, add_zero, zero_add, mul_ite,
+        mul_one]
+      by_cases hv : e.snd = v
+      · rw [Finset.sum_eq_single e (fun x _ hx ↦ by simp [Ne.symm hx])
+          (fun he ↦ absurd (Finset.mem_filter.2 ⟨Finset.mem_univ e, hv⟩) he)]
+        simp [hv]
+      · simp only [hv, ↓reduceIte]
+        refine (Finset.sum_eq_zero fun x hx ↦ ?_).symm
+        rw [Finset.mem_filter] at hx
+        split_ifs with h₁ h₂
+        · exact absurd (h₂ ▸ hx.2) hv
+        · rfl
+        · rfl
+    · simp only [zigzagBasisMul_dart_dart, hf, ↓reduceIte, Option.elim_none, map_zero,
+        Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, mul_zero, add_zero, zero_add, mul_ite,
+        mul_one]
+      refine (Finset.sum_eq_zero fun x _ ↦ ?_).symm
+      split_ifs with h₁ h₂
+      · exact absurd (h₂ ▸ h₁) hf
+      · rfl
+      · rfl
+  all_goals
+    simp only [zigzagBasisMul_vertex_vertex, zigzagBasisMul_vertex_dart,
+      zigzagBasisMul_vertex_volume, zigzagBasisMul_dart_vertex,
+      zigzagBasisMul_dart_volume, zigzagBasisMul_volume_vertex, zigzagBasisMul_volume_dart,
+      zigzagBasisMul_volume_volume, Sum.inl.injEq, Sum.inr.injEq, reduceCtorEq, ↓reduceIte,
+      mul_zero, zero_mul, add_zero, zero_add, Finset.sum_const_zero, Option.elim_none, map_zero,
+      ite_zero_mul_ite_zero]
+  case inl.inr.inr | inr.inr.inl =>
+    -- A vertex vector and a volume vector, in either order.
+    rcases eq_or_ne i j with rfl | hij
+    · simp only [↓reduceIte, Option.elim_some, zigzagBasis_coord_apply, Sum.inr.injEq, and_self,
+        mul_one]
+    · simp only [hij, ↓reduceIte, Option.elim_none, map_zero]
+      exact (ite_eq_right_iff.2 fun h ↦ absurd (h.1.trans h.2.symm) hij).symm
+  -- The remaining products have no volume coordinate.
+  all_goals
+    split_ifs <;>
+    simp only [Option.elim_some, Option.elim_none, map_zero, zigzagBasis_coord_apply,
+      reduceCtorEq, Sum.inr.injEq, ↓reduceIte]
+
+/-- **The volume coordinates of a product.** The coefficient of the volume class at `v` in `x * y`
+pairs the idempotent and volume coordinates at `v` of the two factors, and adds the products of
+the coordinates of the arrows of the backtracks `d, d.symm` with head `v`: the volume class at `v`
+is a product only of itself with the idempotent at `v`, and of each backtrack at `v`. -/
+theorem zigzagBasis_coord_volume_mul [Fintype G.Dart] [DecidableEq V]
+    (hns : ∀ i : V, ∃ j, G.Adj i j) (v : V) (x y : nonisolatedZigzagQuotient k G) :
+    (zigzagBasis k G hns).coord (.inr (.inr v)) (x * y) =
+      (zigzagBasis k G hns).coord (.inl v) x * (zigzagBasis k G hns).coord (.inr (.inr v)) y +
+        (zigzagBasis k G hns).coord (.inr (.inr v)) x * (zigzagBasis k G hns).coord (.inl v) y +
+        ∑ d : G.Dart with d.snd = v,
+          (zigzagBasis k G hns).coord (.inr (.inl d)) x *
+            (zigzagBasis k G hns).coord (.inr (.inl d.symm)) y := by
+  have key : (LinearMap.mul k (nonisolatedZigzagQuotient k G)).compr₂
+        ((zigzagBasis k G hns).coord (.inr (.inr v))) =
+      (LinearMap.mul k k).compl₁₂ ((zigzagBasis k G hns).coord (.inl v))
+          ((zigzagBasis k G hns).coord (.inr (.inr v))) +
+        (LinearMap.mul k k).compl₁₂ ((zigzagBasis k G hns).coord (.inr (.inr v)))
+          ((zigzagBasis k G hns).coord (.inl v)) +
+        ∑ d : G.Dart with d.snd = v,
+          (LinearMap.mul k k).compl₁₂ ((zigzagBasis k G hns).coord (.inr (.inl d)))
+            ((zigzagBasis k G hns).coord (.inr (.inl d.symm))) := by
+    refine LinearMap.ext_basis (zigzagBasis k G hns) (zigzagBasis k G hns) fun b c => ?_
+    simp only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.add_apply,
+      LinearMap.compl₁₂_apply, LinearMap.sum_apply]
+    exact zigzagBasis_coord_volume_zigzagBasis_mul hns v b c
+  simpa only [LinearMap.compr₂_apply, LinearMap.mul_apply', LinearMap.add_apply,
+    LinearMap.compl₁₂_apply, LinearMap.sum_apply] using
+    LinearMap.congr_fun₂ key x y
+
 /-- A volume class absorbs, from the left, only the idempotent at its base vertex. -/
 theorem zigzagVolume_mul (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V)
     (y : nonisolatedZigzagQuotient k G) :
@@ -512,6 +596,14 @@ theorem mul_zigzagVolume (hns : ∀ i : V, ∃ j, G.Adj i j) (i : V)
 theorem zigzagBasis_coord_dart_zigzagVolume (hns : ∀ i : V, ∃ j, G.Adj i j) (d : G.Dart)
     (i : V) : (zigzagBasis k G hns).coord (.inr (.inl d)) (zigzagVolume k G i) = 0 := by
   classical
+  rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
+  simp
+
+/-- The volume coordinate at `v` of the volume class at `v'`. -/
+theorem zigzagBasis_coord_zigzagVolume [DecidableEq V] (hns : ∀ i : V, ∃ j, G.Adj i j)
+    (v v' : V) :
+    (zigzagBasis k G hns).coord (.inr (.inr v)) (zigzagVolume k G v') =
+      if v' = v then 1 else 0 := by
   rw [← zigzagBasisFun_inr_inr, ← zigzagBasis_apply k G hns, zigzagBasis_coord_apply]
   simp
 

@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Riemannian
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Representative
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
-import TauCeti.Geometry.Manifold.Riemannian.Immersion.Projection
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Pullback
 
 /-!
@@ -19,9 +19,11 @@ and the normal vector. The metric is the ambient Riemannian metric; no normal fr
 compactness assumption is needed. This supplies the map from the normal bundle to the ambient
 tangent bundle used by the normal exponential.
 
-The construction applies the smooth normal-projection endomorphism field along an immersion
-to the ambient vector. For embeddings, this projection is the orthogonal representative of its
-intrinsic normal class, and it descends through the smooth normal quotient.
+For embeddings, the orthogonal representative of the normal class of an ambient vector is its
+orthogonal projection onto the normal space of the embedding as an immersion, so its smoothness is
+that of the immersion normal projection
+(`TauCeti.contMDiffAt_starProjection_orthogonalNormalSpace`); it descends through the smooth normal
+quotient.
 
 ## References
 
@@ -59,25 +61,18 @@ theorem contMDiff_normalRepresentative_normalClass
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0) (hm : m + 1 ≤ n) :
     ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (fun p : TotalSpace V ((f : M → N) *ᵖ (TangentSpace J)) =>
-        (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
+        (⟨f p.proj, f.normalRepresentative p.proj hn (f.isImmersion.normalClass p.proj hn p.snd)⟩ :
           TangentBundle J N)) := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact fun p ↦ isEmptyElim p.proj
-  -- the differential of an immersion embeds `E` in the finite-dimensional space `V`
-  have : FiniteDimensional ℝ E :=
-    Module.Finite.of_injective (mfderiv I J f x₀ : E →L[ℝ] V).toLinearMap
-      (f.isImmersion.mfderiv_injective hn x₀)
-  have hbase : ContMDiff (I.prod 𝓘(ℝ, V)) I m
-      (π V ((f : M → N) *ᵖ (TangentSpace J))) := contMDiff_proj _
   have hlift : ContMDiff (I.prod 𝓘(ℝ, V)) (J.prod 𝓘(ℝ, V)) m
       (Pullback.lift (f : M → N)) :=
-    Pullback.contMDiff_lift (E := TangentSpace J) f
-      (f.contMDiff.of_le (le_self_add.trans hm))
-  have hprojection := f.contMDiff.starProjection_orthogonal_range_mfderiv hm
-    (f.isImmersion.mfderiv_injective hn)
-  refine ((hprojection.comp hbase).clm_bundle_apply hlift).congr fun p ↦ ?_
-  exact congrArg (TotalSpace.mk (f p.proj))
-    (f.normalRepresentative_normalClass p.proj hn p.2)
+    Pullback.contMDiff_lift (E := TangentSpace J) f (f.contMDiff.of_le (le_self_add.trans hm))
+  refine fun p ↦ ?_
+  have := finiteDimensional_of_injective_mfderiv (f.isImmersion.mfderiv_injective hn p.proj)
+  refine ((hlift _).comp p (contMDiffAt_starProjection_orthogonalNormalSpace (f.contMDiff _)
+    (f.isImmersion.mfderiv_injective hn p.proj) hm)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun q ↦ ?_)
+  exact congrArg (TotalSpace.mk (f q.proj))
+    (f.normalRepresentative_normalClass_eq_starProjection_orthogonalNormalSpace q.proj hn q.snd)
 
 /-- The map taking an intrinsic normal vector to its orthogonal representative in the ambient
 tangent bundle is `C^m` for a `C^n` embedding with `m + 1 ≤ n` and a `C^m` ambient metric. -/
@@ -88,8 +83,8 @@ theorem contMDiff_normalRepresentative
     haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
     letI := f.normalSpaceFiberBundle hn hdim
     ContMDiff (I.prod 𝓘(ℝ, P)) (J.prod 𝓘(ℝ, V)) m
-      (fun p : TotalSpace P (fun x => f.NormalSpace x hn) =>
-        (⟨f p.proj, f.normalRepresentative p.proj hn p.2⟩ : TangentBundle J N)) := by
+      (fun p : TotalSpace P (fun x => f.isImmersion.NormalSpace x hn) =>
+        (⟨f p.proj, f.normalRepresentative p.proj hn p.snd⟩ : TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   exact f.contMDiff_normalBundle_of_contMDiff_normalClass hn hm hdim
     (fun x v ↦ f.normalRepresentative x hn v)

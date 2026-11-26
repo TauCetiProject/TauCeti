@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.ZeroSum
 import TauCeti.Data.Int.MulPred
+import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeA.Weights
 
 /-!
 # Shortest vectors in the discriminant cosets of `Aₙ`
@@ -46,8 +47,6 @@ norm of a glue vector in an orthogonal sum of root lattices.
   sum zero with coordinates in `ℤ - k / (n + 1)` has norm at least `k (n + 1 - k) / (n + 1)`.
 * `TauCeti.IntegralLattice.dotProduct_self_eq_mul_sub_div_iff`: equality holds exactly when all
   coordinates are `-k / (n + 1)` or `1 - k / (n + 1)`.
-* `TauCeti.IntegralLattice.exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq`: the
-  class `k ω₁` contains a dual vector with these minimal classical coordinates.
 * `TauCeti.IntegralLattice.isLeast_form_self_nsmul_typeAFundamentalWeightClass`: the minimum norm
   of the class `k ω₁` is `k (n + 1 - k) / (n + 1)` for `k ≤ n + 1`.
 * `TauCeti.IntegralLattice.isLeast_form_self_typeADiscriminantGroupEquiv`: the same minimum,
@@ -117,57 +116,22 @@ theorem dotProduct_self_eq_mul_sub_div_iff {k : ℤ} {x : Fin (n + 1) → ℚ} (
 
 /-! ## The discriminant classes of the root lattice -/
 
-/-- **A minimal vector of the discriminant class `k ω₁` of `Aₙ`.** For `0 ≤ k ≤ n + 1`, the class
-`k ω₁` contains a dual vector whose classical coordinates are `1 - k / (n + 1)` in the first `k`
-places and `-k / (n + 1)` in the others. -/
-theorem exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq {k : ℕ} (hk : k ≤ n + 1) :
-    ∃ x : (typeARootLattice n).dualCarrier,
-      Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
-        ∀ j, (typeAIsometryZeroSumLattice n x : Fin (n + 1) → ℚ) j =
-          (if (j : ℕ) < k then 1 else 0) - k / (n + 1) := by
-  set e := typeAIsometryZeroSumLattice n
-  -- The difference `z` of the wanted vector from the classical coordinates
-  -- `k (e₀ - (1 / (n + 1)) (1, …, 1))` of `k ω₁` is an integral vector of coordinate sum zero.
-  set z : Fin (n + 1) → ℚ := fun j ↦ (if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0
-  have hz : z ∈ singleParityCheckCode ℚ (Fin (n + 1)) := by
-    rw [mem_singleParityCheckCode]
-    simp [z, sum_sub_distrib, sum_boole, Fin.card_filter_val_lt, min_eq_right hk]
-  have hzL : e.symm ⟨z, hz⟩ ∈ (typeARootLattice n).carrier := by
-    rw [e.symm.apply_mem_carrier_iff, mem_zeroSumLattice_carrier_iff]
-    intro j
-    refine ⟨(if (j : ℕ) < k then 1 else 0) - k * if j = 0 then 1 else 0, ?_⟩
-    simp [z]
-  refine ⟨(k : ℤ) • typeAFundamentalWeightDual n +
-    ⟨e.symm ⟨z, hz⟩, (typeARootLattice n).le_dualCarrier hzL⟩, ?_, fun j ↦ ?_⟩
-  · rw [← natCast_zsmul, mk_eq_zsmul_typeAFundamentalWeightClass_iff, Submodule.coe_add,
-      Submodule.coe_smul, coe_typeAFundamentalWeightDual, add_sub_cancel_left]
-    exact hzL
-  · simp only [Submodule.coe_add, Submodule.coe_smul, coe_typeAFundamentalWeightDual, map_add,
-      map_zsmul, Isometry.apply_symm_apply]
-    simp [e, z]
-    split_ifs <;> ring
-
 /-- **The minimum norm of the discriminant class `k ω₁` of `Aₙ` is `k (n + 1 - k) / (n + 1)`**,
-for `0 ≤ k ≤ n + 1`.  It is attained by the dual vector whose classical coordinates are
-`(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others, and it bounds the
-norm of every dual vector of the class. -/
+for `0 ≤ k ≤ n + 1`.  It is attained by `typeACosetRepresentativeDual n k`, whose classical
+coordinates are `(n + 1 - k) / (n + 1)` in the first `k` places and `-k / (n + 1)` in the others,
+and it bounds the norm of every dual vector of the class. -/
 theorem isLeast_form_self_nsmul_typeAFundamentalWeightClass {k : ℕ} (hk : k ≤ n + 1) :
     IsLeast {q : ℚ | ∃ x : (typeARootLattice n).dualCarrier,
       Submodule.Quotient.mk x = k • typeAFundamentalWeightClass n ∧
         (typeARootLattice n).form x x = q} ((k : ℚ) * (n + 1 - k) / (n + 1)) := by
   set e := typeAIsometryZeroSumLattice n
-  refine ⟨?_, ?_⟩
-  · obtain ⟨x, hx, hex⟩ := exists_mk_eq_nsmul_typeAFundamentalWeightClass_and_apply_eq hk
-    refine ⟨x, hx, ?_⟩
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
-    rw [typeARootLattice_form_self_eq_dotProduct]
-    refine (dotProduct_self_eq_mul_sub_div_iff (k := k) hsum fun j ↦
-      ⟨if (j : ℕ) < k then 1 else 0, by simp [e, hex]⟩).mpr fun j ↦ ?_
-    by_cases hj : (j : ℕ) < k <;> simp [e, hex, hj]
+  refine ⟨⟨typeACosetRepresentativeDual n k, mk_typeACosetRepresentativeDual n k, ?_⟩, ?_⟩
+  · rw [coe_typeACosetRepresentativeDual]
+    exact form_typeACosetRepresentative_self hk
   · rintro q ⟨x, hx, rfl⟩
     rw [← natCast_zsmul] at hx
     rw [typeARootLattice_form_self_eq_dotProduct]
-    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).2
+    have hsum := (mem_singleParityCheckCode ℚ (Fin (n + 1))).mp (e x).property
     simpa using mul_sub_div_le_dotProduct_self (k := k) hsum
       (exists_typeAIsometryZeroSumLattice_apply_eq_intCast_sub_of_mk_eq x hx)
 

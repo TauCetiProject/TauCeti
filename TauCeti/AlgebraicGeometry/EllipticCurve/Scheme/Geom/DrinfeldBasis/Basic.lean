@@ -20,7 +20,10 @@ Katz–Mazur, a **Drinfeld basis** of `E[N]`, or `[Γ(N)]`-structure on `E`, is 
 on `E` is the closed subscheme `E[N]` (`EllipticCurveGeom.IsDrinfeldBasis`). In the language of
 Katz and Mazur, `φ` is a `(ℤ/Nℤ)²`-generator of the subgroup scheme `E[N]` of the curve `E`; they
 show that this says that the `N²` points `φ a`, counted with multiplicity, form a full set of
-sections of the finite locally free `S`-scheme `E[N]`. That comparison is not made here.
+sections (`EllipticCurveGeom.torsionSection`) of the finite locally free `S`-scheme `E[N]`. Both
+that equivalence (`EllipticCurveGeom.isDrinfeldBasis_iff_isFullSetOfSections`) and the equality of
+schematic loci (`EllipticCurveGeom.drinfeldBasisLocus_eq_fullSetLocus`) are proved in
+`EllipticCurve.Scheme.Geom.FullSetOfSections`.
 
 The definition makes sense over every base, including bases on which `N` is not invertible, where
 the points `φ a` need not be distinct: for a supersingular elliptic curve over a field of
@@ -50,6 +53,8 @@ Following `EllipticCurveGeom.mulBy`, the group law on points of `E` is written m
 
 ## Main definitions
 
+* `TauCeti.AlgebraicGeometry.EllipticCurveGeom.torsionSection E N φ`: the sections of `E[N]` over
+  `S` induced by a homomorphism `φ : (ℤ/Nℤ)² →* E(S)`.
 * `TauCeti.AlgebraicGeometry.EllipticCurveGeom.IsDrinfeldBasis E N φ`: the homomorphism
   `φ : (ℤ/Nℤ)² →* E(S)` is a Drinfeld basis of `E[N]`.
 
@@ -84,7 +89,30 @@ namespace TauCeti.AlgebraicGeometry
 
 namespace EllipticCurveGeom
 
-variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ) [NeZero N]
+variable {S : Scheme.{u}} (E : EllipticCurveGeom S) (N : ℕ)
+
+/-- The section of `E[N] ⟶ S` assigned to `a ∈ (ℤ/Nℤ)²` by `φ : (ℤ/Nℤ)² →* E(S)`. -/
+noncomputable def torsionSection
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) : S ⟶ (E.torsion N).X.left :=
+  (E.torsionLift (φ a) (range_le_ker_mulBy φ ⟨a, rfl⟩)).left
+
+/-- Composing `torsionSection E N φ a` with `E[N] ⟶ E` recovers `(φ a).left`. -/
+@[reassoc (attr := simp)] theorem torsionSection_torsionι_left
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) :
+    E.torsionSection N φ a ≫ (E.torsionι N).left = (φ a).left :=
+  congrArg Over.Hom.left (E.torsionLift_torsionι (φ a) _)
+
+/-- Each `torsionSection E N φ a` is a section of `E[N] ⟶ S`. -/
+@[reassoc (attr := simp)] theorem torsionSection_hom
+    (φ : Multiplicative (ZMod N × ZMod N) →* (𝟙_ (Over S) ⟶ Over.mk E.structureMap))
+    (a : Multiplicative (ZMod N × ZMod N)) :
+    E.torsionSection N φ a ≫ (E.torsion N).X.hom = 𝟙 S := by
+  rw [← torsionι_left_structureMap, ← Category.assoc, torsionSection_torsionι_left,
+    left_comp_structureMap]
+
+variable [NeZero N]
 
 /-- **Drinfeld bases of `E[N]`** (Drinfeld; Katz–Mazur §3.1). A homomorphism
 `φ : (ℤ/Nℤ)² →* E(S)` to the group of `S`-points of an elliptic curve `E` over `S` is a Drinfeld

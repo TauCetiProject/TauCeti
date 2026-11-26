@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Basis
 public import TauCeti.Algebra.Coalgebra.Comodule.Dual
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Product
 
 /-!
@@ -21,14 +23,17 @@ c_(Mᵛ)(ev_m, φ) = S(c_M(φ, m)).
 
 Finite projectivity identifies every functional on `Mᵛ` with evaluation at some `m`, so the
 coefficient sets satisfy `CoeffSet(Mᵛ) = S '' CoeffSet(M)`. No inverse for the antipode is
-needed. When the Hopf algebra is commutative, this becomes an equality of coefficient
-subalgebras, and combining it with the product-comodule formula gives the coefficient algebra of
-`M × Mᵛ`.
+needed. In a finite basis `b`, the coefficient matrix of `b.dualBasis` is the transpose of the
+entrywise antipode of `coefficientMatrix b`. When the Hopf algebra is commutative, this becomes
+an equality of coefficient subalgebras, and combining it with the product-comodule formula gives
+the coefficient algebra of `M × Mᵛ`.
 
 ## Main results
 
 * `TauCeti.Comodule.matrixCoefficient_dual_eval`: the pointwise dual-coefficient formula.
 * `TauCeti.Comodule.matrixCoefficientSet_dual`: dual coefficients are exactly antipode images.
+* `TauCeti.Comodule.coefficientMatrix_dualBasis`: the coefficient matrix in `b.dualBasis` is the
+  transposed antipode transform of `coefficientMatrix b`.
 * `TauCeti.Comodule.matrixCoefficientSubalgebra_dual`: the coefficient algebra of the dual is
   the antipode image of the original coefficient algebra.
 * `TauCeti.Comodule.matrixCoefficientSubalgebra_prod_dual`: adjoining a comodule and its dual
@@ -134,6 +139,33 @@ theorem matrixCoefficientSubalgebra_prod_dual :
   rw [matrixCoefficientSubalgebra_prod, matrixCoefficientSubalgebra_dual]
 
 end Algebra
+
+section Matrix
+
+open Module
+open scoped Matrix
+
+variable {R : Type u} {H : Type v} {M : Type w} {ι : Type*}
+variable [CommSemiring R] [Semiring H] [HopfAlgebra R H]
+variable [AddCommMonoid M] [Module R M] [Comodule R H M]
+variable [Module.Finite R M] [Module.Projective R M] [Finite ι] [DecidableEq ι]
+
+attribute [local instance] dual
+
+/-- In the dual basis `b.dualBasis` of a finite free comodule, the coefficient matrix of the
+explicit right dual is the transpose of the entrywise antipode of `coefficientMatrix b`. -/
+@[simp]
+theorem coefficientMatrix_dualBasis (b : Basis ι R M) :
+    coefficientMatrix (C := H) b.dualBasis =
+      ((coefficientMatrix (C := H) b).map (HopfAlgebra.antipode R))ᵀ := by
+  ext i j
+  have hcoord : b.dualBasis.coord i = Module.Dual.eval R M (b i) :=
+    b.dualBasis.ext fun k ↦ by
+      simp [Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
+  rw [coefficientMatrix_apply, hcoord, matrixCoefficient_dual_eval, Module.Basis.coe_dualBasis,
+    Matrix.transpose_apply, Matrix.map_apply, coefficientMatrix_apply]
+
+end Matrix
 
 end
 

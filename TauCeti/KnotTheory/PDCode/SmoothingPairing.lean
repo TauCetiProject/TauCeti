@@ -18,8 +18,10 @@ pairings agree and one otherwise. Circles entirely in the exterior do not enter 
 The two smoothing closures have equal circle counts exactly for the opposite-slot exterior
 pairing. The other two cases give a merge or a split, with their directions determined here.
 These are finite matching statements: no planar realization or exclusion of the opposite-slot
-pairing is assumed or proved. To apply them to a diagram, one must construct its exterior
-pairing and compare its circle sets with these four-endpoint closures.
+pairing is assumed or proved. The exterior pairing of a diagram comes from
+`TauCeti.PerfectMatching.exists_orbitCount_sumCongr_mul_add`, and
+`TauCeti.PDCode.componentCount_resolveCrossing_cases` applies these closures to the components of
+a resolution.
 
 ## References
 

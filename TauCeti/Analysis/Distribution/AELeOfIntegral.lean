@@ -64,6 +64,8 @@ positivity of an operator, tested on functions localized near a point, is read o
   dual norm.
 * `TauCeti.ae_enorm_le_of_forall_enorm_integral_inner_le`: the pointwise bound `‖h‖ ≤ k` for an
   inner product space.
+* `TauCeti.ae_eq_zero_of_forall_integral_inner_eq_zero`: a vector field whose pairings with all
+  test vector fields vanish is zero almost everywhere.
 * `TauCeti.ae_nonneg_of_forall_integral_mul_nonneg`: nonnegativity from nonnegative pairings.
 * `TauCeti.nonneg_of_forall_integral_sq_smul_nonneg`: pointwise nonnegativity of a real or
   complex density continuous on an open set from nonnegative pairings with squares of test
@@ -98,7 +100,7 @@ private theorem tendsto_integral_testFunction_mul {K L : Set Ω} {W : ℕ → Se
     Tendsto (fun n => ∫ x, ψ n x * h x ∂ρ) atTop (𝓝 (∫ x in K, h x ∂ρ)) := by
   rw [← integral_indicator hK.measurableSet]
   refine tendsto_integral_of_dominated_convergence (L.indicator fun x => ‖h x‖)
-    (fun n => ((ψ n).continuous.comp continuous_subtype_val).aestronglyMeasurable.mul
+    (fun n => ((ψ n).continuous.comp continuous_subtypeVal).aestronglyMeasurable.mul
       hh.aestronglyMeasurable)
     ((integrable_indicator_iff hL.measurableSet).2 (hh.integrableOn_isCompact hL).norm)
     (fun n => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
@@ -127,7 +129,7 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
   have hcut (n : ℕ) : ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
       tsupport ψ ⊆ (↑) '' W n := by
     obtain ⟨ψ, h01, h1, hsupp⟩ := TestFunction.exists_cutoff_tsupport_subset
-      (hK.image continuous_subtype_val) (Ω.isOpen.isOpenMap_subtype_val _ (hWo n))
+      (hK.image continuous_subtypeVal) (Ω.isOpen.isOpenMap_subtypeVal _ (hWo n))
       (image_mono (hKW n)) (Subtype.coe_image_subset _ _)
     exact ⟨ψ, fun x => (h01 x).1, fun x => (h01 x).2,
       fun x hx => h1.self_of_nhdsSet x ⟨x, hx, rfl⟩, hsupp⟩
@@ -280,7 +282,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     have hφs : tsupport φ ⊆ tsupport ψ := by
       rw [hφfun]
       exact tsupport_smul_subset_left _ _
-    have hU := H ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtype_val W hW⟩ (Subtype.coe_image_subset _ _)
+    have hU := H ⟨(↑) '' W, Ω.isOpen.isOpenMap_subtypeVal W hW⟩ (Subtype.coe_image_subset _ _)
       φ (hφs.trans hψW) fun x => by
         rw [hφ, norm_smul, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw0),
           mul_one, Real.norm_of_nonneg (hψ0 x)]
@@ -304,7 +306,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     rw [mul_comm]
     exact_mod_cast this
   rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
-  exact (h x).opNorm_le_bound q.2 hle
+  exact (h x).opNorm_le_bound q.property hle
 
 end Dual
 
@@ -329,6 +331,15 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
   filter_upwards [ae_enorm_le_of_forall_enorm_integral_apply_le hh' hkm hk fun U hU φ hφU hφ => by
     simpa only [innerSL_apply_apply, real_inner_comm] using H U hU φ hφU hφ] with x hx
   rwa [← eNorm_norm, innerSL_apply_norm, eNorm_norm] at hx
+
+/-- **Fundamental lemma for vector fields.** A locally integrable vector field `h : Ω → F` whose
+pairings `∫ ⟪φ x, h x⟫ ∂ρ` with all test vector fields `φ` vanish is zero `ρ`-almost
+everywhere. -/
+theorem ae_eq_zero_of_forall_integral_inner_eq_zero {h : Ω → F} (hh : LocallyIntegrable h ρ)
+    (H : ∀ φ : 𝓓(Ω, F), ∫ x, ⟪φ x, h x⟫ ∂ρ = 0) : h =ᵐ[ρ] 0 := by
+  filter_upwards [ae_enorm_le_of_forall_enorm_integral_inner_le (k := 0) hh measurable_const
+    (by simp) fun U _ φ _ _ => by simp [H φ]] with x hx
+  simpa using hx
 
 end Inner
 
