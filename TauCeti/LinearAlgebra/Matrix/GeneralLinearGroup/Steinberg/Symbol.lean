@@ -95,23 +95,30 @@ private theorem commutatorElement_diagGL_eq_one {u v : Rˣ} (h : Commute u v) :
   ext i : 1
   fin_cases i <;> simp [commutatorElement_def, h.eq]
 
+/-- For `j' : Fin 3` different from `0` with value `j`, the diagonal lift word `h₀ⱼ(u)` lifts the
+stable diagonal matrix with entries `u` at `0`, `u⁻¹` at `j'` and `1` at the remaining index. The
+indices of `h₀ⱼ(u)` are rewritten to the values of `0, j' : Fin 3` with `h_congr`. -/
+private theorem toStableGL_h_zero {j : ℕ} (hj : 0 ≠ j) {j' : Fin 3} (hj' : 0 ≠ j')
+    (hjj' : (j' : ℕ) = j) (u : Rˣ) {d : Fin 3 → Rˣ}
+    (hd : ∀ m, (Pi.mulSingle 0 u * Pi.mulSingle j' u⁻¹ : Fin 3 → Rˣ) m = d m) :
+    SteinbergGroup.toStableGL R (IndexedSteinbergGroup.h hj u) =
+      StableGeneralLinearGroup.of R 3 (diagGL d) := by
+  rw [IndexedSteinbergGroup.h_congr (hij' := Fin.val_ne_of_ne hj') (Fin.val_zero 2).symm
+    hjj'.symm rfl, SteinbergGroup.toStableGL_h hj', funext hd]
+
 /-- The diagonal lift word `h₀₁(u)` lifts the stable matrix `diag(u, u⁻¹, 1)`. -/
 private theorem toStableGL_h_zero_one (u : Rˣ) :
     SteinbergGroup.toStableGL R (IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 1) u) =
-      StableGeneralLinearGroup.of R 3 (diagGL ![u, u⁻¹, 1]) := by
-  refine (SteinbergGroup.toStableGL_h (by decide : (0 : Fin 3) ≠ 1) u).trans ?_
-  congr 2
-  ext m : 1
-  fin_cases m <;> simp
+      StableGeneralLinearGroup.of R 3 (diagGL ![u, u⁻¹, 1]) :=
+  toStableGL_h_zero _ (by decide : (0 : Fin 3) ≠ 1) (Fin.val_one 1) u fun m ↦ by
+    fin_cases m <;> simp
 
 /-- The diagonal lift word `h₀₂(v)` lifts the stable matrix `diag(v, 1, v⁻¹)`. -/
 private theorem toStableGL_h_zero_two (v : Rˣ) :
     SteinbergGroup.toStableGL R (IndexedSteinbergGroup.h (by decide : (0 : ℕ) ≠ 2) v) =
-      StableGeneralLinearGroup.of R 3 (diagGL ![v, 1, v⁻¹]) := by
-  refine (SteinbergGroup.toStableGL_h (by decide : (0 : Fin 3) ≠ 2) v).trans ?_
-  congr 2
-  ext m : 1
-  fin_cases m <;> simp
+      StableGeneralLinearGroup.of R 3 (diagGL ![v, 1, v⁻¹]) :=
+  toStableGL_h_zero _ (by decide : (0 : Fin 3) ≠ 2) (by simp) v fun m ↦ by
+    fin_cases m <;> simp
 
 /-- The **Steinberg symbol** `{u, v} ∈ K₂(R)` of commuting units `u` and `v` of `R`: the
 commutator `⁅h₀₁(u), h₀₂(v)⁆` in the Steinberg group `St(R)` of the diagonal lift words

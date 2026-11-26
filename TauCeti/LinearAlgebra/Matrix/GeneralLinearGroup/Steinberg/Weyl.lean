@@ -102,14 +102,20 @@ private theorem conj_x_chain_reverse {i j k : ι} (hij : i ≠ j) (hki : k ≠ i
     (a b : R) : MulAut.conj (x hij a) (x hki b) = x hkj (-(b * a)) * x hki b :=
   x_mul_x_mul_inv_reverse hij hki hkj a b
 
+/-- Two root generators `x_{ij}(a)` and `x_{ij}(c)` separated by a generator `x_{kl}(b)` commuting
+with them merge into `x_{ij}(a + c)`. -/
+private theorem x_mul_x_mul_x {i j k l : ι} (hij : i ≠ j) (hkl : k ≠ l) (hjk : j ≠ k)
+    (hli : l ≠ i) (a b c : R) : x hij a * x hkl b * x hij c = x hij (a + c) * x hkl b := by
+  rw [mul_assoc, ← (commute_x hij hkl hjk hli c b).eq, ← mul_assoc, x_add]
+
 /-- Conjugation by `w_{ij}(u)` moves the root `(i, k)`, for `k ∉ {i, j}`, to `(j, k)`:
 `w_{ij}(u) x_{ik}(t) w_{ij}(u)⁻¹ = x_{jk}(-u⁻¹ t)`. -/
 theorem w_mul_x_fst_out_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hjk : j ≠ k) (u : Rˣ)
     (t : R) : w hij u * x hik t * (w hij u)⁻¹ = x hjk (-(↑u⁻¹ * t)) := by
-  rw [← MulAut.conj_apply, conj_w, MulAut.mul_apply, MulAut.mul_apply,
-    conj_x_of_commute hij hik hij.symm hik.symm, conj_x_chain hij.symm hik hjk, map_mul,
-    conj_x_chain hij hjk hik, conj_x_of_commute hij hik hij.symm hik.symm, mul_assoc,
-    (commute_x hjk hik hik.symm hjk.symm _ _).eq, ← mul_assoc, ← x_add]
+  rw [← MulAut.conj_apply, conj_w]
+  simp only [MulAut.mul_apply, map_mul, conj_x_of_commute hij hik hij.symm hik.symm,
+    conj_x_chain hij.symm hik hjk, conj_x_chain hij hjk hik]
+  rw [x_mul_x_mul_x hik hjk hjk.symm hik.symm]
   simp
 
 /-- The inverse of a Weyl lift word negates its unit: `w_{ij}(u)⁻¹ = w_{ij}(-u)`. -/
@@ -130,15 +136,13 @@ theorem w_mul_x_snd_out_mul_inv {i j k : ι} (hij : i ≠ j) (hik : i ≠ k) (hj
 `w_{ij}(u) x_{ki}(t) w_{ij}(u)⁻¹ = x_{kj}(-t u)`. -/
 theorem w_mul_x_out_fst_mul_inv {i j k : ι} (hij : i ≠ j) (hki : k ≠ i) (hkj : k ≠ j) (u : Rˣ)
     (t : R) : w hij u * x hki t * (w hij u)⁻¹ = x hkj (-(t * u)) := by
-  rw [← MulAut.conj_apply, conj_w, MulAut.mul_apply, MulAut.mul_apply,
-    conj_x_chain_reverse hij hki hkj, map_mul, map_mul, conj_x_chain_reverse hij.symm hkj hki,
-    conj_x_of_commute hij.symm hki hki.symm hij]
-  simp only [map_mul, conj_x_chain_reverse hij hki hkj,
+  rw [← MulAut.conj_apply, conj_w]
+  simp only [MulAut.mul_apply, map_mul, conj_x_chain_reverse hij hki hkj,
+    conj_x_chain_reverse hij.symm hkj hki, conj_x_of_commute hij.symm hki hki.symm hij,
     conj_x_of_commute hij hkj hkj.symm hij.symm]
-  have hc := commute_x (R := R) hki hkj hki.symm hkj.symm
-  rw [mul_assoc, mul_assoc, (hc _ _).left_comm, (hc _ _).left_comm, ← x_add hki,
-    ← mul_assoc, ← mul_assoc, ← x_add hkj, ← x_add hkj]
-  simp [mul_assoc]
+  rw [x_mul_x_mul_x hkj hki hkj.symm hki.symm, mul_assoc, ← mul_assoc (x hki _),
+    x_mul_x_mul_x hki hkj hki.symm hkj.symm]
+  simp
 
 /-- Conjugation by `w_{ij}(u)` moves the root `(k, j)`, for `k ∉ {i, j}`, to `(k, i)`:
 `w_{ij}(u) x_{kj}(t) w_{ij}(u)⁻¹ = x_{ki}(t u⁻¹)`. -/
@@ -242,6 +246,12 @@ def h {i j : ι} (hij : i ≠ j) (u : Rˣ) : IndexedSteinbergGroup ι R :=
 /-- Unfolding lemma for the diagonal lift word `h_{ij}(u)`. -/
 theorem h_def {i j : ι} (hij : i ≠ j) (u : Rˣ) : h hij u = w hij u * w hij (-1) :=
   (rfl)
+
+/-- Congruence of the diagonal lift word `h_{ij}(u)` in its dependent indices and its unit. -/
+theorem h_congr {i j i' j' : ι} {hij : i ≠ j} {hij' : i' ≠ j'} (hi : i = i') (hj : j = j')
+    {u u' : Rˣ} (hu : u = u') : h hij u = h hij' u' := by
+  subst hi hj hu
+  rfl
 
 /-- The diagonal lift word of the unit `1` is trivial. -/
 @[simp]
