@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.NormalOperator
 public import TauCeti.Analysis.Calculus.ContDiff.Twisted
 public import TauCeti.Analysis.InnerProductSpace.SymplecticCokernel
 public import TauCeti.LinearAlgebra.Determinant.Line
+import TauCeti.Analysis.ODE.HamiltonianCokernel
 
 /-!
 # Kernel, adjoint kernel and determinant line of the orbit-torus operator
@@ -42,10 +43,10 @@ loop equation `w' = J₀ S(t) w` and `Q = Ψ(d) ^ n` for the return map of the `
   (`TauCeti.kerOrbitTorusOperatorEquiv`, `TauCeti.kerOrbitTorusAdjointEquiv`).
 * In finite dimension, `v ↦ -ε₂ J₀ v` induces a linear equivalence from `ker (ε₂ - Q)` onto the
   cokernel `V ⧸ range (ε₂ - Q)` (`TauCeti.kerEquivQuotientRangeOfInnerApplyEq`). The return
-  map preserves the symplectic form `⟪J₀ ·, ·⟫`
-  (`TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply`), so `J₀` carries the
-  `ε₂`-eigenspace into the orthogonal complement of the range; it meets the range only in `0`, and
-  dimensions agree.
+  map preserves the symplectic form `⟪J₀ ·, ·⟫`, for which `J₀ S(t)` is skew
+  (`TauCeti.inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew`), so `J₀` carries
+  the `ε₂`-eigenspace into the orthogonal complement of the range; it meets the range only in
+  `0`, and dimensions agree.
   Hence the kernel of `D†` is identified with the cokernel of `ε₂ - Q`
   (`TauCeti.kerOrbitTorusAdjointEquivQuotientRange`). The factor `-ε₂` is the normalization of
   variation of constants: for `v` in the eigenspace, the solution of `A w = Ψ(t) v` with
@@ -409,8 +410,8 @@ def kerOrbitTorusAdjointEquivQuotientRange (hℓ : 0 < ℓ) (hd : 0 < d)
         have h : ⟪J₀ ((dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) x),
             (dysonSeriesLeft (fun t => J₀ ∘L S t) d ^ n) y⟫ = ⟪J₀ x, y⟫ := by
           simpa [← dysonSeriesLeft_natCast_mul_of_periodic hM hMper n] using
-            inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply hJ₀ hJ₀sq hS hS1.continuous
-              (n * d) x y
+            inner_apply_dysonSeriesLeft_apply_dysonSeriesLeft_apply_of_skew hM
+              (fun r x y => by simp [hJ₀sq, hJ₀ x, hS r]) (n * d) x y
         simp only [LinearMap.neg_apply, LinearMap.smul_apply, ContinuousLinearMap.coe_coe,
           inner_neg_left, real_inner_smul_left, h])
       hε₂ (fun x => by simp))
