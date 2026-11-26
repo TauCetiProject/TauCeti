@@ -428,12 +428,12 @@ theorem sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperato
       simpa [sub_sub, one_add_one_eq_two] using
         smulCommutator_mem_classicalPseudodifferentialOperators
           (smulCommutator_mem_classicalPseudodifferentialOperators hP (g i)) (g i)
-  have h := Submodule.smul_mem _ (-(1 / 2 : ℂ)) hmem
-  rw [sum_smulCommutator_smulCommutator_eq hg, two_nsmul, ← two_smul ℂ, smul_smul,
-    show -(1 / 2 : ℂ) * 2 = -1 by norm_num, neg_one_smul, neg_sub] at h
-  convert h using 3 with i
-  ext u x
-  simp [mul_comm]
+  -- `gᵢ P gᵢ` is `gᵢ • P ∘ₗ Algebra.lsmul ℂ ℂ _ gᵢ`.
+  have hcomp : ∑ i ∈ s, LinearMap.mulLeft ℂ (g i) ∘ₗ P ∘ₗ LinearMap.mulLeft ℂ (g i) =
+      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) :=
+    Finset.sum_congr rfl fun i _ ↦ LinearMap.ext fun u ↦ by simp [smul_eq_mul]
+  rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
+  exact Submodule.smul_mem _ _ hmem
 
 variable {e : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
   {he : ∀ i, e i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}

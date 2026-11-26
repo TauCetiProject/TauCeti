@@ -29,7 +29,7 @@ a commutator with a bundle endomorphism need not lose an order.
 
 For smooth functions `gᵢ` with `∑ᵢ gᵢ² = 1`, the operator `s ↦ ∑ᵢ gᵢ P (gᵢ s)` is `P` up to order
 `m - 2` (`TauCeti.sum_smul_comp_smul_sub_mem_sectionClassicalPseudodifferentialOperators`), since
-it differs from `P` by `-½ ∑ᵢ [[P, gᵢ], gᵢ]` (`TauCeti.sum_smulCommutator_smulCommutator_eq`).
+it differs from `P` by `-½ ∑ᵢ [[P, gᵢ], gᵢ]` (`TauCeti.sub_sum_smul_comp_lsmul_eq`).
 This is the bundle form of
 `TauCeti.sum_mulLeft_comp_comp_mulLeft_sub_mem_classicalPseudodifferentialOperators`: localizing an
 operator between bundles symmetrically over a square partition of unity changes it only at order
@@ -129,11 +129,12 @@ theorem sum_smul_comp_smul_sub_mem_sectionClassicalPseudodifferentialOperators
       simpa [sub_sub, one_add_one_eq_two] using
         smulCommutator_mem_sectionClassicalPseudodifferentialOperators
           (smulCommutator_mem_sectionClassicalPseudodifferentialOperators hP (g i)) (g i)
-  have h := Submodule.smul_mem _ (-(1 / 2 : ℂ)) hmem
-  rw [sum_smulCommutator_smulCommutator_eq hg, two_nsmul, ← two_smul ℂ, smul_smul,
-    show -(1 / 2 : ℂ) * 2 = -1 by norm_num, neg_one_smul, neg_sub] at h
-  convert h using 3 with i
-  ext σ x
-  simp
+  -- Multiplication by `gᵢ` on sections is `Algebra.lsmul ℂ ℂ _ gᵢ` by definition
+  -- (`Algebra.lsmul_eq_smul_one`).
+  have hcomp : ∑ i ∈ s, g i • (P ∘ₗ (g i • LinearMap.id)) =
+      ∑ i ∈ s, g i • P ∘ₗ Algebra.lsmul ℂ ℂ _ (g i) :=
+    Finset.sum_congr rfl fun i _ ↦ rfl
+  rw [hcomp, ← neg_mem_iff, neg_sub, sub_sum_smul_comp_lsmul_eq hg]
+  exact Submodule.smul_mem _ _ hmem
 
 end TauCeti

@@ -30,9 +30,11 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `mem_differentialOperators_iff_forall_list_prod`: order at most `m` means that every
   `(m + 1)`-fold iterated commutator vanishes; the commutators with different elements commute
   (`smulCommutator_comm`).
-* `sum_smulCommutator_smulCommutator_eq`: for `∑ᵢ aᵢ ^ 2 = 1`, the operator
-  `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` differs from `D` by `-½ ∑ᵢ [[D, aᵢ], aᵢ]`, so localizing over a square
-  partition of unity changes an operator only by double commutators.
+* `sum_smulCommutator_smulCommutator_eq`: for `∑ᵢ aᵢ ^ 2 = 1`,
+  `∑ᵢ [[D, aᵢ], aᵢ] = 2 • (D - ∑ᵢ aᵢ • D (aᵢ • ·))`, so localizing over a square partition of
+  unity changes an operator only by double commutators. When `2` is invertible in `R`, `D` minus
+  the operator `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` is `⅟2 • ∑ᵢ [[D, aᵢ], aᵢ]`
+  (`sub_sum_smul_comp_lsmul_eq`).
 * `differentialOperators_mono` and `comp_mem_differentialOperators`: the orders are increasing
   and add under composition, so the operators on `M` form a filtered ring
   (`SetLike.GradedMonoid`).
@@ -209,6 +211,16 @@ theorem sum_smulCommutator_smulCommutator_eq {ι : Type*} {s : Finset ι} {a : �
     ← Finset.sum_smul, ha, one_smul, LinearMap.smul_apply, LinearMap.sub_apply,
     LinearMap.comp_apply, Algebra.lsmul_coe, ← Finset.smul_sum]
   abel
+
+/-- **Square partitions reproduce an operator up to double commutators.** If `2` is invertible in
+`R` and `∑ᵢ aᵢ ^ 2 = 1`, then `D` minus the operator `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` is
+`⅟2 • ∑ᵢ [[D, aᵢ], aᵢ]`. -/
+theorem sub_sum_smul_comp_lsmul_eq [Invertible (2 : R)] {ι : Type*} {s : Finset ι} {a : ι → A}
+    (ha : ∑ i ∈ s, a i ^ 2 = 1) (D : M →ₗ[R] N) :
+    D - ∑ i ∈ s, a i • D ∘ₗ Algebra.lsmul R R M (a i) =
+      (⅟2 : R) • ∑ i ∈ s, smulCommutator R (a i) (smulCommutator R (a i) D) := by
+  rw [sum_smulCommutator_smulCommutator_eq ha, ← ofNat_smul_eq_nsmul (R := R), smul_smul,
+    invOf_mul_self, one_smul]
 
 /-- The Leibniz rule for commutators of a composition:
 `[P ∘ Q, a] = P ∘ [Q, a] + [P, a] ∘ Q`. -/
