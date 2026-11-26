@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
+import TauCeti.Topology.UniformSpace.Pi
 
 /-!
 # Comparisons of finite product norms and distances
@@ -627,21 +628,13 @@ variable {ι : Type*} {E : ι → Type*} (p : ℝ≥0∞) [∀ i, UniformSpace (
 
 /-- Each factor of a complete `L^p` product of nonempty uniform spaces is complete. -/
 theorem completeSpace_of_completeSpace [CompleteSpace (PiLp p E)] (i : ι) :
-    CompleteSpace (E i) := by
-  classical
+    CompleteSpace (E i) :=
   have := (uniformEquiv p E).completeSpace_iff.1 ‹_›
-  -- `E i` is a retract of the product: insert into a fixed point `c` and read coordinate `i`.
-  let c : ∀ j, E j := fun _ ↦ Classical.arbitrary _
-  refine CompleteSpace.of_comp_eq_id (fun x : ∀ j, E j ↦ x i) (Function.update c i)
-    (funext fun _ ↦ Function.update_self ..) (continuous_apply i) ?_
-  refine uniformContinuous_pi.2 fun j ↦ ?_
-  rcases eq_or_ne j i with rfl | hji
-  · simp only [Function.update_self]; exact uniformContinuous_id
-  · simpa [Function.update_of_ne hji] using uniformContinuous_const
+  .of_pi i
 
 /-- An `L^p` product of nonempty uniform spaces is complete if and only if every factor is
 complete. -/
 theorem completeSpace_iff : CompleteSpace (PiLp p E) ↔ ∀ i, CompleteSpace (E i) :=
-  ⟨fun _ ↦ completeSpace_of_completeSpace p, fun _ ↦ inferInstance⟩
+  (uniformEquiv p E).completeSpace_iff.trans completeSpace_pi_iff
 
 end PiLp
