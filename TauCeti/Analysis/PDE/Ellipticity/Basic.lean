@@ -1066,6 +1066,24 @@ lemma add_const_smul_one (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 
     UniformlyEllipticOn Ω (fun x => a x + c • (1 : Matrix n n ℝ)) lam (Lam + c) :=
   h.add_smul_one hc (fun {_} _ => hc) (fun {_} _ => le_rfl)
 
+/-- **Uniform ellipticity extends to the closure** for coefficients whose bilinear forms are
+continuous on the closure: both defining inequalities are closed conditions. -/
+theorem closure_of_continuousOn [TopologicalSpace X] (h : UniformlyEllipticOn Ω a lam Lam)
+    (ha : ContinuousOn (fun x => matrixBilinearForm (a x)) (closure Ω)) :
+    UniformlyEllipticOn (closure Ω) a lam Lam := by
+  obtain ⟨h1, h2, h3⟩ := uniformlyEllipticOn_iff.1 h
+  refine uniformlyEllipticOn_iff.2 ⟨h1, h2, fun x hx => ⟨fun ξ => ?_, fun η ξ => ?_⟩⟩
+  · rw [← matrixBilinearForm_self]
+    exact le_on_closure (f := fun _ => lam * ‖ξ‖ ^ 2)
+      (g := fun x => matrixBilinearForm (a x) ξ ξ)
+      (fun y hy => (matrixBilinearForm_self (a y) ξ).symm ▸ (h3 hy).1 ξ) continuousOn_const
+      ((ha.clm_apply continuousOn_const).clm_apply continuousOn_const) hx
+  · rw [← matrixBilinearForm_apply]
+    exact le_on_closure (f := fun x => |matrixBilinearForm (a x) η ξ|)
+      (g := fun _ => Lam * ‖η‖ * ‖ξ‖)
+      (fun y hy => (matrixBilinearForm_apply (a y) η ξ).symm ▸ (h3 hy).2 η ξ)
+      ((ha.clm_apply continuousOn_const).clm_apply continuousOn_const).abs continuousOn_const hx
+
 end UniformlyEllipticOn
 
 variable {Ω : Set X} {a b : X → Matrix n n ℝ}
