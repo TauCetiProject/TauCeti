@@ -204,7 +204,7 @@ period-one Hamiltonians `H_q` translated by `c`, and let `u` be `C¹` there and 
 equation. If `B` bounds the coefficient field on jets of the end datum along `u` read in the
 recentred chart over the band `t ∈ [0, 1]` beyond `T`, then the coefficient field on conformal jets
 is at most `1 + B + (1 + B) B / π` beyond the height `T + 1` of the standard end chart `φ'_∞`. -/
-private theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le_of_recentered
+theorem norm_floerConformalJetCoeff_positiveEndChart_inf_le_of_recentered
     (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ContDiff ℝ 2 (uncurry (H inf))) {c : ℝ} (hc : |c| ≤ 1)
     {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}

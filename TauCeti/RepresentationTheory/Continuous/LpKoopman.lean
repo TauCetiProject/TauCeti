@@ -35,6 +35,11 @@ finite, and `p ≠ ∞`, the orbit maps `g ↦ π(g) f` are continuous
 ## Main definitions
 
 * `TauCeti.lpKoopman 𝕜 E p μ hμ`: the representation `g ↦ (f ↦ f ∘ (g⁻¹ • ·))` on `Lp E p μ`.
+
+## Main results
+
+* `TauCeti.mem_invariants_lpKoopman_iff`: the invariant vectors are the classes `f` with
+  `f (g • x) = f x` almost everywhere, for every `g`.
 -/
 
 public section
@@ -79,6 +84,15 @@ theorem lpKoopman_apply (g : G) (f : Lp E p μ) :
 theorem coeFn_lpKoopman (g : G) (f : Lp E p μ) :
     lpKoopman 𝕜 E p μ hμ g f =ᵐ[μ] fun x ↦ f (g⁻¹ • x) :=
   Lp.coeFn_compMeasurePreserving f (hμ g⁻¹)
+
+/-- **The invariants of the pullback representation.** A class `f ∈ Lᵖ` is fixed by every `π(g)`
+exactly when `f (g • x) = f x` for almost every `x`, for every `g`. -/
+theorem mem_invariants_lpKoopman_iff {f : Lp E p μ} :
+    f ∈ (lpKoopman 𝕜 E p μ hμ).invariants ↔ ∀ g : G, (fun x ↦ f (g • x)) =ᵐ[μ] f := by
+  rw [ContRepresentation.mem_invariants, (Equiv.inv G).forall_congr_left]
+  refine forall_congr' fun g ↦ ?_
+  rw [Equiv.inv_symm, Equiv.inv_apply, Lp.ext_iff]
+  simpa only [inv_inv] using (coeFn_lpKoopman (𝕜 := 𝕜) (hμ := hμ) g⁻¹ f).congr_left
 
 /-- Each `π(g)` is an isometry. -/
 @[simp]
