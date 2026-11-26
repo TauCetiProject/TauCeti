@@ -59,7 +59,6 @@ example (a : Aut x) {V W : C} (f : V ⟶ U) (g : W ⟶ V) :
 /-- Evaluation at the identity recovers the automorphism, and every section is a lift. -/
 example (a : Aut x) (s : IntrinsicBandSections F U) :
     evaluation (𝟙 U) x (lift J hF x a) = a ∧ lift J hF x (evaluation (𝟙 U) x s) = s :=
-  ⟨evaluation_lift_id J hF x a, by
-    simpa using (evaluationMulEquiv J hF x).symm_apply_apply s⟩
+  ⟨evaluation_lift_id J hF x a, lift_evaluation_id J hF x s⟩
 
 end TauCeti.Examples.BandCenterLift
