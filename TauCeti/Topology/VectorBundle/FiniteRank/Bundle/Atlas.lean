@@ -151,15 +151,19 @@ noncomputable def ofAtlasMap (g : E.toAtlas ⟶ F.toAtlas) : E ⟶ F where
       g.fiberMap x ∘ₗ (E.fiberContinuousLinearEquiv x).toLinearMap := (rfl)
 
 @[simp] theorem toAtlasMap_id : toAtlasMap E (𝟙 E) = 𝟙 E.toAtlas :=
-  FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun v ↦ by
-    rw [fiberMap_toAtlasMap, fiberMap_id, LinearMap.id_comp]
-    exact (E.fiberContinuousLinearEquiv x).apply_symm_apply v
+  FiniteRankAtlas.hom_ext fun x ↦ by
+    simp
+    -- The identities of `E.toAtlas.Fiber x` and `Fin (E.rank x) → 𝕜` agree by the `rfl` lemma
+    -- `FiniteRankAtlas.rank_ofBundles`, which `simp` does not see through.
+    rfl
 
 @[simp] theorem toAtlasMap_comp (f : E ⟶ F) (g : F ⟶ G) :
     toAtlasMap E (f ≫ g) = toAtlasMap E f ≫ toAtlasMap F g :=
   FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun _ ↦ by
-    rw [FiniteRankAtlas.fiberMap_comp, fiberMap_toAtlasMap, fiberMap_toAtlasMap,
-      fiberMap_toAtlasMap, fiberMap_comp]
+    simp only [fiberMap_toAtlasMap, fiberMap_comp, ContinuousLinearEquiv.toLinearEquiv_symm,
+      FiniteRankAtlas.fiberMap_comp]
+    -- `simp` cannot evaluate the compositions at a point of `E.toAtlas.Fiber x`, which is
+    -- `Fin (E.rank x) → 𝕜` only up to the `rfl` lemma `FiniteRankAtlas.rank_ofBundles`.
     exact congrArg (fun u ↦ G.fiberContinuousLinearEquiv x (g.fiberMap x u))
       ((F.fiberContinuousLinearEquiv x).symm_apply_apply _).symm
 
@@ -291,6 +295,15 @@ noncomputable def toAtlasToBundleIso : (toBundle.{w} A).toAtlas ≅ A :=
       (toBundle.{w} A).fiberContinuousLinearEquiv x (ULift.up v) :=
   LinearMap.congr_fun (fiberMap_isoMk_inv _ _ _ x) v
 
+/-- A linear map conjugated by `ContinuousLinearEquiv.ulift` acts on `ULift` by `ULift.down`,
+the map and `ULift.up`. This evaluates the fibre maps of `toBundleMap`. -/
+private theorem ulift_conj_apply {M N : Type*} [AddCommMonoid M] [Module 𝕜 M]
+    [TopologicalSpace M] [AddCommMonoid N] [Module 𝕜 N] [TopologicalSpace N] (φ : M →ₗ[𝕜] N)
+    (u : ULift.{w} M) :
+    ((ContinuousLinearEquiv.ulift : ULift.{w} N ≃L[𝕜] N).symm.toLinearMap ∘ₗ φ ∘ₗ
+      (ContinuousLinearEquiv.ulift : ULift.{w} M ≃L[𝕜] M).toLinearMap) u = ULift.up (φ u.down) := by
+  simp
+
 /-- An atlas map as a map of the reconstructed genuine bundles, acting on the fibres
 `ULift.{w} (A.Fiber x)` through `ULift.down` and `ULift.up`. -/
 noncomputable def toBundleMap {B : FiniteRankAtlas 𝕜 X} (g : A ⟶ B) :
@@ -300,30 +313,28 @@ noncomputable def toBundleMap {B : FiniteRankAtlas 𝕜 X} (g : A ⟶ B) :
   continuous_totalSpaceMap :=
     continuous_totalSpace_conj (toBundleHomeomorph A) (toBundleHomeomorph B).symm
       (toBundleHomeomorph_apply A) (toBundleHomeomorph_symm_apply B)
-      (fun _ ↦ (LinearMap.comp_apply _ _ _).trans <|
-        (ContinuousLinearEquiv.ulift_symm_apply _).trans <| congrArg ULift.up <|
-          (LinearMap.comp_apply _ _ _).trans <| congrArg _ (ContinuousLinearEquiv.ulift_apply _))
-      g.continuous_totalSpaceMap
+      (fun _ ↦ ulift_conj_apply _ _) g.continuous_totalSpaceMap
 
 @[simp] theorem fiberMap_toBundleMap_apply {B : FiniteRankAtlas 𝕜 X} (g : A ⟶ B) (x : X)
     (u : (toBundle.{w} A).Fiber x) :
     (toBundleMap.{w} A g).fiberMap x u = ULift.up (g.fiberMap x (ULift.down u)) :=
-  (LinearMap.comp_apply _ _ _).trans <|
-    (ContinuousLinearEquiv.ulift_symm_apply _).trans <| congrArg ULift.up <|
-      (LinearMap.comp_apply _ _ _).trans <| congrArg _ (ContinuousLinearEquiv.ulift_apply _)
+  ulift_conj_apply _ _
 
 @[simp] theorem toBundleMap_id : toBundleMap.{w} A (𝟙 A) = 𝟙 (toBundle.{w} A) :=
   FiniteRankBundle.hom_ext fun x ↦ LinearMap.ext fun u ↦ by
-    rw [fiberMap_toBundleMap_apply, fiberMap_id, LinearMap.id_apply, FiniteRankBundle.fiberMap_id,
-      LinearMap.id_apply]
+    simp only [fiberMap_toBundleMap_apply, fiberMap_id, LinearMap.id_coe, id_eq,
+      FiniteRankBundle.fiberMap_id]
+    -- `A.toBundle.Fiber x` is `ULift (A.Fiber x)` only up to the `rfl` lemma
+    -- `FiniteRankBundle.fiber_ofBundles`, so `ULift.up_down` is applied by unification.
     exact ULift.up_down u
 
 @[simp] theorem toBundleMap_comp {B C : FiniteRankAtlas 𝕜 X} (f : A ⟶ B) (g : B ⟶ C) :
     toBundleMap.{w} A (f ≫ g) = toBundleMap.{w} A f ≫ toBundleMap.{w} B g :=
   FiniteRankBundle.hom_ext fun x ↦ LinearMap.ext fun u ↦ by
-    rw [fiberMap_toBundleMap_apply, fiberMap_comp, LinearMap.comp_apply,
-      FiniteRankBundle.fiberMap_comp, LinearMap.comp_apply, fiberMap_toBundleMap_apply,
-      fiberMap_toBundleMap_apply]
+    simp only [fiberMap_toBundleMap_apply, fiberMap_comp, LinearMap.coe_comp, Function.comp_apply,
+      FiniteRankBundle.fiberMap_comp]
+    -- As in `toBundleMap_id`, the last evaluation is applied by unification.
+    exact (fiberMap_toBundleMap_apply B g x _).symm
 
 variable (𝕜 X) in
 /-- The reconstruction of genuine bundles from atlases, as a functor. -/
