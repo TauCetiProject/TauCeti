@@ -109,20 +109,7 @@ theorem W1p.halfSpaceTrace_contDiffSMul_ae (hp : p ≠ (∞ : ℝ≥0∞)) (a : 
   have heq : W1p.restrictL (le_top : normalHalfSpace (E := E) a ≤ ⊤)
       (W1p.contDiffSMul ψ hψ hM (fun x _ => hψM x) (fun x _ => hgradM x) w) =
       W1p.contDiffSMul ψ hψ hM (fun x _ => hψM x) (fun x _ => hgradM x) u := by
-    apply W1p.ext_value
-    apply Lp.ext
-    have hw := (W1p.value_restrictL_ae
-      (le_top : normalHalfSpace (E := E) a ≤ ⊤) w).symm
-    rw [W1p.restrictL_extendByReflectionL] at hw
-    have hmul := W1p.value_contDiffSMul_ae (mu := volume) (Omega := ⊤)
-      hψ hM (fun x _ => hψM x) (fun x _ => hgradM x) w
-    simp only [Opens.coe_top, Measure.restrict_univ] at hmul
-    filter_upwards [W1p.value_restrictL_ae le_top
-        (W1p.contDiffSMul ψ hψ hM (fun x _ => hψM x) (fun x _ => hgradM x) w),
-      ae_restrict_of_ae hmul, hw,
-      W1p.value_contDiffSMul_ae hψ hM
-        (fun x _ => hψM x) (fun x _ => hgradM x) u] with x hx hm hwx hu
-    simp only [hx, hm, hwx, hu]
+    rw [W1p.restrictL_contDiffSMul, W1p.restrictL_extendByReflectionL]
   rw [← heq, W1p.halfSpaceTrace_restrictL hp, W1p.halfSpaceTrace_apply]
   exact W1p.hyperplaneTrace_contDiffSMul_ae hp a hψ hψM hgradM w
 

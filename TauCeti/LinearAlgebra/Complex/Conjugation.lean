@@ -75,9 +75,6 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
 * `TauCeti.finrank_realPoints`: the real points of a conjugation have `Module.finrank` over `ℝ`
   equal to `Module.finrank ℂ V`.  If `V` is infinite-dimensional, both sides are `0`, so this says
   nothing about the cardinal `Module.rank`.
-* `TauCeti.finrank_selfAdjoint_submodule`: in particular, the self-adjoint elements of a complex
-  star module have `Module.finrank` over `ℝ` equal to the module's `Module.finrank` over `ℂ`, with
-  both sides `0` in infinite dimension.
 * `TauCeti.exists_one_tmul_add_I_tmul`: every element of `ℂ ⊗[ℝ] W` is `1 ⊗ₜ w₁ + I ⊗ₜ w₂`; this
   is what makes the lift injective.
 * `LinearMap.liftBaseChange_complex_injective_of_conj`: more generally, an injective real-linear
@@ -90,6 +87,7 @@ Everything is stated for an arbitrary `V`; no finite-dimensionality is used anyw
   the canonical real-descent equivalence identifies tensor conjugation with `K`.
 * `TauCeti.tmulConj_baseChange`: that conjugation commutes with every base-changed map, which is
   what makes it equivariant for a base-changed action.
+* `LinearMap.map_real_smul`: a conjugate-linear map is real-linear.
 * `LinearEquiv.conjugationOfComplexification_apply_apply`: the transported conjugation sends
   `e u` to `e (tmulConj W u)`.
 * `LinearEquiv.conjugationOfComplexification_eq_self_iff`,
@@ -324,6 +322,15 @@ theorem _root_.LinearMap.liftBaseChange_complex_injective_of_conj (f : W →ₗ[
 
 end LiftBaseChange
 
+/-- A conjugate-linear map is real-linear, for any real structures compatible with the complex
+ones. -/
+@[simp]
+theorem _root_.LinearMap.map_real_smul {E F : Type*} [AddCommMonoid E] [Module ℂ E] [Module ℝ E]
+    [IsScalarTower ℝ ℂ E] [AddCommMonoid F] [Module ℂ F] [Module ℝ F] [IsScalarTower ℝ ℂ F]
+    (K : E →ₛₗ[starRingEnd ℂ] F) (r : ℝ) (x : E) : K (r • x) = r • K x := by
+  rw [← algebraMap_smul ℂ r x, K.map_smulₛₗ, ← algebraMap_smul ℂ r (K x), Complex.coe_algebraMap,
+    starRingEnd_apply, Complex.star_def, Complex.conj_ofReal]
+
 /-! ### The complexification of the real points -/
 
 variable (K) in
@@ -385,19 +392,6 @@ junk value `0`. -/
 theorem finrank_realPoints (hK : Function.Involutive K) :
     finrank ℝ (realPoints K) = finrank ℂ V := by
   rw [← (realPointsEquiv hK).finrank_eq, Module.finrank_baseChange]
-
-/-- The self-adjoint elements of a complex star module have `Module.finrank` over `ℝ` equal to the
-module's `Module.finrank` over `ℂ`: they are the real points of the conjugation `star`.  This is a
-statement about `Module.finrank` only: in the infinite-dimensional case both sides are the junk
-value `0`. -/
-theorem finrank_selfAdjoint_submodule {A : Type*} [AddCommGroup A] [Module ℂ A] [StarAddMonoid A]
-    [StarModule ℂ A] : finrank ℝ (selfAdjoint.submodule ℝ A) = finrank ℂ A := by
-  let K : A →ₛₗ[starRingEnd ℂ] A := (starLinearEquiv ℂ (A := A)).toLinearMap
-  have h : selfAdjoint.submodule ℝ A = realPoints K := by
-    ext x
-    rw [mem_realPoints, LinearEquiv.coe_coe, starLinearEquiv_apply]
-    exact selfAdjoint.mem_iff (R := A)
-  rw [h, finrank_realPoints (K := K) star_star]
 
 /-! ### The conjugation of a complexification -/
 

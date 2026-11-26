@@ -32,6 +32,8 @@ the field.
   curve on that set.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
+* `IsMIntegralCurve.comp_neg`: running an integral curve of `v` backwards gives an integral curve
+  of `-v`.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
@@ -115,6 +117,17 @@ theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpac
   rw [mfderiv_const] at h₀
   have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
   exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
+
+/-- **Time reversal.** Running an integral curve of `v` backwards gives an integral curve of
+`-v`. -/
+theorem IsMIntegralCurve.comp_neg {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {v : (x : M) → TangentSpace I x} {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) :
+    IsMIntegralCurve (fun t ↦ γ (-t)) (-v) := by
+  convert hγ.comp_mul (-1) using 1
+  · ext t
+    rw [comp_apply, mul_neg_one]
+  · ext y
+    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
 
 namespace IsMIntegralCurveAt
 

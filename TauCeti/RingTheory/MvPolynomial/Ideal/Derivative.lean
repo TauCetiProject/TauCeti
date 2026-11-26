@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 public import TauCeti.RingTheory.MvPolynomial.LocalOrder
+import TauCeti.Algebra.MvPolynomial.PDeriv
 import TauCeti.RingTheory.Derivation.Ideal
 
 /-!
@@ -29,6 +30,12 @@ Characteristic zero is needed: over a field of characteristic `p`, the derivativ
 `(Xᵢ ^ p)` is `(Xᵢ ^ p)` itself, whereas in characteristic zero the derivative ideal of
 `(Xᵢ ^ (n + 1))` is `(Xᵢ ^ n)`.
 
+Over a field of characteristic zero, the only ideals stable under every partial derivative, that
+is, containing their derivative ideal, are `⊥` and `⊤`: a nonzero stable ideal contains a nonzero
+polynomial of least total degree, whose partial derivatives lie in the ideal and have smaller
+degree, so they vanish and the polynomial is a nonzero constant. Characteristic zero is needed
+here too, since `(Xᵢ ^ p)` is stable in characteristic `p`.
+
 ## Main definitions
 
 * `Ideal.derivativeIdeal`: the derivative ideal of an ideal of a multivariate polynomial ring.
@@ -46,6 +53,8 @@ Characteristic zero is needed: over a field of characteristic `p`, the derivativ
 * `Ideal.exists_orderAt_eq_one_mem_derivativeIdeal_iterate`: in characteristic zero, at a point
   where `I` has order `d > 0`, the `(d - 1)`-st iterated derivative ideal contains a polynomial
   of order one.
+* `Ideal.derivativeIdeal_le_self_iff`: in characteristic zero, an ideal contains its derivative
+  ideal if and only if it is `⊥` or `⊤`.
 
 ## References
 
@@ -240,6 +249,34 @@ theorem exists_orderAt_eq_one_mem_derivativeIdeal_iterate [CharZero k] {d : ℕ}
     congr 1
     omega
   simpa using exists_mem_orderAt_eq_of_orderAt_pointToPoint_eq h1
+
+/-- **The ideals stable under all partial derivatives** in characteristic zero: an ideal of a
+multivariate polynomial ring over a field of characteristic zero contains its derivative ideal,
+that is, contains `∂ f / ∂ Xᵢ` for every `f` in it and every variable `Xᵢ`, if and only if it is
+`⊥` or `⊤`. Characteristic zero is needed: over a field of characteristic `p`, `(Xᵢ ^ p)` is a
+proper nonzero ideal containing its derivative ideal
+(`Ideal.derivativeIdeal_span_singleton_X_pow_char`). -/
+theorem derivativeIdeal_le_self_iff [CharZero k] : I.derivativeIdeal ≤ I ↔ I = ⊥ ∨ I = ⊤ := by
+  refine ⟨fun h ↦ or_iff_not_imp_right.mpr fun hI ↦ ?_, by rintro (rfl | rfl) <;> simp⟩
+  have hC (c : k) (hc : C c ∈ I) : c = 0 := by
+    by_contra hc0
+    exact hI (I.eq_top_of_isUnit_mem hc ((isUnit_iff_ne_zero.mpr hc0).map C))
+  -- Every element of `I` of total degree at most `n` vanishes, by induction on `n`: the partial
+  -- derivatives of such an element lie in `I` and have total degree at most `n - 1`, so they
+  -- vanish, and the element is a constant of `I`, hence zero.
+  have key (n : ℕ) : ∀ f ∈ I, f.totalDegree ≤ n → f = 0 := by
+    induction n with
+    | zero =>
+      intro f hf hdeg
+      rw [totalDegree_eq_zero_iff_eq_C.mp (Nat.le_zero.mp hdeg)] at hf ⊢
+      rw [hC _ hf, C_0]
+    | succ n ih =>
+      intro f hf hdeg
+      have hD (i : σ) : pderiv i f = 0 :=
+        ih _ ((derivativeIdeal_le_iff.mp h).2 i f hf) ((totalDegree_pderiv_le i f).trans (by omega))
+      rw [eq_C_constantCoeff_of_forall_pderiv_eq_zero hD] at hf ⊢
+      rw [hC _ hf, C_0]
+  exact eq_bot_iff.mpr fun f hf ↦ (mem_bot).mpr (key _ f hf le_rfl)
 
 end Field
 

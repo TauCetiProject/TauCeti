@@ -59,8 +59,9 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
   two broken products, for a plumbing factor `0 < f` with `3 f ≤ 1`, along which the separation
   and nonvanishing hypotheses hold automatically.
 
-The regularity of the limit, the bubbles at the points of `Z`, breaking along the ends, and
-covering `M` by several charts are not treated here.
+The regularity of the limit, the bubbles at the points of `Z` and breaking along the ends are not
+treated here. Solutions in a closed manifold with arbitrary images, covered by several charts, are
+treated in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.MovingEnds.Closed`.
 
 ## References
 
@@ -106,40 +107,25 @@ private theorem isOpen_and_contDiffOn_puncturedSpherePerturbation {ι : Type*} [
       (a q.1) H Hout (equivRealProdCLM.symm q.2.1) (φ.symm q.2.2) w)
       {q | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧ (∀ i, equivRealProdCLM.symm q.2.1 ≠ c q.1 i) ∧
         q.2.2 ∈ φ.target} := by
+  obtain ⟨hSo, hS⟩ :=
+    isOpen_and_contMDiffAt_puncturedSpherePerturbation (n := 3) hH hHs hHout hHouts hU hc ha
   set S := {q : P × ((ℝ × ℝ) × V) | q.1 ∈ U ∧ (∀ i, a q.1 i ≠ 0) ∧
     (∀ i, equivRealProdCLM.symm q.2.1 ≠ c q.1 i) ∧ q.2.2 ∈ φ.target}
-  -- The configuration, the domain point in `ℂ` and the point of `M`, as a map of `(p, z, y)`.
-  set g : P × ((ℝ × ℝ) × V) → ((ι → ℂ) × (ι → ℂ)) × (ℂ × M) :=
-    fun q ↦ ((c q.1, a q.1), (equivRealProdCLM.symm q.2.1, φ.symm q.2.2))
-  have hO : IsOpen {r : ((ι → ℂ) × (ι → ℂ)) × (ℂ × V) |
-      (∀ i, r.1.2 i ≠ 0) ∧ (∀ i, r.2.1 ≠ r.1.1 i) ∧ r.2.2 ∈ φ.target} := by
-    simp only [ofPred_and, ofPred_forall]
-    exact (isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const).inter
-      ((isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) (by fun_prop)).inter
-        (φ.open_target.preimage (by fun_prop)))
-  have hcont : ContinuousOn (fun q : P × ((ℝ × ℝ) × V) ↦
-      ((c q.1, a q.1), (equivRealProdCLM.symm q.2.1, q.2.2))) (U ×ˢ univ) :=
-    ((hc.continuousOn.comp continuousOn_fst mapsTo_fst_prod).prodMk
-      (ha.continuousOn.comp continuousOn_fst mapsTo_fst_prod)).prodMk
-      (by fun_prop : Continuous fun q : P × ((ℝ × ℝ) × V) ↦
-        (equivRealProdCLM.symm q.2.1, q.2.2)).continuousOn
-  have hSo : IsOpen S := by
-    convert hcont.isOpen_inter_preimage (hU.prod isOpen_univ) hO using 1
+  -- The point `(p, z)` of the family and the point of `M` with chart coordinate `y`.
+  set g : P × ((ℝ × ℝ) × V) → (P × (ℝ × ℝ)) × M := fun q ↦ ((q.1, q.2.1), φ.symm q.2.2)
+  have hSo' : IsOpen S := by
+    have hp : Continuous fun q : P × ((ℝ × ℝ) × V) ↦ (q.1, q.2.1) := by fun_prop
+    convert (hSo.preimage hp).inter
+      (φ.open_target.preimage (f := fun q : P × ((ℝ × ℝ) × V) ↦ q.2.2) (by fun_prop)) using 1
     ext q
-    simp [S]
-  refine ⟨hSo, fun w ↦ ?_⟩
-  have hg : ContMDiffOn 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, (ι → ℂ) × (ι → ℂ)).prod (𝓘(ℝ, ℂ).prod I))
-      3 g S := by
-    refine ContMDiffOn.prodMk ?_ ?_
-    · exact ((hc.comp contDiffOn_fst fun q (hq : q ∈ S) ↦ hq.1).prodMk
-        (ha.comp contDiffOn_fst fun q (hq : q ∈ S) ↦ hq.1)).contMDiffOn
-    · exact (equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff
-        |>.contMDiffOn.prodMk ((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).comp
-          (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffOn fun q (hq : q ∈ S) ↦ hq.2.2.2)
-  refine contMDiffOn_iff_contDiffOn.1 fun q hq ↦ ?_
-  have hF := (contMDiffAt_puncturedSpherePerturbation (n := 3) hH hHs hHout hHouts hq.2.1 hq.2.2.1
-    (φ.symm q.2.2)).comp q ((hg q hq).contMDiffAt (hSo.mem_nhds hq))
-  exact (hF.clm_apply contMDiffAt_const).contMDiffWithinAt
+    simp [S, and_assoc]
+  refine ⟨hSo', fun w ↦ contMDiffOn_iff_contDiffOn.1 fun q hq ↦ ?_⟩
+  have hg : ContMDiffAt 𝓘(ℝ, P × ((ℝ × ℝ) × V)) (𝓘(ℝ, P × (ℝ × ℝ)).prod I) 3 g q :=
+    (contDiff_fst.prodMk (contDiff_fst.comp contDiff_snd)).contMDiff.contMDiffAt.prodMk
+      (((φ.symm.contMDiffOn.of_le (WithTop.coe_le_coe.2 le_top)).contMDiffAt
+        (φ.open_target.mem_nhds hq.2.2.2)).comp q
+        (contDiff_snd.comp contDiff_snd).contMDiff.contMDiffAt)
+  exact ((hS w _ ⟨hq.1, hq.2.1, hq.2.2.1⟩ (φ.symm q.2.2)).comp q hg).contMDiffWithinAt
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
 
@@ -239,27 +225,16 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_pu
     ((hK' Complex.I).mono inter_subset_right) (hJ'.mono inter_subset_left) hC hD hK hKφ hCDKS
     fun p hp z hz x _ ↦ hJt p hp z (hDT p hp hz) x
   refine ⟨δ, hδ, fun Ω p u A hΩ hΩD hpC hu hfl hA huK ↦ ?_⟩
-  have hHs₁ (i : ι) := (hHs i).of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
-  have hHouts₁ := hHouts.of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
-  -- The sphere minus the centers of `pₖ` is an open set containing `Σ_R`, on which `uₖ` is `C¹`.
-  have hVo (k : ℕ) : IsOpen {z : ℝ × ℝ | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := by
-    simp only [ofPred_forall]
-    exact isOpen_iInter_of_finite fun i ↦ isOpen_ne_fun (by fun_prop) continuous_const
-  have hTV (k : ℕ) : equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation (c (p k)) (a (p k)) R ⊆
-      {z | ∀ i, equivRealProdCLM.symm z ≠ c (p k) i} := fun z hz i ↦
-    ne_of_mem_puncturedSphereTruncation (ha₀ _ (hpC k) i) hz
-  have hu₁ (k : ℕ) := (hu k).of_le (by norm_num : (1 : WithTop ℕ∞) ≤ 3)
   have hΩT (k : ℕ) := hΩD.trans (hDT _ (hpC k))
-  -- The energy over `Ω` is at most the topological energy on `Σ_R` plus `∑ i, B i + Bout`.
-  have hE (k : ℕ) := (hω.setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le hH hHs₁
-    hHout hHouts₁ (ha₀ _ (hpC k)) (hsep _ (hpC k)) (hout _ (hpC k)) hB hBout (hVo k) (hTV k)
-    (hu₁ k) hR (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (hΩT k)).trans
-    (add_le_add (hA k) le_rfl)
-  exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono ((hΩT k).trans (hTV k)))
-    (fun k z hz ↦ hfl k z (hΩT k hz)) huK
-    (fun k ↦ (hω.integrableOn_floerEnergyDensity_puncturedSpherePerturbation_truncation hH hHs₁
-      hHout hHouts₁ (ha₀ _ (hpC k)) (hsep _ (hpC k)) (hout _ (hpC k)) (hVo k) (hTV k)
-      (hu₁ k)).mono_set (hΩT k)) hE
+  -- Over `Ω` the energy density is integrable, with energy at most `A + ∑ i, B i + Bout`.
+  have hE (k : ℕ) :=
+    hω.integrableOn_and_setIntegral_floerEnergyDensity_puncturedSpherePerturbation_le hH
+      (fun i ↦ (hHs i).of_le (by norm_num)) hHout (hHouts.of_le (by norm_num)) (ha₀ _ (hpC k))
+      (hsep _ (hpC k)) (hout _ (hpC k)) hB hBout ((hu k).of_le (by norm_num)) hR
+      (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (hA k) (hΩT k)
+  exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono fun z hz i ↦
+      ne_of_mem_puncturedSphereTruncation (ha₀ _ (hpC k) i) (hΩT k hz))
+    (fun k z hz ↦ hfl k z (hΩT k hz)) huK (fun k ↦ (hE k).1) fun k ↦ (hE k).2
 
 /-- **Solutions along the associativity path in a symplectic chart of a manifold converge off
 finitely many bubbling points.** For a plumbing factor `0 < f` with `3 f ≤ 1`, the configurations

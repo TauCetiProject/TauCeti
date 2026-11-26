@@ -97,6 +97,7 @@ corestriction on the invariant `σ b` of the fixing subgroup is the product of t
 * `TauCeti.kummerClassMap_injective`: `Kˣ ⧸ (Kˣ)ⁿ` injects into `H¹(G_K, μₙ)`.
 * `TauCeti.kummerMap_surjective`: every class of `H¹(G_K, μₙ)` is a Kummer class.
 * `TauCeti.finite_H1_kummerCoeff`: `H¹(G_K, μₙ)` is finite when `Kˣ ⧸ (Kˣ)ⁿ` is.
+* `TauCeti.nsmul_H1_kummerCoeff_eq_zero`: `n` kills `H¹(G_K, μₙ)`.
 * `TauCeti.finite_H1_of_isPrimitiveRoot_of_natCard_eq`: the same for every cyclic trivial module of
   order `n` over a group isomorphic to `G_K`, when `K` contains the `n`th roots of unity.
 * `TauCeti.explicitCoeff1_kummerCoeffPow_kummerMap`: the power map `μₙ → μₘ` sends the Kummer
@@ -407,6 +408,14 @@ groups are identified by the Kummer isomorphism. -/
 theorem finite_H1_kummerCoeff (hn : IsUnit (n : K)) [Finite (powerClassQuotient Kˣ n)] :
     Finite (H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :=
   Finite.of_equiv _ ((kummerIso K n hn).toEquiv.trans Multiplicative.toAdd)
+
+variable {K n} in
+/-- **`n` kills `H¹(G_K, μₙ)`**, as it kills the coefficients `μₙ`. -/
+theorem nsmul_H1_kummerCoeff_eq_zero (x : H1 (AbsoluteGaloisGroup K) (KummerCoeff K n)) :
+    n • x = 0 :=
+  nsmul_H1_eq_zero (fun c ↦ Additive.toMul.injective <| Subtype.ext <| by
+    rw [toMul_nsmul, SubmonoidClass.coe_pow, toMul_zero, OneMemClass.coe_one]
+    exact (mem_rootsOfUnity _ _).1 c.toMul.property) x
 
 variable {K n} in
 /-- **`H¹` of a cyclic trivial module over a field containing the roots of unity.** Let `K` be a
@@ -750,6 +759,38 @@ theorem kummerCoeffBaseChange_smul (g : AbsoluteGaloisGroup L) (x : KummerCoeff 
   apply Subtype.ext
   apply Units.ext
   simp [kummerCoeffBaseChange, absoluteGaloisGroupMap_commutes]
+
+variable {n} in
+/-- Base change on Kummer coefficients followed by inclusion into a multiple of the exponent. -/
+def kummerCoeffBaseChangeOfDvd {m : ℕ} (h : m ∣ n) : KummerCoeff K m →+ KummerCoeff L n :=
+  ((Subgroup.inclusion (rootsOfUnity_le_of_dvd h)).toAdditive).comp (kummerCoeffBaseChange m τ)
+
+variable {n} in
+/-- On underlying units, base change to a multiple of the exponent applies the embedding. -/
+@[simp]
+theorem toMul_kummerCoeffBaseChangeOfDvd {m : ℕ} (h : m ∣ n) (x : KummerCoeff K m) :
+    ((kummerCoeffBaseChangeOfDvd τ h x).toMul : (SeparableClosure L)ˣ) =
+      Units.map (τ : SeparableClosure K →* SeparableClosure L) x.toMul :=
+  (rfl)
+
+/-- When the exponents agree, the divisible-exponent map is the fixed-exponent base change. -/
+@[simp]
+theorem kummerCoeffBaseChangeOfDvd_refl :
+    kummerCoeffBaseChangeOfDvd τ (dvd_refl n) = kummerCoeffBaseChange n τ := by
+  refine AddMonoidHom.ext fun x ↦ Additive.toMul.injective (Subtype.ext ?_)
+  rw [toMul_kummerCoeffBaseChangeOfDvd, toMul_kummerCoeffBaseChange]
+
+variable {n} in
+/-- Base change to a multiple of the exponent is equivariant along the induced Galois map. -/
+@[simp]
+theorem kummerCoeffBaseChangeOfDvd_smul {m : ℕ} (h : m ∣ n) (g : AbsoluteGaloisGroup L)
+    (x : KummerCoeff K m) :
+    kummerCoeffBaseChangeOfDvd τ h (absoluteGaloisGroupMap τ g • x) =
+      g • kummerCoeffBaseChangeOfDvd τ h x := by
+  apply Additive.toMul.injective
+  apply Subtype.ext
+  apply Units.ext
+  simp [absoluteGaloisGroupMap_commutes]
 
 /-- Pullback transports the class of a chosen Kummer cocycle to the class of its
 transported root. This statement does not require the exponent to be invertible. -/

@@ -47,6 +47,8 @@ unfolded by hand.
 * `Matrix.SpecialLinearGroup.toGL_smul`, `Matrix.SpecialLinearGroup.mapGL_smul`: the
   `SL(2, ℝ)`- and `SL(2, R)`-actions on `ℍ` agree with the `GL(2, ℝ)`-action of the underlying
   matrix, generalizing Mathlib's `ModularGroup.sl_moeb`.
+* `Matrix.SpecialLinearGroup.map_intCastRingHom_smul`: an integral matrix acts on `ℍ` as its
+  image in `SL(2, ℝ)`.
 * `UpperHalfPlane.num_mul`, `UpperHalfPlane.moebius_mul`: off the real line, the numerator of a
   raw Möbius transformation is a cocycle like `UpperHalfPlane.denom_cocycle`, so raw Möbius
   transformations compose like their matrices; `UpperHalfPlane.moebius_im_ne_zero`: they keep
@@ -59,6 +61,8 @@ unfolded by hand.
 * `TauCeti.UpperHalfPlane.transformationLawSubgroup`: by that cocycle law, the elements of
   `SL(2, ℝ)` for which a function satisfies the weight-`k` transformation law on all of `ℍ` form a
   subgroup, so that the law need only be checked on generators.
+* `TauCeti.sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet`: a point of the upper half-plane differs
+  from every real number.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
 * `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
@@ -118,6 +122,12 @@ theorem _root_.Matrix.SpecialLinearGroup.mapGL_smul {R : Type*} [CommRing R] [Al
     (g : SL(2, R)) (τ : ℍ) :
     Matrix.SpecialLinearGroup.mapGL ℝ g • τ = g • τ :=
   (MulAction.compHom_smul_def _ _ _).symm
+
+/-- An integral matrix acts on `ℍ` as its image in `SL(2, ℝ)`. -/
+theorem _root_.Matrix.SpecialLinearGroup.map_intCastRingHom_smul (g : SL(2, ℤ)) (τ : ℍ) :
+    Matrix.SpecialLinearGroup.map (Int.castRingHom ℝ) g • τ = g • τ := by
+  ext1
+  simp [coe_specialLinearGroup_apply]
 
 /-- The automorphy factor is a cocycle for the `SL(2, R)`-action on `ℍ`:
 `denom (a * b) τ = denom a (b • τ) * denom b τ`. -/
@@ -422,6 +432,12 @@ end ModularGroup
 namespace TauCeti
 
 open Complex Function Set
+
+/-- A point of the upper half-plane differs from every real number: the `upperHalfPlaneSet` form
+of Mathlib's `UpperHalfPlane.ne_ofReal`. -/
+theorem sub_ofReal_ne_zero_of_mem_upperHalfPlaneSet {w : ℂ} (hw : w ∈ upperHalfPlaneSet)
+    (p : ℝ) : w - p ≠ 0 :=
+  sub_ne_zero.mpr (UpperHalfPlane.ne_ofReal ⟨w, hw⟩ p)
 
 /-- For `p < q`, the real fractional-linear transformation sending `p` to infinity
 and `q` to zero preserves the upper half-plane bijectively. -/
