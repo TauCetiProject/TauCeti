@@ -51,6 +51,10 @@ pair, applied there to a form that is nonnegative only after a shift.
   `k` eigenfunctions.
 * `TauCeti.exists_mem_apply_ne_zero_mul_norm_sq_le_re_apply_self`: the lower bound on every
   subspace of dimension at least `k + 1`.
+* `TauCeti.apply_sum_smul_eq_sum_mul_inner`, `TauCeti.apply_sum_smul_sum_smul_eq_sum_mul_sq`:
+  over `ℝ`, the form on finite combinations of eigenfunctions.
+* `TauCeti.sum_mul_inner_sq_le_apply_self`: Bessel's inequality for `B` over `ℝ`, for any
+  orthonormal family of eigenfunction images.
 * `TauCeti.isLeast_minMax_of_hilbertBasis`: the min–max principle over `ℝ`.
 
 ## References
@@ -195,6 +199,43 @@ section Real
 variable {V H : Type*} [AddCommGroup V] [Module ℝ V] [NormedAddCommGroup H]
   [InnerProductSpace ℝ H] {B : V →ₗ[ℝ] V →ₗ[ℝ] ℝ} {J : V →ₗ[ℝ] H} {kappa : ℕ → ℝ}
   {u : ℕ → V}
+
+/-- Let `u i` satisfy `B (u i) v = κᵢ ⟪J (u i), J v⟫` for every `v`, with images `e i = J (u i)`.
+Then a finite combination `∑ cᵢ uᵢ` pairs with every `v` through the eigenvalues:
+`B (∑ cᵢ uᵢ) v = ∑ κᵢ cᵢ ⟪e i, J v⟫`. -/
+theorem apply_sum_smul_eq_sum_mul_inner {ι : Type*} {kappa : ι → ℝ} {u : ι → V} {e : ι → H}
+    (hJu : ∀ i, J (u i) = e i) (heq : ∀ i v, B (u i) v = kappa i * ⟪J (u i), J v⟫_ℝ)
+    (c : ι → ℝ) (t : Finset ι) (v : V) :
+    B (∑ i ∈ t, c i • u i) v = ∑ i ∈ t, kappa i * c i * ⟪e i, J v⟫_ℝ := by
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, heq, hJu]
+  exact Finset.sum_congr rfl fun i _ ↦ by ring
+
+/-- **The energy of a finite combination of eigenvectors.** In the setting of
+`TauCeti.apply_sum_smul_eq_sum_mul_inner`, if the images `e i = J (u i)` are orthonormal then
+the `u i` are orthogonal for `B` with `B (u i) (u i) = κᵢ`, so
+`B (∑ cᵢ uᵢ) (∑ cᵢ uᵢ) = ∑ κᵢ cᵢ²`. -/
+theorem apply_sum_smul_sum_smul_eq_sum_mul_sq {ι : Type*} {kappa : ι → ℝ} {u : ι → V}
+    {e : ι → H} (he : Orthonormal ℝ e) (hJu : ∀ i, J (u i) = e i)
+    (heq : ∀ i v, B (u i) v = kappa i * ⟪J (u i), J v⟫_ℝ) (c : ι → ℝ) (t : Finset ι) :
+    B (∑ i ∈ t, c i • u i) (∑ i ∈ t, c i • u i) = ∑ i ∈ t, kappa i * c i ^ 2 := by
+  rw [apply_sum_smul_eq_sum_mul_inner hJu heq]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  simp only [map_sum, map_smul, hJu]
+  rw [he.inner_right_sum c hi]
+  ring
+
+/-- **Bessel's inequality for `B` over `ℝ`.** Let `B` be symmetric with `B v v ≥ 0`, and let
+`u i` have orthonormal images `e i = J (u i)` and satisfy `B (u i) v = κᵢ ⟪J (u i), J v⟫` for every
+`v`. Then every finite sum of `κᵢ ⟪e i, J v⟫²` is at most `B v v`. This is the real case of
+`TauCeti.sum_mul_norm_inner_sq_le_re_apply_self`. -/
+theorem sum_mul_inner_sq_le_apply_self {ι : Type*} {kappa : ι → ℝ} {u : ι → V} {e : ι → H}
+    (hsymm : ∀ v w : V, B v w = B w v) (hnonneg : ∀ v : V, 0 ≤ B v v) (he : Orthonormal ℝ e)
+    (hJu : ∀ i, J (u i) = e i) (heq : ∀ i v, B (u i) v = kappa i * ⟪J (u i), J v⟫_ℝ) (v : V)
+    (t : Finset ι) : ∑ i ∈ t, kappa i * ⟪e i, J v⟫_ℝ ^ 2 ≤ B v v := by
+  have h := sum_mul_norm_inner_sq_le_re_apply_self (B := B)
+    (fun v w ↦ by rw [star_trivial]; exact hsymm v w) hnonneg (by simpa only [hJu] using he)
+    heq v t
+  simpa only [hJu, Real.norm_eq_abs, sq_abs, re_to_real] using h
 
 /-- **The Courant–Fischer min–max principle.** Let `B` be symmetric with `B v v ≥ 0`, and let
 `(eⱼ)` be an orthonormal basis of `H` with `eⱼ = J uⱼ` and `B uⱼ v = κⱼ ⟪eⱼ, J v⟫` for every `v`,
