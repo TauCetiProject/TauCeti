@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus.Submersion
 public import TauCeti.Geometry.Manifold.RegularValue.ManifoldLevel
-import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 
 /-!
 # The fibres of a smooth mapping torus
@@ -27,7 +27,7 @@ return map of the suspension flow.
   `M` onto `p⁻¹ θ` (`TauCeti.SmoothMappingTorus.fiberDiffeomorph`).
 * Two lifts of `θ` differ by an integer `k`, and the identifications differ by the iterate `φ ^ k`:
   `ι_(t + k) = ι_t ∘ φ ^ k`, so `ι_t⁻¹ ∘ ι_(t + k) = φ ^ k` and `ι_(t + k)⁻¹ ∘ ι_t = φ ^ (-k)`
-  (`TauCeti.SmoothMappingTorus.fiberDiffeomorph_trans_symm_fiberDiffeomorph_add_intCast`).
+  (`TauCeti.SmoothMappingTorus.fiberDiffeomorph_add_intCast_trans_symm_fiberDiffeomorph`).
 * The time-`s` map of the suspension flow `[t, x] ↦ [t + s, x]` restricts to a `C^n`
   diffeomorphism `p⁻¹ θ → p⁻¹ (θ + s)` (`TauCeti.SmoothMappingTorus.fiberFlow`), carrying `ι_t` to
   `ι_(t + s)`. For `s = 1` the fibre returns to itself, and in the chart `ι_t` the time-one map is
@@ -133,16 +133,6 @@ theorem range_mfderiv_coe_fiber (θ : UnitAddCircle) :
   range_mfderiv_coe_regularFiber hn (contMDiff_proj φ) BoundarylessManifold.isInteriorPoint
     (isRegularValue_proj φ hn θ)
 
-/-- A map into a fibre of the mapping torus is `C^n` exactly when it is `C^n` as a map into the
-mapping torus. -/
-private theorem contMDiff_fiber_iff {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
-    {θ : UnitAddCircle} {f : N → {y : SmoothMappingTorus φ // proj φ y = θ}} :
-    letI := fiberChartedSpace φ hn θ
-    ContMDiff I' 𝓘(ℝ, F) n f ↔ ContMDiff I' (𝓘(ℝ).prod I) n fun z ↦ (f z).val := by
-  let := fiberChartedSpace φ hn θ
-  exact (isSmoothEmbedding_coe_fiber φ hn θ).contMDiff_iff_comp
-
 /-! ### The identification of the fibres with `M` -/
 
 variable {θ θ' : UnitAddCircle}
@@ -170,7 +160,7 @@ def fiberDiffeomorph (t : ℝ) (ht : (t : UnitAddCircle) = θ) :
   have he : ∀ y, mk φ t (e.symm y) = y.val := fun y ↦
     congrArg Subtype.val (e.apply_symm_apply y)
   refine { e with
-    contMDiff_toFun := (contMDiff_fiber_iff φ hn).2 (contMDiff_mk φ t)
+    contMDiff_toFun := (isSmoothEmbedding_coe_fiber φ hn θ).contMDiff_iff_comp.2 (contMDiff_mk φ t)
     contMDiff_invFun := ?_ }
   have he' : mk φ t ∘ e.symm = Subtype.val := funext he
   rw [(isSmoothEmbedding_mk φ t).contMDiff_iff_comp, he']
@@ -205,7 +195,7 @@ theorem fiberDiffeomorph_add_intCast (t : ℝ) (k : ℤ) (ht : (t : UnitAddCircl
 
 /-- **Change of lift.** For the lifts `t` and `t + k` of `θ`, the transition `ι_t⁻¹ ∘ ι_(t + k)`
 between the two identifications of `M` with the fibre over `θ` is the iterate `φ ^ k`. -/
-theorem fiberDiffeomorph_trans_symm_fiberDiffeomorph_add_intCast (t : ℝ) (k : ℤ)
+theorem fiberDiffeomorph_add_intCast_trans_symm_fiberDiffeomorph (t : ℝ) (k : ℤ)
     (ht : (t : UnitAddCircle) = θ) (htk : ((t + k : ℝ) : UnitAddCircle) = θ) :
     letI := fiberChartedSpace φ hn θ
     (fiberDiffeomorph φ hn (t + k) htk).trans (fiberDiffeomorph φ hn t ht).symm = φ ^ k := by
@@ -226,7 +216,7 @@ theorem exists_fiberDiffeomorph_trans_symm_fiberDiffeomorph_eq_zpow (t t' : ℝ)
   obtain rfl : t' = t + k := by
     rw [zsmul_eq_mul, mul_one] at hk
     linarith
-  exact ⟨k, rfl, fiberDiffeomorph_trans_symm_fiberDiffeomorph_add_intCast φ hn t k ht ht'⟩
+  exact ⟨k, rfl, fiberDiffeomorph_add_intCast_trans_symm_fiberDiffeomorph φ hn t k ht ht'⟩
 
 /-! ### The suspension flow between fibres -/
 
@@ -236,24 +226,12 @@ def fiberFlow (s : ℝ) (h : θ + s = θ') :
     letI := fiberChartedSpace φ hn θ
     letI := fiberChartedSpace φ hn θ'
     {y : SmoothMappingTorus φ // proj φ y = θ} ≃ₘ^n⟮𝓘(ℝ, F), 𝓘(ℝ, F)⟯
-      {y : SmoothMappingTorus φ // proj φ y = θ'} := by
+      {y : SmoothMappingTorus φ // proj φ y = θ'} :=
   letI := fiberChartedSpace φ hn θ
   letI := fiberChartedSpace φ hn θ'
-  have hs : θ' + ((-s : ℝ) : UnitAddCircle) = θ := by
-    rw [← h, AddCircle.coe_neg, add_neg_cancel_right]
-  exact {
-    toFun y := ⟨flow φ s y, by rw [proj_flow, y.property, h]⟩
-    invFun y := ⟨flow φ (-s) y, by rw [proj_flow, y.property, hs]⟩
-    left_inv y := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
-    right_inv y := Subtype.ext <| by
-      dsimp only
-      rw [← Flow.map_add, add_neg_cancel, Flow.map_zero_apply]
-    contMDiff_toFun := (contMDiff_fiber_iff φ hn).2 <|
-      (contMDiff_flow φ s).comp (isSmoothEmbedding_coe_fiber φ hn θ).contMDiff
-    contMDiff_invFun := (contMDiff_fiber_iff φ hn).2 <|
-      (contMDiff_flow φ (-s)).comp (isSmoothEmbedding_coe_fiber φ hn θ').contMDiff }
+  (flowDiffeomorph φ s).subtypeOfIsSmoothEmbedding (s := {y | proj φ y = θ})
+    (t := {y | proj φ y = θ'}) (isSmoothEmbedding_coe_fiber φ hn θ)
+    (isSmoothEmbedding_coe_fiber φ hn θ') fun y ↦ by simp [proj_flow, ← h]
 
 /-- The restricted flow acts on the points of the fibre as the suspension flow does. -/
 @[simp]
@@ -261,8 +239,13 @@ theorem coe_fiberFlow_apply (s : ℝ) (h : θ + s = θ')
     (y : {y : SmoothMappingTorus φ // proj φ y = θ}) :
     letI := fiberChartedSpace φ hn θ
     letI := fiberChartedSpace φ hn θ'
-    (fiberFlow φ hn s h y : SmoothMappingTorus φ) = flow φ s y :=
-  (rfl)
+    (fiberFlow φ hn s h y : SmoothMappingTorus φ) = flow φ s y := by
+  let := fiberChartedSpace φ hn θ
+  let := fiberChartedSpace φ hn θ'
+  refine (Diffeomorph.subtypeOfIsSmoothEmbedding_apply_coe (s := {y | proj φ y = θ})
+    (t := {y | proj φ y = θ'}) (flowDiffeomorph φ s) (isSmoothEmbedding_coe_fiber φ hn θ)
+    (isSmoothEmbedding_coe_fiber φ hn θ') _ y).trans ?_
+  simp
 
 /-- The inverse of the restricted time-`s` map is the time-`(-s)` map of the suspension flow. -/
 @[simp]
@@ -270,8 +253,13 @@ theorem coe_fiberFlow_symm_apply (s : ℝ) (h : θ + s = θ')
     (y : {y : SmoothMappingTorus φ // proj φ y = θ'}) :
     letI := fiberChartedSpace φ hn θ
     letI := fiberChartedSpace φ hn θ'
-    ((fiberFlow φ hn s h).symm y : SmoothMappingTorus φ) = flow φ (-s) y :=
-  (rfl)
+    ((fiberFlow φ hn s h).symm y : SmoothMappingTorus φ) = flow φ (-s) y := by
+  let := fiberChartedSpace φ hn θ
+  let := fiberChartedSpace φ hn θ'
+  refine (Diffeomorph.subtypeOfIsSmoothEmbedding_symm_apply_coe (s := {y | proj φ y = θ})
+    (t := {y | proj φ y = θ'}) (flowDiffeomorph φ s) (isSmoothEmbedding_coe_fiber φ hn θ)
+    (isSmoothEmbedding_coe_fiber φ hn θ') _ y).trans ?_
+  simp
 
 /-- The restricted flows compose as the flow does: following the time-`s` map from `θ` by the
 time-`r` map from `θ + s` is the time-`(s + r)` map. -/
