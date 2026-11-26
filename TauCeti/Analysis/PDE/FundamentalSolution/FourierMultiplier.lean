@@ -75,17 +75,18 @@ namespace TauCeti
 open ContinuousLinearMap Filter InnerProductSpace MeasureTheory Metric Module Set Topology
 open scoped ContDiff Laplacian Gradient LineDeriv SchwartzMap
 
-/-- A growth bound `‖x‖ ^ (-a) g x ≤ δ` for `R ≤ ‖x‖` bounds `g` on the annulus
+/-- A growth bound `‖x‖ ^ (-a) g x ≤ δ` beyond a radius `R' ≤ R` bounds `g` on the annulus
 `R ≤ ‖x‖ ≤ 2R` by `δ 2 ^ |a| R ^ a`. -/
 private theorem le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le {E : Type*}
-    [NormedAddCommGroup E] {g : E → ℝ} {R δ a : ℝ} (hR : 0 < R) (hg0 : ∀ x, 0 ≤ g x)
-    (hg : ∀ x : E, R ≤ ‖x‖ → ‖x‖ ^ (-a) * g x ≤ δ) {x : E} (hx : R ≤ ‖x‖)
-    (hx2 : ‖x‖ ≤ 2 * R) : g x ≤ δ * 2 ^ |a| * R ^ a := by
+    [NormedAddCommGroup E] {g : E → ℝ} {R R' δ a : ℝ} (hR : 0 < R) (hR' : R' ≤ R)
+    (hg0 : ∀ x, 0 ≤ g x) (hg : ∀ x : E, R' ≤ ‖x‖ → ‖x‖ ^ (-a) * g x ≤ δ) :
+    ∀ x : E, R ≤ ‖x‖ → ‖x‖ ≤ 2 * R → g x ≤ δ * 2 ^ |a| * R ^ a := by
+  intro x hx hx2
   have hx0 : 0 < ‖x‖ := hR.trans_le hx
   calc g x = ‖x‖ ^ a * (‖x‖ ^ (-a) * g x) := by
         rw [← mul_assoc, ← Real.rpow_add hx0, add_neg_cancel, Real.rpow_zero, one_mul]
     _ ≤ (2 ^ |a| * R ^ a) * δ :=
-        mul_le_mul (rpow_le_two_rpow_abs_mul (by linarith) hx2) (hg x hx)
+        mul_le_mul (rpow_le_two_rpow_abs_mul (by linarith) hx2) (hg x (hR'.trans hx))
           (mul_nonneg (by positivity) (hg0 x)) (by positivity)
     _ = δ * 2 ^ |a| * R ^ a := by ring
 
@@ -252,7 +253,7 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add
     rw [div_mul_eq_mul_div, div_lt_iff₀ (by linarith)]
     nlinarith
   have hδ : 0 < δ := div_pos hε (by linarith)
-  rw [← Metric.cobounded_eq_cocompact] at hu₀ hu₁
+  rw [← Metric.cobounded_eq_cocompact, ← neg_sub] at hu₀ hu₁
   obtain ⟨R₁, hR₁⟩ := exists_forall_le_of_tendsto_cobounded hu₀ hδ
   obtain ⟨R₂, hR₂⟩ := exists_forall_le_of_tendsto_cobounded hu₁ hδ
   obtain ⟨N, hN⟩ := (hR.eventually (eventually_ge_atTop (max R₁ R₂))).exists_forall_of_atTop
@@ -260,14 +261,10 @@ private theorem exists_schwartzMap_eventuallyEq_tendsto_toLp_laplacian_add
   have hRm0 := hR0 m
   have hbound := norm_toLp_laplacian_add_le hu hΔ hf hf0 (hR₀R m) hRm0 (hχ m) (hχc m) (hχ1 m)
     (hχ0 m) (hχ' m) (hχ'' m) hC0 (by positivity) (by positivity)
-    (fun x hx hx2 => le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le (δ := δ) (a := 2 - d / 2) hRm0
-      (fun x => norm_nonneg (u x)) (fun x hx => by
-        rw [neg_sub]
-        exact hR₁ x ((le_max_left _ _).trans ((hN m hm).trans hx))) hx hx2)
-    (fun x hx hx2 => le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le (δ := δ) (a := 1 - d / 2) hRm0
-      (fun x => norm_nonneg (fderiv ℝ u x)) (fun x hx => by
-        rw [neg_sub]
-        exact hR₂ x ((le_max_right _ _).trans ((hN m hm).trans hx))) hx hx2)
+    (le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le hRm0 ((le_max_left _ _).trans (hN m hm))
+      (fun x => norm_nonneg (u x)) hR₁)
+    (le_mul_two_rpow_abs_mul_rpow_of_rpow_neg_mul_le hRm0 ((le_max_right _ _).trans (hN m hm))
+      (fun x => norm_nonneg (fderiv ℝ u x)) hR₂)
   rw [dist_zero_right]
   refine hbound.trans_lt (lt_of_eq_of_lt ?_ hδK)
   rw [truncation_bound_mul_measureReal_closedBall_rpow hRm0]

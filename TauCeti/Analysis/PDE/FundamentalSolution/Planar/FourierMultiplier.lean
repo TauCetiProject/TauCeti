@@ -89,9 +89,7 @@ private theorem tendsto_rpow_mul_norm_planarNewtonianKernel_convolution
         mul_le_mul_of_nonneg_left (norm_le_norm_sub_add _ _) (by positivity)
     _ = ‖z‖⁻¹ * ‖u z - planarNewtonianKernel z • ∫ w, φ w‖ +
           (2 * Real.pi)⁻¹ * |Real.log ‖z‖ / ‖z‖| * M := by
-        simp only [planarNewtonianKernel_def, mul_inv_rev, neg_mul, neg_smul, sub_neg_eq_add,
-          norm_neg, norm_smul, norm_mul, norm_inv, Real.norm_eq_abs, Real.abs_pi,
-          abs_div, abs_of_pos hz0, M]
+        rw [norm_smul, norm_planarNewtonianKernel, abs_div, abs_of_pos hz0]
         ring
 
 variable [CompleteSpace F]
