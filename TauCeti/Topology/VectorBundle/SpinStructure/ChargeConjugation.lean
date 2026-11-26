@@ -35,12 +35,13 @@ their charge conjugates (`TauCeti.OrthonormalFrameLift.Equiv.chargeConj`). Since
 charge conjugation is involutive: `[[p, h], k] ↦ p • χ(h) k` is an equivalence
 `s.chargeConj.chargeConj ≃ s` (`TauCeti.SpinCStructure.chargeConjChargeConjEquiv`).
 
-On a symplectic four-manifold, the canonical `Spinᶜ` structure `s_ω` twisted by a Hermitian line
-`E`, with determinant line `K⁻¹ E²`, has conjugate `s_ω ⊗ (K ⊗ E⁻¹)`, with determinant line
-`K E⁻²`. At the level of structure groups this is
-`CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`; twisting `Spinᶜ` structures by Hermitian
-lines is not constructed here, and the identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding
-statement about determinant classes.
+**Relation to twisting.** Twisting a `Spinᶜ` structure by a principal `U(1)`-bundle is
+`TauCeti.SpinCStructure.twist`. Since `χ x = x [1, (det x)⁻¹]`
+(`CliffordAlgebra.spinCGroup.chargeConj_eq_mul_ofCircle_inv_det`), `s.chargeConj` should be
+equivalent to the twist of `s` by the inverse of the `U(1)`-bundle of its determinant line. On a
+symplectic four-manifold this gives `conj (s_ω ⊗ E) ≃ s_ω ⊗ (K ⊗ E⁻¹)`, whose group-level input
+is `CliffordAlgebra.spinCGroup.chargeConj_mul_ofCircle`. Neither equivalence is proved here; the
+identity `c₁(s.chargeConj) = -c₁(s)` is the corresponding statement about determinant classes.
 
 ## Main definitions
 
