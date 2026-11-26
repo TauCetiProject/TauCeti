@@ -86,6 +86,9 @@ makes the slices charts of `A_m^k / G_(k+1)`; that slice theorem is not proved h
   and the field coordinates, the differential at `(0, y)` is `(G, η) ↦ d₀ G + η`.
 * `TauCeti.Vortex.SobolevFieldSpace.coeFn_inclusionLp_gaugeDirectionCoord_ae_eq`: `d₀` computes the
   classical infinitesimal gauge action of the continuous representative of a real phase.
+* `TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`: fields close
+  in the real coordinates to a gauge transform of `y` have sections close in norm to that of `y`,
+  uniformly in the gauge.
 
 ## References
 
@@ -461,6 +464,25 @@ theorem coeFn_inclusionLp_gaugeDirectionCoord_ae_eq (x : SobolevFieldSpace f m k
     rw [h₁, h₂, h₃, gaugeDirection_apply_three]
     push_cast
     ring
+
+/-- **The norm of the section is uniformly continuous along gauge orbits.** For `k ≥ 2` and every
+`δ > 0` there is `ε > 0` such that, for all continuous fields `x` and `y` of `A_m^k` and every
+gauge `g ∈ G_(k+1)`, if the real coordinates of `x` are within `ε` of those of `g · y`, then the
+norms of the sections of `x` and `y` differ by at most `δ` everywhere. -/
+theorem exists_pos_forall_abs_norm_sectionValue_sub_le {δ : ℝ} (hδ : 0 < δ) :
+    ∃ ε > 0, ∀ (x y : SobolevFieldSpace f m k) (g : SobolevTopologicalGaugeGroup hs),
+      ‖x.realSubRef (Nat.cast_nonneg k) - (g • y).realSubRef (Nat.cast_nonneg k)‖ < ε →
+        ∀ z, |‖sectionValue x z‖ - ‖sectionValue y z‖| ≤ δ := by
+  obtain ⟨C, hC⟩ := exists_forall_norm_sectionValue_sub_le_mul (f := f) (m := m)
+    (h := Nat.cast_nonneg k) (by exact_mod_cast (Fact.out : 1 < k))
+  refine ⟨δ / (|C| + 1), by positivity, fun x y g hxy z ↦ ?_⟩
+  rw [← norm_sectionValue_smul g y z]
+  refine (abs_norm_sub_norm_le _ _).trans ((hC x (g • y) z).trans ?_)
+  calc C * ‖x.realSubRef _ - (g • y).realSubRef _‖
+      ≤ (|C| + 1) * ‖x.realSubRef _ - (g • y).realSubRef _‖ := by
+        gcongr; linarith [le_abs_self C]
+    _ ≤ (|C| + 1) * (δ / (|C| + 1)) := mul_le_mul_of_nonneg_left hxy.le (by positivity)
+    _ = δ := by field_simp
 
 end SobolevFieldSpace
 

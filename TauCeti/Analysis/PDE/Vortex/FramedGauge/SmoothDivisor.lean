@@ -19,7 +19,9 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.Real
 import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.PDE.Vortex.Flux.Basic
-import TauCeti.Analysis.PDE.Vortex.FramedGauge.WindowBound
+import TauCeti.Analysis.PDE.Vortex.FramedGauge.UniformDerivativeDecay
+import TauCeti.Analysis.PDE.Vortex.ModulusBound
+import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
@@ -68,11 +70,11 @@ chart.
 
 **Divisor coordinates over a window of divisors.** The moment formula above involves the section
 only through its norm, and only the cutoff depends on the field. Over a bounded set `S` of divisor
-coefficients, collisions of zeros included, the sections of the normalized vortices `y_c`, `c ∈ S`,
-have norm above `1 / 2` outside one disc
-(`TauCeti.Vortex.exists_forall_le_norm_lt_norm_sectionValue_normalizedVortex`), so a single cutoff
-serves every vortex whose section is, in norm, uniformly within `1 / 4` of that of some `y_c`. This
-gives one smooth map `Φ` on the real coordinates of `A_m^k`, invariant under `G_(k+1)`, sending
+coefficients, collisions of zeros included, the zeros of the normalized vortices `y_c`, `c ∈ S`,
+lie in one disc, so their sections have norm above `1 / 2` outside a larger disc
+(`TauCeti.Vortex.exists_forall_lt_normSq_of_forall_mem_norm_le`), and a single cutoff serves
+every vortex whose section is, in norm, uniformly within `1 / 4` of that of some `y_c`. This gives
+one smooth map `Φ` on the real coordinates of `A_m^k`, invariant under `G_(k+1)`, sending
 `y_c` to `c` and equal to the divisor coefficients at all those vortices
 (`TauCeti.Vortex.SobolevFieldSpace.exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq`).
 The condition on the norm of the section holds at every field within a fixed distance, in the real
@@ -100,13 +102,6 @@ coordinates of Taubes's gluing read off fields close to the vortex orbits of a c
 * `TauCeti.Vortex.SobolevFieldSpace.contMDiff_vortexModuliHomeomorph_symm_coeffHomeomorph_symm`,
   `TauCeti.Vortex.SobolevFieldSpace.contMDiff_coeffHomeomorph_vortexModuliHomeomorph`: the vortex
   orbit is a smooth function of its divisor coefficients, and conversely.
-* `TauCeti.Vortex.exists_forall_le_norm_lt_norm_sectionValue_normalizedVortex`: over a bounded set
-  of divisor coefficients, the sections of the normalized vortices have norm near one outside a
-  common disc.
-* `TauCeti.Vortex.SobolevFieldSpace.exists_forall_norm_sectionValue_sub_le_mul`: the section of a
-  field is Lipschitz in its real coordinates, uniformly on the plane.
-* `TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`: fields close to
-  a gauge transform of `y` have sections close in norm to that of `y`.
 * `TauCeti.Vortex.SobolevFieldSpace.exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq`:
   smooth gauge-invariant divisor coordinates on a uniform neighbourhood of the vortex orbits of a
   bounded window of divisors.
@@ -294,53 +289,6 @@ private theorem contDiff_momentDivisorCoeff {E : Type*} [NormedAddCommGroup E] [
     (contDiff_zeroMoment hF _ reCLM j)).add ((ofRealCLM.contDiff.comp
       (contDiff_zeroMoment hF _ imCLM j)).mul contDiff_const)).contDiffAt) _)
 
-/-! ### The sections of the normalized vortices outside a disc -/
-
-/-- **The sections of the normalized vortices have norm near one outside a common disc.** Let
-`m ≥ 1` and let `S ⊆ ℂᵐ` be a bounded set of divisor coefficients, such as the coefficients of a
-compact window of divisors in `Sym ℂ m`, collisions of zeros included. For every `ε > 0` there is
-a radius `R` such that the section of every normalized vortex `y_c`, `c ∈ S`, has norm above
-`1 - ε` outside the disc of radius `R`. -/
-theorem exists_forall_le_norm_lt_norm_sectionValue_normalizedVortex {m : ℕ} (hm : 0 < m)
-    {S : Set (Fin m → ℂ)} (hS : Bornology.IsBounded S) {ε : ℝ} (hε : 0 < ε) :
-    ∃ R, ∀ c ∈ S, ∀ z : ℂ, R ≤ ‖z‖ → 1 - ε < ‖sectionValue (normalizedVortex c) z‖ := by
-  -- Every reference field serves: `y_c` is exponentially close to it, uniformly over `S`.
-  let f : ContDiffBump (0 : ℝ) := ⟨1, 2, one_pos, one_lt_two⟩
-  obtain ⟨K, -, hb⟩ :=
-    exists_norm_iteratedFDeriv_gaugeTransform_sub_referenceField_le_mul_exp_of_isBounded hm f hS 0
-      (c := 1 / 4) (by norm_num) (by norm_num)
-  refine ⟨max 2 (8 * K / ε), fun c hc z hz ↦ ?_⟩
-  have h2 : 2 ≤ ‖z‖ := (le_max_left _ _).trans hz
-  have hKz : 2 * K ≤ ε * (‖z‖ / 4) := by
-    have := (div_le_iff₀ hε).1 ((le_max_right _ _).trans hz)
-    linarith
-  have hd := hb c hc z
-  rw [norm_iteratedFDeriv_zero, ← normalizedVortex_def] at hd
-  -- `exp (-t) (1 + t) ≤ 1` for `t = ‖z‖ / 4`.
-  set E := Real.exp (-(1 / 4 * ‖z‖))
-  have hE0 : 0 < E := Real.exp_pos _
-  have hE : E * (1 + ‖z‖ / 4) ≤ 1 := by
-    calc E * (1 + ‖z‖ / 4) ≤ E * Real.exp (1 / 4 * ‖z‖) := by
-          gcongr; linarith [Real.add_one_le_exp (1 / 4 * ‖z‖)]
-      _ = 1 := by rw [← Real.exp_add, neg_add_cancel, Real.exp_zero]
-  -- The section of `y_c - x_ref` is smaller than `ε` at `z`.
-  have hsec : ‖sectionValue (normalizedVortex c - referenceField f m) z‖ < ε :=
-    calc ‖sectionValue (normalizedVortex c - referenceField f m) z‖
-        ≤ 2 * (K * E) := (norm_sectionValue_le _ z).trans (by linarith)
-      _ ≤ ε * (‖z‖ / 4) * E := by nlinarith
-      _ < ε * (1 + ‖z‖ / 4) * E := by gcongr; linarith
-      _ = ε * (E * (1 + ‖z‖ / 4)) := by ring
-      _ ≤ ε := mul_le_of_le_one_right hε.le hE
-  -- The reference section has norm one at `z`.
-  have hrOut : f.rOut = 2 := rfl
-  have href : ‖sectionValue (referenceField f m) z‖ = 1 := by
-    rw [sectionValue_referenceField]
-    exact norm_referenceSection f m (by rw [hrOut]; nlinarith)
-  rw [sectionValue_sub] at hsec
-  linarith [norm_sub_norm_le (sectionValue (referenceField f m) z)
-    (sectionValue (normalizedVortex c) z), norm_sub_rev (sectionValue (normalizedVortex c) z)
-      (sectionValue (referenceField f m) z)]
-
 namespace SobolevFieldSpace
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
@@ -364,75 +312,6 @@ theorem vortexModuliHomeomorph_symm_coeffHomeomorph_symm (hm : 0 < m) (hk : 3 < 
 
 /-! ### The divisor coefficients as smooth functions of the field -/
 
-section DivisorCoeff
-
-variable {s : ℝ} {h : 0 ≤ s}
-
-/-- The section of the field of real coordinates `u ∈ (H^s_ℝ)⁴`, `s > 1`, as a bounded continuous
-function, real-linear and continuous in `u` (`sectionCLM_apply`). -/
-private def sectionCLM (hs : 1 < s) : (Fin 4 → realSubmodule ℂ h) →L[ℝ] ℂ →ᵇ ℂ :=
-  let T : realSubmodule ℂ h →L[ℝ] ℂ →ᵇ ℂ :=
-    ((toBCF (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ).comp
-      (realSubmodule ℂ h).subtypeL
-  (2 : ℂ) • (T.comp (ContinuousLinearMap.proj 2) + (I : ℂ) • T.comp (ContinuousLinearMap.proj 3))
-
-private theorem sectionCLM_apply (hs : 1 < s) (u : Fin 4 → realSubmodule ℂ h) (z : ℂ) :
-    sectionCLM hs u z = sectionValue (continuousRepField u) z := by
-  simp only [sectionCLM, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.proj_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
-    ContinuousLinearMap.coe_restrictScalars', coe_toBCF, toZeroAtInfty_coe_apply_eq_continuousRep,
-    smul_eq_mul, sectionValue_apply, continuousRepField_apply]
-  ring
-
-/-- The reference section `α_m`, as a bounded continuous function. -/
-private def referenceSectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) : ℂ →ᵇ ℂ :=
-  .ofNormedAddCommGroup (referenceSection f m) (contDiff_referenceSection f m).continuous 1
-    (norm_referenceSection_le_one f m)
-
-/-- The section of a field of `A_m^s`, `s > 1`, is `α_m` plus the section of its real
-coordinates. -/
-private theorem referenceSectionBCF_add_sectionCLM_realSubRef (hs : 1 < s)
-    (x : SobolevFieldSpace f m s) (z : ℂ) :
-    (referenceSectionBCF f m + sectionCLM hs (x.realSubRef h)) z = sectionValue x z := by
-  conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x]
-  rw [add_apply, sectionCLM_apply, coe_ofRealSubRef]
-  simp only [referenceSectionBCF, BoundedContinuousFunction.coe_ofNormedAddCommGroup,
-    ← sectionValue_referenceField f m z, sectionValue_apply, Pi.add_apply, PiLp.add_apply]
-  push_cast
-  ring
-
-
-/-- The section of the field of real coordinates `u ∈ (H^s_ℝ)⁴`, `s > 1`, as a bounded continuous
-function, smooth in `u` (`contDiff_sectionBCF`). -/
-private def sectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) (hs : 1 < s)
-    (u : Fin 4 → realSubmodule ℂ h) : ℂ →ᵇ ℂ :=
-  referenceSectionBCF f m + sectionCLM hs u
-
-private theorem contDiff_sectionBCF (hs : 1 < s) : ContDiff ℝ ∞ (sectionBCF (h := h) f m hs) :=
-  contDiff_const.add (sectionCLM hs).contDiff
-
-private theorem coe_sectionBCF_realSubRef (hs : 1 < s) (x : SobolevFieldSpace f m s) :
-    ⇑(sectionBCF f m hs (x.realSubRef h)) = sectionValue x :=
-  funext (referenceSectionBCF_add_sectionCLM_realSubRef hs x)
-
-/-- **The section is Lipschitz in the real coordinates.** For `s > 1` there is a constant `C` such
-that, at every point, the sections of two continuous fields of `A_m^s` differ by at most `C` times
-the distance of their real coordinates in `(H^s_ℝ)⁴`: the Sobolev embedding of `H^s(ℂ)` into the
-bounded continuous functions. -/
-theorem exists_forall_norm_sectionValue_sub_le_mul (hs : 1 < s) :
-    ∃ C, ∀ (x y : SobolevFieldSpace f m s) (z : ℂ),
-      ‖sectionValue x z - sectionValue y z‖ ≤ C * ‖x.realSubRef h - y.realSubRef h‖ := by
-  refine ⟨‖sectionCLM (h := h) hs‖, fun x y z ↦ ?_⟩
-  have hxy : sectionBCF f m hs (x.realSubRef h) - sectionBCF f m hs (y.realSubRef h) =
-      sectionCLM hs (x.realSubRef h - y.realSubRef h) := by
-    simp only [sectionBCF, map_sub, add_sub_add_left_eq_sub]
-  have hxz : sectionValue x z - sectionValue y z =
-      sectionCLM hs (x.realSubRef h - y.realSubRef h) z := by
-    rw [← hxy, ← coe_sectionBCF_realSubRef (h := h) hs x, ← coe_sectionBCF_realSubRef (h := h) hs y,
-      FunLike.coe_sub, Pi.sub_apply]
-  rw [hxz]
-  exact (BoundedContinuousFunction.norm_coe_le_norm _ z).trans ((sectionCLM hs).le_opNorm _)
-end DivisorCoeff
 
 /-- Outside a disc, the section of a continuous field of `A_m^s`, `s > 1`, has norm above `1 / 2`,
 since it tends to the winding phase at infinity. -/
@@ -448,6 +327,18 @@ private theorem exists_forall_le_norm_lt_norm_sectionValue (hs : 1 < s)
   rw [← sq_norm_sectionValue] at h4
   nlinarith [norm_nonneg (sectionValue x z)]
 
+/-- The moment coordinates of radius `R` of a vortex of `A_m^k`, `k ≥ 4`, whose section has norm
+above `1 / 4` outside the disc of radius `R`, are the coefficients of its zero divisor. -/
+private theorem coeffEquiv_sobolevVortexDivisor_eq_momentDivisorCoeff (hk : 3 < k)
+    {x : SobolevFieldSpace f m k} (hsol : ∀ z, equation x z = 0) {R : ℝ}
+    (hout : ∀ z : ℂ, R ≤ ‖z‖ → 1 / 4 < ‖sectionValue x z‖) :
+    Sym.coeffEquiv ℂ m (sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hsol⟩) =
+      momentDivisorCoeff m R (sectionValue x) := by
+  have hD := isZeroMultiplicity_sectionValue_sobolevVortexDivisor
+    ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hsol⟩
+  simp only [coe_toFramedFieldSpace] at hD
+  exact coeffEquiv_eq_momentDivisorCoeff
+    (fun i ↦ (contDiff_piLp 2).1 (x.contDiff (n := 2) (by exact_mod_cast hk)) i) hsol hD hout
 
 /-- **The divisor coefficients are smooth functions of the field near every field.** For `k ≥ 4`
 and every continuous field `x₀` of `A_m^k`, there is a map `Φ` on the real coordinates of the
@@ -482,12 +373,8 @@ theorem exists_contDiffAt_coeffEquiv_sobolevVortexDivisor (hk : 3 < k)
     rw [coe_sectionBCF_realSubRef, coe_sectionBCF_realSubRef, dist_eq_norm] at hd
     linarith [hR z hz, norm_sub_norm_le (sectionValue x₀ z) (sectionValue x z),
       norm_sub_rev (sectionValue x z) (sectionValue x₀ z)]
-  have hD := isZeroMultiplicity_sectionValue_sobolevVortexDivisor
-    ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hsol⟩
-  simp only [coe_toFramedFieldSpace] at hD
   simp only [coe_sectionBCF_realSubRef]
-  exact coeffEquiv_eq_momentDivisorCoeff
-    (fun i ↦ (contDiff_piLp 2).1 (x.contDiff (n := 2) (by exact_mod_cast hk)) i) hsol hD hout
+  exact coeffEquiv_sobolevVortexDivisor_eq_momentDivisorCoeff hk hsol hout
 
 /-! ### Divisor coordinates over a window of divisors -/
 
@@ -496,27 +383,7 @@ the norm of the section. -/
 private theorem momentDivisorCoeff_sectionValue_smul (g : SobolevTopologicalGaugeGroup hs)
     (x : SobolevFieldSpace f m k) (n : ℕ) (R : ℝ) :
     momentDivisorCoeff n R (sectionValue ⇑(g • x)) = momentDivisorCoeff n R (sectionValue x) :=
-  momentDivisorCoeff_congr_norm (fun z ↦ by simp [coe_smul]) n R
-
-/-- **The norm of the section is uniformly continuous along gauge orbits.** For `k ≥ 2` and every
-`δ > 0` there is `ε > 0` such that, for all continuous fields `x` and `y` of `A_m^k` and every
-gauge `g ∈ G_(k+1)`, if the real coordinates of `x` are within `ε` of those of `g · y`, then the
-norms of the sections of `x` and `y` differ by at most `δ` everywhere. -/
-theorem exists_pos_forall_abs_norm_sectionValue_sub_le {δ : ℝ} (hδ : 0 < δ) :
-    ∃ ε > 0, ∀ (x y : SobolevFieldSpace f m k) (g : SobolevTopologicalGaugeGroup hs),
-      ‖x.realSubRef (Nat.cast_nonneg k) - (g • y).realSubRef (Nat.cast_nonneg k)‖ < ε →
-        ∀ z, |‖sectionValue x z‖ - ‖sectionValue y z‖| ≤ δ := by
-  obtain ⟨C, hC⟩ := exists_forall_norm_sectionValue_sub_le_mul (f := f) (m := m)
-    (h := Nat.cast_nonneg k) (by exact_mod_cast (Fact.out : 1 < k))
-  refine ⟨δ / (|C| + 1), by positivity, fun x y g hxy z ↦ ?_⟩
-  have hgy : ‖sectionValue ⇑(g • y) z‖ = ‖sectionValue y z‖ := by simp [coe_smul]
-  rw [← hgy]
-  refine (abs_norm_sub_norm_le _ _).trans ((hC x (g • y) z).trans ?_)
-  calc C * ‖x.realSubRef _ - (g • y).realSubRef _‖
-      ≤ (|C| + 1) * ‖x.realSubRef _ - (g • y).realSubRef _‖ := by
-        gcongr; linarith [le_abs_self C]
-    _ ≤ (|C| + 1) * (δ / (|C| + 1)) := mul_le_mul_of_nonneg_left hxy.le (by positivity)
-    _ = δ := by field_simp
+  momentDivisorCoeff_congr_norm (norm_sectionValue_smul g x) n R
 
 /-- **Divisor coordinates on a uniform neighbourhood of a window of vortex orbits.** Let `k ≥ 4`,
 `m ≥ 1`, and let `S ⊆ ℂᵐ` be a bounded set of divisor coefficients, such as the coefficients of a
@@ -532,14 +399,9 @@ real coordinates of `A_m^k` such that
 The last condition depends on `x` only through the norm of its section, so it is invariant under
 `G_(k+1)`, and it holds within a fixed distance of every gauge transform of every `y_c`, in the
 real coordinates, independent of `c ∈ S` and of the gauge
-(`TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`). So `Φ` is a
-gauge-invariant smooth chart of divisor coordinates on a neighbourhood of all the vortex orbits of
-the window, of a radius independent of `c ∈ S` and of the gauge.
-
-In the construction (not recorded in the statement), the power sums of `Φ x` are the moments of
-`log |α|²` and `|α|² - 1` of the section `α` of `x` against a cutoff equal to `1` on a disc outside
-which every `y_c`, `c ∈ S`, has section of norm above `1 / 2`
-(`TauCeti.Vortex.exists_forall_le_norm_lt_norm_sectionValue_normalizedVortex`). -/
+(`TauCeti.Vortex.SobolevFieldSpace.exists_pos_forall_abs_norm_sectionValue_sub_le`). So `Φ` gives
+smooth gauge-invariant divisor coordinates on a neighbourhood of all the vortex orbits of the
+window, of a radius independent of `c ∈ S` and of the gauge. -/
 theorem exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq (hm : 0 < m) (hk : 3 < k)
     {S : Set (Fin m → ℂ)} (hS : Bornology.IsBounded S) :
     ∃ Φ : (Fin 4 → realSubmodule ℂ (Nat.cast_nonneg k : (0 : ℝ) ≤ k)) → Fin m → ℂ,
@@ -554,9 +416,23 @@ theorem exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq (hm : 0 < m) (
             (sobolevVortexDivisor ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hx⟩) =
               Φ (x.realSubRef (Nat.cast_nonneg k)) := by
   have hk1 : (1 : ℝ) < k := by exact_mod_cast (by omega : 1 < k)
-  -- A radius outside which the section of every `y_c`, `c ∈ S`, has norm above `1 / 2`.
-  obtain ⟨R, hR⟩ := exists_forall_le_norm_lt_norm_sectionValue_normalizedVortex hm hS
-    (by norm_num : (0 : ℝ) < 1 / 2)
+  -- A radius `R` outside which the section of every `y_c`, `c ∈ S`, has norm above `1 / 2`: the
+  -- zeros of `y_c` are the roots of `P_c`, of norm less than `r + 1`.
+  obtain ⟨r, hr⟩ := hS.exists_norm_le
+  obtain ⟨R₀, hR₀⟩ := exists_forall_lt_normSq_of_forall_mem_norm_le m (r + 1) (θ := 1 / 4)
+    (by norm_num)
+  set R := R₀ + 1
+  have hR (c : Fin m → ℂ) (hc : c ∈ S) (z : ℂ) (hz : R ≤ ‖z‖) :
+      1 / 2 < ‖sectionValue (Vortex.normalizedVortex c) z‖ := by
+    obtain ⟨hx, hsol, hframe, hD⟩ := gaugeTransform_polynomialGauge_polynomialVortex_spec hm c
+    rw [← normalizedVortex_def] at hx hsol hframe hD
+    have h4 := hR₀ _ _ hx hsol hframe hD (fun b hb ↦ by
+      linarith [norm_lt_of_isRoot_monicOfCoeff c (_root_.Polynomial.isRoot_of_mem_roots hb),
+        hr c hc]) z (by linarith)
+    rw [← sq_norm_sectionValue] at h4
+    nlinarith [norm_nonneg (sectionValue (Vortex.normalizedVortex c) z)]
+  -- The power sums of `Φ x` are the moments of `log |α|²` and `|α|² - 1` of the section `α` of `x`
+  -- against a cutoff equal to `1` on the disc of radius `R`.
   refine ⟨fun u ↦ momentDivisorCoeff m R (sectionBCF f m hk1 u),
     contDiff_momentDivisorCoeff (contDiff_sectionBCF hk1) m R, fun g x ↦ ?_, fun c hc ↦ ?_,
     fun x ⟨c, hc, hxc⟩ hsol ↦ ?_⟩
@@ -567,13 +443,8 @@ theorem exists_contDiff_forall_coeffEquiv_sobolevVortexDivisor_eq (hm : 0 < m) (
       (fun i ↦ (contDiff_piLp 2).1 ((Vortex.contDiff_normalizedVortex c).of_le (by simp)) i)
       (Vortex.equation_normalizedVortex hm c) (isZeroMultiplicity_sectionValue_normalizedVortex c)
       fun z hz ↦ by linarith [hR c hc z hz], Equiv.apply_symm_apply]
-  · have hD := isZeroMultiplicity_sectionValue_sobolevVortexDivisor
-      ⟨_, toFramedFieldSpace_mem_sobolevVortices hk hsol⟩
-    simp only [coe_toFramedFieldSpace] at hD
-    simp only [coe_sectionBCF_realSubRef]
-    refine coeffEquiv_eq_momentDivisorCoeff
-      (fun i ↦ (contDiff_piLp 2).1 (x.contDiff (n := 2) (by exact_mod_cast hk)) i) hsol hD
-      fun z hz ↦ ?_
+  · simp only [coe_sectionBCF_realSubRef]
+    refine coeffEquiv_sobolevVortexDivisor_eq_momentDivisorCoeff hk hsol fun z hz ↦ ?_
     rw [coe_normalizedVortex] at hxc
     linarith [hR c hc z hz, (abs_le.1 (hxc z)).1]
 

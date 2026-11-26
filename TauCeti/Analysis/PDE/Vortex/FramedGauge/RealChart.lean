@@ -30,7 +30,11 @@ coordinates the vortex equation is a real-analytic map between real Hilbert spac
 `x_m + continuousRepField u` of `A_m^s` (`SobolevFieldSpace.ofRealSubRef`). This inverts the
 real coordinates `SobolevFieldSpace.realSubRef`, and both maps are continuous, so they form a
 homeomorphism `SobolevFieldSpace.realSubRefHomeomorph`. Above the threshold `s > n + 1`
-every field of `A_m^s` is moreover a `Cⁿ` map (`SobolevFieldSpace.contDiff`).
+every field of `A_m^s` is moreover a `Cⁿ` map (`SobolevFieldSpace.contDiff`). The section of a
+field is the reference section `α_m` plus a continuous real-linear function of its real coordinates
+with values in the bounded continuous functions (`SobolevFieldSpace.sectionBCF`), so it is
+Lipschitz in the real coordinates, uniformly on the plane
+(`SobolevFieldSpace.exists_forall_norm_sectionValue_sub_le_mul`).
 
 **The real equation map.** The vortex equation `∂bar_a α = 0`, `*iF_a = (1 - |α|²) / 8` is
 realized on complexified coordinates by the analytic map
@@ -285,6 +289,83 @@ theorem coe_realSubRefHomeomorph_symm (hs : 1 < s) {h : 0 ≤ s} :
 /-- **Fields of `A_m^s` are `Cⁿ` above the threshold** `s > n + 1`. -/
 theorem contDiff {n : ℕ} (hs : n + 1 < s) (x : SobolevFieldSpace f m s) : ContDiff ℝ n x :=
   contDiff_of_mem_framedFieldSpace hs x.continuous x.mem_framedFieldSpace
+
+/-! ### The section in the real chart -/
+
+section Section
+
+open BoundedContinuousFunction Complex
+
+variable {h : 0 ≤ s}
+
+/-- The section of the field of real coordinates `u ∈ (H^s_ℝ)⁴`, `s > 1`, as a bounded continuous
+function, real-linear and continuous in `u` (`sectionCLM_apply`). -/
+def sectionCLM (hs : 1 < s) : (Fin 4 → realSubmodule ℂ h) →L[ℝ] ℂ →ᵇ ℂ :=
+  let T : realSubmodule ℂ h →L[ℝ] ℂ →ᵇ ℂ :=
+    ((toBCF (finrank_real_complex_lt_two_mul hs)).restrictScalars ℝ).comp
+      (realSubmodule ℂ h).subtypeL
+  (2 : ℂ) • (T.comp (ContinuousLinearMap.proj 2) + (I : ℂ) • T.comp (ContinuousLinearMap.proj 3))
+
+/-- `sectionCLM hs u` is the section of the field of continuous representatives of `u`. -/
+theorem sectionCLM_apply (hs : 1 < s) (u : Fin 4 → realSubmodule ℂ h) (z : ℂ) :
+    sectionCLM hs u z = sectionValue (continuousRepField u) z := by
+  simp only [sectionCLM, smul_add, add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, Submodule.coe_subtypeL, Submodule.subtype_apply,
+    ContinuousLinearMap.coe_restrictScalars', coe_toBCF, toZeroAtInfty_coe_apply_eq_continuousRep,
+    smul_eq_mul, sectionValue_apply, continuousRepField_apply]
+  ring
+
+/-- The reference section `α_m`, as a bounded continuous function. -/
+def referenceSectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) : ℂ →ᵇ ℂ :=
+  .ofNormedAddCommGroup (referenceSection f m) (contDiff_referenceSection f m).continuous 1
+    (norm_referenceSection_le_one f m)
+
+/-- The section of a field of `A_m^s`, `s > 1`, is `α_m` plus the section of its real
+coordinates. -/
+theorem referenceSectionBCF_add_sectionCLM_realSubRef (hs : 1 < s)
+    (x : SobolevFieldSpace f m s) (z : ℂ) :
+    (referenceSectionBCF f m + sectionCLM hs (x.realSubRef h)) z = sectionValue x z := by
+  conv_rhs => rw [← ofRealSubRef_realSubRef hs (h := h) x]
+  rw [add_apply, sectionCLM_apply, coe_ofRealSubRef]
+  simp only [referenceSectionBCF, BoundedContinuousFunction.coe_ofNormedAddCommGroup,
+    ← sectionValue_referenceField f m z, sectionValue_apply, Pi.add_apply, PiLp.add_apply]
+  push_cast
+  ring
+
+/-- The section of the field of `A_m^s`, `s > 1`, with real coordinates `u ∈ (H^s_ℝ)⁴`, as a
+bounded continuous function, smooth in `u` (`contDiff_sectionBCF`). -/
+def sectionBCF (f : ContDiffBump (0 : ℝ)) (m : ℕ) (hs : 1 < s)
+    (u : Fin 4 → realSubmodule ℂ h) : ℂ →ᵇ ℂ :=
+  referenceSectionBCF f m + sectionCLM hs u
+
+/-- The section is a smooth function of the real coordinates. -/
+theorem contDiff_sectionBCF (hs : 1 < s) : ContDiff ℝ ∞ (sectionBCF (h := h) f m hs) :=
+  contDiff_const.add (sectionCLM hs).contDiff
+
+/-- `sectionBCF` of the real coordinates of a field of `A_m^s` is its section. -/
+theorem coe_sectionBCF_realSubRef (hs : 1 < s) (x : SobolevFieldSpace f m s) :
+    ⇑(sectionBCF f m hs (x.realSubRef h)) = sectionValue x :=
+  funext (referenceSectionBCF_add_sectionCLM_realSubRef hs x)
+
+/-- **The section is Lipschitz in the real coordinates.** For `s > 1` there is a constant `C` such
+that, at every point, the sections of two continuous fields of `A_m^s` differ by at most `C` times
+the distance of their real coordinates in `(H^s_ℝ)⁴`: the Sobolev embedding of `H^s(ℂ)` into the
+bounded continuous functions. -/
+theorem exists_forall_norm_sectionValue_sub_le_mul (hs : 1 < s) :
+    ∃ C, ∀ (x y : SobolevFieldSpace f m s) (z : ℂ),
+      ‖sectionValue x z - sectionValue y z‖ ≤ C * ‖x.realSubRef h - y.realSubRef h‖ := by
+  refine ⟨‖sectionCLM (h := h) hs‖, fun x y z ↦ ?_⟩
+  have hxy : sectionBCF f m hs (x.realSubRef h) - sectionBCF f m hs (y.realSubRef h) =
+      sectionCLM hs (x.realSubRef h - y.realSubRef h) := by
+    simp only [sectionBCF, map_sub, add_sub_add_left_eq_sub]
+  have hxz : sectionValue x z - sectionValue y z =
+      sectionCLM hs (x.realSubRef h - y.realSubRef h) z := by
+    rw [← hxy, ← coe_sectionBCF_realSubRef (h := h) hs x, ← coe_sectionBCF_realSubRef (h := h) hs y,
+      FunLike.coe_sub, Pi.sub_apply]
+  rw [hxz]
+  exact (BoundedContinuousFunction.norm_coe_le_norm _ z).trans ((sectionCLM hs).le_opNorm _)
+
+end Section
 
 end SobolevFieldSpace
 
