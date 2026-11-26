@@ -22,17 +22,18 @@ For a one-periodic family `S μ`, a nonzero one-periodic loop lies in the kernel
 `Ψ_μ(1)` has a nonzero fixed vector, by
 `Floer.exists_ne_zero_asymptoticOperator_eq_zero_iff_exists_ne_zero_dysonSeriesLeft_apply_eq_self`.
 
-As `μ` varies, two families can cross the degenerate locus: the self-adjoint operators `A_μ`,
-whose crossings are governed by the crossing form `ζ ↦ ∫ g_r(ζ, ∂_μ A_μ ζ) dr` on their kernel,
-with `g_r = ω(·, J_r ·)`, and the path of symplectic return maps `μ ↦ Ψ_μ(t)`, whose crossings are
-governed by the crossing form `v ↦ ω(v, ∂_μ Ψ_μ(t) v)` on the fixed vectors of `Ψ_μ(t)`. The
-first enters the spectral flow of `A_μ`, the second the Conley–Zehnder index of the return maps.
-This file proves that the two forms agree under `ζ = Ψ_μ(·) v`:
+As `μ` varies, two families can cross the degenerate locus: for compatible `J` and one-periodic
+`S μ`, the self-adjoint operators `A_μ`, whose crossings are governed by the crossing form
+`ζ ↦ ∫₀¹ g_r(ζ, ∂_μ A_μ ζ) dr` on their kernel, with `g_r = ω(·, J_r ·)`, and the path of
+symplectic return maps `μ ↦ Ψ_μ(t)`, whose crossings are governed by the crossing form
+`v ↦ ω(v, ∂_μ Ψ_μ(t) v)` on the fixed vectors of `Ψ_μ(t)`. The first enters the spectral flow of
+`A_μ`, the second the Conley–Zehnder index of the return maps. This file proves an integral
+identity relating the two under `ζ = Ψ_μ(·) v`, which for `t = 1` says that the two forms agree:
 
 * **The return map.** For `Ψ_μ(t) v = v`,
   `ω(v, ∂_μ Ψ_μ(t) v) = ∫₀ᵗ ω(Ψ_μ(r) v, ∂_μ S μ r (Ψ_μ(r) v)) dr`
-  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral`). This is the case `B = ω` of
-  the identity for any continuous bilinear map preserved by the propagators
+  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral_symplecticForm`). This is the
+  case `B = ω` of the identity for any continuous bilinear map preserved by the propagators
   (`TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral`): by
   `TauCeti.hasDerivAt_dysonSeriesLeft_parameter`, `∂_μ Ψ_μ(t) = Ψ_μ(t) ∫₀ᵗ Ψ_μ(r)⁻¹ ∂_μ S Ψ_μ(r)`,
   and since `Ψ_μ(t)` and `Ψ_μ(r)` preserve `ω` and `Ψ_μ(t) v = v`, the outer `Ψ_μ(t)` and the
@@ -40,11 +41,12 @@ This file proves that the two forms agree under `ζ = Ψ_μ(·) v`:
   (`TauCeti.apply_dysonSeries_neg_apply`).
 * **The operators.** The parameter derivative of the asymptotic operator is
   `∂_μ A_μ ζ = -J_r ∂_μ S ζ` (`TauCeti.Floer.hasDerivAt_asymptoticOperator_parameter`), and
-  `g_r(ζ, -J_r w) = ω(ζ, w)` since `J_r² = -1`. Hence the crossing form of the operators at the
-  kernel element `ζ = Ψ_μ(·) v` is the crossing form of the return maps at `v`
-  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral_associatedBilinForm`). No
-  compatibility, continuity or periodicity of `J` is needed for this identity; for a one-periodic
-  family `S μ` and `t = 1`, the loop `ζ` is one-periodic.
+  `g_r(ζ, -J_r w) = ω(ζ, w)` since `J_r² = -1`. Hence the integral `∫₀ᵗ g_r(ζ, ∂_μ A_μ ζ) dr`
+  along `ζ = Ψ_μ(·) v` is the crossing form of the return maps at `v`
+  (`TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral_associatedBilinForm`). This
+  integral identity needs no compatibility, continuity or periodicity of `J`. Only for compatible
+  `J`, one-periodic `S μ` and `t = 1` is `ζ` a kernel loop of the self-adjoint operators `A_μ`
+  and the integral their crossing form.
 * **Weights.** For the weighted fields `S r - δ J_r`, whose asymptotic operators are `A - δ`
   (`TauCeti.Floer.asymptoticOperator_sub_smul`), the crossing form of the return maps is
   `ω(v, ∂_δ Ψ_δ(t) v) = -∫₀ᵗ ω(ζ r, J_r ζ r) dr`
@@ -84,7 +86,7 @@ jointly continuous parameter derivative `S' μ r`, and let `S μ r` be infinites
 at the parameter `μ`. If `v` is a fixed vector of the propagator `Ψ_μ(t)` of `ζ' = S μ r ζ`, then
 `ω(v, ∂_μ Ψ_μ(t) v) = ∫₀ᵗ ω(Ψ_μ(r) v, S' μ r (Ψ_μ(r) v)) dr`. This is the case `B = ω` of
 `TauCeti.apply_deriv_dysonSeriesLeft_apply_eq_integral`. -/
-theorem apply_deriv_dysonSeriesLeft_apply_eq_integral {S S' : ℝ → ℝ → V →L[ℝ] V}
+theorem apply_deriv_dysonSeriesLeft_apply_eq_integral_symplecticForm {S S' : ℝ → ℝ → V →L[ℝ] V}
     (hS : Continuous (uncurry S)) (hS' : Continuous (uncurry S'))
     (hd : ∀ μ r, HasDerivAt (fun μ ↦ S μ r) (S' μ r) μ) {μ t : ℝ}
     (hskew : ∀ r u w, ω (S μ r u) w + ω u (S μ r w) = 0) {v : V}
@@ -110,10 +112,12 @@ theorem hasDerivAt_asymptoticOperator_parameter {J : ℝ → AlmostComplexStruct
   simpa only [comp_def, LinearMap.coe_toContinuousLinearMap', map_neg] using hJ
 
 /-- **The crossing forms of the asymptotic operators and of their return maps agree.** Under the
-hypotheses of `TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral`, for every family
-`J` of almost complex structures, the crossing form `ω(v, ∂_μ Ψ_μ(t) v)` of the return maps at a
-fixed vector `v` of `Ψ_μ(t)` is the crossing form `∫₀ᵗ g_r(ζ, ∂_μ A_μ ζ) dr` of the asymptotic
-operators `A_μ` at the kernel element `ζ = Ψ_μ(·) v`, with `g_r = ω(·, J_r ·)`. -/
+hypotheses of `TauCeti.Floer.apply_deriv_dysonSeriesLeft_apply_eq_integral_symplecticForm`, for
+every family `J` of almost complex structures, the crossing form `ω(v, ∂_μ Ψ_μ(t) v)` of the return
+maps at a fixed vector `v` of `Ψ_μ(t)` equals the integral `∫₀ᵗ g_r(ζ, ∂_μ A_μ ζ) dr` along
+`ζ = Ψ_μ(·) v`, where `A_μ` are the asymptotic operators and `g_r = ω(·, J_r ·)`. For compatible
+`J`, one-periodic `S μ` and `t = 1`, this integral is the crossing form of the self-adjoint
+operators `A_μ` at the kernel loop `ζ`. -/
 theorem apply_deriv_dysonSeriesLeft_apply_eq_integral_associatedBilinForm
     (J : ℝ → AlmostComplexStructure V) {S S' : ℝ → ℝ → V →L[ℝ] V}
     (hS : Continuous (uncurry S)) (hS' : Continuous (uncurry S'))
@@ -123,7 +127,7 @@ theorem apply_deriv_dysonSeriesLeft_apply_eq_integral_associatedBilinForm
     ω v (deriv (fun ν ↦ dysonSeriesLeft (S ν) t) μ v) =
       ∫ r in 0..t, ω.associatedBilinForm (J r) (dysonSeriesLeft (S μ) r v)
         (deriv (fun ν ↦ asymptoticOperator J (S ν) (fun r ↦ dysonSeriesLeft (S μ) r v) r) μ) := by
-  rw [apply_deriv_dysonSeriesLeft_apply_eq_integral hS hS' hd hskew hv]
+  rw [apply_deriv_dysonSeriesLeft_apply_eq_integral_symplecticForm hS hS' hd hskew hv]
   refine integral_congr fun r _ ↦ ?_
   rw [(hasDerivAt_asymptoticOperator_parameter (hd μ r)).deriv,
     SymplecticForm.associatedBilinForm_apply, map_neg, AlmostComplexStructure.apply_apply, neg_neg]
@@ -151,7 +155,7 @@ theorem apply_deriv_dysonSeriesLeft_sub_smul_apply_eq_neg_integral (hSc : Contin
   have hJc' : Continuous Jc := AlmostComplexStructure.continuous_iff.1 hJc
   have hd (ε r : ℝ) : HasDerivAt (fun ε ↦ S r - ε • Jc r) (-Jc r) ε := by
     simpa using ((hasDerivAt_id ε).smul_const (Jc r)).const_sub (S r)
-  rw [apply_deriv_dysonSeriesLeft_apply_eq_integral (S' := fun _ r ↦ -Jc r)
+  rw [apply_deriv_dysonSeriesLeft_apply_eq_integral_symplecticForm (S' := fun _ r ↦ -Jc r)
     ((hSc.comp continuous_snd).sub (continuous_fst.smul (hJc'.comp continuous_snd)))
     (hJc'.comp continuous_snd).neg hd
     (fun r ↦ sub_smul_apply_add_apply_eq_zero (hJ r) (hskew r) δ) hv, ← integral_neg]
