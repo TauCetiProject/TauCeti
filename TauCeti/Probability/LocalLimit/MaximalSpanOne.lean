@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Bernoulli
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Integer laws of maximal span one
@@ -42,9 +43,6 @@ have a support generating `ℤ`. What does characterize it is the group generate
   a measure with atoms at two consecutive integers has maximal span one;
   `MeasureTheory.Measure.hasMaximalSpanOne_bernoulliMeasure_iff`: the Bernoulli law
   `Ber(x, y, p)` has maximal span one if and only if `|x - y| = 1` and `0 < p < 1`.
-* `ProbabilityTheory.bernoulliMeasure_singleton_left_ne_zero`,
-  `ProbabilityTheory.bernoulliMeasure_singleton_right_ne_zero`: `Ber(x, y, p)` charges `x` when
-  `0 < p` and `y` when `p < 1`.
 
 ## References
 
@@ -54,31 +52,9 @@ have a support generating `ℤ`. What does characterize it is the group generate
 
 public section
 
-open ProbabilityTheory unitInterval
+open ProbabilityTheory TauCeti.Probability unitInterval
 
 open scoped Pointwise
-
-namespace ProbabilityTheory
-
-variable {X : Type*} [MeasurableSpace X] [MeasurableSingletonClass X] {x y : X} {p : I}
-
-/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `x` when `0 < p`. -/
-theorem bernoulliMeasure_singleton_left_ne_zero (hp : 0 < (p : ℝ)) : Ber(x, y, p) {x} ≠ 0 := by
-  by_cases h : x = y
-  · simp [h]
-  · rw [bernoulliMeasure_apply_of_mem_of_notMem p (measurableSet_singleton x) rfl
-      (by simpa [eq_comm] using h)]
-    simpa [← NNReal.coe_eq_zero] using hp.ne'
-
-/-- The Bernoulli law `Ber(x, y, p)` gives positive mass to `y` when `p < 1`. -/
-theorem bernoulliMeasure_singleton_right_ne_zero (hp : (p : ℝ) < 1) : Ber(x, y, p) {y} ≠ 0 := by
-  by_cases h : y = x
-  · simp [h]
-  · rw [bernoulliMeasure_apply_of_notMem_of_mem p (measurableSet_singleton y)
-      (by simpa [eq_comm] using h) rfl]
-    simpa [← NNReal.coe_eq_zero, sub_eq_zero] using hp.ne'
-
-end ProbabilityTheory
 
 namespace MeasureTheory.Measure
 

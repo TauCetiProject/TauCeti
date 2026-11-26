@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.LocalLimit.MaximalSpanOne
 public import Mathlib.Probability.UniformOn
+public import TauCeti.Probability.Distributions.Bernoulli.Basic
 
 /-!
 # Examples of integer laws with and without maximal span one
@@ -21,7 +22,7 @@ public import Mathlib.Probability.UniformOn
   mass does not.
 -/
 
-open MeasureTheory Measure ProbabilityTheory unitInterval
+open MeasureTheory Measure ProbabilityTheory TauCeti.Probability unitInterval
 
 open scoped Pointwise
 
