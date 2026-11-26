@@ -186,14 +186,8 @@ variable {n : ℕ}
 the theorem, whose hypothesis fails for `S^{n+2}` since `H_{n+2}(S^{n+2}; 𝔽₂) ≠ 0`. -/
 theorem not_isUniquelyTwoDivisible_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
-    ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun hx ↦ by
-  -- Transport to the Euclidean sphere, where `π_{n+2}(S^{n+2}) ≅ ℤ`.
-  have := Module.finite_of_finrank_eq_succ hE
-  let h := sphereHomeomorphOfFinrankEq (hE.trans (finrank_euclideanSpace_fin (n := n + 3)).symm :
-    Module.finrank ℝ E = Module.finrank ℝ (EuclideanSpace ℝ (Fin (n + 3))))
-  exact not_isUniquelyTwoDivisible_int (hx.of_addEquiv
-    ((HomotopyGroup.mulEquivOfHomotopyEquiv h.toHomotopyEquiv x).toAdditive.trans
-      (homotopyGroupSphereAddEquiv (EuclideanSpace.basisFun (Fin (n + 3)) ℝ) (h x))))
+    ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun hx ↦
+  not_isUniquelyTwoDivisible_int (hx.of_addEquiv (homotopyGroupSphereAddEquivOfFinrankEq hE x))
 
 /-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** Let `p : X → B` be a Serre
 fibration whose fibre over `y` has trivial `π_{n+1}` at `e`. If `π_{n+2}(B, y)` is nontrivial,
