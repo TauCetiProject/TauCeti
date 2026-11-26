@@ -521,7 +521,7 @@ private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le
         gcongr
     _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B * (Sk * (1 + 2 * π) ^ k) :=
         mul_le_mul_of_nonneg_right hbad (by positivity)
-  exact le_rfl
+    _ = _ := by ring
 
 /-- **The coefficients off `A` tend to zero.** Weighted by `(1 + ‖ξ‖) ^ N`, the coefficients off
 `A` still decay like `(1 + ‖ξ‖)⁻¹`, for a decay estimate of `f` of order `M ≥ N + 1`. -/
@@ -716,6 +716,64 @@ private theorem mul_norm_add_le_seminorm {X : Type*} [AddCommGroup X] [Module �
     _ ≤ K₀ * p₁ u + p₂ u := add_le_add hg hc
     _ = (K₀.toNNReal • p₁ + p₂) u := by simp [NNReal.smul_def, Real.coe_toNNReal _ hK₀]
 
+/-- **The estimate behind both seminorm bounds.** Let `φ x`, `x ∈ X`, be cutoffs supported in a
+compact set `K ⊆ U` whose Fourier transforms decay to order `N` with a common constant, and let
+`ξ x` lie in a closed cone `V` containing `0` with `K × V` disjoint from `ιᵀ Γ`. If, for every
+cutoff `χ` and lattice `L`, the weighted series of the terms off `A` form a compact set together
+with `0`, then `(1 + ‖ξ x‖) ^ N ‖ι^* T (φ x e_{ξ x})‖ ≤ p T` for a continuous seminorm `p` of
+`𝓓'_Γ(W)`. -/
+private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (hΓ : IsOpen (((W : Set (WithLp 2 (E × D))) ×ˢ {0}ᶜ) \ Γ))
+    (hcone : ∀ p ∈ Γ, ∀ t : ℝ, 0 < t → (p.1, t • p.2) ∈ Γ) (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0)
+    (hN : ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ Γ)
+    {K : Set E} (hK : IsCompact K) (hKU : K ⊆ U) {V : Set E} (hV : IsClosed V)
+    (hV0 : (0 : E) ∈ V) (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V)
+    (hKV : Disjoint (K ×ˢ V) (pullbackInlCone Γ)) {X : Type*} {φ : X → 𝓓(U, ℂ)}
+    (hφK : ∀ x, tsupport (φ x) ⊆ K) {ξ : X → E} (hξV : ∀ x, ξ x ∈ V) {N : ℕ} {B : ℝ}
+    (hB : ∀ x η, (1 + ‖η‖) ^ N * ‖𝓕 (φ x : E → ℂ) η‖ ≤ B)
+    (hS : ∀ (L : Submodule ℤ (WithLp 2 (E × D))) [DiscreteTopology L] [IsZLattice ℝ L] {ε : ℝ},
+      0 < ε → ∀ χ : 𝓓(W, ℂ), IsCompact (insert 0 (range fun x : X ↦ ∑' m : ZLattice.dual L,
+        ((((1 + ‖ξ x‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D V ε) (𝓕 (φ x : E → ℂ)) (ξ x) m) •
+          (cutoffK χ).modulate (m : WithLp 2 (E × D))))) :
+    ∃ p : Seminorm ℂ (WaveFrontSpace W Γ), Continuous p ∧ ∀ u : WaveFrontSpace W Γ, ∀ x : X,
+      (1 + ‖ξ x‖) ^ N *
+        ‖(u.toDistribution.pullbackInl hU (notMem_waveFrontSet hN u)).localFourier (φ x) (ξ x)‖ ≤
+          p u := by
+  obtain ⟨ε, hε, δ, hδ, χ, hχ1, hχΓ⟩ :=
+    exists_cutoff_disjoint_bigCone hU hΓ hcone hΓ0 hK hKU hV hV0 hVcone hKV
+  obtain ⟨L, _, _, hL⟩ :=
+    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
+  set q := Module.finrank ℤ (ZLattice.dual L) + 1
+  have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
+  obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
+    ((hS L hε χ).image (continuous_ofSupportedIn χ.tsupport_subset))
+  set i := bigConeIndex hV0 hVcone hχΓ (N + q)
+  set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max B 0 *
+    ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
+  have hK₀ : 0 ≤ K₀ := by positivity
+  refine ⟨K₀.toNNReal • WaveFrontSpace.seminorm i + p',
+    ((continuous_seminorm i).const_smul _).add hp', fun u x ↦ ?_⟩
+  set T := u.toDistribution
+  -- The decay of `T` on the cone `A`, from the seminorms `‖T‖_{χ,A,M}`.
+  have hdecay (M : ℕ) : ∃ C, ∀ ζ ∈ bigCone D V ε, (1 + ‖ζ‖) ^ M * ‖T.localFourier χ ζ‖ ≤ C :=
+    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hV0 hVcone hχΓ M) u hζ⟩
+  -- The series off `A` converges.
+  have hbad := summable_badCoeff_smul_modulate L hε χ
+    (exists_one_add_norm_pow_mul_norm_fourier_le (φ x).contDiff (φ x).hasCompactSupport) (hξV x)
+  rw [localFourier_pullbackInl_eq_add hU _ hV0 hε hδ hχ1 L hL hdecay (hφK x) (ξ x) hbad]
+  -- The terms in `A`.
+  have hgood := one_add_norm_pow_mul_norm_tsum_goodTerm_le L (apply_nonneg _ u)
+    (fun η ↦ (hB x η).trans (le_max_left B 0)) (fun ζ hζ ↦ le_seminorm i u hζ) hq (ξ x)
+  -- The terms off `A`: the weighted series lies in the compact set `hS`.
+  have hbadle := hp'le u (ofSupportedIn χ.tsupport_subset (∑' m : ZLattice.dual L,
+      ((((1 + ‖ξ x‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D V ε) (𝓕 (φ x : E → ℂ)) (ξ x) m) •
+        (cutoffK χ).modulate (m : WithLp 2 (E × D))))
+    (mem_image_of_mem _ (mem_insert_of_mem _ ⟨x, rfl⟩))
+  rw [← mul_norm_complexPairing_tsum_smul T χ.tsupport_subset (by positivity) hbad] at hbadle
+  exact mul_norm_add_le_seminorm _ _ u (by positivity) hK₀
+    (hgood.trans_eq (by simp only [K₀]; ring)) hbadle
+
 /-- **The seminorms of the pullback.** For the data `(φ, V, N)` of a seminorm of `𝓓'_{ιᵀ Γ}(U)`,
 the decay estimate `(1 + ‖ξ‖) ^ N ‖ι^* T (φ e_ξ)‖ ≤ p T` on `V` holds for a continuous seminorm
 `p` of `𝓓'_Γ(W)`. -/
@@ -732,51 +790,16 @@ private theorem exists_seminorm_localFourier_pullbackInl_le
   rcases j.cone.eq_empty_or_nonempty with hV | ⟨ξ₀, hξ₀⟩
   · exact ⟨0, continuous_const, fun u ξ hξ ↦ by simp [hV] at hξ⟩
   have hV0 := j.isClosed_cone.zero_mem_of_smul_mem j.smul_mem_cone hξ₀
-  set φ := j.cutoff
-  set N := j.order
-  obtain ⟨ε, hε, δ, hδ, χ, hχ1, hχΓ⟩ := exists_cutoff_disjoint_bigCone hU hΓ hcone hΓ0
-    φ.hasCompactSupport.isCompact φ.tsupport_subset j.isClosed_cone hV0 j.smul_mem_cone
-    j.disjoint
-  obtain ⟨L, _, _, hL⟩ :=
-    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
-  set q := Module.finrank ℤ (ZLattice.dual L) + 1
-  have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
-  obtain ⟨B, hB⟩ := exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport N
-  have hB0 := nonneg_of_one_add_norm_pow_mul_norm_le (hB 0)
-  obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
-    ((isCompact_insert_range_tsum L j.isClosed_cone hε χ φ N).image
-      (continuous_ofSupportedIn χ.tsupport_subset))
-  set i := bigConeIndex hV0 j.smul_mem_cone hχΓ (N + q)
-  set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B *
-    ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
-  have hK₀ : 0 ≤ K₀ := by positivity
-  refine ⟨K₀.toNNReal • WaveFrontSpace.seminorm i + p',
-    ((continuous_seminorm i).const_smul _).add hp', fun u ξ hξ ↦ ?_⟩
-  set T := u.toDistribution
-  -- The decay of `T` on the cone `A`, from the seminorms `‖T‖_{χ,A,M}`.
-  have hdecay (M : ℕ) : ∃ C, ∀ ζ ∈ bigCone D j.cone ε, (1 + ‖ζ‖) ^ M * ‖T.localFourier χ ζ‖ ≤ C :=
-    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hV0 j.smul_mem_cone hχΓ M) u hζ⟩
-  -- The series off `A` converges, as the members of the compact set above do.
-  have hbad : Summable fun m ↦ badCoeff L (bigCone D j.cone ε) (𝓕 (φ : E → ℂ)) ξ m •
-      (cutoffK χ).modulate (m : WithLp 2 (E × D)) := by
-    exact summable_badCoeff_smul_modulate L hε χ
-      (exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport) hξ
-  rw [localFourier_pullbackInl_eq_add hU _ hV0 hε hδ hχ1 L hL hdecay subset_rfl ξ hbad]
-  -- The terms in `A`.
-  have hgood := one_add_norm_pow_mul_norm_tsum_goodTerm_le L (apply_nonneg _ u) hB
-    (fun ζ hζ ↦ le_seminorm i u hζ) hq ξ
-  -- The terms off `A`: the weighted series lies in the compact set above.
-  have hmem : ofSupportedIn χ.tsupport_subset (∑' m : ZLattice.dual L,
-      ((((1 + ‖ξ‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D j.cone ε) (𝓕 (φ : E → ℂ)) ξ m) •
-        (cutoffK χ).modulate (m : WithLp 2 (E × D))) ∈ ofSupportedIn χ.tsupport_subset ''
-      insert 0 (range fun ξ : j.cone ↦ ∑' m : ZLattice.dual L,
-        ((((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D j.cone ε) (𝓕 (φ : E → ℂ)) ξ m) •
-          (cutoffK χ).modulate (m : WithLp 2 (E × D))) :=
-    mem_image_of_mem _ (mem_insert_of_mem _ ⟨⟨ξ, hξ⟩, rfl⟩)
-  have hbadle := hp'le u _ hmem
-  rw [← mul_norm_complexPairing_tsum_smul T χ.tsupport_subset (by positivity) hbad] at hbadle
-  exact mul_norm_add_le_seminorm _ _ u (by positivity) hK₀
-    (hgood.trans_eq (by simp only [K₀]; ring)) hbadle
+  obtain ⟨B, hB⟩ :=
+    exists_one_add_norm_pow_mul_norm_fourier_le j.cutoff.contDiff j.cutoff.hasCompactSupport j.order
+  -- The family of cutoffs is constant, indexed by the points of the cone.
+  obtain ⟨p, hp, hpj⟩ := exists_seminorm_localFourier_pullbackInl_le_of_isCompact hU hΓ hcone hΓ0
+    hN j.cutoff.hasCompactSupport.isCompact j.cutoff.tsupport_subset j.isClosed_cone hV0
+    j.smul_mem_cone j.disjoint (X := j.cone) (φ := fun _ ↦ j.cutoff) (fun _ ↦ subset_rfl)
+    (ξ := (↑)) Subtype.property (fun _ ↦ hB) (by
+      intro L _ _ ε hε χ
+      exact isCompact_insert_range_tsum L j.isClosed_cone hε χ j.cutoff j.order)
+  exact ⟨p, hp, fun u ξ hξ ↦ hpj u ⟨ξ, hξ⟩⟩
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
   [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
@@ -809,53 +832,22 @@ private theorem exists_seminorm_pullbackInl_apply_le
   set Qc : Set 𝓓(U, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM '' Q
   have hQc : IsCompact Qc := hQ.image (postcompCLM _).continuous
   obtain ⟨K, hKU, hQK⟩ := TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact hQc
-  have hV0 : (0 : E) ∈ ({0} : Set E) := mem_singleton 0
   have hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ ({0} : Set E), t • ξ ∈ ({0} : Set E) := by
     rintro t - ξ rfl
     simp
-  have hKV := disjoint_prod_zero_pullbackInlCone hΓ0 hN hKU
-  obtain ⟨ε, hε, δ, hδ, χ, hχ1, hχΓ⟩ := exists_cutoff_disjoint_bigCone hU hΓ hcone hΓ0
-    K.isCompact hKU isClosed_singleton hV0 hVcone hKV
-  obtain ⟨L, _, _, hL⟩ :=
-    ZLattice.exists_forall_add_mem_eq_zero_of_isBounded χ.hasCompactSupport.isCompact.isBounded
-  set q := Module.finrank ℤ (ZLattice.dual L) + 1
-  have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   obtain ⟨B, hB⟩ := exists_forall_one_add_norm_pow_mul_norm_fourier_le hQc 0
-  obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
-    ((isCompact_range_tsum L hε χ hQc).image (continuous_ofSupportedIn χ.tsupport_subset))
-  set i := bigConeIndex hV0 hVcone hχΓ (0 + q)
-  set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max B 0 *
-    ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
-  have hK₀ : 0 ≤ K₀ := by positivity
-  refine ⟨K₀.toNNReal • WaveFrontSpace.seminorm i + p',
-    ((continuous_seminorm i).const_smul _).add hp', fun u ψ hψ ↦ ?_⟩
-  set T := u.toDistribution
-  set ψc : 𝓓(U, ℂ) := postcompCLM (𝕜 := ℝ) ofRealCLM ψ
-  have hψc : ψc ∈ Qc := ⟨ψ, hψ, rfl⟩
-  have hdecay (M : ℕ) : ∃ C, ∀ ζ ∈ bigCone D {0} ε, (1 + ‖ζ‖) ^ M * ‖T.localFourier χ ζ‖ ≤ C :=
-    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hV0 hVcone hχΓ M) u hζ⟩
-  have hbad := summable_badCoeff_smul_modulate L hε χ
-    (exists_one_add_norm_pow_mul_norm_fourier_le ψc.contDiff ψc.hasCompactSupport) hV0
+  -- The family of cutoffs is `Qc`, all at the point `ξ = 0`, with weight order `0`.
+  obtain ⟨p, hp, hpQ⟩ := exists_seminorm_localFourier_pullbackInl_le_of_isCompact hU hΓ hcone hΓ0
+    hN K.isCompact hKU isClosed_singleton (mem_singleton 0) hVcone
+    (disjoint_prod_zero_pullbackInlCone hΓ0 hN hKU) (X := Qc) (φ := (↑)) (fun ψ ↦ hQK _ ψ.property)
+    (ξ := fun _ ↦ 0) (fun _ ↦ mem_singleton 0) (N := 0) (fun ψ ↦ hB ψ ψ.property) (by
+      intro L _ _ ε hε χ
+      simpa only [pow_zero, Complex.ofReal_one, one_mul] using
+        (isCompact_range_tsum L hε χ hQc).insert 0)
+  refine ⟨p, hp, fun u ψ hψ ↦ ?_⟩
   -- `ι^* T ψ` is the localized Fourier transform of `ι^* T` with cutoff `ψ` at `0`.
-  have heq : T.pullbackInl hU (notMem_waveFrontSet hN u) ψ =
-      (T.pullbackInl hU (notMem_waveFrontSet hN u)).localFourier ψc 0 := by
-    rw [localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM]
-  rw [heq, localFourier_pullbackInl_eq_add hU _ hV0 hε hδ hχ1 L hL hdecay (hQK _ hψc) 0 hbad]
-  have hgood := one_add_norm_pow_mul_norm_tsum_goodTerm_le L (N := 0) (B := max B 0)
-    (apply_nonneg _ u) (fun η ↦ (hB ψc hψc η).trans (le_max_left B 0))
-    (fun ζ hζ ↦ le_seminorm i u hζ) hq 0
-  rw [pow_zero, one_mul] at hgood
-  have hmem : ofSupportedIn χ.tsupport_subset (∑' m : ZLattice.dual L,
-      badCoeff L (bigCone D {0} ε) (𝓕 (ψc : E → ℂ)) 0 m •
-        (cutoffK χ).modulate (m : WithLp 2 (E × D))) ∈ ofSupportedIn χ.tsupport_subset ''
-      range (fun ψ : Qc ↦ ∑' m : ZLattice.dual L,
-        badCoeff L (bigCone D {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m •
-          (cutoffK χ).modulate (m : WithLp 2 (E × D))) :=
-    mem_image_of_mem _ ⟨⟨ψc, hψc⟩, rfl⟩
-  calc _ ≤ _ := norm_add_le _ _
-    _ ≤ K₀ * WaveFrontSpace.seminorm i u + p' u :=
-        add_le_add (hgood.trans_eq (by simp only [K₀]; ring)) (hp'le u _ hmem)
-    _ = _ := by simp [NNReal.smul_def, Real.coe_toNNReal _ hK₀]
+  have h := hpQ u ⟨postcompCLM (𝕜 := ℝ) ofRealCLM ψ, ψ, hψ, rfl⟩
+  rwa [pow_zero, one_mul, localFourier_at_zero, complexPairing_postcompCLM_ofRealCLM] at h
 
 end Measurable
 

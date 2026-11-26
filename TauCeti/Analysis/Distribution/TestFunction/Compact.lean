@@ -108,7 +108,7 @@ private theorem continuous_evalSeqLM {x : ℕ → E} (c : ℕ → ℝ)
     · have hg : g (x k) = 0 := g.zero_on_compl (hN k (not_lt.1 hk))
       simp only [coe_ofSupportedIn, hg, norm_zero, mul_zero]
       positivity
-  exact hA
+  simpa only [A, LinearMap.coe_comp, ContinuousLinearMap.coe_coe, coe_ofSupportedInCLM] using hA
 
 /-- **Compact sets of test functions are supported in a common compact set.** For a compact set
 `Q` of test functions on `Ω`, there is a compact set `K ⊆ Ω` containing the support of every

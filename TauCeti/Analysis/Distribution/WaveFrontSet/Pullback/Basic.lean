@@ -67,7 +67,8 @@ opposite wave front covectors over a common point is defined (Hörmander I, Theo
   functions, built as `TestFunction.tensorBump`.
 * `Distribution.pullbackInl_ofFun`: for a continuous function satisfying the hypothesis it is the
   restriction to `E × {0}`.
-* `TauCeti.pullbackInlCone Γ`: the cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`.
+* `TauCeti.pullbackInlCone Γ`: the cone `ιᵀ Γ = {(x, ξ) | ∃ η, ((x, 0), (ξ, η)) ∈ Γ}`, monotone in
+  `Γ` (`TauCeti.pullbackInlCone_mono`).
 * `Distribution.isMicrolocallySmoothAt_pullbackInl`, `Distribution.waveFrontSet_pullbackInl_subset`:
   the wave front set of the pullback lies in the image `ιᵀ WF(T)` of that of `T` under `ιᵀ`.
 * `Distribution.waveFrontSet_pullbackInl_subset_pullbackInlCone`: so it lies in `ιᵀ Γ` when the
@@ -225,6 +226,12 @@ def pullbackInlCone (Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))) : Set (E
 theorem mem_pullbackInlCone {Γ : Set (WithLp 2 (E × D) × WithLp 2 (E × D))} {p : E × E} :
     p ∈ pullbackInlCone Γ ↔ ∃ η : D, (toLp 2 (p.1, (0 : D)), toLp 2 (p.2, η)) ∈ Γ :=
   Iff.rfl
+
+/-- The cone `ιᵀ Γ` is monotone in `Γ`. -/
+@[gcongr]
+theorem pullbackInlCone_mono {Γ Γ' : Set (WithLp 2 (E × D) × WithLp 2 (E × D))} (h : Γ ⊆ Γ') :
+    pullbackInlCone Γ ⊆ pullbackInlCone Γ' :=
+  fun _ ⟨η, hη⟩ ↦ ⟨η, h hη⟩
 
 end Cone
 
@@ -968,6 +975,6 @@ theorem waveFrontSet_pullbackInl_subset_pullbackInlCone
     (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
     (hT : T.waveFrontSet ⊆ Γ) : (T.pullbackInl hU h).waveFrontSet ⊆ TauCeti.pullbackInlCone Γ :=
-  (waveFrontSet_pullbackInl_subset T hU h).trans fun _ ⟨η, hη⟩ ↦ ⟨η, hT hη⟩
+  (waveFrontSet_pullbackInl_subset T hU h).trans (TauCeti.pullbackInlCone_mono hT)
 
 end Distribution
