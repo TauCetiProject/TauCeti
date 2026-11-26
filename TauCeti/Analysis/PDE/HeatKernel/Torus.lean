@@ -50,10 +50,10 @@ space `b^s_{p,∞}(𝕋ᵈ)`, the closure of the trigonometric polynomials
 (`TauCeti.UnitAddTorus.BesovSpace.tendsto_heatSemigroup_iff_mem_littleBesov`), for every
 `1 ≤ p ≤ ∞`. At `p = ∞` this is the periodic little Hölder–Zygmund space `c^s(𝕋ᵈ)`, on which the
 heat semigroup is a strongly continuous contraction semigroup
-(`TauCeti.UnitAddTorus.BesovSpace.heatLittleContractionSemigroup`), although it is not strongly
-continuous on `𝒞^s(𝕋ᵈ)`. These are the periodic counterparts of
-`TauCeti.BesovSpace.tendsto_heatSemigroup` and `TauCeti.BesovSpace.tendsto_heatSemigroup_iff` on
-`ℝᵈ`; on the torus the characterization by the little space holds at `p = ∞` as well.
+(`TauCeti.UnitAddTorus.BesovSpace.heatLittleContractionSemigroup`). These are the periodic
+counterparts of `TauCeti.BesovSpace.tendsto_heatSemigroup` and
+`TauCeti.BesovSpace.tendsto_heatSemigroup_iff` on `ℝᵈ`; on the torus the characterization by
+the little space holds at `p = ∞` as well.
 
 ## The argument
 
@@ -542,8 +542,7 @@ private theorem tendsto_rpow_mul_norm_littlewoodPaleyBlockLp_heatSemigroup_sub
 
 /-- **Strong continuity of the heat semigroup on `B^s_{p,q}(𝕋ᵈ)`, `q < ∞`.** For every
 `u ∈ B^s_{p,q}(𝕋ᵈ)` with `q < ∞`, `e^{tΔ} u → u` in `B^s_{p,q}(𝕋ᵈ)` as `t → 0`. This holds for
-every `1 ≤ p ≤ ∞`, including `p = ∞`, where the heat semigroup is not strongly continuous on
-`L^∞(𝕋ᵈ)`. -/
+every `1 ≤ p ≤ ∞`, including `p = ∞`. -/
 theorem tendsto_heatSemigroup (hq : q ≠ ⊤) (u : BesovSpace φ s p q) :
     Tendsto (fun t ↦ heatSemigroup φ s p q t u) (𝓝 0) (𝓝 u) := by
   have hq0 : 0 < q.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq
