@@ -10,7 +10,6 @@ public import Mathlib.Probability.BrownianMotion.Basic
 public import TauCeti.Probability.DysonBrownianMotion.Drift
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.Calculus.Deriv.PositivePart
@@ -31,8 +30,9 @@ integrable down to `0` while `StrictAnti (X t)` holds for `t > 0`.
 
 This file introduces both the deterministic path predicate `IsDysonPath` and the almost-sure
 measure-level predicate `IsDysonSolution`, proves pairwise inverse-gap integrability and the
-Rogers–Shi entrance bound, establishes pathwise `ℓ²` contraction and uniqueness, and constructs
-concrete witnesses for `n ≤ 1` and for zero-noise `n = 2` (including coincident initial states).
+Rogers–Shi entrance bound, establishes the pathwise `ℓ²` energy identity, contraction, and
+uniqueness, and constructs concrete witnesses for `n ≤ 1` and for zero-noise `n = 2` (including
+coincident initial states).
 Globally Lipschitz chamber truncations and localization live in
 `TauCeti.Probability.DysonBrownianMotion.Truncation`.
 
@@ -46,8 +46,10 @@ Globally Lipschitz chamber truncations and localization live in
   integrability and Rogers–Shi entrance bound.
 * `TauCeti.Probability.IsDysonPath.le_of_le` and `TauCeti.Probability.IsDysonSolution.ae_le_of_le`:
   coordinatewise comparison principle (AGZ Lemma 4.3.6).
-* `TauCeti.Probability.IsDysonPath.sum_sub_sq_le_of_le`, `TauCeti.Probability.IsDysonPath.eq`, and
-  `TauCeti.Probability.IsDysonSolution.ae_eq`: `ℓ²` contraction and pathwise / a.s. uniqueness.
+* `TauCeti.Probability.IsDysonPath.sum_sub_sq_eq`,
+  `TauCeti.Probability.IsDysonPath.sum_sub_sq_le_of_le`, `TauCeti.Probability.IsDysonPath.eq`, and
+  `TauCeti.Probability.IsDysonSolution.ae_eq`: `ℓ²` energy identity, contraction, and pathwise /
+  almost-sure uniqueness.
 * `TauCeti.Probability.dysonSystem_exists_unique_of_le_one`,
   `TauCeti.Probability.twoParticleDysonPath`, and
   `TauCeti.Probability.isDysonPath_twoParticleDysonPath`: non-vacuous witnesses.
@@ -227,64 +229,47 @@ theorem integral_sum_Ioi_sub_inv_le (hX : IsDysonPath n x w X) (t : ℝ≥0) :
   have hmul := mul_le_mul_of_nonneg_left hmono (by positivity : (0 : ℝ) ≤ (n : ℝ) / 2)
   rwa [← mul_assoc, hcancel, one_mul] at hmul
 
-private theorem sq_sub_eq_two_mul_integral_and_integrable (hX : IsDysonPath n x w X)
-    (hY : IsDysonPath n y w Y) {s t : ℝ≥0} (hst : s ≤ t) (i : Fin n) :
-    ((X t i - Y t i) ^ 2 - (X s i - Y s i) ^ 2 =
-      2 * ∫ r in (s : ℝ)..t, (X r.toNNReal i - Y r.toNNReal i) *
-        (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i)) ∧
-    IntervalIntegrable (fun r : ℝ ↦ (X r.toNNReal i - Y r.toNNReal i) *
-      (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i)) volume s t := by
-  have hstR : (s : ℝ) ≤ t := NNReal.coe_le_coe.2 hst
-  let g : ℝ → ℝ := fun r ↦ dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i
-  let d : ℝ → ℝ := fun r ↦ (x i - y i) + ∫ u in (0 : ℝ)..r, g u
-  have hg_int0 : IntervalIntegrable g volume 0 t :=
-    (hX.intervalIntegrable_dysonDrift t i).sub (hY.intervalIntegrable_dysonDrift t i)
-  have hsub_uIcc : uIcc (s : ℝ) t ⊆ uIcc 0 t := by
-    rw [uIcc_of_le hstR, uIcc_of_le t.coe_nonneg]
-    exact Icc_subset_Icc s.coe_nonneg le_rfl
-  have hd_ac : AbsolutelyContinuousOnInterval d s t :=
-    (((LipschitzWith.const (x i - y i)).lipschitzOnWith.absolutelyContinuousOnInterval).add
-      (hg_int0.absolutelyContinuousOnInterval_intervalIntegral' left_mem_uIcc)).mono hsub_uIcc
-  have hd_deriv : ∀ᵐ r, r ∈ uIoc (s : ℝ) t → HasDerivAt d (g r) r := by
-    filter_upwards [hg_int0.ae_hasDerivAt_integral] with r hr hmem
-    simpa [d] using (hr (hsub_uIcc (uIoc_subset_uIcc hmem)) 0 left_mem_uIcc).const_add (x i - y i)
-  have hd_val (u : ℝ≥0) : d u = X u i - Y u i := by
-    have hsub := intervalIntegral.integral_sub (hX.intervalIntegrable_dysonDrift u i)
-      (hY.intervalIntegrable_dysonDrift u i)
-    dsimp [d]; linarith [hX.eq_integral u i, hY.eq_integral u i]
-  have heqOn : EqOn (fun r : ℝ ↦ d r * g r)
-      (fun r : ℝ ↦ (X r.toNNReal i - Y r.toNNReal i) * g r) (uIcc (s : ℝ) t) := fun r hr ↦ by
-    rw [uIcc_of_le hstR] at hr
-    exact congrArg (· * g r) (by
-      simpa only [Real.coe_toNNReal r (s.coe_nonneg.trans hr.1)] using hd_val r.toNNReal)
-  have hibp := hd_ac.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt hd_ac hd_deriv hd_deriv
-  rw [intervalIntegral.integral_congr heqOn,
-    intervalIntegral.integral_congr fun r hr ↦ (mul_comm _ _).trans (heqOn hr),
-    hd_val t, hd_val s, ← sq, ← sq] at hibp
-  exact ⟨by linarith, ((hg_int0.mono_set hsub_uIcc).continuousOn_mul hd_ac.continuousOn).congr
-    (heqOn.mono uIoc_subset_uIcc)⟩
+private theorem eq_integral_of_mem_uIcc (hX : IsDysonPath n x w X) {s t : ℝ≥0} {r : ℝ}
+    (hr : r ∈ uIcc (s : ℝ) t) (i : Fin n) :
+    X r.toNNReal i = x i + w r.toNNReal i +
+      ∫ u in (0 : ℝ)..r, dysonDrift n (X u.toNNReal) i := by
+  simpa only [Real.coe_toNNReal r ((le_min s.coe_nonneg t.coe_nonneg).trans hr.1)] using
+    hX.eq_integral r.toNNReal i
+
+/-- **Pathwise `ℓ²` energy identity.** For any two Dyson trajectories `X` and `Y` driven by the
+same path `w` and any times `s, t : ℝ≥0`, the change in squared Euclidean distance from `s` to `t`
+equals twice the integrated drift-difference pairing over `s..t`. -/
+theorem sum_sub_sq_eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (s t : ℝ≥0) :
+    (∑ i : Fin n, (X t i - Y t i) ^ 2) - ∑ i : Fin n, (X s i - Y s i) ^ 2 =
+      2 * ∫ r in (s : ℝ)..t, ∑ i : Fin n,
+        (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i) *
+          (X r.toNNReal i - Y r.toNNReal i) := by
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sub_sq_eq_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t i)
+      (fun _ hr i _ ↦ hX.eq_integral_of_mem_uIcc hr i)
+      (fun _ hr i _ ↦ hY.eq_integral_of_mem_uIcc hr i)
 
 /-- **Pathwise `ℓ²` contraction.** Any two Dyson trajectories `X` and `Y` driven by the same path
 `w` have nonincreasing squared Euclidean distance on `[0, ∞)`. -/
 theorem sum_sub_sq_le_of_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y)
     {s t : ℝ≥0} (hst : s ≤ t) :
     ∑ i : Fin n, (X t i - Y t i) ^ 2 ≤ ∑ i : Fin n, (X s i - Y s i) ^ 2 := by
-  have hstep := hX.sq_sub_eq_two_mul_integral_and_integrable hY hst
-  have hdiff : (∑ i : Fin n, (X t i - Y t i) ^ 2) - ∑ i : Fin n, (X s i - Y s i) ^ 2 =
-      2 * ∫ r in (s : ℝ)..t, ∑ i : Fin n, (X r.toNNReal i - Y r.toNNReal i) *
-        (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i) := by
-    rw [← Finset.sum_sub_distrib]
-    simp_rw [fun i ↦ (hstep i).1, ← Finset.mul_sum,
-      intervalIntegral.integral_finsetSum fun i _ ↦ (hstep i).2]
-  have hint_nonpos : ∫ r in (s : ℝ)..t, (∑ i : Fin n, (X r.toNNReal i - Y r.toNNReal i) *
-      (dysonDrift n (X r.toNNReal) i - dysonDrift n (Y r.toNNReal) i)) ≤ 0 := by
-    rw [intervalIntegral.integral_of_le (NNReal.coe_le_coe.2 hst)]
-    refine setIntegral_nonpos measurableSet_Ioc fun r hr ↦ ?_
-    rw [Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _]
-    exact sum_dysonDrift_sub_mul_sub_nonpos
-      (hX.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
-      (hY.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
-  linarith
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sub_sq_le_of_eq_add_integral (Finset.univ : Finset (Fin n))
+      (NNReal.coe_le_coe.2 hst)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift s i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t i)
+      (fun _ hr i _ ↦ hX.eq_integral_of_mem_uIcc hr i)
+      (fun _ hr i _ ↦ hY.eq_integral_of_mem_uIcc hr i)
+      fun r hr ↦ sum_dysonDrift_sub_mul_sub_nonpos
+        (hX.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
+        (hY.strictAnti r.toNNReal (Real.toNNReal_pos.2 (s.coe_nonneg.trans_lt hr.1)))
 
 /-- **Continuous dependence on the initial configuration.** The squared `ℓ²` distance at any time
 `t` is bounded by the initial squared `ℓ²` distance `∑ i, (x i - y i) ^ 2`. -/
@@ -297,11 +282,10 @@ theorem sum_sub_sq_le (hX : IsDysonPath n x w X) (hY : IsDysonPath n y w Y) (t :
 by the same forcing path `w` are identical. -/
 theorem eq (hX : IsDysonPath n x w X) (hY : IsDysonPath n x w Y) : X = Y := by
   ext t i
-  have hle := hX.sum_sub_sq_le hY t
-  simp only [sub_self, zero_pow two_ne_zero, Finset.sum_const_zero] at hle
-  have hzero := (Finset.sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1
+  have hle : ∑ j : Fin n, (X t j - Y t j) ^ 2 ≤ 0 := by
+    simpa only [sub_self, zero_pow two_ne_zero, Finset.sum_const_zero] using hX.sum_sub_sq_le hY t
+  exact sub_eq_zero.1 <| (Finset.sum_sq_eq_zero_iff _ _).1
     (le_antisymm hle (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)) i (Finset.mem_univ i)
-  exact sub_eq_zero.1 (sq_eq_zero_iff.1 hzero)
 
 /-- Coordinates of a Dyson trajectory lie in the closed decreasing chamber at every time. -/
 protected theorem antitone (hX : IsDysonPath n x w X) (t : ℝ≥0) : Antitone (X t) := by

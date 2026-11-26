@@ -59,6 +59,7 @@ range, so the value is a `dite` rather than a plain application.
   `Fin.coe_finRotate_of_add_one_lt` is the step away from the last index, where no wrapping occurs.
 * `Fin.coe_finRotate_eq_ite`: the value of `finRotate n` on any `Fin n`, with wrap-around
   determined by whether the index plus one equals `n`.
+* `Fin.finCongr_finRotate`: transport along an equality of lengths commutes with rotation.
 * `Fin.finRotate_ofNat`: reading natural times modulo `k`, `finRotate k` moves to the next time;
   `Fin.image_range_ofNat_eq_image_univ`: at least `k` consecutive times visit every entry of a
   tuple of length `k`.
@@ -466,6 +467,12 @@ theorem coe_finRotate_eq_ite {n : ℕ} (i : Fin n) :
   | succ m =>
     rw [coe_finRotate]
     simp [Fin.ext_iff]
+
+/-- Transport along an equality of lengths commutes with cyclic rotation. -/
+theorem finCongr_finRotate {m n : ℕ} (i : Fin m) (h : m = n) :
+    finCongr h (finRotate m i) = finRotate n (finCongr h i) := by
+  subst h
+  rfl
 
 /-- Reading the times `i : ℕ` modulo `k`, the cyclic successor `finRotate k` of the index at time
 `i` is the index at time `i + 1`. -/

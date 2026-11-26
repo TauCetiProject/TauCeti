@@ -10,7 +10,10 @@ public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Measure.Map
 
 /-!
-# Measures on one-dimensional Euclidean space
+# Measurable sets and measures on Euclidean space
+
+A coordinate box `{x | ∀ i, x i ∈ s i}` with measurable sides is a measurable subset of
+`EuclideanSpace ℝ ι` for a countable index type `ι`.
 
 Over a one-element index type `ι`, reading off the unique coordinate and including it back with
 `EuclideanSpace.single` are inverse to each other. So every measure on `EuclideanSpace ℝ ι` is the
@@ -19,6 +22,8 @@ one-dimensional identification of a law on `EuclideanSpace ℝ ι` to its coordi
 
 ## Main results
 
+* `EuclideanSpace.measurableSet_setOf_forall_mem`: a coordinate box with measurable sides is
+  measurable.
 * `EuclideanSpace.measurable_single`: the inclusion of one coordinate is measurable.
 * `EuclideanSpace.map_single_map_eval`: over a one-element index type, a measure is the image of
   its coordinate law under `EuclideanSpace.single default`.
@@ -29,6 +34,12 @@ public section
 open MeasureTheory
 
 namespace EuclideanSpace
+
+/-- A coordinate box `{x | ∀ i, x i ∈ s i}` with measurable sides `s i` is measurable. -/
+theorem measurableSet_setOf_forall_mem {ι : Type*} [Countable ι] {s : ι → Set ℝ}
+    (hs : ∀ i, MeasurableSet (s i)) : MeasurableSet {x : EuclideanSpace ℝ ι | ∀ i, x i ∈ s i} := by
+  rw [Set.ofPred_forall]
+  exact MeasurableSet.iInter fun i ↦ (PiLp.continuous_apply 2 _ i).measurable (hs i)
 
 variable {ι : Type*} [DecidableEq ι]
 

@@ -18,7 +18,8 @@ On a finite-dimensional real inner product space `E`, Mathlib has two Fourier tr
 Fourier integral `𝓕 f ξ = ∫ 𝐞(-⟪x, ξ⟫) • f x` of a function, and the Fourier transform on
 `L²(E, F)` (`MeasureTheory.Lp.fourierTransformₗᵢ`), obtained by extending the Fourier transform of
 Schwartz functions by continuity. This file proves **Plancherel's theorem on `L¹ ∩ L²`**: if `f`
-is integrable and square integrable, then `𝓕 f` is square integrable with `‖𝓕 f‖₂ = ‖f‖₂`.
+is integrable and square integrable, then `𝓕 f` is square integrable with `‖𝓕 f‖₂ = ‖f‖₂`, and
+the Fourier integral preserves the `L²` inner product of two such functions (Parseval's identity).
 
 It rests on the fact that the two transforms agree on `L¹ ∩ L²`: the `L²` Fourier
 transform of the class of such an `f` is almost everywhere the Fourier integral of `f`. Both are
@@ -43,6 +44,7 @@ dilation: the `L²` Fourier transform turns the normalized dilation `D_r` into `
 * `MeasureTheory.Integrable.eLpNorm_fourier_two_eq`: Plancherel's theorem on `L¹ ∩ L²`.
 * `MeasureTheory.Integrable.memLp_fourier_two`: the Fourier integral of a function in `L¹ ∩ L²`
   lies in `L²`.
+* `MeasureTheory.Integrable.integral_inner_fourier_fourier`: Parseval's identity on `L¹ ∩ L²`.
 * `MeasureTheory.Lp.fourier_ae_eq_of_lineDerivOp_eq`: the Fourier transform of an `L²` derivative
   `∂_m f` is `2πi⟪ξ, m⟫ 𝓕f`.
 * `MeasureTheory.Lp.fourier_dilateLp`: the `L²` Fourier transform turns the normalized dilation
@@ -87,6 +89,26 @@ theorem eLpNorm_fourier_two_eq (hf : Integrable f) (hf₂ : MemLp f 2) :
 /-- The Fourier integral of an integrable, square integrable function is square integrable. -/
 theorem memLp_fourier_two (hf : Integrable f) (hf₂ : MemLp f 2) : MemLp (𝓕 f) 2 :=
   memLp_iff.2 ((hf.eLpNorm_fourier_two_eq hf₂).trans_lt hf₂.eLpNorm_lt_top)
+
+open scoped ComplexInnerProductSpace in
+/-- **Parseval's identity on `L¹ ∩ L²`.** The Fourier integrals of two integrable, square
+integrable functions have the same `L²` inner product as the functions. -/
+theorem integral_inner_fourier_fourier (hf : Integrable f) (hf₂ : MemLp f 2) {g : E → F}
+    (hg : Integrable g) (hg₂ : MemLp g 2) :
+    ∫ ξ, ⟪𝓕 f ξ, 𝓕 g ξ⟫ = ∫ x, ⟪f x, g x⟫ := by
+  have h := Lp.inner_fourier_eq (hf₂.toLp f) (hg₂.toLp g)
+  rw [L2.inner_def, L2.inner_def] at h
+  calc ∫ ξ, ⟪𝓕 f ξ, 𝓕 g ξ⟫
+      = ∫ ξ, ⟪(𝓕 (hf₂.toLp f) : Lp F 2 (volume : Measure E)) ξ,
+          (𝓕 (hg₂.toLp g) : Lp F 2 (volume : Measure E)) ξ⟫ := by
+        refine integral_congr_ae ?_
+        filter_upwards [hf.coeFn_fourier_toLp hf₂, hg.coeFn_fourier_toLp hg₂] with ξ h₁ h₂
+        rw [h₁, h₂]
+    _ = ∫ x, ⟪f x, g x⟫ := by
+        rw [h]
+        refine integral_congr_ae ?_
+        filter_upwards [hf₂.coeFn_toLp, hg₂.coeFn_toLp] with x h₁ h₂
+        rw [h₁, h₂]
 
 end MeasureTheory.Integrable
 

@@ -34,8 +34,9 @@ form `realCliffordForm 4 0` (`OrthonormalBasis.realSpinCGroupEquiv`). The rotati
 `unitarySpinCLift g` is `g` (`TauCeti.toSpecialOrthogonal_unitarySpinCLift_apply`), and its
 determinant character is the determinant of the unitary matrix of `g`, the complex determinant
 (`TauCeti.det_unitarySpinCLift`). So at the level of structure groups the determinant character
-of the canonical `Spinᶜ` structure is the complex determinant; the expected identification of its
-determinant line with the anticanonical line `Λ²_ℂ (E, J)` as line bundles is not made here.
+of the canonical `Spinᶜ` structure is the complex determinant. Its determinant line is identified
+with the anticanonical line `Λ²_ℂ (E, J)` as line bundles in
+`TauCeti.Topology.VectorBundle.SpinStructure.AlmostComplex.Anticanonical`.
 
 ## Main definitions
 

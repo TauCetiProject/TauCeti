@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Calculus.FDeriv.Homothety
 import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
@@ -21,6 +22,7 @@ and weak Hessian of `u ∘ Φ`, and the transfer of local `W^{k,p}` regularity o
 
 ## Main declarations
 
+* `TauCeti.Wkp.IsChangeOfVariables.smul_add_const`: a homothety is a change of variables.
 * `TauCeti.Wkp.IsChangeOfVariables.mono_const` and
   `TauCeti.Wkp.IsChangeOfVariables.norm_fderiv_fderiv_le`: weakening the constants of a change of
   variables, and the bound `L` on its second derivative.
@@ -77,6 +79,27 @@ theorem norm_fderiv_fderiv_le (h : IsChangeOfVariables (k + 2) U V Φ L c) :
     ∀ x ∈ (U : Set E), ‖fderiv ℝ (fderiv ℝ Φ) x‖ ≤ L := fun x hx => by
   rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
   exact h.norm_iteratedFDeriv_le 2 one_le_two (by omega) x hx
+
+/-- A homothety `x ↦ ε x + a` with `ε > 0` mapping `U` into `V` is a change of variables of every
+order, with constants `ε` and `ε ^ finrank ℝ E`. -/
+theorem smul_add_const {ε : ℝ} (hε : 0 < ε) (a : E) (hA : MapsTo (fun x : E => ε • x + a) U V) :
+    IsChangeOfVariables k U V (fun x : E => ε • x + a) ε (ε ^ Module.finrank ℝ E) := by
+  have hd := fderiv_smul_add_const ε a
+  exact
+    { contDiffOn := ((contDiff_id.const_smul ε).add contDiff_const).contDiffOn
+      differentiableOn := ((differentiable_id.const_smul ε).add_const a).differentiableOn
+      injOn := fun _ _ _ _ h => smul_right_injective E hε.ne' (add_right_cancel h)
+      mapsTo := hA
+      norm_iteratedFDeriv_le := fun i hi _ x _ => by
+        obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hi
+        rw [← norm_iteratedFDeriv_fderiv]
+        rcases n with _ | n
+        · simpa [hd, norm_smul, abs_of_pos hε] using
+            mul_le_of_le_one_right hε.le ContinuousLinearMap.norm_id_le
+        · rw [hd, iteratedFDeriv_const_of_ne n.succ_ne_zero]
+          simpa using hε.le
+      pos := pow_pos hε _
+      le_abs_det := fun x _ => (abs_det_fderiv_smul_add_const hε a x).ge }
 
 /-- **The chart between the two sides.** If mutually inverse changes of variables `Φ` and `Ψ`
 between `U` and `V` satisfy `Φ '' (H ∩ U) = Ω ∩ V`, then `Φ` restricts to a change of variables

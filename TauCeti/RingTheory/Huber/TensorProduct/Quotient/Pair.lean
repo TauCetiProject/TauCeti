@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Pair
 public import TauCeti.RingTheory.Huber.TensorProduct.Quotient.Basic
 public import TauCeti.RingTheory.Huber.TensorProduct.Symmetry
 public import TauCeti.RingTheory.Huber.QuotientMapping

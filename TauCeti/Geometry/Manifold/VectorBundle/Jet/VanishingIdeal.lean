@@ -93,8 +93,7 @@ private theorem jet_smul_eq_zero {x : M} {f : C^∞⟮I, M; ℝ⟯}
   let L : ℝ →L[ℝ] F →L[ℝ] F := (ContinuousLinearMap.id ℝ ℝ).smulRight (ContinuousLinearMap.id ℝ F)
   have hloc : FirstJetBundle.localRep I F (f • t : Cₛ^∞⟮I; F, V⟯) x =ᶠ[𝓝 (extChartAt I x x)]
       fun z ↦ (L ∘ g) z (FirstJetBundle.localRep I F t x z) := by
-    rw [show ⇑(f • t : Cₛ^∞⟮I; F, V⟯) = fun y ↦ f y • t y from
-      funext (ContMDiffSection.smul_apply f t)]
+    rw [ContMDiffSection.coe_smul_contMDiffMap]
     exact (FirstJetBundle.localRep_smul_eventuallyEq I F f t hx).mono fun z hz ↦ hz.trans (by
       simp [L, g])
   rw [(hloc.iteratedFDeriv ℝ k).eq_of_nhds]

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.Topology.Algebra.Module.Determinant
 
 /-!
 # Changing the coordinates of a bundle homomorphism
@@ -50,8 +51,9 @@ trivializations with their core coordinate-change maps,
 charts are mutually inverse, and
 `VectorBundleCore.isInvertible_coordChange` and `VectorBundleCore.coordChange_bijective` record
 invertibility and bijectivity of core transition operators on chart overlaps.
-For a core with model fibre the scalar field, `VectorBundleCore.det_coordChangeL_localTriv`
-computes the determinant of such a transition as the scalar transition function.
+`VectorBundleCore.det_coordChangeL_localTriv_eq_det_coordChange` gives such a transition the
+determinant of the core transition, and for a core with model fibre the scalar field,
+`VectorBundleCore.det_coordChangeL_localTriv` computes it as the scalar transition function.
 The fibre instances `VectorBundleCore.isTopologicalAddGroupFiber` and
 `VectorBundleCore.continuousSMulFiber` make Mathlib's Hom bundle between two cores available.
 `VectorBundleCore.inChartCoordinates` expresses a fibre map between two cores in an arbitrary
@@ -121,6 +123,15 @@ theorem det_coordChangeL_localTriv (Z : VectorBundleCore 𝕜 B 𝕜 κ) {i j : 
       𝕜 →ₗ[𝕜] 𝕜) = Z.coordChange i j x 1 := by
   rw [LinearMap.det_ring, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv]
   exact Z.localTriv_coordChange_eq i j ⟨hi, hj⟩ 1
+
+/-- The coordinate change between the local trivializations `i` and `j` of a core, as a linear
+equivalence of the model fibre, has the determinant of the core transition `Z.coordChange i j x`. -/
+theorem det_coordChangeL_localTriv_eq_det_coordChange (Z : VectorBundleCore 𝕜 B F κ) {i j : κ}
+    {x : B} (hi : x ∈ Z.baseSet i) (hj : x ∈ Z.baseSet j) :
+    LinearMap.det (((Z.localTriv i).coordChangeL 𝕜 (Z.localTriv j) x).toLinearEquiv :
+      F →ₗ[𝕜] F) = (Z.coordChange i j x).det := by
+  rw [← Z.localTriv_coordChangeL ⟨hi, hj⟩, ContinuousLinearMap.det,
+    ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- The fibres of a vector bundle core are topological additive groups, as is the model fibre.
 This makes the Hom bundle between two cores available. -/
