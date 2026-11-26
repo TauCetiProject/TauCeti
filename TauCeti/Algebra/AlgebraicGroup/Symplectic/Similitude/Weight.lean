@@ -325,6 +325,13 @@ def rootLE (μ lam : Weight g) : Prop :=
   (gspRootDatum.{0} g).rootLE (gspBase.{0} g) (toGspCharacterLattice g μ)
     (toGspCharacterLattice g lam)
 
+/-- The root order on `X_g` is `RootPairing.rootLE` of `TauCeti.gspBase` under
+`toGspCharacterLattice`, so the general `RootPairing.rootLE` lemmas apply to it. -/
+theorem rootLE_iff_rootLE_toGspCharacterLattice {μ lam : Weight g} :
+    rootLE μ lam ↔ (gspRootDatum.{0} g).rootLE (gspBase.{0} g) (toGspCharacterLattice g μ)
+      (toGspCharacterLattice g lam) :=
+  Iff.rfl
+
 /-- `μ ≤ λ` in the root order exactly when `λ - μ = ∑ nᵢ αᵢ` with natural coefficients `nᵢ`. -/
 theorem rootLE_iff_exists_nat {μ lam : Weight g} :
     rootLE μ lam ↔ ∃ n : Fin g → ℕ, lam - μ = ∑ i, n i • simpleRoot i := by
