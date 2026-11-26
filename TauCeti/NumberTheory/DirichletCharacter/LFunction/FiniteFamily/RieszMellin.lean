@@ -6,7 +6,7 @@ Authors: Tau Ceti contributors
 module
 
 public import Mathlib.Data.Finsupp.Order
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 import TauCeti.Analysis.Contour.Residue.Germ
 import TauCeti.Analysis.Contour.Residue.Noncancellation

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.RieszMellin
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Riesz.Mellin
 import TauCeti.Analysis.Contour.Residue.Germ
 
 /-!
