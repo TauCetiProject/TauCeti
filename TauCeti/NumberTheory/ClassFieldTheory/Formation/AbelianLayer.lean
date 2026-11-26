@@ -167,9 +167,9 @@ theorem mem_maximalAbelianLayer {V : OpenNormalSubgroup G} {x : G} :
   (Iff.rfl)
 
 /-- **The maximal abelian sublayer as a closure operator.** Its closed elements are exactly the
-abelian class-field layers, so its type of closed elements is `AbelianLayer G` and
-`abelianLayerClosure.gi` is the Galois insertion of the abelian layers into all open normal
-subgroups. The universal property of `maximalAbelianLayer` is read off from this structure. -/
+abelian class-field layers (`isClosed_abelianLayerClosure_iff`), and `abelianLayerClosure.gi` is
+the Galois insertion of its closed elements into all open normal subgroups. The universal property
+of `maximalAbelianLayer` is read off from this structure. -/
 def abelianLayerClosure : ClosureOperator (OpenNormalSubgroup G) :=
   .ofPred maximalAbelianLayer IsAbelianClassFieldLayer
     (fun _ _ hx ↦ mem_maximalAbelianLayer.2 (Subgroup.mem_sup_left hx))
@@ -187,7 +187,7 @@ theorem abelianLayerClosure_apply (V : OpenNormalSubgroup G) :
 @[simp]
 theorem isClosed_abelianLayerClosure_iff {V : OpenNormalSubgroup G} :
     abelianLayerClosure.IsClosed V ↔ V.IsAbelianClassFieldLayer :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- Every layer subgroup lies in its maximal abelian sublayer subgroup. -/
 theorem le_maximalAbelianLayer (V : OpenNormalSubgroup G) : V ≤ maximalAbelianLayer V :=
