@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.StableSubspace
 public import TauCeti.Geometry.Manifold.LinearSlice
 public import TauCeti.LinearAlgebra.ExtendByZero
-import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Analysis.Normed.Module.Complemented
 

@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Chart.StableSubspace
 public import TauCeti.Geometry.Manifold.LinearSlice
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.PullbackGroupoid
 
 /-!
 # Stable and unstable manifolds of a critical submanifold of a Morse–Bott function
