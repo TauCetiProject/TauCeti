@@ -74,8 +74,7 @@ theorem le_norm_sub_of_window_taylor_bound_of_pole {F : ℂ → ℂ} {z w ρ : �
     refine (neg_le_neg ?_).trans (abs_le.mp (Complex.abs_re_le_norm _)).1
     simpa [norm_mul, norm_div] using hM k
   have hscale : 2 * (a / d ^ (k + 1)) = ‖meromorphicTrailingCoeffAt F ρ‖ / 2 / d ^ (k + m + 1) := by
-    rw [show k + m + 1 = m + (k + 1) by omega, pow_add]
-    dsimp [a]
+    simp only [a, pow_add, pow_one, div_div, mul_assoc, mul_left_comm, mul_comm]
     ring
   linarith only [hscale, hk, hsmall, hbase]
 
@@ -100,7 +99,7 @@ theorem meromorphicTrailingCoeffAt_re_nonpos_of_window_taylor_bound {F : ℂ →
     hF hp hc hβ hdr] with k hk
   have hscale : (meromorphicTrailingCoeffAt F β).re / 2 / (x - β) ^ m / (x - β) ^ (k + 1) =
       (meromorphicTrailingCoeffAt F β).re / 2 / (x - β) ^ (k + m + 1) := by
-    rw [show k + m + 1 = m + (k + 1) by omega, pow_add (x - β) m (k + 1), div_div]
+    simp only [pow_add, pow_one, div_div, mul_assoc, mul_left_comm, mul_comm]
   exact hscale.trans_le hk
 
 end DifferentiableOn
