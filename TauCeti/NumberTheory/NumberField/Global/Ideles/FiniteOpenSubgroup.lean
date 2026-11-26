@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
-public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FiniteClassGroup
+public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.ClassGroup
 import Mathlib.NumberTheory.NumberField.ClassNumber
 import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Topology
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
