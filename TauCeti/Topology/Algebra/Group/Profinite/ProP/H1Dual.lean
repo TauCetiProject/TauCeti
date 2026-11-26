@@ -20,7 +20,7 @@ continuous `1`-cocycle is a continuous character, so
 continuous `𝔽_p`-valued characters of `G`. The characteristic fact of this degree is that the
 `1`-coboundaries vanish in it — the character group is what is left over, not a quotient of a
 larger group of homomorphisms. The `ZMod p`-module structure that makes this identification an
-isomorphism of `𝔽_p`-vector spaces (`TauCeti.instModuleH1`,
+isomorphism of `𝔽_p`-vector spaces (`TauCeti.ContCohomology.H1.instModule`,
 `TauCeti.h1EquivContinuousZModDual`) needs neither profiniteness nor a pro-`p` hypothesis, and
 holds for every modulus `n`, not only for a prime.
 

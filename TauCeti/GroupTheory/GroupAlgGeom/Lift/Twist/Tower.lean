@@ -30,7 +30,9 @@ p. 104: `λ_β ξ_p = φ_{2K,p} β`, the case `m = L`; `eval_towerRetraction`). 
 needed: the retraction ignores the exponents beyond the `L`-th, whereas `φ_{m,p}` (`phi`)
 continues the sequence of twists periodically. The retraction `t ↦ u ^ k` of one step sends the
 lifted point to the point twisted `k` times (`TowerStage.twisted`,
-`TowerStage.retraction_comp_lift_point`; [IFT], §7.2: (84) is the specialisation of (85)).
+`TowerStage.retraction_comp_lift_point`; [IFT], §7.2: (84) is the specialisation of (85)), at
+which a word takes the value of its image under the `k`-th power of the twist
+(`TowerStage.eval_twisted`).
 
 A tower is nondegenerate (`TowerStage.IsNondegenerate`) when every step extends the centralizer
 of a nonidentity element; this holds, for example, when every twisting word has nontrivial value
@@ -41,6 +43,10 @@ when `H` is nonabelian. A nondegenerate tower over a fully residually free group
 residually free, and its point solves every system that the twists fix and the base point
 solves. For the equation `[x, y] = [a, b]` over `F(a, b)` and its
 basic sequence this is the tower of [IFT], p. 102 (`twistTower_mem_V_oneCommutatorEquation`).
+
+For a standard orientable quadratic equation `S = 1` and a point `β`, lifting `β` along `J` rounds
+of the twist data of the basic sequence of `S` gives the tower of [IFT], §7.2, Proposition 4
+(`basicTower`, the case `J = 2`).
 
 ## Main definitions
 
@@ -53,6 +59,8 @@ basic sequence this is the tower of [IFT], p. 102 (`twistTower_mem_V_oneCommutat
 * `TauCeti.GroupAlgGeom.Lift.towerRetraction`: the retraction of the tower with given exponents.
 * `TauCeti.GroupAlgGeom.Lift.TowerStage.IsNondegenerate`: every step extends the centralizer of
   a nonidentity element.
+* `TauCeti.GroupAlgGeom.Lift.basicTower`: the tower of `J` rounds of the basic sequence over a
+  point.
 
 ## Main results
 
@@ -132,6 +140,15 @@ theorem twisted_coeff (P : TowerStage.{u, v, w} G X) (d : TwistData G X) (k : �
 theorem twisted_point (P : TowerStage.{u, v, w} G X) (d : TwistData G X) (k : ℤ) :
     (P.twisted d k).point = wordMap P.coeff (fun x => (d.toMulAut ^ k) (inr (.of x))) P.point :=
   (rfl)
+
+/-- Evaluating at the stage twisted `k` times along a twist datum is evaluating at the stage after
+applying the `k`-th power of the twist. -/
+theorem eval_twisted (P : TowerStage.{u, v, w} G X) (d : TwistData G X) (k : ℤ) (w : GX G X) :
+    eval (P.twisted d k).coeff (P.twisted d k).point w =
+      eval P.coeff P.point ((d.toMulAut ^ k) w) :=
+  -- The point of the twisted stage is, by definition, the word map of the twist
+  -- (`TowerStage.twisted_point`).
+  eval_wordMap_mulEquiv (d.toMulAut ^ k) (fun g => by simp) P.point w
 
 /-- The retraction `t ↦ u ^ k` of the lift along a twist datum, `u = A(v)`, sends the lifted point
 to the point twisted `k` times, for every integer `k` ([IFT], §7.2: in the extension of the
@@ -333,6 +350,19 @@ theorem twistTower_mem_V {P : TowerStage.{u, v, w} G X} (hP : IsFullyResiduallyF
       (fun d' hd' => hS d' (List.mem_cons_of_mem _ hd'))
       (twistLift_mem_V hP.isBP hP.isCSA hd (Commute.refl _) d.twistHom_self
         (hS d List.mem_cons_self) hv)
+
+/-! ### The tower of the basic sequence -/
+
+/-- The tower of extensions of centralizers obtained by lifting a point `β` of `G[X]` in `G` along
+`J` rounds of the twist data of the basic sequence of a standard orientable quadratic equation
+([IFT], §7.2, Proposition 4, for `J = 2`). -/
+noncomputable def basicTower (S : Quadratic.Standard G X) (hS : S.IsOrientable) (β : X → G)
+    (J : ℕ) : TowerStage.{u, v, u} G X :=
+  twistTower (List.replicate J (basicSeqData S hS)).flatten ⟨G, .id G, β⟩
+
+theorem basicTower_def (S : Quadratic.Standard G X) (hS : S.IsOrientable) (β : X → G) (J : ℕ) :
+    basicTower S hS β J = twistTower (List.replicate J (basicSeqData S hS)).flatten ⟨G, .id G, β⟩ :=
+  (rfl)
 
 /-! ### The one-commutator equation -/
 

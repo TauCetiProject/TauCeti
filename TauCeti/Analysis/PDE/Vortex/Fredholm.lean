@@ -36,7 +36,9 @@ connect it with the realization on `H¹`.
 * **Integration by parts.** For `y ∈ H¹(ℂ)⁴` and a compactly supported `C¹` field `η`,
   `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫` (`TauCeti.Vortex.integral_inner_sobolevGaugeFixedOperator`). Both
   sides are continuous in `y ∈ H¹(ℂ)⁴`, and on test fields this is the classical identity
-  `TauCeti.Vortex.integral_inner_gaugeFixedOperator`; test fields are dense in `H¹(ℂ)`. By the
+  `TauCeti.Vortex.integral_inner_gaugeFixedOperator`; test fields are dense in `H¹(ℂ)`. So the
+  values of every `e ∈ H¹(ℂ)⁴` solve `L_x y = L_a e` weakly
+  (`TauCeti.Vortex.integral_inner_sobolevFieldValues_gaugeFixedAdjoint`). By the
   fundamental lemma of the calculus of variations, an element of `H¹(ℂ)⁴` whose values solve
   `L_x y = f` weakly is mapped to `f`
   (`TauCeti.Vortex.sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
@@ -145,6 +147,20 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
       with z hz
     simp only [Pi.map_apply, hz, Y]
+
+/-- **The weak equation of the realization.** At a continuous field `x` with `L∞` class `a`, the
+values of every `e ∈ H¹(ℂ)⁴` are a weak solution of `L_x y = L_a e`: tested against compactly
+supported `C²` fields, `∫ ⟪e, L_x* η⟫ = ∫ ⟪L_a e, η⟫`. -/
+theorem integral_inner_sobolevFieldValues_gaugeFixedAdjoint (hx : Continuous x)
+    (hax : a =ᵐ[μ⊤] x) (e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
+    {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
+    ∫ z, ⟪sobolevFieldValues e z, gaugeFixedAdjoint x η z⟫ =
+      ∫ z, ⟪sobolevGaugeFixedOperator a e z, η z⟫ := by
+  rw [integral_inner_sobolevGaugeFixedOperator hx hax e (hη.of_le (by simp)) hηc]
+  refine integral_congr_ae ?_
+  filter_upwards [(sobolevFieldValues_ae_eq e).filter_mono
+    (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z hz
+  rw [hz]
 
 /-- **Weak solutions in `H¹` are strong.** Let `x` be a continuous field with `L∞` class `a`, and
 let `y ∈ H¹(ℂ)⁴` be such that its values solve `L_x y = f` weakly, for `f ∈ L²(ℂ; ℝ⁴)`:

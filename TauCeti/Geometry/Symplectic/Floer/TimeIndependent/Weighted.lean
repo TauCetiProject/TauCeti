@@ -167,8 +167,8 @@ private theorem isFredholm_floerWeightedSobolevOperator_and_index_eq
   have hX : Differentiable ℝ (ω.hamiltonianVectorField H) :=
     (ω.contDiff_hamiltonianVectorField (n := 1) hH).differentiable one_ne_zero
   -- The shifted Hamiltonian `H + (δ / 2) ‖·‖²` is `C²`, with `‖dX(γ(s))‖ ≤ a + |δ| < 2π`.
-  have hH' : ContDiff ℝ 2 fun x : F ↦ H x + δ / 2 * ‖x‖ ^ 2 :=
-    hH.add (contDiff_const.mul (contDiff_norm_sq ℝ))
+  have hH' : ContDiff ℝ 2 (Function.uncurry fun (_ : ℝ) (x : F) ↦ H x + δ / 2 * ‖x‖ ^ 2) :=
+    (hH.add (contDiff_const.mul (contDiff_norm_sq ℝ))).comp contDiff_snd
   have haγ' (s : ℝ) :
       ‖fderiv ℝ (ω.hamiltonianVectorField fun x ↦ H x + δ / 2 * ‖x‖ ^ 2) (γ s)‖ ≤ a + |δ| :=
     (norm_fderiv_hamiltonianVectorField_add_div_two_mul_norm_sq_le hg hH₁ (hX _) δ).trans
