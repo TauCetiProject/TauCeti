@@ -13,7 +13,7 @@ public import Mathlib.Data.PNat.Basic
 import Mathlib.Analysis.Complex.ExponentialBounds
 import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
-import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecificLimits.GeometricPNat
 
 /-!
 # Gaussian theta series with bounded coefficients
