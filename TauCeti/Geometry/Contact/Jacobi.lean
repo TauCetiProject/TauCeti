@@ -49,6 +49,8 @@ Unlike a Poisson bracket, `{1, g}_α = R_α(g)` need not vanish
 (`TauCeti.SmoothForm.IsContactForm.jacobiBracket_const_left`). The bracket can also be computed as
 the derivative of `g` along `X_f`, corrected by the Reeb derivative of `f`:
 `{f, g}_α = X_f(g) - g R_α(f)` (`TauCeti.SmoothForm.IsContactForm.jacobiBracket_eq_mvfderiv`).
+In particular the Jacobi bracket of two smooth functions is smooth
+(`TauCeti.SmoothForm.IsContactForm.contMDiff_jacobiBracket`).
 
 ## References
 
@@ -321,6 +323,17 @@ theorem jacobiBracket_eq_neg_mvfderiv (f g : M → ℝ) (x : M) :
       f x * mvfderiv I g x (α.reebVectorField x) := by
   rw [← neg_jacobiBracket, hα.jacobiBracket_eq_mvfderiv]
   ring
+
+/-- **Regularity of the Jacobi bracket.** For a contact form on a finite-dimensional manifold, the
+Jacobi bracket of two `C^(n+1)` functions is `C^n`, for `n ≤ ∞`. In particular the Jacobi bracket
+of two smooth functions is smooth. -/
+theorem contMDiff_jacobiBracket {n : WithTop ℕ∞} (hn : n ≤ ∞) (hf : ContMDiff I 𝓘(ℝ) (n + 1) f)
+    (hg : ContMDiff I 𝓘(ℝ) (n + 1) g) : ContMDiff I 𝓘(ℝ) n (α.jacobiBracket f g) := by
+  rw [funext (hα.jacobiBracket_eq_mvfderiv f g)]
+  -- `X_f(g) - g R_α(f)`, where the product of real functions is their pointwise scalar product.
+  exact ((hg.contMDiff_mvfderiv_apply le_rfl).comp
+    (hα.contMDiff_contactHamiltonianVectorField hn hf)).sub
+      ((hg.of_le le_self_add).smul (hα.contMDiff_mvfderiv_reebVectorField hn hf))
 
 /-- The Jacobi bracket with a constant `c` on the left is `c` times the Reeb derivative:
 `{c, g}_α = c R_α(g)`. In particular `{1, g}_α = R_α(g)`, so the Jacobi bracket is not a Poisson
