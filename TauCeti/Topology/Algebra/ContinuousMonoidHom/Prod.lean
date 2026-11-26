@@ -11,11 +11,12 @@ public import Mathlib.Topology.Algebra.Monoid
 /-!
 # Continuous homomorphisms out of a product
 
-Mathlib defines `ContinuousMonoidHom.coprod`, `ContinuousMonoidHom.inl`, and
-`ContinuousMonoidHom.inr`, mirroring the monoid-homomorphism API in `Mathlib.Algebra.Group.Prod`,
-but does not state the restriction, uniqueness, and composition laws for `coprod` or package the
-universal property as a multiplicative equivalence. This file supplies those lemmas and the
-isomorphism `(A →ₜ* E) × (B →ₜ* E) ≃* ((A × B) →ₜ* E)` (with additive counterparts).
+Mathlib defines `ContinuousMonoidHom.fst`, `ContinuousMonoidHom.snd`, `ContinuousMonoidHom.coprod`,
+`ContinuousMonoidHom.inl`, and `ContinuousMonoidHom.inr`, mirroring the monoid-homomorphism API in
+`Mathlib.Algebra.Group.Prod`, but does not record the underlying monoid homomorphisms of `fst`/`snd`
+or state the restriction, uniqueness, and composition laws for `coprod` or package the universal
+property as a multiplicative equivalence. This file supplies those lemmas and the isomorphism
+`(A →ₜ* E) × (B →ₜ* E) ≃* ((A × B) →ₜ* E)` (with additive counterparts).
 
 ## Main definitions
 
@@ -24,6 +25,8 @@ isomorphism `(A →ₜ* E) × (B →ₜ* E) ≃* ((A × B) →ₜ* E)` (with add
 
 ## Main results
 
+* `ContinuousMonoidHom.coe_fst` and `ContinuousMonoidHom.coe_snd`: the underlying homomorphisms
+  of the continuous projections.
 * `ContinuousMonoidHom.coprod_comp_inl`, `ContinuousMonoidHom.coprod_comp_inr`: restricting
   `f.coprod g` to either factor recovers `f` and `g`.
 * `ContinuousMonoidHom.coprod_unique`: a continuous homomorphism out of `A × B` is uniquely
@@ -34,6 +37,24 @@ isomorphism `(A →ₜ* E) × (B →ₜ* E) ≃* ((A × B) →ₜ* E)` (with add
 public section
 
 namespace ContinuousMonoidHom
+
+section Projections
+
+variable (A B : Type*) [Monoid A] [Monoid B] [TopologicalSpace A] [TopologicalSpace B]
+
+/-- The underlying homomorphism of the continuous first projection is `MonoidHom.fst`. -/
+@[to_additive (attr := simp) /-- The underlying additive homomorphism of the continuous first
+projection is `AddMonoidHom.fst`. -/]
+theorem coe_fst : (fst A B : A × B →* A) = MonoidHom.fst A B :=
+  rfl
+
+/-- The underlying homomorphism of the continuous second projection is `MonoidHom.snd`. -/
+@[to_additive (attr := simp) /-- The underlying additive homomorphism of the continuous second
+projection is `AddMonoidHom.snd`. -/]
+theorem coe_snd : (snd A B : A × B →* B) = MonoidHom.snd A B :=
+  rfl
+
+end Projections
 
 section CommMonoid
 

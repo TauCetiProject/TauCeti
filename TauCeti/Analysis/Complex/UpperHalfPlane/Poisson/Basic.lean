@@ -283,6 +283,43 @@ theorem upperHalfPlanePoissonKernel_le {z : ℂ} (hz : 0 ≤ z.im) (x : ℝ) :
     _ ≤ 2 * (1 + a ^ 2) * π * (max b b⁻¹ * (t + b ^ 2)) := by gcongr
     _ = 2 * (1 + a ^ 2) * max b b⁻¹ * (π * (t + b ^ 2)) := by ring
 
+/-- **The far part of the Poisson kernel.** If `|Re z - x| ≤ δ / 2` and `|s - x| > δ`, then
+`P(z, s) ≤ K Im z / (1 + s ^ 2)` with `K = 4 (2 + (1 + 2 x ^ 2) / δ ^ 2) / π`. -/
+theorem upperHalfPlanePoissonKernel_le_of_lt_abs_sub {z : ℂ} {x s δ : ℝ} (hz : 0 ≤ z.im)
+    (hδ : 0 < δ) (hzx : |z.re - x| ≤ δ / 2) (hs : δ < |s - x|) :
+    upperHalfPlanePoissonKernel z s ≤
+      z.im * (4 * (2 + (1 + 2 * x ^ 2) / δ ^ 2) / π) * (1 + s ^ 2)⁻¹ := by
+  set M := 2 + (1 + 2 * x ^ 2) / δ ^ 2
+  have hd : |s - x| / 2 ≤ |s - z.re| := by
+    have := abs_sub_le s z.re x
+    linarith
+  have hd2 : (s - x) ^ 2 / 4 ≤ (s - z.re) ^ 2 := by
+    have := pow_le_pow_left₀ (by positivity) hd 2
+    rwa [div_pow, sq_abs, sq_abs, show (2 : ℝ) ^ 2 = 4 by norm_num] at this
+  have hδ2 : δ ^ 2 < (s - x) ^ 2 := by
+    simpa [sq_abs] using pow_lt_pow_left₀ hs hδ.le two_ne_zero
+  have hx2 : 1 + 2 * x ^ 2 ≤ (1 + 2 * x ^ 2) / δ ^ 2 * (s - x) ^ 2 := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ (by positivity)]
+    exact mul_le_mul_of_nonneg_left hδ2.le (by positivity)
+  have key : 1 + s ^ 2 ≤ 4 * M * ((s - z.re) ^ 2 + z.im ^ 2) := by
+    have hs2 : s ^ 2 ≤ 2 * (s - x) ^ 2 + 2 * x ^ 2 := by nlinarith [sq_nonneg (s - 2 * x)]
+    have hM : 0 ≤ M := by positivity
+    calc 1 + s ^ 2 ≤ M * (s - x) ^ 2 := by simp only [M]; nlinarith
+      _ ≤ M * (4 * (s - z.re) ^ 2) := by gcongr; linarith
+      _ ≤ 4 * M * ((s - z.re) ^ 2 + z.im ^ 2) := by nlinarith [sq_nonneg z.im]
+  have hM0 : 0 < M := by positivity
+  have hden : 0 < (s - z.re) ^ 2 + z.im ^ 2 := by
+    have : 0 < (s - z.re) ^ 2 := by rw [← sq_abs]; exact pow_pos (by linarith) 2
+    linarith [sq_nonneg z.im]
+  rw [upperHalfPlanePoissonKernel_eq, Complex.normSq_ofReal_sub,
+    div_le_iff₀ (mul_pos Real.pi_pos hden)]
+  calc z.im = z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * (1 + s ^ 2) / (4 * M)) := by
+        field_simp
+    _ ≤ z.im * (4 * M / π) * (1 + s ^ 2)⁻¹ * (π * ((s - z.re) ^ 2 + z.im ^ 2)) := by
+        gcongr
+        rw [div_le_iff₀ (by positivity)]
+        nlinarith [Real.pi_pos]
+
 /-- The imaginary part of the Schwarz kernel `TauCeti.subtractedResolventKernel` is `π P(z, x)`. -/
 theorem subtractedResolventKernel_im_eq_pi_mul_upperHalfPlanePoissonKernel (z : ℂ) (x : ℝ) :
     (subtractedResolventKernel z x).im = π * upperHalfPlanePoissonKernel z x := by
@@ -372,6 +409,41 @@ theorem setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure (f : ℝ 
     linarith
   calc f s = ENNReal.ofReal 1 * f s := by simp
     _ ≤ _ := by gcongr
+
+/-- A function integrable for the Poisson measure is locally integrable on `ℝ`. -/
+theorem locallyIntegrable_of_integrable_upperHalfPlanePoissonMeasure {E : Type*}
+    [NormedAddCommGroup E] {h : ℝ → E} (hh : Integrable h upperHalfPlanePoissonMeasure) :
+    LocallyIntegrable h := by
+  refine locallyIntegrable_iff.2 fun k hk => ?_
+  obtain ⟨R, hR⟩ := hk.isBounded.subset_closedBall 0
+  rw [Real.closedBall_eq_Icc, zero_sub, zero_add] at hR
+  refine IntegrableOn.mono_set ⟨(aestronglyMeasurable_of_integrable_upperHalfPlanePoissonMeasure
+    hh).restrict, ?_⟩ hR
+  exact (setLIntegral_Icc_le_mul_lintegral_upperHalfPlanePoissonMeasure _ R).trans_lt
+    (ENNReal.mul_lt_top ENNReal.ofReal_lt_top hh.2)
+
+/-- **The far part of a Poisson integral.** If `P(z, s) ≤ c / (1 + s ^ 2)` for every `s ∉ S`, the
+integral of `f` against the Poisson kernel `P(z, ·)` off `S` is at most `c ∫ f dΠ`. -/
+theorem lintegral_indicator_compl_mul_upperHalfPlanePoissonKernel_le {f : ℝ → ℝ≥0∞}
+    (hf : AEMeasurable f) {z : ℂ} {S : Set ℝ} {c : ℝ}
+    (hc : ∀ s ∉ S, upperHalfPlanePoissonKernel z s ≤ c * (1 + s ^ 2)⁻¹) :
+    ∫⁻ s, Sᶜ.indicator f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) ≤
+      ENNReal.ofReal c * ∫⁻ s, f s ∂upperHalfPlanePoissonMeasure := by
+  rw [upperHalfPlanePoissonMeasure_eq_withDensity,
+    lintegral_withDensity_eq_lintegral_mul₀ (by fun_prop) hf, ← lintegral_const_mul' _ _
+      ENNReal.ofReal_ne_top]
+  refine lintegral_mono fun s => ?_
+  by_cases hs : s ∈ S
+  · simp [hs]
+  rw [Set.indicator_of_mem (Set.mem_compl hs)]
+  simp only [Pi.mul_apply]
+  calc f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s)
+      ≤ f s * ENNReal.ofReal (c * (1 + s ^ 2)⁻¹) := by
+        gcongr
+        exact hc s hs
+    _ = ENNReal.ofReal c * (ENNReal.ofReal (1 + s ^ 2)⁻¹ * f s) := by
+        rw [ENNReal.ofReal_mul' (by positivity)]
+        ring
 
 /-- A measure `ν` on `ℝ` is **Poisson-finite** when `∫ dν / (1 + x ^ 2) < ∞`, that is when
 `x ↦ 1 / (1 + x ^ 2)` is `ν`-integrable. -/
@@ -580,6 +652,15 @@ theorem upperHalfPlanePoissonLIntegral_def (ν : Measure ℝ) (z : ℂ) :
     upperHalfPlanePoissonLIntegral ν z =
       ∫⁻ x, ENNReal.ofReal (upperHalfPlanePoissonKernel z x) ∂ν := by
   rw [upperHalfPlanePoissonLIntegral]
+
+/-- The extended Poisson integral of `f dx` is the integral of `f` against the Poisson kernel. -/
+theorem upperHalfPlanePoissonLIntegral_withDensity {f : ℝ → ℝ≥0∞} (hf : AEMeasurable f)
+    (z : ℂ) :
+    upperHalfPlanePoissonLIntegral (volume.withDensity f) z =
+      ∫⁻ s, f s * ENNReal.ofReal (upperHalfPlanePoissonKernel z s) := by
+  rw [upperHalfPlanePoissonLIntegral_def, lintegral_withDensity_eq_lintegral_mul₀ hf
+    (measurable_upperHalfPlanePoissonKernel z).ennreal_ofReal.aemeasurable]
+  simp only [Pi.mul_apply]
 
 /-- On the upper half-plane, the extended Poisson integral of `ν` is infinite exactly when `ν` is
 not Poisson-finite. -/

@@ -59,7 +59,7 @@ theorem IsBorelOverAlgClosed.of_comapOfSurjective (f : H ⟶ K)
   rw [isBorelOverAlgClosed_iff] at hJ ⊢
   refine ⟨hJ.1, (isBorelCandidate_comapOfSurjective_iff f hf J).mp hJ.2.prop, ?_⟩
   intro I hI hIJ
-  apply le_of_comapOfSurjective_le_comapOfSurjective _ hf
+  apply (comapOfSurjective_le_comapOfSurjective_iff _ hf).mp
   exact hJ.2.le_of_le ((isBorelCandidate_comapOfSurjective_iff f hf I).mpr hI)
     (comapOfSurjective_mono _ hf hIJ)
 
