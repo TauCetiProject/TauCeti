@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.DerivedCategory.HomologySequence
 public import Mathlib.Algebra.Homology.DerivedCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
+import TauCeti.Algebra.Homology.LinearHomComplex.Homotopy
 
 /-!
 # The linear Hom complex into a K-injective complex
@@ -15,7 +16,10 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 If `I` is a K-injective cochain complex, then the linear Hom complex `Hom^•(-, I)` sends
 quasi-isomorphisms to quasi-isomorphisms (`TauCeti.quasiIso_linearHomComplexPrecomp`): in degree
 `n` its cohomology is the group of morphisms `K ⟶ I⟦n⟧` in the homotopy category, which are the
-morphisms `K ⟶ I⟦n⟧` in the derived category since `I⟦n⟧` is K-injective.
+morphisms `K ⟶ I⟦n⟧` in the derived category since `I⟦n⟧` is K-injective. Dually, postcomposition
+with a quasi-isomorphism between K-injective complexes induces a homotopy equivalence (hence a
+quasi-isomorphism) `Hom^•(K, I) ⟶ Hom^•(K, I')` out of any complex `K`
+(`TauCeti.quasiIso_linearHomComplexPostcomp`).
 -/
 
 public section
@@ -65,5 +69,14 @@ theorem quasiIso_linearHomComplexPrecomp {K' K : CochainComplex C ℤ} (s : K' �
   rw [h]
   exact (linearHomComplexHomologyLinearEquiv R K' I n).symm.bijective.comp
     (hpre.comp (linearHomComplexHomologyLinearEquiv R K I n).bijective)
+
+/-- Postcomposition with a quasi-isomorphism `g : I ⟶ I'` between K-injective complexes induces a
+quasi-isomorphism `Hom^•(K, I) ⟶ Hom^•(K, I')` of linear Hom complexes from any complex `K`. -/
+theorem quasiIso_linearHomComplexPostcomp (K : CochainComplex C ℤ)
+    {I I' : CochainComplex C ℤ} (g : I ⟶ I') [QuasiIso g] [I.IsKInjective] [I'.IsKInjective] :
+    QuasiIso (linearHomComplexPostcomp R K g) := by
+  obtain ⟨e, rfl⟩ := (CochainComplex.IsKInjective.quasiIso_iff g).mp inferInstance
+  rw [← linearHomComplexPostcompHomotopyEquiv_hom]
+  exact (linearHomComplexPostcompHomotopyEquiv R K e).quasiIso_hom
 
 end TauCeti

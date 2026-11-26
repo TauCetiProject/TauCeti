@@ -9,6 +9,11 @@ public import Mathlib.Algebra.Homology.Double
 public import Mathlib.Algebra.Homology.HomotopyCategory.DegreewiseSplit
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
+import Mathlib.CategoryTheory.Adjunction.Additive
+import Mathlib.CategoryTheory.Adjunction.Limits
+import TauCeti.Algebra.Homology.Adjunction
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # K-injective cochain complexes: closure properties and Hom-complex criteria
@@ -16,18 +21,25 @@ public import TauCeti.Algebra.Homology.LinearHomComplex.Cohomology
 A cochain complex `L` in an abelian category is K-injective (Mathlib's
 `CochainComplex.IsKInjective`) if every morphism from an acyclic complex to `L` is null-homotopic.
 This file proves that contractible complexes are K-injective
-(`CochainComplex.isKInjective_of_homotopy_id_zero`), and two closure properties of this class:
+(`CochainComplex.isKInjective_of_homotopy_id_zero`), along with closure and characterization
+properties of this class:
 
 * a product of K-injective complexes is K-injective (`CochainComplex.isKInjective_of_isLimit_fan`);
 * in a degreewise split short exact sequence `0 → X₁ → X₂ → X₃ → 0` of cochain complexes with
   `X₂` and `X₃` K-injective, the complex `X₁` is K-injective
-  (`CochainComplex.isKInjective_X₁_of_degreewiseSplit`).
+  (`CochainComplex.isKInjective_X₁_of_degreewiseSplit`);
+* a complex is both K-injective and acyclic if and only if it is contractible
+  (`CochainComplex.isKInjective_and_acyclic_iff_nonempty_homotopy_id_zero`);
+* the right adjoint of a homology-preserving functor between abelian categories sends K-injective
+  complexes to K-injective complexes
+  (`CategoryTheory.Adjunction.isKInjective_mapHomologicalComplex_obj`).
 
-The second statement holds because K-injective complexes form the right orthogonal of the acyclic
-complexes in the homotopy category, a triangulated subcategory, and a degreewise split short exact
-sequence gives a distinguished triangle there. Together these properties show that the limit of a
-tower of K-injective complexes with degreewise split surjective transitions is K-injective, which
-is the step of Spaltenstein's construction of K-injective replacements of unbounded complexes.
+The degreewise-split property holds because K-injective complexes form the right orthogonal of the
+acyclic complexes in the homotopy category, a triangulated subcategory, and a degreewise split
+short exact sequence gives a distinguished triangle there. Together with closure under products it
+shows that the limit of a tower of K-injective complexes with degreewise split surjective
+transitions is K-injective, which is the step of Spaltenstein's construction of K-injective
+replacements of unbounded complexes.
 
 K-injectivity is also equivalent to acyclicity of the Hom complex from every acyclic complex,
 for both the additive and linear Hom complexes. This identifies Mathlib's null-homotopy
@@ -40,6 +52,7 @@ coboundary criterion for K-injective targets.
 
 * N. Spaltenstein, *Resolutions of unbounded complexes*, Compositio Math. 65 (1988), 121–154,
   Definition 1.1.
+* J. Lurie, *Higher Algebra*, Proposition 1.3.5.6.
 * Stacks Project, *Derived Categories*, the section on K-injective complexes.
 * Joël Riou's `CochainComplex.IsKInjective`, `IsKInjective.eq_δ_of_cocycle`, and
   `HomComplex.homologyAddEquiv` in Mathlib.
@@ -102,7 +115,41 @@ theorem isKInjective_X₁_of_degreewiseSplit (S : ShortComplex (CochainComplex C
     (trianglehOfDegreewiseSplit_distinguished S σ) (IsKInjective.rightOrthogonal S.X₂)
     (IsKInjective.rightOrthogonal S.X₃)
 
+/-- A cochain complex is both K-injective and acyclic if and only if its identity map is
+null-homotopic. -/
+theorem isKInjective_and_acyclic_iff_nonempty_homotopy_id_zero (L : CochainComplex C ℤ) :
+    L.IsKInjective ∧ L.Acyclic ↔ Nonempty (Homotopy (𝟙 L) 0) :=
+  ⟨fun ⟨_, hL⟩ ↦ IsKInjective.nonempty_homotopy_zero (𝟙 L) hL,
+    fun ⟨h⟩ ↦ ⟨isKInjective_of_homotopy_id_zero h, h.acyclic⟩⟩
+
 end CochainComplex
+
+namespace CategoryTheory.Adjunction
+
+variable {C D : Type*} [Category* C] [Category* D] [Abelian C] [Abelian D]
+  {F : C ⥤ D} {G : D ⥤ C} [F.PreservesZeroMorphisms] [G.PreservesZeroMorphisms]
+
+/-- **Right adjoints of homology-preserving functors preserve K-injectivity.** If `adj : F ⊣ G` is
+an adjunction between abelian categories whose left adjoint `F` preserves homology (for instance, if
+`F` preserves finite limits), then applying `G` degreewise sends K-injective cochain complexes to
+K-injective cochain complexes. -/
+theorem isKInjective_mapHomologicalComplex_obj (adj : F ⊣ G) [F.PreservesHomology]
+    (L : CochainComplex D ℤ) [L.IsKInjective] :
+    CochainComplex.IsKInjective ((G.mapHomologicalComplex (.up ℤ)).obj L) where
+  nonempty_homotopy_zero {K} f hK := by
+    have := adj.rightAdjoint_preservesLimits.{0, 0}
+    have : G.Additive := G.additive_of_preserves_binary_products
+    have : F.Additive := adj.left_adjoint_additive
+    let adj' := adj.mapHomologicalComplex (.up ℤ)
+    have hFK : ((F.mapHomologicalComplex (.up ℤ)).obj K).Acyclic :=
+      F.acyclic_mapHomologicalComplex_obj (.up ℤ) hK
+    let h' := CochainComplex.IsKInjective.homotopyZero ((adj'.homEquiv K L).symm f) hFK
+    refine ⟨(Homotopy.ofEq ?_).trans
+      (((G.mapHomotopy h').compLeft (adj'.unit.app K)).trans (Homotopy.ofEq ?_))⟩
+    · exact ((adj'.homEquiv K L).right_inv f).symm.trans (Adjunction.homEquiv_unit adj' K L _)
+    · rw [(G.mapHomologicalComplex (.up ℤ)).map_zero, Limits.comp_zero]
+
+end CategoryTheory.Adjunction
 
 open CategoryTheory Limits CochainComplex CochainComplex.HomComplex
 

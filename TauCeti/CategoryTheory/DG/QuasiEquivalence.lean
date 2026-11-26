@@ -289,6 +289,55 @@ theorem isQuasiEquivalence_inclusion_iff :
     obtain ⟨X, hX, e⟩ := h Y
     exact ⟨⟨X, hX⟩, by simpa only [inclusion_obj] using e⟩
 
+/-- The inclusion between nested full DG subcategories is quasi-fully faithful. -/
+@[simp]
+theorem isQuasiFullyFaithful_inclusionOfLE {Q : C → Prop} (h : ∀ X, P X → Q X) :
+    EnrichedFunctor.IsQuasiFullyFaithful (inclusionOfLE R h) := by
+  intro X Y
+  rw [inclusionOfLE_map]
+  infer_instance
+
+/-- On homotopy categories, `inclusionOfLE` sends the class of a closed degree-zero morphism to
+the class of the same morphism in the larger full DG subcategory. -/
+theorem mapDGHomotopyCategory_inclusionOfLE_map_homOf {Q : C → Prop} (h : ∀ X, P X → Q X)
+    {X Y : DGFullSubcategory P} (f : DGHom R 0 X Y) (hf : f ∈ dgCycles R X Y) :
+    (inclusionOfLE R h).mapDGHomotopyCategory.map (DGHomotopyCategory.homOf R f hf) =
+      eqToHom (by simp) ≫
+        DGHomotopyCategory.homOf R
+          (X := ⟨X.obj, h X.obj X.property⟩) (Y := ⟨Y.obj, h Y.obj Y.property⟩)
+          f (mem_dgCycles_iff.2 ((mem_dgCycles_iff (X := X) (Y := Y)).1 hf)) ≫
+          eqToHom (by simp) := by
+  refine (EnrichedFunctor.mapDGHomotopyCategory_map_homOf _ f hf).trans
+    ((conj_eqToHom_iff_heq' _ _ _ _).2 ?_)
+  have key : ∀ (X' Y' : DGFullSubcategory Q)
+      (hX : X' = ⟨X.obj, h X.obj X.property⟩) (hY : Y' = ⟨Y.obj, h Y.obj Y.property⟩)
+      (φ : dgHomComplex R X Y ⟶ dgHomComplex R X' Y'), φ = eqToHom (by rw [hX, hY]; rfl) →
+        ∀ hφ, DGHomotopyCategory.homOf R ((φ.f 0).hom f) hφ ≍
+          DGHomotopyCategory.homOf R
+            (X := ⟨X.obj, h X.obj X.property⟩) (Y := ⟨Y.obj, h Y.obj Y.property⟩)
+            f (mem_dgCycles_iff.2 ((mem_dgCycles_iff (X := X) (Y := Y)).1 hf)) := by
+    rintro X' Y' rfl rfl φ rfl hφ
+    simp
+  simp only [EnrichedFunctor.dgMap_apply]
+  exact key _ _ (inclusionOfLE_obj R h X) (inclusionOfLE_obj R h Y) _ (inclusionOfLE_map R h X Y) _
+
+/-- The inclusion `DGFullSubcategory P ⥤ DGFullSubcategory Q` is a quasi-equivalence if and only if
+every object satisfying `Q` is isomorphic in `H⁰(DGFullSubcategory Q)` to one satisfying `P`. -/
+@[simp]
+theorem isQuasiEquivalence_inclusionOfLE_iff {Q : C → Prop} (h : ∀ X, P X → Q X) :
+    EnrichedFunctor.IsQuasiEquivalence (inclusionOfLE R h) ↔
+      ∀ Y : DGFullSubcategory Q, ∃ X : C, ∃ hX : P X,
+        Nonempty (DGHomotopyCategory.of R (⟨X, h X hX⟩ : DGFullSubcategory Q) ≅
+          DGHomotopyCategory.of R Y) := by
+  constructor
+  · intro hF Y
+    obtain ⟨X, hX⟩ := hF.2 Y
+    exact ⟨X.obj, X.property, by simpa only [inclusionOfLE_obj] using hX⟩
+  · intro hF
+    refine ⟨isQuasiFullyFaithful_inclusionOfLE h, fun Y ↦ ?_⟩
+    obtain ⟨X, hX, e⟩ := hF Y
+    exact ⟨⟨X, hX⟩, by simpa only [inclusionOfLE_obj] using e⟩
+
 end DGFullSubcategory
 
 end TauCeti

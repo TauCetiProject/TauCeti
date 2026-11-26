@@ -8,22 +8,26 @@ module
 public import Mathlib.Algebra.Homology.Factorizations.Basic
 public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import TauCeti.CategoryTheory.Abelian.EpiWithInjectiveKernel
-import Mathlib.Algebra.Homology.HomologySequenceLemmas
+import Mathlib.CategoryTheory.Preadditive.Injective.LiftingProperties
 import Mathlib.Algebra.Homology.ModelCategory.Lifting
 import TauCeti.Algebra.Homology.Disk
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+import TauCeti.Algebra.Homology.HomologySequenceLemmas
+import TauCeti.Algebra.Homology.Homotopy
+import TauCeti.Algebra.Homology.HomotopyCategory.KInjective
 import TauCeti.Algebra.Homology.HomotopyCofiber
 import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Kernel
 
 /-!
-# Lifting against monomorphic quasi-isomorphisms of unbounded complexes
+# Lifting against monomorphisms and monomorphic quasi-isomorphisms of unbounded complexes
 
 Let `C` be an abelian category. For a Grothendieck abelian category, the injective model
 structure on unbounded cochain complexes in `C` has the monomorphisms as cofibrations, the
 quasi-isomorphisms as weak equivalences, and as fibrations the morphisms with the right lifting
-property with respect to the monomorphic quasi-isomorphisms. This file identifies that lifting
-property without assuming a model structure, so that its fibrations and fibrant objects can be
-recognized and used once a model structure or a factorization is available.
+property with respect to the monomorphic quasi-isomorphisms. This file identifies both right
+lifting properties — against monomorphic quasi-isomorphisms and against all monomorphisms — without
+assuming a model structure, so that fibrations, fibrant objects, trivial fibrations, and injective
+complexes can be recognized directly.
 
 ## Main results
 
@@ -36,17 +40,28 @@ recognized and used once a model structure or a factorization is available.
 * `CochainComplex.rlp_monomorphisms_inf_quasiIso_iff_of_isZero`: the morphism from a complex `I`
   to a zero complex has this lifting property if and only if `I` is a K-injective complex of
   injective objects. No boundedness is assumed.
+* `CochainComplex.rlp_monomorphisms_iff_rlp_monomorphisms_inf_quasiIso_and_quasiIso` and
+  `CochainComplex.rlp_monomorphisms_iff`: a morphism has the right lifting property with respect
+  to all monomorphisms if and only if it is both a fibration in the above sense and a
+  quasi-isomorphism, equivalently degreewise an epimorphism with injective kernel whose kernel is
+  K-injective and acyclic.
+* `CochainComplex.injective_iff_isKInjective_and_acyclic` and
+  `CochainComplex.injective_iff_nonempty_homotopy_id_zero`: an unbounded cochain complex is an
+  injective object of `CochainComplex C ℤ` if and only if its terms are injective and it is both
+  K-injective and acyclic (equivalently, contractible).
 
 ## Implementation notes
 
 The lifting criterion `CochainComplex.hasLiftingProperty_of_forall_eq_δ` corrects degreewise
 liftings by a coboundary, using Joël Riou's obstruction cocycle `CochainComplex.Lifting.cocycle₁`
-and `CochainComplex.Lifting.hasLift`. Applied to a K-injective kernel, it gives
-`CochainComplex.hasLiftingProperty_of_quasiIso`, the unbounded form of the lifting lemma for the
-model structure on bounded below complexes in `Mathlib.Algebra.Homology.ModelCategory.Injective`.
-Conversely, the terms are tested against the acyclic complexes `M --𝟙--> M` in two consecutive
-degrees, which corepresent evaluation in a degree, and K-injectivity is tested against the
-inclusion of an acyclic complex into the mapping cone of its identity.
+and `CochainComplex.Lifting.hasLift`. Applied to a K-injective kernel, it gives both
+`CochainComplex.hasLiftingProperty_of_quasiIso` (when the left map is a quasi-isomorphism) and
+`CochainComplex.hasLiftingProperty_of_acyclic_kernel` (when the kernel of the right map is
+acyclic), the unbounded forms of the lifting lemma for the model structure on bounded below
+complexes in `Mathlib.Algebra.Homology.ModelCategory.Injective`. Conversely, the terms are tested
+against the acyclic complexes `M --𝟙--> M` in two consecutive degrees, which corepresent evaluation
+in a degree, and K-injectivity and contractibility are tested against the inclusion into the
+mapping cone of the identity.
 
 ## References
 
@@ -193,5 +208,92 @@ theorem rlp_monomorphisms_inf_quasiIso_iff_of_isZero {I Z : CochainComplex C ℤ
   rw [epiWithInjectiveKernel_iff_rlp_monomorphisms,
     ← injective_iff_rlp_monomorphisms_of_isZero _ (hZ' n)]
   exact hI n
+
+/-- A morphism of cochain complexes which is degreewise an epimorphism with an injective kernel,
+and whose kernel is both K-injective and acyclic, has the right lifting property with respect to
+every monomorphism. -/
+theorem hasLiftingProperty_of_acyclic_kernel {A B X Y : CochainComplex C ℤ} (i : A ⟶ B)
+    (p : X ⟶ Y) [Mono i] (hp : degreewiseEpiWithInjectiveKernel p) [(kernel p).IsKInjective]
+    (hker : (kernel p).Acyclic) : HasLiftingProperty i p :=
+  hasLiftingProperty_of_forall_eq_δ i p hp (hι := kernel.condition p) (kernelIsKernel p)
+    fun z ↦ IsKInjective.eq_δ_of_cocycle' z hker 0 (by simp)
+
+/-- A quasi-isomorphism of cochain complexes which is degreewise an epimorphism with an injective
+kernel, and whose kernel is K-injective, has the right lifting property with respect to every
+monomorphism. -/
+theorem hasLiftingProperty_of_quasiIso_right {A B X Y : CochainComplex C ℤ} (i : A ⟶ B)
+    (p : X ⟶ Y) [Mono i] [QuasiIso p] (hp : degreewiseEpiWithInjectiveKernel p)
+    [(kernel p).IsKInjective] : HasLiftingProperty i p := by
+  have := hp.epi
+  exact hasLiftingProperty_of_acyclic_kernel i p hp
+    ((TauCeti.kernelSequence_shortExact p).quasiIso_g_iff.1 ‹_›)
+
+/-- If the morphism from a cochain complex `I` to a zero complex has the right lifting property
+with respect to all monomorphisms, then `I` is contractible. -/
+theorem nonempty_homotopy_id_zero_of_rlp_monomorphisms {I Z : CochainComplex C ℤ} {p : I ⟶ Z}
+    (hZ : IsZero Z) (hp : (monomorphisms _).rlp p) :
+    Nonempty (Homotopy (𝟙 I) 0) := by
+  have := hp (HomologicalComplex.homotopyCofiber.inr (𝟙 I)) (inferInstanceAs (Mono _))
+  exact nonempty_homotopy_zero_of_hasLiftingProperty (𝟙 I) (p := p) hZ
+
+/-- **Trivial fibrations of the injective model structure.** A morphism of cochain complexes has
+the right lifting property with respect to all monomorphisms if and only if it has the right
+lifting property with respect to all monomorphic quasi-isomorphisms and is itself a
+quasi-isomorphism. -/
+theorem rlp_monomorphisms_iff_rlp_monomorphisms_inf_quasiIso_and_quasiIso
+    {X Y : CochainComplex C ℤ} (p : X ⟶ Y) :
+    (monomorphisms _).rlp p ↔
+      (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp p ∧ QuasiIso p := by
+  refine ⟨fun hp ↦ ?_, ?_⟩
+  · have hp' : (monomorphisms _ ⊓ HomologicalComplex.quasiIso C (.up ℤ)).rlp p :=
+      antitone_rlp inf_le_left _ hp
+    have := ((rlp_monomorphisms_inf_quasiIso_iff p).1 hp').1.epi
+    obtain ⟨h0⟩ := nonempty_homotopy_id_zero_of_rlp_monomorphisms (isZero_zero _)
+      (IsStableUnderBaseChange.of_isPullback (IsPullback.kernel_ι p) hp)
+    exact ⟨hp', (TauCeti.kernelSequence_shortExact p).quasiIso_g_iff.2 h0.acyclic⟩
+  · rintro ⟨hp, _⟩ A B i (_ : Mono i)
+    obtain ⟨hp', _⟩ := (rlp_monomorphisms_inf_quasiIso_iff p).1 hp
+    exact hasLiftingProperty_of_quasiIso_right i p hp'
+
+/-- A morphism of cochain complexes has the right lifting property with respect to all
+monomorphisms if and only if it is degreewise an epimorphism with an injective kernel and its
+kernel is both K-injective and acyclic. -/
+theorem rlp_monomorphisms_iff {X Y : CochainComplex C ℤ} (p : X ⟶ Y) :
+    (monomorphisms _).rlp p ↔
+      degreewiseEpiWithInjectiveKernel p ∧ (kernel p).IsKInjective ∧ (kernel p).Acyclic := by
+  rw [rlp_monomorphisms_iff_rlp_monomorphisms_inf_quasiIso_and_quasiIso,
+    rlp_monomorphisms_inf_quasiIso_iff]
+  refine ⟨fun ⟨⟨hp, hK⟩, hq⟩ ↦ ?_, fun ⟨hp, hK, hA⟩ ↦ ?_⟩
+  · have := hp.epi
+    exact ⟨hp, hK, (TauCeti.kernelSequence_shortExact p).quasiIso_g_iff.1 hq⟩
+  · have := hp.epi
+    exact ⟨⟨hp, hK⟩, (TauCeti.kernelSequence_shortExact p).quasiIso_g_iff.2 hA⟩
+
+/-- The morphism from a cochain complex `I` to a zero complex has the right lifting property with
+respect to all monomorphisms if and only if `I` is an acyclic K-injective complex of injective
+objects. -/
+theorem rlp_monomorphisms_iff_of_isZero {I Z : CochainComplex C ℤ} (p : I ⟶ Z) (hZ : IsZero Z) :
+    (monomorphisms _).rlp p ↔ (∀ n, Injective (I.X n)) ∧ I.IsKInjective ∧ I.Acyclic := by
+  rw [rlp_monomorphisms_iff_rlp_monomorphisms_inf_quasiIso_and_quasiIso,
+    rlp_monomorphisms_inf_quasiIso_iff_of_isZero p hZ]
+  obtain rfl := hZ.eq_of_tgt p 0
+  refine ⟨fun ⟨⟨hI, hK⟩, _⟩ ↦ ⟨hI, hK, ?_⟩, fun ⟨hI, hK, hA⟩ ↦ ⟨⟨hI, hK⟩, ?_⟩⟩
+  · exact fun n ↦ (exactAt_iff_of_quasiIsoAt (0 : I ⟶ Z) n).2 (Z.acyclic_of_isZero hZ n)
+  · exact HomologicalComplex.quasiIso_of_acyclic (0 : I ⟶ Z) hA (Z.acyclic_of_isZero hZ)
+
+/-- An unbounded cochain complex in an abelian category is an injective object of
+`CochainComplex C ℤ` if and only if its terms are injective and it is both K-injective and
+acyclic. -/
+theorem injective_iff_isKInjective_and_acyclic (I : CochainComplex C ℤ) :
+    Injective I ↔ (∀ n, Injective (I.X n)) ∧ I.IsKInjective ∧ I.Acyclic := by
+  rw [injective_iff_rlp_monomorphisms_zero, rlp_monomorphisms_iff_of_isZero _ (isZero_zero _)]
+
+/-- An unbounded cochain complex in an abelian category is an injective object of
+`CochainComplex C ℤ` if and only if its terms are injective and its identity map is
+null-homotopic. -/
+theorem injective_iff_nonempty_homotopy_id_zero (I : CochainComplex C ℤ) :
+    Injective I ↔ (∀ n, Injective (I.X n)) ∧ Nonempty (Homotopy (𝟙 I) 0) := by
+  rw [injective_iff_isKInjective_and_acyclic,
+    isKInjective_and_acyclic_iff_nonempty_homotopy_id_zero]
 
 end CochainComplex

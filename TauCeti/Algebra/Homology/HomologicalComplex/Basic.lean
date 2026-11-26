@@ -63,9 +63,11 @@ isomorphism in the degrees around `j` identifies exactness at `j` of its source 
 (`HomologicalComplex.exactAt_iff_of_isIso_f`).
 Homology of complexes commutes with an additive functor preserving homology
 (`CategoryTheory.Functor.mapHomologicalComplexCompHomologyFunctorIso`), the complex-level form of
-Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`, and exactness of a mapped complex in
+Mathlib's `CategoryTheory.ShortComplex.homologyFunctorIso`: exactness of a mapped complex in
 degree `i` reduces to exactness of the mapped short complex `(K.sc i).map F`
-(`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`).
+(`CategoryTheory.Functor.mapHomologicalComplex_obj_exactAt_iff`), and a homology-preserving
+functor carries acyclic complexes to acyclic complexes
+(`CategoryTheory.Functor.acyclic_mapHomologicalComplex_obj`).
 Every morphism between acyclic complexes is a quasi-isomorphism
 (`HomologicalComplex.quasiIso_of_acyclic`).
 -/
@@ -549,5 +551,13 @@ lemma mapHomologicalComplexCompHomologyFunctorIso_hom_app (K : HomologicalComple
     (F.mapHomologicalComplexCompHomologyFunctorIso c i).hom.app K =
       ((K.sc i).mapHomologyIso F).hom :=
   (rfl)
+
+omit i in
+/-- An additive functor preserving homology sends acyclic complexes to acyclic complexes. -/
+lemma acyclic_mapHomologicalComplex_obj {K : HomologicalComplex C c} (hK : K.Acyclic) :
+    ((F.mapHomologicalComplex c).obj K).Acyclic := fun j ↦ by
+  rw [HomologicalComplex.exactAt_iff_isZero_homology]
+  exact (F.map_isZero ((K.exactAt_iff_isZero_homology j).mp (hK j))).of_iso
+    ((F.mapHomologicalComplexCompHomologyFunctorIso c j).app K)
 
 end CategoryTheory.Functor
