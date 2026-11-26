@@ -92,14 +92,13 @@ theorem completedGenericIntegersDerivationLift_toCompletedGenericIntegers
   have := isAdicComplete_completedGenericIntegers π
   refine IsHausdorff.haus' (I := Ideal.span {algebraMap A C π}) _ fun n ↦ ?_
   -- write `z = a + ϖ ^ n * y` with `a ∈ A`
-  obtain ⟨a, ha⟩ := Dagger.weakCompletion.exists_sub_mem_span_pow ϖ z n
-  obtain ⟨y, rfl⟩ : ∃ y, z = Dagger.weakCompletion.of ϖ A a + ϖ ^ n • y := by
-    rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton'] at ha
-    obtain ⟨y, hy⟩ := ha
-    exact ⟨y, by rw [Algebra.smul_def, map_pow, mul_comm, hy, add_sub_cancel]⟩
+  obtain ⟨a, y, rfl⟩ := Dagger.weakCompletion.exists_eq_of_add_pow_mul ϖ z n
   -- `Δ` is `O`-linear and vanishes on `A`, so `Δ z = ϖ ^ n • Δ y`
-  rw [map_add, hΔ, zero_add, map_smul, SModEq.zero, ← algebraMap_smul C (ϖ ^ n), map_pow,
-    IsScalarTower.algebraMap_apply O A C]
-  exact Submodule.smul_mem_smul (Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) n) trivial
+  have hz : Δ (Dagger.weakCompletion.of ϖ A a + algebraMap O W ϖ ^ n * y) = ϖ ^ n • Δ y := by
+    simp [hΔ, ← map_pow, ← Algebra.smul_def]
+  rw [hz, SModEq.zero]
+  simpa [Algebra.smul_def, IsScalarTower.algebraMap_apply O A C] using
+    Submodule.smul_mem_smul (Ideal.pow_mem_pow (Ideal.mem_span_singleton_self _) n)
+      (Submodule.mem_top (R := C) (x := Δ y))
 
 end TauCeti.Dagger.weakCompletion
