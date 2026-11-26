@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 public import TauCeti.Geometry.Manifold.Morse.Bott.Thom.Pair
-public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Descent
+public import TauCeti.Topology.VectorBundle.Thom.Orientation.Cover.Subbundle
 
 /-!
 # The homology across a Morse–Bott level with orientation-twisted coefficients
@@ -19,31 +19,32 @@ all its critical points lie on the pieces. Crossing the level attaches the negat
 the pieces, so the relative homology across the level is the direct sum of the homologies of the
 Thom pairs `(ν⁻ j, (ν⁻ j)₀)`
 (`TauCeti.SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_thomPair`). This file
-applies the Thom isomorphism with orientation-twisted coefficients over a compact base
-(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`) to every summand. For every commutative ring `K`, `ℤ`
-included, this gives Bott's description of the homology across the level with no orientation of the
-negative normal bundles:
+applies the Thom isomorphism with orientation-twisted coefficients over a compact base, for
+subbundles spanned by local frames
+(`nonempty_singularHomology_thomPair_iso_twistedHomology_of_hasLocalSubbundleFrames`, in the
+namespace `TauCeti.VectorBundleOrientationCover`), to every summand. For every commutative ring
+`K`, `ℤ` included, this gives Bott's description of the homology across the level with no
+orientation of the negative normal bundles:
 
 `Hₙ({f ≤ b}, {f ≤ a}; K) ≅ ⨁_{r j ≤ n} H_{n - r j}(S j; o(ν⁻ j) ⊗ K)`,
 
 where `o(ν⁻ j)` is the orientation local system of `ν⁻ j`
 (`TauCeti.VectorBundleOrientationCover.signLocalSystem`). A piece of index `r j > n` contributes
 nothing in degree `n`, because the homology of a Thom pair vanishes below the rank
-(`TauCeti.isZero_singularHomology_thomPair`). An orientation of `ν⁻ j` trivializes `o(ν⁻ j)`
-(`TauCeti.VectorBundleOrientation.signLocalSystemIso`); without one the twist matters. For a
-critical circle whose negative normal bundle is a Möbius line, `H₀(S¹; o(ν⁻)) ≅ ℤ/2` with integral
-coefficients and `H₀(S¹; o(ν⁻) ⊗ ℚ) = 0`, so in degree `r j` the circle contributes `ℤ/2` over `ℤ`
-and nothing over `ℚ`, where constant coefficients would give `ℤ` and `ℚ`.
+(`TauCeti.isZero_singularHomology_thomPair_of_hasLocalSubbundleFrames`). An orientation of `ν⁻ j`
+trivializes `o(ν⁻ j)` (`TauCeti.VectorBundleOrientation.signLocalSystemIso`); without one the twist
+matters. For a critical circle whose negative normal bundle is a Möbius line,
+`H₀(S¹; o(ν⁻)) ≅ ℤ/2` with integral coefficients and `H₀(S¹; o(ν⁻) ⊗ ℚ) = 0`, so in degree `r j`
+the circle contributes `ℤ/2` over `ℤ` and nothing over `ℚ`, where constant coefficients would give
+`ℤ` and `ℚ`.
 
 This is the identification of the first page of the critical-band spectral sequence of a
 Morse–Bott function with the twisted homology of its critical submanifolds
 (`nonempty_filteredSpaceSpectralSequence_page_two_X_iso_sigma_twistedHomology`, in the namespace
 `TauCeti.IsMorseBottFamily`, in `TauCeti.Geometry.Manifold.Morse.Bott.SpectralSequence`).
 
-The twisted Thom isomorphism needs the base, the model fibre `Fin (r j) → ℝ` of `ν⁻ j` and the
-coefficient ring in one universe. The model fibre lies in `Type`, so the manifolds, their model
-spaces and the ring live in `Type` too.
+The manifold, its model space, the critical submanifolds and the coefficient ring lie in any
+common universe `u`, although the model fibre `Fin (r j) → ℝ` of `ν⁻ j` lies in `Type`.
 
 ## Main results
 
@@ -71,43 +72,58 @@ open Bundle CategoryTheory Function Limits Module Set
 open TauCeti.LocalCoefficientSystem TauCeti.VectorBundleOrientationCover
 open scoped ContDiff Manifold
 
+universe u
+
 namespace TauCeti
 
-/-- **The Thom pairs of finitely many bundles, with orientation-twisted coefficients.** For
-finitely many vector bundles `V j` of ranks `r j` over compact bases `S j` and a commutative ring
-`K`, the coproduct of the homologies `Hₙ(V j, (V j)₀; K)` of the Thom pairs is the coproduct, over
-the bundles of rank `r j ≤ n`, of the homologies `H_{n - r j}(S j; o(V j) ⊗ K)` with coefficients
-in the orientation local systems. -/
+/-- **The Thom pairs of finitely many subbundles, with orientation-twisted coefficients.** For
+finitely many families `V j` of subspaces of the fibres of vector bundles over compact bases `S j`,
+with continuous local frames of sizes `r j`, and a commutative ring `K`, the coproduct of the
+homologies `Hₙ(V j, (V j)₀; K)` of the Thom pairs is the coproduct, over the subbundles of rank
+`r j ≤ n`, of the homologies `H_{n - r j}(S j; o(V j) ⊗ K)` with coefficients in the orientation
+local systems. -/
 private theorem nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
-    {ι : Type*} [Finite ι] {S : ι → Type} [∀ j, TopologicalSpace (S j)] [∀ j, CompactSpace (S j)]
-    {r : ι → ℕ} {V : ∀ j, S j → Type} [∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j))]
-    [∀ j s, AddCommMonoid (V j s)] [∀ j s, Module ℝ (V j s)] [∀ j s, TopologicalSpace (V j s)]
-    [∀ j, FiberBundle (Fin (r j) → ℝ) (V j)] [∀ j, VectorBundle ℝ (Fin (r j) → ℝ) (V j)]
-    (K : Type) [CommRing K] (n : ℕ) :
-    Nonempty ((∐ fun j ↦ (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n) ≅
-      ∐ fun j : {j // r j ≤ n} ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-        ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) := by
+    {ι : Type*} [Finite ι] {S : ι → Type u} [∀ j, TopologicalSpace (S j)] [∀ j, CompactSpace (S j)]
+    {P : ι → Type*} [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpace ℝ (P j)]
+    {N : ∀ j, S j → Type u} [∀ j, TopologicalSpace (TotalSpace (P j) (N j))]
+    [∀ j s, AddCommMonoid (N j s)] [∀ j s, Module ℝ (N j s)] [∀ j s, TopologicalSpace (N j s)]
+    [∀ j, FiberBundle (P j) (N j)] [∀ j, VectorBundle ℝ (P j) (N j)] {r : ι → ℕ}
+    {V : ∀ j, Π s, Submodule ℝ (N j s)} (hV : ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j)) (V j))
+    (K : Type u) [CommRing K] (n : ℕ) :
+    letI : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦ V j s) :=
+      fun j ↦ subbundleTopology (P j) (V j)
+    letI : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦ V j s := fun j ↦ (hV j).fiberBundle
+    haveI : ∀ j, VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦ V j s := fun j ↦ (hV j).vectorBundle
+    Nonempty ((∐ fun j ↦ (thomPair (Fin (r j) → ℝ) fun s ↦ V j s).singularHomology
+        (ModuleCat.of K K) n) ≅
+      ∐ fun j : {j // r j ≤ n} ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+        (fun s ↦ V j s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)) := by
+  let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) fun s ↦ V j s) :=
+    fun j ↦ subbundleTopology (P j) (V j)
+  let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) fun s ↦ V j s := fun j ↦ (hV j).fiberBundle
+  have (j : ι) : VectorBundle ℝ (Fin (r j) → ℝ) fun s ↦ V j s := (hV j).vectorBundle
   let W (j : ι) : ModuleCat K :=
-    (thomPair (Fin (r j) → ℝ) (V j)).singularHomology (ModuleCat.of K K) n
-  -- Below the rank the homology of a Thom pair vanishes, so only the bundles of rank `r j ≤ n`
+    (thomPair (Fin (r j) → ℝ) fun s ↦ V j s).singularHomology (ModuleCat.of K K) n
+  -- Below the rank the homology of a Thom pair vanishes, so only the subbundles of rank `r j ≤ n`
   -- contribute.
   have hW (j : ι) (hj : ¬r j ≤ n) : IsZero (W j) :=
-    isZero_singularHomology_thomPair _ (by rw [finrank_fin_fun]; omega)
+    isZero_singularHomology_thomPair_of_hasLocalSubbundleFrames (hV j) (ModuleCat.of K K)
+      (by rw [Fintype.card_fin]; omega)
   -- From rank `r j` on, the twisted Thom isomorphism over the compact base shifts the twisted
   -- homology of the base up by the rank.
-  have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
-      ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
-    eqToIso (by rw [finrank_fin_fun, Nat.sub_add_cancel j.property]) ≪≫
-      (nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace (F := Fin (r j) → ℝ)
-        (E := V j) ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm) K (n - r j)).some
+  have T (j : {j // r j ≤ n}) : W j ≅ twistedHomology (signLocalSystem (Fin (r j) → ℝ)
+      (fun s ↦ V j s) K ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j) :=
+    eqToIso (by rw [Fintype.card_fin, Nat.sub_add_cancel j.property]) ≪≫
+      (nonempty_singularHomology_thomPair_iso_twistedHomology_of_hasLocalSubbundleFrames (hV j) K
+        (n - r j)).some
   exact ⟨(biproduct.isoCoproduct W).symm ≪≫
     (biproductSubtypeIsoOfIsZero W (fun j ↦ r j ≤ n) hW).symm ≪≫ biproduct.mapIso T ≪≫
     biproduct.isoCoproduct _⟩
 
-variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
-  {S : ι → Type} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
+  {S : ι → Type u} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
   [∀ j, FiniteDimensional ℝ (E' j)] [∀ j, TopologicalSpace (H' j)]
   {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)} [∀ j, TopologicalSpace (S j)]
   [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -147,7 +163,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] (n : ℕ) :
+    (K : Type u) [CommRing K] (n : ℕ) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
     letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -169,7 +185,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s
+  set V : ∀ j, S j → Type u := fun j s ↦ (h j).negativeNormalSpace hn (g j).toRiemannianMetric s
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
     fun j ↦ subbundleTopology (P j) ((h j).negativeNormalSpace hn (g j).toRiemannianMetric)
   let _ : ∀ j, FiberBundle (Fin (r j) → ℝ) (V j) := fun j ↦ (hV j).fiberBundle
@@ -180,7 +196,7 @@ theorem SmoothEmbedding.nonempty_singularHomology_sublevelPair_iso_sigma_twisted
     hcompact hcrit hdim g
     (fun j ↦ (h j).manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j))
     (ModuleCat.of K K) n
-  exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology K n).some⟩
+  exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology hV K n).some⟩
 
 /-- **The relative homology across a critical level of a Morse–Bott function, with
 orientation-twisted coefficients.** Let the family `i j : S j → M` exhibit `f` as a Morse–Bott
@@ -213,7 +229,7 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
         fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
       ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
         ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-    (K : Type) [CommRing K] (n : ℕ) :
+    (K : Type u) [CommRing K] (n : ℕ) :
     letI : ∀ j, FiberBundle (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
       fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
     letI : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
@@ -244,7 +260,7 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
     fun j ↦ (i j).normalSpaceFiberBundle hn (hdim j)
   let _ : ∀ j, VectorBundle ℝ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn :=
     fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
-  set V : ∀ j, S j → Type := fun j s ↦
+  set V : ∀ j, S j → Type u := fun j s ↦
     (h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric s
   let _ : ∀ j, TopologicalSpace (TotalSpace (Fin (r j) → ℝ) (V j)) :=
     fun j ↦ subbundleTopology (P j)
@@ -264,10 +280,11 @@ theorem IsMorseBottFamily.nonempty_singularHomology_sublevelPair_iso_sigma_twist
     (fun j ↦ (h.isNondegenerateCriticalSubmanifold j)
       |>.manifoldMorseIndex_eq_of_hasLocalSubbundleFrames hn _ (hV j))
     (ModuleCat.of K K) n
-  -- Reindex the pieces of index at most `n` among those on the level `c`.
+  -- Reindex the pieces of index at most `n` among those on the level `c`. The category of the
+  -- coproducts is given, so that their instances are found with the universe of the summands fixed.
   exact ⟨e ≪≫ (nonempty_sigma_singularHomology_thomPair_iso_sigma_twistedHomology
-    (V := fun j : {j // ∀ s, f (i j s) = c} ↦ V j) K n).some ≪≫
-    Sigma.reindex (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
+    (S := fun j : {j // ∀ s, f (i j s) = c} ↦ S j) (fun j ↦ hV j) K n).some ≪≫
+    Sigma.reindex (C := ModuleCat.{u} K) (Equiv.subtypeSubtypeEquivSubtypeInter _ fun j ↦ r j ≤ n)
       fun j ↦ twistedHomology (signLocalSystem (Fin (r j) → ℝ) (V j) K
         ((Fintype.card_fin _).trans (finrank_fin_fun ℝ).symm)) (n - r j)⟩
 

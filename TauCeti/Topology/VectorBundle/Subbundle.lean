@@ -62,6 +62,8 @@ instance; install it with `letI := TauCeti.subbundleTopology F V`.
 
 ## Main results
 
+* `TauCeti.HasLocalSubbundleFrames.of_equiv`: local frames can be reindexed along an equivalence
+  of index types.
 * `TauCeti.isEmbedding_totalSpace_subbundle`: the total space of `V` is a subspace of the total
   space of `E`.
 * `TauCeti.continuous_norm_subbundle`: the fibre norm of a normed bundle stays continuous on the
@@ -304,6 +306,19 @@ theorem HasLocalSubbundleFrames.finrank_eq [StrongRankCondition 𝕜] [Fintype �
     finrank 𝕜 (V x) = Fintype.card ι := by
   obtain ⟨U, -, hx, X, hX⟩ := hV x
   exact hX.finrank_eq hx
+
+variable {F} in
+/-- **Reindexing local frames.** If the family of subspaces `V` has continuous local frames
+indexed by `ι` near every point, it has continuous local frames indexed by any type `ι'`
+equivalent to `ι`: precompose each frame with the equivalence. -/
+theorem HasLocalSubbundleFrames.of_equiv {ι' : Type*} {V : Π x, Submodule 𝕜 (E x)}
+    (hV : HasLocalSubbundleFrames F ι V) (e : ι ≃ ι') : HasLocalSubbundleFrames F ι' V := by
+  intro x
+  obtain ⟨U, hU, hx, X, hX⟩ := hV x
+  refine ⟨U, hU, hx, X ∘ e.symm, fun i ↦ hX.continuousOn (e.symm i), fun hy ↦ ?_, fun hy ↦ ?_⟩
+  · exact (hX.linearIndependent hy).comp e.symm e.symm.injective
+  · rw [← hX.span_eq hy]
+    exact congrArg (Submodule.span 𝕜) (e.symm.surjective.range_comp (X · _))
 
 end Frame
 
