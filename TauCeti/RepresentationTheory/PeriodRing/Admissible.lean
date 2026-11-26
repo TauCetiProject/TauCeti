@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.RepresentationTheory.PeriodRing.Regular
+import TauCeti.RingTheory.TensorProduct.Free
 
 /-!
 # Fontaine's period invariants and the comparison map
@@ -52,7 +53,7 @@ is nonzero because `α_V` is injective, so it is a unit, and `α_V` is bijective
 * `Representation.periodComparison_injective`: the comparison map is injective.
 * `Representation.rank_periodInvariants_le`, `Representation.finrank_periodInvariants_le`:
   `dim_E D_B(V) ≤ dim_F V`.
-* `Representation.bijective_periodComparison_iff`: for finite-dimensional `V`, the comparison
+* `Representation.periodComparison_bijective_iff`: for finite-dimensional `V`, the comparison
   map is bijective if and only if `dim_E D_B(V) = dim_F V`.
 
 ## References
@@ -193,9 +194,12 @@ dimension at most `dim_F V`. -/
 theorem finrank_periodInvariants_le [FiniteDimensional F V]
     (h : TauCeti.IsRegularPeriodRing F E G B) :
     finrank E (ρ.periodInvariants B E) ≤ finrank F V := by
-  simpa [Module.finrank, Cardinal.toNat_lift] using Cardinal.toNat_le_toNat
-    (ρ.rank_periodInvariants_le h)
-    (Cardinal.lift_lt_aleph0.2 (Module.rank_lt_aleph0_iff.2 inferInstance))
+  have := h.isDomain
+  have : Module.Free E (ρ.periodInvariants B E) := .of_divisionRing E (ρ.periodInvariants B E)
+  have := ρ.finiteDimensional_periodInvariants h
+  have := Module.Finite.of_basis (Algebra.TensorProduct.basis B (Module.finBasis F V))
+  simpa using (ρ.linearIndependent_coe_periodInvariants h
+    (Module.finBasis E (ρ.periodInvariants B E)).linearIndependent).fintype_card_le_finrank
 
 end Monoid
 
@@ -204,20 +208,10 @@ section Group
 variable {B} [Group G] [MulSemiringAction G B] [SMulCommClass G F B] (ρ : Representation F G V)
   {E : Type*} [Field E] [Algebra E B] [SMulCommClass F E B] [SMulCommClass G E B]
 
-/-- In the basis `1 ⊗ bᵢ` of `B ⊗[F] V`, the coordinates of `(g • b) ⊗ v` are obtained by
-applying `g` to the coordinates of `b ⊗ v`. -/
-private theorem repr_map_toAlgHom {ι : Type*} (b : Basis ι F V) (g : G) (x : B ⊗[F] V) (i : ι) :
-    (Algebra.TensorProduct.basis B b).repr
-      (TensorProduct.map (MulSemiringAction.toAlgHom F B g).toLinearMap LinearMap.id x) i =
-      g • (Algebra.TensorProduct.basis B b).repr x i := by
-  induction x using TensorProduct.inductionOn with
-  | tmul c v => simp [smul_mul', smul_algebraMap]
-  | add x y hx hy => simp_all [smul_add]
-
 /-- The diagonal action of `g` is `(g • ·) ⊗ id` followed by the scalar extension of `ρ g`. -/
 private theorem periodAction_eq_baseChange (g : G) (x : B ⊗[F] V) :
     ρ.periodAction B g x = (ρ g).baseChange B
-      (TensorProduct.map (MulSemiringAction.toAlgHom F B g).toLinearMap LinearMap.id x) := by
+      ((MulSemiringAction.toAlgHom F B g).toLinearMap.rTensor V x) := by
   induction x using TensorProduct.inductionOn with
   | tmul c v => simp
   | add x y hx hy => simp_all
@@ -241,16 +235,16 @@ private theorem det_toMatrix_periodComparison {n : ℕ} (b : Basis (Fin n) E (ρ
     ext i j
     rw [hcol, ← (b j).prop g, periodAction_eq_baseChange,
       ← LinearMap.toMatrix_mulVec_repr (v₁ := cV) (v₂ := cV)]
-    simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, repr_map_toAlgHom, hcol, cV]
+    simp [Matrix.mul_apply, Matrix.mulVec, dotProduct, Algebra.TensorProduct.basis_repr_rTensor,
+      hcol, cV]
   conv_lhs => rw [hM]
   rw [Matrix.det_mul, ← RingHom.map_det, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    LinearMap.det_toMatrix]
-  rfl
+    LinearMap.det_toMatrix, MulSemiringAction.toRingHom_apply]
 
 /-- **Fontaine's dimension criterion.** For a finite-dimensional representation `V` and a regular
 period ring `B` with field of invariants `E`, the comparison map `B ⊗[E] D_B(V) → B ⊗[F] V` is
 bijective if and only if `dim_E D_B(V) = dim_F V`. -/
-theorem bijective_periodComparison_iff [FiniteDimensional F V]
+theorem periodComparison_bijective_iff [FiniteDimensional F V]
     (h : TauCeti.IsRegularPeriodRing F E G B) :
     Function.Bijective (ρ.periodComparison B E) ↔
       finrank E (ρ.periodInvariants B E) = finrank F V := by
@@ -264,18 +258,18 @@ theorem bijective_periodComparison_iff [FiniteDimensional F V]
   set cD := Algebra.TensorProduct.basis B b
   set cV := Algebra.TensorProduct.basis B b'
   set M := LinearMap.toMatrix cD cV (ρ.periodComparison B E)
-  -- The determinant of `M` is nonzero since the comparison map is injective.
+  -- The determinant of `M` is nonzero: its columns, the coordinates of a basis of `D_B(V)`, are
+  -- independent over `B`.
   have hne : M.det ≠ 0 := by
-    intro h0
-    obtain ⟨v, hv, hMv⟩ := Matrix.exists_mulVec_eq_zero_iff.2 h0
-    have hx : ρ.periodComparison B E (cD.equivFun.symm v) = 0 := by
-      apply cV.equivFun.injective
-      rw [map_zero, Basis.equivFun_apply,
-        ← LinearMap.toMatrix_mulVec_repr (v₁ := cD) (v₂ := cV), ← Basis.equivFun_apply,
-        LinearEquiv.apply_symm_apply, hMv]
-    have := congrArg cD.equivFun (ρ.periodComparison_injective h (hx.trans (map_zero _).symm))
-    rw [LinearEquiv.apply_symm_apply, map_zero] at this
-    exact hv this
+    have hinj : Function.Injective M.mulVec := by
+      rw [Matrix.mulVec_injective_iff]
+      convert (ρ.linearIndependent_coe_periodInvariants h b.linearIndependent).map'
+        cV.equivFun.toLinearMap cV.equivFun.ker
+      ext i
+      simp [M, cD, LinearMap.toMatrix_apply]
+    rw [Ne, ← Matrix.exists_mulVec_eq_zero_iff]
+    rintro ⟨v, hv, hMv⟩
+    exact hv (hinj (hMv.trans M.mulVec_zero.symm))
   -- It spans a `G`-stable line, so it is a unit.
   have hunit : IsUnit M.det := h.isUnit hne fun g ↦ by
     refine Submodule.mem_span_singleton.2 ⟨LinearMap.det (ρ g⁻¹), ?_⟩

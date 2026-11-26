@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Torsion.Free
-public import Mathlib.Algebra.Ring.Action.Field
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 public import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Group.Action.MulDistribMulAction
+import TauCeti.RingTheory.Localization.Action
 
 /-!
 # Regular period rings
@@ -153,38 +154,8 @@ theorem fixedPoints_eq_range_algebraMap [SMulCommClass G E B]
   · rintro ⟨e, rfl⟩ g
     exact smul_algebraMap g e
 
-/-- A field on which `G` acts with field of invariants `E` is a regular period ring. -/
-theorem of_field {K : Type*} [Field K] [Algebra F K] [Algebra E K] [MulSemiringAction G K]
-    (h : ∀ x : K, (∀ g : G, g • x = x) → ∃ e : E, algebraMap E K e = x) :
-    IsRegularPeriodRing F E G K where
-  isDomain := inferInstance
-  exists_algebraMap_mul_eq b c hc hbc := by
-    obtain ⟨e, he⟩ := h (b / c) fun g ↦ by
-      have hgc : g • c ≠ 0 := (map_ne_zero (MulSemiringAction.toRingHom G K g)).2 hc
-      have hdiv : g • (b / c) = g • b / g • c := by
-        rw [div_eq_mul_inv, smul_mul', smul_inv'', div_eq_mul_inv]
-      rw [hdiv, div_eq_div_iff hgc hc, hbc]
-    exact ⟨e, by rw [he, div_mul_cancel₀ b hc]⟩
-  isUnit b hb _ := hb.isUnit
-
 variable (L : Type*) [Field L] [Algebra B L] [IsFractionRing B L] [MulSemiringAction G L]
-  [SMulDistribClass G B L]
-
-/-- An element `b / c` of a fraction field of `B` with the induced action is invariant exactly
-when `(g • b) * c = b * (g • c)` for all `g`. -/
-private theorem div_mem_fixedPoints_iff (b : B) {c : B} (hc : c ≠ 0) :
-    algebraMap B L b / algebraMap B L c ∈ MulAction.fixedPoints G L ↔
-      ∀ g : G, (g • b) * c = b * (g • c) := by
-  have hc' : algebraMap B L c ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective B L)).2 hc
-  refine forall_congr' fun g ↦ ?_
-  have hgc : g • algebraMap B L c ≠ 0 := (map_ne_zero (MulSemiringAction.toRingHom G L g)).2 hc'
-  have hdiv : g • (algebraMap B L b / algebraMap B L c) =
-      g • algebraMap B L b / g • algebraMap B L c := by
-    rw [div_eq_mul_inv, smul_mul', smul_inv'', div_eq_mul_inv]
-  rw [hdiv, div_eq_div_iff hgc hc', ← algebraMap.smul', ← algebraMap.smul', ← map_mul, ← map_mul,
-    (IsFractionRing.injective B L).eq_iff]
-
-variable [Algebra E L] [IsScalarTower E B L]
+  [SMulDistribClass G B L] [Algebra E L] [IsScalarTower E B L]
 
 /-- For a regular period ring `B`, the invariants of a fraction field `L` of `B`, with the
 induced action, are the field of invariant scalars: `Frac(B)^G = E`. -/
@@ -196,7 +167,7 @@ theorem fixedPoints_eq_range [SMulCommClass G E B] (h : IsRegularPeriodRing F E 
   · obtain ⟨b, c, hc, rfl⟩ := IsFractionRing.div_surjective (A := B) x
     have hc' : c ≠ 0 := nonZeroDivisors.ne_zero hc
     obtain ⟨e, he⟩ :=
-      h.exists_algebraMap_mul_eq hc' ((div_mem_fixedPoints_iff L b hc').1 hx)
+      h.exists_algebraMap_mul_eq hc' ((IsFractionRing.div_mem_fixedPoints_iff L b hc').1 hx)
     refine ⟨e, ?_⟩
     rw [eq_div_iff ((map_ne_zero_iff _ (IsFractionRing.injective B L)).2 hc'), ← he, map_mul,
       IsScalarTower.algebraMap_apply E B L]
@@ -212,11 +183,18 @@ theorem of_fixedPoints_subset_range [IsDomain B]
     IsRegularPeriodRing F E G B where
   isDomain := inferInstance
   exists_algebraMap_mul_eq b c hc hbc := by
-    obtain ⟨e, he⟩ := hL ((div_mem_fixedPoints_iff L b hc).2 hbc)
+    obtain ⟨e, he⟩ := hL ((IsFractionRing.div_mem_fixedPoints_iff L b hc).2 hbc)
     have hc' : algebraMap B L c ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective B L)).2 hc
     refine ⟨e, IsFractionRing.injective B L ?_⟩
     rw [map_mul, ← IsScalarTower.algebraMap_apply, he, div_mul_cancel₀ _ hc']
   isUnit := hunit
+
+/-- A field on which `G` acts with field of invariants `E` is a regular period ring. -/
+theorem of_field {K : Type*} [Field K] [Algebra F K] [Algebra E K] [MulSemiringAction G K]
+    (h : ∀ x : K, (∀ g : G, g • x = x) → ∃ e : E, algebraMap E K e = x) :
+    IsRegularPeriodRing F E G K :=
+  have := IsFractionRing.idem K
+  of_fixedPoints_subset_range K (fun x hx ↦ h x hx) fun _ hb _ ↦ hb.isUnit
 
 end Monoid
 
