@@ -126,7 +126,7 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
     simp [_root_.binomialSeries, PowerSeries.binomialSeries_coeff]
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hbin_at0 hu_exp
   have hmul := hasAsymptoticExpansion_pow_const_mul (Complex.exp (r * ℓ)) hcomp
-  refine (hmul.congr_coeff fun n => by rw [formalCpow_def]).congr' ?_
+  refine (hmul.congr_coeff fun n => by rw [formalCpow_def, binomialPow_def]).congr' ?_
   have h1u : Tendsto (fun x => 1 + (Complex.exp (-ℓ) * f x - 1)) l (𝓝 (1 : ℂ)) := by
     simpa only [add_zero] using tendsto_const_nhds.add hu0
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0, h1u.eventually_ne one_ne_zero]

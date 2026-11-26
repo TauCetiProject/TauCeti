@@ -186,7 +186,7 @@ theorem isBigO_mul_trunc_eval_sub (hw : Tendsto w l (𝓝 0)) (P Q : 𝕜⟦X⟧
 
 /-- Remainder estimate for evaluating a truncated power series at two `O(w)` functions differing
 by `O(w ^ M)`. -/
-theorem isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
+private lemma isBigO_trunc_eval_sub_sub_linear {s q : α → 𝕜} {M : ℕ}
     (hw0 : Tendsto w l (𝓝 0)) (P : 𝕜⟦X⟧) (hM : 1 ≤ M)
     (hsO : s =O[l] w) (hqO : q =O[l] w) (hrM : (fun x => s x - q x) =O[l] fun x => w x ^ M) :
     (fun x => ((PowerSeries.trunc (M + 1) P).eval (s x) -
