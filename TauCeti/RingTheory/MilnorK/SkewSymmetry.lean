@@ -5,18 +5,22 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Two
 public import Mathlib.GroupTheory.Perm.Sign
-public import TauCeti.FieldTheory.MilnorKTheory.Grading
+public import TauCeti.RingTheory.MilnorK.Basic
+import TauCeti.Algebra.Ring.Parity
 import TauCeti.Data.List.Swap
 
 /-!
-# Skew-symmetry and graded commutativity of Milnor K-theory
+# Permutation skew-symmetry and repeated-entry identities in Milnor K-theory
 
-Over any field `F`, the Steinberg relation forces degree-one generators to anti-commute, yielding
-graded commutativity (`MilnorK.mul_comm_of_mem_degree`), permutation skew-symmetry of Milnor symbols
-(`MilnorK.symbol_ofFn_comp_perm`), vanishing for opposite pairs (`MilnorK.symbol_neg_self_of_ne`),
-`2`-torsion for repeated entries (`MilnorK.two_nsmul_symbol_of_duplicate`), and vanishing of
-repeated entries in characteristic `2` (`MilnorK.symbol_eq_zero_of_duplicate_of_charTwo`).
+Over any field `F`, `TauCeti.RingTheory.MilnorK.Basic` establishes that degree-one classes
+anti-commute and satisfies graded commutativity (`MilnorK.mul_comm_of_mem_degree`). This file
+extends those identities to general swaps and permutations of Milnor symbols
+(`MilnorK.symbol_swap_middle`, `MilnorK.symbol_ofFn_comp_perm`), vanishing for opposite entries at
+distinct positions (`MilnorK.symbol_neg_self_of_ne`), `2`-torsion for repeated entries
+(`MilnorK.two_nsmul_symbol_of_duplicate`), and vanishing of repeated entries in characteristic `2`
+(`MilnorK.symbol_eq_zero_of_duplicate_of_charTwo`).
 
 ## References
 
@@ -32,78 +36,38 @@ variable {F : Type*} [Field F]
 
 /-! ### Degree-two field identities in `MilnorK F` -/
 
-@[simp] theorem ofUnit_mul_neg_self (a : Fˣ) : ofUnit a * ofUnit (-a) = 0 :=
-  isSteinbergPairing_ofUnit_mul.map_neg_self a
-theorem ofUnit_mul_comm (a b : Fˣ) : ofUnit a * ofUnit b = -(ofUnit b * ofUnit a) :=
-  isSteinbergPairing_ofUnit_mul.map_swap a b
-theorem ofUnit_mul_self (a : Fˣ) : ofUnit a * ofUnit a = ofUnit a * ofUnit (-1) :=
-  isSteinbergPairing_ofUnit_mul.map_self a
-theorem two_nsmul_ofUnit_mul_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 :=
-  isSteinbergPairing_ofUnit_mul.two_nsmul_map_self a
-@[simp] theorem ofUnit_mul_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) :
-    ofUnit a * ofUnit a = 0 :=
-  isSteinbergPairing_ofUnit_mul.map_self_eq_zero_of_charTwo a
+/-- Every diagonal product `ofUnit a * ofUnit a` over a field is `2`-torsion. -/
+theorem two_nsmul_ofUnit_mul_ofUnit_self (a : Fˣ) : 2 • (ofUnit a * ofUnit a) = 0 := by
+  rw [two_nsmul]; exact add_eq_zero_iff_eq_neg.mpr (ofUnit_mul_ofUnit_comm a a)
 
-/-! ### Graded commutativity -/
-
-/-- Moving a degree-one generator past a Milnor symbol multiplies by `(-1) ^ l.length`. -/
-theorem ofUnit_mul_symbol (a : Fˣ) (l : List Fˣ) :
-    ofUnit a * symbol l = (-1 : ℤ) ^ l.length • (symbol l * ofUnit a) := by
-  induction l with
-  | nil => simp
-  | cons b l ih =>
-    rw [symbol_cons, ← mul_assoc, ofUnit_mul_comm a b, neg_mul (α := MilnorK F), mul_assoc, ih,
-      mul_smul_comm]
-    simp [pow_succ', mul_assoc]
-
-/-- Commuting two Milnor symbols multiplies by `(-1) ^ (l₁.length * l₂.length)`. -/
-theorem symbol_mul_symbol (l₁ l₂ : List Fˣ) :
-    symbol l₁ * symbol l₂ = (-1 : ℤ) ^ (l₁.length * l₂.length) • (symbol l₂ * symbol l₁) := by
-  induction l₁ with
-  | nil => simp
-  | cons a l₁ ih =>
-    rw [symbol_cons, mul_assoc, ih, mul_smul_comm, ← mul_assoc, ofUnit_mul_symbol a l₂]
-    simp [add_mul, pow_add, mul_assoc]
-
-/-- **Graded commutativity of `MilnorK F`**: homogeneous elements of degrees `m` and `n` satisfy
-`x * y = (-1)^(m * n) • (y * x)`. -/
-theorem mul_comm_of_mem_degree {m n : ℕ} {x y : MilnorK F}
-    (hx : x ∈ degree F m) (hy : y ∈ degree F n) :
-    x * y = (-1 : ℤ) ^ (m * n) • (y * x) := by
-  rw [degree_eq_span] at hx hy
-  induction hx using Submodule.span_induction with
-  | mem _ hx =>
-    obtain ⟨l₁, rfl, rfl⟩ := hx
-    induction hy using Submodule.span_induction with
-    | mem _ hy => obtain ⟨l₂, rfl, rfl⟩ := hy; exact symbol_mul_symbol l₁ l₂
-    | zero => simp
-    | add _ _ _ _ h₁ h₂ => rw [mul_add, add_mul, smul_add, h₁, h₂]
-    | smul _ _ _ hy => rw [mul_smul_comm, smul_mul_assoc, smul_comm, hy]
-  | zero => simp
-  | add _ _ _ _ h₁ h₂ => rw [add_mul, mul_add, smul_add, h₁, h₂]
-  | smul _ _ _ hx => rw [smul_mul_assoc, mul_smul_comm, smul_comm, hx]
+/-- In characteristic two, every diagonal product `ofUnit a * ofUnit a` vanishes. -/
+@[simp]
+theorem ofUnit_mul_ofUnit_self_eq_zero_of_charTwo [CharP F 2] (a : Fˣ) :
+    ofUnit a * ofUnit a = 0 := by
+  have hneg1 : (-1 : Fˣ) = 1 := Units.ext (by simp [CharTwo.neg_eq])
+  rw [ofUnit_mul_ofUnit_self, hneg1, ofUnit_one, mul_zero]
 
 /-! ### Skew-symmetry under entry swaps and permutations -/
 
 private theorem symbol_separated (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) =
-      (-1 : ℤ) ^ l₂.length • (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
+      (-1) ^ l₂.length * (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
   have hinner : ofUnit a * symbol l₂ * ofUnit b =
-      (-1 : ℤ) ^ l₂.length • (symbol l₂ * (ofUnit a * ofUnit b)) := by
-    rw [ofUnit_mul_symbol a l₂, smul_mul_assoc, mul_assoc]
+      (-1) ^ l₂.length * (symbol l₂ * (ofUnit a * ofUnit b)) := by
+    rw [ofUnit_mul_of_mem_degree a (symbol_mem_degree l₂), mul_assoc, mul_assoc]
   calc symbol (l₁ ++ a :: (l₂ ++ b :: l₃))
       = symbol l₁ * (ofUnit a * symbol l₂ * ofUnit b) * symbol l₃ := by
         simp only [symbol_append, symbol_cons, mul_assoc]
-    _ = symbol l₁ * ((-1 : ℤ) ^ l₂.length • (symbol l₂ * (ofUnit a * ofUnit b))) * symbol l₃ := by
+    _ = symbol l₁ * ((-1) ^ l₂.length * (symbol l₂ * (ofUnit a * ofUnit b))) * symbol l₃ := by
         rw [hinner]
-    _ = (-1 : ℤ) ^ l₂.length • (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
-        rw [mul_smul_comm, smul_mul_assoc, ← mul_assoc (symbol l₁)]
+    _ = (-1) ^ l₂.length * (symbol l₁ * symbol l₂ * (ofUnit a * ofUnit b) * symbol l₃) := by
+        rw [mul_neg_one_pow_mul]; simp only [mul_assoc]
 
 /-- Swapping any two separated entries of a Milnor symbol negates it. -/
 theorem symbol_swap_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) (b : Fˣ) (l₃ : List Fˣ) :
     symbol (l₁ ++ a :: (l₂ ++ b :: l₃)) = -symbol (l₁ ++ b :: (l₂ ++ a :: l₃)) := by
-  rw [symbol_separated l₁ a l₂ b l₃, symbol_separated l₁ b l₂ a l₃, ofUnit_mul_comm a b,
-    mul_neg (α := MilnorK F), neg_mul (α := MilnorK F), smul_neg]
+  rw [symbol_separated l₁ a l₂ b l₃, symbol_separated l₁ b l₂ a l₃, ofUnit_mul_ofUnit_comm a b,
+    mul_neg (α := MilnorK F), neg_mul (α := MilnorK F), mul_neg]
 
 /-- Swapping two distinct entries `i ≠ j` of a Milnor symbol negates it. -/
 theorem symbol_ofFn_comp_swap {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j) :
@@ -129,22 +93,22 @@ theorem symbol_ofFn_comp_perm {n : ℕ} (v : Fin n → Fˣ) (σ : Equiv.Perm (Fi
 /-! ### Repeated and opposite entries -/
 
 /-- A repeated adjacent entry in a Milnor symbol may be replaced by `a, -1`. -/
-theorem symbol_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
+theorem symbol_append_cons_cons_self (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
     symbol (l₁ ++ a :: a :: l₂) = symbol (l₁ ++ a :: (-1) :: l₂) := by
   simp only [symbol_append, symbol_cons, ← mul_assoc]
-  rw [mul_assoc (symbol l₁), ofUnit_mul_self, ← mul_assoc]
+  rw [mul_assoc (symbol l₁), ofUnit_mul_ofUnit_self, ← mul_assoc]
 
 /-- A Milnor symbol containing two adjacent opposite entries `a, -a` vanishes. -/
-theorem symbol_neg_self_middle (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
+theorem symbol_append_cons_cons_neg_self (l₁ : List Fˣ) (a : Fˣ) (l₂ : List Fˣ) :
     symbol (l₁ ++ a :: (-a) :: l₂) = 0 := by
   simp only [symbol_append, symbol_cons, ← mul_assoc]
-  rw [mul_assoc (symbol l₁), ofUnit_mul_neg_self, mul_zero, zero_mul]
+  rw [mul_assoc (symbol l₁), ofUnit_mul_ofUnit_neg_self, mul_zero, zero_mul]
 
 /-- A Milnor symbol containing opposite entries `v j = -v i` at distinct positions vanishes. -/
 theorem symbol_neg_self_of_ne {n : ℕ} (v : Fin n → Fˣ) {i j : Fin n} (hij : i ≠ j)
     (h : v j = -v i) : symbol (List.ofFn v) = 0 := by
   have hvanish (l₁ l₂ l₃ : List Fˣ) (a : Fˣ) : symbol (l₁ ++ a :: (l₂ ++ (-a) :: l₃)) = 0 := by
-    rw [symbol_separated, ofUnit_mul_neg_self, mul_zero, zero_mul, smul_zero]
+    rw [symbol_separated, ofUnit_mul_ofUnit_neg_self, mul_zero, zero_mul, mul_zero]
   rcases lt_or_gt_of_ne hij with hlt | hgt
   · obtain ⟨l₁, l₂, l₃, hv, -⟩ := List.exists_split_ofFn_swap v hlt
     rw [hv, h]; exact hvanish l₁ l₂ l₃ (v i)

@@ -10,7 +10,7 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.ZMod.Basic
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.FieldTheory.MatsumotoGroup.OrderedField
-public import TauCeti.FieldTheory.MilnorKTheory.Grading
+public import TauCeti.RingTheory.MilnorK.DegreeTwo
 
 /-!
 # Order-sign detector on Milnor K-theory
@@ -41,7 +41,7 @@ variable (R) in
 /-- The order-sign ring homomorphism `MilnorK R →+* Polynomial (ZMod 2)`, sending `ofUnit a` to
 `C (Units.signAddHom R (Additive.ofMul a)) * X`. -/
 noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
-  MilnorK.lift R
+  MilnorK.lift
     { toFun := fun u => Polynomial.C (Units.signAddHom R u) * Polynomial.X
       map_zero' := by simp
       map_add' := fun _ _ => by simp [map_add, add_mul] }
@@ -57,12 +57,14 @@ noncomputable def orderSignPoly : MilnorK R →+* Polynomial (ZMod 2) :=
           rw [map_mul]; ring
         _ = 0 := by rw [h0, map_zero, zero_mul]
 
-@[simp] theorem orderSignPoly_ofUnit (a : Rˣ) :
+@[simp]
+theorem orderSignPoly_ofUnit (a : Rˣ) :
     orderSignPoly R (ofUnit a) =
       Polynomial.C (Units.signAddHom R (Additive.ofMul a)) * Polynomial.X :=
   (lift_ofUnit _ _ a).trans (by simp)
 
-@[simp] theorem orderSignPoly_symbol (l : List Rˣ) :
+@[simp]
+theorem orderSignPoly_symbol (l : List Rˣ) :
     orderSignPoly R (symbol l) =
       Polynomial.C (l.map fun a => Units.signAddHom R (Additive.ofMul a)).prod *
         Polynomial.X ^ l.length := by
@@ -94,6 +96,7 @@ theorem coeff_orderSignPoly_of_mem_degree_ne {n k : ℕ} (hkn : k ≠ n) {x : Mi
 variable (R) in
 /-- The order-sign graded ring homomorphism from `MilnorK.degree R` into polynomials over `ZMod 2`
 graded by monomial degree. -/
+@[expose]
 noncomputable def gradedOrderSignPoly :
     degree R →+*ᵍ fun n : ℕ =>
       LinearMap.range (Polynomial.monomial n : ZMod 2 →ₗ[ZMod 2] Polynomial (ZMod 2)) where
@@ -106,20 +109,29 @@ noncomputable def gradedOrderSignPoly :
     · rw [hkn]
     · exact (coeff_orderSignPoly_of_mem_degree_ne (Ne.symm hkn) hx).symm
 
-@[simp] theorem gradedOrderSignPoly_toRingHom :
-    (gradedOrderSignPoly R).toRingHom = orderSignPoly R := by rfl
-@[simp] theorem gradedOrderSignPoly_apply (x : MilnorK R) :
-    gradedOrderSignPoly R x = orderSignPoly R x := by rfl
+@[simp]
+theorem gradedOrderSignPoly_toRingHom :
+    (gradedOrderSignPoly R).toRingHom = orderSignPoly R :=
+  rfl
+
+@[simp]
+theorem gradedOrderSignPoly_apply (x : MilnorK R) :
+    gradedOrderSignPoly R x = orderSignPoly R x :=
+  rfl
 
 variable (R) in
 /-- The degree-`n` order-sign homomorphism `MilnorK.degree R n →ₗ[ℤ] ZMod 2`, extracting the
 degree-`n` coefficient of `MilnorK.orderSignPoly`. -/
+@[expose]
 noncomputable def orderSignDegree (n : ℕ) : degree R n →ₗ[ℤ] ZMod 2 :=
   ((Polynomial.lcoeff (ZMod 2) n).restrictScalars ℤ).comp
     ((orderSignPoly R).toIntAlgHom.toLinearMap.comp (degree R n).subtype)
 
-@[simp] theorem orderSignDegree_apply (n : ℕ) (x : degree R n) :
-    orderSignDegree R n x = (orderSignPoly R x.val).coeff n := by rfl
+@[simp]
+theorem orderSignDegree_apply (n : ℕ) (x : degree R n) :
+    orderSignDegree R n x = (orderSignPoly R x.val).coeff n :=
+  rfl
+
 theorem orderSignDegree_symbol {n : ℕ} (l : List Rˣ) (hl : l.length = n) :
     orderSignDegree R n ⟨symbol l, symbol_mem_degree_of_length hl⟩ =
       (l.map fun a => Units.signAddHom R (Additive.ofMul a)).prod := by
@@ -147,10 +159,8 @@ theorem orderSignDegree_two_eq (x : degree R 2) :
             Units.signAddHom R (Additive.ofMul b)) * Polynomial.X ^ 2 := by
         rw [map_mul, orderSignPoly_ofUnit, orderSignPoly_ofUnit, mul_mul_mul_comm,
           ← Polynomial.C_mul, ← sq]
-      dsimp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddMonoidHom.coe_toIntLinearMap]
-      rw [orderSignDegree_apply, hpoly, Polynomial.coeff_C_mul, Polynomial.coeff_X_pow,
-        ite_eq_left rfl, mul_one, degreeTwoEquiv_ofUnit_mul,
-        MatsumotoGroup.sign_symbol_eq_signPairing, MatsumotoGroup.signPairing_apply]) x
+      simp [hpoly, Polynomial.coeff_X_pow]
+      split_ifs <;> simp_all) x
 
 /-- Over any linearly ordered commutative ring, `{-1, …, -1}` of length `n` is nonzero. -/
 theorem symbol_neg_one_replicate_ne_zero (n : ℕ) : symbol (List.replicate n (-1 : Rˣ)) ≠ 0 := by

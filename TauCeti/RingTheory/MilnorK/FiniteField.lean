@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.FieldTheory.MilnorKTheory.Grading
+public import TauCeti.RingTheory.MilnorK.DegreeTwo
 
 /-!
 # Vanishing of Milnor K-theory of finite fields
@@ -47,6 +47,7 @@ theorem degree_eq_bot_of_finite (F : Type u) [Field F] [Finite F] (n : ℕ) (hn 
 /-- **Milnor K-groups of finite fields vanish in every degree at least two**: `Kₙᴹ(F) = 0` for
 every finite field `F` and every `n ≥ 2` (Milnor 1970, Example 1.5; Weibel, III.7.1.1). -/
 theorem finiteField_vanishing (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (MilnorK.degree F n) := by rw [degree_eq_bot_of_finite F n hn]; infer_instance
+    Subsingleton (MilnorK.degree F n) := by
+  rw [degree_eq_bot_of_finite F n hn]; infer_instance
 
 end TauCeti.MilnorK

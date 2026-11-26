@@ -93,16 +93,24 @@ theorem signPairing_of_add_eq_one {x y : Rˣ} (h : (x : R) + y = 1) :
   rintro ⟨hx, hy⟩
   exact (by linarith : False).elim
 
+/-- The sign pairing is a Steinberg pairing. -/
+theorem isSteinbergPairing_signPairing :
+    IsSteinbergPairing (fun x y : Rˣ => signPairing R (Additive.ofMul x) (Additive.ofMul y)) where
+  map_mul_left _ _ _ := by simp only [ofMul_mul, map_add, AddMonoidHom.add_apply]
+  map_mul_right _ _ _ := by simp only [ofMul_mul, map_add]
+  steinberg _ _ h := signPairing_of_add_eq_one h
+
 variable (R) in
 /-- The **sign map** of the Matsumoto group of an ordered commutative ring, induced by the sign
 pairing: it sends `{x, y}` to `1` if `x` and `y` are both negative, and to `0` otherwise. -/
 noncomputable def sign : MatsumotoGroup R →+ ZMod 2 :=
-  lift (signPairing R) fun _ _ ↦ signPairing_of_add_eq_one
+  (liftLinear (fun x y => signPairing R (Additive.ofMul x) (Additive.ofMul y))
+    isSteinbergPairing_signPairing).toAddMonoidHom
 
 /-- The value of the sign map on a symbol is the sign pairing. -/
 theorem sign_symbol_eq_signPairing (x y : Rˣ) :
     sign R (symbol x y) = signPairing R (Additive.ofMul x) (Additive.ofMul y) :=
-  lift_symbol _ _ x y
+  liftLinear_symbol _ _ x y
 
 @[simp]
 theorem sign_symbol (x y : Rˣ) :

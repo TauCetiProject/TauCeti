@@ -41,8 +41,6 @@ of degree `i` with `i + l = d`.
   where `i + l = d`.
 * `TauCeti.GradedAlgebra.isScalarTower_gradeZero`: the scalars act on a graded algebra through its
   degree-zero part.
-* `SetLike.neg_one_mem_graded`, `SetLike.neg_mem_graded`: in a graded ring, `-1` has degree zero
-  and every homogeneous component is closed under negation.
 -/
 
 public section
@@ -220,31 +218,3 @@ instance isScalarTower_gradeZero : IsScalarTower R (𝒜 0) A :=
 end GradeZero
 
 end TauCeti.GradedAlgebra
-
-namespace SetLike
-
-section Ring
-
-variable {ι σ A : Type*} [Ring A] [SetLike σ A] [AddSubmonoidClass σ A]
-  [DecidableEq ι] [AddMonoid ι]
-
-/-- In a graded ring, `-1` is homogeneous of degree zero. -/
-theorem neg_one_mem_graded (𝒜 : ι → σ) [GradedRing 𝒜] : (-1 : A) ∈ 𝒜 0 := by
-  have h : (DirectSum.decompose 𝒜 (-1 : A) 0 : A) + 1 = 0 := by
-    calc (DirectSum.decompose 𝒜 (-1 : A) 0 : A) + 1
-        = (DirectSum.decompose 𝒜 (-1 : A) 0 : A) + (DirectSum.decompose 𝒜 (1 : A) 0 : A) := by
-          rw [DirectSum.decompose_of_mem_same 𝒜 SetLike.GradedOne.one_mem]
-      _ = (DirectSum.decompose 𝒜 (-1 + 1 : A) 0 : A) := by
-          rw [DirectSum.decompose_add, DirectSum.add_apply, AddMemClass.coe_add]
-      _ = 0 := by simp
-  rw [← eq_neg_iff_add_eq_zero.mpr h]
-  exact SetLike.coe_mem _
-
-/-- In a graded ring, every homogeneous component is closed under negation. -/
-theorem neg_mem_graded {𝒜 : ι → σ} [GradedRing 𝒜] ⦃k : ι⦄ {a : A} (ha : a ∈ 𝒜 k) :
-    -a ∈ 𝒜 k := by
-  simpa only [neg_one_mul, zero_add] using SetLike.GradedMul.mul_mem (neg_one_mem_graded 𝒜) ha
-
-end Ring
-
-end SetLike

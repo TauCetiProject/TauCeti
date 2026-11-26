@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Algebra.CharP.Two
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.Ring
 import TauCeti.FieldTheory.Finite.Nonsquare
 
 /-!
@@ -128,8 +130,8 @@ theorem map_neg_self (hc : IsSteinbergPairing c) (a : Fˣ) : c a (-a) = 0 := by
     let v : Fˣ := (-a)⁻¹ * u
     have hav : (a⁻¹ : Fˣ) + (v : F) = 1 := by
       simp only [v, u, Units.val_mul, Units.val_inv_eq_inv_val, Units.val_neg, Units.val_mk0]
-      rw [inv_neg, neg_mul, mul_sub, mul_one, inv_mul_cancel₀ (Units.ne_zero a), neg_sub,
-        add_sub_cancel]
+      field_simp
+      ring
     have h2 : c a v = 0 := neg_eq_zero.mp (hc.map_inv_left a v ▸ hc.steinberg a⁻¹ v hav)
     have huv : (-a) * v = u := by simp [v]
     have h3 : c a (-a) + c a v = 0 := by
@@ -181,7 +183,7 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one
     simpa [hc.map_zpow_left, hc.map_zpow_right, smul_smul] using hc.steinberg (g ^ m) (g ^ n) hadd
   have h2 : (2 : ℤ) • c g g = 0 := by rw [two_zsmul, ← two_nsmul]; exact hc.two_nsmul_map_self g
   obtain ⟨k, hk⟩ := hm.mul hn
-  rwa [hk, add_zsmul, one_zsmul, mul_comm (2 : ℤ) k, mul_zsmul, h2, smul_zero, zero_add] at hmn
+  simpa [hk, add_zsmul, mul_zsmul, mul_comm, h2] using hmn
 
 /-- **Steinberg pairings on finite fields vanish**: every Steinberg pairing on a finite field is
 identically zero. -/
