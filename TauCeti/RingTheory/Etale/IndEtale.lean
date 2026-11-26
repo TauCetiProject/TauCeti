@@ -118,17 +118,13 @@ theorem exists_etale_aeval_eq_zero [IndEtale R S] {ι : Type*} [Finite ι] (x : 
   -- `P(y)` maps to `P(x) = 0` in the colimit, so it vanishes at a later stage `l`.
   obtain ⟨l, f, f', hf⟩ := Limits.Concrete.isColimit_exists_of_rep_eq pres.diag pres.isColimit
     (MvPolynomial.aeval y P) 0 <| by
-      -- The cocone maps act on elements through their underlying algebra maps.
-      change (pres.ι.app k).hom (MvPolynomial.aeval y P) = (pres.ι.app k).hom 0
       rw [MvPolynomial.comp_aeval_apply, map_zero, ← hP]
       exact congrArg (MvPolynomial.aeval · P) hy'
   refine ⟨pres.diag.obj l, inferInstance, inferInstance, hD l, (pres.ι.app l).hom,
     (pres.diag.map f).hom ∘ y, ?_, ?_⟩
   · ext i
     simp [← hy']
-  · -- The transition maps act on elements through their underlying algebra maps.
-    change (pres.diag.map f).hom (MvPolynomial.aeval y P) = (pres.diag.map f').hom 0 at hf
-    rwa [map_zero, MvPolynomial.comp_aeval_apply] at hf
+  · rwa [map_zero, MvPolynomial.comp_aeval_apply] at hf
 
 /-- An ind-étale algebra is flat: it is a filtered colimit of étale, hence flat, modules. -/
 instance flat [IndEtale R S] : Module.Flat R S := by

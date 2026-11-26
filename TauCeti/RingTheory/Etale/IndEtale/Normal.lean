@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Etale.IndEtale
 public import TauCeti.RingTheory.Etale.Normal
+import Mathlib.RingTheory.Polynomial.UniversalFactorizationRing
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 import TauCeti.RingTheory.Polynomial.ScaleRoots
 
@@ -115,14 +116,11 @@ private theorem exists_etale_eval_scaleRoots_eq_zero [IndEtale R A] {p : A[X]} (
       (g : D →ₐ[R] A) (q : D[X]) (u v : D),
       q.Monic ∧ g u = a ∧ g v = b ∧ (q.scaleRoots v).eval u = 0 := by
   -- This is the equation `P = 0` in the lower coefficients of `p` and in `a` and `b`, where `P`
-  -- is built from the generic monic polynomial `Q` of degree `n`.
+  -- is built from the free monic polynomial `Q` of degree `n`.
   set n := p.natDegree
   let Q : (MvPolynomial (Fin n ⊕ Fin 2) R)[X] :=
-    X ^ n + ∑ i : Fin n, C (MvPolynomial.X (Sum.inl i)) * X ^ (i : ℕ)
-  have hQ : Q.Monic := monic_X_pow_add (degree_sum_fin_lt _)
-  have hQmap {T : Type u} [CommRing T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
-      Q.map φ = X ^ n + ∑ i : Fin n, C (φ (MvPolynomial.X (Sum.inl i))) * X ^ (i : ℕ) := by
-    simp [Q, Polynomial.map_sum]
+    (freeMonic R n).map (MvPolynomial.rename Sum.inl).toRingHom
+  have hQ : Q.Monic := (monic_freeMonic R n).map _
   let P := (Q.scaleRoots (MvPolynomial.X (Sum.inr 1))).eval (MvPolynomial.X (Sum.inr 0))
   have hP {T : Type u} [CommRing T] [Nontrivial T] (φ : MvPolynomial (Fin n ⊕ Fin 2) R →+* T) :
       φ P = ((Q.map φ).scaleRoots (φ (MvPolynomial.X (Sum.inr 1)))).eval
@@ -130,9 +128,12 @@ private theorem exists_etale_eval_scaleRoots_eq_zero [IndEtale R A] {p : A[X]} (
     map_eval_scaleRoots φ (hQ.natDegree_map φ) _ _
   let x : Fin n ⊕ Fin 2 → A := Sum.elim (fun i ↦ p.coeff i) ![a, b]
   have hx : MvPolynomial.aeval x P = 0 := by
+    -- `Q` specializes to `p`, which is the universal property of the free monic polynomial.
     have hpQ : Q.map (MvPolynomial.aeval x).toRingHom = p := by
-      rw [hQmap, hp.as_sum, ← Fin.sum_univ_eq_sum_range (fun i ↦ C (p.coeff i) * X ^ i)]
-      simp [x, n]
+      rw [Polynomial.map_map, AlgHom.toRingHom_eq_coe, AlgHom.toRingHom_eq_coe,
+        ← AlgHom.comp_toRingHom, MvPolynomial.aeval_comp_rename]
+      exact congrArg Subtype.val
+        ((MvPolynomial.mapEquivMonic R A n).apply_symm_apply (.mk p hp rfl))
     have h := hP (MvPolynomial.aeval x).toRingHom
     rw [hpQ] at h
     simpa [x, hab] using h
