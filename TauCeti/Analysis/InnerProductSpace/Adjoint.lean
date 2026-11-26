@@ -63,7 +63,8 @@ Compression is its inverse on this corner, and extension preserves composition a
   same operator norm (`ContinuousLinearEquiv.norm_adjointEquiv`), bounded below by `‖A⁻¹‖⁻¹`
   (`ContinuousLinearEquiv.norm_le_norm_symm_mul_norm_adjointEquiv`).
 * `ContinuousLinearMap.adjointRealLinearIsometryEquiv`: the adjoint `T ↦ T†` of operators between
-  real or complex Hilbert spaces as a real-linear isometric equivalence, and
+  real or complex Hilbert spaces as a real-linear isometric equivalence, inverse to the one in the
+  reverse direction (`ContinuousLinearMap.adjointRealLinearIsometryEquiv_symm`), and
   `ContinuousLinearMap.adjointRealCLM`, its underlying real-linear continuous map.
 * `ContDiff.clm_adjoint`: the pointwise adjoint of a `C^n` family of operators is `C^n`; for a
   continuous family it is continuous (`Continuous.clm_adjoint`). Its derivative is the adjoint of
@@ -256,6 +257,16 @@ theorem adjointRealLinearIsometryEquiv_apply (T : V →L[𝕜] W) :
     adjointRealLinearIsometryEquiv T = adjoint T := by
   rw [adjointRealLinearIsometryEquiv, IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero,
     LinearIsometryEquiv.coe_toIsometryEquiv]
+
+/-- The adjoint is an involution, so its real-linear isometric equivalence is inverse to the one
+in the reverse direction. -/
+@[simp]
+theorem adjointRealLinearIsometryEquiv_symm :
+    (adjointRealLinearIsometryEquiv (𝕜 := 𝕜) (V := V) (W := W)).symm =
+      adjointRealLinearIsometryEquiv := by
+  ext T : 1
+  rw [LinearIsometryEquiv.symm_apply_eq, adjointRealLinearIsometryEquiv_apply,
+    adjointRealLinearIsometryEquiv_apply, adjoint_adjoint]
 
 /-- The Hilbert space adjoint `T ↦ T†`, as a real-linear continuous map: the underlying map of
 `ContinuousLinearMap.adjointRealLinearIsometryEquiv`. -/
