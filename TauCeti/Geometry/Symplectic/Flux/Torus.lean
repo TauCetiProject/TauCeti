@@ -286,6 +286,16 @@ section Shear
 variable {v} {i : ι} (hv : v i = 0) (g : C^∞⟮𝓘(ℝ), AddCircle (p i); ℝ⟯)
   {β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ}
 
+omit [Fintype ι] in
+/-- A bilinear alternating form `β` on two vectors displaced along `v` is
+`β(u + a v, u' + b v) = β(u, u') + b β(u, v) + a β(v, u')`, since `β(v, v) = 0`. -/
+private theorem apply_add_smul_add_smul (β : (ι → ℝ) [⋀^Fin 2]→L[ℝ] ℝ) (v u u' : ι → ℝ)
+    (a b : ℝ) : β ![u + a • v, u' + b • v] = β ![u, u'] + b * β ![u, v] + a * β ![v, u'] := by
+  have hvv : β ![v, v] = 0 := β.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one
+  simp only [ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
+    β.apply_vecCons_add_right, β.apply_vecCons_smul_right, hvv, smul_eq_mul]
+  ring
+
 /-- The integrand of the flux form of a shear: `σ` at the moving point, on the velocity
 `g(x i) v` and the image `w + (t g'(x i) w i) v` of a spatial vector `w`, is `g(x i) β(v, w)`. -/
 private theorem apply_mfderiv_cylinderMap_torusShearDiffeotopy
@@ -302,11 +312,10 @@ private theorem apply_mfderiv_cylinderMap_torusShearDiffeotopy
       g (x i) * β ![v, w] := by
   rw [mfderiv_cylinderMap_torusShearDiffeotopy_apply_one,
     mfderiv_cylinderMap_torusShearDiffeotopy_space, hσ]
-  have hvv : β ![v, v] = 0 := β.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one
-  -- The vectors are `g(x i) v` and `w + b v`, read in the model space `ι → ℝ`.
+  -- The vectors are `0 + g(x i) v` and `w + b v`, read in the model space `ι → ℝ`, and `β`
+  -- vanishes when its first vector is `0`.
   have h (a b : ℝ) : β ![a • v, w + b • v] = a * β ![v, w] := by
-    rw [ContinuousAlternatingMap.vecCons_smul, β.apply_vecCons_add_right,
-      β.apply_vecCons_smul_right, hvv, smul_zero, add_zero, smul_eq_mul]
+    simpa [β.map_coord_zero (m := ![0, _]) 0 rfl] using apply_add_smul_add_smul β v 0 w a b
   exact h _ _
 
 /-- **The flux form of a shear.** For a two-form `σ` on the torus with constant coefficients `β`,
@@ -323,15 +332,9 @@ theorem fluxForm_torusShearDiffeotopy_apply
   · obtain ⟨u, rfl⟩ : ∃ u : ι → ℝ, w = ![u] :=
       ⟨w 0, funext fun j ↦ by rw [Fin.fin_one_eq_zero j]; rfl⟩
     rw [Diffeotopy.curryLeft_mfderiv_cylinderMap_apply]
-    have hw : (fun j : Fin 1 ↦ mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-        (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
-        (x, Set.projIcc 0 1 zero_le_one t) ((![u] j : ι → ℝ), (0 : EuclideanSpace ℝ (Fin 1)))) =
-        ![mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
-          (x, Set.projIcc 0 1 zero_le_one t) (u, (0 : EuclideanSpace ℝ (Fin 1)))] :=
-      funext fun j ↦ by rw [Fin.fin_one_eq_zero j]; rfl
-    rw [hw]
-    refine (apply_mfderiv_cylinderMap_torusShearDiffeotopy p hv g hσ x _ u).trans ?_
+    -- The two vectors are the velocity and the image of `u`.
+    refine (congrArg (σ.val _) (funext fun j ↦ by fin_cases j <;> rfl)).trans
+      ((apply_mfderiv_cylinderMap_torusShearDiffeotopy p hv g hσ x _ u).trans ?_)
     simp
   · rw [intervalIntegral.integral_const, sub_zero, one_smul]
 
@@ -361,20 +364,9 @@ theorem timeSlice_torusShearDiffeotopy_mem_diffeomorphStabilizer
   rw [TauCeti.mpullback_apply, hσ, hσ]
   obtain ⟨u, u', rfl⟩ : ∃ u u' : ι → ℝ, W = ![u, u'] :=
     ⟨W 0, W 1, funext fun j ↦ by fin_cases j <;> rfl⟩
-  have hW : (fun j ↦ mfderiv (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) ((torusShearDiffeotopy p v hv g).timeSlice t) x
-        (![u, u'] j)) = ![u + ((t : ℝ) * L (u i)) • v, u' + ((t : ℝ) * L (u' i)) • v] :=
-    funext fun j ↦ by fin_cases j <;> exact hD _
-  -- Expand `β` on the two displaced vectors.
-  have hexp (a b : ℝ) :
-      β ![u + a • v, u' + b • v] = β ![u, u'] + b * β ![u, v] + a * β ![v, u'] := by
-    have hvv : β ![v, v] = 0 :=
-      β.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl Fin.zero_ne_one
-    rw [ContinuousAlternatingMap.vecCons_add, ContinuousAlternatingMap.vecCons_smul,
-      β.apply_vecCons_add_right, β.apply_vecCons_add_right, β.apply_vecCons_smul_right,
-      β.apply_vecCons_smul_right, hvv, smul_eq_mul, smul_eq_mul, smul_eq_mul]
-    ring
-  refine (congrArg β hW).trans ((hexp _ _).trans ?_)
+  -- Expand `β` on the two displaced vectors `u + (t L (u i)) v` and `u' + (t L (u' i)) v`.
+  refine (congrArg β (funext fun j ↦ by fin_cases j <;> exact hD _)).trans
+    ((apply_add_smul_add_smul β v u u' ((t : ℝ) * L (u i)) ((t : ℝ) * L (u' i))).trans ?_)
   have h₁ := β.apply_vecCons_swap u v
   have h₂ := hβ u
   have h₃ := hβ u'
@@ -442,18 +434,9 @@ private theorem hasHamiltonian_torusShearDiffeotopy {G : AddCircle (p i) → ℝ
       (c • (((1 : ℝ →L[ℝ] ℝ).smulRight (g (x i) - m)).comp (ContinuousLinearMap.proj i)).comp
         (ContinuousLinearMap.fst ℝ (ι → ℝ) (EuclideanSpace ℝ (Fin 1)))) :=
     ((hGd.comp x happ).comp (x, t) (hasMFDerivAt_fst (x, t))).const_smul c
-  have hk : (fun k ↦ mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap (x, t)
-      (![((0 : ι → ℝ), (1 : TangentSpace (𝓡∂ 1) t)), (w, (0 : EuclideanSpace ℝ (Fin 1)))] k)) =
-      ![mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
-          (x, t) ((0 : ι → ℝ), (1 : TangentSpace (𝓡∂ 1) t)),
-        mfderiv ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-          (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (torusShearDiffeotopy p v hv g).cylinderMap
-          (x, t) (w, (0 : EuclideanSpace ℝ (Fin 1)))] :=
-    funext fun k ↦ by fin_cases k <;> rfl
   rw [TauCeti.mpullback_apply]
-  refine (congrArg (σ.val.val ((torusShearDiffeotopy p v hv g).cylinderMap (x, t))) hk).trans
+  -- The two vectors are the velocity and the image of `w`.
+  refine (congrArg (σ.val.val _) (funext fun k ↦ by fin_cases k <;> rfl)).trans
     ((apply_mfderiv_cylinderMap_torusShearDiffeotopy p hv g hσ x t w).trans
       (Eq.trans ?_ (DFunLike.congr_fun hF.mfderiv (w, 0)).symm))
   rw [hβ]

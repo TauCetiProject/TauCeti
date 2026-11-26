@@ -14,6 +14,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # The time form of a circle in de Rham cohomology
@@ -149,8 +150,7 @@ theorem funSMulₗ_timeForm_sub_smul_timeForm_mem_exactForms (g : C^∞⟮𝓘(�
     (hf.continuous.integral_hasStrictDerivAt 0 s).hasDerivAt
   have hFp : Function.Periodic F p := fun s ↦ by
     simp only [F, hfp.intervalIntegral_add_eq_add 0 s hfi, zero_add, hf0, add_zero]
-  have hF : ContDiff ℝ ∞ F := contDiff_infty_iff_deriv.2
-    ⟨fun s ↦ (hFd s).differentiableAt, by rwa [show deriv F = f from funext fun s ↦ (hFd s).deriv]⟩
+  have hF : ContDiff ℝ ∞ F := by simpa using hf.contDiff_add_one_integral (k := ⊤) 0
   -- It descends to a smooth function `G` on the circle, whose differential is `(g - m) dt_p`.
   let G : C^∞⟮𝓘(ℝ), AddCircle p; ℝ⟯ := ⟨hFp.lift, hFp.contMDiff_lift hF⟩
   rw [exactForms_succ]

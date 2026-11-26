@@ -90,14 +90,56 @@ private theorem contMDiff_shift :
   contMDiff_pi_iff.2 fun i ↦
     (AddCircle.contMDiff_coe (p i) n).comp (contDiff_id.mul contDiff_const).contMDiff
 
+omit [Fintype ι] [∀ i, Fact (0 < p i)] in
+/-- Translating by `[s (-v)]` undoes translating by `[s v]`. -/
+private theorem shift_neg (s : ℝ) : shift p (-v) s = -shift p v s :=
+  funext fun k ↦ by simp [shift]
+
+/-- The map `(x, s) ↦ x + [s v]` of `Tⁿ × ℝ` is smooth. -/
+private theorem contMDiff_add_shift_prod :
+    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
+      fun y : (∀ i, AddCircle (p i)) × ℝ ↦ y.1 + shift p v y.2 :=
+  contMDiff_pi_iff.2 fun _ ↦ (contMDiff_apply.comp contMDiff_fst).add
+    (contMDiff_apply.comp ((contMDiff_shift p v).comp contMDiff_snd))
+
+/-- Through a fixed point `x`, the curve `s ↦ x + [s v]` of the torus, for real `s`, has
+velocity `v`. -/
+private theorem hasMFDerivAt_add_shift_real (x : ∀ i, AddCircle (p i)) (s : ℝ) :
+    HasMFDerivAt 𝓘(ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
+      (fun s : ℝ ↦ x + shift p v s) s (ContinuousLinearMap.toSpanSingleton ℝ v) := by
+  have h (i : ι) : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ ↦ (x + shift p v s) i) s
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (v i)) :=
+    AddCircle.hasMFDerivAt_add_coe_comp (hasDerivAt_mul_const (v i)) (x i)
+  refine (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ?_
+  -- Both sides send `1` to `v`.
+  ext i
+  exact (one_smul ℝ (v i)).trans (one_smul ℝ (v i)).symm
+
+/-- The map `(x, s) ↦ x + [s v]` of `Tⁿ × ℝ` has derivative `(w, σ) ↦ w + σ • v`. -/
+private theorem hasMFDerivAt_add_shift_prod (y : (∀ i, AddCircle (p i)) × ℝ) :
+    HasMFDerivAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ))
+      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ y.1 + shift p v y.2) y
+      (ContinuousLinearMap.fst ℝ (ι → ℝ) ℝ +
+        (ContinuousLinearMap.toSpanSingleton ℝ v).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) ℝ)) := by
+  have hd := (contMDiff_add_shift_prod (n := 1) p v).mdifferentiableAt one_ne_zero (x := y)
+  refine hd.hasMFDerivAt.congr_mfderiv (ContinuousLinearMap.ext fun w ↦ ?_)
+  rw [mfderiv_prod_eq_add_apply hd]
+  -- In `x` the map is a translation, and in `s` the curve `s ↦ x + [s v]` of velocity `v`.
+  dsimp only
+  rw [AddCircle.mfderiv_pi_add_right, (hasMFDerivAt_add_shift_real p v y.1 y.2).mfderiv]
+  -- Both sides are `w.1 + w.2 • v`. The tangent spaces at `y.1` and `y.2` are type synonyms of
+  -- `ι → ℝ` and `ℝ`, so the evaluation lemmas for `+`, `id` and `comp` of continuous linear maps
+  -- match the two sides only up to unfolding them, which `rfl` does and `rw` and `simp` do not.
+  rfl
+
 /-- The motion `(t, x) ↦ x + [t v]` of `[0, 1] × Tⁿ` is smooth in both variables. -/
 private theorem contMDiff_add_shift :
     ContMDiff ((𝓡∂ 1).prod (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)))
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
       fun q : unitInterval × ∀ i, AddCircle (p i) ↦ q.2 + shift p v q.1 :=
-  contMDiff_pi_iff.2 fun _ ↦ (contMDiff_apply.comp contMDiff_snd).add
-    (contMDiff_apply.comp ((contMDiff_shift p v).comp
-      (contMDiff_subtypeVal_Icc.comp contMDiff_fst)))
+  (contMDiff_add_shift_prod p v).comp (contMDiff_snd.prodMk
+    (contMDiff_subtypeVal_Icc.comp contMDiff_fst))
 
 /-- The **translation diffeotopy** of the torus `Tⁿ = ∀ i, AddCircle (p i)` along a real vector
 `v : ι → ℝ`: at time `t ∈ [0, 1]` it is the translation `x ↦ x + [t v]` by the image of `t v`
@@ -107,14 +149,8 @@ def torusTranslationDiffeotopy :
   toDiffeomorph :=
     { toFun := fun q ↦ (q.1, q.2 + shift p v q.1)
       invFun := fun q ↦ (q.1, q.2 + shift p (-v) q.1)
-      left_inv := fun q ↦ by
-        refine Prod.ext rfl (funext fun i ↦ ?_)
-        simp only [shift, Pi.add_apply, Pi.neg_apply, mul_neg, AddCircle.coe_neg,
-          add_neg_cancel_right]
-      right_inv := fun q ↦ by
-        refine Prod.ext rfl (funext fun i ↦ ?_)
-        simp only [shift, Pi.add_apply, Pi.neg_apply, mul_neg, AddCircle.coe_neg,
-          neg_add_cancel_right]
+      left_inv := fun q ↦ Prod.ext rfl (by simp only [shift_neg, add_neg_cancel_right])
+      right_inv := fun q ↦ Prod.ext rfl (by simp only [shift_neg, neg_add_cancel_right])
       contMDiff_toFun := contMDiff_fst.prodMk (contMDiff_add_shift p v)
       contMDiff_invFun := contMDiff_fst.prodMk (contMDiff_add_shift p (-v)) }
   fst_apply _ := rfl
@@ -147,29 +183,6 @@ theorem final_torusTranslationDiffeotopy_eq_refl_iff :
     refine Diffeomorph.ext fun x ↦ funext fun i ↦ ?_
     simp [h i]
 
-/-- Through a fixed point `x`, the curve `s ↦ x + [s v]` of the torus, for real `s`, has
-velocity `v`. -/
-private theorem hasMFDerivAt_add_shift_real (x : ∀ i, AddCircle (p i)) (s : ℝ) :
-    HasMFDerivAt 𝓘(ℝ) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun s : ℝ ↦ x + shift p v s) s (ContinuousLinearMap.toSpanSingleton ℝ v) := by
-  have h (i : ι) : HasMFDerivAt 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ ↦ (x + shift p v s) i) s
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (v i)) :=
-    AddCircle.hasMFDerivAt_add_coe_comp (hasDerivAt_mul_const (v i)) (x i)
-  refine (TauCeti.hasMFDerivAt_pi h).congr_mfderiv ?_
-  -- Both sides send `1` to `v`.
-  ext i
-  exact (one_smul ℝ (v i)).trans (one_smul ℝ (v i)).symm
-
-/-- Through a fixed point `x`, the motion `s ↦ x + [s v]` has velocity `v` at every time, read
-through the derivative of the inclusion `[0, 1] → ℝ`. -/
-private theorem hasMFDerivAt_add_shift_time (x : ∀ i, AddCircle (p i)) (t : unitInterval) :
-    HasMFDerivAt (𝓡∂ 1) (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
-      (fun s : unitInterval ↦ x + shift p v s) t
-      ((ContinuousLinearMap.toSpanSingleton ℝ v).comp
-        (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t)) :=
-  (hasMFDerivAt_add_shift_real p v x t).comp t
-    (contMDiff_subtypeVal_Icc.mdifferentiableAt (n := 1) one_ne_zero).hasMFDerivAt
-
 /-- **The derivative of the motion of a translation diffeotopy.** The motion
 `(x, t) ↦ x + [t v]` of the torus has derivative `(w, τ) ↦ w + τ' • v`, where `τ'` is the image of
 the time vector `τ` under the derivative of the inclusion `[0, 1] → ℝ`. -/
@@ -180,24 +193,22 @@ theorem mfderiv_cylinderMap_torusTranslationDiffeotopy_apply (x : ∀ i, AddCirc
         (torusTranslationDiffeotopy (n := n) p v).cylinderMap (x, t) (w, τ) =
       w + ContinuousLinearMap.toSpanSingleton ℝ v
         (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t τ) := by
-  -- The motion is `(x, t) ↦ x + [t v]`, whatever the smoothness exponent of the diffeotopy.
+  -- The motion is `(x, s) ↦ x + [s v]` after `(x, t) ↦ (x, t)`, whatever the smoothness exponent
+  -- of the diffeotopy.
   have hcyl : (torusTranslationDiffeotopy (n := n) p v).cylinderMap =
-      fun q ↦ q.1 + shift p v q.2 :=
+      (fun y : (∀ i, AddCircle (p i)) × ℝ ↦ y.1 + shift p v y.2) ∘
+        fun q : (∀ i, AddCircle (p i)) × unitInterval ↦ (q.1, (q.2 : ℝ)) :=
     funext fun q ↦ Diffeotopy.cylinderMap_apply _ q
-  have hd : MDifferentiableAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod (𝓡∂ 1))
-      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun q ↦ q.1 + shift p v q.2) (x, t) :=
-    ((contMDiff_add_shift (n := 1) p v).comp
-      (contMDiff_snd.prodMk contMDiff_fst)).mdifferentiableAt one_ne_zero
+  have hval : HasMFDerivAt (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t
+      (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t) :=
+    (contMDiff_subtypeVal_Icc.mdifferentiableAt (n := 1) one_ne_zero).hasMFDerivAt
+  have hΨ := (hasMFDerivAt_add_shift_prod p v (x, (t : ℝ))).comp (x, t)
+    ((hasMFDerivAt_fst (x, t)).prodMk (hval.comp (x, t) (hasMFDerivAt_snd (x, t))))
   rw [hcyl]
-  refine (mfderiv_prod_eq_add_apply hd).trans ?_
-  -- The spatial slice is a translation and the time slice has velocity `v`.
-  dsimp only
-  rw [AddCircle.mfderiv_pi_add_right, (hasMFDerivAt_add_shift_time p v x t).mfderiv]
-  -- The tangent spaces are type synonyms of `ι → ℝ`, so `id_apply` and `comp_apply` match the goal
-  -- only up to unfolding them, which `exact` does and `rw` does not.
-  exact congrArg₂ (· + ·) (ContinuousLinearMap.id_apply (R₁ := ℝ) w)
-    (ContinuousLinearMap.comp_apply (ContinuousLinearMap.toSpanSingleton ℝ v)
-      (mfderiv (𝓡∂ 1) 𝓘(ℝ) (Subtype.val : unitInterval → ℝ) t) τ)
+  -- Both sides are `w + τ' • v`. The tangent spaces are type synonyms of the model spaces, so the
+  -- evaluation lemmas of `simp` for `comp`, `prod`, `fst` and `snd` do not fire on the composite;
+  -- `exact` matches it with the goal by unfolding the synonyms.
+  exact DFunLike.congr_fun hΨ.mfderiv (w, τ)
 
 /-- **The velocity of a translation diffeotopy.** On the unit time vector of `[0, 1]`, the
 derivative of the motion `(x, t) ↦ x + [t v]` is `v`: at every time, including the two ends, the
@@ -234,28 +245,6 @@ theorem mfderiv_cylinderMap_torusTranslationDiffeotopy_comp_inl (x : ∀ i, AddC
 
 section Shear
 
-/-- The map `(x, s) ↦ x + [s v]` of `Tⁿ × ℝ` is smooth. -/
-private theorem contMDiff_add_shift_prod :
-    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ))
-      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) n
-      fun y : (∀ i, AddCircle (p i)) × ℝ ↦ y.1 + shift p v y.2 :=
-  contMDiff_pi_iff.2 fun _ ↦ (contMDiff_apply.comp contMDiff_fst).add
-    (contMDiff_apply.comp ((contMDiff_shift p v).comp contMDiff_snd))
-
-/-- The map `(x, s) ↦ x + [s v]` of `Tⁿ × ℝ` has derivative `(w, σ) ↦ w + σ • v`. -/
-private theorem hasMFDerivAt_add_shift_prod (y : (∀ i, AddCircle (p i)) × ℝ) :
-    HasMFDerivAt ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ))
-      (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (fun y ↦ y.1 + shift p v y.2) y
-      (ContinuousLinearMap.fst ℝ (ι → ℝ) ℝ +
-        (ContinuousLinearMap.toSpanSingleton ℝ v).comp (ContinuousLinearMap.snd ℝ (ι → ℝ) ℝ)) := by
-  have hd := (contMDiff_add_shift_prod (n := 1) p v).mdifferentiableAt one_ne_zero (x := y)
-  refine hd.hasMFDerivAt.congr_mfderiv (ContinuousLinearMap.ext fun w ↦ ?_)
-  rw [mfderiv_prod_eq_add_apply hd]
-  -- In `x` the map is a translation, and in `s` the curve `s ↦ x + [s v]` of velocity `v`.
-  dsimp only
-  rw [AddCircle.mfderiv_pi_add_right, (hasMFDerivAt_add_shift_real p v y.1 y.2).mfderiv]
-  rfl
-
 variable {v} {i : ι}
 
 omit [Fintype ι] [∀ i, Fact (0 < p i)] in
@@ -263,11 +252,6 @@ omit [Fintype ι] [∀ i, Fact (0 < p i)] in
 private theorem add_shift_apply_of_eq_zero (hv : v i = 0) (x : ∀ k, AddCircle (p k)) (s : ℝ) :
     (x + shift p v s) i = x i := by
   simp [shift, hv]
-
-omit [Fintype ι] [∀ i, Fact (0 < p i)] in
-/-- Translating by `[s (-v)]` undoes translating by `[s v]`. -/
-private theorem shift_neg (s : ℝ) : shift p (-v) s = -shift p v s :=
-  funext fun k ↦ by simp [shift]
 
 /-- The motion `(t, x) ↦ x + [t g(x i) v]` of `[0, 1] × Tⁿ` is smooth. -/
 private theorem contMDiff_shearMotion (g : C^∞⟮𝓘(ℝ), AddCircle (p i); ℝ⟯) (w : ι → ℝ) :
