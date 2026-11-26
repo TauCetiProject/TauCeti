@@ -235,6 +235,20 @@ theorem lift_mk_segment_eq_mul {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A 
         FreeGroup.lift f (FreeGroup.mk (Ω.segment j k true)) := by
   rw [← Ω.segment_append hij hjk, ← FreeGroup.mul_mk, map_mul]
 
+/-- Evaluation of the one-item segment `h[i, i + 1]` in a group, for a natural number `i`. -/
+theorem lift_mk_segment_add_one {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i : ℕ}
+    (hi : i < Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i (i + 1) true)) = f (.inl ⟨i, hi⟩) := by
+  simpa using congrArg (fun w => FreeGroup.lift f (FreeGroup.mk w)) (Ω.segment_succ ⟨i, hi⟩ true)
+
+/-- Evaluation of the two-item segment `h[i, i + 2]` in a group, for a natural number `i`. -/
+theorem lift_mk_segment_add_two {H : Type*} [Group H] (f : Fin Ω.numItems ⊕ A → H) {i : ℕ}
+    (hi : i + 1 < Ω.numItems) :
+    FreeGroup.lift f (FreeGroup.mk (Ω.segment i (i + 2) true)) =
+      f (.inl ⟨i, by omega⟩) * f (.inl ⟨i + 1, hi⟩) := by
+  rw [Ω.lift_mk_segment_eq_mul f (Nat.le_succ i) (Nat.le_succ (i + 1)),
+    Ω.lift_mk_segment_add_one, Ω.lift_mk_segment_add_one]
+
 /-- The word `h[i, j]` is a prefix of `h[i, k]` for `j ≤ k`. -/
 theorem segment_prefix_segment {i j k : ℕ} (hjk : j ≤ k) :
     Ω.segment i j true <+: Ω.segment i k true := by
