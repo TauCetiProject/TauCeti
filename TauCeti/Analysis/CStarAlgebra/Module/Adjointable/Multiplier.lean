@@ -193,13 +193,8 @@ private noncomputable def toMultiplier :
       𝓜(ℂ, (compactOperatorIdeal A E).toNonUnitalStarSubalgebra) :=
   let I := (compactOperatorIdeal A E).toNonUnitalStarSubalgebra
   let ψ := I.multiplierHom (compactOperatorIdeal A E).mul_mem_toNonUnitalStarSubalgebra
-  have h1 : ψ 1 = 1 := DoubleCentralizer.ext_fst_snd
-    (fun k ↦ Subtype.ext <| by
-      rw [I.coe_multiplierHom_fst_apply, one_mul, DoubleCentralizer.one_fst,
-        one_apply_eq_self])
-    (fun k ↦ Subtype.ext <| by
-      rw [I.coe_multiplierHom_snd_apply, mul_one, DoubleCentralizer.one_snd,
-        one_apply_eq_self])
+  have h1 : ψ 1 = 1 := DoubleCentralizer.ext_fst fun k ↦ Subtype.ext <| by
+    rw [I.coe_multiplierHom_fst_apply, one_mul, DoubleCentralizer.one_fst, one_apply_eq_self]
   { __ := ψ
     map_one' := h1
     commutes' c := by
@@ -309,13 +304,8 @@ noncomputable def multiplierStarAlgEquiv :
     rw [ofMultiplier_apply_compactOperator]
     have h := congrArg (fun S : AdjointableMap A E E ↦ S y) (coe_toMultiplier_fst T k)
     simpa [mul_apply_eq_comp] using h
-  right_inv m := DoubleCentralizer.ext_fst_snd
-    (fun k ↦ Subtype.ext <| ext fun y ↦ by
-      rw [coe_toMultiplier_fst, mul_apply_eq_comp, ofMultiplier_apply_compactOperator])
-    (fun k ↦ Subtype.ext <| ext fun y ↦ by
-      obtain ⟨k_y, y', hy⟩ := exists_compactOperatorSubalgebra_apply_eq (A := A) y
-      rw [coe_toMultiplier_snd, mul_apply_eq_comp, ← hy, ofMultiplier_apply_compactOperator,
-        coe_apply_fst_apply])
+  right_inv m := DoubleCentralizer.ext_fst fun k ↦ Subtype.ext <| ext fun y ↦ by
+    rw [coe_toMultiplier_fst, mul_apply_eq_comp, ofMultiplier_apply_compactOperator]
   map_mul' := map_mul (toMultiplier (A := A) (E := E))
   map_add' := map_add (toMultiplier (A := A) (E := E))
   map_smul' := map_smul (toMultiplier (A := A) (E := E))
@@ -456,32 +446,19 @@ theorem multiplierMulOppositeStarAlgEquiv_trans_congr (A : Type*) [NonUnitalCSta
     rw [StarAlgEquiv.trans_apply, TwoSidedIdeal.coe_toNonUnitalStarSubalgebraEquiv_apply,
       coe_compactOperatorMulOppositeStarAlgEquiv_apply]
   ext T : 1
-  refine DoubleCentralizer.ext_fst_snd (fun k ↦ Subtype.ext ?_) (fun k ↦ Subtype.ext ?_)
-  · have ha : mulLeft A (e.symm k) = (k : AdjointableMap Aᵐᵒᵖ A A) := by simp [← he_apply]
-    calc (((multiplierMulOppositeStarAlgEquiv A).trans (DoubleCentralizer.congr e) T).fst k :
-            AdjointableMap Aᵐᵒᵖ A A)
-        = mulLeft A (T (e.symm k)) := by
-          rw [StarAlgEquiv.trans_apply, DoubleCentralizer.congr_apply_fst, he_apply,
-            multiplierMulOppositeStarAlgEquiv_fst, toContinuousLinearMap_apply]
-      _ = T * (k : AdjointableMap Aᵐᵒᵖ A A) := by
-          rw [← ha]; ext x
-          simpa [mul_apply_eq_comp, MulOpposite.smul_eq_mul_unop] using
-            (T.map_smul_coeff (MulOpposite.op x) (e.symm k)).symm
-      _ = ((multiplierStarAlgEquiv Aᵐᵒᵖ A T).fst k : AdjointableMap Aᵐᵒᵖ A A) := by
-          rw [coe_multiplierStarAlgEquiv_fst]
-  · have ha : mulLeft A (e.symm k) = (k : AdjointableMap Aᵐᵒᵖ A A) := by simp [← he_apply]
-    calc (((multiplierMulOppositeStarAlgEquiv A).trans (DoubleCentralizer.congr e) T).snd k :
-            AdjointableMap Aᵐᵒᵖ A A)
-        = mulLeft A (star (T.adjoint (star (e.symm k)))) := by
-          rw [StarAlgEquiv.trans_apply, DoubleCentralizer.congr_apply_snd, he_apply,
-            multiplierMulOppositeStarAlgEquiv_snd_apply]
-      _ = (k : AdjointableMap Aᵐᵒᵖ A A) * T := by
-          rw [← ha]; ext x
-          have h := T.star_adjoint_apply_mul (star (e.symm k)) x
-          rw [star_star] at h
-          simpa [mul_apply_eq_comp] using h
-      _ = ((multiplierStarAlgEquiv Aᵐᵒᵖ A T).snd k : AdjointableMap Aᵐᵒᵖ A A) := by
-          rw [coe_multiplierStarAlgEquiv_snd]
+  refine DoubleCentralizer.ext_fst fun k ↦ Subtype.ext ?_
+  have ha : mulLeft A (e.symm k) = (k : AdjointableMap Aᵐᵒᵖ A A) := by simp [← he_apply]
+  calc (((multiplierMulOppositeStarAlgEquiv A).trans (DoubleCentralizer.congr e) T).fst k :
+          AdjointableMap Aᵐᵒᵖ A A)
+      = mulLeft A (T (e.symm k)) := by
+        rw [StarAlgEquiv.trans_apply, DoubleCentralizer.congr_apply_fst, he_apply,
+          multiplierMulOppositeStarAlgEquiv_fst, toContinuousLinearMap_apply]
+    _ = T * (k : AdjointableMap Aᵐᵒᵖ A A) := by
+        rw [← ha]; ext x
+        simpa [mul_apply_eq_comp, MulOpposite.smul_eq_mul_unop] using
+          (T.map_smul_coeff (MulOpposite.op x) (e.symm k)).symm
+    _ = ((multiplierStarAlgEquiv Aᵐᵒᵖ A T).fst k : AdjointableMap Aᵐᵒᵖ A A) := by
+        rw [coe_multiplierStarAlgEquiv_fst]
 
 end MultiplierIso
 
