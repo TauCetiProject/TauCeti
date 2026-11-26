@@ -38,7 +38,10 @@ In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
 point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). In particular, on a nonempty
 open interval `(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
-(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`).
+(`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`). The same holds for the `L^∞`
+seminorm on a set `s` at a point of the closure of the interior of `s` where `f` is continuous
+within `s`, such as a boundary point of a closed half-disc
+(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior`).
 -/
 
 public section
@@ -84,6 +87,35 @@ theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure]
     exact eNorm_ae_le_eLpNormEssSup f μ
   have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
   exact (μ.measure_pos_of_mem_nhds hV).ne' h0
+
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum on a set dominates a value up to its boundary.** If `x` lies in the
+closure of the interior of `s`, `f` is continuous at `x` within `s`, and the measure charges every
+nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞(μ.restrict s)}`. -/
+theorem ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict_of_mem_closure_interior
+    {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E} {s : Set X} {x : X}
+    (hf : ContinuousWithinAt f s x) (hx : x ∈ closure (interior s)) :
+    ‖f x‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
+  by_cases hm : AEStronglyMeasurable f (μ.restrict s)
+  swap
+  · rw [eLpNorm_of_not_aestronglyMeasurable hm]
+    exact le_top
+  by_contra h
+  push Not at h
+  -- An open `t ∋ x` on whose trace on `s` the value `‖f‖ₑ` exceeds the essential supremum.
+  obtain ⟨t, ht, hxt, hts⟩ := mem_nhdsWithin.1 (hf.eNorm.eventually_const_lt h)
+  have hae : ∀ᵐ y ∂μ.restrict s, ‖f y‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
+    rw [eLpNorm_exponent_top hm]
+    exact eNorm_ae_le_eLpNormEssSup f _
+  have h0 : μ.restrict s {y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} = 0 := by
+    simpa only [ae_iff, not_le] using hae
+  -- The open set `t ∩ interior s` is nonempty, so it has positive measure.
+  refine ((ht.inter isOpen_interior).measure_pos μ (mem_closure_iff.1 hx t ht hxt)).ne'
+    (le_antisymm ?_ zero_le)
+  calc μ (t ∩ interior s) ≤ μ ({y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} ∩ s) :=
+        measure_mono fun y hy => ⟨hts ⟨hy.1, interior_subset hy.2⟩, interior_subset hy.2⟩
+    _ ≤ μ.restrict s {y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} := Measure.le_restrict_apply _ _
+    _ = 0 := h0
 
 section CLMComp
 
