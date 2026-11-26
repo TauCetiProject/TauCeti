@@ -460,6 +460,13 @@ theorem KZero.principalRightIdeal_obj (he : IsIdempotentElem e) :
     (KZero.principalRightIdeal he).obj = ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}) :=
   (rfl)
 
+/-- The identification of the underlying module of `TauCeti.KZero.principalRightIdeal he` with the
+right ideal spanned by `e`, as an isomorphism of right `R`-modules
+(`TauCeti.KZero.principalRightIdeal_obj`). -/
+def KZero.principalRightIdealObjIso (he : IsIdempotentElem e) :
+    (KZero.principalRightIdeal he).obj ≅ ModuleCat.of Rᵐᵒᵖ (Submodule.span Rᵐᵒᵖ {op e}) :=
+  eqToIso (KZero.principalRightIdeal_obj he)
+
 /-- **The class of a principal right ideal.** The principal right ideal `eR` of an idempotent `e`
 has the class of the `1 × 1` idempotent matrix with entry `e`, its image under
 `Matrix.uniqueRingEquiv.symm`. -/
@@ -469,7 +476,9 @@ theorem IdempotentMonoid.toKZero_mk_of_unique {m : Type*} [Unique m] (he : IsIde
         (he.map Matrix.uniqueRingEquiv.symm)) =
       SplitK0.of.{u} (KZero.principalRightIdeal he) := by
   rw [← IdempotentMonoid.kZeroEquiv_of]
-  exact IdempotentMonoid.kZeroEquiv_of_mk _ _ (rangeMulVecBilinOfUniqueEquivSpan R m e).symm
+  exact IdempotentMonoid.kZeroEquiv_of_mk _ _
+    ((KZero.principalRightIdealObjIso he).toLinearEquiv.trans
+      (rangeMulVecBilinOfUniqueEquivSpan R m e).symm)
 
 end PrincipalRightIdeal
 

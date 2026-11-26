@@ -187,10 +187,17 @@ variable {ι : Type*} {P : ι → Type*} [∀ i, AddCommMonoid (P i)]
 submonoid, by Mathlib's `AddSubmonoid.IsLocalizationMap.pi`. -/
 private noncomputable def piLocalizationMap :
     (⊤ : AddSubmonoid (∀ i, P i)).LocalizationMap (∀ i, GrothendieckAddGroup (P i)) where
-  __ := AddMonoidHom.pi fun i ↦ (of : P i →+ _).comp (Pi.evalAddMonoidHom P i)
-  isLocalizationMap := AddSubmonoid.pi_top (M := P) .univ ▸
-    AddSubmonoid.IsLocalizationMap.pi (fun _ ↦ ⊤) fun i ↦
+  toFun := Pi.map fun i ↦ AddLocalization.addMonoidOf (⊤ : AddSubmonoid (P i))
+  map_add' a b := funext fun i ↦ map_add _ (a i) (b i)
+  isLocalizationMap := by
+    rw [← AddSubmonoid.pi_top (M := P) .univ]
+    exact AddSubmonoid.IsLocalizationMap.pi (fun _ ↦ ⊤) fun i ↦
       (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (P i))).isLocalizationMap
+
+/-- `piLocalizationMap` sends `a` to the family `(of (a i))ᵢ`. -/
+private theorem piLocalizationMap_apply (a : ∀ i, P i) :
+    piLocalizationMap a = fun i ↦ of (a i) :=
+  (rfl)
 
 /-- **The Grothendieck group of a product.** The group completion of `Π i, P i` is the product of
 the group completions of the `P i`, `of a ↦ (of (a i))ᵢ`
@@ -206,7 +213,10 @@ noncomputable def piEquiv :
 -- `of a` is `AddLocalization.addMonoidOf ⊤ a`.
 /-- `Algebra.GrothendieckAddGroup.piEquiv` sends `of a` to the family `(of (a i))ᵢ`. -/
 theorem piEquiv_of (a : ∀ i, P i) : piEquiv (of a) = fun i ↦ of (a i) := by
-  rw [piEquiv, AddSubmonoid.LocalizationMap.addEquivOfLocalizations_apply]
+  rw [piEquiv, AddSubmonoid.LocalizationMap.addEquivOfLocalizations_apply,
+    ← piLocalizationMap_apply]
+  -- `of` is Mathlib's abbreviation for `(AddLocalization.addMonoidOf ⊤).toAddMonoidHom`, so `of a`
+  -- is `addMonoidOf ⊤ a` up to coercion, which `exact` sees but `rw [lift_eq]` does not.
   exact (AddLocalization.addMonoidOf (⊤ : AddSubmonoid (∀ i, P i))).lift_eq _ a
 
 /-- The inverse of `Algebra.GrothendieckAddGroup.piEquiv` sends the family `(of (a i))ᵢ` to

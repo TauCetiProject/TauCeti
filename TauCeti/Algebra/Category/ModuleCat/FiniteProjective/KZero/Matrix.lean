@@ -365,9 +365,10 @@ theorem matrixCorner_eq_principalRightIdeal (i : ι) :
 
 /-- The row module and every corner right ideal `e_{ii} Matrix ι ι R` have the same class. -/
 theorem of_matrixRow_eq_of_matrixCorner (i : ι) :
-    SplitK0.of.{u} (matrixRow R ι) = SplitK0.of.{u} (matrixCorner R ι i) :=
-  SplitK0.of_congr ((finiteProjectiveModules (Matrix ι ι R)ᵐᵒᵖ).fullyFaithfulι.preimageIso
-    ((Matrix.rowLinearEquivSpanSingle R i).toModuleIso ≪≫ eqToIso (matrixCorner_obj R ι i).symm))
+    SplitK0.of.{u} (matrixRow R ι) = SplitK0.of.{u} (matrixCorner R ι i) := by
+  rw [matrixCorner_eq_principalRightIdeal]
+  exact SplitK0.of_congr ((finiteProjectiveModules (Matrix ι ι R)ᵐᵒᵖ).fullyFaithfulι.preimageIso
+    ((Matrix.rowLinearEquivSpanSingle R i).toModuleIso ≪≫ (principalRightIdealObjIso _).symm))
 
 variable [Nonempty ι]
 
