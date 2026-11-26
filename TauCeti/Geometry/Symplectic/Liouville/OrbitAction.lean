@@ -27,7 +27,7 @@ loop with a cap it is the action `TauCeti.contractibleLoopAction` of contractibl
 This file computes it on the orbits of a Hamiltonian `F` that agrees with `φ ∘ r` on a region
 `{r > R}`, `R ≥ 1`. Such an orbit stays on a level `r = c`
 (`TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`) and has velocity
-`φ'(c) X_r` (`TauCeti.IsLiouvilleCompletion.hamiltonianVectorField_eq_smul_of_lt`), and
+`φ'(c) X_r` (`TauCeti.IsLiouvilleCompletion.hamiltonianVectorField_eq_smul_of_eventuallyEq`), and
 `α(X_r) = -r` there, so `α(X_F) = -c φ'(c)`
 (`TauCeti.IsLiouvilleCompletion.apply_hamiltonianVectorField_of_eventuallyEq`): `α` takes this
 constant value on the velocity of the orbit
@@ -110,11 +110,10 @@ theorem apply_curveVelocity_of_isMIntegralCurve (h : IsLiouvilleCompletion ω α
   have hc := h.liouvilleRadialCoordinate_eq_of_isMIntegralCurve hZ hR hF hφ hγ ht₀ t
   have hRt : R < liouvilleRadialCoordinate Z W (γ t) := hc ▸ ht₀
   rw [(Manifold.isMIntegralCurve_iff_curveVelocity_eq.1 hγ t).2, ← Matrix.vec_single_eq_const,
-    h.hamiltonianVectorField_eq_smul_of_lt hZ hR hF hRt (hφ.differentiableAt (Ioi_mem_nhds hRt)),
-    ← SmoothForm.degreeOneEquiv_coe_apply, map_smul, SmoothForm.degreeOneEquiv_coe_apply,
-    h.apply_hamiltonianVectorField_liouvilleRadialCoordinate hZ
-      ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hRt)), hc, smul_eq_mul]
-  ring
+    h.apply_hamiltonianVectorField_of_eventuallyEq hZ
+      ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hRt))
+      (h.eventuallyEq_comp_liouvilleRadialCoordinate_of_lt hZ hF hRt)
+      (hφ.differentiableAt (Ioi_mem_nhds hRt)), hc]
 
 /-- **The line integral of the primitive along an orbit of a radial Hamiltonian.** Under the
 hypotheses of `TauCeti.IsLiouvilleCompletion.apply_curveVelocity_of_isMIntegralCurve`, the
