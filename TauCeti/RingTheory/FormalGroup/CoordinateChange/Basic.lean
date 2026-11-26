@@ -58,6 +58,8 @@ representable by a polynomial ring over the Lazard ring.
 * `TauCeti.FormalGroupHom.smul_eq`: if `φ` is a homomorphism from `F` to `G`, then `φ • F = G`.
 * `TauCeti.FormalGroupIso.toFormalCoordinate_smul`: the coordinate `e.toFormalCoordinate` of an
   isomorphism `e : F ≅ G` satisfies `e.toFormalCoordinate • F = G`.
+* `TauCeti.FormalGroupIso.linearCoeff_toFormalCoordinate`: the coordinate of a strict isomorphism
+  has linear coefficient `1`.
 * `FormalGroup.instIsCommSMul`: changing coordinates preserves commutativity.
 * `FormalGroup.map_smul`: changing coordinates commutes with base change.
 * `FormalGroup.map_ofStrictCoeffs_smul_𝔾ₐ`: the base change of the additive law transported along
@@ -387,6 +389,14 @@ theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_toPowerSeries {F G : Fo
 theorem _root_.TauCeti.FormalGroupIso.toFormalCoordinate_smul {F G : FormalGroup R}
     (e : FormalGroupIso F G) : e.toFormalCoordinate • F = G :=
   e.toHom.smul_eq rfl
+
+/-- The coordinate of a strict isomorphism has linear coefficient `1`. -/
+@[simp]
+theorem _root_.TauCeti.FormalGroupIso.linearCoeff_toFormalCoordinate {F G : FormalGroup R}
+    (e : FormalGroupIso F G) [e.IsStrict] : FormalCoordinate.linearCoeff e.toFormalCoordinate = 1 :=
+  Units.ext <| by
+    rw [FormalCoordinate.val_linearCoeff, e.toFormalCoordinate_toPowerSeries, Units.val_one]
+    exact FormalGroupIso.IsStrict.coeff_one
 
 /-- The isomorphism `φ` from `F` to `φ • F` is strict exactly when `φ` has linear coefficient
 `1`. -/
