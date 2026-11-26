@@ -7,11 +7,15 @@ module
 
 public import TauCeti.Analysis.Analytic.OfScalars
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Group.IntegralConvolution
 public import Mathlib.Probability.IdentDistrib
 public import Mathlib.Probability.Moments.Basic
+public import TauCeti.MeasureTheory.Group.Convolution.Power
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Convex.Mul
+import Mathlib.Analysis.Convex.SpecificFunctions.Deriv
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Probability.Independence.Integration
@@ -46,7 +50,7 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   interval `[-1, 1]`, where integrability is automatic.
 * `Measure.pgf_conv` and `Measure.pgf_conv_of_abs_le_one` — convolution becomes
   multiplication under the natural integrability hypotheses, and for finite measures on
-  `[-1, 1]`.
+  `[-1, 1]`; `Measure.pgf_convolutionPower_of_abs_le_one` is the version for convolution powers.
 * `TauCeti.Probability.hasSum_pgf` and `TauCeti.Probability.pgf_eq_tsum` — the power-series
   expansion in the singleton masses, valid on `[-1, 1]`.
 * `TauCeti.Probability.hasFPowerSeriesOnBall_pgf` and `TauCeti.Probability.analyticOnNhd_pgf` —
@@ -63,6 +67,15 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   the generating function at `0`, with the corollaries
   `TauCeti.Probability.measure_eq_of_pgf_eqOn` and `TauCeti.Probability.identDistrib_of_pgf_eqOn`
   reading the hypothesis off `(-1, 1)`.
+* `TauCeti.Probability.continuousOn_pgf`, `TauCeti.Probability.monotoneOn_pgf`,
+  `TauCeti.Probability.convexOn_pgf` and `TauCeti.Probability.strictConvexOn_pgf` — the shape of
+  the generating function of a finite measure on `ℕ`: continuous on `[-1, 1]`, nondecreasing and
+  convex on `[0, 1]`, and strictly convex there when the measure charges some `k ≥ 2`.
+* `TauCeti.Probability.hasSum_deriv_pgf`, `TauCeti.Probability.monotoneOn_deriv_pgf` and
+  `TauCeti.Probability.tendsto_ofReal_deriv_pgf_nhdsLT_one` — the derivative on `(-1, 1)` is the
+  termwise derivative of the power series; it is nondecreasing on `[0, 1)` and increases to the
+  mean `∫⁻ k, k`, taken in `[0, ∞]`, as the argument increases to `1`, also when the mean is
+  infinite.
 -/
 
 public section
@@ -242,6 +255,16 @@ theorem _root_.MeasureTheory.Measure.pgf_conv_of_abs_le_one (μ ν : Measure ℕ
     pgf id (μ ∗ ν) t = pgf id μ t * pgf id ν t :=
   Measure.pgf_conv μ ν t (integrable_pow_of_abs_le_one aemeasurable_id ht)
     (integrable_pow_of_abs_le_one aemeasurable_id ht)
+
+/-- On `[-1, 1]`, the probability-generating function of the `n`-fold convolution power of a finite
+measure on `ℕ` is the `n`th power of its generating function. -/
+theorem _root_.MeasureTheory.Measure.pgf_convolutionPower_of_abs_le_one (ν : Measure ℕ)
+    [IsFiniteMeasure ν] (n : ℕ) {t : ℝ} (ht : |t| ≤ 1) :
+    pgf id (ν.convolutionPower n) t = pgf id ν t ^ n := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [Measure.convolutionPower_succ, Measure.pgf_conv_of_abs_le_one _ _ ht, ih, pow_succ]
 
 /-- A probability-generating function turns a finite sum of independent random variables into the
 product of their generating functions whenever every factor integrand is integrable. -/
@@ -545,6 +568,143 @@ theorem identDistrib_of_pgf_eqOn {Ω' : Type*} [MeasurableSpace Ω'] {P : Measur
     (Filter.eventuallyEq_of_mem (Ioo_mem_nhds (by norm_num) (by norm_num)) h)
 
 end Coefficients
+
+/-! ### The shape of the generating function on `[0, 1]` -/
+
+section Shape
+
+/-- The probability-generating function of a finite measure on `ℕ` is continuous on `[-1, 1]`. -/
+theorem continuousOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
+    ContinuousOn (pgf id ν) (Set.Icc (-1) 1) := by
+  have h : ContinuousOn (fun t : ℝ => ∫ k : ℕ, t ^ k ∂ν) (Set.Icc (-1) 1) := by
+    refine continuousOn_of_dominated (bound := fun _ => 1) (fun _ _ => by fun_prop)
+      (fun t ht => Eventually.of_forall fun k => ?_) (integrable_const 1)
+      (Eventually.of_forall fun k => (continuous_pow k).continuousOn)
+    rw [norm_pow, Real.norm_eq_abs]
+    exact pow_le_one₀ (abs_nonneg t) (abs_le.mpr ht)
+  have hpgf : pgf id ν = fun t : ℝ => ∫ k : ℕ, t ^ k ∂ν := funext fun t => pgf_def id ν t
+  rwa [hpgf]
+
+/-- The probability-generating function of a finite measure on `ℕ` is nondecreasing on
+`[0, 1]`. -/
+theorem monotoneOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
+    MonotoneOn (pgf id ν) (Set.Icc 0 1) := by
+  intro s hs t ht hst
+  have habs {u : ℝ} (hu : u ∈ Set.Icc (0 : ℝ) 1) : |u| ≤ 1 := by
+    rw [abs_of_nonneg hu.1]; exact hu.2
+  refine hasSum_le (fun k => ?_) (hasSum_pgf ν (habs hs)) (hasSum_pgf ν (habs ht))
+  exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hs.1 hst k) measureReal_nonneg
+
+/-- The probability-generating function of a finite measure on `ℕ` is convex on `[0, 1]`. -/
+theorem convexOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
+    ConvexOn ℝ (Set.Icc 0 1) (pgf id ν) := by
+  refine ⟨convex_Icc 0 1, fun x hx y hy a b ha hb hab => ?_⟩
+  have habs {u : ℝ} (hu : u ∈ Set.Icc (0 : ℝ) 1) : |u| ≤ 1 := by
+    rw [abs_of_nonneg hu.1]; exact hu.2
+  have hxy := convex_Icc (0 : ℝ) 1 hx hy ha hb hab
+  refine hasSum_le (fun k => ?_) (hasSum_pgf ν (habs hxy))
+    (((hasSum_pgf ν (habs hx)).mul_left a).add ((hasSum_pgf ν (habs hy)).mul_left b))
+  have := (convexOn_pow k).2 (Set.mem_Ici.mpr hx.1) (Set.mem_Ici.mpr hy.1) ha hb hab
+  simp only [smul_eq_mul] at this ⊢
+  calc ν.real {k} * (a * x + b * y) ^ k ≤ ν.real {k} * (a * x ^ k + b * y ^ k) :=
+        mul_le_mul_of_nonneg_left this measureReal_nonneg
+    _ = a * (ν.real {k} * x ^ k) + b * (ν.real {k} * y ^ k) := by ring
+
+/-- The probability-generating function of a finite measure on `ℕ` that charges some `k ≥ 2` is
+strictly convex on `[0, 1]`. For a probability measure, such a `k` exists exactly when
+`ν {0} + ν {1} < 1`. -/
+theorem strictConvexOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] {k : ℕ} (hk : 2 ≤ k)
+    (hνk : ν {k} ≠ 0) : StrictConvexOn ℝ (Set.Icc 0 1) (pgf id ν) := by
+  refine ⟨convex_Icc 0 1, fun x hx y hy hxy a b ha hb hab => ?_⟩
+  have habs {u : ℝ} (hu : u ∈ Set.Icc (0 : ℝ) 1) : |u| ≤ 1 := by
+    rw [abs_of_nonneg hu.1]; exact hu.2
+  have hmem := convex_Icc (0 : ℝ) 1 hx hy ha.le hb.le hab
+  have hpos : 0 < ν.real {k} := ENNReal.toReal_pos hνk (measure_ne_top ν _)
+  have hterm (n : ℕ) : ν.real {n} * (a * x + b * y) ^ n ≤
+      a * (ν.real {n} * x ^ n) + b * (ν.real {n} * y ^ n) := by
+    have := (convexOn_pow n).2 (Set.mem_Ici.mpr hx.1) (Set.mem_Ici.mpr hy.1) ha.le hb.le hab
+    simp only [smul_eq_mul] at this
+    calc ν.real {n} * (a * x + b * y) ^ n ≤ ν.real {n} * (a * x ^ n + b * y ^ n) :=
+          mul_le_mul_of_nonneg_left this measureReal_nonneg
+      _ = a * (ν.real {n} * x ^ n) + b * (ν.real {n} * y ^ n) := by ring
+  have hstrict : ν.real {k} * (a * x + b * y) ^ k <
+      a * (ν.real {k} * x ^ k) + b * (ν.real {k} * y ^ k) := by
+    have := (strictConvexOn_pow hk).2 (Set.mem_Ici.mpr hx.1) (Set.mem_Ici.mpr hy.1) hxy ha hb
+      hab
+    simp only [smul_eq_mul] at this
+    calc ν.real {k} * (a * x + b * y) ^ k < ν.real {k} * (a * x ^ k + b * y ^ k) :=
+          mul_lt_mul_of_pos_left this hpos
+      _ = a * (ν.real {k} * x ^ k) + b * (ν.real {k} * y ^ k) := by ring
+  simp only [smul_eq_mul]
+  exact hasSum_lt hterm hstrict (hasSum_pgf ν (habs hmem))
+    (((hasSum_pgf ν (habs hx)).mul_left a).add ((hasSum_pgf ν (habs hy)).mul_left b))
+
+/-- On the open unit interval, the derivative of the probability-generating function of a finite
+measure on `ℕ` is the sum of the termwise derivatives `(n + 1) ν {n + 1} t ^ n`. -/
+theorem hasSum_deriv_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] {t : ℝ} (ht : |t| < 1) :
+    HasSum (fun n : ℕ => (n + 1) * ν.real {n + 1} * t ^ n) (deriv (pgf id ν) t) := by
+  refine (hasFPowerSeriesOnBall_pgf ν).deriv_ofScalars.hasSum_ofScalars ?_
+  rw [← ofReal_norm, ENNReal.ofReal_lt_one, Real.norm_eq_abs]
+  exact ht
+
+/-- The derivative of the probability-generating function of a finite measure on `ℕ` is
+nondecreasing on `[0, 1)`. -/
+theorem monotoneOn_deriv_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
+    MonotoneOn (deriv (pgf id ν)) (Set.Ico 0 1) := by
+  intro s hs t ht hst
+  have habs {u : ℝ} (hu : u ∈ Set.Ico (0 : ℝ) 1) : |u| < 1 := by
+    rw [abs_of_nonneg hu.1]; exact hu.2
+  refine hasSum_le (fun n => ?_) (hasSum_deriv_pgf ν (habs hs)) (hasSum_deriv_pgf ν (habs ht))
+  exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hs.1 hst n)
+    (mul_nonneg (by positivity) measureReal_nonneg)
+
+/-- As the argument increases to `1`, the derivative of the probability-generating function of a
+finite measure on `ℕ` tends to the mean `∫⁻ k, k ∂ν`, taken in `[0, ∞]`; in particular it tends
+to `∞` when the mean is infinite. -/
+theorem tendsto_ofReal_deriv_pgf_nhdsLT_one (ν : Measure ℕ) [IsFiniteMeasure ν] :
+    Tendsto (fun t => ENNReal.ofReal (deriv (pgf id ν) t)) (𝓝[<] 1)
+      (𝓝 (∫⁻ k, (k : ℝ≥0∞) ∂ν)) := by
+  -- the mean is the sum of the masses `c n = (n + 1) ν {n + 1}`, and the derivative at `t` is
+  -- the sum of `c n * t ^ n`; the finite partial sums converge, and every term increases to `c n`
+  let c : ℕ → ℝ≥0∞ := fun n => ((n : ℝ≥0∞) + 1) * ν {n + 1}
+  have hmean : ∫⁻ k, (k : ℝ≥0∞) ∂ν = ∑' n, c n := by
+    rw [lintegral_countable', tsum_eq_zero_add' CompleteLattice.summable]
+    simp only [Nat.cast_zero, zero_mul, zero_add, Nat.cast_add, Nat.cast_one, c]
+  have hderiv {t : ℝ} (ht : t ∈ Set.Ico (0 : ℝ) 1) :
+      ENNReal.ofReal (deriv (pgf id ν) t) = ∑' n, c n * ENNReal.ofReal (t ^ n) := by
+    have hsum := hasSum_deriv_pgf ν (t := t) (by rw [abs_of_nonneg ht.1]; exact ht.2)
+    rw [← hsum.tsum_eq, ENNReal.ofReal_tsum_of_nonneg (fun n => by
+      have := ht.1; positivity) hsum.summable]
+    refine tsum_congr fun n => ?_
+    rw [ENNReal.ofReal_mul (by have := ht.1; positivity), ENNReal.ofReal_mul (by positivity),
+      ofReal_measureReal (measure_ne_top ν _), ENNReal.ofReal_add (by positivity) zero_le_one,
+      ENNReal.ofReal_natCast, ENNReal.ofReal_one]
+  have hev : ∀ᶠ t in 𝓝[<] (1 : ℝ), t ∈ Set.Ico (0 : ℝ) 1 :=
+    Ico_mem_nhdsLT (by norm_num : (0 : ℝ) < 1)
+  rw [hmean]
+  refine tendsto_order.2 ⟨fun a ha => ?_, fun b hb => ?_⟩
+  · rw [tsum_eq_iSup_sum, lt_iSup_iff] at ha
+    obtain ⟨s, hs⟩ := ha
+    have hlim : Tendsto (fun t : ℝ => ∑ n ∈ s, c n * ENNReal.ofReal (t ^ n)) (𝓝[<] 1)
+        (𝓝 (∑ n ∈ s, c n)) := by
+      refine tendsto_finsetSum s fun n _ => ?_
+      have h1 : Tendsto (fun t : ℝ => ENNReal.ofReal (t ^ n)) (𝓝[<] 1) (𝓝 1) := by
+        have : Tendsto (fun t : ℝ => t ^ n) (𝓝[<] 1) (𝓝 1) := by
+          simpa using ((continuous_pow n).tendsto (1 : ℝ)).mono_left nhdsWithin_le_nhds
+        simpa using ENNReal.tendsto_ofReal this
+      simpa using ENNReal.Tendsto.const_mul h1 (Or.inl one_ne_zero)
+    filter_upwards [hlim.eventually (lt_mem_nhds hs), hev] with t ht ht'
+    rw [hderiv ht']
+    exact ht.trans_le (sum_le_tsum s)
+  · filter_upwards [hev] with t ht
+    rw [hderiv ht]
+    refine lt_of_le_of_lt (tsum_le_tsum fun n => ?_) hb
+    calc c n * ENNReal.ofReal (t ^ n) ≤ c n * 1 := by
+          gcongr
+          exact ENNReal.ofReal_le_one.mpr (pow_le_one₀ ht.1 ht.2.le)
+      _ = c n := mul_one _
+
+end Shape
 
 end Probability
 
