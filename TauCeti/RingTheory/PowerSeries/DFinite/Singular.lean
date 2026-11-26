@@ -28,10 +28,10 @@ domain and a single minimal equation `p`, the point `ξ` is singular exactly whe
 points are among the roots of `pₙ`, so a domain contains only finitely many of them, and every
 singular point is algebraic over `k`.
 
-A singular point need not be a genuine singularity of the solutions. For `a ∈ k` and a nontrivial
-`k`-algebra `L`, the point `a` of `L` is a singular point of the minimal equation
+A singular point need not be a genuine singularity of the solutions. For `a ∈ k` and a
+`k`-algebra `L`, the point `a` of `L` is the only singular point of the minimal equation
 `(X - a) f' - (X - a + 1) f = 0` of the series `(X - a) exp(X)`
-(`PowerSeries.isMinimalSingularPoint_X_sub_C_smul_exp`). Over `ℂ` this singular point is
+(`PowerSeries.isMinimalSingularPoint_X_sub_C_smul_exp_iff`). Over `ℂ` this singular point is
 apparent, which is not formalized here: the equation has order one and its solution space is
 spanned by the entire function `(X - a) exp(X)`. By a theorem of André, every singular point
 other than `0` of the minimal equation of an E-function is apparent, and this is the input of
@@ -51,15 +51,19 @@ Beukers' refinement of the Siegel–Shidlovskii theorem.
   singular points are preserved by `k`-algebra homomorphisms, and reflected by injective ones.
 * `PowerSeries.IsMinimalSingularPoint.isAlgebraic`, `PowerSeries.IsMinimalSingularPoint.isIntegral`:
   singular points are algebraic over `k`.
+* `PowerSeries.isMinimalSingularPoint_iff_of_sum_mul_eq_one`: in any `k`-algebra, the singular
+  points are exactly the roots of the leading coefficient of a minimal equation whose
+  coefficients generate the unit ideal of `k[X]`. Such an equation exists by
+  `PowerSeries.IsDFinite.exists_minimal_equation_sum_mul_eq_one`.
 * `PowerSeries.isMinimalSingularPoint_of_rootMultiplicity_lt`,
   `PowerSeries.isMinimalSingularPoint_iff_exists_rootMultiplicity_lt`: for points of a domain, the
   criterion by orders of vanishing of the coefficients of one minimal equation.
 * `PowerSeries.finite_setOf_isMinimalSingularPoint`: a power series has only finitely many
   singular points in a domain.
 * `PowerSeries.not_isMinimalSingularPoint_zero`, `PowerSeries.not_isMinimalSingularPoint_exp`,
-  `PowerSeries.isMinimalSingularPoint_X_sub_C_smul_exp`: in a nontrivial `k`-algebra, the zero
-  series and the exponential series have no singular point, while `a` is a singular point of the
-  minimal equation of `(X - a) exp(X)`.
+  `PowerSeries.isMinimalSingularPoint_X_sub_C_smul_exp_iff`: in a nontrivial `k`-algebra, the
+  zero series and the exponential series have no singular point, while `a` is the only singular
+  point of the minimal equation of `(X - a) exp(X)`.
 
 ## References
 
@@ -141,6 +145,27 @@ theorem IsMinimalSingularPoint.isAlgebraic {f : K⟦X⟧} {ξ : L} (h : IsMinima
 theorem IsMinimalSingularPoint.isIntegral {f : K⟦X⟧} {ξ : L} (h : IsMinimalSingularPoint k f ξ) :
     IsIntegral k ξ :=
   h.isAlgebraic.isIntegral
+
+/-- A minimal equation of `f` whose coefficients generate the unit ideal of `k[X]` decides every
+singular point: `ξ` is singular exactly when the leading coefficient vanishes at `ξ`. Indeed the
+leading coefficient of every other minimal equation is a multiple of this one. -/
+theorem isMinimalSingularPoint_iff_of_sum_mul_eq_one {f : K⟦X⟧} {ξ : L} {n : ℕ}
+    (hn : dfiniteOrder k f = n) {p c : Fin (n + 1) → k[X]}
+    (hp : ∑ i, p i • (d⁄dX)^[i] f = 0) (hc : ∑ i, c i * p i = 1) :
+    IsMinimalSingularPoint k f ξ ↔ Polynomial.aeval ξ (p (Fin.last n)) = 0 := by
+  refine ⟨fun h ↦ h.aeval_eq_zero hn hp, fun hξ ↦ ⟨?_, ?_⟩⟩
+  · refine isDFinite_iff_not_linearIndependent.mpr fun hli ↦ one_ne_zero (α := k[X]) ?_
+    simp [← hc, Fintype.linearIndependent_iff.mp (hli.comp _ Fin.val_injective) p hp]
+  · subst hn
+    intro q hq
+    have hq : q (Fin.last _) = p (Fin.last _) * ∑ i, c i * q i := by
+      calc q (Fin.last _) = ∑ i, c i * (q (Fin.last _) * p i) := by
+            conv_lhs => rw [← mul_one (q _), ← hc, Finset.mul_sum]
+            exact Finset.sum_congr rfl fun i _ ↦ by ring
+        _ = p (Fin.last _) * ∑ i, c i * q i := by
+            simp_rw [minimal_equation_unique hp hq, Finset.mul_sum]
+            exact Finset.sum_congr rfl fun i _ ↦ by ring
+    rw [hq, map_mul, hξ, zero_mul]
 
 /-- The zero series has no singular point: `1 • f = 0` is an equation of minimal order zero. -/
 @[simp]
@@ -224,17 +249,11 @@ theorem isMinimalSingularPoint_iff_exists_rootMultiplicity_lt {f : K⟦X⟧} {ξ
   -- `p` by a generator `g` of the ideal spanned by its coefficients, giving an equation `q` of
   -- minimal order. Since `g` is a combination of the `pᵢ`, it also vanishes to order at least
   -- `m`, so the leading coefficient `qₙ = pₙ / g` does not vanish at `ξ`.
-  set g := Submodule.IsPrincipal.generator (Ideal.span (Set.range p))
-  have hdvd (i : Fin (n + 1)) : g ∣ p i :=
-    (Submodule.IsPrincipal.mem_iff_generator_dvd _).mp (Ideal.subset_span ⟨i, rfl⟩)
-  choose q hq using hdvd
+  obtain ⟨g, q, c, hq, hqlast, hqsum, hc⟩ :=
+    exists_eq_mul_of_sum_smul_iterate_derivative_eq_zero hlast hp
   have hg : g ≠ 0 := fun h0 ↦ hlast (by rw [hq, h0, zero_mul])
-  have hqlast : q (Fin.last n) ≠ 0 := fun h0 ↦ hlast (by rw [hq, h0, mul_zero])
-  have hqsum : ∑ i, q i • (d⁄dX)^[i] f = 0 := by
-    refine (smul_eq_zero_iff_right hg).mp ?_
-    simp_rw [Finset.smul_sum, ← mul_smul, ← hq, hp]
-  obtain ⟨c, hc⟩ : ∃ c : Fin (n + 1) → k[X], ∑ i, c i * p i = g :=
-    Ideal.mem_span_range_iff_exists_fun.mp (Submodule.IsPrincipal.generator_mem _)
+  replace hc : ∑ i, c i * p i = g := by
+    simp_rw [hq, mul_left_comm _ g, ← Finset.mul_sum, hc, mul_one]
   have hgm : ((p (Fin.last n)).map (algebraMap k L)).rootMultiplicity ξ ≤
       (g.map (algebraMap k L)).rootMultiplicity ξ := by
     rw [le_rootMultiplicity_iff (Polynomial.map_ne_zero hg), ← hc, Polynomial.map_sum]
@@ -255,34 +274,19 @@ theorem isMinimalSingularPoint_iff_exists_rootMultiplicity_lt {f : K⟦X⟧} {ξ
 
 end Domain
 
-/-- **A singular point of a minimal equation.** For `a ∈ k`, the series `(X - a) exp(X)` satisfies
-the minimal equation `(X - a) f' - (X - a + 1) f = 0`, and `a` is a singular point of its minimal
-equation. This theorem only proves that `a` is singular. Over `ℂ` the singular point is moreover
-apparent, because the equation has order one and its solutions are spanned by the entire function
-`(X - a) exp(X)`. -/
-theorem isMinimalSingularPoint_X_sub_C_smul_exp [Nontrivial K] [Algebra ℚ K] (a : k) :
-    IsMinimalSingularPoint k ((Polynomial.X - Polynomial.C a) • exp K) (algebraMap k L a) := by
-  set q : k[X] := Polynomial.X - Polynomial.C a with hq_def
-  have hq : q ≠ 0 := X_sub_C_ne_zero a
-  -- The two terms of the equation cancel: `-(q + 1) q + q (1 + q) = 0`.
-  have hcancel : -(q + 1) * q + q * (1 + q) = 0 := by ring
-  have hp : ∑ i, ![-(q + 1), q] i • (d⁄dX)^[i] (q • exp K) = 0 := by
-    have hd : Polynomial.derivative q = 1 := by simp [hq_def]
-    have hsum : ∑ i, ![-(q + 1), q] i • (d⁄dX)^[i] (q • exp K) =
-        (-(q + 1) * q + q * (1 + q)) • exp K := by
-      simp [Fin.sum_univ_two, derivative_polynomial_smul, derivative_exp, hd, smul_smul, add_smul,
-        mul_add]
-    rw [hsum, hcancel, zero_smul]
-  have hn : dfiniteOrder k (q • exp K) = 1 :=
-    le_antisymm (dfiniteOrder_le (by simpa using hq) hp) <|
-      (isDFinite_def.mpr ⟨1, _, by simpa using hq, hp⟩).dfiniteOrder_pos
-        (smul_ne_zero hq (isUnit_exp K).ne_zero)
-  -- First `a` is singular as a point of `k`, by the criterion; then map it into `L`.
-  have hk : IsMinimalSingularPoint k (q • exp K) a := by
-    refine isMinimalSingularPoint_of_rootMultiplicity_lt hn hp (i := 0) ?_ ?_
-    · -- The coefficient `-(X - a + 1)` takes the value `-1` at `a`.
-      exact fun h ↦ by simpa [hq_def] using congrArg (Polynomial.eval a) h
-    · simp [hq_def, rootMultiplicity_eq_zero, X_sub_C_ne_zero]
-  exact hk.map (Algebra.ofId k L)
+/-- **The singular point of a minimal equation.** For `a ∈ k`, the series `(X - a) exp(X)`
+satisfies the minimal equation `(X - a) f' - (X - a + 1) f = 0`, and `a` is its only singular
+point, in every `k`-algebra. Over `ℂ` the singular point is moreover apparent, because the
+equation has order one and its solutions are spanned by the entire function `(X - a) exp(X)`. -/
+@[simp]
+theorem isMinimalSingularPoint_X_sub_C_smul_exp_iff [Nontrivial K] [Algebra ℚ K] (a : k)
+    (ξ : L) :
+    IsMinimalSingularPoint k ((Polynomial.X - Polynomial.C a : k[X]) • exp K) ξ ↔
+      ξ = algebraMap k L a := by
+  rw [isMinimalSingularPoint_iff_of_sum_mul_eq_one
+    (dfiniteOrder_polynomial_smul_exp (X_sub_C_ne_zero a))
+    (sum_smul_iterate_derivative_polynomial_smul_exp _) (c := ![-1, -1])
+    (by simp [Fin.sum_univ_two]; ring)]
+  simp [sub_eq_zero]
 
 end PowerSeries

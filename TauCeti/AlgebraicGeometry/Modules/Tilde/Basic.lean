@@ -50,8 +50,10 @@ base change of `M` along `R → Γ(Spec R, ⊤)`.
   injective maps `M~(U) ⟶ N~(U)` on sections;
 * `TauCeti.AlgebraicGeometry.preservesFiniteLimits_tildeFunctor`: the functor `M ↦ M~` preserves
   finite limits, hence (with its preservation of colimits) short exact sequences;
-* `TauCeti.AlgebraicGeometry.subsingleton_tilde_basicOpen_of_smul_eq_zero`: the sections of
-  `M~` over `D(f)` vanish when `f` annihilates `M`;
+* `TauCeti.AlgebraicGeometry.subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero`: the sections of
+  `M~` over an open inside `D(f)` vanish when `f` annihilates `M`, and by
+  `TauCeti.AlgebraicGeometry.isZero_tilde_restrict_of_le_basicOpen_of_smul_eq_zero` the
+  restriction of `M~` to such an open is zero;
 * `TauCeti.AlgebraicGeometry.subsingleton_tilde_of_forall_notMem_support`: the sections of
   `M~` over `U` vanish when `U` misses the support of `M`;
 * `Scheme.Modules.tildeKernelIso`: the affine computation of ambient kernels of morphisms
@@ -181,14 +183,30 @@ theorem _root_.AlgebraicGeometry.Scheme.Modules.tildeKernelIso_hom_comp_ι
   simp only [kernel.lift_ι, PreservesKernel.iso_hom]
   exact kernelComparison_comp_ι_assoc _ _ _
 
-/-- If `f` annihilates the `R`-module `M`, the sections of `M~` over the basic open `D(f)`
-vanish: they form the localization `M_f`, which is zero. -/
-theorem subsingleton_tilde_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
-    (hf : ∀ m : M, f • m = 0) :
-    Subsingleton Γ(tilde M, (PrimeSpectrum.basicOpen f : (Spec R).Opens)) :=
-  (IsLocalizedModule.subsingleton_iff (Submonoid.powers f)
-    (tilde.toOpen M (PrimeSpectrum.basicOpen f)).hom).2
-    fun m ↦ ⟨f, Submonoid.mem_powers f, hf m⟩
+/-- If `f` annihilates the `R`-module `M`, the sections of `M~` over any open `W ⊆ D(f)` vanish:
+they are families of elements of the localizations `M_p` with `f ∉ p`, which are zero. -/
+theorem subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
+    (hf : ∀ m : M, f • m = 0) {W : (Spec R).Opens} (hW : W ≤ PrimeSpectrum.basicOpen f) :
+    Subsingleton Γ(tilde M, W) := by
+  refine ⟨fun s t ↦ Subtype.ext (funext fun p ↦ ?_)⟩
+  have : Subsingleton (LocalizedModule p.val.asIdeal.primeCompl M) :=
+    (IsLocalizedModule.subsingleton_iff p.val.asIdeal.primeCompl
+      (LocalizedModule.mkLinearMap _ _)).2
+      fun m ↦ ⟨f, (PrimeSpectrum.mem_basicOpen _ _).1 (hW p.property), hf m⟩
+  exact Subsingleton.elim _ _
+
+/-- If `f` annihilates the `R`-module `M`, then `M~` restricts to zero on any open `W ⊆ D(f)`:
+the restriction has the sections of `M~` over opens inside `W`, which vanish. -/
+theorem isZero_tilde_restrict_of_le_basicOpen_of_smul_eq_zero {M : ModuleCat.{u} R} (f : R)
+    (hf : ∀ m : M, f • m = 0) {W : (Spec R).Opens} (hW : W ≤ PrimeSpectrum.basicOpen f) :
+    IsZero ((tilde M).restrict W.ι) := by
+  rw [IsZero.iff_id_eq_zero]
+  refine Scheme.Modules.hom_ext _ _ fun V ↦ ?_
+  ext s
+  have := subsingleton_tilde_of_le_basicOpen_of_smul_eq_zero f hf
+    ((W.ι.image_le_opensRange V).trans (W.opensRange_ι.trans_le hW))
+  have := (Scheme.Modules.restrictAppIso W.ι (tilde M) V).addCommGroupIsoToAddEquiv.subsingleton
+  exact Subsingleton.elim _ _
 
 /-- If no point of an open `U` lies in the support of `M`, i.e. `M_p = 0` for every `p ∈ U`, the
 sections of `M~` over `U` vanish: they are families of elements of the localizations `M_p`,

@@ -30,6 +30,12 @@ estimates compare the Bessel-potential spaces `H^{s,p}` with the Besov spaces `B
 norms are weighted sequence norms of the `‖Δⱼ u‖_p`, and they make `g(D)` lower the Besov
 smoothness by `m`.
 
+* `ContDiffBump.exists_mul_inhomogeneousLittlewoodPaley_eq`: the symbol-level statement. There is
+  `C` such that for every `j` some Schwartz function `σⱼ` agrees with `g` on the support of the
+  piece `ψⱼ`, `σⱼ ψⱼ = g ψⱼ`, with `‖𝓕⁻ σⱼ‖₁ ≤ C W 2^{jm}`; for the Bessel symbol this is
+  `ContDiffBump.exists_mul_inhomogeneousLittlewoodPaley_eq_one_add_norm_sq_rpow_mul`. Being a
+  statement about symbols, it also applies to Fourier series, where the symbols are sampled at the
+  integer points.
 * `TemperedDistribution.exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq`: there is `C`
   such that for every `j` the operator `g(D) Δⱼ` factors as `T_{σⱼ} Δⱼ`, where `T_{σⱼ}` is the
   Fourier multiplier by a Schwartz symbol `σⱼ` whose kernel satisfies `‖𝓕⁻ σⱼ‖₁ ≤ C W 2^{jm}`
@@ -70,6 +76,79 @@ open FourierTransform MeasureTheory Metric Module
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The symbol `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` of the Bessel potential of order `s` has temperate growth
+and the symbol estimates of order `s` up to order `finrank ℝ E + 1`, with a common constant. -/
+private theorem hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (s : ℝ) :
+    (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth ∧
+      ∃ W, ∀ i ≤ finrank ℝ E + 1, ∀ ξ : E,
+        ‖iteratedFDeriv ℝ i (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ξ‖ ≤
+          W * (1 + ‖ξ‖ ^ 2) ^ ((s - i) / 2) :=
+  ⟨Complex.ofRealCLM.hasTemperateGrowth.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _),
+    TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow fun i _ ↦
+      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s i⟩
+
+namespace ContDiffBump
+
+variable (φ : ContDiffBump (0 : E))
+
+/-- **Symbols on the Littlewood–Paley pieces.** For every real `m` there is a constant `C` with the
+following property. Let `g` be a smooth function with the symbol estimates
+`‖D^i g ξ‖ ≤ W (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ n + 1`, where `n = dim E`. For
+every `j` there is a Schwartz function `σⱼ` that agrees with `g` on the support of the piece `ψⱼ`,
+`σⱼ ψⱼ = g ψⱼ`, and whose kernel satisfies
+
+`∫ ‖𝓕⁻ σⱼ x‖ dx ≤ C W 2^{jm}`.
+
+The symbol is `σⱼ = Ψⱼ g` for the enlarged cutoff `Ψⱼ` (`ContDiffBump.enlargedLittlewoodPaley`),
+which equals `1` on the support of `ψⱼ`. -/
+theorem exists_mul_inhomogeneousLittlewoodPaley_eq (m : ℝ) :
+    ∃ C, ∀ {g : E → ℂ} {W : ℝ}, ContDiff ℝ ∞ g →
+      (∀ i ≤ finrank ℝ E + 1, ∀ ξ,
+        ‖iteratedFDeriv ℝ i g ξ‖ ≤ W * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
+        (∀ ξ, σ ξ * φ.inhomogeneousLittlewoodPaley j ξ =
+          g ξ * φ.inhomogeneousLittlewoodPaley j ξ) ∧
+          ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * W * (2 ^ j) ^ m := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
+  choose B _ hB using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
+  obtain ⟨a, b, ha, hab⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
+  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) (H := ℂ) m
+    (N := finrank ℝ E + 1) (by omega) (b := b) ha B
+  refine ⟨C, fun {g W} hg hgW j ↦ ?_⟩
+  -- The symbol `σⱼ = Ψⱼ g`.
+  set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
+  have hχ : ContDiff ℝ ∞ χ := φ.contDiff_enlargedLittlewoodPaley L j
+  set σ : 𝓢(E, ℂ) :=
+    ((φ.hasCompactSupport_enlargedLittlewoodPaley L j).smul_right (f' := g)).toSchwartzMap
+      (hχ.smul hg)
+  have hσ : ⇑σ = fun ξ ↦ χ ξ • g ξ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  refine ⟨σ, fun ξ ↦ ?_, ?_⟩
+  · -- `Ψⱼ ψⱼ = ψⱼ`.
+    have h : (χ ξ : ℂ) * φ.inhomogeneousLittlewoodPaley j ξ = φ.inhomogeneousLittlewoodPaley j ξ :=
+      mod_cast φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL j ξ
+    simp only [hσ, Complex.real_smul]
+    linear_combination g ξ * h
+  · rw [hσ]
+    exact hC g W hg hgW (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
+
+/-- **The Bessel symbol on the Littlewood–Paley pieces.** For every real `s` there is a constant `C`
+such that for every `j` some Schwartz function `σⱼ` agrees with the symbol `(1 + ‖ξ‖ ^ 2) ^ (s / 2)`
+of the Bessel potential `J^s` on the support of the piece `ψⱼ`,
+`σⱼ ψⱼ = (1 + ‖ξ‖ ^ 2) ^ (s / 2) ψⱼ`, and has kernel bounded by
+
+`∫ ‖𝓕⁻ σⱼ x‖ dx ≤ C 2^{js}`. -/
+theorem exists_mul_inhomogeneousLittlewoodPaley_eq_one_add_norm_sq_rpow_mul (s : ℝ) :
+    ∃ C, ∀ j : ℕ, ∃ σ : 𝓢(E, ℂ),
+      (∀ ξ, σ ξ * φ.inhomogeneousLittlewoodPaley j ξ =
+        (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * φ.inhomogeneousLittlewoodPaley j ξ) ∧
+        ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * (2 ^ j) ^ s := by
+  obtain ⟨C, hC⟩ := φ.exists_mul_inhomogeneousLittlewoodPaley_eq s
+  obtain ⟨hg, W, hW⟩ := hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (E := E) s
+  exact ⟨C * W, hC hg.1 hW⟩
+
+end ContDiffBump
+
 namespace TemperedDistribution
 
 variable [NormedSpace ℂ F] (φ : ContDiffBump (0 : E))
@@ -92,34 +171,20 @@ theorem exists_fourierMultiplierCLM_compL_littlewoodPaleyBlock_eq (m : ℝ) :
         fourierMultiplierCLM F g ∘L littlewoodPaleyBlock F φ j =
             fourierMultiplierCLM F σ ∘L littlewoodPaleyBlock F φ j ∧
           ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ ≤ C * W * (2 ^ j) ^ m := by
-  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero φ
-  choose B _ hB using fun k : ℕ ↦ φ.exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le L k
-  obtain ⟨a, b, ha, hab⟩ := φ.exists_one_add_norm_sq_le_of_mem_tsupport_enlargedLittlewoodPaley L
-  obtain ⟨C, hC⟩ := TauCeti.exists_integral_norm_fourierInv_cutoff_smul_le (E := E) (H := ℂ) m
-    (N := finrank ℝ E + 1) (by omega) (b := b) ha B
+  obtain ⟨C, hC⟩ := φ.exists_mul_inhomogeneousLittlewoodPaley_eq m
   refine ⟨C, fun {g W} hg hgW j ↦ ?_⟩
-  -- The symbol `σⱼ = Ψⱼ g`.
-  set χ : E → ℝ := φ.enlargedLittlewoodPaley L j
-  have hχ : ContDiff ℝ ∞ χ := φ.contDiff_enlargedLittlewoodPaley L j
-  set σ : 𝓢(E, ℂ) :=
-    ((φ.hasCompactSupport_enlargedLittlewoodPaley L j).smul_right (f' := g)).toSchwartzMap
-      (hχ.smul hg.1)
-  have hσ : ⇑σ = fun ξ ↦ χ ξ • g ξ := funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  refine ⟨σ, ?_, ?_⟩
-  · -- Both sides are Fourier multipliers; their symbols agree since `Ψⱼ ψⱼ = ψⱼ`.
-    rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM,
-      fourierMultiplierCLM_compL_fourierMultiplierCLM
-        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) hg,
-      fourierMultiplierCLM_compL_fourierMultiplierCLM
-        (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) σ.hasTemperateGrowth]
-    congr 1
-    funext ξ
-    have h : (χ ξ : ℂ) * φ.inhomogeneousLittlewoodPaley j ξ = φ.inhomogeneousLittlewoodPaley j ξ :=
-      mod_cast φ.enlargedLittlewoodPaley_mul_inhomogeneousLittlewoodPaley hL j ξ
-    simp only [Pi.mul_apply, hσ, Complex.real_smul]
-    linear_combination (-g ξ) * h
-  · rw [hσ]
-    exact hC g W hg.1 hgW (2 ^ j) χ (by positivity) hχ (hab j) fun k _ ξ ↦ hB k j ξ
+  obtain ⟨σ, hσ, hσC⟩ := hC hg.1 hgW j
+  refine ⟨σ, ?_, hσC⟩
+  -- Both sides are Fourier multipliers; their symbols agree since `σⱼ ψⱼ = g ψⱼ`.
+  rw [littlewoodPaleyBlock_eq_fourierMultiplierCLM,
+    fourierMultiplierCLM_compL_fourierMultiplierCLM
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) hg,
+    fourierMultiplierCLM_compL_fourierMultiplierCLM
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) σ.hasTemperateGrowth]
+  congr 1
+  funext ξ
+  simp only [Pi.mul_apply]
+  linear_combination -(hσ ξ)
 
 /-- **Fourier multipliers of Littlewood–Paley blocks in `Lᵖ`.** For every real `m` there is a
 constant `C ≥ 0`, depending only on `m` and `φ`, with the following property. Let `g` be a function
@@ -204,18 +269,6 @@ theorem exists_fourierMultiplierCLM_enlargedLittlewoodPaleyBlock_eq_and_norm_le 
           exact_mod_cast Nat.card_Ico_add_le_two_mul_of_sub_le j L
             (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * K * W * 2 ^ (m * j) * ‖f‖ := by ring
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The symbol `(1 + ‖ξ‖ ^ 2) ^ (s / 2)` of the Bessel potential of order `s` has temperate growth
-and the symbol estimates of order `s` up to order `finrank ℝ E + 1`, with a common constant. -/
-private theorem hasTemperateGrowth_and_exists_norm_iteratedFDeriv_besselSymbol_le (s : ℝ) :
-    (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth ∧
-      ∃ W, ∀ i ≤ finrank ℝ E + 1, ∀ ξ : E,
-        ‖iteratedFDeriv ℝ i (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) ξ‖ ≤
-          W * (1 + ‖ξ‖ ^ 2) ^ ((s - i) / 2) :=
-  ⟨Complex.ofRealCLM.hasTemperateGrowth.comp (Function.hasTemperateGrowth_one_add_norm_sq_rpow E _),
-    TauCeti.exists_forall_norm_iteratedFDeriv_le_mul_one_add_norm_sq_rpow fun i _ ↦
-      TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le s i⟩
 
 /-- **Bessel potentials on Littlewood–Paley blocks.** There is a constant `C` such that for every
 `j` the Bessel potential `J^s` of order `s`, applied after the Littlewood–Paley block `Δⱼ`, is the

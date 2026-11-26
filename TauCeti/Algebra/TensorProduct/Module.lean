@@ -31,6 +31,12 @@ with commuting outer actions can reuse the same extension of linearity.
 an action of `A ⊗[R] B` on `M ⊗[R] N`, using Mathlib's `Algebra.lsmul`,
 `Algebra.TensorProduct.map`, and `Module.endTensorEndAlgHom`. This construction requires only
 algebras, without a coproduct.
+
+Conversely to the factor actions above, commuting actions of a commutative ring `R` and a ring
+`A` on `M` give an action of `R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms:
+`TauCeti.tensorToModuleEnd R A M`, extending Mathlib's `Module.toModuleEnd`.
+It is compatible with tensoring by an `R`-module `N`, `M ↦ M ⊗[R] N`
+(`TauCeti.tensorToModuleEnd_rTensor`).
 -/
 
 public section
@@ -225,3 +231,39 @@ theorem tensorPairAction_natural (f : M →ₗ[A] M') (g : N →ₗ[B] N')
 end PairAction
 
 end TauCeti.BialgebraModule
+
+namespace TauCeti
+
+variable (R A M : Type*) [CommRing R] [Ring A] [AddCommMonoid M] [Module R M] [Module A M]
+  [SMulCommClass A R M]
+
+/-- Commuting actions of a commutative ring `R` and a ring `A` on `M` combine into the action of
+`R ⊗[ℤ] A` on `M` by `R`-linear endomorphisms, `r ⊗ a ↦ (m ↦ r • a • m)`. -/
+noncomputable def tensorToModuleEnd : R ⊗[ℤ] A →ₐ[R] Module.End R M :=
+  -- `M` is only an `AddCommMonoid`, so `Module.End R M` has no canonical `Ring` instance; this
+  -- local one, induced by the `R`-algebra structure, exists only so that `RingHom.toIntAlgHom`
+  -- applies. The declared type uses only the semiring structure of `Module.End R M`.
+  letI : Ring (Module.End R M) := _root_.Algebra.semiringToRing R
+  lift (Algebra.ofId R _) (Module.toModuleEnd R (S := A) M).toIntAlgHom
+    fun r _ ↦ by rw [Algebra.ofId_apply]; exact Algebra.commute_algebraMap_left r _
+
+variable {R A M}
+
+@[simp]
+theorem tensorToModuleEnd_tmul (r : R) (a : A) (m : M) :
+    tensorToModuleEnd R A M (r ⊗ₜ a) m = r • a • m := by
+  simp [tensorToModuleEnd]
+
+/-- **Compatibility with tensoring by an `R`-module `N`**: on `M ⊗[R] N`, with `A` acting on the
+first factor, `R ⊗[ℤ] A` acts through its action on `M`. -/
+theorem tensorToModuleEnd_rTensor [SMulCommClass R A M] (N : Type*) [AddCommMonoid N]
+    [Module R N] (t : R ⊗[ℤ] A) :
+    tensorToModuleEnd R A (M ⊗[R] N) t = (tensorToModuleEnd R A M t).rTensor N := by
+  induction t using TensorProduct.inductionOn with
+  | tmul r a =>
+    apply _root_.TensorProduct.ext'
+    intro m n
+    simp [TensorProduct.smul_tmul']
+  | add s t hs ht => rw [map_add, map_add, hs, ht, LinearMap.rTensor_add]
+
+end TauCeti

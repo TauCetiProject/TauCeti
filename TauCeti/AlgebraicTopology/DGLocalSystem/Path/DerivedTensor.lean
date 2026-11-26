@@ -34,8 +34,11 @@ The reason is that the based path space is contractible: its augmentation
 quasi-isomorphism (`TauCeti.exists_differential_eq_and_pathFromChainAugmentationHom_add_eq`), so
 the composite of the comparison with it is a quasi-isomorphism from `K_m` onto `R`
 (`TauCeti.BrownModel.exists_differential_eq_and_augmentation_add_eq`): a Brown model is a
-semi-free resolution of `R`. A semi-free resolution of `R` computes the derived tensor product
-with `R` (`TauCeti.nonempty_localizedFunctor_iso_derivedTensor`).
+semi-free resolution of `R`. So it is homologous to the canonical semi-free resolution of `R`
+(`TauCeti.BrownModel.nonempty_rowFiniteHomologous_semifreeResolution`), and homologous semi-free
+cocycles induce isomorphic functors on the localizations
+(`TauCeti.RowFiniteHomologous.localizedFunctorIso`), so a Brown model computes the derived tensor
+product with `R`.
 
 For the circle, Brown's resolution `TauCeti.loopCellCocycle` with its comparison
 `TauCeti.cycleCellPathComparison` is a Brown model (`TauCeti.loopCellBrownModel`), so
@@ -62,6 +65,8 @@ circle is treated with coefficients `R : Type`, as in
   chains on the based path space is a quasi-isomorphism onto `R`.
 * `TauCeti.BrownModel.exists_differential_eq_and_augmentation_add_eq`: a Brown model is a
   semi-free resolution of the ground ring.
+* `TauCeti.BrownModel.nonempty_rowFiniteHomologous_semifreeResolution`: a Brown model is
+  homologous to the canonical semi-free resolution of the ground ring.
 * `TauCeti.BrownModel.nonempty_localizedFunctor_iso_derivedTensor`: a Brown model computes the
   derived tensor product with the ground ring.
 * `TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`:
@@ -189,6 +194,31 @@ theorem exists_differential_eq_and_augmentation_add_eq {P : Type*} {ind : P → 
     exists_differential_eq_and_pathFromChainAugmentationHom_add_eq u w hu ((hlc u).trans hw)
   exact ⟨u', w', hu', (congrArg (· + _) (hlc u')).symm.trans hw'⟩
 
+/-- **A Brown model is homologous to the semi-free resolution of the ground ring.** For a Brown
+model `M` with generators in the universe of the loop chains, the cocycle of `M` and the canonical
+semi-free resolution (`TauCeti.semifreeResolution`) of `R`, on which the loop chains act through
+their augmentation, are homologous. So the twisted complex `𝓕 ⊗ K_m` is homotopy equivalent to
+`𝓕 ⊗ K`, for the free module `K` of that resolution, with coefficients in every DG right module
+`𝓕` (`TauCeti.RowFiniteHomologous.homotopyEquiv`). -/
+theorem nonempty_rowFiniteHomologous_semifreeResolution {P : Type (max uB uR)} {ind : P → ℤ}
+    (M : BrownModel B b H R P ind) :
+    Nonempty (RowFiniteHomologous (loopChain_isDGAlgebra B b R) M.cocycle
+      (semifreeResolution (R := R) (A := loopChainAlgebra B b R)
+        (cubicalChainGrading (MooreLoopSpace B b) R)
+        (cubicalChainDifferential (MooreLoopSpace B b) R)
+        (loopChainAugmentation B b R).bimoduleGrading
+        (loopChainAugmentation B b R).bimoduleDifferential)) := by
+  -- The left action of the loop chains on `{}_ε R` respects degrees; the instance has to be
+  -- supplied, since the grading of the loop chains is stated with the direct-sum module structure.
+  have := DGAlgHom.bimoduleGradedSMulLeft (loopChainAugmentation B b R)
+  refine TauCeti.nonempty_rowFiniteHomologous_semifreeResolution
+    (loopChainAugmentation B b R).isDGBimodule.toIsDGLeftModule M.wellFounded
+    (ε := pathFromChainAugmentationHom B b H R ∘ M.comparison)
+    (fun x ↦ pathFromChainAugmentationHom_mem (M.comparison_mem x)) (fun x ↦ ?_)
+    M.exists_differential_eq_and_augmentation_add_eq
+  rw [← Finsupp.apply_linearCombination, M.linearCombination_comparison_m,
+    pathFromChainAugmentationHom_differential, Function.comp_apply]
+
 variable {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
   (L₁ : DGRightModuleCat.{uR, max uB uR, uM} (loopChain_isDGAlgebra B b R) ⥤ D₁)
   [L₁.IsLocalization (DGRightModuleCat.quasiIsos (loopChain_isDGAlgebra B b R))]
@@ -208,16 +238,9 @@ theorem nonempty_localizedFunctor_iso_derivedTensor {P : Type (max uB uR)} {ind 
       (derivedTensorLocalizerMorphism (loopChain_isDGAlgebra B b R)
         (loopChainAugmentation B b R).bimoduleGrading
         (loopChainAugmentation B b R).bimoduleDifferential).localizedFunctor L₁ L₂) := by
-  -- The left action of the loop chains on `{}_ε R` respects degrees; the instance has to be
-  -- supplied, since the grading of the loop chains is stated with the direct-sum module structure.
-  have := DGAlgHom.bimoduleGradedSMulLeft (loopChainAugmentation B b R)
-  refine TauCeti.nonempty_localizedFunctor_iso_derivedTensor L₁ L₂
-    (loopChainAugmentation B b R).isDGBimodule.toIsDGLeftModule M.wellFounded
-    (ε := pathFromChainAugmentationHom B b H R ∘ M.comparison)
-    (fun x ↦ pathFromChainAugmentationHom_mem (M.comparison_mem x)) (fun x ↦ ?_)
-    M.exists_differential_eq_and_augmentation_add_eq
-  rw [← Finsupp.apply_linearCombination, M.linearCombination_comparison_m,
-    pathFromChainAugmentationHom_differential, Function.comp_apply]
+  rw [derivedTensorLocalizerMorphism_def]
+  exact M.nonempty_rowFiniteHomologous_semifreeResolution.map fun E ↦
+    E.localizedFunctorIso L₁ L₂ M.wellFounded wellFounded_mem_support_semifreeResolution
 
 end BrownModel
 

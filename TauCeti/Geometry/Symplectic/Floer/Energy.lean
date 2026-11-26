@@ -77,6 +77,8 @@ Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation per
 * `SymplecticForm.mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity` and
   `SymplecticForm.setLIntegral_norm_sq_add_norm_sq_perturbedFDeriv_le`: the energy controls the
   perturbed derivative, pointwise and in `L²`.
+* `SymplecticForm.mul_opNorm_sq_le_of_isComplexLinearMap`: the area of a complex-linear map from
+  the standard complex line controls its operator norm.
 * `SymplecticForm.norm_fderiv_stdComplexLineReal_sq_le`: the energy density and the Hamiltonian
   vector field control `‖∂_s u‖²`.
 * `SymplecticForm.integral_floerEnergyDensity`: the energy identity on a rectangle.
@@ -597,6 +599,34 @@ theorem mul_norm_sq_add_norm_sq_perturbedFDeriv_le_mul_floerEnergyDensity
       h.apply_stdComplexLineImag, ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _) (hJM a) 2
   nlinarith [hJc a, mul_le_mul_of_nonneg_left hM hc, sq_nonneg M, sq_nonneg ‖a‖]
+
+omit [FiniteDimensional ℝ V] in
+/-- **Coercivity of the area of a complex-linear map.** The operator norm of a complex-linear map
+`F` from the standard complex line, for a structure `J` with `‖J a‖ ≤ M ‖a‖` and
+`c ‖a‖² ≤ ω(a, J a)`, is controlled by its area: `c ‖F‖² ≤ (1 + M)² ω(F(1, 0), F(0, 1))`. Applied
+to `F = du`, this bounds `‖du‖²` by a multiple of the area density of a pseudoholomorphic map. -/
+theorem mul_opNorm_sq_le_of_isComplexLinearMap (ω : SymplecticForm V)
+    {J₀ : AlmostComplexStructure V} {c M : ℝ} (hc : 0 < c) (hJc : ∀ a, c * ‖a‖ ^ 2 ≤ ω a (J₀ a))
+    (hJM : ∀ a, ‖J₀ a‖ ≤ M * ‖a‖) {F : ℝ × ℝ →L[ℝ] V}
+    (hF : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J₀ (F : ℝ × ℝ →ₗ[ℝ] V)) :
+    c * ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ω (F stdComplexLineReal) (F stdComplexLineImag) := by
+  set a := F stdComplexLineReal
+  have hb : F stdComplexLineImag = J₀ a := by simpa using hF.apply_stdComplexLineImag
+  -- `‖F‖ ≤ ‖F(1, 0)‖ + ‖F(0, 1)‖ ≤ (1 + M) ‖a‖`.
+  have hF : ‖F‖ ≤ (1 + M) * ‖a‖ := by
+    have hM : 0 ≤ (1 + M) * ‖a‖ := by nlinarith [hJM a, norm_nonneg a, norm_nonneg (J₀ a)]
+    refine F.opNorm_le_bound hM fun z ↦ ?_
+    rw [F.apply_stdComplexLine z]
+    refine (norm_add_le _ _).trans ?_
+    rw [norm_smul, norm_smul, hb]
+    have h1 := mul_le_mul_of_nonneg_right (norm_fst_le z) (norm_nonneg a)
+    have h2 := mul_le_mul (norm_snd_le z) (hJM a) (norm_nonneg _) (norm_nonneg z)
+    nlinarith
+  have hsq : ‖F‖ ^ 2 ≤ (1 + M) ^ 2 * ‖a‖ ^ 2 := by
+    rw [← mul_pow]
+    exact pow_le_pow_left₀ (norm_nonneg F) hF 2
+  rw [hb]
+  nlinarith [hJc a, sq_nonneg (1 + M)]
 
 /-- **The energy density bounds the derivative.** Let `u` solve the Floer equation at `z` for an
 almost complex structure `J` with `c ‖v‖² ≤ ω(v, J v)` for all `v`, where `0 < c`. Then `∂_s u` is
