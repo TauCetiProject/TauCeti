@@ -12,6 +12,7 @@ public import TauCeti.Analysis.PDE.Vortex.WindowEstimate
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.DerivativeDecay
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+import TauCeti.MeasureTheory.Function.Lp.Holder
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.PiLp
 import TauCeti.MeasureTheory.Measure.Restrict
@@ -104,8 +105,9 @@ denotes the weighted norm `‖exp(c ρ) g‖₂` of the values of `g`.
   (`exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjection_le`), with `K`
   depending only on `m`, `R₀` and `c`.
 
-Derivatives in the parameter of order three and higher, and weighted Sobolev versions of the second
-derivative estimates, are not treated here.
+The weighted Sobolev versions of the second-derivative estimates are in
+`TauCeti.Analysis.PDE.Vortex.ParameterDerivative.SecondSobolev`. Derivatives in the parameter of
+order three and higher are not treated here.
 
 ## References
 
@@ -121,7 +123,7 @@ noncomputable section
 
 namespace TauCeti.Vortex
 
-open Complex MeasureTheory Filter TopologicalSpace ContinuousLinearMap BesselPotentialSpace
+open Complex _root_.MeasureTheory Filter TopologicalSpace ContinuousLinearMap BesselPotentialSpace
 open scoped ENNReal NNReal Topology RealInnerProductSpace ContDiff BesselPotentialSpace
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
@@ -602,7 +604,7 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_
 /-- Along a family of coefficients `C²` at `p₀`, whose value at `p₀` is the class of a smooth plane
 vortex with the degree-`m` end framing, the realizations are `C²` at `p₀`, and at `p₀` the
 realization is Fredholm and onto, with its orthogonal kernel projection. -/
-private theorem isFredholm_and_contDiffAt_sobolevGaugeFixedOperator {m : ℕ}
+theorem isFredholm_and_contDiffAt_sobolevGaugeFixedOperator {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ ∞ x) (hsol : ∀ z, equation x z = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1))
     {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
@@ -899,15 +901,22 @@ theorem exists_forall_eLpNorm_exp_mul_smul_fderiv_fun_fderiv_orthogonalKerProjec
 
 /-! ### The weighted Sobolev estimate for the parameter derivative -/
 
-/-- An `L∞` class equal almost everywhere to a field whose coordinates are bounded by `M` has
-norm at most `2 M`. -/
-private theorem norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le
+/-- The coefficient bounds of the weighted Sobolev estimates below and in
+`TauCeti.Analysis.PDE.Vortex.ParameterDerivative.SecondSobolev` control the `L∞` norm: if `b` is
+the class of a field `β` whose coordinates have derivatives bounded by `M` through order `k`, then
+`M` is nonnegative and `‖b‖ ≤ 2 M`. Only the bound on the values is used, which is the case
+`k = 0`; it enters through `MeasureTheory.Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le`. -/
+theorem nonneg_and_norm_le_two_mul_of_forall_norm_iteratedFDeriv_le {k : ℕ}
     {b : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤} {β : ℂ → EuclideanSpace ℝ (Fin 4)} {M : ℝ}
-    (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i z, ‖β z i‖ ≤ M) : ‖b‖ ≤ 2 * M := by
-  have h := Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le ((norm_nonneg _).trans (hβb 0 0))
-    (hb.mono fun z hz i ↦ hz ▸ hβb i z)
-  rwa [Fintype.card_fin, Nat.cast_ofNat, show √(4 : ℝ) = 2 by
+    (hb : b =ᵐ[μ⊤] β) (hβb : ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ β z i) z‖ ≤ M) :
+    0 ≤ M ∧ ‖b‖ ≤ 2 * M := by
+  have hβ (i : Fin 4) (z : ℂ) : ‖β z i‖ ≤ M := by
+    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z
+  have hM : 0 ≤ M := (norm_nonneg _).trans (hβ 0 0)
+  have h := Lp.norm_le_sqrt_card_mul_of_ae_norm_apply_le hM (hb.mono fun z hz i ↦ hz ▸ hβ i z)
+  rw [Fintype.card_fin, Nat.cast_ofNat, show √(4 : ℝ) = 2 by
     rw [show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two]] at h
+  exact ⟨hM, h⟩
 
 /-- **The coordinates of the zeroth-order term.** For every order `k` there is a constant `C` with
 the following property. If `β` is a smooth field whose coordinates have derivatives bounded by `M`
@@ -940,16 +949,181 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder
     exact (pi_norm_le_iff_of_nonneg (norm_nonneg u)).2 fun a ↦
       (norm_inclusion_apply_le hk _).trans (norm_le_pi_norm u a)
 
-/-- **The weighted Sobolev estimate for a solution of `L_a y = -Z(b, e₀)`.** For every order `k`,
-bound `B` and rate `c` there is a constant `K` with the following property, where
+/-- If `W j` are coordinates of `-Z(β j, exp(c ρ) g j)` for `j ∈ t`, for the classes `b j` of
+fields `β j`, then `∑ j ∈ t, W j` are coordinates of `exp(c ρ) (-∑ j ∈ t, Z(b j, g j))`. -/
+private theorem inclusionLp_sum_ae_eq_exp_mul_smul_neg_sum {s : ℝ} (hs : 0 ≤ s) {c : ℝ}
+    {ι : Type*} {t : Finset ι} {b : ι → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
+    {β : ι → ℂ → EuclideanSpace ℝ (Fin 4)} (hb : ∀ j ∈ t, b j =ᵐ[μ⊤] β j)
+    {g : ι → Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤} {W : ι → Fin 4 → H^{s}(ℂ)}
+    (hW : ∀ j ∈ t, ∀ i, ⇑(inclusionLp hs (W j i)) =ᵐ[volume]
+      fun z ↦ ((-gaugeFixedZerothOrder (β j z) (Real.exp (c * √(1 + ‖z‖ ^ 2)) • g j z)) i : ℂ))
+    (i : Fin 4) :
+    ⇑(inclusionLp hs ((∑ j ∈ t, W j) i)) =ᵐ[volume] fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+      (-∑ j ∈ t, gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (b j) (g j)) z) i : ℂ) := by
+  rw [Finset.sum_apply, map_sum]
+  have hμ : ae (volume : Measure ℂ) ≤ ae μ⊤ := ae_mono (Measure.restrict_coe_opens_top _).ge
+  filter_upwards [(Lp.coeFn_finsetSum _ _).trans (eventuallyEq_sum fun j hj ↦ hW j hj i),
+    ((Lp.coeFn_neg _).trans (Lp.coeFn_finsetSum t
+      fun j ↦ gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (b j) (g j)).neg).filter_mono hμ,
+    eventuallyEq_sum fun j hj ↦ gaugeFixedZerothOrder.holderL_ae_eq_of_measure_le (r := 2)
+      (Measure.restrict_coe_opens_top _).ge (b j) (g j) ((hb j hj).filter_mono hμ) .rfl]
+    with z hW hH hZ
+  rw [hW, hH, Pi.neg_apply, hZ, Finset.sum_apply, Finset.sum_apply]
+  simp [map_smul, Finset.smul_sum]
+
+/-- **The weighted Sobolev estimate for `Q f` over a window.** For every degree `m`, radius `R₀`,
+bound `B`, rate `|c| < 1/2` and order `k` there is a constant `K` with the following property. Let
+`x` be a smooth plane vortex with the degree-`m` end framing whose zeros lie in the closed disc of
+radius `R₀` and whose coordinates have derivatives bounded by `B` through order `k`, with `L∞`
+class `a`, and let `Q` be the right inverse of `L_a` with values `L²`-orthogonal to its kernel. If
+the coordinates of `exp(c ρ) f` are given by `g : Fin 4 → H^k(ℂ)`, then those of `exp(c ρ) Q f`
+are given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖g‖`. -/
+theorem exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le
+    (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+    ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤, a =ᵐ[μ⊤] x →
+      ∀ (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) (g : Fin 4 → H^{(k : ℝ)}(ℂ)),
+      (∀ i, ⇑(inclusionLp (Nat.cast_nonneg k) (g i)) =ᵐ[volume]
+        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • f z) i : ℂ)) →
+      ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ i, ⇑(inclusionLp (by positivity) (u i)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+            (orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator a) f) z) i :
+              ℂ)) ∧
+        ‖u‖ ≤ K * ‖g‖ := by
+  obtain ⟨qc, hqc⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
+  refine ⟨K₁ * (1 + 4 * qc), by positivity, ?_⟩
+  intro x D hx hxb hsol hframe hD hD₀ a hax f g hg
+  obtain ⟨hT, hsurj⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
+  have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse sobolevFieldValues_injective hsurj
+  -- The values of `Q f` solve `L_x Y = f` weakly, with weighted `L²` norm at most `4 qc ‖g‖`.
+  obtain ⟨hQm, hQn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
+    (hqc x D hx hsol hframe hD hD₀ a hax f)
+    (eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hg)
+  obtain ⟨u, hu, hun⟩ := hK₁b x hx hxb f _
+    ((Lp.memLp f).mono_measure (Measure.restrict_coe_opens_top _).ge)
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
+      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax _ hη hηc,
+        hQ.rightInverse f]) hQm g hg
+  exact ⟨u, hu, hun.trans (by nlinarith [norm_nonneg g])⟩
+
+/-- **The weighted Sobolev estimate for `π e` over a window.** For every degree `m`, radius `R₀`,
+bound `B`, rate `|c| < 1/2` and order `k` there is a constant `K` with the following property. Let
+`x` be a smooth plane vortex with the degree-`m` end framing whose zeros lie in the closed disc of
+radius `R₀` and whose coordinates have bounded derivatives of every order, bounded by `B` through
+order `k`, with `L∞` class `a`, and let `π` be the projection onto the kernel of `L_a` along its
+`L²`-orthogonal complement. If `exp(c ρ) e` is square integrable, then the coordinates of
+`exp(c ρ) π e` are given by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K ‖exp(c ρ) e‖₂`. -/
+theorem exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le
+    (m : ℕ) (R₀ B : ℝ) {c : ℝ} (hc : |c| < 1 / 2) (k : ℕ) :
+    ∃ K ≥ 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ), ContDiff ℝ ∞ x →
+      (∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      (∀ z, equation x z = 0) →
+      Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
+      IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) → (∀ b ∈ D, ‖b‖ ≤ R₀) →
+      ∀ a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤, a =ᵐ[μ⊤] x →
+      ∀ e : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2,
+      MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2 volume →
+      ∃ u : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ i, ⇑(inclusionLp (by positivity) (u i)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues
+            (orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator a) e) z) i :
+              ℂ)) ∧
+        ‖u‖ ≤ K * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
+          sobolevFieldValues e z) 2 volume).toReal := by
+  obtain ⟨kπ, hkπ⟩ :=
+    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
+  refine ⟨K₁ * kπ, by positivity, ?_⟩
+  intro x D hx hbound hxb hsol hframe hD hD₀ a hax e he
+  obtain ⟨hT, -⟩ := isFredholm_and_surjective_sobolevGaugeFixedOperator hx hsol hframe hax
+  have := hT.finite_ker
+  have hπ := isOrthogonalKerProjection_orthogonalKerProjection sobolevFieldValues_injective
+    (sobolevGaugeFixedOperator a)
+  have hπ0 : sobolevGaugeFixedOperator a (orthogonalKerProjection sobolevFieldValues
+      (sobolevGaugeFixedOperator a) e) = 0 := hπ.mem_ker e
+  -- `π e` is a weak solution of `L_x Y = 0` with weighted `L²` norm at most `kπ ‖exp(c ρ) e‖₂`.
+  obtain ⟨hπm, hπn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
+    (hkπ x D hx hbound hsol hframe hD hD₀ a hax e)
+    (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
+  obtain ⟨u, hu, hun⟩ := hK₁b x hx hxb (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) _
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
+      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax _ hη hηc,
+        hπ0]) hπm 0 fun i ↦ .of_forall fun z ↦ by simp
+  rw [norm_zero, zero_add] at hun
+  exact ⟨u, hu, hun.trans (by rw [mul_assoc]; gcongr)⟩
+
+/-- **The weighted Sobolev estimate for a solution of `L_a y = -∑ j ∈ s, Z(b j, e j)`.** For every
+order `k`, bound `B` and rate `c` there is a constant `K` with the following property, where
 `ρ(z) = √(1 + |z|²)`. Let `x` be a smooth field with `L∞` class `a` whose coordinates have
-derivatives bounded by `B` through order `k`, and let `b` be the class of a smooth field `β` whose
-coordinates have derivatives bounded by `M` through order `k`. Let `e₀, y ∈ H¹(ℂ)⁴` with
-`L_a y = -Z(b, e₀)`, where the coordinates of `exp(c ρ) e₀` are given by
-`u₀ : Fin 4 → H^(k+1)(ℂ)` and `‖exp(c ρ) y‖₂ ≤ N`. Then the coordinates of `exp(c ρ) y` are given
-by some `u : Fin 4 → H^(k+1)(ℂ)` with `‖u‖ ≤ K (M ‖u₀‖ + N)`. This is the step shared by the
-parameter derivatives of the right inverse and of the kernel projection, for which `e₀` is `Q f`
-and `π e`. -/
+derivatives bounded by `B` through order `k`, and let `s` be a finite set of indices, each `b j`
+the class of a smooth field `β j` whose coordinates have derivatives bounded by `M j` through
+order `k`. Let `e j, y ∈ H¹(ℂ)⁴` with `L_a y = -∑ j ∈ s, Z(b j, e j)`, where the coordinates of
+`exp(c ρ) e j` are given by `u j : Fin 4 → H^(k+1)(ℂ)` and `‖exp(c ρ) y‖₂ ≤ N`. Then the
+coordinates of `exp(c ρ) y` are given by some `v : Fin 4 → H^(k+1)(ℂ)` with
+`‖v‖ ≤ K (∑ j ∈ s, M j ‖u j‖ + N)`. The constant does not depend on `s`. This is the step shared
+by the parameter derivatives of the right inverse and of the kernel projection: the first
+derivatives have one term and the second derivatives three. -/
+theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg_sum
+    (k : ℕ) (B c : ℝ) :
+    ∃ K ≥ 0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x →
+      (∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ B) →
+      ∀ a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤, a =ᵐ[μ⊤] x →
+      ∀ {ι : Type*} (s : Finset ι) (b : ι → Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤)
+        (β : ι → ℂ → EuclideanSpace ℝ (Fin 4)) (M : ι → ℝ),
+      (∀ j ∈ s, b j =ᵐ[μ⊤] β j) → (∀ j ∈ s, ContDiff ℝ ∞ (β j)) →
+      (∀ j ∈ s, ∀ i, ∀ n ≤ k, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ β j z i) z‖ ≤ M j) →
+      ∀ (e : ι → Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)
+        (u : ι → Fin 4 → H^{(k : ℝ) + 1}(ℂ)),
+      (∀ j ∈ s, ∀ i, ⇑(inclusionLp (by positivity) (u j i)) =ᵐ[volume]
+        fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues (e j) z) i : ℂ)) →
+      sobolevGaugeFixedOperator a y =
+        -∑ j ∈ s, gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 (b j) (sobolevFieldValues (e j)) →
+      ∀ N : ℝ, MemLp (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2 volume →
+      (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) 2
+        volume).toReal ≤ N →
+      ∃ v : Fin 4 → H^{(k : ℝ) + 1}(ℂ),
+        (∀ i, ⇑(inclusionLp (by positivity) (v i)) =ᵐ[volume]
+          fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) i : ℂ)) ∧
+        ‖v‖ ≤ K * (∑ j ∈ s, M j * ‖u j‖ + N) := by
+  obtain ⟨K₁, hK₁, hK₁b⟩ :=
+    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
+  obtain ⟨C, hC, hCb⟩ := exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder k
+  refine ⟨K₁ * (C + 1), by positivity, ?_⟩
+  intro x hx hxb a hax ι s b β M hb hβ hβb e y u hu hTy N hym hyn
+  -- The coordinates `∑ j ∈ s, W j` of `exp(c ρ) L_a y`, the sum of the `-Z(β j, exp(c ρ) e j)`.
+  choose! W hW hWn using fun j hj ↦ hCb (β j) (hβ j hj) (M j) (hβb j hj) _ (u j) (hu j hj)
+  -- `y` solves `L_x y = L_a y` weakly, and the weighted elliptic estimate concludes.
+  obtain ⟨v, hv, hvn⟩ := hK₁b x hx hxb (sobolevGaugeFixedOperator a y) _
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
+    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦
+      integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax y hη hηc)
+    hym _ (hTy ▸ inclusionLp_sum_ae_eq_exp_mul_smul_neg_sum _ hb hW)
+  refine ⟨v, hv, hvn.trans ?_⟩
+  have hW : ‖∑ j ∈ s, W j‖ ≤ C * ∑ j ∈ s, M j * ‖u j‖ := by
+    rw [Finset.mul_sum]
+    exact norm_sum_le_of_le s fun j hj ↦ (hWn j hj).trans_eq (mul_assoc _ _ _)
+  have : 0 ≤ ∑ j ∈ s, M j * ‖u j‖ := Finset.sum_nonneg fun j hj ↦
+    mul_nonneg ((norm_nonneg _).trans (hβb j hj 0 0 (Nat.zero_le k) 0)) (norm_nonneg _)
+  calc K₁ * (‖∑ j ∈ s, W j‖ + _) ≤ K₁ * (C * ∑ j ∈ s, M j * ‖u j‖ + N) := by
+        gcongr
+    _ ≤ K₁ * (C + 1) * (∑ j ∈ s, M j * ‖u j‖ + N) := by
+        rw [mul_assoc]; gcongr; nlinarith [ENNReal.toReal_nonneg.trans hyn]
+
+/-- **The weighted Sobolev estimate for a solution of `L_a y = -Z(b, e₀)`.** This is the case of
+one term of `exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg_sum`, used
+by the first parameter derivatives of the right inverse and of the kernel projection, for which
+`e₀` is `Q f` and `π e`. The conclusion is `‖u‖ ≤ K (M ‖u₀‖ + N)`. -/
 private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg
     (k : ℕ) (B c : ℝ) :
     ∃ K ≥ 0, ∀ x : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ x →
@@ -970,34 +1144,12 @@ private theorem exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOpera
         (∀ i, ⇑(inclusionLp (by positivity) (u i)) =ᵐ[volume]
           fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues y z) i : ℂ)) ∧
         ‖u‖ ≤ K * (M * ‖u₀‖ + N) := by
-  obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
-  obtain ⟨C, hC, hCb⟩ := exists_forall_exists_inclusionLp_ae_eq_neg_gaugeFixedZerothOrder k
-  refine ⟨K₁ * (C + 1), by positivity, ?_⟩
-  intro x hx hxb a hax b β M hb hβ hβb e₀ y u₀ hu₀ hTy N hym hyn
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
-  have hN : 0 ≤ N := ENNReal.toReal_nonneg.trans hyn
-  set G := -gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b (sobolevFieldValues e₀) with hG
-  -- The coordinates of `exp(c ρ) G = -Z(β, exp(c ρ) e₀)`.
-  obtain ⟨W, hW, hWn⟩ := hCb β hβ M hβb _ u₀ hu₀
-  have hWG : ∀ i, ⇑(inclusionLp (Nat.cast_nonneg k) (W i)) =ᵐ[volume]
-      fun z ↦ ((Real.exp (c * √(1 + ‖z‖ ^ 2)) • G z) i : ℂ) := fun i ↦ (hW i).trans <| by
-    filter_upwards [(Lp.coeFn_neg (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 b
-      (sobolevFieldValues e₀))).filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge),
-      (gaugeFixedZerothOrder.coeFn_holder (r := 2) b (sobolevFieldValues e₀)).filter_mono
-        (ae_mono (Measure.restrict_coe_opens_top _).ge),
-      hb.filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z h₁ h₂ h₃
-    rw [hG, h₁, Pi.neg_apply, holderL_apply_apply, h₂, h₃, map_smul, smul_neg]
-  -- `y` solves `L_x y = G` weakly, and the weighted elliptic estimate concludes.
-  obtain ⟨u, hu, hun⟩ := hK₁b x hx hxb G _
-    ((Lp.memLp G).mono_measure (Measure.restrict_coe_opens_top _).ge)
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
-      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax y hη hηc, hTy])
-    hym W hWG
-  refine ⟨u, hu, hun.trans ?_⟩
-  calc K₁ * (‖W‖ + _) ≤ K₁ * (C * M * ‖u₀‖ + N) := by gcongr
-    _ ≤ K₁ * ((C + 1) * (M * ‖u₀‖ + N)) := by gcongr; nlinarith [norm_nonneg u₀]
-    _ = K₁ * (C + 1) * (M * ‖u₀‖ + N) := by ring
+  obtain ⟨K, hK, hKb⟩ :=
+    exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg_sum k B c
+  refine ⟨K, hK, fun x hx hxb a hax b β M hb hβ hβb e₀ y u₀ hu₀ hTy N hym hyn ↦ ?_⟩
+  simpa only [Finset.sum_singleton] using hKb x hx hxb a hax {()} (fun _ ↦ b) (fun _ ↦ β)
+    (fun _ ↦ M) (fun _ _ ↦ hb) (fun _ _ ↦ hβ) (fun _ _ ↦ hβb) (fun _ ↦ e₀) y (fun _ ↦ u₀)
+    (fun _ _ ↦ hu₀) (by rw [Finset.sum_singleton]; exact hTy) N hym hyn
 
 /-- **The weighted Sobolev estimate for the parameter derivative of the orthogonal right
 inverses, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, bound `B`,
@@ -1038,50 +1190,36 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_fora
               (fderiv ℝ (fun p ↦ orthogonalRightInverse sobolevFieldValues
                 (sobolevGaugeFixedOperator (a p))) p₀ v f) z) i : ℂ)) ∧
           ‖u‖ ≤ K * M * ‖w‖ := by
-  obtain ⟨qc, hqc⟩ :=
-    exists_forall_eLpNorm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₀, hK₀, hK₀b⟩ :=
+    exists_forall_norm_exp_mul_smul_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalRightInverse_le_of_forall_mem_norm_le m R₀
       hc
-  obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
   obtain ⟨K₃, hK₃, hK₃b⟩ :=
     exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg k B c
-  refine ⟨K₃ * (K₁ * (1 + 4 * qc) + 8 * K₂), by positivity, ?_⟩
+  refine ⟨K₃ * (K₀ + 8 * K₂), by positivity, ?_⟩
   intro x D hx hbound hxb hsol hframe hD hD₀ X _ _ a p₀ hax ha v β M hb hβ hβb f w hw
   obtain ⟨hT, hsurj, hd, -⟩ :=
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  have hQ := hT.isOrthogonalRightInverse_orthogonalRightInverse sobolevFieldValues_injective hsurj
-  set Q := orthogonalRightInverse sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
-  have hf := eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hw
-  -- The values of `Q f` solve `L_x Y = f` weakly, with weighted `L²` norm at most `4 qc ‖w‖`, so
-  -- `exp(c ρ) Q f` has coordinates `u₀` in `H^(k+1)`.
-  obtain ⟨hQm, hQn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
-    (hqc x D hx hsol hframe hD hD₀ (a p₀) hax f) hf
-  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₁b x hx hxb f _
-    ((Lp.memLp f).mono_measure (Measure.restrict_coe_opens_top _).ge)
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
-      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax (Q f) hη hηc,
-        hQ.rightInverse f]) hQm w hw
+  obtain ⟨hM, hb2⟩ := nonneg_and_norm_le_two_mul_of_forall_norm_iteratedFDeriv_le hb hβb
+  -- The coordinates `u₀` of `exp(c ρ) Q f` in `H^(k+1)`.
+  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₀b x D hx hxb hsol hframe hD hD₀ (a p₀) hax f w hw
   -- The derivative `y = Q' f` solves `L_x y = -Z(b, Q f)`, with weighted `L²` norm at most
   -- `4 K₂ ‖b‖∞ ‖w‖`, where `‖b‖∞ ≤ 2 M`.
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
-    (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v f) hf
-  have hb2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hb fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z
-  obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax _ β M hb hβ hβb (Q f) _ u₀ hu₀ (by
+    (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v f)
+    (eLpNorm_le_of_forall_inclusionLp_ae_eq (Nat.cast_nonneg k) hw)
+  obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax _ β M hb hβ hβb _ _ u₀ hu₀ (by
     rw [hT.apply_fderiv_orthogonalRightInverse_apply (T := fun p ↦ sobolevGaugeFixedOperator (a p))
       sobolevFieldValues_injective hsurj hd, fderiv_sobolevGaugeFixedOperator_comp_apply ha v])
     _ hym hyn
   refine ⟨u, hu, hun.trans ?_⟩
   push_cast
   calc K₃ * (M * ‖u₀‖ + K₂ * ‖fderiv ℝ a p₀ v‖ * (4 * ‖w‖)) ≤
-        K₃ * (M * (K₁ * (‖w‖ + qc * (4 * ‖w‖))) + K₂ * (2 * M) * (4 * ‖w‖)) := by
+        K₃ * (M * (K₀ * ‖w‖) + K₂ * (2 * M) * (4 * ‖w‖)) := by
         gcongr
-        exact hu₀n.trans (by gcongr)
-    _ = K₃ * (K₁ * (1 + 4 * qc) + 8 * K₂) * M * ‖w‖ := by ring
+    _ = K₃ * (K₀ + 8 * K₂) * M * ‖w‖ := by ring
 
 /-- **The weighted Sobolev estimate for the parameter derivative of the orthogonal kernel
 projections, uniformly over a window of divisors.** For every degree `m`, radius `R₀`, bound `B`,
@@ -1122,53 +1260,38 @@ theorem exists_forall_norm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_for
                 (sobolevGaugeFixedOperator (a p))) p₀ v e) z) i : ℂ)) ∧
           ‖u‖ ≤ K * M * (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) •
             sobolevFieldValues e z) 2 volume).toReal := by
-  obtain ⟨kπ, hkπ⟩ :=
-    exists_forall_eLpNorm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ hc
+  obtain ⟨K₀, hK₀, hK₀b⟩ :=
+    exists_forall_norm_exp_mul_smul_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀ B hc k
   obtain ⟨K₂, hK₂⟩ :=
     exists_forall_eLpNorm_exp_mul_smul_fderiv_orthogonalKerProjection_le_of_forall_mem_norm_le m R₀
       hc
-  obtain ⟨K₁, hK₁, hK₁b⟩ :=
-    exists_forall_exists_inclusionLp_ae_eq_and_norm_le_add_eLpNorm_exp_mul_smul k B c
   obtain ⟨K₃, hK₃, hK₃b⟩ :=
     exists_forall_exists_inclusionLp_ae_eq_of_sobolevGaugeFixedOperator_eq_neg k B c
-  refine ⟨K₃ * (K₁ * kπ + 2 * K₂), by positivity, ?_⟩
+  refine ⟨K₃ * (K₀ + 2 * K₂), by positivity, ?_⟩
   intro x D hx hbound hxb hsol hframe hD hD₀ X _ _ a p₀ hax ha v β M hb hβ hβb e he
-  obtain ⟨hT, hsurj, hd, hπ⟩ :=
+  obtain ⟨hT, hsurj, hd, -⟩ :=
     isFredholm_and_differentiableAt_sobolevGaugeFixedOperator hx hsol hframe hax ha
-  set π := orthogonalKerProjection sobolevFieldValues (sobolevGaugeFixedOperator (a p₀))
   set N := (eLpNorm (fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2)) • sobolevFieldValues e z) 2
     volume).toReal
-  have hM : 0 ≤ M := (norm_nonneg _).trans (hβb 0 0 (Nat.zero_le k) 0)
-  have he' := (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
-  -- `π e` is a weak solution of `L_x Y = 0` with weighted `L²` norm at most `kπ N`, so
-  -- `exp(c ρ) π e` has coordinates `u₀` in `H^(k+1)`.
-  obtain ⟨hπm, hπn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul (by positivity)
-    (hkπ x D hx hbound hsol hframe hD hD₀ (a p₀) hax e) he'
-  have hπ0 : sobolevGaugeFixedOperator (a p₀) (π e) = 0 := hπ.mem_ker e
-  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₁b x hx hxb (0 : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) _
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge)
-    ((Lp.memLp _).mono_measure (Measure.restrict_coe_opens_top _).ge) (fun η hη hηc ↦ by
-      rw [integral_inner_sobolevFieldValues_gaugeFixedAdjoint hx.continuous hax (π e) hη hηc,
-        hπ0]) hπm 0 fun i ↦ .of_forall fun z ↦ by simp
+  obtain ⟨hM, hb2⟩ := nonneg_and_norm_le_two_mul_of_forall_norm_iteratedFDeriv_le hb hβb
+  -- The coordinates `u₀` of `exp(c ρ) π e` in `H^(k+1)`.
+  obtain ⟨u₀, hu₀, hu₀n⟩ := hK₀b x D hx hbound hxb hsol hframe hD hD₀ (a p₀) hax e he
   -- The derivative `y = π' e` solves `L_x y = -Z(b, π e)`, with weighted `L²` norm at most
   -- `K₂ ‖b‖∞ N`, where `‖b‖∞ ≤ 2 M`.
   obtain ⟨hym, hyn⟩ := memLp_and_toReal_eLpNorm_le_of_eLpNorm_le_mul
     (K := K₂ * ‖fderiv ℝ a p₀ v‖₊) (by positivity)
-    (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v e) he'
-  have hb2 := norm_le_two_mul_of_ae_eq_of_forall_norm_apply_le hb fun i z ↦ by
-    simpa only [norm_iteratedFDeriv_zero] using hβb i 0 (Nat.zero_le k) z
-  obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax _ β M hb hβ hβb (π e) _ u₀ hu₀ (by
+    (by simpa only [ENNReal.coe_mul] using hK₂ x D hx hbound hsol hframe hD hD₀ hax ha v e)
+    (ENNReal.ofReal_toReal he.eLpNorm_lt_top.ne).ge
+  obtain ⟨u, hu, hun⟩ := hK₃b x hx hxb (a p₀) hax _ β M hb hβ hβb _ _ u₀ hu₀ (by
     rw [hT.apply_fderiv_orthogonalKerProjection_apply (T := fun p ↦ sobolevGaugeFixedOperator (a p))
       sobolevFieldValues_injective hsurj hd, fderiv_sobolevGaugeFixedOperator_comp_apply ha v])
     _ hym hyn
   refine ⟨u, hu, hun.trans ?_⟩
-  rw [norm_zero, zero_add] at hu₀n
   push_cast
   calc K₃ * (M * ‖u₀‖ + K₂ * ‖fderiv ℝ a p₀ v‖ * N) ≤
-        K₃ * (M * (K₁ * (kπ * N)) + K₂ * (2 * M) * N) := by
+        K₃ * (M * (K₀ * N) + K₂ * (2 * M) * N) := by
         gcongr
-        exact hu₀n.trans (by gcongr)
-    _ = K₃ * (K₁ * kπ + 2 * K₂) * M * N := by ring
+    _ = K₃ * (K₀ + 2 * K₂) * M * N := by ring
 
 /-! ### The adjoints of the right inverses -/
 
