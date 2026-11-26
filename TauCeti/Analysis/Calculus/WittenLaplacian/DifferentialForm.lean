@@ -123,8 +123,7 @@ theorem wittenExtDeriv_apply_eq_exp_smul {f : V → ℝ} {ω : V → V [⋀^Fin 
         smul_eq_mul]
       ring
   -- `extDeriv_function_smul` is stated for the pointwise product `c • ω` of the two functions.
-  rw [show (fun y ↦ Real.exp (t * f y) • ω y) = (fun y ↦ Real.exp (t * f y)) • ω from rfl,
-    extDeriv_function_smul hc.differentiableAt hω, hc.fderiv,
+  rw [← Pi.smul_def', extDeriv_function_smul hc.differentiableAt hω, hc.fderiv,
     alternatizeUncurryFin_innerSL_smulRight, wedgeCovector_smul, wittenExtDeriv_apply]
   simp only [smul_apply, smul_add, smul_smul, ← mul_assoc, ← Real.exp_add, neg_add_cancel,
     Real.exp_zero, one_mul, one_smul]
@@ -233,17 +232,15 @@ theorem integral_alternatingFormInner_wittenExtDeriv_eq_wittenCodifferential [Me
   -- Move the weights `e^{± t f}` across the pairing and apply the adjointness of `d` and `δ`.
   have h := o.integral_alternatingFormInner_extDeriv_eq_codifferential hkl (hE.smul hφ)
     (hE'.smul hψ) (hc.smul_left (f := fun y ↦ Real.exp (-(t * f y))))
-  -- The two sides of `h` write the weighted forms as `c • φ` rather than `fun y ↦ c y • φ y`;
-  -- the final `rfl`s identify the two spellings.
+  -- Spell the weighted forms `c • φ` of `h` pointwise, as `fun y ↦ c y • φ y`.
+  simp only [Pi.smul_def'] at h
   convert h using 2 <;> funext x
   · rw [wittenExtDeriv_apply_eq_exp_smul (hf.differentiable one_ne_zero x)
       (hφ.differentiable one_ne_zero x)]
-    simp only [map_smul, LinearMap.smul_apply, Pi.smul_apply', smul_eq_mul]
-    rfl
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
   · rw [o.wittenCodifferential_apply_eq_exp_smul hkl (hf.differentiable one_ne_zero x)
       (hψ.differentiable one_ne_zero x)]
-    simp only [map_smul, LinearMap.smul_apply, Pi.smul_apply', smul_eq_mul]
-    rfl
+    simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
 
 /-! ### Witten's frame formula -/
 
