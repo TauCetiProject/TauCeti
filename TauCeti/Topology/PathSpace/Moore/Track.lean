@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
 public import TauCeti.Topology.PathSpace.Moore.Truncate
 
@@ -62,29 +63,37 @@ namespace ContinuousMap.Homotopy
 /-- The **track** of a homotopy `H` from `θ₀` to `θ₁` at a point `b`: the path `t ↦ H (t, b)`
 from `θ₀ b` to `θ₁ b`, as a Moore path of length one. It depends continuously on `b`. -/
 def mooreTrack (H : θ₀.Homotopy θ₁) : C(B, TauCeti.MoorePath X) where
-  toFun b := TauCeti.MoorePath.ofUnitPath ⟨fun t ↦ H (t, b), by fun_prop⟩
-  continuous_toFun := TauCeti.MoorePath.continuous_ofUnitPath.comp <|
-    ContinuousMap.continuous_of_continuous_uncurry _ <| by
-      simp only [Function.uncurry_def, ContinuousMap.coe_mk]
-      fun_prop
+  toFun b := (H.evalAt b).toMoorePath
+  continuous_toFun := by
+    simp only [Path.toMoorePath_eq_ofUnitPath]
+    refine TauCeti.MoorePath.continuous_ofUnitPath.comp <|
+      ContinuousMap.continuous_of_continuous_uncurry _ ?_
+    simp only [Function.uncurry_def, Path.coe_toContinuousMap, evalAt_apply]
+    fun_prop
 
 variable (H : θ₀.Homotopy θ₁) (b : B)
 
+/-- The track of a homotopy at a point is the path `ContinuousMap.Homotopy.evalAt` it traces,
+as a Moore path. -/
+theorem mooreTrack_eq_toMoorePath : H.mooreTrack b = (H.evalAt b).toMoorePath :=
+  (rfl)
+
 @[simp]
 theorem mooreTrack_apply (t : ℝ≥0) : H.mooreTrack b t = H (projIcc 0 1 zero_le_one t, b) := by
-  simp [mooreTrack]
+  rw [mooreTrack_eq_toMoorePath, Path.toMoorePath_eq_ofUnitPath, TauCeti.MoorePath.ofUnitPath_apply,
+    Path.coe_toContinuousMap, evalAt_apply]
 
 @[simp]
 theorem length_mooreTrack : (H.mooreTrack b).length = 1 := by
-  simp [mooreTrack]
+  rw [mooreTrack_eq_toMoorePath, Path.length_toMoorePath]
 
 @[simp]
 theorem source_mooreTrack : (H.mooreTrack b).source = θ₀ b := by
-  simp [mooreTrack]
+  rw [mooreTrack_eq_toMoorePath, Path.source_toMoorePath]
 
 @[simp]
 theorem target_mooreTrack : (H.mooreTrack b).target = θ₁ b := by
-  simp [mooreTrack]
+  rw [mooreTrack_eq_toMoorePath, Path.target_toMoorePath]
 
 end ContinuousMap.Homotopy
 
@@ -113,6 +122,13 @@ theorem source_mapSplit (γ : MoorePath B) (τ : ℝ≥0) : (γ.mapSplit H τ).s
 @[simp]
 theorem target_mapSplit (γ : MoorePath B) (τ : ℝ≥0) : (γ.mapSplit H τ).target = θ₁ γ.target := by
   simp [mapSplit]
+
+/-- Splitting a Moore path adds the length one of the track to its length. -/
+@[simp]
+theorem length_mapSplit (γ : MoorePath B) (τ : ℝ≥0) : (γ.mapSplit H τ).length = γ.length + 1 := by
+  simp only [mapSplit, length_trans, length_map, length_truncate, length_drop,
+    ContinuousMap.Homotopy.length_mooreTrack]
+  rw [add_left_comm, add_comm (min τ γ.length), min_comm τ, tsub_add_min, add_comm]
 
 /-- Split at time `0`, a Moore path is the track at its source followed by its image under `θ₁`. -/
 @[simp]

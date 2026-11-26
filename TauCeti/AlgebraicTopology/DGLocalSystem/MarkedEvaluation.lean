@@ -154,6 +154,14 @@ variable {X : Type*} [TopologicalSpace X] {x₀ : X} {c : P → B}
     (e x z u).trans (e z y v) ((he₁ x z u).trans (he₀ z y v).symm))
   {θ₀ θ₁ : C(B, X)} (hθ₀ : ∀ x, θ₀ (c x) = x₀) (hθ₁ : ∀ x, θ₁ (c x) = x₀) (H : θ₀.Homotopy θ₁)
 
+include he in
+/-- When the evaluation into Moore paths takes the composition maps to concatenations, the lengths
+of the paths add up along the composition maps, as the composition maps of the marked spaces
+require. -/
+theorem length_eq_add_of_eq_trans (x z y : P) (u : M x z) (v : M z y) :
+    (e x y (ι x z y (u, v))).length = (e x z u).length + (e z y v).length := by
+  rw [he, MoorePath.length_trans]
+
 /-- **The evaluation of the marked spaces into Moore loops**: a point `u` of `M x y` marked at
 time `τ` goes to the Moore loop at `x₀` that follows `θ₀ ∘ e x y u` up to time `τ`, then the
 track `t ↦ H (t, e x y u τ)` of the homotopy, then `θ₁ ∘ e x y u` from time `τ` on. -/
@@ -175,7 +183,8 @@ include he
 /-- **The evaluation of a mark on the second piece**: it is the loop of the first piece mapped by
 `θ₀`, followed by the evaluation of the marked second piece. -/
 theorem markedLoopEvaluation_markedLeft (x z y : P) (u : M x z) (v : markedSpace e z y) :
-    markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y (markedLeft hl x z y (u, v)) =
+    markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y
+        (markedLeft (length_eq_add_of_eq_trans he₀ he₁ he) x z y (u, v)) =
       mooreLoopEvaluation he₀ he₁ hθ₀ x z u * markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H z y v :=
   MooreLoopSpace.ext <| by
     simp [he, MoorePath.mapSplit_trans_length_add, MooreLoopSpace.toMoorePath_mul]
@@ -183,7 +192,8 @@ theorem markedLoopEvaluation_markedLeft (x z y : P) (u : M x z) (v : markedSpace
 /-- **The evaluation of a mark on the first piece**: it is the evaluation of the marked first
 piece, followed by the loop of the second piece mapped by `θ₁`. -/
 theorem markedLoopEvaluation_markedRight (x z y : P) (u : markedSpace e x z) (v : M z y) :
-    markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y (markedRight hl x z y (u, v)) =
+    markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y
+        (markedRight (length_eq_add_of_eq_trans he₀ he₁ he) x z y (u, v)) =
       markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x z u * mooreLoopEvaluation he₀ he₁ hθ₁ z y v :=
   MooreLoopSpace.ext <| by
     simp [he, MoorePath.mapSplit_trans_of_le _ _ _ _ (mem_markedSpace.1 u.property),
@@ -201,27 +211,25 @@ maps that put the mark on one of the two pieces. Its push-forwards along the eva
 marked spaces, which switches from `θ₀` to `θ₁` at the mark through the homotopy `H`, form a
 continuation cocycle from the twisting cocycle of `S` over the Moore loops for `θ₀` to the one
 for `θ₁`. -/
-def mooreHomotopyCocycle (T : ContinuationChainSystem (markedLeft hl) (markedRight hl) S S) :
+def mooreHomotopyCocycle
+    (T : ContinuationChainSystem (markedLeft (length_eq_add_of_eq_trans he₀ he₁ he))
+      (markedRight (length_eq_add_of_eq_trans he₀ he₁ he)) S S) :
     ContinuationCocycle (S.mooreTwistingCocycle he₀ he₁ hθ₀ he)
-      (S.mooreTwistingCocycle he₀ he₁ hθ₁ he) where
-  ν x y := cubicalChainSumMap R (markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y) (T.chain x y)
-  mem_graded x y := cubicalChainSumMap_mem _ (T.mem_graded x y)
-  continuation x y := by
-    simpa only [continuationCocycle_ν, TwistingChainSystem.twistingCocycle_m,
-      TwistingChainSystem.mooreTwistingCocycle_m] using
-      (T.continuationCocycle (markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H)
-        (mooreLoopEvaluation_mul he₀ he₁ hθ₀ he) (mooreLoopEvaluation_mul he₀ he₁ hθ₁ he)
-        (markedLoopEvaluation_markedLeft hl he₀ he₁ he hθ₀ hθ₁ H)
-        (markedLoopEvaluation_markedRight hl he₀ he₁ he hθ₀ hθ₁ H)).continuation x y
+      (S.mooreTwistingCocycle he₀ he₁ hθ₁ he) :=
+  T.continuationCocycle (markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H)
+    (mooreLoopEvaluation_mul he₀ he₁ hθ₀ he) (mooreLoopEvaluation_mul he₀ he₁ hθ₁ he)
+    (markedLoopEvaluation_markedLeft he₀ he₁ he hθ₀ hθ₁ H)
+    (markedLoopEvaluation_markedRight he₀ he₁ he hθ₀ hθ₁ H)
 
 /-- The entries of the continuation cocycle of a homotopy of collapse maps are the push-forwards of
 the chains along the evaluation of the marked spaces. -/
 @[simp]
-theorem mooreHomotopyCocycle_ν (T : ContinuationChainSystem (markedLeft hl) (markedRight hl) S S)
-    (x y : P) :
-    (T.mooreHomotopyCocycle hl he₀ he₁ he hθ₀ hθ₁ H).ν x y =
+theorem mooreHomotopyCocycle_ν
+    (T : ContinuationChainSystem (markedLeft (length_eq_add_of_eq_trans he₀ he₁ he))
+      (markedRight (length_eq_add_of_eq_trans he₀ he₁ he)) S S) (x y : P) :
+    (T.mooreHomotopyCocycle he₀ he₁ he hθ₀ hθ₁ H).ν x y =
       cubicalChainSumMap R (markedLoopEvaluation he₀ he₁ hθ₀ hθ₁ H x y) (T.chain x y) :=
-  (rfl)
+  T.continuationCocycle_ν ..
 
 end ContinuationChainSystem
 
