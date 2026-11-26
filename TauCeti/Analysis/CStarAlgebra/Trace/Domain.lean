@@ -60,8 +60,8 @@ Dixmier 1963, Lemme 3, p. 226:
   (`TauCeti.IsTrace.linearMap_apply_of_mem_finitePart`).
 * `TauCeti.IsTrace.linearMap_star_mul_comm`, `TauCeti.IsTrace.linearMap_mul_comm`: traciality
   of the extension.
-* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.PositiveTracialFunctional.linearMap_toTrace`:
-  bounded traces.
+* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.mem_domain_of_lt_top`,
+  `TauCeti.PositiveTracialFunctional.linearMap_toTrace`: bounded traces.
 
 ## References
 
@@ -521,6 +521,11 @@ end IsTrace
 theorem domain_eq_top_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) : domain τ = ⊤ := by
   rw [eq_top_iff, ← CStarAlgebra.span_nonneg]
   exact Submodule.span_mono fun x hx ↦ mem_finitePart.2 ⟨hx, hfin x hx⟩
+
+/-- Every element lies in the domain of a trace that is finite on `B₊`. -/
+theorem mem_domain_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) (x : B) : x ∈ domain τ := by
+  rw [domain_eq_top_of_lt_top hfin]
+  exact Submodule.mem_top
 
 namespace PositiveTracialFunctional
 

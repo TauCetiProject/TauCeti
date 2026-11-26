@@ -69,11 +69,6 @@ end PositiveTracialFunctional
 
 namespace IsTrace
 
-/-- Every element lies in the domain of a trace that is finite on `B₊`. -/
-theorem mem_domain_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) (x : B) : x ∈ domain τ := by
-  rw [domain_eq_top_of_lt_top hfin]
-  exact Submodule.mem_top
-
 /-- The **positive tracial functional of a bounded trace**: for a trace `τ` finite on `B₊`, the
 linear extension `x ↦ τ(x)` of `τ` to `𝔪_τ = B`. -/
 noncomputable def toPositiveTracialFunctional (hτ : IsTrace τ)
