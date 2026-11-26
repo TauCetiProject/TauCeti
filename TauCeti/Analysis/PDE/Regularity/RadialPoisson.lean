@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.PDE.EnergyForm.Sobolev
 public import Mathlib.Topology.MetricSpace.Holder
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.PDE.DirichletProblem
 import TauCeti.Analysis.PDE.WeakLaplacian
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.Sobolev.W1p.VanishingBoundary
 import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Sobolev.WeakDeriv.NormRpow
 import TauCeti.MeasureTheory.Integral.NormRpow
@@ -21,7 +24,7 @@ On a bounded open set `Ω ⊆ ℝᵈ`, `d ≥ 1`, the radial function
 `w(x) = -‖x‖ ^ (2 - γ) / ((2 - γ) (d - γ))`
 
 is a weak solution of Poisson's equation `-Δw = ‖x‖ ^ (-γ)` across the origin, for `γ < 1`, and
-for `γ = 1` when `d ≥ 2`. Its gradient `∇w(x) = -‖x‖ ^ (-γ) x / (d - γ)` has size
+for `γ < 2` when `d ≥ 2`. Its gradient `∇w(x) = -‖x‖ ^ (-γ) x / (d - γ)` has size
 `‖x‖ ^ (1 - γ) / (d - γ)`. These solutions show that the interior Schauder estimate for
 divergence-form equations with a scalar datum,
 `exists_holderOnWith_preciseRepresentative_gradient_of_holderOnWith_matrixBilinearForm_of_memLp`,
@@ -41,16 +44,30 @@ coefficient exponent, which for the Laplacian is arbitrary).
   gradient `-x / ((d - 1) ‖x‖)` of the solution `-‖x‖ / (d - 1)` has no representative continuous
   at the origin (`TauCeti.PDE.exists_forall_energyFormH1_eq_and_not_continuousAt_gradient`).
 
+The same solutions, with `0 < γ < 2`, show that the global Hölder estimate for the Dirichlet
+problem `-∂ᵢ(aⁱʲ ∂ⱼu) = f`, `u = 0` on `∂Ω`, with `f ∈ Lᵠ` and `q > d / 2`
+(`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_add_divergence`), cannot give a Hölder
+exponent larger than `2 - d / q`, even for the Laplacian on the unit ball `B`.
+
+* **The exponent `2 - d / q` cannot be raised.** On `B` the shifted solution
+  `(1 - ‖x‖ ^ (2 - γ)) / ((2 - γ) (d - γ))` vanishes on the unit sphere, so it lies in `H¹₀(B)`,
+  and it differs from its value at the origin by a multiple of `t ^ (2 - γ)` at distance `t`.
+  Letting `γ ↑ min 2 (d / q)` shows that for `d ≥ 2` every exponent `β > 2 - d / q` fails for
+  some datum in `Lᵠ(B)`
+  (`TauCeti.PDE.exists_memLp_and_mem_w1p0Submodule_forall_energyFormH1_eq_and_not_holderOnWith`).
+  The datum need not be square integrable; the weak equation holds against all of `H¹₀(B)`
+  because it is in `Lʳ(B)` for some `r > 2d / (d + 2)`.
+
 The weak equation is the divergence identity `∫ Δφ w = ∫ φ div ∇w` for the radial field
 `x ↦ ‖x‖ ^ (-γ) • x`, whose weak derivative is its classical one across the origin
-(`TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`,
-`TauCeti.hasWeakFDerivOn_norm_rpow_neg_one_smul_self`) and whose divergence is
+(`TauCeti.hasWeakFDerivOn_norm_rpow_smul_self`) and whose divergence is
 `(d - γ) ‖x‖ ^ (-γ)` (`TauCeti.trace_rpow_smul_id_add_smulRight`).
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Theorem 8.32 (the interior `C^{1,α}` estimate in divergence form).
+  Theorem 8.32 (the interior `C^{1,α}` estimate in divergence form) and Theorem 8.29 (the global
+  Hölder estimate).
 * M. Giaquinta, L. Martinazzi, *An Introduction to the Regularity Theory for Elliptic Systems,
   Harmonic Maps and Minimal Graphs*, 2nd ed., Chapter 5 (Schauder estimates for equations in
   divergence form with data in Morrey spaces).
@@ -60,12 +77,12 @@ public section
 
 noncomputable section
 
+open InnerProductSpace MeasureTheory Metric Set Filter Topology TopologicalSpace
+open scoped ENNReal NNReal Distributions Gradient RealInnerProductSpace
+
 namespace TauCeti
 
 namespace PDE
-
-open InnerProductSpace MeasureTheory Metric Set Filter Topology TopologicalSpace
-open scoped ENNReal NNReal Distributions Gradient RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] {γ : ℝ}
 
@@ -144,9 +161,11 @@ private theorem energyFormH1_eq_of_value_ae_eq [DecidableEq ι] [Nonempty ι] (h
   field_simp
   ring
 
-/-- On a bounded open set, the radial solution with `γ ≤ 1` lies in `H¹(Ω)`. -/
-private theorem exists_w1p_radialSolution [Nonempty ι] (hγ : γ ≤ 1)
-    {Ω : Opens (EuclideanSpace ℝ ι)} (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) :
+/-- On a bounded open set, the radial solution lies in `H¹(Ω)` as soon as its gradient, of size
+`‖x‖ ^ (1 - γ)`, is square integrable, that is `2 (1 - γ) > -d`; this holds for every `γ ≤ 1`. -/
+private theorem exists_w1p_radialSolution [Nonempty ι] (hγ : γ < 2)
+    (hγd : -(Fintype.card ι : ℝ) < (1 - γ) * 2) {Ω : Opens (EuclideanSpace ℝ ι)}
+    (hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) :
     ∃ u : W1p volume Ω 2, W1p.value u =ᵐ[volume.restrict Ω] radialSolution γ ∧
       W1p.gradient u =ᵐ[volume.restrict Ω] radialGradient γ := by
   obtain ⟨R, hR⟩ := hb.subset_closedBall (0 : EuclideanSpace ℝ ι)
@@ -154,22 +173,22 @@ private theorem exists_w1p_radialSolution [Nonempty ι] (hγ : γ ≤ 1)
     isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
   -- The solution is continuous, hence bounded on the compact closed ball.
   obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : EuclideanSpace ℝ ι) R).exists_bound_of_continuousOn
-    (radialSolution_continuous (ι := ι) (by linarith)).continuousOn
+    (radialSolution_continuous (ι := ι) hγ).continuousOn
   have hw : MemLp (radialSolution (ι := ι) γ) 2 (volume.restrict Ω) :=
-    MemLp.of_bound (radialSolution_continuous (by linarith)).aestronglyMeasurable M
+    MemLp.of_bound (radialSolution_continuous hγ).aestronglyMeasurable M
       ((ae_restrict_mem Ω.isOpen.measurableSet).mono fun x hx ↦ hM x (hR hx))
-  -- The gradient is bounded by `|d - γ|⁻¹ R ^ (1 - γ)` on the ball.
+  -- The gradient is bounded by `|d - γ|⁻¹ ‖x‖ ^ (1 - γ)`, which is square integrable on `Ω`.
   have hmeas : Measurable (radialGradient (ι := ι) γ) := by
     unfold radialGradient
     fun_prop
   have hg : MemLp (radialGradient (ι := ι) γ) 2 (volume.restrict Ω) := by
-    refine MemLp.of_bound hmeas.aestronglyMeasurable
-      (|Fintype.card ι - γ|⁻¹ * R ^ (1 - γ)) ((ae_restrict_mem Ω.isOpen.measurableSet).mono
-        fun x hx ↦ (norm_radialGradient_le x).trans ?_)
-    exact mul_le_mul_of_nonneg_left
-      (Real.rpow_le_rpow (norm_nonneg x) (by simpa using hR hx) (by linarith)) (by positivity)
+    refine ((hb.memLp_norm_rpow_restrict (mu := volume) (r := 2) (by norm_num) (s := 1 - γ)
+      (by rwa [finrank_euclideanSpace, ENNReal.toReal_ofNat])).const_mul
+        |Fintype.card ι - γ|⁻¹).of_le hmeas.aestronglyMeasurable
+      (Eventually.of_forall fun x ↦ (norm_radialGradient_le x).trans ?_)
+    rw [Real.norm_of_nonneg (by positivity)]
   refine ⟨W1p.mk hw.toLp hg.toLp
-    (((hasWeakFDerivOn_radialSolution (by linarith) Ω).congr_ae
+    (((hasWeakFDerivOn_radialSolution hγ Ω).congr_ae
       hw.coeFn_toLp.symm).congr_ae_deriv (hg.coeFn_toLp.mono fun x hx ↦ by simp only [hx])),
     ?_, ?_⟩
   · rw [W1p.value_mk]
@@ -262,12 +281,12 @@ theorem exists_memLp_forall_energyFormH1_eq_and_not_holderOnWith_gradient [Decid
   refine ⟨fun x ↦ ‖x‖ ^ (-γ), hb.memLp_norm_rpow_restrict hq ?_, ?_⟩
   · rw [finrank_euclideanSpace]
     linarith [(lt_div_iff₀ hqr).1 hγq]
-  obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution hγ1.le hb
-  have hγd : γ ≠ Fintype.card ι := by
-    have : (1 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
-    linarith
+  have hd : (1 : ℝ) ≤ Fintype.card ι := by exact_mod_cast Fintype.card_pos
+  obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution (by linarith) (by linarith) hb
+  have hγd : γ ≠ Fintype.card ι := by linarith
   refine ⟨u, fun φ ↦ energyFormH1_eq_of_value_ae_eq (by linarith) hγd
-    (hasWeakFDerivOn_norm_rpow_smul_self (by linarith) Ω) hu φ, ?_⟩
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by linarith [le_max_left (1 : ℝ) (Module.finrank ℝ (EuclideanSpace ℝ ι))]) Ω) hu φ, ?_⟩
   intro r hr hball C g hg hH
   -- On the ball, `g` agrees almost everywhere with the continuous radial gradient, hence
   -- everywhere, and the radial gradient is not `β`-Hölder.
@@ -399,15 +418,163 @@ theorem exists_forall_energyFormH1_eq_and_not_continuousAt_gradient [DecidableEq
       ∀ g : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι,
         g =ᵐ[volume.restrict Ω] W1p.gradient u → ¬ ContinuousAt g 0 := by
   have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
-  obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution (ι := ι) (γ := 1) le_rfl hb
-  have hγd : (1 : ℝ) ≠ Fintype.card ι := by
-    have : (1 : ℝ) < Fintype.card ι := by exact_mod_cast hd
-    exact this.ne
+  have hd' : (1 : ℝ) < Fintype.card ι := by exact_mod_cast hd
+  obtain ⟨u, hu, hgu⟩ := exists_w1p_radialSolution (ι := ι) (γ := 1) (by norm_num)
+    (by linarith) hb
+  have hγd : (1 : ℝ) ≠ Fintype.card ι := hd'.ne
   refine ⟨u, fun φ ↦ ?_, fun g hg ↦
     not_continuousAt_of_ae_eq_radialGradient_one hd h0 (hg.trans hgu)⟩
   rw [energyFormH1_eq_of_value_ae_eq (by norm_num) hγd
-    (hasWeakFDerivOn_norm_rpow_neg_one_smul_self (by rwa [finrank_euclideanSpace]) Ω) hu φ]
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by rw [finrank_euclideanSpace]; linarith [le_max_right (1 : ℝ) (Fintype.card ι)]) Ω) hu φ]
   simp only [Real.rpow_neg_one]
+
+/-! ### The Hölder exponent of the solution -/
+
+/-- For `γ < 2` with `γ < d`, a function equal to the radial solution plus a constant on a ball
+about the origin is not `β`-Hölder there for `β > 2 - γ`: it differs from its value at the origin
+by `t ^ (2 - γ) / ((2 - γ) (d - γ))` at distance `t`. -/
+private theorem not_holderOnWith_of_eqOn_radialSolution_add [Nonempty ι] (hγ : γ < 2)
+    (hγd : γ < Fintype.card ι) {β : ℝ≥0} (hβ : 2 - γ < β) {r : ℝ} (hr : 0 < r) (k : ℝ)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : EqOn g (fun x ↦ radialSolution γ x + k) (ball 0 r))
+    (C : ℝ≥0) : ¬ HolderOnWith C β g (ball 0 r) := by
+  classical
+  intro h
+  obtain ⟨i⟩ := ‹Nonempty ι›
+  set e : EuclideanSpace ℝ ι := EuclideanSpace.single i 1
+  have he : ‖e‖ = 1 := by simp [e]
+  set c : ℝ := ((2 - γ) * (Fintype.card ι - γ))⁻¹
+  have hc : 0 < c := inv_pos.2 (mul_pos (by linarith) (by linarith))
+  -- At distance `t ∈ (0, r / 2]` the Hölder bound reads `c t ^ (2 - γ) ≤ C t ^ β`.
+  refine absurd (le_of_forall_mem_Ioc_rpow_le_mul_rpow (C := C / c) (half_pos hr)
+    fun t ht ↦ ?_) (not_le.2 hβ)
+  have hnorm : ‖t • e‖ = t := by rw [norm_smul, he, mul_one, Real.norm_of_nonneg ht.1.le]
+  have hmem : t • e ∈ ball (0 : EuclideanSpace ℝ ι) r := by
+    rw [mem_ball_zero_iff, hnorm]
+    linarith [ht.2]
+  have hdist := h.dist_le hmem (mem_ball_self hr)
+  rw [hg hmem, hg (mem_ball_self hr), dist_zero_right, hnorm, Real.dist_eq] at hdist
+  have hval : radialSolution γ (t • e) + k - (radialSolution (ι := ι) γ 0 + k) =
+      -(c * t ^ (2 - γ)) := by
+    simp only [radialSolution, hnorm, norm_zero, Real.zero_rpow (by linarith : 2 - γ ≠ 0), c]
+    ring
+  rw [hval, abs_neg, abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos ht.1 _))] at hdist
+  rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+  linarith
+
+/-- For `d ≥ 2` and `0 < γ < 2` there is an exponent `r > d / 2`, hence `r > 1` and
+`r > 2d / (d + 2)`, with `γ r < d`, so that `‖x‖ ^ (-γ)` is `r`-integrable near the origin and
+acts continuously on `H¹₀`. -/
+private theorem exists_one_lt_and_mul_two_sub_lt_and_mul_lt {d : ℝ} (hd : 2 ≤ d) (hγ0 : 0 < γ)
+    (hγ2 : γ < 2) : ∃ r : ℝ≥0, 1 < r ∧ d * (2 - r) < 2 * r ∧ γ * r < d := by
+  obtain ⟨r, hr₁, hr₂⟩ : ∃ r : ℝ, d / 2 < r ∧ r < d / γ :=
+    exists_between (div_lt_div_of_pos_left (by linarith) hγ0 hγ2)
+  have hr1 : 1 < r := by linarith
+  refine ⟨r.toNNReal, by rwa [Real.one_lt_toNNReal], ?_⟩
+  rw [Real.coe_toNNReal _ (by linarith)]
+  rw [lt_div_iff₀ hγ0, mul_comm] at hr₂
+  exact ⟨mul_two_sub_lt_two_mul_of_lt_two_mul (by linarith) hr1 (by linarith), hr₂⟩
+
+/-- **The Dirichlet problem on the unit ball with a radial power datum.** For `d ≥ 2` and
+`0 < γ < 2`, the shifted radial solution `(1 - ‖x‖ ^ (2 - γ)) / ((2 - γ) (d - γ))` lies in
+`H¹₀(B)` on the unit ball `B` and solves `-Δu = ‖x‖ ^ (-γ)` weakly against every `v ∈ H¹₀(B)`. -/
+private theorem exists_mem_w1p0Submodule_ball_one_radialSolution_add [DecidableEq ι]
+    (hd : 2 ≤ Fintype.card ι) (hγ0 : 0 < γ) (hγ2 : γ < 2) :
+    ∃ u : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2,
+      u ∈ w1p0Submodule volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2 ∧
+      W1p.value u =ᵐ[volume.restrict (ball 0 1)]
+        (fun x ↦ radialSolution γ x + ((2 - γ) * (Fintype.card ι - γ))⁻¹) ∧
+      ∀ v : W1p0 volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2,
+        energyFormH1 (fun _ ↦ 1) 0 0 u
+            (v : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2) =
+          ∫ x in ball 0 1, ‖x‖ ^ (-γ) *
+            W1p.value (v : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2)
+              x := by
+  set Ω : Opens (EuclideanSpace ℝ ι) := ⟨ball 0 1, isOpen_ball⟩
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
+  have hd2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast hd
+  have hb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)) := isBounded_ball
+  have : IsFiniteMeasure (volume.restrict (Ω : Set (EuclideanSpace ℝ ι))) :=
+    isFiniteMeasure_restrict.2 hb.measure_lt_top.ne
+  obtain ⟨u₀, hu₀, -⟩ := exists_w1p_radialSolution (ι := ι) hγ2 (by linarith) hb
+  set k : ℝ := ((2 - γ) * (Fintype.card ι - γ))⁻¹
+  have hu : W1p.value (u₀ + W1p.const k) =ᵐ[volume.restrict Ω] fun x ↦ radialSolution γ x + k := by
+    filter_upwards [W1p.value_add_const_ae u₀ k, hu₀] with x h₁ h₂
+    rw [h₁, h₂]
+  refine ⟨u₀ + W1p.const k, W1p.mem_w1p0Submodule_of_continuousOn_closure (by norm_num) hb
+    (g := fun x ↦ radialSolution γ x + k)
+    ((radialSolution_continuous hγ2).add continuous_const).continuousOn (fun x hx ↦ ?_) hu, hu, ?_⟩
+  · -- On the unit sphere the shifted solution vanishes.
+    rw [Opens.coe_mk, frontier_ball 0 one_ne_zero, mem_sphere_zero_iff_norm] at hx
+    simp only [radialSolution, hx, Real.one_rpow, k]
+    ring
+  -- The weak equation against test functions extends to `H¹₀(B)`, the datum being in `Lʳ(B)`
+  -- for some `r > 2d / (d + 2)`.
+  obtain ⟨r, hr1, hrn, hrγ⟩ := exists_one_lt_and_mul_two_sub_lt_and_mul_lt hd2 hγ0 hγ2
+  refine (forall_energyFormH1_eq_setIntegral_iff_forall_testFunction_of_memLp
+    (memLp_energyIntegrand_const_zero_zero 1) hb.measure_lt_top.ne hr1 hrn
+    (hb.memLp_norm_rpow_restrict ENNReal.coe_ne_top ?_) _).2 fun φ ↦ ?_
+  · rw [finrank_euclideanSpace, ENNReal.coe_toReal]
+    linarith
+  rw [energyFormH1_add_const_left]
+  exact energyFormH1_eq_of_value_ae_eq hγ2 (by linarith)
+    (hasWeakFDerivOn_norm_rpow_smul_self
+      (by rw [finrank_euclideanSpace]; linarith [le_max_right (1 : ℝ) (Fintype.card ι)]) Ω) hu₀ φ
+
+/-- **The Hölder exponent `2 - d / q` of the global estimate for the Dirichlet problem is sharp.**
+Let `B` be the unit ball of `ℝᵈ`, `d ≥ 2`, let `0 < q < ∞`, and let `β > 0` with `β > 2 - d / q`.
+Then there are a datum `f ∈ Lᵠ(B)` and a weak solution `u ∈ H¹₀(B)` of the Dirichlet problem
+`-Δu = f` in `B`, `u = 0` on `∂B`, that is `∫_B ∇v · ∇u = ∫_B f v` for every `v ∈ H¹₀(B)`, such
+that no function equal to `u` almost everywhere on a ball `B(0, ρ)`, `0 < ρ ≤ 1`, is `β`-Hölder
+there.
+
+For `q > d / 2` the global Hölder estimate on bounded Lipschitz domains
+(`Set.IsLipschitzDomain.exists_ae_eq_and_holderOnWith_add_divergence`) gives weak solutions with
+datum in `Lᵠ` a Hölder continuous representative; this theorem shows that its exponent can never
+exceed `2 - d / q`, even for the Laplacian on a ball and in the interior. The proof takes the datum
+`‖x‖ ^ (-γ)` and the solution `(1 - ‖x‖ ^ (2 - γ)) / ((2 - γ) (d - γ))`, for a `γ < min 2 (d / q)`
+with `2 - γ < β`. -/
+theorem exists_memLp_and_mem_w1p0Submodule_forall_energyFormH1_eq_and_not_holderOnWith
+    [DecidableEq ι] (hd : 2 ≤ Fintype.card ι) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ∞) {β : ℝ≥0}
+    (hβ0 : 0 < β) (hβ : 2 - Fintype.card ι / q.toReal < β) :
+    ∃ f : EuclideanSpace ℝ ι → ℝ, MemLp f q (volume.restrict (ball 0 1)) ∧
+      ∃ u : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2,
+        u ∈ w1p0Submodule volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2 ∧
+        (∀ v : W1p0 volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2,
+          energyFormH1 (fun _ ↦ 1) 0 0 u
+              (v : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2) =
+            ∫ x in ball 0 1, f x *
+              W1p.value (v : W1p volume (⟨ball 0 1, isOpen_ball⟩ : Opens (EuclideanSpace ℝ ι)) 2)
+                x) ∧
+        ∀ ρ : ℝ, 0 < ρ → ρ ≤ 1 → ∀ (C : ℝ≥0) (g : EuclideanSpace ℝ ι → ℝ),
+          g =ᵐ[volume.restrict (ball 0 ρ)] W1p.value u → ¬ HolderOnWith C β g (ball 0 ρ) := by
+  have : Nonempty ι := Fintype.card_pos_iff.1 (by omega)
+  have hd2 : (2 : ℝ) ≤ Fintype.card ι := by exact_mod_cast hd
+  have hqr : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hdq : 0 < Fintype.card ι / q.toReal := div_pos (by linarith) hqr
+  have hβ0' : (0 : ℝ) < β := hβ0
+  -- Choose `γ` strictly between `max 0 (2 - β)` and `min 2 (d / q)`.
+  obtain ⟨γ, hγ0, hγ2, hγβ, hγq⟩ : ∃ γ : ℝ, 0 < γ ∧ γ < 2 ∧ 2 - γ < β ∧
+      γ < Fintype.card ι / q.toReal := by
+    obtain ⟨γ, hlo, hhi⟩ := exists_between
+      (max_lt (lt_min two_pos hdq) (lt_min (by linarith) (by linarith)) :
+        max 0 (2 - (β : ℝ)) < min 2 (Fintype.card ι / q.toReal))
+    exact ⟨γ, (le_max_left _ _).trans_lt hlo, hhi.trans_le (min_le_left _ _),
+      by linarith [le_max_right 0 (2 - (β : ℝ))], hhi.trans_le (min_le_right _ _)⟩
+  -- `‖x‖ ^ (-γ) ∈ Lᵠ(B)` since `γ q < d`.
+  refine ⟨fun x ↦ ‖x‖ ^ (-γ), isBounded_ball.memLp_norm_rpow_restrict hq ?_, ?_⟩
+  · rw [finrank_euclideanSpace]
+    nlinarith [(lt_div_iff₀ hqr).1 hγq]
+  obtain ⟨u, hu0, hu, hweak⟩ := exists_mem_w1p0Submodule_ball_one_radialSolution_add hd hγ0 hγ2
+  refine ⟨u, hu0, hweak, fun ρ hρ hρ1 C g hg hH ↦ ?_⟩
+  -- On `B(0, ρ)`, `g` agrees almost everywhere with the continuous shifted solution, hence
+  -- everywhere, and the shifted solution is not `β`-Hölder there.
+  have hae : g =ᵐ[volume.restrict (ball 0 ρ)]
+      fun x ↦ radialSolution γ x + ((2 - γ) * (Fintype.card ι - γ))⁻¹ :=
+    hg.trans (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ1) hu)
+  exact not_holderOnWith_of_eqOn_radialSolution_add hγ2 (by linarith) hγβ hρ _
+    (Measure.eqOn_open_of_ae_eq hae isOpen_ball (hH.continuousOn hβ0)
+      ((radialSolution_continuous hγ2).add continuous_const).continuousOn) C hH
 
 end PDE
 
