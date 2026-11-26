@@ -134,14 +134,14 @@ open TauCeti.Dagger.washnitzerAlgebra
 -- Explicit two-variable calculation: on `K⟨X₀, X₁⟩†`, `d(X₀ • dX₁) = dX₀ ∧ dX₁`.
 example :
     let W₂ := washnitzerAlgebra (Fin 2) K
-    Omega.exteriorPowerDeriv K W₂ 1 (X (Fin 2) K 0 •
+    Omega.extDerivPow K W₂ 1 (X (Fin 2) K 0 •
         (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1))) =
       exteriorPower.ιMulti W₂ 2 ![Omega.d K W₂ (X (Fin 2) K 0), Omega.d K W₂ (X (Fin 2) K 1)] := by
   intro W₂
   rw [show (exteriorPower.oneEquiv W₂ (Omega K W₂)).symm (Omega.d K W₂ (X (Fin 2) K 1)) =
-      exteriorPower.ιMulti W₂ 1 (Omega.d K W₂ ∘ ![X (Fin 2) K 1]) from
+      exteriorPower.ιMulti W₂ 1 (fun i ↦ Omega.d K W₂ (![X (Fin 2) K 1] i)) from
       Subtype.ext <| by simp [exteriorPower.oneEquiv_symm_apply, ExteriorAlgebra.ιMulti_succ_apply],
-    Omega.exteriorPowerDeriv_smul_ιMulti_comp_d]
+    Omega.extDerivPow_smul_ιMulti]
   congr 1; funext i; fin_cases i <;> rfl
 
 -- On `K⟨X₀, X₁⟩†`, the `2`-form `dX₀ ∧ dX₁` is nonzero.

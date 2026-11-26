@@ -44,6 +44,8 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `exteriorPower.instProjective`: exterior powers of projective modules are projective.
 * `exteriorPower.fromTensorPower_comp_toTensorPower`: antisymmetrizing and projecting back is
   multiplication by `n!`, whence `exteriorPower.toTensorPower_injective`.
+* `exteriorPower.ιMulti_family_eq_ιMulti`: the term of `exteriorPower.ιMulti_family R n v` at
+  the only `n`-element subset of `Fin n` is the exterior product of `v`.
 * `exteriorPower.ιMulti_ne_zero_iff`: over a field, an exterior product of vectors is nonzero
   exactly when the vectors are linearly independent.
 * `exteriorPower.ιMulti_comp_ne_zero_of_eq_basis`: lifts along a linear map `g` of a basis of its
@@ -56,6 +58,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   `exteriorPower.map_bijective`: the map induced by `f` sends a two-vector `u ∧ w` to
   `f u ∧ f w`, induced maps preserve commuting squares, and bijective maps induce bijections of
   exterior powers.
+* `exteriorPower.map_smul_eq_pow_smul`: the map induced by `c • f` on the `n`th exterior power is
+  `c ^ n` times the map induced by `f`.
 * `exteriorPower.ofEq_ιMulti`: the identification of exterior powers of equal degree renumbers the
   factors of an exterior product.
 * `Submodule.ιMulti_eq_zero_of_finrank_lt`: an exterior product vanishes when more of its factors
@@ -74,8 +78,9 @@ and moving the remaining factors by vectors of that subspace does not change the
   with `n = 0` is `1`.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`, and so do all elements of `⋀ⁱ M`
-  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`); elements of even
-  degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
+  and `⋀ʲ M` (`TauCeti.ExteriorAlgebra.mul_eq_neg_one_pow_smul_mul_of_mem`), also in front of a
+  further factor (`ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul`); elements of
+  even degree are central (`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`).
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`; in particular
   that map preserves the exterior degree (`LinearMap.exteriorAlgebra_map_mem_exteriorPower`).
@@ -94,6 +99,13 @@ and moving the remaining factors by vectors of that subspace does not change the
 * `TauCeti.exteriorPower.mem_span_range_iff_ι_mul_ιMulti_eq_zero`: over a field, a vector lies in
   the span of a linearly independent family exactly when its product with the exterior product of
   the family vanishes.
+* `TauCeti.exteriorPower.span_singleton_ιMulti_eq_top_of_span_eq_top`: the wedge of a spanning
+  family of `n` vectors spans `⋀ⁿ M`; over a field, `n` vectors of an `n`-dimensional space span
+  it exactly when their wedge spans its top exterior power
+  (`TauCeti.exteriorPower.span_singleton_ιMulti_eq_top_iff`).
+
+* `LinearEquiv.coe_exteriorPower_apply`: the exterior-algebra action of an induced equivalence.
+* `exteriorPower.coe_eq_algebraMap_zeroEquiv`: the scalar empty-product coordinate in degree zero.
 
 ## References
 
@@ -274,6 +286,28 @@ theorem range_toTensorPower :
 
 end FromTensorPower
 
+/-! ### Exterior products of `n` vectors in degree `n` -/
+
+section Family
+
+variable [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- In the basis-style family `ιMulti_family R n v` of exterior products of subfamilies of
+`v : Fin n → M`, the term at the only `n`-element subset of `Fin n` is the exterior product of
+`v`. -/
+theorem ιMulti_family_eq_ιMulti {n : ℕ} (v : Fin n → M) (s : Set.powersetCard (Fin n) n) :
+    ιMulti_family R n v s = ιMulti R n v := by
+  -- The only `n`-element subset of `Fin n` is enumerated by the identity.
+  have hs : (s : Finset (Fin n)) = Finset.univ :=
+    Finset.eq_univ_of_card _ (by rw [s.prop, Fintype.card_fin])
+  have he : ⇑(Set.powersetCard.ofFinEmbEquiv.symm s) = id := by
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact (Finset.orderEmbOfFin_unique s.prop (fun _ ↦ hs ▸ Finset.mem_univ _)
+      strictMono_id).symm
+  simp [ιMulti_family, he]
+
+end Family
+
 /-! ### Exterior products over a field -/
 
 section Field
@@ -285,13 +319,9 @@ independent. -/
 theorem ιMulti_ne_zero_iff {n : ℕ} (v : Fin n → V) :
     ιMulti K n v ≠ 0 ↔ LinearIndependent K v := by
   refine ⟨fun h ↦ by_contra fun hv ↦ h ((ιMulti K n).map_linearDependent v hv), fun hv ↦ ?_⟩
-  -- The only `n`-element subset of `Fin n` is enumerated by the identity.
   have hs : (Finset.univ : Finset (Fin n)).card = n := by simp
-  have he : ⇑(Set.powersetCard.ofFinEmbEquiv.symm (Set.powersetCard.ofCard hs)) = id := by
-    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
-    exact (Finset.orderEmbOfFin_unique hs (fun _ ↦ Finset.mem_univ _) strictMono_id).symm
-  simpa [ιMulti_family, he] using (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero
-    (Set.powersetCard.ofCard hs)
+  rw [← ιMulti_family_eq_ιMulti v (Set.powersetCard.ofCard hs)]
+  exact (ιMulti_family_linearIndependent_field (n := n) hv).ne_zero _
 
 /-- The exterior product of lifts `v₁, …, vₙ` along `g` of the vectors of a basis of `W` is
 nonzero. -/
@@ -331,6 +361,15 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
   ⟨map_injective (LinearEquiv.ofBijective f hf).symm.toLinearMap (by ext; simp),
     map_surjective hf.2⟩
 
+/-- Scaling a linear map by `c` scales the induced map on the `n`th exterior power by `c ^ n`. -/
+@[simp] theorem map_smul_eq_pow_smul (n : ℕ) (c : R) (f : M →ₗ[R] N) :
+    map n (c • f) = c ^ n • map n f := by
+  apply linearMap_ext
+  ext m
+  have hm : ⇑(c • f) ∘ m = fun i ↦ c • (f ∘ m) i := funext fun _ ↦ rfl
+  simp only [LinearMap.compAlternatingMap_apply, map_apply_ιMulti, LinearMap.smul_apply, hm,
+    AlternatingMap.map_smul_univ, Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+
 end Bijective
 
 /-! ### Exterior powers of equal degree -/
@@ -355,6 +394,18 @@ theorem ofEq_ιMulti {n m : ℕ} (h : n = m) (v : Fin n → M) :
   rfl
 
 end OfEq
+
+/-- A degree-zero exterior vector is the scalar empty product in the exterior algebra. -/
+theorem coe_eq_algebraMap_zeroEquiv {K : Type*} [CommRing K]
+    {V : Type*} [AddCommGroup V] [Module K V]
+    (a : ⋀[K]^0 V) :
+    (a : ExteriorAlgebra K V) =
+      algebraMap K (ExteriorAlgebra K V) (exteriorPower.zeroEquiv K V a) := by
+  obtain ⟨r, rfl⟩ := (exteriorPower.zeroEquiv K V).symm.surjective a
+  simp only [exteriorPower.zeroEquiv_symm_apply, Submodule.coe_smul_of_tower,
+    exteriorPower.ιMulti_apply_coe, ExteriorAlgebra.ιMulti_zero_apply,
+    map_smul, exteriorPower.zeroEquiv_ιMulti, smul_eq_mul, mul_one,
+    Algebra.algebraMap_eq_smul_one]
 
 end exteriorPower
 
@@ -402,7 +453,22 @@ theorem exteriorPower_trans (e : M ≃ₗ[R] N) (e' : N ≃ₗ[R] P) (n : ℕ) :
   toLinearMap_injective <| by
     simp only [coe_trans, exteriorPower_toLinearMap, _root_.exteriorPower.map_comp]
 
+/-- The induced equivalence of exterior powers acts by the exterior-algebra map. -/
+@[simp]
+theorem coe_exteriorPower_apply {R : Type u} [CommRing R]
+    {U : Type w₁} [AddCommGroup U] [Module R U]
+    {V : Type w₂} [AddCommGroup V] [Module R V]
+    (e : U ≃ₗ[R] V) (n : ℕ) (a : ⋀[R]^n U) :
+    (e.exteriorPower n a : ExteriorAlgebra R V) = ExteriorAlgebra.map e.toLinearMap a := by
+  have h : e.exteriorPower n a = exteriorPower.map n e.toLinearMap a := by
+    simpa only [LinearEquiv.coe_coe] using
+      LinearMap.congr_fun (LinearEquiv.exteriorPower_toLinearMap e n) a
+  exact (congrArg (fun v : ⋀[R]^n V ↦ (v : ExteriorAlgebra R V)) h).trans
+    (exteriorPower.coe_map _ _)
+
 end LinearEquiv
+
+
 
 /-! ### Exterior products with factors in a subspace -/
 
@@ -516,6 +582,16 @@ theorem ιMulti_mul_ιMulti_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v
   rw [_root_.ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm, Units.smul_def,
     ← Int.cast_smul_eq_zsmul R]
   norm_num
+
+/-- Exterior products of `i` and `j` vectors commute up to the sign `(-1) ^ (j * i)` also in front
+of a further factor `x`: `u ∧ (v ∧ x) = (-1) ^ (j * i) • (v ∧ (u ∧ x))`. -/
+theorem _root_.ExteriorAlgebra.ιMulti_mul_ιMulti_mul_eq_neg_one_pow_smul {i j : ℕ}
+    (u : Fin i → M) (v : Fin j → M) (x : _root_.ExteriorAlgebra R M) :
+    _root_.ExteriorAlgebra.ιMulti R i u * (_root_.ExteriorAlgebra.ιMulti R j v * x) =
+      (-1 : R) ^ (j * i) •
+        (_root_.ExteriorAlgebra.ιMulti R j v * (_root_.ExteriorAlgebra.ιMulti R i u * x)) := by
+  rw [← mul_assoc, TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul, smul_mul_assoc,
+    mul_assoc]
 
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/
@@ -678,6 +754,34 @@ theorem mem_span_range_iff_ι_mul_ιMulti_eq_zero {n : ℕ} {v : Fin n → V}
     _root_.exteriorPower.ιMulti_apply_coe, _root_.ExteriorAlgebra.ιMulti_succ_apply,
     _root_.exteriorPower.ιMulti_apply_coe]
   simp [Matrix.vecTail, Function.comp_def]
+
+/-- If `v₁, …, vₙ` span `M`, then the wedge `v₁ ∧ ⋯ ∧ vₙ` spans `⋀ⁿ M`. -/
+theorem span_singleton_ιMulti_eq_top_of_span_eq_top [CommRing R] [AddCommGroup M] [Module R M]
+    {n : ℕ} {v : Fin n → M}
+    (hv : Submodule.span R (Set.range v) = ⊤) :
+    Submodule.span R {_root_.exteriorPower.ιMulti R n v} = ⊤ := by
+  refine eq_top_iff.2 ((_root_.exteriorPower.ιMulti_family_span_of_span R (n := n) hv).symm.le.trans
+    (Submodule.span_le.2 ?_))
+  rintro _ ⟨s, rfl⟩
+  rw [_root_.exteriorPower.ιMulti_family_eq_ιMulti]
+  exact Submodule.mem_span_singleton_self _
+
+/-- Over a field, `n` vectors of an `n`-dimensional vector space span it exactly when their wedge
+spans `⋀ⁿ V`. -/
+theorem span_singleton_ιMulti_eq_top_iff [Module.Finite K V] {n : ℕ}
+    (hV : Module.finrank K V = n) (v : Fin n → V) :
+    Submodule.span K {_root_.exteriorPower.ιMulti K n v} = ⊤ ↔
+      Submodule.span K (Set.range v) = ⊤ := by
+  refine ⟨fun h ↦ ?_, span_singleton_ιMulti_eq_top_of_span_eq_top⟩
+  -- `⋀ⁿ V` is nonzero: it contains the wedge of a basis
+  let b := Module.finBasisOfFinrankEq K V hV
+  have hne : _root_.exteriorPower.ιMulti K n v ≠ 0 := by
+    intro h0
+    rw [h0, Set.singleton_zero, Submodule.span_zero] at h
+    exact (_root_.exteriorPower.ιMulti_ne_zero_iff (⇑b)).2 b.linearIndependent
+      (Submodule.eq_bot_iff _ |>.1 h.symm _ Submodule.mem_top)
+  exact ((_root_.exteriorPower.ιMulti_ne_zero_iff v).1 hne).span_eq_top_of_card_eq_finrank'
+    (by rw [Fintype.card_fin, hV])
 
 end exteriorPower
 

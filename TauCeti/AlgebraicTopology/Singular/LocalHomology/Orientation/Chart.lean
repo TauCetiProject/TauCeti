@@ -32,6 +32,11 @@ equivalence while transporting the model orientation preserves the selected loca
 
 The local generator is the one associated to an oriented coordinate chart in Hatcher's
 *Algebraic Topology*, Section 3.3.
+For `OpenPartialHomeomorph`, the lemma
+`localHomologyMap_sourceRestrict_comp_inclusion_localOrientationOfOrientedChart`
+extends the source-restriction computation to every open neighborhood of the chart centre:
+read through excision, its chart image is the identity-chart local orientation.
+
 -/
 
 public section
@@ -360,6 +365,7 @@ theorem _root_.OpenPartialHomeomorph.localHomologyMap_sourceRestrict_localOrient
   rw [← ConcreteCategory.comp_apply, ← singularHomologyComplSingletonIsoOfOrientation_hom_eq,
     Iso.inv_hom_id_apply, Iso.inv_hom_id_apply]
 
+
 end Restriction
 
 section LinearIsometryEquiv
@@ -440,3 +446,40 @@ theorem
 end LinearIsometryEquiv
 
 end TauCeti
+
+namespace OpenPartialHomeomorph
+
+open TauCeti
+
+/-- The restriction of a chart to any open neighborhood of its centre carries the
+excision-selected local orientation to the identity-chart orientation at the chart value. -/
+theorem localHomologyMap_sourceRestrict_comp_inclusion_localOrientationOfOrientedChart
+    {M E : Type w} [TopologicalSpace M] [T1Space M]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+    (φ : OpenPartialHomeomorph M E) {a : M} (ha : a ∈ φ.source)
+    (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
+    {W : Set M} (hWo : IsOpen W) (haW : a ∈ W) (hWφ : W ⊆ φ.source)
+    (h : (φ.sourceRestrict.comp (ContinuousMap.inclusion hWφ)) ⁻¹' {φ a} ⊆ {⟨a, haW⟩}) :
+    localHomologyMap (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ))
+        (φ.sourceRestrict.comp (ContinuousMap.inclusion hWφ))
+        (S := {⟨a, haW⟩}) (T := {φ a}) h (n + 1)
+        ((hWo.isOpenEmbedding_subtypeVal.localOrientationEquiv ⟨a, haW⟩ (n + 1)).symm
+          (φ.localOrientationOfOrientedChart ha ω hE)).val =
+      ((OpenPartialHomeomorph.refl E).localOrientationOfOrientedChart
+        (OpenPartialHomeomorph.mem_refl_source (φ a)) ω hE).val := by
+  let Z := ModuleCat.of ℤ (ULift.{w} ℤ)
+  have hi : ContinuousMap.inclusion hWφ ⁻¹' {⟨a, ha⟩} ⊆ {⟨a, haW⟩} := fun x hx ↦
+    Subtype.ext (congrArg (fun y : φ.source ↦ y.val) (Set.mem_singleton_iff.1 hx))
+  have hφ : φ.sourceRestrict ⁻¹' {φ a} ⊆ {⟨a, ha⟩} := by
+    intro x hx
+    apply Set.mem_singleton_iff.2
+    apply Subtype.ext
+    simpa only [Set.mem_preimage, Set.mem_singleton_iff, ContinuousMap.subtypeVal_apply]
+      using φ.sourceRestrict_preimage ha hx
+  rw [← localHomologyMap_comp Z (ContinuousMap.inclusion hWφ) φ.sourceRestrict hi hφ (n + 1),
+    ConcreteCategory.comp_apply,
+    φ.open_source.localHomologyMap_inclusion_localOrientationEquiv_symm hWo hWφ haW
+      (φ.localOrientationOfOrientedChart ha ω hE) hi,
+    φ.localHomologyMap_sourceRestrict_localOrientationOfOrientedChart ha ω hE hφ]
+
+end OpenPartialHomeomorph

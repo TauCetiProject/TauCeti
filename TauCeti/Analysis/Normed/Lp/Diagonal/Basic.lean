@@ -27,7 +27,8 @@ coordinate vectors whose coefficients have norm at least `c > 0`, a diagonal ope
 inverse of norm at most `c⁻¹` (`lp.exists_comp_diagonalCLM_comp_subtypeL_eq_id`). Over a locally
 compact scalar field, coefficients tending to zero along the cofinite filter give a compact
 diagonal operator. Over `RCLike 𝕜`, every antitone `ℕ → ℝ≥0` sequence defines a nonnegative
-bounded sequence (`lp.ofAntitone`).
+bounded sequence (`lp.ofAntitone`), whose diagonal operator is injective exactly when no term
+vanishes.
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -335,6 +336,12 @@ theorem ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc 
 theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
     ‖ofAntitone 𝕜 hc n‖ = c n := by
   rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
+
+/-- The diagonal operator of `lp.ofAntitone 𝕜 hc` is injective exactly when no `c n` vanishes. -/
+theorem injective_diagonalCLM_ofAntitone_iff (𝕜 : Type*) [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {c : ℕ → ℝ≥0} (hc : Antitone c) :
+    Function.Injective (diagonalCLM (p := p) (ofAntitone 𝕜 hc)) ↔ ∀ n, c n ≠ 0 := by
+  simp [injective_diagonalCLM_iff]
 
 open scoped ComplexOrder in
 /-- Every entry of `lp.ofAntitone 𝕜 hc` is nonnegative in the `RCLike` order. -/

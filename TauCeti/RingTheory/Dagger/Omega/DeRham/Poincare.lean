@@ -16,8 +16,8 @@ Over a complete ultrametric normed field `K` of characteristic zero, the overcon
 complex of `W = K⟨X_σ⟩†` (`[Finite σ]`) has `H⁰_dR(W/K) ≃ₗ[K] K` and is exact in every positive
 degree `q + 1`, so `deRhamCohomology K W (q + 1)` is subsingleton.
 
-Using the coordinate formula `washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv` and the
-curl-free characterization `exteriorPowerDeriv_one_eq_zero_iff_washnitzer`, we deduce degree-one
+Using the coordinate formula `washnitzerBasis_exteriorPower_repr_extDerivPow` and the
+curl-free characterization `extDerivPow_one_eq_zero_iff_washnitzer`, we deduce degree-one
 exactness and unique potentials with prescribed constant coefficient, and establish positive-degree
 exactness by induction over `σ` via `washnitzerAlgebra.primitive`. Positive-characteristic
 counterexamples live in `TauCeti.RingTheory.Dagger.Omega.DeRham.CharP`.
@@ -49,7 +49,7 @@ variable (σ K) in
 noncomputable def closedFormsZeroWashnitzerEquiv :
     K ≃ₗ[K] closedForms K (washnitzerAlgebra σ K) 0 where
   toFun c := ⟨(exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _).symm (algebraMap K _ c), by
-    rw [mem_closedForms, exteriorPowerDeriv_zero_zeroEquiv_symm, (d K _).map_algebraMap,
+    rw [mem_closedForms, extDerivPow_zero_zeroEquiv_symm, (d K _).map_algebraMap,
       LinearEquiv.map_zero]⟩
   map_add' _ _ := Subtype.ext (by simp [map_add])
   map_smul' a _ := Subtype.ext <| by
@@ -61,7 +61,7 @@ noncomputable def closedFormsZeroWashnitzerEquiv :
   right_inv ω := Subtype.ext <| by
     dsimp only; set f := exteriorPower.zeroEquiv _ _ ω.val
     have hdf : d K (washnitzerAlgebra σ K) f = 0 := by
-      rw [← oneEquiv_exteriorPowerDeriv_zero, (mem_closedForms K _ ω.val).mp ω.property,
+      rw [← oneEquiv_extDerivPow_zero, (mem_closedForms K _ ω.val).mp ω.property,
         LinearEquiv.map_zero]
     rw [← (d_eq_zero_iff_eq_algebraMap_constantCoeff f).mp hdf, LinearEquiv.symm_apply_apply]
 
@@ -100,26 +100,26 @@ variable {σ K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
 /-- **Degree-one Poincaré lemma on `W = K⟨X_σ⟩†` in characteristic zero**: `ω ∈ Ω¹_{W/K}` is
 `d g` for some `g ∈ W` iff `dω = 0`. -/
-theorem exists_d_eq_iff_exteriorPowerDeriv_one_eq_zero_washnitzer [Finite σ] [CharZero K]
+theorem exists_d_eq_iff_extDerivPow_one_eq_zero_washnitzer [Finite σ] [CharZero K]
     (ω : Omega K (washnitzerAlgebra σ K)) :
     (∃ g : washnitzerAlgebra σ K, d K (washnitzerAlgebra σ K) g = ω) ↔
-      exteriorPowerDeriv K (washnitzerAlgebra σ K) 1
+      extDerivPow K (washnitzerAlgebra σ K) 1
         ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω) = 0 := by
-  rw [exteriorPowerDeriv_one_eq_zero_iff_washnitzer, ← exists_pderiv_eq_iff]
+  rw [extDerivPow_one_eq_zero_iff_washnitzer, ← exists_pderiv_eq_iff]
   exact exists_congr fun g ↦ d_eq_iff_forall_pderiv_eq g ω
 
 /-- **Unique potential with prescribed constant coefficient**: for every closed `1`-form `ω` on
 `W = K⟨X_σ⟩†` in characteristic zero and every `c : K`, there is a unique `g ∈ W` with
 `d g = ω` and constant coefficient `c`. -/
-theorem existsUnique_d_eq_of_exteriorPowerDeriv_one_eq_zero_washnitzer [Finite σ] [CharZero K]
+theorem existsUnique_d_eq_of_extDerivPow_one_eq_zero_washnitzer [Finite σ] [CharZero K]
     {ω : Omega K (washnitzerAlgebra σ K)}
-    (hω : exteriorPowerDeriv K (washnitzerAlgebra σ K) 1
+    (hω : extDerivPow K (washnitzerAlgebra σ K) 1
       ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω) = 0) (c : K) :
     ∃! g : washnitzerAlgebra σ K,
       d K (washnitzerAlgebra σ K) g = ω ∧ MvPowerSeries.constantCoeff g.val = c := by
   simpa only [d_eq_iff_forall_pderiv_eq] using
     existsUnique_pderiv_eq (fun i ↦ (washnitzerBasis σ K).repr ω i)
-      ((exteriorPowerDeriv_one_eq_zero_iff_washnitzer ω).mp hω) c
+      ((extDerivPow_one_eq_zero_iff_washnitzer ω).mp hω) c
 end DegreeOne
 /-! ### The Poincaré lemma in all positive degrees -/
 section AllPositiveDegrees
@@ -129,7 +129,7 @@ variable {σ K : Type*} [Finite σ] [NormedField K] [IsUltrametricDist K] [Compl
 omit [CharZero K] in
 private theorem pderiv_repr_eq_zero_of_lt [LinearOrder σ] (q : ℕ) {i₀ k₀ : σ}
     {ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
-    (hdω : exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0)
+    (hdω : extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω = 0)
     (hsupp : ∀ s : Set.powersetCard σ (q + 1),
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.val, i₀ ≤ i)
     (hk₀ : k₀ < i₀) (s : Set.powersetCard σ (q + 1)) (hkn_s : k₀ ∉ s.val) :
@@ -137,9 +137,9 @@ private theorem pderiv_repr_eq_zero_of_lt [LinearOrder σ] (q : ℕ) {i₀ k₀ 
   let w : Set.powersetCard σ (q + 2) := Set.powersetCard.ofCard (s := insert k₀ s.val)
     (by rw [Finset.card_insert_of_notMem hkn_s, Set.powersetCard.card_eq s])
   have hdw : ((washnitzerBasis σ K).exteriorPower (q + 2)).repr
-      (exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω) w = 0 := by
+      (extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω) w = 0 := by
     rw [hdω, LinearEquiv.map_zero, Finsupp.coe_zero, Pi.zero_apply]
-  rw [washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv] at hdw
+  rw [washnitzerBasis_exteriorPower_repr_extDerivPow] at hdw
   have hkw : k₀ ∈ w.val := Finset.mem_insert_self k₀ s.val
   rw [Finset.sum_eq_single ⟨k₀, hkw⟩] at hdw
   · have hwk : Set.powersetCard.ofCard (s := w.val.erase k₀)
@@ -190,15 +190,15 @@ private theorem poincarePrimitive_repr_of_not_forall_lt {t : Set.powersetCard σ
 
 /-- For a closed form supported on indices `≥ i₀`, `d (poincarePrimitive q i₀ ω)` vanishes on
 every multi-index containing an index strictly below `i₀`. -/
-private theorem exteriorPowerDeriv_poincarePrimitive_repr_of_exists_lt
-    (hdω : exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0)
+private theorem extDerivPow_poincarePrimitive_repr_of_exists_lt
+    (hdω : extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω = 0)
     (hsupp : ∀ s : Set.powersetCard σ (q + 1),
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.val, i₀ ≤ i)
     {u : Set.powersetCard σ (q + 1)} (hex_lt : ∃ j₀ ∈ u.val, j₀ < i₀) :
     ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
-        (exteriorPowerDeriv K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u = 0 := by
+        (extDerivPow K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u = 0 := by
   obtain ⟨j₀, hj₀u, hj₀m⟩ := hex_lt
-  rw [washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv]
+  rw [washnitzerBasis_exteriorPower_repr_extDerivPow]
   refine Finset.sum_eq_zero fun k _ ↦ ?_
   by_cases hgt : ∀ j ∈ u.val.erase k.val, i₀ < j
   · -- Erasing `k` leaves indices `> i₀`, so `k = j₀ < i₀` and `∂_k` commutes past `primitive i₀`.
@@ -220,12 +220,12 @@ private theorem exteriorPowerDeriv_poincarePrimitive_repr_of_exists_lt
 
 /-- On a multi-index `u` with minimum element `i₀`, `d (poincarePrimitive q i₀ ω)` reproduces the
 `u`-coordinate of `ω`. -/
-private theorem exteriorPowerDeriv_poincarePrimitive_repr_of_mem_of_forall_le
+private theorem extDerivPow_poincarePrimitive_repr_of_mem_of_forall_le
     {u : Set.powersetCard σ (q + 1)} (hi₀u : i₀ ∈ u.val) (hle : ∀ j ∈ u.val, i₀ ≤ j) :
     ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
-        (exteriorPowerDeriv K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u =
+        (extDerivPow K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u =
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω u := by
-  rw [washnitzerBasis_exteriorPower_repr_exteriorPowerDeriv, Finset.sum_eq_single ⟨i₀, hi₀u⟩]
+  rw [washnitzerBasis_exteriorPower_repr_extDerivPow, Finset.sum_eq_single ⟨i₀, hi₀u⟩]
   · -- Only the `k = i₀` term survives; since `i₀ = min u`, `basisEraseSign i₀ u.val = 1`.
     let t : Set.powersetCard σ q := Set.powersetCard.ofCard (s := u.val.erase i₀)
       (by rw [Finset.card_erase_of_mem hi₀u, Set.powersetCard.card_eq u]; rfl)
@@ -251,17 +251,17 @@ private theorem exteriorPowerDeriv_poincarePrimitive_repr_of_mem_of_forall_le
 
 private theorem poincare_step (q : ℕ) (i₀ : σ)
     {ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
-    (hdω : exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0)
+    (hdω : extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω = 0)
     (hsupp : ∀ s : Set.powersetCard σ (q + 1),
       ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.val, i₀ ≤ i) :
     ∃ η₀ : ⋀[washnitzerAlgebra σ K]^q (Omega K (washnitzerAlgebra σ K)),
-      exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1)
-          (ω - exteriorPowerDeriv K (washnitzerAlgebra σ K) q η₀) = 0 ∧
+      extDerivPow K (washnitzerAlgebra σ K) (q + 1)
+          (ω - extDerivPow K (washnitzerAlgebra σ K) q η₀) = 0 ∧
         ∀ u, ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
-            (ω - exteriorPowerDeriv K (washnitzerAlgebra σ K) q η₀) u ≠ 0 →
+            (ω - extDerivPow K (washnitzerAlgebra σ K) q η₀) u ≠ 0 →
               ∀ i ∈ u.val, i₀ < i := by
   refine ⟨poincarePrimitive q i₀ ω,
-    by rw [map_sub, hdω, exteriorPowerDeriv_exteriorPowerDeriv_apply, sub_zero], fun u hu i hi ↦ ?_⟩
+    by rw [map_sub, hdω, extDerivPow_extDerivPow_apply, sub_zero], fun u hu i hi ↦ ?_⟩
   by_contra! hle_i₀; apply hu
   rw [← Module.Basis.coord_apply, LinearMap.map_sub, sub_eq_zero, Module.Basis.coord_apply,
     Module.Basis.coord_apply]
@@ -269,27 +269,27 @@ private theorem poincare_step (q : ℕ) (i₀ : σ)
   · -- Both `ω` (by `hsupp`) and `d η₀` vanish on multi-indices containing an index `< i₀`.
     have hωu : ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω u = 0 :=
       by_contra fun hne ↦ hex_lt.elim fun j₀ ⟨hj₀u, hj₀m⟩ ↦ not_le_of_gt hj₀m (hsupp u hne j₀ hj₀u)
-    rw [hωu, exteriorPowerDeriv_poincarePrimitive_repr_of_exists_lt hdω hsupp hex_lt]
+    rw [hωu, extDerivPow_poincarePrimitive_repr_of_exists_lt hdω hsupp hex_lt]
   · -- Otherwise `i₀ = min u`, so `d η₀` reproduces and cancels the `u`-coordinate of `ω`.
     simp only [not_exists, not_and, not_lt] at hex_lt
     have hi₀u : i₀ ∈ u.val := le_antisymm hle_i₀ (hex_lt i hi) ▸ hi
-    exact (exteriorPowerDeriv_poincarePrimitive_repr_of_mem_of_forall_le hi₀u hex_lt).symm
+    exact (extDerivPow_poincarePrimitive_repr_of_mem_of_forall_le hi₀u hex_lt).symm
 end PoincareStep
 /-- **The Poincaré lemma on a dagger polydisc (Grosse-Klönne)**: every closed `(q + 1)`-form on
 `W = K⟨X_σ⟩†` (`[Finite σ]`, `CharZero K`) is exact. -/
-theorem exists_exteriorPowerDeriv_eq_of_exteriorPowerDeriv_eq_zero_washnitzer (q : ℕ)
+theorem exists_extDerivPow_eq_of_extDerivPow_eq_zero_washnitzer (q : ℕ)
     {ω₀ : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
-    (hω₀ : exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω₀ = 0) :
+    (hω₀ : extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω₀ = 0) :
     ∃ η : ⋀[washnitzerAlgebra σ K]^q (Omega K (washnitzerAlgebra σ K)),
-      exteriorPowerDeriv K (washnitzerAlgebra σ K) q η = ω₀ := by
+      extDerivPow K (washnitzerAlgebra σ K) q η = ω₀ := by
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
   let : LinearOrder σ := LinearOrder.lift' e e.injective
   let b := washnitzerBasis σ K
   suffices hstep : ∀ (k m : ℕ), m + k = n →
       ∀ (ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))),
-        exteriorPowerDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0 →
+        extDerivPow K (washnitzerAlgebra σ K) (q + 1) ω = 0 →
         (∀ s, (b.exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.val, m ≤ (e i : ℕ)) →
-        ∃ η, exteriorPowerDeriv K (washnitzerAlgebra σ K) q η = ω from
+        ∃ η, extDerivPow K (washnitzerAlgebra σ K) q η = ω from
     hstep n 0 (Nat.zero_add n) ω₀ hω₀ fun _ _ _ _ ↦ Nat.zero_le _
   intro k; induction k with
   | zero =>
@@ -313,7 +313,7 @@ theorem exactForms_washnitzer_succ (q : ℕ) :
     exactForms K (washnitzerAlgebra σ K) (q + 1) = closedForms K (washnitzerAlgebra σ K) (q + 1) :=
   le_antisymm (exactForms_le_closedForms K _ (q + 1)) fun ω hω ↦
     (exactForms_succ K (washnitzerAlgebra σ K) q).symm ▸ LinearMap.mem_range.mpr
-      (exists_exteriorPowerDeriv_eq_of_exteriorPowerDeriv_eq_zero_washnitzer q
+      (exists_extDerivPow_eq_of_extDerivPow_eq_zero_washnitzer q
         ((mem_closedForms K _ ω).mp hω))
 
 /-- **Exactness of the overconvergent de Rham complex of a dagger polydisc** in positive degree

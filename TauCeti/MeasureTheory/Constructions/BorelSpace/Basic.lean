@@ -6,8 +6,10 @@ Authors: Claude
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import Mathlib.Topology.Algebra.IsOpenUnits
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Algebra.IsOpenUnits
 
 /-!
 # Borel measurability and proper pushforwards
@@ -18,6 +20,11 @@ when `f ∘ g` is. Unlike `MeasurableEmbedding.measurable_comp_iff`, this needs 
 of the range of `f`: a topological embedding with non-measurable range still detects
 measurability of maps into its domain.
 
+The units of a topological group with zero with continuous inversion embed into it, so the
+measurable structure that Mathlib puts on them, pulled back along `Units.val`, is their Borel
+structure. For any measurable structure with measurable singletons on a group with zero,
+`Units.val` is a measurable embedding, since its range is the complement of `0`.
+
 Pushforward along a proper map preserves finiteness on compact sets. In particular,
 proper embeddings and translations can transport locally finite measures.
 
@@ -26,14 +33,20 @@ is a countable union of images under open embeddings of chart domains. If it is 
 out of its codomain is therefore measurable exactly when its composite with it is, and it has
 a measurable section, given over the target of each of countably many charts by the inverse chart.
 
+In a monoid with zero whose units form an open subspace with continuous inversion (`IsOpenUnits`),
+`Ring.inverse` is Borel measurable, being continuous on the open set of units and zero outside.
+
 ## Main results
 
 * `ContinuousOn.measurableSet_preimage_inter`
 * `Topology.IsInducing.comap_borel`
 * `Topology.IsInducing.measurable_comp_iff`
+* `Units.borelSpace₀`
+* `Units.measurableEmbedding_val₀`
 * `IsLocalHomeomorph.measurableSet_image`
 * `IsLocalHomeomorph.measurable_comp_iff`
 * `IsLocalHomeomorph.exists_measurable_rightInverse`
+* `IsOpenUnits.measurable_ringInverse`
 * `MeasureTheory.Measure.isFiniteMeasureOnCompacts_map_of_isProperMap`
 -/
 
@@ -66,6 +79,30 @@ theorem Topology.IsInducing.measurable_comp_iff {α β γ : Type*} [TopologicalS
     Measurable (f ∘ g) ↔ Measurable g := by
   rw [measurable_iff_comap_le, measurable_iff_comap_le, ← MeasurableSpace.comap_comp,
     BorelSpace.measurable_eq (α := α), BorelSpace.measurable_eq (α := β), hf.comap_borel]
+
+/-- The measurable structure on the units of a topological group with zero with continuous
+inversion, pulled back along `Units.val`, is the Borel structure: `Units.val` is a topological
+embedding (`Units.isEmbedding_val₀`). -/
+instance Units.borelSpace₀ {G₀ : Type*} [GroupWithZero G₀] [TopologicalSpace G₀]
+    [ContinuousInv₀ G₀] [MeasurableSpace G₀] [BorelSpace G₀] : BorelSpace G₀ˣ :=
+  ⟨by rw [← Units.isEmbedding_val₀.isInducing.comap_borel, ← BorelSpace.measurable_eq]; rfl⟩
+
+/-- The inclusion `Units.val : G₀ˣ → G₀` of the units of a group with zero is a measurable
+embedding, for the measurable structure on `G₀ˣ` pulled back along it: its range is the
+complement of `0`. -/
+theorem Units.measurableEmbedding_val₀ {G₀ : Type*} [GroupWithZero G₀] [MeasurableSpace G₀]
+    [MeasurableSingletonClass G₀] : MeasurableEmbedding (Units.val : G₀ˣ → G₀) where
+  injective := Units.val_injective
+  measurable := Measurable.of_comap_le le_rfl
+  measurableSet_image' := by
+    rintro _ ⟨t, ht, rfl⟩
+    rw [Set.image_preimage_eq_inter_range]
+    refine ht.inter ?_
+    have : Set.range (Units.val : G₀ˣ → G₀) = {0}ᶜ := by
+      ext x
+      exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
+    rw [this]
+    exact (measurableSet_singleton 0).compl
 
 /-- A local homeomorphism out of a Lindelöf space maps measurable sets to measurable sets. -/
 theorem IsLocalHomeomorph.measurableSet_image {α β : Type*} [TopologicalSpace α]
@@ -129,6 +166,19 @@ theorem IsLocalHomeomorph.exists_measurable_rightInverse {α β : Type*} [Topolo
       simp only [Set.piecewise_eq_of_mem _ _ _ hy]
       rw [hfe (c (Nat.find (hmem y)))]
       exact (e _).right_inv hy
+
+/-- In a monoid with zero whose units are open with continuous inversion, `Ring.inverse` is
+Borel measurable. -/
+theorem IsOpenUnits.measurable_ringInverse {R : Type*} [MonoidWithZero R]
+    [TopologicalSpace R] [IsOpenUnits R] [MeasurableSpace R] [BorelSpace R] :
+    Measurable (Ring.inverse : R → R) := by
+  classical
+  have hcont : ContinuousOn (Ring.inverse : R → R) {x : R | IsUnit x} :=
+    fun _ ⟨u, hu⟩ => hu ▸ (IsOpenUnits.continuousAt_ringInverse u).continuousWithinAt
+  have hpiece : ({x : R | IsUnit x}).piecewise (Ring.inverse : R → R) (fun _ ↦ 0) = Ring.inverse :=
+    funext fun x => by by_cases hx : IsUnit x <;> simp [Set.piecewise, hx, Ring.inverse_non_unit]
+  exact hpiece ▸ hcont.measurable_piecewise continuousOn_const
+    IsOpenUnits.isOpenEmbedding_unitsVal.isOpen_range.measurableSet
 
 namespace MeasureTheory.Measure
 

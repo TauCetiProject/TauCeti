@@ -844,8 +844,10 @@ theorem exists_norm_fderiv_reducedSolution_le (P : Polynomial ℂ) :
     (fun y _ ↦ ((contDiff_reducedSolution P).of_le (by simp)).contDiffAt) one_pos
     (fun y _ ↦ hB y) fun y _ ↦ hK y
 
-/-- The `L²` distance of two reduced solutions is at most the `H¹` distance of the minimizers. -/
-private theorem integral_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
+/-- **The `L²` distance of two reduced solutions** is at most the `H¹` distance of the
+minimizers of Taubes's functional: for polynomials `P` and `Q` of positive degree,
+`∫ (w_P - w_Q)² ≤ ‖reducedMinimizer P - reducedMinimizer Q‖²`. -/
+theorem integral_reducedSolution_sub_sq_le_norm_sub_sq {P Q : Polynomial ℂ} (hP : 0 < P.natDegree)
     (hQ : 0 < Q.natDegree) :
     ∫ z, (reducedSolution P z - reducedSolution Q z) ^ 2 ≤
       ‖reducedMinimizer P - reducedMinimizer Q‖ ^ 2 := by
@@ -877,7 +879,7 @@ private theorem exists_eventually_abs_laplacian_sub_le_and_tendsto_integral_sq {
   have hconv := tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_reducedMinimizer hQ hdeg hcoeff)
   have hint : ∀ᶠ i in l, ∫ z, (reducedSolution (P i) z - reducedSolution Q z) ^ 2 ≤
       ‖reducedMinimizer (P i) - reducedMinimizer Q‖ ^ 2 :=
-    hev.mono fun i hi ↦ integral_sub_sq_le_norm_sub_sq hi.natDegree_pos hQ
+    hev.mono fun i hi ↦ integral_reducedSolution_sub_sq_le_norm_sub_sq hi.natDegree_pos hQ
   refine ⟨?_, squeeze_zero' (Eventually.of_forall fun i ↦ integral_nonneg fun z ↦ sq_nonneg _)
     hint (by simpa using hconv.pow 2)⟩
   -- Uniform sup bounds: the minimizers of `P i` are eventually `L²`-close to that of `Q`.

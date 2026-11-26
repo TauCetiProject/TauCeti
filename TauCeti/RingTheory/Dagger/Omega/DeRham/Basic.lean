@@ -11,10 +11,10 @@ public import TauCeti.RingTheory.Dagger.Omega.DeRham.Derivative
 /-!
 # The overconvergent de Rham complex and its functoriality
 
-For any commutative `R`-algebra `A` with Noetherian `Omega R A` (in particular any `K`-dagger
+For any Noetherian commutative `R`-algebra `A` with finite `Omega R A` (in particular any `K`-dagger
 algebra over a complete ultrametric normed field `K`), constructs Grosse-Klönne's overconvergent
 de Rham complex `Omega.deRhamComplex R A` and cohomology `Omega.deRhamCohomology R A q` from
-`Omega.exteriorPowerDeriv`, functorial in `K`-dagger algebras over a complete ultrametric normed
+`Omega.extDerivPow`, functorial in `K`-dagger algebras over a complete ultrametric normed
 field `K`.
 
 ## References
@@ -34,14 +34,15 @@ namespace TauCeti.Dagger.Omega
 /-! ### Overconvergent de Rham complex and cohomology -/
 
 section DeRham
-variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [IsNoetherian A (Omega R A)]
+variable (R A : Type*) [CommRing R] [CommRing A] [Algebra R A] [IsNoetherianRing A]
+  [Module.Finite A (Omega R A)]
 
 /-- **The universally finite (overconvergent) de Rham cochain complex**
 `0 → ⋀⁰ Ω¹ → ⋀¹ Ω¹ → ⋀² Ω¹ → ⋯` in `ModuleCat R`. -/
 def deRhamComplex : CochainComplex (ModuleCat R) ℕ :=
   CochainComplex.of (fun q ↦ ModuleCat.of R (⋀[A]^q (Omega R A)))
-    (fun q ↦ ModuleCat.ofHom (exteriorPowerDeriv R A q))
-    (fun q ↦ ModuleCat.hom_ext (exteriorPowerDeriv_comp_exteriorPowerDeriv q))
+    (fun q ↦ ModuleCat.ofHom (extDerivPow R A q))
+    (fun q ↦ ModuleCat.hom_ext (extDerivPow_comp_extDerivPow q))
 
 /-- Canonical identification of `(deRhamComplex R A).X q` with `⋀[A]^q (Omega R A)`. -/
 def deRhamComplexXIso (q : ℕ) : (deRhamComplex R A).X q ≅ ModuleCat.of R (⋀[A]^q (Omega R A)) :=
@@ -49,34 +50,34 @@ def deRhamComplexXIso (q : ℕ) : (deRhamComplex R A).X q ≅ ModuleCat.of R (�
 
 @[reassoc] theorem deRhamComplex_d (q : ℕ) :
     (deRhamComplex R A).d q (q + 1) ≫ (deRhamComplexXIso R A (q + 1)).hom =
-      (deRhamComplexXIso R A q).hom ≫ ModuleCat.ofHom (exteriorPowerDeriv R A q) := by
+      (deRhamComplexXIso R A q).hom ≫ ModuleCat.ofHom (extDerivPow R A q) := by
   simp [deRhamComplexXIso, deRhamComplex, CochainComplex.of_d]
 theorem deRhamComplex_d_apply (q : ℕ) (x : (deRhamComplex R A).X q) :
     (deRhamComplex R A).d q (q + 1) x =
       (deRhamComplexXIso R A (q + 1)).inv
-        (exteriorPowerDeriv R A q ((deRhamComplexXIso R A q).hom x)) := by
+        (extDerivPow R A q ((deRhamComplexXIso R A q).hom x)) := by
   rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d R A q), ModuleCat.comp_apply, ModuleCat.comp_apply,
     ConcreteCategory.hom_ofHom]
 
 /-- The `R`-submodule of closed `q`-forms `ker (d : Ω^q → Ω^{q+1})`. -/
 def closedForms (q : ℕ) : Submodule R (⋀[A]^q (Omega R A)) :=
-  LinearMap.ker (exteriorPowerDeriv R A q)
+  LinearMap.ker (extDerivPow R A q)
 
 /-- The `R`-submodule of exact `q`-forms: `⊥` in degree `0` and `range d` in degree `q + 1`. -/
 def exactForms : (q : ℕ) → Submodule R (⋀[A]^q (Omega R A))
   | 0 => ⊥
-  | q + 1 => LinearMap.range (exteriorPowerDeriv R A q)
+  | q + 1 => LinearMap.range (extDerivPow R A q)
 
 @[simp] theorem mem_closedForms {q : ℕ} (ω : ⋀[A]^q (Omega R A)) :
-    ω ∈ closedForms R A q ↔ exteriorPowerDeriv R A q ω = 0 := Iff.rfl
+    ω ∈ closedForms R A q ↔ extDerivPow R A q ω = 0 := Iff.rfl
 @[simp] theorem exactForms_zero : exactForms R A 0 = ⊥ := (rfl)
 @[simp] theorem exactForms_succ (q : ℕ) :
-    exactForms R A (q + 1) = LinearMap.range (exteriorPowerDeriv R A q) := (rfl)
+    exactForms R A (q + 1) = LinearMap.range (extDerivPow R A q) := (rfl)
 theorem exactForms_le_closedForms : (q : ℕ) → exactForms R A q ≤ closedForms R A q
   | 0 => by simp
-  | q + 1 => LinearMap.range_le_ker_iff.mpr (exteriorPowerDeriv_comp_exteriorPowerDeriv q)
-theorem exteriorPowerDeriv_mem_closedForms (q : ℕ) (ω : ⋀[A]^q (Omega R A)) :
-    exteriorPowerDeriv R A q ω ∈ closedForms R A (q + 1) :=
+  | q + 1 => LinearMap.range_le_ker_iff.mpr (extDerivPow_comp_extDerivPow q)
+theorem extDerivPow_mem_closedForms (q : ℕ) (ω : ⋀[A]^q (Omega R A)) :
+    extDerivPow R A q ω ∈ closedForms R A (q + 1) :=
   exactForms_le_closedForms R A (q + 1) ⟨ω, rfl⟩
 
 /-- **Overconvergent de Rham cohomology** `H^q_dR(A/R)`. -/
@@ -157,12 +158,13 @@ section Functoriality
 variable {K A B C : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CommRing A] [CommRing B] [CommRing C] [Algebra K A] [Algebra K B] [Algebra K C]
   [IsDaggerAlgebra K A] [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
+  [IsNoetherianRing A] [IsNoetherianRing B] [IsNoetherianRing C]
 
 namespace closedForms
 /-- Pullback of closed overconvergent `q`-forms along `f : A →ₐ[K] B`. -/
 def map (f : A →ₐ[K] B) (q : ℕ) : closedForms K A q →ₗ[K] closedForms K B q :=
   ((formsMap f q).domRestrict (closedForms K A q)).codRestrict (closedForms K B q) fun ω ↦ by
-    rw [mem_closedForms, LinearMap.domRestrict_apply, exteriorPowerDeriv_formsMap,
+    rw [mem_closedForms, LinearMap.domRestrict_apply, extDerivPow_formsMap,
       (mem_closedForms K A ω.val).mp ω.property, map_zero]
 @[simp] theorem coe_map (f : A →ₐ[K] B) (q : ℕ) (ω : closedForms K A q) :
     (map f q ω).val = formsMap f q ω.val := (rfl)
@@ -174,7 +176,7 @@ theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
 theorem map_mem_exactForms (f : A →ₐ[K] B) : ∀ (q : ℕ) (ω : closedForms K A q),
     ω.val ∈ exactForms K A q → (map f q ω).val ∈ exactForms K B q
   | 0, ω, hω => by rw [exactForms_zero, Submodule.mem_bot] at hω ⊢; rw [coe_map, hω, map_zero]
-  | q + 1, _, ⟨η, hη⟩ => ⟨formsMap f q η, by rw [coe_map, exteriorPowerDeriv_formsMap, hη]⟩
+  | q + 1, _, ⟨η, hη⟩ => ⟨formsMap f q η, by rw [coe_map, extDerivPow_formsMap, hη]⟩
 end closedForms
 
 namespace deRhamCohomology
@@ -211,6 +213,7 @@ universe u v
 variable {K : Type u} {A B C : Type v} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [CommRing A] [CommRing B] [CommRing C] [Algebra K A] [Algebra K B] [Algebra K C]
   [IsDaggerAlgebra K A] [IsDaggerAlgebra K B] [IsDaggerAlgebra K C]
+  [IsNoetherianRing A] [IsNoetherianRing B] [IsNoetherianRing C]
 
 namespace deRhamComplex
 /-- The cochain map `deRhamComplex K A ⟶ deRhamComplex K B` induced by `f : A →ₐ[K] B`. -/
@@ -218,9 +221,9 @@ def map (f : A →ₐ[K] B) : deRhamComplex K A ⟶ deRhamComplex K B :=
   CochainComplex.ofHom
     (fun q ↦ (deRhamComplexXIso K A q).hom ≫ ModuleCat.ofHom (formsMap f q) ≫
       (deRhamComplexXIso K B q).inv) fun q ↦ by
-      have hcomm : ModuleCat.ofHom (formsMap f q) ≫ ModuleCat.ofHom (exteriorPowerDeriv K B q) =
-          ModuleCat.ofHom (exteriorPowerDeriv K A q) ≫ ModuleCat.ofHom (formsMap f (q + 1)) :=
-        ModuleCat.hom_ext (exteriorPowerDeriv_comp_formsMap f q)
+      have hcomm : ModuleCat.ofHom (formsMap f q) ≫ ModuleCat.ofHom (extDerivPow K B q) =
+          ModuleCat.ofHom (extDerivPow K A q) ≫ ModuleCat.ofHom (formsMap f (q + 1)) :=
+        ModuleCat.hom_ext (extDerivPow_comp_formsMap f q)
       rw [(Iso.eq_comp_inv _).mpr (deRhamComplex_d K A q),
         (Iso.eq_comp_inv _).mpr (deRhamComplex_d K B q)]
       simp only [Category.assoc, Iso.inv_hom_id_assoc, reassoc_of% hcomm]
@@ -248,9 +251,10 @@ end ComplexFunctoriality
 
 /-! ### Vanishing above the number of variables -/
 
-/-- When `Omega R A` is subsingleton, all positive-degree de Rham cohomology groups vanish. -/
+/-- When `Omega R A` is subsingleton and `A` is Noetherian, all positive-degree de Rham
+cohomology groups vanish. -/
 theorem subsingleton_deRhamCohomology_succ_of_subsingleton {R A : Type*} [CommRing R] [CommRing A]
-    [Algebra R A] [Subsingleton (Omega R A)] (q : ℕ) :
+    [Algebra R A] [IsNoetherianRing A] [Subsingleton (Omega R A)] (q : ℕ) :
     Subsingleton (deRhamCohomology R A (q + 1)) :=
   have := exteriorPower.subsingleton_succ_of_subsingleton (R := A) (M := Omega R A) q
   subsingleton_deRhamCohomology_of_closedForms_le_exactForms R A (q := q + 1)

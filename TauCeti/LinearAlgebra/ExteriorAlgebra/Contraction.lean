@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Basis
+import TauCeti.Data.Finset.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Reverse
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -26,6 +27,8 @@ the wrong side of that move. Creation after contraction at distinct coordinates 
 replaces an occupied coordinate with an unoccupied one, with the product of their shuffle signs.
 Two creations after contractions at distinct coordinates, in reverse order, project onto the
 exterior basis vectors containing both coordinates.
+Removing two distinct coordinates from an index set in the two possible orders gives opposite
+products of shuffle signs (`TauCeti.ExteriorAlgebra.basisEraseSign_mul_basisEraseSign_erase`).
 
 The grade involution is diagonal for the exterior basis as well: it multiplies an exterior
 monomial, and so the basis vector indexed by `s`, by the parity of its degree.
@@ -91,6 +94,14 @@ private theorem contractLeft_coord_basis_eq_zero_of_not_mem {I : Type w} [Linear
   rintro rfl
   exact absurd ((Finset.mem_sort _).mp hj) hi
 
+/-- The two orders of removing distinct indices `j` and `k` from `J` carry opposite products of
+shuffle signs. -/
+theorem basisEraseSign_mul_basisEraseSign_erase {I : Type w} [LinearOrder I] {J : Finset I}
+    {j k : I} (hj : j ∈ J) (hk : k ∈ J) (hjk : j ≠ k) :
+    basisEraseSign j J * basisEraseSign k (J.erase j) =
+      -(basisEraseSign k J * basisEraseSign j (J.erase k)) := by
+  simp only [basisEraseSign_eq_neg_one_pow_card_filter_lt]
+  exact Finset.neg_one_pow_card_filter_lt_mul_erase hj hk hjk
 
 /-- Contracting an exterior-basis vector erases the contracted coordinate, with the shuffle sign
 that moves that coordinate to the front; it is zero when the coordinate is absent. -/

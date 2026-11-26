@@ -205,10 +205,9 @@ theorem exists_isTheta_pow_of_contDiffOn_of_complexStructure (hΩ : IsOpen Ω)
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
   obtain ⟨n, T, hfac⟩ :=
     exists_hasSimilarityFactorizationAt_symm_comp hΩ hJ hJJ hξ hCm hCb heq hz₁
-  obtain ⟨m, hm, hθ, -⟩ := exists_analyticOrderAt_eq_of_hasSimilarityFactorizationAt hΩ hΩc
-    (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
-    ⟨z₁, hz₁, by simpa using hξz₁⟩ hz₀ (by simp [hξ₀])
-  exact ⟨m, hm, IsTheta.trans ⟨T.symm.isBigO_comp_rev _ _, T.symm.isBigO_comp _ _⟩ hθ⟩
+  exact exists_isTheta_pow_of_continuousLinearEquiv_of_hasSimilarityFactorizationAt T.symm hΩ
+    hΩc (T.symm.continuous.comp_continuousOn hξ.continuousOn) (fun z hz _ ↦ hfac z hz)
+    ⟨z₁, hz₁, hξz₁⟩ hz₀ hξ₀
 
 end Real
 
