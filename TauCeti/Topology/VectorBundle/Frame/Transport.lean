@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.Contractible
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Linear transport along a frame
@@ -167,16 +168,8 @@ theorem exists_pos_forall_frameTransport_eq_smul [PreconnectedSpace X] (hF : fin
   set A : X → F ≃L[ℝ] F := fun x ↦ (ψ x).trans (φ x).symm
   set d : X → ℝ := fun x ↦ ((A x : F ≃L[ℝ] F) : F →L[ℝ] F).det
   -- In rank one every endomorphism is multiplication by its determinant.
-  have hA (x : X) (v : F) : A x v = d x • v := by
-    obtain ⟨c, hc, -⟩ :=
-      ((A x : F →L[ℝ] F) : F →ₗ[ℝ] F).existsUnique_eq_smul_id_of_finrank_eq_one hF
-    have hdc : d x = c := by
-      -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-      change LinearMap.det ((A x : F →L[ℝ] F) : F →ₗ[ℝ] F) = c
-      rw [hc]
-      simp [hF]
-    rw [hdc]
-    exact LinearMap.congr_fun hc v
+  have hA (x : X) (v : F) : A x v = d x • v :=
+    LinearMap.apply_eq_det_smul_of_finrank_eq_one hF ((A x : F →L[ℝ] F) : F →ₗ[ℝ] F) v
   have hψφ (x : X) (v : F) : ψ x v = d x • φ x v := by
     rw [← map_smul, ← hA]
     simp [A]
