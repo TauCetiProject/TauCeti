@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
 public import TauCeti.Topology.VectorBundle.Thom.Class
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
+import TauCeti.Topology.VectorBundle.ModelFiber
 
 /-!
 # The Thom pair over finite unions of trivializing open sets
@@ -87,7 +88,8 @@ from the pairs over `U`, `V` and `U ∩ V`; this is used in
 * `TauCeti.isZero_singularHomology_thomPairOver_biUnion`: `Hₙ(E|_W, E₀|_W) = 0` for `n < r` over a
   finite union `W` of trivializing open sets.
 * `TauCeti.isZero_singularHomology_thomPair_of_compactSpace`: `Hₙ(E, E₀) = 0` for `n < r` over a
-  compact base, without a filtered-colimit hypothesis on coefficients.
+  compact base, without a filtered-colimit hypothesis on coefficients, for a model fibre in any
+  universe.
 * `TauCeti.singularHomology_thomPairOver_union_hom_ext`,
   `TauCeti.singularHomology_thomPairOver_biUnion_hom_ext`: morphisms out of `Hᵣ(E|_W, E₀|_W)`
   are determined over the open sets of a cover of `W`, and, over a finite union of trivializing
@@ -628,10 +630,12 @@ theorem isZero_singularHomology_thomPairOver_biUnion {ι : Type*} (s : Finset ι
     obtain ⟨e', he', hi'⟩ := hWe i (Finset.mem_insert_of_mem hi)
     exact ⟨e', he', inter_subset_right.trans hi'⟩
 
-/-- **The relative homology of the Thom pair of a vector bundle over a compact base vanishes below
-the rank**: `Hₙ(E, E₀) = 0` for `n < dim F`. -/
-theorem isZero_singularHomology_thomPair_of_compactSpace [CompactSpace B] [VectorBundle ℝ F E]
-    {n : ℕ} (hn : n < finrank ℝ F) : IsZero ((thomPair F E).singularHomology R n) := by
+/-- The relative homology of the Thom pair of a vector bundle over a compact base vanishes below
+the rank, for a model fibre in the universe of the base:
+`TauCeti.isZero_singularHomology_thomPair_of_compactSpace` for such model fibres. -/
+private theorem isZero_singularHomology_thomPair_of_compactSpace_sameUniverse [CompactSpace B]
+    [VectorBundle ℝ F E] {n : ℕ} (hn : n < finrank ℝ F) :
+    IsZero ((thomPair F E).singularHomology R n) := by
   obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
     (fun b : B ↦ (trivializationAt F E b).baseSet) (fun b ↦ (trivializationAt F E b).open_baseSet)
     fun b _ ↦ mem_iUnion.2 ⟨b, mem_baseSet_trivializationAt F E b⟩
@@ -640,6 +644,21 @@ theorem isZero_singularHomology_thomPair_of_compactSpace [CompactSpace B] [Vecto
     (fun b _ ↦ ⟨trivializationAt F E b, inferInstance, subset_rfl⟩) hn
   rw [univ_subset_iff.1 ht] at h
   exact h.of_iso (asIso (TopPair.singularHomologyMap (thomPairOverUnivIso F E).inv R n))
+
+/-- **The relative homology of the Thom pair of a vector bundle over a compact base vanishes below
+the rank**: `Hₙ(E, E₀) = 0` for `n < dim F`. The model fibre may lie in any universe. -/
+theorem isZero_singularHomology_thomPair_of_compactSpace [CompactSpace B] {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E] {n : ℕ}
+    (hn : n < finrank ℝ F) : IsZero ((thomPair F E).singularHomology R n) := by
+  -- Read `E` with the model fibre `ULift (Fin r → ℝ)`, which lies in the universe of `B` and of
+  -- the fibres, with the topology on its total space induced along the identity of points.
+  let L : F ≃L[ℝ] ULift.{w} (Fin (finrank ℝ F) → ℝ) :=
+    (ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm
+  obtain ⟨_, h_ind, _, _⟩ := VectorBundle.exists_modelFiber_of_continuousLinearEquiv F (E := E) L
+  exact (isZero_singularHomology_thomPair_of_compactSpace_sameUniverse R
+    (by rwa [← L.toLinearEquiv.finrank_eq])).of_iso
+    ((thomPair F E).singularHomologyMapIso R (thomPairModelFiberIso h_ind).symm n)
 
 variable {R} in
 /-- **Morphisms out of the top-degree homology of the Thom pair over a finite union of
