@@ -153,8 +153,6 @@ private theorem finite_quotient_inertia {k : Type u} {G : Type v} [Field k] [Gro
     (hσ : IsAtom σ) : Finite (G ⧸ inertia (FDRep.of σ.toRepresentation)) :=
   -- The restriction is a Noetherian `k[N]`-module, so it has finitely many isotypic components,
   -- and these are indexed by the inertia cosets.
-  have : IsNoetherian k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) :=
-    isNoetherian_of_tower k inferInstance
   .of_equiv _ (ρ.isotypicComponentsEquivQuotientInertia σ hσ)
 
 /-- **Clifford's decomposition of the module of the restriction.**  The `k[N]`-module carried by

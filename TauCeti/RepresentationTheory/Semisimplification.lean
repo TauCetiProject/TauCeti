@@ -30,8 +30,9 @@ and determinant on `V^ss` as on `V`.
 * `Representation.nonempty_equiv_semisimplification_iff`: `V^ss ≅ V` exactly when `ρ` is
   semisimple.
 * `Representation.charpoly_semisimplification_apply`,
-  `Representation.trace_semisimplification_apply`, `Representation.det_semisimplification_apply`:
-  `V^ss` and `V` have the same characteristic polynomials, traces and determinants.
+  `Representation.trace_semisimplification_apply`, `Representation.char_semisimplification`,
+  `Representation.det_semisimplification_apply`: `V^ss` and `V` have the same characteristic
+  polynomials, traces, characters and determinants.
 -/
 
 public section
@@ -42,14 +43,6 @@ namespace Representation
 
 variable {k G V : Type*} [Field k] [Monoid G] [AddCommGroup V] [Module k V] [FiniteDimensional k V]
   (ρ : Representation k G V)
-
-/-- The `k[G]`-module attached to a finite-dimensional representation is Noetherian. -/
-instance isNoetherian_asModule : IsNoetherian k[G] ρ.asModule :=
-  isNoetherian_of_tower k inferInstance
-
-/-- The `k[G]`-module attached to a finite-dimensional representation is Artinian. -/
-instance isArtinian_asModule : IsArtinian k[G] ρ.asModule :=
-  isArtinian_of_tower k inferInstance
 
 /-- The **semisimplification** of a finite-dimensional representation: the representation of `G`
 on the direct sum `V^ss` of the Jordan-Hölder factors of `V`, read off the `k[G]`-module
@@ -65,13 +58,27 @@ theorem semisimplification_def :
 /-- A group element acts on `V^ss` through the corresponding basis element of `k[G]`. -/
 theorem semisimplification_apply (g : G) (x : TauCeti.semisimplification k[G] ρ.asModule) :
     ρ.semisimplification g x = MonoidAlgebra.single g (1 : k) • x :=
-  (rfl)
+  TauCeti.Representation.ofModule'_apply _ g x
 
 /-- The `k[G]`-module attached to `ρ.semisimplification` is the semisimplification of the module
 attached to `ρ`. -/
 noncomputable def semisimplificationAsModuleEquiv :
     ρ.semisimplification.asModule ≃ₗ[k[G]] TauCeti.semisimplification k[G] ρ.asModule :=
   TauCeti.Representation.ofModule'AsModuleEquiv _
+
+/-- `Representation.semisimplificationAsModuleEquiv` is the identity map of the underlying type. -/
+@[simp]
+theorem semisimplificationAsModuleEquiv_apply (x : ρ.semisimplification.asModule) :
+    ρ.semisimplificationAsModuleEquiv x = x :=
+  TauCeti.Representation.ofModule'AsModuleEquiv_apply _ x
+
+/-- The inverse of `Representation.semisimplificationAsModuleEquiv` is the identity map of the
+underlying type. -/
+@[simp]
+theorem semisimplificationAsModuleEquiv_symm_apply
+    (x : TauCeti.semisimplification k[G] ρ.asModule) :
+    ρ.semisimplificationAsModuleEquiv.symm x = x :=
+  (LinearEquiv.symm_apply_eq _).mpr (semisimplificationAsModuleEquiv_apply ..).symm
 
 /-- **The semisimplification is semisimple.** -/
 instance isSemisimpleRepresentation_semisimplification :
@@ -105,6 +112,11 @@ theorem trace_semisimplification_apply (g : G) :
     LinearMap.trace k _ (ρ.semisimplification g) = LinearMap.trace k _ (ρ g) := by
   rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, LinearMap.trace_eq_neg_charpoly_nextCoeff,
     charpoly_semisimplification_apply]
+
+/-- The semisimplification has the character of `ρ`. -/
+@[simp]
+theorem char_semisimplification : ρ.semisimplification.character = ρ.character :=
+  funext ρ.trace_semisimplification_apply
 
 /-- The semisimplification has the determinants of `ρ`. -/
 @[simp]
