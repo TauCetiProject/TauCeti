@@ -138,23 +138,9 @@ theorem abs_toReal_topologicalPressure_sub_le [UniformSpace X] {c : ℝ}
 `T` is `⊤`. -/
 theorem topologicalPressure_eq_top_iff [UniformSpace X] {c : ℝ} (h : ∀ x, |φ x| ≤ c) :
     topologicalPressure T φ = ⊤ ↔ coverEntropy T univ = ⊤ := by
-  have h₁ : topologicalPressure T φ ≤ coverEntropy T univ + c := by
-    rw [← topologicalPressure_zero]
-    exact topologicalPressure_le_add_of_abs_sub_le fun x ↦ by simpa using h x
-  have h₂ : coverEntropy T univ ≤ topologicalPressure T φ + c := by
-    rw [← topologicalPressure_zero]
-    exact topologicalPressure_le_add_of_abs_sub_le fun x ↦ by simpa using h x
-  have hc := EReal.add_eq_top_iff_eq_top_left (x := coverEntropy T univ) (EReal.coe_ne_bot c)
-    (EReal.coe_ne_top c)
-  have hc' := EReal.add_eq_top_iff_eq_top_left (x := topologicalPressure T φ)
-    (EReal.coe_ne_bot c) (EReal.coe_ne_top c)
-  constructor
-  · intro hφ
-    rw [hφ, top_le_iff] at h₁
-    exact hc.mp h₁
-  · intro hT
-    rw [hT, top_le_iff] at h₂
-    exact hc'.mp h₂
+  rw [← topologicalPressure_zero]
+  refine not_iff_not.mp ⟨topologicalPressure_ne_top_of_abs_sub_le (c := c) fun x ↦ ?_,
+    topologicalPressure_ne_top_of_abs_sub_le (c := c) fun x ↦ ?_⟩ <;> simpa using h x
 
 /-- Invariance of pressure under bounded coboundaries: if `|ψ x| ≤ c` for every `x`, then
 `P(T, φ + ψ ∘ T - ψ) = P(T, φ)`. -/
