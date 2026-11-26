@@ -636,11 +636,15 @@ theorem isInvertible_torusModeOperator {ω : ℕ → ℝ} {ω₀ : ℝ} (hω₀ 
 
 /-- The frequencies `ωₖ = (2k + 1)π/ℓ` along `s` of the modes of maps antiperiodic of antiperiod `ℓ`
 in `s`. -/
-@[expose] def antiperiodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
+def antiperiodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
   (2 * k + 1) * π / ℓ
 
 theorem antiperiodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     antiperiodicModeFrequency ℓ k = (2 * k + 1) * π / ℓ :=
+  (rfl)
+
+theorem antiperiodicModeFrequency_eq (ℓ : ℝ) :
+    antiperiodicModeFrequency ℓ = fun k : ℕ ↦ (2 * k + 1) * π / ℓ :=
   (rfl)
 
 /-- The frequencies `ωₖ = 2(k + 1)π/ℓ` along `s` of the modes of maps periodic of period `ℓ` in `s`
@@ -648,11 +652,15 @@ with no `s`-independent part. -/
 -- Named sequences: with an anonymous function such as `fun k ↦ 2 * (k + 1) * π / ℓ` in the types
 -- of the determinant lines of the operators on invariant subspaces, as for
 -- `TauCeti.skewTorusOperator`, elaboration unfolds the invariant subspaces and times out.
-@[expose] def periodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
+def periodicModeFrequency (ℓ : ℝ) (k : ℕ) : ℝ :=
   2 * (k + 1) * π / ℓ
 
 theorem periodicModeFrequency_apply (ℓ : ℝ) (k : ℕ) :
     periodicModeFrequency ℓ k = 2 * (k + 1) * π / ℓ :=
+  (rfl)
+
+theorem periodicModeFrequency_eq (ℓ : ℝ) :
+    periodicModeFrequency ℓ = fun k : ℕ ↦ 2 * (k + 1) * π / ℓ :=
   (rfl)
 
 /-- The frequency `π / |ℓ|` bounds every frequency `c π / ℓ` with `1 ≤ c`, in particular the

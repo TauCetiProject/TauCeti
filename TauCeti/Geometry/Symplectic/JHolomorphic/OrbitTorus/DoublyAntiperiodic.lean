@@ -132,7 +132,7 @@ modes `aₖ, bₖ` are antiperiodic loops (`TauCeti.CircleSobolev.antiperiodic`)
 the ambient space of pairs of mode sequences, contained in `TauCeti.torusModeSobolev F ω`
 (`TauCeti.doublyAntiperiodicSobolev_le_torusModeSobolev`). -/
 def doublyAntiperiodicSobolev (ℓ : ℝ) : Submodule ℂ 𝕏[F] where
-  carrier := {x | x ∈ torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ∧
+  carrier := {x | x ∈ torusModeSobolev F (antiperiodicModeFrequency ℓ) ∧
     ∀ k, (x.1 k).fst ∈ antiperiodic 1 F ∧ (x.1 k).snd ∈ antiperiodic 1 F}
   add_mem' hx hy := ⟨add_mem hx.1 hy.1,
     fun k ↦ ⟨add_mem (hx.2 k).1 (hy.2 k).1, add_mem (hx.2 k).2 (hy.2 k).2⟩⟩
@@ -142,12 +142,12 @@ def doublyAntiperiodicSobolev (ℓ : ℝ) : Submodule ℂ 𝕏[F] where
 
 theorem mem_doublyAntiperiodicSobolev_iff {ℓ : ℝ} {x : 𝕏[F]} :
     x ∈ doublyAntiperiodicSobolev F ℓ ↔
-      x ∈ torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ∧
+      x ∈ torusModeSobolev F (antiperiodicModeFrequency ℓ) ∧
         ∀ k, (x.1 k).fst ∈ antiperiodic 1 F ∧ (x.1 k).snd ∈ antiperiodic 1 F :=
   Iff.rfl
 
 theorem doublyAntiperiodicSobolev_le_torusModeSobolev (ℓ : ℝ) :
-    doublyAntiperiodicSobolev F ℓ ≤ torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ :=
+    doublyAntiperiodicSobolev F ℓ ≤ torusModeSobolev F (antiperiodicModeFrequency ℓ) :=
   fun _ hx ↦ hx.1
 
 /-- `TauCeti.doublyAntiperiodicSobolev` is closed: it is the intersection of the closed subspace
@@ -200,9 +200,9 @@ local instance instCompleteSpaceDoublyAntiperiodic : CompleteSpace F :=
 maps antiperiodic in both factors to targets antiperiodic in both factors. -/
 theorem torusModeOperator_mem_doublyAntiperiodicL2 {ℓ : ℝ}
     {S : C(AddCircle T, F →L[ℝ] F)} (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t)
-    {x : torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ}
+    {x : torusModeSobolev F (antiperiodicModeFrequency ℓ)}
     (hx : (x : 𝕏[F]) ∈ doublyAntiperiodicSobolev F ℓ) :
-    torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x ∈ doublyAntiperiodicL2 F := fun k ↦ by
+    torusModeOperator T (antiperiodicModeFrequency ℓ) S x ∈ doublyAntiperiodicL2 F := fun k ↦ by
   rw [torusModeOperator_apply_apply_eq]
   exact ⟨add_mem (Submodule.smul_mem _ I (loopOperator_mem_antiperiodic hS (hx.2 k).1))
       (Submodule.smul_of_tower_mem _ _ ((inclusion_mem_supported_iff _).2 (hx.2 k).2)),
@@ -224,7 +224,7 @@ def doublyAntiperiodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] 
 theorem coe_doublyAntiperiodicTorusOperator_apply (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t, S (t + (T / 2 : ℝ)) = S t) (x : doublyAntiperiodicSobolev F ℓ) :
     (doublyAntiperiodicTorusOperator T ℓ S hS x : 𝕐[F]) =
-      torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S
+      torusModeOperator T (antiperiodicModeFrequency ℓ) S
         (Submodule.inclusion (doublyAntiperiodicSobolev_le_torusModeSobolev ℓ) x) :=
   coe_restrictTorusModeOperator_apply _ _ _ _ _ x
 
@@ -287,21 +287,20 @@ in `t`: the half rotation `R x` has image `R (D x) = -D x`, so `R x = -x` by inj
 private theorem mem_doublyAntiperiodicSobolev_of_mem {ℓ : ℝ} (hℓ : ℓ ≠ 0)
     {S : C(AddCircle T, F →L[ℝ] F)}
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) {x : torusModeSobolev F fun k : ℕ ↦ (2 * k + 1) * π / ℓ}
-    (hx : torusModeOperator T (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) S x ∈ doublyAntiperiodicL2 F) :
+    (hS' : ∀ t, S (t + (T / 2 : ℝ)) = S t) {x : torusModeSobolev F (antiperiodicModeFrequency ℓ)}
+    (hx : torusModeOperator T (antiperiodicModeFrequency ℓ) S x ∈ doublyAntiperiodicL2 F) :
     (x : 𝕏[F]) ∈ doublyAntiperiodicSobolev F ℓ := by
   have hT : T ≠ 0 := hT.out.ne'
   have hrot : rotateMode ((T / 2 : ℝ) : AddCircle T) x = -x := by
     refine (isInvertible_torusModeOperator_antiperiodic T hℓ S hS).injective
       (lp.ext (funext fun k ↦ ?_))
-    unfold antiperiodicModeFrequency
     rw [torusModeOperator_rotateMode T hS', map_neg]
     refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).1
     · simpa using (rotate_half_period_eq_neg_iff hT).2 (hx k).2
   refine ⟨x.property, fun k ↦ ?_⟩
   have hk := congrArg
-    (fun z : torusModeSobolev F (fun k : ℕ ↦ (2 * k + 1) * π / ℓ) ↦ (z : 𝕏[F]).1 k) hrot
+    (fun z : torusModeSobolev F (antiperiodicModeFrequency ℓ) ↦ (z : 𝕏[F]).1 k) hrot
   simp only [rotateMode_fst_apply, rotatePair_apply] at hk
   exact ⟨(rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.fst hk),
     (rotate_half_period_eq_neg_iff hT).1 (by simpa using congrArg WithLp.snd hk)⟩
