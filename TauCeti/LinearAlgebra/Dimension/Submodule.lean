@@ -333,8 +333,8 @@ theorem finrank_biSup_le_sum {ι : Type*} (M : ι → Submodule 𝕜 E) [∀ i, 
 open Finset in
 /-- The images of a subspace `C` under the maps `B s`, `s ∈ t`, span at most `#t dim C`
 dimensions. -/
-theorem finrank_biSup_map_le [FiniteDimensional 𝕜 E] {Θ G : Type*} [AddCommGroup G]
-    [Module 𝕜 G] (B : Θ → E →ₗ[𝕜] G) (t : Finset Θ) (C : Submodule 𝕜 E) :
+theorem finrank_biSup_map_le {Θ G : Type*} [AddCommGroup G] [Module 𝕜 G] (B : Θ → E →ₗ[𝕜] G)
+    (t : Finset Θ) (C : Submodule 𝕜 E) [FiniteDimensional 𝕜 C] :
     finrank 𝕜 ↥(⨆ s ∈ t, C.map (B s)) ≤ #t * finrank 𝕜 C :=
   (finrank_biSup_le_sum _ t).trans <| by
     simpa using Finset.sum_le_sum fun s (_ : s ∈ t) ↦ finrank_map_le (B s) C
@@ -511,8 +511,8 @@ theorem finrank_comap_of_surjective {K : Type*} {M : Type u} {N : Type v} [Divis
 /-- **Adding the image of a map.** Adding `range A` to `F` adds `dim V - dim A⁻¹(F)` dimensions:
 `dim (F + A V) + dim A⁻¹(F) = dim F + dim V`. -/
 theorem finrank_sup_range_add_finrank_comap {K V W : Type*} [DivisionRing K] [AddCommGroup V]
-    [Module K V] [AddCommGroup W] [Module K W] [FiniteDimensional K V] [FiniteDimensional K W]
-    (A : V →ₗ[K] W) (F : Submodule K W) :
+    [Module K V] [AddCommGroup W] [Module K W] [FiniteDimensional K V] (A : V →ₗ[K] W)
+    (F : Submodule K W) [FiniteDimensional K F] :
     finrank K ↥(F ⊔ range A) + finrank K (F.comap A) = finrank K F + finrank K V := by
   have h_comap := A.finrank_comap F
   rw [inf_comm] at h_comap
