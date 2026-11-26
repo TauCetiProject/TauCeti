@@ -22,9 +22,10 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Norm
 Let `L/K` be a finite abelian extension of number fields and `𝔪` a modulus of `K` admissible for
 `L/K`. This file shows that the exponents of the conductor of `L/K` are its local conductor
 exponents, so that `𝔪` bounds them, and, in particular, that every prime of `K` ramified in `L`
-divides `𝔪`, and that every real place of `K` ramified in `L` belongs to `𝔪`. Conversely, an
-extension unramified at every finite prime admits every modulus carrying its ramified real places;
-this identifies the extensions admitting the trivial and the narrow modulus.
+divides `𝔪`, and that every real place of `K` ramified in `L` belongs to `𝔪`, while the unramified
+real places can be left out of the conductor. Conversely, an extension unramified at every finite
+prime admits every modulus carrying its ramified real places; this identifies the extensions
+admitting the trivial and the narrow modulus.
 
 Let `v` be a finite place of `K` and `w` a place of `L` above it. The class of the idele
 concentrated at `v` with component `u ∈ K_vˣ` is a norm from `C_L` exactly when its global Artin
@@ -65,6 +66,15 @@ At an infinite place `v` of `K` outside the real places of `𝔪`, the idele cla
 norm from `L_w` for a place `w` of `L` above `v` (`infiniteLocalArtinAt_eq_one_iff_mem_normGroup`).
 If `w` were ramified, `L_w/K_v` would be `ℂ/ℝ`, whose norms are positive. Hence `w` is unramified
 (`IsAdmissibleModulus.isUnramified_of_forall_ne`).
+
+Conversely, at an infinite place `v` of `K` unramified in `L`, the local Artin symbols vanish, so
+every idele class concentrated at `v` is a norm
+(`ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn`). A congruence idele for the
+conductor with `v` removed becomes a congruence idele for the conductor after its component at `v`
+is divided out, so dropping an unramified real place from the conductor leaves an admissible
+modulus. Together, a real place of `K` lies in the conductor of `L/K` exactly when it ramifies in
+`L` (`mem_infinitePart_abelianConductor_iff`), the archimedean counterpart of
+`exponent_abelianConductor`.
 
 Conversely (`isAdmissibleModulus_of_isUnramifiedAt`), suppose that `L/K` is Galois and unramified
 at every finite prime, and that the infinite places of `L` above the infinite places of `K`
@@ -110,6 +120,10 @@ whole idele class group, so the trivial modulus is admissible for it, although `
   support of `L/K` is contained in the support of every admissible modulus.
 * `TauCeti.ClassFieldTheory.IsAdmissibleModulus.isUnramified_of_forall_ne`: an infinite place of
   `L` over an infinite place outside the real places of an admissible modulus is unramified.
+* `TauCeti.ClassFieldTheory.ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn`: the class
+  of an idele concentrated at an infinite place unramified in `L` is a norm from `L`.
+* `TauCeti.ClassFieldTheory.mem_infinitePart_abelianConductor_iff`: a real place lies in the
+  conductor of `L/K` exactly when it ramifies in `L`.
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_of_isUnramifiedAt`: an extension unramified at
   every finite prime admits every modulus carrying its ramified real places.
 * `TauCeti.ClassFieldTheory.isAdmissibleModulus_one_iff`: the trivial modulus is admissible
@@ -372,5 +386,68 @@ theorem isAdmissibleModulus_narrowModulus_iff :
     hv ⟨v, hvR⟩ (mem_narrowModulus_infinitePart _) rfl
   rw [InfinitePlace.isUnramified_iff, InfinitePlace.LiesOver.comap_eq w v]
   exact Or.inr hvC
+
+/-! ### The real places of the conductor -/
+
+/-- **Idele classes concentrated at an unramified infinite place are norms.** If every place of
+`L` above the infinite place `v` of `K` is unramified, then the class of every idele concentrated
+at `v` is a norm from `L`. -/
+theorem ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn {v : InfinitePlace K}
+    (hv : v.IsUnramifiedIn L) (u : v.Completionˣ) :
+    IdeleClassGroup.ofCompletion (𝓞 K) K v u ∈
+      (ideleClassNormMap K L : IdeleClassGroup (𝓞 L) L →* IdeleClassGroup (𝓞 K) K).range := by
+  obtain ⟨w, rfl⟩ := InfinitePlace.comap_surjective (K := L) v
+  rw [← globalArtinMap_eq_zero_iff K L IsSepClosed.lift, IdeleClassGroup.ofCompletion_apply,
+    globalArtinMap_infiniteLocal, ofMul_eq_zero]
+  exact infiniteLocalArtinAt_eq_one_of_isUnramified _ w (hv w rfl) u
+
+/-- **A real place lies in the conductor exactly when it ramifies.** For a finite abelian extension
+`L/K` of number fields, a real place `w` of `K` belongs to the infinite part of the conductor of
+`L/K` exactly when some place of `L` above `w` is complex, that is, ramified over `K`. -/
+theorem mem_infinitePart_abelianConductor_iff (w : {w : InfinitePlace K // w.IsReal}) :
+    w ∈ (abelianConductor K L).infinitePart ↔ ¬ (w : InfinitePlace K).IsUnramifiedIn L := by
+  classical
+  refine ⟨fun hw hunr ↦ ?_, fun hram ↦ ?_⟩
+  · -- Dropping `w` from the conductor leaves an admissible modulus.
+    set 𝔣 := abelianConductor K L
+    let 𝔪 : Modulus K := ⟨𝔣.finitePart, 𝔣.finitePart_ne_bot, 𝔣.infinitePart.erase w⟩
+    have h𝔪 : IsAdmissibleModulus K L 𝔪 := by
+      refine isAdmissibleModulus_iff.2 fun c hc ↦ ?_
+      obtain ⟨x, hx, rfl⟩ := mem_raySubgroup_iff.1 hc
+      -- Multiplying `x` by the idele `e` concentrated at `w` with the inverse of the component of
+      -- `x` there gives a congruence idele for `𝔣`, whose class is a norm; so is the class of `e`.
+      set u := (w : InfinitePlace K).ideleInfiniteCoord x
+      set e := IdeleGroup.ofCompletion (𝓞 K) K (w : InfinitePlace K) u⁻¹
+      obtain ⟨h₁, h₂, h₃⟩ := mem_ideleCongruenceSubgroup_iff.1 hx
+      have hxe : x * e ∈ ideleCongruenceSubgroup 𝔣 := by
+        refine mem_ideleCongruenceSubgroup_iff.2 ⟨fun v hv ↦ ?_, fun v hv ↦ ?_, fun w' hw' ↦ ?_⟩
+        · simpa [e] using h₁ v hv
+        · -- `𝔪` and `𝔣` have the same finite part, hence the same exponents.
+          have h := h₂ v hv
+          rw [Modulus.exponent_def] at h ⊢
+          simpa [e] using h
+        · by_cases hww : w' = w
+          · subst hww
+            simp [e, u]
+          · have hne : (w' : InfinitePlace K) ≠ w := fun h ↦ hww (Subtype.ext h)
+            simpa [e, InfinitePlace.ideleInfiniteCoord_ofCompletion_of_ne _ hne] using
+              h₃ w' (Finset.mem_erase.2 ⟨hww, hw'⟩)
+      have hn := mul_mem (isAdmissibleModulus_iff.1 (isAdmissibleModulus_abelianConductor K L)
+          (mem_raySubgroup_iff.2 ⟨_, hxe, rfl⟩))
+        (inv_mem (ofCompletion_mem_range_ideleClassNormMap_of_isUnramifiedIn hunr u⁻¹))
+      have hc' : QuotientGroup.mk' (IdeleGroup.principalSubgroup (𝓞 K) K) x =
+          QuotientGroup.mk' _ (x * e) *
+            (IdeleClassGroup.ofCompletion (𝓞 K) K (w : InfinitePlace K) u⁻¹)⁻¹ := by
+        rw [IdeleClassGroup.ofCompletion_apply, ← QuotientGroup.mk'_apply, map_mul,
+          mul_inv_cancel_right]
+      exact hc' ▸ hn
+    have := (Modulus.dvd_iff.1 ((isAdmissibleModulus_iff_abelianConductor_dvd 𝔪).1 h𝔪)).2 hw
+    exact (Finset.mem_erase.1 this).1 rfl
+  · -- A real place outside an admissible modulus is unramified.
+    by_contra hw
+    refine hram fun v hv ↦ ?_
+    have : v.LiesOver (w : InfinitePlace K) := hv ▸ inferInstance
+    exact (isAdmissibleModulus_abelianConductor K L).isUnramified_of_forall_ne
+      (fun w' hw' heq ↦ hw ((Subtype.ext heq : w' = w) ▸ hw')) v
 
 end TauCeti.ClassFieldTheory
