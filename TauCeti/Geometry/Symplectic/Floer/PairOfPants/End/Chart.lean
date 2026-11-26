@@ -219,13 +219,13 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
 
 /-- The pair of pants `S = ℂ ∖ {0, 1}` is connected in real coordinates: it is the complement of
 two points in the plane. -/
-theorem isPreconnected_thricePuncturedSphereReal : IsPreconnected thricePuncturedSphereReal := by
+theorem isConnected_thricePuncturedSphereReal : IsConnected thricePuncturedSphereReal := by
   have hS : thricePuncturedSphereReal =
       ({Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1} : Set (ℝ × ℝ))ᶜ := by
     ext z
     simp [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_eq, Prod.mk_zero_zero]
   rw [hS]
-  refine ((Set.toFinite _).countable.isConnected_compl_of_one_lt_rank ?_).isPreconnected
+  refine (Set.toFinite _).countable.isConnected_compl_of_one_lt_rank ?_
   rw [rank_prod', Module.rank_self, one_add_one_eq_two]
   exact Cardinal.one_lt_two
 

@@ -267,7 +267,8 @@ theorem range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_
     (hco : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range.CoFG) :
     (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range ⊔
       Submodule.span ℝ (ω.hamiltonianVariationsOn U u W) = ⊤ := by
-  have := hco
+  -- `CoFG` is the finiteness of the quotient; put it in scope as an instance.
+  have : Module.Finite ℝ (_ ⧸ (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range) := hco
   -- The sum contains the closed range, of finite codimension, so it is closed.
   have hK := Submodule.isClosed_mono_of_finiteDimensional_quotient hcl
     (le_sup_left (b := Submodule.span ℝ (ω.hamiltonianVariationsOn U u W)))
@@ -296,7 +297,8 @@ theorem exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top
     (hco : (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range.CoFG) :
     ∃ t : Finset (Lp V 2 (volume.restrict U)), (t : Set _) ⊆ ω.hamiltonianVariationsOn U u W ∧
       (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range ⊔ Submodule.span ℝ t = ⊤ := by
-  have := hco
+  -- `CoFG` is the finiteness of the quotient; put it in scope as an instance.
+  have : Module.Finite ℝ (_ ⧸ (ω.floerConformalSobolevOperator U ρ J Ks Kt u).range) := hco
   exact Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top hρ hUc hJ hJJ hKs
       hKt hu hM hO hOne hOU hW hcl hco)

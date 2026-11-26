@@ -28,7 +28,7 @@ there.
 This is the case of the pair of pants of the cokernel detection of
 `TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal` on a connected open set with a
 conformal weight. Its two inputs are that `S` is connected
-(`TauCeti.Floer.isPreconnected_thricePuncturedSphereReal`), as the complement of two points in the
+(`TauCeti.Floer.isConnected_thricePuncturedSphereReal`), as the complement of two points in the
 plane, and that the coefficient field of `D_u` on conformal jets is essentially bounded, which holds
 once the ends of `u` converge to their asymptotic loops
 (`TauCeti.SymplecticForm.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn`). When
@@ -99,7 +99,7 @@ theorem topologicalClosure_range_sup_span_hamiltonianVariationsOn_pairOfPants_eq
       Submodule.span ℝ (ω.hamiltonianVariationsOn thricePuncturedSphereReal u W)).topologicalClosure
       = ⊤ :=
   topologicalClosure_range_floerConformalSobolevOperator_sup_span_hamiltonianVariationsOn_eq_top
-    isWeight_cylindricalWeight isPreconnected_thricePuncturedSphereReal hJ
+    isWeight_cylindricalWeight isConnected_thricePuncturedSphereReal.isPreconnected hJ
     (fun z _ ↦ ContinuousLinearMap.ext fun v ↦ by simp) hKs hKt hu
     (ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs hx hJe hJeq hK
       (fun z hz ↦ (hJ z hz).of_le one_le_two) (fun z hz ↦ (hKs z hz).of_le (by norm_num))
