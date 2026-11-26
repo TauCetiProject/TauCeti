@@ -174,7 +174,7 @@ theorem continuousLinearMapAt_sectionChartQuantization (φ ψ : 𝓓(⟨e.target
       quantizeSchwartzValue a.toSymbol.coefficient (t.cutoffPushforwardSchwartz he hE ψ s) (e x)
     := by
   rw [sectionChartQuantization_apply_of_mem he t hE t' hF φ ψ a s hx,
-    ← t'.symmL_apply (R := ℂ) (hF hx), t'.continuousLinearMapAt_symmL (hF hx)]
+    Bundle.Trivialization.continuousLinearMapAt_apply, t'.linearMapAt_symm (hF hx)]
 
 /-- The chart quantization is supported in the image of the support of `φ` under the inverse of
 the chart. -/
@@ -272,10 +272,9 @@ theorem sectionChartQuantization_eq_sum (φ ψ : 𝓓(⟨e.target, e.open_target
   have hρx : ρ x = 1 := by
     simpa [e.left_inv hx] using hρ (e x) (Or.inl (subset_tsupport _ hφ))
   rw [hρx, ← Symbol.sum_quantizeSchwartzValue_map_entryMap_smul a.toSymbol bV bW v (e x),
-    ← Complex.coe_smul, t'.symm_apply_smul (hF hx), ← t'.symmL_apply (R := ℂ) (hF hx), map_sum]
-  simp only [map_smul]
-  simp only [t'.symmL_apply (R := ℂ) (hF hx), one_smul, Finset.smul_sum, smul_smul,
-    Finset.sum_smul, Complex.real_smul]
+    ← Complex.coe_smul, t'.symm_apply_smul (hF hx)]
+  simp only [t'.symm_apply_sum ℂ (hF hx), t'.symm_apply_smul (hF hx), one_smul, Finset.smul_sum,
+    smul_smul, Finset.sum_smul, Complex.real_smul]
 
 /-- **Chart quantizations between bundles are classical pseudodifferential operators.** The
 quantization of a classical symbol of order `m` with values in `V →L[ℂ] W`, in a chart of the
@@ -355,7 +354,7 @@ theorem sectionChartQuantization_eq_smul_comp {φ ψ : 𝓓(⟨e.target, e.open_
   by_cases hφ : φ (e x) = 0
   · simp [hφ, t'.symm_apply_zero ℂ (hF hx)]
   rw [hφ₁ _ (subset_tsupport _ hφ), one_smul, ← Complex.coe_smul, t'.symm_apply_smul (hF hx),
-    ← t'.symmL_apply (R := ℂ) (hF hx), t'.symmL_continuousLinearMapAt (hF hx)]
+    Bundle.Trivialization.continuousLinearMapAt_apply, t'.symm_linearMapAt (hF hx)]
   simp
 
 /-- **Localized operators are chart quantizations.** Let `P` be a classical pseudodifferential
