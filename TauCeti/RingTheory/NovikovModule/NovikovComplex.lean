@@ -56,7 +56,8 @@ with Novikov coefficients.
 ## Main definitions
 
 * `TauCeti.NovikovModule.IsLaurentKernel.novikovMap`: the `Λ`-linear map of a Laurent kernel.
-* `TauCeti.NovikovModule.gradedNovikovMap`: its component between homogeneous pieces.
+* `TauCeti.NovikovModule.gradedNovikovMap`: its restriction to homogeneous pieces whose degrees
+  differ by the degree of the kernel.
 * `TauCeti.NovikovModule.novikovGradeByBasis`: the basis of a homogeneous piece given by the
   lifts of the orbits of that degree.
 * `TauCeti.NovikovModule.novikovComplex`: the Novikov complex of a Laurent differential.
@@ -83,9 +84,10 @@ with Novikov coefficients.
 
 `TauCeti.gradedCochainComplex` assembles a `ℤ`-indexed family of submodules with a differential
 into a cochain complex. The residue grading is indexed by a general additive type such as
-`ZMod n`, so the Novikov complex is assembled on `ComplexShape.up A` directly. Its terms are
-reached through `TauCeti.NovikovModule.novikovComplexXEquiv`, and its differential and chain maps
-through the lemmas `coe_novikovComplexXEquiv_*`.
+`ZMod n`, so the Novikov complex and its chain maps are assembled with Mathlib's
+`CochainComplex.of` and `CochainComplex.ofHom`, which allow any such index type. Its terms are
+reached through `TauCeti.NovikovModule.novikovComplexXEquiv`, and its differential, chain maps and
+homotopies through the lemmas `coe_novikovComplexXEquiv_*`.
 
 ## References
 
@@ -118,6 +120,12 @@ variable {R H A ι₁ ι₀ ι₂ : Type*} [Semiring R] [AddGroup H] {N : H →+
   {m : (Σ i, P₁ i) → (Σ k, P₀ k) → R} {m' : (Σ k, P₀ k) → (Σ l, P₂ l) → R}
 
 namespace IsLaurentKernel
+
+/-- The outputs of a Laurent kernel are finite combinations, so they are completed
+combinations. -/
+theorem mem_novikovModule (hm : IsLaurentKernel d₁ d₀ c m) (p : Σ i, P₁ i) :
+    m p ∈ NovikovModule R F₀ :=
+  mem_of_finite_support (hm.finite_support p)
 
 include hF₁ hF₀ in
 /-- **A Laurent kernel obeys a potential bound.** For equivariant potentials with the same period
@@ -153,13 +161,13 @@ def novikovMap (hm : IsLaurentKernel d₁ d₀ c m) :
     letI := module (R := R) hF₀
     NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₀ :=
   novikovKernelMap hF₁ hF₀ (hm.exists_potential_le hF₁ hF₀).choose_spec
-    (fun p => mem_of_finite_support (hm.finite_support p)) hm.apply_vadd_vadd
+    hm.mem_novikovModule hm.apply_vadd_vadd
 
 /-- The map of a Laurent kernel is the kernel map of `m`, for any potential bound. -/
 theorem novikovMap_apply (hm : IsLaurentKernel d₁ d₀ c m) {C : ℝ}
     (hC : ∀ p q, m p q ≠ 0 → F₀ q ≤ F₁ p + C) (a : NovikovModule R F₁) :
     hm.novikovMap hF₁ hF₀ a =
-      kernelMap hC (fun p => mem_of_finite_support (hm.finite_support p)) a :=
+      kernelMap hC hm.mem_novikovModule a :=
   Subtype.ext <| funext fun q => by
     rw [novikovMap, novikovKernelMap_apply, kernelMap_apply_val, kernelMap_apply_val]
 
@@ -178,8 +186,8 @@ theorem novikovMap_novikovMap_apply_val (hm : IsLaurentKernel d₁ d₀ c m)
       ∑ᶠ p, a.val p * kernelComp m m' p q := by
   obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
   obtain ⟨C', hC'⟩ := hm'.exists_potential_le hF₀ hF₂
-  have hfin (p) : m p ∈ NovikovModule R F₀ := mem_of_finite_support (hm.finite_support p)
-  have hfin' (q) : m' q ∈ NovikovModule R F₂ := mem_of_finite_support (hm'.finite_support q)
+  have hfin := hm.mem_novikovModule (F₀ := F₀)
+  have hfin' := hm'.mem_novikovModule (F₀ := F₂)
   have hCC (p q) (h : kernelComp m m' p q ≠ 0) : F₂ q ≤ F₁ p + (C + C') := by
     linarith [potential_le_of_kernelComp_ne_zero (hC p) (hC' · q) h]
   rw [hm.novikovMap_apply hF₁ hF₀ hC, hm'.novikovMap_apply hF₀ hF₂ hC',
@@ -219,8 +227,7 @@ theorem novikovMap_novikovMap_sub_eq [DecidableEq (Σ i, P₁ i)] {e e' : A}
   obtain ⟨Ck, hCk⟩ := hK.exists_potential_le hF₁ hF₁
   obtain ⟨Cδ, hCδ⟩ := hδ.exists_potential_le hF₁ hF₁
   have hfin (p) : kernelComp m Ψ p ∈ NovikovModule R F₁ :=
-    kernelComp_mem hC' (fun q => mem_of_finite_support (hΨ.finite_support q))
-      (mem_of_finite_support (hm.finite_support p))
+    kernelComp_mem hC' hΨ.mem_novikovModule (hm.mem_novikovModule p)
   have hCC (p q) (h : kernelComp m Ψ p q ≠ 0) : F₁ q ≤ F₁ p + (C + C') := by
     linarith [potential_le_of_kernelComp_ne_zero (hC p) (hC' · q) h]
   -- The composite of the two maps and the identity are kernel maps, and the difference of their
@@ -236,10 +243,8 @@ theorem novikovMap_novikovMap_sub_eq [DecidableEq (Σ i, P₁ i)] {e e' : A}
       rw [hm.novikovMap_novikovMap_apply_val hF₁ hF₀ hF₁ hΨ, kernelMap_apply_val]
   have hid : kernelMap h1 h1fin a = a := by rw [kernelMap_eq_id, LinearMap.id_apply]
   rw [hcomp, ← congrArg (kernelMap hCC hfin a - ·) hid,
-    kernelMap_sub_kernelMap hCC hfin h1 h1fin hCk
-      (fun p => mem_of_finite_support (hK.finite_support p)) hCδ
-      (fun p => mem_of_finite_support (hδ.finite_support p)) hCδ
-      (fun p => mem_of_finite_support (hδ.finite_support p)) hmΨ]
+    kernelMap_sub_kernelMap hCC hfin h1 h1fin hCk hK.mem_novikovModule hCδ
+      hδ.mem_novikovModule hCδ hδ.mem_novikovModule hmΨ]
   simp only [hK.novikovMap_apply hF₁ hF₁ hCk, hδ.novikovMap_apply hF₁ hF₁ hCδ]
 
 /-- **The map of a Laurent kernel shifts the potential filtration.** There is a constant `C` such
@@ -270,43 +275,33 @@ variable {R H A ι₁ ι₀ : Type*} [Semiring R] [AddGroup H] {N : H →+ ℝ} 
   {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
   (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
   (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
-  [Add A] [DecidableEq A] {d₁ : (Σ i, P₁ i) → A} {d₀ : (Σ k, P₀ k) → A}
+  [Add A] {d₁ : (Σ i, P₁ i) → A} {d₀ : (Σ k, P₀ k) → A}
   (hd₁ : ∀ i (g : H) (p : P₁ i), d₁ ⟨i, g +ᵥ p⟩ = d₁ ⟨i, p⟩)
   (hd₀ : ∀ k (g : H) (q : P₀ k), d₀ ⟨k, g +ᵥ q⟩ = d₀ ⟨k, q⟩)
   {c : A} {m : (Σ i, P₁ i) → (Σ k, P₀ k) → R}
 
-/-- The component from the piece of degree `a` to the piece of degree `b` of the map of a Laurent
-kernel of degree `c`: the restriction of `TauCeti.NovikovModule.IsLaurentKernel.novikovMap` when
-`a + c = b`, and zero otherwise. -/
-def gradedNovikovMap (hm : IsLaurentKernel d₁ d₀ c m) (a b : A) :
+/-- The map of a Laurent kernel of degree `c` restricted to the piece of degree `a` and the piece
+of degree `b = a + c`, which contains its image. -/
+def gradedNovikovMap (hm : IsLaurentKernel d₁ d₀ c m) {a b : A} (h : a + c = b) :
     letI := module (R := R) hF₁
     letI := module (R := R) hF₀
     novikovGradeBy (R := R) hF₁ hd₁ a →ₗ[NovikovSeries R H N] novikovGradeBy (R := R) hF₀ hd₀ b :=
   letI := module (R := R) hF₁
   letI := module (R := R) hF₀
-  if h : a + c = b then
-    (hm.novikovMap hF₁ hF₀).restrict fun x hx => by
-      obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
-      rw [mem_novikovGradeBy, hm.novikovMap_apply hF₁ hF₀ hC, ← h]
-      exact kernelMap_mem_gradeBy _ _ hm.degree_eq ((mem_novikovGradeBy hF₁ hd₁).1 hx)
-  else 0
+  (hm.novikovMap hF₁ hF₀).restrict fun x hx => by
+    obtain ⟨C, hC⟩ := hm.exists_potential_le hF₁ hF₀
+    rw [mem_novikovGradeBy, hm.novikovMap_apply hF₁ hF₀ hC, ← h]
+    exact kernelMap_mem_gradeBy _ _ hm.degree_eq ((mem_novikovGradeBy hF₁ hd₁).1 hx)
 
 variable {hF₁ hF₀ hd₁ hd₀}
 
-/-- Between pieces whose degrees differ by the degree of the kernel, the component of the map of
-a Laurent kernel is its restriction. -/
+/-- The restriction of the map of a Laurent kernel to homogeneous pieces is the map itself. -/
 @[simp]
 theorem coe_gradedNovikovMap_apply (hm : IsLaurentKernel d₁ d₀ c m) {a b : A} (h : a + c = b)
     (x : novikovGradeBy (R := R) hF₁ hd₁ a) :
-    (gradedNovikovMap hF₁ hF₀ hd₁ hd₀ hm a b x : NovikovModule R F₀) =
+    (gradedNovikovMap hF₁ hF₀ hd₁ hd₀ hm h x : NovikovModule R F₀) =
       hm.novikovMap hF₁ hF₀ x := by
-  simp only [gradedNovikovMap, h, dite_true, LinearMap.coe_restrict_apply]
-
-/-- Between pieces whose degrees do not differ by the degree of the kernel, the component of the
-map of a Laurent kernel vanishes. -/
-theorem gradedNovikovMap_of_add_ne (hm : IsLaurentKernel d₁ d₀ c m) {a b : A} (h : a + c ≠ b) :
-    gradedNovikovMap hF₁ hF₀ hd₁ hd₀ hm a b = 0 := by
-  simp only [gradedNovikovMap, h, dite_false]
+  simp only [gradedNovikovMap, LinearMap.coe_restrict_apply]
 
 end GradedMap
 
@@ -383,21 +378,17 @@ def novikovComplex (hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ -
     (d : (Σ i, P i) → A) (hd : ∀ i (g : H) (p : P i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩)
     (δ : (Σ i, P i) → (Σ i, P i) → R) (hδ : IsLaurentKernel d d 1 δ)
     (hδδ : ∀ p q, kernelComp δ δ p q = 0) :
-    HomologicalComplex (ModuleCat.{max u v w} (NovikovSeries R H N)) (ComplexShape.up A) :=
+    CochainComplex (ModuleCat.{max u v w} (NovikovSeries R H N)) A :=
   letI := module (R := R) hF
-  { X a := ModuleCat.of _ (novikovGradeBy (R := R) hF hd a)
-    d a b := ModuleCat.ofHom (gradedNovikovMap hF hF hd hd hδ a b)
-    shape a b h := by
-      rw [gradedNovikovMap_of_add_ne hδ h]
-      rfl
-    d_comp_d' a b e hab hbe := by
+  CochainComplex.of (fun a => ModuleCat.of _ (novikovGradeBy (R := R) hF hd a))
+    (fun a => ModuleCat.ofHom (gradedNovikovMap hF hF hd hd hδ rfl)) fun a => by
       ext x : 2
       refine Subtype.ext (Subtype.ext ?_)
       simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        coe_gradedNovikovMap_apply hδ hbe, coe_gradedNovikovMap_apply hδ hab]
+        coe_gradedNovikovMap_apply]
       ext q
       rw [hδ.novikovMap_novikovMap_apply_val hF hF hF hδ x q]
-      simp [hδδ] }
+      simp [hδδ]
 
 variable {hF : ∀ i h (p : P i), F ⟨i, h +ᵥ p⟩ = F ⟨i, p⟩ - N h} {d : (Σ i, P i) → A}
   {hd : ∀ i (g : H) (p : P i), d ⟨i, g +ᵥ p⟩ = d ⟨i, p⟩} {δ : (Σ i, P i) → (Σ i, P i) → R}
@@ -419,8 +410,11 @@ theorem coe_novikovComplexXEquiv_d_apply {a b : A} (h : a + 1 = b)
     (x : (novikovComplex R hF d hd δ hδ hδδ).X a) :
     (novikovComplexXEquiv R hF d hd δ hδ hδδ b (((novikovComplex R hF d hd δ hδ hδδ).d a b).hom x) :
       NovikovModule R F) =
-        hδ.novikovMap hF hF (novikovComplexXEquiv R hF d hd δ hδ hδδ a x : NovikovModule R F) :=
-  coe_gradedNovikovMap_apply hδ h x
+        hδ.novikovMap hF hF (novikovComplexXEquiv R hF d hd δ hδ hδδ a x : NovikovModule R F) := by
+  subst h
+  dsimp only [novikovComplex]
+  rw [CochainComplex.of_d]
+  exact coe_gradedNovikovMap_apply hδ rfl x
 
 variable (R hF d hd δ hδ hδδ) in
 /-- The basis of the term of degree `a` of the Novikov complex given by chosen lifts of the orbits
@@ -458,41 +452,34 @@ variable {R : Type u} [Ring R] {H A : Type*} [AddGroup H] {N : H →+ ℝ} [AddG
   {δ₀ : (Σ k, P₀ k) → (Σ k, P₀ k) → R} {hδ₀ : IsLaurentKernel d₀ d₀ 1 δ₀}
   {hδδ₀ : ∀ p q, kernelComp δ₀ δ₀ p q = 0}
 
-/-- The component from degree `a` to degree `b` of the map of a Laurent kernel, between the terms
-of two Novikov complexes. -/
+/-- The map of a Laurent kernel of degree `c` from the term of degree `a` to the term of degree
+`b = a + c`, typed between the terms of two Novikov complexes so that it composes with their
+differentials. -/
 private def novikovComplexComponent {c : A} (m : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (hm : IsLaurentKernel d₁ d₀ c m) (a b : A) :
+    (hm : IsLaurentKernel d₁ d₀ c m) {a b : A} (h : a + c = b) :
     (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁).X a ⟶ (novikovComplex R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀).X b :=
-  ModuleCat.ofHom (gradedNovikovMap hF₁ hF₀ hd₁ hd₀ hm a b)
+  ModuleCat.ofHom (gradedNovikovMap hF₁ hF₀ hd₁ hd₀ hm h)
 
 private theorem coe_novikovComplexXEquiv_novikovComplexComponent_apply {c : A}
     (m : (Σ i, P₁ i) → (Σ k, P₀ k) → R) (hm : IsLaurentKernel d₁ d₀ c m) {a b : A}
     (h : a + c = b) (x : (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁).X a) :
     (novikovComplexXEquiv R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀ b
-        ((novikovComplexComponent m hm a b).hom x) : NovikovModule R F₀) =
+        ((novikovComplexComponent m hm h).hom x) : NovikovModule R F₀) =
       hm.novikovMap hF₁ hF₀
         (novikovComplexXEquiv R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ a x : NovikovModule R F₁) :=
   coe_gradedNovikovMap_apply hm h x
-
-private theorem novikovComplexComponent_eq_zero {c : A} (m : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
-    (hm : IsLaurentKernel d₁ d₀ c m) {a b : A} (h : a + c ≠ b) :
-    novikovComplexComponent (hδδ₀ := hδδ₀) (hδ₀ := hδ₀) (hδδ₁ := hδδ₁) (hδ₁ := hδ₁)
-      (hF₀ := hF₀) (hd₀ := hd₀) (hF₁ := hF₁) (hd₁ := hd₁) m hm a b = 0 := by
-  rw [novikovComplexComponent, gradedNovikovMap_of_add_ne hm h]
-  rfl
 
 /-- The chain map of Novikov complexes given by a Laurent chain map `Φ` of degree `0`, one with
 `δ₁ Φ = Φ δ₀` as composite kernels. Its components are the maps of `Φ` on the homogeneous pieces
 (`TauCeti.NovikovModule.coe_novikovComplexXEquiv_novikovComplexHom_f_apply`). -/
 def novikovComplexHom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
     (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q) :
-    novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ ⟶ novikovComplex R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀ where
-  f a := novikovComplexComponent Φ hΦ a a
-  comm' a b hab := by
+    novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ ⟶ novikovComplex R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀ :=
+  CochainComplex.ofHom (fun a => novikovComplexComponent Φ hΦ (add_zero a)) fun a => by
     ext x : 2
-    refine (novikovComplexXEquiv R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀ b).injective (Subtype.ext ?_)
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, coe_novikovComplexXEquiv_d_apply hab,
-      coe_novikovComplexXEquiv_novikovComplexComponent_apply Φ hΦ (add_zero _)]
+    refine (novikovComplexXEquiv R hF₀ d₀ hd₀ δ₀ hδ₀ hδδ₀ _).injective (Subtype.ext ?_)
+    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, coe_novikovComplexXEquiv_d_apply rfl,
+      coe_novikovComplexXEquiv_novikovComplexComponent_apply]
     ext q
     rw [hΦ.novikovMap_novikovMap_apply_val hF₁ hF₀ hF₀ hδ₀,
       hδ₁.novikovMap_novikovMap_apply_val hF₁ hF₁ hF₀ hΦ]
@@ -513,7 +500,9 @@ theorem coe_novikovComplexXEquiv_novikovComplexHom_f_apply (Φ : (Σ i, P₁ i) 
 variable [DecidableEq (Σ i, P₁ i)]
 
 /-- Laurent chain maps `Φ` and `Ψ` with `Φ Ψ - 1 = K δ₁ + δ₁ K` for a Laurent kernel `K` of
-degree `-1` give a homotopy between the composite of their chain maps and the identity. -/
+degree `-1` give a homotopy between the composite of their chain maps and the identity. Its
+component from degree `a` to degree `a - 1` is the map of `K`
+(`TauCeti.NovikovModule.coe_novikovComplexXEquiv_novikovComplexHomotopy_hom_apply`). -/
 def novikovComplexHomotopy (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
     (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
     (hΦ : IsLaurentKernel d₁ d₀ 0 Φ) (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ)
@@ -526,12 +515,13 @@ def novikovComplexHomotopy (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
         novikovComplexHom Ψ hΨ hΨδ :
         novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ ⟶ novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁)
       (𝟙 (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁)) where
-  hom := novikovComplexComponent K hK
-  zero a b hab := novikovComplexComponent_eq_zero K hK fun h => hab (by
-    rw [ComplexShape.up_Rel, ← h, neg_add_cancel_right])
+  hom a b := if h : a + -1 = b then novikovComplexComponent K hK h else 0
+  zero a b hab :=
+    dite_eq_right fun h => hab (by rw [ComplexShape.up_Rel, ← h, neg_add_cancel_right])
   comm a := by
     rw [dNext_eq _ (show (ComplexShape.up A).Rel a (a + 1) from rfl),
-      prevD_eq _ (show (ComplexShape.up A).Rel (a - 1) a from sub_add_cancel a 1)]
+      prevD_eq _ (show (ComplexShape.up A).Rel (a - 1) a from sub_add_cancel a 1),
+      dite_eq_left (add_neg_cancel_right a 1), dite_eq_left (sub_eq_add_neg a 1).symm]
     ext x : 2
     refine (novikovComplexXEquiv R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ a).injective (Subtype.ext ?_)
     simp only [HomologicalComplex.comp_f, HomologicalComplex.id_f, ModuleCat.hom_add,
@@ -544,6 +534,39 @@ def novikovComplexHomotopy (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
       coe_novikovComplexXEquiv_novikovComplexComponent_apply K hK (add_neg_cancel_right a 1)]
     rw [← sub_eq_iff_eq_add, add_comm]
     exact hΦ.novikovMap_novikovMap_sub_eq hF₁ hF₀ hΨ hK hδ₁ hΦΨ _
+
+/-- The component from degree `a` to degree `a - 1` of the homotopy given by a Laurent homotopy
+`K` is the map of `K` on the homogeneous pieces. -/
+@[simp]
+theorem coe_novikovComplexXEquiv_novikovComplexHomotopy_hom_apply
+    (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R) (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R)
+    (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
+    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
+    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
+    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
+    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+      kernelComp K δ₁ p q + kernelComp δ₁ K p q) {a b : A} (h : a + -1 = b)
+    (x : (novikovComplex R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁).X a) :
+    (novikovComplexXEquiv R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ b
+        (((novikovComplexHomotopy (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K hΦ
+          hΨ hK hΦδ hΨδ hΦΨ).hom a b).hom x) : NovikovModule R F₁) =
+      hK.novikovMap hF₁ hF₁
+        (novikovComplexXEquiv R hF₁ d₁ hd₁ δ₁ hδ₁ hδδ₁ a x : NovikovModule R F₁) := by
+  simp only [novikovComplexHomotopy, dite_eq_left h,
+    coe_novikovComplexXEquiv_novikovComplexComponent_apply]
+
+/-- The components of the homotopy given by a Laurent homotopy vanish outside degree `-1`. -/
+theorem novikovComplexHomotopy_hom_of_add_ne (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
+    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
+    (hΦ : IsLaurentKernel d₁ d₀ 0 Φ) (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ)
+    (hK : IsLaurentKernel d₁ d₁ (-1) K)
+    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
+    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
+    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+      kernelComp K δ₁ p q + kernelComp δ₁ K p q) {a b : A} (h : a + -1 ≠ b) :
+    (novikovComplexHomotopy (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁) (hF₀ := hF₀)
+      (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K hΦ hΨ hK hΦδ hΨδ hΦΨ).hom a b = 0 :=
+  dite_eq_right h
 
 variable [DecidableEq (Σ k, P₀ k)]
 
@@ -608,6 +631,48 @@ theorem novikovComplexHomotopyEquiv_inv (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) 
         (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
         hΨΦ).inv =
       novikovComplexHom Ψ hΨ hΨδ :=
+  (rfl)
+
+/-- The homotopy from the composite of the maps of the homotopy equivalence of Novikov complexes
+to the identity of the first complex has the components of the homotopy given by `K`. -/
+@[simp]
+theorem novikovComplexHomotopyEquiv_homotopyHomInvId_hom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
+    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
+    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
+    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
+    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
+    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
+    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
+    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
+    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
+      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
+    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
+        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
+        hΨΦ).homotopyHomInvId.hom =
+      (novikovComplexHomotopy (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K hΦ hΨ hK
+        hΦδ hΨδ hΦΨ).hom :=
+  (rfl)
+
+/-- The homotopy from the composite of the maps of the homotopy equivalence of Novikov complexes
+to the identity of the second complex has the components of the homotopy given by `K'`. -/
+@[simp]
+theorem novikovComplexHomotopyEquiv_homotopyInvHomId_hom (Φ : (Σ i, P₁ i) → (Σ k, P₀ k) → R)
+    (Ψ : (Σ k, P₀ k) → (Σ i, P₁ i) → R) (K : (Σ i, P₁ i) → (Σ i, P₁ i) → R)
+    (K' : (Σ k, P₀ k) → (Σ k, P₀ k) → R) (hΦ : IsLaurentKernel d₁ d₀ 0 Φ)
+    (hΨ : IsLaurentKernel d₀ d₁ 0 Ψ) (hK : IsLaurentKernel d₁ d₁ (-1) K)
+    (hK' : IsLaurentKernel d₀ d₀ (-1) K')
+    (hΦδ : ∀ p q, kernelComp δ₁ Φ p q = kernelComp Φ δ₀ p q)
+    (hΨδ : ∀ p q, kernelComp δ₀ Ψ p q = kernelComp Ψ δ₁ p q)
+    (hΦΨ : ∀ p q, kernelComp Φ Ψ p q - (if p = q then 1 else 0) =
+      kernelComp K δ₁ p q + kernelComp δ₁ K p q)
+    (hΨΦ : ∀ p q, kernelComp Ψ Φ p q - (if p = q then 1 else 0) =
+      kernelComp K' δ₀ p q + kernelComp δ₀ K' p q) :
+    (novikovComplexHomotopyEquiv (hF₁ := hF₁) (hd₁ := hd₁) (hδ₁ := hδ₁) (hδδ₁ := hδδ₁)
+        (hF₀ := hF₀) (hd₀ := hd₀) (hδ₀ := hδ₀) (hδδ₀ := hδδ₀) Φ Ψ K K' hΦ hΨ hK hK' hΦδ hΨδ hΦΨ
+        hΨΦ).homotopyInvHomId.hom =
+      (novikovComplexHomotopy (hF₀ := hF₁) (hd₀ := hd₁) (hδ₀ := hδ₁) (hδδ₀ := hδδ₁) Ψ Φ K' hΨ hΦ
+        hK' hΨδ hΦδ hΨΦ).hom :=
   (rfl)
 
 end HomotopyEquiv
