@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.Wkp.CriticalEmbedding
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
 import TauCeti.Analysis.Sobolev.Wkp.MeyersSerrin
 import TauCeti.MeasureTheory.Function.LocalRepresentative
