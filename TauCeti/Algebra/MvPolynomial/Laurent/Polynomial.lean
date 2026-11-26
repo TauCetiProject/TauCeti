@@ -9,6 +9,7 @@ public import TauCeti.Algebra.MvPolynomial.Laurent.Basic
 public import Mathlib.Algebra.MvPolynomial.Rename
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.Localization.Defs
+import TauCeti.Algebra.MonoidAlgebra.Units
 
 /-!
 # Polynomials as Laurent polynomials
@@ -37,6 +38,9 @@ and this is the condition for it to define a faithful Laurent chart.
 * `MvPolynomial.toLaurent_injective`: the inclusion is injective.
 * `MvPolynomial.mem_range_toLaurent_iff`: a Laurent polynomial is a polynomial exactly when the
   exponents in its support are nonnegative.
+* `MvPolynomial.isUnit_toLaurent_iff`: over a commutative semiring without zero divisors, a
+  polynomial becomes a unit in `TauCeti.LaurentRing R K` if and only if it is a monomial with a
+  unit coefficient.
 * `MvPolynomial.toLaurent_map`, `TauCeti.LaurentRing.rename_toLaurent` and
   `TauCeti.LaurentRing.aeval_toLaurent`: the inclusion commutes with coefficient maps, with
   renaming the variables, and with evaluation at a family of units.
@@ -140,6 +144,35 @@ theorem toLaurent_map {S : Type*} [CommSemiring S] (φ : R →+* S) (p : MvPolyn
   | C r => simp
   | add p q hp hq => simp [hp, hq]
   | mul_X p i hp => simp [hp]
+
+/-- Every monomial in `MvPolynomial K R` with unit coefficient maps to a unit in
+`LaurentRing R K`. -/
+theorem isUnit_toLaurent_monomial (s : K →₀ ℕ) {r : R} (hr : IsUnit r) :
+    IsUnit (toLaurent (monomial s r)) := by
+  cases subsingleton_or_nontrivial R
+  · exact isUnit_of_subsingleton _
+  rw [toLaurent_monomial]
+  exact (AddMonoidAlgebra.isUnit_single_iff _ _).mpr ⟨AddGroup.isAddUnit _, hr⟩
+
+/-- Over a commutative semiring without zero divisors, `toLaurent d` is a unit of `LaurentRing R K`
+if and only if `d` is a monomial with a unit coefficient. -/
+theorem isUnit_toLaurent_iff [NoZeroDivisors R] {d : MvPolynomial K R} :
+    IsUnit (toLaurent d) ↔ ∃ (s : K →₀ ℕ) (r : R), IsUnit r ∧ d = monomial s r := by
+  cases subsingleton_or_nontrivial R
+  · exact ⟨fun _ ↦ ⟨0, 1, isUnit_one, Subsingleton.elim _ _⟩, fun _ ↦ isUnit_of_subsingleton _⟩
+  refine ⟨fun h ↦ ?_, fun ⟨s, r, hr, hd⟩ ↦ hd ▸ isUnit_toLaurent_monomial s hr⟩
+  obtain ⟨m, r, -, hr, hd⟩ := (AddMonoidAlgebra.isUnit_iff_exists_single (toLaurent d)).mp h
+  have hm_mem : m ∈ (toLaurent d).coeff.support := by
+    rw [hd, coeff_single, Finsupp.mem_support_iff, Finsupp.single_eq_same]
+    exact hr.ne_zero
+  have hm_nonneg : ∀ i, 0 ≤ m i :=
+    mem_range_toLaurent_iff.mp ⟨d, rfl⟩ m hm_mem
+  let s : K →₀ ℕ := m.mapRange Int.toNat Int.toNat_zero
+  have hs : (s.mapRange Nat.cast Nat.cast_zero : K →₀ ℤ) = m := by
+    ext i
+    simpa [s] using hm_nonneg i
+  refine ⟨s, r, hr, toLaurent_injective ?_⟩
+  rw [hd, toLaurent_monomial, hs]
 
 end MvPolynomial
 

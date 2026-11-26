@@ -31,6 +31,12 @@ none of the further theory built on it.
 * `MonoidAlgebra.coeff_one_mul_of_coeff_mem`: the coefficient at the identity is multiplicative
   on elements whose other coefficients lie in a square-zero ideal, with additive version
   `AddMonoidAlgebra.coeff_zero_mul_of_coeff_mem`.
+* `MonoidAlgebra.support_coeff_prod_one_add_single_subset` and
+  `MonoidAlgebra.coeff_one_prod_one_add_single`: a finite product `∏ r ∈ s, (1 + single a (c r))`
+  is supported on `Submonoid.powers a`, and has coefficient `1` at the identity when `a` does not
+  have finite order (with additive versions
+  `AddMonoidAlgebra.support_coeff_prod_one_add_single_subset` and
+  `AddMonoidAlgebra.coeff_zero_prod_one_add_single`).
 * The `IsMulCommutative (MonoidAlgebra R M)` instance: the monoid algebra of a commutative
   magma over a commutative semiring is commutative, as a mixin on the existing ring structure.
 * `TauCeti.MonoidAlgebra.mem_ideal_smul_top_iff`: an element of `R[M]` lies in `I • R[M]` exactly
@@ -242,6 +248,45 @@ theorem coeff_one_mul_of_coeff_mem {R M : Type*} [CommSemiring R] [MulOneClass M
     · exact hzero hm fun hn ↦ hm (by simpa [hn] using hmn)
     · rfl
   · simp
+
+/-- Every index in the support of a finite product `∏ r ∈ s, (1 + single a (c r))` is a power
+of `a`. -/
+@[to_additive (dont_translate := R) support_coeff_prod_one_add_single_subset
+/-- Every index in the support of a finite product `∏ r ∈ s, (1 + single a (c r))` is a natural
+multiple of `a`. -/]
+theorem support_coeff_prod_one_add_single_subset {R M ι : Type*} [CommSemiring R] [CommMonoid M]
+    (s : Finset ι) (a : M) (c : ι → R) :
+    ((∏ r ∈ s, (1 + single a (c r))).coeff.support : Set M) ⊆ Submonoid.powers a := by
+  classical
+  have hprod : ∏ r ∈ s, (1 + single a (c r)) =
+      mapDomainRingHom R (Submonoid.powers a).subtype
+        (∏ r ∈ s, (1 + single ⟨a, 1, pow_one a⟩ (c r))) := by
+    simp [map_prod, mapDomain_add, one_def]
+  rw [hprod, mapDomainRingHom_apply]
+  intro x hx
+  obtain ⟨y, -, rfl⟩ := Finset.mem_image.mp (Finsupp.mapDomain_support hx)
+  exact y.property
+
+/-- For an element `a` that does not have finite order, the coefficient at the identity of a finite
+product `∏ r ∈ s, (1 + single a (c r))` is `1`. -/
+@[to_additive (dont_translate := R) coeff_zero_prod_one_add_single
+/-- For an element `a` that does not have finite additive order, the coefficient at zero of a finite
+product `∏ r ∈ s, (1 + single a (c r))` is `1`. -/]
+theorem coeff_one_prod_one_add_single {R M ι : Type*} [CommSemiring R] [CommMonoid M]
+    (s : Finset ι) {a : M} (ha : ¬ IsOfFinOrder a) (c : ι → R) :
+    (∏ r ∈ s, (1 + single a (c r))).coeff 1 = 1 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert r s hrs ih =>
+    set g : MonoidAlgebra R M := ∏ i ∈ s, (1 + single a (c i))
+    have hzero : (single a (c r) * g).coeff 1 = 0 := by
+      rw [coeff_mul, coeff_single, Finsupp.sum_single_index (by simp), Finsupp.sum]
+      refine Finset.sum_eq_zero fun m hm ↦ ite_eq_right fun ham ↦ ha ?_
+      obtain ⟨n, rfl⟩ := (Submonoid.mem_powers_iff _ _).mp
+        (support_coeff_prod_one_add_single_subset s a c hm)
+      exact isOfFinOrder_iff_pow_eq_one.mpr ⟨n + 1, Nat.succ_pos n, by rwa [pow_succ']⟩
+    simp [Finset.prod_insert hrs, add_mul, g, ih, hzero]
 
 section TorsionFree
 
