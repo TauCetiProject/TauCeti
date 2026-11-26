@@ -89,6 +89,12 @@ bijective, by Lefschetz duality and by Poincaré duality of `∂X`; at the ends 
   fundamental class of `M` along `K` after excision, followed by the map induced by `ι`.
 * `TauCeti.HomologicalOrientation.bijective_capFundamentalClassRel`: **Lefschetz duality**, and
   `TauCeti.HomologicalOrientation.isIso_capFundamentalClassRel` as an isomorphism.
+* `TauCeti.HomologicalOrientation.capFundamentalClassRel_singularCohomologyδ`,
+  `TauCeti.HomologicalOrientation.absoluteCapFundamentalClassRel_singularCohomologyπ` and
+  `TauCeti.HomologicalOrientation.singularHomologyδ_absoluteCapFundamentalClassRel`: the squares
+  of the ladder between the long exact cohomology and homology sequences of `(X, ∂X)`,
+  `[X, ∂X] ⌢ δβ = i_*([∂X] ⌢ β)`, `[X, ∂X] ⌢ j^*β = j_*([X, ∂X] ⌢ β)` and
+  `∂([X, ∂X] ⌢ α) = (-1)ᵖ [∂X] ⌢ α|_{∂X}`.
 * `TauCeti.HomologicalOrientation.bijective_absoluteCapFundamentalClassRel`: **Lefschetz duality
   for absolute cohomology**, when the boundary is a manifold, and
   `TauCeti.HomologicalOrientation.isIso_absoluteCapFundamentalClassRel` as an isomorphism.
@@ -377,7 +383,7 @@ fundamental class on `∂X`, form a ladder between the long exact sequence of th
 cohomology and in homology, commuting up to sign (Hatcher, proof of Theorem 3.43). -/
 
 /-- The square of the connecting morphisms: `[X, ∂X] ⌢ δβ = i_*([∂X] ⌢ β)` for `β ∈ Hᵖ(∂X)`. -/
-private lemma capFundamentalClassRel_singularCohomologyδ {m : ℕ} (hm : m + 1 = n) (p q : ℕ)
+lemma capFundamentalClassRel_singularCohomologyδ {m : ℕ} (hm : m + 1 = n) (p q : ℕ)
     (h : p + q = m)
     (β : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCohomology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
@@ -398,7 +404,7 @@ private lemma capFundamentalClassRel_singularCohomologyδ {m : ℕ} (hm : m + 1 
 
 /-- The square of the restriction to `∂X` and the connecting morphism:
 `∂([X, ∂X] ⌢ α) = (-1)ᵖ [∂X] ⌢ α|_{∂X}` for `α ∈ Hᵖ(X)`. -/
-private lemma singularHomologyδ_absoluteCapFundamentalClassRel {m : ℕ} (hm : m + 1 = n)
+lemma singularHomologyδ_absoluteCapFundamentalClassRel {m : ℕ} (hm : m + 1 = n)
     (p q : ℕ) (h : p + (q + 1) = n) (h' : p + q = m)
     (α : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).fst.singularCohomology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
@@ -414,11 +420,15 @@ private lemma singularHomologyδ_absoluteCapFundamentalClassRel {m : ℕ} (hm : 
   rw [absoluteCapFundamentalClassRel_apply, ← ConcreteCategory.comp_apply,
     TopPair.absoluteSingularCap_comp_singularHomologyδ _ ℤ (ρ_ _).inv (ρ_ L).hom p q m (q + 1) n
       h' h α rfl hm]
+  -- `((-1)ᵖ • (∂ ≫ φ)).hom x = (-1)ᵖ • φ.hom (∂.hom x)` holds by definition (`ModuleCat.hom_zsmul`,
+  -- `LinearMap.smul_apply`, `ConcreteCategory.comp_apply`), but cannot be rewritten: the target of
+  -- `∂` is the singular homology of `∂X` only up to unfolding, and the `ℤ`-action of the morphism
+  -- group and the `ℤ`-module structure of the homology agree only up to unfolding.
   rfl
 
 /-- The square of the maps from relative to absolute cohomology and from absolute to relative
 homology: `[X, ∂X] ⌢ j^*β = j_*([X, ∂X] ⌢ β)` for `β ∈ Hᵖ(X, ∂X)`. -/
-private lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h : p + q = n)
+lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h : p + q = n)
     (β : (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :
     o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h
@@ -427,7 +437,9 @@ private lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h
         (o.capFundamentalClassRel hn hι hιf hf L p q h β) := by
   rw [absoluteCapFundamentalClassRel_apply, capFundamentalClassRel_apply,
     TopPair.absoluteSingularCap_singularCohomologyπ]
-  rfl
+  -- The source of `j_*` is the singular homology of `X` only up to unfolding, so the composite is
+  -- evaluated by unification rather than by rewriting.
+  exact ConcreteCategory.comp_apply _ _ _
 
 /-- Injectivity in the duality ladder: if capping with `[∂X]` is bijective in every degree and
 `Hₙ(∂X; L)` and `Hⁿ(∂X; L)` vanish, then capping with `[X, ∂X]` is injective on `Hᵖ(X; L)`. -/
