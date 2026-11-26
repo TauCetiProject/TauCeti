@@ -81,6 +81,9 @@ rank of its underlying graph plus the sum of the ranks of its vertex groups.
   Internat. J. Algebra Comput. 15 (2005), §3, Definition 3.1, Convention 3.2, Definition 3.3,
   Example 3.4, Convention 3.5, Definition 3.6, Proposition 3.7, Remark 3.8 and Lemma 3.9; §4,
   Definition 4.1 and Example 4.4; §6, Definition 6.1.
+* The helpers `cast_vertexHom_nil_mem_subgroup`, `cast_mem_grp` and `rankGrp_congr` come from
+  [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
+  `69d53542b6`, whose files under `AGraph/` were left out when it was merged.
 -/
 
 public section
@@ -257,6 +260,15 @@ theorem toHom_mapLetter_dart_eq (f : B.graph.E)
   -- The labels on the two sides are transported along proofs of the same equalities.
   rfl
 
+/-- The letters read along a dart `f`: its start label `f_α`, its type `[f]` and its end label
+`f_ω`, read in the vertex groups at the endpoints of `[f]`. -/
+theorem toHom_mapLetter_dart (f : B.graph.E) :
+    B.toHom.mapLetter (Letter.dart (𝔸 := B.toGraphOfGroups) (B.graph.dart f)) =
+      ((Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) (B.labelα f))).comp
+        (Path.ofDart ⟨B.typ.mapE f, B.typ.map_src f, B.typ.map_tgt _ f⟩)).comp
+          (Path.ofVertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f) (B.labelω f))) :=
+  B.toHom_mapLetter_dart_eq f rfl rfl rfl
+
 /-- The path read along a dart `f`, from equalities for its start label, its type and its end
 label. -/
 theorem toHom_mapPath_ofDart_eq (f : B.graph.E)
@@ -409,6 +421,11 @@ theorem subgroup_eq_sup (γ : ∀ u : B.graph.V, B.toGraphOfGroups.Path ⟨B.bas
 def grpSrc (f : B.graph.E) : Subgroup (𝔸.vertexGroup (Γ.src (B.typ.mapE f))) :=
   (B.grp (B.graph.src f)).comap (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f)).toMonoidHom
 
+theorem grpSrc_def (f : B.graph.E) : B.grpSrc f =
+    (B.grp (B.graph.src f)).comap
+      (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f)).toMonoidHom :=
+  (rfl)
+
 theorem mem_grpSrc {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.src (B.typ.mapE f))} :
     c ∈ B.grpSrc f ↔
       MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f) c ∈ B.grp (B.graph.src f) :=
@@ -417,6 +434,11 @@ theorem mem_grpSrc {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.src (B.typ.mapE f))
 /-- The vertex group at the end of a dart `f`, as a subgroup of the vertex group `A_{t([f])}`. -/
 def grpTgt (f : B.graph.E) : Subgroup (𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))) :=
   (B.grp (B.graph.tgt f)).comap (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f)).toMonoidHom
+
+theorem grpTgt_def (f : B.graph.E) : B.grpTgt f =
+    (B.grp (B.graph.tgt f)).comap
+      (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f)).toMonoidHom :=
+  (rfl)
 
 theorem mem_grpTgt {f : B.graph.E} {c : 𝔸.vertexGroup (Γ.tgt (B.typ.mapE f))} :
     c ∈ B.grpTgt f ↔
@@ -504,6 +526,29 @@ noncomputable def complexity : ℕ :=
 theorem complexity_def :
     B.complexity = (Nat.card B.graph.GeomEdge + 1 - Nat.card B.graph.V) + ∑ᶠ z, B.rankGrp z :=
   (rfl)
+
+section mk
+
+variable (grp : ∀ z : B.graph.V, Subgroup (𝔸.vertexGroup (B.typ.mapV z)))
+  (lab : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
+
+/-- Replacing the vertex groups of an `𝔸`-graph by isomorphic ones, and its labels by any others,
+preserves finiteness; this covers the auxiliary moves A0–A2. -/
+theorem isFinite_mk_iff (e : ∀ z, B.grp z ≃* grp z) :
+    (⟨B.graph, B.typ, B.base, B.typ_base, grp, lab⟩ :
+      AGraph.{u, v, w, x, u', v'} 𝔸 v₀).IsFinite ↔ B.IsFinite :=
+  ⟨fun h => ⟨h.finite_E, h.connected, fun z => (isMulFG_congr (e z)).2 (h.fg z)⟩,
+    fun h => ⟨h.finite_E, h.connected, fun z => (isMulFG_congr (e z)).1 (h.fg z)⟩⟩
+
+/-- Replacing the vertex groups of an `𝔸`-graph by isomorphic ones, and its labels by any others,
+preserves the complexity; this covers the auxiliary moves A0–A2. -/
+theorem complexity_mk (e : ∀ z, B.grp z ≃* grp z) :
+    (⟨B.graph, B.typ, B.base, B.typ_base, grp, lab⟩ :
+      AGraph.{u, v, w, x, u', v'} 𝔸 v₀).complexity = B.complexity := by
+  rw [complexity_def, complexity_def]
+  exact congrArg _ (finsum_congr fun z => (rankGrp_congr (e z)).symm)
+
+end mk
 
 /-! ### A single edge over an amalgamated product -/
 

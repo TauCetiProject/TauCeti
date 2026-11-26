@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GraphOfGroups.AGraph.Basic
-public import Mathlib.Tactic.Group
 
 /-!
 # Comparing the subgroups represented by two `𝔸`-graphs
@@ -21,7 +20,8 @@ those of `B'` up to the vertex groups of `B'` and up to a conjugation: there are
 
 Then every `𝔹`-path `p` from `u₀` to `z` lifts to a `𝔹'`-path from `u₀'` to `φ(z)` reading
 `g_{u₀} μ(p) g_z⁻¹` up to homotopy, so that `g_{u₀} L(B, u₀) g_{u₀}⁻¹ ≤ L(B', u₀')`. When moreover
-`g_{u₀} ∈ B'_{u₀'}`, for instance when `g_{u₀} = 1`, this is an inclusion `L(B, u₀) ≤ L(B', u₀')`.
+`g_{u₀}` normalizes `L(B', u₀')`, for instance when `g_{u₀} ∈ B'_{u₀'}` or `g_{u₀} = 1`, this is an
+inclusion `L(B, u₀) ≤ L(B', u₀')`.
 This inclusion generalises the consequence `im ν ≤ im ν'` of the factorisation `ν = ν' ∘ γ` in
 Kapovich, Weidmann and Myasnikov, Proposition 4.15, given there for a folding map with equal labels
 and `g = 1`; the generalisation applies to the auxiliary moves A0 and A2 as well, which change only
@@ -32,10 +32,12 @@ the vertex groups and the labels.
 * `TauCeti.GraphOfGroups.AGraph.subgroup_map_conj_le_mk`: the inclusion
   `g_{u₀} L(B, u₀) g_{u₀}⁻¹ ≤ L(B', u₀)` when `B'` is `B` with other vertex groups and labels, as
   after the auxiliary moves A0 and A2.
-* `TauCeti.GraphOfGroups.AGraph.subgroup_map_conj_le_of_hom`: the inclusion
+* `TauCeti.GraphOfGroups.AGraph.subgroup_map_conj_le_of_serreGraphHom`: the inclusion
   `g_{u₀} L(B, u₀) g_{u₀}⁻¹ ≤ L(B', u₀')`.
-* `TauCeti.GraphOfGroups.AGraph.subgroup_le_of_hom`: the inclusion `L(B, u₀) ≤ L(B', u₀')` when
-  `g_{u₀} ∈ B'_{u₀'}`.
+* `TauCeti.GraphOfGroups.AGraph.subgroup_le_of_serreGraphHom_of_mem_normalizer`: the inclusion
+  `L(B, u₀) ≤ L(B', u₀')` when `g_{u₀}` normalizes `L(B', u₀')`.
+* `TauCeti.GraphOfGroups.AGraph.subgroup_le_of_serreGraphHom`: the inclusion
+  `L(B, u₀) ≤ L(B', u₀')` when `g_{u₀} ∈ B'_{u₀'}`.
 
 ## Implementation notes
 
@@ -47,10 +49,17 @@ definition. The morphism of graphs of groups defined by the pullback is the comp
 `AGraph.toHom` for `B'` with the morphism given by `φ`, the identities of the vertex groups and
 trivial twisting elements, so the pullback's `ν` factors through `π₁(𝔹', u₀')` (`π₁.map_map`).
 
+This file ports the comparison development of Tau Ceti PR #39438 (see the references), whose files
+under `AGraph/` were left out when it was merged. The port replaces its hand-made letter map
+`pathMap`/`letterPath` by the morphism of graphs of groups `AGraph.toHom` and its path map.
+
 ## References
 
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §4, Proposition 4.15.
+* The Lean development ported here:
+  [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
+  `69d53542b6`.
 -/
 
 public section
@@ -154,10 +163,7 @@ private theorem homotopic_relabel_dart {y : 𝔸.LetterVertex} (e : B.graph.E)
       (c₂ : 𝔸.vertexGroup _) = MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ e) (B.labelω e) *
         (g (B.graph.tgt e))⁻¹ :=
     cast_labelω_relabel_mul_inv g e h₂
-  rw [toHom_mapLetter_dart_eq (B.relabel grp lab) e rfl
-    (d := ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩) rfl rfl,
-    toHom_mapLetter_dart_eq B e rfl (d := ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩) rfl
-      rfl]
+  rw [toHom_mapLetter_dart, toHom_mapLetter_dart]
   simp only [Path.comp_ofVertex, Quiver.Path.comp_cons, ← Quiver.Path.comp_assoc] at h ⊢
   have h' := (((h.cons (Letter.vertex (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src e)
     b₁))).trans (.mul _ _ _)).cons (Letter.vertex (MulEquiv.cast (M := 𝔸.vertexGroup)
@@ -263,21 +269,22 @@ private theorem toHom_pullback :
     -- once `SerreGraph.Hom.comp` is unfolded.
     rfl
 
-/-- An element of `π₁(𝔹', z)` at a vertex `z` equal to the base vertex, sent to `π₁(𝔸, v₀)`, lies
-in `L(B')`. -/
-private theorem cast_map_toHom_mem {z : B'.graph.V} (hz : z = B'.base) (h : B'.typ.mapV z = v₀)
-    (x : π₁ B'.toGraphOfGroups z) :
-    MulEquiv.cast (M := π₁ 𝔸) h (π₁.map B'.toHom z x) ∈ B'.subgroup := by
-  subst hz
-  rw [subgroup_def]
-  exact ⟨x, B'.π₁Hom_apply x⟩
+/-- The homomorphism `ν` of the pullback factors through `π₁(𝔹', u₀')`: it is the homomorphism
+induced by `pullbackHom`, transported along `φ(u) = u₀'`, followed by `ν` of `B'`. -/
+private theorem π₁Hom_pullback : (pullback B' φ base hbase).π₁Hom = B'.π₁Hom.comp
+    ((MulEquiv.cast (M := π₁ B'.toGraphOfGroups) hbase).toMonoidHom.comp
+      (π₁.map (pullbackHom B' φ base hbase) base)) := by
+  ext x
+  rw [MonoidHom.comp_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, π₁Hom_apply,
+    π₁Hom_apply, π₁.map_cast, ← π₁.cast_map (toHom_pullback B' φ base hbase).symm base rfl,
+    ← π₁.map_map]
+  simp only [MulEquiv.cast_apply, cast_cast]
+  -- The image `φ(u)` of the base vertex is the image under the graph map of `pullbackHom`.
+  rfl
 
 private theorem subgroup_pullback_le : (pullback B' φ base hbase).subgroup ≤ B'.subgroup := by
-  intro _ hx
-  rw [subgroup_def] at hx
-  obtain ⟨x, rfl⟩ := hx
-  rw [π₁Hom_apply, ← π₁.cast_map (toHom_pullback B' φ base hbase).symm base rfl, ← π₁.map_map]
-  exact cast_map_toHom_mem B' hbase _ _
+  rw [subgroup_def, subgroup_def, π₁Hom_pullback, MonoidHom.range_comp]
+  exact Subgroup.map_le_range _ _
 
 end pullback
 
@@ -331,7 +338,7 @@ vertices, and let `g_z ∈ A_[z]` be elements with `g_z B_z g_z⁻¹ ≤ B'_{φ(
 and `f_α = g_{o(f)}⁻¹ b' φ(f)_α` with `b' ∈ B'_{φ(o(f))}` for every dart `f`. Then the conjugate
 `g_{u₀} L(B, u₀) g_{u₀}⁻¹` of the represented subgroup lies in `L(B', u₀')`, with `g_{u₀}` read in
 `π₁(𝔸, v₀)`. -/
-theorem subgroup_map_conj_le_of_hom :
+theorem subgroup_map_conj_le_of_serreGraphHom :
     B.subgroup.map (MulAut.conj (MulEquiv.cast (M := π₁ 𝔸) B.typ_base
       (π₁.vertexHom Quiver.Path.nil (g B.base)))).toMonoidHom ≤ B'.subgroup := by
   -- First relabel `B` by the vertex groups and labels of the images under `φ`, read through the
@@ -352,19 +359,30 @@ theorem subgroup_map_conj_le_of_hom :
 include hbase hgrp hlab in
 /-- Let `φ : B → B'` be a type-preserving graph morphism of `𝔸`-graphs respecting the base
 vertices, and let `g_z ∈ A_[z]` be elements with `g_z B_z g_z⁻¹ ≤ B'_{φ(z)}` for every vertex `z`
+and `f_α = g_{o(f)}⁻¹ b' φ(f)_α` with `b' ∈ B'_{φ(o(f))}` for every dart `f`. If moreover `g_{u₀}`,
+read in `π₁(𝔸, v₀)`, normalizes `L(B', u₀')`, then `L(B, u₀) ≤ L(B', u₀')`. -/
+theorem subgroup_le_of_serreGraphHom_of_mem_normalizer
+    (hg : MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil (g B.base)) ∈
+      Subgroup.normalizer (B'.subgroup : Set (π₁ 𝔸 v₀))) :
+    B.subgroup ≤ B'.subgroup :=
+  -- Conjugation by `g_{u₀}` is injective and fixes `L(B', u₀')`.
+  (Subgroup.map_le_map_iff_of_injective (MulAut.conj _).injective).1
+    ((subgroup_map_conj_le_of_serreGraphHom φ hV hE hbase g hgrp hlab).trans
+      (Subgroup.mem_normalizer_iff_map_conj_eq.mp hg).ge)
+
+include hbase hgrp hlab in
+/-- Let `φ : B → B'` be a type-preserving graph morphism of `𝔸`-graphs respecting the base
+vertices, and let `g_z ∈ A_[z]` be elements with `g_z B_z g_z⁻¹ ≤ B'_{φ(z)}` for every vertex `z`
 and `f_α = g_{o(f)}⁻¹ b' φ(f)_α` with `b' ∈ B'_{φ(o(f))}` for every dart `f`. If moreover `g_{u₀}`
 lies in `B'_{u₀'}`, for instance if `g_{u₀} = 1`, then `L(B, u₀) ≤ L(B', u₀')`. For a folding map,
 with equal labels and `g = 1`, this is the consequence `im ν ≤ im ν'` of the factorisation
 `ν = ν' ∘ γ` of Kapovich, Weidmann and Myasnikov, Proposition 4.15. -/
-theorem subgroup_le_of_hom
+theorem subgroup_le_of_serreGraphHom
     (hg : g B.base ∈ (B'.grp (φ.mapV B.base)).comap
       (MulEquiv.cast (M := 𝔸.vertexGroup) (hV B.base).symm).toMonoidHom) :
-    B.subgroup ≤ B'.subgroup := by
-  have hx := cast_vertexHom_nil_mem B' hbase (hV B.base) B.typ_base hg
-  intro y hy
-  have h := subgroup_map_conj_le_of_hom φ hV hE hbase g hgrp hlab (Subgroup.mem_map_of_mem _ hy)
-  rw [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] at h
-  simpa [mul_assoc] using mul_mem (mul_mem (inv_mem hx) h) hx
+    B.subgroup ≤ B'.subgroup :=
+  subgroup_le_of_serreGraphHom_of_mem_normalizer φ hV hE hbase g hgrp hlab
+    (Subgroup.le_normalizer (cast_vertexHom_nil_mem B' hbase (hV B.base) B.typ_base hg))
 
 end AGraph
 

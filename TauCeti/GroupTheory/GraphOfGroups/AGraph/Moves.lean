@@ -44,6 +44,8 @@ and `1` elsewhere.
 
 * `TauCeti.GraphOfGroups.AGraph.subgroup_conj`: a conjugation move conjugates the represented
   subgroup by the element at the base vertex.
+* `TauCeti.GraphOfGroups.AGraph.subgroup_conj_eq_self_iff`: a conjugation move preserves the
+  represented subgroup exactly when its element at the base vertex normalizes it.
 * `TauCeti.GraphOfGroups.AGraph.subgroup_conj_of_mem`: a conjugation move whose element at the
   base vertex lies in the vertex group there, for instance an admissible one, preserves the
   represented subgroup.
@@ -63,6 +65,10 @@ and `1` elsewhere.
 * I. Kapovich, R. Weidmann, A. Myasnikov, *Foldings, graphs of groups and the membership problem*,
   Internat. J. Algebra Comput. 15 (2005), §4.1, Definitions 4.5, 4.6 and 4.7, Proposition 4.15
   and Lemma 4.16.
+* The moves and their preservation theorems were first formalised in
+  [Tau Ceti PR #39438](https://github.com/TauCetiProject/TauCeti/pull/39438), accepted at head
+  `69d53542b6`, whose files under `AGraph/` were left out when it was merged; this file ports them
+  to `AGraph.toHom`.
 -/
 
 public section
@@ -132,9 +138,7 @@ variable (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z))
 @[simp] theorem grpSrc_conj (f : B.graph.E) : (B.conj g).grpSrc f = (B.grpSrc f).map
     (MulAut.conj (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_src f).symm
       (g (B.graph.src f)))).toMonoidHom := by
-  ext c
-  rw [mem_grpSrc, conj_grp, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, mem_grpSrc,
-    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+  rw [grpSrc_def, grpSrc_def, ← Subgroup.comap_map_conj, MulEquiv.coe_toMonoidHom]
   simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
   -- The start of `f` in `B.conj g` is its start in `B` by definition.
   rfl
@@ -144,9 +148,7 @@ variable (g : ∀ z : B.graph.V, 𝔸.vertexGroup (B.typ.mapV z))
 @[simp] theorem grpTgt_conj (f : B.graph.E) : (B.conj g).grpTgt f = (B.grpTgt f).map
     (MulAut.conj (MulEquiv.cast (M := 𝔸.vertexGroup) (B.typ.map_tgt _ f).symm
       (g (B.graph.tgt f)))).toMonoidHom := by
-  ext c
-  rw [mem_grpTgt, conj_grp, Subgroup.mem_map_equiv, Subgroup.mem_map_equiv, mem_grpTgt,
-    MulAut.conj_symm_apply, MulAut.conj_symm_apply, map_mul, map_mul, map_inv]
+  rw [grpTgt_def, grpTgt_def, ← Subgroup.comap_map_conj, MulEquiv.coe_toMonoidHom]
   simp only [MulEquiv.cast_apply, cast_cast, cast_eq]
   -- The end of `f` in `B.conj g` is its end in `B` by definition.
   rfl
@@ -182,40 +184,41 @@ theorem subgroup_conj : (B.conj g).subgroup = B.subgroup.map (MulAut.conj (MulEq
     (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil (g B.base)))).toMonoidHom := by
   -- `B.conj g` is `B` with new vertex groups and labels, and `B` is `B.conj g` with the old ones,
   -- so both inclusions come from `subgroup_map_conj_le_mk`, with the families `g` and `g⁻¹`.
-  have h₁ : B.subgroup.map _ ≤ (B.conj g).subgroup :=
-    subgroup_map_conj_le_mk g (fun z => le_rfl) fun f => ⟨1, one_mem _, by
-      simp only [one_mul, inv_mul_cancel_left]⟩
-  have h₂ : (B.conj g).subgroup.map (MulAut.conj (MulEquiv.cast (M := π₁ 𝔸) B.typ_base
-      (π₁.vertexHom Quiver.Path.nil (g B.base)⁻¹))).toMonoidHom ≤ B.subgroup :=
-    subgroup_map_conj_le_mk (B := B.conj g) g⁻¹ (fun z => ?_) fun f => ⟨1, one_mem _, ?_⟩
-  · refine le_antisymm (fun y hy => ⟨_, h₂ (Subgroup.mem_map_of_mem _ hy), ?_⟩) h₁
-    simp only [map_inv, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, MulAut.conj_inv_apply]
-    group
-  · rintro _ ⟨_, ⟨c, hc, rfl⟩, rfl⟩
-    simpa [MulAut.conj_apply, mul_assoc] using hc
+  have h := subgroup_map_conj_le_mk (B := B.conj g) (grp := B.grp) (lab := B.labelα) g⁻¹
+    (fun z => ?_) fun f => ⟨1, one_mem _, ?_⟩
+  · -- Conjugating back by `g_{u₀}⁻¹` is the inverse of conjugating by `g_{u₀}`.
+    rw [Subgroup.map_le_iff_le_comap, Pi.inv_apply, map_inv, map_inv, map_inv, MulAut.inv_def,
+      Subgroup.comap_equiv_eq_map_symm', MulEquiv.symm_symm] at h
+    exact h.antisymm (subgroup_map_conj_le_mk g (fun z => le_rfl) fun f => ⟨1, one_mem _, by
+      simp only [one_mul, inv_mul_cancel_left]⟩)
+  · rw [conj_grp, Subgroup.map_conj_map_conj, Pi.inv_apply, inv_mul_cancel, map_one]
+    exact (Subgroup.map_id _).le
   · simp [map_inv]
+
+/-- A conjugation move preserves the represented subgroup exactly when its element `g_{u₀}` at the
+base vertex, read in `π₁(𝔸, v₀)`, normalizes it. -/
+theorem subgroup_conj_eq_self_iff : (B.conj g).subgroup = B.subgroup ↔
+    MulEquiv.cast (M := π₁ 𝔸) B.typ_base (π₁.vertexHom Quiver.Path.nil (g B.base)) ∈
+      Subgroup.normalizer (B.subgroup : Set (π₁ 𝔸 v₀)) := by
+  rw [subgroup_conj, Subgroup.mem_normalizer_iff_map_conj_eq]
+  rfl
 
 /-- A conjugation move whose element `g_{u₀}` at the base vertex lies in the vertex group `B_{u₀}`
 preserves the represented subgroup; this covers the moves A0 admissible with respect to the base
 vertex, with `g_{u₀} = 1` (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the move A0). -/
 @[simp] theorem subgroup_conj_of_mem (hg : g B.base ∈ B.grp B.base) :
-    (B.conj g).subgroup = B.subgroup := by
-  rw [subgroup_conj]
-  exact Subgroup.mem_normalizer_iff_map_conj_eq.mp
-    (Subgroup.le_normalizer (B.cast_vertexHom_nil_mem_subgroup hg))
+    (B.conj g).subgroup = B.subgroup :=
+  (B.subgroup_conj_eq_self_iff g).2 (Subgroup.le_normalizer (B.cast_vertexHom_nil_mem_subgroup hg))
 
 /-- A conjugation move preserves finiteness. -/
-@[simp] theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite := by
-  unfold conj
-  refine ⟨fun h => ⟨h.finite_E, h.connected, fun z => ?_⟩,
-    fun h => ⟨h.finite_E, h.connected, fun z => have := h.fg z; inferInstance⟩⟩
-  exact (isMulFG_congr (Subgroup.equivMapOfInjective (B.grp z) _
-    (MulAut.conj (g z)).injective)).2 (h.fg z)
+@[simp] theorem isFinite_conj_iff : (B.conj g).IsFinite ↔ B.IsFinite :=
+  isFinite_mk_iff B _ _ fun z =>
+    Subgroup.equivMapOfInjective (B.grp z) _ (MulAut.conj (g z)).injective
 
 /-- A conjugation move preserves the complexity. -/
-@[simp] theorem complexity_conj : (B.conj g).complexity = B.complexity := by
-  rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr (B.rankGrp_conj g))
+@[simp] theorem complexity_conj : (B.conj g).complexity = B.complexity :=
+  complexity_mk B _ _ fun z =>
+    Subgroup.equivMapOfInjective (B.grp z) _ (MulAut.conj (g z)).injective
 
 variable {B} in
 /-- A conjugation move carries a folded `𝔸`-graph to a folded one (Kapovich, Weidmann and
@@ -340,10 +343,8 @@ private theorem homotopic_toHom_mapLetter_bassSerre {e : B.graph.E}
       ((congrArg Γ.toGeomEdge (B.typ.map_rev e)).trans (Γ.toGeomEdge_rev _)).symm (c e)) :
     Path.Homotopic ((B.bassSerre c).toHom.mapLetter (Letter.dart ((B.bassSerre c).graph.dart e)))
       (B.toHom.mapLetter (Letter.dart (B.graph.dart e))) := by
-  rw [toHom_mapLetter_dart_eq (B.bassSerre c) e rfl
-    (d := ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩) rfl rfl,
-    toHom_mapLetter_dart_eq B e rfl (d := ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩) rfl
-      rfl, bassSerre_labelα, labelω_bassSerre_of_rev hc, map_mul, map_mul, map_inv]
+  rw [toHom_mapLetter_dart, toHom_mapLetter_dart, bassSerre_labelα, labelω_bassSerre_of_rev hc,
+    map_mul, map_mul, map_inv]
   have h := Path.Homotopic.dart_αArrow_ωArrow (𝔸 := 𝔸)
     ⟨B.typ.mapE e, B.typ.map_src e, B.typ.map_tgt _ e⟩ (c e)
   rw [αArrow_apply, ωArrow_apply] at h
@@ -388,12 +389,11 @@ represented subgroup (Kapovich, Weidmann and Myasnikov, Proposition 4.15 for the
 
 /-- A Bass–Serre move preserves finiteness. -/
 @[simp] theorem isFinite_bassSerre_iff : (B.bassSerre c).IsFinite ↔ B.IsFinite :=
-  ⟨fun h => ⟨h.finite_E, h.connected, h.fg⟩, fun h => ⟨h.finite_E, h.connected, h.fg⟩⟩
+  isFinite_mk_iff B _ _ fun _ => MulEquiv.refl _
 
 /-- A Bass–Serre move preserves the complexity. -/
-@[simp] theorem complexity_bassSerre : (B.bassSerre c).complexity = B.complexity := by
-  rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr (B.rankGrp_bassSerre c))
+@[simp] theorem complexity_bassSerre : (B.bassSerre c).complexity = B.complexity :=
+  complexity_mk B _ _ fun _ => MulEquiv.refl _
 
 variable {B c} in
 /-- A Bass–Serre move by a family taking the same value on a dart and on its reverse carries a
@@ -528,12 +528,11 @@ variable (a : ∀ f : B.graph.E, 𝔸.vertexGroup (Γ.src (B.typ.mapE f)))
 
 /-- A simple adjustment preserves finiteness. -/
 @[simp] theorem isFinite_adjust_iff : (B.adjust a).IsFinite ↔ B.IsFinite :=
-  ⟨fun h => ⟨h.finite_E, h.connected, h.fg⟩, fun h => ⟨h.finite_E, h.connected, h.fg⟩⟩
+  isFinite_mk_iff B _ _ fun _ => MulEquiv.refl _
 
 /-- A simple adjustment preserves the complexity. -/
-@[simp] theorem complexity_adjust : (B.adjust a).complexity = B.complexity := by
-  rw [complexity_def, complexity_def]
-  exact congrArg _ (finsum_congr (B.rankGrp_adjust a))
+@[simp] theorem complexity_adjust : (B.adjust a).complexity = B.complexity :=
+  complexity_mk B _ _ fun _ => MulEquiv.refl _
 
 variable {B a} in
 /-- A simple adjustment by elements of the vertex groups carries a folded `𝔸`-graph to a folded
@@ -590,8 +589,9 @@ variable {P Q : Type w} {C : Type x} [Group P] [Group Q] [Group C] (f : C →* P
 /-- The conjugation move on a single edge `(a, e, b)` by `p` at its start and `q` at its end gives
 the single edge `(p a, e, b q⁻¹)` with the groups `p P₀ p⁻¹` and `q Q₀ q⁻¹` (Kapovich, Weidmann and
 Myasnikov, Figure 3). Every family indexed by the two vertices is of this form. -/
-theorem segment_conj (p : P) (q : Q) :
-    (segment f g hf hg P₀ Q₀ a b).conj (fun z => Bool.rec (motive := fun z => cond z Q P) p q z) =
+@[simp] theorem segment_conj (p : P) (q : Q) :
+    (segment f g hf hg P₀ Q₀ a b).conj
+      (fun z : SerreGraph.segment.V => Bool.rec (motive := fun z => cond z Q P) p q z) =
       segment f g hf hg (P₀.map (MulAut.conj p).toMonoidHom) (Q₀.map (MulAut.conj q).toMonoidHom)
         (p * a) (b * q⁻¹) := by
   -- The vertices and darts of the single edge are the Booleans, and its vertex groups `P` and `Q`,
@@ -609,7 +609,7 @@ theorem segment_conj (p : P) (q : Q) :
 /-- The Bass–Serre move on a single edge `(a, e, b)` by a family `c` gives the single edge
 `(a f(c_e)⁻¹, e, g(c_{e⁻¹}) b)`; for a constant family this is Figure 4 of Kapovich, Weidmann and
 Myasnikov. -/
-theorem segment_bassSerre (c : Bool → C) :
+@[simp] theorem segment_bassSerre (c : Bool → C) :
     (segment f g hf hg P₀ Q₀ a b).bassSerre c =
       segment f g hf hg P₀ Q₀ (a * (f (c false))⁻¹) (g (c true) * b) := by
   -- As in `segment_conj`, the labels are compared one Boolean at a time after unfolding.
@@ -623,11 +623,14 @@ theorem segment_bassSerre (c : Bool → C) :
     exact congrArg (fun x => b⁻¹ * x⁻¹)
       (DFunLike.congr_fun (GraphOfGroups.segment_α_true ..) (c true))
 
-/-- The simple adjustment of a single edge `(a, e, b)` by `p` at its start and `q` at the start of
-its reverse gives the single edge `(p a, e, b q⁻¹)` (Kapovich, Weidmann and Myasnikov, Figure 5).
-Every family indexed by the two darts is of this form. -/
-theorem segment_adjust (p : P) (q : Q) :
-    (segment f g hf hg P₀ Q₀ a b).adjust (fun e => Bool.rec (motive := fun e => cond e Q P) p q e) =
+/-- The label operation `AGraph.adjust` on a single edge `(a, e, b)`, by `p` at its start and `q` at
+the start of its reverse, gives the single edge `(p a, e, b q⁻¹)`. Every family indexed by the two
+darts is of this form, and `p`, `q` are arbitrary here. Only when `p ∈ P₀` and `q ∈ Q₀` is this a
+pair of valid simple adjustments A2 (Kapovich, Weidmann and Myasnikov, Figure 5), which then
+preserve the represented subgroup by `subgroup_adjust`. -/
+@[simp] theorem segment_adjust (p : P) (q : Q) :
+    (segment f g hf hg P₀ Q₀ a b).adjust
+      (fun e : SerreGraph.segment.E => Bool.rec (motive := fun e => cond e Q P) p q e) =
       segment f g hf hg P₀ Q₀ (p * a) (b * q⁻¹) := by
   -- As in `segment_conj`, the labels are compared one Boolean at a time after unfolding.
   unfold adjust segment
