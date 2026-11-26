@@ -30,10 +30,12 @@ Definition 6.1.6) consists of stratifications `σ_I : X_I → S` of all the thic
   rank `m_I = ∑_(α ∈ I) dim E_α` of the obstruction space (`TauCeti.IsCellLikeOn`): every closed
   stratum `X_I^reg ∩ X_I^≤s` is a topological manifold of dimension `dim s + m_I` with boundary
   `X_I^reg ∩ X_I^<s`;
-* over `ψ_IJ⁻¹(X_I^reg)` the stratification of `X_J` is pulled back from the first factor of a local
-  product model: near every such point there is a homeomorphism of an open subset of `X_J` onto an
-  open subset of a product `F × E_(J \ I)`, whose second coordinate is the extra obstruction
-  `s_(J \ I)`, in which two points with the same first coordinate lie in the same stratum.
+* over `ψ_IJ⁻¹(X_I^reg)` the stratification of `X_J` is pulled back from a cell-like stratification
+  of the first factor of a local product model: near every such point there is a homeomorphism of
+  an open subset of `X_J` onto an open subset of a product `F × E_(J \ I)`, whose second coordinate
+  is the extra obstruction `s_(J \ I)`, and a cell-like stratification `τ` of `F` for the
+  dimensions `dim s + m_I`, so that every closed stratum `(F^≤s, F^<s)` is a manifold with boundary
+  of dimension `dim s + m_I`, with `σ_J = τ ∘ pr₁ ∘ e` on the chart.
 
 The base `X` is stratified by `σ_∅` through the identification `X_∅ ≃ X`
 (`TauCeti.ImplicitAtlasWithBoundary.CellLikeStratification.baseStratum`), with boundary
@@ -79,8 +81,8 @@ namespace ImplicitAtlasWithBoundary
 dimension function `dim` and boundary faces `∂S` (Pardon, Definition 6.1.6): stratifications
 `σ_I : X_I → S` of the thickenings, invariant under `Γ_I`, with `∂X_I = σ_I⁻¹(∂S)`, compatible
 with the footprint maps on the zero sets, cell-like on the regular loci for the dimensions
-`dim s + m_I`, and pulled back from the first factor of a local product model of the extra
-obstruction over `ψ_IJ⁻¹(X_I^reg)`. -/
+`dim s + m_I`, and pulled back from a cell-like stratification of the first factor of a local
+product model of the extra obstruction over `ψ_IJ⁻¹(X_I^reg)`. -/
 structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act X bd d)
     (S : Type*) [PartialOrder S] (dim : S → ℤ) (bdS : LowerSet S) where
   /-- The stratification `σ_I : X_I → S` of the thickening `X_I`. -/
@@ -95,14 +97,16 @@ structure CellLikeStratification (𝒜 : ImplicitAtlasWithBoundary Γ E ρ T act
   /-- On the regular locus the stratification is cell-like for the dimensions `dim s + m_I`. -/
   isCellLikeOn_regLocus : ∀ I : Finset A, IsCellLikeOn (stratum I) (𝒜.regLocus I)
     fun s ↦ dim s + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ)
-  /-- Over `ψ_IJ⁻¹(X_I^reg)` the stratification of `X_J` is pulled back from the first factor of
-  a local product model `F × E_(J \ I)` whose second coordinate is `s_(J \ I)`. -/
+  /-- Over `ψ_IJ⁻¹(X_I^reg)` the stratification of `X_J` is pulled back from a cell-like
+  stratification `τ` of the first factor of a local product model `F × E_(J \ I)` whose second
+  coordinate is `s_(J \ I)`, for the dimensions `dim s + m_I`. -/
   exists_openPartialHomeomorph_stratum : ∀ ⦃I J : Finset A⦄ (h : I ⊆ J)
     (x : kuranishiZeroSet 𝒜.kuranishi I J), 𝒜.footprintMap h x ∈ 𝒜.regLocus I →
-      ∃ (F : Type) (_ : TopologicalSpace F)
-        (e : OpenPartialHomeomorph (T J) (F × ((α : ↥(J \ I)) → E α))),
-        x.val ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
-          ∀ y ∈ e.source, ∀ y' ∈ e.source, (e y).1 = (e y').1 → stratum J y = stratum J y'
+      ∃ (F : Type) (_ : TopologicalSpace F) (τ : F → S),
+        IsCellLike τ (fun s ↦ dim s + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ)) ∧
+        ∃ e : OpenPartialHomeomorph (T J) (F × ((α : ↥(J \ I)) → E α)),
+          x.val ∈ e.source ∧ (∀ y ∈ e.source, (e y).2 = kuranishiSdiff 𝒜.kuranishi I J y) ∧
+            ∀ y ∈ e.source, stratum J y = τ (e y).1
 
 namespace CellLikeStratification
 
@@ -199,14 +203,12 @@ noncomputable def unitIntervalCellLikeStratification :
     simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum.isCellLikeOn_univ
   exists_openPartialHomeomorph_stratum I J _ x _ := by
     have : IsEmpty ↥(J \ I) := ⟨fun α ↦ IsEmpty.false α.val⟩
-    refine ⟨unitInterval, inferInstance,
+    refine ⟨unitInterval, inferInstance, unitIntervalStratum,
+      by simpa [Finset.eq_empty_of_isEmpty I] using isCellLike_unitIntervalStratum,
       (Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm.toOpenPartialHomeomorph,
-      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ y' _ hyy' ↦ ?_⟩
-    have key (z : unitInterval) :
-        ((Homeomorph.prodUnique unitInterval ((α : ↥(J \ I)) → E α)).symm z).1 = z := by
-      rw [← Homeomorph.coe_prodUnique, Homeomorph.apply_symm_apply]
-    simp only [Homeomorph.toOpenPartialHomeomorph_apply, key] at hyy'
-    rw [hyy']
+      by simp, fun _ _ ↦ Subsingleton.elim _ _, fun y _ ↦ ?_⟩
+    rw [Homeomorph.toOpenPartialHomeomorph_apply, ← Homeomorph.coe_prodUnique,
+      Homeomorph.apply_symm_apply]
 
 /-- The interval atlas is stratified by `TauCeti.unitIntervalStratum` in each thickening. -/
 @[simp]
