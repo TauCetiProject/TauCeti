@@ -40,9 +40,9 @@ theorem logLevelMin_def (m : ℕ) (meanLogWeight M D L : ℝ) :
     logLevelMin m meanLogWeight M D L =
       m * meanLogWeight + ((m : ℝ) - 1) * log (M * D / (2 * π)) - (15 / 2) * L := (rfl)
 
-/-- The lower endpoint is between `m * L` and `24 * m * L` when the mean log weight is in
-`[0,L]`, the auxiliary level is in `[exp(20L),exp(22L)]` and the root discriminant is in
-`[1,exp L]`. -/
+/-- The lower endpoint is between `m * L` and `24 * m * L` when `2 ≤ m`, `log (2 * π) ≤ L`,
+the mean log weight is in `[0,L]`, the auxiliary level is in `[exp(20L),exp(22L)]` and the
+root discriminant is in `[1,exp L]`. -/
 theorem logLevelMin_mem_Icc {m : ℕ} {w M D L : ℝ} (hm : 2 ≤ m) (hL : log (2 * π) ≤ L)
     (hw : w ∈ Icc 0 L) (hM : M ∈ Icc (exp (20 * L)) (exp (22 * L)))
     (hD : D ∈ Icc 1 (exp L)) : logLevelMin m w M D L ∈ Icc (m * L) (24 * m * L) := by
