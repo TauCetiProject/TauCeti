@@ -13,9 +13,9 @@ public import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.BigOperators.Ring.Finset
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.Algebra.Order.Group.Abs
 import Mathlib.Data.Finset.Max
 import Mathlib.Data.Fintype.EquivFin
-import Mathlib.Tactic.Linarith
 
 /-!
 # Weights of regular parameters
@@ -143,7 +143,7 @@ theorem columnHighestWeight_antitone (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) :
     Antitone (columnHighestWeight n κ e) := fun p q hpq ↦ by
   rw [columnHighestWeight_def, columnHighestWeight_def]
   exact add_le_add_right (sum_le_sum_of_subset_of_nonneg (Ioo_subset_Ioo_left hpq)
-    fun _ _ _ ↦ Nat.cast_nonneg _) e
+    fun _ _ _ ↦ Int.natCast_nonneg _) e
 
 /-- The doubled parameter `doubledHCParameter n κ e` is strictly decreasing in the position. -/
 theorem doubledHCParameter_strictAnti (n : ℕ) (κ : ℕ → ℕ) (e : ℤ) :
