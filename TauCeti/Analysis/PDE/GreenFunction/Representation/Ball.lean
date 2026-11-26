@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.GreenFunction.Representation.Basic
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.DirichletBall
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Analytic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ParametricIntegral
+import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.BallPotential
 import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Distribution
 import TauCeti.MeasureTheory.Integral.Kernel.Potential
 import TauCeti.Topology.Algebra.Support
@@ -62,7 +63,12 @@ extends to `L²(B)`.
 
 As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in `B` is
 `(1 - ‖x‖²) / (2n)`, so `∫_B G(x, y) dy = (1 - ‖x‖²) / (2n)` for almost every `x ∈ B`
-(`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is `(1 - ‖x‖²) / 6`.
+(`TauCeti.ae_setIntegral_ballGreenKernel_eq`); for `n = 3` this is `(1 - ‖x‖²) / 6`. The
+Newtonian potential of the ball is `1 / (n (n - 2)) + (1 - ‖x‖²) / (2n)` on the closed ball
+(`TauCeti.setIntegral_ball_newtonianKernel_sub_of_norm_sub_le`), constant on the sphere, so the
+harmonic correction of the torsion function is the constant `1 / (n (n - 2))`
+(`TauCeti.ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub`); in `ℝ³` the
+potential is `(3 - ‖x‖²) / 6` and the correction is `1 / 3`.
 
 ## Main declarations
 
@@ -83,6 +89,8 @@ As a check, the torsion function of the ball: the weak solution of `-Δu = 1` in
 * `TauCeti.PDE.IsWeakSolutionDirichlet.value_ae_eq_setIntegral_ballGreenKernel_mul`: the
   representation for data in `L²(B)`.
 * `TauCeti.ae_setIntegral_ballGreenKernel_eq`: the torsion function of the ball.
+* `TauCeti.ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub`: it is the Newtonian
+  potential of the ball minus the constant value of that potential on the sphere.
 
 ## References
 
@@ -353,5 +361,31 @@ theorem ae_setIntegral_ballGreenKernel_eq (hn : n ≠ 1) :
   refine integral_congr_ae ?_
   filter_upwards [h1.coeFn_toLp] with y hy
   rw [hy, mul_one]
+
+
+/-- **The harmonic correction of the torsion function is a constant.** Let `n ≠ 1`, so that the
+dimension `N = n + 1` is `1` or at least `3`. The Newtonian potential `v(x) = ∫_B Gₙ(x - y) dy` of
+the unit ball `B` of `ℝᴺ` takes the constant value `1 / (N (N - 2))` on the unit sphere
+(`TauCeti.setIntegral_ball_newtonianKernel_sub_of_norm_sub_le`), so the harmonic function with
+the boundary values of `v` is this constant, and the Green potential of the constant `1`, the
+solution of `-Δu = 1` in `B`, `u = 0` on the sphere, is `v` corrected by it:
+`∫_B G(x, y) dy = v(x) - 1 / (N (N - 2))` for almost every `x ∈ B`. In `ℝ³` (`n = 2`) this reads
+`(1 - ‖x‖²) / 6 = (3 - ‖x‖²) / 6 - 1 / 3`. -/
+theorem ae_setIntegral_ballGreenKernel_eq_setIntegral_newtonianKernel_sub (hn : n ≠ 1) :
+    ∀ᵐ x ∂(volume.restrict (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)),
+      ∫ y in ball 0 1, ballGreenKernel (n + 1) x y =
+        (∫ y in ball 0 1, newtonianKernel (n + 1) (x - y)) -
+          (((n : ℝ) + 1) * ((n : ℝ) + 1 - 2))⁻¹ := by
+  have hn' : (n : ℝ) + 1 - 2 ≠ 0 := by
+    have : (n : ℝ) ≠ 1 := by exact_mod_cast hn
+    contrapose this
+    linarith
+  filter_upwards [ae_setIntegral_ballGreenKernel_eq hn, ae_restrict_mem measurableSet_ball]
+    with x hx hxB
+  rw [hx, setIntegral_ball_newtonianKernel_sub_of_norm_sub_le (by omega)
+    (by simpa using (mem_ball_zero_iff.1 hxB).le), sub_zero]
+  push_cast
+  field_simp
+  ring
 
 end TauCeti
