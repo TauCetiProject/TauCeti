@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
@@ -630,9 +631,7 @@ is elliptic at some point, then `E` and `F` have the same rank: the principal sy
 covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
-  obtain ⟨η, hη⟩ := exists_ne (0 : CoordinateSpace n)
-  have hξ : (innerSL ℝ η : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) ≠ 0 := fun h ↦
-    hη (by simpa using DFunLike.congr_fun h η)
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
       (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
     ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
@@ -647,10 +646,7 @@ theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (Coordinate
     (hPx : IsSectionClassicalEllipticAt m P x) :
     P ∈ sectionClassicalPseudodifferentialOperators m ∨ (Subsingleton V ∧ Subsingleton W) := by
   refine or_iff_not_imp_left.2 fun hP ↦ ?_
-  obtain ⟨η, hη⟩ := exists_ne (0 : CoordinateSpace n)
-  have hη' : (innerSL ℝ η : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) ≠ 0 := fun h ↦
-    hη (by simpa using DFunLike.congr_fun h η)
-  obtain ⟨ξ, hξ⟩ : ∃ ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ, ξ ≠ 0 := ⟨_, hη'⟩
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
   rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
   -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
