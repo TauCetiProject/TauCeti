@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.Trace.Matrix
+public import TauCeti.Examples.Analysis.CStarAlgebra.TracePairing
 
 /-!
 # Checks for the matrix amplification of a trace
@@ -66,20 +67,20 @@ section Complex
 open scoped ComplexOrder
 
 /-- The identity trace of `ℂ`, `z ↦ Re z` on `ℂ₊ = [0, ∞)`: the trace of the identity of `ℂ` as a
-positive tracial functional. -/
+positive tracial functional (`TauCeti.TracePairingExample.idTrace`). -/
 noncomputable def complexTrace : ℂ → ℝ≥0∞ :=
-  (PositiveTracialFunctional.ofMapMulComm (PositiveContinuousLinearMap.id ℂ ℂ)
-    fun a b ↦ by simp [mul_comm]).toTrace
+  TracePairingExample.idTrace.toTrace
 
 /-- The value of the identity trace of `ℂ`. -/
 theorem complexTrace_apply (z : ℂ) : complexTrace z = ENNReal.ofReal z.re := by
-  simp [complexTrace, PositiveTracialFunctional.ofMapMulComm_apply]
+  simp [complexTrace, TracePairingExample.idTrace_apply]
 
 /-- For `τ = id` on `ℂ`, `τ_n` is the matrix trace on `M_n(ℂ)₊`. -/
 theorem matrixTrace_complexTrace_of_nonneg {n : Type*} [Fintype n] {x : CStarMatrix n n ℂ}
     (hx : 0 ≤ x) :
     matrixTrace complexTrace n x = ENNReal.ofReal (CStarMatrix.ofMatrix.symm x).trace.re := by
-  simp only [matrixTrace_apply, complexTrace_apply, Matrix.trace, Matrix.diag, Complex.re_sum]
+  simp only [matrixTrace_apply, complexTrace_apply, Matrix.trace, Matrix.diag,
+    CStarMatrix.ofMatrix_symm_apply, Complex.re_sum]
   exact (ENNReal.ofReal_sum_of_nonneg fun i _ ↦
     (Complex.nonneg_iff.1 (CStarMatrix.diag_nonneg_of_nonneg hx i)).1).symm
 

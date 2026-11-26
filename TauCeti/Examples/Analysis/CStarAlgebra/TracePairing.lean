@@ -26,6 +26,10 @@ namespace TauCeti.TracePairingExample
 noncomputable def idTrace : PositiveTracialFunctional ℂ :=
   .ofMapMulComm (PositiveContinuousLinearMap.id ℂ ℂ) fun a b ↦ by simp [mul_comm]
 
+/-- The identity trace of `ℂ` is the identity. -/
+theorem idTrace_apply (z : ℂ) : idTrace z = z := by
+  simp [idTrace]
+
 /-- The identity matrix of size `k` pairs to `k` with the identity trace on `ℂ`. -/
 theorem idTrace_kZeroPairing_of_mk_one (k : ℕ) :
     idTrace.kZeroPairing (GrothendieckAddGroup.of
