@@ -1256,8 +1256,7 @@ theorem compress_one_mul_star_self [DecidableEq n] {u : CStarMatrix n n ℂ} (hu
     compress (1 : CStarMatrix n n ℂ) u R * star (compress (1 : CStarMatrix n n ℂ) u R) =
       R * star R := by
   have h (k l : n) : ∑ t, star (u t k) * u t l = if k = l then 1 else 0 := by
-    simpa [mul_apply, star_apply, one_apply] using
-      congrFun (congrFun (congrArg ofMatrix.symm hu) k) l
+    simpa [mul_apply, star_apply, one_apply] using CStarMatrix.ext_iff.mpr hu k l
   ext i j
   simp only [mul_apply, star_apply, compress_one_apply u, star_sum, star_smul, star_star,
     Finset.sum_mul, Finset.mul_sum, smul_mul_smul_comm]
