@@ -44,7 +44,7 @@ of a critical submanifold of index `r`: the cohomology of the base, shifted up b
   (`nonempty_singularCohomology_sublevelPair_iso_singularCohomology_of_vectorBundleOrientation`).
 * For a non-orientable negative bundle and a ring in which `2 ≠ 0` the cohomology of the base must
   be twisted by the orientation local system `o(V)`: for every commutative ring `K` and every
-  injective `K`-module `N`, for instance `K = ℤ` and `N = ℚ`,
+  `K`-module `N`, for instance `K = N = ℤ`,
   `Hᵖ⁺ʳ(M_{c+ε}, M_{c-ε}; K, N) ≅ Hᵖ(B; o(V) ⊗ K, N)` with no orientation of `V`
   (`nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocalSystem`).
 
@@ -58,7 +58,7 @@ closed subset of the compact set `{x ∈ W | s x + 2 t x ≤ 2ε}`
 compact base (`TauCeti.thomEquivOfCompactSpace`), and so is its twisted form
 (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the namespace
 `TauCeti.VectorBundleOrientationCover`). The twisted form needs the base, the fibres and the ring in
-`Type`, and is computed with injective values only, through the universal coefficient theorem.
+`Type`.
 
 ## References
 
@@ -280,7 +280,7 @@ submanifold twisted by the orientation of the negative bundle.** Under the hypot
 negative disc bundle of the quadratic normal form `f = c - s + t` is parametrized by the disc
 bundle of a real vector bundle `V → B` of rank `r`, orientable or not, with orientation local
 system `o(V)` (`TauCeti.VectorBundleOrientationCover.signLocalSystem`), let `K` be a commutative
-ring and `N` an injective `K`-module, for instance `K = ℤ` and `N = ℚ`. Then
+ring and `N` a `K`-module, for instance `K = N = ℤ`. Then
 `Hᵖ⁺ʳ({f ≤ c + ε}, {f ≤ c - ε}; K, N) ≅ Hᵖ(B; o(V) ⊗ K, N)` in every degree `p`. -/
 theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocalSystem
     (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hW : IsOpen W) (hs : ContMDiffOn I 𝓘(ℝ) ∞ s W)
@@ -299,7 +299,7 @@ theorem nonempty_singularCohomology_sublevelPair_iso_twistedCohomology_signLocal
     (hgD : g '' gaugeDiscBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x ≤ ε})
     (hgS : g '' gaugeSphereBundle ρ = {x | x ∈ W ∧ t x = 0 ∧ s x = ε})
     {ι : Type} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F) (K : Type) [CommRing K]
-    (N : ModuleCat.{0} K) [Injective N] (p : ℕ) :
+    (N : ModuleCat.{0} K) (p : ℕ) :
     Nonempty ((sublevelPair f (a := c - ε) (b := c + ε) (by linarith)).singularCohomology
         (ModuleCat.of K K) K N (p + finrank ℝ F) ≅
       (VectorBundleOrientationCover.signLocalSystem F V K hι).twistedCohomology K N p) := by

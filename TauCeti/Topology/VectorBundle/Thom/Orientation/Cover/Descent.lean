@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Embedding.MapExtend
-public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Kronecker
+public import TauCeti.Algebra.Homology.Embedding.LinearYoneda
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Coordinates
 public import TauCeti.AlgebraicTopology.Singular.Twisted.QuotientCovering
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Quotient
@@ -39,19 +38,31 @@ is invertible the same groups are identified through the transfer instead
 transfer does not suffice, and the descent here is the argument of Milnor–Stasheff §12 and
 Spanier, Chapter 5, Section 7, at the level of equivariant chains.
 
-The isomorphism is composed of three identifications.
+The isomorphism is induced by a chain map `C(E, E₀; k) ⟶ C(B; o(E) ⊗ k)[r]`
+(`TauCeti.VectorBundleOrientationCover.thomPairTwistedChainMap`), composed of three pieces.
 
 * The equivariant cap product with `φ` is a quasi-isomorphism
   `C(E', E'₀; k) ⟶ (k_sign ⊗ C(B'; k))[r]` of complexes of representations of `ℤˣ`
-  (`TauCeti.quasiIso_singularChainsRepCap_thomPair`). The action on `B'` is free, so the target is
-  a complex of projective representations.
+  (`TauCeti.quasiIso_singularChainsRepCap_thomPair`). The actions on `E'` and `B'` are free, so both
+  are complexes of projective representations and it is a chain homotopy equivalence.
 * Taking coinvariants against the trivial representation, the source becomes the relative chains of
   `(E, E₀)` with coefficients in the local system associated to the trivial representation
-  (`TopPair.twistedHomologyIsoHomologyCoinvariantsTensorObj`), which is constant
-  (`IsQuotientCoveringMap.associatedLocalSystemTrivialIso`), so its homology is `Hₘ(E, E₀; k)`.
+  (`TopPair.coinvariantsTensorSingularChainsRepIsoTwisted`), which is constant
+  (`IsQuotientCoveringMap.associatedLocalSystemTrivialIso`), so it is `C(E, E₀; k)`.
 * The target becomes the sign coinvariants `(k_sign ⊗ C(B'; k))_{ℤˣ}`, placed `r` degrees higher,
   which are the chains of `B` with coefficients in `o(E)`
   (`TauCeti.VectorBundleOrientationCover.coinvariantsTensorSingularChainsRepIsoTwisted`).
+
+Coinvariants form an additive functor, so the chain map is a chain homotopy equivalence
+(`TauCeti.VectorBundleOrientationCover.homotopyEquivalences_thomPairTwistedChainMap`). Hence
+`Hom(-, N)` turns it into a cochain homotopy equivalence for every `k`-module `N`, which gives the
+Thom isomorphism in cohomology with values in `N`,
+
+`Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`
+
+(`TauCeti.VectorBundleOrientationCover.thomPairSingularCohomologyIsoTwistedCohomology`), with no
+hypothesis on `N`: over `ℤ` it holds with integral values, not only with values in an injective
+module such as `ℚ`, for which the universal coefficient theorem would suffice.
 
 Such cocycles come from classes of `(E, E₀)` with coefficients in the pulled-back orientation
 system `π^*o(E)`. The deck involution negates every lifted cochain on the nose
@@ -60,18 +71,19 @@ cocycle is semi-invariant
 (`TauCeti.VectorBundleOrientationCover.isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap`, in
 `TauCeti.Topology.VectorBundle.Thom.Orientation.TwistedLift`).
 Hence, whenever the lift of a class `U ∈ Hʳ(E, E₀; π^*o(E), k)` to `(E', E'₀)` is a Thom class of
-`E'`, `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` in every degree
-(`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology`).
+`E'`, `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` and `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every
+degree
+(`TauCeti.VectorBundleOrientationCover.nonempty_singularHomology_thomPair_iso_twistedHomology` and
+`TauCeti.VectorBundleOrientationCover.nonempty_singularCohomology_thomPair_iso_twistedCohomology`).
 The natural class `U` is the Thom class with coefficients in the orientation system
 (`TauCeti.twistedThomClass`, over a compact base), which takes the value `1` on the fibre class
 over every point. Its lift is a Thom class of `E'`
 (`isThomClass_thomPairSignCohomologyMap_twistedThomClass`), so over a compact base
 `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` holds for every bundle and every commutative ring `k`
 (`nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`, in the namespace
-`TauCeti.VectorBundleOrientationCover`). By the universal coefficient theorem it transposes to
-cohomology with values in any injective module
-(`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`, in the same
-namespace).
+`TauCeti.VectorBundleOrientationCover`), and so does `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for
+every `k`-module `N` (`nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`,
+in the same namespace).
 
 The base, the fibres and the ring lie in any common universe `w`, and the orientations are indexed
 by a type `ι : Type`, such as `Fin r`. Representations, their associated local systems and the
@@ -82,6 +94,9 @@ equivariant cap product need the acting group in the universe `w`, so `ℤˣ` ac
 
 In the namespace `TauCeti.VectorBundleOrientationCover`:
 
+* `thomPairTwistedChainMap`: the chain map `C(E, E₀; k) ⟶ C(B; o(E) ⊗ k)[r]` from a
+  semi-invariant cocycle of `E'`, and `homotopyEquivalences_thomPairTwistedChainMap`: it is a
+  chain homotopy equivalence when the cocycle represents a Thom class of `E'`.
 * `thomPairSingularHomologyIsoTwistedHomology`: `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` from a
   semi-invariant Thom cocycle of `E'`.
 * `thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass`: the same from a cocycle of
@@ -90,8 +105,13 @@ In the namespace `TauCeti.VectorBundleOrientationCover`:
   `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
 * `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`: over a compact base,
   `Hₚ₊ᵣ(E, E₀; k) ≅ Hₚ(B; o(E) ⊗ k)` for every bundle and every commutative ring `k`.
-* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: its transpose
-  `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in cohomology, for injective values `N`.
+* `thomPairSingularCohomologyIsoTwistedCohomology`: `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`
+  for every `k`-module `N`, from a semi-invariant Thom cocycle of `E'`, and
+  `nonempty_singularCohomology_thomPair_iso_twistedCohomology`: the same from a class of
+  `Hʳ(E, E₀; π^*o(E), k)` whose lift is a Thom class of `E'`.
+* `nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace`: over a compact
+  base, `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every bundle, every commutative ring `k` and
+  every `k`-module `N`.
 
 ## References
 
@@ -147,6 +167,89 @@ local instance : ContinuousConstSMul ℤˣ
 /-! ### Descent of the equivariant Thom isomorphism -/
 
 variable (F E) in
+/-- **The chain-level Thom map with coefficients in the orientation system.** Let `E → B` be a real
+vector bundle of rank `r`, `B'` its orientation double cover, `E'` the pull-back of `E` to `B'`
+and `k` a commutative ring. A relative cocycle `φ` of degree `r` of `(E', E'₀)` which the deck
+involution negates (`TopPair.IsSemiInvariantCocycle` for the sign character) gives a chain map
+`C(E, E₀; k) ⟶ C(B; o(E) ⊗ k)[r]` from the relative singular chains of the Thom pair to the chains
+of `B` with coefficients in the orientation local system `o(E)`, placed `r` degrees higher. It is
+the sign coinvariants of the equivariant cap product with `φ`
+(`TopPair.singularChainsRepCap`), read through the identifications of the coinvariants of the
+chains of `(E', E'₀)` with the relative chains of `(E, E₀)` and of the sign coinvariants of the
+chains of `B'` with the orientation-twisted chains of `B`. When the class of `φ` is a Thom class of
+`E'` it is a chain homotopy equivalence (`homotopyEquivalences_thomPairTwistedChainMap`). -/
+def thomPairTwistedChainMap
+    {φ : (TopPair.singularCochainComplex
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+      (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ) :
+    (thomPair F E).singularChainComplex (ModuleCat.of k k) ⟶
+      (twistedChainComplex (signLocalSystem F E k hι)).extend
+        (ComplexShape.embeddingDownNatAdd (finrank ℝ F)) :=
+  haveI := (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.{w}.toContinuousConstSMul
+  haveI := (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift.{w}.toContinuousConstSMul
+  ((thomPair F E).twistedChainComplexConstantIso (ModuleCat.of k k)).inv ≫
+    ((thomPair F E).twistedChainComplexCoefficientIso
+      ((isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.associatedLocalSystemTrivialIso
+        k k)).inv ≫
+    ((thomPair F _).coinvariantsTensorSingularChainsRepIsoTwisted k
+      (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift
+      (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift (fun _ ↦ thomPair_map_smul _)
+      (Rep.trivial k (ULift.{w} ℤˣ) k)).inv ≫
+    (((Rep.coinvariantsTensor k (ULift.{w} ℤˣ)).obj
+      (Rep.trivial k (ULift.{w} ℤˣ) k)).mapHomologicalComplex _).map (TopPair.singularChainsRepCap
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ
+        (fun _ ↦ thomPair_map_smul _)) ≫
+    (HomologicalComplex.mapExtendIso _ _ _).hom ≫
+    ((ComplexShape.embeddingDownNatAdd (finrank ℝ F)).extendFunctor _).map
+      ((NatIso.mapHomologicalComplex (Rep.tensorLeftCompCoinvariantsTensorTrivialIso _ ≪≫
+        (Rep.coinvariantsTensor k (ULift.{w} ℤˣ)).mapIso
+          (Rep.mkIso (Representation.ofLinearCharacterEquivOfDistribMulAction
+            (uliftIntUnitsSign k) fun _ _ ↦ by simp [Units.smul_def]))) _).app _ ≪≫
+        coinvariantsTensorSingularChainsRepIsoTwisted hι k).hom
+
+variable (F E) in
+/-- **The chain-level Thom map is a chain homotopy equivalence.** If the class of the
+semi-invariant cocycle `φ` is a Thom class of the pull-back `E'` of `E` to the orientation double
+cover, the chain map `C(E, E₀; k) ⟶ C(B; o(E) ⊗ k)[r]` of `thomPairTwistedChainMap` is a chain
+homotopy equivalence, over every commutative ring `k`. The equivariant cap product with `φ` is a
+quasi-isomorphism of complexes of projective representations of `ℤˣ`
+(`TauCeti.quasiIso_singularChainsRepCap_thomPair`), hence a chain homotopy equivalence, which the
+additive functor of sign coinvariants preserves. -/
+theorem homotopyEquivalences_thomPairTwistedChainMap
+    {φ : (TopPair.singularCochainComplex
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+      (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ)
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      ((TopPair.singularCochainComplex
+        (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+        (ModuleCat.of k k) k (ModuleCat.of k k)).homologyπ (finrank ℝ F) φ)) :
+    HomologicalComplex.homotopyEquivalences _ _ (thomPairTwistedChainMap F E hι k hφ) := by
+  have := (isQuotientCoveringMap_proj (F := F) (E := E) hι).ulift.{w}.isCancelSMul
+  have := (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.{w}.toContinuousConstSMul
+  have := (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift.{w}.toContinuousConstSMul
+  have := (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.{w}.isCancelSMul
+  have := quasiIso_singularChainsRepCap_thomPair (F := F)
+    (E := (projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (G := ULift.{w} ℤˣ)
+    (B := VectorBundleOrientationCover F E ι) (fun _ ↦ thomPair_map_smul _)
+    (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ hu
+  -- every factor but the coinvariants of the cap product is an isomorphism, and that factor is the
+  -- image of a chain homotopy equivalence between complexes of projective representations
+  refine MorphismProperty.comp_mem _ _ _ (.of_isIso _) <| MorphismProperty.comp_mem _ _ _
+    (.of_isIso _) <| MorphismProperty.comp_mem _ _ _ (.of_isIso _) <|
+      MorphismProperty.comp_mem _ _ _ ?_ <| MorphismProperty.comp_mem _ _ _ (.of_isIso _)
+        (.of_isIso _)
+  have : ∀ n, Projective ((TopPair.singularChainsRep
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)) k
+      (ULift.{w} ℤˣ) (fun _ ↦ thomPair_map_smul _)).X n) :=
+    fun n ↦ TopPair.projective_singularChainsRep_X _ k _ _ n
+  exact Functor.homotopyEquivalences_mapHomologicalComplex_map _ _
+    ((ChainComplex.quasiIso_iff_of_projective _).1 ‹_›)
+
+
+variable (F E) in
 /-- **The Thom isomorphism with coefficients in the orientation system, from a semi-invariant Thom
 cocycle on the orientation cover.** Let `E → B` be a real vector bundle of rank `r`, `B'` its
 orientation double cover and `E'` the pull-back of `E` to `B'`, and let `k` be a commutative ring.
@@ -167,37 +270,41 @@ def thomPairSingularHomologyIsoTwistedHomology
     (p : ℕ) :
     (thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p :=
-  haveI := (isQuotientCoveringMap_proj (F := F) (E := E) hι).ulift.{w}.isCancelSMul
-  -- `ℤˣ` acts through its copy `ULift ℤˣ` in the universe of the spaces, as representations and
-  -- associated local systems require.
-  haveI := quasiIso_singularChainsRepCap_thomPair (F := F)
-    (E := (projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E) (G := ULift.{w} ℤˣ)
-    (B := VectorBundleOrientationCover F E ι) (fun _ ↦ thomPair_map_smul _)
-    (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ hu
-  ((thomPair F E).twistedHomologyConstantIso (ModuleCat.of k k) _).symm ≪≫
-    (HomologicalComplex.homologyFunctor _ _ _).mapIso
-      ((thomPair F E).twistedChainComplexCoefficientIso
-        ((isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift.associatedLocalSystemTrivialIso
-          k k)).symm ≪≫
-    (thomPair F _).twistedHomologyIsoHomologyCoinvariantsTensorObj k
-      (isQuotientCoveringMap_coverThomPairMap_fst F E ι hι).ulift
-      (isQuotientCoveringMap_coverThomPairMap_snd F E ι hι).ulift (fun _ ↦ thomPair_map_smul _)
-      -- the pair and `p₀` are explicit so that the cap map is the one of the instance above:
-      -- `thomPairProj_smul` reads the zeros of the fibres through `pullbackFiberZero` instead
-      (Rep.trivial k (ULift.{w} ℤˣ) k) (TopPair.singularChainsRepCap
+  haveI : QuasiIso (thomPairTwistedChainMap F E hι k hφ) :=
+    homotopyEquivalences_le_quasiIso _ _ _
+      (homotopyEquivalences_thomPairTwistedChainMap F E hι k hφ hu)
+  asIso (HomologicalComplex.homologyMap (thomPairTwistedChainMap F E hι k hφ) (p + finrank ℝ F)) ≪≫
+    HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingDownNatAdd_f _ p)
+
+variable (F E) in
+/-- **The Thom isomorphism in cohomology with coefficients in the orientation system, from a
+semi-invariant Thom cocycle on the orientation cover.** Let `E → B` be a real vector bundle of rank
+`r`, `E'` its pull-back to the orientation double cover and `k` a commutative ring. A relative
+cocycle `φ` of degree `r` of `(E', E'₀)` which the deck involution negates and whose class is a
+Thom class of `E'` gives `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` for every `k`-module `N`, with
+coefficients in the orientation local system `o(E)`. The chain map `thomPairTwistedChainMap` is a
+chain homotopy equivalence, and `Hom(-, N)` preserves chain homotopy equivalences, so no hypothesis
+on `N` is needed. -/
+def thomPairSingularCohomologyIsoTwistedCohomology
+    {φ : (TopPair.singularCochainComplex
+      (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
+      (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (finrank ℝ F)}
+    (hφ : TopPair.IsSemiInvariantCocycle (uliftIntUnitsSign.{w} k) φ)
+    (hu : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      ((TopPair.singularCochainComplex
         (thomPair F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E))
-        (p₀ := thomPairProj F _) (fun _ ↦ thomPairProj_smul _) (uliftIntUnitsSign k) hφ
-        (fun _ ↦ thomPair_map_smul _))
-      (p + finrank ℝ F) ≪≫
-    (HomologicalComplex.homologyFunctor _ _ _).mapIso (HomologicalComplex.mapExtendIso _ _ _) ≪≫
-    HomologicalComplex.extendHomologyIso _ _ (ComplexShape.embeddingDownNatAdd_f _ p) ≪≫
-    (HomologicalComplex.homologyFunctor _ _ p).mapIso
-      ((NatIso.mapHomologicalComplex (Rep.tensorLeftCompCoinvariantsTensorTrivialIso _ ≪≫
-        (Rep.coinvariantsTensor k (ULift.{w} ℤˣ)).mapIso
-          (Rep.mkIso (Representation.ofLinearCharacterEquivOfDistribMulAction
-            (uliftIntUnitsSign k) fun _ _ ↦ by simp [Units.smul_def]))) _).app _) ≪≫
-    (HomologicalComplex.homologyFunctor _ _ p).mapIso
-      (coinvariantsTensorSingularChainsRepIsoTwisted hι k)
+        (ModuleCat.of k k) k (ModuleCat.of k k)).homologyπ (finrank ℝ F) φ))
+    (N : ModuleCat.{w} k) (p : ℕ) :
+    (thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
+      (signLocalSystem F E k hι).twistedCohomology k N p :=
+  haveI : QuasiIso ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
+      (thomPairTwistedChainMap F E hι k hφ).op) :=
+    homotopyEquivalences_le_quasiIso _ _ _
+      (TauCeti.ChainComplex.homotopyEquivalences_linearYonedaFunctor_map k N
+        (homotopyEquivalences_thomPairTwistedChainMap F E hι k hφ hu))
+  (asIso (HomologicalComplex.homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k N).map
+      (thomPairTwistedChainMap F E hι k hφ).op) (p + finrank ℝ F))).symm ≪≫
+    ChainComplex.linearYonedaObjExtendHomologyIso N _ (finrank ℝ F) p
 
 variable (F E) in
 /-- **The Thom isomorphism with orientation-twisted coefficients over every ring, from a lifted
@@ -259,24 +366,42 @@ theorem nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace [
   exact nonempty_singularHomology_thomPair_iso_twistedHomology hι k _
     (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) p
 
+/-- **The Thom isomorphism in cohomology with coefficients in the orientation system, from a
+twisted class whose lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'`
+its pull-back to the orientation double cover and `k` a commutative ring. If the lift to
+`(E', E'₀)` (`TauCeti.VectorBundleOrientationCover.thomPairSignCohomologyMap`) of a class
+`U ∈ Hʳ(E, E₀; π^*o(E), k)` is a Thom class of `E'`, then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)`
+for every `k`-module `N` and every degree `p`: `thomPairSingularCohomologyIsoTwistedCohomology`
+applies to the lift of any cocycle representing `U`. -/
+theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology
+    (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
+      (finrank ℝ F))
+    (hU : IsThomClass F ((projection : C(VectorBundleOrientationCover F E ι, B)) *ᵖ E)
+      (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U))
+    (N : ModuleCat.{w} k) (p : ℕ) :
+    Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
+      (signLocalSystem F E k hι).twistedCohomology k N p) := by
+  obtain ⟨ψ, rfl⟩ := (ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U
+  exact ⟨thomPairSingularCohomologyIsoTwistedCohomology F E hι k
+    (isSemiInvariantCocycle_cyclesMap_thomPairSignCochainMap hι k ψ)
+    (isThomClass_homologyπ_cyclesMap_thomPairSignCochainMap hι k hU) N p⟩
+
 variable (F E) in
 /-- **The Thom isomorphism in cohomology with orientation-twisted coefficients over a compact
 base.** Let `E → B` be a real vector bundle of rank `r` over a compact base, orientable or not, with
-orientation local system `o(E)`, let `k` be any commutative ring and `N` an injective `k`-module,
-for instance `k = ℤ` and `N = ℚ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`.
-
-It is the transpose of `nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace`:
-with injective values both cohomologies are the duals `Hom(-, N)` of the corresponding homologies,
-by the universal coefficient theorem (`TopPair.singularKronecker_bijective` and
-`TauCeti.LocalCoefficientSystem.twistedKronecker_bijective`). -/
+orientation local system `o(E)`, let `k` be any commutative ring and `N` any `k`-module, for
+instance `k = N = ℤ`. Then `Hᵖ⁺ʳ(E, E₀; k, N) ≅ Hᵖ(B; o(E) ⊗ k, N)` in every degree `p`. -/
 theorem nonempty_singularCohomology_thomPair_iso_twistedCohomology_of_compactSpace
-    [CompactSpace B] (N : ModuleCat.{w} k) [Injective N] (p : ℕ) :
+    [CompactSpace B] (N : ModuleCat.{w} k) (p : ℕ) :
     Nonempty ((thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p) := by
-  obtain ⟨e⟩ := nonempty_singularHomology_thomPair_iso_twistedHomology_of_compactSpace
-    (F := F) (E := E) hι k p
-  exact ⟨((LinearEquiv.ofBijective _ ((thomPair F E).singularKronecker_bijective k _)).trans
-    ((Linear.homCongr k e (Iso.refl N)).trans
-      ((signLocalSystem F E k hι).twistedKroneckerEquiv k p).symm)).toModuleIso⟩
+  classical
+  -- As in homology, the lift of the Thom class with coefficients in the orientation system is a
+  -- Thom class of the pull-back to the orientation cover.
+  let ω : Orientation ℝ F ι :=
+    ((Module.finBasis ℝ F).reindex (Fintype.equivFinOfCardEq hι).symm).orientation
+  exact nonempty_singularCohomology_thomPair_iso_twistedCohomology hι k _
+    (isThomClass_thomPairSignCohomologyMap_twistedThomClass hι ω) N p
 
 end TauCeti.VectorBundleOrientationCover
