@@ -231,7 +231,8 @@ theorem IsSl2TripleOrZero.smul_of_mem_intLieAlgebra {K L : Type*} [CommRing K] [
     [LieAlgebra K L] [LieAlgebra ℚ L] {g : LinearMap.GeneralLinearGroup K L}
     (hg : g ∈ intLieAlgebra K L) {h e f : L} (t : IsSl2TripleOrZero h e f) :
     IsSl2TripleOrZero (g • h) (g • e) (g • f) := by
-  simpa using (intLieAlgebraLieEquiv ⟨g, hg⟩).isSl2TripleOrZero_apply_iff.mpr t
+  simpa only [LieEquiv.coe_toLieHom, intLieAlgebraLieEquiv_apply] using
+    t.map (intLieAlgebraLieEquiv ⟨g, hg⟩).toLieHom
 
 /-- For `i ≠ j`, the matrix units `Eᵢᵢ - Eⱼⱼ`, `Eᵢⱼ`, `Eⱼᵢ` form a zero-inclusive `sl₂` triple in
 `sl n R`, over every commutative ring: over a nontrivial ring this is

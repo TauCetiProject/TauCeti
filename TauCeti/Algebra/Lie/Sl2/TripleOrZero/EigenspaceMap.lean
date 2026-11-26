@@ -22,7 +22,8 @@ because `h = e = f = 0`: then `M = M_0`, every other eigenspace vanishes, and `e
 zero.
 
 Specialised to integer weights `j`, `e` maps `M_j` onto `M_(j + 2)` for `j ≥ -1` and injectively
-for `j ≤ -1`, and in the adjoint grading `⁅e, L(0)⁆ = L(2)`. These are the statements about the
+for `j ≤ -1`, dually `f` maps `M_j` onto `M_(j - 2)` for `j ≤ 1` and injectively for `j ≥ 1`,
+and in the adjoint grading `⁅e, L(0)⁆ = L(2)`. These are the statements about the
 grading of a triple used in comparing two triples with the same neutral element: the lowering
 element is determined by the other two, and the raising element is reached from any other choice
 by the centraliser of `h`, whose orbit map at `e` has differential `x ↦ ⁅x, e⁆` from `L(0)` onto
@@ -42,6 +43,9 @@ by the centraliser of `h`, whose orbit map at `e` has differential `x ↦ ⁅x, 
 * `TauCeti.IsSl2TripleOrZero.map_toEnd_e_eigenspace_intCast` and
   `TauCeti.IsSl2TripleOrZero.disjoint_ker_toEnd_e_eigenspace_intCast`: at integer weights, `e`
   maps `M_j` onto `M_(j + 2)` for `j ≥ -1`, and injectively for `j ≤ -1`.
+* `TauCeti.IsSl2TripleOrZero.map_toEnd_f_eigenspace_intCast` and
+  `TauCeti.IsSl2TripleOrZero.disjoint_ker_toEnd_f_eigenspace_intCast`: dually, `f` maps `M_j`
+  onto `M_(j - 2)` for `j ≤ 1`, and injectively for `j ≥ 1`.
 * `TauCeti.IsSl2TripleOrZero.map_ad_e_eigenspace_zero`: `⁅e, L(0)⁆ = L(2)` in the adjoint
   grading.
 
@@ -93,6 +97,14 @@ theorem disjoint_ker_toEnd_e_eigenspace_intCast (t : IsSl2TripleOrZero h e f) {j
     (hj : j ≤ -1) : Disjoint (LinearMap.ker (toEnd K L M e)) ((toEnd K L M h).eigenspace (j : K)) :=
   t.disjoint_ker_toEnd_e_eigenspace fun n hn ↦ by
     have : j = n := by exact_mod_cast hn
+    omega
+
+/-- **Injectivity of the lowering operator at positive integer weights.** For `1 ≤ j`, `f` is
+injective on the eigenspace of `h` at `j`. -/
+theorem disjoint_ker_toEnd_f_eigenspace_intCast (t : IsSl2TripleOrZero h e f) {j : ℤ}
+    (hj : 1 ≤ j) : Disjoint (LinearMap.ker (toEnd K L M f)) ((toEnd K L M h).eigenspace (j : K)) :=
+  t.disjoint_ker_toEnd_f_eigenspace fun n hn ↦ by
+    rw [← Int.cast_natCast, ← Int.cast_neg, Int.cast_inj] at hn
     omega
 
 end Domain
@@ -159,6 +171,16 @@ theorem map_toEnd_e_eigenspace_intCast (t : IsSl2TripleOrZero h e f) {j : ℤ} (
   rw [Int.cast_add, Int.cast_ofNat]
   refine t.map_toEnd_e_eigenspace fun n hn ↦ ?_
   have : j + 2 = -n := by exact_mod_cast hn
+  omega
+
+/-- **Surjectivity of the lowering operator at integer weights `j ≤ 1`.** For `j ≤ 1`, `f` maps
+the eigenspace of `h` at `j` onto the eigenspace at `j - 2`. -/
+theorem map_toEnd_f_eigenspace_intCast (t : IsSl2TripleOrZero h e f) {j : ℤ} (hj : j ≤ 1) :
+    ((toEnd K L M h).eigenspace (j : K)).map (toEnd K L M f) =
+      (toEnd K L M h).eigenspace ((j - 2 : ℤ) : K) := by
+  rw [Int.cast_sub, Int.cast_ofNat]
+  refine t.map_toEnd_f_eigenspace fun n hn ↦ ?_
+  have : j - 2 = n := by exact_mod_cast hn
   omega
 
 variable [FiniteDimensional K L]
