@@ -195,7 +195,11 @@ namespace TauCeti
 variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
 
 /-- In a commutative group the conjugacy class of `g` is `{g}`, so its class sum, as an element of
-the center, is `g`. -/
+the center, is `g`.
+
+Its simp priority is low so that `classSumCenter_mk_one` still rewrites the class of `1`
+to `1`, rather than to `toCenter (of k G 1)`, which simp leaves as `single 1 1`. -/
+@[simp low]
 theorem classSumCenter_mk_of_commGroup (g : G) :
     classSumCenter (k := k) (ConjClasses.mk g) =
       MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) := by
