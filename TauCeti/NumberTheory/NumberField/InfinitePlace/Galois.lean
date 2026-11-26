@@ -27,22 +27,7 @@ open MulAction
 
 namespace NumberField.InfinitePlace
 
-variable {K L : Type*} [Field K] [Field L] [Algebra K L]
-
-/-- Two complex embeddings over a common restriction agree if they induce the same infinite
-place and that place is unramified over the base. -/
-theorem mk_eq_mk_iff_of_isUnramified {φ ψ : L →+* ℂ}
-    (h : φ.comp (algebraMap K L) = ψ.comp (algebraMap K L))
-    (hφ : (mk φ).IsUnramified K) : mk φ = mk ψ ↔ φ = ψ := by
-  refine ⟨fun he ↦ ?_, congrArg mk⟩
-  rcases mk_eq_iff.mp he with he | hc
-  · exact he
-  have hr : ComplexEmbedding.IsReal (φ.comp (algebraMap K L)) := by
-    rw [ComplexEmbedding.isReal_iff, ← ComplexEmbedding.conjugate_comp, hc, h]
-  have hφreal := (isUnramified_mk_iff_isUnmixed.mp hφ) hr
-  exact (ComplexEmbedding.isReal_iff.mp hφreal).symm.trans hc
-
-variable [IsGalois K L]
+variable {K L : Type*} [Field K] [Field L] [Algebra K L] [IsGalois K L]
 
 /-- The places with the same restriction as an unramified infinite place `w` are parametrized
 by the Galois group via the inverse action on `w`. -/
