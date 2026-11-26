@@ -72,6 +72,13 @@ square sum `∑_{i ≤ k} (hⁱ ‖Dⁱ f‖₂)²` lies between `hⁿ ‖f‖_{
 `‖φ‖_{k,h} ≤ C ‖u‖_{k,h}` gives one between square sums with the constant `(k + 1) C²`
 (`TauCeti.sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le`).
 
+**The scaled jet.** For `h > 0` and `f` with square-integrable derivatives through order `k`, the
+squared norm is comparable, with constant `k + 1` in both directions, to
+`h⁻ⁿ ∫ (∑_{i ≤ k} hⁱ ‖Dⁱ f (y)‖)² dy`, the integral of the square of the pointwise scaled jet
+(`TauCeti.sq_semiclassicalSobolevNorm_le_integral`,
+`TauCeti.integral_le_sq_semiclassicalSobolevNorm`), so pointwise estimates of the scaled jet
+integrate to estimates of the norm.
+
 The norms at different scales compare as follows. A derivative costs one factor of `h`:
 `h ‖Df‖_{k,h} ≤ ‖f‖_{k+1,h}` (`TauCeti.mul_semiclassicalSobolevNorm_fderiv_le`). For `0 < h ≤ 1`
 the semiclassical and unscaled norms satisfy
@@ -422,6 +429,84 @@ theorem sum_sq_le_mul_sum_sq_of_semiclassicalSobolevNorm_le {G : Type*} [NormedA
           (h ^ j * lpNorm (iteratedFDeriv ℝ j u) 2 volume) ^ 2) :=
         mul_le_mul_of_nonneg_left (rpow_mul_semiclassicalSobolevNorm_sq_le k hh u) (sq_nonneg C)
     _ = _ := by ring
+
+/-! ### The squared norm and the scaled jet -/
+
+/-- The square of the semiclassical norm, `‖g‖²_{k,h} = h⁻ⁿ (∑_{i ≤ k} hⁱ ‖Dⁱ g‖₂)²`. -/
+theorem sq_semiclassicalSobolevNorm {k : ℕ} {h : ℝ} (hh : 0 ≤ h) (g : E → F) :
+    semiclassicalSobolevNorm k h g ^ 2 = h ^ (-(finrank ℝ E : ℝ)) *
+      (∑ i ∈ Finset.range (k + 1), h ^ i * lpNorm (iteratedFDeriv ℝ i g) 2 volume) ^ 2 := by
+  rw [semiclassicalSobolevNorm_def, mul_pow, ← Real.rpow_natCast, ← Real.rpow_mul hh]
+  norm_num
+
+/-- The square of a weighted `L²` norm of a derivative is the integral of the square of the
+weighted pointwise norm. -/
+private theorem sq_pow_mul_lpNorm_iteratedFDeriv {g : E → F} {i : ℕ}
+    (hm : MemLp (iteratedFDeriv ℝ i g) 2) (h : ℝ) :
+    (h ^ i * lpNorm (iteratedFDeriv ℝ i g) 2 volume) ^ 2 =
+      ∫ y, (h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2 := by
+  rw [mul_pow, lpNorm_two_sq_eq_integral_norm_sq hm.aestronglyMeasurable, ← integral_const_mul]
+  simp only [mul_pow]
+
+/-- The weighted pointwise norm of a square-integrable derivative is square integrable. -/
+private theorem integrable_sq_pow_mul_norm_iteratedFDeriv {g : E → F} {i : ℕ}
+    (hm : MemLp (iteratedFDeriv ℝ i g) 2) (h : ℝ) :
+    Integrable fun y ↦ (h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2 :=
+  (hm.norm.const_mul (h ^ i)).integrable_sq
+
+/-- The square of the scaled jet `y ↦ ∑_{i ≤ k} hⁱ ‖Dⁱ g y‖` of a function with square-integrable
+derivatives through order `k` is integrable. -/
+theorem integrable_sq_sum_pow_mul_norm_iteratedFDeriv {k : ℕ} {g : E → F}
+    (hm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (h : ℝ) :
+    Integrable fun y ↦ (∑ i ∈ Finset.range (k + 1), h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2 :=
+  (memLp_finsetSum _ fun i hi ↦
+    ((hm i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).norm.const_mul (h ^ i))).integrable_sq
+
+/-- **The norm from the scaled jet.** For `g` with square-integrable derivatives through order `k`
+and `h ≥ 0`, the squared semiclassical norm is at most `k + 1` times `h⁻ⁿ` times the integral of
+the square of the scaled jet `y ↦ ∑_{i ≤ k} hⁱ ‖Dⁱ g y‖`. -/
+theorem sq_semiclassicalSobolevNorm_le_integral {k : ℕ} {h : ℝ} {g : E → F}
+    (hm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (hh : 0 ≤ h) :
+    semiclassicalSobolevNorm k h g ^ 2 ≤ (k + 1) * (h ^ (-(finrank ℝ E : ℝ)) *
+      ∫ y, (∑ i ∈ Finset.range (k + 1), h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2) := by
+  have hm' (i) (hi : i ∈ Finset.range (k + 1)) := hm i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+  rw [sq_semiclassicalSobolevNorm hh, mul_left_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
+  refine (sq_sum_le_card_mul_sum_sq (s := Finset.range (k + 1))).trans ?_
+  rw [Finset.card_range, Nat.cast_add_one]
+  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
+  rw [Finset.sum_congr rfl fun i hi ↦ sq_pow_mul_lpNorm_iteratedFDeriv (hm' i hi) h,
+    ← integral_finsetSum _ fun i hi ↦ integrable_sq_pow_mul_norm_iteratedFDeriv (hm' i hi) h]
+  exact integral_mono (integrable_finsetSum _ fun i hi ↦
+    integrable_sq_pow_mul_norm_iteratedFDeriv (hm' i hi) h)
+    (integrable_sq_sum_pow_mul_norm_iteratedFDeriv hm h)
+    fun y ↦ Finset.sum_sq_le_sq_sum_of_nonneg fun i _ ↦ by positivity
+
+/-- **The scaled jet from the norm.** For `g` with square-integrable derivatives through order `k`
+and `h ≥ 0`, `h⁻ⁿ` times the integral of the square of the scaled jet
+`y ↦ ∑_{i ≤ k} hⁱ ‖Dⁱ g y‖` is at most `k + 1` times the squared semiclassical norm. -/
+theorem integral_le_sq_semiclassicalSobolevNorm {k : ℕ} {h : ℝ} {g : E → F}
+    (hm : ∀ i ≤ k, MemLp (iteratedFDeriv ℝ i g) 2) (hh : 0 ≤ h) :
+    h ^ (-(finrank ℝ E : ℝ)) *
+        ∫ y, (∑ i ∈ Finset.range (k + 1), h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2 ≤
+      (k + 1) * semiclassicalSobolevNorm k h g ^ 2 := by
+  have hm' (i) (hi : i ∈ Finset.range (k + 1)) := hm i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
+  rw [sq_semiclassicalSobolevNorm hh, mul_left_comm]
+  refine mul_le_mul_of_nonneg_left ?_ (Real.rpow_nonneg hh _)
+  calc ∫ y, (∑ i ∈ Finset.range (k + 1), h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2
+      ≤ ∫ y, (k + 1 : ℝ) * ∑ i ∈ Finset.range (k + 1), (h ^ i * ‖iteratedFDeriv ℝ i g y‖) ^ 2 := by
+        refine integral_mono (integrable_sq_sum_pow_mul_norm_iteratedFDeriv hm h)
+          ((integrable_finsetSum _ fun i hi ↦
+            integrable_sq_pow_mul_norm_iteratedFDeriv (hm' i hi) h).const_mul _) fun y ↦ ?_
+        simpa using sq_sum_le_card_mul_sum_sq (s := Finset.range (k + 1))
+          (f := fun i ↦ h ^ i * ‖iteratedFDeriv ℝ i g y‖)
+    _ = (k + 1) * ∑ i ∈ Finset.range (k + 1),
+          (h ^ i * lpNorm (iteratedFDeriv ℝ i g) 2 volume) ^ 2 := by
+        rw [integral_const_mul, integral_finsetSum _ fun i hi ↦
+          integrable_sq_pow_mul_norm_iteratedFDeriv (hm' i hi) h,
+          Finset.sum_congr rfl fun i hi ↦ sq_pow_mul_lpNorm_iteratedFDeriv (hm' i hi) h]
+    _ ≤ _ := mul_le_mul_of_nonneg_left (Finset.sum_sq_le_sq_sum_of_nonneg fun i _ ↦
+          mul_nonneg (pow_nonneg hh i) lpNorm_nonneg) (by positivity)
 
 /-! ### Multipliers with semiclassical `Cᵏ` bounds -/
 
