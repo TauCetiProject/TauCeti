@@ -59,8 +59,8 @@ maps valued in an arbitrary module.
 * `LinearMap.BilinForm.IsRefl.compl₁₂`: pullback preserves reflexivity.
 * `LinearMap.BilinForm.IsSymm.compl₁₂`: pullback preserves symmetry.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
-* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a free module every alternating form is
-  `B - B.flip` for some form `B`, in every characteristic.
+* `LinearMap.BilinForm.IsAlt.exists_sub_flip_eq`: on a projective module every alternating form
+  is `B - B.flip` for some form `B`, in every characteristic.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
   torsion-free values sees each argument only modulo elements of finite additive order.
@@ -226,11 +226,10 @@ end LinearMap.BilinForm.IsSymm
 
 namespace LinearMap.BilinForm.IsAlt
 
-/-- **Every alternating form on a free module is `B - B.flip` for some form `B`**, in every
-characteristic and in any rank: order a basis and take for `B` the strictly upper triangular part
-of the alternating form in that basis. -/
-theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
-    [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+/-- On a free module, an alternating form is `B - B.flip` for the strictly upper triangular part
+`B` of the form with respect to a well-ordered basis. -/
+private theorem exists_sub_flip_eq_of_free {R M : Type*} [CommRing R] [AddCommMonoid M]
+    [Module R M] [Module.Free R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
     ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
   classical
   let b := Module.Free.chooseBasis R M
@@ -249,6 +248,20 @@ theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module 
     simp only [map_add, LinearMap.add_apply, hA.self_eq_zero, zero_add, add_zero] at h0
     simp only [h, h.not_gt, ↓reduceIte, zero_sub]
     linear_combination -h0
+
+/-- **Every alternating form on a projective module is `B - B.flip` for some form `B`**, in every
+characteristic and in any rank. -/
+theorem exists_sub_flip_eq {R M : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Module.Projective R M] {A : LinearMap.BilinForm R M} (hA : A.IsAlt) :
+    ∃ B : LinearMap.BilinForm R M, B - B.flip = A := by
+  -- `M` is a retract `M → (M →₀ R) → M` of a free module, where the strictly upper triangular
+  -- part of the pulled-back form in a well-ordered basis works.
+  obtain ⟨s, hs⟩ := (Module.projective_def' (R := R) (P := M)).mp ‹_›
+  let π := Finsupp.linearCombination R (_root_.id : M → M)
+  obtain ⟨B, hB⟩ := exists_sub_flip_eq_of_free (A := A.compl₁₂ π π) fun z => hA (π z)
+  refine ⟨B.compl₁₂ s s, LinearMap.ext₂ fun x y => ?_⟩
+  have hπ (x : M) : π (s x) = x := LinearMap.congr_fun hs x
+  simpa [hπ] using LinearMap.congr_fun₂ hB (s x) (s y)
 
 end LinearMap.BilinForm.IsAlt
 
