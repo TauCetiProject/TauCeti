@@ -459,8 +459,9 @@ private theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
           (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 η (TauCeti.Complex.realChart (·⁻¹) ζ) := by
   have h := ω.floerLinearizationAdjoint_perturbationPullback (J := fun _ _ ↦ J₀)
     (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) (u := 0) (TauCeti.Complex.contDiffAt_realChart_inv hζ)
-    (Filter.mem_of_superset (isOpen_setOf_equivRealProdCLM_symm_ne_zero.mem_nhds hζ) fun ζ' hζ' ↦
-      isComplexLinearMap_fderiv_realChart (hasDerivAt_inv hζ'))
+    (Filter.mem_of_superset
+      ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).mem_nhds hζ)
+      fun ζ' hζ' ↦ isComplexLinearMap_fderiv_realChart (hasDerivAt_inv hζ'))
     (differentiableAt_const _) (.of_forall fun _ ↦ differentiableAt_const _)
     (.of_forall fun _ ↦ differentiableAt_const _) (by simp) (by simp)
     (by simp [floerOperator_def]) hη (differentiableAt_const _)
@@ -481,7 +482,7 @@ private theorem contDiff_covectorPullback_realChart_inv {η : ℝ × ℝ → V �
           (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) 0 η ζ = 0 := by
   set ι : ℝ × ℝ → ℝ × ℝ := TauCeti.Complex.realChart (·⁻¹)
   set U : Set (ℝ × ℝ) := {ζ | Complex.equivRealProdCLM.symm ζ ≠ 0}
-  have hU : IsOpen U := isOpen_setOf_equivRealProdCLM_symm_ne_zero
+  have hU : IsOpen U := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   obtain ⟨δ, hδ, hδ0⟩ :=
     TauCeti.Complex.exists_pos_forall_apply_realChart_inv_eq_zero hc hr hη0
   have hnear0 (ζ : ℝ × ℝ) (hζ : ζ ∉ U) : (η ∘ ι) =ᶠ[𝓝 ζ] 0 := by
@@ -528,7 +529,7 @@ private theorem integral_norm_floerLinearizationAdjoint_covectorPullback_realCha
   set D := ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
     (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0
   set U : Set (ℝ × ℝ) := {ζ | Complex.equivRealProdCLM.symm ζ ≠ 0}
-  have hU : IsOpen U := isOpen_setOf_equivRealProdCLM_symm_ne_zero
+  have hU : IsOpen U := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
   set g : ℝ × ℝ → ℝ := fun z ↦ ‖Complex.equivRealProdCLM.symm z‖ ^ 4 * ‖D η z‖ ^ 2
   have hDη' (ζ : ℝ × ℝ) (hζ : ζ ∈ U) : ‖D (Floer.covectorPullback ι
       (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) 0 η) ζ‖ ^ 2 =
