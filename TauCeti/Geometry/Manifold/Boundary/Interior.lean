@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Invariance
 public import TauCeti.Geometry.Manifold.IsManifold.InteriorChart
+import Mathlib.Topology.LocalAtTarget
 
 /-!
 # The interior of a manifold with corners is a manifold without boundary
@@ -42,6 +43,9 @@ For a manifold `M` that is already boundaryless as a `C¹` manifold,
 ## Main definitions
 
 * `OpenPartialHomeomorph.interiorExtend`: the chart of the interior given by a chart of `M`.
+* `ModelWithCorners.interiorOpensInclusion`: the inclusion of the interior of an open subset of
+  `M` into the interior of `M`, an open embedding
+  (`ModelWithCorners.isOpenEmbedding_interiorOpensInclusion`).
 * `ModelWithCorners.instChartedSpaceInterior`: the interior of `M` as a charted space modelled
   on `E`.
 
@@ -69,7 +73,7 @@ public section
 
 noncomputable section
 
-open Set Topology
+open Set Topology TopologicalSpace
 
 open scoped Manifold ContDiff
 
@@ -254,5 +258,40 @@ omit [FiniteDimensional 𝕜 E] in
 theorem range_subtypeVal_interior :
     range (Subtype.val : I.interior M → M) = (range (Subtype.val : I.boundary M → M))ᶜ := by
   rw [Subtype.range_coe, Subtype.range_coe, compl_boundary]
+
+/-! ### Interiors of open subsets -/
+
+/-- The inclusion of the interior of an open subset `u` of `M` into the interior of `M`: by
+`ModelWithCorners.interior_open`, the interior of `u` is the preimage of the interior of `M`, and
+the map is `Set.restrictPreimage` of the inclusion `u → M`. -/
+def interiorOpensInclusion (u : Opens M) : I.interior u → I.interior M :=
+  (I.interior M).restrictPreimage ((↑) : u → M) ∘ Homeomorph.setCongr I.interior_open
+
+omit [FiniteDimensional 𝕜 E] in
+@[simp]
+theorem coe_interiorOpensInclusion (u : Opens M) (x : I.interior u) :
+    (I.interiorOpensInclusion u x : M) = x.val.val :=
+  (rfl)
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The image of the interior of the open subset `u` in the interior of `M` consists of the
+interior points of `M` that lie in `u`. -/
+@[simp]
+theorem range_interiorOpensInclusion (u : Opens M) :
+    range (I.interiorOpensInclusion u) = (↑) ⁻¹' (u : Set M) := by
+  ext y
+  refine ⟨?_, fun hy => ?_⟩
+  · rintro ⟨x, rfl⟩
+    exact x.val.property
+  · refine ⟨⟨⟨y, hy⟩, ?_⟩, rfl⟩
+    rw [I.interior_open]
+    exact y.property
+
+omit [FiniteDimensional 𝕜 E] in
+/-- The inclusion of the interior of an open subset into the interior is an open embedding. -/
+theorem isOpenEmbedding_interiorOpensInclusion (u : Opens M) :
+    IsOpenEmbedding (I.interiorOpensInclusion u) :=
+  ((I.interior M).restrictPreimage_isOpenEmbedding u.isOpen.isOpenEmbedding_subtypeVal).comp
+    (Homeomorph.setCongr I.interior_open).isOpenEmbedding
 
 end ModelWithCorners

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Cyclotomic.Basic
-import Mathlib.NumberTheory.NumberField.Cyclotomic.Basic
+public import TauCeti.RingTheory.Cyclotomic.ComplexField
 
 /-!
 # The image of exact cyclotomic integers
@@ -46,22 +45,16 @@ theorem mem_range_complexEmbedding_iff {z : ℂ} :
 /-- Every algebraic integer in the cyclotomic field has an exact cyclotomic representative
 under the distinguished complex embedding. -/
 theorem mem_range_complexEmbedding_of_isIntegral {z : ℂ}
-    (hz : z ∈ IntermediateField.adjoin ℚ {complexRoot e}) (hint : IsIntegral ℤ z) :
+    (hz : z ∈ complexField e) (hint : IsIntegral ℤ z) :
     z ∈ Set.range (complexEmbedding (e := e)) := by
   rw [mem_range_complexEmbedding_iff]
-  let K := IntermediateField.adjoin ℚ {complexRoot e}
-  let ζ : K := ⟨complexRoot e, IntermediateField.subset_adjoin ℚ _ (Set.mem_singleton _)⟩
-  have hζ : IsPrimitiveRoot ζ e :=
-    IsPrimitiveRoot.coe_submonoidClass_iff.mp isPrimitiveRoot_complexRoot
-  have : IsCyclotomicExtension {e} ℚ K :=
-    (IntermediateField.isCyclotomicExtension_singleton_iff_eq_adjoin e ℚ ℂ K
-      isPrimitiveRoot_complexRoot).mpr rfl
+  let K := complexField e
   have hz' : IsIntegral ℤ (⟨z, hz⟩ : K) :=
     (isIntegral_algHom_iff K.val.toIntAlgHom Subtype.val_injective).mp hint
-  obtain ⟨a, ha⟩ :=
-    (IsCyclotomicExtension.Rat.isIntegralClosure_adjoin_singleton hζ).isIntegral_iff.mp hz'
-  let A := (Algebra.adjoin ℤ ({ζ} : Set K)).map K.val.toIntAlgHom
+  obtain ⟨a, ha⟩ := (IsCyclotomicExtension.Rat.isIntegralClosure_adjoin_singleton
+    (complexField.isPrimitiveRoot_zeta e)).isIntegral_iff.mp hz'
+  let A := (Algebra.adjoin ℤ ({complexField.zeta e} : Set K)).map K.val.toIntAlgHom
   have : z ∈ A := ⟨a, a.property, congrArg Subtype.val ha⟩
-  simpa [A, AlgHom.map_adjoin_singleton, ζ] using this
+  simpa [A, AlgHom.map_adjoin_singleton] using this
 
 end TauCeti.Cyclotomic

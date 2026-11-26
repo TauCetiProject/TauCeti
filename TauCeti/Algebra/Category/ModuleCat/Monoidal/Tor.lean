@@ -24,7 +24,7 @@ import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 import TauCeti.CategoryTheory.Abelian.Projective.Dimension
-import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
 public import TauCeti.LinearAlgebra.End.TensorProduct

@@ -14,7 +14,9 @@ import Mathlib.RingTheory.Localization.Ideal
 
 A closed subscheme is reduced exactly when its defining ideal sheaf is radical. Equivalently,
 its ideal on every affine open is radical. This permits reducedness of a divisor to be checked
-on its local equations, rather than on the local rings of the closed subscheme.
+on its local equations, rather than on the local rings of the closed subscheme. In particular a
+scheme is reduced exactly when its nilradical vanishes
+(`AlgebraicGeometry.Scheme.nilradical_eq_bot_iff`).
 
 ## References
 
@@ -90,5 +92,15 @@ theorem isReduced_subscheme_ofIdealTop_span_singleton_iff (f : Γ(X, ⊤)) :
     intro x hxU
     rw [I.map_radical_ideal_germ U x hxU, hmap U x hxU]
     exact Ideal.radical_eq_iff.mpr (isRadical_iff_span_singleton.mp (h x))
+
+/-- **A scheme is reduced exactly when its nilradical vanishes.** -/
+theorem _root_.AlgebraicGeometry.Scheme.nilradical_eq_bot_iff {X : Scheme} :
+    X.nilradical = ⊥ ↔ IsReduced X := by
+  refine ⟨fun h ↦ ?_, fun _ ↦ nilradical_eq_bot⟩
+  have : IsReduced (⊥ : X.IdealSheafData).subscheme :=
+    (isReduced_subscheme_iff_radical_eq ⊥).mpr (by rwa [radical_bot])
+  have : CategoryTheory.IsIso (⊥ : X.IdealSheafData).subschemeι :=
+    (isIso_subschemeι_iff_eq_bot _).mpr rfl
+  exact isReduced_of_isOpenImmersion (CategoryTheory.inv (⊥ : X.IdealSheafData).subschemeι)
 
 end AlgebraicGeometry.Scheme.IdealSheafData

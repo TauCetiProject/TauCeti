@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Finrank
 public import TauCeti.Geometry.Symplectic.Restrict
 
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
+
 /-!
 # Every symplectic vector space carries a compatible almost complex structure
 
@@ -38,9 +40,14 @@ are those of McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Se
   two summands of a symplectic splitting assemble into one on the whole space.
 * `TauCeti.SymplecticForm.exists_compatible` and `TauCeti.SymplecticForm.exists_tames`: the
   existence theorems.
+* `TauCeti.AlmostComplexStructure.exists_tames`: conversely, every almost complex structure on a
+  finite-dimensional space is tamed by some symplectic form.
 * `TauCeti.SymplecticForm.even_finrank` and `TauCeti.SymplecticForm.isEmpty_of_odd_finrank`: a
   symplectic vector space has even dimension, so an odd-dimensional space carries no symplectic
   form at all.
+* `TauCeti.SymplecticForm.IsSymplectic.even_finrank` and
+  `TauCeti.SymplecticForm.IsSymplectic.two_le_finrank_of_mem`: a symplectic subspace has even
+  dimension, at least two when it is nonzero.
 -/
 
 public section
@@ -204,6 +211,45 @@ theorem isEmpty_of_odd_finrank (h : Odd (finrank ℝ V)) :
   haveI : Module.Finite ℝ V := Module.finite_of_finrank_pos h.pos
   ⟨fun ω => (Nat.not_even_iff_odd.2 h) ω.even_finrank⟩
 
+/-- A symplectic subspace of a finite-dimensional symplectic space has even dimension. -/
+theorem IsSymplectic.even_finrank [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+    {L : Submodule ℝ V} (hL : ω.IsSymplectic L) : Even (finrank ℝ L) :=
+  (ω.restrict L hL.nondegenerate_restrict).even_finrank
+
+/-- A symplectic subspace containing a nonzero vector has dimension at least two: its dimension is
+even and nonzero. -/
+theorem IsSymplectic.two_le_finrank_of_mem [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+    {L : Submodule ℝ V} (hL : ω.IsSymplectic L) {x : V} (hx : x ∈ L) (hx0 : x ≠ 0) :
+    2 ≤ finrank ℝ L := by
+  obtain ⟨r, hr⟩ := hL.even_finrank
+  have hpos : finrank ℝ L ≠ 0 := fun h0 ↦
+    hx0 ((Submodule.mem_bot ℝ).1 (Submodule.finrank_eq_zero.1 h0 ▸ hx))
+  omega
+
 end SymplecticForm
+
+namespace AlmostComplexStructure
+
+variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
+
+/-- **Every almost complex structure is tamed by a symplectic form.** For an almost complex
+structure `J` on a finite-dimensional real vector space and any inner product `g`, the form
+`ω(u, v) = g(J u, v) - g(u, J v)` is alternating and `ω(v, J v) = g(J v, J v) + g(v, v) > 0` for
+`v ≠ 0`, so it is a symplectic form taming `J`. -/
+theorem exists_tames (J : AlmostComplexStructure V) : ∃ ω : SymplecticForm V, ω.Tames J := by
+  -- Any inner product `g` on `V` will do.
+  obtain ⟨Q, hQ⟩ := exists_posDef_quadraticForm ℝ V
+  let g := Q.associated
+  let B : LinearMap.BilinForm ℝ V :=
+    g.compl₁₂ J.toLinearMap LinearMap.id - g.compl₁₂ LinearMap.id J.toLinearMap
+  have hB (u v : V) : B u v = g (J u) v - g u (J v) := by simp [B]
+  have halt : B.IsAlt := fun v ↦ by rw [hB, QuadraticMap.associated_isSymm, sub_self]
+  have hpos (v : V) (hv : v ≠ 0) : 0 < B v (J v) := by
+    rw [hB, J.apply_apply, map_neg, sub_neg_eq_add, QuadraticMap.associated_eq_self_apply,
+      QuadraticMap.associated_eq_self_apply]
+    exact add_pos (hQ _ (J.map_ne_zero_iff.2 hv)) (hQ v hv)
+  exact ⟨SymplecticForm.ofTames B halt hpos, SymplecticForm.tames_ofTames halt hpos⟩
+
+end AlmostComplexStructure
 
 end TauCeti

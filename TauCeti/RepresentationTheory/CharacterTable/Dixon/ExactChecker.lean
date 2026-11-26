@@ -35,6 +35,8 @@ same proof serves both the integer-valued stage and the exact cyclotomic stage.
   degree vector sums to the character degrees of the group.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.exists_equiv_characterTable`: the rows of the
   character table, numbered along a certified exact table, with their values and degrees.
+* `TauCeti.ClassData.IsExactCharacterTableSpec.irreducibleCharacters_eq_range`: the irreducible
+  characters are the mapped rows of a certified exact table, read through the class numbering.
 * `TauCeti.ClassData.IsExactCharacterTableSpec.map_central_injective`: central rows remain
   distinct under maps to rings without zero divisors in which the group order is nonzero.
 
@@ -313,6 +315,15 @@ theorem sum_characterDegree_eq_sum_degree (f : R →+* ℂ)
   have key := (h.isCharacterTableSpec f hf).sum_apply_mk_one_eq_sum_characterDegree
   rw [hcol] at key
   exact_mod_cast key.symm
+
+/-- **The rows of a certified exact table are the irreducible characters** of `G`: for a
+star-preserving ring homomorphism `f` to `ℂ`, the irreducible complex characters are exactly the
+functions `g ↦ f (table i (d.index g))`. -/
+theorem irreducibleCharacters_eq_range (f : R →+* ℂ) (hf : ∀ x, f (conj x) = star (f x)) :
+    irreducibleCharacters ℂ G = Set.range fun i g => f (table i (d.index g)) := by
+  rw [(h.isCharacterTableSpec f hf).irreducibleCharacters_eq_range,
+    ← (finCongr d.numClasses_eq_card_conjClasses).surjective.range_comp]
+  simp [Function.comp_def, ClassData.equivConjClasses_symm_apply]
 
 /-- **The rows of the character table, numbered along a certified exact table**: for a
 star-preserving ring homomorphism `f` to `ℂ`, some bijection `τ` from the numbering of `d` to the

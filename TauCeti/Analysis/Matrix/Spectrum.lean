@@ -6,8 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.PosDef
+public import Mathlib.LinearAlgebra.Matrix.Adjugate
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Analysis.Matrix.LDL
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.LinearAlgebra.Matrix.Charpoly.Diagonal
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -22,6 +26,9 @@ determinant of the pencil `1 - c • B`, which are read off the scalars `1 - c *
 and the traces of natural powers of `B`, which are sums of powers of the eigenvalues. The
 pencil is diagonal in the eigenbasis for any scalar `c`; only its positive definiteness asks
 for a real one.
+The real parts of the determinant and trace are the product and sum of the eigenvalues, and a
+Hermitian matrix with all eigenvalues equal to `c` is `c • 1`
+(`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq`).
 
 These are the spectral facts behind the moment-generating function of a Gaussian quadratic form,
 whose exponential-integrability domain is a positive-definiteness condition on such a pencil and
@@ -33,7 +40,9 @@ possibly of different sizes, then the eigenvalues of `A` are those of `B` togeth
 zeros. Mathlib's `Matrix.charpoly_mul_comm_of_le` gives this relation for the two Gram matrices
 `Aᴴ * A` and `A * Aᴴ` of a rectangular matrix, which therefore have the same nonzero eigenvalues.
 This is how the spectra of sample covariance matrices `X * Xᴴ` and of their companions `Xᴴ * X`
-are compared.
+are compared. Since unitary conjugation preserves the characteristic polynomial, a decreasing real
+diagonal is recovered from the ordered eigenvalues of any of its unitary conjugates; this is the
+ordered diagonal coordinate in the spectral change of variables.
 
 Eigen-coordinates also bound the pseudo-inverse of `B` along eigenvectors of a matrix below it in
 the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with eigenvalue `a`,
@@ -42,7 +51,9 @@ for `0 ≤ A ≤ B`.
 
 A unit eigenvector of a simple eigenvalue is a unimodular multiple of the matching column of `U`,
 so the quadratic form of any matrix `C` at it is a diagonal entry of `Uᴴ C U`. This identifies the
-first variation of a simple eigenvalue.
+first variation of a simple eigenvalue. The adjugate of `λ k₀ - B` multiplies an eigenvector for
+`λ k₀` by the product of the gaps `λ k₀ - λ k` to the other eigenvalues, which is nonzero exactly
+when `λ k₀` is simple; this gives differentiable curves of eigenvectors.
 
 Over `ℝ`, where the conjugate transpose is the transpose, the spectral theorem diagonalizes a
 symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻¹ = Oᵀ`.
@@ -67,6 +78,8 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   zeros;
 * `Matrix.filter_map_eigenvalues_conjTranspose_mul_self` — `Aᴴ * A` and `A * Aᴴ` have the same
   nonzero eigenvalues, counted with multiplicity;
+* `Matrix.eigenvalues₀_conjStarAlgAut_diagonal` — the ordered eigenvalues of a unitary conjugate
+  of a decreasing real diagonal are its diagonal entries;
 * `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
@@ -74,15 +87,36 @@ symmetric matrix by an orthogonal one: `X = O * diagonal d * O⁻¹` with `O⁻�
   of `A` with eigenvalue `a` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`;
 * `Matrix.IsHermitian.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary` — `Uᴴ B U` is the
   diagonal matrix of eigenvalues;
+* `Matrix.IsHermitian.star_eigenvectorUnitary_mulVec_apply_eq_zero` — the eigen-coordinates of an
+  eigenvector for `μ` vanish off the indices with eigenvalue `μ`;
+* `Matrix.IsHermitian.adjugate_scalar_sub_mulVec_eq_prod_smul` — the adjugate of `λ k₀ - B`
+  multiplies an eigenvector for `λ k₀` by the product of the gaps `λ k₀ - λ k`, `k ≠ k₀`;
 * `Matrix.IsHermitian.star_dotProduct_mulVec_eq_of_simple` — a unit eigenvector `u` of a simple
   eigenvalue `λ k₀` satisfies `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for every matrix `C`;
 * `Matrix.IsSymm.exists_orthogonal_diagonal` — a real symmetric matrix is `O * diagonal d * O⁻¹`
-  for an invertible `O` with `O⁻¹ = Oᵀ`.
+  for an invertible `O` with `O⁻¹ = Oᵀ`;
+* `Matrix.PosDef.exists_simultaneous_diagonal_real` — a real positive-definite matrix `A` and
+  Hermitian matrix `C` admit `P : GL ι ℝ` with `Pᵀ * A * P = 1` and `Pᵀ * C * P = diagonal lam`;
+* `Matrix.IsHermitian.eigenvalues_apply_equivOfCardEq`,
+  `Matrix.IsHermitian.eigenvalues₀_equivOfCardEq_symm` and
+  `Matrix.IsHermitian.eigenvalues_ne_eigenvalues_equivOfCardEq` — the canonical equivalence
+  `Fin (Fintype.card ι) ≃ ι` reindexes the sorted eigenvalues `hB.eigenvalues₀` as the
+  matrix-indexed eigenvalues `hB.eigenvalues`, so a simple sorted eigenvalue is simple as a
+  matrix-indexed one;
+* `Matrix.IsHermitian.prod_erase_sub_eigenvalues_ne_zero` — at a simple sorted eigenvalue `λᵢ`,
+  the gaps `λᵢ - λₖ` to the other matrix-indexed eigenvalues have nonzero product;
+* `Matrix.IsHermitian.det_scalar_eigenvalues₀_sub_eq_zero` — every sorted eigenvalue `μ` is a root
+  of the characteristic polynomial, so `μ - A` is singular;
+* `Matrix.IsHermitian.prod_comp_eigenvalues` and `Matrix.IsHermitian.sum_comp_eigenvalues` — a
+  product or sum of a function over the matrix-indexed eigenvalues is the same over the sorted
+  eigenvalues.
 
 ## References
 
 * R. A. Horn, C. R. Johnson, *Matrix Analysis*, 2nd ed., Cambridge University Press (2013),
   Theorem 1.3.22 (`AB` and `BA` have the same nonzero eigenvalues).
+* G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
+  University Press (2010), §4.1 (ordered diagonal coordinate of the spectral change of variables).
 -/
 
 public section
@@ -185,6 +219,65 @@ theorem star_eigenvectorUnitary_mul_mul_eigenvectorUnitary :
       diagonal (RCLike.ofReal ∘ hB.eigenvalues) := by
   simpa [Unitary.conjStarAlgAut_star_apply] using hB.conjStarAlgAut_star_eigenvectorUnitary
 
+/-- The coordinates `Uᴴ u` of an eigenvector `u` of `B` for the eigenvalue `μ`, in the eigenbasis
+`U = hB.eigenvectorUnitary`, vanish at every index whose eigenvalue differs from `μ`. -/
+theorem star_eigenvectorUnitary_mulVec_apply_eq_zero {μ : ℝ} {u : ι → 𝕜}
+    (hu : B *ᵥ u = (μ : 𝕜) • u) {k : ι} (hk : hB.eigenvalues k ≠ μ) :
+    (star (hB.eigenvectorUnitary : Matrix ι ι 𝕜) *ᵥ u) k = 0 := by
+  set U : Matrix ι ι 𝕜 := (hB.eigenvectorUnitary : Matrix ι ι 𝕜)
+  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hB.eigenvectorUnitary.property
+  have h : diagonal (RCLike.ofReal ∘ hB.eigenvalues) *ᵥ (star U *ᵥ u) =
+      (μ : 𝕜) • (star U *ᵥ u) := by
+    rw [← hB.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary, ← mulVec_mulVec,
+      mulVec_mulVec _ U, hU', one_mulVec, ← mulVec_mulVec, hu, mulVec_smul]
+  have hk' := congrFun h k
+  simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at hk'
+  have h' : ((hB.eigenvalues k : 𝕜) - μ) * (star U *ᵥ u) k = 0 := by rw [sub_mul, hk', sub_self]
+  exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk))
+
+/-- The adjugate of `λ k₀ - B` multiplies an eigenvector of a Hermitian matrix `B` for the
+eigenvalue `λ k₀ = hB.eigenvalues k₀` by the product `∏_{k ≠ k₀} (λ k₀ - λ k)` of the gaps to the
+eigenvalues at the other indices. This product vanishes unless the eigenvalue is simple. -/
+theorem adjugate_scalar_sub_mulVec_eq_prod_smul {k₀ : ι} {u : ι → 𝕜}
+    (hu : B *ᵥ u = (hB.eigenvalues k₀ : 𝕜) • u) :
+    Matrix.adjugate (scalar ι (hB.eigenvalues k₀ : 𝕜) - B) *ᵥ u =
+      (∏ k ∈ Finset.univ.erase k₀, ((hB.eigenvalues k₀ - hB.eigenvalues k : ℝ) : 𝕜)) • u := by
+  set U : Matrix ι ι 𝕜 := (hB.eigenvectorUnitary : Matrix ι ι 𝕜)
+  set d := hB.eigenvalues
+  set μ := d k₀
+  have hU : star U * U = 1 := Unitary.star_mul_self_of_mem hB.eigenvectorUnitary.property
+  have hU' : U * star U = 1 := Unitary.mul_star_self_of_mem hB.eigenvectorUnitary.property
+  -- In the eigenbasis, `μ - B` is the diagonal matrix of the gaps `μ - λₖ`.
+  have hN : scalar ι (μ : 𝕜) - B = U * diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
+    have hD : diagonal (fun k ↦ ((μ - d k : ℝ) : 𝕜)) =
+        (μ : 𝕜) • 1 - diagonal (RCLike.ofReal ∘ d) := by
+      rw [smul_one_eq_diagonal, diagonal_sub]
+      simp
+    rw [hD, Matrix.mul_sub, Matrix.sub_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, hU',
+      scalar_apply, ← smul_one_eq_diagonal]
+    conv_lhs => rw [hB.spectral_theorem, conjStarAlgAut_apply]
+  -- Conjugation by a unitary commutes with the adjugate.
+  have hadj : Matrix.adjugate (scalar ι (μ : 𝕜) - B) =
+      U * Matrix.adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) * star U := by
+    rw [hN, adjugate_mul_distrib, adjugate_mul_distrib, adjugate_eq_det_smul_of_mul_eq_one hU,
+      adjugate_eq_det_smul_of_mul_eq_one hU']
+    simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, Matrix.mul_assoc]
+    rw [← det_mul, hU', det_one, one_smul]
+  -- Off `k₀`, either the eigen-coordinate of `u` or the adjugate entry, a product containing the
+  -- gap `μ - λ k₀ = 0`, vanishes.
+  have hdiag : Matrix.adjugate (diagonal fun k ↦ ((μ - d k : ℝ) : 𝕜)) *ᵥ (star U *ᵥ u) =
+      (∏ k ∈ Finset.univ.erase k₀, ((μ - d k : ℝ) : 𝕜)) • (star U *ᵥ u) := by
+    ext k
+    rw [adjugate_diagonal, mulVec_diagonal, Pi.smul_apply, smul_eq_mul]
+    obtain rfl | hk := eq_or_ne k₀ k
+    · rfl
+    obtain hdk | hdk := ne_or_eq (d k) μ
+    · rw [hB.star_eigenvectorUnitary_mulVec_apply_eq_zero hu hdk, mul_zero, mul_zero]
+    · rw [Finset.prod_eq_zero (Finset.mem_erase.2 ⟨hk, Finset.mem_univ k₀⟩) (by simp [μ]),
+        Finset.prod_eq_zero (Finset.mem_erase.2 ⟨hk.symm, Finset.mem_univ k⟩)
+          (by rw [hdk, sub_self, RCLike.ofReal_zero])]
+  rw [hadj, ← mulVec_mulVec, ← mulVec_mulVec, hdiag, mulVec_smul, mulVec_mulVec, hU', one_mulVec]
+
 /-- A unit eigenvector `u` of a simple eigenvalue `λ k₀` of a Hermitian matrix `B` is a unimodular
 multiple of the `k₀`-th column of `U = hB.eigenvectorUnitary`, so `⟪u, C u⟫ = (Uᴴ C U) k₀ k₀` for
 every matrix `C`. -/
@@ -200,18 +293,12 @@ theorem star_dotProduct_mulVec_eq_of_simple {k₀ : ι}
   -- Coordinates of `u` in the eigenbasis vanish off `k₀`.
   set w := star U *ᵥ u
   have huw : u = U *ᵥ w := by rw [mulVec_mulVec, hU', one_mulVec]
-  have hDw : diagonal (RCLike.ofReal ∘ d) *ᵥ w = (d k₀ : 𝕜) • w := by
-    rw [← hB.star_eigenvectorUnitary_mul_mul_eigenvectorUnitary, ← mulVec_mulVec, ← mulVec_mulVec,
-      ← huw, hu, mulVec_smul]
   have hw : w = Pi.single k₀ (w k₀) := by
     ext k
     obtain rfl | hk := eq_or_ne k k₀
     · simp
-    have h := congrFun hDw k
-    simp only [mulVec_diagonal, Function.comp_apply, Pi.smul_apply, smul_eq_mul] at h
-    have h' : ((d k : 𝕜) - d k₀) * w k = 0 := by rw [sub_mul, h, sub_self]
     rw [Pi.single_eq_of_ne hk]
-    exact (mul_eq_zero.1 h').resolve_left (sub_ne_zero.2 (by exact_mod_cast hk₀ k hk))
+    exact hB.star_eigenvectorUnitary_mulVec_apply_eq_zero hu (hk₀ k hk)
   have hconj (D : Matrix ι ι 𝕜) : star u ⬝ᵥ (D *ᵥ u) = star w ⬝ᵥ ((star U * D * U) *ᵥ w) := by
     rw [huw, star_mulVec, ← dotProduct_mulVec, mulVec_mulVec, mulVec_mulVec, star_eq_conjTranspose,
       Matrix.mul_assoc]
@@ -380,6 +467,36 @@ theorem filter_map_eigenvalues_conjTranspose_mul_self (A : Matrix ι κ 𝕜) :
 
 end Matrix
 
+namespace Matrix
+
+variable {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [LinearOrder ι]
+
+/-- If a real diagonal decreases along a linear order on its finite index type, its entries listed
+in that order are the ordered eigenvalues of every unitary conjugate of the diagonal. -/
+theorem eigenvalues₀_conjStarAlgAut_diagonal (U : unitaryGroup ι 𝕜) {d : ι → ℝ}
+    (hd : Antitone d) (hA : (Unitary.conjStarAlgAut ℝ _ U
+      (diagonal fun i ↦ (d i : 𝕜))).IsHermitian) :
+    hA.eigenvalues₀ = d ∘ Fintype.orderIsoFinOfCardEq ι rfl := by
+  let D := diagonal fun i : ι ↦ (d i : 𝕜)
+  let o := Fintype.orderIsoFinOfCardEq ι rfl
+  have hC : (Unitary.conjStarAlgAut ℝ _ U D).charpoly = D.charpoly := by
+    rw [Unitary.conjStarAlgAut_apply, ← inv_eq_left_inv (Unitary.coe_star_mul_self U)]
+    exact charpoly_units_conj (Unitary.toUnits U) D
+  rw [← List.ofFn_inj, ← hA.sort_roots_charpoly_eq_eigenvalues₀, hC,
+    roots_charpoly_diagonal, Multiset.map_map]
+  have hmap : Finset.univ.val.map (RCLike.re ∘ fun i ↦ (d i : 𝕜)) =
+      (List.ofFn (d ∘ o) : Multiset ℝ) := by
+    have ho : Finset.univ.val.map (d ∘ o) = Finset.univ.val.map d := by
+      rw [← Multiset.map_map, ← OrderIso.coe_toEquiv, Multiset.map_univ_val_equiv]
+    rw [← Fin.univ_val_map, ho]
+    simp
+  rw [hmap, Multiset.coe_sort]
+  exact List.mergeSort_of_pairwise (by
+    simp_rw [decide_eq_true_eq, ← List.sortedGE_iff_pairwise]
+    exact (hd.comp_monotone o.monotone).sortedGE_ofFn)
+
+end Matrix
+
 namespace Matrix.IsSymm
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
@@ -403,3 +520,125 @@ theorem exists_orthogonal_diagonal {X : Matrix ι ι ℝ} (hX : X.IsSymm) :
   simp [Unitary.conjStarAlgAut_apply, hstar]
 
 end Matrix.IsSymm
+
+namespace Matrix.IsHermitian
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι] {A : Matrix ι ι 𝕜}
+
+/-- Reindexing a sorted eigenvalue by the canonical finite equivalence gives the
+corresponding matrix-indexed eigenvalue. -/
+@[simp]
+theorem eigenvalues_apply_equivOfCardEq (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) :
+    hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) =
+      hA.eigenvalues₀ i := by
+  simp only [IsHermitian.eigenvalues, Equiv.symm_apply_apply]
+
+/-- The sorted eigenvalue at the index the canonical finite equivalence sends to `i` is the
+matrix-indexed eigenvalue at `i`. -/
+theorem eigenvalues₀_equivOfCardEq_symm (hA : A.IsHermitian) (i : ι) :
+    hA.eigenvalues₀ ((Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))).symm i) =
+      hA.eigenvalues i := by
+  rw [← eigenvalues_apply_equivOfCardEq, Equiv.apply_symm_apply]
+
+/-- A product of a function over the matrix-indexed eigenvalues of a Hermitian matrix is its
+product over the sorted eigenvalues. -/
+@[to_additive /-- A sum of a function over the matrix-indexed eigenvalues of a Hermitian matrix is
+its sum over the sorted eigenvalues. -/]
+theorem prod_comp_eigenvalues {M : Type*} [CommMonoid M] (hA : A.IsHermitian) (g : ℝ → M) :
+    ∏ i, g (hA.eigenvalues i) = ∏ k, g (hA.eigenvalues₀ k) := by
+  rw [← Equiv.prod_comp (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)))]
+  simp only [eigenvalues_apply_equivOfCardEq]
+
+/-- A simple sorted eigenvalue is simple as a matrix-indexed eigenvalue at the index given by the
+canonical finite equivalence. -/
+theorem eigenvalues_ne_eigenvalues_equivOfCardEq (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∀ k ≠ Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i, hA.eigenvalues k ≠
+      hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) := by
+  set e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  intro k hk
+  have hk' : e.symm k ≠ i := fun h ↦ hk (by rw [← h, e.apply_symm_apply])
+  simpa [e, IsHermitian.eigenvalues] using hi _ hk'
+
+/-- A Hermitian matrix whose eigenvalues are all equal to `c` is `c • 1`. -/
+theorem eq_smul_one_of_eigenvalues_eq (hA : A.IsHermitian) {c : ℝ}
+    (hc : ∀ i, hA.eigenvalues i = c) : A = c • (1 : Matrix ι ι 𝕜) := by
+  have hdiag : diagonal (RCLike.ofReal ∘ hA.eigenvalues) = algebraMap 𝕜 (Matrix ι ι 𝕜) c := by
+    ext i j
+    simp [hc, diagonal_apply, algebraMap_matrix_apply]
+  rw [hA.spectral_theorem, hdiag, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one,
+    ← RCLike.real_smul_eq_coe_smul]
+
+/-- The real part of the determinant of a Hermitian matrix is the product of its eigenvalues. -/
+theorem re_det_eq_prod_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.det = ∏ i, hA.eigenvalues i := by
+  rw [hA.det_eq_prod_eigenvalues, ← RCLike.ofReal_prod, RCLike.ofReal_re]
+
+/-- The real part of the trace of a Hermitian matrix is the sum of its eigenvalues. -/
+theorem re_trace_eq_sum_eigenvalues (hA : A.IsHermitian) :
+    RCLike.re A.trace = ∑ i, hA.eigenvalues i := by
+  rw [hA.trace_eq_sum_eigenvalues, ← RCLike.ofReal_sum, RCLike.ofReal_re]
+
+/-- At a simple ordered eigenvalue `λᵢ`, the product `∏_{j ≠ i} (λᵢ - λⱼ)` over the remaining
+matrix-indexed eigenvalues does not vanish. -/
+theorem prod_erase_sub_eigenvalues_ne_zero (hA : A.IsHermitian)
+    {i : Fin (Fintype.card ι)} (hi : ∀ j ≠ i, hA.eigenvalues₀ j ≠ hA.eigenvalues₀ i) :
+    ∏ j ∈ Finset.univ.erase (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i),
+      (hA.eigenvalues (Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι)) i) -
+        hA.eigenvalues j) ≠ 0 :=
+  Finset.prod_ne_zero_iff.2 fun j hj ↦ sub_ne_zero.2
+    (hA.eigenvalues_ne_eigenvalues_equivOfCardEq hi j (Finset.ne_of_mem_erase hj)).symm
+
+/-- Every ordered eigenvalue `μ` of a Hermitian matrix `A` is a root of its characteristic
+polynomial, so `μ - A` is singular. -/
+theorem det_scalar_eigenvalues₀_sub_eq_zero (hA : A.IsHermitian)
+    (i : Fin (Fintype.card ι)) : (scalar ι (hA.eigenvalues₀ i : 𝕜) - A).det = 0 := by
+  have hroot : (hA.eigenvalues₀ i : 𝕜) ∈ A.charpoly.roots := by
+    rw [hA.roots_charpoly_eq_eigenvalues₀]
+    exact Multiset.mem_map_of_mem _ (Finset.mem_univ_val i)
+  rw [← eval_charpoly, ((Polynomial.mem_roots (charpoly_monic _).ne_zero).1 hroot).eq_zero]
+
+end Matrix.IsHermitian
+
+namespace Matrix.PosDef
+
+/-- Simultaneous diagonalization of a real positive-definite matrix `A` and a real Hermitian
+(symmetric) matrix `C`: there exist an invertible matrix `P : GL ι ℝ` and a vector `lam` (the
+generalized eigenvalues of `C` relative to `A`) such that `Pᵀ * A * P = 1` and
+`Pᵀ * C * P = Matrix.diagonal lam`. -/
+theorem exists_simultaneous_diagonal_real {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {A C : Matrix ι ι ℝ} (hA : A.PosDef) (hC : C.IsHermitian) :
+    ∃ (P : GL ι ℝ) (lam : ι → ℝ),
+      (P : Matrix ι ι ℝ)ᵀ * A * (P : Matrix ι ι ℝ) = 1 ∧
+      (P : Matrix ι ι ℝ)ᵀ * C * (P : Matrix ι ι ℝ) = Matrix.diagonal lam := by
+  let e := Fintype.equivOfCardEq (Fintype.card_fin (Fintype.card ι))
+  let lo : LinearOrder ι := LinearOrder.lift' e.symm e.symm.injective
+  obtain ⟨P₁, -, hP₁_lo⟩ := letI := lo; hA.exists_isUpperTriangular_conjTranspose_mul_mul_eq_one
+  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hP₁_lo
+  -- The LDL lemma's `1` uses the `DecidableEq ι` derived from `lo`, not the ambient instance;
+  -- the two instances agree since `DecidableEq ι` is a subsingleton.
+  have hP₁ : P₁ᵀ * A * P₁ = 1 := by convert hP₁_lo
+  let uP₁ : GL ι ℝ := ⟨P₁, P₁ᵀ * A, mul_eq_one_comm.mp hP₁, hP₁⟩
+  set M := P₁ᵀ * C * P₁
+  have hM : M.IsHermitian := by
+    simpa [M, Matrix.conjTranspose_eq_transpose_of_trivial] using
+      Matrix.isHermitian_conjTranspose_mul_mul P₁ hC
+  have hMS : M.IsSymm := by
+    rw [Matrix.IsHermitian, Matrix.conjTranspose_eq_transpose_of_trivial] at hM
+    exact hM
+  obtain ⟨O, lam, hO_inv, hM_diag⟩ := hMS.exists_orthogonal_diagonal
+  have hOL : (O : Matrix ι ι ℝ)ᵀ * (O : Matrix ι ι ℝ) = 1 := by
+    rw [← hO_inv, ← Units.val_mul, inv_mul_cancel, Units.val_one]
+  have hOL_mul (X : Matrix ι ι ℝ) : (O : Matrix ι ι ℝ)ᵀ * ((O : Matrix ι ι ℝ) * X) = X := by
+    rw [← Matrix.mul_assoc, hOL, Matrix.one_mul]
+  have hP₁_mul (X : Matrix ι ι ℝ) : P₁ᵀ * (A * (P₁ * X)) = X := by
+    rw [← Matrix.mul_assoc, ← Matrix.mul_assoc, hP₁, Matrix.one_mul]
+  have hM_mul (X : Matrix ι ι ℝ) : P₁ᵀ * (C * (P₁ * X)) = M * X := by
+    simp only [M, Matrix.mul_assoc]
+  refine ⟨uP₁ * O, lam, ?_, ?_⟩
+  · simp [Units.val_mul, uP₁, Matrix.transpose_mul, Matrix.mul_assoc, hP₁_mul, hOL]
+  · simp [Units.val_mul, uP₁, Matrix.transpose_mul, Matrix.mul_assoc, hM_mul, hM_diag, hO_inv,
+      hOL_mul, hOL]
+
+end Matrix.PosDef

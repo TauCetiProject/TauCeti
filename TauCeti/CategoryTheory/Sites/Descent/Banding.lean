@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Category.Grp.Basic
 public import Mathlib.CategoryTheory.Bicategory.LocallyDiscrete
 public import Mathlib.CategoryTheory.Bicategory.Modification.Pseudo
-public import Mathlib.CategoryTheory.Sites.Sheaf
+public import Mathlib.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Bicategory.Functor.LocallyDiscrete
+public import TauCeti.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
 
 /-!
 # Abelian bandings of gerbes and band-preserving transformations
@@ -26,6 +28,10 @@ component functors carry the band automorphism of each coefficient to the band a
 the same coefficient. Band-preserving transformations are closed under identities and
 composition.
 
+Both notions restrict to the slice site `(Over U, J.over U)`: an `A`-banding of `F` restricts to an
+`A.over U`-banding of the restriction `F.over U`, and the restriction of a band-preserving
+transformation, its whiskering by `(Over.forget U).op`, preserves the restricted bands.
+
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.AbelianBanding`: an `A`-banding of `F`.
@@ -33,8 +39,12 @@ composition.
   commute with every isomorphism of the fibre.
 * `CategoryTheory.Pseudofunctor.AbelianBanding.aut_mul_comm`: the automorphism groups of a banded
   pseudofunctor are commutative.
+* `CategoryTheory.Pseudofunctor.AbelianBanding.over`: the restriction of an `A`-banding to the
+  slice site over `U`, an `A.over U`-banding of `F.over U`.
 * `CategoryTheory.Pseudofunctor.BandPreserving`: the property of a strong transformation of
   preserving the bands.
+* `CategoryTheory.Pseudofunctor.BandPreserving.over`: the restriction of a band-preserving
+  transformation to the slice site over `U` preserves the restricted bands.
 
 ## References
 
@@ -133,6 +143,20 @@ theorem aut_mul_comm {U : C} {x : F.obj (.mk (op U))} (g h : Aut x) : g * h = h 
   ext
   simp [b.mulEquiv_hom_comp h.asIso a]
 
+/-- The restriction of an `A`-banding of `F` to the slice site `(Over U, J.over U)`: the
+`A.over U`-banding of the restriction `F.over U` that identifies, for `X : Over U` and an object
+`x` of the fibre of `F` over `X.left`, the coefficients `A(X.left)` with `Aut x` through `b`. -/
+def over (U : C) : (F.over U).AbelianBanding (J.over U) (A.over U) where
+  mulEquiv X x := b.mulEquiv X.left x
+  mapAut_mulEquiv g x a := b.mapAut_mulEquiv g.left x a
+  autMulEquivOfIso_mulEquiv e a := b.autMulEquivOfIso_mulEquiv e a
+
+/-- The restricted banding `b.over U` at `X : Over U` is the banding `b` at `X.left`. -/
+@[simp]
+lemma over_mulEquiv (U : C) (X : Over U) (x : (F.over U).obj (.mk (op X))) :
+    (b.over U).mulEquiv X x = b.mulEquiv X.left x :=
+  (rfl)
+
 end AbelianBanding
 
 /-- A strong transformation `η : F ⟶ G` between pseudofunctors with `A`-bandings `bF` and `bG`
@@ -181,6 +205,13 @@ lemma comp (η : F ⟶ G) (θ : G ⟶ H) [BandPreserving bF bG η] [BandPreservi
     rw [map_mulEquiv_hom bG η, map_mulEquiv_hom bH θ]
     -- The two sides differ only by `Functor.comp_obj`, which holds by definition.
     rfl
+
+open scoped Pseudofunctor.StrongTrans in
+/-- The restriction of a band-preserving transformation `η` to the slice site over `U`, the
+whiskering of `η` by `(Over.forget U).op`, preserves the restricted bands. -/
+instance over (η : F ⟶ G) [BandPreserving bF bG η] (U : C) :
+    BandPreserving (bF.over U) (bG.over U) ((Over.forget U).op.toPseudofunctor.whiskerLeft η) where
+  mapAut_mulEquiv X x a := BandPreserving.mapAut_mulEquiv (bG := bG) (η := η) X.left x a
 
 end BandPreserving
 

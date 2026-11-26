@@ -33,6 +33,10 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
+* An instance `Module.Free k ρ.asModule` for a representation on a free `k`-module, next to
+  Mathlib's `Module.Finite` one.
+* `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
+  is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
   scalars preserves the dimension of the representation.
 * `FDRep.finrank_end_eq_finrank_moduleEnd`: the categorical endomorphism space has
@@ -128,6 +132,11 @@ theorem _root_.Representation.asModuleEquiv_symm_apply (x : V) :
     ρ.asModuleEquiv.symm x = x :=
   (rfl)
 
+/-- The `k[G]`-module of a representation on a free `k`-module is free over `k`, being `V` itself
+(`Representation.asModuleEquiv`). This complements Mathlib's instance for `Module.Finite`. -/
+instance [Module.Free k V] : Module.Free k ρ.asModule :=
+  .of_equiv ρ.asModuleEquiv.symm
+
 end Semiring
 
 variable {k G V W : Type*} [CommSemiring k] [Monoid G]
@@ -143,6 +152,21 @@ theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply
     ((_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ).symm f) v =
       σ.asModuleEquiv (f (ρ.asModuleEquiv.symm v)) :=
   (rfl)
+
+/-- **Surjectivity transfers across the module dictionary.** The `k[G]`-linear map that
+`Representation.IntertwiningMap.equivLinearMapAsModule` attaches to an intertwining map is
+surjective exactly when the intertwining map is. -/
+theorem _root_.Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff
+    (f : _root_.Representation.IntertwiningMap ρ σ) :
+    Function.Surjective (_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) ↔
+      Function.Surjective f := by
+  have h : ⇑(_root_.Representation.IntertwiningMap.equivLinearMapAsModule ρ σ f) =
+      σ.asModuleEquiv.symm ∘ f ∘ ρ.asModuleEquiv := by
+    ext x
+    rw [Function.comp_apply, Function.comp_apply, _root_.Representation.asModuleEquiv_apply,
+      _root_.Representation.asModuleEquiv_symm_apply,
+      _root_.Representation.IntertwiningMap.equivLinearMapAsModule_apply]
+  rw [h, EquivLike.comp_surjective, EquivLike.surjective_comp]
 
 /-- **A `k[G]`-linear isomorphism of the attached modules is an equivalence of representations.**
 The underlying intertwining map is the one attached by

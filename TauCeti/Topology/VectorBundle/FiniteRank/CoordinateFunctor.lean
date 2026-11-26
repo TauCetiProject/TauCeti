@@ -175,7 +175,7 @@ rank `Φ.rank n`, by the identity on every fibre. -/
 def mapCoreTrivialIso (n : ℕ) :
     Φ.mapCore (FiniteRankBundleCore.trivial 𝕜 B n) ≅
       FiniteRankBundleCore.trivial 𝕜' B (Φ.rank n) :=
-  FiniteRankBundleCore.constIso (fun _ => rfl) (ContinuousLinearEquiv.refl 𝕜' _)
+  FiniteRankBundleCore.constIso (fun _ => subset_rfl) (ContinuousLinearEquiv.refl 𝕜' _)
     -- Both transitions are identities; that of the transformed core is `Φ.map id`.
     fun _ _ _ _ _ => ContinuousLinearMap.ext fun v => congrArg (fun S => S v) (Φ.map_id n)
 

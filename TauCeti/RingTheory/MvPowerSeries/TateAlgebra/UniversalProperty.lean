@@ -54,8 +54,6 @@ and reduces to `‖bᵢ‖ ≤ 1` when the target is a complete nonarchimedean n
 ## Main results
 
 * `TauCeti.MvPowerSeries.isPowerBounded_X`: each variable `Xᵢ` is power-bounded.
-* `TauCeti.MvPowerSeries.isRestricted_subring_ringHom_ext_of_continuous`: continuous ring
-  homomorphisms out of `R⟨X₁, …, Xₖ⟩` agreeing on constants and variables are equal.
 * `TauCeti.MvPowerSeries.restrictedLift_unique` and
   `TauCeti.MvPowerSeries.existsUnique_continuous_ringHom_isRestricted_subring`: the universal
   property at power-bounded arguments.
@@ -85,24 +83,6 @@ namespace TauCeti.MvPowerSeries
 open _root_.MvPowerSeries TauCeti.Huber Topology
 
 variable {k : ℕ} {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
-
-/-- **Continuous ring homomorphisms out of `R⟨X₁, …, Xₖ⟩` are determined by the constants and the
-variables.** Two continuous ring homomorphisms into a Hausdorff ring that agree on every constant
-and on every `Xᵢ` are equal. -/
-theorem isRestricted_subring_ringHom_ext_of_continuous {T : Type*} [Semiring T]
-    [TopologicalSpace T] [T2Space T]
-    {ψ₁ ψ₂ : IsRestricted.subring (R := R) (fun _ : Fin k ↦ 1) →+* T} (h₁ : Continuous ψ₁)
-    (h₂ : Continuous ψ₂) (hC : ∀ r, ψ₁ (algebraMap R _ r) = ψ₂ (algebraMap R _ r))
-    (hX : ∀ i, ψ₁ ⟨X i, isRestricted_X _ i⟩ = ψ₂ ⟨X i, isRestricted_X _ i⟩) : ψ₁ = ψ₂ := by
-  let e := restrictedMvPowerSeriesGaussEquiv (n := k) (R := R)
-  have h := weightedRestrictedSubring_ringHom_ext_of_continuous isWeightFamily_one_weight
-    (f := ψ₁.comp e.toRingHom) (g := ψ₂.comp e.toRingHom)
-    (h₁.comp continuous_restrictedMvPowerSeriesGaussEquiv)
-    (h₂.comp continuous_restrictedMvPowerSeriesGaussEquiv)
-    (fun r ↦ by simp [e, hC])
-    (fun i ↦ by simp [e, hX])
-  ext f
-  simpa using congr($h (e.symm f))
 
 /-- Each variable `Xᵢ` of the Gauss-normed algebra `R⟨X₁, …, Xₖ⟩` is power-bounded. -/
 theorem isPowerBounded_X (i : Fin k) :
