@@ -11,9 +11,10 @@ public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 /-!
 # Characteristic polynomials of the action of an algebra
 
-Let `A` be an algebra over a field `k`. Every `a : A` acts `k`-linearly on an `A`-module `M` by
-`Algebra.lsmul k k M a`. This file records how its characteristic polynomial behaves under
-`A`-linear equivalences and products of modules.
+Let `A` be an algebra over a commutative ring `k`. Every `a : A` acts `k`-linearly on an
+`A`-module `M` by `Algebra.lsmul k k M a`; for `M` finite and free over `k`, this action has a
+characteristic polynomial. This file records how that polynomial behaves under `A`-linear
+equivalences and products of modules.
 
 ## Main results
 
@@ -25,9 +26,11 @@ Let `A` be an algebra over a field `k`. Every `a : A` acts `k`-linearly on an `A
 
 public section
 
-variable {k A M N : Type*} [Field k] [Ring A] [Algebra k A]
-  [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M] [FiniteDimensional k M]
-  [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N] [FiniteDimensional k N]
+variable {k A M N : Type*} [CommRing k] [Ring A] [Algebra k A]
+  [AddCommGroup M] [Module A M] [Module k M] [IsScalarTower k A M]
+  [Module.Free k M] [Module.Finite k M]
+  [AddCommGroup N] [Module A N] [Module k N] [IsScalarTower k A N]
+  [Module.Free k N] [Module.Finite k N]
 
 namespace LinearEquiv
 
