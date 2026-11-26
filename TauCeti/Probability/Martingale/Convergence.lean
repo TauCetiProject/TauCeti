@@ -377,7 +377,7 @@ theorem exists_forall_abs_measureReal_inter_sub_mul_le_of_forall_zero_or_one_iIn
       = ‖∫ x in B, (μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x ∂μ‖ := by
         rw [Real.norm_eq_abs, ← h1, ← h2, ← integral_sub integrable_condExp.integrableOn
           integrable_condExp.integrableOn]
-        rfl
+        simp only [Pi.sub_apply]
     _ ≤ ∫ x in B, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ := norm_integral_le_integral_norm _
     _ ≤ ∫ x, ‖(μ[f₀|𝔽 n] - μ[f₀|⨅ m, 𝔽 m]) x‖ ∂μ :=
         setIntegral_le_integral hg.norm (Eventually.of_forall fun x => norm_nonneg _)

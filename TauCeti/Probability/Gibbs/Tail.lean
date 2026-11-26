@@ -148,7 +148,8 @@ theorem eq_of_forall_tail_eq [Countable I] [IsFiniteMeasure μ] [IsFiniteMeasure
 exterior σ-algebra of every finite set is Gibbs. -/
 theorem IsGibbs.cond (hμ : γ.IsGibbs μ) {A : Set X}
     (hA : ∀ Λ : Finset I, MeasurableSet[X.exterior Λ] A) : γ.IsGibbs μ[|A] := by
-  rw [ProbabilityTheory.cond, ← withDensity_indicator_one (X.exterior_le _ A (hA ∅))]
+  rw [ProbabilityTheory.cond,
+    ← withDensity_indicator_one (Subshift.measurableSet_of_forall_measurableSet_exterior hA)]
   exact (hμ.withDensity fun Λ =>
     Measurable.indicator (m := X.exterior Λ) measurable_const (hA Λ)).smul _
 
@@ -160,23 +161,22 @@ theorem mem_extremePoints_gibbsMeasures_iff_measure_eq_zero_or_one [Countable I]
     μ ∈ extremePoints ℝ≥0∞ γ.gibbsMeasures ↔
       ∀ A : Set X, (∀ Λ : Finset I, MeasurableSet[X.exterior Λ] A) → μ A = 0 ∨ μ A = 1 := by
   obtain ⟨_, hγμ⟩ := mem_gibbsMeasures_iff.1 hμ
-  have hmeas {A : Set X} (hA : ∀ Λ : Finset I, MeasurableSet[X.exterior Λ] A) : MeasurableSet A :=
-    X.exterior_le _ A (hA ∅)
   constructor
   · -- A tail event `A` of mass strictly between `0` and `1` splits `μ` into the conditioned
     -- measures `μ[|A]` and `μ[|Aᶜ]`, which are Gibbs and differ from `μ`.
     intro hext A hA
+    have hAm := Subshift.measurableSet_of_forall_measurableSet_exterior hA
     by_contra! hA01
     obtain ⟨h0, h1⟩ := hA01
-    have h0' : μ Aᶜ ≠ 0 := by rwa [Ne, prob_compl_eq_zero_iff (hmeas hA)]
+    have h0' : μ Aᶜ ≠ 0 := by rwa [Ne, prob_compl_eq_zero_iff hAm]
     have hdec : μ A • μ[|A] + μ Aᶜ • μ[|Aᶜ] = μ := by
       ext t -
       simp only [add_apply, smul_apply, smul_eq_mul]
-      rw [mul_comm, mul_comm (μ Aᶜ), cond_add_cond_compl_eq (hmeas hA)]
+      rw [mul_comm, mul_comm (μ Aᶜ), cond_add_cond_compl_eq hAm]
     have hcond := (mem_extremePoints.1 hext).2 μ[|A]
       (mem_gibbsMeasures_iff.2 ⟨cond_isProbabilityMeasure h0, hγμ.cond hA⟩) μ[|Aᶜ]
       (mem_gibbsMeasures_iff.2 ⟨cond_isProbabilityMeasure h0', hγμ.cond fun Λ => (hA Λ).compl⟩)
-      ⟨μ A, μ Aᶜ, pos_iff_ne_zero.2 h0, pos_iff_ne_zero.2 h0', prob_add_prob_compl (hmeas hA),
+      ⟨μ A, μ Aᶜ, pos_iff_ne_zero.2 h0, pos_iff_ne_zero.2 h0', prob_add_prob_compl hAm,
         hdec⟩
     exact h1 (by rw [← hcond.1, cond_apply_self h0 (measure_ne_top _ _)])
   · -- A Gibbs probability measure `ν ≪ μ` agrees with `μ` on the tail, hence everywhere.
@@ -184,10 +184,11 @@ theorem mem_extremePoints_gibbsMeasures_iff_measure_eq_zero_or_one [Countable I]
     refine mem_extremePoints.2 ⟨hμ, ?_⟩
     have key {ν : Measure X} [IsProbabilityMeasure ν] (hν : γ.IsGibbs ν) (hνμ : ν ≪ μ) : ν = μ :=
       eq_of_forall_tail_eq hν hγμ fun A hA => by
+        have hAm := Subshift.measurableSet_of_forall_measurableSet_exterior hA
         rcases htriv A hA with h | h
         · rw [h, hνμ h]
-        · rw [h, ← prob_compl_eq_zero_iff (hmeas hA)]
-          exact hνμ ((prob_compl_eq_zero_iff (hmeas hA)).2 h)
+        · rw [h, ← prob_compl_eq_zero_iff hAm]
+          exact hνμ ((prob_compl_eq_zero_iff hAm).2 h)
     rintro ν₁ hν₁ ν₂ hν₂ ⟨a, b, ha, hb, -, rfl⟩
     obtain ⟨_, hν₁⟩ := mem_gibbsMeasures_iff.1 hν₁
     obtain ⟨_, hν₂⟩ := mem_gibbsMeasures_iff.1 hν₂
@@ -209,7 +210,7 @@ theorem exists_tail_separating_of_mem_extremePoints [Countable I]
       μ A ≠ ν A := by
     by_contra! h
     exact hne (eq_of_forall_tail_eq hγμ hγν h)
-  have hmeas : MeasurableSet A := X.exterior_le _ A (hA ∅)
+  have hmeas := Subshift.measurableSet_of_forall_measurableSet_exterior hA
   rcases hμ' A hA with hμA | hμA <;> rcases hν' A hA with hνA | hνA
   · exact absurd (hμA.trans hνA.symm) hAne
   · exact ⟨A, hA, hμA, hνA⟩
@@ -233,14 +234,11 @@ theorem mem_extremePoints_gibbsMeasures_iff_abs_measureReal_inter_sub_mul_le [Co
   · -- Along an exhaustion by finite sets `D n` the exterior σ-algebras decrease, and their
     -- intersection is `μ`-trivial.
     intro htriv A hA ε hε
-    classical
-    obtain ⟨D, hDmono, hD⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop (Finset I)
-    have hanti : Antitone fun n => X.exterior (D n : Set I) := fun _ _ hmn =>
-      X.exterior_anti (Finset.coe_subset.2 (hDmono hmn))
+    obtain ⟨D, hanti, hD⟩ := X.exists_antitone_exterior_forall_exists_le
     have htriv' (s : Set X) (hs : MeasurableSet[⨅ n, X.exterior (D n : Set I)] s) :
         μ s = 0 ∨ μ s = 1 := htriv s fun Λ => by
-      obtain ⟨n, hn⟩ := (Filter.tendsto_atTop.1 hD Λ).exists
-      exact X.exterior_anti (Finset.coe_subset.2 hn) _ (MeasurableSpace.measurableSet_iInf.1 hs n)
+      obtain ⟨n, hn⟩ := hD Λ
+      exact hn _ (MeasurableSpace.measurableSet_iInf.1 hs n)
     obtain ⟨n, hn⟩ := exists_forall_abs_measureReal_inter_sub_mul_le_of_forall_zero_or_one_iInf
       hanti (X.exterior_le _) htriv' hA hε
     exact ⟨D n, hn⟩
@@ -248,7 +246,7 @@ theorem mem_extremePoints_gibbsMeasures_iff_abs_measureReal_inter_sub_mul_le [Co
     intro hdec A hA
     have hsq : μ.real A * (1 - μ.real A) = 0 := by
       have : |μ.real A - μ.real A * μ.real A| ≤ 0 := le_of_forall_pos_le_add fun ε hε => by
-        obtain ⟨Λ, hΛ⟩ := hdec A (X.exterior_le _ A (hA ∅)) ε hε
+        obtain ⟨Λ, hΛ⟩ := hdec A (Subshift.measurableSet_of_forall_measurableSet_exterior hA) ε hε
         simpa using hΛ A (hA Λ)
       rw [mul_sub, mul_one]
       exact abs_nonpos_iff.1 this

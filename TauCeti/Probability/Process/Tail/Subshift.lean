@@ -34,8 +34,9 @@ Without any group action: for any measure on `X`, a function `X → ℝ≥0∞` 
 everywhere with an `𝓕_{Λᶜ}`-measurable function for each finite `Λ` separately agrees almost
 everywhere with one function measurable for all of them
 (`TauCeti.Subshift.exists_forall_measurable_exterior_ae_eq_of_forall_exists`). The exterior
-σ-algebras of an exhaustion of `I` decrease, and the versions combine through
-`TauCeti.MeasureTheory.aestronglyMeasurable_iInf_of_antitone`.
+σ-algebras of an exhaustion of `I` decrease and eventually refine each exterior σ-algebra of a
+finite set (`TauCeti.Subshift.exists_antitone_exterior_forall_exists_le`), and the versions combine
+through `TauCeti.MeasureTheory.aestronglyMeasurable_iInf_of_antitone`.
 -/
 
 public section
@@ -51,6 +52,23 @@ namespace Subshift
 variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [Countable I] [TopologicalSpace S]
   [MeasurableSpace S] {X : Subshift Γ I S} {μ : Measure X}
 
+omit [Countable I] in
+/-- An event measurable for the exterior σ-algebra of every finite set is measurable. -/
+theorem measurableSet_of_forall_measurableSet_exterior {A : Set X}
+    (hA : ∀ Λ : Finset I, MeasurableSet[X.exterior Λ] A) : MeasurableSet A :=
+  X.exterior_le _ A (hA ∅)
+
+/-- **An exhaustion by finite sets.** Over a countable index set, some sequence of finite sets
+`D n` has decreasing exterior σ-algebras, each exterior σ-algebra of a finite set being coarser
+than that of some `D n`. -/
+theorem exists_antitone_exterior_forall_exists_le :
+    ∃ D : ℕ → Finset I, Antitone (fun n => X.exterior (D n : Set I)) ∧
+      ∀ Λ : Finset I, ∃ n, X.exterior (D n : Set I) ≤ X.exterior Λ := by
+  obtain ⟨D, hDmono, hD⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop (Finset I)
+  refine ⟨D, fun _ _ hmn => X.exterior_anti (Finset.coe_subset.2 (hDmono hmn)), fun Λ => ?_⟩
+  obtain ⟨n, hn⟩ := (Filter.tendsto_atTop.1 hD Λ).exists
+  exact ⟨n, X.exterior_anti (Finset.coe_subset.2 hn)⟩
+
 /-- **Versions measurable for every exterior σ-algebra.** On a subshift over a countable index set,
 if a function `f : X → ℝ≥0∞` agrees `μ`-almost everywhere with an `𝓕_{Λᶜ}`-measurable function for
 each finite `Λ`, then it agrees `μ`-almost everywhere with a single function measurable for the
@@ -58,18 +76,14 @@ exterior σ-algebra of every finite set. -/
 theorem exists_forall_measurable_exterior_ae_eq_of_forall_exists {f : X → ℝ≥0∞}
     (h : ∀ Λ : Finset I, ∃ g : X → ℝ≥0∞, Measurable[X.exterior Λ] g ∧ g =ᵐ[μ] f) :
     ∃ g : X → ℝ≥0∞, (∀ Λ : Finset I, Measurable[X.exterior Λ] g) ∧ g =ᵐ[μ] f := by
-  classical
   -- An exhaustion of `I` by finite sets `D n`, along which the exterior σ-algebras decrease.
-  obtain ⟨D, hDmono, hD⟩ := Filter.exists_seq_monotone_tendsto_atTop_atTop (Finset I)
-  have hanti : Antitone fun n => X.exterior (D n : Set I) := fun _ _ hmn =>
-    X.exterior_anti (Finset.coe_subset.2 (hDmono hmn))
+  obtain ⟨D, hanti, hD⟩ := X.exists_antitone_exterior_forall_exists_le
   have hf := aestronglyMeasurable_iInf_of_antitone (μ := μ) hanti f fun n => by
     obtain ⟨g, hg, hgf⟩ := h (D n)
     exact ⟨g, hg.stronglyMeasurable, hgf.symm⟩
   refine ⟨hf.mk f, fun Λ => ?_, hf.ae_eq_mk.symm⟩
-  obtain ⟨n, hn⟩ := (Filter.tendsto_atTop.1 hD Λ).exists
-  exact hf.stronglyMeasurable_mk.measurable.mono
-    ((iInf_le _ n).trans (X.exterior_anti (Finset.coe_subset.2 hn))) le_rfl
+  obtain ⟨n, hn⟩ := hD Λ
+  exact hf.stronglyMeasurable_mk.measurable.mono ((iInf_le _ n).trans hn) le_rfl
 
 variable [IsFiniteMeasure μ] [SMulInvariantMeasure Γ X μ]
 
