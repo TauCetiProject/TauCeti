@@ -14,6 +14,7 @@ public import Mathlib.NumberTheory.Harmonic.Defs
 
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Data.ZMod.FinEquiv
+import TauCeti.Data.ZMod.LocalRing
 import TauCeti.GroupTheory.Coset.Fiber
 
 /-!
@@ -55,6 +56,8 @@ of the representatives sum to the harmonic number `H_{n-1}`.
   none modulo any multiple of `m`.
 * `ZMod.card_filter_not_self_dvd_val`: the residues whose representative the modulus does not
   divide, the base case of such a count.
+* `ZMod.card_filter_not_isUnit_prime_pow`: modulo a positive prime power `p ^ k`, exactly
+  `p ^ (k - 1)` residues are not units, namely those reducing to zero modulo `p`.
 -/
 
 public section
@@ -179,6 +182,22 @@ theorem card_filter_not_self_dvd_val [NeZero m] : #{z : ZMod m | ¬m ∣ z.val} 
   -- the modulus divides a representative exactly when the residue vanishes
   simp only [← natCast_eq_zero_iff, natCast_zmod_val]
   rw [filter_ne', card_erase_of_mem (mem_univ 0), card_univ, ZMod.card]
+
+/-- **Counting the nonunits modulo a prime power.** Modulo a positive power `p ^ k` of a prime,
+the nonunits are the residues reducing to zero modulo `p`, so there are `p ^ (k - 1)` of them. -/
+theorem card_filter_not_isUnit_prime_pow (p k : ℕ) [Fact p.Prime] (hk : k ≠ 0) :
+    #{x : ZMod (p ^ k) | ¬IsUnit x} = p ^ (k - 1) := by
+  have hp := (Fact.out : p.Prime).pos
+  have h := mul_card_filter_natCast_val (m := p) (n := p ^ k) (dvd_pow_self p hk) (· = 0)
+  simp only [filter_eq', mem_univ, ↓reduceIte, card_singleton, mul_one] at h
+  have hfilter : #{x : ZMod (p ^ k) | ¬IsUnit x} = #{x : ZMod (p ^ k) | (x.val : ZMod p) = 0} := by
+    congr 1
+    ext x
+    rw [mem_filter, mem_filter, isUnit_prime_pow_iff_castHom_ne_zero p k hk, castHom_apply,
+      cast_eq_val, not_not]
+  rw [hfilter]
+  refine Nat.eq_of_mul_eq_mul_left hp ?_
+  rw [h, ← pow_succ', Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hk)]
 
 /-- **Counting independent conditions on coprime factors.** If the moduli `a i` are pairwise
 coprime, the residues modulo `∏ i, a i` whose reduction modulo each `a i` satisfies `Q i` are
