@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.Perron.Regular
 public import TauCeti.Analysis.SpecialFunctions.Complex.Log.Reciprocal
-import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry.ApplyEq
 
 /-!
 # Regularity at the end of a slit in the plane
@@ -24,14 +24,17 @@ disc slit along a radius, the slit has empty interior, and the exterior cone con
 
 ## The barrier
 
-Identify `E` with `ℂ` by a linear isometry `L` taking `η - ξ` to the negative real axis, and put
-`z = L (x - ξ)`. Near `ξ` the set `Ω` misses the slit `[ξ, η]`, so `z` stays in the slit plane,
-where the principal logarithm is holomorphic. The local barrier is
+Identify `E` with `ℂ` by a linear isometry `L` taking `η - ξ` to the negative real axis
+(`TauCeti.exists_linearIsometryEquiv_apply_eq`), and put `z = L (x - ξ)`. Near `ξ` the set `Ω`
+misses the slit `[ξ, η]`, so `z` stays in the slit plane, where the principal logarithm is
+holomorphic. The local barrier is
 
-`w x = -Re (1 / log z) = -log ‖z‖ / ((log ‖z‖)² + (arg z)²)`,
+`w x = -Re (1 / log z) = -log ‖z‖ / ((log ‖z‖)² + (arg z)²)`.
 
-on `Ω ∩ ball ξ ρ` with `ρ ≤ 1 / 2` and `ρ ≤ ‖η - ξ‖`
-(`TauCeti.isBarrier_neg_inv_log_re`). It is harmonic there, being the real part of the
+It is a barrier relative to any set inside a ball of radius less than `1` about `ξ` whose image
+under `x ↦ L (x - ξ)` lies in the slit plane (`TauCeti.isBarrier_neg_inv_log_re`); in
+`TauCeti.exists_isBarrier_of_disjoint_segment` this set is `Ω ∩ ball ξ ρ` with
+`ρ = min ‖η - ξ‖ (1 / 2)`. It is harmonic there, being the real part of the
 holomorphic function `-1 / log z`. It is positive on the punctured disc `0 < ‖z‖ < 1`, and it is
 continuous on all of `closure Ω` near `ξ`, including the points of the slit, because it depends on
 the argument only through `(arg z)²`, which does not jump across the negative real axis, and it
@@ -47,8 +50,8 @@ instance on a disc with a nondegenerate segment removed, such as a slit disc
 
 ## Main declarations
 
-* `TauCeti.isBarrier_neg_inv_log_re`: the logarithmic barrier relative to a set inside the unit
-  ball about `ξ` that misses the slit.
+* `TauCeti.isBarrier_neg_inv_log_re`: the logarithmic barrier relative to a set inside a ball of
+  radius less than `1` about `ξ` that misses the slit.
 * `TauCeti.exists_isBarrier_of_disjoint_segment`: an endpoint of a nondegenerate segment outside
   `Ω` is a regular boundary point.
 * `TauCeti.exists_harmonicOnNhd_continuousOn_closure_eqOn_frontier_of_disjoint_segment`: the
@@ -105,20 +108,12 @@ two-dimensional real inner product space, let `Ω` be open and let `[ξ, η]`, `
 segment missing `Ω`. Then `ξ` admits a barrier relative to `Ω`. -/
 theorem exists_isBarrier_of_disjoint_segment (hE : Module.finrank ℝ E = 2) (hΩ : IsOpen Ω)
     {η : E} (hη : η ≠ ξ) (hseg : Disjoint (segment ℝ ξ η) Ω) : ∃ w, IsBarrier Ω ξ w := by
-  set d := η - ξ
+  set d := η - ξ with hd_def
   have hd : d ≠ 0 := sub_ne_zero.2 hη
-  -- A linear isometry onto `ℂ` taking `d` to the negative real axis: identify `E` with `ℂ`,
-  -- then rotate.
-  obtain ⟨L, hL⟩ : ∃ L : E ≃ₗᵢ[ℝ] ℂ, L d = -(‖d‖ : ℂ) := by
-    let l : E ≃ₗᵢ[ℝ] ℂ := ((stdOrthonormalBasis ℝ E).reindex (finCongr hE)).repr.trans
-      Complex.orthonormalBasisOneI.repr.symm
-    have hld : l d ≠ 0 := l.map_ne_zero_iff.2 hd
-    let a : Circle := ⟨-(‖d‖ : ℂ) / l d, mem_sphere_zero_iff_norm.2 <| by
-      rw [norm_div, norm_neg, Complex.norm_real, norm_norm, l.norm_map,
-        div_self (norm_ne_zero_iff.2 hd)]⟩
-    refine ⟨l.trans (rotation a), ?_⟩
-    rw [LinearIsometryEquiv.trans_apply, rotation_apply]
-    exact div_mul_cancel₀ _ hld
+  -- A linear isometry onto `ℂ` taking `d` to the negative real axis.
+  obtain ⟨L, hL⟩ : ∃ L : E ≃ₗᵢ[ℝ] ℂ, L d = -(‖d‖ : ℂ) :=
+    exists_linearIsometryEquiv_apply_eq (hE.trans Complex.finrank_real_complex.symm)
+      (by rw [norm_neg, Complex.norm_real, norm_norm])
   set ρ := min ‖d‖ (1 / 2)
   have hρ : 0 < ρ := lt_min (norm_pos_iff.2 hd) one_half_pos
   refine (isBarrier_neg_inv_log_re (Ω := Ω ∩ ball ξ ρ) L
@@ -145,8 +140,9 @@ theorem exists_isBarrier_of_disjoint_segment (hE : Module.finrank ℝ E = 2) (h�
     rw [hz, L.map_smul, hL, Complex.real_smul, mul_neg, ← Complex.ofReal_mul, ht]
   refine disjoint_left.1 hseg ?_ hxΩ
   rw [segment_eq_image']
-  exact ⟨t, ⟨by positivity, (div_le_one hdpos).2 hs.le⟩,
-    show ξ + t • d = x by rw [← hxt, add_sub_cancel]⟩
+  refine ⟨t, ⟨by positivity, (div_le_one hdpos).2 hs.le⟩, ?_⟩
+  simp only [← hd_def]
+  rw [← hxt, add_sub_cancel]
 
 /-- **The Dirichlet problem when every boundary point ends a segment outside the domain.** In a
 two-dimensional real inner product space, let `Ω` be a bounded open set such that every

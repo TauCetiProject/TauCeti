@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 public import Mathlib.Analysis.SpecialFunctions.Complex.Log
-import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # The real part of the reciprocal of the logarithm
@@ -17,7 +17,8 @@ In polar coordinates `z = r e^{iθ}`, `-π < θ ≤ π`, the principal logarithm
 
 `Re (1 / log z) = log r / ((log r)² + θ²)`
 
-(`Complex.inv_log_re`). The logarithm jumps across the negative real axis, but only through the
+(`Complex.inv_log_re`), where `log z ≠ 0` exactly when `z ≠ 0` and `z ≠ 1`
+(`Complex.log_ne_zero`). The logarithm jumps across the negative real axis, but only through the
 sign of `θ`, which this expression does not see: `Re (1 / log z)` is continuous at every point
 other than `1`, where the logarithm vanishes, including `0`, where it tends to `0` because
 `|Re (1 / log z)| ≤ 1 / |log ‖z‖|` (`Complex.continuousAt_inv_log_re`). Away from the negative
@@ -42,6 +43,11 @@ open Filter Set
 open scoped Topology
 
 namespace Complex
+
+/-- The principal logarithm vanishes only at `0`, where it is `0` by convention, and at `1`. -/
+theorem log_ne_zero {z : ℂ} : log z ≠ 0 ↔ z ≠ 0 ∧ z ≠ 1 := by
+  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨hz0, hz1⟩ h ↦ hz1 (by rw [← exp_log hz0, h, exp_zero])⟩ <;>
+    rintro rfl <;> simp at h
 
 /-- **`Re (1 / log z)` in polar coordinates.** For every `z`,
 `Re (1 / log z) = log ‖z‖ / ((log ‖z‖)² + (arg z)²)`. At `z = 0` both sides vanish. -/
@@ -74,8 +80,8 @@ theorem inv_log_re_neg {z : ℂ} (hz : z ≠ 0) (hz1 : ‖z‖ < 1) : (log z)⁻
 
 /-- **`Re (1 / log z)` is continuous away from `1`.** The logarithm jumps across the negative real
 axis, but `Re (1 / log z) = log ‖z‖ / ((log ‖z‖)² + (arg z)²)` depends on the argument only
-through `|arg z|`, which is continuous on the punctured plane. At `0` the function tends to its
-value `0`. -/
+through `|arg z|`, which is continuous on the punctured plane
+(`TauCeti.continuousAt_abs_arg`). At `0` the function tends to its value `0`. -/
 theorem continuousAt_inv_log_re {z : ℂ} (hz : z ≠ 1) :
     ContinuousAt (fun w ↦ (log w)⁻¹.re) z := by
   rcases eq_or_ne z 0 with rfl | hz0
@@ -87,29 +93,21 @@ theorem continuousAt_inv_log_re {z : ℂ} (hz : z ≠ 1) :
     have h0 : (log (0 : ℂ))⁻¹.re = 0 := by simp
     rw [h0]
     exact squeeze_zero_norm (fun w ↦ (Real.norm_eq_abs _).trans_le (abs_inv_log_re_le w)) hlog
-  -- Away from `0`, `(arg w)² = (angle w 1)²`, and the denominator is `‖log z‖² ≠ 0`.
-  have hlog : log z ≠ 0 := fun h ↦ hz (by rw [← exp_log hz0, h, exp_zero])
-  have heq : (fun w ↦ (log w)⁻¹.re) =ᶠ[𝓝 z] fun w ↦
-      Real.log ‖w‖ / (Real.log ‖w‖ ^ 2 + InnerProductGeometry.angle w 1 ^ 2) := by
-    filter_upwards [isOpen_ne.mem_nhds hz0] with w hw
-    rw [inv_log_re, angle_one_right hw, sq_abs]
-  refine ContinuousAt.congr ?_ heq.symm
+  -- Away from `0`, `(arg w)² = |arg w|²`, and the denominator is `‖log z‖² ≠ 0`.
+  have hlog : log z ≠ 0 := log_ne_zero.2 ⟨hz0, hz⟩
+  simp_rw [inv_log_re, ← sq_abs (arg _)]
   have hnorm : ContinuousAt (fun w : ℂ ↦ Real.log ‖w‖) z :=
     (Real.continuousAt_log (norm_ne_zero_iff.2 hz0)).comp continuous_norm.continuousAt
-  have hangle : ContinuousAt (fun w : ℂ ↦ InnerProductGeometry.angle w 1) z :=
-    (InnerProductGeometry.continuousAt_angle (x := (z, (1 : ℂ))) hz0 one_ne_zero).comp
-      (f := fun w : ℂ ↦ (w, (1 : ℂ))) (by fun_prop)
-  refine hnorm.div ((hnorm.pow 2).add (hangle.pow 2)) ?_
+  refine hnorm.div ((hnorm.pow 2).add ((TauCeti.continuousAt_abs_arg hz0).pow 2)) ?_
   have hpos := normSq_pos.2 hlog
   rw [normSq_apply, log_re, log_im] at hpos
-  rw [angle_one_right hz0, sq_abs]
+  rw [sq_abs]
   nlinarith
 
 /-- **`Re (1 / log z)` is harmonic on the slit plane away from `1`**, being the real part of the
 holomorphic function `1 / log z` there. -/
 theorem harmonicAt_inv_log_re {z : ℂ} (hz : z ∈ slitPlane) (hz1 : z ≠ 1) :
     InnerProductSpace.HarmonicAt (fun w ↦ (log w)⁻¹.re) z := by
-  have hlog : log z ≠ 0 := fun h ↦ hz1 (by rw [← exp_log (slitPlane_ne_zero hz), h, exp_zero])
-  exact ((analyticAt_clog hz).inv hlog).harmonicAt_re
+  exact ((analyticAt_clog hz).inv (log_ne_zero.2 ⟨slitPlane_ne_zero hz, hz1⟩)).harmonicAt_re
 
 end Complex
