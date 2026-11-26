@@ -29,7 +29,7 @@ space, `dist x y ≤ K * dist (f x) (f y)` for `y` near `x`
 `s` on which `x` is the only point with image `f x`, and the derivative is taken within `s`, the
 bound holds for every `y ∈ s`
 (`IsCompact.exists_forall_dist_le_mul_dist_of_hasFDerivWithinAt`). This is the global self-point
-floor at an injective regular point of a map, in the sense of `TauCeti.AntilipschitzWithAt`.
+floor at an injective regular point of a map, in the sense of `TauCeti.AntilipschitzWithFrom`.
 -/
 
 public section
