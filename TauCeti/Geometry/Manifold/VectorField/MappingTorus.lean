@@ -213,8 +213,7 @@ theorem isCompl_span_timeVectorField_ker_mfderiv_proj (y : SmoothMappingTorus φ
     IsCompl (ℝ ∙ timeVectorField φ y)
       (mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y).ker := by
   -- The differential of the projection, read as a real linear form: tangent vectors of the
-  -- circle are real numbers. Its kernel is `ker dp`, and `f T = dp(T) = 1`, so this is the
-  -- general formula for the projection onto the kernel of a linear form.
+  -- circle are real numbers.
   let f : TangentSpace (𝓘(ℝ).prod I) y →L[ℝ] ℝ := mfderiv (𝓘(ℝ).prod I) 𝓘(ℝ) (proj φ) y
   have hT : f (timeVectorField φ y) = 1 := mfderiv_proj_timeVectorField φ y
   suffices h : IsCompl (ℝ ∙ timeVectorField φ y) f.ker from h

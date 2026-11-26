@@ -223,8 +223,7 @@ theorem apply_eq_sum_repr_projectionOnto {ι : Type*} [Fintype ι] {F₀ F₁ : 
 theorem projection_ker_span_singleton_apply {f : V →ₗ[R] R} {v : V} (hv : f v = 1)
     (h : IsCompl (LinearMap.ker f) (R ∙ v)) (w : V) :
     (LinearMap.ker f).projection (R ∙ v) h w = w - f w • v := by
-  have hk : w - f w • v ∈ LinearMap.ker f := by
-    rw [LinearMap.mem_ker, map_sub, map_smul, hv, smul_eq_mul, mul_one, sub_self]
+  have hk : w - f w • v ∈ LinearMap.ker f := by simp [hv]
   conv_lhs => rw [← sub_add_cancel w (f w • v)]
   rw [map_add, projection_apply_of_mem_left h hk,
     projection_apply_of_mem_right h (smul_mem _ _ (mem_span_singleton_self v)), add_zero]
