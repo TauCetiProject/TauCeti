@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.OneOne
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Topology.Algebra.Order.Archimedean
 
 /-!
 # The topology of `Spin(1, 1)`
@@ -40,6 +41,8 @@ for its module topology (`IsModuleTopology.continuous_of_linearMap`).
   of `Spin(1, 1)` is the group of hyperbolic rotations.
 * `CliffordAlgebra.index_connectedComponentOfOne_realCliffordSpinGroup_one_one`: the identity
   component has index two, so `Spin(1, 1)` has two connected components.
+* `CliffordAlgebra.realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact`: the elements of a
+  compact subgroup of `Spin(1, 1)` are `±1`, with rapidity `t = 0`.
 
 ## References
 
@@ -86,11 +89,11 @@ private theorem coeffVol_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × 
 
 private theorem continuous_coeffOne : Continuous coeffOne :=
   ((IsModuleTopology.continuous_of_linearMap realCliffordOneOneEquivMatrix.toLinearMap).comp
-    continuous_subtype_val).matrix_elem 0 0
+    continuous_subtypeVal).matrix_elem 0 0
 
 private theorem continuous_coeffVol : Continuous coeffVol :=
   ((IsModuleTopology.continuous_of_linearMap realCliffordOneOneEquivMatrix.toLinearMap).comp
-    continuous_subtype_val).matrix_elem 0 1
+    continuous_subtypeVal).matrix_elem 0 1
 
 /-- The sign `ζ`, read off from the sign of `ζ cosh t`. -/
 private noncomputable def spinSign (x : realCliffordSpinGroup 1 1) : rootsOfUnity 2 ℝ :=
@@ -111,7 +114,7 @@ private theorem spinInv_realCliffordSpinOneOneEquiv (p : rootsOfUnity 2 ℝ × M
     · simp [coe_negOneRootsOfUnity, (cosh_pos _).le]
   have hζ : ((ζ : ℝˣ) : ℝ) * ((ζ : ℝˣ) : ℝ) = 1 := by
     rw [← sq]
-    exact_mod_cast (mem_rootsOfUnity' 2 (ζ : ℝˣ)).mp ζ.2
+    exact_mod_cast (mem_rootsOfUnity' 2 (ζ : ℝˣ)).mp ζ.property
   rw [spinInv, hsign, coeffVol_realCliffordSpinOneOneEquiv, ← mul_assoc, hζ, one_mul,
     arsinh_sinh, ofAdd_toAdd]
 
@@ -151,7 +154,7 @@ noncomputable def realCliffordSpinOneOneContinuousMulEquiv :
     change Continuous realCliffordSpinOneOneEquiv.symm
     rw [h]
     have hσ : Continuous fun x ↦ ((spinSign x : ℝˣ) : ℝ) :=
-      Units.continuous_val.comp (continuous_subtype_val.comp continuous_spinSign)
+      Units.continuous_val.comp (continuous_subtypeVal.comp continuous_spinSign)
     exact continuous_spinSign.prodMk
       (continuous_ofAdd.comp (continuous_arsinh.comp (hσ.mul continuous_coeffVol)))
 
@@ -214,5 +217,27 @@ theorem index_connectedComponentOfOne_realCliffordSpinGroup_one_one :
     Subgroup.index_ker, MonoidHom.range_eq_top.mpr realCliffordSpinOneOneSign_surjective,
     Subgroup.card_top]
   exact card_rootsOfUnity_two two_ne_zero
+
+
+/-- **Compact subgroups of `Spin(1, 1)` have rapidity zero.** If `ζ (cosh t + sinh t z)` lies in a
+compact subgroup `C` of `Spin(1, 1)`, then `t = 0`: the rapidities of the elements of `C` form a
+compact additive subgroup of `ℝ`, which is trivial (`AddSubgroup.eq_bot_of_isCompact`). -/
+theorem realCliffordSpinOneOneEquiv_symm_snd_eq_one_of_isCompact
+    {C : Subgroup (realCliffordSpinGroup 1 1)}
+    (hC : IsCompact (C : Set (realCliffordSpinGroup 1 1)))
+    {x : realCliffordSpinGroup 1 1} (hx : x ∈ C) :
+    (realCliffordSpinOneOneEquiv.symm x).2 = 1 := by
+  let f : realCliffordSpinGroup 1 1 →* Multiplicative ℝ :=
+    (MonoidHom.snd _ _).comp realCliffordSpinOneOneEquiv.symm.toMonoidHom
+  have hf : Continuous f :=
+    continuous_snd.comp realCliffordSpinOneOneContinuousMulEquiv.symm.continuous
+  have hH : IsCompact (Subgroup.toAddSubgroup' (C.map f) : Set ℝ) := by
+    have h : (Subgroup.toAddSubgroup' (C.map f) : Set ℝ) = Multiplicative.toAdd '' (f '' C) := by
+      ext a
+      simp [eq_comm]
+    rw [h]
+    exact (hC.image hf).image continuous_toAdd
+  have hmem := (Subgroup.mem_toAddSubgroup' _ (f x).toAdd).mpr (Subgroup.mem_map_of_mem f hx)
+  rwa [AddSubgroup.eq_bot_of_isCompact hH, AddSubgroup.mem_bot, toAdd_eq_zero] at hmem
 
 end CliffordAlgebra

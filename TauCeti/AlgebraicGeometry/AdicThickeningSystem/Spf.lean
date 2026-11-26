@@ -411,7 +411,7 @@ noncomputable def spfHomEquiv (I : Ideal R) (J : Ideal S) [IsAdicComplete J S] :
       have ha1 : Ideal.Quotient.mk (I ^ 1) a = 0 :=
         Ideal.Quotient.eq_zero_iff_mem.mpr (by simpa using ha)
       rw [Ideal.mem_comap, ← pow_one J, ← Ideal.Quotient.eq_zero_iff_mem, ha0, ha1, map_zero]⟩
-  invFun φ := spfMap φ.1 φ.2
+  invFun φ := spfMap φ.val φ.property
   left_inv f := by
     ext n
     dsimp only [spfMap, spf]
@@ -436,12 +436,12 @@ noncomputable def spfHomEquiv (I : Ideal R) (J : Ideal S) [IsAdicComplete J S] :
 @[simp]
 theorem spfHomEquiv_symm_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J S]
     (φ : {φ : R →+* S // I ≤ J.comap φ}) :
-    (spfHomEquiv I J).symm φ = spfMap φ.1 φ.2 :=
+    (spfHomEquiv I J).symm φ = spfMap φ.val φ.property :=
   (rfl)
 
 theorem mk_comp_spfHomEquiv_apply {I : Ideal R} {J : Ideal S} [IsAdicComplete J S]
     (f : spf J ⟶ spf I) (n : ℕ) :
-    (Ideal.Quotient.mk (J ^ (n + 1))).comp (spfHomEquiv I J f).1 =
+    (Ideal.Quotient.mk (J ^ (n + 1))).comp (spfHomEquiv I J f).val =
       (Spec.preimage (f.app n)).hom.comp (Ideal.Quotient.mk (I ^ (n + 1))) := by
   have hn := (IsAdicComplete.isLimitQuotientPowSuccCone J).fac (spfHomCone f) (op n)
   dsimp only [spfHomEquiv, spfHomCone, Ideal.quotientPowSuccCone,
@@ -589,11 +589,11 @@ noncomputable def homEquiv (A B : AdicRing.{u}) :
 @[simp]
 theorem homEquiv_symm_apply (A B : AdicRing.{u})
     (φ : {φ : A.carrier →+* B.carrier // A.ideal ≤ B.ideal.comap φ}) :
-    (homEquiv A B).symm φ = map φ.1 φ.2 :=
+    (homEquiv A B).symm φ = map φ.val φ.property :=
   (rfl)
 
 theorem mk_comp_homEquiv_apply {A B : AdicRing.{u}} (f : Spf B ⟶ Spf A) (n : ℕ) :
-    (Ideal.Quotient.mk (B.ideal ^ (n + 1))).comp (homEquiv A B f).1 =
+    (Ideal.Quotient.mk (B.ideal ^ (n + 1))).comp (homEquiv A B f).val =
       (Spec.preimage (f.app n)).hom.comp (Ideal.Quotient.mk (A.ideal ^ (n + 1))) :=
   AdicThickeningSystem.mk_comp_spfHomEquiv_apply f n
 

@@ -363,8 +363,8 @@ private theorem exists_eventually_norm_le_of_isSelfAdjoint_le_one
     (tendsto_order.mp (tendsto_zero_iff_norm_tendsto_zero.mp hα_zero)).2 1 zero_lt_one]
     with t htxy htα
   have hx_le : ‖(selfAdjointPart ℝ (φ t a) : B₁)‖ ≤ √(‖(1 : B₁)‖ + 1) :=
-    (((selfAdjointPart ℝ (φ t a)).2).norm_le_sqrt_norm_mul_self_add
-      (selfAdjointPart ℝ (φ t b)).2).trans (Real.sqrt_le_sqrt htxy.le)
+    (((selfAdjointPart ℝ (φ t a)).property).norm_le_sqrt_norm_mul_self_add
+      (selfAdjointPart ℝ (φ t b)).property).trans (Real.sqrt_le_sqrt htxy.le)
   calc ‖φ t a‖
       = ‖(selfAdjointPart ℝ (φ t a) : B₁) + skewAdjointPart ℝ (φ t a)‖ := by
           rw [StarModule.selfAdjointPart_add_skewAdjointPart]
@@ -404,8 +404,8 @@ theorem exists_eventually_norm_le (φ : AsymptoticMorphism A B) (a : A) :
         _ ≤ 1 + ‖x‖ * max C₀ 0 :=
           add_le_add_right (mul_le_mul_of_nonneg_left (htc.trans (le_max_left _ _)) hpos.le) 1
   let z : Unitization ℂ A := (a : Unitization ℂ A)
-  obtain ⟨C₁, hC₁⟩ := hsa (ℜ z).2
-  obtain ⟨C₂, hC₂⟩ := hsa (ℑ z).2
+  obtain ⟨C₁, hC₁⟩ := hsa (ℜ z).property
+  obtain ⟨C₂, hC₂⟩ := hsa (ℑ z).property
   have hdef : Tendsto (fun t ↦ ψ t z - (ψ t (ℜ z) + Complex.I • ψ t (ℑ z))) atTop (𝓝 0) := by
     have h := (ψ.map_add_tendsto (ℜ z) (Complex.I • (ℑ z : Unitization ℂ A))).add
       (ψ.map_smul_tendsto Complex.I (ℑ z))
@@ -616,7 +616,8 @@ noncomputable def rescaledAsymptoticMorphism (f : A →⋆ₙₐ[ℂ] B) :
     TauCeti.AsymptoticMorphism A B where
   toFun t a := ((1 : ℝ) + (t : ℝ)⁻¹) • f a
   continuous_apply' _ :=
-    (continuous_const.add (continuous_subtype_val.inv₀ fun t ↦ (zero_lt_one.trans_le t.2).ne')).smul
+    (continuous_const.add
+      (continuous_subtypeVal.inv₀ fun t ↦ (zero_lt_one.trans_le t.property).ne')).smul
       continuous_const
   map_add_tendsto' _ _ := by simp [map_add, smul_add]
   map_smul_tendsto' c _ := by simp [map_smul, smul_comm ((1 : ℝ) + (_ : ℝ)⁻¹) c]

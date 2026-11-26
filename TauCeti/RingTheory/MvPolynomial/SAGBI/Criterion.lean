@@ -131,10 +131,7 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
   -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
   have hβ (j : J) :
       (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
-    have hmem : monomial (u j) (1 : R) - monomial (v j) 1 ∈ TauCeti.toricIdeal R a := by
-      rw [hJ]
-      exact Ideal.subset_span ⟨j, rfl⟩
-    have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
+    have huv : A (u j) = A (v j) := TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
     exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
       (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
   -- The part `P₀` of `P` of weight `δ` lies in the toric ideal, so `P₀ = ∑ j, g j * β j` for some
@@ -155,7 +152,8 @@ theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
     ring
   rw [heq] at hw
   rcases Finset.mem_union.1 (support_add hw) with hw | hw
-  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent, hA] at hw
+  · rw [mem_support_iff, AddMonoidAlgebra.coeff_sub_apply, coeff_weightedHomogeneousComponent,
+      hA] at hw
     have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
     have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
     exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
@@ -248,9 +246,7 @@ theorem isSAGBIBasis_range_iff_forall_exists_aeval_eq (hc : ∀ i, m.Monic (c i)
         ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
           Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j) := by
   refine ⟨fun h j ↦ h.exists_aeval_eq_aeval_sub hc ?_, fun hQ ↦ ?_⟩
-  · refine (TauCeti.monomial_sub_monomial_mem_toricIdeal_iff (R := k)).1 ?_
-    rw [hJ]
-    exact Ideal.subset_span ⟨j, rfl⟩
+  · exact TauCeti.linearCombination_eq_of_toricIdeal_eq_span hJ j
   refine isSAGBIBasis_iff_degree_mem_closure.2 ⟨Algebra.subset_adjoin, fun f hf hf0 ↦ ?_⟩
   rw [Algebra.adjoin_range_eq_range_aeval] at hf
   obtain ⟨P, rfl⟩ := hf

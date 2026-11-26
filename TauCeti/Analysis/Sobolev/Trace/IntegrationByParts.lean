@@ -197,17 +197,15 @@ private theorem setIntegral_restrictL_fderiv_mul_value_add_mul_inner_gradient
     (isClosed_eq hcL hcR) fun ψ ↦ ?_
   have hψ : ContDiff ℝ 1 (ψ : WithLp 2 (ℝ × E) → ℝ) := ψ.contDiff.of_le (by simp)
   have hval := W1p.value_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := p) ψ
-  have hgrad := W1p.gradient_ofTestFunctionₗ (mu := volume) (Omega := ⊤) (p := p) ψ
   calc
     _ = ∫ x in normalHalfSpace (E := E) a, fderiv ℝ (fun x ↦ χ x * ψ x) x v := by
       apply integral_congr_ae
       have hv := testFunctionLp_apply_ae (mu := volume) p ψ
-      have hg := gradientTestFunctionLp_apply_ae (mu := volume) p ψ
-      simp only [Opens.coe_top, Measure.restrict_univ] at hv hg
+      simp only [Opens.coe_top, Measure.restrict_univ] at hv
       filter_upwards [W1p.value_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ p ψ),
-        W1p.gradient_restrictL_ae le_top (W1p.ofTestFunctionₗ volume ⊤ p ψ),
-        ae_restrict_of_ae hv, ae_restrict_of_ae hg] with x hx hy hx' hy'
-      rw [hx, hy, hval, hgrad, hx', hy',
+        W1p.gradient_restrictL_ofTestFunctionₗ_ae (mu := volume) (p := p) le_top ψ,
+        ae_restrict_of_ae hv] with x hx hy hx'
+      rw [hx, hy, hval, hx',
         fderiv_fun_mul (hχ.differentiable one_ne_zero x) (hψ.differentiable one_ne_zero x),
         real_inner_comm, inner_gradient_left]
       simp only [add_apply, smul_apply, smul_eq_mul]
@@ -266,8 +264,10 @@ private theorem setIntegral_extendByZeroₗᵢ_eq {p : ENNReal} [Fact (1 ≤ p)]
   have htop := (⊤ : Opens (WithLp 2 (ℝ × E))).isOpen.measurableSet
   have hsub : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ⊆
       ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E))) := subset_univ _
-  have hval := (ae_restrict_iff' htop).1 (coeFn_extendByZeroLpₗᵢ ℝ hH hsub (W1p.value u))
-  have hgrad := (ae_restrict_iff' htop).1 (coeFn_extendByZeroLpₗᵢ ℝ hH hsub (W1p.gradient u))
+  have hval := (ae_restrict_iff' htop).1
+    (coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet hsub (W1p.value u))
+  have hgrad := (ae_restrict_iff' htop).1
+    (coeFn_extendByZeroLpₗᵢ ℝ hH.nullMeasurableSet hsub (W1p.gradient u))
   rw [← integral_indicator hH, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦
       (hx (by simp)).elim]
   apply integral_congr_ae

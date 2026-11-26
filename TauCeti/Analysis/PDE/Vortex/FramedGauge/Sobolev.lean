@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
@@ -168,9 +167,9 @@ theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : �
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
   have hs' := finrank_real_complex_lt_two_mul hs
   have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₁
-    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
+    ((continuous_re.comp (continuous_subtypeVal.comp hu)).sub continuous_const)
   have him := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₂
-    (continuous_im.comp (continuous_subtype_val.comp hu))
+    (continuous_im.comp (continuous_subtypeVal.comp hu))
   have h := (((continuous_ofReal.tendsto 0).comp hre).add
     (((continuous_ofReal.tendsto 0).comp him).mul_const I)).const_add (1 : ℂ)
   have hfun : (fun z ↦ (u z : ℂ)) =
@@ -220,14 +219,11 @@ the Sobolev embedding of `H^s(ℂ)` into `C^k`. In particular the elements of `G
 theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {k : ℕ} (hk : k + 1 < s)
     {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) : ContDiff ℝ k (fun z ↦ (u z : ℂ)) := by
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
-  have hk' : (finrank ℝ ℂ : ℝ) + 2 * k < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
+  have hk' := finrank_real_complex_add_two_mul_lt_two_mul hk
   have hre := contDiff_of_mem_realSobolevFunctions hk' hu₁
-    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
+    ((continuous_re.comp (continuous_subtypeVal.comp hu)).sub continuous_const)
   have him := contDiff_of_mem_realSobolevFunctions hk' hu₂
-    (continuous_im.comp (continuous_subtype_val.comp hu))
+    (continuous_im.comp (continuous_subtypeVal.comp hu))
   have hfun : (fun z ↦ (u z : ℂ)) =
       fun z ↦ ofRealCLM ((u z : ℂ).re - 1) + 1 + ofRealCLM (u z : ℂ).im * I := by
     ext1 z
@@ -405,12 +401,13 @@ field by the charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. The 
 `C¹`. -/
 instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
     MulAction (sobolevGaugeGroup hs) (framedFieldSpace f m k) where
-  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.2 x.2⟩
+  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.property
+      x.property⟩
   one_smul x := Subtype.ext (gaugeTransform_one x)
   mul_smul u v x := by
     have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast Fact.out : (1 : ℝ) < k)]
-    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 u.2)
-      (differentiable_of_mem_sobolevGaugeGroup h2 v.2) x)
+    exact Subtype.ext (gaugeTransform_mul (differentiable_of_mem_sobolevGaugeGroup h2 u.property)
+      (differentiable_of_mem_sobolevGaugeGroup h2 v.property) x)
 
 /-- The bundled action of `G_(k+1)` on `A_m^k` is the charge-one coordinate transformation. -/
 @[simp]
@@ -425,9 +422,9 @@ instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 
     IsCancelSMul (sobolevGaugeGroup hs) (framedFieldSpace f m k) := by
   have h2 : 2 < (k : ℝ) + 1 := by linarith [(by exact_mod_cast Fact.out : (1 : ℝ) < k)]
   refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun u x hux ↦ Subtype.ext ?_
-  exact eq_one_of_gaugeTransform_eq_self (x := x.1)
-    (differentiable_of_mem_sobolevGaugeGroup h2 u.2)
-    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.2)
+  exact eq_one_of_gaugeTransform_eq_self (x := x.val)
+    (differentiable_of_mem_sobolevGaugeGroup h2 u.property)
+    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.property)
     (by simpa only [coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hux)
 
 end TauCeti.Vortex

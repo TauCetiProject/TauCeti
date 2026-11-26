@@ -6,13 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.Morphisms.Descent
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import Mathlib.AlgebraicGeometry.Morphisms.FlatDescent
 public import Mathlib.RingTheory.Finiteness.Descent
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Descent
-public import Mathlib.Tactic.Observe
 public import TauCeti.AlgebraicGeometry.Descent.Affine
 public import TauCeti.AlgebraicGeometry.Descent.AffineMorphism
+import TauCeti.AlgebraicGeometry.Morphisms.Affine.TargetLocal
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.TargetLocal
 
 /-!
 # Affine morphisms satisfy fpqc descent
@@ -28,7 +29,10 @@ data, `Y₀` is isomorphic to `Y` (`TauCeti.DescentDatum.Hom.descendIso`), so `Y
 
 Once affineness descends, so does every property of morphisms defined on affine targets by an
 affine source and a property of the ring map on global sections which codescends along faithfully
-flat ring maps. In particular closed immersions and finite morphisms satisfy fpqc descent.
+flat ring maps. In particular closed immersions and finite morphisms satisfy fpqc descent. Being
+finite is local on the target, so finite morphisms also satisfy fppf descent, with no
+quasi-compactness hypothesis on the cover, by Mathlib's fpqc-to-fppf descent instance in
+`Mathlib.AlgebraicGeometry.Morphisms.FlatDescent`.
 
 For a descent datum `D` on a scheme `X` affine over `S'`, relative to an affine flat `p`, the
 cartesian square `TauCeti.DescentDatum.isPullback_toDescended` exhibits `X ⟶ S'` as a base change
@@ -47,6 +51,8 @@ one on a finite `S'`-scheme descends to a finite `S`-scheme.
 * `AlgebraicGeometry.IsClosedImmersion.descendsAlong_surjective_inf_flat_inf_quasiCompact` and
   `AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact`: closed
   immersions and finite morphisms satisfy fpqc descent.
+* `AlgebraicGeometry.IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation`:
+  finite morphisms satisfy fppf descent.
 * `TauCeti.DescentDatum.Hom.mem_of_descendsAlong`: for `p` surjective, flat and quasi-compact,
   if a descent datum on `X` is isomorphic to the canonical descent datum on `X₀ ×_S S'`, then
   `X₀ ⟶ S` has every property of `X ⟶ S'` satisfying fpqc descent.
@@ -75,9 +81,9 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-! Mathlib proves the stability of `Surjective ⊓ Flat` and the target-locality of affine morphisms
-under `backward.isDefEq.respectTransparency`, so instance search does not find them here; they are
-supplied by name, as local instances. -/
+/-! Mathlib proves the stability of `Surjective ⊓ Flat` under
+`backward.isDefEq.respectTransparency`, so instance search does not find it here; the stability
+instances are supplied by name, as local instances. -/
 
 private theorem isStableUnderBaseChange_surjective_inf_flat :
     IsStableUnderBaseChange (@Surjective.{u} ⊓ @Flat.{u} : MorphismProperty Scheme.{u}) :=
@@ -88,11 +94,8 @@ private theorem isStableUnderComposition_surjective_inf_flat :
   have : IsStableUnderComposition @Surjective.{u} := IsMultiplicative.toIsStableUnderComposition
   IsStableUnderComposition.inf
 
-private theorem isZariskiLocalAtTarget_isAffineHom : IsZariskiLocalAtTarget @IsAffineHom.{u} :=
-  @HasAffineProperty.instIsZariskiLocalAtTarget _ _ instHasAffinePropertyIsAffineHomIsAffine
-
 attribute [local instance] isStableUnderBaseChange_surjective_inf_flat
-  isStableUnderComposition_surjective_inf_flat isZariskiLocalAtTarget_isAffineHom
+  isStableUnderComposition_surjective_inf_flat
 
 /-- Surjective local isomorphisms are surjective and flat: the condition under which
 `IsZariskiLocalAtTarget.descendsAlong_inf_quasiCompact` reduces fpqc descent to affine bases. -/
@@ -174,13 +177,22 @@ instance IsClosedImmersion.descendsAlong_surjective_inf_flat_inf_quasiCompact :
 /-- **Finite morphisms satisfy fpqc descent.** A morphism whose base change along a surjective,
 flat and quasi-compact morphism is finite is finite. -/
 instance IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact :
-    DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) := by
-  -- Mathlib's affine description of finite morphisms is an unnamed instance which instance search
-  -- does not find here, as above.
-  observe hP : HasAffineProperty @IsFinite.{u}
-    (fun X _ f _ ↦ IsAffine X ∧ RingHom.Finite (f.appTop).hom)
-  exact HasAffineProperty.descendsAlong_surjective_inf_flat_inf_quasiCompact (Q := RingHom.Finite)
-    hP RingHom.finite_respectsIso RingHom.Finite.codescendsAlong_faithfullyFlat
+    DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
+  HasAffineProperty.descendsAlong_surjective_inf_flat_inf_quasiCompact (Q := RingHom.Finite)
+    hasAffineProperty_isFinite RingHom.finite_respectsIso
+    RingHom.Finite.codescendsAlong_faithfullyFlat
+
+/-- **Finite morphisms satisfy fppf descent.** A morphism whose base change along a surjective,
+flat morphism locally of finite presentation is finite is itself finite. -/
+instance IsFinite.descendsAlong_surjective_inf_flat_inf_locallyOfFinitePresentation :
+    DescendsAlong @IsFinite.{u} (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation) := by
+  -- Mathlib's fpqc-to-fppf instance is stated for a bundled `MorphismProperty`, which instance
+  -- search does not unify with `@IsFinite`, so the fpqc descent of finite morphisms is supplied
+  -- as a local instance.
+  let P : MorphismProperty Scheme.{u} := @IsFinite
+  have : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact) :=
+    IsFinite.descendsAlong_surjective_inf_flat_inf_quasiCompact
+  exact (inferInstance : P.DescendsAlong (@Surjective ⊓ @Flat ⊓ @LocallyOfFinitePresentation))
 
 end AlgebraicGeometry
 

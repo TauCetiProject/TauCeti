@@ -87,8 +87,8 @@ and its degree. Building divisors as finite formal sums of all such places remai
 
 Among the places of `W.FunctionField` over `K`, `W.infinityPlace` is the one beyond the affine
 ones; this is the statement that pins it down, and it is what turns a valuation produced by some
-construction — the restriction of `v_∞` along an isogeny, in `Isogeny/InfinityPlace.lean` — into
-*the* place at infinity. That step is what relates an unpointed induced-place map for finite
+construction — the restriction of `v_∞` along an isogeny, in `Isogeny/InfinityPlace/Basic.lean` —
+into *the* place at infinity. That step is what relates an unpointed induced-place map for finite
 function-field embeddings to `MapsInfinity`: an embedding `λ` maps infinity exactly when
 `λ_*(O₂) = O₃`.
 

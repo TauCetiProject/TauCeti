@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.BoundedVariation.CutByBall
-public import TauCeti.Analysis.BoundedVariation.ReducedBoundary
+public import TauCeti.Analysis.BoundedVariation.CutByBall.Basic
+public import TauCeti.Analysis.BoundedVariation.ReducedBoundary.Basic
 public import Mathlib.Geometry.Euclidean.Volume.Measure
 public import Mathlib.MeasureTheory.Measure.Hausdorff
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
@@ -155,7 +155,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by
     rw [← integral_inner (hint r hΩ) v]
     simpa only [smul_eq_mul] using tendsto_integral_smul_of_cutoff (g := fun y => ⟪v, σ y⟫)
-      measurable_subtype_coe hδ
+      measurable_subtypeVal hδ
       ((hint (r + δ) (by rwa [add_comm])).const_inner v)
       (fun h hh => (hψs h hh).continuous.measurable)
       (fun h hh y => abs_le.2 ⟨(neg_nonpos.2 zero_le_one).trans (hψ01 h hh (mem_range_self y)).1,
@@ -339,7 +339,7 @@ theorem variationMeasure_preimage_le_mul_hausdorffMeasure [μ.IsAddHaarMeasure] 
       (ENNReal.div_ne_top (ENNReal.mul_ne_top ENNReal.coe_ne_top ENNReal.ofReal_ne_top) h2)
       (A := ((↑) : Ω → E) ⁻¹' A) fun y hy => ?_
     · rw [ENNReal.mul_div_cancel h2 h2top, ← Isometry.hausdorffMeasure_image
-        (isometry_subtype_coe (s := (Ω : Set E))) (Or.inl (by positivity))] at hle
+        (isometry_subtypeVal (s := (Ω : Set E))) (Or.inl (by positivity))] at hle
       exact hle.trans (by rw [mul_assoc]; gcongr; exact image_preimage_subset _ _)
     filter_upwards [eventually_variationMeasure_closedBall_le (hA hy) ht, self_mem_nhdsWithin]
       with r hr (hr0 : 0 < r)
@@ -364,7 +364,7 @@ theorem map_variationMeasure_absolutelyContinuous_euclideanHausdorffMeasure
     [μ.IsAddHaarMeasure] :
     (variationMeasure μ Ω (s.indicator 1)).map ((↑) : Ω → E) ≪ μHE[finrank ℝ E - 1] := by
   refine Measure.AbsolutelyContinuous.mk fun N hN hN0 => ?_
-  rw [Measure.map_apply measurable_subtype_coe hN]
+  rw [Measure.map_apply measurable_subtypeVal hN]
   -- Off the reduced boundary `|Dχ_s|` vanishes; on it, use the Hausdorff measure bound.
   have hsub : ((↑) : Ω → E) ⁻¹' N ⊆ ((↑) : Ω → E) ⁻¹' (N ∩ reducedBoundary μ Ω s) ∪
       {y | ↑y ∉ reducedBoundary μ Ω s} := fun y hy =>

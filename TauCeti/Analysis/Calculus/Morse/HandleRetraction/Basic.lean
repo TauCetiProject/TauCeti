@@ -119,7 +119,7 @@ def quadraticHandleRetraction (ε : ℝ) : C(Eᵤ × Eₛ, Eᵤ × Eₛ) where
   toFun z := (z.1, radialRetraction √(‖z.1‖ ^ 2 - ε) z.2)
   continuous_toFun := continuous_fst.prodMk
     ((by fun_prop : Continuous fun z : Eᵤ × Eₛ ↦ √(‖z.1‖ ^ 2 - ε)).radialRetraction
-      (fun _ ↦ Real.sqrt_nonneg _) continuous_snd)
+      (fun _ ↦ .inr (Real.sqrt_nonneg _)) continuous_snd)
 
 @[simp]
 theorem quadraticHandleRetraction_apply (ε : ℝ) (z : Eᵤ × Eₛ) :
@@ -154,9 +154,10 @@ def quadraticHandleDeformation (ε : ℝ) :
   toFun p :=
     (p.2.1, (1 - (p.1 : ℝ)) • radialRetraction √(‖p.2.1‖ ^ 2 - ε) p.2.2 + (p.1 : ℝ) • p.2.2)
   continuous_toFun := by
-    have hr : Continuous fun p : I × (Eᵤ × Eₛ) ↦ radialRetraction √(‖p.2.1‖ ^ 2 - ε) p.2.2 :=
-      (by fun_prop : Continuous fun p : I × (Eᵤ × Eₛ) ↦ √(‖p.2.1‖ ^ 2 - ε)).radialRetraction
-        (fun _ ↦ Real.sqrt_nonneg _) (by fun_prop)
+    -- The radial component is the second component of the bundled retraction.
+    have hr : Continuous fun p : I × (Eᵤ × Eₛ) ↦ (quadraticHandleRetraction ε p.2).2 := by
+      fun_prop
+    simp only [quadraticHandleRetraction_apply] at hr
     fun_prop
   map_zero_left z := by simp
   map_one_left z := by simp
@@ -223,13 +224,13 @@ theorem exists_inter_quadraticSublevelUnionCell_deformation {X : Set (Eᵤ × E�
       Nonempty (((ContinuousMap.inclusion inter_subset_left).comp r).HomotopyRel
         (ContinuousMap.id X) {x | (x : Eᵤ × Eₛ) ∈ quadraticSublevelUnionCell ε}) := by
   have hmem (x : X) : quadraticHandleRetraction ε x ∈ X := by
-    simpa using quadraticHandleDeformation_mem_of_starConvex hX ε 0 x.2
+    simpa using quadraticHandleDeformation_mem_of_starConvex hX ε 0 x.property
   refine ⟨⟨fun x ↦ ⟨quadraticHandleRetraction ε x, hmem x,
       quadraticHandleRetraction_mem ε (x : Eᵤ × Eₛ)⟩, by fun_prop⟩,
-    fun x ↦ Subtype.ext (quadraticHandleRetraction_eq_self_iff.2 x.2.2), ⟨?_⟩⟩
+    fun x ↦ Subtype.ext (quadraticHandleRetraction_eq_self_iff.2 x.property.2), ⟨?_⟩⟩
   exact
     { toFun p := ⟨quadraticHandleDeformation ε (p.1, p.2),
-        quadraticHandleDeformation_mem_of_starConvex hX ε p.1 p.2.2⟩
+        quadraticHandleDeformation_mem_of_starConvex hX ε p.1 p.2.property⟩
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext ((quadraticHandleDeformation ε).apply_zero (x : Eᵤ × Eₛ))
       map_one_left x := Subtype.ext ((quadraticHandleDeformation ε).apply_one (x : Eᵤ × Eₛ))

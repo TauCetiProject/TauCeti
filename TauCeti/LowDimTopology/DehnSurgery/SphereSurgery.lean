@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.LowDimTopology.DehnSurgery.Filling
 public import TauCeti.Topology.Surgery.Basic
 
@@ -146,7 +146,7 @@ theorem toDehnFilling_exteriorEmbedding_apply (h : IsSolidTorusNeighborhood f Φ
     (S : SphereSurgery (solidTorusFramedSphere_injective h.isEmbedding.injective) Y)
     (x : knotExterior (Φ := Φ)) :
     (S.toDehnFilling h).exteriorEmbedding x =
-      S.exteriorEmbedding ⟨x, sphereExterior_solidTorusFramedSphere.symm ▸ x.2⟩ :=
+      S.exteriorEmbedding ⟨x, sphereExterior_solidTorusFramedSphere.symm ▸ x.property⟩ :=
   (rfl)
 
 /-- The filling solid torus of the Dehn filling of a surgery is its glued-in `D² × S¹`. -/

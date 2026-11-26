@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Defs
+public import Mathlib.Algebra.Field.Defs
+public import Mathlib.Algebra.Module.Basic
 public import Mathlib.Algebra.Regular.SMul
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.LinearCombination
@@ -23,6 +24,12 @@ The braid relation `TauCeti.smul_add_one_sub_smul_braid_relation` compares two w
 three values pairwise by affine combinations. It is the self-distributivity of the Alexander
 quandle, and gives the invariance of the Alexander module of a link diagram under the third
 Reidemeister move.
+
+When `2` is invertible in the scalars, the midpoint `2⁻¹ • (x + y)` plus and minus the half
+difference `2⁻¹ • (x - y)` recover `x` and `y`
+(`TauCeti.inv_two_smul_add_add_inv_two_smul_sub`, `TauCeti.inv_two_smul_add_sub_inv_two_smul_sub`),
+and averaging the squares `(x + y) * (x + y)` and `(x - y) * (x - y)` in any module-ring cancels
+the anticommutator `x * y + y * x` (`TauCeti.invOf_two_smul_add_mul_self_add_sub_mul_self`).
 -/
 
 public section
@@ -70,5 +77,31 @@ theorem smul_add_one_sub_smul_braid_relation {R M : Type*} [CommRing R] [AddComm
     | module
     | linear_combination (norm := module) h • ((1 - q₁) • (a - b))
     | linear_combination (norm := module) h • ((1 - p₁) • (b - c))
+
+section Midpoint
+
+variable {R M : Type*} [DivisionSemiring R] [NeZero (2 : R)] [AddCommGroup M] [Module R M]
+
+/-- The midpoint of `x` and `y` plus their half difference is `x`. -/
+theorem inv_two_smul_add_add_inv_two_smul_sub (x y : M) :
+    (2⁻¹ : R) • (x + y) + (2⁻¹ : R) • (x - y) = x := by
+  rw [← smul_add, add_add_sub_cancel, ← two_smul R x, inv_smul_smul₀ two_ne_zero]
+
+/-- The midpoint of `x` and `y` minus their half difference is `y`. -/
+theorem inv_two_smul_add_sub_inv_two_smul_sub (x y : M) :
+    (2⁻¹ : R) • (x + y) - (2⁻¹ : R) • (x - y) = y := by
+  rw [← smul_sub, add_sub_sub_cancel, ← two_smul R y, inv_smul_smul₀ two_ne_zero]
+
+end Midpoint
+
+/-- **Noncommutative parallelogram identity.** When `2` is invertible in `R`, averaging the squares
+`(x + y) * (x + y)` and `(x - y) * (x - y)` in any (possibly nonassociative, nonunital) ring `A`
+cancels the anticommutator `x * y + y * x`. -/
+theorem invOf_two_smul_add_mul_self_add_sub_mul_self {R A : Type*} [Semiring R]
+    [Invertible (2 : R)] [NonUnitalNonAssocRing A] [Module R A] (x y : A) :
+    (⅟2 : R) • ((x + y) * (x + y) + (x - y) * (x - y)) = x * x + y * y := by
+  have hring : (x + y) * (x + y) + (x - y) * (x - y) = (x * x + y * y) + (x * x + y * y) := by
+    simp only [mul_add, add_mul, mul_sub, sub_mul]; abel
+  rw [hring, smul_add, invOf_two_smul_add_invOf_two_smul]
 
 end TauCeti

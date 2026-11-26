@@ -112,7 +112,7 @@ C⋆-algebra, it is a C⋆-algebra and this `⋆`-homomorphism is automatically 
 contractive. -/
 private noncomputable def pathConcatStarAlgHom (B : Type*) [NonUnitalCStarAlgebra B] :
     pathConcatSubalgebra B →⋆ₙₐ[ℂ] C(unitInterval, B) where
-  toFun p := ((Path.mk p.1.1 rfl rfl).trans (Path.mk p.1.2 p.2.symm rfl)).toContinuousMap
+  toFun p := ((Path.mk p.val.1 rfl rfl).trans (Path.mk p.val.2 p.property.symm rfl)).toContinuousMap
   map_smul' _ _ := by
     ext; simp only [ContinuousMap.smul_apply, ContinuousMap.toFun_eq_coe, Path.coe_toContinuousMap,
       Path.trans_apply]; split_ifs <;> rfl
@@ -163,14 +163,14 @@ theorem Equiv.homotopic {φ ψ : AsymptoticMorphism A B} (h : φ.Equiv ψ) : φ.
   let φc : AsymptoticMorphism A C(unitInterval, B) :=
     φ.postcompStarAlgHom (ContinuousMap.constNonUnitalStarAlgHom ℂ unitInterval B)
   let lineHom : B →+ C(unitInterval, B) :=
-    { toFun := fun b ↦ ⟨fun s ↦ (s : ℝ) • b, continuous_subtype_val.smul continuous_const⟩
+    { toFun := fun b ↦ ⟨fun s ↦ (s : ℝ) • b, continuous_subtypeVal.smul continuous_const⟩
       map_zero' := by ext; simp
       map_add' := fun _ _ ↦ by ext; simp [smul_add] }
   have hline_norm (b : B) : ‖lineHom b‖ ≤ ‖b‖ :=
     (ContinuousMap.norm_le _ (norm_nonneg b)).mpr fun s ↦ by
       simp only [lineHom, AddMonoidHom.coe_mk, ZeroHom.coe_mk, ContinuousMap.coe_mk, norm_smul,
-        Real.norm_of_nonneg s.2.1]
-      exact mul_le_of_le_one_left (norm_nonneg b) s.2.2
+        Real.norm_of_nonneg s.property.1]
+      exact mul_le_of_le_one_left (norm_nonneg b) s.property.2
   have hline_cont : Continuous lineHom :=
     AddMonoidHomClass.continuous_of_bound lineHom 1
       fun b ↦ by simpa only [one_mul] using hline_norm b
@@ -222,9 +222,9 @@ theorem homotopic_reparam (φ : AsymptoticMorphism A B)
   let R : C(Ici (1 : ℝ) × unitInterval, Ici (1 : ℝ)) :=
     { toFun := fun p ↦ ⟨(1 - (p.2 : ℝ)) * (p.1 : ℝ) + (p.2 : ℝ) * (r p.1 : ℝ), by
         rw [mem_Ici]
-        have hp1 : (1 : ℝ) ≤ p.1 := p.1.2
-        have hrp : (1 : ℝ) ≤ r p.1 := (r p.1).2
-        nlinarith [p.2.2.1, sub_nonneg.mpr p.2.2.2]⟩
+        have hp1 : (1 : ℝ) ≤ p.1 := p.1.property
+        have hrp : (1 : ℝ) ≤ r p.1 := (r p.1).property
+        nlinarith [p.2.property.1, sub_nonneg.mpr p.2.property.2]⟩
       continuous_toFun := by fun_prop }
   have hpull_zero {g : Ici (1 : ℝ) → B} (hg_cont : Continuous g) (hg : Tendsto g atTop (𝓝 0)) :
       Tendsto (fun t : Ici (1 : ℝ) ↦
@@ -242,7 +242,7 @@ theorem homotopic_reparam (φ : AsymptoticMorphism A B)
       ((ContinuousMap.norm_le _ (half_pos hε).le).mpr fun s ↦ ?_) (half_lt_self hε)
     have hR_ge : T ≤ R (t, s) := by
       rw [← Subtype.coe_le_coe]; simp only [R, ContinuousMap.coe_mk]
-      nlinarith [s.2.1, sub_nonneg.mpr s.2.2]
+      nlinarith [s.property.1, sub_nonneg.mpr s.property.2]
     exact (dist_zero_right (g (R (t, s))) ▸ hT (R (t, s)) hR_ge).le
   let H : AsymptoticMorphism A C(unitInterval, B) :=
     { toFun := fun t a ↦

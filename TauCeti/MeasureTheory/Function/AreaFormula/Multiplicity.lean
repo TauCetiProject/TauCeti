@@ -42,6 +42,8 @@ negative.
 
 ## Main results
 
+* `LocallyLipschitzOn.tsum_fiber_congr_ae_set`, `LocallyLipschitzOn.tsum_fiber_congr_ae_fun`:
+  almost-everywhere congruence of weighted fiber sums for locally Lipschitz maps.
 * `TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv`: the weighted
   area formula with multiplicity on a measurable set of points with injective derivative.
 * `TauCeti.measurable_encard_inter_preimage_singleton`: fibre counts over a set of regular points
@@ -103,7 +105,7 @@ theorem measurable_tsum_fiber_of_injective_fderiv
       exact (hpd hij).mono inter_subset_left inter_subset_left
   simp_rw [hfiber]
   exact Measurable.tsum fun n ↦
-    (he n).measurable_extend (hg.comp measurable_subtype_coe) measurable_const
+    (he n).measurable_extend (hg.comp measurable_subtypeVal) measurable_const
 
 variable {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
   [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
@@ -265,6 +267,35 @@ theorem lintegral_normDet_fderiv_eq_lintegral_encard (hf : LipschitzWith K f)
 
 end LipschitzWith
 
+namespace LocallyLipschitzOn
+variable {X Y M : Type*} [EMetricSpace X] [TopologicalSpace.SeparableSpace X] [MeasurableSpace X]
+  [BorelSpace X] [EMetricSpace Y] [MeasurableSpace Y] [BorelSpace Y] [AddCommMonoid M]
+  [TopologicalSpace M]
+
+/-- Changing the domain subset of a locally Lipschitz map on a `μHE[d]`-null set changes its
+weighted fiber sums only on a `μHE[d]`-null set. -/
+theorem tsum_fiber_congr_ae_set {E s t : Set X} {f : X → Y} (hf : LocallyLipschitzOn E f)
+    (hs : s ⊆ E) (ht : t ⊆ E) {d : ℕ} (hst : s =ᵐ[μHE[d]] t) (w : X → M) :
+    (fun y => ∑' x : ↥(s ∩ f ⁻¹' {y}), w x) =ᵐ[μHE[d]] fun y => ∑' x : ↥(t ∩ f ⁻¹' {y}), w x := by
+  have hnull : μHE[d] (f '' (s ∆ t)) = 0 := hf.euclideanHausdorffMeasure_image_eq_zero_of_subset
+    (symmDiff_subset_union.trans (union_subset hs ht)) d (measure_symmDiff_eq_zero_iff.mpr hst)
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp hnull] with y hy
+  refine tsum_congr_set_coe w (Set.ext fun x => ?_)
+  exact ⟨fun ⟨hxs, hfx⟩ => ⟨by_contra fun hxt => hy ⟨x, Or.inl ⟨hxs, hxt⟩, hfx⟩, hfx⟩,
+    fun ⟨hxt, hfx⟩ => ⟨by_contra fun hxs => hy ⟨x, Or.inr ⟨hxt, hxs⟩, hfx⟩, hfx⟩⟩
+
+/-- Changing the weight of a locally Lipschitz map on a `μHE[d].restrict E`-null set changes its
+weighted fiber sums only on a `μHE[d]`-null set. -/
+theorem tsum_fiber_congr_ae_fun {E : Set X} {f : X → Y} (hf : LocallyLipschitzOn E f) {d : ℕ}
+    {w₁ w₂ : X → M} (hw : w₁ =ᵐ[μHE[d].restrict E] w₂) :
+    (fun y => ∑' x : ↥(E ∩ f ⁻¹' {y}), w₁ x) =ᵐ[μHE[d]] fun y => ∑' x : ↥(E ∩ f ⁻¹' {y}), w₂ x := by
+  have hN0 : μHE[d] ({x | w₁ x ≠ w₂ x} ∩ E) = 0 := nonpos_iff_eq_zero.mp
+    ((le_restrict_apply E {x | w₁ x ≠ w₂ x}).trans_eq (ae_iff.mp hw))
+  filter_upwards [measure_eq_zero_iff_ae_notMem.mp
+    (hf.euclideanHausdorffMeasure_image_eq_zero_of_subset inter_subset_right d hN0)] with y hy
+  exact tsum_congr fun x => not_not.mp fun hne => hy ⟨x.val, ⟨hne, x.property.1⟩, x.property.2⟩
+end LocallyLipschitzOn
+
 namespace TauCeti
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
@@ -307,7 +338,7 @@ theorem map_withDensity_abs_det_fderiv_eq_withDensity_encard (hs : MeasurableSet
     _ = _ := by
       refine lintegral_congr fun y ↦ ?_
       have e : ∀ x : ↥(s ∩ f ⁻¹' {y}), (B.indicator (1 : E → ℝ≥0∞) ∘ f) x = B.indicator 1 y :=
-        fun x ↦ by rw [comp_apply, x.2.2]
+        fun x ↦ by rw [comp_apply, x.property.2]
       simp_rw [e, ENNReal.tsum_set_const]
       by_cases hy : y ∈ B <;> simp [hy]
 

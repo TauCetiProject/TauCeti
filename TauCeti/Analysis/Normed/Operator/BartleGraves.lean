@@ -25,7 +25,7 @@ inverse `s : q.NonlinearRightInverse`, without guaranteeing continuity.
 This file proves the **Bartle–Graves theorem**: every surjective continuous linear map between
 real (or `RCLike`) Banach spaces admits a *continuous*, positively `ℝ`-homogeneous
 `ContinuousLinearMap.NonlinearRightInverse`, with linear norm bound arbitrarily close to the
-open-mapping constant. Following Messerschmidt's short proof via Michael's selection theorem
+open-mapping constant. Via Michael's selection theorem
 (`LowerHemicontinuous.exists_continuous_selection`), one restricts the bounded-fibre correspondence
 `y ↦ q ⁻¹' {y} ∩ closedBall 0 R` (`R > C`) to the unit sphere `Metric.sphere (0 : F) 1`, proves
 lower hemicontinuity by shrinking any fibre point slightly toward a `C`-bounded preimage and
@@ -50,8 +50,10 @@ sphere, and extends radially by `s(y) = ‖y‖ • σ(‖y‖⁻¹ • y)` (`s(
 
 * Robert G. Bartle and Lawrence M. Graves, *Mappings between function spaces*, Trans. Amer. Math.
   Soc. **72** (1952), 400–413, Theorem 4.
-* Miek Messerschmidt, *A short proof of the Bartle–Graves theorem*, Positivity **19** (2015),
-  399–402 (arXiv:1111.5726, Theorem 5.1).
+* Ernest Michael, *Continuous selections. I*, Ann. of Math. (2) **63** (1956), 361–382,
+  Proposition 7.2.
+* Yoav Benyamini and Joram Lindenstrauss, *Geometric Nonlinear Functional Analysis*, Vol. 1,
+  Amer. Math. Soc. Colloquium Publications **48**, 2000, Proposition 1.19.
 -/
 
 public section
@@ -168,14 +170,14 @@ private theorem continuous_radialExtend {σ : sphere (0 : F) 1 → E} {R : ℝ} 
       _ < (R + 1) * (ε / (R + 1)) := by gcongr
       _ = ε := mul_div_cancel₀ ε (by positivity)
   · let U : Set F := {y : F | y ≠ 0}
-    have hprojU : Continuous (fun y : U ↦ unitProj y.2) :=
+    have hprojU : Continuous (fun y : U ↦ unitProj y.property) :=
       Continuous.subtype_mk
-        (((continuous_subtype_val.norm.inv₀ fun y ↦ norm_ne_zero_iff.mpr y.2).smul
-          continuous_subtype_val)) _
+        (((continuous_subtypeVal.norm.inv₀ fun y ↦ norm_ne_zero_iff.mpr y.property).smul
+          continuous_subtypeVal)) _
     have hcontOn : ContinuousOn (radialExtend σ) U :=
       continuousOn_iff_continuous_domRestrict.mpr <|
-        (continuous_subtype_val.norm.smul (hσ_cont.comp hprojU)).congr
-          fun y ↦ (radialExtend_of_ne_zero σ y.2).symm
+        (continuous_subtypeVal.norm.smul (hσ_cont.comp hprojU)).congr
+          fun y ↦ (radialExtend_of_ne_zero σ y.property).symm
     exact hcontOn.continuousAt (isOpen_ne.mem_nhds hy₀)
 
 /-- **Bartle–Graves theorem with explicit norm bound.** If `E` is a real Banach space and

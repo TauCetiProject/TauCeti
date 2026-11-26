@@ -32,6 +32,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.comap_mem_spa`: pullback preserves the sub-unit locus.
+* `TauCeti.ValuationSpectrum.comap_preimage_spa_inter_inter_spa`: pulling back a subset
+  `spa A⁺ ∩ S` cut out by a condition `S`.
 * `TauCeti.ValuationSpectrum.mem_spa_map_iff`: a continuous point lies over the image plus ring
   exactly when its pullback lies over the original one.
 * `TauCeti.ValuationSpectrum.continuous_spaComap`: `spaComap` is continuous.
@@ -85,6 +87,15 @@ theorem comap_mem_spa {φ : A →+* B} (hφ : Continuous φ) {Aplus : Subring A}
   rw [comap_vle, map_one]
   exact hv.2 (φ a) (hplus a ha)
 
+/-- Pulling back a subset of `spa (A, A⁺)` cut out by a condition `S`: the points of
+`spa (B, B⁺)` whose pullback lies in `spa (A, A⁺) ∩ S` are those whose pullback lies in `S`. -/
+theorem comap_preimage_spa_inter_inter_spa {φ : A →+* B} (hφ : Continuous φ)
+    {Aplus : Subring A} {Bplus : Subring B} (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus)
+    (S : Set (Spv A)) :
+    comap φ ⁻¹' (spa Aplus ∩ S) ∩ spa Bplus = spa Bplus ∩ comap φ ⁻¹' S := by
+  ext v
+  exact ⟨fun h ↦ ⟨h.2, h.1.2⟩, fun h ↦ ⟨⟨comap_mem_spa hφ hplus h.1, h.2⟩, h.1⟩⟩
+
 /-- A continuous point of `Spv B` lies in `spa (φ(A⁺))` exactly when its pullback along a
 continuous ring homomorphism `φ : A →+* B` lies in `spa A⁺`. -/
 theorem mem_spa_map_iff {φ : A →+* B} (hφ : Continuous φ) (Aplus : Subring A) {w : Spv B}
@@ -95,19 +106,19 @@ theorem mem_spa_map_iff {φ : A →+* B} (hφ : Continuous φ) (Aplus : Subring 
 `φ : A →+* B` carrying `Aplus` into `Bplus`. -/
 def spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A) (Bplus : Subring B)
     (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) : spa Aplus :=
-  ⟨comap φ v.1, comap_mem_spa hφ hplus v.2⟩
+  ⟨comap φ v.val, comap_mem_spa hφ hplus v.property⟩
 
 @[simp]
 theorem spaComap_val (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) (v : spa Bplus) :
-    (spaComap φ hφ Aplus Bplus hplus v).1 = comap φ v.1 := (rfl)
+    (spaComap φ hφ Aplus Bplus hplus v).val = comap φ v.val := (rfl)
 
 /-- `spaComap` is continuous for the subspace topologies. -/
 theorem continuous_spaComap (φ : A →+* B) (hφ : Continuous φ) (Aplus : Subring A)
     (Bplus : Subring B) (hplus : ∀ a ∈ Aplus, φ a ∈ Bplus) :
     Continuous (spaComap φ hφ Aplus Bplus hplus) := by
   rw [continuous_induced_rng]
-  exact (continuous_comap φ).comp continuous_subtype_val
+  exact (continuous_comap φ).comp continuous_subtypeVal
 
 /-- `spaComap` of the identity homomorphism is the identity map on `spa Aplus`. -/
 @[simp]
@@ -359,7 +370,7 @@ theorem isClosed_support_locus (Aplus : Subring A) (J : Ideal A) :
     simp [PrimeSpectrum.mem_zeroLocus, suppFun_asIdeal]
   rw [hlocus, ← Set.preimage_comp]
   exact (PrimeSpectrum.isClosed_zeroLocus (J : Set A)).preimage
-    (continuous_suppFun.comp continuous_subtype_val)
+    (continuous_suppFun.comp continuous_subtypeVal)
 
 /-- The quotient homomorphism with the image plus ring induces a closed embedding of sub-unit
 valuation loci. -/

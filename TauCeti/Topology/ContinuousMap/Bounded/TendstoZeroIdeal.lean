@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
 public import Mathlib.Topology.Order.LiminfLimsup
 public import TauCeti.Analysis.Normed.Ring.TwoSidedIdeal
+import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # Two-sided ideals of bounded continuous functions vanishing along a filter
@@ -91,19 +92,11 @@ theorem mem_tendstoZeroIdeal_iff_norm {R : Type*} [NonUnitalSeminormedRing R] {l
 in the supremum norm. -/
 instance isClosed_tendstoZeroIdeal (R : Type*) [NonUnitalSeminormedRing R] (l : Filter α) :
     IsClosed (tendstoZeroIdeal R l : Set (α →ᵇ R)) := by
-  refine IsSeqClosed.isClosed fun u f hu huf ↦ ?_
-  rw [SetLike.mem_coe, mem_tendstoZeroIdeal_iff_norm, Metric.tendsto_nhds]
-  intro ε hε
-  obtain ⟨N, hN⟩ := (Metric.tendsto_atTop.mp huf) (ε / 2) (half_pos hε)
-  have hdist : ‖f - u N‖ < ε / 2 := by simpa only [dist_eq_norm, norm_sub_rev] using hN N le_rfl
-  filter_upwards [(Metric.tendsto_nhds.mp (mem_tendstoZeroIdeal_iff_norm.mp (hu N)))
-    (ε / 2) (half_pos hε)] with x hx
-  rw [Real.dist_eq, sub_zero, abs_of_nonneg (norm_nonneg _)] at hx ⊢
-  calc ‖f x‖ = ‖(f - u N) x + u N x‖ := by simp
-    _ ≤ ‖f - u N‖ + ‖u N x‖ :=
-      (norm_add_le _ _).trans (add_le_add_left ((f - u N).norm_coe_le_norm x) _)
-    _ < ε / 2 + ε / 2 := add_lt_add hdist hx
-    _ = ε := add_halves ε
+  have h : (tendstoZeroIdeal R l : Set (α →ᵇ R)) = {f | Tendsto (fun x ↦ f x) l (𝓝 0)} := by
+    ext f; exact mem_tendstoZeroIdeal_iff
+  rw [h]
+  exact (LipschitzWith.uniformEquicontinuous (fun x (f : α →ᵇ R) ↦ f x) 1
+    lipschitz_eval_const).equicontinuous.isClosed_setOfPred_tendsto continuous_const
 
 theorem mk_tendstoZeroIdeal_eq_zero_iff {R : Type*} [NonUnitalSeminormedRing R] {l : Filter α}
     {f : α →ᵇ R} :
@@ -130,11 +123,11 @@ theorem exists_norm_le_of_eventually_Ici {E : Type*} [SeminormedAddCommGroup E]
     ∃ M, ∀ t : Ici a, ‖f t‖ ≤ M := by
   obtain ⟨C, hC⟩ := hf_bdd
   obtain ⟨T, hT⟩ := eventually_atTop.mp hC
-  have hincl : Continuous (fun s : Icc a (T : ℝ) ↦ (⟨s.1, s.2.1⟩ : Ici a)) :=
-    Continuous.subtype_mk continuous_subtype_val _
+  have hincl : Continuous (fun s : Icc a (T : ℝ) ↦ (⟨s.val, s.property.1⟩ : Ici a)) :=
+    Continuous.subtype_mk continuous_subtypeVal _
   obtain ⟨M₁, hM₁⟩ := (isCompact_range (hf_cont.norm.comp hincl)).bddAbove
   refine ⟨max M₁ C, fun t ↦ (le_total t T).elim (fun htT ↦ ?_) fun hTt ↦ ?_⟩
-  · exact (hM₁ ⟨⟨(t : ℝ), t.2, htT⟩, rfl⟩).trans (le_max_left M₁ C)
+  · exact (hM₁ ⟨⟨(t : ℝ), t.property, htT⟩, rfl⟩).trans (le_max_left M₁ C)
   · exact (hT t hTt).trans (le_max_right M₁ C)
 
 /-- Package a continuous map `f : Set.Ici a → E` that is eventually bounded along `atTop` as a
@@ -203,7 +196,7 @@ theorem norm_mk_tendstoZeroIdeal_Ici_eq_limsup {R : Type*} [NonUnitalSeminormedR
     have hg_mem : g ∈ tendstoZeroIdeal R atTop := by
       rw [mem_tendstoZeroIdeal_iff]
       refine tendsto_const_nhds.congr' (eventually_atTop.mpr ⟨⟨(T : ℝ) + 1, ?_⟩, fun t ht ↦ ?_⟩)
-      · exact mem_Ici.mpr (by linarith [mem_Ici.mp T.2])
+      · exact mem_Ici.mpr (by linarith [mem_Ici.mp T.property])
       · rw [hg_apply, cutoffIci_eq_zero_of_add_one_le (Subtype.coe_le_coe.mpr ht),
           zero_smul, neg_zero]
     have hmk : TwoSidedIdeal.Quotient.mk (tendstoZeroIdeal R atTop) f =

@@ -38,7 +38,9 @@ inclusion is a closed cofibration is a Hurewicz fibration
 sphere is one, so evaluation `Map(Sᵏ, X) → X` at any point of the unit sphere `Sᵏ ⊆ ℝᵏ⁺¹` is a
 Hurewicz fibration for every space `X` (`TauCeti.isHurewiczFibration_mappingSpaceEval_sphere`). Its
 fibre over `x` is the based mapping space `Map_*(Sᵏ, X)`, a copy of the `k`-fold loop space of `X`
-at `x`, and the constant maps are a section.
+at `x`, and the constant maps are a section. Restricted to the maps sending the base point into
+a subset `Y ⊆ X`, evaluation is a Serre fibration over `Y`
+(`TauCeti.mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere`).
 
 ## References
 
@@ -109,6 +111,16 @@ theorem isHurewiczFibration_mappingSpaceEval_sphere (k : ℕ)
   (hasHomotopyExtensionProperty_singleton_sphere k s₀).isHurewiczFibration_mappingSpaceEval
     isClosed_singleton
 
+/-- Evaluation `Map(Sᵏ, X) → X` at a point `s₀` of the unit sphere, restricted to the maps sending
+`s₀` into a subset `Y ⊆ X`, is a Serre fibration over `Y`. -/
+theorem mem_serreFibrations_restrictPreimage_mappingSpaceEval_sphere {k : ℕ}
+    (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (Y : Set X) :
+    TopCat.serreFibrations
+      (_root_.TopCat.ofHom ((mappingSpaceEval (X := X) s₀).restrictPreimage Y)) :=
+  TopCat.mem_serreFibrations_restrictPreimage
+    (p := _root_.TopCat.ofHom (mappingSpaceEval (X := X) s₀))
+    (isHurewiczFibration_mappingSpaceEval_sphere.{0} k s₀).mem_serreFibrations Y
+
 /-! ### Evaluation of free loops -/
 
 section FreeLoop
@@ -121,23 +133,23 @@ private def closedUnitPathHomeomorphPullback :
     ClosedUnitPath Q ≃ₜ
       {x : Q × C(I, Q) // ContinuousMap.const' (X := ({0, 1} : Set I)) x.1 =
         x.2.restrict ({0, 1} : Set I)} where
-  toFun γ := ⟨(γ.1 0, γ.1), ContinuousMap.ext fun t ↦ by
+  toFun γ := ⟨(γ.val 0, γ.val), ContinuousMap.ext fun t ↦ by
     obtain ⟨t, rfl | rfl⟩ := t
     · rfl
-    · exact γ.2⟩
-  invFun x := ⟨x.1.2, by
-    have h₀ : x.1.1 = x.1.2 0 := ContinuousMap.congr_fun x.2 ⟨0, Or.inl rfl⟩
-    have h₁ : x.1.1 = x.1.2 1 := ContinuousMap.congr_fun x.2 ⟨1, Or.inr rfl⟩
+    · exact γ.property⟩
+  invFun x := ⟨x.val.2, by
+    have h₀ : x.val.1 = x.val.2 0 := ContinuousMap.congr_fun x.property ⟨0, Or.inl rfl⟩
+    have h₁ : x.val.1 = x.val.2 1 := ContinuousMap.congr_fun x.property ⟨1, Or.inr rfl⟩
     exact h₀.symm.trans h₁⟩
   left_inv _ := rfl
   right_inv x := by
-    have h₀ : x.1.1 = x.1.2 0 := ContinuousMap.congr_fun x.2 ⟨0, Or.inl rfl⟩
+    have h₀ : x.val.1 = x.val.2 0 := ContinuousMap.congr_fun x.property ⟨0, Or.inl rfl⟩
     exact Subtype.ext (Prod.ext h₀.symm rfl)
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
 
 private theorem coe_closedUnitPathHomeomorphPullback (γ : ClosedUnitPath Q) :
-    (closedUnitPathHomeomorphPullback γ : Q × C(I, Q)) = (γ.1 0, γ.1) :=
+    (closedUnitPathHomeomorphPullback γ : Q × C(I, Q)) = (γ.val 0, γ.val) :=
   rfl
 
 /-- **Evaluation of free loops is a Hurewicz fibration.** Evaluation `C(S¹, Q) → Q` at
@@ -157,9 +169,7 @@ theorem isHurewiczFibration_mappingSpaceEval_one :
 theorem isHurewiczFibration_basepointContractibleLoop :
     IsHurewiczFibration.{w} (basepointContractibleLoop (Q := Q)) := by
   have h := (isHurewiczFibration_mappingSpaceEval_one.{w} (Q := Q)).comp_subtypeVal
-    (S := contractibleLoops Q) fun _ _ hγ h ↦ by
-      obtain ⟨q, hq⟩ := mem_contractibleLoops_iff.1 hγ
-      exact mem_contractibleLoops_iff.2 ⟨q, h.symm.trans hq⟩
+    (S := contractibleLoops Q) fun _ _ hγ h ↦ pathComponent_subset_contractibleLoops hγ h
   convert h using 1
   funext γ
   rw [basepointContractibleLoop_apply, Function.comp_apply, mappingSpaceEval_apply]
