@@ -173,7 +173,7 @@ noncomputable def multiplierKernelPointsIso :
 /-- The point of `O(q)` attached to a point of the quotient by `multiplierKernelHopfIdeal` is the
 matrix of its image in `GO(q)`. -/
 @[simp]
-theorem coe_pointsMulEquiv_multiplierKernelPointsIso_hom_app (A : CommAlgCat.{u} R)
+theorem coe_pointsMulEquiv_multiplierKernelPointsIso_hom_app_apply (A : CommAlgCat.{u} R)
     (f : HopfAlgebra.points (R := R) (H := CommHopfAlgCat.quotient
       (coordinateHopfAlgebra R n q) (multiplierKernelHopfIdeal R n q)) A) :
     (QuadraticOrthogonal.pointsMulEquiv R n q A ((multiplierKernelPointsIso R n q).hom.app A f) :
@@ -190,7 +190,7 @@ theorem coe_pointsMulEquiv_multiplierKernelPointsIso_hom_app (A : CommAlgCat.{u}
 /-- The point of `GO(q)` underlying the quotient point attached to a point `g` of `O(q)` is the
 similitude `(g, 1)`. -/
 @[simp]
-theorem coe_pointsMulEquiv_quotientPointsHom_multiplierKernelPointsIso_inv_app
+theorem coe_pointsMulEquiv_quotientPointsHom_multiplierKernelPointsIso_inv_app_apply
     (A : CommAlgCat.{u} R)
     (g : HopfAlgebra.points (R := R) (H := QuadraticOrthogonal.coordinateHopfAlgebra R n q) A) :
     ((pointsMulEquiv R n q (A := A) (CommHopfAlgCat.quotientPointsHom _ _ A
