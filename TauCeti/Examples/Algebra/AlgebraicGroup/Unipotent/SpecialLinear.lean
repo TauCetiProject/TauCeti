@@ -53,18 +53,16 @@ theorem not_unipotent_specialLinear {n : ℕ} (hn : 2 ≤ n) :
   have hfix := basePointsRepresentation_eq_of_coact_eq_tmul_one (R := k)
     (H := SpecialLinear.coordinateHopfAlgebra k n) (Pi.single j 1 : Fin n → k)
     (mem_fixedSubcomodule.mp (htop ▸ Subcomodule.mem_top _)) g
-  rw [SpecialLinear.basePointsRepresentation_eq_mulVec, MulEquiv.apply_symm_apply,
-    ← Matrix.smul_eq_mulVec, ← Matrix.SpecialLinearGroup.smul_def,
-    Matrix.SpecialLinearGroup.transvection_smul_single_snd] at hfix
-  simpa [hij] using congrFun hfix i
+  rw [SpecialLinear.basePointsRepresentation_eq_mulVec] at hfix
+  simpa [g, t, Matrix.SpecialLinearGroup.transvection_coe, Matrix.add_mulVec, hij] using
+    congrFun hfix i
 
 /-- For the point `diag(2, 1/2)` of `SL₂(ℚ)`, the matrix `diag(2, 1/2) - 1` is invertible. -/
 theorem isUnit_diag_two_half_sub_one :
     IsUnit ((Matrix.SpecialLinearGroup.diag2 (2 : ℚ) two_ne_zero : Matrix (Fin 2) (Fin 2) ℚ) -
       1) := by
-  rw [Matrix.SpecialLinearGroup.diag2_coe, Matrix.isUnit_iff_isUnit_det, ← Matrix.diagonal_one,
-    Matrix.diagonal_sub, Matrix.det_diagonal]
-  norm_num [Fin.prod_univ_two]
+  rw [Matrix.isUnit_iff_isUnit_det]
+  norm_num [Matrix.SpecialLinearGroup.diag2_coe', Matrix.det_fin_two]
 
 /-- `SL₂` is not unipotent over `ℚ`. -/
 example : ¬ unipotentCommHopfAlgProperty ℚ (SpecialLinear.coordinateHopfAlgebra ℚ 2) :=
