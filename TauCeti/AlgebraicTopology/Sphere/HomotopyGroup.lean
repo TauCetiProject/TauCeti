@@ -73,6 +73,8 @@ basis, so its sign depends on the orientation of that basis.
 * `TauCeti.subsingleton_homotopyGroup_mooreLoopSpace_sphere`: `πₖ(ΩSⁿ)` is trivial for
   `k + 1 < n`.
 * `TauCeti.pathConnectedSpace_loopSpace_sphere`: `ΩSⁿ` is path connected for `n ≥ 2`.
+* `TauCeti.pathConnectedSpace_mooreLoopSpace_sphere`: the Moore loop space of `Sⁿ` is path
+  connected for `n ≥ 2`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_piLp_quaternion`: `πₖ(S^{4m-1}, x)` is trivial for
   `k < 4m - 1`, for the unit sphere of `ℍᵐ`.
 * `TauCeti.subsingleton_homotopyGroup_sphere_quaternion`: `πₖ(S³, x)` is trivial for `k < 3`.
@@ -168,6 +170,14 @@ theorem pathConnectedSpace_loopSpace_sphere {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (hn : 2 ≤ n) (x : sphere (0 : E) 1) :
     PathConnectedSpace (Ω (sphere (0 : E) 1) x) :=
   (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).2
+    (subsingleton_homotopyGroup_sphere_of_lt hE (by simp; omega) x)
+
+/-- **The Moore loop space of `Sⁿ` is path connected** for `n ≥ 2`, since `Sⁿ` is simply
+connected. -/
+theorem pathConnectedSpace_mooreLoopSpace_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 1) (hn : 2 ≤ n) (x : sphere (0 : E) 1) :
+    PathConnectedSpace (MooreLoopSpace (sphere (0 : E) 1) x) :=
+  (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 x).2
     (subsingleton_homotopyGroup_sphere_of_lt hE (by simp; omega) x)
 
 section Hurewicz

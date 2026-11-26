@@ -44,7 +44,8 @@ element of `π₁(ℝPⁿ) = ℤ/2`.
 * `TauCeti.RealProjectiveSpace.isZero_singularHomology_pathComponent_loopSpace`,
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_pathComponent_mooreLoopSpace`: the
   homology of `Ω₀ℝPⁿ` vanishes in the degrees not divisible by `n - 1`.
-* `TauCeti.RealProjectiveSpace.nontrivial_singularHomology_pathComponent_loopSpace`:
+* `TauCeti.RealProjectiveSpace.nontrivial_singularHomology_pathComponent_loopSpace`,
+  `TauCeti.RealProjectiveSpace.nontrivial_singularHomology_pathComponent_mooreLoopSpace`:
   `H_{n-1}(Ω₀ℝPⁿ; R)` is nonzero for a nontrivial ring `R`.
 
 ## References
@@ -74,13 +75,6 @@ private theorem pathConnectedSpace_loopSpace : PathConnectedSpace (Ω (sphere
     (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :=
   pathConnectedSpace_loopSpace_sphere finrank_euclideanSpace_fin hn x
 
-include hn in
-/-- The Moore loop space of `Sⁿ` is path connected for `n ≥ 2`. -/
-private theorem pathConnectedSpace_mooreLoopSpace : PathConnectedSpace (MooreLoopSpace (sphere
-    (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :=
-  (MooreLoopSpace.pathConnectedSpace_iff_subsingleton_pi1 x).2
-    (subsingleton_homotopyGroup_sphere_of_lt finrank_euclideanSpace_fin (by simp; omega) x)
-
 /-- **The contractible loops of `ℝPⁿ` are the loops of `Sⁿ`**: for `n ≥ 2`, the loop map of the
 projection `Sⁿ → ℝPⁿ` is a homeomorphism from the loop space of `Sⁿ` at `x` onto the path component
 of the constant loop in the loop space of `ℝPⁿ` at the image of `x`. -/
@@ -103,7 +97,7 @@ onto the path component of the unit in the Moore loop space of `ℝPⁿ` at the 
 def mooreLoopSpaceSphereHomeomorph :
     MooreLoopSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x ≃ₜ
       pathComponent (1 : MooreLoopSpace (RealProjectiveSpace n) (mk n x)) :=
-  have := pathConnectedSpace_mooreLoopSpace hn x
+  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
   IsCoveringMap.mooreLoopSpaceHomeomorph (p := ⟨mk n, continuous_mk n⟩) (isCoveringMap_mk n) x
 
 @[simp]
@@ -111,7 +105,7 @@ theorem coe_mooreLoopSpaceSphereHomeomorph_apply
     (γ : MooreLoopSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) x) :
     (mooreLoopSpaceSphereHomeomorph hn x γ : MooreLoopSpace (RealProjectiveSpace n) (mk n x)) =
       MooreLoopSpace.map ⟨mk n, continuous_mk n⟩ rfl γ :=
-  have := pathConnectedSpace_mooreLoopSpace hn x
+  have := pathConnectedSpace_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x
   IsCoveringMap.coe_mooreLoopSpaceHomeomorph_apply (p := ⟨mk n, continuous_mk n⟩)
     (isCoveringMap_mk n) x γ
 
@@ -167,6 +161,17 @@ theorem isZero_singularHomology_pathComponent_mooreLoopSpace {k : ℕ} (hk : ¬(
   (isZero_singularHomology_mooreLoopSpace_sphere finrank_euclideanSpace_fin hn x R hk).of_iso
     (((singularHomologyFunctor (ModuleCat.{0} R) k).obj (ModuleCat.of R R)).mapIso
       (TopCat.isoOfHomeo (mooreLoopSpaceSphereHomeomorph hn x))).symm
+
+include hn in
+/-- **The contractible Moore loops of `ℝPⁿ` have nonzero homology in degree `n - 1`** with
+coefficients in a nontrivial ring, for `n ≥ 2`. -/
+theorem nontrivial_singularHomology_pathComponent_mooreLoopSpace [Nontrivial R] :
+    Nontrivial (((singularHomologyFunctor (ModuleCat.{0} R) (n - 1)).obj
+      (ModuleCat.of R R)).obj
+        (TopCat.of (pathComponent (1 : MooreLoopSpace (RealProjectiveSpace n) (mk n x))))) := by
+  have e := singularHomologyPathComponentMooreLoopSpaceIso hn x R 1
+  rw [one_mul] at e
+  exact (e.toLinearEquiv.toEquiv.nontrivial_congr).2 inferInstance
 
 end RealProjectiveSpace
 

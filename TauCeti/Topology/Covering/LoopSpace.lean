@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Lifting
+public import TauCeti.Topology.Homotopy.LoopSpaceFibration
 public import TauCeti.Topology.Homotopy.Path
 public import TauCeti.Topology.PathComponent
 public import TauCeti.Topology.PathSpace.Moore.Covering
@@ -21,8 +22,8 @@ inverse lifts a contractible loop `δ` from `e`: the lifts, taken all at once by
 over the path-connected space `Ω₀B`, depend continuously on `δ`, and their end points lie in the
 discrete fibre over `p e`, so they all end where the lift of the constant loop does, at `e`.
 
-When `Ω E e` is path connected, for instance when `E` is simply connected, all of `Ω E e` is
-contractible, so the loop map identifies `Ω E e` with `Ω₀B`
+When `Ω E e` is path connected, for instance when `E` is simply connected, every loop at `e` is
+contractible, so `Ω E e = Ω₀E` and the loop map identifies `Ω E e` with `Ω₀B`
 (`IsCoveringMap.loopSpaceHomeomorph`). For the universal cover `Sⁿ → ℝPⁿ`, `n ≥ 2`, this says
 that the contractible loops of `ℝPⁿ` are the loop space of `Sⁿ`; the mod-two vanishing theorem
 applied to `Ω₀ℝPⁿ` in the proof of Theorem C of Barraud–Damian–Humilière–Oancea sees the homology
@@ -70,11 +71,6 @@ section LoopSpace
 variable {p : E → B} (hp : IsCoveringMap p) (e : E)
 
 include hp
-
-/-- The loop map of `p`, continuous for the compact-open topologies. -/
-private theorem continuous_loopMap :
-    Continuous fun γ : Ω E e ↦ γ.map hp.continuous :=
-  Path.continuous_uncurry_iff.1 <| hp.continuous.comp continuous_eval
 
 /-- The contractible loops at `p e` as a homotopy of paths, parametrized by the loop. -/
 private def evalHomotopy : C(I × pathComponent (Path.refl (p e)), B) :=
@@ -145,11 +141,13 @@ def pathComponentLoopSpaceHomeomorph :
     pathComponent (Path.refl e) ≃ₜ pathComponent (Path.refl (p e)) where
   toFun γ := ⟨(γ : Ω E e).map hp.continuous,
     Path.map_refl hp.continuous e ▸
-      (continuous_loopMap hp e).mapsTo_pathComponent (Path.refl e) γ.property⟩
+      (TauCeti.continuous_loopMap hp.continuous e).mapsTo_pathComponent (Path.refl e)
+        γ.property⟩
   invFun δ := ⟨liftLoop hp e δ, liftLoop_mem_pathComponent hp e δ⟩
   left_inv γ := Subtype.ext <| liftLoop_map hp e γ _
   right_inv δ := Subtype.ext <| map_liftLoop hp e δ
-  continuous_toFun := ((continuous_loopMap hp e).comp continuous_subtypeVal).subtype_mk _
+  continuous_toFun :=
+    ((TauCeti.continuous_loopMap hp.continuous e).comp continuous_subtypeVal).subtype_mk _
   continuous_invFun := (continuous_liftLoop hp e).subtype_mk _
 
 @[simp]
@@ -169,10 +167,8 @@ connected, as when `E` is simply connected, the loop map of a covering map `p : 
 homeomorphism from `Ω E e` onto the space of contractible loops at `p e`. -/
 def loopSpaceHomeomorph [PathConnectedSpace (Ω E e)] :
     Ω E e ≃ₜ pathComponent (Path.refl (p e)) :=
-  (Homeomorph.Set.univ (Ω E e)).symm.trans <|
-    (Homeomorph.setCongr
-      (Set.eq_univ_of_forall fun γ ↦ PathConnectedSpace.joined (Path.refl e) γ).symm).trans <|
-      hp.pathComponentLoopSpaceHomeomorph e
+  (Homeomorph.pathComponentOfPathConnectedSpace (Path.refl e)).trans <|
+    hp.pathComponentLoopSpaceHomeomorph e
 
 @[simp]
 theorem coe_loopSpaceHomeomorph_apply [PathConnectedSpace (Ω E e)] (γ : Ω E e) :
@@ -279,10 +275,8 @@ covering map `p : E → B` is a homeomorphism from `MooreLoopSpace E e` onto the
 Moore loops at `p e`. -/
 def mooreLoopSpaceHomeomorph [PathConnectedSpace (MooreLoopSpace E e)] :
     MooreLoopSpace E e ≃ₜ pathComponent (1 : MooreLoopSpace B (p e)) :=
-  (Homeomorph.Set.univ (MooreLoopSpace E e)).symm.trans <|
-    (Homeomorph.setCongr (Set.eq_univ_of_forall fun γ ↦
-      PathConnectedSpace.joined (1 : MooreLoopSpace E e) γ).symm).trans <|
-      hp.pathComponentMooreLoopSpaceHomeomorph e
+  (Homeomorph.pathComponentOfPathConnectedSpace (1 : MooreLoopSpace E e)).trans <|
+    hp.pathComponentMooreLoopSpaceHomeomorph e
 
 @[simp]
 theorem coe_mooreLoopSpaceHomeomorph_apply [PathConnectedSpace (MooreLoopSpace E e)]
